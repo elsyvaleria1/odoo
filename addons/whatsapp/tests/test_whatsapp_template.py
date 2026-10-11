@@ -24,7 +24,6 @@ class WhatsAppTemplateCommon(WhatsAppCommon, MockIncomingWhatsApp):
 class WhatsAppTemplate(WhatsAppTemplateCommon):
     @users("user_wa_admin")
     def test_template_button(self):
-        """Test various combination of buttons"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Dynamic url button template {{1}}",
@@ -143,7 +142,6 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
                 )
                 self.assertWATemplateVariables(template, exp_tmpl_vars)
 
-        # test update
         template.write(
             {
                 "button_ids": [
@@ -171,7 +169,7 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
         )
         template.invalidate_recordset(
             ["variable_ids"]
-        )  # buttons do not trigger a compute
+        )
         template.button_ids.flush_recordset()
         template.flush_recordset()
         self.assertWATemplateVariables(
@@ -205,11 +203,6 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
         )
 
     def test_template_create_existing_name_no_account(self):
-        """Check that account-linked templates do not prevent base data creation.
-
-        Base data is linked to an existing account for convenience by default.
-        We should not use that default if it would result in a unique constraint error.
-        """
         common_template_name = "test_template_create_existing_name_no_account"
         first_template = self.env["whatsapp.template"].create(
             {
@@ -231,7 +224,6 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
             second_template.wa_account_id,
             "Expected fall-back on no account when name already exists for default account",
         )
-        # Because NULL != NULL in postgres by default, we can have multiple templates with different names but no account
         third_template = self.env["whatsapp.template"].create(
             {
                 "template_name": common_template_name,
@@ -242,7 +234,6 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
             "Expected fall-back on no account when name already exists for default account",
         )
 
-        # check we can still select a specific account
         new_account = self.whatsapp_account.copy(
             {"phone_uid": "test_template_create_existing_name_no_account"}
         )
@@ -256,7 +247,6 @@ class WhatsAppTemplate(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_template_content_dynamic(self):
-        """Test body with multiple variables"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": """Hello I am {{1}},
@@ -331,7 +321,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_content_validation(self):
-        """Test body variables validation and usage"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "{{3}} {{2}} {{1}} {{3}} {{4}}",
@@ -349,14 +338,12 @@ Welcome to {{3}} office""",
             ],
         )
 
-        # those changes should raise a ValidationError, not other errors
         with self.assertRaises(exceptions.ValidationError):
             template.body = "{{2}} {{5}} {{1}} {{3}} {{2}}"
         with self.assertRaises(exceptions.ValidationError):
             template.body = "{{2}} {{3}} {{4}} {{5}}"
 
     def test_template_format_markup_underscore_handling(self):
-        """Test that underscores in URLs and tokens are not converted to italic markup"""
         template = self.env["whatsapp.template"]
 
         test_cases = [
@@ -364,27 +351,22 @@ Welcome to {{3}} office""",
                 "Here is _some text_ in italics",
                 "<p>Here is <i>some text</i> in italics</p>",
             ),
-            # URLs with underscores should not be affected
             (
                 "Visit https://example.com?access_token=abc123_def456",
                 '<p>Visit <a href="https://example.com?access_token=abc123_def456" target="_blank" rel="noreferrer noopener">https://example.com?access_token=abc123_def456</a></p>',
             ),
-            # Mixed content - italic with urls and underscores
             (
                 "This is _italic_ and visit https://example.com?token=abc_123",
                 '<p>This is <i>italic</i> and visit <a href="https://example.com?token=abc_123" target="_blank" rel="noreferrer noopener">https://example.com?token=abc_123</a></p>',
             ),
-            # Multiple italic formatting
             (
                 "Both _first_ and _second_ are italic",
                 "<p>Both <i>first</i> and <i>second</i> are italic</p>",
             ),
-            # Edge case
             (
                 "_italic_text_with_underscores_",
                 "<p>_italic_text_with_underscores_</p>",
-            ),  # Should not match
-            # Combined formatting italic and bold
+            ),
             (
                 "*Bold* and _italic_ with url_param=value",
                 "<p><b>Bold</b> and <i>italic</i> with url_param=value</p>",
@@ -401,7 +383,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_header_type_attachment(self):
-        """Test header type attachment"""
         for header_type, header_attachment in zip(
             ("image", "video", "document"),
             (self.image_attachment, self.video_attachment, self.document_attachment),
@@ -409,7 +390,6 @@ Welcome to {{3}} office""",
         ):
             with self.subTest(header_type=header_type):
                 demo_header_attachment = header_attachment.copy()
-                # TDE TOCHECK: remove sudo and check attachement rights
                 template = (
                     self.env["whatsapp.template"]
                     .sudo()
@@ -431,9 +411,7 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_header_type_attachment_validation(self):
-        """Test header type attachment validation"""
         categ_types = [
-            # document
             [
                 "text/plain",
                 "application/pdf",
@@ -444,9 +422,7 @@ Welcome to {{3}} office""",
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             ],
-            # image
             ["image/jpeg", "image/png"],
-            # video
             ["video/mp4"],
         ]
         all_types = [mimetype for categ in categ_types for mimetype in categ]
@@ -483,7 +459,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_header_type_dynamic_text(self):
-        """Test dynamic text header"""
         template = self.env["whatsapp.template"].create(
             {
                 "header_text": "Header {{1}}",
@@ -544,7 +519,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_header_type_location(self):
-        """Test location header type"""
         template = self.env["whatsapp.template"].create(
             {
                 "header_type": "location",
@@ -628,7 +602,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_header_variables_update(self):
-        """Test variable compute method, when updating header_type."""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Super Body",
@@ -674,7 +647,6 @@ Welcome to {{3}} office""",
 
     @users("user_wa_admin")
     def test_template_submit_with_10_body_variables(self):
-        """Test template submit body with 10 variables"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Hello I am {{1}} {{2}} {{3}} {{4}} {{5}} {{6}} {{7}} {{8}} {{9}} {{10}}",
@@ -756,9 +728,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_button_format(self):
-        """Test detection of invalid phone number or invalid url on button and update of
-        url of button, updating scheme to https when it is not set
-        """
         template_form = Form(self.env["whatsapp.template"])
         template_form.name = "Test Buttons"
         template_form.body = "Hello World"
@@ -786,8 +755,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
                 url_button.website_url = url
             template = template_form.save()
             self.assertEqual(template.button_ids[0].website_url, expected_url)
-            # with the form view, the domain is always added through the onchange
-            # so to test the warning message, the url has to be changed without the form view
             template.button_ids[0].website_url = url
             self.assertEqual(
                 bool(template.warning_message and "URL" in template.warning_message),
@@ -814,8 +781,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_header_onchange(self):
-        """Test reset / update of fields during onchange to keep header related
-        fields coherent and avoid useless validation errors"""
         template_form = Form(self.env["whatsapp.template"])
         self.assertEqual(template_form.model, "res.partner")
 
@@ -823,7 +788,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
         template_form.body = "Test Body"
         template_form.header_type = "document"
 
-        # check validation
         template_form.header_attachment_ids.add(self.document_attachment_wa_admin)
         template_form.header_attachment_ids.add(self.video_attachment_wa_admin)
         with self.assertRaises(exceptions.ValidationError):
@@ -832,7 +796,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
         template_form.header_attachment_ids.remove(id=self.video_attachment_wa_admin.id)
         template = template_form.save()
 
-        # test onchange
         with Form(template) as template_form:
             template_form.header_type = "text"
             template_form.header_text = "Header Text {{1}}"
@@ -841,11 +804,9 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
             template.header_attachment_ids, "Text header: should reset attachments"
         )
 
-        # test reverse onchange
         with Form(template) as template_form:
             template_form.header_type = "document"
 
-            # attachment or report is mandatory
             with self.assertRaises(exceptions.ValidationError):
                 template = template_form.save()
 
@@ -857,15 +818,12 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_model_update(self):
-        """WA admins that are not sys admins should be able to chose / change
-        models, even when not having access to the underlying ir.model"""
         template_form = Form(self.env["whatsapp.template"])
         self.assertEqual(template_form.model, "res.partner")
         self.assertEqual(
             template_form.model_id, self.env["ir.model"]._get("res.partner")
         )
 
-        # add mandatory body then model-dependent content to check the reset
         template_form.body = "Test Body"
         template_form.header_type = "document"
         template_form.report_id = self.test_partner_report
@@ -883,12 +841,9 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_variables_new_mode(self):
-        """Test "_compute_variable_ids" as it has a lot to do, especially in
-        new mode."""
         template_form = Form(self.env["whatsapp.template"])
         template_form.name = "Test Variables"
 
-        # header_type location: should add 4 location variables
         template_form.header_type = "location"
         exp_variables = [
             ("name", "location"),
@@ -910,7 +865,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
             self.assertEqual(match["line_type"], line_type)
             self.assertEqual(match["model"], template_form.model)
 
-        # update body, should add matching variables
         template_form.body = "Hello {{1}} this is {{2}}"
         exp_variables += [
             ("{{1}}", "body"),
@@ -930,7 +884,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
             self.assertEqual(match["line_type"], line_type)
             self.assertEqual(match["model"], template_form.model)
 
-        # change header type: shoud remove location variables
         template_form.header_type = "text"
         template_form.header_text = "Header {{1}}"
         exp_variables = [
@@ -951,7 +904,6 @@ class WhatsAppTemplateForm(WhatsAppTemplateCommon):
             )
             self.assertEqual(match["model"], template_form.model)
 
-        # save, check final content
         template = template_form.save()
         self.assertWATemplate(
             template,
@@ -970,8 +922,6 @@ class WhatsAppTemplateInternals(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_copy_attachments(self):
-        """Test that copying a template also copy either the report either
-        attachments when used in headers, to avoid validation errors."""
         template = self.env["whatsapp.template"].create(
             {
                 "header_attachment_ids": [(4, self.document_attachment_wa_admin.id)],
@@ -988,8 +938,6 @@ class WhatsAppTemplateInternals(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_copy_variables(self):
-        """Test that copying the template is copying the variables but also the
-        buttons with their respective variables."""
         for button_type in ["static", "dynamic"]:
             with self.subTest(button_type=button_type):
                 template = self.env["whatsapp.template"].create(
@@ -1115,7 +1063,6 @@ class WhatsAppTemplateInternals(WhatsAppTemplateCommon):
 class WhatsAppTemplatePreview(WhatsAppTemplateCommon):
     @users("user_wa_admin")
     def test_template_preview(self):
-        """Test preview feature from template itself"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Feel free to contact {{1}}",
@@ -1159,12 +1106,10 @@ class WhatsAppTemplatePreview(WhatsAppTemplateCommon):
 class WhatsAppTemplateSync(WhatsAppTemplateCommon):
     @users("user_wa_admin")
     def test_synchronize_archived(self):
-        """If template is archived then it should sync the archived template
-        instead of creating new one."""
         self.basic_template.write(
             {
                 "active": False,
-                "wa_template_uid": "778510144283702",  # sync with mock template_data
+                "wa_template_uid": "778510144283702",
             }
         )
         with self.mockWhatsappGateway():
@@ -1190,7 +1135,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
 
     @users("user_wa_admin")
     def test_synchronize_without_existing_template_from_account(self):
-        """Test template sync with whatsapp where there is no existing template for that account in odoo"""
         with self.mockWhatsappGateway():
             self.whatsapp_account.button_sync_whatsapp_account_templates()
         templates = self.env["whatsapp.template"].search(
@@ -1198,7 +1142,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
         )
         templates = templates.grouped("template_name")
 
-        # Check template with simple text
         self.assertTrue(templates["test_simple_text"])
         self.assertWATemplate(
             templates["test_simple_text"],
@@ -1212,7 +1155,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
             },
         )
 
-        # Check template with image header
         self.assertTrue(templates["test_image_header"])
         self.assertWATemplate(
             templates["test_image_header"],
@@ -1230,7 +1172,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
             },
         )
 
-        # Check template with dynamic header and dynamic body
         self.assertTrue(templates["test_dynamic_header_with_dynamic_body"])
         self.assertWATemplate(
             templates["test_dynamic_header_with_dynamic_body"],
@@ -1252,7 +1193,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
             ],
         )
 
-        # Check template with location header
         self.assertTrue(templates["test_location_header"])
         self.assertWATemplate(
             templates["test_location_header"],
@@ -1271,7 +1211,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
             ],
         )
 
-        # Check template with dynamic header and dynamic body and dynamic button
         self.assertTrue(templates["test_dynamic_header_body_button"])
         self.assertWATemplate(
             templates["test_dynamic_header_body_button"],
@@ -1299,7 +1238,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
             ],
         )
 
-        # Check template with red quality
         self.assertTrue(templates["test_red_quality"])
         self.assertWATemplate(
             templates["test_red_quality"],
@@ -1314,14 +1252,12 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
         )
 
     def test_synchronize_with_existing_template_from_account(self):
-        """Test template sync with whatsapp where there is existing template for that account in odoo"""
         with self.mockWhatsappGateway():
             self.whatsapp_account.button_sync_whatsapp_account_templates()
         templates = self.env["whatsapp.template"].search(
             [("wa_account_id", "=", self.whatsapp_account.id)]
         )
         templates = templates.grouped("template_name")
-        # Now modify existing template and sync again
         templates["test_simple_text"].write(
             {
                 "body": "Hello, how are you? Thank you for reaching out to us. Modified",
@@ -1424,18 +1360,15 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
                 ("{{2}}", "body", "user_phone", {"demo_value": "+91 12345 12345"}),
             ],
         )
-        # Test Whatsapp phone number on sync
         self.assertEqual(self.whatsapp_account.phone_number, "+91 12345 67890")
 
     def test_synchronize_with_existing_template_from_template_individual(self):
-        """Test template sync with whatsapp where there is existing template from template itself"""
         with self.mockWhatsappGateway():
             self.whatsapp_account.button_sync_whatsapp_account_templates()
         templates = self.env["whatsapp.template"].search(
             [("wa_account_id", "=", self.whatsapp_account.id)]
         )
         templates = templates.grouped("template_name")
-        # Now modify existing template and sync template one by one
         templates["test_simple_text"].write(
             {
                 "body": "Hello, how are you? Thank you for reaching out to us. Modified",
@@ -1519,7 +1452,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
         )
 
     def test_update_webhook(self):
-        """Test template update webhook for different fields"""
         basic_template = self.env["whatsapp.template"].create(
             {
                 "body": "Demo Template",
@@ -1592,7 +1524,6 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
                 for fname, fvalue in expected_values.items():
                     self.assertEqual(basic_template[fname], fvalue)
 
-                # remove value tracking messages
                 log = self._new_msgs.filtered(lambda msg: msg.body)
                 if (
                     field == "message_template_status_update"
@@ -1603,6 +1534,5 @@ class WhatsAppTemplateSync(WhatsAppTemplateCommon):
                         "<p>Your Template has been rejected.<br>Reason : &lt;b&gt;Super Reason&lt;/b&gt;</p>",
                     )
                 else:
-                    # remove tracking messages
                     log = self._new_msgs.filtered(lambda msg: msg.body)
                     self.assertFalse(log)

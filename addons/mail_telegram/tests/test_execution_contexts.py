@@ -23,8 +23,6 @@ class TestExecutionContexts(MailTelegramCase):
         super().setUpClass()
         cls.main = cls.env.company
         cls.other = cls.env["res.company"].create({"name": "TG Contexts Other"})
-        # the bot speaks for the other company, of which the recipient is a
-        # member and the poster is not
         cls.test_bot.company_id = cls.other
         cls.test_user.write({"company_ids": [Command.set((cls.main | cls.other).ids)]})
         cls.test_user._telegram_settings().telegram_notify_inbox = "always"
@@ -66,7 +64,6 @@ class TestExecutionContexts(MailTelegramCase):
         self.assertEqual(len(self._queued()), 1)
 
     def _run_delivery_jobs(self, call):
-        """Run the outbox jobs as the queue would: as their own user."""
         jobs = (
             self.env["ir.job"]
             .sudo()

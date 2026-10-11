@@ -21,15 +21,9 @@ websocket.enableTrace(True, level=logging.getLevelName(_logger.getEffectiveLevel
 
 @helpers.require_db
 def send_to_controller(params, method="send_websocket", server_url=None) -> None:
-    """Confirm the operation's completion by sending a response back to the Odoo server
-
-    :param params: the parameters to send back to the server
-    :param method: method to call on the IoT box controller
-    :param server_url: URL of the Odoo server (provided by decorator).
-    """
     request_path = f"{server_url}/iot/box/{method}"
     try:
-        response = requests.post(request_path, json={"params": params}, timeout=5)  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        response = requests.post(request_path, json={"params": params}, timeout=5)
         response.raise_for_status()
     except requests.exceptions.RequestException:
         _logger.exception("Could not reach database URL: %s", request_path)
@@ -44,12 +38,7 @@ class WebsocketClient(Thread):
     channel = ""
 
     def on_open(self, ws) -> None:
-        """
-        When the client is setup, this function send a message to subscribe to the iot websocket channel
-        """
         self.connect_timestamp = time.monotonic()
-        # the server may have answered the box's last /iot/setup with another
-        # channel since this client started: every reconnect takes the latest
         self.channel = main.manager.ws_channel or self.channel
         ws.send(
             json_dumps(
@@ -65,7 +54,6 @@ class WebsocketClient(Thread):
         )
 
     def on_message(self, ws, messages) -> None:
-        """Synchronously handle messages received by the websocket."""
         for message in json_loads(messages):
             self.last_message_id = message["id"]
             payload = message["message"]["payload"]
@@ -90,7 +78,6 @@ class WebsocketClient(Thread):
                                 time.perf_counter() - start_operation_time,
                             )
                         else:
-                            # Notify the controller that the device is not connected
                             send_to_controller(
                                 {
                                     "session_id": payload.get("session_id", "0"),
@@ -101,8 +88,6 @@ class WebsocketClient(Thread):
                             )
                 case "server_clear":
                     if time.monotonic() < self.connect_timestamp + 5.0:
-                        # This is a hacky way avoid processing an old server_clear message
-                        # In master we can fix this properly by providing the last message ID to the IoT box on connection
                         _logger.warning("Ignoring server_clear message")
                         continue
                     helpers.disconnect_from_server()
@@ -162,9 +147,6 @@ class WebsocketClient(Thread):
                         }
                     )
                 case "bundle_changed":
-                    # This message is sent by the DB whenever the web JS asset bundle changes.
-                    # While this is a bit of a hack we use this message to check if the DB has been upgraded,
-                    # since we know the bundle will always change in this situation.
                     upgrade.check_git_branch()
                 case _:
                     continue
@@ -174,11 +156,6 @@ class WebsocketClient(Thread):
         helpers.update_conf({"last_websocket_message_id": self.last_message_id})
 
     def __init__(self, channel, server_url=None) -> None:
-        """This class will not be instantiated if no db is connected.
-
-        :param str channel: the channel to subscribe to
-        :param str server_url: URL of the Odoo server (provided by decorator).
-        """
         self.channel = channel
         self.last_message_id = int(helpers.get_conf("last_websocket_message_id") or 0)
         self.server_url = server_url
@@ -193,7 +170,7 @@ class WebsocketClient(Thread):
 
     def run(self):
         if self.db_name:
-            session_response = requests.get(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+            session_response = requests.get(
                 self.server_url + "/web/login?db=" + self.db_name,
                 allow_redirects=False,
                 timeout=10,
@@ -205,7 +182,7 @@ class WebsocketClient(Thread):
                     "Failed to get session ID, status %s", session_response.status_code
                 )
 
-        self.ws = websocket.WebSocketApp(  # noqa: E8518 - runs on the IoT Box, dialling the Odoo server its operator paired it with; ir.egress does not exist there
+        self.ws = websocket.WebSocketApp(
             self.websocket_url,
             header={
                 "User-Agent": "OdooIoTBox/1.0",
@@ -217,17 +194,6 @@ class WebsocketClient(Thread):
             on_close=self.on_close,
         )
 
-        # The IoT synchronised servers can stop in 2 ways that we need to handle:
-        #  A. Gracefully:
-        #   In this case a disconnection signal is sent to the IoT-box
-        #   The websocket is properly closed, but it needs to be established a new connection when
-        #   the server will be back.
-        #
-        # B. Forced/killed:
-        #   In this case there is no disconnection signal received
-        #
-        #   This will also happen with the graceful quit as `reconnect` will trigger if the server
-        #   is offline while attempting the new connection
         while True:
             try:
                 run_res = self.ws.run_forever(reconnect=10)

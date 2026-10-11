@@ -156,7 +156,6 @@ class TestCouponForm(TestCartLineForm):
                 "website_sale.total_no_promotions",
             },
         )
-        # the total the coupon form sits in says what the redirect's query would
         self.assertIn('name="coupon_code"', fragments["website_sale.total"])
         self.assertIn("alert-danger", fragments["website_sale.total"])
         events = {event["name"] for event in payload["events"]}

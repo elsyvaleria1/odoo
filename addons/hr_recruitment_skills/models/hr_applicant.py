@@ -200,9 +200,6 @@ class HrApplicant(models.Model):
         return action
 
     def write(self, vals):
-        """A pool applicant mirrors the skills of the applicants drawn from it,
-        so the raw commands are mapped onto its rows before the mixin turns
-        them into the versioned form."""
         command_fields = set(self._individual_skill_command_field_names())
         if command_fields & vals.keys():
             skills = []

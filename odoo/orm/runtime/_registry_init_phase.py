@@ -77,12 +77,6 @@ class _RegistryInitPhaseMixin(_RegistryStubs):
         *,
         reflect: bool = True,
     ) -> bool:
-        """Admit field-owned tables; payload models retain their own schema lifecycle.
-
-        All models are assembled before this phase begins, even when their tables
-        have not been created yet. Manual relations need the same ownership check
-        but do not acquire module-uninstall metadata.
-        """
         phase = self.init_phase
         if relation in phase.model_tables:
             _debug.logic(

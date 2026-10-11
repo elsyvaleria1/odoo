@@ -806,13 +806,6 @@ class TestExpiringLeaves(HttpCase, TestHrHolidaysCommon):
 
     @users("enguerran")
     def test_carried_over_expiration_is_read_at_the_target_date(self):
-        """The projection is built for ``target_date``; every field read back
-        off it must be read in that same context. ``leaves_taken`` is
-        ``depends_context("default_date_from")``, so a read outside it answers
-        for today instead -- and a leave between today and the target date is
-        then counted as still to come, leaving the carried-over days reading
-        unconsumed.
-        """
         logged_in_emp = self.env.user.employee_id
         with freeze_time("2023-01-01"):
             self.env["hr.leave.allocation"].sudo().create(

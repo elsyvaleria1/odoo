@@ -63,21 +63,6 @@ class DeviceClientVisit(models.Model):
 
     @api.model
     def _rebuild_from_gps_logs(self, device_ids, date_from, date_to) -> int:
-        """Rebuild the client visits of `device_ids` between two UTC
-        datetimes from the raw GPS positions.
-
-        The 5-minute cron only records visits while it is running, so the
-        history before the module was installed -- or across any outage --
-        is empty. This replays the positions through the same proximity
-        rule as the live tracker and sessionizes them: consecutive
-        positions on the same parcel are one visit, and a silence shorter
-        than VISIT_MAX_SILENCE does not end it (the tracker sleeps
-        while parked).
-
-        Existing visits of those devices that start inside the window are
-        replaced; ongoing visits (no departure) are left alone so the live
-        tracker keeps owning them. Returns the number of visits created.
-        """
         self.check_access("create")
         self.check_access("unlink")
         devices = self.env["device.device"].browse(sorted(set(device_ids)))
@@ -205,9 +190,6 @@ class DeviceClientVisit(models.Model):
         )
         created = self.browse([row[0] for row in cr.fetchall()])
         self.invalidate_model()
-        # The raw insert bypassed the ORM: recompute every stored computed
-        # or related field (company_id, operator snapshots, ...) so the rows
-        # look exactly like ones the live tracker would have created.
         for field in self._fields.values():
             if field.store and field.compute:
                 self.env.add_to_compute(field, created)

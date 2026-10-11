@@ -21,14 +21,11 @@ class TestPaymentTransaction(PaymentCustomCommon):
         )
 
     def test_communication_based_on_transaction_reference(self):
-        """Test that the payment communication falls back to the transaction reference when there
-        is no linked invoice or sales order."""
         tx = self._create_transaction(flow="direct", reference="test")
 
         self.assertEqual(tx._get_communication(), "test")
 
     def test_communication_for_invoice(self):
-        """Test that the communication displayed is the invoice payment reference."""
         account_payment_module = self.env["ir.module.module"]._get(
             "account_payment_provider"
         )
@@ -53,7 +50,6 @@ class TestPaymentTransaction(PaymentCustomCommon):
         self.assertEqual(tx._get_communication(), "test")
 
     def test_communication_for_sale_order(self):
-        """Test that the communication displayed is the sale order reference."""
         sale_module = self.env["ir.module.module"]._get("sale")
         if sale_module.state != "installed":
             self.skipTest("sale module is not installed")

@@ -14,16 +14,6 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
     """
 
     def test_fsm_flow(self):
-        """
-        Test Cases:
-        ==========
-        1) Add task and Assert no products added
-        2) Add and remove different quantities of products:
-            - Service (order/delivered)
-            - Consumable (order/delivered)
-            And assert after each operation on product count
-        3) Set product quantity after confirming SO
-        """
         self.assertFalse(
             self.task.material_line_product_count,
             "No product should be linked to a new task",
@@ -109,7 +99,6 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
             f"{expected_product_count} product should be linked to the task",
         )
 
-        # timesheet
         values = {
             "task_id": self.task.id,
             "project_id": self.task.project_id.id,
@@ -126,7 +115,6 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
             "Timesheet should not appear in material",
         )
 
-        # validation and SO
         self.assertFalse(self.task.fsm_done, "Task should not be validated")
         self.assertEqual(len(self.task.sale_order_id.line_ids), 4)
 
@@ -140,7 +128,6 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
             self.task.sale_order_id.state, "done", "Sale order should be confirmed"
         )
 
-        # Add product quantity after confirming the SO
         self.service_product_ordered.with_user(self.project_user).with_context(
             {"fsm_task_id": self.task.id}
         ).set_fsm_quantity(9)
@@ -152,20 +139,15 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
             f"{expected_product_count} product should be linked to the task",
         )
 
-        # invoice
         self.assertTrue(self.task.task_to_invoice, "Task should be invoiceable")
         invoice_ctx = self.task.action_create_invoice()["context"]
         invoice_wizard = (
             self.env["wizard.sale.order.invoice"].with_context(invoice_ctx).create({})
         )
         invoice_wizard.create_invoices()
-        # An invoice counts toward the order's invoiced quantity once posted, not
-        # while draft, so the task stays invoiceable until the wizard's invoice is
-        # validated -- which is what "invoiced" means here.
         self.task.sale_order_id.invoice_ids.action_post()
         self.assertFalse(self.task.task_to_invoice, "Task should not be invoiceable")
 
-        # quotation
         self.assertEqual(
             self.task.quotation_count,
             0,
@@ -174,7 +156,7 @@ class TestFsmFlowSaleWithStock(TestFsmFlowSaleCommon):
         quotation_context = self.task.action_fsm_create_quotation()["context"]
         quotation = self.env["sale.order"].with_context(quotation_context).create({})
         self.assertEqual(quotation.task_id, self.task)
-        self.task._compute_quotation_count()  # it means we return to the form view of the task, So the compute will be trigger again.
+        self.task._compute_quotation_count()
         self.assertEqual(
             self.task.quotation_count,
             1,

@@ -41,10 +41,6 @@ class TestTOTPMixin:
         totp_key = None
 
         def _generate_totp(secret_b32, timestamp):
-            """Generate a 6-digit TOTP token using HMAC-SHA1 (RFC 6238)."""
-            # The wizard displays the secret space-grouped for readability;
-            # normalize exactly like res.users._totp_try_setting does (the
-            # passlib TOTP this replaced normalized implicitly).
             key = base64.b32decode(re.sub(r"\s", "", secret_b32).upper())
             counter = int(timestamp / 30)
             mac = hmac.new(key, struct.pack(">Q", counter), "sha1").digest()
@@ -62,20 +58,16 @@ class TestTOTPMixin:
             _logger.info("TOTP secret:%s offset:%s token:%s", secret, offset, token)
             return token
 
-        # because not preprocessed by ControllerType metaclass
         totp_hook.routing_type = "json"
         self.env.registry.clear_cache("routing")
-        # patch Home to add test endpoint
         Home.totp_hook = http.route("/totphook", type="jsonrpc", auth="none")(totp_hook)
 
         def totp_match(self, code, t=None, **kwargs):
-            # Allow going beyond the 30s window
             return origin_match(self, code, t=baseline_time + last_offset, **kwargs)
 
         origin_match = auth_TOTP.match
         auth_TOTP.match = totp_match
 
-        # remove endpoint and destroy routing map
         @self.addCleanup
         def _cleanup():
             del Home.totp_hook
@@ -90,10 +82,8 @@ class TestTOTP(TestTOTPMixin, HttpCase):
         self.install_totphook()
 
     def test_totp(self):
-        # 1. Enable 2FA
         self.start_tour("/odoo", "totp_tour_setup", login="test_user")
 
-        # 2. Verify that RPC is blocked because 2FA is on.
         self.assertFalse(
             self.xmlrpc_common.authenticate(
                 get_db_name(), "test_user", "test_user", {}
@@ -112,20 +102,16 @@ class TestTOTP(TestTOTPMixin, HttpCase):
                 get_db_name(), uid, "test_user", "res.users", "read", [uid, ["login"]]
             )
 
-        # 3. Check 2FA is required
         with self.assertLogs("odoo.addons.auth_totp.models.res_users", "WARNING") as cm:
             self.start_tour("/", "totp_login_enabled", login=None)
 
         self.assertEqual(len(cm.output), 1)
         self.assertIn("2FA check: REUSE", cm.output[0])
 
-        # 4. Check 2FA is not requested on saved device and disable it
         self.start_tour("/", "totp_login_device", login=None)
 
-        # 5. Finally, check that 2FA is in fact disabled
         self.start_tour("/", "totp_login_disabled", login=None)
 
-        # 6. Check that rpc is now re-allowed
         uid = self.xmlrpc_common.authenticate(
             get_db_name(), "test_user", "test_user", {}
         )
@@ -137,8 +123,6 @@ class TestTOTP(TestTOTPMixin, HttpCase):
 
     def test_totp_administration(self):
         self.start_tour("/web", "totp_tour_setup", login="test_user")
-        # If not enabled (like in demo data), landing on res.config will try
-        # to disable module_sale_quotation_builder and raise an issue
         group_order_template = self.env.ref(
             "sale.group_sale_order_template", raise_if_not_found=False
         )
@@ -151,7 +135,6 @@ class TestTOTP(TestTOTPMixin, HttpCase):
 
     @mute_logger("odoo.http")
     def test_totp_authenticate(self):
-        """Ensure we don't leak session info from a half-logged-in user."""
         self.start_tour("/odoo", "totp_tour_setup", login="test_user")
         self.url_open("/web/session/logout")
 
@@ -176,19 +159,14 @@ class TestTOTP(TestTOTPMixin, HttpCase):
         self.assertEqual(data["result"]["uid"], None)
 
     def test_totp_setup_rate_limited(self):
-        """_totp_try_setting (the 2FA setup wizard's code-verification path)
-        must be rate-limited exactly like _check_credentials's 'totp' branch:
-        without it, the wizard's secret+code pair (a 10**DIGITS code space)
-        could be brute-forced through repeated enable() calls."""
         secret = base64.b32encode(os.urandom(20)).decode()
         fake_request = MagicMock()
         fake_request.httprequest.environ = {"REMOTE_ADDR": "203.0.113.1"}
         fake_request.httprequest.remote_addr = "203.0.113.1"
         user = self.user_test.with_user(self.user_test)
-        limit = 5  # TOTP_RATE_LIMITS['code_check'][0]
+        limit = 5
         with patch("odoo.addons.auth_totp.models.res_users.request", fake_request):
             for _ in range(limit):
-                # wrong code: rate limit must not trip yet, just a normal reject
                 self.assertFalse(user._totp_try_setting(secret, "000000"))
             with self.assertRaises(AccessDenied):
                 user._totp_try_setting(secret, "000000")

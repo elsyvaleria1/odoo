@@ -162,9 +162,6 @@ class AccountBatchPayment(models.Model):
 
     @api.depends("batch_type", "journal_id", "payment_ids")
     def _compute_payment_method_id(self) -> None:
-        """Compute the 'payment_method_id' field.
-        This field is not computed in '_compute_available_payment_method_ids' because it's a stored editable one.
-        """
         for batch in self:
             if batch.payment_ids:
                 batch.payment_method_id = batch.payment_ids.payment_channel_id[
@@ -185,7 +182,6 @@ class AccountBatchPayment(models.Model):
                 "payment_method_id"
             )
 
-            # Select the first available one by default.
             if batch.available_payment_method_ids:
                 batch.payment_method_id = batch.available_payment_method_ids[0]._origin
             else:
@@ -229,10 +225,6 @@ class AccountBatchPayment(models.Model):
             )
 
     def _get_methods_generating_files(self):
-        """Hook for extension. Any payment method whose code stands in the list
-        returned by this function will see the "print" button disappear on batch
-        payments form when it gets selected and an 'Export file' appear instead.
-        """
         return []
 
     @api.depends("journal_id")
@@ -389,7 +381,6 @@ class AccountBatchPayment(models.Model):
                             "You cannot create a batch with payments that are already in another batch."
                         )
                     )
-                # Collect all payment IDs
                 all_payment_ids.extend(payments.ids)
 
         if len(all_payment_ids) != len(set(all_payment_ids)):
@@ -461,7 +452,6 @@ class AccountBatchPayment(models.Model):
         for batch in sepa_batches:
             invalid_partners = self.env["res.partner"]
             for partner in batch.payment_ids.partner_id:
-                # sudo needed for accountant users that are not in hr (employee_ids)
                 addresses = partner.sudo()._get_all_addr()
                 has_valid_address = any(
                     addr.get("city") and addr.get("country") for addr in addresses
@@ -478,9 +468,6 @@ class AccountBatchPayment(models.Model):
         )
 
     def confirm_batch(self):
-        """Verifies the content of a batch and proceeds to its sending if possible.
-        If not, opens a wizard listing the errors and/or warnings encountered.
-        """
         validate_action = self._check_batch_validity()
         if validate_action:
             return validate_action
@@ -497,7 +484,7 @@ class AccountBatchPayment(models.Model):
 
         errors = (
             (not self.export_file and self.check_payments_for_errors()) or []
-        )  # We don't re-check for errors if we are regenerating the file (we know there aren't any)
+        )
         warnings = self.get_payment_warnings()
         if errors or warnings:
             if len(errors) == 1 and not warnings:
@@ -523,9 +510,6 @@ class AccountBatchPayment(models.Model):
         return self.confirm_batch()
 
     def _send_after_validation(self):
-        """Sends the payments of a batch (possibly generating an export file)
-        once the batch has been validated.
-        """
 
         self.check_singleton()
         if self.payment_ids:
@@ -536,40 +520,10 @@ class AccountBatchPayment(models.Model):
         return None
 
     def get_payment_warnings(self):
-        """Checks the payments of this batch and returns (if relevant) some
-        warnings about them. These warnings are not to be confused with errors,
-        they are only messgaes displayed to make sure the user is aware of some
-        specificities in the payments he's put in the batch. He will be able to
-        ignore them.
-
-        :return: A list of dictionaries, each one corresponding to a distinct
-            warning and containing the following keys:
-
-            - ``'title'``: A short name for the warning (mandatory)
-            - ``'records'``: The recordset of payments concerned by this warning (mandatory)
-            - ``'help'``: A help text to give the user further information
-              on the reason this warning exists (optional)
-        """
         return []
 
     def check_payments_for_errors(self):
-        """Goes through all the payments of the batches contained in this
-        record set, and returns the ones that would impeach batch validation,
-        in such a way that the payments impeaching validation for the same reason
-        are grouped under a common error message. This function is a hook for
-        extension for modules making a specific use of batch payments, such as SEPA
-        ones.
-
-        :return: A list of dictionaries, each one corresponding to a distinct
-            error and containing the following keys:
-
-            - ``'title'``: A short name for the error (mandatory)
-            - ``'records'``: The recordset of payments facing this error (mandatory)
-            - ``'help'``: A help text to give the user further information
-              on how to solve the error (optional)
-        """
         self.check_singleton()
-        # We first try to post all the draft batch payments
         rslt = self._check_and_post_draft_payments(
             self.payment_ids.filtered(lambda x: x.state == "draft")
         )
@@ -622,11 +576,6 @@ class AccountBatchPayment(models.Model):
         return rslt
 
     def _check_and_post_draft_payments(self, draft_payments):
-        """Tries posting each of the draft payments contained in this batch.
-        If it fails and raise a UserError, it is catched and the process continues
-        on the following payments. All the encountered errors are then returned
-        withing a dictionary, in the same fashion as check_payments_for_errors.
-        """
         exceptions_mapping = {}
         for payment in draft_payments:
             try:
@@ -644,7 +593,6 @@ class AccountBatchPayment(models.Model):
         ]
 
     def export_batch_payment(self) -> None:
-        # export and save the file for each batch payment
         self.check_access("write")
         for record in self.sudo():
             record = record.with_company(record.journal_id.company_id)
@@ -659,13 +607,5 @@ class AccountBatchPayment(models.Model):
             )
 
     def _generate_export_file(self):
-        """To be overridden by modules adding support for different export format.
-        This function returns False if no export file could be generated
-        for this batch. Otherwise, it returns a dictionary containing the following keys:
-        - file: the content of the generated export file, in base 64.
-        - filename: the name of the generated file
-        - warning: (optional) the warning message to display
-
-        """
         self.check_singleton()
         return False

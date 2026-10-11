@@ -70,8 +70,6 @@ class DbExecutor:
         self._jobs = deque()
         lock = threading.Lock()
         self._cond = threading.Condition(lock)
-        # Its own condition: a wait_idle() woken by submit()'s notify() would
-        # take the wake-up a sleeping job thread needs, and the job would sit.
         self._drained = threading.Condition(lock)
         self._threads = 0
         self._idle = 0
@@ -135,9 +133,6 @@ class DbExecutor:
     def _run(self) -> None:
         me = threading.current_thread()
         idle_name = f"{IDLE_THREAD_PREFIX}{me.ident}"
-        # A job holds a cursor, in a test the shared test cursor: named like a
-        # request thread while busy, the HTTP test harness waits for it before
-        # the next test takes the registry lock.
         busy_name = f"{REQUEST_THREAD_PREFIX}{me.ident}"
         me.name = idle_name
         worker = as_worker_thread(me)
@@ -151,8 +146,6 @@ class DbExecutor:
             except Exception:
                 _logger.exception("Unhandled error in a websocket job")
             finally:
-                # The idle wait for the next job must not keep this one, and
-                # the connection it closes over, alive.
                 job = None
                 worker.start_time = None
                 me.name = idle_name
@@ -256,8 +249,6 @@ class WebsocketHub:
             conn.events = 0
             self.set_events(conn, selectors.EVENT_READ)
         except Exception:
-            # A client gone between its 101 and here: its socket and its slot
-            # are given back, not left to a hub that never registered them.
             _logger.info("Websocket could not be attached; closing it", exc_info=True)
             conn.abort()
             return
@@ -400,15 +391,11 @@ class WebsocketHub:
             self._exit = True
 
         self.call_and_wait(finish, timeout=1.0)
-        # finish may never have run on a blocked loop: the flag is what makes
-        # it end, not the callback.
         self._exit = True
         self.executor.wait_idle(max(deadline, self._clock() + 0.1))
         self.executor.close()
         self._thread.join(1.0)
         if self._thread.is_alive():
-            # Closing its selector under it would make every iteration fail
-            # and the loop spin; the process is going away anyway.
             _logger.warning("Websocket hub loop did not stop; leaving it to exit")
             return remaining
         for resource in (self._selector, self._wake_r, self._wake_w):

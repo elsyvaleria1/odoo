@@ -42,7 +42,6 @@ class VisitDeliveriesSetup:
         cls.vehicle = cls.env["resource.resource"].create(
             {"name": "Pickup", "kind_id": kind.id, "product_id": pickup_model.id}
         )
-        # A vehicle is on one trip at a time: a second trip on the road takes another.
         cls.other_vehicle = cls.env["resource.resource"].create(
             {"name": "Truck", "kind_id": kind.id, "product_id": pickup_model.id}
         )
@@ -170,7 +169,6 @@ class TestVisitDeliveries(VisitDeliveriesSetup, TransactionCase):
             }
         ).action_confirm()
         first.action_complete()
-        # The vehicle came back with the goods: its trip closes before it leaves again.
         trip.write({"odometer_return": 1100.0})
         trip.action_return()
 

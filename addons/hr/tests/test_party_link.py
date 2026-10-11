@@ -51,8 +51,6 @@ class TestPartyLink(TransactionCase):
         user = self.env["res.users"].create({"name": "Link Login", "login": "link"})
         employee.user_id = user
         self.assertNotEqual(employee.partner_id, former)
-        # The shell is archived rather than deleted precisely so that what was
-        # said about the person before they had a login is still readable.
         self.assertTrue(former.exists())
         self.assertFalse(former.active)
         self.assertLessEqual(

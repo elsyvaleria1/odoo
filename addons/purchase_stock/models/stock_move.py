@@ -33,8 +33,6 @@ class StockMove(models.Model):
         ]
 
     def _compute_partner_id(self):
-        # a receipt keeps the address its order sent it to (the customer of
-        # a dropship); a return to the vendor follows its picking
         purchase_moves = self.filtered(
             lambda m: m.purchase_line_id and m.location_id.usage == "supplier"
         )

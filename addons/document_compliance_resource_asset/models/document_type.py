@@ -18,7 +18,6 @@ class DocumentType(models.Model):
 
     @api.model
     def _selection_applies_to(self) -> list[tuple[str, str]]:
-        # the resources that are documents' entities here are the things
         return [
             (value, self.env._("Assets") if value == "resource.resource" else label)
             for value, label in super()._selection_applies_to()

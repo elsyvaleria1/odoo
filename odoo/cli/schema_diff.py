@@ -91,8 +91,6 @@ class SchemaDiff(DatabaseCommand):
             stage: str,
             version: str | None = None,
         ) -> None:
-            # read off the call, not the "Running migration" log line, which a
-            # --log-level above info never emits
             recorder.record_migration(installed_version, pyfile, addon, version)
             run_migration_script(cr, installed_version, pyfile, addon, stage, version)
 
@@ -104,8 +102,6 @@ class SchemaDiff(DatabaseCommand):
                 real_execute = real.execute
 
                 def dry_commit() -> None:
-                    # what Cursor.commit does short of COMMIT: the loader's
-                    # per-module commits keep the one transaction open
                     real.flush()
                     real.commit_count += 1
                     real.clear()
@@ -122,17 +118,13 @@ class SchemaDiff(DatabaseCommand):
                 def open_dry(
                     self: typing.Any, readonly: bool = False, **kwargs: typing.Any
                 ) -> BaseCursor:
-                    # the loader insists on a real Cursor and commits per
-                    # module; every opener gets the one real cursor with its
-                    # COMMIT, ROLLBACK and close disarmed, so the whole run is
-                    # a single transaction the command rolls back at the end
                     opened[0] += 1
                     return real
 
-                real.commit = dry_commit  # type: ignore[method-assign]
-                real.rollback = lambda: None  # type: ignore[method-assign]
-                real.close = lambda: None  # type: ignore[method-assign]
-                real.execute = recording_execute  # type: ignore[method-assign]
+                real.commit = dry_commit
+                real.rollback = lambda: None
+                real.close = lambda: None
+                real.execute = recording_execute
                 with contextlib.ExitStack() as stack:
                     stack.enter_context(patch.object(Registry, "cursor", open_dry))
                     stack.enter_context(
@@ -199,8 +191,6 @@ class SchemaDiff(DatabaseCommand):
 
 
 def _shape(statement: str) -> str:
-    # literals and comments folded, identifiers kept: the reader wants the
-    # table and the column, not the help text
     shape = re.sub(r"'[^']*'", "'…'", statement)
     shape = re.sub(r"; COMMENT ON [^;]*", "", shape)
     shape = re.sub(r"\bIS %s\b", "IS …", shape)

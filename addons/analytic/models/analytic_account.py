@@ -36,7 +36,7 @@ class AccountAnalyticAccount(models.Model):
         index=True,
         required=True,
     )
-    root_plan_id = fields.Many2one(  # noqa: E8529  plan_id.root_id is a non-stored compute over parent_path: there is no column to join
+    root_plan_id = fields.Many2one(
         comodel_name="account.analytic.plan",
         related="plan_id.root_id",
         string="Root Plan",
@@ -49,7 +49,7 @@ class AccountAnalyticAccount(models.Model):
 
     line_ids = fields.One2many(
         comodel_name="account.analytic.line",
-        inverse_name="auto_account_id",  # magic link to the right column (plan) by using the context in the view
+        inverse_name="auto_account_id",
         string="Analytic Lines",
     )
 
@@ -63,7 +63,6 @@ class AccountAnalyticAccount(models.Model):
         string="Customer",
         index="btree_not_null",
         check_company=True,
-        # use bypass_search_access to speed up name_search call
         bypass_search_access=True,
         tracking=True,
     )
@@ -89,7 +88,7 @@ class AccountAnalyticAccount(models.Model):
     @api.constrains("company_id")
     def _check_company_consistency(self) -> None:
         for company, accounts in groupby(self, lambda account: account.company_id):
-            if company and self.env["account.analytic.line"].sudo().search_count(  # noqa: E8507 - one query per company; accounts sharing one were merged above
+            if company and self.env["account.analytic.line"].sudo().search_count(
                 [
                     ("auto_account_id", "in", [account.id for account in accounts]),
                     "!",
@@ -122,9 +121,6 @@ class AccountAnalyticAccount(models.Model):
         return vals_list
 
     def copy_translations(self, new, excluded=()) -> None:
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
@@ -156,7 +152,7 @@ class AccountAnalyticAccount(models.Model):
             if not plan:
                 accounts.debit = accounts.credit = accounts.balance = 0
                 continue
-            credit_groups = self.env["account.analytic.line"]._read_group(  # noqa: E8507 - one query per plan: the plan names the column to group on
+            credit_groups = self.env["account.analytic.line"]._read_group(
                 domain=domain
                 + [(plan._column_name(), "in", self.ids), ("amount", ">=", 0.0)],
                 groupby=[plan._column_name(), "currency_id"],
@@ -166,7 +162,7 @@ class AccountAnalyticAccount(models.Model):
             for account, currency, amount_sum in credit_groups:
                 data_credit[account.id] += convert(amount_sum, currency)
 
-            debit_groups = self.env["account.analytic.line"]._read_group(  # noqa: E8507 - one query per plan: the plan names the column to group on
+            debit_groups = self.env["account.analytic.line"]._read_group(
                 domain=domain
                 + [(plan._column_name(), "in", self.ids), ("amount", "<", 0.0)],
                 groupby=[plan._column_name(), "currency_id"],
@@ -236,29 +232,10 @@ class AccountAnalyticAccount(models.Model):
     def _perform_analytic_distribution(
         self, distribution, amount, unit_amount, lines, obj, additive=False
     ):
-        """
-        Redistributes the analytic lines to match the given distribution:
-            - For account_ids where lines already exist, the amount and unit_amount of these lines get updated,
-              lines where the updated amount becomes zero get unlinked.
-            - For account_ids where lines don't exist yet, the line values to create them are returned,
-              lines where the amount becomes zero are not included.
-
-        :param distribution:    the desired distribution to match the analytic lines to
-        :param amount:          the total amount to distribute over the analytic lines
-        :param unit_amount:     the total unit amount (will not be distributed)
-        :param lines:           the (current) analytic account lines that need to be matched to the new distribution
-        :param obj:             the object on which _prepare_analytic_line_values(account_id, amount, unit_amount) will be
-                                called to get the template for the values of new analytic line objects
-        :param additive:        if True, the unit_amount and (distributed) amount get added to the existing lines
-
-        :returns: a list of dicts containing the values for new analytic lines that need to be created
-        :rtype:   list
-        """
         if not distribution:
             lines.unlink()
             return []
 
-        # Does this: {'15': 40, '14,16': 60} -> { account(15): 40, account(14,16): 60 }
         distribution = {
             self.env["account.analytic.account"]
             .browse(map(int, ids.split(",")))
@@ -279,15 +256,11 @@ class AccountAnalyticAccount(models.Model):
                 total_percentages[plan] = total_percentages.get(plan, 0) + percentage
 
         for existing_aal in lines:
-            # The accounts this line already names, one plan column at a time.
-            # `distribution` is keyed by the whole recordset, so the union has to
-            # be built before it can be looked up.
             accounts = self.env["account.analytic.account"].union(
                 *(existing_aal[column] for column in line_columns)
             )
             existing_aal = existing_aal.sudo()
             if accounts in distribution:
-                # Update the existing AAL for this account
                 percentage = distribution[accounts]
                 new_amount = 0
                 new_unit_amount = unit_amount
@@ -308,12 +281,9 @@ class AccountAnalyticAccount(models.Model):
                 else:
                     existing_aal.amount = new_amount
                     existing_aal.unit_amount = new_unit_amount
-                # Prevent this distribution from being applied again
                 del distribution[accounts]
             else:
-                # Delete the existing AAL if it is no longer present in the new distribution
                 existing_aal.unlink()
-        # Create new lines from remaining distributions
         for accounts, percentage in distribution.items():
             if not accounts:
                 continue
@@ -327,10 +297,6 @@ class AccountAnalyticAccount(models.Model):
                     distribution_on_each_plan,
                 )
                 account_field_values[account.plan_id._column_name()] = account.id
-            # `accounts[0]`, as in the update branch above: `account` here is
-            # whichever plan's account the loop happened to end on, so the two
-            # branches rounded against different currencies for the same
-            # distribution key.
             currency = accounts[0].currency_id or obj.company_id.currency_id
             if not currency.is_zero(new_amount):
                 lines_to_link.append(

@@ -57,13 +57,9 @@ class WizardProjectTaskUpdateProductLotLine(models.TransientModel):
     def _compute_warehouse(self) -> None:
         default_warehouse = self.env.user._get_default_warehouse_id()
         for line in self:
-            if line.id:  # not a new record
+            if line.id:
                 so_lines_warehouses = line.sale_order_line_id.move_ids.warehouse_id
                 if len(so_lines_warehouses) > 1:
-                    # If there is more than one we ensure not taking the default warehouse in order to avoid unwanted
-                    # moves as this would mean we already have several move_ids (which would only occur through the use
-                    # of other apps than FSM (inventory app for instance)). This should indeed not be possible through
-                    # the use of the FSM app only.
                     line.warehouse_id = so_lines_warehouses.filtered(
                         lambda w: w.id != default_warehouse.id
                     )[0]

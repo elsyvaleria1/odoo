@@ -47,7 +47,7 @@ class AccountBankStatementLine(models.Model):
             "amount": amount,
         }
         if transfer_account.active:
-            create_vals["counterpart_account_id"] = transfer_account.id  # Hack 'field'
+            create_vals["counterpart_account_id"] = transfer_account.id
 
         if topup_currency != journal_currency:
             create_vals.update(
@@ -118,7 +118,6 @@ class AccountBankStatementLine(models.Model):
                 expense.account_move_id.origin_payment_id.state == "in_process"
                 for expense in expenses
             ):
-                # Split expenses cases, we only want to reconcile if everything posted
                 expenses._reconcile_stripe_payments(existing_statement_lines=stmt_line)
 
     def _update_from_stripe_transaction(self, tr_object) -> None:
@@ -150,9 +149,6 @@ class AccountBankStatementLine(models.Model):
         if update_vals:
             self.write(update_vals)
 
-    ##################
-    # Helper methods #
-    ##################
     @api.model
     def _acquire_transaction_data(
         self, card: HrExpenseStripeCard, tr_object: dict[str, Any]

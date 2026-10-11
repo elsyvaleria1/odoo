@@ -72,7 +72,6 @@ class TestLineMatch(TestTradeOrderCase):
             domain = [("account_move_id", "=", move.id)]
         return Match.search(domain)
 
-    # ─── the view itself ──────────────────────────────────────────
 
     def test_the_view_carries_both_sides(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))
@@ -84,7 +83,6 @@ class TestLineMatch(TestTradeOrderCase):
         self.assertEqual(len(rows.filtered("aml_id")), 1)
 
     def test_order_line_rows_have_a_positive_id_and_invoice_rows_a_negative_one(self):
-        """The union has to keep the two sides apart in one id space."""
         order = self._confirmed_order((self.product, 5.0, 10.0))
         move = self._invoice((self.product, 5.0, 10.0))
 
@@ -102,7 +100,6 @@ class TestLineMatch(TestTradeOrderCase):
 
         self.assertFalse(remaining.filtered("aml_id"))
 
-    # ─── matching ─────────────────────────────────────────────────
 
     def test_matching_links_the_invoice_line_to_the_order_line(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))
@@ -137,9 +134,6 @@ class TestLineMatch(TestTradeOrderCase):
                 )
 
     def test_lines_of_different_products_are_not_matched_to_each_other(self):
-        """Matching is per product; what is left over goes down the residue
-        path, so the order line still reaches the invoice -- as its own new
-        line, never linked to the unrelated one that was already there."""
         order = self._confirmed_order((self.product, 1.0, 10.0))
         move = self._invoice((self.other_product, 1.0, 10.0))
         pre_existing = move.invoice_line_ids
@@ -166,7 +160,6 @@ class TestLineMatch(TestTradeOrderCase):
 
         self.assertEqual(action["res_model"], "account.move")
 
-    # ─── the residue ──────────────────────────────────────────────
 
     def test_an_unmatched_order_line_is_added_to_the_invoice(self):
         order = self._confirmed_order(
@@ -196,7 +189,6 @@ class TestLineMatch(TestTradeOrderCase):
 
         self.assertNotIn(self.other_product, move.invoice_line_ids.product_id)
 
-    # ─── navigation ───────────────────────────────────────────────
 
     def test_opening_a_row_goes_to_the_document_it_came_from(self):
         order = self._confirmed_order((self.product, 5.0, 10.0))

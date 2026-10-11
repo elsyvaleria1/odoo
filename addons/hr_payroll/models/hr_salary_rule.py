@@ -212,18 +212,13 @@ result_rate = 10""",
             )
 
     def _search_input_used_in_definition(self, operator, value):
-        # operator should be '=' or '!='
-        # value is True/False
         if operator not in ("=", "!="):
             raise UserError(self.env._("Unsupported operator %s") % operator)
 
-        # find rule ids that match the condition
         rules = self.env["hr.salary.rule"].search(
             [("condition_select", "=", "property_input")]
         )
 
-        # collect struct->input_names mapping, only for structures these
-        # rules actually reference (not every structure in the database)
         definitions_inputs_by_structure = defaultdict(set)
         for struct in rules.struct_id:
             definitions_inputs_by_structure[struct.id] = {
@@ -277,11 +272,6 @@ result_rate = 10""",
         )
 
     def _compute_rule(self, localdict) -> tuple[float, float, float]:
-        """
-        :param localdict: dictionary containing the current computation environment
-        :return: returns a tuple (amount, qty, rate)
-        :rtype: tuple[float, float, float]
-        """
         self.check_singleton()
         localdict["localdict"] = localdict
 
@@ -337,7 +327,6 @@ result_rate = 10""",
                 1.0,
                 100.0,
             )
-        # python code
         try:
             safe_eval(self.amount_python_compute or 0.0, localdict, mode="exec")
             return (
@@ -364,7 +353,6 @@ result_rate = 10""",
             )
         if self.condition_select == "property_input":
             return self.id in localdict["property_inputs"]
-        # python code
         try:
             safe_eval(self.condition_python, localdict, mode="exec")
             return localdict.get("result", False)
@@ -383,8 +371,6 @@ result_rate = 10""",
         )
 
     def write(self, vals):
-        # A write on a field the data file owns, made by anything other than the data
-        # loader itself, hands the rule over to the user -- see _release_from_data_file.
         release = not self.env.context.get(
             "install_mode"
         ) and not vals.keys().isdisjoint(self._get_data_file_owned_fields())
@@ -395,7 +381,6 @@ result_rate = 10""",
 
     @api.model
     def _get_data_file_owned_fields(self) -> list:
-        """The fields a payroll localization's data file sets, and would set again."""
         return [
             "code",
             "category_id",
@@ -424,16 +409,6 @@ result_rate = 10""",
         ]
 
     def _release_from_data_file(self) -> None:
-        """Stop `hr.payslip._update_payroll_data` from maintaining these rules.
-
-        `hr_payroll.ir_cron_update_payroll_data` re-converts the salary data of every
-        installed localization once a week, so without this an edit made in the form
-        does not survive seven days. Flagging the external identifier `noupdate` is
-        what makes the loader skip the record (`_load_records` in
-        `core/odoo/orm/models/mixins/load.py:693` reads `not (update and d_noupdate)`),
-        and the flag survives the pass because the upsert in
-        `ir.model.data._update_xmlids` never rewrites that column.
-        """
         identifiers = (
             self.env["ir.model.data"]
             .sudo()
@@ -446,17 +421,12 @@ result_rate = 10""",
             )
         )
         if not identifiers:
-            # Nothing to release: a rule with no external identifier is nobody's but
-            # the user's already.
             return
         identifiers.noupdate = True
-        # The loader reads noupdate straight out of ir_model_data with raw SQL
-        # (ir.model.data._get_xmlids), so an unflushed value would not be seen.
         identifiers.flush_recordset(["noupdate"])
         self.browse(identifiers.mapped("res_id")).modified_by_user = True
 
     def action_reset_rule(self) -> dict:
-        """Give the rule back to the payroll localization that ships it."""
         self.check_singleton()
         self.env["ir.model.data"].sudo().search(
             [
@@ -466,10 +436,6 @@ result_rate = 10""",
         ).noupdate = False
         self.modified_by_user = False
         self.env.flush_all()
-        # Re-applies the salary data of every installed localization, not just this
-        # rule's. Wasteful, but idempotent -- every other rule is either already at
-        # its shipped value or flagged noupdate -- and reset is a rare, deliberate
-        # click.
         self.env["hr.payslip"].sudo()._update_payroll_data()
         return {
             "type": "ir.actions.client",

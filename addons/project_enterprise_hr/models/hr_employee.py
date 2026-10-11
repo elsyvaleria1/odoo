@@ -21,8 +21,6 @@ class HrEmployee(models.Model):
         return result
 
     def _book_tasks_of_users(self, users) -> None:
-        # a task books the resource its assignee resolves to when it is
-        # dated, so an assignee given an employee afterwards is booked on none
         if not users:
             return
         tasks = (

@@ -47,8 +47,6 @@ class MixinApprovalDocument(models.AbstractModel):
     _approval_requester_field = "user_id"
 
     def _check_before_approval(self, verb: str) -> None:
-        # an order is asked for approval before its confirmation checks run, as
-        # its own action_confirm always asked; they run when it is confirmed
         if verb != "confirm":
             super()._check_before_approval(verb)
 
@@ -105,11 +103,6 @@ class MixinApprovalDocument(models.AbstractModel):
         categories = self.line_ids.product_id.categ_id
         if not categories:
             return False
-        # The flag marks a branch, not a single node: a product filed under
-        # "Controlled / Solvents" is controlled because "Controlled" says so.
-        # approval.category._is_matching_product_category already reads the
-        # tree that way (`child_of`), and reading it any other way here meant
-        # a flag set on a parent protected nothing underneath it.
         branch = (
             self.env["product.category"]
             .sudo()
@@ -432,7 +425,6 @@ class MixinApprovalDocument(models.AbstractModel):
         }
 
     def _check_approval_covers(self, operation: str) -> None:
-        # the amount first: when it moved, saying so is the more useful refusal
         self._check_approved_amount()
         super()._check_approval_covers(operation)
 

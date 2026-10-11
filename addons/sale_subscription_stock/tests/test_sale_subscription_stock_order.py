@@ -15,9 +15,6 @@ from odoo.addons.sale_subscription_stock.tests.common_sale_subscription_stock im
 @tagged("post_install", "-at_install")
 class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
     def test_subscription_stock_order_base(self):
-        """Test invoice and picking order creation in case of one or multiple 'on_order'
-        storable items in the subscription
-        """
         sub = self.subscription_order
         with freeze_time("2022-03-02"):
             self.assertEqual(
@@ -31,7 +28,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "After confirming the subscription, we should have created a delivery order",
             )
             self.env["sale.order"]._cron_recurring_create_invoice()
-            # Check that the invoice information are correct
             self.assertEqual(
                 sub.invoice_count,
                 1,
@@ -54,7 +50,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 1,
                 "Order line should still be marked as invoiced",
             )
-            # Check that the delivery order information are correct
             move = sub.picking_ids.move_ids
             self.assertEqual(
                 len(sub.picking_ids),
@@ -79,7 +74,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
 
         sub = self.subscription_order.copy()
 
-        # Simulate cron before start_date
         invoice, picking = self.simulate_period(sub, "2022-02-02")
         self.assertEqual(
             sub.invoice_count,
@@ -122,7 +116,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 date,
                 "Invoice date should correspond to the current date",
             )
-            # For first invoice it does not create a new delivery
             if sub.invoice_count != 1:
                 self.assertEqual(
                     picking.move_ids.product_uom_qty,
@@ -139,7 +132,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                     "Delivery deadline should correspond to the date + one more month",
                 )
 
-        # End of subscription
         sub.write({"end_date": "2022-07-02"})
         invoice, picking = self.simulate_period(sub, "2022-07-02")
         self.assertEqual(len(invoice), 0, "We should ont generate new invoices")
@@ -272,13 +264,13 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         ):
             sub.write({"start_date": fields.Date.today(), "next_invoice_date": False})
             sub.action_confirm()
-            picking_id = sub.picking_ids  # only one picking
+            picking_id = sub.picking_ids
             self.assertEqual(
                 len(picking_id), 1, "After confirming we should create a delivery"
             )
             for move in picking_id.move_ids:
                 move.write({"quantity": 1, "picked": True})
-            picking_id._action_done()  # this will create the backorder
+            picking_id._action_done()
 
             self.assertEqual(
                 picking_id.move_ids.quantity, 1, "Check that we under_delivered"
@@ -405,7 +397,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             [self.sub_product_order.id, self.test_product_order.id],
         )
 
-        # We deliver the non-recurring product
         sub.picking_ids.move_ids.write({"quantity": 1, "picked": True})
         sub.picking_ids._action_done()
 
@@ -719,7 +710,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 additional_kit_product.qty_available, 98, "The kit product is consumed"
             )
 
-        # Return the delivery for the first period
         stock_return_picking_form = Form(
             self.env["wizard.stock.picking.return"].with_context(
                 active_ids=subscription_order_with_bom.picking_ids.ids,
@@ -744,7 +734,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         self.assertEqual(
             additional_kit_product.qty_available, 100, "the kit product is returned"
         )
-        # create invoice for the second period
         with freeze_time("2024-03-02"):
             _dummy, second_period_picking = self.simulate_period(
                 subscription_order_with_bom, "2024-03-02"
@@ -766,7 +755,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.assertEqual(additional_kit_product.qty_available, 99)
 
     def test_subscription_stock_delivery_recurring_product(self):
-        # make sure we have enough product on hand
         self.test_product_order.invoice_policy = "transferred"
         self.sub_product_order.invoice_policy = "transferred"
         warehouse = self.env["stock.warehouse"].search(
@@ -900,18 +888,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         )
 
     def test_prepaid_qty_computation(self):
-        """
-        Several cases:
-        1) Today is in the middle of the 1st INVOICED period
-            a) The product is already delivered
-            b) The product is still not delivered
-        2) Today is in the 2nd period that is NOT YET invoiced
-            a) The 1st period product was delivered after the invoicing period but before today
-            b) The 1st period product is still not delivered
-        3) Today is in the 2nd INVOICED period
-            a) The 1st and 2nd period products have been delivered (both in the 2nd period)
-            b) The 1st and 2nd period products are still not delivered
-        """
 
         with freeze_time("2023-01-01"):
             self.product.invoice_policy = "ordered"
@@ -943,13 +919,11 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 }
             )
 
-            # --------- Start Case 1 --------- #
             sub = sub_temp.copy()
             sub.action_confirm()
             self.env["sale.order"]._create_recurring_invoice()
 
         with freeze_time("2023-01-05"):
-            # case 1.b
             res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0])
@@ -959,14 +933,12 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         with freeze_time("2023-01-10"):
             self.validate_picking_moves(sub.picking_ids)
             sub.line_ids[0].qty_transferred = 1
-            # case 1.a
             res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 1])
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
-        # --------- Start Case 2 --------- #
 
         with freeze_time("2023-01-01"):
             sub = sub_temp.copy()
@@ -975,29 +947,24 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.assertTrue(sub.next_invoice_date, datetime.date(2023, 2, 1))
 
         with freeze_time("2023-02-15"):
-            # case 2.b
             res = self._get_quantities(
                 sub.line_ids
-            )  # February was NOT invoiced, `res` represents January's data
+            )
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0])
-            # self.assertEqual(res['invoiced'], [0, 0]) # --> Impossible
-            # self.assertEqual(res['to_invoice'], [1, 1]) # --> Impossible
 
         with freeze_time("2023-02-25"):
-            # case 2.a
             self.validate_picking_moves(sub.picking_ids)
             sub.line_ids[0].qty_transferred = 1
 
             res = self._get_quantities(
                 sub.line_ids
-            )  # February was NOT invoiced, `res` represents January's data
+            )
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 0])
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
-        # --------- Start Case 3 --------- #
 
         with freeze_time("2023-01-01"):
             sub = sub_temp.copy()
@@ -1009,40 +976,29 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.env["sale.order"]._create_recurring_invoice()
 
         with freeze_time("2023-02-15"):
-            # case 3.b
             res = self._get_quantities(
                 sub.line_ids
-            )  # February has been invoiced, `res` represents February's data
+            )
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0], "products are not yet delivered")
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
         with freeze_time("2023-02-25"):
-            # case 3.a
             self.validate_picking_moves(
                 sub.picking_ids
-            )  # Deliver January's and February's products
+            )
             sub.line_ids[0].qty_transferred = 1
 
             res = self._get_quantities(
                 sub.line_ids
-            )  # February has been invoiced, `res` represents February's data
+            )
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 2])
             self.assertEqual(res["invoiced"], [1, 1])
             self.assertEqual(res["to_invoice"], [0, 0])
 
     def test_postpaid_qty_computation(self):
-        """ "
-        Several cases:
-        1) Today is at the next invoice date. Previous period was already invoiced but we need to invoice today
-            a) The product has been delivered during the period to invoice
-            b) The product has not been delivered yet
-        2) Today is The next invoice date but we are are 2 recurrence away from the last invoiced period.
-           a) Product were delivered during last period but it was not invoiced
-           b) Product were not delivered during last period and it was not invoiced
-        """
         with freeze_time("2023-01-01"):
             self.product.invoice_policy = "transferred"
             self.sub_product_order.invoice_policy = "transferred"
@@ -1073,7 +1029,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             sub = sub_temp.copy()
             sub.action_confirm()
             self.env["sale.order"]._create_recurring_invoice()
-            # SETUP
             res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [0, 0])
@@ -1083,7 +1038,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         with freeze_time("2023-01-10"):
             self.validate_picking_moves(sub.picking_ids)
             sub.line_ids[0].qty_transferred = 1
-            # SETUP
             res = self._get_quantities(sub.line_ids)
             self.assertEqual(res["ordered"], [1, 1])
             self.assertEqual(res["delivered"], [1, 1])
@@ -1098,11 +1052,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             self.assertEqual(res["to_invoice"], [1, 1])
 
     def test_sale_order_with_downpayment_and_picking(self):
-        """
-        Test case to verify the creation of downpayment and full invoices for a sale order with pickings.
-        This test ensures that pickings are created when the sale order is confirmed. It also validates the creation of a 50%
-        downpayment invoice and a full invoice for the sale order. The test checks the absence of new pickings for the downpayment invoice.
-        """
 
         sub = self.subscription_order
         with freeze_time("2022-03-02"):
@@ -1118,7 +1067,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "Initial picking should be in 'done' state",
             )
 
-            # Create a 50% downpayment invoice
             downpayment = (
                 self.env["wizard.sale.order.invoice"]
                 .with_context(self.context)
@@ -1143,7 +1091,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 msg="Downpayment invoice amount should be 50% of the sale order total",
             )
 
-            # Post the downpayment invoice
             downpayment_invoice.action_post()
             self.assertEqual(
                 downpayment_invoice.state,
@@ -1156,7 +1103,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "No new picking should be created for the downpayment invoice",
             )
 
-            # Create a full invoice
             payment = (
                 self.env["wizard.sale.order.invoice"]
                 .with_context(self.context)
@@ -1175,7 +1121,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 msg="Full invoice amount should be the remaining 50% of the sale order total",
             )
 
-            # Post the full invoice
             full_invoice.action_post()
             self.assertEqual(
                 full_invoice.state, "posted", "Full invoice should be in 'posted' state"
@@ -1190,12 +1135,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             )
 
     def test_sale_order_with_deliveries_and_invoices(self):
-        """
-        Test case to verify the creation of invoices and pickings for a sale order with deliveries.
-        This test ensures that pickings are created when the sale order is confirmed. It validates the creation
-        of the first and second invoices, along with their states. The test also confirms the creation of a new picking
-        for the second invoice.
-        """
 
         sub = self.subscription_order
         with freeze_time("2022-03-02"):
@@ -1210,7 +1149,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "Initial picking should be in 'done' state",
             )
 
-            # Create the first invoice
             first_invoice, picking = self.simulate_period(sub, "2022-03-02")
 
             self.assertEqual(
@@ -1224,7 +1162,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "No new picking should be created for the first invoice",
             )
 
-            # Create the second invoice
             second_invoice, picking = self.simulate_period(sub, "2022-04-02")
             self.assertEqual(
                 len(sub.invoice_ids), 2, "Second invoice should be created"
@@ -1235,7 +1172,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 "Second invoice should be in 'posted' state",
             )
 
-            # Ensure a new picking is created for the second invoice
             self.assertEqual(
                 len(sub.picking_ids),
                 initial_picking_count + 1,
@@ -1292,7 +1228,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         )
 
     def test_cron_product_multiple_delivery_creation(self):
-        """This check ensures that the cron creates the deliveries for all subscriptions"""
         self.storable_product = self.env["product.product"].create(
             {
                 "name": "Storable Product",
@@ -1328,7 +1263,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         subscription_order_1 = create_subscription("Order 1")
         subscription_order_2 = create_subscription("Order 2")
 
-        # Use freeze_time to not rely in "today's" date.
         with freeze_time("2024-11-15"):
             self.env["sale.order"]._create_recurring_invoice()
 
@@ -1338,13 +1272,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         self.assertTrue(bool(move_2))
 
     def test_picking_done_in_another_period(self):
-        """In this test, we trigger 2 periods the same day.
-        The goal is to ensure that the picking of the first period does not interfere with the second period.
-        It happened when the first period picking was validated in the second period.
-        Then, when you triggered the second period, it would find one picking already done,
-        and skip the picking creation.
-        It also check that an user with only inventory right can validate a delivery
-        """
 
         storable_product = self.env["product.product"].create(
             {
@@ -1390,7 +1317,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         with freeze_time("2024-11-15"):
             sub.action_confirm()
             self.assertEqual(sub.next_invoice_date, datetime.date(2024, 10, 1))
-            # Period = "2024-10-01" -> "2024-10-31"
             first_picking = sub.picking_ids
             self.assertTrue(first_picking)
             first_picking.move_ids.write({"quantity": 1, "picked": True})
@@ -1400,7 +1326,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             first_picking.with_user(inventory_user).button_validate()
             quantity_delivered = sum(sub.line_ids.move_ids.mapped("quantity"))
             self.assertEqual(quantity_delivered, 1)
-            # start the cron once, it will increment the next invoice date but no new picking is created
             self.env["sale.order"]._create_recurring_invoice()
             self.assertEqual(sub.next_invoice_date, datetime.date(2024, 11, 1))
             other_picking = sub.picking_ids - first_picking
@@ -1409,11 +1334,9 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             )
 
         with freeze_time("2024-11-16"):
-            # the next day, the cron run again and as the next invoice_date is passed, we process the order
             self.env["sale.order"]._create_recurring_invoice()
             self.assertEqual(sub.next_invoice_date, datetime.date(2024, 12, 1))
 
-            # Period = "2024-11-01" -> "2024-11-30"
             second_picking = sub.picking_ids - first_picking
             self.assertTrue(second_picking, "new picking should be created")
             second_picking.move_ids.write({"quantity": 1, "picked": True})
@@ -1554,13 +1477,8 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             )
 
     def test_qty_delivered_with_respect_to_first_delivery(self):
-        """
-        Check that the qty delivered is correctly computed with respect
-        to the delivery generated at confirmation of the subscription.
-        """
         subscription = self.subscription_delivery
         self.assertEqual(subscription.line_ids.qty_transferred, 1.0)
-        # create the related invoice manually
         account_move = subscription._create_invoices()
         self.assertRecordValues(
             account_move,
@@ -1574,9 +1492,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         )
 
     def test_post_invoice_hook_exception_handler(self):
-        """Check that the _handle_post_invoice_hook_exception correctly creates a warning activity
-        for the subscription with stock to deliver, and do nothing for the others.
-        """
         self.storable_product = self.env["product.product"].create(
             {
                 "name": "Storable Product",
@@ -1634,26 +1549,19 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
 
             (sub_stock_invoiced | sub_service).action_confirm()
             self.env["sale.order"]._create_recurring_invoice()
-            # Trigger the exception handler as no exception really happened
             (sub_stock_invoiced | sub_service)._handle_post_invoice_hook_exception()
 
-        # Subscription was invoiced, and a delivery should be created,
-        # so a warning activity should have been created by the handler
         self.assertEqual(len(sub_stock_invoiced.activity_ids), 1)
         self.assertEqual(
             sub_stock_invoiced.activity_type_id.id,
             self.env.ref("mail.mail_activity_data_warning").id,
         )
 
-        # The subscription only has service product, no delivery needed to be created anyway,
-        # no activity should have been created
         self.assertEqual(len(sub_service.activity_ids), 0)
 
     def test_subscription_delivery_post_activity_if_already_invoiced(self):
-        """Post a mail.activity if delivery is made after already invoiced subscription period."""
 
         with freeze_time("2025-08-26"):
-            # Create subscription with delivery-based product (postpaid)
             subscription = self.env["sale.order"].create(
                 {
                     "is_subscription": True,
@@ -1669,23 +1577,17 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                     ],
                 }
             )
-            # confirmation increment  next invoice date
             subscription.action_confirm()
             self.validate_picking_moves(subscription.picking_ids)
-            # create and post the invoice in the middle of the period, before the deferred_end_date
-            # It will save last_invoiced_date and trigger the activty
             inv = subscription._create_invoices()
             inv._post()
         with freeze_time("2025-09-15"):
-            # validate the picking of the period to trigger the activity
             self.validate_picking_moves(subscription.picking_ids)
             self.assertTrue(subscription.invoice_ids)
-            # Assert activity is posted
             activity = subscription.activity_ids
             self.assertTrue(activity, "Expected mail activity was not created.")
 
     def test_create_delivery_one_time_product(self):
-        """Create a sale order with a one-time sale product and confirm it."""
         sale_order = self.subscription_one_time_delivery
         sale_order.action_confirm()
         picking = sale_order.picking_ids
@@ -1699,7 +1601,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         _invoice1, picking1 = self.simulate_period(sub, "2022-03-02", move_qty=3)
         self.assertEqual(sub.line_ids.qty_transferred, 3)
 
-        # return 2 qty
         stock_return_picking_form = Form(
             self.env["wizard.stock.picking.return"].with_context(
                 active_ids=picking1.ids,
@@ -1724,7 +1625,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             "Qty delivered for the period should be reduced",
         )
 
-        # reverse part of the return
         stock_return_picking_form_2 = Form(
             self.env["wizard.stock.picking.return"].with_context(
                 active_ids=return_picking.ids,
@@ -1747,12 +1647,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
         )
 
     def test_subscription_duplicate_picking_postpaid(self):
-        """
-        Test case to verify the creation of invoices and pickings for a sale order with deliveries (postpaid).
-        This test ensures that pickings are created when the sale order is confirmed. It validates the creation
-        of the first and second invoices, along with their states. The test also confirms the creation of a new picking
-        for the second invoice.
-        """
 
         sub = self.subscription_delivery.copy(
             {"start_date": False, "next_invoice_date": False}
@@ -1785,9 +1679,7 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             )
             self.assertEqual(new_picking.move_ids.date, picking.move_ids.date)
             self.validate_picking_moves(new_picking)
-            # When we change the date manually, it allows to update the delivery quantity
             new_picking.move_ids.date = datetime.date(2025, 8, 15)
-            # qty deliverd is updated if the compute is triggered, bad test is bad
             sub.line_ids._compute_qty_transferred()
             self.assertEqual(
                 sub.line_ids.qty_transferred,
@@ -1803,12 +1695,6 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
             )
 
     def test_subscription_duplicate_picking_prepaid(self):
-        """
-        Test case to verify the creation of invoices and pickings for a sale order with deliveries (postpaid).
-        This test ensures that pickings are created when the sale order is confirmed. It validates the creation
-        of the first and second invoices, along with their states. The test also confirms the creation of a new picking
-        for the second invoice.
-        """
         sub = self.subscription_delivery.copy(
             {"start_date": False, "next_invoice_date": False}
         )
@@ -1841,11 +1727,7 @@ class TestSubscriptionStockOnOrder(TestSubscriptionStockCommon):
                 picking.date_planned,
                 "the date_planned should be copied",
             )
-            # date is set to today when we validate the picking
-            # self.assertEqual(new_picking.move_ids.date, picking.move_ids.date)
-            # When we change the date manually, it allows to update the delivery quantity
             new_picking.move_ids.date = datetime.date(2025, 8, 15)
-            # qty deliverd is updated if the compute is triggered, bad test is bad
             sub.line_ids._compute_qty_transferred()
             self.assertEqual(
                 sub.line_ids.qty_transferred,

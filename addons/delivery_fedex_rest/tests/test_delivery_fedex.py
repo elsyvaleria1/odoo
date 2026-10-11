@@ -29,7 +29,7 @@ def _mock_request_call():
                                 {
                                     "currency": "EUR",
                                     "totalNetChargeWithDutiesAndTaxes": 8.25,
-                                },  # Test rate set to 1.5 EUR = 1 USD
+                                },
                             ]
                         }
                     ],
@@ -50,7 +50,7 @@ def _mock_request_call():
                                             "currency": "USD",
                                         },
                                         {
-                                            "rateType": "PREFERRED_ACCOUNT_SHIPMENT",  # Test rate set to 1.5 EUR = 1 USD
+                                            "rateType": "PREFERRED_ACCOUNT_SHIPMENT",
                                             "totalNetChargeWithDutiesAndTaxes": 8.25,
                                             "currency": "EUR",
                                         },
@@ -182,9 +182,6 @@ class TestDeliveryFedex(TransactionCase):
         self.customer_location = self.env.ref("stock.stock_location_customers")
 
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method.
-        """
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -216,7 +213,6 @@ class TestDeliveryFedex(TransactionCase):
         so_vals = {"partner_id": self.delta_pc.id, "line_ids": [(0, None, sol_vals)]}
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -290,7 +286,6 @@ class TestDeliveryFedex(TransactionCase):
         so_vals = {"partner_id": self.agrolait.id, "line_ids": [(0, None, sol_vals)]}
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -373,7 +368,6 @@ class TestDeliveryFedex(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -487,10 +481,6 @@ class TestDeliveryFedex(TransactionCase):
             )
 
     def test_05_fedex_international_delivery_with_multi_currency(self):
-        """
-        Create a SO in a different currency from the company's. Ensure prices
-        are computed and displayed to the user in the correct currency.
-        """
         currency_EUR = self.env.ref("base.EUR")
         currency_EUR.active = True
         currency_EUR.rate_ids = [
@@ -561,9 +551,6 @@ class TestDeliveryFedex(TransactionCase):
             self.assertEqual(picking.carrier_price, 8.25)
 
     def test_06_fedex_address_special_characters(self):
-        """
-        Ensure accents get removed when sending address to the Fedex API.
-        """
 
         def patched_get_shipping_price(self, ship_from, ship_to, packages, currency):
             if self._get_location_from_partner(ship_to)["city"] == "Hong Kong":

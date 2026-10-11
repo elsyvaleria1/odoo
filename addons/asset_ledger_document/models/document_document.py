@@ -17,8 +17,6 @@ class Documents(models.Model):
 
     @api.depends("res_id", "res_model")
     def _compute_asset_id(self) -> None:
-        # an asset's documents are filed under its resource, whose other
-        # documents (a person's) name no asset
         asset_model = self.env["resource.resource"]
         reference = asset_model._get_reference_model_name()
         filed = self.filtered(lambda d: d.res_model == reference and d.res_id)

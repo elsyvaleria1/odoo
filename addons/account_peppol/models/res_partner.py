@@ -21,7 +21,7 @@ class ResPartner(models.Model):
     invoice_sending_method = fields.Selection(selection_add=[("peppol", "by Peppol")])
     peppol_eas = fields.Selection(
         selection_add=[("odemo", "Odoo Demo ID")]
-    )  # Not a real EAS, used for demonstration.
+    )
     available_peppol_sending_methods = fields.Json(
         compute="_compute_available_peppol_sending_methods"
     )
@@ -34,11 +34,11 @@ class ResPartner(models.Model):
             (
                 "not_valid",
                 "Partner is not on Peppol",
-            ),  # does not exist on Peppol at all
+            ),
             (
                 "not_valid_format",
                 "Partner cannot receive format",
-            ),  # registered on Peppol but cannot receive the selected document type
+            ),
             ("valid", "Partner is on Peppol"),
         ],
         string="Peppol status",
@@ -49,9 +49,6 @@ class ResPartner(models.Model):
     def _onchange_verify_peppol_status(self) -> None:
         self.button_account_peppol_check_partner_endpoint()
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends_context("company")
     @api.depends("company_id")
@@ -73,21 +70,14 @@ class ResPartner(models.Model):
                 )
 
     def _compute_available_peppol_eas(self) -> None:
-        # EXTENDS 'account_edi_ubl_cii'
         super()._compute_available_peppol_eas()
         eas_codes = set(self[:1].available_peppol_eas)
         if self.env.company._get_peppol_edi_mode() != "demo" and "odemo" in eas_codes:
             eas_codes.remove("odemo")
             self.available_peppol_eas = list(eas_codes)
 
-    # -------------------------------------------------------------------------
-    # HELPERS
-    # -------------------------------------------------------------------------
 
     def _log_verification_state_update(self, company, old_value, new_value) -> None:
-        # log the update of the peppol verification state
-        # we do this instead of regular tracking because of the customized message
-        # and because we want to log the change for every company in the db
         if old_value == new_value:
             return
 
@@ -95,7 +85,7 @@ class ResPartner(models.Model):
         selection_values = dict(peppol_verification_state_field.selection)
         old_label = (
             selection_values[old_value] if old_value else False
-        )  # get translated labels
+        )
         new_label = selection_values[new_value] if new_value else False
 
         body = Markup("""
@@ -118,7 +108,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _get_participant_info(self, edi_identification):
-        # DEPRECATED: Peppol moved from CNAME to NAPTR DNS records
         hash_participant = md5(edi_identification.lower().encode()).hexdigest()
         endpoint_participant = parse.quote_plus(
             f"iso6523-actorid-upis::{edi_identification}"
@@ -148,8 +137,6 @@ class ResPartner(models.Model):
             if services := participant_info.get("services", []):
                 service_href = services[0].get("href", "")
         else:
-            # DEPRECATED: we now use Odoo peppol API to fetch participant info and get a json response
-            # keeping this branch for compatibility
             participant_identifier = (
                 participant_info.findtext("{*}ParticipantIdentifier") or ""
             )
@@ -157,9 +144,6 @@ class ResPartner(models.Model):
             if service_metadata is not None:
                 service_href = service_metadata.attrib.get("href", "")
 
-        # all Belgian companies are pre-registered on hermes-belgium, so they will
-        # technically have an existing SMP url but they are not real Peppol participants
-        # NOTE: peppol identifier must be case insensitive
         return (
             edi_identification.lower() == participant_identifier.lower()
             and "hermes-belgium" not in service_href
@@ -167,7 +151,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _peppol_get_participant(self, edi_identification):
-        """NAPTR DNS peppol participant lookup through Odoo's Peppol proxy"""
         if (edi_mode := self.env.company._get_peppol_edi_mode()) == "demo":
             return None
 
@@ -229,7 +212,6 @@ class ResPartner(models.Model):
                 for service in participant_info.get("services", [])
             )
 
-        # DEPRECATED: participant_info as XML fetched directly from SMP
         service_references = participant_info.findall(
             "{*}ServiceMetadataReferenceCollection/{*}ServiceMetadataReference"
         )
@@ -267,14 +249,13 @@ class ResPartner(models.Model):
                 continue
 
             if all_companies is None:
-                # We only check it for companies that are actually using Peppol.
                 can_send = self.env[
                     "account_edi_proxy_client.user"
                 ]._get_domain_can_send()
                 all_companies = (
                     self.env["account_peppol.config"]
                     .sudo()
-                    .search(  # noqa: E8507 - computed once, on first need
+                    .search(
                         [
                             ("account_peppol_proxy_state", "in", can_send),
                         ]
@@ -285,9 +266,6 @@ class ResPartner(models.Model):
             for company in all_companies:
                 partner.button_account_peppol_check_partner_endpoint(company=company)
 
-    # -------------------------------------------------------------------------
-    # LOW-LEVEL METHODS
-    # -------------------------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -296,20 +274,8 @@ class ResPartner(models.Model):
             res._update_peppol_state_per_company()
         return res
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def button_account_peppol_check_partner_endpoint(self, company=None) -> bool:
-        """A basic check for whether a participant is reachable at the given
-        Peppol participant ID - peppol_eas:peppol_endpoint (ex: '9999:test')
-        The SML (Service Metadata Locator) assigns a DNS name to each peppol participant.
-        This DNS name resolves into the SMP (Service Metadata Publisher) of the participant.
-        The DNS address is of the following form:
-        strip-trailing(base32(sha256(lowercase(ID-VALUE))),"=") + "." + ID-SCHEME + "." + SML-ZONE-NAME
-        The lookup should be done on NAPTR DNS from 2025-11-01
-        (ref:https://peppol.helger.com/public/locale-en_US/menuitem-docs-doc-exchange)
-        """
         self.check_singleton()
         if not company:
             company = self.env.company
@@ -325,7 +291,6 @@ class ResPartner(models.Model):
         )
 
         if new_value != "valid" and self_partner.peppol_eas in ("0208", "9925"):
-            # checks the inverse `eas:endpoint` if the belgian user was not found on Peppol in the first try
             inverse_eas = "9925" if self_partner.peppol_eas == "0208" else "0208"
             inverse_endpoint = (
                 f"BE{self_partner.peppol_endpoint}"

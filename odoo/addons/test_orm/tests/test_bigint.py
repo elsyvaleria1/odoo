@@ -49,7 +49,6 @@ class TestBigintField(common.TransactionCase):
         self.assertEqual(found, large)
 
     def test_read_answers_a_value_past_int4_as_a_float_as_for_every_integer(self):
-        # XML-RPC's <int> is 32-bit: Integer.convert_to_read widens past it
         record = self.env["test_orm.bigint"].create({"amount": FIVE_GB})
         self.assertEqual(record.read(["amount"])[0]["amount"], float(FIVE_GB))
 

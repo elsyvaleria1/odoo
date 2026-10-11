@@ -23,13 +23,6 @@ STOP = False
 
 
 def _nmcli(args, sudo=False):
-    """Run nmcli command with given arguments and return the output.
-
-    :param args: Arguments to pass to nmcli
-    :param sudo: Run the command with sudo privileges
-    :return: Output of the command
-    :rtype: str
-    """
     command = ["nmcli", "-t", *args]
     if sudo:
         command = ["sudo", *command]
@@ -41,11 +34,6 @@ def _nmcli(args, sudo=False):
 
 
 def _get_networks() -> list:
-    """Scan for connected/available networks and return the SSID.
-
-    :return: list of found SSIDs with a flag indicating whether it's the connected network
-    :rtype: list[tuple[bool, str]]
-    """
     ssids = _nmcli(["-f", "ACTIVE,SSID", "dev", "wifi"], sudo=True)
     ssids_dict = (
         {
@@ -62,13 +50,6 @@ def _get_networks() -> list:
 
 
 def _reload_network_manager() -> bool:
-    """Reload the NetworkManager service.
-    Can be useful when ``nmcli`` doesn't respond correctly (e.g. can't fetch available
-    networks properly).
-
-    :return: True if the service is reloaded successfully
-    :rtype: bool
-    """
     if (
         subprocess.run(
             ["sudo", "systemctl", "reload", "NetworkManager"], check=False
@@ -82,11 +63,6 @@ def _reload_network_manager() -> bool:
 
 
 def get_current():
-    """Get the SSID of the currently connected network, or None if it is not connected
-
-    :return: The connected network's SSID, or None
-    :rtype: str | None
-    """
     nmcli_output = _nmcli(
         ["-f", "GENERAL.CONNECTION,GENERAL.STATE", "dev", "show", "wlan0"]
     )
@@ -101,15 +77,8 @@ def get_current():
 
 
 def get_available_ssids() -> list:
-    """Get the SSIDs of the available networks. May reload NetworkManager service
-    if the list doesn't contain all the available networks.
-
-    :return: List of available SSIDs
-    :rtype: list[str]
-    """
     ssids = _get_networks()
 
-    # If the list contains only the connected network, reload network manager and rescan
     if len(ssids) == 1 and is_current(ssids[0][1]) and _reload_network_manager():
         ssids = _get_networks()
 
@@ -117,15 +86,10 @@ def get_available_ssids() -> list:
 
 
 def is_current(ssid) -> bool:
-    """Check if the given SSID is the one connected."""
     return ssid == get_current()
 
 
 def disconnect():
-    """Disconnects from the current network.
-
-    :return: True if disconnected successfully
-    """
     ssid = get_current()
 
     if not ssid:
@@ -140,13 +104,6 @@ def disconnect():
 
 
 def _connect(ssid, password):
-    """Disables access point mode and connects to the given
-    network using the provided password.
-
-    :param str ssid: SSID of the network to connect to
-    :param str password: Password of the network to connect to
-    :return: True if connected successfully
-    """
     if ssid not in get_available_ssids() or not toggle_access_point(STOP):
         return False
 
@@ -160,19 +117,10 @@ def _connect(ssid, password):
 
 
 def reconnect(ssid=None, password=None, force_update=False):
-    """Reconnect to the given network. If a connection to the network already exists,
-    we can reconnect to it without providing the password (e.g. after a reboot).
-    If no SSID is provided, we will try to reconnect to the last connected network.
-
-    :param str ssid: SSID of the network to reconnect to (optional)
-    :param str password: Password of the network to reconnect to (optional)
-    :param bool force_update: Force connection, even if internet is already available through ethernet
-    :return: True if reconnected successfully
-    """
     if not force_update:
         timer = (
             time.time() + 10
-        )  # Required on boot: wait 10 sec (see: https://github.com/odoo/odoo/pull/187862)
+        )
         while time.time() < timer:
             if get_ip():
                 if is_access_point():
@@ -185,7 +133,6 @@ def reconnect(ssid=None, password=None, force_update=False):
 
     should_start_access_point_on_failure = is_access_point() or not get_ip()
 
-    # Try to re-enable an existing connection, or set up a new persistent one
     if toggle_access_point(STOP) and not _nmcli(["con", "up", ssid], sudo=True):
         _connect(ssid, password)
 
@@ -197,17 +144,6 @@ def reconnect(ssid=None, password=None, force_update=False):
 
 
 def _save_configuration(ssid) -> bool:
-    """For security reasons, everything that is saved in the root filesystem
-    on IoT Boxes is lost after reboot. This method saves the network
-    configuration file in the right filesystem (``/root_bypass_ramdisks``).
-
-    Although it is not mandatory to connect to the Wi-Fi, this method is required
-    for the network to be reconnected automatically after a reboot.
-
-    :param str ssid: SSID of the network to validate
-    :return: True if the configuration file is saved successfully
-    :rtype: bool
-    """
     connection_path = Path(
         f"/etc/NetworkManager/system-connections/{ssid}.nmconnection"
     )
@@ -220,7 +156,6 @@ def _save_configuration(ssid) -> bool:
     if source_path.is_dir():
         source_path = f"{source_path}/"
 
-    # Copy the configuration file to the root filesystem
     if (
         subprocess.run(
             ["sudo", "rsync", "--dirs", "--delete", source_path, destination_path],
@@ -236,31 +171,14 @@ def _save_configuration(ssid) -> bool:
         return False
 
 
-# -------------------------- #
-# Access Point Configuration #
-# -------------------------- #
 
 
 @cache
 def get_access_point_ssid():
-    """Generate a unique SSID for the access point.
-    Uses the identifier of the device or a random token if the
-    identifier was not found.
-
-    :return: Generated SSID
-    :rtype: str
-    """
     return "IoTBox-" + get_identifier() or secrets.token_hex(8)
 
 
 def _configure_access_point(on=True) -> bool:
-    """Update the ``hostapd`` configuration file with the given SSID.
-    This method also adds/deletes a static IP address to the ``wlan0`` interface,
-    mandatory to allow people to connect to the access point.
-
-    :param bool on: Start or stop the access point
-    :return: True if the configuration is successful
-    """
     ssid = get_access_point_ssid()
 
     if on:
@@ -276,17 +194,11 @@ def _configure_access_point(on=True) -> bool:
             stderr=subprocess.DEVNULL,
         ).returncode
         == 0
-        or not on  # Don't fail if stopping access point: IP address might not exist
+        or not on
     )
 
 
 def toggle_access_point(state=START) -> bool:
-    """Start or stop an access point.
-
-    :param bool state: Start or stop the access point
-    :return: True if the operation on the access point is successful
-    :rtype: bool
-    """
     if not _configure_access_point(state):
         return False
 
@@ -303,11 +215,6 @@ def toggle_access_point(state=START) -> bool:
 
 
 def is_access_point() -> bool:
-    """Check if the device is currently in access point mode.
-
-    :return: True if the device is in access point mode
-    :rtype: bool
-    """
     return (
         subprocess.run(
             ["systemctl", "is-active", "hostapd"],
@@ -330,12 +237,6 @@ def get_qr_data_for_wifi() -> str | None:
 
 @cache
 def generate_qr_code_image(qr_code_data) -> str:
-    """Generate a QR code based on data argument and return it in base64 image format
-    Cached to avoir regenerating the same QR code multiple times
-
-    :param str qr_code_data: Data to encode in the QR code
-    :return: The QR code image in base64 format ready to be used in json format
-    """
     qr_code = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -353,12 +254,6 @@ def generate_qr_code_image(qr_code_data) -> str:
 
 
 def generate_network_qr_codes() -> dict:
-    """Generate a QR codes for the IoT Box network and its homepage
-    and return them in base64 image format in a dictionary
-
-    :return: A dictionary containing the QR codes in base64 format
-    :rtype: dict
-    """
     wifi_network_qr_data = get_qr_data_for_wifi()
     return {
         "qr_wifi": generate_qr_code_image(wifi_network_qr_data)

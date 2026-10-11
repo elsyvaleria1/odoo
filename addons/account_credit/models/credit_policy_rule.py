@@ -92,8 +92,6 @@ class CreditPolicyRule(models.Model):
 
     def _applies(self, profile, facts):
         self.check_singleton()
-        # a delivery creates no credit; only a rule written for deliveries
-        # reads one, so the seeded order and invoice rules never hold goods
         if facts["kind"] == "picking":
             if self.document_kind != "picking":
                 return False

@@ -50,7 +50,6 @@ class WizardAccountBankStatementLineDeleteDuplicate(models.TransientModel):
             for ids_group in ids_groups:
                 group_set = set(ids_group)
                 if not group_set & check_set:
-                    # list view not supposed to have the same line multiple times
                     check_set.update(group_set)
                     flat_ids.extend(ids_group)
                     first_ids_in_group.append(ids_group[0])
@@ -80,7 +79,6 @@ class WizardAccountBankStatementLineDeleteDuplicate(models.TransientModel):
                 [], order="id desc", limit=1, fields=["create_date"]
             )
             if last_bsl:
-                # set date to the oldest transaction date of last sync batch
                 bsl = self.env["account.bank.statement.line"].search_read(
                     [
                         (

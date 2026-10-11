@@ -20,11 +20,6 @@ class GattBtManager(Gatt_DeviceManager):
             bt_devices[identifier] = device
 
     def run(self):
-        """Override gatt.DeviceManager.run() method
-        to avoid calling GObject.MainLoop() deprecated method inside it.
-        MainLoop.run() will 'infinite loop' until MainLoop.quit()
-        method is called which we never do, so we don't need to reimplement
-        the rest of the MainLoop.run() method"""
 
         if self._main_loop:
             return

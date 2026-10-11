@@ -13,16 +13,12 @@ from .common import TestUiCommon
 @tagged("-at_install", "post_install")
 class TestUi(TestUiCommon):
     def _set_gantt_date(self):
-        # Python's frozen clock does not change the browser's clock.
         for action in self.env["ir.actions.act_window"].search(
             [("res_model", "=", "planning.slot")]
         ):
             try:
                 context = ast.literal_eval(action.context or "{}")
             except SyntaxError, ValueError:
-                # A context naming `active_id` is scoped to a record the tours
-                # never open from a menu, and `repr` would freeze the name into
-                # whatever it happened to resolve to here.
                 continue
             context["initialDate"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             action.context = repr(context)
@@ -133,7 +129,6 @@ class TestUi(TestUiCommon):
     def test_split_shift_ui(self):
         self._set_gantt_date()
         PlanningSlot = self.env["planning.slot"]
-        # create a user with planning manager rights and timezone set to UTC
         hugo = new_test_user(
             self.env,
             login="hugo_user",
@@ -142,8 +137,7 @@ class TestUi(TestUiCommon):
             email="hugo@example.com",
             tz="UTC",
         )
-        # 1. Creating work schedule in UTC
-        attendance_schedule = {  # To round to hours!
+        attendance_schedule = {
             "start_am": time.fromisoformat("08:00:00"),
             "end_am": time.fromisoformat("12:00:00"),
             "start_pm": time.fromisoformat("13:00:00"),
@@ -205,7 +199,6 @@ class TestUi(TestUiCommon):
             ]
         )
 
-        # 2. Creating employees using those work schedules
         employees = (
             employee_aramis,
             employee_athos,
@@ -232,7 +225,6 @@ class TestUi(TestUiCommon):
             ]
         )
 
-        # 3. Creating shifts for those employees (in UTC)
         days_to_wednesday = (
             2 - date.today().weekday() + 7 * (date.today().weekday() // 6)
         )
@@ -285,7 +277,6 @@ class TestUi(TestUiCommon):
                 },
             ]
         )
-        # Initially 1 slot assigned to Aramis, 1 to Athos and 3 to Porthos
         slot_count_per_resource = dict(
             PlanningSlot._read_group(
                 [("resource_id", "in", employees.resource_id.ids)],
@@ -303,10 +294,8 @@ class TestUi(TestUiCommon):
             },
         )
 
-        # 4. Launching tour (Browser in UTC by default)
         self.start_tour("/", "planning_split_shift_week", login="hugo_user")
 
-        # 5. Verify the resulting slots after splitting
         slot_data = PlanningSlot.search_read(
             [("resource_id", "in", employees.resource_id.ids)],
             fields=["resource_id", "start_datetime", "end_datetime"],
@@ -319,7 +308,6 @@ class TestUi(TestUiCommon):
         slots_aramis, slots_athos, slots_porthos, slots_rochefort = (
             slots_per_resource_id[employee.resource_id.id] for employee in employees
         )
-        # After splitting: 2 slot assigned to Aramis, 3 to Athos, 4 to Porthos and 2 to Rochefort
         self.assertEqual(len(slots_aramis), 2)
         self.assertEqual(len(slots_athos), 3)
         self.assertEqual(
@@ -362,8 +350,6 @@ class TestUi(TestUiCommon):
             "When splitting a shift planned in a weekend, resulting shifts should have its start/end set to 8AM/5PM.",
         )
 
-        # 6. Undo the splits
-        # One split was done on the slot of Aramis, we undo it and check that the dates of the resulting slot correspond to the ones we had before the split
         slot1_aramis, slot2_aramis = PlanningSlot.browse(
             [slot["id"] for slot in slots_aramis]
         )
@@ -378,7 +364,6 @@ class TestUi(TestUiCommon):
             [full_slot_aramis.start_datetime, full_slot_aramis.end_datetime],
         )
 
-        # Two splits were done on the slot of Athos, we first undo the second split (between part 1 and part 2 of the slot)
         slot1_athos, slot2_athos, slot3_athos = PlanningSlot.browse(
             [slot["id"] for slot in slots_athos]
         )
@@ -392,7 +377,6 @@ class TestUi(TestUiCommon):
             [slot1_athos.start_datetime, slot1_athos.end_datetime],
             [slot_athos12_start_date, slot_athos12_end_datetime],
         )
-        # We then undo the first split (between resulting part and part 3 of the slot)
         (slot1_athos + slot3_athos).undo_split_shift(
             full_slot_athos.start_datetime,
             full_slot_athos.end_datetime,

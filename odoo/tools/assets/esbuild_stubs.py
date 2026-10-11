@@ -102,9 +102,6 @@ def write_stubs(
 def alias_into_mirror(
     flag: str, odoo_root: Path, real_to_mirror: dict[Path, Path]
 ) -> str:
-    # esbuild runs with --preserve-symlinks over a mirror, so a file reached
-    # through its real path and through the mirror is two modules: an alias
-    # naming a file of a mirrored addon's static tree must name the mirror's
     spec, _, target = flag.removeprefix("--alias:").partition("=")
     if not target.startswith(("./", "../")):
         return flag
@@ -143,8 +140,6 @@ def mirror_aliases(
             continue
         mirror = stub_root / addon
         mirror_dir(mirror, real_dir, addon, occupied, must_be_real)
-        # Keep each addon's static siblings separate: @addon/../tests and
-        # relative ../lib imports must not resolve into another addon's tree.
         static_root = Path(tmp_dir) / "layout" / addon / "static"
         static_root.mkdir(parents=True, exist_ok=True)
         source_root = static_root / "src"

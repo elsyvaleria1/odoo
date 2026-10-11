@@ -17,8 +17,6 @@ class TestResourceKindWalletCards(TransactionCase):
         cls.vehicle = cls.env["resource.asset.vehicle"].browse(resource.id)
 
     def test_the_vehicle_form_validates_with_the_wallet_cards_button(self):
-        # create() checks only the nodes a view brings; an upgrade rewrites the
-        # view and checks the whole form, the asset form's buttons included
         self.env.ref("resource_asset_vehicle.fleet_vehicle_view_form")._check_xml()
 
     def test_a_vehicle_opens_what_its_resource_opens(self):

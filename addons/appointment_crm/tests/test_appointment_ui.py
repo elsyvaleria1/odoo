@@ -15,9 +15,6 @@ from odoo.addons.mail.tests.common import MailCommon
 class AppointmentCrmUITest(AppointmentCommon, MailCommon, common.HttpCase):
     @freeze_time("2022-02-14 07:00:00")
     def test_apt_with_lead_anonymous_create_with_multi_company(self):
-        """Test that an anonymous user can create an appointment from the website using information
-        from an existing contact that belongs to a different company than the one associated with the
-        appointment user, with lead_create enabled."""
         apt = self.apt_type_bxls_2days
         apt.write(
             {
@@ -124,9 +121,7 @@ class AppointmentCrmUITest(AppointmentCommon, MailCommon, common.HttpCase):
         appointment_type = self.env["appointment.type"].browse(
             result["appointment_type_id"]
         )
-        # The default_is_auto_assign should be ignored as the field is not whitelisted
         self.assertFalse(appointment_type.is_auto_assign)
-        # The default_opportunity_id should be propagated as the field is whitelisted
         appointment_invite = self.env["appointment.invite"].search(
             [("appointment_type_ids", "in", appointment_type.ids)]
         )

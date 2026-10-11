@@ -14,7 +14,6 @@ class WhatsAppComposerCase(WhatsAppCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # test records for sending messages
         cls.test_base_records = cls.env["whatsapp.test.base"].create(
             [
                 {
@@ -36,7 +35,6 @@ class WhatsAppComposerCase(WhatsAppCommon):
             ]
         )
 
-        # templates (considered as approved)
         cls.template_basic, cls.template_dynamic, cls.template_dynamic_cplx = cls.env[
             "whatsapp.template"
         ].create(
@@ -135,13 +133,11 @@ class WhatsAppComposerRendering(
     dynamic content, headers, ..."""
 
     def test_assert_initial_data(self):
-        """Ensure base data for tests, to ease understanding them"""
         self.assertEqual(self.company_admin.country_id, self.env.ref("base.us"))
         self.assertEqual(self.user_admin.country_id, self.env.ref("base.be"))
 
     @users("employee")
     def test_composer_tpl_base(self):
-        """Test basic sending, with template, without rendering"""
         template = self.template_basic.with_user(self.env.user)
         test_record = self.test_base_records[0]
         composer = self._instanciate_wa_composer_from_records(template, test_record)
@@ -156,7 +152,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_base_rendering(self):
-        """Test sending with template and rendering"""
         free_text = "Odoo In"
         template = self.template_dynamic_cplx.with_user(self.env.user)
         test_record = self.test_base_records[0]
@@ -173,8 +168,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_base_rendering_datetime(self):
-        """Specific case involving datetimes"""
-        # template setup
         self.template_basic.write(
             {
                 "body": "Hello, your dates are here {{1}}",
@@ -196,10 +189,8 @@ class WhatsAppComposerRendering(
         )
         test_template = self.template_basic.with_user(self.env.user)
 
-        # record setup without timezone field
         self.test_base_records[0].datetime = datetime(2024, 1, 19, 0, 0, 0)
 
-        # record setup with timezone field
         test_record_with_tz = self.env["whatsapp.test.timezone"].create(
             {
                 "country_id": self.env.ref("base.be").id,
@@ -212,11 +203,9 @@ class WhatsAppComposerRendering(
             }
         )
 
-        # model setup
         wa_base_model_id = self.env["ir.model"]._get_id("whatsapp.test.base")
         wa_tz_model_id = self.env["ir.model"]._get_id("whatsapp.test.timezone")
 
-        # record setup with timezone field with false value
         test_record_with_tz_false = test_record_with_tz.copy({"tz": False})
         test_record_with_datetime_false = test_record_with_tz.copy({"datetime": False})
 
@@ -278,8 +267,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_base_rendering_selection(self):
-        """Specific case involving selections"""
-        # template setup
         self.template_basic.write(
             {
                 "body": "Base model is here ({{1}}) and selection through m2o is here ({{2}})",
@@ -312,7 +299,6 @@ class WhatsAppComposerRendering(
         )
         test_template = self.template_basic.with_user(self.env.user)
 
-        # record setup with selection field
         test_selection = self.env["whatsapp.test.selection"].create(
             {
                 "selection_field": "selection_key_4",
@@ -329,7 +315,6 @@ class WhatsAppComposerRendering(
             }
         )
 
-        # Check whether selection field values are sent and not keys
         composer = self._instanciate_wa_composer_from_records(
             test_template, test_base_selection_id
         )
@@ -344,7 +329,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_header_attachments(self):
-        """Send a template with a header attachment set through the composer."""
         doc_attach_clone = self.document_attachment.copy({"name": "pdf_clone.pdf"})
         self.template_dynamic.write(
             {
@@ -372,9 +356,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_header_report_resend(self):
-        """In case of resend and reports, it has to be generated again, so
-        it deserves its own test."""
-        # template setup with report
         self.template_basic.write(
             {
                 "header_type": "document",
@@ -401,7 +382,6 @@ class WhatsAppComposerRendering(
         message = self._new_wa_msg
         old_attachment_ids = message.mail_message_id.attachment_ids
 
-        # fail the message using the webhook
         self._receive_message_update(
             account=self.whatsapp_account,
             display_phone_number=self.test_base_records[0]._phone_get_number().number,
@@ -421,7 +401,6 @@ class WhatsAppComposerRendering(
             },
         )
 
-        # retry the failed message
         with self.mockWhatsappGateway(), self.patchWhatsappCronTrigger():
             message.button_resend()
         self.assertEqual(len(self._wa_msg_sent_vals), 1)
@@ -439,7 +418,6 @@ class WhatsAppComposerRendering(
 
     @users("employee")
     def test_composer_tpl_header_various(self):
-        """Test sending with rendering, including header"""
         sample_text = "Header Free Text"
 
         base_variable_ids = [
@@ -470,7 +448,6 @@ class WhatsAppComposerRendering(
                 "location",
             ),
             (
-                # text
                 {"header_text": "Header World"},
                 {
                     "header_text": "Header {{1}}",
@@ -523,18 +500,14 @@ class WhatsAppComposerRendering(
                     ]
                     + base_variable_ids,
                 },
-                # image
                 {"header_attachment_ids": [(6, 0, self.image_attachment.ids)]},
-                # video
                 {"header_attachment_ids": [(6, 0, self.video_attachment.ids)]},
-                # document
                 {"header_attachment_ids": [(6, 0, self.document_attachment.ids)]},
                 {"report_id": self.test_wa_base_report.id},
                 {
                     "header_attachment_ids": [(6, 0, self.document_attachment.ids)],
                     "report_id": self.test_wa_base_report.id,
                 },
-                # location
                 {
                     "variable_ids": [
                         (
@@ -577,26 +550,22 @@ class WhatsAppComposerRendering(
                 },
             ),
             (
-                # text
                 {},
                 {},
                 {},
                 {},
-                # image
                 {
                     "name": self.image_attachment.name,
                     "datas": self.image_attachment.datas,
                     "res_model": self.test_base_records._name,
                     "res_id": self.test_base_records[0].id,
                 },
-                # video
                 {
                     "name": self.video_attachment.name,
                     "datas": self.video_attachment.datas,
                     "res_model": self.test_base_records._name,
                     "res_id": self.test_base_records[0].id,
                 },
-                # document
                 {
                     "name": self.document_attachment.name,
                     "datas": self.document_attachment.datas,
@@ -617,11 +586,9 @@ class WhatsAppComposerRendering(
                     "res_model": self.test_base_records._name,
                     "res_id": self.test_base_records[0].id,
                 },
-                # location
                 {},
             ),
             (
-                # text
                 {
                     "body": f"<p><b>Header World</b></p><p>Hello {self.test_base_records[0].name}</p>"
                 },
@@ -634,15 +601,11 @@ class WhatsAppComposerRendering(
                 {
                     "body": f"<p><b>Header {self.env.user._phone_get_number().number}</b></p><p>Hello {self.test_base_records[0].name}</p>"
                 },
-                # image
-                {},
-                # video
-                {},
-                # document
                 {},
                 {},
                 {},
-                # location
+                {},
+                {},
                 {},
             ),
             strict=False,
@@ -677,14 +640,6 @@ class WhatsAppComposerRendering(
 @tagged("wa_composer")
 class WhatsAppComposerSending(WhatsAppFullCase, WhatsAppComposerCase):
     def test_composer_send_duplicates(self):
-        """Check that duplicate messages are detected and cancelled properly.
-
-        A message is considered a duplicate if:
-        - They use the same template
-        - It does not contain a report
-        - All of the variables of the template are equal
-        - Regardless of static attachments (which should be the same for the same template)
-        """
         self.template_dynamic.write(
             {
                 "header_attachment_ids": [(6, 0, self.document_attachment.ids)],
@@ -755,8 +710,6 @@ class WhatsAppComposerSending(WhatsAppFullCase, WhatsAppComposerCase):
                 ):
                     self.assertWAMessageFromRecord(rec, status=status)
 
-        # same number, same dynamic body, different templates
-        # different templates are always considered different
         with self.subTest():
             setup_and_send(
                 {
@@ -765,7 +718,6 @@ class WhatsAppComposerSending(WhatsAppFullCase, WhatsAppComposerCase):
                     "templates": [dynamic_template, dynamic_template_copy],
                 }
             )
-            # check manually as assertWAMessage methods can't differenciate duplicate messages...
             state_by_res_id = {
                 res_id: messages.mapped("state")
                 for res_id, messages in self._new_wa_msg.grouped(
@@ -779,7 +731,6 @@ class WhatsAppComposerSending(WhatsAppFullCase, WhatsAppComposerCase):
                 state_by_res_id[self.test_base_records[1].id], ["cancel"] * 2
             )
 
-        # same number same dynamic body with report
         composer.wa_template_id = self.template_dynamic
         with self.subTest():
             setup_and_send(
@@ -792,7 +743,6 @@ class WhatsAppComposerSending(WhatsAppFullCase, WhatsAppComposerCase):
             self.assertWAMessageFromRecord(self.test_base_records[0])
             self.assertWAMessageFromRecord(self.test_base_records[1])
             mail_messages = self._new_wa_msg.mail_message_id
-            # both notified even though they have the same result
             self.assertEqual(
                 mail_messages[0].attachment_ids.checksum,
                 mail_messages[1].attachment_ids.checksum,

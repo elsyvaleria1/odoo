@@ -27,8 +27,4 @@ class HrEmployee(models.Model):
                 self.env._("There is no valid payslip to send to the employee."),
                 title=title,
             )
-        # Return the payslip-level result: it already reports what was sent
-        # and what was skipped (missing email, missing document). Fabricating
-        # a success toast here showed "successfully sent" even when every
-        # payslip was skipped and no mail was queued.
         return valid_payslips.action_resend_payslips(notify=True)

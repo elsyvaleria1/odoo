@@ -82,7 +82,6 @@ class TestMqttProtocol(BaseCase):
 
         self.protocol.open(_snapshot(), lambda payload, meta: None, on_state)
 
-        # paho's thread would die with an exception out of the callback
         self.client.on_connect(self.client, None, None, 0, None)
         self.client.on_disconnect(self.client, None, None, 1, None)
 

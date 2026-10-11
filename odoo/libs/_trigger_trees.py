@@ -7,10 +7,6 @@ from .iteration.sorting import strongly_connected_components
 __all__ = ["TriggerGraph", "get_trigger_trees"]
 
 Bucket = tuple[Sequence[int], Sequence[int]]
-# (is_many2one, is_one2many, name, inverse_name, model_name, comodel_name, fact):
-# `fact` is the stored column a field stands for. Every model of a table-
-# inheritance tree keeps its own Field for one column, so the walk closes a
-# cycle on the fact, or a self-dependency shared by n siblings costs n! paths.
 Meta = tuple[bool, bool, int, int, int, int, int]
 Node = tuple[list[int], list[tuple[int, "Node"]]]
 
@@ -117,9 +113,6 @@ class TriggerGraph:
                 fact = meta[target][6]
                 if fact in seen or target not in triggers:
                     continue
-                # With no frame of its component on the stack, nothing the
-                # walk below `target` reaches is on the stack either, so its
-                # result depends on (target, node) alone and is already in.
                 if not active.get(component[fact]):
                     key = (target, frame.node)
                     if key in expanded:

@@ -69,7 +69,6 @@ class TestSMSNoThread(SMSCommon, TestSMSRecipients):
             )
             composer_form.body = self._test_body_sta
             composer = composer_form.save()
-            # TDE FIXME: mono/mass mode should be fixed
             self.assertFalse(composer.comment_single_recipient)
             self.assertEqual(composer.composition_mode, "comment")
             self.assertEqual(composer.recipient_valid_count, 1)
@@ -103,7 +102,7 @@ class TestSMSNoThread(SMSCommon, TestSMSRecipients):
                     self.assertEqual(composer.composition_mode, "comment")
                     if ctx.get("default_number_field_name") == "mobile":
                         stored_number = (
-                            ""  # invalid field + single recipient -> no number
+                            ""
                         )
                         self.assertEqual(composer.recipient_valid_count, 0)
                         self.assertEqual(composer.recipient_invalid_count, 1)
@@ -129,5 +128,4 @@ class TestSMSNoThread(SMSCommon, TestSMSRecipients):
                     with self.mockSMSGateway():
                         composer._action_send_sms()
 
-                    # even if the stored number is correct, fall back on the computed number
                     self.assertSMS(self.env["res.partner"], "+32455135790", "pending")

@@ -75,12 +75,6 @@ class TestAILoggingIntegration(TransactionCase):
         )
 
     def _create_mock_request(self, responses):
-        """Build a ``_request`` replacement returning the given responses in order.
-
-        :param list responses: payloads to return, one per successive call
-        :return: the mock function
-        :rtype: callable
-        """
         call_count = 0
 
         def mock_request(*args, **kwargs):
@@ -92,7 +86,6 @@ class TestAILoggingIntegration(TransactionCase):
         return mock_request
 
     def test_sequential_tool_calls(self):
-        """Tools called one after another are logged as individual API calls and executions."""
         mock_request = self._create_mock_request(
             [
                 {
@@ -169,7 +162,6 @@ class TestAILoggingIntegration(TransactionCase):
         )
 
     def test_parallel_tool_calls(self):
-        """Several tool calls in one API response are logged as a numbered ⚡ batch."""
         mock_request = self._create_mock_request(
             [
                 {
@@ -247,7 +239,6 @@ class TestAILoggingIntegration(TransactionCase):
         )
 
     def test_mixed_tool_calls(self):
-        """A batch of tool calls followed by a single one logs both batch and single markers."""
         mock_request = self._create_mock_request(
             [
                 {

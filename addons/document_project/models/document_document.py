@@ -10,7 +10,6 @@ _debug = DebugLog(__name__)
 class DocumentsDocument(models.Model):
     _inherit = "document.document"
 
-    # for folders
     project_ids = fields.One2many(
         comodel_name="project.project",
         inverse_name="documents_folder_id",
@@ -69,7 +68,6 @@ class DocumentsDocument(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def unlink_except_project_folder(self) -> None:
-        # custom folders assigned to company.documents_project_folder_id are protected by _unlink_except_company_folders
         project_folder = self.env.ref("document_project.document_project_folder")
         if self._project_folder_or_ancestor_in_self(project_folder):
             _debug.logic("unlink_refused", reason="project_base_folder", documents=self)
@@ -99,16 +97,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _get_project_protected_folder_ids(self):
-        """Return ids of folders that must never be deleted automatically.
-
-        :return: ids of folders used by projects (including archived ones),
-            their ancestors, and the base project folder with its ancestors
-        :rtype: set of int
-        """
-        # The unlink_except_project_folder check uses child_of, meaning
-        # deleting any ancestor of a project folder would also be blocked.
-        # Archived projects must be included because DocumentsDocument.unlink
-        # propagates active_test=False context to the ondelete check.
         project_folders = (
             self.env["project.project"]
             .sudo()
@@ -124,7 +112,6 @@ class DocumentsDocument(models.Model):
         for folder in project_folders:
             if folder.parent_path:
                 protected_ids.update(folder._get_ancestor_ids(include_self=True))
-        # Also protect the base project folder and its ancestors
         project_folder = self.env.ref(
             "document_project.document_project_folder", raise_if_not_found=False
         )
@@ -135,21 +122,12 @@ class DocumentsDocument(models.Model):
     @api.model
     def _get_domain_gc_clear_bin(self):
         domain = super()._get_domain_gc_clear_bin()
-        # Exclude protected project folders to prevent UserError during
-        # autovacuum (see _get_project_protected_folder_ids).
         if excluded_ids := self._get_project_protected_folder_ids():
             _debug.logic("gc_folders_protected", count=len(excluded_ids))
             domain = Domain.AND([domain, [("id", "not in", list(excluded_ids))]])
         return domain
 
     def _get_removable_parent_folders(self):
-        """Exclude project folders from the opportunistic parent-folder cleanup.
-
-        Deleting the last children of an archived project folder must not
-        cascade into deleting the folder itself: unlink_except_project_folder
-        would raise a UserError and roll back the whole unlink batch (this
-        aborted the _gc_clear_bin autovacuum daily, see task 23528).
-        """
         folders = super()._get_removable_parent_folders()
         if folders and (protected_ids := self._get_project_protected_folder_ids()):
             _debug.logic("parent_cleanup_protected", folders=folders)
@@ -221,7 +199,6 @@ class DocumentsDocument(models.Model):
                 )
 
         for folder in folders:
-            # a folder without a company serves projects of any company
             if not folder.company_id:
                 continue
             if folder.project_ids and folder.project_ids.company_id:
@@ -283,17 +260,6 @@ class DocumentsDocument(models.Model):
         return {}
 
     def _get_project_from_closest_ancestor(self):
-        """
-        If the current folder is linked to exactly one project, this method returns
-        that project.
-
-        If the current folder doesn't match the criteria, but one of its ancestors
-        does, this method will return the project linked to the closest ancestor
-        matching the criteria.
-
-        :return: The project linked to the closest valid ancestor, or an empty
-        recordset if no project is found.
-        """
         self.check_singleton()
         eligible_projects = (
             self.env["project.project"]
@@ -307,7 +273,6 @@ class DocumentsDocument(models.Model):
         if not eligible_projects:
             return self.env["project.project"]
 
-        # dict {folder_id: position}, where position is a value used to sort projects by their folder_id
         folder_id_order = {
             folder_id: i
             for i, folder_id in enumerate(

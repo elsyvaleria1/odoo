@@ -15,7 +15,6 @@ class StockMoveLine(models.Model):
     def _compute_is_subcontract_stock_barcode(self) -> None:
         self.is_subcontract_stock_barcode = False
         for move_line in self:
-            # Hide if not encoding state or it is not a subcontracting picking
             if (
                 move_line.state in ("draft", "cancel", "done")
                 or not move_line.move_id.is_subcontract
@@ -33,11 +32,6 @@ class StockMoveLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """In the case of a subcontract move, a move line may be created without an initial
-        `move_id`- thus the line will use whatever source location value is defined on the picking,
-        which is less precise than using a value defined on a move that may take ownership of the
-        MoveLine after its initial creation.
-        """
         move_lines = super().create(vals_list)
         subcontract_moves = move_lines.move_id.filtered("is_subcontract")
         _debug.lifecycle(
@@ -56,7 +50,6 @@ class StockMoveLine(models.Model):
         return move_lines
 
     def write(self, vals):
-        """Make sure to use trace_ids instead of lot_names in case of subcontracting moves."""
         if "lot_name" in vals and any(l.move_id.is_subcontract for l in self):
             trace_id = self.env["product.trace"].search(
                 [
@@ -81,5 +74,4 @@ class StockMoveLine(models.Model):
         return super().write(vals)
 
     def _get_fields_stock_barcode(self):
-        """Inject info if the line is subcontract and have tracked component"""
         return super()._get_fields_stock_barcode() + ["is_subcontract_stock_barcode"]

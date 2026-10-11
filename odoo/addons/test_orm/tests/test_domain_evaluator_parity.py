@@ -859,8 +859,6 @@ class TestSearchDefinedPredicateQueries(TransactionCase):
 
 
 class TestFieldTypeMatrixParity(TransactionCase):
-    # every (field, operator, value) triple the generator above cannot reach:
-    # Reference, Binary, Html, Datetime, Selection, x2many and Properties
     OPERATORS = (
         "=",
         "!=",
@@ -1102,7 +1100,7 @@ class TestFieldTypeMatrixParity(TransactionCase):
         try:
             with self.env.cr.savepoint(), mute_logger("odoo.db.cursor"):
                 sql_ids = set(model.search(scoped).ids)
-        except Exception as exc:  # the pair of outcomes is the finding
+        except Exception as exc:
             sql_ids = type(exc).__name__
         try:
             with self.env.cr.savepoint():

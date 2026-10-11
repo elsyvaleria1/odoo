@@ -89,7 +89,7 @@ class TestCalendarSms(SMSCommon):
         cls.event_1h = cls.env["calendar.event"].create(
             {
                 "name": "Event in 1h",
-                "start": now + timedelta(minutes=30),  # Start in 30 minutes
+                "start": now + timedelta(minutes=30),
                 "stop": now + timedelta(hours=1, minutes=30),
                 "alarm_ids": [(4, cls.alarm_1h.id), (4, cls.alarm_24h.id)],
                 "partner_ids": [(6, 0, [cls.partner_phone.id])],
@@ -102,15 +102,13 @@ class TestCalendarSms(SMSCommon):
                 "partner_ids": [(6, 0, [cls.partner_phone_3.id])],
             }
         )
-        # for some reason the above is not sufficient
         cls.event_1h_dup.partner_ids = cls.partner_phone_3
 
-        # Adjust event_24h so that the 24-hour alarm falls within the last hour
         cls.event_24h = cls.env["calendar.event"].create(
             {
                 "name": "Event in 24h",
                 "start": now
-                + timedelta(hours=23, minutes=30),  # Start in 23 hours 30 minutes
+                + timedelta(hours=23, minutes=30),
                 "stop": now + timedelta(hours=24, minutes=30),
                 "alarm_ids": [(4, cls.alarm_1h.id), (4, cls.alarm_24h.id)],
                 "partner_ids": [(6, 0, [cls.partner_phone_2.id])],
@@ -137,7 +135,6 @@ class TestCalendarSms(SMSCommon):
         cls.alarm_24h.sms_template_id = cls.sms_template_24h.id
 
     def test_attendees_with_number(self):
-        """Test if only partners with sanitized number are returned."""
         with self.mockSMSGateway():
             self.event._do_sms_reminder(self.event.alarm_ids)
         self.assertEqual(
@@ -145,10 +142,6 @@ class TestCalendarSms(SMSCommon):
         )
 
     def test_send_reminder_match_both_events(self):
-        """
-        Test that only the necessary SMS messages are sent,
-         with each SMS template correctly matching its corresponding alarm duration and the event.
-        """
         with self.mockSMSGateway():
             lastcall = fields.Datetime.now() - timedelta(hours=1)
             self.env["calendar.alarm_manager"].with_context(

@@ -23,8 +23,6 @@ class TestAsyncDispatch(DeviceTransactionCase):
     def test_queue_event_enqueues_a_job_for_the_event(self):
         event = self.device.queue_event({"temperature": 21.5})
 
-        # integration routes an async event through its own event log, whose
-        # identity_key is what stops the same payload being handled twice.
         job = self.env["ir.job"].search(
             [
                 ("model_name", "=", "integration.exchange"),
@@ -122,11 +120,6 @@ class TestAsyncDispatch(DeviceTransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestPushRouteStoresOneSource(DeviceHttpCase):
-    # The push route reached _store_data_point twice with different arguments:
-    # the sync branch named source="webhook", the async branch let the signature
-    # default to "iot". device.data.log.report groups and filters by source, so
-    # the same device landed in two analytics buckets depending on a field no
-    # view exposes.
 
     @classmethod
     def setUpClass(cls):

@@ -3,9 +3,6 @@ from typing import Any
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-# One badly configured type widens the notification cron's selection window for
-# the whole tenant, so the configurable value carries a ceiling. Two years is
-# well above anything the module ships or its demo data uses (180 is the widest).
 MAX_NOTIFICATION_DAYS = 730
 
 
@@ -95,8 +92,6 @@ class DocumentType(models.Model):
         return self._parse_notification_days(self.notification_days)
 
     def action_view_documents(self) -> dict[str, Any]:
-        # every form on document.document in core is a special-purpose dialog,
-        # so a record opened from the app's list needs the compliance form named
         action = super().action_view_documents()
         action["views"] = [
             *((view_id, mode) for view_id, mode in action["views"] if mode != "form"),

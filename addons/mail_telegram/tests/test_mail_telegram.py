@@ -15,7 +15,6 @@ class MailTelegramCase(TelegramBotTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.test_bot.notify_mail = True
-        # contacts are the records here: the replying user may write them
         cls.test_user.write(
             {
                 "notification_type": "inbox",
@@ -37,8 +36,6 @@ class MailTelegramCase(TelegramBotTestCase):
         cls.record = cls._create_partner({"name": "Followed Record"})
 
     def _run_alert_jobs(self) -> None:
-        """Run the queued notices that Telegram stopped delivering, each as
-        the job's own user."""
         jobs = (
             self.env["ir.job"]
             .sudo()

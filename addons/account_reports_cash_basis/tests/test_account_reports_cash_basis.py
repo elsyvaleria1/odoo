@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from datetime import timedelta
 
 from odoo import Command, fields
@@ -33,7 +32,6 @@ class TestAccountReports(TestAccountReportsCommon):
         cls.receivable_account_1 = cls.company_data["default_account_receivable"]
         cls.revenue_account_1 = cls.company_data["default_account_revenue"]
 
-        # Invoice having two receivable lines on the same account.
 
         invoice = cls.env["account.move"].create(
             {
@@ -73,7 +71,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
         invoice.action_post()
 
-        # First payment (20% of the invoice).
 
         payment_1 = cls.env["account.move"].create(
             {
@@ -106,7 +103,6 @@ class TestAccountReports(TestAccountReportsCommon):
 
         cls._reconcile_on((invoice + payment_1).line_ids, cls.receivable_account_1)
 
-        # Second payment (also 20% but will produce two partials, one on each receivable line).
 
         payment_2 = cls.env["account.move"].create(
             {
@@ -158,7 +154,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_general_ledger_cash_basis(self):
-        # Check the cash basis option.
         self.env["res.currency"].search([("name", "!=", "USD")]).with_context(
             force_deactivate=True
         ).active = False
@@ -173,51 +168,40 @@ class TestAccountReports(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                            Debit       Credit      Balance
             [0, 3, 4, 5],
             [
-                # Accounts.
                 (self.liquidity_label, 460.0, 0.0, 460.0),
                 ("121000 Account Receivable", 460.0, 460.0, 0.0),
                 ("400000 Product Sales", 0.0, 460.0, -460.0),
-                # Report Total.
                 ("Total General Ledger", 920.0, 920.0, 0.0),
             ],
             options,
         )
 
-        # Mark the '121000 Account Receivable' line to be unfolded.
         line_id = lines[2][
             "id"
-        ]  # Index 2, because there is the total line for bank in position 1
+        ]
         options["unfolded_lines"] = [line_id]
         self.assertLinesValues(
             report._get_lines(options),
-            # pylint: disable=C0326
-            #   Name                                    Date            Debit           Credit          Balance
             [0, 1, 3, 4, 5],
             [
-                # Account.
                 (self.liquidity_label, "", 460.00, 0.00, 460.00),
                 ("121000 Account Receivable", "", 460.00, 460.00, 0.00),
-                # Account Move Lines.from unfolded account
                 ("BNK1/2016/00001", "02/01/2016", 0.00, 230.00, -230.00),
                 ("MISC/2016/01/0001", "02/01/2016", 69.00, 0.00, -161.00),
                 ("MISC/2016/01/0001", "02/01/2016", 161.00, 0.00, 0.00),
                 ("BNK1/2016/00002", "03/01/2016", 0.00, 230.00, -230.00),
                 ("MISC/2016/01/0001", "03/01/2016", 69.00, 0.00, -161.00),
                 ("MISC/2016/01/0001", "03/01/2016", 161.00, 0.00, 0.00),
-                # Account Total.
                 ("Total 121000 Account Receivable", "", 460.00, 460.00, 0.00),
                 ("400000 Product Sales", "", 0.00, 460.00, -460.00),
-                # Report Total.
                 ("Total General Ledger", "", 920.00, 920.00, 0.00),
             ],
             options,
         )
 
     def test_balance_sheet_cash_basis(self):
-        # Check the cash basis option.
         report = self.env.ref("account.balance_sheet")
         options = self._generate_options(
             report,
@@ -228,7 +212,6 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                            Balance
             [0, 1],
             [
                 ("ASSETS", 460.0),
@@ -261,9 +244,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_cash_basis_forces_readonly_query_off(self):
-        # The temp-table build in _prepare_lines_for_cash_basis requires a
-        # write, so cash basis must disable the readonly-query optimization
-        # even on a report that would otherwise qualify for it.
         report = self.env.ref("account.balance_sheet")
         options = self._generate_options(
             report,
@@ -277,10 +257,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_show_cash_basis_matches_resolved_report_on_sections_report(self):
-        # Regression test for the sections-report reroute: get_options() on a
-        # composite (e.g. Annual Statements) actually returns the selected
-        # section's options, so show_cash_basis must be derived from that
-        # section, not from the composite record `self` was called on.
         composite = self.env.ref("account.annual_statements")
         options = composite.get_options({})
         resolved_report = self.env["report.formula"].browse(options["report_id"])
@@ -315,7 +291,6 @@ class TestAccountReports(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Second invoice, left unpaid: with cash basis on, it must not show up in the report lines.
         self.init_invoice(
             "out_invoice",
             amounts=[100.0],
@@ -324,7 +299,6 @@ class TestAccountReports(TestAccountReportsCommon):
             post=True,
         )
 
-        # Check the impact in the reports: the invoice date should be the one the invoice appears at, since it is greater than the payment's
         report = self.env.ref("account.general_ledger_report")
 
         options = self._generate_options(
@@ -335,15 +309,11 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 3, 4, 5],
             [
-                # Accounts.
                 (self.outstanding_receipts_label, 115, 0, 115),
                 ("121000 Account Receivable", 0, 115, -115),
-                # Report Total.
                 ("Total General Ledger", 115, 115, 0),
             ],
             options,
@@ -357,17 +327,13 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 3, 4, 5],
             [
-                # Accounts.
                 (self.outstanding_receipts_label, 115, 0, 115),
                 ("121000 Account Receivable", 115, 115, 0),
                 ("251000 Tax Received", 0, 15, -15),
                 ("400000 Product Sales", 0, 100, -100),
-                # Report Total.
                 ("Total General Ledger", 230, 230, 0),
             ],
             options,
@@ -469,7 +435,6 @@ class TestAccountReports(TestAccountReportsCommon):
         (ar1 | ar5).reconcile()
         (ar2 | ar6).reconcile()
 
-        # Check the impact in the reports, year by year and then over the whole period.
         report = self.env.ref("account.general_ledger_report")
 
         options = self._generate_options(
@@ -479,12 +444,8 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 4, 5, 6],
             [
-                # Accounts.
-                # There should be no lines in this report.
-                # Report Total.
                 ("Total General Ledger", 0, 0, 0),
             ],
             options,
@@ -497,14 +458,11 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 4, 5, 6],
             [
-                # Accounts.
                 (self.liquidity_label, 350, 0, 350),
                 ("121000 Account Receivable", 245, 455, -210),
                 ("400000 Product Sales", 0, 140, -140),
-                # Report Total.
                 ("Total General Ledger", 595, 595, 0),
             ],
             options,
@@ -517,16 +475,13 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 4, 5, 6],
             [
-                # Accounts.
                 (self.liquidity_label, 350, 0, 350),
                 ("121000 Account Receivable", 500, 500, 0),
                 ("400000 Product Sales", 0, 60, -60),
                 ("499000 Other Income", 0, 150, -150),
                 ("Result Brought Forward - company_1_data", 0, 140, -140),
-                # Report Total.
                 ("Total General Ledger", 850, 850, 0),
             ],
             options,
@@ -539,15 +494,12 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                     Debit           Credit          Balance
             [0, 4, 5, 6],
             [
-                # Accounts.
                 (self.liquidity_label, 350, 0, 350),
                 ("121000 Account Receivable", 500, 500, 0),
                 ("400000 Product Sales", 0, 200, -200),
                 ("499000 Other Income", 0, 150, -150),
-                # Report Total.
                 ("Total General Ledger", 850, 850, 0),
             ],
             options,
@@ -600,25 +552,21 @@ class TestAccountReports(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                Debit       Credit     Balance
             [0, 4, 5, 6],
             [
-                # Accounts.
                 (self.liquidity_label, 460.0, 0, 460.0),
                 (self.outstanding_receipts_label, 3000.0, 0, 3000.0),
                 ("121000 Account Receivable", 3460.0, 3460.0, 0.0),
-                # Expanded line
                 ("400000 Product Sales", 0, 3000.0, -3000.0),
                 (
                     "INV/2023/00001 test line",
                     0,
                     2000.0,
                     -2000.0,
-                ),  # All lines are grouped if they are on the same date with the same id
+                ),
                 ("INV/2023/00001 test line", 0, 500.0, -2500.0),
                 ("Load more...", "", "", ""),
                 ("Result Brought Forward - company_1_data", 0, 460.0, -460.0),
-                # Report Total.
                 ("Total General Ledger", 6920.0, 6920.0, 0),
             ],
             options,
@@ -636,7 +584,6 @@ class TestAccountReports(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_1,
-            #   Name, Debit, Credit, Balance
             [0, 4, 5, 6],
             [
                 (
@@ -644,14 +591,11 @@ class TestAccountReports(TestAccountReportsCommon):
                     0,
                     500.0,
                     -3000.0,
-                ),  # The last payment is displayed on another line
+                ),
             ],
             options,
         )
 
-    # ------------------------------------------------------
-    # Audit Cell of Reports with Cash Basis Filter Activated
-    # ------------------------------------------------------
 
     def _audit_line(self, options, report, line_xml_id):
         lines = report._get_lines(options)
@@ -664,14 +608,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def _create_entry_and_partial_payment(self, analytic_distribution=None):
-        """Create the 345+805 receivable / 1150 revenue entry and a 230
-        (20%) payment on it, reconciled together.
-
-        Shared by the analytic-groupby cash-basis tests, which each attach
-        the analytic distribution differently (on the invoice line here via
-        ``analytic_distribution``, or manually on the payment line by the
-        caller) to exercise different analytic-amount resolution paths.
-        """
         entry = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -761,7 +697,6 @@ class TestAccountReports(TestAccountReportsCommon):
         return new_misc
 
     def test_cash_basis_audit_cell_invoices(self):
-        # Ensure lines from invoices are part of the audit with cash basis only when a payment is linked to the invoice
         report = self.env.ref("account.profit_and_loss")
         invoice_date = "2023-07-01"
         invoice_1 = self.init_invoice(
@@ -815,7 +750,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_cash_basis_audit_cell_misc_without_receivable(self):
-        # Ensure lines from misc entries without receivable are always part of the audit with cash basis
         report = self.env.ref("account.profit_and_loss")
         misc_without_receivable = self._create_misc_entry(
             "2023-07-01",
@@ -841,8 +775,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_a_cash_basis_render_leaves_journal_items_read_once(self):
-        # the substitute table used to INHERIT account_move_line, so every plain
-        # read of the parent in the same transaction returned its rows as well
         report = self.env.ref("account.balance_sheet")
         move = self.env["account.move"].create(
             {
@@ -888,7 +820,6 @@ class TestAccountReports(TestAccountReportsCommon):
         self.assertEqual(self.env.cr.fetchone()[0], 2)
 
     def test_cash_basis_audit_cell_bank_statement(self):
-        # Ensure lines from move on bank journal are displayed when auditing the balance sheet with cash basis
         report = self.env.ref("account.balance_sheet")
         bank_entry = self.env["account.move"].create(
             {
@@ -941,9 +872,6 @@ class TestAccountReports(TestAccountReportsCommon):
             "Bank entry lines should be present in the audit with cash basis",
         )
 
-        # Negative control: an unrelated misc-journal receivable line, never
-        # reconciled and on neither a cash nor a bank journal, must not be
-        # swept in by an over-broad audit domain.
         control_misc = self._create_misc_entry(
             "2023-01-23", self.receivable_account_1.id, self.revenue_account_1.id
         )
@@ -954,7 +882,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_cash_basis_audit_cell_misc_with_receivable(self):
-        # Ensure lines from misc entries with receivable are part of the audit with cash basis only when a payment is linked to the misc
         report = self.env.ref("account.profit_and_loss")
         invoice_date = "2023-07-01"
         misc_with_receivable = self._create_misc_entry(
@@ -1017,11 +944,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_cash_basis_audit_cell_reconcilable_tax_account(self):
-        """Ensure that when a tax account is reconcilable, and the tax line of an invoice is reconciled, then the
-        lines of the invoice are not displayed in the audit of the accounting report with cash basis activated.
-        Moves that contain receivable or payable lines are displayed in the audit only if the
-        partial is specifically reconciled with the receivable or payable line.
-        """
         report = self.env.ref("account.profit_and_loss")
         invoice_date = "2023-07-01"
         tax_account = self.tax_sale_a.invoice_repartition_line_ids.account_id
@@ -1060,13 +982,10 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_analytic_cash_basis_with_analytic_line_on_invoice(self):
-        """The analytic groupby column reports the analytic amount in proportion to the amount paid on the invoice."""
-        # Second entry, but with an analytic distribution on the revenue line
         self._create_entry_and_partial_payment(
             analytic_distribution={self.analytic_account_partner_a_1.id: 100}
         )
 
-        # Check the cash basis option with analytic groupby on accounts.
         report = self.env.ref("account.balance_sheet")
         options = self._generate_options(
             report,
@@ -1149,11 +1068,8 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_analytic_cash_basis_analytic_line_on_payment(self):
-        """The analytic groupby column reports the amount of the analytic line linked to a payment."""
-        # Second entry, without analytic distribution: the analytic line is created on the payment below.
         _invoice, payment = self._create_entry_and_partial_payment()
 
-        # Check the cash basis option with analytic groupby on accounts.
         report = self.env.ref("account.balance_sheet")
         options = self._generate_options(
             report,
@@ -1165,7 +1081,6 @@ class TestAccountReports(TestAccountReportsCommon):
             },
         )
 
-        # Checks that analytic line on a bank/cash account is reported on the report
 
         self.env["account.analytic.line"].create(
             {
@@ -1215,10 +1130,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
 
     def test_analytic_cash_basis_analytic_line_linked_to_credit_note(self):
-        """The analytic groupby column reports the amount of the analytic line linked to a credit note
-        reconciled with an invoice.
-        """
-        # Second invoice, without analytic distribution: it is set on the credit note below.
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1260,7 +1171,6 @@ class TestAccountReports(TestAccountReportsCommon):
 
         reversal_move.action_post()
 
-        # Check the cash basis option with analytic groupby on accounts.
         report = self.env.ref("account.balance_sheet")
         options = self._generate_options(
             report,
@@ -1328,7 +1238,6 @@ class TestAccountReports(TestAccountReportsCommon):
             default_options=additional_options,
         )
 
-        # Check result of line Current Year Unallocated Earnings of the report
         line = report._get_line_from_xml_id(
             report._get_lines(options),
             "account.account_financial_report_current_years_earnings",
@@ -1356,7 +1265,6 @@ class TestAccountReports(TestAccountReportsCommon):
             ]
         )
 
-        # Invoices, with different distributions on their revenue line
         invoice_1, invoice_2, _invoice_3, invoice_4 = invoices = self.env[
             "account.move"
         ].create(
@@ -1552,12 +1460,10 @@ class TestAccountReports(TestAccountReportsCommon):
 
         report = self.env.ref("account.balance_sheet")
 
-        # 4 invoices of 1000 and 1 invoice of 1150, without special filters
         self.assert_line_values(
             report, "2016-03-01", [5150], cash_basis=False, analytic=False
         )
 
-        # ANALYTICS WITHOUT CABA
         self.assert_line_values(
             report,
             "2016-03-01",
@@ -1566,86 +1472,68 @@ class TestAccountReports(TestAccountReportsCommon):
             analytic=True,
         )
 
-        # CABA WITHOUT ANALYTICS
 
-        # only first 2 invoices, first invoice payment
         self.assert_line_values(
             report, "2016-02-01", [230.0], cash_basis=True, analytic=False
         )
 
-        # only first 2 invoices, both partially paid
         self.assert_line_values(
             report, "2016-02-10", [430.0], cash_basis=True, analytic=False
         )
 
-        # only first 3 invoices, first 2 partially paid
         self.assert_line_values(
             report, "2016-02-15", [430.0], cash_basis=True, analytic=False
         )
 
-        # only first 3 invoices, all partially paid
         self.assert_line_values(
             report, "2016-02-20", [730.0], cash_basis=True, analytic=False
         )
 
-        # only first 4 invoices, first 3 partially paid
         self.assert_line_values(
             report, "2016-02-25", [730.0], cash_basis=True, analytic=False
         )
 
-        # only first 4 invoices, first 3 partially paid (2 payments on invoice_2)
         self.assert_line_values(
             report, "2016-02-29", [930.0], cash_basis=True, analytic=False
         )
 
-        # All 5 invoices, first 3 partially paid (2 payments on the setUpClass entry and on invoice_2)
         self.assert_line_values(
             report, "2016-03-01", [1160.0], cash_basis=True, analytic=False
         )
 
-        # All 5 invoices, first 3 and last partially paid (2 payments on the setUpClass entry and on invoice_2)
         self.assert_line_values(
             report, "2016-03-10", [1360.0], cash_basis=True, analytic=False
         )
 
-        # WITH ANALYTICS AND CABA
 
-        # only first 2 invoices, first invoice payment, no analytic
         self.assert_line_values(
             report, "2016-02-01", [0, 0, 0, 230.0], cash_basis=True, analytic=True
         )
 
-        # only first 2 invoices, both paid, analytic on invoice_1 (with proportion of payment)
         self.assert_line_values(
             report, "2016-02-10", [0, 200, 100, 430.0], cash_basis=True, analytic=True
         )
 
-        # only first 3 invoices, first 2 paid, analytic on invoice_1
         self.assert_line_values(
             report, "2016-02-15", [0, 200, 100, 430.0], cash_basis=True, analytic=True
         )
 
-        # only first 3 invoices, all paid, analytic on invoice_1 and invoice_2
         self.assert_line_values(
             report, "2016-02-20", [0, 440, 100, 730.0], cash_basis=True, analytic=True
         )
 
-        # only first 4 invoices, first 3 paid, analytic on invoice_1 and invoice_2
         self.assert_line_values(
             report, "2016-02-25", [0, 440, 100, 730.0], cash_basis=True, analytic=True
         )
 
-        # only first 4 invoices, first 3 partially paid (2 payments on invoice_2)
         self.assert_line_values(
             report, "2016-02-29", [0, 600, 100, 930.0], cash_basis=True, analytic=True
         )
 
-        # All 5 invoices, first 3 partially paid (2 payments on invoice_2)
         self.assert_line_values(
             report, "2016-03-01", [0, 600, 100, 1160.0], cash_basis=True, analytic=True
         )
 
-        # All 5 invoices, first 3 and last partially paid (2 payments on invoice_2)
         self.assert_line_values(
             report, "2016-03-10", [0, 620, 120, 1360.0], cash_basis=True, analytic=True
         )
@@ -1653,7 +1541,6 @@ class TestAccountReports(TestAccountReportsCommon):
     def test_cash_basis_move_multi_account(self):
         receivable_account_2 = self.copy_account(self.receivable_account_1)
         receivable_account_3 = self.copy_account(self.receivable_account_1)
-        # Invoice with 3 receivable lines spread over 2 different accounts
         invoice = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1701,7 +1588,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
         invoice.action_post()
 
-        # Payment of 70% for the first receivable account line
         payment_1 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1732,7 +1618,6 @@ class TestAccountReports(TestAccountReportsCommon):
         payment_1.action_post()
         self._reconcile_on((invoice + payment_1).line_ids, receivable_account_2)
 
-        # Check the cash basis option.
         self.env["res.currency"].search([("name", "!=", "USD")]).with_context(
             force_deactivate=True
         ).active = False
@@ -1746,22 +1631,18 @@ class TestAccountReports(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                    Debit       Credit        Balance
             [0, 3, 4, 5],
             [
-                # Accounts.
                 (self.liquidity_label, 530.0, 0.0, 530.0),
                 ("121000 Account Receivable", 460.0, 460.0, 0.0),
                 (receivable_account_2.display_name, 70.0, 70.0, 0.0),
                 ("400000 Product Sales", 0.0, 70.0, -70.0),
                 ("Result Brought Forward - company_1_data", 0.0, 460.0, -460.0),
-                # Report Total.
                 ("Total General Ledger", 1060.0, 1060.0, 0.0),
             ],
             options,
         )
 
-        # First payment of 20% for the second receivable account line
         payment_2 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1791,7 +1672,6 @@ class TestAccountReports(TestAccountReportsCommon):
         )
         payment_2.action_post()
         self._reconcile_on((invoice + payment_2).line_ids, receivable_account_3)
-        # Second payment of 20% for the second receivable account line
         payment_3 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1822,22 +1702,18 @@ class TestAccountReports(TestAccountReportsCommon):
         payment_3.action_post()
         self._reconcile_on((invoice + payment_3).line_ids, receivable_account_3)
 
-        # Delete the temporary cash basis table manually in order to run another _get_lines in the same transaction
         report._clear_cash_basis_temp_tables()
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Debit       Credit        Balance
             [0, 3, 4, 5],
             [
-                # Accounts.
                 (self.liquidity_label, 610.0, 0.0, 610.0),
                 ("121000 Account Receivable", 460.0, 460.0, 0.0),
                 (receivable_account_2.display_name, 70.0, 70.0, 0.0),
                 (receivable_account_3.display_name, 80.0, 80.0, 0.0),
                 ("400000 Product Sales", 0.0, 150.0, -150.0),
                 ("Result Brought Forward - company_1_data", 0.0, 460.0, -460.0),
-                # Report Total.
                 ("Total General Ledger", 1220.0, 1220.0, 0.0),
             ],
             options,

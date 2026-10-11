@@ -12,7 +12,7 @@ class ProductFeed(Controller):
         website=True,
         sitemap=False,
     )
-    def gmc_feed(self, feed_id="", access_token=""):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def gmc_feed(self, feed_id="", access_token=""):
         if not request.website.enabled_gmc_src:
             raise NotFound
 
@@ -40,7 +40,7 @@ class ProductFeed(Controller):
         if not feed_sudo:
             raise NotFound
 
-        if not consteq(feed_sudo.access_token, access_token):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+        if not consteq(feed_sudo.access_token, access_token):
             raise Forbidden
 
         return feed_sudo

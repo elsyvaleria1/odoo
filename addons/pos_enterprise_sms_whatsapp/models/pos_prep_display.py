@@ -39,7 +39,6 @@ class PosPrepDisplay(models.Model):
     )
 
     def send_order_notifications(self, order, event_type) -> None:
-        """Send SMS/WhatsApp notifications using configured templates."""
         self.check_singleton()
         if not order.exists():
             return
@@ -84,7 +83,6 @@ class PosPrepDisplay(models.Model):
                 composer._send_whatsapp_template()
 
     def _get_default_sms_template(self, event_type):
-        """Return the default SMS template based on event type."""
         if event_type == "received":
             return self.env.ref(
                 "pos_enterprise_sms_whatsapp.sms_template_order_received_confirmation_pos",
@@ -98,7 +96,6 @@ class PosPrepDisplay(models.Model):
         return None
 
     def _get_default_whatsapp_template(self, event_type):
-        """Return the default WhatsApp template based on event type."""
         if event_type == "received":
             return self.env.ref(
                 "pos_enterprise_sms_whatsapp.whatsapp_order_received_confirmation_pos",

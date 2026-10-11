@@ -38,7 +38,6 @@ class ResCompany(models.Model):
     @api.constrains("ytd_reset_day", "ytd_reset_month")
     def _check_valid_reset_date(self) -> None:
         for company in self:
-            # We try if the date exists in 2023, which is not a leap year.
             max_possible_day = calendar.monthrange(2023, int(company.ytd_reset_month))[
                 1
             ]

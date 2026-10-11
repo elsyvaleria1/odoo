@@ -16,7 +16,6 @@ class PosOrderLine(models.Model):
         if not bom:
             return super()._get_stock_moves_to_consider(stock_moves, product)
         boms, components = bom._explode(product, self.qty)
-        # Get a flat list of all bom_line_ids
         bom_line_ids = [
             item.id
             for x in boms

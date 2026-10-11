@@ -8,7 +8,6 @@ class WizardResPartnerMerge(models.TransientModel):
 
     def _get_unalterable_sources(self, src_partners):
         refused = super()._get_unalterable_sources(src_partners)
-        # every company's hashed entries: a line elsewhere still locks it
         groups = (
             self.env["account.move.line"]
             .sudo()

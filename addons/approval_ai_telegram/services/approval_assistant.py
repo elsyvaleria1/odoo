@@ -49,8 +49,6 @@ _CLASSIFICATION_PROPERTIES = {
     },
     "reason": {"type": "string"},
 }
-# Every key of the answer spelled out: against a bare {"type": "object"} Gemini
-# Flash-Lite answers "{}", which reads as no classification at all.
 CLASSIFICATION_SCHEMA = {
     "type": "object",
     "properties": _CLASSIFICATION_PROPERTIES,

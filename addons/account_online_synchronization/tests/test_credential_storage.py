@@ -29,9 +29,6 @@ class TestOdooFinCredentials(AccountOnlineSynchronizationCommon):
         self.assertEqual(self.account_online_link.refresh_token, "refresh_token")
 
     def test_fetching_a_new_access_token_leaves_the_refresh_token_alone(self):
-        # `_update_access_token` writes only the access token. Losing the refresh
-        # token here blocks the connection until the user re-authorises with the
-        # bank, which the retry site's own comment already warns about.
         self.account_online_link.access_token = "a-newer-access-token"
         self.account_online_link.invalidate_recordset()
 
@@ -43,8 +40,6 @@ class TestOdooFinCredentials(AccountOnlineSynchronizationCommon):
         )
 
     def test_an_accountant_still_reads_the_access_token(self):
-        # It is `account.group_account_basic`, not system, and has to stay that
-        # way: the compute sudoes the vault so the field's own groups decide.
         accountant = self.env["res.users"].create(
             {
                 "name": "Plain Accountant",
@@ -72,8 +67,6 @@ class TestOdooFinCredentials(AccountOnlineSynchronizationCommon):
             link.read(["refresh_token"])
 
     def test_an_accountant_can_still_read_the_record(self):
-        # The trap `sale_amazon` walked into: a compute reaching a restricted
-        # field raises from inside an ordinary read rather than omitting a field.
         accountant = self.env["res.users"].create(
             {
                 "name": "Plain Accountant Three",

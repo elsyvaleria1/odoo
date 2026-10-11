@@ -19,7 +19,6 @@ class WizardAccountBatchPaymentValidateErrorLine(models.TransientModel):
     warning_wizard_id = fields.Many2one(
         comodel_name="wizard.account.batch.payment.validate.error"
     )
-    # Whether or not this line should display a button allowing to remove its related payments from the batch
     show_remove_button = fields.Boolean(compute="_compute_show_remove_button")
 
     def _compute_show_remove_button(self) -> None:
@@ -38,7 +37,6 @@ class WizardAccountBatchPaymentValidateErrorLine(models.TransientModel):
         for payment in self.payment_ids:
             payment.batch_payment_id = None
 
-        # We try revalidating the batch if we still have payments for it (we hence do nothing for empty batches)
         batch = (self.error_wizard_id or self.warning_wizard_id).batch_payment_id
         if batch.payment_ids:
             return batch.confirm_batch()

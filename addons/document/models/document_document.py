@@ -32,8 +32,6 @@ from odoo.addons.mail.tools import link_preview
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-# what a user who does not hold the lock may still write on a locked document:
-# what their own work leaves on it, not the document itself
 LOCK_FREE_FIELDS = frozenset(
     {
         "favorite_user_ids",
@@ -53,8 +51,6 @@ SHARE_USER_LOCKED_FIELDS = (
 )
 
 
-# the links that stand for a document's own "anyone with the link" setting
-# (access_via_link), as opposed to links issued to a person
 DOCUMENT_LINK_DOMAIN = (
     Domain("audience", "=", "anyone")
     & Domain("partner_id", "=", False)
@@ -268,8 +264,6 @@ class DocumentsDocument(models.Model):
     lock_uid = fields.Many2one(
         comodel_name="res.users",
         string="Locked by",
-        # a copy is its copier's new document: someone else's lock on it
-        # would keep them out of what they just made
         copy=False,
         tracking=True,
     )
@@ -346,8 +340,6 @@ class DocumentsDocument(models.Model):
         string="Can move it",
         compute="_compute_user_can_move",
     )
-    # what the current user may do, said by the server: a client deriving it
-    # from lock_uid, user_permission and the folders got it wrong
     is_locked_by_other = fields.Boolean(
         string="Locked by someone else",
         compute="_compute_is_locked_by_other",
@@ -467,10 +459,6 @@ class DocumentsDocument(models.Model):
     )
 
     _res_model_res_id_idx = models.Index("(res_model, res_id)")
-    # the orders the views read pages in, so a page stops after the rows it
-    # shows pass the access rule instead of sorting every visible document:
-    # newest first (the kanban, "id" the ORM's tiebreak), folders first (the
-    # list), and newest first inside one folder
     _create_date_order_idx = models.Index("(create_date DESC, id)")
     _folder_first_order_idx = models.Index(
         "((type = 'folder') DESC, create_date DESC, id DESC)"
@@ -584,14 +572,6 @@ class DocumentsDocument(models.Model):
 
     @api.constrains("res_model")
     def _check_res_model(self) -> None:
-        # Read the value off the recordset rather than asking the database for
-        # it. The `search_count` this replaces went through `_search`, which
-        # applies `active_test` -- so the rule simply did not exist for an
-        # archived document. Archive, link, restore, and an ACTIVE document
-        # linked to another document (or to ITSELF, `res_id == id`) was left
-        # behind, which is the exact state this constraint is here to forbid.
-        # It also cost a flush and a round-trip per `create` for values already
-        # in memory.
         offenders = self.filtered(lambda d: d.res_model == "document.document")
         if offenders:
             _debug.logic("res_model_refused", documents=offenders)
@@ -615,13 +595,6 @@ class DocumentsDocument(models.Model):
                 )
 
     def _pop_attachment_vals(self, vals: dict) -> dict:
-        """Pop the values of fields related to the attachment, keyed by the
-        attachment's own field (``attachment_name`` writes ``name``).
-
-        :param dict vals: values of a create or write, modified in place
-        :return: the values to write on the attachment
-        :rtype: dict
-        """
         targets = {
             key: path[1]
             for key in list(vals)
@@ -634,7 +607,6 @@ class DocumentsDocument(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> DocumentsDocument:
         _debug.pipeline("create_start", count=len(vals_list), su=self.env.su)
-        # what the caller asks for, before the location adds its own defaults
         sets_access = any(
             set(SHARE_USER_LOCKED_FIELDS) & set(vals) - {"access_via_link"}
             for vals in vals_list
@@ -643,11 +615,6 @@ class DocumentsDocument(models.Model):
         for vals in vals_list:
             self._clean_vals_for_user_folder_id(vals, is_create=True)
         self._check_parent_folders([vals.get("folder_id") for vals in vals_list])
-        # The attachments a vals carries its content in are created in ONE call
-        # for the whole batch, not one call per document: `ir.attachment.create`
-        # is a row insert plus its own filestore work, so doing it per vals made
-        # creating N documents cost N inserts where the documents themselves
-        # cost one. Collected here, created below.
         pending_attachment_vals = {}
         for position, vals in enumerate(vals_list):
             attachment_dict = self._pop_attachment_vals(vals)
@@ -687,12 +654,7 @@ class DocumentsDocument(models.Model):
             if attachment and not vals.get("name"):
                 vals["name"] = attachment.name
 
-        # what a document is asked to grant is settled once the row exists,
-        # its folder's scope known: members kept out first, then its audience;
-        # the children a create carries come after, so they can read their
-        # folder
         opting_out = [self._opts_out_of_members(vals) for vals in vals_list]
-        # a shortcut's audience is its target's, never its own
         audiences = []
         for vals in vals_list:
             level = vals.pop("access_internal", None)
@@ -705,9 +667,6 @@ class DocumentsDocument(models.Model):
             documents = super(
                 DocumentsDocument, self.with_context(default_access_ids=None)
             ).create(vals_list)
-        # written as part of the creation, which the create rules check: the
-        # document cannot be read or edited by its creator before its own
-        # audience exists
         for document, opts_out, level in zip(
             documents.sudo(), opting_out, audiences, strict=True
         ):
@@ -763,14 +722,6 @@ class DocumentsDocument(models.Model):
                         "res_id": document.id,
                     }
                 )
-        # A document can be BORN in the trash -- `message_new` creates every
-        # mail-gateway document with `active=False`, and `document_sign` does
-        # the same for its signed copies. `_write_check_active_after` never
-        # runs for those, so without this they would carry no deletion date and
-        # `_gc_clear_bin`, which purges on that date, would leave them in the
-        # trash for good. The invariant is "not active implies a deletion
-        # date", and it is owned by the two places `active` can take that
-        # value: here and on the write transition.
         if born_archived := documents.filtered(
             lambda document: not document.active and not document.deletion_date
         ):
@@ -804,10 +755,6 @@ class DocumentsDocument(models.Model):
         return self.filtered(lambda d: d.lock_uid and d.lock_uid != self.env.user)
 
     def _raise_if_locked_by_other(self, reason: str) -> None:
-        """Hands off: a lock stops everyone but its taker and a manager, whole.
-
-        :param reason: what was refused, for the debug log
-        """
         if locked_by_other := self._locked_by_other():
             _debug.logic("lock_refused", reason=reason, documents=locked_by_other)
             raise UserError(
@@ -829,14 +776,6 @@ class DocumentsDocument(models.Model):
             raise UserError(self.env._("Invalid folder id"))
 
     def write(self, vals: dict) -> bool:
-        """Apply `vals`, running the document-specific steps around the ORM write.
-
-        The steps are ordered and several of them look at state that the ORM
-        write itself destroys, so each one says in its name whether it runs
-        BEFORE or AFTER `super().write`. They are methods rather than blocks so
-        that a bridge module can extend one of them instead of this whole
-        sequence, and so each is reachable from a test on its own.
-        """
         _debug.lifecycle("write", documents=self, fields=sorted(vals))
         if "shortcut_document_id" in vals:
             _debug.logic("write_refused", reason="shortcut_retarget", documents=self)
@@ -873,7 +812,6 @@ class DocumentsDocument(models.Model):
 
         move = self._write_plan_move_before(vals)
         if move.resolved_vals is not None:
-            # The destination is a shortcut: retry against what it points at.
             return self.write(move.resolved_vals)
 
         documents_per_initial_active = self._write_check_active_before(vals)
@@ -983,16 +921,11 @@ class DocumentsDocument(models.Model):
         self._check_access_or_raise(
             "write", self.env._("You are not allowed to update these access rights.")
         )
-        # a new link replaces the old one, which stops opening anything for
-        # whoever holds it: a change of who can access, as the link's role is
         self._check_link_managed("rotate")
         self._revoke_document_links("the link was rotated")
         self._sync_document_links()
         _debug.lifecycle("document_link_rotated", documents=self)
 
-    # ------------------------------------------------------------------
-    # The link anyone can use (access.link)
-    # ------------------------------------------------------------------
 
     def _check_link_managed(self, change: str) -> None:
         if self._may_manage_access():
@@ -1017,13 +950,6 @@ class DocumentsDocument(models.Model):
         cause: str = "share",
         roles: dict[int, str] | None = None,
     ) -> None:
-        """Hold each document's links to its access_via_link: a live link with
-        that role when it is on, none when it is off. A document created shared
-        (a payslip, a product sheet, a file uploaded into a shared folder) is
-        the system's doing and keeps its link a year; one a user shares by hand
-        30 days, unless they chose a date. `roles` (id: access_via_link) is
-        given by code that holds base.privilege_manage_links for documents its
-        user may not read."""
         Link = self.env["access.link"]
         if roles is None:
             documents = self.with_context(active_test=False).exists()
@@ -1057,7 +983,6 @@ class DocumentsDocument(models.Model):
                     document, changes, domain=DOCUMENT_LINK_DOMAIN
                 )
             if not any(link.id in showable for link in links):
-                # a link carried over from before can open, not be shown again
                 Link._issue(
                     document,
                     role=role,
@@ -1067,11 +992,6 @@ class DocumentsDocument(models.Model):
         records.invalidate_recordset(["access_token", "access_url", "link_date_to"])
 
     def _sync_subtree_link_expiry(self, date_to: Any) -> None:
-        # a folder's link setting reaches its subtree (_action_update_access),
-        # so its expiry does too: extended on the folder alone, every child's
-        # own link lapsed on its 30 days and the public folder page's cards
-        # 404ed while "Download All" still served them. The subtree is the one
-        # the link setting reaches: what the writer edits below the roots
         subtree = self.with_context(active_test=False).search(
             Domain("id", "child_of", self.ids)
             & Domain("id", "not in", self.ids)
@@ -1101,8 +1021,6 @@ class DocumentsDocument(models.Model):
         )
 
     def _write_check_lock_before(self, vals: dict, writes_content: bool) -> None:
-        # a lock is taken for oneself or released (toggle_lock), never set in
-        # somebody else's name
         if (
             "lock_uid" in vals
             and not self.env.su
@@ -1110,9 +1028,6 @@ class DocumentsDocument(models.Model):
         ):
             _debug.logic("write_refused", reason="lock_for_another", documents=self)
             raise AccessError(self.env._("You can only lock a document for yourself."))
-        # hands off: under someone else's lock nothing of the document changes
-        # (its content, name, place, tags, sharing, the lock itself), only the
-        # bookkeeping other users' work leaves on it
         if any(
             field_name not in LOCK_FREE_FIELDS
             and not field_name.startswith(("message_", "activity_"))
@@ -1121,12 +1036,6 @@ class DocumentsDocument(models.Model):
             self._raise_if_locked_by_other("content" if writes_content else "write")
 
     def _write_check_owner_before(self, vals: dict, is_manager: bool) -> dict:
-        """Refuse an owner change on documents this user does not own.
-
-        Returns the documents whose owner is about to change, grouped by their
-        CURRENT owner -- read here because `super().write` overwrites it, and
-        needed afterwards to leave that owner an explicit `edit` membership.
-        """
         if (owner_id := vals.get("owner_id")) is None:
             return {}
         if not is_manager and any(d.owner_id != self.env.user for d in self):
@@ -1143,12 +1052,6 @@ class DocumentsDocument(models.Model):
         return dict(documents_changing_owner.grouped("owner_id"))
 
     def _write_plan_move_before(self, vals: dict) -> DocumentMovePlan:
-        """Validate a `folder_id` change and capture what the move needs later.
-
-        `resolved_vals` set on the result means the destination turned out to be
-        a shortcut and the caller must restart against the target instead; every
-        other field is empty in that case.
-        """
         empty = self.browse()
         if "folder_id" not in vals:
             return DocumentMovePlan(empty, empty, {}, None)
@@ -1245,12 +1148,6 @@ class DocumentsDocument(models.Model):
     def _write_apply_versioning_before(
         self, vals: dict, writes_content: bool, has_content: bool
     ) -> tuple[list[bool], DocumentsDocument]:
-        """Move the outgoing content into the version history.
-
-        Returns which records already held an attachment -- read before the
-        write, and the only way to tell afterwards that a document request was
-        just fulfilled -- and the records that gained a version.
-        """
         attachment_id = vals.get("attachment_id")
         attachments_was_present = []
         versioned = self.browse()
@@ -1262,9 +1159,6 @@ class DocumentsDocument(models.Model):
                 and not record.attachment_id
                 and (has_content or attachment_id)
             )
-            # an empty binary is a request (the UI's isRequest); one answered
-            # without an activity still says who answered it -- with content:
-            # an emptying write answers nothing
             if (
                 record.type == "binary"
                 and (has_content or "url" in vals)
@@ -1285,9 +1179,6 @@ class DocumentsDocument(models.Model):
             elif has_content and not attachment_id:
                 self._write_attach_empty_document(record, vals)
 
-        # One `copy()` for every record whose content is being overwritten:
-        # `copy()` ends in a single `create()`, so calling it per record turned
-        # N version snapshots into N inserts.
         self._write_snapshot_replaced_content(replaced_content)
         return attachments_was_present, versioned
 
@@ -1296,10 +1187,6 @@ class DocumentsDocument(models.Model):
             return
         snapshots = records.attachment_id.with_context(no_document=True).copy()
         for record, snapshot in zip(records, snapshots, strict=True):
-            # `copy()` already carries the source's res_model/res_id, which for
-            # a document-owned file is this document -- so only a file that
-            # lives on another record needs redirecting, and the common case
-            # writes nothing.
             if (snapshot.res_model, snapshot.res_id) != (
                 "document.document",
                 record.id,
@@ -1311,12 +1198,6 @@ class DocumentsDocument(models.Model):
     def _write_version_existing(
         self, record: DocumentsDocument, vals: dict, writes_content: bool
     ) -> str | bool:
-        """Report which kind of version this write creates, if any.
-
-        A content overwrite is only REPORTED here ("content_copy") and carried
-        out by `_write_snapshot_replaced_content` for the whole batch at once;
-        the other two shapes are per-record by nature and rare.
-        """
         attachment_id = vals.get("attachment_id")
         if attachment_id and attachment_id != record.attachment_id.id:
             attachment = self.env["ir.attachment"].browse(attachment_id)
@@ -1345,18 +1226,6 @@ class DocumentsDocument(models.Model):
             _debug.logic("versioned", by="attachment_swap", document=record)
             return "swap"
         if "attachment_id" in vals and not attachment_id:
-            # Detaching the file outright. This used to keep no version
-            # at all: the document went empty, the outgoing attachment
-            # stayed behind pointing at it, and the history panel
-            # offered nothing to go back to -- unlike every other way of
-            # replacing the content. Emptying a document IS replacing
-            # its content, which is how the lock guard above already
-            # reads it.
-            #
-            # The attachment itself becomes the previous version, not a
-            # copy of it: nothing is overwriting it here, so the copy
-            # the branch below makes would archive a duplicate and leave
-            # the original dangling.
             record.previous_attachment_ids = [Command.link(record.attachment_id.id)]
             _debug.logic("versioned", by="detach", document=record)
             return "detach"
@@ -1372,9 +1241,6 @@ class DocumentsDocument(models.Model):
         if res_model and (
             res_model not in self.env or not self.env[res_model].browse(res_id).exists()
         ):
-            # A model the registry no longer has is the strongest form of "the
-            # linked record is gone", which is what this branch is already for.
-            # It used to index `self.env[res_model]` first and raise KeyError.
             _debug.logic(
                 "res_record_cleared",
                 res_model=res_model,
@@ -1406,13 +1272,6 @@ class DocumentsDocument(models.Model):
     ) -> None:
         if (new_active := vals.get("active")) is None:
             return
-        # Stamp on the TRANSITION, not in `action_archive`. `write` reroutes a
-        # bare `active=False` to `action_archive` only when the caller is not
-        # superuser, so `doc.sudo().write({"active": False})` -- which several
-        # bridges do -- reached the trash with no deletion date, and a purge
-        # that reads that date would have left those documents in the trash for
-        # good. Here every path that flips `active` is covered, including the
-        # one `action_archive` itself takes.
         if not new_active:
             if newly_archived := documents_per_initial_active.get(True):
                 newly_archived.sudo().deletion_date = self._next_deletion_date()
@@ -1480,9 +1339,6 @@ class DocumentsDocument(models.Model):
                 )
 
     def _write_refusing_access_change(self, vals: dict) -> bool:
-        # the move says itself what it changes: it runs, the access of the
-        # moved documents and of what they contain the caller can read is
-        # compared, and a change undoes it all and is reported
         contents = self.search(
             [("id", "child_of", self.ids), ("id", "not in", self.ids)]
         )
@@ -1536,9 +1392,6 @@ class DocumentsDocument(models.Model):
         }
 
     def _write_sync_moved_after(self, vals: dict, move: DocumentMovePlan) -> None:
-        # what the new folder grants reaches the moved documents by itself,
-        # and what the old one granted stops: only the link setting and the
-        # company follow the folder
         if move.new_parent_folder and (
             documents_to_sync := move.documents_to_move.filtered(
                 lambda d: not d.shortcut_document_id
@@ -1576,7 +1429,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _default_owner_id(self) -> int | bool:
-        # an inactive user (OdooBot, a cron's __system__) owns nothing
         return self.env.user.id if self.env.user.active else False
 
     def copy(self, default: ValuesType | None = None) -> DocumentsDocument:
@@ -1592,8 +1444,6 @@ class DocumentsDocument(models.Model):
 
         self.env["document.document"].check_access("create")
         self.check_access("read")
-        # the copy is its copier's to edit, so to download: a file they may
-        # only view unblocked is not theirs to duplicate
         if not self.env.su and (
             blocked := self.filtered(
                 lambda d: (
@@ -1814,13 +1664,8 @@ class DocumentsDocument(models.Model):
         self._raise_if_used_folder()
 
     def _compute_access_token(self) -> None:
-        # the token part is the live link's, shown again from the sealed
-        # secret; a document without a link is addressed by its id, which
-        # opens it to those who may read it and to nobody else
         saved = self.filtered(lambda document: isinstance(document.id, int))
         links = saved._document_links().sorted("id")
-        # one query for every link's token, not one per link (a public folder
-        # page computes it for each child)
         by_link = links._tokens()
         tokens = {link.res_id: by_link[link.id] for link in links if link.id in by_link}
         for document in self:
@@ -1858,10 +1703,6 @@ class DocumentsDocument(models.Model):
             _debug.logic("display_name_masked", documents=not_accessible_records)
         not_accessible_records.display_name = self.env._("Restricted")
         folders = accessible_records.filtered(lambda d: d.type == "folder")
-        # a folder shared on its own sits under a parent its reader may not
-        # reach: that parent's name is withheld. Asked of user_permission, not
-        # _filtered_access: name_search and web_read name a many2one under
-        # sudo, where every record passes _filtered_access
         readable_parents = (
             folders.folder_id.filtered(lambda f: f.user_permission != "none")
             if self.env.context.get("documents_show_parent_name")
@@ -1894,8 +1735,6 @@ class DocumentsDocument(models.Model):
             document.is_folder = document.type == "folder"
 
     def _order_by_sql_is_folder(self, field, alias, direction, nulls, query):
-        # the term agrees with the value: folders are True, so "is_folder desc"
-        # lists them first, as the list view and the search model ask
         return self._order_value_to_sql(
             SQL("(%s = 'folder')", SQL.identifier(alias, "type")),
             direction,
@@ -1964,8 +1803,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _cron_update_url_preview(self, limit: int = 200) -> None:
-        # sudo for the same reason `_cron_refresh_expiration_state` needs it:
-        # a system sweep must not be scoped to the cron user's readable set.
         documents = self.sudo().search(
             [("url_preview_pending", "=", True), ("type", "=", "url")], limit=limit
         )
@@ -2074,24 +1911,6 @@ class DocumentsDocument(models.Model):
             (record | record.shortcut_ids).file_extension = file_extension
 
     def _owning_record_link(self) -> tuple:
-        """Where this document's file belongs: the linked record, or itself.
-
-        `res_model` can name a model the registry no longer has -- the module
-        that owned it was uninstalled and the string stayed behind on the row.
-        That is a dangling link, not an error, and `_compute_res_name` and
-        `_inverse_res_record` already read it that way. Two write paths did not,
-        and they are the ones that hurt: `_write_attach_empty_document` indexed
-        `self.env[res_model]` unguarded and raised a bare `KeyError: '<model>'`
-        -- reaching the client as a 500 when someone fulfilled an upload request
-        against a record whose module had since been uninstalled -- and
-        `_write_version_existing` stamped the dead name onto a freshly created
-        attachment, which `ir.attachment` then refuses to read at all, because it
-        denies access to anything it cannot access-check.
-
-        The expression this replaces was written out at three call sites, one of
-        them in the controller, which is why the guard was missing from two of
-        them.
-        """
         self.check_singleton()
         if self.res_model and self.res_model in self.env:
             return self.res_model, self.res_id
@@ -2295,18 +2114,11 @@ class DocumentsDocument(models.Model):
             "read", self.env._("You are not allowed to access these documents.")
         )
 
-    # compute_sudo=False, unlike the mixin's default: the compute below masks
-    # the value for documents this user may not access, and _filtered_access
-    # answers "yes" to everything when it runs sudo.
     is_user_favorite = fields.Boolean(compute_sudo=False)
 
     @api.depends("favorite_user_ids")
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_is_user_favorite(self) -> None:
-        # A document you may no longer access reads as not-favorited, rather
-        # than as whatever the relation still says. Field reads on this model
-        # are not gated by user_permission, so the mixin's plain membership
-        # test would answer for records the rest of the UI hides.
         favorited = self._filtered_access("read").filtered(
             lambda document: self.env.user in document.favorite_user_ids
         )
@@ -2345,11 +2157,6 @@ class DocumentsDocument(models.Model):
             requested=len(self),
             deletion_date=deletion_date,
         )
-        # The stamp itself happens in `_write_check_active_after`, on the
-        # active transition the `super()` call below performs, so that a path
-        # which never comes through here is covered too. Both read
-        # `_next_deletion_date`, so the promise above and the date the purge
-        # reads cannot drift.
         return super(
             DocumentsDocument,
             active_documents.with_context(documents_archiving=True),
@@ -2429,15 +2236,6 @@ class DocumentsDocument(models.Model):
         return super(DocumentsDocument, to_unarchive_documents).action_unarchive()
 
     def add_documents_attachment(self, res_model: str, res_id: int) -> list[dict]:
-        """Copy the documents' files as attachments of a record being edited.
-
-        The copies are private to that record. A content served to visitors (a
-        web page) links to the documents instead, which stay revocable, logged
-        and current: a public copy would leave the documents' access for good.
-        """
-        # the copies are plain attachments, outside the documents' download
-        # block: a file its caller may only view is not theirs to attach, as
-        # it is not theirs to duplicate (copy)
         if not self.env.su and (
             blocked := self.filtered(
                 lambda d: d.attachment_id and not d._is_download_allowed()
@@ -2491,8 +2289,6 @@ class DocumentsDocument(models.Model):
         return res
 
     def get_deletion_delay(self) -> int:
-        # settings refuse a negative delay; a parameter set directly would
-        # date every trashed document in the past, purged on the next run
         return max(
             0,
             self.env.registry.settings.get_int(self.env, "document.deletion_delay", 30),
@@ -2501,15 +2297,11 @@ class DocumentsDocument(models.Model):
     def _get_is_multipage(self) -> bool | None:
         attachment = self.attachment_id
         if not attachment or attachment.type == "cloud_storage":
-            # a blob a provider holds is not downloaded inside the write that
-            # files it: its page count reads as unknown
             return None
         decoded = attachment._get_pdf_raw()
         if decoded is None:
             return None
         if modules.module.current_test and not decoded.lstrip().startswith(b"%PDF"):
-            # A test run renders reports as HTML (_is_pdf_rendering_enabled);
-            # a document with no PDF header cannot have pages to count.
             _logger.info(
                 "Skip _get_is_multipage of %r: html content detected in pdf document while in testing mode",
                 self.name,
@@ -2549,14 +2341,11 @@ class DocumentsDocument(models.Model):
             except ValueError:
                 _logger.error("invalid %s: %r", key, value)
                 continue
-            # 0 is "no cap"; a negative cap would refuse every upload
             return limit if limit > 0 else None
         return odoo.http.DEFAULT_MAX_CONTENT_LENGTH
 
     @api.model
     def _get_details_panel_res_models(self) -> list[str]:
-        # Each document_* bridge adds the model it links documents to; these
-        # two have no bridge module to declare them from.
         return ["purchase.order", "sale.order"]
 
     @api.readonly
@@ -2614,26 +2403,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _get_domain_gc_clear_bin(self) -> list:
-        """Purge what the trash SAID it would purge, on the day it said.
-
-        This used to re-derive the date as `write_date <= now - delay`, which
-        is a different quantity from the one `action_archive` writes into the
-        chatter ("will be deleted forever on ..."):
-
-        - any later write to a trashed document -- a rename, a stored
-          recompute, a bridge detaching `res_model` -- restarted the countdown
-          silently, with no new message and nothing in the UI saying so;
-        - changing `document.deletion_delay` retroactively moved the date of
-          every document already in the trash, in both directions; lowering it
-          could purge, on the next cron run, documents whose own message
-          promised them weeks more.
-
-        `deletion_date` is stamped once, when the document is archived, so the
-        promise and the mechanism are the same value. `_gc_clear_bin` still
-        skips rows with no date -- a document archived by a bare
-        `write({"active": False})` under `documents_archiving`, or by an older
-        version before the migration -- rather than inventing one for them.
-        """
         return [
             ("active", "=", False),
             ("deletion_date", "!=", False),
@@ -2720,9 +2489,6 @@ class DocumentsDocument(models.Model):
         return fields_to_recompute
 
     def _opts_out_of_members(self, vals: dict) -> bool:
-        # granting nobody at creation keeps out the members of the folder
-        # above: the document becomes a boundary that keeps what the folder
-        # grants to groups (decision K1's shape)
         commands = vals.get("access_ids")
         return (
             "access_ids" in vals
@@ -2787,8 +2553,6 @@ class DocumentsDocument(models.Model):
                     _debug.logic("access_defaults", by="folder", folder=folder)
                     vals_values["access_via_link"] = folder.access_via_link
                     if "access_internal" not in old_vals:
-                        # the folder's audience reaches the document; a
-                        # default is no reason to narrow it
                         vals.pop("access_internal", None)
                 if folder.company_id:
                     vals_values["company_id"] = folder.company_id.id
@@ -2888,14 +2652,6 @@ class DocumentsDocument(models.Model):
         first_source_ids: list | tuple = (),
         user_folder: UserFolder | None = None,
     ) -> DocumentsDocument:
-        """Write each page set as a new document, owned by whoever splits.
-
-        An output goes where its first page came from: the folder, tags and
-        contact of that source document, or the splitter's My Drive when the
-        source sits in no folder. One made only of uploaded files goes to
-        `user_folder`, the folder the splitter is looking at, or their My Drive
-        when that is not a place a document can be created in.
-        """
         with _debug.perf("pdf_split", cr=self.env.cr) as span:
             new_attachments = self.env["ir.attachment"]._pdf_split(
                 new_files=new_files, open_files=open_files
@@ -2951,11 +2707,6 @@ class DocumentsDocument(models.Model):
         return removed, removed == limit
 
     def _folders_used_by_companies(self) -> DocumentsDocument:
-        """The folders among these that another application files into.
-
-        One count for the whole batch, the usual answer being none; only when
-        some is used are the folders asked one by one.
-        """
         folders = self.filtered(lambda d: d.type == "folder")
         companies = self.env["res.company"].sudo()
         if not folders or not companies.search_count(

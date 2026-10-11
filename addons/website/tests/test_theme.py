@@ -93,8 +93,6 @@ class TestThemeLoadOrder(common.TransactionCase):
             {"name": "test_theme_order", "state": "installed"}
         )
         ThemeView = cls.env["theme.ir.ui.view"]
-        # imd order is by name: the variant's extension sorts first, and it
-        # removes the shape the snippet's extension adds
         variant_extension = ThemeView.create(
             {
                 "name": "variant extension",

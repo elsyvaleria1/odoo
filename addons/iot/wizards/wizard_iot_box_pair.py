@@ -11,7 +11,6 @@ class WizardIotBoxPair(models.TransientModel):
     _name = "wizard.iot.box.pair"
     _description = "Add IoT Box wizard"
 
-    # Depending on the stage different window actions are available
     stage = fields.Selection(
         selection=[
             ("start", "Start"),
@@ -37,14 +36,7 @@ class WizardIotBoxPair(models.TransientModel):
         readonly=True,
     )
 
-    # ------------------------- IOT-PROXY CALLING METHODS -------------------------
     def _connect_iot_box_with_pairing_code(self):
-        """
-        Calls the route /odoo-enterprise/iot/connect-db to connect the IoT Box with the provided pairing code
-
-        :return: the action to open the wizard view with the next step
-        """
-        # Pairing code can be entered manually or recovered from the selected IoT Box
         if self.iot_box_to_connect:
             self.pairing_code = self.iot_box_to_connect.pairing_code
             self.serial_number = self.iot_box_to_connect.serial_number
@@ -71,10 +63,9 @@ class WizardIotBoxPair(models.TransientModel):
             response.raise_for_status()
             json = response.json()
 
-            # Typically occurs when the used pairing code wasn't found on iot proxy
             error = json.get(
                 "error"
-            )  # e.g {'code': 404, 'message': '404: Not Found', ...}
+            )
             if error:
                 _logger.warning(
                     "Error when using pairing code %s. IoT Proxy responded with an error message: %s",
@@ -82,7 +73,7 @@ class WizardIotBoxPair(models.TransientModel):
                     error,
                 )
                 return self._open_no_iot_box_found_action()
-            result = json.get("result")  # e.g [{'id': 1, 'serial_number': '12345'}]}
+            result = json.get("result")
             if result and result[0]:
                 return self._open_connecting_action()
             else:
@@ -98,7 +89,6 @@ class WizardIotBoxPair(models.TransientModel):
             )
         return self._open_no_iot_box_found_action()
 
-    # ------------------------- WIZARD OPEN ACTIONS -------------------------
     def _open_select_box_to_connect_action(self) -> dict:
         self.stage = "connect"
         return {
@@ -155,34 +145,20 @@ class WizardIotBoxPair(models.TransientModel):
             "target": "new",
         }
 
-    # ------------------------- WIZARD STAGE ACTIONS -------------------------
 
     def _start_stage(self):
-        """
-        Make a request to discover local IoT Boxes
-        If none are found, open the pairing code wizard
-        If only 1 is found, attempt to connect it directly
-        If > 1 is found, open the select box wizard
-        """
         n_detected_iot_boxes = len(self.discovered_box_ids)
 
-        # If multiple IoT Boxes are found, ask the user to select one
         if n_detected_iot_boxes > 1:
             return self._open_select_box_to_connect_action()
-        # If only one IoT Box is found, connect it directly without showing the wizard to the user
         elif n_detected_iot_boxes == 1:
             self.pairing_code = self.discovered_box_ids[0].pairing_code
             self.serial_number = self.discovered_box_ids[0].serial_number
             return self._connect_iot_box_with_pairing_code()
-        # If no IoT Boxes are found, ask the user to enter the pairing code manually
         else:
             return self._open_no_iot_box_found_action()
 
     def add_iot_box_wizard_action(self):
-        """
-        Base action for the wizard used to connect IoT Boxes
-        Depending on the stage of the wizard, different actions are available
-        """
         match self.stage:
             case "start":
                 return self._start_stage()
@@ -193,9 +169,6 @@ class WizardIotBoxPair(models.TransientModel):
         return None
 
     def pair_offline(self):
-        """Use the token to pair an IoT Box.
-        Allows to pair an IoT Box that is not connected to the internet
-        """
         if self.stage == "pair_offline":
             self.stage = "start"
             return self._start_stage()

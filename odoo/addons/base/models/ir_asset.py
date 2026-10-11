@@ -306,11 +306,11 @@ class IrAsset(models.Model):
         self, addons: tuple[str, ...]
     ) -> Mapping[str, tuple[tuple[str, Any], ...]]:
         by_bundle: dict[str, list[tuple[str, Any]]] = {}
-        missing = 0  # debuglog
+        missing = 0
         for addon in self._get_addons_sorted_topologically(addons):
             manifest = Manifest.for_addon(addon)
             if manifest is None:
-                missing += 1  # debuglog
+                missing += 1
                 continue
             for bundle, commands in manifest["assets"].items():
                 by_bundle.setdefault(bundle, []).extend(

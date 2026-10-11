@@ -6,7 +6,6 @@ class AppointmentHrCommon(AppointmentCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Calendars: 8-12, 13-17 (UTC + 1)
         cls.resource_calendar_2days = cls.env["resource.calendar"].create(
             {
                 "attendance_ids": [
@@ -30,7 +29,6 @@ class AppointmentHrCommon(AppointmentCommon):
             }
         )
 
-        # User resources and employees for work intervals
         cls.apt_manager_employee = cls.env["hr.employee"].create(
             {
                 "company_id": cls.apt_manager.company_id.id,

@@ -4,9 +4,6 @@ from . import reports
 
 
 def _create_warehouse_data(env) -> None:
-    """This hook is used to add default repair picking types on every warehouse.
-    It is necessary if the repair module is installed after some warehouses were already created.
-    """
     warehouses = env["stock.warehouse"].search([("repair_type_id", "=", False)])
     for warehouse in warehouses:
         picking_type_vals = warehouse._create_or_update_picking_types()

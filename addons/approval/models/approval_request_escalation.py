@@ -285,11 +285,7 @@ class ApprovalRequestEscalation(models.Model):
                 ("date_confirmed", "<", reminder_threshold),
             ]
 
-            # One query per ESCALATION_RULES entry, not per record: the loop is
-            # over the priority selection, so the count is fixed and independent
-            # of the data. Each priority carries its own reminder threshold and
-            # its own CRON_BATCH_LIMIT, which one merged query cannot preserve.
-            requests_to_remind = self.search(  # noqa: E8507  one search per priority, each with its own threshold and batch limit
+            requests_to_remind = self.search(
                 domain,
                 order="date_confirmed asc",
                 limit=CRON_BATCH_LIMIT,
@@ -316,12 +312,6 @@ class ApprovalRequestEscalation(models.Model):
         return reminders_sent
 
     def _remind_one_isolated(self, request, escalation_threshold, now) -> bool:
-        """Remind or escalate `request` in a savepoint of its own, then stamp it.
-
-        A request nobody could be reminded about, or whose reminder failed, is
-        stamped all the same: left unstamped, the oldest of them would fill every
-        later batch. One decided meanwhile is left to the next run.
-        """
         try:
             with self.env.cr.savepoint():
                 reminded = bool(
@@ -356,11 +346,6 @@ class ApprovalRequestEscalation(models.Model):
             for a in request.approver_ids
             if a.state == "pending"
         )
-        # escalated_to_manager gates both triggers. A stalled approver is a
-        # reason to escalate ahead of the age threshold, not a reason to
-        # escalate again on every run: it does not clear itself, so binding it
-        # to the flag alone re-sent the same notice daily for the life of the
-        # request. Reset to draft clears the flag and re-opens escalation.
         needs_escalation = (
             request.category_id.escalate_overdue
             and not request.escalated_to_manager
@@ -423,9 +408,6 @@ class ApprovalRequestEscalation(models.Model):
 
     @api.model
     def _get_past_window(self, hours_field: str, extra_domain=None):
-        """Pending requests past the `hours_field` window they were submitted under:
-        the snapshot's, or the category's for a request confirmed before the
-        snapshot carried it (as `_get_snapshot_config` reads it)."""
         self.flush_model(
             ["state", "date_confirmed", "category_snapshot", "category_id"]
         )
@@ -601,9 +583,6 @@ class ApprovalRequestEscalation(models.Model):
         priority_label = dict(self._fields["priority"].selection)[self.priority]
         for manager, approvers in by_manager.items():
             self.message_post(
-                # The markup is the template and the values are its arguments:
-                # a translated str carrying tags is escaped by message_post and
-                # reaches the reader as visible source.
                 body=Markup(
                     self.env._(
                         "<p><strong>Escalation Notice</strong></p>"

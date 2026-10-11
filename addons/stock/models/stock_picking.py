@@ -238,7 +238,7 @@ class StockPicking(models.Model):
         index="btree_not_null",
         check_company=True,
     )
-    company_id = fields.Many2one(  # noqa: E8529  UNIQUE (name, company_id) partial
+    company_id = fields.Many2one(
         comodel_name="res.company",
         related="picking_type_id.company_id",
         string="Company",
@@ -325,8 +325,6 @@ class StockPicking(models.Model):
         "Packages with no shipping weight specified will default to their products' total weight. "
         "This is the weight used to compute the cost of the shipping.",
     )
-    # stored like shipping_weight: a list summing it would otherwise compute
-    # it for every transfer of every group, collapsed or not
     shipping_volume = fields.Float(
         string="Volume for Shipping",
         compute="_compute_shipping_volume",
@@ -585,14 +583,6 @@ class StockPicking(models.Model):
 
     @api.depends("picking_type_id")
     def _compute_move_type(self) -> None:
-        # An editable default: `precompute` places it and the user owns it
-        # afterwards. Every value is valid for every operation type, so there
-        # is nothing for a later trigger to invalidate -- and `modified()`
-        # fires on the key written, not on a change, so re-deriving here reset
-        # a deliberately chosen shipping policy on a write of `picking_type_id`
-        # that changed nothing. Measured: a picking set to "When all products
-        # are ready" came back "As soon as possible" after
-        # `write({"picking_type_id": <its own type>})`.
         for record in self:
             if (
                 not record.move_type

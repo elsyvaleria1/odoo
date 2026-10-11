@@ -49,7 +49,6 @@ class TestLoyalty(TransactionCase):
         )
 
     def test_loyalty_program_default_values(self):
-        # Test that the default values are correctly set when creating a new program
         program = self.env["loyalty.program"].create({"name": "Test"})
         self._check_promotion_default_values(program)
 
@@ -70,19 +69,16 @@ class TestLoyalty(TransactionCase):
         self.assertFalse(program.communication_plan_ids)
 
     def test_loyalty_program_default_values_in_form(self):
-        # Test that the default values are correctly set when creating a new program in a form
         with Form(self.env["loyalty.program"]) as program_form:
             program_form.name = "Test"
             program = program_form.save()
         self._check_promotion_default_values(program)
 
     def test_discount_product_unlink(self):
-        # Test that we can not unlink discount line product id
         with mute_logger("odoo.db"), self.assertRaises(IntegrityError):
             self.program.reward_ids.discount_line_product_id.unlink()
 
     def test_loyalty_mail(self):
-        # Test basic loyalty_mail functionalities
         loyalty_card_model_id = self.env.ref("loyalty.model_loyalty_card")
         create_tmpl, fifty_tmpl, hundred_tmpl = self.env["mail.template"].create(
             [
@@ -143,14 +139,10 @@ class TestLoyalty(TransactionCase):
             sent_mails |= self
 
         partner = self.env["res.partner"].create({"name": "Test Partner"})
-        # `send_mail_batch`, not `send_mail`: the coupon paths send one batch per
-        # (template, author) rather than one mail per coupon, and `send_mail` is
-        # itself a one-record wrapper over the batch entry point.
         with patch(
             "odoo.addons.mail.models.mail_template.MailTemplate.send_mail_batch",
             new=mock_send_mail,
         ):
-            # Send mail at creation
             coupon = self.env["loyalty.card"].create(
                 {
                     "program_id": self.program.id,
@@ -160,18 +152,14 @@ class TestLoyalty(TransactionCase):
             )
             self.assertEqual(sent_mails, create_tmpl)
             sent_mails = self.env["mail.template"]
-            # 50 points mail
             coupon.points = 50
             self.assertEqual(sent_mails, fifty_tmpl)
             sent_mails = self.env["mail.template"]
-            # Check that it does not get sent again
             coupon.points = 99
             self.assertFalse(sent_mails)
-            # 100 points mail
             coupon.points = 100
             self.assertEqual(sent_mails, hundred_tmpl)
             sent_mails = self.env["mail.template"]
-            # Reset and go straight to 100 points
             coupon.points = 0
             self.assertFalse(sent_mails)
             coupon.points = 100
@@ -179,7 +167,6 @@ class TestLoyalty(TransactionCase):
 
     def test_loyalty_program_preserve_reward_upon_writing(self):
         self.program.program_type = "buy_x_get_y"
-        # recompute of rewards
         self.program.flush_recordset(["reward_ids"])
 
         self.program.write(
@@ -255,9 +242,6 @@ class TestLoyalty(TransactionCase):
         self.product.action_archive()
 
     def test_prevent_archiving_product_used_for_discount_reward(self):
-        """
-        Ensure products cannot be archived while they have a specific program active.
-        """
         self.program.write(
             {
                 "name": f"50% Discount on {self.product.name}",
@@ -280,11 +264,6 @@ class TestLoyalty(TransactionCase):
         self.assertFalse(self.product.active)
 
     def test_prevent_archiving_product_when_archiving_program(self):
-        """
-        Test prevent archiving a product when archiving a "Buy X Get Y" program.
-        We just have to archive the free product that has been created while creating
-        the program itself not the product we already had before.
-        """
         loyalty_program = self.env["loyalty.program"].create(
             {
                 "name": "Test Program",
@@ -301,15 +280,9 @@ class TestLoyalty(TransactionCase):
             }
         )
         loyalty_program.action_archive()
-        # Make sure that the main product didn't get archived
         self.assertTrue(self.product.active)
 
     def test_merge_loyalty_cards(self):
-        """Test merging nominative loyalty cards from source partners to a destination partner
-        when partners are merged.
-        """
-        # `applies_on: 'both'` is what makes the program nominative; passing
-        # `is_nominative` here did nothing -- it is a non-stored compute.
         program = self.env["loyalty.program"].create(
             {
                 "name": "Test Program",
@@ -354,9 +327,6 @@ class TestLoyalty(TransactionCase):
             )
         )
 
-        # The surviving balance has to be explained: 30 of its 60 points arrived
-        # from the two cards that were drained, and each of those says where its
-        # own balance went.
         moved_in = self.env["loyalty.history"].search(
             [
                 ("card_id", "=", dest_partner_loyalty_cards.id),
@@ -409,23 +379,16 @@ class TestLoyalty(TransactionCase):
         )
 
     def test_prevent_unarchive_when_conflicting_active_program_exists(self):
-        """Unarchiving a program should fail if another active program already has the same rule
-        code."""
         program = self.create_program_with_code("FREE")
         program.action_archive()
-        # create another active program with the same rule code
         self.create_program_with_code("FREE")
-        # attempt to unarchive the first program
         with self.assertRaises(ValidationError):
             program.action_unarchive()
 
     def test_prevent_unarchive_when_batch_contains_duplicate_codes(self):
-        """Unarchiving multiple programs at once should fail if they share the same rule code."""
         program1 = self.create_program_with_code("FREE")
         program1.action_archive()
-        # create another program with the same rule code and archive it
         program2 = self.create_program_with_code("FREE")
         program2.action_archive()
-        # attempt to unarchive both programs together
         with self.assertRaises(ValidationError):
             (program1 + program2).action_unarchive()

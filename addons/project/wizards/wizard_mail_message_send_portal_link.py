@@ -60,8 +60,6 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
 
     def _get_shared_record(self) -> models.BaseModel:
         record = super()._get_shared_record()
-        # a task's dialog only hands out links; a project's also invites
-        # collaborators, which its privacy allows
         if record._name == "project.task":
             self._check_link_shareable(record)
         return record

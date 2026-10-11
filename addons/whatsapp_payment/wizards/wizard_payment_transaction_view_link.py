@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class WizardPaymentTransactionViewLink(models.TransientModel):
     _inherit = "wizard.payment.transaction.view.link"
 
-    # UX field used to display the send whatsapp button
     can_send_whatsapp = fields.Boolean(
         string="Can Send WhatsApp",
         compute="_compute_can_send_whatsapp",

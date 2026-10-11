@@ -11,7 +11,6 @@ class TestTeam(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Patch send_mail to avoid actual email sending
         patch_email = patch(
             "odoo.addons.mail.models.mail_template.MailTemplate.send_mail",
             lambda *args, **kwargs: None,
@@ -44,7 +43,6 @@ class TestTeam(common.TransactionCase):
         )
 
     def test_member_count(self):
-        """member_count reflects the number of team members."""
         team = self.env["gamification.team"].create(
             {
                 "name": "Alpha Team",
@@ -58,7 +56,6 @@ class TestTeam(common.TransactionCase):
         self.assertEqual(team.member_count, 3)
 
     def test_team_karma_aggregate(self):
-        """team_karma is the sum of all members' karma."""
         team = self.env["gamification.team"].create(
             {
                 "name": "Karma Team",
@@ -71,17 +68,14 @@ class TestTeam(common.TransactionCase):
         self.assertEqual(team.team_karma, expected)
 
     def test_team_badges_aggregate(self):
-        """team_badges counts total badge grants across all members."""
         team = self.env["gamification.team"].create(
             {
                 "name": "Badge Team",
                 "member_ids": [(6, 0, [self.user_1.id, self.user_2.id])],
             }
         )
-        # Initially no badges
         self.assertEqual(team.team_badges, 0)
 
-        # Grant a badge to user_1
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Test Badge",
@@ -100,7 +94,6 @@ class TestTeam(common.TransactionCase):
         self.assertEqual(team.team_badges, 1)
 
     def test_empty_team_stats(self):
-        """Empty team has zero karma and badges."""
         team = self.env["gamification.team"].create(
             {
                 "name": "Empty Team",
@@ -111,7 +104,6 @@ class TestTeam(common.TransactionCase):
         self.assertEqual(team.member_count, 0)
 
     def test_get_team_challenge_score_no_members(self):
-        """Team with no members returns 0 score."""
         team = self.env["gamification.team"].create({"name": "Ghost Team"})
         challenge = self.env["gamification.challenge"].create(
             {
@@ -122,7 +114,6 @@ class TestTeam(common.TransactionCase):
         self.assertEqual(team.get_team_challenge_score(challenge), 0.0)
 
     def test_get_team_challenge_score_with_goals(self):
-        """Team score is average completeness of members' goals."""
         team = self.env["gamification.team"].create(
             {
                 "name": "Score Team",
@@ -130,7 +121,6 @@ class TestTeam(common.TransactionCase):
             }
         )
 
-        # Create a challenge with one goal definition
         self.env["ir.model"]._get("res.partner")
         goal_def = self.env["gamification.goal.definition"].create(
             {
@@ -154,10 +144,8 @@ class TestTeam(common.TransactionCase):
             }
         )
 
-        # Start challenge to generate goals
         challenge.action_start()
 
-        # Update goals manually
         goals = self.env["gamification.goal"].search(
             [
                 ("challenge_id", "=", challenge.id),
@@ -166,16 +154,14 @@ class TestTeam(common.TransactionCase):
         )
         for goal in goals:
             if goal.user_id == self.user_1:
-                goal.write({"current": 80})  # 80% complete
+                goal.write({"current": 80})
             else:
-                goal.write({"current": 40})  # 40% complete
+                goal.write({"current": 40})
 
         score = team.get_team_challenge_score(challenge)
-        # Average of 80% and 40% = 60%
         self.assertAlmostEqual(score, 60.0, places=0)
 
     def test_get_team_challenge_score_no_goals(self):
-        """Team score is 0 when no goals exist for the challenge."""
         team = self.env["gamification.team"].create(
             {
                 "name": "No Goals Team",

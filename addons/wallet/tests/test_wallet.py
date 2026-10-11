@@ -93,7 +93,6 @@ class TestWallet(TransactionCase):
             {"number": "3456", "account_id": self.account.id, "active": False}
         )
         self._snapshot(800.0, now - timedelta(hours=1))
-        # a card the issuer stopped reporting keeps its old reading
         self._snapshot(200.0, now - timedelta(days=3), card=behind)
         self._snapshot(50.0, now, card=archived)
         self.account.invalidate_recordset()
@@ -119,7 +118,6 @@ class TestWallet(TransactionCase):
         behind = self.env["wallet.card"].create(
             {"number": "9012", "account_id": self.account.id}
         )
-        # an old import left this card an amount with no reading behind it
         self.env.flush_all()
         self.env.cr.execute(
             SQL(

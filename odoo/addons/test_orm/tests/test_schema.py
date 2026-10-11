@@ -116,10 +116,6 @@ class TestReflection(common.TransactionCase):
 
                         field_description = field.get_description(self.env)
                         if field.type in ("many2many", "one2many"):
-                            # a One2one is a one2many by type and a singleton
-                            # by contract, and converts to SQL through its
-                            # unique inverse, so ordering by it names one row
-                            # where ordering by a one2many names no row
                             self.assertEqual(
                                 field_description["sortable"],
                                 bool(getattr(field, "is_one2one", False)),

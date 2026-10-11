@@ -129,8 +129,6 @@ class Base(models.AbstractModel):
             chain_is_fully_included = True
             while chain_is_fully_included and record_id:
                 if record_id in ancestor_chain:
-                    # Repair only the response graph: do not mutate stored data or
-                    # the caller's records. One broken edge makes the cycle a tree.
                     record = allowed_records[record_id]
                     allowed_records[record_id] = {**record, parent_name: False}
                     _log.logic(

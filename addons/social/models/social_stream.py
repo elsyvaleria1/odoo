@@ -63,7 +63,6 @@ class SocialStream(models.Model):
         for stream in self:
             if stream.account_id and stream.account_id.media_id != stream.media_id:
                 stream.account_id = False
-            # Set stream_type_ids by default if only one type for the media.
             stream_type_ids = self.env["social.stream.type"].search(
                 [("media_id", "=", stream.media_id.id)], limit=2
             )
@@ -81,18 +80,9 @@ class SocialStream(models.Model):
 
     @api.model
     def refresh_all(self):
-        """Fetches the stream.post based on third party API endpoints (Facebook/Twitter/...) and inserts new stream.posts into database.
-        If any post is inserted into a stream created by the current user, the method returns 'True' to indicate caller that
-        changes were made and a refresh is required.
-
-        That means it will not always match the filter used on the view but it's the most common use case so it's not an issue.
-        (For cases when it does not match the user's filter, the view will need simple to be refreshed manually)."""
 
         new_content = False
         for stream in self.env["social.stream"].search([]):
-            # as refreshing the streams is a recurring task, we ignore occasional "read timeouts"
-            # from the third party services, as it would most likely mean a temporary slow connection
-            # and/or a slow response from their side
             try:
                 new_content |= stream._sync_stream_data()
             except requests.exceptions.ConnectionError, requests.exceptions.Timeout:
@@ -101,19 +91,6 @@ class SocialStream(models.Model):
         return new_content
 
     def _sync_stream_data(self):
-        """Every social module should override this method.
-
-        This is the method responsible for creating the social.stream.posts using the social.media
-        third party API.
-
-        It will be called manually every time we need to refresh the social.stream data:
-            - social.stream creation/edition
-            - 'Feed' kanban loading
-            - 'Refresh' button on 'Feed' kanban
-            - ...
-
-        This method should return 'True' if new social.posts are inserted,  please check the 'refresh_all' method for
-        further implementation instructions."""
 
         self.check_singleton()
 

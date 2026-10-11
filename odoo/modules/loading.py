@@ -58,9 +58,6 @@ _debug = DebugLog(__name__)
 
 _GC_YOUNG_BACKLOG_LIMIT = 100_000
 
-# pg advisory locks are scoped to the database, so one key serializes the
-# module operations of each database; the uninstall reload re-enters
-# load_modules on another connection of the same process, hence the count
 _MODULE_OPERATIONS_LOCK_KEY = 0x0D00_0001_1A0D
 _module_operations_held: dict[str, int] = {}
 _module_operations_guard = threading.Lock()
@@ -175,9 +172,9 @@ def _get_files_missing_records(cr: BaseCursor, stored_files: dict) -> set[str]:
             [list(files_by_xmlid)],
         )
         stale: set[str] = set()
-        missing = 0  # debuglog
+        missing = 0
         for [xmlid] in cr.fetchall():
-            missing += 1  # debuglog
+            missing += 1
             stale.update(files_by_xmlid[xmlid])
         span.set(missing=missing, stale=len(stale))
     return stale
@@ -219,9 +216,9 @@ def _get_files_with_moved_refs[K](
             ],
         )
         moved: set[K] = set()
-        count = 0  # debuglog
+        count = 0
         for xmlid, res_id in cr.fetchall():
-            count += 1  # debuglog
+            count += 1
             moved.update(files_by_ref[xmlid, res_id])
         span.set(moved_refs=count, stale=len(moved))
     return moved
@@ -322,11 +319,11 @@ def _load_tracked_file(
     digest, dynamic = _get_data_file_digest_and_dynamic_flag(filename, content)
     registry = env.registry
     entry = stored_files.get(filename)
-    reason = "new" if entry is None else "dynamic" if dynamic else "changed"  # debuglog
+    reason = "new" if entry is None else "dynamic" if dynamic else "changed"
     if not dynamic and _is_reusable_checksum_entry(entry, digest):
         contended = registry.loading.xmlids_written.intersection(entry["xmlids"])
         if filename in stale_files:
-            reason = "stale"  # debuglog
+            reason = "stale"
             _logger.info(
                 "re-applying unchanged %s/%s: records it declares are gone from "
                 "the database, so its digest no longer witnesses their presence",
@@ -334,7 +331,7 @@ def _load_tracked_file(
                 filename,
             )
         elif filename in moved_files:
-            reason = "moved_refs"  # debuglog
+            reason = "moved_refs"
             _logger.info(
                 "re-applying unchanged %s/%s: a record it references is no "
                 "longer the one it resolved to when it was last applied",
@@ -342,7 +339,7 @@ def _load_tracked_file(
                 filename,
             )
         elif _has_xmlids_of_another_module(entry, package.name):
-            reason = "foreign_xmlids"  # debuglog
+            reason = "foreign_xmlids"
             _logger.info(
                 "re-applying unchanged %s/%s: it writes records another "
                 "module declares, so its effect is its place in the load "
@@ -363,7 +360,7 @@ def _load_tracked_file(
             )
             return entry
         else:
-            reason = "contended"  # debuglog
+            reason = "contended"
             _logger.info(
                 "re-applying unchanged %s/%s: it owns %d record(s) already "
                 "rewritten in this run (%s)",
@@ -498,8 +495,6 @@ def load_data(
         recreated = _get_recreated_ids(stored_files, new_files)
     if kind == "data":
         addon_state.pop(LEGACY_ACCESS_MODULE, None)
-        # lines and rules written for stock Odoo, read from the files whether
-        # or not they were loaded again, and loaded as the rows they amount to
         env["ir.access"]._load_legacy_access(package.name, mode)
     return recreated
 
@@ -521,7 +516,7 @@ def load_demo(
             with env.cr.savepoint():
                 load_data(env(su=True), idref, mode, kind="demo", package=package)
         return True
-    except Exception as exc:  # debuglog
+    except Exception as exc:
         _logger.warning(
             "Module %s demo data failed to install, installed without demo data",
             package.name,
@@ -675,8 +670,8 @@ class _PackageLoader:
         self.operation: UpdateOperation | None = None
         self.log_level = logging.DEBUG
         self.model_names: OrderedSet[str] = OrderedSet()
-        self.module: IrModuleModuleProtocol = None  # type: ignore[assignment]
-        self.py_module: types.ModuleType = None  # type: ignore[assignment]
+        self.module: IrModuleModuleProtocol = None
+        self.py_module: types.ModuleType = None
         self.recreated_ids: dict[str, int] = {}
         self.test_time = 0.0
         self.test_queries = 0
@@ -774,11 +769,9 @@ class _PackageLoader:
         ) as span:
             model_names: OrderedSet[str] = OrderedSet(registry.load(package))
             span.set(models=len(model_names))
-        declared = len(model_names)  # debuglog
+        declared = len(model_names)
 
         if self.operation:
-            # a class that only adds methods to a model leaves its descendants'
-            # tables alone: an _inherit = "base" of methods is not every model
             schema_changing = registry.get_schema_changing_models(package)
             model_names |= registry.get_descendants(
                 schema_changing, "_inherit", "_inherits"
@@ -974,9 +967,6 @@ class _PackageLoader:
         return set(writing)
 
     def record_demo_failure(self) -> None:
-        # a failed demo is a warning to an install, so it can hide for months;
-        # a run with tests is where it must turn red; outside one, importing
-        # odoo.tests would itself log an error
         report = self.report
         if report is not None:
             from odoo.tests.result import REQUIRE_DEMO
@@ -1024,8 +1014,6 @@ class _PackageLoader:
 
     def run_post_init_hook(self) -> None:
         if self.operation in ("install", "upgrade"):
-            # a configuration row read later by a request would be created on
-            # that request's cursor, which may be read-only
             self.env["res.company"]._seed_configurations(self.name)
         if self.operation == "install":
             if post_init := self.package.manifest.get("post_init_hook"):
@@ -1117,10 +1105,6 @@ class _PackageLoader:
             module=self.name,
             tests=suite.countTestCases(),
         )
-        # A suite may compute for minutes without a query (test_lint scans every
-        # source file) while this transaction stays open, and the server's
-        # idle-in-transaction timeout would kill the loader mid-run. Local to
-        # this transaction: the module's commit restores the server setting.
         self.cr.execute(
             "SELECT set_config('idle_in_transaction_session_timeout', '0', true)"
         )
@@ -1214,7 +1198,6 @@ def get_installed_not_yet_loaded(
         if node.name not in loaded and node.state in ("installed", "to upgrade")
     ]
     if name == "base":
-        # The bootstrap graph holds base alone; the database names the rest.
         pending.extend(
             module
             for module in graph.installed_outside()
@@ -1227,8 +1210,6 @@ def _run_gc_cycle(registry: Registry, cycles: int) -> int:
     young = gc.get_count()[0]
     if young <= _GC_YOUNG_BACKLOG_LIMIT:
         return cycles
-    # clear_all_caches() would record every group as changed, and the registry's
-    # signal_changes() at the end of loading would flush every other process's caches
     registry._release_cache_groups()
     cycles += 1
     with _debug.perf(
@@ -1281,12 +1262,12 @@ def load_module_graph(
 
     models_updated: set[str] = set()
     gc_cycles = 0
-    skipped = 0  # debuglog
+    skipped = 0
 
     try:
         for index, package in enumerate(graph, 1):
             if package.name in registry.loaded_modules:
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             _PackageLoader(
                 env,
@@ -1437,7 +1418,7 @@ def _drop_not_null_on_removed_columns(
         for table_name, column_name, is_nullable in cr.fetchall():
             columns_by_table.setdefault(table_name, {})[column_name] = is_nullable
 
-        orphans = dropped = 0  # debuglog
+        orphans = dropped = 0
         for model in models:
             Model = env[model]
             if Model._abstract:
@@ -1446,7 +1427,7 @@ def _drop_not_null_on_removed_columns(
             for col_name, is_nullable in columns_by_table.get(Model._table, {}).items():
                 if col_name in cols:
                     continue
-                orphans += 1  # debuglog
+                orphans += 1
                 _logger.debug(
                     "column %s is in the table %s but not in the corresponding object %s",
                     col_name,
@@ -1454,7 +1435,7 @@ def _drop_not_null_on_removed_columns(
                     model,
                 )
                 if is_nullable == "NO":
-                    dropped += 1  # debuglog
+                    dropped += 1
                     _debug.lifecycle(
                         "modules.removed_column.not_null_dropped",
                         model=model,
@@ -1539,10 +1520,10 @@ class _ModuleLoader:
         self.reinit_modules = reinit_modules
         self.new_db_demo = new_db_demo
         self.models_to_check = models_to_check
-        self.graph: ModuleGraph = None  # type: ignore[assignment]
-        self.env: Environment = None  # type: ignore[assignment]
+        self.graph: ModuleGraph = None
+        self.env: Environment = None
         self.report: OdooTestResult | None = None
-        self.migrations: MigrationManager = None  # type: ignore[assignment]
+        self.migrations: MigrationManager = None
 
     def bootstrap(self) -> bool:
         cr = self.cr
@@ -1604,8 +1585,6 @@ class _ModuleLoader:
             raise DatabaseOlderThanUpgradableError(self.cr.dbname, too_old)
 
     def upgrade_base_ahead_of_database(self) -> None:
-        # base's pre-migrations rename and fold modules before the graph is
-        # built; a run without them installs a renamed module beside its old row
         if not self.update_module or "base" in self.upgrade_modules:
             return
         if ahead := get_base_ahead_of_database(self.cr):
@@ -1781,9 +1760,9 @@ class _ModuleLoader:
 
     def converge_module_graph(self) -> None:
         env = self.env
-        iteration = 0  # debuglog
+        iteration = 0
         while True:
-            iteration += 1  # debuglog
+            iteration += 1
             states: tuple[str, ...] = ("installed", "to upgrade", "to remove")
             if self.update_module:
                 states += ("to install",)
@@ -1999,12 +1978,12 @@ class _ModuleLoader:
         cr = self.cr
         cr.execute("SELECT model from ir_model")
         checked_models = []
-        unloadable = 0  # debuglog
+        unloadable = 0
         for (model,) in cr.fetchall():
             if model in self.registry:
                 checked_models.append(model)
             else:
-                unloadable += 1  # debuglog
+                unloadable += 1
                 _logger.log(
                     RUNBOT,
                     "Model %s is declared but cannot be loaded! (Perhaps a module was partially removed or renamed)",
@@ -2097,7 +2076,7 @@ class _ModuleLoader:
             """SELECT DISTINCT model FROM ir_model_fields WHERE state = 'manual'"""
         )
         rows = self.cr.fetchall()
-        before = len(self.models_to_check)  # debuglog
+        before = len(self.models_to_check)
         self.models_to_check.update(
             model_name for (model_name,) in rows if model_name in self.registry
         )
@@ -2169,19 +2148,18 @@ class _ModuleLoader:
             "modules.custom_views_check", cr=self.cr, models=len(self.registry)
         ) as span:
             custom_views = View._get_custom_views().grouped("model")
-            invalid = 0  # debuglog
+            invalid = 0
             for model, views in custom_views.items():
                 if model not in self.registry:
                     continue
                 try:
                     views._check_xml()
                 except Exception as e:
-                    invalid += 1  # debuglog
+                    invalid += 1
                     _logger.warning("invalid custom view(s) for model %s: %s", model, e)
             span.set(custom=len(custom_views), invalid=invalid)
 
     def log_unresolved_access_domains(self) -> None:
-        # a stored row loses a field only when a module's schema changes
         if not self.update_module or "ir.access" not in self.registry:
             return
         with _debug.perf("modules.access_domains_check", cr=self.cr):
@@ -2275,14 +2253,10 @@ def _lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[Non
     try:
         with cr.holding_session_state():
             yield
-        # the next holder's snapshot is taken as it takes the lock, so what
-        # this operation wrote is committed before the lock is released
         cr.commit()
     finally:
         with _module_operations_guard:
             _module_operations_held.pop(db_name, None)
-        # an aborted transaction refuses the unlock; the pool's reset of the
-        # returned connection (pg_advisory_unlock_all / DISCARD ALL) releases it
         try:
             cr.execute("SELECT pg_advisory_unlock(%s)", [_MODULE_OPERATIONS_LOCK_KEY])
         except psycopg.Error as e:

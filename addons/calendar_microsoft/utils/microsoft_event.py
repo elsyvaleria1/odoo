@@ -11,22 +11,9 @@ class MicrosoftEvent(ProviderEvents):
 
     @property
     def uids(self):
-        """
-        Use 'iCalUid' to return an identifier which is unique accross all calendars
-        """
         return tuple(e.iCalUId for e in self)
 
     def owner_id(self, env):
-        """
-        Indicates who is the owner of an event (i.e the organizer of the event).
-
-        There are several possible cases:
-        1) the current Odoo user is the organizer of the event according to Outlook event, so return his id.
-        2) the current Odoo user is NOT the organizer and:
-           2.1) we are able to find a Odoo user using the Outlook event organizer email address and we use his id,
-           2.2) we are NOT able to find a Odoo user matching the organizer email address and we return False, meaning
-                that no Odoo user will be able to modify this event. All modifications will be done from Outlook.
-        """
         if self.isOrganizer:
             return env.user.id
 
@@ -37,7 +24,6 @@ class MicrosoftEvent(ProviderEvents):
             self.organizer.get("emailAddress").get("address")
         )
         if organizer_email:
-            # Warning: In Microsoft: 1 email = 1 user; but in Odoo several users might have the same email
             user = env["res.users"].search([("email", "=", organizer_email)], limit=1)
             return user.id if user else False
         return False
@@ -101,9 +87,7 @@ class MicrosoftEvent(ProviderEvents):
         if month_by:
             result["month_by"] = month_by
 
-        # daysOfWeek contains the full name of the day, the fields contain the first 3 letters (mon, tue, etc)
         week_days = [x[:3] for x in pattern.get("daysOfWeek", [])]
-        # Outlook's "last day of the month" is the last of any weekday
         if (
             pattern["type"] == "relativeMonthly"
             and result["byday"]

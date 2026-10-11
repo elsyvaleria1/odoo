@@ -48,10 +48,6 @@ class MarketingCampaign(models.Model):
         return campaign_templates_info
 
     def _create_campaign_from_template_anniversary(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         anniversary_mailing_template = self.env.ref(
             "marketing_automation_website_sale.mailing_anniversary_arch",
             raise_if_not_found=False,
@@ -92,7 +88,6 @@ class MarketingCampaign(models.Model):
                 "use_in_marketing_automation": True,
             }
         )
-        # Add a partner tag to the participants of any instance of this campaign
         anniversary_tag = self.env.ref(
             "marketing_automation_website_sale.res_partner_category_anniversary_discount_recipient",
             raise_if_not_found=False,
@@ -152,10 +147,6 @@ class MarketingCampaign(models.Model):
         return campaign
 
     def _create_campaign_from_template_purchase_followup(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         campaign = self.env["marketing.campaign"].create(
             {
                 "name": self.env._("Recent Purchase Follow-up"),
@@ -169,7 +160,6 @@ class MarketingCampaign(models.Model):
             "marketing_automation_website_sale.mailing_purchase_followup_arch",
             raise_if_not_found=False,
         )
-        # we need to pass in dynamic expressions otherwise it will try to render them at this stage...
         followup_arch = (
             self.env["ir.ui.view"]._render_template(
                 followup_mailing_template.id,
@@ -207,10 +197,6 @@ class MarketingCampaign(models.Model):
         return campaign
 
     def _create_campaign_from_template_repeat_customer(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         campaign = self.env["marketing.campaign"].create(
             {
                 "name": self.env._("Create Repeat Customers"),

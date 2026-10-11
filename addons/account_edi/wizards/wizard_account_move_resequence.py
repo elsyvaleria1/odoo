@@ -6,10 +6,6 @@ class WizardAccountMoveResequence(models.TransientModel):
     _inherit = "wizard.account.move.resequence"
 
     def _frozen_edi_documents(self):
-        """Get EDI documents that can't change.
-
-        Their moves are restricted and cannot be resequenced.
-        """
         return self.move_ids.edi_document_ids.filtered(
             lambda d: d.edi_format_id._is_web_service_required() and d.state == "sent"
         )

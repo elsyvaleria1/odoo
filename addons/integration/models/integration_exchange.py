@@ -140,8 +140,6 @@ class IntegrationExchange(models.Model):
         store=True,
     )
 
-    # An HTTP method is a token, not a closed list: a DAV client PROPFINDs
-    # and REPORTs, and every one of its calls is an exchange like any other.
     request_method = fields.Char(
         size=16,
         index=True,
@@ -313,8 +311,6 @@ class IntegrationExchange(models.Model):
     )
 
     _CHANNEL_MIXINS = ("mixin.integration.channel", "mixin.inbound.gate")
-    # Channels that are neither a gate nor an outbound service: a stream is
-    # its own kind of counterpart.
     _CHANNEL_MODELS = ("integration.stream",)
 
     @api.model
@@ -705,8 +701,6 @@ class IntegrationExchange(models.Model):
                 _logger.exception("Failed to queue event %d for retry", event.id)
                 event.mark_failed(str(e), schedule_retry=True)
 
-    # A refusal is the record of who was turned away; only its collapse
-    # counters move, and only the retention sweep removes it.
     _REFUSAL_COLLAPSE_FIELDS = frozenset(
         {
             "attempt_count",
@@ -756,8 +750,6 @@ class IntegrationExchange(models.Model):
         user_agent: str | None = None,
         status_code: int = 404,
     ) -> None:
-        """A call for a subject no channel answers for: the row has no
-        channel and names what the caller asked for."""
         self._record_refusal(
             None,
             "endpoint_not_found",
@@ -793,10 +785,6 @@ class IntegrationExchange(models.Model):
         path: str | None = None,
         fingerprint: str | None = None,
     ) -> bool:
-        """Record a refusal; with a `window`, a repeat inside it collapses onto
-        the standing row (counted per caller for a caller's own limit, not
-        counted for a gate's standing condition). Returns whether the row is
-        news, which is what decides whether the log line is written."""
         rows = self.sudo()
         now = fields.Datetime.now()
         channel_ref = f"{channel._name},{channel.id}" if channel else False
@@ -857,8 +845,6 @@ class IntegrationExchange(models.Model):
         return True
 
     def _count_presented(self, fingerprint: str | None) -> dict[str, Any]:
-        """Return the counter update a repeat presenting `fingerprint` makes:
-        a new credential is remembered and counted, until the bound."""
         self.check_singleton()
         seen = list(self.presented_fingerprints or [])
         if not fingerprint or fingerprint in seen or len(seen) >= FINGERPRINTS_MAX:
@@ -868,8 +854,6 @@ class IntegrationExchange(models.Model):
 
     @api.model
     def _fingerprint_presented(self, channel, credential: str | None) -> str | None:
-        """Return a keyed fingerprint of a credential a gate refused, or None
-        when none was presented; bound to the gate, never reversible."""
         if not credential:
             return None
         channel_ref = f"{channel._name},{channel.id}" if channel else ""
@@ -879,7 +863,6 @@ class IntegrationExchange(models.Model):
 
     @api.autovacuum
     def _gc_old_logs(self):
-        # The sweep is SQL over what the transaction has written so far.
         self.flush_model()
         default_retention = int(
             self.env.registry.settings.get(
@@ -897,8 +880,6 @@ class IntegrationExchange(models.Model):
         if default_retention > 0:
             self._remove_logs_past_retention(
                 default_retention,
-                # a refusal no channel answers for has no channel_id, and
-                # NOT (NULL = ANY(...)) is NULL: it must be swept explicitly
                 SQL(
                     "(channel_id IS NULL OR NOT (channel_id = ANY(%s)))",
                     overridden_refs,
@@ -913,13 +894,11 @@ class IntegrationExchange(models.Model):
             Model = self.env[model_name].sudo().with_context(active_test=False)
             if "log_retention_days" in Model._fields:
                 channels.extend(
-                    Model.search([("log_retention_days", ">", 0)])  # noqa: E8507  one query per channel model
+                    Model.search([("log_retention_days", ">", 0)])
                 )
         return channels
 
     def _remove_logs_past_retention(self, days, scope) -> None:
-        # A terminal row can lack date_completed; its creation then dates it,
-        # otherwise such a row would never be swept.
         cutoff = fields.Datetime.now() - timedelta(days=days)
         self.env.cr.execute(
             SQL(

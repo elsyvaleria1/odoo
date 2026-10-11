@@ -64,9 +64,6 @@ class _ShapedRetry(Retry):
         return clone
 
     def is_retry(self, method, status_code, has_retry_after=False) -> bool:
-        # A 429 means the vendor refused the request without acting on it, so
-        # resending is safe even for a POST; any other status after a POST may
-        # follow a charge, a stamp or a message already sent.
         if status_code == 429 and not self._is_method_retryable(method):
             return bool(self.total)
         return super().is_retry(method, status_code, has_retry_after)
@@ -75,7 +72,6 @@ class _ShapedRetry(Retry):
         if self.backoff_type == "exponential":
             return super().get_backoff_time()
 
-        # Same "ignore redirects" rule as Retry.get_backoff_time().
         consecutive_errors_len = len(
             list(
                 itertools.takewhile(
@@ -132,8 +128,6 @@ def is_private_host(host) -> bool:
 
 
 def _is_exhausted_read_timeout(exc) -> bool:
-    # requests reports a read timeout that outlived its retries as a
-    # ConnectionError wrapping urllib3's MaxRetryError, not as a Timeout.
     reason = getattr(exc.args[0], "reason", None) if exc.args else None
     return isinstance(reason, ReadTimeoutError)
 
@@ -148,8 +142,6 @@ def _masked_cause(exc: BaseException) -> BaseException:
 
 
 class _CredentialSession(GuardedSession):
-    # requests strips only Authorization on a cross-host redirect; a vendor key
-    # in X-API-Key or a custom header would follow the redirect to the new host.
     credential_header_names = frozenset()
 
     def rebuild_auth(self, prepared_request, response) -> None:
@@ -292,9 +284,6 @@ class OutboundAPIClient:
 
     def _get_or_create_session(self):
         cache = get_session_cache(self.env)
-        # what the service and the egress allow-list say about the session are
-        # part of its key: a changed service, or a network taken off the
-        # allow-list, gets a new session, not one an hour out of date
         cache_key = (
             f"{self.endpoint_code}:{self.company_id}:{self.credential.credential_hash}"
             f":{self.egress_policy}:{self._session_shape()}"
@@ -412,8 +401,6 @@ class OutboundAPIClient:
             _logger.info("API Request: %s %s", method, redact.mask_url(url))
             response = self._send(method, url, kwargs, attempt)
             if response.status_code == 401 and self._may_refresh_oauth2():
-                # an access token can be revoked before its expiry: refresh
-                # once and send again; a second refusal is the answer
                 self.connection._oauth2_access_token(force=True)
                 kwargs["headers"].update(self.connection._get_auth_headers())
                 attempt = self.admit(
@@ -1118,14 +1105,6 @@ class OutboundAPIClient:
         return redact.mask_data(by_provenance)
 
     def probe_health(self) -> bool:
-        """Make an uncached health request without exchange logging.
-
-        A configured health endpoint must return HTTP 200. Otherwise send
-        OPTIONS to the root and report success if the request returns. Caught
-        request errors return false. Each request uses a five-second timeout.
-
-        :rtype: bool
-        """
         try:
             if self.service.health_check_endpoint:
                 response = self.get(
@@ -1184,11 +1163,11 @@ def get_api_client(
 
 
 def _zeep_transport_class():
-    from contextlib import closing  # pylint: disable=import-outside-toplevel
+    from contextlib import closing
 
-    from zeep.transports import Transport  # pylint: disable=import-outside-toplevel
+    from zeep.transports import Transport
 
-    class ClientTransport(Transport):  # noqa: E8518  zeep sends through the guarded session it is given
+    class ClientTransport(Transport):
         def __init__(self, client, url, timeout=30):
             super().__init__(
                 session=client.session, timeout=timeout, operation_timeout=timeout

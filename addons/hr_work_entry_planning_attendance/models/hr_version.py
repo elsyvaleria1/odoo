@@ -12,7 +12,6 @@ class HrVersion(models.Model):
     _name = "hr.version"
 
     def _get_attendance_intervals(self, start_dt, end_dt):
-        # Planning-based contracts with attendance overtime
         mapped_intervals = super()._get_attendance_intervals(start_dt, end_dt)
         planning_based_contracts = self.filtered(
             lambda c: c.work_entry_source == "planning" and c.overtime_from_attendance
@@ -28,7 +27,7 @@ class HrVersion(models.Model):
                         "check_out",
                         ">=",
                         start_dt.replace(tzinfo=None),
-                    ),  # We ignore attendances which don't have a check_out
+                    ),
                 ]
             )
         )
@@ -49,14 +48,14 @@ class HrVersion(models.Model):
             start_dt, end_dt, attendances, mapped_intervals, overtime_intervals
         )
         work_entry_overtime_intervals = defaultdict(list)
-        rejected = 0  # debuglog
+        rejected = 0
         for r, intervals in overtime_intervals.items():
             for start, end, overtime in intervals:
                 if not (
                     overtime.rule_ids.work_entry_type_id
                     and overtime.status == "approved"
                 ):
-                    rejected += 1  # debuglog
+                    rejected += 1
                     continue
                 work_entry_overtime_intervals[r].extend([(start, end, overtime)])
 

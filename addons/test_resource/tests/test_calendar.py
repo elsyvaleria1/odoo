@@ -54,7 +54,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertEqual(hours, 40)
 
-        # leave of size 0
         self.env["resource.schedule.exception"].create(
             {
                 "name": "zero_length",
@@ -73,7 +72,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertEqual(hours, 35)
 
-        # leave of medium size
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "zero_length",
@@ -96,7 +94,6 @@ class TestCalendar(TestResourceCommon):
 
         leave.unlink()
 
-        # leave of very small size
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "zero_length",
@@ -119,8 +116,6 @@ class TestCalendar(TestResourceCommon):
 
         leave.unlink()
 
-        # no timezone given should be converted to UTC
-        # Should equal to a leave between 2018/04/03 10:00:00 and 2018/04/04 10:00:00
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "no timezone",
@@ -145,28 +140,24 @@ class TestCalendar(TestResourceCommon):
 
         leave.unlink()
 
-        # 2 weeks calendar week 1
         hours = self.calendar_jules.get_work_hours_count(
             self.datetime_tz(2018, 4, 2, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2018, 4, 6, 23, 59, 59, tzinfo=self.jules.tz),
         )
         self.assertEqual(hours, 30)
 
-        # 2 weeks calendar week 1
         hours = self.calendar_jules.get_work_hours_count(
             self.datetime_tz(2018, 4, 16, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2018, 4, 20, 23, 59, 59, tzinfo=self.jules.tz),
         )
         self.assertEqual(hours, 30)
 
-        # 2 weeks calendar week 2
         hours = self.calendar_jules.get_work_hours_count(
             self.datetime_tz(2018, 4, 9, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2018, 4, 13, 23, 59, 59, tzinfo=self.jules.tz),
         )
         self.assertEqual(hours, 16)
 
-        # 2 weeks calendar week 2, leave during a day where he doesn't work this week
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "Time Off Jules week 2",
@@ -189,7 +180,6 @@ class TestCalendar(TestResourceCommon):
 
         leave.unlink()
 
-        # 2 weeks calendar week 2, leave during a day where he works this week
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "Time Off Jules week 2",
@@ -212,7 +202,6 @@ class TestCalendar(TestResourceCommon):
 
         leave.unlink()
 
-        # leave without calendar, should count for anyone in the company
         jean_global_leave.unlink()
         leave = self.env["resource.schedule.exception"].create(
             {
@@ -412,10 +401,10 @@ class TestCalendar(TestResourceCommon):
         res = calendar.get_work_hours_count(
             fields.Datetime.from_string(
                 "2017-05-03 14:03:00"
-            ),  # Wednesday (8:00-12:00, 13:00-16:00)
+            ),
             fields.Datetime.from_string(
                 "2017-05-04 11:03:00"
-            ),  # Thursday (8:00-12:00, 13:00-16:00)
+            ),
             compute_leaves=False,
         )
         self.assertEqual(res, 5.0)
@@ -482,7 +471,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 12, 12, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # negative planning
         time = self.calendar_jean.plan_hours(
             -10,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -492,7 +480,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 6, 14, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # zero planning with holidays
         time = self.calendar_jean.plan_hours(
             0,
             self.datetime_tz(2018, 4, 11, 0, 0, 0, tzinfo=self.jean.tz),
@@ -510,7 +497,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 10, 8, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # very small planning
         time = self.calendar_jean.plan_hours(
             0.0002,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -520,7 +506,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 10, 8, 0, 0, 720000, tzinfo=self.jean.tz)
         )
 
-        # huge planning
         time = self.calendar_jean.plan_hours(
             3000,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -572,7 +557,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 17, 16, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # negative planning
         time = self.calendar_jean.plan_days(
             -10,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -582,7 +566,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 3, 27, 8, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # zero planning
         time = self.calendar_jean.plan_days(
             0,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -592,7 +575,6 @@ class TestCalendar(TestResourceCommon):
             time, self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz)
         )
 
-        # a fraction of a day plans no day: there is nothing to find
         time = self.calendar_jean.plan_days(
             0.0002,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -600,7 +582,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertIsNone(time)
 
-        # a plan beyond the search horizon finds nothing
         time = self.calendar_jean.plan_days(
             3000,
             self.datetime_tz(2018, 4, 10, 0, 0, 0, tzinfo=self.jean.tz),
@@ -609,8 +590,6 @@ class TestCalendar(TestResourceCommon):
         self.assertIsNone(time)
 
     def test_attendance_interval_edge_tz(self):
-        # When genereting the attendance intervals in an edge timezone, the last interval shouldn't
-        # be truncated if the timezone is correctly set
         self.env.user.tz = "America/Los_Angeles"
         self.calendar_jean.tz = "America/Los_Angeles"
         attendances = self.calendar_jean._attendance_intervals_batch(
@@ -651,7 +630,6 @@ class TestCalendar(TestResourceCommon):
         )
 
     def test_resource_calendar_update(self):
-        """Ensure leave calendar gets set correctly when updating resource calendar."""
         holiday = self.env["resource.schedule.exception"].create(
             {
                 "name": "May Day",
@@ -665,7 +643,6 @@ class TestCalendar(TestResourceCommon):
             }
         )
 
-        # Jean takes a leave
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "Jean is AFK",
@@ -680,7 +657,6 @@ class TestCalendar(TestResourceCommon):
             }
         )
 
-        # Jean changes working schedule to Jules'
         self.jean.resource_calendar_id = self.calendar_jules
         self.assertEqual(
             leave.calendar_id, self.calendar_jules, "Leave calendar should update"
@@ -690,8 +666,6 @@ class TestCalendar(TestResourceCommon):
         )
 
     def test_compute_work_time_with_one_week_calendar(self):
-        """Test Case: check if the computation of the work time rate in the resource.calendar is correct."""
-        # Define a mid time
         resource_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Calendar Mid-Time",
@@ -781,7 +755,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 50, 2)
 
-        # Define a 4/5
         resource_calendar.write(
             {
                 "name": "Calendar (4 / 5)",
@@ -835,7 +808,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 80, 2)
 
-        # Define a 9/10
         resource_calendar.write(
             {
                 "name": "Calendar (9 / 10)",
@@ -856,7 +828,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 90, 2)
 
-        # Define a Full-Time
         resource_calendar.write(
             {
                 "name": "Calendar Full-Time",
@@ -878,7 +849,6 @@ class TestCalendar(TestResourceCommon):
         self.assertAlmostEqual(resource_calendar.work_time_rate, 100, 2)
 
     def test_compute_work_time_with_two_weeks_calendar(self):
-        """Test Case: check if the computation of the work time rate in the resource.calendar is correct."""
 
         def create_attendance_ids(attendance_list):
             return [
@@ -939,7 +909,6 @@ class TestCalendar(TestResourceCommon):
             },
         ]
 
-        # Define a mid time
         resource_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Calendar Mid-Time",
@@ -982,7 +951,6 @@ class TestCalendar(TestResourceCommon):
             },
         ]
 
-        # Define a 4/5
         resource_calendar.write(
             {
                 "name": "Calendar (4 / 5)",
@@ -991,7 +959,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 80, 2)
 
-        # Define a 9/10
         resource_calendar.write(
             {
                 "name": "Calendar (9 / 10)",
@@ -1010,7 +977,6 @@ class TestCalendar(TestResourceCommon):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 90, 2)
 
-        # Define a Full-Time
         resource_calendar.write(
             {
                 "name": "Calendar Full-Time",

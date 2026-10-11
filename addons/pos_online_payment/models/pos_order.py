@@ -12,7 +12,7 @@ class PosOrder(models.Model):
         string="Next online payment amount to pay",
         digits=0,
         required=False,
-    )  # unlimited precision
+    )
 
     @api.depends("config_id.payment_method_ids")
     def _compute_online_payment_method_id(self) -> None:
@@ -39,16 +39,6 @@ class PosOrder(models.Model):
         order_payments.unlink()
 
     def get_and_set_online_payments_data(self, next_online_payment_amount=False):
-        """Allows to update the amount to pay for the next online payment and
-        get online payments already made and how much remains to be paid.
-        If next_online_payment_amount is different than False, updates the
-        next online payment amount, otherwise, the next online payment amount
-        is unchanged.
-        If next_online_payment_amount is 0 and the order has no successful
-        online payment, is in draft state, is not a restaurant order and the
-        pos.config has no trusted config, then the order is deleted from the
-        database, because it was probably added for the online payment flow.
-        """
         self.check_singleton()
         is_paid = self.state in ("paid", "done")
         if is_paid:
@@ -80,7 +70,7 @@ class PosOrder(models.Model):
                 and not self.config_id.module_pos_restaurant
                 and len(self.config_id.trusted_config_ids) == 0
             ):
-                self.sudo()._remove_payment_lines()  # Needed to delete the order
+                self.sudo()._remove_payment_lines()
                 return_data["deleted"] = True
             elif self._check_next_online_payment_amount(next_online_payment_amount):
                 self.next_online_payment_amount = next_online_payment_amount
@@ -101,7 +91,6 @@ class PosOrder(models.Model):
 
     @api.model
     def _load_pos_data_fields(self, config):
-        # EXTENDS point_of_sale
         return super()._load_pos_data_fields(config) + [
             "next_online_payment_amount",
             "online_payment_method_id",
@@ -115,7 +104,6 @@ class PosOrder(models.Model):
             "is_online_payment"
         )
         if draft and online_payment_methods:
-            # online payment lines should not be created in draft orders
             order["payment_ids"] = [
                 payment
                 for payment in order.get("payment_ids", [])

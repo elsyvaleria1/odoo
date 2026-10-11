@@ -43,14 +43,10 @@ def isapi_content_type(content: bytes) -> str:
 
 ACCESS_CATEGORY_CODE = "access_control"
 AUTH_MODE_PARAM = "device_access_control.auth_mode"
-# A reader posts a face capture beside its event; the log keeps a head of
-# the body, never the picture.
 ACCESS_MAX_PAYLOAD = 8 * 1024 * 1024
 ACCESS_MAX_LOGGED_PAYLOAD = 65536
 EHOME_BRIDGE_DEFAULT_URL = "http://localhost:8085"
 EHOME_DOOR_TIMEOUT = 10
-# The bridge waits on the panel for the time it is handed; Odoo waits that much
-# longer for the bridge, so a slow panel comes back as the bridge's error.
 EHOME_BRIDGE_MARGIN = 5
 
 
@@ -237,9 +233,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _prepare_access_device_refusal_response(self, refused):
-        """A reader that sees anything but 200 retries the event or stops
-        reporting, so a refusal answers as its protocol expects and the
-        verdict is in the access log alone."""
         return request.prepare_response("OK", status=200)
 
     def _inbound_auth_mode(self, parameter_key=None):
@@ -905,8 +898,6 @@ class DeviceDevice(models.Model):
     def action_fetch_users(self):
         self.check_singleton()
         device_user_model = self.env["access.device.user"]
-        # asked before the device is, so a refused caller never reaches it
-        # with its credentials
         device_user_model.check_access("create")
         users_data = self._get_all_device_users()
         if not users_data:
@@ -1147,8 +1138,6 @@ class DeviceDevice(models.Model):
         return str(body)[:200]
 
     def _unwrap_ehome_response(self, resp) -> ISAPIResponse:
-        # The bridge answers 200 with the panel's bytes in base64; it cannot
-        # tell their type, so the content says what it is.
         try:
             content = base64.b64decode(resp.json()["response"], validate=True)
         except ValueError, KeyError, TypeError:
@@ -1224,8 +1213,6 @@ class DeviceDevice(models.Model):
             devices._check_ehome_status_on_bridge()
 
     def _check_ehome_status_on_bridge(self) -> None:
-        # Being listed by the bridge is the panel's sign of life: it refreshes
-        # date_last_data_received, which the health cron reads.
         try:
             client = self[:1]._require_connection()._get_api_client()
             body = client.get("/api/devices", timeout=5)["body"]

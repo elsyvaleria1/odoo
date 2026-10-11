@@ -304,9 +304,6 @@ class WizardSurveySurveyInvite(models.TransientModel):
                 if answer.email:
                     latest_by_email.setdefault(answer.email, answer)
 
-            # Iterate the keys that were actually indexed. mapped() on a Char keeps
-            # the False of a partner-only participation, and looking that up raised
-            # KeyError(False) on the mainline resend flow.
             partners_done = self.env["res.partner"].union(*latest_by_partner)
             emails_done = list(latest_by_email)
             answers = self.env["survey.user_input"].union(
@@ -320,11 +317,6 @@ class WizardSurveySurveyInvite(models.TransientModel):
         }
 
     def _send_mails(self, answers: Any) -> Any:
-        """Render each field once for the whole batch.
-
-        _render_field takes a list of ids; calling it per recipient from a Python loop
-        made a 1000-address invite 2000 single-record template renders.
-        """
         if not answers:
             return self.env["mail.mail"]
         rendered = {
@@ -400,7 +392,7 @@ class WizardSurveySurveyInvite(models.TransientModel):
                 domain = [("email_normalized", "=", email_normalized)]
                 if invite.survey_users_login_required:
                     domain.append(("user_ids", "!=", False))
-                partner = Partner.search(domain, limit=1)  # noqa: E8507 - one lookup per email of the invite
+                partner = Partner.search(domain, limit=1)
             if partner:
                 valid_partners |= partner
             else:

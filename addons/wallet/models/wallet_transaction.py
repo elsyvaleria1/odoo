@@ -9,8 +9,6 @@ class WalletTransaction(models.Model):
     _description = "Electronic Wallet Transaction"
     _order = "date_transaction desc, id desc"
 
-    # FIELDS
-    # Core identification
     name = fields.Char(
         compute="_compute_name",
         precompute=True,
@@ -22,7 +20,7 @@ class WalletTransaction(models.Model):
         required=True,
         ondelete="cascade",
     )
-    account_id = fields.Many2one(  # noqa: E8529  UNIQUE (external_ref, account_id) partial
+    account_id = fields.Many2one(
         related="card_id.account_id",
         precompute=True,
         store=True,
@@ -43,7 +41,6 @@ class WalletTransaction(models.Model):
         index=True,
         help="The issuer's own identifier of the transaction.",
     )
-    # Transaction block
     date_transaction = fields.Datetime(
         default=fields.Datetime.now,
         required=True,
@@ -60,7 +57,6 @@ class WalletTransaction(models.Model):
         check_company=True,
         help="The merchant the issuer paid, when it is known as a partner.",
     )
-    # Amount block
     currency_id = fields.Many2one(related="company_id.currency_id")
     amount = fields.Monetary(
         required=True,
@@ -77,16 +73,11 @@ class WalletTransaction(models.Model):
     )
     raw_data = fields.Text(groups="wallet.group_wallet_manager")
 
-    # INDEXES
-    # Partial, because a transaction with no issuer reference cannot be
-    # deduplicated at all; NULLS NOT DISTINCT so a card whose account is
-    # somehow empty still deduplicates its references.
     _external_ref_account_uniq = models.UniqueIndex(
         "(external_ref, account_id) NULLS NOT DISTINCT WHERE external_ref IS NOT NULL",
         "A transaction reference must be unique per wallet account.",
     )
 
-    # COMPUTE METHODS
     @api.depends("place", "date_transaction", "account_id.tz", "card_id.kind")
     def _compute_name(self):
         kinds = dict(self._fields["kind"]._description_selection(self.env))
@@ -102,7 +93,6 @@ class WalletTransaction(models.Model):
             local = transaction._get_date_transaction_local()
             transaction.date = local.date() if local else False
 
-    # HELPER METHODS
     def _get_date_transaction_local(self):
         self.check_singleton()
         if not self.date_transaction:

@@ -1207,8 +1207,6 @@ class TestAccountAsset(TestAccountReportsCommon):
         for move in asset.depreciation_move_ids:
             self.assertEqual(move.depreciation_value, -2000)
 
-        # the form lists the entries in the order the board reads them, not in the
-        # list view's default_order, which only the web client applies
         listed = list(asset.depreciation_move_ids)
         by_date = asset.depreciation_move_ids._sorted_by_date()
         with Form(
@@ -4134,8 +4132,6 @@ class TestAccountAsset(TestAccountReportsCommon):
         self.assertFalse(self.account_asset_model_fixedassets.active)
 
     def _skip_if_journals_number_by_year(self):
-        # these dates are where a journal numbered by month puts an entry that
-        # falls inside the lock; a journal numbered by year dates it today
         if self.env["ir.module.module"].search_count(
             [("name", "=", "account_move_name_sequence"), ("state", "=", "installed")]
         ):

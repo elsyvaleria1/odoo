@@ -5,12 +5,6 @@ from odoo.tests.common import TransactionCase
 
 
 def build(model, **registries):
-    """Assemble ``model``'s query with some registry hooks replaced.
-
-    Values are returned verbatim by the patched hook.  Patching the registry
-    class is restored in ``finally``; every caller goes through here so no test
-    can leak a hook into the ones that follow it.
-    """
     cls = type(model)
     original = {name: cls.__dict__.get(name, _ABSENT) for name in registries}
     try:
@@ -91,7 +85,6 @@ class TestRegistryComposition(TransactionCase):
         self.env.cr.execute(sql)
 
     def test_having_has_a_named_home(self):
-        """Aggregate filters land in HAVING, after GROUP BY and before ORDER BY."""
         Source = self.env["mixin.report.sql.test.source"]
         Source.create({"grain": "a", "value": 1.0})
         Source.create({"grain": "b", "value": 1.0})
@@ -170,11 +163,6 @@ class TestFromEntryShapes(TransactionCase):
         self.assertEqual(entry.code, "(SELECT 1) x")
 
     def test_a_sql_table_never_renders_the_alias_argument(self):
-        """It binds its own name; rendering both is a syntax error.
-
-        The base entry used to render it and the JOIN entry used to drop it, so
-        the same registry value was valid in one slot and not the other.
-        """
         entry = self.report._prepare_from_entry(SQL("(SELECT 1) x"), "x", None, None)
         self.assertEqual(entry.code, "(SELECT 1) x")
         entry = self.report._prepare_from_entry(
@@ -182,7 +170,6 @@ class TestFromEntryShapes(TransactionCase):
         )
         self.assertEqual(entry.code, "LEFT JOIN (SELECT 1) x ON x.c = 1")
 
-        # what rendering both would have produced, and why it is not rendered
         with self.assertRaises(psycopg.errors.SyntaxError):
             with self.env.cr.savepoint():
                 self.env.cr.execute(
@@ -190,12 +177,6 @@ class TestFromEntryShapes(TransactionCase):
                 )
 
     def test_both_currency_table_shapes_assemble(self):
-        """The live reason the alias must be dropped rather than rendered.
-
-        `res.currency._get_simple_currency_table` returns an aliased VALUES list
-        or a bare relation name depending on the companies' currencies, and
-        sale.report / purchase.report pass the same alias for both.
-        """
         aliased = SQL("(VALUES (1, 1.0)) AS account_currency_table(company_id, rate)")
         bare = SQL("account_currency_table")
         for table in (aliased, bare):
@@ -248,8 +229,6 @@ class TestPercentEscaping(TransactionCase):
         self.env["mixin.report.sql.test.source"].create({"grain": "abc", "value": 1.0})
         self.env.flush_all()
         self.env.cr.execute(sql)
-        # Odoo's cursor passes params=() rather than None, so psycopg still
-        # collapses '%%' to '%': the doubled pattern must match 'abc'.
         self.assertEqual(self.env.cr.fetchone()[1], "hit")
 
     def test_unescaped_percent_in_where_raises(self):

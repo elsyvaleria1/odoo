@@ -37,8 +37,6 @@ def _no_global_state_leak():
 
     def snapshot():
         return {
-            # A hook registered and not taken back runs for every server object
-            # any later test builds.
             "_base_server._on_stop_hooks": tuple(_base_server._on_stop_hooks),
             "_base_server._process_exit_hooks": tuple(_base_server._process_exit_hooks),
             "_process_state.server": _process_state.server,
@@ -76,8 +74,6 @@ def _no_global_state_leak():
 def _no_thread_or_descriptor_leak():
     threads, fds = _threads(), open_fds()
     yield
-    # Coming back is an eventual property: a pool thread retires, an upgrade
-    # thread closes its socket, a moment after the client has its answer.
     deadline = time.monotonic() + SETTLE_S
     while time.monotonic() < deadline:
         if _threads() == threads and open_fds() == fds:

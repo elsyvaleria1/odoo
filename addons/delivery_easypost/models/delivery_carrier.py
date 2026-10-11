@@ -28,11 +28,6 @@ class DeliveryCarrier(models.Model):
             )
         },
     )
-    # Doors onto `carrier_credential_id` (ADR-0081). Unlike DHL these two are not
-    # a key and a secret -- they are the SAME credential for two environments,
-    # and `prod_environment` picks between them. The vault's native api_key /
-    # api_secret would misdescribe that, so both live in `credential_data` under
-    # their own names.
     _CREDENTIAL_FIELDS = {
         "easypost_test_api_key": "easypost_test_api_key",
         "easypost_production_api_key": "easypost_production_api_key",
@@ -93,9 +88,6 @@ class DeliveryCarrier(models.Model):
         return res
 
     def action_get_carrier_type(self):
-        """Return the list of carriers configured by the customer
-        on its easypost account.
-        """
         if self.delivery_type == "easypost" and self.sudo().easypost_production_api_key:
             ep = EasypostRequest(
                 self, self.sudo().easypost_production_api_key, self.log_xml
@@ -119,7 +111,6 @@ class DeliveryCarrier(models.Model):
         return None
 
     def easypost_rate_shipment(self, order) -> dict:
-        """Return the rates for a quotation/SO."""
         _debug.pipeline(
             "carrier_rate_request", provider="easypost", carrier=self.id, order=order.id
         )
@@ -133,7 +124,6 @@ class DeliveryCarrier(models.Model):
         response = ep.rate_request(
             self, order.partner_shipping_id, order.warehouse_id.partner_id, order
         )
-        # Return error message
         if response.get("error_message"):
             return {
                 "success": False,
@@ -142,7 +132,6 @@ class DeliveryCarrier(models.Model):
                 "warning_message": False,
             }
 
-        # Update price with the order currency
         rate = response.get("rate")
         if order.currency_id.name == rate["currency"]:
             price = float(rate["rate"])
@@ -157,7 +146,6 @@ class DeliveryCarrier(models.Model):
                 fields.Date.context_today(self),
             )
 
-        # Update price with the insurance cost
         insurance_cost = response.get("insurance_cost", 0)
         usd = self.env.ref("base.USD")
         price += usd._convert(
@@ -175,13 +163,6 @@ class DeliveryCarrier(models.Model):
         }
 
     def easypost_send_shipping(self, pickings):
-        """It creates an easypost order and buy it with the selected rate on
-        delivery method or cheapest rate if it is not set. It will use the
-        packages used with the put in pack functionality or a single package if
-        the user didn't use packages.
-        Once the order is purchased. It will post as message the tracking
-        links and the shipping labels.
-        """
         _debug.pipeline(
             "carrier_ship_request",
             provider="easypost",
@@ -219,7 +200,6 @@ class DeliveryCarrier(models.Model):
                     fields.Date.context_today(self),
                 )
 
-            # Update price with the insurance cost
             insurance_cost = result.get("insurance_cost", 0)
             usd = self.env.ref("base.USD")
             price += usd._convert(
@@ -229,7 +209,6 @@ class DeliveryCarrier(models.Model):
                 fields.Date.context_today(self),
             )
 
-            # return tracking information
             carrier_tracking_link = ""
             for track_number, tracker_url in result.get("track_shipments_url").items():
                 carrier_tracking_link += Markup("<a href='%s'>%s</a><br/>") % (
@@ -239,7 +218,6 @@ class DeliveryCarrier(models.Model):
 
             carrier_tracking_ref = " + ".join(result.get("track_shipments_url").keys())
 
-            # pickings where we should leave a lognote
             lognote_pickings = (
                 picking.sale_id.picking_ids if picking.sale_id else picking
             )
@@ -313,7 +291,6 @@ class DeliveryCarrier(models.Model):
                 "tracking_number": carrier_tracking_ref,
             }
             res.append(shipping_data)
-            # store order reference on picking
             picking.ep_order_ref = result.get("id")
             if picking.carrier_id.return_label_on_delivery:
                 self.get_return_label(picking)
@@ -369,10 +346,6 @@ class DeliveryCarrier(models.Model):
         pickings.message_post(body=logmessage, attachments=labels)
 
     def easypost_get_tracking_link(self, picking):
-        """Returns the tracking links from a picking. Easypost reutrn one
-        tracking link by package. It specific to easypost since other delivery
-        carrier use a single link for all packages.
-        """
         _debug.logic(
             "carrier_tracking_link",
             provider="easypost",
@@ -397,7 +370,6 @@ class DeliveryCarrier(models.Model):
         )
 
     def easypost_cancel_shipment(self, pickings) -> None:
-        # Note: Easypost API not provide shipment/order cancel mechanism
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="easypost",
@@ -407,13 +379,6 @@ class DeliveryCarrier(models.Model):
         raise UserError(self.env._("You can't cancel Easypost shipping."))
 
     def _easypost_get_services_and_package_types(self) -> tuple:
-        """Get the list of services and package types by carrier
-        type. They are stored in 2 dict stored in 2 distinct static json file.
-        The dictionaries come from an easypost doc parsing since packages and
-        services list are not available with an API request. The purpose of a
-        json is to replace the static file request by an API request if easypost
-        implements a way to do it.
-        """
         with file_open(
             "delivery_easypost/static/data/package_types_by_carriers.json"
         ) as f:
@@ -445,9 +410,6 @@ class DeliveryCarrier(models.Model):
                     )
 
     def _easypost_set_insurance_fees(self) -> None:
-        """Sets the `easypost_insurance_fee_rate` and
-        `easypost_insurance_fee_minimum` values.
-        """
         if self.delivery_type == "easypost" and self.sudo().easypost_production_api_key:
             ep = EasypostRequest(
                 self, self.sudo().easypost_production_api_key, self.log_xml
@@ -474,11 +436,6 @@ class DeliveryCarrier(models.Model):
             )
 
     def _create_services(self, rates) -> None:
-        """When a user do a rate request easypost returns
-        a rates for each service available. However some services
-        could not be guess before a first API call. This method
-        complete the list of services for the used carrier type.
-        """
         services_name = [rate.get("service") for rate in rates]
         existing_services = self.env["easypost.service"].search_read(
             [
@@ -496,34 +453,21 @@ class DeliveryCarrier(models.Model):
         )
 
     def _easypost_convert_weight(self, weight):
-        """Each API request for easypost required
-        a weight in pounds.
-        """
         if weight == 0:
             return weight
         weight_uom_id = self.env["product.template"]._get_uom_from_setting("weight")
-        # round=False: the result is an intermediate. `_get_quantity_in_unit`
-        # quantises at the "Product Unit" precision of the destination unit --
-        # 0.01 lb, which is 0.16 oz, coarser than the 0.1 oz this rounds to on
-        # the next line. Pre-rounding it therefore loses precision the caller
-        # then pretends to have. The sibling carriers (ups, ups_rest, fedex,
-        # dhl, shiprocket) already convert weights this way.
         weight_in_pounds = weight_uom_id._get_quantity_in_unit(
             weight, self.env.ref("base.product_uom_lb"), round=False
         )
         return max(0.1, float_round((weight_in_pounds * 16), precision_digits=1))
 
     def _get_delivery_type(self):
-        """Override of delivery to return the easypost delivery type."""
         res = super()._get_delivery_type()
         if self.delivery_type != "easypost":
             return res
         return self.easypost_delivery_type
 
     def _easypost_usd_insured_value(self, package_value, currency):
-        """With Easypost, To specify an amount to insure, pass the insurance
-        attribute as a string. The currency of all insurance is USD.
-        """
         if not self.shipping_insurance:
             return 0
         usd = self.env.ref("base.USD")
@@ -536,10 +480,6 @@ class DeliveryCarrier(models.Model):
         )
 
     def _easypost_usd_estimated_insurance_cost(self, usd_insured_value):
-        """Returns the calculated insurance cost based on the user's
-        insurance fees. This function should be called only if there is a
-        shipping insurance.
-        """
         self._easypost_set_insurance_fees()
         return max(
             usd_insured_value * self.easypost_insurance_fee_rate,

@@ -42,21 +42,11 @@ class Geocoder(models.AbstractModel):
     def geo_query_address(
         self, street=None, zip_code=None, city=None, state=None, country=None
     ):
-        """Converts address fields into a valid string for querying
-        geolocation APIs.
-        :param street: street address
-        :param zip_code: zip code
-        :param city: city
-        :param state: state
-        :param country: country
-        :return: formatted string
-        """
         provider = self._get_provider().tech_name
         formatter = self._get_geo_address_formatters().get(provider)
         if formatter:
             return formatter(street, zip_code, city, state, country)
         else:
-            # By default, join the non-empty parameters
             return self._geo_query_address_default(
                 street=street,
                 zip_code=zip_code,
@@ -67,11 +57,6 @@ class Geocoder(models.AbstractModel):
 
     @api.model
     def geo_find(self, addr, **kw):
-        """Use a location provider API to convert an address string into a latitude, longitude tuple.
-        Here we use Openstreetmap Nominatim by default.
-        :param addr: Address string passed to API
-        :return: (latitude, longitude) or None if not found
-        """
         provider = self._get_provider().tech_name
         service = self._get_geo_services().get(provider)
         if not service:
@@ -102,10 +87,6 @@ class Geocoder(models.AbstractModel):
 
     @api.model
     def _call_openstreetmap(self, addr, **kw) -> tuple | None:
-        """
-        Use Openstreemap Nominatim service to retrieve location
-        :return: (latitude, longitude), or None if addr is empty or the provider found no match
-        """
         if not addr:
             _logger.info("invalid address given")
             return None
@@ -138,13 +119,6 @@ class Geocoder(models.AbstractModel):
 
     @api.model
     def _call_openstreetmap_reverse(self, lat, lon):
-        """
-        Use Openstreemap Nominatim service to retrieve location from latitude and longitude
-        :param lat: Latitude
-        :param lon: Longitude
-        :return: parsed JSON response (dict) from the Nominatim reverse endpoint, or None if lat/lon are missing
-
-        """
         if not (lat and lon):
             _logger.info("invalid latitude or longitude given")
             return None
@@ -177,9 +151,6 @@ class Geocoder(models.AbstractModel):
 
     @api.model
     def _call_googlemap(self, addr, **kw) -> tuple | None:
-        """Use google maps API. It won't work without a valid API key.
-        :return: (latitude, longitude) or None if not found
-        """
         apikey = self.env["credential.credential"]._get_system_secret(
             "geocoding.google_map_api_key"
         )
@@ -264,22 +235,10 @@ class Geocoder(models.AbstractModel):
         raise UserError(self.env._("Error with geolocation server: %s", error))
 
     def _get_localisation(self, latitude, longitude):
-        """Return a human-readable "[postcode] city, country" string for the given coordinates.
-
-        :param float latitude: latitude to resolve
-        :param float longitude: longitude to resolve
-        :return: human-readable location, using request.geoip first and a
-            reverse-geocode fallback
-        :rtype: str
-        """
-        # try to get city and/or country from request.geoip first
-        # if not possible, get them from latitude and longitude
         city = request.geoip.city.name
         country_code = request.geoip.country_code
         postcode = False
         if not (city and country_code):
-            # for now, we use openstreetmap, if needed, we will add a setting like "partner geolocation" that let the
-            # user decide wich provider to use to localise the partner.
             result = self._call_openstreetmap_reverse(latitude, longitude)
             if result and (address := result.get("address")):
                 country_code = country_code or address.get("country_code")

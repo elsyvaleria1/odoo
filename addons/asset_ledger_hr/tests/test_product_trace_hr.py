@@ -233,12 +233,6 @@ class TestStockLotHR(TransactionCase):
         self.assertEqual(asset2.operator_id, self.employee1)
 
     def test_accept_operator_change_clears_an_archived_asset(self):
-        """Archiving is the ordinary way a retired asset leaves the list.
-
-        The clearing search ran with the default `active_test = True`, so an
-        archived asset holding the incoming operator was invisible to it and
-        kept them: one employee operating two assets.
-        """
         archived = self.ProductTrace.create(
             {
                 "name": "VAN-ARCHIVED",
@@ -387,13 +381,6 @@ class TestStockLotHR(TransactionCase):
             (asset1 | asset2).action_accept_operator_change()
 
     def test_accept_operator_change_allows_one_asset_of_each_kind(self):
-        """The guard and the clearing search have to mean the same thing.
-
-        `assets_to_clear` only frees the asset kinds in this operation, so
-        custody is per kind and the same employee legitimately operates a truck
-        and a tractor. The guard used to key on the employee alone, so the two
-        were accepted one at a time and refused together.
-        """
         machinery_product = create_test_template(
             self.env,
             name="Company Tractor",
@@ -425,13 +412,6 @@ class TestStockLotHR(TransactionCase):
 
     @freeze_time("2026-09-07 03:00:00")
     def test_a_booked_assignment_dates_both_columns_in_the_users_zone(self):
-        """`date` and `date_start` are the same day on the same row.
-
-        `date` defaults to `context_today` while `date_start` was written with
-        `fields.Date.today()`, the server process's date. At 03:00 UTC a
-        UTC-6 user is still on the previous day, so the two columns of one
-        booked assignment named two different days.
-        """
         user_env = self.env(context=dict(self.env.context, tz="America/Mexico_City"))
         self.assertEqual(fields.Date.today(), date(2026, 9, 7))
         self.assertEqual(
@@ -455,15 +435,6 @@ class TestStockLotHR(TransactionCase):
         self.assertEqual(log.date, log.date_start)
 
     def test_a_booked_assignment_is_typed_with_no_product(self):
-        """The row has to be counted whether the assignment product exists or not.
-
-        `_get_product_operator_assignment` uses `raise_if_not_found=False`, so a
-        missing xmlid yielded `product_id` False, no category, and a `log_type`
-        that `_compute_log_type` leaves alone. `count_logs_assignment` and
-        `action_view_logs_assignation` both bucket on `log_type == "operator"`,
-        so custody was written to a table and reachable from nothing, with no
-        error and no log line.
-        """
         self.env["ir.model.data"].search(
             [
                 ("module", "=", "asset_ledger"),
@@ -495,12 +466,6 @@ class TestStockLotHR(TransactionCase):
         self.assertEqual(lot.asset_id.count_logs_assignment, 1)
 
     def test_a_booked_assignment_takes_no_odometer_reading(self):
-        """A handover is not a measurement: the row carries no odometer.
-
-        It used to copy the asset's current odometer with today's date, so the
-        last figure someone typed became a reading taken today and entered the
-        odometer timeline as one.
-        """
         lot = self.ProductTrace.create(
             {
                 "name": "VAN-HANDOVER",

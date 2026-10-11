@@ -9,8 +9,6 @@ if typing.TYPE_CHECKING:
 
 
 class LangData(ReadonlyDict[str, typing.Any]):
-    # the shape res.lang caches per language, for a registry without the
-    # language table; attribute access like the model's own LangData
     __slots__ = ()
 
     def __bool__(self) -> bool:
@@ -23,7 +21,6 @@ class LangData(ReadonlyDict[str, typing.Any]):
             raise AttributeError(name) from None
 
 
-# base's res.lang.csv row for en_US, the language every registry speaks
 _EN_US = {
     "id": 1,
     "name": "English (US)",
@@ -47,8 +44,6 @@ class Locale:
 
     def lang_data(self, env: Environment, code: str) -> typing.Any:
         if "res.lang" not in env.registry:
-            # every installed language answers en_US's formats: the DB-free
-            # tier has no language table to read them from
             if not self.is_lang_installed(env, code):
                 return LangData({**_EN_US, "id": False, "code": code, "active": False})
             return LangData({**_EN_US, "code": code})
@@ -61,24 +56,17 @@ class Locale:
 
     def is_lang_installed(self, env: Environment, code: str) -> bool:
         if "res.lang" not in env.registry:
-            # a registry without the language table (the DB-free tier) speaks the
-            # base language and nothing else
             return code == "en_US"
         return bool(env["res.lang"]._get_data(code=code))
 
     def decimal_precision(self, env: Environment, application: str) -> int:
         if "decimal.precision" not in env.registry:
-            # the model's own default for an application nobody defined
             return 2
         return env["decimal.precision"].get_precision(application)
 
     def currency_rates(
         self, env: Environment, company: typing.Any, date: typing.Any
     ) -> dict[int, float]:
-        # the rate of every currency for a company's root, as the sum_currency
-        # aggregate's subquery picks it: the root's own rates before the shared
-        # ones, and in that bucket the latest rate dated up to the day, else
-        # the earliest later one; a currency without a rate is absent
         if "res.currency.rate" not in env.registry:
             return {}
         root_id = company.root_id.id

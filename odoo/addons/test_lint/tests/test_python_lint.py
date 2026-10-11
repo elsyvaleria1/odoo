@@ -94,8 +94,6 @@ class TestPythonLint(LintCase):
         )
 
     def test_the_parallel_scan_agrees_with_the_serial_one(self):
-        # Every file the full scan reported on, and a stride of the rest: the
-        # model classes the cross-unit rules fold are what the two must agree on.
         reported = {
             finding.path for found in _py_scan.findings().values() for finding in found
         }

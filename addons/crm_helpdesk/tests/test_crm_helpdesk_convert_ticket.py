@@ -29,7 +29,6 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
             }
         )
 
-        # UTM fields
         cls.test_campaign = cls.env["utm.campaign"].create(
             {
                 "name": "A test UTM campaign",
@@ -49,10 +48,8 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         )
 
     def assertTicketLeadConvertData(self, ticket, lead, team, partner):
-        # lead update: archived
         self.assertFalse(lead.active)
 
-        # new ticket: data from lead and convert options
         self.assertEqual(ticket.description, lead.description)
         self.assertEqual(ticket.partner_id, partner)
         self.assertEqual(ticket.partner_email, lead.email_from or partner.email)
@@ -67,13 +64,11 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
 
     @users("user_sales_salesman")
     def test_lead_convert_to_ticket_corner_cases(self):
-        # admin updates salesman to have helpdesk rights
         self.user_sales_salesman.write(
             {"group_ids": [(4, self.env.ref("helpdesk.group_helpdesk_user").id)]}
         )
         lead = self.lead_1.with_user(self.env.user)
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.crm.lead.convert.ticket"]
             .with_context({"active_model": "crm.lead", "active_id": lead.id})
@@ -85,17 +80,14 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         )
         action = convert.action_lead_to_helpdesk_ticket()
 
-        # salesmen with helpdesk rights redirected to ticket
         ticket = self.env["helpdesk.ticket"].search([("name", "=", lead.name)])
         self.assertEqual(action["res_model"], ticket._name)
 
-        # admin remove rights on salesman
         lead.write({"active": True})
         self.user_sales_salesman.write(
             {"group_ids": [(3, self.env.ref("sale.group_sale_salesman").id)]}
         )
 
-        # sneaky monkey tries to invoke the wizard
         with self.assertRaises(AccessError):
             convert = (
                 self.env["wizard.crm.lead.convert.ticket"]
@@ -109,7 +101,6 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
 
     @users("user_sales_salesman")
     def test_lead_convert_to_ticket_w_email_rights(self):
-        """Base test for ticket convertion: internal details, based on email"""
         lead = self.lead_1.with_user(self.env.user)
         self.assertEqual(lead.partner_id, self.env["res.partner"])
         new_partner = self.env["res.partner"].search(
@@ -121,10 +112,8 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         )
         lead_message_ids = lead.message_ids
 
-        # ensure basic rights on team
         test_team = self.env["team.team"].search([("id", "=", self.test_team.id)])
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.crm.lead.convert.ticket"]
             .with_context({"active_model": "crm.lead", "active_id": self.lead_1.id})
@@ -136,10 +125,8 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         )
         action = convert.action_lead_to_helpdesk_ticket()
 
-        # salesmen redirected to ticket
         self.assertEqual(action["res_model"], "helpdesk.ticket")
 
-        # check created ticket coherency
         ticket = self.env["helpdesk.ticket"].sudo().search([("name", "=", lead.name)])
         new_partner = self.env["res.partner"].search(
             [("email_normalized", "=", "amy.wong@test.example.com")]
@@ -147,7 +134,6 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         self.assertTrue(len(new_partner), 1)
         self.assertTicketLeadConvertData(ticket, lead, test_team, new_partner)
 
-        # check discussion thread transfer
         self.assertTrue(
             all(message in ticket.message_ids for message in lead_message_ids)
         )
@@ -161,15 +147,12 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
                 "partner_id": self.contact_1.id,
             }
         )
-        # ensure partner updated lead information
         self.assertEqual(lead.partner_id, self.contact_1)
         self.assertEqual(lead.email_from, self.contact_1.email)
         self.assertEqual(lead.partner_name, self.contact_company_1.name)
         self.assertEqual(lead.contact_name, self.contact_1.name)
-        # ensure partner did not void existing information
         self.assertEqual(lead._phone_get_number().number, "+1 202 555 9999")
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.crm.lead.convert.ticket"]
             .with_context({"active_model": "crm.lead", "active_id": self.lead_1.id})
@@ -181,6 +164,5 @@ class TestLeadConvertToTicket(crm_common.TestCrmCommon):
         )
         convert.action_lead_to_helpdesk_ticket()
 
-        # check created ticket coherency
         ticket = self.env["helpdesk.ticket"].sudo().search([("name", "=", lead.name)])
         self.assertTicketLeadConvertData(ticket, lead, self.test_team, self.contact_1)

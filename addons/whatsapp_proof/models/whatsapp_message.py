@@ -9,7 +9,6 @@ class WhatsappMessage(models.Model):
     def write(self, vals):
         res = super().write(vals)
         if vals.get("state") in FAILED:
-            # a question WhatsApp refused never reached its contact
             self.env["proof.challenge"]._with_proof_privilege().env[
                 "proof.delivery"
             ].search(

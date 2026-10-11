@@ -203,7 +203,6 @@ class TestBillsPrediction(AccountTestInvoicingCommon):
         purchase = self.company_data["default_journal_purchase"]
         line = self.env["account.move.line"]
 
-        # Control: on an unrestricted journal the name of the account wins.
         self.assertEqual(
             line._predict_specific_account(
                 self._draft_bill(partner, purchase), "Maintenance and repair", partner
@@ -243,7 +242,6 @@ class TestBillsPrediction(AccountTestInvoicingCommon):
         history.action_post()
         line = self.env["account.move.line"]
 
-        # Control: without a restriction the partner's history is followed.
         self.assertEqual(
             line._predict_specific_account(
                 self._draft_bill(partner, purchase), "Drinks", partner

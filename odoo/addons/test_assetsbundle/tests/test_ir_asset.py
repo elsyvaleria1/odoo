@@ -859,8 +859,6 @@ class TestAssetsManifest(AddonManifestPatched):
         self.assertBundleJs(bundle, 1, 2, 4, 3)
 
     def test_24_1_before_already_satisfied_does_not_warn(self):
-        # jsfile1 already precedes jsfile2 in bundle4: the directive states an
-        # ordering that holds, so nothing is stranded
         self.declare_sibling_module(
             {
                 "test_assetsbundle.bundle4": [

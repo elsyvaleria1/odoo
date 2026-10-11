@@ -143,7 +143,7 @@ class MailingPerformanceBlacklist(models.Model):
     _name = "mailing.performance.blacklist"
     _description = "Mailing: blacklist performance"
     _inherit = ["mixin.mail.thread.blacklist"]
-    _primary_email = "email_from"  # blacklist field to check
+    _primary_email = "email_from"
 
     name = fields.Char()
     email_from = fields.Char()

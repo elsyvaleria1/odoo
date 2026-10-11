@@ -83,7 +83,6 @@ class TestApprovalBindingEditor(common.TransactionCase):
         self.assertEqual(action["context"]["default_category_id"], step.category_id.id)
 
     def test_the_steps_action_opens_them_as_a_kanban_with_a_quick_create(self):
-        """Studio's sidebar button promises a kanban of the button's approvals."""
         self._add_step()
         action = self.Binding.action_open_button_steps(
             "res.partner", "action_archive", False
@@ -99,7 +98,6 @@ class TestApprovalBindingEditor(common.TransactionCase):
         )
 
     def test_the_steps_action_answers_the_web_clients_button_call(self):
-        """The sidebar opens it as a button: /web/dataset/call_button sends ids first."""
         step = self._add_step()
         action = call_kw(
             self.Binding,
@@ -110,7 +108,6 @@ class TestApprovalBindingEditor(common.TransactionCase):
         self.assertEqual(self.Step.search(action["domain"]), step)
 
     def test_a_button_whose_steps_are_all_archived_is_no_longer_gated(self):
-        """Studio's test_disable_approvals: archiving the last rule lifts the gate."""
         step = self._add_step()
         user = self.env["res.users"].create(
             {
@@ -142,7 +139,6 @@ class TestApprovalBindingEditor(common.TransactionCase):
         )
 
     def test_approvers_given_without_a_group_satisfy_the_pool_check(self):
-        """The pool check waits for the approvers list to become members."""
         category = self.env["approval.category"].create({"name": "No group"})
         step = self.Step.create(
             {

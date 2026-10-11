@@ -32,7 +32,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         cls.invoice = cls.init_invoice("in_invoice", amounts=[1000], post=True)
 
     def test_suspense_statement_line_id(self):
-        # Remove all autoconfigured journal synchronization settings for documents
         self.env["document.account.folder.setting"].search([]).unlink()
 
         reconcile_activity_type = self.env["mail.activity.type"].create(
@@ -62,7 +61,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         st_line = st.line_ids
         move = st_line.move_id
 
-        # Log an activity on the move using the "Reconciliation Request".
         activity = self.env["mail.activity"].create(
             {
                 "activity_type_id": reconcile_activity_type.id,
@@ -73,13 +71,11 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         )
         activity._onchange_activity_type_id()
 
-        # A new document has been created.
         documents = self.env["document.document"].search(
             [("request_activity_id", "=", activity.id)]
         )
         self.assertTrue(documents.exists())
 
-        # Upload an attachment.
         attachment = self.env["ir.attachment"].create(
             {
                 "name": "test_suspense_statement_line_id",
@@ -90,7 +86,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         )
         activity._action_done(attachment_ids=attachment.ids)
 
-        # Upload as a vendor bill.
         vendor_bill_action = documents.account_create_account_move("in_invoice")
         self.assertTrue(vendor_bill_action.get("res_id"))
         vendor_bill = self.env["account.move"].browse(vendor_bill_action["res_id"])
@@ -110,7 +105,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         )
 
     def test_create_account_move_on_archived_document(self):
-        """Check that when creating an account move on an archived document, it updates and unarchives it."""
         self.setup_sync_journal_folder(self.invoice.journal_id, self.folder_test)
         self.document.action_archive()
         self.assertFalse(self.document.folder_id)
@@ -119,8 +113,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         self.assertTrue(self.document.active)
 
     def _age_move(self, move):
-        """Make ``move`` look created in an earlier transaction: the tests run
-        inside one, so every record carries the same ``create_date``."""
         self.env.cr.execute(
             "UPDATE account_move SET create_date = create_date - interval '1 day' "
             "WHERE id = %s",
@@ -129,9 +121,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         move.invalidate_recordset(["create_date"])
 
     def test_main_attachment_keeps_deliberately_filed_document(self):
-        """A document filed outside any journal folder, with its own owner,
-        onto an existing invoice keeps both when its attachment becomes the
-        invoice's main one."""
         self.setup_sync_journal_folder(self.invoice.journal_id, self.folder_test)
         self._age_move(self.invoice)
         other_user = self.env["res.users"].create(
@@ -158,8 +147,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         self.assertEqual(scan.owner_id, other_user)
 
     def test_main_attachment_refiles_document_from_another_journal_folder(self):
-        """Changing the journal of a draft invoice moves its synced document to
-        the new journal's folder."""
         invoice = self.init_invoice("in_invoice", amounts=[1000])
         self.setup_sync_journal_folder(invoice.journal_id, self.folder_test)
         other_journal = invoice.journal_id.copy()
@@ -189,8 +176,6 @@ class TestInvoices(AccountTestInvoicingCommon, DocumentsAccountHelpersCommon):
         self.assertEqual(document.owner_id, self.env.user, "owner is never rewritten")
 
     def test_an_xml_attachment_is_filed_whatever_its_spelling(self):
-        """An e-invoice a mail client declares text/xml is filed as one declared
-        application/xml is."""
         invoice = self.init_invoice("in_invoice", amounts=[1000])
         self.setup_sync_journal_folder(invoice.journal_id, self.folder_test)
 

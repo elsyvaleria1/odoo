@@ -145,8 +145,6 @@ class TestHttpGreeting(TestHttpBase):
             self.logout(keep_db=False)
 
     def test_greeting0_bearer_scope_is_the_routes(self):
-        """`@route(scope=...)` names the API-key scope the bearer must carry;
-        a key of another scope is refused with the same 401 as no key."""
         self.authenticate(None, None)
         joe = new_test_user(self.env, "joe", context={"lang": "en_US"})
         joe = joe.with_user(joe)

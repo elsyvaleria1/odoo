@@ -62,7 +62,6 @@ class AIEmbedding(models.Model):
         target_checksums = (
             self.env["ir.attachment"].browse(attachment_ids).mapped("checksum")
         )
-        # Execute the SQL query to find similar embeddings of the same sources' attachments checksum
         return self.browse(
             id_
             for id_, *_ in self.env.execute_query(
@@ -87,15 +86,8 @@ class AIEmbedding(models.Model):
 
     @api.model
     def _cron_generate_embedding(self, batch_size=100) -> bool:
-        """Generate embeddings for sources, handling multiple embedding models per source.
-
-        :return: whether another batch remains to be processed
-        :rtype: bool
-        """
-        # Check for sources that need to be chunked and create embedding chunks
         self._create_embedding_chunks()
 
-        # Check for all the embedding vectors to be generated
         missing_embeddings = self.search(
             [
                 ("embedding_vector", "=", False),
@@ -107,7 +99,6 @@ class AIEmbedding(models.Model):
             return False
         missing_embeddings_batch = missing_embeddings[:batch_size]
 
-        # Group by embedding model to batch similar requests
         embeddings_by_model = defaultdict(list)
         for embedding in missing_embeddings_batch:
             model = embedding.embedding_model
@@ -129,10 +120,8 @@ class AIEmbedding(models.Model):
         self.env["ir.cron"]._commit_progress(remaining=len(missing_embeddings_batch))
         failed_embeddings = self.env[self._name]
 
-        # Process each model group separately
         for model, embeddings in embeddings_by_model.items():
             provider = get_provider_for_embedding_model(self.env, model)
-            # Create batches respecting provider limits
             batches = self._create_batches(embeddings, provider)
             _logger.info(
                 "Processing %s embeddings for model %s in %s batches",
@@ -151,9 +140,7 @@ class AIEmbedding(models.Model):
                         model,
                     )
 
-                    # Prepare batch input
                     batch_content = [emb.content for emb in batch]
-                    # Get embeddings for the entire batch
                     llm_service = LLMApiService(
                         env=self.env, provider=provider, purpose="ai.embedding"
                     )
@@ -162,7 +149,6 @@ class AIEmbedding(models.Model):
                         dimensions=self._get_dimensions(),
                         model=model,
                     )
-                    # Update each embedding record with its corresponding vector
                     for idx, embedding in enumerate(batch):
                         try:
                             embedding.embedding_vector = response["data"][idx][
@@ -176,7 +162,6 @@ class AIEmbedding(models.Model):
                             )
                             failed_embeddings |= embedding
 
-                    # Commit progress for this batch
                     if not self.env["ir.cron"]._commit_progress(len(batch)):
                         break
 
@@ -188,7 +173,6 @@ class AIEmbedding(models.Model):
                         model,
                         e,
                     )
-                    # Mark all embeddings in failed batch as failed
                     failed_embeddings |= self.env[self._name].concat(*batch)
                     continue
 
@@ -196,20 +180,17 @@ class AIEmbedding(models.Model):
             failed_embeddings.write({"has_embedding_generation_failed": True})
             self.env["ir.cron"]._commit_progress(len(failed_embeddings))
 
-        # Handle the status of sources
         for source in staged_sources:
             embedding_model = source.agent_id._get_embedding_model()
             source._update_source_status(embedding_model)
 
         if len(missing_embeddings) > batch_size:
-            # we still have unfinished embeddings to generate: run the CRON again
             self.env["ir.cron"]._trigger_ref("ai.ir_cron_generate_embedding")
             return True
 
         return False
 
     def _create_embedding_chunks(self) -> None:
-        """Create embedding chunks for processing sources that have an attachment and no chunk yet."""
         sources_to_process = self.env["ai.agent.source"].search(
             [
                 ("status", "=", "processing"),
@@ -251,24 +232,9 @@ class AIEmbedding(models.Model):
                     )
 
     def _estimate_tokens(self, text):
-        """Estimate token count based on text length.
-
-        :param str text: Text to estimate tokens for
-        :return: Estimated token count
-        :rtype: int
-        """
-        # 1 token ~= 4 characters, see
-        # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
         return len(text) // 4 if text else 0
 
     def _create_batches(self, embeddings, provider):
-        """Group embeddings into batches respecting provider limits.
-
-        :param list embeddings: List of embedding records to group into batches
-        :param str provider: Provider to use for embedding generation
-        :return: List of batches
-        :rtype: list[list]
-        """
         config = get_embedding_config(self.env, provider)
         max_batch_size = config["max_batch_size"]
         max_tokens = config["max_tokens_per_request"]
@@ -295,12 +261,6 @@ class AIEmbedding(models.Model):
         return batches
 
     def _get_indexed_embedding_models_by_checksum(self, checksum) -> list[str]:
-        """Get the embedding models already indexed for the given attachment checksum.
-
-        :param str checksum: checksum of the attachment
-        :return: list of indexed embedding models
-        :rtype: list[str]
-        """
         embeddings_by_model = self._read_group(
             domain=[("checksum", "=", checksum)],
             groupby=["embedding_model"],
@@ -309,7 +269,6 @@ class AIEmbedding(models.Model):
 
     @api.autovacuum
     def _gc_embeddings(self) -> None:
-        """Clean up embedding chunks not associated with any agent's attachments."""
         all_agents = self.env["ai.agent"].with_context(active_test=False).search([])
         used_attachment_ids = all_agents.mapped("sources_ids").mapped("attachment_id")
         used_checksums = used_attachment_ids.mapped("checksum")

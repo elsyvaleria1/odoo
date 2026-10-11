@@ -24,7 +24,6 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
             )
         )
 
-        # prepare recipients to test for more realistic workload
         cls.partners = (
             cls.env["res.partner"]
             .with_context(cls._test_context)
@@ -54,14 +53,8 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
         with (
             self.subTest("QueryCount"),
             self.mockSMSGateway(sms_allow_unlink=True),
-            # +5 (and +8 below, which resolves the record's number and the
-            # customer's): a number is a phone.number row reached through a
-            # relation, not a column of the record, and the company's mail
-            # configuration is another row. The cost is the same for one
-            # partner as for ten, so the batch still holds.
-            # +1: the company's mail configuration is a row of its own (mixin.company.config), read once per transaction on a cold cache.
             self.assertQueryCount(employee=37),
-        ):  # tms: 36
+        ):
             messages = record._message_sms(
                 body="Performance Test",
                 partner_ids=pids,
@@ -81,10 +74,8 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
         with (
             self.subTest("QueryCount"),
             self.mockSMSGateway(sms_allow_unlink=True),
-            # +5: the number is a phone.number row, not a column (see above).
-            # +1: the company's mail configuration is a row of its own (mixin.company.config), read once per transaction on a cold cache.
             self.assertQueryCount(employee=37),
-        ):  # tms: 36
+        ):
             messages = record._message_sms(
                 body="Performance Test",
                 partner_ids=pids,
@@ -106,10 +97,8 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
         with (
             self.subTest("QueryCount"),
             self.mockSMSGateway(sms_allow_unlink=True),
-            # +8: the record's number and the customer's (see above).
-            # +1: the company's mail configuration is a row of its own (mixin.company.config), read once per transaction on a cold cache.
             self.assertQueryCount(employee=41),
-        ):  # tms: 40
+        ):
             messages = record._message_sms(
                 body="Performance Test",
             )

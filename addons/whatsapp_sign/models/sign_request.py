@@ -10,7 +10,7 @@ class SignRequest(models.Model):
         selection_add=[("whatsapp", "WhatsApp")],
         ondelete={
             "whatsapp": "set default"
-        },  # go back to email if whatsapp was removed
+        },
     )
     signers_name = fields.Char(
         string="Signers name",
@@ -89,20 +89,6 @@ class SignRequest(models.Model):
         force_send=False,
         sign_request_item=None,
     ):
-        """Sends a completion message for a signed document.
-        This method handles sending a completion message to the signers after a document has been fully signed.
-        It primarily attempts to use a WhatsApp channel if configured.
-        If the channel is 'whatsapp' and the required WhatsApp template is not found, it falls back to sending an email by calling the parent method.
-
-        :param signers: The list of `res.partner` records to whom the completion message should be sent
-        :param bool request_edited: A boolean indicating if the signing request was edited
-        :param partner: The `res.partner` record of the main partner involved in the request
-        :param str access_token: An optional access token for the request, if applicable
-        :param bool with_message_cc: A boolean to include a carbon copy recipient in the message, if applicable
-        :param bool force_send: A boolean to force the message to be sent immediately, bypassing any scheduled cron jobs
-        :param sign_request_item: The `sign.request.item` record representing the specific item that the completion message will be sent to its partner
-        :return: The result of the parent method if the message is sent via a different channel, otherwise `None`
-        """
         self.check_singleton()
 
         is_whatsapp = self.send_channel == "whatsapp"
@@ -152,17 +138,6 @@ class SignRequest(models.Model):
         force_send=False,
         sign_request_item=None,
     ):
-        """Sends a refusal message for a document signing request.
-        This method handles notifying relevant parties that a document signing request has been refused by one of the signers.
-
-        :param refuser: The `res.partner` record of the person who refused the document
-        :param str refusal_reason: The reason for the refusal as a string
-        :param partner: The `res.partner` record of the main partner involved in the request
-        :param str access_token: An optional access token for the request, if applicable
-        :param bool force_send: A boolean to force the message to be sent immediately, bypassing any scheduled jobs
-        :param sign_request_item: The `sign.request.item` record representing the specific item that the refusal message will be sent to its partner
-        :return: The result of the parent method if the message is sent via a different channel, otherwise `None`
-        """
         self.check_singleton()
 
         is_whatsapp = self.send_channel == "whatsapp"

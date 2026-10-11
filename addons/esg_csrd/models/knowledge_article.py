@@ -84,7 +84,6 @@ class KnowledgeArticle(models.Model):
         return Domain.AND([base_domain, [("is_esg_report_template", "=", False)]])
 
     def _is_load_all_annexes_required(self) -> bool:
-        # If the report is of type VSME + Comprehensive Module, we will load the Comprehensive articles as well
         return bool(
             super()._is_load_all_annexes_required()
             and self.sudo().inherited_esg_report_id.report_type != "vsme_advanced"

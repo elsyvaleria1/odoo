@@ -7,9 +7,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestModelVerdicts(TransactionCase):
-    # an environment keeps its model-level verdicts for as long as its
-    # principal's signature holds: each change below happens while one
-    # environment holds a warm verdict, which must follow at once
 
     @classmethod
     def setUpClass(cls):
@@ -178,9 +175,6 @@ class TestModelVerdicts(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestMembershipKeepsCaches(TransactionCase):
-    # a membership change clears the users' group states and nothing else:
-    # what does not depend on who holds a group stays warm, and what does
-    # keys on the new state
 
     @classmethod
     def setUpClass(cls):

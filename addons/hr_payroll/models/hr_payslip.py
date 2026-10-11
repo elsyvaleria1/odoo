@@ -347,11 +347,6 @@ class HrPayslip(models.Model):
         elif schedule == "annually":
             date_from = today.replace(day=1, month=1)
         elif schedule == "weekly":
-            # `week_start` is already read above and every other branch that
-            # cares about it uses it. Anchoring to `weekday()` alone pinned
-            # the period to a Monday even for a language whose week begins on
-            # Sunday. res.lang numbers the days 1=Monday..7=Sunday, Python
-            # 0=Monday..6=Sunday, hence the -1.
             week_day = (today.weekday() - (int(week_start) - 1)) % 7
             date_from = today + relativedelta(days=-week_day)
         elif schedule == "bi-weekly":
@@ -362,16 +357,13 @@ class HrPayslip(models.Model):
             is_second_week = week % 2 == 0
             date_from = today + relativedelta(days=-week_day - 7 * int(is_second_week))
         elif schedule == "semi-monthly":
-            # The halves are 1..15 and 16..end-of-month. Starting the second
-            # one on the 15th put that day inside both payslips, since
-            # `_schedule_timedelta` ends the first half on it.
             date_from = today.replace(day=1 if today.day < 16 else 16)
         elif schedule == "bi-monthly":
             current_year_slice = math.ceil(today.month / 2)
             date_from = today.replace(day=1, month=(current_year_slice - 1) * 2 + 1)
         elif schedule == "daily":
             date_from = today
-        else:  # if not handled, put the monthly behaviour
+        else:
             date_from = today.replace(day=1)
         return date_from
 
@@ -430,7 +422,7 @@ class HrPayslip(models.Model):
             timedelta = relativedelta(months=2, days=-1)
         elif schedule == "daily":
             timedelta = relativedelta(days=0)
-        else:  # if not handled, put the monthly behaviour
+        else:
             timedelta = relativedelta(months=1, days=-1)
         return timedelta
 
@@ -485,7 +477,6 @@ class HrPayslip(models.Model):
                 input_line_vals = [Command.unlink(line.id) for line in lines_to_remove]
 
                 valid_attachments = slip._get_applicable_salary_attachments()
-                # Only take deduction types present in structure
                 for input_type_id, attachments in valid_attachments.grouped(
                     "other_input_type_id"
                 ).items():
@@ -744,7 +735,6 @@ class HrPayslip(models.Model):
             )
 
     def _get_regular_worked_hours(self):
-        # To be overridden by localization modules. Used for the amount computation for each worked days type.
         self.check_singleton()
         return self.sum_worked_hours
 
@@ -772,11 +762,6 @@ class HrPayslip(models.Model):
 
     def write(self, vals):
         _debug.lifecycle("write", payslips=self, fields=list(vals))
-        # Snapshot which payslips are actually transitioning INTO 'paid'
-        # before super().write() changes their state -- record_payment is not
-        # idempotent, so re-writing state='paid' on an already-paid payslip
-        # (e.g. a batch write mixing paid and not-yet-paid slips) must not
-        # deduct salary attachments a second time.
         slips_becoming_paid = self.env["hr.payslip"]
         if vals.get("state") == "paid":
             slips_becoming_paid = self.filtered(lambda r: r.state != "paid")
@@ -784,24 +769,15 @@ class HrPayslip(models.Model):
         res = super().write(vals)
 
         if vals.get("input_line_ids") or vals.get("payslip_properties"):
-            # A draft sheet that was already computed has to follow its inputs,
-            # otherwise the Salary Computation tab silently disagrees with the
-            # Salary Inputs one. Hand-edited payslips are left alone here for
-            # the same reason action_refresh_from_work_entries leaves them
-            # alone: their lines were typed by a user, not computed.
             self.filtered(
                 lambda p: p.state == "draft" and p.line_ids and not p.edited
             ).compute_sheet()
         if "state" in vals and vals["state"] == "paid":
-            # Register payment in Salary Attachments
-            # NOTE: Since we combine multiple attachments on one input line, it's not possible to compute
-            #  how much per attachment needs to be taken record_payment will consume monthly payments (child_support) before other attachments
             for slip in slips_becoming_paid.filtered(lambda r: r.salary_attachment_ids):
                 salary_lines_by_code = slip.line_ids.grouped("code")
                 for deduction_code, attachments in slip.salary_attachment_ids.grouped(
                     lambda x: x.other_input_type_id.code
                 ).items():
-                    # Use the amount from the computed value in the payslip lines not the input
                     salary_lines = salary_lines_by_code.get(deduction_code)
                     if not attachments or not salary_lines:
                         continue
@@ -895,7 +871,7 @@ class HrPayslip(models.Model):
         generic_name = self.env._("Payslip")
         for report, payslips in mapped_reports.items():
             for payslip in payslips:
-                pdf_content, dummy = (  # noqa: RUF059  `dummy` is the fork throwaway-name convention
+                pdf_content, dummy = (
                     self.env["ir.actions.report"]
                     .sudo()
                     .with_context(lang=payslip.employee_id.lang or self.env.lang)
@@ -916,7 +892,6 @@ class HrPayslip(models.Model):
                 )
 
         self.env["ir.attachment"].sudo().create(attachments_vals_list)
-        # Send email to employees (after attachment is created to include it in the mail by other bridge module)
         for payslips in mapped_reports.values():
             for payslip in payslips:
                 template = payslip._get_email_template()
@@ -944,20 +919,11 @@ class HrPayslip(models.Model):
         )
 
     def _get_send_trigger(self):
-        """Return when payslips are handed to the PDF cron: the moment employees
-        receive them, since `_generate_pdf` mails each one right after building it.
-
-        One of `on_confirmed`, `on_paid` or `never`. The setting lives in
-        `ir.config_parameter` rather than on `res.company` so that enabling it needs
-        no migration, and an absent parameter reads as `on_confirmed` -- what the
-        module did before the setting existed.
-        """
         return self.env.registry.settings.get(
             self.env, "hr_payroll.payslip_generate_and_send_trigger", "on_confirmed"
         )
 
     def _queue_for_pdf(self) -> None:
-        """Hand these payslips to the PDF cron and wake it up."""
         self.write({"queued_for_pdf": True})
         self.env["ir.cron"]._trigger_ref("hr_payroll.ir_cron_generate_payslip_pdfs")
 
@@ -992,7 +958,6 @@ class HrPayslip(models.Model):
         self.filtered(
             lambda p: not p.credit_note and line_values["NET"][p.id]["total"] < 0
         ).write({"has_negative_net_to_report": True})
-        # Validate work entries for regular payslips (exclude end of year bonus, ...)
         regular_payslips = self.filtered(
             lambda p: p.struct_id.type_id.default_struct_id == p.struct_id
         )
@@ -1047,8 +1012,6 @@ class HrPayslip(models.Model):
                 "paid_date": fields.Date.today(),
             }
         )
-        # Only what actually changed state: re-running the action over a batch that
-        # is already paid must not mail every employee a second copy.
         if newly_paid and self._get_send_trigger() == "on_paid":
             newly_paid._queue_for_pdf()
 
@@ -1229,9 +1192,7 @@ class HrPayslip(models.Model):
                 payslips=payslips.filtered("error_count"),
             )
             raise ValidationError(self._get_error_message())
-        # delete old payslip lines
         payslips.line_ids.unlink()
-        # this guarantees consistent results
         self.env.flush_all()
         today = fields.Date.today()
         for payslip in payslips:
@@ -1242,8 +1203,6 @@ class HrPayslip(models.Model):
         return True
 
     def action_refresh_from_work_entries(self):
-        # Refresh the whole payslip in case the HR has modified some work entries
-        # after the payslip generation
         if any(p.state != "draft" for p in self):
             _debug.logic("refresh_refused", reason="not_draft", payslips=self)
             raise UserError(
@@ -1336,16 +1295,12 @@ class HrPayslip(models.Model):
             }
             res.append(attendance_line)
 
-        # Sort by Work Entry Type sequence
         work_entry_type = self.env["hr.work.entry.type"]
         return sorted(
             res, key=lambda d: work_entry_type.browse(d["work_entry_type_id"]).sequence
         )
 
     def _prepare_worked_day_vals(self, domain=None, check_out_of_version=True):
-        """
-        :returns: a list of dict containing the worked days values that should be applied for the given payslip
-        """
         res = []
         self.check_singleton()
         version = self.version_id
@@ -1353,8 +1308,6 @@ class HrPayslip(models.Model):
         if not check_out_of_version:
             return res
 
-        # If the version doesn't cover the whole month, create
-        # worked_days lines to adapt the wage accordingly
         out_days, out_hours = 0, 0
         reference_calendar = self._get_out_of_contract_calendar()
         if self.date_from < version.date_start:
@@ -1523,10 +1476,6 @@ class HrPayslip(models.Model):
             },
         )
         res = self.env.cr.fetchone()
-        # SUM() over no rows still returns one row holding NULL, so `res` is
-        # truthy and `res[0]` is None. The two sibling helpers above both
-        # guard that with `or 0.0`; this one returned None to salary rules
-        # that then did arithmetic on it.
         return (res and res[0]) or 0.0
 
     def _prepare_salary_rule_base_context(self):
@@ -1544,8 +1493,6 @@ class HrPayslip(models.Model):
 
     def _prepare_salary_rule_context(self):
         self.check_singleton()
-        # Check for multiple inputs of the same type and keep a copy of
-        # them because otherwise they are lost when building the dict
         same_type_input_lines = defaultdict(lambda: self.env["hr.payslip.input"])
         input_line_ids_by_code = self.input_line_ids.grouped("code")
         for code, input_lines in input_line_ids_by_code.items():
@@ -1555,9 +1502,6 @@ class HrPayslip(models.Model):
         employee_properties = dict(self.version_id.payroll_properties)
         payslip_properties = dict(self.payslip_properties)
         employee_properties.update(payslip_properties)
-        # Only the salary-rule entries are inputs. A group separator is keyed
-        # `separator_<section id>`, and the properties widget writes its fold
-        # state there as a value, so it reaches us like any other entry.
         property_inputs = {
             int(rule_id): float(value)
             for rule_id, value in employee_properties.items()
@@ -1598,10 +1542,6 @@ class HrPayslip(models.Model):
 
     def _get_last_ytd_payslips(self):
         if not self:
-            # Both callers index this and call `.values()` on it, so the
-            # empty case has to be the same kind of thing as the full one.
-            # Returning the empty recordset made `_update_worked_days_ytd()`
-            # raise AttributeError instead of doing nothing.
             return defaultdict(lambda: self.env["hr.payslip"])
 
         earliest_date_to = min(self.mapped("date_to"))
@@ -1678,7 +1618,6 @@ class HrPayslip(models.Model):
 
         for payslip in self:
             if lang := payslip.employee_id.lang:
-                # /!\ Don't remove /!\ ensure that the employee will receive their payslip in their language.
                 payslip = payslip.with_context(lang=lang)
 
             localdict = (
@@ -1761,9 +1700,7 @@ class HrPayslip(models.Model):
                             )
                         else:
                             amount, qty, rate = rule._compute_rule(localdict)
-                            # check if there is already a rule computed with that code
                             previous_amount = localdict.get(rule.code, 0.0)
-                            # set/overwrite the amount computed for this rule in the localdict
                             tot_rule = payslip._get_payslip_line_total(
                                 amount, qty, rate, rule
                             )
@@ -1781,14 +1718,12 @@ class HrPayslip(models.Model):
                                 "rate": rate,
                                 "ytd": ytd,
                             }
-                            # sum the amount for its salary category, if it has one
                             if rule.category_id:
                                 localdict = (
                                     rule.category_id._get_salary_rule_category_sum(
                                         localdict, tot_rule - previous_amount
                                     )
                                 )
-                            # create/overwrite the rule in the temporary results
                             result[rule.code] = {
                                 "sequence": rule.sequence,
                                 "code": rule.code,
@@ -1804,10 +1739,6 @@ class HrPayslip(models.Model):
                                 "ytd": ytd,
                             }
             except UserError as error:
-                # A malformed salary rule (bad python code/condition/quantity)
-                # on ONE employee must not abort compute_sheet() for the whole
-                # batch: report it and keep computing the other payslips. A
-                # single payslip has nobody else to protect, so it tells the user.
                 if len(self) == 1:
                     _debug.logic(
                         "rule_error_raised", payslip=payslip, error=type(error).__name__
@@ -1902,10 +1833,6 @@ class HrPayslip(models.Model):
             or self.version_id.structure_type_id.default_schedule_pay
         )
         if schedule == "monthly":
-            # "y" is the calendar year. Capital "Y" is the WEEK-numbering
-            # year, which disagrees with it whenever the date sits in the
-            # first or last days of a year -- enough to name a January
-            # payslip after the previous year.
             period_name = self._format_date_cached(cache, start_date, "MMMM y")
         elif schedule == "quarterly":
             current_year_quarter = get_quarter_number(start_date)
@@ -1974,8 +1901,6 @@ class HrPayslip(models.Model):
         "struct_id.payslip_name",
         "date_from",
         "date_to",
-        # `_get_period_name` below branches on the schedule, so the name has
-        # to follow the version too, not only the fields of the payslip.
         "version_id",
         "version_id.schedule_pay",
         "version_id.structure_type_id.default_schedule_pay",
@@ -2052,7 +1977,6 @@ class HrPayslip(models.Model):
                     "level": "danger",
                 }
             )
-        # A salary simulation computes on a throwaway archived copy of the version.
         pinned_slips = (
             draft_slips.browse()
             if self.env.context.get("salary_simulation")
@@ -2107,7 +2031,6 @@ class HrPayslip(models.Model):
                     slip.date_to,
                 )
                 duplicates = similar_payslips[key] - slip
-                # Ignore duplicate warning if this slip is a refund of the original
                 if duplicates:
                     related_payslips = self.env["hr.payslip"]
                     if slip.origin_payslip_id:
@@ -2158,7 +2081,6 @@ class HrPayslip(models.Model):
             )
             warnings_by_slip[slip] = warnings
 
-        # Payment report related errors
         for employee_banks, slips in (
             self.filtered(lambda ps: ps.state == "validated")
             .grouped(lambda ps: ps.employee_id.salary_bank_account_ids)
@@ -2250,9 +2172,7 @@ class HrPayslip(models.Model):
         )
         if not valid_slips:
             return
-        # Make sure to reset invalid payslip's worked days line
         self.update({"worked_days_line_ids": [Command.clear()]})
-        # Ensure work entries are generated for all contracts
         generate_from = min(p.date_from for p in valid_slips) + relativedelta(days=-1)
         generate_to = max(p.date_to for p in valid_slips) + relativedelta(days=1)
         self.version_id.filtered(
@@ -2284,7 +2204,6 @@ class HrPayslip(models.Model):
                 ]
             )
             payslip_work_entries._check_undefined_slots(slip.date_from, slip.date_to)
-            # We can't use a batched create here as the payslip may not exist yet
             slip.update(
                 {"worked_days_line_ids": slip._prepare_worked_days_line_commands()}
             )
@@ -2302,7 +2221,6 @@ class HrPayslip(models.Model):
         ]
         all_existing_payslips = self.env["hr.payslip"].search(search_domain)
 
-        # Group existing slips for easy lookup
         existing_payslip_map = defaultdict(lambda: self.env["hr.payslip"])
         for slip in all_existing_payslips:
             key = (slip.employee_id.id, slip.struct_id.id, slip.date_from, slip.date_to)
@@ -2351,18 +2269,6 @@ class HrPayslip(models.Model):
             ["slip_id", "code"],
             [f"{f_name}:sum" for f_name in vals_list],
         )
-        # result = {
-        #     'IP': {
-        #         'sum': {'quantity': 2, 'total': 300},
-        #         1: {'quantity': 1, 'total': 100},
-        #         2: {'quantity': 1, 'total': 200},
-        #     },
-        #     'IP.DED': {
-        #         'sum': {'quantity': 2, 'total': -5},
-        #         1: {'quantity': 1, 'total': -2},
-        #         2: {'quantity': 1, 'total': -3},
-        #     },
-        # }
         for payslip, code, *sum_vals_list in payslip_line_read_group:
             for vals, vals_value in zip(vals_list, sum_vals_list, strict=False):
                 if compute_sum:
@@ -2371,10 +2277,6 @@ class HrPayslip(models.Model):
         return result
 
     def _get_worked_days_line_values_orm(self, code, field_name=None):
-        """
-        Use this method only if self is not yet created.
-        Otherwise, use '_get_worked_days_line_values' that leads to better performances.
-        """
         if field_name is None:
             field_name = "amount"
         valid_values = {"number_of_hours", "number_of_days", "amount", "ytd"}
@@ -2420,26 +2322,7 @@ class HrPayslip(models.Model):
             % (selected_fields, "%s", operation),
             (list(self.ids), list(code_list)),
         )
-        # self = hr.payslip(1, 2)
-        # request_rows = [
-        #     {'id': 1, 'code': 'WORK100', 'amount': 100, 'number_of_days': 1},
-        #     {'id': 1, 'code': 'LEAVE100', 'amount': 200, 'number_of_days': 1},
-        #     {'id': 2, 'code': 'WORK100', 'amount': -2, 'number_of_days': 1},
-        #     {'id': 2, 'code': 'LEAVE100', 'amount': -3, 'number_of_days': 1}
-        # ]
         request_rows = self.env.cr.dictfetchall()
-        # result = {
-        #     'WORK100': {
-        #         'sum': {'number_of_days': 2, 'amount': 98},
-        #         1: {'number_of_days': 1, 'amount': 100},
-        #         2: {'number_of_days': 1, 'amount': -2},
-        #     },
-        #     'LEAVE100': {
-        #         'sum': {'number_of_days': 2, 'amount': 197},
-        #         1: {'number_of_days': 1, 'amount': 200},
-        #         2: {'number_of_days': 1, 'amount': -3},
-        #     },
-        # }
         for row in request_rows:
             code = row["code"]
             payslip_id = row["id"]
@@ -2449,7 +2332,6 @@ class HrPayslip(models.Model):
                 result[code][payslip_id][vals] += row[vals] or 0.0
         return result
 
-    # TODO: convert to a single SQL request + handle children
     def _get_category_data(self, category_code):
         category_data = {"quantity": 0.0, "total": 0.0}
         for line in self.line_ids:
@@ -2509,7 +2391,6 @@ class HrPayslip(models.Model):
         )
 
     def _get_data_files_to_update(self):
-        # Note: Use lists as modules/files order should be maintained
         return []
 
     def _update_payroll_data(self) -> None:
@@ -2596,7 +2477,6 @@ class HrPayslip(models.Model):
             payslips_batch = payslips[:BATCH_SIZE]
             payslips_batch._create_pdf_attachments()
             payslips_batch.write({"queued_for_pdf": False})
-            # if necessary, retrigger the cron to generate more pdfs
             if len(payslips) > BATCH_SIZE:
                 self.env["ir.cron"]._trigger_ref(
                     "hr_payroll.ir_cron_generate_payslip_pdfs"
@@ -2611,7 +2491,6 @@ class HrPayslip(models.Model):
             lines_batch = lines[:BATCH_SIZE]
             lines_batch._update_pdf()
             lines_batch.write({"pdf_to_generate": False})
-            # if necessary, retrigger the cron to generate more pdfs
             if len(lines) > BATCH_SIZE:
                 self.env["ir.cron"]._trigger_ref(
                     "hr_payroll.ir_cron_generate_payslip_pdfs"
@@ -2621,31 +2500,11 @@ class HrPayslip(models.Model):
 
     @api.model
     def __get_aggregator_hr_payslip_input_model(self):
-        """this method return an aggregator version of hr.payslip.input Model.
-        this method is also meant to be overriden in case other modules adds new fields
-        to hr.payslip.input model. In case it can be extended as such:
-        ```py
-        def __get_aggregator_hr_payslip_input_model(self):
-            class ProxyHrPayslipInput(
-                super().__get_aggregator_hr_payslip_input_model()
-            ): ...  # your modifications
-
-
-        return ProxyHrPayslipInput
-        ```
-
-        Note: -this method use the normal python class inheritance instead of odoo's
-              -the aggregation assumes that the code are the same for all the inputs
-        Warning: Do not reproduce elsewhere it's quite a specific case here
-        :return: Aggregator version of hr.payslip.input model
-        """
 
         class ProxyHrPayslipInput(self.env["hr.payslip.input"].__class__):
             _name = self.env["hr.payslip.input"]._name
-            _register = False  # invisible to the ORM
+            _register = False
 
-            # All the fields that are not overridden are considered as equal to
-            # self[0]['field']
 
             def __getitem__(self, key_or_slice):
                 if not self or len(self) == 1:
@@ -2680,7 +2539,6 @@ class HrPayslip(models.Model):
 
         return ProxyHrPayslipInput
 
-    # Payroll Dashboard
     @api.model
     def _dashboard_default_action(
         self, name, res_model, res_ids, additional_context=None
@@ -2703,10 +2561,8 @@ class HrPayslip(models.Model):
 
     @api.model
     def get_dashboard_warnings(self):
-        # Retrieve the different warnings to display on the actions section (box on the left)
         result = []
 
-        # Retrieves last batches (this month, or last month)
         batch_limit_date = fields.Date.today() - relativedelta(months=1, day=1)
         batch_group_read = (
             self.env["hr.payslip.run"]
@@ -2723,7 +2579,6 @@ class HrPayslip(models.Model):
                 order="date_start:month desc",
             )
         )
-        # Keep only the last month
         batch_group_read = batch_group_read[:1]
         if batch_group_read:
             min_date = batch_group_read[-1][0] or batch_limit_date
@@ -2787,7 +2642,6 @@ class HrPayslip(models.Model):
             for [employee] in HrVersion._read_group(
                 [
                     ("employee_id", "in", new_versions.employee_id.ids),
-                    # ('date_end', '<', today),  # TODO: filter after
                     ("id", "not in", new_versions.ids),
                 ],
                 groupby=["employee_id"],
@@ -2874,11 +2728,6 @@ class HrPayslip(models.Model):
                 "yearly": defaultdict(lambda: [{}, {}, {}]),
             },
         }
-        # Retrieve employer costs over the last 3 months.
-        # The bounds have to come from the same clock as `today` below: the
-        # bucket index is derived from `today`, and a domain built on a
-        # different calendar date can admit a payslip whose index falls
-        # outside the three slots allocated above.
         monthly_payslips = self.env["hr.payslip"].search(
             [
                 ("state", "!=", "cancel"),
@@ -2907,7 +2756,6 @@ class HrPayslip(models.Model):
                     employer_cost["data"]["monthly"][code_desc][idx]["label"] = (
                         period_str
                     )
-        # Retrieve employer costs over the last 3 years
         yearly_payslips = self.env["hr.payslip"].search(
             [
                 ("state", "!=", "cancel"),
@@ -2915,10 +2763,6 @@ class HrPayslip(models.Model):
                 ("date_to", "<=", today + relativedelta(month=12, day=31)),
             ]
         )
-        # Sample-ness is a property of the whole widget, and the fill below
-        # uses it for BOTH series. Deciding it from the monthly search alone
-        # padded the yearly series with generated numbers while it held real
-        # aggregates, in the same bars, indistinguishable.
         employer_cost["is_sample"] = not monthly_payslips and not yearly_payslips
         line_values = yearly_payslips._get_line_values(cost_codes.keys())
         for slip in yearly_payslips:
@@ -2940,7 +2784,6 @@ class HrPayslip(models.Model):
                     employer_cost["data"]["yearly"][code_desc][idx]["label"] = (
                         period_str
                     )
-        # Nullify empty sections
         for i in range(3):
             for code_desc in cost_codes.values():
                 if not employer_cost["data"]["monthly"][code_desc][i]:
@@ -2971,7 +2814,6 @@ class HrPayslip(models.Model):
                             date_format=date_formats["yearly"],
                         )
                         employer_cost["data"]["yearly"][code_desc][i]["label"] = label
-        # Format/Round at the end as the method cost is heavy
         for data_by_code in employer_cost["data"].values():
             for data_by_type in data_by_code.values():
                 for data_dict in data_by_type:
@@ -2997,39 +2839,32 @@ class HrPayslip(models.Model):
                 "yearly": [{}, {}, {}],
             },
         }
-        # These are all the periods for which we need data
         periods = [
-            # Last month
             (
                 today - relativedelta(months=1, day=1),
                 today - relativedelta(day=1, days=1),
                 "monthly,past",
             ),
-            # This month
             (
                 today - relativedelta(day=1),
                 today + relativedelta(months=1, day=1, days=-1),
                 "monthly,present",
             ),
-            # Next month
             (
                 today + relativedelta(months=1, day=1),
                 today + relativedelta(months=2, day=1, days=-1),
                 "monthly,future",
             ),
-            # Last year
             (
                 today - relativedelta(years=1, month=1, day=1),
                 today - relativedelta(years=1, month=12, day=31),
                 "yearly,past",
             ),
-            # This year
             (
                 today - relativedelta(month=1, day=1),
                 today + relativedelta(month=12, day=31),
                 "yearly,present",
             ),
-            # Next year
             (
                 today + relativedelta(years=1, month=1, day=1),
                 today + relativedelta(years=1, month=12, day=31),
@@ -3045,11 +2880,6 @@ class HrPayslip(models.Model):
             }
             for p in periods
         )
-        # Fetch our statistics
-        # Contracts are joined by our period using the usual state/date conditions
-        # and aggregates are used to collect data directly from our database
-        # avoiding unnecessary orm overhead
-        # TODO: should filter with date_start, date_end via orm or is it already good ? will this stay at all ?
         self.env.cr.execute(
             """
         WITH periods AS (
@@ -3086,22 +2916,19 @@ class HrPayslip(models.Model):
             "monthly": "MMMM y",
             "yearly": "y",
         }
-        # Collect data in our result
         for res in self.env.cr.dictfetchall():
-            period_type, _type = res["_type"].split(",")  # Ex: yearly,past
+            period_type, _type = res["_type"].split(",")
             start = res["start"]
             period_idx = period_indexes[_type]
             period_str = format_date(
                 self.env, start, date_format=date_formats[period_type]
             )
-            # The data is formatted for the chart module
             employees_trends["data"][period_type][period_idx] = {
                 "label": period_str,
                 "value": res["employee_count"],
                 "name": period_str,
             }
 
-        # Generates a point as sample data
         def prepare_sample_data(period_str, period_type, chart_type):
             if chart_type == "line":
                 return {
@@ -3115,7 +2942,6 @@ class HrPayslip(models.Model):
                 "type": period_type,
             }
 
-        # Generates empty data in case a column is missing
         def prepare_null_data(period_str, period_type, chart_type):
             if chart_type == "line":
                 return {"x": period_str, "name": period_str, "y": 0}
@@ -3128,7 +2954,6 @@ class HrPayslip(models.Model):
             employees_trends["is_sample"] = True
             make_data = prepare_sample_data
 
-        # Go through all the data and create null or sample values where necessary
         for start, _dummy, p_types in periods:
             _type, _time = p_types.split(",")
             i = period_indexes[_time]
@@ -3144,9 +2969,6 @@ class HrPayslip(models.Model):
 
     @api.model
     def _get_dashboard_stats(self) -> list:
-        # Retrieve the different stats to display on the stats sections
-        # This function fills in employees and employer costs statistics
-        # Default data, replaced by sample data if empty after query
         employees_trends = self._get_dashboard_stat_employee_trends()
         employer_cost = self._get_dashboard_stats_employer_cost()
 
@@ -3170,15 +2992,10 @@ class HrPayslip(models.Model):
 
     @api.model
     def get_payroll_dashboard_data(self, sections=None):
-        # Entry point for getting the dashboard data
-        # `sections` defines which part of the data we want to include/exclude
         if sections is None:
             sections = self._get_dashboard_default_sections()
         result = {}
         if "batches" in sections:
-            # Batches are loaded for the last 3 months with batches, for example if there are no batches for
-            # the summer and september is loaded, we want to get september, june, may.
-            # Limit to max - 1 year
             batch_limit_date = fields.Date.today() - relativedelta(years=1, day=1)
             batch_group_read = (
                 self.env["hr.payslip.run"]
@@ -3190,7 +3007,6 @@ class HrPayslip(models.Model):
                     order="date_start:month desc",
                 )
             )
-            # Keep only the last 3 months
             batch_group_read = batch_group_read[:3]
             if batch_group_read:
                 min_date = batch_group_read[-1][
@@ -3250,16 +3066,7 @@ class HrPayslip(models.Model):
         fixed_bank_account_ids = self.employee_id._get_accounts_with_fixed_allocations()
         for ba in fixed_bank_account_ids:
             amount, _ = self.employee_id.get_bank_account_salary_allocation(ba.id)
-            # Money, so ask the currency rather than the float operators:
-            # 3.3 - 1.1 is 2.1999999999999997, which made a following
-            # allocation of 2.2 look larger than what is left and rejected a
-            # split that adds up exactly. Rounding the remainder each time
-            # keeps that error from accumulating across allocations too.
             if self.currency_id.is_zero(amount):
-                # Allocating nothing is not an error. The percentage loop
-                # below already records a zero share and moves on; this
-                # branch used to answer it with "surpasses the net salary",
-                # which is not what a zero does.
                 res[str(ba.id)] = 0
                 continue
             if amount < 0:

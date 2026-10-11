@@ -12,8 +12,6 @@ class ResCompany(models.Model):
         compute="_compute_integration_twilio_config_id",
         search="_search_integration_twilio_config_id",
     )
-    # the company's own Twilio numbers, whose inverse names the company: a
-    # collection it owns, not a setting the configuration keeps
     twilio_number_ids = fields.One2many(
         comodel_name="integration.twilio.number",
         inverse_name="company_id",
@@ -36,7 +34,6 @@ class ResCompany(models.Model):
         return super()._get_sms_api_class()
 
     def _get_twilio_sender(self, to_number):
-        # an automated SMS: a conversation's reply names its own number
         senders = self.twilio_number_ids.filtered(
             lambda number: number.is_sms_capable and not number.is_conversation_only
         )

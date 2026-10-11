@@ -19,8 +19,6 @@ class StockQuant(models.Model):
         )
         if strict or location_id.trip_vehicle_id:
             return domain
-        # what rides a vehicle is on the road: a transfer drawing from the
-        # place the vehicle loaded at must not reserve it
         if location_id._has_trip_vehicle_descendant():
             domain &= Domain("location_id.trip_vehicle_id", "=", False)
         return domain

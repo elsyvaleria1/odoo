@@ -18,13 +18,9 @@ class TestCalendarTours(HttpCaseWithUserDemo):
         )
 
     def test_calendar_month_view_start_hour_displayed(self):
-        """Test that the time is displayed in the month view."""
         self.start_tour("/odoo", "calendar_appointments_hour_tour", login="demo")
 
     def test_calendar_delete_tour(self):
-        """
-        Check that we can delete events with the "Everybody's calendars" filter.
-        """
         user_admin = self.env.ref("base.user_admin")
         start = datetime.combine(date.today(), datetime.min.time()).replace(hour=9)
         stop = datetime.combine(date.today(), datetime.min.time()).replace(hour=12)
@@ -48,12 +44,9 @@ class TestCalendarTours(HttpCaseWithUserDemo):
         url = "/odoo/action-" + str(action_id.id)
         self.start_tour(url, "test_calendar_delete_tour", login="admin")
         event = self.env["calendar.event"].search([("name", "=", "Test Event")])
-        self.assertFalse(event)  # Check if the event has been correctly deleted
+        self.assertFalse(event)
 
     def test_calendar_decline_tour(self):
-        """
-        Check that we can decline events.
-        """
         user_admin = self.env.ref("base.user_admin")
         user_demo = self.user_demo
         start = datetime.combine(date.today(), datetime.min.time()).replace(hour=9)
@@ -83,4 +76,4 @@ class TestCalendarTours(HttpCaseWithUserDemo):
         )
         self.assertEqual(
             attendee.state, "declined"
-        )  # Check if the event has been correctly declined
+        )

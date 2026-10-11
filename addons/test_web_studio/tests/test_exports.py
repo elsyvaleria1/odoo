@@ -50,8 +50,6 @@ class TestStudioExports(StudioExportCase):
             action=f"ir.actions.act_window,{custom_action.id}",
         )
 
-        # Create a record to show that it is not exported
-        # (appears neither in manifest nor in filelist)
         self.env[custom_model.model].create(
             {"x_name": "Austenitization", "x_studio_max_temp": 1200}
         )
@@ -74,8 +72,6 @@ class TestStudioExports(StudioExportCase):
             "data/ir_actions_act_window.xml",
             "data/ir_ui_menu.xml",
         )
-        # An empty field is not exported. A custom model has no docstring to
-        # reflect, so its `info` is empty and the record carries no info line.
         info = (
             f'<field name="info"><![CDATA[{custom_model.info}]]></field>'
             if custom_model.info
@@ -162,7 +158,6 @@ class TestStudioExports(StudioExportCase):
         CustomModel = self.env[custom_model.model].with_user(2).sudo()
         CustomModel.create({"x_name": "Austenitization", "x_studio_max_temp": 1200})
 
-        # Without export model, the custom model data are not exported
         self.studio_export()
         self.assertFileList("data/ir_model.xml", "data/ir_model_fields.xml")
 
@@ -181,7 +176,6 @@ class TestStudioExports(StudioExportCase):
             {"x_name": "Austenitization", "x_studio_max_temp": 1200}
         )
 
-        # With the export model, the custom model data is exported
         self.create_export_model(CustomModel._name)
         self.studio_export()
         self.assertFileList(
@@ -202,7 +196,6 @@ class TestStudioExports(StudioExportCase):
     def test_simple_export_model_without_record(self):
         self.create_export_model(self.TestModel._name)
 
-        # Without record, the export_model has no effect
         self.studio_export()
         self.assertFileList()
 
@@ -210,7 +203,6 @@ class TestStudioExports(StudioExportCase):
         self.create_export_model(self.TestModel._name)
         some_record = self.TestModel.create({"name": "Some record"})
 
-        # Simple case
         self.studio_export()
         self.assertFileList("data/test_studio_export_model1.xml")
         self.assertXML(
@@ -228,7 +220,6 @@ class TestStudioExports(StudioExportCase):
         self.create_export_model(self.TestModel._name, updatable=True)
         some_record = self.TestModel.create({"name": "Some record"})
 
-        # Without updatable mode
         self.studio_export()
         self.assertFileList("data/test_studio_export_model1.xml")
         self.assertXML(
@@ -246,7 +237,6 @@ class TestStudioExports(StudioExportCase):
         self.create_export_model(self.TestModel._name, is_demo_data=True)
         some_record = self.TestModel.create({"name": "Some record"})
 
-        # With is_demo_data mode, with updatable
         self.studio_export()
         self.assertFileList("demo/test_studio_export_model1.xml")
         self.assertXML(
@@ -266,7 +256,6 @@ class TestStudioExports(StudioExportCase):
         )
         some_record = self.TestModel.create({"name": "Some record"})
 
-        # With is_demo_data mode, without updatable
         self.studio_export()
         self.assertFileList("demo/test_studio_export_model1.xml")
         self.assertXML(
@@ -307,7 +296,6 @@ class TestStudioExports(StudioExportCase):
         )
         self.create_export_model(self.TestModel._name)
 
-        # Without include_attachment
         self.studio_export()
         self.assertFileList(
             "data/test_studio_export_model1.xml",
@@ -332,7 +320,6 @@ class TestStudioExports(StudioExportCase):
         )
         self.create_export_model(self.TestModel._name, include_attachment=True)
 
-        # With include_attachment we have the same export result
         self.studio_export()
         self.assertFileList(
             "data/test_studio_export_model1.xml",
@@ -488,8 +475,6 @@ class TestStudioExports(StudioExportCase):
         )
 
     def test_empty_models_and_fields(self):
-        # Test that models without records do not export any data
-        # and empty fields are not exported
 
         model2_record1 = self.TestModel2.create({"name": "Some Record"})
         model2_record2 = self.TestModel2.create(
@@ -522,9 +507,6 @@ class TestStudioExports(StudioExportCase):
         )
 
     def test_export_data_related_to_demo(self):
-        # Test that master data (non demo) does not export fields related
-        # to demo records, but data records related to demo are also exported
-        # as demo with only the fields related to said demo records.
 
         model3_record = self.TestModel3.create({"name": "Some record"})
         model2_record = self.TestModel2.create(
@@ -566,7 +548,6 @@ class TestStudioExports(StudioExportCase):
         )
 
     def test_export_dependencies_order(self):
-        # Test that files and records order respects dependencies
 
         model3_record = self.TestModel3.create({"name": "Some record"})
         model2_record = self.TestModel2.create(
@@ -630,8 +611,6 @@ class TestStudioExports(StudioExportCase):
         )
 
     def test_export_handles_circular_dependencies(self):
-        # Test that models circular dependencies appear in warning.txt
-        # and only if some records causes it
         model3_record = self.TestModel3.create(
             {
                 "name": "Record 3",
@@ -750,7 +729,6 @@ class TestStudioExports(StudioExportCase):
 
 class TestSpecificStudioExports_SaleOrder(SaleCommon, StudioExportCase):
     def test_export_demo_sale_orders(self):
-        # SPECIFIC: Confirm demo sale orders
         self.sale_order.action_confirm()
         self.create_export_model(
             "sale.order", domain=[("id", "in", [self.sale_order.id])], is_demo_data=True
@@ -765,7 +743,7 @@ class TestSpecificStudioExports_SaleOrder(SaleCommon, StudioExportCase):
             "demo/sale_order.xml",
             "demo/sale_order_line.xml",
             "demo/sale_order_confirm.xml",
-            "warnings.txt",  # because no products nor partners are exported here, but that's not the point of this test.
+            "warnings.txt",
         )
         evl_attr_value = f"[[ref('{self.get_xmlid(self.sale_order)}')]]"
         self.assertXML(
@@ -779,7 +757,6 @@ class TestSpecificStudioExports_SaleOrder(SaleCommon, StudioExportCase):
 
 class TestSpecificStudioExports_Website(StudioExportCase):
     def test_unlink_default_main_menu(self):
-        # SPECIFIC: unlink the default main menu from the website if needed
         website = self.env["website"].get_current_website()
         menus = self.env["website.menu"].search([("website_id", "=", website.id)])
         self.create_export_model(
@@ -789,17 +766,15 @@ class TestSpecificStudioExports_Website(StudioExportCase):
         if self.get_xmlid(website) != "website.default_website" or not any(
             r["url"] == "/default-main-menu" for r in menus
         ):
-            # Only written for the default website and on a fresh install
             self.skipTest(
                 "This test is only written for the default website and on a fresh install"
             )
 
         self.assertFileList(
-            "warnings.txt",  # because we do not export all the necessary data for website exports, but that's not the point of this test
+            "warnings.txt",
             "data/website_menu.xml",
         )
 
-        # should have only function to unlink the default main menu
         nodes = self.get_xml_nodes("data/website_menu.xml", "/odoo/*")
         self.assertEqual(len(nodes), 1 + len(menus), "has a child for each menu + 1")
         self.assertEqual([n.tag for n in nodes], ["function"] + ["record"] * len(menus))

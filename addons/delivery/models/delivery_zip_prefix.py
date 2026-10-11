@@ -16,8 +16,6 @@ class DeliveryZipPrefix(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            # we cannot easily convert a list of prefix names into upper to compare with partner zips
-            # later on, so let's ensure they are always upper
             if "name" in vals:
                 vals["name"] = vals["name"].upper()
         return super().create(vals_list)

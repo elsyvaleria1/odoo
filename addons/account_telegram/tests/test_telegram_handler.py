@@ -36,20 +36,17 @@ class TestHandlerDeclarations(PartnerLedgerTelegramTestCase):
             self.assertEqual(handler._name, "telegram.handler.account")
 
     def test_buttons_already_sent_keep_their_prefixes(self):
-        # a subset: an extension of the handler adds its own buttons
         self.assertLessEqual(
             {"fin_period_", "fin_custom", "ecm_partner_", "ecm_period_", "ecm_custom"},
             set(self.env["telegram.handler.account"]._telegram_callback_prefixes()),
         )
 
     def test_the_renamed_commands_keep_their_xml_ids(self):
-        # an upgrade renames the records the bots already carry
         self.assertEqual(
             self.env.ref("account_telegram.command_ecmanager").name, "/edocliente"
         )
 
     def test_the_own_statement_is_the_period_command_s_current_year(self):
-        # /estadoctapropio is gone: its current year heads the period menu
         self.assertFalse(
             self.env["telegram.command"].search([("name", "=", "/estadoctapropio")])
         )
@@ -137,7 +134,6 @@ class TestValidateDateFormat(PartnerLedgerTelegramTestCase):
         self.assertFalse(self.handler._is_date_format_valid(""))
 
     def test_unpadded_date_is_refused(self):
-        # Accepted, it compared as later than "2024-01-31" in the range check.
         self.assertFalse(self.handler._is_date_format_valid("2024-1-5"))
         self.assertFalse(self.handler._is_date_format_valid("2024-01-5"))
 
@@ -424,8 +420,6 @@ class TestValidatePartnerAccess(PartnerLedgerTelegramTestCase):
         self.assertTrue(result)
 
     def test_lines_only_in_another_company_do_not_count(self):
-        # The statement is printed for one company; lines elsewhere would
-        # print an empty PDF.
         self._post_statement_line(self.test_partner)
         self.test_bot.company_id = self.env["res.company"].create(
             {"name": "Zyx Statement Company"}
@@ -580,8 +574,6 @@ class TestManagerRole(PartnerLedgerTelegramTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.handler = cls.env["telegram.handler.account"]
-        # account's demo adds the accounting manager to base.default_user_group,
-        # so a user created without groups manages on a demo database
         cls.test_user.group_ids = cls.env.ref("base.group_user")
 
     def _help_text(self):
@@ -716,7 +708,6 @@ class TestRequesterClock(PartnerLedgerTelegramTestCase):
         cls.handler = cls.env["telegram.handler.account"]
 
     def test_last_month_on_the_evening_of_the_last_day(self):
-        # 20:00 on 30 September in Mexico City is already October in UTC.
         self.test_partner.tz = "America/Mexico_City"
         callback_query = self.mock_telegram_callback_query(
             callback_data="fin_period_1m"
@@ -755,7 +746,6 @@ class TestRequesterClock(PartnerLedgerTelegramTestCase):
         self.assertEqual(report.call_args[0][3:5], ("2026-01-01", "2026-12-31"))
 
     def test_requester_timezone_wins_over_mexico_city(self):
-        # 06:30 UTC: already the 28th in Mexico City, still the 27th in Hermosillo.
         self.test_partner.tz = "America/Hermosillo"
         with freeze_time("2026-09-28 06:30:00"):
             today = self.handler._requester_today(self.test_chat)
@@ -875,7 +865,6 @@ class TestReportFailure(PartnerLedgerTelegramTestCase):
             )
 
         Log = self.env["telegram.financial.report.log"]
-        # caught by hand: assertRaises rolls its block back, the log with it
         raised = None
         with (
             self.mock_api_gateway_post(),

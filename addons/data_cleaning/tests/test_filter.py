@@ -6,7 +6,6 @@ from . import test_common
 class TestFilter(test_common.TestCommon):
     @users("admin")
     def test_company_filter(self):
-        """Test the method `_search_company_id`, which performs custom logic for searching on the `company_id` field."""
         PartnerModel = self.env["ir.model"].search([("model", "=", "res.partner")])
 
         company = self.env["res.company"].create({"name": "Company test"})

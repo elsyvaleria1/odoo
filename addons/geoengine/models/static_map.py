@@ -29,13 +29,10 @@ WEB_MERCATOR = 3857
 WEB_MERCATOR_WIDTH = 40075016.68557849
 TILE_SIZE = 256
 MAX_ZOOM = 18
-# A lone point is framed this many metres wide, about a few streets.
 POINT_SPAN_M = 600
 DEFAULT_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
 DEFAULT_ATTRIBUTION = "© OpenStreetMap contributors"
 TILE_TIMEOUT_S = 5
-# All the tiles of one map share this budget: a slow tile server costs a
-# report seconds, not minutes.
 MAP_TILE_BUDGET_S = 10
 TILE_CACHE_DAYS = 30
 MAX_TILES = 30
@@ -77,7 +74,6 @@ class Frame:
         return (x - self.minx) / self.resolution, (self.maxy - y) / self.resolution
 
     def tiles(self) -> list[tuple[int, int, float, float]]:
-        """``(x, y, left, top)`` of every tile the frame overlaps."""
         tile_m = TILE_SIZE * self.resolution
         half = WEB_MERCATOR_WIDTH / 2
         first_x = math.floor((self.minx + half) / tile_m)
@@ -253,8 +249,6 @@ def render_static_map(
     basemap: bool = True,
     fetcher: TileFetcher | None = None,
 ) -> Markup | None:
-    """An SVG of ``items`` over their basemap, or None when none has a
-    geometry. Items in any SRID are drawn in Web Mercator, the basemap's."""
     placed = [
         (reproject(item.shape, item.srid, WEB_MERCATOR), item.style)
         for item in items

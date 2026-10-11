@@ -81,7 +81,6 @@ class MixinDocuments(models.AbstractModel):
             )
             raise ValueError(f"Invalid model {res_model} (expected {self._name})")
 
-        # a record deleted meanwhile lends the document nothing
         related_record_by_id = (
             self.env[res_model]
             .browse([res_id for vals in vals_list if (res_id := vals.get("res_id"))])
@@ -113,7 +112,6 @@ class MixinDocuments(models.AbstractModel):
             if "access_ids" in pre_vals:
                 continue
             access_ids = vals.get("access_ids") or []
-            # a grant may name a group rather than a partner
             partner_with_access = {
                 access[2].get("partner_id")
                 for access in access_ids

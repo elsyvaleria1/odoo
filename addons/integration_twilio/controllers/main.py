@@ -8,7 +8,6 @@ from odoo.addons.integration_twilio.models.integration_twilio_config import EMPT
 
 _logger = logging.getLogger(__name__)
 
-# https://www.twilio.com/docs/messaging/api/message-resource#message-status-values
 TWILIO_TO_SMS_STATE_ERRORS = {
     "failed": "error",
     "undelivered": "error",
@@ -26,8 +25,6 @@ TWILIO_TO_SMS_STATE = {
 
 
 class TwilioController(Controller):
-    # csrf=False: auth="receiver" admits the caller through its inbound gate.
-    # /sms_twilio/status/ is the URL SMS sent before the module's rename named.
     @route(
         [
             "/integration_twilio/sms/status/<string:uuid>",
@@ -53,13 +50,9 @@ class TwilioController(Controller):
     ):
         status = MessageStatus or SmsStatus
         if status not in TWILIO_TO_SMS_STATE:
-            # a status SMS does not have (read, partially_delivered) changes
-            # nothing; a 404 would only fill Twilio's error log
             _logger.info("Twilio SMS: status %r left as it was", status)
             return ""
 
-        # the gate admitted the SMS, or the tracker it outlived, under the sudo
-        # it resolved it with
         subject_sudo = request.admission.subject
         is_tracker = subject_sudo._name == "sms.tracker"
         tracker_sudo = subject_sudo if is_tracker else subject_sudo.sms_tracker_id
@@ -80,7 +73,6 @@ class TwilioController(Controller):
             subject_sudo.to_delete = True
         return ""
 
-    # Twilio reads the answer as TwiML: an empty <Response/> sends no reply
     @route(
         "/integration_twilio/sms/inbound/<string:twilio_sid>",
         type="http",

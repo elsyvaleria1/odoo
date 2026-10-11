@@ -8,25 +8,11 @@ class AccountMove(models.Model):
         comodel_name="budget.analytic",
         string="Budgets",
         compute="_compute_budget_analytic_ids",
-        # `budget.report` is readable by `group_account_readonly` and above;
-        # `group_account_invoice` implies only `base.group_user`
-        # (`core/addons/account/security/account_security.xml:64-70`), so an
-        # invoicing-only user must not reach this field or the compute would
-        # raise on them.
         groups="account.group_account_readonly",
     )
 
     @api.depends("line_ids.analytic_line_ids")
     def _compute_budget_analytic_ids(self) -> None:
-        """Read the budgets off `budget.report` instead of re-deriving them.
-
-        The report is already the model that decides which budget line an
-        analytic entry falls under: it applies the period, the company, the
-        account type against the budget type, and the guard that a budget
-        line scoping no plan at all claims nothing. Re-deriving that join
-        here would give the smart button its own opinion, and the button and
-        the report would disagree the first time either one changed.
-        """
         move_of_line = {
             line.id: move for move in self for line in move.line_ids.analytic_line_ids
         }

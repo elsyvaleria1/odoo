@@ -21,7 +21,6 @@ def _get_notify_socket() -> str | None:
     path = os.environ.get("NOTIFY_SOCKET") or ""
     if not path:
         return None
-    # An abstract socket is spelled with a leading "@" in the variable.
     return "\0" + path[1:] if path.startswith("@") else path
 
 
@@ -49,13 +48,10 @@ def notify_ready() -> bool:
 
 
 def notify_reloading() -> bool:
-    # Type=notify-reload wants the CLOCK_MONOTONIC stamp of the request.
     return notify(f"RELOADING=1\nMONOTONIC_USEC={time.monotonic_ns() // 1000}")
 
 
 def get_watchdog_interval() -> float | None:
-    # Half of the unit's WatchdogSec=, as sd_watchdog_enabled(3) recommends,
-    # and only when the variable names this process or names none.
     usec = os.environ.get("WATCHDOG_USEC") or ""
     if not usec.isdecimal():
         return None

@@ -203,7 +203,7 @@ class CrmLead(models.Model):
             latitude = lead.partner_latitude
             longitude = lead.partner_longitude
             if latitude and longitude:
-                partner_ids = Partner.search(  # noqa: E8507 - widening radius probes per lead; the first non-empty ring wins
+                partner_ids = Partner.search(
                     [
                         ("partner_weight", ">", 0),
                         ("partner_latitude", ">", latitude - 2),
@@ -216,7 +216,7 @@ class CrmLead(models.Model):
                 )
 
                 if not partner_ids:
-                    partner_ids = Partner.search(  # noqa: E8507 - widening radius probes per lead; the first non-empty ring wins
+                    partner_ids = Partner.search(
                         [
                             ("partner_weight", ">", 0),
                             ("partner_latitude", ">", latitude - 4),
@@ -229,7 +229,7 @@ class CrmLead(models.Model):
                     )
 
                 if not partner_ids:
-                    partner_ids = Partner.search(  # noqa: E8507 - widening radius probes per lead; the first non-empty ring wins
+                    partner_ids = Partner.search(
                         [
                             ("partner_weight", ">", 0),
                             ("partner_latitude", ">", latitude - 8),
@@ -242,7 +242,7 @@ class CrmLead(models.Model):
                     )
 
                 if not partner_ids:
-                    partner_ids = Partner.search(  # noqa: E8507 - widening radius probes per lead; the first non-empty ring wins
+                    partner_ids = Partner.search(
                         [
                             ("partner_weight", ">", 0),
                             ("country_id", "=", lead.country_id.id),

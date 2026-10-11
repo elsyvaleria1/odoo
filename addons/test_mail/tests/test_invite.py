@@ -42,9 +42,6 @@ class TestInvite(MailCommon):
         with self.mock_mail_app(), self.mock_mail_gateway():
             mail_invite.edit_followers()
 
-        # Check added followers and that notifications are sent.
-        # Admin notification preference is inbox so the notification must be of inbox type
-        # while partner_employee must receive it by email.
         self.assertEqual(
             test_record.message_partner_ids, test_partner | self.user_admin.partner_id
         )
@@ -57,7 +54,6 @@ class TestInvite(MailCommon):
             [{"partner": self.partner_admin, "type": "inbox", "is_read": False}],
         )
 
-        # Remove followers
         mail_remove = (
             self.env["wizard.mail.followers.update"]
             .with_context(
@@ -81,7 +77,6 @@ class TestInvite(MailCommon):
         with self.mock_mail_app(), self.mock_mail_gateway():
             mail_remove.edit_followers()
 
-        # Check removed followers and that notifications are sent.
         self.assertEqual(test_record.message_partner_ids, self.env["res.partner"])
 
     def test_edit_followers_drops_stale_ids_and_refuses_an_empty_selection(self):

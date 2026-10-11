@@ -2,19 +2,9 @@ from odoo.tests import Form, tagged
 from odoo.tests.common import TransactionCase
 
 
-# `post_install`: `Form` needs the quality.check form view, and this module
-# does not carry one -- `quality_control` does, and its arch names fields
-# (`hide_picking_id`) that are not in the registry while `quality`'s own
-# at-install phase runs.  Measured: `inregistry False` at that point, so the
-# modifier raised NameError on any database where `quality_control` is
-# installed.
 @tagged("post_install", "-at_install")
 class TestQualityCheck(TransactionCase):
     def test_change_quality_point(self):
-        """
-        Test that a quality point can be used with an incompatible product and that a change of
-        a quality piont changes the test_type of the quality check accordingly.
-        """
         product_a = self.env["product.product"].create(
             {
                 "name": "product a",
@@ -53,9 +43,6 @@ class TestQualityCheck(TransactionCase):
         self.assertEqual(qc.point_id, qp_product_a)
 
     def test_duplicates_quality_checks(self):
-        """
-        Test that the quality.check model's name and control_date fields are not copied when duplicating a quality.check
-        """
         qc_a = self.env["quality.check"].create(
             {
                 "team_id": self.env.ref("quality.quality_alert_team0").id,

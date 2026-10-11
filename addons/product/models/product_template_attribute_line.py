@@ -90,8 +90,6 @@ class ProductTemplateAttributeLine(models.Model):
         archived_ptal_pool = self._pool_of_reusable_archived_lines(vals_list)
         default_purpose = self.default_get(["purpose"]).get("purpose", "variant")
         for index, value in enumerate(vals_list):
-            # A reused archived line keeps whatever is not written: its old
-            # purpose must not carry over to the line asked for.
             vals = dict(
                 value,
                 active=value.get("active", True),

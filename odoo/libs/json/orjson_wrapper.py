@@ -66,8 +66,6 @@ def _orjson_key(key: Any, option: int) -> str:
         return key
     if type(key) is int:
         return str(key)
-    # orjson's own spelling ("1e-7", "true", an Enum's value) keeps the
-    # fallback identical, and all-str keys still sort when the stdlib sorts
     (spelled,) = _orjson.loads(_orjson.dumps({key: None}, option=option))
     return spelled
 
@@ -76,10 +74,6 @@ def _encode(obj: Any, default: Callable | None, option: int) -> bytes:
     try:
         return _orjson.dumps(obj, default=default, option=option)
     except TypeError as error:
-        # orjson refuses what JSON can carry: an integer past 64 bits, and a
-        # str holding a lone surrogate (text decoded with surrogateescape).
-        # The stdlib writes both; the payload keeps orjson's shape otherwise.
-        # What the stdlib refuses too re-raises orjson's own error.
         indent = 2 if option & _orjson.OPT_INDENT_2 else None
         key_option = option & ~(_orjson.OPT_INDENT_2 | _orjson.OPT_SORT_KEYS)
         try:
@@ -124,8 +118,6 @@ def loads(
     parse_constant: Callable[[str], Any] | None = None,
     strict: bool = True,
 ) -> Any:
-    # orjson refuses a subclass (Markup, a lazy text); the stdlib reads it,
-    # and raises TypeError, not a decode error, for what is no text at all
     if type(s) is not str and isinstance(s, str):
         s = str(s)
     elif type(s) is not bytes and isinstance(s, bytes):
@@ -134,7 +126,6 @@ def loads(
         msg = f"the JSON object must be str, bytes or bytearray, not {type(s).__name__}"
         raise TypeError(msg)
     if parse_float is not None or parse_constant is not None or not strict:
-        # orjson has no parse hooks and no lenient mode: they are the stdlib's
         return _json.loads(
             bytes(s) if isinstance(s, memoryview) else s,
             parse_float=parse_float,
@@ -158,14 +149,10 @@ def loads(
         except ValueError, RecursionError:
             raise error from None
     if _may_hold_wide_integer(s, value):
-        # orjson reads an integer past 64 bits as a float; the stdlib keeps it
-        # exact. orjson parsed first, so what it rejects is still rejected.
         return _json.loads(bytes(s) if isinstance(s, memoryview) else s)
     return value
 
 
-# orjson's wording (pinned in requirements.txt) for the two things dumps
-# writes through the stdlib; the round-trip tests fail if it changes
 _LONE_SURROGATE_ERRORS = frozenset(
     {
         "no low surrogate in string",
@@ -187,10 +174,6 @@ def _is_what_dumps_writes(
 def _orjson_reads_it_rewritten(
     data: bytes, error: _orjson.JSONDecodeError, lone_surrogates: bool
 ) -> bool:
-    # The stdlib reads more than orjson: a BOM, UTF-16, raw surrogate bytes,
-    # nesting past 1024. Each rewrite clears its kind of error everywhere and
-    # keeps the document's grammar, so orjson accepting the rewritten bytes
-    # proves those two kinds were its only objection.
     for _ in range(2):
         if not _is_what_dumps_writes(error, lone_surrogates):
             return False
@@ -224,21 +207,13 @@ def _finite_float(text: str) -> float:
 _DIGIT_MASK = bytes(
     0x30 if 0x30 <= b <= 0x39 else b if b == 0x2D else 0x78 for b in range(256)
 )
-# orjson reads any 19-digit integer exactly, and a negative one down to i64
-# only, so 20 digits or a minus and 19 are where it may read a float instead
 _WIDE_POSITIVE = b"0" * 20
 _WIDE_NEGATIVE = b"-" + b"0" * 19
-# a 309-digit integer is where a double may overflow; two leading digits keep
-# a run's grammar (a leading zero followed by more digits stays invalid)
 _OVERFLOWING_RUN = b"0" * 309
 _NOT_A_DIGIT = re.compile(rb"[^0]")
 
 
-# what orjson reads a wide integer as: a float of at least 2**63 in magnitude,
-# 2**64 and up when positive (it keeps a u64 exact), -2**63 - 1 and down
 _WIDE_FLOAT = float(2**63)
-# a body this short is cheaper to byte-scan than to walk; past it, the walk
-# visits few nodes for a large body (an upload's base64 string is one node)
 _BYTE_SCAN_LIMIT = 65536
 _WALK_BUDGET = 10_000
 
@@ -258,8 +233,6 @@ def _may_hold_wide_integer(s: str | bytes | bytearray | memoryview, value: Any) 
 
 
 def _holds_wide_float(value: Any, budget: int | None) -> bool | None:
-    # a float of that magnitude is also what a float literal (1e19) reads as:
-    # finding one only sends the body to the stdlib, which reads both right
     pending = [value]
     visited = 0
     while pending:

@@ -86,14 +86,7 @@ class TestTripTrace(TransactionCase):
         cls.damaged = cls.env.ref("stock_fleet_trace.unbatch_reason_damaged_product")
         cls.absent = cls.env.ref("stock_fleet.unbatch_reason_customer_absent")
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     def _delivery(self, lines):
-        """A delivery fed through the shipping transit, as CDG runs SHIP -> OUT.
-
-        :param list lines: (product, quantity) pairs
-        """
         delivery = self.env["stock.picking"].create(
             {
                 "picking_type_id": self.out_type.id,
@@ -165,7 +158,6 @@ class TestTripTrace(TransactionCase):
         return sum(quants.mapped("quantity"))
 
     def _stop_result(self, picking, delivered, reason=None, whole_reason=None):
-        """Record a stop: ``delivered`` maps products to the quantity taken."""
         wizard = (
             self.env["wizard.stock.trip.stop.result"]
             .with_context(default_picking_id=picking.id)
@@ -182,7 +174,6 @@ class TestTripTrace(TransactionCase):
         trip.action_return()
 
     def _confirm_unload(self, trip, counted=None):
-        """The warehouse counts the unloading; ``counted`` overrides per product."""
         unload = trip.trip_support_picking_ids.filtered(
             lambda p: p.trip_support_kind == "unload"
         )
@@ -204,9 +195,6 @@ class TestTripTrace(TransactionCase):
     def _balance(self, trip, product):
         return trip.trip_balance_ids.filtered(lambda line: line.product_id == product)
 
-    # ------------------------------------------------------------------
-    # Loading and departure
-    # ------------------------------------------------------------------
     def test_departure_loads_the_goods_onto_the_vehicle(self):
         delivery = self._delivery([(self.product, 5), (self.lot_product, 3)])
         trip = self._trip(delivery)
@@ -218,7 +206,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(vehicle_location.location_id, self.transit)
         self.assertEqual(self._on_board(trip, self.product), 5)
         self.assertEqual(self._on_board(trip, self.lot_product), 3)
-        # The delivery still holds its goods, now on the vehicle, same lot.
         self.assertEqual(delivery.state, "assigned")
         lines = delivery.move_ids.move_line_ids
         self.assertEqual(lines.location_id, vehicle_location)
@@ -312,9 +299,6 @@ class TestTripTrace(TransactionCase):
         with self.assertRaisesRegex(UserError, "already loaded"):
             other.with_context(trip_handover=True).write({"batch_id": trip.id})
 
-    # ------------------------------------------------------------------
-    # Stops
-    # ------------------------------------------------------------------
     def test_a_full_trip_balances_without_unloading(self):
         delivery = self._delivery([(self.product, 5)])
         trip = self._trip(delivery)
@@ -369,8 +353,6 @@ class TestTripTrace(TransactionCase):
         backorder = delivery.backorder_ids
         self.assertEqual(backorder.move_ids.product_uom_qty, 2)
         self.assertFalse(backorder.batch_id)
-        # The rejected units are free on the vehicle: they return to stock, not to
-        # the customer.
         self.assertFalse(backorder.move_ids.move_line_ids)
         self._return(trip)
         self._confirm_unload(trip)
@@ -386,7 +368,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(delivery.trip_delivery_result, "not_delivered")
         self._return(trip)
         unload = self._confirm_unload(trip)
-        # Back to where deliveries leave from, still reserved to the delivery.
         self.assertEqual(unload.move_ids.location_dest_id, self.transit)
         self.assertEqual(delivery.state, "assigned")
         self.assertEqual(delivery.move_ids.move_line_ids.location_id, self.transit)
@@ -403,9 +384,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(trip.balance_state, "difference", self._dump(trip))
         self.assertEqual(self._balance(trip, self.product).qty_difference, -1)
 
-    # ------------------------------------------------------------------
-    # Incidents
-    # ------------------------------------------------------------------
     def test_a_spill_writes_off_only_once_approved(self):
         delivery = self._delivery([(self.product, 5)])
         trip = self._trip(delivery)
@@ -548,7 +526,6 @@ class TestTripTrace(TransactionCase):
             }
         )
         order.action_confirm()
-        # A warehouse in two steps stages the goods first.
         for leg in order.picking_ids.filtered(
             lambda p: p.picking_type_id != self.out_type
         ):
@@ -566,9 +543,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(delivery.trip_delivery_result, "partial")
         self.assertEqual(delivery.move_ids.quantity, 3)
 
-    # ------------------------------------------------------------------
-    # Scanning
-    # ------------------------------------------------------------------
     def test_scanning_departs_marks_arrival_and_counts_the_lots(self):
         delivery = self._delivery([(self.product, 5), (self.lot_product, 3)])
         trip = self._trip(delivery)
@@ -577,7 +551,6 @@ class TestTripTrace(TransactionCase):
         with self.assertRaisesRegex(UserError, "not by its operator"):
             as_driver._trip_process_scan(trip.name)
 
-        # The supervisor (or the gate) reads the sheet; the driver cannot.
         message, _stop = trip.with_user(self.supervisor)._trip_process_scan(trip.name)
         self.assertEqual(trip.trip_state, "in_transit", message)
         departure = trip.trip_checkpoint_ids.filtered(
@@ -588,7 +561,6 @@ class TestTripTrace(TransactionCase):
         _message, stop = as_driver._trip_process_scan(delivery.name)
         self.assertEqual(stop, delivery)
         self.assertTrue(delivery.trip_arrival_date)
-        # One scan of the slip registers every unit of the delivery.
         scanned = delivery._trip_scanned_by_lot()
         self.assertEqual(scanned[(self.lot_product, self.lot)], 3)
         self.assertEqual(scanned[(self.product, self.env["product.trace"])], 5)
@@ -597,7 +569,6 @@ class TestTripTrace(TransactionCase):
                 {"name": "OTHER-LOT", "product_id": self.lot_product.id}
             )
             as_driver._trip_process_scan(other.name, picking=delivery)
-        # A lot read afterwards only checks it: it is already complete.
         message, _stop = as_driver._trip_process_scan(self.lot.name, picking=delivery)
         self.assertIn("already complete", message)
         self.assertEqual(
@@ -616,7 +587,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(
             delivery._trip_scanned_by_lot()[(self.lot_product, self.lot)], 3
         )
-        # The product without lot was not counted, so it does not block Delivered.
         delivery.with_user(self.driver_user).action_deliver()
         self.assertEqual(delivery.state, "done")
 
@@ -625,7 +595,6 @@ class TestTripTrace(TransactionCase):
         trip = self._trip(delivery)
         trip.action_depart()
         as_driver = trip.with_user(self.driver_user)
-        # An explicit count (e.g. the office typing what the customer took).
         as_driver._trip_process_scan(self.lot.name, 2, delivery)
         with self.assertRaisesRegex(UserError, "only 3.0 travel"):
             as_driver._trip_process_scan(self.lot.name, 2, delivery)
@@ -644,7 +613,7 @@ class TestTripTrace(TransactionCase):
         trip = self._trip(delivery)
         trip.action_depart()
         delivery.move_ids.picked = True
-        delivery.button_validate()  # e.g. from the barcode app
+        delivery.button_validate()
         outcome = trip.trip_checkpoint_ids.filtered(
             lambda c: c.event_type == "delivery"
         )
@@ -655,7 +624,6 @@ class TestTripTrace(TransactionCase):
         if "block_expired_lots" not in self.out_type._fields:
             self.skipTest("stock_expired_lot_guard is not installed")
         self.out_type.block_expired_lots = True
-        # A one-step delivery: it draws straight from the warehouse stock.
         delivery = self.env["stock.picking"].create(
             {
                 "picking_type_id": self.out_type.id,
@@ -676,7 +644,6 @@ class TestTripTrace(TransactionCase):
         )
         delivery.action_confirm()
         delivery.action_assign()
-        # The lot expires after the reservation, as it would overnight.
         self.lot.expiration_date = "2020-01-01 00:00:00"
         trip = self._trip(delivery)
         with self.assertRaisesRegex(UserError, "expired"):
@@ -684,14 +651,10 @@ class TestTripTrace(TransactionCase):
         self.assertFalse(trip.date_loaded)
 
     def test_a_lot_past_its_removal_date_boards_without_an_unseen_question(self):
-        # Past its removal date but not expired: the expiry wizard would ask on
-        # the loading transfer and, unanswered, leave the trip loaded with
-        # nothing on board. The expired-lot guard already judged the delivery.
         if "use_expiration_date" not in self.lot_product._fields:
             self.skipTest("product_expiry is not installed")
         self.lot_product.use_expiration_date = True
         delivery = self._delivery([(self.lot_product, 3)])
-        # The removal date passes after the reservation, as it would overnight.
         now = fields.Datetime.now()
         self.lot.write(
             {
@@ -706,8 +669,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(self._on_board(trip, self.lot_product), 3)
         trip.action_depart()
         self.assertEqual(trip.trip_state, "in_transit")
-        # Nor is the question asked again at the customer's door, where the
-        # expired-lot guard already judged the lot on loading.
         if "block_expired_lots" in self.out_type._fields:
             self.out_type.block_expired_lots = True
             self.assertTrue(delivery._trip_expiry_decided())
@@ -727,8 +688,6 @@ class TestTripTrace(TransactionCase):
         self.env.ref("product.decimal_stock_weight").digits = 6
         self.product.weight = 1.25
         delivery = self._delivery([(self.product, 2)])
-        # The slip prints in the customer's language: English here, whatever
-        # languages the database has.
         delivery.partner_id.lang = "en_US"
         trip = self._trip(delivery)
         trip.action_depart()
@@ -737,10 +696,7 @@ class TestTripTrace(TransactionCase):
         html = report._render_qweb_html("stock.report_deliveryslip", delivery.ids)[
             0
         ].decode()
-        # Operator is the trip's driver, and a delivery without a phone signature
-        # gets blank lines to sign on paper, not the customer's name.
         self.assertIn(self.driver.name, html)
-        # The company keeps weights at six decimals (marin); the slip prints two.
         self.assertIn("2.50", html)
         self.assertNotIn("2.500", html)
         self.assertIn("Received By", html)
@@ -750,7 +706,6 @@ class TestTripTrace(TransactionCase):
             0
         ].decode()
         self.assertIn("Juan Almacenista", html)
-        # In Spanish, as production prints it, the paper lines are translated.
         Lang = self.env["res.lang"].with_context(active_test=False)
         if not Lang.search([("code", "=", "es_MX"), ("active", "=", True)]):
             return
@@ -764,8 +719,6 @@ class TestTripTrace(TransactionCase):
         self.assertNotIn("Signature:", html)
 
     def test_a_delivery_on_board_comes_off_only_as_not_delivered(self):
-        # Taking a loaded delivery off the trip as it is would trap its goods on
-        # the vehicle: the unload would not bring them back.
         delivery = self._delivery([(self.product, 2)])
         trip = self._trip(delivery)
         trip.action_trip_load()
@@ -790,8 +743,6 @@ class TestTripTrace(TransactionCase):
         self._spill_then_breakdown("direct")
 
     def test_a_spill_does_not_hold_back_a_deliver_all_at_once_delivery(self):
-        # Production creates every delivery as "deliver all at once": once
-        # loaded, a spill must not keep the rescue trip from departing.
         self._spill_then_breakdown("one")
 
     def test_a_trip_of_a_type_that_does_not_require_trips_says_so(self):
@@ -854,9 +805,6 @@ class TestTripTrace(TransactionCase):
         self.assertEqual(trip.balance_state, "balanced", self._dump(trip))
         self.assertEqual(rescue.balance_state, "balanced", self._dump(rescue))
 
-    # ------------------------------------------------------------------
-    # The log
-    # ------------------------------------------------------------------
     def test_the_log_cannot_be_edited_and_tampering_is_detected(self):
         trip = self._trip(self._delivery([(self.product, 1)]))
         trip.action_depart()
@@ -866,7 +814,6 @@ class TestTripTrace(TransactionCase):
         with self.assertRaises(UserError):
             checkpoint.unlink()
         trip.action_trip_verify_log()
-        # An edit made behind the ORM breaks the seal.
         self.env.cr.execute(
             "UPDATE stock_trip_checkpoint SET odometer = 1 WHERE id = %s",
             [checkpoint.id],

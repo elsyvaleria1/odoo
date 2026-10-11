@@ -698,9 +698,6 @@ class ApprovalRequest(models.Model):
             )
 
     def _get_routed_step(self, step) -> RoutedStep:
-        """`step` as this request was routed under it, so editing the step decides
-        no request it already routed. A request routed before its snapshot kept the
-        steps, or still a draft, reads the step as it is."""
         self.check_singleton()
         for entry in (self.category_snapshot or {}).get("steps", ()):
             if entry.get("id") == step.id:
@@ -912,8 +909,6 @@ class ApprovalRequest(models.Model):
                 )
 
     def _get_deciding_refusals(self):
-        """Refused rows that refuse the request: all but those refused only for
-        advisory steps."""
         self.check_singleton()
         refused = self.approver_ids.filtered(
             lambda approver: approver.state == "refused"
@@ -964,10 +959,6 @@ class ApprovalRequest(models.Model):
         return met
 
     def _get_quorum_short_of_people(self) -> dict[str, Any] | None:
-        """The first quorum delegation leaves fewer distinct people than it asks
-        for: a delegated row counts as its delegate, an approved row as whoever
-        approved it. A step a group staffs is left alone, anyone in the group may
-        decide it without a row; so is a quorum already short without delegation."""
         self.check_singleton()
         if self.state not in ("new", "pending"):
             return None
@@ -1018,19 +1009,6 @@ class ApprovalRequest(models.Model):
         }
 
     def _get_step_assignment(self) -> dict[int, Any]:
-        """Which approved rows count toward each step, exclusivity applied, one per
-        person: whoever decided several rows standing in for their principals
-        counts once toward a step, as they clicked once.
-
-        An approved row counts toward every step its decision was given for. That is
-        Studio's rule -- a user who decided an exclusive step decides nothing else on
-        the same record, and the other way round -- which a decision keeps when it
-        is taken (_get_steps_for_decision, _check_steps_decidable). A row approved
-        for several steps one of which is exclusive, as consent or an automatic rule
-        approves, counts toward exactly one: the lowest still short of its quorum.
-        The approval button shows this assignment, so what it draws is what the
-        quorum counts.
-        """
         self.check_singleton()
         steps = self._sort_routed_steps(self.approver_ids.step_ids)
         routed = {step.id: self._get_routed_step(step) for step in steps}
@@ -1075,12 +1053,6 @@ class ApprovalRequest(models.Model):
         )
 
     def _get_step_required_rows_pending(self, step):
-        """The rows of a step's required members that have not approved it yet.
-
-        Required is per step: a member required on one step holds that step until
-        they approve it, whatever else they are asked for, and holds nothing on a
-        step they are a plain member of. A required member of an advisory step
-        holds no more than the step does, which is nothing."""
         self.check_singleton()
         required = self._get_routed_step(step).required_user_ids
         if not required:
@@ -1094,23 +1066,18 @@ class ApprovalRequest(models.Model):
         )
 
     def _get_blocking_unmet_steps(self):
-        """The unmet steps the request waits for: advisory steps never hold it."""
         self.check_singleton()
         return self._get_unmet_steps().filtered(
             lambda step: not self._get_routed_step(step).advisory
         )
 
     def _get_step_turn_row(self, step):
-        """On a step whose members decide in order, the row whose turn it is: the first
-        member, in the members' order, whose row has not approved the step yet."""
         self.check_singleton()
         named = step.sudo()._get_source_user_ids(self.get_source_document(), self)
         member_sequence = dict.fromkeys(named, step.subject_user_sequence)
         member_sequence.update(
             {member.user_id.id: member.sequence for member in step.member_ids}
         )
-        # A member takes its member sequence; an approver added to the request takes
-        # its own row sequence, which is how the approver list ordered them.
         rows = self.approver_ids.filtered(lambda row: step in row.step_ids).sorted(
             lambda row: (member_sequence.get(row.user_id.id, row.sequence), row.id)
         )
@@ -1159,8 +1126,6 @@ class ApprovalRequest(models.Model):
         return not step.in_order or self._get_step_turn_row(step) == row
 
     def _get_open_steps(self):
-        """The unmet steps an approver is asked for now: the lowest sequence among the
-        blocking ones, and every advisory step still unmet, which waits for nobody."""
         self.check_singleton()
         unmet = self._get_unmet_steps()
         blocking = unmet.filtered(lambda step: not self._get_routed_step(step).advisory)
@@ -1254,7 +1219,6 @@ class ApprovalRequest(models.Model):
             return False
 
     def _as_owner(self, record):
-        """`record` as this request's owner acts on it: as them, in their companies."""
         self.check_singleton()
         owner = self.request_owner_id
         acting = record.with_user(owner).with_context(

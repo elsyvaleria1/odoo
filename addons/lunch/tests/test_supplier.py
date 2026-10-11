@@ -64,10 +64,6 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
 
     @common.users("cle-lunch-manager")
     def test_search_available_today(self):
-        """
-        This test checks that _search_available_today returns a valid domain.
-        The field is of type boolean, so it accepts only the '=' operator.
-        """
         self.env.user.tz = "Europe/Brussels"
         Supplier = self.env["lunch.supplier"]
 
@@ -181,26 +177,9 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
                         }
                     )
 
-                    ######################################################
-                    # id:  # lines:               # state:      # quantity:
-                    #######################################################
-                    # 1    # line_pizza           # sent        # 1
-                    # 2    # line_pizza_olive     # sent        # 1
-                    # 3    # line_tuna            # ordered     # 1
-                    # 4    # line_pizza_2         # new         # 2
-                    # 5    # line_pizza_olive_2   # new         # 1
-                    # 6    # line_tuna_2          # new         # 2
 
                     (line_pizza_2 | line_pizza_olive_2 | line_tuna_2).action_order()
 
-                    ######################################################
-                    # id:  # lines:               # state:      # quantity:
-                    #######################################################
-                    # 1    # line_pizza           # sent        # 1
-                    # 2    # line_pizza_olive     # sent        # 1
-                    # 3    # line_tuna            # ordered     # 3 (1 + 2 from line_tuna_2 id=6)
-                    # 4    # line_pizza_2         # ordered     # 2
-                    # 5    # line_pizza_olive_2   # ordered     # 1
 
                     assert all(
                         line.state == "ordered"
@@ -214,7 +193,7 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
 
     @common.users("cle-lunch-manager")
     def test_cron_sync_create(self):
-        cron_ny = self.supplier_kothai.cron_id  # I am at New-York
+        cron_ny = self.supplier_kothai.cron_id
         self.assertTrue(cron_ny.active)
         self.assertEqual(cron_ny.name, "Lunch: send automatic email to Kothai")
         self.assertEqual(
@@ -230,7 +209,7 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
         )
         self.assertEqual(
             cron_ny.nextcall, datetime(2021, 1, 29, 15, 0)
-        )  # New-york is UTC-5
+        )
 
     @common.users("cle-lunch-manager")
     def test_cron_sync_active(self):
@@ -256,7 +235,6 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
             cron_ny.nextcall, old_nextcall - timedelta(hours=5) + timedelta(days=1)
         )
 
-        # Simulate cron execution
         cron_ny.sudo().lastcall = old_nextcall - timedelta(hours=5)
         cron_ny.sudo().nextcall += timedelta(days=1)
 
@@ -298,7 +276,6 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
             }
         )
 
-        # simulating the delete as it's done on frontend
         supplier.write(
             {
                 "topping_ids_2": [(2, supplier.topping_ids_2.id)],
@@ -306,7 +283,6 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
         )
         self.assertFalse(supplier.topping_ids_2)
 
-        # simulating the delete as it's done on frontend
         supplier.write(
             {
                 "topping_ids_3": [(2, supplier.topping_ids_3.id)],
@@ -315,7 +291,6 @@ env['lunch.supplier'].browse([{self.supplier_kothai.id}])._send_auto_email()""",
         self.assertFalse(supplier.topping_ids_3)
 
     def test_lunch_order_with_minimum_threshold(self):
-        """Test that lunch order is allowed within the overdraft threshold."""
 
         self.env.company.lunch_config_id.lunch_minimum_threshold = 200.0
         order = self.env["lunch.order"].create(

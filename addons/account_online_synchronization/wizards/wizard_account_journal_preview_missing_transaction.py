@@ -100,7 +100,7 @@ class WizardAccountJournalPreviewMissingTransaction(models.TransientModel):
                         for transaction in filtered_transactions
                         if transaction.get("state") != "pending"
                     ]
-                ),  # Activate this default filter only if we have posted transactions
+                ),
             },
         }
 

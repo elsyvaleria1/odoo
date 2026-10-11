@@ -15,8 +15,6 @@ class TestAccountAvalaraUseTaxVendorManagement(TestAvataxCommon):
         return res
 
     def test_vendor_identifier_mapping(self):
-        """Identify the vendor identifier field (typically the database key in the vendor master)
-        to map to the “CustomerCode” field in Avalara."""
         Partner = self.env["res.partner"]
         partner = Partner.search([], limit=1)
         partner_via_code = Partner.search(
@@ -32,13 +30,6 @@ class TestAccountAvalaraUseTaxProductManagement(TestAccountAvataxCommon):
     """https://developer.avalara.com/certification/avatax/use-tax-badge/"""
 
     def test_item_code(self):
-        """Identify item/service/charge code (number, ID) to pass to the AvaTax service. If the
-        customer has access to UPC, they should be able to prepend UPC to the code and have it come
-        across in the item code field. If there is no UPC, it should fall back to SKU. (See UPC
-        requirements in the Administration & Utilities Integration section) For Purchase Invoices
-        not associated with a Purchase Order, you may not have access to the ItemCode from the
-        client application. In that case, simply use the GL account number/cost center identifier.
-        """
         self.env.company.avalara_use_upc = False
         with self._capture_request(
             return_value={"lines": [], "summary": []}
@@ -62,12 +53,11 @@ class TestAccountAvalaraUseTaxProductManagement(TestAccountAvataxCommon):
         )
 
     def test_item_code_is_not_more_than_50_characters(self):
-        """Ensure that the item code passed to AvaTax is not more than 50 characters long."""
         product = self.env["product.product"].create(
             {
                 "name": "Product",
-                "default_code": 100 * "A",  # A very long default code
-                "barcode": 100 * "1",  # A very long barcode
+                "default_code": 100 * "A",
+                "barcode": 100 * "1",
                 "list_price": 15.00,
                 "standard_price": 15.00,
                 "supplier_taxes_id": None,
@@ -106,9 +96,6 @@ class TestAccountAvalaraUseTaxProductManagement(TestAccountAvataxCommon):
         )
 
     def test_item_description(self):
-        """Identify item/service/charge description to pass to the AvaTax service with a
-        human-readable description or item name.
-        """
         with self._capture_request(
             return_value={"lines": [], "summary": []}
         ) as capture:

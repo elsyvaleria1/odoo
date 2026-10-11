@@ -32,10 +32,6 @@ class CameraDriver(Driver):
         return bool(device["interface"])
 
     def _action_default(self, _data):
-        """Capture an image from the camera.
-        The resolution is set to 1920x1080, but will be lowered if not supported.
-        """
-        # "-" to output to stdout (avoid writing to disk)
         image = subprocess.run(
             ["fswebcam", "-d", self.interface, "-r", "1920x1080", "-"],
             capture_output=True,

@@ -27,9 +27,8 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
         dummy_client_secret = "pi_123456789_secret_dummy_123456789"
         tx = self._create_transaction(
             flow="direct"
-        )  # We don't really care what the flow is here.
+        )
 
-        # Ensure no external API call is done, we only want to check the processing values logic
         def mock_stripe_stripe_create_intent(self):
             return {"client_secret": dummy_client_secret}
 
@@ -94,7 +93,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_stripe.controllers.main")
     def test_webhook_notification_confirms_transaction(self):
-        """Test the processing of a webhook notification."""
         tx = self._create_transaction("redirect")
         url = self._build_url(StripeController._webhook_url)
         with patch(
@@ -222,7 +220,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_stripe.controllers.main")
     def test_webhook_notification_tokenizes_payment_method(self):
-        """Test the processing of a webhook notification."""
         self.amount = 0.0
         self._create_transaction("dummy", operation="validation", tokenize=True)
         url = self._build_url(StripeController._webhook_url)
@@ -247,7 +244,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_stripe.controllers.main")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(StripeController._webhook_url)
         with (
@@ -266,7 +262,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
     def test_webhook_notification_skips_signature_verification_for_missing_transactions(
         self,
     ):
-        """Test that the webhook ignores signature verification for unknown transactions (e.g. POS)."""
         url = self._build_url(StripeController._webhook_url)
         payload = dict(self.payment_data)
         payload["data"]["object"]["description"] = None
@@ -327,7 +322,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
         self.assertIn("setup_intent_client_secret=***REDACTED***", log)
 
     def test_onboarding_action_redirect_to_url(self):
-        """Test that the action generate and return an URL when the provider is disabled."""
         if country := self.env["res.country"].search(
             [("code", "in", list(const.SUPPORTED_COUNTRIES))], limit=1
         ):
@@ -353,7 +347,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
         self.assertEqual(onboarding_url["url"], "https://dummy.url")
 
     def test_country_mapping_stripe_connect(self):
-        """Test that La Réunion (and other french territories) is supported by Stripe Connect."""
         mapped_country_company = self.env["res.company"].create(
             {
                 "name": "Mapped Company",
@@ -423,7 +416,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
             self.stripe.stripe_secret_key = False
 
     def test_only_create_webhook_if_not_already_done(self):
-        """Test that a webhook is created only if the webhook secret is not already set."""
         self.stripe.stripe_webhook_secret = False
         with patch.object(
             self.env.registry["payment.provider"], "_send_api_request"
@@ -432,7 +424,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
             self.assertEqual(mock.call_count, 1)
 
     def test_do_not_create_webhook_if_already_done(self):
-        """Test that no webhook is created if the webhook secret is already set."""
         self.stripe.stripe_webhook_secret = "dummy"
         with patch.object(
             self.env.registry["payment.provider"], "_send_api_request"
@@ -441,7 +432,6 @@ class StripeTest(StripeCommon, PaymentHttpCommon):
             self.assertEqual(mock.call_count, 0)
 
     def test_create_account_link_pass_required_parameters(self):
-        """Test that the generation of an account link includes all the required parameters."""
         with patch.object(
             self.env.registry["payment.provider"],
             "_send_api_request",

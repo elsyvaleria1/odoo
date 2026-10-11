@@ -17,12 +17,6 @@ class HelpdeskTeam(models.Model):
         return result
 
     def _is_sale_timesheet_feature_enabled(self) -> bool:
-        """Check if the Time Billing feature is enabled
-
-        Check if the user can see at least one helpdesk team with `use_helpdesk_sale_timesheet=True`
-
-        :return True if the feature is enabled otherwise False.
-        """
         return bool(
             self.env["team.team"].search(
                 [("use_helpdesk_sale_timesheet", "=", True)], limit=1

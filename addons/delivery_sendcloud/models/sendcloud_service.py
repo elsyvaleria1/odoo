@@ -10,7 +10,6 @@ from odoo.tools.urls import urljoin as url_join
 
 _logger = logging.getLogger(__name__)
 
-# More information at : https://api.sendcloud.dev/docs/sendcloud-public-api/integrations
 BASE_URL = "https://panel.sendcloud.sc/api/v2/"
 MULTICOLLO_MAX_PACKAGE = 20
 
@@ -69,7 +68,6 @@ class SendCloud:
     def _get_shipping_rate(
         self, carrier, order=None, picking=None, parcel=None, order_weight=None
     ) -> tuple | None:
-        # Get source, destination and weight
         if order:
             to_country = order.partner_shipping_id.country_id.code
             from_country = order.warehouse_id.partner_id.country_id.code
@@ -110,7 +108,7 @@ class SendCloud:
                     "id": parcel.get("shipment", {}).get("id"),
                     "weight": int(
                         float(parcel.get("weight", 0)) * 1000
-                    ),  # parcel weight is defined in kg
+                    ),
                 }
             ]
         else:
@@ -145,13 +143,12 @@ class SendCloud:
                 carrier.sendcloud_shipping_id, total_weight, target_weight
             )
         if packages_no > 1:
-            # We're forcefully calling this method from a sale order, as we only want an estimation of the rating, take the 'heaviest' methods
             shipping_methods = [
                 m
                 for m in shipping_methods
                 if m["properties"]["max_weight"]
                 == carrier.sendcloud_shipping_id.max_weight
-            ]  # We're sure here there's at least one matching method as max_weight was updated in _acquire_shipping_methods
+            ]
         shipping_prices = self._get_shipping_prices(
             shipping_methods,
             to_country,
@@ -188,11 +185,9 @@ class SendCloud:
     def _send_shipment(self, picking, is_return=False):
         sender_id = None
         if not is_return:
-            # get warehouse for each picking and get the sender address to use for shipment
             sender_id = self._get_pick_sender_address(picking)
         parcels = self._prepare_parcel(picking, sender_id, is_return)
 
-        # the id of the access_point needs to be passed as parameter following Sendcloud API's
         if picking.sale_id.pickup_location_data and not is_return:
             for parcel in parcels:
                 parcel["to_service_point"] = picking.sale_id.pickup_location_data["id"]
@@ -221,7 +216,6 @@ class SendCloud:
         return self._send_request(f"parcels/{parcel_id}/cancel", method="post")
 
     def _get_document(self, url):
-        """Returns pdf content of document to print"""
         self.logger(f"get {url}", "sendcloud get document")
         try:
             res = self.session.request(method="get", url=url, timeout=60)
@@ -245,11 +239,8 @@ class SendCloud:
     def _split_shipping(
         self, shipping_product_id, total_weight, target_weight=False
     ) -> tuple:
-        # if the weight is greater than max weight and source is order (initial estimate)
-        # split the weight into packages instead of returning no price / offer
         shipping_count = 1
         shipping_weight = total_weight
-        # max weight from sendcloud is 1 gram extra (eg. if max allowed weight = 3000g, sendcloud_shipping_id.max_weight = 3001g)
         max_weight = target_weight or shipping_product_id.max_weight - 1
         if target_weight or total_weight > max_weight:
             shipping_count = math.ceil(total_weight / max_weight)
@@ -281,14 +272,11 @@ class SendCloud:
             if not weight:
                 params["weight"] = (
                     shipping_method["properties"]["max_weight"] - 1
-                )  # the weight of a shipping_method is always in gram
-            # the API response is an Array of 1 dict with price and currency (usually EUR)
+                )
             res = self._send_request("shipping-price", params=params)[0]
             if res.get("price"):
                 shipping_prices[shipping_id] = res
-            elif shipping_id == 8:  # Sendcloud Unstamped Letter
-                # shipping id 8 is a test shipping and does not provide a price, but we still need the flow to continue
-                # the check is done after the request since in the future if price is actually returned it will be passed correctly
+            elif shipping_id == 8:
                 shipping_prices = {8: {"price": 0.0, "currency": "EUR"}}
         return shipping_prices
 
@@ -303,12 +291,6 @@ class SendCloud:
         from_postal_code=None,
         to_postal_code=None,
     ) -> list[dict[str, Any]] | None:
-        """
-        We're now working with a sendcloud's PRODUCT
-        We must fetch the differents METHODS in that product, in order to find the most appropriate !
-        We may however still be in the case where there isn't a single method able to handle the total weight of the order.
-        In this last case, we may split the shipping in multiple packages as before.
-        """
         sendcloud_product_id = (
             carrier_id.sendcloud_return_id
             if is_return
@@ -318,9 +300,6 @@ class SendCloud:
             return None
         shipping_code = sendcloud_product_id.sendcloud_code
         shipping_carrier = sendcloud_product_id.carrier
-        # Despite the fact that the sendcloud's documentation says the product
-        #  weight range is inclusive, a search with total_weight == max_weight
-        #  returns no result.
         single_shipping = (
             total_weight and total_weight < sendcloud_product_id.max_weight
         )
@@ -351,8 +330,6 @@ class SendCloud:
         )
         if not shipping_product:
             if single_shipping:
-                # single_shipping may be false-positive due to the local value 'sendcloud_product_id.max_weight'
-                # we call back this method without filtering the call by weight to reach the update of local cache
                 return self._acquire_shipping_methods(
                     carrier_id,
                     from_country,
@@ -366,12 +343,11 @@ class SendCloud:
                 return None
 
         if not single_shipping:
-            # Update product local values
             max_allowed_weight = shipping_product[
                 "weight_range"
             ][
                 "max_weight"
-            ]  # This data is only valid if we didn't set the 'weight' arg in _get_shipping_products call
+            ]
             if sendcloud_product_id.max_weight != max_allowed_weight:
                 sendcloud_product_id.max_weight = max_allowed_weight
 
@@ -398,21 +374,6 @@ class SendCloud:
         shipping_methods: list[dict[str, Any]],
         user_filters: dict[str, list[str | bool]] | None,
     ) -> set[int]:
-        """
-        Apply user filters on methods
-        for each filter key : [values]
-            if the ONLY value for a key is None:
-               then the key MUST NOT be present in the method functions
-            if there are "other values" AND None:
-               then OR :
-                  the key IS present AND it's value IN filter's values
-                  the key IS NOT present
-                  the value IS present default value of the filter
-            if there are ONLY "other values":
-                  the key IS present AND it's value IN filter's values
-        Default : return all the ids when there's no user_filters
-        Return : set of id
-        """
         default_shipping_functionalities = None
         try:
             default_shipping_functionalities = self._get_shipping_functionalities()
@@ -547,14 +508,6 @@ class SendCloud:
             )
 
     def _get_max_package_sizes(self, package_ids):
-        """
-        Return the largest size for each dimension of a list of package
-
-        :param delivery.carrier self: the Sendcloud delivery carrier
-        :param list[DeliveryPackage] package_ids: A list of package
-        :return: A dict of size for each dimension or None if all sizes are 0
-        :rtype: dict[str, int] or None
-        """
         sizes = {
             "length": 0,
             "height": 0,
@@ -566,18 +519,16 @@ class SendCloud:
         return sizes
 
     def _prepare_parcel(self, picking, sender_id, is_return):
-        # Pre-checks
         carrier_id = picking.carrier_id
         delivery_packages = carrier_id._get_packages_from_picking(
             picking, carrier_id.sendcloud_default_package_type_id
-        )  # If nothing to return -> Error
+        )
         if any(not pkg.weight for pkg in delivery_packages):
             raise UserError(
                 self.env._(
                     "Ensure picking has shipping weight, if using packages, each package should have a shipping weight"
                 )
             )
-        # Prepare API call and process data
         to_partner_id = picking.partner_id
         from_partner_id = picking.picking_type_id.warehouse_id.partner_id
         if is_return:
@@ -599,12 +550,10 @@ class SendCloud:
         single_shipping = len(delivery_packages) == 1 or (
             use_multicollo and len(delivery_packages) <= 20
         )
-        # Avg weight for multiple packages in single shipping, sendcloud multiplies it with number of packages
         api_weight = (
             int(shipping_weight / len(delivery_packages)) if single_shipping else None
         )
 
-        # Fetch shipping methods compatible with current picking
         shipping_methods = self._acquire_shipping_methods(
             picking.carrier_id,
             from_country,
@@ -621,7 +570,7 @@ class SendCloud:
         )
         user_uom_max_weight = carrier_id.sendcloud_convert_weight(
             sendcloud_product_id.max_weight - 1, grams=True, reverse=True
-        )  # grams to user uom
+        )
         user_weight_uom = (
             carrier_id.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
@@ -684,7 +633,6 @@ class SendCloud:
             from_postal_code=from_postal_code,
             to_postal_code=to_postal_code,
         )
-        # Assign consequent price to each method, delete the method if no price is available
         for shipping_method in reversed(shipping_methods):
             price = shipping_prices.get(shipping_method["id"], {}).get("price")
             shipping_method["price"] = float(price) if price else 0.0
@@ -711,13 +659,13 @@ class SendCloud:
         total_value = float_repr(total_value, 2)
 
         parcels = []
-        for shipping in method_shipments:  # shipping = { 'id': (int), 'packages': [pkg or [pkg]]}, each id is unique among the whole list
+        for shipping in method_shipments:
             parcel_common["shipment"] = {
                 "id": shipping["id"],
             }
             for pkg in shipping[
                 "packages"
-            ]:  # pkg is either a single pkg or a list of pkg
+            ]:
                 parcel = dict(parcel_common)
                 if isinstance(pkg, list):
                     max_sizes = self._get_max_package_sizes(pkg)
@@ -725,7 +673,7 @@ class SendCloud:
                         {
                             "weight": float_repr(
                                 (sum(p.weight for p in pkg) / len(pkg)), 3
-                            ),  # weight gets multiplied with quantity in sendcloud backend
+                            ),
                             "length": max_sizes["length"],
                             "width": max_sizes["width"],
                             "height": max_sizes["height"],
@@ -754,16 +702,11 @@ class SendCloud:
         self, carrier_id, delivery_packages, shipping_methods, use_multicollo=False
     ):
         sorted_methods = self._get_cheapest_method_by_weight_ranges(shipping_methods)
-        # Now methods are sorted by price :
-        #   For regular shippings, we can fit packages in the first matching method
-        #   For multicollo :
-        #       Group packages wisely to minimize the cost if there's more than 20 of them
-        #       Fitting of method is done by batch of packages
         failed_assignation = []
         for package in delivery_packages:
             sendcloud_uom_package_weight = int(
                 carrier_id.sendcloud_convert_weight(package.weight, grams=True)
-            )  # user uom to grams
+            )
             cheapest_method = next(
                 (
                     m
@@ -792,7 +735,7 @@ class SendCloud:
 
         sorted_methods = [
             m for m in sorted_methods if m["packages"]
-        ]  # Remove methods without package
+        ]
         if not use_multicollo:
             return sorted_methods
 
@@ -806,7 +749,7 @@ class SendCloud:
         min_batch_size = len(delivery_packages) % MULTICOLLO_MAX_PACKAGE
         max_batch_size = MULTICOLLO_MAX_PACKAGE
         for method in reversed(sorted_methods):
-            while True:  # the current method may be set for more than 20pkg, ensure to assign all of them
+            while True:
                 batch_size = len(multicollo_batch[-1]["packages"][-1])
                 method_pkg_size = len(method["packages"])
                 if not multicollo_batch[-1]["id"]:
@@ -814,7 +757,7 @@ class SendCloud:
 
                 if (batch_size + method_pkg_size) <= max_batch_size:
                     multicollo_batch[-1]["packages"][-1].extend(method["packages"])
-                    break  # Exit the 'infinite' loop, as the else condition always minimize batch_size and method_pkg_size that are defined on basis of finite sets, we will forcefully reach this point
+                    break
                 to_fulfill = max_batch_size - batch_size
                 multicollo_batch[-1]["packages"][-1].extend(
                     method["packages"][: to_fulfill - 1]
@@ -826,7 +769,7 @@ class SendCloud:
 
             if (
                 min_batch_size <= len(multicollo_batch[-1]["packages"][-1])
-            ):  # As we're iterating in reverse order (on price), we want to ship a min. of package in early batches to minimize the cost
+            ):
                 pkg_number -= 1
                 if pkg_number == 0:
                     break
@@ -842,18 +785,13 @@ class SendCloud:
                 )
             else:
                 max_batch_size = (
-                    min_batch_size  # Apply minimum append strategy on next iteration
+                    min_batch_size
                 )
         return multicollo_batch
 
     def _get_sale_totals_by_product(
         self, sale_order=None
     ) -> dict[int, dict[str, float]]:
-        """
-        If the parcel come from a sale order, we take the price from it.
-        However, as we may have the same product sold at different prices in the same SO,
-        and as sendcloud is strict (particularly when it comes to customs), we define the average price per product
-        """
         products_values = {}
         if not sale_order:
             return products_values
@@ -883,7 +821,6 @@ class SendCloud:
         return products_values
 
     def _get_cheapest_method_by_weight_ranges(self, shipping_methods):
-        # order methods by min_weight(1st) and max_weight(2nd) and price(3rd)
         shipping_methods = sorted(
             shipping_methods,
             key=lambda m: (
@@ -893,7 +830,6 @@ class SendCloud:
             ),
         )
         sorted_methods = []
-        # Define best method by weight range
         for method in shipping_methods:
             if (
                 sorted_methods
@@ -902,7 +838,7 @@ class SendCloud:
                 and method["properties"]["max_weight"]
                 == sorted_methods[-1]["weight"]["max"]
             ):
-                continue  # Due to previous sort, price of current method is forcefully greater for the same weight range (which is worse)
+                continue
             sorted_methods.append(
                 {
                     "id": method["id"],
@@ -919,7 +855,6 @@ class SendCloud:
 
     def _prepare_parcel_common_data(self, picking, is_return, sender_id=False):
         if picking.sale_id.pickup_location_data:
-            # actual partner data is stored on partner_id's parent, partner_id contains access_point data
             if not picking.partner_id.parent_id:
                 raise UserError(
                     self.env._(
@@ -978,12 +913,8 @@ class SendCloud:
             },
         }
         if sender_id:
-            # "sender_id" implies that "not is_return" (c.f. send_shipment())
-            # So we're sure here that sender_id and from_partner_id holds the warehouse's address
             parcel_common.update({"sender_address": sender_id})
         elif from_partner_id:
-            # As we can't use 'sender_address' and 'from_*' fields at the same time in the API call
-            # we only use from_partner_id in case sender_id is false
             self._check_partner_details(from_partner_id)
             parcel_common.update(
                 {

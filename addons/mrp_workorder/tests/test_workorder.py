@@ -25,7 +25,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                 ]
             }
         )
-        # Products and lots
         cls.submarine_pod = cls.env["product.product"].create(
             {"name": "Submarine pod", "is_storable": True, "tracking": "serial"}
         )
@@ -80,7 +79,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         cls.trapped_child = cls.env["product.product"].create(
             {"name": "Trapped child", "is_storable": True, "tracking": "none"}
         )
-        # Bill of material
         cls.bom_submarine = cls.env["mrp.bom"].create(
             {
                 "product_tmpl_id": cls.submarine_pod.product_tmpl_id.id,
@@ -141,12 +139,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                 "sequence": 2,
             }
         )
-        # cls.mrp_routing_0 = cls.env['mrp.routing'].create({
-        #    'name': 'Primary Assembly',
-        # })
-        # cls.mrp_routing_1 = cls.env['mrp.routing'].create({
-        #    'name': 'Secondary Assembly',
-        # })
         cls.mrp_workcenter_1 = cls.env["mrp.workcenter"].create(
             {
                 "name": "Drill Station 1",
@@ -159,42 +151,7 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                 "resource_calendar_id": cls.env.ref("base.resource_calendar_std").id,
             }
         )
-        # --------------
-        # .mrp_routing_0
-        # --------------
-        #        cls.mrp_routing_workcenter_0 = cls.env['mrp.routing.workcenter'].create({
-        #            #'routing_id': cls.mrp_routing_0.id,
-        #            'workcenter_id': cls.mrp_workcenter_3.id,
-        #            'name': 'Manual Assembly',
-        #            'time_cycle': 60,
-        #        })
-        #
-        #        # -------------
-        #        # mpr_routing_1
-        #        # -------------
-        #        cls.mrp_routing_workcenter_1 = cls.env['mrp.routing.workcenter'].create({
-        #            #'routing_id': cls.mrp_routing_1.id,
-        #            'workcenter_id': cls.mrp_workcenter_3.id,
-        #            'name': 'Long time assembly',
-        #            'time_cycle': 180,
-        #            'sequence': 15,
-        #        })
-        #        cls.mrp_routing_workcenter_3 = cls.env['mrp.routing.workcenter'].create({
-        #            #'routing_id': cls.mrp_routing_1.id,
-        #            'workcenter_id': cls.mrp_workcenter_3.id,
-        #            'name': 'Testing',
-        #            'time_cycle': 60,
-        #            'sequence': 10,
-        #        })
-        #        cls.mrp_routing_workcenter_4 = cls.env['mrp.routing.workcenter'].create({
-        #            #'routing_id': cls.mrp_routing_1.id,
-        #            'workcenter_id': cls.mrp_workcenter_1.id,
-        #            'name': 'Packing',
-        #            'time_cycle': 30,
-        #            'sequence': 5,
-        #        })
 
-        # Update quantities
         Quant = cls.env["stock.quant"]
         Quant._update_available_quantity(
             cls.elon_musk, cls.stock_location, 1.0, trace_id=cls.elon1
@@ -240,8 +197,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                 "product_tmpl_id": custom_laptop.product_tmpl_id.id,
                 "product_qty": 1,
                 "product_uom_id": unit,
-                #'routing_id': self.mrp_routing_0.id,
-                # inlined mrp_routing0
                 "bom_line_ids": [
                     (
                         0,
@@ -296,9 +251,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         production.action_assign()
 
     def test_flexible_consumption_2(self):
-        """Production with a flexible consumption
-        Check that consuming different quantities than planned doensn't trigger
-        any error"""
         self.bom_submarine.consumption = "flexible"
 
         mo_form = Form(self.env["mrp.production"])
@@ -372,11 +324,9 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         mrp_order_form.product_qty = 1
         production = mrp_order_form.save()
 
-        # plan the work orders
         production.button_plan()
 
     def test_suggested_lot_in_multi_step(self):
-        """Suggest the assigned lot in multi step system."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.submarine_pod.id)],
@@ -496,14 +446,12 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                 "note": "Installing VIM (pcs xi ipzth adi du ixbt)",
             }
         )
-        # Check that the operation is removed when the picking type is updated and none have the mrp_operation code.
         self.assertTrue(p1.operation_id)
         p1.picking_type_ids = self.env["stock.picking.type"].search(
             [("code", "=", "internal"), ("company_id", "=", self.env.company.id)],
             limit=1,
         )
         self.assertFalse(p1.operation_id)
-        # reset manufacture_picking_type
         p1.picking_type_ids = manufacture_picking_type
         p1.operation_id = (bom_who.operation_ids[0].id,)
         self.assertTrue(p1.operation_id)
@@ -550,7 +498,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         self.assertEqual(len(production_a3.workorder_ids.check_ids), 0)
 
     def test_add_workorder_into_a_backorder(self):
-        """Checks a new workorder can be created and processed into a backorder."""
         (self.submarine_pod | self.elon_musk | self.metal_cylinder).tracking = "none"
         self.bom_submarine.consumption = "flexible"
 
@@ -565,7 +512,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
                         wo.current_quality_check_id._next()
                     wo.do_finish()
 
-        # Creates a MO with 2 WO.
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.submarine_pod
         mo_form.product_qty = 10
@@ -573,10 +519,8 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         mo.action_confirm()
         mo.button_plan()
 
-        # Processes partially the workorders.
         process_workorder(mo.workorder_ids.sorted(), 2)
 
-        # Marks the MO as done and creates a backorder.
         Form.from_action(self.env, mo.button_mark_done()).save().action_backorder()
 
         backorder = mo.production_group_id.production_ids.sorted("backorder_sequence")[
@@ -589,25 +533,15 @@ class TestWorkOrder(TestMrpWorkorderCommon):
             backorder.workorder_ids.mapped("qty_production"), [8.0, 8.0, 8.0]
         )
 
-        # Adds a new WO in the backorder.
         mo_form = Form(backorder)
         with mo_form.workorder_ids.new() as wo_line:
             wo_line.name = "OP-SP"
             wo_line.workcenter_id = self.workcenter_1
         mo_form.save()
 
-        # Again, processes partially the workorders.
         process_workorder(backorder.workorder_ids.sorted(), 5, True)
 
     def test_backorder_with_reserved_qty_in_sublocation(self):
-        """
-        Let's produce a MO based on a BoM with a storable component C and a
-        workorder. There are some C available in a sublocation SL. The user
-        reserves the needed quantities, then processes a part of the MO and
-        creates a backorder. On the backorder, the production should be
-        pre-completed: the qty_producing should be set and the consumed quantity
-        of C should come from SL
-        """
         location = self.shelf_1
         compo = self.bom_4.bom_line_ids.product_id
         compo.is_storable = True
@@ -652,9 +586,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         self.assertEqual(backorder.move_raw_ids.move_line_ids.location_id, location)
 
     def test_split_mo_finished_wo_transition(self):
-        """Check that if WOs are done out of order, then backordered/split WOs are not
-        started when they should not be started
-        """
         simple_bom = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": self.product_1.product_tmpl_id.id,
@@ -694,7 +625,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         wizard = Form.from_action(self.env, action)
         wizard.max_batch_size = 1
         action = wizard.save().action_split()
-        # Should have 2 mos w/ 2 wos each
         self.assertEqual(len(mo.production_group_id.production_ids), 2)
         mo2 = mo.production_group_id.production_ids.sorted("backorder_sequence")[1]
         self.assertEqual(len(mo.workorder_ids), 2)
@@ -726,10 +656,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         self.assertEqual(mo.state, "to_close")
 
     def test_workorder_tracked_final_product(self):
-        """
-        Suppose that you have an MO for a prodcut tracked by SN with two operations.
-        Check that you can mark the operations as done without registering an SN.
-        """
         tracked_product = self.env["product.product"].create(
             {
                 "name": "Final product",
@@ -783,7 +709,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         mo = mo_form.save()
         mo.action_confirm()
 
-        # Operation 1 & 2: consume components and mark as done
         raw_move_1, raw_move_2 = mo.move_raw_ids
         operation_1, operation_2 = mo.workorder_ids
         operation_1.button_start()
@@ -803,7 +728,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
             [{"qty_produced": 1.0, "finished_trace_ids": [], "state": "done"}],
         )
         self.assertEqual(mo.state, "to_close")
-        # Try to finish the production without assigning an SN
         mo.move_raw_ids.filtered(lambda m: not m.operation_id).picked = True
         mo.button_mark_done()
 
@@ -813,14 +737,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
 
     @freeze_time("2025-10-01")
     def test_workorder_duration_inverse_time_ids_consistency(self):
-        """
-        Verify that the inverse method of the workorder duration field correctly
-        mirrors the logic of its compute method.
-
-        Specifically, the duration is computed as the total interval duration,
-        counting overlapping time_ids only once. This ensures that the inverse
-        method does not accidentally unlink any time_ids when updating durations.
-        """
         now = fields.Datetime.now()
         mo = self.env["mrp.production"].create(
             {
@@ -862,11 +778,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         )
 
     def test_workorder_timelog_for_assigned_employee(self):
-        """This test ensures that when a work order is assigned to an employee (not the current/logged-in user)
-        and is marked as done by the current user, the time log for workorder is correctly recorded
-        under the assigned employee instead of the current user.
-        """
-        # Create employees
         assigned_employee, current_employee = self.env["hr.employee"].create(
             [
                 {"name": "Assigned Employee"},
@@ -874,7 +785,6 @@ class TestWorkOrder(TestMrpWorkorderCommon):
             ]
         )
 
-        # Create and confirm a Manufacturing Order with workorders.
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.submarine_pod
         mo_form.bom_id = self.bom_submarine
@@ -882,13 +792,9 @@ class TestWorkOrder(TestMrpWorkorderCommon):
         mo.action_confirm()
 
         workorder_1, workorder_2 = mo.workorder_ids[:2]
-        # Assign a different employee to the workorder_1 and keep workorder_2 unassigned.
         workorder_1.employee_assigned_ids = assigned_employee
-        # mark the workorders as done.
         mo.workorder_ids.action_mark_as_done()
 
-        # The time log should be assigned to the employee assigned in the workorder_1,
-        # and to the current user in workorder_2.
         self.assertEqual(workorder_1.time_ids[0].employee_id, assigned_employee)
         self.assertEqual(workorder_2.time_ids[0].employee_id, current_employee)
 
@@ -925,13 +831,8 @@ class TestWorkOrder(TestMrpWorkorderCommon):
 
 @tagged("post_install", "-at_install")
 class TestShopFloor(HttpCase, TestMrpWorkorderCommon):
-    @unittest.skip  # TODO: tour needs to be updated.
+    @unittest.skip
     def test_access_shop_floor_with_multicompany(self):
-        """
-        test the flow when we have multicompany situation and
-        we want to access shop floor from a company after switching
-        from the other one.
-        """
         company1 = self.env["res.company"].create({"name": "Test Company"})
         user_admin = self.env.ref("base.user_admin")
         user_admin.write(

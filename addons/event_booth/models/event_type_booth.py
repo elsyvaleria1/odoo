@@ -6,7 +6,6 @@ class EventTypeBooth(models.Model):
     _description = "Event Booth Template"
 
     def _default_booth_category_id(self):
-        """Assign booth category by default if only one exists"""
         category_id = self.env["event.booth.category"].search([])
         if category_id and len(category_id) == 1:
             return category_id

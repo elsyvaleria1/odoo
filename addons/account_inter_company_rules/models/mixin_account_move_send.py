@@ -16,8 +16,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         allow_fallback_pdf=False,
         **custom_settings,
     ):
-        # EXTENDS 'account' - to create the pdf attachment
-        # in the matching inter-company move
         res = super()._generate_and_send_invoices(
             moves,
             from_cron=from_cron,
@@ -26,16 +24,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             **custom_settings,
         )
 
-        # auto_generated + auto_invoice_id already identifies a generated
-        # mirror exactly, so no prefilter on the source moves is needed beyond
-        # "does it have a PDF to copy". The previous one read every res.company
-        # and all their partner ids on every send, and matched company partners
-        # by commercial_partner_id while generation matches them with
-        # `parent_of`: for a contact under an is_company child of a company
-        # partner the two disagree, a bill *is* generated, and this lookup could
-        # never find it — so that bill silently never received its PDF.
-        # It also passed include_receipts=True on both sides while the
-        # generation trigger excludes receipts; the two halves now agree.
         moves_with_attachments = moves.filtered("message_main_attachment_id")
 
         ico_moves = (
@@ -67,23 +55,16 @@ class MixinAccountMoveSend(models.AbstractModel):
         for ico_move in ico_moves:
             original_move = ico_move.auto_invoice_id
             move_attachment = original_move.message_main_attachment_id
-            if not move_attachment:  # shouldn't happen but just in case
+            if not move_attachment:
                 continue
 
             attachment_name = f"{original_move.name}.pdf"
             existing = existing_attachments_by_key.get((ico_move.id, attachment_name))
             if existing:
-                # Re-sending the source invoice, or a from_cron retry, must not
-                # stack another identical PDF on the bill and orphan this one.
                 ico_move.message_main_attachment_id = existing
                 continue
 
             if not ico_move.company_id.intercompany_user_id:
-                # with_user(False) silently returns self instead of switching
-                # user, so posting this as a company-restricted user would
-                # crash with a bare AccessError and abort every move still
-                # queued behind it in this loop. Skip only this move's
-                # attachment copy instead.
                 _logger.warning(
                     "Skipping the inter-company attachment copy for %s:"
                     " no inter-company user is configured on %s.",

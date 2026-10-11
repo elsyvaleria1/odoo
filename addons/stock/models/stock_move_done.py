@@ -81,8 +81,6 @@ class StockMoveDone(models.Model):
         _debug.lifecycle("moves_done", moves=moves_todo)
         moves_todo.write({"state": "done", "date": fields.Datetime.now()})
 
-        # the completion flag lets the lines leave a location blocked since
-        # they were reserved; what runs downstream is a new operation
         moves_todo = moves_todo.with_env(caller_env)
         picking = picking.with_env(caller_env)
         moves_todo._push_and_assign_downstream()
@@ -224,7 +222,6 @@ class StockMoveDone(models.Model):
                     or cancel_backorder
                 )
             ):
-                # cancelling unreserves with force: every line of the move goes
                 move_ids_to_cancel.add(move.id)
             elif move.picked:
                 ml_ids_to_unlink |= move.move_line_ids.filtered(

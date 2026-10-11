@@ -9,7 +9,7 @@ EX_TEMPFAIL = 75
 DEFAULT_TIMEOUT = 120
 
 
-import sys  # noqa: E402 - sys must exist before the guarded import block below, whose handler writes to stderr
+import sys
 
 try:
     import argparse
@@ -26,8 +26,6 @@ except ImportError as e:
 
 
 class ArgumentParser(argparse.ArgumentParser):
-    # Postfix bounces on every exit status but EX_TEMPFAIL and EX_OSERR: a
-    # mistake in master.cf must keep the mail queued until it is fixed
     def exit(self, status: int = 0, message: str | None = None) -> NoReturn:
         if message:
             sys.stderr.write(message)
@@ -47,7 +45,7 @@ def postfix_exit(
             traceback.print_exc(None, sys.stderr)
         if message:
             sys.stderr.write(message)
-    except Exception:  # noqa: S110 - already on the failure path; a failure to report it must not mask the original
+    except Exception:
         pass
     finally:
         sys.exit(exit_code)
@@ -136,9 +134,6 @@ def get_exit_status(status: int, body: bytes) -> tuple[int, str]:
         return EX_NOUSER, "no Odoo alias accepts this message: %s\n" % detail
     if status == 413:
         return EX_UNAVAILABLE, "the message is larger than Odoo accepts\n"
-    # Anything else -- a wrong token or URL, a restart, a bug -- is a reason
-    # to keep the message in the queue while someone fixes it, never to
-    # bounce mail a sender has no way to resend.
     return EX_TEMPFAIL, "odoo answered %d %s %s\n" % (status, error, detail)
 
 
@@ -150,7 +145,7 @@ def main() -> None:
         postfix_exit(EX_USAGE, "no message on stdin\n", options.debug)
     if not options.url.startswith(("https://", "http://")):
         postfix_exit(EX_TEMPFAIL, "--url must be an http(s) URL\n", options.debug)
-    request = urllib.request.Request(  # noqa: S310 - the scheme is checked just above
+    request = urllib.request.Request(
         options.url,
         data=prepare_envelope(options, message),
         method="POST",

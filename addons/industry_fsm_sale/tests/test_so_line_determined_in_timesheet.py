@@ -49,19 +49,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
         cls.fsm_so.action_confirm()
 
     def test_sol_determined_when_fsm_project_is_employee_rate(self):
-        """Test the SOL gives to the timesheet when the pricing_type in the fsm project is employee rate.
-
-        Test Case:
-        =========
-        1) Create task with a SOL in the SO create in the setUpClass of this class,
-        2) Create timesheet in the task and check if the SOL in the timesheet is the one in the task,
-        3) Create timesheet in the task for the employee defined in the mapping and check if the SOL in this timesheet contains the service product and the price unit defined in the mapping for this employee.
-        4) Create timesheet in the task for the employee defined in the mapping but no SOL in the SO linked to the task contains the service product defined in the mapping for this employee.
-        5) Change the SOL in the task and check if only the SOL in the timesheet which does not concerne about the mapping changes.
-        6) Add a mapping for the employee manager with a service product in the SOLs but with a different price unit.
-            - Check if the timesheet of this employee manager is set to False as there now exists a mapping without a linked SOL
-        """
-        # 1) Create task with a SOL in the SO create in the setUpClass of this class
         task = (
             self.env["project.task"]
             .with_context(
@@ -79,7 +66,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             )
         )
 
-        # 2) Create timesheet in the task and check if the SOL in the timesheet is the one in the task
         employee_manager_timesheet = self.env["account.analytic.line"].create(
             {
                 "name": "/",
@@ -100,8 +86,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The quantity delivered should be equal to 1 for the SOL linked to the task.",
         )
 
-        # 3) Create timesheet in the task for the employee defined in the mapping and check if the SOL in this timesheet
-        # contains the service product and the price unit defined in the mapping for this employee.
         employee_user3_timesheet = self.env["account.analytic.line"].create(
             {
                 "name": "/",
@@ -112,7 +96,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             }
         )
 
-        # Find the mapping for this employee
         employee_user3_mapping = (
             self.fsm_project_employee_rate.sale_line_employee_ids.filtered(
                 lambda mapping: (
@@ -121,7 +104,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             )
         )
 
-        # Find the SOL containing the same product and price unit defined in the found mapping
         sol = self.fsm_so.line_ids.filtered(
             lambda sol: (
                 sol.product_id == employee_user3_mapping.timesheet_product_id
@@ -139,8 +121,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The quantity delivered for this SOL should be the unit_amount of the timesheet, that is 2 hours.",
         )
 
-        # 4) Create timesheet in the task for the employee defined in the mapping but no SOL in the SO linked to the task
-        # contains the service product defined in the mapping for this employee.
         employee_user_timesheet = self.env["account.analytic.line"].create(
             {
                 "name": "/",
@@ -151,7 +131,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             }
         )
 
-        # Find the mapping for this employee
         employee_user_mapping = (
             self.fsm_project_employee_rate.sale_line_employee_ids.filtered(
                 lambda mapping: (
@@ -160,7 +139,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             )
         )
 
-        # Search if a SOL contains the same product and price unit defined in the found mapping
         self.assertFalse(
             any(
                 sol.product_id == employee_user_mapping.timesheet_product_id
@@ -174,7 +152,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The SOL linked to the timesheet should be False as there exists a mapping defined for this employee in the project but no SOL contains the same product and the same price unit than in this mapping. Note that the SOL will only be set when the task will be validated.",
         )
 
-        # 5) Change the SOL in the task and check if only the SOL in the timesheet which does not concerne about the mapping changes.
         sol = self.fsm_so.line_ids.filtered(
             lambda sol: sol.product_id == self.product_delivery_timesheet3
         )[:1]
@@ -197,7 +174,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The SOL in the timesheet of employee user should remain the same than before and be not the one in the task.",
         )
 
-        # 6) Add a mapping for the employee manager with a service product in the SOLs but with a different price unit.
         mappings_count = len(self.fsm_project_employee_rate.sale_line_employee_ids)
         self.env["project.sale.line.employee.map"].create(
             {
@@ -213,20 +189,15 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The mapping for the employee manager should added in the employee mappings.",
         )
 
-        # Check if the SO in the timesheet of the employee manager is now False.
         self.assertFalse(
             employee_manager_timesheet.so_line,
             "The SOL linked to the timesheet should be False as there exists a mapping defined for the employee manager in the project but no SOL contains the same product and the same price unit than in this mapping. Note that the SOL will only be set when the task will be validated",
         )
 
     def test_fsm_sale_rounding(self):
-        """
-        Test rounding is correctly applied in the so line
-        """
         self.task.write({"partner_id": self.partner_1.id})
         product_qty = 0.333333
         quantity_precision = self.env["decimal.precision"].get_precision("Product Unit")
-        # timesheet
         values = {
             "task_id": self.task.id,
             "project_id": self.task.project_id.id,
@@ -237,7 +208,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
         }
         self.env["account.analytic.line"].create(values)
 
-        # validation and SO
         self.task.with_user(self.project_user).action_fsm_validate()
         order = self.task.sale_order_id
 
@@ -254,18 +224,7 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
     def test_sol_determined_when_fsm_project_is_employee_rate_after_task_validation(
         self,
     ):
-        """Test that the SOL in the timesheet is correctly updated according to the employee rate in the fsm project after validating the task.
 
-        Test Case:
-        =========
-        1) Create task with a SOL in the SO create in the setUpClass of this class,
-        2) Create timesheet in the task for the manager employee and for the user employee
-        3) Task validation
-        4) Check that the SOL in the timesheet for user employee was correctly updated according to the mapping now that the task was validated
-        5) Check that nothing has changed for the manager as this employee has no mapping
-        """
-
-        # 1) Create task with a SOL in the SO create in the setUpClass of this class
         task = (
             self.env["project.task"]
             .with_context(
@@ -283,7 +242,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             )
         )
 
-        # 2) Create timesheet in the task for the manager employee and for the user employee
         employee_manager_timesheet, employee_user_timesheet = self.env[
             "account.analytic.line"
         ].create(
@@ -302,11 +260,8 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             ]
         )
 
-        # 3) Task validation
         task.with_user(self.project_user).action_fsm_validate()
 
-        # 4) Check that the SOL in the timesheet for user employee was correctly updated according to the mapping now that the task was validated
-        # Find the mapping for this employee
         employee_user_mapping = (
             self.fsm_project_employee_rate.sale_line_employee_ids.filtered(
                 lambda mapping: (
@@ -314,7 +269,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
                 )
             )
         )
-        # Find the SOL containing the same product and price unit defined in the found mapping
         sol = self.fsm_so.line_ids.filtered(
             lambda s: (
                 s.product_id == employee_user_mapping.timesheet_product_id
@@ -332,7 +286,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
             "The quantity delivered for this SOL should be the unit_amount of the timesheet, that is 3 hours.",
         )
 
-        # 5) Check that nothing has changed for the manager as this employee has no mapping
         self.assertEqual(
             employee_manager_timesheet.so_line,
             task.sale_line_id,
@@ -345,12 +298,6 @@ class TestSoLineDeterminedInTimesheet(TestFsmFlowSaleCommon):
         )
 
     def test_sol_determined_on_timesheet_with_task_is_under_warranty(self):
-        """Test the functionality to ensure that the SOL in the timesheet is not set in the FSM project after task validation.
-        - Created two tasks, one designated as "Under Warranty" and another not.
-        - Validate both task.
-        - Ensure that the SOL in the timesheet remains unset
-            for the task marked as "Under Warranty"
-        """
         warranty_task, without_warranty_task = (
             self.env["project.task"]
             .with_context(

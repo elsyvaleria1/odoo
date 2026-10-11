@@ -82,17 +82,14 @@ class TestOfferMailFeatures(MailCommon):
         )
 
     def test_assert_initial_values(self):
-        # work contact automatically created in create
         self.assertTrue(self.employee.partner_id)
         self.assertEqual(self.employee.partner_id.email, "hr.employee@test.example.com")
         self.assertEqual(self.employee.partner_id.name, "Mr Employee")
         self.assertTrue(self.applicant.partner_id)
         self.assertEqual(self.applicant.partner_id.email, "applicant@test.example.com")
-        # forced
         self.assertFalse(self.applicant_nopartner.partner_id)
 
     def test_offer_default_recipients(self):
-        """Check default recipients, should try to contact always someone"""
         offers = self.salary_offers.with_env(self.env)
         defaults = offers._message_get_default_recipients()
         expected_all = {
@@ -122,7 +119,6 @@ class TestOfferMailFeatures(MailCommon):
             ),
             strict=True,
         ):
-            # due to ACLs, we have to differentiate users (employee / applicant contracts)
             offer = offer.with_user(user)
             expected = expected_all.get(offer.id)
             with self.subTest(
@@ -133,8 +129,6 @@ class TestOfferMailFeatures(MailCommon):
                 self.assertEqual(defaults[offer.id], expected)
 
     def test_offer_suggested_recipients(self):
-        """Check suggested recipients, should include applicant, employee, ...
-        when present in order to have people to propose."""
         offers = self.salary_offers.with_env(self.env)
         expected_all = [
             [
@@ -173,7 +167,6 @@ class TestOfferMailFeatures(MailCommon):
             expected_all,
             strict=True,
         ):
-            # due to ACLs, we have to differentiate users (employee / applicant contracts)
             offer = offer.with_user(user)
             with self.subTest(
                 offer=offer,
@@ -184,7 +177,6 @@ class TestOfferMailFeatures(MailCommon):
                 self.assertEqual(suggested, expected)
 
     def test_send_email(self):
-        """Test we succeed to send offers to people, based on found contact info"""
         template_emp = self.env.ref("hr_contract_salary.mail_template_send_offer")
         template_app = self.env.ref(
             "hr_contract_salary.mail_template_send_offer_applicant"
@@ -194,7 +186,7 @@ class TestOfferMailFeatures(MailCommon):
             (template_app, template_app, template_emp),
             (
                 [{"partner": self.applicant.partner_id, "type": "email"}],
-                [],  # specific, partner created during sending
+                [],
                 [{"partner": self.employee.partner_id, "type": "email"}],
             ),
             strict=True,
@@ -213,7 +205,6 @@ class TestOfferMailFeatures(MailCommon):
                 self.assertEqual(composer.template_id, exp_template)
                 with self.mock_mail_gateway():
                     _mails, message = composer._action_send_mail()
-                # partner was created during sending mail process
                 if offer == self.salary_offers[1]:
                     new_partner = self.env["res.partner"].search(
                         [

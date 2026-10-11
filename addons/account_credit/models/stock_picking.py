@@ -19,12 +19,6 @@ class StockPicking(models.Model):
     credit_verdict_message = fields.Text(compute="_compute_credit_verdict")
 
     def _credit_order(self):
-        """The order this delivery ships, read whoever opens or validates it.
-
-        :rtype: sale.order
-        """
-        # a branch's warehouse keeper may also sell, as a seller reading only
-        # their own orders: a colleague's delivery weighs its credit all the same
         self.check_singleton()
         return self.with_privilege(
             "account_credit.privilege_credit_delivery",

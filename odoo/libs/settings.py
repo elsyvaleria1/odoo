@@ -71,5 +71,5 @@ class SettingsSlot[T]:
 
     @contextmanager
     def override(self, **changes: Any) -> Iterator[T]:
-        with self.installed(replace(self.current(), **changes)) as settings:  # type: ignore[type-var]
+        with self.installed(replace(self.current(), **changes)) as settings:
             yield settings

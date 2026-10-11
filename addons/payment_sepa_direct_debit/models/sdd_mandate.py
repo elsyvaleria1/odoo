@@ -22,7 +22,6 @@ class SddMandate(models.Model):
     )
 
     def _compute_is_online_payment(self) -> None:
-        # In sudo mode to read the custom_mode field of payment.provider.
         results = (
             self.env["payment.transaction"]
             .sudo()
@@ -41,7 +40,6 @@ class SddMandate(models.Model):
 
     @api.depends("payment_transaction_ids")
     def _compute_payment_transaction_count(self) -> None:
-        # In sudo mode to read the custom_mode field of payment.provider.
         results = (
             self.env["payment.transaction"]
             .sudo()
@@ -65,12 +63,11 @@ class SddMandate(models.Model):
                 [("sdd_mandate_id", "in", self.ids)]
             )
             linked_tokens.sudo().active = (
-                False  # In sudo mode to write on payment.token.
+                False
             )
         return res
 
     def _confirm(self):
-        """Confirm the customer's ownership of the SEPA Direct Debit mandate."""
         template = self.env.ref(
             "payment_sepa_direct_debit.mail_template_sepa_notify_validation"
         )
@@ -78,10 +75,8 @@ class SddMandate(models.Model):
         template.with_user(SUPERUSER_ID).send_mail(self.id)
 
     def action_validate_mandate(self) -> None:
-        """Override of `account_sepa_direct_debit` to create a token when validating mandates."""
         super().action_validate_mandate()
 
-        # sudo to let accounting users validate mandates without provider access
         sepa_provider_per_company_sudo = dict(
             self.env["payment.provider"]
             .sudo()
@@ -115,7 +110,6 @@ class SddMandate(models.Model):
         }
 
     def _get_source_transaction(self):
-        """Return the source transaction that initiated the creation of this SDD mandate."""
         self.check_singleton()
         return self.env["payment.transaction"].search(
             [

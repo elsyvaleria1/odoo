@@ -60,7 +60,6 @@ class MailTestFieldType(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Emulate an addon that alters the creation context, such as `crm`
         if not self.env.context.get("default_type"):
             self = self.with_context(default_type="first")
         return super().create(vals_list)
@@ -90,9 +89,6 @@ class MailTestLang(models.Model):
         return groups
 
 
-# ------------------------------------------------------------
-# TRACKING MODELS
-# ------------------------------------------------------------
 
 
 class MailTestTrackAllM2m(models.Model):
@@ -223,9 +219,6 @@ class MailTestTrackSelection(models.Model):
     )
 
 
-# ------------------------------------------------------------
-# OTHER
-# ------------------------------------------------------------
 
 
 class MailTestMultiCompany(models.Model):

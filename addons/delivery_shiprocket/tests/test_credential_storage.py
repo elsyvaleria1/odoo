@@ -55,8 +55,6 @@ class TestShiprocketCredentials(TransactionCase):
         self.assertEqual(self.carrier.shiprocket_access_token, "round-token")
 
     def test_regenerating_the_token_leaves_the_password_alone(self):
-        # `action_shiprocket_test_connection` writes only the access token; the
-        # password is what generated it and must survive.
         self.carrier.write(
             {
                 "shiprocket_password": "the-password",
@@ -71,16 +69,12 @@ class TestShiprocketCredentials(TransactionCase):
         self.assertEqual(self.carrier.shiprocket_password, "the-password")
 
     def test_the_email_stays_a_plain_readable_column(self):
-        # The username half of the login. Not secret, and it has no groups --
-        # moving it would restrict a field the form shows.
         field = self.env["delivery.carrier"]._fields["shiprocket_email"]
 
         self.assertTrue(field.store)
         self.assertFalse(field.groups)
 
     def test_the_two_doors_keep_their_different_visibility(self):
-        # The password is system-only and the token is not, exactly as before.
-        # Both computes sudo the vault so each field's own groups decide.
         user = self.env["res.users"].create(
             {
                 "name": "Plain User",

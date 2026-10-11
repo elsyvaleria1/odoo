@@ -150,12 +150,10 @@ class PlanningRecurrency(models.Model):
         if slot:
             if not self.date_recurrence_origin:
                 self.date_recurrence_origin = self._resolve_recurrence_origin(slot)
-            # find the end of the recurrence
             recurrence_end_dt = False
             if self.repeat_type == "until":
                 recurrence_end_dt = self.repeat_until
 
-            # find end of generation period (either the end of recurrence (if this one ends before the cron period), or the given `stop_datetime` (usually the cron period))
             recurrency_stop_datetime = (
                 stop_datetime
                 or PlanningSlot._add_delta_with_dst(
@@ -177,18 +175,15 @@ class PlanningRecurrency(models.Model):
             )
             slot_duration = slot.end_datetime - slot.start_datetime
 
-            # add timezone information to the start and end of the recurrence duration (needed for company / resource availability computation)
             start_duration = slot.start_datetime.replace(tzinfo=UTC)
             end_duration = range_limit.replace(tzinfo=UTC)
 
-            # get the company's work intervals as well as the public holidays
             company_calendar_working_days = (
                 self.company_id.resource_calendar_id._work_intervals_batch(
                     start_duration, end_duration
                 )[False]
             )
 
-            # get the resource of the recurring shift
             resource = (
                 slot.resource_id
                 or self.slot_ids.filtered("resource_id")
@@ -196,7 +191,6 @@ class PlanningRecurrency(models.Model):
                 .resource_id
             )
 
-            # We check whether the slot was generated outisde working days (includes public holidays), if so we will generate the recurrent slots normally
             days_of_slot = {
                 slot.start_datetime.date() + timedelta(days=i)
                 for i in range(slot_duration.days + 1)
@@ -251,8 +245,6 @@ class PlanningRecurrency(models.Model):
                     generated_recurrency_slots += self.repeat_type == "count"
                     yield next_start
 
-            # Load all consumers through Resource, including the full local
-            # weeks needed to account for flexible effort outside these slots.
             booking_start, booking_stop = resource._get_flexible_week_bounds(
                 start_duration, (range_limit + slot_duration).replace(tzinfo=UTC)
             )
@@ -362,7 +354,6 @@ class PlanningRecurrency(models.Model):
             slot_values_list = []
             for next_start in get_all_next_starts():
                 next_end = next_start + slot_duration
-                # Check that the duration is not longer than the month of the start to avoid overlapping slots
                 if slot.repeat_unit == "month":
                     days_in_month = monthrange(next_start.year, next_start.month)[1]
                     if slot_duration.days >= days_in_month:
@@ -439,8 +430,6 @@ class PlanningRecurrency(models.Model):
         origin = self.date_recurrence_origin
         if self._is_occurrence(origin, after):
             return after
-        # A latest shift moved off its date on its own still stands for the
-        # occurrence it was generated at, which must not be generated again.
         replaced = self._get_next_occurrence(origin, after)
         if (
             self.last_generated_end_datetime
@@ -460,18 +449,6 @@ class PlanningRecurrency(models.Model):
         slots.unlink()
 
     def _get_misc_recurrence_stop(self):
-        """
-        If there are additional limitations on until when the recurring shifts can be generated, this method will return the
-        earliest date after which shifts cannot be generated under this additional limitation.
-
-        By default, we generate recurring shifts until the repeat_until date specified by the user or for 6 months in the future.
-        If there are any additional limitations that prevent us from generating the slot until either of those two datetimes, they
-        should be returned here.
-
-        Example: this method is extended in the planning_contract module - to plan until the end of the contract period. That way,
-        if we plan a shift on 1/1/25 to repeat weekly until 1/4/25 but the resource's contract ends in 1/3/25, we will only repeat the
-        slot until 1/3/25 and not until 1/4/25. This method should thus return the detatime 1/3/25 23:59:59.
-        """
         res = datetime.max.replace(tzinfo=UTC)
         sorted_slots = self.slot_ids.sorted("end_datetime")
         initial_slot, last_slot = sorted_slots[0], sorted_slots[-1]
@@ -481,9 +458,6 @@ class PlanningRecurrency(models.Model):
             if end_contract
             else res
         )
-        # If the initial slot that we are repeating is planned after the end of the resource contract, we generate the slots
-        # on out-of-contract dates normally.
-        # Convert the result back to the ORM's naive UTC representation.
         if initial_slot.start_datetime.replace(tzinfo=UTC) > end_contract:
             return res.replace(tzinfo=None)
         return min(end_contract, res).replace(tzinfo=None)

@@ -38,9 +38,6 @@ def is_available(component: Any, options: Mapping[str, Any]) -> bool:
 def remembered[T](
     options: Mapping[str, Any], key: Hashable, compute: Callable[[], T]
 ) -> T:
-    # what a component works out to decide it is available and needs again to
-    # read or write, worked out once: the memo lives in the document's options,
-    # and a shallow copy of them (``write(value, **options)``) shares it
     if not isinstance(options, MutableMapping):
         return compute()
     memo = options.get(_MEMO)

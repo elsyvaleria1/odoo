@@ -179,7 +179,7 @@ class ProjectProject(models.Model):
             if not subset:
                 continue
             ProjectTask = self.env["project.task"].with_context(active_test=active_test)
-            for project, state, count in ProjectTask._read_group(  # noqa: E8507 - two queries: active and archived tasks
+            for project, state, count in ProjectTask._read_group(
                 Domain("project_id", "in", subset.ids)
                 & Domain("is_template", "=", False),
                 ["project_id", "state"],
@@ -700,8 +700,6 @@ class ProjectProject(models.Model):
 
     @api.depends("company_id")
     def _compute_phase_id(self) -> None:
-        # a compute, not a write: the phase follows the company whoever moves
-        # the project, though the field is hidden to users without stages
         for project in self:
             if (
                 project.phase_id.company_id
@@ -2052,8 +2050,6 @@ class ProjectProject(models.Model):
     def _unarchive_tasks_archived_with_project(self) -> None:
         projects = self.with_context(active_test=False)
         tasks = projects.archived_with_project_task_ids
-        # a project archived before the archived tasks were recorded restores
-        # every archived task, as archiving then archived them all
         unrecorded = projects.filtered(lambda p: not p.archived_tasks_recorded)
         tasks |= unrecorded.task_ids
         tasks = tasks.filtered(lambda t: not t.active and t.project_id in projects)
@@ -2103,20 +2099,9 @@ class ProjectProject(models.Model):
         return result
 
     def _get_fields_assignment(self) -> set[str]:
-        """The fields a write names the project manager through.
-
-        `user_id` is the manager everything downstream reads, but a layer that
-        composes it from fields of its own must name those here, or every hook
-        keyed on a manager change stops firing.
-        """
         return {"user_id"}
 
     def _get_assigned_users(self, values: dict[str, Any]):
-        """The user a write makes the manager, whatever field carried it.
-
-        Read before the write is applied, so a composed `user_id` cannot be read
-        back from the record yet.
-        """
         user_id = values.get("user_id")
         return (
             self.env["res.users"].browse(user_id) if user_id else self.env["res.users"]
@@ -2129,9 +2114,6 @@ class ProjectProject(models.Model):
     def _message_auto_subscribe_followers(
         self, updated_values: dict, default_subtype_ids: list[int]
     ) -> list:
-        # Not super()'s: it subscribes `user_id` only while that field is tracked,
-        # and a layer composing it from its own tracked fields leaves it untracked.
-        # The manager follows the project either way.
         manager = self._get_assigned_users(updated_values).sudo()
         if not manager or not manager.active or not manager.partner_id:
             return super()._message_auto_subscribe_followers(
@@ -2232,8 +2214,6 @@ class ProjectProject(models.Model):
     def _sync_feature_group_to_usage(
         self, field_name: str, group_name: str
     ) -> bool | None:
-        # the sync owns the implication alone: a grant of the group given by
-        # hand or by data outlives the last project using the feature
         group = self.env.ref(group_name)
         base_group_user = self.env.ref("base.group_user")
         implied = group in base_group_user.implied_ids
@@ -2359,7 +2339,6 @@ class ProjectProject(models.Model):
             elif group_name == "portal_customer" and not self._admits_link_partner(
                 self._portal_customer()
             ):
-                # the button carries the customer's link, which would not open
                 group_data["has_button_access"] = False
         return groups
 
@@ -2918,14 +2897,7 @@ class ProjectProject(models.Model):
         return self.env.user._is_internal()
 
     def _admits_link_partner(self, partner: Any, task: Any = None) -> bool:
-        """Whether a link naming `partner` (none for a partnerless link) may
-        open this project, or `task` in it: what the privacy lets that
-        partner's own portal account reach, so nothing on a team-only
-        project, and on an invited-users one the project for its live
-        collaborators and a task also for its followers."""
         self.check_singleton()
-        # read as the access policy reads it: whoever presents the link or is
-        # notified, the project's own settings decide
         project = self.env["ir.access"]._access_evaluator(self._name).browse(self.id)
         visibility = project.privacy_visibility
         if visibility == "followers":

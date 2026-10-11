@@ -24,7 +24,6 @@ class DocumentSpreadsheetSurveyAction(TestSurveyCommon, SpreadsheetTestCommon):
         )
         self.assertEqual(linked_spreadsheet.name, "Test Survey (#%s)" % test_survey.id)
 
-        # Re-calling the action should return the same spreadsheet
         action = test_survey.action_survey_open_linked_spreadsheet()
         self.assertEqual(
             action["params"],
@@ -61,14 +60,12 @@ class DocumentSpreadsheetSurveyAction(TestSurveyCommon, SpreadsheetTestCommon):
     def test_archived_linked_spreadsheet(self):
         test_survey = self.env["survey.survey"].create({"title": "Test Survey"})
 
-        # Spreadsheet is restored when opening the action again
         test_survey.spreadsheet_document_id.action_archive()
         self.assertFalse(test_survey.spreadsheet_document_id.active)
 
         test_survey.action_survey_open_linked_spreadsheet()
         self.assertTrue(test_survey.spreadsheet_document_id.active)
 
-        # Survey folder is restored as well
         folder_id = (
             self.env["ir.config_parameter"]
             .sudo()
@@ -99,7 +96,6 @@ class DocumentSpreadsheetSurveyAction(TestSurveyCommon, SpreadsheetTestCommon):
             survey.spreadsheet_document_id = private
         self.assertEqual(private.with_user(self.survey_user).user_permission, "none")
 
-        # the action still links, opens and shares the survey's own sheet
         action = survey.action_survey_open_linked_spreadsheet()
         sheet = survey.spreadsheet_document_id
         self.assertEqual(action["params"]["spreadsheet_id"], sheet.id)

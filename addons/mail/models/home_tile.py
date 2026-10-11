@@ -57,8 +57,6 @@ class HomeTile(models.AbstractModel):
                     "domain": group["domain"],
                     "name": group["name"],
                     "icon": group["icon"],
-                    # what the activity systray opens a group with: the tile
-                    # opens it through the same activityGroupOpener
                     "activity_ids": group.get("activity_ids", []),
                     "view_type": group.get("view_type"),
                     "is_todo": group.get("is_todo", False),
@@ -78,8 +76,6 @@ class HomeTile(models.AbstractModel):
             order="id desc",
         )
         count = self.env.user.partner_id._get_needaction_count()
-        # a notified user reads the message, not always the record it is on;
-        # the tile opens only what they can read, else the inbox
         readable: set[tuple[str, int]] = set()
         for model, grouped in messages.filtered("res_id").grouped("model").items():
             if model in self.env:

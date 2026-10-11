@@ -25,19 +25,15 @@ class TestRentalSchedule(SaleRentingCommon):
         cls.projector_lots = cls.env["product.trace"].create(lots_to_create_vals)
 
     def test_warn_on_stock_quantity_inconsistency(self):
-        # Get a time reference
         t = self.rental_order.rental_start_date
         conflicting_order = self._create_rental_order(
-            # Originally scheduled one week before
             rental_start_date=t - relativedelta(days=7),
             rental_return_date=t - relativedelta(days=6),
-            # 5 in stock but `self.rental_order` already asks for 2
             line_ids=[
                 Command.create({"product_id": self.projector.id, "product_qty": 4})
             ],
         )
 
-        # Rescheduled for the next week but now conflicts with `self.rental_order`
         result = conflicting_order.line_ids.web_gantt_write(
             {
                 "start_date": t,
@@ -60,7 +56,6 @@ class TestRentalSchedule(SaleRentingCommon):
         )
         self.rental_order.line_ids.reserved_trace_ids = self.projector_lots[:2]
 
-        # Reserve the first lot again at the same time as `self.rental_order`
         result = conflicting_order.line_ids.web_gantt_write(
             {
                 "reserved_trace_ids": self.projector_lots[0].ids,
@@ -84,4 +79,4 @@ class TestRentalSchedule(SaleRentingCommon):
                 for notif in result["notifications"]
             )
         )
-        self.assertTrue(result["actions"])  # Show the assign popup
+        self.assertTrue(result["actions"])

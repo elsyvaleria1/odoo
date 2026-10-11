@@ -295,7 +295,7 @@ class Website(models.Model):
         for website in self:
             website = website.with_company(website.company_id)
             ProductPricelist = website.env["product.pricelist"]
-            website.pricelist_ids = ProductPricelist.sudo().search_fetch(  # noqa: E8507 - one query per website, in that website's company
+            website.pricelist_ids = ProductPricelist.sudo().search_fetch(
                 ProductPricelist._get_domain_website_pricelists(website)
             )
 
@@ -336,7 +336,7 @@ class Website(models.Model):
             {
                 "option": option,
                 "img_src": config["img_src"],
-                "title": self.env._(config["title"]),  # noqa: E8502  a LazyGettext, extracted where _lt declares it
+                "title": self.env._(config["title"]),
             }
             for option, config in const.SHOP_PAGE_STYLE_MAPPING.items()
         ]
@@ -347,7 +347,7 @@ class Website(models.Model):
             {
                 "option": option,
                 "img_src": config["img_src"],
-                "title": self.env._(config["title"]),  # noqa: E8502  a LazyGettext, extracted where _lt declares it
+                "title": self.env._(config["title"]),
             }
             for option, config in const.PRODUCT_PAGE_STYLE_MAPPING.items()
         ]
@@ -437,7 +437,7 @@ class Website(models.Model):
                     else:
                         ecommerce_categories = self.env[
                             "product.public.category"
-                        ].search([], limit=6)  # noqa: E8507 - runs for the one ecommerce footer of the list
+                        ].search([], limit=6)
                         footer_updated = True
                         ecommerce_categories_node[0].attrib["t-value"] = json_dumps(
                             [
@@ -737,8 +737,6 @@ class Website(models.Model):
 
         if cart_sudo := request.cart:
             if request.env.cr.readonly:
-                # Left out of the session: cached, the cart's unrecomputed
-                # pricelist would outlive every later writable request.
                 _debug.logic(
                     "pricelist_uncached", reason="readonly_cursor", order=cart_sudo.id
                 )
@@ -867,9 +865,6 @@ class Website(models.Model):
                     readonly=request.env.cr.readonly,
                 )
                 if request.env.cr.readonly:
-                    # Cached, the cart is never resumed again: the first
-                    # writable request refreshes its pricelist and fiscal
-                    # position in the cached branch above.
                     request.session[CART_REFRESH_PENDING_SESSION_KEY] = True
                 else:
                     abandonned_cart_sudo._update_address(
@@ -973,7 +968,7 @@ class Website(models.Model):
         for website in self.search([]):
             if not website.send_abandoned_cart_email:
                 continue
-            all_abandoned_carts = self.env["sale.order"].search(  # noqa: E8507 - one query per website
+            all_abandoned_carts = self.env["sale.order"].search(
                 [
                     ("is_abandoned_cart", "=", True),
                     ("cart_recovery_email_sent", "=", False),

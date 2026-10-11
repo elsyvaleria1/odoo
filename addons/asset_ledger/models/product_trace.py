@@ -7,8 +7,6 @@ from odoo.addons.base.models.resource_utils import SKIP_IDENTITY_CHECK
 
 _logger = logging.getLogger(__name__)
 
-# What `_prepare_asset_vals` reads off the lot, so a write to any of them has to
-# reach the asset. `trace_id` is not here: it is the link, not an attribute.
 ASSET_ATTRIBUTE_FIELDS = frozenset(
     {
         "name",
@@ -118,11 +116,6 @@ class ProductTrace(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # The ledger and identity fields are related to an asset that does
-        # not exist while the lot's own create runs, so a value given here
-        # lands nowhere until the asset is written below. The asset's identity
-        # check therefore waits for that write; a lot created with no identity
-        # at all is checked explicitly, unless a receipt asked to skip it.
         skip = self.env.context.get(SKIP_IDENTITY_CHECK)
         lots = super(
             ProductTrace, self.with_context(**{SKIP_IDENTITY_CHECK: True})
@@ -160,9 +153,6 @@ class ProductTrace(models.Model):
         )
 
     def write(self, vals):
-        # The ledger fields belong to the asset, which a stock user may hold no
-        # right on: the serial is theirs, so its values reach the asset as
-        # superuser, the way the asset itself was created.
         ledger_map = self._asset_ledger_field_map()
         ledger = {ledger_map[k]: vals[k] for k in ledger_map if k in vals}
         if ledger:
@@ -189,18 +179,6 @@ class ProductTrace(models.Model):
         return vals
 
     def _sync_resource_asset_attributes(self) -> None:
-        """Core writes the asset's name, product, kind and company once, at
-        create. They have to follow the lot afterwards too: retyping a model
-        from vehicle to machinery otherwise leaves every consumer of
-        `resource.asset.kind_id` reading the kind the unit was received as, and
-        moving the lot to another company leaves the asset in the old one.
-
-        The values come from core's `_prepare_asset_vals` rather than being
-        re-derived here, so the two paths cannot drift. `trace_id` is dropped --
-        it is the link itself, not an attribute -- and an empty `kind_id` is
-        never pushed, because it is `required=True`: a template demoted back to
-        a plain product leaves its assets with the kind they had.
-        """
         for lot in self.filtered("asset_id"):
             vals = lot._prepare_asset_vals()
             vals.pop("trace_id", None)
@@ -213,8 +191,6 @@ class ProductTrace(models.Model):
                 if asset._fields[name].convert_to_write(asset[name], asset) != value
             }
             if "kind_id" in changed:
-                # Retyping the product retypes its units on purpose, table
-                # and all; an ordinary write refuses to move a row.
                 asset = asset._retype(
                     self.env["resource.kind"].browse(changed.pop("kind_id"))
                 )
@@ -222,8 +198,6 @@ class ProductTrace(models.Model):
                 asset.write(changed)
 
     def _sync_resource_asset(self) -> None:
-        """The lot's identity is the asset's now; what the lot still feeds the
-        asset from its own side is the odometer meter."""
         for lot in self.filtered("asset_id"):
             lot._sync_resource_asset_meter(None)
 
@@ -266,8 +240,6 @@ class ProductTrace(models.Model):
 
     @api.model
     def _asset_ledger_field_map(self):
-        """{lot field: asset field} for the values the lot relays to its asset.
-        The two names differ where core asset names a holder by employee."""
         return {name: name for name in self.ASSET_LEDGER_FIELDS}
 
     @api.model

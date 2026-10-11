@@ -46,8 +46,6 @@ class TestImLivechatSupportPage(TestGetOperatorCommon):
     def test_the_embed_snippet_carries_no_nonce(self):
         channel = self.env["im_livechat.channel"].create({"name": "Embed"})
         values = {"url": channel.get_base_url(), "channel_id": channel.id}
-        # rendered where the channel form computes it and where the support
-        # page includes it: neither is a website page
         with MockRequest(self.env, is_frontend=False) as request:
             request.csp_nonce = "n0nce"
             self.assertIn(
@@ -81,8 +79,6 @@ class TestImLivechatSupportPage(TestGetOperatorCommon):
         self.assertIn("'unsafe-eval'", policy, "the embed comes from another origin")
 
     def test_the_embed_s_emoji_bundle_needs_no_import_map(self):
-        # A page of another site has none: a bare specifier left in the
-        # bundle fails there, and the embed's emoji picker stayed empty.
         response = self.url_open("/im_livechat/emoji_bundle")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

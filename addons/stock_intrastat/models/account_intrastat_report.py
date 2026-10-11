@@ -14,10 +14,8 @@ class StockIntrastatReportHandler(models.AbstractModel):
         _debug.pipeline("intrastat_missing_values", count=len(vals_list))
         vals_list = super()._update_missing_values(vals_list)
 
-        # Erase the company region code by the warehouse region code, if any
         invoice_ids = [vals["invoice_id"] for vals in vals_list]
 
-        # If the region codes do not apply on the warehouses, no need to search for stock moves
         warehouses = (
             self.env["stock.warehouse"].with_context(active_test=False).search([])
         )
@@ -26,7 +24,6 @@ class StockIntrastatReportHandler(models.AbstractModel):
         if not regions:
             return vals_list
 
-        # If all moves are from the same region, assign its code to all values
         if len(regions) == 1 and all(wh.intrastat_region_id for wh in warehouses):
             for val in vals_list:
                 val["region_code"] = regions.code

@@ -124,13 +124,6 @@ class TestOvertimeDeferral(TransactionCase):
         )
 
     def test_the_regenerated_fields_are_stale_inside_the_block(self):
-        """The constraint, asserted rather than left in a docstring.
-
-        `_cron_absence_detection` drops a marker whose `overtime_hours` came
-        out zero. Run inside a deferral that read would be zero for every one
-        of them and the cron would delete them all -- which it did, until a
-        test caught it.
-        """
         attendance = self._open(self._employee("stale"))
         with attendance._deferring_overtime() as records:
             records.write({"check_out": datetime(2026, 9, 7, 20, 0)})

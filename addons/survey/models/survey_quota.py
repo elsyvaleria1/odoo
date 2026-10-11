@@ -71,12 +71,6 @@ class SurveyQuota(models.Model):
             quota.is_full = count >= quota.limit
 
     def _get_domain_usage(self) -> list:
-        """Completed responses, plus the ones still plausibly in flight.
-
-        Counting every non-new response prevented overselling but never released
-        the slot: an abandoned response held it for good, so anyone could exhaust a
-        public survey's quotas by starting responses and closing the tab.
-        """
         reserved_since = fields.Datetime.now() - relativedelta(
             hours=self.RESERVATION_HOURS
         )

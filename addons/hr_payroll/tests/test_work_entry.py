@@ -33,7 +33,6 @@ class TestWorkEntry(TestPayslipBase):
         )
 
     def test_time_normal_work_entry(self):
-        # Normal attendances (global to all employees)
         work_entries = self.richard_emp.version_id.generate_work_entries(
             self.start.date(), self.end.date()
         )

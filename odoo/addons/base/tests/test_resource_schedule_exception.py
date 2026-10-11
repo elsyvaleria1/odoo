@@ -155,11 +155,6 @@ class TestDeletingAScheduleDoesNotCreateAGlobalHoliday(TransactionCase):
         )
 
     def test_deleting_a_calendarless_resource_does_not_widen_its_time_off(self):
-        """A resource with a calendar is safe: the leave keeps ``calendar_id``
-        and stays scoped to it.  The leak needs BOTH columns to go NULL, which
-        is what happens to a fully flexible resource -- the shape the form
-        offers as "Fully Flexible" and the default for a bare material asset.
-        """
         bystander = self._bystander()
         machine = self.Resource.create(
             {
@@ -194,7 +189,6 @@ class TestDeletingAScheduleDoesNotCreateAGlobalHoliday(TransactionCase):
         )
 
     def test_deleting_a_resource_that_has_a_calendar_is_already_safe(self):
-        """Pins the boundary, so the fix is not credited with more than it does."""
         bystander = self._bystander()
         own = self.Calendar.create({"name": "Machine shift"})
         self.env.flush_all()
@@ -223,7 +217,6 @@ class TestDeletingAScheduleDoesNotCreateAGlobalHoliday(TransactionCase):
         self.assertEqual(bystander.get_work_hours_count(self.start, self.stop), before)
 
     def test_a_genuinely_global_leave_still_applies_everywhere(self):
-        """The counterpart: cascading must not take the real wildcard with it."""
         bystander = self._bystander()
         before = bystander.get_work_hours_count(self.start, self.stop)
         self.Leave.create(
@@ -304,9 +297,6 @@ class TestLeaveDateToMultiCompanyTz(TransactionCase):
         self.assertEqual(leave_b.date_to, datetime(2025, 1, 6, 15, 0))
 
     def test_date_to_calendar_tz_wins_over_the_acting_users_tz(self):
-        # Company A's calendar is Europe/Brussels (UTC+1 in January); the
-        # acting user is in Asia/Tokyo (UTC+9). Both compute() and
-        # default_get() must resolve the same "end of day": the calendar's.
         leave = (
             self.env["resource.schedule.exception"]
             .with_context(tz="Asia/Tokyo")

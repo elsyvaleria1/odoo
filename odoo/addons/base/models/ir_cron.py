@@ -203,9 +203,6 @@ class _Watermark:
 
 @contextmanager
 def _job_default_env(env: api.Environment) -> Iterator[None]:
-    # A job owns its cursor in production. Under registry test mode it borrows
-    # the test's transaction, whose default environment has to survive the job:
-    # left in place, every later flush of that test class runs as the job's user.
     transaction = env.transaction
     previous = transaction.default_env
     transaction.default_env = env
@@ -225,7 +222,6 @@ class IrCron(models.Model):
     _name = "ir.cron"
     _inherit = ["mixin.recurrence.interval"]
     _order = "cron_name, id"
-    # upstream's fields, which mixin.recurrence.interval names otherwise
     _legacy_field_names = frozendict(
         {"interval_number": "repeat_interval", "interval_type": "repeat_unit"}
     )
@@ -457,9 +453,6 @@ class IrCron(models.Model):
                 _debug.logic("job_skipped", job=job_id, reason="concurrency_error")
                 continue
             if not job:
-                # _acquire_job may hold the advisory lock of a job it found
-                # not ready; left in place it would block that job for as
-                # long as the next one runs
                 cron_cr.rollback()
                 _logger.debug(
                     "job %s is being processed by another worker, skip", job_id
@@ -569,8 +562,6 @@ class IrCron(models.Model):
     def _acquire_job(
         cr: BaseCursor, job_id: int, *, include_not_ready: bool = False
     ) -> CronJob | None:
-        # the row must be read after the lock is granted: a snapshot taken
-        # before it still shows the nextcall of a run that just finished
         cr.use_read_committed()
         cr.execute(
             SQL(
@@ -636,8 +627,6 @@ class IrCron(models.Model):
         *,
         deadline: float | None = None,
     ) -> None:
-        # cron_cr idles in its transaction, holding the job's lock, for as long
-        # as the job runs; a server idle timeout would kill it mid-run
         cron_cr.execute(
             "SELECT set_config('idle_in_transaction_session_timeout', '0', true)"
         )
@@ -1049,8 +1038,6 @@ class IrCron(models.Model):
     @api.model
     def _prepare_reschedule_vals(self, job: CronJob) -> dict[str, Any]:
         now = self._get_now()
-        # counted from the anchor, not from the nextcall of the run that just
-        # ended: a nextcall a DST gap moved would shift every later run
         start = job.schedule_anchor or job.nextcall
         nextcall = self._get_next_call(
             self, start, now, job.repeat_unit, job.repeat_interval
@@ -1173,9 +1160,6 @@ class IrCron(models.Model):
             return super().write(vals)
         cadences = {cron.id: _cadence(cron) for cron in self}
         super().write(vals)
-        # the series restarts from the pending execution, as it did before there
-        # was an anchor; a rewrite of the same cadence (a data file reloaded)
-        # keeps it, or an upgrade could pin a nextcall a DST gap had moved
         restarted = self.filtered(lambda cron: cadences[cron.id] != _cadence(cron))
         for nextcall, group in restarted.grouped("nextcall").items():
             super(IrCron, group).write({"schedule_anchor": nextcall})

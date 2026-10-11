@@ -7,12 +7,6 @@ from .common import AppointmentCommon
 class AppointmentCalendarEventTest(AppointmentCommon):
     @users("apt_manager")
     def test_appointment_calendar_event_inverse_capacity(self):
-        """Ensure the inverse appropriately assigns bookings such that the input reserved capacity is preserved.
-
-        If the resources cannot hold the requested capacity, an error should be raised.
-        In the case of appointments where capacity is not managed, the capacity should be 1 per resource selected
-        regardless of their capacity.
-        """
         user_appointment = self.apt_type_manage_capacity_users
         user_appointment.staff_user_ids += self.env.user
 

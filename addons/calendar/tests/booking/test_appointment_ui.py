@@ -28,7 +28,7 @@ class AppointmentUICommon(AppointmentCommon, common.HttpCase):
             name="Solène StandardUser",
             notification_type="email",
             login="std_user",
-            tz="Europe/Brussels",  # UTC + 1 (at least in February)
+            tz="Europe/Brussels",
         )
         cls.portal_user = cls._create_portal_user()
 
@@ -115,7 +115,6 @@ class AppointmentUITest(AppointmentUICommon):
         appointment_type = self.env["appointment.type"].browse(
             result["appointment_type_id"]
         )
-        # The default context fields should be ignored as the fields are not whitelisted
         self.assertFalse(appointment_type.is_auto_assign)
 
     @users("apt_manager")
@@ -231,7 +230,6 @@ class AppointmentUITest(AppointmentUICommon):
         appointment_type = self.env["appointment.type"].browse(
             result["appointment_type_id"]
         )
-        # The default context fields should be ignored as the fields are not whitelisted
         self.assertFalse(appointment_type.is_auto_assign)
 
     def test_share_appointment_type(self):
@@ -249,7 +247,6 @@ class AppointmentUITest(AppointmentUICommon):
     @users("apt_manager")
     @freeze_time("2022-02-15T14:00:00")
     def test_action_meeting_from_appointment_type(self):
-        """Check values of the action of viewing meetings from clicking an appointment type."""
         now = datetime.now()
         appointment_types = self.env["appointment.type"].create(
             [
@@ -267,7 +264,6 @@ class AppointmentUITest(AppointmentUICommon):
                 },
             ]
         )
-        # create an event to test smart scale
         self.env["calendar.event"].create(
             {
                 "name": "Next Month Appointment",
@@ -314,11 +310,9 @@ class AppointmentUITest(AppointmentUICommon):
                 views_order = [
                     view_id_type[1]
                     for view_id_type in action["views"]
-                    # Optional presentation adapters may prepend their views.
                     if view_id_type[1] in {"calendar", "list"}
                 ]
                 self.assertEqual(views_order, expected_views_order)
-                # Optional adapters may add their own presentation defaults.
                 self.assertEqual(
                     action["context"] | expected_context, action["context"]
                 )
@@ -327,7 +321,6 @@ class AppointmentUITest(AppointmentUICommon):
     @freeze_time("2022-07-04")
     @users("apt_manager")
     def test_appointment_meeting_url(self):
-        """Test if a meeting linked to an appointment has the right meeting URL no matter its location."""
         CalendarEvent = self.env["calendar.event"]
         self.authenticate(self.env.user.login, self.env.user.login)
         datetime_format = "%Y-%m-%d %H:%M:%S"
@@ -385,7 +378,6 @@ class AppointmentUITest(AppointmentUICommon):
         ]
 
         for appointment, appointment_data, expect_discuss in cases:
-            # Prevent booking the same slot
             appt_datetime = datetime.strptime(
                 appointment_data.get("datetime_str"), datetime_format
             )
@@ -496,8 +488,7 @@ class AppointmentUITest(AppointmentUICommon):
     @freeze_time("2022-02-13")
     @users("apt_manager")
     def test_appointment_crossing_manual_confirmation_treshold(self):
-        """Test that crossing over the manual confirmation threshold leaves the booking in 'request' while its attendees are confirmed"""
-        self.assertFalse(self.apt_type_resource.meeting_ids)  # Assert initial data
+        self.assertFalse(self.apt_type_resource.meeting_ids)
         self.authenticate(self.env.user.login, self.env.user.login)
         resource = (
             self.env["resource.resource"]
@@ -517,7 +508,7 @@ class AppointmentUITest(AppointmentUICommon):
         self.assertTrue(phone_question)
         self.assertTrue(self.apt_type_resource.auto_confirm)
         self.apt_type_resource.sudo().manual_confirmation_percentage = (
-            0.5  # Set Manual Confirmation at 50%
+            0.5
         )
 
         appointment_data = {
@@ -552,8 +543,6 @@ class AppointmentUITest(AppointmentUICommon):
     @mute_logger("odoo.http")
     @users("apt_manager")
     def test_appointment_answer_required_questions(self):
-        """Check that when submitting a form through the controller, the required
-        questions have indeed been answered."""
         self.authenticate(self.env.user.login, self.env.user.login)
         self.apt_type_bxls_2days.write(
             {"max_bookings": 10, "meeting_ids": False, "question_ids": False}
@@ -619,7 +608,7 @@ class AppointmentUITest(AppointmentUICommon):
         self.assertEqual(len(self.apt_type_bxls_2days.meeting_ids), 1)
         self.assertEqual(
             len(self.apt_type_bxls_2days.meeting_ids.appointment_answer_input_ids), 4
-        )  # main phone was stripped out
+        )
 
         for question_key in [
             key for key in event_answers if key != f"question_{questions[0].id}"
@@ -636,9 +625,6 @@ class AppointmentUITest(AppointmentUICommon):
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_appointment_resource_manual_confirmation(self):
-        """Test that a resource booking is confirmed on submission, except when
-        auto_confirm is False where it is set to 'request'.
-        """
         self.authenticate(self.env.user.login, self.env.user.login)
         self.assertFalse(self.apt_resource_multiple_bookings.meeting_ids)
         phone_question = self.apt_resource_multiple_bookings._get_main_phone_question()
@@ -700,8 +686,6 @@ class AppointmentUITest(AppointmentUICommon):
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_appointment_staff_user_manual_confirmation(self):
-        """Check that appointment and attendee status are correctly
-        set based on the auto_confirm and manual_confirmation_percentage fields"""
         self.authenticate(self.env.user.login, self.env.user.login)
         phone_question = self.apt_type_bxls_2days._get_main_phone_question()
         self.assertTrue(phone_question)
@@ -751,7 +735,6 @@ class AppointmentUITest(AppointmentUICommon):
             )
         )
 
-        # Despite 100% manual_confirmation_percentage, should be 'request' as auto_confirm is False
         self.apt_type_bxls_2days.write(
             {"auto_confirm": False, "manual_confirmation_percentage": 1.0}
         )
@@ -772,11 +755,7 @@ class AppointmentUITest(AppointmentUICommon):
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_appointment_staff_user_manual_confirmation_percentage(self):
-        """Check that appointment and attendee status are correctly set based on the auto_confirm
-        and manual_confirmation_percentage fields when enabled, when booking (multiple) users and
-        managing capacity"""
         self.authenticate(self.env.user.login, self.env.user.login)
-        # 2 users, 3 capacity -> 6 total.
         self.apt_type_manage_capacity_users.write(
             {
                 "auto_confirm": True,
@@ -801,7 +780,6 @@ class AppointmentUITest(AppointmentUICommon):
             "asked_capacity": 3,
         }
 
-        # Booking for 3 capacity with one staff user. Total used is 3/6. It should create a 'booked' event as <= 50%
         res = self.url_open(
             f"/appointment/{self.apt_type_manage_capacity_users.id}/submit",
             event_values,
@@ -814,7 +792,6 @@ class AppointmentUITest(AppointmentUICommon):
             all(attendee.state == "accepted" for attendee in first_meeting.attendee_ids)
         )
 
-        # Booking for 1 capacity with another staff user. Total used is 4/6. It should create a 'request' event as > 50%
         event_values.update(
             {
                 "asked_capacity": 1,
@@ -880,9 +857,6 @@ class CalendarTest(AppointmentUICommon):
 
     @freeze_time("2023, 11, 22")
     def test_meeting_booker_cancel(self):
-        """Test that when appointment Booker cancels the meeting then the event should
-        be archived.
-        """
         self.authenticate(self.portal_user.login, self.portal_user.login)
         self.apt_type_bxls_2days.write({"is_published": "True"})
         event = self.env["calendar.event"].create(
@@ -913,7 +887,6 @@ class CalendarTest(AppointmentUICommon):
 
     @freeze_time("2023, 11, 22")
     def test_meeting_cancel_no_partner(self):
-        """Test cancellation of meeting with no partner."""
         self.authenticate(None, None)
         self.apt_type_bxls_2days.write({"is_published": "True"})
         event = self.env["calendar.event"].create(
@@ -945,7 +918,6 @@ class CalendarTest(AppointmentUICommon):
 class AppointmentUIAtInstallTest(AppointmentUICommon):
     @freeze_time("2022-02-14T7:00:00")
     def test_get_appointment_type_page_view(self):
-        """Test if the appointment_type_page always shows available slots if there are some."""
         now = self.reference_monday
         user_admin = self.env.ref("base.user_admin")
         slot_time = now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(
@@ -1001,7 +973,6 @@ class AppointmentUIAtInstallTest(AppointmentUICommon):
             slots_calendar.getchildren(), "Slots calendar should be visible"
         )
 
-        # create an event to make the first staff user busy and remove its available slots
         selected_staff_user = self.env["res.users"].browse(
             int(selected_user_option.attrib["value"])
         )
@@ -1026,7 +997,6 @@ class AppointmentUIAtInstallTest(AppointmentUICommon):
             slots_calendar.getchildren(), "Slots calendar should be visible"
         )
 
-        # create another event to make both staff user busy and remove all slots
         self._create_meetings(
             remaining_staff_user, [(slot_time, slot_time + timedelta(hours=1), True)]
         )

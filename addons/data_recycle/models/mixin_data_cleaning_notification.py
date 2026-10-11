@@ -8,8 +8,6 @@ class MixinDataCleaningNotification(models.AbstractModel):
     _name = "mixin.data.cleaning.notification"
     _description = "Data Cleaning Notification"
 
-    #: Name of the Selection on the concrete model that reads 'manual' or
-    #: 'automatic'. Automatic rules act on their own and notify nobody.
     _cleaning_mode_field = None
 
     notify_user_ids = fields.Many2many(
@@ -37,15 +35,11 @@ class MixinDataCleaningNotification(models.AbstractModel):
 
     @api.model
     def _domain_notify_user_ids(self) -> list:
-        # Only a system user can reach the queues these notifications link to.
         return [("all_group_ids", "in", self.env.ref("base.group_system").id)]
 
     def _notify_pending_records(self) -> None:
-        """Notify the watchers of every manual rule in `self` that is due."""
         mode_field = self._cleaning_mode_field
         if not mode_field:
-            # Without this the filter below raises `KeyError: None` from inside a
-            # cron, which says nothing about what the consumer forgot to declare.
             raise NotImplementedError(
                 "%s inherits mixin.data.cleaning.notification without setting "
                 "_cleaning_mode_field" % self._name
@@ -59,14 +53,10 @@ class MixinDataCleaningNotification(models.AbstractModel):
                 and rule.last_notification + delta >= fields.Datetime.now()
             ):
                 continue
-            # Stamp only on a notification that went out. Stamping first, which
-            # all three copies did, spends the period on a run that sent
-            # nothing and leaves the watchers to find the backlog themselves.
             if rule._send_notification():
                 rule.last_notification = fields.Datetime.now()
 
     def _send_notification(self):
-        """Send one rule's notification. False when there was nothing to say."""
         self.check_singleton()
         records_count = self._get_count_pending()
         partner_ids = self.notify_user_ids.partner_id.ids
@@ -81,16 +71,12 @@ class MixinDataCleaningNotification(models.AbstractModel):
         )
         return True
 
-    # Hooks
 
     def _get_count_pending(self):
-        """How many records this rule is currently proposing."""
         raise NotImplementedError
 
     def _get_notification_body(self, records_count):
-        """The rendered body of the notification."""
         raise NotImplementedError
 
     def _get_notification_subject(self):
-        """The subject line."""
         raise NotImplementedError

@@ -28,7 +28,6 @@ from odoo.tools import SQL
 
 _debug = DebugLog(__name__)
 
-# what the key is drawn for, so no other HMAC of the database secret is it
 CIPHER_SCOPE = tools.register_signed_scope(
     "mixin.bearer.token",
     purpose="derive the Fernet key that seals a model's bearer tokens at rest",
@@ -50,9 +49,6 @@ class MixinBearerToken(models.AbstractModel):
         inverse="_inverse_bearer_token",
         search="_search_bearer_token",
     )
-    # neither is the token: its hash, and its value sealed under a key the
-    # database does not hold in clear. Read with the record, so rendering a
-    # token costs no query; written only through _store_bearer_tokens
     access_token_hash = fields.Char(
         index="btree_not_null",
         copy=False,
@@ -64,7 +60,6 @@ class MixinBearerToken(models.AbstractModel):
     )
 
     def _bearer_cipher(self) -> Fernet:
-        # one key per model, drawn from the database secret
         digest = tools.hmac(self.env(su=True), CIPHER_SCOPE, self._name)
         return Fernet(base64.urlsafe_b64encode(bytes.fromhex(digest)))
 
@@ -78,8 +73,6 @@ class MixinBearerToken(models.AbstractModel):
                 try:
                     token = cipher.decrypt(record.access_token_sealed.encode()).decode()
                 except InvalidToken:
-                    # sealed under another database secret: it still opens,
-                    # but cannot be shown
                     _debug.logic(
                         "bearer_token_unopenable", model=self._name, id=record.id
                     )
@@ -90,9 +83,6 @@ class MixinBearerToken(models.AbstractModel):
             record.access_token = token
 
     def _prepare_create_values(self, vals_list: list[ValuesType]) -> list[ValuesType]:
-        # a new record's token goes into its INSERT, not into an UPDATE after
-        # it; one it is created without (a copy of a record that had none)
-        # leaves nothing to store
         vals_list = super()._prepare_create_values(vals_list)
         cipher = None
         for vals in vals_list:
@@ -105,9 +95,6 @@ class MixinBearerToken(models.AbstractModel):
     def _bearer_token_columns(
         self, token: str | None, cipher: Fernet
     ) -> dict[str, str | None]:
-        """The stored Char columns a token is kept as, every one None for no
-        token. A model keeping more of a token extends it; create and
-        _store_bearer_tokens both write what it returns."""
         if not token:
             return {"access_token_hash": None, "access_token_sealed": None}
         return {
@@ -121,8 +108,6 @@ class MixinBearerToken(models.AbstractModel):
         )
 
     def _store_bearer_tokens(self, tokens: dict[int, Any]) -> None:
-        """Keep each record's token as its hash and its sealed value; a falsy
-        token removes the record's."""
         rows = {
             record_id: token
             for record_id, token in tokens.items()
@@ -137,7 +122,6 @@ class MixinBearerToken(models.AbstractModel):
         }
         names = list(next(iter(columns_by_id.values())))
         self.flush_model(names)
-        # one statement for every record: an upgrade seals a table at once
         self.env.cr.execute(
             SQL(
                 "UPDATE %s AS record SET %s FROM unnest(%s::int4[], %s) AS stored(id, %s) "
@@ -161,7 +145,6 @@ class MixinBearerToken(models.AbstractModel):
         self.browse(list(columns_by_id)).invalidate_recordset(["access_token", *names])
 
     def _search_bearer_token(self, operator: str, value: Any) -> Domain:
-        # the records a token opens are found by its hash, in the query itself
         if operator not in ("in", "not in"):
             return NotImplemented
         values = [value] if isinstance(value, str) or value is None else list(value)
@@ -180,7 +163,6 @@ class MixinBearerToken(models.AbstractModel):
                 if not conditions:
                     return SQL("FALSE")
                 return SQL("(%s)", SQL(" OR ").join(conditions))
-            # a record without a token is not one of the given tokens
             others = SQL("%s <> ALL(%s)", column, hashes) if hashes else SQL("TRUE")
             if without:
                 return SQL("(%s IS NOT NULL AND %s)", column, others)
@@ -189,7 +171,6 @@ class MixinBearerToken(models.AbstractModel):
         return Domain.custom(to_sql=to_sql)
 
     def _access_token_opens(self, token: str | None) -> bool:
-        """Whether `token` is this record's."""
         self.check_singleton()
         if not token or not isinstance(token, str) or not self.access_token_hash:
             return False

@@ -130,7 +130,5 @@ class ResourceResource(models.Model):
             self._compute_document_link_name(field_name)
 
     def _inverse_document_links(self) -> None:
-        # One inverse for every slot: linking is idempotent, and Odoo gives the
-        # inverse no way to know which of the five was written.
         for field_name in DOCUMENT_LINKS:
             self._link_document(field_name)

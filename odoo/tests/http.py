@@ -108,7 +108,7 @@ class HttpCase(TransactionCase):
         super().setUpClass()
 
         ICP = cls.env["ir.config_parameter"]
-        ICP.set_param("web.base.url", cls.base_url())  # type: ignore[attr-defined]  # ir.config_parameter is an addon model
+        ICP.set_param("web.base.url", cls.base_url())
         cls.env.flush_all()
         cls.xmlrpc_url = f"{cls.base_url()}/xmlrpc/2/"
         cls._logger = logging.getLogger("%s.%s" % (cls.__module__, cls.__name__))
@@ -273,8 +273,6 @@ class HttpCase(TransactionCase):
 
         self._logger.info("waiting for threads: %s", request_threads)
 
-        # A pooled worker outlives its request and is renamed when it goes back
-        # to idle, so joining it would wait out the whole timeout: poll instead.
         deadline = start_time + timeout
         with _debug.perf(
             "test.http.wait_requests",
@@ -317,7 +315,6 @@ class HttpCase(TransactionCase):
         self._wait_remaining_requests(strict=exc_type is None)
 
     def logout(self, keep_db: bool = True) -> None:
-        # The browser may have followed a rotation since authenticate().
         sid = self.opener.cookies.get("session_id", self.session.sid)
         _debug.lifecycle(
             "test.http.logout",
@@ -560,8 +557,6 @@ class HttpCase(TransactionCase):
         ):
             atexit.enter_context(self.allow_requests(browser=browser))
             atexit.push(self._wait_for_requests_unless_already_failing)
-            # Registered last so it runs first: the browser is gone before the
-            # wait for its requests starts, and before the cookie is withdrawn.
             atexit.callback(browser.stop)
             self._browser_js_patch_bus(atexit)
 
@@ -632,8 +627,6 @@ class HttpCase(TransactionCase):
         **kwargs: Any,
     ) -> None:
         if not url_path or not isinstance(url_path, str):
-            # a link a fixture failed to build reads as False: the browser then
-            # opens a page that only lacks what the first step waits for
             raise ValueError(f"start_tour({tour_name!r}) needs a url, got {url_path!r}")
         options = {
             "stepDelay": step_delay or 0,
@@ -673,7 +666,7 @@ class HttpCase(TransactionCase):
         Users = self.registry["res.users"]
 
         def setup(_):
-            Users.tour_enabled = False  # type: ignore[attr-defined]  # res.users is an addon model
+            Users.tour_enabled = False
 
         with (
             patch.object(Users, "tour_enabled", False),

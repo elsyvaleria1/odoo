@@ -18,7 +18,6 @@ class AIAgentSource(models.Model):
 
     @api.model
     def create_from_articles(self, article_ids, agent_id) -> None:
-        """Create AI agent sources from articles."""
         articles = self.env["knowledge.article"].browse(article_ids)
         vals_list = [
             {
@@ -37,17 +36,14 @@ class AIAgentSource(models.Model):
     @api.depends_context("uid")
     @api.depends("article_id")
     def _compute_user_has_access(self) -> None:
-        """Override to check the user's access through the linked article."""
         article_sources = self.filtered(lambda s: s.type == "knowledge_article")
         for source in article_sources:
-            # evaluate access with the current user without elevating to sudo (used in LLM response flow)
             source.user_has_access = source.article_id.with_user(
                 self.env.user
             ).user_can_read
         super(AIAgentSource, self - article_sources)._compute_user_has_access()
 
     def _update_name(self):
-        """Override to name knowledge-article sources after their article."""
         if not self:
             return None
 
@@ -62,7 +58,6 @@ class AIAgentSource(models.Model):
         return None
 
     def action_access_source(self) -> dict:
-        """Override to open the linked article when there is one."""
         self.check_singleton()
         if self.url:
             return {
@@ -73,11 +68,6 @@ class AIAgentSource(models.Model):
         return super().action_access_source()
 
     def _get_sources_to_process(self):
-        """Override to also process the sources of the articles being processed.
-
-        :return: sources to process
-        :rtype: ai.agent.source recordset
-        """
         sources_to_process = super()._get_sources_to_process()
         target_articles = (
             self.env["ai.agent.source"]
@@ -97,17 +87,9 @@ class AIAgentSource(models.Model):
         return sources_to_process | knowledge_sources_to_process
 
     def _get_content(self, source):
-        """Override to fetch a knowledge article source and all its descendants.
-
-        :param ai.agent.source source: source to fetch the content from
-        :return: dictionary with 'content', 'title' and 'error' keys
-        :rtype: dict
-        """
         if source.type != "knowledge_article":
             return super()._get_content(source)
 
-        # Set the agent creator's language explicitly: it is missing inside cron jobs,
-        # which would otherwise make translations impossible.
         lang = source.agent_id.create_uid.lang or "en_US"
         env = self.with_context(lang=lang).env
         extractor = HTMLExtractor(env)

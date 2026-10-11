@@ -43,7 +43,6 @@ class StockPicking(models.Model):
                         ]
                     )
                 )
-                # Find corresponding receipt in other company
                 receipts = purchase_order.picking_ids.filtered(
                     lambda p: p.picking_type_code in ("incoming", "dropship")
                 )
@@ -111,9 +110,6 @@ class StockPicking(models.Model):
                 reason="no_unpicked_candidate",
             )
             return False
-        # Prefer the candidate whose quantity matches, in case more than one
-        # not-yet-picked move exists for the same product (e.g. two order
-        # lines for the same product).
         exact_qty_match = candidates.filtered(
             lambda move: move.product_uom_qty == move_orig.product_uom_qty
         )

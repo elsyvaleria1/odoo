@@ -15,9 +15,6 @@ _logger = logging.getLogger(__name__)
 
 class ShipRocket:
     def __init__(self, carrier, debug_logger):
-        """
-        Initial parameters for making api requests.
-        """
         self.url = "https://apiv2.shiprocket.in/v1/"
         self.session = carrier._get_integration_connection()._egress_session(
             "shiprocket"
@@ -26,27 +23,19 @@ class ShipRocket:
         self.debug_logger = debug_logger
 
     def _send_api_request(self, endpoint, method="GET", data=None, token=None):
-        """
-        make an api call, return response for multiple api requests of shiprocket
-        """
         headers = {"Content-Type": "application/json"}
         if token:
-            # Include authorization header if a token is provided
             headers["Authorization"] = f"Bearer {token}"
         access_url = url_join(self.url, endpoint)
         try:
-            # Log the request details for debugging purposes
             self.debug_logger(
                 "%s\n%s\n%s" % (access_url, method, data),
                 "shiprocket_request_%s" % endpoint,
             )
-            # Make the API request
             response = self.session.request(
                 method, access_url, json=data, headers=headers, timeout=30
             )
-            # Parse the response as JSON
             response_json = response.json()
-            # Log the response details for debugging purposes
             self.debug_logger(
                 "%s\n%s" % (response.status_code, response.text),
                 "shiprocket_response_%s" % endpoint,
@@ -66,9 +55,6 @@ class ShipRocket:
             return {"errors": {"JSONDecodeError": str(error)}}
 
     def _authorize_generate_token(self):
-        """
-        Generate an access token from shiprocket credentials.
-        """
         data = {
             "email": self.carrier.shiprocket_email,
             "password": self.carrier.sudo().shiprocket_password,
@@ -76,10 +62,6 @@ class ShipRocket:
         return self._send_api_request("external/auth/login", "POST", data)
 
     def _acquire_access_token(self) -> str | None:
-        """
-        Generate an access token for shiprocket.
-        The token is automatically generates after 9 days as it expires.
-        """
         if not (
             self.carrier.shiprocket_email and self.carrier.sudo().shiprocket_password
         ):
@@ -107,9 +89,6 @@ class ShipRocket:
         return self.carrier.shiprocket_access_token or None
 
     def _shiprocket_get_error_message(self, json_data):
-        """
-        Return error message(s) from shiprocket requests.
-        """
         errors = json_data.get("errors", {})
         payload = json_data.get("payload", {})
         message_template = self.carrier.env._("Shiprocket Error: %s")
@@ -132,10 +111,6 @@ class ShipRocket:
         return ""
 
     def _get_shiprocket_channels(self):
-        """
-        Import all active channels from shiprocket requests.
-        https://apiv2.shiprocket.in/v1/external/channels
-        """
         channels_response = self._send_api_request(
             "external/channels", token=self._acquire_access_token()
         )
@@ -146,10 +121,6 @@ class ShipRocket:
         raise ValidationError(self._shiprocket_get_error_message(channels_response))
 
     def _get_shiprocket_couriers(self):
-        """
-        Import all available courier service(s) from shiprocket requests.
-        https://apiv2.shiprocket.in/v1/external/courier/courierListWithCounts
-        """
         carriers_json = self._send_api_request(
             "external/courier/courierListWithCounts", token=self._acquire_access_token()
         )
@@ -158,9 +129,6 @@ class ShipRocket:
         raise ValidationError(self._shiprocket_get_error_message(carriers_json))
 
     def _get_rate(self, shipper, recipient, weight_in_kg, dimensions):
-        """
-        Fetch rate from Shiprocket API based on the parameters.
-        """
         res = {"currency": "INR"}
         is_india = recipient.country_id.code == "IN" and shipper.country_id.code == "IN"
         data = {
@@ -240,11 +208,6 @@ class ShipRocket:
     def _rate_request(
         self, recipient, shipper, order=False, picking=False, package=False
     ):
-        """
-        Returns the dictionary of shipment rate from shiprocket
-        https://apiv2.shiprocket.in/v1/external/courier/serviceability/
-        https://apiv2.shiprocket.in/v1/external/courier/international/serviceability
-        """
         if not (order or picking):
             raise UserError(
                 self.carrier.env._("Sale Order or Picking is required to get rate.")
@@ -281,9 +244,6 @@ class ShipRocket:
         return self._get_rate(shipper, recipient, weight_in_kg, dimensions)
 
     def _get_currency_converted_amount(self, amount, picking):
-        """
-        Returns the amount converted in INR currency.
-        """
         inr_currency = picking.env.ref("base.INR")
         picking_currency = (
             picking.sale_id.currency_id
@@ -300,9 +260,6 @@ class ShipRocket:
         return amount
 
     def _get_gst_tax_rate(self, stock_move):
-        """
-        Returns the GST tax amount from order lines.
-        """
         gst_tax_amount = 0.0
         tax_ids = (
             stock_move.sale_line_id and stock_move.sale_line_id.sudo().tax_ids
@@ -321,23 +278,13 @@ class ShipRocket:
         return gst_tax_amount
 
     def _get_subtotal(self, line_vals):
-        """
-        Returns the subtotal of the order.
-        """
         return sum(line["selling_price"] * line["units"] for line in line_vals)
 
     def _get_phone(self, partner):
-        """
-        Return the mobile/phone for shiprocket requests.
-        """
         matches = re.findall(r"\d+", partner.phone_ids._primary().number or "")
         return "".join(matches)
 
     def _get_shipping_lines(self, package, picking):
-        """
-        Returns shipping products data from picking to create an order.
-        Get shipping lines from package commodities.
-        """
         line_by_product = {}
         package_total_value = 0
         for commodity in package.commodities:
@@ -357,11 +304,9 @@ class ShipRocket:
             for move in picking.move_ids:
                 move_dest = move._rollup_move_dest_ids(set())
                 if move_dest:
-                    # need only those moves which have sale_line_id links for 3 step delivery
                     dest_moves |= picking.env["stock.move"].browse(move_dest)
             if dest_moves:
                 moves = dest_moves
-            # label price must be in the INR currency
             unit_price = self._get_currency_converted_amount(
                 round(commodity.monetary_value, 2), package.picking_id
             )
@@ -385,9 +330,6 @@ class ShipRocket:
     def _prepare_parcel(
         self, picking, package, courier_code=False, ship_charges=0.00, index=1
     ):
-        """
-        Prepare parcel for picking shipment based on the package.
-        """
         database_uuid = picking.env.registry.settings.get(
             picking.env, "database.uuid", False
         )
@@ -474,9 +416,6 @@ class ShipRocket:
         }
 
     def _get_shipping_params(self, picking):
-        """
-        Returns the shipping data from picking for create an shiprocket order.
-        """
         if not self.carrier.shiprocket_channel_id:
             action = self.carrier.env.ref("delivery.action_delivery_carrier_form")
             raise RedirectWarning(
@@ -491,18 +430,15 @@ class ShipRocket:
         )
         default_package = self.carrier.shiprocket_default_package_type_id
         packages = self.carrier._get_packages_from_picking(picking, default_package)
-        # ship_charges is mandatory as forward shipment API will not return it in response, used in subtotal.
         carrier_product_id = self.carrier.product_id
         carrier_order_lines = picking.sale_id.line_ids.filtered(
             lambda ol: ol.product_id == carrier_product_id
         )
         ship_charges = sum(carrier_order_lines.mapped("price_unit"))
         for index, package in enumerate(packages):
-            # fetch rate based on package weight and size
             rate_response = self._rate_request(
                 picking.partner_id, ship_from, picking=picking, package=package
             )
-            # need courier code, as the rate request and forward shipment APIs must have to use the same courier code.
             courier_code = rate_response.get("courier_code")
             parcel = self._prepare_parcel(
                 picking, package, courier_code, ship_charges, index=index
@@ -511,12 +447,6 @@ class ShipRocket:
         return parcel_dict
 
     def _send_shipping(self, picking):
-        """
-        Returns the dictionary with order_id, shipment_id, tracking_number,
-        exact_price and courier_name for delivery order.
-        - for multiple package, shiprocket create new order.
-        https://apiv2.shiprocket.in/v1/external/shipments/create/forward-shipment
-        """
         products = picking.move_line_ids.product_id
         self._check_required_value(
             picking.partner_id,
@@ -572,7 +502,6 @@ class ShipRocket:
                 and not payload.get("awb_assign_error")
             ):
                 res["tracking_numbers"].append(payload.get("awb_code"))
-                # To get exact_price
                 order_details = self._send_api_request(
                     "external/shipments/{}".format(payload["shipment_id"]),
                     token=self._acquire_access_token(),
@@ -594,11 +523,6 @@ class ShipRocket:
         return res
 
     def _generate_label(self, shipment_id):
-        """
-        Generate Label for shiprocket order if the forward shipment fails
-        to generate label again and shipment is already created in shiprocket.
-        https://apiv2.shiprocket.in/v1/external/courier/generate/label
-        """
         label_data = {"shipment_id": [shipment_id]}
         label_result = self._send_api_request(
             "external/courier/generate/label",
@@ -611,11 +535,6 @@ class ShipRocket:
         raise ValidationError(self._shiprocket_get_error_message(label_result))
 
     def _send_cancelling(self, orders_data, pickup_request):
-        """
-        Cancelling shiprocket order/shipment.
-        https://apiv2.shiprocket.in/v1/external/orders/cancel
-        https://apiv2.shiprocket.in/v1/external/orders/cancel/shipment/awbs
-        """
         cancel_result = {}
         for order in orders_data:
             if pickup_request:
@@ -634,10 +553,6 @@ class ShipRocket:
         return cancel_result
 
     def _check_required_value(self, recipient, shipper, products):
-        """
-        Check if the required value are not present in order to process an API call.
-        return True or return an error if configuration is missing.
-        """
         error_msg = {"Customer": [], "Shipper": []}
         if not recipient.street:
             error_msg["Customer"].append(self.carrier.env._("Street is required!"))

@@ -85,8 +85,6 @@ class RuleScriptTest(models.Model):
                 )
 
     def _run_against(self, version) -> list:
-        """The failure messages of these tests evaluated by `version`; each test
-        records its outcome."""
         header, function = version._get_compiled()
         Script = self.env["rule.script"]
         failures = []

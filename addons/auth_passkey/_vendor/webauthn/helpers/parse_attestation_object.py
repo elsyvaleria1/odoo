@@ -5,10 +5,6 @@ from .parse_cbor import parse_cbor
 
 
 def parse_attestation_object(val: bytes) -> AttestationObject:
-    """
-    Decode and peel apart the CBOR-encoded blob `response.attestationObject` into
-    structured data.
-    """
     attestation_dict = parse_cbor(val)
 
     decoded_attestation_object = AttestationObject(

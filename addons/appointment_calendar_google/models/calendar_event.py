@@ -10,11 +10,6 @@ class CalendarEvent(models.Model):
     _inherit = "calendar.event"
 
     def _compute_videocall_redirection(self) -> None:
-        """Creating a videocall redirection link even if there is no videocall location (google meet url) to ensure
-        we have a videocall link to display in the chatter record creation message. The google meet url is indeed only accessible
-        after the creation of the record, when the related Google Event has been created and a google synchronization
-        has been performed.
-        """
         events_w_google_url = self.filtered(
             lambda event: event.videocall_source == "google_meet"
         )
@@ -32,12 +27,6 @@ class CalendarEvent(models.Model):
         )._compute_videocall_redirection()
 
     def _google_values(self):
-        """Override the base calendar google values to include the following logic:
-        - For appointment types that are not configured as google meet: remove the conferenceData
-        That way Google will never create a Hangout meeting
-        - For appointment types that are configured as google meet: force conferenceData
-        To have the inverse behavior, in that case we always want a Hangout meeting to be created
-        (Unless another videocall location was manually specified)."""
         values = super()._google_values()
         if not self.appointment_type_id:
             return values
@@ -54,7 +43,6 @@ class CalendarEvent(models.Model):
         return values
 
     def _prepare_post_sync_vals(self, request_values, google_values) -> ValuesType:
-        """Override to set videocall_location when the appointment type uses Google Meet."""
         self.check_singleton()
         post_values = super()._prepare_post_sync_vals(request_values, google_values)
         if self.appointment_type_id.sudo().event_videocall_source == "google_meet":

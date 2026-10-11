@@ -8,8 +8,6 @@ class ScorecardDimensionBand(models.Model):
     _description = "Scorecard Dimension Band"
     _order = "dimension_id, min_value, id"
 
-    # An early payment is a negative days-beyond-terms and a distressed Z'' is
-    # negative: a band says what it covers rather than have the engine clamp.
     _band_allow_negative = True
 
     dimension_id = fields.Many2one(

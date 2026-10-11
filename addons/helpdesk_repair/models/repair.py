@@ -55,11 +55,6 @@ class RepairOrder(models.Model):
         return orders
 
     def _action_repair_confirm(self):
-        """repair.action_repair_confirm() apply changes on move_ids which,
-        if default_trace_id is still in the context, will give all stock_move_lines.trace_id this value.
-        We want to avoid that, as the components of the repair do not have the same trace_id, if any,
-        so it leads to an exception.
-        """
         context = dict(self.env.context)
         context.pop("default_trace_id", None)
         return super(RepairOrder, self.with_context(context))._action_repair_confirm()

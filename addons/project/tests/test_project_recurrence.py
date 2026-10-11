@@ -147,8 +147,6 @@ class TestProjectRecurrence(TransactionCase):
             form.repeat_unit = "month"
             form.repeat_type = "forever"
             task = form.save()
-            # not through the form: a layer composing user_ids assigns through its
-            # own fields, so the form need not show this one
             task.user_ids = self.user
 
         with freeze_time(self.date_01_01 + relativedelta(months=1)):

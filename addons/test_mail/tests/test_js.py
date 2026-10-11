@@ -43,8 +43,6 @@ MISC_SUITES = (
     "@test_mail/properties_field",
     "@test_mail/tracking_value",
 )
-# Union of every prefix some method selects — checked exhaustively by
-# test_suite_filters_cover_every_test_file.
 ALL_TEST_MAIL_SUITE_PREFIXES = (*ACTIVITY_SUITES, *MISC_SUITES)
 
 
@@ -52,19 +50,13 @@ ALL_TEST_MAIL_SUITE_PREFIXES = (*ACTIVITY_SUITES, *MISC_SUITES)
 class TestMailSuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_activity(self):
-        """@test_mail/activity* — activity view, mobile layout, systray."""
         self._run_hoot(*ACTIVITY_SUITES, preset="desktop")
 
     @odoo.tests.no_retry
     def test_misc(self):
-        """Chatter on test models, attachment view, properties, tracking."""
         self._run_hoot(*MISC_SUITES, preset="desktop")
 
     def test_suite_filters_cover_every_test_file(self):
-        """Every ``static/tests/**/*.test.js`` must be selected by at least
-        one method's suite prefix — HOOT ``&id=`` filters resolve against
-        suite names, so a test file no method names simply never runs (the
-        exact failure mode this file exists to fix)."""
         tests_root = Path(file_path("test_mail/static/tests"))
         uncovered = []
         for test_file in sorted(tests_root.rglob("*.test.js")):

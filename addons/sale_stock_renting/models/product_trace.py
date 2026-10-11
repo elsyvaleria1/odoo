@@ -6,8 +6,6 @@ class ProductTrace(models.Model):
     _inherit = "product.trace"
 
     def action_auto_assign_lots(self) -> None:
-        """Automatically assigns available lots to a sale order line based on the provided
-        context."""
         if not (sol_id := self.env.context.get("order_line_id")):
             return
 
@@ -18,12 +16,6 @@ class ProductTrace(models.Model):
 
     @api.model
     def _get_available_lots(self, products, location=None):
-        """Get all available lots for a set of products.
-
-        :param product.product products: The products to look for.
-        :param stock.location location: Optionally, filter for a specific location.
-        :rtype: product.trace
-        """
         quant_domain = Domain(
             [
                 ("product_id", "in", products.ids),
@@ -43,5 +35,4 @@ class ProductTrace(models.Model):
 
     @api.model
     def _get_lots_in_rent(self, product):
-        """Company_wise"""
         return self._get_available_lots(product, self.env.company.rental_loc_id)

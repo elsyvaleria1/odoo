@@ -5,7 +5,6 @@ class SignRequest(models.Model):
     _inherit = "sign.request"
 
     def go_to_signable_document(self, request_items=None):
-        """go to the signable document as the signers for specified request_items or the current user"""
         res = super().go_to_signable_document(request_items)
         if not request_items:
             request_items = self.request_item_ids.filtered(

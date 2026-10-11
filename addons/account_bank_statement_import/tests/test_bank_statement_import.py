@@ -12,8 +12,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
     independent of any real file format submodule (ofx/qif/camt/csv/coda)."""
 
     def test_find_additional_data_multi_match_raises_user_error(self):
-        """Two journals whose bank account shares the same sanitized number
-        must raise a clean UserError, not crash with an ORM singleton error."""
         company_2 = self.env["res.company"].create({"name": "Other Co"})
         bank = self.env["res.bank"].create({"name": "Shared Bank"})
         acc_number = "BE68539007547034"
@@ -56,8 +54,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
             multi_company_journal.browse()._find_additional_data(False, acc_number)
 
     def test_complete_bank_statement_vals_always_links_attachment(self):
-        """attachment_ids must be set even when the parser already provided
-        a reference, so the file-to-statement audit trail is never lost."""
         journal = self.company_data["default_journal_bank"]
         attachment = self.env["ir.attachment"].create(
             {"name": "statement.txt", "raw": b"dummy"}
@@ -70,8 +66,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(result[0]["attachment_ids"][0][2], attachment.ids)
 
     def test_create_bank_statements_skips_duplicate_and_rebalances(self):
-        """A transaction whose unique_import_id was already imported must be
-        skipped and its amount folded back into balance_start."""
         journal = self.company_data["default_journal_bank"]
         first_batch = [
             {
@@ -116,19 +110,12 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         statement_ids_2, ignored_qty_2 = journal._create_bank_statements(second_batch)
         self.assertEqual(ignored_qty_2, 1)
         statement_2 = self.env["account.bank.statement"].browse(statement_ids_2)
-        # The skipped duplicate's amount (100.0) must be folded into balance_start.
         self.assertEqual(statement_2.balance_start, 100.0)
         self.assertEqual(len(statement_2.line_ids), 1)
-        # And folding it in is only correct if the statement still adds up: the
-        # point of moving the number is that balance_start + the lines that were
-        # kept still reaches the closing balance the file declared.
         self.assertEqual(statement_2.balance_end, statement_2.balance_end_real)
         self.assertTrue(statement_2.is_complete)
 
     def test_create_bank_statements_zero_amount_line_is_not_counted_as_duplicate(self):
-        """A never-imported zero-amount (informational) line is dropped, but it
-        must not count towards ignored_qty: that count feeds the "%d transactions
-        had already been imported" notification, which would be false for it."""
         journal = self.company_data["default_journal_bank"]
         batch = [
             {
@@ -158,9 +145,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(statement.balance_start, 0.0)
 
     def test_create_bank_statements_filters_duplicate_within_same_import(self):
-        """A unique_import_id repeated across two statements of the SAME call
-        must be filtered on its second occurrence, exactly as it was when each
-        line ran its own search against the statements already created."""
         journal = self.company_data["default_journal_bank"]
         batch = [
             {
@@ -195,8 +179,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(len(statement_ids), 1)
 
     def test_create_bank_statements_duplicate_check_is_batched(self):
-        """The duplicate check must not cost one query per transaction line:
-        re-importing N already-imported lines used to run N point searches."""
         journal = self.company_data["default_journal_bank"]
         n_lines = 20
 
@@ -227,20 +209,9 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         queries_after = self.env.cr.sql_log_count
         self.assertEqual(ignored_qty, n_lines)
         self.assertFalse(statement_ids)
-        # One prefetch query plus bounded ORM overhead — never one per line.
         self.assertLess(queries_after - queries_before, n_lines)
 
     def test_a_statement_that_does_not_add_up_is_created_and_says_so(self):
-        """`_check_parsed_data` asks only whether the file held any transaction,
-        so a file whose declared closing balance disagrees with the transactions
-        under it imports without complaint. That is not a missing check: the
-        statement itself carries one. `balance_end` is computed from
-        `balance_start` plus the posted lines and `is_complete` compares it with
-        `balance_end_real`, the closing balance the file declared, so the
-        disagreement reaches the form as `problem_description` rather than being
-        lost. Refusing the import instead would reject files that are legitimately
-        incomplete, which is why the signal belongs on the record and not in the
-        parser."""
         journal = self.company_data["default_journal_bank"]
         statement_ids, _ignored = journal._create_bank_statements(
             [
@@ -266,8 +237,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertTrue(statement.problem_description)
 
     def test_a_statement_that_adds_up_reports_no_problem(self):
-        """The other half of the pair: without it, a check that never fires and a
-        check that always fires are indistinguishable."""
         journal = self.company_data["default_journal_bank"]
         statement_ids, _ignored = journal._create_bank_statements(
             [
@@ -291,8 +260,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertTrue(statement.is_complete)
 
     def test_import_bank_statement_aggregates_errors_across_attachments(self):
-        """One bad attachment must not block a good one; both outcomes are
-        reported together in one warning notification."""
         journal = self.company_data["default_journal_bank"]
         good_attachment = self.env["ir.attachment"].create(
             {"name": "good.txt", "raw": b"good"}
@@ -339,10 +306,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         )
 
     def test_import_bank_statement_does_not_clobber_online_sync_source(self):
-        """A journal already on Online Synchronization must keep that source
-        after a successful file import -- flipping it to 'file_import' would
-        make account_online_synchronization's write() override unlink the
-        journal's live sync connection as a side effect."""
         journal = self.company_data["default_journal_bank"]
         journal.bank_statements_source = "online_sync"
         attachment = self.env["ir.attachment"].create(
@@ -377,9 +340,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(journal.bank_statements_source, "online_sync")
 
     def test_import_bank_statement_still_defaults_undefined_source(self):
-        """The hub's actual purpose -- recording that a journal with no
-        established feed yet was just fed via file import -- must keep
-        working."""
         journal = self.company_data["default_journal_bank"]
         self.assertEqual(journal.bank_statements_source, "undefined")
         attachment = self.env["ir.attachment"].create(
@@ -414,8 +374,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(journal.bank_statements_source, "file_import")
 
     def test_parse_bank_statement_attachment_no_embedded_propagates_original(self):
-        """With no embedded files to fall back to, the original parse
-        failure must propagate unchanged."""
         journal = self.company_data["default_journal_bank"]
         attachment = self.env["ir.attachment"].create(
             {"name": "statement.txt", "raw": b"orig"}
@@ -438,8 +396,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(capture.exception.args[0], "original failure")
 
     def test_parse_bank_statement_attachment_uses_first_successful_embedded(self):
-        """When the original parse fails but a later embedded candidate
-        succeeds, its result must be returned."""
         journal = self.company_data["default_journal_bank"]
         attachment = self.env["ir.attachment"].create(
             {"name": "statement.pdf", "raw": b"orig"}
@@ -467,8 +423,6 @@ class TestBankStatementImportHub(AccountTestInvoicingCommon):
         self.assertEqual(result, "PARSED")
 
     def test_parse_bank_statement_attachment_all_embedded_fail_reraises_original(self):
-        """When every embedded candidate also fails, the *original* parse
-        failure must propagate, not the last embedded candidate's."""
         journal = self.company_data["default_journal_bank"]
         attachment = self.env["ir.attachment"].create(
             {"name": "statement.pdf", "raw": b"orig"}

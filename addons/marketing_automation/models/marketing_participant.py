@@ -181,7 +181,6 @@ class MarketingParticipant(models.Model):
         return res
 
     def action_set_completed(self) -> None:
-        """Manually mark as a completed and cancel every scheduled trace"""
         self._action_set_completed(trace_message=self.env._("Marked as completed"))
 
     def _action_set_completed(self, trace_message=False) -> None:

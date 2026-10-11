@@ -347,10 +347,10 @@ class CssPipeline:
         with cls._compiled_cache_lock:
             cache[key] = result
             cache.move_to_end(key)
-            evicted = 0  # debuglog
+            evicted = 0
             while len(cache) > cls._COMPILED_CACHE_SIZE:
                 cache.popitem(last=False)
-                evicted += 1  # debuglog
+                evicted += 1
         _debug.lifecycle(
             "css_cache_stored", stage=key[0], size=len(cache), evicted=evicted
         )
@@ -408,22 +408,13 @@ class CssPipeline:
     _RX_ERROR_GUTTER = re.compile(r"^\s*(?P<line>\d+)\s*\u2502", re.MULTILINE)
 
     def _locate_source_line(self, source: str, line_no: int) -> str:
-        """Name the asset that contributed line `line_no` of the compiled source.
-
-        The compiler numbers its errors against the whole concatenated document,
-        which is hundreds of files and tens of thousands of lines, so the number
-        alone points at nothing and the caller is left reading a list of every
-        file in the bundle. `get_source` opens each asset with an `odoo-split`
-        marker, so the nearest marker at or above the line names the owner and
-        the distance down to the line is the line number within that file.
-        """
         lines = source.split("\n")
         if not 1 <= line_no <= len(lines):
             _debug.logic("css_error_line_out_of_range", line=line_no, lines=len(lines))
             return ""
         assets_by_id = {asset.id: asset for asset in self._bundle.stylesheets}
         for index in range(line_no - 1, -1, -1):
-            if match := self.rx_css_split.search(lines[index]):  # noqa: E8507  a regex, not the ORM
+            if match := self.rx_css_split.search(lines[index]):
                 asset = assets_by_id.get(match.group(1))
                 url = (asset.url or "<inline sass>") if asset else "<unknown asset>"
                 _debug.logic(

@@ -69,8 +69,6 @@ class DocumentsDocument(models.Model):
                     or (
                         pdata["id"]
                         and self.access_via_link != "none"
-                        # an expired grant the vacuum has not removed yet
-                        # opens nothing
                         and self.access_ids.filtered(
                             lambda a: (
                                 a.partner_id.id == pdata["id"]
@@ -231,17 +229,12 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _request_grant_end(self, day: Any) -> datetime:
-        # a requestee's grant lasts through the deadline day where the
-        # requester reads it, stored naive UTC like every Datetime: combined
-        # naive, it ended the day in UTC, up to a day off
         tz = ZoneInfo(self.env.context.get("tz") or self.env.user.tz or "UTC")
         end = datetime.combine(day, time.max).replace(tzinfo=tz)
         return end.astimezone(UTC).replace(tzinfo=None)
 
     @api.model
     def _activity_deadline(self, amount: int, unit: str) -> Any:
-        # today, in the user's timezone, plus the configured delay; False
-        # when none is configured
         if amount <= 0:
             return False
         return fields.Date.context_today(self) + get_timedelta(amount, unit)

@@ -3,7 +3,7 @@ from datetime import date, datetime
 from odoo.tests import TransactionCase, freeze_time
 
 
-@freeze_time("2025-07-17")  # Thursday
+@freeze_time("2025-07-17")
 class TestProjectTemplates(TransactionCase):
     @classmethod
     def setUpClass(cls):
@@ -72,7 +72,7 @@ class TestProjectTemplates(TransactionCase):
         cls.template_project = cls.env["project.project"].create(
             {
                 "name": "Template",
-                "date_start": date(2025, 6, 2),  # Monday
+                "date_start": date(2025, 6, 2),
                 "date": date(2025, 6, 30),
                 "is_template": True,
             }
@@ -83,13 +83,12 @@ class TestProjectTemplates(TransactionCase):
             {
                 "name": "Task",
                 "project_id": self.template_project.id,
-                "date_start": datetime(2025, 6, 2, 9, 0),  # Tuesday
-                "date_end": datetime(2025, 6, 5, 17, 0),  # Thursday
+                "date_start": datetime(2025, 6, 2, 9, 0),
+                "date_end": datetime(2025, 6, 5, 17, 0),
                 "planned_hours": 17,
             }
         )
 
-        # Will default to starting today (2025-07-17)
         new_project = self.template_project.action_create_from_template(
             {
                 "name": "New Project",
@@ -106,7 +105,7 @@ class TestProjectTemplates(TransactionCase):
 
         self.assertEqual(
             copied_task.date_end,
-            datetime(2025, 7, 22, 12, 0),  # Tuesday
+            datetime(2025, 7, 22, 12, 0),
             "Copied task should end 17 working hours after its start.",
         )
 
@@ -116,8 +115,8 @@ class TestProjectTemplates(TransactionCase):
                 {
                     "name": "A Planned Task",
                     "project_id": self.template_project.id,
-                    "date_start": datetime(2025, 6, 4, 9, 0),  # Wednesday
-                    "date_end": datetime(2025, 6, 5, 17, 0),  # Thursday
+                    "date_start": datetime(2025, 6, 4, 9, 0),
+                    "date_end": datetime(2025, 6, 5, 17, 0),
                     "planned_hours": 17,
                 },
                 {
@@ -127,7 +126,6 @@ class TestProjectTemplates(TransactionCase):
             ]
         )
 
-        # Will default to starting today (2025-07-17)
         new_project = self.template_project.action_create_from_template(
             {
                 "name": "New Project",
@@ -138,9 +136,6 @@ class TestProjectTemplates(TransactionCase):
             new_project.task_ids, key=lambda t: t.name
         )
 
-        # Planned task expected start:
-        # new project start + 2 days offset = Sat 2025-07-19 (non-working)
-        # Shift to next working day Mon 2025-07-21 09:00
         expected_planned_start = datetime(2025, 7, 21, 9, 0)
         self.assertEqual(
             copied_planned.date_start,
@@ -160,7 +155,7 @@ class TestProjectTemplates(TransactionCase):
     def test_create_from_future_template(self):
         self.template_project.write(
             {
-                "date_start": date(2025, 8, 4),  # Monday
+                "date_start": date(2025, 8, 4),
                 "date": date(2025, 8, 31),
             }
         )
@@ -170,8 +165,8 @@ class TestProjectTemplates(TransactionCase):
                 "project_id": self.template_project.id,
                 "date_start": datetime(
                     2025, 8, 11, 9, 0
-                ),  # Monday, 7 days after start of project
-                "date_end": datetime(2025, 8, 14, 17, 0),  # Thursday
+                ),
+                "date_end": datetime(2025, 8, 14, 17, 0),
                 "planned_hours": 17,
             }
         )
@@ -184,20 +179,16 @@ class TestProjectTemplates(TransactionCase):
         copied_task = new_project.task_ids
         self.assertEqual(
             copied_task.date_start,
-            datetime(2025, 7, 24, 9, 0),  # Thursday
+            datetime(2025, 7, 24, 9, 0),
             "Copied task should start 7 days from now.",
         )
         self.assertEqual(
             copied_task.date_end,
-            datetime(2025, 7, 29, 12, 0),  # Tuesday
+            datetime(2025, 7, 29, 12, 0),
             "Copied task should end 17 working hours after its start.",
         )
 
     def test_unplanned_template_with_planned_tasks(self):
-        """
-        If the template has no dates, the planned tasks should get planned from the start date of the new project
-        (by default, today)
-        """
         self.template_project.write(
             {
                 "date_start": False,
@@ -211,15 +202,15 @@ class TestProjectTemplates(TransactionCase):
                 {
                     "name": "A Task",
                     "project_id": self.template_project.id,
-                    "date_start": datetime(2025, 6, 2, 9, 0),  # Monday
-                    "date_end": datetime(2025, 6, 3, 10, 0),  # -> Tuesday 10 am = 8h
+                    "date_start": datetime(2025, 6, 2, 9, 0),
+                    "date_end": datetime(2025, 6, 3, 10, 0),
                     "planned_hours": 8,
                 },
                 {
                     "name": "B Task",
                     "project_id": self.template_project.id,
-                    "date_start": datetime(2025, 6, 3, 10, 0),  # after Task A finishes
-                    "date_end": datetime(2025, 6, 5, 11, 0),  # -> Thursday 11 am = 4h
+                    "date_start": datetime(2025, 6, 3, 10, 0),
+                    "date_end": datetime(2025, 6, 5, 11, 0),
                     "planned_hours": 4,
                 },
             ]
@@ -238,24 +229,23 @@ class TestProjectTemplates(TransactionCase):
 
         self.assertEqual(
             copied_task_1.date_start,
-            datetime(2025, 7, 17, 9, 0),  # Thursday
+            datetime(2025, 7, 17, 9, 0),
             "First copied task should start today at 09:00.",
         )
         self.assertEqual(
             copied_task_1.date_end,
-            datetime(2025, 7, 21, 10, 0),  # Monday
+            datetime(2025, 7, 21, 10, 0),
             "First copied task should end after 8 working hours.",
         )
 
-        # Task 2 should be planned right after task 1
         self.assertEqual(
             copied_task_2.date_start,
-            datetime(2025, 7, 21, 10, 0),  # Monday
+            datetime(2025, 7, 21, 10, 0),
             "Second copied task should start when the first finishes.",
         )
         self.assertEqual(
             copied_task_2.date_end,
-            datetime(2025, 7, 21, 15, 0),  # Monday
+            datetime(2025, 7, 21, 15, 0),
             "Second copied task should also last 4 working hours",
         )
         self.assertIn(
@@ -278,22 +268,22 @@ class TestProjectTemplates(TransactionCase):
 
         self.assertEqual(
             copied_task_3.date_start,
-            datetime(2025, 7, 22, 9, 0),  # Tuesday
+            datetime(2025, 7, 22, 9, 0),
             "First copied task should start at the project start date.",
         )
         self.assertEqual(
             copied_task_3.date_end,
-            datetime(2025, 7, 24, 15, 0),  # Thursday
+            datetime(2025, 7, 24, 15, 0),
             "First copied task should end after 8 working hours.",
         )
 
         self.assertEqual(
             copied_task_4.date_start,
-            datetime(2025, 7, 24, 15, 0),  # Thursday
+            datetime(2025, 7, 24, 15, 0),
             "Second copied task should start when the first finishes.",
         )
         self.assertEqual(
             copied_task_4.date_end,
-            datetime(2025, 7, 28, 11, 0),  # Monday
+            datetime(2025, 7, 28, 11, 0),
             "Second copied task should also last 4 working hours.",
         )

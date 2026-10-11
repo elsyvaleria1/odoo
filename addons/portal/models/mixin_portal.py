@@ -13,7 +13,6 @@ _debug = DebugLog(__name__)
 
 
 def _presented_link_tokens() -> dict:
-    """{(model, id): token} of the records this request opened by a token."""
     if not request:
         return {}
     tokens = getattr(request, "presented_link_tokens", None)
@@ -56,8 +55,6 @@ class MixinPortal(models.AbstractModel):
         return self._portal_customers()[self.id]
 
     def _portal_customers(self) -> dict[int, models.Model]:
-        # the partner notifications address as the customer, the one a
-        # record's link is issued to by default
         if isinstance(self, self.env.registry["mixin.mail.thread"]):
             partners = self._mail_get_partners(introspect_fields=False)
             return {record.id: partners[record.id][:1] for record in self}
@@ -66,10 +63,6 @@ class MixinPortal(models.AbstractModel):
         return {record.id: self.env["res.partner"] for record in self}
 
     def _compute_access_token(self) -> None:
-        # the token this request opened the record with, so a page reached by
-        # a link carried over from before posts back with it; otherwise the
-        # customer's link, shown again from the sealed secret, while the
-        # record admits it; a record nobody was sent a link to has none
         presented = _presented_link_tokens()
         tokens = {
             record.id: presented[record._name, record.id]
@@ -105,7 +98,6 @@ class MixinPortal(models.AbstractModel):
     def _portal_token_opens(
         self, token: str | None, role: str = "view", action: str | None = "view"
     ) -> bool:
-        """Whether `token` is a live link to this record, at `role` or above."""
         self.check_singleton()
         try:
             self.env["access.link"]._resolve(
@@ -119,8 +111,6 @@ class MixinPortal(models.AbstractModel):
         return True
 
     def _portal_get_or_create_token(self, partner: models.Model | None = None) -> str:
-        """The token of the link `partner` (the customer by default) opens this
-        record with, issued the first time it is asked for."""
         self.check_singleton()
         if partner is None and (token := self.access_token):
             return token
@@ -135,17 +125,12 @@ class MixinPortal(models.AbstractModel):
         return token
 
     def _portal_tokens(self, partners: models.Model) -> dict[int, str]:
-        """{partner id: token} of the links `partners` open this record with,
-        issued in one go for those who had none."""
         self.check_singleton()
         return self.env["access.link"]._issue_many(
             self, partners, role="comment", cause="notification"
         )
 
     def _portal_revoke_tokens(self) -> None:
-        """Revoke every link that opens these records, as when a record stops
-        being shared; the caller has decided the records may no longer be
-        reached by a token."""
         self.env["access.link"].with_privilege(
             "base.privilege_manage_links", reason="the records are no longer shared"
         )._revoke_record_links(self, "the record is no longer shared")
@@ -263,5 +248,4 @@ class MixinPortal(models.AbstractModel):
                 fragment=anchor if anchor is not None else url.fragment,
             )
         )
-        # Credentials and explicit options take priority over query-string values.
         return get_url_with_params(url, params)

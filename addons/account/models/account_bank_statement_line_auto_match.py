@@ -12,11 +12,7 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 MAX_BARREN_CRON_ROUNDS = 3
-# A document is booked days after the money moves far more often than before
-# it, so a transaction that found nothing on import is offered again for as
-# long as a match can reasonably still appear.
 AUTO_RECONCILE_RETRY_DAYS = 90
-# Posting a batch of invoices asks for one run, not one per invoice.
 AUTO_RECONCILE_WAKE_UP_MINUTES = 5
 
 
@@ -46,11 +42,6 @@ class AccountBankStatementLine(models.Model):
     ) -> None:
         _debug.lifecycle("_cron_try_auto_reconcile_statement_lines", records=self)
         if limit_time <= 0:
-            # `limit_time_real_cron` DEFAULTS to -1, meaning "inherit
-            # --limit-time-real" (itself 120), and reading the option directly
-            # cannot see that: -1 fell through to the 180 default, so the cron
-            # budgeted itself 50% longer than the server's own request limit.
-            # The service helper resolves the inheritance.
             cron_limit_time = service.get_cron_real_time_budget() or -1
             limit_time = cron_limit_time if 0 < cron_limit_time < 180 else 180
 
@@ -68,9 +59,6 @@ class AccountBankStatementLine(models.Model):
                 batch_size,
             )
 
-        # Truncated so a stamp written in this run never reads as older than the
-        # run: `cron_last_check` is compared against it to tell the lines this
-        # run has yet to visit from the ones it already did.
         run_start = self.env.cr.now().replace(microsecond=0)
 
         def compute_st_lines_to_reconcile(company_id=None):
@@ -196,13 +184,6 @@ class AccountBankStatementLine(models.Model):
 
     @api.model
     def _get_domain_auto_reconcile_due(self, run_start) -> Domain:
-        """Return the transactions a CRON run started at `run_start` still owes a visit.
-
-        A transaction never looked at is always due. One already looked at is
-        due again on every later run while it is younger than the retry window,
-        because the invoice or bill that settles it is usually booked after the
-        import that first tried it.
-        """
         retry_days = self.env.registry.settings.get_int(
             self.env, "account.bank_rec_retry_days", AUTO_RECONCILE_RETRY_DAYS
         )
@@ -216,27 +197,9 @@ class AccountBankStatementLine(models.Model):
         )
 
     def _get_domain_settled_elsewhere(self) -> Domain:
-        """Return the transactions another process is to settle, which the
-        automatic matching leaves alone: settling one first would race that
-        process to a different document. A module owning such a process
-        extends it."""
         return Domain.FALSE
 
     def _auto_reconcile_isolating_failures(self, company_id=None, retire=True):
-        """Reconcile each line under its own savepoint, so one bad line costs one line.
-
-        `_try_auto_reconcile_statement_lines` works on the whole recordset and
-        aborts the run on the first line that raises. The CRON therefore falls
-        back to this loop whenever a batch blew up, stamping `cron_last_check`
-        on every line it visits, failing or not, so the same run stops picking
-        them up.
-
-        `retire=False` gives the same isolation without that bookkeeping, for an
-        on-demand run: the accountant asking for one extra pass must not
-        push a transaction to the back of the CRON's queue.
-
-        Returns how many lines it gave up on.
-        """
         given_up = 0
         for st_line in self.exists():
             try:
@@ -255,11 +218,6 @@ class AccountBankStatementLine(models.Model):
         return given_up
 
     def _update_auto_reconcile_rule(self, rule) -> None:
-        """Record `rule` on the lines of `self` it finished matching.
-
-        A line a rule only matched in part is still a person's to finish, and
-        is then that person's match.
-        """
         matched = self.filtered(
             lambda st_line: st_line.is_reconciled and not st_line.auto_reconcile_rule
         )
@@ -528,8 +486,6 @@ class AccountBankStatementLine(models.Model):
             )
         reco_models = self.env["account.reconcile.model"].search(domain)
 
-        # Not only on import: the transactions that teach a partner are
-        # settled while this one waits.
         if detect_partner:
             self._set_partner_from_transaction()
         self._partner_mapping(reco_models)
@@ -647,12 +603,6 @@ class AccountMove(models.Model):
         return posted
 
     def _trigger_statement_line_auto_reconcile(self) -> None:
-        """Wake the reconciliation CRON for a document a transaction may be waiting for.
-
-        The nightly run alone loses the race it exists to win: most invoices
-        and bills are booked after the bank movement they settle, and whoever
-        booked one goes on to match it by hand within the hour.
-        """
         documents = self.filtered(
             lambda move: (
                 not move.statement_line_id

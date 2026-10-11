@@ -954,26 +954,6 @@ class TestMrpAuditFixes(TestMrpCommon):
         self.assertAlmostEqual(workorder.duration_live, workorder.duration)
 
     def test_creating_orders_costs_no_query_per_order_for_its_moves(self):
-        """`all_move_raw_ids` and `all_move_ids` are read by nothing and load-bearing.
-
-        They are the undomained siblings of `move_raw_ids` and
-        `move_finished_ids`. `modified()` navigates from a written `stock.move`
-        back to the productions whose dependent fields need recomputing, and it
-        does that through an inverse One2many — which the domained pair cannot
-        serve. Deleting them as dead (no reference in odoo, enterprise,
-        agromarin or design-themes, and none in any stored expression) cost two
-        queries per order created, and no test said so.
-
-        The threshold also guards the batching in `_create_deferred_records`: a
-        `Command.create` inside the x2many assignment is flushed by that
-        assignment, so a compute that assigns per record calls
-        `stock.move.create()` per record. Deferring the vals took the marginal
-        cost from 4.0 to 1.27, and 2.0 is below both the 4.0 that per-record
-        creates cost and the 6.0 that losing the undomained inverses cost.
-
-        The guard is the marginal cost of one more order, not a total: a total
-        moves with every unrelated change and a budget only fails above itself.
-        """
         component = self.env["product.product"].create(
             {"name": "Marginal component", "is_storable": True}
         )
@@ -1015,15 +995,6 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def test_a_timer_that_starts_after_the_transaction_did_still_accrues(self):
-        """The bound on a running timer must be the clock that stamped its start.
-
-        It was `cr.now()`, PostgreSQL's transaction timestamp, so a timer whose
-        `date_start` fell after the transaction began spanned backwards and
-        `Intervals` dropped it -- a work order started five seconds into its own
-        transaction reported a live duration of exactly zero. Freezing the
-        wall clock ahead of the transaction reproduces that ordering exactly,
-        without depending on how long this test's transaction has been open.
-        """
         with freeze_time("2099-03-01 10:00:00"):
             workorder = self._audit_workorder_with_timer(
                 "Ahead of the cursor", started_minutes_ago=60
@@ -1036,14 +1007,6 @@ class TestMrpAuditFixes(TestMrpCommon):
             self.assertEqual(workorder.duration_live, 60.0)
 
     def test_a_frozen_clock_freezes_the_live_duration(self):
-        """A live duration read twice under a frozen clock reads the same twice.
-
-        It did not: the running timer was bounded by `cr.now()`, which is
-        PostgreSQL's clock and which `freeze_time` cannot reach. Under a freeze
-        that put `date_start` in 2020, the unfrozen bound made the interval
-        years wide -- the same defect that made a real 5-second-old transaction
-        report zero, seen from the other side.
-        """
         with freeze_time("2020-05-04 10:00:00"):
             workorder = self._audit_workorder_with_timer(
                 "Frozen", started_minutes_ago=45
@@ -1054,13 +1017,6 @@ class TestMrpAuditFixes(TestMrpCommon):
             self.assertEqual(workorder.duration, 0.0)
 
     def test_the_stored_duration_agrees_with_the_sum_of_its_timer_rows(self):
-        """One figure, two routes: the ORM field and the SQL the reports run.
-
-        `mrp_account_enterprise` reads `SUM(mrp_workcenter_productivity.duration)`
-        and `mrp_workorder_hr_account` reads `SUM(mrp_workorder.duration)`. They
-        are the same quantity and disagreed by the live accrual of every running
-        timer.
-        """
         workorder = self._audit_workorder_with_timer(
             "Two numbers", started_minutes_ago=30
         )
@@ -1337,7 +1293,6 @@ class TestMrpAuditFixes(TestMrpCommon):
                 "kind": "guard",
                 "guard_scope": "members",
                 "operation": "crud",
-                # hides every quant; a FALSE guard would deny the model instead
                 "domain": "[('id', '<', 0)]",
             }
         )
@@ -3455,14 +3410,6 @@ class TestMrpAuditFixes(TestMrpCommon):
         )
 
     def test_posting_the_rest_of_an_order_keeps_the_first_batch_traceable(self):
-        """`_post_inventory` runs once per post, `move_finished_ids` spans them all.
-
-        Produce part of an order, post it, then mark the rest done. The first
-        batch's produced line is already linked to what it consumed, and the
-        second pass must not reach back and rewrite it -- least of all with the
-        empty set it holds when the raw moves were consumed in full the first
-        time round.
-        """
         finished = self.env["product.product"].create(
             {"name": "Partial finished", "is_storable": True, "route_ids": []}
         )

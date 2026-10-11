@@ -18,7 +18,7 @@ class Home(web_home.Home):
         methods=["GET", "POST"],
         sitemap=False,
         website=True,
-        multilang=False,  # website breaks the login layout...
+        multilang=False,
     )
     def web_totp(self, redirect=None, **kwargs):
         if request.session.uid:
@@ -68,14 +68,6 @@ class Home(web_home.Home):
                     self._login_redirect(request.session.uid, redirect=redirect)
                 )
                 if kwargs.get("remember"):
-                    # Both attributes are None for any User-Agent the parser in
-                    # odoo/libs/_vendor/useragents.py does not classify, and
-                    # calling .capitalize() on that turned "remember this
-                    # device" into an HTTP 500 -- after the session was already
-                    # finalized. The Odoo mobile app is one such client
-                    # (`Odoo/x CFNetwork/y Darwin/z` parses a platform but no
-                    # browser), which is the same client the two workarounds
-                    # further down this method exist for.
                     user_agent = request.httprequest.user_agent
                     name = request.env._(
                         "%(browser)s on %(platform)s",
@@ -106,11 +98,9 @@ class Home(web_home.Home):
                         httponly=True,
                         samesite="Lax",
                     )
-                # Crapy workaround for unupdatable Odoo Mobile App iOS (Thanks Apple :@)
                 request.session.mark_dirty()
                 return response
 
-        # Crapy workaround for unupdatable Odoo Mobile App iOS (Thanks Apple :@)
         request.session.mark_dirty()
         return request.render(
             "auth_totp.auth_totp_form",

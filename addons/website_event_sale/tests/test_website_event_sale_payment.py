@@ -26,12 +26,6 @@ class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
             )
 
     def test_payment_accepted_for_already_reserved_seats(self):
-        """An order whose registrations are already reserved can still be paid.
-
-        A salesperson may confirm the quotation before the customer pays; the
-        registrations then flip to `open` and are counted as taken seats. The
-        check must not ask for those seats a second time.
-        """
         cart = self.empty_cart
         cart._cart_add(self.product_event.id, 2, event_ticket_id=self.ticket.id)
         self.ticket.write({"seats_max": 2, "seats_limited": True})
@@ -46,7 +40,6 @@ class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
         self._validate(cart)
 
     def test_payment_refused_when_pending_seats_overflow(self):
-        """Registrations still to be reserved are checked against the seats."""
         cart = self.empty_cart
         cart._cart_add(self.product_event.id, 2, event_ticket_id=self.ticket.id)
         self._make_registrations(cart)
@@ -57,11 +50,6 @@ class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
             self._validate(cart)
 
     def test_payment_check_is_grouped_per_event(self):
-        """An order spanning two events checks each event on its own.
-
-        Only the capped event may refuse the payment; the uncapped one is
-        unconstrained and contributes nothing.
-        """
         cart = self.empty_cart
         cart._cart_add(self.product_event.id, 2, event_ticket_id=self.ticket.id)
         cart._cart_add(self.product_event.id, 1, event_ticket_id=self.ticket_2.id)
@@ -77,7 +65,6 @@ class TestWebsiteEventSalePayment(TestWebsiteEventSaleCommon):
         with self.assertRaisesRegex(ValidationError, "Pycon"):
             self._validate(cart)
 
-        # Without the tighter cap both events are unconstrained: nothing raises.
         self.ticket.write({"seats_max": 0, "seats_limited": False})
         self.env.flush_all()
         self._validate(cart)

@@ -8,15 +8,8 @@ from .encode_cbor import encode_cbor
 
 
 def parse_authenticator_data(val: bytes) -> AuthenticatorData:
-    """
-    Turn `response.attestationObject.authData` into structured data
-    """
     val = byteslike_to_bytes(val)
 
-    # Don't bother parsing if there aren't enough bytes for at least:
-    # - rpIdHash (32 bytes)
-    # - flags (1 byte)
-    # - signCount (4 bytes)
     if len(val) < 37:
         raise InvalidAuthenticatorDataStructure(
             f"Authenticator data was {len(val)} bytes, expected at least 37 bytes"
@@ -27,14 +20,12 @@ def parse_authenticator_data(val: bytes) -> AuthenticatorData:
     rp_id_hash = val[pointer:32]
     pointer += 32
 
-    # Cast byte to ordinal so we can use bitwise operators on it
     flags_bytes = ord(val[pointer : pointer + 1])
     pointer += 1
 
     sign_count = val[pointer : pointer + 4]
     pointer += 4
 
-    # Parse flags
     flags = AuthenticatorDataFlags(
         up=flags_bytes & (1 << 0) != 0,
         uv=flags_bytes & (1 << 2) != 0,
@@ -44,14 +35,12 @@ def parse_authenticator_data(val: bytes) -> AuthenticatorData:
         ed=flags_bytes & (1 << 7) != 0,
     )
 
-    # The value to return
     authenticator_data = AuthenticatorData(
         rp_id_hash=rp_id_hash,
         flags=flags,
         sign_count=int.from_bytes(sign_count, "big"),
     )
 
-    # Parse AttestedCredentialData if present
     if flags.at is True:
         aaguid = val[pointer : pointer + 16]
         pointer += 16
@@ -68,18 +57,12 @@ def parse_authenticator_data(val: bytes) -> AuthenticatorData:
         the single byte there's a good chance the authData can be correctly parsed. Let's try to
         detect when this happens and gracefully handle it.
         """
-        # Decodes to `{1: "OKP", 3: -8, -1: "Ed25519"}` (it's missing key -2 a.k.a. COSEKey.X)
         bad_eddsa_cbor = bytearray.fromhex("a301634f4b500327206745643235353139")
-        # If we find the bytes here then let's fix the bad data
         if val[pointer : pointer + len(bad_eddsa_cbor)] == bad_eddsa_cbor:
-            # Make a mutable copy of the bytes...
             _val = bytearray(val)
-            # ...Fix the bad byte...
             _val[pointer] = 0xA4
-            # ...Then replace `val` with the fixed bytes
             val = bytes(_val)
 
-        # Load the next CBOR-encoded value
         credential_public_key = parse_cbor(val[pointer:])
         credential_public_key_bytes = encode_cbor(credential_public_key)
         pointer += len(credential_public_key_bytes)
@@ -97,7 +80,6 @@ def parse_authenticator_data(val: bytes) -> AuthenticatorData:
         pointer += len(extension_bytes)
         authenticator_data.extensions = extension_bytes
 
-    # We should have parsed all authenticator data by this point
     if len(val) > pointer:
         raise InvalidAuthenticatorDataStructure(
             "Leftover bytes detected while parsing authenticator data"

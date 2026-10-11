@@ -21,7 +21,6 @@ class ApprovalCategoryStep(models.Model):
     )
     company_id = fields.Many2one(
         related="category_id.company_id",
-        # mixin.approval.threshold declares it stored, indexed and precomputed
         precompute=False,
         store=False,
         index=False,
@@ -430,7 +429,6 @@ class ApprovalCategoryStep(models.Model):
         return result
 
     def _get_pending_routed_requests(self):
-        """The pending requests some row routes through these steps, archived or not."""
         if not self.ids:
             return self.env["approval.request"]
         self.env["approval.approver"].flush_model(["request_id", "step_ids"])
@@ -459,7 +457,6 @@ class ApprovalCategoryStep(models.Model):
         current = {
             member.user_id.id
             for member in self.member_ids
-            # the superuser is archived by design and still acts
             if (member.user_id.active or member.user_id.id == SUPERUSER_ID)
             and (not member.date_end or member.date_end >= today)
         }
@@ -476,8 +473,6 @@ class ApprovalCategoryStep(models.Model):
         return in_company
 
     def _get_subject(self, document, request):
-        """The record the step's condition and approver path read: the request itself
-        when the step's source model is approval.request, else its source document."""
         self.check_singleton()
         if request and self.subject_model_id.model == request._name:
             return request
@@ -504,9 +499,6 @@ class ApprovalCategoryStep(models.Model):
         return named
 
     def _get_pool_user_ids(self, document=None, company=None, request=None) -> set[int]:
-        """Who may approve this step today: valid members, the users the document
-        names, and the group's users -- of those, the ones who work in `company` and
-        whom the document's own policy lets decide it."""
         self.check_singleton()
         if self.walk != "none" and request:
             return self._walk(document, company, request)
@@ -532,10 +524,6 @@ class ApprovalCategoryStep(models.Model):
         return pool
 
     def _walk(self, document, company, request) -> set[int]:
-        """The one approver the walk stops at: the first whose limit covers the amount.
-
-        Excluded principals are passed over, not stopped at.
-        """
         self.check_singleton()
         verb = request.operation or (
             document._get_gated_operation()
@@ -608,8 +596,6 @@ class ApprovalCategoryStep(models.Model):
         )
 
     def _get_candidate_user_ids(self, document=None, request=None) -> set[int]:
-        """Every user the step names for `document`, before the request's company or
-        the document's policy narrows them: routing owns the rows of all of them."""
         self.check_singleton()
         users = self._get_member_user_ids(document, request=request)
         if self.group_id:
@@ -624,8 +610,6 @@ class ApprovalCategoryStep(models.Model):
         return users
 
     def _filter_document_user_ids(self, user_ids: set[int], document) -> set[int]:
-        """A record an approval request is raised for (mixin.approval.source) keeps a
-        user off its step when its own policy would refuse that user's decision."""
         self.check_singleton()
         if (
             not user_ids
@@ -644,8 +628,6 @@ class ApprovalCategoryStep(models.Model):
         return kept
 
     def _filter_company_user_ids(self, user_ids: set[int], company) -> set[int]:
-        """An approver row belongs to its request's company, so only a user allowed
-        in that company can hold one."""
         if not company or not user_ids:
             return user_ids
         users = self.env["res.users"].sudo().browse(user_ids)
@@ -706,8 +688,6 @@ class ApprovalCategoryStep(models.Model):
         return matches
 
     def _matches_request_figure(self, request) -> bool:
-        """The step's numeric condition on the request itself: its amount, quantity,
-        date range or priority, which a request with no source document has too."""
         self.check_singleton()
         measured = self._get_field_value(request)
         matches = measured is not None and self._compare(measured, self.threshold)

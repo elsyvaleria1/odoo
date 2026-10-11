@@ -41,7 +41,7 @@ class WebDAVBaseController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
     def propfind(self, resource_path: str):

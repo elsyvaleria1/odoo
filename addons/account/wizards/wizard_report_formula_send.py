@@ -25,10 +25,8 @@ class WizardReportFormulaSend(models.TransientModel):
         readonly=False,
     )
 
-    # == PRINT ==
     checkbox_download = fields.Boolean(string="Download")
 
-    # == MAIL ==
     checkbox_send_mail = fields.Boolean(
         string="Email",
         default=True,
@@ -82,7 +80,6 @@ class WizardReportFormulaSend(models.TransientModel):
     @api.model
     @_debug.perf.timed
     def default_get(self, fields):
-        # EXTENDS 'base'
         _debug.lifecycle("default_get", records=self)
         results = super().default_get(fields)
 
@@ -120,20 +117,6 @@ class WizardReportFormulaSend(models.TransientModel):
         }
 
     def _prepare_mail_attachment_placeholders(self, partner):
-        """Return the placeholder attachment data of the report of a partner.
-
-        Each dictionary holds:
-
-        * id: str, the (fake) id of the attachment, needed as t-key on rendering.
-        * name: str, the name of the attachment.
-        * mimetype: str, the mimetype of the attachment.
-        * placeholder: bool, True to prevent download / deletion.
-
-        :param recordset partner: the partner this report is generated for
-        :return: one dictionary per placeholder
-        :rtype: list
-        """
-        # Extend to add placeholders based on the checkboxes.
         self.check_singleton()
         extension = "pdf"
         filename = f"{partner.name} - {self.account_report_id.get_default_report_filename(self.report_options, extension)}"
@@ -148,7 +131,6 @@ class WizardReportFormulaSend(models.TransientModel):
 
     @api.model
     def _prepare_template_attachment_entries(self, mail_template) -> list:
-        """Return the attachment data of a mail template."""
         return [
             {
                 "id": attachment.id,
@@ -160,9 +142,6 @@ class WizardReportFormulaSend(models.TransientModel):
             for attachment in mail_template.attachment_ids
         ]
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends("partner_ids")
     def _compute_mode(self) -> None:
@@ -270,7 +249,6 @@ class WizardReportFormulaSend(models.TransientModel):
     @api.model
     @_debug.perf.timed
     def _action_download(self, attachments) -> dict:
-        """Return the action downloading the attachment, or a zip of them if there is more than one."""
         _debug.lifecycle("_action_download", records=self)
         return {
             "type": "ir.actions.act_url",
@@ -280,17 +258,6 @@ class WizardReportFormulaSend(models.TransientModel):
 
     @_debug.perf.timed
     def _process_send_and_print(self, report, options, wizard=None):
-        """Generate the report of each partner of the options, then mail and/or download it.
-
-        Each partner's report is mailed to the recipients edited in a single-recipient wizard,
-        else to that partner or, without an email, to its invoice contacts.
-
-        :param recordset report: the report.formula to generate
-        :param dict options: report options; options['partner_ids'] holds the partners to process
-        :param wizard: the wizard.report.formula.send wizard; absent when sending by cron, in which
-                       case the values stored in report.send_and_print_values are used
-        :return: a download action if attachments have to be downloaded, else None
-        """
         wizard_vals = (
             report.send_and_print_values
             if not wizard
@@ -395,12 +362,6 @@ class WizardReportFormulaSend(models.TransientModel):
 
     @_debug.perf.timed
     def action_send_and_print(self, force_synchronous=False):
-        """Create the documents and send them to the end customers.
-
-        Multiple statements that are not downloaded are processed asynchronously by cron.
-
-        :param force_synchronous: process synchronously even in multi mode
-        """
         _debug.lifecycle("action_send_and_print", records=self)
         self.check_singleton()
 
@@ -426,7 +387,6 @@ class WizardReportFormulaSend(models.TransientModel):
                 partners=self.partner_ids,
             )
         if process_later:
-            # Set sending information on report
             if self.account_report_id.send_and_print_values:
                 raise UserError(
                     self.env._(

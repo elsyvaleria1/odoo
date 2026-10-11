@@ -11,7 +11,7 @@ class ResPartner(models.Model):
         company_dependent=True,
         help="Used in sales orders.",
     )
-    is_pickup_location = fields.Boolean()  # Whether it is a pickup point address.
+    is_pickup_location = fields.Boolean()
 
     def _get_domain_delivery_address(self):
         return super()._get_domain_delivery_address() & Domain(

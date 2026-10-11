@@ -25,7 +25,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
     )
 
     def _create_sepa_binary(self):
-        # Map the necessary data
         payments_data = []
         for slip in self.payslip_ids.filtered(
             lambda p: p.state == "validated" and p.net_wage > 0
@@ -41,8 +40,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
                 "sepa_payments_collected",
                 wizard=self,
                 payslips=self.payslip_ids,
-                # a payslip already PAID, or one whose net is zero or
-                # negative, contributes nothing to the file and says nothing
                 eligible=len(
                     self.payslip_ids.filtered(
                         lambda p: p.state == "validated" and p.net_wage > 0
@@ -53,7 +50,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
                 journal=self.journal_id,
             )
 
-        # Generate XML File
         xml_doc = (
             self.journal_id.sudo()
             .with_context(
@@ -108,8 +104,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
                     reason="journal_account_is_not_an_iban",
                     wizard=self,
                     journal=self.journal_id,
-                    # an unset bank account on the journal reaches this guard
-                    # as an empty acc_type and is refused with the same message
                     bank_account=self.journal_id.bank_account_id,
                     acc_type=self.journal_id.bank_account_id.acc_type,
                 )

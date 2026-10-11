@@ -6,7 +6,6 @@ from odoo.addons.mail.tests.common_controllers import MailControllerAttachmentCo
 @odoo.tests.tagged("-at_install", "post_install", "mail_controller")
 class TestAttachmentController(MailControllerAttachmentCommon):
     def test_independent_attachment_delete(self):
-        """Test access to delete an attachment whether or not limited `ownership_token` is sent"""
         self._execute_subtests_delete(self.all_users, token=True, allowed=True)
         self._execute_subtests_delete(self.user_admin, token=False, allowed=True)
         self._execute_subtests_delete(
@@ -16,8 +15,6 @@ class TestAttachmentController(MailControllerAttachmentCommon):
         )
 
     def test_attachment_delete_linked_to_thread(self):
-        """Test access to delete an attachment associated with a thread
-        whether or not limited `ownership_token` is sent"""
         thread = self.env["mail.test.simple"].create({"name": "Test"})
         self._execute_subtests_delete(
             self.all_users, token=True, allowed=True, thread=thread

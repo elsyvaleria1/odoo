@@ -17,8 +17,6 @@ class DiscussChannelMember(models.Model):
             member.ai_agent_id = member.livechat_member_history_ids.ai_agent_id
 
     def _inverse_ai_agent_id(self) -> None:
-        # sudo - im_livechat.channel.member: creating/updating history following
-        # "ai_agent_id" modification is acceptable.
         self.sudo()._create_or_update_history(
             {member: {"ai_agent_id": member.ai_agent_id.id} for member in self}
         )

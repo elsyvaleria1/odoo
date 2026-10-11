@@ -34,9 +34,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
         wa_msg_origin = WhatsappMessage.create
         partner_create_origin = ResPartner.create
 
-        # ------------------------------------------------------------
-        # Whatsapp API
-        # ------------------------------------------------------------
 
         def _get_all_template(fetch_all=False):
             return template_data
@@ -112,9 +109,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
         def _get_phone_number(phone_uid):
             return "+91 12345 67890"
 
-        # ------------------------------------------------------------
-        # Whatsapp Models
-        # ------------------------------------------------------------
 
         def _res_partner_create(model, *args, **kwargs):
             records = partner_create_origin(model, *args, **kwargs)
@@ -187,7 +181,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 
     @contextmanager
     def mockWhatsappHTTPResponse(self, response_map):
-        """Mock request response when testing response handling."""
         self._init_wa_http_mock()
 
         def _prepare_request(
@@ -234,9 +227,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 
     @contextmanager
     def patchWhatsappCronTrigger(self):
-        """Call the cron code immediately in the current thread when whatsapp
-        related crons are triggered. Useful when you care about the result of
-        the actual sending step of a batch of messages."""
         IrCron = self.registry["ir.cron"]
         trigger_orig = IrCron._trigger
 
@@ -253,9 +243,6 @@ class MockOutgoingWhatsApp(common.BaseCase):
 class MockIncomingWhatsApp(common.HttpCase):
     """Mock and provide tools on incoming WhatsApp calls."""
 
-    # ------------------------------------------------------------
-    # TOOLS FOR SIMULATING RECEPTION
-    # ------------------------------------------------------------
 
     def _get_message_signature(self, account, message_data):
         return hmac.new(
@@ -265,14 +252,6 @@ class MockIncomingWhatsApp(common.HttpCase):
         ).hexdigest()
 
     def _receive_message_update(self, account, display_phone_number, extra_value=None):
-        """Simulate reception of a message update from WhatsApp API.
-
-        param account: whatsapp.account
-        param display_phone_number: phone number from which message was created
-          (e.g. "+91 12345 67891")
-        param extra_value: extra data added in "value" of "changes", to send in the request
-          (e.g. "statuses": [{"status": "failed"}, ...])
-        """
         data = json_dumps(
             {
                 "entry": [
@@ -308,12 +287,6 @@ class MockIncomingWhatsApp(common.HttpCase):
         )
 
     def _receive_template_update(self, field, account, data):
-        """Simulate reception of a template update from WhatsApp API.
-
-        param field: field to update (e.g. "message_template_status_update")
-        param account: whatsapp.account
-        param data: data to send in the request (e.g. {"event": "APPROVED"})
-        """
         data = json_dumps(
             {
                 "entry": [
@@ -403,7 +376,7 @@ class MockIncomingWhatsApp(common.HttpCase):
                                     "contacts": [
                                         {
                                             "profile": {"name": sender_name},
-                                            "wa_id": f"{time.time() % 9 // 1:.0f}{sender_phone_number[1:]}",  # not necessarily the actual phone number
+                                            "wa_id": f"{time.time() % 9 // 1:.0f}{sender_phone_number[1:]}",
                                         }
                                     ],
                                     "messages": [message_vals],
@@ -433,18 +406,13 @@ class MockIncomingWhatsApp(common.HttpCase):
             headers={"Content-Type": "application/json", **(headers or {})},
         )
 
-    # ------------------------------------------------------------
-    # TEST TOOLS AND ASSERTS
-    # ------------------------------------------------------------
 
     def _find_discuss_channel(self, whatsapp_number):
-        # Remove me in master, moved in WhatsAppCase
         return self.env["discuss.channel"].search(
             [("whatsapp_number", "=", whatsapp_number)]
         )
 
     def assertWhatsAppChannel(self, sender_phone_number):
-        # Remove me in master, moved in WhatsAppCase
         discuss_channel = self._find_discuss_channel(sender_phone_number)
         self.assertEqual(
             len(discuss_channel),
@@ -458,9 +426,6 @@ class MockIncomingWhatsApp(common.HttpCase):
 class WhatsAppCase(MockOutgoingWhatsApp):
     """Common class with tools and asserts"""
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     def _add_button_to_template(
         self,
@@ -495,13 +460,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
     def _wa_composer_form(
         self, template, from_records, with_user=False, add_context=None
     ):
-        """Create a whatsapp composer form, intended to run 'template' on
-        'from_records'.
-
-        :param with_user: a user to set on environment, allowing to check ACLs;
-        :param add_context: optional additional context values given to the
-          composer creation;
-        """
         context = dict(
             {
                 "active_model": from_records._name,
@@ -519,12 +477,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
     def _instanciate_wa_composer_from_records(
         self, template, from_records, with_user=False, add_context=None
     ):
-        """Create a whatsapp composer to run 'template' on 'from_records'.
-
-        :param with_user: a user to set on environment, allowing to check ACLs;
-        :param add_context: optional additional context values given to the
-          composer creation;
-        """
         context = dict(
             {"active_model": from_records._name, "active_ids": from_records.ids},
             **(add_context or {}),
@@ -580,7 +532,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         )
 
     def whatsapp_answer_with_records(self, records, body=None, mock=False):
-        # if mock is used -> internal wa_msgs is reset, prepare beforehand
         wa_msgs = [self._find_wa_msg_wrecord(record) for record in records]
         with (
             self.mockWhatsappGateway() if mock else nullcontext(),
@@ -598,7 +549,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 )
 
     def whatsapp_msg_bounce_with_records(self, records, error_code=131026):
-        """Simulate a 'bounce' message event through webhook"""
         for record in records:
             wa_msg = self._find_wa_msg_wrecord(record)
             self.assertTrue(wa_msg)
@@ -622,7 +572,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             )
 
     def whatsapp_msg_click_with_records(self, records, body=False, button_index=None):
-        """Simulate a 'read' message event through webhook"""
         for record in records:
             wa_msg = self._find_wa_msg_wrecord(record)
             self.assertTrue(wa_msg)
@@ -639,7 +588,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             self.assertTrue(btn)
             parsed_url = urlsplit(btn["parameters"][0]["text"])
             path_items = parsed_url.path.split("/")
-            # FIXME: incoherent, sometimes complete url, sometimes right part of url only ?
             if len(path_items) == 4:
                 code, wa_msg_id = path_items[1], int(path_items[3])
             elif len(path_items) == 5:
@@ -652,7 +600,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             )
 
     def whatsapp_msg_read_with_records(self, records):
-        """Simulate a 'read' message event through webhook"""
         for record in records:
             wa_msg = self._find_wa_msg_wrecord(record)
             self.assertTrue(wa_msg)
@@ -669,12 +616,8 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 },
             )
 
-    # ------------------------------------------------------------
-    # MESSAGE FIND AND ASSERTS
-    # ------------------------------------------------------------
 
     def _find_sent_wa_wuid(self, msg_uid):
-        """Find a sent WA message through gateway, based on 'mobile_number'"""
         for wa_sent, wa_sent_msg in zip(
             self._wa_msg_sent, self._wa_msg_sent_vals, strict=True
         ):
@@ -686,7 +629,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         )
 
     def _find_wa_msg_wnumber(self, mobile_number):
-        """Find a WA message, based on 'mobile_number'"""
         for wa_msg in self._new_wa_msg:
             if wa_msg.mobile_number == mobile_number:
                 return wa_msg
@@ -699,7 +641,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         )
 
     def _find_wa_msg_wrecord(self, record):
-        """Find a WA message, using linked record through its mail.message"""
         for wa_msg in self._new_wa_msg:
             if (
                 wa_msg.mail_message_id.model == record._name
@@ -720,23 +661,9 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         status="sent",
         fields_values=None,
         attachment_values=None,
-        free_text_json_values=None,  # custom free_text_json check on whatsapp.message
+        free_text_json_values=None,
         mail_message_values=None,
     ):
-        """Assert content of WhatsApp message.
-
-        :param <whatsapp.message> wa_message: whatsapp message whose content
-          is going to be checked;
-        :param str status: one of whatsapp.message.state field value;
-        :param dict fields_values: if given, should be a dictionary of field
-          names / values allowing to check message content (e.g. body);
-        :param dict attachment_values: if given, should be a dictionary of field
-          names / values allowing to check attachment values (e.g. mimetype);
-        :param free_text_json_values: if given, should be a dictionary of free_text_json
-          fields names / values to check free_text_json values (e.g. free_text_1, button_dynamic_url_1);
-        :param dict mail_message_values: if given, should be a dictionary of
-          field names/values to check inner mail.message content;
-        """
         if len(wa_message) != 1:
             debug_info = "\n".join(
                 f"Msg: {wa_msg.id}, {wa_msg.body}" for wa_msg in wa_message
@@ -745,7 +672,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 f"whatsapp.message: should have 1 message, received {len(wa_message)}\n{debug_info}"
             )
 
-        # check base message data
         self.assertEqual(
             wa_message.state,
             status,
@@ -757,7 +683,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 return re.sub(r"\s+", " ", value)
             return value
 
-        # check message content
         for fname, fvalue in (fields_values or {}).items():
             with self.subTest(fname=fname, fvalue=fvalue):
                 self.assertEqual(
@@ -766,7 +691,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                     f"whatsapp.message: expected {fvalue} for {fname}, got {wa_message[fname]}",
                 )
 
-        # check inner mail.message content
         for fname, fvalue in (mail_message_values or {}).items():
             with self.subTest(fname=fname, fvalue=fvalue):
                 self.assertEqual(
@@ -776,9 +700,7 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 )
 
         if attachment_values:
-            # check attachment values
             attachment = wa_message.mail_message_id.attachment_ids
-            # only support one attachment for whatsapp messages
             self.assertEqual(len(attachment), 1)
 
             for fname, fvalue in attachment_values.items():
@@ -790,7 +712,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                         f"whatsapp.message invalid attachment: expected {fvalue} for {fname}, got {attachment_value}",
                     )
 
-        # Check free_text_json
         if free_text_json_values:
             free_text_json = wa_message.free_text_json
             for fname, fvalue in free_text_json_values.items():
@@ -806,11 +727,9 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         status="sent",
         fields_values=None,
         attachment_values=None,
-        free_text_json_values=None,  # custom free_text_json check on whatsapp.message
+        free_text_json_values=None,
         mail_message_values=None,
     ):
-        """Assert and check content of a unique whatsapp message created under
-        mock."""
         self._assertWAMessage(
             self._new_wa_msg,
             status=status,
@@ -828,8 +747,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         attachment_values=None,
         mail_message_values=None,
     ):
-        """Assert and check content of a whatsapp message fetched based on a
-        given mobile number."""
         whatsapp_message = self._find_wa_msg_wnumber(mobile_number)
         self._assertWAMessage(
             whatsapp_message,
@@ -847,8 +764,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         attachment_values=None,
         mail_message_values=None,
     ):
-        """Assert and check content of a whatsapp message fetched based on a
-        given record."""
         whatsapp_message = self._find_wa_msg_wrecord(record)
         self._assertWAMessage(
             whatsapp_message,
@@ -858,9 +773,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             mail_message_values=mail_message_values,
         )
 
-    # ------------------------------------------------------------
-    # DISCUSS ASSERTS
-    # ------------------------------------------------------------
 
     def _find_wa_discuss_channel(
         self, whatsapp_number, wa_account=None, channel_domain=None
@@ -908,7 +820,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             f"Should find exactly one channel for number {sender_phone_number}",
         )
 
-        # check partner created during mock
         if new_partner_values:
             partner = self._new_partners
             self.assertEqual(
@@ -943,9 +854,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         )
         return discuss_channel
 
-    # ------------------------------------------------------------
-    # TEMPLATE ASSERTS
-    # ------------------------------------------------------------
 
     def assertWATemplate(
         self,
@@ -956,26 +864,12 @@ class WhatsAppCase(MockOutgoingWhatsApp):
         template_variables=None,
         template_variables_strict=True,
     ):
-        """Assert content of WhatsApp template.
-
-        :param <whatsapp.template> template: whatsapp template whose content
-          is going to be checked;
-        :param str status: one of whatsapp.template.status field value;
-        :param dict fields_values: if given, should be a dictionary of field
-          names / values allowing to check template content (e.g. body);
-        :param dict attachment_values: if given, should be a dictionary of field
-          names / values allowing to check attachment values (e.g. mimetype);
-        :param list template_variables: see 'assertWATemplateVariables';
-        :param boolean template_variables_strict: see 'assertWATemplateVariables';
-        """
-        # check base template data
         self.assertEqual(
             template.status,
             status,
             f"whatsapp.template invalid status: found {template.status}, expected {status}",
         )
 
-        # check template content
         for fname, fvalue in (fields_values or {}).items():
             with self.subTest(fname=fname, fvalue=fvalue):
                 self.assertEqual(
@@ -985,9 +879,7 @@ class WhatsAppCase(MockOutgoingWhatsApp):
                 )
 
         if attachment_values:
-            # check attachment values
             attachment = template.header_attachment_ids
-            # only support one attachment for whatsapp templates
             self.assertEqual(
                 len(attachment), 1, "whatsapp.template: should have only one attachment"
             )
@@ -1006,12 +898,6 @@ class WhatsAppCase(MockOutgoingWhatsApp):
             )
 
     def assertWATemplateVariables(self, template, expected_variables, strict=True):
-        """Assert content of 'variable_ids' field of a template
-
-        :param list expected_variables: values of variables expected in template;
-        :param bool strict: in addition to content ensure there are no other
-          variables;
-        """
         for exp_name, exp_line_type, exp_field_type, exp_vals in expected_variables:
             with self.subTest(exp_name=exp_name):
                 exp_demo_value = exp_vals.get("demo_value")
@@ -1046,10 +932,8 @@ class WhatsAppCommon(MailCommon, WhatsAppCase):
 
     @classmethod
     def setUpClass(cls):
-        """Note that MailCommon is multi-company by default"""
         super().setUpClass()
 
-        # ensure company / users data for tests, don't rely on demo
         cls.company_admin.write(
             {
                 "country_id": cls.env.ref("base.us"),
@@ -1062,13 +946,11 @@ class WhatsAppCommon(MailCommon, WhatsAppCase):
             }
         )
 
-        # phone-specific test data
         cls.user_employee_mobile = "+91(132)-553-7272"
         cls.user_employee.phone_ids = [
             Command.create({"number": cls.user_employee_mobile, "type": "mobile"})
         ]
 
-        # Notified user for WhatsApp Business Account
         cls.user_wa_admin = mail_new_test_user(
             cls.env,
             company_id=cls.company_admin.id,
@@ -1081,7 +963,6 @@ class WhatsAppCommon(MailCommon, WhatsAppCase):
             phone_ids=[Command.create({"number": "+1 650-555-0111", "type": "mobile"})],
             signature="--\nWasin",
         )
-        # WhatsApp Business Accounts
         cls.whatsapp_account, cls.whatsapp_account_2 = (
             cls.env["whatsapp.account"]
             .with_user(cls.user_admin)
@@ -1137,7 +1018,6 @@ class WhatsAppCommon(MailCommon, WhatsAppCase):
             )
             .sudo(False)
         )
-        # Test customer (In)
         cls.whatsapp_customer = cls.env["res.partner"].create(
             {
                 "country_id": cls.env.ref("base.in").id,
@@ -1149,7 +1029,6 @@ class WhatsAppCommon(MailCommon, WhatsAppCase):
             }
         )
 
-        # https://github.com/mathiasbynens/small
         image_data = (
             "/9j/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8Q"
             "EBEQCgwSExIQEw8QEBD/yQALCAABAAEBAREA/8wABgAQEAX/2gAIAQEAAD8A0s8g/9k="

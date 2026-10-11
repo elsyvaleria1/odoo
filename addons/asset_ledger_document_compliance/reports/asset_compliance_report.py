@@ -6,8 +6,6 @@ class AssetComplianceReport(models.Model):
     _name = "asset.compliance.report"
     _inherit = "document.compliance.report"
     _description = "Asset Compliance Report"
-    # Restated because the metaclass reads _log_access from this class's own body,
-    # defaulting it to True for a model that only inherits _auto = False.
     _auto = False
     _rec_name = "asset_name"
     _order = "compliance_percentage"

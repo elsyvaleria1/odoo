@@ -204,8 +204,6 @@ class TestHiddenColumnOracles(ScopeCase):
         )
 
     def test_the_client_context_cannot_switch_the_enforcement_off(self):
-        # `show_vat` embeds the column in the label, and a context of the
-        # caller's replaces the environment's: only the allowlisted keys pass.
         rows = self._call(
             "read",
             [self.partner.id],
@@ -245,17 +243,10 @@ class TestComputedDerivationsAreHidden(ScopeCase):
         self.assertNotIn("name", hidden)
 
     def test_the_closure_crosses_a_relation_into_a_model_the_scope_names_not(self):
-        # `res.users.email` is related to `partner_id.email`; the scope does
-        # not reach res.users at all, and the closure still says what its
-        # rows would leak if it did.
         self.assertIn("email", self._hidden("res.users"))
         self.assertIn("email_formatted", self._hidden("res.users"))
 
     def test_the_closure_is_one_pass_over_the_registry(self):
-        # A closure taken per model recursed into every model a dependency
-        # path crossed, again for every path and every iteration, and on a
-        # registry of several hundred models a search timed out; one
-        # fixpoint over the registry answers every model at once.
         rules = self.scope._rules()
         started = time.monotonic()
         self._hidden("res.partner")
@@ -277,13 +268,9 @@ class TestComputedDerivationsAreHidden(ScopeCase):
 
 @tagged("post_install", "-at_install")
 class TestHiddenClasses(TransactionCase):
-    # a scope hides a field class: on every model it reaches, or on the model
-    # of one line, and every field whose value derives from one of the class
 
     def setUp(self):
         super().setUp()
-        # login is self-readable: grouped, it reads through base.user_self on
-        # the user's own record, which makes it a field of that class
         self.patch(
             self.env["res.users"]._fields["login"], "groups", "base.group_system"
         )
@@ -445,8 +432,6 @@ class TestKeysAndScopes(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestScopeRecords(TransactionCase):
     def test_a_data_record_adopts_the_row_a_migration_made_for_its_key(self):
-        """base 1.89 makes a row per scope string keys already carry, before
-        the module that describes that door loads its data record."""
         Scope = self.env["res.users.apikeys.scope"]
         made = Scope._get_or_create("door.described.later")
         self.assertEqual(made.name, "door.described.later")

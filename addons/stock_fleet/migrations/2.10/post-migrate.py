@@ -6,12 +6,6 @@ _logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
-    """Tick the evidence of the transfers that carry only the customer's signature.
-
-    "Valid Evidence" now counts the signature as well as the photo. A transfer
-    with a photo keeps its tick as it is, since a reviewer may have rejected it;
-    an empty attachment is neither.
-    """
     if not version:
         return
     cr.execute(

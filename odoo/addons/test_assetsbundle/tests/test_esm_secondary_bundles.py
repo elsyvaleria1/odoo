@@ -353,8 +353,6 @@ class TestAConsumersImportsAreReadOneWay(TransactionCase):
     def test_a_member_under_an_external_lib_name_is_imported(self):
         if "@odoo/hoot-mock" not in esm_registry().external_libs:
             self.skipTest("@odoo/hoot-mock is not an external lib here")
-        # the bundle that owns it must export it, or a per-file test module
-        # importing animationFrame from it reads undefined
         self.assertIn("@odoo/hoot-mock", self._imported({"@odoo/hoot-mock"}))
 
     def test_a_member_reexported_under_an_external_lib_name_is_imported(self):

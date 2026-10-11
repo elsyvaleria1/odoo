@@ -11,7 +11,6 @@ from odoo.addons.ai_document.tests.test_common import TestAiDocumentsCommon
 
 class TestAiDocuments(TestAiDocumentsCommon):
     def test_ai_documents_access(self):
-        """Test that only an admin can change the prompt of a folder."""
         with self.assertRaises(AccessError):
             self.env["document.document"].with_user(self.user_internal).create(
                 {"ai_sort_prompt": "test", "type": "folder"}
@@ -34,11 +33,9 @@ class TestAiDocuments(TestAiDocumentsCommon):
         "odoo.addons.ai_document.models.ir_actions_server",
     )
     def test_ai_documents_sort(self):
-        """Test the "Auto-sort" flow using tools."""
         Doc = self.env["document.document"]
         llm_calls = 0
 
-        # Check that we write the prompt on the source folder
         self.assertIn("data-ai-record-id", self.folder.ai_sort_prompt)
         self.assertIn(str(self.target_folder.id), self.folder.ai_sort_prompt)
         self.assertIn('data-ai-field="name"', self.folder.ai_sort_prompt)
@@ -50,7 +47,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         self.assertEqual(len(automation_rule), 1)
         self.assertEqual(len(automation_rule.action_server_ids), 1)
 
-        # Should create an action of type `ai`, that will render the `ai_sort_prompt` of the source folder
         self.assertEqual(automation_rule.action_server_ids.state, "ai")
         self.assertEqual(
             automation_rule.filter_domain,
@@ -68,7 +64,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
             "Should have the `multi` type action, and the `move in folder` action.",
         )
 
-        # That `ai` action has the tools we set on the wizard
         move_in_folder = self.env.ref("ai_document.ir_actions_server_move_in_folder")
         self.assertEqual(self.ir_action_tool | move_in_folder, ai_tool_ids)
         self.assertTrue(all(ai_tool_ids.mapped("use_in_ai")))
@@ -145,7 +140,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         self.assertEqual(document.name, "new name")
         self.assertEqual(document.folder_id, self.target_folder)
 
-        # Check that we don't try to auto-sort non-sortable document
         llm_calls = 0
 
         with patch.object(LLMApiService, "_request_llm", _mocked_request_llm):
@@ -159,7 +153,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
 
         self.assertEqual(llm_calls, 0)
 
-        # Try to create a loop between 2 folders (if the target folder is also "Sort With AI")
 
         def _mocked_request_llm_loop(
             service,
@@ -219,7 +212,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         self.assertEqual(document.folder_id, self.folder)
         self.assertEqual(document.name, "test")
 
-        # Re-test the exact same flow, but this time the LLM return a folder not in the prompt for some reason
         llm_calls = 0
         llm_target_folder = self.other_folder
 
@@ -241,8 +233,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         )
         self.assertEqual(llm_calls, 3)
 
-        # Test that removing the prompt delete the automation rule
-        # (we only left inserted records without instruction)
         self.env["wizard.document.document.setup.ai.sort"].create(
             {
                 "folder_id": self.folder.id,
@@ -259,10 +249,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
             Doc.search([("id", "=", shortcut.id), ("ai_sortable", "=", True)])
         )
 
-        # Test the case where the LLM will execute a tool that will move the documents,
-        # with any tools, and then try to move it with the "AI: Move To Folder" tool (the second
-        # folder won't have a prompt, and so it should take the folder linked to the action
-        # and not to the document).
         llm_calls = 0
 
         def _mocked_request_llm_move(
@@ -329,8 +315,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
 
     @users("user_test")
     def test_ai_documents_sort_manual_trigger(self):
-        """Test that users can trigger auto-sort on their documents."""
-        # disable the automation to be able to trigger it manually
         self.env["automation.rule"].sudo().search(
             [("ai_autosort_folder_id", "=", self.folder.id)]
         ).active = False
@@ -350,8 +334,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         )
         llm_calls = 0
 
-        # The user cannot access the target folder,
-        # but the name of the folder is still inserted in the prompt
         self.env.invalidate_all()
         with self.assertRaises(AccessError):
             self.target_folder.with_user(self.user_internal).name
@@ -406,7 +388,6 @@ class TestAiDocuments(TestAiDocumentsCommon):
         self.assertEqual(document.folder_id, self.target_folder)
 
     def _ai_tool_call(self, name, call_id, arguments):
-        # Simulate the response of `_request_llm` when the LLM ask to execute a tool
         return (
             [],
             [(name, call_id, arguments)],

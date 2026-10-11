@@ -26,7 +26,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
 
     def test_in_invoice_check_manual_sequencing(self):
-        """Test the check generation for vendor bills."""
         nb_invoices_to_test = INV_LINES_PER_STUB + 1
 
         self.company_data["default_journal_bank"].write(
@@ -36,7 +35,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             }
         )
 
-        # Create 10 customer invoices.
         in_invoices = self.env["account.move"].create(
             [
                 {
@@ -59,7 +57,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
         in_invoices.action_post()
 
-        # Create a single payment.
         payment = (
             self.env["wizard.account.move.line.pay"]
             .with_context(active_model="account.move", active_ids=in_invoices.ids)
@@ -72,7 +69,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             ._create_payments()
         )
 
-        # Check created payment.
         self.assertRecordValues(
             payment,
             [
@@ -86,7 +82,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check pages.
         self.company_data[
             "company"
         ].account_config_id.account_check_printing_multi_stub = True
@@ -102,7 +97,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         self.assertEqual(len(report_pages), 1)
 
     def test_out_refund_check_manual_sequencing(self):
-        """Test the check generation for refunds."""
         nb_invoices_to_test = INV_LINES_PER_STUB + 1
 
         self.company_data["default_journal_bank"].write(
@@ -112,7 +106,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             }
         )
 
-        # Create 10 refunds.
         out_refunds = self.env["account.move"].create(
             [
                 {
@@ -135,7 +128,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
         out_refunds.action_post()
 
-        # Create a single payment.
         payment = (
             self.env["wizard.account.move.line.pay"]
             .with_context(active_model="account.move", active_ids=out_refunds.ids)
@@ -148,7 +140,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             ._create_payments()
         )
 
-        # Check created payment.
         self.assertRecordValues(
             payment,
             [
@@ -162,7 +153,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check pages.
         self.company_data[
             "company"
         ].account_config_id.account_check_printing_multi_stub = True
@@ -178,7 +168,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         self.assertEqual(len(report_pages), 1)
 
     def test_multi_currency_stub_lines(self):
-        # Invoice in company's currency: 100$
         invoice = self.env["account.move"].create(
             {
                 "move_type": "in_invoice",
@@ -198,7 +187,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
         invoice.action_post()
 
-        # Partial payment in foreign currency.
         payment = (
             self.env["wizard.account.move.line.pay"]
             .with_context(active_model="account.move", active_ids=invoice.ids)
@@ -232,9 +220,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
 
     def test_in_invoice_check_manual_sequencing_with_multiple_payments(self):
-        """
-        Test the check generation for vendor bills with multiple payments.
-        """
         nb_invoices_to_test = INV_LINES_PER_STUB + 1
 
         self.company_data["default_journal_bank"].write(
@@ -302,10 +287,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             )
 
     def test_print_great_pre_number_check(self):
-        """
-        Make sure we can use integer of more than 2147483647 in check sequence
-         limit of `integer` type in psql: https://www.postgresql.org/docs/current/datatype-numeric.html
-        """
         vals = {
             "payment_type": "outbound",
             "partner_type": "supplier",
@@ -328,9 +309,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
 
     def test_print_check_with_branch(self):
-        """
-        Test that we don't get access error when printing a check with a branch
-        """
         company = self.env.company
         branch = self.env["res.company"].create(
             {
@@ -338,7 +316,7 @@ class TestPrintCheck(AccountTestInvoicingCommon):
                 "parent_id": company.id,
             }
         )
-        self.cr.precommit.run()  # load the CoA
+        self.cr.precommit.run()
         self.env.user.write(
             {"company_id": company.id, "company_ids": [Command.set(company.ids)]}
         )
@@ -374,7 +352,7 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         if not accounting_installed:
             self.skipTest(
                 "Accounting not installed"
-            )  # There is an implicit outstanding account in this case, which makes it avoid the error
+            )
 
         self.company_data["default_journal_bank"].write(
             {
@@ -383,7 +361,7 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             }
         )
         self.payment_channel_check.payment_account_id = (
-            None  # Needed to trigger the error
+            None
         )
 
         in_invoices = self.env["account.move"].create(
@@ -434,10 +412,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         self.assertEqual(len(report_pages), 1)
 
     def test_multiple_payments_check_number_uniqueness(self):
-        """Test that when multiple payments are created at once with check printing,
-        each payment gets a unique check number when posted.
-        """
-        # Configure the bank journal with manual check sequencing
         self.company_data["default_journal_bank"].write(
             {
                 "check_manual_sequencing": True,
@@ -445,7 +419,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             }
         )
 
-        # Create three vendor bills
         in_invoices = self.env["account.move"].create(
             [
                 {
@@ -497,7 +470,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         )
         in_invoices.action_post()
 
-        # Create grouped payments , using the check payment method
         payments = (
             self.env["wizard.account.move.line.pay"]
             .with_context(active_model="account.move", active_ids=in_invoices.ids)
@@ -510,7 +482,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
             ._create_payments()
         )
 
-        # Check that the payments have different check numbers
         check_numbers = payments.mapped("check_number")
         self.assertEqual(
             len(check_numbers), 2, "Both payments should have a check number"
@@ -524,7 +495,6 @@ class TestPrintCheck(AccountTestInvoicingCommon):
         self.assertIn(f"Checks - 10002: {payments[1].memo}", move_names)
 
     def test_number_exceeds_int32_limit(self):
-        """Numbers greater than 2,147,483,647 should raise a ValidationError."""
         self.journal = self.env["account.journal"].create(
             {
                 "name": "Test Bank Journal",

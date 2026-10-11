@@ -112,11 +112,6 @@ class _Protecting:
         self._active = False
         core = self._core
         try:
-            # the outermost scope drains while it still protects what it
-            # assigned, so a check cannot invalidate a value its caller
-            # has not read yet
-            # an error leaves the queue for the next flush or clean exit:
-            # the values it checks stand until a rollback drops them
             if core.protection_depth() == 1 and exc_type is None:
                 core.run_deferred()
         finally:
@@ -131,7 +126,7 @@ class Environment(Mapping[str, "BaseModel"]):
     privileges: frozenset[int]
     transaction: Transaction
 
-    def __new__(  # noqa: PYI034  interned per transaction, not always an instance of cls
+    def __new__(
         cls,
         cr: BaseCursor,
         uid: int | None,
@@ -184,137 +179,137 @@ class Environment(Mapping[str, "BaseModel"]):
         return model_name in self.registry
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["decimal.precision"]
     ) -> DecimalPrecisionProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.attachment"]
     ) -> IrAttachmentProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.config_parameter"]
     ) -> IrConfigParameterProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.cron"]
     ) -> IrCronProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.http"]
     ) -> IrHttpProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.default"]
     ) -> IrDefaultProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model"]
     ) -> IrModelProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.access"]
     ) -> IrAccessProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.constraint"]
     ) -> IrModelConstraintProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.data"]
     ) -> IrModelDataProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.fields"]
     ) -> IrModelFieldsProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.fields.selection"]
     ) -> IrModelFieldsSelectionProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.inherit"]
     ) -> IrModelInheritProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.model.relation"]
     ) -> IrModelRelationProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.module.module"]
     ) -> IrModuleModuleProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.ui.view"]
     ) -> IrUiViewProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.fields.converter"]
     ) -> IrFieldsConverterProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.company"]
     ) -> ResCompanyProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.country"]
     ) -> ResCountryProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.currency"]
     ) -> ResCurrencyProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.lang"]
     ) -> ResLangProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.users"]
     ) -> ResUsersProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["auth.user.client"]
     ) -> AuthUserClientProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.users.apikeys.scope"]
     ) -> ResUsersApikeysScopeProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["res.groups"]
     ) -> ResGroupsProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.access.log"]
     ) -> IrAccessLogProtocol: ...
 
     @typing.overload
-    def __getitem__(  # type: ignore[overload-overlap]
+    def __getitem__(
         self, model_name: typing.Literal["ir.access.obligation"]
     ) -> IrAccessObligationProtocol: ...
 
@@ -339,11 +334,9 @@ class Environment(Mapping[str, "BaseModel"]):
     def __len__(self) -> int:
         return len(self.registry)
 
-    # interned per transaction, so equality is identity; the slot wrappers
-    # keep it in C, where every env switch compares and hashes environments
     __eq__ = object.__eq__
     __ne__ = object.__ne__
-    __hash__ = object.__hash__  # type: ignore[assignment]
+    __hash__ = object.__hash__
 
     def __call__(
         self,
@@ -357,9 +350,6 @@ class Environment(Mapping[str, "BaseModel"]):
         uid = self.uid if user is None else int(user)
         if context is None:
             context = self.context
-            # keep the frozendict itself when there is nothing to strip: the
-            # transaction then matches the last environment by identity and
-            # reuses its cached hash instead of copying and rehashing
             if su and not self.su and self._context_defaults:
                 context = clean_context(context)
                 if _debug.logic.enabled:
@@ -369,7 +359,6 @@ class Environment(Mapping[str, "BaseModel"]):
                         keys=len(self.context) - len(context),
                     )
             if user is not None and ACTING_PARTNER_KEY in context:
-                # another user acts on behalf of no one
                 context = {
                     key: value
                     for key, value in context.items()
@@ -377,7 +366,6 @@ class Environment(Mapping[str, "BaseModel"]):
                 }
         su = (user is None and self.su) if su is None else su
         if privileges is None:
-            # another user holds none of this one's privileges
             privileges = self.privileges if user is None else NO_PRIVILEGES
         return Environment(cr, uid, context, su, privileges)
 
@@ -485,15 +473,10 @@ class Environment(Mapping[str, "BaseModel"]):
 
     @property
     def access_signature(self) -> tuple[Hashable, ...]:
-        # what the policy's answers for this environment depend on besides the
-        # data: a cache keyed on it follows a grant, a membership or a company
-        # switch without being cleared
         return self.registry.access_policy.access_signature(self)
 
     @functools.cached_property
     def _read_access_key(self) -> tuple[Hashable, ...]:
-        # what a read verdict depends on besides the data: the user, sudo and
-        # the context values the access domains read
         return (
             self.uid,
             self.su,
@@ -505,9 +488,6 @@ class Environment(Mapping[str, "BaseModel"]):
         if self.su:
             return True
         acting = self.context.get(ACTING_PARTNER_KEY)
-        # a rule's condition on a translated field reads the language: a user
-        # slot read in another one is a slot of its own, unless the model's
-        # rules read no translated field
         if (
             (lang := self.context.get("lang"))
             and lang != "en_US"
@@ -562,7 +542,7 @@ class Environment(Mapping[str, "BaseModel"]):
             and lang != "en_US"
             and not self.registry.locale.is_lang_installed(self, lang)
         ):
-            raise UserError(  # noqa: E8505  see above: this one cannot be translated
+            raise UserError(
                 f"Invalid language code: {lang}"
             )
         return lang or None
@@ -650,9 +630,6 @@ class Environment(Mapping[str, "BaseModel"]):
             if key == "company":
                 return self.company.id
             elif key == "uid":
-                # whoever the environment acts for is part of who it is, as
-                # its privileges are: a compute reading either is not served
-                # to the bare user or to another contact
                 uid_key: typing.Any = (
                     self.uid if field.compute_sudo else (self.uid, self.su)
                 )
@@ -675,7 +652,6 @@ class Environment(Mapping[str, "BaseModel"]):
                 return bool(get_context(key))
             else:
                 val = get_context(key)
-                # a FrozenList keys as the tuple a list does, not apart from it
                 if isinstance(val, list):
                     val = tuple(val)
                 try:
@@ -708,8 +684,6 @@ class Environment(Mapping[str, "BaseModel"]):
             env = self if su is None or su == self.su else self(su=su)
             if any(env.context.get(k, _MISSING) != v for k, v in overrides.items()):
                 env = env(context=dict(env.context, **overrides))
-            # holding self would make every environment a reference cycle,
-            # alive until the garbage collector runs
             self._derived_envs[key] = _MISSING if env is self else env
         return env if isinstance(env, Environment) else self
 
@@ -756,8 +730,6 @@ class Environment(Mapping[str, "BaseModel"]):
         for field in fields_to_flush:
             fnames_to_flush[field.model_name].add(field.name)
         for model_name, field_names in list(fnames_to_flush.items()):
-            # a query on a table-inheritance root reads the rows every model
-            # of the tree writes, each through its own field cache
             for tree_model_name in self._table_inheritance_tree(model_name):
                 fnames_to_flush[tree_model_name].update(
                     name
@@ -768,9 +740,6 @@ class Environment(Mapping[str, "BaseModel"]):
             self[model_name].flush_model(field_names)
 
     def _table_inheritance_tree(self, model_name: str) -> tuple[str, ...]:
-        # A root UPDATE reaches the rows of every table inheriting from it and
-        # a leaf SELECT reads the rows the root writes, so the tree is the
-        # same set of models seen from any of its members.
         root = self.registry[model_name]._table_inheritance_root
         if not root:
             return ()
@@ -784,7 +753,7 @@ class Environment(Mapping[str, "BaseModel"]):
         if not isinstance(query, SQL):
             raise TypeError(f"execute_query expected SQL, got {type(query).__name__}")
         self.flush_query(query)
-        self.cr.execute(query)  # noqa: E8501  query is checked to be SQL above
+        self.cr.execute(query)
         try:
             return self.cr.fetchall()
         except ProgrammingError as exc:

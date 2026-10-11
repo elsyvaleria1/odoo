@@ -131,8 +131,6 @@ class TestDocumentAccessRequest(HttpCase):
         self.assertIn("Your request to edit it is waiting", page.text)
 
     def test_a_portal_user_asks_nothing_by_an_address_alone(self):
-        # a colleague asks by the address; anyone else holds a link, and a
-        # live link opens the document rather than a request
         self.authenticate("doc_access_portal", "doc_access_portal")
         token = self.folder.access_token
 

@@ -142,9 +142,6 @@ class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
         self.assertTrue(event.exists())
 
     def test_appointment_successful_payment_flow(self):
-        """Check that the booking payment flows uses appropriate routes, links the invoice and bookings together
-        and create the event from booking when the transaction paying the total amount is paid."""
-        # Payment page
         token = self._generate_test_access_token(
             self.booking_invoice.partner_id.id,
             self.booking_invoice.amount_total,
@@ -167,7 +164,6 @@ class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
         self.assertEqual(cancel_form[0].get("method"), "post")
         self.assertTrue(cancel_form[0].xpath(".//input[@name='csrf_token']/@value"))
 
-        # Transaction route
         tx_context = self._get_payment_context(response)
         tx_url = self._build_url(tx_context["transaction_route"])
         tx_route_kwargs = {
@@ -194,7 +190,6 @@ class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
 
         self.assertTrue(self.booking_invoice.calendar_booking_ids.calendar_event_id)
 
-        # Landing Page is event page as event is successfully created
         landing_page_url = self._build_url(tx_context["landing_route"])
         response = self._make_http_get_request(landing_page_url)
         self.assertEqual(response.status_code, 200)
@@ -202,7 +197,6 @@ class AppointmentAccountPaymentFlowsTest(AppointmentAccountPaymentFlowsCommon):
 
     @freeze_time("2022-02-14")
     def test_appointment_service_product_type_appointment(self):
-        """Test calendar booking creation for a service product with list price 0."""
         if (
             self.env["ir.module.module"].search([("name", "=", "sale_project")]).state
             == "uninstalled"

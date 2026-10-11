@@ -156,8 +156,6 @@ class MailScheduledMessage(models.Model):
 
     @api.model
     def _access_owner_reach(self, Owner: models.BaseModel) -> typing.Any:
-        # a scheduled message is reached through a document the user may post
-        # on, as _access_unreachable_owners decides it
         if type(Owner)._check_access is models.BaseModel._check_access:
             return Owner._mail_access_domain("create")
         return CONCRETE

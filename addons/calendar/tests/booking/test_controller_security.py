@@ -89,12 +89,6 @@ class AppointmentControllerSecurity(AppointmentUICommon):
 
     @freeze_time("2022-07-04")
     def test_appointment_submit_no_csrf(self):
-        """Check that the form does not require a CSRF token when logged out.
-
-        When logged out we should always create a new partner regardless of whether one exists
-        with similar contact info, so it is ok to not check CSRF as we do not use any session-related
-        information during form submission.
-        """
         invite = self.env["appointment.invite"].create(
             {
                 "appointment_type_ids": self.apt_type_bxls_2days.ids,
@@ -123,9 +117,6 @@ class AppointmentControllerSecurity(AppointmentUICommon):
         ):
             with self.subTest(login=login, with_csrf=with_csrf):
                 self.authenticate(login, login)
-                # Book a different slot on each iteration: the submit route now
-                # refuses an already-taken slot, and this type allows one booking
-                # per slot.
                 slot_data = base_appointment_data | {
                     "datetime_str": f"2022-07-04 {10 + offset}:00:00",
                 }
@@ -169,5 +160,4 @@ class AppointmentControllerSecurity(AppointmentUICommon):
                         self.apt_manager.partner_id + self.staff_user_bxls.partner_id,
                     )
                 existing_partners |= latest_partner
-                # avoid using up a slot for following tests
                 latest_appointment.unlink()

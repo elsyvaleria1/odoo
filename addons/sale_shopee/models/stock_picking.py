@@ -39,25 +39,12 @@ class StockPicking(models.Model):
         help="The last time the picking was synchronized with Shopee.",
     )
 
-    # === ACTION METHODS === #
 
     def action_shopee_sync_pickings(self):
         return self._sync_shopee_pickings()
 
-    # === BUSINESS METHODS === #
 
     def _sync_shopee_pickings(self, shop_ids=(), auto_commit=True) -> dict | None:
-        """Fetch tracking number and shipping label from Shopee.
-
-        Delivery information needs to be filled directly on Shopee, once done, Shopee will assign a
-        tracking number to the pickings. _sync_picking will fetch this number, and create the
-        associated shipping label.
-
-        :param tuple shop_ids: The shop whose deliveries should be synchronized, as a tuple of
-                               `shopee.shop` record ids.
-        :param auto_commit: If True, the transaction will be committed after each successful sync
-        :return: None
-        """
         pickings_by_shop = self._get_pickings_by_shop(shop_ids)
         _debug.pipeline(
             "pickings_sync_started",
@@ -81,7 +68,6 @@ class StockPicking(models.Model):
                 )
                 continue
 
-        # If there are pickings in processing status, schedule a cron to retry in 1 minute
         all_pickings = self.env["stock.picking"].concat(*pickings_by_shop.values())
         processing_pickings = all_pickings.filtered(
             lambda p: p.shopee_label_status == "processing"
@@ -107,13 +93,6 @@ class StockPicking(models.Model):
         return None
 
     def _get_pickings_by_shop(self, shop_ids=()):
-        """Group the pickings by their respective shops.
-
-        :param tuple shop_ids: The shops whose pickings should be considered, as a tuple of
-                              `shopee.shop` records ids.
-        :return: The pickings grouped by Shopee shop.
-        :rtype: dict
-        """
         pickings_by_shop = {}
         domain = [
             ("sale_id.shopee_shop_id", "!=", False),
@@ -138,20 +117,9 @@ class StockPicking(models.Model):
         return pickings_by_shop
 
     def _update_shipment_label(self, auto_commit=True) -> None:
-        """Fetch tracking number and shipping label from Shopee.
-
-        Delivery information needs to be filled directly on Shopee, once done, Shopee will assign a
-        tracking number to the pickings. _sync_picking will fetch this number, and create the
-        associated shipping label.
-
-        :param auto_commit: If True, the transaction will be committed after each successful sync
-        :return: None
-        """
         shop = self[0].sale_id.shopee_shop_id
         shop.check_singleton()
 
-        # fetch tracking numbers for pickings without tracking number
-        # fetch pickings 50 per 50 and sort by the last_shopee_sync_date to avoid cron timeout
         error_messages = []
         current_datetime = fields.Datetime.now()
         picking_sorted = self.filtered(
@@ -164,7 +132,7 @@ class StockPicking(models.Model):
 
         batch_size = min(
             const.ORDER_DETAIL_SIZE_LIMIT, const.SHIPPING_DOCUMENT_SIZE_LIMIT
-        )  # same
+        )
         picking_batches = [
             picking_sorted[i : i + batch_size]
             for i in range(0, len(picking_sorted), batch_size)
@@ -177,7 +145,6 @@ class StockPicking(models.Model):
         )
         for picking_batch in picking_batches:
             try:
-                # Update the order delivery status in case it changed.
                 orders_detail = shop._get_orders_detail(
                     picking_batch.sale_id.mapped("shopee_order_ref")
                 )
@@ -202,23 +169,19 @@ class StockPicking(models.Model):
                     lambda p: p.shopee_delivery_status in {"draft", "confirmed"}
                 )
 
-                # Set the tracking number as soon as it's available
                 picking_batch._set_tracking_number(shop)
                 pickings = picking_batch.filtered(lambda p: p.carrier_tracking_ref)
 
-                # Request shipping label
                 pickings_no_label_requested = pickings.filtered(
                     lambda p: p.shopee_label_status in ["not available", "failed"]
                 )
                 pickings_no_label_requested._update_shipping_label(shop)
 
-                # Fetch the shipping label status to flag the pickings ready to be downloaded.
                 pickings_label_requested = pickings.filtered(
                     lambda p: p.shopee_label_status == "processing"
                 )
                 pickings_label_requested._update_shipping_label_status(shop)
 
-                # Download the shipping label
                 pickings_label_ready_to_print = pickings.filtered(
                     lambda p: p.shopee_label_status == "ready"
                 )
@@ -259,13 +222,6 @@ class StockPicking(models.Model):
             )
 
     def _set_tracking_number(self, shop) -> None:
-        """Fetch the tracking number from Shopee API and update the carrier_tracking_ref field.
-
-        If the tracking number is not available, the field will be left empty.
-
-        :param record shop: The Shopee shop of the pickings as a `shopee.shop` record.
-        :return: None
-        """
         for picking in self.filtered(lambda p: not p.carrier_tracking_ref):
             tracking_number = utils.send_shopee_api_request(
                 shop, "get_tracking_number", {"order_sn": picking.shopee_order_ref}
@@ -279,11 +235,6 @@ class StockPicking(models.Model):
                 picking.carrier_tracking_ref = tracking_number
 
     def _update_shipping_label(self, shop) -> None:
-        """Initiate the shipping label generation from Shopee for the pickings.
-
-        :param record shop: The Shopee shop of the pickings as a `shopee.shop` record.
-        :return: None
-        """
 
         for i in range(0, len(self), const.SHIPPING_DOCUMENT_SIZE_LIMIT):
             pickings = self[i : i + const.SHIPPING_DOCUMENT_SIZE_LIMIT]
@@ -319,11 +270,6 @@ class StockPicking(models.Model):
             successful_pickings.shopee_label_status = "processing"
 
     def _update_shipping_label_status(self, shop) -> None:
-        """Fetch the shipping label from Shopee API and update the label status for the pickings.
-
-        :param record shop: The Shopee shop of the pickings as a `shopee.shop` record.
-        :return: None
-        """
         for i in range(0, len(self), const.SHIPPING_DOCUMENT_SIZE_LIMIT):
             pickings = self[i : i + const.SHIPPING_DOCUMENT_SIZE_LIMIT]
             order_list = [
@@ -338,7 +284,7 @@ class StockPicking(models.Model):
             order_sn_status = {
                 res["order_sn"]: res["status"] for res in response["result_list"]
             }
-            for picking in pickings:  # update the label status for each picking
+            for picking in pickings:
                 status = order_sn_status.get(picking.shopee_order_ref)
                 if status:
                     picking.shopee_label_status = (
@@ -346,11 +292,6 @@ class StockPicking(models.Model):
                     )
 
     def _download_shipping_label(self, shop) -> None:
-        """Download the shipping labels and store them in the picking messages.
-
-        :param record shop: The Shopee shop of the pickings as a `shopee.shop` record.
-        :return: None
-        """
         for picking in self:
             order_sn = picking.shopee_order_ref
             content = utils.send_shopee_api_request(
@@ -361,7 +302,6 @@ class StockPicking(models.Model):
                 },
                 method="POST",
             )
-            # If the label exists in the picking messages, do not store it again
             attachment_name = f"Shopee_Label_{picking.name.replace(' ', '_')}.pdf"
             existing_attachment = self.env["ir.attachment"].search(
                 [
@@ -380,7 +320,6 @@ class StockPicking(models.Model):
             picking.shopee_label_status = "stored"
 
     def _sync_processing_pickings(self):
-        """Retry fetching shipping label from Shopee for pickings in processing status."""
         processing_pickings = self.search([("shopee_label_status", "=", "processing")])
         if processing_pickings:
             return processing_pickings._sync_shopee_pickings()

@@ -102,8 +102,6 @@ class IrAsset(models.Model):
 
             asset_values = vals
             if not asset.key:
-                # Copy-on-write needs an identity shared by the generic asset
-                # and its overrides; False also matches unrelated unkeyed assets.
                 super(IrAsset, asset).write(
                     {"key": vals.get("key") or f"website.asset_{uuid4().hex}"}
                 )

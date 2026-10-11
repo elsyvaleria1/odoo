@@ -17,7 +17,6 @@ class CalendarBooking(models.Model):
     def _default_booking_token(self):
         return uuid.uuid4().hex
 
-    # Answers
     appointment_response_ids = fields.One2many(
         comodel_name="survey.user_input",
         inverse_name="calendar_booking_id",
@@ -28,7 +27,6 @@ class CalendarBooking(models.Model):
         inverse_name="calendar_booking_id",
         string="Appointment Answers",
     )
-    # Calendar Event Data
     appointment_invite_id = fields.Many2one(comodel_name="appointment.invite")
     appointment_type_id = fields.Many2one(
         comodel_name="appointment.type",
@@ -41,7 +39,7 @@ class CalendarBooking(models.Model):
         comodel_name="res.partner",
         string="Guests",
     )
-    name = fields.Char(string="Customer Name")  # Could differ from partner
+    name = fields.Char(string="Customer Name")
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Contact",
@@ -49,19 +47,16 @@ class CalendarBooking(models.Model):
     allday = fields.Boolean()
     start = fields.Datetime(required=True)
     stop = fields.Datetime(required=True)
-    # Resources
     asked_capacity = fields.Integer(default=0)
     booking_line_ids = fields.One2many(
         comodel_name="calendar.booking.line",
         inverse_name="calendar_booking_id",
         string="Booking Lines",
     )
-    # Staff User
     staff_user_id = fields.Many2one(
         comodel_name="res.users",
         string="Operator",
     )
-    # Payment
     account_move_id = fields.Many2one(
         comodel_name="account.move",
         string="Appointment Invoice",
@@ -72,16 +67,13 @@ class CalendarBooking(models.Model):
         comodel_name="product.product",
         required=True,
     )
-    # Access for front-end view
     booking_token = fields.Char(
         string="Access Token",
         default=lambda self: self._default_booking_token(),
         copy=False,
         readonly=True,
     )
-    # Used in display
     not_available = fields.Boolean(string="Is Not Available")
-    # Event (once created)
     calendar_event_id = fields.Many2one(
         comodel_name="calendar.event",
         string="Meeting",
@@ -93,7 +85,6 @@ class CalendarBooking(models.Model):
             booking.duration = (booking.stop - booking.start).total_seconds() / 3600
 
     def unlink(self):
-        # Unlink answers linked to these bookings that do not belong to meetings.
         answers = self.appointment_response_ids.filtered(
             lambda answer: not answer.calendar_event_id
         )
@@ -101,18 +92,11 @@ class CalendarBooking(models.Model):
         return super().unlink()
 
     def _filter_unavailable_bookings(self):
-        """Check availability in self and return the bookings that would not be available
-        when reserving space for all of them.
-
-        :return: bookings that cannot be reserved
-        :rtype: calendar.booking recordset
-        """
         user_bookings = self.filtered("staff_user_id")
         resource_bookings = self.filtered(lambda b: b.booking_line_ids.resource_id)
         if not user_bookings and not resource_bookings:
             return self
 
-        # Simple approach: interval per interval, 'fit' as much availability as possible.
         def filter_available_user_bookings(user_bookings):
             boundaries = sorted(
                 set(user_bookings.mapped("start") + user_bookings.mapped("stop"))
@@ -146,7 +130,6 @@ class CalendarBooking(models.Model):
                     for booking_line in booking_lines:
                         if total_availability >= booking_line.capacity_used:
                             total_availability -= booking_line.capacity_used
-                        # Booking is unavailable
                         else:
                             user_bookings -= booking_line.calendar_booking_id
             return user_bookings
@@ -191,7 +174,6 @@ class CalendarBooking(models.Model):
                     for booking_line in booking_lines:
                         if total_availability >= booking_line.capacity_used:
                             total_availability -= booking_line.capacity_used
-                        # Booking is unavailable
                         else:
                             resource_bookings -= booking_line.calendar_booking_id
             return resource_bookings
@@ -202,7 +184,6 @@ class CalendarBooking(models.Model):
         )
 
     def _get_description(self):
-        """Returns a multiline description of the booking"""
         self.check_singleton()
         tz = (
             self.env.context.get("tz")
@@ -234,8 +215,6 @@ class CalendarBooking(models.Model):
             )
 
     def _log_booking_collisions(self) -> None:
-        """Log a message on the invoice of each booking that could not be turned into a
-        meeting when confirming / paying that invoice."""
         odoobot = self.env.ref("base.partner_root")
         for booking in self.filtered("account_move_id"):
             booking.account_move_id._message_log(
@@ -250,7 +229,6 @@ class CalendarBooking(models.Model):
             )
 
     def _create_event_from_paid_booking(self) -> None:
-        """Create a calendar event from the booking values, once the booking is considered paid."""
         if not self:
             return
         todo = self.filtered(lambda booking: not booking.calendar_event_id)
@@ -305,7 +283,6 @@ class CalendarBooking(models.Model):
         unavailable_bookings._log_booking_collisions()
 
     def _cancel_pending_booking(self):
-        """Cancel only before payment initiation; preserve delayed callback targets."""
         self.check_singleton()
         invoice = self.account_move_id
         invoice._lock_for_payment()
@@ -324,12 +301,6 @@ class CalendarBooking(models.Model):
         return True
 
     def _create_booking_invoices(self):
-        """Create, link and return the invoices of the bookings in self.
-
-        :return: created invoices
-        :rtype: account.move recordset
-        """
-        # Call in sudo mode to avoid access error on invoice creation.
         return self.env["account.move"].create(
             [
                 {

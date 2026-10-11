@@ -40,10 +40,7 @@ class PaymentTransaction(models.Model):
         if not all(
             f"razorpay_{key}" in data for key in ("order_id", "payment_id", "signature")
         ):
-            # The customer cancelled the payment or the payment failed: there is
-            # no payment to process.
             raise Acknowledged.redirect("/payment/status")
-        # The same key as for webhook notifications' data.
         tx, _extra = self._resolve_notification(
             "razorpay",
             {"description": data.get("reference")},
@@ -93,15 +90,6 @@ class PaymentTransaction(models.Model):
         return True
 
     def _prepare_provider_processing_values(self, processing_values):
-        """Override of `payment` to return razorpay-specific processing values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the
-                                       transaction.
-        :return: The provider-specific processing values.
-        :rtype: dict
-        """
         if self.provider_code != "razorpay":
             return super()._prepare_provider_processing_values(processing_values)
 
@@ -126,11 +114,6 @@ class PaymentTransaction(models.Model):
         return processing_values
 
     def _razorpay_create_customer(self):
-        """Create and return a Customer object.
-
-        :return: The created Customer.
-        :rtype: dict
-        """
         payload = {
             "name": self.partner_name,
             "email": self.partner_email or "",
@@ -138,7 +121,7 @@ class PaymentTransaction(models.Model):
                 self.partner_phone and self._format_phone_number(self.partner_phone)
             )
             or "",
-            "fail_existing": "0",  # Don't throw an error if the customer already exists.
+            "fail_existing": "0",
         }
         customer_data = {}
         try:
@@ -150,13 +133,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _format_phone_number(self, phone):
-        """Validate and format the phone number.
-
-        :param str phone: The phone number to validate.
-        :returns: The formatted phone number.
-        :rtype: str
-        :raise ValidationError: If the phone number is missing or incorrect.
-        """
         if not phone and self.tokenize:
             raise ValidationError(self.env._("The phone number is missing."))
 
@@ -171,13 +147,6 @@ class PaymentTransaction(models.Model):
         return phone
 
     def _razorpay_create_order(self, customer_id=None):
-        """Create and return an Order object to initiate the payment.
-
-        :param str customer_id: The ID of the Customer object to assign to the Order for
-                                non-subsequent payments.
-        :return: The created Order.
-        :rtype: dict
-        """
         payload = self._razorpay_prepare_order_payload(customer_id=customer_id)
         order_data = {}
         try:
@@ -189,12 +158,6 @@ class PaymentTransaction(models.Model):
         return order_data
 
     def _is_razorpay_payment_of_own_order(self, payment_data) -> bool:
-        """Whether a payment entity was made on the order created for this transaction.
-
-        Its `description`, which the transaction is found by, is the customer's to set in the
-        checkout options; the order is created by Odoo, for the transaction's amount. A
-        transaction created before the order was kept has none to compare.
-        """
         self.check_singleton()
         return (
             not self.razorpay_order_id
@@ -202,13 +165,6 @@ class PaymentTransaction(models.Model):
         )
 
     def _razorpay_prepare_order_payload(self, customer_id=None):
-        """Prepare the payload for the order request based on the transaction values.
-
-        :param str customer_id: The ID of the Customer object to assign to the Order for
-                                non-subsequent payments.
-        :return: The request payload.
-        :rtype: dict
-        """
         converted_amount = payment_utils.major_to_minor_currency_units(
             self.amount, self.currency_id
         )
@@ -226,7 +182,7 @@ class PaymentTransaction(models.Model):
         }
         if self.operation in ["online_direct", "validation"]:
             payload["customer_id"] = (
-                customer_id  # Required for only non-subsequent payments.
+                customer_id
             )
             if self.tokenize:
                 payload["token"] = {
@@ -235,22 +191,21 @@ class PaymentTransaction(models.Model):
                     ),
                     "expire_at": time.mktime(
                         (datetime.today() + relativedelta(years=10)).timetuple()
-                    ),  # Don't expire the token before at least 10 years.
+                    ),
                     "frequency": "as_presented",
                 }
-        else:  # 'online_token', 'offline'
-            # Required for only subsequent payments.
+        else:
             payload["payment_capture"] = not self.provider_id.capture_manually
         if (
             self.provider_id.capture_manually
-        ):  # The related payment must be only authorized.
+        ):
             payload.update(
                 {
                     "payment": {
                         "capture": "manual",
                         "capture_options": {
-                            "manual_expiry_period": 7200,  # The default value for this required option.
-                            "refund_speed": "normal",  # The default value for this required option.
+                            "manual_expiry_period": 7200,
+                            "refund_speed": "normal",
                         },
                     },
                 }
@@ -258,11 +213,6 @@ class PaymentTransaction(models.Model):
         return payload
 
     def _razorpay_get_mandate_max_amount(self):
-        """Return the eMandate's maximum amount to define.
-
-        :return: The eMandate's maximum amount.
-        :rtype: float
-        """
         pm_code = (
             self.payment_method_id.primary_payment_method_id or self.payment_method_id
         ).code
@@ -270,7 +220,7 @@ class PaymentTransaction(models.Model):
         pm_max_amount = self._razorpay_convert_inr_to_currency(
             pm_max_amount_INR, self.currency_id
         )
-        mandate_values = self._prepare_mandate_data()  # The linked document's values.
+        mandate_values = self._prepare_mandate_data()
         if "amount" in mandate_values and "MRR" in mandate_values:
             max_amount = min(
                 pm_max_amount,
@@ -282,13 +232,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _razorpay_convert_inr_to_currency(self, amount, currency_id):
-        """Convert the amount from INR to the given currency.
-
-        :param float amount: The amount to converted, in INR.
-        :param currency_id: The currency to which the amount should be converted.
-        :return: The converted amount in the given currency.
-        :rtype: float
-        """
         inr_currency = (
             self.env["res.currency"]
             .with_context(active_test=False)
@@ -302,14 +245,9 @@ class PaymentTransaction(models.Model):
         return inr_currency._convert(amount, currency_id)
 
     def _send_payment_request(self):
-        """Override of `payment` to send a payment request to Razorpay."""
         if self.provider_code != "razorpay":
             return super()._send_payment_request()
 
-        # Prevent multiple token payments for the same document within 36 hours. Another transaction
-        # with the same token could be pending processing due to Razorpay waiting 24 hours.
-        # See https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=11668.
-        # Remove every character after the last "-", "-" included
         reference_prefix = re.sub(r"-(?!.*-).*$", "", self.reference) or self.reference
         earlier_pending_tx = self.search(
             [
@@ -357,18 +295,16 @@ class PaymentTransaction(models.Model):
             self._process("razorpay", recurring_payment_data)
 
     def _send_refund_request(self):
-        """Override of `payment` to send a refund request to Razorpay."""
         if self.provider_code != "razorpay":
             return super()._send_refund_request()
 
-        # Send the refund request to Razorpay.
         converted_amount = payment_utils.major_to_minor_currency_units(
             -self.amount, self.currency_id
-        )  # The amount is negative for refund transactions.
+        )
         payload = {
             "amount": converted_amount,
             "notes": {
-                "reference": self.reference,  # Allow retrieving the ref. from webhook data.
+                "reference": self.reference,
             },
         }
         response_content = self._send_api_request(
@@ -379,7 +315,6 @@ class PaymentTransaction(models.Model):
         return None
 
     def _send_capture_request(self):
-        """Override of `payment` to send a capture request to Razorpay."""
         if self.provider_code != "razorpay":
             return super()._send_capture_request()
 
@@ -391,12 +326,10 @@ class PaymentTransaction(models.Model):
             "POST", f"payments/{self.provider_reference}/capture", json=payload
         )
 
-        # Process the capture request response.
         self._process("razorpay", response_content)
         return None
 
     def _send_void_request(self):
-        """Override of `payment` to explain that it is impossible to void a Razorpay transaction."""
         if self.provider_code != "razorpay":
             return super()._send_void_request()
 
@@ -408,14 +341,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _search_by_reference(self, provider_code, payment_data):
-        """Override of `payment` to find the transaction based on razorpay data.
-
-        :param str provider_code: The code of the provider that handled the transaction
-        :param dict payment_data: The normalized payment data sent by the provider
-        :return: The transaction if found
-        :rtype: payment.transaction
-        :raise: ValidationError if the data match no transaction
-        """
         if provider_code != "razorpay":
             return super()._search_by_reference(provider_code, payment_data)
 
@@ -437,8 +362,6 @@ class PaymentTransaction(models.Model):
             )
             return self.browse()
         if tx and field_name == "provider_reference":
-            # The refund was initiated from Razorpay: its refund transaction, created by its first
-            # webhook, is found by the refund id, else created with a new reference.
             tx = self._search_by_notified_value(
                 "razorpay", "provider_reference", payment_data.get("id")
             ) or self._razorpay_create_refund_tx_from_payment_data(tx, payment_data)
@@ -446,8 +369,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _search_notification_subject(self, provider_code, payment_data):
-        """Override of `payment` to find the transaction without creating the refund transaction
-        of a refund initiated from Razorpay: its refunded transaction is found instead."""
         if provider_code != "razorpay":
             return super()._search_notification_subject(provider_code, payment_data)
         return self._search_by_notified_value(
@@ -456,16 +377,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _razorpay_notified_lookup(self, payment_data):
-        """Return the field and the value identifying the transaction the payment data are about.
-
-        A payment, and a refund initiated from Odoo, carry the reference of their transaction; a
-        refund initiated from Razorpay carries only the provider reference of the refunded one.
-        Searching by them writes nothing, so it can run before the notification is verified.
-
-        :param dict payment_data: The normalized payment data sent by the provider.
-        :return: The field name and the value to search the transaction with.
-        :rtype: tuple
-        """
         if payment_data.get("entity_type", "payment") == "payment":
             return "reference", payment_data.get("description")
         notes = payment_data.get("notes")
@@ -475,15 +386,6 @@ class PaymentTransaction(models.Model):
         return "provider_reference", payment_data.get("payment_id")
 
     def _razorpay_create_refund_tx_from_payment_data(self, source_tx, payment_data):
-        """Create a refund transaction based on Razorpay data.
-
-        :param recordset source_tx: The source transaction for which a refund is initiated, as a
-                                    `payment.transaction` recordset.
-        :param dict payment_data: The payment data sent by the provider.
-        :return: The newly created refund transaction.
-        :rtype: payment.transaction
-        :raise ValidationError: If inconsistent data were received.
-        """
         refund_provider_reference = payment_data.get("id")
         amount_to_refund = payment_data.get("amount")
         if not refund_provider_reference or not amount_to_refund:
@@ -499,11 +401,9 @@ class PaymentTransaction(models.Model):
         )
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of payment to extract the amount and currency from the payment data."""
         if self.provider_code != "razorpay":
             return super()._extract_amount_data(payment_data)
 
-        # Amount and currency are not sent in the payment data when redirecting to the return route.
         if "amount" not in payment_data or "currency" not in payment_data:
             return None
 
@@ -516,16 +416,14 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "razorpay":
             return super()._apply_updates(payment_data)
 
         if (
             "id" in payment_data
-        ):  # We have the full entity data (S2S request or webhook).
+        ):
             entity_data = payment_data
-        else:  # The payment data are not complete (Payments made by a token).
-            # Fetch the full payment data.
+        else:
             try:
                 entity_data = self._send_api_request(
                     "GET", f"payments/{payment_data['razorpay_payment_id']}"
@@ -534,19 +432,15 @@ class PaymentTransaction(models.Model):
                 self._set_error(str(e))
                 return None
 
-        # Update the provider reference.
         entity_id = entity_data.get("id")
         if not entity_id:
             self._set_error(self.env._("Received data with missing entity id."))
             return None
 
-        # One reference can have multiple entity ids as Razorpay allows retry on payment failure.
-        # Making sure the last entity id is the one we have in the provider reference.
         allowed_to_modify = self.state not in ("done", "authorized")
         if allowed_to_modify:
             self.provider_reference = entity_id
 
-        # Update the payment method.
         payment_method_type = entity_data.get("method", "")
         if payment_method_type == "card":
             payment_method_type = entity_data.get("card", {}).get("network", "").lower()
@@ -556,7 +450,6 @@ class PaymentTransaction(models.Model):
         if allowed_to_modify and payment_method:
             self.payment_method_id = payment_method
 
-        # Update the payment state.
         entity_status = entity_data.get("status")
         if not entity_status:
             self._set_error(self.env._("Received data with missing status."))
@@ -572,12 +465,9 @@ class PaymentTransaction(models.Model):
                 and entity_data.get("token_id")
                 and self.provider_id.allow_tokenization
             ):
-                # In case the tokenization was requested on provider side not from odoo form.
                 self.tokenize = True
             self._set_done()
 
-            # Immediately post-process the transaction if it is a refund, as the post-processing
-            # will not be triggered by a customer browsing the transaction from the portal.
             if self.operation == "refund":
                 self.env["ir.cron"]._trigger_ref("payment.cron_post_process_payment_tx")
         elif entity_status in const.PAYMENT_STATUS_MAPPING["error"]:
@@ -591,7 +481,7 @@ class PaymentTransaction(models.Model):
                     "An error occurred during the processing of your payment. Please try again."
                 )
             )
-        else:  # Classify unsupported payment status as the `error` tx state.
+        else:
             _logger.warning(
                 "Received data for transaction %s with invalid payment status: %s.",
                 self.reference,
@@ -604,14 +494,6 @@ class PaymentTransaction(models.Model):
         return None
 
     def _extract_token_values(self, payment_data) -> dict:
-        """Override of `payment` to return token data based on Razorpay data.
-
-        Note: self.check_singleton() from :meth: `_tokenize`
-
-        :param dict payment_data: The payment data sent by the provider.
-        :return: Data to create a token.
-        :rtype: dict
-        """
         if self.provider_code != "razorpay":
             return super()._extract_token_values(payment_data)
 
@@ -635,6 +517,5 @@ class PaymentTransaction(models.Model):
             details = pm_code
         return {
             "payment_details": details,
-            # Razorpay requires both the customer ID and the token ID which are extracted from here.
             "provider_ref": f"{payment_data['customer_id']},{payment_data['token_id']}",
         }

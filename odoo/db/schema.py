@@ -402,8 +402,6 @@ def convert_column_to_company_dependent(
     column = SQL.identifier(columnname)
     value = SQL("to_char(%s, %s)", column, value_format) if value_format else column
     _convert_column(cr, tablename, columnname, "jsonb", SQL("to_jsonb(%s)", value))
-    # a transform expression may hold no subquery: the scalar becomes every
-    # company's value in a second pass
     cr.execute(
         SQL(
             "UPDATE %(table)s SET %(column)s = "
@@ -608,10 +606,6 @@ def rename_column(
     _schema.debug("Table %r: renamed column %r to %r", tablename, columnname, newname)
 
 
-# PostgreSQL's makeObjectName: the name it gives a constraint it names itself
-# (a NOT NULL, an unnamed FOREIGN KEY). Past 63 bytes it trims the longer of
-# the two parts a byte at a time, never the label, so the name is not the
-# joined string cut at 63 -- that guess missed every long one.
 def get_default_constraint_name(tablename: str, columnname: str, label: str) -> str:
     table, column = tablename.encode(), columnname.encode()
     available = _MAX_IDENTIFIER_BYTES - len(label.encode()) - 2
@@ -629,8 +623,6 @@ def get_default_constraint_name(tablename: str, columnname: str, label: str) -> 
 def rename_objects_named_after_column(
     cr: BaseCursor, tablename: str, columnname: str, newname: str
 ) -> list[str]:
-    # The ORM finds a column's index by name, so an index left under the
-    # old name is not found and a second one is built beside it.
     renamed = [
         label
         for label in ("not_null", "fkey")
@@ -696,8 +688,6 @@ def _rename_constraint_named_after(
         )
     )
     if taken := cr.fetchone():
-        # the new column has its own already: the old one is a duplicate to
-        # drop when it says the same, and left alone when it does not
         if taken[0] == taken[1]:
             cr.execute(
                 SQL(
@@ -1270,8 +1260,6 @@ def get_column_names_in_constraint(
             via="skipped",
         )
         return []
-    # a unique index (models.UniqueIndex, partial ones included) is no
-    # pg_constraint row: its key columns come from pg_index, in key order
     cr.execute(
         SQL(
             """

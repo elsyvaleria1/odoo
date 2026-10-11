@@ -115,8 +115,6 @@ class TestPeppolWebhooks(AccountTestInvoicingCommon, HttpCase):
         )
 
     def test_a_company_without_a_peppol_user_resolves_no_proxy_user(self):
-        # a proxy user whose id is the company's, as the dropped legacy
-        # fallback read the company id the token names
         ProxyUser = self.env["account_edi_proxy_client.user"]
         Company = self.env["res.company"]
         company = Company.create({"name": "Sin Peppol 0"})

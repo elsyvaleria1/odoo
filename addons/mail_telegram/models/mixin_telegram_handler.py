@@ -5,8 +5,6 @@ class MixinTelegramHandler(models.AbstractModel):
     _inherit = "mixin.telegram.handler"
 
     def _link_inbound(self, bot, chat, message, posted) -> None:
-        """Record on the message's inbound ledger row the Odoo message it was
-        posted as: an edit or a reply to it finds it there."""
         if not message.get("message_id"):
             return
         self.env["telegram.message"].search(
@@ -21,10 +19,6 @@ class MixinTelegramHandler(models.AbstractModel):
 
     @staticmethod
     def _react(posted, partner, added, removed) -> None:
-        """`partner`'s reactions to an Odoo message follow theirs in
-        Telegram."""
-        # reactions are mail's own records: whoever answers for the person
-        # reacts in their name, as a post would be
         message = posted.with_privilege(
             "mail.privilege_post_as_author",
             reason="a reaction in Telegram is its person's in Odoo",

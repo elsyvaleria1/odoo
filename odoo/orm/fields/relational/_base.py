@@ -41,10 +41,6 @@ _debug = DebugLog(__name__)
 def _split_scope(
     scope: typing.Any,
 ) -> tuple[int, typing.Any, frozenset[int], tuple[int, int] | None]:
-    # an access scope is (uid, companies), or ((uid, companies), privileges)
-    # for an environment elevated to named privileges, with the partner it
-    # acts on behalf of after them when it does, and its language after that
-    # when it is not the default
     if isinstance(scope[0], tuple):
         (uid, company_ids), privileges, *rest = scope
         return uid, company_ids, frozenset(privileges), rest[0] if rest else None
@@ -320,12 +316,6 @@ class _Relational(Field["BaseModel"]):
     def _reads_archived_corecords(
         self, records: BaseModel, env: Environment, operator: str, value: typing.Any
     ) -> bool:
-        # SQL answers an id list from the relation's rows, an archived
-        # corecord's included, and a subdomain with the comodel's search,
-        # which keeps the active corecords unless the domain it is given --
-        # the subdomain and the field's domain -- names the active field
-        # itself: once fully optimized, or as written, which the optimizer
-        # keeps named in an x2many subdomain
         if operator == "in":
             return isinstance(value, COLLECTION_TYPES)
         comodel = env[self.comodel_name]
@@ -364,8 +354,6 @@ class _Relational(Field["BaseModel"]):
         if (self.bypass_search_access or operator == "any!") and not env.su:
             env = records.sudo().with_context(filter_function_reset_sudo=True).env
         elif operator == "in" and isinstance(value, COLLECTION_TYPES) and not env.su:
-            # an id list is compared with the relation's rows, as SQL does,
-            # whatever the user may read of the corecords they name
             env = records.sudo().env
         if (
             self.is_x2many
@@ -388,8 +376,6 @@ class _Relational(Field["BaseModel"]):
             ):
                 corecords = corecords.sudo(False)._filtered_access("read")
             elif operator == "any" and not env.su:
-                # the search's sub-select reads the corecords the user may
-                # read; the values read here name the others too
                 corecords = corecords._filtered_access("read")
             corecords = corecords.filtered_domain(value)
         elif operator == "in" and isinstance(value, COLLECTION_TYPES):
@@ -419,7 +405,6 @@ PENDING_SCOPE_KEY = ("__pending__",)
 
 
 def _is_cache_order_stable(records: BaseModel, ids: tuple[IdType, ...]) -> bool:
-    # A new record cannot be read back from the database, so its id stays in the cache.
     if not all(isinstance(id_, int) for id_ in ids):
         return True
     return records._order.replace(" ", "").lower() in ("id", "idasc") and list(
@@ -516,7 +501,6 @@ class _RelationalMulti(_Relational):
                 field_cache[record_id] = tuple(unique(cache_value + (new_id,)))
 
     def _get_listed_draft_origins(self, env: Environment) -> set[int]:
-        # the rows the drafts this field lists, or will list, are made of
         core = env.core
         lists: list[typing.Iterable[IdType]] = []
         if patches := core.get_patches(self):
@@ -533,18 +517,16 @@ class _RelationalMulti(_Relational):
         }
 
     def _forget_drafts_of(self, env: Environment, origins: frozenset[int]) -> None:
-        # a draft of a deleted row names a row that is gone: the drafts this
-        # field lists it on, and those still waiting for their value, drop it
         def alive(id_: IdType) -> bool:
             return bool(id_) or getattr(id_, "origin", None) not in origins
 
         core = env.core
-        dropped = 0  # debuglog
+        dropped = 0
         if patches := core.get_patches(self):
             for key, ids in list(patches.items()):
                 kept = [id_ for id_ in ids if alive(id_)]
                 if len(kept) < len(ids):
-                    dropped += len(ids) - len(kept)  # debuglog
+                    dropped += len(ids) - len(kept)
                     if kept:
                         patches[key] = kept
                     else:
@@ -553,7 +535,7 @@ class _RelationalMulti(_Relational):
             for key, value in list(pending.items()):
                 if isinstance(value, tuple) and not all(map(alive, value)):
                     kept_value = tuple(id_ for id_ in value if alive(id_))
-                    dropped += len(value) - len(kept_value)  # debuglog
+                    dropped += len(value) - len(kept_value)
                     pending[key] = kept_value
         if dropped:
             _debug.logic(
@@ -608,9 +590,6 @@ class _RelationalMulti(_Relational):
     def _protected_value_of_other_scope(
         self, env: Environment, record_id: IdType
     ) -> typing.Any:
-        # a protected row's value is the one its compute or inverse is
-        # assigning, whichever scope assigned it: a scope that reads it fresh
-        # would compute nothing and, storing that, evict the assignment
         own = env.get_cache_key(self)
         index = env._field_depends_context[self].index("access")
         rest = (*own[:index], *own[index + 1 :])
@@ -681,12 +660,6 @@ class _RelationalMulti(_Relational):
         return key[index] is True or key[index] is None
 
     def _reads_as_superuser(self, env: Environment) -> bool:
-        # a user's read equals the superuser's only when nothing narrows it:
-        # a static field domain, a comodel whose _search is not overridden,
-        # model access, and no read rule for the user on the comodel.
-        # Four ways to decline and one to allow, so the inputs are logged
-        # rather than the verdict: this is the seam the x2many access scopes
-        # are built on, and which of the four said no is the whole question.
         comodel = env[self.comodel_name]
         callable_domain = callable(self.domain)
         search_overridden = is_search_overridden(type(comodel))
@@ -739,12 +712,6 @@ class _RelationalMulti(_Relational):
         fnames: Collection[str] | None,
         model_name: str,
     ) -> bool:
-        # a user's search applies the user's read rules on the comodel; a
-        # write to a field a rule reads, on the comodel or along a path from
-        # it, can move a record in or out of view. A comodel whose _search is
-        # overridden narrows by code: it declares the fields that code reads
-        # or every write anywhere may have moved a record, and what its
-        # searches were seen to read counts whatever it declared
         if fnames is None:
             return True
         comodel_cls = type(env[self.comodel_name])
@@ -764,11 +731,8 @@ class _RelationalMulti(_Relational):
         try:
             facts = memo.read_facts(self._scope_env(env, key), self.comodel_name)
         except NotImplementedError:
-            # an environment without an access policy declares no rule
             return False
         except AccessError:
-            # the scope names a company its user no longer holds: its rules can
-            # no longer be read, and forgetting what it held is always safe
             _debug.logic(
                 "field.x2many.scope_unreadable_evicted",
                 model=self.model_name,
@@ -783,11 +747,6 @@ class _RelationalMulti(_Relational):
     def _evict_user_scopes_reading_through(
         self, env: Environment, fnames: Collection[str] | None, model_name: str
     ) -> None:
-        # after a write of `fnames` on rows of `model_name`: every user scope
-        # whose read of this field reads one of them forgets what it held,
-        # and its next read searches; the superuser reads through no rule.
-        # A rule only narrows the superuser's answer, so a row both scopes
-        # hold empty stays empty whatever the rule now reads
         user_scopes = [
             (key, slot)
             for key, slot in env.core.iter_context_caches(self)
@@ -798,8 +757,6 @@ class _RelationalMulti(_Relational):
         if not user_scopes:
             return
         evicted = 0
-        # a record being computed holds the value its compute is assigning
-        # now, from the very inputs the write reports
         computing = env.core.get_protected_ids(self)
         narrows_superuser = not (
             callable(self.domain) or is_search_overridden(type(env[self.comodel_name]))
@@ -842,8 +799,6 @@ class _RelationalMulti(_Relational):
         return env.transaction.access_memo.observing(self.comodel_name)
 
     def _watch_user_scope(self, env: Environment) -> None:
-        # a user slot is about to hold what the user's search returns: the
-        # transaction learns which writes elsewhere may make it stale
         if env.su or (self.compute and self.compute_sudo):
             return
         comodel_cls = type(env[self.comodel_name])
@@ -935,10 +890,6 @@ class _RelationalMulti(_Relational):
     def _sync_added_to_other_scopes(
         self, env: Environment, additions: Mapping[IdType, tuple[IdType, ...]]
     ) -> None:
-        # the superuser's slot takes every addition, it reads everything; a
-        # user's slot is evicted rather than judged: judging costs the
-        # comodel's read check now, evicting costs a search only if that user
-        # reads the record again, and a direct x2many write evicts the same way
         additions = {
             id_: added
             for id_, added in additions.items()
@@ -1005,10 +956,6 @@ class _RelationalMulti(_Relational):
 
     @override
     def _insert_cache(self, records: ModelLike, values: Iterable[typing.Any]) -> None:
-        # a read nothing narrows answers what the superuser's own search
-        # would: the value fills the reader's slot and the superuser's, so a
-        # compute_sudo compute that follows serves from the cache instead of
-        # fetching the relation once more for its scope
         env = records.env
         self._watch_user_scope(env)
         if env.su or not self._reads_as_superuser(env):
@@ -1129,9 +1076,6 @@ class _RelationalMulti(_Relational):
         raise ValueError(f"Wrong value for {self}: {value}")
 
     def _get_raw_ids(self, record: ModelLike) -> tuple[IdType, ...]:
-        # Reading the field drops inactive corecords under the field's own
-        # active_test, which a caller's with_context(active_test=False) cannot
-        # lift; a write deriving the new relation from the old must see all of it.
         env = record.env
         field_cache = self._get_cache(env)
         record_id = record.id
@@ -1140,13 +1084,9 @@ class _RelationalMulti(_Relational):
             and record_id not in field_cache
             and env.is_protected(self, record)
         ):
-            # the compute assigning this field is running: there is no earlier
-            # value to derive a delta from; the read would answer the empty value
-            # and cache it, and a write that finds nothing changed relies on it
             self._update_cache(record, ())
             return ()
         record[self.name]
-        # the read may have replaced the cache dict the memo hands out
         raw_ids: tuple[IdType, ...] = self._get_cache(env)[record_id]
         return raw_ids
 
@@ -1478,9 +1418,6 @@ class _RelationalMulti(_Relational):
                 field=self.name,
                 operator=operator,
             )
-            # the caller still owns `value`: a Query written into a domain is
-            # an argument, not a workspace, and narrowing it in place applies
-            # this field's `domain=` to every later use the caller makes of it
             narrowed = value.copy()
             narrowed.add_where(domain._to_sql(comodel, narrowed.table, narrowed))
             return narrowed

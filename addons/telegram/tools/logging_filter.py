@@ -28,7 +28,7 @@ class TelegramTokenFilter(logging.Filter):
                     else:
                         masked_args.append(arg)
                 record.args = tuple(masked_args)
-            except Exception:  # noqa: S110 — logging filters must never raise
+            except Exception:
                 pass
 
         if isinstance(record.msg, str):
@@ -37,9 +37,6 @@ class TelegramTokenFilter(logging.Filter):
         return True
 
 
-# A filter sees only records emitted on its own logger, so it goes on the logger that
-# writes the access line: odoo's own transport, and werkzeug for an odoo still serving
-# through werkzeug.serving.
 ACCESS_LOGGERS = ("odoo.service.http.access", "werkzeug")
 
 

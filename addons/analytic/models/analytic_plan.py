@@ -102,12 +102,6 @@ class AccountAnalyticPlan(models.Model):
         super()._auto_init()
 
         def precommit():
-            # Only seed the system default once: `_auto_init` reruns on every
-            # schema init of this model (every `-i`/`-u` that touches it, not
-            # just the first install), and `ir.default.set` unconditionally
-            # overwrites an existing row — so an admin's own customization of
-            # this default would otherwise be silently reset to "optional" on
-            # the next module update.
             if self.env["ir.default"]._get(self._name, "default_applicability") is None:
                 self.env["ir.default"].set(
                     self._name,
@@ -171,7 +165,6 @@ class AccountAnalyticPlan(models.Model):
 
     @api.depends("account_ids", "children_ids")
     def _compute_all_account_count(self) -> None:
-        # Get all children_ids from each plan
         if not self.ids:
             self.all_account_count = 0
             return
@@ -214,11 +207,6 @@ class AccountAnalyticPlan(models.Model):
 
     @api.constrains("parent_id")
     def _check_project_plan_has_no_parent(self) -> None:
-        # Companion check to `_onchange_parent_id`: the onchange only guards the
-        # form UI, so a direct write()/create() (RPC, scripts, other modules)
-        # could still reparent the "Project" plan referenced by
-        # `analytic.project_plan` and silently invalidate `root_id`/
-        # `_column_name()` for every model using `auto_account_id`.
         project_plan, __ = self._get_all_plans()
         if project_plan in self and project_plan.parent_id:
             raise ValidationError(
@@ -249,13 +237,7 @@ class AccountAnalyticPlan(models.Model):
 
     @api.model
     def get_relevant_plans(self, **kwargs):
-        """Returns the list of plans that should be available.
-        This list is computed based on the applicabilities of root plans."""
         cache = RELEVANT_PLANS(self.env)
-        # `default_applicability` is `company_dependent`, so the result also
-        # depends on the active company even when `kwargs` doesn't carry a
-        # `company_id` — key the cache on it too, or two calls for different
-        # companies in the same request/cursor silently reuse each other's result.
         key = frozendict(kwargs, __company_ids__=tuple(self.env.companies.ids))
         if key in cache:
             return cache[key]
@@ -268,9 +250,6 @@ class AccountAnalyticPlan(models.Model):
                 and p._get_applicability(**kwargs) != "unavailable"
             )
         )
-        # If we have accounts that are already selected (before the applicability rules changed or from a model),
-        # we want the plans that were unavailable to be shown in the list (and in optional, because the previous
-        # percentage could be different from 0)
         forced_plans = (
             self.env["account.analytic.account"]
             .browse(record_account_ids)
@@ -294,10 +273,8 @@ class AccountAnalyticPlan(models.Model):
         return cache[key]
 
     def _get_applicability(self, **kwargs):
-        """Returns the applicability of the best applicability line or the default applicability"""
         self.check_singleton()
         if "applicability" in kwargs:
-            # For models for example, we want all plans to be visible, so we force the applicability
             return kwargs["applicability"]
         else:
             score = 0
@@ -319,8 +296,6 @@ class AccountAnalyticPlan(models.Model):
         plans = self.browse(self._get_descendant_ids(include_self=True))
         doomed_roots = plans.filtered(lambda plan: not plan.parent_id)
         in_doomed_trees = plans.filtered(lambda plan: plan.root_id in doomed_roots)
-        # a sub-plan's related field reads its root's column: both leave in
-        # one unlink, or the column is refused as a dependency
         doomed_fields = plans._get_plan_column() | in_doomed_trees._get_related_field()
         related_fields = (plans - in_doomed_trees)._get_related_field()
         _debug.logic(
@@ -331,9 +306,6 @@ class AccountAnalyticPlan(models.Model):
             related_to_check=len(related_fields),
         )
         res = super().unlink()
-        # the plans leave before their columns: dropping a column reloads the
-        # schema, and a SQL view built from _get_all_plans (the budget report's)
-        # must not still name a plan whose field the reload just removed
         self.env.registry.clear_cache("stable")
         doomed_fields.unlink()
         related_fields.filtered(lambda f: not self._is_subplan_field_used(f)).unlink()
@@ -347,11 +319,6 @@ class AccountAnalyticPlan(models.Model):
         return depth, fname
 
     def _is_subplan_field_used(self, field) -> bool:
-        """Return `True` if there are analytic plans still on the same hierarchy level as what the field was created for.
-
-        :param field: the recordset of a field created to group by sub plan
-        :rtype: bool
-        """
         assert "_id_" in field.name
         root_name, depth = field.name.rsplit("_", maxsplit=1)
         plan_id_match = re.search(r"\d+", root_name)
@@ -387,15 +354,11 @@ class AccountAnalyticPlan(models.Model):
             self._sync_plan_column(model)
 
     def _sync_plan_column(self, model) -> None:
-        # Create/delete a new field/column on related models for this plan, and keep the name in sync.
-        # Sort by parent_path to ensure parents are processed before children
         for plan in self.sorted("parent_path"):
             prev_stored = plan._get_plan_column(model)
             depth, name_related = plan._hierarchy_name()
             prev_related = plan._get_related_field(model)
             if plan.parent_id:
-                # If there is a parent, we just need to make sure there is a field to group by the hierarchy level
-                # of this plan, allowing to group by sub plan
                 if prev_stored:
                     prev_stored.with_context({MODULE_UNINSTALL_FLAG: True}).unlink()
                 description = f"{plan.root_id.name} ({depth})"
@@ -421,7 +384,6 @@ class AccountAnalyticPlan(models.Model):
                 else:
                     prev_related.field_description = description
             else:
-                # If there is no parent, then we need to create a new stored field as this is the root plan
                 if prev_related:
                     prev_related.with_context({MODULE_UNINSTALL_FLAG: True}).unlink()
                 description = plan.name
@@ -467,12 +429,11 @@ class AccountAnalyticPlan(models.Model):
         new_parent = self.env["account.analytic.plan"].browse(vals.get("parent_id"))
         plan2previous_parent = {plan: plan.parent_id for plan in self if plan.parent_id}
         if "parent_id" in vals and new_parent:
-            # Update accounts in analytic lines before _sync_plan_column() unlinks child plan's column
             for plan in self:
                 self.env["account.analytic.account"]._update_accounts_in_analytic_lines(
                     new_fname=new_parent._column_name(),
                     current_fname=plan._column_name(),
-                    accounts=self.env["account.analytic.account"].search(  # noqa: E8507 - one query per plan: the plan names the column to move
+                    accounts=self.env["account.analytic.account"].search(
                         [("plan_id", "child_of", plan.id)]
                     ),
                 )
@@ -480,12 +441,11 @@ class AccountAnalyticPlan(models.Model):
         res = super().write(vals)
 
         if "parent_id" in vals and not new_parent:
-            # Update accounts in analytic lines after _sync_plan_column() creates the new column
             for plan, previous_parent in plan2previous_parent.items():
                 self.env["account.analytic.account"]._update_accounts_in_analytic_lines(
                     new_fname=plan._column_name(),
                     current_fname=previous_parent._column_name(),
-                    accounts=self.env["account.analytic.account"].search(  # noqa: E8507 - one query per plan: the plan names the column to move
+                    accounts=self.env["account.analytic.account"].search(
                         [("plan_id", "child_of", plan.id)]
                     ),
                 )
@@ -494,23 +454,6 @@ class AccountAnalyticPlan(models.Model):
     def _get_distribution_amount(
         self, amount, percentage, total_percentage, distribution_on_each_plan
     ):
-        """
-        Ensures that the total amount distributed across all lines always adds up to exactly `amount` per
-        plan. We try to correct for compounding rounding errors by assigning the exact outstanding amount when
-        we detect that a line will close out a plan's total percentage. However, since multiple plans can be
-        assigned to a line, with different prior distributions, there is the possible edge case that one line
-        closes out two (or more) tallies with different compounding errors. This means there is no one correct
-        amount that we can assign to a line that will correctly close out both all plans. This is described in
-        more detail in the commit message, under "concurrent closing line edge case".
-
-        :param amount:                      the total amount to distribute
-        :param percentage:                  this line's share of the distribution, as a percentage
-        :param total_percentage:            the percentage this plan's distribution should add up to
-        :param distribution_on_each_plan:   accumulator dict, keyed by plan, mutated in place to track
-                                            progress toward each plan's total_percentage
-        :return: the amount to assign to this line for this plan
-        :rtype:   float
-        """
         decimal_precision = self.env["decimal.precision"].get_precision(
             "Percentage Analytic"
         )
@@ -567,10 +510,7 @@ class AccountAnalyticApplicability(models.Model):
     )
 
     def _get_score(self, **kwargs):
-        """Gives the score of an applicability with the parameters of kwargs"""
         self.check_singleton()
-        # 0.5 is because company is less important than other fields for an equal number of valid fields
-        # No company on the applicability and the kwargs together are not considered a more fitting rule
         score = 0.5 if self.company_id and kwargs.get("company_id") else 0
         if not kwargs.get("business_domain"):
             return score

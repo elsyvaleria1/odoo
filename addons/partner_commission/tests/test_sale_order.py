@@ -7,7 +7,6 @@ from odoo.addons.partner_commission.tests.setup import TestCommissionsSetup
 @tagged("commission_sale", "post_install", "-at_install")
 class TestSaleOrder(TestCommissionsSetup):
     def test_referrer_commission_plan_changed(self):
-        """When the referrer's commission plan changes, its new commission plan should be set on the sale order."""
         self.referrer.commission_plan_id = self.gold_plan
 
         form = Form(
@@ -21,12 +20,10 @@ class TestSaleOrder(TestCommissionsSetup):
 
         self.assertEqual(so.commission_plan_id, self.gold_plan)
 
-        # Update referrer's commission plan.
         self.referrer.commission_plan_id = self.silver_plan
         self.assertEqual(so.commission_plan_id, self.silver_plan)
 
     def test_referrer_grade_changed(self):
-        """When the referrer's grade changes, its new commission plan should be set on the sale order."""
         self.referrer.grade_id = self.gold
         self.referrer._onchange_grade_id()
         form = Form(
@@ -38,13 +35,11 @@ class TestSaleOrder(TestCommissionsSetup):
         form.referrer_id = self.referrer
         so = form.save()
 
-        # Demote the referrer to silver.
         self.referrer.grade_id = self.silver
         self.referrer._onchange_grade_id()
         self.assertEqual(so.commission_plan_id, self.silver_plan)
 
     def test_so_data_forwarded_to_sub(self):
-        """Some data should be forwarded from the sale order to the subscription."""
         self.referrer.commission_plan_id = self.gold_plan
 
         form = Form(
@@ -55,7 +50,6 @@ class TestSaleOrder(TestCommissionsSetup):
         )
         form.partner_id = self.customer
         form.referrer_id = self.referrer
-        # form.commission_plan_frozen = False
         form.plan_id = self.plan_year
 
         with form.line_ids.new() as line:
@@ -66,13 +60,11 @@ class TestSaleOrder(TestCommissionsSetup):
         so = form.save()
         so.action_confirm()
 
-        # check that inverse field is working
         so.commission_plan_id = self.silver_plan
         self.assertEqual(so.commission_plan_id, self.silver_plan)
         self.assertEqual(so.commission_plan_frozen, True)
 
     def test_so_data_forwarded_to_invoice(self):
-        """Some data should be forwarded from the sale order to the invoice."""
         self.referrer.commission_plan_id = self.gold_plan
 
         form = Form(
@@ -82,7 +74,6 @@ class TestSaleOrder(TestCommissionsSetup):
         )
         form.partner_id = self.customer
         form.referrer_id = self.referrer
-        # We test the non recurring flow: recurring_invoice is False on the product
         self.worker.recurring_invoice = False
         with form.line_ids.new() as line:
             line.name = self.worker.name
@@ -106,7 +97,6 @@ class TestSaleOrder(TestCommissionsSetup):
         )
         form.partner_id = self.customer
         form.referrer_id = self.referrer
-        # We test the non recurring flow: recurring_invoice is False on the product
         self.worker.recurring_invoice = False
         with form.line_ids.new() as line:
             line.name = self.worker.name
@@ -120,9 +110,8 @@ class TestSaleOrder(TestCommissionsSetup):
         self.assertEqual(so.commission, 150)
 
     def test_so_referrer_id_to_invoice(self):
-        """Referrer_id should be the same in the new created invoice"""
         self.referrer.commission_plan_id = self.gold_plan
-        self.worker.recurring_invoice = False  # test on a non recurring SO
+        self.worker.recurring_invoice = False
         form = Form(
             self.env["sale.order"]
             .with_user(self.salesman)
@@ -155,11 +144,6 @@ class TestSaleOrder(TestCommissionsSetup):
         self.assertEqual(inv.referrer_id, so.referrer_id)
 
     def test_commission_plan_apply_sequence(self):
-        """
-        1. Check that we select the first valid rule following the sequence.
-        2. Check that if a rule is not present for product category, then it's parent category's
-        rule is applied.
-        """
         category_main = self.env["product.category"].create({"name": "All"})
         category_sub = self.env["product.category"].create(
             {
@@ -203,7 +187,7 @@ class TestSaleOrder(TestCommissionsSetup):
                             "category_id": category_main.id,
                             "product_id": product_test.id,
                             "rate": 20,
-                            "sequence": 0,  # First rule to apply
+                            "sequence": 0,
                         },
                     ),
                 ],
@@ -224,7 +208,7 @@ class TestSaleOrder(TestCommissionsSetup):
             line.product_qty = 1
         so = form.save()
 
-        self.assertEqual(so.commission, 20)  # Confirms the sequence of rule applied
+        self.assertEqual(so.commission, 20)
 
         old_commission = so.commission
         with form.line_ids.new() as line:
@@ -235,18 +219,9 @@ class TestSaleOrder(TestCommissionsSetup):
 
         self.assertEqual(
             so.commission, 10 + old_commission
-        )  # Confirms that parent rule is applied
+        )
 
     def test_subcontracted_service_po_with_referrer(self):
-        """
-        Test PO behavior when a subcontracted service product is in SO with a referrer.
-        Steps:
-        1. Configure the service product with customer as supplier.
-        2. Create two sale orders (one with a referrer).
-        3. Create sale order lines.
-        4. Confirm both sale orders.
-        5. Validate the generated purchase order and purchase lines.
-        """
         self.env["product.supplierinfo"].create(
             {
                 "partner_id": self.customer.id,

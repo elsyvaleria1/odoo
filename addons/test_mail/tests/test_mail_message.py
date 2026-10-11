@@ -39,15 +39,12 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
 
     def setUp(self):
         super().setUp()
-        # cleanup db
         self.env["mail.notification"].search(
             [("author_id", "=", self.partner_employee.id)]
         ).unlink()
 
-        # handy shortcut variables
         self.deleted_record = self.test_records_simple[2]
 
-        # generate crashed notifications
         with mute_logger("odoo.addons.mail.models.mail_mail"), self.mock_mail_gateway():
 
             def _send_email(*args, **kwargs):
@@ -63,8 +60,6 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
                     subtype_id=self.env.ref("mail.mt_comment").id,
                 )
 
-        # In the mean time, some FK deletes the record where the message is
-        # # scheduled, skipping its unlink() override
         self.env.cr.execute(
             f"DELETE FROM {self.test_records_simple._table} WHERE id = %s",
             (self.deleted_record.id,),
@@ -95,7 +90,6 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
     def test_load_message_failures(self):
         self.authenticate(self.user_employee.login, self.user_employee.login)
         result = self.call_jsonrpc("/mail/data", {"fetch_params": ["failures"]})
-        # the payload never mentions the deleted record
         self.assertEqual(
             sorted(r["thread"]["id"] for r in result["mail.message"]),
             sorted(self.test_records_simple[:2].ids),
@@ -125,7 +119,6 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
         msg = test_record.message_post(
             body="Some body", author_id=self.partner_employee.id
         )
-        # simulate failure
         self.env["mail.notification"].create(
             {
                 "author_id": msg.author_id.id,
@@ -139,7 +132,7 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
         with (
             contextlib.suppress(Exception),
             mute_logger("odoo.http", "odoo.db.cursor"),
-        ):  # suppress logged error due to readonly route doing an update
+        ):
             res = self.call_jsonrpc("/mail/data", {"fetch_params": ["failures"]})
             self.assertEqual(
                 sorted(t["name"] for t in res["mixin.mail.thread"]),
@@ -152,7 +145,6 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
             )
 
     def test_message_fetch(self):
-        # set notifications to unread, so that we can simulate inbox usage
         p2_notifications = self.env["mail.notification"].search(
             [("res_partner_id", "=", self.partner_employee_2.id)]
         )
@@ -209,13 +201,11 @@ class TestMessageHelpersRobustness(MailCommon, HttpCase):
             res = self.url_open(f"/mail/message/{deleted_message.id}")
 
     def test_notify_cancel_by_type(self):
-        """Test canceling notifications, notably when having missing records."""
         self.env.invalidate_all()
         notifs_by_employee = self.env["mail.notification"].search(
             [("author_id", "=", self.partner_employee.id)]
         )
 
-        # do not crash even if removed record
         self.test_records_simple.with_user(self.user_employee).notify_cancel_by_type(
             "email"
         )
@@ -253,16 +243,6 @@ class TestMessageValues(MailCommon):
 
     @users("employee")
     def test_empty_message(self):
-        """Test that message is correctly considered as empty (see `_filtered_empty()`).
-        Message considered as empty if:
-            - no body or empty body
-            - AND no subtype or no subtype description
-            - AND no tracking values
-            - AND no attachment
-
-        Check _update_content behavior when voiding messages (cleanup side
-        records: stars, notifications).
-        """
         note_subtype = self.env.ref("mail.mt_note")
         _attach_1 = (
             self.env["ir.attachment"]
@@ -289,7 +269,6 @@ class TestMessageValues(MailCommon):
         )
         message.write({"starred_partner_ids": [(4, self.partner_admin.id)]})
 
-        # check content
         self.assertEqual(len(message.attachment_ids), 1)
         self.assertFalse(is_html_empty(message.body))
         self.assertEqual(len(message.sudo().notification_ids), 1)
@@ -297,7 +276,6 @@ class TestMessageValues(MailCommon):
         self.assertEqual(message.starred_partner_ids, self.partner_admin)
         self.assertFalse(message.sudo().tracking_value_ids)
 
-        # Reset body case
         record._message_update_content(
             message,
             body=Markup("<p><br /></p>"),
@@ -306,7 +284,6 @@ class TestMessageValues(MailCommon):
         self.assertTrue(is_html_empty(message.body))
         self.assertFalse(message.sudo()._filtered_empty(), "Still having attachments")
 
-        # Subtype content
         note_subtype.sudo().write({"description": "Very important discussions"})
         record._message_update_content(message, body="", attachment_ids=[])
         self.assertFalse(message.attachment_ids)
@@ -314,18 +291,16 @@ class TestMessageValues(MailCommon):
         self.assertEqual(message.starred_partner_ids, self.partner_admin)
         self.assertFalse(message.sudo()._filtered_empty(), "Subtype with description")
 
-        # Completely emptied now
         note_subtype.sudo().write({"description": ""})
         self.assertEqual(message.sudo()._filtered_empty(), message)
         record._message_update_content(message.sudo(), body="", attachment_ids=[])
         self.assertEqual(
             message.notified_partner_ids, self.partner_admin
-        )  # message still notified (albeit content is removed)
+        )
         self.assertEqual(
             message.starred_partner_ids, self.partner_admin
-        )  # starred messages stay (albeit content is removed)
+        )
 
-        # test tracking values
         record.write({"user_id": self.user_admin.id})
         self.flush_tracking()
         tracking_message = record.message_ids[0]
@@ -342,10 +317,6 @@ class TestMessageValues(MailCommon):
 
     @mute_logger("odoo.models.unlink")
     def test_mail_message_to_store_access(self):
-        """
-        User that doesn't have access to a record should still be able to fetch
-        the record_name inside message _to_store.
-        """
         company_2 = self.env["res.company"].create({"name": "Second Test Company"})
         record1 = self.env["mail.test.multi.company"].create(
             {
@@ -356,9 +327,6 @@ class TestMessageValues(MailCommon):
         message = record1.message_post(
             body="", partner_ids=[self.user_employee.partner_id.id]
         )
-        # We need to flush and invalidate the ORM cache since the record_name
-        # is already cached from the creation. Otherwise it will leak inside
-        # message _to_store.
         self.env.flush_all()
         self.env.invalidate_all()
         res = Store().add(message.with_user(self.user_employee)).get_result()
@@ -370,7 +338,6 @@ class TestMessageValues(MailCommon):
         res = Store().add(message.with_user(self.user_employee)).get_result()
         self.assertEqual(res["mail.message"][0].get("record_name"), "Test2")
 
-        # check model not inheriting from mixin.mail.thread -> should not crash
         record_nothread = self.env["mail.test.nothread"].create({"name": "NoThread"})
         message = self.env["mail.message"].create(
             {
@@ -394,7 +361,6 @@ class TestMessageValues(MailCommon):
                 for record in [record1, record2, record3]
             ]
         )
-        # methods called on batch of message
         records_by_model_name = messages._records_by_model_name()
         test_simple_records = records_by_model_name["mail.test.simple"]
         self.assertEqual(test_simple_records, record1 + record2)
@@ -414,7 +380,6 @@ class TestMessageValues(MailCommon):
         m2_records = record_by_message[messages[2]]
         self.assertEqual(m2_records, record3)
         self.assertEqual(m2_records._prefetch_ids, tuple(record3.ids))
-        # methods called on individual message from a batch: prefetch from batch is kept
         records_by_model_name = next(iter(messages))._records_by_model_name()
         test_simple_records = records_by_model_name["mail.test.simple"]
         self.assertEqual(test_simple_records, record1)
@@ -446,11 +411,6 @@ class TestMessageValues(MailCommon):
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.base")
     @users("employee")
     def test_mail_message_values_fromto_long_name(self):
-        """Long headers may break in python if above 68 chars for certain
-        DKIM verification stacks as folding is not done correctly
-        (see ``_notify_get_reply_to_formatted_email`` docstring
-        + commit linked to this test)."""
-        # name would make it blow up: keep only email
         test_record = self.env["mail.test.container"].browse(self.alias_record.ids)
         self.user_employee.write(
             {
@@ -467,7 +427,6 @@ class TestMessageValues(MailCommon):
             "Reply-To: use only email when formataddr > 68 chars",
         )
 
-        # whatever the record and company names, email is too long: keep only email
         test_record.write(
             {
                 "alias_name": "Waaaay too long alias name that should make any reply-to blow the 68 characters limit",
@@ -518,7 +477,6 @@ class TestMessageValues(MailCommon):
             formataddr((self.user_employee.name, self.user_employee.email)),
         )
 
-        # no alias domain -> author
         self.env.company.sudo().alias_domain_id = False
         self.assertFalse(self.env.company.catchall_email)
 
@@ -541,31 +499,6 @@ class TestMessageValues(MailCommon):
     @mute_logger("odoo.models.unlink")
     @users("employee")
     def test_the_three_reply_to_spellings_agree(self):
-        """A model's reply-to redirect must apply however the question is asked.
-
-        Three code paths ask for a record's reply-to and they used to disagree,
-        because the redirect was overridden one level too high:
-
-          `_notify_get_reply_to`          -> honoured the override
-          `_notify_get_reply_to_batch`    -> skipped it   (wizard.mail.message.send)
-          `_notify_get_reply_to_addresses`-> skipped it   (mail.message)
-
-        So a reply to a mass mail sent from the composer on a lead, a task, an
-        applicant or a ticket went to the **generic catchall** instead of the
-        team, project or job alias it was addressed from. Reproduced on
-        `mail.test.ticket`, whose override points at its container:
-
-            _notify_get_reply_to        aliased-container@...   correct
-            _notify_get_reply_to_batch  catchall@...            wrong
-            _addresses + formatted      catchall@...            wrong
-
-        The override point is now `_notify_get_reply_to_addresses`, the deepest
-        of the three, so all of them inherit it. Asserted as "the three agree"
-        rather than "each returns X" because that is the invariant -- they are
-        three spellings of one question.
-        """
-        # `mail.test.ticket.mc` is the fixture carrying the redirect, and it
-        # points at `mail.test.container.mc`
         container = (
             self.env["mail.test.container.mc"]
             .sudo()
@@ -604,8 +537,6 @@ class TestMessageValues(MailCommon):
 
     @users("employee")
     def test_a_record_without_a_parent_still_falls_back(self):
-        """Moving the override point must not lose the fallback for a record
-        that names no parent: it keeps its own alias, then the catchall."""
         lone = self.env["mail.test.ticket.mc"].create({"name": "No container"})
         self.env.flush_all()
         author = self.user_employee.partner_id
@@ -629,7 +560,6 @@ class TestMessageValues(MailCommon):
             formataddr((self.user_employee.name, self.user_employee.email)),
         )
 
-        # no alias domain, no company catchall -> author
         self.alias_record.alias_domain_id = False
         self.env.company.sudo().alias_domain_id = False
         self.assertFalse(self.env.company.catchall_email)
@@ -649,7 +579,6 @@ class TestMessageValues(MailCommon):
             formataddr((self.user_employee.name, self.user_employee.email)),
         )
 
-        # alias wins over company, hence no catchall is not an issue
         self.alias_record.alias_domain_id = self.mail_alias_domain
 
         msg = self.Message.create(
@@ -735,7 +664,6 @@ class TestMessageValues(MailCommon):
         self.assertNotIn("-%d-" % self.alias_record.id, msg.message_id.split("@")[0])
 
     def test_mail_message_values_misc(self):
-        """Test various values on mail.message, notably default values"""
         msg = self.env["mail.message"].create(
             {"model": self.alias_record._name, "res_id": self.alias_record.id}
         )

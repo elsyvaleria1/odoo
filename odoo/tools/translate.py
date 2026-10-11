@@ -438,15 +438,8 @@ def xml_term_adapter(term_en: str) -> Callable[[str], str | None]:
             return None
         try:
             for orig_n, new_n in same_struct_iter(orig_node, new_node):
-                # The exclusion below has been swept away twice by commits
-                # about something else (fb3c3c9bdbb, 28d2ccec482), each time
-                # letting a source `style` overwrite the translation's.
-                # `test_sync_xml_inline_modifiers` is what catches the third.
                 for k in [k for k in new_n.attrib if k in MODIFIER_ATTRS]:
                     del new_n.attrib[k]
-                # A translator-addable attribute belongs to the translation, so
-                # the source term must not overwrite one the translator set --
-                # nor supply one the translation never carried.
                 new_n.attrib.update(
                     (k, v)
                     for k, v in orig_n.attrib.items()
@@ -579,7 +572,7 @@ def _is_iterable_arg(value: object) -> bool:
 
 
 def _materialise(value: object) -> object:
-    return list(value) if _is_iterable_arg(value) else value  # type: ignore[call-overload]
+    return list(value) if _is_iterable_arg(value) else value
 
 
 def get_translation(module: str, lang: str, source: str, args: tuple | dict) -> str:
@@ -779,8 +772,6 @@ def _get_lang(frame: FrameType | None, default_lang: str = "") -> str:
         f_locals = candidate.f_locals
         local_env = _probe(f_locals.get("self"), "env")
         if lang := _get_frame_context_lang(f_locals):
-            # a context comes from the caller: an unknown code must not become
-            # a code-translation cache key
             if _is_usable_lang(lang, local_env):
                 return lang
             _debug.logic("translate.context_lang_rejected", lang=lang[:64])
@@ -1089,16 +1080,12 @@ class PoFileReader:
 
         if pot_path:
             active = {e.msgid_with_context for e in self.pofile if not e.obsolete}
-            # polib's merge keys obsolete entries too: a #~ copy of a live term
-            # would take the pot's occurrences and be read after the live one
             self.pofile[:] = [
                 entry
                 for entry in self.pofile
                 if not (entry.obsolete and entry.msgid_with_context in active)
             ]
             self.pofile.merge(polib.pofile(pot_path))
-            # the pot refreshes occurrences; a term it lacks is one it has not
-            # caught up with yet, so the .po's own occurrences still stand
             for entry in self.pofile:
                 if entry.obsolete and entry.msgid_with_context in active:
                     entry.obsolete = False
@@ -1273,9 +1260,6 @@ def _po_field_layout(text: str) -> dict[tuple[str, str], list[str]]:
 
 
 class _LaidOutEntry(polib.POEntry):
-    # a string, or a line of one, that the replaced file already held keeps the
-    # line breaks it had there: a re-export does not re-wrap what translators'
-    # tools wrote
     layout: Mapping[tuple[str, str], list[str]] = {}
 
     def _str_field(
@@ -1716,7 +1700,7 @@ class TranslationReader:
             return
 
         env = records.env
-        pushed = len(self._to_translate)  # debuglog
+        pushed = len(self._to_translate)
         for record in records.with_context(check_translations=True):
             imd = imd_per_id[record.id]
             module = imd.module
@@ -1995,8 +1979,6 @@ class TranslationModuleReader(TranslationReader):
         if not self._po_lang:
             return ""
         own, others = self._module_po_values(imd.module)
-        # the stored value is the module's own only when no other file the
-        # importer applies to this record could have written it
         if (
             stored == source
             or (imd.module, imd.model, imd.res_id) in self._shared
@@ -2039,10 +2021,10 @@ class TranslationModuleReader(TranslationReader):
             self._shared = set(self._cr.fetchall())
 
         records_per_model: defaultdict[str, dict] = defaultdict(dict)
-        skipped = 0  # debuglog
+        skipped = 0
         for imd_name, model, res_id, module in imd_rows:
             if (model, module, imd_name) in xml_defined:
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             records_per_model[model][res_id] = ImdInfo(imd_name, model, res_id, module)
         _debug.pipeline(
@@ -2275,7 +2257,7 @@ class TranslationModuleReader(TranslationReader):
     def _export_attachment_translations(self) -> None:
         IrModuleModule = self.env["ir.module.module"]
         modules = self._selected_modules()
-        before = len(self._to_translate)  # debuglog
+        before = len(self._to_translate)
         for module in modules:
             for translation in IrModuleModule._extract_resource_attachment_translations(
                 module, self._lang
@@ -2289,7 +2271,6 @@ class TranslationModuleReader(TranslationReader):
         )
 
 
-# a data file carries translations only as `field@lang` names
 _DATA_FILE_TRANSLATED = {
     "xml": re.compile(rb"""name\s*=\s*["'][^"'@]*@"""),
     "csv": re.compile(rb"\A[^\n]*@"),
@@ -2412,7 +2393,6 @@ class TranslationImporter:
         lang: str,
         xmlids: Collection[str] | None = None,
     ) -> int:
-        # a set, even empty, is a filter: nothing outside it is loaded
         wanted = None if xmlids is None else set(xmlids)
         valid_langs = get_base_langs(lang)
         rows = sorted(
@@ -2424,31 +2404,30 @@ class TranslationImporter:
             ),
         )
         model = model_terms = code = 0
-        skipped: dict[str, int] = defaultdict(int)  # debuglog
+        skipped: dict[str, int] = defaultdict(int)
         for row in rows:
             if not row.get("value") or not row.get("src"):
-                skipped["empty"] += 1  # debuglog
+                skipped["empty"] += 1
                 continue
             if row.get("type") == "code":
-                # read from the same file by CodeTranslations, not stored here
                 code += 1
                 continue
             if row.get("lang", lang) not in valid_langs:
-                skipped["lang"] += 1  # debuglog
+                skipped["lang"] += 1
                 continue
             model_name = row.get("imd_model")
             module_name = row["module"]
             if not model_name or model_name not in self.env:
-                skipped["model"] += 1  # debuglog
+                skipped["model"] += 1
                 continue
             field_name = row["name"].split(",")[1]
             field = self.env[model_name]._fields.get(field_name)
             if not field or not field.translate or not field.store:
-                skipped["field"] += 1  # debuglog
+                skipped["field"] += 1
                 continue
             xmlid = module_name + "." + row["imd_name"]
             if wanted is not None and xmlid not in wanted:
-                skipped["xmlid"] += 1  # debuglog
+                skipped["xmlid"] += 1
                 continue
             if row.get("type") == "model" and field.translate is True:
                 self.model_translations[model_name][field_name][xmlid][lang] = row[
@@ -2466,7 +2445,7 @@ class TranslationImporter:
                 self.imported_langs.add(lang)
                 model_terms += 1
             else:
-                skipped["type_mismatch"] += 1  # debuglog
+                skipped["type_mismatch"] += 1
         _debug.pipeline(
             "translate.load_rows",
             lang=lang,
@@ -2697,7 +2676,7 @@ class TranslationImporter:
             )
             current_sources = dict(self.cr.fetchall())
         checked = []
-        dropped = 0  # debuglog
+        dropped = 0
         for xmlid, translations in items:
             translations = dict(translations)
             for lang, candidates in sources.get(xmlid, {}).items():
@@ -2714,7 +2693,7 @@ class TranslationImporter:
                     translations[lang] = matching[-1]
                 else:
                     del translations[lang]
-                    dropped += 1  # debuglog
+                    dropped += 1
             if translations:
                 checked.append((xmlid, translations))
         _debug.perf.count(
@@ -2752,7 +2731,6 @@ class TranslationImporter:
                 (xmlid, (res_id, bool(noupdate)))
                 for xmlid, res_id, noupdate in self.cr.fetchall()
             )
-        # checked follows load order, so a later module's value wins per language
         merged: dict[int, tuple[bool, dict]] = {}
         for xmlid, translations in checked:
             if xmlid not in records:
@@ -2848,9 +2826,6 @@ class TranslationImporter:
             self._save_model_translations(overwrite, force_overwrite)
 
         env.invalidate_all()
-        # a translated column also feeds the compiled templates (keyed by
-        # language, so a view's new terms would never reach them) and the
-        # action bindings
         env.registry.clear_cache("stable", "groups", "actions")
         _debug.lifecycle("translate.saved", langs=sorted(self.imported_langs))
         if self.verbose:
@@ -3082,7 +3057,7 @@ class CodeTranslations:
     ) -> dict[str, str]:
         po_paths = get_po_paths(module_name, lang)
         translations = {}
-        files = 0  # debuglog
+        files = 0
         for po_path in po_paths:
             try:
                 with file_open(po_path, mode="rb") as fileobj:
@@ -3090,7 +3065,7 @@ class CodeTranslations:
                         fileobj, filter_func
                     )
                 translations.update(p)
-                files += 1  # debuglog
+                files += 1
             except OSError:
                 _logger.exception(
                     "couldn't read translation file %s [lang: %s]",
@@ -3154,8 +3129,6 @@ class CodeTranslations:
             self.web_translations.clear()
             return
         for cache in (self.python_translations, self.web_translations):
-            # list() snapshots the keys in one step: request threads insert
-            # while a registry reload clears
             for key in [k for k in list(cache) if k[0] == module_name]:
                 cache.pop(key, None)
 

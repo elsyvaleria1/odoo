@@ -151,13 +151,6 @@ class TestTaskPlanningFlow(TransactionCase):
                         datum["second_expected_allocated_hours"],
                         "Scheduled hours should be recomputed when the planned dates are modified",
                     )
-                # date_start is the invisible companion of the date_end daterange
-                # widget (options start_date_field), so the view offers no direct
-                # write on it and Form rightly refuses one -- clear it on the saved
-                # record instead. The field that follows the dates is
-                # scheduled_hours; allocated_hours is reservation-derived in this
-                # fork, which is what the message four lines up already says, so
-                # asserting it here was asserting the vanilla semantics.
                 created = task.record
                 created.write({"date_start": False})
                 self.assertEqual(

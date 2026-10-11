@@ -30,8 +30,6 @@ class PortalThreadController(ThreadController):
             elif is_thread_hash_pid_valid(
                 thread, kwargs.get("hash"), kwargs.get("pid"), kwargs.get("token")
             ):
-                # A signed recipient that no longer exists must not silently
-                # become the public user (or a guest) through mail's fallback.
                 _logger.debug(
                     "Rejecting portal post for missing signed recipient: model=%s id=%s pid=%s",
                     thread._name,

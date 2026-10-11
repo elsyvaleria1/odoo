@@ -103,7 +103,7 @@ class MailGuest(models.Model):
             if (
                 not guest
                 or not guest.access_token
-                or not consteq(guest.access_token, guest_access_token)  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                or not consteq(guest.access_token, guest_access_token)
             ):
                 _debug.logic("guest_token_rejected", guest=int(guest_id))
                 guest = self.env["mail.guest"]

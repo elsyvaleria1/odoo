@@ -94,7 +94,7 @@ class WizardHrWorkEntryRegenerate(models.TransientModel):
         for wizard in self:
             employees = self.env["hr.employee"]
             if wizard.search_criteria_completed:
-                for [employee] in self.env["hr.work.entry"]._read_group(  # noqa: E8507 - a transient wizard: one record
+                for [employee] in self.env["hr.work.entry"]._read_group(
                     [
                         ("employee_id", "in", wizard.employee_ids.ids),
                         ("date", ">=", wizard.date_from),

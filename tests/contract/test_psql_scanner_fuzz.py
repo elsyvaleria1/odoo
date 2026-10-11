@@ -22,8 +22,6 @@ def _grammar(rng, payload):
         "SELECT $$dollar body$$;",
         "SELECT $tag$tagged body$tag$;",
         "SELECT 1 AS money$usd;",
-        # A dollar-quote tag follows unquoted-identifier rules, so it may hold
-        # any non-ASCII letter; an ASCII-only tag pattern did not see this one.
         "SELECT $caf\u00e9$ a tagged body $caf\u00e9$;",
     ]
     hiding = [
@@ -53,10 +51,6 @@ def _grammar(rng, payload):
         f"SELECT 'unterminated\n{payload}",
         f"SELECT $$unterminated\n{payload}",
         f"/* unterminated\n{payload}",
-        # The two shapes that got past this generator by hand. A tag it cannot
-        # read makes the body SQL, and one apostrophe in it opens a string
-        # that never closes; and the setting psql lexes by is reachable
-        # without the word SET.
         f"SELECT $caf\u00e9$ it's $caf\u00e9$;\n{payload}",
         (
             "SELECT set_config('standard_conforming_strings','off',false);\n"
@@ -122,18 +116,7 @@ class TestScannerHasNoBypassUnderFuzz:
         assert build_case(8, tmp_path / "c") != a
 
 
-if __name__ == "__main__":  # pragma: no cover - investigation entry point
-    # Run it from the repo root as a module, not as a script -- it imports its
-    # siblings by relative path, which only resolves inside the package:
-    #
-    #     python -m tests.contract.test_psql_scanner_fuzz <db> [cases]
-    #
-    # `CASES` above is what the suite can afford to spend per run, not what
-    # this grammar needs to exercise itself: with the tricky list at its
-    # current length and roughly a third of cases wrapped in `\restrict`
-    # (which psql uses to refuse the payload), any one shape gets a handful of
-    # draws in 150. Measured against a scanner with both known bypasses open,
-    # 150 cases found none and 600 found 24.
+if __name__ == "__main__":
     import pathlib
     import sys
     import tempfile

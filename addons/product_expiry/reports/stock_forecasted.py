@@ -78,10 +78,6 @@ class StockForecasted_Product_Product(models.AbstractModel):
             return True
         if not product.use_expiration_date:
             return False
-        # The expired and dated-removal lines are built inside
-        # `_get_free_stock_lines`, and so is the compensation for stock reserved
-        # from expired quants. A product whose free stock nets to zero would
-        # otherwise report neither.
         return bool(
             self.env["stock.quant"].search_count(
                 self._get_domain_expired_quant(wh_location_ids, product), limit=1
@@ -126,15 +122,8 @@ class StockForecasted_Product_Product(models.AbstractModel):
                     )
                     reported_qty += free_stock_at_date
 
-            # `free_stock` already covers the dated-removal quantities just
-            # broken out above; without this, the undivided line added by
-            # super() below double-counts them. Expired quants are NOT in it:
-            # `_get_domain_quant` filters them out, which is why only the
-            # dated buckets feed `reported_qty`.
             free_stock += reserved_expired - reported_qty
             if res and product.uom_id.is_zero(free_stock):
-                # Everything free is accounted for by the lines above; an
-                # undivided line here would be a bare "Free Stock 0.00" row.
                 return res
         return res + super()._get_free_stock_lines(
             product, free_stock, moves_data, wh_location_ids, read

@@ -206,8 +206,6 @@ class OrmCore[F: FieldKey = FieldKey]:
             known.update(ids)
 
     def note_rows_vanished(self) -> None:
-        # a savepoint rollback un-creates rows no unlink recorded; only a check
-        # already queued can name one, and the next drain clears the mark
         if not self._deferred:
             return
         self._rows_vanished = True
@@ -248,8 +246,6 @@ class OrmCore[F: FieldKey = FieldKey]:
                 ran += 1
         finally:
             self._draining = False
-            # a failing check leaves the ones after it queued: the next drain
-            # runs them, unless a rollback discards them with their rows
             if not deferred:
                 self._deleted.clear()
                 self._rows_vanished = False
@@ -262,8 +258,6 @@ class OrmCore[F: FieldKey = FieldKey]:
         if self._draining or not self._deferred:
             return
         if self._engine.protection_depth():
-            # a savepoint restored inside a protecting scope: the checks queued
-            # before it are for rows it kept, and the scope's exit runs them
             _debug.lifecycle(
                 "core.deferred_checks_kept",
                 queued=len(self._deferred),

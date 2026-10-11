@@ -101,8 +101,6 @@ class SpeechSpeaker(models.Model):
             if cue.get("speaker")
         }
         speakers = self.sudo().search([("attachment_id", "=", attachment.id)])
-        # a reading done again can tell the voices apart differently: a label
-        # it no longer uses is gone, unless someone put a person on it
         speakers.filtered(
             lambda speaker: speaker.label not in labels and not speaker.partner_id
         ).unlink()

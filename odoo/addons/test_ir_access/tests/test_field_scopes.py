@@ -6,9 +6,6 @@ MODEL = "test_ir_access.classified"
 
 
 class TestFieldClassScopes(TransactionCase):
-    # a class held through a grant limited to some companies is read on
-    # their records only: the value is masked where it leaves (read, search,
-    # sort, group), refused on attribute access, and the cache stays true
 
     @classmethod
     def setUpClass(cls):

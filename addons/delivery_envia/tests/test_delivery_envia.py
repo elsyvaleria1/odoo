@@ -249,7 +249,6 @@ class TestDeliveryEnvia(TransactionCase):
                 ],
             }
         )
-        # partner in us (azure)
         cls.us_partner = cls.env["res.partner"].create(
             {
                 "name": "Azure Interior",
@@ -286,7 +285,6 @@ class TestDeliveryEnvia(TransactionCase):
         )
 
     def test_rate_order(self):
-        """Set up a sale order for an BR client and ensure that the rate is computed properly."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.br_partner.id,
@@ -308,7 +306,6 @@ class TestDeliveryEnvia(TransactionCase):
             self.assertEqual(choose_delivery_carrier.delivery_price, 4.60)
 
     def test_rate_order_without_address(self):
-        """Set up a sale order without address and ensure that the rate computation fails."""
         partner = self.env["res.partner"].create(
             {
                 "name": "Test Partner",
@@ -337,7 +334,6 @@ class TestDeliveryEnvia(TransactionCase):
                 choose_delivery_carrier.update_price()
 
     def test_shipping_order(self):
-        """Ensure that the shipping of an order works properly."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.br_partner.id,
@@ -382,7 +378,6 @@ class TestDeliveryEnvia(TransactionCase):
                 "The Envia Parcel Reference is not correct.",
             )
 
-            # Check that we the PDF is there with the correct title.
             pdf = picking.message_ids.attachment_ids.filtered(
                 lambda m: m.description == "LabelShipping-envia-1Z48746Q48746.PDF"
             )

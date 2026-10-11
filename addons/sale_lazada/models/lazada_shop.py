@@ -42,7 +42,6 @@ class LazadaShop(models.Model):
         }
     )
 
-    # === BASIC FIELDS === #
     name = fields.Char(
         default="Unnamed Lazada Shop",
         required=True,
@@ -87,7 +86,6 @@ class LazadaShop(models.Model):
         "same company.",
     )
 
-    # === API & AUTHENTICATION FIELDS === #
     api_endpoint = fields.Char(
         string="API Endpoint",
         compute="_compute_api_endpoint",
@@ -141,7 +139,6 @@ class LazadaShop(models.Model):
         "you'll need to re-authorize the connection to continue synchronizing with Lazada.",
     )
 
-    # === CONFIGURATION FIELDS === #
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Default Salesperson",
@@ -220,11 +217,9 @@ class LazadaShop(models.Model):
         "The same Lazada shop cannot be linked twice to the same company.",
     )
 
-    # === COMPUTE METHODS === #
 
     @api.depends("country_id")
     def _compute_api_endpoint(self) -> None:
-        """Compute the API endpoint based on the shop's country."""
         for shop in self:
             if not shop.country_id:
                 shop.api_endpoint = ""
@@ -240,17 +235,11 @@ class LazadaShop(models.Model):
                     )
                 )
 
-    # === CRUD METHODS === #
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Create Lazada shops and configure FBL locations.
-
-        Each shop is automatically assigned a dedicated FBL (Fulfilled by Lazada) location.
-        """
         for vals in vals_list:
             company_id = vals.get("company_id") or self.env.company.id
-            # Find or create the lazada warehouse to be associated with the shop
             parent_warehouse = self.env["stock.warehouse"].search_read(
                 self.env["stock.warehouse"]._check_company_domain(company_id),
                 ["view_location_id"],
@@ -272,7 +261,6 @@ class LazadaShop(models.Model):
                     ],
                     limit=1,
                 )
-                # Create FBL location if it doesn't exist
                 if not location:
                     location = self.env["stock.location"].create(
                         {
@@ -286,10 +274,8 @@ class LazadaShop(models.Model):
 
         return super().create(vals_list)
 
-    # === ACTION METHODS === #
 
     def action_view_orders(self):
-        """Open the list of orders for this shop."""
         self.check_singleton()
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "sale.action_orders"
@@ -299,13 +285,11 @@ class LazadaShop(models.Model):
         return action
 
     def action_sync_orders(self) -> dict | None:
-        """Manually sync orders for this shop."""
         self.check_singleton()
         self._sync_orders()
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def action_view_lazada_items(self):
-        """Open the list of Lazada items for this shop."""
         self.check_singleton()
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "sale_lazada.action_lazada_item_list"
@@ -317,28 +301,20 @@ class LazadaShop(models.Model):
         return action
 
     def action_sync_inventory(self) -> dict | None:
-        """Manually sync inventory for this shop."""
         self.check_singleton()
         self._sync_inventory()
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def action_sync_product_catalog(self) -> dict:
-        """Manually sync product catalog for this shop."""
         self.check_singleton()
         self._sync_product_catalog()
         return {"type": "ir.actions.client", "tag": "reload"}
 
     def action_archive(self):
-        """Disconnect and archive the Lazada shop."""
         self._reset_refresh_token()
         return super().action_archive()
 
     def action_view_auth_link(self) -> dict:
-        """Redirect to Lazada authorization page.
-
-        :return: Action dictionary for URL redirect
-        :rtype: dict
-        """
         self.check_singleton()
 
         if not (self.app_key and self.app_secret):
@@ -360,15 +336,11 @@ class LazadaShop(models.Model):
             "state": state,
         }
 
-        # The url needs to be accessed to authorize the Lazada app. It will return to a callback URL
-        # with the authorization code needed to get the access and refresh tokens.
         url = f"{auth_url}?{urlencode(params)}"
         return {"type": "ir.actions.act_url", "url": url, "target": "self"}
 
-    # === TOKEN MANAGEMENT === #
 
     def _reset_refresh_token(self) -> None:
-        """Reset refresh and access tokens for the shop."""
         self.write(
             {
                 "refresh_token": False,
@@ -378,15 +350,8 @@ class LazadaShop(models.Model):
             }
         )
 
-    # === INVENTORY & PRODUCT CATALOG SYNCHRONIZATION === #
 
     def _sync_inventory(self, auto_commit=True) -> None:
-        """Synchronize inventory from Odoo to Lazada.
-
-        Syncs all active shops if called on empty recordset.
-
-        :param bool auto_commit: Whether to commit after each successful sync
-        """
         shops = self or self.search([("active", "=", True)])
         for shop in shops.filtered(lambda s: s.synchronize_inventory):
             with _debug.perf("inventory_sync", shop=shop) as span:
@@ -394,16 +359,10 @@ class LazadaShop(models.Model):
                 shop.lazada_item_ids._sync_inventory(auto_commit=auto_commit)
 
     def _sync_product_catalog(self) -> None:
-        """Synchronize Lazada product catalog to Odoo.
-
-        Syncs all active shops if called on empty recordset. If initialize is True,
-        fetches all products; otherwise only products updated since last sync.
-        """
         sync_start_dt = fields.Datetime.now()
         shops = self or self.search([("active", "=", True)])
         _debug.pipeline("product_catalog_sync_started", shops=shops)
         for shop in shops:
-            # If the sync date is empty, initialize the catalog (fetch all items)
             initialize_shop = not shop.last_product_catalog_sync_date
             time_from = shop.last_product_catalog_sync_date
             time_to = sync_start_dt
@@ -443,7 +402,6 @@ class LazadaShop(models.Model):
                             len(product_sku.get("fblWarehouseInventories", []))
                             and "fbl"
                         ) or "fbm"
-                        # Consider item inactive if either product or SKU status is not "active"
                         sku_status = (product_sku.get("Status") or "").lower()
                         is_active = all(
                             status in ("", "active")
@@ -455,21 +413,12 @@ class LazadaShop(models.Model):
                             fulfillment_type=fulfillment_type,
                             no_create=not is_active,
                         )
-                        # Disable inventory sync when Lazada item is inactive/deleted
                         if not is_active and lazada_item.sync_lazada_inventory:
                             lazada_item.sync_lazada_inventory &= is_active
 
             shop.last_product_catalog_sync_date = sync_start_dt
 
     def _get_lazada_products(self, time_from=None, time_to=None, offset=0) -> tuple:
-        """Fetch products from Lazada API.
-
-        :param datetime time_from: Lower time limit for filtering products
-        :param datetime time_to: Upper time limit for filtering products
-        :param int offset: Page offset for pagination
-        :return: Tuple of (next_offset, total_products, products_list)
-        :rtype: tuple
-        """
         target_timezone = timezone(
             country_timezones().get(self.country_id.code, ("UTC",))[0]
         )
@@ -492,24 +441,14 @@ class LazadaShop(models.Model):
         products = response["data"]["products"] if response.get("data") else []
         return offset + 1, total_products, products
 
-    # === ORDER SYNCHRONIZATION METHODS === #
 
     def _sync_orders(self, auto_commit=True) -> None:
-        """Synchronize orders updated in Lazada since last sync.
-
-        Syncs all active shops if called on empty recordset.
-
-        :param bool auto_commit: Whether to commit after each successful order sync
-        """
         shops = self or self.search([("active", "=", True)])
         _debug.pipeline("orders_sync_started", shops=shops, auto_commit=auto_commit)
         for shop in shops:
             shop = shop.with_prefetch()
             start_sync_dt = fields.Datetime.now()
             try:
-                # Orders are pulled in batches of up to ORDER_LIST_SIZE_LIMIT orders. If more can be
-                # synchronized, the request results are paginated and the next page holds another
-                # batch.
                 while shop.last_orders_sync_date < start_sync_dt:
                     status_update_lower_limit = shop.last_orders_sync_date
                     status_update_upper_limit = min(
@@ -531,8 +470,6 @@ class LazadaShop(models.Model):
                     for order_id, order in orders_map.items():
                         order["order_items"] = order_items_map.get(int(order_id), [])
 
-                    # Convert the maximum updated_at timestamp of the order items of
-                    # each order to a timestamp at UTC timezone
                     for order in orders_map.values():
                         max_order_item_timestamp = max(
                             utils.lazada_timestamp_to_datetime(item.get("updated_at"))
@@ -540,10 +477,6 @@ class LazadaShop(models.Model):
                         )
                         order["last_order_item_updated_at"] = max_order_item_timestamp
 
-                    # As we fetched these order items based on order ids, not their updated time,
-                    # orders might have been updated later than the set upper limit. We discard
-                    # them for now to avoid skipping the intermediary orders by setting a wrong
-                    # last updated time as they'll be sync later anyway.
                     valid_orders_map = {
                         id: order
                         for id, order in orders_map.items()
@@ -562,7 +495,6 @@ class LazadaShop(models.Model):
                     for order_data in valid_orders_map.values():
                         shop._create_or_update_sale_order(order_data, auto_commit)
 
-                    # The sync of this orders batch went through, save the last status update time
                     valid_update_times = [
                         order["last_order_item_updated_at"]
                         for order in valid_orders_map.values()
@@ -582,16 +514,9 @@ class LazadaShop(models.Model):
                     " id %(shop)d. Operation: %(error_operation)s",
                     {"shop": shop.id, "error_operation": error.operation},
                 )
-                continue  # The remaining orders will be pulled in the next cron run.
+                continue
 
     def _get_order_list(self, time_from, time_to) -> dict | list:
-        """Fetch order list from Lazada API.
-
-        :param datetime time_from: Lower time limit
-        :param datetime time_to: Upper time limit
-        :return: Dict mapping order_id to order details
-        :rtype: dict
-        """
         target_timezone = timezone(
             country_timezones().get(self.country_id.code, ("UTC",))[0]
         )
@@ -611,12 +536,6 @@ class LazadaShop(models.Model):
         return {i["order_id"]: i for i in response["data"].get("orders", [])}
 
     def _get_orders_items(self, order_extern_id_list):
-        """Fetch order items from Lazada API.
-
-        :param list order_extern_id_list: List of order identifiers
-        :return: Dict mapping order_id to order items
-        :rtype: dict
-        """
         order_items_map = {}
         for batch in (
             list(b)
@@ -634,21 +553,11 @@ class LazadaShop(models.Model):
         return order_items_map
 
     def _get_seller_information(self):
-        """Fetch seller information from Lazada API.
-
-        :return: Seller data including seller_id, name
-        :rtype: dict
-        """
         self.check_singleton()
         response = utils.send_lazada_api_request("GetSeller", self, params={})
         return response["data"]
 
     def _create_or_update_sale_order(self, order_data, auto_commit=True) -> None:
-        """Create or update sale order from Lazada order data.
-
-        :param dict order_data: Order data from Lazada API
-        :param bool auto_commit: Whether to commit after successful sync
-        """
         try:
             if order_data["items_count"] == 0:
                 return
@@ -656,7 +565,7 @@ class LazadaShop(models.Model):
             if auto_commit:
                 with self.env.cr.savepoint():
                     self._process_order_data(order_data)
-            else:  # Avoid the savepoint in testing
+            else:
                 self._process_order_data(order_data)
         except utils.LazadaRateLimitError:
             raise
@@ -674,9 +583,6 @@ class LazadaShop(models.Model):
                 {"order_ref": lazada_order_ref, "shop": self.id},
                 exc_info=True,
             )
-            # Dismiss business errors to allow the synchronization to skip the
-            #  problematic orders.
-            # The order will then require creating the order manually.
             self.env.cr.rollback()
             self._handle_sync_failure(
                 flow="order_sync", lazada_order_ref=lazada_order_ref
@@ -685,15 +591,6 @@ class LazadaShop(models.Model):
             self.env["ir.cron"]._commit_progress(processed=1)
 
     def _process_order_data(self, order_data):
-        """Process Lazada order data and create or update sale order.
-
-        Creates new orders if status is in ORDER_STATUSES_TO_SYNC, otherwise updates
-        existing order items.
-
-        :param dict order_data: Order data from Lazada API
-        :return: Created or updated sale order
-        :rtype: sale.order or None
-        """
         fulfillment_type = self._get_fulfillment_type(order_data)
         if not fulfillment_type:
             _debug.logic(
@@ -741,12 +638,6 @@ class LazadaShop(models.Model):
         return order
 
     def _get_fulfillment_type(self, order_data):
-        """Get fulfillment type from order data.
-
-        :param dict order_data: Order data from Lazada API
-        :return: 'fbm' or 'fbl'
-        :rtype: str
-        """
         fulfillment_type_list = list(
             {
                 "fbl" if int(item["is_fbl"]) else "fbm"
@@ -764,14 +655,6 @@ class LazadaShop(models.Model):
         return None
 
     def _is_order_creation_required(self, order_data, fulfillment_type) -> bool:
-        """Determine if order should be created based on status.
-
-        :param dict order_data: Order data from Lazada API
-        :param str fulfillment_type: 'fbm' or 'fbl'
-        :return: True if order should be created
-        :rtype: bool
-        """
-        # The provider type of DBS order is "seller_own_fleet", which is not supported for now.
         provider_types = list(
             {item.get("shipping_provider_type") for item in order_data["order_items"]}
         )
@@ -796,13 +679,6 @@ class LazadaShop(models.Model):
         return bool(valid_statuses and valid_provider_types)
 
     def _create_stock_moves(self, order):
-        """
-        Generate a stock move for each product of the provided sales order.
-
-        :param sale.order order: The sales order to generate stock moves.
-        :return: The generated stock moves.
-        :rtype: stock.move
-        """
         customers_location = self.env.ref("stock.stock_location_customers")
         _debug.pipeline(
             "stock_moves_generation_started",
@@ -827,17 +703,11 @@ class LazadaShop(models.Model):
             )
             stock_move._update_quantity_done(order_line.product_qty)
             stock_move.picked = (
-                True  # To also change move lines created in `_update_quantity_done`
+                True
             )
             stock_move._action_done()
 
     def _get_shipping_carrier(self, order_data):
-        """Extract shipping carrier code from order data.
-
-        :param dict order_data: Order data from Lazada API
-        :return: Shipping carrier code or empty string
-        :rtype: str
-        """
         unique_providers = []
         for item in order_data["order_items"]:
             provider_type = item.get("shipping_provider_type")
@@ -876,11 +746,6 @@ class LazadaShop(models.Model):
         return unique_providers[0]["shipment_provider"]
 
     def _update_picking_from_data(self, picking, order_data) -> None:
-        """Update picking from Lazada order data.
-
-        :param stock.picking picking: Picking record
-        :param dict order_data: Order data from Lazada API
-        """
         if picking.package_extern_id:
             package_item_data = [
                 item
@@ -890,7 +755,6 @@ class LazadaShop(models.Model):
         else:
             package_item_data = order_data["order_items"]
 
-        # ignore if the picking is already synced
         max_update_time = max(
             utils.lazada_timestamp_to_datetime(item["updated_at"])
             for item in package_item_data
@@ -935,11 +799,6 @@ class LazadaShop(models.Model):
         )
 
     def _update_order_from_data(self, order, order_data) -> None:
-        """Update sale order from Lazada order data.
-
-        :param sale.order order: Sale order record
-        :param dict order_data: Order data from Lazada API
-        """
         order.check_singleton()
         if order.lazada_fulfillment_type != "fbl":
             order_item_map = {
@@ -963,13 +822,6 @@ class LazadaShop(models.Model):
             )
 
     def _create_order_from_data(self, order_data):
-        """Create sale order from Lazada order data.
-
-        :param dict order_data: Order data from Lazada API
-        :return: Created sale order
-        :rtype: sale.order
-        """
-        # Prepare the order values
         currency = (
             self.env["res.currency"]
             .with_context(active_test=False)
@@ -1032,18 +884,11 @@ class LazadaShop(models.Model):
         )
 
         if order.picking_ids and fulfillment_type != "fbl":
-            # Initialize the lazada order items from the sale order lines
             order.picking_ids.move_ids.initialize_lazada_order_items()
             self._update_order_from_data(order, order_data)
         return order
 
     def _convert_to_order_line_values(self, **kwargs) -> dict:
-        """Convert values to sale order line format.
-
-        :param dict kwargs: Values including product_id, quantity, subtotal, order_items, etc.
-        :return: Sale order line values dict
-        :rtype: dict
-        """
         subtotal = kwargs.get("subtotal", 0)
         quantity = kwargs.get("quantity", 1)
         original_subtotal = kwargs.get("original_subtotal", 0) or subtotal
@@ -1071,16 +916,6 @@ class LazadaShop(models.Model):
         }
 
     def _prepare_order_lines_values(self, order_data, currency, fiscal_pos):
-        """Prepare sale order line values from Lazada order data.
-
-        Groups items by SKU and creates one order line per SKU.
-
-        :param dict order_data: Order data from Lazada API
-        :param record currency: Currency record (res.currency)
-        :param record fiscal_pos: Fiscal position record (account.fiscal.position)
-        :return: List of order line values
-        :rtype: list
-        """
         self.check_singleton()
 
         order_lines_values = []
@@ -1089,7 +924,6 @@ class LazadaShop(models.Model):
             sku_items.setdefault(item_data["sku"], []).append(item_data)
 
         for sku, items in sku_items.items():
-            # Use first item for common info
             common_item_data = items[0]
             fulfillment_type = "fbl" if common_item_data["is_fbl"] else "fbm"
             item_extern_id = common_item_data["sku_id"]
@@ -1103,7 +937,6 @@ class LazadaShop(models.Model):
                 self.company_id
             )
 
-            # Add promotion information to the description
             if not promotion_id:
                 description = self.env._(
                     "[%(sku)s] %(product_name)s", sku=sku, product_name=product_name
@@ -1116,7 +949,6 @@ class LazadaShop(models.Model):
                     promotion_id=promotion_id,
                 )
 
-            # If the item is canceled, it should not be counted in the quantity
             quantity = len([i for i in items if i.get("status") != "canceled"])
             original_subtotal = sum(item["item_price"] for item in items)
             discounted_subtotal = sum(item["paid_price"] for item in items)
@@ -1160,12 +992,6 @@ class LazadaShop(models.Model):
         )
 
     def _get_or_create_partners_from_data(self, order_data) -> tuple:
-        """Find or create contact and delivery partners from order data.
-
-        :param dict order_data: Order data from Lazada API
-        :return: Tuple of (contact_partner, delivery_partner)
-        :rtype: tuple
-        """
         self.check_singleton()
 
         lazada_buyer_extern_id = str(order_data["order_items"][0]["buyer_id"])
@@ -1209,7 +1035,6 @@ class LazadaShop(models.Model):
             "lazada_buyer_extern_id": lazada_buyer_extern_id,
         }
 
-        # Try to find existing contact partner
         contact_partner = self.env["res.partner"].search(
             [
                 ("lazada_buyer_extern_id", "=", lazada_buyer_extern_id),
@@ -1244,13 +1069,6 @@ class LazadaShop(models.Model):
         return contact_partner, delivery_partner
 
     def _get_or_create_delivery_carrier(self, shipping_carrier_code, shipping_product):
-        """Find or create delivery carrier by shipping code.
-
-        :param str shipping_carrier_code: Shipping carrier code
-        :param record shipping_product: Shipping product record (product.product)
-        :return: Delivery carrier record
-        :rtype: delivery.carrier
-        """
         delivery_method = self.env["delivery.carrier"].search(
             [("name", "=", shipping_carrier_code)], limit=1
         )
@@ -1264,12 +1082,6 @@ class LazadaShop(models.Model):
         return delivery_method
 
     def _get_or_create_pricelist(self, currency):
-        """Find or create pricelist for currency.
-
-        :param currency: Currency record (res.currency)
-        :return: Pricelist record
-        :rtype: product.pricelist
-        """
         pricelist = self.env["product.pricelist"].search(
             [
                 ("currency_id", "=", currency.id),
@@ -1291,7 +1103,6 @@ class LazadaShop(models.Model):
         return pricelist
 
     def _get_price_from_tax_included_total(self, total, taxes, currency):
-        """Return the order-line price, retaining configured price-included taxes."""
         return price_from_tax_included_total(self.env, total, taxes, currency)
 
     def _acquire_item(
@@ -1301,16 +1112,6 @@ class LazadaShop(models.Model):
         fulfillment_type: str = "fbm",
         no_create: bool = False,
     ) -> LazadaItem:
-        """Find or create Lazada item mapping.
-
-        Links Lazada items to Odoo products based on SKU.
-
-        :param str sku: Product SKU
-        :param str item_extern_id: Lazada item ID
-        :param str fulfillment_type: 'fbm' or 'fbl' (optional)
-        :return: Lazada item record
-        :rtype: lazada.item
-        """
         self.check_singleton()
         lazada_item = self.lazada_item_ids.filtered(
             lambda i: i.lazada_item_extern_id == str(item_extern_id)
@@ -1330,8 +1131,6 @@ class LazadaShop(models.Model):
                 .with_context(tracking_disable=True)
                 .create(item_vals)
             )
-        # If the item has been linked with the default product, check if another product
-        # has now been assigned the current SKU as internal reference and update if so
         else:
             if (
                 "sale_lazada.default_sale_product"
@@ -1355,14 +1154,7 @@ class LazadaShop(models.Model):
 
         return lazada_item
 
-    # === OTHER HELPER METHODS === #
     def _prepare_shop_vals(self, code) -> dict:
-        """Create shop values from Lazada authorization code.
-
-        :param str code: Authorization code from Lazada
-        :return: Dict of shop values (tokens, country_id, shop_extern_id)
-        :rtype: dict
-        """
         self.check_singleton()
         token_data = utils.request_access_token(self, authorization_code=code)
         if not token_data:
@@ -1401,11 +1193,6 @@ class LazadaShop(models.Model):
     def _handle_sync_failure(
         self, flow="", lazada_order_ref=False, error_messages=False
     ) -> None:
-        """Send failure notification email to shop manager.
-
-        :param str flow: Sync flow type: 'order_sync' or 'inventory_sync'
-        :param str lazada_order_ref: Lazada order reference (for order_sync flow)
-        """
         mail_template_id = ""
         if flow == "order_sync":
             _logger.error(

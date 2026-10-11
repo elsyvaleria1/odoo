@@ -171,8 +171,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
                         {
                             "name": "line_credit_c1",
                             "account_id": self.account_expense_c1.id,
-                            # not taken into account because the account
-                            # has include_initial_balance=False
                             "credit": 555,
                         },
                     ),
@@ -280,7 +278,7 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
                             "range_type": "year",
                             "year": 2022,
                         },
-                        "codes": ["sp1234566"],  # only for company 1
+                        "codes": ["sp1234566"],
                         "company_id": self.company_data["company"].id,
                         "include_unposted": True,
                     },
@@ -289,7 +287,7 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
                             "range_type": "year",
                             "year": 2022,
                         },
-                        "codes": ["sp99887755"],  # only for company 2
+                        "codes": ["sp99887755"],
                         "company_id": self.company_data_2["company"].id,
                         "include_unposted": True,
                     },
@@ -624,7 +622,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_balance_account_by_year(self):
-        # On balance accounts, we sum the lines from the creation up to the last dat of date_range
         self.account_revenue_c1.sudo().account_type = "asset_receivable"
         self.assertEqual(
             self.env["account.account"].spreadsheet_fetch_debit_credit(
@@ -924,7 +921,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_code_no_account(self):
-        """code that doesn't match any account"""
         self.assertEqual(
             self.env["account.account"].spreadsheet_fetch_debit_credit(
                 [

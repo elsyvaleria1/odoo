@@ -3,7 +3,6 @@ from odoo.tests import TransactionCase, tagged
 
 from .common import TripFixtureMixin
 
-# A standalone 1x1 transparent PNG, valid enough for the Image fields to accept.
 PNG = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY"
     "42YAAAAASUVORK5CYII="
@@ -28,7 +27,6 @@ class TestTripDeliveryProof(TripFixtureMixin, TransactionCase):
         return delivery, trip
 
     def _phone_delivers(self, trip, delivery, uuid, **payload):
-        """Send the driver's Delivered as the phone does, with its chain hash."""
         Event = self.env["stock.trip.offline.event"]
         event = {
             "client_uuid": uuid,
@@ -112,8 +110,6 @@ class TestTripDeliveryProof(TripFixtureMixin, TransactionCase):
         )
 
     def test_a_partial_stop_without_evidence_is_never_delivered_whole(self):
-        # The refusal undoes the quantities of the partial stop; the photo dialog
-        # then keeps the photo only, and the stop is recorded again as partial.
         delivery, _trip = self._departed()
         with self.assertRaises(RedirectWarning) as refusal:
             self._stop_result(delivery, 3)

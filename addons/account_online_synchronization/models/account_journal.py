@@ -54,14 +54,12 @@ class AccountJournal(models.Model):
     )
 
     def write(self, vals):
-        # When changing the bank_statement_source, unlink the connection if there is any
         if (
             "bank_statements_source" in vals
             and vals.get("bank_statements_source") != "online_sync"
         ):
             for journal in self:
                 if journal.bank_statements_source == "online_sync":
-                    # unlink current connection
                     vals["account_online_account_id"] = False
                     journal.account_online_link_id.has_unlinked_accounts = True
         return super().write(vals)
@@ -80,7 +78,6 @@ class AccountJournal(models.Model):
 
     def _update_bank_cash_dashboard_data(self, dashboard_data) -> None:
         super()._update_bank_cash_dashboard_data(dashboard_data)
-        # Caching data to avoid one call per journal
         self.browse(list(dashboard_data.keys())).fetch(
             ["type", "account_online_account_id"]
         )
@@ -111,7 +108,6 @@ class AccountJournal(models.Model):
                 journal.manual_sync()
                 self.env["ir.cron"]._commit_progress(processed=1)
             except UserError, RedirectWarning:
-                # We need to rollback here otherwise the next iteration will still have the error when trying to commit
                 self.env.cr.rollback()
 
     def get_online_sync_favorite_institutions(self):
@@ -153,14 +149,7 @@ class AccountJournal(models.Model):
 
     @api.model
     def _cron_import_waiting_online_transactions(self) -> None:
-        """Fetch transactions for synchronizations still awaiting an asynchronous fetch."""
-        # Split from _cron_import_online_transactions so one cron doesn't mix
-        # synchronous and asynchronous fetch logic. Picks up syncs still pending
-        # ('planned'/'waiting', or 'processing' past the time limit); once done
-        # their status becomes 'done' and they are no longer selected.
 
-        # 'limit_time_real_cron' and 'limit_time_real' default respectively to -1 and 120.
-        # Manual fallbacks applied for non-POSIX systems where this key is disabled (set to None).
         limit_time = tools.config["limit_time_real_cron"] or -1
         if limit_time <= 0:
             limit_time = tools.config["limit_time_real"] or 120
@@ -181,9 +170,6 @@ class AccountJournal(models.Model):
 
     @api.model
     def _cron_import_online_transactions(self) -> None:
-        """This method is called by the cron (by default twice a day) to fetch (for all journals)
-        the new transactions.
-        """
         journals = self.search([("account_online_account_id", "!=", False)])
         journals.with_context(cron=True)._sync_online_transactions()
 
@@ -201,19 +187,11 @@ class AccountJournal(models.Model):
         return None
 
     def unlink(self):
-        """
-        Override of the unlink method.
-        That's useful to unlink account.online.account too.
-        """
         if self.account_online_account_id:
             self.account_online_account_id.unlink()
         return super().unlink()
 
     def action_configure_bank_journal(self):
-        """
-        Override the "action_configure_bank_journal" and change the flow for the
-        "Configure" button in dashboard.
-        """
         self.check_singleton()
         return self.env["account.online.link"].action_new_synchronization()
 
@@ -230,9 +208,6 @@ class AccountJournal(models.Model):
         }
 
     def action_extend_consent(self):
-        """
-        Extend the consent of the user by redirecting him to update his credentials
-        """
         self.check_singleton()
         return self.account_online_link_id._open_iframe(
             mode="updateCredentials",
@@ -260,15 +235,6 @@ class AccountJournal(models.Model):
         self.message_post_with_source(source_ref=template, subtype_id=subtype.id)
 
     def action_view_missing_transaction_wizard(self) -> dict:
-        """This method allows to open the wizard to fetch the missing
-        transactions and the pending ones.
-        Depending on where the function is called, we'll receive
-        one journal or none of them.
-        If we receive more or less than one journal, we do not set
-        it on the wizard, the user should select it by himself.
-
-        :return: An action opening the wizard.
-        """
         journal_id = None
         if len(self) == 1:
             if (
@@ -296,11 +262,6 @@ class AccountJournal(models.Model):
         }
 
     def action_view_duplicate_transaction_wizard(self, from_date=None):
-        """This method allows to open the wizard to find duplicate transactions.
-        :param from_date: date from with we must check for duplicates.
-
-        :return: An action opening the wizard.
-        """
         wizard = self.env["wizard.account.bank.statement.line.delete.duplicate"].create(
             {
                 "journal_id": self.id if len(self) == 1 else None,
@@ -312,15 +273,6 @@ class AccountJournal(models.Model):
         )
 
     def _has_duplicate_transactions(self, date_from) -> bool:
-        """Has any transaction with
-           - same amount &
-           - same date &
-           - same account number
-        We do not check on online_transaction_identifier because this is called after the fetch
-        where transitions would already have been filtered on existing online_transaction_identifier.
-
-        :param date_from: date from with we must check for duplicates.
-        """
         self.env.cr.execute(
             SQL.join(
                 SQL(""),
@@ -335,15 +287,6 @@ class AccountJournal(models.Model):
         return bool(self.env.cr.rowcount)
 
     def _get_duplicate_transactions(self, date_from) -> list:
-        """Find all transaction with
-           - same amount &
-           - same date &
-           - same account number
-           or
-           - same transaction id
-
-        :param date_from: date from with we must check for duplicates.
-        """
         query = SQL.join(
             SQL(""),
             [
@@ -358,9 +301,6 @@ class AccountJournal(models.Model):
         return [res[0] for res in self.env.execute_query(query)]
 
     def _get_provider_duplicate_transactions(self, date_from) -> list:
-        """
-        Find all transaction with that have a "duplicated: True" in the transaction details.
-        """
         statement_lines = self.env.execute_query(
             SQL(
                 """
@@ -411,18 +351,10 @@ class AccountJournal(models.Model):
             prior_date=date_from
             - relativedelta(
                 months=3
-            ),  # allow 1 of duplicate statements to be older than "from" date
+            ),
         )
 
     def action_view_dashboard_asynchronous_action(self):
-        """This method allows to open action asynchronously
-        during the fetching process.
-        When a user clicks on the Fetch Transactions button in
-        the dashboard, we fetch the transactions asynchronously
-        and save connection state details on the synchronization.
-        This action allows the user to open the action saved in
-        the connection state details.
-        """
         self.check_singleton()
 
         if not self.account_online_account_id:
@@ -472,13 +404,6 @@ class AccountJournal(models.Model):
         return dashboard_data
 
     def get_related_connection_state_details(self):
-        """This method allows JS widget to get the last connection state details
-        It's useful if the user wasn't on the dashboard when we send the message
-        by websocket that the asynchronous flow is finished.
-        In case we don't have a connection state details and if the fetching
-        status is set on "waiting" or "processing". We're returning that the sync
-        is currently fetching.
-        """
         self.check_singleton()
         connection_state_details = (
             self.account_online_link_id._get_connection_state_details(journal=self)
@@ -496,14 +421,9 @@ class AccountJournal(models.Model):
         if self.account_online_link_id and self.env.user.has_group(
             "account.group_account_manager"
         ):
-            # In case we have a bank synchronization connected to the journal
-            # we want to remove the last connection state because it means that we
-            # have "mark as read" this state, and we don't want to display it again to
-            # the user.
             self.account_online_link_id._pop_connection_state_details(journal=self)
 
     def open_action(self):
-        # Extends 'account_accountant'
         if (
             not self.env.context.get("action_name")
             and self.type == "bank"
@@ -518,19 +438,14 @@ class AccountJournal(models.Model):
         return super().open_action()
 
     def action_view_reconcile(self):
-        # Extends 'account_accountant'
         self._consume_connection_state_details()
         return super().action_view_reconcile()
 
     def action_view_bank_transactions(self):
-        # Extends 'account_accountant'
         self._consume_connection_state_details()
         return super().action_view_bank_transactions()
 
     def action_view_pending_bank_statement_lines(self) -> dict:
-        """Show the pending transactions bank statement lines.
-        :return: An action showing pending transactions bank statement lines.
-        """
         self.check_singleton()
         account = self.account_online_account_id
         pendings = account._get_transactions_from_provider(
@@ -582,7 +497,6 @@ class AccountJournal(models.Model):
             )
 
     def get_total_journal_amount(self) -> dict:
-        # EXTENDS account_accountant
         info_data = super().get_total_journal_amount()
 
         available_balance = ""

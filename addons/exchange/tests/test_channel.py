@@ -71,8 +71,6 @@ class TestExchangeChannel(ExchangeCase):
 @tagged("post_install", "-at_install")
 class TestExchangeChannelReaders(ExchangeCase):
     def test_an_internal_user_reads_a_channel_and_only_its_service(self):
-        # the channel binds its service's read permission (plan section 3.1):
-        # an internal user reads a channel's endpoint and no other service
         user = new_test_user(
             self.env, login="exchange_reader", groups="base.group_user"
         )

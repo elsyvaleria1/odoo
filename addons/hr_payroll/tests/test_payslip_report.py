@@ -7,11 +7,6 @@ from .common import TestPayslipBase
 @tests.tagged("post_install", "-at_install")
 class TestPayslipReport(TestPayslipBase):
     def test_worked_days_hours_printed_as_duration(self):
-        """The worked days table of the payslip PDF prints hours as HH:MM.
-
-        7.2 hours is seven hours and twelve minutes, not seven hours and two
-        tenths of something. The line and the Total row have to agree.
-        """
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "Payslip of Richard",

@@ -58,8 +58,6 @@ class ResCompany(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        # A default, not an addition: only seed companies whose vals did not
-        # already carry notes, or the caller's list gets ours appended to it.
         for company, vals in zip(res, vals_list, strict=True):
             if not vals.get("assessment_note_ids"):
                 company.sudo().write(
@@ -77,10 +75,6 @@ class ResCompany(models.Model):
         )
         appraisal_values = [
             {
-                # No `company_id`: since `1ce7b984685` dropped its `store=True`
-                # the field is a non-stored readonly related over
-                # `employee_id.company_id` with no inverse, so the key was
-                # silently discarded on create.
                 "department_id": employee.department_id.id,
                 "employee_id": employee.id,
                 "date_close": employee.next_appraisal_date + relativedelta(days=days),
@@ -93,7 +87,6 @@ class ResCompany(models.Model):
         ]
         return self.env["hr.appraisal"].create(appraisal_values)
 
-    # CRON job
     def _run_employee_appraisal_plans(self) -> None:
         companies = self.env["res.company"].search([("appraisal_plan", "=", True)])
         current_date = datetime.date.today()
@@ -105,8 +98,6 @@ class ResCompany(models.Model):
         )
         if all_employees:
             appraisals = self._create_new_appraisal(all_employees)
-            # The cron creates appraisals in 'pending' state,
-            # Thus we need to update last appraisal info on employee
             for appraisal in appraisals:
                 appraisal.employee_id.sudo().write(
                     {

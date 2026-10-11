@@ -116,7 +116,6 @@ class TestRoutes(RunnerFixtures, HttpCase):
         }
         before = self.env.company._ml_spend_this_month()
         self.assertEqual(self._post("fail", body), (200, {"state": "queued"}))
-        # queued again, the run is no longer this runner's: the replay is refused
         self.assertEqual(self._post("fail", body), (409, {"error": "lease_lost"}))
         self.assertAlmostEqual(self.env.company._ml_spend_this_month() - before, 0.75)
         self.assertEqual((run.cost, run.count_input_token), (0.75, 10))

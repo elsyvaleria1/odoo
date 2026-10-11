@@ -45,8 +45,6 @@ class TestGateBatchSurvivesAnUnstaffedStep(ApprovalCommon):
                 "user_ids": [(6, 0, self.approver_elsewhere.ids)],
             }
         )
-        # the configuration is saved before anyone works on documents, and
-        # saving it grants its approvers the Decider group
         self.env.cr.flush()
 
     def _document(self, name, category):
@@ -144,5 +142,4 @@ class TestGateBatchRaisesTogether(ApprovalCommon):
     def test_each_further_document_costs_a_bounded_number_of_queries(self):
         ten = self._queries_to_ship(10)
         twenty = self._queries_to_ship(20)
-        # 55 statements a document when each was raised on its own; 7 raised together
         self.assertLessEqual((twenty - ten) / 10, 15)

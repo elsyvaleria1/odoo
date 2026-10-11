@@ -44,14 +44,9 @@ class MrpBom(models.Model):
             bom.eco_count = eco_count[bom.id]
 
     def apply_new_version(self) -> bool:
-        """Activate the new BoM as the active revision, deprecating the previous one and rebasing its pending ECOs.
-
-        TODO: Set to stage that is production_ready
-        """
         MrpEco = self.env["mrp.eco"]
         for new_bom in self:
             new_bom.write({"active": True})
-            # Move eco's into rebase state which is in progress state.
             ecos = MrpEco.search(
                 [
                     "|",
@@ -63,7 +58,6 @@ class MrpBom(models.Model):
                 ]
             )
             ecos.write({"state": "rebase", "current_bom_id": new_bom.id})
-            # Repoint ECOs that haven't started a BoM revision yet (new_bom_id not set).
             draft_ecos = MrpEco.search(
                 [
                     "|",
@@ -81,7 +75,6 @@ class MrpBom(models.Model):
                 rebased_ecos=len(ecos),
                 repointed_ecos=len(draft_ecos),
             )
-            # Deactivate previous revision of BoM
             new_bom.previous_bom_id.write({"active": False})
         return True
 
@@ -103,9 +96,6 @@ class MrpBom(models.Model):
         return action
 
     def _get_previous_boms(self):
-        """Return a dictionary with the keys to be all the previous boms' id and
-        the value to be a set of ids in self of which the key is their previous boms.
-        """
         boms_data = self.with_context(active_test=False).search_read(
             [("product_tmpl_id", "in", self.product_tmpl_id.ids)],
             fields=["id", "previous_bom_id"],
@@ -164,7 +154,6 @@ class MrpBomLine(models.Model):
         self.check_singleton()
         BomChange = self.env["mrp.eco.bom.change"].sudo()
         for eco in ecos:
-            # When product exist in new bill of material update line otherwise add line in rebase changes.
             rebase_line = BomChange.search(
                 [("product_id", "=", product_id), ("rebase_id", "=", eco.id)], limit=1
             )
@@ -176,7 +165,6 @@ class MrpBomLine(models.Model):
                 operation=operation,
             )
             if rebase_line:
-                # Update existing rebase line or unlink it.
                 if (
                     rebase_line.old_product_qty,
                     rebase_line.old_uom_id.id,
@@ -228,7 +216,6 @@ class MrpBomLine(models.Model):
                 ecos=len(ecos),
             )
             if ecos:
-                # Latest bom line (product, uom, operation_id, product_qty)
                 product_id = vals.get("product_id", line.product_id.id)
                 uom_id = vals.get("product_uom_id", line.product_uom_id.id)
                 operation_id = vals.get("operation_id", line.operation_id.id)
@@ -247,14 +234,12 @@ class MrpBomLine(models.Model):
     def write(self, vals):
         operation = "update"
         if vals.get("product_id"):
-            # It will create update rebase line with negative quantity.
             self._bom_line_change([{"product_qty": 0.0}] * len(self), operation)
             operation = "add"
         self._bom_line_change([vals] * len(self), operation)
         return super().write(vals)
 
     def unlink(self):
-        # It will create update rebase line.
         self._bom_line_change([{"product_qty": 0.0}] * len(self))
         return super().unlink()
 

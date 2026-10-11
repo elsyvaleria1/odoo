@@ -301,7 +301,6 @@ class LunchSupplier(models.Model):
                     "module": "lunch",
                     "res_id": cron.ir_actions_server_id.id,
                     "model": "ir.actions.server",
-                    # noupdate is set to true to avoid to delete record at module update
                     "noupdate": True,
                 }
                 for cron in crons
@@ -340,7 +339,6 @@ class LunchSupplier(models.Model):
                 {"active": False}
             )
         if not CRON_DEPENDS.isdisjoint(values):
-            # flush automatic_email_time field to call _sql_constraints
             if "automatic_email_time" in values:
                 self.flush_model(["automatic_email_time"])
             self._sync_cron()
@@ -374,7 +372,6 @@ class LunchSupplier(models.Model):
         )
 
     def _get_current_orders(self, state="ordered"):
-        """Returns today's orders"""
         available_today = self.filtered("available_today")
         if not available_today:
             return self.env["lunch.order"]
@@ -389,8 +386,6 @@ class LunchSupplier(models.Model):
         )
 
     def _send_auto_email(self) -> None:
-        """Send an email to the supplier with the order of the day"""
-        # Called daily by cron
         self.check_singleton()
 
         if not self.available_today:

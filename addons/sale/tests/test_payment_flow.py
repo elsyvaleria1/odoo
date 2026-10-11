@@ -244,7 +244,6 @@ class TestSalePayment(AccountPaymentCommon, MailCase, PaymentHttpCommon, SaleCom
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.automatic_invoice", "True"
         )
-        # granted by the server: a user may not grant themselves a group
         self.sale_order.create_uid.sudo().group_ids += self.env.ref(
             "sale.group_auto_done_setting"
         )

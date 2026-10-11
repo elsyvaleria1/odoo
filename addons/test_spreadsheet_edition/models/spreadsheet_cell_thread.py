@@ -16,7 +16,6 @@ class SpreadsheetCellThread(models.Model):
 
     @api.model
     def _access_guard(self, operation):
-        # a thread follows the spreadsheet it is written on
         return super()._access_guard(operation) & (
             Domain("dummy_id", "=", False) | Domain("dummy_id", "access", "read")
         )

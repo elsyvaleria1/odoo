@@ -18,9 +18,6 @@ _debug = DebugLog(__name__)
 
 
 def cannot_release(thread: threading.Thread | None) -> bool:
-    # A dead thread, and a pooled HTTP worker back to idle, will never run the
-    # close() that returns what it holds. Any other live thread is still
-    # running: its acquisition is in use, not stranded.
     return (
         thread is None
         or not thread.is_alive()
@@ -55,8 +52,6 @@ def _release_foreign_acquisition(lock: Any) -> None:
                     holder.name,
                 )
                 return
-            # One release per stranded acquisition: the count is the holder's,
-            # and each of its stranded cursors returns one.
             lock._owner = me
         lock.release()
         _debug.logic("test.lock.stranded_released", adopted=foreign)
@@ -81,10 +76,6 @@ class TestCursor(BaseCursor):
 
     _cursors_stack: list[TestCursor] = []
     _revoked_by: str | None = None
-    # Every test cursor runs on the test's one connection. A cursor's thread
-    # holds this while it is on that connection, and while it takes or returns
-    # the registry test lock, so a revocation that holds it knows no statement
-    # is in flight and that no acquisition count moves under it.
     _connection_guard = threading.RLock()
 
     @classmethod
@@ -288,15 +279,11 @@ class TestCursor(BaseCursor):
             raise RuntimeError("Opening a read/write test cursor from a readonly one")
 
     def _check_outer_savepoints(self) -> None:
-        # Every test cursor shares one connection, and a cursor takes its savepoint on
-        # its first statement. An outer cursor whose first statement runs while this one
-        # is open would nest its savepoint inside ours, and our rollback would destroy it.
-        # Read-only cursors stay lazy: their savepoint sets the transaction read-only.
-        forced = 0  # debuglog
+        forced = 0
         for cursor in self._cursors_stack:
             if not cursor.readonly:
                 if not cursor._savepoint:
-                    forced += 1  # debuglog
+                    forced += 1
                 cursor._check_savepoint()
         if _debug.logic.enabled and forced:
             _debug.logic(
@@ -321,8 +308,6 @@ class TestCursor(BaseCursor):
         if rollback:
             self._cursor._on_rollback_to_savepoint()
 
-    # The wrapped cursor runs every statement, so it keeps the depth its
-    # replay, lock ledger, statement budget and pipeline read.
     def _savepoint_opened(self) -> None:
         self._cursor._savepoint_opened()
         super()._savepoint_opened()
@@ -394,15 +379,10 @@ class TestCursor(BaseCursor):
                 )
 
     def _release_wrapped_cursor(self) -> None:
-        # The rollback before this undid, server-side, every savepoint opened
-        # on this cursor and never closed; the wrapped cursor, which outlives
-        # it, must stop counting them.
         if leaked := self._savepoint_depth:
             _logger.warning("%d savepoint(s) left open on a closed test cursor", leaked)
             self._cursor._savepoint_depth -= leaked
             self._savepoint_depth = 0
-        # A statement budget lives as long as its cursor; here the real
-        # cursor outlives every test cursor, so the budget ends with this one.
         if getattr(self._cursor, "_statement_timeout", None) is not None:
             self._cursor.set_statement_timeout(None)
 
@@ -425,7 +405,7 @@ class TestCursor(BaseCursor):
         with self._connection_guard:
             if self._revoked_by is not None:
                 return
-            had_savepoint = self._savepoint is not None  # debuglog
+            had_savepoint = self._savepoint is not None
             self.clear()
             self._now = None
             self.postcommit.clear()

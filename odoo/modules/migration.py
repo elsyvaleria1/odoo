@@ -145,7 +145,6 @@ def _read_installed_versions(cr: Cursor) -> list[tuple[str, str | None]]:
             " WHERE state IN ('installed', 'to upgrade') ORDER BY name"
         )
     else:
-        # a database from before the column's rename keeps upstream's name
         cr.execute(
             "SELECT name, latest_version FROM ir_module_module"
             " WHERE state IN ('installed', 'to upgrade') ORDER BY name"
@@ -288,8 +287,6 @@ class MigrationManager:
         return pkg.load_version or ""
 
     def record_pending_end_migrations(self, pkg: module_graph.ModuleNode) -> None:
-        # the module's new db_version is committed before the end stage runs,
-        # so the version the end scripts start from must outlive a crash there
         if pkg.load_state != "to upgrade" or pkg.name in self.pending_end:
             return
         if not self._has_applicable_scripts(pkg, "end"):
@@ -327,14 +324,14 @@ class MigrationManager:
         with _debug.perf(
             "migration.index", graph=len(self.graph), indexed=len(self.migrations)
         ) as span:
-            added = 0  # debuglog
+            added = 0
             for pkg in self.graph:
                 if pkg.name in self.migrations:
                     continue
                 if not self._is_migration_required(pkg):
                     continue
 
-                added += 1  # debuglog
+                added += 1
                 self.migrations[pkg.name] = {
                     "module": _get_scripts_by_version(
                         _get_addon_path(pkg.name + "/migrations")
@@ -431,7 +428,7 @@ class MigrationManager:
                 if _is_migration_applicable(version, installed_version, target_version)
             ),
         )
-        scripts_run = 0  # debuglog
+        scripts_run = 0
         for version in versions:
             if not _is_migration_applicable(version, installed_version, target_version):
                 continue
@@ -444,7 +441,7 @@ class MigrationManager:
                 scripts=len(files),
             )
             for pyfile in files:
-                scripts_run += 1  # debuglog
+                scripts_run += 1
                 run_migration_script(
                     self.cr,
                     installed_version,

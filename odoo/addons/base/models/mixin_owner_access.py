@@ -77,9 +77,6 @@ class MixinOwnerAccess(models.AbstractModel):
 
     @api.model
     def _access_owner_delegates(self) -> bool:
-        # a many2one owner whose model states its whole access in ir.access is
-        # read through the 'access' operator; a many2one_reference owner, or a
-        # model that checks more in code, is scanned record by record
         field = self._fields.get(self._access_owner_field)
         if field is None or field.type != "many2one":
             return False
@@ -130,9 +127,6 @@ class MixinOwnerAccess(models.AbstractModel):
             )
         if self._access_owner_delegates():
             return super()._search(domain, offset, limit, order, **kwargs)
-        # what the record-level check admits (_access_forbidden_ids): a row
-        # with no owner, or one on an owner the user reaches, as one condition
-        # the database evaluates
         field = self._fields[self._access_owner_field]
         if field.type != "many2one_reference":
             comodel = self.env[field.comodel_name]
@@ -178,9 +172,6 @@ class MixinOwnerAccess(models.AbstractModel):
 
     @api.model
     def _access_owner_reach(self, Owner: models.BaseModel) -> typing.Any:
-        # the owners a row is read through, as a domain on the owner read in
-        # sudo, or CONCRETE where none states it (_access_owner_decide decides
-        # them): what _access_unreachable_owners decides record by record
         operation = self._access_owner_operation("read")
         try:
             reach = Owner._record_access_domain(operation)
@@ -192,7 +183,6 @@ class MixinOwnerAccess(models.AbstractModel):
 
     @api.model
     def _access_owner_decide(self, owners: models.BaseModel) -> models.BaseModel:
-        # of these owners, those a row is read through
         unreachable = self._access_unreachable_owners(
             {owners._name: set(owners._ids)}, "read"
         )

@@ -81,7 +81,6 @@ class TestTrackingCommand(TelegramBotTestCase):
             self.addCleanup(patcher.stop)
 
     def _message(self, text, *, chat_id=None, group=False):
-        """Dispatch a synthetic message and reject shipment writes or network calls."""
         self.message_id += 1
         message = self.mock_telegram_message(
             chat_id=chat_id or self.test_chat.chat_id,
@@ -117,7 +116,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self.assertNotIn(self.picking.carrier_status_branch, self._texts())
 
     def test_stock_reader_gets_saved_status_without_ai_or_writes(self):
-        """A stock reader receives the saved event and consultation dates."""
         reader = self.env["stock.picking"].with_user(self.test_user)
         self.assertTrue(reader.has_access("read"))
         self.assertFalse(reader.has_access("write"))
@@ -145,7 +143,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self.assertFalse(self.test_chat.flow_owner)
 
     def test_number_matches_exactly_and_ignores_case(self):
-        """Prefix and suffix collisions do not disclose another shipment."""
         collisions = [
             self.picking.copy({"carrier_tracking_ref": reference})
             for reference in ("XTST00000001", "TST000000010")
@@ -156,14 +153,12 @@ class TestTrackingCommand(TelegramBotTestCase):
             self.assertNotIn(picking.name, self._texts())
 
     def test_number_matches_one_element_of_multiple_references(self):
-        """A complete guide is found inside a comma-separated reference field."""
         self.picking.carrier_tracking_ref = "TST00000002, TST00000001, TST00000003"
         self._message("/rastreo TST00000001")
         self.assertIn(self.picking.name, self._texts())
         self.assertIn(self.customer.name, self._texts())
 
     def test_missing_or_malformed_number_never_lists_shipments(self):
-        """Invalid input returns usage without entering the global tracking query."""
         for text in (
             "/rastreo",
             "/rastreo abc",
@@ -182,7 +177,6 @@ class TestTrackingCommand(TelegramBotTestCase):
                 self._assert_no_shipment_data()
 
     def test_command_must_be_enabled_on_this_bot(self):
-        """An installed handler cannot answer through a bot that did not enable it."""
         self.test_bot.command_ids = [Command.unlink(self.command.id)]
         with patch.object(catalog, "answer", wraps=catalog.answer) as answer:
             self._message("/rastreo TST00000001")
@@ -190,7 +184,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self._assert_no_shipment_data()
 
     def test_unlinked_sender_cannot_consult(self):
-        """An unlinked Telegram account cannot enter the tracking query."""
         with patch.object(catalog, "answer", wraps=catalog.answer) as answer:
             self._message("/rastreo TST00000001", chat_id=self.unlinked_chat.chat_id)
         answer.assert_not_called()
@@ -198,14 +191,12 @@ class TestTrackingCommand(TelegramBotTestCase):
         self._assert_no_shipment_data()
 
     def test_group_chat_cannot_consult_even_for_a_linked_sender(self):
-        """A linked sender cannot expose a shipment to a group chat."""
         with patch.object(catalog, "answer", wraps=catalog.answer) as answer:
             self._message("/rastreo TST00000001", group=True)
         answer.assert_not_called()
         self._assert_no_shipment_data()
 
     def test_inactive_user_cannot_consult(self):
-        """Archiving the linked user immediately removes command access."""
         self.test_user.active = False
         with patch.object(catalog, "answer", wraps=catalog.answer) as answer:
             self._message("/rastreo TST00000001")
@@ -214,7 +205,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self._assert_no_shipment_data()
 
     def test_internal_user_without_stock_permission_cannot_consult(self):
-        """A valid internal binding does not replace stock read permission."""
         self.test_user.group_ids = [Command.set([self.env.ref("base.group_user").id])]
         self.assertFalse(
             self.env["stock.picking"].with_user(self.test_user).has_access("read")
@@ -226,7 +216,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self._assert_no_shipment_data()
 
     def test_record_guard_hides_a_shipment_from_an_authorized_reader(self):
-        """Record guards apply even when the user has model read permission."""
         self.env["ir.access"].create(
             {
                 "name": "Hide tracking fixture shipment",
@@ -244,7 +233,6 @@ class TestTrackingCommand(TelegramBotTestCase):
         self._assert_no_shipment_data()
 
     def test_only_companies_shared_by_bot_and_user_are_visible(self):
-        """Neither bot coverage nor user membership alone exposes another company."""
         other_company = self.env["res.company"].create(
             {"name": "Tracking fixture other company"}
         )
@@ -290,7 +278,6 @@ class TestTrackingCommand(TelegramBotTestCase):
                     self.assertIn("No transfer", self._texts())
 
     def test_help_and_menu_follow_bot_enablement(self):
-        """The command is advertised only on bots that enabled it."""
         self.assertIn("rastreo", self._menu_commands())
         self._message("/ayuda")
         self.assertIn("/rastreo", self._texts())
@@ -301,14 +288,12 @@ class TestTrackingCommand(TelegramBotTestCase):
         self.assertNotIn("/rastreo", self._texts())
 
     def test_help_and_menu_hide_tracking_without_stock_read_access(self):
-        """Help and Telegram's menu use the same permission gate as execution."""
         self.test_user.group_ids = [Command.set([self.env.ref("base.group_user").id])]
         self.assertNotIn("rastreo", self._menu_commands())
         self._message("/ayuda")
         self.assertNotIn("/rastreo", self._texts())
 
     def test_tracking_does_not_replace_another_handlers_flow(self):
-        """A read-only lookup leaves another handler's active conversation intact."""
         self.test_chat._flow_start(
             "telegram.handler.base", "fixture_other_step", {"marker": "unchanged"}
         )

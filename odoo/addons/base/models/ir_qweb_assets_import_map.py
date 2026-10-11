@@ -27,19 +27,19 @@ class IrQweb(models.AbstractModel):
     ) -> tuple[list[AssetNode], frozenset[str]]:
         nodes: list[AssetNode] = []
         mapped = set(rendered)
-        shims = dropped = narrowed_count = 0  # debuglog
+        shims = dropped = narrowed_count = 0
         for node in pre_nodes:
             if self._is_loader_shim_node(node):
-                shims += 1  # debuglog
+                shims += 1
                 continue
             if not self._is_import_map_node(node):
                 nodes.append(node)
                 continue
             narrowed = self._narrow_import_map_node(node, mapped)
             if narrowed is None:
-                dropped += 1  # debuglog
+                dropped += 1
                 continue
-            narrowed_count += 1  # debuglog
+            narrowed_count += 1
             mapped |= self._get_import_map_names([narrowed])
             nodes.append(narrowed)
         _debug.logic(
@@ -228,8 +228,6 @@ class IrQweb(models.AbstractModel):
             provided=shared,
         )
         reached = set(discovered) - own_specs
-        # A satellite can explicitly list a module already owned by its parent
-        # (for example account's tour helpers). It must reuse that module too.
         owned_modules = {
             asset.module_path
             for asset in sec_ab.native_modules
@@ -286,8 +284,6 @@ class IrQweb(models.AbstractModel):
         page_scope: tuple[str, ...] = (),
         sec_ab: AssetsBundle | None = None,
     ) -> dict[str, str]:
-        # what the satellite carries beyond its own modules: registered by the
-        # satellite so a runtime child loaded after it binds to that copy
         _stubbed, inlined = self._get_secondary_reach(
             bundle, assets_params, page_scope, sec_ab
         )
@@ -365,8 +361,6 @@ class IrQweb(models.AbstractModel):
     ) -> None:
         registry = esm_registry()
         secondaries = registry.secondary_import_map_includes.get(bundle, ())
-        # the later half of a split page maps its satellites itself, after its
-        # own bridges; merged here first, a source URL would shadow a bridge
         deferred = {
             name
             for half in secondaries
@@ -390,7 +384,7 @@ class IrQweb(models.AbstractModel):
                 assets_params=assets_params,
             )
             sec_data = sec_ab.get_native_module_data(with_bridges=False)
-            before = len(import_map)  # debuglog
+            before = len(import_map)
             for spec, url in sec_data["import_map"].items():
                 import_map.setdefault(spec, url)
             _debug.logic(
@@ -402,9 +396,6 @@ class IrQweb(models.AbstractModel):
             )
 
     def _get_bridge_url_aliases(self, bridge_map: Mapping[str, str]) -> dict[str, str]:
-        # a per-file module reaches a page module by url too: a relative import
-        # resolves to the module's file, which no specifier key matches, and
-        # the browser would evaluate a second copy of it from source
         return {
             url: bridge
             for spec, bridge in bridge_map.items()
@@ -420,21 +411,21 @@ class IrQweb(models.AbstractModel):
         bundle: str = "",
     ) -> dict[str, str]:
         resolved_map = {}
-        kept = dropped = seen = 0  # debuglog
+        kept = dropped = seen = 0
         for spec in discovered:
-            seen += 1  # debuglog
+            seen += 1
             current = import_map.get(spec)
             if current and not current.startswith((ESM_BRIDGE_URL_PREFIX, "data:")):
-                kept += 1  # debuglog
+                kept += 1
                 continue
             resolved = self._resolve_specifier_url(spec)
             if resolved:
                 import_map[spec] = resolved
                 resolved_map[spec] = resolved
             elif current and drop_unresolved:
-                dropped += 1  # debuglog
+                dropped += 1
                 del import_map[spec]
-        transitive = 0  # debuglog
+        transitive = 0
         if resolved_map:
             extra = discover_transitive_import_specifiers(
                 resolved_map,
@@ -445,7 +436,7 @@ class IrQweb(models.AbstractModel):
             for spec in sorted(extra):
                 resolved = self._resolve_specifier_url(spec)
                 if resolved:
-                    transitive += 1  # debuglog
+                    transitive += 1
                     import_map[spec] = resolved
                     resolved_map[spec] = resolved
         _debug.logic(

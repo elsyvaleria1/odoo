@@ -15,14 +15,11 @@ class WizardMailingContactAddList(models.TransientModel):
     )
 
     def action_add_contacts(self):
-        """Simply add contacts to the mailing list and close wizard."""
         return self._add_contacts_to_mailing_list(
             {"type": "ir.actions.act_window_close"}
         )
 
     def action_add_contacts_and_send_mailing(self):
-        """Add contacts to the mailing list and redirect to a new mailing on
-        this list."""
         self.check_singleton()
 
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(

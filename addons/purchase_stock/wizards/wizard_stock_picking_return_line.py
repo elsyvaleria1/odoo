@@ -11,8 +11,6 @@ class WizardStockPickingReturnLine(models.TransientModel):
             purchase_line_id, partner_id = (
                 self.move_id._get_purchase_line_and_partner_from_chain()
             )
-            # a receipt with no purchase behind it keeps the partner the
-            # return picking gives its moves
             if purchase_line_id:
                 vals["purchase_line_id"] = purchase_line_id
                 vals["partner_id"] = partner_id

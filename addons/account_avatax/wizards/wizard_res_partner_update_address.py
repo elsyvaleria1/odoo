@@ -61,7 +61,6 @@ class WizardResPartnerUpdateAddress(models.TransientModel):
         compute="_compute_validated_address",
     )
 
-    # field used to determine whether to allow updating the address or not
     is_already_valid = fields.Boolean(compute="_compute_validated_address")
 
     @api.depends("partner_id")

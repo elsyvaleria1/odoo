@@ -380,8 +380,6 @@ class ResCurrency(models.Model):
                 )
                 return num2words(number, lang="en").title()
 
-        # the words must name the amount `format` prints: the currency's
-        # half-up rounding, not the binary float's half-even
         amount = self.round(amount)
         integral, fractional = tools.float_split_str(amount, self.decimal_places)
         integer_value = int(integral)
@@ -510,9 +508,6 @@ class ResCurrency(models.Model):
         company_ids: Iterable[int] | SQL | None = None,
         date: Any = None,
     ) -> SQL:
-        # Mirrors _get_rate_from_history: from its root's first own rate on, a
-        # company sees only its root's rates; a missing rate, and any date
-        # before the first rate, take the earliest rate of the history in use.
         company_filter = SQL()
         if company_ids is not None:
             company_filter = SQL("WHERE c.id = ANY(%s)", _id_set(company_ids))
@@ -858,12 +853,12 @@ class ResCurrencyRate(models.Model):
         env_company_root = self.env.company.root_id
         company_currency_rates = self._get_company_currency_rates()
         rates_per_key = {}
-        derived = 0  # debuglog
+        derived = 0
         for currency_rate in self:
             company = currency_rate.company_id or env_company_root
             rate = currency_rate.rate
             if not rate:
-                derived += 1  # debuglog
+                derived += 1
                 if not currency_rate.name:
                     _debug.logic(
                         "company_rate_refused", rate=currency_rate.id, reason="no_date"

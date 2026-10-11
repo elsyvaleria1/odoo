@@ -83,7 +83,6 @@ class TestPayrollSEPACreditTransferCommon(TestHrPayrollAccountCommon):
         )
         cls.bank_journal.sepa_pain_version = "pain.001.001.09"
 
-        # ============================= MIURA =============================
         cls.miura_be_company = cls.env["res.company"].create(
             {
                 "name": "Miura BE company",
@@ -324,20 +323,15 @@ class TestPayrollSEPACreditTransferCommon(TestHrPayrollAccountCommon):
 @tagged("post_install", "-at_install")
 class TestPayrollSEPACreditTransfer(TestPayrollSEPACreditTransferCommon):
     def test_00_hr_payroll_account_iso20022(self):
-        """Checking the process of payslip when you create a SEPA payment."""
 
-        # I verify if the payslip has not already a payslip run.
         self.assertFalse(
             self.hr_payslip_john.payslip_run_id, "There is already a payslip run!"
         )
 
-        # I validate the payslip.
         self.hr_payslip_john.action_payslip_done()
 
-        # I verify the payslip is in validated state.
         self.assertEqual(self.hr_payslip_john.state, "validated", "State not changed!")
 
-        # I make the SEPA payment.
         file = (
             self.env["wizard.hr.payslip.export.payment.file"]
             .create(
@@ -351,32 +345,23 @@ class TestPayrollSEPACreditTransfer(TestPayrollSEPACreditTransferCommon):
             ._create_sepa_binary()
         )
 
-        # I verify if a file is created.
         self.assertTrue(file, "SEPA payment has not been created!")
 
-        # I verify the payslip is in validated state.
         self.assertEqual(
             self.hr_payslip_john.state, "validated", "State should not change!"
         )
 
     def test_01_hr_payroll_account_iso20022(self):
-        """Checking the process of payslip run when you create a SEPA payment."""
-        # I verify the payslip run is in draft state.
         self.assertEqual(self.payslip_run.state, "01_ready", "State not changed!")
 
-        # I create a payslip employee.
         self.payslip_run.generate_payslips(employee_ids=[self.hr_employee_john.id])
 
-        # I verify if the payslip run has payslip(s).
         self.assertTrue(len(self.payslip_run.slip_ids) > 0, "Payslip(s) not added!")
 
-        # I confirm the payslip run.
         self.payslip_run.action_validate()
 
-        # I verify the payslip run is in close state.
         self.assertEqual(self.payslip_run.state, "02_close", "State not changed!")
 
-        # I make the SEPA payment.
         file = (
             self.env["wizard.hr.payslip.export.payment.file"]
             .create(
@@ -390,16 +375,13 @@ class TestPayrollSEPACreditTransfer(TestPayrollSEPACreditTransferCommon):
             ._create_sepa_binary()
         )
 
-        # I verify if a file is created for the payslip run.
         self.assertTrue(file, "SEPA payment has not been created!")
 
-        # I verify the payslip is in paid state.
         self.assertEqual(self.payslip_run.state, "02_close", "State should not change!")
 
     def test_02_hr_payroll_account_iso20022_ch(self):
         self.assertEqual(self.payslip_run.state, "01_ready")
 
-        # I create a payslip employee.
         self.payslip_run.generate_payslips(employee_ids=[self.hr_employee_john.id])
 
         self.assertTrue(len(self.payslip_run.slip_ids) > 0)
@@ -425,14 +407,6 @@ class TestPayrollSEPACreditTransfer(TestPayrollSEPACreditTransferCommon):
         self.assertEqual(self.payslip_run.state, "02_close")
 
     def test_sepa_payslip_partner_bank_id(self):
-        """Check that the "bank_account_id" is set after account_register_payment wizard has
-        been initialized and that the action_create_payments (action launched when the
-        user clicks on "Create Payments" button of the account_register_payment wizard)
-        doesn't raise any error.
-
-        This test is not following any real spec, its only purpose is to check that the payslip
-        sepa payment flow works (so feel free to modify it if you feel like something's wrong)
-        """
         self.hr_payslip_miura.compute_sheet()
         self.hr_payslip_miura.action_payslip_done()
         self.hr_payslip_miura.move_id.action_post()
@@ -463,7 +437,6 @@ class TestPayrollSEPACreditTransferXmlValidity(TestPayrollSEPACreditTransferComm
 
     @test_xsd(path="account_iso20022/schemas/pain.001.001.03.xsd")
     def test_00_hr_payroll_account_iso20022(self):
-        """Checking the process of payslip when you create a SEPA payment."""
 
         self.hr_payslip_john.action_payslip_done()
         file = (
@@ -482,7 +455,6 @@ class TestPayrollSEPACreditTransferXmlValidity(TestPayrollSEPACreditTransferComm
 
     @test_xsd(path="account_iso20022/schemas/pain.001.001.03.xsd")
     def test_01_hr_payroll_account_iso20022(self):
-        """Checking the process of payslip run when you create a SEPA payment."""
 
         self.payslip_run.generate_payslips(employee_ids=[self.hr_employee_john.id])
         self.payslip_run.action_validate()

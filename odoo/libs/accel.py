@@ -39,8 +39,6 @@ _require = _field_access.require_type
 
 
 def csv_export_python(headers: list[Any], rows: list[Any]) -> bytes:
-    # the extension takes headers and rows as lists only; the twin refuses what it
-    # refuses, or code passing without it fails once it is built
     _require("csv_export", "headers", headers, list)
     _require("csv_export", "rows", rows, list)
     fp = io.StringIO()
@@ -63,8 +61,6 @@ def csv_export_python(headers: list[Any], rows: list[Any]) -> bytes:
 def rows_to_dicts_python(names: tuple[str, ...], rows: list[tuple]) -> list[dict]:
     _require("rows_to_dicts", "names", names, tuple)
     _require("rows_to_dicts", "rows", rows, list)
-    # the extension reads the tuples' and the list's storage, never their
-    # __iter__ or __len__, so a subclass overriding either reads the same here
     keys = names if type(names) is tuple else tuple(tuple.__iter__(names))
     width = len(keys)
     count = list.__len__(rows)
@@ -85,7 +81,6 @@ def rows_to_dicts_python(names: tuple[str, ...], rows: list[tuple]) -> list[dict
     return result
 
 
-# odoo_rust's clone.rs MAX_CLONE_DEPTH: both refuse the same structures
 _MAX_CLONE_DEPTH = 500
 
 
@@ -103,8 +98,6 @@ def _clone[T](obj: T, depth: int) -> T:
     if isinstance(obj, list):
         return cast("T", [_clone(value, depth + 1) for value in obj])
     if isinstance(obj, tuple):
-        # a list comprehension runs in this frame, a generator in its own:
-        # the same depth must cost the same stack as a dict's or a list's
         return cast("T", tuple([_clone(value, depth + 1) for value in obj]))
     return obj
 

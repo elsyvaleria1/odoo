@@ -13,7 +13,6 @@ class TestPosHrHttpCommon(TestPointOfSaleHttpCommon):
 
         cls.main_pos_config.write({"module_pos_hr": True})
 
-        # Admin employee
         cls.admin = (
             cls.env.ref("hr.employee_admin")
             .sudo()
@@ -28,7 +27,6 @@ class TestPosHrHttpCommon(TestPointOfSaleHttpCommon):
             )
         )
 
-        # Managers
         cls.manager_user = new_test_user(
             cls.env,
             login="manager_user",
@@ -48,7 +46,6 @@ class TestPosHrHttpCommon(TestPointOfSaleHttpCommon):
             {"name": "Test Manager 2", "company_id": cls.env.company.id, "pin": "5652"}
         )
 
-        # User employee
         cls.emp1 = cls.env["hr.employee"].create(
             {
                 "name": "Test Employee 1",
@@ -66,7 +63,6 @@ class TestPosHrHttpCommon(TestPointOfSaleHttpCommon):
             {"name": "Pos Employee1", "pin": "2580", "user_id": emp1_user.id}
         )
 
-        # Non-user employee
         cls.emp2 = cls.env["hr.employee"].create(
             {
                 "name": "Test Employee 2",
@@ -122,7 +118,6 @@ class TestUi(TestPosHrHttpCommon):
         self.start_pos_tour("PosHrTour", login="pos_admin")
 
     def test_cashier_stay_logged_in(self):
-        # open a session, the /pos/ui controller will redirect to it
         self.main_pos_config.with_user(self.pos_admin).open_ui()
 
         self.start_tour(
@@ -132,7 +127,6 @@ class TestUi(TestPosHrHttpCommon):
         )
 
     def test_cashier_can_see_product_info(self):
-        # open a session, the /pos/ui controller will redirect to it
         self.product_a.available_in_pos = True
         self.main_pos_config.with_user(self.pos_admin).open_ui()
 
@@ -143,7 +137,6 @@ class TestUi(TestPosHrHttpCommon):
         )
 
     def test_basic_user_cannot_close_session(self):
-        # open a session, the /pos/ui controller will redirect to it
         self.main_pos_config.advanced_employee_ids = []
         self.main_pos_config.basic_employee_ids = [
             Command.link(self.emp3.id),
@@ -176,8 +169,6 @@ class TestUi(TestPosHrHttpCommon):
         )
 
     def test_change_on_rights_reflected_directly(self):
-        """When changes in employee rights (advanced/basic/minimal) should
-        be reflected directly and not read from the cache."""
 
         self.main_pos_config.advanced_employee_ids = self.pos_admin.employee_id
         self.main_pos_config.with_user(self.pos_admin).open_ui()
@@ -188,13 +179,6 @@ class TestUi(TestPosHrHttpCommon):
         )
 
     def test_cashier_changed_in_receipt(self):
-        """
-        Checks that when the cashier is changed during the order,
-        the receipts displays the employee that concluded the order,
-        meaning the one that was at the register when the customer was paying.
-        Also checks that the order has the right cashier and employee in the same
-        use case.
-        """
         self.product_a.available_in_pos = True
         self.main_pos_config.with_user(self.pos_admin).open_ui()
 
@@ -293,8 +277,6 @@ class TestUi(TestPosHrHttpCommon):
         self.main_pos_config.set_maximum_difference = True
         self.main_pos_config.amount_authorized_diff = 0
 
-        # Admin users should still be able to override max difference
-        # regardless if they are the connected user or not
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_tour(
             "/pos/ui?config_id=%d" % self.main_pos_config.id,
@@ -302,8 +284,6 @@ class TestUi(TestPosHrHttpCommon):
             login="pos_user",
         )
 
-        # Advanced rights employees should not override max difference
-        # when the connected user has admin rights (they never should)
         self.main_pos_config.with_user(self.pos_admin).open_ui()
         self.start_tour(
             "/pos/ui?config_id=%d" % self.main_pos_config.id,
@@ -312,10 +292,6 @@ class TestUi(TestPosHrHttpCommon):
         )
 
     def test_scan_employee_barcode_with_pos_hr_disabled(self):
-        """
-        Ensure that scanning an employee barcode when module_pos_hr is disabled does not
-        trigger any traceback.
-        """
         self.main_pos_config.module_pos_hr = False
         self.main_pos_config.with_user(self.pos_admin).open_ui()
 

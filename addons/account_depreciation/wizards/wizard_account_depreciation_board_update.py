@@ -363,9 +363,6 @@ class WizardAccountDepreciationBoardUpdate(models.TransientModel):
             if self.asset_id.depreciation_move_ids
             else self.asset_id.date_acquisition
         )
-        # a date order, not a day count: a constant-period day is worth
-        # 30 / days-in-month, so a same-day count comes out at -0.03 in a
-        # 31-day month and at +0.07 in February
         if self.date <= date_before_pause:
             _debug.logic(
                 "resume.refused",

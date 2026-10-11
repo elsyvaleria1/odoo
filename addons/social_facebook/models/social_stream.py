@@ -56,7 +56,6 @@ class SocialStream(models.Model):
             self.FACEBOOK_REACTIONS_FIELDS,
         ]
         if endpoint_name == "published_posts":
-            # used for `facebook_reach`
             facebook_fields.append("insights.metric(post_media_view)")
 
         posts_endpoint_url = url_join(
@@ -138,7 +137,6 @@ class SocialStream(models.Model):
                     ]
                 existing_post.sudo().write(values)
             elif attachments or values["message"]:
-                # do not create post without content
                 values.update(attachments)
                 posts_to_create.append(values)
 
@@ -187,7 +185,6 @@ class SocialStream(models.Model):
                         }
                     )
             elif attachment.get("type") in ["photo", "animated_image_video"]:
-                # TODO improvement later: handle videos in Feed view to correctly display FB GIFs?
                 image_src = attachment.get("media", {}).get("image", {}).get("src")
                 if image_src:
                     result.update(
@@ -199,7 +196,6 @@ class SocialStream(models.Model):
                     )
 
             elif attachment.get("type") == "event":
-                # events creation post are handle like link and image in the frontend
                 result.update(
                     {
                         "link_title": attachment.get("title"),
@@ -222,41 +218,12 @@ class SocialStream(models.Model):
 
     @api.model
     def _format_facebook_message(self, message, tags):
-        """
-        This allows to create links to the referenced Facebook pages
-
-        example:
-            "Hello Odoo :)" -> "Hello @[542132] Odoo :)"
-            "Hello Odoo Social :)" -> "Hello @[542132] Odoo-Social :)"
-            "Hello Odoo - Social :)" -> "Hello @[542132] Odoo-Social :)"
-
-        details:
-            "Hello @[42] faketag Odoo - Social :)" -> "Hello @ [42] faketag @[542132] Odoo-Social :)""
-            -> With associated tag: {name: "Odoo - Social", offset: 20, length: 13}
-
-            We take the message until the tag offset: "Hello @[42] faketag "
-            and remove the fake tag in the process "Hello @ [42] faketag "
-            Then we insert the forged tag "@[542132] Odoo-Social"
-            Then take the rest of the message, starting at index tag offset + length, since we inserted the forged tag instead
-
-        :param message: str message
-        :param tags: list of tags in the message as received through Facebook endpoint
-            - id: ID of the page/user/group tagged
-            - name: name of the page/user/group tagged
-            - offset: position of the tag in the text
-            - length: length of the tag in the text
-        """
         if not message:
             return message
 
         def remove_forged_tags(message):
-            """
-            Remove False positive in the message
-                (e.g: if someone write "@[42] test" without tagging someone)
-            """
             return re.sub(r"\B@\[", "@ [", message)
 
-        # Remove Facebook hashtags that have are considered as tags with ID but are not managed by this method
         tags = [tag for tag in tags or [] if not tag.get("name", "").startswith("#")]
 
         message_index = 0

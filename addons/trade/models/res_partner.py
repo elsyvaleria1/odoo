@@ -118,7 +118,7 @@ class ResPartner(models.Model):
             order_groups = (
                 self.env[order_model]
                 .sudo()
-                ._read_group(  # noqa: E8507  one read group per order model
+                ._read_group(
                     domain=Domain.AND(
                         [
                             domain,
@@ -161,7 +161,7 @@ class ResPartner(models.Model):
             order_groups = (
                 self.env[order_model]
                 .sudo()
-                ._read_group(  # noqa: E8507  one read group per order model
+                ._read_group(
                     domain=Domain.AND(
                         [
                             domain,

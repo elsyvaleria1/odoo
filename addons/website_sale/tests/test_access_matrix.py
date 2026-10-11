@@ -218,7 +218,6 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
             employee_a="r",
             salesman_a="r",
             manager_a="r",
-            # marin makes sales managers price managers
             installed={"marin": {"manager_a": "w"}},
         ),
         Cell(
@@ -230,7 +229,6 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
             employee_a="r",
             salesman_a="r",
             manager_a="r",
-            # marin makes sales managers price managers
             installed={"marin": {"manager_a": "w"}},
         ),
         Cell(
@@ -304,7 +302,6 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
         env = cls.env
         a = cls.companies["a"]
         customer_c, customer_d = cls.partners["customer_c"], cls.partners["customer_d"]
-        # the partner's own pricelist exists only where pricelists are on
         env.ref("base.group_user").write(
             {
                 "implied_ids": [

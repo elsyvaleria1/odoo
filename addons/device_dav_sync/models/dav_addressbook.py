@@ -78,7 +78,7 @@ class DAVAddressbook(models.Model):
     def _compute_ctag(self) -> None:
         Partner = self.env["res.partner"].with_context(active_test=False)
         for addressbook in self:
-            [(count, latest)] = Partner._read_group(  # noqa: E8507 - each address book counts its own domain
+            [(count, latest)] = Partner._read_group(
                 addressbook._get_domain_contact(),
                 aggregates=["__count", "write_date:max"],
             )

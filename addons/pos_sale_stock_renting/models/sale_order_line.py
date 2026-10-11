@@ -5,11 +5,6 @@ class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
     def _compute_qty_transferred(self):
-        """This contains a duplicate of the sale_stock_renting and pos_sale logic.
-        This is required because the value written in pos_sale would be overwritten
-        by the sale_stock_renting logic. Doing this here make sure that the PoS value
-        is no erased because it's the last one written.
-        """
         super()._compute_qty_transferred()
 
         if not self.with_context(
@@ -44,11 +39,6 @@ class SaleOrderLine(models.Model):
                     )
 
     def _prepare_qty_transferred(self):
-        """This contains a duplicate of the sale_stock_renting and pos_sale logic.
-        This is required because the value written in pos_sale would be overwritten
-        by the sale_stock_renting logic. Doing this here make sure that the PoS value
-        is no erased because it's the last one written.
-        """
         delivered_qties = super()._prepare_qty_transferred()
 
         if not self.with_context(

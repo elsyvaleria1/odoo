@@ -5,8 +5,6 @@ from odoo.models import ValuesType
 from odoo.tools.translate import html_translate
 
 
-# Ranks define thresholds in the karma XP curve.  When a user's karma
-# crosses a threshold, they level up and optionally receive badges.
 class GamificationKarmaRank(models.Model):
     """Karma-based rank (level) in the gamification progression system."""
 
@@ -88,8 +86,6 @@ class GamificationKarmaRank(models.Model):
                 .search([], order="karma_min DESC, id")
                 .ids
             )
-            # `min(x, *[])` is `min(int)`, which raises TypeError: writing
-            # karma_min on an empty recordset is legal and used to blow up here.
             thresholds = [vals["karma_min"], *self.mapped("karma_min")]
             low, high = min(thresholds), max(thresholds)
 
@@ -102,8 +98,6 @@ class GamificationKarmaRank(models.Model):
                 .ids
             )
             if previous_ranks != after_ranks:
-                # Order changed: any ranked user can move, including one at
-                # karma 0 still holding a rank that `karma >= low` never selects.
                 users = (
                     self.env["res.users"]
                     .sudo()

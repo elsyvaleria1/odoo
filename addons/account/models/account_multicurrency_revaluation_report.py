@@ -8,10 +8,6 @@ from odoo.tools import SQL, float_is_zero
 _debug = DebugLog(__name__)
 
 
-# In multi-currency environments, the risk related to fluctuating currencies must be
-# controlled and some countries legally require journal entries provisioning the probable
-# future currency expense: an entry is created at the beginning of a period to make that
-# expense visible in reports, and reverted at the end of it to record the real gain/loss.
 class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
     """Manage Unrealized Gains/Losses."""
 
@@ -24,11 +20,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
         super()._custom_options_initializer(
             report, options, previous_options=previous_options
         )
-        # Currency normalization below is computed against self.env.company only (see
-        # `company_rate` a few lines down), so any other company selected via the
-        # multi-company selector would silently be normalized with the wrong rate.
-        # Restrict the report to the active company to match the UI warning
-        # ("This report only displays the data of the active company").
         options["companies"] = [
             company
             for company in options["companies"]
@@ -44,7 +35,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
         rates = active_currencies._get_rates(
             self.env.company, options.get("date").get("date_to")
         )
-        # Normalize the rates to the company's currency
         company_rate = rates[self.env.company.currency_id.id]
         for key in rates:
             rates[key] /= company_rate
@@ -152,11 +142,9 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
                 )
                 or (res_id == line_excluded_id and index == len(lines) - 1)
             ):
-                # 'To Adjust' and 'Excluded' lines need to be hidden if they have no child
                 continue
 
             if res_model_name == "res.currency":
-                # Include the rate in the currency_id group lines
                 line["name"] = "{for_cur} (1 {comp_cur} = {rate:.6} {for_cur})".format(
                     for_cur=line["name"],
                     comp_cur=self.env.company.currency_id.display_name,
@@ -164,13 +152,11 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
                 )
 
             elif res_model_name == "account.account":
-                # Mark the included/excluded lines, so that the custom component templates knows what label to put on them
                 line["is_included_line"] = (
                     report._get_res_id_from_line_id(line["id"], "report.formula.line")
                     == line_to_adjust_id
                 )
 
-            # Inject the related model into the line dict in order to use it on the custom component template on js side to display buttons
             line["cur_revaluation_line_model"] = res_model_name
 
             rslt.append(line)
@@ -196,7 +182,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
     def action_multi_currency_revaluation_open_revaluation_wizard(
         self, options
     ) -> dict:
-        """Open the revaluation wizard."""
         _debug.lifecycle(
             "action_multi_currency_revaluation_open_revaluation_wizard", records=self
         )
@@ -221,13 +206,10 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
             "context": {
                 **self.env.context,
                 "multicurrency_revaluation_report_options": options,
-                # The wizard reads the adjustments from here instead of running
-                # the report again on open, on every onchange, on save and on post.
                 "default_adjustment_vals": adjustment_vals,
             },
         }
 
-    # ACTIONS
     @_debug.perf.timed
     def action_multi_currency_revaluation_open_general_ledger(self, options, params):
         _debug.lifecycle(
@@ -257,7 +239,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
     def action_multi_currency_revaluation_toggle_provision(
         self, options, params
     ) -> dict:
-        """Include/exclude an account from the provision."""
         _debug.lifecycle(
             "action_multi_currency_revaluation_toggle_provision", records=self
         )
@@ -279,7 +260,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
     def action_multi_currency_revaluation_open_currency_rates(
         self, options, params=None
     ) -> dict:
-        """Open the currency rate list."""
         _debug.lifecycle(
             "action_multi_currency_revaluation_open_currency_rates", records=self
         )
@@ -376,7 +356,6 @@ class AccountMulticurrencyRevaluationReportHandler(models.AbstractModel):
             next_groupby=next_groupby,
             header_only=not current_groupby,
         )
-        # No need to run any SQL if we're computing the main line: it does not display any total
         if not current_groupby:
             return {
                 "balance_currency": None,

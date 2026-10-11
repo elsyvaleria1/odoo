@@ -1,9 +1,6 @@
 from odoo import api, fields, models
 from odoo.tools import SQL, frozendict
 
-# Real move ids are positive int4, order ids are negative int4. Templates use
-# the next positive namespace, stable across inserts and exactly representable
-# by JavaScript. The UNION promotes its virtual id column to bigint.
 TEMPLATE_SOURCE_ID_OFFSET = 2**31
 
 
@@ -53,7 +50,6 @@ class MixinAccountDocumentMatch(models.AbstractModel):
                 ("is_payment", "=", False),
                 ("move_type", "in", self._get_source_move_types()),
             ]
-            # Use the source model's ORM query, including its access policies.
             readable = Template._search(domain)
             lang = self.env.lang or "en_US"
             values = {

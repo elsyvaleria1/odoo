@@ -22,7 +22,6 @@ from pathlib import Path
 HEADER_AFTER = "operation"
 NEW_COLUMNS = ("reach", "anchor")
 PREDICATE_COLUMNS = ("predicate_id/id", "predicate_args")
-# the record each predicate the recognizer names is shipped as
 PREDICATE_XMLIDS = {
     "base.user_has_access": "base.access_predicate_user_has_access",
     "base.is_member": "base.access_predicate_is_member",
@@ -89,7 +88,6 @@ def csv_rewrite(path: Path, rows: dict[str, dict]) -> int:
 
 
 def xml_rewrite(path: Path, rows: dict[str, dict]) -> int:
-    # one field line per value, keeping the file's own formatting elsewhere
     text = path.read_text(encoding="utf-8")
     changed = 0
     for xmlid, row in rows.items():
@@ -146,8 +144,6 @@ def xml_rewrite(path: Path, rows: dict[str, dict]) -> int:
 
 
 def model_classes(module: Path) -> dict[str, tuple[Path, ast.ClassDef]]:
-    # the class a module defines or extends each model with, when one class
-    # names exactly that model
     found: dict[str, tuple[Path, ast.ClassDef]] = {}
     for path in sorted(module.rglob("*.py")):
         if {"tests", "migrations", "upgrades", "static"} & set(
@@ -222,7 +218,6 @@ def declare_in_class(path: Path, node: ast.ClassDef, anchors: dict[str, str]) ->
         start, end = existing.lineno - 1, existing.end_lineno
         lines[start:end] = [render(merged, indent)]
     else:
-        # after the leading class attributes (_name, _inherit, _description...)
         last = node.body[0]
         for stmt in node.body:
             if (
@@ -271,7 +266,6 @@ _KINDS: dict[str, str] = {}
 
 
 def model_base(roots: list[Path], model: str) -> str:
-    # the base the model is defined with, read from its defining class
     if not _KINDS:
         pattern = re.compile(
             r"^class \w+\((?:models\.)?(Model|TransientModel|AbstractModel)\):"
@@ -348,7 +342,6 @@ def main() -> None:
         }
         declared = {k for k in keys if k in declarations.get(model, {})}
         if not all("anchor" in p for p in row["parts"]):
-            # the planner found no anchor for a part: the row keeps its domain
             continue
         by_file[row["file"]][row["xmlid"]] = row
         file = Path(row["file"])
@@ -376,7 +369,6 @@ def main() -> None:
         if args.dry_run:
             continue
         module = modules[module_name]
-        # re-read each time: an earlier declaration moved the lines
         classes = model_classes(module)
         if model in classes:
             declare_in_class(*classes[model], anchors)

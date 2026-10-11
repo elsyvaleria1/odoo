@@ -21,10 +21,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         cls.task_1.write({"date_end": cls.task_1_date_deadline, "planned_hours": 1})
 
     def test_gantt_reschedule_date_not_active(self):
-        """This test purpose is to ensure that auto shift date feature is not active when it shouldn't:
-        * When the task has no project (either the moved task or the linked one (predecessor_ids or successor_ids).
-        * When the calculated planned_start_date is prior to now.
-        """
 
         def test_task_3_dates_unchanged(
             task_1_new_planned_dates, failed_message, domain_force=False, **context
@@ -52,7 +48,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
         self.task_4.predecessor_ids = [Command.clear()]
 
-        # Checks that no date shift is made when the moved task has no project_id
         failed_message = (
             "The auto shift date feature should not be triggered after having moved a task that "
             "does not have a project_id."
@@ -64,7 +59,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
         self.task_1.write({"project_id": project_id.id})
 
-        # Checks that no date shift is made when the linked task has no project_id
         failed_message = (
             "The auto shift date feature should not be triggered on tasks (predecessor_ids/successor_ids) "
             "that do have a project_id."
@@ -76,7 +70,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
         self.task_3.write({"project_id": project_id.id})
 
-        # Checks that no date shift is made when the new planned_date is prior to the current datetime.
         with freeze_time(
             self.task_1_no_date_gantt_reschedule_trigger()["date_start"]
             + relativedelta(weeks=1)
@@ -90,48 +83,11 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
             )
 
     def test_gantt_reschedule_forward_dependent_task_consume_and_maintain_buffer(self):
-        """
-            All tasks in this test have allocated_hours, so their duration is computed according to the allocated hours
-            Initial state:
-                            ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
-                            │ Task 1  │ -->  │ Task 3  │ -->  │ Task 4  │ -->  │ Task 5  │ -->  │ Task 6  │
-                            │         │      │         │      │         │      │02/08 8H │      │         │
-                            │ 24/06   │      │ 24/06   │      │ 30/06   │      │   ->    │      │ 04/08   │
-                            │ 9H > 10H│      │13H > 15H│      │15H > 17H│      │03/08 17H│      │ 8H->17H │
-                            └─────────┘      └─────────┘      └─────────┘      └─────────┘      └─────────┘
-
-            buffer(1, 3) = 2 hours (10H -> 12H), lunch hour from 12H -> 13H is not counted
-            buffer(3, 4) = 32 hours
-            buffer(4, 5) = 0
-            buffer(5, 6) = 0
-
-        This test purpose is to ensure that task 3 that depends on a task 1 is shifted forward when task 1 advances in 2 ways:
-            1- consume buffer: task 3 can start directly (when possible) after task 1, tasks 4, 5, 6 should not be replanned as there no
-        conflicts to solve.
-
-            2- maintain buffer: task 3 should start after min = buffer = 2H after the end of task 1, tasks 4, 5 and 6 should move as the buffer should
-        be maintained
-
-                             ┌─────────┐
-                             │ Task 1  │
-                             │         │
-                             │ 24/06   │
-                             │13H > 14H│
-                             └─────────┘
-                                   |
-                                   |  ┌─────────┐
-                                   |  │ Task 3  │
-                                   -->│         │   task 3 should move to the right with its children 4, 5 and 6
-                                      │ 24/06   │             =>
-                                      │13H > 15H│
-                                      └─────────┘
-        """
 
         moved_tasks = self.task_3 | self.task_1
         not_moved_tasks = self.task_4 | self.task_5 | self.task_6
         old_vals = {task.name: (task.date_start, task.date_end) for task in moved_tasks}
 
-        # 1- consume buffer
         res = self.gantt_reschedule_consume_buffer(
             self.task_1, self.task_1_date_gantt_reschedule_trigger()
         )
@@ -168,7 +124,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
             old_vals[self.task_1.name],
         )
 
-        # 2- maintain buffer
         moved_tasks |= not_moved_tasks
         for task in not_moved_tasks:
             old_vals[task.name] = (task.date_start, task.date_end)
@@ -222,26 +177,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
 
     def test_gantt_reschedule_backward_dependent_task_consume_and_maintain_buffer(self):
-        """
-        All tasks in this test have allocated_hours, so their duration is computed according to the allocated hours
-        This test purpose is to ensure that a task A that depends on a task B is shifted backward, up to before
-            B date_start_effective field value.
-
-                                    ┌─────────┐
-        task 5 should move          │ Task 5  │
-        to the left with            | 02/08 8H|
-        its ancestors               │  ->     │
-                <=                  │         │-------
-                                    │03/08 17H│      |
-                                    └─────────┘      |
-                                   |------------------
-                                   |  ┌─────────┐
-                                   |  │ Task 6  │
-                                   -->│         │
-                                      │ 03/08   │
-                                      │08H > 17H│
-                                      └─────────┘
-        """
         moved_tasks = self.task_6 | self.task_5 | self.task_4
         not_moved_tasks = self.task_3 | self.task_1
         old_vals = {task.name: (task.date_start, task.date_end) for task in moved_tasks}
@@ -251,7 +186,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
             "date_end": "2021-08-03 17:00:00",
         }
 
-        # 1- consume buffer
         res = self.gantt_reschedule_consume_buffer(self.task_6, task_6_vals)
         self.assert_old_tasks_vals(
             res, "success", "Tasks rescheduled", moved_tasks, old_vals
@@ -330,11 +264,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
     def test_gantt_reschedule_forward_dependent_task_maintain_buffer_with_missing_start_date_on_task(
         self,
     ):
-        """
-        Tests forward rescheduling with maintain buffer when a dependent task (Task 3) has no planned start date.
-        Task 1 move to the right, but Task 3 and its children 4, 5 and 6 remains unchanged due to Task 3
-        missing planned start date.
-        """
         self.task_3.date_start = False
         task3_date_deadline = self.task_3.date_end
         res = self.gantt_reschedule_maintain_buffer(
@@ -342,7 +271,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
         self.assertEqual(self.task_1.date_start, datetime(2021, 6, 24, 13))
         self.assertEqual(self.task_1.date_end, datetime(2021, 6, 24, 14))
-        # Task 3 and its children 4, 5 and 6 remains unchanged
         self.assertFalse(self.task_3.date_start)
         self.assertEqual(self.task_3.date_end, task3_date_deadline)
         self.assert_task_not_replanned(
@@ -353,11 +281,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
     def test_gantt_reschedule_backward_dependent_task_maintain_buffer_with_missing_date_deadline_on_task(
         self,
     ):
-        """
-        Tests backward rescheduling with maintain buffer when a depends on task (Task 4) has no date deadline.
-        Task 6 -> task 5 should move to the left but Task 4 and its parent 3 and 1 remains unchanged due to
-        Task 4 missing date deadline.
-        """
         self.task_4.date_end = False
         task4_date_begin = self.task_4.date_start
         task_6_vals = {
@@ -369,7 +292,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         self.assertEqual(self.task_6.date_end, datetime(2021, 8, 3, 17))
         self.assertEqual(self.task_5.date_start, datetime(2021, 6, 30, 8))
         self.assertEqual(self.task_5.date_end, datetime(2021, 8, 2, 17))
-        # Task 4 and its parent 3 and 1 remains unchanged
         self.assertFalse(self.task_4.date_end)
         self.assertEqual(self.task_4.date_start, task4_date_begin)
         self.assert_task_not_replanned(
@@ -379,15 +301,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_gantt_reschedule_with_planned_hours(self):
-        """This test purpose is to ensure that the task planned_date_fields (begin/end) are calculated accordingly to
-        the allocated_hours if any. So if a dependent task has to be move forward up to before an unavailable period
-        of time and that its allocated_hours is such that the date_end would fall into that unavailable
-        period, then the date_end will be push forward after the unavailable period so that the
-        allocated_hours constraint is met.
-
-        task 3 is planned from 13H to 15H but with allocated hours = 8, when it will be moved, it will be planned
-        in coherence with its allocated hours
-        """
         self.task_3.planned_hours = 8
         self.gantt_reschedule_consume_buffer(
             self.task_1, self.task_1_date_gantt_reschedule_trigger()
@@ -404,11 +317,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_gantt_reschedule_without_allocated_hours(self):
-        """This test purpose is to ensure that the interval made by the task planned_date_fields (begin/end) is
-        preserved when no allocated_hours is set.
-
-        task 3 allocated hours = 0, task duration when moving it will be 2H as the difference between dates
-        """
         self.task_3.write(
             {
                 "planned_hours": 0,
@@ -428,9 +336,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
 
     def test_gantt_reschedule_project_user(self):
-        """This test purpose is to ensure that the project user has the sufficient rights to trigger a gantt
-        reschedule.
-        """
         new_task_6_planned_date_begin = self.task_5_planned_date_begin + timedelta(
             hours=1
         )
@@ -466,15 +371,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_project2_reschedule_cascading_forward(self):
-        """
-        This test concerns project2 tasks, when task 0 is moved ahead of task 8.
-        As tasks 1, 2, 3 are children of 0, they should be done after it,
-        they should also be moved forward in one of this 2 valid orders
-            1- ['0', '1', '2', '3']
-            2- ['0', '1', '3', '2']
-            but it will be usually the first option as task 3 is the first in the successor_ids of task 1
-        All the other tasks should not move.
-        """
         self.project2_task_1.successor_ids = self.project2_task_1.successor_ids.sorted(
             key=lambda t: t.name, reverse=True
         )
@@ -530,17 +426,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_project2_reschedule_cascading_backward(self):
-        """
-        This test concerns project2 tasks, when the left arrow is clicked. task 8 should be moved behind task 0
-        As tasks 4, 6, 5, 7 are ancestors for 8 and should be done before it, they should be moved backward.
-        A valid topo order can be:
-            1- ['8', '7', '5', '6', '4']
-            2- ['8', '7', '6', '4', '5']
-            it will be usually 2 as task 5 is the first in the predecessor_ids of task 7.
-        9 and 10 should not be impacted as they are not ancestors of 8.
-        We shouldn't have conflicts with 11, 12, 13 and 14 that are already planned in the past
-        All the other tasks should not move.
-        """
         self.project2_task_7.predecessor_ids = (
             self.project2_task_7.predecessor_ids.sorted(key=lambda t: t.name)
         )
@@ -620,22 +505,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_project2_reschedule_cascading_backward_no_planning_in_the_past(self):
-        """
-        This test concerns project2 tasks, when the left arrow is clicked. task 8 should be moved behind task 0
-        As tasks 4, 6, 5, 7 are ancestors for 8 and should be done before it, they should be moved backward.
-        As we can't plan taks in the past and there are no available intervals to plan, so they should be
-        planned starting from now and it will create conflicts
-
-        fake now (01/04)                 07/04
-                |                          |
-                |                          |
-                |                          |
-
-                   [ 7 ]--->[8]----->[0]->[1]->[2]
-                [ 6 ]
-                [ 4 ]
-                [ 5 ]
-        """
         self.project2_task_0.date_start = datetime(year=2021, month=4, day=7, hour=8)
         res = self.gantt_reschedule_consume_buffer(
             self.project2_task_8,
@@ -711,15 +580,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_compute_task_duration(self):
-        """
-        when task allocated_hours = 0, duration is computed as the intersection of work intervals and [date_start, date_end]
-        example: task 6 is planned from datetime(2024, 3, 9, 8, 0) to datetime(2024, 3, 13, 12, 0)
-        duration is 20:
-        - 0 on 09/03 and 10/03 as it's weekend
-        - 8 on 11/03
-        - 8 on 12/03
-        - 4 from 8H to 12H
-        """
         durations = self.project2_task_6._get_tasks_durations(
             self.user_projectuser, "date_start", "date_end"
         )
@@ -727,16 +587,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
 
     @users("admin")
     def test_backward_cross_project(self):
-        """
-        When the move back/for{ward} concerns 2 tasks from 2 different projects, it's done
-        exactly like the previous cases (tasks belonging to same project). There is nothing
-        special for this case.
-
-        Test dependencies Project     [5]---       ---->[6]---      -->[8]
-                                           |       |         |      |
-        project_pigs                       |    [4]-         --->[7]-
-                                           |_________________|
-        """
         self.project2_task_7.successor_ids = self.project2_task_7.successor_ids.sorted(
             key=lambda t: t.name
         )
@@ -822,25 +672,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         )
 
     def test_move_forward_with_multi_users(self):
-        """
-                    -------------------------------------------------
-                    |                                               |
-                    v                                               |
-        Raouf 1    [0]->[ 1 ]------>[2]----------->[5]   |->[7]    [8]
-                         |  |        ^      --------|----
-                         |  |        |      |       |
-        Raouf 2          |  -->[3]   |      |       ----->[9]----->[10]
-                         |           |      |
-                         |           |      |
-        Raouf 3 and 2    ---------->[4]---->[6]
-
-        When we move 0 in front of 8:
-        - 3, 4 can be planned in // just after the end of 1
-        - 2, 6 can be planned in // just after the end of 4
-        - 5 planned after 2
-        - 9, 10 should wait for 5 to be planned even if there are available slots before
-        - 7 planned after 6
-        """
         self.project2_task_8.write(
             {
                 "predecessor_ids": [Command.unlink(self.project2_task_7.id)],
@@ -963,21 +794,6 @@ class TestGanttRescheduleOnTasks(ProjectGanttRescheduleCommon):
         self.assert_task_not_replanned(moved_tasks, self.initial_dates)
 
     def test_move_backward_with_multi_users(self):
-        """
-                     ----------------------------------------------------------------
-                     |                                                              |
-                     v                                                              |
-        Armande     [13]    [0]->[ 1 ]------>[2]----------->[5]   |->[7]---------->[8]
-                                  |  |        ^      --------|-----                 ^
-                                  |  |        |      |       |                      |
-        Raouf 2                   |  -->[3]   |      |       ----->[9]------------>[10]
-                                  |           |      |
-                                  |           |      |
-        Raouf 3 & Raouf 2         ---------->[4]---->[6]
-
-        When we move 8 before 13:
-        - all the ancestors of 8 should move before 8 (0, 1, 4, 2, 6, 7, 5, 9, 10, 8)
-        """
         self.project2_task_7.successor_ids = self.project2_task_7.successor_ids.sorted(
             key=lambda t: t.name
         )

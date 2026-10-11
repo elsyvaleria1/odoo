@@ -104,7 +104,6 @@ class HrVersion(models.Model):
         tracking=True,
         groups="hr.group_hr_user",
     )
-    # FIXME: holidays and wage_with_holidays are defined twice...
     holidays = fields.Float(
         string="Extra Time Off",
         tracking=True,
@@ -149,7 +148,6 @@ class HrVersion(models.Model):
         groups="hr.group_hr_user",
     )
 
-    # Employer costs fields
     final_yearly_costs = fields.Monetary(
         string="Yearly Cost",
         compute="_compute_final_yearly_costs",
@@ -541,7 +539,6 @@ class HrVersion(models.Model):
         return self.read(load=None)[0]
 
     def _get_wage_to_apply(self):
-        # To be overriden in localizations if a new wage applies depending on selected benefits
         self.check_singleton()
         return self.wage_with_holidays
 

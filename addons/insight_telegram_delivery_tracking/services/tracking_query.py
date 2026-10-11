@@ -8,13 +8,11 @@ ON_THE_WAY = ("documented", "in_transit", "at_destination", "out_for_delivery", 
 
 
 def _when(ask, value) -> str:
-    """A stored UTC datetime as the owner reads it: "8 oct 2026 16:09"."""
     local = pytz.UTC.localize(value).astimezone(pytz.timezone(ask.tz))
     return f"{ask.format_day(local.date())} {local:%H:%M}"
 
 
 def _status(picking, reference) -> dict:
-    """Read one guide's snapshot, or the transfer summary when unambiguous."""
     if reference:
         for key, value in (picking.carrier_tracking_details or {}).items():
             if key.upper() == reference:
@@ -138,7 +136,6 @@ def run_tracking(ask):
 
 
 def _freshness(ask, pickings, reference=None) -> list:
-    """Distinguish successful reads from failed attempts and unread transfers."""
     if not pickings:
         return []
     reads = [date for date in pickings.mapped("date_carrier_tracking_sync") if date]

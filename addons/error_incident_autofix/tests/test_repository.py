@@ -100,7 +100,6 @@ class TestRepositoryOfAModule(TransactionCase):
         self.assertFalse(self.Repository._for_module(""))
 
     def test_an_origin_git_cannot_read_is_no_repositorys(self):
-        # no git to ask is not "no origin": the directory's name decides nothing
         checkout = self._clone("odoo")
         self.assertEqual(self._for(checkout), self._ref("odoo"))
         with patch.dict(repository.os.environ, {"PATH": str(self.root)}):

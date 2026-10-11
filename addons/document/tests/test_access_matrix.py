@@ -89,8 +89,6 @@ class TestDocumentAccessMatrix(AccessMatrixCase):
             "document.access.tracking",
             "tracking",
         ),
-        # reached only through a document, by code holding the privilege:
-        # not even the document's owner reads the row
         Cell(
             "document.thumbnail",
             "thumbnail",

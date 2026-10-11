@@ -258,7 +258,6 @@ class TestRoutingIntegrity(ApprovalCommon):
         self._delegate_row(row, self.delegate_user)
         self.assertIn(self.delegate_user, request.pending_user_ids)
 
-    # -- a request keeps the configuration it was routed under ---------------
 
     def _two_member_step(self, **step_vals):
         return self._category(

@@ -122,7 +122,6 @@ class SocialTwitterCase(SocialCase):
         )
         self.assertTrue(tweet_1.twitter_can_retweet)
 
-        # When we retweet the tweet with the same account:
         retweet = self.env["social.stream.post"].create(
             {
                 "message": "RT Hello world",
@@ -134,12 +133,10 @@ class SocialTwitterCase(SocialCase):
             }
         )
 
-        # We should not be able to retweet the tweet or the retweet with the same account:
         tweet_1.invalidate_recordset()
         self.assertFalse(tweet_1.twitter_can_retweet)
         self.assertFalse(retweet.twitter_can_retweet)
 
-        # But if the same tweet appears in another stream:
         tweet_2 = self.env["social.stream.post"].create(
             {
                 "message": tweet_1.message,
@@ -150,7 +147,6 @@ class SocialTwitterCase(SocialCase):
             }
         )
 
-        # We should be able to retweet it with the other account:
         tweet_1.invalidate_recordset()
         retweet.invalidate_recordset()
         self.assertFalse(tweet_1.twitter_can_retweet)
@@ -158,7 +154,6 @@ class SocialTwitterCase(SocialCase):
         self.assertTrue(tweet_2.twitter_can_retweet)
 
     def test_no_duplicated_tweets_in_stream(self):
-        # There should not be duplicated tweets within a stream:
         account = self.social_stream_1.account_id
         tweet = self.env["social.stream.post"].create(
             {
@@ -182,7 +177,6 @@ class SocialTwitterCase(SocialCase):
                     }
                 )
 
-        # But, we can store the same tweet in another stream
         self.env["social.stream.post"].create(
             {
                 "message": tweet.message,
@@ -203,7 +197,6 @@ class SocialTwitterCase(SocialCase):
             "social_twitter.disable_mentions", True
         )
 
-        # without `ignore_mention` parameter
         assert_results = [
             ["@mister hello", "@ mister hello"],
             ["111@mister hello", "111@mister hello"],
@@ -219,7 +212,6 @@ class SocialTwitterCase(SocialCase):
                 self.env["social.live.post"]._remove_mentions(message), expected
             )
 
-        # with `ignore_mention` parameter
         assert_results = [
             ["@mister hello", ["mister"], "@mister hello"],
             ["@mister hello", ["MISTER"], "@mister hello"],
@@ -240,7 +232,6 @@ class SocialTwitterCase(SocialCase):
                 ["mister", "test"],
                 "@Mister hello @ miste @TEST",
             ],
-            # will remove `mister_kiwi_12` but must keep `mister_kiwi_123`
             [
                 "special mention @mister_kiwi_123 @mister_kiwi_12",
                 ["mister_kiwi_123"],
@@ -281,15 +272,13 @@ class SocialTwitterCase(SocialCase):
         )
         counter_message = f"{len(message_to_post)} / {social_media.max_post_length} characters to fit in a Post"
 
-        # When posting a message exceeding the Twitter limit (280 characters), verify that the
-        # preview properly shows that we exceed the limit (with highlighted exceeding text).
         self.assertEqual(social_post.twitter_post_limit_message, counter_message)
         self.assertTrue(
             "o_social_twitter_message_exceeding" in social_post.twitter_preview
         )
 
         with self.assertRaises(ValidationError):
-            social_post.action_post()  # Should raise ValidationError when trying to post tweet having content exceeding the limit
+            social_post.action_post()
 
         social_media.max_post_length = 0
         social_post._compute_twitter_post_limit_message()
@@ -297,9 +286,8 @@ class SocialTwitterCase(SocialCase):
         counter_message = f"{len(message_to_post)} / {social_media.max_post_length} characters to fit in a Post"
 
         self.assertEqual(social_post.twitter_post_limit_message, counter_message)
-        # Preview should not have Exceed Content when Max content length is satisfied
         self.assertTrue(
             "o_social_twitter_message_exceeding" not in social_post.twitter_preview
         )
 
-        social_post.action_post()  # Should not raise ValidationError when trying to post tweet having proper content length
+        social_post.action_post()

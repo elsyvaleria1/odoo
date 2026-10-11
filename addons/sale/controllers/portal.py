@@ -449,7 +449,7 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
         if order_sudo._has_to_be_signed() and decline_message:
             _debug.lifecycle("portal_order_declined", order=order_sudo)
             order_sudo._action_cancel()
-            order_sudo.line_ids.currency_id  # noqa: B018 (intentional: primes the currency cache)
+            order_sudo.line_ids.currency_id
 
             order_sudo.message_post(
                 author_id=(
@@ -574,8 +574,6 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
 
     @staticmethod
     def _portal_line_quantity(order_line, quantity, delta):
-        # a typed quantity wins over the -/+ button that came with it: Enter
-        # in the field submits the form with its first button, the minus
         try:
             typed = int(quantity) if quantity not in (None, "") else None
             if typed is not None and (

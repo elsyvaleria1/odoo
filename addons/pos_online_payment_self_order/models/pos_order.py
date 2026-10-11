@@ -48,8 +48,6 @@ class PosOrder(models.Model):
         return super().create(prepared)
 
     def write(self, vals):
-        # Because use_self_order_online_payment is not intended to be changed manually,
-        # avoid to raise an error.
         if "use_self_order_online_payment" not in vals:
             return super().write(vals)
 
@@ -85,9 +83,6 @@ class PosOrder(models.Model):
     def _compute_online_payment_method_id(self) -> None:
         for order in self:
             if order.use_self_order_online_payment:
-                # It is expected to use the self order online payment method.
-                # If for any reason it is not defined, then the online payment
-                # of the order is set to null to make the problem noticeable.
                 order.online_payment_method_id = (
                     order.config_id.self_order_online_payment_method_id
                 )
@@ -101,9 +96,6 @@ class PosOrder(models.Model):
             and not res.get("deleted", False)
             and not isinstance(next_online_payment_amount, bool)
         ):
-            # This method is only called in the POS frontend flow, not self order.
-            # If the next online payment is 0, then the online payment of the frontend
-            # flow is cancelled, and the default flow is self order if it is configured.
             self.use_self_order_online_payment = (
                 self.currency_id.is_zero(next_online_payment_amount)
                 and self.config_id.self_order_online_payment_method_id
@@ -112,7 +104,6 @@ class PosOrder(models.Model):
 
     def _send_notification_online_payment_status(self, status) -> None:
         self.check_singleton()
-        # the till prints the order it is told of, and loads it itself
         self.config_id._notify(
             "ONLINE_PAYMENT_STATUS",
             {"status": status, "data": {"pos.order": [{"id": self.id}]}},
@@ -120,7 +111,7 @@ class PosOrder(models.Model):
         self._notify_self_order_device(
             "ONLINE_PAYMENT_STATUS",
             {
-                "status": status,  # progress, success, fail
+                "status": status,
                 "data": {
                     "pos.order": self.read(
                         self._load_pos_self_data_fields(self.config_id), load=False

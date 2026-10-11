@@ -795,8 +795,6 @@ class IrModelFields(models.Model):
             for record in self
             if (field := self.env[record.model]._fields.get(record.name))
         )
-        # a code field keeps depending on a popped field until its depends are
-        # derived again: a callable @api.depends names the manual fields it saw
         code_dependents = OrderedSet(
             dependent
             for field in popping
@@ -980,7 +978,6 @@ class IrModelFields(models.Model):
                 self.env.core.pop_dirty(field)
         fields_ = records._pop_registry_fields()
         self.pool.discard_fields([field for field in fields_ if field is not None])
-        # the popped fields must come back if this transaction does not commit
         self.pool.registry_invalidated = True
         views = self._get_views_mentioning(records.mapped("name"))
         _debug.logic("views_mentioning_fields", fields=len(records), views=len(views))
@@ -1055,7 +1052,6 @@ class IrModelFields(models.Model):
             attachments.write({"res_field": self.name})
 
     def _is_module_data(self, record: Self, requested: set[tuple[str, str]]) -> bool:
-        # an inherited copy of a manual field goes with its base field, never alone
         if record.state == "manual":
             return False
         model = self.env.get(record.model)
@@ -1202,8 +1198,6 @@ class IrModelFields(models.Model):
         return res
 
     def _compute_new_stored_attachments(self) -> None:
-        # _auto_init finds a new attachment field by its missing reflection; a
-        # manual field is reflected before its schema reloads, so it is found here
         for record in self:
             model = self.env.get(record.model)
             field = model._fields.get(record.name) if model is not None else None
@@ -1351,7 +1345,7 @@ class IrModelFields(models.Model):
             _debug.logic("rename_xml_ids.skipped", fields=len(old_names))
             return
         by_id = {record.id: record for record in self}
-        renamed = 0  # debuglog
+        renamed = 0
         for entry in entries:
             record = by_id[entry.res_id]
             derived = field_xmlid(entry.module, record.model, old_names[entry.res_id])
@@ -1360,7 +1354,7 @@ class IrModelFields(models.Model):
                     "rename_xml_ids.kept", xmlid=entry.id, reason="custom_name"
                 )
                 continue
-            renamed += 1  # debuglog
+            renamed += 1
             entry.name = field_xmlid(entry.module, record.model, record.name).partition(
                 "."
             )[2]
@@ -1595,8 +1589,6 @@ class IrModelFields(models.Model):
                 field_ids[row[:2]] = id_
             self.pool.post_init(mark_modified, self.browse(ids), cols[2:])
 
-        # a lookup cached before this reflection would still answer with the old
-        # field set; seed it with what the table holds now, as _reflect_models does
         ids_by_model: dict[str, dict[str, int]] = {name: {} for name in model_names}
         for (field_model, field_name), field_id in field_ids.items():
             ids_by_model[field_model][field_name] = field_id
@@ -1635,10 +1627,6 @@ class IrModelFields(models.Model):
     def _update_inherited_translations(
         self, module_names: list[str], langs: list[str]
     ) -> None:
-        # A catalogue names only the models of its module's dependency closure,
-        # so the label a mixin gives a model outside it (calendar's
-        # activity_calendar_event_id on account.move) has no entry of its own.
-        # Whichever of the two loads last reflects the row that lacks it.
         langs = [lang for lang in langs if lang != "en_US"]
         if not langs or not module_names:
             _debug.logic(
@@ -1826,8 +1814,6 @@ class IrModelFields(models.Model):
     def _is_path_ready_now(
         self, model_name: str, path: str, seen: frozenset[tuple[str, str]]
     ) -> bool:
-        # a related path through a manual field that is itself deferred
-        # (its comodel not loaded yet) waits with it
         for name in path.split("."):
             if model_name not in self.env:
                 return False

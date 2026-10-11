@@ -98,7 +98,7 @@ class MailActivity(models.Model):
         required=False,
         ondelete="cascade",
     )
-    res_model = fields.Char(  # noqa: E8529  CHECK mail_activity_check_res_id_is_set_if_model; CHECK mail_activity_check_user_id_is_set_if_model; index (res_model, res_id)
+    res_model = fields.Char(
         related="res_model_id.model",
         string="Related Document Model",
         precompute=True,
@@ -169,7 +169,7 @@ class MailActivity(models.Model):
         required=False,
         ondelete="cascade",
     )
-    user_tz = fields.Selection(  # noqa: E8529  _sql_today builds a CASE on alias.user_tz; the source is two joins away (res_users, res_partner)
+    user_tz = fields.Selection(
         related="user_id.tz",
         string="Timezone",
         store=True,
@@ -561,11 +561,7 @@ class MailActivity(models.Model):
         operation = next(iter(value))
         mine = Domain("user_id", "=", self.env.uid)
         if operation == "read" and self.env.context.get(PINNED_TO_SELF):
-            # a search pinned to the reader's own activities: every row it can
-            # return is already within `mine`, so no document is asked
             return mine
-        # the ORM resolves an access domain as the superuser; the documents'
-        # access is the user's own
         return (
             self.sudo(False)
             .with_context(**{PINNED_TO_SELF: False})
@@ -574,18 +570,10 @@ class MailActivity(models.Model):
 
     @api.model
     def _document_reach_domain(self, operation: str) -> Domain:
-        # the activities the user reaches through their document, as the
-        # document's own message access says it (_mail_access_domain):
-        # - read: the assignee's, or on a document whose messages they read
-        # - write: on a document whose messages they may edit
-        # - create: on a document they may post on, or their own on one they
-        #   read or follow; with no document, their own
         documents = frozenset(m for m in self._activity_models() if m in self.env)
         if (scope := self.env.context.get(SCOPED_TO_MODELS)) is not None:
             documents &= scope
         if self.env.context.get(ON_ACTIVITY):
-            # an activity filed on an activity reaches through that one, one
-            # level deep: the reach of its reach would recurse forever
             documents -= {self._name}
         documents = tuple(sorted(documents))
         mine = Domain("user_id", "=", self.env.uid)
@@ -605,9 +593,6 @@ class MailActivity(models.Model):
 
     @api.model
     def _on_documents(self, operation: str, documents: tuple[str, ...]) -> Domain:
-        # an activity is reached where its document's messages are: each
-        # document probed per row, as activities are few against their
-        # documents and hashing a document model's whole reach costs more
 
         def decide(activities: MailActivity) -> MailActivity:
             nested = activities.with_context(
@@ -635,7 +620,6 @@ class MailActivity(models.Model):
 
     @api.model
     def _followed_ids(self, res_model: str) -> Domain:
-        # the user's own subscriptions, whatever the document lets them read
         followers = self.env["mail.followers"]._search(
             [
                 ("res_model", "=", res_model),
@@ -647,7 +631,6 @@ class MailActivity(models.Model):
 
     @api.model
     def _activity_models(self) -> frozenset[str]:
-        # the document models activities are on, read once per transaction
         return self._known_activity_models()[0]
 
     @api.model
@@ -671,8 +654,6 @@ class MailActivity(models.Model):
     def _note_models_to_come(
         self, vals_list: list[ValuesType], defaults: Mapping = frozendict()
     ) -> None:
-        # before activities land on a model the transaction has not seen, the
-        # reach must know it: the create guard only reaches the models it knows
         cache = self.env.cr.cache
         if (known := cache.get(ACTIVITY_MODELS_KEY)) is None:
             return
@@ -694,7 +675,6 @@ class MailActivity(models.Model):
 
     @api.model
     def _refuse_personal_for_others(self, vals_list: list[ValuesType]) -> None:
-        # the create guard refuses these too; this names why
         if self.env.su:
             return
         context = self.env.context
@@ -767,8 +747,6 @@ class MailActivity(models.Model):
         undated = [vals for vals in vals_list if not vals.get("date_deadline")]
         if not undated:
             return vals_list
-        # the assignees browsed together: the first one's time zone read
-        # fetches them all
         assignees = self.env["res.users"].union(
             *(self._assignee_of(vals) for vals in undated)
         )
@@ -793,7 +771,6 @@ class MailActivity(models.Model):
         backed = self._filtered_document_backed()
         if not backed:
             return backed
-        # the create reach decides, not whether the user may read the activities
         postable = set(
             self.with_context(active_test=False)
             ._search(
@@ -937,9 +914,6 @@ class MailActivity(models.Model):
 
     @api.model
     def _pinned_models(self, domain: DomainType) -> frozenset[str] | None:
-        # the document models a search can only return activities of, when its
-        # domain pins them (res_model) or pins ids whose model is in cache: the
-        # document reach then asks those models only
         domain = Domain(domain)
         conjuncts = (
             domain.children if getattr(domain, "OPERATOR", None) == "&" else (domain,)
@@ -1723,10 +1697,6 @@ class MailActivity(models.Model):
             yield model, activities, activities.mapped("res_id")
 
     def _create_successors(self, next_values: list[ValuesType]) -> Self:
-        # a completed activity's declared successors, created on the
-        # completer's authority (a privilege whose row names only successors,
-        # the activity guards still binding): one the completer may not file
-        # on its record is skipped and logged, finishing the activity never is
         if not next_values:
             return self.browse()
         Successors = self.with_context(clean_context(self.env.context)).with_privilege(
@@ -1754,8 +1724,6 @@ class MailActivity(models.Model):
         types = self.env["mail.activity.type"].browse(
             [values.get("activity_type_id") for values in skipped]
         )
-        # the completed activities name their document's model, which the
-        # completer need not be able to read in ir.model
         models_ = {activity.res_model_id.id: activity.res_model for activity in self}
         _debug.logic("successors_skipped", count=len(skipped))
         self.env["ir.access.log"]._record(

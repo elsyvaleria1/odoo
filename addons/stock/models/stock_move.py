@@ -605,8 +605,6 @@ class StockMove(models.Model):
     @_debug.perf.timed
     def unlink(self):
         _debug.lifecycle("unlink", moves=self)
-        # validate before the lines go, as the @api.ondelete hook only runs
-        # after them -- and, like it, not while a module is uninstalled
         if not self.env.context.get(MODULE_UNINSTALL_FLAG):
             self._unlink_except_done_or_linked()
         self.with_context(prefetch_fields=False).mapped("move_line_ids").unlink()
@@ -858,15 +856,6 @@ class StockMove(models.Model):
             label += f" ({self.create_uid.display_name})"
         return label
 
-    # `product_uom_id.factor` is read here, through `_get_quantity_stored`,
-    # and is deliberately NOT declared. `uom.uom.write` refuses a ratio change
-    # only while moves are OPEN (`state not in ("cancel", "done")`), so a unit
-    # can be re-rated once its moves are done -- and a done move's `product_qty`
-    # is what was actually moved, not a conversion to be replayed. Measured: a
-    # done move of 2 boxes at 10 units records 20; after the box is re-rated to
-    # 20 units the stored value stays 20, and a forced recompute writes 40.
-    # Declaring the dependency would rewrite history on every historical move
-    # whose unit was ever re-rated.
     @api.depends("product_id", "product_uom_id", "product_uom_qty")
     def _compute_product_qty(self):
         for move in self:
@@ -914,9 +903,6 @@ class StockMove(models.Model):
         for move in self:
             move.packaging_uom_id = move.product_uom_id
 
-    # `product_uom_id.factor` is deliberately absent for the same reason as on
-    # `_compute_product_qty` above: a re-rated unit must not restate what a done
-    # move recorded.
     @api.depends("product_uom_qty", "product_uom_id", "packaging_uom_id")
     def _compute_quantity_packaging_uom(self) -> None:
         for move in self:
@@ -1042,8 +1028,6 @@ class StockMove(models.Model):
                 )
             self.env["stock.move.line"].browse(mls_to_unlink).unlink()
 
-        # the lines the increases add are created in one batch: a create per
-        # move reserves, links and recomputes states one move at a time
         commands_by_move = {}
         for move in self:
             delta_qty = move.quantity - move._get_move_line_quantity()
@@ -1194,8 +1178,6 @@ class StockMove(models.Model):
         )
         moves_to_cancel.state = "cancel"
 
-        # the whole batch is cancelled before any sibling is inspected, so the
-        # dests and origins it cascades to can be cancelled in one call each
         dest_ids_to_cancel = OrderedSet()
         orig_ids_to_cancel = OrderedSet()
         detached_origs_by_dest = defaultdict(OrderedSet)
@@ -1354,7 +1336,6 @@ class StockMove(models.Model):
             ),
         )
         receipt_moves_to_reassign -= receipt_moves_to_reassign.filtered("picked")
-        # `_unreserve` leaves picked moves alone, so nothing recomputed their state
         kept_picked = move_to_unreserve.filtered("picked")
         move_to_recompute_state = (
             self - (move_to_unreserve - kept_picked) - receipt_moves_to_reassign

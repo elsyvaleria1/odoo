@@ -35,8 +35,6 @@ class FollowupRequest:
     mail_template: Any = None
     sms_template: Any = None
 
-    # Content. None means "the renderer builds the default"; the manual wizard
-    # fills these in with whatever the user edited.
     subject: str | None = None
     body: str | None = None
     sms_body: str | None = None
@@ -50,15 +48,11 @@ class FollowupRequest:
     join_invoices: bool = True
     print_letter: bool = False
 
-    # Per-channel overrides. Absent means "ask the follow-up level", which is
-    # what `is_channel_enabled` does. Channels are open: snailmail and whatsapp add their own
-    # without this class knowing their names.
     channels: Mapping[str, bool] = MappingProxyType({})
     extra: Mapping[str, Any] = MappingProxyType({})
 
     @classmethod
     def prepare(cls, partner: Any, followup_line: Any = None, **values: Any) -> Self:
-        """Resolve a request for `partner`, defaulting from its follow-up level."""
         partner.check_singleton()
         followup_line = (
             followup_line
@@ -76,7 +70,6 @@ class FollowupRequest:
         return cls(partner=partner, followup_line=followup_line, **values)
 
     def replace(self, **changes: Any) -> Self:
-        """Return a copy with `changes` applied, normalised the same way as prepare."""
         if "attachment_ids" in changes:
             changes["attachment_ids"] = tuple(changes["attachment_ids"] or ())
         for key in ("channels", "extra"):
@@ -85,19 +78,12 @@ class FollowupRequest:
         return dataclasses.replace(self, **changes)
 
     def with_channel(self, channel: str, enabled: bool) -> Self:
-        """Return a copy that forces `channel` on or off.
-
-        The seam a module adding a channel extends, so it never has to know how
-        the others are stored.
-        """
         return self.replace(channels={**self.channels, channel: enabled})
 
     def with_extra(self, **values: Any) -> Self:
-        """Return a copy carrying module-specific values the core does not model."""
         return self.replace(extra={**self.extra, **values})
 
     def is_channel_enabled(self, channel: str, default: bool) -> bool:
-        """Whether `channel` should be used, `default` being the level's own setting."""
         return bool(self.channels.get(channel, default))
 
     @property

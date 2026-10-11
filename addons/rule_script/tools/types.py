@@ -55,8 +55,6 @@ def _dict(value):
 
 
 def freeze(value):
-    """A copy of a JSON-like value the caller keeps no handle on: lists become
-    tuples, mappings are copied, scalars and dates pass."""
     if isinstance(value, (list, tuple)):
         return _list(value)
     if isinstance(value, dict):

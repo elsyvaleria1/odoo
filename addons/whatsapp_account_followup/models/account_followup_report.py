@@ -7,9 +7,6 @@ class AccountFollowupReport(models.AbstractModel):
 
     @api.model
     def _send_whatsapp(self, partner, whatsapp_composer=None, followup_line=None):
-        """
-        Send by WhatsApp the followup to the customer
-        """
         if not whatsapp_composer:
             if not followup_line:
                 raise ValidationError(

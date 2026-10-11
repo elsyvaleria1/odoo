@@ -10,22 +10,11 @@ CLIENT_PROXIMITY_TOLERANCE_M = 50
 DWELL_THRESHOLD_MINUTES = 30
 DWELL_STATIONARY_RADIUS_M = 100
 DWELL_CLIENT_SEARCH_RADIUS_M = 2000
-# A tracker parked on a parcel goes to deep sleep and stops reporting. A
-# silence shorter than this is still the same stay; a longer one ends the
-# visit at the last position received, so an overnight stop does not run
-# the duration up until the vehicle moves again.
 VISIT_MAX_SILENCE = timedelta(hours=6)
-# How far back _find_visit_arrival may walk. A stay that began earlier than
-# this would have had to survive a VISIT_MAX_SILENCE gap, which ends it, so
-# the floor cannot truncate a real arrival; it does keep the scan bounded.
 VISIT_LOOKBACK = timedelta(days=2)
 DWELL_FALLBACK_USER_LOGIN_PARAM = "device_gps_geoengine.dwell_fallback_user_login"
 DWELL_FALLBACK_GROUP = "device_gps_geoengine.group_device_gps_geofence_editor"
-# 4 decimals is ~11 m: finer than any street address resolves, coarse enough
-# that GPS jitter on a parked vehicle does not trigger a new lookup.
 ADDRESS_KEY_DECIMALS = 4
-# Nominatim's address parts, most specific first, grouped by what each one
-# says: the street, the settlement, the municipality, the state.
 ADDRESS_PARTS = (
     ("road",),
     ("neighbourhood", "suburb", "quarter", "hamlet", "village"),
@@ -102,9 +91,6 @@ class DeviceDevice(models.Model):
             device.gps_speed_max_today = top
 
     def _gps_speed_today_by_device(self) -> dict:
-        """{device_id: (avg, max)} over today's positions, today being the
-        user's local day: a night-shift driver at 01:00 local is still on
-        the same day their dispatcher sees."""
         if not self.ids:
             return {}
         tz = self.env.tz
@@ -133,10 +119,6 @@ class DeviceDevice(models.Model):
         }
 
     def get_current_address(self) -> str | bool:
-        """Street address of the device's last position, for the live map
-        popup. Resolved on demand rather than on every map load: the map
-        reads dozens of devices at once and Nominatim allows one request a
-        second."""
         self.check_singleton()
         latitude = self.log_gps_last_latitude
         longitude = self.log_gps_last_longitude
@@ -497,14 +479,6 @@ class DeviceDevice(models.Model):
             device._track_client_visit(now)
 
     def _track_client_visit(self, now) -> None:
-        """Open and close this device's client visit from its GPS positions.
-
-        Arrival and departure are the timestamps of the positions that
-        crossed the parcel edge, not `now`: this runs every 5 minutes and
-        can be down for hours, and stamping the cron's clock put visits at
-        midnight for vehicles that had parked at three. `now` only decides
-        whether the tracker has gone silent.
-        """
         self.check_singleton()
         current = self.current_client_geofence_id
         ongoing = self._ongoing_client_visit_geofence()
@@ -522,23 +496,6 @@ class DeviceDevice(models.Model):
                 self._open_client_visit(current, arrival)
 
     def _stay_was_already_closed(self, geofence, arrival, now, last_seen) -> bool:
-        """The stay starting at `arrival` on `geofence` is the visit the
-        silence branch has already closed, not a new one.
-
-        That branch closes a visit while the parcel it was on is still the
-        device's current one, so the next run sees a closed visit against a
-        current parcel -- the shape that opens one. It must not: the tracker
-        is still asleep, the walk back returns the same arrival, and the two
-        loop, banking an identical visit every second run of a 5-minute cron.
-
-        All four tests are load-bearing. Without the silence test a device
-        that leaves a parcel and comes back within the same second -- which
-        is every test using the default timestamp -- would be refused its
-        second visit. Without the geofence test a device asleep beside a
-        different parcel from the one it last left would be refused. And
-        without the arrival test a tracker that wakes up on the same parcel
-        would be, since its new stay starts after the recorded departure.
-        """
         return bool(
             now - last_seen > VISIT_MAX_SILENCE
             and self.client_visit_departure
@@ -578,21 +535,6 @@ class DeviceDevice(models.Model):
         )
 
     def _find_visit_arrival(self, geofence):
-        """Timestamp of the first position of the current stay on `geofence`.
-
-        Walks the positions back from the last one, on the same proximity
-        rule as the detection, and stops at the first position off the
-        parcel or at a silence longer than VISIT_MAX_SILENCE: the stay
-        begins at the first on-parcel position after that boundary. With
-        no history it is the last position's own timestamp.
-
-        The walk is floored at VISIT_LOOKBACK before that last position.
-        Without a lower bound the scan is open-ended on the older side, and
-        the log table is a postgres_fdw foreign table: the geometry join and
-        the window functions keep ORDER BY ... LIMIT on this side of the
-        wire, so the remote server reads the device's whole history before
-        the LIMIT can apply.
-        """
         self.check_singleton()
         last_log = self.log_gps_last_id
         if not last_log or not last_log.timestamp:

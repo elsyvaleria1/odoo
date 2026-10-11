@@ -43,7 +43,7 @@ class TestMailRenderMixin(common.HttpCase):
 
         with self.allow_requests(
             all_requests=True
-        ):  # Creating link will query url to infer title
+        ):
             self.env["mixin.mail.render"]._shorten_links("".join(test_links), {})
 
         trackers_to_find = [
@@ -70,7 +70,7 @@ class TestMailRenderMixin(common.HttpCase):
             [
                 ("url", "=", "https://www.odoo.com?test=%20+3&this=that"),
                 ("label", "=", "THERE > there"),
-            ],  # lxml unescaped
+            ],
         ]
         trackers_to_fail = [
             [("url", "=", "https://test_542152qsdqsd.com"), ("label", "ilike", "_")],
@@ -88,7 +88,6 @@ class TestMailRenderMixin(common.HttpCase):
 
     @mute_logger("odoo.tests.transaction_case.requests")
     def test_shorten_links_html_different_labels(self):
-        # Covers multiple additions from web_editor's convert_inline.js classToStyle
         content = """<p>There is a <a href="https://www.odoo.com">logo.png</a> here,
 <a href="https://www.odoo.com">there</a>, and in this
 <a href="https://www.odoo.com"><!--[if mso]><img src="https://www.odoo.com/logo.png" alt="image" style="1"/><![endif]-->
@@ -155,7 +154,6 @@ And here is the same: <a href="{self.base_url}/r/(\w+)+"><img src="https://www.o
                 f"Different labels {trackers_to_find[idx1][1][2]} and {trackers_to_find[idx2][1][2]} should have different short codes.",
             )
 
-        # Making sure no link got the short code of another one
         for idx in range(len(trackers_to_find) - 2):
             assert_different_shortcode(idx, idx + 1)
         self.assertNotEqual(matches[0], matches[8])
@@ -190,15 +188,13 @@ And a 7th: <a href="{self.base_url}/r/(\w+)">Here2</a><br/>
 And a last, more complex: <a href="{self.base_url}/r/(\w+)">There!</a>
 </p>"""
         )
-        with self.allow_requests(all_requests=True):  # shorten_links queries the url
+        with self.allow_requests(all_requests=True):
             new_content = self.env["mixin.mail.render"]._shorten_links(content, {})
 
         self.assertRegex(new_content, expected_pattern)
         matches = expected_pattern.search(new_content).groups()
-        # 3rd and 4th, 6th and 7th lead to the same short_urls
         self.assertEqual(matches[2], matches[3])
         self.assertEqual(matches[5], matches[6])
-        # The others not.
         self.assertNotEqual(matches[0], matches[1])
         self.assertNotEqual(matches[0], matches[2])
         self.assertNotEqual(matches[1], matches[2])
@@ -257,12 +253,11 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
         )
         with self.allow_requests(
             all_requests=True
-        ):  # Creating link will query url to infer title
+        ):
             new_content = self.env["mixin.mail.render"]._shorten_links_text(content, {})
 
         self.assertRegex(new_content, expected_pattern)
         matches = expected_pattern.search(new_content).groups()
-        # 3rd and 4th lead to the same short_url
         self.assertEqual(matches[0], matches[1])
 
     def test_shorten_links_text_skip_shorts(self):
@@ -300,14 +295,6 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
         )
 
     def test_shorten_blacklisted_links(self):
-        """The html and text shorteners must honour a blacklist identically.
-
-        Both branches used to call `_shorten_links`, so the text path -- the one
-        whose matching semantics differed -- was never exercised at all. Repairing
-        that alone catches nothing: every item here was path-prefixed, and both
-        implementations agreed on those. The host-matching cases are the ones that
-        discriminate, and they used to disagree.
-        """
         test_links = [
             (
                 'This link should not be shortened: <a href="https://www.example.com/page/blacklist">text</a>',
@@ -353,12 +340,6 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
                     self.assertIn(keyword, shorten_text)
 
     def test_shorten_blacklist_matches_a_host(self):
-        """A blacklist item naming a host must be honoured by both shorteners.
-
-        The html path matched against the whole absolute URL and the text path
-        against the path alone, so this entry protected an html body and silently
-        did nothing for an SMS one.
-        """
         url = "https://blacklisted-host.example.com/page"
         shorten_html = self.env["mixin.mail.render"]._shorten_links(
             f'<a href="{url}">text</a>', {}, blacklist=["blacklisted-host.example.com"]
@@ -370,11 +351,6 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
         self.assertNotIn("/r/", shorten_text)
 
     def test_shorten_blacklist_items_are_literals(self):
-        """Blacklist items are literals, not regular expressions.
-
-        They were interpolated raw, so `a.c` matched `/abc`, `a+` matched `/aaa`,
-        and a lone `(` raised re.PatternError out of a public helper.
-        """
         for item, url in [
             ("a.c", "https://literal.example.com/abc"),
             ("a+", "https://literal.example.com/aaa"),
@@ -385,21 +361,12 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
                 )
                 self.assertIn("/r/", shortened, f"{item!r} must not match as a pattern")
 
-        # an item that is not a valid regex must not raise
         shortened = self.env["mixin.mail.render"]._shorten_links(
             '<a href="https://paren.example.com/x">text</a>', {}, blacklist=["("]
         )
         self.assertIn("/r/", shortened)
 
     def test_shorten_links_text_skips_only_our_own_routes(self):
-        """`/sms/` belongs to mass_mailing_sms, not here.
-
-        This module skipped it unconditionally while depending on neither `sms`
-        nor `mass_mailing_sms`, so every caller inherited the carve-out whether or
-        not it could emit one. It now arrives through
-        `_shorten_links_text_skip_prefixes`, which the owning module extends --
-        so what is asserted depends on which side of that split is installed.
-        """
         base_url = self.env["mixin.mail.render"].get_base_url()
         prefixes = self.env["mixin.mail.render"]._shorten_links_text_skip_prefixes(
             base_url
@@ -408,7 +375,6 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
             base_url + "/r/", prefixes, "link_tracker claims its own short-link route"
         )
 
-        # an already-shortened link is left alone either way
         short = f"{base_url}/r/abcdefgh"
         self.assertEqual(
             self.env["mixin.mail.render"]._shorten_links_text(short, {}), short
@@ -440,7 +406,6 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
             self.assertIn("/r/", shortened)
 
     def test_shorten_links_keeps_the_body_structure(self):
-        """`fromstring` synthesises a wrapper around a multi-root fragment."""
         body = '<p>Hello</p><p><a href="https://struct.example.com">Click</a></p>'
         shortened = self.env["mixin.mail.render"]._shorten_links(body, {})
         self.assertTrue(
@@ -449,13 +414,11 @@ And a last, with question mark: {self.base_url}/r/(\w+)"""
         )
         self.assertNotIn("<div>", shortened)
 
-        # a single-rooted body is unchanged in shape, as it always was
         body = '<div><p><a href="https://struct2.example.com">Click</a></p></div>'
         shortened = self.env["mixin.mail.render"]._shorten_links(body, {})
         self.assertTrue(shortened.startswith("<div><p>"))
 
     def test_shorten_links_survives_an_unparseable_body(self):
-        """A body that parses to nothing raised ParserError onto the send path."""
         body = '<!--[if mso]><a href="https://mso.example.com">C</a><![endif]-->'
         self.assertEqual(
             self.env["mixin.mail.render"]._shorten_links(body, {}),

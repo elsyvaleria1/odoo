@@ -127,15 +127,6 @@ class TestHrHolidaysMultiCompanyCommon(TestHrHolidaysCommon):
         )
 
     def test_the_columns_the_company_rules_filter_are_indexed(self):
-        """The global company rules must not make every read a sequential scan.
-
-        `hr_leave_rule_multicompany` puts `company_id` in the domain of every
-        read of a time off, and `hr_leave_allocation_rule_multicompany` reaches
-        `holiday_status_id.company_id`, which the ORM resolves by joining
-        through that Many2one (`_traverse_related_sql`). Both columns carry the
-        weight of the security layer on every query, so neither may be left
-        without an index.
-        """
         expected = {
             ("hr_leave", "company_id"),
             ("hr_leave", "holiday_status_id"),

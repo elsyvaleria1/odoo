@@ -58,8 +58,6 @@ class AccountReturn(models.Model):
         required=True,
     )
 
-    # IMPORTANT: To change the state of a return you should always write on the 'state' field; its
-    # inverse dispatches the value to the selection field named by type_id.states_workflow.
     state = fields.Char(
         compute="_compute_state",
         inverse="_inverse_state",
@@ -115,7 +113,7 @@ class AccountReturn(models.Model):
         default=False,
         tracking=True,
         write_classification="account.return_workflow",
-    )  # Set to true when all steps are done
+    )
     is_closed_outside_odoo = fields.Boolean(
         string="Closed Outside Odoo",
         copy=False,
@@ -186,7 +184,6 @@ class AccountReturn(models.Model):
     )
     manually_created = fields.Boolean()
 
-    # Tax return fields
     total_amount_to_pay = fields.Monetary(currency_field="amount_to_pay_currency_id")
     payment_ids = fields.One2many(
         comodel_name="account.return.payment",
@@ -205,7 +202,6 @@ class AccountReturn(models.Model):
     )
     show_amount_to_pay = fields.Boolean(compute="_compute_show_amount_to_pay")
 
-    # view helper fields
     days_to_deadline = fields.Integer(compute="_compute_days_to_deadline")
     is_report_set = fields.Boolean(compute="_compute_is_report_set")
     has_move_entries = fields.Boolean(compute="_compute_has_move_entries")
@@ -230,7 +226,6 @@ class AccountReturn(models.Model):
         related="type_id.is_ec_sales_list_return_type"
     )
 
-    # Audit
     audit_status = fields.Selection(
         selection=[
             ("ongoing", "Ongoing"),
@@ -292,7 +287,6 @@ class AccountReturn(models.Model):
     )
     @_debug.perf.timed
     def _create_embedded_actions_config(self, audit_action_id):
-        """Create embedded action settings for this return if not already existing."""
         user_setting_id = self.env.user.res_users_settings_id.id
         if self.env["res.users.settings.embedded.action"].search(
             [("user_setting_id", "=", user_setting_id), ("res_id", "=", self.id)],
@@ -334,21 +328,17 @@ class AccountReturn(models.Model):
         account_status_create_vals = []
         for record in records:
             if record.return_type_category == "audit":
-                accounts = self.env["account.account"].search_fetch(  # noqa: E8507 - audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
+                accounts = self.env["account.account"].search_fetch(
                     domain=self.env["account.account"]._check_company_domain(
                         record.company_ids
                     ),
                     field_names=["id"],
                 )
                 eve_of_date_from = record.date_from - relativedelta(days=1)
-                # The boundaries come from a fiscal calendar, and the periodicity,
-                # the fiscal year and the start-date elements are all read off the
-                # company: it has to be the return's own, not whichever one the
-                # creating user happens to have active.
                 date_from, date_to = record.type_id._get_period_boundaries(
                     record.company_id, eve_of_date_from
                 )
-                previous_return = self.env["account.return"].search(  # noqa: E8507 - audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
+                previous_return = self.env["account.return"].search(
                     domain=[
                         *self.env["account.return"]._check_company_domain(
                             record.company_id
@@ -364,7 +354,7 @@ class AccountReturn(models.Model):
                 if previous_return:
                     previous_accounts_with_status = (
                         self.env["account.audit.account.status"]
-                        .search(  # noqa: E8507 - audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
+                        .search(
                             domain=[
                                 ("audit_id", "=", previous_return.id),
                                 ("status", "!=", False),
@@ -372,17 +362,7 @@ class AccountReturn(models.Model):
                         )
                         .account_id
                     )
-                # Which accounts an entry touched during the period is a set of
-                # yes/no questions, not a census. An audit covers a fiscal year, so
-                # grouping the period's move lines by account scans the whole year's
-                # ledger to answer them; correlating an EXISTS lets the query stop
-                # at the first hit per account. Same shape as the account-code probe
-                # in models/account_move_line.py:2824.
                 period_lines_query = self.env["account.move.line"]._search(
-                    # Scoped to the audit's own companies, as the account search
-                    # above is: without it the entries that decide which accounts
-                    # are "to review" are whichever ones the creating user happens
-                    # to be allowed to see.
                     [
                         *self.env["account.move.line"]._check_company_domain(
                             record.company_ids
@@ -541,7 +521,7 @@ class AccountReturn(models.Model):
 
         return self.env["res.company"].browse(
             companies.ids
-        )  # Drop sudo and avoid leaking elevated permissions
+        )
 
     @api.depends("company_id", "tax_unit_id", "type_id")
     def _compute_company_ids(self) -> None:
@@ -558,9 +538,6 @@ class AccountReturn(models.Model):
     @api.depends("company_ids")
     def _compute_show_companies(self) -> None:
         for record in self:
-            # Use _get_company_ids() instead of company_ids: access rows filter records out during
-            # cache insertion, so cached values may differ from those in the database and users
-            # with branch-only access would see company_ids without the parent company.
             record.show_companies = (
                 len(self.env.companies) > 1
                 or len(
@@ -758,14 +735,6 @@ class AccountReturn(models.Model):
     def get_next_returns_ids(
         self, journal_id=False, additional_domain=None, allow_multiple_by_types=False
     ):
-        """Return the ids of the uncompleted returns to post next, one per return type unless
-        allow_multiple_by_types is set.
-
-        :param journal_id: restrict the returns to the company of this journal
-        :param additional_domain: extra domain leaves narrowing down the returns
-        :param allow_multiple_by_types: return every matching return instead of the first of each type
-        :rtype: list
-        """
 
         domain = [
             ("is_completed", "=", False),
@@ -851,7 +820,6 @@ class AccountReturn(models.Model):
             additional_context = {}
 
         company._check_tax_return_configuration()
-        # Fiscal year is automatically setup with default values as it is a required field
         if not company.account_config_id.account_opening_date:
             _debug.logic("opening_date_missing", company=company)
             if not self.env.user.has_group("account.group_account_manager"):
@@ -930,7 +898,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def action_view_audit_balances(self) -> dict:
-        # Opens the balances list view; action_view_audit_return opens the check kanban.
         _debug.lifecycle("action_view_audit_balances", records=self)
         self.check_singleton()
         return {
@@ -950,7 +917,6 @@ class AccountReturn(models.Model):
         }
 
     def _create_pay_wizard_action(self) -> dict[str, Any] | None:
-        """Return the payment wizard action. Override in l10n modules opening a specific wizard."""
         wizard = self.env["wizard.account.return.pay"].create(
             {
                 "return_id": self.id,
@@ -968,9 +934,6 @@ class AccountReturn(models.Model):
             "target": "new",
         }
 
-    ####################################################################################################
-    ####  State Actions
-    ####################################################################################################
 
     def _check_transition(self, target_state) -> None:
         self.check_singleton()
@@ -993,7 +956,6 @@ class AccountReturn(models.Model):
             )
 
     def _check_lockable(self, allow_posted_closing=False) -> None:
-        # an override may post its own closing before the base locking runs
         self.check_singleton()
         posted_closing = (
             self.env["account.move"]
@@ -1025,10 +987,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def action_validate(self, bypass_failing_tests=False):
-        """Review the checks, then complete an audit return or lock any other return.
-
-        :param bypass_failing_tests: mark the failing checks as reviewed instead of blocking
-        """
         _debug.lifecycle("action_validate", records=self)
         self.check_singleton()
         self._check_lockable()
@@ -1060,12 +1018,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def _proceed_with_locking(self, options_to_inject=None):
-        """Lock the return: generate the carryover values and the attachments of
-        `_generate_locking_attachments`, create the closing entries for a tax return, then set
-        date_lock and move the state to 'reviewed'.
-
-        :param options_to_inject: report options overriding the computed closing report options
-        """
         self.check_singleton()
         self._check_lockable(allow_posted_closing=True)
 
@@ -1101,10 +1053,8 @@ class AccountReturn(models.Model):
 
             if self.is_tax_return:
                 _debug.pipeline("locking_tax_closing_entries", tax_return=self)
-                # Create the tax closing move
                 self._create_tax_closing_entries(options)
 
-                # Reset any tax lock date exceptions
                 self.env["account.lock_exception"].search(
                     [
                         ("company_id", "in", self.company_ids.ids),
@@ -1113,7 +1063,6 @@ class AccountReturn(models.Model):
                     ]
                 ).sudo().action_revoke()
 
-                # Create default expressions for next period if necessary
                 main_company = self.tax_unit_id.main_company_id or self.company_id
                 if (
                     report.country_id
@@ -1140,7 +1089,6 @@ class AccountReturn(models.Model):
                         )
                         company.sudo().account_config_id.tax_lock_date = self.date_to
 
-                # Generate the carryover values.
                 payable_accounts, receivable_accounts = (
                     self._get_tax_closing_payable_and_receivable_accounts()
                 )
@@ -1242,11 +1190,6 @@ class AccountReturn(models.Model):
         )
 
     def _is_settled_by_ledger(self) -> bool:
-        """Whether every settlement line is reconciled with money that left the bank.
-
-        A counterpart that is an accounting payment counts only once the bank confirmed it
-        (``paid``); one that is a bank statement line is the bank itself.
-        """
         self.check_singleton()
         lines = self._get_settlement_lines()
         if not lines or not all(lines.mapped("reconciled")):
@@ -1494,14 +1437,9 @@ class AccountReturn(models.Model):
             return self._mark_completed()
         return None
 
-    ####################################################################################################
-    ####  Revert Actions
-    ####################################################################################################
 
     @_debug.perf.timed
     def action_delete(self):
-        # Since 19.0, Upgrade the module to have the new view with the confirmaton modal, and call .unlink instead.
-        # The permission checks this used to restate are an @api.ondelete hook, so unlink() applies them itself.
         _debug.lifecycle("action_delete", records=self)
         self.unlink()
 
@@ -1567,7 +1505,6 @@ class AccountReturn(models.Model):
             )
         self._check_resettable()
 
-        # Check if it is the last return locked
         domain = [
             ("company_id", "=", self.company_id.id),
             ("type_id", "=", self.type_id.id),
@@ -1581,14 +1518,12 @@ class AccountReturn(models.Model):
                 )
             )
 
-        # delete carryover if possible
         if report := self.type_id.report_id:
             if (
                 not report.country_id
                 or report.country_id
                 == self.company_id.tax_config_id.account_fiscal_country_id
             ):
-                # Check for locked return
                 violated_lock_dates = []
                 for company in self.company_ids:
                     violated_lock_dates = company._get_lock_date_violations(
@@ -1736,9 +1671,6 @@ class AccountReturn(models.Model):
             self.closing_move_ids.action_draft()
             self.closing_move_ids.unlink()
 
-    ####################################################################################################
-    ####  Other Actions
-    ####################################################################################################
     @_debug.perf.timed
     def action_view_attachments(self):
         _debug.lifecycle("action_view_attachments", records=self)
@@ -1979,7 +1911,6 @@ class AccountReturn(models.Model):
                 "date_from": fields.Date.to_string(self.date_from),
                 "date_to": fields.Date.to_string(self.date_to),
                 "filter": date_filter,
-                # use custom period in case of anormal dates
                 "mode": "range",
             },
             "selected_variant_id": report.id,
@@ -2055,15 +1986,8 @@ class AccountReturn(models.Model):
         )
         return mail.partner_ids.ids or self.env.user.partner_id.ids
 
-    ####################################################################################################
-    ####  Tax Closing
-    ####################################################################################################
     @_debug.perf.timed
     def _create_tax_closing_entries(self, options):
-        """Create and post one closing move per company of the return.
-
-        :param options: report options
-        """
         self.check_singleton()
         self._check_tax_group_configuration_for_tax_closing()
 
@@ -2077,7 +2001,7 @@ class AccountReturn(models.Model):
             )
             closing_move_vals.append(
                 {
-                    "company_id": company.id,  # Important to specify together with the journal, for branches
+                    "company_id": company.id,
                     "journal_id": company._get_tax_closing_journal().id,
                     "date": self.date_to,
                     "closing_return_id": self.id,
@@ -2097,9 +2021,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def _check_tax_group_configuration_for_tax_closing(self) -> None:
-        """Raise a RedirectWarning informing the user his tax groups are missing configuration,
-        redirecting him to the list view of account.tax.group filtered on the report's country.
-        """
         self.check_singleton()
 
         tax_with_incomplete_group_domain = [
@@ -2140,12 +2061,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def _get_tax_closing_entry(self, company, options) -> tuple:
-        """Compute the tax closing entry.
-
-        :return: the one2many commands balancing the tax accounts for the selected period, and the
-            subtotal dictionary used to balance the accounts set per tax group
-        :rtype: tuple
-        """
         self.env.flush_all()
 
         company_options = {
@@ -2160,7 +2075,6 @@ class AccountReturn(models.Model):
             domain=self._get_domain_vat_closing_entry_additional(),
         )
 
-        # Check whether it is multilingual, in order to get the translation from the JSON value if present
         tax_name = self.env["account.tax"]._field_to_sql("tax", "name")
 
         query = SQL(
@@ -2203,16 +2117,11 @@ class AccountReturn(models.Model):
                 (result.get("tax_name"), result.get("account_id"), result.get("amount"))
             )
 
-        # then loop on previous results to
-        #    * add the lines that will balance their sum per account
-        #    * make the total per tax group's account triplet
-        # (if 2 tax groups share the same 3 accounts, they should consolidate in the vat closing entry)
         move_vals_lines = []
         tax_group_subtotal = defaultdict(float)
         currency = company.currency_id
         for tg, values in tax_groups.items():
             total = 0
-            # ignore line that have no property defined on tax group
             if not tg.tax_receivable_account_id or not tg.tax_payable_account_id:
                 _debug.logic(
                     "tax_group_skipped",
@@ -2223,7 +2132,6 @@ class AccountReturn(models.Model):
                 continue
             for value in values.values():
                 for tax_name, account_id, amt in value:
-                    # Line to balance
                     move_vals_lines.append(
                         Command.create(
                             {
@@ -2237,7 +2145,6 @@ class AccountReturn(models.Model):
                     total += amt
 
             if not currency.is_zero(total):
-                # Add total to correct group
                 key = (
                     tg.advance_tax_payment_account_id.id or False,
                     tg.tax_receivable_account_id.id,
@@ -2254,8 +2161,6 @@ class AccountReturn(models.Model):
             subtotal_keys=len(tax_group_subtotal),
         )
 
-        # If the tax report is completely empty, we add two 0-valued lines, using the first in in and out
-        # account id we find on the taxes.
         if not move_vals_lines:
             rep_ln_in = self.env["account.tax.repartition.line"].search(
                 [
@@ -2316,11 +2221,6 @@ class AccountReturn(models.Model):
     def _vat_closing_entry_results_rounding(
         self, company, options, results, rounding_accounts, vat_results_summary
     ):
-        """
-        Apply the rounding from the tax report by adding a line to the end of the query results
-        representing the sum of the roundings on each line of the tax report.
-        """
-        # Ignore if the rounding accounts cannot be found
         if _debug.logic.enabled and (
             not rounding_accounts.get("profit") or not rounding_accounts.get("loss")
         ):
@@ -2338,8 +2238,6 @@ class AccountReturn(models.Model):
 
         for line in results:
             total_amount += line["amount"]
-            # The accounts on the tax group ids from the results should be uniform,
-            # but we choose the greatest id so that the line appears last on the entry.
             tax_group_id = line["tax_group_id"]
 
         report = self.env["report.formula"].browse(options["report_id"])
@@ -2362,10 +2260,6 @@ class AccountReturn(models.Model):
                     ):
                         continue
 
-                    # We accept 3 types of operations:
-                    # 1) due and 2) deductible - This is used for reports that have lines for the payable vat and
-                    # lines for the reclaimable vat.
-                    # 3) total - This is used for reports that have a single line with the payable/reclaimable vat.
                     if operation_type in {"due", "total"}:
                         total_amount += column["no_format"]
                     elif operation_type == "deductible":
@@ -2398,7 +2292,6 @@ class AccountReturn(models.Model):
         return results
 
     def _postprocess_vat_closing_entry_results(self, company, options, results):
-        # Override this to, for example, apply a rounding to the lines of the closing entry
         return results
 
     def _get_domain_vat_closing_entry_additional(self):
@@ -2406,12 +2299,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def _add_tax_group_closing_items(self, tax_group_subtotal, company):
-        """Transform the tax_group_subtotal dictionary into the one2many commands balancing the
-        tax group accounts of the VAT closing entry.
-
-        :param company: the company whose closing move is being built.
-        :rtype: list
-        """
 
         def _add_line(account_id, name, company_currency):
             advance_balance = self.env["account.move.line"]._read_group(
@@ -2424,7 +2311,6 @@ class AccountReturn(models.Model):
                 aggregates=["balance:sum"],
             )[0][0]
 
-            # Deduct/Add advance payment
             if not company_currency.is_zero(advance_balance):
                 line_ids_vals.append(
                     Command.create(
@@ -2443,11 +2329,9 @@ class AccountReturn(models.Model):
         currency = company.currency_id
         settlement_account = self.type_id.with_company(company).settlement_account_id
         line_ids_vals = []
-        # keep track of already balanced account, as one can be used in several tax group
         account_already_balanced = []
         for key, value in tax_group_subtotal.items():
             total = value
-            # Search if any advance payment done for that configuration
             if key[0] and key[0] not in account_already_balanced:
                 total += _add_line(
                     key[0], self.env._("Balance tax advance payment account"), currency
@@ -2461,7 +2345,6 @@ class AccountReturn(models.Model):
                 )
                 account_already_balanced.append(key[1])
 
-            # Balance on the receivable/payable tax account
             if currency.is_zero(total):
                 continue
             if total > 0:
@@ -2512,9 +2395,6 @@ class AccountReturn(models.Model):
         )
         return line_ids_vals
 
-    ####################################################################################################
-    ####  Checks
-    ####################################################################################################
 
     @_debug.perf.timed
     def _check_failing_checks_in_current_stage(self) -> None:
@@ -2533,11 +2413,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def refresh_checks(self) -> None:
-        """
-        Recompute all checks for every return in self of the current state
-        """
-        # Lock the return records before processing to ensure only one worker can
-        # modify them at a time, preventing race conditions in parallel execution.
         locked_returns = self.try_lock_for_update()
         if (
             not self.env["account.return.check"].has_access("write")
@@ -2551,7 +2426,7 @@ class AccountReturn(models.Model):
         for record in locked_returns:
             if (
                 record.company_id not in self.env.companies
-            ):  # We do not run checks if the main company is not selected
+            ):
                 continue
 
             if record._is_check_run_required():
@@ -2568,7 +2443,6 @@ class AccountReturn(models.Model):
                 for vals in rslt:
                     codes_refreshed.add(vals["code"])
                     if existing_check := checks_by_code.get(vals["code"]):
-                        # If a user has updated `result`, we no longer updates its value automatically.
                         if not existing_check.refresh_result:
                             vals.pop("result", None)
                         existing_check.with_user(SUPERUSER_ID).write(vals)
@@ -2596,7 +2470,6 @@ class AccountReturn(models.Model):
         to_unlink.unlink()
 
     def _is_check_run_required(self) -> bool:
-        # To override in order to run checks in other custom-made states
         self.check_singleton()
         return self.state == "new"
 
@@ -2653,7 +2526,6 @@ class AccountReturn(models.Model):
                     }
                 )
             elif existing_check_by_template_id[template].type != template.type:
-                # If the existing check type does not match we have to reset the result
                 vals_dict["result"] = "todo"
                 _debug.logic(
                     "check_type_changed_reset",
@@ -2701,7 +2573,7 @@ class AccountReturn(models.Model):
                     ("date", "<=", fields.Date.to_string(self.date_to)),
                     ("company_id", "in", self.company_ids.ids),
                 ]
-                entries = model.sudo().search(domain, limit=LIMIT_CHECK_ENTRIES)  # noqa: E8507 - one query per check template; each has its own model and domain
+                entries = model.sudo().search(domain, limit=LIMIT_CHECK_ENTRIES)
                 if entries:
                     if action := template._get_default_check_action_from_model():
                         action["domain"] = [*action.get("domain", []), *domain]
@@ -2740,9 +2612,6 @@ class AccountReturn(models.Model):
 
     @_debug.perf.timed
     def _run_checks(self, check_codes_to_ignore):
-        """
-        To override in l10n for specific checks by type
-        """
         self.check_singleton()
         checks = []
         report_country = self.type_id.report_id.country_id
@@ -2769,7 +2638,6 @@ class AccountReturn(models.Model):
     @_debug.perf.timed
     def _check_suite_common_vat_report(self, check_codes_to_ignore):
         checks = []
-        # check company configuration
         if "check_company_data" not in check_codes_to_ignore:
             review_action = {
                 "type": "ir.actions.act_window",
@@ -3000,7 +2868,6 @@ class AccountReturn(models.Model):
                 ]
             return aml_ids
 
-        # 15-day intervals so amounts aged over 60 fall under 'Older' column
         overdue_aging_interval = 15
 
         def get_overdue_aged_balance(report, older_expr) -> float | None:
@@ -3504,7 +3371,7 @@ class AccountReturn(models.Model):
             "type": "ir.actions.act_window",
             "name": str(
                 name
-            ),  # If it is _lt, we need to stringify it because it cannot be json dumped
+            ),
             "view_mode": "list",
             "res_model": "account.bank.statement.line",
             "domain": domain,
@@ -3582,7 +3449,7 @@ class AccountReturn(models.Model):
             "type": "ir.actions.act_window",
             "name": str(
                 name
-            ),  # If it is _lt, we need to stringify it because it cannot be json dumped
+            ),
             "view_mode": "list",
             "res_model": "account.move",
             "domain": domain,
@@ -3616,14 +3483,6 @@ class AccountReturn(models.Model):
 
     @api.model
     def _get_nth_working_day(self, from_date, n):
-        """Return the Nth working day (Monday to Friday) starting from a given date.
-
-        :param from_date: the start date, included in the count
-        :param n: rank of the working day to find, 1 being the first one on or after from_date
-        :return: the date of the Nth working day
-        :rtype: datetime.date
-        :raises UserError: if n is not strictly positive
-        """
 
         def is_working_day(day) -> bool:
             return day.isoweekday() <= 5

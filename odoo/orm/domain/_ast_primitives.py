@@ -38,12 +38,7 @@ MAX_DOMAIN_NESTING = 100
 
 
 def _searches_one_value(field: Field[typing.Any]) -> bool:
-    # a record matches a condition on it through at most one value: a related
-    # path crossing an x2many matches when some line does, and a custom search
-    # may do the same, so neither merges nor negates like a column
     if field.is_x2many:
-        # a one2one holds one line at most, but a record without one is matched
-        # by no condition on the line, its negation included
         return False
     if field.store:
         return True
@@ -52,9 +47,6 @@ def _searches_one_value(field: Field[typing.Any]) -> bool:
 
 
 def _negates_by_operator(field: Field[typing.Any]) -> bool:
-    # a related field through a one2many or many2many matches a condition
-    # when some line does: `!=` on some line is not the complement of `=` on
-    # some line, while a one2one step holds one line at most
     if field.related:
         return not any(
             step.is_x2many and not step.is_one2one
@@ -71,7 +63,6 @@ def _is_comparand_equal(left: typing.Any, right: typing.Any) -> bool:
         try:
             if set(left) != set(right):
                 return False
-            # equal members of one shared type are equal typed members too
             types = set(map(type, left))
             if len(types) == 1 and types == set(map(type, right)):
                 return True
@@ -94,7 +85,6 @@ def _freeze_comparand(value: typing.Any, path: set[int] | None = None) -> typing
         if _SCALAR_CLASSES.issuperset(map(type, value)):
             return value if cls is tuple else tuple(value)
     elif cls is OrderedSet or cls is set or cls is frozenset:
-        # a set's members are hashable, so already frozen
         return FrozenOrderedSet(value) if cls is OrderedSet else frozenset(value)
     if not isinstance(value, (list, tuple, set, frozenset, dict, OrderedSet)):
         return value
@@ -214,11 +204,6 @@ def _get_nary_subtree_tiebreak(domain: Domain) -> tuple[int, typing.Any]:
 
 
 def _defines_the_condition(field: Field[typing.Any], su: bool) -> bool:
-    # a search method answers the condition instead of the field's value. A
-    # related or inherited field's generic search is the path rewrite, whose
-    # sub-select an access domain may narrow for a user but never for the
-    # superuser: as the superuser the in-memory read through the path answers
-    # the same, unless the path ends on a field with a search method of its own
     search = field.search
     if not search:
         return False

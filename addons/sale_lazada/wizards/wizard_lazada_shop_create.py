@@ -30,7 +30,6 @@ class WizardLazadaShopCreate(models.TransientModel):
     )
 
     def action_create_shop(self):
-        """Create a shop using the given credentials and redirect to Lazada authorization page."""
         self.check_singleton()
         shop = self.env["lazada.shop"].create(
             {
@@ -41,5 +40,4 @@ class WizardLazadaShopCreate(models.TransientModel):
             }
         )
 
-        # Redirect to authorization flow
         return shop.action_view_auth_link()

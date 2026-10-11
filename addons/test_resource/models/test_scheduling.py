@@ -19,9 +19,6 @@ from odoo import api, fields, models
 class ResourceSchedulingTest(models.Model):
     _name = "resource.scheduling.test"
     _description = "Scheduling Mixin Test Model"
-    # The allocation mixin, so the suite covers both halves: it inherits the
-    # scheduling one, and the tests assert on ``allocated_hours`` /
-    # ``allocated_percentage`` as well as on the projection lifecycle.
     _inherit = ["mixin.resource.allocation"]
 
     name = fields.Char()
@@ -54,11 +51,6 @@ class ResourceSchedulingTest(models.Model):
         return ("date_start", "date_end")
 
     def _prepare_reservation_vals_list(self):
-        # Faithful consumer: project the local scheduling columns into a single
-        # reservation so the mixin's create/write sync path and the
-        # reservation-ledger aggregation of ``allocated_hours`` /
-        # ``schedule_overlap_count`` are exercised end-to-end (rather than
-        # re-implementing that logic inside the test model).
         self.check_singleton()
         if not self.date_start or not self.date_end:
             return []
@@ -74,8 +66,6 @@ class ResourceSchedulingTest(models.Model):
         ]
 
     def _get_fields_sync_trigger(self):
-        # Re-sync the reservation when the resource or the allocation share
-        # changes, not only the dates (the mixin default).
         return super()._get_fields_sync_trigger() | {
             "resource_id",
             "allocated_percentage",

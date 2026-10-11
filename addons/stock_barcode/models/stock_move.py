@@ -20,8 +20,6 @@ class StockMove(models.Model):
         ]
 
     def split_uncompleted_moves(self):
-        """Creates a new move for every uncompleted move in order to get one picked move
-        with the picked quantity, and one not picked move with the remaining quantity."""
         _debug.pipeline("barcode_split_uncompleted", moves=self)
         moves_to_reset = self.filtered(lambda m: m.picked and m.quantity == 0)
         moves_to_backorder = (self - moves_to_reset).filtered(
@@ -32,7 +30,6 @@ class StockMove(models.Model):
             move.quantity = move.product_uom_qty
             move.picked = False
         new_moves = moves_to_backorder._create_backorder()
-        # certain moves should be assigned manually as they are not by the _action_confirm
         new_moves.with_context(bypass_entire_pack=True).filtered(
             lambda m: (
                 m.procure_method == "make_to_order"
@@ -40,9 +37,6 @@ class StockMove(models.Model):
             )
         )._action_assign()
         if new_moves:
-            # In some case, we already split the move lines in the front end.
-            # Those move lines are linked to the original move. If their quantity
-            # is 0 and they already picked, there is no reason to keep them.
             moves_to_clean = self - new_moves
             for move in moves_to_clean:
                 for move_line in move.move_line_ids:
@@ -57,7 +51,6 @@ class StockMove(models.Model):
         return new_moves
 
     def _truncate_overreserved_moves(self, barcode_quantities) -> None:
-        """Truncate moves with an exceeding quantity due to barcode move line creations."""
         _debug.logic("barcode_truncate_overreserved", moves=self)
         for move in self:
             if not move.picked or move.state in ("done", "cancel"):

@@ -59,9 +59,6 @@ class ResConfigSettings(models.TransientModel):
     )
 
     def urbanpiper_create_store(self):
-        """
-        Create the store in UrbanPiper.
-        """
         self.pos_config_id._check_required_request_params()
         if not self.pos_config_id.company_id.city:
             msg = self.env._(
@@ -84,9 +81,6 @@ class ResConfigSettings(models.TransientModel):
         return self.pos_config_id._urbanpiper_handle_response(response_json)
 
     def urbanpiper_sync_menu(self):
-        """
-        Sync the menu with UrbanPiper. This will update the menu items and categories in UrbanPiper.
-        """
         self.pos_config_id._check_required_request_params()
         if not self.pos_config_id.urbanpiper_delivery_provider_ids:
             raise UserError(self.env._("UrbanPiper Delivery Providers are required."))
@@ -121,10 +115,6 @@ class ResConfigSettings(models.TransientModel):
         return self.pos_config_id._urbanpiper_handle_response(combined_response)
 
     def action_refresh_webhooks(self):
-        """
-        If a webhook already exists on Atlas, refresh it; otherwise, create a new one.
-        and products become available for syncing again as fresh entries.
-        """
         self.pos_config_id._reset_urbanpiper_product_linkages()
         self.pos_config_id._check_required_request_params()
         up = UrbanPiperClient(self.pos_config_id)
@@ -132,9 +122,6 @@ class ResConfigSettings(models.TransientModel):
         return self.pos_config_id._urbanpiper_handle_response(response_json)
 
     def open_test_order_wizard(self) -> dict:
-        """
-        Open the test order wizard to create test orders.
-        """
         return {
             "name": self.env._("Test Food Delivery Order"),
             "views": [
@@ -156,9 +143,6 @@ class ResConfigSettings(models.TransientModel):
         }
 
     def action_flush_and_sync_menu(self):
-        """
-        Resets all existing UrbanPiper product linkages and performs a fresh menu sync.
-        """
         self.check_singleton()
         self.pos_config_id._reset_urbanpiper_product_linkages()
         return self.with_context(flush=True).urbanpiper_sync_menu()

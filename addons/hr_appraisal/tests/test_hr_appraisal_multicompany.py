@@ -46,7 +46,6 @@ class TestHrAppraisalMulticompany(TransactionCase):
         )
 
     def test_hr_appraisal(self):
-        # I create a new Employee with appraisal configuration.
         appraisal_count = self.env["hr.appraisal"].search_count
         self.assertEqual(
             appraisal_count([("employee_id", "=", self.hr_employee.id)]), 0

@@ -8,7 +8,6 @@ _debug = DebugLog(__name__)
 class MaintenanceOrder(models.Model):
     _inherit = "maintenance.order"
 
-    # FIELDS
     trace_ids = fields.Many2many(
         comodel_name="product.trace",
         string="Serial Numbers",
@@ -47,7 +46,6 @@ class MaintenanceOrder(models.Model):
         readonly=True,
     )
 
-    # COMPUTE METHODS
     @api.depends("asset_ids.trace_id")
     def _compute_trace_ids(self) -> None:
         for order in self:
@@ -86,7 +84,6 @@ class MaintenanceOrder(models.Model):
                 order.return_delay_days = 0.0
                 order.is_returned_on_time = False
 
-    # SEARCH METHODS
     def _search_trace_ids(self, operator, value):
         if operator in ("in", "not in"):
             lot_domain = [("trace_id", "in", value)]
@@ -102,7 +99,6 @@ class MaintenanceOrder(models.Model):
             )
         ]
 
-    # ACTION METHODS
     def action_send_to_maintenance(self) -> dict:
         self.check_singleton()
         return {
@@ -123,7 +119,6 @@ class MaintenanceOrder(models.Model):
         action["context"] = {"create": False}
         return action
 
-    # TRANSFER METHODS
     def _create_transfer(self, location, location_dest, picking_type):
         self.check_singleton()
         if self.state not in ("confirmed", "in_progress"):
@@ -171,7 +166,7 @@ class MaintenanceOrder(models.Model):
         )
         for order in self:
             for lot in return_picking.move_line_ids.trace_id & order.trace_ids:
-                if Log.search_count(  # noqa: E8507 - one probe per returned serial, which arrives one transfer at a time
+                if Log.search_count(
                     [
                         ("maintenance_order_id", "=", order.id),
                         ("asset_id", "=", lot.asset_id.id),
@@ -189,7 +184,6 @@ class MaintenanceOrder(models.Model):
                     }
                 )
 
-    # HELPER METHODS
     def _get_outgoing_transfer(self):
         self.check_singleton()
         return self.picking_ids.filtered(

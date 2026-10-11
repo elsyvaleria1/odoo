@@ -6,7 +6,6 @@ class KnowledgeArticle(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_sources(self) -> None:
-        """Delete sources when an article is deleted."""
         source_linked_to_article = self.env["ai.agent.source"].search(
             [("article_id", "in", self.ids)]
         )

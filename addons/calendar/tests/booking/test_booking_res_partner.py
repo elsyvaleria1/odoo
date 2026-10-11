@@ -33,18 +33,17 @@ class ResPartnerTest(AppointmentCommon):
 
     @users("staff_user_bxls")
     def test__is_calendar_available(self):
-        """Testing _is_calendar_available."""
         self._create_meetings(
             self.staff_user_bxls,
             [
                 (
-                    self.reference_monday + timedelta(days=1),  # 3 hours first Tuesday
+                    self.reference_monday + timedelta(days=1),
                     self.reference_monday + timedelta(days=1, hours=3),
                     False,
                 ),
                 (
                     self.reference_monday
-                    + timedelta(days=7, hours=8),  # next Monday: one full day
+                    + timedelta(days=7, hours=8),
                     self.reference_monday + timedelta(days=7, hours=11),
                     True,
                 ),
@@ -53,7 +52,7 @@ class ResPartnerTest(AppointmentCommon):
         self.assertFalse(
             self.staff_user_bxls.partner_id._is_calendar_available(
                 self.reference_monday
-                + timedelta(days=1, hours=2),  # 2 hours same Tuesday
+                + timedelta(days=1, hours=2),
                 self.reference_monday + timedelta(days=1, hours=4),
             )
         )
@@ -61,19 +60,18 @@ class ResPartnerTest(AppointmentCommon):
         self.assertFalse(
             self.staff_user_bxls.partner_id._is_calendar_available(
                 self.reference_monday
-                + timedelta(days=7, hours=4),  # Overlapping allday event
+                + timedelta(days=7, hours=4),
                 self.reference_monday + timedelta(days=7, hours=8),
             )
         )
         self.assertTrue(
             self.staff_user_bxls.partner_id._is_calendar_available(
                 self.reference_monday
-                + timedelta(days=8, hours=3),  # 1 hour next Tuesday (10 UTC)
+                + timedelta(days=8, hours=3),
                 self.reference_monday + timedelta(days=8, hours=4),
             )
         )
 
-        # Test availability for the meeting linked to the appointment
         start = self.reference_monday + timedelta(hours=15)
         end = start + timedelta(hours=1)
 
@@ -83,12 +81,10 @@ class ResPartnerTest(AppointmentCommon):
             self.apt_type_manage_capacity_users.id,
         )
 
-        # Partner is unavailable for the meeting without appointment
         self.assertFalse(
             self.staff_user_aust.partner_id._is_calendar_available(start, end)
         )
 
-        # Unavailable for the meeting in other appointments
         self.assertFalse(
             self.staff_user_aust.partner_id._is_calendar_available(
                 start,
@@ -97,7 +93,6 @@ class ResPartnerTest(AppointmentCommon):
             )
         )
 
-        # Available for the booking for the same appointment as previous booking
         self.assertTrue(
             self.staff_user_aust.partner_id._is_calendar_available(
                 start,

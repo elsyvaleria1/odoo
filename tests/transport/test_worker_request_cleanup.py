@@ -112,8 +112,6 @@ def test_a_prefork_worker_never_exposes_the_socket_for_hijacking(worker):
 
 
 def test_an_upgraded_connection_keeps_its_socket(worker):
-    """The upgrade thread owns the socket from the 101 on; closing it here
-    would cut the websocket under it."""
     client, peer = _socketpair()
     try:
         with patch.object(

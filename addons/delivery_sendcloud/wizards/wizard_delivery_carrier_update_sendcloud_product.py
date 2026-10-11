@@ -14,8 +14,6 @@ class WizardDeliveryCarrierUpdateSendcloudProduct(models.TransientModel):
     shipping_products = fields.Json()
     return_products = fields.Json()
 
-    # Using a Json rather than 2 Char fields allow us to work on reference from owl,
-    # such allowing update of value on the same object client-side and server-side
     sendcloud_products_code = fields.Json(string="Active Products Code")
 
     def action_validate(self):

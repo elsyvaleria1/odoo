@@ -74,7 +74,6 @@ class SessionStore(ABC):
         self.session_class = session_class
         self._durability = threading.local()
 
-    # -- the storage surface a backend implements ---------------------------
 
     @abstractmethod
     def _lock(self, sid: str) -> contextlib.AbstractContextManager[None]: ...
@@ -100,7 +99,6 @@ class SessionStore(ABC):
     @abstractmethod
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None: ...
 
-    # -- keys ----------------------------------------------------------------
 
     def generate_key(self) -> str:
         return base64.urlsafe_b64encode(os.urandom(63)).decode("ascii")
@@ -125,7 +123,6 @@ class SessionStore(ABC):
     def _is_durable(self) -> bool:
         return getattr(self._durability, "enabled", False)
 
-    # -- load and store ------------------------------------------------------
 
     def new(self) -> Session:
         session = self.session_class({}, self.generate_key(), True)
@@ -144,9 +141,6 @@ class SessionStore(ABC):
         if not self.is_valid_key(sid):
             _debug.logic("http.session.get", sid=sid[:8], found=False, invalid_key=True)
             return self.new()
-        # Lock-free: every write replaces a session atomically under the stripe
-        # lock, so a reader sees one whole version; only discarding a corrupt
-        # one takes the lock (see _discard_corrupt).
         with _debug.perf("http.session.read", sid=sid[:8]) as span:
             stored = self._read(sid)
             span.set(found=stored is not None)
@@ -223,7 +217,7 @@ class SessionStore(ABC):
 
     def get_missing_session_identifiers(self, identifiers: Iterable[str]) -> set[str]:
         identifiers = set(identifiers)
-        asked = len(identifiers)  # debuglog
+        asked = len(identifiers)
         missing = {i for i in identifiers if not self._sids_in_family(i)}
         _debug.pipeline(
             "http.session.missing_identifiers", asked=asked, missing=len(missing)
@@ -250,15 +244,11 @@ class SessionStore(ABC):
                         continue
                     self._remove_sid(sid)
 
-    # -- merge, rotation, adoption ------------------------------------------
 
     def _settle_anonymous_identity(self, session: Session) -> None:
         if session.uid is None and ISSUED_SID_KEY not in session:
             session[ISSUED_SID_KEY] = session.sid
         if session.unstored_sid:
-            # Never written under a sid the client chose: a stored session
-            # answering to a planted cookie would be shared with the planter,
-            # and one answering to a revoked cookie would resurrect its family.
             session.sid = self.generate_key()
             session.unstored_sid = False
             _debug.lifecycle(
@@ -322,9 +312,6 @@ class SessionStore(ABC):
             return
         if session["create_time"] + SESSION_DELETION_TIMER >= time.time():
             return
-        # Every sid of a family shares its lock stripe. The stored copy decides:
-        # a request that loaded this session before a peer rotated it holds a
-        # stale flag, and collecting on its word would delete the successor.
         with self._lock(session.sid):
             current = self.get(session.sid)
             if (
@@ -414,8 +401,6 @@ class SessionStore(ABC):
                     strategy="soft" if soft else "hard",
                     original_new=original.is_new,
                 )
-                # Write the successor first: an interrupted write must not
-                # leave the old cookie pointing at a nonexistent session.
                 if soft and not original.is_new:
                     uid = session.uid
                     session.merge_changes(current)
@@ -445,8 +430,6 @@ class SessionStore(ABC):
                     with self._durably():
                         self._save_unlocked(current)
                 elif not original.is_new:
-                    # A previous soft rotation keeps predecessor cookies valid
-                    # briefly. A hard rotation must revoke that entire family.
                     self.remove_sessions_for_identifiers(
                         [original.sid[:STORED_SESSION_BYTES]],
                         exclude_sid=session.sid,
@@ -513,8 +496,6 @@ class FilesystemSessionStore(SessionStore):
     @contextlib.contextmanager
     def _lock(self, sid: str) -> Iterator[None]:
         self._require_key(sid)
-        # Fixed stripes bound lock-file growth. Never unlink them: replacing a
-        # locked inode would let two workers enter the same critical section.
         stripe = sid[:2]
         held = getattr(self._held_locks, "stripes", None)
         if held is None:
@@ -523,9 +504,6 @@ class FilesystemSessionStore(SessionStore):
             _debug.lifecycle("http.session.lock_reentered", stripe=stripe)
             yield
             return
-        # A fresh descriptor per acquisition, not a cached one: flock belongs to
-        # the open file description, so a shared descriptor would let two
-        # threads of this process, or a forked child, into the same section.
         lock_fd = self._open_lock_file(stripe)
         try:
             with _debug.perf("http.session.lock_wait", stripe=stripe):
@@ -562,9 +540,6 @@ class FilesystemSessionStore(SessionStore):
             _debug.logic("http.session.read_missing", sid=sid[:8])
             return None
         except OSError as exc:
-            # EIO, EACCES...: the session may well exist, so answering "none"
-            # would hand out a fresh anonymous one -- a logout -- and make every
-            # later save of it read as a revocation.
             _debug.logic("http.session.read_failed", sid=sid[:8], errno=exc.errno)
             raise SessionStorageError(f"cannot read session {sid[:8]}: {exc}") from exc
         data = self._decode(sid, payload)
@@ -610,7 +585,6 @@ class FilesystemSessionStore(SessionStore):
         path = Path(self.get_session_filename(sid))
         with contextlib.suppress(FileNotFoundError):
             path.unlink()
-            # A revocation that a crash can undo is not a revocation.
             _fsync_directory(path.parent)
 
     def _touch(self, sid: str) -> bool:
@@ -628,7 +602,7 @@ class FilesystemSessionStore(SessionStore):
 
     def get_missing_session_identifiers(self, identifiers: Iterable[str]) -> set[str]:
         identifiers = set(identifiers)
-        asked = len(identifiers)  # debuglog
+        asked = len(identifiers)
         base = Path(self.path)
         directories = {str(base / identifier[:2]) for identifier in identifiers}
         for directory in directories:
@@ -650,7 +624,7 @@ class FilesystemSessionStore(SessionStore):
     def vacuum(self, max_lifetime: int = SESSION_LIFETIME) -> None:
         threshold = time.time() - max_lifetime
         base_path = Path(self.path)
-        removed = 0  # debuglog
+        removed = 0
         with _debug.perf("http.session.vacuum", max_lifetime=max_lifetime) as span:
             for stripe_dir in base_path.iterdir():
                 stripe = stripe_dir.name
@@ -664,13 +638,13 @@ class FilesystemSessionStore(SessionStore):
                             st = path.stat()
                             if S_ISREG(st.st_mode) and st.st_mtime < threshold:
                                 path.unlink()
-                                removed += 1  # debuglog
+                                removed += 1
             for path in base_path.glob(f"*{_TEMPORARY_SUFFIX}"):
                 with contextlib.suppress(OSError):
                     st = path.stat()
                     if S_ISREG(st.st_mode) and st.st_mtime < threshold:
                         path.unlink()
-                        removed += 1  # debuglog
+                        removed += 1
             span.set(removed=removed)
 
 
@@ -776,8 +750,6 @@ class PostgresSessionStore(SessionStore):
     def _create_schema(self, cr: Any) -> bool:
         if self._schema_ready:
             return False
-        # Two workers' first transactions would race CREATE TABLE IF NOT
-        # EXISTS into a unique violation on pg_type.
         cr.execute("SELECT pg_advisory_xact_lock(%s)", (_SCHEMA_LOCK_KEY,))
         cr.execute(_SESSION_TABLE_DDL)
         cr.execute(_SESSION_INDEX_DDL)
@@ -793,22 +765,12 @@ class PostgresSessionStore(SessionStore):
         with self._storage_errors():
             cr = odoo.db.db_connect(self.dbname).cursor()
             try:
-                # The pool runs REPEATABLE READ, whose snapshot is taken at the
-                # first statement -- the lock wait -- so a writer that queued
-                # behind another would read the row as it was before the other
-                # committed and fail to serialize its own update. The advisory
-                # lock is this store's serialization; READ COMMITTED lets the
-                # locked section see what the previous holder wrote.
                 if locking:
                     cr.use_read_committed()
                 schema_created = self._create_schema(cr)
                 yield cr
                 cr.commit()
                 if schema_created:
-                    # Only remember the schema once its DDL is committed: a
-                    # rollback of this first transaction undoes CREATE TABLE,
-                    # and a flag set before the commit would suppress every
-                    # retry.
                     self._schema_ready = True
                     _debug.lifecycle("http.session.pg_schema_ready", db=self.dbname)
             except BaseException:
@@ -840,8 +802,6 @@ class PostgresSessionStore(SessionStore):
             if outermost:
                 self._local.cursor = cr
             try:
-                # Released with the transaction, i.e. when the outermost lock
-                # exits and _cursor commits or rolls back.
                 cr.execute(
                     "SELECT pg_advisory_xact_lock(%s)",
                     (_advisory_lock_key(sid[:2]),),
@@ -854,10 +814,6 @@ class PostgresSessionStore(SessionStore):
 
     def _read(self, sid: str) -> tuple[dict[str, Any], float | None] | None:
         if self._schema_ready and getattr(self._local, "cursor", None) is None:
-            # A plain read, the one every request with a cookie makes: one
-            # statement outside any transaction, no BEGIN and COMMIT around it.
-            # Under a lock the read belongs to the lock's transaction, and the
-            # first read of the process creates the table first.
             with self._storage_errors():
                 rows = odoo.db.db_connect(self.dbname).get_rows_autocommit(
                     _SESSION_READ_SQL, (sid,)
@@ -913,9 +869,8 @@ class PostgresSessionStore(SessionStore):
             return [row[0] for row in cr.fetchall()]
 
     def get_missing_session_identifiers(self, identifiers: Iterable[str]) -> set[str]:
-        # One query instead of the base class's transaction per identifier.
         identifiers = set(identifiers)
-        asked = len(identifiers)  # debuglog
+        asked = len(identifiers)
         if identifiers:
             with self._cursor() as cr:
                 cr.execute(
@@ -932,8 +887,6 @@ class PostgresSessionStore(SessionStore):
         threshold = time.time() - max_lifetime
         removed = stripes = 0
         while True:
-            # http_session_mtime_idx finds the expired rows; the deletes then
-            # go by primary key, never a scan per stripe
             with self._cursor() as cr:
                 cr.execute(
                     "SELECT sid FROM http_session WHERE mtime < %s LIMIT %s",
@@ -943,11 +896,6 @@ class PostgresSessionStore(SessionStore):
             by_stripe: dict[str, list[str]] = {}
             for sid in expired:
                 by_stripe.setdefault(sid[:2], []).append(sid)
-            # Stripe by stripe under the lock every save holds, as the
-            # filesystem vacuum does: a save that read a session cannot then
-            # write it back after the vacuum removed it without seeing the
-            # removal; the mtime is re-read under the lock, so a session
-            # kept alive since the select stays.
             for stripe, sids in by_stripe.items():
                 with (
                     self._lock(stripe.ljust(_SESSION_KEY_LENGTH, "_")),

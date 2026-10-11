@@ -67,8 +67,6 @@ def read_anthropic_content(payload) -> tuple:
     return text, None
 
 
-# OpenAI's transcription guide documents `languages` for gpt-transcribe, and no
-# segment timestamps; `json` is the one format every transcription model takes.
 UNTIMED_TRANSCRIPTION_MODELS = frozenset({"gpt-transcribe"})
 
 

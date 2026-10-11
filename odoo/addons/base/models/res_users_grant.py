@@ -16,31 +16,20 @@ from odoo.libs.debug_log import DebugLog
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-# set while a grant writes the membership it projects, so the write-through of
-# res.users and res.groups does not turn the projection back into grants; an
-# in-process marker, not a context key a client could send
 _PROJECTING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_projecting", default=False
 )
-# set while the grant model itself changes a grant's lifecycle fields
 _LIFECYCLE: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_lifecycle", default=False
 )
-# set while an eligibility's activation creates its grant
 _ACTIVATING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_activating", default=False
 )
-# the users a create is making: no cache holds anything about them yet
 _FRESH_USERS: contextvars.ContextVar[frozenset[int]] = contextvars.ContextVar(
     "res_users_grant_fresh_users", default=frozenset()
 )
-# the transaction's cr.cache entry naming the users whose group state it
-# computed
 GROUP_STATE_COMPUTED = "res_users_group_state_computed"
-# the registries whose database has the grant table
 _GRANTS_AVAILABLE: weakref.WeakValueDictionary[int, Any] = weakref.WeakValueDictionary()
-# set while grants follow a membership write, whose writer clears the access
-# caches once it is done
 _FOLLOWING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "res_users_grant_following", default=False
 )
@@ -56,14 +45,9 @@ GRANT_CAUSES = [
     ("activation", "Activation"),
     ("break_glass", "Break-glass"),
 ]
-# causes whose producer is a later phase: a grant cannot claim them yet
 UNPRODUCED_CAUSES = frozenset({"approval_request", "position"})
-# causes only an eligibility's activation produces
 ACTIVATED_CAUSES = frozenset({"activation", "break_glass"})
-# why a grant exists: code acting under a named privilege states it, as the
-# superuser does; anyone else gives a manual grant
 CAUSE_FIELDS = frozenset({"cause", "cause_model", "cause_res_id"})
-# who gave or ended a grant: only the superuser writes these
 AUDIT_FIELDS = CAUSE_FIELDS | frozenset(
     {"granted_by_id", "revoked_by_id", "revoked_at", "revoke_reason"}
 )
@@ -269,8 +253,6 @@ class ResUsersGrant(models.Model):
                 su=self.env.su,
             )
         grants._check_delegation()
-        # refused after the delegation check: who may not give the grant at
-        # all hears that, not what the grant would have claimed
         if claimed:
             _debug.logic(
                 "create_refused", reason="audit_fields", fields=sorted(claimed)
@@ -312,7 +294,6 @@ class ResUsersGrant(models.Model):
                 raise UserError(
                     self.env._("An expired or revoked grant cannot be changed.")
                 )
-            # a grant's reason changes nothing it gives
             self._check_delegation("write", narrowing=set(vals) <= {"reason"})
         result = super().write(vals)
         if "company_ids" in vals:
@@ -401,24 +382,12 @@ class ResUsersGrant(models.Model):
     def _check_delegation(
         self, operation: str = "create", *, narrowing: bool = False
     ) -> None:
-        # who may give or change a grant besides the access administrators:
-        # the members of the group's admin group, for someone else, within
-        # their own companies, and only for groups whose implications they
-        # administer too or the grantee already holds
         env = self.env
         if env.su:
             _debug.logic("delegation_bypassed", grants=self.ids, reason="superuser")
             return
         if env.privileges and self._granted_by_privilege(operation):
-            # code that keeps a membership in step with its data acts under a
-            # privilege whose own rows name the group it may grant (an
-            # eligibility's activation among them); the actor granting
-            # themselves is then the data's doing, not a choice
             return
-        # nobody gives themselves a group or stretches their own grant, the
-        # access administrators included: another person does, or an
-        # eligibility activated for a while. Ending one's own grant only
-        # narrows it, and is left to whoever the rows let write it
         grants = self.sudo()
         if narrowing and all(grant.user_id.id == env.uid for grant in grants):
             return
@@ -441,8 +410,6 @@ class ResUsersGrant(models.Model):
         actor = env.user
         actor_groups = set(actor._get_group_ids())
         actor_companies = set(actor._get_company_ids())
-        # what each grantee holds through their other grants, read from the
-        # grants rather than a cached answer that may already count these
         held_by_user: defaultdict[int, set[int]] = defaultdict(set)
         others = self.sudo().search(
             self._live_domain()
@@ -503,17 +470,11 @@ class ResUsersGrant(models.Model):
                 )
 
     def _granted_by_privilege(self, operation: str) -> bool:
-        # every grant is one the environment's privileges allow by their own
-        # rows, for this operation
         grants = self.sudo().with_context(active_test=False)
         domain = self.env["ir.access"]._privilege_domain(self._name, operation)
         return grants.filtered_domain(domain) == grants
 
     def _check_lasting_administrator(self) -> None:
-        # the clock ends a timed grant where no constraint can refuse it: an
-        # administrator must remain once every timed grant has ended, through
-        # an open-ended grant or a membership no grant covers
-        # an invariant of the whole database: it reads everything
         grants = self.sudo()
         env = grants.env
         system = env.ref("base.group_system", raise_if_not_found=False)
@@ -527,7 +488,6 @@ class ResUsersGrant(models.Model):
             [("all_group_ids", "in", system.ids), ("active", "=", True)]
         )
         if not admins:
-            # no administrator at all: res.users refuses that by itself
             _debug.logic("lasting_administrator_skipped", reason="no_administrator")
             return
         covering = grants.search_fetch(
@@ -595,8 +555,6 @@ class ResUsersGrant(models.Model):
         date_to: datetime | None = None,
         reason: str | None = None,
     ) -> Self:
-        # a grant of each group to each user not already holding it everywhere
-        # (for a cause: through that cause, which then ends it alone)
         live = self._live_pairs(
             users,
             groups,
@@ -638,9 +596,6 @@ class ResUsersGrant(models.Model):
         cause_model: str | None = None,
         reason: str | None = None,
     ) -> Self:
-        # the live grants of these groups to these users (to anyone, without
-        # users); with a cause, only the grants that cause made, so a
-        # membership given by hand outlives the data that also implied it
         domain = self._live_domain() & Domain("group_id", "in", groups.ids)
         if users is not None:
             domain &= Domain("user_id", "in", users.ids)
@@ -687,16 +642,12 @@ class ResUsersGrant(models.Model):
         removed: Iterable[tuple[int, int]],
         fresh_user_ids: Iterable[int] = (),
     ) -> None:
-        # a membership written through group_ids or user_ids: an added pair is
-        # granted unscoped, a removed one loses every live grant of it
         added = set(added)
         if not self.env.su and (
             own := sorted(
                 group_id for user_id, group_id in added if user_id == self.env.uid
             )
         ):
-            # the grants below are made as the server: the writer giving
-            # themselves a group is refused here, as a grant of their own is
             _debug.logic("membership_refused", groups=own, reason="self_grant")
             raise AccessError(
                 self.env._(
@@ -705,11 +656,6 @@ class ResUsersGrant(models.Model):
                     group=self.env["res.groups"].browse(own[0]).full_name,
                 )
             )
-        # a writer clears the caches after its write; a create does not. A new
-        # user's group state asked before its grants existed counted each
-        # membership no grant covered, unscoped, as its grant now does: only a
-        # pair a grant already covered (scoped, timed or scheduled, given
-        # inside the create) reads differently once its unscoped grant exists
         asked = set(fresh_user_ids) & self.env.cr.cache.get(GROUP_STATE_COMPUTED, set())
         grants = self.sudo()
         covered = grants._covered_pairs({pair for pair in added if pair[0] in asked})
@@ -778,10 +724,6 @@ class ResUsersGrant(models.Model):
         return granted
 
     def _on_grant_changed(self, event: str) -> None:
-        # called once per batch after a grant is created, changed, revoked,
-        # started or expired, with the name of its ir.access.log event, or
-        # grant_started for a start, which is not logged; modules that judge
-        # a grant (a separation-of-duties rule) extend it
         return
 
     def _log(self, event: str, reason: str | None = None) -> None:
@@ -839,11 +781,6 @@ class ResUsersGrant(models.Model):
             & Domain("date_to", "<=", now)
         )
         _debug.lifecycle("grant_boundaries", starting=len(starting), ending=len(ending))
-        # one user at a time: a boundary a constraint refuses does not hold
-        # back every other user's. An end refused (the last administrator's)
-        # stays due and is retried; a start refused (a group the user may not
-        # hold beside another) is revoked, since a scheduled grant counts from
-        # its start whether the cron has run or not
         for user, user_grants in (starting | ending).grouped("user_id").items():
             user_starting, user_ending = user_grants & starting, user_grants & ending
             error = user_grants._cross_boundaries(user_starting, user_ending)
@@ -863,8 +800,6 @@ class ResUsersGrant(models.Model):
             )
 
     def _cross_boundaries(self, starting: Self, ending: Self) -> Exception | None:
-        # start and end these grants in a savepoint of their own; the refusal
-        # a constraint raises is answered, not raised
         try:
             with self.env.cr.savepoint():
                 with _marked(_LIFECYCLE):
@@ -903,12 +838,7 @@ class ResUsersGrant(models.Model):
         return {(grant.user_id.id, grant.group_id.id) for grant in self.sudo()}
 
     def _project(self, pairs: set[tuple[int, int]] | None = None) -> None:
-        # group_ids holds the (user, group) pairs with an active grant, whatever
-        # its scope; only the pairs these grants name are touched, so a
-        # membership no grant covers yet (a database before its migration) is
-        # left as it is
         if _FOLLOWING.get():
-            # the membership write these grants follow has moved the pairs
             return
         pairs = self._pairs() if pairs is None else pairs
         if not pairs:
@@ -924,8 +854,6 @@ class ResUsersGrant(models.Model):
         )
         active = {(user.id, group.id) for user, group in rows}
         users = self.env["res.users"].sudo().with_context(active_test=False)
-        # one write per distinct change: each runs the membership constraints
-        # and clears every access cache, whatever number of users it names
         by_commands: defaultdict[tuple, list[int]] = defaultdict(list)
         for user in users.browse(sorted(mine)):
             held = set(user.group_ids.ids)
@@ -959,21 +887,12 @@ class ResUsersGrant(models.Model):
                         unlink=[cmd[1] for cmd in commands if cmd[0] == Command.UNLINK],
                     )
                 users.browse(ids).write({"group_ids": list(commands)})
-        # a group_ids write clears the caches itself; a user this transaction
-        # is creating has nothing cached yet
         if by_commands or not mine.keys() - _FRESH_USERS.get():
             return
         self._clear_membership_caches()
 
     @api.model
     def _clear_membership_caches(self) -> None:
-        # the users' group states, and nothing else: every cache whose value
-        # depends on who holds a group keys on the state's signature (the
-        # policy's domains and verdicts, the menus, the tracked fields, a
-        # view's projection), so a new membership reads new keys. Not
-        # `default` (ir.default, the xml ids), nor `templates` (a cached arch
-        # holds group keys, each user's projection is keyed on the groups it
-        # matches), nor `stable`
         self.env.flush_all()
         self.env.invalidate_all()
         self.env.registry.clear_cache("memberships")
@@ -981,11 +900,6 @@ class ResUsersGrant(models.Model):
     @api.model
     @tools.ormcache(cache="stable")
     def _grants_available(self) -> bool:
-        # false only while an upgrade from before the model has not created
-        # its table yet: the reflection that records the model runs with the
-        # table's creation, and reads the same in memory as in PostgreSQL.
-        # Once true it stays true for the registry, which is asked on every
-        # cold group state
         if _GRANTS_AVAILABLE.get(id(self.pool)) is self.pool:
             return True
         available = bool(

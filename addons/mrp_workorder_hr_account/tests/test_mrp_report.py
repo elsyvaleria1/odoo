@@ -10,25 +10,9 @@ from odoo.addons.mrp.tests.common import TestMrpCommon
 class TestMrpReportEmployeeCost(TestMrpCommon):
     @freeze_time("2022-05-28")
     def test_mrp_report_no_operations(self):
-        """
-        Check that the operation cost is 0 when we don't have any operations.
 
-        - Final product Bom structure:
-            - product_1: qty: 1, cost: $20
-
-        MO:
-            - qty to produce: 10 units
-            - work_order duration: 0
-            unit_component_cost = $20
-            unit_duration = 0
-            unit_operation_cost = 0
-            unit_cost = 180
-        """
-
-        # Remove operations
         self.bom_4.operation_ids = [Command.clear()]
 
-        # MO
         self.product_1.standard_price = 20
         production_form = Form(self.env["mrp.production"])
         production_form.bom_id = self.bom_4
@@ -41,7 +25,6 @@ class TestMrpReportEmployeeCost(TestMrpCommon):
         mo = mo_form.save()
         mo.button_mark_done()
 
-        # must flush else SQL request in report is not accurate
         self.env.flush_all()
 
         report = self.env["mrp.report"].search([("production_id", "=", mo.id)])
@@ -94,7 +77,6 @@ class TestMrpReportEmployeeCost(TestMrpCommon):
         mo_2.move_raw_ids.quantity = 2
         mo_2.move_raw_ids.picked = True
         mo_2.button_mark_done()
-        # second report record not created without flush
         self.env.flush_all()
         self.assertRecordValues(
             self.env["mrp.report"].search(
@@ -112,7 +94,6 @@ class TestMrpReportEmployeeCost(TestMrpCommon):
         )
 
     def test_mrp_report_estimated_cost(self):
-        """Test that the mrp report correctly computes estimated costs."""
         self.workcenter_2.write(
             {
                 "costs_hour": 20,

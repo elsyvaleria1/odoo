@@ -13,7 +13,6 @@ class AccountMove(models.Model):
 
     @api.depends("fiscal_position_id", "move_type")
     def _compute_is_tax_computed_externally(self) -> None:
-        # EXTENDS 'account_external_tax' to enable external taxes on sale documents.
         super()._compute_is_tax_computed_externally()
         for move in self:
             if move.is_avatax:
@@ -22,10 +21,6 @@ class AccountMove(models.Model):
     def _post_entries(self):
         res = super()._post_entries()
 
-        # This recreates the existing transaction with the invoice name as the referenceCode (unknown
-        # before posting), and also commits the transaction. This deliberately doesn't pass the output
-        # back through _set_external_taxes(), because a posted invoice cannot be modified and the taxes
-        # were just calculated before in super()._post_entries() by the account_external_tax module.
         self.filtered(
             lambda move: (
                 move.is_avatax
@@ -37,7 +32,6 @@ class AccountMove(models.Model):
         return res
 
     def _prepare_avatax_service_params(self, commit=False):
-        # EXTENDS 'mixin.account.external.tax'
         res = super()._prepare_avatax_service_params(commit)
         document_type = {
             "out_invoice": "SalesInvoice",

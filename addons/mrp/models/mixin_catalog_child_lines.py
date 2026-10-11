@@ -44,15 +44,15 @@ class MixinCatalogChildLines(models.AbstractModel):
         line = self[child_field].filtered(
             lambda line: line.product_id.id == product_id
         )[:1]
-        by = "ignored"  # debuglog
+        by = "ignored"
         if line:
-            by = "updated" if quantity != 0 else "unlinked"  # debuglog
+            by = "updated" if quantity != 0 else "unlinked"
             if quantity != 0:
                 self._update_catalog_line_quantity(line, quantity, **kwargs)
             else:
                 line.unlink()
         elif quantity > 0:
-            by = "created"  # debuglog
+            by = "created"
             self.write(
                 {
                     child_field: [

@@ -30,7 +30,6 @@ class TestSignTemplate(TransactionCase):
         )
 
     def test_create_update_copy_unlink_template(self):
-        # create
         res = (
             self.env["sign.template"]
             .with_user(self.test_user)
@@ -56,7 +55,6 @@ class TestSignTemplate(TransactionCase):
             "The name of the template should be sample_contract.pdf",
         )
 
-        # update
         result = sign_template.update_from_pdfviewer(
             sign_items={
                 "-1": {
@@ -121,7 +119,6 @@ class TestSignTemplate(TransactionCase):
             "The name of the document should be sample_contract2.pdf",
         )
 
-        # copy
         copy_name = sign_template._get_copy_name(sign_template.name)
         self.assertNotEqual(
             sign_template.name,
@@ -140,7 +137,6 @@ class TestSignTemplate(TransactionCase):
             "The copied template should have 1 sign.item",
         )
 
-        # unlink
         sign_item = sign_template.sign_item_ids[0]
         sign_document = sign_template.document_ids[0]
         sign_template.unlink()
@@ -148,7 +144,6 @@ class TestSignTemplate(TransactionCase):
         self.assertFalse(sign_document.exists(), "The document should be deleted")
 
     def test_update_from_pdfviewer_bad_internet(self):
-        # create
         res = (
             self.env["sign.template"]
             .with_user(self.test_user)
@@ -163,8 +158,6 @@ class TestSignTemplate(TransactionCase):
             self.env["sign.template"].with_user(self.test_user).browse(sign_template_id)
         )
         document_id = sign_template.document_ids[0].id
-        # add new sign items
-        # A client creates a new item1(-1)
         result1 = sign_template.update_from_pdfviewer(
             sign_items={
                 "-1": {
@@ -200,8 +193,6 @@ class TestSignTemplate(TransactionCase):
             "The poxY of item1 should be 0.058",
         )
 
-        # result1 is received by client
-        # The client creates new item2(-2) and item3(-3), and updates the posY of item1
         result2 = sign_template.update_from_pdfviewer(
             sign_items={
                 str(item1_id): {
@@ -259,8 +250,6 @@ class TestSignTemplate(TransactionCase):
             "The poxY of item1 should be 0.158",
         )
 
-        # Result2 is not received by the client / the client sends another rpc call before it receive the result2
-        # The client removes the item3(-3) and create a new item4(-4) and update the posY of item2(-2)
         result3 = sign_template.update_from_pdfviewer(
             sign_items={
                 str(item1_id): {
@@ -326,7 +315,6 @@ class TestSignTemplate(TransactionCase):
         )
 
     def test_sign_item_has_proper_type(self):
-        """Tests that a sign item can only be set as read-only if it has certain types."""
         res = (
             self.env["sign.template"]
             .with_user(self.test_user)
@@ -371,8 +359,6 @@ class TestSignTemplate(TransactionCase):
                     )
 
     def test_sign_item_model_name(self):
-        """Make sure that we can't save a model on sign.template that is incompatible with the sign items"""
-        # Use models that are available in the sign application
         model_sr = self.env["ir.model"]._get("sign.request")
         model_cron = self.env["ir.model"]._get("ir.cron")
         model_partner = self.env["ir.model"]._get("res.partner")
@@ -439,7 +425,6 @@ class TestSignTemplate(TransactionCase):
 
     @mute_logger("odoo.addons.sign.utils.pdf_handling", "pypdf._reader")
     def test_invalid_pdf_upload(self):
-        """Make sure that uploading invalid/encrypted PDF upload should raise the error."""
         for fname, data in [
             ("test_AES.pdf", self.AES_pdf_data),
             ("test_unicode.pdf", self.unicode_pdf_data),
@@ -454,8 +439,6 @@ class TestSignTemplate(TransactionCase):
 
     @mute_logger("odoo.addons.sign.utils.pdf_handling", "pypdf._reader")
     def test_invalid_pdf_add_in_document(self):
-        """Make sure that adding invalid/encrypted PDF in Document should raise the error."""
-        # create a valid template first
         res = (
             self.env["sign.template"]
             .with_user(self.test_user)
@@ -481,8 +464,6 @@ class TestSignTemplate(TransactionCase):
                     )
 
     def test_update_document_preserves_sign_items(self):
-        """Ensure that updating a document in a sign template creates a new template and preserves sign items."""
-        # Create a template with one document and one sign item
         res = (
             self.env["sign.template"]
             .with_user(self.test_user)
@@ -519,7 +500,6 @@ class TestSignTemplate(TransactionCase):
             "Template should have 1 sign item before replacement",
         )
 
-        # Prepare new document data, call update_document, get the new template and perform the checks.
         new_attachment_data = {"name": "new_contract.pdf", "datas": self.pdf_data}
         action = template.update_document(document.id, new_attachment_data)
         new_template_id = action["params"]["id"]
@@ -701,16 +681,10 @@ class TestSignTemplate(TransactionCase):
             )
 
     def test_template_sign_tour(self):
-        """
-        Check that users who do not have the Sign admin group can access
-        the template returned by `trigger_template_tour`, as access errors
-        related to sign items happened during the copy of the original template.
-        """
         original_template = self.env.ref("sign.template_sign_tour")
         original_template.sign_request_ids.unlink()
         original_template.document_ids.sign_item_ids.unlink()
 
-        # check user with limited Sign rights can access the sample template
         self.env["sign.template"].with_user(self.test_user).trigger_template_tour()
 
         role = self.env["sign.item.role"].create({"name": "test"})
@@ -752,14 +726,11 @@ class TestSignTemplate(TransactionCase):
 
         self.assertTrue(original_template.has_sign_requests)
 
-        # check user with limited Sign rights can access the sample template after items
-        # have been added to it and a sign request has been created.
         res = (
             self.env["sign.template"].with_user(self.test_user).trigger_template_tour()
         )
         template_id = res["params"]["id"]
         template = self.env["sign.template"].browse(template_id)
-        # check existing sign items have not been copied to avoid access errors
         self.assertFalse(template.sign_item_ids)
 
 
@@ -768,7 +739,6 @@ class TestSignDocumentBinSize(TransactionCase):
     """`num_pages` must not depend on the ambient `bin_size` context."""
 
     def test_num_pages_survives_bin_size_recompute(self):
-        """A stored compute reading attachment bytes must read real bytes."""
         with file_open("sign/static/demo/sample_contract.pdf", "rb") as f:
             pdf = f.read()
         attachment = self.env["ir.attachment"].create(
@@ -789,7 +759,6 @@ class TestSignDocumentBinSize(TransactionCase):
         expected = document.num_pages
         self.assertGreater(expected, 0, "fixture should have pages")
 
-        # redo the stored compute from a bin_size environment, as a list read does
         document.invalidate_recordset()
         sized = document.with_context(bin_size=True)
         self.env.add_to_compute(self.env["sign.document"]._fields["num_pages"], sized)

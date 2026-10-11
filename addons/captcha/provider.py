@@ -7,5 +7,4 @@ class CaptchaProvider:
 
     code: str
     label: str
-    # the adapter model verifying the provider's tokens
     adapter: str

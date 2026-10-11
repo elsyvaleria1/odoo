@@ -258,8 +258,6 @@ class PosOrderLine(models.Model):
     def _keep_till_combo_shares(self, shares_by_uuid) -> None:
         if not shares_by_uuid:
             return
-        # the quantities say the share while the combo has some; at zero they
-        # cannot, and only the till that zeroed it still knows
         at_zero = self.filtered(
             lambda line: (
                 line.uuid in shares_by_uuid
@@ -306,8 +304,6 @@ class PosOrderLine(models.Model):
 
     def _get_over_refunded_lines(self, refund_order) -> Self:
         self._serialize_refund_settlements()
-        # a draft refund elsewhere has returned nothing yet, so only settled
-        # refunds and this one count
         digits = self.env["decimal.precision"].get_precision("Product Unit")
 
         def settled_refund_qty(line):
@@ -335,9 +331,6 @@ class PosOrderLine(models.Model):
         if not self:
             return
         self.lock_for_update(allow_referencing=True, wait=True)
-        # A lock alone lets a settlement that waited on it count with the
-        # snapshot it took before this one committed; rewriting the rows makes
-        # it fail to serialise instead, and its retry counts this refund.
         self.env.cr.execute(
             SQL(
                 "UPDATE %s SET write_date = write_date WHERE id = ANY(%s)",
@@ -362,7 +355,6 @@ class PosOrderLine(models.Model):
         }
 
     def _get_pricing_exemptions(self) -> dict[Self, set[str]]:
-        """The pricing fields something other than the cashier sets, per line."""
         tip_products = self.order_id.config_id.tip_product_id
         return {
             line: (
@@ -393,10 +385,6 @@ class PosOrderLine(models.Model):
         return {name: breaches[name] for name in checks if name in breaches}
 
     def _approve_pricing(self, previous) -> None:
-        """Approve what this sync changed, as far as its cashier may set it.
-
-        `previous` maps a line's uuid to its price and discount before the sync.
-        """
         if not self:
             return
         order = self.order_id
@@ -436,7 +424,6 @@ class PosOrderLine(models.Model):
     def _has_allowed_discount(self) -> bool:
         self.check_singleton()
         digits = self.env["decimal.precision"].get_precision("Discount")
-        # a refund gives back the discount it was sold with
         return (
             not float_compare(
                 self.discount,
@@ -451,8 +438,6 @@ class PosOrderLine(models.Model):
         self.check_singleton()
         if not self.discount_barcode:
             return False
-        # the till reads a scan with the company's nomenclature, and with its
-        # fallback one only when the company's is GS1
         nomenclature = self.company_id.barcodes_config_id.nomenclature_id
         fallback = self.order_id.config_id.fallback_nomenclature_id
         if nomenclature.is_gs1_nomenclature and fallback:
@@ -501,7 +486,6 @@ class PosOrderLine(models.Model):
         product = self.product_id.with_context(
             **self.product_id._prepare_product_price_context(self.attribute_value_ids)
         )
-        # the till prices a tracked product on its quantity across the order
         quantities = {self.qty}
         if product.tracking != "none":
             quantities.add(
@@ -685,7 +669,6 @@ class PosOrderLine(models.Model):
     def _get_subtotals_from_base_lines(
         self, base_lines
     ) -> dict[Self, dict[str, float]]:
-        # as the till: each line after the engine spread the order's rounding
         AccountTax = self.env["account.tax"]
         subtotals = {}
         for base_line in base_lines:
@@ -693,7 +676,6 @@ class PosOrderLine(models.Model):
             if line not in self:
                 continue
             tax_details = base_line["tax_details"]
-            # a refund order's base lines are priced on the opposite quantity
             sign = -1 if line.order_id._is_refund_order() else 1
             subtotals[line] = {
                 "price_subtotal": sign
@@ -709,7 +691,6 @@ class PosOrderLine(models.Model):
     def _write_subtotals(self, base_lines) -> None:
         subtotals = self._get_subtotals_from_base_lines(base_lines)
         if len(subtotals) < len(self):
-            # the rounding is spread over every line the till priced together
             subtotals = self._get_subtotals()
         for line, values in subtotals.items():
             currency = line.currency_id
@@ -896,8 +877,6 @@ class PosOrderLine(models.Model):
                 if cost_currency.is_zero(product_cost) and line.order_id.shipping_date:
                     refunded = line.refunded_orderline_id
                     if refunded and refunded.qty:
-                        # Keep the recorded source cost even if historical rates
-                        # were corrected. Older lines may lack that unit cost.
                         product_cost = (
                             refunded.price_cost
                             or refunded.currency_id._convert(

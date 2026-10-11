@@ -25,8 +25,6 @@ CHANGESET_LOG_EVENTS = [
 ]
 POLICY_VERSION = "base.access_policy_version"
 IMPACT_OPERATIONS = ("read", "write", "create", "unlink")
-# set while a change set applies its lines, and while code that is not a
-# person's edit writes a staged model on purpose
 _APPLYING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "ir_access_changeset_applying", default=False
 )
@@ -41,10 +39,6 @@ def applying() -> Iterator[None]:
         _APPLYING.reset(token)
 
 
-# the models whose form edits security rows: a person's call on one of them
-# stages what it changes; what code serving a call on another model changes
-# (a second website, a helpdesk team's SLA flag) is a feature's doing, as a
-# setting's is
 STAGING_ENTRIES = frozenset(
     {
         "ir.access",
@@ -54,9 +48,6 @@ STAGING_ENTRIES = frozenset(
         "res.groups",
         "res.users",
         "res.users.eligibility",
-        # the model form edits a model's rows (access_ids), and an import
-        # writes the rows it reads: both are a person's edit, through another
-        # door, of what the list above stages
         "ir.model",
         "base_import.import",
     }
@@ -64,8 +55,6 @@ STAGING_ENTRIES = frozenset(
 
 
 def staging(env: api.Environment) -> bool:
-    # a person's edit of a security row: a remote call on a security model,
-    # not the superuser, not a module's load, not a change set applying itself
     return not (
         env.su
         or _APPLYING.get()
@@ -100,8 +89,6 @@ class MixinAccessAudit(models.AbstractModel):
     def _access_audit_module_record(
         self, module: str, lines: list[dict[str, Any]]
     ) -> dict[str, Any]:
-        # a module's load is not staged, the module is the change: it is
-        # recorded as a change set already active, whose lines are its diff
         values = super()._access_audit_module_record(module, lines)
         if not lines:
             return values
@@ -113,10 +100,7 @@ class MixinAccessStaged(models.AbstractModel):
     _name = "mixin.access.staged"
     _description = "Security Row Changed Through a Change Set"
 
-    # the fields a person's edit stages; empty: every stored field written
     _access_staged_fields: ClassVar[tuple[str, ...]] = ()
-    # a person's new record waits, inactive, for its change set: the field
-    # and the value that hold it back, and the value activation writes
     _access_staged_create: ClassVar[tuple[str, Any, Any] | None] = None
 
     def _access_staged_names(self, names: Any) -> list[str]:
@@ -280,8 +264,6 @@ class ResUsersEligibility(models.Model):
 
 
 def _shape(impact: dict[str, Any]) -> set[tuple]:
-    # what an impact says, record counts aside: who gains, who loses, and on
-    # what (a record created meanwhile moves a count, not a decision)
     return {
         (user_id, model, operation, gained > 0, lost > 0, before < 0, after < 0)
         for user_id, by_model in impact.items()
@@ -292,7 +274,6 @@ def _shape(impact: dict[str, Any]) -> set[tuple]:
 
 
 def _widened(impact: dict[str, Any]) -> set[int]:
-    # the people who reach a record, or a model, they did not reach before
     return {
         int(user_id)
         for user_id, by_model in impact.items()
@@ -489,10 +470,6 @@ class IrAccessChangeset(models.Model):
         }
 
     def _check_review(self) -> dict[str, Any]:
-        # a change set is activated for what it was proposed to do: who gains
-        # or loses what, per person, model and operation. A widening is
-        # another person's to activate, as a pull request is another's to
-        # merge; a change set activated without a proposal is judged as well
         impact = self._impact()
         if self.state == "proposed" and _shape(impact) != _shape(self.impact or {}):
             raise UserError(
@@ -519,9 +496,6 @@ class IrAccessChangeset(models.Model):
         self.impact = self._impact()
 
     def _impact(self) -> dict[str, Any]:
-        # the same compiled domains the decision uses, counted per affected
-        # principal, model and operation, before and after the lines applied
-        # in a savepoint that is rolled back
         self.check_singleton()
         models_, groups = self.line_ids._affected()
         users = self.env["res.users"].search(
@@ -550,7 +524,6 @@ class IrAccessChangeset(models.Model):
             if was == reached:
                 continue
             user_id, model_name, operation = key
-            # before, after, gained, lost; -1 where the model is refused whole
             impact.setdefault(str(user_id), {}).setdefault(model_name, {})[
                 operation
             ] = [
@@ -693,9 +666,6 @@ class IrAccessChangesetLine(models.Model):
         return now != self.values_before
 
     def _apply(self) -> None:
-        # an activated change set is the policy changing its own rows: what
-        # decided it is its approval (or its author's activation), not what
-        # the activating person may write when it runs
         record = (
             self.env["ir.access"]._access_evaluator(self.res_model).browse(self.res_id)
         )
@@ -729,8 +699,6 @@ class IrAccessChangesetLine(models.Model):
         return values
 
     def _discard_created(self) -> None:
-        # a new row stays as it was staged, inactive; a staged eligibility is
-        # revoked, so nobody may activate it
         for line in self.filtered(
             lambda line: line.res_model == "res.users.eligibility"
         ):
@@ -761,8 +729,6 @@ class IrAccessChangesetLine(models.Model):
         )
 
     def _affected(self) -> tuple[set[str], set[int]]:
-        # the models whose reach the lines may move, and the groups whose
-        # holders they may move it for
         model_names: set[str] = set()
         group_ids: set[int] = set()
         implied: set[int] = set()

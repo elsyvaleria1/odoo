@@ -8,8 +8,6 @@ from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCom
 @tagged("post_install", "-at_install")
 class TestPoSSubscription(TestPointOfSaleHttpCommon):
     def test_pos_recurring_product_invoicing(self):
-        """Test if qty_invoiced is correctly updated when a recurring product is
-        invoiced from the POS and the next_invoice_date is updated."""
         plan_month = (
             self.env["sale.subscription.plan"]
             .sudo()

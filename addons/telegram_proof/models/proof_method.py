@@ -42,10 +42,6 @@ class ProofMethod(models.Model):
     def _get_contact_chat(
         self, partner: models.BaseModel, company: models.BaseModel | None = None
     ) -> models.BaseModel:
-        """The private chat that reaches ``partner``, preferring a bot of
-        ``company``: only an account bound to the contact reaches them."""
-        # the contact's own chats and their company's people's, never one a
-        # stand-in contact holds: a stranger's first message made it
         chats = (
             operating(self.env["telegram.chat"])
             ._for_partner(partner | partner.child_ids)
@@ -146,8 +142,6 @@ class ProofMethod(models.Model):
                 env._("Is this right?"),
             ]
         )
-        # through the outbox: sent once the asking transaction commits, so a
-        # collection rolled back never reaches its customer
         ledger = chat.bot_id._queue_text(
             chat,
             text,
@@ -173,8 +167,6 @@ class ProofMethod(models.Model):
             )
 
     def _get_delivery_ledger(self, delivery: models.BaseModel) -> models.BaseModel:
-        """The outbox row that carried the message, whose Telegram id the
-        contact's button press names once it went out."""
         ledger = operating(self.env["telegram.message"])
         if not (delivery.ref or "").isdigit():
             return ledger

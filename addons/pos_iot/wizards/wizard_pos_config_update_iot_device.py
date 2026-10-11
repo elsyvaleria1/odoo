@@ -22,7 +22,6 @@ class WizardPosConfigUpdateIotDevice(models.TransientModel):
     )
 
     def _get_default_pos(self):
-        """Get the first PoS config where no IoT Box is set."""
         pos_config = self.env["pos.config"].search([("is_posbox", "=", False)], limit=1)
         return [Command.set([pos_config.id])] if pos_config else []
 

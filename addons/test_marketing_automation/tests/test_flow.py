@@ -17,20 +17,9 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
         super().setUpClass()
         cls.date_reference = Datetime.from_string(
             "2014-08-01 15:02:32"
-        )  # so long, little task
+        )
         cls.env["res.lang"]._activate_lang("fr_FR")
 
-        # --------------------------------------------------
-        # TEST RECORDS, using marketing.test.sms (customers)
-        #
-        # 2 times
-        # - 3 records with partners
-        # - 1 records wo partner, but email/mobile
-        # - 1 record wo partner/email/mobile
-        # 1 record filtered out by campaign filter
-        # 1 wrong email
-        # 1 duplicate
-        # --------------------------------------------------
         cls.test_records_base = cls._create_marketauto_records(
             model="marketing.test.sms", count=2
         )
@@ -52,9 +41,6 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
                 },
                 {
                     "email_from": cls.test_records_base[1].email_from,
-                    # compared to < 17, we need the name to be the same, as duplicate
-                    # comparison is now done on sent content + recipient, not just
-                    # the recipient itself
                     "name": cls.test_records_base[1].name,
                     "phone_ids": [Command.set(cls.test_records_base[1].phone_ids.ids)],
                 },
@@ -71,22 +57,12 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
             cls.test_records.filtered(
                 lambda r: (
                     not r.email_from or r.email_from == "wrong"
-                )  # phone / email similar heuristics
+                )
             )
             + cls.test_records_failure_dupe
         )
         cls.test_records_contact_ok = cls.test_records - cls.test_records_contact_ko
 
-        # --------------------------------------------------
-        # CAMPAIGN, based on marketing.test.sms (customers)
-        #
-        # ACT1              MAIL begin
-        #   ACT1.1            -> reply -> send an SMS after 1h with a promotional link
-        #     ACT1.1.1          -> sms_click -> send a confirmation SMS right at click
-        #   ACT1.2            -> not opened within 1 day-> update description through server action
-        #   ACT1.3            -> send whatsapp reminder one week after
-        #     ACT1.3.1          -> whatsapp_replied: resend confirmation whatsapp
-        # --------------------------------------------------
 
         cls.campaign = (
             cls.env["marketing.campaign"]
@@ -99,7 +75,6 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
                 }
             )
         )
-        # begin activity: send a mailing
         cls.act1_mailing = cls._create_mailing(
             "marketing.test.sms",
             email_from=cls.user_marketing_automation.email_formatted,
@@ -112,7 +87,6 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
             interval_number=0,
         ).with_user(cls.user_marketing_automation)
 
-        # first sub-activity: send an SMS 1 hour after a reply
         cls.act1_1_mailing = cls._create_mailing(
             "marketing.test.sms",
             mailing_type="sms",
@@ -127,8 +101,6 @@ class TestMarketAutoFlow(TestMACommon, CronMixinCase):
             interval_number=1,
             interval_type="hour",
         ).with_user(cls.user_marketing_automation)
-        # second sub-activity: update description if not opened after 1 day
-        # created by admin, should probably not give rights to marketing
         cls.act1_2_sact = cls.env["ir.actions.server"].create(
             {
                 "code": """
@@ -148,7 +120,6 @@ for record in records:
             interval_type="day",
             activity_domain=[("email_from", "!=", False)],
         ).with_user(cls.user_marketing_automation)
-        # third sub-activity: send whatsapp reminder
         cls.act1_3_wa_template = cls._create_wa_template(
             "marketing.test.sms",
             user=cls.user_marketing_automation.id,
@@ -162,7 +133,6 @@ for record in records:
             interval_type="week",
         ).with_user(cls.user_marketing_automation)
 
-        # child of SMS sub-activity: send a confirmation by SMS
         cls.act1_1_1_mailing = cls._create_mailing(
             "marketing.test.sms",
             mailing_type="sms",
@@ -177,7 +147,6 @@ for record in records:
             interval_number=0,
         ).with_user(cls.user_marketing_automation)
 
-        # child of WA sub-activity: send a confirmation by WA right at reception
         cls.act1_3_1_wa_template = cls._create_wa_template(
             "marketing.test.sms",
             body="WA Confirmation",
@@ -195,8 +164,6 @@ for record in records:
         cls.env.flush_all()
 
     def test_assert_initial_values(self):
-        """Test initial values to have a common ground for other tests"""
-        # ensure initial data
         self.assertEqual(len(self.test_records_all), 13)
         self.assertEqual(len(self.test_records), 12)
         self.assertEqual(self.campaign.state, "draft")
@@ -209,12 +176,9 @@ for record in records:
     )
     @users("user_marketing_automation")
     def test_marketing_automation_flow(self):
-        """Test a marketing automation flow involving several steps."""
-        # init test variables to ease code reading
         date_reference = self.date_reference
         test_records = self.test_records.with_user(self.env.user)
 
-        # update campaign
         act1 = self.act1.with_user(self.env.user)
         act1_1 = self.act1_1.with_user(self.env.user)
         act1_2 = self.act1_2.with_user(self.env.user)
@@ -228,10 +192,7 @@ for record in records:
             }
         )
 
-        # CAMPAIGN START
-        # ------------------------------------------------------------
 
-        # User starts and syncs its campaign
         with (
             self.mock_datetime_and_now(self.date_reference),
             self.capture_triggers(
@@ -241,7 +202,6 @@ for record in records:
             campaign.action_start_campaign()
         self.assertEqual(campaign.state, "running")
 
-        # a cron.trigger has been created to sync participants after campaign start
         self.assertEqual(len(captured_triggers.records), 1)
         self.assertEqual(
             captured_triggers.records[0].cron_id,
@@ -257,14 +217,12 @@ for record in records:
         ):
             campaign.sync_participants()
 
-        # All records not containing Test_00 should be added as participants
         self.assertEqual(campaign.running_participant_count, len(test_records))
         self.assertEqual(
             set(campaign.participant_ids.mapped("res_id")), set(test_records.ids)
         )
         self.assertEqual(set(campaign.participant_ids.mapped("state")), {"running"})
 
-        # Beginning activity should contain a scheduled trace for each participant
         self.assertMarketAutoTraces(
             [
                 {
@@ -279,8 +237,6 @@ for record in records:
             act1,
         )
 
-        # a cron.trigger has been created to execute activities after campaign start
-        # there should only be one since we have 9 activities with the same scheduled_date
         self.assertEqual(len(captured_triggers.records), 1)
         self.assertEqual(
             captured_triggers.records[0].cron_id,
@@ -288,16 +244,12 @@ for record in records:
         )
         self.assertEqual(captured_triggers.records[0].call_at, self.date_reference)
 
-        # No other trace should have been created as the first one are waiting to be processed
         for act in act1_1 + act1_1_1 + act1_2 + act1_3 + act1_3_1:
             self.assertEqual(act.trace_ids, self.env["marketing.trace"])
 
-        # ACT1: LAUNCH MAILING
-        # ------------------------------------------------------------
         test_records_contact_ko = self.test_records_contact_ko.with_env(self.env)
         test_records_contact_ok = self.test_records_contact_ok.with_env(self.env)
 
-        # First traces are processed, emails are sent (or failed)
         with (
             self.mock_datetime_and_now(self.date_reference),
             self.mock_mail_gateway(),
@@ -327,7 +279,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # wrong email -> trace set as ignored
                     "trace_email": self.test_records_failure_wrong.email_from,
                     "trace_failure_type": "mail_email_invalid",
                     "trace_status": "cancel",
@@ -339,7 +290,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # wrong email -> trace set as ignored
                     "trace_email": self.test_records_failure_dupe.email_normalized,
                     "trace_failure_type": "mail_dup",
                     "trace_status": "cancel",
@@ -355,7 +305,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # no email -> trace set as ignored
                     "trace_failure_type": "mail_email_missing",
                     "trace_status": "cancel",
                 },
@@ -363,8 +312,6 @@ for record in records:
             act1,
         )
 
-        # Child traces should have been generated for all traces of parent activity as activity_domain
-        # is taken into account at processing, not generation (see act2_2)
         self.assertMarketAutoTraces(
             [
                 {
@@ -405,8 +352,6 @@ for record in records:
             act1_3,
         )
 
-        # a cron.trigger has been created to execute activities 1 day and 1 week after mailing is sent
-        # there should only be two since we have 2*9 activities with the same scheduled_date
         self.assertEqual(2, len(captured_triggers.records))
         for trigger in captured_triggers.records:
             self.assertEqual(
@@ -422,7 +367,6 @@ for record in records:
             "Should have 1 day / 1 week triggers: two sub activities with should have triggers",
         )
 
-        # Processing does not change anything (not time yet)
         with self.mock_datetime_and_now(self.date_reference):
             campaign.execute_activities()
         for act in act1_1 + act1_2 + act1_3:
@@ -433,8 +377,6 @@ for record in records:
                 "Grand children should have traces only when their respective parent is executed",
             )
 
-        # ACT1 FOLLOWUP: PROCESS SOME REPLIES (+1 H)
-        # ------------------------------------------------------------
 
         date_reference_reply = date_reference + relativedelta(hours=1)
         test_records_mail_replied = test_records_contact_ok[:2]
@@ -479,7 +421,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # wrong email -> trace set as ignored
                     "trace_email": self.test_records_failure_wrong.email_from,
                     "trace_failure_type": "mail_email_invalid",
                     "trace_status": "cancel",
@@ -491,7 +432,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # wrong email -> trace set as ignored
                     "trace_email": self.test_records_failure_dupe.email_normalized,
                     "trace_failure_type": "mail_dup",
                     "trace_status": "cancel",
@@ -507,7 +447,6 @@ for record in records:
                         "schedule_date": date_reference,
                         "state_msg": "Email cancelled",
                     },
-                    # no email -> trace set as ignored
                     "trace_failure_type": "mail_email_missing",
                     "trace_status": "cancel",
                 },
@@ -515,7 +454,6 @@ for record in records:
             act1,
         )
 
-        # Replied records -> SMS scheduled
         self.assertMarketAutoTraces(
             [
                 {
@@ -535,7 +473,6 @@ for record in records:
             ],
             act1_1,
         )
-        # Replied records -> mail_not_open canceled
         self.assertMarketAutoTraces(
             [
                 {
@@ -555,7 +492,6 @@ for record in records:
             ],
             act1_2,
         )
-        # Not impacted, still waiting to be executed in one week
         self.assertMarketAutoTraces(
             [
                 {
@@ -570,9 +506,6 @@ for record in records:
             act1_3,
         )
 
-        # a cron.trigger has been created exactly 1 hour after the replies to match the
-        # created marketing.trace (ACT2.1); the 2 replies land at the exact same time, so they
-        # share one trigger
         self.assertEqual(len(captured_triggers.records), 1)
         for captured_trigger in captured_triggers.records:
             self.assertEqual(
@@ -583,8 +516,6 @@ for record in records:
                 captured_trigger.call_at, date_reference_reply + relativedelta(hours=1)
             )
 
-        # ACT2_1: REPLIED GOT AN SMS (+2 H)
-        # ------------------------------------------------------------
 
         date_reference_new = date_reference + relativedelta(hours=2)
 
@@ -630,7 +561,7 @@ for record in records:
             act1_1_1,
         )
 
-        self.assertFalse(captured_triggers.records)  # no trigger should be created
+        self.assertFalse(captured_triggers.records)
 
         self.env.flush_all()
         with (
@@ -665,21 +596,16 @@ for record in records:
             act1_1,
         )
 
-        self.assertFalse(captured_triggers.records)  # no trigger should be created
+        self.assertFalse(captured_triggers.records)
 
-        # ACT2_1 FOLLOWUP: CLICK ON LINKS -> ACT3_1: CONFIRMATION SMS SENT
-        # ------------------------------------------------------------
 
         self._clear_outgoing_sms()
-        # TDE CLEANME: improve those tools, but sms gateway resets finding existing
-        # sms, which is why we do in two steps
         test_records_sms_clicked = test_records_mail_replied[0]
         sms_sent = self._find_sms_sent(
             test_records_sms_clicked.customer_id,
             test_records_sms_clicked.phone_sanitized,
         )
 
-        # mock SMS gateway as in the same transaction, next activity is processed
         with (
             self.mock_datetime_and_now(date_reference_new),
             self.mockSMSGateway(),
@@ -689,7 +615,7 @@ for record in records:
         ):
             self.gateway_sms_sent_click(sms_sent)
 
-        self.assertFalse(captured_triggers.records)  # no trigger should be created
+        self.assertFalse(captured_triggers.records)
 
         self.env.flush_all()
         with (
@@ -703,9 +629,8 @@ for record in records:
             self.env(cr=cr)["sms.sms"].sudo()._process_queue()
             self.env.invalidate_all()
 
-        self.assertFalse(captured_triggers.records)  # no trigger should be created
+        self.assertFalse(captured_triggers.records)
 
-        # click triggers process_event and automatically launches act1_1_1 depending on sms_click
         self.assertMarketAutoTraces(
             [
                 {
@@ -714,7 +639,6 @@ for record in records:
                     "fields_values": {
                         "schedule_date": date_reference_new,
                     },
-                    # mailing trace
                     "trace_content": f"Confirmation for {test_records_sms_clicked.name}",
                     "trace_status": "pending",
                 },
@@ -729,8 +653,6 @@ for record in records:
             act1_1_1,
         )
 
-        # ACT1_2: PROCESS SERVER ACTION ON NOT-REPLIED (+1D 2H)
-        # ------------------------------------------------------------
 
         date_reference_new = date_reference + relativedelta(days=1, hours=2)
         self._clear_outgoing_sms()
@@ -756,7 +678,7 @@ for record in records:
                     "status": "error",
                     "records": (
                         self.test_records_failure_wrong + self.test_records_failure_dupe
-                    ),  # server action did crash, description is False (see muted logger)
+                    ),
                     "fields_values": {
                         "schedule_date": date_reference_new,
                         "state_msg_content": "Exception in server action",
@@ -768,14 +690,14 @@ for record in records:
                         test_records_contact_ko
                         - self.test_records_failure_wrong
                         - self.test_records_failure_dupe
-                    ),  # no email_from -> rejected due to domain filter
+                    ),
                     "fields_values": {
                         "schedule_date": date_reference + relativedelta(days=1),
                     },
                 },
                 {
                     "status": "canceled",
-                    "records": test_records_mail_replied,  # replied -> mail_not_open is canceled
+                    "records": test_records_mail_replied,
                     "fields_values": {
                         "schedule_date": date_reference_reply,
                     },
@@ -784,7 +706,6 @@ for record in records:
             act1_2,
         )
 
-        # check server action was actually processed
         for record in test_records_contact_ko | test_records_mail_replied:
             self.assertNotIn(
                 "Did not answer, sad campaign is sad", (record.description or "")
@@ -793,10 +714,8 @@ for record in records:
             self.assertIn(
                 "Did not answer, sad campaign is sad", (record.description or "")
             )
-        self.assertFalse(captured_triggers.records)  # no trigger should be created
+        self.assertFalse(captured_triggers.records)
 
-        # ACT1_3: PROCESS WHATSAPP (+1W)
-        # ------------------------------------------------------------
         date_reference_new = date_reference + relativedelta(weeks=1, hours=1)
         with (
             self.mock_datetime_and_now(date_reference_new),
@@ -819,7 +738,7 @@ for record in records:
                     "trace_content": "<p>Hello your much wow template value</p>",
                     "trace_status": "sent",
                 },
-                {  # duplicated is processed, why not
+                {
                     "status": "processed",
                     "records": self.test_records_failure_dupe,
                     "fields_values": {
@@ -855,21 +774,19 @@ for record in records:
             ],
             act1_3,
         )
-        # traces for sub activity should have been prepared
         self.assertMarketAutoTraces(
             [
                 {
                     "status": "scheduled",
                     "records": test_records,
                     "fields_values": {
-                        "schedule_date": False,  # on user reply, hence no scheduled date
+                        "schedule_date": False,
                     },
                 }
             ],
             act1_3_1,
         )
 
-        # some whatsapp replies, should trigger sub activity
         date_wa_reply = date_reference + relativedelta(weeks=1, hours=2)
         with self.mock_datetime_and_now(date_wa_reply):
             self.whatsapp_answer_with_records(test_records_contact_ok[0:2], mock=True)
@@ -882,7 +799,7 @@ for record in records:
                         "schedule_date": date_reference_new,
                     },
                     "trace_status": "replied",
-                    "wa_from_mock": False,  # mocked replies override stored mock content
+                    "wa_from_mock": False,
                 },
                 {
                     "status": "processed",
@@ -891,11 +808,11 @@ for record in records:
                         "schedule_date": date_reference_new,
                     },
                     "trace_status": "sent",
-                    "wa_from_mock": False,  # mocked replies override stored mock content
+                    "wa_from_mock": False,
                 },
             ],
             act1_3,
-            strict=False,  # don't recheck all traces
+            strict=False,
         )
         self.assertMarketAutoTraces(
             [
@@ -903,7 +820,7 @@ for record in records:
                     "status": "scheduled",
                     "records": test_records - test_records_contact_ok[0:2],
                     "fields_values": {
-                        "schedule_date": False,  # on user reply, hence no scheduled date
+                        "schedule_date": False,
                     },
                 },
                 {

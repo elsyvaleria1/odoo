@@ -66,8 +66,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
         return companies[:1]
 
     def _get_payslips_to_process(self):
-        """Payslips this report actually processes: validated, with a
-        strictly positive net wage. Matches the check in _perform_checks()."""
         return self.payslip_ids.filtered(
             lambda p: p.state == "validated" and p.net_wage > 0
         )
@@ -114,9 +112,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
                 )
                 index += 1
         if self.include_partners:
-            # Summed over the selected payslips as a whole, outside the employee
-            # loop above: that loop skips an employee with no bank allocation,
-            # and a third party is owed its money either way.
             period = (
                 format_date(self.env, min(self.payslip_ids.mapped("date_from")))
                 + " - "
@@ -141,8 +136,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
         return base64.encodebytes(output.getvalue().encode())
 
     def _get_partner_contributions(self):
-        """Amount owed to each third party named on a salary rule, summed over
-        every selected payslip."""
         contributions = defaultdict(float)
         for line in self.payslip_ids.line_ids.filtered("salary_rule_id.partner_id"):
             contributions[line.salary_rule_id.partner_id] += line.total
@@ -179,11 +172,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
             )
 
     def _perform_checks(self) -> None:
-        """
-        Extend this function and first call super()._perform_checks().
-        Then make condition(s) for the format(s) you added and corresponding checks.
-        The checks below are common to all payment reports.
-        """
         if not self.payslip_ids:
             raise ValidationError(
                 self.env._("There should be at least one payslip to generate the file.")
@@ -199,10 +187,6 @@ class WizardHrPayslipExportPaymentFile(models.TransientModel):
         self._get_payslips_to_process().write({"paid_date": self.date_effective})
 
     def generate_payment_report(self) -> None:
-        """
-        Extend this function and first call super().generate_payment_report().
-        Then make condition(s) for the format(s) you added and corresponding methods.
-        """
         self.check_singleton()
         if self.payslip_ids.filtered("error_count"):
             raise ValidationError(self._get_error_message())

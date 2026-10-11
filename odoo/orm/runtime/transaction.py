@@ -43,8 +43,6 @@ def _is_new_id(record_id: object) -> bool:
     return isinstance(record_id, NewId)
 
 
-# the privileges an environment holds: the virtual groups only code grants
-# (BaseModel.with_privilege), part of the environment's identity
 NO_PRIVILEGES: frozenset[int] = frozenset()
 
 
@@ -113,9 +111,6 @@ class _EnvironmentSet(WeakSet["Environment"]):
             del self._index[key]
         return env
 
-    # WeakSet's bulk and in-place operators write its data directly; each
-    # goes through add/discard so the index never names an environment the
-    # set has left
     @typing.override
     def update(self, other: Iterable[Environment]) -> None:
         for env in list(other):
@@ -140,25 +135,23 @@ class _EnvironmentSet(WeakSet["Environment"]):
             else:
                 self.add(env)
 
-    def __ior__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+    def __ior__(self, other: Iterable[Environment]) -> typing.Self:
         self.update(other)
         return self
 
-    def __isub__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+    def __isub__(self, other: Iterable[Environment]) -> typing.Self:
         self.difference_update(other)
         return self
 
-    def __iand__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+    def __iand__(self, other: Iterable[Environment]) -> typing.Self:
         self.intersection_update(other)
         return self
 
-    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[override,misc]
+    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:
         self.symmetric_difference_update(other)
         return self
 
     def get_environment(self, key: tuple[typing.Any, ...]) -> Environment | None:
-        # every path that takes an environment out of the set takes it out of
-        # the index, and both forget a collected one, so the index alone answers
         return self._index.get(key)
 
 
@@ -194,10 +187,6 @@ class Transaction:
         self.envs: _EnvironmentSet = _EnvironmentSet()
         self.default_env: Environment | None = None
         self._last_env: weakref_ref[Environment] | None = None
-        # the index and the last-env fast path hold environments weakly, so a
-        # transient one (record.sudo().field, in a loop) died with its
-        # recordset and was rebuilt on the next call; a short strong ring
-        # keeps the recent ones alive between those calls
         self._recent_envs: deque[Environment] = deque(maxlen=RECENT_ENVIRONMENTS)
 
         self._cache_store: FieldCache[Field[typing.Any]] = FieldCache(
@@ -223,13 +212,8 @@ class Transaction:
         self._ref_cache: dict[tuple[str, int], bool] = {}
         self._create_frames: list[dict[str, set[int]]] = []
         self._inserted_checks: list[tuple[str, frozenset[int]]] = []
-        # the calls a wrapper let through, held here and never in a context: a
-        # context is whatever the client sent
         self._admissions: list[tuple[str, str, frozenset[int]]] = []
         self.prefetch_batch: tuple[str, tuple[IdType, ...]] | None = None
-        # while a recursive recompute runs: the values a fetch read for rows
-        # still pending, kept for each row's own compute to read as its old
-        # value instead of fetching the batch again, row by row
         self.recompute_snapshots: (
             dict[Field[typing.Any], dict[IdType, typing.Any]] | None
         ) = None
@@ -316,8 +300,6 @@ class Transaction:
             return last
         company_ids = context.get("allowed_company_ids")
         if type(company_ids) is list:
-            # a request's context carries the web client's JSON array; frozen, the
-            # frozendict caches its hash instead of re-freezing it on every lookup
             frozen_context = frozendict(
                 context, allowed_company_ids=FrozenList(company_ids)
             )
@@ -383,7 +365,6 @@ class Transaction:
         prof = _OrmProfile(_orm_cache)
         core = self.core
         if not core.protection_depth():
-            # checks a scope left behind with its error, about to be flushed
             core.run_deferred()
 
         def recompute_fn(field: Field[typing.Any]) -> None:

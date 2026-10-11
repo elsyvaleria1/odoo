@@ -18,8 +18,6 @@ _debug = DebugLog(__name__)
 _gc_start: int = 0
 _gc_timings: list[int] = [0, 0, 0]
 _gc_collections: list[int] = [0, 0, 0]
-# Python 3.14's incremental collector reports every automatic collection as
-# generation 1, so a per-collection line is kept for full or slow ones.
 _SLOW_COLLECTION_NS = 10_000_000
 
 
@@ -28,7 +26,7 @@ def _to_ms(ns: float) -> float:
 
 
 def _record_gc_timing(event: str, info: dict[str, Any]) -> None:
-    global _gc_start  # noqa: PLW0603  gc callbacks run on the collecting thread and own this state
+    global _gc_start
     gen = info["generation"]
     if event == "start":
         _gc_start = _gc_time()
@@ -63,7 +61,7 @@ def gc_set_timing(*, enable: bool) -> None:
         atexit.unregister(_stop_timing_at_exit)
         _debug.lifecycle("gc.timing", enabled=False)
     elif enable:
-        global _gc_timings, _gc_collections  # noqa: PLW0603  gc callback state, as above
+        global _gc_timings, _gc_collections
         _gc_timings = [0, 0, 0]
         _gc_collections = [0, 0, 0]
         gc.callbacks.append(_record_gc_timing)
@@ -93,12 +91,6 @@ def gc_info() -> dict[str, Any]:
 
 
 def freeze_survivors() -> None:
-    # Long-lived objects (a registry's models, fields and compiled caches) are
-    # otherwise re-examined by every collection: a gen-1 pass over a warm server
-    # took ~250 ms and stalled every request thread. Collect first, so garbage
-    # is not frozen with them.
-    # get_freeze_count() walks the whole permanent generation (~20 ms for a
-    # warm server's ~300k objects), so it is only paid for a reader.
     counted = _debug.lifecycle.enabled or _logger.isEnabledFor(logging.DEBUG)
     started = _gc_time()
     already_frozen = gc.get_freeze_count() if counted else 0
@@ -117,22 +109,18 @@ def freeze_survivors() -> None:
 
 
 def thaw() -> None:
-    # A frozen object is never collected, so anything dropped after a freeze --
-    # a removed registry -- must be thawed or it stays in memory for good.
     if _debug.lifecycle.enabled:
         _debug.lifecycle("gc.thawed", frozen=gc.get_freeze_count())
     gc.unfreeze()
 
 
-# sections open in any thread since disabling_gc turned the collector off: the
-# collector is one per process, so the last section out turns it back on
 _sections = 0
 _sections_lock = threading.Lock()
 
 
 @contextlib.contextmanager
 def disabling_gc() -> Generator[bool]:
-    global _sections  # noqa: PLW0603 one collector per process
+    global _sections
     with _sections_lock:
         joined = bool(_sections) or gc.isenabled()
         if joined:

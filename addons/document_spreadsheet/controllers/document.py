@@ -10,7 +10,6 @@ from odoo.tools import replace_exceptions
 from odoo.addons.document.controllers.document import ShareRoute
 from odoo.addons.spreadsheet.utils.json import extend_serialized_json
 
-# ends with .osheet.json or .osheet (6).json
 SPREADSHEET_RE = re.compile(r"\.osheet(\s?\(\d+\))?\.json$")
 
 _debug = DebugLog(__name__)
@@ -27,7 +26,6 @@ class SpreadsheetShareRoute(ShareRoute):
         if document.handler not in ("spreadsheet", "frozen_spreadsheet"):
             return super()._documents_render_portal_view(document)
 
-        # check if the spreadsheet contains "live data", if yes the rendering will fail
         if document._contains_live_data():
             _debug.logic(
                 "spreadsheet_portal_view_refused", document=document, reason="live_data"
@@ -55,10 +53,6 @@ class SpreadsheetShareRoute(ShareRoute):
         )
 
     def _documents_content_stream(self, document_sudo):
-        """
-        Use the ``excel_export`` field instead of ``raw`` when
-        downloading frozen spreadsheets.
-        """
         if document_sudo.handler == "frozen_spreadsheet":
             return request.env["ir.binary"]._get_stream_from_record(
                 document_sudo, "excel_export"
@@ -74,14 +68,11 @@ class SpreadsheetShareRoute(ShareRoute):
         readonly=True,
     )
     def documents_spreadsheet(self, access_token):
-        """Download the spreadsheet data for the readonly view."""
         document_sudo = self._from_access_token(access_token, skip_log=True)
         if not document_sudo:
             _debug.logic("spreadsheet_public_data_not_found", reason="unknown_token")
             raise request.prepare_not_found_error()
 
-        # handcraft the json response body, avoiding the need for parsing and re-serializing
-        # the spreadsheet file and the revisions, which can be expensive for large files.
         spreadsheet_data = document_sudo._get_spreadsheet_serialized_snapshot()
         serialized_revisions = ",".join(
             document_sudo._get_spreadsheet_serialized_revisions()
@@ -101,13 +92,6 @@ class SpreadsheetShareRoute(ShareRoute):
         return request.prepare_response(body, headers)
 
     def _documents_upload_post(self, document_sudo, vals):
-        """Set the correct handler when uploading a spreadsheet.
-
-        Moved from `_documents_upload_create_write` when that hook was split:
-        this reacts to a document that already exists, so it belongs on the
-        side that runs AFTER creation. The multi-file upload path batches its
-        creates and no longer calls the old hook.
-        """
         super()._documents_upload_post(document_sudo, vals)
         if _debug.logic.enabled:
             _debug.logic(
@@ -125,9 +109,6 @@ class SpreadsheetShareRoute(ShareRoute):
         ):
             _debug.logic("spreadsheet_uploaded_as_osheet", document=document_sudo)
             if document_sudo.access_via_link == "edit":
-                # a spreadsheet is not edited by link (its CHECK): the upload
-                # link it answers falls back to viewing first, as the
-                # request's closing would right after
                 document_sudo._update_access_rights(
                     access_via_link="view", no_propagation=True
                 )
@@ -146,14 +127,6 @@ class SpreadsheetShareRoute(ShareRoute):
     def documents_display_thumbnail(
         self, access_token, width="0", height="0", unique=""
     ):
-        """Show the thumbnail of the document, or a placeholder.
-
-        :param access_token: the access token to the document record
-        :param width: resize the thumbnail to this maximum width
-        :param height: resize the thumbnail to this maximum height
-        :param unique: force storing the file in the browser cache, best
-            used with the checksum of the attachment
-        """
         with replace_exceptions(ValueError, by=BadRequest):
             width = int(width)
             height = int(height)

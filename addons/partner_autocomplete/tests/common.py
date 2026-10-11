@@ -55,7 +55,6 @@ class MockIAPPartnerAutocomplete(common.BaseCase):
             }
             if default_data:
                 sim_result.update(default_data)
-            # mock enrich only currently, to update further
             if action == "enrich_by_domain":
                 if sim_error and sim_error == "credit":
                     raise iap_tools.InsufficientCreditError("InsufficientCreditError")

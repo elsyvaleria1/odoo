@@ -47,13 +47,12 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_adyen.models.payment_transaction")
     def test_send_refund_request(self):
-        self.provider.support_refund = "full_only"  # Should simply not be False
+        self.provider.support_refund = "full_only"
         tx = self._create_transaction(
             "redirect", state="done", provider_reference="source_reference"
         )
-        tx._post_process()  # Create the payment
+        tx._post_process()
 
-        # Send the refund request
         with patch(
             "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
             new=lambda *args, **kwargs: {
@@ -316,7 +315,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
         )
 
     def test_application_info_passed_in_payment_request(self):
-        """Ensure applicationInfo is added correctly to the payment request payload."""
         tx = self._create_transaction("direct")
         with (
             patch(
@@ -355,7 +353,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
         )
 
     def test_application_info_passed_in_token_payment_request(self):
-        """Ensure applicationInfo is added correctly to the token payment request payload."""
         tx = self._create_transaction("token", token_id=self._create_token().id)
         with patch(
             "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
@@ -589,7 +586,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_adyen.controllers.main")
     @mute_logger("odoo.addons.payment_adyen.models.payment_transaction")
     def _webhook_notification_flow(self, payload):
-        """Send a notification to the webhook, ignore the signature, and check the response."""
         url = self._build_url(AdyenController._webhook_url)
         with patch(
             "odoo.addons.payment_adyen.models.payment_provider.PaymentProvider._is_inbound_request_authentic"
@@ -603,7 +599,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_adyen.controllers.main")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("direct")
         url = self._build_url(AdyenController._webhook_url)
         with (
@@ -618,7 +613,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
             self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_webhook_notification_with_valid_signature(self):
-        """Test the verification of a webhook notification with a valid signature."""
         tx = self._create_transaction("direct")
         self.assertTrue(
             tx.provider_id._is_adyen_notification_item_signature_valid(
@@ -628,7 +622,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_adyen.models.payment_provider")
     def test_reject_webhook_notification_with_missing_signature(self):
-        """Test the verification of a webhook notification with a missing signature."""
         payload = dict(
             self.webhook_notification_payload, additionalData={"hmacSignature": None}
         )
@@ -639,7 +632,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_adyen.models.payment_provider")
     def test_reject_webhook_notification_with_invalid_signature(self):
-        """Test the verification of a webhook notification with an invalid signature."""
         payload = dict(
             self.webhook_notification_payload, additionalData={"hmacSignature": "dummy"}
         )
@@ -670,7 +662,6 @@ class AdyenTest(AdyenCommon, PaymentHttpCommon):
     def test_reject_webhook_notification_with_a_signature_that_is_no_ascii_string(
         self,
     ):
-        """Test that a non-ASCII or non-string signature is refused, not raised on."""
         tx = self._create_transaction("direct")
         for signature in ("é" * 44, ["dummy"], 42):
             with self.subTest(signature=signature):

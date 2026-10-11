@@ -149,8 +149,6 @@ class TestWebsiteControllerPage(HttpCase):
         tree = html.fromstring(response.content.decode())
         rec_nodes = tree.xpath("//a[@class='test_record_listing']")
         self.assertEqual(len(rec_nodes), 2)
-        # created in one transaction, the records tie on create_date: the
-        # listing breaks the tie newest first
         newest_first = self.exposed_records.sorted("id", reverse=True)
         for n, record in zip(rec_nodes, newest_first, strict=True):
             self.assertEqual(
@@ -236,7 +234,6 @@ class TestWebsiteControllerPage(HttpCase):
             login="admin",
         )
         self.assertEqual(self.listing_controller_page.default_layout, "list")
-        # check that the user that has not previously interacted with the layout switcher will prompt on the default layout
         self.start_tour(
             "/model/exposed-model",
             "website_controller_page_default_page_check",
@@ -253,7 +250,6 @@ class TestWebsiteControllerPage(HttpCase):
             "type": "qweb",
             "name": "some_name",
         }
-        # Abstract Model
         self.assertEqual(
             get_model_meta_params("mixin.website.published"), (True, False, False)
         )
@@ -265,7 +261,6 @@ class TestWebsiteControllerPage(HttpCase):
             str(cm.exception), "A page must be set to display a concrete model."
         )
 
-        # Transient Model
         self.assertEqual(
             get_model_meta_params("wizard.res.partner.merge"),
             (False, True, True),
@@ -278,7 +273,6 @@ class TestWebsiteControllerPage(HttpCase):
             str(cm.exception), "A page must be set to display a concrete model."
         )
 
-        # _auto = False Model
         self.assertEqual(
             get_model_meta_params("website.technical.page"), (False, False, False)
         )

@@ -26,7 +26,6 @@ class TestDeliveryUPS(TransactionCase):
         )
         self.uom_unit = self.env.ref("base.product_uom_unit")
 
-        # Add a full address to "Your Company" and "Agrolait"
         self.your_company = self.env.ref("base.main_partner")
         self.your_company.write(
             {
@@ -56,9 +55,6 @@ class TestDeliveryUPS(TransactionCase):
         self.customer_location = self.env.ref("stock.stock_location_customers")
 
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method.
-        """
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -79,7 +75,6 @@ class TestDeliveryUPS(TransactionCase):
             "price_unit": self.iPadMini.lst_price,
         }
 
-        # Set service type = 'UPS Worldwide Expedited', which is available between US to BE
         carrier = self.env.ref("delivery_ups.delivery_carrier_ups_us")
         carrier.write(
             {"ups_default_service_type": "08", "ups_package_dimension_unit": "IN"}
@@ -91,7 +86,6 @@ class TestDeliveryUPS(TransactionCase):
         so_vals = {"partner_id": self.agrolait.id, "line_ids": [(0, None, sol_vals)]}
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {"default_order_id": sale_order.id, "default_carrier_id": carrier.id}
@@ -148,8 +142,6 @@ class TestDeliveryUPS(TransactionCase):
     def test_02_ups_multipackage_flow(self):
         SaleOrder = self.env["sale.order"]
 
-        # Set package type = 'Pallet' and service type = 'UPS Worldwide Express Freight'
-        # so in this case height, width and length required.
         carrier = self.env.ref("delivery_ups.delivery_carrier_ups_us")
         carrier.write(
             {
@@ -184,7 +176,6 @@ class TestDeliveryUPS(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {"default_order_id": sale_order.id, "default_carrier_id": carrier.id}
@@ -250,7 +241,6 @@ class TestDeliveryUPS(TransactionCase):
         )
 
     def test_03_ups_flow_from_delivery_order(self):
-        # Set service type = 'UPS Worldwide Expedited', which is available between US to BE
         carrier = self.env.ref("delivery_ups.delivery_carrier_ups_us")
         carrier.write(
             {"ups_default_service_type": "08", "ups_package_dimension_unit": "IN"}
@@ -295,16 +285,6 @@ class TestDeliveryUPS(TransactionCase):
         self.assertEqual(delivery_order.state, "done", "Shipment state should be done.")
 
     def test_04_backorder_and_track_number(self):
-        """Suppose a two-steps delivery with 2 x Product A and 2 x Product B.
-        For the Pick step, process a first picking (PICK01) with 2 x Product A
-        and a backorder (PICK02) with 2 x Product B
-        For the Out step, process a first picking (OUT01) with 1 x Product A
-        and a backorder (OUT02) with 1 x Product A and 2 x Product B
-        This test ensures that:
-            - OUT01 and OUT02 have their own tracking reference
-            - The tracking reference of PICK01 is defined with the one of OUT01 and OUT02
-            - The tracking reference of PICK02 is defined with the one of OUT02
-        """
 
         def process_picking(picking):
             action = picking.button_validate()
@@ -343,7 +323,6 @@ class TestDeliveryUPS(TransactionCase):
             line.product_qty = 2
         so = so_form.save()
 
-        # Add UPS shipping
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {"default_order_id": so.id, "default_carrier_id": carrier.id}
@@ -356,16 +335,13 @@ class TestDeliveryUPS(TransactionCase):
         so.action_confirm()
         pick01 = so.picking_ids.filtered(lambda p: p.location_id == stock_location)
 
-        # First step with 2 x Product A
         pick01.move_ids.filtered(lambda m: m.product_id == product_a).write(
             {"quantity": 2, "picked": True}
         )
         process_picking(pick01)
-        # First step with 2 x Product B
         pick02 = pick01.backorder_ids
         process_picking(pick02)
         out01 = so.picking_ids - pick01 - pick02
-        # Second step with 1 x Pr  oduct A
         out01.move_ids.filtered(lambda m: m.product_id == product_a).write(
             {"quantity": 1, "picked": True}
         )
@@ -376,7 +352,6 @@ class TestDeliveryUPS(TransactionCase):
         self.assertEqual(pick01.carrier_tracking_ref, out01.carrier_tracking_ref)
         self.assertFalse(pick02.carrier_tracking_ref)
 
-        # Second step with 1 x Product A + 2 x Product B
         process_picking(out02)
         self.assertTrue(out01.carrier_tracking_ref)
         self.assertTrue(out02.carrier_tracking_ref)
@@ -395,8 +370,6 @@ def get_rate_request():
 
 @functools.lru_cache(maxsize=1)
 def get_shipment_request():
-    # Reconstruct the original shipment request here, we had extracted the
-    # various base64 payloads into decidated files to access their content.
     with (
         file_open("delivery_ups/tests/shipment_request.xml", "rb") as shipment_file,
         file_open(
@@ -431,7 +404,6 @@ def get_void_shipment_request():
 class TestMockDeliveryUPS(TestDeliveryUPS):
     @contextmanager
     def patch_ups_requests(self):
-        """Mock context for requests to the UPS API."""
 
         class MockedSession:
             def __init__(self, *args, **kwargs):
@@ -455,7 +427,6 @@ class TestMockDeliveryUPS(TestDeliveryUPS):
                     response.content = get_void_shipment_request()
                 return response
 
-        # zeep.Client.transport is using post from requests.Session
         with patch("zeep.transports.requests.Session") as mocked_session:
             mocked_session.side_effect = MockedSession
             yield mocked_session

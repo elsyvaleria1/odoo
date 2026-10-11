@@ -101,8 +101,6 @@ class TestBankStatementExtraction(AccountTestInvoicingCommon):
         self.assertTrue(statement.is_complete)
 
     def test_a_statement_that_does_not_add_up_says_so(self):
-        # The whole reason the closing balance is written to balance_end_real and
-        # not to balance_end: the model's own check has something left to compare.
         statement = self._statement()
         self._read(
             statement,
@@ -143,10 +141,6 @@ class TestBankStatementExtraction(AccountTestInvoicingCommon):
         self.assertEqual(statement.line_ids.mapped("payment_ref"), ["typed by hand"])
 
     def test_an_unreadable_row_drops_itself_and_keeps_the_rest(self):
-        # The dropping is the schema's, not this module's: `bank_statement`
-        # declares a transaction row as date/description/amount and coerces it,
-        # so a printed European total arrives as a float and a row that is not a
-        # row never reaches the write.
         statement = self._statement()
         self._read(
             statement,
@@ -163,11 +157,6 @@ class TestBankStatementExtraction(AccountTestInvoicingCommon):
         self.assertEqual(statement.line_ids.amount, 1234.56)
 
     def test_a_transaction_with_no_description_is_dropped_rather_than_invented(self):
-        # It used to land under a made-up "Transaction" label. A row with an
-        # amount and no description is a misread, and inventing a name for it
-        # hides the misread inside a statement that then looks complete. Dropped,
-        # the money is missing and `is_complete` says so -- which is the whole
-        # reason the closing balance is written where the model can check it.
         statement = self._statement()
         self._read(
             statement,

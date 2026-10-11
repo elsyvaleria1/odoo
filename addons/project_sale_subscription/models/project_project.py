@@ -9,9 +9,6 @@ class ProjectProject(models.Model):
     _name = "project.project"
     _inherit = "project.project"
 
-    # -------------------------------------------
-    # Actions
-    # -------------------------------------------
 
     def _get_subscription_action(self, domain=None, subscription_ids=None):
         if not domain and not subscription_ids:
@@ -55,9 +52,6 @@ class ProjectProject(models.Model):
             return self._get_subscription_action(domain, [res_id] if res_id else [])
         return super().action_profitability_items(section_name, domain, res_id)
 
-    # -------------------------------------------
-    # Project Update
-    # -------------------------------------------
 
     def _get_profitability_labels(self):
         labels = super()._get_profitability_labels()
@@ -118,15 +112,14 @@ class ProjectProject(models.Model):
             set_currency_ids.add(currency.id)
             if (
                 subscription_state != "3_progress"
-            ):  # then the subscriptions are closed and so nothing is to invoice.
+            ):
                 continue
-            if not template_id:  # then we will take the recurring monthly amount that we will invoice in the next invoice(s).
+            if not template_id:
                 amount_to_invoice_per_currency[currency.id] += recurring_monthly
                 continue
             recurring_per_currency_per_template[template_id.id][currency.id] += (
                 recurring_monthly
             )
-        # fetch the data needed for the 'invoiced' section before handling the 'to invoice' one, in order to have all the currencies available and make only one fetch on the rates
         aal_read_group = (
             self.env["account.analytic.line"]
             .sudo()

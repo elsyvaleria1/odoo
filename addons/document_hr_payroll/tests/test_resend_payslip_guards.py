@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, new_test_user, tagged
 @tagged("post_install", "-at_install")
 class TestResendPayslipGuards(TransactionCase):
     def test_resend_requires_payroll_group(self):
-        """Check that non-payroll users cannot trigger the resend action."""
         basic_user = new_test_user(
             self.env, login="doc_payroll_basic", groups="base.group_user"
         )
@@ -14,8 +13,6 @@ class TestResendPayslipGuards(TransactionCase):
             self.env["hr.payslip"].with_user(basic_user).action_resend_payslips()
 
     def test_resend_warns_on_unvalidated_payslips(self):
-        """Check that draft payslips produce the validate-first warning
-        notification instead of sending anything."""
         payroll_user = new_test_user(
             self.env,
             login="doc_payroll_officer",
@@ -33,8 +30,6 @@ class TestResendPayslipGuards(TransactionCase):
         self.assertIn("validated or paid", action["params"]["message"])
 
     def test_employee_resend_reports_skipped_payslips(self):
-        """The employee-level action must surface the payslip-level warning
-        (here: employee without email) instead of a fabricated success."""
         payroll_user = new_test_user(
             self.env,
             login="doc_payroll_officer_2",

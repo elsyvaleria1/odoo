@@ -1,16 +1,3 @@
-# The test_lint gates that read only the tree, run without a database, so
-# they hold in seconds instead of after a module install.
-#
-#   python odoo/addons/test_lint/lint_source_gates.py            every source gate
-#   python odoo/addons/test_lint/lint_source_gates.py test_pep649 test_naming
-#
-# Run from the checkout with the workspace venv's interpreter. The addons path is
-# the narrow scope the floors are defined at (odoo/addons, addons), plus the
-# sibling checkouts the workspace holds (l10n, agromarin): a gate graded per
-# repository reads each one's own files, so their floors are held here too, in
-# seconds, instead of only by a full-scope install nobody runs. A test that asks
-# for a database skips instead of failing: the narrow test_lint run on a
-# database grades it, and still grades everything this one does for odoo.
 import importlib
 import logging
 import multiprocessing
@@ -50,21 +37,16 @@ def main(names: list[str]) -> int:
     from odoo.logutils import init_logger
 
     init_logger()
-    # every module that already bound `from ... import get_db_name` gets the
-    # stand-in too; test modules imported below bind it from these
     original = odoo.tests.utils.get_db_name
     for module in list(sys.modules.values()):
         if getattr(module, "get_db_name", None) is original:
             module.get_db_name = _no_database
 
     started = time.monotonic()
-    # largest test files first, so the long scans are not the tail of the run
     names = names or sorted(
         (p.stem for p in TESTS.glob("test_*.py")),
         key=lambda stem: -(TESTS / f"{stem}.py").stat().st_size,
     )
-    # forked after the setup above, so a worker inherits the configured odoo and
-    # the stand-in instead of importing them again; 3.14 defaults to forkserver
     jobs = max(1, min(len(names), (os.process_cpu_count() or 2) // 2))
     with ProcessPoolExecutor(
         jobs, mp_context=multiprocessing.get_context("fork")

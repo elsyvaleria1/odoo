@@ -82,7 +82,7 @@ def exp_authenticate(
         _debug.logic("rpc.authenticate.not_odoo_db", db=db)
         return False
     with registry.cursor() as cr:
-        env = odoo.api.Environment(cr, None, {})  # type: ignore[arg-type]
+        env = odoo.api.Environment(cr, None, {})
         env.transaction.default_env = env
         try:
             credential = {

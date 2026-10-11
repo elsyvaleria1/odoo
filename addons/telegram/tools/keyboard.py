@@ -12,14 +12,10 @@ def web_app_button(text, url) -> dict:
 
 
 def keyboard(*rows) -> dict:
-    """A reply markup of `rows`, each a sequence of buttons; an empty row is
-    left out."""
     return {"inline_keyboard": [list(row) for row in rows if row]}
 
 
 def share_phone(text) -> dict:
-    """A reply keyboard whose one button shares the person's own contact:
-    Telegram fills in the number their account is registered with."""
     return {
         "keyboard": [[{"text": text, "request_contact": True}]],
         "one_time_keyboard": True,
@@ -45,8 +41,6 @@ def shorten(text, width=None):
 
 
 def record_list(records, label, data, *, limit=None, width=None, trailing=()):
-    """One button per record -- `label(record)` shortened to `width`,
-    `data(record)` -- for at most `limit` records, then the `trailing` row."""
     shown = list(records)[:limit] if limit else list(records)
     return keyboard(
         *([button(shorten(label(record), width), data(record))] for record in shown),

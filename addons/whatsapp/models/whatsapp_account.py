@@ -60,10 +60,6 @@ class WhatsappAccount(models.Model):
         help="The phone number used in the Whatsapp Business Account.",
     )
 
-    # ADR-0081: the three secrets below rest in credential.credential, encrypted,
-    # access-logged and rate-limited. The fields keep their names and stay the
-    # module's interface -- they are doors onto the vault rather than stores, so
-    # every reader, every view and the webhook controller are unchanged.
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
         copy=False,
@@ -141,12 +137,6 @@ class WhatsappAccount(models.Model):
             rec.webhook_verify_token = values.get("webhook_verify_token") or False
 
     def _wa_mint_missing_webhook_verify_tokens(self) -> None:
-        """Give each account holding a credential the verify token Meta is given.
-
-        It is ours to generate, once, with the account's first secret: minting it on
-        read made every reader of any of the three secrets lock and rewrite the
-        credential.
-        """
         for rec in self.filtered("credential_id"):
             if rec._wa_credential_values().get("webhook_verify_token"):
                 continue
@@ -161,8 +151,6 @@ class WhatsappAccount(models.Model):
 
     @api.model
     def _receiver_for_webhook(self, **path_args):
-        """Meta names the business account inside the body it signs with the
-        app secret; the account is the subject and its secret the proof."""
         try:
             data = json_loads(request.httprequest.get_data(cache=True) or b"{}")
             account_uid = data["entry"][0]["id"]
@@ -181,27 +169,19 @@ class WhatsappAccount(models.Model):
 
     @api.model
     def _receiver_for_webhook_verification(self, **path_args):
-        """Meta's subscription handshake presents the verify token in the
-        query and expects its challenge echoed; no account is proven by
-        anything else, so the token is the identity and the challenge the
-        whole answer."""
         params = request.get_http_params()
         token = params.get("hub.verify_token")
         mode = params.get("hub.mode")
         challenge = params.get("hub.challenge")
         if not (token and mode and challenge):
             return Resolution(self.browse(), claimed="incomplete handshake")
-        # The verify token rests in the vault (ADR-0081), so it is no longer a
-        # column to search. There are a handful of accounts, and comparing in
-        # Python lets the comparison be constant-time, which a SQL equality on a
-        # secret never was.
         account = (
             self.sudo()
             .search([])
             .filtered(
                 lambda account: (
                     account.webhook_verify_token
-                    and consteq(account.webhook_verify_token, token)  # noqa: E8537  inbound: a signature an outside service sends us
+                    and consteq(account.webhook_verify_token, token)
                 )
             )[:1]
         )
@@ -210,25 +190,20 @@ class WhatsappAccount(models.Model):
         return Resolution(
             account,
             {"challenge": challenge},
-            verify=lambda headers, body: consteq(  # noqa: E8537  inbound: a signature an outside service sends us
+            verify=lambda headers, body: consteq(
                 account.sudo().webhook_verify_token, token
             ),
         )
 
     def _webhook_signer(self, headers, body):
-        """The account of these whose app secret signed `body`, or none: the
-        phones of one business account are one account row each, and Meta
-        signs with the secret of the app each was registered under."""
         return self.filtered(
             lambda account: account._is_webhook_signature_valid(headers, body)
         )[:1]
 
     def _is_webhook_signature_valid(self, headers, body) -> bool:
-        """Whatsapp will sign all requests it makes to our endpoint."""
         self.check_singleton()
         signature = headers.get("X-Hub-Signature-256")
         if not signature or not signature.startswith("sha256=") or len(signature) != 71:
-            # Signature must be valid SHA-256 (sha256=<64 hex digits>)
             _logger.warning("Invalid signature header %r", signature)
             return False
         app_secret = self.sudo().app_secret
@@ -253,7 +228,6 @@ class WhatsappAccount(models.Model):
             rec._wa_store_secret("webhook_verify_token", rec.webhook_verify_token)
 
     def _wa_credential_values(self) -> dict:
-        """The account's secrets as a dict, or empty when it holds no credential."""
         self.check_singleton()
         credential = self.credential_id.sudo()
         if not credential:
@@ -273,7 +247,6 @@ class WhatsappAccount(models.Model):
             return {}
 
     def _wa_store_secret(self, key, value) -> None:
-        """Write one secret into the account's credential, creating it if needed."""
         self.check_singleton()
         if value is False or value is None:
             return
@@ -306,8 +279,6 @@ class WhatsappAccount(models.Model):
             self._wa_mint_missing_webhook_verify_tokens()
 
     def _compute_templates_count(self) -> None:
-        # One GROUP BY for the whole set: the loop form issued a COUNT(*) per
-        # account, which `test_lint E8507` counts as a query inside a loop.
         counts = dict(
             self.env["whatsapp.template"]._read_group(
                 [("wa_account_id", "in", self.ids)],
@@ -319,10 +290,6 @@ class WhatsappAccount(models.Model):
             tmpl.templates_count = counts.get(tmpl, 0)
 
     def button_sync_whatsapp_account_templates(self) -> dict:
-        """
-        This method will sync all the templates of the WhatsApp Business Account.
-        It will create new templates and update existing templates.
-        """
         self.check_singleton()
         try:
             response = WhatsAppApi(self)._get_all_template(fetch_all=True)
@@ -368,7 +335,6 @@ class WhatsappAccount(models.Model):
         }
 
     def button_test_connection(self) -> dict:
-        """Test connection of the WhatsApp Business Account. with the given credentials."""
         self.check_singleton()
         wa_api = WhatsAppApi(self)
         try:
@@ -389,7 +355,6 @@ class WhatsappAccount(models.Model):
         }
 
     def action_debug(self):
-        """Enable debug logging."""
         self.check_singleton()
         previous_debug_state = self.debug_logging
         self.debug_logging = True
@@ -410,7 +375,6 @@ class WhatsappAccount(models.Model):
         )
 
     def action_stop_debug(self) -> None:
-        """Disable debug logging."""
         self.check_singleton()
         self.debug_logging = False
 
@@ -429,7 +393,6 @@ class WhatsappAccount(models.Model):
         self.check_singleton()
         self.env.flush_all()
         db_name = self.env.cr.dbname
-        # Use a new cursor to avoid rollback that could be caused by an upper method
         try:
             db_registry = Registry(db_name)
             with db_registry.cursor() as cr:
@@ -452,7 +415,6 @@ class WhatsappAccount(models.Model):
     def _find_active_channel(
         self, sender_mobile_formatted, sender_name=False, create_if_not_found=False
     ):
-        """This method will find the active channel for the given sender mobile number."""
         self.check_singleton()
         whatsapp_message = (
             self.env["whatsapp.message"]
@@ -481,24 +443,9 @@ class WhatsappAccount(models.Model):
         )
 
     def _on_button_reply(self, parent_whatsapp_message, message) -> None:
-        """A contact pressed a quick-reply button of ``parent_whatsapp_message``
-        (empty when the reply names no message of ours): ``message`` is the
-        inbound message as WhatsApp sent it, its ``button`` the pressed one's
-        ``text`` and ``payload``. The reply is still posted to its channel."""
+        pass
 
     def _process_messages(self, value) -> None:
-        """
-        This method is used for processing messages with the values received via webhook.
-        If any whatsapp message template has been sent from this account then it will find the active channel or
-        create new channel with last template message sent to that number and post message in that channel.
-        And if channel is not found then it will create new channel with notify user set in account and post message.
-        Supported Messages
-         => Text Message
-         => Attachment Message with caption
-         => Location Message
-         => Contact Message
-         => Message Reactions
-        """
         if "messages" not in value and value.get("whatsapp_business_api_data", {}).get(
             "messages"
         ):

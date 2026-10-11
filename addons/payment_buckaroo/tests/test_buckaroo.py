@@ -74,7 +74,6 @@ class BuckarooTest(BuckarooCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_buckaroo.models.payment_transaction")
     def test_webhook_notification_confirms_transaction(self):
-        """Test the processing of a webhook notification."""
         tx = self._create_transaction("redirect")
         url = self._build_url(BuckarooController._webhook_url)
         with patch(
@@ -85,7 +84,6 @@ class BuckarooTest(BuckarooCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_buckaroo.models.payment_transaction")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(BuckarooController._return_url)
         with (
@@ -100,7 +98,6 @@ class BuckarooTest(BuckarooCommon, PaymentHttpCommon):
             self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_notification_with_valid_signature(self):
-        """Test the verification of a notification with a valid signature."""
         tx = self._create_transaction("redirect")
         self.assertTrue(
             tx._is_buckaroo_signature_valid(
@@ -110,20 +107,17 @@ class BuckarooTest(BuckarooCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_buckaroo.models.payment_transaction")
     def test_reject_notification_with_missing_signature(self):
-        """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(tx._is_buckaroo_signature_valid(self.async_payment_data, None))
 
     @mute_logger("odoo.addons.payment_buckaroo.models.payment_transaction")
     def test_reject_notification_with_invalid_signature(self):
-        """Test the verification of a notification with an invalid signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(
             tx._is_buckaroo_signature_valid(self.async_payment_data, "dummy")
         )
 
     def test_signature_is_computed_based_on_lower_case_data_keys(self):
-        """Test that lower case keys are used to execute the case-insensitive sort."""
         computed_signature = self.provider._get_buckaroo_signature(
             {
                 "brq_a": "1",
@@ -142,7 +136,6 @@ class BuckarooTest(BuckarooCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_buckaroo.models.payment_transaction")
     def test_reject_notification_with_a_non_ascii_signature(self):
-        """Test that a non-ASCII signature is refused, not raised on."""
         tx = self._create_transaction("redirect")
         self.assertFalse(
             tx._is_buckaroo_signature_valid(self.async_payment_data, "é" * 40)

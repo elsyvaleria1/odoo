@@ -6,7 +6,6 @@ from odoo.modules import Manifest
 from . import _js_sources, lint_case
 
 _COMMENT = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
-# A claim whose handle is a statement of its own: nothing can release it.
 _DROPPED_CLAIM = re.compile(
     r"^[ \t]*(?:[\w$]+\.)*(?:bus_service|busService|bus)\.(?:addChannel|subscribe)\(",
     re.MULTILINE,

@@ -41,14 +41,11 @@ class TestMailFlow(MailCommon, TestRecipients):
         cls.partner_portal = cls.user_portal.partner_id
 
         cls.test_emails = [
-            # emails only
             '"Sylvie Lelitre" <sylvie.lelitre@zboing.com>',
             '"Josiane Quichopoils" <accounting@zboing.com>',
             "pay@zboing.com",
             "invoicing@zboing.com",
-            # existing partners
             '"Robert Brutijus" <robert@zboing.com>',
-            # existing portal users
             '"Portal Zboing" <portal@zboing.com>',
         ]
         cls.test_emails_normalized = [
@@ -77,7 +74,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
         cls.customer_portal_zboing = cls.user_portal_zboing.partner_id
 
-        # lead@test.mycompany.com will cause the creation of new mail.test.lead
         cls.mail_test_lead_model = cls.env["ir.model"]._get("mail.test.lead")
         cls.alias = cls.env["mail.alias"].create(
             {
@@ -87,7 +83,6 @@ class TestMailFlow(MailCommon, TestRecipients):
                 "alias_name": "lead",
             }
         )
-        # help@test.mycompany.com will cause the creation of new mail.test.ticket.mc
         cls.ticket_template = cls.env["mail.template"].create(
             {
                 "auto_delete": True,
@@ -102,10 +97,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
         cls.container = cls.env["mail.test.container.mc"].create(
             {
-                # triggers automatic answer yay ! `alias_model_id` travels with the
-                # defaults that name its fields: the mixin proposes
-                # `mail.test.ticket`, the caller narrows it, and nothing in between
-                # sees an alias whose defaults disagree with its model.
                 "alias_defaults": {
                     "state": "new",
                     "state_template_id": cls.ticket_template.id,
@@ -120,7 +111,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
 
     def test_assert_initial_values(self):
-        """Assert base values for tests"""
         self.assertEqual(
             self.env["res.partner"].search(
                 [("email_normalized", "in", self.test_emails_normalized)]
@@ -129,7 +119,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
 
     def test_lead_email_to_email(self):
-        """Test email-to-email (e.g. gmail) usage"""
         self.user_employee.notification_type = "email"
         lead = (
             self.env["mail.test.lead"]
@@ -140,7 +129,6 @@ class TestMailFlow(MailCommon, TestRecipients):
                 }
             )
         )
-        # employee posts, pinging the customer
         recipients = lead._message_get_suggested_recipients(
             reply_discussion=True,
             no_create=False,
@@ -180,7 +168,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             msg_to_lst=[self.customer_zboing.email_formatted],
         )
 
-        # customer replies from their email reader, adds a CC and someone in the To
         cust_reply = self.gateway_mail_reply_from_smtp_email(
             MAIL_TEMPLATE_SHORT,
             [self.customer_zboing.email_normalized],
@@ -198,10 +185,8 @@ class TestMailFlow(MailCommon, TestRecipients):
                         "author_id": self.customer_zboing,
                         "email_from": self.customer_zboing.email_formatted,
                         "incoming_email_cc": self.test_emails[1],
-                        # be sure to not have catchall.test inside the incoming_email_to !
                         "incoming_email_to": self.test_emails[0],
                         "notified_partner_ids": self.user_employee.partner_id,
-                        # only recognized partners
                         "partner_ids": self.env["res.partner"],
                         "reply_to": formataddr(
                             (
@@ -225,7 +210,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             ),
             smtp_from=self.mail_server_notification.from_filter,
             smtp_to_list=[self.user_employee.email_normalized],
-            # customers in To/Cc of reply added in envelope to keep them in discussions
             msg_to_lst=[
                 self.user_employee.email_formatted,
                 self.test_emails[0],
@@ -234,7 +218,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             msg_cc_lst=[],
         )
 
-        # employee replies from their email reader, adds their colleague
         emp_reply = self.gateway_mail_reply_from_smtp_email(
             MAIL_TEMPLATE_SHORT,
             [self.user_employee.email_normalized],
@@ -251,18 +234,12 @@ class TestMailFlow(MailCommon, TestRecipients):
                         "author_id": self.partner_employee,
                         "email_from": self.partner_employee.email_formatted,
                         "incoming_email_cc": self.partner_employee_2.email_formatted,
-                        # be sure not to have catchall reply-to ! customers are in 'To' due to Reply-All
                         "incoming_email_to": f"{self.test_emails[0]}, {self.test_emails[1]}",
                         "notified_partner_ids": self.customer_zboing,
-                        # the recognized partners of the incoming email, plus the
-                        # parent's author, whom the gateway pinged through
-                        # message_post: a partner it notified is a partner it
-                        # addressed, and the two sets have to agree
                         "partner_ids": self.customer_zboing + self.partner_employee_2,
                         "subject": "Re: Re: False",
                         "subtype_id": self.env.ref("mail.mt_comment"),
                     },
-                    # partner_employee_2 received an email, hence no duplicate notification
                     "notif": [{"partner": self.customer_zboing, "type": "email"}],
                 },
             ],
@@ -274,7 +251,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             ),
             smtp_from=self.mail_server_notification.from_filter,
             smtp_to_list=[self.customer_zboing.email_normalized],
-            # customers are still in discussion
             msg_to_lst=[
                 self.customer_zboing.email_formatted,
                 self.partner_employee_2.email_formatted,
@@ -285,25 +261,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
 
     def test_lead_mailgateway(self):
-        """Flow of this test
-        * incoming email creating a lead -> email set as first message
-        * a salesperson is assigned
-        * - he adds followers (internal and portal)
-        * - he replies through chatter, using suggested recipients
-        * - customer replies, adding other people
-
-        Tested features
-        * cc / to support
-        * suggested recipients computation
-        * outgoing SMTP envelope
-
-        Recipients
-        * incoming: From: sylvie (email) - To: employee, accounting (email) - Cc: pay (email), portal (portal)
-        * reply: creates partner for sylvie and pay through suggested recipients
-        * customer reply: Cc: invoicing (email) and robert (partner)
-        """
-        # incoming customer email: lead alias + recipients (to + cc)
-        # ------------------------------------------------------------
         email_to = f"lead@{self.alias_domain}, {self.test_emails[1]}, {self.partner_employee.email_formatted}"
         email_to_filtered = (
             f"{self.test_emails[1]}, {self.partner_employee.email_formatted}"
@@ -324,9 +281,7 @@ class TestMailFlow(MailCommon, TestRecipients):
         self.assertEqual(lead.email_from, self.test_emails[0])
         self.assertEqual(lead.name, "Inquiry")
         self.assertFalse(lead.partner_id)
-        # followers
         self.assertFalse(lead.message_partner_ids)
-        # messages
         self.assertEqual(
             len(lead.message_ids),
             1,
@@ -347,24 +302,21 @@ class TestMailFlow(MailCommon, TestRecipients):
                         "mail_server_id": self.env["ir.mail_server"],
                         "parent_id": self.env["mail.message"],
                         "notified_partner_ids": self.env["res.partner"],
-                        # only recognized partners
                         "partner_ids": self.partner_employee
                         + self.customer_portal_zboing,
                         "subject": "Inquiry",
                         "subtype_id": self.env.ref("mail.mt_comment"),
                     },
-                    "notif": [],  # no notif, mailgateway sets recipients without notification
+                    "notif": [],
                 },
             ],
         )
 
-        # user is assigned, should notify him
         with self.mock_mail_gateway(), self.mock_mail_app():
             lead.write({"user_id": self.user_employee.id})
         lead_as_emp = lead.with_user(self.user_employee.id)
         self.assertEqual(lead_as_emp.message_partner_ids, self.partner_employee)
 
-        # adds other employee and a portal customer as followers
         lead_as_emp.message_subscribe(
             partner_ids=(self.partner_employee_2 + self.partner_portal).ids
         )
@@ -372,7 +324,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             lead_as_emp.message_partner_ids,
             self.partner_employee + self.partner_employee_2 + self.partner_portal,
         )
-        # updates some customer information
         lead_as_emp.write(
             {
                 "customer_name": "Sylvie Lelitre (Zboing)",
@@ -383,9 +334,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             }
         )
 
-        # uses Chatter: fetches suggested recipients, post a message
-        # - checks all suggested: email_cc field, primary email
-        # ------------------------------------------------------------
         suggested_all = lead_as_emp._message_get_suggested_recipients(
             reply_discussion=True,
             no_create=False,
@@ -400,25 +348,25 @@ class TestMailFlow(MailCommon, TestRecipients):
             [("email_normalized", "=", "accounting@zboing.com")]
         )
         expected_all = [
-            {  # existing partners come first
+            {
                 "create_values": {},
                 "email": "portal@zboing.com",
                 "name": "Portal Zboing",
                 "partner_id": self.customer_portal_zboing.id,
             },
-            {  # primary email comes first
+            {
                 "create_values": {},
                 "email": "sylvie.lelitre@zboing.com",
                 "name": "Sylvie Lelitre (Zboing)",
                 "partner_id": partner_sylvie.id,
             },
-            {  # mixin.mail.thread.cc: email_cc field
+            {
                 "create_values": {},
                 "email": "pay@zboing.com",
                 "name": "pay@zboing.com",
                 "partner_id": partner_pay.id,
             },
-            {  # reply message
+            {
                 "create_values": {},
                 "email": "accounting@zboing.com",
                 "name": "Josiane Quichopoils",
@@ -428,7 +376,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         for suggested, expected in zip(suggested_all, expected_all, strict=True):
             self.assertDictEqual(suggested, expected)
 
-        # finally post the message with recipients
         with self.mock_mail_gateway():
             responsible_answer = lead_as_emp.message_post(
                 body="<p>Well received !",
@@ -463,7 +410,7 @@ class TestMailFlow(MailCommon, TestRecipients):
                     "mail_mail_values": {
                         "mail_server_id": self.env[
                             "ir.mail_server"
-                        ],  # no specified server
+                        ],
                     },
                     "message_type": "comment",
                     "message_values": {
@@ -472,11 +419,9 @@ class TestMailFlow(MailCommon, TestRecipients):
                         "incoming_email_cc": False,
                         "incoming_email_to": False,
                         "mail_server_id": self.env["ir.mail_server"],
-                        # followers + recipients - author
                         "notified_partner_ids": external_partners
                         + self.partner_employee_2,
                         "parent_id": incoming_email,
-                        # matches posted message
                         "partner_ids": partner_sylvie
                         + partner_pay
                         + partner_accounting
@@ -500,8 +445,6 @@ class TestMailFlow(MailCommon, TestRecipients):
                 },
             ],
         )
-        # expected Msg['To'] : Reply-All behavior: actual recipient, then
-        # all "not internal partners" and catchall (to receive answers)
         for partner in responsible_answer.notified_partner_ids:
             exp_msg_to_partners = partner | external_partners
             exp_msg_to = exp_msg_to_partners.mapped("email_formatted")
@@ -519,16 +462,13 @@ class TestMailFlow(MailCommon, TestRecipients):
                     msg_to_lst=exp_msg_to,
                 )
 
-        # customer replies using "Reply All" + adds new people
-        # added: Cc: invoicing (email) and robert (partner)
-        # ------------------------------------------------------------
         self.gateway_mail_reply_from_smtp_email(
             MAIL_TEMPLATE,
             [partner_sylvie.email_normalized],
             reply_all=True,
-            cc=f"{self.test_emails[3]}, {self.test_emails[4]}",  # used mainly for existing partners currently
+            cc=f"{self.test_emails[3]}, {self.test_emails[4]}",
         )
-        external_partners += self.customer_zboing  # added in CC just above
+        external_partners += self.customer_zboing
         self.assertEqual(
             len(lead.message_ids), 3, "Incoming email + chatter reply + customer reply"
         )
@@ -548,9 +488,7 @@ class TestMailFlow(MailCommon, TestRecipients):
                     "message_values": {
                         "author_id": partner_sylvie,
                         "email_from": partner_sylvie.email_formatted,
-                        # Cc: received email CC - an email still not partnerized (invoicing) and customer_zboing
                         "incoming_email_cc": f"{self.test_emails[3]}, {self.test_emails[4]}",
-                        # To: received email Msg-To - customer who replies + email Reply-To
                         "incoming_email_to": ", ".join(
                             (
                                 external_partners
@@ -559,10 +497,8 @@ class TestMailFlow(MailCommon, TestRecipients):
                             ).mapped("email_formatted")
                         ),
                         "mail_server_id": self.env["ir.mail_server"],
-                        # notified: followers - already mailed, aka internal only
                         "notified_partner_ids": internal_partners,
                         "parent_id": responsible_answer,
-                        # same reasoning as email_to/cc
                         "partner_ids": external_partners - partner_sylvie,
                         "reply_to": formataddr(
                             (
@@ -573,7 +509,6 @@ class TestMailFlow(MailCommon, TestRecipients):
                         "subject": f"Re: Re: {lead.name}",
                         "subtype_id": self.env.ref("mail.mt_comment"),
                     },
-                    # portal was already in email_to, hence not notified twice through odoo
                     "notif": [
                         {"partner": self.partner_employee, "type": "inbox"},
                         {"partner": self.partner_employee_2, "type": "email"},
@@ -583,12 +518,6 @@ class TestMailFlow(MailCommon, TestRecipients):
         )
 
     def test_ticket_mailgateway(self):
-        """Flow of this test
-        * incoming email creating a ticket in 'new' state
-        * automatic answer based on template
-        """
-        # incoming customer email: help alias + recipients (to + cc)
-        # ------------------------------------------------------------
         email_to = f"help@{self.alias_domain}, {self.test_emails[1]}, {self.partner_employee.email_formatted}"
         email_to_filtered = (
             f"{self.test_emails[1]}, {self.partner_employee.email_formatted}"
@@ -605,7 +534,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             )
             self.flush_tracking()
 
-        # author -> partner, as automatic email creates partner
         partner_sylvie = self.env["res.partner"].search(
             [("email_normalized", "=", "sylvie.lelitre@zboing.com")]
         )
@@ -623,7 +551,6 @@ class TestMailFlow(MailCommon, TestRecipients):
             "sylvie.lelitre@zboing.com",
             "TDE FIXME: should parse name/email correctly",
         )
-        # create ticket
         self.assertEqual(ticket.container_id, self.container)
         self.assertEqual(
             ticket.customer_id,
@@ -638,14 +565,11 @@ class TestMailFlow(MailCommon, TestRecipients):
             self.ticket_template,
             "Should come from alias defaults",
         )
-        # followers
         self.assertFalse(ticket.message_partner_ids)
-        # messages
         self.assertEqual(
             len(ticket.message_ids), 3, "Incoming email + Acknowledgement + Tracking"
         )
 
-        # first message: incoming email
         incoming_email = ticket.message_ids[2]
         self.assertMailNotifications(
             incoming_email,
@@ -656,27 +580,23 @@ class TestMailFlow(MailCommon, TestRecipients):
                     "message_values": {
                         "author_id": self.env["res.partner"],
                         "email_from": self.test_emails[0],
-                        # coming from incoming email
                         "incoming_email_cc": email_cc,
                         "incoming_email_to": email_to_filtered,
                         "mail_server_id": self.env["ir.mail_server"],
                         "parent_id": self.env["mail.message"],
                         "notified_partner_ids": self.env["res.partner"],
-                        # only recognized partners
                         "partner_ids": self.partner_employee
                         + self.customer_portal_zboing,
                         "subject": "Inquiry",
-                        # subtype from '_creation_subtype'
                         "subtype_id": self.env.ref(
                             "test_mail.st_mail_test_ticket_partner_new"
                         ),
                     },
-                    "notif": [],  # no notif, mailgateway sets recipients without notification
+                    "notif": [],
                 },
             ],
         )
 
-        # second message: acknowledgement
         acknowledgement = ticket.message_ids[1]
         self.assertMailNotifications(
             acknowledgement,
@@ -685,19 +605,15 @@ class TestMailFlow(MailCommon, TestRecipients):
                     "content": f"Received {ticket.name}",
                     "message_type": "auto_comment",
                     "message_values": {
-                        # defined by template, root is the cron user as no responsible
                         "author_id": self.partner_root,
                         "email_from": self.partner_root.email_formatted,
                         "incoming_email_cc": False,
                         "incoming_email_to": False,
                         "mail_server_id": self.env["ir.mail_server"],
-                        # no followers, hence only template default_to
                         "notified_partner_ids": partner_sylvie,
                         "parent_id": incoming_email,
-                        # no followers, hence only template default_to
                         "partner_ids": partner_sylvie,
                         "subject": f"Received {ticket.name}",
-                        # subtype from '_track_template'
                         "subtype_id": self.env.ref("mail.mt_note"),
                     },
                     "notif": [

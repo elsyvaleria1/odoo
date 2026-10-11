@@ -22,16 +22,10 @@ class PosConfig(models.Model):
         return "urban_piper", self.env._("Point of Sale: Urban Piper"), "other"
 
     def _default_payment_method_ids(self):
-        """
-        Override default payment methods to filter out delivery payment methods.
-        """
         payment_methods = super()._default_payment_method_ids()
         return payment_methods.filtered(lambda pm: not pm.is_delivery_payment)
 
     def _default_urbanpiper_store_identifier(self):
-        """
-        Default unique Urban Piper POS ID.
-        """
         return secrets.token_hex()
 
     def _urbanpiper_pricelist_of(self, company):
@@ -134,14 +128,12 @@ class PosConfig(models.Model):
     def _init_column(self, column_name, *, new_column=False):
         if column_name != "urbanpiper_store_identifier":
             return super()._init_column(column_name, new_column=new_column)
-        # fetch void columns
         self.env.cr.execute(
             SQL("SELECT id FROM pos_config WHERE urbanpiper_store_identifier IS NULL")
         )
         pos_config_ids = self.env.cr.fetchall()
         if not pos_config_ids:
             return None
-        # update existing columns
         for pos_config_id in pos_config_ids:
             self.env.cr.execute(
                 SQL(
@@ -177,9 +169,6 @@ class PosConfig(models.Model):
         return res
 
     def _setup_journals_and_payment_methods(self) -> None:
-        """
-        Fetch or create payment methods and enable option fiscal taxes.
-        """
         self.check_singleton()
         delivery_providers = self.urbanpiper_delivery_provider_ids
         for delivery_provider in delivery_providers:
@@ -236,9 +225,6 @@ class PosConfig(models.Model):
             self.urbanpiper_payment_methods_ids |= payment_method
 
     def _configure_fiscal_position_and_pricelist(self) -> None:
-        """
-        Set taxes in fiscal position for urban piper.
-        """
         self.check_singleton()
         fiscal_position = (
             self.urbanpiper_fiscal_position_id
@@ -272,27 +258,16 @@ class PosConfig(models.Model):
         self._add_line_to_fiscal_position(fiscal_position)
 
     def _add_line_to_fiscal_position(self, fiscal_position):
-        # Outside of India, prices are tax-inclusive. So if users want tax-specific behavior,
-        # they must manually add a tax line to the fiscal position.
         pass
 
     def prepare_taxes_data(self, pos_products):
-        """
-        Prepare taxes data for urban piper for sync menu.
-        """
         return []
 
     def update_urbanpiper_item_data(self, item, product):
-        """
-        Override this method to update item data with product information. (as per requirements for different regions)
-        """
         self.check_singleton()
         return item
 
     def update_store_status(self, status) -> None:
-        """
-        Activate and Deactivate store
-        """
         user_name = self.env.registry.settings.get(
             self.env, "pos_urban_piper.urbanpiper_username", False
         )
@@ -309,9 +284,6 @@ class PosConfig(models.Model):
     def order_status_update(
         self, order_id, new_status, code=None, urban_piper_test=False, extra_args=None
     ) -> dict:
-        """
-        Update order status from urban piper webhook
-        """
         if extra_args is None:
             extra_args = {}
         self.check_singleton()
@@ -339,15 +311,11 @@ class PosConfig(models.Model):
         if not urban_piper_test and new_status == "Acknowledged":
             up.urbanpiper_order_reference_update(order)
         if new_status == "Cancelled":
-            # Prevent loading cancelled orders in `getServerOrders` triggered by `_send_delivery_order_count`
             order.state = "cancel"
         self._send_delivery_order_count(order_id)
         return {"is_success": is_success, "message": message}
 
     def _create_order_payment(self, order) -> None:
-        """
-        Make payment for order of urban piper orders.
-        """
         self.check_singleton()
         payment_method = self.urbanpiper_payment_methods_ids.filtered(
             lambda pm: pm.delivery_provider_id.id == order.delivery_provider_id.id
@@ -364,25 +332,16 @@ class PosConfig(models.Model):
         order._recompute_amounts()
 
     def _send_delivery_order_count(self, order_id=None) -> None:
-        """
-        Send delivery order count to pos ui
-        """
         self.check_singleton()
         if self.current_session_id:
             self._notify("DELIVERY_ORDER_COUNT", order_id)
 
     def _store_action_update(self, data) -> None:
-        """
-        Send store status update to pos ui
-        """
         self.check_singleton()
         if self.current_session_id:
             self._notify("STORE_ACTION", data)
 
     def get_delivery_data(self) -> dict:
-        """
-        Fetch delivery order count and providers for pos ui
-        """
         self.check_singleton()
         delivery_order_count = self._get_urbanpiper_order_count()
         delivery_providers = self._get_active_delivery_providers()
@@ -401,9 +360,6 @@ class PosConfig(models.Model):
         return "total_included"
 
     def _get_urbanpiper_order_count(self) -> dict:
-        """
-        Updates order count whenever order status changes and when new order receives
-        """
         self.check_singleton()
         if not self.current_session_id:
             return {}
@@ -438,9 +394,6 @@ class PosConfig(models.Model):
         return {"urbanpiper": order_count_data}
 
     def _get_active_delivery_providers(self) -> list:
-        """
-        Fetch delivery providers for pos ui
-        """
         return [
             {
                 "code": provider.technical_name,
@@ -454,9 +407,6 @@ class PosConfig(models.Model):
     def _urbanpiper_handle_response(
         self, response_json, raise_exception=False
     ) -> dict | None:
-        """
-        Handle response from urban piper
-        """
         title, msg_type, message = self.env._("Urban Piper"), "danger", ""
         if response_json.get("errors"):
             title = next(iter(response_json.get("errors").keys()))
@@ -480,7 +430,7 @@ class PosConfig(models.Model):
                     "sticky": False,
                     "next": {
                         "type": "ir.actions.act_window_close"
-                    },  # force a form reload
+                    },
                 },
             }
         return None
@@ -524,20 +474,12 @@ class PosConfig(models.Model):
             pass
 
     def _reset_urbanpiper_product_linkages(self) -> None:
-        """
-        Reset product linkage to Urbanpiper and products become available
-        for syncing again.
-        """
         if linked_statuses := self.env["product.urban.piper.status"].search(
             [("config_id", "in", self.ids), ("is_product_linked", "=", True)]
         ):
             linked_statuses.write({"is_product_linked": False})
 
     def _get_urban_piper_toggle_states(self):
-        # get_param's default applies only when the key is ABSENT. The post-init
-        # hook plants this one as an empty string, so a two-argument get_param
-        # reads "" and json.loads raises -- which is why both callers must go
-        # through one reader rather than each deciding what empty means.
         raw = self.env.registry.settings.get(
             self.env, "pos_urban_piper.toggle_state", False
         )

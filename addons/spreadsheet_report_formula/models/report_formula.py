@@ -43,22 +43,6 @@ class ReportFormula(models.Model):
     @api.readonly
     @api.model
     def spreadsheet_fetch_report_values(self, args_list):
-        """Fetch data for ODOO.REPORT formulas.
-        The input list looks like this::
-
-            [
-                {
-                    report: str(xmlid) | int,
-                    line_code: str,
-                    label: str,
-                    date_range: {range_type: "year", year: int},
-                    company_id: int | None,
-                    include_unposted: bool,
-                }
-            ]
-
-        A formula whose report or line does not exist gets ``False``.
-        """
         results = [False] * len(args_list)
         requests = defaultdict(list)
         for index, args in enumerate(args_list):

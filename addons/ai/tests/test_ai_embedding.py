@@ -21,7 +21,6 @@ class TestAIEmbeddingBatching(TransactionCase):
         )
 
     def test_batches_respect_max_batch_size(self):
-        """Ensure batches never exceed the configured max size."""
         embeddings = [self._create_embedding("short content") for _ in range(5)]
 
         with patch(
@@ -33,7 +32,6 @@ class TestAIEmbeddingBatching(TransactionCase):
         self.assertEqual([len(batch) for batch in batches], [2, 2, 1])
 
     def test_batches_split_on_token_limit(self):
-        """Ensure token budget splits batches even when size allows more records."""
         embeddings = [
             self._create_embedding("a" * 8),
             self._create_embedding("b" * 12),

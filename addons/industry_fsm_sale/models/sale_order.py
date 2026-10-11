@@ -15,10 +15,6 @@ class SaleOrder(models.Model):
     )
 
     def _get_domain_rollup_lines(self) -> Domain:
-        # A free field-service line outside anglo-saxon accounting is never
-        # invoiced (SaleOrderLine._compute_invoice_state below marks it "no"),
-        # so it must not read as a line still pending in the order's rollup,
-        # where "no" with a quantity means "not invoiceable yet".
         free_service_line = (
             Domain("price_unit", "=", 0)
             & Domain("task_id.is_fsm", "=", True)
@@ -56,11 +52,6 @@ class SaleOrder(models.Model):
     def _get_product_catalog_record_lines(
         self, product_ids, *, section_id=None, **kwarg
     ):
-        """
-        Accessing the catalog from the smart button of a "field service" should compute
-        the content of the catalog related to that field service rather than the content
-        of the catalog related to the sale order containing that "field service".
-        """
         task_id = self.env.context.get("fsm_task_id")
         if task_id:
             grouped_lines = defaultdict(lambda: self.env["sale.order.line"])
@@ -108,9 +99,6 @@ class SaleOrderLine(models.Model):
 
     @api.depends("qty_transferred", "discount", "price_unit", "tax_ids")
     def _compute_delivered_amount(self) -> None:
-        """
-        Compute the amounts of the SO line for delivered quantity.
-        """
         for line in self:
             price = line.price_unit * (1 - (line.discount or 0.0) / 100.0)
             taxes = line.tax_ids.compute_all(
@@ -138,17 +126,12 @@ class SaleOrderLine(models.Model):
         return res
 
     def _timesheet_create_project_prepare_values(self):
-        """Generate project values"""
         values = super()._timesheet_create_project_prepare_values()
         if self.product_id.project_template_id.is_fsm:
             values.pop("sale_line_id", False)
         return values
 
     def _compute_invoice_state(self):
-        # Fork migration: invoice_status -> invoice_state with remapped values
-        # ('invoiced' -> 'done', 'to invoice' -> 'to do'), ordered quantity is
-        # product_qty (product_uom_qty is now the reference-UoM quantity) and
-        # the decimal precision is named 'Product Unit'.
         sol_from_task_without_amount = self.filtered(
             lambda sol: (
                 sol.task_id.is_fsm
@@ -194,14 +177,6 @@ class SaleOrderLine(models.Model):
 
     @api.depends("price_unit")
     def _compute_invoice_amounts(self):
-        """Zero-priced field-service lines are not invoiced without anglo-saxon.
-
-        The rule itself is unchanged; where it hangs is. This fork computes
-        `qty_to_invoice` inside `_compute_invoice_amounts` together with the invoiced
-        amounts, so the `_compute_qty_to_invoice` this used to override is no longer
-        the field's compute and never ran -- a free line kept a quantity to invoice
-        and came out on the invoice at 0.00.
-        """
         super()._compute_invoice_amounts()
         sol_from_task_without_amount = self.filtered(
             lambda sol: sol.task_id.is_fsm and sol.currency_id.is_zero(sol.price_unit)

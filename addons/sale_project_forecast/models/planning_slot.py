@@ -46,11 +46,8 @@ class PlanningSlot(models.Model):
             if not slot.sale_line_id and slot.project_id:
                 slot.sale_line_id = slot.project_id.sale_line_id
 
-    # ORM Override
 
     def _display_name_fields(self):
-        """List of fields that can be displayed in the display_name"""
-        # Ensure this will be displayed in the right order
         display_name_fields = [
             item
             for item in super()._display_name_fields()
@@ -58,7 +55,6 @@ class PlanningSlot(models.Model):
         ]
         return display_name_fields + ["project_id", "sale_line_id"]
 
-    # Business methods
 
     def _get_domain_shifts_to_plan(self, view_domain=None):
         domain = super()._get_domain_shifts_to_plan(view_domain)

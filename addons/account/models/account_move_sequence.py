@@ -137,8 +137,6 @@ class AccountMove(models.Model):
                 has_date=bool(self.date),
             )
             return Domain.FALSE
-        # a NULL or empty name is not a number in the sequence; SQL's `!= '/'` dropped
-        # NULL by itself, a Domain's `!=` keeps it
         domain = self._get_last_sequence_journal_domain() & Domain(
             "name", "not in", ("/", "", False)
         )
@@ -240,9 +238,6 @@ class AccountMove(models.Model):
 
         forced_year_range = (date_start.year, date_end.year)
         month_start, month_end = date_utils.get_month(self.date)
-        # the month is split only where a fiscal year ends strictly inside it,
-        # as get_fiscal_year says: a year ending on Feb 28 ends on the 29th in
-        # a leap year
         boundary = next(
             (
                 day

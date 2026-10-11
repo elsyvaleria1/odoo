@@ -17,19 +17,9 @@ _logger = logging.getLogger(__name__)
 
 
 def archive_products(env):
-    """Archive every POS product a configuration does not reserve.
-
-    `product.template._check_is_special_product` refuses to archive a product any
-    `pos.config` names as special, and modules add to that set through
-    `pos.config._get_special_products` -- `pos_discount`, `pos_sale`,
-    `pos_self_order`, `pos_settle_due`, `pos_tyro` and `pos_blackbox_be` all do.
-    Naming the tip here instead duplicated that extension point with a fixed
-    list of one, so this raised as soon as any of them was installed.
-    """
     Template = env["product.template"]
     all_pos_product = Template.search([("available_in_pos", "=", True)])
     reserved = all_pos_product._filtered_pos_special_products()
-    # demo data leaves sessions open, and the fixtures replace the whole catalog
     with patch.object(
         type(Template), "_is_blocked_by_open_pos_session", return_value=False
     ):
@@ -39,11 +29,6 @@ def archive_products(env):
 class PosCatalogEditorMixin:
     @classmethod
     def _pos_catalog_editor_groups(cls):
-        # The POS fixtures and tours set `available_in_pos` and prices on the
-        # products they build, and a deployment may gate writing them on the
-        # sales manager group (marin does). point_of_sale does not depend on
-        # sale, so resolve it optionally, the way AccountTestInvoicingCommon
-        # resolves mrp, purchase and stock.
         return cls.env.ref("sale.group_sale_manager", False) or cls.env["res.groups"]
 
     @classmethod
@@ -841,8 +826,6 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
                 },
             ]
         )
-        # created on its own: in one batch with the cash journal, its inbound and
-        # outbound payment channels are numbered the other way round
         other_bank_journal = cls.env["account.journal"].create(
             {
                 "name": "Bank Other",

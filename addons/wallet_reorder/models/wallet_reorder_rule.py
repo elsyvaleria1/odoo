@@ -8,8 +8,6 @@ class WalletReorderRule(models.Model):
     _order = "account_id, card_id, id"
     _check_company_auto = True
 
-    # FIELDS
-    # Core identification
     name = fields.Char(
         compute="_compute_name",
         precompute=True,
@@ -21,7 +19,7 @@ class WalletReorderRule(models.Model):
         required=True,
         ondelete="cascade",
     )
-    account_id = fields.Many2one(  # noqa: E8529  One2many inverse of wallet.account.reorder_rule_ids
+    account_id = fields.Many2one(
         related="card_id.account_id",
         precompute=True,
         store=True,
@@ -31,7 +29,6 @@ class WalletReorderRule(models.Model):
         related="card_id.company_id",
     )
     active = fields.Boolean(default=True)
-    # Rule block
     currency_id = fields.Many2one(related="company_id.currency_id")
     amount_min = fields.Monetary(
         required=True,
@@ -49,7 +46,6 @@ class WalletReorderRule(models.Model):
         readonly=False,
         check_company=True,
     )
-    # Balance block
     amount_balance = fields.Monetary(related="card_id.amount_balance")
     date_balance = fields.Datetime(related="card_id.date_balance")
     amount_to_reload = fields.Monetary(
@@ -57,7 +53,6 @@ class WalletReorderRule(models.Model):
         store=True,
         help="What brings the card back to its maximum, once it is under its minimum.",
     )
-    # Purchase block
     purchase_line_ids = fields.One2many(
         comodel_name="purchase.order.line",
         inverse_name="wallet_reorder_rule_id",
@@ -77,13 +72,11 @@ class WalletReorderRule(models.Model):
         search="_search_state",
     )
 
-    # CONSTRAINTS
     _card_uniq = models.Constraint(
         "UNIQUE(card_id)",
         "A card has one reordering rule.",
     )
 
-    # CONSTRAINT METHODS
     @api.constrains("amount_min", "amount_max")
     def _check_amounts(self) -> None:
         for rule in self:
@@ -96,7 +89,6 @@ class WalletReorderRule(models.Model):
                     )
                 )
 
-    # COMPUTE METHODS
     @api.depends("card_id.name")
     def _compute_name(self):
         for rule in self:
@@ -136,7 +128,6 @@ class WalletReorderRule(models.Model):
             else:
                 rule.state = "ok"
 
-    # SEARCH METHODS
     def _search_state(self, operator, value):
         if operator not in ("=", "in"):
             return NotImplemented
@@ -144,7 +135,6 @@ class WalletReorderRule(models.Model):
         rules = self.search([]).filtered(lambda rule: rule.state in wanted)
         return [("id", "in", rules.ids)]
 
-    # ACTION METHODS
     def action_procure(self) -> dict | None:
         orders = self._procure()
         if not orders:
@@ -157,14 +147,11 @@ class WalletReorderRule(models.Model):
             "domain": [("id", "in", orders.ids)],
         }
 
-    # PROCUREMENT METHODS
     @api.model
     def _cron_procure(self):
         return self.search([])._procure()
 
     def _procure(self):
-        """One draft purchase order per account and company for the rules
-        under their minimum with no top-up ordered yet."""
         Order = self.env["purchase.order"]
         orders = Order.browse()
         by_account = {}
@@ -211,7 +198,6 @@ class WalletReorderRule(models.Model):
         )
         return lines[:1]
 
-    # HELPER METHODS
     def _prepare_purchase_line_vals(self) -> dict:
         self.check_singleton()
         return {

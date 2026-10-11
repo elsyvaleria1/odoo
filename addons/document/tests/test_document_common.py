@@ -10,8 +10,6 @@ WEBP = b"UklGRjoAAABXRUJQVlA4IC4AAAAwAQCdASoBAAEAAUAmJaAAA3AA/u/uY//8s//2W/7LeM/
 
 
 def effective_members(document):
-    # {partner: role} of every partner a grant or an owner reaches the document
-    # with, on it or on a folder above it
     return document._member_roles()
 
 

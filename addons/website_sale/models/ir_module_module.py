@@ -20,7 +20,7 @@ class IrModuleModule(models.Model):
             lang_items = (
                 SQL(
                     "%(lang)s, o_step.%(fname)s->>%(lang)s",
-                    lang=SQL("'%s'" % lang),  # noqa: E8501  SQL literal, not a value
+                    lang=SQL("'%s'" % lang),
                     fname=fname,
                 )
                 for lang in to_langs

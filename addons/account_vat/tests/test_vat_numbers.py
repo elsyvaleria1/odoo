@@ -17,9 +17,6 @@ class TestStructure(TransactionCase):
         cls._vies_check_func = check_vies
 
     def test_peru_ruc_format(self):
-        """Only values that has the length of 11 will be checked as RUC, that's what we are proving. The second part
-        will check for a valid ruc and there will be no problem at all.
-        """
         partner = self.env["res.partner"].create(
             {"name": "Dummy partner", "country_id": self.env.ref("base.pe").id}
         )
@@ -29,7 +26,6 @@ class TestStructure(TransactionCase):
         partner.vat = "20507822470"
 
     def test_vat_country_difference(self):
-        """Test the validation when country code is different from vat code"""
         partner = self.env["res.partner"].create(
             {
                 "name": "Test",
@@ -64,9 +60,7 @@ class TestStructure(TransactionCase):
         self.assertEqual(invalid, False)
 
     def test_parent_validation(self):
-        """Test the validation with company and contact"""
 
-        # set an invalid vat number
         self.env.user.company_id.account_config_id.vat_check_vies = False
         company = self.env["res.partner"].create(
             {
@@ -77,7 +71,6 @@ class TestStructure(TransactionCase):
             }
         )
 
-        # reactivate it and correct the vat number
         with patch(
             "odoo.addons.account_vat.models.res_partner.check_vies",
             type(self)._vies_check_func,
@@ -85,30 +78,24 @@ class TestStructure(TransactionCase):
             self.env.user.company_id.account_config_id.vat_check_vies = True
             with self.assertRaises(ValidationError):
                 company.vat = (
-                    "BE0987654321"  # VIES refused, don't fallback on other check
+                    "BE0987654321"
                 )
             company.vat = "BE0477472701"
             self.assertEqual(company.vies_valid, True)
 
     def test_vat_syntactic_validation(self):
-        """Tests VAT validation (both successes and failures), with the different country
-        detection cases possible.
-        """
         test_partner = self.env["res.partner"].create({"name": "John Dex"})
 
-        # VAT starting with country code: use the starting country code
         test_partner.write(
             {"vat": "BE0477472701", "country_id": self.env.ref("base.fr").id}
         )
         test_partner.write({"vat": "BE0477472701", "country_id": None})
 
         with self.assertRaises(ValidationError):
-            # A French VAT with a BE prefix that is not a valid BE number should raise
             test_partner.write(
                 {"vat": "BE23334175221", "country_id": self.env.ref("base.fr").id}
             )
 
-        # No country code in VAT: use the partner's country
         test_partner.write(
             {"vat": "0477472701", "country_id": self.env.ref("base.be").id}
         )
@@ -116,20 +103,16 @@ class TestStructure(TransactionCase):
         with self.assertRaises(ValidationError):
             test_partner.write({"vat": "42", "country_id": self.env.ref("base.be").id})
 
-        # If no country set on the partner: VAT number should always be considered valid
-        test_partner.write({"vat": "BE42", "country_id": None})  # Invalid in BE
+        test_partner.write({"vat": "BE42", "country_id": None})
         test_partner.write({"vat": "0477472701", "country_id": None})
         test_partner.write(
             {"vat": "BE0477472701", "country_id": None}
-        )  # Even with BE prefix, it should not be checked
+        )
         test_partner.write(
             {"vat": "BE0477472702", "country_id": None}
-        )  # also invalid in BE
+        )
 
     def test_vat_eu(self):
-        """Foreign companies that trade with non-enterprises in the EU may have a VATIN starting with "EU" instead of
-        a country code.
-        """
         test_partner = self.env["res.partner"].create(
             {"name": "Turlututu", "country_id": self.env.ref("base.fr").id}
         )
@@ -148,16 +131,12 @@ class TestStructure(TransactionCase):
         test_partner = self.env["res.partner"].create(
             {"name": "Mein Company", "country_id": self.env.ref("base.de").id}
         )
-        # Set a valid VAT
         test_partner.write({"vat": "DE123456788"})
-        # Set a valid German tax ID (steuernummer)
         test_partner.write({"vat": "201/123/12340"})
-        # Test invalid VAT (should raise a ValidationError)
         with self.assertRaises(ValidationError):
             test_partner.write({"vat": "136695978"})
 
     def test_no_vies_revalidation_when_creating_company_from_contact(self):
-        # Test that we don't revalidate the VAT when create a company from a contact where it's already validated
         self.env.user.company_id.account_config_id.vat_check_vies = True
         with patch(
             "odoo.addons.account_vat.models.res_partner.check_vies",
@@ -185,7 +164,6 @@ class TestStructure(TransactionCase):
         test_partner = self.env["res.partner"].create(
             {"name": "UY Company", "country_id": self.env.ref("base.uy").id}
         )
-        # Set a valid Number
         test_partner.write({"vat": "215521750017"})
         test_partner.write({"vat": "220018800014"})
         test_partner.write({"vat": "21-55217500-17"})
@@ -195,7 +173,6 @@ class TestStructure(TransactionCase):
         test_partner.write({"vat": "UY215521750017"})
         self.assertEqual(test_partner.vat, "215521750017")
 
-        # Test invalid VAT (should raise a ValidationError)
         msg = "The VAT number.*does not seem to be valid"
         with self.assertRaisesRegex(ValidationError, msg):
             test_partner.vat = "215521750018"
@@ -237,7 +214,6 @@ class TestStructure(TransactionCase):
         self.assertEqual(test_partner_1.vat, "XI123456782")
 
     def test_gr_changes(self):
-        """As GR is not associated to another country, it can change magically to EL"""
         gr_country = self.env.ref("base.gr").id
         test_partner_1 = self.env["res.partner"].create(
             {"name": "Roman", "country_id": gr_country, "vat": "GR123456783"}
@@ -259,12 +235,10 @@ class TestStructure(TransactionCase):
         test_partner = self.env["res.partner"].create(
             {"name": "DuongDepTrai", "country_id": self.env.ref("base.vn").id}
         )
-        # Valid vn vat
-        test_partner.vat = "000012345679"  # individual
-        test_partner.vat = "0123457890"  # enterprise
-        test_partner.vat = "0123457890-111"  # branch
+        test_partner.vat = "000012345679"
+        test_partner.vat = "0123457890"
+        test_partner.vat = "0123457890-111"
 
-        # Test invalid VAT (should raise a ValidationError)
         msg = "The VAT number.*does not seem to be valid"
         with self.assertRaisesRegex(ValidationError, msg):
             test_partner.write({"vat": "00001234567912"})
@@ -289,10 +263,8 @@ class TestStructure(TransactionCase):
         test_partner = self.env["res.partner"].create(
             {"name": "CN Company", "country_id": self.env.ref("base.cn").id}
         )
-        # Valid Chinese or French (European Vat)
         test_partner.write({"vat": "123456789012345678"})
         test_partner.write({"vat": "FR17698800935"})
-        # Test australian VAT (should raise a ValidationError)
         with self.assertRaises(ValidationError):
             test_partner.write({"vat": "83914571673"})
         test_partner.write({"vat": "BE0477.47.27.01"})
@@ -322,10 +294,8 @@ class TestStructure(TransactionCase):
         test_partner = self.env["res.partner"].create(
             {"name": "DO Company", "country_id": self.env.ref("base.do").id}
         )
-        # Valid do vat
         test_partner.write({"vat": "152-0000706-8"})
         test_partner.write({"vat": "4-01-00707-1"})
-        # Test invalid VAT (should raise a ValidationError)
         msg = "The VAT number.*does not seem to be valid"
         with self.assertRaisesRegex(ValidationError, msg):
             test_partner.write({"vat": "152-0000706-7"})

@@ -43,7 +43,6 @@ class TestAccrualYearlyGain(TestHrHolidaysCommon):
         self.assertEqual(level.yearly_gain, 52 * self.calendar.hours_per_week)
 
     def test_yearly_gain_daily_counts_calendar_days(self):
-        # Not based on worked time: every day of the year accrues.
         level = self._level(frequency="daily")
         self.assertFalse(level.is_based_on_worked_time)
         self.assertEqual(level.yearly_gain, 365)

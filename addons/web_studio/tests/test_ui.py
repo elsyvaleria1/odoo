@@ -20,10 +20,8 @@ class TestUi(odoo.tests.HttpCase):
     def test_new_app_and_report(self):
         self.start_tour("/odoo", "web_studio_new_app_tour", login="admin")
 
-        # the new submenu tour is based on the result of the new app tour
         self.start_tour("/odoo", "web_studio_new_submenu_tour", login="admin")
 
-        # the report tour is based on the result of the new app tour
         self.start_tour(
             "/odoo?debug=tests", "web_studio_new_report_tour", login="admin"
         )
@@ -94,7 +92,6 @@ class TestUi(odoo.tests.HttpCase):
             login="admin",
         )
 
-        # we can't assert xml equality as a lot of stuff in the arch are set randomly
         view = self.env["ir.ui.view"].search(
             [("model", "=", created_model_name), ("type", "=", "form")], limit=1
         )
@@ -104,8 +101,6 @@ class TestUi(odoo.tests.HttpCase):
         fields_of_interest = tree.xpath("//field[@name='message_partner_ids']")
         self.assertEqual(len(fields_of_interest), 2)
 
-        # First field is on the main model: not below another field
-        # The second one is in a subview
         self.assertEqual(
             root.getpath(fields_of_interest[0]), "/form/sheet/group/group[1]/field"
         )
@@ -113,7 +108,6 @@ class TestUi(odoo.tests.HttpCase):
             root.getpath(fields_of_interest[1]), "/form/sheet/field[2]/list/field[1]"
         )
 
-        # The tour in its final steps is putting column_invisible on the field in the subview
         self.assertEqual(fields_of_interest[0].get("invisible"), None)
         self.assertEqual(fields_of_interest[1].get("invisible"), None)
 
@@ -378,7 +372,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
                     </header>
                 </xpath>
             </data>"""
-        # FIXME Can't do it otherwise cause of indentation problems
         self.assertEqual(studioView.arch.replace(" ", ""), arch.replace(" ", ""))
 
     def test_create_action_button_in_list_view(self):
@@ -426,7 +419,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
                     </header>
                 </xpath>
             </data>"""
-        # FIXME Can't do it otherwise cause of indentation problems
         self.assertEqual(studioView.arch.replace(" ", ""), arch.replace(" ", ""))
 
     def test_form_view_not_altered_by_studio_xml_edition(self):
@@ -737,8 +729,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         )
 
         def create_new_field_mocked(*args, **kwargs):
-            # For this test we need to patch groups from the phone field. Unfortunately it seems
-            # that the patch is erased each time we create a new field so we have to patch after.
             self.patch(
                 type(self.env["res.partner"]).phone_ids,
                 "groups",
@@ -1199,8 +1189,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         )
 
     def test_field_with_groups_in_tree_node_has_groups_too(self):
-        # The field has a group in python in which the user is
-        # The node has also a group in which the user is not
         hasGroup = self.env["res.groups"].create(
             {"name": "studio has group", "user_ids": [Command.link(self.env.user.id)]}
         )
@@ -1366,8 +1354,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         assertViewArchEqual(self, arch, expected)
 
     def test_studio_view_is_last(self):
-        # The studio view created should have, in all cases, a priority greater than all views
-        # that are part of the inheritance
         self.testView.arch = """
             <form><sheet>
                 <group><field name="name" required="True" /></group>
@@ -1592,7 +1578,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             "/odoo?debug=tests", "web_studio_monetary_create", login="admin"
         )
 
-        # There is a new currency and there is a new monetary
         fields = self.env[self.newModel.model]._fields
         currency_name_list = list(
             filter(
@@ -1609,7 +1594,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         self.assertEqual(len(currency_name_list), 1)
         self.assertEqual(len(monetary_name_list), 1)
 
-        # The studio arch contains the new monetary and the new currency
         studioView = _get_studio_view(self.newView)
         assertViewArchEqual(
             self,
@@ -1709,7 +1693,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         self.start_tour(
             "/odoo?debug=tests", "web_studio_related_monetary_creation", login="admin"
         )
-        # There is only one currency and there is a new monetary
         fields = self.env["x_test_model"]._fields
         currency_name_list = list(
             filter(
@@ -1725,7 +1708,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         )
         self.assertEqual(len(currency_name_list), 1)
         self.assertEqual(len(monetary_name_list), 1)
-        # The monetary has been created and is a related field
         monetary_field = self.env["x_test_model"]._fields[monetary_name_list[0]]
         self.assertEqual(monetary_field.related, "x_test.x_studio_monetary_test")
         self.assertEqual(
@@ -1733,7 +1715,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             "x_studio_x_test_x_studio_currency_test",
         )
         self.assertEqual(monetary_field.get_description(self.env)["aggregator"], "sum")
-        # A currency has been created because there was none in the model/view
         currency_field = self.env["x_test_model"]._fields[
             "x_studio_x_test_x_studio_currency_test"
         ]
@@ -1792,7 +1773,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             login="admin",
         )
 
-        # The currency_field in the monetary field changed
         self.assertEqual(monetary.currency_field, "x_studio_currency_test2")
 
     def test_monetary_change_currency_not_in_view(self):
@@ -1837,7 +1817,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             login="admin",
         )
 
-        # The currency_field in the monetary field changed
         self.assertEqual(monetary.currency_field, "x_studio_currency_test2")
 
         studioView = _get_studio_view(self.newView)
@@ -1884,7 +1863,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             login="admin",
         )
 
-        # The studio arch contains the monetary and the associated currency
         studioView = _get_studio_view(self.newView)
         assertViewArchEqual(
             self,
@@ -1922,7 +1900,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
             login="admin",
         )
 
-        # There is only one currency and there is a new monetary
         fields = self.env[self.newModel.model]._fields
         currency_name_list = list(
             filter(
@@ -1939,7 +1916,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         self.assertEqual(len(currency_name_list), 1)
         self.assertEqual(len(monetary_name_list), 1)
 
-        # The studio arch contains the new monetary but no currency as it exist in the original arch
         studioView = _get_studio_view(self.newView)
         assertViewArchEqual(
             self,
@@ -2506,9 +2482,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
         self.assertEqual(field.related_field_id, target_field)
 
     def test_add_many2one_without_related(self):
-        """Test ensure raise a warning and not the current view does not contain studio arch when the user
-        tries to add one2many field but the model does not contain any related many2one field.
-        """
 
         self.create_empty_app()
         self.newView.arch = """<form>
@@ -2524,7 +2497,6 @@ class TestStudioUIUnit(odoo.tests.HttpCase):
 
         studioView = _get_studio_view(self.newView)
 
-        # Does not contain studio arch
         assertViewArchEqual(self, studioView.arch, False)
 
     def test_approval_button_xml_id(self):

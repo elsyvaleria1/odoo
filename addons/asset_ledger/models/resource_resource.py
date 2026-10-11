@@ -14,7 +14,6 @@ class ResourceResource(models.Model):
         string="Asset Location",
         help="Where the thing is kept (garage, ...)",
     )
-    # Not `tag_ids`: a vehicle already carries that name for fleet tags.
     asset_tag_ids = fields.Many2many(
         comodel_name="resource.tag",
         relation="resource_asset_tag_rel",
@@ -118,9 +117,6 @@ class ResourceResource(models.Model):
         return "asset_ledger.action_product_asset_log"
 
     def _get_log_type_context(self, log_type):
-        """A form opened to book a fuel entry arrives with the seeded category
-        already chosen, so the log types this repository adds are reachable
-        without knowing which product category carries them."""
         seed = self._get_seed_log_category(log_type)
         return {"default_product_category_id": seed.id} if seed else {}
 
@@ -159,7 +155,6 @@ class ResourceResource(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # the ledger's configured unit is a new thing's odometer unit
         things = [
             vals
             for vals in vals_list

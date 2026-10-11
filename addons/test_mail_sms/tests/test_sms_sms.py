@@ -42,15 +42,6 @@ class TestSMSPost(SMSCommon, MockLinkTracker):
         self.assertEqual(self.count, 4)
 
     def test_sms_send_batch_size_out_of_range(self):
-        """A batch size below one, or not a number, must not take the queue down.
-
-        `_get_send_batch_size` hands its result to an SQL LIMIT in
-        `_process_queue` and to `itertools.batched` in `_split_batch`. It read
-        the parameter with a bare `int(get_param(...))`, so a negative value
-        reached Postgres as `LIMIT -3` and a non-numeric one raised ValueError --
-        both straight out of the queue cron, and both on every run until someone
-        re-read the System Parameters row.
-        """
         ICP = self.env["ir.config_parameter"]
         for value in ("-3", "0", "not a number", ""):
             with self.subTest(value=value):
@@ -77,15 +68,12 @@ class TestSMSPost(SMSCommon, MockLinkTracker):
         )
 
         ICP.set_param("sms.session.batch.size", "-3")
-        # _commit_progress calls cr.commit(), forbidden on a test cursor:
-        # stub the cron bookkeeping, the behavior under test is the batch size.
         with (
             patch.object(SmsModel, "_send", autospec=True, side_effect=_send),
             patch.object(
                 type(self.env["ir.cron"]), "_commit_progress", return_value=float("inf")
             ),
         ):
-            # the cron path: this is the one that reached SQL
             self.env["sms.sms"]._process_queue()
 
     def test_sms_send_crash_employee(self):
@@ -102,7 +90,6 @@ class TestSMSPost(SMSCommon, MockLinkTracker):
         self.assertFalse(len(self.sms_all.exists().filtered(lambda s: not s.to_delete)))
 
     def test_sms_send_delete_default(self):
-        """Test default send behavior: keep failed SMS, remove sent."""
         with self.mockSMSGateway(
             sms_allow_unlink=True,
             nbr_t_error={

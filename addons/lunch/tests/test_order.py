@@ -6,10 +6,6 @@ from odoo.addons.lunch.tests.common import TestsCommon
 class TestOrder(TestsCommon):
     @common.users("cle-lunch-manager")
     def test_create_only_updates_new_orders(self):
-        """
-        Test that creating a new order only increments quantity for orders
-        in 'new' state, not 'ordered'.
-        """
         order_ordered = self.env["lunch.order"].create(
             {
                 "product_id": self.product_pizza.id,

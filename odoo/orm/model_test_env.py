@@ -89,15 +89,10 @@ class _TestResUsers(Model):
     lang = Char()
     company_id = Many2one("res.company")
     company_ids = Many2many("res.company")
-    # res.users inherits res.partner's parent_id: a many2one to a user
-    # describes itself with the hierarchy operators, as on PostgreSQL
     parent_id = Many2one("res.users")
-    # the group external ids the user holds, comma-separated: what a test
-    # gives a user instead of res.groups rows
     group_xmlids = Char()
 
     def _get_company_ids(self) -> tuple[int, ...]:
-        # the protocol and the real res.users answer tuple[int, ...]
         return (self.company_id | self.company_ids)._ids
 
     def _held_groups(self) -> set[str]:
@@ -153,7 +148,6 @@ class _TestResCompany(Model):
 
     name = Char()
     active = Boolean(default=True)
-    # a stub company is its own root, as a company without a parent is
     root_id = Many2one("res.company", compute="_compute_root_id")
 
     def _compute_root_id(self) -> None:
@@ -169,8 +163,6 @@ _FALLBACK_MODELS = (
 
 
 class InMemorySavepoint:
-    # a snapshot of the dict storage stands in for SAVEPOINT; rolling back restores
-    # it and drops the ORM caches, as the flushing savepoint does on PostgreSQL
     __slots__ = (
         "_cr",
         "_flush",
@@ -211,8 +203,6 @@ class InMemorySavepoint:
         rollback_commit_hooks(self._hook_marks)
         self._cr.storage.restore(self._snapshot)
         if (transaction := self._cr.transaction) is not None:
-            # as on PostgreSQL, in both modes: an ormcache group cleared and
-            # refilled inside holds values read from the rows just restored
             _clear_invalidated_caches(transaction.registry, self._generation_before)
             if self._flush:
                 transaction.clear()
@@ -243,9 +233,6 @@ class InMemoryCursor(BaseCursor):
         super().__init__()
         self.dbname = registry.db_name
         self.storage = DictBackend()
-        # SQL.inlined renders literals against the connection; without one
-        # psycopg renders them generically, which the compiled statement the
-        # in-memory backend never runs can carry
         self._cnx = None
         self.transaction = Transaction(registry, storage=self.storage)
         self._fixtures: dict[
@@ -261,9 +248,6 @@ class InMemoryCursor(BaseCursor):
         prepare: bool | None = None,
     ) -> None:
         key = str(query)
-        # a fixture registered as (query, params) answers only that exact
-        # execution; a str-only fixture answers the text whatever the params,
-        # as before, but says so when params were dropped on the floor
         rows = None
         if params is not None:
             rows = self._fixtures.get((key, tuple(params)))
@@ -298,9 +282,6 @@ class InMemoryCursor(BaseCursor):
 
     @property
     def connection(self) -> None:
-        # the DB-API name for a cursor's connection: there is none, and psycopg
-        # quotes a literal without one (SQL.inlined); a caller wanting the
-        # connection's members fails on None, which is as loud as it was
         return self._cnx
 
     @property
@@ -314,8 +295,6 @@ class InMemoryCursor(BaseCursor):
         return self._last_result[0] if self._last_result else None
 
     def fetchmany(self, size: int = 0) -> list[tuple[Any, ...]]:
-        # psycopg substitutes the cursor's arraysize (default 1) for a
-        # falsy size instead of answering no rows
         return self._last_result[: size or 1]
 
     _DICT_API_UNSUPPORTED = (
@@ -385,8 +364,6 @@ class ModelRegistry(
     file_store = FILE_STORE
     settings = SYSTEM_SETTINGS
     locale = LOCALE
-    # A database's own ilike normalizer (Registry.get_ilike_normalizer(env)), when a
-    # differential wants this registry to fold exactly as that database does.
     ilike_normalizer: Callable[[str], str] | None = None
     cache_epoch: int = 0
 
@@ -457,8 +434,6 @@ class ModelRegistry(
             raise
 
     def __contains__(self, model_name: object) -> bool:
-        # Mapping's default asks __getitem__, whose miss on ir.access is a
-        # NotImplementedError, not a KeyError
         return model_name in self.models
 
     def record_xmlids_written(self, xml_ids: Iterable[str]) -> None:
@@ -516,11 +491,6 @@ class ModelRegistry(
             generation[cache_name] = generation.get(cache_name, 0) + 1
 
     def is_an_ordinary_table(self, model: Any) -> bool:
-        # the live registry asks pg_class for relkind='r'. There is no
-        # catalog here, but the facts that decide it are on the model: an
-        # abstract model has no table at all, and one that is not `_auto` or
-        # carries a `_table_query` is backed by a view, which is what
-        # `_registry_schema` itself uses to decide who gets a table
         return (
             bool(model._auto)
             and not model._abstract
@@ -578,9 +548,6 @@ class ModelRegistry(
 
     @staticmethod
     def _modules_of(model_defs: Iterable[type[BaseModel]]) -> set[str]:
-        # only the modules the named classes declare: once a test imports
-        # odoo.addons.base.models, "base" holds every base model class and an
-        # implicit "base" would drag them into every registry of the process
         modules: set[str] = set()
         for cls in model_defs:
             module = getattr(cls, "_module", None)
@@ -594,8 +561,6 @@ class ModelRegistry(
         model_defs: list[type[BaseModel]],
         isolated: bool = False,
     ) -> list[type[BaseModel]]:
-        # an isolated registry holds these classes and nothing else of their
-        # module, so a test can pick real addon models without their neighbours
         modules = () if isolated else cls._modules_of(model_defs)
 
         all_defs: list[Any] = []
@@ -725,8 +690,6 @@ class _InstalledLangs(Locale):
 
 
 def module_model_classes(module: str) -> list[type[BaseModel]]:
-    # the model definition classes a module's `models` package binds, in
-    # import order, so a registry can be built from an addon's real models
     import importlib
     import pkgutil
 
@@ -748,10 +711,6 @@ def module_model_classes(module: str) -> list[type[BaseModel]]:
 def load_module_data(
     env: Environment, module: str, *, skip: Collection[str] = ()
 ) -> list[str]:
-    # the module's data files in manifest order through the same converter
-    # the loader uses; what the loader itself creates before any file (the
-    # module rows and categories of `Module.update_list`) is not here, so a
-    # file naming those is passed in `skip`
     from odoo.modules.module import get_manifest
     from odoo.tools.convert import convert_file
 
@@ -781,8 +740,6 @@ def model_test_env(
 ) -> Any:
     if registry is None:
         registry = ModelRegistry(model_classes, db_name=db_name)
-    # a reused registry keeps its own locale only for this call: without a
-    # restore, a later model_test_env without langs would still see them
     had_own_locale = "locale" in registry.__dict__
     prev_locale = registry.__dict__.get("locale")
     if langs:
@@ -812,10 +769,6 @@ def model_test_env(
         yield env
         failed = False
     finally:
-        # every test leaves the caches agreeing with the rows, as
-        # TransactionCase asserts against PostgreSQL; a test that plants
-        # cache values or expects a refused flush opts out, and a failing
-        # test reports its own error
         if langs:
             if had_own_locale:
                 registry.locale = cast("Locale", prev_locale)
@@ -828,8 +781,6 @@ def model_test_env(
 def _reflect_models(
     storage: DictBackend, registry: ModelRegistry, env: Environment
 ) -> None:
-    # the rows init_models reflects on PostgreSQL, so ir.model / ir.model.fields answer
-    # the same questions in memory (defaults, xmlids on fields, selection labels)
     if "ir.model" not in registry or "ir.model.fields" not in registry:
         return
     IrModel = env["ir.model"]
@@ -862,10 +813,6 @@ def _reflect_models(
 
     for model_cls in registry.models.values():
         model = model_cls(env, (), ())
-        # the loader reflects a model once per module that defines or extends
-        # it -- `model._module` is the module being loaded at the time -- so a
-        # module's data file may name `<that module>.model_<slug>`, as web's
-        # report bindings name `web.model_res_company`
         modules = list(
             dict.fromkeys(
                 cls._module
@@ -908,9 +855,6 @@ def _declares_field(
     module: str,
     original: str,
 ) -> bool:
-    # ir.model.fields._reflect_field_params' own rule, so a data file naming
-    # `<module>.field_<model>__<name>` resolves exactly where it would on a
-    # database
     if module == original or module in getattr(field, "_modules", ()):
         return True
     return any(
@@ -926,7 +870,6 @@ def _create_fixtures(storage: DictBackend, registry: ModelRegistry) -> None:
         data["id"] = record_id
         storage.put_rows(table, [data])
 
-    # the rows base/data/base_data.sql seeds before any XML loads, with their xmlids
     xmlids: list[tuple[str, str]] = []
 
     if "res.currency" in registry:
@@ -961,8 +904,6 @@ def _create_fixtures(storage: DictBackend, registry: ModelRegistry) -> None:
         xmlids.append(("main_company", "res.company"))
 
     if "res.users" in registry:
-        # the row base_data.sql bootstraps: the superuser, inactive, with the
-        # login no data file ever claims, so base's own data files load over it
         _insert_row(
             "res_users",
             1,
@@ -974,9 +915,6 @@ def _create_fixtures(storage: DictBackend, registry: ModelRegistry) -> None:
                 "partner_id": 1,
             },
         )
-        # every database carries a second user beside the superuser, and a
-        # DB-free test asking for `env(user=2)` names it; its create_uid would
-        # break the foreign key of every row it writes if it did not exist
         _insert_row(
             "res_users",
             2,

@@ -42,9 +42,6 @@ class MrpProduction(models.Model):
         return dict(action, context=context)
 
     def set_lot_producing(self) -> tuple:
-        """Special mo barcode action to produce and return SN/lot data compatible with barcode app.
-        Helps avoid doing extra db calls within barcode that using action_generate_serial
-        would require."""
         action = self.action_generate_serial()
         if action and action["type"] == "ir.actions.act_window":
             return None, action
@@ -78,23 +75,19 @@ class MrpProduction(models.Model):
         ]
 
     def _get_stock_barcode_data(self):
-        # Avoid to get the products full name because code and name are separate in the barcode app.
         self = self.with_context(display_default_code=False)
         move_lines = self.move_raw_line_ids | self.move_byproduct_line_ids
         lots = move_lines.trace_id | self.trace_producing_ids
         owners = move_lines.owner_id
-        # Fetch all implied products in `self`
         products = (
             self.product_id | (self.move_raw_ids + self.move_byproduct_ids).product_id
         )
         moves = self.move_raw_ids | self.move_byproduct_ids
 
         uoms = products.uom_id | move_lines.product_uom_id | products.uom_ids
-        # If UoM setting is active, fetch all UoM's data.
         if self.env.user.has_group("base.group_uom"):
             uoms |= self.env["uom.uom"].search([])
 
-        # Fetch `stock.location`
         source_locations = self.env["stock.location"].search(
             [("id", "child_of", self.location_src_id.ids)]
         )
@@ -109,7 +102,6 @@ class MrpProduction(models.Model):
             | self.production_location_id
         )
 
-        # Fetch `stock.package` and `stock.package.type` if group_tracking_lot.
         packages = self.env["stock.package"]
         package_types = self.env["stock.package.type"]
         if self.env.user.has_group("stock.group_tracking_lot"):
@@ -174,13 +166,11 @@ class MrpProduction(models.Model):
 
     @api.model
     def filter_on_barcode(self, barcode):
-        """Searches ready MOs for the scanned product or order."""
         barcode_type = None
         nomenclature = self.env.company.sudo().barcodes_config_id.nomenclature_id
         if nomenclature.is_gs1_nomenclature:
             parsed_results = nomenclature.parse_barcode(barcode)
             if parsed_results:
-                # filter with the last feasible rule
                 for result in parsed_results[::-1]:
                     if result["type"] in ("product", "package"):
                         barcode_type = result["type"]
@@ -219,7 +209,7 @@ class MrpProduction(models.Model):
                     additional_context["search_default_move_raw_ids"] = barcode
         if (
             not barcode_type and not mo_nums
-        ):  # Nothing found yet, try to find picking by name.
+        ):
             mo_nums = self.search_count(base_domain + [("name", "=", barcode)])
             additional_context["search_default_name"] = barcode
 

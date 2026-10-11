@@ -13,7 +13,6 @@ class StockBarcodeDraftMixin(models.AbstractModel):
     _name = "stock.barcode.draft.mixin"
     _description = "Barcode operation created by its first save"
 
-    # The values a client may hand back for a record it has not created yet.
     _barcode_draft_fields = frozenset()
     _barcode_client_action = None
 
@@ -42,8 +41,6 @@ class StockBarcodeDraftMixin(models.AbstractModel):
     @api.model
     def _get_stock_barcode_draft_data(self, draft):
         values, _confirm = self._parse_barcode_draft(draft)
-        # `new()` takes no defaults, `create()` does: without them a draft read differently
-        # from the record its first save creates (a batch had no state).
         defaults = self.default_get(list(self._fields))
         data = self.new({**defaults, **values})._get_stock_barcode_data()
         for record in data["records"].get(self._name, []):

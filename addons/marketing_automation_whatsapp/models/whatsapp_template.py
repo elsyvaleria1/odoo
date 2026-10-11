@@ -18,12 +18,6 @@ class WhatsappTemplate(models.Model):
     _inherit = "whatsapp.template"
 
     def _prepare_additional_button_vals(self, button):
-        """
-        Checks if the provided `website_url` is already being tracked. This is important due to
-        the added functionality that allows users to send tracked links as website buttons (see _acquire_url_button_data).
-        Additionally, local variables that aren't sent from Meta need to be synchronized to prevent
-        their values from being lost.
-        """
         button_url_data = super()._prepare_additional_button_vals(button)
         if "sequence" not in button or button["button_type"] != "url":
             return {}
@@ -39,7 +33,6 @@ class WhatsappTemplate(models.Model):
         return button_url_data
 
     def _prepare_send_template_data(self, record, whatsapp_message) -> tuple:
-        """Override to create link tracker before whatsapp messages are sent"""
 
         template_vals, attachment = super()._prepare_send_template_data(
             record, whatsapp_message
@@ -56,7 +49,6 @@ class WhatsappTemplate(models.Model):
             "campaign_id": campaign_id.utm_campaign_id.id,
         }
 
-        # check button links
         buttons_by_sequence = self.button_ids.grouped("sequence")
         for component in template_vals["components"]:
             if component["type"] == "button" and component["sub_type"] == "url":
@@ -73,7 +65,6 @@ class WhatsappTemplate(models.Model):
                         self.env["link.tracker"].get_base_url(), ""
                     ).lstrip("/")
 
-        # check variable links
         url_template_parameters = [
             parameter
             for component in template_vals["components"]
@@ -102,7 +93,6 @@ class WhatsappTemplate(models.Model):
     def _acquire_url_button_data(
         self, button: WhatsappTemplateButton
     ) -> dict[str, str]:
-        """Return button component for template registration to whatsapp"""
         button_data = super()._acquire_url_button_data(button)
         if button.url_type == "tracked":
             base_url = self.env["link.tracker"].get_base_url().strip("/")

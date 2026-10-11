@@ -24,9 +24,6 @@ class ProductTrace(models.Model):
 
     @api.model
     def _get_domain_outgoing_move_lines(self) -> Domain:
-        # An unbuild line links the lot it consumes to the component lots it
-        # releases, and the production that made the lot links them the other
-        # way: following it would credit each lot with the other's deliveries.
         return super()._get_domain_outgoing_move_lines() & Domain(
             "move_id.unbuild_id", "=", False
         )

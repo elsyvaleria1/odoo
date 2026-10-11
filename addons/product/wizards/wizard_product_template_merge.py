@@ -19,9 +19,6 @@ class WizardProductTemplateMerge(models.TransientModel):
     _inherit = ["mixin.merge"]
     _description = "Merge Products Wizard"
 
-    # Products carry more cross-model side effects to reconcile per merge
-    # (variants, attribute lines, pricelist rules) than a plain partner merge,
-    # so the batch is kept small; re-open the wizard to merge more.
     _MAX_MERGE_SIZE = 3
 
     _GROUPBY_ALLOWED_FIELDS = frozenset(
@@ -393,7 +390,6 @@ class WizardProductTemplateMerge(models.TransientModel):
                 expression = column
             group_expressions.append(expression)
             if field in self._CASE_INSENSITIVE_GROUPBY_FIELDS:
-                # a blank code or name is no identity: it groups nothing
                 filters.append(SQL("trim(%s) <> ''", expression))
             else:
                 filters.append(SQL("%s IS NOT NULL", expression))
@@ -481,7 +477,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         model_mapping = self._get_exclusion_models()
 
         self.env.flush_all()
-        self.env.cr.execute(query)  # noqa: E8501  built by _generate_query
+        self.env.cr.execute(query)
 
         line_vals_list = []
         for min_id, template_ids in self.env.cr.fetchall():

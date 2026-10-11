@@ -4,7 +4,7 @@ import contextlib
 from datetime import datetime
 from itertools import chain
 from xml.etree import (
-    ElementTree,  # noqa: ICN001  used as `ElementTree` throughout this module
+    ElementTree,
 )
 
 from odoo import api, fields, models
@@ -18,8 +18,6 @@ _debug = DebugLog(__name__)
 class DocumentsDocument(models.Model):
     _inherit = "document.document"
 
-    # once we parsed the XML to know if a PDF is embedded inside,
-    # we store that information so we don't need to parse it again
     has_embedded_pdf = fields.Boolean(
         string="Has Embedded PDF",
         compute="_compute_has_embedded_pdf",
@@ -31,7 +29,6 @@ class DocumentsDocument(models.Model):
         super()._compute_thumbnail_source_checksum()
 
     def _get_thumbnail_kind(self) -> str | bool:
-        # an XML invoice carrying a PDF shows that PDF, as a PDF file would
         if self.has_embedded_pdf:
             return "pdf"
         return super()._get_thumbnail_kind()
@@ -47,14 +44,6 @@ class DocumentsDocument(models.Model):
             document.has_embedded_pdf = bool(document._extract_pdf_from_xml())
 
     def _extract_pdf_from_xml(self):
-        """Parse the XML file and return the PDF content if one is found.
-
-        For some invoice files (in the XML format), we can have a PDF embedded inside
-        in base 64. We want to be able to preview it in documents.
-
-        We support the UBL format
-        > https://docs.peppol.eu/poacc/billing/3.0/syntax/ubl-invoice
-        """
         self.check_singleton()
 
         if not self.mimetype:
@@ -72,9 +61,6 @@ class DocumentsDocument(models.Model):
 
         raw = self.with_context(bin_size=False).raw
         if not raw:
-            # An attachment whose bytes live in cloud storage reads as False
-            # here rather than as an empty string, and there is nothing to
-            # search for an embedded PDF in.
             _debug.logic("embedded_pdf_skipped", reason="no_raw", document=self)
             return False
         try:
@@ -83,7 +69,6 @@ class DocumentsDocument(models.Model):
             _debug.logic("embedded_pdf_skipped", reason="not_utf8", document=self)
             return False
 
-        # quick filters, to not parse the XML most of the cases
         if (
             "EmbeddedDocumentBinaryObject" not in xml_file_content
             and "Attachment" not in xml_file_content
@@ -92,7 +77,7 @@ class DocumentsDocument(models.Model):
             return False
 
         try:
-            tree = ElementTree.fromstring(xml_file_content)  # noqa: S314  ElementTree resolves no external entity, and expat caps entity expansion
+            tree = ElementTree.fromstring(xml_file_content)
         except ElementTree.ParseError:
             _debug.logic("embedded_pdf_skipped", reason="unparseable", document=self)
             return False
@@ -101,11 +86,10 @@ class DocumentsDocument(models.Model):
         attachment_nodes = chain(attachment_nodes, tree.iterfind(".//{*}Attachment"))
 
         for attachment_node in attachment_nodes:
-            if len(attachment_node):  # the node has children
+            if len(attachment_node):
                 continue
 
             with contextlib.suppress(TypeError, binascii.Error):
-                # check file header in case many file are embedded in the XML
                 if (
                     pdf_attachment_content := base64.b64decode(
                         attachment_node.text + "===="
@@ -118,11 +102,6 @@ class DocumentsDocument(models.Model):
         return False
 
     def _is_in_journal_folder(self) -> bool:
-        """Whether this document sits in a folder some journal syncs into.
-
-        A document there was filed by the journal synchronization and follows
-        the journal; one anywhere else was filed on purpose and stays put.
-        """
         self.check_singleton()
         if not self.folder_id:
             return False
@@ -170,8 +149,6 @@ class DocumentsDocument(models.Model):
         move = None
         invoices = self.env["account.move"]
 
-        # 'entry' is handled outside the document loop because the returned
-        # actions can differ (cf. l10n_be_soda)
         if move_type == "entry":
             _debug.logic("account_move_create", by="entry_batch", documents=self)
             return journal_id.create_document_from_attachment(
@@ -210,10 +187,6 @@ class DocumentsDocument(models.Model):
 
         _debug.lifecycle("account_moves_created", documents=self, moves=invoices)
 
-        # When running an action on several documents, this method is called in a
-        # loop (because of the "multi" server action). When it is the case, we try
-        # to redirect to a list of all created invoices instead of just the last
-        # one, using the context.
         context = dict(self.env.context, default_move_type=move_type)
         documents_active_ids = context.get("documents_active_ids")
         if (
@@ -247,9 +220,6 @@ class DocumentsDocument(models.Model):
         return action
 
     def account_create_account_bank_statement(self, journal_id=None):
-        # It is not possible to link the doc
-        # to the newly created entry as they can be more than one. But importing
-        # many times the same bank statement is later checked.
         default_journal = journal_id or self.env["account.journal"].search(
             [
                 *self.env["account.journal"]._check_company_domain(self.env.company),

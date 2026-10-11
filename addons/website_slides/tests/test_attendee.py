@@ -839,7 +839,6 @@ class TestAttendeeCase(HttpCaseWithUserPortal):
         )
 
     def test_a_zero_completion_keeps_its_aria_value(self):
-        # a training slide other than a video is completed by merely opening it
         self.slide.write(
             {
                 "slide_category": "video",

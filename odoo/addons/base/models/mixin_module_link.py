@@ -93,10 +93,10 @@ class MixinModuleLink(models.AbstractModel):
 
     @api.depends("linked_id.state")
     def _compute_state(self) -> None:
-        unknown = 0  # debuglog
+        unknown = 0
         for link in self:
             link.state = link.linked_id.state or "unknown"
-            unknown += not link.linked_id  # debuglog
+            unknown += not link.linked_id
         _debug.perf.count(
             "link_states_computed", model=self._name, links=len(self), unknown=unknown
         )

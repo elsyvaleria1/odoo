@@ -29,7 +29,6 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
         with Form(cls.mo) as mo_form:
             mo_form.qty_producing = 1
 
-        # Register a productivity of one hour
         cls.workorder = cls.mo.workorder_ids[0]
         cls.env["mrp.workcenter.productivity"].create(
             {
@@ -49,22 +48,15 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
         self.assertEqual(self.mo.move_finished_ids[0].value, value)
 
     def test_workcenter_employee_cost_impacting_on_valuation_1(self):
-        """
-        When the employee's *cost per hour* is set on the employee's form, it
-        must override the workcenter's *employee cost per hour* for AVCO/FIFO
-        products. However, if the employee's cost per hour is zero, then the
-        workcenter's employee cost per hour should be used on valuations.
-        """
         self.mo.button_mark_done()
         self.assert_employee_cost(100)
 
     def test_workcenter_employee_cost_impacting_on_valuation_2(self):
-        # 1.2) hourly_cost not set on employee's form
         self.employee.hourly_cost = 0
         self.assertEqual(self.workorder.time_ids.total_cost, 50)
         self.workorder.button_finish()
         self.mo.button_mark_done()
-        self.assert_employee_cost(50)  # must use workcenter's costs_hour
+        self.assert_employee_cost(50)
 
     def test_workcenter_employee_cost_impacting_on_valuation_3(self):
         self.dining_table.categ_id = self.category_avco
@@ -79,7 +71,7 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
         self.assertEqual(self.workorder.time_ids.total_cost, 50)
         self.workorder.button_finish()
         self.mo.button_mark_done()
-        self.assert_employee_cost(50)  # must use workcenter's costs_hour
+        self.assert_employee_cost(50)
 
     def test_workcenter_employee_cost_impacting_on_valuation_5(self):
         self.dining_table.categ_id = self.category_avco
@@ -112,7 +104,6 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
         employee1.hourly_cost = 15
         workorder = self.mo.workorder_ids[1]
         ymd = {"year": 2020, "month": 1, "day": 1}
-        # emp1 works (08:00 until 09:30) and (11:30 until 12:00)
         self.env["mrp.workcenter.productivity"].create(
             [
                 {
@@ -129,7 +120,6 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
                 )
             ]
         )
-        # emp2 works (08:30:00 until 09:30) and (10:30 until 11:30)
         self.env["mrp.workcenter.productivity"].create(
             [
                 {
@@ -152,23 +142,13 @@ class TestMrpWorkorderHrValuation(TestBomPriceOperationCommon):
                 )
             ]
         )
-        # => workcenter is operated from: [08:00 - 09:30] and [10:30 - 12:00] = 180 minutes
-        # we should get a workcenter cost like: ($35 / hour * 1.5 hours) + ($35 / hour * 1.5 hours) = $105.0
         workorder.button_finish()
         self.mo.button_mark_done()
-        # SVL value derived like:
-        #   emp1 total cost        + emp2 total cost        + workcenter costs
-        # = ($15 / hour * 2 hours) + ($40 / hour * 2 hours) + ($105.0)
-        # = $215.0
         self.assertEqual(workorder._get_cost(), 215.0)
 
     def test_wip_accounting_01(self):
-        """
-        This test runs a WIP accounting for a workorder currently runnning.
-        """
         with freeze_time("2027-09-01 10:00:00"):
             mo = self._create_mo(self.bom_1, 1)
-        # post a WIP for a valid MO - no WO time completed, but time running, no valuated components consumed => nothing to debit/credit
         with freeze_time("2027-10-01 10:00:00"):
             mo.workorder_ids[0].start_employee(self.employee.id)
         with freeze_time("2027-10-01 10:30:00"):

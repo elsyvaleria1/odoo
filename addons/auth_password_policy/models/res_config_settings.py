@@ -13,5 +13,4 @@ class ResConfigSettings(models.TransientModel):
 
     @api.onchange("minlength")
     def _on_change_mins(self) -> None:
-        """Password lower bounds must be naturals"""
         self.minlength = max(0, self.minlength or 0)

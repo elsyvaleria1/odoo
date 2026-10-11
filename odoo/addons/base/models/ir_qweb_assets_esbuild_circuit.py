@@ -21,9 +21,6 @@ class IrQweb(models.AbstractModel):
     _esbuild_circuit = _esbuild_circuit
     _ESBUILD_COOLDOWN_S: float = 60.0
     _ESBUILD_EXTENDED_COOLDOWN_S: float = 600.0
-    # a decline (no lock cursor, lock timeout, a build that could not be
-    # saved) is contention, not a broken compiler: back off briefly, never
-    # escalate to the extended cooldown
     _ESBUILD_DECLINE_COOLDOWN_S: float = 30.0
 
     def _get_esbuild_config(self):
@@ -51,9 +48,6 @@ class IrQweb(models.AbstractModel):
     def _get_esbuild_cooldown_key(self, bundle: str) -> tuple[str, ...]:
         test = _module.current_test
         if test and test is not True:
-            # the circuit is process-wide and declines open it: under a test
-            # it is scoped to that test, so one test's decline cannot keep
-            # every later test of the run off the compile path
             return (self.env.cr.dbname, bundle, test.id())
         return (self.env.cr.dbname, bundle)
 
@@ -143,12 +137,6 @@ class IrQweb(models.AbstractModel):
     def _acquire_esbuild_lock(
         self, bundle: str, cr=None, timeout_s: float | None = None
     ) -> None:
-        """Serialize compilation without changing the page's module layout.
-
-        Contention is not a compiler failure: switching just one bundle to
-        unbundled modules can instantiate dependencies a second time on a page
-        whose other bundles have already inlined them.
-        """
         if cr is None:
             cr = self.env.cr
         started = time.monotonic()

@@ -148,8 +148,6 @@ class TestGeoIndexForeignTable(TransactionCase):
         self.assertFalse(_is_foreign_table(self.env.cr, "no_such_table_xyz"))
 
     def test_create_geo_index_skips_foreign_table(self):
-        # A foreign table cannot be indexed, so the upgrade must warn and go
-        # on instead of aborting on CREATE INDEX.
         indexname = geo_index_name("res_partner", "the_point_foreign")
         with (
             patch.object(geo_fields, "_is_foreign_table", return_value=True),

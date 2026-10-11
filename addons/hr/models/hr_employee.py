@@ -108,7 +108,7 @@ class HrEmployee(models.Model):
         comodel_name="resource.resource",
         required=True,
     )
-    name = fields.Char(  # noqa: E8529  identity column of a delegated record: 33 files join hr_employee in raw SQL and read it, and it leads _order and name search
+    name = fields.Char(
         related="partner_id.name",
         string="Employee Name",
         inherited=True,
@@ -117,14 +117,14 @@ class HrEmployee(models.Model):
         readonly=False,
         tracking=True,
     )
-    active = fields.Boolean(  # noqa: E8529  identity column of a delegated record: every search filters on it, 33 files join hr_employee in raw SQL
+    active = fields.Boolean(
         related="resource_id.active",
         string="Active",
         default=True,
         store=True,
         readonly=False,
     )
-    user_id = fields.Many2one(  # noqa: E8529  UNIQUE (user_id, company_id) partial
+    user_id = fields.Many2one(
         comodel_name="res.users",
         related="resource_id.user_id",
         string="User",
@@ -1141,8 +1141,6 @@ class HrEmployee(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_change_request_reviewed(self):
-        # the change requests go with the employee by an SQL cascade, which skips
-        # their own refusal to be deleted while reviewed: it is asked here
         reviewed = (
             self.env["hr.employee.change.request"]
             .search([("employee_id", "in", self.ids)])
@@ -1193,14 +1191,9 @@ class HrEmployee(models.Model):
             sudo=True,
         )
         self._write_check_field_access(address_vals)
-        # The address is a child partner, which the HR groups may not write. The field
-        # groups checked above, as the caller, are the policy; the partner write is not.
         super(HrEmployee, self.sudo()).write(address_vals)
 
     def _create_parent_records(self, data_list) -> None:
-        # The party is created or updated with the employee. hr.employee's create access
-        # and the field groups create() checked on every value decide it, so an HR officer
-        # needs no Contact Creation right of their own, as upstream's work contact did not.
         Party = self.env["res.partner"].sudo()
         party_vals_list = [
             data["inherited"].pop("res.partner", {}) for data in data_list
@@ -1269,13 +1262,6 @@ class HrEmployee(models.Model):
         return new_vals_list
 
     def _compute_salary_bank_account_ids(self) -> None:
-        """Project the allocations onto the accounts this reader may see.
-
-        A stored many2many filtered itself: its read is a search on the
-        comodel, so access domains dropped what the reader cannot see and the
-        field simply came back shorter. This projection has to say so out
-        loud, or it hands out records whose first dereference raises.
-        """
         for employee in self:
             accounts = employee.salary_allocation_ids.bank_account_id
             employee.salary_bank_account_ids = accounts._filtered_access("read")
@@ -1293,19 +1279,9 @@ class HrEmployee(models.Model):
         ]
 
     def _inverse_salary_bank_account_ids(self) -> None:
-        """Reconcile the allocation rows with the accounts just written.
-
-        This is what `_compute_salary_distribution` did over a JSON dict, and it
-        keeps the same two rules, because they are the behaviour and not the
-        storage: a removed account's percentage folds into the first remaining
-        percentage row, and accounts added share what percentage is left, the
-        last one taking the rounding remainder so the total stays exactly 100.
-        """
         Allocation = self.env["hr.employee.bank.allocation"]
         for employee in self:
             wanted = employee.salary_bank_account_ids
-            # a create hands the inverse its Command.create accounts as new
-            # records, where a write has already created them
             drafts = wanted.filtered(lambda account: not account.id)
             if drafts:
                 wanted -= drafts
@@ -1318,8 +1294,6 @@ class HrEmployee(models.Model):
                 [by_account[i] for i in wanted.ids if i in by_account]
             )
             visible = current.bank_account_id._filtered_access("read")
-            # an account the writer could not see was never in the value they
-            # wrote, so its absence from it is not a removal
             removed = (current - kept).filtered_domain(
                 [("bank_account_id", "in", visible.ids)]
             )
@@ -1328,7 +1302,6 @@ class HrEmployee(models.Model):
             freed = sum(removed.filtered("amount_is_percentage").mapped("amount"))
             removed.unlink()
 
-            # percentage rows first, then by sequence -- the order the JSON sorted by
             ordered = kept.sorted(
                 key=lambda a: (not a.amount_is_percentage, a.sequence)
             )
@@ -1388,8 +1361,6 @@ class HrEmployee(models.Model):
 
     @api.depends("salary_bank_account_ids")
     def _compute_has_multiple_bank_accounts(self) -> None:
-        # over the accounts and not the allocations: an unsaved form carries
-        # the accounts the user just picked and no allocation row yet
         for employee in self:
             employee.has_multiple_bank_accounts = (
                 len(employee.salary_bank_account_ids) > 1
@@ -1405,7 +1376,7 @@ class HrEmployee(models.Model):
                 )
             else:
                 if states is None:
-                    states = self.env["res.country.state"].search([])  # noqa: E8507 - computed once, on first need
+                    states = self.env["res.country.state"].search([])
                 employee.allowed_country_state_ids = states
 
     @api.depends("distance_home_work", "distance_home_work_unit")
@@ -1608,8 +1579,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _access_field_class(self, field):
-        # what only HR officers read and write of an employee: the party
-        # fields that are not public, and four the chatter would leak
         if field.name in self._DIRTY_HACK_PRIVATE_FIELDS or (
             self._is_party_field(field.name)
             and not self._is_public_party_field(field.name)
@@ -1662,7 +1631,6 @@ class HrEmployee(models.Model):
         return Domain("partner_id.email", operator, value)
 
     def _inverse_work_email(self) -> None:
-        # Employee editors may maintain the work contact without Contacts rights.
         for employee in self:
             employee.partner_id.sudo().email = employee.work_email
 
@@ -1694,8 +1662,6 @@ class HrEmployee(models.Model):
 
     @api.depends("version_ids.date_start", "version_ids.date_end")
     def _compute_first_contract_date(self) -> None:
-        # compute_sudo: `_get_first_version_date` refuses a non-HR reader, and a
-        # stored compute runs for whoever writes the version.
         for employee in self:
             employee.first_contract_date = employee._get_first_version_date()
 
@@ -1786,7 +1752,6 @@ class HrEmployee(models.Model):
         )
 
     def _version_id_sql(self, field, alias: str, query: (Query | None) = None) -> SQL:
-        # the current version's row: what the compute answers, as a column
         return self._field_to_sql(alias, "current_version_id", query)
 
     def _get_version(self, date=None):
@@ -1930,9 +1895,6 @@ class HrEmployee(models.Model):
             if name not in version_fields
         }
         if employee_vals:
-            # Employee-level values describe the person as of the version's
-            # date: a version in effect writes them on the party now, a future
-            # one carries them until its date arrives.
             if date <= fields.Date.today():
                 _debug.pipeline(
                     "version_employee_vals",
@@ -2175,7 +2137,6 @@ class HrEmployee(models.Model):
         working_now = []
         for (tz, calendar), employees in employees_by_schedule.items():
             if calendar.schedule_type == "fully_flexible":
-                # Any hour is theirs, so no hour is one they are expected in.
                 continue
             zone = timezone(tz)
             work_intervals = calendar._work_intervals_batch(
@@ -2217,8 +2178,6 @@ class HrEmployee(models.Model):
 
     def _inverse_nationality_country_id(self) -> None:
         for employee in self:
-            # through nationality_ids, read like the other private fields: the
-            # facet itself is hidden by base's guard from all but its subject
             rows = employee.nationality_ids
             held = rows._filter_held()
             country = employee.nationality_country_id
@@ -2238,9 +2197,6 @@ class HrEmployee(models.Model):
                 values = {"date_lost": False, "sequence": first_sequence}
                 command = Command.update(first.id, values)
             elif held:
-                # the one field names one nationality: a new country corrects
-                # the first, whose basis and proof were the other country's;
-                # a second one is acquired on the nationality rows
                 command = Command.update(
                     held[:1].id,
                     {
@@ -2269,8 +2225,6 @@ class HrEmployee(models.Model):
         ]
 
     def _get_nationality_declared_to(self, country):
-        """The nationality a declaration to ``country``'s authority states: its
-        own, when the person holds it, else their first."""
         self.check_singleton()
         if country in self.nationality_country_ids:
             return country
@@ -2293,14 +2247,7 @@ class HrEmployee(models.Model):
     @_debug.perf.timed
     @api.depends("user_id.im_status", "active")
     def _compute_hr_presence_state(self) -> None:
-        # sudo: `is_in_contract` reaches the version through a field owned by
-        # hr.group_hr_manager, while hr_presence_state is read by everyone.
-        # Resolved once for the whole recordset rather than per record inside
-        # the filter, so the versions are fetched in a single batch.
         in_contract_ids = set(self.sudo().filtered("is_in_contract")._ids)
-        # Only employees under contract whose company uses login-based presence
-        # control consult `working_now_list` below. Anyone else is out of
-        # working hours whatever their session says.
         employee_to_check_working = self.filtered(
             lambda e: (
                 e.id in in_contract_ids
@@ -2357,13 +2304,6 @@ class HrEmployee(models.Model):
     def _compute_birthday_public_display_string(self) -> None:
         for employee in self:
             if employee.birthday and employee.birthday_public_display:
-                # Not `strftime("%d %B")`: that takes the month name from the
-                # locale of the server PROCESS, so every reader saw an English
-                # month whatever their own language. `format_date` resolves the
-                # language from the environment instead. The field is not
-                # stored, so each request recomputes it for whoever is reading --
-                # within one transaction the first read still wins the cache,
-                # because the value is cached per record and not per language.
                 employee.birthday_public_display_string = format_date(
                     self.env, employee.birthday, date_format="dd MMMM"
                 )
@@ -2577,11 +2517,6 @@ class HrEmployee(models.Model):
         )
 
     def _is_public_party_field(self, fname):
-        """A party field a public-profile reader may read through the employee:
-        one the partner stores as a column, which the reader could read on the
-        partner itself, plus the work channels every internal user reads off a
-        colleague. Other computed and x2many party fields reach into models the
-        reader has no claim on and stay behind the profile."""
         field = self._fields[fname]
         return self._is_party_field(fname) and (
             fname.startswith(("image_", "avatar_"))
@@ -2612,7 +2547,7 @@ class HrEmployee(models.Model):
             ] += company
 
         for notice_period, period_companies in companies_by_contract_period.items():
-            employees_contract_expiring += self.env["hr.employee"].search(  # noqa: E8507 - one query per distinct notice period; companies sharing one were merged above
+            employees_contract_expiring += self.env["hr.employee"].search(
                 [
                     ("company_id", "in", period_companies.ids),
                     ("contract_date_start", "!=", False),
@@ -2626,7 +2561,7 @@ class HrEmployee(models.Model):
                 ]
             )
         for notice_period, period_companies in companies_by_permit_period.items():
-            employees_work_permit_expiring += self.env["hr.employee"].search(  # noqa: E8507 - one query per distinct notice period; companies sharing one were merged above
+            employees_work_permit_expiring += self.env["hr.employee"].search(
                 [
                     ("company_id", "in", period_companies.ids),
                     ("work_permit_expiration_date", ">=", today),
@@ -2739,10 +2674,6 @@ class HrEmployee(models.Model):
 
     @api.depends("salary_allocation_ids.sequence", "salary_bank_account_ids")
     def _compute_primary_bank_account_id(self) -> None:
-        # `_order = "sequence, id"` on the allocation, so the first row is the
-        # lowest sequence -- the `min(...)` the JSON needed is the ordering now.
-        # An unsaved form has the accounts and no rows, so it falls back to the
-        # first account the user picked.
         for employee in self:
             allocations = employee.salary_allocation_ids
             employee.primary_bank_account_id = (
@@ -2863,7 +2794,7 @@ class HrEmployee(models.Model):
                 barcode = "041" + "".join(choice(digits) for _ in range(9))
                 if barcode in minted:
                     continue
-                if not Employee.search_count([("barcode", "=", barcode)], limit=1):  # noqa: E8507 - draws a random barcode until a free one turns up
+                if not Employee.search_count([("barcode", "=", barcode)], limit=1):
                     break
             else:
                 raise UserError(
@@ -3007,7 +2938,6 @@ class HrEmployee(models.Model):
         )
 
     def _get_unusual_days(self, date_from, date_to=None):
-        """Use the employee's schedule, or the current company for an empty recordset."""
         if self:
             self.check_singleton()
         date_from_date = datetime.strptime(date_from, "%Y-%m-%d %H:%M:%S").date()

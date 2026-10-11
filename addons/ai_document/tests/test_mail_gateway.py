@@ -32,9 +32,6 @@ class TestMailGateway(TestAiDocumentsCommon, MailCommon):
             )
 
         self.assertFalse(_mocked_request_llm.called)
-        # The gateway files the mail itself as an ARCHIVED document and its
-        # attachments as active ones, so counting them needs active_test=False --
-        # the same context `document`'s own mail-gateway tests use.
         documents = (
             self.env["document.document"]
             .with_context(active_test=False)

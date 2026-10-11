@@ -12,16 +12,14 @@ from odoo.addons.payment_flutterwave.tests.common import FlutterwaveCommon
 class TestPaymentTransaction(FlutterwaveCommon):
     @freeze_time(
         "2011-11-02 12:00:21"
-    )  # Freeze time for consistent singularization behavior.
+    )
     def test_reference_is_singularized(self):
-        """Test that transaction references are unique at the provider level."""
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.flutterwave.code
         )
         self.assertEqual(reference, "tx-20111102120021")
 
     def test_no_item_missing_from_rendering_values(self):
-        """Test that the rendered values are conform to the transaction fields."""
         tx = self._create_transaction(flow="redirect")
         with patch(
             "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
@@ -32,7 +30,6 @@ class TestPaymentTransaction(FlutterwaveCommon):
 
     @mute_logger("odoo.addons.payment.models.payment_transaction")
     def test_no_input_missing_from_redirect_form(self):
-        """Test that the `api_url` key is not omitted from the rendering values."""
         tx = self._create_transaction(flow="redirect")
         with patch(
             "odoo.addons.payment_flutterwave.models.payment_transaction.PaymentTransaction"
@@ -48,8 +45,6 @@ class TestPaymentTransaction(FlutterwaveCommon):
         self.assertDictEqual(form_info["inputs"], {})
 
     def test_apply_updates_confirms_transaction(self):
-        """Test that the transaction state is set to 'done' when the payment data indicate a
-        successful payment."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates(self.verification_data["data"])
         self.assertEqual(tx.state, "done")

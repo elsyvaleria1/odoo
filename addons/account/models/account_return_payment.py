@@ -124,8 +124,6 @@ class AccountReturnPayment(models.Model):
         ).settlement_account_id
 
     def _get_open_settlement_lines(self):
-        """The return's settlement lines this payment pays, each tax its own
-        when the return settles per concept."""
         self.check_singleton()
         return self.return_id._get_settlement_lines().filtered(
             lambda line: (
@@ -156,8 +154,6 @@ class AccountReturnPayment(models.Model):
         }
         if not self._is_per_concept():
             return {**vals, "destination_account_id": self._get_settlement_account().id}
-        # one payment pays every concept: its counterpart settles the first
-        # line, and a line of its own settles each other one on its account
         first, *others = self._get_open_settlement_lines().sorted("id")
         return {
             **vals,

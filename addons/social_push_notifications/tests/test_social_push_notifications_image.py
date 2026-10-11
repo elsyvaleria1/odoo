@@ -23,7 +23,6 @@ class SocialPushNotificationsImageCase(HttpCase):
         )
         image = Image.open(io.BytesIO(response.content))
         width, _ = image.size
-        # If Social Post isn't in posted or posting state, a placeholder should be rendered
         self.assertTrue(width > 1)
 
         social_post.write({"state": "posted"})
@@ -33,5 +32,4 @@ class SocialPushNotificationsImageCase(HttpCase):
         )
         image = Image.open(io.BytesIO(response.content))
         width, _ = image.size
-        # As Social Post is posted now, the pixel should be rendered
         self.assertTrue(width == 1)

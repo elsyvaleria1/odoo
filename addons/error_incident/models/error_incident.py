@@ -20,7 +20,6 @@ SOURCES = [
     ("client", "Browser"),
 ]
 
-# What the error dialog follows, pushed to the users an incident affected.
 JOURNEY_NOTIFICATION = "error_incident/journey"
 JOURNEY_STEPS = ("recorded", "acknowledged", "resolved")
 _JOURNEY_STEP_OF_STATE = {"acknowledged": "acknowledged", "resolved": "resolved"}
@@ -45,8 +44,6 @@ class ErrorIncident(models.Model):
     _description = "Error Incident"
     _inherit = ["mixin.mail.thread"]
     _order = "date_last_seen desc, id desc"
-    # An error belongs to the server, not to a company; the users it affected
-    # are whose it is.
     _access_anchors = frozendict({"company": "", "owner": "user_ids"})
 
     name = fields.Char(
@@ -171,16 +168,12 @@ class ErrorIncident(models.Model):
     def action_reopen(self) -> None:
         resolved = self.filtered(lambda incident: incident.incident_state == "resolved")
         self.write({"incident_state": "acknowledged", "rule_id": False})
-        # a person reopening a resolved incident says it came back, like a
-        # recurrence the server saw would
         resolved._on_regressed()
 
     def action_set_aside(self) -> None:
         self.incident_state = "set_aside"
 
     def _journey(self) -> Journey:
-        """Where the incident stands, in the dialog's terms: the steps it walks,
-        the one reached, and what cut it short, if anything."""
         self.check_singleton()
         state = self.incident_state
         return {
@@ -199,9 +192,6 @@ class ErrorIncident(models.Model):
         users: models.BaseModel | None = None,
         occurrence_ref: str | None = None,
     ) -> None:
-        """Push each incident's journey to the internal users it affected, or to
-        ``users``; naming the occurrence lets the dialog that shows it, opened
-        before the occurrence was written, recognise its own."""
         for incident in self:
             recipients = incident.user_ids if users is None else users
             recipients = recipients.filtered(lambda user: not user.share)
@@ -219,8 +209,6 @@ class ErrorIncident(models.Model):
             )
 
     def _notify_fixed(self) -> None:
-        """Tell every internal user an incident affected that it is fixed, in
-        their own language, wherever they are in the web client."""
         for incident in self:
             for user in incident.user_ids.filtered(lambda user: not user.share):
                 in_their_language = incident.with_context(lang=user.lang).env
@@ -236,18 +224,8 @@ class ErrorIncident(models.Model):
             _debug.logic("incident.fixed_sent", incident=incident.id)
 
     def _capture(self, payload: dict[str, Any]) -> int:
-        """Record one occurrence; return its incident's id.
-
-        Locks the incident's row, so concurrent occurrences of one fingerprint
-        count up one after the other, and a resolved incident that occurs
-        again is reopened exactly once.
-
-        :param payload: what the capture hook saw -- see `_capture_payload`.
-        """
         now = payload["date"]
         uid = self.env.uid
-        # On the cron and job paths this runs inside a live transaction: what
-        # the ORM still holds must reach the table before the SQL reads it.
         self.flush_model()
         incident_id, previous_state = self._lock_incident(payload)
         if incident_id is None:
@@ -295,8 +273,6 @@ class ErrorIncident(models.Model):
                 )
             else:
                 incident_id, previous_state = self._lock_incident(payload)
-        # a browser's report can be made up by anyone signed in: it records an
-        # occurrence, but does not reopen a resolved incident on its own
         regressed = previous_state == "resolved" and payload["source"] != "client"
         self.env.cr.execute(
             SQL(
@@ -342,8 +318,6 @@ class ErrorIncident(models.Model):
             incident._notify_journey(users=incident.user_ids - hit_by)
             incident._on_regressed()
         elif previous_state == "resolved" and not incident.browser_reported_again:
-            # once per resolution: a browser's reports, any number of them,
-            # are one question for a person
             incident.browser_reported_again = True
             incident.message_post(
                 body=self.env._(
@@ -361,8 +335,7 @@ class ErrorIncident(models.Model):
         return incident_id
 
     def _on_regressed(self) -> None:
-        """It occurred again after it was resolved -- once per reopening, not
-        per occurrence. A hook for the modules that act on a regression."""
+        pass
 
     def _lock_incident(self, payload: dict[str, Any]) -> tuple[int | None, str | None]:
         self.env.cr.execute(
@@ -393,12 +366,6 @@ class ErrorIncident(models.Model):
         }
 
     def _capture_quietly(self, payload: dict[str, Any]) -> int | None:
-        """`_capture`, for the error path: it never raises.
-
-        It runs while something else has already gone wrong; a failure to
-        record must not hide, replace or worsen the one being recorded. The
-        system records it, whoever's code failed.
-        """
         try:
             with self.env.cr.savepoint():
                 system = api.Environment(self.env.cr, SUPERUSER_ID, {})
@@ -419,11 +386,6 @@ def capture_payload(
     request_ref: str | None = None,
     occurrence_ref: str | None = None,
 ) -> dict[str, Any]:
-    """Everything recorded about one occurrence, taken while it is at hand.
-
-    Built from the exception alone, without the database: on the request path
-    it is taken before the cursor is handed back, and written after.
-    """
     kind = fp.exception_type(exc)
     where = fp.origin(exc)
     title = f"{kind} in {where.function or '?'}"
@@ -456,8 +418,6 @@ def client_capture_payload(
     user_id: int,
     location: str | None = None,
 ) -> dict[str, Any]:
-    """`capture_payload` for an error the browser reports: its stack, located
-    in our sources through the bundles' source maps."""
     error = read_client_error(env, stack)
     origin = error.origin
     title = error.kind

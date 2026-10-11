@@ -69,7 +69,6 @@ class PaymentTransaction(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override of `payment` to set the Redsys-specific `provider_reference`."""
         transactions = super().create(vals_list)
         for tx in transactions.filtered(lambda t: t.provider_code == "redsys"):
             tx.provider_reference = tx.reference
@@ -83,18 +82,6 @@ class PaymentTransaction(models.Model):
         references_in_use: set[str] | None = None,
         **kwargs,
     ) -> str:
-        """Override of `payment` to ensure that Redsys' requirements for references are satisfied.
-
-        Redsys' requirements for transaction are as follows:
-        - References can only be made of alphanumeric characters.
-        - References must be minimum 9 characters and at most 12 characters long.
-
-        :param str provider_code: The code of the provider handling the transaction.
-        :param str prefix: The custom prefix used to compute the full reference.
-        :param str separator: The custom separator used to separate the prefix from the suffix.
-        :return: The unique reference for the transaction.
-        :rtype: str
-        """
         if provider_code != "redsys":
             return super()._get_unique_reference(
                 provider_code,
@@ -104,8 +91,6 @@ class PaymentTransaction(models.Model):
                 **kwargs,
             )
 
-        # Generate the prefix as the timestamp of the current time (10 chars).
-        # This leaves just enough room for the separator and the suffix in case of collisions.
         prefix = str(int(fields.Datetime.now().timestamp()))[-10:]
 
         return super()._get_unique_reference(
@@ -117,14 +102,6 @@ class PaymentTransaction(models.Model):
         )
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return Redsys-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`.
-
-        :param dict processing_values: The generic processing values of the transaction.
-        :return: The dict of provider-specific rendering values.
-        :rtype: dict
-        """
         if self.provider_code != "redsys":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -145,11 +122,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _redsys_prepare_merchant_parameters(self) -> dict:
-        """Create the merchant parameters payload based on the transaction values.
-
-        :return: The merchant parameters.
-        :rtype: str
-        """
         converted_amount = payment_utils.major_to_minor_currency_units(
             self.amount, self.currency_id
         )
@@ -163,7 +135,7 @@ class PaymentTransaction(models.Model):
             "DS_MERCHANT_TERMINAL": self.provider_id.redsys_merchant_terminal,
             "DS_MERCHANT_ORDER": self.reference,
             "DS_MERCHANT_MERCHANTURL": webhook_url,
-            "DS_MERCHANT_TRANSACTIONTYPE": "0",  # Authorization
+            "DS_MERCHANT_TRANSACTIONTYPE": "0",
             "DS_MERCHANT_URLOK": return_url,
             "DS_MERCHANT_URLKO": return_url,
             "DS_MERCHANT_PAYMETHODS": const.PAYMENT_METHODS_MAPPING.get(
@@ -184,13 +156,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "redsys":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("Ds_Order")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "redsys":
             return super()._extract_amount_data(payment_data)
 
@@ -208,18 +178,15 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment' to update the transaction based on the payment data."""
         if self.provider_code != "redsys":
             return super()._apply_updates(payment_data)
 
-        # Update the payment method.
         card_brand = payment_data.get("Ds_Card_Brand")
         payment_method = self.env["payment.method"]._get_from_code(
             card_brand, mapping=const.PAYMENT_METHODS_MAPPING
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         status_code = payment_data["Ds_Response"]
         if status_code in const.PAYMENT_STATUS_MAPPING["done"]:
             self._set_done()

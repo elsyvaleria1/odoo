@@ -79,13 +79,12 @@ class TestPayslipAttendance(HrWorkEntryAttendanceCommon):
                     "employee_id": self.employee.id,
                     "check_in": datetime(
                         2024, 1, 30, 23, 30, 0
-                    ),  # 2024-01-31 00-30-00 in UTC+1
+                    ),
                     "check_out": datetime(2024, 1, 31, 7, 30, 0),
                 },
             ]
         )
 
-        # Without using `_get_attendance_by_payslip`
         domain = [
             ("employee_id", "=", self.employee.id),
             ("check_in", "<=", self.payslip.date_to),
@@ -96,16 +95,12 @@ class TestPayslipAttendance(HrWorkEntryAttendanceCommon):
         )
         self.assertEqual(attendances, attendance_A)
         self.assertNotIn(attendance_B, attendances)
-        # With using `_get_attendance_by_payslip`:
         attendance_by_payslip = self.payslip.with_context(
             tz="Europe/Brussels"
         )._get_attendance_by_payslip()
         self.assertEqual(attendance_by_payslip[self.payslip], attendance_A)
 
     def test_get_attendance_from_payslip_overnight_start(self):
-        """An attendance starting the day before the payslip period but
-        ending inside it (an overnight shift) must still be attributed to
-        the payslip."""
         overnight = self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,

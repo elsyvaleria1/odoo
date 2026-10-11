@@ -25,7 +25,6 @@ class EventMailSlot(models.Model):
         required=True,
         ondelete="cascade",
     )
-    # contact and status
     last_registration_id = fields.Many2one(
         comodel_name="event.registration",
         string="Last Attendee",

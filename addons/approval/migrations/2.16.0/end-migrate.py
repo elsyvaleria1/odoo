@@ -2,11 +2,6 @@ from odoo import SUPERUSER_ID, api
 
 
 def migrate(cr, version):
-    # requests confirmed before the snapshot recorded each step's id are judged by
-    # the steps as they are now; record them so a later edit of a step decides none.
-    # An end script: resolving a step's people reads fields that modules loaded
-    # after approval add (approval_hr's requester_manager_user_id), which a
-    # post script, run while approval itself loads, does not have yet
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})

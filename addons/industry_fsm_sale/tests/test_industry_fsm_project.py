@@ -8,45 +8,16 @@ from .common import TestFsmFlowSaleCommon
 @tagged("-at_install", "post_install")
 class TestIndustryFsmProject(TestFsmFlowSaleCommon):
     def test_timesheet_product_is_required(self):
-        """Test if timesheet product is required in billable fsm project
-
-        To do this we need to check if an exception is raise when the timesheet
-        product is False/None and the project config has this props:
-            - allow_billable=True,
-            - allow_timesheets=True,
-            - is_fsm=True.
-
-        Test Case:
-        =========
-        Remove the timesheet product in the billable fsm project and check if an exception is raise.
-        """
         with self.assertRaises(ValidationError):
             self.fsm_project.write({"timesheet_product_id": False})
 
     def test_convert_project_into_fsm_project(self):
-        """Test when we want to convert a project to fsm project
-
-        Normally, this project should be billable and its pricing type should be task_rate.
-
-        Test Case:
-        =========
-        1) Convert a non billable project to a fsm project and check if
-            - allow_billable=True,
-            - pricing_type="task_rate",
-            - is_fsm=True,
-            - allow_material=True,
-        2) Convert a project with pricing_type="employee_rate"
-        3) Convert a project with pricing_type="project_rate"
-        """
-        # 1) Convert a non billable project to a fsm project
         self.project_non_billable.write({"is_fsm": True})
         self.assertTrue(self.project_non_billable.allow_billable)
         self.assertTrue(self.project_non_billable.is_fsm)
         self.assertTrue(self.project_non_billable.allow_material)
         self.assertEqual(self.project_non_billable.pricing_type, "task_rate")
 
-        # 2) Convert a project with pricing_type="employee_rate"
-        # Configuration of the employee rate project before convert it into fsm project
         self.project_employee_rate = self.project_task_rate.copy(
             {
                 "name": 'Project with pricing_type="employee_rate"',
@@ -63,17 +34,13 @@ class TestIndustryFsmProject(TestFsmFlowSaleCommon):
                 ],
             }
         )
-        # Convert the project into fsm project
         self.project_employee_rate.write({"is_fsm": True})
-        # Check if the configuration is the one expected
         self.assertTrue(self.project_employee_rate.is_fsm)
         self.assertTrue(self.project_employee_rate.allow_material)
         self.assertEqual(self.project_employee_rate.pricing_type, "employee_rate")
         self.assertFalse(self.project_employee_rate.sale_order_id)
         self.assertFalse(self.project_employee_rate.sale_line_id)
 
-        # 3) Convert a project with pricing_type="project_rate"
-        # Configuration of the "project rate" project before convert it into fsm project
         self.project_project_rate = self.project_task_rate.copy(
             {
                 "name": 'Project with pricing_type="project_rate"',
@@ -88,22 +55,7 @@ class TestIndustryFsmProject(TestFsmFlowSaleCommon):
         self.assertFalse(self.project_project_rate.sale_line_id)
 
     def test_fsm_project_form_view(self):
-        """Test if in the form view of the fsm project, the user can always edit the price unit in the mapping
-
-        Test Case:
-        =========
-        1) Use the Form class to create a fsm project with a form view
-        2) Define this project as fsm project (is_fsm = True)
-        3) Create an employee mapping in this project
-        4) Check if the _compute_price_unit set the correct price unit
-        5) Change manually the price unit in this mapping and check if the edition is correctly done as expected
-        6) Save the creation and check the value in the pricing_type, partner_id and employee mapping price_unit fields.
-        """
         with self.debug_mode():
-            # <div class="col-lg-6 o_setting_box" groups="base.group_no_one">
-            #     <div class="o_setting_left_pane">
-            #         <field name="is_fsm"/>
-            #     </div>
             with Form(
                 self.env["project.project"].with_context({"tracking_disable": True})
             ) as project_form:
@@ -192,14 +144,13 @@ class TestIndustryFsmProject(TestFsmFlowSaleCommon):
             self.task.sale_line_id, "The fsm task should have a SOL linked."
         )
 
-        self.env.flush_all()  # It needed to have the result of `action_fsm_validate` in db before executing the query to fetch SOL linked to the project
+        self.env.flush_all()
         self.assertEqual(
             self.fsm_project._get_sale_order_items(), self.task.sale_line_id
         )
         self.assertEqual(self.fsm_project._get_sale_orders(), self.task.sale_order_id)
 
     def test_projects_to_make_billable(self):
-        """Test the projects fetched in the post init are not fsm ones"""
         Project = self.env["project.project"]
         Task = self.env["project.task"]
         _dummy, project2, project3 = Project.create(

@@ -12,7 +12,6 @@ class OnboardingOnboarding(models.Model):
         string="Name of the onboarding",
         translate=True,
     )
-    # One word identifier of the onboarding panel, used as its key by the modules that render it.
     route_name = fields.Char(
         string="One word name",
         required=True,
@@ -74,9 +73,6 @@ class OnboardingOnboarding(models.Model):
         "progress_ids", "progress_ids.company_id", "step_ids", "step_ids.is_per_company"
     )
     def _compute_is_per_company(self) -> None:
-        # Once an onboarding is made "per-company", there is no drawback to simply still consider
-        # it per-company even when if its last per-company step is unlinked. This allows to avoid
-        # handling the merging of existing progress (step) records.
 
         onboardings_with_per_company_steps_or_progress = self.filtered(
             lambda o: (
@@ -113,7 +109,6 @@ class OnboardingOnboarding(models.Model):
                 onboarding.is_onboarding_closed = False
 
     def write(self, vals):
-        """Recompute progress step ids if new steps are added/removed."""
         already_linked_steps_by_id = {
             onboarding.id: onboarding.step_ids for onboarding in self
         }
@@ -124,32 +119,19 @@ class OnboardingOnboarding(models.Model):
             )
         )
         if changed:
-            # Split progress into per-company records if `step_ids` made `changed` become
-            # per-company (mirrors the same repair triggered from the step side in
-            # `onboarding.onboarding.step.write()`).
             changed.action_refresh_progress_ids()
             changed.progress_ids._recompute_progress_step_ids()
         return res
 
     def action_close(self):
-        """Close the onboarding panel."""
         self.current_progress_id.action_close()
 
     @api.model
     def action_close_panel(self, xmlid) -> None:
-        """Close the onboarding panel identified by its `xmlid`.
-
-        If not found, quietly do nothing.
-        """
         if onboarding := self.env.ref(xmlid, raise_if_not_found=False):
             onboarding.action_close()
 
     def action_refresh_progress_ids(self) -> None:
-        """Re-initialize onboarding progress records (after step is_per_company change).
-
-        Meant to be called when `is_per_company` of linked steps is modified (or per-company
-        steps are added to an onboarding).
-        """
         onboardings_to_refresh_progress = self.filtered(
             lambda o: (
                 o.is_per_company and o.progress_ids and not o.progress_ids.company_id
@@ -162,7 +144,6 @@ class OnboardingOnboarding(models.Model):
         self.current_progress_id.action_toggle_visibility()
 
     def _search_or_create_progress(self):
-        """Create Progress record(s) as necessary for the context."""
         onboardings_without_progress = self.filtered(
             lambda onboarding: not onboarding.current_progress_id
         )

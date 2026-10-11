@@ -20,8 +20,6 @@ class TestPosClientFields(TransactionCase):
         )
 
     def test_the_flags_are_still_the_computed_ones_this_module_installs(self):
-        """If a flag goes back to being stored the test above passes for a
-        different reason, so pin why the declaration is needed at all."""
         for name in self.CONVERTED:
             field = self.env["pos.config"]._fields[name]
             self.assertTrue(

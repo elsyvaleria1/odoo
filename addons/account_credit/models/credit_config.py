@@ -113,10 +113,6 @@ class CreditConfig(models.Model):
 
     @api.model
     def _sync_credit_folder_grants(self) -> None:
-        # the credit groups reach each company's credit folder, live down its
-        # tree, for who holds them in that company: viewers view, users (and
-        # administrators, who imply them) edit. One cause for every company,
-        # since companies share a folder
         self.flush_model(["credit_folder_id", "company_id"])
         self.env.cr.execute(
             "SELECT DISTINCT credit_folder_id, company_id FROM credit_config"

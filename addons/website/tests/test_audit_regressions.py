@@ -258,8 +258,6 @@ class TestVisitorPageSearch(TransactionCase):
         page = self.env["website.page"].search([], limit=1)
         self.assertTrue(page, "need at least one page")
         visitor = self.env["website.visitor"].create({"access_token": "a" * 32})
-        # a visit is a track with a url; page_ids is computed over those, and
-        # its search reads the same tracks
         self.env["website.track"].create(
             {"visitor_id": visitor.id, "page_id": page.id, "url": page.url}
         )
@@ -342,8 +340,6 @@ class TestControllerPageSlugPerWebsite(TransactionCase):
         )
 
     def test_a_visitor_reads_a_published_page_whose_view_it_may_see(self):
-        # a controller page binds its view's read permission (plan section
-        # 3.1): a visitor reads the page when the view's visibility lets it
         website = self.env["website"].browse(1)
         page = self._make_page(website, "audit_visitor_page")
         page.website_published = True

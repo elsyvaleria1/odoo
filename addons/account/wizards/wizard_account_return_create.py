@@ -136,15 +136,13 @@ class WizardAccountReturnCreate(models.TransientModel):
         generic_tax_report = self.env.ref("account.generic_tax_report")
 
         for wizard in self:
-            # For the company country, takes all the return types
             wizard_country_return_types = country_return_type_map[
                 wizard.company_id.tax_config_id.account_fiscal_country_id
             ][wizard.category]
 
-            # For the foreign fiscal positions, takes only the VAT return types
             foreign_vat_fpos_countries = (
                 self.env["account.fiscal.position"]
-                .search(  # noqa: E8507 - a transient wizard opened on one company
+                .search(
                     [
                         *self.env["account.fiscal.position"]._check_company_domain(
                             wizard.company_id
@@ -161,12 +159,10 @@ class WizardAccountReturnCreate(models.TransientModel):
                     wizard.category
                 ].filtered(lambda rt: rt.report_id.root_report_id == generic_tax_report)
 
-            # Finally, includes the return types not linked to any country
             return_types_without_country = country_return_type_map[
                 self.env["res.country"]
             ][wizard.category]
 
-            # remove the generic tax report return type if company country tax return type available
             has_current_country_tax_return_type = wizard_country_return_types.filtered(
                 lambda rt: rt.report_id.root_report_id == generic_tax_report
             )
@@ -251,7 +247,6 @@ class WizardAccountReturnCreate(models.TransientModel):
                 )
                 continue
 
-            # checks date_from and date_to against the return type period boundaries
             date_pointer = wizard.date_from
             first_period = True
             while date_pointer <= wizard.date_to:
@@ -263,7 +258,6 @@ class WizardAccountReturnCreate(models.TransientModel):
                 date_pointer = period_end + relativedelta(days=1)
                 first_period = False
 
-            # Validate the last period ends exactly at date_to
             if date_pointer - relativedelta(days=1) != wizard.date_to:
                 wizard.show_warning_wrong_dates = True
 
@@ -271,7 +265,7 @@ class WizardAccountReturnCreate(models.TransientModel):
             intersecting = (
                 self.env["account.return"]
                 .sudo()
-                .search_fetch(  # noqa: E8507 - a transient wizard opened on one company
+                .search_fetch(
                     wizard._get_domain_existing_returns(company),
                     ["date_from", "date_to"],
                 )

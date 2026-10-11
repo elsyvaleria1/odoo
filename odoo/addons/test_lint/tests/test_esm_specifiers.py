@@ -11,10 +11,8 @@ from . import _js_sources, _specifier_renames, lint_case
 _logger = logging.getLogger(__name__)
 
 _REMOTE_PREFIXES = ("http://", "https://", "data:", "blob:")
-# Standalone pages that render their own import map: the bare specifiers it
-# maps resolve there and nowhere else.
 _PAGE_MAPPED_BARE = {
-    "web/src/public/database_manager": {"bootstrap"},  # its .qweb.html
+    "web/src/public/database_manager": {"bootstrap"},
 }
 
 
@@ -29,12 +27,10 @@ def _unresolved_specifiers(sources):
     }
     broken = []
     for source_addon, path, source in sources:
-        # JSDoc import() expressions resolve types, not runtime JS assets.
         for spec in _js_sources.specifiers(source):
             if spec in external_libs() or spec.startswith(_REMOTE_PREFIXES):
                 continue
             if spec.startswith("/"):
-                # an absolute URL (/web/static/lib/...) is served as is
                 addon, _, relative = spec.lstrip("/").partition("/")
                 root = addon_paths.get(addon)
                 if root is None or not (root / relative).is_file():
@@ -45,7 +41,6 @@ def _unresolved_specifiers(sources):
                     _js_sources.module_key(source_addon, path), ()
                 )
                 if spec not in page_mapped:
-                    # only an import map resolves a bare specifier
                     broken.append(
                         (path, spec, "bare specifier outside esm.external_libs")
                     )
@@ -166,7 +161,6 @@ class TestEsmSpecifiers(lint_case.LintCase):
         )
 
     def test_the_rename_table_points_at_live_modules(self):
-        # a stale row would send the next upstream import to a dead path
         for old, new in _specifier_renames.RENAMED.items():
             with self.subTest(old=old):
                 self.assertEqual(

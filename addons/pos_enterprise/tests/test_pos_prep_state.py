@@ -18,7 +18,6 @@ class TestPosPrepState(TestPoSCommon):
         )
 
     def _make_prep_state(self, stage):
-        """Build the pos order -> prep order -> prep line -> prep state chain."""
         self.config.open_ui()
         session = self.config.current_session_id
         order = self.env["pos.order"].create(
@@ -64,15 +63,11 @@ class TestPosPrepState(TestPoSCommon):
         return order.lines[0], prep_order, state
 
     def test_order_line_time_sentinels_default(self):
-        """Check that a fresh pos order line carries the -1 time sentinels the
-        preparation flow relies on."""
         pos_line, _prep_order, _state = self._make_prep_state(self.stages[0])
         self.assertEqual(pos_line.preparation_time, -1)
         self.assertEqual(pos_line.service_time, -1)
 
     def test_change_state_status_records_and_resets_preparation_time(self):
-        """Check that marking a first-stage line done records the preparation
-        time and that undoing it restores the -1 sentinel."""
         pos_line, _prep_order, state = self._make_prep_state(self.stages[0])
 
         state.change_state_status({str(state.id): False}, str(self.display.id))
@@ -83,20 +78,12 @@ class TestPosPrepState(TestPoSCommon):
         self.assertTrue(state.todo)
         self.assertEqual(pos_line.preparation_time, -1)
 
-    # NOTE: no test pins the second-last-stage preparation_time recording —
-    # the `len(pdis_state.stage_id) > 1` guards in pos_prep_state.py are dead
-    # code (the method is called record by record, so stage_id is a 0-or-1
-    # recordset and the comparison can never be true). Task t24230 tracks the
-    # fix instead of freezing the broken contract here.
 
     def test_display_without_stages_is_refused(self):
-        """Check that removing every stage from the display is refused."""
         with self.assertRaisesRegex(ValidationError, "minimum of one step"):
             self.display.stage_ids = [Command.clear()]
 
     def test_change_state_stage_to_last_records_service_and_completion(self):
-        """Check that moving a line to the last stage records the service time,
-        resets todo and writes the order completion time."""
         pos_line, prep_order, state = self._make_prep_state(self.stages[0])
 
         state.change_state_stage(

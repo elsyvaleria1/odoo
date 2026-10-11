@@ -100,7 +100,6 @@ class TestDriverHash(TransactionCase):
         Event = self.env["stock.trip.offline.event"]
         self.assertEqual(len(results), len(samples))
         for sample, result in zip(samples, results, strict=True):
-            # The server hashes what it parses from the JSON the phone sends.
             with self.subTest(event=sample["client_uuid"]):
                 wire = json_loads(result["wire"])
                 self.assertEqual(result["hash"], Event._trip_hash_event(wire))
@@ -235,7 +234,6 @@ class TestDriverScreen(TripFixtureMixin, HttpCase):
         self.assertEqual(package["chain_head"], chain_hash)
 
     def test_the_driver_works_two_stops_from_the_screen(self):
-        """The real page in Chrome: a stray lot is flagged, two stops are chained."""
         delivered = self._delivery(5)
         absent = self._delivery(2)
         trip = self._trip(delivered | absent)
@@ -329,7 +327,6 @@ class TestDriverScreen(TripFixtureMixin, HttpCase):
         self.assertFalse(absent.batch_id)
         events = trip.trip_offline_event_ids.sorted("id")
         self.assertEqual(events.mapped("state"), ["applied", "applied"])
-        # Chained on the phone, verified by the server.
         self.assertEqual(events[1].prev_hash, events[0].event_hash)
         self.assertFalse(trip.trip_offline_chain_broken)
         self.assertTrue(all(events.mapped("device_uuid")))

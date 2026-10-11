@@ -54,7 +54,6 @@ class AccountRoot(models.Model):
 
     @api.model
     def _from_account_code(self, code) -> Self:
-        """Return the account.root record for an account code's first two characters."""
         return self.browse(code and code[:2])
 
     def _compute_root(self) -> None:

@@ -4,7 +4,6 @@ from odoo import api, fields, models
 
 from .stock_picking_batch import HARSH_DRIVING_EVENT
 
-# Harsh driving this close to an incident is shown on it.
 INCIDENT_EVENT_WINDOW = timedelta(minutes=15)
 
 
@@ -28,7 +27,6 @@ class StockTripIncident(models.Model):
         return incidents
 
     def _update_from_gps(self) -> None:
-        """Place the incident where the GPS was, and note harsh driving near it."""
         self.check_singleton()
         vehicle = self.batch_id.vehicle_id
         if not vehicle.resource_id._gps_device_ids():

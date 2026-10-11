@@ -11,7 +11,6 @@ class ResCompany(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override to ensure a default exists for all studio-created company/currency fields."""
         companies = super().create(vals_list)
         company_fields = (
             self.env["ir.model.fields"]

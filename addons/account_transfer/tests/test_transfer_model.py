@@ -13,15 +13,11 @@ from odoo.addons.account_transfer.tests.account_transfer_test_classes import (
 )
 
 
-# ############################################################################ #
-#                             FUNCTIONAL TESTS                                 #
-# ############################################################################ #
 @tagged("post_install", "-at_install")
 class TransferModelTestFunctionalCase(AccountAutoTransferTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Model with 4 lines of 20%, 20% is left in origin accounts
         cls.functional_transfer = cls.env["account.transfer.model"].create(
             {
                 "name": "Test Functional Model",
@@ -50,9 +46,7 @@ class TransferModelTestFunctionalCase(AccountAutoTransferTestCase):
             }
         )
         cls.dates = ("2019-01-15", "2019-02-15")
-        # Create one line for each date...
         for date in cls.dates:
-            # ...in each origin account with a balance of 1000.
             for account in cls.origin_accounts:
                 cls._create_basic_move(
                     cls,
@@ -63,10 +57,7 @@ class TransferModelTestFunctionalCase(AccountAutoTransferTestCase):
                 )
 
     def test_lines_on_move(self):
-        # Balance is +8000 in each origin account
-        # 80% is transfered in 4 destination accounts in equal proprotions
         self.functional_transfer.action_perform_auto_transfer()
-        # 1600 is left in each origin account
         for account in self.origin_accounts:
             self.assertEqual(
                 sum(
@@ -76,7 +67,6 @@ class TransferModelTestFunctionalCase(AccountAutoTransferTestCase):
                 ),
                 1600,
             )
-        # 3200 has been transfered in each destination account
         for account in self.destination_accounts:
             self.assertEqual(
                 sum(
@@ -97,13 +87,9 @@ class TransferModelTestFunctionalCase(AccountAutoTransferTestCase):
                         ),
                     ]
                 )
-                # a move line has been created in each account for each date
                 self.assertEqual(len(amls), 1)
 
 
-# ############################################################################ #
-#                                UNIT TESTS                                    #
-# ############################################################################ #
 @tagged("post_install", "-at_install")
 class TransferModelTestCase(AccountAutoTransferTestCase):
     @patch(
@@ -130,15 +116,14 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         self.transfer_model.date_start = datetime.strftime(
             datetime.today() + relativedelta(day=1), "%Y-%m-%d"
         )
-        # - CASE 1 : normal case, acting on current period
         self.transfer_model.action_perform_auto_transfer()
-        patched.assert_not_called()  # create_or_update method should not be called for self.transfer_model as no account_ids and no line_ids
+        patched.assert_not_called()
 
         master_ids, slave_ids = self._create_accounts(1, 2)
         self.transfer_model.write({"account_ids": [Command.link(master_ids.id)]})
 
         self.transfer_model.action_perform_auto_transfer()
-        patched.assert_not_called()  # create_or_update method should not be called for self.transfer_model as no line_ids
+        patched.assert_not_called()
 
         self.transfer_model.write(
             {
@@ -150,9 +135,8 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         )
 
         self.transfer_model.action_perform_auto_transfer()
-        patched.assert_called_once()  # create_or_update method should be called for self.transfer_model
+        patched.assert_called_once()
 
-        # - CASE 2 : "old" case, acting on everything before now as nothing has been done yet
         transfer_model = self.transfer_model.copy()
         transfer_model.write(
             {"date_start": transfer_model.date_start + relativedelta(months=-12)}
@@ -171,7 +155,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
     def test_create_or_update_move_for_period(
         self, patched_get_transfer_move_lines_values
     ):
-        # PREPARATION
         master_ids, _ = self._create_accounts(2, 0)
         next_move_date = self.transfer_model._get_next_move_date(
             self.transfer_model.date_start
@@ -189,7 +172,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             },
         ]
 
-        # There is no existing move, this is a brand new one
         created_move = self.transfer_model._create_or_update_move_for_period(
             self.transfer_model.date_start, next_move_date
         )
@@ -238,7 +220,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             },
         ]
 
-        # Update the existing move but don't create a new one
         amount_of_moves = self.env["account.move"].search_count([])
         amount_of_move_lines = self.env["account.move.line"].search_count([])
         updated_move = self.transfer_model._create_or_update_move_for_period(
@@ -277,12 +258,10 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         )
 
     def test_get_move_for_period(self):
-        # 2019-06-30 --> None as no move generated
         date_to_test = datetime.strptime("2019-06-30", "%Y-%m-%d").date()
         move_for_period = self.transfer_model._get_move_for_period(date_to_test)
         self.assertIsNone(move_for_period, "No move is generated yet")
 
-        # Generate a move
         move_date = self.transfer_model._get_next_move_date(
             self.transfer_model.date_start
         )
@@ -293,7 +272,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
                 "transfer_model_id": self.transfer_model.id,
             }
         )
-        # 2019-06-30 --> None as generated move is generated for 01/07
         move_for_period = self.transfer_model._get_move_for_period(date_to_test)
         self.assertEqual(
             move_for_period,
@@ -301,12 +279,10 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             "Should be equal to the already generated move",
         )
 
-        # 2019-07-01 --> The generated move
         date_to_test += relativedelta(days=1)
         move_for_period = self.transfer_model._get_move_for_period(date_to_test)
         self.assertIsNone(move_for_period, "The generated move is for the next period")
 
-        # 2019-07-02 --> None as generated move is generated for 01/07
         date_to_test += relativedelta(days=1)
         move_for_period = self.transfer_model._get_move_for_period(date_to_test)
         self.assertIsNone(
@@ -355,7 +331,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
     def test_get_next_move_date(self):
         experimentations = {
             (1, "month"): [
-                # date, expected date
                 (self.transfer_model.date_start, "2019-06-30"),
                 (fields.Date.to_date("2019-01-29"), "2019-02-27"),
                 (fields.Date.to_date("2019-01-30"), "2019-02-27"),
@@ -390,7 +365,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
                     % (str(next_date), expected_date_str),
                 )
 
-    # TEST CONSTRAINTS
     def test_check_line_ids_percents(self):
         with self.assertRaises(ValidationError):
             transfer_model_lines = []
@@ -411,7 +385,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             )
 
     def test_unlink_of_transfer_with_no_moves(self):
-        """Deletion of an automatic transfer that has no move should not raise an error."""
 
         self.transfer_model.write(
             {
@@ -429,7 +402,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         self.transfer_model.unlink()
 
     def test_error_unlink_of_transfer_with_moves(self):
-        """Deletion of an automatic transfer that has posted/draft moves should raise an error."""
 
         self.transfer_model.write(
             {
@@ -449,7 +421,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         )
         self.transfer_model.action_enable()
 
-        # Add a transaction on the journal so that the move is not empty
         self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -469,14 +440,12 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             }
         ).action_post()
 
-        # Generate draft moves
         self.transfer_model.action_perform_auto_transfer()
 
         error_message = "You cannot delete a transfer model that has draft moves*"
         with self.assertRaisesRegex(UserError, error_message):
             self.transfer_model.unlink()
 
-        # Post one of the moves
         self.transfer_model.move_ids[0].action_post()
 
         error_message = "You cannot delete a transfer model that has posted moves*"
@@ -484,7 +453,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
             self.transfer_model.unlink()
 
     def test_disable_transfer_when_archived(self):
-        """An automatic transfer in progress should be disabled when archived."""
 
         self.transfer_model.action_enable()
         self.assertEqual(self.transfer_model.state, "in_progress")
@@ -494,7 +462,6 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
 
     @freeze_time("2022-01-01")
     def test_compute_transfer_lines_100_percent_transfer(self):
-        """Transfer 100% of the source account in separate destinations."""
         self.transfer_model.date_start = datetime.strftime(
             datetime.today() + relativedelta(day=1), "%Y-%m-%d"
         )
@@ -533,22 +500,18 @@ class TransferModelTestCase(AccountAutoTransferTestCase):
         self.transfer_model.action_enable()
         self.transfer_model.action_perform_auto_transfer()
         lines = self.transfer_model.move_ids.line_ids
-        # 100% of the total amount
         self.assertAlmostEqual(
             lines.filtered(
                 lambda l: l.account_id == self.company_data["default_account_revenue"]
             ).debit,
             410.34,
         )
-        # 15% of the total amount
         self.assertAlmostEqual(
             lines.filtered(lambda l: l.account_id == slave_ids[0]).credit, 61.55
         )
-        # 42.50% of the total amount
         self.assertAlmostEqual(
             lines.filtered(lambda l: l.account_id == slave_ids[1]).credit, 174.39
         )
-        # the remaining amount of the total amount (42.50%)
         self.assertAlmostEqual(
             lines.filtered(lambda l: l.account_id == slave_ids[2]).credit, 174.4
         )

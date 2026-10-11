@@ -147,9 +147,6 @@ class WizardMrpProductionScheduleUpdateForecast(models.TransientModel):
             )
 
     def _get_suggestion_quantities_for_period_type(self, period_scale=False):
-        """
-        Return a list of quantities, each is a suggestion demand for the matched period of the selected type.
-        """
         suggestion_quantities = []
         years = 0 if self.based_on == "actual_demand" else 1
         date_range = self.mrp_mps_id.company_id._get_date_range(
@@ -172,10 +169,6 @@ class WizardMrpProductionScheduleUpdateForecast(models.TransientModel):
         return suggestion_quantities
 
     def _get_suggestion_quantities_for_period_length(self, period_scale=False):
-        """
-        Return a list of quantities, each is a suggestion demand representing a ratio between
-        the length of the period of the selected type and the length of the demand period.
-        """
         if period_scale == "year":
             multiplier_monthly_demand = 12
         elif period_scale == "month":

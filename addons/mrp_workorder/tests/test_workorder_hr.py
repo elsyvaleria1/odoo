@@ -74,18 +74,16 @@ class TestWorkorderDurationHr(common.TransactionCase):
         )
 
     def test_workorder_duration(self):
-        """Test the duration of workorder is computed based on employee time interval"""
         self.mo.action_confirm()
         wo = self.mo.workorder_ids[0]
         with freeze_time("2027-10-01 10:00:00"):
             wo.start_employee(self.employee_1.id)
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         with freeze_time("2027-10-01 11:00:00"):
             wo.stop_employee([self.employee_1.id])
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         self.assertEqual(wo.duration, 60)
 
-        # add new time interval that overlapped with the previous one
         wo_form = Form(wo)
         with wo_form.time_ids.new() as line:
             line.employee_id = self.employee_2
@@ -95,7 +93,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
         wo_form.save()
         self.assertEqual(wo.duration, 90)
 
-        # add new time interval that not overlapped with the previous ones
         with wo_form.time_ids.new() as line:
             line.employee_id = self.employee_1
             line.date_start = datetime(2027, 10, 1, 12, 30, 0)
@@ -103,7 +100,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
             line.loss_id = self.env.ref("mrp.block_reason7")
         wo_form.save()
         self.assertEqual(wo.duration, 150)
-        # Check that the work order cannot be started when it's finished
         self.mo.qty_producing = 1
         self.env.user.employee_id = self.employee_1
         wo.do_finish()
@@ -112,10 +108,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
             wo.button_start()
 
     def test_allowed_employees_restriction(self):
-        """
-        Ensure that the employee linked to the current user cannot start a work order
-        in a work center where this employee is not authorized to work.
-        """
         self.workcenter.employee_ids = self.employee_1
         self.assertEqual(self.mo.workorder_ids.workcenter_id, self.workcenter)
         self.env.user.employee_id = self.employee_2
@@ -126,9 +118,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
         self.assertEqual(self.mo.workorder_ids.state, "progress")
 
     def test_assigned_employee_workorder_productivity(self):
-        """Ensure that the employee assigned to the work order is the one
-        linked to productivity when validating the MO.
-        """
         self.env.user.employee_ids = [Command.link(self.employee_2.id)]
         self.mo.action_confirm()
         self.mo.workorder_ids.employee_assigned_ids = self.employee_1
@@ -138,8 +127,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
         self.assertEqual(self.mo.workorder_ids.time_ids.employee_id, self.employee_1)
 
     def test_estimated_employee_cost_valuation(self):
-        """Test that operations with 'estimated' cost correctly compute the employee cost.
-        The cost should be equal to workcenter.employee_costs_hour * workorder.duration_expected."""
         self.bom.operation_ids.cost_mode = "estimated"
         self.workcenter.costs_hour = 33
         self.workcenter.employee_costs_hour = 60
@@ -148,7 +135,6 @@ class TestWorkorderDurationHr(common.TransactionCase):
         self.mo.workorder_ids.duration = 10
         self.assertEqual(self.mo.workorder_ids._get_cost(), 93.0)
 
-        # Cost should stay the same for a done MO if nothing else is changed
         self.mo.button_mark_done()
         self.bom.operation_ids.cost_mode = "actual"
         self.workcenter.employee_costs_hour = 99
@@ -219,14 +205,9 @@ class TestWorkorderDurationHr(common.TransactionCase):
         )
 
     def test_button_pending_only_current_employee(self):
-        """
-        Ensure that clicking on Pending stops only the current employee productivity
-        and does not affect other employees working on the same workorder.
-        """
         self.mo.action_confirm()
         wo = self.mo.workorder_ids
 
-        # Create a second user linked to employee_2
         user_2 = self.env["res.users"].create(
             {
                 "name": "Second User",
@@ -236,20 +217,14 @@ class TestWorkorderDurationHr(common.TransactionCase):
                 "employee_id": self.employee_2.id,
             }
         )
-        # Start workorder with employee 1
         self.env.user.employee_id = self.employee_1
         wo.start_employee(self.employee_1.id)
-        # Start workorder with employee 2 (second user)
         wo.with_user(user_2).start_employee(self.employee_2.id)
-        # Ensure both employees are working
         self.assertEqual(len(wo.time_ids), 2)
         self.assertFalse(any(wo.time_ids.mapped("date_end")))
-        # Employee 1 clicks on Pending
         wo.button_pending()
 
         time_emp_1 = wo.time_ids.filtered(lambda t: t.employee_id == self.employee_1)
         time_emp_2 = wo.time_ids.filtered(lambda t: t.employee_id == self.employee_2)
-        # Employee 1 must be stopped
         self.assertTrue(time_emp_1.date_end)
-        # Employee 2 must still be running
         self.assertFalse(time_emp_2.date_end)

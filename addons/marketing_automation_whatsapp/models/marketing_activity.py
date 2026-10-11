@@ -183,7 +183,6 @@ class MarketingActivity(models.Model):
                         message.state = "error"
                         message.failure_type = "phone_invalid"
 
-                # at most 500 messages are sent at one go, so there is no reason to divide them further.
                 messages._send()
 
         except Exception as e:
@@ -231,16 +230,6 @@ class MarketingActivity(models.Model):
         return self._action_view_documents_filtered_wa("replied")
 
     def _action_view_documents_filtered_wa(self, view_filter):
-        """Return an action with a domain tailored to the `view_filter` parameter.
-
-        The domain dynamically includes WhatsApp message states based on `view_filter` values:
-        - 'sent', 'delivered', 'read', 'replied': The filter builds on state progressions, where 'delivered' includes 'sent', etc.
-        - 'clicked': Filters for messages with clicked links.
-        Other values default to all traces.
-
-        :param view_filter:  A filter condition ('sent', 'delivered', 'read', 'replied', 'clicked', etc.).
-        :return: Updated action dictionary with domain and context set according to the filter.
-        """
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "marketing_automation.marketing_participants_action_mail"
         )

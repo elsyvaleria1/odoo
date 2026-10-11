@@ -5,7 +5,7 @@ from typing import Any
 try:
     from blake3 import blake3 as _blake3
 except ImportError:
-    _blake3 = None  # type: ignore[assignment]
+    _blake3 = None
 
 __all__ = [
     "ALGO_TAG",
@@ -41,9 +41,6 @@ if CONTENT_DIGEST_LEN > CONTENT_DIGEST_MAX_LEN:
 _FILE_CHUNK = 1 << 20
 
 
-# one thread: blake3's multi-threaded update() runs on a rayon pool that a
-# forked child inherits without its threads, and the prefork master hashes the
-# bundles it builds before it forks. Many threads saved ~1.4 ms per 8 MB.
 def _prepare_blake3_hasher() -> Any:
     return _blake3(max_threads=1)
 

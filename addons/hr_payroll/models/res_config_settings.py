@@ -31,10 +31,6 @@ class ResConfigSettings(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Amazing workaround: non-stored related fields on company are a BAD idea since the 2 fields
-        # must follow the constraint '_check_valid_reset_date'. The thing is, in case of related
-        # fields, the inverse write is done one value at a time, and thus the constraint is verified
-        # one value at a time... so it is likely to fail.
         for vals in vals_list:
             company = (
                 self.env["res.company"].browse(vals["company_id"])

@@ -19,17 +19,6 @@ class LazadaController(http.Controller):
         auth="user",
     )
     def lazada_return_from_authorization(self, shop, timestamp, sign, code=False):
-        """Handle Lazada authorization callback.
-
-        Processes authorization code and retrieves access tokens.
-
-        :param model("lazada.shop"):shop: Shop to authorize
-        :param int timestamp: Request timestamp
-        :param str sign: Request signature for validation
-        :param str code: Authorization code from Lazada
-        :return: HTTP redirect response
-        :rtype: http.response
-        """
 
         if datetime.fromtimestamp(timestamp, UTC).replace(
             tzinfo=None
@@ -53,12 +42,10 @@ class LazadaController(http.Controller):
                 "Lazada Shop - %(name)s", name=seller_data["name"]
             )
 
-            # Craft the URL of the Lazada Shop form view
             shop_url = f"/odoo/action-sale_lazada.action_lazada_shop_list/{shop.id}"
             return request.redirect(shop_url, local=False)
 
         except utils.LazadaApiError as error:
-            # Log the error for debugging
             error_message = str(error) or request.env._(
                 "An unexpected error occurred during authorization."
             )

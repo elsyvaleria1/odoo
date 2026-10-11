@@ -57,7 +57,6 @@ from .ir_access_convert import (
 
 _logger = logging.getLogger(__name__)
 
-# groups stock Odoo 19.0 declares that this fork declares elsewhere
 LEGACY_GROUP_RENAMES = {
     "api_doc.group_allow_doc": "rpc.group_allow_doc",
     "fleet.fleet_group_manager": "resource_asset_vehicle.fleet_group_manager",
@@ -67,13 +66,11 @@ LEGACY_GROUP_RENAMES = {
     "sales_team.group_sale_salesman": "sale.group_sale_salesman",
     "sales_team.group_sale_salesman_all_leads": "sale.group_sale_salesman_all_leads",
 }
-# groups stock Odoo 19.0 declares that this fork dropped, and why
 LEGACY_GROUPS_REMOVED = {
     "purchase_requisition.group_purchase_alternatives": (
         "purchase alternatives are not a separate group in this fork"
     ),
 }
-# models stock Odoo 19.0 declares under another name here
 LEGACY_MODEL_RENAMES = {
     "crm.lost.reason": "loss.reason",
     "crm.team": "team.team",
@@ -101,7 +98,6 @@ class LegacySources:
 
 
 class _Ref(str):
-    # what ref('x') gives inside an eval: the external id, not a database id
     __slots__ = ()
 
 
@@ -120,7 +116,6 @@ def _commands(value: Any) -> Iterator[tuple[int, Any]]:
 
 
 def _group_refs(value: Any) -> list[str]:
-    # the groups an x2many eval names, applying its commands in order
     groups: list[str] = []
     for code, args in _commands(value):
         if code in (Command.LINK, Command.UPDATE) and args:
@@ -157,7 +152,6 @@ def _noupdate(record: etree._Element) -> bool:
 
 
 def legacy_access_sources(module: str) -> LegacySources:
-    """The ir.model.access lines and ir.rule records a module's data files ship."""
     sources = LegacySources()
     path = get_module_path(module, display_warning=False)
     if not path:
@@ -218,7 +212,6 @@ def legacy_access_sources(module: str) -> LegacySources:
                         else repr(domain),
                         "group_refs": _group_refs(values.get("groups")),
                         "global": _bool(values.get("global"), not values.get("groups")),
-                        # a rule's operations default to all four, as ir.rule's did
                         **{perm: _bool(values.get(perm), True) for perm in _PERMS},
                     }
                 )
@@ -232,10 +225,6 @@ def convert_legacy(
     implications: dict[str, Iterable[str]],
     context_lines: Iterable[dict[str, Any]] = (),
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    """The ir.access rows a module's resolved lines and rules amount to, and
-    what of stock Odoo's check they cannot say. ``context_lines`` are the lines
-    other modules keep on the same models: they pair with the module's rules
-    and yield no row of their own."""
     context = [{**line, "module": None} for line in context_lines]
     converter = _Converter([*lines, *context], rules, implications, None)
     closure = converter.closure
@@ -276,10 +265,8 @@ def convert_legacy(
                 if not shared:
                     continue
                 if rule.group in closure[acl.group]:
-                    # the line's members all hold the rule's group
                     granted[acl.group] |= shared
                 elif acl.group in closure[rule.group]:
-                    # the rule's members all hold the line
                     granted[rule.group] |= shared
                 else:
                     unrelated |= shared
@@ -393,9 +380,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _load_legacy_access(self, module: str, mode: str) -> dict[str, bool]:
-        """Load the rows the stock ir.model.access lines and ir.rule records
-        of ``module``'s data files amount to; answer their external ids, each
-        with whether its file loads it noupdate."""
         sources = legacy_access_sources(module)
         if not sources:
             return {}
@@ -455,7 +439,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _legacy_group_keys(self) -> dict[int, str]:
-        # every group by the external id the converter names it with
         self.env.cr.execute(
             """
             SELECT DISTINCT ON (res_id) res_id, module || '.' || name
@@ -482,8 +465,6 @@ class IrAccess(models.Model):
     def _legacy_context_lines(
         self, module: str, model_names: set[str], group_keys: dict[int, str]
     ) -> list[dict[str, Any]]:
-        # the rows other modules keep that are lines as stock Odoo had them: a
-        # whole-model permission of a group
         rows = self.with_context(active_test=True).search(
             [
                 ("model_id.model", "in", sorted(model_names)),

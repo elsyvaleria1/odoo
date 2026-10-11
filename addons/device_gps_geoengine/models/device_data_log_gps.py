@@ -27,10 +27,6 @@ class DeviceDataLogGps(models.Model):
         self._create_remote_geo_indexes()
         return result
 
-    # A foreign table's spatial index lives on its remote table, which neither
-    # the FDW schema sync nor geoengine creates; without it every map tile
-    # scans the GPS log. Built concurrently so GPS ingestion is not blocked,
-    # and after the commit, which the concurrent build waits for.
     def _create_remote_geo_indexes(self) -> None:
         cr = self.env.cr
         if not fdw.is_foreign(cr, self._table) or not fdw.dblink_available(cr):

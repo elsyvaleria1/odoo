@@ -148,10 +148,8 @@ class SocialPostTemplate(models.Model):
 
     @api.model
     def _message_fields(self) -> dict:
-        """Return the message field per media."""
         return {**super()._message_fields(), "twitter": "twitter_message"}
 
     @api.model
     def _images_fields(self) -> dict:
-        """Return the images field per media."""
         return {**super()._images_fields(), "twitter": "twitter_image_ids"}

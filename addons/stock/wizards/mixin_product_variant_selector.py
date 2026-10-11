@@ -12,14 +12,6 @@ class MixinProductVariantSelector(models.AbstractModel):
     )
 
     def _get_product_variant_selector_defaults(self, fields_list) -> tuple:
-        """Resolve product_tmpl_id/product_id/product_has_variants from the
-        default_product_id/default_product_tmpl_id context keys.
-
-        Returns a (product_tmpl_id, vals) tuple: the resolved
-        product.template record (possibly empty), and a dict of the
-        default_get() values to merge in, gated the same way regardless of
-        whether "product_id" was requested.
-        """
         vals = {}
         product_tmpl_id = self.env["product.template"]
         if self.env.context.get("default_product_id"):

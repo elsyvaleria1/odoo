@@ -19,13 +19,11 @@ QUEUED_ORM_METHODS = frozenset({"create", "write", "unlink"})
 
 
 def pos_queueable[F: Callable[..., Any]](method: F) -> F:
-    method._pos_queueable = True  # type: ignore[attr-defined]
+    method._pos_queueable = True
     return method
 
 
 def _arguments_digest(args: Sequence[Any], kwargs: Mapping[str, Any]) -> str:
-    # the context is the session's ambient state, merged into every call by the
-    # client and rebuilt on reload, which a queued replay may cross
     arguments = [args, {key: kwargs[key] for key in kwargs if key != "context"}]
     return sha256(dumps_bytes(arguments, option=OPT_SORT_KEYS)).hexdigest()
 
@@ -89,8 +87,6 @@ class PosProcessedOperation(models.Model):
         call: Callable[[], Any],
     ) -> Any:
         digest = _arguments_digest(args, kwargs)
-        # A concurrent replay waits on the uncommitted row, then fails to
-        # serialise; its retry reads the result this transaction commits.
         self.env.cr.execute(
             SQL(
                 """
@@ -141,7 +137,6 @@ class PosProcessedOperation(models.Model):
             res_model,
             method,
         )
-        # a row recorded before digests were has none; it expires with its retention
         same_arguments = done_digest is None or done_digest == digest
         if not (same_call and same_arguments):
             _debug.logic(
@@ -157,8 +152,6 @@ class PosProcessedOperation(models.Model):
             raise AccessError(
                 self.env._("This operation was already processed as another one.")
             )
-        # a replay changes nothing and only hands back the answer: a declared
-        # method's answer needs the model readable, an ORM write its own right
         self.env[res_model].check_access(
             method if method in QUEUED_ORM_METHODS else "read"
         )

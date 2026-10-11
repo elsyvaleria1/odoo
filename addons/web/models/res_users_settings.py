@@ -60,8 +60,6 @@ class ResUsersSettings(models.Model):
         "follows the user to every device.",
     )
 
-    # Written only through a method that validates them; the generic
-    # settings writer would otherwise store any shape a client sends.
     _SETTINGS_WRITTEN_BY_METHOD = frozenset(
         {"homemenu_config", "dismissed_banners", "home_tiles"}
     )
@@ -178,8 +176,6 @@ class ResUsersSettings(models.Model):
 
     @api.model
     def _normalize_home_tiles(self, value: Any) -> dict[str, Any]:
-        # a type the user cannot use right now is kept: it shows as
-        # unavailable, and comes back with the access
         tile_types = self.env["home.tile"]._get_tile_types()
         tiles = []
         seen = set()
@@ -224,7 +220,6 @@ class ResUsersSettings(models.Model):
 
     @api.model
     def _home_tints(self) -> dict[str, str]:
-        # the keys of $o-home-menu-tints in home_menu.variables.scss
         return {
             "blue": self.env._("Blue"),
             "teal": self.env._("Teal"),
@@ -247,7 +242,6 @@ class ResUsersSettings(models.Model):
             },
         )
         default = self._normalize_home_tiles(layer)
-        # nobody inherits a tile they cannot use
         usable = self.env["home.tile"].get_tile_types()
         default["tiles"] = [tile for tile in default["tiles"] if tile["type"] in usable]
         return default

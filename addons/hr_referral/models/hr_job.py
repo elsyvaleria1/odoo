@@ -68,21 +68,7 @@ class HrJob(models.Model):
             job.max_points = sum(stages.mapped("points"))
 
     def search_or_create_referral_links(self, users=None, channel="direct"):
-        """
-        Create/Retrieve a referral link for each user in the given channel.
 
-        This method is made to retrieve/create a referral link for each user
-        for one job.
-
-        :param User users: the users for which to retrieve/create the
-            referral links. If not given, the current user is used.
-        :param str channel: the channel to use for the referral links.
-            Default to 'direct'.
-        :returns: a dictionary mapping each user to its referral link.
-        :rtype: dict
-        """
-
-        # checks and defaults
         self.check_singleton()
         chanel_to_medium = {
             "direct": "utm.utm_medium_direct",

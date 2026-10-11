@@ -448,9 +448,6 @@ class WizardMailMessageSend(models.TransientModel):
             composer.template_render_attachments = values
 
     def _render_template_fields_batch(self, fnames) -> dict:
-        # the single-record composers of one template render in one call: a
-        # template renders each record on its own, so the values are the ones
-        # _render_template_fields gives, without one render pass per composer
         rendered = {}
         res_ids_by_template = defaultdict(dict)
         for composer in self:
@@ -480,12 +477,6 @@ class WizardMailMessageSend(models.TransientModel):
         return rendered
 
     def _render_template_fields(self, fnames) -> dict | Literal[False]:
-        """Render the template's `fnames` for the composer's one record.
-
-        Attachments render apart from the text fields: a report renders its page,
-        and building that page's assets flushes, which recomputes the composer's
-        other fields while the render that asked for it is still running.
-        """
         self.check_singleton()
         if (
             not self.template_id
@@ -708,9 +699,6 @@ class WizardMailMessageSend(models.TransientModel):
         "template_id",
     )
     def _compute_partner_ids(self) -> None:
-        # the composers of one template and one suggestion mode resolve their
-        # recipients in one template call: each record's partners are still
-        # its own, found or created once per email for the whole batch
         by_rendering = defaultdict(dict)
         for composer in self:
             template = composer.template_id
@@ -965,7 +953,7 @@ class WizardMailMessageSend(models.TransientModel):
         for wizard in self:
             if wizard.res_domain:
                 search_domain = wizard._evaluate_res_domain()
-                res_ids = self.env[wizard.model].search(search_domain).ids  # noqa: E8507  model and domain both vary per wizard, so no one query spans them
+                res_ids = self.env[wizard.model].search(search_domain).ids
             else:
                 res_ids = wizard._evaluate_res_ids()
             if not res_ids and wizard.composition_mode == "comment":
@@ -1001,9 +989,6 @@ class WizardMailMessageSend(models.TransientModel):
             and not self.env.context.get("composer_force_res_ids")
             and not MASS_MAIL_SELECTION_CONTEXT_KEYS.isdisjoint(self.env.context)
         ):
-            # the stored res_ids answer every later evaluation; a selection
-            # kept in the context is re-hashed by every environment the post
-            # opens, O(records) each time
             _debug.logic("comment_selection_context_dropped", wizard=self.id)
             self = self.with_context(
                 {
@@ -1059,9 +1044,6 @@ class WizardMailMessageSend(models.TransientModel):
     ) -> MailMail:
         batch_size = self.env["mail.mail"]._get_send_batch_size(self._batch_size or 50)
         counter_mails_done = 0
-        # the records arrive as ``res_ids``; the selection lists that chose them
-        # would be re-hashed with the context of every environment rendering
-        # opens, which is O(records) per environment and O(records²) per mailing
         composer_context = {
             key: value
             for key, value in self.env.context.items()
@@ -1101,8 +1083,6 @@ class WizardMailMessageSend(models.TransientModel):
             time_left = None
             if auto_commit is True:
                 counter_mails_done += len(prepared_mail_values_filtered)
-                # the enclosing cron counts its own units (mass_mailing counts
-                # mailings), so this only commits and leaves its counters alone
                 time_left = composer.env["ir.cron"]._commit_progress()
             _debug.pipeline(
                 "mass_mail_batch",

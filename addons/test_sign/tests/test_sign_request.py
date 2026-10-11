@@ -12,7 +12,6 @@ class TestSignRequest(SignRequestCommon):
         cls.product = cls.env["product.product"].create({"name": "test_product"})
 
     def create_sign_request_wizard(self, model_name, record_id, subject):
-        """Helper to create a sign request wizard with context from a reference document."""
         context = {
             "sign_directly_without_mail": False,
             "default_reference_doc": f"{model_name},{record_id}",
@@ -29,7 +28,6 @@ class TestSignRequest(SignRequestCommon):
         )
 
     def test_send_request_with_default_partner_id(self):
-        """Test default signer is set to partner_id for Sale Order."""
 
         sale_order = (
             self.env["sale.order"]
@@ -53,7 +51,6 @@ class TestSignRequest(SignRequestCommon):
         )
 
     def test_send_request_with_default_partner_id_for_crm(self):
-        """Test default signer is set to partner_id for CRM Lead."""
 
         crm_lead = (
             self.env["crm.lead"]
@@ -78,7 +75,6 @@ class TestSignRequest(SignRequestCommon):
         )
 
     def test_send_request_with_default_user_id(self):
-        """Test default signer is set to user_id.partner_id for MRP Production."""
 
         mrp_production = (
             self.env["mrp.production"]
@@ -103,7 +99,6 @@ class TestSignRequest(SignRequestCommon):
         )
 
     def test_send_request_with_default_employee_id(self):
-        """Test default signer is set to employee's work contact for Expense."""
 
         employee = self.env["hr.employee"].sudo().search([], limit=1)
         if not employee:

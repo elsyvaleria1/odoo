@@ -56,7 +56,6 @@ class IrAccessPredicate(models.Model):
                             name=predicate.name,
                         )
                     )
-                # a predicate for any model names a method every model has
                 model_name = predicate.model_id.model or "base"
                 if not callable(getattr(self.env[model_name], predicate.method, None)):
                     raise ValidationError(
@@ -115,9 +114,6 @@ class IrAccessPredicate(models.Model):
             )
 
     def _arguments(self, model_name: str) -> tuple[frozenset[str], frozenset[str]]:
-        # the arguments it reads, required and optional: a template's are the
-        # args.<name> it spells, a method's what predicate_arguments declares
-        # on it (nothing, undeclared), wherever in the model's classes
         self.check_singleton()
         if self.template:
             tree = ast.parse(self.template, mode="eval")
@@ -137,10 +133,6 @@ class IrAccessPredicate(models.Model):
     def write(self, vals: dict[str, Any]) -> bool:
         result = super().write(vals)
         if {"template", "method", "model_id"} & vals.keys():
-            # what it reads may have changed: the rows naming it still pass it
-            # exactly that. A row on a model no module has loaded yet -- base
-            # reloading its predicates during an upgrade -- is checked when its
-            # own module loads it.
             self.env["ir.access"].search(
                 [("predicate_id", "in", self.ids)]
             )._check_reach(loaded_only=True)
@@ -153,12 +145,6 @@ class Base(models.AbstractModel):
 
     @predicate_arguments("operation", "role", optional=("with",))
     def _access_predicate_conditional_reach(self, bind, args) -> Domain:
-        # a restricted role's ceiling (base.conditional_reach), for the members
-        # of args["role"]: they reach what their conditional permissions on the
-        # model reach for args["operation"], and whatever the groups implying
-        # the role (its wider variants) or named in args["with"] grant -- not
-        # what another group reaching every record grants beside, as record
-        # rules bounded access lines
         Access = self.env["ir.access"]
         role = self.env.ref(args["role"]).id
         family = set(Access._group_ids_implying().get(role, {role}))

@@ -281,8 +281,6 @@ class IrActionsServer(models.Model):
         if runtime.third_party_id:
             wizard_vals["third_party_id"] = runtime.third_party_id.id
 
-        # A company-less template serves every company and follows the run's
-        # transaction company, including when another company received payment.
         if runtime._is_intercompany() or not template.company_id:
             wizard_vals["multicompany_id"] = runtime._get_transaction_company().id
 
@@ -290,9 +288,6 @@ class IrActionsServer(models.Model):
         if tg_data:
             wizard_fields = self.env["wizard.account.move.template.create.move"]._fields
 
-            # `or ""` rather than a get() default: the payload is stored raw
-            # from an external Telegram client, so the key can be present and
-            # null, which a default never covers.
             pm_text = (tg_data.get("payment_method") or "").strip()
             if pm_text and "l10n_mx_edi_payment_method_id" in wizard_fields:
                 pm_aliases = {
@@ -530,23 +525,9 @@ class IrActionsServer(models.Model):
     def _reconcile_statement_across_companies(
         self, st_line, open_lines
     ) -> models.Model:
-        """Settle a customer's collection banked by another company.
-
-        :param st_line: the bank statement line, in the company that got paid
-        :param open_lines: the move's open receivable lines, in the company
-            that is owed
-        :return: the bridge ``account.move`` entry posted in the company that is owed
-        :rtype: models.Model
-        """
         self.check_singleton()
         st_line.check_singleton()
 
-        # Two separate ledgers cannot share a reconciliation, so each company
-        # books its own half. The receiving company matches its bank line to
-        # what it now owes the other company; the owed company books the
-        # mirror receivable against the customer's receivable and reconciles
-        # that with the move. The intercompany balance stays open on both
-        # sides until the companies settle it.
         move = open_lines.move_id
         receiving = st_line.company_id
         owed = move.company_id
@@ -675,9 +656,6 @@ class IrActionsServer(models.Model):
         )
         bridge.action_post()
 
-        # The mirror receivable may share the customer's account, as it does
-        # when the companies' contacts use the default receivable, so the line
-        # to settle is told apart by its side, not by its account.
         settled = bridge.line_ids.filtered(
             lambda line: (
                 line.account_id == customer_account
@@ -715,18 +693,6 @@ class IrActionsServer(models.Model):
         return self.reconcile_move_with_open_invoices(runtime_line, move)
 
     def reconcile_move_with_open_invoices(self, runtime_line, move) -> models.Model:
-        """Apply a credit note to its partner's open invoices, oldest first.
-
-        The order is the invoice date and then the invoice number, not the
-        due date: it is the order accounting follows when it applies the
-        credit by hand, one invoice at a time, from the credit note's
-        outstanding widget. Whatever the open invoices do not absorb stays
-        on the credit note as an open credit, and a credit note with nothing
-        left to apply is left alone, so the step still closes a run whose
-        credit was applied by hand.
-
-        :return: the invoices the credit note was applied to
-        """
         self.check_singleton()
         runtime_line.check_singleton()
         move.check_singleton()
@@ -847,12 +813,6 @@ class IrActionsServer(models.Model):
         return runtime.partner_id
 
     def _get_workflow_taxes(self, company) -> models.Model:
-        """Return this step's replacement taxes as `company` knows them.
-
-        A tax belongs to one company, and one step runs in whichever company
-        its run names, so a tax of another company stands for the one of the
-        same name, use and rate.
-        """
         self.check_singleton()
         Tax = self.env["account.tax"].with_company(company)
         company_domain = Tax._check_company_domain(company)
@@ -920,7 +880,6 @@ class IrActionsServer(models.Model):
         return refs
 
     def _get_nearest_document_steps(self, seen=None) -> models.Model:
-        """Return the nearest document-making step on every branch above this one."""
         self.check_singleton()
         seen = self.browse() if seen is None else seen
         found = self.browse()
@@ -961,8 +920,6 @@ class IrActionsServer(models.Model):
         return problems
 
     def _get_workflow_document_step(self) -> models.Model:
-        """Return the step whose document this one works on: the one named in
-        Acts On, else the nearest upstream step that creates a document."""
         self.check_singleton()
         if self.workflow_source_step_id:
             return self.workflow_source_step_id
@@ -979,16 +936,9 @@ class IrActionsServer(models.Model):
         return self.browse()
 
     def _get_workflow_step_summary(self, runtime) -> str:
-        """Return what this step does on `runtime`, in the reader's words.
-
-        Empty for a step whose effect is not declared on it, such as Python
-        code.
-        """
         self.check_singleton()
         if self.state == "workflow_create_document":
             template = self.workflow_template_id
-            # account.move's own labels: they are the ones the reader knows
-            # the documents by, and the ones the localization translates.
             move_types = dict(
                 self.env["account.move"]
                 ._fields["move_type"]
@@ -1017,7 +967,6 @@ class IrActionsServer(models.Model):
         return ""
 
     def _get_workflow_problems(self, runtime) -> list[str]:
-        """Return what would stop this step on `runtime`, before it runs."""
         self.check_singleton()
         problems = []
         if self.state in STATEMENT_STATES and not runtime.st_line_id:
@@ -1120,7 +1069,6 @@ class IrActionsServer(models.Model):
             ).get(self[field_name], "")
             for field_name in ("workflow_company_source", "workflow_partner_source")
         }
-        # Whoever may see the workflow drawn may not read its templates.
         template = self.workflow_template_id._visible_display_names().get(
             self.workflow_template_id.id
         )
@@ -1169,7 +1117,6 @@ class IrActionsServer(models.Model):
         company = self._get_workflow_company(runtime)
         context_vals = {
             "partner_id": self._get_workflow_partner(runtime).id,
-            # The step, not the template, says who the document is issued to.
             "third_party_id": False,
             "multicompany_id": company.id,
         }
@@ -1257,13 +1204,6 @@ class IrActionsServer(models.Model):
         )
 
     def _change_move_partner(self, move, partner) -> None:
-        """Issue `move` to `partner` instead, keeping its number and date.
-
-        A posted document goes back to draft and is posted again, which the
-        accounting refuses for one whose period is locked, whose entry is
-        hashed, or whose electronic invoice must be cancelled at the tax
-        authority first.
-        """
         self.check_singleton()
         applied = move.line_ids.filtered(
             lambda line: (
@@ -1289,7 +1229,6 @@ class IrActionsServer(models.Model):
 
     @api.model
     def _get_open_amount(self, move) -> float:
-        """Return what is still open on `move`'s receivable or payable lines."""
         lines = move.line_ids.filtered(
             lambda line: line.account_id.account_type in OPEN_ITEM_TYPES,
         )

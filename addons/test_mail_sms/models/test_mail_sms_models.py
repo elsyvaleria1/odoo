@@ -165,9 +165,6 @@ class MailTestSmsPartner2many(models.Model):
         return self.search([("id", "in", res_ids), ("opt_out", "=", True)]).ids
 
 
-# ------------------------------------------------------------
-# OTHER
-# ------------------------------------------------------------
 
 
 class SMSTestNotMailThread(models.Model):

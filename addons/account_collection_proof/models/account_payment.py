@@ -18,8 +18,6 @@ class AccountPayment(models.Model):
     )
     def _compute_confirmation_state(self) -> None:
         super()._compute_confirmation_state()
-        # a collection reset or cancelled stands confirmed by nobody: posted
-        # again with the same figures, its confirmation shows again
         self.filtered(lambda payment: payment.state in UNPOSTED).update(
             {
                 "confirmation_state": False,
@@ -55,8 +53,6 @@ class AccountPayment(models.Model):
         return self.filtered(lambda payment: payment._is_customer_collection())
 
     def _send_collection_receipt(self) -> None:
-        # the confirmation mail carries the receipt's figures and its link: a
-        # customer it reached gets no second mail
         mailed = self.filtered(lambda payment: payment._is_confirmation_mailed())
         super(AccountPayment, self - mailed)._send_collection_receipt()
 
@@ -139,8 +135,6 @@ class AccountPayment(models.Model):
             payment._post_customer_answer(
                 self.env._("I confirm this collection (%(sent_to)s).", sent_to=sent_to)
             )
-            # the account that answered was connected with an invitation whoever
-            # asked made: they could have opened it themselves
             if (
                 payload.get("invited_by")
                 and payload["invited_by"] == evidence.user_id.id
@@ -168,7 +162,6 @@ class AccountPayment(models.Model):
         self._with_answer_privilege()._post_customer_answer(text)
 
     def _post_customer_answer(self, body: str) -> None:
-        # the customer's own words, kept as a note in their name
         self.message_post(
             author_id=self.partner_id.id,
             body=body,
@@ -195,8 +188,6 @@ class AccountPayment(models.Model):
             )
 
     def _with_answer_privilege(self) -> AccountPayment:
-        # the answer reaches the collection as its collector, who asked: their
-        # own collection is theirs to note it on
         return self.with_privilege(
             "account_collection.privilege_register_collection",
             reason="a collector's collection notes what its customer answered",

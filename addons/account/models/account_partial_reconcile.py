@@ -214,7 +214,6 @@ class AccountPartialReconcile(models.Model):
         self.check_access("unlink")
         move_model = self.env["account.move"]
         move_model.flush_model(["tax_cash_basis_rec_id"])
-        # Record rules must not silently hide entries that cleanup needs to undo.
         rows = self.env.execute_query(
             SQL(
                 "SELECT id FROM account_move WHERE tax_cash_basis_rec_id = ANY(%s)",

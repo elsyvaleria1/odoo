@@ -123,8 +123,6 @@ class HrEmployee(models.Model):
                 calendars=len(work_hours_data),
             )
             for global_time_off in global_leaves:
-                # `_work_time_per_day` keys by calendar first and by leave
-                # second; both reads below take the pair.
                 leave_days = work_hours_data[employee.resource_calendar_id.id][
                     global_time_off.id
                 ]

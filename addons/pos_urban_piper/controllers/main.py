@@ -108,7 +108,6 @@ class PosUrbanPiperController(http.Controller):
                 request.env, "pos_urban_piper.uuid", False
             ),
         ):
-            # Ignore request if it's not from the same database
             request.env["pos.config"].log_xml(
                 "Rejected Webhook: X-Urbanpiper-Uuid: %s"
                 % (request.httprequest.headers.get("X-Urbanpiper-Uuid")),
@@ -117,7 +116,6 @@ class PosUrbanPiperController(http.Controller):
             )
             return
         data = request.get_json_data()
-        # request data for order_placed and rider_status_update are already stored in the database
         if event_type not in ["order_placed", "rider_status_update"]:
             request.env["pos.config"].log_xml(
                 "UrbanPiper Webhook Received: %s" % json.dumps(data),
@@ -227,7 +225,6 @@ class PosUrbanPiperController(http.Controller):
                 ]
             )
         )
-        # Check the customer exists with the same name and phone number
         customer_sudo = (
             request.env["res.partner"]
             .sudo()
@@ -383,7 +380,7 @@ class PosUrbanPiperController(http.Controller):
                 "company_id": pos_config_sudo.company_id.id,
                 "fiscal_position_id": pos_config_sudo.urbanpiper_fiscal_position_id.id,
                 "lines": lines,
-                "amount_paid": 0.0,  # calculation is done below
+                "amount_paid": 0.0,
                 "amount_total": 0.0,
                 "amount_tax": 0.0,
                 "amount_return": 0.0,
@@ -506,9 +503,6 @@ class PosUrbanPiperController(http.Controller):
         pass
 
     def _get_tax_value(self, taxes_data, pos_config):
-        """
-        Override in delivery provider modules.
-        """
         taxes = request.env["account.tax"]
         for tax_line in taxes_data:
             taxes |= (

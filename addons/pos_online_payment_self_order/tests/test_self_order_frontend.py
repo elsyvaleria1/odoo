@@ -25,7 +25,7 @@ class TestUi(TestFrontendCommon, OnlinePaymentCommon):
 
         cls.payment_provider = (
             cls.provider
-        )  # The dummy_provider used by the tests of the 'payment' module.
+        )
 
         cls.payment_provider_old_company_id = cls.payment_provider.company_id.id
         cls.payment_provider_old_journal_id = cls.payment_provider.journal_id.id
@@ -52,7 +52,6 @@ class TestUi(TestFrontendCommon, OnlinePaymentCommon):
 
 class TestSelfOrderOnlinePayment(TestUi):
     def test_01_online_payment_with_multi_table(self):
-        # No need to check preparation printer in this test.
         self.env["pos.printer"].search([]).unlink()
         self.pos_config.with_user(self.pos_admin).open_ui()
         self.start_pos_tour("OnlinePaymentWithMultiTables", login="pos_admin")
@@ -63,7 +62,6 @@ class TestSelfOrderOnlinePayment(TestUi):
         ):
             self.skipTest("The 'website' module is required for this test.")
 
-        # Setup another company and related POS configuration
         company_b_data = self.setup_other_company(name="Company B")
         company_b = company_b_data["company"]
 
@@ -118,7 +116,6 @@ class TestSelfOrderOnlinePayment(TestUi):
             }
         )
 
-        # Create test user for the "first" company
         self.env["res.users"].create(
             {
                 "group_ids": [Command.set([self.ref("base.group_user")])],
@@ -132,7 +129,7 @@ class TestSelfOrderOnlinePayment(TestUi):
 
         def patched_frontend_pre_dispatch(cls):
             self.env.ref("base.public_user")
-            website_b.button_go_website()  # Simulate visiting Website B (populating request session data)
+            website_b.button_go_website()
             original_frontend_pre_dispatch.__func__(cls)
 
         with patch.object(
@@ -140,7 +137,6 @@ class TestSelfOrderOnlinePayment(TestUi):
             "_frontend_pre_dispatch",
             classmethod(patched_frontend_pre_dispatch),
         ):
-            # Create a new order
             self.start_tour(
                 pos_config._get_self_order_route(),
                 "test_online_payment_self_multi_company",
@@ -153,7 +149,6 @@ class TestSelfOrderOnlinePayment(TestUi):
                 draft_order.id, draft_order._receipt_token()
             )
 
-            # Test payment page access for different users
             self.start_tour(
                 payment_route,
                 "test_online_payment_self_multi_company_payment",

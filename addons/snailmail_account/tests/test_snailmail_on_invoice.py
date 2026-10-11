@@ -5,10 +5,6 @@ from odoo.tests import TransactionCase, tagged
 @tagged("post_install", "-at_install")
 class TestSnailmailOnInvoice(TransactionCase):
     def test_snailmail_on_invoice_for_partner_without_email(self):
-        """ "
-        Checks that a snailmail letter is created when one print and send by post a customer invoice
-        for a partner without email.
-        """
 
         partner_without_email = self.env["res.partner"].create(
             {

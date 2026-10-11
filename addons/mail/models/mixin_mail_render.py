@@ -488,9 +488,6 @@ class MixinMailRender(models.AbstractModel):
         )
 
     def _is_restricted_template_author(self) -> bool:
-        # below Settings a template may add only expressions of the restricted
-        # grammar (rendering_tools); what the template already held, or what a
-        # shipped template of the model spells, was not written by this author
         return (
             not self.env.su
             and self.env.context.get("bypass_restricted_rendering")
@@ -559,9 +556,6 @@ class MixinMailRender(models.AbstractModel):
         }
 
     def _get_shipped_template_expressions(self) -> frozenset[str]:
-        # what the modules shipped, read from the data files the templates were
-        # loaded from: a shipped template's body in the database may since have
-        # been edited by anyone, so it vouches for nothing
         if "template_fs" not in self._fields:
             return frozenset()
         return self._get_module_template_expressions()
@@ -647,9 +641,6 @@ class MixinMailRender(models.AbstractModel):
 
     @api.model
     def _audit_template_authoring(self) -> dict[str, list[str]]:
-        # the templates of this model that an author below Settings could not
-        # save today: none of their refused expressions is a shipped one; run
-        # it as an administrator, it reads every template
         templates = self.with_context(active_test=False).search([])
         external_ids = templates._get_external_ids()
         shipped = self._get_shipped_template_expressions()
@@ -687,9 +678,6 @@ class MixinMailRender(models.AbstractModel):
         engine: str,
         trusted_templates: models.BaseModel | None = None,
     ) -> None:
-        # a template rendered from a source nobody saved (a composer body) is
-        # held to the grammar at render time, trusting only the expressions of
-        # the template the source was loaded from
         if (
             engine == "qweb_view"
             or self._is_restricted()

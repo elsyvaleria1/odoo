@@ -133,8 +133,6 @@ class TestPartnerAssign(TransactionCase):
         without_portal = self.env["res.partner"].create(
             {"name": "No Portal", "email": "plain@example.com"}
         )
-        # The partner without portal access comes last, so a portal check
-        # reading the last line's partner answers False for both.
         leads = self.env["crm.lead"].create(
             [
                 {"name": "To portal", "partner_assigned_id": with_portal.id},
@@ -646,11 +644,6 @@ class TestPublish(HttpCase):
 
 class TestLeadMessageAccess(TestCrmCommon):
     def test_message_access_is_one_rule_both_ways(self):
-        """The assigned partner posts with read access alone, defined once.
-
-        The per-record answer and the domain the activity guard searches with
-        must pick the same leads.
-        """
         portal = mail_new_test_user(
             self.env,
             login="lead_portal_pin",

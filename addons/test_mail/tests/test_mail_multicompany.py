@@ -56,7 +56,6 @@ class TestMailMCCommon(MailCommon, TestRecipients):
                 }
             )
         )
-        # groups@.. will cause the creation of new mail.test.gateway
         cls.mail_alias = cls.env["mail.alias"].create(
             {
                 "alias_contact": "everyone",
@@ -65,7 +64,6 @@ class TestMailMCCommon(MailCommon, TestRecipients):
             }
         )
 
-        # Set a first message on public group to test update and hierarchy
         cls.fake_email = cls.env["mail.message"].create(
             {
                 "model": "mail.test.gateway",
@@ -90,7 +88,6 @@ class TestMailMCCommon(MailCommon, TestRecipients):
 
     def setUp(self):
         super().setUp()
-        # patch registry to simulate a ready environment
         self.patch(self.env.registry, "ready", True)
 
 
@@ -99,8 +96,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
     @users("employee_c2")
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_post_with_read_access(self):
-        """Check that with readonly access, a message with attachment can be
-        posted on a model with the attribute _mail_post_access = 'read'."""
         test_record_c1_su = (
             self.env["mail.test.multi.company.read"]
             .sudo()
@@ -173,9 +168,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             ("ReportLike2", "AttContent2"),
         ]
 
-        # ------------------------------------------------------------
-        # Other company (no access)
-        # ------------------------------------------------------------
 
         _original_car = MailMessage._check_access
         with patch.object(
@@ -184,9 +176,9 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             with self.assertRaises(AccessError):
                 test_records_mc_c1.message_post(
                     body="<p>Hello</p>",
-                    force_record_name="CustomName",  # avoid ACL on display_name
+                    force_record_name="CustomName",
                     message_type="comment",
-                    reply_to="custom.reply.to@test.example.com",  # avoid ACL in notify_get_reply_to
+                    reply_to="custom.reply.to@test.example.com",
                     subtype_xmlid="mail.mt_comment",
                 )
             self.assertEqual(
@@ -197,7 +189,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
         with self.assertRaises(AccessError):
             _name = test_records_mc_c1.name
 
-        # no access to company1, access to post through being notified of parent
         with self.assertRaises(AccessError):
             _subject = test_records_mc_c1.message_ids.subject
         self.assertEqual(len(self.test_records_mc[0].message_ids), 1)
@@ -210,25 +201,20 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
                 "res_partner_id": self.user_employee_c2.partner_id.id,
             }
         )
-        # additional: works only if in partner_ids, not notified via followers
         initial_message.write(
             {
                 "partner_ids": [(4, self.user_employee_c2.partner_id.id)],
             }
         )
-        # now able to post as was notified of parent message
         test_records_mc_c1.message_post(
             body="<p>Hello</p>",
-            force_record_name="CustomName",  # avoid ACL on display_name
+            force_record_name="CustomName",
             message_type="comment",
             parent_id=initial_message.id,
-            reply_to="custom.reply.to@test.example.com",  # avoid ACL in notify_get_reply_to
+            reply_to="custom.reply.to@test.example.com",
             subtype_xmlid="mail.mt_comment",
         )
 
-        # record_name and reply_to may generate ACLs issues when computed by
-        # 'message_post' but should not, hence not specifying them to be sure
-        # testing the complete flow
         test_records_mc_c1.message_post(
             body="<p>Hello</p>",
             message_type="comment",
@@ -236,11 +222,7 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             subtype_xmlid="mail.mt_comment",
         )
 
-        # ------------------------------------------------------------
-        # User company (access granted)
-        # ------------------------------------------------------------
 
-        # can effectively link attachments with message to record of writable record
         attachments = self.env["ir.attachment"].create(
             self._generate_attachments_data(
                 2, "wizard.mail.message.send", 0, prefix="Same"
@@ -250,9 +232,9 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             attachments=attachments_data,
             attachment_ids=attachments.ids,
             body="<p>Hello</p>",
-            force_record_name="CustomName",  # avoid ACL on display_name
+            force_record_name="CustomName",
             message_type="comment",
-            reply_to="custom.reply.to@test.example.com",  # avoid ACL in notify_get_reply_to
+            reply_to="custom.reply.to@test.example.com",
             subtype_xmlid="mail.mt_comment",
         )
         self.assertTrue(attachments < message.attachment_ids)
@@ -274,8 +256,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             [test_records_mc_c2._name] * 4,
         )
 
-        # cannot link attachments of unreachable records when posting on a document
-        # they can access (aka no access delegation through posting message)
         attachments = (
             self.env["ir.attachment"]
             .sudo()
@@ -293,14 +273,13 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
                 attachments=attachments_data,
                 attachment_ids=attachments.ids,
                 body="<p>Hello</p>",
-                force_record_name="CustomName",  # avoid ACL on display_name
+                force_record_name="CustomName",
                 message_type="comment",
-                reply_to="custom.reply.to@test.example.com",  # avoid ACL in notify_get_reply_to
+                reply_to="custom.reply.to@test.example.com",
                 subtype_xmlid="mail.mt_comment",
             )
 
     def test_recipients_multi_company(self):
-        """Test mentioning a partner with no common company."""
         test_records_mc_c2 = self.test_records_mc[1]
         with self.assertBus(
             [(self.cr.dbname, "res.partner", self.user_employee_c3.partner_id.id)]
@@ -319,8 +298,6 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
 class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
     @mute_logger("odoo.http")
     def test_mail_thread_data(self):
-        """Test returned thread data, in MC environment, to test notably MC
-        access issues on partner, ACL support, ..."""
         customer_c3 = self.env["res.partner"].create(
             {
                 "company_id": self.company_3.id,
@@ -366,7 +343,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
         self.assertTrue(result["mixin.mail.thread"][0]["hasReadAccess"])
         self.assertTrue(result["mixin.mail.thread"][0]["canPostOnReadonly"])
 
-        # check read / write / post access info
         for test_user, (has_w, has_r, can_post) in zip(
             (
                 self.user_portal,
@@ -379,12 +355,12 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                     False,
                     True,
                     True,
-                ),  # currently not really supported actually, should go through portal controllers
+                ),
                 (
                     False,
                     True,
                     True,
-                ),  # currently not really supported actually, should go through portal controllers
+                ),
                 (False, True, True),
                 (True, True, True),
             ),
@@ -392,7 +368,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
         ):
             with self.subTest(user_name=test_user.name):
                 self.authenticate(test_user.login, test_user.login)
-                # crash if calling using portal users -> dedicated portal routes currently
                 if test_user in self.user_portal + self.user_portal_c2:
                     with self.assertRaises(JsonRpcException):
                         result = self.call_jsonrpc(
@@ -440,8 +415,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                     )
 
     def test_redirect_to_records(self):
-        """Test mail/view redirection in MC environment, notably cids being
-        added in redirect if user has access to the record."""
         mc_record_c1, mc_record_c2 = self.env["mail.test.multi.company"].create(
             [
                 {
@@ -457,9 +430,9 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
 
         for (login, password), mc_record in product(
             (
-                (None, None),  # not logged: redirect to web/login
-                ("employee", "employee"),  # access only main company
-                ("admin", "admin"),  # access both companies
+                (None, None),
+                ("employee", "employee"),
+                ("admin", "admin"),
             ),
             (mc_record_c1, mc_record_c2),
         ):
@@ -480,17 +453,11 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                     self.assertEqual(user.login, login)
                     mc_error = login == "employee" and mc_record == mc_record_c2
                     if mc_error:
-                        # Logged into company main, try accessing record in other
-                        # company -> _redirect_to_record should redirect to
-                        # messaging as the user doesn't have any access
                         parsed_url = urlsplit(response.url)
                         self.assertEqual(
                             parsed_url.path, "/odoo/action-mail.action_discuss"
                         )
                     else:
-                        # Logged into company main, try accessing record in same
-                        # company -> _redirect_to_record should add company in
-                        # allowed_company_ids
                         cids = response.request._cookies.get("cids")
                         if mc_record.company_id == user.company_id:
                             self.assertEqual(cids, f"{mc_record.company_id.id}")
@@ -500,9 +467,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                             )
 
     def test_multi_redirect_to_records(self):
-        """Test mail/view redirection in MC environment, notably test a user that is
-        redirected multiple times, the cids needed to access the record are being added
-        recursivelly when in redirect."""
         mc_records = self.env["mail.test.multi.company"].create(
             [
                 {
@@ -531,7 +495,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                 self.assertEqual(cids, "-".join(companies))
 
     def test_redirect_to_records_nothread(self):
-        """Test no thread models and redirection"""
         nothreads = self.env["mail.test.nothread"].create(
             [
                 {
@@ -546,8 +509,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
             ]
         )
 
-        # when being logged, cids should be based on current user's company unless
-        # there is an access issue (not tested here, see 'test_redirect_to_records')
         for test_record in nothreads:
             for user_company in self.company_admin, self.company_2:
                 with self.subTest(
@@ -566,8 +527,6 @@ class TestMultiCompanyControllers(TestMailMCCommon, HttpCase):
                         response.request._cookies.get("cids"), str(user_company.id)
                     )
 
-        # when being not logged, cids should not be added as redirection after
-        # logging will be 'mail/view' again
         for test_record in nothreads:
             with self.subTest(record_name=test_record.name):
                 self.authenticate(None, None)

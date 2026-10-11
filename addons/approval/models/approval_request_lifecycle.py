@@ -18,11 +18,6 @@ class ApprovalRequestLifecycle(models.Model):
     _inherit = "approval.request"
 
     def _split_bulk_decidable(self) -> tuple[models.BaseModel, list[tuple[str, str]]]:
-        """The requests the user may decide now, and why each other one is left.
-
-        A selection made from a list goes stale while it is open: a request decided
-        meanwhile is reported among the failures, not a reason to decide none.
-        Nothing decidable at all is refused."""
         readable = self._filtered_access("read")
         decidable_ids = []
         skipped = [
@@ -150,10 +145,6 @@ class ApprovalRequestLifecycle(models.Model):
         return self._action_bulk_decision("action_approve", "approval", "approved")
 
     def _raise_not_assigned_approver(self) -> None:
-        # No campaign refusal event here on purpose: three callers reach this one
-        # message for four different reasons, and one event would collapse them.
-        # Each caller reports its own kind before calling (decision_without_a_row,
-        # change_request_without_a_row, wizard_without_a_row).
         raise UserError(
             self.env._(
                 "You are not assigned as an approver for this request, "
@@ -255,8 +246,6 @@ class ApprovalRequestLifecycle(models.Model):
             if decision == "approve" and row.state == "approved":
                 decided |= row.decided_step_ids
             if decision == "approve" and row.state == "approved":
-                # Link rather than set: the row's decided steps read without an
-                # archived one, which a set would forget.
                 decided_steps = [Command.link(step.id) for step in decided]
             else:
                 decided_steps = [Command.set(decided.ids)]
@@ -346,10 +335,6 @@ class ApprovalRequestLifecycle(models.Model):
             self._refuse_approval_request()
 
     def _follow_state_change(self, old_state: str, reask: bool = True) -> None:
-        """What the request's state now asks of its rows, activities and document:
-        a pending request asks whoever's turn it is, a concluded one stops asking,
-        an approved one leaves its undecided rows waiting, and a request that just
-        concluded tells its document and runs what it gated."""
         self.check_singleton()
         if reask and self.state == "pending":
             self._refresh_turn_states()
@@ -375,13 +360,6 @@ class ApprovalRequestLifecycle(models.Model):
         self._apply_decision("approve", approver, steps)
 
     def _get_steps_for_decision(self, approver):
-        """The steps an approval naming none is given for.
-
-        Every undecided step of the row, unless one of the row's steps is exclusive:
-        then the first still short of its quorum, exclusive steps first within a
-        sequence. Deciding that here, not when counting, keeps who decided which step
-        fixed as later approvals come in.
-        """
         self.check_singleton()
         undecided = (approver.step_ids - approver.decided_step_ids).filtered(
             lambda step: self._is_row_turn(approver, step)
@@ -414,7 +392,6 @@ class ApprovalRequestLifecycle(models.Model):
         return chosen
 
     def _check_steps_decidable(self, approvers, steps=None) -> None:
-        """Refuse deciding a step twice, or a step beside an exclusive decided one."""
         self.check_singleton()
         for approver in approvers:
             decided = approver.decided_step_ids
@@ -454,7 +431,6 @@ class ApprovalRequestLifecycle(models.Model):
                 )
 
     def _check_step_turn(self, approvers, steps=None) -> None:
-        """Refuse a decision on a step whose members decide in order, out of turn."""
         self.check_singleton()
         for approver in approvers:
             wanted = steps or (approver.step_ids - approver.decided_step_ids)
@@ -484,7 +460,6 @@ class ApprovalRequestLifecycle(models.Model):
     def _notify_step_decision(
         self, approvers, acting_user, decision: str, steps=None
     ) -> None:
-        """Post an internal note to the notify list of every step this decision is for."""
         self.check_singleton()
         steps = steps or approvers.decided_step_ids
         partners = steps.notify_user_ids.partner_id
@@ -862,12 +837,6 @@ class ApprovalRequestLifecycle(models.Model):
             request._force_draft()
 
     def _force_draft(self, note: str | None = None) -> None:
-        """Clear every decision and send the request back to draft, whatever its state.
-
-        action_reset_to_draft is the guarded way in for a user; an approval binding
-        whose record returns to its reset condition resets a request still waiting too,
-        so a decision given for the document's earlier state does not survive it.
-        """
         self.check_singleton()
         request = self
         previous_state = request.state
@@ -899,8 +868,6 @@ class ApprovalRequestLifecycle(models.Model):
                 "reminder_count": 0,
                 "escalated_to_manager": False,
                 "applied_rule_ids": [Command.clear()],
-                # a new cycle's grant has not run the gate's operation, whatever
-                # the last one ran; a binding's replay stays once for good
                 "date_operation_run": False,
             },
         )
@@ -1072,8 +1039,6 @@ class ApprovalRequestLifecycle(models.Model):
                     parked.sudo().write({"flow_state": "pending"})
                     parked._create_activity()
                 if request.approver_ids.step_ids:
-                    # A withdrawal can hand a turn back: whoever it passed to is no
-                    # longer asked.
                     request._refresh_turn_states()
                     request._retire_unasked_approval_activities()
 
@@ -1145,11 +1110,6 @@ class ApprovalRequestLifecycle(models.Model):
             )
 
     def _get_unmeetable_steps(self, steps) -> dict[Any, tuple[set[int], set[int]]]:
-        """The deciding steps fewer people may approve than their quorum asks, with
-        who may and who was passed over: the pool routing gives rows to, so a step
-        that only the owner or the requester could staff counts as unstaffed rather
-        than being dropped. A document whose own state move decides keeps them: the
-        move is the decision there, not a row."""
         self.check_singleton()
         document = self.get_source_document()
         excluded = (
@@ -1254,7 +1214,6 @@ class ApprovalRequestLifecycle(models.Model):
             self.action_withdraw(approver)
 
     def _withdraw_decided_steps(self, approver, steps) -> None:
-        """Take a decision back from some of its steps; it stands for the others."""
         self.check_singleton()
         self._lock_and_reload(with_approvers=True)
         if self.state not in ("pending", "approved"):
@@ -1401,10 +1360,6 @@ class ApprovalRequestLifecycle(models.Model):
         )
 
     def _retire_unasked_approval_activities(self) -> None:
-        """Remove the approval activities of rows no longer asked, once their steps are met.
-
-        Unlinked, not marked done: their approver decided nothing.
-        """
         self.check_singleton()
         stale = self._get_approval_activities().filtered(
             lambda activity: (
@@ -1417,7 +1372,6 @@ class ApprovalRequestLifecycle(models.Model):
         stale.sudo().unlink()
 
     def _get_approval_activities(self, user: Any = None) -> Any:
-        """The approval activities asking this request's approvers, wherever they live."""
         domain = [("approver_id.request_id", "in", self.ids)]
         if user:
             domain.append(("user_id", "=", user.id))
@@ -1446,12 +1400,6 @@ class ApprovalRequestLifecycle(models.Model):
     def _lock_for_approval_action(self) -> None:
         if not self.ids:
             return
-        # An UPDATE, not a SELECT FOR UPDATE: a decision often changes only the
-        # approver rows, so a transaction that read this request before another
-        # decided on it would lock it afterwards without conflict and decide on rows
-        # it no longer sees. Touching the row makes it fail to serialize instead,
-        # and the server retries it on fresh rows. Rows are locked in id order so
-        # two multi-request lockers cannot deadlock.
         self.env.cr.execute(
             SQL(
                 """
@@ -1676,12 +1624,6 @@ class ApprovalRequestLifecycle(models.Model):
                 self._replay_bound_operation()
 
     def _replay_bound_operation(self) -> None:
-        """Run the operation an approval.binding raised this request for.
-
-        After the source document has been told, so a document implementing
-        mixin.approval sees itself approved before the operation it gated
-        runs. Once only: a withdrawal and a second approval do not run it again.
-        """
         self.check_singleton()
         request = self.sudo()
         invoking = self.id in self.env.transaction.admitted_ids(
@@ -1709,13 +1651,6 @@ class ApprovalRequestLifecycle(models.Model):
         request.binding_id._replay(request)
 
     def _get_notifiable_source_document(self):
-        """The adopting record to tell about this request, or None.
-
-        A mixin.approval document is told only when it references this request back,
-        so a stale res_id cannot drive a foreign record's workflow. A
-        mixin.approval.subjects record is told about a request raised for one of its
-        subjects, which carries its subject_key.
-        """
         self.check_singleton()
         if not self.res_model or not self.res_id:
             trace.SYNC.event(

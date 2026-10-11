@@ -8,7 +8,6 @@ class WizardResourceAssetPartClearFlag(models.TransientModel):
     _name = "wizard.resource.asset.part.clear.flag"
     _description = "Clear Flagged Parts"
 
-    # FIELDS
     part_ids = fields.Many2many(
         comodel_name="resource.part",
         string="Parts",
@@ -19,7 +18,6 @@ class WizardResourceAssetPartClearFlag(models.TransientModel):
         help="Why the flags are accepted. It stays on the part's history.",
     )
 
-    # ACTION METHODS
     def action_clear(self) -> dict:
         self.check_singleton()
         _debug.lifecycle("part_clear_wizard_confirmed", parts=self.part_ids)

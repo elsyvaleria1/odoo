@@ -572,11 +572,6 @@ class AccountMove(models.Model):
         required=True,
         help="Specify whether this entry is posted automatically on its accounting date, and any similar recurring invoices.",
     )
-    # The cadence is `mixin.recurrence.rule`'s. `auto_post` used to answer three
-    # questions at once -- whether the entry posts itself, whether it repeats,
-    # and how often -- with `monthly`, `quarterly` and `yearly` standing in for
-    # intervals of 1, 3 and 12 months that `_apply_delta_recurring_entries`
-    # then decoded from a table of its own.
     repeat_unit = fields.Selection(
         selection=time_unit_selection("month", "year"),
         default="month",
@@ -1328,9 +1323,6 @@ class AccountMove(models.Model):
 
     @api.depends("auto_post", "repeat_type")
     def _compute_repeat_until(self) -> None:
-        # Cleared unless the series both recurs and says it ends, so that
-        # `_copy_recurring_entries` can read the date alone as the cut-off
-        # rather than having to agree with `repeat_type` about it.
         for record in self:
             if record.auto_post != "recurring" or record.repeat_type != "until":
                 record.repeat_until = False
@@ -1363,8 +1355,6 @@ class AccountMove(models.Model):
 
     @api.depends("move_type", "origin_payment_id", "statement_line_id")
     def _compute_journal_id(self) -> None:
-        # the default journal is one search per move; the moves of a batch
-        # that share a company, a kind and a currency share the answer
         defaults = {}
         for move in self.filtered(
             lambda r: r.journal_id.type not in r._get_valid_journal_types()
@@ -1550,9 +1540,6 @@ class AccountMove(models.Model):
             return NotImplemented
         return [("inalterable_hash", "!=", False)]
 
-    # The account type and tax exigibility it reads are left out on purpose: they
-    # are configuration, and a trigger on them would flip posted entries and
-    # rewrite their tax report after the fact.
     @api.depends(
         "move_type",
         "line_ids.account_id",
@@ -1765,11 +1752,6 @@ class AccountMove(models.Model):
             else:
                 move.expected_currency_rate = 1
 
-    # The invoice's own rate inputs, not expected_currency_rate: on an
-    # editable compute the dependencies say when a rate set by hand is
-    # discarded, and expected_currency_rate also follows `date` and, in
-    # l10n_hu_edi, `delivery_date` -- a post that fills the delivery date
-    # would reset the rate the user typed.
     @api.depends(
         "currency_id",
         "company_currency_id",
@@ -1927,8 +1909,6 @@ class AccountMove(models.Model):
             )
         ]
         rows = self.env.execute_query_dict(SQL(" UNION ALL ").join(queries))
-        # read through the ORM, not the column: a flush would compute is_bank_matched
-        # for every pending payment, including those whose state is being computed
         matched = {
             payment.id
             for payment in payments.browse(
@@ -3909,10 +3889,6 @@ class AccountMove(models.Model):
         self._conditional_add_to_compute(
             "payment_reference", lambda move: move.name and move.name != "/"
         )
-        # a move without a real name has no sequence neighbours (none shares its
-        # empty prefix with a lower or higher number), and _has_sequence_gap_around
-        # is false for it: the neighbour query can only clear its own flag, which
-        # is done here without flushing the sequence fields or querying
         named = self.filtered(lambda move: move.name and move.name != "/")
         cleared = (self - named).filtered("made_sequence_gap")
         if cleared:
@@ -3964,7 +3940,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _get_invoice_autocomplete_fields(self):
-        """Trade applications register their picker and required role by move type."""
         return {}
 
     @api.onchange("invoice_source_id")
@@ -3974,7 +3949,6 @@ class AccountMove(models.Model):
             self.invoice_source_id = False
 
     def _auto_complete_from_document(self, source) -> bool:
-        """Dispatch a non-order source; providers extend this hook."""
         self.check_singleton()
         source.check_access("read")
         if self.state != "draft":
@@ -4155,7 +4129,7 @@ class AccountMove(models.Model):
         with self._disable_recursion(
             "check_move_validity", default=True, target=False
         ) as disabled:
-            yield  # noqa: RUF075 - deliberate: on exception the transaction aborts and rolls back, so a balance check skipped here would only have judged writes that are not being kept
+            yield
             if disabled:
                 return
 
@@ -4709,9 +4683,6 @@ class AccountMove(models.Model):
 
     @_debug.perf.timed
     def _check_write_journal_change(self, move, vals) -> None:
-        # both refusals are about a written journal: without one there is
-        # nothing to check, and reading move.name first would force its compute
-        # on every write of a move whose name is still pending
         if "journal_id" not in vals:
             return
         if (
@@ -5128,9 +5099,6 @@ class AccountMove(models.Model):
         if not values["to_process_lines"] or not term_lines:
             return None
 
-        # On each account only the term lines on the side the move is owed carry
-        # its tax; an opposite line there settles them like a payment would, so
-        # counting both sides would recognise a same-move netting twice.
         values["debt_lines"] = self._get_cash_basis_debt_lines(
             term_lines, values["to_process_lines"]
         )
@@ -5142,8 +5110,6 @@ class AccountMove(models.Model):
             values["total_amount_currency"] += sign * line.amount_currency
             values["total_residual_currency"] += sign * line.amount_residual_currency
 
-        # The paid share is measured on the term lines alone; when they carry
-        # several currencies only the company currency adds them up.
         values["is_fully_paid"] = self.company_id.currency_id.is_zero(
             values["total_residual"]
         )
@@ -6186,8 +6152,6 @@ class AccountMove(models.Model):
 
     @contextmanager
     def _exempting_posting_from_approval(self, reason):
-        # the admission lives on the transaction, not in the context: no client
-        # can send one, and only server code naming a declared reason opens it
         if reason not in self._get_posting_approval_exemptions():
             raise ValueError(f"{reason!r} is not a declared posting approval exemption")
         held = self._get_held_for_posting_approval()
@@ -8407,9 +8371,6 @@ class AccountMove(models.Model):
         return None
 
     def _get_available_invoice_template_pdf_report_ids(self):
-        # asked once per partner created and once per journal read, and
-        # answered from the report configuration alone for a model-level
-        # call: memoized per transaction until a report changes
         if self:
             return self._available_invoice_template_pdf_report_ids()
         per_env = INVOICE_TEMPLATE_REPORTS(self.env)
@@ -8638,7 +8599,7 @@ class AccountMove(models.Model):
             return []
         return [
             {
-                "label": self.env._(label),  # noqa: E8502  a LazyGettext, extracted where _lt declares it
+                "label": self.env._(label),
                 "template": f"/account/static/xls/{stem}.xlsx",
             }
         ]

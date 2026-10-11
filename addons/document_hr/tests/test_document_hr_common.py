@@ -110,15 +110,6 @@ class TransactionCaseDocumentsHr(TransactionCaseDocuments):
     def check_document_creation_permission(
         self, related_record, folder=None, folder_manager=None
     ):
-        """Test that documents created with the given related record is only viewable by the employee of this record
-        and the manager set on the folder.
-
-        :param related_record: Related record of doc_user employee
-        :param folder: folder where documents are to be created (when created explicitly not through an attachment).
-        :param folder_manager: manager (user) with edit access on the folder to test access propagation
-
-        We add this method in common to check various model of HR (employee, contract, payslips, ...).
-        """
         folder = folder or self.hr_employee_folder
         folder_manager = folder_manager or self.hr_manager
 
@@ -134,7 +125,6 @@ class TransactionCaseDocumentsHr(TransactionCaseDocuments):
                     ["view", "view"],
                     "At employee document creation, the employee contact gets view access",
                 )
-                # We test access propagation because there is no propagation if access_ids are set at document creation
                 self.assertEqual(
                     documents.with_user(folder_manager).mapped("user_permission"),
                     ["edit", "edit"],

@@ -17,7 +17,6 @@ class TestLoyaltyGenerateSelected(TransactionCase):
         cls.partner_b = cls.env["res.partner"].create({"name": "Cust B"})
 
     def test_generate_selected_one_coupon_per_partner(self):
-        """Selected mode issues one coupon per chosen customer."""
         wizard = self.env["wizard.loyalty.program.create.card"].create(
             {
                 "program_id": self.program.id,
@@ -32,7 +31,6 @@ class TestLoyaltyGenerateSelected(TransactionCase):
         self.assertEqual(coupons.mapped("partner_id"), self.partner_a + self.partner_b)
 
     def test_generate_zero_quantity_raises(self):
-        """A zero-coupon batch is rejected before any card is created."""
         wizard = self.env["wizard.loyalty.program.create.card"].create(
             {
                 "program_id": self.program.id,

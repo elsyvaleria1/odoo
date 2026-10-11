@@ -38,7 +38,6 @@ class TestSocialTwitter(HttpCase):
                 }
             )
 
-            # With social manager to be displayed with the filter "My Streams"
             self.social_stream = (
                 self.env["social.stream"]
                 .with_user(self.social_manager)
@@ -115,7 +114,6 @@ class TestSocialTwitter(HttpCase):
             self.assertNotIn("api.twitter.com", url, "API call not patched")
             return original_request(requests.Session(), "GET", url, *args, **kwargs)
 
-        # Counter to generate Twitter post identifiers
         self.unique_id_str = 1000
         self.all_messages = []
 
@@ -133,7 +131,6 @@ class TestSocialTwitter(HttpCase):
             if "/tweets" in url:
                 self.all_messages.append(params.get("text", ""))
                 self.unique_id_str += 1
-                # write a comment
                 response = requests.Response()
                 response._content = json_dumps(
                     {

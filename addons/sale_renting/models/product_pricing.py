@@ -8,14 +8,11 @@ from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import format_amount
 
-# For our use case: pricing depending on the duration, the values should be sufficiently different from one plan to
-# another to not suffer from the approcimation that all months are 31 longs.
-# otherwise, 31 days would result in 2 month.
 PERIOD_RATIO = {
     "hour": 1,
     "day": 24,
     "week": 24 * 7,
-    "month": 24 * 31,  # average number of days per month over the year
+    "month": 24 * 31,
     "year": 24 * 31 * 12,
 }
 
@@ -82,10 +79,6 @@ class ProductPricing(models.Model):
         "product_template_id", "pricelist_id", "recurrence_id", "product_variant_ids"
     )
     def _check_unique_parameters(self) -> None:
-        """We want to avoid having several lines that apply for the same conditions.
-        The pricing must differ by at least one parameter among the template, the variants, the
-        pricelist (defined or not), the duration and the time unit.
-        """
         conflict_counter = defaultdict(int)
         for price in self.product_template_id.product_pricing_ids:
             key_list = [
@@ -137,11 +130,6 @@ class ProductPricing(models.Model):
             )
 
     def _get_price_for_duration(self, duration, unit):
-        """Compute the price for a specified duration of the current pricing rule.
-        :param float duration: duration in hours
-        :param str unit: duration unit (hour, day, week)
-        :return float: price
-        """
         self.check_singleton()
         if duration <= 0 or self.recurrence_id.duration <= 0:
             return self.price
@@ -156,15 +144,6 @@ class ProductPricing(models.Model):
 
     @api.model
     def _get_duration_vals(self, start_date, end_date):
-        """Compute the duration for different temporal units.
-
-        Note: all values in the returned dictionary are rounded up.
-
-        :param datetime start_date: beginning of the duration.
-        :param datetime end_date: end of the duration.
-        :returns: duration length in different units.
-        :rtype: dict
-        """
         duration = end_date - start_date
         vals = {"hour": (duration.days * 24 + duration.seconds / 3600)}
         vals["day"] = math.ceil(vals["hour"] / 24)
@@ -182,10 +161,6 @@ class ProductPricing(models.Model):
         return vals
 
     def _applies_to(self, product) -> bool:
-        """Check whether current pricing applies to given product.
-        :param product.product product:
-        :return: true if current pricing is applicable for given product, else otherwise.
-        """
         self.check_singleton()
         return self.product_template_id == product.product_tmpl_id and (
             not self.product_variant_ids or product in self.product_variant_ids
@@ -193,18 +168,10 @@ class ProductPricing(models.Model):
 
     @api.model
     def _get_first_suitable_pricing(self, product, pricelist=None):
-        """Get the first suitable pricing for given product and pricelist.
-
-        Note: model method
-        """
         return self._get_suitable_pricings(product, pricelist=pricelist, first=True)
 
     @api.model
     def _get_suitable_pricings(self, product, pricelist=None, first=False):
-        """Get the suitable pricings for given product and pricelist.
-
-        Note: model method
-        """
         is_product_template = product._name == "product.template"
         available_pricings = self.env["product.pricing"]
         if pricelist:

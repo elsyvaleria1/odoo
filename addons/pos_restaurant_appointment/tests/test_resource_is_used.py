@@ -24,7 +24,6 @@ class TestResourceIsUsed(TransactionCase):
                 "appointment_type_ids": [(6, 0, cls.appointment_type.ids)],
             }
         )
-        # 19:30 on 2026-10-04 in Mexico City (UTC-6) is 01:30 UTC the next day
         cls.env["calendar.event"].create(
             {
                 "name": "Dinner",

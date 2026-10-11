@@ -42,12 +42,7 @@ class ProductPricelist(models.Model):
         end_date=None,
         **kwargs,
     ):
-        """Override to handle the rental product price
-
-        Note that this implementation can be done deeper in the base price method of pricelist item
-        or the product price compute method.
-        """
-        self and self.check_singleton()  # self is at most one record
+        self and self.check_singleton()
 
         currency = currency or self.currency_id or self.env.company.currency_id
         currency.check_singleton()
@@ -56,7 +51,6 @@ class ProductPricelist(models.Model):
             return {}
 
         if not date:
-            # Used to fetch pricelist rules and currency rates
             date = fields.Datetime.now()
 
         results = {}
@@ -107,10 +101,4 @@ class ProductPricelist(models.Model):
         }
 
     def _enable_rental_price(self, start_date, end_date):
-        """Enable the rental price computing or use the default price computing
-
-        :param date start_date: A rental pickup date
-        :param date end_date: A rental return date
-        :return: Whether product pricing should be or not be used to compute product price
-        """
         return start_date and end_date

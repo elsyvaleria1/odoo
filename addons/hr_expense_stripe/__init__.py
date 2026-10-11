@@ -19,9 +19,6 @@ def _post_init_hook_setup_issuing(env) -> None:
 
 
 def _uninstall_hook(env) -> None:
-    """Uninstall hook to delete the Stripe account, as a safeguard against accidental deletion
-    we request the user to block all cards first.
-    """
     if env["hr.expense.stripe.card"].search_count(
         [("state", "in", ["inactive", "active"])], limit=1
     ):

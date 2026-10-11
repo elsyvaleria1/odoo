@@ -32,7 +32,6 @@ class TestPosRescueSessionMigration(TestPoSCommon):
         self.basic_config.open_ui()
         self.env.flush_all()
         cr = self.env.cr
-        # the 1.0.12 schema: a registered rescue column the open-session index exempts
         cr.execute("DROP INDEX pos_session_open_per_config_uniq")
         cr.execute("ALTER TABLE pos_session ADD COLUMN rescue boolean")
         cr.execute(

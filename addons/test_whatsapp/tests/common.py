@@ -8,7 +8,6 @@ class WhatsAppFullCase(WhatsAppCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # base test records
         country_be_id = cls.env.ref("base.be").id
         cls.test_partner = cls.env["res.partner"].create(
             {
@@ -40,7 +39,6 @@ class WhatsAppFullCase(WhatsAppCommon):
             cls.test_base_records
         )
 
-        # template on base wa model
         cls.whatsapp_template = cls.env[
             "whatsapp.template"
         ].create(
@@ -48,13 +46,12 @@ class WhatsAppFullCase(WhatsAppCommon):
                 "body": "Hello World",
                 "model_id": cls.env["ir.model"]._get_id("whatsapp.test.base"),
                 "name": "WhatsApp Template",
-                "template_name": "whatsapp_template",  # not computed because pre-approved
+                "template_name": "whatsapp_template",
                 "status": "approved",
                 "wa_account_id": cls.whatsapp_account.id,
             }
         )
 
-        # test report records
         cls.test_wa_base_report = cls.env["ir.actions.report"].create(
             {
                 "model": "whatsapp.test.base",

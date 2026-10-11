@@ -5,7 +5,6 @@ from odoo.exceptions import UserError
 
 from odoo.addons.pos_self_order.controllers.orders import PosSelfOrderController
 
-# what a kiosk sends a box: an action on a device, and a WebRTC offer
 KIOSK_IOT_MESSAGE_TYPES = frozenset({"iot_action", "webrtc_offer"})
 
 
@@ -16,7 +15,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def iot_payment_cancelled(self, access_token, order_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def iot_payment_cancelled(self, access_token, order_id):
         pos_config = self._get_pos_config(access_token)
         order = pos_config.env["pos.order"].search(
             [("id", "=", order_id), ("config_id", "=", pos_config.id)]
@@ -29,12 +28,9 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def iot_payment_success(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def iot_payment_success(
         self, access_token, order_id, payment_method_id, payment_info
     ):
-        # the IoT box answers the kiosk's browser, never this server: the
-        # approval cannot be checked with the terminal, so it is taken only
-        # from a kiosk, for its own terminal, once per transaction
         pos_config = self._get_pos_config(access_token)
         payment_method = pos_config.payment_method_ids.filtered(
             lambda p: p.id == payment_method_id and p.iot_device_id
@@ -65,7 +61,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     @http.route(
         "/pos-self-order/get-iot-box-data/", auth="public", type="jsonrpc", website=True
     )
-    def get_iot_box_data(self, access_token, iot_box_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_iot_box_data(self, access_token, iot_box_id):
         pos_config = self._get_pos_config(access_token)
         iot_box = self._kiosk_iot_boxes(pos_config).filtered(
             lambda box: box.id == iot_box_id
@@ -77,17 +73,12 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     @http.route(
         "/pos-self-order/iot-box-websocket-channel/", auth="public", type="jsonrpc"
     )
-    def iot_box_websocket_channel(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def iot_box_websocket_channel(
         self, access_token, message=None, message_type="iot_action"
     ):
-        # a kiosk drives its point of sale's boxes from the browser and hears
-        # their answers on a channel of its own; a phone, whose token every QR
-        # code prints, reaches no box
         try:
             pos_config = self._get_pos_config(access_token)
         except Unauthorized:
-            # If pos is closed, we don't want a traceback, and we don't care
-            # about sending messages to the iot box: we return an empty ws channel
             return ""
         if pos_config.self_ordering_mode != "kiosk":
             return ""

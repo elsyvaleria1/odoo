@@ -14,7 +14,6 @@ class ResPartner(models.Model):
     _name = "res.partner"
     _inherit = "res.partner"
 
-    # Investee (Company) fields
     equity_transaction_ids = fields.One2many(
         comodel_name="equity.transaction",
         inverse_name="partner_id",
@@ -47,7 +46,6 @@ class ResPartner(models.Model):
     equity_legal_form = fields.Char(string="Legal Form")
     equity_formation_date = fields.Date(string="Formation Date")
 
-    # Ultimate Beneficial Owner
     ubo_birth_date = fields.Date(string="Birth Date")
     ubo_birth_place = fields.Char(string="Birth Place")
     ubo_national_identifier = fields.Char(string="UBO ID Number")
@@ -67,7 +65,6 @@ class ResPartner(models.Model):
         classification="equity.partner_ownership",
     )
 
-    # Investee (Company) methods
     def _compute_transaction_count(self) -> None:
         partners_transactions = dict(
             self.env["equity.transaction"]._read_group(
@@ -147,7 +144,6 @@ class ResPartner(models.Model):
                 ]
             )
 
-    # cap table methods
     def _get_cap_table_data(self) -> dict:
         self.check_singleton()
         return {
@@ -205,12 +201,7 @@ class ResPartner(models.Model):
             },
         )
 
-    # misc methods
     def _equity_get_or_create_token(self) -> str:
-        """``<partner id>$<token>`` of the partner's equity link: an access.link
-        in the partner's name opening their equity pages and their UBO form,
-        living a notification's lifetime (decision B1) from the last mail that
-        carried it."""
         self.check_singleton()
         link, token = self.env["access.link"]._issue(
             self, partner=self, role="comment", cause="notification"

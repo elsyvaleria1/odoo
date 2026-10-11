@@ -31,7 +31,6 @@ HASHED_FIELDS_V1 = (
     "ip",
     "user_agent",
 )
-# a row is rehashed with the fields of the version it was recorded under
 HASHED_FIELDS = {
     1: HASHED_FIELDS_V1,
     2: (*HASHED_FIELDS_V1, "partner_id"),
@@ -172,15 +171,11 @@ class ProofEvidence(models.Model):
                 sequence=sequence, prev_hash=prev_hash, hash_version=HASH_VERSION
             )
             vals["hash"] = prev_hash = self._get_chained_hash(vals)
-        # what is pending is written first: a conflict of its own is not this
-        # chain's, and must not read as a concurrent proof
         self.env.flush_all()
         try:
             with self.env.cr.savepoint():
                 return super().create(vals_list)
         except psycopg.errors.UniqueViolation:
-            # a concurrent proof took the position this snapshot computed:
-            # replaying on a snapshot that sees it chains after it
             raise ConcurrencyError(
                 "proof.evidence: a concurrent proof took this chain position"
             ) from None
@@ -239,9 +234,6 @@ class ProofEvidence(models.Model):
         return {name: self[name] for name in HASHED_FIELDS[self.hash_version]}
 
     def _get_chain_error(self) -> str | None:
-        """Why the whole chain no longer vouches for its proofs, or None: the first
-        position missing, the first row not linked to its predecessor, or the
-        first row whose content no longer matches its hash."""
         expected, prev_hash = 1, ""
         for ids in batched(self.search([], order="sequence").ids, 1000, strict=False):
             for evidence in self.browse(ids):

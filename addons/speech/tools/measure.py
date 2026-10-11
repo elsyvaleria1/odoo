@@ -112,8 +112,6 @@ def _read_number(tokens: list[str], start: int) -> tuple[str, int] | None:
     return value, index
 
 
-# a recogniser writes "38" for "treinta y ocho" and the grammar reads both, so a
-# spoken number is compared as the number it names, not word by word
 def words(text: str) -> list[str]:
     folded = unicodedata.normalize("NFKD", text.lower())
     bare = "".join(char for char in folded if not unicodedata.combining(char))
@@ -199,8 +197,6 @@ class Score:
         return ranked[min(len(ranked) - 1, int(share * len(ranked)))]
 
 
-# engines are interleaved clip by clip, so a machine that slows down mid-run
-# slows every engine alike instead of whichever ran last
 def measure(
     env: Any,
     clips: list[Clip],

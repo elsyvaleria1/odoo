@@ -376,10 +376,6 @@ class TestInboundEventEnqueue(TestIntegrationExchange):
         )
 
     def _give_the_channel_a_handler(self, handler):
-        # Not `self.patch`, which requires the attribute to exist:
-        # `_run_queued_event` lives on the INBOUND mixin, and the channel these
-        # events point at is an outbound endpoint because `mixin.integration.receiver`
-        # is abstract and has no concrete model in this addon to point at.
         channel_cls = self.registry["integration.service"]
         channel_cls._run_queued_event = handler
         self.addCleanup(delattr, channel_cls, "_run_queued_event")
@@ -390,9 +386,6 @@ class TestInboundEventEnqueue(TestIntegrationExchange):
         return event
 
     def _give_the_channel_a_processing_mode(self, processing_mode):
-        # `processing_mode` lives on the INBOUND mixin too; see
-        # `_give_the_channel_a_handler` above for why it is patched onto the
-        # outbound channel these test events point at.
         channel_cls = self.registry["integration.service"]
         channel_cls.processing_mode = processing_mode
         self.addCleanup(delattr, channel_cls, "processing_mode")
@@ -406,10 +399,6 @@ class TestInboundEventEnqueue(TestIntegrationExchange):
         self.assertEqual(len(self._jobs_for(event)), 1)
 
     def test_the_retry_cron_does_not_add_a_second_job_for_a_fresh_event(self):
-        # The defect this guards: `queue_event` leaves an event `pending` with
-        # `date_next_retry` unset, and the cron's domain asks for exactly that.
-        # Any cron run between queueing and the worker claiming the job used to
-        # enqueue a second one, and nothing downstream deduplicated it.
         self._give_the_channel_a_handler(lambda channel, event_id: None)
         event = self._inbound_event()
         event._enqueue_processing()
@@ -424,11 +413,6 @@ class TestInboundEventEnqueue(TestIntegrationExchange):
 
     @mute_logger("odoo.addons.integration.models.integration_exchange")
     def test_the_retry_cron_does_not_replay_a_synchronous_endpoints_event(self):
-        # The defect this guards: `queue_event` never enqueues a job for a
-        # `processing_mode="sync"` endpoint (the caller is expected to process
-        # inline and close the event itself), so a caller that forgets leaves
-        # the event `pending` with no job to deduplicate against. The cron
-        # used to enqueue one anyway right after warning that it shouldn't.
         self._give_the_channel_a_handler(lambda channel, event_id: None)
         self._give_the_channel_a_processing_mode("sync")
         event = self._inbound_event()

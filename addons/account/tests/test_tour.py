@@ -158,10 +158,7 @@ class TestUi(AccountTestInvoicingHttpCommon):
         )
 
     def test_a_product_added_after_creating_a_section_lands_in_that_section(self):
-        # with a line already on the invoice the catalog opens on "no section";
-        # the card must follow the section the user then creates and selects
         self.product.write({"is_favorite": True})
-        # the tour logs in as admin, so the invoice lives in admin's company
         invoice = (
             self.env["account.move"]
             .with_user(self.env.ref("base.user_admin"))

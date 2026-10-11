@@ -6,7 +6,7 @@ from odoo.tools import file_open
 
 @tagged("-at_install", "post_install")
 class TestSignRequestCancel(TransactionCase):
-    def setUp(cls):  # noqa: N805  preexisting: instance setUp named `cls` (reported)
+    def setUp(cls):
         super().setUp()
 
         with file_open(
@@ -77,7 +77,6 @@ class TestSignRequestCancel(TransactionCase):
     def test_cancel_sign_request(self):
         new_test_user(self.env, login="user1", groups="sign.group_sign_user")
         with self.with_user("user1"):
-            # sudo() to avoid recreating everything again and instead use already present record
             template_id = (
                 self.env["sign.template"]
                 .sudo()

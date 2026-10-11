@@ -5,7 +5,6 @@ from odoo.tools import mute_logger
 @tagged("-at_install", "post_install")
 class WithContext(HttpCase):
     def test_01_homepage_url(self):
-        # Setup
         website = self.env["website"].browse([1])
         website.write(
             {
@@ -25,12 +24,6 @@ class WithContext(HttpCase):
             ]
         ).sequence = 1
 
-        # 404 shouldn't be served but fallback on first menu
-        # -------------------------------------------
-        # / page exists | first menu  |  homepage_url
-        # -------------------------------------------
-        #    yes        | /contactus  |  /unexisting
-        # -------------------------------------------
         r = self.url_open(website.homepage_url)
         self.assertEqual(r.status_code, 404, "The website homepage_url should be a 404")
         r = self.url_open(home_url)
@@ -39,12 +32,6 @@ class WithContext(HttpCase):
         self.assertURLEqual(r.url, contactus_url_full)
         self.assertIn(contactus_content, r.content)
 
-        # same with 403
-        # -------------------------------------------
-        # / page exists | first menu  |  homepage_url
-        # -------------------------------------------
-        #    yes        | /contactus  |  /test_website/200/name-1
-        # -------------------------------------------
         rec_unpublished = self.env["test.model"].create(
             {
                 "name": "name",
@@ -52,7 +39,7 @@ class WithContext(HttpCase):
             }
         )
         website.homepage_url = f"/test_website/200/name-{rec_unpublished.id}"
-        with mute_logger("odoo.http"):  # mute 403 warning
+        with mute_logger("odoo.http"):
             r = self.url_open(website.homepage_url)
         self.assertEqual(r.status_code, 404, "The website homepage_url should be a 404")
         r = self.url_open(home_url)

@@ -420,17 +420,6 @@ class DeviceGeofence(models.Model):
         }
 
     def _schedule_local_now(self, now_utc):
-        """This geofence's own wall clock at `now_utc`.
-
-        Not the acting user's. The alert loop runs from a cron every five
-        minutes, so `self.env.company` is OdooBot's -- company 1, the
-        unconfigured placeholder, whose partner carries no timezone at all. The
-        `or "UTC"` fallback therefore fired on every single run, and a
-        `business_hours` fence over a UTC-6 fleet was live from 02:00 to 12:00
-        local instead of 08:00 to 18:00. Nothing raised; the alerts simply came
-        at the wrong hours. A schedule is written in the hours of the company
-        that owns the fence, so it has to be read back in them.
-        """
         self.check_singleton()
         company = self.company_id or self.env.company
         return now_utc.replace(tzinfo=UTC).astimezone(
@@ -438,13 +427,6 @@ class DeviceGeofence(models.Model):
         )
 
     def _is_within_schedule(self, now_utc) -> bool:
-        """Whether this geofence is watching at `now_utc`.
-
-        Lifted out of the cron loop so the window can be asserted directly. It
-        was six hours out for as long as it lived there, and a schedule buried
-        inside a batch that also walks devices, computes containment and sends
-        alerts is one no test was ever going to pin down on its own.
-        """
         self.check_singleton()
         if self.schedule_type == "always":
             return True

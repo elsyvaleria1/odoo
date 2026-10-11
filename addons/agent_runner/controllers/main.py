@@ -8,14 +8,12 @@ from ..models.agent_run import LIVE_STATES, LeaseLost
 
 _debug = DebugLog(__name__)
 
-# Every route: the runner's own bearer token admits it, through the inbound gate
-# its record is; the handler then runs as the runner's service user.
 _RUNNER_ROUTE = {
     "type": "http",
     "auth": "receiver",
     "receiver": "agent.runner:_receiver_for_bearer",
     "methods": ["POST"],
-    "csrf": False,  # auth="receiver": the runner's token authenticates it
+    "csrf": False,
     "save_session": False,
 }
 
@@ -40,8 +38,6 @@ def _usage(body: dict[str, Any]) -> dict[str, Any]:
 
 
 def _annotate_spend(run: Any, usage: dict[str, Any]) -> None:
-    """The spend lands on this call's exchange row, under the run's company,
-    where the company's machine-learning budget reads it."""
     request.admission.annotate(
         company_id=run.company_id.id,
         ml_cost=usage["cost"],
@@ -58,9 +54,6 @@ class AgentRunnerController(http.Controller):
         return runner, admission.json()
 
     def _leased_run(self, runner: Any, body: dict[str, Any]) -> Any:
-        """The run ``body`` names, when this runner holds it. Any other id --
-        another runner's run, one that does not exist -- answers as a lost
-        lease, so an id says nothing about which runs exist."""
         run_id = body.get("run")
         if isinstance(run_id, bool) or not isinstance(run_id, int):
             return None
@@ -75,7 +68,6 @@ class AgentRunnerController(http.Controller):
 
     @http.route("/agent_runner/v1/claim", receiver_event="agent_claim", **_RUNNER_ROUTE)
     def claim(self) -> http.Response:
-        """At most one run for this runner, with the lease token that names it."""
         runner, _body = self._runner_and_body()
         return _answer({"run": runner.env["agent.run"]._lease(runner)})
 
@@ -114,9 +106,6 @@ class AgentRunnerController(http.Controller):
         **_RUNNER_ROUTE,
     )
     def complete(self) -> http.Response:
-        """Finish the run. A replay answers as the first call did and counts
-        nothing twice: the spend lands on this call's exchange row only the
-        first time, where the company's machine-learning budget reads it."""
         runner, body = self._runner_and_body()
         run = self._leased_run(runner, body)
         if run is None:

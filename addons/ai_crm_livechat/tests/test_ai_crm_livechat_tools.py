@@ -8,7 +8,6 @@ from odoo.addons.ai_crm.tests.test_ai_crm_tools import TestAiCrmTools
 class TestAiCrmLivechatTools(TestAiCrmTools):
     @users("public_user")
     def test_create_lead_tool_from_livechat(self):
-        # check that the lead is created with the origin_channel_id
         tool = self.env.ref("ai_crm.ir_actions_server_ai_create_lead").sudo()
         livechat_channel = (
             self.env["discuss.channel"]

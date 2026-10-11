@@ -22,8 +22,6 @@ class IrAccess(models.Model):
         return res
 
     def _get_access_context(self):
-        # the website _eval_context reads, the request's on the frontend: the
-        # context's website_id alone let two websites share one cached domain
         yield from super()._get_access_context()
         is_frontend = ir_http.get_request_website()
         yield (is_frontend and self.env["website"].get_current_website().id) or False

@@ -20,11 +20,6 @@ class MixinApprovalStateSync(models.AbstractModel):
         return "state"
 
     def _get_approval_sync_kinds(self) -> dict[Any, str]:
-        """Each value of the state field, mapped to what it means for the request.
-
-        Kinds: ``pending`` (awaiting approval), ``progress`` (a first step approved),
-        ``approved``, ``refused``, ``cancelled`` and ``draft`` (not submitted).
-        """
         raise NotImplementedError
 
     def _get_approval_sync_kind(self) -> str | None:
@@ -56,8 +51,6 @@ class MixinApprovalStateSync(models.AbstractModel):
         return records
 
     def _approval_move_decided(self, verb: str) -> None:
-        """The records a write moved into `verb`'s state: the move is the request's
-        decision, or raises the request a document in that state holds."""
         synced = self.env.transaction.admitted_ids("approval.request", SYNC_ADMISSION)
         with_request = self.filtered(
             lambda record: (
@@ -80,11 +73,9 @@ class MixinApprovalStateSync(models.AbstractModel):
         )._create_approval_requests()
 
     def _get_approval_sync_model(self) -> str:
-        """The model whose verbs are the document's moves."""
         return self._name
 
     def _get_approval_sync_verb(self, value: Any) -> str | None:
-        """The verb whose move lands the state field on `value`."""
         field = self._get_approval_sync_state_field()
         transitions = self.env.registry.verb_transitions.get(
             self._get_approval_sync_model(), {}
@@ -95,7 +86,6 @@ class MixinApprovalStateSync(models.AbstractModel):
         return None
 
     def _get_approval_outcome_value(self, kind: str) -> Any:
-        """The state an outcome of the request lands the document in, if any."""
         values = [
             value
             for value, value_kind in self._get_approval_sync_kinds().items()
@@ -133,14 +123,10 @@ class MixinApprovalStateSync(models.AbstractModel):
         return can_raise
 
     def _can_raise_approval_request(self) -> bool:
-        """Whether this document may hold a request at all; adopters add their own
-        exclusions here, whatever state the document is in."""
         self.check_singleton()
         return not self.approval_request_id and self.approval_required
 
     def _create_approval_requests(self) -> None:
-        # The superuser is the system: what it creates or moves (crons, fast paths,
-        # data) keeps the direct flow. A user's sudo() keeps their uid, so it still asks.
         if self.env.uid == SUPERUSER_ID or self.env.context.get("import_file"):
             return
         records = self.sudo()
@@ -158,35 +144,17 @@ class MixinApprovalStateSync(models.AbstractModel):
                 needing |= record
         if not needing:
             return
-        # Flush before the savepoint, so what is already pending is checked in the
-        # env that produced it rather than by the savepoint's own flush.
         self.env.flush_all()
         try:
             with self.env.cr.savepoint():
                 needing._raise_approval_requests()
         except ApprovalStepUnstaffed:
-            # one record's company staffs no step: find which, and keep the rest
             trace.SYNC.event("batch_not_raised_unstaffed", records=needing)
             for record in needing:
                 record._raise_approval_request_on_create()
 
     def _raise_approval_request_on_create(self) -> None:
-        """Raise this record's request, and survive a company that staffs no step.
-
-        Whoever creates a document rarely governs who may approve it: an employee
-        asking for time off in a company that has named no time-off officer cannot
-        appoint one. A step every one of whose approvers works in another company
-        is that gap, and it belongs to the configuration, not to the document being
-        recorded -- the refusal used to travel out of the automatic create and
-        refuse the document itself. The document is kept and says why it has no
-        request yet.
-
-        Every other refusal still reaches the caller, the document's own approval
-        policy emptying a step included: that one is the document's to answer for.
-        """
         self.check_singleton()
-        # Flush before the savepoint, so what is already pending is checked in the
-        # env that produced it rather than by the savepoint's own flush.
         self.env.flush_all()
         try:
             with self.env.cr.savepoint():
@@ -368,14 +336,6 @@ class MixinApprovalStateSync(models.AbstractModel):
         )
 
     def _apply_approval_outcome(self, kind: str, decided: bool = True) -> None:
-        """Move the document where the request's outcome says, as the decider.
-
-        The decider is asked the adopter's own policy, then the verb of that move
-        through the verb's rows, as a checkpoint would. The rows alone and not the
-        operation the verb requires: an approver decides through the request and
-        reads the document only while deciding it. The move is then admitted for
-        the verb, so the funnel does not ask it again.
-        """
         self.check_singleton()
         value = self._get_approval_outcome_value(kind)
         verb = self._get_approval_sync_verb(value) if value is not None else None

@@ -18,8 +18,6 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 TRACKER_AUTH_MODE_PARAM = "device_gps.webhook_auth_mode"
-# What an unnamed caller may send before the tracker it claims to be is
-# known; the device's own limit applies from then on.
 TRACKER_MAX_ANONYMOUS_BODY = 256 * 1024
 TRACKER_ACK = b"\x01"
 TRACKER_NACK = b"\x00"
@@ -30,7 +28,6 @@ class DeviceDevice(models.Model):
     _receiver_privileges = ("device_gps.privilege_receive_fix",)
 
     def _gps_timezone(self):
-        """Working timezone of the observation target, with a neutral fallback."""
         self.check_singleton()
         return (
             self.tracked_resource_id.tz
@@ -41,8 +38,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _gps_timezone_query(self):
-        """One timezone per device, its company's, usable by reports without
-        business joins."""
         return SQL(
             """
             SELECT d.id AS device_id,
@@ -194,9 +189,6 @@ class DeviceDevice(models.Model):
 
     @api.depends("config_id")
     def _compute_gps_tracking_enabled(self) -> None:
-        # The config value is only the default for a NEW config assignment; a
-        # per-device override must survive later edits of the config itself,
-        # so this deliberately does not depend on config_id.gps_tracking_enabled.
         for device in self:
             if device._origin.config_id != device.config_id:
                 if device.config_id and hasattr(
@@ -284,9 +276,6 @@ class DeviceDevice(models.Model):
             last_update = device.date_last_data_received
             last_update_str = ""
             if last_update:
-                # Rendered straight onto the card by `t-out` in the kanban
-                # arch, so this is the string the operator reads: it is
-                # translated here or nowhere.
                 seconds = (fields.Datetime.now() - last_update).total_seconds()
                 if seconds < 3600:
                     last_update_str = self.env._(
@@ -403,25 +392,11 @@ class DeviceDevice(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_with_tracking_history(self) -> None:
-        """Refuse to delete a device that still holds tracking history.
-
-        The log table lives in its own database behind postgres_fdw, so the
-        ``ondelete="cascade"`` on ``device_id`` no longer exists in Postgres:
-        a BEFORE DELETE trigger refuses the row instead (see
-        ``remote.tools.fdw``). Left to the trigger the user gets a raw
-        foreign-key traceback, so the rule is stated here too, where it can
-        name the device and point at archiving. The count is bounded by
-        ``device_id``, so it ships to the remote server and hits the
-        composite index.
-
-        ``at_uninstall=False``: uninstalling the module drops its own tables,
-        and the history goes with them.
-        """
         logs = self.env["device.data.log.gps"].sudo()
         with_history = self.browse(
             device.id
             for device in self
-            if logs.search_count([("device_id", "=", device.id)], limit=1)  # noqa: E8507 - one EXISTS per device; a grouped count reads every fix of the log table
+            if logs.search_count([("device_id", "=", device.id)], limit=1)
         )
         if with_history:
             raise UserError(
@@ -472,8 +447,6 @@ class DeviceDevice(models.Model):
 
     @api.constrains("company_id")
     def _check_tracked_resource_company(self):
-        # Checking only the resource's writes misses a tracker moved to another
-        # company. Validate the stored relation from the device side as well.
         resources = self.sudo().mapped("tracked_resource_id")
         resources._check_company(["gps_device_id"])
         self._check_gps_history_company()
@@ -499,8 +472,6 @@ class DeviceDevice(models.Model):
             self._check_gps_history_company(vals["company_id"])
         result = super().write(vals)
         if "odometer_initial_offset" in vals or "config_id" in vals:
-            # A config switch changes the correction factor and the raw source
-            # (reports_odometer), so the stored history must be recomputed too.
             self.env["device.data.log.gps"]._schedule_real_odometer_recompute(self)
         if "company_id" in vals:
             self.env["device.data.log.gps.report"]._rolling_mark_stale()
@@ -508,7 +479,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _read_tracker_request(self) -> tuple | None:
-        """Parse the bounded legacy envelope shared by both GPS routes."""
         httprequest = request.httprequest
         httprequest.max_content_length = TRACKER_MAX_ANONYMOUS_BODY
         try:
@@ -539,9 +509,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _prepare_tracker_refusal_response(self, refused):
-        """A tracker reads one byte: every refusal is a NACK with 200, so an
-        unknown receiver key, a wrong token and a blocked address are indistinguishable
-        from outside, and the verdict is in the access log alone."""
         return Response(TRACKER_NACK, status=200, mimetype="application/octet-stream")
 
     def _inbound_auth_mode(self, parameter_key=None):
@@ -551,8 +518,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _normalize_tracker_key(self, value):
-        # JSON booleans, floats and containers are not source identities.
-        # Preserve string leading zeroes and exact deployed wire values.
         if type(value) is int and value >= 0:
             value = str(value)
         if not isinstance(value, str) or not value.strip() or len(value) > 128:
@@ -565,8 +530,6 @@ class DeviceDevice(models.Model):
         if key is None:
             _debug.logic("gps_receiver_resolution", result="invalid_key")
             return self.browse()
-        # The legacy URL has no tenant/receiver namespace. Until scoped
-        # channels replace it, refuse ambiguity instead of picking a tenant.
         devices = self.with_context(active_test=False).search(
             [("gps_receiver_key", "=", key)],
             limit=2,
@@ -588,7 +551,6 @@ class DeviceDevice(models.Model):
                 "WHERE gps_receiver_key IS NOT NULL AND gps_receiver_key != '' "
                 "GROUP BY gps_receiver_key HAVING count(*) > 1)"
             ),
-            # Shape diagnostic only; this does not verify checksum or ownership.
             "malformed_imeis": SQL(
                 "imei IS NOT NULL AND imei != '' AND imei !~ '^[0-9]{15}$'"
             ),
@@ -602,9 +564,6 @@ class DeviceDevice(models.Model):
         return checks
 
     def _cron_refresh_gps_pointers(self, lookback_minutes=60) -> None:
-        # The cutoff is a bound parameter, not now() in SQL: postgres_fdw only
-        # ships a filter it can evaluate remotely, and now() is not one, so
-        # the foreign table would otherwise send every row every two minutes.
         since = fields.Datetime.now() - timedelta(minutes=lookback_minutes)
         self.env.cr.execute(
             """

@@ -64,7 +64,6 @@ class Im_LivechatChannel(models.Model):
             chatbot_script_id=chatbot_script_id,
             **kwargs,
         )
-        # sudo() => access is managed through _is_user_access_allowed.
         ai_agent = (
             self.env["ai.agent"].sudo().search([("id", "=", kwargs.get("ai_agent_id"))])
         )

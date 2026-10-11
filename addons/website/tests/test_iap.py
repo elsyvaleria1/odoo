@@ -18,9 +18,6 @@ class TestIap(odoo.tests.HttpCase):
         try:
             english_terms = _get_industries("en")
         except AccessError as e:
-            # The IAP endpoint being unreachable/erroring out is an
-            # environment issue, not a translation regression: don't let it
-            # masquerade as one.
             self.skipTest(f"IAP industries endpoint unavailable: {e}")
         for lang in [
             "ar",

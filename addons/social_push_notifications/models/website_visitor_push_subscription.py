@@ -36,16 +36,12 @@ class WebsiteVisitorPushSubscription(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Ensure the push_token is unique by first deleting existing copies.
-        Will also mark related website.visitors as having push notifications enabled."""
 
         subscriptions = super().create(vals_list)
         subscriptions.website_visitor_id.write({"has_push_notifications": True})
         return subscriptions
 
     def unlink(self):
-        """When unlinking, check if it's the last subscription for the related visitor and mark
-        them as not having subscriptions if it's the case."""
 
         website_visitor_ids = self.website_visitor_id
         result = super().unlink()

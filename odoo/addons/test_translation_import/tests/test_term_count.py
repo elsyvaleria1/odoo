@@ -207,7 +207,7 @@ class TestImport(common.TransactionCase):
         self.env["res.lang"]._activate_lang("fr_FR")
         context = {"lang": "en_US"}
         self.assertEqual(str(BOOLEAN_TRANSLATIONS[0]), "yes")
-        context = {"lang": "fr_FR"}  # noqa: F841  read via caller-frame inspection, see above
+        context = {"lang": "fr_FR"}
         self.assertEqual(str(BOOLEAN_TRANSLATIONS[0]), "oui")
 
     def test_import_from_csv_file(self):

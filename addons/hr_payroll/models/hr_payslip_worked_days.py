@@ -78,11 +78,6 @@ class HrPayslipWorkedDays(models.Model):
         "payslip_id.date_to",
     )
     def _compute_is_paid(self) -> None:
-        # Same "(5, 0, 0) during an onchange detaches lines instead of
-        # dropping them" case documented in _compute_name below: a detached
-        # line (payslip_id unset) has no struct to look up, so it must be
-        # handled explicitly instead of falling through to the same-looking
-        # "structure not found" branch below by accident.
         detached = self.filtered(lambda wd: not wd.payslip_id)
         for worked_days in detached:
             worked_days.is_paid = False
@@ -141,7 +136,6 @@ class HrPayslipWorkedDays(models.Model):
     def _is_half_day(self) -> bool:
         self.check_singleton()
         work_hours = self.payslip_id._get_worked_day_lines_hours_per_day()
-        # For refunds number of days is negative
         return (
             abs(self.number_of_days) < 1
             or float_round(self.number_of_hours / self.number_of_days, 2) < work_hours
@@ -151,15 +145,6 @@ class HrPayslipWorkedDays(models.Model):
         "work_entry_type_id", "number_of_days", "number_of_hours", "payslip_id"
     )
     def _compute_name(self):
-        # Resetting an x2many with (5, 0, 0) during an onchange detaches the
-        # lines computed by a previous onchange instead of dropping them:
-        # One2many.write_new only sets their inverse to False, so they stay in
-        # cache and, since this compute depends on payslip_id, they are queued
-        # for recomputation together with the freshly created lines.  The batch
-        # is therefore mixed, and a recordset-level guard would let a detached
-        # line reach _is_half_day() below, whose check_singleton() explodes on the
-        # empty payslip.  A detached line has no calendar to compare against, so
-        # it only gets named after its work entry type.
         detached = self.filtered(lambda wd: not wd.payslip_id)
         for worked_days in detached:
             worked_days.name = worked_days.work_entry_type_id.name or ""

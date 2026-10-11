@@ -72,8 +72,6 @@ def _domain_fields_differences(automation, domain1, domain2) -> tuple:
     return in_d1_only_fields, in_d2_only_fields
 
 
-# Minutes per delay unit, only to size the scheduler's polling interval: a month
-# is approximated because the interval is a fixed number of minutes.
 MINUTES_PER_DELAY_UNIT = {
     "minute": 1,
     "hour": 60,
@@ -236,11 +234,6 @@ class AutomationRule(models.Model):
     edge_count = fields.Count(
         count_of="edge_ids",
         string="Connections",
-        # An edge is cascade-deleted with either endpoint, and the ORM sees that
-        # as a change to `action_server_ids` rather than to `edge_ids`, so
-        # counting only what Count counts leaves the stored value one high after
-        # a step is removed. `test_the_counts_follow_the_graph` reads exactly
-        # that sequence.
         depends=["edge_ids", "action_server_ids"],
         store=True,
         help="How many typed dependencies order this automation's steps",
@@ -554,11 +547,6 @@ class AutomationRule(models.Model):
         return new_automations
 
     def _get_step_reference_problems(self) -> list[str]:
-        """Every read of one step by another that the graph does not guarantee.
-
-        Not a constraint: rewiring a flow passes through states like these, so
-        they are shown on the automation and refused only when a run starts.
-        """
         self.check_singleton()
         problems = []
         for action in self.action_server_ids.sorted("sequence"):
@@ -619,8 +607,6 @@ class AutomationRule(models.Model):
         self.live_runtime_ids.action_cancel()
 
     def action_sync_running_runs(self) -> None:
-        """Bring every run still going up to this automation's graph, running
-        nothing."""
         self.env["automation.runtime"].search(
             [
                 ("automation_id", "in", self.ids),
@@ -1839,8 +1825,6 @@ class AutomationRule(models.Model):
             repeat_interval, repeat_unit = self._get_cron_interval(automations)
             vals = {"active": bool(automations)}
 
-            # Compared by where each cadence lands from one instant, not by a
-            # length: a month has none, and the old table priced it at 30 days.
             reference = fields.Datetime.now()
             if (
                 reference + get_timedelta(repeat_interval, repeat_unit)

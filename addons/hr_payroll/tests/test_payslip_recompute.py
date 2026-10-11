@@ -52,8 +52,6 @@ class TestPayslipRecomputeOnInputChange(TestPayslipContractBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # developer_pay_structure ships no input-driven rule, so the fixture
-        # cannot show an input moving a line on its own.
         cls.bonus_type = cls.env["hr.payslip.input.type"].create(
             {
                 "name": "Test Bonus",
@@ -102,9 +100,6 @@ class TestPayslipRecomputeOnInputChange(TestPayslipContractBase):
         return payslip._get_line_values(["TESTBONUS"])["TESTBONUS"][payslip.id]["total"]
 
     def test_an_input_change_refreshes_the_draft_payslip(self):
-        # Editing an amount in the Salary Inputs tab of an already computed
-        # draft payslip used to leave the salary lines behind: the Salary
-        # Computation tab kept showing the old figures and nothing said so.
         payslip, bonus = self._computed_payslip_with_a_bonus("Payslip with a bonus")
         self.assertEqual(self._bonus_total(payslip), 100.0)
 
@@ -116,8 +111,6 @@ class TestPayslipRecomputeOnInputChange(TestPayslipContractBase):
         )
 
     def test_an_input_change_leaves_a_hand_edited_payslip_alone(self):
-        # The counterpart: a payslip whose lines were typed by hand is left
-        # alone, the same way action_refresh_from_work_entries leaves it alone.
         payslip, bonus = self._computed_payslip_with_a_bonus("Hand-edited payslip")
         payslip.edited = True
         payslip.line_ids.filtered(lambda line: line.code == "TESTBONUS").total = 42.0

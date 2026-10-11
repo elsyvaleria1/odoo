@@ -87,7 +87,7 @@ class WebsitePage(models.Model):
         help='Add this page to the "+New" page templates. It will be added to the "Custom" category.',
     )
 
-    website_id = fields.Many2one(  # noqa: E8529  page serving filters and orders on it; TestWebsitePerformance's query pins rise through ir_ui_view
+    website_id = fields.Many2one(
         related="view_id.website_id",
         store=True,
         readonly=False,
@@ -99,9 +99,6 @@ class WebsitePage(models.Model):
         readonly=False,
     )
 
-    # every page view looks its page up by `url =`, every 404 and mistyped
-    # case by `unaccent(url) ILIKE`: this btree serves the first, the field's
-    # trigram the second
     _url_idx = models.Index("(url)")
 
     @api.depends("url", "website_id")
@@ -145,11 +142,6 @@ class WebsitePage(models.Model):
     def _get_most_specific_pages(self) -> Self:
         if not self:
             return self
-        # Three columns, read once, as rows. Reading `url`, `website_id` and the
-        # `_inherits`-related `key` through the ORM descriptor once per record
-        # is what this method cost: profiled behind the editor's link picker it
-        # was 1.05 s of 1.13 s over 2,624 pages, and it also sits behind the
-        # sitemap and site search.
         rows = (
             self.sudo()
             .with_context(prefetch_fields=False)
@@ -158,10 +150,6 @@ class WebsitePage(models.Model):
         by_id = {row["id"]: row for row in rows}
         position = {page_id: index for index, page_id in enumerate(self.ids)}
 
-        # Only the keys carried by `self` are ever looked up below, so the count
-        # is taken over those keys and not over every page of the website: this
-        # runs behind site search, the sitemap and the page list, where the
-        # candidate set is a handful of rows and the table is the whole site.
         website_domain = (
             self.env["website"]
             .browse(self.env.context.get("website_id"))
@@ -178,14 +166,6 @@ class WebsitePage(models.Model):
             .mapped("key")
         )
 
-        # The url sort exists to put a website-specific page ahead of the generic
-        # one it shadows, so that the first row of each url group decides the
-        # group. It is a decision order, not an output order: the result is
-        # filtered out of `self`, which keeps the caller's `order=`. Returning
-        # `browse(ids)` here handed every caller its pages in url order instead
-        # -- site search ignored the requested sort, and the link picker's
-        # "last modified" list was not sorted by date. The explicit `position`
-        # tie-break reproduces the stable sort over `self` that it replaces.
         kept_ids = set()
         previous_url = None
         for row in sorted(
@@ -309,13 +289,13 @@ class WebsitePage(models.Model):
                         self.env["website"]._update_vals_homepage_url(
                             old_url_normalized
                         )
-                        websites = self.env["website"].search(  # noqa: E8507 - url renames are sequential: each page's unique path and homepage rewrite depend on the previous page's write
+                        websites = self.env["website"].search(
                             [("homepage_url", "=", old_url_normalized["homepage_url"])]
                         )
                         if page.website_id:
                             websites &= page.website_id
                         else:
-                            websites -= self.search(  # noqa: E8507 - url renames are sequential: each page's unique path and homepage rewrite depend on the previous page's write
+                            websites -= self.search(
                                 [("url", "=", old_url), ("website_id", "!=", False)]
                             ).website_id
                         _debug.lifecycle(
@@ -393,15 +373,11 @@ class WebsitePage(models.Model):
         if with_description:
             search_fields.append("arch_db")
             fetch_fields.append("arch")
-            # A page searches its stored `arch_db` and renders the related
-            # `arch`, so the mapping cannot name the field the enumerators read.
             html_fields.add("arch_db")
             mapping["description"] = {
                 "name": "arch",
                 "type": "text",
                 "html": True,
-                # `arch` comes out of a stored XML document, so its entities are
-                # escaped once more than an ordinary html field's.
                 "escaped_twice": True,
                 "match": True,
             }
@@ -426,30 +402,10 @@ class WebsitePage(models.Model):
         domain = self._search_get_domain(
             [base_domain], search, fields, search_detail.get("search_extra")
         )
-        # Let SQL do the matching. This used to fetch every page the base domain
-        # admits and then `filtered_domain(domain)` in Python, which reads
-        # `arch_db` -- the whole stored html of every page on the site -- for a
-        # search that matches three of them. Profiled at 2,624 pages, the ORM
-        # field reads behind that filter were the entire cost of a public
-        # search.
-        #
-        # Equivalent because the dedup only ever needs the url groups it will
-        # answer for: a group with no match contributes nothing either way, and
-        # a group with one is expanded in full below before the dedup runs, so
-        # the dedup sees exactly the rows it used to see for that url.
         result_order = search_detail.get("order", order)
 
-        # Every candidate is selected in SQL. This used to fetch every page the
-        # base domain admits and filter it with `filtered_domain(domain)` in
-        # Python -- which reads `arch_db`, the whole stored html of every page
-        # on the site, to answer a search matching three of them. Profiled at
-        # 2,624 pages, those ORM field reads were the entire cost of a public
-        # search.
         candidate_ids = set(self.sudo()._search(domain))
         if with_description and search:
-            # The term-split domain above requires every term; this adds the
-            # pages carrying the phrase, over the same base domain it always
-            # scanned -- in SQL, so widening it costs one query and no records.
             v_arch_db = self.env["ir.ui.view"]._field_to_sql("v", "arch_db")
             rows = self.env.execute_query(
                 SQL(
@@ -469,9 +425,6 @@ class WebsitePage(models.Model):
             )
             candidate_ids.update(row[0] for row in rows)
 
-        # The dedup only ever needs the url groups it will answer for: a group
-        # with no candidate contributes nothing, and a group with one is
-        # expanded in full here, so the dedup sees exactly the rows it used to.
         candidates = self.sudo().search(
             base_domain & Domain("id", "in", list(candidate_ids)), order=result_order
         )
@@ -482,9 +435,6 @@ class WebsitePage(models.Model):
         )
         results = most_specific_pages.filtered(lambda page: page.id in candidate_ids)
 
-        # what a visitor may find is the base domain's publication, date,
-        # visibility and group criteria: no reader below the designer holds a
-        # read grant on website.page or its views, pages are served through sudo
         search_pattern = None
         if search and with_description:
             terms = "|".join(re.escape(term) for term in search.split())
@@ -574,9 +524,6 @@ class WebsitePage(models.Model):
             try:
                 response, cache_key = self._get_response_cached(request)
             except PageCannotBeCached as not_cached:
-                # Both raise sites carry (response, cache_key); the response may
-                # be None, the tuple never is. Returning here is the only exit:
-                # falling through would read `response` and `cache_key` unbound.
                 _debug.logic(
                     "page_response",
                     by="uncacheable",
@@ -607,8 +554,6 @@ class WebsitePage(models.Model):
 
     @staticmethod
     def _copy_cached_response(response: http.Response) -> http.Response:
-        # post_dispatch writes this request's headers, its script policy
-        # included, into the response it returns: never the cached one.
         copy = http.Response(
             headers=response.headers.copy(),
             mimetype=response.mimetype,
@@ -638,7 +583,6 @@ class WebsitePage(models.Model):
             raise PageCannotBeCached(response)
 
         response.flatten()
-        # a hit renders no t-call-assets, which is what decides the policy
         response.script_unsafe_eval = request.csp_unsafe_eval
         if not self._is_cache_insertion_allowed(response.response[-1]):
             _debug.logic("page_not_cached", reason="layout_refused", page=self.id)

@@ -115,7 +115,7 @@ _SAFE_QWEB_OPCODES = (
 )
 
 
-unsafe_eval = eval  # noqa: S307  compiled QWeb template code; the name says what it is
+unsafe_eval = eval
 
 
 FORBIDDEN_FIELD_TAGS = frozenset(
@@ -188,10 +188,6 @@ POST_PROCESSING_ATT_NAMES = frozenset(
     )
 )
 
-# A URL executes only through its scheme, so the check is anchored there: a
-# script scheme, or a data: URL whose media type is a document or a script.
-# An SVG document runs its scripts wherever it is navigated to or framed, but
-# not where it is drawn as an image.
 EXECUTABLE_URL_REGEXP = re.compile(
     r"(?:java|vb|live)script:"
     r"|data:(?:text/(?:html|xml|javascript|ecmascript)"
@@ -234,8 +230,6 @@ def is_event_handler_attribute(name: object) -> bool:
 
 
 def srcdoc_value(value: Any) -> Markup:
-    # srcdoc is parsed as a document once the attribute is decoded: markup is
-    # the document, anything else must stay text inside it
     if isinstance(value, Markup):
         return value
     return escape(to_text(value))
@@ -252,8 +246,6 @@ def mapping_value(value: Any) -> Mapping[Any, Any]:
 
 
 def checked_attributes(computed: Any) -> dict[Any, Any]:
-    # a handler cannot be escaped into safety, so it is dropped rather than
-    # failing the page, the way the static drop of stray attributes does
     attributes = {}
     for name, value in mapping_value(computed).items():
         if is_event_handler_attribute(name):
@@ -312,8 +304,6 @@ def indent_code(code: str, level: int) -> str:
 
 
 def block_code(lines: list[str], level: int) -> list[str]:
-    # the lines of an indented block, which Python needs a statement in: a
-    # branch compiled to nothing but the compiler's own comments gets a pass
     if any(
         stripped and not stripped.startswith("#")
         for line in lines
@@ -324,9 +314,6 @@ def block_code(lines: list[str], level: int) -> list[str]:
 
 
 def format_attributes(attrs: Mapping[str, Any], *, strict: bool = True) -> str:
-    # a name computed while rendering must be one: a data-driven key could
-    # otherwise add an attribute of its own; a name the template's markup
-    # already carries is the template's, and is only escaped
     name_html = _attribute_name_html if strict else _escaped_attribute_name
     return "".join(
         [
@@ -431,8 +418,6 @@ class ExpressionRewriter(ast.NodeTransformer):
 
     def _resolve(self, node: ast.Name, *, walked_into: bool) -> ast.expr:
         name = node.id
-        # a bound name is renamed so a parameter spelled like the generated
-        # code's own locals (values, self) cannot shadow them
         if self._is_bound(name):
             return ast.copy_location(
                 ast.Name(BOUND_NAME_TEMPLATE % name, node.ctx), node
@@ -670,22 +655,17 @@ class QwebContent:
 
 
 class RenderScopedDict(dict):
-    # The environment interns itself on a content hash of its context, walking
-    # into every unhashable value; a render-scoped memo grows as templates load,
-    # so hashed by content it made every with_context in a render a new
-    # environment and cost a walk over the loaded code. By identity it is one
-    # object, hashed in O(1), equal to itself only.
     __slots__ = ()
-    __hash__ = object.__hash__  # type: ignore[assignment]
-    __eq__ = object.__eq__  # type: ignore[assignment]
-    __ne__ = object.__ne__  # type: ignore[assignment]
+    __hash__ = object.__hash__
+    __eq__ = object.__eq__
+    __ne__ = object.__ne__
 
 
 class RenderScopedList(list):
     __slots__ = ()
-    __hash__ = object.__hash__  # type: ignore[assignment]
-    __eq__ = object.__eq__  # type: ignore[assignment]
-    __ne__ = object.__ne__  # type: ignore[assignment]
+    __hash__ = object.__hash__
+    __eq__ = object.__eq__
+    __ne__ = object.__ne__
 
 
 class QwebJSON(json.JSON):
@@ -803,9 +783,6 @@ class IrQweb(models.AbstractModel):
         cache_shared = compiled_cache is not None
         if not cache_shared:
             compiled_cache = RenderScopedDict()
-        # the depth is the whole render's, however the renders nest: a t-set
-        # body output through str() or a widget rendering its own template
-        # continues the count instead of starting another at 1
         render_depth = qweb.env.context.get("_qweb_render_depth")
         if render_depth is None:
             render_depth = RenderScopedList([0])
@@ -850,9 +827,6 @@ class IrQweb(models.AbstractModel):
         root_values = values["__qweb_root_values"]
         compiled_cache = self.env.context["__qweb_compiled_cache"]
 
-        # The root frame keeps the caller's location (a t-set body rendered
-        # through str() reports where it was written), while the item it
-        # yields renders in the given values as they are.
         item = params._replace(context={}, values=None, scope=False, path_xml=None)
         stack = [
             QwebStackFrame(
@@ -871,8 +845,6 @@ class IrQweb(models.AbstractModel):
         frame = stack[-1]
         out: list[str] = []
         append = out.append
-        # A body streamed through the stack keeps what it yielded, so it
-        # renders once however many times it is output.
         capturing: list[tuple[QwebContent, int, int]] = []
         try:
             while stack:
@@ -948,9 +920,6 @@ class IrQweb(models.AbstractModel):
         qweb = frame.qweb
         cache_signature = frame.cache_signature
 
-        # A t-set body captures the whole context it was written in, which is
-        # nearly always the context it is rendered in: switching environments
-        # and re-deriving the cache signature only when they differ.
         context_switched = bool(params.context) and not (
             params.context.items() <= qweb.env.context.items()
         )
@@ -978,9 +947,6 @@ class IrQweb(models.AbstractModel):
             context_switched=context_switched,
         )
 
-        # The frame is pushed even when resolving or calling the template
-        # raises: the error report walks the stack for the t-call chain, and
-        # the failing template's own location must be its last entry.
         iterator: Iterable[Any] = ()
         options = None
         try:
@@ -1139,9 +1105,6 @@ class IrQweb(models.AbstractModel):
         )
 
     def _get_error_origin(self, ref: Any, path: str | None) -> str | None:
-        # the extension whose spec put the failing element into the combined
-        # template: the branded combine marks every node an extension inserts
-        # with its view, and a node without a mark belongs to its ancestor's
         if not isinstance(ref, int) or not path:
             return None
         try:
@@ -1631,9 +1594,6 @@ class IrQweb(models.AbstractModel):
         ]
         for lines in template_functions.values():
             code_lines.extend(lines)
-            # A body with no output (t-set assignments only) must still be a
-            # generator: the renderer iterates whatever the function returns;
-            # an entry point returns its body's generator itself.
             body = "\n".join(lines).split("\n", 1)[1]
             if not YIELD_LINE_REGEXP.search(body):
                 match = BODY_INDENT_REGEXP.search(body)
@@ -1760,8 +1720,6 @@ class IrQweb(models.AbstractModel):
         return image_data_uri(base64_source)
 
     def _get_jpg_for_webp(self, base64_webp: str | bytes) -> bytes | None:
-        # The webp origin is a field attachment (res_field set), which the
-        # default ir.attachment search hides.
         Attachment = (
             self.env["ir.attachment"].sudo().with_context(skip_res_field_check=True)
         )
@@ -1888,9 +1846,6 @@ class IrQweb(models.AbstractModel):
     def _new_namespaces(
         self, el: etree._Element, compile_context: CompileContext
     ) -> list[tuple[str | None, str]]:
-        # Sorted, default namespace first: a set here ordered the xmlns
-        # declarations by string hash, so the same template rendered
-        # differently from one process to the next.
         return sorted(
             set(el.nsmap.items()) - set(compile_context.nsmap.items()),
             key=lambda item: item[0] or "",
@@ -2029,9 +1984,6 @@ class IrQweb(models.AbstractModel):
 
         self._normalize_deprecated_attributes(el, compile_context)
         if el.tag == "script":
-            # A literal nonce cannot match any response; an arch saved from a
-            # live page holds the one that page was served with, or the empty
-            # value the browser leaves behind once it hides it.
             el.attrib.pop("nonce", None)
 
         if self._is_static_node(el, compile_context):
@@ -2548,9 +2500,6 @@ class IrQweb(models.AbstractModel):
 
         if el.text is not None:
             self._add_text(el.text, compile_context)
-        # A directive of this element may still refuse it after its children
-        # compiled (t-if checks the text before its t-else last): the element
-        # a compile error names must be this one again, not the last child.
         parent_path = compile_context.element_path
         parent_xml = compile_context.element_xml
         body = []
@@ -3296,12 +3245,7 @@ class IrQweb(models.AbstractModel):
         for index, (tag_name, asset_attrs) in enumerate(nodes):
             if index:
                 yield "\n        "
-            # The node dicts come straight from the ormcache
-            # (_get_native_module_nodes_cached): read 'text' without popping it,
-            # or every render after the first emits an empty <script>.
             text_content = asset_attrs.get("text") if asset_attrs else None
-            # Framework-generated markup (bundle URLs, media/defer attributes):
-            # post-processed as static attributes, like compile-time static nodes.
             attrs = self._post_processing_att(
                 tag_name,
                 {k: v for k, v in asset_attrs.items() if k != "text"}
@@ -3322,9 +3266,6 @@ class IrQweb(models.AbstractModel):
                 yield f"<{tag_name}{attributes}>{text_content or ''}</{tag_name}>"
 
     def _script_nonce(self) -> str | None:
-        # markup rendered to be copied into another site (a livechat embed
-        # snippet) carries no nonce: it would be this response's, meaningless
-        # there
         if self.env.context.get("script_nonce") is False:
             return None
         nonce = request.csp_nonce if request else None
@@ -3341,7 +3282,7 @@ class IrQweb(models.AbstractModel):
                 f"unsupported t-debug value {debugger!r}: keep it empty and "
                 "configure the ``breakpoint`` builtin instead"
             )
-        breakpoint()  # noqa: T100 - entering the debugger is what t-debug is for
+        breakpoint()
 
     def _post_processing_att(
         self, tag_name: str, atts: dict[str, Any], *, is_static: bool = False
@@ -3434,9 +3375,6 @@ class IrQweb(models.AbstractModel):
         inherit_branding = self.env.context.get("inherit_branding")
         field_options["inherit_branding"] = inherit_branding
 
-        # No value is no content, as record_to_html already answers for
-        # t-field: the converters format numbers, dates and images, and
-        # None or False through them is a TypeError or "<img src='None'>".
         if value is None or value is False:
             _debug.logic("widget_skipped", reason="no_value", expression=expression)
             content = None

@@ -56,10 +56,6 @@ class TestPrintedCv(SkillsCase):
         return html.decode() if isinstance(html, bytes) else html
 
     def test_a_versioned_skill_is_printed_once(self):
-        # Two rows for one skill is the versioning engine's normal output: the
-        # superseded level keeps its history and the current one carries on.
-        # Printing both put the same skill on the CV twice, with two progress
-        # bars at different levels and no level name to tell them apart.
         self.assertEqual(len(self._piano_rows()), 2)
         self.assertEqual(self._render().count("Piano"), 1)
 

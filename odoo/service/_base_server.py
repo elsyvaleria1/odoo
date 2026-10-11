@@ -63,10 +63,6 @@ def run_on_stop_hooks(logger: logging.Logger) -> None:
             _debug.logic("server.stop_hook.failed", hook=name)
 
 
-# what to run when the process that registered it ends, however it ends: atexit
-# covers an ordinary exit, and a prefork child, which leaves through os._exit and
-# so skips atexit, runs the hooks it registered itself (run_process_exit_hooks);
-# never one inherited from its parent, which owns what that hook would release
 _process_exit_hooks: list[tuple[int, Callable]] = []
 
 
@@ -155,8 +151,6 @@ class CommonServer:
         raise NotImplementedError
 
     def log_ready(self) -> None:
-        # One line an operator can read the deployment's shape from, where
-        # the bind, thread-budget and worker lines each told a part of it.
         settings = self.settings
         budgets = ", ".join(
             f"{label} {int(settings.get_real_time_budget(kind))}s"

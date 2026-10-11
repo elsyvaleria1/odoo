@@ -62,7 +62,6 @@ class MixinSpreadsheet(models.AbstractModel):
                 )
                 continue
             if data.get("[Content_Types].xml"):
-                # this is a xlsx file
                 _debug.logic(
                     "spreadsheet_data_validation_skipped",
                     records=spreadsheet,
@@ -90,7 +89,7 @@ class MixinSpreadsheet(models.AbstractModel):
                     field_model = model
                     for fname in field_chain.split(
                         "."
-                    ):  # field chain 'product_id.channel_ids'
+                    ):
                         if fname not in self.env[field_model]._fields:
                             errors.append(
                                 f"- field '{fname}' used in spreadsheet '{display_name}' does not exist on model '{field_model}'"
@@ -107,7 +106,6 @@ class MixinSpreadsheet(models.AbstractModel):
                         f"- xml id '{xml_id}' used in spreadsheet '{display_name}' does not exist"
                     )
                     continue
-                # check that the menu has an action. Root menus always have an action.
                 if not record.action and record.parent_id.id:
                     errors.append(
                         f"- menu with xml id '{xml_id}' used in spreadsheet '{display_name}' does not have an action"
@@ -183,7 +181,7 @@ class MixinSpreadsheet(models.AbstractModel):
                     "spreadsheet_display_names_model_missing", model=model, ids=len(ids)
                 )
                 continue
-            records = Model.with_context(active_test=False).search([("id", "in", ids)])  # noqa: E8507 - one query per model
+            records = Model.with_context(active_test=False).search([("id", "in", ids)])
             for record in records:
                 display_names[model][record.id] = record.display_name
 
@@ -193,21 +191,13 @@ class MixinSpreadsheet(models.AbstractModel):
             models=len(ids_per_model),
             resolved=sum(len(names) for names in display_names.values()),
         )
-        # return the display names in the same order as the input
         return [display_names[arg["model"]].get(arg["id"]) for arg in args]
 
     def _empty_spreadsheet_data_base64(self):
-        """Create an empty spreadsheet workbook.
-        Encoded as base64
-        """
         data = json_dumps(self._empty_spreadsheet_data())
         return base64.b64encode(data.encode())
 
     def _empty_spreadsheet_data(self):
-        """Create an empty spreadsheet workbook.
-        The sheet name should be the same for all users to allow consistent references
-        in formulas. It is translated for the user creating the spreadsheet.
-        """
         lang = self.env["res.lang"]._get_lang_cached(self.env.user.lang)
         locale = lang._odoo_lang_to_spreadsheet_locale()
         return {
@@ -231,8 +221,6 @@ class MixinSpreadsheet(models.AbstractModel):
         ):
             images = missing_images = 0
             for f in files:
-                # to reduce networking load, only the image path is sent.
-                # It's replaced by the image content here.
                 if "imageSrc" in f:
                     images += 1
                     try:

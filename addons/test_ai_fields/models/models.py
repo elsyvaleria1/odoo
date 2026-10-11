@@ -36,7 +36,6 @@ class TestAiFields(models.Model):
 
 
 class TestAiFieldsDefinition(models.Model):
-    # Model with a Properties definition that's not used for some reason
     _description = "Test AI Fields"
     _name = "test.ai.fields.definition"
 

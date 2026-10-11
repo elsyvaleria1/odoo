@@ -47,10 +47,8 @@ class TestPriceHistory(TestTradeOrderCase):
             }
         )
 
-    # ─── the weighted average ─────────────────────────────────────
 
     def test_the_average_is_weighted_by_quantity_not_by_line(self):
-        """Ten units at 10 and one at 100 average 18.18, not 55."""
         self._confirmed_line(price=10.0, qty=10.0)
         self._confirmed_line(price=100.0, qty=1.0)
         target = self._confirmed_line(price=50.0)
@@ -118,7 +116,6 @@ class TestPriceHistory(TestTradeOrderCase):
 
         self.assertAlmostEqual(wizard.avg_price_unit, 50.0, places=2)
 
-    # ─── divergence ───────────────────────────────────────────────
 
     def test_divergence_is_relative_to_the_period_average(self):
         self._confirmed_line(price=100.0)
@@ -130,7 +127,6 @@ class TestPriceHistory(TestTradeOrderCase):
         self.assertAlmostEqual(wizard.divergence_pct, 0.2, places=4)
 
     def test_a_higher_price_is_favorable_when_selling(self):
-        """The direction's price sign is 1 on a sale-facing model, -1 on a buying one."""
         self.assertEqual(direction_of(self.env["test_trade.order.line"]).price_sign, 1)
         self._confirmed_line(price=100.0)
 
@@ -150,7 +146,6 @@ class TestPriceHistory(TestTradeOrderCase):
         self.assertAlmostEqual(wizard.divergence_pct, 0.0, places=4)
         self.assertFalse(wizard.avg_sample_truncated)
 
-    # ─── the partner cut ──────────────────────────────────────────
 
     def test_the_partner_average_is_read_against_the_market_one(self):
         self._confirmed_line(price=100.0, partner=self.other_partner)
@@ -173,7 +168,6 @@ class TestPriceHistory(TestTradeOrderCase):
 
         self.assertEqual(wizard.partner_avg_sample_count, 0)
 
-    # ─── period ───────────────────────────────────────────────────
 
     def test_the_period_start_moves_with_the_selection(self):
         target = self._confirmed_line(price=50.0)
@@ -204,7 +198,6 @@ class TestPriceHistory(TestTradeOrderCase):
         self.assertEqual(wizard.avg_sample_count, 1)
         self.assertAlmostEqual(wizard.avg_price_unit, 10.0, places=2)
 
-    # ─── the shortlist and the action ─────────────────────────────
 
     def test_the_shortlist_is_filled_from_the_filters(self):
         self._confirmed_line(price=10.0)

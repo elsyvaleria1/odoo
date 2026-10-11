@@ -173,13 +173,13 @@ def add_banner(
     pdf_stream: io.BytesIO,
     text: str | None = None,
     logo: bool = False,
-    thickness: float = SENTINEL,  # type: ignore[assignment]
+    thickness: float = SENTINEL,
 ) -> io.BytesIO:
     from reportlab.lib import colors
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    if thickness is SENTINEL:  # type: ignore[comparison-overlap]
+    if thickness is SENTINEL:
         from reportlab.lib.units import cm
 
         thickness = 2 * cm
@@ -275,8 +275,6 @@ def _name_tree_pairs(node: DictionaryObject, seen: set[int]) -> Iterator[tuple]:
         yield from zip(names[::2], names[1::2], strict=False)
     for kid in node.get("/Kids", ()):
         kid = kid.get_object()
-        # a kid that does not resolve (a dangling reference) holds nothing to
-        # read; its siblings still do
         if isinstance(kid, DictionaryObject) and id(kid) not in seen:
             seen.add(id(kid))
             yield from _name_tree_pairs(kid, seen)
@@ -382,7 +380,6 @@ class OdooPdfFileWriter(BrandedFileWriter):
             *zip(entries[::2], entries[1::2], strict=False),
             (attachment.get_object()["/F"], attachment),
         ]
-        # a name tree is searched by its sorted keys
         pairs.sort(key=lambda pair: _pdf_string_key(pair[0]))
         entries[:] = [item for pair in pairs for item in pair]
 
@@ -394,8 +391,6 @@ class OdooPdfFileWriter(BrandedFileWriter):
             self._root_object.update({NameObject("/AF"): attachment_array})
 
     def _embedded_files_entries(self) -> ArrayObject:
-        # /Names holds more trees than the attachments (/Dests: the targets of
-        # the internal links), so only its /EmbeddedFiles is created here
         names = self._root_object.get("/Names")
         if names is None:
             names = DictionaryObject()
@@ -409,8 +404,6 @@ class OdooPdfFileWriter(BrandedFileWriter):
         else:
             tree = tree.get_object()
         if "/Kids" in tree:
-            # another producer's tree of subtrees becomes one sorted array:
-            # a root holds either
             entries = ArrayObject(
                 item for pair in _name_tree_pairs(tree, set()) for item in pair
             )
@@ -442,8 +435,6 @@ class OdooPdfFileWriter(BrandedFileWriter):
         self._reader = reader
         stream = reader.stream
         stream.seek(0)
-        # the version token alone: a line may end in CR only, and the binary
-        # comment after it is no part of the header
         if header := _PDF_HEADER.match(stream.read(32)):
             self._header = header[0]
         self.is_pdfa = self._declares_pdfa(reader)
@@ -458,8 +449,6 @@ class OdooPdfFileWriter(BrandedFileWriter):
 
     @staticmethod
     def _declares_pdfa(reader: PdfReader) -> bool:
-        # metadata that cannot be read (an unknown filter, a missing decoder,
-        # malformed XML) declares nothing, and must not fail the clone
         try:
             xmp = reader.xmp_metadata
         except Exception as exc:

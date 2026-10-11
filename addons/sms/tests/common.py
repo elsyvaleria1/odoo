@@ -27,34 +27,19 @@ class MockSMS(common.HttpCase):
         super().tearDown()
         self._clear_sms_sent()
 
-    # ------------------------------------------------------------
-    # UTILITY MOCKS
-    # ------------------------------------------------------------
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues."""
-        # cr.now() is contractually a datetime; coerce a string so consumers
-        # doing datetime arithmetic on it (e.g. ir.cron._now) don't break.
         now_dt = (
             fields.Datetime.to_datetime(mock_dt)
             if isinstance(mock_dt, str)
             else mock_dt
         )
-        # cr.now() is naive UTC in production; normalize a tz-aware freeze
-        # point so it (and freeze_time) stay on that convention, else
-        # naive/aware comparisons (e.g. ir.cron._now) crash. Mirrors mail
-        # freeze_all_time.
         if now_dt.tzinfo is not None:
             now_dt = now_dt.astimezone(UTC).replace(tzinfo=None)
         with freeze_time(now_dt), patch.object(self.env.cr, "now", lambda: now_dt):
             yield
 
-    # ------------------------------------------------------------
-    # GATEWAY MOCK
-    # ------------------------------------------------------------
 
     @contextmanager
     def mockSMSGateway(
@@ -70,7 +55,6 @@ class MockSMS(common.HttpCase):
         sms_send_origin = SmsSms._send
 
         def _contact_iap(local_endpoint, params):
-            # mock single sms sending
             if local_endpoint == "/iap/message_send":
                 self._sms += [
                     {
@@ -79,8 +63,7 @@ class MockSMS(common.HttpCase):
                     }
                     for number in params["numbers"]
                 ]
-                return True  # send_message v0 API returns always True
-            # mock batch sending
+                return True
             if local_endpoint == "/iap/sms/2/send":
                 result = []
                 for to_send in params["messages"]:
@@ -142,7 +125,6 @@ class MockSMS(common.HttpCase):
                             "credit": 1,
                         }
                         if error:
-                            # credit is only given if the amount is known
                             res.update(credit=0)
                         else:
                             self._sms.append(
@@ -202,8 +184,6 @@ class MockSMS(common.HttpCase):
         self._new_sms = self.env["sms.sms"].sudo()
 
     def _clear_outgoing_sms(self):
-        """As SMS gateway mock keeps SMS, we may need to remove them manually
-        if there are several tests in the same tx."""
         self.env["sms.sms"].sudo().search([("state", "=", "outgoing")]).unlink()
 
 
@@ -214,7 +194,6 @@ class SMSCase(MockSMS):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # This is called to make sure that an iap_account for sms already exists or if not is created.
         cls.env["iap.account"].acquire_account("sms")
 
     def _find_sms_sent(self, partner, number):
@@ -257,14 +236,6 @@ class SMSCase(MockSMS):
         return sms
 
     def assertSMSIapSent(self, numbers, content=None):
-        """Check sent SMS (to IAP, but other providers like twilio should be
-        mocked to fill up 'self._sms', allowing tests to pass). Order is not
-        checked. Each number should have received the same content. Useful to
-        check batch sending.
-
-        :param numbers: list of numbers;
-        :param content: content to check for each number;
-        """
         for number in numbers:
             sent_sms = next((sms for sms in self._sms if sms["number"] == number), None)
             self.assertTrue(
@@ -284,17 +255,6 @@ class SMSCase(MockSMS):
         content=None,
         fields_values=None,
     ):
-        """Find a ``sms.sms`` record, based on given partner, number and status.
-
-        :param partner: optional partner, used to find a ``sms.sms`` and a number
-          if not given;
-        :param number: optional number, used to find a ``sms.sms``, notably if
-          partner is not given;
-        :param failure_type: check failure type if SMS is not sent or outgoing;
-        :param content: if given, should be contained in sms body;
-        :param fields_values: optional values allowing to check directly some
-          values on ``sms.sms`` record;
-        """
         sms_sms = self._find_sms_sms(partner, number, status, content=content)
         if failure_type:
             self.assertEqual(sms_sms.failure_type, failure_type)
@@ -312,8 +272,6 @@ class SMSCase(MockSMS):
     def assertSMSCanceled(
         self, partner, number, failure_type, content=None, fields_values=None
     ):
-        """Check canceled SMS. Search is done for a pair partner / number where
-        partner can be an empty recordset."""
         self.assertSMS(
             partner,
             number,
@@ -326,8 +284,6 @@ class SMSCase(MockSMS):
     def assertSMSFailed(
         self, partner, number, failure_type, content=None, fields_values=None
     ):
-        """Check failed SMS. Search is done for a pair partner / number where
-        partner can be an empty recordset."""
         self.assertSMS(
             partner,
             number,
@@ -338,8 +294,6 @@ class SMSCase(MockSMS):
         )
 
     def assertSMSOutgoing(self, partner, number, content=None, fields_values=None):
-        """Check outgoing SMS. Search is done for a pair partner / number where
-        partner can be an empty recordset."""
         self.assertSMS(
             partner, number, "outgoing", content=content, fields_values=fields_values
         )
@@ -363,22 +317,10 @@ class SMSCase(MockSMS):
         sent_unlink=False,
         mail_message_values=None,
     ):
-        """Check content of notifications and sms.
-
-        :param recipients_info: list[{
-          'partner': res.partner record (may be empty),
-          'number': number used for notification (may be empty, computed based on partner),
-          'state': ready / pending / sent / exception / canceled (pending by default),
-          'failure_type': optional: sms_number_missing / sms_number_format / sms_credit / sms_server
-          }, { ... }]
-        :param content: SMS content
-        :param mail_message_values: dictionary of expected mail message fields values
-        """
         partners = self.env["res.partner"].concat(
             *[p["partner"] for p in recipients_info if p.get("partner")]
         )
         numbers = [p["number"] for p in recipients_info if p.get("number")]
-        # special case of void notifications: check for False / False notifications
         if not partners and not numbers:
             numbers = [False]
         base_domain = [
@@ -396,15 +338,11 @@ class SMSCase(MockSMS):
         self.assertEqual(notifications.mapped("res_partner_id"), partners)
 
         for recipient_info in recipients_info:
-            # sanity check
             extra_keys = recipient_info.keys() - {
-                # notification
                 "failure_reason",
                 "failure_type",
                 "state",
-                # sms
                 "sms_fields_values",
-                # recipient
                 "number",
                 "partner",
                 "recipient_check_sms",
@@ -512,7 +450,6 @@ class SMSCommon(MailCommon, SMSCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # some numbers for testing
         cls.random_numbers_str = "+32456998877, 0456665544"
         cls.random_numbers = cls.random_numbers_str.split(", ")
         cls.random_numbers_san = [
@@ -525,7 +462,6 @@ class SMSCommon(MailCommon, SMSCase):
             for number in cls.test_numbers
         ]
 
-        # some numbers for mass testing
         cls.mass_numbers = ["04561%s2%s3%s" % (x, x, x) for x in range(10)]
         cls.mass_numbers_san = [
             phone_validation.phone_format(number, "BE", "32", force_format="E164")

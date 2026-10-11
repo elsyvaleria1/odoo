@@ -28,8 +28,6 @@ class TestTracking(MailCommon):
         cls.record = record.with_context(mail_notrack=False)
 
     def test_message_track_author(self):
-        """Check that the author of the log note matches the user at the time
-        of writing."""
         with self.mock_mail_gateway():
             self.record._track_set_author(self.partner_admin)
             self.record.write(
@@ -45,8 +43,6 @@ class TestTracking(MailCommon):
         self.assertEqual(self.record.message_ids.author_id, self.partner_admin)
 
     def test_message_track_monetary_currency(self):
-        """Monetary field tracking must carry the field's currency (C1d,
-        upstream 30ec41fe: inject currency_field into col_info)."""
         record = (
             self.env["mail.test.track.monetary"]
             .with_context(
@@ -75,8 +71,6 @@ class TestTracking(MailCommon):
 
     @users("employee")
     def test_message_track_default_message(self):
-        """Check that the default tracking log message defined on the model is used
-        and that setting a log message overrides it. See `_track_get_default_log_message`"""
 
         record = (
             self.env["mail.test.track"]
@@ -118,8 +112,6 @@ class TestTracking(MailCommon):
 
     @users("employee")
     def test_message_track_filter_for_display(self):
-        """Check that tracked fields filtered for display are not present
-        in the front-end and email formatting methods. See `_track_filtered_for_display`"""
         field_dname = "Responsible"
         field_type = "many2one"
         original_user = self.user_admin
@@ -154,7 +146,6 @@ class TestTracking(MailCommon):
                 record.message_ids[0],
                 [("user_id", "many2one", original_user, new_user)],
             )
-        # first record: tracking value should be hidden
         message_0 = records[0].message_ids[0]
         formatted = Store().add(message_0).get_result()["mail.message"][0]
         self.assertEqual(
@@ -165,7 +156,6 @@ class TestTracking(MailCommon):
         )
         self.assertEqual(mail_render["tracking_values"], [])
 
-        # second record: all values displayed
         message_1 = records[1].message_ids[0]
         formatted = Store().add(message_1).get_result()["mail.message"][0]
         self.assertEqual(len(formatted["trackingValues"]), 1)
@@ -194,8 +184,6 @@ class TestTracking(MailCommon):
 
     @users("employee")
     def test_message_track_filter_for_display_search(self):
-        """A value hidden by `_track_filtered_for_display` must not be found by
-        chatter search: a hit would confirm the hidden value."""
         original_user = self.user_admin
         new_user = self.user_employee
         records = self.env["mail.test.track"].create(
@@ -232,8 +220,6 @@ class TestTracking(MailCommon):
 
     @users("employee")
     def test_message_track_format_once_per_page(self):
-        """A chatter page formats the tracking values of all its messages at
-        once, not one message at a time."""
         record = self.env["mail.test.track"].create({"name": "Paged"})
         self.flush_tracking()
         for user in (self.user_admin, self.user_employee) * 15:
@@ -259,7 +245,6 @@ class TestTracking(MailCommon):
         self.assertLess(statements, 60, "formatting a page must not scale per message")
 
     def test_message_track_message_type(self):
-        """Check that the right message type is applied for track templates."""
         self.record.message_subscribe(
             partner_ids=[self.user_admin.partner_id.id],
             subtype_ids=[self.env.ref("mail.mt_comment").id],
@@ -299,7 +284,6 @@ class TestTracking(MailCommon):
 
         container = self.env["mail.test.container"].create({"name": "Container"})
 
-        # default is auto_comment
         with self.mock_mail_gateway():
             self.record.email_from = "test@test.lan"
             self.flush_tracking()
@@ -314,7 +298,6 @@ class TestTracking(MailCommon):
         )
         self.assertEqual(first_message.message_type, "auto_comment")
 
-        # auto_comment can be overriden by _track_template
         with self.mock_mail_gateway(mail_unlink_sent=False):
             self.record.container_id = container
             self.flush_tracking()
@@ -330,15 +313,6 @@ class TestTracking(MailCommon):
         self.assertEqual(second_message.message_type, "notification")
 
     def test_message_track_keeps_a_field_whose_old_value_was_unlinked(self):
-        """Unlinking the record a tracked many2one pointed to must not erase
-        the tracking of the whole record.
-
-        The initial value kept for the precommit is the old related record; its
-        `display_name` raises `MissingError` once it is gone, and `_message_track`
-        caught that at record level -- so one stale many2one dropped every other
-        tracked change of the record silently. The old value is kept by id, with
-        an empty name, and the other fields keep tracking.
-        """
         container_a, container_b = (
             self.env["mail.test.container"]
             .with_context(mail_create_nosubscribe=True)
@@ -375,7 +349,6 @@ class TestTracking(MailCommon):
         self.assertEqual(container_tracking.new_value_char, "Container B")
 
     def test_message_track_multiple(self):
-        """check that multiple updates generate a single tracking message"""
         container = (
             self.env["mail.test.container"]
             .with_context(mail_create_nosubscribe=True)
@@ -387,7 +360,6 @@ class TestTracking(MailCommon):
         self.record.container_id = container
         self.flush_tracking()
 
-        # should have a single message with all tracked fields
         self.assertEqual(
             len(self.record.message_ids), 1, "should have 1 tracking message"
         )
@@ -402,7 +374,6 @@ class TestTracking(MailCommon):
         )
 
     def test_message_track_no_subtype(self):
-        """Update some tracked fields not linked to some subtype -> message with onchange"""
         customer = self.env["res.partner"].create(
             {"name": "Customer", "email": "cust@example.com"}
         )
@@ -415,32 +386,27 @@ class TestTracking(MailCommon):
             )
             self.flush_tracking()
 
-        # one new message containing tracking; without subtype linked to tracking, a note is generated
         self.assertEqual(len(self.record.message_ids), 1)
         self.assertEqual(self.record.message_ids.author_id, self.partner_employee)
         self.assertEqual(
             self.record.message_ids.subtype_id, self.env.ref("mail.mt_note")
         )
 
-        # no specific recipients except those following notes, no email
         self.assertEqual(self.record.message_ids.partner_ids, self.env["res.partner"])
         self.assertEqual(
             self.record.message_ids.notified_partner_ids, self.env["res.partner"]
         )
         self.assertNotSentEmail()
 
-        # verify tracked value
         self.assertTracking(
             self.record.message_ids,
             [
-                ("customer_id", "many2one", False, customer)  # onchange tracked field
+                ("customer_id", "many2one", False, customer)
             ],
         )
 
     @users("employee")
     def test_message_track_no_tracking(self):
-        """Update a set of non tracked fields -> no message, no tracking, or
-        use dedicated context key"""
         record = self.record.with_env(self.env)
         record.write(
             {
@@ -451,7 +417,6 @@ class TestTracking(MailCommon):
         self.flush_tracking()
         self.assertFalse(record.message_ids)
 
-        # check context key allowing to skip tracking
         record.with_context(mail_notrack=True).write(
             {"email_from": "new.from@test.example.com"}
         )
@@ -459,7 +424,6 @@ class TestTracking(MailCommon):
         self.assertFalse(record.message_ids)
 
     def test_message_track_subtype(self):
-        """Update some tracked fields linked to some subtype -> message with onchange"""
         self.record.message_subscribe(
             partner_ids=[self.user_admin.partner_id.id],
             subtype_ids=[
@@ -480,7 +444,6 @@ class TestTracking(MailCommon):
             }
         )
         self.flush_tracking()
-        # one new message containing tracking; subtype linked to tracking
         self.assertEqual(len(self.record.message_ids), 1)
         self.assertEqual(self.record.message_ids.author_id, self.partner_employee)
         self.assertEqual(
@@ -488,23 +451,20 @@ class TestTracking(MailCommon):
             self.env.ref("test_mail.st_mail_test_ticket_container_upd"),
         )
 
-        # no specific recipients except those following container
         self.assertEqual(self.record.message_ids.partner_ids, self.env["res.partner"])
         self.assertEqual(
             self.record.message_ids.notified_partner_ids, self.user_admin.partner_id
         )
 
-        # verify tracked value
         self.assertTracking(
             self.record.message_ids,
             [
-                ("container_id", "many2one", False, container)  # onchange tracked field
+                ("container_id", "many2one", False, container)
             ],
         )
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_message_track_template(self):
-        """Update some tracked fields linked to some template -> message with onchange"""
         self.record.write(
             {
                 "mail_template": self.env.ref(
@@ -529,19 +489,16 @@ class TestTracking(MailCommon):
             "should have 2 new messages: one for tracking, one for template",
         )
 
-        # one new message containing the template linked to tracking
         self.assertEqual(self.record.message_ids[0].author_id, self.partner_employee)
         self.assertEqual(self.record.message_ids[0].subject, "Test Template")
         self.assertEqual(self.record.message_ids[0].body, "<p>Hello Test2</p>")
 
-        # one email send due to template
         self.assertSentEmail(
             self.record.env.user.partner_id,
             [self.partner_admin],
             body="<p>Hello Test2</p>",
         )
 
-        # one new message containing tracking; without subtype linked to tracking
         self.assertEqual(
             self.record.message_ids[1].subtype_id, self.env.ref("mail.mt_note")
         )
@@ -553,13 +510,12 @@ class TestTracking(MailCommon):
                     "many2one",
                     False,
                     self.user_admin.partner_id,
-                )  # onchange tracked field
+                )
             ],
         )
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_message_track_template_at_create(self):
-        """Create a record with tracking template on create, template should be sent."""
 
         Model = (
             self.env["mail.test.ticket"]
@@ -582,11 +538,9 @@ class TestTracking(MailCommon):
         self.assertEqual(
             len(record.message_ids), 1, "should have 1 new messages for template"
         )
-        # one new message containing the template linked to tracking
         self.assertEqual(record.message_ids[0].author_id, self.partner_employee)
         self.assertEqual(record.message_ids[0].subject, "Test Template")
         self.assertEqual(record.message_ids[0].body, "<p>Hello Test</p>")
-        # one email send due to template
         self.assertSentEmail(
             self.record.env.user.partner_id,
             [self.partner_admin],
@@ -599,8 +553,6 @@ class TestTracking(MailCommon):
         "odoo.addons.mail.models.mixin_mail_gateway",
     )
     def test_message_track_template_at_create_from_message(self):
-        """Make sure records created through aliasing show the original message before the template"""
-        # setup
         test_model = self.env["ir.model"]._get("mail.test.ticket")
         original_sender = self.user_admin.partner_id
         custom_values = {
@@ -628,7 +580,6 @@ class TestTracking(MailCommon):
         with self.mock_mail_gateway(mail_unlink_sent=False):
             self.flush_tracking()
 
-        # Should be trigger message and response template
         self.assertEqual(len(record.message_ids), 2)
         messages = list(record.message_ids)
         messages.sort(key=lambda msg: msg.id)
@@ -649,8 +600,6 @@ class TestTracking(MailCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_message_track_template_create_partner_multicompany(self):
-        """Test partner created due to usage of a mail.template, triggered by
-        a tracking, in a multi company environment."""
         company1 = self.env["res.company"].create({"name": "company1"})
         self.env.user.write({"company_ids": [(4, company1.id, False)]})
         self.assertNotEqual(self.env.company, company1)
@@ -683,7 +632,7 @@ class TestTracking(MailCommon):
                 {
                     "email_from": email_new_partner,
                     "company_id": company1.id,
-                    "user_id": self.env.user.id,  # trigger track template
+                    "user_id": self.env.user.id,
                 }
             )
             self.flush_tracking()
@@ -693,8 +642,6 @@ class TestTracking(MailCommon):
         self.assertEqual(new_partner.company_id, company1)
 
     def test_message_track_template_defaults(self):
-        """Check that default_* keys are not taken into account in
-        _message_track_post_template"""
         magic_code = "Up-Up-Down-Down-Left-Right-Left-Right-Square-Triangle"
 
         mt_name_changed = self.env["mail.message.subtype"].create(
@@ -867,9 +814,6 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_mail_track_2many(self):
-        """Check result of tracking one2many and many2many fields. Current
-        usage is to aggregate names into value_char fields."""
-        # Create a record with an initially invalid selection value
         test_tags = self.env["mail.test.track.all.m2m"].create(
             [
                 {
@@ -890,11 +834,9 @@ class TestTrackingInternals(MailCommon):
         )
         self.flush_tracking()
 
-        # no tracked field, no tracking at create
         last_message = test_record.message_ids[0]
         self.assertFalse(last_message.sudo().tracking_value_ids)
 
-        # update m2m
         test_record.write(
             {
                 "many2many_field": [(4, test_tags[0].id), (4, test_tags[1].id)],
@@ -914,7 +856,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # update m2m + o2m
         test_record.write(
             {
                 "many2many_field": [(3, test_tags[0].id), (4, test_tags[2].id)],
@@ -947,7 +888,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # remove from o2m
         test_record.write({"one2many_field": [(3, test_record.one2many_field[0].id)]})
         self.flush_tracking()
         last_message = test_record.message_ids[0]
@@ -1015,7 +955,6 @@ class TestTrackingInternals(MailCommon):
             ("text_field", "text", False, "text_value"),
         ]
         self.assertTracking(new_message, tracking_value_list, strict=True)
-        # check formatting for all field types
         formatted_values_all = (
             new_message.sudo().tracking_value_ids._tracking_value_format()
         )
@@ -1034,8 +973,6 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_mail_track_compute(self):
-        """Test tracking of computed fields"""
-        # no tracking at creation
         compute_record = self.env["mail.test.track.compute"].create({})
         self.flush_tracking()
         self.assertEqual(len(compute_record.message_ids), 1)
@@ -1043,8 +980,6 @@ class TestTrackingInternals(MailCommon):
             len(compute_record.message_ids[0].sudo().tracking_value_ids), 0
         )
 
-        # assign partner_id: one tracking message for the modified field and all
-        # the stored and non-stored computed fields on the record
         partner_su = (
             self.env["res.partner"]
             .sudo()
@@ -1075,7 +1010,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # modify partner: one tracking message for the only recomputed field
         partner_su.write({"name": "Fool"})
         self.flush_tracking()
         self.assertEqual(len(compute_record.message_ids), 3)
@@ -1089,8 +1023,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # modify partner: one tracking message for both stored computed fields;
-        # the non-stored computed fields have no tracking
         partner_su.write(
             {
                 "name": "Bar",
@@ -1101,8 +1033,6 @@ class TestTrackingInternals(MailCommon):
                 ],
             }
         )
-        # force recomputation of 'phone_ids' to make sure it does not
-        # generate tracking values
         self.assertEqual(compute_record.phone_ids.number, "0987654321")
         self.flush_tracking()
         self.assertEqual(len(compute_record.message_ids), 4)
@@ -1119,7 +1049,6 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_mail_track_monetary(self):
-        """Update a record with a tracked monetary field"""
         monetary_record = (
             self.env["mail.test.track.monetary"]
             .with_user(self.user_employee)
@@ -1132,7 +1061,6 @@ class TestTrackingInternals(MailCommon):
         self.flush_tracking()
         self.assertEqual(len(monetary_record.message_ids), 1)
 
-        # Check if the tracking value have the correct currency and values
         monetary_record.write(
             {
                 "revenue": 100,
@@ -1147,7 +1075,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # Check if the tracking value have the correct currency and values after changing the value and the company
         monetary_record.write(
             {
                 "revenue": 200,
@@ -1170,17 +1097,6 @@ class TestTrackingInternals(MailCommon):
         )
 
     def _formatted_tracking_values(self, record):
-        """What the client receives, and it must not depend on cache warmth.
-
-        Formatting one tracking at a time -- which this test used to do -- makes
-        ``_tracking_value_format``'s sort a no-op on a single row, so what was
-        asserted was the *recordset* order: id ASC out of the ORM cache, id DESC
-        out of the database. The two are reverses of each other, so the shipped
-        expectations were the reverse of the definition order the code sets out
-        to produce, and would have flipped the moment anything invalidated the
-        cache between the write and the assertion. Format the set, and read it
-        twice.
-        """
         warm = record.mapped("message_ids.tracking_value_ids")._tracking_value_format()
         self.env.invalidate_all()
         cold = record.mapped("message_ids.tracking_value_ids")._tracking_value_format()
@@ -1192,9 +1108,7 @@ class TestTrackingInternals(MailCommon):
         return warm
 
     def test_mail_track_properties(self):
-        """Test that the old properties values are logged when the parent changes."""
         record = self.properties_record_2
-        # change the parent, it will change the properties values
         record.properties_parent_id = self.properties_parent_1
         self.flush_tracking()
         formatted_values = self._formatted_tracking_values(record)
@@ -1207,8 +1121,6 @@ class TestTrackingInternals(MailCommon):
         self.assertEqual(
             formatted_values[0]["fieldInfo"]["changedField"], "Properties Parent"
         )
-        # definition order of properties_parent_2: m2m, separator, tags,
-        # datetime, date -- and that is the order they are rendered in.
         self.assertEqual(
             formatted_values[1]["fieldInfo"]["changedField"], "Properties: Property M2M"
         )
@@ -1244,7 +1156,6 @@ class TestTrackingInternals(MailCommon):
         self.assertEqual(
             formatted_values[0]["fieldInfo"]["changedField"], "Properties Parent"
         )
-        # definition order of properties_parent_1: char, separator, int, m2o.
         self.assertEqual(
             formatted_values[1]["fieldInfo"]["changedField"],
             "Properties: Property Char",
@@ -1259,15 +1170,12 @@ class TestTrackingInternals(MailCommon):
         )
         self.assertEqual(formatted_values[3]["oldValue"], "Record 0")
 
-        # changing the parent and then changing again
-        # to the original one to not create tracking values
         with self.mock_mail_gateway():
             record.properties_parent_id = self.properties_parent_1
             record.properties_parent_id = self.properties_parent_2
             self.flush_tracking()
         self.assertFalse(self._new_mails)
 
-        # do not create tracking if the value was false
         record.properties = {
             "property_m2m": False,
             "property_tags": ["aa"],
@@ -1291,8 +1199,6 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_mail_track_selection_invalid(self):
-        """Check that initial invalid selection values are allowed when tracking"""
-        # Create a record with an initially invalid selection value
         invalid_value = "I love writing tests!"
         record = self.env["mail.test.track.selection"].create(
             {
@@ -1313,7 +1219,6 @@ class TestTrackingInternals(MailCommon):
         record.invalidate_recordset()
         self.assertEqual(record.selection_type, invalid_value)
 
-        # Write a valid selection value
         record.selection_type = "second"
 
         self.flush_tracking()
@@ -1325,8 +1230,6 @@ class TestTrackingInternals(MailCommon):
         )
 
     def test_track_groups(self):
-        """Test field groups and filtering when using standard helpers"""
-        # say that 'email_from' is accessible to erp_managers only
         field = self.record._fields["email_from"]
         self.addCleanup(setattr, field, "groups", field.groups)
         field.groups = "base.group_erp_manager"
@@ -1393,20 +1296,15 @@ class TestTrackingInternals(MailCommon):
             values_sudo.get("tracking_values"), "should have protected tracking values"
         )
 
-        # test editing the record with user not in the group of the field
         self.env.invalidate_all()
         self.env.registry.clear_cache()
         record_form = Form(self.record.with_user(self.user_employee))
         record_form.name = "TestDoNoCrash"
-        # the employee user must be able to save the fields on which they can write
-        # if we fetch all the tracked fields, ignoring the group of the current user
-        # it will crash and it shouldn't
         record = record_form.save()
         self.assertEqual(record.name, "TestDoNoCrash")
 
     @users("employee")
     def test_track_invalid(self):
-        """Test invalid use cases: unknown field, unsupported type, ..."""
         test_record = self.env["mail.test.track.all"].create(
             {
                 "company_id": self.env.company.id,
@@ -1414,7 +1312,6 @@ class TestTrackingInternals(MailCommon):
         )
         self.flush_tracking()
 
-        # raise on non existing field
         with self.assertRaises(ValueError):
             self.env["mail.tracking.value"]._prepare_tracking_values(
                 "",
@@ -1424,7 +1321,6 @@ class TestTrackingInternals(MailCommon):
                 test_record,
             )
 
-        # raise on unsupported field type
         with self.assertRaises(NotImplementedError):
             self.env["mail.tracking.value"]._prepare_tracking_values(
                 "",
@@ -1436,9 +1332,6 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_track_multi_models(self):
-        """Some models track value coming from another model e.g. when having
-        a sub model (lines) on which some value should be tracked on a parent
-        model. Test there is no model mismatch."""
         main_track = self.env["mail.test.track.all"].create(
             {
                 "name": "Multi Models Tracking",
@@ -1455,7 +1348,6 @@ class TestTrackingInternals(MailCommon):
                 "secret": "secret",
             }
         )
-        # some custom code generates tracking values on main_track
         main_track.message_post(
             body="Custom Log with Tracking",
             tracking_value_ids=[
@@ -1499,7 +1391,6 @@ class TestTrackingInternals(MailCommon):
         trackings = main_track.message_ids.sudo().tracking_value_ids.sorted("id")
         self.assertEqual(len(trackings), 3)
 
-        # check groups, as it depends on model
         for tracking, exp_groups in zip(
             trackings,
             ["base.group_user", "base.group_system", "base.group_system"],
@@ -1513,7 +1404,6 @@ class TestTrackingInternals(MailCommon):
                 groups = field.groups
             self.assertEqual(groups, exp_groups)
 
-        # check formatting, as it fetches info on model
         formatted = trackings._tracking_value_format()
         self.assertEqual(
             formatted,
@@ -1559,14 +1449,10 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_track_sequence(self):
-        """Update some tracked fields and check that the mail.tracking.value
-        are ordered according to their tracking_sequence"""
         record = self.record.with_env(self.env)
         self.assertEqual(len(record.message_ids), 1)
-        # order: user_id -> 1, customer_id -> 2, container_id -> True -> 100, email_from -> True -> 100
         ordered_fnames = ["user_id", "customer_id", "container_id", "email_from"]
 
-        # Update tracked fields, should generate tracking values correctly ordered
         record.write(
             {
                 "container_id": self.env["mail.test.container"]
@@ -1594,7 +1480,6 @@ class TestTrackingInternals(MailCommon):
             "Track: order, based on ID DESC, should follow tracking sequence (or name) on field",
         )
 
-        # Manually create trackings, format should be the fallback to reorder them
         new_msg = record.message_post(
             body="Manual Hack of tracking",
             subtype_xmlid="mail.mt_note",
@@ -1634,9 +1519,8 @@ class TestTrackingInternals(MailCommon):
 
     @users("employee")
     def test_unlinked_model(self):
-        """Fields from obsolete models with tracking values can be unlinked without error."""
         record = self.record.with_env(self.env)
-        record.write({"email_from": "new_value"})  # create a tracking value
+        record.write({"email_from": "new_value"})
         self.flush_tracking()
         self.assertTracking(
             record.message_ids[0],
@@ -1654,20 +1538,16 @@ class TestTrackingInternals(MailCommon):
             )
         )
 
-        # Simulate a registry without the model, which is what we have if we
-        # update a module with the model code removed
         model = self.env.registry.models.pop("mail.test.ticket")
         try:
             fields_to_remove.with_context(_force_unlink=True).unlink()
         finally:
-            # Restore model to prevent registry errors after test
             self.env.registry.models["mail.test.ticket"] = model
 
     @users("employee")
     def test_unlinked_field(self):
-        """Check that removing a field removes its tracking values."""
         record = self.record.with_env(self.env)
-        record.write({"email_from": "new_value"})  # create a tracking value
+        record.write({"email_from": "new_value"})
 
         record_other = self.env["mail.test.ticket"].create({})
         self.flush_tracking()
@@ -1707,24 +1587,18 @@ class TestTrackingInternals(MailCommon):
             strict=True,
         )
 
-        # check display / format
         trackings_all = (record + record_other).message_ids.sudo().tracking_value_ids
-        # Three rows share a field name and a sequence, so they tie on the first
-        # three components of the format sort. It closes on descending id --
-        # ``mail.tracking.value._order`` -- and not, as it used to, on whatever
-        # order the recordset happened to arrive in, which is id ASC out of the
-        # ORM cache and id DESC out of the database.
         email_from_trackings = trackings_all.filtered(
             lambda t: t.field_id.name == "email_from"
         ).sorted("id", reverse=True)
         trackings_all_sorted = [
             trackings_all.filtered(
                 lambda t: t.field_id.name == "user_id"
-            ),  # tracking=1
+            ),
             trackings_all.filtered(
                 lambda t: t.field_id.name == "customer_id"
-            ),  # tracking=2
-            *email_from_trackings,  # tracking=True -> 100
+            ),
+            *email_from_trackings,
         ]
         fields_info = [
             ("user_id", "many2one", "Responsible"),
@@ -1775,7 +1649,6 @@ class TestTrackingInternals(MailCommon):
             ],
         )
 
-        # remove fields
         fields_toremove = (
             self.env["ir.model.fields"]
             .sudo()
@@ -1786,14 +1659,13 @@ class TestTrackingInternals(MailCommon):
                         "name",
                         "in",
                         ("email_from", "user_id", "datetime"),
-                    ),  # also include a non tracked field
+                    ),
                 ]
             )
         )
         fields_toremove.with_context(_force_unlink=True).unlink()
         self.assertEqual(len(trackings_all.exists()), 5)
 
-        # check display / format, even if field is removed
         formatted = trackings_all._tracking_value_format()
         self.assertEqual(
             formatted,
@@ -1854,9 +1726,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def test_tracking_a_batch_costs_no_query_per_record(self):
-        """Tracking N records must not cost a query per record. Measured as a
-        marginal cost so cache warmth cannot make the assertion meaningless --
-        and at N > 1, which is the only scale at which an N+1 is visible."""
         few_queries, _few_records = self._tracked_write_on(2)
         many_queries, many_records = self._tracked_write_on(20)
         self.assertLessEqual(
@@ -1884,8 +1753,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def test_tracking_keeps_one_author_per_record(self):
-        """Batching the log must not collapse per-record authors set by
-        `_track_set_author`."""
         records = (
             self.env["mail.test.ticket"]
             .with_user(self.user_employee)
@@ -1907,8 +1774,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def _subtype_tracked_write_on(self, count, authors=None):
-        """Write a field whose `_track_subtype` returns a subtype, so tracking
-        takes the posting exit rather than the logging one."""
         containers = self.env["mail.test.container"].create(
             [{"name": f"Container {index}"} for index in range(3)]
         )
@@ -1929,13 +1794,6 @@ class TestTrackingBatchCost(MailCommon):
         return self.cr.sql_statement_count - before, records
 
     def test_tracking_with_a_subtype_costs_no_query_per_record(self):
-        """The subtype exit of `_message_track` must batch like the logging one.
-
-        It used to post one `message_post` per record, which billed everything
-        that method does per call -- alias domains, companies, reply-to, parent
-        ids and a separate outgoing-mail flush -- once per record. Measured as a
-        marginal cost at N > 1, the only scale at which an N+1 is visible.
-        """
         few_queries, _few = self._subtype_tracked_write_on(2)
         many_queries, many_records = self._subtype_tracked_write_on(20)
         self.assertLessEqual(
@@ -1944,8 +1802,6 @@ class TestTrackingBatchCost(MailCommon):
             f"18 further subtype-tracked records cost {many_queries - few_queries} "
             f"extra queries (2 records: {few_queries}, 20 records: {many_queries})",
         )
-        # a query budget alone cannot tell a saving from skipped work, so pin
-        # what the batch must still produce
         tracking_messages = self._tracking_messages_of(many_records)
         self.assertEqual(len(tracking_messages), 20)
         self.assertEqual(len(tracking_messages.tracking_value_ids), 20)
@@ -1965,8 +1821,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def _logged_tracked_write_on(self, count, authors=None):
-        """Write a tracked field whose `_track_subtype` returns nothing, so
-        tracking takes the logging exit (`_message_log_batch`)."""
         records = (
             self.env["mail.test.ticket"]
             .with_user(self.user_employee)
@@ -1983,19 +1837,6 @@ class TestTrackingBatchCost(MailCommon):
         return self.cr.sql_statement_count - before, records
 
     def test_distinct_authors_cost_no_query_per_author(self):
-        """Resolving N distinct authors must not cost N queries.
-
-        `_message_compute_author` browses one partner and reads
-        `email_formatted`; a bare browse carries a prefetch pool of one, so both
-        exits of tracking -- which loop over the distinct authors
-        `_track_set_author` recorded -- paid a query per author. Measured before
-        the fix at 50 records with 50 distinct authors: 51 `res_partner`
-        queries on each exit, against 2 for a single author.
-
-        Asserted as a MARGINAL cost, because the per-author query is invisible
-        to any absolute count taken at one N, and invisible at every N when the
-        batch has one author -- which is the case every other test here uses.
-        """
         for label, writer in (
             ("posting", self._subtype_tracked_write_on),
             ("logging", self._logged_tracked_write_on),
@@ -2010,8 +1851,6 @@ class TestTrackingBatchCost(MailCommon):
                     f"queries for 19 further distinct authors (1 author: "
                     f"{one_author}, 20 authors: {many_authors})",
                 )
-                # a query budget cannot tell cheap from empty: every record must
-                # still carry the author it was given
                 messages = self._tracking_messages_of(records)
                 self.assertEqual(len(messages), 20)
                 self.assertEqual(
@@ -2021,15 +1860,6 @@ class TestTrackingBatchCost(MailCommon):
                 )
 
     def test_tracking_a_batched_write_costs_nothing_per_record(self):
-        """With the write itself batched, tracking must be flat in N.
-
-        The per-record residue that survives a one-record-at-a-time write is
-        `write()` calling `_message_auto_subscribe` once per call, which is the
-        write's cost and not tracking's. Batch the write and nothing in the
-        tracking path should scale at all -- this is the assertion that would
-        have caught the subtype `exists()` check, which asked one question about
-        the whole batch once per record.
-        """
         container = self.env["mail.test.container"].create({"name": "Shared"})
 
         def batched_write_on(count):
@@ -2048,11 +1878,6 @@ class TestTrackingBatchCost(MailCommon):
 
         few_queries, _few = batched_write_on(2)
         many_queries, many_records = batched_write_on(20)
-        # `<=` rather than `==`: the claim is that nothing scales with N, and a
-        # per-record cost would show as +18 or more over these 18 records. The
-        # small slack absorbs fixed-cost noise -- sequence allocation and cache
-        # warmth make the two runs differ by a few queries in either direction,
-        # and the larger run is routinely the cheaper of the two.
         self.assertLessEqual(
             many_queries - few_queries,
             5,
@@ -2069,7 +1894,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def test_tracking_with_a_subtype_keeps_one_author_per_record(self):
-        """Batching the posting exit must not collapse per-record authors."""
         _queries, records = self._subtype_tracked_write_on(
             4, authors=self.customers[:2]
         )
@@ -2084,9 +1908,6 @@ class TestTrackingBatchCost(MailCommon):
         )
 
     def test_tracking_creation_templates_post_once_per_change_set(self):
-        """Creation registered one precommit callback per record, so a batch
-        create ran `_message_track_post_template` once per record and its
-        grouping never applied."""
         template = self.env.ref("test_mail.mail_test_ticket_tracking_tpl")
         calls = []
         original = self.registry["mixin.mail.thread"]._message_track_post_template
@@ -2126,8 +1947,6 @@ class TestTrackingBatchCost(MailCommon):
         self.assertEqual(len(self._new_mails), 4, "still one mail per record")
 
     def test_tracking_templates_run_in_each_writer_company(self):
-        """Templates of a later writer ran in the first writer's env while its
-        tracking ran in its own company."""
         company_2 = self.env["res.company"].create({"name": "Tracking Company 2"})
         self.user_admin.company_ids = [Command.link(company_2.id)]
         records = self.env["mail.test.ticket"].create(
@@ -2195,13 +2014,6 @@ class TestTrackingBatchCost(MailCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_tracking_templates_mass_mail_once_per_template_for_a_batch(self):
-        """A batch whose tracking resolves to one template renders it once.
-
-        `_track_finalize` handed `_message_track_post_template` one record at a
-        time, so its `mass_mail` branch built one composer per record and the
-        batch branch was unreachable. Records sharing a change set and a
-        template now post as one group; each still gets its own mail.
-        """
         records, calls = self._batch_template_tracking(5)
         self.assertEqual(
             calls["mass_mail"],
@@ -2217,8 +2029,6 @@ class TestTrackingBatchCost(MailCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_tracking_templates_post_once_per_template_for_a_batch(self):
-        """Without an explicit composition mode a template posts as a comment,
-        for a batch as for a single record, and the group posts once."""
         template = self.env.ref("test_mail.mail_test_ticket_tracking_tpl")
 
         def _track_template(self, changes):
@@ -2289,9 +2099,6 @@ class TestTrackingCompanyDependent(MailCommon):
 
     def test_each_record_is_compared_in_the_company_it_was_written_in(self):
         messages_b = self.record_b.message_ids
-        # the first write registers the tracking in the main company; the
-        # second rewrites B's value unchanged in its own company, which the
-        # finalization used to read in the main company (5.0 -> 0.0)
         self.record_a.with_company(self.env.company).company_amount = 1.0
         self.record_b.with_company(self.company_other).company_amount = 5.0
         self.flush_tracking()

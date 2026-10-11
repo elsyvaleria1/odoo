@@ -99,8 +99,6 @@ class StockPicking(models.Model):
 
     @api.constrains("carrier_id", "carrier_tracking_ref")
     def _check_carrier_tracking_ref_format(self) -> None:
-        # Checked on save, so a mistyped reference is caught while the slip is in
-        # hand rather than when the customer asks where the goods are.
         checked = self.filtered(
             lambda picking: (
                 picking.carrier_tracking_ref and picking.carrier_id.tracking_ref_pattern

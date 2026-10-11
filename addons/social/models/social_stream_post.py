@@ -65,37 +65,27 @@ class SocialStreamPost(models.Model):
         string="Stream Post Images",
         help="Images that were shared with this post.",
     )
-    # JSON array capturing the URLs of the images to make it easy to display them in the kanban view
     stream_post_image_urls = fields.Text(
         string="Stream Post Images URLs",
         compute="_compute_stream_post_image_urls",
     )
 
-    # Some social.medias (ex: Facebook) provide information on the link shared with the post.
-    # We store those infomation to render a nice block on the kanban view with the title, image and description.
     link_title = fields.Text()
     link_description = fields.Text()
     link_image_url = fields.Char(string="Link Image URL")
     link_url = fields.Char(string="Link URL")
 
     def _compute_stream_post_image_urls(self) -> None:
-        """See field 'help' for more information."""
         for stream_post in self:
             stream_post.stream_post_image_urls = json_dumps(
                 [image.image_url for image in stream_post.stream_post_image_ids]
             )
 
     def _compute_author_link(self) -> None:
-        """Every social module should override this method and handle its own
-        records, then call super() on remaining subset. See field 'help' for
-        more information."""
         for post in self:
             post.author_link = False
 
     def _compute_post_link(self) -> None:
-        """Every social module should override this method and handle its own
-        records, then call super() on remaining subset. See field 'help' for
-        more information."""
         for post in self:
             post.post_link = False
 
@@ -116,7 +106,6 @@ class SocialStreamPost(models.Model):
 
     @api.model
     def _format_published_date(self, published_date):
-        """Formats to '5 minutes' instead of date if not older than 12 hours."""
         if (datetime.now() - published_date) < timedelta(hours=12):
             return _format_time_ago(
                 self.env, (datetime.now() - published_date), add_direction=False
@@ -125,12 +114,6 @@ class SocialStreamPost(models.Model):
             return format_date(self.env, published_date)
 
     def _get_matching_post(self):
-        """This method is meant to be overridden by underlying social implementations.
-        It returns the social.post linked to this social.stream.post if any, by matching
-        the social media specific ID of the social.stream.post to its social.live.post counterpart.
-
-        This can't be easily built dinamically since all social media implementations have their own
-        specific IDs, that we don't want to mix."""
 
         self.check_singleton()
         return self.env["social.post"]

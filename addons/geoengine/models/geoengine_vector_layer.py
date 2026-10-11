@@ -485,12 +485,6 @@ class GeoVectorLayer(models.Model):
         )
 
     def get_class_bounds(self, layer_domain: list | None = None) -> dict:
-        """Bounds of the attribute over the layer's population.
-
-        ``layer_domain`` is the layer's domain as the map evaluated it (its
-        filter, the search, the drawn ids); without one the stored filter
-        applies.
-        """
         if not (target := self._attribute_target()):
             return {}
         model, field_name = target
@@ -508,18 +502,12 @@ class GeoVectorLayer(models.Model):
         limit: int = MAX_CLASS_VALUES,
         distinct: bool = False,
     ) -> list:
-        """The attribute's non-empty values over the layer's population, as
-        ``get_class_bounds`` reads it, each once when ``distinct`` (all unique
-        classes need); empty when there are more than ``limit``, and the map
-        then classifies the drawn features."""
         if not (target := self._attribute_target()):
             return []
         model, field_name = target
         limit = min(limit or MAX_CLASS_VALUES, MAX_CLASS_VALUES)
         domain = self._population_domain(layer_domain)
         field_type = model._fields[field_name].type
-        # A datetime grouped by day would not match the full timestamps the
-        # map compares against, so it is read row by row like any population.
         if distinct and field_type != "datetime":
             spec = f"{field_name}:day" if field_type == "date" else field_name
             values = [
@@ -543,9 +531,6 @@ class GeoVectorLayer(models.Model):
     def get_class_quantiles(
         self, layer_domain: list | None = None, nb_class: int = 0
     ) -> list[float]:
-        """Quantile class bounds of the attribute over the layer's population,
-        computed by the database for a population too large to send as values
-        (``get_class_values``): ``nb_class + 1`` ascending bounds, or empty."""
         if not (target := self._attribute_target()):
             return []
         model, field_name = target
@@ -570,12 +555,6 @@ class GeoVectorLayer(models.Model):
     def get_tile(
         self, z: int, x: int, y: int, layer_domain: list | None = None
     ) -> dict:
-        """The layer's population inside one Web Mercator tile, as a Mapbox
-        vector tile (base64): a feature per record carrying its id and styled
-        values or, for points, a feature per grid cell carrying its count (a
-        cell of one record keeps that record's id and values). ``too_dense`` is set, and no tile returned,
-        when the tile did not render within ``geoengine.tile_timeout_ms``.
-        """
         self.check_singleton()
         self.check_access("read")
         tile = Tile.checked(self.env, z, x, y)
@@ -597,9 +576,6 @@ class GeoVectorLayer(models.Model):
         layer_domain: list | None = None,
         limit: int = CELL_RECORD_LIMIT,
     ) -> dict:
-        """The records a tile counted in one cell (its ``cell`` address), for
-        a map where they stack too close to be told apart by zooming:
-        ``{"records": [{"id", "display_name"}], "more": bool}``."""
         self.check_singleton()
         self.check_access("read")
         model, field = self._tile_target()
@@ -623,9 +599,6 @@ class GeoVectorLayer(models.Model):
     def get_heat_cells(
         self, extent: list, zoom: float, layer_domain: list | None = None
     ) -> dict:
-        """The layer's population in a heatmap's view, summed into cells of a
-        few pixels: ``{"cells": [[x, y, weight]], "too_dense": bool}`` in Web
-        Mercator, weighted by the heatmap's weight field or by count."""
         self.check_singleton()
         self.check_access("read")
         model, field = self._tile_target()
@@ -650,9 +623,6 @@ class GeoVectorLayer(models.Model):
         return {"cells": row[0], "too_dense": False}
 
     def get_tile_extent(self, layer_domain: list | None = None) -> list[float] | None:
-        """The Web Mercator bounds of the layer's population, for framing a
-        tiled layer; None when it is empty or not measured within the tile
-        budget."""
         self.check_singleton()
         self.check_access("read")
         model, field = self._tile_target()

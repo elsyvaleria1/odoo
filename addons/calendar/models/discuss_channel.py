@@ -17,15 +17,10 @@ class DiscussChannel(models.Model):
 
     @api.model
     def _get_meeting_backed_domain(self, event_domain=Domain.TRUE):
-        # `any!`: a guest or portal member of a meeting channel may not read
-        # the meeting, and when an accessible channel's meeting takes place is
-        # not private
         return Domain("calendar_event_ids", "any!", event_domain)
 
     @api.model
     def _get_meeting_today_domain(self):
-        # a planned meeting takes place on its own dates; an ad-hoc one
-        # ("Start Now") backs no meeting and takes place the day it started
         planned_today = self._get_meeting_backed_domain(
             self.env["calendar.event"]._get_today_domain()
         )
@@ -52,8 +47,6 @@ class DiscussChannel(models.Model):
         "parent_channel_id.calendar_event_ids.stop",
     )
     def _compute_meeting_dt(self) -> None:
-        # the occurrences of a recurrence share one channel: the one going on
-        # or coming next stands for it, the last one once they are all over
         super()._compute_meeting_dt()
         now = fields.Datetime.now()
         events_by_channel = (
@@ -77,9 +70,6 @@ class DiscussChannel(models.Model):
         )
 
     def _retire_orphan_meeting_channels(self) -> None:
-        # the channel of a deleted meeting goes with it, the last occurrence of
-        # a recurrence taking it; one that hosted a conversation is kept for
-        # its history and only unpinned, dropping out of the Meetings tab
         channels = (
             self._with_meeting_channel_privilege()
             .with_context(active_test=False)

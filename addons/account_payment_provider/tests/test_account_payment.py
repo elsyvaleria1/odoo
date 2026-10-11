@@ -56,7 +56,7 @@ class TestAccountPayment(AccountPaymentCommon):
     def test_no_amount_available_for_refund_when_not_supported(self):
         self.provider.support_refund = "none"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self.assertEqual(
             tx.payment_id.amount_available_for_refund,
             0,
@@ -65,9 +65,9 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_full_amount_available_for_refund_when_not_yet_refunded(self):
-        self.provider.support_refund = "full_only"  # Should simply not be False
+        self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self.assertAlmostEqual(
             tx.payment_id.amount_available_for_refund,
             tx.amount,
@@ -79,19 +79,19 @@ class TestAccountPayment(AccountPaymentCommon):
     def test_full_amount_available_for_refund_when_refunds_are_pending(self):
         self.provider.write(
             {
-                "support_refund": "full_only",  # Should simply not be False
-                "support_manual_capture": "partial",  # To create transaction in the 'authorized' state
+                "support_refund": "full_only",
+                "support_manual_capture": "partial",
             }
         )
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         for reference_index, state in enumerate(("draft", "pending", "authorized")):
             self._create_transaction(
                 "dummy",
                 amount=-tx.amount,
                 reference=f"R-{tx.reference}-{reference_index + 1}",
                 state=state,
-                operation="refund",  # Override the computed flow
+                operation="refund",
                 source_transaction_id=tx.id,
             )
         self.assertAlmostEqual(
@@ -103,15 +103,15 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_no_amount_available_for_refund_when_fully_refunded(self):
-        self.provider.support_refund = "full_only"  # Should simply not be False
+        self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self._create_transaction(
             "dummy",
             amount=-tx.amount,
             reference=f"R-{tx.reference}",
             state="done",
-            operation="refund",  # Override the computed flow
+            operation="refund",
             source_transaction_id=tx.id,
         )._post_process()
         self.assertEqual(
@@ -124,13 +124,13 @@ class TestAccountPayment(AccountPaymentCommon):
     def test_no_full_amount_available_for_refund_when_partially_refunded(self):
         self.provider.support_refund = "partial"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self._create_transaction(
             "dummy",
             amount=-(tx.amount / 10),
             reference=f"R-{tx.reference}",
             state="done",
-            operation="refund",  # Override the computed flow
+            operation="refund",
             source_transaction_id=tx.id,
         )._post_process()
         self.assertAlmostEqual(
@@ -143,9 +143,9 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_refunds_count(self):
-        self.provider.support_refund = "full_only"  # Should simply not be False
+        self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         for reference_index, operation in enumerate(
             ("online_redirect", "online_direct", "online_token", "validation", "refund")
         ):
@@ -153,7 +153,7 @@ class TestAccountPayment(AccountPaymentCommon):
                 "dummy",
                 reference=f"R-{tx.reference}-{reference_index + 1}",
                 state="done",
-                operation=operation,  # Override the computed flow
+                operation=operation,
                 source_transaction_id=tx.id,
             )._post_process()
 
@@ -164,7 +164,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_refund_message_author_is_logged_in_user(self):
-        """Ensure that the chatter message author is the user processing the refund."""
         self.provider.support_refund = "full_only"
 
         tx = self._create_transaction("redirect", state="done")
@@ -205,9 +204,6 @@ class TestAccountPayment(AccountPaymentCommon):
             patched.assert_called_once()
 
     def test_online_payment_error_no_duplicate_message_when_fully_paid(self):
-        """Test that _get_online_payment_error does not emit both 'There is no amount
-        to be paid.' and 'This invoice has already been paid.' for the same
-        zero-residual cause."""
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -233,9 +229,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_suitable_payment_token_ids_grouped_by_company_partner_provider(self):
-        """Test that _compute_suitable_payment_token_ids returns the right tokens for
-        each distinct (company, partner, provider) group when computed on a batch of
-        several account.payment records sharing the same group."""
         provider_method_line = (
             self.provider.journal_id.inbound_payment_channel_ids.filtered(
                 lambda l: l.payment_provider_id == self.provider
@@ -284,9 +277,6 @@ class TestAccountPayment(AccountPaymentCommon):
         self.assertEqual(other_group.suitable_payment_token_ids, other_token)
 
     def test_payment_action_void_ensures_single_record(self):
-        """Test that payment_action_void raises on a multi-record recordset, matching
-        its sibling payment_action_capture, instead of silently voiding transactions
-        across several invoices at once."""
         invoice_1 = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -307,13 +297,12 @@ class TestAccountPayment(AccountPaymentCommon):
         )
         with self.assertRaises(ValueError):
             (invoice_1 + invoice_2).payment_action_void()
-        # Single-record call still works.
         invoice_1.payment_action_void()
 
     def test_no_payment_for_validations(self):
         tx = self._create_transaction(
             flow="dummy", operation="validation"
-        )  # Overwrite the flow
+        )
         tx._post_process()
         payment_count = self.env["account.payment"].search_count(
             [("transaction_id", "=", tx.id)]
@@ -352,13 +341,11 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_prevent_unlink_apml_with_active_provider(self):
-        """Test that deleting an `account.payment.channel` linked to an active provider raises."""
         self.assertEqual(self.dummy_provider.state, "test")
         with self.assertRaises(UserError):
             self.dummy_provider.journal_id.inbound_payment_channel_ids.unlink()
 
     def test_provider_journal_assignation(self):
-        """Test the computation of the 'journal_id' field and so, the link with the accounting side."""
 
         def get_payment_channel(provider):
             return self.env["account.payment.channel"].search(
@@ -370,14 +357,12 @@ class TestAccountPayment(AccountPaymentCommon):
             provider = self.provider
             self.assertRecordValues(provider, [{"journal_id": journal.id}])
 
-            # Test changing the journal.
             copy_journal = journal.copy()
             payment_channel = get_payment_channel(provider)
             provider.journal_id = copy_journal
             self.assertRecordValues(provider, [{"journal_id": copy_journal.id}])
             self.assertRecordValues(payment_channel, [{"journal_id": copy_journal.id}])
 
-            # Test duplication of the provider.
             payment_channel.payment_account_id = (
                 self.inbound_payment_channel.payment_account_id
             )
@@ -395,16 +380,13 @@ class TestAccountPayment(AccountPaymentCommon):
                 ],
             )
 
-            # We are able to have both on the same journal...
             with self.assertRaises(ValidationError):
-                # ...but not having both with the same name.
                 provider.journal_id = journal
 
             method_line = get_payment_channel(copy_provider)
             method_line.name = "dummy (copy)"
             provider.journal_id = journal
 
-            # You can't have twice the same acquirer on the same journal.
             copy_provider_pml = get_payment_channel(copy_provider)
             with self.assertRaises(ValidationError):
                 journal.inbound_payment_channel_ids = [
@@ -430,8 +412,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_payment_invoice_same_receivable(self):
-        """Test that the payment of a transaction takes its destination account from the invoice
-        line rather than from the partner's receivable account."""
         payment_term = self.env["account.payment.term"].create(
             {
                 "name": "early_payment_term",
@@ -490,7 +470,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_vendor_payment_name_remains_same_after_repost(self):
-        """Test that reposting a vendor payment keeps its name, unless the journal changed."""
         journal = self.company_data["default_journal_bank"]
 
         payment = self.env["account.payment"].create(
@@ -531,7 +510,6 @@ class TestAccountPayment(AccountPaymentCommon):
             "Payment name should remain the same after reposting",
         )
 
-        # Now try to change the journal, and check if the name is now updated
         payment.move_id.action_draft()
         new_journal = journal.copy()
         new_payment_channel = new_journal.outbound_payment_channel_ids[0]
@@ -552,8 +530,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_post_process_does_not_fail_on_cancelled_invoice(self):
-        """Test that `_post_process` does not raise when the transaction is confirmed after its
-        invoice was cancelled."""
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -575,14 +551,10 @@ class TestAccountPayment(AccountPaymentCommon):
         )
         invoice.action_cancel()
         tx._set_done()
-        # _post_process() shouldn't raise an error even though the invoice is cancelled
         tx._post_process()
         self.assertEqual(tx.payment_id.state, "in_process")
 
     def test_post_process_only_posts_own_transaction_invoices(self):
-        """Test that `_post_process` on a batch of transactions only posts the invoices linked
-        to the transaction that actually reached the `done` state, not invoices linked to other
-        (non-done) transactions in the same batch."""
         done_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -614,9 +586,6 @@ class TestAccountPayment(AccountPaymentCommon):
             invoice_ids=[pending_invoice.id],
         )
         done_tx._set_done()
-        # Only done_tx is 'done'; call _post_process on the whole batch, as
-        # account_payment.py's action_post() does when several token-based
-        # payments are posted together.
         (done_tx + pending_tx)._post_process()
         self.assertEqual(
             done_invoice.state,
@@ -631,10 +600,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_create_payment_no_forced_destination_account_when_invoices_differ(self):
-        """Test that `_create_payment` does not force `destination_account_id` to one
-        invoice's receivable account when the transaction's invoices don't all share the
-        same one, so it falls back to account.payment's own partner-based compute instead
-        of silently excluding the other invoice's lines from reconciliation."""
         invoice_1 = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -654,9 +619,6 @@ class TestAccountPayment(AccountPaymentCommon):
             }
         )
         (invoice_1 + invoice_2).action_post()
-        # Both diverge from the partner's actual default receivable account,
-        # so an "arbitrary pick" (whichever invoice's line happens to be
-        # first) is distinguishable from the correct partner-based fallback.
         other_receivable_1 = self.company_data["default_account_receivable"].copy()
         other_receivable_2 = self.company_data["default_account_receivable"].copy()
         invoice_1.line_ids.filtered(
@@ -682,7 +644,6 @@ class TestAccountPayment(AccountPaymentCommon):
         )
 
     def test_payment_token_for_invoice_partner_is_available(self):
-        """Test that the payment token of the invoice partner is available"""
         Wizard = self.env["wizard.account.move.line.pay"].with_context(
             active_model="account.move"
         )
@@ -737,23 +698,18 @@ class TestAccountPayment(AccountPaymentCommon):
                 ],
             )
 
-            # Check that tokens assigned to the specific partner as well as their
-            # commercial partner can be selected.
             parent_token = self._create_token(partner_id=self.partner.id)
             wizard = payment_register_wizard(invoice)
             self.assertEqual(
                 wizard.suitable_payment_token_ids, payment_token + parent_token
             )
 
-            # Check that payments for multiple invoices with multiple partners
-            # only retrieve tokens assigned to a common commercial partner.
             other_invoice = invoice.copy({"partner_id": other_child.id})
             other_invoice.action_post()
             wizard = payment_register_wizard(invoice + other_invoice)
             self.assertEqual(wizard.suitable_payment_token_ids, parent_token)
 
     def test_generate_and_send_invoice_with_qr_code(self):
-        """Test generating & sending invoices with QR codes enabled."""
         self.env.company.account_config_id.link_qr_code = True
         move = self.env["account.move"].create(
             {
@@ -778,7 +734,6 @@ class TestAccountPayment(AccountPaymentCommon):
             self.assertTrue(payment_qr_mock.called)
 
     def test_partial_reconcile_with_payments_coming_from_provider(self):
-        """Test that partial reconciliation is not allowed on payments coming from a provider."""
         provider = self.env["payment.provider"].create(
             {
                 "name": "Test",

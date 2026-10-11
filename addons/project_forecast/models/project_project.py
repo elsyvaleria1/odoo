@@ -82,7 +82,6 @@ class ProjectProject(models.Model):
         )
         return action
 
-    # Project Updates
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

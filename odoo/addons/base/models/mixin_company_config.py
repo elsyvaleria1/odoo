@@ -75,8 +75,6 @@ class MixinCompanyConfig(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        # one record per company: data that names a company already
-        # configured (the company's create made the record) writes it
         self._inherit_delegated_fields(vals_list)
         company_ids = [vals.get("company_id") for vals in vals_list]
         existing = {
@@ -123,12 +121,6 @@ class MixinCompanyConfig(models.AbstractModel):
         return result
 
     def _propagate_delegated_fields_to_branches(self, vals: ValuesType) -> None:
-        # res.company pushes its own delegated fields down to its branches; a
-        # configuration written directly must do the same for its own, or the
-        # branches keep the old value until a recompute re-checks them and
-        # _check_delegated_fields_match_root refuses the unrelated write. The
-        # branches are written as the writer: one who cannot reach a branch is
-        # refused rather than leaving it behind
         delegated = set(vals) & set(self._get_field_names_delegated_to_root())
         if not delegated:
             return
@@ -166,9 +158,6 @@ class MixinCompanyConfig(models.AbstractModel):
         return result
 
     def _clear_registry_cache_for(self, vals: ValuesType) -> None:
-        # a setting an ormcache answers about moved here with the rest of the
-        # application's configuration, and the company's own hook no longer
-        # sees it written
         invalidation_fields = self._get_cache_invalidation_fields()
         if invalidation_fields.isdisjoint(vals):
             return
@@ -191,9 +180,6 @@ class MixinCompanyConfig(models.AbstractModel):
     @api.model
     @ormcache()
     def _config_ids_by_company(self) -> frozendict:
-        # which row configures which company changes only when a row is
-        # created, deleted or re-pointed, so a request reads the pairing from
-        # the registry instead of searching the table for it
         configs = (
             self.sudo().with_context(active_test=False).search_fetch([], ["company_id"])
         )
@@ -205,15 +191,12 @@ class MixinCompanyConfig(models.AbstractModel):
 
     @api.model
     def _config_id_by_company(self, companies: models.Model) -> dict[int, int]:
-        # a company not yet saved has no configuration to find or create
         companies = companies.filtered(lambda company: isinstance(company.id, int))
         by_company = self._config_ids_by_company()
         found = {cid: by_company[cid] for cid in companies.ids if cid in by_company}
         unmapped = companies.filtered(lambda company: company.id not in by_company)
         if not unmapped:
             return found
-        # a row another transaction committed after the map was read is found
-        # here, and the map refreshed for the next request
         existing = (
             self.sudo()
             .with_context(active_test=False)

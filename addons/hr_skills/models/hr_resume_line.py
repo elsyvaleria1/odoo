@@ -92,11 +92,6 @@ class HrResumeLine(models.Model):
 
     @api.model
     def _site_name(self, url):
-        """The registrable label of the URL's host, capitalised, or nothing.
-
-        ``https://docs.python.org/3/`` -> ``Python``; a bare ``coursera.org``
-        counts too. The regex this replaces stopped at the *last* dot of the
-        whole URL, so any path holding a dot gave ``Example.com/a.b``."""
         if "//" not in url:
             url = f"//{url}"
         host = urlsplit(url).hostname or ""

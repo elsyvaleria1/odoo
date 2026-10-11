@@ -23,7 +23,6 @@ if not easyCTEPPath.exists():
     )
     unzip_file(zipPath, str(libPath / "ctep_w"))
 
-# Add Worldline dll path so that the linker can find the required dll files
 os.environ["PATH"] = str(libPath / "ctep_w") + os.pathsep + os.environ["PATH"]
 easyCTEP = import_ctypes_library("ctep_w", "libeasyctep.dll")
 

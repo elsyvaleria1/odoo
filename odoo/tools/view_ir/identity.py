@@ -15,25 +15,6 @@ def _short_hash(parts: Iterable[str]) -> str:
 
 
 def identify(root: Node) -> dict[str, Node]:
-    """Give every node of ``root`` a stable id and return ``{id: node}``.
-
-    Derivation, in order:
-
-    1. an explicit ``id`` attribute is the id;
-    2. a named node (``name=``) is ``kind:name`` — ``field:partner_id``,
-       ``button:action_confirm``, ``page:other_info``;
-    3. a kind that occurs once in the view is the kind — ``sheet``, ``header``;
-    4. anything else is ``kind@hash`` over the parent's id and the node's own
-       kind and attributes — not its children, so an anonymous ``<group>``
-       keeps its id when its content changes or its siblings move, and loses
-       it when it is re-parented or its attributes change; two such siblings
-       that are alike are told apart by document order (``#2``).
-
-    Ids are still unique when two nodes claim the same one — a field placed
-    twice, an HTML ``id`` an arch repeats: the second and later carry ``#2``,
-    ``#3``, … in document order, explicit ids claiming before derived ones.
-    """
-    # one walk, document order, each node with its parent
     nodes: list[tuple[Node, Node | None]] = []
     stack: list[tuple[Node, Node | None]] = [(root, None)]
     while stack:
@@ -55,12 +36,10 @@ def identify(root: Node) -> dict[str, Node]:
         ids[node_id] = node
         return node_id
 
-    # explicit ids first, in document order, so a derived id never takes one
     for node, _parent in nodes:
         if node.attrs.get("id"):
             node.id = claim(node.attrs["id"], node)
 
-    # a parent precedes its children in document order, so its id is settled
     for node, parent in nodes:
         if node.attrs.get("id"):
             continue

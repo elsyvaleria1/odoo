@@ -5,7 +5,6 @@ class TestCommon(TransactionCase):
     def setUp(self):
         super().setUp()
 
-        # activate multi language support
         self.env["res.lang"]._activate_lang("fr_FR")
         self.env.user.write({"lang": "en_US"})
 

@@ -27,9 +27,6 @@ class TestSessionInfo(common.HttpCase):
         }
 
     def _payload(self):
-        """
-        Helper to properly build jsonrpc payload
-        """
         return json_dumps(
             {
                 "jsonrpc": "2.0",
@@ -39,10 +36,6 @@ class TestSessionInfo(common.HttpCase):
         )
 
     def test_session_info_without_right(self):
-        """
-        Checks that the session_info['can_insert_in_spreadsheet'] structure
-        correspond to what is expected
-        """
         self.authenticate(self.user1.login, self.user_password)
         response = self.url_open(
             "/web/session/get_session_info", data=self._payload(), headers=self.headers
@@ -59,10 +52,6 @@ class TestSessionInfo(common.HttpCase):
         )
 
     def test_session_info_with_right(self):
-        """
-        Checks that the session_info['can_insert_in_spreadsheet'] structure
-        correspond to what is expected
-        """
         self.authenticate(self.user2.login, self.user_password)
         response = self.url_open(
             "/web/session/get_session_info", data=self._payload(), headers=self.headers

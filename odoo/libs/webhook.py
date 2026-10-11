@@ -28,8 +28,6 @@ def get_log_target(url: str) -> str:
         parts = parse_url(url)
     except ValueError:
         return "<malformed URL>"
-    # urllib3 parses any text as a location: a "host" with whitespace in it
-    # was never one
     if parts.host and any(char.isspace() for char in parts.host):
         return "<malformed URL>"
     host = parts.host if parts.scheme else None
@@ -55,8 +53,6 @@ def get_refusal_explanation(refusal: DestinationRefused) -> str:
 
 
 def _spellings(url: str) -> set[str]:
-    # an error names the URL as requests re-quoted it (%7C for |, o for %6F,
-    # UTF-8 escapes for non-ASCII), not as the action spelled it
     forms = [url]
     with contextlib.suppress(requests.exceptions.RequestException, ValueError):
         forms.append(requests.Request("POST", url).prepare().url or "")

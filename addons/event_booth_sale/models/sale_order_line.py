@@ -38,8 +38,6 @@ class SaleOrderLine(models.Model):
             )
 
     def _inverse_event_booth_pending_ids(self) -> None:
-        """This method will take care of creating the event.booth.registrations based on selected booths.
-        It will also unlink ones that are de-selected."""
 
         for so_line in self:
             existing_booths = (
@@ -79,7 +77,6 @@ class SaleOrderLine(models.Model):
 
     @api.onchange("product_id")
     def _onchange_product_id_booth(self) -> None:
-        """We reset the event when the selected product doesn't belong to any pending booths."""
         if self.event_id and (
             not self.product_id
             or self.product_id not in self.event_booth_pending_ids.product_id
@@ -88,7 +85,6 @@ class SaleOrderLine(models.Model):
 
     @api.onchange("event_id")
     def _onchange_event_id_booth(self) -> None:
-        """We reset the pending booths when the event changes to avoid inconsistent state."""
         if self.event_booth_pending_ids and (
             not self.event_id or self.event_id != self.event_booth_pending_ids.event_id
         ):
@@ -96,10 +92,6 @@ class SaleOrderLine(models.Model):
 
     @api.depends("event_booth_pending_ids")
     def _compute_name(self):
-        """Override to add the compute dependency.
-
-        The custom name logic can be found below in _get_line_multiline_description_sale.
-        """
         super()._compute_name()
 
     def _update_event_booths(self, set_paid=False) -> bool:
@@ -130,7 +122,6 @@ class SaleOrderLine(models.Model):
         return super()._get_line_multiline_description_sale()
 
     def _use_template_name(self):
-        """We do not want configured description to get rewritten by template default"""
         if self.event_booth_pending_ids:
             return False
         return super()._use_template_name()

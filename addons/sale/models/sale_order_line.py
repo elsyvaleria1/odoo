@@ -698,8 +698,6 @@ class SaleOrderLine(models.Model):
             )
             posted_lines = line._get_posted_invoice_lines()
             draft_lines = line._get_draft_invoice_lines()
-            # a draft claims what it carries exactly as a posted invoice does,
-            # so posting it moves a figure between buckets and nothing else
             invoice_lines = posted_lines | draft_lines
             (
                 qty_invoiced_posted,
@@ -1309,8 +1307,6 @@ class SaleOrderLine(models.Model):
         return {}
 
     def _get_invoice_lines_totals(self, invoice_lines) -> tuple:
-        """Quantity, untaxed and taxed amount `invoice_lines` carry for this
-        line, in its unit and currency, credit notes deducted."""
         self.check_singleton()
         qty = amount_taxexc = amount_taxinc = 0.0
         for invoice_line in invoice_lines:
@@ -1372,8 +1368,6 @@ class SaleOrderLine(models.Model):
         )
 
     def _filtered_manual_transfer(self) -> Self:
-        # a sales line keeps the transferred quantity entered by hand, where
-        # the kernel resets it
         return self.filtered(lambda line: line.qty_transferred_method == "manual")
 
     def _prepare_qty_transferred(self):

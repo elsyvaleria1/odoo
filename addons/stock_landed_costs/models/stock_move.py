@@ -48,8 +48,6 @@ class StockMove(models.Model):
         return accounting_data
 
     def _get_landed_cost_lines(self, at_date=None):
-        # through the one2many, so valuing a batch of moves one by one reads
-        # every move's adjustment lines in one query
         self.check_singleton()
         at_date = at_date and fields.Date.to_date(at_date)
         lines = self.landed_cost_adjustment_line_ids.filtered(

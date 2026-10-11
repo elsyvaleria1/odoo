@@ -14,14 +14,12 @@ from odoo.addons.integration.tools.admission import Resolution
 class AppointmentType(models.Model):
     _inherit = "appointment.type"
 
-    # field overrides
     is_auto_assign = fields.Boolean(
         compute="_compute_is_auto_assign",
         store=True,
         readonly=False,
     )
 
-    # google reserve fields
     google_reserve_enable = fields.Boolean(string="Enable Google Booking")
     google_reserve_pending_sync = fields.Boolean(
         string="Google Booking Pending Synchronization",
@@ -77,8 +75,6 @@ class AppointmentType(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Create corresponding merchants and services when appointment
-        types with google_reserve_enable are created"""
 
         appointment_types = super().create(vals_list)
 
@@ -99,9 +95,6 @@ class AppointmentType(models.Model):
         return appointment_types
 
     def write(self, vals):
-        """Create/delete merchants and service base on the value of google_reserve_enable.
-        Update the availabilities and service information if needed.
-        """
 
         if (
             not self.env.user.has_group("calendar.group_appointment_manager")
@@ -156,8 +149,6 @@ class AppointmentType(models.Model):
                     google_reserve_pending_sync += appointment_type
 
             if vals.keys() & slots_altering_values:
-                # we do not re-sync availabilities in this case as we would need to re-upload ALL
-                # of them, instead we let the availabilities CRON feed run again the next day
                 google_reserve_pending_sync += google_booking_appointments
 
         google_reserve_pending_sync.google_reserve_pending_sync = True
@@ -171,19 +162,15 @@ class AppointmentType(models.Model):
             google_reserve_iap.unregister_appointment(appointment_type)
 
     def action_google_reserve_enable(self) -> None:
-        """Linked to an action to have a button with a confirmation in form view."""
         self.google_reserve_enable = True
 
     def action_google_reserve_disable(self) -> None:
-        """Linked to an action to have a button with a confirmation in form view."""
         self.google_reserve_enable = False
 
     @api.model
     def _receiver_for_google_reserve(
         self, appointment_id=None, appointment_token=None, **path_args
     ):
-        """The appointment type IAP addresses by id, proven by the access
-        token in the path."""
         appointment_type = self.sudo().search(
             [("id", "=", appointment_id), ("google_reserve_enable", "=", True)]
         )
@@ -193,7 +180,7 @@ class AppointmentType(models.Model):
             appointment_type,
             verify=lambda headers, body: (
                 bool(appointment_token)
-                and consteq(  # noqa: E8537  inbound: a signature an outside service sends us
+                and consteq(
                     appointment_type.google_reserve_access_token, appointment_token
                 )
             ),
@@ -201,8 +188,6 @@ class AppointmentType(models.Model):
 
     @api.model
     def _receiver_for_google_reserve_feed(self, **path_args):
-        """The feed upload names every appointment type it covers with its
-        token; the first is the subject and every pair must verify."""
         try:
             pairs = request.get_json_data().get("google_reserve_access_token_pairs")
         except ValueError, AttributeError:
@@ -229,7 +214,7 @@ class AppointmentType(models.Model):
         def is_request_authorized(headers, body) -> bool:
             by_id = {t.id: t for t in types}
             return all(
-                consteq(  # noqa: E8537  inbound: a signature an outside service sends us
+                consteq(
                     by_id[int(pair["appointment_type_id"])].google_reserve_access_token,
                     str(pair.get("appointment_token") or ""),
                 )
@@ -239,21 +224,6 @@ class AppointmentType(models.Model):
         return Resolution(types[:1], verify=is_request_authorized)
 
     def _google_reserve_get_availabilities(self, start_time=False, end_time=False):
-        """Get the availabilities to send to the Google Reserve IAP service.
-
-        Currently only working for appointment types in auto-assign mode.
-
-        Example format of a specific availability: {
-            "spots_total": 4,           # maximal number of reservations that can be made for this specific availability
-            "spots_open": 3,            # number of reservations that can still be made for this availability
-            "duration_sec": 3600,       # duration of the slot in seconds
-            "start_sec": 12345678,      # starting time of the slot in UTC epoch time
-            "resources": {              # resource info for the slot (can be used for user or resource) (opt)
-                "party_size": 2,        # number of people the slot can take (opt)
-            }
-        }
-
-        See: https://developers.google.com/actions-center/verticals/reservations/e2e/reference/feeds/availability-feed"""
 
         self.check_singleton()
         availabilities = []
@@ -264,9 +234,7 @@ class AppointmentType(models.Model):
             start_time = datetime.now().astimezone(UTC)
 
         if not end_time:
-            # 30 days of coverage are needed for google
             max_schedule_days = max(30, self.max_schedule_days)
-            # let's avoid spending more than 2 years of availabilities to keep perf under control
             max_schedule_days = min(730, self.max_schedule_days)
             end_time = datetime.combine(
                 start_time + timedelta(days=max_schedule_days), time.max
@@ -323,52 +291,6 @@ class AppointmentType(models.Model):
     def _google_reserve_format_slot_availabilities_resources(
         self, slot, availability_values
     ):
-        """Compute and build the slot info for the availabilities of resources in Google's format.
-
-        Google also wants to know how many spots would accommodate each capacity *regardless of bookings*.
-        Meaning we send both the "theoretical" configuration where no-one has booked and the actual situation.
-
-        Note: The maximum party-size defaults to 12 (somewhat arbitrary number previously used) and
-        is now configurable via the appointment.resource_max_capacity_allowed system parameter.
-        Keeping this value low has the big advantage of avoiding an explosion of the data size sent.
-        Also, the upper limit is fixed to 20 due to Google Reserve max party size.
-
-        (Overly simplified used case for demonstration).
-        Considering a restaurant that has 2 tables of 2 spots, this will result in:
-        [
-            {"spots_open": 2, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 1}},
-            {"spots_open": 2, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 2}},
-        ]
-
-        If we have a booking for one of the table, it becomes:
-        [
-            {"spots_open": 1, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 1}},
-            {"spots_open": 1, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 2}},
-        ]
-
-        If both tables are "combinable" with each other, we get instead (without any bookings):
-        [
-            {"spots_open": 2, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 1}},
-            {"spots_open": 2, "spots_total": 2, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 2}},
-            {"spots_open": 1, "spots_total": 1, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 3}},
-            {"spots_open": 1, "spots_total": 1, "duration_sec": 3600, "start_sec": 1749819600, "resources": {"party_size": 4}},
-        ]
-
-        Technical notes:
-
-        '_get_resources_remaining_capacity' returns a dict with resources as key AND a
-        'total_remaining_capacity' key
-        -> We manually exclude the 'total_remaining_capacity' entry as it makes processing the data
-        more challenging and we do not need that information.
-
-        When dealing with combinables, we have to keep track of what resources where used for
-        what combinations, as the dict from '_get_resources_remaining_capacity' will return both:
-        table 1: (table 1: capacity, table2: capacity)
-        table 2: (table 1: capacity, table2: capacity)
-        -> Those are the same combination, so it does not count as 'another available spot'.
-
-        Meaning once a resource has been used for a certain combination for a certain capacity, it cannot
-        be used again."""
 
         self.check_singleton()
         [start_utc, end_utc] = slot["UTC"]
@@ -386,7 +308,7 @@ class AppointmentType(models.Model):
                 ).items()
                 if isinstance(
                     booked_resource, models.BaseModel
-                )  # see docstring for explanations
+                )
             }
             for resource in self.resource_ids
         }
@@ -399,9 +321,8 @@ class AppointmentType(models.Model):
         )
         max_capacity = min(
             20, allowed_max_capacity, self.resource_total_capacity
-        )  # see docstring
+        )
         for capacity in range(1, max_capacity + 1):
-            # total numbers of resources that can accommodate this capacity, regardless of bookings
             used_resources = self.env["resource.resource"]
             total_spots = 0
             for capacity_by_booked_resource in remaining_capacity_by_resource.values():
@@ -419,9 +340,6 @@ class AppointmentType(models.Model):
             if total_spots == 0:
                 break
 
-            # total numbers of resources that can accommodate this capacity, considering bookings
-            # note: could theoretically be included in above loop but would be less readable and
-            # is not very costly
             used_resources = self.env["resource.resource"]
             open_spots = 0
             for capacity_by_booked_resource in remaining_capacity_by_resource.values():

@@ -366,8 +366,6 @@ class TestStockQuant(TestStockCommon):
         quant = self.gather_relevant(self.productA, self.stock_location, strict=True)
         self.assertEqual(len(quant), 1)
         self.assertEqual(quant.quantity, 10.0)
-        # another transaction can only change a row this one neither inserted
-        # nor locked: the quant stands for one an earlier transaction made
         self.env.cr.cache.pop(LOCKED_QUANTS_CACHE_KEY, None)
         self.env.cr.execute(
             "UPDATE stock_quant SET quantity = quantity + 5 WHERE id = %s",
@@ -378,7 +376,6 @@ class TestStockQuant(TestStockCommon):
         self.assertEqual(quant.quantity, 18.0)
 
     def test_increase_available_quantity_4(self):
-        """A stock user, not a superuser, can add to available quantity."""
         self.env = self.env(user=self.demo_user)
         self.env["stock.quant"]._update_available_quantity(
             self.productA, self.stock_location, 1.0
@@ -516,8 +513,6 @@ class TestStockQuant(TestStockCommon):
             "UPDATE stock_quant SET reserved_quantity = reserved_quantity + 3 WHERE id = %s",
             (quant.id,),
         )
-        # the raw write stands in for another transaction's: the row must
-        # not count as already locked by this one
         self.env.cr.cache.pop(LOCKED_QUANTS_CACHE_KEY, None)
         Quant._update_reserved_quantity(self.productA, self.stock_location, -2.0)
         quant.invalidate_recordset(["reserved_quantity"])

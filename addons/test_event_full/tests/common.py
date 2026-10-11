@@ -17,15 +17,10 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Context data: dates
-        # ------------------------------------------------------------
 
-        # Mock dates to have reproducible computed fields based on time
         cls.reference_now = datetime(2021, 12, 1, 10, 0, 0)
         cls.reference_today = datetime(2021, 12, 1)
 
-        # Users and contacts
-        # ------------------------------------------------------------
 
         cls.admin_user = cls.env.ref("base.user_admin")
         cls.admin_user.write(
@@ -36,7 +31,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             }
         )
         cls.company_admin = cls.admin_user.company_id
-        # set country in order to format Belgian numbers
         cls.company_admin.write(
             {
                 "country_id": cls.env.ref("base.be").id,
@@ -66,7 +60,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                 ],
             }
         )
-        # make a SO for a customer, selling some tickets
         cls.customer_so = (
             cls.env["sale.order"]
             .with_user(cls.user_sales_salesman)
@@ -77,8 +70,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             )
         )
 
-        # Side records for event main records
-        # ------------------------------------------------------------
 
         cls.ticket_product = cls.env["product.product"].create(
             {
@@ -156,8 +147,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             ]
         )
 
-        # Event type
-        # ------------------------------------------------------------
         test_registration_report = cls.env.ref(
             "test_event_full.event_registration_report_test"
         )
@@ -207,7 +196,7 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                         0,
                         0,
                         {
-                            "interval_unit": "now",  # right at subscription
+                            "interval_unit": "now",
                             "interval_type": "after_sub",
                             "template_ref": "mail.template,%i"
                             % subscription_template.id,
@@ -217,7 +206,7 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                         0,
                         0,
                         {
-                            "interval_nbr": 1,  # 1 days before event
+                            "interval_nbr": 1,
                             "interval_unit": "day",
                             "interval_type": "before_event",
                             "template_ref": "mail.template,%i"
@@ -230,7 +219,7 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                         0,
                         0,
                         {
-                            "interval_nbr": 1,  # 1 days after event
+                            "interval_nbr": 1,
                             "interval_unit": "day",
                             "interval_type": "after_event",
                             "template_ref": "sms.template,%i"
@@ -309,7 +298,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             }
         )
 
-        # Stages
         cls.stage_def = cls.env["event.stage"].create(
             {
                 "name": "First Stage",
@@ -317,8 +305,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
             }
         )
 
-        # Event data
-        # ------------------------------------------------------------
 
         cls.event_base_vals = {
             "name": "Test Event",
@@ -338,7 +324,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                     "is_published": True,
                 }
             )
-        # update post-synchronize data
         ticket_1 = cls.test_event.event_ticket_ids.filtered(
             lambda t: t.name == "Ticket1"
         )
@@ -348,8 +333,6 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
         ticket_1.start_sale_datetime = cls.reference_now + timedelta(hours=1)
         ticket_2.start_sale_datetime = cls.reference_now + timedelta(hours=2)
 
-        # Website data
-        # ------------------------------------------------------------
 
         cls.website = cls.env["website"].search(
             [("company_id", "=", cls.company_admin.id)], limit=1
@@ -445,7 +428,7 @@ class TestEventFullCommon(EventCrmCase, TestSalesCommon, MockVisitor):
                 else:
                     self.assertIn(
                         answer.value_text_box, lead.description
-                    )  # better: check multi line
+                    )
 
 
 class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
@@ -454,9 +437,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
         super().setUpClass()
 
         cls.event_cron_id = cls.env.ref("event.event_mail_scheduler")
-        # deactivate other schedulers to avoid messing with crons
         cls.env["event.mail"].search([]).unlink()
-        # consider asynchronous sending as default sending
         cls.env["ir.config_parameter"].set_param("event.event_mail_async", False)
 
         cls.env.company.write(
@@ -466,7 +447,6 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
             }
         )
 
-        # prepare SMS templates
         cls.sms_template_sub = cls.env["sms.template"].create(
             {
                 "name": "Test SMS Subscription",
@@ -484,11 +464,6 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
             }
         )
 
-        # freeze some datetimes, and ensure more than 1D+1H before event starts
-        # to ease time-based scheduler check
-        # Since `now` is used to set the `create_date` of an event and create_date
-        # has often microseconds, we set it to ensure that the scheduler we still be
-        # launched if scheduled_date == create_date - microseconds
         cls.reference_now = datetime(2021, 3, 20, 14, 30, 15, 123456)
         cls.event_date_begin = datetime(2021, 3, 25, 8, 0, 0)
         cls.event_date_end = datetime(2021, 3, 28, 18, 0, 0)
@@ -505,7 +480,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # right at subscription: mail
+                            {
                                 "interval_unit": "now",
                                 "interval_type": "after_sub",
                                 "notification_type": "mail",
@@ -515,7 +490,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # right at subscription: sms
+                            {
                                 "interval_unit": "now",
                                 "interval_type": "after_sub",
                                 "notification_type": "sms",
@@ -525,7 +500,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # 3 days before event: mail
+                            {
                                 "interval_nbr": 3,
                                 "interval_unit": "day",
                                 "interval_type": "before_event",
@@ -536,7 +511,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # 3 days before event: SMS
+                            {
                                 "interval_nbr": 3,
                                 "interval_unit": "day",
                                 "interval_type": "before_event",
@@ -547,7 +522,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # 1h after event: mail
+                            {
                                 "interval_nbr": 1,
                                 "interval_unit": "hour",
                                 "interval_type": "after_event",
@@ -558,7 +533,7 @@ class TestEventMailCommon(EventCase, SMSCase, MailCase, CronMixinCase):
                         (
                             0,
                             0,
-                            {  # 1h after event: SMS
+                            {
                                 "interval_nbr": 1,
                                 "interval_unit": "hour",
                                 "interval_type": "after_event",
@@ -575,10 +550,7 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
     def setUp(self):
         super().setUp()
 
-        # Context data: dates
-        # ------------------------------------------------------------
 
-        # Mock dates to have reproducible computed fields based on time
         self.reference_now = datetime(2021, 12, 1, 10, 0, 0)
         self.reference_today = datetime(2021, 12, 1)
 
@@ -618,13 +590,11 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
                 "address_id": False,
                 "user_id": self.user_demo.id,
                 "tag_ids": [(4, self.event_tag_category_1_tag_1.id)],
-                # event if 8-18 in Europe/Brussels (DST) (first day: begins at 7, last day: ends at 17)
                 "date_tz": "Europe/Brussels",
                 "date_begin": datetime.combine(self.reference_now, time(5, 0))
                 - timedelta(days=1),
                 "date_end": datetime.combine(self.reference_now, time(15, 0))
                 + timedelta(days=1),
-                # ticket informations
                 "event_ticket_ids": [
                     (
                         0,
@@ -645,7 +615,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
                         },
                     ),
                 ],
-                # activate menus
                 "is_published": True,
                 "website_menu": True,
                 "website_track": True,
@@ -675,9 +644,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
             }
         )
 
-        # ------------------------------------------------------------
-        # QUESTIONS
-        # ------------------------------------------------------------
 
         self.event_question_1 = self.env["event.question"].create(
             {
@@ -701,9 +667,6 @@ class TestWEventCommon(HttpCaseWithUserDemo, HttpCaseWithUserPortal, MockVisitor
             }
         )
 
-        # ------------------------------------------------------------
-        # TRACKS
-        # ------------------------------------------------------------
 
         self.track_0 = self.env["event.track"].create(
             {

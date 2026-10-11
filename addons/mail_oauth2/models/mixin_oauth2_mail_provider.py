@@ -9,8 +9,6 @@ from odoo.addons.integration.tools.exceptions import CommError
 
 
 def _id_token_claims(id_token) -> dict:
-    # from the code exchange itself, a TLS call to the provider's token
-    # endpoint: its signature needs no check (OpenID Connect Core 3.1.3.7)
     try:
         payload = id_token.split(".")[1]
         payload += "=" * (-len(payload) % 4)
@@ -28,7 +26,6 @@ class MixinOauth2MailProvider(models.AbstractModel):
     _name = "mixin.oauth2.mail.provider"
     _description = "OAuth2 Mail Provider Mixin"
 
-    # the field naming the server's type, on the concrete model
     _oauth2_type_field = None
 
     active = fields.Boolean(default=True)
@@ -46,7 +43,7 @@ class MixinOauth2MailProvider(models.AbstractModel):
             )
 
     def _oauth2_provider(self):
-        """The vendor this record's server type authenticates with, if any."""
+        pass
 
     def _oauth2_connection(self):
         self.check_singleton()
@@ -55,7 +52,6 @@ class MixinOauth2MailProvider(models.AbstractModel):
     def write(self, vals):
         result = super().write(vals)
         if self._oauth2_type_field in vals:
-            # a server that stops using a vendor keeps none of its grant
             for record in self.filtered(lambda record: not record._oauth2_provider()):
                 connection = record._oauth2_connection()
                 if connection.credential_id:
@@ -92,8 +88,6 @@ class MixinOauth2MailProvider(models.AbstractModel):
         }
 
     def _oauth2_return_url(self) -> str:
-        """A personal server returns to its user's preferences, any other one
-        to its form, for an administrator."""
         self.check_singleton()
         user = self.env.user
         if (
@@ -109,8 +103,6 @@ class MixinOauth2MailProvider(models.AbstractModel):
         return self.with_user(user).has_access("write")
 
     def _on_oauth_authorized(self, connection, tokens) -> None:
-        """A personal server, or one a non-administrator connects, sends as the
-        account that consented, read off the exchange's id_token."""
         self.check_singleton()
         if self._name == "ir.mail_server" and (
             self.owner_user_id or not self.env.user.has_group("base.group_system")
@@ -134,7 +126,6 @@ class MixinOauth2MailProvider(models.AbstractModel):
         self.active = True
 
     def _oauth2_generate_string(self, provider, login) -> str:
-        """The SASL argument of XOAUTH2 for `login`, with a current token."""
         self.check_singleton()
         connection = self._oauth2_connection()
         try:

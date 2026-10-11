@@ -104,8 +104,6 @@ class MixinProjectColumnContainer(models.AbstractModel):
         }
 
     def _count_reached_members(self, restoring: bool) -> int:
-        # every member the cascade would reach, read past the user's rules: a
-        # member the user cannot see must stop the archive, not slip through it
         Member = self.env[self._member_model]
         Member.flush_model([self._member_field, "active"])
         table = SQL.identifier(Member._table)
@@ -182,8 +180,6 @@ class MixinProjectColumnContainer(models.AbstractModel):
         )
         legacy = self - recorded
         if legacy:
-            # archived before the cascade was recorded: restore what the column
-            # holds, as the unarchive wizard of that time did
             members |= (
                 self.env[self._member_model]
                 .with_context(active_test=False)

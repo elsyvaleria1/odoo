@@ -32,10 +32,10 @@ class MixinUserFavorite(models.AbstractModel):
     @api.depends_context("uid")
     def _compute_is_user_favorite(self) -> None:
         uid = self.env.uid
-        favorited = 0  # debuglog
+        favorited = 0
         for record in self:
             record.is_user_favorite = uid in record.favorite_user_ids.ids
-            favorited += record.is_user_favorite  # debuglog
+            favorited += record.is_user_favorite
         _debug.perf.count(
             "user_favorite_computed",
             model=self._name,

@@ -151,30 +151,23 @@ class TestProductMargin(AccountTestInvoicingCommon):
     def test_product_margin(self):
         self.invoices.action_post()
 
-        # Sale turnover ( Quantity * Price Subtotal / Quantity)
         sale_turnover = (20.0 * 750.00) + (10.0 * 550.00)
 
-        # Expected sale (Total quantity * Sale price)
         sale_expected = 750.00 * 30.0
 
-        # Purchase total cost (Quantity * Unit price)
         purchase_total_cost = (10.0 * 300.00) + (4.0 * 450.00)
 
-        # Purchase normal cost ( Total quantity * Cost price)
         purchase_normal_cost = 14.0 * 500.00
 
         total_margin = sale_turnover - purchase_total_cost
         expected_margin = sale_expected - purchase_normal_cost
 
-        # Check total margin
         self.assertEqual(self.ipad.total_margin, total_margin, "Wrong Total Margin.")
 
-        # Check expected margin
         self.assertEqual(
             self.ipad.expected_margin, expected_margin, "Wrong Expected Margin."
         )
 
-        # Check that read_group doesn't generate an UPDATE and returns the right answer
         self.ipad.invalidate_recordset()
         with patch.object(self.registry["product.product"], "write") as write_method:
             total_margin_sum, expected_margin_sum = self.env[
@@ -188,10 +181,6 @@ class TestProductMargin(AccountTestInvoicingCommon):
             write_method.assert_not_called()
 
     def test_product_margin_negative_price_in_move_lines(self):
-        """
-        Test that product margins are calculated correctly when move lines
-        include negative quantities or prices.
-        """
         self.ipad.write(
             {
                 "standard_price": 1000.0,
@@ -262,12 +251,8 @@ class TestProductMargin(AccountTestInvoicingCommon):
         self.assertEqual(results[self.ipad.id]["total_margin"], 750)
 
     def test_product_margin_read_grouping_sets(self):
-        """
-        Test that product margins are aggregated properly when using _read_grouping_sets.
-        """
         self.invoices.action_post()
 
-        # Create a category and two other products.
         categ_portable = self.env["product.category"].create({"name": "Portable"})
         iphone, imac = self.env["product.product"].create(
             [
@@ -286,10 +271,8 @@ class TestProductMargin(AccountTestInvoicingCommon):
             ]
         )
 
-        # Update products
         self.ipad.write({"categ_id": categ_portable.id})
 
-        # Create invoices for iPhone and iMac
         invoices = self.env["account.move"].create(
             [
                 {
@@ -377,31 +360,9 @@ class TestProductMargin(AccountTestInvoicingCommon):
         invoices.invoice_date = fields.Date.today()
         invoices.action_post()
 
-        # Expected Values
 
-        # ipad (Portable, Units):
-        #   sale_turnover = (20 * 750) + (10 * 550) = 20500
-        #   purchase_total_cost = (10 * 300) + (4 * 450) = 4800
-        #   sale_expected = 750 * 30 = 22500
-        #   purchase_expected = 14 * 500 = 7000
-        #   total_margin = 20500 - 4800 = 15700
-        #   expected_margin = 22500 - 7000 = 15500
 
-        # iphone (Portable, Dozens):
-        #   sale_turnover = (20 * 1500) + (10 * 1100) = 41000
-        #   purchase_total_cost = (10 * 600) + (4 * 900) = 9600
-        #   sale_expected = 1200 * 30 = 36000
-        #   purchase_expected = 14 * 1000 = 14000
-        #   total_margin = 41000 - 9600 = 31400
-        #   expected_margin = 36000 - 14000 = 22000
 
-        # imac (All, Units):
-        #   sale_turnover = (20 * 2250) + (10 * 1650) = 61500
-        #   purchase_total_cost = (10 * 900) + (4 * 1350) = 14400
-        #   sale_expected = 1800 * 30 = 54000
-        #   purchase_expected = 14 * 1500 = 21000
-        #   total_margin = 61500 - 14400 = 47100
-        #   expected_margin = 54000 - 21000 = 33000
 
         result = self.env["product.product"]._read_grouping_sets(
             [("id", "in", [iphone.id, imac.id, self.ipad.id])],
@@ -409,7 +370,6 @@ class TestProductMargin(AccountTestInvoicingCommon):
             aggregates=["total_margin:sum", "expected_margin:sum"],
         )
 
-        # 1. ['categ_id', 'uom_id']
         res_cat_uom = result[0]
         self.assertEqual(len(res_cat_uom), 3)
         map_cat_uom = {(r[0], r[1]): (r[2], r[3]) for r in res_cat_uom}
@@ -418,19 +378,16 @@ class TestProductMargin(AccountTestInvoicingCommon):
         no_categ = self.env["product.category"]
         self.assertEqual(map_cat_uom[no_categ, self.uom_unit], (47100, 33000))
 
-        # 2. ['categ_id']
         res_cat = result[1]
         map_cat = {r[0]: (r[1], r[2]) for r in res_cat}
         self.assertEqual(map_cat[categ_portable], (47100, 37500))
         self.assertEqual(map_cat[no_categ], (47100, 33000))
 
-        # 3. ['uom_id']
         res_uom = result[2]
         map_uom = {r[0]: (r[1], r[2]) for r in res_uom}
         self.assertEqual(map_uom[self.uom_unit], (62800, 48500))
         self.assertEqual(map_uom[self.uom_dozen], (31400, 22000))
 
-        # 4. []
         res_all = result[3]
         self.assertEqual(res_all[0], (94200, 70500))
 

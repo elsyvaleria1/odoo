@@ -35,10 +35,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "iyzico":
             supported_currencies = supported_currencies.filtered(
@@ -46,19 +44,15 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "iyzico":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "iyzico":
             return super()._prepare_request_url(endpoint, **kwargs)
 
@@ -70,10 +64,6 @@ class PaymentProvider(models.Model):
         return urljoin(api_url, endpoint)
 
     def _prepare_request_headers(self, method, endpoint, payload, **kwargs):
-        """Override of `payment` to build the request headers.
-
-        See https://docs.iyzico.com/en/getting-started/preliminaries/authentication/hmacsha256-auth.
-        """
         if self.code != "iyzico":
             return super()._prepare_request_headers(method, endpoint, payload, **kwargs)
 
@@ -94,16 +84,6 @@ class PaymentProvider(models.Model):
         }
 
     def _get_iyzico_signature(self, endpoint, body, random_string):
-        """Calculate the signature for the provided data.
-
-        See https://docs.iyzico.com/en/getting-started/preliminaries/authentication/hmacsha256-auth.
-
-        :param str endpoint: The endpoint of the API to reach with the request.
-        :param bytes body: The request body, exactly as it is sent.
-        :param str random_string: The random string to use for the signature.
-        :return: The calculated signature.
-        :rtype: str
-        """
         data_string = f"{random_string}/{endpoint}{body.decode()}"
         return hmac.new(
             self.iyzico_key_secret.encode(),
@@ -112,13 +92,11 @@ class PaymentProvider(models.Model):
         ).hexdigest()
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "iyzico":
             return super()._parse_response_error(response)
         return response.json().get("errorMessage")
 
     def _parse_response_content(self, response, **kwargs):
-        """Override of `payment` to parse the response content."""
         if self.code != "iyzico":
             return super()._parse_response_content(response, **kwargs)
 

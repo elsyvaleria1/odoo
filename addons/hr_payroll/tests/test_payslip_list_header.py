@@ -23,8 +23,6 @@ class TestPayslipListHeader(TestPayslipBase, HttpCase):
         )
         self.richard_emp.version_ids[0].wage = 1234
 
-        # Two employees, so the tour can pin each row by a name it can see: the
-        # payslip list shows employee_id, not the payslip's own name.
         draftee, confirmee = (
             self.richard_emp.copy({"name": "Probe Draftee"}),
             self.richard_emp.copy({"name": "Probe Confirmee"}),

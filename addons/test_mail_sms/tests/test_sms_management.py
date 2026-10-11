@@ -111,7 +111,7 @@ class TestSMSActions(TestSMSActionsCommon):
             "TEST BODY",
             self.msg,
             check_sms=False,
-        )  # do not check new sms as they already exist
+        )
 
         self._reset_bus()
         self.sms_p2.with_context(sms_skip_msg_notification=True).action_set_canceled()
@@ -140,7 +140,7 @@ class TestSMSActions(TestSMSActionsCommon):
             "TEST BODY",
             self.msg,
             check_sms=False,
-        )  # do not check new sms as they already exist
+        )
 
     def test_sms_set_error(self):
         self._reset_bus()
@@ -178,7 +178,7 @@ class TestSMSActions(TestSMSActionsCommon):
             "TEST BODY",
             self.msg,
             check_sms=False,
-        )  # do not check new sms as they already exist
+        )
 
     @users("admin")
     def test_sms_set_outgoing(self):
@@ -204,4 +204,4 @@ class TestSMSActions(TestSMSActionsCommon):
             "TEST BODY",
             self.msg,
             check_sms=False,
-        )  # do not check new sms as they already exist
+        )

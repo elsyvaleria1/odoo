@@ -103,7 +103,6 @@ class MixinApproval(models.AbstractModel):
             record.approval_chain_preview = record._render_approval_chain_preview()
 
     def _get_approval_chain_preview(self) -> list[dict[str, Any]]:
-        """The rows routing would stage for a request raised now, without writing one."""
         self.check_singleton()
         if not self.id or self.approval_request_id or not self.approval_required:
             return []
@@ -185,15 +184,6 @@ class MixinApproval(models.AbstractModel):
         )
 
     def _get_approval_trigger(self) -> str | bool:
-        """What asks this document for an approval, if anything.
-
-        ``APPROVAL_TRIGGER_CATEGORY``: a configured category that applies asks it.
-        ``APPROVAL_TRIGGER_RULE``: the document's own rule asks it, and a category
-        only routes it; one that does not apply is refused when it is asked.
-        ``False``: nothing asks it. Either way, a document type no category is
-        configured for requires no approval: absence is no opinion, and a gate
-        refuses only what it has an opinion about.
-        """
         self.check_singleton()
         return APPROVAL_TRIGGER_CATEGORY
 
@@ -205,9 +195,6 @@ class MixinApproval(models.AbstractModel):
             )
 
     def _search_approval_pending_user_ids(self, operator: str, value: Any) -> Domain:
-        # a read rule ORs this into every search of the document: the requests
-        # are read when the query is built, so a subselect never joins the
-        # document's plan, and nobody deciding anything adds nothing to it
         if operator != "in":
             return NotImplemented
         self.env["approval.request"].flush_model(["pending_user_ids"])
@@ -241,12 +228,7 @@ class MixinApproval(models.AbstractModel):
                     missing=missing_fields,
                 )
 
-    def _check_can_request_approval(self, candidates=None) -> "ApprovalCategory":  # noqa: UP037 — see _get_candidate_approval_categories.
-        """Refuse what cannot be asked for, and return the category it is asked in.
-
-        `candidates` is a batch's memo of category searches, as
-        `_get_approval_category` keeps it.
-        """
+    def _check_can_request_approval(self, candidates=None) -> "ApprovalCategory":
         self.check_singleton()
         if self.approval_request_id:
             trace.REFUSAL.event(
@@ -300,9 +282,6 @@ class MixinApproval(models.AbstractModel):
         return category
 
     def _get_engine_approval_request(self):
-        """The linked request as the engine acts on it: whoever may act on the
-        document -- cancel it, edit what it protects -- need not be able to read
-        the request it raised, and what follows is the engine's, not theirs."""
         self.check_singleton()
         return self.approval_request_id.sudo()
 
@@ -323,7 +302,6 @@ class MixinApproval(models.AbstractModel):
         return self._get_approval_submitted_action(self._raise_approval_requests())
 
     def _raise_approval_requests(self):
-        """Raise one request per record, in one batch, and submit them."""
         self.lock_for_update(wait=True)
         self.invalidate_recordset(["approval_request_id"])
         candidates = {}
@@ -353,8 +331,6 @@ class MixinApproval(models.AbstractModel):
         return approvals
 
     def _submits_approval_request_on_raise(self) -> bool:
-        """Whether a raised request is submitted at once, or left in draft for its
-        owner to complete and submit."""
         return True
 
     def _get_approval_raised_note(self, approval) -> Markup:
@@ -492,15 +468,6 @@ class MixinApproval(models.AbstractModel):
         return records
 
     def _check_no_forged_approval_outputs(self, vals: dict[str, Any]) -> None:
-        """What a document says about its approval is read from its request.
-
-        These columns are stored copies of the request, kept for search and
-        domains. Writing one does not reach the request: it makes the document
-        claim a decision nobody took, and every gate that reads the document
-        believes it. Nothing legitimate writes them -- the ORM updates a stored
-        related field without calling `write` -- so the refusal holds for the
-        superuser too.
-        """
         forged = self._APPROVAL_OUTPUT_FIELDS & vals.keys()
         if forged:
             trace.REFUSAL.event(
@@ -516,19 +483,6 @@ class MixinApproval(models.AbstractModel):
             )
 
     def _check_approval_request_link(self, request_id: int | Any) -> None:
-        """A document may point only at an approval request it answers to.
-
-        Three relations are real. The request is about this record: the
-        engine's own link. The request produced this record: its category's
-        `target_model` is this model, and the link is written inside the
-        request's `_link_produced_documents` (or `_producing_documents`) window,
-        which only server code opens. A bill or an order created from an
-        approved request is covered by it; one a user points at that request is
-        not. Or the request is the writer's own, has no subject and nobody has
-        decided it yet: it is bound to the record here, so it cannot be adopted
-        twice, nor by someone it does not belong to. Anything else
-        would lend the record a decision taken about something else.
-        """
         request = (
             self.env["approval.request"]
             .sudo()
@@ -610,8 +564,6 @@ class MixinApproval(models.AbstractModel):
                     )
         invalidated = self._get_records_approval_invalidated_by(vals)
         for record, _fields_changed in invalidated:
-            # Refuse the edit rather than leave an approval standing that no
-            # longer describes the document, where the request cannot be reset.
             record._get_engine_approval_request()._check_reset_allowed()
         result = super().write(vals)
         for record, fields_changed in invalidated:
@@ -619,18 +571,9 @@ class MixinApproval(models.AbstractModel):
         return result
 
     def _is_approval_invalidated_by_changes(self, fields_changed: list[str]) -> bool:
-        """Whether changing these protected fields after approval takes the
-        approval away. A document that re-checks some of them against what was
-        approved at its own gate -- an amount compared at posting -- may keep
-        the approval for those, and only those."""
         return True
 
     def _get_records_approval_invalidated_by(self, vals: dict[str, Any]):
-        """The approved records this write would change in what was approved.
-
-        Compared value by value, not by key: a form saves the fields it shows,
-        and an unchanged partner written back must not take an approval away.
-        """
         protected = set(self._get_fields_approval_protected()) & vals.keys()
         if not protected:
             return []
@@ -685,9 +628,6 @@ class MixinApproval(models.AbstractModel):
         )
 
     def _reset_approval_for_subject_change(self, fields_changed: list[str]) -> None:
-        """What was approved is not what the document says any more: the approval
-        goes back to draft, recorded as a reset with the fields that moved, and
-        the document hears it as it would from a manager's reset."""
         self.check_singleton()
         labels = ", ".join(self._fields[name].string for name in fields_changed)
         trace.MIXIN.note(
@@ -788,7 +728,7 @@ class MixinApproval(models.AbstractModel):
             trace.DEGRADED.event("category_xmlid_missing", record=self, xmlid=xmlid)
         return []
 
-    def _get_candidate_approval_categories(self) -> "ApprovalCategory":  # noqa: UP037 — ORM methods are runtime-introspected (api_doc, /json/2); the TYPE_CHECKING import means the class isn't in the runtime namespace, so the annotation must stay quoted.
+    def _get_candidate_approval_categories(self) -> "ApprovalCategory":
         self.check_singleton()
         domain = self._get_domain_approval_category()
         if not domain:
@@ -802,7 +742,7 @@ class MixinApproval(models.AbstractModel):
             domain + [("company_id", "in", (company_id, False))],
         )
 
-    def _find_approval_category(self, categories=None) -> "ApprovalCategory":  # noqa: UP037 — see _get_candidate_approval_categories.
+    def _find_approval_category(self, categories=None) -> "ApprovalCategory":
         self.check_singleton()
         if categories is None:
             categories = self._get_candidate_approval_categories()
@@ -822,7 +762,7 @@ class MixinApproval(models.AbstractModel):
         )
         return self._get_approval_category_fallback(categories)
 
-    def _get_approval_category(self, candidates=None) -> "ApprovalCategory | bool":  # noqa: UP037 — see _get_candidate_approval_categories.
+    def _get_approval_category(self, candidates=None) -> "ApprovalCategory | bool":
         self.check_singleton()
         domain = self._get_domain_approval_category()
         if not domain:
@@ -929,7 +869,6 @@ class MixinApproval(models.AbstractModel):
             value = self[source_field]
             if isinstance(value, models.BaseModel):
                 value = value.id
-            # An amount of zero is what was approved, not the absence of one.
             if value or isinstance(value, float):
                 vals[target_field] = value
 
@@ -948,11 +887,6 @@ class MixinApproval(models.AbstractModel):
         return vals
 
     def _is_approval_acted_on(self) -> bool:
-        """Whether this document already did what its approval allowed.
-
-        Withdrawing or resetting such an approval would undo nothing, so the request
-        refuses both: the document is reversed by its own means instead.
-        """
         self.check_singleton()
         return False
 
@@ -967,8 +901,6 @@ class MixinApproval(models.AbstractModel):
     )
 
     def _get_approval_refresh_values(self, request) -> dict[str, Any]:
-        """What a request reset to draft takes again from this document before it is
-        submitted: the figures the approvers decide on, as they are now."""
         self.check_singleton()
         values = self._prepare_approval_request_values(request.category_id)
         return {
@@ -1030,7 +962,6 @@ class MixinApproval(models.AbstractModel):
             )
 
     def _on_approval_progress(self) -> None:
-        """A decision met a step of this document's request, which is still pending."""
         self.check_singleton()
 
     def _on_approval_approved(self) -> None:

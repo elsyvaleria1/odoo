@@ -29,7 +29,6 @@ _OMITTED_PAYLOAD_HEAD_CHARS = 512
 
 DEFAULT_MAX_PAYLOAD_SIZE = 1024 * 1024
 
-# (dbname, gate model, gate id, condition) -> when it was last reported
 _STANDING_CONDITIONS_REPORTED: dict[tuple, float] = {}
 
 
@@ -41,7 +40,6 @@ class Verdict(NamedTuple):
 
 
 def receiver_privileges_of(gate_class: type) -> tuple[str, ...]:
-    # every module extending a gate names its own; the gate holds them all
     return tuple(
         dict.fromkeys(
             name
@@ -142,15 +140,9 @@ class MixinInboundGate(models.AbstractModel):
 
     _BODY_DEPENDENT_AUTH_TYPES = ("hmac_sha256", "hmac_sha512", "custom")
 
-    # The named privileges a call admitted through this gate holds, on top of
-    # its service principal's own grants. Each module extending a gate names
-    # its own; the gate holds them all (`_inbound_receiver_privileges`).
-    # Literal names only: test_lint reads this tuple as a with_privilege() call.
     _receiver_privileges: tuple[str, ...] = (
         "integration.privilege_keep_inbound_exchange",
     )
-    # Transitional: an elevated gate's handler runs as its principal with su,
-    # as every gate did before the principals held named privileges.
     _inbound_elevated = True
 
     @api.model
@@ -160,15 +152,6 @@ class MixinInboundGate(models.AbstractModel):
         path_args: dict[str, Any],
         event_type: str | None = None,
     ):
-        """The ``Resolution`` of a route's ``receiver=`` declaration.
-
-        ``<model>:<field>`` searches the subject by the path variable of that
-        name; ``<model>:_method`` calls the method with the path variables, and
-        it answers a record or ``(record, extra)`` -- what it parsed on the way,
-        handed to the handler on ``request.admission.extra``. The gate is the
-        subject itself when it carries this mixin, else the receiver row of the
-        record its ``_inbound_gate_owner()`` names (itself by default; a
-        ``(record, name, purpose)`` tuple names the receiver's purpose too)."""
         model_name, _, selector = declaration.partition(":")
         model = self.env[model_name].sudo()
         if selector in model._fields:
@@ -245,8 +228,6 @@ class MixinInboundGate(models.AbstractModel):
                 headers=dict(httprequest.headers),
                 remote_addr=remote_addr,
             )
-            # Committed, so the refusal row above is kept: nothing before
-            # it wrote on the request's cursor.
             raise Refused(
                 413,
                 f"Request exceeds maximum size of {limit // 1024}KB",
@@ -254,7 +235,6 @@ class MixinInboundGate(models.AbstractModel):
                 commit=True,
                 detail={"limit_bytes": limit},
             )
-        # A body past the limit is refused while it is still being read.
         httprequest.max_content_length = limit
         try:
             body = httprequest.get_data(cache=True)
@@ -274,11 +254,7 @@ class MixinInboundGate(models.AbstractModel):
                 commit=True,
                 detail={"limit_bytes": limit},
             ) from None
-        # Authority locks belong to the request transaction, not the short-lived
-        # verdict transaction below. Keep authorization stable through handling.
         gate._hold_inbound_authority()
-        # The verdict is written on its own cursor: a refusal raises, the
-        # request rolls back, and the refusal must outlive that.
         with self.env.registry.cursor() as verdict_cr:
             verdict = gate.with_env(gate.env(cr=verdict_cr))._inbound_verdict(
                 dict(httprequest.headers), body=body, remote_addr=remote_addr
@@ -303,52 +279,29 @@ class MixinInboundGate(models.AbstractModel):
         return admission
 
     def _hold_inbound_authority(self) -> None:
-        """Retain any authority locks on the caller's transaction until it ends.
-
-        Receivers with mutable authorization override this before the independent
-        verdict cursor opens. This hook must not consume rate limits or log a
-        second verdict.
-        """
+        pass
 
     def _inbound_event_type(
         self, admission: Admission, event_type: str | None
     ) -> str | None:
-        """The event this call is, once the body can say more than the route
-        did: a JSON-RPC method, a webhook's own type field."""
         return event_type
 
     def _inbound_event_logged(self, event_type: str | None) -> bool:
-        """Whether an admitted call of this kind leaves a row. A poll that a
-        reader repeats every few seconds is not worth one per repetition; its
-        failure still is, and `Admission.settle` writes that one."""
         return True
 
     def _inbound_payload_logged(self, event_type: str | None) -> bool:
-        """Whether the row keeps the body. A conversation's content is not
-        the operator's to read; the hash of the body is kept either way."""
         return True
 
     def _inbound_event_id(
         self, admission: Admission, event_type: str | None
     ) -> str | None:
-        """The sender's own id for this event, when it has one (a Telegram
-        update_id, a Stripe event id): the row claims it, and a redelivery
-        is refused as a duplicate while the first is processing or once it
-        has been processed, whatever the body's bytes. A resolver that read
-        the id hands it over on its `Resolution`; a gate that knows its
-        sender's envelope overrides this."""
         return admission.event_id
 
     def _open_inbound_exchange(
         self, admission: Admission, event_type: str | None
     ) -> None:
-        """The row is the call: created now, in the request's transaction,
-        processing until the handler or the end of the request settles it,
-        kept as a failed row when the request rolls back."""
         vals = self._inbound_exchange_vals(admission, event_type)
         Exchange = self.env["integration.exchange"].sudo()
-        # The claim is the index's: what this transaction settled must be in
-        # the table before the insert is judged against it.
         Exchange.flush_model()
         try:
             with self.env.cr.savepoint():
@@ -390,7 +343,6 @@ class MixinInboundGate(models.AbstractModel):
             and admission.auth_mode != "audit",
             "auth_mode": admission.auth_mode,
             **self._inbound_payload_vals(admission, event_type),
-            # The hash of the body as received, whatever the row keeps of it.
             "request_payload_hash_override": admission.payload_hash,
         }
 
@@ -453,8 +405,6 @@ class MixinInboundGate(models.AbstractModel):
         mode: str | None = None,
         caller_already_checked: bool = False,
     ) -> Verdict:
-        """The gate's decision, recorded: `(allowed, status, reason, code)`,
-        the code being the word the caller's problem document carries."""
         if mode is None:
             mode = self._inbound_auth_mode()
         verdict = Verdict(
@@ -481,9 +431,6 @@ class MixinInboundGate(models.AbstractModel):
         return verdict
 
     def _inbound_principal_unfitness(self) -> str | None:
-        """Why the gate's service principal may not run an admitted call, or
-        None: it must be an active service user and belong to the gate's
-        company, since it runs without su and the company guards bind it."""
         self.check_singleton()
         principal = self._inbound_service_user()
         if not principal:
@@ -504,19 +451,12 @@ class MixinInboundGate(models.AbstractModel):
         return None
 
     def _inbound_principal_env(self, env, principal):
-        """The environment an admitted call's handler runs in: the gate's
-        service principal without su, in the gate's company, holding the
-        gate's receiver privileges."""
         self.check_singleton()
         context = dict(env.context)
-        # an elevated gate's subject carries su: its principal is not asked to
-        # be in the gate's company, and the caller's context stays
         if not self._inbound_elevated:
             if company_id := self._get_inbound_company_id():
                 context["allowed_company_ids"] = [company_id]
             else:
-                # whatever companies the caller's context named are not the
-                # principal's to be in; its own default applies
                 context.pop("allowed_company_ids", None)
         gate = self.with_env(env(user=principal.id, context=context, su=False))
         if receiver_privileges := self._inbound_receiver_privileges():
@@ -528,8 +468,6 @@ class MixinInboundGate(models.AbstractModel):
 
     @api.model
     def _place_principal_in_companies(self, principal, companies) -> None:
-        # a principal runs without su and the company guards bind it, so it
-        # belongs to the company of every gate it runs for
         principal = principal.with_env(self.env)
         missing = companies - principal.company_ids
         if not principal or not missing:
@@ -552,8 +490,6 @@ class MixinInboundGate(models.AbstractModel):
         caller_already_checked: bool = False,
     ) -> tuple[bool, int, str, str]:
         self.check_singleton()
-        # an owner's receiver is found archived or not, so that archiving it
-        # does not make the next call create a fresh, open one
         if "active" in self._fields and not self.active:
             return False, 404, f"{self.display_name} is archived", "endpoint_inactive"
         if mode == self.AUTH_MODE_OFF:
@@ -633,10 +569,6 @@ class MixinInboundGate(models.AbstractModel):
     ) -> bool:
         self.check_singleton()
 
-        # A route's resolver may hand the gate the check itself -- a Basic
-        # login on a bearer-keyed device, a signed link, a per-user API key
-        # on a gate that holds no credential of its own -- and then that is
-        # the identity for this call, whatever the gate's own scheme.
         verify = self.env.context.get(INBOUND_VERIFY_KEY)
         if verify is not None:
             return bool(verify(headers, body))
@@ -701,7 +633,6 @@ class MixinInboundGate(models.AbstractModel):
     _INBOUND_PAYLOAD_LOG_BYTES = 64 * 1024
 
     def _get_inbound_payload_log_bytes(self) -> int:
-        """Return the logged payload byte limit; zero disables truncation."""
         return self._INBOUND_PAYLOAD_LOG_BYTES
 
     def _record_inbound_exchange(
@@ -746,15 +677,12 @@ class MixinInboundGate(models.AbstractModel):
         queue_exchange_values(self.env, vals)
 
     def _prepare_inbound_payload_vals(self, body: str | bytes | None) -> dict[str, Any]:
-        """Prepare redacted, size-limited payload fields for an exchange record."""
         if not body:
             return {}
         text = (
             body.decode("utf-8", errors="replace") if isinstance(body, bytes) else body
         )
         limit = self._get_inbound_payload_log_bytes()
-        # masked and cut in one pass that stops a byte past the limit, so a
-        # large body costs what is kept; one byte more says it was cut
         bound = limit + 1 if limit else None
         try:
             masked = redact.dump_masked(json_loads(text), bound)
@@ -786,9 +714,6 @@ class MixinInboundGate(models.AbstractModel):
         remote_addr: str | None = None,
         mode: str = AUTH_MODE_ENFORCE,
     ) -> None:
-        """A refusal is an exchange row of the gate; an admission is recorded
-        by the admission itself. An audit-mode admission and a misconfigured
-        gate are standing conditions, reported once per window."""
         if mode == self.AUTH_MODE_OFF:
             return
         if allowed:
@@ -825,18 +750,12 @@ class MixinInboundGate(models.AbstractModel):
                 reason,
             )
 
-    # A refusal a caller provokes collapses per caller and is counted, inside
-    # the caller's rate window: a refused request is free to send and would
-    # otherwise add a row each time. A gate's standing condition collapses per
-    # gate in the standing window and is not counted, because counting is an
-    # UPDATE of a row every concurrent request shares.
     _STANDING_CONDITIONS = frozenset({"misconfigured", "audit_accepted"})
 
     STANDING_WINDOW_PARAM = "credential.inbound_standing_window_seconds"
     STANDING_WINDOW_DEFAULT = 3600
 
     def _get_inbound_coalesce_window(self, code: str) -> int:
-        """Return the caller-limit or standing-condition window in seconds."""
         if code not in self._STANDING_CONDITIONS:
             return self.rate_limit_window_seconds or 60
         window = self.env.registry.settings.get_int(
@@ -845,8 +764,6 @@ class MixinInboundGate(models.AbstractModel):
         return max(60, window)
 
     def _standing_condition_is_news(self, code: str) -> bool:
-        """Once per gate per window, without a row: the admission rows say
-        `auth_mode = audit` for themselves."""
         key = (self.env.cr.dbname, self._name, self.id, code)
         now = time.monotonic()
         window = self._get_inbound_coalesce_window(code)
@@ -891,19 +808,10 @@ class MixinInboundGate(models.AbstractModel):
         )
 
     def _inbound_max_payload_size(self) -> int:
-        """Return the largest body, in bytes, the gate admits.
-
-        :return: the gate's own limit, or the field default when it has none
-        :rtype: int
-        """
         self.check_singleton()
-        # A row that predates the field's default holds NULL, which reads as
-        # 0. The limit exists against DoS and a receiver may not set it to 0,
-        # so an empty one is the default -- neither "no limit" nor "0 bytes".
         return self.max_payload_size or DEFAULT_MAX_PAYLOAD_SIZE
 
     def _get_inbound_company_id(self):
-        """Return the gate's company ID, or False when no company is bound."""
         company = self._fields.get("company_id") and self.company_id
         return company.id if company else False
 
@@ -921,19 +829,6 @@ class MixinInboundGate(models.AbstractModel):
     PREAUTH_MULTIPLIER_DEFAULT = 10
 
     def _consume_caller_allowance(self, remote_addr) -> bool:
-        """Cheap, best-effort pre-auth throttle by caller IP.
-
-        Backed by ``get_caller_rate_limiter``, an in-memory limiter held
-        per worker process (see ``registry_singleton``), not shared across
-        ``--workers=N``: a caller balanced across N workers can consume up
-        to N times ``rate_limit_requests * PREAUTH_MULTIPLIER_DEFAULT``
-        before this gate denies anything. That is an accepted trade-off,
-        not an oversight -- this multiplier is already a coarse pre-filter
-        ahead of the real, DB-backed per-identity limit
-        (``rate.limit.bucket``, correct across workers), so it favors
-        avoiding a DB write on every unauthenticated request over exact
-        cross-worker accounting.
-        """
         self.check_singleton()
         if not remote_addr:
             return True
@@ -1002,7 +897,5 @@ class MixinInboundGate(models.AbstractModel):
         return is_ip_in_allowlist(source_ip, self.ip_whitelist)
 
     def _inbound_service_user(self):
-        # the service principal an admitted call runs as; a module whose gates
-        # all run as one principal overrides it with that principal
         self.check_singleton()
         return self.service_user_id

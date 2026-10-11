@@ -7,9 +7,6 @@ from odoo.addons.product.tests.common import ProductCommon
 @tagged("post_install", "-at_install")
 class TestPosPricer(ProductCommon, TransactionCase):
     def test_pos_pricer_sales_pricelist(self):
-        """
-        Test that the pricer sales pricelist is correctly applied to products
-        """
         self.env["product.pricelist.item"].create(
             {
                 "pricelist_id": self.pricelist.id,
@@ -24,12 +21,10 @@ class TestPosPricer(ProductCommon, TransactionCase):
         ProductForm.pricer_sale_pricelist_id = self.pricelist
         self.assertEqual(ProductForm.on_sale_price, 90)
         ProductForm.save()
-        # After saving, on_sale_price should change if lst_price is modified
         ProductForm.lst_price = 100
         self.assertEqual(ProductForm.on_sale_price, 90)
 
     def test_pricer_display_compute_price(self):
-        """Ensure the compute method sets a default value to avoid crash."""
         product_form = Form(self.env["product.product"])
         product_form.name = "Test Product"
         product = product_form.save()

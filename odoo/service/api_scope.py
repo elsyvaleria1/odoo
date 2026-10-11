@@ -51,22 +51,14 @@ METHOD_OPERATIONS: Mapping[str, str] = {
 
 READ_RESULT_METHODS = frozenset({"read", "search_read", "web_read"})
 
-# The context keys an API caller may set. An allowlist, because `call_kw`
-# replaces the environment's context with the caller's and `default_<field>`
-# or the `show_*` label embeds would reach around a denial.
 SAFE_CONTEXT_KEYS = frozenset(
     {"lang", "tz", "allowed_company_ids", "active_test", "bin_size"}
 )
 
-# The record's label is what a many2one tuple carries whether or not it is
-# asked for, and `res.partner` declares it dependent on `vat` for an optional
-# rendering. Hiding it would strip the one field every answer needs while the
-# tuple still shows it.
 NEVER_HIDDEN = frozenset({"display_name"})
 
 _SEGMENT_SEPARATORS = re.compile(r"[./]")
 _SUBDOMAIN_OPERATORS = frozenset({"any", "not any"})
-# Command.CREATE and Command.UPDATE carry a vals dict for the comodel.
 _VALS_COMMANDS = frozenset({0, 1})
 
 
@@ -78,7 +70,6 @@ class ModelRule:
     unlink: bool = False
     call: bool = False
     denied: frozenset[str] = frozenset()
-    # the field classes this model's line hides, beside its fields
     denied_classes: frozenset[str] = frozenset()
 
     def allows(self, operation: str) -> bool:
@@ -94,9 +85,7 @@ class ScopeRules:
     key: str
     models: Mapping[str, ModelRule] | None = None
     max_depth: int = 8
-    # the field classes hidden on every model the scope reaches
     denied_classes: frozenset[str] = frozenset()
-    # Per registry, keyed by model: the denylist closed over depends.
     _hidden: dict[str, frozenset[str]] = field(
         default_factory=dict, repr=False, compare=False
     )
@@ -116,9 +105,6 @@ class ScopeRules:
         return self.denied_classes | own
 
 
-# The scope of the API call being served, for the ORM hooks that must know
-# (the name search on `base`): a context variable, because `call_kw`
-# replaces the environment's context with the caller's.
 _ACTIVE: contextvars.ContextVar[ScopeRules | None] = contextvars.ContextVar(
     "api_scope", default=None
 )
@@ -147,7 +133,7 @@ def check_model_operation(
     rule = rules.rule(model_name)
     operation = operation_of(method)
     if rule is None:
-        raise AccessError(  # noqa: E8505  the API key's own scope, named to its holder
+        raise AccessError(
             env._(
                 "The API key's scope '%(scope)s' does not reach '%(model)s'.",
                 scope=rules.key,
@@ -155,7 +141,7 @@ def check_model_operation(
             )
         )
     if not rule.allows(operation):
-        raise AccessError(  # noqa: E8505  the API key's own scope, named to its holder
+        raise AccessError(
             env._(
                 "The API key's scope '%(scope)s' does not allow %(operation)s on "
                 "'%(model)s' (%(method)s).",
@@ -168,34 +154,17 @@ def check_model_operation(
 
 
 def safe_context(env: Environment, context: Any) -> dict[str, Any]:
-    """The caller's context reduced to keys that cannot reach around a denial:
-    the environment's own safe keys, overridden only within the allowlist."""
     caller = context if isinstance(context, dict) else {}
     safe = {k: v for k, v in env.context.items() if k in SAFE_CONTEXT_KEYS}
     safe.update((k, v) for k, v in caller.items() if k in SAFE_CONTEXT_KEYS)
     return safe
 
 
-# ---------------------------------------------------------------------------
-# hidden fields: the denylist closed over depends
-# ---------------------------------------------------------------------------
 
 
 def hidden_field_names(
     env: Environment, rules: ScopeRules, model_name: str
 ) -> frozenset[str]:
-    """The denylist closed over `@api.depends`.
-
-    A `related` field is another name for a column, and a computed field is a
-    function of its dependencies: `email_formatted` prints `email` verbatim,
-    `same_vat_partner_id` answers whether a `vat` is taken. The registry has
-    resolved every one of those through the depends map, so the walk reads it
-    and reaches every field whose value derives from a hidden column, on this
-    model or across a relation. The closure is one fixpoint over every model
-    of the registry, taken once per scope: a field is hidden as soon as any
-    of its dependency paths crosses a hidden field of any model, and a path
-    that crosses a relation reads the other model's set as it stands.
-    """
     cache = rules._hidden
     if not cache:
         cache.update(_closed_field_names(env, rules))
@@ -239,8 +208,6 @@ def _closed_field_names(
 def _class_field_names(
     env: Environment, classes: frozenset[str], model_name: str
 ) -> frozenset[str]:
-    # the fields of the model that belong to one of the classes, whether to
-    # read them, to write them, or as the class that grants reading them alone
     if not classes:
         return frozenset()
     names = set()
@@ -272,15 +239,6 @@ def _touches_hidden(
 def visible_name_search_fields(
     env: Environment, model_name: str, search_fnames: list[str]
 ) -> list[str]:
-    """The name-search fields that touch no hidden column, or a refusal.
-
-    `_rec_names_search` is how `display_name ilike`, `name_search` and a
-    string operator on any many2one reach the columns behind a label --
-    `res.partner` searches `vat` and `email` by name -- so a hidden column
-    is a value oracle through every one of them. Dropping the hidden names
-    narrows the search; when nothing is left, refusing beats matching
-    everything, which is also what the ORM does for a cyclic list.
-    """
     rules = active_rules()
     if rules is None:
         return list(search_fnames)
@@ -301,9 +259,6 @@ def visible_name_search_fields(
     return visible
 
 
-# ---------------------------------------------------------------------------
-# field paths
-# ---------------------------------------------------------------------------
 
 
 def _segment(token: str) -> str:
@@ -315,7 +270,6 @@ def path_segments(path: Any) -> list[str]:
 
 
 def walk_path(env: Environment, model_name: str, path: Any) -> list[tuple[str, str]]:
-    """Every ``(model, field)`` a dotted or slashed path touches, in order."""
     pairs = []
     model: str | None = model_name
     for token in path_segments(path):
@@ -373,7 +327,6 @@ FIELDS, FIELD, PATHS, SPEC, DOMAIN, ORDER, GROUP, HAVING, VALS = (
     "vals",
 )
 
-# Where each RPC method takes the arguments that name fields.
 CALL_SHAPES: dict[str, tuple[Argument, ...]] = {
     "read": (Argument(FIELDS, 1, "fields"),),
     "search": (Argument(DOMAIN, 0, "domain"), Argument(ORDER, 3, "order")),
@@ -504,7 +457,6 @@ def parse_domain(domain: Any) -> Domain | None:
 
 
 def domain_paths(domain: Any, prefix: str = "") -> list[str]:
-    """Every field path a domain filters on, sub-domains of ``any`` included."""
     parsed = parse_domain(domain)
     if parsed is None:
         return []
@@ -554,8 +506,6 @@ def _grouping_paths(container: Any) -> list[str]:
 
 
 def vals_paths(vals: Any, prefix: str = "") -> list[str]:
-    """Every field path a vals dict writes, x2many command payloads included:
-    ``{"child_ids": [[0, 0, {"vat": ...}]]}`` writes ``child_ids.vat``."""
     if not isinstance(vals, dict):
         return []
     paths = []
@@ -606,9 +556,6 @@ def call_paths(method: str, args: Any, kwargs: Mapping[str, Any]) -> list[str]:
     return [p for p in paths if p and not _segment(p).startswith("__")]
 
 
-# ---------------------------------------------------------------------------
-# refusals
-# ---------------------------------------------------------------------------
 
 
 def _close_field_names(name: str, known: list[str]) -> list[str]:
@@ -629,8 +576,6 @@ def _describe_unknown(name: Any, known: list[str]) -> str:
 
 
 def unknown_field_names(env: Environment, model_name: str, names: Any) -> str:
-    """The names the model has no field for, each with what the caller
-    probably meant, or an empty string."""
     model_fields = env[model_name]._fields
     unknown: list = []
     for name in names:
@@ -779,8 +724,6 @@ def check_write_values(
 def check_field_names(
     env: Environment, model_name: str, method: str, args: Any, kwargs: Mapping[str, Any]
 ) -> None:
-    """Every field name the call mentions exists, with what the caller
-    probably meant when one does not."""
     check_requested_fields(env, model_name, method, args, kwargs)
     check_domain(env, model_name, method, args, kwargs)
     check_order(env, model_name, method, args, kwargs)
@@ -802,8 +745,6 @@ def check_hidden_paths(
     hits: list[tuple[str, str]] = []
     too_deep: list[str] = []
     for path in paths:
-        # Refusing beats truncating: a denied field past the cap would be
-        # served instead of found.
         if len(path_segments(path)) > rules.max_depth:
             too_deep.append(str(path))
             continue
@@ -845,16 +786,12 @@ def check_call(
     check_hidden_paths(env, rules, model_name, call_paths(method, args, kwargs))
 
 
-# ---------------------------------------------------------------------------
-# results
-# ---------------------------------------------------------------------------
 
 
 def strip(
     env: Environment, rules: ScopeRules, model_name: str, result: Any, _depth: int = 0
 ) -> Any:
     if _depth > rules.max_depth:
-        # Past the cap a hidden column cannot be told from a visible one.
         return None
     if not model_name or model_name not in env:
         return result
@@ -929,8 +866,6 @@ def _strip_arch_node(
 def strip_views(
     env: Environment, rules: ScopeRules, model_name: str, result: Any
 ) -> Any:
-    """``get_views`` is ``fields_get`` for every model the views touch plus an
-    arch that names each field: both halves take the same decision."""
     if not isinstance(result, dict):
         return result
     models = {
@@ -951,8 +886,6 @@ def strip_views(
 def strip_export(
     env: Environment, rules: ScopeRules, model_name: str, paths: Any, result: Any
 ) -> Any:
-    """``export_data`` answers positionally, so a hidden column is an index;
-    the check before the call is the first line and this the second."""
     if not isinstance(result, dict) or "datas" not in result:
         return result
     keep = [

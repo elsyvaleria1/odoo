@@ -21,8 +21,6 @@ class TelegramHandlerBase(models.AbstractModel):
     _description = "Telegram: General Commands"
 
     def _telegram_commands(self) -> dict:
-        # /start is Telegram's own button and /desconectar is one tap from
-        # undoing the connection: neither is in the menu, /ayuda names both
         return {
             "/start": TelegramCommand(
                 "_handle_start_command", "unlinked", builtin=True
@@ -42,7 +40,6 @@ class TelegramHandlerBase(models.AbstractModel):
             "/desconectar": TelegramCommand(
                 "_handle_disconnect_command", "partner", builtin=True
             ),
-            # unlinked: the least a command opening a flow asks (/subirfactura)
             "/cancelar": TelegramCommand(
                 "_handle_cancel_command",
                 "unlinked",
@@ -227,8 +224,6 @@ class TelegramHandlerBase(models.AbstractModel):
         account = chat.account_id
         contact = message.get("contact") or {}
         sender_id = str((message.get("from") or {}).get("id") or "")
-        # Telegram sets a shared contact's user_id to the account its number
-        # belongs to: only the sender's own vouches for their number
         own = (
             chat.chat_type == "private"
             and account

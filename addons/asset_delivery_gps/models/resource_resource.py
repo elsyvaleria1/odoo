@@ -6,8 +6,6 @@ from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
-# How old a GPS odometer may be and still be a trip's reading: a tracker that
-# went quiet must not fill a departure with where the vehicle stood days ago.
 TRIP_READING_MAX_AGE_PARAM = "asset_delivery_gps.trip_reading_max_age_minutes"
 DEFAULT_TRIP_READING_MAX_AGE_MINUTES = 120
 
@@ -53,10 +51,6 @@ class ResourceResource(models.Model):
 
     @api.model
     def _trip_reading_max_age(self) -> timedelta:
-        """How old a GPS odometer reading may be and still count for a trip.
-
-        :rtype: timedelta
-        """
         raw = self.env.registry.settings.get(
             self.env, TRIP_READING_MAX_AGE_PARAM, DEFAULT_TRIP_READING_MAX_AGE_MINUTES
         )

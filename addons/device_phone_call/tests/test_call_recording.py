@@ -116,8 +116,6 @@ class TestDeviceCallRecording(DeviceHttpCase):
         self.assertEqual(self._job(recording).state, "pending")
 
     def test_a_numbered_recording_matches_a_call_longer_than_the_window(self):
-        # The dialer stamps the file when the call ends, which for any call over
-        # a minute is outside a window drawn around the call's start.
         self.call.sudo().end_date = datetime(2026, 7, 28, 15, 35, 0)
         resp = self._push(
             {
@@ -130,8 +128,6 @@ class TestDeviceCallRecording(DeviceHttpCase):
         self.assertEqual(resp.json()["call_id"], self.call.id)
 
     def test_a_recording_without_number_matches_the_call_by_time(self):
-        # Samsung names the file after the contact, so the app sends no number;
-        # the stamp falls at the end of the 42 s call.
         self.call.sudo().end_date = datetime(2026, 7, 28, 15, 30, 42)
         resp = self._push(
             {

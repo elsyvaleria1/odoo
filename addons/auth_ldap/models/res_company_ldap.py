@@ -116,12 +116,6 @@ class ResCompanyLdap(models.Model):
     )
 
     def _get_ldap_dicts(self):
-        """
-        Retrieve res_company_ldap resources from the database in dictionary
-        format.
-        :return: ldap configurations
-        :rtype: list of dictionaries
-        """
 
         return self.sudo().search_read(
             [("ldap_server", "!=", False)],
@@ -142,13 +136,6 @@ class ResCompanyLdap(models.Model):
         )
 
     def _connect(self, conf):
-        """
-        Connect to an LDAP server specified by an ldap
-        configuration dictionary.
-
-        :param dict conf: LDAP configuration
-        :return: an LDAP object
-        """
 
         uri = "ldap://%s:%d" % (conf["ldap_server"], conf["ldap_server_port"])
 
@@ -173,7 +160,6 @@ class ResCompanyLdap(models.Model):
         formatted_filter = filter_format(filter_tmpl, [login] * placeholders)
         results = self._query(conf, formatted_filter)
 
-        # Get rid of results (dn, attrs) without a dn
         results = [entry for entry in results if entry[0]]
 
         dn, entry = False, False
@@ -182,18 +168,6 @@ class ResCompanyLdap(models.Model):
         return dn, entry
 
     def _authenticate(self, conf, login, password):
-        """
-        Authenticate a user against the specified LDAP server.
-
-        In order to prevent an unintended 'unauthenticated authentication',
-        which is an anonymous bind with a valid dn and a blank password,
-        check for empty passwords explicitely (:rfc:`4513#section-6.3.1`)
-        :param dict conf: LDAP configuration
-        :param login: username
-        :param password: Password for the LDAP user
-        :return: LDAP entry of authenticated user or False
-        :rtype: dictionary of attributes
-        """
 
         if not password:
             return False
@@ -213,27 +187,6 @@ class ResCompanyLdap(models.Model):
         return entry
 
     def _query(self, conf, filter, retrieve_attributes=None):
-        """
-        Query an LDAP server with the filter argument and scope subtree.
-
-        Allow for all authentication methods of the simple authentication
-        method:
-
-        - authenticated bind (non-empty binddn + valid password)
-        - anonymous bind (empty binddn + empty password)
-        - unauthenticated authentication (non-empty binddn + empty password)
-
-        .. seealso::
-           :rfc:`4513#section-5.1` - LDAP: Simple Authentication Method.
-
-        :param dict conf: LDAP configuration
-        :param filter: valid LDAP filter
-        :param list retrieve_attributes: LDAP attributes to be retrieved. \
-        If not specified, return all attributes.
-        :return: ldap entries
-        :rtype: list of tuples (dn, attrs)
-
-        """
 
         results = []
         try:
@@ -256,15 +209,6 @@ class ResCompanyLdap(models.Model):
         return results
 
     def _map_ldap_attributes(self, conf, login, ldap_entry):
-        """
-        Compose values for a new resource of model res_users,
-        based upon the retrieved ldap entry and the LDAP settings.
-        :param dict conf: LDAP configuration
-        :param login: the new user's login
-        :param tuple ldap_entry: single LDAP result (dn, attrs)
-        :return: parameters for a new resource of model res_users
-        :rtype: dict
-        """
         data = {
             "name": ldap_entry[1]["cn"][0],
             "login": login,
@@ -275,16 +219,6 @@ class ResCompanyLdap(models.Model):
         return data
 
     def _get_or_create_user(self, conf, login, ldap_entry):
-        """
-        Retrieve an active resource of model res_users with the specified
-        login. Create the user if it is not initially found.
-
-        :param dict conf: LDAP configuration
-        :param login: the user's login
-        :param tuple ldap_entry: single LDAP result (dn, attrs)
-        :return: res_users id
-        :rtype: int
-        """
         login = login.lower().strip()
         self.env.cr.execute(
             "SELECT id, active FROM res_users WHERE lower(login)=%s", (login,)
@@ -327,10 +261,6 @@ class ResCompanyLdap(models.Model):
         return changed
 
     def test_ldap_connection(self) -> dict:
-        """
-        Test the LDAP connection using the current configuration.
-        Returns a dictionary with notification parameters indicating success or failure.
-        """
         conf = {
             "ldap_server": self.ldap_server,
             "ldap_server_port": self.ldap_server_port,

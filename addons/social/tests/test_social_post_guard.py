@@ -21,8 +21,6 @@ class TestSocialPostGuard(common.SocialCase):
         first = self._live_posts()
         self.assertTrue(first, "the first call publishes")
 
-        # A stale form still offering the button, or the retry that follows a
-        # concurrent writer's 40001. Either way the state has moved on.
         self.social_post._action_post()
 
         self.assertEqual(

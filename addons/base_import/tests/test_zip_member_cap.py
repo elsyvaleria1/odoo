@@ -74,16 +74,10 @@ class TestZipMemberCap(TransactionCase):
             zip_guard.check_zip_member_sizes(io.BytesIO(_archive_of(4096)))
 
     def test_an_archive_under_the_cap_is_let_through(self):
-        # Not a tautology: a guard that refused everything would pass the two
-        # assertions above and break every spreadsheet import in the product.
         with patch.object(zip_guard, "MAX_UNCOMPRESSED_MEMBER_SIZE", 1024):
             zip_guard.check_zip_member_sizes(io.BytesIO(_archive_of(16)))
 
     def test_reading_a_spreadsheet_does_not_need_the_ods_library(self):
-        # The guard is shared with the `.ods` reader, and used to live in it.
-        # `.xlsx` is registered against openpyxl alone, so importing a
-        # spreadsheet must not fail on a box where the optional odfpy is not
-        # installed -- which is where this was found.
         real_import = builtins.__import__
 
         def without_odf(name, *args, **kwargs):

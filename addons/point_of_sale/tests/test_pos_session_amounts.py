@@ -24,8 +24,6 @@ class TestPosSessionAmounts(TestPoSCommon):
         self.config = self.basic_config
 
     def _assert_rejected_without_rollback(self, operation, *args, **kwargs):
-        # TransactionCase.assertRaises rolls back automatically. Catch the error
-        # here so the assertions also detect writes performed before rejection.
         try:
             operation(*args, **kwargs)
         except UserError as error:

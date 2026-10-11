@@ -6,7 +6,6 @@ class ProductPricelist(models.Model):
     _inherit = "product.pricelist"
 
     def _domain_item_ids(self):
-        # Subscription pricings shouldn't appear in the main tab
         return Domain.AND([super()._domain_item_ids(), [("plan_id", "=", False)]])
 
     def _domain_subscription_item_ids(self):
@@ -30,8 +29,6 @@ class ProductPricelist(models.Model):
 
         recurring_rules = self.env["product.pricelist.item"]
         if plan_id:
-            # Prepend the recurring rules if a plan is given, as they are expected to take priority
-            # over the standard rules.
             recurring_rules = (
                 self.env["product.pricelist.item"]
                 .with_context(active_test=False)
@@ -46,24 +43,19 @@ class ProductPricelist(models.Model):
                 .with_context(self.env.context)
             )
 
-        # Do not give plan_id to super call
         return recurring_rules | super()._get_applicable_rules(products, date, **kwargs)
 
     def _get_domain_applicable_rules(
         self, *args, plan_id=None, any_plan=False, **kwargs
     ):
-        # Filter out subscription-rules targeting other products
         base_domain = super()._get_domain_applicable_rules(
             *args, plan_id=plan_id, **kwargs
         )
 
         if plan_id:
-            # Only search recurring rules when a plan is given
             return Domain.AND([base_domain, [("plan_id", "=", plan_id)]])
 
         if any_plan:
-            # Specific use-case (website_sale_subscription), fetch all the recurring rules applying
-            # to a given product.
             return Domain.AND(
                 [
                     base_domain,
@@ -71,5 +63,4 @@ class ProductPricelist(models.Model):
                 ]
             )
 
-        # Do not return recurring rules if no plan was given
         return Domain.AND([base_domain, [("plan_id", "=", False)]])

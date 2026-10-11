@@ -25,7 +25,6 @@ class PosPreset(models.Model):
         domain="[('model', '=', 'pos.order')]",
     )
 
-    # will be overridden.
     @api.model
     def _load_pos_self_data_domain(self, data, config):
         return [

@@ -46,7 +46,6 @@ class TestCreditLimitsViewGroups(TransactionCase):
         )
 
     def test_partner_form_has_no_unreadable_field_node(self):
-        """Every field node served must exist in the models payload."""
         views = (
             self.env["res.partner"]
             .with_user(self.credit_viewer)
@@ -57,7 +56,6 @@ class TestCreditLimitsViewGroups(TransactionCase):
         served = {
             node.get("name")
             for node in arch.iter("field")
-            # Nested nodes belong to an embedded subview's comodel, not res.partner.
             if next(node.iterancestors("field"), None) is None
         }
         self.assertFalse(

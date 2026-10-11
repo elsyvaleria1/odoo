@@ -21,9 +21,6 @@ class MailMessage(models.Model):
         inverse_name="message_id",
         string="Related ratings",
     )
-    # Stored: the message store reads it on every thread load, and a stored
-    # column travels with the message row where a one2many scan is a query
-    # per batch.
     rating_id = fields.Many2one(
         comodel_name="rating.rating",
         compute="_compute_rating_id",
@@ -38,8 +35,6 @@ class MailMessage(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # A message is created before any rating names it: saying so spares
-        # the compute a one2many read per batch on every message created.
         for vals in vals_list:
             vals.setdefault("rating_id", False)
         messages = super().create(vals_list)
@@ -81,7 +76,6 @@ class MailMessage(models.Model):
         return domain
 
     def _to_store_defaults(self, target):
-        # sudo: mail.message - guest and portal user can receive rating of accessible message
         return super()._to_store_defaults(target) + [
             Store.One("rating_id", sudo=True),
             "record_rating",

@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-DEFAULT_CLOUD_STORAGE_MIN_FILE_SIZE = 20_000_000  # 20MB
+DEFAULT_CLOUD_STORAGE_MIN_FILE_SIZE = 20_000_000
 
 
 class ResConfigSettings(models.TransientModel):
@@ -27,25 +27,12 @@ class ResConfigSettings(models.TransientModel):
     )
 
     def _setup_cloud_storage_provider(self):
-        """
-        Setup the cloud storage provider and check the validity of the account
-        info after saving the config in settings.
-        """
         pass
 
     def _get_cloud_storage_configuration(self):
-        """
-        Return the configuration for the cloud storage provider. If the cloud
-        storage provider is not fully configured, return an empty dict.
-        :return: A configuration dict
-        """
         return {}
 
     def _check_cloud_storage_uninstallable(self):
-        """
-        Check if the cloud storages provider is used by any attachments
-        :raise UserError: when the cloud storage provider cannot be uninstalled
-        """
         pass
 
     @api.model

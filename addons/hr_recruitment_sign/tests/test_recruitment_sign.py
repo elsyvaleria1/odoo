@@ -73,7 +73,6 @@ class TestHrRecruitmentSign(HttpCase):
         )
         wizard.action_confirm_signature()
 
-        # create the employee
         self.start_tour(
             "/odoo", "applicant_sign_request_tour", login="admin", timeout=300
         )

@@ -26,8 +26,6 @@ def counter():
 
 @pytest.fixture(scope="module")
 def graph(env):
-    # the production shape the plan budgets (section 9.3): a principal granted
-    # 50 folders, 5 of them boundaries, among others' folders, with files
     from odoo.tests.common import new_test_user
 
     user = new_test_user(env, login="perf_documents", groups="base.group_user")

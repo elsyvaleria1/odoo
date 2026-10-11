@@ -41,7 +41,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _latest_birthdate_for_age(self, age):
-        """The newest birthdate that has already completed ``age`` years."""
         return fields.Date.today() - relativedelta(years=age)
 
     @api.model
@@ -82,8 +81,6 @@ class ResPartner(models.Model):
 
     @api.depends("birthdate")
     def _compute_age_range_id(self) -> None:
-        # The ranges are read once, and only when a partner in the batch has
-        # a birthdate: a contact without one (most of them) costs no query.
         dated = self.filtered("birthdate")
         age_ranges = (
             self.env["res.partner.age.range"].sudo().search([]) if dated else None

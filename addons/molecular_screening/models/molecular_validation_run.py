@@ -87,8 +87,6 @@ class MolecularValidationRun(models.Model):
     @api.depends("rmsd_top", "threshold")
     def _compute_passed(self):
         for run in self:
-            # The gate judges the top-ranked pose only: a correct pose buried
-            # further down means the scoring cannot be trusted to rank.
             run.passed = run.rmsd_top <= run.threshold
 
     @api.depends("pose_ids.rank", "pose_ids.rmsd", "pose_ids.affinity")
@@ -105,7 +103,6 @@ class MolecularValidationRun(models.Model):
             run.affinity_top = poses[0].affinity
 
     def action_set_active(self):
-        """Make this run the one that governs its target."""
         for run in self:
             run.target_id.active_validation_id = run
 

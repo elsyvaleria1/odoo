@@ -536,8 +536,6 @@ class MailMail(models.Model):
             _logger.exception("Failed processing mail queue")
             return
         if not completed and time_left[0] > 0 and in_cron:
-            # the pass ended on a lost SMTP session and ``send`` scheduled the
-            # next one; reporting work left would make the cron retry at once
             _debug.pipeline("queue_pass_ended", reason="session_lost")
             self.env["ir.cron"]._commit_progress(remaining=0)
 
@@ -1738,9 +1736,6 @@ class MailMail(models.Model):
             with self.env.cr.savepoint(flush=False):
                 return self._claim_for_sending(wait=False)
         except psycopg.errors.SerializationFailure:
-            # the queue pass's snapshot predates another sender's commit on
-            # this mail; skipping leaves it to whoever changed it, or to the
-            # next pass if it is still outgoing then
             _debug.logic("claim_skipped", mail=self.id, reason="changed_since_snapshot")
             return self.browse()
 
@@ -1830,8 +1825,6 @@ class MailMail(models.Model):
             )
             raise
         except self._FATAL_SESSION_ERRORS:
-            # reading a field here would query the aborted transaction and
-            # replace a retryable error with InFailedSqlTransaction
             _debug.logic("send_fatal", mail=self.id, kind="session")
             _logger.exception(
                 "Exception while processing mail with ID %r (delivered as %r).",
@@ -1954,10 +1947,6 @@ class MailMail(models.Model):
             email_list,
             nothing_left_to_deliver=nothing_left_to_deliver,
         )
-        # under auto-commit the placeholder is already durable, so an aborted
-        # transaction here would lose `state = 'sent'` and leave a retryable
-        # failure behind; without auto-commit nothing is durable yet and a
-        # database error must abort the caller's transaction as it would anyway
         guard = (
             self.env.cr.savepoint()
             if batch.commits_per_mail

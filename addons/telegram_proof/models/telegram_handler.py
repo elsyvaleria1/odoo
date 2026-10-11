@@ -20,8 +20,6 @@ class TelegramHandlerProof(models.AbstractModel):
         return self._tr(bot, chat)._("telling us what is not right")
 
     def _on_account_bound(self, bot, chat, binding) -> None:
-        # a contact who connects Telegram while a question waits for them is
-        # asked it here too: typically a customer scanning the collector's QR
         if binding.method == "contact":
             return
         partners = binding.partner_id | binding.partner_id.commercial_partner_id
@@ -68,7 +66,6 @@ class TelegramHandlerProof(models.AbstractModel):
             bot.send_message(chat.chat_id, tr._("Thank you. You confirmed it."))
             return True
         if chat._flow_is_open():
-            # their next words belong to what they have going already
             bot.send_message(chat.chat_id, tr._("Thank you. We will contact you."))
             return True
         self._flow_start(chat, "comment", {"evidence": evidence.id})
@@ -83,9 +80,6 @@ class TelegramHandlerProof(models.AbstractModel):
 
     @staticmethod
     def _binding_speaks_for(binding, delivery) -> bool:
-        """Whether the account's binding answers for the delivery's contact:
-        the contact, or a person of the same company, bound by an invitation or
-        a session; never a stand-in contact a stranger's first message made."""
         partner = binding.partner_id
         return bool(
             binding.state == "active"

@@ -222,12 +222,6 @@ class TestHelperMethods(AutomationAccountCommon):
         self.assertTrue(move.exists())
 
     def test_a_null_payment_method_does_not_break_the_template_run(self):
-        """telegram_data is stored raw from an external client.
-
-        A key that is present and null is not the same as a key that is
-        absent: a get() default only covers the second, so `.strip()` on the
-        first used to raise AttributeError and take the whole step down.
-        """
         line = self.lines[0]
         action = line.action_id
 

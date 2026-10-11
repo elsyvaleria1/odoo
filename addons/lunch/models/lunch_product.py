@@ -56,7 +56,6 @@ class LunchProduct(models.Model):
     last_order_date = fields.Date(compute="_compute_last_order_date")
 
     product_image = fields.Image(compute="_compute_product_image")
-    # This field is used only for searching
     is_available_at = fields.Many2one(
         comodel_name="lunch.location",
         string="Product Availability",
@@ -96,10 +95,6 @@ class LunchProduct(models.Model):
                 product.last_order_date = max(mapped_orders[product].mapped("date"))
 
     def _compute_is_available_at(self) -> None:
-        """
-        Is available_at is always false when browsing it
-        this field is there only to search (see _search_is_available_at)
-        """
         self.is_available_at = False
 
     def _search_is_available_at(self, operator, value):
@@ -110,7 +105,6 @@ class LunchProduct(models.Model):
         )
 
     def _sync_active_from_related(self) -> None:
-        """Archive/unarchive product after related field is archived/unarchived"""
         self.filtered(
             lambda p: p.active and not (p.category_id.active and p.supplier_id.active)
         ).action_archive()

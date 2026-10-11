@@ -164,7 +164,7 @@ class WizardBaseViewTrail(models.TransientModel):
         if not self.model_name:
             raise UserError(self.env._("Please select a model"))
 
-        TargetModel = self.env[self.model_name]  # pylint: disable=invalid-name
+        TargetModel = self.env[self.model_name]
 
         field = TargetModel._fields.get(self.date_field)
         if field is None or field.type != "datetime" or not field.store:
@@ -348,7 +348,7 @@ class WizardBaseViewTrail(models.TransientModel):
         if not trails:
             return self.env["wizard.base.view.trail.result"]
 
-        TrailResult = self.env["wizard.base.view.trail.result"]  # pylint: disable=invalid-name
+        TrailResult = self.env["wizard.base.view.trail.result"]
         result_srid = TrailResult._fields["the_trail"].srid
         max_size = max_geometry_size(self.env)
         vals_list = [

@@ -6,8 +6,6 @@ from odoo.addons.test_whatsapp.tests.common import WhatsAppFullCase
 @tagged("wa_message")
 class TestWhatsappMessageQueueSend(WhatsAppFullCase):
     def test_queue_processing_with_user_rights(self):
-        """Test marketing trace update when actual user rights are involved. All sub models
-        accesses are not always granted."""
 
         self.env["phone.blacklist"].add(
             number=self.test_base_record_nopartner._phone_get_number().number

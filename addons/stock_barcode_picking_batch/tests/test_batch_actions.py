@@ -34,8 +34,6 @@ class TestBatchBarcodeActions(TransactionCase):
         )
 
     def test_batch_window_actions(self):
-        """Check the client action, the form opener, and the cancel dialog
-        carry the batch reference."""
         action = self.batch.action_client_action()
         self.assertEqual(action["context"]["active_id"], self.batch.id)
 
@@ -48,8 +46,6 @@ class TestBatchBarcodeActions(TransactionCase):
         self.assertEqual(action["context"]["default_batch_id"], self.batch.id)
 
     def test_confirm_batch_and_status(self):
-        """Check the RPC helpers used by the barcode client: confirming a
-        batch with pickings and reading the new-batch status payload."""
         self.picking.action_confirm()
         status = self.env["stock.picking.batch"].action_get_new_batch_status(
             self.batch.id
@@ -64,22 +60,15 @@ class TestBatchBarcodeActions(TransactionCase):
         self.assertEqual(self.picking.batch_id, self.batch)
 
     def test_confirm_batch_without_pickings_is_refused(self):
-        """Check that confirming a batch without any picking is refused."""
         with self.assertRaisesRegex(UserError, "set some pickings"):
             self.env["stock.picking.batch"].action_confirm_batch_picking(
                 self.batch.id, None
             )
 
     def test_picking_batch_bridges(self):
-        """Check the display flag, the batch opener, and unbatching."""
         self.picking.batch_id = self.batch
         self.batch.action_confirm()
         self.assertEqual(self.batch.state, "in_progress")
-        # NOTE: the invalidation below papers over a model defect —
-        # _compute_display_batch_button depends on 'batch_id' but reads
-        # batch_id.state, so confirming the batch never invalidates the
-        # flag and the button stays hidden in a live form (one-token fix:
-        # depend on 'batch_id.state'; tracked under task t24782).
         self.picking.invalidate_recordset(["display_batch_button"])
         self.assertTrue(self.picking.display_batch_button)
 
@@ -90,7 +79,6 @@ class TestBatchBarcodeActions(TransactionCase):
         self.assertFalse(self.picking.batch_id)
 
     def test_cancel_wizard_cancels_batch(self):
-        """Check that the barcode cancel wizard cancels the whole batch."""
         self.picking.batch_id = self.batch
         wizard = self.env["wizard.stock.picking.cancel"].create(
             {"batch_id": self.batch.id}
@@ -100,7 +88,6 @@ class TestBatchBarcodeActions(TransactionCase):
         self.assertEqual(self.batch.state, "cancel")
 
     def test_without_quantities_error_message(self):
-        """Check the barcode-specific validation error message."""
         message = self.picking.with_context(
             barcode_view=True
         )._get_without_quantities_error_message()
@@ -112,8 +99,6 @@ class TestBatchBarcodeActions(TransactionCase):
         return self.env["stock.picking.batch"].search([])
 
     def test_opening_a_new_batch_writes_nothing(self):
-        """The batch kanban's "New" created the batch at once: every open left without a
-        selection stayed behind as an empty draft batch with a consumed number."""
         self.picking.action_confirm()
         self.picking.action_assign()
         before = self._batches()

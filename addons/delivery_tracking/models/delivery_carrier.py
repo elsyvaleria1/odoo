@@ -4,7 +4,6 @@ from odoo import fields, models
 class DeliveryCarrier(models.Model):
     _inherit = "delivery.carrier"
 
-    # FIELDS
     tracking_provider = fields.Selection(
         selection=[],
         string="Tracking Provider",
@@ -19,19 +18,7 @@ class DeliveryCarrier(models.Model):
         "Empty: the transfer's responsible.",
     )
 
-    # BUSINESS METHODS
     def _fetch_tracking_status(self, reference) -> dict:
-        """The carrier's current status of one tracking number, normalized.
-
-        :param str reference: the tracking number
-        :return: ``state`` (a ``carrier_tracking_state`` value), ``code``,
-            ``text``, ``branch``, ``date`` (naive UTC datetime or None),
-            ``kind`` (``home``, ``pickup`` or None), ``estimated`` and
-            ``received_by``. Optional ``events``, ``documents`` and ``shipment``
-            carry JSON-compatible details; event dates are UTC strings.
-        :rtype: dict
-        :raise UserError: the carrier answered with an error or nothing usable
-        """
         self.check_singleton()
         fetch = getattr(self, f"_{self.tracking_provider}_fetch_tracking_status", None)
         if not self.tracking_provider or fetch is None:
@@ -41,6 +28,4 @@ class DeliveryCarrier(models.Model):
         return fetch(reference)
 
     def _is_tracking_document_url(self, url) -> bool:
-        """Whether this provider permits opening the supplied document URL."""
-        # Each connector declares the hosts it actually receives documents from.
         return False

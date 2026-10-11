@@ -44,9 +44,6 @@ class SignRequestItem(models.Model):
         ]
 
     def _with_requester(self) -> SignRequestItem:
-        # the signer proves through whoever sent the request, as a contact
-        # proves through the user who asks them: the challenge is theirs. A
-        # request no internal user sent proves through the system
         requester = self.sign_request_id.create_uid
         if not requester._is_internal():
             requester = self.env.ref("base.user_root")

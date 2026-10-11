@@ -16,19 +16,11 @@ _logger = logging.getLogger(__name__)
 
 
 def create_demo_time_based_automation(env):
-    """
-    Demo: Time-based trigger automation
-
-    Pattern: Sends a reminder 3 days after lead creation
-    Trigger: on_time (3 days after create_date)
-    Model: automation.lead.test
-    """
     _logger.info("Creating demo: Time-based lead reminder automation")
 
     model_lead = env["ir.model"]._get("automation.lead.test")
     date_field = env["ir.model.fields"]._get("automation.lead.test", "create_date")
 
-    # Create the automation
     automation = env["automation.rule"].create(
         {
             "name": "Demo: Lead Follow-up Reminder (3 days)",
@@ -41,7 +33,6 @@ def create_demo_time_based_automation(env):
         }
     )
 
-    # Create the action
     env["ir.actions.server"].create(
         {
             "name": "Send Follow-up Reminder",
@@ -65,13 +56,6 @@ record.write({
 
 
 def create_demo_priority_escalation(env):
-    """
-    Demo: Field change trigger
-
-    Pattern: Auto-assigns high priority leads to admin
-    Trigger: on_write (when priority changes to '3')
-    Model: automation.lead.test
-    """
     _logger.info("Creating demo: Priority escalation automation")
 
     model_lead = env["ir.model"]._get("automation.lead.test")
@@ -110,13 +94,6 @@ record.write({
 
 
 def create_demo_state_transition(env):
-    """
-    Demo: State transition automation
-
-    Pattern: Automatically moves leads through workflow states
-    Trigger: on_write (when state changes to 'open')
-    Model: automation.lead.test
-    """
     _logger.info("Creating demo: State transition automation")
 
     model_lead = env["ir.model"]._get("automation.lead.test")
@@ -154,13 +131,6 @@ else:
 
 
 def create_demo_webhook_integration(env):
-    """
-    Demo: Webhook trigger
-
-    Pattern: Accepts webhook payloads to create/update leads
-    Trigger: on_webhook
-    Model: automation.lead.test
-    """
     _logger.info("Creating demo: Webhook integration automation")
 
     model_lead = env["ir.model"]._get("automation.lead.test")
@@ -218,13 +188,6 @@ log(f"Processed webhook for: {record.name}, Customer: {customer_name}")
 
 
 def create_demo_multi_action_workflow(env):
-    """
-    Demo: Multi-action automation
-
-    Pattern: Sequential actions on lead creation
-    Trigger: on_create
-    Model: automation.lead.test
-    """
     _logger.info("Creating demo: Multi-action workflow automation")
 
     model_lead = env["ir.model"]._get("automation.lead.test")
@@ -238,7 +201,6 @@ def create_demo_multi_action_workflow(env):
         }
     )
 
-    # Action 1: Initialize lead
     env["ir.actions.server"].create(
         {
             "name": "Initialize Lead",
@@ -258,7 +220,6 @@ record.write({
         }
     )
 
-    # Action 2: Assign to user
     env["ir.actions.server"].create(
         {
             "name": "Auto-assign Lead",
@@ -277,7 +238,6 @@ if not record.user_id:
         }
     )
 
-    # Action 3: Log creation
     env["ir.actions.server"].create(
         {
             "name": "Log Lead Creation",
@@ -300,13 +260,6 @@ log(f"Lead onboarding complete: {record.name}, User: {record.user_id.name if rec
 
 
 def create_demo_runtime_workflow(env):
-    """
-    Demo: Runtime workflow (DAG-based)
-
-    Pattern: Multi-step approval workflow with dependencies
-    Trigger: on_hand (manual runtime execution)
-    Model: automation.rule
-    """
     _logger.info("Creating demo: Runtime workflow with DAG")
 
     model_automation = env["ir.model"]._get("automation.rule")
@@ -317,12 +270,11 @@ def create_demo_runtime_workflow(env):
             "model_id": model_automation.id,
             "trigger": "on_hand",
             "use_workflow_dag": True,
-            "auto_execute_workflow": False,  # Manual step-by-step execution
+            "auto_execute_workflow": False,
             "active": True,
         }
     )
 
-    # Step 1: Review
     action_review = env["ir.actions.server"].create(
         {
             "name": "Review Request",
@@ -339,7 +291,6 @@ log(f"Amount: {runtime.amount if hasattr(runtime, 'amount') else 'N/A'}")
         }
     )
 
-    # Step 2: Approval (depends on review)
     action_approve = env["ir.actions.server"].create(
         {
             "name": "Approve Request",
@@ -358,7 +309,6 @@ log(f"Request approved for: {runtime.partner_id.name if runtime.partner_id else 
         {"source_node_id": action_review.id, "target_node_id": action_approve.id}
     )
 
-    # Step 3: Notification (depends on approval)
     action_notify = env["ir.actions.server"].create(
         {
             "name": "Send Notification",
@@ -386,13 +336,6 @@ log(f"Notification sent for approved request: {runtime.partner_id.name if runtim
 
 
 def create_demo_project_automation(env):
-    """
-    Demo: Automation on secondary test model
-
-    Pattern: Project state management
-    Trigger: on_write
-    Model: test_automation.project
-    """
     _logger.info("Creating demo: Project automation")
 
     model_project = env["ir.model"]._get("test_automation.project")
@@ -430,18 +373,11 @@ if not record.user_id:
 
 
 def _setup_demo_data(env):
-    """
-    Main entry point for demo data creation.
-
-    This function is called when the module is installed with demo data enabled.
-    It creates all demo automations showcasing various patterns.
-    """
     _logger.info("=" * 80)
     _logger.info("CREATING BASE AUTOMATION DEMO DATA")
     _logger.info("=" * 80)
 
     try:
-        # Create all demo automations
         demo_automations = []
 
         demo_automations.append(create_demo_time_based_automation(env))

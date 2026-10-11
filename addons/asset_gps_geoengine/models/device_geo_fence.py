@@ -17,8 +17,6 @@ class DeviceGeoFence(models.Model):
     )
 
     def _to_mark_ids(self):
-        """Geofences without a client, not internal, under a stop that is
-        still a place to mark (device.gps.stop.to_mark)."""
         stops = self.env["device.gps.stop"]
         stops._flush_to_mark_inputs()
         self.env.cr.execute(

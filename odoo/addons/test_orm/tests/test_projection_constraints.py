@@ -46,8 +46,6 @@ class TestAProjectedFieldFiresItsConstraints(TransactionCase):
             )
 
     def test_a_new_record_is_checked_once_its_inverses_have_written(self):
-        # `parent_name` is written through its inverse, after the stored pass of
-        # create: a check run from `modified()` would read a parent still unnamed
         unnamed = self.env["test_orm.projection.parent"].create({})
         child = self.env["test_orm.projection.child"].create(
             {"name": "named late", "parent_id": unnamed.id, "parent_name": "now named"}

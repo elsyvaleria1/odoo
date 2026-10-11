@@ -383,8 +383,6 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
                 self.assertEqual(bool(variant), bool(expected))
 
     def test_serving_an_encoded_copy_reads_the_copy_alone(self):
-        """Once an asset's copies are known, serving one searches nothing and
-        reads neither the asset nor another copy."""
         asset = self._create_generated_asset(
             b"a{color:red}\n" * 2000, mimetype="text/css"
         )
@@ -396,8 +394,6 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual((stream.encoding, stream.mimetype), ("gzip", "text/css"))
 
     def test_a_copy_gone_since_it_was_known_serves_the_asset(self):
-        """A transaction that read before a delete committed can cache the
-        deleted copy again: serving it falls back to the asset."""
         raw = b"a{color:red}\n" * 2000
         asset = self._create_generated_asset(raw, mimetype="text/css")
         accept = parse_accept_header("gzip")
@@ -2630,7 +2626,6 @@ class TestPermissions(TransactionCaseWithUserDemo):
 
     def test_an_id_led_scan_seeks_and_any_other_order_pages_by_offset(self):
         self.Attachments.create([{"name": f"seek{i:02d}"} for i in range(8)])
-        # by name, not by ids: a search by ids is one statement, not a scan
         domain = [("name", "=like", "seek%")]
         passes = []
         search = IrAttachment._search
@@ -2759,8 +2754,6 @@ class TestPermissions(TransactionCaseWithUserDemo):
         return self.Attachments.search(domain).ids
 
     def _checked_ids(self, domain):
-        # the oracle: every row the domain holds, kept where the record-level
-        # check lets the user read it
         rows = self.Attachments.sudo().search(domain)
         return rows.with_env(self.Attachments.env)._filtered_access("read").ids
 
@@ -3440,12 +3433,6 @@ class TestFilestoreDedup(TransactionCaseWithUserDemo):
         self.assertEqual(empty_stream.size, 0)
 
     def test_get_content_answers_the_stored_bytes(self):
-        """Without a provider, fetching is reading: same bytes, same prefix.
-
-        The method exists so a provider module can override it; base must
-        answer exactly what this database holds, or every caller that moved to
-        it would read something different from `_get_content_prefix`.
-        """
         payload = b"the-content" * 4
         on_disk = self.Attachment.create({"name": "disk.bin", "raw": payload})
         self.env.flush_all()

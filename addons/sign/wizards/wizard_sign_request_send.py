@@ -133,24 +133,19 @@ class WizardSignRequestSend(models.TransientModel):
         self.reminder = min(self.reminder, 365)
 
     def _get_default_signer(self):
-        """Helper method to define default signer (see hr_recruitment_sign/wizards/sign_send_request.py)."""
         if self.reference_doc or self.env.context.get("default_reference_doc"):
             ref = self.reference_doc
-            # If the reference document has a direct partner, such as in the contacts module.
             if ref._name == "res.partner":
                 return ref.id
 
-            # return the partner_id of the reference document
             partner = "partner_id" in ref and ref.partner_id
             if partner:
                 return partner.id
 
-            # If the reference document has an user_id, some modules like MRP etc.
             user = "user_id" in ref and ref.user_id
             if user and user.partner_id:
                 return user.partner_id.id
 
-            # If the reference document has an employee_id, some modules like hr_recruitment, expense, etc.
             employee = "employee_id" in ref and ref.employee_id
             if employee and employee.partner_id:
                 return employee.partner_id.id
@@ -165,14 +160,11 @@ class WizardSignRequestSend(models.TransientModel):
             roles = template.sign_item_ids.responsible_id.sorted()
             signer_ids = []
             if wiz.signer_ids and len(wiz.signer_ids) == len(roles):
-                # Check if all signers currently have the default mail_sent_order = 1
                 all_default = all(
                     signer.mail_sent_order == 1 for signer in wiz.signer_ids
                 )
                 for default_signing_order, signer in enumerate(wiz.signer_ids):
                     if wiz.set_sign_order:
-                        # If signing order is enabled, assign based on order only if all signers are default.
-                        # Otherwise, keep their existing mail_sent_order.
                         mail_sent_order = (
                             default_signing_order + 1
                             if all_default
@@ -193,14 +185,11 @@ class WizardSignRequestSend(models.TransientModel):
                     )
             else:
                 for default_signing_order, role in enumerate(roles):
-                    # First signer logic
                     if default_signing_order == 0:
-                        # If role has assign_to, use it; else use default_signer
                         partner_id = (
                             role.assign_to.id if role.assign_to else default_signer
                         )
                     else:
-                        # For other roles, check assign_to
                         partner_id = role.assign_to.id if role.assign_to else False
                     signer_vals = {
                         "role_id": role.id,
@@ -283,7 +272,6 @@ class WizardSignRequestSend(models.TransientModel):
             model_names = [
                 ref._name for ref in self.reference_doc if self.reference_doc
             ]
-            # unprivilegied user don't have access to ir.model
             model_ids = (
                 self.env["ir.model"].sudo().search([("model", "in", model_names)]).ids
             )
@@ -307,11 +295,9 @@ class WizardSignRequestSend(models.TransientModel):
     @api.depends("template_id")
     def _compute_mail_message_body(self) -> None:
         for wiz in self:
-            # Compute mail message
             if wiz.template_id:
                 wiz.body = wiz.template_id.message
 
-    # Business methods
 
     def _activity_done(self) -> None:
         signatories = self.signer_id.name or self.signer_ids.partner_id.mapped("name")
@@ -395,7 +381,6 @@ class WizardSignRequestSend(models.TransientModel):
                 "sign.sign_request_action"
             )
 
-        # redirect to the record linked to reference_doc
         next_action = request.get_close_values().get("action")
 
         return {
@@ -435,18 +420,11 @@ class WizardSignRequestSend(models.TransientModel):
         if self.activity_id:
             self._activity_done()
         if self.env.context.get("sign_all"):
-            # Go back to document if it exists
             return request.go_to_signable_document(request.request_item_ids)
         return request.go_to_signable_document()
 
     @api.depends("template_id", "signer_ids")
     def _compute_only_autofill_readonly(self) -> None:
-        """
-        Computes the flag indicating if all the fields in a request are autofillable/constant(readonly).
-
-        :return: nothing, sets the value in the only_autofill_readonly field.
-        """
-        # TODO master: clean this as it is only needed for download button (invisible for more than one signer)
         item_type_to_field = {
             "signature": "sign_signature",
             "initial": "sign_initials",
@@ -479,11 +457,6 @@ class WizardSignRequestSend(models.TransientModel):
 
     @api.depends("only_autofill_readonly", "signers_count", "is_user_signer")
     def _compute_display_download_button(self) -> None:
-        """
-        Computes the flag indicating if the download button should be shown in the wizard.
-
-        :return: nothing, sets the value in the display_download_button field.
-        """
         for wiz in self:
             wiz.display_download_button = (
                 wiz.only_autofill_readonly
@@ -492,19 +465,9 @@ class WizardSignRequestSend(models.TransientModel):
             )
 
     def quick_sign(self):
-        """
-        Is triggered by the Download button, implements the quick-sign flow by retrieving the values needed to fill the fields, filling them, creating the finished document, downloading it and redirecting to the view of the model the user was coming from (sign requests can be made from other apps too).
-
-        :return: triggers an action which downloads the completed document and redirects to the correct view.
-        """
-        # Create the sign request
         request = self.create_request()
 
-        # The values the user's profile gives every item, keyed by the
-        # stringified item id as _sign expects them.
         date_type = self.env.ref("sign.sign_item_type_date")
-        # linked fields are read with the sender's rights; only the stored
-        # signatures and the signing itself need more
         request_item = request.request_item_ids
         sign_request_item = request_item.sudo()
         corrected_dict = {}
@@ -547,11 +510,8 @@ class WizardSignRequestSend(models.TransientModel):
             else:
                 corrected_dict[key] = item.name
 
-        # Fill the fields with the values contained in corrected_dict, set the request state as signed and generate the document.
         sign_request_item._sign(corrected_dict, frame=frames)
 
-        # Trigger the download and the redirection with a single custom action
-        # The reference_doc tells us if the request has been made from somewhere outside of Sign (other apps)
         url = f"/sign/download/{request.id}/{request.access_token}/completed"
         if self.reference_doc:
             view_record = self.reference_doc

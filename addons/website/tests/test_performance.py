@@ -132,7 +132,6 @@ class TestStandardPerformance(UtilPerf):
             self.env["res.users"].sudo().browse(2).website_published, False
         )
         url = "/web/image/res.users/2/image_256"
-        # a signed-in request re-reads its client binding on a fresh snapshot
         self.assertEqual(self._get_url_hot_query(url), 6)
 
     @mute_logger("odoo.http")
@@ -278,7 +277,6 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     }
                 )
                 expected_query_count = 2 if cache else 8
-                # recorded on either cursor: a read-only one after its release
                 insert_tables_perf = {"website_visitor": 1}
                 expected_query_count += 1
                 self.page.track = True
@@ -307,7 +305,6 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     "orm_signaling_registry": 1,
                 }
                 expected_query_count = 1
-                # recorded on either cursor: a read-only one after its release
                 insert_tables_perf = {"website_visitor": 1}
                 expected_query_count += 1
                 self._check_url_hot_query(
@@ -324,7 +321,6 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     "social_media_config": 1,
                 }
                 expected_query_count = 7
-                # recorded on either cursor: a read-only one after its release
                 insert_tables_perf = {"website_visitor": 1}
                 expected_query_count += 1
                 self._check_url_hot_query(

@@ -62,15 +62,11 @@ class ProductCategory(models.Model):
     def _check_company_id(self) -> None:
         for company, categories in self.grouped("company_id").items():
             if not company:
-                # A shared category stays usable by every company's products.
                 continue
-            # A product may use a category of its own company or of an ancestor
-            # (see _check_company_domain above), so the products to reject are the
-            # ones whose company is not below this one -- shared products included.
             domain = Domain("categ_id", "in", categories.ids) & ~Domain(
                 "company_id", "child_of", company.id
             )
-            if not self.env["product.template"].sudo().search_count(domain, limit=1):  # noqa: E8507 - one probe per company; categories sharing one were merged above
+            if not self.env["product.template"].sudo().search_count(domain, limit=1):
                 continue
             raise ValidationError(
                 self.env._(

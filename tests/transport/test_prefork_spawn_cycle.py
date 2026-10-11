@@ -42,7 +42,6 @@ class TestTheWorkerCensusCrossesTheFork:
             yield obj
 
     def _child_of(self, master):
-        """A forked child: same `self.pid` (the master's), different os.getpid()."""
         child = _prefork.PreforkServer(None)
         child.pid = master.pid
         child.logger = MagicMock()
@@ -109,14 +108,6 @@ class TestTheWorkerCensusCrossesTheFork:
         assert child._census.read() == {}
 
     def test_publishing_never_raises_even_on_a_half_built_server(self):
-        """`run()`'s catch-all turns any raise here into `stop(False)`; return -1.
-
-        This is not hypothetical: the first version of `_publish_census` read
-        the throttle stamp OUTSIDE its try, and four `TestRun` cases went red
-        because the server they build never sets it -- an AttributeError in
-        the loop took the whole master down. A server with no census object at
-        all is the same shape of failure.
-        """
         bare = prefork_server()
         bare._census = MagicMock()
         bare._census.publish.side_effect = OSError("no census")
@@ -128,11 +119,6 @@ class TestTheWorkerCensusCrossesTheFork:
         )
 
     def test_publishing_never_raises_into_the_masters_run_loop(self, master):
-        """It runs in `run()`'s while-loop; a raise there takes the server down.
-
-        The failure mode must be exactly what it was before the census
-        existed: the metrics are absent.
-        """
         with server_settings.override(data_dir="/proc/nonexistent-dir"):
             master._census.written_at = float("-inf")
             master._publish_census()
@@ -417,7 +403,6 @@ class TestProcessSpawnChecksSignallingOncePerCycle:
         )
 
     def test_a_crash_loop_in_one_kind_holds_only_that_kind(self, prefork):
-        """One population's early deaths do not delay another's replacements."""
         cfg = {
             "http_enable": True,
             "max_cron_threads": 1,
@@ -600,7 +585,6 @@ class TestARecycledFdIsRegisteredForItsNewOwner:
         )
 
     def test_kill_timed_out_workers_spares_the_healthy_replacement(self, master):
-        """The symptom the operator sees, rather than the mechanism."""
         prefork, spawn = master
 
         dying = spawn(201)

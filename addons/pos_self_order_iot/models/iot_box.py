@@ -27,7 +27,6 @@ class IotBox(models.Model):
     )
 
     def get_computed_img_version(self) -> float:
-        # Once connected to db, version is like 'L24.08-17.0#f30b83ff': we need to extract between 'L' and '-'
         try:
             version_str = self.version.split("-")[0]
             return float(version_str[1:8])
@@ -40,8 +39,6 @@ class IotBox(models.Model):
     def _compute_can_be_kiosk(self) -> None:
         for record in self:
             device_types = {device.type for device in record.device_ids}
-            # Kiosk mode is only available for devices with a display and a keyboard
-            # Images before 24.08 need to delete /etc/X11/xorg.conf to be able to use xrandr to rotate the screen
             record.can_be_kiosk = (
                 "display" in device_types
                 and "keyboard" in device_types

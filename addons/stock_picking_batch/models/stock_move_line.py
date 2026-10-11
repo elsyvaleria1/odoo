@@ -178,7 +178,7 @@ class StockMoveLine(models.Model):
     def _is_auto_waveable(self) -> bool:
         _debug.logic("auto_waveable_check", lines=self)
         self.check_singleton()
-        if (  # noqa: SIM103  the condition reads as a checklist; a bare return would not
+        if (
             not self.picking_id
             or (
                 (

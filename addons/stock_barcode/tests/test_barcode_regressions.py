@@ -63,11 +63,6 @@ class TestStockBarcodeRegressions(TransactionCase):
         ]
 
     def test_barcode_write_reuses_a_lot_within_one_batch(self):
-        """Counting the same lot in two locations is one save with two `lot_name` commands.
-
-        Creating a lot per command hits `product.trace`'s uniqueness constraint, and since the
-        whole payload is one transaction that rejects every line the operator counted.
-        """
         Lot = self.env["product.trace"]
         before = Lot.search_count([("product_id", "=", self.tracked_product.id)])
         self.env["stock.quant"].barcode_write(
@@ -92,7 +87,6 @@ class TestStockBarcodeRegressions(TransactionCase):
         )
 
     def test_barcode_write_reuses_an_existing_lot(self):
-        """A lot the client's cache did not know about must be reused, not re-created."""
         lot = self.env["product.trace"].create(
             {"name": "REG-LOT-2", "product_id": self.tracked_product.id}
         )
@@ -117,15 +111,12 @@ class TestStockBarcodeRegressions(TransactionCase):
         self.assertEqual(quant.trace_id, lot)
 
     def test_usable_packages_are_bounded(self):
-        """`int(get_param(...))` is 0 when the parameter is unset, and `limit=0` means
-        "no limit" — so the payload used to carry every package in the database."""
         Package = self.env["stock.package"]
         Package.create([{"name": f"REG-PKG-{i:03d}"} for i in range(5)])
         self.env["ir.config_parameter"].sudo().set_param(
             "stock_barcode.usable_packages_limit", "3"
         )
         self.assertEqual(len(Package._get_usable_packages()), 3)
-        # Unset: falls back to the class default rather than to "everything".
         self.env["ir.config_parameter"].sudo().set_param(
             "stock_barcode.usable_packages_limit", False
         )
@@ -133,15 +124,12 @@ class TestStockBarcodeRegressions(TransactionCase):
             self.assertEqual(len(Package._get_usable_packages()), 2)
 
     def test_has_image_follows_the_image(self):
-        """`_compute_has_image` used to depend on itself, so it never saw the image change."""
         product = self.env["product.product"].create({"name": "Regression image probe"})
         self.assertFalse(product.has_image)
         product.image_1920 = self._one_pixel_png()
         self.assertTrue(product.has_image)
 
     def test_scrap_scan_of_a_lot_name_shared_across_products(self):
-        """Lot names are unique per (product, company) only, so the same name can exist for
-        several products; the unbounded search used to raise "Expected singleton"."""
         other_product = self.env["product.product"].create(
             {
                 "name": "Regression tracked product 2",
@@ -166,8 +154,6 @@ class TestStockBarcodeRegressions(TransactionCase):
         )
 
     def test_epc_scheme_name_is_validated(self):
-        """The scheme name arrives from the client and keyed an unbounded `@cache`, besides
-        being interpolated into an XPath expression."""
         with self.assertRaises(UserError):
             EpcScheme(self.env, "not-a-scheme")
         with self.assertRaises(UserError):
@@ -175,8 +161,6 @@ class TestStockBarcodeRegressions(TransactionCase):
         self.assertIn("sgtin-96", EpcData.scheme_names())
 
     def test_epc_partition_ai_is_found_in_any_position(self):
-        """`next(x if cond else None for ...)` returned the first item whatever it was, so the
-        partition AI was only found when it came first in the element string."""
         scheme = EpcScheme(self.env, "sgtin-96")
         forward = scheme.encode("(01) 00000076543210 (21) 42", 1, 7)
         scheme = EpcScheme(self.env, "sgtin-96")
@@ -185,13 +169,10 @@ class TestStockBarcodeRegressions(TransactionCase):
         self.assertNotIn("error", forward.lower())
 
     def test_epc_write_bits_rejects_a_non_integer(self):
-        """The guard sat below `value.bit_length()` (so it never ran) and its message passed a
-        positional argument to a named-placeholder format string (so it raised in turn)."""
         with self.assertRaises(ValueError):
             EpcData.write_bits("not an int", 8)
 
     def test_epc_encode_partial_refuses_reserved_fields(self):
-        """It used to *return* an Exception object, which the caller stored in a Char field."""
         scheme = EpcScheme(self.env, "sgtin-96")
         with self.assertRaises(UserError):
             scheme.encode_partial("header", 1)
@@ -287,9 +268,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         return picking, moves
 
     def test_partial_move_count_is_not_offset_by_the_empty_moves(self):
-        """The two counts cover disjoint moves (picked vs. not picked), so subtracting the
-        empty count from the partial one reported 2 empty and -1 partial for 2 untouched
-        moves and 1 half-done one, and the view hid the partial sentence."""
         products = self.env["product.product"].create(
             [{"name": f"Partial count {name}", "is_storable": True} for name in "ABC"]
         )
@@ -303,8 +281,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertEqual(wizard.partial_move_count, 1)
 
     def test_filter_on_barcode_survives_an_unparsable_gs1_barcode(self):
-        """AI 17 with month 13 matches a GS1 pattern and then fails to parse: the kanban
-        filter raised the ValidationError to the operator instead of answering a warning."""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -316,8 +292,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertIn("warning", result)
 
     def test_new_after_a_barcode_filter_opens_the_barcode_app(self):
-        """The kanban's "New" calls `action_view_new_picking` with the filtered action's
-        context, which carried `active_id` but not the `active_model` it requires."""
         product = self.env["product.product"].create(
             {"name": "Filter product", "is_storable": True, "barcode": "FILTER-1"}
         )
@@ -334,9 +308,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertEqual(action["tag"], "stock_barcode_client_action")
 
     def test_epc_scheme_reencodes_with_another_company_prefix_length(self):
-        """The first `encode` wrote the partition's bit sizes into the scheme's fields for
-        good (`if field.bit_size == 0`), so a second encode with another company prefix
-        length reused the first one's split."""
         element = "(01) 80614141123458 (21) 6789"
         reused = EpcScheme(self.env, "sgtin-96")
         reused.encode(element, 1, 7)
@@ -346,8 +317,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         )
 
     def test_line_quants_stay_within_their_own_picking_location(self):
-        """The quants were searched under every computed line's parent location and handed
-        to each line whole: a line of a shelf-A picking offered shelf B's stock."""
         product = self.env["product.product"].create(
             {"name": "Two-shelf product", "is_storable": True}
         )
@@ -388,8 +357,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
             self.assertEqual(line.product_stock_quant_ids.location_id, shelf)
 
     def test_quant_payload_carries_every_ancestor_package(self):
-        """Only the direct container was sent, so a quant three packages deep referenced a
-        package the client cache did not have."""
         Package = self.env["stock.package"]
         outer = Package.create({"name": "OUTER"})
         middle = Package.create({"name": "MIDDLE", "parent_package_id": outer.id})
@@ -407,7 +374,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertEqual({p["id"] for p in payload}, {outer.id, middle.id, inner.id})
 
     def test_destination_packages_are_bounded(self):
-        """The packages stored under a picking's destination were prefetched unbounded."""
         Package = self.env["stock.package"]
         packages = Package.create([{"name": f"DEST-PKG-{i}"} for i in range(3)])
         product = self.env["product.product"].create(
@@ -428,8 +394,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertEqual(len(located), 2)
 
     def test_removing_a_count_keeps_the_stock(self):
-        """The inventory line's trash button called `action_validate`: a quant of 5 counted
-        to 0 and "deleted" posted a -5 adjustment."""
         product = self.env["product.product"].create(
             {"name": "Counted product", "is_storable": True}
         )
@@ -465,8 +429,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
         self.assertFalse(quant.exists())
 
     def test_key_timing_setting_defaults_to_the_scanner_default(self):
-        """The field said 100 ms while `barcodes` defaults to 150 ms: saving the settings
-        for anything else wrote 100 and made slow wedge scanners split their barcodes."""
         defaults = self.env["res.config.settings"].default_get(
             ["barcode_max_time_between_keys_in_ms"]
         )
@@ -479,8 +441,6 @@ class TestStockBarcodeRegressions20260928(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestInventoryPayloadCompleteness(TransactionCase):
     def test_the_initial_load_names_the_products_it_sent_every_quant_of(self):
-        """The inventory's first payload carried every internal quant of some products
-        without saying so, and the first scan of one fetched them all again."""
         stock = (
             self.env["stock.warehouse"]
             .search([("company_id", "=", self.env.company.id)], limit=1)

@@ -48,8 +48,6 @@ class PosPaymentMethod(models.Model):
     def _is_inbound_request_authentic(self, headers, body) -> bool:
         if self.use_payment_terminal != "mollie":
             return super()._is_inbound_request_authentic(headers, body)
-        # The payload is signed by this database (hash_sign) and names the
-        # method: resolving it is the verification.
         payload = request.get_http_params().get("payload") or ""
         decoded = resolve_hash_signed(self.sudo().env, WEBHOOK_SCOPE, payload)
         return bool(decoded) and decoded.get("payment_method_id") == self.id
@@ -124,7 +122,7 @@ class PosPaymentMethod(models.Model):
         }
         signed_payload = hash_sign(
             self.sudo().env, WEBHOOK_SCOPE, payload, expiration_hours=27
-        )  # Mollie webhooks can retry for up to 26 hours
+        )
         payment_request = {
             "amount": {
                 "currency": currency.name,
@@ -134,7 +132,7 @@ class PosPaymentMethod(models.Model):
             "description": self._get_mollie_payment_description(
                 pos_session_id, payment_uuid
             ),
-            "redirectUrl": f"{self.get_base_url()}",  # Not used for POS payments but required by Mollie API
+            "redirectUrl": f"{self.get_base_url()}",
             "webhookUrl": f"{self.get_base_url()}/pos_mollie/webhook?payload={signed_payload}",
             "method": "pointofsale",
             "terminalId": self.mollie_terminal_id,

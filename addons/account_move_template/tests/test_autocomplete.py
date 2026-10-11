@@ -84,7 +84,6 @@ class TestTemplateAutocomplete(TransactionCase):
         )
 
     def test_base_picker_applies_template_without_trade_dependency(self):
-        # An accounting-only user exercises the base form even with trade installed.
         user = new_test_user(
             self.env,
             login="autocomplete-accountant",

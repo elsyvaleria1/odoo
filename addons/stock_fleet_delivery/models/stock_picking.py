@@ -8,21 +8,13 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def _get_dispatch_mode(self):
-        """How the goods leave: the carrier's mode, else the source location's.
-
-        :rtype: str or bool
-        """
         self.check_singleton()
         return self.carrier_id.dispatch_mode or self.location_id.dispatch_mode
 
     def _rides_trip_vehicle(self) -> bool:
-        # Goods that leave with a third-party carrier or the customer do not ride
-        # our vehicle; no carrier and no location mode still means our own.
         return super()._rides_trip_vehicle() and self._get_dispatch_mode() in TRIP_MODES
 
     def _trip_vehicle_returns(self) -> bool:
-        # A salesperson delivers with their own car and carries on: their trip
-        # ends at the last delivery, not back at the warehouse.
         return (
             super()._trip_vehicle_returns()
             and self._get_dispatch_mode() != "salesperson"

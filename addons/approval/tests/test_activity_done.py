@@ -45,7 +45,6 @@ class TestApprovalActivityDone(ApprovalCommon):
         )
 
     def test_someone_else_marking_it_done_decides_nothing(self):
-        """Studio's test_12_approval_activity_spoof."""
         request = self._prepare_request(
             self._make_category(approvers=[self.approver_1])
         )
@@ -79,8 +78,6 @@ class TestApprovalActivityDone(ApprovalCommon):
         ).action_confirm_change()
         self.assertEqual(request.pending_change_field, "reason")
         self.assertTrue(activity.active)
-        # Not assertRaises: it rolls back to its own savepoint, which would hide
-        # whether marking the activity done is undone with the failed decision.
         raised = False
         try:
             activity.with_user(self.approver_1).action_done()

@@ -90,11 +90,7 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
             )
 
     def validate_generated_sale_order(self, purchase_order, company, partner):
-        """Validate sale order which has been generated from purchase order
-        and test its state, total_amount, product_name and product_quantity.
-        """
 
-        # Find related sale order based on client order reference.
         sale_order = (
             self.env["sale.order"]
             .with_company(partner)
@@ -223,9 +219,7 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
                 line.product_uom_id = product_storable.uom_id
 
         purchase_order.date_commitment = today + relativedelta(days=7)
-        # Confirm Purchase order
         purchase_order.with_company(self.company_b).action_confirm()
-        # Check purchase order state should be purchase.
         self.assertEqual(
             purchase_order.state, "done", "Purchase order should be in purchase state."
         )
@@ -245,7 +239,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(len(sale_order.line_ids), 1)
         self.assertEqual(sale_order.line_ids.product_id, product_storable)
         self.assertEqual(sale_order.date_commitment, today + relativedelta(days=7))
-        # Check the MTO purchase, the seller should be the correct one
         po = (
             self.env["purchase.order"]
             .with_company(self.company_a)
@@ -277,7 +270,7 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
                 "intercompany_generate_sales_orders": True,
                 "intercompany_generate_purchase_orders": True,
                 "intercompany_sync_delivery_receipt": True,
-                "intercompany_document_state": "posted",  # Needed to create the receipt
+                "intercompany_document_state": "posted",
             }
         )
 
@@ -320,16 +313,11 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(new_picking.product_id, product)
 
     def test_04_inter_company_putaway_rules(self):
-        """
-        Check that putaway strategies are correctly applied on tracked products
-        when the transaction is updated by an intercompany procedure.
-        """
-        # with company A:
         self.company_a.update(
             {
                 "intercompany_generate_purchase_orders": True,
                 "intercompany_sync_delivery_receipt": True,
-                "intercompany_document_state": "posted",  # Needed to create the receipt
+                "intercompany_document_state": "posted",
             }
         )
         stock_location_a = (
@@ -354,7 +342,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
                 "location_out_id": shelf_location.id,
             }
         )
-        # with company B:
         my_product = (
             self.env["product.product"]
             .with_company(self.company_b)
@@ -406,9 +393,7 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         po = self.env["purchase.order"].search(
             [("auto_sale_order_id", "=", so.id)], limit=1
         )
-        # There should be no move lines yet as no reservation could be done, as delivery is not processed yet.
         self.assertFalse(po.picking_ids.move_line_ids)
-        # Confirm the delivery created in company B to update the delivery in Company A
         delivery_b = so.picking_ids
         delivery_b.move_line_ids.trace_id = my_lot
         delivery_b.button_validate()
@@ -420,9 +405,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertTrue(receipt_a.move_line_ids.picked)
 
     def test_05_inter_company_purchase_order_from_so_with_custom_attribute_values(self):
-        """
-        Check that the custom attribute values are transfered by procurements
-        """
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": True,
@@ -441,7 +423,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         buy_route.product_selectable = True
         mto_route.active = True
 
-        # setup product with customizable attribute value
         product_storable = self.env["product.product"].create(
             {
                 "name": "Storable",
@@ -484,7 +465,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
 
         custom_value = "test"
 
-        # create and confirm SO with comp a for a customer
         sale_order = (
             self.env["sale.order"]
             .with_company(self.company_a)
@@ -541,10 +521,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         )
 
     def test_07_inter_company_serial_across_companies(self):
-        """Checks that on a inter-company transfer, the right quants are created/updated in the right locations.
-        Follows the trail of a serial-tracked product along the following flow:
-        Vendor -> Company A -> Company B -> Customer
-        """
         self.env.user.group_ids |= self.env.ref("stock.group_production_lot")
         (self.company_a | self.company_b).write(
             {
@@ -562,7 +538,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
                 for name in ["Vendor", "Customer"]
             ]
         )
-        # Use MTO route to avoid having to deal with manual replenishments
         mto_route = self.env.ref("stock.route_warehouse0_mto")
         mto_route.active = True
         mto_route.rule_ids.procure_method = "make_to_order"
@@ -593,7 +568,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
             }
         )
 
-        # Create a sale order from Company B to the customer
         with Form(self.env["sale.order"].with_company(self.company_b)) as sale_form:
             sale_form.partner_id = customer
             with sale_form.line_ids.new() as line:
@@ -606,7 +580,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(purchase_from_a.partner_id, self.company_a.partner_id)
         purchase_from_a.with_company(self.company_b).action_confirm()
 
-        # Company A side.
         sale_to_b = (
             self.env["sale.order"]
             .with_company(self.company_a)
@@ -618,7 +591,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         purchase_from_vendor.action_confirm()
         receipt_from_vendor = purchase_from_vendor.picking_ids
 
-        # Receive lot from vendor
         lot = self.env["product.trace"].create(
             {"name": "lot", "product_id": product.id}
         )
@@ -629,7 +601,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
             receipt_from_vendor = receipt_form.save()
         receipt_from_vendor.button_validate()
 
-        # Transfer lot to Company B
         interco_location = self.env.ref("stock.stock_location_inter_company")
         self.assertEqual(sale_to_b.picking_ids.state, "assigned")
         self.assertEqual(sale_to_b.picking_ids.move_ids.trace_ids, lot)
@@ -637,12 +608,10 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         sale_to_b.picking_ids.button_validate()
         self.assertEqual(sale_to_b.line_ids.qty_transferred, 1)
 
-        # Receive lot from Company A
         self.assertEqual(purchase_from_a.picking_ids.move_ids.trace_ids, lot)
         self.assertEqual(purchase_from_a.picking_ids.location_id, interco_location)
         purchase_from_a.picking_ids.with_company(self.company_b).button_validate()
 
-        # Send lot to Customer
         self.assertEqual(sale_to_customer.picking_ids.state, "assigned")
         self.assertEqual(sale_to_customer.picking_ids.move_ids.trace_ids, lot)
         sale_to_customer.picking_ids.with_company(self.company_b).button_validate()
@@ -706,7 +675,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
             }
         )
 
-        # Create a sale order from Company B to the customer
         with Form(self.env["sale.order"].with_company(self.company_b)) as sale_form:
             sale_form.partner_id = customer
             with sale_form.line_ids.new() as line:
@@ -721,7 +689,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(sale_to_customer.dropship_picking_count, 1)
         self.assertEqual(purchase_from_a.dropship_picking_count, 1)
 
-        # Company A side.
         sale_to_b = (
             self.env["sale.order"]
             .with_company(self.company_a)
@@ -735,7 +702,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(purchase_from_vendor.dropship_picking_count, 1)
         dropship_from_vendor = purchase_from_vendor.picking_ids
 
-        # Dropship lot from vendor
         lot = self.env["product.trace"].create(
             {"name": "lot", "product_id": product.id}
         )
@@ -750,7 +716,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(sale_to_b.picking_ids.state, "done")
         self.assertEqual(sale_to_b.picking_ids.location_dest_id, interco_location)
 
-        # Lot should be preset from Company A
         self.assertEqual(purchase_from_a.picking_ids.move_ids.trace_ids, lot)
         self.assertEqual(purchase_from_a.picking_ids.location_id, interco_location)
 
@@ -776,7 +741,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
                 for name in ["Vendor", "Customer"]
             ]
         )
-        # Avoids issue if mrp_subcontracting is already installed, as there will be two dropships per company, customer & subcontractor
         dropship_type = dropship_type.filtered(
             lambda pt: pt.default_location_dest_id == customer.property_stock_customer
         )
@@ -831,7 +795,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
             product, warehouse_a.lot_stock_id, 1, trace_id=lot
         )
 
-        # Create a sale order from Company B to the customer
         with Form(self.env["sale.order"].with_company(self.company_b)) as sale_form:
             sale_form.partner_id = customer
             with sale_form.line_ids.new() as line:
@@ -844,7 +807,6 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(purchase_from_a.partner_id, self.company_a.partner_id)
         purchase_from_a.with_company(self.company_b).action_confirm()
 
-        # Company A side, deliver lot to Company B
         sale_to_b = (
             self.env["sale.order"]
             .with_company(self.company_a)
@@ -856,6 +818,5 @@ class TestInterCompanyPurchaseToSaleWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(sale_to_b.picking_ids.location_dest_id, interco_location)
         sale_to_b.with_company(self.company_a).picking_ids.button_validate()
 
-        # Lot should be preset from Company A
         self.assertEqual(purchase_from_a.picking_ids.move_ids.trace_ids, lot)
         self.assertEqual(purchase_from_a.picking_ids.location_id, interco_location)

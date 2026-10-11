@@ -8,7 +8,6 @@ from ..tools.molfile import parse_molblock
 
 class MolecularStructure(models.Model):
     _name = "molecular.structure"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Molecular Structure"
     _order = "compound_id, create_date desc"
@@ -103,13 +102,6 @@ class MolecularStructure(models.Model):
                 )
 
     def action_explode_molblock(self):
-        """Replace the atom and bond tables with the molblock's own connectivity.
-
-        Each atom also gets what the valence table can say about it on its own:
-        how many hydrogens complete it, whether it is aromatic, how it is
-        hybridised, how many lone pairs it keeps, and — when every element is
-        parameterised — its partial charge.
-        """
         for structure in self:
             try:
                 atoms, bonds = parse_molblock(structure.molblock)
@@ -168,8 +160,6 @@ class MolecularStructure(models.Model):
                     "bond_ids": [fields.Command.create(bond) for bond in bonds],
                     "formula": report["formula"],
                     "net_charge": report["charge"],
-                    # An unparameterised element leaves this empty rather than
-                    # letting a column of zeros pass for computed charges.
                     "charge_method": valence.PEOE_METHOD if charges else False,
                 }
             )
@@ -183,7 +173,6 @@ class MolecularStructure(models.Model):
 
 class MolecularStructureAtom(models.Model):
     _name = "molecular.structure.atom"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Structure Atom"
     _order = "structure_id, idx"
@@ -236,7 +225,6 @@ class MolecularStructureAtom(models.Model):
 
 class MolecularStructureBond(models.Model):
     _name = "molecular.structure.bond"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Structure Bond"
     _order = "structure_id, atom_a, atom_b"
@@ -265,7 +253,6 @@ class MolecularStructureBond(models.Model):
     _bond_uniq = models.Constraint(
         "unique(structure_id, atom_a, atom_b)", "This bond is already recorded."
     )
-    # Normalising the order is what stops one bond entering twice reversed.
     _atom_order = models.Constraint(
         "check(atom_a < atom_b)",
         "A bond must be stored with its lower atom index first.",

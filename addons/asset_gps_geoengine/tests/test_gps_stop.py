@@ -7,14 +7,10 @@ from odoo.exceptions import UserError
 from odoo.libs.json import dumps as json_dumps
 from odoo.tests import common, tagged
 
-# 2026-09-07 in Mexico City is UTC-6: 15:00 UTC is 09:00 local, same day.
 DAY = date(2026, 9, 7)
 T0 = datetime(2026, 9, 7, 15, 0)
-# Inside the client parcel below.
 ON_PARCEL = (19.40, -99.10)
-# About 1.1 km north of the parcel: no geofence, but a client parcel nearby.
 OFF_PARCEL = (19.42, -99.10)
-# Far from everything.
 ELSEWHERE = (20.50, -101.00)
 
 
@@ -168,7 +164,6 @@ class TestGpsStop(common.TransactionCase):
         self.assertIn("19.420000,-99.100000", stop.map_url)
 
     def test_map_colour_marks_long_stops_outside_geofences(self):
-        # 10 min on the parcel, 15 min off it, 40 min far from everything.
         self._still(T0, 10, ON_PARCEL)
         self._log(self.device, T0 + timedelta(minutes=10), ON_PARCEL, 30)
         self._still(T0 + timedelta(hours=1), 15, OFF_PARCEL)
@@ -232,7 +227,6 @@ class TestGpsStop(common.TransactionCase):
         )
         self.assertIn("Fonda Lupita (Restaurant)", stop.place)
 
-        # The ten-minute rewrite keeps the name without asking again.
         calls, fake = self._fake_nominatim([])
         with fake:
             stop = self._stops()
@@ -322,7 +316,6 @@ class TestGpsStop(common.TransactionCase):
         self.assertTrue(unmarked.to_mark)
         self.assertNotIn(self.parcel, fences.search([("to_mark", "=", True)]))
 
-        # Someone marks it: it gets a client, and both clear at once.
         unmarked.partner_id = self.client
         stop.invalidate_recordset()
         unmarked.invalidate_recordset()

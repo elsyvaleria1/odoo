@@ -152,7 +152,6 @@ def _fmt_str(s: str) -> str:
     except UnicodeEncodeError:
         return json_dumps(s)
     if '"' in s and "'" not in s and s.isprintable():
-        # the quote that needs no escape, which is what ruff format leaves
         return "'" + s.replace("\\", "\\\\") + "'"
     return json.dumps(s, ensure_ascii=False)
 
@@ -287,7 +286,7 @@ def iter_manifests(roots: list[str], excluded: set[str]):
 
 def ensure_odoo_importable() -> None:
     try:
-        import odoo.modules.module  # noqa: F401 -- probing importability
+        import odoo.modules.module
     except ImportError:
         sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
@@ -335,13 +334,13 @@ def main(argv: list[str] | None = None) -> int:
             skipped += 1
         elif result:
             label = "would rewrite" if args.dry_run else "rewrote      "
-            print(f"  {label}  {manifest}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+            print(f"  {label}  {manifest}")
             changed += 1
         else:
             unchanged += 1
 
     verb = "would change" if args.dry_run else "rewrote"
-    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")
     return 1 if skipped or (args.dry_run and changed) else 0
 
 

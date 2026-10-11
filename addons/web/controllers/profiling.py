@@ -46,7 +46,6 @@ class Profiling(Controller):
         collector_names = (
             collectors.split(",") if collectors is not None else ["sql", "traces_async"]
         )
-        # None leaves the session's profiling as it is; "" or "0" stops it
         enable = None if profile is None else profile not in ("", "0")
         if _debug.lifecycle.enabled:
             _debug.lifecycle(

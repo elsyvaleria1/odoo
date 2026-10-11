@@ -24,10 +24,6 @@ class WizardSaleOrderUpdateAttendee(models.TransientModel):
             sale_order_id = res.get("sale_order_id", self.env.context.get("active_id"))
             res["sale_order_id"] = sale_order_id
         sale_order = self.env["sale.order"].browse(res.get("sale_order_id"))
-        # `.ids` drops the empty slot, so an order mixing a slotted line with a
-        # non-slotted one used to match none of the latter's registrations: they
-        # were re-proposed as new and action_make_registration duplicated them.
-        # Keep False in the list so slot-less registrations are found too.
         registrations = self.env["event.registration"].search(
             [
                 ("sale_order_id", "=", sale_order.id),
@@ -52,7 +48,6 @@ class WizardSaleOrderUpdateAttendee(models.TransientModel):
             so_line_registrations = so_line_to_reg.get(
                 so_line, self.env["event.registration"]
             )
-            # Add existing registrations
             attendee_list += [
                 [
                     0,
@@ -72,7 +67,6 @@ class WizardSaleOrderUpdateAttendee(models.TransientModel):
                 ]
                 for reg in so_line_registrations
             ]
-            # Add new registrations
             attendee_list += [
                 [
                     0,
@@ -113,6 +107,5 @@ class WizardSaleOrderUpdateAttendee(models.TransientModel):
                 )
 
         self.env["event.registration"].create(registrations_to_create)
-        # Force compute after wizard so seat validation/emails happen now.
         self.event_registration_ids.registration_id._compute_registration_status()
         return {"type": "ir.actions.act_window_close"}

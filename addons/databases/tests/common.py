@@ -19,7 +19,6 @@ class TestDatabasesCommon(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Ensure the tests doesn't get disturbed by any data that would already present in the database
         pre_existing_project = cls.env["project.project"].search([])
         origin_search_fetch = cls.env.registry["project.project"].search_fetch
 
@@ -62,7 +61,6 @@ class TestDatabasesCommon(TransactionCase):
             groups="project.group_project_manager",
         )
 
-        # Tell the database how to connect
         cls.env["credential.credential"]._set_system_secret(
             "databases.odoocom_apikey", "privateKey"
         )
@@ -88,15 +86,12 @@ class TestDatabasesCommon(TransactionCase):
                 raise RequestsConnectionError
             hostname_calls = self.json2_mocked_calls[parsed_url.hostname]
 
-            # To handle /json/version, add a line like this in your test:
-            # json2_mocked_calls[hostname]['version'] = '19.0+e'
             if parsed_url.path == "/json/version":
                 self.assertEqual(method, "get")
                 if "version" not in hostname_calls:
                     return MagicMock(status_code=303)
                 value = {
                     "version": hostname_calls["version"],
-                    # 'version_info': ...,  # We should not rely on this field
                 }
                 return MagicMock(status_code=200, **{"json.return_value": value})
             m = re.match(

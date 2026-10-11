@@ -85,13 +85,6 @@ class TestApprovalRequestLineSeller(TransactionCase):
         )
 
     def test_the_chosen_seller_prices_the_purchase_order_line(self):
-        """A hand-picked pricelist line must survive into the purchase order.
-
-        The product carries two rows for the same vendor. Core's own
-        ``_select_seller`` would take the first by sequence, so if the resolved
-        seller is not handed to ``_prepare_purchase_order_line`` the buyer's
-        choice is silently replaced by the cheaper row.
-        """
         approver = self.env["res.users"].create(
             {
                 "name": "Seller Approver",

@@ -1,19 +1,12 @@
-# The codes of the payment methods to activate when Buckaroo is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
     "ideal",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",
     "discover",
 }
 
-# Mapping of payment method codes to Buckaroo codes.
-# https://docs.buckaroo.io/docs/payment-methods
-# For each payment method check "Requests" tab and get "Services.ServiceList.Name"
-# in "Example request"
 PAYMENT_METHODS_MAPPING = {
     "alipay": "Alipay",
     "apple_pay": "applepay",
@@ -40,9 +33,6 @@ PAYMENT_METHODS_MAPPING = {
     "afterpay_riverty": "afterpay",
 }
 
-# Mapping of transaction states to Buckaroo status codes.
-# See https://www.pronamic.nl/wp-content/uploads/2013/04/BPE-3.0-Gateway-HTML.1.02.pdf for the
-# exhaustive list of status codes.
 STATUS_CODES_MAPPING = {
     "pending": (790, 791, 792, 793),
     "done": (190,),
@@ -55,9 +45,6 @@ STATUS_CODES_MAPPING = {
     ),
 }
 
-# The currencies supported by Buckaroo, in ISO 4217 format.
-# See https://support.buckaroo.eu/frequently-asked-questions
-# Last seen online: 7 November 2022.
 SUPPORTED_CURRENCIES = [
     "EUR",
     "GBP",

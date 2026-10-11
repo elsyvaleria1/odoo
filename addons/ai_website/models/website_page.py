@@ -18,36 +18,20 @@ class WebsitePage(models.Model):
 
     @api.model
     def _extract_snippets_from_template(self, sectionsArch, template_id):
-        """Get the snippets for a given template.
-
-        :param str sectionsArch: the HTML string of the template
-        :param str template_id: id of the template, used to get the English version
-        :return: mapping of snippet ids to their sections and translated sections
-        :rtype: dict
-        """
         View = self.env["ir.ui.view"]
         snippets_dict = {}
         doc = html.fromstring('<div id="wrap">' + sectionsArch + "</div>")
 
-        # the template_html_en is already wrapped in a div with id="wrap"
         sectionsArch_en = View.with_context(
             inherit_branding=False, lang="en_US"
         )._render_template(template_id)
         doc_en = html.fromstring(sectionsArch_en)
-        # Get the main sections of the template (each is a snippet)
         snippet_sections = doc.xpath('//div[@id="wrap"]/section')
         snippet_sections_en = doc_en.xpath('//div[@id="wrap"]/section')
 
-        # Create a mapping of snippet IDs to English elements for lookup
         en_snippets_map = {}
         for idx, el_en in enumerate(snippet_sections_en):
             snippet_key = el_en.attrib["data-snippet"]
-            # Because the templates are generated from specific
-            # t-snippet-calls such as:
-            # "website.new_page_template_about_0_s_text_block",
-            # the generated data-snippet looks like:
-            # "new_page_template_about_0_s_text_block"
-            # while it should be "s_text_block" only.
             if "_s_" in snippet_key:
                 el_en.attrib["data-snippet"] = f"s_{snippet_key.split('_s_')[-1]}"
             snippet_key = el_en.attrib["data-snippet"]
@@ -56,13 +40,10 @@ class WebsitePage(models.Model):
                     el_en, encoding="unicode", method="html"
                 )
 
-        # Process each snippet element
         for idx, el in enumerate(snippet_sections):
             snippet_id = el.get("data-snippet")
             if snippet_id:
-                # Get the section content (current language)
                 section_content = html.tostring(el, encoding="unicode", method="html")
-                # Get the translated section content (English)
                 translated_section_content = en_snippets_map.get(
                     f"{snippet_id}_{idx}", section_content
                 )
@@ -77,13 +58,6 @@ class WebsitePage(models.Model):
         return {"cta_btn_text": "Contact Us", "cta_btn_href": "/contactus"}
 
     def _generate_response(self, content_context, placeholders):
-        """Generate a response from the AI agent.
-
-        :param str content_context: context information for the agent
-        :param list placeholders: placeholder texts to be replaced by the AI
-        :return: response from the AI agent containing the generated content
-        :rtype: dict
-        """
         agent = self.env.ref("ai_website.website_page_generator_agent")
         batch = {str(i + 1): placeholder for i, placeholder in enumerate(placeholders)}
         prompt = json.dumps(batch, ensure_ascii=False)
@@ -107,14 +81,6 @@ class WebsitePage(models.Model):
     def _generate_ai_website_page_html(
         self, template_id, sectionsArch, content_context
     ) -> str:
-        """Generate the AI-generated HTML content string of the page's template.
-
-        :param str template_id: id of the template to use
-        :param str sectionsArch: the HTML string of the template
-        :param str content_context: context information for the agent
-        :return: the HTML string of the generated page
-        :rtype: str
-        """
         website = self.env["website"].get_current_website()
         text_generation_target_lang = website.default_lang_id.code
         text_must_be_translated_for_openai = not text_generation_target_lang.startswith(
@@ -151,8 +117,6 @@ class WebsitePage(models.Model):
 
         result = []
         for key, snippet in snippets.items():
-            # The key is like: "s_text_block_0" where the last part _0 is the
-            # section index. We want to get the snippet key without the index
             snippet_key = key.rsplit("_", 1)[0]
             el = html_text_processor._update_snippet_content(
                 generated_content, snippet_key, snippet_html=snippet["section"]

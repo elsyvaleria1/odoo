@@ -36,8 +36,6 @@ COMPARATORS = {
 
 
 def _solve_percentage(hours_at, wanted: float) -> float:
-    # hours_at only grows with the percentage, and stops growing once the
-    # schedule has nothing left: past that, the share stays linear
     if wanted <= 0:
         return 0.0
     full = hours_at(100.0)
@@ -321,8 +319,6 @@ class ResourceReservation(models.Model):
         )
         loads = {}
         if dated:
-            # The stored rows of the records at hand give way to their current,
-            # possibly unsaved, values: a draft counts its own share.
             stored_ids = [record._origin.id for record in dated if record._origin.id]
             loads = self._get_booking_load_batch(
                 dated.resource_id,
@@ -354,8 +350,6 @@ class ResourceReservation(models.Model):
             else:
                 record.booking_state = "under"
 
-    # not on the resource's calendar: a reservation keeps the schedule it was
-    # booked under; resource.resource.write moves the open ones
     @api.depends("resource_id", "company_id")
     def _compute_resource_calendar_id(self) -> None:
         for record in self:
@@ -569,9 +563,6 @@ class ResourceReservation(models.Model):
                         )
                     ]
                 )
-                # what the claim would hold at 100 % alone: its own window
-                # filling each week from its first day; a share takes that
-                # part of it, out of what earlier claims left
                 reach = []
                 alone_week_left = dict(schedule.hours_per_week[resource.id])
                 for day, hours in sorted(
@@ -713,11 +704,6 @@ class ResourceReservation(models.Model):
 
     @api.model
     def _get_domain_occupancy(self, resources, *, since=None, until=None):
-        """Select active, positive claims with nonempty dates in a half-open window.
-
-        Missing bounds leave the window open. This only builds a domain;
-        callers retain responsibility for access and for projecting private claims.
-        """
         since = (
             localized(fields.Datetime.to_datetime(since))
             .astimezone(UTC)
@@ -847,8 +833,6 @@ class ResourceReservation(models.Model):
         zero_matches = COMPARATORS[operator](0, value)
 
         def to_sql(model, alias, query):
-            # A reservation without conflicts has no row: when zero conflicts
-            # match, select by excluding the rows whose count does not.
             return SQL(
                 "%s %s (SELECT id FROM (%s) AS partners(id, peers) WHERE %s)",
                 model._field_to_sql(alias, "id", query),

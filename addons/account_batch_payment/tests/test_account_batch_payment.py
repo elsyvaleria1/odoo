@@ -47,10 +47,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
         for company, create_property_account_receivable in companies_dict.items():
-            # Needed for the computation of payment.destination_account_id. The
-            # goal is that the company HAS the default, not that a second row is
-            # added: ir.default is unique per field, user, company and condition,
-            # and a branch may already carry one from its chart template.
             already_set = self.env["ir.default"].search_count(
                 [
                     ("field_id", "=", field_record.id),
@@ -112,9 +108,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         self.assertEqual(len(batch_payment_id.payment_ids), 2)
 
     def test_change_payment_state(self):
-        """
-        Check if the amount is well computed when we change a payment state
-        """
         payments = self.env["account.payment"]
         for _ in range(2):
             payments += self.env["account.payment"].create(
@@ -150,7 +143,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
 
         payments[0].move_id.action_draft()
 
-        # Check that we still keep it
         self.assertRecordValues(
             batch_payment,
             [
@@ -163,9 +155,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
     def test_change_payment_state_valid(self):
-        """
-        Check if the amount is well computed when we change a payment state into a non valid payment status
-        """
         if self.env["account.move"]._get_invoice_in_payment_state() != "in_payment":
             self.skipTest("Accounting not installed")
         payments = self.env["account.payment"]
@@ -201,7 +190,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
             ],
         )
 
-        # Change move state to 'paid', if accounting is installed it won't be a valid payment state for batches
         payments[0].action_validate()
 
         self.assertRecordValues(
@@ -216,9 +204,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
     def test_validate_batch(self):
-        """
-        Check that we can only validate a batch if all the payments are in progress
-        """
         payments = self.env["account.payment"]
         for _ in range(2):
             payments += self.env["account.payment"].create(
@@ -242,8 +227,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
         payments[0].action_validate()
 
-        # In accounting, we can only validate a batch if all the payments are in process
-        # While in enterprise invoicing, we can validate a batch even if some payments are paid
         is_accounting_installed = (
             self.env["account.move"]._get_invoice_in_payment_state() == "in_payment"
         )
@@ -252,14 +235,12 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                 RedirectWarning, "To validate the batch, payments must be in process"
             ):
                 batch_payment.confirm_batch()
-            # Set payment to in process state
             payments[0].action_draft()
             payments[0].action_post()
         action = batch_payment.confirm_batch()
         self.assertFalse(action)
 
     def test_batch_payment_sub_company(self):
-        """Test the creation of a batch payment from a sub company"""
         self.company_data["company"].write(
             {"child_ids": [Command.create({"name": "Good Company"})]}
         )
@@ -281,10 +262,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         self.assertTrue(batch)
 
     def test_batch_payment_branches(self):
-        """
-        Test the creation of a batch payment with branches. When all payments are branches of
-        a common head office, a batch payment should be allowed to be created.
-        """
         main_company = self.company_data["company"]
         main_company.vat = "123"
         branch_1 = self.env["res.company"].create(
@@ -314,7 +291,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         self.assertTrue(batch)
 
     def test_batch_payment_different_companies(self):
-        """Payments from different companies not belonging to the same head company should raise an error."""
         main_company = self.company_data["company"]
         company_b = self.setup_other_company()["company"]
 
@@ -334,13 +310,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
             )
 
     def test_batch_payment_foreign_currency(self):
-        """
-        Make sure that payments in foreign currency are converted for the total amount to be displayed
-            currency rate = 1$:10€
-            amount_company_currency = 100$
-            amount_foreign_currency = 100€ -> 10$
-            => batch.amount = 110$
-        """
         payments = self.env["account.payment"]
         company_currency = self.env.company.currency_id
         foreign_currency = self.other_currency
@@ -383,10 +352,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
     def test_batch_payment_move_different_currencies(self):
-        """
-        Make sure that payments linked to a move in foreign currency 1 are converted correctly when
-        the batch is in foreign currency 2
-        """
         payments = self.env["account.payment"]
         bank_journal_2 = self.company_data["default_journal_bank"].copy(
             {"currency_id": self.other_currency_2.id}
@@ -437,10 +402,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
     def test_foreign_currency_batch_payment(self):
-        """
-        Make sure that payments in company_currency are converted when the batch is in
-        foreign currency
-        """
         payments = self.env["account.payment"]
         foreign_currency = self.other_currency
 
@@ -485,13 +446,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
         )
 
     def test_batch_payment_journal_foreign_currency(self):
-        """
-        Test that, if a bank journal is set in a foreign currency, the batch payment will be correctly converted
-        currency rate = 1$:10€
-        payment of 100€ -> 100☺
-        payment of 100$ -> 1000☺
-        Total -> 1100
-        """
         payments = self.env["account.payment"]
         company_currency = self.env.company.currency_id
         foreign_currency = self.other_currency
@@ -564,12 +518,8 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
             payment.create_batch_payment()
 
     def test_amount_in_paid_state(self):
-        """
-        Verify that the batch payment amount is correctly computed when the payment state is 'paid'.
-        """
         payments = self.env["account.payment"]
 
-        # Create two inbound payments of 100€ each
         for _ in range(2):
             payments += self.env["account.payment"].create(
                 {
@@ -581,19 +531,15 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                     "bank_account_id": self.partner_bank_account.id,
                 }
             )
-        # Post the payments to validate them
         payments.action_post()
 
-        # Update payment states to 'paid'
         payments.write({"state": "paid"})
 
-        # Ensure all payments are now in the 'paid' state
         self.assertTrue(
             all(payment.state == "paid" for payment in payments),
             "Payments should be in 'paid' state",
         )
 
-        # Create a batch payment including the two payments
         batch_payment = self.env["account.batch.payment"].create(
             {
                 "journal_id": payments.journal_id.id,
@@ -602,9 +548,6 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
             }
         )
 
-        # Ensure the amount remains correct after recomputation
-        # When accountant is not installed, payments with paid state
-        # should be counted when recomputing amount_residual
         if self.env["ir.module.module"]._get("accountant").state == "installed":
             self.assertEqual(batch_payment.amount_residual, 0)
             self.assertEqual(batch_payment.amount_residual_currency, 0)

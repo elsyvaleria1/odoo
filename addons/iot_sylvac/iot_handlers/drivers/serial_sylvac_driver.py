@@ -43,11 +43,9 @@ class SylvacSCalProDriver(SerialDriver):
         self._actions["read_once"] = self._action_read_once
 
     def _action_read_once(self, _data) -> None:
-        """Make value available to the longpolling event route"""
         event_manager.device_changed(self)
 
     def _take_measure(self):
-        """Asks the device for a new value, and pushes that value to the frontend."""
 
         with self._device_lock:
             self._connection.write(
@@ -60,11 +58,6 @@ class SylvacSCalProDriver(SerialDriver):
 
     @staticmethod
     def _get_raw_response(connection):
-        """Gets a raw, unparsed string containing the updated value of the device.
-
-        :param connection: connection to the device's serial port
-        :type connection: pyserial.Serial
-        """
 
         TIMEOUT = 1
         answer = []
@@ -81,13 +74,6 @@ class SylvacSCalProDriver(SerialDriver):
 
     @classmethod
     def supported(cls, device):
-        """Checks whether the device at path `device` is supported by the driver.
-
-        :param device: path to the device
-        :type device: str
-        :return: whether the device is supported by the driver
-        :rtype: bool
-        """
 
         protocol = cls._protocol
 

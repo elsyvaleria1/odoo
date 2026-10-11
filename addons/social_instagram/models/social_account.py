@@ -32,8 +32,6 @@ class SocialAccount(models.Model):
     )
 
     def _compute_stats_link(self) -> None:
-        """Instagram does not provide a 'desktop' version of the insights.
-        Statistics are only available through the mobile app, which means we don't have any website URL to provide."""
         instagram_accounts = self._filtered_by_media_types(["instagram"])
 
         super(SocialAccount, (self - instagram_accounts))._compute_stats_link()
@@ -42,8 +40,6 @@ class SocialAccount(models.Model):
             account.stats_link = False
 
     def _update_statistics(self):
-        """Facebook Instagram API does not provide any data in the 'stories' department.
-        Probably because the 'share' mechanic is not the same / not existing for Instagram posts."""
         instagram_accounts = self._filtered_by_media_types(["instagram"])
 
         super(SocialAccount, (self - instagram_accounts))._update_statistics()
@@ -87,8 +83,6 @@ class SocialAccount(models.Model):
             )
 
     def _get_statistics_instagram_360d(self, insights_endpoint_url):
-        """Instagram (Facebook) only accepts requests for a range of maximum 30 days.
-        We loop 12 times over 30 days to build the last 360 days of data (~ 1 year)."""
 
         total_statistics = {"reach": 0, "follower_count": 0}
         for index in range(12):
@@ -109,24 +103,6 @@ class SocialAccount(models.Model):
     def _get_statistics_instagram(
         self, endpoint_url, date_preset="last_30d", since=None, until=None
     ):
-        """Check https://developers.facebook.com/docs/instagram-api/reference/ig-user/insights for more information
-        about the endpoint used.
-        e.g of data structure returned by the endpoint:
-        [{
-            'name':  'follower_count',
-            'values': [{
-                'value': 10,
-            }, {
-                'value': 20,
-            }]
-        }{
-            'name':  'reach',
-            'values': [{
-                'value': 15,
-            }, {
-                'value': 25,
-            }]
-        }]"""
         params = {
             "metric": "reach,follower_count",
             "period": "day",

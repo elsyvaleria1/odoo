@@ -71,7 +71,6 @@ class TestAutoCreateFsmProject(TestIndustryFsmCommon):
         employee.resource_id.write({"calendar_id": False})
         now = datetime.combine(datetime.now(), datetime.min.time())
 
-        # first save
         task_form = Form(self.env["project.task"], view="project.view_task_form2")
         task_form.name = "test task"
         task_form.project_id = fsm_project
@@ -81,7 +80,6 @@ class TestAutoCreateFsmProject(TestIndustryFsmCommon):
         task_form.date_end = False
         task_form.save()
 
-        # second save
         task_form.date_start = now
         task_form.date_end = now + relativedelta(days=1)
         task = task_form.save()

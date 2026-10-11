@@ -69,8 +69,6 @@ class TestImage(HttpCase):
         self.assertEqual(self.url_open("/web/content?id=999999999").status_code, 404)
 
     def test_01d_asset_nocache_is_coerced(self):
-        # a versioned URL: an "any" one names whichever build is current and is
-        # never cached, so it cannot show what nocache takes away
         version = (
             self.env["ir.qweb"]._get_asset_bundle("web.assets_web").get_version("css")
         )

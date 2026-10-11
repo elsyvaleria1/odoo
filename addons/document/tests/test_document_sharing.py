@@ -58,7 +58,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         cls.internal_user.email = "internal_doc_sharing@example.com"
 
     def set_documents_env_user_to_current(self):
-        """Helper to ensure the env of the test documents are self.env.user (to work with @users decorator)."""
         self.manager_doc = self.manager_doc.with_user(self.env.user)
         self.user_doc = self.user_doc.with_user(self.env.user)
         self.manager_doc_shortcut = self.manager_doc_shortcut.with_user(self.env.user)
@@ -68,7 +67,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @staticmethod
     def form_get_access_edit(form, partner):
-        """Get a sub-form of the form to edit the share_access_id of the given partner."""
         access_idx = next(
             idx
             for idx, a in enumerate(form.share_access_ids._records)
@@ -81,7 +79,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         return Sharing.browse([Sharing.action_open(documents.ids)["res_id"]])
 
     def assert_open_wizard(self, action, documents):
-        """Assert the action will open the wizard with the given documents and return the wizard instance."""
         res_id = action["res_id"]
         document0 = documents[0]
         self.assertEqual(
@@ -109,7 +106,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @freeze_time("2025-02-26 15:02:00")
     def test_filtered_relevant_access(self):
-        """Check filtered_relevant_access on document access."""
         YESTERDAY = fields.Datetime.now() - timedelta(days=1)
         TOMORROW = fields.Datetime.now() + timedelta(days=1)
         user_doc2 = self.env["res.users"].create(
@@ -132,23 +128,21 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
                         self.doc_user,
                         "edit",
                         False,
-                    ),  # should be ignored as doc_user is the owner
+                    ),
                     (user_doc2, "edit", TOMORROW),
                     (self.document_manager, "edit", False),
                     (
                         self.internal_user,
                         "view",
                         YESTERDAY,
-                    ),  # should be ignored as expired
+                    ),
                 )
             },
             access_via_link="view",
         )
-        # a portal user's visit is the log's, not a grant
         self.env["document.access.log"]._log(
             self.document_gif, self.portal_user.partner_id, "view"
         )
-        # the owner's role is not written: it already reaches the document
         self.assertEqual(len(self.document_gif.access_ids), 3)
         self.assertEqual(self.document_gif.owner_id, self.doc_user)
 
@@ -167,9 +161,7 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_warning_self_access_loss(self):
-        """The wizard warns when pending rights would strip the editor's own access."""
         self.set_documents_env_user_to_current()
-        # Manager-owned doc: doc_user has an edit membership, no internal/link access.
         doc = self.manager_doc
         doc.sudo().action_update_access_rights(
             access_internal="none",
@@ -177,19 +169,15 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
             partners={self.doc_user.partner_id: ("manage", False)},
         )
         with Form(self.create_documents_sharing(doc)) as form:
-            # Keeping the membership -> no warning.
             self.assertFalse(form.has_warning_self_access_loss)
-            # Removing the editor's own membership -> they would lose all access.
             with self.form_get_access_edit(form, self.doc_user.partner_id) as line:
                 line.is_deleted = True
             self.assertTrue(form.has_warning_self_access_loss)
-            # Restoring an access path (internal view) clears the warning.
             form.access_internal = "write_view"
             self.assertFalse(form.has_warning_self_access_loss)
 
     @users("documents@example.com")
     def test_init_multi_owners(self):
-        """Test that the owner isn't shown when all the doc doesn't have the same owner (but well in the accesses)."""
         self.set_documents_env_user_to_current()
         user_doc_copy = self.user_doc.copy(default={"owner_id": False})
         self.assertEqual(self.user_doc.owner_id, self.doc_user)
@@ -220,7 +208,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
             )
 
     def test_init_with_log_and_owner(self):
-        """Test that the owner and visits are not shown as document members."""
         doc = self.manager_doc
         self.assertFalse(doc.access_ids.filtered("partner_id"))
         self.env["document.access.log"]._log(doc, self.internal_user.partner_id, "view")
@@ -232,7 +219,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
             partners={self.internal_user.partner_id: ("view", False)}
         )
         doc.owner_id = False
-        # the previous owner keeps an edit grant
         with Form(self.create_documents_sharing(doc)) as form:
             self.assertEqual(
                 {
@@ -247,7 +233,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_invite_members(self):
-        """Test invitation."""
         DocumentsSharing = self.env["wizard.document.document.share"]
         self.set_documents_env_user_to_current()
         doc = self.user_doc
@@ -338,7 +323,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_invite_missing_email_notification_warning(self):
-        """Test partner email missing notification warning."""
         self.set_documents_env_user_to_current()
         self.partner_without_user.email = False
         doc_sharing = self.create_documents_sharing(self.user_doc)
@@ -351,7 +335,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_invite_no_partner_notification_warning(self):
-        """Test no partner notification warning."""
         self.set_documents_env_user_to_current()
         self.partner_without_user.email = False
         action = self.create_documents_sharing(self.user_doc).action_invite_members()
@@ -361,10 +344,8 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_invite_warning_partners_without_access(self):
-        """Test the warning about sharing documents to external partners without access (without user)."""
         self.set_documents_env_user_to_current()
         (self.user_doc | self.manager_doc).sudo().access_internal = "edit"
-        # inviting is managing (decision C1): the owner lets this user manage
         self.manager_doc.sudo().action_update_access_rights(
             partners={self.doc_user.partner_id: ("manage", False)}
         )
@@ -424,7 +405,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
                         )
 
     def test_open_wizard_with_shortcuts(self):
-        """Test that open sharing wizard on shortcuts open the wizard on the target of the shortcut."""
         DocumentSharing = self.env["wizard.document.document.share"]
         self.assert_open_wizard(
             DocumentSharing.action_open(self.user_doc_shortcut.ids), self.user_doc
@@ -444,7 +424,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_readonly(self):
-        """Test that the form is read-only when the user doesn't manage all the selected documents"""
         self.set_documents_env_user_to_current()
         self.assertTrue(self.create_documents_sharing(self.manager_doc).is_readonly)
         self.assertFalse(self.create_documents_sharing(self.user_doc).is_readonly)
@@ -468,13 +447,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
     def check_update_access_right(
         self, doc_main, doc_other=None, doc_child=None, must_propagate=False
     ):
-        """Check update rights using the wizard.
-
-        :param doc_main: The main document or folder on which the update is performed.
-        :param doc_other: The other document or folder on which the update is performed.
-        :param doc_child: Child of doc_main if defined. In that case doc_main must be a folder.
-        :param must_propagate: whether to check if the update performed on doc_main is propagated to doc_child.
-        """
         doc_child = doc_child or self.env["document.document"]
         doc_main = doc_main or self.env["document.document"]
         doc_other = doc_other or self.env["document.document"]
@@ -500,11 +472,9 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
             no_propagation=True,
         )
 
-        # Check update a member right
         action = self.env["wizard.document.document.share"].action_open(documents.ids)
         doc_sharing = self.assert_open_wizard(action, documents)
         form = Form(doc_sharing)
-        # Check initialization
         self.assertFalse(doc_sharing.is_access_modified)
         self.assertEqual(form.owner_id, self.doc_user)
         self.assertEqual(
@@ -514,7 +484,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         self.assertEqual(form.access_internal, "none")
         self.assertEqual(form.access_via_link, "none")
         self.assertEqual(form.access_via_link_mode, "link_required")
-        # Update and check modification
         with self.form_get_access_edit(form, portal_partner) as access_edit_form:
             access_edit_form.role = "write_edit"
         self.assertTrue(form.is_access_modified)
@@ -541,12 +510,10 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
             "a grant on a folder is not copied below it",
         )
 
-        # Check change multiple values and remove a member
         doc_other.access_via_link = "view"
         doc_other.is_access_via_link_hidden = False
         doc_sharing = self.create_documents_sharing(documents)
         form = Form(doc_sharing)
-        # Check initialization
         self.assertFalse(form.is_access_modified)
         self.assertEqual(
             {s["partner_id"]: s["role"] for s in form.share_access_ids._records},
@@ -560,8 +527,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         self.assertEqual(
             form.access_via_link_mode, "link_required" if is_single_doc else "mixed"
         )
-        # Update and check modification
-        # Expiration is only supported with single document selection
         expiration_date = (
             fields.Datetime.now() + relativedelta(days=1, hour=11)
             if is_single_doc
@@ -612,14 +577,12 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
                 {portal_partner_2: "edit"},
             )
         self.assertEqual(set(docs_to_check.mapped("access_via_link")), {"view"})
-        # No propagation for is_access_via_link_hidden
         self.assertEqual(set(documents.mapped("is_access_via_link_hidden")), {False})
         if doc_child:
             self.assertEqual(set(doc_child.mapped("is_access_via_link_hidden")), {True})
 
     @users("dtdm")
     def test_update_access_rights_expiration_date(self):
-        """Test that expiration are unaltered when updating rights on multiple documents."""
         self.set_documents_env_user_to_current()
         expiration_date = fields.Datetime.now() + relativedelta(days=1, hour=11)
         self.manager_doc.action_update_access_rights(
@@ -658,7 +621,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("dtdm")
     def test_update_access_rights_of_owners(self):
-        """Test modifying member access of partner that owns some of the selected documents."""
         DocumentsSharing = self.env["wizard.document.document.share"]
         self.set_documents_env_user_to_current()
         self.assertFalse(self.user_doc.access_ids.filtered("partner_id"))
@@ -688,7 +650,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         doc_sharing = self.create_documents_sharing(self.user_doc | self.manager_doc)
         with Form(doc_sharing) as form:
             self.assertFalse(form.owner_id)
-            # the owner manages their own document; the other one they edit
             self.assertEqual(
                 self.form_get_access_edit(form, self.doc_user.partner_id).role, "mixed"
             )
@@ -705,7 +666,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_update_access_rights_multi_mixed(self):
-        """Test access rights edition on a documents and a folder."""
         self.set_documents_env_user_to_current()
         self.check_update_access_right(
             self.folder_b,
@@ -716,7 +676,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_update_access_rights_multi_folders(self):
-        """Test access rights edition on multiple folders."""
         self.set_documents_env_user_to_current()
         self.check_update_access_right(
             self.folder_b,
@@ -727,19 +686,16 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_update_access_rights_multi_documents(self):
-        """Test access rights edition on multiple documents."""
         self.set_documents_env_user_to_current()
         self.check_update_access_right(self.user_doc, self.user_doc.copy())
 
     @users("documents@example.com")
     def test_update_access_rights_single_document(self):
-        """Test access rights edition on a single document."""
         self.set_documents_env_user_to_current()
         self.check_update_access_right(self.user_doc)
 
     @users("documents@example.com")
     def test_update_access_rights_single_folder(self):
-        """Test access rights edition on a single folder."""
         self.set_documents_env_user_to_current()
         self.check_update_access_right(
             self.folder_b, doc_child=self.document_gif, must_propagate=True
@@ -747,7 +703,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
 
     @users("documents@example.com")
     def test_update_access_rights_warning_link_with_more_rights(self):
-        """Test the warning about sharing documents with more rights when having the link than the internal users."""
         self.set_documents_env_user_to_current()
         for documents in (self.user_doc, self.user_doc.copy() | self.user_doc.copy()):
             with self.subTest(documents=documents):
@@ -790,8 +745,6 @@ class TestDocumentsSharing(TransactionCaseDocuments, MockEmail):
         self.assertEqual(self.manager_doc.sudo().access_token, old_token)
 
     def test_an_editor_who_does_not_manage_cannot_move_the_link(self):
-        # rotating the link or pushing its expiry decides who can open the
-        # document, as its role does: an edit grant is not enough for either
         self.manager_doc.action_update_access_rights(
             access_via_link="view",
             partners={self.doc_user_2.partner_id: ("edit", False)},

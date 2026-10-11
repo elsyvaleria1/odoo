@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 import contextlib
 import itertools
 import logging
@@ -11,20 +10,12 @@ from odoo.addons.account.tests.common_report_engine import TestAccountReportsCom
 
 _logger = logging.getLogger(__name__)
 syscohada_coas = [country_code.lower() for country_code in SYSCOHADA_LIST]
-# `.lower()`, not `.lower`: without the call every entry formatted the bound method
-# itself ('<built-in method lower of str object at 0x...>_syscebnl'), matching no chart
-# template. Line 571 filters the CoAs to test by `chart_template_refs`, so the garbage
-# list excluded every one of them and the syscebnl balance sheet was asserted for none
-# of these 17 countries.
 syscebnl_coas = [f"{country_code.lower()}_syscebnl" for country_code in SYSCOHADA_LIST]
 
 
-# === Set this variable to something truthy if you want the test to identify any incorrectly-referenced accounts for you. === #
 IDENTIFY_INCORRECT_ACCOUNTS = False
-# === Set this to True (if the above is set to True) if you want the test to show you journal entries for reproducing the imbalance === #
 EXTRA_DETAIL = False
 
-# === When creating a new Balance Sheet, please add its config here. === #
 """ Example config:
 REPORT_CONFIG = {
     <Balance Sheet report xmlid> : {
@@ -167,7 +158,7 @@ REPORT_CONFIG = {
     "l10n_hr_reports.l10n_hr_balance_sheet": {
         "asset_line_ref": "l10n_hr_reports.account_financial_report_hr_active_title0",
         "liability_line_ref": "l10n_hr_reports.account_financial_report_hr_passif_title0",
-        "chart_template_refs": ["hr"],  # don't test the hr_kuna CoA anymore (obsolete)
+        "chart_template_refs": ["hr"],
     },
     "l10n_hu_reports.l10n_hu_balance_sheet": {
         "asset_line_ref": "l10n_hu_reports.l10n_hu_balance_sheet_assets",
@@ -363,9 +354,6 @@ REPORT_CONFIG = {
     },
 }
 
-# === If some accounts should be excluded from the testing, specify them here === #
-# Accounts starting with 99 are excluded anyway: users should change their codes
-# to something sensible in order for them to be taken into account in the Balance Sheet.
 """
 NON_TESTED_ACCOUNTS = {
     <chart template ref>: [account_code_1, account_code_2, ...]
@@ -373,8 +361,8 @@ NON_TESTED_ACCOUNTS = {
 """
 NON_TESTED_ACCOUNTS = {
     "all": [
-        "99",  # 99 account codes are placeholders and should normally be changed by the user.
-        "123456",  # hr.payroll creates an account 123456 Account Payslip Houserental for demo companies; don't test it
+        "99",
+        "123456",
     ],
     **{coa: ["13"] for coa in syscohada_coas},
     "at": ["98"],
@@ -456,8 +444,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
 
     @classmethod
     def setup_independent_user(cls):
-        # OVERRIDE: let the user have access to all existing companies.
-        # This allows us to use demo companies for a significant speedup.
         cls.existing_companies = cls.env["res.company"].search([])
         return new_test_user(
             cls.env,
@@ -473,11 +459,9 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
 
     @classmethod
     def setup_independent_company(cls):
-        # OVERRIDE: Don't create an independent company by default
         pass
 
     def test_balance_sheet_balanced(self):
-        """Check whether every Balance Sheet of every installed CoA is balanced."""
         installed_modules = self.env["ir.module.module"].search(
             [("state", "=", "installed")]
         )
@@ -490,7 +474,7 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             not in (
                 "syscohada",
                 "syscebnl",
-            )  # Syscohada template is visible but deprecated since odoo#163350
+            )
         ]
 
         self.existing_companies = self.env["res.company"].search([])
@@ -502,7 +486,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
                 contextlib.closing(self.env.cr.savepoint(flush=False)),
                 self.subTest(CoA=coa),
             ):
-                # === 1. Set-up localization === #
                 available_reports, aml_pairs, accounts_by_aml = (
                     self._set_up_localization(
                         coa, post_lines=not IDENTIFY_INCORRECT_ACCOUNTS
@@ -512,16 +495,13 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
                     "ANALYZE account_account, account_move, account_move_line"
                 )
 
-                # Test each of the Balance Sheet reports available for the CoA.
                 for report in available_reports:
                     report_ref = report.get_external_id()[report.id]
                     with self.subTest(Report=report_ref):
                         _logger.info("Testing report %s with CoA %s", report_ref, coa)
 
-                        # === 2. Set-up report === #
                         report_setup_data = self._set_up_report(report)
 
-                        # === 3. Test that the report is balanced with both the debits journal entry and the credits journal entry. === #
                         if not IDENTIFY_INCORRECT_ACCOUNTS:
                             self._check_balance_sheet_balanced(
                                 report_setup_data, aml_pairs
@@ -545,23 +525,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
                                 self.fail("Balance Sheet not balanced.")
 
     def _set_up_localization(self, coa, post_lines=False):
-        """Set up a localization for testing.
-
-        This identifies the company to use (creating it if needed),
-        sets self.env.company to it, and generates AMLs for testing.
-
-        If a (demo) company already exists with the CoA, we'll just use it
-        rather than create a new company and load a new CoA for it.
-
-        :param str coa: code of the Chart of Accounts template to install
-        :param bool post_lines: whether to post the generated move lines
-
-        :return: (available_reports, aml_pairs, accounts_by_aml), where:
-            * available_reports are the reports that can be tested for this localization
-            * aml_pairs is a list of (aml_id, counterpart_aml_id) that were generated
-            * accounts_by_aml is a map {aml_id: account_id} for the generated AMLs
-        """
-        # Always reset company, as the one used in the previous subtest might not exist anymore
         self.env = self.env(
             context=dict(
                 self.env.context, allowed_company_ids=self.existing_companies[0].ids
@@ -603,7 +566,7 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             self.__class__.chart_template = coa
             company_data = self.setup_other_company(
                 name="company_3"
-            )  # This uses cls.chart_template to load the right CoA
+            )
             self.env = self.env(
                 context=dict(
                     self.env.context, allowed_company_ids=company_data["company"].ids
@@ -616,7 +579,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             coa_setup_data["income_account"] = company_data["default_account_revenue"]
             coa_setup_data["journal"] = company_data["default_journal_misc"]
 
-        # Find the available Balance Sheets for the current company.
         generic_balance_sheet = self.env.ref("account.balance_sheet").with_company(
             self.env.company
         )
@@ -629,7 +591,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
         ]
         available_reports = self.env["report.formula"].browse(available_report_ids)
 
-        # Don't test Balance Sheets for which the REPORT_CONFIG specifies a chart_template_refs that differs from this CoA.
         available_report_refs = available_reports.get_external_id()
         report_ids_to_skip = [
             id_
@@ -640,9 +601,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
         available_reports -= self.env["report.formula"].browse(report_ids_to_skip)
         available_reports = available_reports.with_company(self.env.company)
 
-        # Choose an account to be a counterpart account. Every AML we generate will have a counterpart in this account.
-        # We use the Accounts Receivable account (which in general should be well-configured.)
-        # However, if the Balance Sheet is incorrect for the counterpart account, the test will give weird results.
         tested_accounts_domain = [
             ("company_ids", "=", self.env.company.id),
             ("internal_group", "!=", "off_balance"),
@@ -654,7 +612,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             tested_accounts - coa_setup_data["counterpart_account"]
         )
 
-        # Create two test journal entries: one with debits in each account (other than the counterpart account), the other with credits.
         debit_move_aml_pairs, debit_accounts_by_aml = (
             self._create_balance_sheet_test_move(coa_setup_data, post_lines=post_lines)
         )
@@ -670,19 +627,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
         return available_reports, aml_pairs, accounts_by_aml
 
     def _set_up_report(self, report):
-        """Set-up a Balance Sheet report for testing.
-
-        :param report.formula report: the Balance Sheet report to set-up
-        :return: report_setup_data, holding the following keys:
-            * report_ref: the XMLID of the report currently being tested
-            * report: the report currently being tested
-            * report_options: the report options for the test
-            * report_column_balance_idx: the index of the column containing the balance
-            * asset_line: the Total Assets report line
-            * liability_line: the Total Liabilities report line
-            * equity_line: the Total Equity report line (None if not separate from Liabilities)
-        :rtype: dict
-        """
         report_setup_data = {"report": report}
 
         report_ref = report.get_external_id()[report.id]
@@ -700,7 +644,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             report, False, fields.Date.to_date(report_setup_data["report_date"])
         )
 
-        # Find the report column containing the total figures.
         for idx, col in enumerate(report_setup_data["report_options"]["columns"]):
             if col["expression_label"] in report_config.get(
                 "balance_col_label", "balance"
@@ -728,19 +671,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
     def _create_balance_sheet_test_move(
         self, coa_setup_data, create_credits=False, post_lines=False
     ):
-        """Create a journal entry that will be the basis for testing the Balance Sheet.
-        The created journal entry will have one AML in each account in coa_setup_data['tested_accounts'],
-        and corresponding counterpart AMLs in coa_setup_data['counterpart_account'].
-        We create it in SQL to improve performance (since this gets run a lot on runbot).
-
-        :param bool create_credits: If true, the AMLs in the tested accounts get a positive balance
-                                    (debit) and their counterparts a credit; if false, the reverse.
-        :param bool post_lines: If true, the created AMLs will be posted.
-
-        :return: (aml_pairs, accounts_by_aml), where:
-           - aml_pairs is a list of tuples (aml_id, counterpart_aml_id) containing the AMLs of the journal entry that was created.
-           - accounts_by_aml is a map of AML id to account id.
-        """
 
         def get_move_line_sql_create_vals(move, account, balance):
             debit, credit = (balance, 0.0) if balance > 0.0 else (0.0, -balance)
@@ -767,11 +697,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             }
         )
 
-        # For each account, we create 2 AMLs:
-        # - one AML in that account (either a debit or a credit, depending on the create_credits param)
-        # - one counterpart AML in the counterpart account
-        # Careful: create_credits is inverted w.r.t. its name — a positive balance is a debit, so
-        # create_credits=True debits the tested account and credits the counterpart.
         amls_vals = []
         for i, account in enumerate(coa_setup_data["tested_accounts"]):
             balance = self.env.company.currency_id.round(i + 1)
@@ -793,8 +718,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             }
         )
 
-        # Additionally, in one Income/Expense account, create an AML in the previous fiscal year
-        # in order to test the unaffected earnings
         amls_vals += [
             get_move_line_sql_create_vals(
                 move_previous_year, coa_setup_data["income_account"], balance
@@ -804,9 +727,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             ),
         ]
 
-        # Create the AMLs. `execute_values` builds the VALUES rows itself; writing
-        # them as a bare `%s` per row and passing tuples only expands under
-        # psycopg2, and yields `VALUES $1, $2, ...` (a syntax error) on psycopg 3.
         query_columns = ", ".join(amls_vals[0].keys())
 
         self.env["account.move.line"].invalidate_model()
@@ -819,12 +739,10 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             )
         ]
 
-        # Create a map of AMLs to accounts, to avoid having to fetch this info from the DB
         accounts_by_aml = {
             aml_ids[i]: aml_vals["account_id"] for i, aml_vals in enumerate(amls_vals)
         }
 
-        # Group AMLs in account/counterpart pairs
         aml_pairs = []
         for i, _account in enumerate(coa_setup_data["tested_accounts"]):
             aml_id = aml_ids[2 * i]
@@ -834,7 +752,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
         return aml_pairs, accounts_by_aml
 
     def _check_balance_sheet_balanced(self, report_setup_data, aml_pairs):
-        """Check whether the Balance Sheet is balanced."""
         totals = self._get_report_totals(report_setup_data)
         if not totals["is_balanced"]:
             self.fail(f"""
@@ -846,11 +763,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
 
     @contextlib.contextmanager
     def _activate_lines(self, aml_pairs):
-        """On entry: set the 'parent_state' of the specified AMLs to 'posted'.
-        On exit: set the 'parent_state' of these AMLs to 'draft'.
-
-        :param aml_pairs: list of tuples (aml_id, counterpart_aml_id) whose parent_state should be set to 'posted'.
-        """
         aml_ids = tuple(itertools.chain(*aml_pairs))
         self.env["account.move.line"].browse(aml_ids).invalidate_recordset()
         self.env.cr.execute(
@@ -873,7 +785,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
         )
 
     def _get_report_totals(self, report_setup_data):
-        """Get the Assets, Liabilities and Equity totals of the Balance Sheet report."""
 
         def get_line_amount(lines, report_line, balance_column_idx):
             line = next(
@@ -923,20 +834,7 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
     def _identify_incorrect_accounts(
         self, report_setup_data, aml_pairs, accounts_by_aml, bad_account_ids, logging_fn
     ):
-        """Identify accounts that are incorrectly used in the Balance Sheet, using a binary search.
-        This is a recursive function.
 
-        :param dict report_setup_data: the report configuration to test, as built by :meth:`_set_up_report`
-        :param list aml_pairs: list of tuples (aml_id, counterpart_aml_id) to bisect
-        :param dict accounts_by_aml: a map {aml_id: account_id} of the AMLs to test
-        :param set bad_account_ids: account ids already determined to be badly referenced; updated in
-                                    place, and used to avoid testing a bad account twice
-        :param logging_fn: a function called when an account causing an unbalance is found, with
-                           signature (report_setup_data, amls, totals, is_first_call) where `amls`
-                           is the account.move.line recordset of the offending pair
-        """
-
-        # No need to further test AMLs in accounts already determined to be badly referenced.
         aml_pairs = [
             (aml_id, counterpart_aml_id)
             for aml_id, counterpart_aml_id in aml_pairs
@@ -948,10 +846,8 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             totals = self._get_report_totals()
 
         if totals["is_balanced"]:
-            # Valid subtree case. There are no badly-referenced accounts in the subtree, just return (no need to search deeper)
             return
         elif len(aml_pairs) == 1:
-            # Leaf case. This account is badly-referenced: log and return.
             logging_fn(
                 report_setup_data,
                 amls=self.env["account.move.line"].browse(aml_pairs[0]),
@@ -960,7 +856,6 @@ class TestBalanceSheetBalanced(TestAccountReportsCommon):
             )
             bad_account_ids.add(accounts_by_aml[aml_pairs[0][0]])
         else:
-            # Non-leaf case. Some accounts in the subtree are badly-referenced: bisect it into two halves, and check each half.
             middle_index = len(aml_pairs) // 2
             aml_pairs_left = aml_pairs[:middle_index]
             aml_pairs_right = aml_pairs[middle_index:]

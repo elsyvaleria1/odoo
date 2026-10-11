@@ -1,12 +1,4 @@
 def format_partner_address(partner):
-    """Format the partner address values to PayPal address values. When provided, PayPal requires
-    at least a country code, so returns only an email address or an empty dict if partner lacks a
-    `country_id`.
-
-    :param res.partner partner: The relevant partner record.
-    :return: Address values suitable for PayPal processing.
-    :rtype: dict
-    """
     address_vals = {"email_address": partner.email} if partner.email else {}
     if not partner.country_id:
         return address_vals
@@ -26,14 +18,6 @@ def format_partner_address(partner):
 
 
 def format_shipping_address(tx_sudo):
-    """Format the shipping address of the related sales order or invoice to the payload of the API
-    request. If no related sales order or invoice exists, or the address is incomplete, the shipping
-    address is not included.
-
-    :param payment.transaction tx_sudo: The sudoed transaction of the payment.
-    :return: The subset of the API payload that includes the billing and delivery addresses.
-    :rtype: dict
-    """
     address_vals = {}
 
     if "sale_order_ids" in tx_sudo and tx_sudo.sale_order_ids:

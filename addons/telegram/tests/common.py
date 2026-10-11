@@ -51,8 +51,6 @@ def rpc_exposed_methods(records, module_prefix, allowed=frozenset()):
     return exposed
 
 
-# a private chat's command menu goes out through the outbox too: a test about
-# what a person was sent leaves it out
 NOT_A_MENU = ("api_method", "!=", "setMyCommands")
 
 
@@ -61,8 +59,6 @@ class TelegramBotTestCase(TransactionCase):
 
     @contextmanager
     def extra_command(self, command, func=None, tier="unlinked", starts_flow=False):
-        """Make the general handler answer `command` with `func` for the block
-        -- or, `func` omitted, redeclare an existing command's flag."""
         handler = type(self.env["telegram.handler.base"])
         original = handler._telegram_commands
         method = f"_test_{command.strip('/')}_command"
@@ -132,7 +128,6 @@ class TelegramBotTestCase(TransactionCase):
 
     @classmethod
     def _bot_of_another_company(cls, name="Other Company Bot"):
-        """A bot that speaks for a company of its own, not the main one."""
         company = cls.env["res.company"].create({"name": f"{name} Company"})
         return cls.env["telegram.bot"].create(
             {
@@ -183,8 +178,6 @@ class TelegramBotTestCase(TransactionCase):
             },
         )
 
-        # A private chat's id is its person's Telegram user id; the account
-        # is bound to the test user as a session link would bind it.
         cls.test_account = cls.env["telegram.account"].create(
             {"tg_user_id": "12345", "username": "testuser", "first_name": "Test"}
         )
@@ -214,7 +207,6 @@ class TelegramBotTestCase(TransactionCase):
 
     @classmethod
     def _bound_account(cls, tg_user_id, partner, user=None):
-        """The account of Telegram user `tg_user_id`, bound to `partner`."""
         account = cls.env["telegram.account"]._from_telegram(
             {"id": int(tg_user_id), "first_name": partner.name}
         )
@@ -223,8 +215,6 @@ class TelegramBotTestCase(TransactionCase):
 
     @staticmethod
     def _sender_of(chat_id, is_bot=False):
-        """Who writes in a private chat: Telegram gives the chat its person's
-        user id."""
         return {
             "id": int(chat_id) if str(chat_id).lstrip("-").isdigit() else 123,
             "username": "testuser" if str(chat_id) == "12345" else f"user{chat_id}",

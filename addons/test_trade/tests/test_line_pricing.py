@@ -19,19 +19,16 @@ class TestLinePricing(TestTradeOrderCase):
     def test_should_update_when_price_matches_old_auto(self):
         line = self._line(price_unit=100.0)
 
-        # price_unit == old auto -> not a manual override -> update allowed
         self.assertTrue(line._is_price_update_required(120.0, 100.0))
 
     def test_should_not_update_when_manually_overridden(self):
         line = self._line(price_unit=100.0)
 
-        # price_unit (100) != old auto (80) -> manual override -> preserve
         self.assertFalse(line._is_price_update_required(120.0, 80.0))
 
     def test_force_recompute_bypasses_manual_protection(self):
         line = self._line(price_unit=100.0)
 
-        # manual override, but force_recompute wins
         self.assertTrue(
             line._is_price_update_required(120.0, 80.0, force_recompute=True)
         )
@@ -39,7 +36,6 @@ class TestLinePricing(TestTradeOrderCase):
     def test_price_auto_computed_from_hook(self):
         order = self._make_order()
 
-        # No price_unit -> auto price from the hook (product.list_price = 100)
         line = self.env["test_trade.order.line"].create(
             {"order_id": order.id, "product_id": self.product.id}
         )

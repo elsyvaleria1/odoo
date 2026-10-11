@@ -5,11 +5,9 @@ from odoo.modules import get_resource_from_path
 
 from . import lint_case
 
-# no lookaround: the scanner is Rust's regex crate
 BARE_FA_PAT = r"(?m)\.fa(?:[^\w-]|$)"
 BARE_FA_RE = re.compile(BARE_FA_PAT)
 
-# the one place that names the classes: the selector's own definition
 ALLOWED = {"web/static/src/webclient/icons.variables.scss"}
 
 

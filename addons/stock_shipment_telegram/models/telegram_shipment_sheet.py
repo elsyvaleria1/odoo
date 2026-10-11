@@ -12,7 +12,6 @@ from odoo.addons.extract.tools import run as extract
 
 _logger = logging.getLogger(__name__)
 
-# how far back an open transfer is offered for a sheet
 OUT_LOOKBACK = timedelta(days=14)
 IN_LOOKBACK = timedelta(days=30)
 
@@ -30,7 +29,6 @@ class TelegramShipmentSheet(models.Model):
     _rec_name = "tracking_ref"
     _access_anchors = frozendict({"partner": "chat_id.account_id.partner_id"})
 
-    # FIELDS
     bot_id = fields.Many2one(
         comodel_name="telegram.bot",
         required=True,
@@ -86,7 +84,6 @@ class TelegramShipmentSheet(models.Model):
     )
     error_message = fields.Char()
 
-    # BUSINESS METHODS
     @api.model
     def _find_resent(self, chat, file_unique_id):
         if not file_unique_id:
@@ -101,7 +98,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _checksum_seen(self, content):
-        """The sheet already assigned with these same bytes, if any."""
         self.check_singleton()
         self.checksum = hashlib.sha1(content).hexdigest()
         return self.search(
@@ -114,8 +110,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _read_sheet(self, content) -> dict:
-        """The shipping order's fields, read locally: barcode, text layer or
-        OCR, never a paid reader."""
         self.check_singleton()
         document = Document(content, name=self.file_name or "sheet", read_up_to=METERED)
         try:
@@ -125,11 +119,6 @@ class TelegramShipmentSheet(models.Model):
             return {}
 
     def _recognise(self, content) -> None:
-        """Read the sheet and the carrier whose tracking number pattern its
-        number matches.
-
-        :raise SheetRefused: no tracking number, or none a carrier recognises
-        """
         values = self._read_sheet(content)
         reference = (values.get("tracking_ref") or "").strip().upper()
         if not reference:
@@ -163,12 +152,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _candidates(self, incoming=False, digits=None):
-        """The open transfers this sheet may go on, the ones already carrying
-        its number first: deliveries of its carrier or none, or receipts when
-        the carrier brings a purchase.
-
-        :param str digits: keep only the transfers whose name ends in them
-        """
         self.check_singleton()
         lookback = IN_LOOKBACK if incoming else OUT_LOOKBACK
         domain = [
@@ -189,11 +172,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _more_candidates(self, digits=None):
-        """The open transfers of the same kind this assigned sheet's number
-        may also go on: one shipment often carries several transfers.
-
-        :param str digits: keep only the transfers whose name ends in them
-        """
         self.check_singleton()
         incoming = self.picking_id.picking_type_code == "incoming"
         return self._candidates(incoming=incoming, digits=digits).filtered(
@@ -204,8 +182,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _sibling(self):
-        """A pending copy of this sheet, to put its number on one more
-        transfer: each transfer keeps its own record of the sheet."""
         self.check_singleton()
         return self.create(
             {
@@ -222,13 +198,6 @@ class TelegramShipmentSheet(models.Model):
         )
 
     def _assign(self, picking, content) -> list:
-        """Put the sheet's tracking number and carrier on ``picking`` and keep
-        the sheet on its chatter.
-
-        :return: lines for the reply, what other modules added included
-        :rtype: list
-        :raise SheetRefused: the transfer carries another tracking number
-        """
         self.check_singleton()
         current = (picking.carrier_tracking_ref or "").strip().upper()
         if current and current != self.tracking_ref:
@@ -246,7 +215,6 @@ class TelegramShipmentSheet(models.Model):
                 "carrier_tracking_ref": self.tracking_ref,
             }
         )
-        # the chatter speaks the company's language, not the sender's
         company_lang = picking.company_id.partner_id.lang
         picking.with_context(lang=company_lang).message_post(
             body=picking.with_context(lang=company_lang).env._(
@@ -264,12 +232,6 @@ class TelegramShipmentSheet(models.Model):
         return f"hoja_embarque_{self.tracking_ref}.{extension}"
 
     def _on_shipment_sheet_assigned(self, content) -> list:
-        """Hook once the sheet is on its transfer: other modules act on it.
-
-        :param bytes content: the sheet as sent
-        :return: lines to add to the chat's reply
-        :rtype: list
-        """
         return []
 
     def _refuse(self, reason) -> None:

@@ -698,15 +698,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(job.with_user(other_user).activity_count, 1)
 
     def test_refusing_an_application_of_a_talent_refuses_its_siblings(self):
-        """Driven through the module's own wizards, no field set by hand.
-
-        Pool an applicant, put that talent on a second job, then correct the
-        e-mail on the first application: ``write`` propagates the correction to
-        the talent but not to the sibling application, so the sibling now shares
-        only ``pool_applicant_id`` with the refused one. The wizard offers it as
-        a duplicate and used to have no original to point it at -- a KeyError on
-        an ordinary refusal.
-        """
         job_one, job_two = self.env["hr.job"].create(
             [{"name": "First Job"}, {"name": "Second Job"}]
         )
@@ -766,8 +757,6 @@ class TestRecruitment(TransactionCase):
         self.assertFalse(talent.active)
 
     def test_refusing_a_hand_picked_non_duplicate_does_not_crash(self):
-        """``duplicate_applicant_ids`` is editable, so an unmatched entry is
-        reachable and must degrade to a link-less log, not an exception."""
         job = self.env["hr.job"].create({"name": "Job"})
         original, real_duplicate, unrelated = self.env["hr.applicant"].create(
             [
@@ -809,8 +798,6 @@ class TestRecruitment(TransactionCase):
         self.assertNotIn(unrelated, wizard._get_related_original_applicants())
 
     def test_phone_reaches_the_contact_without_an_email(self):
-        """The inverse is shared by ``email_from`` and ``phone_ids``: gating it
-        on the e-mail dropped every phone edit on an e-mail-less applicant."""
         partner = self.env["res.partner"].create({"name": "Phone Only"})
         applicant = self.env["hr.applicant"].create(
             {"partner_name": "Phone Only", "partner_id": partner.id}
@@ -823,8 +810,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(partner.phone_ids, phone)
 
     def test_a_phone_edit_does_not_rename_the_contact(self):
-        """The phone sync must not drag the name sync onto a path it was never on:
-        ``partner_id`` has no domain, so it can be a contact the recruiter picked."""
         contact = self.env["res.partner"].create(
             {"name": "ACME Corp", "is_company": True}
         )
@@ -840,8 +825,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(contact.name, "ACME Corp")
 
     def test_rewriting_the_same_stage_keeps_the_previous_stage(self):
-        """``last_stage_id`` answers "where did it come from"; a write that
-        moves nothing must not answer "from where it already is"."""
         job = self.env["hr.job"].create({"name": "Job"})
         first, second = self.env["hr.recruitment.stage"].create(
             [
@@ -885,7 +868,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(applicant.application_status, "ongoing")
 
     def test_stage_duration_of_a_refused_application_is_never_negative(self):
-        """The refusal freezes the stage clock; it must not run it backwards."""
         job = self.env["hr.job"].create({"name": "Job"})
         applicant = self.env["hr.applicant"].create(
             {"partner_name": "Applicant", "job_id": job.id}
@@ -909,11 +891,6 @@ class TestRecruitment(TransactionCase):
         )
 
     def test_talent_pool_count_unions_every_matching_key(self):
-        """An applicant can match one talent by e-mail and another by phone.
-
-        The count used to report whichever key was checked first, so a person
-        present in two pools through two talents read as being in one.
-        """
         pool_a, pool_b = self.env["hr.talent.pool"].create(
             [{"name": "Pool A"}, {"name": "Pool B"}]
         )
@@ -955,12 +932,6 @@ class TestRecruitment(TransactionCase):
         self.assertTrue(Job.is_recruitment_scenario_loaded())
 
     def test_a_new_job_is_a_favorite_of_its_creator(self):
-        """``_default_favorite_user_ids`` used to be dead: ``create`` forced the
-        key to ``[]`` before ``super()``, so the default never applied.
-
-        Driven as a real user: ``self.env.user`` is ``__system__``, which is
-        archived, and an archived user is filtered out of the m2m on read.
-        """
         recruiter = self.env["res.users"].create(
             {
                 "name": "Recruiter",
@@ -986,9 +957,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(job.favorite_user_ids, other)
 
     def test_restoring_a_job_restores_the_applications_it_archived(self):
-        """The cascade was one-way: archiving a job archived every running
-        application and un-archiving it restored none, with no record of which
-        ones the cascade had taken."""
         job = self.env["hr.job"].create({"name": "Job"})
         running = self.env["hr.applicant"].create(
             [{"partner_name": f"Running {i}", "job_id": job.id} for i in range(3)]
@@ -1052,8 +1020,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(copied.name, "cv.txt")
 
     def test_recurring_interviews_do_not_each_copy_the_cv(self):
-        """`_apply_recurrence` copies the base event's values, applicant included,
-        so keying the copy on the record alone would duplicate every CV."""
         job = self.env["hr.job"].create({"name": "Job"})
         applicant = self.env["hr.applicant"].create(
             {"partner_name": "Applicant", "job_id": job.id}
@@ -1115,12 +1081,6 @@ class TestRecruitment(TransactionCase):
             "Ada <ada.work@example.com>",
             "the address the applicant wrote from",
         )
-        # This pins behaviour and does NOT discriminate the change it accompanies:
-        # driven against the pre-audit code, which called
-        # `_compute_partner_phone_email()` by hand here, it passes unchanged. That
-        # compute does assign `email_from` from the contact, but the inverse has
-        # already synced the contact to the applicant by then, so the assignment
-        # is a no-op. Replacing the call was a clarity change, not a fix.
 
     def test_job_documents_span_the_job_and_its_unhired_applications(self):
         job, other_job = self.env["hr.job"].create([{"name": "A"}, {"name": "B"}])
@@ -1156,11 +1116,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(job.documents_count, 2)
 
     def test_degrees_come_back_in_the_order_they_were_dragged_into(self):
-        """The degree list ships `widget="handle"`, which writes `sequence`.
-
-        Without `_order` naming it the drag wrote a column nothing read, so the
-        list re-rendered in id order and the reordering silently did nothing.
-        """
         Degree = self.env["hr.recruitment.degree"]
         degrees = Degree.create(
             [
@@ -1177,9 +1132,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(found.mapped("name"), ["First", "Second", "Third"])
 
     def test_degrees_left_at_the_default_sequence_keep_a_stable_order(self):
-        """Every row in an existing database sits at the default sequence, so the
-        interesting case is the tie, not the reordering: a sort key with no
-        tiebreak would order them however the plan happened to come out."""
         Degree = self.env["hr.recruitment.degree"]
         tied = Degree.create([{"name": f"Tied {index}"} for index in range(6)])
         self.env.flush_all()
@@ -1192,16 +1144,6 @@ class TestRecruitment(TransactionCase):
         self.assertTrue(all(order == orders[0] for order in orders))
 
     def test_the_status_filters_agree_with_the_status_field(self):
-        """The search view hand-rolls the four `application_status` states.
-
-        It has to: `application_status` is a computed field with a `search=`, and
-        the ORM decides whether to apply `active_test` from the *raw* domain
-        leaves, so `('application_status', '=', 'archived')` in a filter silently
-        returns nothing. The duplication is therefore load-bearing, which makes
-        it worth a test -- "Hired" used to be `date_closed != False` alone and
-        listed applications that had been refused after reaching a hired stage,
-        under both Hired and Refused at once.
-        """
         job = self.env["hr.job"].create({"name": "Job"})
         hired_stage = self.env["hr.recruitment.stage"].create(
             {"name": "Contract Signed", "sequence": 99, "hired_stage": True}
@@ -1230,7 +1172,6 @@ class TestRecruitment(TransactionCase):
         self.env.flush_all()
         self.env.invalidate_all()
 
-        # read the domains off the view itself, so this fails if the view drifts
         arch = etree.fromstring(
             self.env.ref("hr_recruitment.hr_applicant_view_search_bis").arch
         )
@@ -1268,7 +1209,6 @@ class TestRecruitment(TransactionCase):
         )
 
     def test_pooling_an_applicant_needs_no_elevated_rights(self):
-        """The ordinary path runs on the recruiter's own rights."""
         recruiter = self._recruiter()
         pool = self.env["hr.talent.pool"].create({"name": "Pool"})
         applicant = self.env["hr.applicant"].create(
@@ -1292,13 +1232,6 @@ class TestRecruitment(TransactionCase):
         self.assertEqual(applicant.pool_applicant_id.talent_pool_ids, pool)
 
     def test_pooling_cannot_write_to_a_talent_of_another_company(self):
-        """`_add_applicants_to_pool` used to run entirely as superuser.
-
-        An applicant the recruiter *can* see may carry a `pool_applicant_id`
-        pointing at a talent in a company they cannot, and the elevation wrote to
-        that talent -- putting a record the recruiter cannot read into a pool of
-        their own company.
-        """
         recruiter = self._recruiter()
         other_company = self.env["res.company"].create({"name": "Elsewhere"})
         foreign_pool = self.env["hr.talent.pool"].create(
@@ -1341,18 +1274,6 @@ class TestRecruitment(TransactionCase):
                 }
             )
         )
-        # the write is buffered: the access domain is checked at flush, so a bare
-        # `assertRaises` around the action alone exits before the error is raised
-        # `assertRaises(AccessError)` cannot be used here, and the reason is
-        # worth stating because the obvious test passes against the bug.
-        # `TransactionCase._assertRaises` calls `cr.clear()` whenever the
-        # expected exception is an `AccessError`, and that discards the state
-        # staged before the block -- including this wizard's own `applicant_ids`,
-        # which then reads empty. `_add_applicants_to_pool` iterates nothing, the
-        # dangerous write never happens, and the assertion is vacuous. Measured:
-        # with `cr.clear()` the foreign talent is untouched and no error is
-        # raised; without it the error is raised every time, through either env.
-        # So this asserts the property, which is the stronger claim anyway.
         refused = False
         try:
             wizard.action_add_applicants_to_pool()

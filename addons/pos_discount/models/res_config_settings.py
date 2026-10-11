@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    # pos.config fields
     pos_discount_pc = fields.Float(
         related="pos_config_id.discount_pc",
         readonly=False,

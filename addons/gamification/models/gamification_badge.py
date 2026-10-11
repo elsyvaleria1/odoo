@@ -135,25 +135,9 @@ class GamificationBadge(models.Model):
         help="If a maximum is set",
     )
 
-    # Every column here is "as seen by the acting user": the four stat_* ones
-    # count that user's own sending and receiving, and the owner ones go through
-    # res.users._search, so access domains decide which owners are visible. Merging
-    # the two passes made that one compute, and it has to say so or the cache
-    # serves one user's numbers to the next.
     @api.depends_context("uid")
     @api.depends("owner_ids")
     def _compute_owner_stats(self) -> None:
-        """Fill every per-badge statistic from a single aggregation.
-
-        This was two passes over ``gamification_badge_user`` carrying the same
-        ``@api.depends``, so they always recomputed together and always cost two
-        round-trips to answer one question about one table.
-
-        The owner columns go through ``res.users._search`` so that who you are
-        still decides which owners you can see; the four ``stat_*`` columns are
-        about the acting user's own sending and receiving and need no such
-        scoping.
-        """
         defaults = {
             "granted_count": 0,
             "granted_users_count": 0,
@@ -218,18 +202,10 @@ class GamificationBadge(models.Model):
         "stat_my_monthly_sending",
     )
     def _compute_remaining_sending(self) -> None:
-        """Computes the number of badges remaining the user can send
-
-        0 if not allowed or no remaining
-        integer if limited sending
-        -1 if infinite (should not be displayed)
-        """
         for badge in self:
             if badge._get_badge_grant_status() != self.CAN_GRANT:
-                # if the user cannot grant this badge at all, result is 0
                 badge.remaining_sending = 0
             elif not badge.rule_max:
-                # if there is no limitation, -1 is returned which means 'infinite'
                 badge.remaining_sending = -1
             else:
                 badge.remaining_sending = (
@@ -237,11 +213,6 @@ class GamificationBadge(models.Model):
                 )
 
     def check_granting(self) -> bool:
-        """Check the user 'uid' can grant the badge 'badge_id' and raise the appropriate exception
-        if not
-
-        Do not check for SUPERUSER_ID
-        """
         status_code = self._get_badge_grant_status()
         if status_code == self.CAN_GRANT:
             return True
@@ -266,10 +237,6 @@ class GamificationBadge(models.Model):
         return False
 
     def _get_badge_grant_status(self) -> int:
-        """Check if a user can grant a badge to another user
-
-        :return: integer representing the permission.
-        """
         if self.env.is_admin():
             return self.CAN_GRANT
 
@@ -278,8 +245,6 @@ class GamificationBadge(models.Model):
         elif self.rule_auth == "users" and self.env.user not in self.rule_auth_user_ids:
             return self.USER_NOT_VIP
         elif self.rule_auth == "having":
-            # Ask only about the badges this rule names, instead of loading every
-            # badge the user owns to intersect in Python.
             held = self.env["gamification.badge.user"].search_fetch(
                 [
                     ("user_id", "=", self.env.uid),
@@ -293,5 +258,4 @@ class GamificationBadge(models.Model):
         if self.rule_max and self.stat_my_monthly_sending >= self.rule_max_number:
             return self.TOO_MANY
 
-        # badge.rule_auth == 'everyone' -> no check
         return self.CAN_GRANT

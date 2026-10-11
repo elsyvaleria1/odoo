@@ -56,27 +56,8 @@ class PaymentTransaction(models.Model):
         references_in_use: set[str] | None = None,
         **kwargs,
     ) -> str:
-        """Override of `payment` to satisfy Flutterwave requirements for references.
-
-        Flutterwave requirements for references are as follows:
-        - References must be unique at provider level for a given merchant account. This is
-          satisfied by singularizing the prefix with the current datetime. If two transactions are
-          created simultaneously, `_get_unique_reference` ensures the uniqueness of references by
-          suffixing a sequence number.
-
-        :param str provider_code: The code of the provider handling the transaction
-        :param str prefix: The custom prefix used to compute the full reference
-        :param str separator: The custom separator used to separate the prefix from the suffix
-        :return: The unique reference for the transaction
-        :rtype: str
-        """
         if provider_code == "flutterwave":
             if not prefix:
-                # If no prefix is provided, it could mean that a module has passed a kwarg intended
-                # for the `_get_reference_prefix` method, as it is only called if the prefix is
-                # empty. We call it manually here because singularizing the prefix would generate a
-                # default value if it was empty, hence preventing the method from ever being called
-                # and the transaction from received a reference named after the related document.
                 prefix = self.sudo()._get_reference_prefix(separator, **kwargs) or None
             prefix = payment_utils.singularize_reference_prefix(
                 prefix=prefix, separator=separator
@@ -90,13 +71,6 @@ class PaymentTransaction(models.Model):
         )
 
     def _prepare_provider_processing_values(self, processing_values):
-        """Override of payment to redirect pending token-flow transactions.
-
-        If the financial institution insists on 3-D Secure authentication, this
-        override will redirect the user to the provided authorization page.
-
-        Note: `self.check_singleton()`
-        """
         if not self._filtered_flutterwave_pending_authorizations():
             return super()._prepare_provider_processing_values(processing_values)
 
@@ -108,19 +82,10 @@ class PaymentTransaction(models.Model):
         }
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of payment to return Flutterwave-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific processing values.
-        :rtype: dict
-        """
         res = super()._prepare_redirect_form_values(processing_values)
         if self.provider_code != "flutterwave":
             return res
 
-        # Initiate the payment and retrieve the payment link data.
         base_url = self.provider_id.get_base_url()
         payload = {
             "tx_ref": self.reference,
@@ -148,11 +113,9 @@ class PaymentTransaction(models.Model):
             self._set_error(str(error))
             return {}
 
-        # Extract the payment link URL and embed it in the redirect form.
         return {"api_url": payment_link_data["link"]}
 
     def _send_payment_request(self):
-        """Override of `payment` to send a payment request to Flutterwave."""
         if self.provider_code != "flutterwave":
             return super()._send_payment_request()
 
@@ -184,13 +147,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "flutterwave":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("tx_ref") or payment_data.get("txRef")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "flutterwave":
             return super()._extract_amount_data(payment_data)
 
@@ -202,14 +163,11 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "flutterwave":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         self.provider_reference = payment_data["id"]
 
-        # Update payment method.
         payment_method_type = payment_data.get("payment_type", "")
         if payment_method_type == "card":
             payment_method_type = payment_data.get("card", {}).get("type").lower()
@@ -218,14 +176,12 @@ class PaymentTransaction(models.Model):
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         payment_status = payment_data["status"].lower()
         if payment_status in const.PAYMENT_STATUS_MAPPING["pending"]:
             auth_url = (
                 payment_data.get("meta", {}).get("authorization", {}).get("redirect")
             )
             if auth_url:
-                # will be set back to the actual value after moving away from pending
                 self.provider_reference = auth_url
             self._set_pending()
         elif payment_status in const.PAYMENT_STATUS_MAPPING["done"]:
@@ -250,7 +206,6 @@ class PaymentTransaction(models.Model):
         return None
 
     def _extract_token_values(self, payment_data) -> dict:
-        """Override of `payment` to extract the token values from the payment data."""
         if self.provider_code != "flutterwave":
             return super()._extract_token_values(payment_data)
 
@@ -264,11 +219,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _filtered_flutterwave_pending_authorizations(self) -> Self:
-        """Filter Flutterwave token transactions that are awaiting external authorization.
-
-        :return: Pending transactions awaiting authorization.
-        :rtype: recordset of `payment.transaction`
-        """
         return self.filtered_domain(
             [
                 ("provider_code", "=", "flutterwave"),

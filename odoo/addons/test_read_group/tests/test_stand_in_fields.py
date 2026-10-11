@@ -248,9 +248,6 @@ class TestStandInFields(common.TransactionCase):
             field._check_stand_in_fields(self.Task)
 
     def test_a_sql_hook_carrying_a_parameter_groups_and_orders(self):
-        # the hook's SQL is inlined like every other groupby term; left as a
-        # bound parameter it becomes $1 in SELECT and $2 in GROUP BY, and
-        # PostgreSQL reads those as different expressions
         groups = self.Task._read_group(
             self.domain, ["band"], ["__count", "id:array_agg"], order="band"
         )

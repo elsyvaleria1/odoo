@@ -17,7 +17,6 @@ class LoyaltyCard(models.Model):
         return self._prepare_code()
 
     def _prepare_code(self):
-        """Barcode identifiable codes."""
         return "044" + str(uuid4())[7:-18]
 
     @api.depends("program_id", "code")
@@ -29,18 +28,14 @@ class LoyaltyCard(models.Model):
         comodel_name="loyalty.program",
         default=lambda self: self.env.context.get("active_id", None),
         index="btree_not_null",
-        # Required: a card with no program has no company, no currency and no point
-        # name, and its display name read "False: 044f-d2de-4011".
         required=True,
         ondelete="restrict",
     )
     program_type = fields.Selection(related="program_id.program_type")
-    # TODO probably isn't useful to store this company_id anymore
     company_id = fields.Many2one(
         related="program_id.company_id",
     )
     currency_id = fields.Many2one(related="program_id.currency_id")
-    # Reserved for this partner if non-empty
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         index=True,
@@ -73,7 +68,6 @@ class LoyaltyCard(models.Model):
 
     @api.constrains("code")
     def _check_code(self) -> None:
-        # Prevent a coupon from sharing its code with a program trigger
         if self.env["loyalty.rule"].search_count(
             [("mode", "=", "with_code"), ("code", "in", self.mapped("code"))], limit=1
         ):
@@ -85,8 +79,6 @@ class LoyaltyCard(models.Model):
 
     @api.constrains("expiration_date", "program_id")
     def _check_expiration_date(self) -> None:
-        # A constraint and not an onchange: the onchange this replaces guarded the
-        # form alone, and let `create`/`write`/an import set the date anyway.
         for card in self:
             if card.program_type == "loyalty" and card.expiration_date:
                 raise ValidationError(
@@ -110,11 +102,6 @@ class LoyaltyCard(models.Model):
         return f"{points:.2f} {self.point_name or ''}"
 
     def _compute_use_count(self) -> None:
-        """Count the order lines this card has paid for. Zero without a channel.
-
-        Overridden by `sale_loyalty` and `pos_loyalty`, both with a `_read_group`;
-        see `loyalty.program._compute_total_order_count` for what that costs.
-        """
         self.use_count = 0
 
     def _get_default_template(self):
@@ -132,14 +119,12 @@ class LoyaltyCard(models.Model):
         ).partner_id
 
     def _get_signature(self):
-        """To be overridden."""
         self.check_singleton()
 
     def _has_source_order(self) -> bool:
         return False
 
     def action_coupon_send(self) -> dict:
-        """Open the email composer preloaded with `_get_default_template`."""
         self.check_singleton()
         default_template = self._get_default_template()
         compose_form = self.env.ref("mail.email_compose_message_wizard_form", False)
@@ -163,12 +148,6 @@ class LoyaltyCard(models.Model):
         }
 
     def _plans_per_program(self, trigger) -> dict:
-        """Return the communication plans of each program of these coupons.
-
-        :param str trigger: the `loyalty.mail.trigger` to keep
-        :return: each ``loyalty.program`` mapped to its ``loyalty.mail`` plans for ``trigger``
-        :rtype: dict
-        """
         return {
             program: program.communication_plan_ids.filtered(
                 lambda plan: plan.trigger == trigger
@@ -177,21 +156,13 @@ class LoyaltyCard(models.Model):
         }
 
     def _send_creation_communication(self, force_send=False) -> None:
-        """Send the 'At Creation' communication plans of the given coupons, if any.
-
-        One `send_mail_batch` per (template, author) rather than one `send_mail` per
-        coupon: the coupon-generation wizard's whole purpose is bulk, and a mail per
-        coupon measured about seven queries each.
-        """
         if self.env.context.get("loyalty_no_mail", False) or self.env.context.get(
             "action_no_send_mail", False
         ):
             return
-        # Ideally one plan per program, but multiple is supported
         plans_per_program = self._plans_per_program("create")
         if not any(plans_per_program.values()):
             return
-        # `_mail_get_customer` is `check_singleton`; the batch behind it is not.
         customers = self._mail_get_partners()
         coupons_per_sender = defaultdict(list)
         for coupon in self:
@@ -199,9 +170,6 @@ class LoyaltyCard(models.Model):
                 continue
             for plan in plans_per_program[coupon.program_id]:
                 template = plan.mail_template_id
-                # A template with no `email_from` needs an author to be sent at all,
-                # and the author falls back to the coupon's own company -- so the
-                # coupons are grouped by the author they each resolve to.
                 author = (
                     self.env["res.partner"]
                     if template.email_from
@@ -222,10 +190,6 @@ class LoyaltyCard(models.Model):
             )
 
     def _send_points_reach_communication(self, points_changes) -> None:
-        """Send the 'When Reaching' communication plans for the given coupons.
-
-        When a coupon passes several milestones, only the highest one reached is sent.
-        """
         if self.env.context.get("loyalty_no_mail", False):
             return
         milestones_per_program = {
@@ -237,8 +201,6 @@ class LoyaltyCard(models.Model):
         customers = self._mail_get_partners()
         coupons_per_milestone = defaultdict(list)
         for coupon in self:
-            # Skip cards without milestone, customer or partner, and those that
-            # gained no points
             if (
                 not milestones_per_program[coupon.program_id]
                 or not coupon.partner_id
@@ -257,8 +219,6 @@ class LoyaltyCard(models.Model):
                 coupon_ids, email_layout_xmlid="mail.mail_notification_light"
             )
 
-    # What `res.partner._compute_loyalty_card_count` searches on. Changing any of
-    # them changes some partner's count.
     _PARTNER_COUNT_FIELDS = frozenset(
         {
             "active",
@@ -270,16 +230,6 @@ class LoyaltyCard(models.Model):
     )
 
     def _invalidate_partner_card_count(self) -> None:
-        """Drop the cached `res.partner.loyalty_card_count`.
-
-        The count is a search, so it has no `@api.depends` to declare and nothing
-        invalidates it: a card created or spent in a transaction was invisible to
-        every later read of the count in that same transaction. Invalidated for the
-        whole model rather than for `self.partner_id`, because the count rolls a
-        partner's children up into it and the ancestors are not known here.
-
-        The field is not stored, so this drops cache entries and issues no query.
-        """
         self.env["res.partner"].invalidate_model(["loyalty_card_count"])
 
     @api.model_create_multi

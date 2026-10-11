@@ -64,13 +64,9 @@ class AppointmentHRGanttTest(AppointmentGanttTestCommon):
 
     @users("apt_manager", "staff_user_bxls")
     def test_gantt_calendar_unavailable(self):
-        """Check that calendar unavailabilities and conflicting meetings are properly computed when grouping by attendees."""
-        # staff user needs to be organizer for read access rights
         self.apt_types.staff_user_ids += self.staff_user_bxls
-        # needs to be part of the appointment types to host them/be listed
         self.apt_types.staff_user_ids += self.user_john
 
-        # inverted time slots over the test interval (0 -> 23)
         appointment_slot_unavailabilities = Intervals(
             [
                 (
@@ -105,7 +101,6 @@ class AppointmentHRGanttTest(AppointmentGanttTestCommon):
             },
         ]
 
-        # clean up between @users subtests
         self.env["calendar.event"].sudo().search(
             [
                 (

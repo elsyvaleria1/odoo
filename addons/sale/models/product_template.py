@@ -88,7 +88,7 @@ class ProductTemplate(models.Model):
                 ._search([("product_tmpl_id", "in", products.ids)])
             )
             so_lines = (
-                self.env["sale.order.line"]  # noqa: E8507 - one query per company; templates sharing one were merged above
+                self.env["sale.order.line"]
                 .sudo()
                 .search_read(
                     [

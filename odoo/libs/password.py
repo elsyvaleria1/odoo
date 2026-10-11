@@ -18,10 +18,6 @@ _SALT_SIZE = 16
 _HASH_SIZE = 64
 HASH_PREFIX = "$pbkdf2-sha512$"
 _MCF_RE = re.compile(r"^\$pbkdf2-sha512\$(\d+)\$([^$]+)\$([^$]+)$")
-# another system's hash, compared as plaintext, would log in with its own text;
-# it is told from a plaintext that merely opens on "$word$" (an admin_passwd
-# such as "$Adm1n$2024") by a known scheme identifier and the fields it carries:
-# modular crypt's "$id$", Django's unprefixed "id$" and LDAP's "{ID}"
 _FOREIGN_HASH_RE = re.compile(
     r"""
     \$(?:1|2[abxy]?|3|5|6|7|y|gy|apr1|sha1|scrypt|bcrypt-sha256|p5k2|scram
@@ -61,7 +57,6 @@ def _pbkdf2_sha512(password: bytes, salt: bytes, rounds: int) -> bytes:
 
 
 def _check_rounds(rounds: object) -> int:
-    # bool is an int, and True would mean a single round
     if not isinstance(rounds, int) or isinstance(rounds, bool):
         raise TypeError(f"pbkdf2_sha512__rounds must be an int, got {rounds!r}")
     if not 0 < rounds <= _MAX_ROUNDS:
@@ -118,8 +113,6 @@ class CryptContext:
         self._schemes = (
             _scheme_names(schemes, "schemes", _SCHEMES) if schemes else [_HASHING]
         )
-        # hash() writes only pbkdf2_sha512, so any other default would rehash
-        # every login into a scheme the context then calls outdated
         if self._schemes[0] != _HASHING:
             raise ValueError(
                 f"the first scheme must be {_HASHING!r}, the one hash() writes"

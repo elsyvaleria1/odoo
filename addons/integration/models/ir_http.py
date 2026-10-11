@@ -23,8 +23,6 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _post_dispatch(cls, response) -> None:
-        # The row is the call: a handler that did not settle it is settled by
-        # the answer it gave.
         admission = getattr(request, "admission", None)
         if admission is not None and not admission.settled:
             status = getattr(response, "status_code", 200)
@@ -43,15 +41,9 @@ class IrHttp(models.AbstractModel):
         receiver_event: str | None = None,
         receiver_refusal: str | None = None,
     ) -> None:
-        # A transaction replay reuses the request, but its admission and bound
-        # refusal renderer belong to the previous environment and attempt.
         request.admission = None
         request.receiver_refusal = None
         cls._auth_method_public()
-        # the request's language is the caller's Accept-Language until
-        # `_pre_dispatch` settles it, and the gate reads translated fields
-        # before that: a language this database lacks (a Telegram WebView's
-        # es-ES where only es_MX is installed) must not refuse the caller
         request.update_context(lang=get_lang(request.env).code)
         if receiver_refusal:
             model_name, _, method = receiver_refusal.partition(":")
@@ -80,7 +72,6 @@ class IrHttp(models.AbstractModel):
                 user_agent=request.httprequest.headers.get("User-Agent"),
                 status_code=404,
             )
-            # Committed, so the row above is kept: nothing else ran.
             raise Refused(
                 404, "Endpoint not found or inactive", "endpoint_not_found", commit=True
             )
@@ -92,8 +83,6 @@ class IrHttp(models.AbstractModel):
         )
         request.admission.extra = extra
         if service_user := gate._inbound_service_user():
-            # the handler runs as the gate's service principal, so what it
-            # writes is attributed to it rather than to the public user
             admission = request.admission
             principal_env = gate._inbound_principal_env(request.env, service_user)
             request.update_env(

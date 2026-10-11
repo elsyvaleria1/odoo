@@ -11,7 +11,7 @@ class PosSelfKiosk(http.Controller):
         website=True,
         sitemap=True,
     )
-    def start_self_ordering(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def start_self_ordering(
         self, config_id=None, access_token=None, table_identifier=None, subpath=None
     ):
         pos_config, _, config_access_token = self._get_entry_config_and_table(
@@ -44,7 +44,7 @@ class PosSelfKiosk(http.Controller):
     @http.route(
         "/pos-self/data/<config_id>", type="jsonrpc", auth="public", website=True
     )
-    def get_self_ordering_data(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_self_ordering_data(
         self, config_id=None, access_token=None, table_identifier=None
     ):
         pos_config, _, config_access_token = self._get_entry_config_and_table(
@@ -55,7 +55,7 @@ class PosSelfKiosk(http.Controller):
         return data
 
     @http.route("/pos-self/relations/<config_id>", type="jsonrpc", auth="public")
-    def get_self_ordering_relations(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_self_ordering_relations(
         self, config_id=None, access_token=None, table_identifier=None
     ):
         pos_config, _, _ = self._get_entry_config_and_table(
@@ -74,7 +74,7 @@ class PosSelfKiosk(http.Controller):
         if access_token:
             config_access_token = True
             pos_config_sudo = (
-                request.env["pos.config"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                request.env["pos.config"]
                 .sudo()
                 .search(
                     [

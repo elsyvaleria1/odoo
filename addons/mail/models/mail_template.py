@@ -302,7 +302,7 @@ class MailTemplate(models.Model):
         domain=[("abstract", "=", False)],
         ondelete="cascade",
     )
-    model = fields.Char(  # noqa: E8529  the column carries mail.template's own read check: computed, related_sudo makes every reader of it bypass the ACL
+    model = fields.Char(
         related="model_id.model",
         string="Related Document Model",
         store=True,
@@ -564,10 +564,6 @@ class MailTemplate(models.Model):
     def _probe_rendering_samples(
         self, fnames: Collection[str], render_options: dict | None
     ) -> None:
-        # as the user saving the template: a render as the superuser would run
-        # what they wrote with rights they do not hold (unrestricted, since
-        # is_admin() is true under sudo), and the probe is only meant to predict
-        # what rendering does for them
         samples = self._get_rendering_samples()
         if not samples:
             return
@@ -603,7 +599,7 @@ class MailTemplate(models.Model):
                 or not self.env[model].has_access("read")
             ):
                 continue
-            if record := self.env[model].search([], limit=1):  # noqa: E8507  the loop is over distinct models, not records: one sample row per table
+            if record := self.env[model].search([], limit=1):
                 samples[model] = record
         _debug.perf.count(
             "rendering_samples", templates=self.ids, models=sorted(samples)

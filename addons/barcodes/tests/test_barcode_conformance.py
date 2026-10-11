@@ -19,13 +19,6 @@ VECTORS_OPENING = "JSON.parse(String.raw`"
 
 
 def load_vectors():
-    """Parse the golden vectors out of the ES module both runtimes share.
-
-    The file is a JS module so the HOOT suite can import it, and its payload is
-    a JSON string in a template literal so this side needs no JS engine -- and,
-    unlike an object literal, oxfmt leaves it alone instead of unquoting the
-    keys into something ``json.loads`` rejects.
-    """
     source = Path(file_path(VECTORS_PATH)).read_text(encoding="utf-8")
     start = source.index(VECTORS_OPENING) + len(VECTORS_OPENING)
     return json_loads(source[start : source.index("`", start)])
@@ -53,7 +46,6 @@ class TestBarcodeConformance(common.TransactionCase):
         return nomenclature
 
     def test_conformance_vectors(self):
-        """Every nomenclature vector parses to the documented result."""
         for case in self.vectors["cases"]:
             nomenclature = self._build_nomenclature(case)
             for expectation in case["expected"]:
@@ -70,7 +62,6 @@ class TestBarcodeConformance(common.TransactionCase):
                         )
 
     def test_conformance_uri_vectors(self):
-        """Every EPC URI vector decodes to the documented list of parts."""
         nomenclature = self.env["barcode.nomenclature"].create({"name": "uri"})
         for case in self.vectors["uri_cases"]:
             barcode = case["barcode"]

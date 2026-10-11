@@ -23,7 +23,6 @@ class MrpBom(models.Model):
         return action
 
     def _get_child_boms(self, checked_ids=False):
-        """Return self + all child boms."""
         if not checked_ids:
             checked_ids = OrderedSet()
         checked_ids |= self.ids

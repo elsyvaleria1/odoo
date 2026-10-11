@@ -870,11 +870,6 @@ class TestMergePartnerIdentifiers(TransactionCase):
         )
 
     def test_a_reference_pair_with_an_unstored_model_field_is_skipped(self):
-        # `automation.rule.trg_field_ref` is stored while the model_field it
-        # names, `trg_field_ref_model_name`, is computed and unstored. Since
-        # the pair is found with a domain over that model_field, including it
-        # raised "Cannot convert ... to SQL because it is not stored" and took
-        # every partner merge on a database carrying `automation` with it.
         wizard = self.env["wizard.res.partner.merge"].create({})
         for (
             model_name,

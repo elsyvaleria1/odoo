@@ -43,7 +43,6 @@ class TestKarmaIntegrity(common.TransactionCase):
         )
 
     def test_batch_create_accumulates(self):
-        """Several rows for one user in a single create() must all count."""
         user = self._user("karma_batch")
         self.env.flush_all()
         self.Tracking.create(
@@ -54,7 +53,6 @@ class TestKarmaIntegrity(common.TransactionCase):
         self.assertEqual(user.karma, 15, "Both rows of a batch must be counted")
 
     def test_backdated_row_still_counts(self):
-        """A row inserted with an older tracking_date must not be swallowed."""
         user = self._user("karma_backdate")
         user.karma = 150
         self.env.flush_all()
@@ -72,8 +70,6 @@ class TestKarmaIntegrity(common.TransactionCase):
         self.assertEqual(user.karma, 175, "Backdated gains must still apply")
 
     def test_consolidation_preserves_pending_recompute(self):
-        """Consolidating must not discard a karma recompute pending in the
-        same transaction."""
         user = self._user("karma_consol")
         self.env.flush_all()
         old = fields.Datetime.now() - timedelta(days=70)
@@ -91,7 +87,6 @@ class TestKarmaIntegrity(common.TransactionCase):
         )
 
     def test_consolidation_is_karma_neutral(self):
-        """CONTROL: consolidation alone changes no karma."""
         user = self._user("karma_neutral")
         self.env.flush_all()
         old = fields.Datetime.now() - timedelta(days=70)
@@ -161,7 +156,6 @@ class TestGoalStateMachine(common.TransactionCase):
         self.assertTrue(goal.closed)
 
     def test_expired_goal_fails_when_value_changed(self):
-        """CONTROL: the path that always worked still works."""
         goal = self._goal(
             self._definition("result = 5"),
             target=100,
@@ -181,7 +175,6 @@ class TestGoalStateMachine(common.TransactionCase):
         self.assertEqual(goal.state, "inprogress")
 
     def test_goal_becomes_reached(self):
-        """CONTROL: crossing the target still sets reached."""
         goal = self._goal(
             self._definition("result = 150"), target=100, current=0, end_date=False
         )
@@ -189,7 +182,6 @@ class TestGoalStateMachine(common.TransactionCase):
         self.assertEqual(goal.state, "reached")
 
     def test_draft_goal_untouched_by_recomputation(self):
-        """A draft goal must not be auto-started by an update."""
         goal = self._goal(
             self._definition("result = 150"),
             target=100,
@@ -227,7 +219,6 @@ class TestMentorshipSecurity(common.TransactionCase):
         )
 
     def test_employee_cannot_set_own_payout(self):
-        """Reward fields are manager-only, so the amount is never attacker-set."""
         with self.assertRaises(AccessError):
             self.env["gamification.mentorship"].with_user(self.attacker).create(
                 {
@@ -238,7 +229,6 @@ class TestMentorshipSecurity(common.TransactionCase):
             )
 
     def test_mentor_cannot_complete_own_mentorship(self):
-        """Completion pays the mentor, so the mentor may not trigger it."""
         mentorship = self.env["gamification.mentorship"].create(
             {"mentor_id": self.attacker.id, "mentee_id": self.victim.id}
         )
@@ -247,7 +237,6 @@ class TestMentorshipSecurity(common.TransactionCase):
             mentorship.with_user(self.attacker).action_complete()
 
     def test_mentee_can_complete_and_mentor_is_paid(self):
-        """CONTROL: the legitimate path still works and still pays."""
         mentorship = self.env["gamification.mentorship"].create(
             {
                 "mentor_id": self.attacker.id,
@@ -263,10 +252,6 @@ class TestMentorshipSecurity(common.TransactionCase):
         self.assertEqual(self.attacker.karma, before + 100)
 
     def test_mentor_cannot_confirm_own_pending_mentorship_by_direct_write(self):
-        """`state` carries no readonly/groups=, so nothing at the ORM layer
-        stopped the proposer from writing `state` directly -- bypassing
-        `_check_may_accept()`'s consent gate entirely.
-        """
         mentorship = self.env["gamification.mentorship"].create(
             {"mentor_id": self.attacker.id, "mentee_id": self.victim.id}
         )
@@ -281,9 +266,6 @@ class TestMentorshipSecurity(common.TransactionCase):
         )
 
     def test_sudo_can_still_write_state(self):
-        """CONTROL: action_accept/decline/complete/cancel themselves rely on
-        sudo() to apply the state change after their own checks pass.
-        """
         mentorship = self.env["gamification.mentorship"].create(
             {"mentor_id": self.attacker.id, "mentee_id": self.victim.id}
         )
@@ -291,7 +273,6 @@ class TestMentorshipSecurity(common.TransactionCase):
         self.assertEqual(mentorship.state, "active")
 
     def test_employee_cannot_see_third_party_mentorship(self):
-        """The access domain hides pairings the user is not part of."""
         other_a = (
             self.env["res.users"]
             .with_context(no_reset_password=True)
@@ -318,8 +299,6 @@ class TestMentorshipSecurity(common.TransactionCase):
 class TestStreakCronIdempotency(common.TransactionCase):
     @freeze_time("2026-03-15")
     def test_repeated_cron_runs_are_noops(self):
-        """Running the streak cron repeatedly in one day must not burn
-        freeze days or break a streak."""
         user = (
             self.env["res.users"]
             .with_context(no_reset_password=True)
@@ -339,7 +318,7 @@ class TestStreakCronIdempotency(common.TransactionCase):
                 "date_field_id": self.env["ir.model.fields"]
                 ._get("res.partner", "create_date")
                 .id,
-                "domain": "[('id','=',-1)]",  # never matches
+                "domain": "[('id','=',-1)]",
             }
         )
         Streak = self.env["gamification.streak"]
@@ -420,7 +399,6 @@ class TestStreakTimezone(common.TransactionCase):
         return user
 
     def test_evening_work_west_of_utc_counts_same_day(self):
-        """UTC-6, Monday 19:00 local (Tuesday 01:00 UTC) is Monday activity."""
         user = self._user_with_activity(
             "tz_west", "America/Mexico_City", "2026-07-14 01:00:00"
         )
@@ -428,19 +406,16 @@ class TestStreakTimezone(common.TransactionCase):
         self.assertFalse(self.stype._check_user_activity(user, self.tuesday))
 
     def test_early_work_east_of_utc_counts_same_day(self):
-        """UTC+9, Tuesday 07:00 local (Monday 22:00 UTC) is Tuesday activity."""
         user = self._user_with_activity("tz_east", "Asia/Tokyo", "2026-07-13 22:00:00")
         self.assertFalse(self.stype._check_user_activity(user, self.monday))
         self.assertTrue(self.stype._check_user_activity(user, self.tuesday))
 
     def test_user_without_timezone_uses_utc_day(self):
-        """CONTROL: no tz set behaves exactly as before."""
         user = self._user_with_activity("tz_unset", False, "2026-07-13 12:00:00")
         self.assertTrue(self.stype._check_user_activity(user, self.monday))
         self.assertFalse(self.stype._check_user_activity(user, self.tuesday))
 
     def test_batch_check_groups_users_by_timezone(self):
-        """Users in different timezones are bucketed independently in one batch."""
         west = self._user_with_activity(
             "tz_batch_west", "America/Mexico_City", "2026-07-14 01:00:00"
         )
@@ -477,12 +452,10 @@ class TestCronErrorIsolation(common.TransactionCase):
         )
 
     def test_bad_achievement_does_not_block_the_others(self):
-        """A poison trigger_domain must not stop later achievements."""
         user = self._user("ach_isolation")
         partner_model = self.env["ir.model"]._get("res.partner")
         self.env["res.partner"].create({"name": "Isolation Partner"})
 
-        # Ordered by sequence: the broken one is evaluated first.
         self.env["gamification.achievement"].create(
             {
                 "name": "Broken Achievement",
@@ -505,7 +478,6 @@ class TestCronErrorIsolation(common.TransactionCase):
         )
         self.env.flush_all()
 
-        # Must not raise, and must still process the healthy achievement.
         self.env["gamification.achievement"]._cron_check_achievements()
         self.env.flush_all()
 
@@ -518,7 +490,6 @@ class TestCronErrorIsolation(common.TransactionCase):
         )
 
     def test_bad_goal_definition_does_not_block_the_others(self):
-        """A domain naming a dropped field must not stop the challenge cron."""
         user = self._user("goal_isolation")
         partner_model = self.env["ir.model"]._get("res.partner")
         Definition = self.env["gamification.goal.definition"]
@@ -550,7 +521,6 @@ class TestCronErrorIsolation(common.TransactionCase):
                 ],
             }
         )
-        # What a module upgrade leaves behind; write() would reject it.
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE gamification_goal_definition SET domain = %s WHERE id = %s",
@@ -574,7 +544,6 @@ class TestCronErrorIsolation(common.TransactionCase):
 
     @freeze_time("2026-03-15")
     def test_bad_streak_type_does_not_block_the_others(self):
-        """A poison streak domain must not stop later streaks."""
         user_bad = self._user("streak_bad")
         user_good = self._user("streak_good")
         partner_field = self.env["ir.model.fields"]._get("res.partner", "create_date")
@@ -678,7 +647,6 @@ class TestSkillTreeWiring(common.TransactionCase):
         return enrollment
 
     def test_quest_completion_unlocks_linked_node(self):
-        """Completing the quest unlocks the node gated on it."""
         self._complete_quest()
         unlocked = self.env["gamification.skill.node.unlock"].search_count(
             [("node_id", "=", self.root.id), ("user_id", "=", self.user.id)]
@@ -686,7 +654,6 @@ class TestSkillTreeWiring(common.TransactionCase):
         self.assertTrue(unlocked, "Quest-linked skill node must unlock on completion")
 
     def test_unlock_cascades_to_dependents(self):
-        """Unlocking the root satisfies the leaf's only prerequisite."""
         self._complete_quest()
         leaf_unlocked = self.env["gamification.skill.node.unlock"].search_count(
             [("node_id", "=", self.leaf.id), ("user_id", "=", self.user.id)]
@@ -696,15 +663,12 @@ class TestSkillTreeWiring(common.TransactionCase):
         )
 
     def test_unlock_grants_karma(self):
-        """CONTROL: both nodes' karma rewards are actually granted."""
         before = self.user.karma
         self._complete_quest()
         self.user.invalidate_recordset()
-        # quest 0 karma + root 30 + leaf 40
         self.assertEqual(self.user.karma, before + 70)
 
     def test_unlock_is_idempotent(self):
-        """Re-running the unlock must not double-grant."""
         self._complete_quest()
         karma_after_first = self.user.karma
         self.env["gamification.skill.node"]._unlock_nodes_for_quest(
@@ -720,7 +684,6 @@ class TestSkillTreeWiring(common.TransactionCase):
         )
 
     def test_prerequisite_cycle_rejected(self):
-        """A prerequisite cycle must be rejected at write time."""
         a = self.env["gamification.skill.node"].create(
             {"name": "Cycle A", "tree_id": self.tree.id}
         )
@@ -737,7 +700,6 @@ class TestSkillTreeWiring(common.TransactionCase):
 
 class TestNudgeBudget(common.TransactionCase):
     def test_low_progress_user_keeps_nudge_eligibility(self):
-        """Users who receive no nudge must not have their cooldown consumed."""
         definition = self.env["gamification.goal.definition"].create(
             {"name": "Nudge Def", "computation_mode": "manually", "condition": "higher"}
         )
@@ -768,7 +730,6 @@ class TestNudgeBudget(common.TransactionCase):
         self.assertFalse(user.last_gamification_nudge_date)
 
     def test_high_progress_user_is_nudged(self):
-        """CONTROL: a user at 90% is nudged and marked."""
         definition = self.env["gamification.goal.definition"].create(
             {"name": "Nudge Def", "computation_mode": "manually", "condition": "higher"}
         )
@@ -801,7 +762,6 @@ class TestNudgeBudget(common.TransactionCase):
 
 class TestProfilePrivacy(common.TransactionCase):
     def test_user_can_set_own_visibility(self):
-        """The privacy control must be reachable by the person it protects."""
         user = (
             self.env["res.users"]
             .with_context(no_reset_password=True)
@@ -818,8 +778,6 @@ class TestProfilePrivacy(common.TransactionCase):
         self.assertEqual(user.gamification_visibility, "private")
 
     def test_private_user_activity_hidden_from_others(self):
-        """A private profile's activity rows are hidden at the ORM layer, not
-        only inside the curated feed helper."""
         emp = self.env.ref("base.group_user")
         Users = self.env["res.users"].with_context(no_reset_password=True)
         private = Users.create(
@@ -855,7 +813,6 @@ class TestProfilePrivacy(common.TransactionCase):
         self.assertFalse(visible, "Private user's activity must not be readable")
 
     def test_public_user_activity_visible(self):
-        """CONTROL: a public profile's activity remains visible."""
         emp = self.env.ref("base.group_user")
         Users = self.env["res.users"].with_context(no_reset_password=True)
         public = Users.create(
@@ -951,7 +908,6 @@ class TestGoalOutcomeFields(common.TransactionCase):
                 self.goal.with_user(self.employee).write({field_name: value})
 
     def test_lowering_your_own_target_does_not_mint_the_reward(self):
-        """The escalation end to end, through the real nightly cron."""
         with self.assertRaises(UserError):
             self.goal.with_user(self.employee).write({"target_goal": 1})
 
@@ -966,7 +922,6 @@ class TestGoalOutcomeFields(common.TransactionCase):
         )
 
     def test_a_manager_still_can(self):
-        """CONTROL: the guard is about who writes, not about the field."""
         self.goal.write({"target_goal": 5})
         self.assertEqual(self.goal.target_goal, 5)
 
@@ -1028,11 +983,6 @@ class TestQuestOwnership(common.TransactionCase):
         )
 
     def test_the_owner_still_progresses_normally(self):
-        """CONTROL: complete_step sudoes the row it writes, so it still works.
-
-        And it still refuses a step whose prerequisite is unmet -- the check
-        the direct-INSERT hole used to walk straight past.
-        """
         with self.assertRaises(UserError):
             self.enrollment.with_user(self.owner).complete_step(self.step_two)
 
@@ -1106,7 +1056,6 @@ class TestChallengeRetargeting(common.TransactionCase):
         self.assertIn(self.user_b, self.challenge.user_ids)
 
     def test_hand_added_participants_survive_a_retarget(self):
-        """That is what `manual_user_ids` is for."""
         self.challenge.manual_user_ids = [(4, self.user_b.id)]
         self.challenge.user_domain = "[]"
         self.challenge._recompute_challenge_users()
@@ -1156,7 +1105,7 @@ class TestConsolidationPreservesGain(common.TransactionCase):
         rows = self.Tracking.search(
             [("user_id", "=", self.user.id)], order="tracking_date, id"
         )
-        rows[1].write({"old_value": 0})  # the reachable administrative edit
+        rows[1].write({"old_value": 0})
         self.env.flush_all()
         expected = self._gains()
 
@@ -1185,7 +1134,6 @@ class TestConsolidationPreservesGain(common.TransactionCase):
         self.assertEqual(self._gains(), expected)
 
     def test_an_intact_chain_is_untouched(self):
-        """CONTROL: the normal case still collapses to one row, same total."""
         for gain in (10, 20, 30):
             self.user._add_karma(gain, reason="seed")
         self.env.flush_all()
@@ -1230,8 +1178,6 @@ class TestActivityFeedRendersAtReadTime(common.TransactionCase):
         self.assertIn("Renamed Badge", entry["summary"])
 
     def test_a_row_whose_source_is_gone_keeps_its_stored_sentence(self):
-        """CONTROL: `badge_id` is ondelete='set null', so the render must fall
-        back rather than raise or produce a sentence with a hole in it."""
         self.env["gamification.activity"]._log_badge(self.actor, self.badge)
         self.env.flush_all()
         stored = self.env["gamification.activity"].search(
@@ -1263,11 +1209,6 @@ class TestClosedGoalCurrentFrozen(common.TransactionCase):
             email="closed_goal@example.com",
             groups="base.group_user",
         )
-        # Python mode so the employee-run update_goal() below only ever needs
-        # to read `compute_code` (a Char on gamification.goal.definition
-        # itself, readable by group_user) rather than `model_id.model`,
-        # which needs `ir.model` read access a plain employee doesn't have --
-        # an unrelated, pre-existing gap outside this finding's scope.
         cls.definition = cls.env["gamification.goal.definition"].create(
             {
                 "name": "Closed Goal Partners",
@@ -1295,10 +1236,6 @@ class TestClosedGoalCurrentFrozen(common.TransactionCase):
         )
 
     def test_update_goal_does_not_move_current_once_closed(self):
-        # Force a closed goal whose stored `current` disagrees with what a
-        # fresh measurement would produce (`compute_code` always yields 999)
-        # -- exactly the state a goal is in once its period has ended and
-        # its measured value has since moved on.
         self.goal.sudo().write({"state": "failed", "closed": True, "current": 0})
 
         self.goal.with_user(self.employee).update_goal()
@@ -1309,7 +1246,6 @@ class TestClosedGoalCurrentFrozen(common.TransactionCase):
         self.assertTrue(self.goal.closed)
 
     def test_a_still_open_goal_still_updates(self):
-        """CONTROL: the refresh button must keep working for open goals."""
         self.goal.sudo().write({"current": 0})
 
         self.goal.with_user(self.employee).update_goal()
@@ -1382,7 +1318,6 @@ class TestQuestStepCrossQuestGuard(common.TransactionCase):
         self.assertEqual(self.enrollment_a.state, "in_progress")
 
     def test_can_still_complete_its_own_quests_step(self):
-        """CONTROL: the guard must not block the normal, same-quest path."""
         completion = self.enrollment_a.with_user(self.user).complete_step(self.step_a)
         self.assertTrue(completion)
         self.assertEqual(self.enrollment_a.state, "completed")
@@ -1439,9 +1374,6 @@ class TestQuestEnrollmentStateNotDirectlyWritable(common.TransactionCase):
         self.assertEqual(self.enrollment.state, "in_progress")
 
     def test_sudo_can_still_write_state(self):
-        """CONTROL: complete_step/_complete_quest/action_abandon rely on
-        sudo() to apply the state change after their own checks pass.
-        """
         self.enrollment.sudo().write({"state": "abandoned"})
         self.assertEqual(self.enrollment.state, "abandoned")
 
@@ -1500,18 +1432,10 @@ class TestKudosImmutableAfterSend(common.TransactionCase):
                 self.kudos.with_user(self.sender).write({field_name: value})
 
     def test_owner_cannot_edit_sender(self):
-        """sender_id feeds summary exactly like the other frozen fields; a
-        sudo edit must not desync summary from karma_granted/the activity
-        feed/the posted message, which all still name the original sender.
-        """
         with self.assertRaises(UserError):
             self.kudos.with_user(self.sender).write({"sender_id": self.recipient.id})
 
     def test_sudo_sender_edit_desyncs_summary(self):
-        """CONTROL: a sudo() edit is still allowed (imports/migrations), but
-        confirms the desync the frozen field now guards against -- summary
-        re-renders while karma_granted and the activity feed do not.
-        """
         activity = self.env["gamification.activity"].search(
             [
                 ("activity_type", "=", "kudos"),
@@ -1531,7 +1455,6 @@ class TestKudosImmutableAfterSend(common.TransactionCase):
         )
 
     def test_a_sudo_caller_still_can(self):
-        """CONTROL: imports/migrations, not end-user edits, keep working."""
         self.kudos.sudo().write({"category_id": self.category_b.id})
         self.assertEqual(self.kudos.category_id, self.category_b)
 
@@ -1564,7 +1487,6 @@ class TestStreakConcurrentFirstVisit(common.TransactionCase):
         )
 
     def test_raw_duplicate_insert_is_rejected_by_the_unique_index(self):
-        """CONTROL: the constraint this guard protects against is real."""
         Streak = self.env["gamification.streak"].sudo()
         Streak.create({"user_id": self.user.id, "streak_type_id": self.streak_type.id})
         with self.assertRaises(IntegrityError):
@@ -1577,19 +1499,11 @@ class TestStreakConcurrentFirstVisit(common.TransactionCase):
                 )
 
     def test_get_user_streaks_survives_a_stale_missing_read(self):
-        """Simulates the race: another transaction's insert committed
-        between this call's ``NOT EXISTS`` check and its own ``create()`` --
-        modeled here by forcing the "missing" read to report the type as
-        absent even though a row for it already exists."""
         Streak = self.env["gamification.streak"]
         Streak.sudo().create(
             {"user_id": self.user.id, "streak_type_id": self.streak_type.id}
         )
 
-        # Only the very first `fetchall()` call is faked (the one
-        # `_get_or_create_user_streaks` itself makes for its NOT EXISTS query); every
-        # later call -- flush's own bookkeeping queries included -- reaches
-        # the real cursor, so only the race being simulated is affected.
         cursor_cls = type(self.env.cr)
         real_fetchall = cursor_cls.fetchall
         call_count = 0
@@ -1643,13 +1557,10 @@ class TestXpProgressFollowsRankThresholds(common.TransactionCase):
         cls.user.sudo()._add_karma(500, reason="setup")
 
     def test_threshold_move_without_rank_change_refreshes_bar(self):
-        """Raising the next rank's floor must move the bar with no invalidation."""
         self.env.invalidate_all()
         self.assertEqual(self.user.rank_id, self.lower)
         self.assertEqual(self.user.xp_to_next_rank, 500)
 
-        # Read once so the value is cached, then move only the far threshold.
-        # The user stays on `lower`, so the re-rank hook does not touch them.
         self.upper.karma_min = 1500
         self.env.flush_all()
 
@@ -1661,11 +1572,9 @@ class TestXpProgressFollowsRankThresholds(common.TransactionCase):
         )
 
     def test_rank_change_still_refreshes_bar(self):
-        """The path the write hook already covered must keep working."""
         self.env.invalidate_all()
         self.assertEqual(self.user.xp_to_next_rank, 500)
 
-        # Move the floor under the user so they actually change rank.
         self.upper.karma_min = 400
         self.env.flush_all()
 
@@ -1695,8 +1604,6 @@ class TestXpProgressBatchesRankLookup(common.TransactionCase):
             ]
         )
         self.env.flush_all()
-        # Set karma without going through the karma hooks, so the only thing
-        # under test is the compute itself.
         self.env.cr.execute(
             "UPDATE res_users SET karma = 2500 WHERE id = ANY(%s)", (users.ids,)
         )
@@ -1707,7 +1614,6 @@ class TestXpProgressBatchesRankLookup(common.TransactionCase):
         return users
 
     def test_matches_get_next_rank_for_every_rank_state(self):
-        """The batched pick must equal _get_next_rank() at every rung."""
         ranks = self.Rank.search([], order="karma_min")
         self.assertTrue(ranks, "the ladder must not be empty for this test")
 
@@ -1734,14 +1640,10 @@ class TestXpProgressBatchesRankLookup(common.TransactionCase):
                 )
 
     def test_does_not_issue_one_query_per_user(self):
-        """Query count must be flat in the size of the recordset."""
 
         def cost(count, tag):
             users = self._users(count, tag)
             self.env.invalidate_all()
-            # sql_log_count is incremented per ROW, so a batched read of ten
-            # users scores ten even when it issues one statement. The claim
-            # here is about round trips.
             before = self.env.cr.sql_statement_count
             users.mapped("xp_progress_percent")
             return self.env.cr.sql_statement_count - before

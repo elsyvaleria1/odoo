@@ -13,18 +13,15 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
             {"mail_create_nolog": True}
         )
 
-        # Every internal user can write on it
         cls.writable_article = cls.article_roots[0]
         cls.writable_article.invite_members(cls.partner_portal, "write")
         cls.workspace_thread = Threads.create({"article_id": cls.writable_article.id})
         cls.workspace_thread.message_post(body="This is a public Thread")
 
-        # Employee is readonly
         cls.shared_article = cls.article_roots[2]
         cls.shared_thread = Threads.create({"article_id": cls.shared_article.id})
         cls.shared_thread.message_post(body="This is a shared Thread")
 
-        # Only employee_manager can write on it
         cls.private_article = cls.env["knowledge.article"].create(
             [
                 {
@@ -49,7 +46,6 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
     @users("employee")
     def test_create_article_thread_as_employee(self):
         article = self.writable_article.with_env(self.env)
-        # writable article
         self.env["knowledge.article.thread"].create(
             [
                 {
@@ -58,7 +54,6 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
             ]
         )
         with self.assertRaises(AccessError):
-            # readonly article
             self.env["knowledge.article.thread"].create(
                 [{"article_id": self.shared_article.with_env(self.env).id}]
             )
@@ -69,11 +64,9 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
         shared_thread = self.shared_thread.with_env(self.env)
         workspace_thread = self.workspace_thread.with_env(self.env)
 
-        # When you have access to an article you can write and read on threads
         self.assertFalse(workspace_thread.is_resolved)
         self.assertFalse(shared_thread.is_resolved)
 
-        # * No access to the article = No access to the linked thread
         with self.assertRaises(AccessError):
             private_thread.is_resolved
 
@@ -83,12 +76,10 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
         shared_thread = self.shared_thread.with_env(self.env)
         workspace_thread = self.workspace_thread.with_env(self.env)
 
-        # When you have access to an article you can write and read on threads
         self.assertFalse(workspace_thread.is_resolved)
         with self.assertRaises(AccessError):
             shared_thread.is_resolved
 
-        # * No access to the article = No access to the linked thread
         with self.assertRaises(AccessError):
             private_thread.is_resolved
 
@@ -96,12 +87,10 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
     def test_security_thread_resolution(self):
         base_thread = self.private_thread.with_env(self.env)
 
-        # No access to the article
         with self.assertRaises(AccessError):
             base_thread.write({"is_resolved": True})
 
         base_thread = self.workspace_thread.with_env(self.env)
-        # Access to the article
         self.assertFalse(base_thread.is_resolved)
         base_thread.write({"is_resolved": True})
         self.assertTrue(base_thread.is_resolved)
@@ -120,7 +109,7 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
             {self.partner_employee_manager: "write", self.env.user.partner_id: "read"},
         )
 
-        recipients = self.env.user.partner_id  # get only accessible partners
+        recipients = self.env.user.partner_id
         message = base_thread.message_post(
             body="Hello Everyone",
             partner_ids=recipients.ids,
@@ -147,7 +136,6 @@ class TestKnowledgeArticleThreadPermissions(KnowledgeArticlePermissionsCase):
             len(base_thread.message_ids), 2, "A message should have been posted"
         )
 
-        # Access token is generated for the attachment when a user posts a message
         base_thread = self.workspace_thread.with_env(self.env)
         attachment = self.env["ir.attachment"].create(
             {

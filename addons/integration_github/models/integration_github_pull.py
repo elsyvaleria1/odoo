@@ -171,8 +171,6 @@ class IntegrationGithubPull(models.Model):
             and pull.date_github_updated
             and (
                 updated < pull.date_github_updated
-                # within one second, an open pull request is no news of a
-                # closed or merged one
                 or (
                     updated == pull.date_github_updated
                     and vals["pull_state"] == "open"
@@ -189,10 +187,6 @@ class IntegrationGithubPull(models.Model):
             and vals["pull_state"] == pull.pull_state == "open"
             and vals["head_sha"] != pull.head_sha
         ):
-            # two heads in one second: which is the pull request's now, only
-            # GitHub can say -- a late one would roll the head back. Its
-            # answer is the pull request alone, so a failure to list checks
-            # cannot undo it; the head's checks arrive as they always do
             _debug.logic("pull.same_second_heads", pull=pull.id, number=pr["number"])
             try:
                 with self.env.cr.savepoint():
@@ -206,8 +200,6 @@ class IntegrationGithubPull(models.Model):
             except psycopg.Error, ConcurrencyError:
                 raise
             except Exception:
-                # no answer -- a credential, the network, GitHub itself: the
-                # delivery is ingested as it was before GitHub was asked
                 _logger.warning(
                     "Pull request %s#%s: two heads in one second, and GitHub "
                     "could not be asked which is current; the later delivery wins",
@@ -227,13 +219,10 @@ class IntegrationGithubPull(models.Model):
         return pull
 
     def _from_its_repository(self) -> bool:
-        """Its branch lives in its own repository, not in a fork: what a run
-        pushed can only be such a branch."""
         self.check_singleton()
         return same_repository(self.head_repository, self.repository)
 
     def _refresh_checks_state(self) -> None:
-        # checks recorded earlier in this transaction are not in a cached value
         self.invalidate_recordset(["check_ids"])
         for pull in self:
             state = pull.check_ids._aggregate_state()
@@ -242,7 +231,6 @@ class IntegrationGithubPull(models.Model):
 
     @api.model
     def _checks_moved(self, repository: str, head_sha: str) -> None:
-        """A check of ``head_sha`` changed: the pull requests it heads move."""
         pulls = self.search(
             [("repository", "=", repository), ("head_sha", "=", head_sha)]
         )
@@ -253,12 +241,9 @@ class IntegrationGithubPull(models.Model):
                 pull._github_updated()
 
     def _github_updated(self) -> None:
-        """What GitHub said about these pull requests changed. A hook for the
-        modules that follow them."""
+        pass
 
     def action_refresh(self) -> None:
-        """Read the pull request and its head's checks from GitHub, for when a
-        webhook was missed or none is configured."""
         Check = self.env["integration.github.check"]
         for pull in self:
             client = get_github_client(self.env)

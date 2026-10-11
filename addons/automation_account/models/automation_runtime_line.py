@@ -38,12 +38,6 @@ class AutomationRuntimeLine(models.Model):
         return summary or super()._workflow_step_detail()
 
     def _get_source_move(self) -> models.Model:
-        """Return the document this step acts on.
-
-        The one its step names in Acts On; otherwise the nearest document on
-        each branch above it, which must be a single one. Two branches offering
-        two documents is refused rather than settled by edge order.
-        """
         self.check_singleton()
         source = self.action_id.workflow_source_step_id
         if source:
@@ -68,7 +62,6 @@ class AutomationRuntimeLine(models.Model):
         return moves
 
     def _get_nearest_moves(self, visited: set[int] | None = None) -> models.Model:
-        """Return the nearest document on every branch leading here."""
         if self.created_record_ref and self.created_record_ref._name == "account.move":
             return self.created_record_ref
 

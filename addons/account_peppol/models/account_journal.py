@@ -14,7 +14,6 @@ class AccountJournal(models.Model):
 
     @api.depends("account_peppol_proxy_state")
     def _compute_show_refresh_out_einvoices_status_button(self) -> None:
-        # EXTENDS 'account'
         super()._compute_show_refresh_out_einvoices_status_button()
         sender_states = self.env["account_edi_proxy_client.user"]._get_domain_can_send()
 
@@ -27,7 +26,6 @@ class AccountJournal(models.Model):
 
     @api.depends("is_peppol_journal", "account_peppol_proxy_state")
     def _compute_show_fetch_in_einvoices_button(self) -> None:
-        # EXTENDS 'account'
         super()._compute_show_fetch_in_einvoices_button()
 
         self.filtered(
@@ -40,7 +38,6 @@ class AccountJournal(models.Model):
         ).show_fetch_in_einvoices_button = True
 
     def button_fetch_in_einvoices(self):
-        # EXTENDS 'account'
         super().button_fetch_in_einvoices()
         edi_users = self.env["account_edi_proxy_client.user"].search(
             [
@@ -56,7 +53,6 @@ class AccountJournal(models.Model):
         edi_users._peppol_get_new_documents()
 
     def button_refresh_out_einvoices_status(self):
-        # EXTENDS 'account'
         super().button_refresh_out_einvoices_status()
         can_send = self.env["account_edi_proxy_client.user"]._get_domain_can_send()
         edi_users = self.env["account_edi_proxy_client.user"].search(

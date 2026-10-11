@@ -84,9 +84,6 @@ class TestApprovalReasonLines(TransactionCase):
         )
 
     def test_the_reason_carries_the_notes_left_for_approvers(self):
-        # `categ_id` is empty on a product created without one in this fork, and
-        # writing through an empty recordset is a silent no-op, so the category
-        # leg needs a real category to be exercised at all.
         self.product.categ_id = self.env["product.category"].create(
             {"name": "Reason Lines Category Of Products"},
         )

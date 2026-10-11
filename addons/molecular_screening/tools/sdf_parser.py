@@ -4,12 +4,6 @@ _TAG_RE = re.compile(r"^>\s*<([^>]+)>")
 
 
 def parse_sdf(text):
-    """Split an SDF document into its records.
-
-    :param str text: content of the SDF file
-    :return: one dict per record with ``name``, ``molblock`` and ``tags``
-    :rtype: list[dict]
-    """
     records = []
     for chunk in text.replace("\r\n", "\n").split("$$$$"):
         if not chunk.strip():

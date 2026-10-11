@@ -94,34 +94,25 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     )
 
     def _get_proxy_urls(self):
-        # To extend
         return {}
 
     def _get_server_url(self, proxy_type=None, edi_mode=None):
         proxy_type = proxy_type or self.proxy_type
         edi_mode = edi_mode or self.edi_mode
         proxy_urls = self._get_proxy_urls()
-        # letting this traceback in case of a KeyError, as that would mean something's wrong with the code
         return proxy_urls[proxy_type][edi_mode]
 
     def _get_proxy_users(self, company, proxy_type):
-        """Returns proxy users associated with the given company and proxy type."""
         return company.account_edi_proxy_client_ids.filtered(
             lambda u: u.proxy_type == proxy_type
         )
 
     def _get_proxy_identification(self, company, proxy_type):
-        """Returns the key that will identify company uniquely
-        within a specific proxy type and edi operating mode.
-        or raises a UserError (if the user didn't fill the related field).
-        TO OVERRIDE
-        """
         return False
 
     def _prepare_request(
         self, url, params=False, *, auth_type: Literal["hmac", "asymmetric"] = "hmac"
     ):
-        """Make a request to proxy and handle the generic elements of the reponse (errors, new refresh token)."""
         payload = {
             "jsonrpc": "2.0",
             "method": "call",
@@ -129,7 +120,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             "id": uuid.uuid4().hex,
         }
 
-        # Last barrier : in case the demo mode is not handled by the caller, we block access.
         if self.edi_mode == "demo":
             raise AccountEdiProxyError(
                 "block_demo_mode", "Can't access the proxy in demo mode"
@@ -182,10 +172,9 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 self._renew_token()
                 self.env[
                     "ir.cron"
-                ]._commit_progress()  # We do not want to lose it if in the _prepare_request below something goes wrong
+                ]._commit_progress()
                 return self._prepare_request(url, params, auth_type="hmac")
             if error_code == "no_such_user":
-                # This error is also raised if the user didn't exchange data and someone else claimed the edi_identificaiton.
                 self.sudo().active = False
             if error_code == "invalid_signature":
                 raise AccountEdiProxyError(
@@ -214,11 +203,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         }
 
     def _register_proxy_user(self, company, proxy_type, edi_mode) -> Self:
-        """Generate the public_key/private_key that will be used to encrypt the file, send a request to the proxy
-        to register the user with the public key and create the user with the private key.
-
-        :param company: the company of the user.
-        """
         private_key_sudo = (
             self.env["certificate.key"]
             .sudo()
@@ -229,14 +213,12 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         )
         edi_identification = self._get_proxy_identification(company, proxy_type)
         if edi_mode == "demo":
-            # simulate registration
             response = {
                 "id_client": f"demo{company.id}{proxy_type}",
                 "refresh_token": "demo",
             }
         else:
             try:
-                # b64encode returns a bytestring, we need it as a string
                 server_url = self._get_server_url(proxy_type, edi_mode)
                 response = self._prepare_request(
                     f"{server_url}/iap/account_edi/2/create_user",
@@ -251,8 +233,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                     response["error"]
                     == "A user already exists with this identification."
                 ):
-                    # Note: Peppol IAP errors weren't made properly with error code that are then translated on
-                    # Odoo side. We are for now forced to check the error message.
                     raise UserError(
                         self.env._(
                             "A user already exists with theses credentials on our server. Please check your information."
@@ -273,12 +253,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         )
 
     def _renew_token(self):
-        """Request the proxy for a new refresh token.
-
-        Request to the proxy should be made with a refresh token that expire after 24h to avoid
-        that multiple database use the same credentials. When receiving an error for an expired refresh_token,
-        This method makes a request to get a new refresh token.
-        """
         try:
             self.lock_for_update()
         except LockError:
@@ -287,19 +261,10 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             self._get_server_url() + "/iap/account_edi/1/renew_token"
         )
         if "error" in response:
-            # can happen if the database was duplicated and the refresh_token was refreshed by the other database.
-            # we don't want two database to be able to query the proxy with the same user
-            # because it could lead to not inconsistent data.
             _logger.error(response["error"])
         self.sudo().refresh_token = response["refresh_token"]
 
     def _decrypt_data(self, data, symmetric_key):
-        """Decrypt the data. The data is encrypted with a symmetric key, which is encrypted with an asymmetric key.
-        We must therefore decrypt the symmetric key.
-
-        :param data:            The data to decrypt.
-        :param symmetric_key:   The symmetric_key encrypted with self.private_key_id.public_key()
-        """
         decrypted_key = self.sudo().private_key_id._decrypt(
             base64.b64decode(symmetric_key)
         )

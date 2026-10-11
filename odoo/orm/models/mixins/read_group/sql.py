@@ -37,13 +37,6 @@ class _ReadGroupSQLMixin(_ModelStubs):
     def _parse_aggregate_spec(
         self, aggregate_spec: str
     ) -> tuple[str, str, Field[typing.Any]]:
-        """The field and function an aggregate spec names, or a ValueError.
-
-        One reader compiles the spec to SQL and another checks it against the
-        caller's access before any of that, and they used to spell these four
-        refusals separately, in the same words. A rule stated twice is a rule
-        free to drift.
-        """
         fname, property_name, func = parse_read_group_spec(aggregate_spec)
         if property_name:
             raise ValueError(
@@ -152,8 +145,6 @@ class _ReadGroupSQLMixin(_ModelStubs):
 
         sql_field = self._field_to_sql(self._table, fname, query)
         if field.is_boolean:
-            # a never-written boolean is NULL in the column and False to the
-            # ORM; BOOL_AND, COUNT and ARRAY_AGG would skip or leak the NULL
             sql_field = SQL("COALESCE(%s, FALSE)", sql_field)
         return READ_GROUP_AGGREGATE[func](self._table, sql_field)
 
@@ -283,10 +274,6 @@ class _ReadGroupSQLMixin(_ModelStubs):
                 shape="sql_hook",
                 hook=field.group_by_sql,
             )
-            # inlined like every other groupby term: the same SQL object is
-            # placed in SELECT, GROUPING(), GROUP BY and ORDER BY, and a
-            # parameter binds server-side as a different $n in each, which
-            # PostgreSQL reads as different expressions
             group_sql: SQL = getattr(self, field.group_by_sql)(field, alias, query)
             return group_sql.inlined(self.env.cr)
 
@@ -384,10 +371,6 @@ class _ReadGroupSQLMixin(_ModelStubs):
             first_week_day = int(get_lang(self.env).week_start) - 1
             days_offset = first_week_day and 7 - first_week_day
             interval = SQL.literal(f"-{days_offset} DAY")
-            # the week of 0001-01-01 may begin in 1 BC, which no client reads:
-            # it is held to the calendar's first day. GREATEST alone would turn
-            # the empty group into that day; a marker no week start can be (one
-            # second past midnight) carries it across, reading the value once
             sql_expr = SQL(
                 "NULLIF(GREATEST(COALESCE("
                 "date_trunc('week', %s::timestamp - INTERVAL %s) + INTERVAL %s,"
@@ -405,8 +388,6 @@ class _ReadGroupSQLMixin(_ModelStubs):
             )
 
         if is_date and granularity not in READ_GROUP_NUMBER_GRANULARITY:
-            # a date property groups by a date, as a Date column does; the
-            # in-memory backend answers the same
             sql_expr = SQL("%s::date", sql_expr)
 
         _debug.logic(

@@ -234,7 +234,6 @@ class DeviceEnrollment(models.Model):
 
     @api.model
     def _probe_integrity(self, limit=100, after_id=0):
-        """Inspect one bounded page without exposing credentials or payloads."""
         if not self.env.is_system():
             raise AccessError(
                 self.env._("Only administrators can inspect enrollment integrity.")

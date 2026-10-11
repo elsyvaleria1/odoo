@@ -30,10 +30,6 @@ class ProductProduct(models.Model):
         ]
 
     def _compute_qty_in_rent(self) -> None:
-        """
-        Note: we don't use product.with_context(location=self.env.company.rental_loc_id.id).qty_available
-        because there are no stock moves for services (which can be rented).
-        """
         active_rental_lines = self.env["sale.order.line"]._read_group(
             domain=self._get_domain_qty_in_rent(),
             groupby=["product_id"],
@@ -47,24 +43,14 @@ class ProductProduct(models.Model):
             product.qty_in_rent = res.get(product.id, 0)
 
     def _get_delay_price(self, duration):
-        """Compute daily and hourly delay price.
-
-        :param timedelta duration: datetime representing the delay.
-        """
         days = duration.days
         hours = duration.seconds // 3600
         return days * self.extra_daily + hours * self.extra_hourly
 
     def _get_best_pricing_rule(self, **kwargs):
-        """Return the best pricing rule for the given duration.
-
-        :return: least expensive pricing rule for given duration
-        :rtype: product.pricing
-        """
         return self.product_tmpl_id._get_best_pricing_rule(product=self, **kwargs)
 
     def action_view_rentals(self):
-        """Access Schedule view of rental order lines, filtered on the current variants"""
 
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sale_renting.action_rental_order_schedule"

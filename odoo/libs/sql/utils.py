@@ -59,9 +59,6 @@ def _truncating_div(size: int, divisor: int) -> int:
 
 
 def pg_size_pretty(size: int) -> str:
-    # PostgreSQL's pg_size_pretty(bigint), unit table and all: a rounding
-    # unit keeps one bit past its own to half-round with, and C division
-    # truncates toward zero, which a negative size shows
     for current, following in itertools.pairwise(_SIZE_PRETTY_UNITS):
         unit, limit, rounds, bits = current
         if abs(size) < limit:

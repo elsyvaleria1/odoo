@@ -106,17 +106,11 @@ class _RequestServeMixin(RequestState):
         ) as span:
             try:
                 stream = Stream._from_trusted_path(filepath, public=True)
-                # debug=assets is the session's, mirrored into a cookie by
-                # ir.http._handle_debug: a static file reads no session
                 debug = bool(
                     self.httprequest.cookies.get(DEBUG_ASSETS_COOKIE)
                     or current_settings().dev_mode
                 )
                 path = getattr(self.httprequest, "path", "") or ""
-                # an ES module under static/src is fetched by its bare URL when
-                # the page falls back to per-file loading; a week of cache would
-                # mix modules of two deploys on one page, so it revalidates (a
-                # cheap 304) instead. Compiled bundles carry a content hash.
                 module_source = "/static/src/" in path and path.endswith(".js")
                 res = stream.prepare_response(
                     max_age=0 if debug or module_source else STATIC_CACHE,
@@ -286,8 +280,6 @@ class _RequestServeMixin(RequestState):
             return None
         return functools.partial(self._check_session_binding_on_primary, registry)
 
-    # A replica cursor cannot answer whether the session was revoked, and the
-    # request must not open a primary one while it holds the replica's.
     def _check_session_binding_on_primary(self, registry: Registry) -> None:
         session = self.session
         with (
@@ -369,7 +361,6 @@ class _RequestServeMixin(RequestState):
                         "Request cleanup rollback failed; preserving original exception",
                         exc_info=True,
                     )
-                    # Cursor.close owns discarding connections that cannot roll back.
                     env.cr.close()
             self._update_served_exception(exc)
             raise
@@ -412,8 +403,6 @@ class _RequestServeMixin(RequestState):
         except HTTPException as exc:
             if exc.code is not None:
                 raise
-            # An explicit response is successful control flow (e.g. ensure_db
-            # redirect). Let retrying commit its session changes normally.
             return self._serve_aborted(exc)
 
     def _open_read_write_cursor(self, cr: Any, *, readonly: bool) -> Any:
@@ -424,26 +413,16 @@ class _RequestServeMixin(RequestState):
                 cr.close()
                 cr = env.registry.cursor(pin_key=self.session.sid)
             elif readonly:
-                # The snapshot the signaling check took is as good as a fresh
-                # one for a route that does not write: a read-only transaction
-                # never fails to serialize, so a new one would cost a ROLLBACK
-                # and, once the handler runs SQL, a second BEGIN, for nothing.
                 _debug.lifecycle(
                     "http.serve.cursor_reused", db=env.registry.db_name, fresh=False
                 )
             else:
-                # A writing handler starts its snapshot now, not at the
-                # signaling check: an older one widens the window in which a
-                # concurrent commit fails it to serialize, and the retry costs
-                # a backoff.
                 cr.rollback()
                 _debug.lifecycle(
                     "http.serve.cursor_reused", db=env.registry.db_name, fresh=True
                 )
         if cr.readonly:
             _debug.logic("http.serve.cursor_still_readonly", db=env.registry.db_name)
-            # The caller's variable still names the cursor this method was
-            # handed; close the replacement here or its connection leaks.
             cr.close()
             e = (
                 f"{self.httprequest.method} {self.httprequest.path} needs a "
@@ -462,9 +441,6 @@ class _RequestServeMixin(RequestState):
                 raise RuntimeError("ir.http is only reachable with a registry")
             thread = current_worker_thread()
             thread.dbname = registry.db_name
-            # The env is born with the session's user, so an `auth="user"`
-            # route never calls `update_env`; without this its log lines,
-            # tracebacks included, carry no uid.
             thread.uid = self.session.uid
 
             self.env = odoo.api.Environment(
@@ -489,11 +465,6 @@ class _RequestServeMixin(RequestState):
                 promoted = True
             else:
                 thread = current_worker_thread()
-                # The registry stamps the speculative read-only acquisition
-                # ("ro", or "ro->rw" when the session is pinned). Only a
-                # readonly route whose cursor came back on the primary keeps
-                # that reading; a write route ran read/write whatever the
-                # router chose first.
                 if not readonly or getattr(thread, "cursor_mode", None) is None:
                     thread.cursor_mode = "rw"
 

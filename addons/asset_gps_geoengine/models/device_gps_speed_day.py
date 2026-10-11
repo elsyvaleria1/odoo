@@ -4,10 +4,7 @@ from odoo.tools import SQL, frozendict
 
 from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
-# UTC is the neutral fallback when a device has no configured timezone.
 DEFAULT_TZ = "UTC"
-# A parked tracker drifts a few km/h; below this a reading is not driving,
-# so it is left out of the minimum and the average.
 MOVING_MIN_KMH = 5.0
 
 

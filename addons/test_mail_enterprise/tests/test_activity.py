@@ -33,7 +33,6 @@ class TestActivity(SMSCommon, TestSMSRecipients):
             }
         )
 
-        # clean db to ease tests
         cls.env["mail.activity.type"].search(
             [
                 ("category", "=", "phonecall"),
@@ -42,7 +41,6 @@ class TestActivity(SMSCommon, TestSMSRecipients):
         ).unlink()
 
     def test_activity_data(self):
-        """Ensure initial data for tests"""
         self.assertEqual(self.partner_1._phone_get_number().number, "0456001122")
         self.assertTrue(self.phonecall_activity)
         self.assertEqual(self.phonecall_activity.category, "phonecall")
@@ -69,9 +67,6 @@ class TestActivity(SMSCommon, TestSMSRecipients):
         )
         phonecall_activities.write({"activity_type_id": False})
         phonecall_activities.flush_recordset()
-        # it is now protected, but before protection it was possible to have removed
-        # 'Call' activity type (aka you can't do self.phonecall_activity.unlink()
-        # but you may have already removed it)
         self.env.cr.execute(
             "DELETE FROM mail_activity_type WHERE id = ANY(%s)",
             (list(self.phonecall_activity.ids),),
@@ -80,7 +75,6 @@ class TestActivity(SMSCommon, TestSMSRecipients):
             [("name", "=", "mail_activity_data_call"), ("module", "=", "mail")]
         ).unlink()
 
-        # no more phonecall activity -> will be dynamically created
         self.assertFalse(
             self.env["mail.activity.type"].search([("category", "=", "phonecall")])
         )

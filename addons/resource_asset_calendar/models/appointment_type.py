@@ -7,8 +7,6 @@ class AppointmentType(models.Model):
     def _slot_availability_prepare_resources_values(
         self, resources, start_dt_utc, end_dt_utc
     ):
-        """The per-slot check below is handed one resource at a time; the states
-        of the whole offer are read here, in one go."""
         values = super()._slot_availability_prepare_resources_values(
             resources, start_dt_utc, end_dt_utc
         )

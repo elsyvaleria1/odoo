@@ -12,13 +12,11 @@ class GithubWebhookController(http.Controller):
         receiver="integration.github.webhook:hook_uuid",
         receiver_event="github",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the delivery's HMAC signature authenticates it
+        csrf=False,
         save_session=False,
         typed=True,
     )
     def webhook(self, hook_uuid: str) -> http.Response:
-        """One delivery, acted on at once: what it records is small, and GitHub
-        waits ten seconds for the answer."""
         admission = request.admission
         event = request.httprequest.headers.get(EVENT_HEADER, "")
         if event:

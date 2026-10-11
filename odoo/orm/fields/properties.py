@@ -49,7 +49,6 @@ __all__ = [
 _debug = DebugLog(__name__)
 
 PROPERTIES_DEFINITION_PARSED_CACHE_KEY = "properties_definition.parsed"
-# a long cursor reading many containers under many environments
 _PARSED_DEFINITIONS_MAX = 1024
 
 if typing.TYPE_CHECKING:
@@ -194,9 +193,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
         if not value:
             return None
 
-        # a stored value (a Property) is taken as it is; a written one stores
-        # each temporal value in its canonical form, typed by the definitions
-        # a list carries, or else by the record's container
         temporal: dict[str, tuple[str, str]] | None = None
         if isinstance(value, Property):
             value = value._values
@@ -264,7 +260,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
         temporal: dict[str, tuple[str, str]],
         record: ModelLike,
     ) -> None:
-        canonicalized = kept = 0  # debuglog
+        canonicalized = kept = 0
         for name, (property_type, label) in temporal.items():
             value = values.get(name)
             if value is None or value is False:
@@ -274,9 +270,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                 continue
             canonical = canonical_temporal_property(value, property_type)
             if canonical is None:
-                # a value the records already hold, written before the
-                # property was temporal, is carried as it is and reads as no
-                # value; a new one is refused, as fields.Date refuses it
                 if not self._all_hold(record, name, value):
                     raise ValidationError(
                         record.env._(
@@ -286,10 +279,10 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                             property=label,
                         )
                     )
-                kept += 1  # debuglog
+                kept += 1
             elif canonical != value:
                 values[name] = canonical
-                canonicalized += 1  # debuglog
+                canonicalized += 1
         if _debug.logic.enabled and (canonicalized or kept):
             _debug.logic(
                 "field.properties.temporal_canonicalized",
@@ -318,7 +311,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                     types_by_name[definition["name"]] = definition.get("type")
 
         converted = dict(values)
-        replaced = 0  # debuglog
+        replaced = 0
         for name, value in values.items():
             if not is_recordset(value):
                 continue
@@ -333,7 +326,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                     f"{self}: its definition declares "
                     f"{property_type or 'no relational type'}"
                 )
-            replaced += 1  # debuglog
+            replaced += 1
         _debug.logic(
             "field.properties.recordsets_replaced",
             model=self.model_name,
@@ -367,8 +360,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
             )
 
         result = []
-        # records sharing a container share its definition: _dict_to_list
-        # clones it, and validating it per record re-parses every domain
         definitions: dict[typing.Any, list[dict[str, typing.Any]] | None] = {}
         for record, value in zip(records, values, strict=True):
             value = value._values if isinstance(value, Property) else value
@@ -396,7 +387,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
             for model, res_ids in res_ids_per_model.items():
                 for record in env[model].browse(sorted(res_ids)):
                     with contextlib.suppress(AccessError):
-                        record.display_name  # noqa: B018  the read IS the access check suppress() catches
+                        record.display_name
             for value in result:
                 self._add_display_name(value, env)
 
@@ -454,8 +445,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
 
         if not ids_per_model:
             return {}
-        # the pairs a cursor has already seen exist stay verified until an
-        # unlink discards their model (the unlink mixin does, by cache key)
         verified = env.cr.cache.setdefault(REFERENCE_VERIFIED_CACHE_KEY, {}).setdefault(
             (self.model_name, self.name), set()
         )
@@ -464,9 +453,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
             for model, ids in ids_per_model.items()
             for id_ in ids
         )
-        # one record asked and a statement is due: its prefetch siblings'
-        # cached values name the records the next reads will ask about, so
-        # they are verified in the same statement instead of one per record
         if unverified and records is not None and len(records) == 1:
             cached = self._get_cache(env)
             for sibling_id in records._prefetch_ids:
@@ -503,8 +489,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
 
     @override
     def create(self, record_values: Sequence[tuple[BaseModel, typing.Any]]) -> None:
-        # the row and the cache already carry the value: only a definition change
-        # still has work to do after the insert
         definition_writes = [
             (record, value)
             for record, value in record_values
@@ -535,8 +519,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
         if isinstance(value, Property):
             value = value._values
 
-        # the definition record is bookkeeping: whoever writes the properties
-        # needs it whether or not they may read the field that holds it
         if len(records.sudo()[self._get_definition_record()]) > 1 and value:
             raise UserError(
                 records.env._(
@@ -665,7 +647,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                 properties_values, properties_definition
             )
 
-        defaulted = 0  # debuglog
+        defaulted = 0
         for properties_value in properties_list_values:
             if properties_value.get("value") is None:
                 property_name = properties_value.get("name")
@@ -674,8 +656,6 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                     default = env.context[context_key]
                 else:
                     default = properties_value.get("default")
-                    # a definition's default is no input of this write: one
-                    # that is no valid date leaves the property unset
                     property_type = properties_value.get("type")
                     if (
                         default
@@ -692,7 +672,7 @@ class Properties(_PropertiesSearchMixin, _PropertiesJsonMixin, Field["Property"]
                         default = None
                 if default is not None:
                     properties_value["value"] = default
-                    defaulted += 1  # debuglog
+                    defaulted += 1
 
         _debug.logic(
             "field.properties.defaults_applied",
@@ -903,13 +883,6 @@ class PropertiesDefinition(Field[list[dict[str, typing.Any]]]):
     ) -> list[dict[str, typing.Any]]:
         if not value:
             return []
-        # every read of a Property parses its container's definition: records
-        # sharing a container share the parse while the cached value is the
-        # same object (a write replaces it, an invalidation refetches it) and
-        # the environment is the same (a domain's check may run searches)
-        # the field itself is in the key: a registry rebuilt in the same cursor
-        # (a module install) brings new fields, so no parse outlives the models
-        # it was checked against
         memo = record.env.cr.cache.setdefault(
             PROPERTIES_DEFINITION_PARSED_CACHE_KEY, {}
         )

@@ -1,10 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-# Prefix used to name the "separator" pseudo-property that groups salary
-# inputs by hr.salary.rule.section in a properties_definition list; the
-# category id is appended after it (see _add_property_to_definition) and
-# recovered from it (see _sort_definition).
 _SEPARATOR_PREFIX = "separator_"
 
 

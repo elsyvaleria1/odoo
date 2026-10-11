@@ -20,14 +20,6 @@ DATE_FIELD_ADAPTERS = {
 
 
 def _as_utc(value):
-    """The tz-aware UTC form the cascade threads its bounds in.
-
-    ``project_enterprise`` and ``mrp_workorder`` take these bounds, compare them
-    against tz-aware values of their own out of the resource calendar, and hand
-    them back, so the offset has to stay on. A ``date`` has no offset to give
-    and passes through untouched -- which is the whole reason this is a
-    function rather than a bare ``astimezone``.
-    """
     if isinstance(value, datetime):
         return value.astimezone(UTC)
     return value
@@ -38,7 +30,6 @@ def _relational_group_id(value):
 
 
 def _as_stored(value):
-    """The naive-UTC form the ORM stores. A ``date`` passes through."""
     if isinstance(value, datetime):
         return value.astimezone(UTC).replace(tzinfo=None)
     return value
@@ -47,10 +38,9 @@ def _as_stored(value):
 class Base(models.AbstractModel):
     _inherit = "base"
 
-    _start_name = "date_start"  # start field to use for default gantt view
-    _stop_name = "date_stop"  # stop field to use for default gantt view
+    _start_name = "date_start"
+    _stop_name = "date_stop"
 
-    # web_gantt_reschedule utils
     _WEB_GANTT_RESCHEDULE_FORWARD = "forward"
     _WEB_GANTT_RESCHEDULE_BACKWARD = "backward"
     _WEB_GANTT_RESCHEDULE_MAINTAIN_BUFFER = "maintainBuffer"
@@ -59,12 +49,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def _get_default_gantt_view(self):
-        """Generates a default gantt view by trying to infer
-        time-based fields from a number of pre-set attribute names
-
-        :returns: a gantt view
-        :rtype: etree._Element
-        """
         view = E.gantt(string=self._description)
 
         gantt_field_names = {
@@ -119,7 +103,6 @@ class Base(models.AbstractModel):
         scale=None,
     ):
         if groupby:
-            # Because there is no limit by group, we can fetch record_ids as aggregate
             groups, length = self.with_context(
                 read_group_expand=True
             )._get_formatted_read_group_with_length(
@@ -143,12 +126,10 @@ class Base(models.AbstractModel):
                 )
             )
 
-            # Do search_fetch to order records (model order can be no-trivial)
             all_records = self.with_context(active_test=False).search_fetch(
                 [("id", "in", all_record_ids)], read_specification.keys()
             )
         else:
-            # Not groupby => search records directly and create one group to respect the API
             all_records = self.search_fetch(domain, read_specification.keys())
             final_result = {
                 "groups": [
@@ -176,22 +157,15 @@ class Base(models.AbstractModel):
         res_ids_for_unavailabilities = defaultdict(set)
         res_ids_for_progress_bars = defaultdict(set)
         for group in final_result["groups"]:
-            # A field the caller asked about is absent from the group when the
-            # call is not grouped on it; reading it with [] turned that into a
-            # KeyError instead of an empty result.
-            # Only a relational group value carries an id; a selection or
-            # char value is a string, and its first character is not one.
             for field in unavailability_fields:
                 if res_id := _relational_group_id(group.get(field)):
                     res_ids_for_unavailabilities[field].add(res_id)
             for field in progress_bar_fields:
                 if res_id := _relational_group_id(group.get(field)):
                     res_ids_for_progress_bars[field].add(res_id)
-            # Reorder __record_ids
             group["__record_ids"] = list(
                 ordered_set_ids & OrderedSet(group.pop("id:array_agg"))
             )
-            # We don't need these in the gantt view
             del group["__extra_domain"]
             group.pop("__fold", None)
 
@@ -255,7 +229,6 @@ class Base(models.AbstractModel):
         record.check_singleton()
 
         message = self.env._("Tasks rescheduled")
-        # if the pill is moved without changing dates, or there are no dependencies between pills, or the pill is moved to the past => only write the moved pill (like Manual rescheduling)
         start_date_field = self.env[self._name]._fields[start_date_field_name]
         start_date = now_value = None
         if start_date_field_name in vals:
@@ -292,8 +265,6 @@ class Base(models.AbstractModel):
                 has_errors = bool(log_messages.get("errors"))
                 sp.close(rollback=has_errors)
         except AccessError as error:
-            # A dependent the user may not write is a notification, not a
-            # traceback: the savepoint has rolled everything back.
             return {
                 "type": "warning",
                 "message": str(error.args[0]) if error.args else "",
@@ -340,7 +311,7 @@ class Base(models.AbstractModel):
         if key == self._WEB_GANTT_LOOP_ERROR:
             return self.env._("The dependencies are not valid, there is a cycle.")
         elif key == "past_error":
-            if params:  # params is the record that is in the past
+            if params:
                 return self.env._(
                     "%s cannot be scheduled in the past", params.display_name
                 )
@@ -384,7 +355,6 @@ class Base(models.AbstractModel):
             vals[start_date_field_name]
         )
         old_start = self[start_date_field_name]
-        # A record with no start yet is placed for the first time: forward.
         return (
             self._WEB_GANTT_RESCHEDULE_FORWARD
             if not old_start or date_start > old_start
@@ -566,18 +536,6 @@ class Base(models.AbstractModel):
         consume_buffer,
         vals,
     ) -> tuple:
-        """Move candidates according to the provided parameters.
-
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :param dependency_field_name: The field name of the relation between the pill and pills that block it.
-        :param dependency_inverted_field_name: The field name of the relation between the pill and pills it blocks.
-        :param search_forward: True if the direction = 'forward'
-        :param candidates_ids: The candidates to reschedule
-        :param consume_buffer: True if reschedule_method = 'consumeBuffer' else False
-        :param vals: dict containing the new vals for the moved pill
-        :return: dict of list containing 2 keys, errors and warnings
-        """
         result = {
             "errors": [],
             "warnings": [],
@@ -664,10 +622,6 @@ class Base(models.AbstractModel):
         dependency_field_name,
         dependency_inverted_field_name,
     ):
-        """Write the moved record and prepare what the cascade threads from
-        candidate to candidate. A subclass adds what its own scheduling needs
-        to the returned dict; an ``"error"`` key aborts the cascade with that
-        message key."""
         self.write(vals)
         (
             first_possible_start_date_per_candidate,
@@ -701,9 +655,6 @@ class Base(models.AbstractModel):
     def _web_gantt_cascade_dates(
         self, cascade, search_forward, start_date_field_name, stop_date_field_name
     ) -> str | tuple:
-        """The dates this candidate moves to, tz-aware, or an error message key."""
-        # A candidate none of its predecessors pushed keeps its own date as
-        # the bound, so a conflict further down the chain still resolves.
         if search_forward:
             bound = cascade["first_possible_start_date_per_candidate"].get(
                 self.id, _as_utc(self[start_date_field_name])
@@ -731,8 +682,6 @@ class Base(models.AbstractModel):
         start_date,
         end_date,
     ):
-        """This candidate has been written to its new dates: push the bounds of
-        the pills that follow it. An error message key aborts the cascade."""
         self._web_gantt_update_next_pills_first_possible_date(
             dependency_field_name,
             dependency_inverted_field_name,
@@ -749,7 +698,6 @@ class Base(models.AbstractModel):
         )
 
     def _web_gantt_cascade_warnings(self, cascade):
-        """The warning message keys a finished cascade reports."""
         return []
 
     def _web_gantt_record_has_dependencies(self):
@@ -764,19 +712,6 @@ class Base(models.AbstractModel):
         visited=None,
         ancestors=None,
     ) -> bool:
-        """Get the current records' related records rescheduling candidates
-
-        :param candidates_ids: empty list that will contain the candidates at the end
-        :param dependency_field_name: The field name of the relation between the pill and candidates
-            (pills blocked by the pill if move forward or blocking the pill if move backward)
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :param visited: set containing all the visited pills
-        :param ancestors: set containing the visited ancestors for the current pill
-        :return: bool, True if there is a cycle, else False.
-            candidates_id will contain the candidate pills in DFS post-order
-            (the caller must .reverse() it to get a valid topological order)
-        """
         if visited is None:
             visited = set()
         if ancestors is None:
@@ -820,17 +755,6 @@ class Base(models.AbstractModel):
         start_date_field_name,
         stop_date_field_name,
     ):
-        """Compute start_date and end_date according to the provided arguments.
-        This method is meant to be overridden when we need to add constraints that have to be taken into account
-        in the computing of the start_date and end_date.
-
-        :param date_candidate: The optimal date, which does not take any constraint into account.
-        :param search_forward: True if the direction = 'forward'
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :return: a list of [start_date, end_date]
-        :rtype: list[datetime]
-        """
         search_factor = 1 if search_forward else -1
         duration = search_factor * (
             self[stop_date_field_name] - self[start_date_field_name]
@@ -840,15 +764,6 @@ class Base(models.AbstractModel):
     def _web_gantt_reschedule_is_record_candidate(
         self, start_date_field_name, stop_date_field_name
     ):
-        """Get whether the record is a candidate for the rescheduling. This method is meant to be overridden when
-        we need to add a constraint in order to prevent some records to be rescheduled. This method focuses on the
-        record itself
-
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :return: True if record can be rescheduled, False if not.
-        :rtype: bool
-        """
         return self._web_gantt_reschedule_can_record_be_rescheduled(
             start_date_field_name, stop_date_field_name
         )
@@ -867,19 +782,8 @@ class Base(models.AbstractModel):
     def _web_gantt_reschedule_write_new_dates(
         self, new_start_date, new_stop_date, start_date_field_name, stop_date_field_name
     ):
-        """Write the dates values if new_start_date is in the future.
-
-        :param new_start_date: The start_date to write.
-        :param new_stop_date: The stop_date to write.
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :return: True if successful, False if not.
-        :rtype: bool
-        """
         start_field = self._fields[start_date_field_name]
         new_start_date = _as_stored(new_start_date)
-        # 30s epsilon: the first valid interval can be "now" and drift below now()
-        # by a few seconds by the time the comparison runs.
         now = DATE_FIELD_ADAPTERS[start_field.type]["now"]()
         if start_field.type == "datetime":
             now -= timedelta(seconds=30)

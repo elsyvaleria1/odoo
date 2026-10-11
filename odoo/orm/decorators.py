@@ -79,22 +79,11 @@ def onchange(*args: str) -> Decorator:
 
 
 def _check_field_paths(what: str, args: typing.Iterable[str], *, dotted: bool) -> None:
-    """Refuse the spellings that read as a field path and are not one.
-
-    `@api.depends("a, b")` is one dependency named `a, b`, which matches no
-    field and so never fires; the same goes for a stray space or an empty
-    segment. None of these raises anywhere later -- the compute simply stops
-    recomputing -- so they are refused where they are written. Zero arguments
-    stay legal: `@api.depends()` is how a compute declares it has no
-    dependencies.
-    """
     for arg in args:
         detail = None
         if not arg:
             detail = "is empty"
         elif "," in arg:
-            # checked before whitespace: `("a, b")` is the classic typo and
-            # naming the comma says what to do about it
             detail = "contains a comma (pass one argument per field)"
         elif arg.strip() != arg or any(c.isspace() for c in arg):
             detail = "contains whitespace"
@@ -102,9 +91,6 @@ def _check_field_paths(what: str, args: typing.Iterable[str], *, dotted: bool) -
             detail = "is dotted, which this decorator does not follow"
         else:
             for part in arg.split("."):
-                # a field name is an attribute name; `isidentifier` is what
-                # admits the manual and Studio spellings (x_studio_Foo) that a
-                # lowercase-only pattern would refuse
                 if not part.isidentifier():
                     detail = (
                         "has an empty segment"
@@ -213,14 +199,6 @@ def job(
     max_defers: int = 100,
     idle_timeout: int | None = None,
 ) -> Callable[..., typing.Any]:
-    """Declare a method runnable by the job queue.
-
-    `idle_timeout`, in seconds, lets one job's transaction sit idle longer
-    than the server's idle_in_transaction_session_timeout while it waits on
-    the outside world (a browser, a remote API). The job's transaction holds
-    its liveness lock, so it cannot commit early to avoid the wait; the
-    setting is transaction-local and ends with the job.
-    """
 
     def decorate[F: Callable[..., typing.Any]](func: F) -> F:
         if not func.__name__.startswith("_"):
@@ -258,9 +236,6 @@ def readonly[F: Callable[..., typing.Any]](method: F) -> F:
 
 
 def is_readonly(model_class: type, method_name: str) -> bool:
-    """Whether ``method_name`` is declared read-only on ``model_class``: the
-    nearest definition in the MRO that says so decides, so an override that
-    does not restate the decorator inherits the declaration below it."""
     for cls in model_class.__mro__:
         method = cls.__dict__.get(method_name)
         if method is not None and hasattr(method, "_readonly"):

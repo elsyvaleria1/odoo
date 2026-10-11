@@ -104,7 +104,7 @@ class TestTranslationImportModel1(models.Model):
         self.env._("PY Export 26 %s", "NO - PY Export 05" + "".join(terms))
         self.env._("PY Export 27 %s", "".join(terms) + "NO - PY Export 06")
 
-        self.env._(f"PY Export 28")  # noqa: F541  see comment above
+        self.env._(f"PY Export 28")
         self.env._(f"NO - PY Export 07 {term}")
 
         self.env._(dummy_function("NO - PY Export 08"))

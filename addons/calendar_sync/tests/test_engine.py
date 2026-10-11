@@ -68,7 +68,6 @@ class TestCalendarSyncEngine(TransactionCase):
                     capabilities=capabilities,
                 ),
             )
-        # beside the providers installed, whose adapters keep running
         Account = type(cls.env["calendar.sync.account"])
         installed = Account._calendar_sync_providers
         cls.startClassPatcher(
@@ -116,7 +115,6 @@ class TestCalendarSyncEngine(TransactionCase):
             )
         )
 
-    # -- helpers -------------------------------------------------------------
 
     def _authorize(self, user, code="fake_outlook"):
         connection = self.env["integration.connection"]._personal(
@@ -133,7 +131,6 @@ class TestCalendarSyncEngine(TransactionCase):
         return result
 
     def _push(self):
-        """What a commit does: flush, then run what waits for the commit."""
         self.env.flush_all()
         funcs = self.env.cr.postcommit._funcs
         while funcs:
@@ -162,7 +159,6 @@ class TestCalendarSyncEngine(TransactionCase):
         )
 
     def _capabilities(self, code="fake_outlook", **capabilities):
-        """`code`'s provider with `capabilities` changed, for this test."""
         service, provider = self.providers[code]
         self.providers[code] = (
             service,
@@ -174,14 +170,12 @@ class TestCalendarSyncEngine(TransactionCase):
         self.addCleanup(self.providers.__setitem__, code, (service, provider))
 
     def _linked_event(self, code="fake_outlook", **values):
-        """An event the organizer's calendar holds, in sync."""
         account = self._authorize(self.organizer, code)
         event = self._event(**values)
         self._push()
         self.servers[code].sent.clear()
         return account, event
 
-    # -- pull ----------------------------------------------------------------
 
     def test_a_remote_event_is_created_once_and_linked(self):
         account = self._authorize(self.organizer)
@@ -333,8 +327,6 @@ class TestCalendarSyncEngine(TransactionCase):
         self.assertEqual(server.sent, [], "a series read from Outlook is not sent back")
 
     def test_an_occurrence_changed_alone_goes_to_its_series(self):
-        """An item of a series this calendar holds, listed without its series,
-        changes that series' event; it is never an event of its own."""
         account = self._authorize(self.organizer)
         server = self.servers["fake_outlook"]
         master = server.add(
@@ -377,7 +369,6 @@ class TestCalendarSyncEngine(TransactionCase):
         )
         self.assertNotEqual(account.sync_token, "stale")
 
-    # -- push ----------------------------------------------------------------
 
     def test_an_event_is_inserted_through_its_organizer(self):
         account = self._authorize(self.organizer)
@@ -473,8 +464,6 @@ class TestCalendarSyncEngine(TransactionCase):
         )
 
     def test_an_answer_goes_out_from_the_attendees_own_calendar(self):
-        """With an answer endpoint, an attendee answers in their own calendar,
-        under the id their copy has there: the organizer's copy is not sent."""
         self._capabilities(answer_endpoint=True)
         __, event = self._linked_event()
         server = self.servers["fake_outlook"]
@@ -514,8 +503,6 @@ class TestCalendarSyncEngine(TransactionCase):
         self.assertFalse(self.servers["fake_outlook"].sent)
 
     def test_a_record_the_provider_would_refuse_is_refused_alone(self):
-        """A record the adapter knows the provider refuses is not sent and is
-        noted once; the others go on."""
         self._authorize(self.organizer)
         server = self.servers["fake_outlook"]
         refused, sent = self._event(name="Refused"), self._event(name="Sent")

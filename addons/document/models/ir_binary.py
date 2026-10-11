@@ -24,13 +24,6 @@ class IrBinary(models.AbstractModel):
         return super()._record_to_stream(record, field_name)
 
     def _check_document_content_served(self, attachment: models.Model) -> None:
-        # /web/content and /web/image stream a document's file past the
-        # /documents/content gate, which is the only one that asked whether it
-        # may leave: the current file of a document is served where that route
-        # would serve it inline, a version only where it may be downloaded.
-        # Only the documents the caller reaches bind: one who holds the file
-        # through the record it is attached to is no viewer of the document.
-        # A record handed over sudo was gated by the route that elevated it
         if attachment.env.su or not attachment:
             return
         Documents = attachment.env["document.document"].with_context(active_test=False)
@@ -72,8 +65,6 @@ class IrBinary(models.AbstractModel):
             raise AccessError(self.env._("Downloading this document is not allowed."))
 
     def _is_blocked_document_content(self, attachment: models.Model) -> bool:
-        # most attachments back no blocked document: one indexed probe, free
-        # of the access rules a document search builds for every file served
         Documents = self.env["document.document"]
         versions = Documents._fields["previous_attachment_ids"]
         Documents.flush_model(
@@ -114,7 +105,7 @@ class IrBinary(models.AbstractModel):
             and filename is None
             and record.file_extension
         ):
-            name, extension = splitext(record.name)  # noqa: PTH122  a display name, not a path
+            name, extension = splitext(record.name)
             if extension == f".{record.file_extension}":
                 filename = record.name
             else:

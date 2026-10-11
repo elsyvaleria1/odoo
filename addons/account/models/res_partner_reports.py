@@ -98,11 +98,6 @@ class ResPartner(models.Model):
         return None
 
     def _get_partner_account_report_options(self, report, **overrides):
-        """The options for `report` scoped to this partner's open entries.
-
-        The single definition of that scope: a caller needing a variant passes
-        `overrides` rather than restating the whole dict and drifting from it.
-        """
         return report.get_options(
             {
                 "forced_companies": self.env["res.company"]
@@ -129,7 +124,6 @@ class ResPartner(models.Model):
     def _create_partner_account_report_attachment(self, report, options=None):
         self.check_singleton()
         if self.lang:
-            # Print the followup in the customer's language
             report = report.with_context(lang=self.lang)
 
         _debug.logic(
@@ -175,7 +169,6 @@ class ResPartner(models.Model):
             hierarchy=main_hierarchy,
             duplicates=duplicated_partners,
         )
-        # Update commercial partner of all duplicates
         duplicated_partners.write(
             {
                 "is_company": False,

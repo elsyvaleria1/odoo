@@ -7,7 +7,6 @@ class WizardHrExpenseSplitLine(models.TransientModel):
 
     def _prepare_expense_vals(self):
         values = super()._prepare_expense_vals()
-        # Add any additional fields or modifications specific to hr_expense_stripe here
         values.update(
             {
                 "stripe_authorization_id": self.expense_id.stripe_authorization_id,

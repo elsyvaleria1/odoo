@@ -38,8 +38,6 @@ class MailingSMSController(http.Controller):
         auth="public",
     )
     def blacklist_page(self, mailing_id, trace_code, **post):
-        """Main entry point for unsubscribe links. Verify trace code (should
-        match mailing and trace), then check number can be sanitized."""
         check_res = self._check_trace(mailing_id, trace_code)
         found_traces = check_res.get("trace")
         if not found_traces:
@@ -57,7 +55,6 @@ class MailingSMSController(http.Controller):
             if not country:
                 country = request.env.company.country_id
             try:
-                # Sanitize the phone number
                 sanitized_number = phone_validation.phone_format(
                     sms_number,
                     country.code,
@@ -73,13 +70,11 @@ class MailingSMSController(http.Controller):
                     lambda t: t.sms_number == sanitized_number
                 )
 
-        # trace found -> number valid, code matching
         if valid_trace:
             return request.redirect(
                 f"/sms/{mailing_id}/unsubscribe/{trace_code}?{urlencode({'sms_number': sanitized_number})}"
             )
 
-        # otherwise: generate error message, loop on same page
         unsubscribe_error = False
         if sms_number and not sanitized_number:
             unsubscribe_error = request.env._(
@@ -104,11 +99,9 @@ class MailingSMSController(http.Controller):
         auth="public",
     )
     def blacklist_number(self, mailing_id, trace_code, **post):
-        """Effectively opt-out or enter number in block list."""
         check_res = self._check_trace(mailing_id, trace_code)
         if not check_res.get("trace"):
             return request.redirect("/odoo")
-        # parse and validate number
         sms_number = post.get("sms_number", "").strip(" ")
         tocheck_number = sms_number
 
@@ -117,7 +110,6 @@ class MailingSMSController(http.Controller):
             if tocheck_number
             else False
         )
-        # compute opt-out / blacklist information
         lists_optout = request.env["mailing.list"].sudo()
         lists_optin = request.env["mailing.list"].sudo()
         if tocheck_number and trace:

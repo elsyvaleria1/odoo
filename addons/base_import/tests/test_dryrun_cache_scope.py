@@ -31,14 +31,6 @@ class DryRunClearsOnlyWhatItDirtied(TransactionCase):
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ",", "encoding": "utf-8"}
 
     def _seed_sentinels(self):
-        """Put a recognisable entry in every ormcache LRU, and take it out after.
-
-        The LRUs are process-global and not transactional, so a sentinel is the
-        only way to see what a rollback did to them -- and it has to be cleaned
-        up by hand, since nothing else will.
-        """
-        # Asset precompilation can leave invalidation flags before the first
-        # post-install test. Measure only what this import invalidates.
         self._clear_registry_caches()
         lrus = self.env.registry.ormcache_lrus
         for name, lru in lrus.items():
@@ -70,7 +62,6 @@ class DryRunClearsOnlyWhatItDirtied(TransactionCase):
         self.assertFalse(result["messages"])
 
     def test_dryrun_keeps_the_caches_it_cannot_have_dirtied(self):
-        """Importing partners leaves the asset and routing caches alone."""
         lrus = self._seed_sentinels()
 
         self._dryrun("res.partner", b"name\nImported Row\n", ["name"], ["Name"])
@@ -85,33 +76,12 @@ class DryRunClearsOnlyWhatItDirtied(TransactionCase):
             expected,
             "a dry-run cleared more of the ormcache than the rows it rolled back",
         )
-        # Named explicitly: these two are the whole point of the change, and an
-        # expression-only assertion would not say so if CACHES_BY_KEY moved.
         self.assertIn("routing", expected)
         self.assertIn("assets", expected)
 
     def test_dryrun_still_clears_a_cache_the_import_invalidated(self):
-        """Importing ir.asset drops `assets`, because the write reported it.
-
-        Unlike the test above, this one passes both before and after the
-        narrowing -- `clear_all_caches()` dropped `assets` too, just for a
-        cruder reason. It is a guard, not the proof: it fails if someone
-        narrows the set further, or if `ir.asset` stops reporting what it
-        dirtied, which are the two ways the narrowing could later turn unsafe.
-
-        Asserted at the seam rather than by counting survivors. The sentinels
-        cannot carry this one on their own: `reset_changes()` also has a
-        registry-reload branch, and `_setup_models__` opens with
-        `self._caches.clear_all()`, so whenever a module update leaves the
-        registry flagged -- which is exactly the case while this suite runs
-        under `-u base_import` -- every LRU is wiped for a reason that has
-        nothing to do with the narrowing. Checking what reached
-        `cache_invalidated` states the actual guarantee and survives that.
-        """
         self._seed_sentinels()
         seen = {}
-        # on the instance: every TransactionCase already wraps the registry's
-        # reset_changes there, which a patch of the class would sit behind
         registry = self.env.registry
         original = registry.reset_changes
 

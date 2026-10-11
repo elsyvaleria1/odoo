@@ -28,9 +28,6 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def _pine_labs_paisa(self, order) -> int:
-        # Pine Labs takes whole paisa; amount_total * 100 is a float such as
-        # 1998.9999999999998. Half-up, as payment.utils and the till's
-        # ResCurrency.toMinorUnits round, never round()'s half-to-even
         return int(
             float_round(
                 order.amount_total * 10**order.currency_id.decimal_places,

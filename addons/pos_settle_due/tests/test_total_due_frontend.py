@@ -29,10 +29,6 @@ class TestPointOfSaleFlow(TestPointOfSaleHttpCommon):
         )
 
     def test_settle_order_partially_backend(self):
-        """
-        - Create an invoice when paying an order with customer account from POS, pay partially the invoice from PoS and go to backend to check that the amount residual is decreased.
-        - Then pay partially from the backend, and check that the amount due is updated in the POS.
-        """
         self.partner_test_a = self.env["res.partner"].create({"name": "A Partner"})
         self.customer_account_payment_method = self.env["pos.payment.method"].create(
             {
@@ -75,7 +71,6 @@ class TestPointOfSaleFlow(TestPointOfSaleHttpCommon):
         self.assertEqual(self.partner_test_a.total_due, 0)
 
     def test_settle_due_account_button(self):
-        """Test that an invoice can be created after the session is closed"""
         self.customer_account_payment_method = self.env["pos.payment.method"].create(
             {
                 "name": "Customer Account",
@@ -236,10 +231,6 @@ class TestPointOfSaleFlow(TestPointOfSaleHttpCommon):
             )
 
     def test_pos_settling_account_resets_on_payment_screen_unmount(self):
-        """
-        Test that the variable is_settling_account resets to false
-        if payment is not completed or user returns back to product screen
-        """
         self.main_pos_config.open_ui()
         self.start_tour(
             "/pos/ui/%d" % self.main_pos_config.id,

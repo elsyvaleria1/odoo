@@ -169,17 +169,12 @@ class AutomationRuntimeLine(models.Model):
         ]
 
     def _get_missing_inputs(self):
-        """Return the fields of this step it needs filled before it runs and lacks."""
         self.check_singleton()
         return self.action_id._get_line_input_fields().filtered(
             lambda field: field.name in self._fields and not self[field.name],
         )
 
     def _get_unanswered_questions(self) -> list[str]:
-        """Return the labels of this step's form questions still unanswered.
-
-        A yes/no question is answered by being left unticked.
-        """
         self.check_singleton()
         answers = self.input_values
         return [
@@ -194,13 +189,6 @@ class AutomationRuntimeLine(models.Model):
         return bool(self._get_missing_inputs() or self._get_unanswered_questions())
 
     def _awaits_input(self) -> bool:
-        """Whether someone must fill in fields before this step goes on.
-
-        An Input step waits on its run's fields or its form; any other step
-        paused itself because its own fields or form were empty when it was
-        reached. Every other pause waits on a clock, an approval or a
-        sub-workflow.
-        """
         self.check_singleton()
         if self.state != "paused":
             return False
@@ -217,7 +205,6 @@ class AutomationRuntimeLine(models.Model):
 
     @api.model
     def _get_input_fields(self):
-        """Return the fields the step named by the context needs filled."""
         line = self.browse(self.env.context.get(INPUT_CONTEXT_KEY)).exists()
         return (
             line.action_id._get_line_input_fields().filtered(
@@ -309,19 +296,15 @@ class AutomationRuntimeLine(models.Model):
             runtime._notify_workflow_change()
             return {"type": "ir.actions.act_window_close"}
         self.state = "ready"
-        # The dialog was part of pressing Next Step on this step: it runs this
-        # step, as Next Step would have, and no more.
         result = runtime._run_line(self)
         if isinstance(result, dict):
             return result
         return {"type": "ir.actions.act_window_close"}
 
     def _set_output(self, output: dict, summary: str = "") -> None:
-        """Record what the step did: data for the flow, and a line for people."""
         self.write({"output": output, "output_summary": summary or False})
 
     def action_run(self) -> dict | None:
-        """Run this ready step now, whichever other steps are ready too."""
         self.check_singleton()
         runtime = self.runtime_id
         if self.state != "ready" or runtime.state not in (
@@ -341,7 +324,6 @@ class AutomationRuntimeLine(models.Model):
         return result if isinstance(result, dict) else None
 
     def _get_upstream_lines(self):
-        """Return every step of the run this one transitively waits for."""
         self.check_singleton()
         upstream = self.browse()
         frontier = self._get_predecessors()
@@ -358,8 +340,6 @@ class AutomationRuntimeLine(models.Model):
         }
 
     def _get_step_scope(self) -> dict:
-        """Return the variables a code step evaluates with: what it may read
-        of the other steps of its run, which is what runs before it."""
         self.check_singleton()
         views = self._get_step_views(self._get_upstream_lines())
         predecessors = self._get_predecessors()
@@ -388,8 +368,6 @@ class AutomationRuntimeLine(models.Model):
         }
 
     def _get_readable_steps(self) -> StepScope:
-        """Return this step and everything upstream of it, as an edge leaving
-        it reads them."""
         self.check_singleton()
         return StepScope(
             self._get_step_views(self | self._get_upstream_lines()),
@@ -679,10 +657,6 @@ class AutomationRuntimeLine(models.Model):
 
     @api.model
     def _settle_approvals(self, rules=None) -> None:
-        """Release the approval steps their approvers answered, and fail those
-        whose required decisions were withdrawn or are missing. An approver only closes
-        their own activity; the dispatcher moves the run, as the rule runs it.
-        """
         paused = self.search(
             [
                 "|",
@@ -754,8 +728,6 @@ class AutomationRuntimeLine(models.Model):
         if runtime.state == "waiting_resume":
             runtime.state = "in_progress"
         self.action_resume()
-        # once the step is released: removing the activities of a step still
-        # paused is what fails it
         pending.unlink()
         runtime._advance()
 
@@ -862,9 +834,6 @@ class AutomationRuntimeLine(models.Model):
                 self.runtime_id.name,
             )
 
-            # Settling the step belongs to the step: releasing its successors
-            # or closing the run can raise too, and a step left `error` with
-            # its document still there would create a second one on retry.
             with self.env.cr.savepoint():
                 result = self.action_id.with_context(**ctx).run()
                 self.action_mark_done()
@@ -874,11 +843,6 @@ class AutomationRuntimeLine(models.Model):
             return result or True
 
         except PG_RETRY_EXCEPTIONS:
-            # The transaction lost to a concurrent one; the step did not fail.
-            # Raised while opening the savepoint, it leaves the transaction
-            # aborted, and marking the step failed would be refused in turn,
-            # burying the cause under InFailedSqlTransaction. Whoever owns the
-            # transaction -- a request, a cron -- runs it again from scratch.
             raise
         except Exception as e:
             error_msg = str(e)

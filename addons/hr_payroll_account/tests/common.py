@@ -25,28 +25,6 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
         employee_fields=False,
         tz=False,
     ):
-        """
-        This method setups a set of common models that will be used to test payslip validation.
-
-        It will create a partner and an employee that are in the company in cls.env.company.
-        The employee and company resource calendar will be a standard full-time 40h/week calendar.
-        The default timezone is 'America/Los_Angeles'.
-
-        It will also create a contract for the employee in the same company with:
-            - a default start date at the 1st of January 2016
-            - a default wage amounting to 1000.0 of whatever the currency of the company is.
-
-        In the following parameter descriptions, 'xx' is the standard 2-letter country code.
-        :param country: Record of the country (usually base.xx)
-        :param structure: Record of the default structure (usually l10n_xx_hr_payroll.hr_payroll_structure_xx_employee_salary)
-        :param structure_type: Record of the default structure type (usually l10n_xx_hr_payroll.structure_type_employee_xx)
-        :param resource_calendar: Record of a resource calendar if you want to replace the default one
-        :param car: Record of the employee's fleet car, False by default
-        :param contract_fields: Dict of field names: value, that will be overridden on the contract created
-        :param employee_fields: Dict of field names: value, that will be overridden on the employee created
-        :param tz: String of a timezone that is set for both the user and the resource calendar
-        :return:
-        """
         cls.country = country
         country_code = country.code.upper()
 
@@ -145,7 +123,6 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
         cls.car = car
         if cls.car:
             cls.car.sudo().write({"operator_id": cls.employee.resource_id.id})
-            # This field only exists if fleet is installed
             cls.contract.sudo().write({"car_id": cls.car.id})
 
     @classmethod
@@ -173,7 +150,6 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                 }
             ]
         )
-        # This field only exists if fleet is installed
         if cls.car:
             payslip.write({"vehicle_id": cls.car.id})
         work_entries.action_validate()
@@ -217,7 +193,7 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                     )
             for line in payslip_lines:
                 if line.code not in results:
-                    error.append(  # noqa: PERF401  explicit loop reads clearer here
+                    error.append(
                         f"{'MISSING LINE':>20} │ {line.code:<30} │ {'/':>15} │ {line_values[line.code][payslip.id]['total']:>15} │"
                     )
         if error:
@@ -242,13 +218,6 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
         self.assertEqual(len(error), 0, "\n\n" + "\n".join(error))
 
     def _validate_worked_days(self, payslip, results, skip_lines=False):
-        """
-        Validate the worked days lines of a payslip.
-        :param payslip: The payslip
-        :param results: A dict of {work_entry_code: (number_of_days, number_of_hours, amount)}
-        :param skip_lines: If True, we don't check that all lines are present in the payslip
-        :return:
-        """
         error = []
         line_values = payslip._get_worked_days_line_values(
             set(results.keys()) | set(payslip.worked_days_line_ids.mapped("code")),
@@ -276,7 +245,7 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
         if not skip_lines:
             for line in payslip.worked_days_line_ids:
                 if line.code not in results:
-                    error.append(  # noqa: PERF401  explicit loop reads clearer here
+                    error.append(
                         "Missing Line: '%s' - %s Days - %s Hours - %s CHF,"
                         % (
                             line.code,
@@ -294,7 +263,7 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
                 ]
             )
             for line in payslip.worked_days_line_ids:
-                error.append(  # noqa: PERF401  explicit loop reads clearer here
+                error.append(
                     "            '%s': (%s, %s, %s),"
                     % (
                         line.code,
@@ -321,7 +290,7 @@ class TestPayslipValidationCommon(AccountTestInvoicingCommon):
             for line in lines:
                 for move_type in ["credit", "debit"]:
                     if line[move_type]:
-                        error.append(  # noqa: PERF401  explicit loop reads clearer here
+                        error.append(
                             "%s - %s - %s"
                             % (line.account_id.code, move_type, line[move_type])
                         )

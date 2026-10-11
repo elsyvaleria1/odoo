@@ -35,8 +35,6 @@ class TestWebsitePageManager(HttpCaseWithWebsiteUser):
             "test_website_page_manager",
             login="website_user",
         )
-        # This second test is about ensuring that you can switch from a list
-        # view which has no `website_pages_list` js_class to its kanban view
         self.start_tour(
             "/odoo/action-test_website.action_test_model_multi_website_js_class_bug",
             "test_website_page_manager_js_class_bug",

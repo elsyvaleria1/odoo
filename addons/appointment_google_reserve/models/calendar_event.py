@@ -25,7 +25,6 @@ class CalendarEvent(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Update the availability based on the new events created if needed."""
 
         events = super().create(vals_list)
         events._sync_google_reserve_availabilities()
@@ -33,7 +32,6 @@ class CalendarEvent(models.Model):
         return events
 
     def write(self, vals):
-        """Update the google booking and availabilities."""
 
         google_sync_modifying_fields = {
             "active",
@@ -54,7 +52,6 @@ class CalendarEvent(models.Model):
         self._sync_google_reserve_availabilities(old_dates_by_event)
 
         if not self.env.context.get("google_reserve_service_rpc"):
-            # if the modification does not come from a Google Reserve call -> update the booking
             google_reserve = GoogleReserveIAP()
             events_by_appointment = self.filtered(
                 lambda event: event.appointment_type_id.google_reserve_enable
@@ -64,8 +61,6 @@ class CalendarEvent(models.Model):
                     "is_google_reserve"
                 ):
                     if "stop" in vals and "start" not in vals:
-                        # special case: Google will only accept "start" and "duration"
-                        # -> manually add start for each event
                         for google_reserve_event in google_reserve_events:
                             google_reserve.update_booking(
                                 appointment_type,
@@ -81,7 +76,6 @@ class CalendarEvent(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_update_availabilities(self) -> None:
-        """Cancel the google booking and update availabilities."""
 
         google_reserve = GoogleReserveIAP()
         dates_by_appointment = {}

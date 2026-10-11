@@ -271,7 +271,7 @@ class WizardStockWarehouseOrderpointUpdateReplenishment(models.TransientModel):
                 ],
             )
             quantity_out = (
-                self.env["stock.move"]._read_group(  # noqa: E8507 - the domain carries this record's own product, period and company
+                self.env["stock.move"]._read_group(
                     Domain.AND(
                         [
                             domain,
@@ -289,7 +289,7 @@ class WizardStockWarehouseOrderpointUpdateReplenishment(models.TransientModel):
                 or 0.0
             )
             quantity_returned = (
-                self.env["stock.move"]._read_group(  # noqa: E8507 - the domain carries this record's own product, period and company
+                self.env["stock.move"]._read_group(
                     Domain.AND([domain, [("location_id.usage", "=", "customer")]]),
                     aggregates=["product_qty:sum"],
                 )[0][0]

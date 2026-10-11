@@ -1,6 +1,5 @@
 from odoo import api, models
 
-# the setting's value that suggests nothing, where an unset one picks a provider
 NO_PROVIDER = "none"
 
 
@@ -9,14 +8,10 @@ class IrHttp(models.AbstractModel):
 
     @api.model
     def _address_autocomplete_providers(self) -> dict:
-        """{code: AddressProvider} of the installed providers."""
         return {}
 
     @api.model
     def _address_autocomplete_provider(self):
-        """The provider chosen in the settings when it is installed; with none
-        chosen, the first installed one by code; None when the settings say
-        none."""
         code = self.env.registry.settings.get(
             self.env, "address_autocomplete.provider", False
         )

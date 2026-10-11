@@ -38,8 +38,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _get_l10n_mx_municipality_sql(self, partner: SQL) -> SQL:
-        # the municipality set on the contact, else the one of its postal code:
-        # the record picked in the field, else the catalogue entry of the zip text
         return SQL(
             """
             COALESCE(

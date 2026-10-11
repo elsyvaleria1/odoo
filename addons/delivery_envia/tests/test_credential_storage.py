@@ -12,9 +12,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestEnviaCredentials(TransactionCase):
-    # Not EnviaTestCommon: its setUp calls action_get_carrier_type(), which
-    # reaches the live Envia API and is only mocked by the subclass that
-    # re-tags those tests standard. A carrier of our own is enough here.
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -57,9 +54,6 @@ class TestEnviaCredentials(TransactionCase):
         self.assertEqual(self.carrier.envia_production_api_key, "round-prod")
 
     def test_writing_one_environment_leaves_the_other_alone(self):
-        # The two arrive through separate inverses, so they land one at a time.
-        # A store that rewrote credential_data wholesale would drop the sibling,
-        # and here that means silently switching production onto no token at all.
         self.carrier.write(
             {
                 "envia_sandbox_api_key": "keep-test",
@@ -74,7 +68,6 @@ class TestEnviaCredentials(TransactionCase):
         self.assertEqual(self.carrier.envia_sandbox_api_key, "keep-test")
 
     def test_neither_key_lands_in_a_native_vault_field(self):
-        # api_key/api_secret would misdescribe two environments of one key.
         self.carrier.envia_sandbox_api_key = "not-an-api-key"
 
         credential = self.carrier.carrier_credential_id.sudo()

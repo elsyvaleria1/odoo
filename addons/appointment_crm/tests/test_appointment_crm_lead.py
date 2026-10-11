@@ -5,7 +5,6 @@ from odoo.tests import HttpCase, tagged, users
 class AppointmentCrmLeadPropagationTest(HttpCase):
     @users("admin")
     def test_tour_default_opportunity_propagation(self):
-        """Test that the opportunity is correctly propagated to the appointment invitation created"""
         self.env.user.tz = "Europe/Brussels"
         opportunity = self.env["crm.lead"].create({"name": "Test Opportunity"})
         appointment_type = self.env["appointment.type"].create(

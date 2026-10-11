@@ -150,11 +150,6 @@ class SaleOrderLine(models.Model):
                 if product_uom_id == sale_line_uom:
                     results.append(item)
                     continue
-                # `product_uom_qty` is ALREADY the product's reference unit in
-                # this fork (Appendix A), so converting it here multiplied the
-                # ratio in a second time: one dozen settled as 144 rather than
-                # 12. The other four quantities are in the line's own unit and
-                # do need the conversion.
                 item["qty_transferred"] = self._convert_qty(
                     sale_line, item["qty_transferred"], "s2p"
                 )
@@ -183,16 +178,6 @@ class SaleOrderLine(models.Model):
 
     @api.model
     def _convert_qty(self, sale_line, qty, direction):
-        """Convert qty between sale_line's UoM and its product's UoM.
-
-        :param recordset sale_line: sale.order.line to convert for
-        :param float qty: quantity to convert
-        :param str direction: "s2p" (sale line UoM to product UoM) or "p2s"
-            (product UoM to sale line UoM)
-        :return: converted quantity
-        :rtype: float
-        :raises ValueError: if direction is neither "s2p" nor "p2s"
-        """
         product_uom_id = sale_line.product_id.uom_id
         sale_line_uom = sale_line.product_uom_id
         if direction == "s2p":
@@ -202,7 +187,6 @@ class SaleOrderLine(models.Model):
         raise ValueError(f"Unknown conversion direction: {direction!r}")
 
     def unlink(self):
-        # do not delete downpayment lines created from pos
         pos_downpayment_lines = self.filtered(
             lambda line: line.is_downpayment and line.sudo().pos_order_line_ids
         )

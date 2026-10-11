@@ -105,7 +105,6 @@ class TestResPartnerAttributeLine(TransactionCase):
             self.env.flush_all()
 
     def test_a_sequence_write_does_not_rescore(self):
-        """A handle drag is not a capture; the score rows do not move."""
         line = self.Line.create(
             {
                 "partner_id": self.company.id,
@@ -120,7 +119,6 @@ class TestResPartnerAttributeLine(TransactionCase):
             self.assertTrue(rescored.called)
 
     def test_demoting_a_company_moves_its_captured_attributes_up(self):
-        """The constraint cannot see a change on the partner, so write() does."""
         demoted = self.Partner.create({"name": "Line Demoted", "is_company": True})
         line = self.Line.create(
             {
@@ -184,8 +182,6 @@ class TestResPartnerAttributeLine(TransactionCase):
 
         demoted.write({"parent_id": parent.id, "is_company": False})
 
-        # Two captures of one attribute cannot be merged without deciding
-        # which answer wins, so nothing is silently destroyed.
         self.assertEqual(stray.partner_id, demoted)
         self.assertEqual(held.partner_id, parent)
         self.assertEqual(held.value_ids, self.val_b)

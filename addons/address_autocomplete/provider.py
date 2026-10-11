@@ -8,5 +8,4 @@ class AddressProvider:
 
     code: str
     label: str
-    # the adapter model answering the provider's suggestions and details
     adapter: str

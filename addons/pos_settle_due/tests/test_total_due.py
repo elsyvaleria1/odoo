@@ -33,7 +33,6 @@ class TestPointOfSaleFlow(CommonPosTest):
         order.action_pos_order_invoice()
         self.assertEqual(accounting_partner.total_due, 5.0)
 
-        # get journal entry that does the reverse payment, it the ref must contains Reversal
         reverse_payment = self.env["account.move"].search(
             [("ref", "ilike", "Reversal")]
         )
@@ -46,7 +45,6 @@ class TestPointOfSaleFlow(CommonPosTest):
         reverser_customer_payment_entry = reverse_payment.line_ids.filtered(
             lambda l: l.account_id.account_type == "asset_receivable"
         )
-        # check that both use the same account
         self.assertEqual(len(reverser_customer_payment_entry), 2)
         self.assertEqual(len(original_customer_payment_entry), 2)
         self.assertTrue(
@@ -67,7 +65,6 @@ class TestPointOfSaleFlow(CommonPosTest):
         )
 
     def test_invoicing_after_closing_session_intermediary_account(self):
-        """Test that an invoice can be created after the session is closed"""
         receivable_account = self.env.company.account_config_id.account_default_pos_receivable_account_id.copy()
         self.cash_payment_method.receivable_account_id = receivable_account
         self.partner_moda.parent_id = self.partner_adgu
@@ -91,11 +88,9 @@ class TestPointOfSaleFlow(CommonPosTest):
         accounting_partner = self.partner_moda.commercial_partner_id
         self.assertEqual(accounting_partner.total_due, 0.0)
 
-        # create invoice
         order.action_pos_order_invoice()
         self.assertEqual(accounting_partner.total_due, 0.0)
 
-        # get journal entry that does the reverse payment, it the ref must contains Reversal
         reverse_payment = self.env["account.move"].search(
             [("ref", "ilike", "Reversal")]
         )
@@ -108,7 +103,6 @@ class TestPointOfSaleFlow(CommonPosTest):
         reverser_customer_payment_entry = reverse_payment.line_ids.filtered(
             lambda l: l.account_id.account_type == "asset_receivable"
         )
-        # check that both use the same account
         self.assertEqual(original_customer_payment_entry.account_id, receivable_account)
         self.assertEqual(
             original_customer_payment_entry.account_id.id,
@@ -128,7 +122,6 @@ class TestPointOfSaleFlow(CommonPosTest):
             self.assertEqual(aml_g["__count"], 2)
 
     def test_deleted_partner_get_all_total_due(self):
-        """Test that get_all_total_due works when some partners have been deleted"""
         partner_a = self.env["res.partner"].create({"name": "A Partner"})
         partner_b = self.env["res.partner"].create({"name": "B Partner"})
         partner_c = self.env["res.partner"].create({"name": "C Partner"})

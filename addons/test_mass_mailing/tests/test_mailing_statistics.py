@@ -34,10 +34,10 @@ class TestMailingStatistics(TestMassMailCommon):
             model="mailing.test.blacklist", count=13
         )
         target_records[10]["email_from"] = (
-            False  # void email should lead to a 'cancel' trace_status
+            False
         )
         target_records[11]["email_from"] = (
-            "raoul@example¢¡.com"  # wrong email should lead to a 'exception' trace_status
+            "raoul@example¢¡.com"
         )
         mailing = self.env["mailing.mailing"].browse(self.mailing_bl.ids)
         mailing.write(
@@ -50,7 +50,6 @@ class TestMailingStatistics(TestMassMailCommon):
         with self.mock_mail_gateway(mail_unlink_sent=False):
             mailing.action_send_mail()
 
-        # simulate some replies and clicks
         self.gateway_mail_reply_wrecord(
             MAIL_TEMPLATE, target_records[0], use_in_reply_to=True
         )
@@ -67,7 +66,6 @@ class TestMailingStatistics(TestMassMailCommon):
         self.gateway_mail_trace_bounce(mailing, target_records[12])
         self.assertEqual(target_records[12].message_bounce, 1)
 
-        # check mailing statistics
         self.assertEqual(mailing.bounced, 1)
         self.assertEqual(mailing.bounced_ratio, 9.09)
         self.assertEqual(mailing.canceled, 1)
@@ -91,13 +89,11 @@ class TestMailingStatistics(TestMassMailCommon):
             "Mailing: a mail should have been created for statistics",
         )
         mail = self._new_mails[0]
-        # test email values
         self.assertEqual(mail.author_id, self.user_marketing_2.partner_id)
         self.assertEqual(mail.email_from, self.user_marketing_2.email_formatted)
         self.assertEqual(mail.email_to, self.user_marketing_2.email_formatted)
         self.assertEqual(mail.reply_to, self.company_admin.partner_id.email_formatted)
         self.assertEqual(mail.state, "outgoing")
-        # test body content: KPIs
         body_html = html.fromstring(mail.body_html)
         kpi_values = body_html.xpath(
             '//table[@data-field="mail"]//*[hasclass("kpi_value")]/text()'
@@ -108,9 +104,8 @@ class TestMailingStatistics(TestMassMailCommon):
                 "83.33",
                 str(mailing.opened_ratio),
                 str(mailing.replied_ratio),
-            ],  # first value is received_ratio
+            ],
         )
-        # test body content: clicks (a bit hackish but hey we are in stable)
         kpi_click_values = body_html.xpath(
             '//table//tr[contains(@style,"color: #888888")]/td[contains(@style,"width: 30%")]/text()'
         )
@@ -144,7 +139,6 @@ class TestMailingStatistics(TestMassMailCommon):
             "Mailing: a mail should have been created for statistics",
         )
         mail = self._new_mails[0]
-        # test email values
         self.assertEqual(mail.author_id, self.user_marketing.partner_id)
         self.assertEqual(mail.email_from, self.user_marketing.email_formatted)
         self.assertEqual(mail.email_to, self.user_marketing.email_formatted)

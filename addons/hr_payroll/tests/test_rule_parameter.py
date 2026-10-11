@@ -24,7 +24,7 @@ class TestRuleParameter(TransactionCase):
 
         values = []
         for year in [2016, 2017, 2018, 2020]:
-            values.append(  # noqa: PERF401  explicit loop reads clearer for the multi-key dict
+            values.append(
                 {
                     "rule_parameter_id": cls.rule_parameter.id,
                     "parameter_value": str(year),
@@ -55,7 +55,6 @@ class TestRuleParameter(TransactionCase):
             self.env["hr.rule.parameter"]._get_parameter_from_code("wrong_code")
 
     def test_multicompany(self):
-        """Test value is not reused from cache when allowed_company_ids changes"""
 
         be = self.env.ref("base.be")
         fr = self.env.ref("base.fr")
@@ -89,12 +88,10 @@ class TestRuleParameter(TransactionCase):
         )
 
         with self.assertRaises(UserError):
-            # Read a BE parameter from FR company
             self.env["hr.rule.parameter"].with_user(user).with_company(
                 company_2
             )._get_parameter_from_code("test_parameter")
 
-        # Read a BE parameter from BE company, value is set in cache
         be_value = (
             self.env["hr.rule.parameter"]
             .with_user(user)
@@ -104,14 +101,11 @@ class TestRuleParameter(TransactionCase):
         self.assertEqual(be_value, 100)
 
         with self.assertRaises(UserError):
-            # Read a BE parameter from FR company
-            # Value should not come from cache, access rights should be checked
             self.env["hr.rule.parameter"].with_user(user).with_company(
                 company_2
             )._get_parameter_from_code("test_parameter")
 
     def test_future_rule_parameter(self):
-        """Test rule parameter value creation with future date"""
         with Form(self.env["hr.rule.parameter"]) as rule:
             rule.name = "Test Future Parameter"
             rule.code = "test_future_param"
@@ -122,20 +116,16 @@ class TestRuleParameter(TransactionCase):
         self.assertTrue(new_rule.exists())
 
     def test_duplicate_rule_parameter(self):
-        """Duplicating a parameter must not collide with the unique code."""
         copy = self.rule_parameter.copy()
         self.assertTrue(copy.exists())
         self.assertEqual(copy.code, "test_param_copy")
         self.assertEqual(copy.name, "Test Parameter (copy)")
 
     def test_duplicate_rule_parameter_honours_explicit_code(self):
-        """An explicit default still wins over the _copy suffix."""
         copy = self.rule_parameter.copy({"code": "chosen_code"})
         self.assertEqual(copy.code, "chosen_code")
 
     def test_parameter_value_update_is_logged_on_the_parameter(self):
-        """Changing a rule parameter moves the whole payroll; the parameter
-        must keep a trace of the old and the new value."""
         value = self.rule_parameter.parameter_version_ids.filtered(
             lambda v: v.date_from == date(2016, 1, 1)
         )
@@ -162,7 +152,6 @@ class TestRuleParameter(TransactionCase):
         self.assertIn("2017-07-01", messages[0].body)
 
     def test_parameter_value_update_logs_every_record_of_a_batch(self):
-        """The log runs inside write(), which is a multi-record call."""
         values = self.rule_parameter.parameter_version_ids
         self.assertGreater(len(values), 1)
         messages_before = len(self.rule_parameter.message_ids)

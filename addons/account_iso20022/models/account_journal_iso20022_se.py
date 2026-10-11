@@ -75,7 +75,6 @@ class AccountJournal(models.Model):
     def _prepare_credit_transfer_element(
         self, PmtInfId, payment, payment_method_code, include_charge_bearer=True
     ) -> etree._Element:
-        # For Sweden, country is sufficient ; handle the case where the city was not specified beforehand
         CdtTrfTxInf = super()._prepare_credit_transfer_element(
             PmtInfId, payment, payment_method_code, include_charge_bearer
         )

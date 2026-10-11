@@ -44,7 +44,6 @@ class ProductTemplate(models.Model):
         if not barcode_lookup_data:
             return None
         products = barcode_lookup_data.get("products")
-        # if no result or multi result ignore it
         if not products or len(products) > 1:
             return False
         product_data = products[0]
@@ -52,18 +51,15 @@ class ProductTemplate(models.Model):
         if not product.name:
             product.name = product_data.get("title")
 
-        # Image
         if not product.image_1920 and (images := product_data.get("images")):
             for image in images:
                 img_response = barcode_lookup_service.barcode_lookup_request(image)
                 if isinstance(img_response, dict):
-                    # Response is not 200 when fetching the image so we just ignore it.
                     continue
 
                 if img_response:
                     self._set_lookup_image(product, img_response)
 
-        # Weight
         if not product.weight and (
             barcode_lookup_weight := product_data.get("weight", "")
         ):
@@ -85,7 +81,6 @@ class ProductTemplate(models.Model):
                     )
                 product.weight = weight
 
-        # Price
         if (
             not self.list_price or self.currency_id.is_zero(self.list_price - 1.0)
         ) and (stores := product_data.get("stores")):
@@ -115,7 +110,6 @@ class ProductTemplate(models.Model):
                     )
                 product.list_price = self._get_list_price(price)
 
-        # Attributes and values
         extra_attributes = {}
         if (
             product._name == "product.template"
@@ -173,7 +167,6 @@ class ProductTemplate(models.Model):
                     extra_attributes.update({attr_name.capitalize(): attr_values})
             product.attribute_line_ids = attribute_lines
 
-        # Product Categories
         if not product.id and (category := product_data.get("category")):
             sub_category = product_data.get("category", "").split(">")[-1].strip()
             if category := self.env["product.category"].search(
@@ -181,7 +174,6 @@ class ProductTemplate(models.Model):
             ):
                 product.categ_id = category
 
-        # Dimensions and volume
         dimensions = {
             dim: (product_data.get(dim)) for dim in ["length", "width", "height"]
         }
@@ -197,7 +189,6 @@ class ProductTemplate(models.Model):
             if re_match:
                 dim_dict = re_match.groupdict()
                 dim_value = self._to_float(dim_dict.get("uom_val"))
-                # convert value to correct uom
                 if dim_dict.get("unit"):
                     if dim_dict["unit"] == "cm" and imperial_len:
                         dimensions[dim_name] = uom_cm._get_quantity_estimate(
@@ -228,7 +219,6 @@ class ProductTemplate(models.Model):
         else:
             product.volume = volume
 
-        # Description
         product_description = OrderedDict()
         if category := product_data.get("category"):
             product_description.update({"Category": Markup("<li>%s</li>") % category})

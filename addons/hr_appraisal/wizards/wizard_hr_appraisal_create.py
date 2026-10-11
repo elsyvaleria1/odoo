@@ -67,14 +67,6 @@ class WizardHrAppraisalCreate(models.TransientModel):
         user = self.env.user
         domain = Domain([("company_id", "in", self.env.companies.ids)])
         if not user.has_group("hr_appraisal.group_hr_appraisal_user"):
-            # All of the user's employee records, not the singular
-            # `user.employee_id`: its compute is scoped to `env.company` alone,
-            # while the company half of this domain widens to `env.companies`,
-            # so the two disagreed by construction and a user holding an
-            # employee in a second company silently lost every report under it.
-            # Every internal user reaches this branch — `base.group_user` has
-            # create on the wizard and both "Launch Campaign" buttons carry
-            # that group.
             domain &= Domain([("id", "child_of", user.employee_ids.ids)])
         return domain
 
@@ -95,7 +87,6 @@ class WizardHrAppraisalCreate(models.TransientModel):
             )
 
     def _get_warnings(self):
-        """The warnings `warning` renders, one wizard at a time."""
         self.check_singleton()
         warnings = []
         employees = self._get_employees_from_mode()
@@ -149,15 +140,11 @@ class WizardHrAppraisalCreate(models.TransientModel):
         return warnings
 
     def _get_expected_managers(self, employee):
-        """The managers this campaign would give `employee`."""
         if self.manager == "person":
             return self.manager_ids.filtered(lambda m: m.id != employee.id)
         return employee.parent_id if employee.parent_id != employee else False
 
     def _get_appraisals_with_same_date_and_managers(self, employees):
-        # One query for the whole campaign instead of one per employee, and one
-        # call per action instead of two: `_compute_warning` and
-        # `_create_employees_appraisals` both need this set.
         candidates = (
             self.env["hr.appraisal"]
             .sudo()
@@ -187,9 +174,6 @@ class WizardHrAppraisalCreate(models.TransientModel):
 
     def _get_employees_from_mode(self):
         if self.mode == "employee":
-            # No implicit "everyone": an empty selection used to expand to every
-            # employee in every allowed company and launch a company-wide
-            # campaign by accident.
             employees = self.employee_ids
         elif self.mode == "company":
             employees = self.env["hr.employee"].search(
@@ -201,9 +185,6 @@ class WizardHrAppraisalCreate(models.TransientModel):
             )
         else:
             employees = self.department_id.member_ids
-        # The access domain can no longer carry this: scope the result to the
-        # employees this user is allowed to launch a campaign for, which is what
-        # `_employees_domain` already describes for the employee_ids widget.
         return employees.filtered_domain(self._employees_domain())
 
     def _create_employees_appraisals(self, employees):
@@ -212,7 +193,6 @@ class WizardHrAppraisalCreate(models.TransientModel):
         create_vals = []
         for employee in employees_without_appraisal:
             managers = self._get_expected_managers(employee)
-            # A warning will be generated in compute_warning about employees without a direct manager.
             if managers:
                 create_vals.append(
                     {

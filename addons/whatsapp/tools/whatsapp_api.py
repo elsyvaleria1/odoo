@@ -11,7 +11,7 @@ from odoo.addons.whatsapp.tools.whatsapp_exception import WhatsAppError
 _logger = logging.getLogger(__name__)
 
 DEFAULT_ENDPOINT = "https://graph.facebook.com/v23.0"
-MAX_RESPONSE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_RESPONSE_SIZE = 10 * 1024 * 1024
 
 
 class WhatsAppApi:
@@ -23,10 +23,6 @@ class WhatsAppApi:
         self.is_shared_account = False
 
     def _check_allow_requests(self) -> None:
-        """Raise when attempting to make a request in tests.
-
-        Overridable to allow testing internals, if requests themselves are mocked.
-        """
         if modules.module.current_test:
             raise WhatsAppError("API requests disabled in testing.")
 
@@ -61,7 +57,6 @@ class WhatsAppApi:
             headers.update({"Authorization": f"Bearer {self.token}"})
         call_url = (DEFAULT_ENDPOINT + url) if not endpoint_include else url
 
-        # Log the request details for debugging purposes if debug logging is enabled
         if wa_account_id.debug_logging:
             message = f"Type: {request_type}\nURL: {call_url}\nData: {data}"
             wa_account_id._add_ir_log("WA Api Call", message, "__api_requests")
@@ -80,7 +75,6 @@ class WhatsAppApi:
         except requests.exceptions.RequestException as err:
             raise WhatsAppError(failure_type="network") from err
         else:
-            # Log the response details for debugging purposes if debug logging is enabled
             content_type = res.headers.get("Content-Type", "")
             if content_type.startswith(("application/json", "text/")):
                 response_repr = res.text
@@ -109,7 +103,6 @@ class WhatsAppApi:
                 raise WhatsAppError(failure_type="network")
             return res
 
-        # raise if json-parseable and 'error' in json
         try:
             if "error" in res.json():
                 raise WhatsAppError(*self._prepare_error_response(res.json()))
@@ -120,10 +113,6 @@ class WhatsAppApi:
         return res
 
     def _prepare_error_response(self, response) -> tuple:
-        """
-        This method is used to prepare error response
-        :return tuple[str, int]: (error_message, whatsapp_error_code | -1)
-        """
         if response.get("error"):
             error = response["error"]
             desc = error.get("message", "")
@@ -147,11 +136,6 @@ class WhatsAppApi:
         )
 
     def _get_all_template(self, fetch_all=False):
-        """
-        This method is used to get all the template from the WhatsApp Business Account
-
-        API Documentation: https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates
-        """
         if self.is_shared_account:
             raise WhatsAppError(failure_type="account")
 
@@ -164,7 +148,6 @@ class WhatsAppApi:
 
         if fetch_all:
             final_response_json = {}
-            # Fetch 200 templates at once
             template_url += "&limit=200"
             endpoint_include = False
             while template_url:
@@ -176,13 +159,11 @@ class WhatsAppApi:
                 )
                 response_json = response.json()
                 if final_response_json:
-                    # Add fetched data to existing response
                     response_data = response_json.get("data", [])
                     final_response_json.setdefault("data", []).extend(response_data)
                 else:
                     final_response_json = response_json
 
-                # Fetch the next URL if it exists in response to fetch more templates
                 template_url = response_json.get("paging", {}).get("next")
                 endpoint_include = bool(template_url)
         else:
@@ -192,11 +173,6 @@ class WhatsAppApi:
         return final_response_json
 
     def _get_phone_number(self, phone_uid):
-        """
-        This method is used to get phone number for the WhatsApp Business Account using phone uid
-
-        API Documentation: https://developers.facebook.com/docs/whatsapp/business-management-api/manage-phone-numbers
-        """
         _logger.info(
             "Get phone number for account %s [%s] using phone uid %s",
             self.wa_account_id.name,
@@ -207,11 +183,6 @@ class WhatsAppApi:
         return response.json().get("display_phone_number")
 
     def _get_template_data(self, wa_template_uid):
-        """
-        This method is used to get one template details using template uid from the WhatsApp Business Account
-
-        API Documentation: https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates
-        """
         if self.is_shared_account:
             raise WhatsAppError(failure_type="account")
 
@@ -229,16 +200,9 @@ class WhatsAppApi:
         return response.json()
 
     def _upload_demo_document(self, attachment):
-        """
-        This method is used to get a handle to later upload a demo document.
-        Only use for template registration.
-
-        API documentation https://developers.facebook.com/docs/graph-api/guides/upload
-        """
         if self.is_shared_account:
             raise WhatsAppError(failure_type="account")
 
-        # Open session
         app_uid = self.wa_account_id.app_uid
         params = {
             "file_length": attachment.file_size,
@@ -263,7 +227,6 @@ class WhatsAppApi:
                     "Document upload session open failed, please retry after sometime."
                 )
             )
-        # Upload file
         _logger.info(
             "Upload sample document on the opened session using account %s [%s]",
             self.wa_account_id.name,
@@ -288,12 +251,6 @@ class WhatsAppApi:
         return file_handle
 
     def _submit_template_new(self, json_data) -> dict:
-        """
-        This method is used to submit template for approval
-        If template was submitted before, we have wa_template_uid and we call template update URL
-
-        API Documentation: https://developers.facebook.com/docs/graph-api/reference/whats-app-business-account/message_templates#Creating
-        """
         if self.is_shared_account:
             raise WhatsAppError(failure_type="account")
         _logger.info(
@@ -335,18 +292,11 @@ class WhatsAppApi:
         raise WhatsAppError(*self._prepare_error_response(response_json))
 
     def _send_whatsapp(self, number, message_type, send_vals, parent_message_id=False):
-        """Send WA messages for all message type using WhatsApp Business Account
-
-        API Documentation:
-            Normal        - https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-messages
-            Template send - https://developers.facebook.com/docs/whatsapp/cloud-api/guides/send-message-templates
-        """
         data = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": number,
         }
-        # if there is parent_message_id then we send message as reply
         if parent_message_id:
             data.update(
                 {
@@ -383,7 +333,6 @@ class WhatsAppApi:
         raise WhatsAppError(*self._prepare_error_response(response_json))
 
     def _get_header_data_from_handle(self, url) -> tuple:
-        """This method is used to get template demo document from url"""
         _logger.info(
             "Get header data for url %s from account %s [%s]",
             url,
@@ -400,11 +349,6 @@ class WhatsAppApi:
         return data, mimetype
 
     def _get_whatsapp_document(self, document_id):
-        """
-        This method is used to get document from WhatsApp sent by user
-
-        API Documentation: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
-        """
         _logger.info(
             "Get document url for document uid %s from account %s [%s]",
             document_id,
@@ -425,11 +369,6 @@ class WhatsAppApi:
         return file_response.content
 
     def _upload_whatsapp_document(self, attachment):
-        """
-        This method is used to upload document for sending via WhatsApp
-
-        API Documentation: https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media
-        """
         payload = {"messaging_product": "whatsapp"}
         files = [("file", (attachment.name, attachment.raw, attachment.mimetype))]
         _logger.info(
@@ -450,7 +389,6 @@ class WhatsAppApi:
         raise WhatsAppError(*self._prepare_error_response(response_json))
 
     def _test_connection(self) -> None:
-        """This method is used to test connection of WhatsApp Business Account"""
         _logger.info(
             "Test connection: Verify set phone uid is available in account %s [%s]",
             self.wa_account_id.name,

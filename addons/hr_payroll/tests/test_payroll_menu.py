@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 class TestPayrollWorkEntriesMenu(TransactionCase):
     def _work_entries_menu(self, user):
-        """Return the menu entry carrying the work entries action, as the user sees it."""
         action = self.env.ref("hr_work_entry.hr_work_entry_action")
         menus = self.env["ir.ui.menu"].with_user(user).load_menus(False)
         for key, menu in menus.items():
@@ -17,12 +16,6 @@ class TestPayrollWorkEntriesMenu(TransactionCase):
         return None
 
     def test_payroll_officer_reaches_the_work_entries_menu(self):
-        """A Payroll Officer has full ACL on hr.work.entry; give them a menu to use it.
-
-        The menu carrying the work entries action hangs under a root restricted
-        to hr.group_hr_manager, and group_hr_payroll_user only implies
-        hr.group_hr_user, so the officer used to see nothing at all.
-        """
         officer = new_test_user(
             self.env,
             login="payroll_officer",
@@ -38,7 +31,6 @@ class TestPayrollWorkEntriesMenu(TransactionCase):
         )
 
     def test_hr_manager_keeps_the_work_entries_menu(self):
-        """Opening the section to payroll must not close it on HR managers."""
         manager = new_test_user(
             self.env,
             login="hr_manager_without_payroll",

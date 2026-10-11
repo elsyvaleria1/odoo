@@ -298,16 +298,6 @@ class TestTimesheetGlobalTimeOff(common.TransactionCase):
         self.assertEqual(len(timesheets_full_time_employee), 7)
 
     def test_reactivation_names_lines_with_the_real_day_total(self):
-        """A regenerated public-holiday line is "Time Off (i/n)", never (i/0).
-
-        `_work_time_per_day` returns `{calendar_id: {leave_id: [(date, hours)]}}`.
-        `_create_future_public_holidays_timesheets` used to hand
-        `work_hours_data[global_time_off.id]` to the line-name builder as the
-        total -- a leave id read at the calendar level, which a `defaultdict`
-        answers with an empty mapping instead of raising. Every line the
-        reactivation path produced was therefore named "Time Off (1/0)".
-        Nothing failed, because no test asserted a name.
-        """
         today = datetime.today()
         leave_start_datetime = today + timedelta(days=-today.weekday(), weeks=1)
 

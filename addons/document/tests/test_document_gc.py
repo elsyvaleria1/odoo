@@ -201,9 +201,6 @@ class TestDocumentsVacuumProgress(TransactionCaseDocuments):
         )
         documents.action_archive()
         self.env.flush_all()
-        # Age them the way the trash does: the purge reads the `deletion_date`
-        # stamped by `action_archive`, not `write_date`, so that a rename can no
-        # longer postpone a deletion the user was already promised.
         documents.sudo().deletion_date = fields.Date.today()
         self.env.invalidate_all()
 
@@ -307,13 +304,6 @@ class TestDocumentsTrashExpiry(TransactionCaseDocuments):
         self.assertFalse(doc.exists(), "and on it, not a day later")
 
     def test_a_later_write_does_not_move_the_date(self):
-        """The whole point: a rename is not a stay of execution.
-
-        Under the old rule any write restarted the countdown -- a rename, a
-        stored recompute, a bridge detaching `res_model` when its record was
-        deleted -- silently, with no new message and nothing in the UI saying
-        the date had moved.
-        """
         self.env["ir.config_parameter"].sudo().set_param(
             "document.deletion_delay", "30"
         )
@@ -334,7 +324,6 @@ class TestDocumentsTrashExpiry(TransactionCaseDocuments):
         self.assertFalse(doc.exists())
 
     def test_changing_the_delay_does_not_move_documents_already_in_the_trash(self):
-        """A settings change is not retroactive on promises already made."""
         self.env["ir.config_parameter"].sudo().set_param(
             "document.deletion_delay", "30"
         )
@@ -371,9 +360,6 @@ class TestDocumentsTrashExpiry(TransactionCaseDocuments):
         self.assertFalse(
             doc.deletion_date, "out of the trash means off the purge schedule"
         )
-        # Even a bare sudo write -- which skips `action_archive` -- puts the
-        # document on the schedule, because the stamp happens on the active
-        # transition rather than inside the action.
         doc.sudo().write({"active": False})
         self.assertEqual(
             doc.deletion_date,
@@ -413,7 +399,6 @@ class TestDocumentsTrashInvariant(TransactionCaseDocuments):
         )
 
     def test_the_mail_gateway_document_is_on_the_schedule(self):
-        """The route that actually does this in production."""
         folder = self.env["document.document"].create(
             {"name": "alias folder", "type": "folder"}
         )
@@ -426,8 +411,6 @@ class TestDocumentsTrashInvariant(TransactionCaseDocuments):
         self.assertTrue(self._dated(document))
 
     def test_a_sudo_write_into_the_trash_is_on_the_schedule(self):
-        """The write half: `write` only reroutes to `action_archive` when the
-        caller is not superuser, so a sudo write reaches the trash directly."""
         document = self.env["document.document"].create(
             {"name": "sudo-archived.txt", "type": "binary"}
         )
@@ -438,7 +421,6 @@ class TestDocumentsTrashInvariant(TransactionCaseDocuments):
         self.assertTrue(self._dated(document))
 
     def test_no_active_document_carries_one(self):
-        """The other half of the invariant, so the fix cannot over-apply."""
         document = self.env["document.document"].create(
             {"name": "plain.txt", "type": "binary"}
         )

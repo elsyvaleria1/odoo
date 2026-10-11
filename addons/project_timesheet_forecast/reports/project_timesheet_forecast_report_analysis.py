@@ -94,8 +94,6 @@ class ProjectTimesheetForecastReportAnalysis(models.Model):
     planned_costs = fields.Float(readonly=True)
 
     def _number_of_days_without_weekend(self) -> str:
-        # this method should return working days based on resource calendar
-        # TODO: naming should be changed on master
         return """
             WITH no_weekend_days AS (
                 SELECT
@@ -256,7 +254,7 @@ class ProjectTimesheetForecastReportAnalysis(models.Model):
         limit=None,
         order=None,
     ) -> list[dict]:
-        if not order:  # For pivot and graph view
+        if not order:
             order = ", ".join(
                 [
                     (f"{group} DESC" if group.startswith("entry_date") else group)

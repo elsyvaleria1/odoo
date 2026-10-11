@@ -148,7 +148,6 @@ class PlanningSlot(models.Model):
         readonly=False,
         required=True,
     )
-    # UI fields and warnings
     allow_self_unassign = fields.Boolean(
         string="Let Employee Unassign Themselves",
         compute="_compute_allow_self_unassign",
@@ -194,7 +193,6 @@ class PlanningSlot(models.Model):
         readonly=True,
     )
 
-    # time allocation
     allocation_type = fields.Selection(
         selection=[
             ("planning", "Planning"),
@@ -218,7 +216,6 @@ class PlanningSlot(models.Model):
     )
     duration = fields.Float(compute="_compute_slot_duration")
 
-    # publication and sending
     publication_warning = fields.Boolean(
         string="Modified Since Last Publication",
         compute="_compute_publication_warning",
@@ -236,7 +233,6 @@ class PlanningSlot(models.Model):
         string="Status",
         default="1_draft",
     )
-    # template dummy fields (only for UI purpose)
     template_creation = fields.Boolean(
         string="Save as Template",
         inverse="_inverse_template_creation",
@@ -265,7 +261,6 @@ class PlanningSlot(models.Model):
         compute="_compute_allow_template_creation",
     )
 
-    # Recurring (`repeat_` fields are none stored, only used for UI purpose)
     recurrency_id = fields.Many2one(
         comodel_name="planning.recurrency",
         export_string_translation=False,
@@ -424,14 +419,6 @@ class PlanningSlot(models.Model):
 
     @api.model
     def _get_scheduled_states(self) -> list:
-        """States in which a shift stands for its employee: sent in his planning,
-        shown on his page, worked and paid.
-
-        Every state but draft. A module that adds a state in which the shift no
-        longer stands, such as a cancellation, removes it here.
-
-        :rtype: list[str]
-        """
         return [
             state
             for state in self._fields["state"].get_values(self.env)
@@ -487,13 +474,6 @@ class PlanningSlot(models.Model):
 
     @api.depends("allocated_hours")
     def _compute_allocated_percentage(self) -> None:
-        # Cyclic dependency: allocated_hours, allocated_percentage
-        # As allocated_hours and allocated percentage have some common dependencies, and are dependant one from another, we have to make sure
-        # they are computed in the right order to get rid of undeterministic computation.
-        #
-        # Allocated percentage must only be recomputed if allocated_hours has been modified by the user and not in any other cases.
-        # If allocated hours have to be recomputed, the allocated percentage have to keep its current value.
-        # Hence, we stop the computation of allocated percentage if allocated hours have to be recomputed.
         allocated_hours_field = self._fields["allocated_hours"]
         slots = self.filtered(
             lambda slot: (
@@ -505,7 +485,6 @@ class PlanningSlot(models.Model):
         )
         if not slots:
             return
-        # if there are at least one slot having start or end date, call the _get_valid_work_intervals
         start_utc = min(slots.mapped("start_datetime")).replace(tzinfo=UTC)
         end_utc = max(slots.mapped("end_datetime")).replace(tzinfo=UTC)
         schedule = slots.resource_id._get_work_schedule(
@@ -549,11 +528,9 @@ class PlanningSlot(models.Model):
         assigned_slots = self - open_slots
         _debug.logic("allocated_hours_split", open=open_slots, assigned=assigned_slots)
         for slot in open_slots:
-            # for each planning slot, compute the duration
             ratio = slot.allocated_percentage / 100.0
             slot.allocated_hours = slot._get_slot_duration_capped() * ratio
         if assigned_slots:
-            # for forecasted slots, compute the conjunction of the slot resource's work intervals and the slot.
             unplanned_assigned_slots = assigned_slots.filtered_domain(
                 [
                     "|",
@@ -561,8 +538,6 @@ class PlanningSlot(models.Model):
                     ("end_datetime", "=", False),
                 ]
             )
-            # Unplanned slots will have allocated hours set to 0.0 as there are no enough information
-            # to compute the allocated hours (start or end datetime are mandatory for this computation)
             for slot in unplanned_assigned_slots:
                 slot.allocated_hours = 0.0
             planned_assigned_slots = assigned_slots - unplanned_assigned_slots
@@ -572,7 +547,6 @@ class PlanningSlot(models.Model):
             planned_assigned_slots -= budgeted
             if not planned_assigned_slots:
                 return
-            # if there are at least one slot having start or end date, call the _get_valid_work_intervals
             start_utc = min(planned_assigned_slots.mapped("start_datetime")).replace(
                 tzinfo=UTC
             )
@@ -580,7 +554,6 @@ class PlanningSlot(models.Model):
                 tzinfo=UTC
             )
 
-            # work intervals per resource are retrieved with a batch
             schedule = assigned_slots.resource_id._get_work_schedule(
                 start_utc,
                 end_utc,
@@ -603,26 +576,6 @@ class PlanningSlot(models.Model):
         "start_datetime", "end_datetime", "resource_id", "allocated_percentage"
     )
     def _compute_overlap_slot_count(self) -> None:
-        """Report the shifts this one collides with, out of the reservation ledger.
-
-        Two things change against the SQL self-join this replaces.
-
-        The comparison is now *cumulative*: three 50% shifts on one resource
-        are 150% of it, which the old pairwise
-        `S1.allocated_percentage + S2.allocated_percentage > 100` called clean
-        because no pair of them exceeded 100. Unsaved shifts are answered by
-        the same sweep, so the warning no longer changes its mind on save.
-
-        These fields keep their shift-to-shift meaning -- the views and the
-        `conflicting_slot_ids` m2m are typed to `planning.slot` -- so a clash
-        with a task or a work order is filtered out here. The mixin's
-        `schedule_overlap_count` counts those too, for whoever wants them.
-
-        Published-visibility is planning's own rule with no equivalent on a
-        reservation, so it is reapplied: a user who cannot manage planning is
-        shown conflicts only against published shifts. Dropping it would leak
-        colleagues' draft shifts through the conflict list.
-        """
         peers_by_slot = self._get_conflicting_slots()
         for slot in self:
             slot.overlap_slot_count = len(peers_by_slot[slot.id])
@@ -631,20 +584,11 @@ class PlanningSlot(models.Model):
         "start_datetime", "end_datetime", "resource_id", "allocated_percentage"
     )
     def _compute_conflicting_slot_ids(self) -> None:
-        """Name the conflicting shifts. See ``_compute_overlap_slot_count``.
-
-        Deliberately a *separate* compute from the count, though both come from
-        the same helper. This field is a Many2many back to ``planning.slot``,
-        so assigning it touches the very records whose count is being computed;
-        sharing one compute method between the two made each assignment
-        invalidate the other and every read fell back to the default.
-        """
         peers_by_slot = self._get_conflicting_slots()
         for slot in self:
             slot.conflicting_slot_ids = peers_by_slot[slot.id]
 
     def _get_conflicting_slots(self):
-        """Return ``{slot id: conflicting planning.slot recordset}``."""
         is_manager = self.env.user.has_group("planning.group_planning_manager")
         with _debug.perf("conflicts", cr=self.env.cr, slots=self) as span:
             conflicts_by_slot = self._get_schedule_conflicts_batch()
@@ -668,14 +612,6 @@ class PlanningSlot(models.Model):
 
     @api.model
     def _search_overlap_slot_count(self, operator, value):
-        """Find the shifts whose resource is over-allocated at some instant.
-
-        Answered from the reservation ledger, so the filter is deliberately
-        *broader* than the badge next to it: it returns a shift clashing with
-        anything holding the same resource, where `conflicting_slot_ids` lists
-        only the clashing shifts. A shift double-booked against a task is in
-        conflict and belongs in this list; it simply has no shift to name.
-        """
         if operator == "in":
             return Domain.OR(self._search_overlap_slot_count("=", v) for v in value)
         if operator not in ["=", ">"] or not isinstance(value, int) or value != 0:
@@ -696,17 +632,11 @@ class PlanningSlot(models.Model):
         slot_ids = list({reservation.res_id for reservation in conflicted})
         return [("id", "in" if operator == ">" else "not in", slot_ids)]
 
-    # ----------------------------------------------------
-    # Resource reservation integration
-    # ----------------------------------------------------
 
     def _get_fields_reservation_date(self) -> tuple:
         return ("start_datetime", "end_datetime")
 
     def _filter_first_served(self):
-        # a flexible person's week is shared by their slots in date order,
-        # read as their reservations read it; a printed day of a slot takes
-        # its hours from the slot instead
         if self.env.context.get("planning_print_pill"):
             return self.browse()
         return self.filtered(
@@ -774,8 +704,6 @@ class PlanningSlot(models.Model):
         ]
 
     def _get_fields_sync_trigger(self):
-        # `allocated_percentage` is planning's own field, not the allocation
-        # mixin's, so it is named here rather than inherited.
         return super()._get_fields_sync_trigger() | {
             "resource_id",
             "name",
@@ -802,9 +730,6 @@ class PlanningSlot(models.Model):
         )
 
     def _get_slot_duration(self):
-        """Return the slot (effective) duration expressed in hours, or False
-        if start/end are unset.
-        """
         self.check_singleton()
         resource = self.resource_id
         if not self.start_datetime or not self.end_datetime:
@@ -910,12 +835,6 @@ class PlanningSlot(models.Model):
         (self - recurrency_slots).update(self.default_get(["repeat_interval"]))
 
     def _get_recurrence_tz(self):
-        """The timezone the recurrence end date is expressed in.
-
-        `planning.recurrency.repeat_until` is a Datetime while the field the
-        user edits here is a Date, so the two conversions have to agree on a
-        zone. `_inverse_repeat` uses the company calendar's, so this does too.
-        """
         self.check_singleton()
         return timezone(self.company_id.resource_calendar_id.tz or "UTC")
 
@@ -925,22 +844,12 @@ class PlanningSlot(models.Model):
             repeat_until = False
             if slot.repeat and slot.repeat_type == "until":
                 if slot.recurrency_id and slot.recurrency_id.repeat_until:
-                    # Convert back through the same zone `_inverse_repeat`
-                    # stored it in. It writes the *end of the chosen day* in
-                    # the company calendar's timezone and converts to UTC, so
-                    # truncating that UTC datetime to a date is only correct
-                    # east of Greenwich: anywhere behind UTC the instant lands
-                    # on the following calendar day, and the field came back a
-                    # day later than the user picked -- every time the form was
-                    # reopened, in every American timezone.
                     repeat_until = (
                         slot.recurrency_id.repeat_until.replace(tzinfo=UTC)
                         .astimezone(slot._get_recurrence_tz())
                         .date()
                     )
                 elif slot.start_datetime:
-                    # A suggestion rather than a round-trip, but read in the
-                    # same zone so it agrees with what a save would store.
                     repeat_until = (
                         (slot.start_datetime + relativedelta(weeks=1))
                         .replace(tzinfo=UTC)
@@ -976,7 +885,7 @@ class PlanningSlot(models.Model):
 
     def _inverse_repeat(self) -> None:
         for slot in self:
-            if slot.repeat and not slot.recurrency_id.id:  # create the recurrence
+            if slot.repeat and not slot.recurrency_id.id:
                 repeat_until = False
                 repeat_number = 0
                 if slot.repeat_type == "until":
@@ -1000,11 +909,9 @@ class PlanningSlot(models.Model):
                 }
                 recurrence = self.env["planning.recurrency"].create(recurrency_values)
                 slot.recurrency_id = recurrence
-            # user wants to delete the recurrence
-            # here we also check that we don't delete by mistake a slot of which the repeat parameters have been changed
             elif not slot.repeat and slot.recurrency_id.id:
                 slot.recurrency_id._remove_slot(slot.end_datetime)
-                slot.recurrency_id.unlink()  # will set recurrency_id to NULL
+                slot.recurrency_id.unlink()
 
     def _inverse_template_creation(self) -> None:
         PlanningTemplate = self.env["planning.slot.template"]
@@ -1059,10 +966,6 @@ class PlanningSlot(models.Model):
         previous_template_id,
         template_reset,
     ):
-        """Calculate the start and end dates for a given planning slot based on various parameters.
-
-        :return: a tuple of the calculated start and end datetime values in UTC (naive).
-        """
 
         def convert_datetime_timezone(dt, tz):
             return dt and dt.replace(tzinfo=UTC).astimezone(tz)
@@ -1079,9 +982,6 @@ class PlanningSlot(models.Model):
             or "UTC"
         )
 
-        # start_datetime and end_datetime are from 00:00 to 23:59 in user timezone
-        # Converted in UTC, it gives an offset for any other timezone, convert_datetime_timezone removes the offset
-        # If start_datetime and end_datetime are None, the resource should follow the company's working calendar and return the work intervals based on the time zone and the company's working calendar.
         intervals = []
         start = (
             convert_datetime_timezone(start_datetime, user_tz)
@@ -1095,8 +995,6 @@ class PlanningSlot(models.Model):
         )
 
         if not template_id:
-            # Transform the current column's start/end_datetime to the user's timezone from UTC
-            # Look at the work intervals to examine whether the current start/end_datetimes are inside working hours
             calendar_id = (
                 company.resource_calendar_id
                 if not resource or resource._is_fully_flexible()
@@ -1110,12 +1008,8 @@ class PlanningSlot(models.Model):
             if not intervals and not self.env.context.get(
                 "planning_keep_default_datetime", False
             ):
-                # If we are outside working hours, we do not edit the start/end_datetime
-                # Return the start/end times back at UTC and remove the tzinfo from the object
                 return self._get_non_working_days_bounds(start, end, resource)
 
-        # start_datetime and end_datetime are from 00:00 to 23:59 in user timezone
-        # Converted in UTC, it gives an offset for any other timezone, convert_datetime_timezone removes the offset
         start = (
             convert_datetime_timezone(start_datetime, user_tz)
             if start_datetime
@@ -1127,22 +1021,6 @@ class PlanningSlot(models.Model):
             else self._get_default_end_datetime().replace(tzinfo=user_tz)
         )
 
-        # Get start and end in resource timezone so that it begins/ends at the same hour of the day as it would be in the user timezone
-        # This is needed because _adjust_to_calendar takes start as datetime for the start of the day and end as end time for the end of the day
-        # This can lead to different results depending on the timezone difference between the current user and the resource.
-        # Example:
-        # The user is in Europe/Brussels timezone (CET, UTC+1)
-        # The resource is Asia/Krasnoyarsk timezone (IST, UTC+7)
-        # The resource has two shifts during the day:
-        #       - Morning shift: 8 to 12
-        #       - Afternoon shift: 13 to 17
-        # When the user selects a day to plan a shift for the resource, he expects to have the shift scheduled according to the resource's calendar given a search range between 00:00 and 23:59
-        # The datetime received from the frontend is in the user's timezone meaning that the search interval will be between 23:00 and 22:59 in UTC
-        # If the datetime is not adjusted to the resource's calendar beforehand, _adjust_to_calendar and _get_closest_work_time will shift the time to the resource's timezone.
-        # The datetime given to _get_closest_work_time will be 6 AM once shifted in the resource's timezone. This will properly find the start of the morning shift at 8AM
-        # For the afternoon shift, _get_closest_work_time will search the end of the shift that is close to 6AM the day after.
-        # The closest shift found based on the end datetime will be the morning shift meaning that the work_interval_end will be the end of the morning shift the following day.
-        # Determine the start and end dates from _work_intervals_batch and convert them to the resource's time zone.
         if resource and intervals:
             start = (
                 intervals[0][0]
@@ -1190,8 +1068,6 @@ class PlanningSlot(models.Model):
                     else end
                 )
 
-        # Need to remove the tzinfo in start and end as without these it leads to a traceback
-        # when the start time is empty
         start = start.astimezone(UTC).replace(tzinfo=None) if start.tzinfo else start
         end = end.astimezone(UTC).replace(tzinfo=None) if end.tzinfo else end
         return (start, end)
@@ -1233,7 +1109,7 @@ class PlanningSlot(models.Model):
         start_datetime, end_datetime = (start, end)
         if (
             intervals and (end_datetime - start_datetime).days == 0
-        ):  # Then we want the first working day and keep the end hours of this day
+        ):
             start_datetime = intervals[0][0]
             end_datetime = [
                 stop
@@ -1271,9 +1147,6 @@ class PlanningSlot(models.Model):
                 slot.unassign_deadline < fields.Datetime.now()
             )
 
-    # ----------------------------------------------------
-    # ORM overrides
-    # ----------------------------------------------------
 
     @api.model
     def _read_group_fields_nullify(self):
@@ -1369,10 +1242,8 @@ class PlanningSlot(models.Model):
             fname for fname in self._display_name_fields() if fname not in group_by
         ]
 
-        # Sudo as a planning manager is not able to read private project if he is not project manager.
         self = self.sudo()
         for slot in self.with_context(hide_partner_ref=True):
-            # label part, depending on context `groupby`
             name_values = [
                 self._fields[fname].convert_to_display_name(slot[fname], slot)
                 if fname != "resource_id"
@@ -1380,10 +1251,9 @@ class PlanningSlot(models.Model):
                 for fname in field_list
                 if slot[fname]
                 and not (fname == "resource_id" and slot.resource_type == "human")
-            ][:4]  # limit to 4 labels
+            ][:4]
             name = " - ".join(name_values)
 
-            # add unicode bubble to tell there is a note
             if slot.name:
                 name = f"{name} \U0001f4ac"
 
@@ -1444,8 +1314,6 @@ class PlanningSlot(models.Model):
             if vals_list_updated:
                 vals_list = vals_list_updated
         slots = super().create(vals_list)
-        # Recurrence inverses can consume the pending percentage recomputation.
-        # Preserve explicit effort as the input before projecting the whole batch.
         slots.flush_recordset()
         slots.browse(
             [
@@ -1454,10 +1322,7 @@ class PlanningSlot(models.Model):
                 if "allocated_hours" in values and "allocated_percentage" not in values
             ]
         )._compute_allocated_percentage()
-        # `_reservation_sync_manual`: project once this model is done with the
-        # records, not from inside the mixin's create hook.
         slots._active_for_sync()._sync_reservations()
-        # Recurrence admission must see every source shift in this create batch.
         recurrences = self.env["planning.recurrency"]
         for slot, values in zip(slots, vals_list, strict=True):
             if slot.repeat and not values.get("recurrency_id"):
@@ -1567,8 +1432,6 @@ class PlanningSlot(models.Model):
         )
         if new_resource and new_resource.type != "human":
             values["state"] = "2_published"
-        # if the resource_id is changed while the shift has already been published and the resource is human, that means that the shift has been re-assigned
-        # and thus we should send the email about the shift re-assignment
         for slot in self.filtered(
             lambda s: (
                 new_resource
@@ -1603,9 +1466,7 @@ class PlanningSlot(models.Model):
 
         recurrence_update = values.pop("recurrence_update", "this")
         shifts_to_update = self
-        # `self` has no recurrence when we just set it, in which case there's no other slot to update
         if shifts_to_update.recurrency_id and recurrence_update != "this":
-            # Updating "all" or "subsequent" slots is only possible on one record at a time
             shifts_to_update.check_singleton()
             datetime_keys = values.keys() & {"start_datetime", "end_datetime"}
             if recurrence_update == "subsequent":
@@ -1648,7 +1509,7 @@ class PlanningSlot(models.Model):
                     )
                     values["repeat_type"] = (
                         first_slot.repeat_type
-                    )  # this is to ensure that the subsequent slots are recreated
+                    )
                     (all_slots - first_slot).unlink()
                     shifts_to_update = first_slot
                 else:
@@ -1665,7 +1526,6 @@ class PlanningSlot(models.Model):
             (slots_clearing_request_to_switch & self.exists()).write(
                 {"request_to_switch": False}
             )
-        # recurrence
         if any(
             key
             in (
@@ -1678,8 +1538,6 @@ class PlanningSlot(models.Model):
             )
             for key in values
         ):
-            # User is trying to change this record's recurrence so we delete future slots belonging to recurrence A
-            # and we create recurrence B from now on w/ the new parameters
             for slot in shifts_to_update:
                 recurrence = slot.recurrency_id
                 if recurrence and values.get("repeat") is None:
@@ -1725,22 +1583,9 @@ class PlanningSlot(models.Model):
                     recurrence._remove_slot(end_datetime)
                     recurrences_to_generate |= recurrence
 
-        # `_reservation_sync_manual`: project only now, with every compute this
-        # method touches settled. Syncing from the mixin's write hook read
-        # `start_datetime` while the tz adjustment above was still pending,
-        # which resolved `_compute_template_id` against a stale start and
-        # silently cleared the shift's template.
-        # `shifts_to_update`, not `self`: recurrence handling above redirects
-        # the write onto sibling slots, and those are the records whose
-        # bookings moved.
         triggers = self._get_fields_sync_trigger()
         if triggers.intersection(values.keys()) or values.get("active"):
             to_sync = shifts_to_update.exists()._active_for_sync()
-            # Settle first. Even here, at the end of the method, the computes
-            # this write triggered are still pending -- the ORM resolves them
-            # at flush -- so reading `start_datetime` to build the booking
-            # would force it ahead of `_compute_template_id`, which then
-            # compares the template against a stale start and clears it.
             to_sync.flush_recordset()
             to_sync._sync_reservations()
         recurrences_to_generate.exists()._repeat_slot()
@@ -1769,31 +1614,18 @@ class PlanningSlot(models.Model):
 
     def copy(self, default=None):
         result = super().copy(default=default)
-        # force recompute of stored computed fields depending on start_datetime and resource_id
         if default and {"start_datetime", "resource_id"} & default.keys():
             result._compute_allocated_hours()
         return result
 
     def split_pill(self, values):
-        """Split the slot in two parts: copy the pill with the new start time
-        (second pill) and shorten the original pill's end time (first pill).
 
-        :param values: dict with start_datetime (new second-pill start) and
-            end_datetime (new first-pill end).
-        """
-
-        # Important Note: When you change this method logic, change it also in
-        # print_planning_split_fake_pill in the same file, they should be identical
         result = self.copy({"start_datetime": values.get("start_datetime")})
         self.write({"end_datetime": values.get("end_datetime")})
         return result.id
 
-    # ----------------------------------------------------
-    # Actions
-    # ----------------------------------------------------
 
     def action_address_recurrency(self, recurrence_update) -> None:
-        """:param recurrence_update: the occurences to be targetted (this, subsequent, all)"""
         if recurrence_update == "this":
             return
         domain = Domain("id", "not in", self.ids)
@@ -1837,9 +1669,7 @@ class PlanningSlot(models.Model):
         }
 
     def action_self_assign(self):
-        """Allow planning user to self assign open shift."""
         self.check_singleton()
-        # user must at least 'read' the shift to self assign (Prevent any user in the system (portal, ...) to assign themselves)
         if not self.has_access("read"):
             _debug.logic("self_assign_refused", reason="no_read", slot=self)
             raise AccessError(
@@ -1879,10 +1709,7 @@ class PlanningSlot(models.Model):
         return self.sudo().write({"resource_id": resource_id})
 
     def action_self_unassign(self):
-        """Allow planning user to self unassign from a shift, if the feature is activated"""
         self.check_singleton()
-        # The following condition will check the read access on planning.slot, and that user must at least 'read' the
-        # shift to self unassign. Prevent any user in the system (portal, ...) to unassign any shift.
         if not self.allow_self_unassign:
             _debug.logic("self_unassign_refused", reason="not_allowed", slot=self)
             raise UserError(
@@ -1905,9 +1732,7 @@ class PlanningSlot(models.Model):
         return self.sudo().write({"resource_id": False})
 
     def action_switch_shift(self):
-        """Allow planning user to make shift available for other people to assign themselves to."""
         self.check_singleton()
-        # same as with self-assign, a user must be able to 'read' the shift in order to request a switch
         if not self.has_access("read"):
             raise AccessError(self.env._("You don't have the right to switch shifts."))
         if self.employee_id != self.env.user.employee_id:
@@ -1923,9 +1748,7 @@ class PlanningSlot(models.Model):
         return self.sudo().write({"request_to_switch": True})
 
     def action_cancel_switch(self):
-        """Allows the planning user to cancel the shift switch if they change their mind at a later date"""
         self.check_singleton()
-        # same as above, the user rights are checked in order for the operation to be completed
         if not self.has_access("read"):
             raise AccessError(
                 self.env._("You don't have the right to cancel a request to switch.")
@@ -1974,7 +1797,6 @@ class PlanningSlot(models.Model):
         }
 
     def auto_plan_id(self):
-        """Used in the form view to auto plan a single shift."""
         self.check_singleton()
         if not self.with_context(planning_slot_id=self.id).auto_plan_ids(
             [("id", "=", self.id)]
@@ -1986,8 +1808,6 @@ class PlanningSlot(models.Model):
         return None
 
     def _get_open_shifts_resources(self) -> tuple:
-        # Get all resources that have the role set on those shifts as default role or in their roles.
-        # open_shifts.role_id.ids wouldn't include False, yet we need this information
         open_shift_role_ids = [shift.role_id.id for shift in self]
         resources = self.env["resource.resource"].search(
             [
@@ -1996,7 +1816,6 @@ class PlanningSlot(models.Model):
                 ("role_ids", "in", self.role_id.ids),
             ]
         )
-        # And make two dictionnaries out of it (default roles and roles). We will prioritize default roles.
         resource_ids_per_role = defaultdict(list)
         resource_ids_per_default_role = defaultdict(list)
         for resource in resources:
@@ -2014,7 +1833,6 @@ class PlanningSlot(models.Model):
 
     @api.model
     def auto_plan_ids(self, view_domain):
-        # We need to make sure we have a specified either one shift in particular or a period to look into.
         assert self.env.context.get("planning_slot_id") or (
             self.env.context.get("default_start_datetime")
             and self.env.context.get("default_end_datetime")
@@ -2022,7 +1840,6 @@ class PlanningSlot(models.Model):
             "`default_start_datetime` and `default_end_datetime` attributes should be in the context"
         )
 
-        # Our goal is to assign empty shifts in this period. So first, let's get them all!
         open_shifts, min_start, max_end = self._read_group(
             Domain.AND(
                 [
@@ -2040,14 +1857,12 @@ class PlanningSlot(models.Model):
         max_end = max_end.astimezone(user_tz)
 
         resources, resources_dicts = open_shifts._get_open_shifts_resources()
-        # Get the schedule of each resource in the period.
         flexible_resources = resources.filtered(lambda r: r._is_flexible())
         regular_resources = resources - flexible_resources
         schedule_intervals_per_resource_id, _dummy = (
             regular_resources._get_valid_work_intervals(min_start, max_end)
         )
 
-        # we assume that if the employee has currently a flexible contract, all other contracts are also flexible
         (
             flexible_resource_work_intervals,
             flexible_resources_hours_per_day,
@@ -2069,7 +1884,6 @@ class PlanningSlot(models.Model):
                 days=1, hour=0, minute=0, second=0, microsecond=0
             )
 
-        # Include the whole resource budget period when counting existing work.
         min_start = min_start.astimezone(UTC).replace(tzinfo=None)
         max_end = max_end.astimezone(UTC).replace(tzinfo=None)
         PlanningShift = self.env["planning.slot"]
@@ -2105,7 +1919,6 @@ class PlanningSlot(models.Model):
                         shift_intervals
                         & schedule_intervals_per_resource_id[resource.id]
                     )
-                    # If the shift is out of resource's schedule, skip it.
                     if not split_shift_intervals:
                         continue
                     is_flex_resource = resource._is_flexible()
@@ -2151,8 +1964,6 @@ class PlanningSlot(models.Model):
                                 for start, end, rec in split_shift_intervals
                             )
                         )
-                    # Capacity covers the same complete span as the Resource
-                    # reservation; working intervals only determine effort.
                     percentage = 100 * rate
                     bookings = loads.setdefault(resource.id, [])
                     if (
@@ -2162,10 +1973,6 @@ class PlanningSlot(models.Model):
                         + percentage
                         <= resource.booking_limit_percentage + 1e-7
                     ):
-                        # Publish one complete assignment. A resource may have a
-                        # different day length from the open shift's reference
-                        # calendar; projecting its old percentage first can
-                        # violate a hard ceiling despite the final rate fitting.
                         shift.write(
                             {
                                 "resource_id": resource.id,
@@ -2194,9 +2001,6 @@ class PlanningSlot(models.Model):
         open_shift_assigned = shifts_data["open_shift_assigned"]
         self.browse(open_shift_assigned).resource_id = False
 
-    # ----------------------------------------------------
-    # Gantt - Calendar view
-    # ----------------------------------------------------
 
     @api.model
     def get_gantt_data(
@@ -2248,15 +2052,11 @@ class PlanningSlot(models.Model):
 
         result = {False: []}
         for resource in resources:
-            # return no unavailability if the resource is fully flexible hours (both material and employee).
             if (resource.id not in res_ids) or (
                 resource and resource._is_fully_flexible()
             ):
                 continue
             calendar = leaves_mapping.get(resource.id, company_leaves)
-            # remove intervals smaller than a cell, as they will cause half a cell to turn grey
-            # ie: when looking at a week, a employee start everyday at 8, so there is a unavailability
-            # like: 2019-05-22 20:00 -> 2019-05-23 08:00 which will make the first half of the 23's cell grey
             notable_intervals = filter(
                 lambda interval: interval[1] - interval[0] >= cell_dt, calendar
             )
@@ -2273,18 +2073,10 @@ class PlanningSlot(models.Model):
 
     @api.model
     def _cron_clear_past_request_to_switch(self) -> None:
-        """Clear the switch request of shifts that are now in the past.
-
-        Runs on a cron instead of as a side effect of the public "/planning/..."
-        portal route, which should not perform writes on an unauthenticated GET.
-        """
         self.search([("request_to_switch", "=", True)]).filtered(
             "is_past"
         ).request_to_switch = False
 
-    # ----------------------------------------------------
-    # Period Duplication
-    # ----------------------------------------------------
 
     @api.model
     def action_copy_previous_week(
@@ -2319,18 +2111,8 @@ class PlanningSlot(models.Model):
         self.browse(copied_slot_ids).was_copied = False
         self.exists().unlink()
 
-    # ----------------------------------------------------
-    # Sending Shifts
-    # ----------------------------------------------------
 
     def get_people_without_email(self) -> dict | None:
-        """Check that the people this slot would be sent to have an email address.
-
-        This method is used in a rpc call.
-
-        :returns: what the caller needs to open those people, or None when
-            everyone already has an address.
-        """
         self.check_singleton()
         resources = self.resource_id or self._get_resources_to_send_slot()
         without_email = resources.filtered(
@@ -2410,7 +2192,6 @@ class PlanningSlot(models.Model):
         return self._get_notification_action("success", message)
 
     def action_save_template(self) -> None:
-        """Used to save template of a shift."""
         self.check_singleton()
         if self.allow_template_creation:
             self.template_creation = True
@@ -2434,9 +2215,6 @@ class PlanningSlot(models.Model):
             message = self.env._("There are no shifts to reset to draft.")
         return self._get_notification_action(notif_type, message)
 
-    # ----------------------------------------------------
-    # Print planning
-    # ----------------------------------------------------
     def _print_planning_get_fields_to_copy(self):
         return [
             "employee_id",
@@ -2520,7 +2298,6 @@ class PlanningSlot(models.Model):
                 )
             )
             source_of[record] = source_of.get(shift, shift)
-            # copy method called inside the original split_pill method recomputes the allocated_hours again after the split (dates changed)
             record._compute_allocated_hours()
             return record
 
@@ -2734,7 +2511,6 @@ class PlanningSlot(models.Model):
                 slot_start_day = slot_start.date()
                 slot_end_day = last_day_of(slot_start, slot_end)
 
-                # one day slot
                 if slot_start_day == slot_end_day:
                     print_planning_add_slot(
                         slot,
@@ -2745,11 +2521,8 @@ class PlanningSlot(models.Model):
                         group_by,
                     )
                 else:
-                    # slot on more than one day, we do a fake copy using new without storing in db and
-                    # we use split_pill function to cut the slot in many days
                     fake_slot = print_planning_create_fake_pill(slot)
 
-                    # remove the part of the pill happening in the previous weeks
                     first_day = days[0]
                     if slot_start_day < first_day:
                         fake_slot = print_planning_split_fake_pill(
@@ -2770,7 +2543,6 @@ class PlanningSlot(models.Model):
                             },
                         )
 
-                    # remove the part of the pill happening in the next weeks
                     last_day = days[-1]
                     if slot_end_day > last_day:
                         print_planning_split_fake_pill(
@@ -2791,7 +2563,6 @@ class PlanningSlot(models.Model):
                             },
                         )
 
-                    # split the pill in different pills, pill per day
                     current_day = fake_slot.start_datetime.date()
                     last_day = fake_slot.end_datetime.date()
                     while current_day < last_day:
@@ -2833,9 +2604,6 @@ class PlanningSlot(models.Model):
                         group_by,
                     )
 
-        # groups were inserted in the dict in a specific order (false, then sorted non DESC order)
-        # but in Qweb, the order was lost
-        # so we transformed it to a dict {week: (group, {day: slots})}
         group_by_slots_per_day_per_week_formatted = {
             week: [(group, val) for group, val in data.items()]
             for week, data in group_by_slots_per_day_per_week.items()
@@ -2854,30 +2622,16 @@ class PlanningSlot(models.Model):
             )
         )
 
-    # ----------------------------------------------------
-    # Business Methods
-    # ----------------------------------------------------
 
     def _get_slot_duration_capped(self):
-        """Return the slot duration in hours, capped at the applicable daily maximum.
-
-        The measurement itself is ``_get_slot_duration``; the cap is the only
-        reason this is a separate method. A shift spanning three calendar days
-        can allocate at most three days of the reference calendar's
-        ``hours_per_day``, however wide its wall-clock span.
-        """
         self.check_singleton()
-        # `_get_slot_duration` returns False when the slot has no dates, and a
-        # zero measurement can only stay zero through the cap below.
         slot_duration = self._get_slot_duration() or 0.0
         if not slot_duration:
             return 0.0
 
         period = self.end_datetime - self.start_datetime
-        # if the resource is an employee, the hours_per_day of its calendar is used as max_hours_per_day.
         if self.employee_id:
             max_hours_per_day = self.employee_id.resource_calendar_id.hours_per_day
-        # For other resource and open shifts, we refer to the max of the company's default contract
         else:
             max_hours_per_day = self.company_id.resource_calendar_id.hours_per_day
         max_duration = (period.days + (1 if period.seconds else 0)) * max_hours_per_day
@@ -2885,60 +2639,26 @@ class PlanningSlot(models.Model):
             return slot_duration
         return max_duration
 
-    # ----------------------------------------------------
-    # Copy Slots
-    # ----------------------------------------------------
 
     def _add_delta_with_dst(self, start, delta):
-        """
-        Add to start, adjusting the hours if needed to account for a shift in the local timezone between the
-        start date and the resulting date (typically, because of DST)
-
-        :param start: origin date in UTC timezone, but without timezone info (a naive date)
-        :return: resulting date in the UTC timezone (a naive date)
-        """
         tz = self._get_tzinfo()
         start = start.replace(tzinfo=UTC).astimezone(tz).replace(tzinfo=None)
         result = start + delta
         return wall_to_utc(result, tz)
 
     def _init_remaining_hours_to_plan(self, remaining_hours_to_plan):
-        """
-        Inits the remaining_hours_to_plan dict for a given slot and returns wether
-        there are enough remaining hours.
-
-        :return: a bool representing whether or not there are still hours remaining
-        """
         self.check_singleton()
         return True
 
     def _update_remaining_hours_to_plan_and_values(
         self, remaining_hours_to_plan, values
     ):
-        """
-        Update the remaining_hours_to_plan with the allocated hours of the slot in `values`
-        and returns wether there are enough remaining hours.
-
-        If remaining_hours is strictly positive, and the allocated hours of the slot in `values` is
-        higher than remaining hours, than update the values in order to consume at most the
-        number of remaining_hours still available.
-
-        :return: a bool representing whether or not there are still hours remaining
-        """
         self.check_singleton()
         return True
 
     def _prepare_split_slot_vals_list(
         self, values, intervals, remaining_hours_to_plan, unassign=False
     ) -> list[ValuesType]:
-        """
-        Generates and returns slots values within the given intervals
-
-        The slot in values, which represents a forecast planning slot, is split in multiple parts
-        filling the (available) intervals.
-
-        :return: a vals list of the slot to create
-        """
         self.check_singleton()
         split_slot_values = []
         for start_inter, end_inter, _resource in intervals:
@@ -2952,14 +2672,11 @@ class PlanningSlot(models.Model):
             )
             period = end_inter - start_inter
             slot_duration = period.total_seconds() / 3600
-            # If the slot is assigned to a flexible resource, the allocated hours are computed based on the hours_per_day of the resource calendar
-            # However if it's a fully flexible resource, the allocated hours are the same as the slot duration.
             if (
                 not unassign
                 and self.resource_id._is_flexible()
                 and not self.resource_id._is_fully_flexible()
             ):
-                # refer to the hours_per_day if the slot duration exceeds it.
                 max_hours_per_day = self.employee_id.resource_calendar_id.hours_per_day
                 max_duration = (
                     period.days + (1 if period.seconds else 0)
@@ -2976,48 +2693,25 @@ class PlanningSlot(models.Model):
         return split_slot_values
 
     def _copy_slots(self, start_dt, end_dt, delta):
-        """
-        Copy slots planned between `start_dt` and `end_dt`, after a `delta`
-
-        Takes into account the resource calendar and the slots already planned.
-        All the slots will be copied, whatever the value of was_copied is.
-
-        :return: a vals list of the slot to create
-        """
-        # 1) Retrieve all the slots of the new period and create intervals within the slots will have to be unassigned (resource_slots_intervals),
-        #    add it to `unavailable_intervals_per_resource`
-        # 2) Retrieve all the calendars for the resource and their validity intervals (intervals within which the calendar is valid for the resource)
-        # 3) For each calendar, retrieve the attendances and the leaves. Add attendances by resource in `attendance_intervals_per_resource` and
-        #    the leaves by resource in `unavailable_intervals_per_resource`
-        # 4) For each slot, check if the slot is at least within an attendance and outside a company leave :
-        #    - If it is a planning :
-        #       - Copy it if the resource is available
-        #       - Copy and unassign it if the resource isn't available
-        #    - Otherwise :
-        #       - Split it and assign the part within resource work intervals
-        #       - Split it and unassign the part within resource leaves and outside company leaves
         resource_per_calendar = defaultdict(lambda: self.env["resource.resource"])
         resource_calendar_validity_intervals = defaultdict(dict)
         attendance_intervals_per_resource = defaultdict(
             Intervals
-        )  # key: resource, values: attendance intervals
+        )
         unavailable_intervals_per_resource = defaultdict(
             Intervals
-        )  # key: resource, values: unavailable intervals
+        )
         attendance_intervals_per_calendar = defaultdict(
             Intervals
-        )  # key: calendar, values: attendance intervals (used for company calendars)
+        )
         leave_intervals_per_calendar = defaultdict(
             Intervals
-        )  # key: calendar, values: leave intervals (used for company calendars)
+        )
         new_slot_values = []
-        # date utils variable
         start_dt_delta = start_dt + delta
         end_dt_delta = end_dt + delta
         start_dt_delta_utc = start_dt_delta.replace(tzinfo=UTC)
         end_dt_delta_utc = end_dt_delta.replace(tzinfo=UTC)
-        # 1)
-        # Search for all resource slots already planned
         resource_slots = self.search(
             [
                 ("start_datetime", ">=", start_dt_delta),
@@ -3025,7 +2719,6 @@ class PlanningSlot(models.Model):
                 ("resource_id", "in", self.resource_id.ids),
             ]
         )
-        # And convert it into intervals
         for slot in resource_slots:
             unavailable_intervals_per_resource[slot.resource_id] |= Intervals(
                 [
@@ -3036,7 +2729,6 @@ class PlanningSlot(models.Model):
                     )
                 ]
             )
-        # 2)
         resource_calendar_validity_intervals = (
             self.resource_id.sudo()
             .filtered(lambda resource: not resource._is_flexible())
@@ -3051,13 +2743,10 @@ class PlanningSlot(models.Model):
             company_calendar_id = slot.company_id.resource_calendar_id
             resource_per_calendar[company_calendar_id] |= self.env[
                 "resource.resource"
-            ]  # ensures the company_calendar will be in resource_per_calendar keys.
-        # 3)
+            ]
         for calendar, resources in resource_per_calendar.items():
-            # For empty calendar (fully flexible resource), we do not need to retrieve the attendances nor the leaves.
             if not calendar:
                 continue
-            # For each calendar, retrieves the work intervals of every resource
             attendances = {
                 resource_id: Intervals(work_interval._items)
                 for resource_id, work_interval in calendar._attendance_intervals_batch(
@@ -3070,7 +2759,6 @@ class PlanningSlot(models.Model):
             attendance_intervals_per_calendar[calendar] = attendances[False]
             leave_intervals_per_calendar[calendar] = leaves[False]
             for resource in resources:
-                # for each resource, adds his/her attendances and unavailabilities for this calendar, during the calendar validity interval.
                 attendance_intervals_per_resource[resource] |= (
                     attendances[resource.id]
                     & resource_calendar_validity_intervals[resource.id][calendar]
@@ -3079,7 +2767,6 @@ class PlanningSlot(models.Model):
                     leaves[resource.id]
                     & resource_calendar_validity_intervals[resource.id][calendar]
                 )
-        # 4)
         remaining_hours_to_plan = {}
         for slot in self:
             if not slot._init_remaining_hours_to_plan(remaining_hours_to_plan):
@@ -3115,8 +2802,6 @@ class PlanningSlot(models.Model):
                 ]
             )
             company_calendar = slot.company_id.resource_calendar_id
-            # Check if interval is contained in the resource work interval.
-            # For flexible hours, ignore the resource work interval and return the whole interval of slot as valid.
             if slot.resource_id and slot.resource_id._is_flexible():
                 attendance_interval_resource = interval
                 attendance_interval_company = interval
@@ -3127,11 +2812,9 @@ class PlanningSlot(models.Model):
                     else attendance_intervals_per_calendar[company_calendar]
                 )
                 attendance_interval_resource = interval & attendance_resource
-                # Check if interval is contained in the company attendances interval
                 attendance_interval_company = (
                     interval & attendance_intervals_per_calendar[company_calendar]
                 )
-            # Check if interval is contained in the company leaves interval
             unavailable_interval_company = (
                 interval & leave_intervals_per_calendar[company_calendar]
             )
@@ -3141,32 +2824,22 @@ class PlanningSlot(models.Model):
                 else (interval & unavailable_intervals_per_resource[slot.resource_id])
             )
             if not unavailable_interval_company:
-                # Either the employee has, at least, some attendance that are not during the company unavailability
-                # Either the company has, at least, some attendance that are not during the company unavailability
 
                 if slot.allocation_type == "planning":
-                    # /!\ It can be an "Extended Attendance" (see hereabove), and the slot may be unassigned.
                     if (
                         unavailable_interval_resource
                         or not attendance_interval_resource
                     ):
-                        # if the slot is during an resourece unavailability, or the employee is not attending during the slot
                         if slot.resource_type != "human":
-                            # if the resource is not an employee and the resource is not available, do not copy it nor unassign it
                             continue
                         values["resource_id"] = False
                     if not slot._update_remaining_hours_to_plan_and_values(
                         remaining_hours_to_plan, values
                     ):
-                        # make sure the hours remaining are enough
                         continue
                     new_slot_values.append(values)
                 else:
                     if attendance_interval_resource:
-                        # if the resource has attendances, at least during a while of the future slot lifetime,
-                        # 1) Work interval represents the availabilities of the employee
-                        # 2) The unassigned intervals represents the slots where the employee should be unassigned
-                        #    (when the company is not unavailable and the employee is unavailable)
                         work_interval_employee = (
                             attendance_interval_resource - unavailable_interval_resource
                         )
@@ -3184,11 +2857,8 @@ class PlanningSlot(models.Model):
                                 unassign=True,
                             )
                     elif slot.resource_type != "human":
-                        # If the resource type is not user and the slot can not be assigned to the resource, do not copy not unassign it
                         continue
                     else:
-                        # When the employee has no attendance at all, we are in the case where the employee has a calendar different than the
-                        # company (or no more calendar), so the slot will be unassigned
                         unassigned_interval = (
                             attendance_interval_company - unavailable_interval_company
                         )
@@ -3198,18 +2868,15 @@ class PlanningSlot(models.Model):
                             remaining_hours_to_plan,
                             unassign=True,
                         )
-                    # merge forecast slots in order to have visually bigger slots
                     new_slot_values += self._merge_slots_values(
                         split_slot_values, unassigned_interval
                     )
         return new_slot_values
 
     def _display_name_fields(self):
-        """List of fields that can be displayed in the display_name"""
         return ["resource_id", "role_id"]
 
     def _get_fields_breaking_publication(self):
-        """Fields list triggering the `publication_warning` to True when updating shifts"""
         return [
             "resource_id",
             "resource_type",
@@ -3220,8 +2887,6 @@ class PlanningSlot(models.Model):
 
     @api.model
     def _get_fields_template(self) -> dict:
-        # key -> field from template
-        # value -> field from slot
         return {
             "role_id": "role_id",
             "start_time": "start_datetime",
@@ -3246,15 +2911,12 @@ class PlanningSlot(models.Model):
         )
 
     def _prepare_template_values(self) -> dict:
-        """extract values from shift to create a template"""
-        # compute duration w/ tzinfo otherwise DST will not be taken into account
         destination_tz = timezone(self._get_tz())
         start_datetime = self.start_datetime.replace(tzinfo=UTC).astimezone(
             destination_tz
         )
         end_datetime = self.end_datetime.replace(tzinfo=UTC).astimezone(destination_tz)
 
-        # get days span from slot
         duration_days = days_span(start_datetime, end_datetime)
 
         return {
@@ -3305,7 +2967,6 @@ class PlanningSlot(models.Model):
             and ("start_datetime", "<") in dom_tuples
             and ("end_datetime", ">") in dom_tuples
         ):
-            # Search on the roles and resources
             search_on_role_domain = Domain.TRUE
             search_on_ressource_domain = Domain.TRUE
             search_on_department_domain = Domain.TRUE
@@ -3338,24 +2999,14 @@ class PlanningSlot(models.Model):
                 department_ids = (
                     self.env["hr.department"].search(department_search_domain).ids
                 )
-                # department_id on resource.resource is a non stored compute, so
-                # the searchable path to it is the employee behind the resource.
                 search_on_department_domain = Domain(
                     "employee_id.department_id", "in", department_ids
                 )
-                # The gantt ORs ('resource_id', '=', False) into the domain as
-                # soon as the facet is a department, see the load() override in
-                # planning_gantt_model.js. Kept in the AND below, that lone
-                # condition matches nothing and cancels the expansion we just
-                # built, so the department members without a shift would stay
-                # hidden - which is exactly what this expansion is for.
                 if search_on_ressource_domain == Domain("id", "=", False):
                     search_on_ressource_domain = Domain.TRUE
-            # Search on the slots
             filters = self._expand_domain_dates(domain)
             resources = self.env["planning.slot"].search(filters).mapped("resource_id")
             search_on_expanded_dates = Domain("id", "in", resources.ids)
-            # Merge the search domains
             if (
                 search_on_role_domain
                 or search_on_department_domain
@@ -3548,7 +3199,6 @@ class PlanningSlot(models.Model):
             allocated_percentage = float_repr(
                 self.allocated_percentage, precision_digits=0
             )
-            # update context to build a link for view in the slot
             view_context.update(
                 {
                     "iCal_url": self._get_ics_url(resource.partner_id),
@@ -3616,27 +3266,14 @@ class PlanningSlot(models.Model):
                 email_layout_xmlid="mail.mail_notification_light",
             )
 
-    # ---------------------------------------------------
-    # Slots generation/copy
-    # ---------------------------------------------------
 
     @api.model
     def _merge_slots_values(self, slots_to_merge, unforecastable_intervals):
-        """Return a list of merged slots.
-
-        - `slots_to_merge` is a sorted list of slots
-        - `unforecastable_intervals` are the intervals where the employee cannot work
-
-        :return: list of merged slots
-        """
         if not slots_to_merge:
             return slots_to_merge
-        # resulting vals_list of the merged slots
         new_slots_vals_list = []
-        # accumulator for mergeable slots
         sum_allocated_hours = 0
         to_merge = None
-        # invariants for mergeable slots
         common_allocated_percentage = slots_to_merge[0]["allocated_percentage"]
         resource_id = slots_to_merge[0].get("resource_id")
         start_datetime = slots_to_merge[0]["start_datetime"]
@@ -3650,9 +3287,6 @@ class PlanningSlot(models.Model):
                 or (slot["start_datetime"] - previous_end_datetime).total_seconds()
                 > 3600 * 24
             ):
-                # last condition means the elapsed time between the previous end time and the
-                # start datetime of the current slot should not be bigger than 24hours
-                # if it's the case, then the slot can not be merged.
                 mergeable = False
             if mergeable:
                 end_datetime = slot["end_datetime"]
@@ -3688,15 +3322,6 @@ class PlanningSlot(models.Model):
         return new_slots_vals_list
 
     def _get_working_hours_over_period(self, start_utc, end_utc, schedule):
-        """
-        Compute the total work hours of the slot based on its work intervals or its working calendar.
-        The following are the different cases:
-        1) If the assigned resource has a flexible contract, its working hours is computed via _get_flexible_resource_work_hours
-           that takes into account contract, timeoff, max hours per day and per week
-        3) If the slot is an open shift, take the `hours_per_day` of the company's calendar to calculate the working hours.
-           this allows the creation of open slots outside the company's calendar attendance (such as weekends).
-        4) If the resource is assigned and has fixed working hours, compute the work hours based on its work intervals.
-        """
         start = max(start_utc, self.start_datetime.replace(tzinfo=UTC))
         end = min(end_utc, self.end_datetime.replace(tzinfo=UTC))
         slot_interval = Intervals(
@@ -3711,7 +3336,6 @@ class PlanningSlot(models.Model):
 
         period = self.end_datetime - self.start_datetime
         slot_duration = period.total_seconds() / 3600
-        # For open shift, take the `hours_per_day` of the company's default calendar
         if not self.resource_id and self.allocation_type == "forecast":
             max_hours_per_day = self.company_id.resource_calendar_id.hours_per_day
             max_duration = (
@@ -3719,7 +3343,6 @@ class PlanningSlot(models.Model):
             ) * max_hours_per_day
             return round(min(slot_duration, max_duration), 2)
 
-        # Resource with fixed working hours, else we refer to the company's calendar
         working_intervals = (
             schedule.intervals[self.resource_id.id]
             if self.resource_id
@@ -3740,8 +3363,8 @@ class PlanningSlot(models.Model):
             + url_encode(
                 {
                     "action": "TEMPLATE",
-                    "text": self.display_name or self.env._("New Shift"),  # Event title
-                    "dates": f"{get_url_dt(self.start_datetime)}/{get_url_dt(self.end_datetime)}",  # Event start and end date/time
+                    "text": self.display_name or self.env._("New Shift"),
+                    "dates": f"{get_url_dt(self.start_datetime)}/{get_url_dt(self.end_datetime)}",
                     "ctz": self._get_tz(),
                     "details": self.env["ir.qweb"]._render(
                         "planning.planning_shift_ics_description", ics_description_data
@@ -3751,9 +3374,6 @@ class PlanningSlot(models.Model):
         }
 
     def _get_ics_url(self, partner) -> str:
-        """The download link of this shift's calendar file, in ``partner``'s
-        name: an access.link until a month after the shift ends, and never less
-        than a month from issue (decisions PL-A, 4B)."""
         self.check_singleton()
         __, token = self.env["access.link"]._issue(
             self,
@@ -3776,7 +3396,6 @@ class PlanningSlot(models.Model):
             and self.end_datetime <= stop
         ):
             return self.allocated_hours
-        # if the slot goes over the gantt period, compute the duration only within the gantt period
         ratio = self.allocated_percentage / 100.0
         working_hours = self._get_working_hours_over_period(
             start_utc, stop_utc, schedule
@@ -3808,13 +3427,11 @@ class PlanningSlot(models.Model):
             planned_hours_mapped[slot.resource_id.id] += slot._get_duration_over_period(
                 start, stop, schedule
             )
-        # Compute employee work hours based on its work intervals or flexible hours.
         work_hours = {
             resource.id: schedule.work_hours(resource) for resource in resources
         }
 
         company_calendar = self.env.company.resource_calendar_id
-        # Export work intervals in UTC
         resource_work_intervals[False] = (
             calendar_work_intervals.get(company_calendar.id)
             or company_calendar._work_intervals_batch(start, stop)[False]
@@ -3831,12 +3448,11 @@ class PlanningSlot(models.Model):
                         resource_work_interval[1].replace(tzinfo=UTC),
                     )
                 )
-        # Add average daily work hours per resource calendar to the output
         avg_hours_per_resource = {False: 0}
         for resource in set(resources):
             if resource._is_fully_flexible():
                 avg_hours_per_resource[resource.id] = (
-                    24  # set to 24 hours if the resource is fully flexible
+                    24
                 )
             else:
                 avg_hours_per_resource[resource.id] = resource.calendar_id.hours_per_day
@@ -3869,8 +3485,6 @@ class PlanningSlot(models.Model):
 
     def _gantt_progress_bar_department_id(self, res_ids, start, stop):
         departments = self.env["hr.department"].browse(res_ids).exists()
-        # department_id on resource.resource is a non stored compute, so the
-        # searchable path to it is the employee behind the resource.
         return self._sum_gantt_progress_bar_per_resource(
             departments,
             self.env["resource.resource"].search(
@@ -3884,19 +3498,6 @@ class PlanningSlot(models.Model):
     def _sum_gantt_progress_bar_per_resource(
         self, records, resources, resource_field, start, stop
     ):
-        """Fold the resource progress bars into one bar per group record.
-
-        A role or department row aggregates the shifts of every resource it
-        holds, so its bar is the sum of theirs. Delegating to
-        `_gantt_progress_bar_resource_id` keeps the hour arithmetic - flexible
-        contracts, time off, calendars - in a single place.
-
-        :param records: the groups the gantt asked a bar for
-        :param resources: the resources attached to those groups
-        :param resource_field: field of `resource.resource` pointing back to
-            `records`, a Many2one or a Many2many
-        :return: a dict of {group id: {'value': .., 'max_value': ..}}
-        """
         per_resource = self._gantt_progress_bar_resource_id(resources.ids, start, stop)
         progress_bar = {
             record.id: {"value": 0.0, "max_value": 0.0} for record in records
@@ -3928,7 +3529,6 @@ class PlanningSlot(models.Model):
         raise NotImplementedError("This Progress Bar is not implemented.")
 
     def _prepare_shift_vals(self) -> dict:
-        """Generate shift vals"""
         self.check_singleton()
         return {
             "resource_id": False,

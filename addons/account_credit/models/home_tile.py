@@ -26,7 +26,6 @@ class HomeTile(models.AbstractModel):
         Review = self.env["credit.review"]
         domain = [("state", "in", OPEN_REVIEW_STATES), ("user_id", "=", self.env.uid)]
         kinds = dict(Review._fields["kind"]._description_selection(self.env))
-        # a queue: the review waiting longest first, not the model's newest first
         reviews = Review.search(
             domain, limit=self._REVIEWS_SHOWN, order="create_date, id"
         )

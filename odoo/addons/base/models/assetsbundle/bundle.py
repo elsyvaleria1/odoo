@@ -394,8 +394,6 @@ class AssetsBundle:
         standalone: bool = False,
     ) -> EsbuildCompiler:
         registry = esm_registry()
-        # A bundle declared standalone always is; one a route serves on its
-        # own (the live chat embed's emoji data) is only for that build.
         standalone = standalone or self.name in registry.standalone_bundles
         native_modules = self.native_modules
         if excluded_specs:
@@ -502,9 +500,6 @@ class AssetsBundle:
         }
         if not params:
             return params
-        # params that leave the bundle's code and templates as they are without
-        # them are not part of its identity: a website with no assets of its
-        # own ships the bytes every other website does
         unscoped = self.env["ir.qweb"]._get_asset_bundle(
             self.name,
             css=False,
@@ -604,8 +599,6 @@ class AssetsBundle:
         body_builder: Callable[[SourceMapGenerator, str], str],
     ) -> IrAttachment:
         map_extension = f"{extension}.map"
-        # the map's url is a function of the version, so it is known before
-        # the map exists and no placeholder row has to be written to learn it
         map_url = self._store.get_versioned_url(map_extension)
         generator = SourceMapGenerator(
             source_root=_sourcemap_source_root(self.get_asset_url("debug", extension)),
@@ -674,8 +667,6 @@ class AssetsBundle:
                 previous=bool(previous_attachment),
             )
             banner = self._css._render_css_error_banner(self.css_errors, previous_css)
-            # Saved under the versioned url, the banner would outlive a
-            # transient compiler failure until a source file changes.
             return self._store.unsaved_attachment(extension, banner)
 
         import_rules, css = self._css.hoist_import_rules(css)

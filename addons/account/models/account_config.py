@@ -497,7 +497,6 @@ class AccountConfig(models.Model):
     @api.constrains("fiscalyear_last_day", "fiscalyear_last_month")
     def _check_fiscalyear_last_day(self) -> None:
         for config in self:
-            # 2020 is a leap year, so February accepts its 29th every year
             last_day = calendar.monthrange(2020, int(config.fiscalyear_last_month))[1]
             if not 1 <= config.fiscalyear_last_day <= last_day:
                 raise ValidationError(
@@ -824,7 +823,6 @@ class AccountConfig(models.Model):
         roots = opened.company_id.root_id
         if "account_opening_date" in vals:
             self.env["account.return.type"].with_context(
-                # 2 years to make sure we cover all cases, such as yearly returns with a deadline of more than 1 year.
                 forced_date_from=min(opened.mapped("account_opening_date"))
                 - relativedelta(years=2),
                 forced_date_to=datetime.date.today() + relativedelta(years=1),

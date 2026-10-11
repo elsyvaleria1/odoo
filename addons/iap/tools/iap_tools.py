@@ -11,9 +11,6 @@ _logger = logging.getLogger(__name__)
 DEFAULT_ENDPOINT = "https://iap.odoo.com"
 
 
-# ----------------------------------------------------------
-# Tools globals
-# ----------------------------------------------------------
 
 _MAIL_PROVIDERS = {
     "gmail.com",
@@ -243,13 +240,10 @@ _MAIL_PROVIDERS = {
     "outlook.jp",
     "eim.ae",
     "pm.me",
-    # Dummy entries
     "example.com",
 }
 _MAIL_DOMAIN_BLACKLIST = _MAIL_PROVIDERS | {"odoo.com"}
 
-# List of country codes for which we should offer state filtering when mining new leads.
-# See crm.iap.lead.mining.request#_compute_available_state_ids() for more details.
 _STATES_FILTER_COUNTRIES_WHITELIST = {
     "AR",
     "AU",
@@ -264,21 +258,9 @@ _STATES_FILTER_COUNTRIES_WHITELIST = {
 }
 
 
-# ----------------------------------------------------------
-# Tools
-# ----------------------------------------------------------
 
 
 def mail_prepare_for_domain_search(email, min_email_length=0):
-    """Return an email address to use for a domain-based search. For generic
-    email providers like gmail (see ``_MAIL_DOMAIN_BLACKLIST``) we consider
-    each email as being independent (and return the whole email). Otherwise
-    we return only the domain part prefixed with "@" (aka "@mydomain.com" if
-    email is "Raoul Lachignole" <raoul@mydomain.com>).
-
-    :param integer min_email_length: skip if email has not the sufficient minimal
-      length, indicating a probably fake / wrong value (skip if 0);
-    """
     if not email:
         return False
     email_tocheck = email_normalize(email, strict=False)
@@ -310,11 +292,8 @@ class IAPServerError(Exception):
 
 
 def iap_jsonrpc(url, method="call", params=None, timeout=15, *, env, purpose=None):
-    """Call the provided JSON-RPC endpoint, unwrap the result and raise
-    JSON-RPC errors as ``InsufficientCreditError`` or ``AccessError``.
-    """
     if modules.module.current_test:
-        raise exceptions.AccessError("Unavailable during tests.")  # noqa: E8505  a guard against reaching IAP from a test run
+        raise exceptions.AccessError("Unavailable during tests.")
 
     payload = {
         "jsonrpc": "2.0",

@@ -37,9 +37,6 @@ class TestAnalyticMoveLineMerge(TestHrPayrollAccountCommon):
         )
         self.distribution = {str(self.analytic_account.id): 100.0}
 
-        # Same NAME on both rules: that is what makes their journal items
-        # candidates for merging. Different codes, because the rule engine keys
-        # its results by code.
         self.rule_values = {
             "name": "Mergeable Allowance",
             "struct_id": self.hr_structure_softwaredeveloper.id,
@@ -71,7 +68,6 @@ class TestAnalyticMoveLineMerge(TestHrPayrollAccountCommon):
         )
 
     def test_two_lines_of_one_name_merge_without_analytic(self):
-        """The control: merging works when no analytic distribution is involved."""
         self._create_rules()
 
         lines = self._post_and_get_merge_lines()
@@ -80,13 +76,6 @@ class TestAnalyticMoveLineMerge(TestHrPayrollAccountCommon):
         self.assertAlmostEqual(lines.debit, 150.0, places=2)
 
     def test_two_lines_of_one_name_merge_with_the_same_analytic(self):
-        """The regression this file exists for.
-
-        Both rules carry the SAME distribution, so their journal items are as
-        mergeable as they are without one. Before the fix this produced two
-        items, because the membership test asked whether a recordset was a key
-        of a dict keyed by strings and got `False` every time.
-        """
         self._create_rules(analytic_distribution=self.distribution)
 
         lines = self._post_and_get_merge_lines()
@@ -100,12 +89,6 @@ class TestAnalyticMoveLineMerge(TestHrPayrollAccountCommon):
         self.assertEqual(lines.analytic_distribution, self.distribution)
 
     def test_lines_with_different_analytic_do_not_merge(self):
-        """Merging is about equal distributions, not overlapping ones.
-
-        Two lines that split the same analytic account differently describe
-        different things, and collapsing them would produce an item that is
-        neither.
-        """
         other_account = self.env["account.analytic.account"].create(
             {
                 "name": "Other Payroll Account",

@@ -70,7 +70,6 @@ class TestHeaderMisc(TestTradeOrderCase):
         late_found = Model.search([("is_late", "=", True), ("id", "in", made.ids)])
         self.assertEqual(late_found, late)
 
-        # The negation must also cover orders without a planned date.
         not_late = Model.search([("is_late", "=", False), ("id", "in", made.ids)])
         self.assertEqual(not_late, on_time + undated + draft_past)
 
@@ -79,7 +78,6 @@ class TestHeaderMisc(TestTradeOrderCase):
             self.env["test_trade.order"].search([("is_late", ">", True)])
 
     def test_is_late_field_agrees_with_its_own_filter(self):
-        """The field used to read False on a record its own filter matched."""
         now = fields.Datetime.now()
         late = self._make_order(date_commitment=now - timedelta(days=1))
         on_time = self._make_order(date_commitment=now + timedelta(days=1))
@@ -127,7 +125,6 @@ class TestHeaderMisc(TestTradeOrderCase):
         self.assertTrue(draft.show_comparison)
 
     def test_show_comparison_ignores_orders_of_another_company(self):
-        """A confirmed order elsewhere is not a comparison this order may draw on."""
         other_company = self.env["res.company"].create({"name": "Comparison Co"})
         self.env.user.company_ids = [(4, other_company.id)]
         product = self.env["product.product"].create({"name": "Cross-company"})

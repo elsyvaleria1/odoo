@@ -84,8 +84,6 @@ class EventQuestion(models.Model):
         self.filtered("is_default").is_reusable = True
 
     def write(self, vals):
-        """We add a check to prevent changing the question_type of a question that already has answers.
-        Indeed, it would mess up the event.registration.answer (answer type not matching the question type)."""
 
         if "question_type" in vals:
             questions_new_type = self.filtered(
@@ -120,12 +118,6 @@ class EventQuestion(models.Model):
             raise UserError(self.env._("You cannot delete a default question."))
 
     def action_view_question_answers(self):
-        """Allow analyzing the attendees answers to event questions in a convenient way:
-
-        - A graph view showing counts of each suggestion for simple_choice questions
-          (Along with secondary pivot and list views)
-        - A list view showing textual answers values for text_box questions.
-        """
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "event.action_event_registration_report"
@@ -133,7 +125,6 @@ class EventQuestion(models.Model):
         action["context"] = {"search_default_question_id": self.id}
         if event_id := self.env.context.get("search_default_event_id"):
             action["context"].update(search_default_event_id=event_id)
-        # Fetch attendee answers for which the event is still linked to the question.
         action["domain"] = [("event_id.question_ids", "in", self.ids)]
 
         if self.question_type == "simple_choice":

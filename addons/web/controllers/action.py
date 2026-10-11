@@ -20,11 +20,6 @@ def _views_request(
     view_context: dict[str, Any],
     view_options: dict[str, Any],
 ) -> dict[str, Any] | None:
-    # the get_views call the web client makes for a window action it has just
-    # loaded: its preprocessAction, prepareViewInfo and view_service.loadViews,
-    # in that order. None where the client's own inputs are not all known here.
-    # `context` is what the action is evaluated with, the user's included;
-    # `view_context` the caller's alone, which the views' context starts from
     if action.get("type") != "ir.actions.act_window" or not action.get("res_model"):
         return None
     if action.get("embedded_action_ids") or view_context.get(
@@ -44,8 +39,6 @@ def _views_request(
         views = [view for view in views if view[1] == "form"]
     else:
         search_view = action.get("search_view_id")
-        # [id, name] as a read action carries it; a bare id as many a method
-        # returning an action dict writes it, which the web client accepts too
         if isinstance(search_view, int):
             search_view_id = search_view
         else:
@@ -96,9 +89,6 @@ def _with_views(
     view_options: dict[str, Any],
     views_known: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    # the action, and for a window action the get_views request the client
-    # makes next with its answer; a request the client says it holds the
-    # answer to travels without it
     views_request = _views_request(
         action, context or {}, view_context or {}, view_options
     )
@@ -130,9 +120,6 @@ class Action(Controller):
         action = self._load(action_id, context)
         if view_options is None or not isinstance(action, dict):
             return action
-        # with view_options, a window action comes with the get_views answer for
-        # the request view_service.loadViews makes next, as guessed here: the
-        # request travels with it, so the client takes it only for that request
         return _with_views(action, context, view_context, view_options, None)
 
     def _load(
@@ -145,8 +132,6 @@ class Action(Controller):
         if context:
             request.update_context(**context)
         Actions = request.env["ir.actions.actions"]
-        # an xml id or a path resolves to a record it has just found; only a
-        # bare id still has to be checked for existence
         resolved_by_name = False
         try:
             action_id = int(action_id)

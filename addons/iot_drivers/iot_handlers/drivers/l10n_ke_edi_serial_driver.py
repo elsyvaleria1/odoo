@@ -41,7 +41,6 @@ ETX = 0x0A
 ACK = 0x06
 NACK = 0x15
 
-# Dictionary defining the output size of expected from various commands
 COMMAND_OUTPUT_SIZE = {
     0x30: 7,
     0x31: 7,
@@ -98,13 +97,6 @@ class TremolG03Driver(SerialDriver):
 
     @classmethod
     def supported(cls, device) -> bool | None:
-        """Checks whether the device, which port info is passed as argument, is supported by the driver.
-
-        :param device: path to the device
-        :type device: str
-        :return: whether the device is supported by the driver
-        :rtype: bool
-        """
         protocol = cls._protocol
         try:
             protocol = cls._protocol
@@ -122,45 +114,14 @@ class TremolG03Driver(SerialDriver):
                 "Error while probing %s with protocol %s", device, protocol.name
             )
 
-    # ----------------
-    # HELPERS
-    # ----------------
 
     @staticmethod
     def generate_checksum(message):
-        """Generate the checksum bytes for the bytes provided.
-
-        :param message: bytes representing the part of the message from which the checksum is calculated
-        :returns:       two checksum bytes calculated from the message
-
-         This checksum is calculated as:
-        1) XOR of all bytes of the bytes
-        2) Conversion of the one XOR byte into the two bytes of the checksum by
-           adding 30h to each half-byte of the XOR
-
-        eg. to_check = \x12\x23\x34\x45\x56
-            XOR of all bytes in to_check = \x16
-            checksum generated as \x16 -> \x31 \x36
-        """
         xor = reduce(lambda a, b: a ^ b, message)
         return bytes([(xor >> 4) + 0x30, (xor & 0xF) + 0x30])
 
-    # ----------------
-    # COMMUNICATION
-    # ----------------
 
     def send(self, msgs):
-        """Send and receive messages to/from the fiscal device over serial connection
-
-        Generate the wrapped message from the msgs and send them to the device.
-        The wrapping contains the <STX> (starting byte) <LEN> (length byte)
-        and <NBL> (message number byte) at the start and two <CS> (checksum
-        bytes), and the <ETX> line-feed byte at the end.
-        :param msgs: A list of byte strings representing the <CMD> and <DATA>
-                     components of the serial message.
-        :return:     A list of the responses (if any) from the device. If the
-                     response is an ack, it wont be part of this list.
-        """
 
         with self._device_lock:
             replies = []
@@ -179,8 +140,6 @@ class TremolG03Driver(SerialDriver):
                 time.sleep(self._protocol.commandDelay)
                 self._connection.write(request)
                 _logger.debug("Debug send request: %s", request)
-                # If we know the expected output size, we can set the read
-                # buffer to match the size of the output.
                 output_size = COMMAND_OUTPUT_SIZE.get(msg[0])
                 if output_size:
                     try:
@@ -200,7 +159,6 @@ class TremolG03Driver(SerialDriver):
                     self.abort_post()
                     break
                 if response[0] == ACK:
-                    # In the case where either byte is not 0x30, there has been an error
                     if response[2] != 0x30 or response[3] != 0x30:
                         self.data["status"] = response[2:4].decode("cp1251")
                         _logger.error(
@@ -225,12 +183,6 @@ class TremolG03Driver(SerialDriver):
         return {"replies": replies, "status": self.data["status"]}
 
     def abort_post(self) -> None:
-        """Cancel the posting of the invoice
-
-        In the event of an error, it is better to try to cancel the posting of
-        the invoice, since the state of the invoice on the device will remain
-        open otherwise, blocking further invoices being sent.
-        """
         self.message_number += 1
         abort = struct.pack("BBB", 35, self.message_number + 32, 0x39)
         request = struct.pack("B3s2sB", STX, abort, self.generate_checksum(abort), ETX)
@@ -247,23 +199,13 @@ class TremolG03Driver(SerialDriver):
 
 
 class TremolG03Controller(http.Controller):
-    # csrf=False: an IoT box has no session; the device refuses a company VAT it does not carry
     @route.iot_route(
         "/hw_proxy/l10n_ke_cu_send", type="http", cors="*", csrf=False, methods=["POST"]
     )
     def l10n_ke_cu_send(self, messages, company_vat):
-        """Posts the messages sent to this endpoint to the fiscal device connected to the server
-
-        :param messages:     The messages (consisting of <CMD> and <DATA>) to
-                             send to the fiscal device.
-        :returns:            Dictionary containing a list of the responses from
-                             fiscal device and status of the fiscal device.
-        """
         device = TremolG03Driver.get_default_device()
         if device:
-            # First run the command to get the fiscal device numbers
             device_numbers = device.send([b"\x60"])
-            # If the vat doesn't match, abort
             if device_numbers["status"] != "ok":
                 return device_numbers
             serial_number, device_vat, _dummy = device_numbers["replies"][0].split(";")

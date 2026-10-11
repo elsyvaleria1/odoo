@@ -80,11 +80,6 @@ class MixinMediaTimeline(models.AbstractModel):
         eta: Any = None,
         priority: int | None = None,
     ) -> MediaSegment:
-        """Put a recording on this timeline and have it heard if it may be.
-
-        With no start it follows what is already there; with no end it lasts
-        as long as its container says.
-        """
         self.check_singleton()
         if start_ms is None:
             start_ms = self._next_media_offset_ms()
@@ -104,8 +99,6 @@ class MixinMediaTimeline(models.AbstractModel):
         return segment
 
     def _spoken_lines(self) -> tuple[str, dict[str, models.Model]]:
-        """The timeline's transcript, one timed and attributed line per cue,
-        and the speakers behind each attribution."""
         self.check_singleton()
         segments = self.segment_ids.sorted("start_ms")
         several = len(segments) > 1
@@ -160,9 +153,6 @@ class MixinMediaTimeline(models.AbstractModel):
         return {}
 
     def _as_transcript_owner(self):
-        """This timeline as its transcripts' callbacks run on it, whoever
-        queued the transcript: a module whose callbacks write what the caller
-        may not grants its own privilege here."""
         return self
 
     def _on_media_transcribed(self, attachment: IrAttachment) -> None:

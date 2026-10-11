@@ -80,7 +80,7 @@ class SpreadsheetDashboard(models.Model):
             (
                 model
                 for model in self.sudo().main_data_model_ids.mapped("model")
-                if self.env[model].search_count([], limit=1) == 0  # noqa: E8507 - one per data model, each its own table, first empty one wins
+                if self.env[model].search_count([], limit=1) == 0
             ),
             None,
         )
@@ -112,9 +112,6 @@ class SpreadsheetDashboard(models.Model):
         return vals_list
 
     def copy_translations(self, new, excluded=()) -> None:
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)

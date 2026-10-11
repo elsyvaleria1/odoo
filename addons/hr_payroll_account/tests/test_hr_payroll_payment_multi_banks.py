@@ -33,7 +33,6 @@ class TestHrPayrollPaymentMultiAccount(TestHrPayrollAccountCommon):
             }
         )
 
-        # Two bank accounts for John
         bank1 = cls.env["res.partner.bank.account"].create(
             {
                 "acc_number": "111-222",
@@ -52,7 +51,6 @@ class TestHrPayrollPaymentMultiAccount(TestHrPayrollAccountCommon):
             Command.set([bank1.id, bank2.id])
         ]
 
-        # Salary distribution: 40% to bank1, 60% to bank2
         set_salary_allocations(
             cls.hr_employee_john,
             {
@@ -73,24 +71,19 @@ class TestHrPayrollPaymentMultiAccount(TestHrPayrollAccountCommon):
         cls.bank1, cls.bank2 = bank1, bank2
 
     def test_payment_multiple_bank_accounts(self):
-        """Payslip with multiple bank accounts should generate multiple payments correctly"""
 
-        # Validate payslip
         self.hr_payslip_john.action_payslip_done()
         self.assertEqual(self.hr_payslip_john.state, "validated")
 
-        # Post the move
         self.hr_payslip_john.move_id.action_post()
         self.assertEqual(self.hr_payslip_john.move_id.state, "posted")
 
-        # Register payment action
         action_register_payment = self.hr_payslip_john.action_register_payment()
         action_register_payment["context"]["hr_payroll_payment_register"] = True
 
         wizard = Form.from_action(self.env, action_register_payment)
         action_create_payment = wizard.save().action_create_payments()
 
-        # Extract payment IDs from the action domain
         payment_ids = action_create_payment["domain"][0][2]
         payments = (
             self.env["account.payment"]
@@ -98,7 +91,6 @@ class TestHrPayrollPaymentMultiAccount(TestHrPayrollAccountCommon):
             .filtered(lambda p: p.payment_type == "outbound")
         )
 
-        # Check we generated 2 payments
         self.assertEqual(
             len(payments), 2, "Expected 2 outbound payments for 2 bank accounts"
         )
@@ -107,7 +99,6 @@ class TestHrPayrollPaymentMultiAccount(TestHrPayrollAccountCommon):
         expected1 = round(total * 0.40, 2)
         expected2 = round(total * 0.60, 2)
 
-        # Assert amounts & bank account mapping
         payment_by_bank = {p.bank_account_id.id: p.amount for p in payments}
         self.assertAlmostEqual(
             payment_by_bank[self.bank1.id], expected1, msg="Bank1 amount incorrect"

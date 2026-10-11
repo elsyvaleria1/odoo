@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class PlanningAnalysisReport(models.Model):
     _inherit = "planning.analysis.report"
 
-    # Not using a related as we want to avoid having a depends.
     employee_skill_ids = fields.One2many(
         comodel_name="hr.employee.skill",
         string="Skills",

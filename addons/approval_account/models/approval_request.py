@@ -6,7 +6,6 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.tools.misc import clean_context
 
-# what makes a waiting request look again for the one transaction it fits
 CLAIM_TRIGGERS = frozenset({"amount", "date", "category_id", "company_id"})
 
 
@@ -138,10 +137,6 @@ class ApprovalRequest(models.Model):
     def create(self, vals_list):
         seen_line_ids: set[int] = set()
         for vals in vals_list:
-            # Same gate write() applies. Without it the treasury seal is only
-            # half enforced: a request cannot be marked paid, but it can be
-            # created already paid, which is the same thing arrived at from
-            # the other side.
             self._check_payment_fields_access(vals)
             line_id = vals.get("bank_statement_line_id")
             if not line_id:
@@ -175,7 +170,6 @@ class ApprovalRequest(models.Model):
                     ),
                 )
             if self:
-                # The guard above leaves at most one record here.
                 self._check_bank_statement_line_available(line_id, exclude=self)
         result = super().write(vals)
         if CLAIM_TRIGGERS & set(vals) and "bank_statement_line_id" not in vals:
@@ -190,8 +184,6 @@ class ApprovalRequest(models.Model):
         return result
 
     def _get_bank_statement_line_offer_domain(self) -> Domain:
-        """Return the transactions this request's picker offers, as the
-        field's own domain states them for the client."""
         self.check_singleton()
         offered = (
             Domain("company_id", "=", self.company_id.id)
@@ -213,13 +205,6 @@ class ApprovalRequest(models.Model):
 
     @api.model
     def _claim_bank_statement_lines(self, companies) -> None:
-        """Give each waiting request of `companies` the one transaction its
-        picker offers, when no other waiting request is offered that one.
-
-        A request waits when it is submitted, needs a bank transaction and
-        has none. A transaction two waiting requests could take is left for a
-        person to assign; so is a request offered several.
-        """
         claimer = self.with_privilege(
             "approval_account.privilege_claim_bank_line",
             reason="a bank transaction is claimed by the one waiting request it fits",
@@ -357,15 +342,6 @@ class ApprovalRequest(models.Model):
         )
 
     def _account_moves_by_request(self) -> dict[int, models.BaseModel]:
-        """``_get_all_account_moves()`` for a whole recordset, in one search.
-
-        ``_get_documents_of_model`` is ``check_singleton()`` by contract and
-        searches once per record, which is right for the singleton callers and
-        wrong for a bulk action holding a week of requests. That helper belongs
-        to ``approval_product`` and is left alone; this is the batched reading
-        of the same two halves -- the lines, which traverse, and the mixin
-        link, which needs the one search this does up front.
-        """
         empty = self.env["account.move"]
         persisted = self.filtered(lambda request: request._origin.id)
         from_mixin: dict[int, Any] = {}
@@ -404,15 +380,6 @@ class ApprovalRequest(models.Model):
         return super().action_view_target_documents()
 
     def action_create_account_moves_bulk(self) -> dict[str, Any]:
-        """Create the journal entries of every eligible request in ``self``.
-
-        Bound to the list view so a week of approved requests can be
-        invoiced in one click. A request is eligible when it is approved,
-        targets ``account.move``, carries lines and has no move yet; the
-        others are left untouched and counted in the closing notification.
-        Creation is atomic: a failure on one request rolls back the batch,
-        so a half-invoiced selection never has to be sorted out by hand.
-        """
         moves_by_request = self._account_moves_by_request()
         eligible = self.filtered(
             lambda request: (
@@ -435,8 +402,6 @@ class ApprovalRequest(models.Model):
         for request in eligible:
             request._create_target_documents()
             request._log_target_creation_to_chatter()
-        # Eligibility already required that these carried no move, so whatever
-        # they carry now is what this run created. One search for the batch.
         for moves in eligible._account_moves_by_request().values():
             created_moves |= moves
 
@@ -476,9 +441,6 @@ class ApprovalRequest(models.Model):
                 "res_model": "account.move",
                 "res_id": all_moves.id,
                 "view_mode": "form",
-                # Spelled out because this dict also travels as the `next` of
-                # a display_notification, where the button controller does not
-                # normalise `views` and the client dies on `views.map`.
                 "views": [(False, "form")],
                 "context": clean_context(self.env.context),
             }

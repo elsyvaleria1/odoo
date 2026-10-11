@@ -25,12 +25,6 @@ class DisplayInterface(Interface):
 
     @classmethod
     def _add_device(cls, display_identifier, x_screen) -> dict:
-        """Creates a display_device dict.
-
-        :param display_identifier: the identifier of the display
-        :param x_screen: the x screen number
-        :return: the display device dict
-        """
 
         return {
             "identifier": display_identifier,

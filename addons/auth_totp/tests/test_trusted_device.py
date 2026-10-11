@@ -19,9 +19,6 @@ from odoo.tests import HttpCase, tagged
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 
-#: A User-Agent odoo/libs/_vendor/useragents.py classifies as neither browser
-#: nor platform. The Odoo mobile app's own agent is the realistic case --
-#: ``Odoo/x CFNetwork/y Darwin/z`` parses a platform but no browser.
 UNRECOGNIZED_UA = "Odoo/19.0 CFNetwork/1494.0.7 Darwin/23.4.0"
 CHROME_UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -30,7 +27,6 @@ CHROME_UA = (
 
 
 def _totp_token(secret_b32):
-    """Return the current 6-digit TOTP code for a base32 secret (RFC 6238)."""
     key = base64.b32decode(re.sub(r"\s", "", secret_b32).upper())
     mac = hmac.new(key, struct.pack(">Q", int(time.time() / 30)), "sha1").digest()
     offset = mac[-1] & 0xF
@@ -59,7 +55,6 @@ class TestTrustedDevice(HttpCase):
         )
 
     def _login_remembering_device(self, login, secret, user_agent):
-        """Run the real two-step login with "remember this device" ticked."""
         self.opener.headers["User-Agent"] = user_agent
         login_page = self.url_open("/web/login")
         totp_form = self.url_open(
@@ -82,7 +77,6 @@ class TestTrustedDevice(HttpCase):
         )
 
     def test_unrecognized_user_agent_still_registers_the_device(self):
-        """An unparseable User-Agent must not fail the login (was a 500)."""
         user, secret = self._new_2fa_user("td_ua", "base.group_user")
 
         response = self._login_remembering_device("td_ua", secret, UNRECOGNIZED_UA)
@@ -92,7 +86,6 @@ class TestTrustedDevice(HttpCase):
         self.assertIn("Unknown browser", user.totp_trust_ids.name)
 
     def test_recognized_user_agent_names_the_device(self):
-        """The naming path a real browser takes is unchanged (boundary)."""
         user, secret = self._new_2fa_user("td_chrome", "base.group_user")
 
         response = self._login_remembering_device("td_chrome", secret, CHROME_UA)
@@ -101,14 +94,6 @@ class TestTrustedDevice(HttpCase):
         self.assertEqual(user.totp_trust_ids.name, "Chrome on Linux")
 
     def test_portal_user_may_remember_a_device(self):
-        """A trusted device is not an API key: no portal.allow_api_keys needed.
-
-        This used to be an HTTP 403, because auth.totp.trust inherited
-        res.users.apikeys' internal-users-only policy and portal's widening
-        of it.
-        """
-        # the point of this test is the setting being off, which a deployment
-        # that saved its settings stores as "False" rather than leaving unset
         self.env["ir.config_parameter"].sudo().set_param(
             "portal.allow_api_keys", False
         )
@@ -120,7 +105,6 @@ class TestTrustedDevice(HttpCase):
         self.assertEqual(len(user.totp_trust_ids), 1)
 
     def test_public_user_may_not_register_a_device(self):
-        """The one caller authenticates first, but the floor stays explicit."""
         public_user = self.env.ref("base.public_user")
         with self.assertRaises(AccessError):
             self.env["auth.totp.trust"].with_user(public_user)._issue("nope")
@@ -143,7 +127,6 @@ class TestTrustedDevice(HttpCase):
         self.env.invalidate_all()
         device, trust = user.auth_client_ids, user.totp_trust_ids
         self.assertTrue(device.totp_trust_ids)
-        # trust retention deletes expired credentials in SQL, not through the ORM
         self.env.cr.execute("DELETE FROM auth_totp_trust WHERE id = %s", [trust.id])
         self.env.invalidate_all()
         self.assertFalse(device.totp_trust_ids)

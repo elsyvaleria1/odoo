@@ -22,7 +22,6 @@ _SYSTRAY_OCCASIONAL = {"latitude": 50.27, "longitude": 5.31, "city": "Waillet"}
 
 
 def working_days():
-    """A weekday's four clock events for each of the last two months or so."""
     now = fields.Datetime.now()
     previous_month = now - relativedelta(months=1)
     days_back = now.day + monthrange(previous_month.year, previous_month.month)[1]

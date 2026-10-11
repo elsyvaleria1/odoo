@@ -7,9 +7,6 @@ class AccountFollowupReport(models.AbstractModel):
 
     @api.model
     def _send_snailmail(self, request) -> None:
-        """
-        Send by post the followup to the customer's followup contacts
-        """
         partner = request.partner
         contact = partner._get_followup_contact() or partner
         letter = self.env["snailmail.letter"].create(
@@ -26,7 +23,6 @@ class AccountFollowupReport(models.AbstractModel):
             }
         )
 
-        # Allow snailmail_letter to generate the attachment using the followup request
         letter.with_context(followup_request=request)._snailmail_print()
         if not self.env["snailmail.letter"]._is_valid_address(letter):
             raise UserError(

@@ -60,7 +60,6 @@ class TestWebhookSecretProvisioning(TelegramBotTestCase):
         self.assertEqual(list(calls), ["setWebhook", "getMe"])
         payload = calls["setWebhook"]
         self.assertEqual(payload["secret_token"], bot._webhook_secret())
-        # addressed by the token hash: the token never travels in a URL
         self.assertTrue(payload["url"].endswith(f"/telegram/webhook/{bot.token_hash}"))
         self.assertNotIn("ZYX-provisioning_token", payload["url"])
 

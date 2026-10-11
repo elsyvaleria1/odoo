@@ -28,14 +28,9 @@ _MAGIC_FIELDS = frozenset(
     ("create_uid", "create_date", "write_uid", "write_date", "parent_path")
 )
 
-# the user evaluating the domain and another one: a many2one to the users
-# names one of the two, never a row of the dataset
 PRINCIPALS = "res.users"
 LANGS = ("en_US", "fr_FR")
-# zones whose offsets move the datetimes of the pool across a day, a month
-# and a year boundary, both ways
 TIMEZONES = ("UTC", "America/Mexico_City", "Asia/Tokyo", "Pacific/Kiritimati")
-# the date parts a domain may compare, as `moment.hour_number`
 _PARTS = (
     "year_number",
     "quarter_number",
@@ -62,7 +57,6 @@ OTHER = Ref(PRINCIPALS, 1)
 
 
 class _UserId:
-    # the evaluating user in the text of an access rule
     def __repr__(self) -> str:
         return "user.id"
 
@@ -72,7 +66,6 @@ USER = _UserId()
 
 @dataclass(frozen=True)
 class Translated:
-    # a translated field's value in each installed language
     en_US: str
     fr_FR: str
 
@@ -88,8 +81,6 @@ class Raised:
         return f"raised {self.error}"
 
 
-# a reading that does not judge: the set algebra when one of its conditions
-# raised, which the search may legitimately never evaluate (`False & bad`)
 ABSTAINED = Raised("abstained")
 Outcome = frozenset[Ref] | Raised
 Row = dict[str, typing.Any]
@@ -107,19 +98,14 @@ class FieldSpec:
     writable: bool
     unique: bool
     hierarchical: bool
-    # the stored field whose dataset values this one reads, if any
     source: tuple[str, str] | None
     translate: bool = False
-    # a property of a Properties field (`props.size`) or a part of a date
-    # (`day.month_number`): searched by its path, never written as a column
     container: str | None = None
     part: str | None = None
 
 
 @dataclass(frozen=True)
 class Container:
-    # a Properties field, the many2one holding its definition and the
-    # definition's field on that record
     name: str
     link: str
     definition: str
@@ -152,9 +138,6 @@ class Schema:
     creation_order: tuple[str, ...]
 
     def resolve(self, model: str, path: str) -> tuple[list[str], str, FieldSpec]:
-        # the relational steps of a path, the model they reach and the spec
-        # the rest names there: `parent_id.props.size` is one step, then a
-        # property of the parent
         names = path.split(".")
         owner = model
         for index in range(len(names)):
@@ -165,7 +148,6 @@ class Schema:
         raise KeyError(path)
 
     def reached(self, model: str, path: str) -> set[str]:
-        # the models a condition on the path reads records of
         steps, owner, spec = self.resolve(model, path)
         found = set()
         current = model
@@ -364,9 +346,7 @@ _LIKE_PATTERNS = (
     "tr%",
 )
 _REGEXES = ("a", "^a", "b$", ".", "^$", "^[ab]+$", "A", "^0$", "1", "^-", "^2026-01")
-# a pattern on a number, a date or a flag compares its text
 _PATTERN_OPERATORS = ("like", "not like", "ilike", "not ilike", "=like", "=~", "not =~")
-# an id no record has: a dangling reference
 MISSING = -1
 _FOREIGN: dict[str, tuple[typing.Any, ...]] = {
     "integer": ("7", 7.5, "-1"),
@@ -381,10 +361,7 @@ _FOREIGN: dict[str, tuple[typing.Any, ...]] = {
 }
 
 
-# values a date part takes, and some no date has
 _PART_VALUES = (0, 1, 2, 3, 4, 5, 6, 12, 23, 31, 52, 53, 365, 2025, 2026)
-# the properties a definition may declare; each record of the definition's
-# model declares some of them, in its own order
 PROPERTY_POOL: tuple[dict[str, typing.Any], ...] = (
     {"name": "size", "type": "integer"},
     {"name": "ratio", "type": "float"},
@@ -462,8 +439,6 @@ def _definition(rng: random.Random) -> list[dict[str, typing.Any]]:
 def _property_values(
     rng: random.Random, dataset: Dataset, row: Row, container: Container
 ) -> dict[str, typing.Any] | None:
-    # what a record holds for each property its definition record declares;
-    # the definition is read when the record is written, so it is the row's
     holder = row.get(container.link)
     if not isinstance(holder, Ref) or rng.random() < 0.15:
         return None
@@ -547,13 +522,9 @@ def _row_value(
         return False
     pool = _scalars(spec)
     if spec.translate and rng.random() < 0.6:
-        # a value of its own in French, often one an English value has too:
-        # a condition then holds for other records in each language
         english = rng.choice([text for text in pool[:6] if text])
         return Translated(english, rng.choice(pool[:8]))
     if rng.random() < 0.8:
-        # a few values, so that records share them and lines of one record
-        # differ: what makes two conditions on one field disagree
         pool = pool[:4]
     return rng.choice(pool)
 
@@ -649,7 +620,6 @@ _RELATIONAL_OPERATORS = (
     "not ilike",
 )
 _HIERARCHY_OPERATORS = ("child_of", "parent_of")
-# what the optimizer merges between siblings
 _SET_OPERATORS = ("=", "!=", "in", "not in")
 
 
@@ -667,7 +637,6 @@ class DomainGenerator:
         self.dataset = dataset
         self.rng = rng
         self.accepts = accepts or (lambda model, path, operator: True)
-        # only what the optimizer merges: sibling conditions on one field
         self.merges = merges
 
     def node(self, model: str, depth: int = 3) -> Node:
@@ -682,9 +651,6 @@ class DomainGenerator:
         return self.leaf(model, depth)
 
     def _nary(self, model: str, depth: int) -> Nary:
-        # siblings often search the same field, often with the same operator:
-        # that is where the optimizer merges conditions, and where a merge
-        # can be wrong
         count = self.rng.choice((2, 2, 2, 3))
         if self.rng.random() < 0.5:
             return self._siblings(model, depth, count)
@@ -730,8 +696,6 @@ class DomainGenerator:
     def _leaf(self, model: str, depth: int) -> Leaf | None:
         rng = self.rng
         fields = self.schema.models[model].fields
-        # a related field reads through other records: where the optimizer
-        # rewrites the most, so where it is drawn the most
         weights = [
             3 if spec.source and spec.source[0] != model else 1 for spec in fields
         ]
@@ -792,11 +756,8 @@ class DomainGenerator:
                 operators = (*operators, "<", ">=")
             comodel = self.schema.models.get(spec.comodel)
             if comodel is not None and comodel.hierarchical:
-                # the fork refuses a hierarchy operator on a comodel without
-                # a parent field rather than reading it as `in`
                 operators = (*operators, *_HIERARCHY_OPERATORS)
             if comodel is None:
-                # the users are no rows of the dataset: no condition on theirs
                 operators = tuple(
                     op for op in operators if op not in ("any", "not any")
                 )
@@ -825,8 +786,6 @@ class DomainGenerator:
         return Leaf(spec.name, operator, self._scalar_value(spec, operator))
 
     def _naming_every_active(self, model: str, node: Node) -> Node:
-        # a subdomain naming the active field decides about archived corecords
-        # even when the optimizer reduces what it names to nothing
         rng = self.rng
         names = {spec.name for spec in self.schema.models[model].fields}
         if "active" not in names or rng.random() >= 0.4:
@@ -848,7 +807,6 @@ class DomainGenerator:
         if operator in ("=", "!=", "in", "not in", *_HIERARCHY_OPERATORS) and (
             rng.random() < 0.05
         ):
-            # a name stands for the records it name-searches
             refs = [*refs, rng.choice(("a", "ab", "zz", "é"))]
         if operator in ("in", "not in"):
             chosen: list[typing.Any] = rng.sample(
@@ -880,15 +838,11 @@ class DomainGenerator:
         rng = self.rng
         held = self._held_values(spec)
         if held and rng.random() < 0.7:
-            # a value some record holds: random comparands rarely meet the
-            # few values a small dataset has, and a match is what tells
             return rng.choice(held)
         foreign = _FOREIGN.get(spec.type)
         if foreign and rng.random() < 0.05:
             return rng.choice(foreign)
         if spec.type in ("char", "text") and spec.size and rng.random() < 0.5:
-            # longer than the column: what the column holds is cut, a
-            # comparand is not
             return rng.choice(("abcdefg", "ABCDEFGH", "abcdef", "ABCDE"))
         if spec.type == "integer" and rng.random() < 0.2:
             return rng.choice((3, -2, 100))
@@ -978,8 +932,6 @@ _EXPECTED_ERRORS = (
 
 
 def _reading(read: Callable[[], Sequence[int]], loaded: Loaded, model: str) -> Outcome:
-    # a query PostgreSQL refuses aborts the transaction: each reading rolls
-    # back alone, or every reading after it would raise too
     cr = loaded.env.cr
     isolated = nullcontext() if isinstance(cr, InMemoryCursor) else cr.savepoint(False)
     try:
@@ -995,9 +947,6 @@ def _reading(read: Callable[[], Sequence[int]], loaded: Loaded, model: str) -> O
 
 @dataclass(frozen=True)
 class Rule:
-    # an ir.access row the evaluating user's group holds on a model: a
-    # permission admits what its domain matches (the permissions of a model
-    # add up), a guard keeps only what its domain matches
     model: str
     kind: str
     node: Node
@@ -1008,8 +957,6 @@ class Rule:
 
 @dataclass(frozen=True)
 class Viewpoint:
-    # who evaluates a domain and in which context: the superuser when
-    # `rules` is None, else a user whose group holds exactly those rows
     lang: str = "en_US"
     tz: str | None = None
     rules: tuple[Rule, ...] | None = None
@@ -1025,8 +972,6 @@ class Viewpoint:
         return f"{head}, as a user holding{''.join(texts) or ' every record'}"
 
 
-# a rule reads plain columns and relations: a date or a property has no
-# literal the rule's text evaluates the same in every context
 _RULE_TYPES = frozenset(
     ("char", "text", "integer", "float", "boolean", "selection", "many2one")
 ) | frozenset(("one2many", "many2many", "one2one"))
@@ -1190,9 +1135,6 @@ class Loaded:
         }
 
     def _grant(self, rules: Sequence[Rule]) -> tuple[Rule, ...]:
-        # the user's group holds the drawn rows and, on a model with no drawn
-        # permission, one admitting every record; the module's own rows on
-        # these models would admit more, so they go for the world's life
         env = self.env
         access = env["ir.access"]
         access.search([("model_id.model", "in", list(self.schema.models))]).write(
@@ -1260,8 +1202,6 @@ class Loaded:
         return [id_ for ref, id_ in self.ids.items() if ref.model == model]
 
     def all_ids(self, model: str) -> list[int]:
-        # the records the evaluator may read: a user's are those its rules
-        # admit, archived ones included
         if self.as_user:
             return list(self.readable[model])
         return self.every_id(model)
@@ -1270,8 +1210,6 @@ class Loaded:
         return self.outcome(model, self.all_ids(model))
 
     def keeps_active_only(self, model: str, node: Node) -> bool:
-        # the rule `_search` applies: a domain naming the active field at its
-        # own level decides about archived records itself
         active_name = self.env[model]._active_name
         return bool(
             self.active_test
@@ -1293,8 +1231,6 @@ class Loaded:
         return _reading(lambda: self.sudo_env[model].search(domain).ids, self, model)
 
     def search_every_record(self, model: str, domain: list) -> Outcome:
-        # what the domain alone matches among archived records too, with the
-        # relations still read under the environment's active_test
         Model = self.env[model]
         if self.active_test and Model._active_name:
             domain = ["&", (Model._active_name, "in", [True, False]), *domain]
@@ -1303,7 +1239,6 @@ class Loaded:
     def relating(
         self, model: str, fname: str, corefs: frozenset[Ref]
     ) -> frozenset[Ref]:
-        # the relation's rows, archived corecords included, as SQL joins them
         coids = {self.ids[ref] for ref in corefs}
         ids = self.all_ids(model)
         records = self.env[model].with_context(active_test=False).browse(ids)
@@ -1319,8 +1254,6 @@ class Loaded:
     def filtered(self, model: str, domain: list, *, active_only: bool) -> Outcome:
         records = self.env[model].browse(self.all_ids(model))
         if not records:
-            # filtered_domain of no record evaluates nothing: it agrees with
-            # any answer, a refusal included, so it does not judge
             return ABSTAINED
 
         def read() -> Sequence[int]:
@@ -1331,14 +1264,10 @@ class Loaded:
 
         outcome = _reading(read, self, model)
         if self.as_user and outcome == Raised("AccessError"):
-            # the predicate read a corecord the user may not read, where the
-            # search's subquery leaves it out under the comodel's rules
             return ABSTAINED
         return outcome
 
     def reached(self, model: str, node: Node) -> set[str] | None:
-        # the models whose records a domain reads besides the root's own
-        # columns, or None when it name-searches, which may read any
         found: set[str] = set()
         for leaf in leaves(node):
             _steps, _owner, spec = self.schema.resolve(model, leaf.path)
@@ -1386,7 +1315,6 @@ Evaluate = Callable[[str, Node], dict[str, Outcome]]
 def _related_any_chain(
     loaded: Loaded, model: str, related: str, value: SubDomain
 ) -> Node | None:
-    # a related field is searched as the `any` chain of its path
     *hops, last = related.split(".")
     owners = [model]
     for hop in hops:
@@ -1401,18 +1329,10 @@ def _related_any_chain(
 
 
 def evaluators(loaded: Loaded, *, prefix: str = "") -> Evaluate:
-    # the set algebra searches each condition alone and combines the answers
-    # as AND, OR and NOT mean: what the optimizer's rewrites must preserve;
-    # a stored relation's `any` it evaluates itself, so the search cannot
-    # vouch for its own subdomain
-    # keyed by repr: equal leaves may differ in meaning, 0 == False
     leaf_cache: dict[tuple[str, str], Outcome] = {}
     ruled = {rule.model for rule in loaded.applied}
 
     def any_outcome(model: str, leaf: Leaf) -> Outcome | None:
-        # a subdomain is the set algebra of the comodel, and the comodel's
-        # search keeps its active records unless the subdomain names the
-        # active field; a many2one reads archived corecords too
         value = leaf.value
         if not isinstance(value, SubDomain) or leaf.operator not in ("any", "not any"):
             return None
@@ -1422,8 +1342,6 @@ def evaluators(loaded: Loaded, *, prefix: str = "") -> Evaluate:
         if not field.store:
             if not field.related or loaded.as_user:
                 return None
-            # a user's chain reads access the superuser's does not: left to
-            # the search to answer
             node = _related_any_chain(loaded, model, field.related, value)
             if node is None:
                 return None
@@ -1467,9 +1385,6 @@ def evaluators(loaded: Loaded, *, prefix: str = "") -> Evaluate:
             f"{prefix}composed": outcome,
         }
         if loaded.as_user:
-            # a domain reading no record of a ruled model but the root's
-            # matches for the user what it matches for the superuser, among
-            # the records the user reads
             reached = loaded.reached(model, node)
             if reached is not None and not reached & ruled:
                 found = loaded.search_as_superuser(model, domain)
@@ -1485,9 +1400,6 @@ World = Callable[[Dataset, Viewpoint], AbstractContextManager[tuple[Evaluate, Lo
 
 
 def disagreement(outcomes: Mapping[str, Outcome]) -> tuple[str, str] | None:
-    # when a condition raises on its own (the set algebra abstains), an
-    # evaluator that decided every record without it may answer where
-    # another raises: which conditions are evaluated is theirs to choose
     erring_alone = any(outcome is ABSTAINED for outcome in outcomes.values())
     names = list(outcomes)
     for i, first in enumerate(names):
@@ -1586,8 +1498,6 @@ class Campaign:
         generator = DomainGenerator(
             self.schema, dataset, rng, accepts=self.accepts, merges=self.merges
         )
-        # filtered_domain of no record evaluates nothing: a root without
-        # rows would agree with any search and hide what it should show
         roots = [root for root in self.roots if _refs(dataset, root)]
         viewpoint = (
             self.viewpoints(self.schema, dataset, rng)
@@ -1711,8 +1621,6 @@ def _smaller_nodes(node: Node) -> Iterator[Node]:
 def _smaller_datasets(
     schema: Schema, dataset: Dataset, keep: set[Ref], root: str
 ) -> Iterator[Dataset]:
-    # the root model keeps a row: `filtered_domain` of no record evaluates
-    # nothing, so it would agree with any search and hide the difference
     for model_name in reversed(list(dataset)):
         for index, row in enumerate(dataset[model_name]):
             if row is not None and Ref(model_name, index) not in keep:
@@ -1759,8 +1667,6 @@ def _with_value(
 
 
 def _without(schema: Schema, dataset: Dataset, gone: Ref) -> Dataset:
-    # a row whose required many2one names a removed row goes with it; an
-    # optional one is left empty
     removed = {gone}
     changed = True
     while changed:
@@ -1826,8 +1732,6 @@ def item_sizes(rng: random.Random) -> dict[str, int]:
     }
 
 
-# test_orm's models for domain semantics: every field kind on the item, and
-# a comodel behind each kind of relation
 ITEM_MODELS = (
     "test_orm.domain.partner",
     "test_orm.domain.tag",
@@ -1835,8 +1739,6 @@ ITEM_MODELS = (
     "test_orm.domain.line",
     "test_orm.domain.detail",
 )
-# the item holds every field kind; the others reach what it does not, such
-# as a detail without an item, whose display name is that empty relation
 ITEM_ROOTS = (
     "test_orm.domain.item",
     "test_orm.domain.item",

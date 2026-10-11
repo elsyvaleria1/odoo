@@ -6,7 +6,6 @@ class PosPrepOrder(models.Model):
 
     @api.model
     def process_order(self, order_id, options=None):
-        """Override to send order received notification via SMS/WhatsApp."""
         if not order_id or not self.env["pos.order"].browse(order_id).exists():
             return None
 
@@ -22,9 +21,6 @@ class PosPrepOrder(models.Model):
         )
         prep_orders_added = new_prep_orders and not existing_prep_orders
 
-        # Send notification ONLY when prep orders are first created, not on subsequent calls.
-        # prep_orders_added is True when the prep orders are created for the first time to avoid sending multiple notifications to user phone number.
-        # it can be called two times with an online pm set.
         if (
             prep_orders_added
             and not (options or {}).get("cancelled")

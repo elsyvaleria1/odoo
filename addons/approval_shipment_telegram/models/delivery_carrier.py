@@ -4,7 +4,6 @@ from odoo import fields, models
 class DeliveryCarrier(models.Model):
     _inherit = "delivery.carrier"
 
-    # FIELDS
     freight_approval_category_id = fields.Many2one(
         comodel_name="approval.category",
         string="Freight Approval",

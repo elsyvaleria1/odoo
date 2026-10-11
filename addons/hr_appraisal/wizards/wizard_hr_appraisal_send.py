@@ -91,10 +91,6 @@ class WizardHrAppraisalSend(models.TransientModel):
 
     @api.constrains("template_id", "appraisal_id")
     def _check_template_id(self) -> None:
-        """Check the default templates are used.
-
-        This is necessary to ensure the safety of _unrestricted_rendering.
-        """
         for appraisal_request in self.filtered("template_id"):
             template = appraisal_request.template_id
             appraisal = appraisal_request.appraisal_id
@@ -113,8 +109,6 @@ class WizardHrAppraisalSend(models.TransientModel):
 
     @api.depends("employee_id")
     def _compute_subject(self) -> None:
-        # Both templates target hr.appraisal, which is also this wizard's
-        # render_model, so one model applies on every pass.
         for wizard_su in self.filtered(
             lambda w: w.employee_id and w.template_id
         ).sudo():
@@ -175,17 +169,13 @@ class WizardHrAppraisalSend(models.TransientModel):
 
     def _compute_can_edit_body(self) -> None:
         for record in self:
-            # Do not bypass verification (as the template is rendered 2 times with 2 different models)
             record.can_edit_body = True
 
-    # Overrides of mixin.mail.composer
-    @api.depends("subject")  # fake trigger otherwise not computed in new mode
+    @api.depends("subject")
     def _compute_render_model(self) -> None:
         self.render_model = "hr.appraisal"
 
     def action_invite(self):
-        """Process the wizard content and proceed with sending the related
-        email(s), rendering any template patterns on the fly if needed"""
         self.check_singleton()
         appraisal = self.appraisal_id
 
@@ -194,13 +184,6 @@ class WizardHrAppraisalSend(models.TransientModel):
         }
         context_self = self.with_context(ctx)
         subject = context_self._render_field("subject", appraisal.ids)[appraisal.id]
-        # Render `body` as it stands. It used to be rewritten first, turning
-        # every `href` in the already-rendered body into `t-att-href`, which
-        # manufactured qweb expressions *after* `_check_access_right_dynamic_
-        # template` had vetted the value - so any internal user could put
-        # `<a href="...">` in the optional comment and have it evaluated. The
-        # link the templates need is now resolved on the first pass instead,
-        # by `_compute_body`, so there is nothing left to rewrite.
         body = context_self._render_field("body", appraisal.ids)[appraisal.id]
 
         appraisal.message_post(

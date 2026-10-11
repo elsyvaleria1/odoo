@@ -63,7 +63,6 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         return run
 
     def _pushed(self, checks="none"):
-        """An incident whose live fix is pushed and its pull request open."""
         self._occur()
         incident = self._occur()
         self._finish(

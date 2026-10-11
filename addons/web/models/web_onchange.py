@@ -32,7 +32,6 @@ class Base(models.AbstractModel):
             return {}
 
         fields_spec = self._screen_fields_spec(fields_spec)
-        # a client sends back what it read, the verbs a record grants included
         values = self._prepare_onchange_values(values)
 
         if first_call:
@@ -278,7 +277,6 @@ class Base(models.AbstractModel):
         screened = {}
         for field_name, field_spec in fields_spec.items():
             if field_name == VERBS_FIELD:
-                # no field: the verbs a record grants come with its read
                 continue
             field = self._fields.get(field_name)
             if field is None:

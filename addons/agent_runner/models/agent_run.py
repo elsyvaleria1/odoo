@@ -207,7 +207,6 @@ class AgentRun(models.Model):
         "A run is handed out at least once.",
     )
 
-    # -- what users do --------------------------------------------------------
 
     def action_cancel(self) -> None:
         live = self.filtered(lambda run: run.run_state not in FINAL_STATES)
@@ -233,7 +232,6 @@ class AgentRun(models.Model):
             }
         )
 
-    # -- the protocol ---------------------------------------------------------
 
     @api.model
     def _lease_seconds(self) -> int:
@@ -245,8 +243,6 @@ class AgentRun(models.Model):
     @api.model
     def _companies_over_budget(self) -> list[int]:
         companies = self.search([("run_state", "=", "queued")]).company_id
-        # the budget is a system field, which a runner's principal does not
-        # read; which of its companies are over it is all a claim learns
         return [
             company.id
             for company in companies.sudo()
@@ -256,13 +252,6 @@ class AgentRun(models.Model):
 
     @api.model
     def _claim(self, runner: models.BaseModel) -> tuple[AgentRun, str] | None:
-        """Lease ``runner`` the most urgent queued run it can take, or nothing.
-
-        The runner's row is locked first, so two calls of one runner cannot
-        both pass its concurrency; the run is picked under `SKIP LOCKED`, so two
-        runners racing for one run do not wait on each other and only one of
-        them gets it.
-        """
         runner.check_singleton()
         self.flush_model()
         cr = self.env.cr
@@ -336,13 +325,6 @@ class AgentRun(models.Model):
 
     @api.model
     def _lease(self, runner: models.BaseModel) -> dict[str, Any] | None:
-        """What `_claim` leases ``runner``, with the credentials it acts with.
-
-        A run whose credentials are refused fails for good, and the next run is
-        tried. One whose credentials cannot be prepared now -- GitHub
-        unreachable, a credential misconfigured -- is deferred (`_defer`), and
-        the next run is tried.
-        """
         while found := self._claim(runner):
             run, token = found
             try:
@@ -355,7 +337,6 @@ class AgentRun(models.Model):
                 run._log_event("error", str(refusal))
                 run._end_attempt(str(refusal), requeue=False)
             except psycopg.Error, ConcurrencyError:
-                # the transaction itself failed: the request is retried whole
                 raise
             except Exception as error:
                 _logger.warning(
@@ -367,10 +348,6 @@ class AgentRun(models.Model):
         return None
 
     def _defer(self, reason: str) -> None:
-        """Put the run back in the queue, its attempt unspent, for a while that
-        doubles at each failure in a row (an hour at most): a GitHub outage
-        neither spends the run's attempts nor holds the runner's other work.
-        A run whose credentials keep failing for about a day fails."""
         self.check_singleton()
         failures = self.count_credential_failure + 1
         self._log_event(
@@ -417,9 +394,6 @@ class AgentRun(models.Model):
         }
 
     def _prepare_credentials(self) -> dict[str, Any]:
-        """What the runner needs to act for this run alone -- a repository token,
-        a model key. Handed with the lease, never kept on the runner. Raises
-        `CredentialsRefused` when the run may not have them."""
         if not self.ml_purpose:
             return {}
         provider = self.env.ref(
@@ -494,8 +468,6 @@ class AgentRun(models.Model):
         return len(vals_list)
 
     def _complete(self, token: object, result: object, usage: dict[str, Any]) -> bool:
-        """Finish the run; ``False`` when it already was, by this very lease --
-        a replay, which changes nothing and counts no spend twice."""
         if not self._holds(token):
             raise LeaseLost
         if self.run_state == "succeeded":
@@ -524,13 +496,9 @@ class AgentRun(models.Model):
         retryable: bool,
         usage: dict[str, Any] | None = None,
     ) -> str:
-        """Fail the attempt; the run is queued again while it has attempts left
-        and the runner says another could succeed. What the attempt spent
-        counts like a completion's. Returns the run's state."""
         if not self._holds(token):
             raise LeaseLost
         if self.run_state not in LIVE_STATES:
-            # a replay of a failure already recorded under this lease
             return self.run_state
         if usage:
             self.write(self._spend_vals(usage))
@@ -540,7 +508,6 @@ class AgentRun(models.Model):
         return self.run_state
 
     def _spend_vals(self, usage: dict[str, Any]) -> dict[str, Any]:
-        """Every attempt's spend, added up."""
         return {
             "count_input_token": self.count_input_token + usage["input_tokens"],
             "count_output_token": self.count_output_token + usage["output_tokens"],
@@ -572,7 +539,6 @@ class AgentRun(models.Model):
 
     @api.model
     def _reap_expired_leases(self) -> int:
-        """Hand out again, or fail, every run whose runner stopped answering."""
         self.flush_model()
         self.env.cr.execute(
             SQL(
@@ -599,7 +565,6 @@ class AgentRun(models.Model):
         _debug.logic("run.reaped", count=len(expired))
         return len(expired)
 
-    # -- the record the run works for ------------------------------------------
 
     def _owner(self) -> models.BaseModel | None:
         self.check_singleton()
@@ -609,10 +574,6 @@ class AgentRun(models.Model):
         return owner or None
 
     def _notify_owner(self) -> None:
-        """Tell the record the run works for that it ended: a note in its
-        chatter, and `_agent_run_ended(run)` when it defines one. The run ends
-        either way: an owner whose module grants whoever ends the run no right
-        to it is not told, and the run says so."""
         owner = self._owner()
         if owner is None:
             return

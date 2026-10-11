@@ -38,9 +38,6 @@ class MixinVoipQueue(models.AbstractModel):
     def create_call_activity(self):
         if not self:
             return self.env["mail.activity"]
-        # Ensure that a phonecall activity type exists beforehand, otherwise
-        # create one. This is important because we rely on this type to retrieve
-        # the activities to be displayed in the Next Activities tab.
         phonecall_activity_type_id = self.env["ir.model.data"]._xmlid_to_res_id(
             "mail.mail_activity_data_call", raise_if_not_found=False
         )

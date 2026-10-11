@@ -116,8 +116,6 @@ class MixinTender(models.AbstractModel):
         return line.order_id.date_commitment
 
     def _better(self, value, best) -> bool:
-        # we choose the offer: when we buy the lowest price is best, when we
-        # sell the highest (price_sign is -1 for a purchase, +1 for a sale)
         sign = direction_of(self).price_sign
         return value * sign > best * sign
 

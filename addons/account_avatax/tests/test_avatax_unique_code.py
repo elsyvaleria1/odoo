@@ -67,13 +67,11 @@ class TestAvataxUniqueCode(TestAccountAvataxCommon):
         )
 
     def test_search_bool(self):
-        # searching True is not supported
         self.assertRaises(
             ValueError,
             self.env["res.partner"].search,
             [("avatax_unique_code", "=", True)],
         )
-        # searching False results in a True domain
         self.assertTrue(
             self.env["res.partner"]
             ._search([("avatax_unique_code", "=", False)])

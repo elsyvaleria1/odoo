@@ -30,7 +30,6 @@ class SaleOrder(models.Model):
                     [("sale_id", "=", order.id), ("state", "=", "done")]
                 )
                 if picking:
-                    # The picking was processed on Odoo while Amazon canceled it.
                     order.message_post(
                         body=self.env._(
                             "The order has been cancelled by the Amazon customer while some"

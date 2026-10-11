@@ -37,7 +37,6 @@ class TestPayrollPerformance(TestPayslipBase):
     @users("__system__", "admin")
     @warmup
     def test_performance_work_entry_generation(self):
-        """Work entry generation"""
         with self.assertQueryCount(__system__=22, admin=23):
             self.employees.generate_work_entries(date(2018, 1, 1), date(2018, 1, 2))
         self.reset_work_entries()
@@ -45,7 +44,6 @@ class TestPayrollPerformance(TestPayslipBase):
     @users("__system__", "admin")
     @warmup
     def test_performance_work_entry_unlink(self):
-        """Work entry unlink"""
         work_entry = self.create_work_entry(
             datetime(2018, 1, 1, 7, 0), datetime(2018, 1, 1, 12, 0)
         )

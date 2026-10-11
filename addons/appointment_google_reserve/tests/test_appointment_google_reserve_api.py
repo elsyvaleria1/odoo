@@ -12,35 +12,26 @@ from odoo.addons.appointment_google_reserve.tests.common import GoogleReserveCom
 class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
     @freeze_time("2022-02-14 07-00-00")
     def test_appointment_resource_sync(self):
-        # initial assertion
         self.assertFalse(self.apt_type_resource_google.google_reserve_pending_sync)
 
-        # 1. write on unrelated field: nothing happens
         self.apt_resources_google.write({"name": "Updated Name"})
         self.assertFalse(self.apt_type_resource_google.google_reserve_pending_sync)
 
-        # 2. write on capacity: update related appointment availabilities
         self.apt_resources_google.write({"capacity": 3})
         self.assertTrue(self.apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         self.apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 3. archive -> update related appointment availabilities
         self.apt_resources_google.action_archive()
         self.assertTrue(self.apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         self.apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 4. restore -> update related appointment availabilities (again)
         self.apt_resources_google.action_unarchive()
         self.assertTrue(self.apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         self.apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 4. restore -> update related appointment availabilities (again)
         self.apt_resources_google.unlink()
         self.assertTrue(self.apt_type_resource_google.google_reserve_pending_sync)
 
@@ -49,20 +40,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         "odoo.addons.appointment_google_reserve.tools.google_reserve_iap.iap_jsonrpc"
     )
     def test_appointment_type_sync(self, iap_jsonrpc):
-        """When an appointment is created, we need to check that it's registered on IAP.
-        When an appointment is modified, we need to check that:
-          - It's updated on IAP
-          - It's marked as requiring sync
-
-        The following use cases are taken into account:
-        - Creation of an appointment.type
-        - Modification of an appointment.type
-          - Only for relevant fields
-          - Some fields need to re-register the appointment on IAP
-          - Some fields need to update the availabilities on IAP
-          - (Some need to do both)
-        - Archive/Restore an appointment.type
-        - Unlink an appointment.type"""
 
         db_uuid = self.env["ir.config_parameter"].sudo().get_param("database.uuid")
         self.env["ir.config_parameter"].sudo().set_param(
@@ -70,7 +47,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             "https://google-reserve.api.odoo.com",
         )
 
-        # 1. create an appointment.type: needs to be registered on IAP
         apt_type_resource_google = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
@@ -99,7 +75,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         )
         access_token = apt_type_resource_google.google_reserve_access_token
 
-        # assert initial data
         self.assertFalse(apt_type_resource_google.google_reserve_pending_sync)
 
         self.env["resource.resource"].create(
@@ -152,13 +127,10 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             appointment_data,
         )
 
-        # 2a. writing on an unrelated field, should not call IAP
         apt_type_resource_google.write({"sequence": 42})
         self.assertEqual(iap_jsonrpc.call_count, 1)
         self.assertFalse(apt_type_resource_google.google_reserve_pending_sync)
 
-        # 2b. writing on a field that alters both the slots and the appointment definition on IAP
-        # -> call register and mark as needing sync
         apt_type_resource_google.write({"min_cancellation_hours": 2})
         appointment_data["appointment_details"]["min_cancellation_hours"] = 2
 
@@ -170,11 +142,8 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         )
         self.assertTrue(apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 2c. writing on a field that alters only the appointment definition
-        # -> call appointment registration route for update
         apt_type_resource_google.write({"name": "Test Google Reserve Edited"})
         self.assertTrue(apt_type_resource_google.google_reserve_pending_sync)
 
@@ -182,53 +151,44 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         self.assertIapRpc(
             iap_jsonrpc.call_args_list[2],
             "https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/register",
-            False,  # already tested before
+            False,
         )
 
-        # reset sync
         apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 2d. writing on a field that alters only the appointment availabilities
-        # -> call appointment availabilities replace route
         apt_type_resource_google.write({"appointment_duration": 2})
         self.assertTrue(apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 3. archive -> unregister the appointment from IAP
         apt_type_resource_google.action_archive()
         self.assertEqual(iap_jsonrpc.call_count, 4)
         self.assertIapRpc(
             iap_jsonrpc.call_args_list[3],
             f"https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/{access_token}/unregister",
-            False,  # nothing relevant to test
+            False,
         )
         self.assertTrue(apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 4. restore -> register the appointment on IAP again
         apt_type_resource_google.action_unarchive()
         self.assertEqual(iap_jsonrpc.call_count, 5)
         self.assertIapRpc(
             iap_jsonrpc.call_args_list[4],
             "https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/register",
-            False,  # already tested before
+            False,
         )
         self.assertTrue(apt_type_resource_google.google_reserve_pending_sync)
 
-        # reset sync
         apt_type_resource_google.google_reserve_pending_sync = False
 
-        # 5. unlink -> unregister the appointment from IAP
         apt_type_resource_google.unlink()
         self.assertEqual(iap_jsonrpc.call_count, 6)
         self.assertIapRpc(
             iap_jsonrpc.call_args_list[5],
             f"https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/{access_token}/unregister",
-            False,  # already tested before
+            False,
         )
 
     @freeze_time("2022-02-14 07-00-00")
@@ -236,17 +196,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         "odoo.addons.appointment_google_reserve.tools.google_reserve_iap.iap_jsonrpc"
     )
     def test_booking_update(self, iap_jsonrpc):
-        """When a calendar.event was created from a Google Reserve booking, we need to notify Google
-        every time that booking is updated (or cancelled)
-
-        The following use cases are taken into account:
-        - Update of a unrelated calendar.event
-        - Update of a Google Reserve calendar.event
-          - Date change
-          - Party size change
-          - Unrelated field change
-        - Archive a Google Reserve calendar.event
-        - Unlink a Google Reserve calendar.event"""
 
         update_availabilities_url = f"https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/{self.apt_type_resource_google.google_reserve_access_token}/update_availabilities"
         update_booking_url = f"https://google-reserve.api.odoo.com/api/google_reserve/1/appointment/{self.apt_type_resource_google.google_reserve_access_token}/update_booking"
@@ -264,8 +213,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
 
         calendar_event.write({"stop": datetime(2022, 2, 14, 15, 0, 0)})
 
-        # 1. not a Google Reserve event: no need to update Google
-        # we however did 2 calls to "update_availabilities"
         self.assertEqual(iap_jsonrpc.call_count, 2)
         for i in range(2):
             self.assertIapRpc(
@@ -273,7 +220,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
                 update_availabilities_url,
             )
 
-        # 2. write on dates -> update Google to reflect calendar event changes
         calendar_event.write(
             {
                 "is_google_reserve": True,
@@ -292,7 +238,7 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
                 "booking_ids": calendar_event.ids,
                 "booking_values": {
                     "startTime": "2022-02-14T10:00:00Z",
-                    "duration": str(4 * 3600) + "s",  # 4 hours
+                    "duration": str(4 * 3600) + "s",
                 },
                 "db_uuid": self.env["ir.config_parameter"]
                 .sudo()
@@ -300,7 +246,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             },
         )
 
-        # 3. book for more people -> update Google to reflect calendar event changes
         calendar_event.write(
             {
                 "resource_ids": [(4, self.apt_type_resources_table_2.id, 0)],
@@ -326,7 +271,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             },
         )
 
-        # 4. name change -> nothing happens
         calendar_event.write(
             {
                 "name": "Booking for Paul",
@@ -334,7 +278,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         )
         self.assertEqual(iap_jsonrpc.call_count, 6)
 
-        # 5. archive event -> cancel on Google
         calendar_event.write(
             {
                 "active": False,
@@ -359,7 +302,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             },
         )
 
-        # 6. unlink event -> cancel on Google
         [regular_event, google_event] = self.env["calendar.event"].create(
             [
                 {
@@ -413,16 +355,7 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         autospec=True,
     )
     def test_calendar_event_sync(self, update_availabilities):
-        """When a calendar.event is created or modified, we need to sync the availabilities of the
-        underlying appointments that are google reserve enabled.
 
-        The following use cases are taken into account:
-        - Creation of a calendar.event
-        - Modification of a calendar.event (for relevant fields)
-        - Archive/Restore a calendar.event
-        - Unlink a calendar.event"""
-
-        # 1. create bookings: update related appointment availabilities
         events = self.env["calendar.event"].create(
             [
                 {
@@ -448,12 +381,9 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 14, 19, 0, 0),
         )
 
-        # 2. rename bookings: do nothing, it doesn't affect availabilities
         events.write({"name": "Renamed Meeting"})
         self.assertEqual(update_availabilities.call_count, 1)
 
-        # 3. move bookings: update related appointment availabilities
-        # -> take min (old start, new start) and max (old stop, new stop)
         events.write(
             {
                 "start": datetime(2022, 2, 14, 11, 0, 0),
@@ -468,7 +398,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 14, 20, 0, 0),
         )
 
-        # 4. archive bookings: update related appointment availabilities
         events.action_archive()
         self.assertEqual(update_availabilities.call_count, 3)
         self.assertUpdateAvailabilities(
@@ -478,7 +407,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 14, 20, 0, 0),
         )
 
-        # 5. restore bookings: update related appointment availabilities
         events.action_unarchive()
         self.assertEqual(update_availabilities.call_count, 4)
         self.assertUpdateAvailabilities(
@@ -488,7 +416,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 14, 20, 0, 0),
         )
 
-        # 6. delete bookings: update related appointment availabilities
         events.unlink()
         self.assertEqual(update_availabilities.call_count, 5)
         self.assertUpdateAvailabilities(
@@ -505,15 +432,7 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
         autospec=True,
     )
     def test_resource_schedule_exception_sync(self, update_availabilities):
-        """When a resource.schedule.exception is created or modified, we need to sync the
-        availabilities of the underlying appointment resources' appointments that are google reserve enabled.
 
-        The following use cases are taken into account:
-        - Creation of a calendar.resource.leaves
-        - Modification of a calendar.resource.leaves (for relevant fields)
-        - Unlink a calendar.resource.leaves"""
-
-        # 1. create leaves: update related appointment availabilities
         calendar_leaves = self.env["resource.schedule.exception"].create(
             [
                 {
@@ -533,12 +452,9 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 17, 17, 0, 0),
         )
 
-        # 2. change reason: do nothing, it doesn't affect availabilities
         calendar_leaves.write({"name": "New Reason"})
         self.assertEqual(update_availabilities.call_count, 1)
 
-        # 3. move leaves: update related appointment availabilities
-        # -> take min (old start, new start) and max (old stop, new stop)
         calendar_leaves.write(
             {
                 "date_from": datetime(2022, 2, 17, 11, 0, 0),
@@ -553,7 +469,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 17, 20, 0, 0),
         )
 
-        # 4. unlink: update related appointment availabilities
         calendar_leaves.unlink()
         self.assertUpdateAvailabilities(
             update_availabilities.call_args_list[2],
@@ -562,9 +477,6 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             datetime(2022, 2, 17, 20, 0, 0),
         )
 
-    # ------------------------------------------------------------
-    # UTILS
-    # ------------------------------------------------------------
 
     def assertIapRpc(self, post_mock_call_args, post_url, post_data=False):
         args, kwargs = post_mock_call_args

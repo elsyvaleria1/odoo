@@ -38,8 +38,6 @@ class TestReceiverAuthority(DeviceHttpCase):
         )
 
     def _declared(self):
-        # Every installed module extending the gate adds its own privilege:
-        # the set held is the gate's declaration, device's two among it.
         declared = frozenset(
             self.env.ref(name).id
             for name in self.env["device.device"]._inbound_receiver_privileges()

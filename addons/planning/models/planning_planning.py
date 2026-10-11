@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 _debug = DebugLog(__name__)
 
-# a schedule's page stays open a month past its last day
 PAGE_OUTLIVES_SCHEDULE = timedelta(days=30)
 
 
@@ -37,9 +36,6 @@ class PlanningPlanning(models.Model):
         string="Includes Open Shifts",
         default=True,
     )
-    # the calendar feed's credential (/planning/<access_token>/<resource>.ics):
-    # a subscription a calendar app polls for good, a device's (decision
-    # PL-A, G1). The schedule's page and its actions are access.link rows
     access_token = fields.Char(
         string="Security Token",
         default=lambda self: self._default_access_token(),
@@ -83,7 +79,6 @@ class PlanningPlanning(models.Model):
             )
 
     def _compute_display_name(self):
-        """This override is needed to have a human readable string in the email light layout header (`message.record_name`)"""
         self.display_name = self.env._("Planning")
 
     def _compute_allow_self_unassign(self) -> None:
@@ -91,7 +86,6 @@ class PlanningPlanning(models.Model):
             self.company_id.planning_employee_unavailabilities == "unassign"
         )
 
-    # Business Methods
 
     def _is_slot_in_planning(self, slot_sudo) -> bool:
         return bool(
@@ -116,9 +110,6 @@ class PlanningPlanning(models.Model):
         slots_in_planning._append_ics_events(calendar, resource.tz)
 
     def _page_token(self, resource) -> str:
-        """The token of the link to this schedule's page sent to ``resource``,
-        in its person's name, until a month after the schedule ends and never
-        less than a month from now (decision PL-A)."""
         self.check_singleton()
         __, token = self.env["access.link"]._issue(
             self,
@@ -175,7 +166,6 @@ class PlanningPlanning(models.Model):
                     },
                     email_layout_xmlid="mail.mail_notification_light",
                 )
-        # mark as sent; a shift already under way keeps its state
         slots.write({"publication_warning": False})
         slots.filtered(lambda slot: slot.state == "1_draft").write(
             {"state": "2_published"}

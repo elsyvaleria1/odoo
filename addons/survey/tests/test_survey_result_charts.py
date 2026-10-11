@@ -4,8 +4,6 @@ from odoo.tests import HttpCase, tagged
 @tagged("post_install", "-at_install")
 class TestSurveyResultCharts(HttpCase):
     def test_the_trend_chart_draws_without_a_global_chart(self):
-        # the trend interaction loads Chart.js through @web/core/lib/chartjs;
-        # the results page no longer ships a setup that publishes window.Chart
         survey = self.env["survey.survey"].create(
             {"title": "Chart probe", "access_mode": "public"}
         )

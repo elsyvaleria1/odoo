@@ -9,12 +9,6 @@ from odoo.addons.hr_payroll_holidays.tests.common import TestPayrollHolidaysBase
 class TestLeaveStateChange(TestPayrollHolidaysBase):
     @freeze_time("2018-02-24 10:00:00")
     def test_leave_back_to_approval_leave_when_not_in_confirm_payslip(self):
-        """
-        ================================================================================================================
-        | case 1: An approved leave can be moved back to confirm state if leave is not in done/paid payslip.           |
-        | case 2: An approved leave can't be moved back to confirm state if leave is in done/paid payslip.             |
-        ================================================================================================================
-        """
         unpaid_leave_type = self.env["hr.leave.type"].create(
             {
                 "name": "unpaid leave in days",
@@ -63,13 +57,6 @@ class TestLeaveStateChange(TestPayrollHolidaysBase):
         )
 
     def test_payslip_coverage_checks_on_empty_recordset(self):
-        """
-        The payslip-coverage check used to crash with ValueError: max()
-        iterable argument is empty when called on an empty hr.leave recordset
-        (F1), because it built a search domain from max()/min() of an empty
-        mapped() list with no guard for `not self`. It must behave as a no-op
-        instead.
-        """
         empty_leaves = self.env["hr.leave"]
         self.assertFalse(
             empty_leaves._leaves_covered_by_validated_payslip(),

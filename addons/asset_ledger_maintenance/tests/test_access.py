@@ -75,8 +75,6 @@ class TestMaintenanceAccess(TransactionCase):
             self.template.with_user(self.plain_user).write({"name": "Renamed"})
 
     def test_a_warehouse_user_can_open_a_lot_that_has_a_plan(self):
-        """A plan is the asset's, and a warehouse user reaches it through the
-        serial they own."""
         data = self.lot.asset_id.with_user(self.warehouse_user).read(
             ["name", "maintenance_plan_ids", "maintenance_plan_count"]
         )
@@ -87,7 +85,6 @@ class TestMaintenanceAccess(TransactionCase):
             self.plan.with_user(self.warehouse_user).write({"repeat_interval": 9})
 
     def test_closing_a_maintenance_return_rearms_the_plan_for_a_warehouse_user(self):
-        """Rearming is a consequence of the transfer, not an edit by its validator."""
         product = self.template.product_variant_ids[0]
         self.env["stock.quant"]._update_available_quantity(
             product, self.warehouse.lot_stock_id, 1, trace_id=self.lot

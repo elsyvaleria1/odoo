@@ -68,13 +68,6 @@ class DeliveryCarrier(models.Model):
                 )
 
     def _get_malformed_tracking_refs(self, tracking_ref: str) -> list[str]:
-        """The references in ``tracking_ref`` that do not match this carrier's format.
-
-        :param tracking_ref: one reference, or several separated by commas as
-            shipping connectors store them
-        :return: the offending references, empty when all match or no format is set
-        :rtype: list[str]
-        """
         self.check_singleton()
         if not self.tracking_ref_pattern:
             return []

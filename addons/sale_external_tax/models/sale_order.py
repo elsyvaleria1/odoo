@@ -9,17 +9,14 @@ class SaleOrder(models.Model):
     _inherit = ["mixin.account.external.tax", "sale.order"]
 
     def action_confirm(self):
-        """Ensure confirmed orders have the right taxes."""
         self._get_and_set_external_taxes_on_eligible_records()
         return super().action_confirm()
 
     def action_send_quotation(self):
-        """Calculate taxes before presenting order to the customer."""
         self._get_and_set_external_taxes_on_eligible_records()
         return super().action_send_quotation()
 
     def _get_and_set_external_taxes_on_eligible_records(self):
-        """mixin.account.external.tax override."""
         eligible_orders = self.filtered(
             lambda order: (
                 order.is_tax_computed_externally
@@ -36,7 +33,6 @@ class SaleOrder(models.Model):
         return super()._get_and_set_external_taxes_on_eligible_records()
 
     def _prepare_line_data_for_external_taxes(self):
-        """mixin.account.external.tax override."""
         AccountTax = self.env["account.tax"]
         order_lines = self.line_ids.filtered(
             lambda line: not line.display_type and not line.is_downpayment

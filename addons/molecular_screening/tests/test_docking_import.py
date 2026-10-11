@@ -70,7 +70,6 @@ class TestDockingImport(TransactionCase):
         wizard, _action = self._import(
             pose("CHEMBL1", -7.5) + pose("CHEMBL1", -7.1) + pose("CHEMBL2", -6.2)
         )
-        # The method defaults to the run that earned the gate
         self.assertEqual((wizard.engine, wizard.engine_ver), ("smina", "Oct 15 2019"))
         first = self.compounds["CHEMBL1"].result_ids.sorted("pose_rank")
         self.assertEqual(first.mapped("pose_rank"), [1, 2])
@@ -90,12 +89,9 @@ class TestDockingImport(TransactionCase):
         self._import(pose("CHEMBL1", -8.0))
         results = self.compounds["CHEMBL1"].result_ids
         self.assertEqual(results.mapped("score"), [-8.0])
-        # A compound absent from the second file keeps its poses
         self.assertEqual(self.compounds["CHEMBL2"].result_ids.mapped("score"), [-6.2])
 
     def test_pose_finds_a_structure_merged_into_another_name(self):
-        # The pilot exported imidacloprid's control as CHEMBL406819: one compound
-        # under the reference's name, whose 3D structure keeps the docked title
         compound = self.compounds["CHEMBL2"]
         compound.structure_3d_id.molblock = MOLBLOCK.format(name="CHEMBL406819")
         self._import(pose("CHEMBL406819", -6.9))
@@ -103,7 +99,6 @@ class TestDockingImport(TransactionCase):
 
     def test_ligand_efficiency_counts_heavy_atoms_only(self):
         structure = self.compounds["CHEMBL1"].structure_3d_id
-        # N with an explicit hydrogen: two atoms, one of them heavy
         structure.molblock = (
             "CHEMBL1\n     RDKit          3D\n\n"
             "  2  1  0  0  0  0  0  0  0  0999 V2000\n"

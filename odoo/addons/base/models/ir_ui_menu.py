@@ -18,8 +18,6 @@ MENU_ITEM_SEPARATOR = "/"
 _MISSING = object()
 NUMBER_PARENS = re.compile(r"\((\d+)\)\s*$")
 
-# the lightest and the darkest surface of each scheme; web's design-system
-# tests hold every installed app's accent to all of that scheme's surfaces
 ACCENT_SURFACES = {
     "light": ("#ffffff", "#e5e5ea"),
     "dark": ("#161618", "#2c2c2e"),
@@ -132,7 +130,6 @@ class IrUiMenu(models.Model):
                 _debug.logic("web_accent_unreadable", menu=self.id)
                 return False
             return rgb_to_hex(accent) if accent else False
-        # an icon built in the app editor is "icon class,colour,background"
         parts = (self.web_icon or "").split(",")
         if len(parts) == 3:
             try:
@@ -190,8 +187,6 @@ class IrUiMenu(models.Model):
     @api.model
     @tools.ormcache("frozenset(self.env.user._get_group_ids())", "bool(debug)")
     def _get_visible_menu_ids(self, debug: bool = False) -> frozenset[int]:
-        # the key is the user's groups: a superuser's access checks, which
-        # pass everything, must not decide what a group set sees
         self = self.sudo(False)
         group_ids = set(self.env.user._get_group_ids())
         if not debug:
@@ -268,13 +263,13 @@ class IrUiMenu(models.Model):
         hidden_ids = self._get_hidden_menu_ids() & set(menus._ids)
         menu_ids = set(menus._ids) - hidden_ids
         visible_ids = set()
-        no_action = access_denied = 0  # debuglog
+        no_action = access_denied = 0
         for menu in menus:
             if menu.id in hidden_ids:
                 continue
             action = menu.action
             if not action or action not in existing_actions:
-                no_action += 1  # debuglog
+                no_action += 1
                 continue
             model_fname = MODEL_BY_TYPE.get(action._name)
             groups_fname = GROUPS_BY_TYPE.get(action._name)
@@ -282,7 +277,7 @@ class IrUiMenu(models.Model):
                 action[groups_fname]._ids if groups_fname else (),
                 action[model_fname] if model_fname else None,
             ):
-                access_denied += 1  # debuglog
+                access_denied += 1
                 continue
             menu_id = menu.id
             while menu_id not in visible_ids and menu_id in menu_ids:
@@ -307,8 +302,6 @@ class IrUiMenu(models.Model):
         return frozenset(reachable_ids)
 
     def _get_hidden_menu_ids(self) -> set[int]:
-        # runs inside _get_visible_menu_ids' cache, keyed on the group set:
-        # an override may decide on the user's groups and nothing else
         return set()
 
     @staticmethod
@@ -354,8 +347,6 @@ class IrUiMenu(models.Model):
     def _without_blacklisted_branches(
         self, visible_ids: frozenset[int], blacklisted_ids: set[int]
     ) -> set[int]:
-        # a folder is visible for the actions it leads to: one that led only
-        # into a blacklisted branch goes with it, an app root included
         kept: set[int] = set()
         menus = self.browse(visible_ids)
         menus.fetch(["parent_path", "action"])
@@ -427,10 +418,10 @@ class IrUiMenu(models.Model):
 
     def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
         vals_list = super().copy_data(default=default)
-        renamed = 0  # debuglog
+        renamed = 0
         for vals in vals_list:
             if name := vals.get("name"):
-                renamed += 1  # debuglog
+                renamed += 1
                 if match := NUMBER_PARENS.search(name):
                     next_num = int(match.group(1)) + 1
                     vals["name"] = NUMBER_PARENS.sub(f"({next_num})", name, count=1)
@@ -580,22 +571,6 @@ class IrUiMenu(models.Model):
     def _get_app_categories(
         self, root_menu_ids: list[int], menus_dict: dict
     ) -> dict[int, tuple[str, int]]:
-        """Group heading for each app, and the order its group sits in.
-
-        The heading is the top of the module's category tree. The leaf category
-        is very nearly the app itself -- measured over a 22-app database it
-        yields 17 categories, 12 of them holding one app, so it names more
-        groups than it saves rows. Its root names eight, of sizes that read:
-        Sales, Supply Chain, Productivity, Accounting.
-
-        The sequence travels with the name because the client has no other way
-        to order the groups. Menus are ordered by their own sequence, so
-        grouping them alone puts the headings in the order the first app of
-        each happens to appear -- Productivity before Sales because Calendar
-        outranks CRM. `ir.module.category.sequence` is the field that already
-        answers this, and it is the same order the Apps store and the
-        access-rights page use.
-        """
         modules_by_menu = {}
         for menu_id in root_menu_ids:
             module = (menus_dict.get(menu_id, {}).get("xmlid") or "").split(".")[0]
@@ -604,7 +579,6 @@ class IrUiMenu(models.Model):
         if not modules_by_menu:
             _debug.logic("app_categories_skipped", roots=len(root_menu_ids))
             return {}
-        # sudo: an app's heading is not the reader's business to have rights on
         modules = (
             self.env["ir.module.module"]
             .sudo()

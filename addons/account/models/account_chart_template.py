@@ -8,7 +8,6 @@ class AccountChartTemplate(models.AbstractModel):
 
     @template(model="account.journal")
     def _get_account_reports_journal(self, template_code) -> dict:
-        """Add a journal for the tax returns."""
         return {
             "tax_returns": {
                 "name": self.env._("Tax Returns"),
@@ -20,9 +19,6 @@ class AccountChartTemplate(models.AbstractModel):
 
     @template(model="res.company")
     def _get_account_reports_res_company(self, chart_template) -> dict:
-        """Make sure the tax return journal is set on the company."""
-        # Also called from this module's post-init hook, to cover companies whose CoA
-        # was already installed before the module was.
         company = self.env.company
         return {
             company.id: {

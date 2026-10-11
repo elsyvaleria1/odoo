@@ -41,7 +41,6 @@ class FileStore:
         self, records: ModelLike, field_name: str, *, bin_size: bool
     ) -> dict[int, typing.Any]:
         if "ir.attachment" not in records.env.registry:
-            # nothing stored, nothing to read: the field answers False
             return {}
         attachments = self._attachments(records.env)._with_bin_size_disabled()
         return {

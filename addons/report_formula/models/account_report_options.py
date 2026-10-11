@@ -50,11 +50,6 @@ class AccountReportOptions(models.Model):
 
     @_debug.perf.timed
     def _init_options_date(self, options, previous_options) -> None:
-        """Initialize the 'date' options key.
-
-        :param options:             The current report options to build.
-        :param previous_options:    The previous options coming from another report.
-        """
         date = previous_options.get("date", {})
         period_date_to = date.get("date_to")
         period_date_from = date.get("date_from")
@@ -66,7 +61,6 @@ class AccountReportOptions(models.Model):
         date_from = date_to = period_type = False
 
         if mode == "single" and options_mode == "range":
-            # 'single' date mode to 'range'.
             if date_filter:
                 date_to = fields.Date.from_string(period_date_to or period_date_from)
                 date_from = self._get_year_bounds(date_to)["date_from"]
@@ -74,7 +68,6 @@ class AccountReportOptions(models.Model):
             else:
                 options_filter = default_filter
         elif mode == "range" and options_mode == "single":
-            # 'range' date mode to 'single'.
             if date_filter == "custom":
                 date_to = fields.Date.from_string(period_date_to or period_date_from)
                 date_from = date_utils.get_month(date_to)[0]
@@ -84,7 +77,6 @@ class AccountReportOptions(models.Model):
             else:
                 options_filter = default_filter
         elif (mode is None or mode == options_mode) and date:
-            # Same date mode.
             if date_filter == "custom":
                 if options_mode == "range":
                     date_from = fields.Date.from_string(period_date_from)
@@ -99,7 +91,6 @@ class AccountReportOptions(models.Model):
             else:
                 options_filter = date_filter
         else:
-            # Default.
             options_filter = default_filter
 
         _debug.logic(
@@ -115,7 +106,6 @@ class AccountReportOptions(models.Model):
             options, options_filter, period_date_to
         )
 
-        # Compute 'date_from' / 'date_to'.
         if not date_from or not date_to:
             if options_filter == "today":
                 date_to = fields.Date.context_today(self)
@@ -186,7 +176,6 @@ class AccountReportOptions(models.Model):
                 new_period,
                 return_period="return_period" in options_filter,
             )
-            # This line is useful for the export and tax closing so that the period is set in the options.
             options["date"]["period"] = new_period
 
         self._finalize_custom_period_options(options, options_filter)
@@ -203,13 +192,6 @@ class AccountReportOptions(models.Model):
 
     @_debug.perf.timed
     def _init_options_comparison(self, options, previous_options) -> None:
-        """Initialize the 'comparison' options key.
-
-        This filter must be loaded after the 'date' filter.
-
-        :param options:             The current report options to build.
-        :param previous_options:    The previous options coming from another report.
-        """
         if not self.filter_period_comparison:
             _debug.logic("comparison_skipped", report=self, reason="filter_disabled")
             return
@@ -219,13 +201,11 @@ class AccountReportOptions(models.Model):
 
         period_order = previous_comparison.get("period_order") or "descending"
         if previous_filter == "custom":
-            # Try to adapt the previous 'custom' filter.
             date_from = previous_comparison.get("date_from")
             date_to = previous_comparison.get("date_to")
             number_period = 1
             options_filter = "custom"
         else:
-            # Use the 'date' options.
             date_from = options["date"]["date_from"]
             date_to = options["date"]["date_to"]
             number_period = max(previous_comparison.get("number_period", 1) or 0, 0)
@@ -370,7 +350,6 @@ class AccountReportOptions(models.Model):
 
     @api.model
     def _init_options_order_column(self, options, previous_options) -> None:
-        # options['order_column'] is in the form {'expression_label': expression label of the column to order, 'direction': the direction order ('ASC' or 'DESC')}
         options["order_column"] = None
 
         previous_value = previous_options and previous_options.get("order_column")
@@ -404,9 +383,6 @@ class AccountReportOptions(models.Model):
             for c in companies
         ]
 
-    ####################################################
-    # OPTIONS: MULTI CURRENCY
-    ####################################################
     def _init_options_multi_currency(self, options, previous_options) -> None:
         options["multi_currency"] = (
             any(
@@ -420,17 +396,11 @@ class AccountReportOptions(models.Model):
             )
         )
 
-    ####################################################
-    # OPTIONS: ROUNDING UNIT
-    ####################################################
     def _init_options_rounding_unit(self, options, previous_options) -> None:
         default = "decimals"
         options["rounding_unit"] = previous_options.get("rounding_unit", default)
         options["rounding_unit_names"] = self._get_rounding_unit_names()
 
-    ####################################################
-    # OPTIONS: UNFOLDED LINES
-    ####################################################
     def _init_options_unfolded(self, options, previous_options) -> None:
         options["unfold_all"] = self.filter_unfold_all and previous_options.get(
             "unfold_all", False
@@ -441,14 +411,10 @@ class AccountReportOptions(models.Model):
             not previous_section_source_id
             or previous_section_source_id == options["sections_source_id"]
         ):
-            # Only keep the unfolded lines if they belong to the same report or a section of the same report
             options["unfolded_lines"] = previous_options.get("unfolded_lines", [])
         else:
             options["unfolded_lines"] = []
 
-    ####################################################
-    # OPTIONS: HIDE LINE AT 0
-    ####################################################
     def _init_options_hide_0_lines(self, options, previous_options) -> None:
         if self.filter_hide_0_lines != "never":
             previous_val = previous_options.get("hide_0_lines")
@@ -459,16 +425,10 @@ class AccountReportOptions(models.Model):
         else:
             options["hide_0_lines"] = False
 
-    ####################################################
-    # OPTIONS: HORIZONTAL GROUP
-    ####################################################
     def _init_options_horizontal_groups(self, options, previous_options) -> None:
         options["available_horizontal_groups"] = []
         options["selected_horizontal_group_id"] = None
 
-    ####################################################
-    # OPTIONS: SEARCH BAR
-    ####################################################
     def _init_options_search_bar(self, options, previous_options) -> None:
         if self.search_bar:
             options["search_bar"] = True
@@ -477,7 +437,6 @@ class AccountReportOptions(models.Model):
 
     @_debug.perf.timed
     def _init_options_column_headers(self, options, previous_options) -> None:
-        # Prepare column headers, in case the order of the comparison is ascending we reverse the order of the columns
         all_comparison_date_vals = [options["date"]] + options.get(
             "comparison", {}
         ).get("periods", [])
@@ -494,10 +453,9 @@ class AccountReportOptions(models.Model):
                     "forced_options": {"date": comparison_date_vals},
                 }
                 for comparison_date_vals in all_comparison_date_vals
-            ],  # First level always consists of date comparison. Horizontal groupby are done on following levels.
+            ],
         ]
 
-        # Handle horizontal groups
         selected_horizontal_group_id = options.get("selected_horizontal_group_id")
         if selected_horizontal_group_id:
             horizontal_group = self.env["account.report.horizontal.group"].browse(
@@ -514,7 +472,6 @@ class AccountReportOptions(models.Model):
                 ]
                 column_headers.append(header_level)
 
-        # Insert budget column headers if needed
         selected_budgets = [
             budget for budget in options.get("budgets", []) if budget["selected"]
         ]
@@ -531,7 +488,6 @@ class AccountReportOptions(models.Model):
             ]
 
             for budget in selected_budgets:
-                # Add budget amount column
                 budget_headers.append(
                     {
                         "name": budget["name"],
@@ -550,7 +506,6 @@ class AccountReportOptions(models.Model):
                     )
                     == 1
                 ):
-                    # Add budget percentage column (only if one column in the report)
                     budget_headers.append(
                         {
                             "name": "%",
@@ -577,9 +532,6 @@ class AccountReportOptions(models.Model):
             budgets=len(selected_budgets),
         )
 
-    ####################################################
-    # OPTIONS: COLUMNS
-    ####################################################
     @_debug.perf.timed
     def _init_options_optional_columns(self, options, previous_options) -> None:
         optional_columns = self.column_ids.filtered("optional")
@@ -625,13 +577,12 @@ class AccountReportOptions(models.Model):
         options["columns"] = columns
         options["column_groups"] = column_groups
 
-        # Debug column is only shown when there is a single column group, so that we can display all the subtotals of the line in a clear way
         options["show_debug_column"] = (
             options["export_mode"] != "print"
             and self.env.user.has_group("base.group_no_one")
             and len(options["column_groups"]) == 1
             and len(self.line_ids) > 0
-        )  # No debug column on fully dynamic reports by default (they can customize this)
+        )
 
         options["show_last_annotations"] = previous_options.get("show_last_annotations")
 
@@ -639,7 +590,6 @@ class AccountReportOptions(models.Model):
             budget for budget in options.get("budgets", []) if budget["selected"]
         ]
 
-        # Show an additional column summing all the horizontal groups if there is no comparison or budget, and only one level of horizontal group
         options["show_horizontal_group_total"] = (
             options.get("selected_horizontal_group_id")
             and options.get("comparison", {}).get("filter") == "no_comparison"
@@ -682,12 +632,7 @@ class AccountReportOptions(models.Model):
         _debug.pipeline("buttons_built", report=self, buttons=len(options["buttons"]))
 
     def _init_options_section_buttons(self, options, previous_options) -> None:
-        """In case we're displaying a section, we want to replace its buttons by its source report's. This needs to be done last, after calling the
-        custom handler, to avoid its _custom_options_initializer function to generate additional buttons.
-        """
         if options["sections_source_id"] != self.id:
-            # We need to re-call a full get_options in case a custom options initializer adds new buttons depending on other options.
-            # This way, we're sure we always get all buttons that are needed.
             sections_source = self.env["report.formula"].browse(
                 options["sections_source_id"]
             )
@@ -695,9 +640,6 @@ class AccountReportOptions(models.Model):
                 previous_options={**options, "no_report_reroute": True}
             )["buttons"]
 
-    ####################################################
-    # OPTIONS: VARIANTS
-    ####################################################
     @_debug.perf.timed
     def _init_options_variants(self, options, previous_options) -> None:
         allowed_variant_ids = set()
@@ -723,7 +665,7 @@ class AccountReportOptions(models.Model):
         for variant in all_variants._filtered_available_for(options):
             if (
                 not self.root_report_id and variant != self and variant.active
-            ):  # Non-route reports don't reroute the variant when computing their options
+            ):
                 allowed_variant_ids.add(variant.id)
                 if variant.country_id:
                     allowed_country_variant_ids.setdefault(
@@ -749,7 +691,7 @@ class AccountReportOptions(models.Model):
             {
                 "id": variant.id,
                 "name": variant.display_name,
-                "country_id": variant.country_id.id,  # To ease selection of default variant to open, without needing browsing again
+                "country_id": variant.country_id.id,
             }
             for variant in sorted(
                 available_variants,
@@ -780,9 +722,6 @@ class AccountReportOptions(models.Model):
             rerouted=options["selected_variant_id"] != self.id,
         )
 
-    ####################################################
-    # OPTIONS: SECTIONS
-    ####################################################
     @_debug.perf.timed
     def _init_options_sections(self, options, previous_options) -> None:
         if options.get("selected_variant_id"):
@@ -827,12 +766,8 @@ class AccountReportOptions(models.Model):
             )
         )
 
-    ####################################################
-    # OPTIONS: REPORT_ID
-    ####################################################
     def _init_options_report_id(self, options, previous_options) -> None:
         if previous_options.get("no_report_reroute"):
-            # Used for exports
             options["report_id"] = self.id
         else:
             options["report_id"] = (
@@ -841,18 +776,12 @@ class AccountReportOptions(models.Model):
                 or self.id
             )
 
-    ####################################################
-    # OPTIONS: HORIZONTAL SPLIT
-    ####################################################
     def _init_options_horizontal_split(self, options, previous_options) -> None:
         if any(line.horizontal_split_side for line in self.line_ids):
             options["horizontal_split"] = previous_options.get(
                 "horizontal_split", False
             )
 
-    ####################################################
-    # OPTIONS: CUSTOM
-    ####################################################
     def _init_options_custom(self, options, previous_options) -> None:
         custom_handler_model = self._get_custom_handler_model()
         if custom_handler_model:
@@ -866,9 +795,6 @@ class AccountReportOptions(models.Model):
                     self, options, previous_options
                 )
 
-    ####################################################
-    # OPTIONS: INTEGER ROUNDING
-    ####################################################
     def _init_options_integer_rounding(self, options, previous_options):
         if self.integer_rounding:
             options["integer_rounding"] = self.integer_rounding
@@ -881,9 +807,6 @@ class AccountReportOptions(models.Model):
             return options
         return None
 
-    ####################################################
-    # OPTIONS: CONSOLIDATION
-    ####################################################
     def _init_options_consolidation(self, options, previous_options) -> None:
         options["show_consolidation"] = len(
             self.get_report_company_ids(options)
@@ -897,19 +820,12 @@ class AccountReportOptions(models.Model):
             "show_consolidation"
         ] and previous_options.get("consolidation", False)
 
-    ####################################################
-    # OPTIONS: LOADING CALL
-    ####################################################
     def _init_options_loading_call(self, options, previous_options):
-        """Used by the js to know if it needs to reload the options (to not overwrite new options from the js)"""
         options["loading_call_number"] = (
             previous_options.get("loading_call_number") or 0
         )
         return options
 
-    ####################################################
-    # OPTIONS: FILTERS
-    ####################################################
     def _init_options_export_mode(self, options, previous_options) -> None:
         options["export_mode"] = previous_options.get("export_mode")
 
@@ -944,14 +860,6 @@ class AccountReportOptions(models.Model):
 
         options = {"custom_display_config": {}}
 
-        # previous_options comes straight from the client, so this flag is settable from
-        # a browser. It is honoured only while a test is actually running: three l10n
-        # modules branch on it, and two of them use it to skip a check -- l10n_es waives
-        # the BOE date validation, l10n_ar deselects the purchase book "to avoid raising"
-        # -- which a user must not be able to ask for.
-        # Read through the module, never `from ... import current_test`: the name is
-        # rebound when a test starts, and a by-value import would keep the False it
-        # was bound to at import time.
         if previous_options.get("_running_export_test") and modules.module.current_test:
             options["_running_export_test"] = True
 
@@ -962,18 +870,15 @@ class AccountReportOptions(models.Model):
         before_report = initializers_in_sequence[:idx]
         after_report = initializers_in_sequence[idx:]
 
-        # We need report_id to be initialized. Compute the necessary options to check for reroute.
         for initializer in before_report:
             initializer(options, previous_options=previous_options)
 
-        # Stop the computation to check for reroute once we have computed the necessary information
         if (
             not self.root_report_id or (self.use_sections and self.section_report_ids)
         ) and options["report_id"] != self.id:
             _debug.logic(
                 "get_options_rerouted", report=self, report_id=options["report_id"]
             )
-            # Load the variant/section instead of the root report
             variant_options = {**previous_options}
             for reroute_opt_key in (
                 "selected_variant_id",
@@ -991,7 +896,6 @@ class AccountReportOptions(models.Model):
                 .get_options(variant_options)
             )
 
-        # No reroute; keep on and compute the other options
         for initializer in after_report:
             with _debug.perf(
                 "get_options", cr=self.env.cr, report=self, name=initializer.__name__
@@ -1011,13 +915,10 @@ class AccountReportOptions(models.Model):
 
         self._apply_branch_rules_to_buttons(options)
 
-        # Sort the buttons list by sequence, for rendering
         options["buttons"] = sorted(
             options["buttons"], key=lambda x: x.get("sequence", 90)
         )
 
-        # Sanitizing date_from and date_to since they need to be JSON-serializable when exporting the report
-        # on the server side, since the ORM converts them to strings automatically when sending them to the client.
         for date_dict in [options.get("date", {})] + [
             group_data["forced_options"]["date"]
             for group_data in options["column_groups"].values()
@@ -1034,16 +935,6 @@ class AccountReportOptions(models.Model):
         return options
 
     def _get_options_initializers_in_sequence(self):
-        """Gets all filters in the right order to initialize them, so that each filter is
-        guaranteed to be after all of its dependencies in the resulting list.
-
-        :return: a list of initializer functions, each accepting two parameters:
-            - options (mandatory): The options dictionary to be modified by this initializer to include its related option's data
-
-            - previous_options (optional, defaults to None): A dict with default options values, coming from a previous call to the report.
-                                                             These values can be considered or ignored on a case-by-case basis by the initializer,
-                                                             depending on functional needs.
-        """
         initializer_prefix = "_init_options_"
         initializers = [
             getattr(self, attr)
@@ -1051,7 +942,6 @@ class AccountReportOptions(models.Model):
             if attr.startswith(initializer_prefix)
         ]
 
-        # Order them in a dependency-compliant way
         forced_sequence_map = self._get_options_initializers_forced_sequence_map()
         initializers.sort(
             key=lambda x: forced_sequence_map.get(
@@ -1063,14 +953,6 @@ class AccountReportOptions(models.Model):
 
     @_debug.perf.timed
     def _get_options_initializers_forced_sequence_map(self):
-        """By default, not specific order is ensured for the filters when calling _get_options_initializers_in_sequence.
-        This function allows giving them a sequence number. It can be overridden
-        to make filters depend on each other.
-
-        :return: dict(str, int): the initializer's method name and its sequence (lowest first);
-                                 "default" is the sequence of every initializer the map does not name.
-                                 Initializers sharing a sequence run in the alphabetical order of their names.
-        """
         return {
             "_init_options_companies": 10,
             "_init_options_variants": 15,
@@ -1103,7 +985,7 @@ class AccountReportOptions(models.Model):
         )
         if (
             date_scope and date_scope not in available_scopes
-        ):  # date_scope can be passed to None explicitly to ignore the dates
+        ):
             raise UserError(self.env._("Unknown date scope: %s", date_scope))
 
         return Domain.AND(
@@ -1112,7 +994,6 @@ class AccountReportOptions(models.Model):
                 self._get_domain_options_date(options, date_scope)
                 if date_scope
                 else Domain.TRUE,
-                # That option key is set when splitting options between column groups
                 options.get("forced_domain") or Domain.TRUE,
                 *self._get_source_domains(options, date_scope),
             ]
@@ -1120,11 +1001,6 @@ class AccountReportOptions(models.Model):
 
     @api.model
     def _get_dates_previous_year(self, options, period_vals):
-        """Shift the period to the previous year.
-        :param options:     The report options.
-        :param period_vals: A dictionary generated by the _get_dates_period method.
-        :return:            A dictionary in the format returned by _get_dates_period.
-        """
         period_type = period_vals["period_type"]
         mode = period_vals["mode"]
         date_from = fields.Date.from_string(period_vals["date_from"])
@@ -1139,7 +1015,6 @@ class AccountReportOptions(models.Model):
 
     @_debug.perf.timed
     def _get_date_bounds_info(self, options, date_scope) -> tuple:
-        # Default values (the ones from 'strict_range')
         date_to = options["date"]["date_to"]
         date_from = (
             options["date"]["date_from"] if options["date"]["mode"] == "range" else None
@@ -1183,11 +1058,6 @@ class AccountReportOptions(models.Model):
         return date_from, date_to
 
     def _standardize_date_scope_for_date_range(self, date_scope):
-        """Return the canonical date_scope to use for this report.
-
-        When the report does not accept date ranges, several date scopes mean the same thing; collapsing
-        them onto a single value avoids creating redundant computation batches.
-        """
         if not self.filter_date_range and date_scope == "strict_range":
             return "from_beginning"
         else:
@@ -1224,17 +1094,6 @@ class AccountReportOptions(models.Model):
     def _get_dates_period(
         self, date_from, date_to, mode, period_type=None, options_return=False
     ) -> dict:
-        """Compute some information about the period:
-        * The name to display on the report.
-        * The period type (e.g. quarter) if not specified explicitly.
-        :param date_from:   The starting date of the period.
-        :param date_to:     The ending date of the period.
-        :param mode:        'single' for a date-based period, 'range' for a date range.
-        :param period_type: The type of the interval date_from -> date_to.
-        :param options_return: The 'return_period' options, needed to name a 'return_period' period.
-        :return:            A dictionary containing:
-            * date_from * date_to * string * period_type * mode * currency_table_period_key *
-        """
 
         def match(dt_from, dt_to):
             return (dt_from, dt_to) == (date_from, date_to)
@@ -1249,7 +1108,6 @@ class AccountReportOptions(models.Model):
             return f"{date_from_quarter_string} - {date_to_quarter_string}"
 
         string = None
-        # If no date_from or not date_to, we are unable to determine a period
         if not period_type or period_type == "custom":
             date = date_to or date_from
             company_fiscalyear_dates = self._get_year_bounds(date)
@@ -1330,14 +1188,6 @@ class AccountReportOptions(models.Model):
     def _get_shifted_dates_period(
         self, options, period_vals, periods, return_period=False
     ):
-        """Shift the period.
-        :param options:     The report options.
-        :param period_vals: A dictionary generated by the _get_dates_period method.
-        :param periods:     The number of periods we want to move either in the future or the past
-        :param return_period: Force the shift to follow the return periodicity of options.
-        :return:            A dictionary in the format returned by _get_dates_period, or None
-                            for a period_type this method cannot shift.
-        """
         period_type = period_vals["period_type"]
         mode = period_vals["mode"]
         date_from = fields.Date.from_string(period_vals["date_from"])
@@ -1364,10 +1214,7 @@ class AccountReportOptions(models.Model):
         if custom_period is not None:
             return custom_period
         if period_type in ("fiscalyear", "today"):
-            # Don't pass the period_type to _get_dates_period to be able to retrieve the account.fiscal.year record if
-            # necessary.
             company_fiscalyear_dates = {}
-            # This loop is needed because a fiscal year can be a month, quarter, etc
             for _ in range(abs(periods)):
                 date_to = (date_from if periods < 0 else date_to) + relativedelta(
                     days=periods / abs(periods)

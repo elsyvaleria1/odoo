@@ -39,7 +39,6 @@ class TestAIAgent(TransactionCase):
         )
 
     def test_generate_response_no_duplicate_user_prompt(self):
-        """User prompts are not duplicated when calling `_generate_response`."""
         agent = self.env["ai.agent"].create(
             {
                 "name": "Test AI Agent",
@@ -48,7 +47,6 @@ class TestAIAgent(TransactionCase):
         )
         channel = agent._get_or_create_ai_chat()
 
-        # First 2 messages to simulate first question and response
         channel.message_post(
             body="first question",
             author_id=self.env.user.partner_id.id,
@@ -60,8 +58,6 @@ class TestAIAgent(TransactionCase):
             message_type="comment",
         )
 
-        # Post a new message and followed by an explicit generate response call.
-        # In the generate response, we check that the user prompt is not duplicated.
         channel.message_post(
             body="second question",
             author_id=self.env.user.partner_id.id,
@@ -108,16 +104,13 @@ class TestAIAgent(TransactionCase):
             )
 
     def test_get_or_create_ai_chat_returns_single_channel(self):
-        """`_get_or_create_ai_chat` returns a single channel even if several exist."""
         agent = self.env["ai.agent"].create(
             {
                 "name": "Test Agent",
             }
         )
-        # create the first AI chat channel
         agent._get_or_create_ai_chat()
 
-        # manually create a second AI chat channel for the same agent
         self.env["discuss.channel"].create(
             {
                 "channel_member_ids": [
@@ -129,14 +122,12 @@ class TestAIAgent(TransactionCase):
             }
         )
 
-        # call again: should return a single record
         channel = agent._get_or_create_ai_chat()
         self.assertEqual(
             len(channel), 1, "Should always return exactly one AI chat channel"
         )
 
     def test_action_ask_ai_always_opens_a_new_channel(self):
-        """`action_ask_ai` always opens a new AI chat channel."""
         agent = self.env["ai.agent"].create({"name": "Odoo AI"})
 
         action_1 = agent.action_ask_ai("Hello, AI!")
@@ -149,7 +140,6 @@ class TestAIAgent(TransactionCase):
         )
 
     def test_get_llm_response_with_sources(self):
-        """Responses include source links when the LLM returns attachment ids."""
         agent = self.env["ai.agent"].create(
             {
                 "name": "Odoo Agent",

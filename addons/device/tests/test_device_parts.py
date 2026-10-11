@@ -160,8 +160,6 @@ class TestDeviceParts(TransactionCase, DeviceFixtureMixin):
         self.assertEqual(len((first | second).sudo().connection_id.exists()), 2)
 
     def test_a_device_needs_no_profile(self):
-        # An IoT box has no device.profile: the profile is a device model, and
-        # not every device in the registry has one.
         device = self.env["device.device"].create(
             {"name": "Profileless", "identifier": "NO-PROFILE"}
         )

@@ -269,9 +269,6 @@ class Im_LivechatChannel(models.Model):
 
     @staticmethod
     def _reading_availability(records):
-        # whoever asks which operators can take a visitor -- a live chat user's
-        # channel list, a visitor's session -- reads their presence and calls,
-        # which their own rights reach for themselves only
         return records.with_privilege(
             "im_livechat.privilege_open_session",
             reason="an operator's availability is read from their presence",
@@ -429,22 +426,6 @@ class Im_LivechatChannel(models.Model):
         operator_criteria=None,
         extra_vals=None,
     ):
-        """Open a live chat session for a visitor, whatever it came from: a
-        web page (the controller resolves the guest, country and language from
-        the request) or a server-side origin such as a messaging bridge.
-
-        `forced_agent` routes to that user whether available or not.
-        `allow_waiting`, when nobody is available, still opens the session --
-        a message that already arrived cannot be turned away as a page visit
-        can -- with the least busy of the channel's operators, looking for
-        help. `operator_criteria` carries what an extension selects operators
-        by beyond these, as the web route's parameters do. Returns an empty
-        recordset when no operator could be found.
-
-        The caller holds `im_livechat.privilege_open_session`, as the web
-        route does: the operator is picked and the session created on its
-        rows, never as the superuser.
-        """
         self.check_singleton()
         waiting = False
         if operator_info is None:
@@ -516,10 +497,6 @@ class Im_LivechatChannel(models.Model):
         visitor_guest=None,
         **kwargs,
     ):
-        """The values of a new session. The visitor is whom the caller names:
-        a request's guest or logged-in user, or a partner a bridge brings --
-        never inferred from the environment, which for a server-side origin
-        is a service user."""
         now = fields.Datetime.now()
         last_interest_dt = now - timedelta(seconds=1)
         members_to_add = [
@@ -720,11 +697,6 @@ class Im_LivechatChannel(models.Model):
         return operator
 
     def _claim_operator_capacity(self, operator) -> None:
-        # the capacity count ran on this transaction's REPEATABLE READ snapshot;
-        # writing a new version of the operator's row makes a concurrent
-        # assignment of the same operator fail with a serialization error and
-        # retry on a fresh snapshot that counts this session, instead of both
-        # passing max_sessions
         self.env.cr.execute(
             SQL("UPDATE res_users SET id = id WHERE id = %s", operator.id)
         )
@@ -873,9 +845,6 @@ class Im_LivechatChannel(models.Model):
         }
 
     def _get_livechat_loader_info(self, username=None) -> dict:
-        # "available" only lets the client boot: it asks the channel's
-        # availability itself (init_livechat), so the info holds for a page
-        # served from a cache long after the operators came or went
         self.check_singleton()
 
         if username is None:

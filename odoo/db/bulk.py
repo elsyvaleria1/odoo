@@ -36,8 +36,6 @@ def _dump_json_verbatim(value: str) -> str:
 
 _BINARY_NUMERIC_MAX_FRACTION = 0.25
 
-# The extended protocol counts bind parameters in a uint16; PostgreSQL refuses
-# a statement carrying more ("number of parameters must be between 0 and 65535").
 _MAX_BIND_PARAMS = 65535
 
 
@@ -279,8 +277,8 @@ class _BulkAccessMixin:
             else _nullcontext()
         )
         ph_by_len: dict[int, str] = {}
-        batches = 0  # debuglog
-        clamped = 0  # debuglog
+        batches = 0
+        clamped = 0
         with _debug.perf(
             "bulk.execute_values",
             cr=self,
@@ -296,14 +294,11 @@ class _BulkAccessMixin:
                 while i < n:
                     placeholders: list[str] = []
                     params: list[Any] = []
-                    # A page is `page_size` rows, or fewer when the widest rows
-                    # would push one statement past the uint16 bind-parameter
-                    # limit; decided per row here, so the rows are walked once.
                     while i < n and len(placeholders) < page_size:
                         row = argslist[i]
                         width = len(row) if isinstance(row, (list, tuple)) else 1
                         if len(params) + width > _MAX_BIND_PARAMS and params:
-                            clamped += 1  # debuglog
+                            clamped += 1
                             break
                         if isinstance(row, (list, tuple)):
                             if template:
@@ -321,7 +316,7 @@ class _BulkAccessMixin:
                         i += 1
                     full_query = f"{prefix}{', '.join(placeholders)}{suffix}"
                     self.execute(full_query, params, log_exceptions)
-                    batches += 1  # debuglog
+                    batches += 1
                     if fetch:
                         results.extend(self.fetchall())
             span.set(fetched=len(results), batches=batches, clamped_pages=clamped)
@@ -446,8 +441,6 @@ class _BulkAccessMixin:
             if len(rows) == 0:
                 return None
         else:
-            # Peeled rather than materialised: this branch exists to stream,
-            # and a generator has no length to test before the round trip.
             iterator = iter(rows)
             first = next(iterator, None)
             if first is None:
@@ -493,7 +486,7 @@ class _BulkAccessMixin:
         row = self.fetchone()
         assert row is not None, "pg_get_serial_sequence returned no row"
         (seq_name,) = row
-        via = "pg_get_serial_sequence"  # debuglog
+        via = "pg_get_serial_sequence"
         if seq_name is None:
             self.execute(
                 SQL(
@@ -516,7 +509,7 @@ class _BulkAccessMixin:
                 _debug.logic("bulk.id_sequence_missing", table=table)
                 raise ValueError(f"No serial sequence found for {table}.id")
             seq_name = row[0]
-            via = "pg_depend"  # debuglog
+            via = "pg_depend"
         cache.set_id_sequence(table, seq_name)
         _debug.perf.count(
             "bulk.id_sequence_resolved", table=table, sequence=seq_name, via=via

@@ -3,10 +3,6 @@ from odoo.tests import tagged
 
 from .common import TestTradeOrderCase
 
-# mixin.order guards confirmation through a registry: _check_confirm_allowed walks the
-# names _get_confirm_validation_methods returns. Nothing exercised any of
-# it — the validators are all-or-nothing error paths, so a broken one is silent
-# until an order that should have been refused goes through.
 
 
 @tagged("post_install", "-at_install")
@@ -16,7 +12,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         self._make_line(order=order, product_qty=1.0)
         return order
 
-    # --- the registry itself ---
 
     def test_registry_lists_the_validators(self):
         order = self._make_order()
@@ -34,8 +29,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         )
 
     def test_registry_entries_all_exist(self):
-        """A name in the registry with no method behind it fails only at
-        confirmation time, on a getattr."""
         order = self._make_order()
 
         for name in order._get_confirm_validation_methods():
@@ -47,9 +40,8 @@ class TestConfirmValidation(TestTradeOrderCase):
     def test_confirm_passes_on_a_valid_order(self):
         order = self._confirmable_order()
 
-        order._check_confirm_allowed()  # must not raise
+        order._check_confirm_allowed()
 
-    # --- _check_confirm_state ---
 
     def test_confirmed_order_cannot_be_confirmed_again(self):
         order = self._confirmable_order()
@@ -68,7 +60,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         self.assertIn("Cancelled", str(err.exception))
 
     def test_state_error_separates_confirmed_from_cancelled(self):
-        """A mixed batch reports both groups, each under its own heading."""
         confirmed = self._confirmable_order()
         confirmed.state = "done"
         cancelled = self._confirmable_order()
@@ -86,9 +77,8 @@ class TestConfirmValidation(TestTradeOrderCase):
     def test_draft_order_passes_the_state_check(self):
         order = self._confirmable_order()
 
-        order._check_confirm_state()  # must not raise
+        order._check_confirm_state()
 
-    # --- _check_confirm_has_lines ---
 
     def test_order_without_lines_cannot_be_confirmed(self):
         order = self._make_order()
@@ -98,14 +88,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         self.assertIn(order.display_name, str(err.exception))
 
     def test_a_flow_can_declare_that_an_empty_order_is_expected(self):
-        """`_requires_lines_to_confirm` is the seam for flows that confirm empty.
-
-        `industry_fsm_stock` is the case in the tree: it confirms a field-service
-        order before the technician has added any material, because confirmation is
-        what binds the order and its pickings to that user's warehouse. The exemption
-        is per record, not per model -- dropping `_check_confirm_has_lines` from the
-        registry would disable the guard for every order of the model.
-        """
         order = self._make_order()
         self.assertTrue(order._requires_lines_to_confirm())
 
@@ -113,15 +95,13 @@ class TestConfirmValidation(TestTradeOrderCase):
         original = cls._requires_lines_to_confirm
         cls._requires_lines_to_confirm = lambda records: False
         try:
-            order._check_confirm_has_lines()  # must not raise
+            order._check_confirm_has_lines()
         finally:
             cls._requires_lines_to_confirm = original
 
-        # and the guard is back the moment the flow stops claiming the exemption
         with self.assertRaises(UserError):
             order._check_confirm_has_lines()
 
-    # --- _check_confirm_lines_have_product ---
 
     def test_line_without_product_blocks_confirmation(self):
         order = self._make_order()
@@ -135,7 +115,6 @@ class TestConfirmValidation(TestTradeOrderCase):
         self.assertIn("1 line(s) without products", message)
 
     def test_display_lines_need_no_product(self):
-        """Sections and notes carry no product by definition."""
         order = self._confirmable_order()
         self._make_line(
             order=order,
@@ -144,13 +123,13 @@ class TestConfirmValidation(TestTradeOrderCase):
             name="A section",
         )
 
-        order._check_confirm_lines_have_product()  # must not raise
+        order._check_confirm_lines_have_product()
 
     def test_downpayment_lines_need_no_product(self):
         order = self._confirmable_order()
         self._make_line(order=order, product_id=False, is_downpayment=True)
 
-        order._check_confirm_lines_have_product()  # must not raise
+        order._check_confirm_lines_have_product()
 
     def test_product_error_counts_each_offending_line(self):
         order = self._make_order()

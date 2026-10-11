@@ -8,23 +8,17 @@ _logger = logging.getLogger(__name__)
 
 
 def _printed_by_odoo(attachment) -> bool:
-    # the statement report Odoo generated before this version carries its
-    # writer's /Creator; action_generate_attachment keeps new ones out
     if not (raw := attachment.raw):
         return False
     try:
         metadata = PdfReader(io.BytesIO(raw), strict=False).metadata
     except PdfReadError:
-        # an unreadable PDF is filed: losing a bank statement costs more than
-        # filing one report by mistake
         _logger.warning("unreadable PDF %s is filed as issued", attachment.id)
         return False
     return bool(metadata) and metadata.get("/Creator") == "Odoo"
 
 
 def migrate(cr, version):
-    # statements file their PDFs into Documents from this version on; the
-    # PDFs attached before it are filed the same way
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})

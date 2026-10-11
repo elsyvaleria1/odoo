@@ -63,10 +63,6 @@ class TestResolvedUnitsAreSelectable(UomSettingsCommon):
         return units
 
     def test_every_resolved_unit_is_active(self):
-        # Weight, volume, length and distance are deliberately absent: those
-        # resolve a unit only to label or convert a value, and no user is ever
-        # asked to re-select it, so `base.product_uom_lb` staying archived costs
-        # nothing.
         for kind in ("odometer", "area", "power", "fuel_efficiency"):
             for unit in self._resolved(kind):
                 with self.subTest(unit=unit.display_name):

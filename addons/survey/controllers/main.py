@@ -61,7 +61,7 @@ class Survey(http.Controller):
             if answer_sudo:
                 return answer_sudo.survey_id, answer_sudo
 
-        survey_sudo = SurveySudo.with_context(active_test=False).search(  # noqa: E8537  public: an identifier that is not meant to be secret
+        survey_sudo = SurveySudo.with_context(active_test=False).search(
             [("access_token", "=", survey_token)]
         )
         if answer_token:
@@ -72,8 +72,6 @@ class Survey(http.Controller):
 
     @staticmethod
     def _answer_from_invitation(token: str) -> Any:
-        """The answer whose live invitation link `token` is, in sudo, or an
-        empty recordset."""
         try:
             return (
                 request.env["access.link"]
@@ -607,8 +605,6 @@ class Survey(http.Controller):
         elif "page" in survey_data:
             background_image_url = survey_data["page"].background_image_url
 
-        # the next screen replaces the form's content, the progress and the
-        # navigation, each rendered as the page renders it
         return render_fragments(
             request.env["ir.qweb"].with_context(lang=lang_code).env,
             Fragment(
@@ -669,10 +665,6 @@ class Survey(http.Controller):
         for question_id, raw_value in prefills.items():
             question = question_ids[question_id]
             try:
-                # A failure here can be a DB-level one (an out-of-int4 scale value
-                # reaches PostgreSQL, not Python), which aborts the transaction. Without
-                # a savepoint the swallow below leaves every later query in this request
-                # dying on InFailedSqlTransaction.
                 with request.env.cr.savepoint():
                     if question.question_type in ("simple_choice", "dropdown"):
                         answer = self._resolve_prefill_choice(question, raw_value)
@@ -910,13 +902,6 @@ class Survey(http.Controller):
         if len(content) > question.file_upload_max_size * 1024 * 1024:
             return request.prepare_json_response({"error": "too_large"}, status=413)
 
-        # This route is auth="public" and creates a record per POST. Without a ceiling,
-        # a respondent holding one valid answer token can fill the filestore one upload
-        # at a time. Re-uploading before the line is saved does NOT release the earlier
-        # attachment for the same question (nothing ties an orphan attachment to a
-        # question until `_save_lines` runs) — MAX_UPLOADS_PER_ANSWER below is what
-        # actually caps it; the `previous`/`superseded` cleanup further down only
-        # replaces the file once it is referenced by a saved answer line.
         answer_sudo._lock()
         Attachment = request.env["ir.attachment"].sudo()
         own_domain = [
@@ -1115,8 +1100,6 @@ class Survey(http.Controller):
             access_data["answer_sudo"],
         )
 
-        # Taken before the state is read, so a second request carrying the same token
-        # waits here rather than racing this one to _mark_done().
         answer_sudo._lock()
         answer_sudo.invalidate_recordset(["state"])
         if answer_sudo.state == "done":
@@ -1247,10 +1230,6 @@ class Survey(http.Controller):
         selected = answer_sudo.user_input_line_ids.filtered(
             lambda ln: ln.question_id in submitted_questions and ln.suggested_answer_id
         ).suggested_answer_id
-        # A multiple-choice question can carry several answers with different skip
-        # actions. Taking whichever line the recordset happened to yield first made the
-        # winner an artifact of insertion order; the most terminal action wins now, so
-        # picking "end the survey" alongside "jump to Q7" ends the survey.
         for answer in selected.sorted(
             lambda a: (
                 self._SKIP_ACTION_PRECEDENCE.get(a.skip_action, 99),
@@ -1297,13 +1276,8 @@ class Survey(http.Controller):
                     comment = candidate["comment"].strip()
                 else:
                     choices.append(candidate)
-            # Validate the choice payload after extracting its optional comment.
-            # A malformed dictionary stays in choices and is rejected normally.
             return choices[0] if len(choices) == 1 else choices, comment
         if not question._is_well_shaped_answer(answers):
-            # Hand the payload on unchanged; _check_answer refuses it with a message.
-            # Reaching into it here -- `"comment" in answers` on a number -- raised out
-            # of the request instead.
             return answers, None
         if not question._is_unanswered(answers):
             if question.question_type in (
@@ -1442,12 +1416,8 @@ class Survey(http.Controller):
                     ("partner_id", "=", request.env.user.partner_id.id),
                     ("survey_id", "=", survey_id),
                     ("scoring_success", "=", True),
-                    # _mark_done already refuses to mail a certificate for a test
-                    # entry; downloading one had no such rule, so a test run that
-                    # scored well produced a real certificate.
                     ("test_entry", "=", False),
                 ],
-                # The best passing attempt, not whichever the default order returned.
                 order="scoring_percentage desc, id desc",
                 limit=1,
             )
@@ -1501,7 +1471,6 @@ class Survey(http.Controller):
         except ValueError:
             q_row = q_col = 0
         if not wants_fragments():
-            # the cross-tabulation page draws the same table
             return request.redirect(
                 f"/survey/results/{survey.id}/cross-tab?q_row={q_row}&q_col={q_col}"
             )

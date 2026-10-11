@@ -23,8 +23,6 @@ class SocialStreamPost(models.Model):
     instagram_comments_disabled = fields.Boolean(default=False)
 
     def _compute_post_link(self) -> None:
-        """The posts links for instagram cannot be inferred from the ID.
-        We have to store the URL that we got when fetching the instagram posts."""
         instagram_posts = self._filtered_by_media_types(["instagram"])
 
         super(SocialStreamPost, (self - instagram_posts))._compute_post_link()
@@ -52,14 +50,8 @@ class SocialStreamPost(models.Model):
                 == post.account_id.instagram_facebook_account_id
             )
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     def _instagram_comment_add(self, message, object_id, comment_type="comment"):
-        """Publishes a comment on an Instagram stream post or on another comment.
-        We specify a 'fields' parameter to retrieve information about the created comment
-        and return the data to display a properly formatted comment in the frontend."""
 
         self.check_singleton()
 
@@ -89,8 +81,6 @@ class SocialStreamPost(models.Model):
         return self._instagram_format_comment(response_json)
 
     def _instagram_get_comments(self, next_records_token=False, count=20) -> dict:
-        """Returns users comments on an Instagram social.stream.post.
-        This method supports pagination through the 'next_records_token' parameter."""
         self.check_singleton()
 
         comments_endpoint = url_join(
@@ -140,9 +130,6 @@ class SocialStreamPost(models.Model):
             data={"access_token": self.account_id.instagram_access_token},
         )
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _get_matching_post(self):
         self.check_singleton()
@@ -177,8 +164,6 @@ class SocialStreamPost(models.Model):
             "likes": {"summary": {"total_count": comment.get("like_count")}},
             "user_likes": comment.get("user_likes"),
             "comments": {
-                # Small trick for the comment answers, we reverse the list to have it in the
-                # desired order (chronological).
                 "data": [
                     self._instagram_format_comment(comment)
                     for comment in comment["replies"].get("data", [])

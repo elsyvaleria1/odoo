@@ -22,10 +22,8 @@ class PosConfig(models.Model):
         return models
 
     def action_view_wizard(self):
-        """Override the ir.action.act_url to open the kiosk on the selected IoT Boxes (if any)."""
-        url_in_new_tab_action = super().action_view_wizard()  # Configure pos session
+        url_in_new_tab_action = super().action_view_wizard()
 
-        # If no IoT Box is selected in the settings, open the kiosk in a new tab
         if not self.self_ordering_iot_available_iot_box_ids:
             return url_in_new_tab_action
 

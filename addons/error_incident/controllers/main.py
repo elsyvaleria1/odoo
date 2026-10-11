@@ -6,8 +6,6 @@ from odoo.libs.fixed_window import FixedWindowLimiter
 
 from ..models.error_incident import client_capture_payload
 
-# A browser reports what its dialogs show: a few a minute is a bad day, more is
-# a loop or a script.
 _reports = FixedWindowLimiter(window=60, limit=20)
 _MAX_STACK = 20_000
 
@@ -20,13 +18,6 @@ class ErrorIncidentController(http.Controller):
         methods=["POST"],
     )
     def journey(self, occurrence: str | None = None) -> dict[str, Any]:
-        """Where the incident of the caller's own occurrence stands.
-
-        ``pending`` stands for an occurrence not written yet -- the error
-        response leaves before its occurrence is recorded -- and, alike, for
-        one that is not the caller's: telling them apart would make this an
-        oracle for other users' errors.
-        """
         if not request.env.user._is_internal():
             return {"state": "unavailable"}
         incident = request.env["error.occurrence"]._own_incident(occurrence)
@@ -41,14 +32,6 @@ class ErrorIncidentController(http.Controller):
         methods=["POST"],
     )
     def report(self, stack: object = None, location: object = None) -> dict[str, Any]:
-        """Record an error the browser raised on its own, and answer where its
-        incident stands -- the server-side answer the dialog of a request
-        error gets from `journey`.
-
-        The stack is the browser's word, so it locates the error and nothing
-        more: the user is the session's, and what is stored is masked and
-        capped.
-        """
         env = request.env
         if not env.user._is_internal():
             return {"state": "unavailable"}

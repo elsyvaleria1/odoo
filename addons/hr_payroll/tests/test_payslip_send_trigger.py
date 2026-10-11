@@ -23,8 +23,6 @@ class TestPayslipSendTrigger(TestPayslipBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # A second employee shaped like richard_emp, so a batch has two payslips to
-        # queue instead of one.
         cls.second_emp = cls.env["hr.employee"].create(
             {
                 "name": "Second",
@@ -57,7 +55,6 @@ class TestPayslipSendTrigger(TestPayslipBase):
         )
 
     def _validate(self, payslips):
-        """Validate the way the Confirm button does, PDF context included."""
         payslips.with_context(payslip_generate_pdf=True).action_validate()
 
     def test_on_confirmed_queues_on_validation(self):
@@ -101,7 +98,6 @@ class TestPayslipSendTrigger(TestPayslipBase):
         self._set_trigger("on_confirmed")
         payslips = self.payslip_richard | self.payslip_second
         self._validate(payslips)
-        # The cron drains the queue between the two steps, as it would in production.
         payslips.write({"queued_for_pdf": False})
         payslips.action_payslip_paid()
         self.assertFalse(
@@ -110,7 +106,6 @@ class TestPayslipSendTrigger(TestPayslipBase):
         )
 
     def test_absent_parameter_behaves_as_on_confirmed(self):
-        """A database that never opened the setting keeps the pre-setting behaviour."""
         self.env["ir.config_parameter"].sudo().search(
             [("key", "=", "hr_payroll.payslip_generate_and_send_trigger")]
         ).unlink()
@@ -121,12 +116,6 @@ class TestPayslipSendTrigger(TestPayslipBase):
         )
 
     def test_single_payslip_is_queued_not_generated_inline(self):
-        """A lone payslip goes through the cron like any other.
-
-        Upstream generates the PDF inline when exactly one payslip is confirmed.
-        We deliberately did not take that half: it would change today's behaviour
-        for the default trigger, and `document_hr_payroll` pins the queued path.
-        """
         self._set_trigger("on_confirmed")
         self._validate(self.payslip_richard)
         self.assertTrue(

@@ -8,7 +8,6 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _prepare_invoice_lot_rows(self):
-        """Display Rental lots on invoice report when functionality is enabled."""
         res = super()._prepare_invoice_lot_rows()
 
         if self.state == "draft":
@@ -26,25 +25,21 @@ class AccountMove(models.Model):
 
         stock_move_lines = rental_stock_move_lines
 
-        # Get the other customer invoices and refunds.
         ordered_invoice_ids = (
             sale_orders.mapped("invoice_ids")
             .filtered(lambda i: i.state not in ["draft", "cancel"])
             .sorted(lambda i: (i.invoice_date, i.id))
         )
 
-        # Get the position of self in other customer invoices and refunds.
         self_index = None
         for i, invoice in enumerate(ordered_invoice_ids):
             if invoice.id == self.id:
                 self_index = i
                 break
 
-        # Get the previous invoice if any.
         previous_invoices = ordered_invoice_ids[:self_index]
         last_invoice = previous_invoices[-1] if len(previous_invoices) else None
 
-        # Get the incoming and outgoing sml between self.invoice_date and the previous invoice (if any).
         self_datetime = (
             max(self.invoice_line_ids.mapped("write_date"))
             if self.invoice_line_ids
@@ -57,8 +52,6 @@ class AccountMove(models.Model):
         )
 
         def _filter_outgoing_sml(ml):
-            # Rental moves send the products (& lots) to an internal location
-            # independent of any warehouse (but still in the company to count for the assets).
             if (
                 ml.state == "done"
                 and ml.trace_id
@@ -70,25 +63,14 @@ class AccountMove(models.Model):
                     return ml.date <= self_datetime
             return False
 
-        # We only care about outgoing moves to display SN on invoices
-        # we do not want to display more information atm, but could be nice to
-        # say in invoicing report which SN have been returned and which not.
         outgoing_sml = stock_move_lines.filtered(_filter_outgoing_sml)
 
-        # Prepare and return lot_values
         qties_per_lot = defaultdict(lambda: 0)
         for ml in outgoing_sml:
             qties_per_lot[ml.trace_id] += ml.product_uom_id._get_quantity_in_unit(
                 ml.quantity, ml.product_id.uom_id
             )
 
-        # VFE NOTE: The quantity may be wrong in some advanced cases:
-        # When modifying pickedup or returned lots manually (e.g. not through the rental wizard),
-        # You could remove already pickedup/returned lots, which would trigger the magical creation
-        # of SML.
-        # This means that if you return by error Lot A, then undo the return by removing the lot in the M2M,
-        # 2 stocks moves would have been created.  Thus, on the invoice report, you would see 2 as qty for lot A...
-        # Cf. magic move creation in sale_stock_renting/models/sale_rental.py
 
         lot_values = res
         for trace_id, qty in qties_per_lot.items():

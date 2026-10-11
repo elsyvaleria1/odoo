@@ -386,7 +386,6 @@ class TestExternalComponents(CreditProfileCase):
         profile._score_refresh()
         rows = profile.score_line_ids
         skipped = rows.filtered(lambda l: not l.applicable)
-        # A subset: a bridge may add dimensions of its own that skip here too.
         self.assertLessEqual(
             {"dbt", "late_ratio", "bureau_score", "z_score"},
             set(skipped.mapped("dimension_code")),
@@ -406,9 +405,6 @@ class TestExternalComponents(CreditProfileCase):
         self.assertEqual(line.max_points, 10.0)
 
     def test_an_observation_on_a_bound_keeps_its_band(self):
-        # 127 of 395 production customers pay on the due date: dbt exactly 0
-        # is the top band, and a value on any converted bound lands where the
-        # old inclusive bound put it.
         partner = self._partner("On the bound", credit_grade_id=self.unconditional.id)
         profile = partner.sudo().credit_profile_id
         Dimension = self.env["scorecard.dimension"]

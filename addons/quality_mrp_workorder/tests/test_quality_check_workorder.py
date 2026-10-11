@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 class TestQualityCheckWorkorder(TestMrpCommon):
     def test_01_quality_check_with_component_consumed_in_operation(self):
-        """Test quality check on a production with a component consumed in one operation"""
         component = self.env["product.product"].create(
             {
                 "name": "consumable component",
@@ -21,10 +20,8 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         bom = self.bom_2.copy()
         bom.bom_line_ids[0].product_id = component
 
-        # Registering the first component in the operation of the BoM
         bom.bom_line_ids[0].operation_id = bom.operation_ids[0]
 
-        # Create Quality Point for all products
         self.env["quality.point"].create(
             {
                 "product_ids": [],
@@ -33,7 +30,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
             }
         )
 
-        # Create Production of Painted Boat to produce 5.0 Unit.
         production_form = Form(self.env["mrp.production"])
         production_form.product_id = bom.product_id
         production_form.bom_id = bom
@@ -42,7 +38,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         production.action_confirm()
         production.qty_producing = 3.0
 
-        # Check that the Quality Check were created and has correct values
         self.assertEqual(
             len(
                 production.check_ids.filtered(
@@ -54,12 +49,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         self.assertEqual(len(production.check_ids), 1)
 
     def test_register_consumed_materials(self):
-        """
-        Process a MO based on a BoM with one operation. That operation has one
-        step: register the used component. Both finished product and component
-        are tracked by serial. The auto-completion of the serial numbers should
-        be correct
-        """
         finished = self.bom_4.product_id
         component = self.bom_4.bom_line_ids.product_id
         (finished | component).write(
@@ -135,12 +124,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         )
 
     def test_register_consumed_materials_split_production(self):
-        """
-        Process an MO based on a BoM with one operation. That operation has one
-        step: register the used component. The component is tracked. Split the
-        production MO -> MO-001 + MO-002, the component registrations should
-        update the appropriate backorder.
-        """
         warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
         )
@@ -201,14 +184,11 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         mo.action_confirm()
 
         self.assertEqual(mo.move_raw_ids.trace_ids, lots[:2])
-        # Split the MO in 2
         action = mo.action_split()
         wizard = Form.from_action(self.env, action)
         wizard.max_batch_size = 1
         action = wizard.save().action_split()
-        # Should have 2 mos /w 1 sn each
         self.assertEqual(len(mo.production_group_id.production_ids), 2)
-        # Check that the assigned lots didn't change
         self.assertEqual(
             mo.production_group_id.production_ids[
                 0
@@ -221,7 +201,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
             ].workorder_ids.current_quality_check_id.trace_ids,
             lots[1],
         )
-        # Register sn3 on mo 1 and check that it is reflected on the associated move line
         component_move = mo.workorder_ids.current_quality_check_id.move_id
         component_move.action_add_from_quant(
             self.env["stock.quant"]
@@ -242,11 +221,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         )
 
     def test_backorder_cancelled_workorder_quality_check(self):
-        """Create an MO based on a bom with 2 operations, when processing workorders,
-        process one workorder fully and the other partially, then confirm and create backorder
-        the fully finished workorder copy should be cancelled without any checks to do, and the other
-        should ready, we should be able to pass the checks and produce the backorder
-        """
         bom = self.env["mrp.bom"].create(
             {
                 "product_id": self.product_6.id,
@@ -321,7 +295,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         self.assertEqual(len(mo.move_raw_ids), 2)
         self.assertEqual(len(mo.workorder_ids), 2)
         self.assertEqual(len(mo.workorder_ids.check_ids), 2)
-        # 1 work order will produce the full 2 qty, the other will only produce 1
         full_workorder = mo.workorder_ids[0]
         full_workorder.qty_producing = 2
         full_workorder.check_ids.action_pass_and_next()
@@ -332,12 +305,9 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         partial_workorder.check_ids.action_pass_and_next()
         partial_workorder.button_finish()
         self.assertEqual(partial_workorder.state, "done")
-        # MO qty_producing should become 1 since only 1 qty was fully produced
         self.assertEqual(mo.qty_producing, 1)
         Form.from_action(self.env, mo.button_mark_done()).save().action_backorder()
         backorder = mo.production_group_id.production_ids[1]
-        # the backorder has 1 qty to produce and the full workorder done from before should be cancelled (its a copy)
-        # and should not have any quality check to perform
         self.assertEqual(backorder.product_qty, 1)
         self.assertEqual(len(backorder.workorder_ids), 2)
         self.assertEqual(backorder.workorder_ids[0].state, "cancel")
@@ -349,10 +319,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         self.assertEqual(backorder.state, "done")
 
     def test_compute_lot_quality_checks(self):
-        """
-        Ensure that the quantity of quality checks related to a lot is properly computed,
-        whether the lot is used as a finished product or a component.
-        """
         self.product_2.tracking = "serial"
         self.env["quality.point"].create(
             {
@@ -386,7 +352,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         mo.button_mark_done()
         self.assertEqual(mo.state, "done")
         self.assertEqual(finished_sn.quality_check_qty, 1)
-        # use the finished product as component in another mo
         bom_2 = self.env["mrp.bom"].create(
             {
                 "product_id": self.product_3.id,
@@ -444,11 +409,6 @@ class TestQualityCheckWorkorder(TestMrpCommon):
         )
 
     def test_merge_mo_from_orderpoints_2(self):
-        """
-        Ensure that triggering a manufacturing reordering rule:
-        - Updates an existing MO if none of its quality check has been performed yet
-        - Creates a new MO if the last MO's product_qty cannot be updated due to a performed quality check
-        """
         warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
         )

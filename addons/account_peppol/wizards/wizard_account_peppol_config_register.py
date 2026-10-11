@@ -29,29 +29,23 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
     _name = "wizard.account_peppol.config.register"
     _description = "Peppol Registration"
 
-    # 'company_id' is the current active company, always set.
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
         required=True,
     )
 
-    # 'parent_company_id' is the potential parent company of the current branch or the branch itself
-    # if no fallback on the parent branch is possible.
     parent_company_id = fields.Many2one(
         comodel_name="res.company",
         compute="_compute_parent_company_id",
     )
     parent_company_name = fields.Char(related="parent_company_id.name")
 
-    # 'selected_company_id' could be 'company_id' if 'use_parent_connection_selection' is 'use_self'
-    # or 'parent_company_id' if 'use_parent_connection_selection' is 'use_parent'.
     selected_company_id = fields.Many2one(
         comodel_name="res.company",
         compute="_compute_selected_company_id",
     )
 
-    # Choice between the current company or the parent one.
     display_use_parent_connection_selection = fields.Boolean(
         compute="_compute_display_use_parent_connection_selection"
     )
@@ -66,7 +60,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
     )
     use_parent_connection = fields.Boolean(compute="_compute_use_parent_connection")
 
-    # TODO: remove in master
     is_branch_company = fields.Boolean(store=False)
     active_parent_company = fields.Many2one(
         related="parent_company_id",
@@ -80,7 +73,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
         related="display_use_parent_connection_selection",
         string="Can Use Parent Connection",
     )
-    # TODO END: remove in master
 
     edi_mode = fields.Selection(
         selection=[("demo", "Demo"), ("test", "Test"), ("prod", "Live")],
@@ -119,7 +111,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
         required=True,
     )
     smp_registration = fields.Boolean(
-        # you're registering to SMP when you register as a sender+receiver
         string="Register as a receiver",
         compute="_compute_smp_registration_external_provider",
     )
@@ -130,9 +121,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
     display_itsme_login = fields.Boolean(compute="_compute_peppol_can_connect_data")
     display_no_auth_buttons = fields.Boolean(compute="_compute_peppol_can_connect_data")
 
-    # -------------------------------------------------------------------------
-    # ONCHANGE METHODS
-    # -------------------------------------------------------------------------
 
     @api.onchange("peppol_endpoint")
     def _onchange_peppol_endpoint(self) -> None:
@@ -147,7 +135,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
         self.env["res.company"]._check_phonenumbers_import()
         for wizard in self:
             if wizard.phone_number:
-                # The `phone_number` we set is not necessarily valid (may fail `_normalize_peppol_phone_number`)
                 with contextlib.suppress(phonenumbers.NumberParseException):
                     parsed_phone_number = phonenumbers.parse(
                         wizard.phone_number,
@@ -158,9 +145,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                         phonenumbers.PhoneNumberFormat.E164,
                     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends("company_id")
     def _compute_parent_company_id(self) -> None:
@@ -288,7 +272,7 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                 external_provider = peppol_info["external_provider"]
             wizard.smp_registration = (
                 not is_company_on_peppol
-            )  # Register on smp if not on Peppol
+            )
             wizard.peppol_external_provider = external_provider
 
     @api.depends("peppol_eas", "peppol_endpoint")
@@ -301,9 +285,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
             )
             wizard.display_no_auth_buttons = not bool(connect_vals.get("auth_required"))
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def _branch_with_same_address(self) -> bool:
         self.check_singleton()
@@ -342,7 +323,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
 
     def _action_view_peppol_form(self, reopen=True):
         view = self.env.ref("account_peppol.peppol_registration_form").sudo()
-        # TODO remove in master this hack to get the itsme button up
         if "itsme" not in view.arch_db:
             view.reset_arch(mode="hard")
         action_dict = {
@@ -370,7 +350,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
 
     @api.model
     def _check_can_connect(self, can_connect_vals, selected_auth=None) -> None:
-        """Checks the answer from the /can_connect endpoint and raises an error if it's invalid."""
         if not can_connect_vals:
             raise UserError(self.env._("Could not connect to Proxy Server."))
         if identifier_invalid := can_connect_vals.get("identifier_invalid"):
@@ -474,7 +453,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
         except UserError:
             _logger.info("New connection to Peppol failed")
             raise
-        # if no error, create the proxy user
         _logger.info("New connection to Peppol success")
         edi_user = self.env["account_edi_proxy_client.user"].create(
             {
@@ -522,7 +500,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
         self.check_singleton()
         self._check_mandatory_fields()
 
-        # Make sure we archive possible existing proxy user when (re-)registering
         old_proxy_users = self.env["account_edi_proxy_client.user"].search(
             [
                 ("company_id", "=", self.company_id.id),
@@ -561,7 +538,6 @@ class WizardAccountPeppolConfigRegister(models.TransientModel):
                 "target": "new",
             }
 
-        # No auth required
         peppol_identifier = f"{self.peppol_eas}:{self.peppol_endpoint}".lower()
         db_uuid = self.env.registry.settings.get(self.env, "database.uuid", False)
         self._create_connection(peppol_identifier, db_uuid, self.company_id)

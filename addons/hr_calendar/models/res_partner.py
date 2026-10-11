@@ -35,9 +35,6 @@ class ResPartner(models.Model):
         resources_by_calendar = defaultdict(lambda: self.env["resource.resource"])
 
         employees = sum(employees_by_partner.values(), start=self.env["hr.employee"])
-        # A working week is the schedule of the employee's version, whether or
-        # not a contract runs: an employee without contract dates still works,
-        # and one with no version over the window works its current schedule.
         periods = employees._get_calendar_periods(
             start_period, stop_period, check_contract=False
         )

@@ -22,11 +22,6 @@ class HrPayslip(models.Model):
     document_access_url = fields.Char(compute="_compute_document_access_url")
 
     def _filtered_sendable(self) -> Self:
-        """Payslips whose state allows re-sending them to the employee.
-
-        Single definition, shared with hr.employee.action_resend_payslips so the
-        two entry points cannot drift apart.
-        """
         return self.filtered(lambda payslip: payslip.state in ("validated", "paid"))
 
     def _payslip_notification(self, notification_type, message, title=None) -> dict:
@@ -105,7 +100,7 @@ class HrPayslip(models.Model):
                 "\n".join(skipped)
                 or self.env._("There is no payslip to send to the employee."),
             )
-        if not notify and not skipped:  # refresh the form view
+        if not notify and not skipped:
             return None
 
         sent = self.env._("%s Payslip(s) correctly sent.", len(sendable))
@@ -114,8 +109,6 @@ class HrPayslip(models.Model):
         return self._payslip_notification("success", sent)
 
     def _get_document_vals_access_rights(self):
-        """All payslips should be accessible in 'Anyone with the link' to make the link permanent.
-        The document must be still accessible even if the employee and its user (if any) are archived."""
         return {
             "access_via_link": "view",
             "access_internal": "none",
@@ -160,7 +153,6 @@ class HrPayslip(models.Model):
     @api.depends("document_ids.access_url")
     def _compute_document_access_url(self) -> None:
         for payslip in self:
-            # keep the last document created for the payslip
             last_document = payslip.document_ids.sorted("id", reverse=True)[:1]
             payslip.document_access_url = last_document.access_url
 
@@ -175,7 +167,6 @@ class HrPayslip(models.Model):
         if is_rescheduled:
             return is_rescheduled
 
-        # Post declarations from mixin
         lines = self.env["hr.payroll.employee.declaration"].search(
             [("pdf_to_post", "=", True)]
         )
@@ -187,9 +178,6 @@ class HrPayslip(models.Model):
             )
             lines_batch._post_pdf()
             lines_batch.write({"pdf_to_post": False})
-            # A queued line that still has no document could never be posted: it
-            # carries no PDF file. Dequeue it so it does not block the head of
-            # the batch, but say so instead of dropping it silently.
             undeliverable = lines_batch.filtered(lambda line: not line.document_id)
             if undeliverable:
                 _debug.logic(
@@ -200,7 +188,6 @@ class HrPayslip(models.Model):
                     len(undeliverable),
                     undeliverable.ids,
                 )
-            # if necessary, retrigger the cron to generate more pdfs
             if len(lines) > BATCH_SIZE:
                 self.env["ir.cron"]._trigger_ref(
                     "hr_payroll.ir_cron_generate_payslip_pdfs"

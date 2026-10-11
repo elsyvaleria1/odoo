@@ -45,12 +45,6 @@ class DateRangeGeneratorTest(TransactionCase):
         self.assertEqual(range4.type_id, self.type)
 
     def test_generate_clamps_last_range_to_date_end(self):
-        """The last generated range never runs past a non-aligned date_end.
-
-        Without a clamp, the last range's end came from one more interval
-        past the last occurrence, regardless of where the requested date_end
-        actually fell.
-        """
         generator = self.generator.create(
             {
                 "date_start": "2024-01-01",
@@ -84,12 +78,6 @@ class DateRangeGeneratorTest(TransactionCase):
             )
 
     def test_create_from_python_with_type_defaults(self):
-        """create() works with only a type: the wizard fills its own defaults.
-
-        The generation parameters used to carry required=True on top of a
-        compute the ORM does not run before the INSERT, so this raised a raw
-        NotNullViolation from psycopg.
-        """
         dr_type = self.env["date.range.type"].create(
             {
                 "name": "Configured",
@@ -111,11 +99,6 @@ class DateRangeGeneratorTest(TransactionCase):
         )
 
     def test_create_many_keeps_each_configuration(self):
-        """The computes handle a multi-record set.
-
-        Every one of them read ``self.type_id`` directly, so a two-record
-        create raised "Expected singleton".
-        """
         type_a, type_b = self.env["date.range.type"].create(
             [
                 {
@@ -171,13 +154,6 @@ class DateRangeGeneratorTest(TransactionCase):
         )
 
     def test_negative_duration_reports_clean_error(self):
-        """A negative duration is refused up front, not as a raw ValueError.
-
-        `duration_count` used to only be checked for falsiness, so `-1`
-        (truthy) slipped past `_check_settings_complete` and reached
-        `dateutil.rrule`'s `interval`, which raises `ValueError` instead of
-        the wizard's usual `UserError`/`ValidationError`.
-        """
         wizard = self.generator.create(
             {
                 "date_start": "2024-01-01",
@@ -192,12 +168,6 @@ class DateRangeGeneratorTest(TransactionCase):
             wizard.action_apply()
 
     def test_preview_agrees_with_generated_names(self):
-        """The type preview, the wizard preview and the result all agree.
-
-        The type used to run its own preview implementation that could not know
-        how many ranges there would be, so it promised ``Q1`` where the wizard
-        and the created ranges said ``Q01``.
-        """
         dr_type = self.env["date.range.type"].create(
             {
                 "name": "Padded",
@@ -223,13 +193,6 @@ class DateRangeGeneratorTest(TransactionCase):
         self.assertEqual(names[-1], "Q12")
 
     def test_type_preview_hidden_without_autogeneration_horizon(self):
-        """No autogeneration horizon means no guessed-count preview.
-
-        Without a horizon the type cannot know how many ranges a manual
-        wizard run will ask for, so it used to preview ``count=1`` and show
-        an unpadded index (``Q1``) that disagreed with what a real run with
-        ``count >= 10`` produces (``Q01``).
-        """
         dr_type = self.env["date.range.type"].create(
             {
                 "name": "Unpadded",
@@ -242,41 +205,32 @@ class DateRangeGeneratorTest(TransactionCase):
         self.assertFalse(dr_type.range_name_preview)
 
     def test_generator_form(self):
-        """Test validation and onchange functionality"""
         form = Form(self.env["wizard.date.range.create"])
         form.type_id = self.type
         form.duration_unit = "month"
         form.duration_count = 10
         form.date_end = "2021-01-01"
-        # Setting count clears date_end
         form.count = 10
         self.assertFalse(form.date_end)
-        # Setting date_end clears count
         form.date_end = "2021-01-01"
         self.assertFalse(form.count)
         form.count = 10
         form.name_prefix = "PREFIX"
-        # An invalid name_expr is reported in the preview rather than raised,
-        # so the form stays editable; generation still refuses it.
         form.name_expr = "'not valid"
         self.assertIn("Invalid name expression", form.range_name_preview)
         with self.assertRaisesRegex(UserError, "Invalid name expression"):
             form.save().action_apply()
-        # Setting name_expr clears name_prefix
         form.name_expr = "'PREFIX%s' % index"
         self.assertFalse(form.name_prefix)
         self.assertEqual(form.range_name_preview, "PREFIX01")
         wizard = form.save()
 
-        # Cannot generate ranges without count and without date_end.
-        # action_apply reports the missing settings as a UserError.
         wizard.date_end = False
         wizard.count = False
         with self.assertRaisesRegex(UserError, "end date or number of ranges"):
             wizard.action_apply()
 
         wizard.count = 10
-        # Cannot generate ranges without a prefix and without an expression
         wizard.name_expr = False
         wizard.name_prefix = False
         with self.assertRaisesRegex(UserError, "name prefix or name expression"):

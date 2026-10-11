@@ -41,7 +41,6 @@ class TestKioskPineLabsPayment(SelfOrderCommonTest):
         )
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")
-        # what the terminal holds, by PlutusTransactionReferenceID
         self.terminal = {}
         self.uploaded = []
         patcher = patch(

@@ -25,8 +25,6 @@ class Group:
 
 
 def groups() -> dict[str, Group]:
-    # every res.groups record the core modules declare, merged across the
-    # modules that extend one
     found: dict[str, Group] = {}
     for manifest in index._module_manifests():
         root = Path(manifest.path)
@@ -62,7 +60,6 @@ def groups() -> dict[str, Group]:
 
 
 def tiers(rows, known: dict[str, Group]) -> dict[str, list]:
-    # a read-only tier: a group named *_readonly that holds permission rows
     by_tier: dict[str, list] = {}
     for row in rows:
         group = index._qualify(row.module, row.group or "")
@@ -88,8 +85,6 @@ def write_findings(by_tier, models) -> list[str]:
 
 
 def rung_findings(by_tier, known: dict[str, Group]) -> list[str]:
-    # the tier is its privilege's lowest rung, it is an internal user, and a
-    # rung of the same privilege implies it
     findings = []
     for tier in sorted(by_tier):
         group = known[tier]
@@ -121,8 +116,6 @@ def rung_findings(by_tier, known: dict[str, Group]) -> list[str]:
 
 @functools.cache
 def loaded_with(module: str) -> frozenset[str]:
-    # the modules always installed where this one is: itself and its
-    # dependencies, transitively
     seen = set()
     todo = [module]
     while todo:
@@ -136,8 +129,6 @@ def loaded_with(module: str) -> frozenset[str]:
 
 
 def dead_row_findings(by_tier, rows, loaded=loaded_with) -> list[str]:
-    # a tier read that every internal user already has unrestricted wherever
-    # the tier's row is installed
     everyone_reads = {
         (row.model, row.module)
         for row in rows

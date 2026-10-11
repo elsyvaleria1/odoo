@@ -544,10 +544,6 @@ class TestDeadlineEscalation(common.TransactionCase):
         )
 
     def test_a_stalled_approver_escalates_once_not_every_run(self):
-        # A second approver is what keeps the archive handover from
-        # reassigning the first one: the successor it would pick is already an
-        # approver, so the archived one stays pending. That is the shape a
-        # stalled approver actually has in production.
         add_category_approver(
             self.category_with_deadline, self.escalation_user, required=False
         )
@@ -577,10 +573,6 @@ class TestDeadlineEscalation(common.TransactionCase):
             "the archived approver must stay pending for this scenario",
         )
 
-        # An approver who left the company is a reason to escalate ahead of
-        # the age threshold, not a reason to escalate again on every run:
-        # nothing clears the condition, so this re-sent the same notice daily
-        # for the rest of the request's life.
         for day in ("2026-01-06 17:00:00", "2026-01-07 17:00:00"):
             with freeze_time(day):
                 self.env["approval.request"].cron_smart_escalation()

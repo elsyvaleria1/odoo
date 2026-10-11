@@ -35,9 +35,6 @@ class TestProject(TestProjectCommon):
         )
 
     def test_get_budget_items_expense(self):
-        """
-        Check budget items data with expense budget only
-        """
         if not self.project_pigs.account_id:
             self.assertEqual(
                 self.project_pigs._get_budget_items(False),
@@ -83,7 +80,7 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_goats._get_budget_items(False)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -103,9 +100,6 @@ class TestProject(TestProjectCommon):
         )
 
     def test_get_budget_items_revenue(self):
-        """
-        Check budget items data with revenue budget only
-        """
         self.assertEqual(
             self.project_goats.account_id,
             self.analytic_account,
@@ -134,7 +128,7 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_goats._get_budget_items(False)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -154,9 +148,6 @@ class TestProject(TestProjectCommon):
         )
 
     def test_get_budget_items_both(self):
-        """
-        Check budget items data with both budget only
-        """
         self.assertEqual(
             self.project_goats.account_id,
             self.analytic_account,
@@ -185,7 +176,7 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_goats._get_budget_items(False)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         self.assertDictEqual(
             budget_items,
@@ -205,9 +196,6 @@ class TestProject(TestProjectCommon):
         )
 
     def test_get_budget_items_expense_and_revenue(self):
-        """
-        Check budget items data with expense and revenue budgets
-        """
         self.assertEqual(
             self.project_goats.account_id,
             self.analytic_account,
@@ -254,11 +242,11 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_goats._get_budget_items(False)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         del budget_items["data"][1][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,
@@ -349,11 +337,11 @@ class TestProject(TestProjectCommon):
         budget_items = self.project_pigs._get_budget_items(False)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         del budget_items["data"][1][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,
@@ -417,11 +405,11 @@ class TestProject(TestProjectCommon):
         )._get_budget_items(with_action=True)
         del budget_items["data"][0][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][0]["id"]
         del budget_items["data"][1][
             "name"
-        ]  # remove the name because it is a lazy translation.
+        ]
         del budget_items["data"][1]["id"]
         self.assertDictEqual(
             budget_items,
@@ -510,8 +498,6 @@ class TestProject(TestProjectCommon):
         self.user_projectuser.group_ids |= self.env.ref(
             "account.group_account_readonly"
         )
-        # project_goats is limited to its team: project.project_public_members_rule
-        # only lets team members read it, so make the reader one
         self.project_goats.member_user_ids = self.user_projectuser
         self.project_goats.total_budget_amount = 1000
 

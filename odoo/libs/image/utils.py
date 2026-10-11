@@ -81,9 +81,6 @@ def image_fix_orientation(image: PILImage) -> PILImage:
     return ImageOps.exif_transpose(image)
 
 
-# what Pillow raises out of a file that is not the image it claims to be: a
-# plugin reading a corrupt header or pixel stream is not limited to OSError
-# (a TIFF without dimensions is a TypeError, a bad tag a KeyError)
 _CORRUPT_IMAGE_ERRORS = (
     OSError,
     SyntaxError,
@@ -124,11 +121,6 @@ class _SourceStream(io.BytesIO):
         return data
 
 
-# Pillow pads a truncated or cut-short image instead of failing it once
-# anything in the process sets ImageFile.LOAD_TRUNCATED_IMAGES (weasyprint
-# does, at import). The flag is shared across threads, so it is neither read
-# nor set here: a decoder asking for data the source does not hold, from the
-# stream or from the plugin's own chunk reader, is what still tells it.
 def _watch_source(image: PILImage) -> _SourceStream | None:
     stream = getattr(image, "fp", None)
     if not isinstance(stream, _SourceStream):
@@ -211,7 +203,6 @@ def image_apply_opt(image: PILImage, output_format: str, **params) -> bytes:
         if format_name == "JPEG" and image.mode not in ["1", "L", "RGB"]:
             image = image.convert("RGB")
     stream = io.BytesIO()
-    # the frames after the first are decoded while they are written
     with (
         _decoding("frames", None)
         if params.get("save_all")
@@ -236,7 +227,6 @@ _DATA_URI_SIGNATURES = (
 )
 _NOT_BASE64 = re.compile(rb"[^A-Za-z0-9+/]")
 _SIGNATURE_HEAD_BASE64 = 64
-# as much of an SVG's prolog as a mimetype sniff reads
 _SUBTYPE_HEAD_BASE64 = 2048 * 4 // 3
 
 
@@ -256,7 +246,6 @@ def base64_image_subtype(base64_source: bytes) -> str:
         return "png"
     if is_svg(_base64_head(base64_source, _SUBTYPE_HEAD_BASE64)):
         return "svg+xml"
-    # a prolog longer than the head leaves only the whole source to tell
     if len(base64_source) > _SUBTYPE_HEAD_BASE64 and is_svg(
         _base64_head(base64_source, len(base64_source))
     ):
@@ -282,7 +271,6 @@ def _to_rgba(frame: PILImage) -> PILImage:
 
 
 def _to_shared_palette(frames: list[PILImage]) -> list[PILImage]:
-    # quantized one by one, every frame gets a palette of its own
     sheet = Image.new(
         "RGBA", (max(f.width for f in frames), sum(f.height for f in frames))
     )
@@ -301,13 +289,10 @@ def _to_shared_palette(frames: list[PILImage]) -> list[PILImage]:
     return shared
 
 
-# the formats whose orientation Pillow reads from what it parsed at open
 _HEADER_ORIENTATION_FORMATS = frozenset({"JPEG", "MPO", "WEBP", "PNG"})
 
 
 def _exif_orientation(image: PILImage) -> int:
-    # an EXIF block that does not parse says nothing about orientation: the
-    # image is upright, instead of a SyntaxError out of every caller
     try:
         return image.getexif().get(_EXIF_TAG_ORIENTATION, 1)
     except SyntaxError, ValueError, TypeError, struct.error, OSError:
@@ -315,8 +300,6 @@ def _exif_orientation(image: PILImage) -> int:
 
 
 def _header_orientation(image: PILImage, source: bytes) -> int | None:
-    # None when only a decode says it: another format (TIFF reads its tags from
-    # the pixel stream), or a PNG whose eXIf chunk follows its pixel data
     image_format = (image.format or "").upper()
     if image_format not in _HEADER_ORIENTATION_FORMATS:
         return None
@@ -353,15 +336,11 @@ class ImageProcess:
 
             w, h = image.size
             image_format = (getattr(image, "format", None) or "").upper()
-            # a phone's MPO is a JPEG followed by its depth or preview
-            # images: the first is the photo, the others are never shown
             if image_format == "MPO":
                 image_format = "JPEG"
             with _decoding("header", source):
                 frames = getattr(image, "n_frames", 1)
             animated = frames > 1 and image_format in _ANIMATED_FORMATS
-            # every frame of an animation is decoded to a full canvas: a few
-            # kilobytes of one-pixel frames cost width x height per frame
             decoded_frames = frames if animated else 1
             if verify_resolution and w * h * decoded_frames > IMAGE_MAX_RESOLUTION:
                 _debug.logic(
@@ -380,7 +359,6 @@ class ImageProcess:
             self.original_format = image_format
             self.animated = animated
             self._image = image
-            # an animation is worked frame by frame, never as one decoded image
             self._decoded = self.animated
             with _decoding("header", source):
                 orientation = 1 if self.animated else _header_orientation(image, source)
@@ -433,8 +411,6 @@ class ImageProcess:
         return size
 
     def validate(self) -> Self:
-        # an animation's frames are decoded by the operation that transforms
-        # them, and one no operation touches is checked here
         if not self._decoded or (self.animated and not self.animated_frames):
             self._decode_upright()
         return self
@@ -474,9 +450,6 @@ class ImageProcess:
         return self.animated or self.original_format == "GIF"
 
     def _transform_frames(self, transform: Callable[[PILImage], PILImage]) -> None:
-        # each frame is transformed as it is decoded, so the decoded canvases
-        # are never all alive at once; the decode is _decode_upright's, the one
-        # place a subclass maps a decode error from
         if self.animated and not self.animated_frames:
             self._frame_transform = transform
             try:
@@ -524,8 +497,6 @@ class ImageProcess:
         if output_format == "PNG":
             opt["optimize"] = True
             if self.animated:
-                # an APNG holds one palette, and Pillow cannot write a
-                # palette first frame ahead of frames in another mode
                 if quality or len({frame.mode for frame in self._frames}) > 1:
                     self._transform_frames(_to_rgba)
                 if quality:
@@ -583,7 +554,6 @@ class ImageProcess:
         max_height: float | None = 0,
         expand: bool = False,
     ) -> Self:
-        # a box read out of CSS comes as floats, which Pillow refuses
         max_width, max_height = int(max_width or 0), int(max_height or 0)
         if self._image and (max_width or max_height):
             w, h = self._dimensions
@@ -611,13 +581,10 @@ class ImageProcess:
                 self.image = self._pixels.resize((asked_width, asked_height))
                 self.operations_count += 1
                 return self
-            # thumbnail only ever shrinks: a box the image fits is a no-op,
-            # which needs no pixels
             if asked_width < w or asked_height < h:
                 self._pixels.thumbnail(
                     (asked_width, asked_height),
                     Resampling.LANCZOS,
-                    # Pillow's reduce() pre-step refuses the integer modes
                     reducing_gap=None
                     if self._pixels.mode in _UNREDUCIBLE_MODES
                     else 2.0,
@@ -637,8 +604,6 @@ class ImageProcess:
         if not (self._image and max_width and max_height):
             return self.resize(max_width, max_height)
         w, h = self._dimensions
-        # the widest box of the asked ratio the image holds, rounded once: a
-        # side floored here and floored again by a shrink came out a pixel short
         if w * max_height > h * max_width:
             new_w, new_h = max(1, round(h * max_width / max_height)), h
         else:
@@ -696,8 +661,6 @@ class ImageProcess:
                 )
             inner = (img_width - 2 * padding, img_height - 2 * padding)
 
-            # a palette's entry 0 is whatever colour the file put first, and
-            # an animation's frames beyond the first come decoded to RGB
             as_rgba = self._frame_wise
 
             def pad(frame: PILImage) -> PILImage:
@@ -749,8 +712,6 @@ def image_process(
     ):
         image = processor(source, verify_resolution)
         if verify_resolution:
-            # a verified source is an upload: a truncated file is refused even
-            # when it already fits and nothing else would decode it
             image.validate()
         if size:
             if crop:

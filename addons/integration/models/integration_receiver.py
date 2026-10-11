@@ -61,9 +61,6 @@ class IntegrationReceiver(models.Model):
             return receiver
         company = record["company_id"] if "company_id" in record._fields else None
         with self.env.registry.cursor() as receiver_cr:
-            # a REPEATABLE READ snapshot is taken as the lock statement starts,
-            # before the wait, and would miss the receiver the previous holder
-            # committed; READ COMMITTED lets the search under the lock see it
             receiver_cr.use_read_committed()
             receiver_cr.execute(
                 "SELECT pg_advisory_xact_lock(%s, %s)",
@@ -88,8 +85,6 @@ class IntegrationReceiver(models.Model):
                     "rate_limit_window_seconds": 60,
                 }
             )
-            # the request's snapshot predates this commit, so it takes the row
-            # as read here, where the row is visible
             values = receiver.read(
                 [name for name, field in receiver._fields.items() if field.column_type],
                 load=None,

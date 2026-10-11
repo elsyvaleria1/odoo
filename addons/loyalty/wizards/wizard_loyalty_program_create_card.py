@@ -58,7 +58,6 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
     description = fields.Text()
 
     def _get_partners(self):
-        """Return the customers this wizard issues a coupon to, one each."""
         self.check_singleton()
         if self.mode != "selected":
             return self.env["res.partner"]
@@ -67,11 +66,6 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
             domains.append(Domain("id", "in", self.customer_ids.ids))
         if self.customer_tag_ids:
             domains.append(Domain("tag_ids", "in", self.customer_tag_ids.ids))
-        # An empty selection deliberately means *every* partner, and the form says
-        # so: `customer_ids` is placeheld "For all customers" and a warning banner
-        # shows `confirmation_message`, which carries the exact count, before
-        # anything is generated. Pinned by `sale_loyalty`'s
-        # `TestProgramWithCodeOperations.test_program_usability`.
         return self.env["res.partner"].search(
             Domain.OR(domains) if domains else Domain.TRUE
         )
@@ -108,7 +102,6 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
             )
 
     def _prepare_coupon_vals(self, partner) -> ValuesType:
-        """Return the creation values of one coupon, held by `partner` if nominative."""
         self.check_singleton()
         return {
             "program_id": self.program_id.id,
@@ -118,7 +111,6 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
         }
 
     def generate_coupons(self):
-        """Issue this wizard's coupons and record what each one was granted."""
         if any(not wizard.program_id for wizard in self):
             raise ValidationError(
                 self.env._("Can not generate coupon, no program is set.")
@@ -126,7 +118,7 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
         if any(wizard.coupon_qty <= 0 for wizard in self):
             raise ValidationError(self.env._("Invalid quantity."))
         coupon_create_vals = []
-        issuers = []  # the wizard each coupon came from, to describe its history line
+        issuers = []
         for wizard in self:
             holders = (
                 wizard._get_partners()
@@ -140,7 +132,6 @@ class WizardLoyaltyProgramCreateCard(models.TransientModel):
             )
             issuers.extend([wizard] * len(holders))
         coupons = self.env["loyalty.card"].create(coupon_create_vals)
-        # `self` may hold several wizards, each with its own grant and description.
         self.env["loyalty.history"].create(
             [
                 {

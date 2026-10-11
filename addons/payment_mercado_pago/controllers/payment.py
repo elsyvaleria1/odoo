@@ -25,17 +25,6 @@ class MercadoPagoPaymentController(http.Controller):
         issuer_id,
         transaction_amount=None,
     ):
-        """Make a payment request and process the payment data.
-
-        :param str reference: The reference of the transaction
-        :param int token: The transaction token of card received from Mercado Pago.
-        :param int installments:
-        :param int payment_method_brand: The payment method of the transaction.
-        :param int issuer_id: The issuer id of the card received from Mercado Pago.
-        :param transaction_amount: Ignored, as a page loaded before it was dropped sends
-                                   it: the amount charged is the transaction's.
-        :rtype: None
-        """
         tx_sudo = (
             request.env["payment.transaction"]
             .sudo()
@@ -73,19 +62,13 @@ class MercadoPagoPaymentController(http.Controller):
         typed=True,
     )
     def mercado_pago_return_from_checkout(self, **data):
-        """Process the payment data sent by Mercado Pago after redirection from checkout.
-
-        :param dict data: The payment data.
-        """
         _logger.info(
             "Handling redirection from Mercado Pago with data:\n%s",
             pprint.pformat(data),
         )
         self._check_and_process()
-        # Redirect the user to the status page.
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         f"{const.WEBHOOK_ROUTE}/<reference>",
         type="http",
@@ -96,24 +79,15 @@ class MercadoPagoPaymentController(http.Controller):
         typed=True,
     )
     def mercado_pago_webhook(self, reference: str, **_kwargs):
-        """Process the payment data sent by Mercado Pago to the webhook.
-
-        :param str reference: The transaction reference embedded in the webhook URL.
-        :param dict _kwargs: The extra query parameters.
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from Mercado Pago with data:\n%s",
             pprint.pformat(request.get_json_data()),
         )
         self._check_and_process()
-        return ""  # Acknowledge the notification.
+        return ""
 
     @staticmethod
     def _check_and_process():
-        """Process the admitted transaction's payment, fetched back from Mercado
-        Pago's API, once it is the transaction's own."""
         admission = request.admission
         tx_sudo = admission.subject
         payment_id = admission.extra["data"].get("payment_id")

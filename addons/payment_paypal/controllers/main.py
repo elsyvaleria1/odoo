@@ -15,13 +15,6 @@ class PaypalController(http.Controller):
 
     @http.route(_complete_url, type="jsonrpc", auth="public", methods=["POST"])
     def paypal_complete_order(self, order_id, reference):
-        """Make a capture request and process the payment data.
-
-        :param string order_id: The order id provided by PayPal to identify the order.
-        :param str reference: The reference of the transaction, used to generate the idempotency
-                              key.
-        :return: None
-        """
         tx_sudo = (
             request.env["payment.transaction"]
             .sudo()
@@ -46,7 +39,6 @@ class PaypalController(http.Controller):
             )
             tx_sudo._process("paypal", normalized_response)
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -57,13 +49,6 @@ class PaypalController(http.Controller):
         typed=True,
     )
     def paypal_webhook(self):
-        """Process the payment data sent by PayPal to the webhook.
-
-        See https://developer.paypal.com/docs/api/webhooks/v1/.
-
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from PayPal with data:\n%s",
             pprint.pformat(request.get_json_data()),

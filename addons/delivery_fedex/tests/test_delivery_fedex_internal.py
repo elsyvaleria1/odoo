@@ -58,23 +58,18 @@ class TestDeliveryFedexInternal(TransactionCase):
         self.assertEqual(1.234, price)
 
     def test_get_request_price_company_currency(self):
-        # case where Fedex returns the price in the company currency
-        # we want to convert it to the order currency (without consideration for other currencies present)
         price = self.carrier._get_request_price(
             {"UKL": 4, "EUR": 999}, self.sale_order, self.currency_usd_id
         )
         self.assertEqual(4 * 2, price)
 
     def test_get_request_price_other_currency(self):
-        # case where Fedex returns another currency altogether
-        # we want to convert it to the order currency
         price = self.carrier._get_request_price(
             {"EUR": 4}, self.sale_order, self.currency_usd_id
         )
         self.assertEqual(4 / 0.8, price)
 
     def test_get_request_price_other_currency_iso(self):
-        # case where Fedex returns GBP instead of UKL
         price = self.carrier._get_request_price(
             {"GBP": 4}, self.sale_order, self.currency_usd_id
         )

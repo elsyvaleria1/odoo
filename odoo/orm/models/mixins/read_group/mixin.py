@@ -171,9 +171,6 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
             grouping_select_sql = SQL("0")
 
         query.order = self._read_group_orderby(order, groupby_terms, query)
-        # one GROUPING SETS entry per distinct set of terms: a set given twice,
-        # in the same or another order, would be grouped twice by PostgreSQL
-        # and both results would carry the rows twice
         grouping_sets_sql = {
             frozenset(
                 groupby_terms[groupby_spec] for groupby_spec in grouping_set
@@ -299,7 +296,6 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
                 model, field.group_by_field + spec[len(fname) :]
             )
         if field.group_by_sql:
-            # one expression per row of the model's own table
             return False
         if field.is_properties:
             if not property_name:
@@ -344,9 +340,6 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
             )
         }
 
-        # every set sharing a mask receives the same rows, each through its
-        # own extractor: two sets naming the same terms in another order
-        # answer the same groups with their own column order
         dispatch_by_mask: defaultdict[
             int,
             list[
@@ -435,8 +428,6 @@ class ReadGroupMixin(_ReadGroupSQLMixin, _ReadGroupFormatMixin, _ReadGroupFillMi
             self._check_read_group_spec_access(groupby, aggregates, query)
             if not groupby:
                 if having:
-                    # the aggregate row over no record, kept or dropped by the
-                    # having clause as SQL decides it
                     empty_query = Query(self.env, self._table, self._table_sql)
                     empty_query.add_where(SQL("FALSE"))
                     empty_query.having = self._read_group_having(

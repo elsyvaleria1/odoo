@@ -89,7 +89,6 @@ class TestRekeyRecords(TransactionCase):
             "UPDATE ir_act_window SET res_model = 'probe.box' WHERE id = %s",
             [cls.action.id],
         )
-        # each box takes the id another one holds until it moves too
         rekey_records(
             cls.env.cr, ["probe.box", "probe.crate"], "probe_box", {1: 2, 2: 3, 3: 10}
         )
@@ -204,8 +203,6 @@ class TestRekeyRecords(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
     def test_every_undeclared_record_id_is_known(self):
-        """An Integer that holds a record id beside a model name, and is not a
-        Many2oneReference, is listed for rekey_records, or it is missed."""
         listed = {(table, column) for table, column, __ in UNDECLARED_REFERENCES}
         suffixes = ("res_id", "_thread_id", "record_id")
         for name, model in self.env.registry.items():
@@ -221,8 +218,6 @@ class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
                         self.assertIn((model._table, field.name), listed)
 
     def test_every_stored_model_and_id_pair_is_the_one_it_reads(self):
-        """rekey_records pairs a res_id with its model column by name, before
-        any registry exists; every pair the registry knows must match it."""
         for name, model in self.env.registry.items():
             if model._abstract or not model._auto:
                 continue

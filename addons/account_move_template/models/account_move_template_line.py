@@ -115,19 +115,6 @@ class AccountMoveTemplateLine(models.Model):
     def _resolve_codes_in_company(
         self, codes: Iterable[str], company: models.Model
     ) -> dict[str, models.Model]:
-        """Resolve account code prefixes inside `company`'s own namespace.
-
-        `account.account.code` is company-dependent: it computes from
-        `code_store` at `env.company.root_id`, so both the read and the
-        search have to happen in the company the codes belong to. Resolving
-        them in whatever company the reader happens to be in makes a code
-        owned by another company unresolvable, which is the whole point of
-        the codes being late-bound.
-
-        A company-less template deliberately serves every company, so it
-        keeps resolving in the reader's own company and its search is not
-        restricted by ownership.
-        """
         codes = {code for code in codes if code}
         if not codes:
             return {}
@@ -161,14 +148,6 @@ class AccountMoveTemplateLine(models.Model):
 
     @api.depends("template_id")
     def _compute_sequence(self) -> None:
-        """Continue the template's own numbering instead of a flat default.
-
-        `(template_id, sequence)` is uniquely indexed, so a flat default
-        made two lines created together collide on a raw `UniqueViolation`
-        -- which is how a data file, a CSV import with no sequence column
-        or a hand-built vals dict creates them. The web client is not
-        affected: it sends the previous row's sequence plus one.
-        """
         highest: dict[int, int] = {}
         for line in self:
             if line.sequence:

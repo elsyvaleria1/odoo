@@ -17,7 +17,6 @@ class TestPayrollSEPANewCreditTransferXmlValidity(TestPayrollSEPACreditTransferC
         self.bank_journal.sepa_pain_version = "pain.001.001.09"
         self.payslip_run.generate_payslips(employee_ids=[self.hr_employee_john.id])
         self.payslip_run.action_validate()
-        # make the SEPA payment.
         file = (
             self.env["wizard.hr.payslip.export.payment.file"]
             .create(
@@ -40,7 +39,6 @@ class TestPayrollSEPANewCreditTransferXmlValidity(TestPayrollSEPACreditTransferC
             ".//ns:CdtTrfTxInf/ns:PmtId/ns:UETR", namespaces=namespaces
         )
         self.assertEqual(uetr_text, self.payslip_run.slip_ids.iso20022_uetr)
-        # Regenerating the same payment must reuse its stored transfer identity.
         payments = self.payslip_run.slip_ids._acquire_iso20022_payments_data(
             self.bank_journal
         )

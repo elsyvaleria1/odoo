@@ -49,9 +49,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         )
 
     def test_mrp_employee_analytic_account(self):
-        """Test when a wo requires employees, both aa lines for employees and for
-        workcenters are correctly posted.
-        """
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.product
         mo_form.bom_id = self.bom
@@ -62,10 +59,10 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         with freeze_time("2027-10-01 10:00:00"):
             mo.workorder_ids.start_employee(self.employee1.id)
             mo.workorder_ids.start_employee(self.employee2.id)
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         with freeze_time("2027-10-01 11:00:00"):
             mo.workorder_ids.stop_employee([self.employee1.id, self.employee2.id])
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         employee1_aa_line = (
             mo.workorder_ids.employee_analytic_account_line_ids.filtered(
                 lambda l: l.employee_id == self.employee1
@@ -97,7 +94,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
                 f"{self.analytic_plan._column_name()}": new_account.id,
             }
         )
-        # Remove the analytic account auto-generated when creating a timesheetable project if it exists
         new_project.account_id = False
         mo.project_id = new_project
         employee1_aa_line = (
@@ -117,7 +113,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
             employee1_aa_line[self.analytic_plan._column_name()], new_account
         )
 
-        # Test the same thing but when the wo is marked as done from the widget
         mo_2 = self.env["mrp.production"].create(
             {
                 "product_id": self.product.id,
@@ -139,9 +134,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         self.assertEqual(mo_2.workorder_ids.mo_analytic_account_line_ids.amount, -10.0)
 
     def test_mrp_analytic_account_without_workorder(self):
-        """
-        Test adding a project with an analytic account to a confirmed manufacturing order without a work order.
-        """
         product = self.env["product.product"].create(
             {
                 "name": "Test Product",
@@ -174,10 +166,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         self.assertEqual(mo.state, "done")
 
     def test_mrp_analytic_account_with_workorder(self):
-        """
-        Test adding a project with an analytic account to a confirmed manufacturing order with work orders.
-        """
-        # add a workorder to the BoM
         with self.with_user(self.env.ref("base.user_admin").login):
             self.workcenter.employee_ids = [Command.clear()]
             self.bom.write(
@@ -203,7 +191,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
             mo.action_confirm()
             self.assertEqual(mo.state, "confirmed")
 
-            # start the workorders
             mo.workorder_ids[0].button_start()
             mo.workorder_ids[1].button_start()
             self.assertEqual(mo.workorder_ids[0].state, "progress")
@@ -224,9 +211,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
             self.assertEqual(mo.state, "done")
 
     def test_mrp_analytic_account_employee(self):
-        """
-        Test adding a user time to a work order.
-        """
         user = self.env["res.users"].create(
             {
                 "name": "Marc Demo",
@@ -250,7 +234,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
                 "costs_hour": 10,
             }
         )
-        # add a workorder to the BoM
         self.bom.write(
             {
                 "operation_ids": [
@@ -297,7 +280,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
             "2 lines for workcenters costs 2 for employee cost",
         )
 
-        # delete a time from a workorder
         previous_balance = self.analytic_account.balance
         time.unlink()
         self.assertEqual(
@@ -308,9 +290,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         self.assertEqual(mo.workorder_ids[1].duration, 0, "no time left on workorder")
 
     def test_mrp_analytic_account_employee_from_widget(self):
-        """
-        Test adding a user time to a work order from the widget
-        """
         user = self.env["res.users"].create(
             {
                 "name": "Marc Demo",
@@ -344,7 +323,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
                 line.workcenter_id = self.workcenter
 
         mo.button_mark_done()
-        # check that the aal is created with the right values
         first_amount = mo.workorder_ids.employee_analytic_account_line_ids.filtered(
             lambda l: l.employee_id == self.employee1
         ).amount
@@ -353,7 +331,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
             -50,
             "the workcenter productivity has a duration of 30 min so the aal should be half of the employee's hourly cost",
         )
-        # check that changing the date of a line without saving it does not create a new aal or modify the value of an existing one
         with Form(mo.workorder_ids) as form:
             with form.time_ids.edit(0) as line:
                 line.date_end = "2025-05-15 14:16:46"
@@ -366,9 +343,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
                 )
 
     def test_mrp_aa_employee_without_account_rights(self):
-        """
-        MRP user who starts and stops a WO of an MO related to a project
-        """
         user = new_test_user(self.env, "mrp_user", "mrp.group_mrp_user")
         self.env["hr.employee"].create(
             {
@@ -402,10 +376,6 @@ class TestMrpAnalyticAccountHr(TestMrpAnalyticAccount):
         )
 
     def test_user_can_complete_workorder_despite_project_restrictions(self):
-        """
-        Ensure that a user who has mrp right can still start and finish a work
-        order of a MO linked to a project
-        """
         user = new_test_user(self.env, "mrp_user", "mrp.group_mrp_user")
 
         self.env["hr.employee"].create(

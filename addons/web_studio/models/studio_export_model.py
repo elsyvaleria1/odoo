@@ -7,8 +7,6 @@ from odoo.addons.web_studio.wizards.wizard_ir_module_module_export_customization
     FIELDS_TO_EXPORT,
 )
 
-# List of preset models to export when the preset action is triggered.
-# This list may include specific defaults for each model.
 PRESET_MODELS_DEFAULTS = [
     ("res.partner", {"domain": "[('user_ids', '=', False)]", "is_demo_data": True}),
     ("resource.resource", {"is_demo_data": True}),
@@ -108,7 +106,6 @@ DEFAULTS_BY_PRESET_MODELS = {
     m[0]: {**m[1], "sequence": index} for index, m in enumerate(PRESET_MODELS_DEFAULTS)
 }
 
-# _compute_excluded_fields: default fields to exclude
 DEFAULT_FIELDS_TO_EXCLUDE = {
     "res.partner": {
         "ocn_token",
@@ -131,8 +128,6 @@ DEFAULT_FIELDS_TO_EXCLUDE = {
     "product.category": {"complete_name"},
     "product.product": {
         "combination_indices",
-        # the other image fields are excluded through the mixin.image fields to exclude
-        # and we only need the image_variant_1920 for the export
         "image_1920",
         "image_variant_128",
         "image_variant_256",
@@ -252,7 +247,6 @@ DEFAULT_FIELDS_TO_EXCLUDE = {
     "survey.question": {"page_id"},
 }
 
-# _compute_excluded_fields: abstract model fields to exclude
 ABSTRACT_MODEL_FIELDS_TO_EXCLUDE = {
     "mixin.html.field.history": {"html_field_history_metadata", "html_field_history"},
     "mixin.mail.activity": {"activity_ids"},
@@ -272,11 +266,9 @@ ABSTRACT_MODEL_FIELDS_TO_EXCLUDE = {
         "avatar_256",
         "avatar_128",
     },
-    # only export image_1920, the other sizes can be generated from it
     "mixin.image": {"image_1024", "image_512", "image_256", "image_128"},
 }
 
-# _compute_excluded_fields: relations to exclude
 RELATED_MODELS_TO_EXCLUDE = [
     "account.account.tag",
     "account.account",
@@ -358,7 +350,6 @@ class StudioExportModel(models.Model):
                 DEFAULT_FIELDS_TO_EXCLUDE.get(record.model_name, ())
             )
 
-            # also exclude fields of abstract models
             to_search = {m for m in RecordModel._base_classes__ if m._abstract}
             searched = set()
             while to_search:
@@ -383,15 +374,10 @@ class StudioExportModel(models.Model):
                     continue
                 module = field._modules[0] if field._modules else None
                 if (
-                    # - exclude computed fields (not related) that can't impact the import because they are not writeable
                     (
                         (field.compute and not field.related)
                         and not (field.store or field.inverse)
                     )
-                    # - exclude related fields:
-                    #    - if they are related to an excluded model
-                    #    - or if they are not stored+readonly (= the field is writeable but on the
-                    #         current record only, not the source record), except if required
                     or (
                         field.related
                         and (
@@ -399,11 +385,8 @@ class StudioExportModel(models.Model):
                             or not ((field.store and field.readonly) or field.required)
                         )
                     )
-                    # - exclude one2many fields
                     or (field.type == "one2many")
-                    # - exclude fields created in l10n_* modules
                     or (module and module.startswith("l10n_"))
-                    # - exclude many2x if comodel is not to export
                     or (
                         field.type in ["many2one", "many2many"]
                         and field.comodel_name in RELATED_MODELS_TO_EXCLUDE
@@ -439,7 +422,6 @@ class StudioExportModel(models.Model):
         ]
         preset_models = [
             (model, DEFAULTS_BY_PRESET_MODELS.get(model["model"], {}))
-            # find all existing models from the preset list + custom ones
             for model in self.env["ir.model"].search_read(
                 Domain("transient", "=", False)
                 & Domain("abstract", "=", False)
@@ -454,7 +436,6 @@ class StudioExportModel(models.Model):
         to_create = [
             {**defaults, "model_id": model["id"]}
             for model, defaults in preset_models
-            # filter out models that are already configured or do not have some records to export
             if model["model"] not in curr_models_names
             and (
                 not self.env[model["model"]]._log_access

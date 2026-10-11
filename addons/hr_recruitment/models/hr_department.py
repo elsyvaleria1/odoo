@@ -26,8 +26,6 @@ class HrDepartment(models.Model):
         )
         if not first_stage_by_job:
             return
-        # Ask only about the stages that can count, instead of grouping every
-        # (job, stage) pair in the department and discarding most of the rows.
         counts = self.env["hr.applicant"]._read_group(
             [
                 ("job_id", "in", jobs.ids),

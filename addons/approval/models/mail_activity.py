@@ -65,14 +65,6 @@ class MailActivity(models.Model):
         return result
 
     def _get_answering_approvers(self):
-        """The rows these activities approve when marked done.
-
-        Done by the approver it was asked of, an approval activity approves; anyone else
-        marking it done only dismisses it. The approval follows the done, so the
-        feedback given with it is posted rather than closed over by the decision, and
-        both run in one savepoint, so a decision that cannot be recorded raises and
-        leaves the activity open rather than done with nothing decided.
-        """
         user = self.env.user
         return self.filtered(
             lambda activity: (

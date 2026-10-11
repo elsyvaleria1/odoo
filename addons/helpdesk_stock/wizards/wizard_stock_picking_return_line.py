@@ -11,4 +11,4 @@ class WizardStockPickingReturnLine(models.TransientModel):
         comodel_name="stock.picking",
         related="wizard_id.picking_id",
         export_string_translation=False,
-    )  # used for warnings
+    )

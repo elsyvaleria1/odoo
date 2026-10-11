@@ -164,8 +164,6 @@ class AccountMove(models.Model):
         self.currency_id = new_currency_id
 
         link = self._get_order_line_link_field(order._name)
-        # Onchange links can wrap saved lines in NewId records. Compare their
-        # persistent origins so choosing the same order twice cannot duplicate it.
         linked_line_ids = set(self.invoice_line_ids.mapped(link)._origin.ids)
         order_lines = order.line_ids.filtered(
             lambda line: line._origin.id not in linked_line_ids,

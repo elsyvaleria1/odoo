@@ -105,8 +105,6 @@ class BpostRequest:
         recipient_required_fields = ["city", "country_id"]
         if recipient.country_id.code not in COUNTRIES_WITHOUT_POSTCODES:
             recipient_required_fields.append("zip")
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not recipient.street
             and not recipient.street2
@@ -169,7 +167,7 @@ class BpostRequest:
             street = partner.street or partner.street2
         match = re.match(r"^(.*?)(\S*\d+\S*)?\s*$", street, re.DOTALL)
         street = match.group(1)
-        street_number = match.group(2)  # None if no number found
+        street_number = match.group(2)
         if street_number and len(street_number) > 8:
             street = match.group(0)
             street_number = None
@@ -182,15 +180,9 @@ class BpostRequest:
         )
 
     def _get_rate(self, carrier, weight, country):
-        """@param carrier: a record of the delivery.carrier
-        @param weight: in grams
-        @param country: a record of the destination res.country"""
 
-        # Surprisingly, bpost does not require to send other data while asking for prices;
-        # they simply return a price grid for all activated products for this account.
         code, response = self._send_request("rate", None, carrier)
         if code == 401 and response:
-            # If the authentication fails, the server returns plain HTML instead of XML
             error_page = html.fromstring(response)
             error_message = error_page.body.text_content()
             raise UserError(
@@ -201,7 +193,6 @@ class BpostRequest:
             )
         xml_response = fromstring(response)
 
-        # Find price by product and country
         price = 0.0
         ns = {"ns1": "http://schema.post.be/shm/deepintegration/v3/"}
         bpost_delivery_type = (
@@ -232,7 +223,6 @@ class BpostRequest:
                 )
             )
 
-        # If delivery on saturday is enabled, there are additional fees
         additional_fees = 0.0
         if carrier.bpost_saturday is True:
             for option_price in xml_response.findall(
@@ -275,26 +265,19 @@ class BpostRequest:
             sender = picking.picking_type_id.warehouse_id.partner_id
             boxes = self._compute_boxes(picking, carrier)
 
-        ###### need to change the get_rate !!!!!!!!!!
         price = 0.0
         for box in boxes:
             price += self._get_rate(
                 carrier, int(box["weight"]), picking.partner_id.country_id
             )
 
-        # Announce shipment to bpost
         reference_id = str(picking.name.replace("/", ""))[:50]
         ss, sn = self._parse_address(sender)
         rs, rn = self._parse_address(receiver)
 
-        # bpsot only allow a zip with a size of 8 characters. In some country
-        # (e.g. brazil) the postalCode could be longer than 8. In this case we
-        # set the zip in the locality.
         receiver_postal_code = receiver.zip
         receiver_locality = receiver.city
 
-        # Some country do not use zip code (Saudi Arabia, Congo, ...). Bpost
-        # always require at least a zip or a PO box.
         if not receiver_postal_code:
             receiver_postal_code = "/"
         elif len(receiver_postal_code) > 8:
@@ -324,12 +307,10 @@ class BpostRequest:
                 "postalCode": receiver_postal_code,
             },
             "is_domestic": carrier.bpost_delivery_nature == "Domestic",
-            # domestic
             "product": "bpack Easy Retour"
             if is_return_label
             else carrier.bpost_domestic_deliver_type,
             "saturday": carrier.bpost_saturday,
-            # international
             "international_product": carrier.bpost_international_deliver_type,
             "shipmentType": carrier.bpost_shipment_type,
             "parcelReturnInstructions": carrier.bpost_parcel_return_instructions,
@@ -349,7 +330,6 @@ class BpostRequest:
             except ParseError:
                 raise UserError(response) from None
 
-        # Grab printable label and tracking code
         code, response2 = self._send_request(
             "label",
             None,
@@ -391,7 +371,6 @@ class BpostRequest:
         barcodes = labels.findall("ns1:barcode", ns)
         src_pdf = labels.find("ns1:bytes", ns).text
 
-        # return barcodes ends with '050'
         main_indeces = [
             index
             for index, barcode in enumerate(barcodes)
@@ -486,13 +465,6 @@ class BpostRequest:
         return response.status_code, response.text
 
     def _compute_boxes(self, picking, carrier):
-        """Group the move lines in the picking to different boxes.
-
-        Lines with the same result_package_id belong to the same box,
-        and lines without result_package_id are assigned to one box.
-        This method returns a list of summary of each box which will be
-        used in creating the request in making order in bpost.
-        """
         boxes = []
         move_lines_by_package = picking.move_line_ids.grouped("result_package_id")
         for package in picking.move_line_ids.result_package_id:

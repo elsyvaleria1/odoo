@@ -54,9 +54,6 @@ class TestSyncFailures(TestSyncGoogle):
         self.push_google()
 
     def test_a_refused_insert_is_noted_once_and_not_sent_again(self):
-        """Google refused an insert with a 403: the event was noted as not
-        synchronized, and every run sent it again and noted it again, because
-        a record with no Google id was always a candidate."""
         sent = []
 
         def insert(service, values, connection=None, timeout=None, need_video_call=1):
@@ -77,9 +74,6 @@ class TestSyncFailures(TestSyncGoogle):
         self.assertIn("forbidden for this calendar", notes.body)
 
     def test_an_insert_whose_answer_was_lost_is_not_inserted_twice(self):
-        """Google inserted the event but its answer never came back: the next
-        run inserted it again under a new id. The retry sends the same id, which
-        Google refuses as existing, and the event takes it."""
         sent = []
 
         def insert(service, values, connection=None, timeout=None, need_video_call=1):

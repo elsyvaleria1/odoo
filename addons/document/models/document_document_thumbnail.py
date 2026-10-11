@@ -23,11 +23,7 @@ _debug = DebugLog(__name__)
 THUMBNAIL_SIZE = (200, 140)
 JOB_CHANNEL = "document_thumbnail"
 PRECOMMIT_KEY = "document.thumbnails_awaited"
-# an upload's images are rendered before it commits, as they always were; past
-# this many in one transaction (an import, an upgrade) they queue with the PDFs
 INLINE_IMAGES = 20
-# the renderer loads the whole file: past this the browser, which streams the
-# first page out of it, stays the renderer
 MAX_PDF_BYTES = 64 * 1024 * 1024
 SWEEP_BATCH = 500
 SERVER_KINDS = ("image", "pdf")
@@ -61,10 +57,6 @@ class DocumentsDocument(models.Model):
     )
 
     def _get_thumbnail_kind(self) -> str | bool:
-        # who renders this document's thumbnail: the server, in process
-        # ("image") or in its sandboxed renderer ("pdf"); the browser
-        # ("browser"); nobody, it is written by whoever has one ("authored");
-        # or there is none to show (False)
         self.check_singleton()
         if self.type != "binary" or not self.attachment_id:
             return False
@@ -79,9 +71,6 @@ class DocumentsDocument(models.Model):
         return "image"
 
     def _get_thumbnail_content_key(self) -> str | bool:
-        # what names the content a thumbnail shows: its checksum, or for a blob
-        # a storage provider holds, of which this database keeps no checksum,
-        # its address, which a new version never reuses
         self.check_singleton()
         attachment = self.attachment_id
         if attachment.checksum:
@@ -91,7 +80,6 @@ class DocumentsDocument(models.Model):
         return False
 
     def _get_thumbnail_source(self) -> bytes:
-        # the bytes a server-rendered thumbnail is drawn from
         self.check_singleton()
         return self.attachment_id._get_content() or b""
 
@@ -113,9 +101,6 @@ class DocumentsDocument(models.Model):
             document.thumbnail_source_checksum = (
                 document._get_thumbnail_content_key() if rendered else False
             )
-        # whatever changed the content (an upload, a new version, the
-        # attachment written directly), its thumbnail is asked for here, once
-        # per transaction, before it commits
         awaited = {
             document.id
             for document in self
@@ -163,8 +148,6 @@ class DocumentsDocument(models.Model):
         for document in self:
             source = document.shortcut_document_id or document
             row = rows.get(document._origin.id)
-            # what a preview's URL is cached under: the rendering it serves, or
-            # the content a textual preview reads
             version = (
                 f"{row.id}:{row.write_date}"
                 if row
@@ -192,9 +175,6 @@ class DocumentsDocument(models.Model):
         )
 
     def _get_thumbnail_rows(self) -> dict[int, DocumentThumbnail]:
-        # each document's thumbnail: its own when it has one for its content,
-        # else the server's rendering of that content; a shortcut shows its
-        # target's
         sources = {
             document._origin.id: (document.shortcut_document_id or document)._origin
             for document in self
@@ -220,7 +200,6 @@ class DocumentsDocument(models.Model):
         for document_id, source in sources.items():
             row = own.get(source.id)
             if row and row.checksum != source._get_thumbnail_content_key():
-                # rendered from a content the document no longer holds
                 row = row if source._get_thumbnail_kind() == "authored" else None
             if row := row or shared.get(source.thumbnail_source_checksum):
                 rows[document_id] = row
@@ -229,8 +208,6 @@ class DocumentsDocument(models.Model):
     def _store_own_thumbnail(
         self, image: bytes | typing.Literal[False], state: str
     ) -> None:
-        # the one shape a thumbnail written for a document takes, whoever wrote
-        # it: an author, or a browser that rendered the content
         self.check_singleton()
         store = self._thumbnail_store()
         row = store.search([("document_id", "=", self.id)])
@@ -252,13 +229,10 @@ class DocumentsDocument(models.Model):
     @api.model
     def _render_awaited_thumbnails(self) -> None:
         ids = self.env.cr.precommit.data.pop(PRECOMMIT_KEY, set())
-        # rendering is the system's, not the uploader's: a public visitor's
-        # upload is rendered all the same, and the rows are nobody's
         system = self.with_user(SUPERUSER_ID)
         system.browse(sorted(ids)).exists()._schedule_thumbnails(inline=INLINE_IMAGES)
 
     def _schedule_thumbnails(self, inline: int = 0) -> None:
-        # one rendering per content, however many documents hold it
         rows = self._get_thumbnail_rows()
         by_checksum = {}
         for document in self:
@@ -267,8 +241,6 @@ class DocumentsDocument(models.Model):
         rendered = queued = 0
         for checksum, document in by_checksum.items():
             kind = document._get_thumbnail_kind()
-            # a blob a storage provider holds is fetched over the network,
-            # never before an upload commits
             local = document.attachment_id.type != "cloud_storage"
             if kind == "image" and local and rendered < inline:
                 document._render_thumbnail()
@@ -287,8 +259,6 @@ class DocumentsDocument(models.Model):
 
     @api.job(channel=JOB_CHANNEL, max_retries=2)
     def _job_render_thumbnails(self) -> None:
-        # runs as the system, which reads every document and its bytes; a
-        # content rendered since it was queued is not rendered again
         for document in self.exists():
             if (
                 document.thumbnail_source_checksum
@@ -304,9 +274,6 @@ class DocumentsDocument(models.Model):
             try:
                 content = self._get_thumbnail_source()
             except UserError, OSError:
-                # the bytes are out of reach (a provider unconfigured, refusing
-                # or down), which says nothing about them: no row, and the
-                # sweep asks again
                 _logger.warning(
                     "Documents: the content of %r is unreachable",
                     self.name,
@@ -316,16 +283,12 @@ class DocumentsDocument(models.Model):
                 return
             if kind == "pdf":
                 width, height = THUMBNAIL_SIZE
-                # twice the thumbnail's size, then downscaled: sharper than
-                # rendering at it
                 rendering = pdf_raster.render_first_page(content, 2 * width, 2 * height)
                 span.set(outcome=rendering.outcome)
                 if rendering.outcome in (
                     pdf_raster.Outcome.UNAVAILABLE,
                     pdf_raster.Outcome.TIMED_OUT,
                 ):
-                    # nothing learnt about the file: no row, and the sweep
-                    # asks again
                     return
                 if rendering.pages is not None:
                     self._note_page_count(checksum, rendering.pages)
@@ -336,10 +299,6 @@ class DocumentsDocument(models.Model):
         self._store_rendered_thumbnail(checksum, image)
 
     def _note_page_count(self, checksum: str, pages: int) -> None:
-        # a PDF a storage provider holds is not downloaded to count its pages
-        # when it is filed (_get_is_multipage); the render downloaded it, and
-        # tells. Written past the ORM, as the source key is: the documents'
-        # write dates stay those of what was done to them
         self.env.cr.execute(
             SQL(
                 """
@@ -373,16 +332,11 @@ class DocumentsDocument(models.Model):
             with self.env.cr.savepoint():
                 self._thumbnail_store().create(vals)
         except errors.UniqueViolation:
-            # the same content rendered by another transaction first
             _debug.logic("thumbnail_render_raced", checksum=checksum)
         self.invalidate_model(["thumbnail", "thumbnail_status", "thumbnail_unique"])
 
     @api.model
     def _rekey_thumbnail_sources(self) -> None:
-        # every file's source checksum, written past the ORM: a recompute
-        # would stamp each document with today's write_date, and nothing
-        # about them changed. What no stored thumbnail covers then queues;
-        # nothing renders here
         documents = self.with_context(active_test=False).search(
             [("type", "=", "binary"), ("shortcut_document_id", "=", False)]
         )
@@ -405,8 +359,6 @@ class DocumentsDocument(models.Model):
             )
         )
         written = self.env.cr.rowcount
-        # a document's own thumbnail stored before its content had a key (a
-        # blob a provider holds has no checksum) speaks for the content it holds
         unkeyed = self._thumbnail_store().search(
             [("document_id", "in", documents.ids), ("checksum", "=", False)]
         )
@@ -422,8 +374,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _cron_render_awaited_thumbnails(self) -> None:
-        # what the queue lost: a job past its retries, a renderer installed
-        # after the upload, a document filed before thumbnails were rendered
         self.env.cr.execute(
             SQL(
                 """
@@ -455,24 +405,9 @@ class DocumentsDocument(models.Model):
 
 
 def _fit(content: bytes, crop: str) -> bytes | None:
-    # Any decoding failure is an ERROR THUMBNAIL, never an exception: this runs
-    # before the upload that carried the file commits, and whatever escapes
-    # aborts it. odoo.libs.image turns Pillow's decode failures and its
-    # DecompressionBombError into ImageError, but an encoder or a format plugin
-    # can still raise its own type, and the bomb stays reachable on purpose --
-    # a uniform 16000x16000 PNG is 250 KB on the wire and 256 Mpx once decoded,
-    # so no upload size limit bounds it, and `/documents/upload/<token>`
-    # accepts it from an unauthenticated visitor holding an edit link.
     if not content:
         return None
     try:
-        # Bound the DECODE, not just the download. Pillow only refuses above
-        # twice its own MAX_IMAGE_PIXELS; between one and two times it warns
-        # and decodes anyway, so a 410 KB, 12000x12000 RGB PNG allocated
-        # ~550 MB and SUCCEEDED. `verify_resolution` reads the header and
-        # refuses past `IMAGE_MAX_RESOLUTION` (50 Mpx) before any pixel is
-        # decoded; past it the file is still stored and served, only its
-        # preview is skipped.
         return (
             image_process(
                 content, size=THUMBNAIL_SIZE, crop=crop, verify_resolution=True

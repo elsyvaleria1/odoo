@@ -14,9 +14,6 @@ class AccountPaymentCommon(PaymentCommon, AccountTestInvoicingCommon):
         )
 
         cls.account = cls.outbound_payment_channel.payment_account_id
-        # A raw miscellaneous journal entry, NOT a real invoice (move_type="entry",
-        # no partner payment terms, never posted) - only suitable for tests that need
-        # any account.move id/token to plumb through, not an actual invoice-payment flow.
         cls.misc_entry = cls.env["account.move"].create(
             {
                 "move_type": "entry",

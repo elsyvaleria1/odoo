@@ -70,8 +70,6 @@ class TestEventRegisterUTM(HttpCase, TestEventOnlineCommon):
 
 class TestEventListFilters(HttpCase, TestEventOnlineCommon):
     def test_malformed_type_and_country_query_params(self):
-        """A malformed 'type'/'country' query param on the event list must
-        not crash the controller with an unhandled ValueError."""
         for param in ("type", "country"):
             resp = self.url_open(f"/event?{param}=abc")
             self.assertEqual(
@@ -81,8 +79,6 @@ class TestEventListFilters(HttpCase, TestEventOnlineCommon):
             )
 
     def test_event_page_exact_slug_match(self):
-        """A page lookup must match the view key exactly, not via SQL ilike
-        wildcards ('%'/'_') smuggled through the requested slug."""
         self.event_0.write({"website_menu": True, "is_published": True})
         page_view = self.event_0.introduction_menu_ids.view_id.copy(
             {"key": "website_event.testXsecret"}
@@ -104,9 +100,6 @@ class TestEventListFilters(HttpCase, TestEventOnlineCommon):
         )
 
     def test_event_tags_page_non_slug_tag(self):
-        """A single, non-comma tag on /event/tags/<slug> stays a GET (no
-        redirect) and must not crash the search when the tag doesn't parse
-        as a slug (e.g. no trailing '-<id>')."""
         resp = self.url_open("/event/tags/abc")
         self.assertEqual(
             resp.status_code,
@@ -154,10 +147,6 @@ class TestUi(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
         self.assertEqual(event.website_meta_title, False)
 
     def test_s_events_snippet_real_render(self):
-        """The s_events dynamic snippet must render real event data through
-        the actual /website/snippet/filters controller - not just wire up
-        correctly against a hand-written mock, as the hoot unit test for
-        this snippet does."""
         event = self.env["event.event"].create(
             {
                 "name": "Snippet Test Event",

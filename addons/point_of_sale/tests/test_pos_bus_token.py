@@ -50,8 +50,6 @@ class TestPosBusToken(CommonPosTest):
                 self.assertTrue(resolve_capability(self.env(user=user), display))
 
     def test_a_till_of_a_cashiers_other_company_is_theirs_and_no_one_elses(self):
-        # a websocket carries no company selection: every company of the
-        # cashier is allowed, their default one first
         second = self.env["res.company"].sudo().create({"name": "Second shop"})
         till = self.pos_config_usd._pos_bus_channel("till")
         both = new_test_user(

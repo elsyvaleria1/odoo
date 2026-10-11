@@ -14,7 +14,6 @@ class SocialLivePost(models.Model):
         string="Reached Visitors",
     )
 
-    # UI fields
     push_notification_title = fields.Char(related="post_id.push_notification_title")
     push_notification_target_url = fields.Char(
         related="post_id.push_notification_target_url"
@@ -22,8 +21,6 @@ class SocialLivePost(models.Model):
     push_notification_image = fields.Binary(related="post_id.push_notification_image")
 
     def _post(self):
-        """The _post method of push notifications, unlike other social.media, doesn't post messages directly
-        Instead, we keep them 'ready' and they are gathered by a cron job (see 'social.post#_cron_publish_scheduled')."""
 
         push_notifications_live_posts = self._filtered_by_media_types(
             ["push_notifications"]
@@ -44,13 +41,11 @@ class SocialLivePost(models.Model):
                 else "/mail/static/src/img/odoobot_transparent.png"
             )
 
-            # TODO awa: force push_token domain here in case user manually removed it in form view?
             visitor_domain = Domain(ast.literal_eval(live_post.post_id.visitor_domain))
             if account.website_id:
                 if account.website_id.firebase_enable_push_notifications:
                     visitor_domain &= Domain("website_id", "=", account.website_id.id)
                 else:
-                    # If the website doesn't have push notifications enabled, we don't send any push notifications
                     live_post.write({"state": "posted"})
                     continue
 
@@ -66,7 +61,6 @@ class SocialLivePost(models.Model):
             if not post.use_visitor_timezone or not post.scheduled_date:
                 target_visitors = self.env["website.visitor"].search(visitor_domain)
             else:
-                # We need to filter the target_visitors based on their timezone
                 post_date = post.scheduled_date
                 post_user_datetime = (
                     post_date.replace(tzinfo=UTC)
@@ -99,17 +93,6 @@ class SocialLivePost(models.Model):
                 target_visitors,
             )
 
-            # TODO awa:
-            # In theory, we should clean registrations from database for which we receive a 'registration-token-not-registered' error.
-            # However, while running tests, I've seen that this error appears a lot more than it should.
-            # When looking into it, I've seen this topic: https://github.com/firebase/firebase-admin-node/issues/533
-            # It mentions how this error is kind of like a 'default' and could mean many things (firebase having issues contacting a service, ...)
-            # As long as we can't be sure that the token is actually expired, we can't risk to delete it.
-            # 2 possible solutions:
-            # - wait for them to break the error down into more specific codes (see github thread)
-            # - implement a mechanism where we remove the registration after having received X errors consecutively
-            # In the mean time, please DON'T UNCOMMENT this
-            # self._clean_unregistered_tokens(result)
 
             if post.use_visitor_timezone:
                 values = {
@@ -118,7 +101,6 @@ class SocialLivePost(models.Model):
                         for target_visitor in target_visitors
                     ]
                 }
-                # If all visitors have been processed
                 if len(pending_visitors) == len(target_visitors):
                     values["state"] = "posted"
 
@@ -126,13 +108,7 @@ class SocialLivePost(models.Model):
             else:
                 live_post.write({"state": "posted"})
 
-    # TODO AWA : check what is result object and use token directly instead of id
-    # as token are now stored on website_visitor
     def _clean_unregistered_tokens(self, result) -> None:
-        """This will clean the tokens for which we receive a 'registration-token-not-registered' error
-        from firebase.
-        This method assumes the 'responses' from the batches are ordered the same way as matching registrations.
-        (In all test cases so far, they were)"""
 
         matched_registrations = result[0]
         batch_results = result[1]

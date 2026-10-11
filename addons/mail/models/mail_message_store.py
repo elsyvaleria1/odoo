@@ -155,8 +155,6 @@ class MailMessage(models.Model):
 
                 def needaction_done(message: MailMessage) -> bool:
                     nonlocal done_ids
-                    # one notification per partner and message: an unread one
-                    # rules out a read one, with no lookup
                     if message.needaction:
                         return False
                     if done_ids is None:
@@ -188,9 +186,6 @@ class MailMessage(models.Model):
         if msg_vals:
             self.check_singleton()
             return {self.id: msg_vals.get("scheduled_date", False)}
-        # read through the one2many so a message reached alone (a reply's
-        # parent, a sub-channel's origin) fetches its schedule with its
-        # prefetch siblings in one statement
         return {
             message.id: message.schedule_ids[-1:].scheduled_datetime
             for message in self.sudo()

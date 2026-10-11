@@ -5,7 +5,6 @@ class AccountPayment(models.Model):
     _inherit = "account.payment"
 
     def action_post(self):
-        # EXTEND account, reconcile stripe moves if available
         res = super().action_post()
 
         stripe_transactions = {

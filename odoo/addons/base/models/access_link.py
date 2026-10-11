@@ -46,7 +46,6 @@ LINK_ACTIONS = [
     ("act", "Act"),
 ]
 
-# decision B1: how long a link anyone can use lives, by what it was issued for
 DEFAULT_LIFETIME = {
     "share": timedelta(days=30),
     "notification": timedelta(days=365),
@@ -62,19 +61,10 @@ TOKEN_SCOPE = tools.register_signed_scope(
     lifetime="the link's own date_to: the token is stored hashed and dies with "
     "the link",
 )
-# the named elevations the link machinery runs under, never a bare sudo():
-# issuing, extending and revoking (this one) write what nobody writes by hand,
-# and resolving (base.privilege_resolve_links) reads the one link a token's
-# hash names
 MANAGE = "base.privilege_manage_links"
-# a legacy token below this carries too little to be a capability (a typed
-# token, the P0 D14 heuristic); it is never migrated
 MIN_TOKEN_LENGTH = 16
 MAX_TOKEN_LENGTH = 128
 
-# the fields only the link machinery writes: what a link opens, for whom and
-# at which role; a sharer who could write them would turn a link to view into
-# one to edit, or speak through it as someone else
 SERVER_FIELDS = frozenset(
     {
         "res_model",
@@ -284,8 +274,6 @@ class AccessLink(models.Model):
                 for link in links:
                     link.record_name = f"{model_name},{link.res_id}"
                 continue
-            # the sharer and the administrators read the records they shared;
-            # a record they cannot read shows as its model and id
             records = self.env[model_name].browse([link.res_id for link in links])
             names = {
                 record.id: record.display_name
@@ -326,9 +314,6 @@ class AccessLink(models.Model):
             Domain("date_to", "=", False) | Domain("date_to", ">", now)
         )
 
-    # ------------------------------------------------------------------
-    # Tokens
-    # ------------------------------------------------------------------
 
     @api.model
     def _derive_token(self, nonce: str) -> str:
@@ -336,13 +321,10 @@ class AccessLink(models.Model):
         return base64.urlsafe_b64encode(bytes.fromhex(digest)[:24]).decode()
 
     def _token(self) -> str | None:
-        """The link's token, when the server can show it again (A1)."""
         self.check_singleton()
         return self._tokens().get(self.id)
 
     def _tokens(self) -> dict[int, str]:
-        """{link id: token} for the links whose token the server can show
-        again, in one query."""
         if not self.ids:
             return {}
         self.env.cr.execute(
@@ -355,15 +337,10 @@ class AccessLink(models.Model):
         tokens = {}
         for link_id, nonce, stored_hash in self.env.cr.fetchall():
             token = self._derive_token(nonce)
-            # after the database secret changed, a URL sent out still works,
-            # but this server can no longer rebuild it
             if tools.consteq(hash_token(token), stored_hash):
                 tokens[link_id] = token
         return tokens
 
-    # ------------------------------------------------------------------
-    # Issue
-    # ------------------------------------------------------------------
 
     @api.model
     def _find_reusable(
@@ -378,14 +355,9 @@ class AccessLink(models.Model):
         cause_record: models.BaseModel | None = None,
         date_to: datetime | None = None,
     ) -> tuple[Self, str | None]:
-        """The live link to ``record`` that ``_issue`` would hand out again for
-        the same arguments, and its token; nothing is issued. ``(empty, None)``
-        when there is none, or when the server can no longer show its token."""
         record.check_singleton()
         self._check_may_issue(record, role)
         partner = partner or self.env["res.partner"]
-        # a link is reused only when it is the one asked for: an expiry named
-        # by the caller, and the very people a link for some people names
         people = set((audience_partners or partner).ids)
         found = (
             self.with_privilege(
@@ -443,9 +415,6 @@ class AccessLink(models.Model):
         cause_record: models.BaseModel | None = None,
         waive_expiry: bool = False,
     ) -> tuple[Self, str]:
-        """A live link to ``record`` and its token, reusing the one already
-        issued for the same person, role, audience and cause (and the same
-        cause record, when one is named)."""
         reusable, token = self._find_reusable(
             record,
             partner=partner,
@@ -504,10 +473,6 @@ class AccessLink(models.Model):
         cause: str = "notification",
         date_to: Callable[[models.BaseModel], datetime | None] | None = None,
     ) -> dict[int, str]:
-        """One link anyone can use per record, issued to the partner the record
-        names in ``partner_field``, {record id: token}: the live ones reused,
-        the others created, in one lookup and one insert whatever the number of
-        records."""
         if not records:
             return {}
         issuer = self._each_issuer(records, role)
@@ -554,9 +519,6 @@ class AccessLink(models.Model):
         cause: str = "notification",
         date_to: Callable[[models.BaseModel], datetime | None] | None = None,
     ) -> dict[int, str]:
-        """_issue_each for records that hold no live link to reuse, because
-        they were just created or their links were just revoked: one insert,
-        and no lookup that can only come back empty."""
         if not records:
             return {}
         return self._each_issuer(records, role)._create_each(
@@ -625,8 +587,6 @@ class AccessLink(models.Model):
         cause: str = "share",
         date_to: datetime | None = None,
     ) -> dict[int, str]:
-        """One link anyone can use per partner to ``record``, {partner id: token},
-        in one lookup and one insert whatever the number of partners."""
         record.check_singleton()
         self._check_may_issue(record, role)
         date_to = date_to or fields.Datetime.now() + DEFAULT_LIFETIME[cause]
@@ -692,8 +652,6 @@ class AccessLink(models.Model):
         return dict(self.env.cr.fetchall())
 
     def _record_company(self, record: models.BaseModel) -> int | bool:
-        # read from the column: the code issuing a link may vouch for a record
-        # its user cannot read (a folder's setting reaching its subtree)
         field = record._fields.get("company_id")
         if not field or not field.store or field.type != "many2one":
             return False
@@ -710,16 +668,10 @@ class AccessLink(models.Model):
 
     @api.model
     def _check_may_issue(self, record: models.BaseModel, role: str) -> None:
-        # a link that never expires is an administrator's: expiry_waived's
-        # write_groups refuses it to anyone else when the link is created; code
-        # running the machinery has checked the record itself
         if self._runs_the_machinery():
             return
         record.check_access("write" if role == "edit" else "read")
 
-    # ------------------------------------------------------------------
-    # Resolve
-    # ------------------------------------------------------------------
 
     @api.model
     def _resolve(
@@ -731,8 +683,6 @@ class AccessLink(models.Model):
         role: str = "view",
         action: str | None = "view",
     ) -> LinkResolution:
-        """The one door a bearer token passes: raises LinkRefused, the same for
-        every reason, or LinkLoginRequired."""
         if (
             not isinstance(token, str)
             or not MIN_TOKEN_LENGTH <= len(token) <= MAX_TOKEN_LENGTH
@@ -761,10 +711,6 @@ class AccessLink(models.Model):
                 raise LinkLoginRequired
             _debug.logic("link.refused", link=link.id, reason="audience")
             raise LinkRefused
-        # decision I1: the bearer reads the record as the server, as portal
-        # handlers did; a privilege is as wide as its rows, and a link opens a
-        # record of any model, so the one name this read has is the link
-        # (request.access_link) and its use row
         record = self.env[link.res_model].sudo().browse(link.res_id).exists()
         if not record:
             _debug.logic("link.refused", link=link.id, reason="record_gone")
@@ -781,12 +727,6 @@ class AccessLink(models.Model):
         access_token: str | None = None,
         role: str = "view",
     ) -> models.BaseModel:
-        """The record ``model``/``res_id`` as the server, when the session may
-        read it or ``access_token`` is a live link to it at ``role`` (decision I1):
-        the entry point of the RPC routes and helpers that open a record by a
-        token, where a route declares ``auth="link"``. Raises MissingError for
-        a record that is gone and AccessError for every refusal, as the portal's
-        check did, so each caller keeps its own answer."""
         record = self.env[model].browse(res_id)
         record_sudo = record.with_user(SUPERUSER_ID).exists()
         if not record_sudo:
@@ -811,7 +751,6 @@ class AccessLink(models.Model):
 
     @api.model
     def _note_presented(self, record: models.BaseModel, token: str) -> None:
-        # the page shows and posts back the token it was opened with
         if not request:
             return
         presented = getattr(request, "presented_link_tokens", None)
@@ -836,10 +775,6 @@ class AccessLink(models.Model):
         return self._record_refusal()
 
     def _record_refusal(self) -> str:
-        """Why the record this link names refuses it now, whatever the link's
-        own state (a setting of the record closing it to links); "" when it
-        does not. Read on every presentation, so a record that closes revokes
-        nothing and a link issued before the record closed is refused too."""
         return ""
 
     def _admits_session(self) -> bool:
@@ -883,21 +818,14 @@ class AccessLink(models.Model):
             ),
         ]
         if self.env.cr.readonly:
-            # a read-only route (a thumbnail, an avatar) serves what a page
-            # opened through the link already counted
             _debug.logic("link.use_not_recorded", link=self.id, reason="readonly")
             return
         for statement in statements:
             self.env.cr.execute(statement)
         self.invalidate_recordset(["use_count", "last_used_at"])
 
-    # ------------------------------------------------------------------
-    # Revoke, extend
-    # ------------------------------------------------------------------
 
     def _check_may_manage(self) -> None:
-        # the sharer and the administrators, as the access rows say; the
-        # writes that follow are the server's
         self.check_access("write")
 
     def action_revoke(self, reason: str | None = None) -> bool:
@@ -934,10 +862,6 @@ class AccessLink(models.Model):
     def _record_links(
         self, records: models.BaseModel, domain: Domain | None = None
     ) -> Self:
-        """The live links of `records`, for whoever may read the records: a
-        page shows the link it can hand out again. A record the caller may not
-        read contributes no link: a computed token field does not leak through
-        a record fetched alongside one the caller may read."""
         if not self._runs_the_machinery():
             records = records._filtered_access("read")
         return self.with_privilege(
@@ -972,8 +896,6 @@ class AccessLink(models.Model):
         vals: ValuesType,
         domain: Domain | None = None,
     ) -> None:
-        """Change the role or the expiry of the live links of `records`, for
-        whoever may write them: the URLs stay the same."""
         if set(vals) - {"role", "date_to"}:
             raise UserError(
                 self.env._("A link's role and expiry change; nothing else.")
@@ -1009,9 +931,6 @@ class AccessLink(models.Model):
             ]
         )
 
-    # ------------------------------------------------------------------
-    # CRUD guards
-    # ------------------------------------------------------------------
 
     def _runs_the_machinery(self) -> bool:
         if self.env.su:
@@ -1048,9 +967,6 @@ class AccessLink(models.Model):
         return result
 
     def _check_lifetime(self, date_to: Any) -> None:
-        # a sharer moves a link's expiry within what its cause allows (thirty
-        # days for a link shared by hand) and never takes it away; only an
-        # administrator goes past, as only one waives expiry
         if self.env.user._is_system():
             return
         date_to = fields.Datetime.to_datetime(date_to)

@@ -40,18 +40,10 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.assertEqual(document.owner_id, self.document_manager)
 
     def test_noop_access_update_queues_no_tracking_work(self):
-        """An update that changes nothing must not wake the tracking cron.
-
-        The queue is drained by `ir_cron_documents_access_tracking`, which
-        `_create_access_tracking` triggers. Triggering it for an update that
-        produced no change wakes it to drain an empty queue, and `_trigger`
-        does not de-duplicate, so every such call leaves its own row behind.
-        """
         Tracking = self.env["document.access.tracking"]
         Trigger = self.env["ir.cron.trigger"]
         folder = self.folder_a
 
-        # settle on a known value, then ask for the value it already has
         folder.action_update_access_rights(access_internal="view")
         self.env.flush_all()
         before = (Tracking.search_count([]), Trigger.search_count([]))
@@ -64,8 +56,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             "a no-op update queued tracking work or woke the cron",
         )
 
-        # ...and a real change still queues both, so the guard above cannot be
-        # satisfied by simply not tracking anything any more.
         folder.action_update_access_rights(access_internal="edit")
         self.env.flush_all()
         self.assertGreater(
@@ -177,7 +167,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
 
         self._assert_raises_check_access_rule(folder_a_as_internal, "write")
         folder_a_as_portal.check_access("read")
-        # a member of a folder reaches what is in it, live
         folder_a_a_as_portal.check_access("read")
         self._assert_raises_check_access_rule(folder_a_as_portal, "write")
         self._assert_raises_check_access_rule(folder_a_a_as_portal, "write")
@@ -212,13 +201,11 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.env["document.access.log"]._log(
             self.folder_a, self.portal_user.partner_id, "view"
         )
-        # having opened the link once is a visit, not a membership
         self._assert_raises_check_access_rule(folder_a_as_portal)
         self._assert_raises_check_access_rule(folder_a_a_as_portal)
         self.folder_a.access_via_link = "edit"
         self._assert_raises_check_access_rule(folder_a_as_portal, "write")
 
-        # a member's role is what an edit link raises
         self.env["document.access"].create(
             {
                 "document_id": self.folder_a.id,
@@ -242,7 +229,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         folder_a1 = self.env["document.document"].create(
             {"name": "Folder A1", "folder_id": self.folder_a.id, "type": "folder"}
         )
-        # nothing is copied: the folder's owner reaches the new folder from it
         self.assertFalse(folder_a1.access_ids)
         self.assertEqual(self._members(folder_a1), {doc_partner: "manage"})
         self.assertEqual(folder_a1.access_internal, "none")
@@ -295,8 +281,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
                 },
             ]
         )
-        # granting nobody at creation keeps out the folder's members; what it
-        # grants to groups, the audience, stays as the new folder's own
         self.assertTrue(folder_a3.is_access_restricted)
         self.assertEqual(
             folder_a3.access_ids.mapped(lambda a: (a.group_id, a.role)),
@@ -406,7 +390,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
                 }
             )
 
-        # editing a document is not managing it: only who manages it grants
         with self.assertRaises(AccessError):
             self.env["document.access"].with_user(self.doc_user).create(
                 {
@@ -502,8 +485,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         )
 
         test_authorized_users(self.internal_user)
-        # a Documents system administrator reaches another person's drive only
-        # while holding break-glass
         self.assertEqual(
             self.folder_a.with_user(self.document_manager).user_permission, "none"
         )
@@ -530,24 +511,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def _settled_caches(self):
-        """Start every pinned block below from ONE known cache state.
-
-        `invalidate_all()` drops the field cache. It does not reset the
-        environment's cached `user`/`companies`, nor the registry LRUs behind
-        `has_group`, `env.ref` and `get_param` -- but a rolled-back savepoint
-        resets all of them. So a block that happened to follow an
-        `assertRaises` started colder than one that did not, and the *same*
-        call measured 9 queries in one place and 15 in another: the pins were
-        reading the history in front of each block rather than the cost of the
-        operation.
-
-        The warm-up runs the operation itself, on a throwaway folder, so the
-        caches involved are whatever `action_update_access_rights` actually
-        touches -- a named list would have to be kept in step with it. The
-        field cache is dropped afterwards, so each pin still measures a cold
-        read against warm registry caches, which is the state a real request
-        reaches this code in.
-        """
         scratch = self.env["document.document"].create(
             {"type": "folder", "name": "cache warm-up"}
         )
@@ -567,9 +530,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
 
         IN_ONE_DAY = fields.Datetime.now() + datetime.timedelta(days=1)
         partners = {portal.id: ("view", False), portal_2.id: ("view", IN_ONE_DAY)}
-        # Every pin in this method is measured from `_settled_caches()`, not
-        # from a bare `invalidate_all()`: see its docstring for why the two are
-        # not the same measurement.
         self._settled_caches()
         with self.assertQueryCount(50):
             self.folder_a.action_update_access_rights(partners=partners)
@@ -577,7 +537,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         folder_a_as_portal_2.check_access("read")
         folder_a_as_internal = self.folder_a.with_user(self.internal_user)
 
-        # a grant on the folder reaches below it live: nothing is copied
         self.assertFalse(self.folder_a_a.access_ids.filtered("partner_id"))
         self.folder_a_a.with_user(portal_user_2).check_access("read")
         portal_2_access = self.folder_a.access_ids.filtered(
@@ -601,7 +560,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.assertEqual(portal_2_access.role, "edit")
         self.folder_a_a.with_user(portal_user_2).check_access("write")
 
-        # the role alone leaves the expiry as it is
         self._settled_caches()
         with self.assertQueryCount(50):
             self.folder_a.action_update_access_rights(
@@ -610,8 +568,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.assertEqual(portal_2_access.date_to, IN_ONE_DAY)
         self.assertEqual(portal_2_access.role, "view")
 
-        # the expiry alone leaves the role as it is, and a partner who is not
-        # a member gains nothing
         self.folder_a.action_update_access_rights(
             partners={
                 portal_2: (None, IN_12_H),
@@ -674,7 +630,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             )
         self._assert_raises_check_access_rule(folder_a_as_portal_2)
 
-        # portal 2 granted on the first level reaches the second too
         self._settled_caches()
         with self.assertQueryCount(50):
             self.folder_a_a.action_update_access_rights(
@@ -683,8 +638,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         folder_a_a_p.with_user(portal_user_2).check_access("read")
         self._assert_raises_check_access_rule(folder_a_as_portal_2)
 
-        # taking an inherited member out of a folder makes it a boundary that
-        # keeps what else reached it (decision K1)
         folder_a_a_p.action_update_access_rights(partners={portal_2.id: (False, None)})
         self.assertTrue(folder_a_a_p.is_access_restricted)
         self._assert_raises_check_access_rule(folder_a_a_p.with_user(portal_user_2))
@@ -697,7 +650,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             },
         )
 
-        # an archived document is reached like any other
         archived = self.env["document.document"].create(
             {"type": "folder", "name": "Archived", "folder_id": self.folder_a_a.id}
         )
@@ -731,8 +683,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         )
 
     def test_action_update_access_rights_no_propagation(self):
-        # the owner holds its folder whatever it is granted: a member here is
-        # someone else
         doc_partner = self.portal_user.partner_id
         self.folder_b.action_update_access_rights(
             access_internal="view",
@@ -792,8 +742,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             ).mapped(lambda a: (a.role, a.date_to)),
             [("edit", IN_ONE_DAY)],
         )
-        # the link is the document's own setting and stays; the audience is a
-        # grant on the folder and reaches its content whatever is asked
         self.assertEqual(
             self.document_gif.mapped(
                 lambda d: (
@@ -1233,27 +1181,14 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.assertEqual(self.document_gif.access_internal, "none")
         self.assertEqual(self.document_txt.access_internal, "none")
         self.assertEqual(self.document_gif.access_via_link, "none")
-        # Propagation reaches the children for BOTH fields of that one call.
-        # This used to assert "view" -- the value `setUpClass` wrote onto this
-        # document directly -- because the walk was seeded only from rows whose
-        # value differed and `folder_b` already held `access_via_link="none"`.
-        # So one field of the call propagated and the other silently did not,
-        # decided by what the folder happened to hold rather than by what was
-        # asked for. `TestAccessPropagation` pins the general case.
         self.assertEqual(self.document_txt.access_via_link, "none")
 
-        # What the rest of this test is about is link access INHERITED from the
-        # parent folder, and it needs this document to carry its own. Put it
-        # back the way `setUpClass` had it -- deliberately and after the
-        # propagation, rather than by surviving it.
         self.document_txt.access_via_link = "view"
         with mute_logger("odoo.addons.document.models.document_document"):
             document_txt_private = self.document_txt.copy()
         self.assertIn(document_txt_private.access_ids.role, {False, "edit"})
         document_txt_private.is_access_via_link_hidden = True
         self.assertEqual(document_txt_private.access_via_link, "view")
-        # what the folder grants would reach them live: as boundaries, the only
-        # way in left is the link
         (self.document_gif | self.document_txt | document_txt_private).write(
             {"is_access_restricted": True}
         )
@@ -1268,7 +1203,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             "document_id": self.folder_b.id,
             "partner_id": self.internal_user.partner_id.id,
         }
-        # a visit to the folder's link is not a way into it any more
         self.folder_b.access_via_link = "view"
         self.env["document.access.log"]._log(
             self.folder_b, self.internal_user.partner_id, "view"
@@ -1495,7 +1429,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         ).action_create_shortcut(location_user_folder_id=str(self.folder_a.id))
         self.assertEqual(shortcut.owner_id, self.internal_user)
         self.document_txt.owner_id = self.document_manager
-        # the previous owner keeps an edit grant, which their shortcut reaches
         self.assertEqual(
             self.document_txt.access_ids.filtered(
                 lambda a: a.partner_id == self.internal_user.partner_id
@@ -1607,8 +1540,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.assertEqual(
             self.document_txt.with_user(self.internal_user).user_permission, "view"
         )
-        # the target is reached through its folder, not through the visit
-        # recorded on it: the owner's shortcut is only as open as that
         self.assertEqual(shortcut.with_user(self.internal_user).user_permission, "view")
         self.assertFalse(
             Doc_as_internal_sudo.search(
@@ -1635,8 +1566,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             }
         )
 
-        # the tree belongs to the Documents manager, who shares it (decision
-        # C1: only who manages a document sets who reaches it)
         root = (
             self.env["document.document"]
             .with_user(self.document_manager)
@@ -1739,7 +1668,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             shortcut_3.with_user(self.internal_user).user_permission, "none"
         )
 
-        # only who manages a document changes its access (decision C1)
         root.sudo().action_update_access_rights(
             partners={self.internal_user.partner_id.id: ("manage", False)}
         )
@@ -1747,7 +1675,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             access_via_link="view"
         )
 
-        # what the propagation wrote, whoever may read it
         self.assertEqual(root.sudo().access_via_link, "view")
         self.assertEqual(file_1.sudo().access_via_link, "view")
         self.assertEqual(file_2.sudo().access_via_link, "none")
@@ -1771,8 +1698,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
                 grantee, False
             )
 
-        # the grant on the root reaches what is below it, live, but for the two
-        # files created narrower than their folder, which are boundaries
         self.assertEqual(get_access(root), "edit")
         self.assertEqual(get_access(file_1), "edit")
         self.assertTrue(file_2.is_access_restricted and file_3.is_access_restricted)
@@ -1845,7 +1770,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         gif_copy, txt_copy = documents.with_user(self.internal_user).copy()
         self.assertEqual((gif_copy | txt_copy).owner_id, self.internal_user)
         self.assertTrue(gif_copy.attachment_id)
-        # a copy keeps the original's own grants, and nothing its folder gave
         internal = self.internal_user.partner_id
         for original, copied in (
             (self.document_gif, gif_copy),
@@ -1923,8 +1847,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         self.folder_b.folder_id = False
         self.assertEqual(self.folder_b.owner_id, self.doc_user)
         self.assertFalse(self.folder_b._is_company_root_folder())
-        # out of folder A it keeps only its own grants: shared with the
-        # employees, a Documents manager reaches it
         with self.assertRaises(AccessError):
             self.folder_b.with_user(self.document_manager).copy()
         self.folder_b.action_update_access_rights(access_internal="view")
@@ -2250,7 +2172,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             set(doc.access_ids.mapped(lambda a: (a.partner_id, a.role))),
             {(self.document_manager.partner_id, "edit")},
         )
-        # the creator's visit is the log's: the grant table holds grants only
         self.assertEqual(
             set(
                 doc.sudo().access_log_ids.mapped(
@@ -2439,8 +2360,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
                 "document.ir_cron_documents_access_tracking"
             ).method_direct_trigger()
 
-        # the grants changed on the folder, and only the folder records it: what
-        # is below it is reached live, nothing was written there
         folder_a_d_message_ids = _get_mail_messages(folder_a_d.ids)
         self.assertEqual(len(folder_a_d_message_ids), 1)
         self.assertTracking(
@@ -2479,7 +2398,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
             "Portal user has gained access as Editor",
             " ".join(html2plaintext(folder_a_message.body).split()),
         )
-        # the link is each document's own setting, and still walks down
         below = sub_folder_ids | sub_folder_ids.children_ids
         message_ids = _get_mail_messages(below.ids).filtered(
             lambda message: message.id not in folder_a_d_message_ids.ids
@@ -2504,8 +2422,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         )
 
         self.document_txt.folder_id = self.folder_a.id
-        # a document's own grants move with it; what its old folder granted
-        # stays behind and what the new one grants reaches it
         self.assertIn(
             (internal, "view"),
             self.document_txt.access_ids.mapped(lambda a: (a.partner_id, a.role)),
@@ -2515,7 +2431,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
         )
 
     def test_members_invitation(self):
-        # website answers the scope from its own setting, "b2b" by default
         self.patch(
             type(self.env["res.users"]), "_get_signup_invitation_scope", lambda _: "b2c"
         )
@@ -2698,7 +2613,6 @@ class TestDocumentsAccess(TransactionCaseDocuments, MockEmail):
 
         none.with_user(self.doc_user).check_access("read")
         member_folder.with_user(self.doc_user).check_access("read")
-        # the new folder's member reaches what moved in, and nothing is copied
         self.assertEqual(self._members(member_folder)[self.doc_user.partner_id], "edit")
         self.assertNotIn(self.doc_user.partner_id, member_folder.access_ids.partner_id)
         self.assertTrue(secret_folder.is_access_restricted)

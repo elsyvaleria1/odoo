@@ -57,15 +57,6 @@ class StockPicking(models.Model):
         return super().button_validate(**validate_kwargs)
 
     def _trip_expiry_decided(self):
-        """Whether an expired lot of this delivery was already judged on loading.
-
-        True for a delivery drawn from the vehicle of a trip on the road, of an
-        operation type whose expired-lot guard refuses an expired lot nobody
-        approved: the customer's door does not ask the expiry question again.
-        Without the guard nothing judged it, so the question stays.
-
-        :rtype: bool
-        """
         self.check_singleton()
         trip = self.batch_id
         picking_type = self.picking_type_id
@@ -85,10 +76,6 @@ class StockPicking(models.Model):
         )
 
     def _take_off_trip_as_correction(self, reason):
-        # On a traced trip the goods of a pending delivery are on the vehicle,
-        # reserved there: taken off the trip as they are, they would neither come
-        # back with the unload nor let the vehicle load again. Not delivered, with
-        # its reason (credit held, an operations instruction), brings them back.
         on_board = self.filtered(
             lambda picking: (
                 picking.batch_id.has_trip_trace
@@ -110,7 +97,6 @@ class StockPicking(models.Model):
         return super()._take_off_trip_as_correction(reason)
 
     def action_trip_view_signature(self) -> dict:
-        """Show who received the delivery and their signature, without printing."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -130,19 +116,11 @@ class StockPicking(models.Model):
         }
 
     def _requires_trip(self):
-        # A partial delivery to review already has its outcome on the road: the
-        # trip returns, and the office settles the quantities before unloading.
         if self.env.context.get("trip_returning") and self.trip_partial_review:
             return False
         return super()._requires_trip()
 
     def _trip_location(self):
-        """Where the vehicle delivers this transfer: its address, or the
-        coordinates of the customer's company when the address has none.
-
-        :return: ``(latitude, longitude)``, or None when nothing locates it
-        :rtype: tuple
-        """
         self.check_singleton()
         for partner in (self.partner_id, self.partner_id.commercial_partner_id):
             if partner.partner_latitude or partner.partner_longitude:
@@ -150,14 +128,6 @@ class StockPicking(models.Model):
         return None
 
     def _trip_goods_weight(self):
-        """What the goods reserved to this delivery weigh, for the trip's balance.
-
-        The goods alone, product weight times quantity, without pallets or
-        packaging: the balance follows goods, not packages. The trip's load,
-        tare included, is stock_fleet's ``trip_shipping_weight``.
-
-        :rtype: float
-        """
         self.check_singleton()
         return self.move_ids.move_line_ids.filtered(
             lambda line: line.state not in ("done", "cancel")
@@ -185,7 +155,6 @@ class StockPicking(models.Model):
         return super().write(vals)
 
     def action_trip_arrived(self) -> None:
-        """Driver button: the vehicle reached this customer."""
         self.check_singleton()
         if not self.batch_id.date_departure:
             raise UserError(
@@ -195,7 +164,6 @@ class StockPicking(models.Model):
         self.batch_id._trip_checkpoint("arrival", picking_id=self.id)
 
     def action_trip_stop_result(self) -> dict:
-        """Driver button: record what the customer took, product by product."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -208,15 +176,12 @@ class StockPicking(models.Model):
         }
 
     def action_deliver(self):
-        """Delivered as loaded; refused when the scans at the stop say otherwise."""
         self.check_singleton()
         if self.trip_scan_ids.filtered(
             lambda s: s.kind == "lot" and s.batch_id == self.batch_id
         ):
             scanned = self._trip_scanned_by_lot()
             on_board = self._trip_on_board_by_lot()
-            # A product without lot is checked only when something counted it
-            # (the slip counts everything); a lot always is.
             if any(
                 scanned.get(key, 0.0) != qty
                 for key, qty in on_board.items()
@@ -255,11 +220,6 @@ class StockPicking(models.Model):
         return res
 
     def _trip_record_outcome(self) -> None:
-        """Log the outcome of deliveries validated on a departed trip.
-
-        Whether through the driver's buttons, the barcode app or the plain
-        Validate, a delivery on the route leaves its checkpoint.
-        """
         for picking in self.filtered(
             lambda p: (
                 p.state == "done"

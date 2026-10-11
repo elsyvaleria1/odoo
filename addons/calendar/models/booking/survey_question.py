@@ -3,8 +3,6 @@ from odoo.exceptions import AccessError, ValidationError
 
 
 def _check_appointment_write_access(env) -> None:
-    # Write rules apply to the old owner; transitions must check the destination.
-    # Call from sudo=False constraints to retain the caller's actual privileges.
     if not env.su and not env.user.has_group("calendar.group_appointment_manager"):
         raise AccessError(
             env._(

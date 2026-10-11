@@ -4,7 +4,6 @@ from odoo import Command, api, fields, models, tools
 class WizardSmsSmsSend(models.TransientModel):
     _inherit = "wizard.sms.sms.send"
 
-    # mass mode with mass sms
     mass_sms_allow_unsubscribe = fields.Boolean(
         string="Include opt-out link",
         default=True,
@@ -16,9 +15,6 @@ class WizardSmsSmsSend(models.TransientModel):
         ondelete="set null",
     )
 
-    # ------------------------------------------------------------
-    # Mass mode specific
-    # ------------------------------------------------------------
 
     def _get_unsubscribe_url(self, mailing_id, trace_code):
         return tools.urls.urljoin(
@@ -54,7 +50,6 @@ class WizardSmsSmsSend(models.TransientModel):
         return trace_values
 
     def _get_optout_record_ids(self, records, recipients_info):
-        """Fetch opt-out records based on mailing."""
         res = super()._get_optout_record_ids(records, recipients_info)
         if self.mailing_id:
             optout_res_ids = self.mailing_id._get_opt_out_list_sms()
@@ -62,7 +57,6 @@ class WizardSmsSmsSend(models.TransientModel):
         return res
 
     def _get_done_record_ids(self, records, recipients_info):
-        """A/B testing could lead to records having been already mailed."""
         res = super()._get_done_record_ids(records, recipients_info)
         if self.mailing_id:
             seen_ids, _seen_list = self.mailing_id._get_seen_list_sms()
@@ -83,7 +77,6 @@ class WizardSmsSmsSend(models.TransientModel):
         return all_bodies
 
     def _prepare_mass_sms_values(self, records):
-        # In mass mailing only, add 'mailing.trace' values directly in the o2m field
         result = super()._prepare_mass_sms_values(records)
         if not self._is_mass_sms():
             return result
@@ -112,7 +105,6 @@ class WizardSmsSmsSend(models.TransientModel):
         return bool(self.composition_mode == "mass" and self.mailing_id)
 
     def _filter_out_and_handle_revoked_sms_values(self, sms_values_all):
-        # Filter out canceled sms of mass mailing and create traces for canceled ones.
         results = super()._filter_out_and_handle_revoked_sms_values(sms_values_all)
         if not self._is_mass_sms():
             return results
@@ -123,7 +115,6 @@ class WizardSmsSmsSend(models.TransientModel):
                 if mail_values.get("state") == "canceled"
                 and mail_values["mailing_trace_ids"]
                 for trace_commands in (mail_values["mailing_trace_ids"],)
-                # Ensure it is a create command
                 if len(trace_commands) == 1
                 and len(trace_commands[0]) == 3
                 and trace_commands[0][0] == 0

@@ -15,10 +15,8 @@ class PaymentProvider(models.Model):
         selection_add=[("sepa_direct_debit", "SEPA Direct Debit")]
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.custom_mode == "sepa_direct_debit").update(
             {
@@ -27,7 +25,6 @@ class PaymentProvider(models.Model):
         )
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return EUR as the only supported currency."""
         supported_currencies = super()._get_supported_currencies()
         if self.custom_mode == "sepa_direct_debit":
             supported_currencies = supported_currencies.filtered(
@@ -35,11 +32,9 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CONSTRAINT METHODS === #
 
     @api.constrains("state", "journal_id")
     def _check_journal_iban_is_valid(self) -> None:
-        """Check that the bank account of the payment journal is a valid IBAN."""
         for provider in self.filtered(
             lambda p: p.custom_mode == "sepa_direct_debit" and p.state == "enabled"
         ):
@@ -50,7 +45,6 @@ class PaymentProvider(models.Model):
 
     @api.constrains("state", "company_id")
     def _check_has_creditor_identifier(self) -> None:
-        """Check that the company has a creditor identifier."""
         for provider in self.filtered(
             lambda p: p.custom_mode == "sepa_direct_debit" and p.state == "enabled"
         ):
@@ -64,7 +58,6 @@ class PaymentProvider(models.Model):
 
     @api.constrains("available_country_ids")
     def _check_country_in_sepa_zone(self) -> None:
-        """Check that all selected countries are in the SEPA zone."""
         sepa_countries = self.env.ref("base.sepa_zone").country_ids
         for provider in self.filtered(lambda p: p.custom_mode == "sepa_direct_debit"):
             non_sepa_countries = provider.available_country_ids - sepa_countries
@@ -76,26 +69,18 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.custom_mode != "sepa_direct_debit":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS === #
 
     @api.model
     def _get_compatible_providers(
         self, *args, is_validation=False, report=None, **kwargs
     ):
-        """Override of `payment` to unlist SDD providers for validation flows.
-
-        Tokens are created automatically once the direct transaction is confirmed, but cannot be
-        created through validation flows.
-        """
         providers = super()._get_compatible_providers(
             *args, is_validation=is_validation, report=report, **kwargs
         )
@@ -115,11 +100,6 @@ class PaymentProvider(models.Model):
         return providers
 
     def _is_tokenization_required(self, **kwargs) -> bool:
-        """Override of payment to hide the "Save my payment details" input in checkout forms.
-
-        :return: Whether the provider is SEPA
-        :rtype: bool
-        """
         res = super()._is_tokenization_required(**kwargs)
         if len(self) != 1 or self.custom_mode != "sepa_direct_debit":
             return res
@@ -127,15 +107,6 @@ class PaymentProvider(models.Model):
         return True
 
     def _sdd_find_or_create_mandate(self, partner_id, iban):
-        """Find or create the SDD mandate verified by the given phone.
-
-        Note: self.check_singleton()
-
-        :param int partner_id: The partner making the transaction, as a `res.partner` id
-        :param str iban: The sanitized IBAN number of the partner's bank account
-        :return: The SDD mandate
-        :rtype: recordset of `sdd.mandate`
-        """
         self.check_singleton()
 
         commercial_partner_id = (
@@ -168,15 +139,6 @@ class PaymentProvider(models.Model):
         return mandate
 
     def _sdd_find_or_create_partner_bank(self, partner_id, iban):
-        """Find or create the partner bank with the given iban.
-
-        Note: self.check_singleton()
-
-        :param int partner_id: The partner making the transaction, as a `res.partner` id
-        :param str iban: The sanitized IBAN number of the partner's bank account
-        :return: The partner bank
-        :rtype: recordset of `res.partner.bank.account`
-        """
         self.check_singleton()
 
         ResPartnerBankAccount = self.env["res.partner.bank.account"]
@@ -200,15 +162,6 @@ class PaymentProvider(models.Model):
         return partner_bank
 
     def _sdd_create_token_for_mandate(self, partner, mandate):
-        """Create a token linked to the mandate with the obfuscated IBAN as name and return it.
-
-        :param res.partner partner: The partner making the transaction.
-        :param sdd.mandate mandate: The mandate to link to the token.
-        :return: The created token.
-        :rtype: payment.token
-        :raise AccessError: If the partner is different than the mandate's partner.
-        """
-        # Since we're in a sudoed env, we need to verify the partner
         if mandate.partner_id != partner.commercial_partner_id:
             raise AccessError(
                 self.env._("The mandate owner and customer do not match.")
@@ -225,10 +178,8 @@ class PaymentProvider(models.Model):
             }
         )
 
-    # === SETUP METHODS === #
 
     def _get_code(self):
-        """Override of `payment` to trick the JS into believing the code is 'sepa_direct_debit'."""
         res = super()._get_code()
         if self.code == "custom" and self.custom_mode == "sepa_direct_debit":
             return self.custom_mode

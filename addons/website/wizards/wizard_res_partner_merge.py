@@ -12,7 +12,6 @@ class WizardResPartnerMerge(models.TransientModel):
 
     @api.model
     def _update_foreign_keys(self, src_partners, dst_partner) -> None:
-        # Visitor analytics are internal merge metadata, scoped to these contacts.
         visitors = dst_partner.sudo().visitor_ids | src_partners.sudo().visitor_ids
         dst_visitor = visitors[:1]
         _debug.lifecycle(

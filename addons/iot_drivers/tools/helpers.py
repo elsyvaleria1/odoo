@@ -65,9 +65,6 @@ class IoTRestart(Thread):
 
 
 def toggleable(function):
-    """Decorate a function to enable or disable it based on the value
-    of the associated configuration parameter.
-    """
     fname = f"<function {function.__module__}.{function.__qualname__}>"
 
     @wraps(function)
@@ -79,11 +76,11 @@ def toggleable(function):
                 )
                 raise Locked(
                     "Longpolling disabled by devtools"
-                )  # raise to make the http request fail
+                )
         elif function.__name__ == "action":
             action = args[1].get(
                 "action", "default"
-            )  # first argument is self (containing Driver instance), second is 'data'
+            )
             disabled_actions = (get_conf("actions", section="devtools") or "").split(
                 ","
             )
@@ -106,10 +103,6 @@ def toggleable(function):
 
 
 def require_db(function):
-    """Decorator to check if the IoT Box is connected to the internet
-    and to a database before executing the function.
-    This decorator injects the ``server_url`` parameter if the function has it.
-    """
 
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -148,13 +141,8 @@ else:
 
 
 def check_image() -> dict | Literal[False]:
-    """Check if the current image of IoT Box is up to date
-
-    :return: dict containing major and minor versions of the latest image available
-    :rtype: dict
-    """
     try:
-        response = requests.get(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        response = requests.get(
             "https://nightly.odoo.com/master/iotbox/SHA1SUMS.txt", timeout=5
         )
         response.raise_for_status()
@@ -173,7 +161,7 @@ def check_image() -> dict | Literal[False]:
                 value_latest = value
             elif name == get_img_name():
                 value_actual = value
-    if value_actual == value_latest:  # pylint: disable=E0601
+    if value_actual == value_latest:
         return False
     version = (
         check_file.get(value_latest, "Error")
@@ -185,14 +173,6 @@ def check_image() -> dict | Literal[False]:
 
 
 def save_conf_server(url, token, db_uuid, enterprise_code, db_name=None) -> None:
-    """
-    Save server configurations in odoo.conf
-    :param url: The URL of the server
-    :param token: The token to authenticate the server
-    :param db_uuid: The database UUID
-    :param enterprise_code: The enterprise code
-    :param db_name: The database name
-    """
     update_conf(
         {
             "remote_server": url,
@@ -206,10 +186,6 @@ def save_conf_server(url, token, db_uuid, enterprise_code, db_name=None) -> None
 
 
 def generate_password():
-    """Resets (pi) user password generating a new random one.
-
-    :return: The new generated password
-    """
     password = secrets.token_urlsafe(16)
     try:
         subprocess.run(
@@ -227,12 +203,9 @@ def get_img_name() -> str:
 
 
 def get_ip():
-    """Get the local IP address of the IoT Box by creating
-    a dummy connection to the gateway or Google DNS.
-    """
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        s.connect((get_gateway() or "8.8.8.8", 1))  # Google DNS
+        s.connect((get_gateway() or "8.8.8.8", 1))
         return s.getsockname()[0]
     except OSError as e:
         _logger.warning("Could not get local IP address: %s", e)
@@ -250,7 +223,6 @@ def get_identifier():
     elif IS_TEST:
         return "test_identifier"
 
-    # On windows, get motherboard's uuid (serial number isn't reliable as it's not always present)
     command = [
         "powershell",
         "-Command",
@@ -259,7 +231,7 @@ def get_identifier():
     p = subprocess.run(command, stdout=subprocess.PIPE, check=False)
     identifier = get_conf(
         "generated_identifier"
-    )  # Fallback identifier if windows does not return mb UUID
+    )
     if p.returncode == 0 and p.stdout.decode().strip():
         return p.stdout.decode().strip()
 
@@ -289,16 +261,10 @@ def get_path_nginx():
 
 @cache
 def get_odoo_server_url():
-    """Get the URL of the linked Odoo database.
-
-    :return: The URL of the linked Odoo database.
-    :rtype: str or None
-    """
     return get_conf("remote_server")
 
 
 def get_token():
-    """:return: The token to authenticate the server"""
     return get_conf("token")
 
 
@@ -326,14 +292,12 @@ def get_version(detailed_version=False):
     if IS_RPI:
         image_version = read_file_first_line("/var/odoo/iotbox_version")
     elif IS_WINDOWS:
-        # updated manually when big changes are made to the windows virtual IoT
         image_version = "23.11"
     elif IS_TEST:
         image_version = "test"
 
     version = IOT_CHAR + image_version
     if detailed_version:
-        # Note: on windows IoT, the `release.version` finish with the build date
         version += f"-{release.version}"
         if IS_RPI:
             version += f"#{get_commit_hash()}"
@@ -342,9 +306,6 @@ def get_version(detailed_version=False):
 
 
 def remove_iot_handlers() -> None:
-    """Delete all drivers, interfaces and libs if any.
-    This is needed to avoid conflicts with the newly downloaded drivers.
-    """
     try:
         iot_handlers = Path(file_path("iot_drivers/iot_handlers"))
         filenames = [
@@ -361,16 +322,9 @@ def remove_iot_handlers() -> None:
 @toggleable
 @require_db
 def download_iot_handlers(auto=True, server_url=None) -> None:
-    """Get the drivers from the configured Odoo server.
-    If drivers did not change on the server, download
-    will be skipped.
-
-    :param auto: If True, the download will depend on the parameter set in the database
-    :param server_url: The URL of the connected Odoo database (provided by decorator).
-    """
     etag = get_conf("iot_handlers_etag")
     try:
-        response = requests.post(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        response = requests.post(
             server_url + "/iot/get_handlers",
             data={"identifier": get_identifier(), "auto": auto},
             timeout=8,
@@ -409,11 +363,6 @@ def compute_iot_handlers_addon_name(handler_kind, handler_file_name) -> str:
 
 
 def load_iot_handlers() -> None:
-    """
-    This method loads local files: 'odoo/addons/iot_drivers/iot_handlers/drivers' and
-    'odoo/addons/iot_drivers/iot_handlers/interfaces'
-    And execute these python drivers and interfaces
-    """
     for directory in ["interfaces", "drivers"]:
         path = file_path(f"iot_drivers/iot_handlers/{directory}")
         filesList = get_handlers_files_to_load(path)
@@ -432,14 +381,6 @@ def load_iot_handlers() -> None:
 
 
 def get_handlers_files_to_load(handler_path) -> list:
-    """
-    Get all handler files that an IoT system should load in a list.
-    - Rpi IoT boxes load file without suffixe and _L
-    - Windows IoT load file without suffixes and _W
-    :param handler_path: The path to the directory containing the files (either drivers or interfaces)
-    :return: files corresponding to the current IoT system
-    :rtype list:
-    """
     if IS_RPI:
         return [x.name for x in Path(handler_path).glob(f"*[!{IOT_WINDOWS_CHAR}].*")]
     elif IS_WINDOWS:
@@ -448,20 +389,11 @@ def get_handlers_files_to_load(handler_path) -> list:
 
 
 def odoo_restart(delay=0) -> None:
-    """
-    Restart Odoo service
-    :param delay: Delay in seconds before restarting the service (Default: 0)
-    """
     IR = IoTRestart(delay)
     IR.start()
 
 
 def path_file(*args):
-    """Return the path to the file from IoT Box root or Windows Odoo
-    server folder
-
-    :return: The path to the file
-    """
     return Path(sys.path[0]).parent.joinpath(*args)
 
 
@@ -481,26 +413,14 @@ def unlink_file(*filenames) -> None:
 
 
 def write_file(filename, text, mode="w") -> None:
-    """This function writes 'text' to 'filename' file
-
-    :param filename: The name of the file to write to
-    :param text: The text to write to the file
-    :param mode: The mode to open the file in (Default: 'w')
-    """
     path = path_file(filename)
     with Path(path).open(mode) as f:
         f.write(text)
 
 
 def download_from_url(download_url, path_to_filename) -> None:
-    """
-    This function downloads from its 'download_url' argument and
-    saves the result in 'path_to_filename' file
-    The 'path_to_filename' needs to be a valid path + file name
-    (Example: 'C:\\Program Files\\Odoo\\downloaded_file.zip')
-    """
     try:
-        request_response = requests.get(download_url, timeout=60)  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        request_response = requests.get(download_url, timeout=60)
         request_response.raise_for_status()
         write_file(path_to_filename, request_response.content, "wb")
         _logger.info("Downloaded %s from %s", path_to_filename, download_url)
@@ -509,13 +429,6 @@ def download_from_url(download_url, path_to_filename) -> None:
 
 
 def unzip_file(path_to_filename, path_to_extract) -> None:
-    """
-    This function unzips 'path_to_filename' argument to
-    the path specified by 'path_to_extract' argument
-    and deletes the originally used .zip file
-    Example: unzip_file('C:\\Program Files\\Odoo\\downloaded_file.zip', 'C:\\Program Files\\Odoo\\new_folder'))
-    Will extract all the contents of 'downloaded_file.zip' to the 'new_folder' location)
-    """
     try:
         path = path_file(path_to_filename)
         with zipfile.ZipFile(path) as zip_file:
@@ -527,11 +440,6 @@ def unzip_file(path_to_filename, path_to_extract) -> None:
 
 
 def update_conf(values, section="iot.box") -> None:
-    """Update odoo.conf with the given key and value.
-
-    :param dict values: key-value pairs to update the config with.
-    :param str section: The section to update the key-value pairs in (Default: iot.box).
-    """
     _logger.debug("Updating odoo.conf with values: %s", values)
     conf = get_conf()
 
@@ -547,22 +455,15 @@ def update_conf(values, section="iot.box") -> None:
 
 
 def get_conf(key=None, section="iot.box"):
-    """Get the value of the given key from odoo.conf, or the full config if no key is provided.
-
-    :param key: The key to get the value of.
-    :param section: The section to get the key from (Default: iot.box).
-    :return: The value of the key provided or None if it doesn't exist, or full conf object if no key is provided.
-    """
     conf = configparser.RawConfigParser()
     conf.read(path_file("odoo.conf"))
 
     return (
         conf.get(section, key, fallback=None) if key else conf
-    )  # Return the key's value or the configparser object
+    )
 
 
 def disconnect_from_server() -> None:
-    """Disconnect the IoT Box from the server"""
     update_conf(
         {
             "remote_server": "",
@@ -580,36 +481,20 @@ def disconnect_from_server() -> None:
 
 
 def save_browser_state(url=None, orientation=None) -> None:
-    """Save the browser state to the file
-
-    :param url: The URL the browser is on (if None, the URL is not saved)
-    :param orientation: The orientation of the screen (if None, the orientation is not saved)
-    """
     to_update = {
         "browser_url": url,
         "screen_orientation": orientation.name.lower() if orientation else None,
     }
-    # Only update the values that are not None
     update_conf({k: v for k, v in to_update.items() if v is not None})
 
 
 def load_browser_state() -> tuple:
-    """Load the browser state from the file
-
-    :return: The URL the browser is on and the orientation of the screen (default to NORMAL)
-    """
     url = get_conf("browser_url")
     orientation = get_conf("screen_orientation") or Orientation.NORMAL.name
     return url, Orientation[orientation.upper()]
 
 
 def url_is_valid(url) -> bool:
-    """Checks whether the provided url is a valid one or not
-
-    :param url: the URL to check
-    :return: True if the URL is valid and False otherwise
-    :rtype: bool
-    """
     try:
         result = urllib3.util.parse_url(url.strip())
         return all(
@@ -624,13 +509,6 @@ def url_is_valid(url) -> bool:
 
 
 def parse_url(url) -> dict:
-    """Parses URL params and returns them as a dictionary starting by the url.
-    Does not allow multiple params with the same name (e.g. <url>?a=1&a=2 will return the same as <url>?a=1)
-
-    :param url: the URL to parse
-    :return: the dictionary containing the URL and params
-    :rtype: dict
-    """
     if not url_is_valid(url):
         raise ValueError("Invalid URL provided.")
 
@@ -646,9 +524,6 @@ def parse_url(url) -> dict:
 
 
 def reset_log_level() -> None:
-    """Reset the log level to the default one if the reset timestamp is reached
-    This timestamp is set by the log controller in `iot_drivers/homepage.py` when the log level is changed
-    """
     log_level_reset_timestamp = get_conf("log_level_reset_timestamp")
     if log_level_reset_timestamp and float(log_level_reset_timestamp) <= time.time():
         _logger.info("Resetting log level to default.")
@@ -669,11 +544,6 @@ def _get_system_uptime() -> int | float:
 
 
 def _get_raspberry_pi_model():
-    """Returns the Raspberry Pi model number (e.g. 4) as an integer
-    Returns 0 if the model can't be determined, or -1 if called on Windows
-
-    :rtype: int
-    """
     if not IS_RPI:
         return -1
     model = Path("/proc/device-tree/model").read_text(encoding="utf-8")
@@ -687,25 +557,17 @@ system_start_time = odoo_start_time - _get_system_uptime()
 
 
 def is_ngrok_enabled() -> bool:
-    """Check if a ngrok tunnel is active on the IoT Box"""
     try:
-        response = requests.get("http://localhost:4040/api/tunnels", timeout=5)  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        response = requests.get("http://localhost:4040/api/tunnels", timeout=5)
         response.raise_for_status()
         response.json()
         return True
     except requests.exceptions.RequestException, ValueError:
-        # if the request fails or the response is not valid JSON,
-        # it means ngrok is not enabled or not running
         _logger.debug("Ngrok isn't running.", exc_info=True)
         return False
 
 
 def toggle_remote_connection(token="") -> bool:
-    """Enable/disable remote connection to the IoT Box using ngrok.
-    If the token is provided, it will set up ngrok with the
-    given authtoken, else it will disable the ngrok service.
-
-    :param str token: The ngrok authtoken to use for the connection"""
     _logger.info(
         "Toggling remote connection with token: %s...",
         token[:5] if token else "<No Token>",
@@ -759,10 +621,6 @@ def check_network(host=None) -> str | None:
 
 
 def get_gateway():
-    """Get the router IP address (default gateway)
-
-    :return: The IP address of the default gateway or None if it can't be determined
-    """
     gws = netifaces.gateways()
     default = gws.get("default", {})
     gw = default.get(netifaces.AF_INET)

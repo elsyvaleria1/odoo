@@ -29,5 +29,4 @@ class ResourceTimeType(models.Model):
 
     @api.model
     def _get_leave_type(self):
-        """The kind an absence has, and the one a schedule subtracts."""
         return self.env.ref("base.time_type_leave", raise_if_not_found=False)

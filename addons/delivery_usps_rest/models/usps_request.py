@@ -176,8 +176,6 @@ class USPSRequest:
         self, recipient, delivery_nature, shipper, order=False, picking=False
     ):
         recipient_required_field = ["city", "zip", "country_id"]
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not recipient.street
             and not recipient.street2

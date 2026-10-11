@@ -54,7 +54,6 @@ class TestFirstContactRace(TransactionCase):
                 def second_message():
                     with self.registry.cursor() as cr:
                         env = self.env(cr=cr)
-                        # its snapshot predates the first message's channel
                         env["discuss.channel"].search_count([])
                         snapshot_taken.set()
                         first_created.wait(10)
@@ -101,8 +100,6 @@ class TestFirstContactRace(TransactionCase):
                     ).unlink()
                     env["mail.inbox"].browse(ids["inbox"]).unlink()
                     env["res.partner"].browse(ids["partner"]).unlink()
-                    # on a database with no alias domain yet, the test's domain
-                    # became the default and adopted every alias that had none
                     env["mail.alias"].search(
                         [("alias_domain_id", "=", ids["domain"])]
                     ).alias_domain_id = False

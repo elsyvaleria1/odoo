@@ -52,8 +52,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             start_date=start_date,
             end_date=end_date,
             employee_type=is_employee_type,
-            # `rowcount` rather than the tuple, so the site needs no local of
-            # its own and `fetchall` is still consumed exactly once
             versions=request.env.cr.rowcount,
         )
         return tuple(row[0] for row in request.env.cr.fetchall())
@@ -105,8 +103,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             versions=len(version_ids),
             total=total_employees_count,
             full_time=result,
-            # neither a count nor a query: whatever the other two do not
-            # explain, so it goes negative if a version is counted twice
             part_time=employees_part_time_count,
             no_calendar=employees_emp_type_not_reported_count,
         )
@@ -168,7 +164,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             female=employees_female_count,
             male=employees_male_count,
             other=employees_other_count,
-            # the residue of the three groups, not a count of its own
             unknown=employees_unknown_count,
             groups=len(employees_count_per_sex),
         )
@@ -237,8 +232,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             below_30=employees_age_below_30_count,
             between_30_and_50=employees_age_between_30_and_50_count,
             above_50=employees_age_above_50_count,
-            # three independent searches subtracted from the total, so an
-            # employee matched by two of them makes this negative
             unknown=employees_age_unknown_count,
             date_30_years_ago=date_30_years_ago,
             date_50_years_ago=date_50_years_ago,
@@ -292,8 +285,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             total=total_employees_count,
             permanent=employees_permanent_contract_count,
             fixed_term=employees_fixed_term_contract_count,
-            # a version whose contract ended BEFORE the period and one with
-            # no contract dates at all land in this same residue
             unknown=employees_unkown_contract_count,
             start_date=start_date,
             end_date=end_date,
@@ -482,7 +473,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             between_1_and_3=tenure_1_3,
             between_3_and_5=tenure_3_5,
             gt5=tenure_gt5,
-            # the residue again: an employee the tenure query never grouped
             not_reported=tenure_not_reported,
         )
 
@@ -512,7 +502,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
         male_versions = versions_by_sex.get("male", request.env["hr.version"])
         female_versions = versions_by_sex.get("female", request.env["hr.version"])
 
-        # Normalize wages to a hourly wage
         def get_wages(versions):
             return [
                 wage
@@ -539,8 +528,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 else "no_comparable_median",
                 male_versions=len(male_versions),
                 female_versions=len(female_versions),
-                # versions whose normalized wage is falsy never reach the
-                # median, so these two are usually smaller than the counts
                 male_wages=len(male_wages),
                 female_wages=len(female_wages),
                 male_median=male_median,
@@ -649,7 +636,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             female_full_time=female_ft_count,
             other_full_time=other_ft_count,
             unknown_full_time=gender_not_reported_ft_count,
-            # every part-time figure is a subtraction from the gender table
             male_part_time=male_pt_count,
             female_part_time=female_pt_count,
             other_part_time=other_pt_count,
@@ -773,8 +759,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 male=m,
                 female=f,
                 other=stats["other"],
-                # a level with no men and a level with no women both report
-                # a ratio of 0.0
                 by="female_over_male" if m > 0 else "no_men_at_this_level",
                 ratio=ratio,
             )
@@ -799,7 +783,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
         ):
             return template_variables
 
-        # Reporting Year
         report_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date, is_employee_type=True
         )
@@ -915,7 +898,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             }
         )
 
-        # Base Year
         base_total_employees_count = 0
         base_year_start_date = 0
         base_year_end_date = 0
@@ -932,8 +914,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             base_total_employees_count = len(base_version_ids)
             template_variables["{{ total_base }}"] = str(base_total_employees_count)
 
-        # Data for Table: Employment Type
-        # Reporting Year
         if report_version_ids and esg_report.report_type == "csrd":
             report_employment_type_result = self._get_employment_type_data(
                 report_version_ids, report_total_employees_count
@@ -964,7 +944,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids and esg_report.report_type == "csrd":
             base_employment_type_result = self._get_employment_type_data(
                 base_version_ids, base_total_employees_count
@@ -996,8 +975,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Gender
-        # Reporting Year
         if report_version_ids:
             report_gender_result = self._get_gender_data(
                 report_version_ids, report_total_employees_count
@@ -1030,7 +1007,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids:
             base_gender_result = self._get_gender_data(
                 base_version_ids, base_total_employees_count
@@ -1062,8 +1038,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Age Group
-        # Reporting Year
         if report_version_ids:
             report_age_group_result = self._get_age_group_data(
                 report_version_ids, report_total_employees_count, esg_report.end_date
@@ -1098,7 +1072,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids:
             base_age_group_result = self._get_age_group_data(
                 base_version_ids, base_total_employees_count, base_year_end_date
@@ -1134,8 +1107,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Contract Type
-        # Reporting Year
         if report_version_ids and esg_report.report_type == "csrd":
             report_contract_type_result = self._get_contract_type_data(
                 report_version_ids,
@@ -1175,7 +1146,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids and esg_report.report_type == "csrd":
             base_contract_type_result = self._get_contract_type_data(
                 base_version_ids,
@@ -1212,8 +1182,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Tenure
-        # Reporting Year
         if report_version_ids and esg_report.report_type == "csrd":
             report_employee_tenure_result = self._get_employee_tenure_data(
                 esg_report.start_date, esg_report.end_date, report_total_employees_count
@@ -1252,7 +1220,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids and esg_report.report_type == "csrd":
             base_employee_tenure_result = self._get_employee_tenure_data(
                 base_year_start_date, base_year_end_date, base_total_employees_count
@@ -1292,8 +1259,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Employee Turnover
-        # Reporting Year
         if report_version_ids:
             report_employee_turnover_result = self._get_employee_turnover_data(
                 esg_report.start_date, esg_report.end_date
@@ -1311,7 +1276,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids:
             base_employee_turnover_result = self._get_employee_turnover_data(
                 base_year_start_date, base_year_end_date
@@ -1330,8 +1294,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: Workforce by Type of Contract
-        # Reporting Year
         if report_version_ids and esg_report.report_type != "csrd":
             report_employment_type_per_gender_result = (
                 self._get_employment_type_per_gender_data(
@@ -1370,7 +1332,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids and esg_report.report_type != "csrd":
             base_employment_type_per_gender_result = (
                 self._get_employment_type_per_gender_data(
@@ -1410,8 +1371,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Remuneration - Gender Pay Gap
-        # Reporting Year
         if report_version_ids and esg_report.report_type != "csrd":
             report_pay_gap_result = self._get_pay_gap_data(report_version_ids)
             template_variables.update(
@@ -1427,7 +1386,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_version_ids and esg_report.report_type != "csrd":
             base_pay_gap_result = self._get_pay_gap_data(base_version_ids)
             template_variables.update(
@@ -1444,8 +1402,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Non-Employees
-        # Reporting Year
         report_non_employees_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date, is_employee_type=False
         )
@@ -1480,7 +1436,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 "{{ non_temp_base }}": "",
             }
         )
-        # Base Year
         base_total_non_employees_count = 0
         base_non_employees_version_ids = False
         if esg_report.base_year:
@@ -1492,8 +1447,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 base_total_non_employees_count
             )
 
-        # Data for Table: Gender (Non-Employees)
-        # Reporting Year
         if report_non_employees_version_ids and esg_report.report_type == "csrd":
             non_employees_report_gender_result = self._get_gender_data(
                 report_non_employees_version_ids, report_total_non_employees_count
@@ -1530,7 +1483,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_non_employees_version_ids and esg_report.report_type == "csrd":
             non_employees_base_gender_result = self._get_gender_data(
                 base_non_employees_version_ids, base_total_non_employees_count
@@ -1564,8 +1516,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Table: B8.5: Non-Employees
-        # Reporting Year
         if report_non_employees_version_ids and esg_report.report_type != "csrd":
             non_employees_report_non_salaried_result = self._get_non_salaried_data(
                 report_non_employees_version_ids
@@ -1589,7 +1539,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                     ),
                 }
             )
-        # Base Year
         if base_non_employees_version_ids and esg_report.report_type != "csrd":
             non_employees_base_non_salaried_result = self._get_non_salaried_data(
                 base_non_employees_version_ids
@@ -1614,7 +1563,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 }
             )
 
-        # Data for Employees + Non-Employees
         report_all_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date
         )
@@ -1628,7 +1576,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             }
         )
 
-        # Data for Table: Diversity Metrics
         if report_all_version_ids and esg_report.report_type == "csrd":
             report_gender_result = self._get_gender_data(
                 report_all_version_ids, report_total_all_count
@@ -1683,7 +1630,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
         ):
             return html_template_variables
 
-        # Reporting Year
         report_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date, is_employee_type=True
         )
@@ -1695,7 +1641,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             }
         )
 
-        # Base Year
         base_total_employees_count = 0
         base_year_start_date = 0
         base_year_end_date = 0
@@ -1712,11 +1657,8 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             )
             base_total_employees_count = len(base_version_ids)
 
-        # Data for Table: Geography/Region
-        # Reporting Year
         if report_version_ids:
             report_country_data = self._get_country_employees_data(report_version_ids)
-            # Base Year
             base_country_data = self._get_country_employees_data(base_version_ids)
             rows = []
             for (
@@ -1818,13 +1760,10 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 employees_number_per_country_table
             )
 
-        # Data for Table: Job Category/Function
-        # Reporting Year
         if report_version_ids and esg_report.report_type == "csrd":
             report_department_data = self._get_department_employees_data(
                 report_version_ids
             )
-            # Base Year
             base_department_data = self._get_department_employees_data(base_version_ids)
             rows = []
             for report_department, report_count in report_department_data.items():
@@ -1922,8 +1861,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 employees_number_per_department_table
             )
 
-        # Data for Non-Employees
-        # Reporting Year
         report_non_employees_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date, is_employee_type=False
         )
@@ -1938,7 +1875,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 "{{ department_non_employees_table }}": "",
             }
         )
-        # Base Year
         base_total_non_employees_count = 0
         base_non_employees_version_ids = False
         if esg_report.base_year:
@@ -1950,7 +1886,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 base_total_non_employees_count
             )
 
-        # Data for Table: Employment Type (Non-Employees)
         if report_non_employees_version_ids and esg_report.report_type == "csrd":
             report_non_employee_type_data = self._get_employee_type_data(
                 report_non_employees_version_ids
@@ -2023,13 +1958,10 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 non_employees_types_table
             )
 
-        # Data for Table: Geography/Region (Non-Employees)
-        # Reporting Year
         if report_non_employees_version_ids and esg_report.report_type == "csrd":
             report_country_data = self._get_country_employees_data(
                 report_non_employees_version_ids
             )
-            # Base Year
             base_country_data = self._get_country_employees_data(
                 base_non_employees_version_ids
             )
@@ -2139,13 +2071,10 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 country_non_employees_table
             )
 
-        # Data for Table: Job Category/Function (Non-Employees)
-        # Reporting Year
         if report_non_employees_version_ids and esg_report.report_type == "csrd":
             report_department_data = self._get_department_employees_data(
                 report_non_employees_version_ids
             )
-            # Base Year
             base_department_data = self._get_department_employees_data(
                 base_non_employees_version_ids
             )
@@ -2247,8 +2176,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 department_non_employees_table
             )
 
-        # Data for Employees + Non-Employees
-        # Reporting Year
         report_all_version_ids = self._get_valid_employee_version_ids(
             esg_report.start_date, esg_report.end_date
         )
@@ -2261,9 +2188,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
             }
         )
 
-        # Data for Tables: Remuneration Metrics
-        # Data for Table: Job Category/Function Pay Gap (Employees + Non-Employees)
-        # Reporting Year
         if report_all_version_ids and esg_report.report_type == "csrd":
             report_department_pay_gap_data = self._get_department_pay_gap_data(
                 report_all_version_ids
@@ -2297,8 +2221,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 department_all_employees_pay_gap_table
             )
 
-        # Data for Table: Contract Type Pay Gap (Employees + Non-Employees)
-        # Reporting Year
         if report_all_version_ids and esg_report.report_type == "csrd":
             report_contract_pay_gap_data = self._get_contract_type_pay_gap_data(
                 report_all_version_ids
@@ -2329,8 +2251,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 "{{ contract_type_all_employees_pay_gap_table }}"
             ] = contract_type_all_employees_pay_gap_table
 
-        # Data for Table: Country Pay Gap (Employees + Non-Employees)
-        # Reporting Year
         if report_all_version_ids and esg_report.report_type == "csrd":
             report_country_pay_gap_data = self._get_country_pay_gap_data(
                 report_all_version_ids
@@ -2361,8 +2281,6 @@ class EsgCsrdHrReportController(EsgCsrdReportController):
                 country_all_employees_pay_gap_table
             )
 
-        # Gender Ratio at Management Level (Employees + Non-Employees)
-        # Reporting Year
         if report_all_version_ids and esg_report.report_type != "csrd":
             report_gender_management_data = self._get_gender_management_data(
                 report_all_version_ids

@@ -41,8 +41,7 @@ class One2many(_RelationalMulti):
     type = "one2many"
     is_one2many = True
 
-    # set by every declaration and read as a field name; None only before setup
-    inverse_name: str = None  # type: ignore[assignment]
+    inverse_name: str = None
     copy: bool = False
     _inverse_is_computed: bool = False
 
@@ -239,15 +238,6 @@ class One2many(_RelationalMulti):
         )
 
     def _assign_current_value(self, recs: BaseModel) -> None:
-        # A command list assigned to a record whose field is under protection
-        # (its compute is running) is the record's value afterwards, whatever
-        # its commands change. Only a command that touches the relation writes
-        # the cache, so a record with nothing cached starts from the value it
-        # reads -- empty while its compute runs -- and holds it: an empty list,
-        # or one of updates only, assigns the field instead of leaving its
-        # compute "failed to assign". The read alone does not cache when the
-        # field depends on more of the context than access
-        # (get_cache_miss_by_compute).
         protected = recs.env.core.get_protected_ids(self)
         if not protected:
             return
@@ -325,7 +315,7 @@ class One2many(_RelationalMulti):
             & Domain(inverse, "in", recs.ids)
             & Domain("id", "not in", lines.ids)
         )
-        orphans = comodel.with_context(active_test=False).search(  # noqa: E8507  see above
+        orphans = comodel.with_context(active_test=False).search(
             domain
         )
         _debug.logic(
@@ -343,8 +333,6 @@ class One2many(_RelationalMulti):
         if not reference_model_field:
             lines[self.inverse_name] = record
             return
-        # a line from another model moves in one write, its model and id
-        # together: an inverse computed from both never sees half of the move
         model_name = record._get_reference_model_name()
         moved = lines.filtered(lambda line: line[reference_model_field] != model_name)
         if stay := lines - moved:
@@ -429,9 +417,6 @@ class One2many(_RelationalMulti):
                 or not line_ids.isdisjoint(delta.unlinked)
                 for line_ids in to_link.values()
             ):
-                # an earlier record of the batch links a line this one
-                # deletes or detaches: the link happens first, as one create
-                # after the other would have it
                 flush()
             if delta.updated:
                 prefetch_ids = recs[self.name]._prefetch_ids

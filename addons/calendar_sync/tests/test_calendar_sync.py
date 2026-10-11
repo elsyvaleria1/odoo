@@ -43,8 +43,6 @@ class TestCalendarSyncEngine(HttpCase):
             scope="calendar",
             paused_param="calendar_sync.test_fake_paused",
         )
-        # for the whole class: what a test creates is flushed after its own
-        # patches are undone
         Account = type(cls.env["calendar.sync.account"])
         cls.startClassPatcher(
             patch.object(

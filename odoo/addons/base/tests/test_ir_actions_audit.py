@@ -1321,8 +1321,6 @@ class TestIrActionsUnlinkFollowsTheStorage(TransactionCase):
             }
         )
         self.env.flush_all()
-        # a database upgraded with such rows keeps them: the constraint that
-        # forbids them is only added once none is left
         self.env.cr.execute(
             "ALTER TABLE ir_act_window DROP CONSTRAINT ir_act_window_type_names_model"
         )
@@ -1800,8 +1798,6 @@ class TestIrActionsAsConcrete(TransactionCase):
             {"name": "audit-conc-lie", "res_model": "res.partner"}
         )
         self.env.flush_all()
-        # a database upgraded with such rows keeps them: the constraint that
-        # forbids them is only added once none is left
         self.env.cr.execute(
             "ALTER TABLE ir_act_window DROP CONSTRAINT ir_act_window_type_names_model"
         )

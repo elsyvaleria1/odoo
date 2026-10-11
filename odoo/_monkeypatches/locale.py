@@ -5,10 +5,10 @@ import time
 
 def patch_module() -> None:
     if not hasattr(locale, "D_FMT"):
-        locale.D_FMT = 1  # type: ignore[misc]
+        locale.D_FMT = 1
 
     if not hasattr(locale, "T_FMT"):
-        locale.T_FMT = 2  # type: ignore[misc]
+        locale.T_FMT = 2
 
     if not hasattr(locale, "nl_langinfo"):
 
@@ -34,4 +34,4 @@ def patch_module() -> None:
                 return format_time
             return None
 
-        locale.nl_langinfo = nl_langinfo  # type: ignore[assignment]
+        locale.nl_langinfo = nl_langinfo

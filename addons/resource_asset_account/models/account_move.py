@@ -8,7 +8,6 @@ _debug = DebugLog(__name__)
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    # FIELDS
     asset_part_flagged_count = fields.Integer(
         string="Flagged Parts",
         compute="_compute_asset_part_flagged_count",
@@ -20,13 +19,11 @@ class AccountMove(models.Model):
         help="Payment is blocked because a part this bill charges was flagged.",
     )
 
-    # COMPUTE METHODS
     @api.depends("line_ids.asset_part_ids.review_state")
     def _compute_asset_part_flagged_count(self) -> None:
         for move in self:
             move.asset_part_flagged_count = len(move._get_flagged_asset_parts())
 
-    # ACTION METHODS
     def action_toggle_block_payment(self):
         if self.payment_state == "blocked" and self._get_flagged_asset_parts():
             raise UserError(
@@ -48,7 +45,6 @@ class AccountMove(models.Model):
         action["context"] = {"create": False, "search_default_flagged": 1}
         return action
 
-    # POSTING METHODS
     def _post(self, soft=True):
         bills = self.filtered(
             lambda move: (
@@ -61,7 +57,6 @@ class AccountMove(models.Model):
         return super()._post(soft=soft)
 
     def _hold_flagged_asset_parts(self) -> None:
-        # sudo: binding a bill line to the parts it charges follows from posting it.
         parts = (
             self.env["resource.part"]
             .sudo()
@@ -123,10 +118,8 @@ class AccountMove(models.Model):
                         )
                     )
 
-    # HELPER METHODS
     def _get_flagged_asset_parts(self):
         self.check_singleton()
-        # sudo: an accountant sees that a bill is held without rights on the asset.
         return self.sudo().line_ids.asset_part_ids.filtered(
             lambda part: part.review_state == "flagged"
         )

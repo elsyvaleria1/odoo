@@ -12,8 +12,6 @@ class AuthUserClient(models.Model):
         self.check_singleton()
         user = self.user_id
         if not user.email or not self.browser:
-            # a script signing in without keeping cookies is a new device at
-            # every login: only a browser is worth an alert
             _debug.logic(
                 "new_device_alert_skipped",
                 reason="no_email_or_browser",
@@ -23,7 +21,6 @@ class AuthUserClient(models.Model):
             )
             return
         if user._get_mfa_type():
-            # the second factor's own alert already covers a new browser
             _debug.logic("new_device_alert_skipped", reason="mfa")
             return
         if not self.with_context(active_test=False).search_count(
@@ -31,7 +28,6 @@ class AuthUserClient(models.Model):
         ):
             _debug.logic("new_device_alert_skipped", reason="first_device")
             return
-        # the owner reads it, in their language, not the signing-in browser's
         owner = self.with_context(lang=user.lang)
         user.with_context(lang=user.lang)._notify_security_setting_update(
             subject=owner.env._("New Sign-in to your Account"),

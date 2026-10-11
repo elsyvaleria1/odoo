@@ -92,7 +92,6 @@ class TestDispatchManagement(TransactionCase):
         return picking
 
     def _delivery_fed_through_transit(self, quantity=3):
-        """Deliver from a shipping transit that an earlier leg already filled."""
         transit = self.env["stock.location"].create(
             {
                 "name": "Shipping transit",
@@ -199,7 +198,6 @@ class TestDispatchManagement(TransactionCase):
         self.assertFalse(picking.move_line_ids)
         self.assertEqual(batch.trip_shipping_weight, 30.0)
         self.assertEqual(batch.used_weight_percentage, 30.0)
-        # Reserved on a pallet: the shipping weight carries the pallet's tare.
         pallet = self.env["stock.package.type"].create(
             {"name": "Pallet", "base_weight": 20.0}
         )

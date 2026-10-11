@@ -45,7 +45,6 @@ class TestEncoding(ImportCase):
             )
 
     def test_autodetect_encoding(self):
-        """Check that import preview can detect & return encoding"""
         self._check_text(
             "Iñtërnâtiônàlizætiøn", [("iso-8859-1", ["iso-8859-1", "iso-8859-2"])]
         )
@@ -60,11 +59,7 @@ class TestEncoding(ImportCase):
             ["euc_kr", "iso2022_kr"],
         )
 
-    # + control in widget
     def test_override_detection(self):
-        """ensure an explicitly specified encoding is not overridden by the
-        auto-detection
-        """
         s = "Iñtërnâtiônàlizætiøn".encode()
         r = self._make_import(s + b"\ntext").parse_preview(
             {
@@ -104,7 +99,6 @@ d|4
         self.assertEqual(r["options"]["separator"], "|")
 
     def test_explicit_fail(self):
-        """Don't protect user against making mistakes"""
         r = self.imp.parse_preview(
             {
                 "separator": ",",
@@ -131,9 +125,6 @@ d|4
         self.assertEqual(r["options"]["separator"], "|")
 
     def test_noguess(self):
-        """If the guesser has no idea what the separator is, it defaults to
-        "," but should not set that value
-        """
         imp = self._make_import("c\na\nb\nc\nd")
         r = imp.parse_preview(
             {

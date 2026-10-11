@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    # reminder for employees
     timesheet_mail_employee_allow = fields.Boolean(
         string="Employee Reminder",
         export_string_translation=False,
@@ -41,7 +40,6 @@ class ResCompany(models.Model):
         readonly=True,
     )
 
-    # reminder for approver
     timesheet_mail_allow = fields.Boolean(
         string="Approver Reminder",
         export_string_translation=False,
@@ -155,9 +153,6 @@ class ResCompany(models.Model):
 
     @api.model
     def _cron_timesheet_reminder_employee(self) -> None:
-        """Send an email reminder to the user having at least one timesheet since the last 3 month. From those ones, we exclude
-        ones having complete their timesheet (meaning timesheeted the same hours amount than their working calendar).
-        """
         today_max = fields.Datetime.to_string(datetime.combine(date.today(), time.max))
         companies = self.search(
             [
@@ -173,8 +168,6 @@ class ResCompany(models.Model):
                     company.timesheet_mail_employee_nextdate,
                 )
 
-            # get the employee that have at least a timesheet for the last 3 months
-            # and that are still active; don't spam retired users
             users = (
                 self.env["account.analytic.line"]
                 .search(
@@ -189,7 +182,6 @@ class ResCompany(models.Model):
                 .filtered("active")
             )
 
-            # calculate the period
             if company.timesheet_mail_employee_interval == "months":
                 date_start = (
                     date.today()
@@ -208,7 +200,6 @@ class ResCompany(models.Model):
             date_start = fields.Date.to_string(date_start)
             date_stop = fields.Date.to_string(date_stop)
 
-            # get the related employees timesheet status for the cron period
             employees = self.env["hr.employee"].search(
                 [("company_id", "=", company.id), ("user_id", "in", users.ids)]
             )
@@ -229,12 +220,10 @@ class ResCompany(models.Model):
                         additionnal_values=work_hours_struct[employee.id],
                     )
 
-        # compute the next execution date
         companies._update_timesheet_mail_employee_nextdate()
 
     @api.model
     def _cron_timesheet_reminder(self) -> None:
-        """Send a email reminder to all users having the group 'timesheet approver'."""
         today_max = fields.Datetime.to_string(datetime.combine(date.today(), time.max))
         companies = self.search(
             [
@@ -259,7 +248,6 @@ class ResCompany(models.Model):
                     'The cron "Timesheet: Approver Email Reminder" should have run on %s',
                     company.timesheet_mail_nextdate,
                 )
-            # calculate the period
             if company.timesheet_mail_interval == "months":
                 date_start = (
                     date.today() - timedelta(days=company.timesheet_mail_delay + 1)
@@ -318,23 +306,17 @@ class ResCompany(models.Model):
                         additionnal_values=values,
                     )
 
-        # compute the next execution date
         companies._update_timesheet_mail_nextdate()
 
     @api.model
     def _cron_timesheet_send_reminder(
         self, employees, template_xmlid, action_xmlid, additionnal_values=None
     ) -> None:
-        """Send the email reminder to specified users
-        :param user_ids : list of user identifier to send the reminder
-        :param template_xmlid : xml id of the reminder mail template
-        """
         action_url = (
             f"{self.get_base_url()}/odoo/action-{action_xmlid}"
             f"?menu_id={self.env.ref('hr_timesheet.timesheet_menu_root').id}"
         )
 
-        # send mail template to users having email address
         template = self.env.ref(template_xmlid)
         template_ctx = {"action_url": action_url}
         if additionnal_values:

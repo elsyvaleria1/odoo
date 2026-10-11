@@ -14,11 +14,6 @@ class ProjectTask(models.Model):
     )
 
     def _deliver_materials(self) -> None:
-        """Prepare the materials delivery
-
-        We validate the stock and generates/updates delivery order.
-        This method is called at the end of the action_fsm_validate method in industry_fsm_sale.
-        """
         _debug.pipeline("fsm_materials_deliver", tasks=self)
         for task in self.filtered(lambda x: x.allow_billable and x.sale_order_id):
             exception = False
@@ -127,7 +122,6 @@ class ProjectTask(models.Model):
             all_fsm_sn_moves |= fsm_sn_moves
         self.env["stock.move.line"].create(ml_to_create)
         for so_line in self.sale_order_id.line_ids:
-            # set the quantity delivered of the sol to the quantity ordered for the product linked to the task
             if so_line.task_id == self and so_line.product_id.service_policy not in [
                 "delivered_timesheet",
                 "delivered_milestones",
@@ -135,7 +129,6 @@ class ProjectTask(models.Model):
                 so_line.qty_transferred = so_line.product_qty
 
         def is_fsm_material_picking(picking, task) -> bool:
-            """this function returns if the picking is a picking ready to be validated."""
             moves = picking.move_ids
             while moves.move_dest_ids:
                 moves = moves.move_dest_ids
@@ -146,8 +139,6 @@ class ProjectTask(models.Model):
                 if not (
                     sol.product_id != task.project_id.timesheet_product_id
                     and sol != task.sale_line_id
-                    # On the last and, we check if the task is either done (and thus already done for the delivery) or the current one (and thus about to be validated)
-                    # if not, we can not validate the delivery
                     and (sol.task_id == task or sol.task_id.fsm_done)
                 ):
                     return False
@@ -158,7 +149,6 @@ class ProjectTask(models.Model):
                 p.state not in ["done", "cancel"] and is_fsm_material_picking(p, self)
             )
         )
-        # set the quantity done as the initial demand before validating the pickings
         for move in pickings_to_do.move_ids:
             if move.state in ("done", "cancel") or move in all_fsm_sn_moves:
                 continue
@@ -177,7 +167,6 @@ class ProjectTask(models.Model):
                 move.quantity = qty_to_do
         pickings_to_do.with_context(skip_sms=True).button_validate()
 
-        # With new push rules, some pickings may not be created before previous picking validation, hence the need to go through the pickings again.
         done_picking_ids.update(pickings_to_do.ids)
         remaining_to_do = self.sale_order_id.picking_ids.filtered(
             lambda p: (
@@ -233,26 +222,13 @@ class ProjectTask(models.Model):
         }
 
     def _fsm_get_or_create_sale_order(self):
-        """Since we want to use the current user warehouse when using the FSM product kanban view, the SO must
-        be confirmed before adding any product trough the product kanban view.
-        We cannot indeed wait that the user actually adds a product trough the FSM product kanban view
-        to do so as there would be a risk that all the existing SOL (possibly added in a (pre)sale phase)
-        would get that user's default warehouse when the SO gets confirmed and the picking generated."""
         _debug.logic("fsm_sale_order_ensure", tasks=self)
         sale_order = super()._fsm_get_or_create_sale_order()
         if sale_order.state == "draft":
-            # Same context as `_fsm_create_sale_order` below: this is the FSM
-            # auto-confirm, which runs before any material exists, so the order is
-            # exempt from `_check_confirm_has_lines` (see `_requires_lines_to_confirm`).
             sale_order.with_context(fsm_create_sale_order=True).action_confirm()
         return sale_order
 
     def _fsm_create_sale_order(self) -> None:
-        """Since we want to use the current user warehouse when using the FSM product kanban view, the SO must
-        be confirmed before adding any product trough the product kanban view.
-        We cannot indeed wait that the user actually adds a product trough the FSM product kanban view
-        to do so as there would be a risk that all the existing SOL (possibly added in a (pre)sale phase)
-        would get that user's default warehouse when the SO gets confirmed and the picking generated."""
         _debug.lifecycle("fsm_sale_order_create", tasks=self)
         super()._fsm_create_sale_order()
         sale_order = self.sale_order_id
@@ -268,10 +244,6 @@ class ProjectTask(models.Model):
         return action
 
     def action_fsm_validate(self, stop_running_timers=False):
-        """Since SOs for FSM tasks are confirmed right after creation
-        and this blocks the creation of pickings,
-        we do not lock sales orders for FSM tasks after confirmation.
-        Instead, we lock the SOs when we mark the FSM task as done."""
         _debug.pipeline("fsm_task_validate", tasks=self)
         res = super().action_fsm_validate(stop_running_timers)
         if res is True:

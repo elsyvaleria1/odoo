@@ -47,7 +47,6 @@ class PosOrder(models.Model):
                 if order.state == "paid" and not order.config_id.module_pos_restaurant:
                     self.env["pos.prep.order"].process_order(order.id)
 
-        # When preparation context is defined only one order is available in data
         if self.env.context.get("preparation"):
             options = self.env.context.get("preparation").get("process_order_options")
             order = self.browse(data["pos.order"][0]["id"])
@@ -75,8 +74,6 @@ class PosOrder(models.Model):
         orders = super().action_pos_order_cancel()
         if not self.env.context.get("active_ids"):
             return orders
-        # When an order is cancelled from the backend UI, ensure the preparation display
-        # is updated to reflect the cancellation
         for order in orders["pos.order"]:
             if order["state"] != "cancel":
                 continue
@@ -109,7 +106,6 @@ class PosOrder(models.Model):
             ),
             {},
         )
-        # If cancelled flag, we flag all lines as cancelled
         if cancelled:
             for line in pdis_lines:
                 line.cancelled = line.quantity
@@ -119,7 +115,6 @@ class PosOrder(models.Model):
         order_line_filter = self.env.context.get(
             "ppc_order_line_filter", lambda x: True
         )
-        # create a dictionary with the key as a tuple of product_id, internal_note, attribute_value_ids and pos_order_line_uuid
         skip_unmerged_lines = {}
         for pdis_line in pdis_lines:
             key = (
@@ -129,8 +124,6 @@ class PosOrder(models.Model):
                 pdis_line.pos_order_line_uuid,
             )
             line_qty = pdis_line.quantity - pdis_line.cancelled
-            # Ensure that when an orderline is merged to another table (e.g., from Table 1 to Table 2), sent to the kitchen,
-            # and later unmerged back to its original table, it is not canceled if the order is sent to the kitchen again from Table 2.
             unmerged_line_order_id = unmerged_lines.get(pdis_line.pos_order_line_uuid)
             if unmerged_line_order_id and unmerged_line_order_id != self.id:
                 skip_product_id, skip_note, skip_attribute_value_ids, _skip_uuid = key
@@ -161,7 +154,6 @@ class PosOrder(models.Model):
                 line.uuid,
             )
 
-            # Prevents quantity increase when an orderline is transferred to another table but was originally ordered in a previous table.
             if not quantity_data.get(key):
                 quantity_data[key] = {
                     "attribute_value_ids": line.attribute_value_ids.ids,
@@ -174,7 +166,6 @@ class PosOrder(models.Model):
             else:
                 quantity_data[key]["order"] += line.qty
 
-        # Try to merge the quantity of this line to existing quantity_data entries
         for skip_key, skip_qty in skip_unmerged_lines.items():
             skip_product_id, skip_note, skip_attribute_value_ids = skip_key
             for data_key, data_value in quantity_data.items():
@@ -189,7 +180,6 @@ class PosOrder(models.Model):
                     data_value["display"] += skip_qty
                     break
 
-        # Update quantity_data with note_history
         if note_history:
             for line in pdis_lines[::-1]:
                 product_id = str(line.product_id.id)
@@ -233,12 +223,10 @@ class PosOrder(models.Model):
                                 "uuid": line.pos_order_line_uuid,
                             }
 
-                        # Merge the two lines, so that if the quantity was changed it's also applied
                         old_quantity = quantity_data.pop(key, None)
                         quantity_data[key_new]["display"] += old_quantity["display"]
                         quantity_data[key_new]["order"] += old_quantity["order"]
 
-        # Check if pos_order have new lines or if some lines have more quantity than before
         if any(
             quantities["order"] > quantities["display"]
             and order_line_filter(quantities["uuid"])
@@ -361,7 +349,7 @@ class PosOrder(models.Model):
                     flag_change = True
                     category_ids.update(
                         pdis_lines[0].product_id.pos_categ_ids.ids
-                    )  # necessary to send when only ordernote changed
+                    )
         if internal_note is not None:
             for order in pdis_order:
                 if order.pdis_internal_note != internal_note:
@@ -369,7 +357,7 @@ class PosOrder(models.Model):
                     flag_change = True
                     category_ids.update(
                         pdis_lines[0].product_id.pos_categ_ids.ids
-                    )  # necessary to send when only ordernote changed
+                    )
 
         return {
             "change": flag_change,

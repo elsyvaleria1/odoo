@@ -27,8 +27,6 @@ ALLOWED_NETWORKS_PARAM = "base.egress_allowed_networks"
 
 @functools.lru_cache(maxsize=32)
 def _policy_with_networks(policy: PolicyName, configured: str) -> netguard.Policy:
-    # keyed on the parameter's value: a malformed one is reported once, not
-    # on every outbound call made while it stands
     base = _POLICIES[policy]
     try:
         return base.with_networks(*configured.replace(",", " ").split())

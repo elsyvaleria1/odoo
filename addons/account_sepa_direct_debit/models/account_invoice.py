@@ -12,7 +12,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _search_sdd_has_usable_mandate(self, operator, value):
-        """Returns invoice ids for which a mandate exist that can be used to be paid."""
         if operator != "in":
             return NotImplemented
 
@@ -39,9 +38,6 @@ class AccountMove(models.Model):
             rec.sdd_has_usable_mandate = bool(rec._sdd_get_usable_mandate())
 
     def _sdd_get_usable_mandate(self):
-        """returns the first mandate found that can be used to pay this invoice,
-        or none if there is no such mandate.
-        """
         if self.move_type in ("out_invoice", "in_refund"):
             return self.env["sdd.mandate"]._sdd_get_usable_mandate(
                 self.company_id.id, self.commercial_partner_id.id, self.invoice_date
@@ -50,7 +46,6 @@ class AccountMove(models.Model):
             return None
 
     def _track_subtype(self, init_values):
-        # OVERRIDE to log a different message when an invoice is paid using SDD.
         self.check_singleton()
         if (
             "state" in init_values

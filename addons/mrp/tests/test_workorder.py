@@ -57,8 +57,6 @@ class TestWorkorderAudit(TransactionCase):
 
     def test_replanning_an_unconflicted_workorder_keeps_its_slot(self):
         mo = self._mo(tag="R")
-        # A slot starting now is in the past a second later, and replanning
-        # anchors on the clock: plan in the future to measure conflicts only.
         mo.date_start = fields.Datetime.now() + timedelta(days=7)
         mo.button_plan()
         self.env.flush_all()
@@ -639,7 +637,6 @@ class TestWorkorderAudit(TransactionCase):
         self.assertEqual(wo.reservation_ids.resource_id, previous)
         self.wc.resource_id = self._replacement_resource()
         self.assertEqual(wo.reservation_ids.resource_id, previous)
-        # A later date correction must not rewrite the completed identity.
         wo.write({"date_end": wo.date_end + timedelta(minutes=1)})
         self.assertEqual(wo.reservation_ids.resource_id, previous)
 

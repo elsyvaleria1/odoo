@@ -37,7 +37,6 @@ class TestForecastAccessRights(TestCommonForecast):
             ]
         )
 
-        # Create planning slot templates related to these private projects
         cls.PlanningSlotTemplates = cls.env["planning.slot.template"]
         cls.slot_templates = cls.PlanningSlotTemplates.create(
             [
@@ -58,7 +57,6 @@ class TestForecastAccessRights(TestCommonForecast):
         )
 
     def test_project_manager_access_slot_template(self):
-        """Test that a project manager can access all planning slot templates."""
         slot_templates_count = self.PlanningSlotTemplates.with_user(
             self.user_projectmanager
         ).search_count([("id", "in", self.slot_templates.ids)])
@@ -69,7 +67,6 @@ class TestForecastAccessRights(TestCommonForecast):
         )
 
     def test_project_user_access_slot_template(self):
-        """Test that a project user can access only specific planning slot templates."""
         slot_templates = self.PlanningSlotTemplates.with_user(
             self.user_projectuser
         ).search([("id", "in", self.slot_templates.ids)])

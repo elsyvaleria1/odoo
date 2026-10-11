@@ -19,9 +19,6 @@ class QualityPoint(models.Model):
     @api.constrains("operation_id", "measure_frequency_type")
     def _check_measure_frequency_type(self) -> None:
         for point in self:
-            # `point.operation_id`, not `self.operation_id`: reading it off the
-            # whole recordset rejected a legal on-demand point whenever any
-            # *sibling* created in the same call carried an operation.
             if point.measure_frequency_type == "on_demand" and point.operation_id:
                 raise ValidationError(
                     self.env._(
@@ -35,12 +32,6 @@ class QualityCheck(models.Model):
 
     operation_id = fields.Many2one(related="point_id.operation_id")
 
-    # `do_pass` / `do_fail` used to be overridden here for nothing but an
-    # `check_singleton()` -- and `do_pass` dropped the return value on the way.
-    # This module auto-installs with `mrp_workorder`, so that narrowing made
-    # `picking.check_ids.do_pass()` raise on any transfer carrying more than
-    # one check, everywhere in the ring.  `mrp_workorder`'s own `do_pass`
-    # already loops.
 
     def do_measure(self):
         self.check_singleton()
@@ -93,13 +84,6 @@ class QualityCheck(models.Model):
             }
         return result
 
-    # `result` and `_get_check_result` belong to `mrp_workorder`; the two
-    # branches below read `measure` and `norm_unit`, which belong to
-    # `quality_control`.  This module is the only one that depends on both,
-    # which is why they live here -- `quality_control` used to hold them and
-    # call a `super()` that no base of its own defines, correct only because
-    # of an ordering nothing declares.  (The `picture` branch went to
-    # `mrp_workorder` instead: `picture` is `quality`'s, so it needs no bridge.)
     def _get_check_result(self):
         if self.test_type == "passfail":
             return (
@@ -117,10 +101,6 @@ class QualityCheck(models.Model):
 
     def action_pass_and_next(self) -> dict:
         _debug.lifecycle("check_pass_and_next", check=self.id)
-        # `self.do_pass()`, not `super().do_pass()`: the `super()` was there to
-        # skip this module's own override, which existed only to `check_singleton`
-        # and is gone.  Left as `super()` it would also skip any override a
-        # later module adds.
         self.check_singleton()
         self.do_pass()
         return {"next_check_id": self._next()}

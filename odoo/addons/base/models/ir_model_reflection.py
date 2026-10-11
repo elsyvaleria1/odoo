@@ -449,9 +449,6 @@ class IrModelRelation(models.Model):
         *,
         model_tables: Collection[str] = (),
     ) -> None:
-        # Older registries could reflect a payload model's table as a disposable
-        # Many2many relation. Remove that metadata without uninstalling its table,
-        # including on passes which have no new field-owned relations to reflect.
         if model_tables:
             stale = self.search([("name", "in", model_tables)])
             _debug.lifecycle(

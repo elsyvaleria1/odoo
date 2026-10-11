@@ -1,6 +1,3 @@
-# Specifiers upstream 19.0 still imports and the fork moved or retired. The
-# specifier gate names the replacement when it meets one, so an upstream import
-# is a lookup instead of a hunt. Add a row whenever a fork commit moves a module.
 
 RENAMED = {
     "@web/core/l10n/translation": "@web/core/translation",

@@ -181,7 +181,6 @@ class IssuesMixin:
     ):
         payload = {"merge_method": merge_method}
         if sha:
-            # GitHub refuses the merge when the head is no longer this commit
             payload["sha"] = sha
 
         if commit_title:

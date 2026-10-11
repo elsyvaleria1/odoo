@@ -153,13 +153,11 @@ class TestAPI(ThreadRecipients):
         )
 
     def test_assert_initial_values(self):
-        """Just be sure of what we test"""
         self.assertFalse(self.user_employee_archived.active)
         self.assertTrue(self.partner_employee_archived.active)
 
     @users("employee")
     def test_body_keeps_its_shape_when_cid_images_are_rewritten(self):
-        """Rewriting cid: images must not wrap the body in an invented element."""
         ticket_record = self.ticket_record.with_env(self.env)
         for body, expected_shape in [
             (
@@ -194,7 +192,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_body_escape(self):
-        """Test various use cases involving HTML encoding / escaping"""
         ticket_record = self.ticket_record.with_env(self.env)
         attachments = self.env["ir.attachment"].create(
             self._generate_attachments_data(2, "wizard.mail.message.send", 0)
@@ -203,7 +200,6 @@ class TestAPI(ThreadRecipients):
             self.env["ir.attachment"].sudo().search([("name", "=", "test_image.jpeg")])
         )
 
-        # attachments processing through CID, rewrites body (if escaped)
         body = '<div class="ltr"><img src="cid:ii_lps7a8sm0" alt="test_image.jpeg" width="542" height="253">Zboing</div>'
         for with_markup in [False, True]:
             with self.subTest(with_markup=with_markup):
@@ -234,7 +230,6 @@ class TestAPI(ThreadRecipients):
                 self.assertEqual(message.body, expected_body)
                 new_attachment.unlink()
 
-        # internals of attachment processing, in case it is called for other addons
         for with_markup in [False, True]:
             with self.subTest(with_markup=with_markup):
                 message_values = {
@@ -257,11 +252,10 @@ class TestAPI(ThreadRecipients):
                 else:
                     self.assertTrue(isinstance(processed_values["body"], Markup))
 
-        # html is escaped in main API methods
         content = 'I am "Robert <robert@poilvache.com>"'
         expected = Markup(
             '<p>I am "Robert &lt;robert@poilvache.com&gt;"</p>'
-        )  # enclosed in p to make valid html
+        )
         message = ticket_record._message_log(
             body=content,
         )
@@ -287,9 +281,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_mail_partner_find_from_emails(self):
-        """Test '_partner_get_or_create_from_emails'. Multi mode is mainly targeting
-        finding or creating partners based on record information or message
-        history."""
         existing_partners = self.env["res.partner"].sudo().search([])
         tickets = self.ticket_records.with_user(self.env.user)
         self.assertEqual(len(tickets), 8)
@@ -298,7 +289,6 @@ class TestAPI(ThreadRecipients):
         )
         self.assertEqual(len(tickets), len(res))
 
-        # fetch partners that should have been created
         new = self.env["res.partner"].search(
             [("email_normalized", "=", "paulette@test.example.com")]
         )
@@ -321,7 +311,6 @@ class TestAPI(ThreadRecipients):
         )
         self.assertNotIn(new, new_multi)
 
-        # assert results: found / create partners and their values (if applies)
         record_customer_values = {
             "company_id": self.user_employee.company_id,
             "email": "paulette@test.example.com",
@@ -334,7 +323,7 @@ class TestAPI(ThreadRecipients):
             (
                 new_multi,
                 [
-                    {  # not the actual record customer hence no mobile / phone, see _mail_get_customer_information
+                    {
                         "company_id": self.user_employee.company_id,
                         "email": "multi@test.example.com",
                         "name": "Multi Customer",
@@ -345,7 +334,7 @@ class TestAPI(ThreadRecipients):
             (
                 new_wrong,
                 [
-                    {  # invalid email but can be fixed afterwards -> matches a potential customer
+                    {
                         "company_id": self.user_employee.company_id,
                         "email": "wrong",
                         "name": "wrong",
@@ -356,7 +345,7 @@ class TestAPI(ThreadRecipients):
             (
                 new_wrong,
                 [
-                    {  # invalid email but can be fixed afterwards -> matches a potential customer
+                    {
                         "company_id": self.user_employee.company_id,
                         "email": "wrong",
                         "name": "wrong",
@@ -389,10 +378,7 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_mail_partner_find_from_emails_ordering(self):
-        """Test '_partner_get_or_create_from_emails' on a single record, to test notably
-        ordering and filtering."""
         self.user_employee.write({"company_ids": [(4, self.company_2.id)]})
-        # create a mess, mix of portal / internal users + customer, to test ordering
         portal_user, internal_user = (
             self.env["res.users"]
             .sudo()
@@ -410,7 +396,7 @@ class TestAPI(ThreadRecipients):
                         "email": "test.ordering@test.example.com",
                         "group_ids": [(4, self.env.ref("base.group_user").id)],
                         "login": "order_internal",
-                        "name": "Zuper Internal Test User for ordering",  # name based: after portal
+                        "name": "Zuper Internal Test User for ordering",
                     },
                 ]
             )
@@ -437,7 +423,7 @@ class TestAPI(ThreadRecipients):
                 {
                     "company_id": False,
                     "email": '"ID ordering check" <test.ordering@test.example.com>',
-                    "name": "A Dupe Partner (NoC)",  # name based: before other, but newest, check ID order
+                    "name": "A Dupe Partner (NoC)",
                 },
             ]
         )
@@ -446,31 +432,24 @@ class TestAPI(ThreadRecipients):
         self.assertTrue(internal_user.partner_id.id < dupe_partners[0].id)
 
         for active_partners, followers, expected in [
-            # nothing to find
             (self.env["res.partner"], self.env["res.partner"], self.env["res.partner"]),
-            # one result, easy yay
             (dupe_partners[3], self.env["res.partner"], dupe_partners[3]),
-            # various partners: should be id ASC, not name-based
             (
                 dupe_partners[1] + dupe_partners[3],
                 self.env["res.partner"],
                 dupe_partners[1],
             ),
-            # involving matching company check: matching company wins
             (dupe_partners, self.env["res.partner"], dupe_partners[2]),
-            # users > partner
             (
                 portal_user.partner_id + dupe_partners,
                 self.env["res.partner"],
                 portal_user.partner_id,
             ),
-            # internal user > any other user
             (
                 portal_user.partner_id + internal_user.partner_id + dupe_partners,
                 self.env["res.partner"],
                 internal_user.partner_id,
             ),
-            # follower > any other thing
             (
                 internal_user.partner_id + dupe_partners,
                 dupe_partners[0],
@@ -480,7 +459,6 @@ class TestAPI(ThreadRecipients):
             with self.subTest(
                 names=active_partners.mapped("name"), followers=followers.mapped("name")
             ):
-                # removes (through deactivating) some partners to check ordering
                 (portal_user + internal_user).filtered_domain(
                     [("partner_id", "not in", active_partners.ids)]
                 ).active = False
@@ -493,7 +471,6 @@ class TestAPI(ThreadRecipients):
                     no_create=True,
                 )[ticket.id]
 
-                # should find just one partner, the other one is not linked to any partner
                 self.assertEqual(
                     partners,
                     expected,
@@ -506,8 +483,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_mail_partner_find_from_emails_record(self):
-        """On a given record, give several emails and check it is effectively
-        based on record information."""
         ticket = self.ticket_record.with_user(self.env.user)
         partners = ticket._partner_get_or_create_from_emails(
             {
@@ -520,12 +495,10 @@ class TestAPI(ThreadRecipients):
             no_create=False,
         )[ticket.id]
 
-        # new - extra email
         other = partners[0]
         self.assertEqual(other.company_id, self.user_employee.company_id)
         self.assertEqual(other.email, "raoul@test.example.com")
         self.assertEqual(other.name, "raoul@test.example.com")
-        # new - linked to record
         customer = partners[1]
         self.assertEqual(customer.company_id, self.user_employee.company_id)
         self.assertEqual(customer.email, "paulette@test.example.com")
@@ -535,12 +508,10 @@ class TestAPI(ThreadRecipients):
             "Should come from record, see '_mail_get_customer_information'",
         )
         self.assertEqual(customer.name, "Paulette Vachette")
-        # found
         self.assertEqual(partners[2], self.test_partner)
 
     @users("employee")
     def test_mail_partner_find_from_emails_tweaks(self):
-        """Misc tweaks of '_partner_get_or_create_from_emails'"""
         ticket = self.ticket_record.with_user(self.env.user)
         partner = ticket._partner_get_or_create_from_emails_single(
             [ticket.email_from],
@@ -602,8 +573,6 @@ class TestAPI(ThreadRecipients):
         self.assertFalse(test_records[2].customer_email)
         self.flush_tracking()
 
-        # test default computation of recipients; contact_ids is read under
-        # record rules, so its relation is probed first (9f1db963ef48)
         self.env.invalidate_all()
         with self.assertQueryCount(8):
             defaults_withcc = (
@@ -618,19 +587,16 @@ class TestAPI(ThreadRecipients):
             test_records,
             [
                 {
-                    # customer_id first for partner_ids; partner > email
                     "email_cc": "",
                     "email_to": "",
                     "partner_ids": (self.partner_1 + self.partner_2).ids,
                 },
                 {
-                    # partner > email
                     "email_cc": '"CC" <email.cc@test.example.com>',
                     "email_to": "",
                     "partner_ids": self.partner_1.ids,
                 },
                 {
-                    # partner > email
                     "email_cc": "",
                     "email_to": "",
                     "partner_ids": self.partner_1.ids,
@@ -655,7 +621,7 @@ class TestAPI(ThreadRecipients):
                     "email_to": "",
                     "partner_ids": [],
                 },
-                {  # public user should not be proposed
+                {
                     "email_cc": "",
                     "email_to": "",
                     "partner_ids": [],
@@ -669,7 +635,6 @@ class TestAPI(ThreadRecipients):
                     defaults_withoutcc[record.id], dict(expected, email_cc="")
                 )
 
-        # test default computation of recipients with email prioritized
         with patch.object(
             type(self.env["mail.test.recipients"]), "_mail_defaults_to_email", True
         ):
@@ -690,51 +655,40 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_get_default_recipients_banned(self):
-        """Test defensive behavior to avoid contacting critical emails like
-        aliases, public users, ..."""
         tickets = self.env["mail.test.ticket.mc"].create(
             [
-                # do not propose public partners
                 {
                     "customer_id": self.user_public.partner_id.id,
                     "name": "Public",
                 },
-                # do not propose root
                 {
                     "customer_id": self.user_root.partner_id.id,
                     "name": "Root",
                 },
-                # do not propose alias domain emails
                 {
                     "email_from": self.mail_alias_domain.catchall_email,
                     "name": "Alias domain email",
                 },
-                # do not propose when partner = alias
                 {
                     "customer_id": self.test_partner_alias.id,
                     "name": "Partner = Alias",
                 },
-                # do not propose alias email
                 {
                     "email_from": self.test_aliases[0].alias_full_name,
                     "name": "Alias email",
                 },
-                # do not propose alias email (left-part pre-17 support)
                 {
                     "email_from": f"{self.test_aliases[2].alias_name}@other.domain",
                     "name": "Alias email (left-part compat)",
                 },
-                # do not propose alias email (even if linked to a partner)
                 {
                     "email_from": self.test_aliases[1].alias_full_name,
                     "name": "Alias email, existing partner",
                 },
-                # propose archived
                 {
                     "customer_id": self.test_partner_archived.id,
                     "name": "Archived partner",
                 },
-                # propose active based on archived user
                 {
                     "customer_id": self.partner_employee_archived.id,
                     "name": "Archived partner",
@@ -742,27 +696,18 @@ class TestAPI(ThreadRecipients):
             ]
         )
         expected_all = [
-            # nobody to suggest (no public !)
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # should be nobody to suggest (no root !)
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # alias domain email is not ok
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # partner with alias email is not ok
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # alias email is not ok
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # left-part compat alias email is not ok
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # alias email is not ok even if linked to partner
             {"email_cc": "", "email_to": "", "partner_ids": []},
-            # archived is ok, customer
             {
                 "email_cc": "",
                 "email_to": "",
                 "partner_ids": [self.test_partner_archived.id],
             },
-            # active based on archived user is ok, customer
             {
                 "email_cc": "",
                 "email_to": "",
@@ -776,9 +721,7 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_get_suggested_recipients(self):
-        """Test default creation values returned for suggested recipient."""
         ticket = self.ticket_record.with_user(self.env.user)
-        # assign to another user so the responsible can be proposed as suggested recipient
         ticket.user_id = self.user_employee_2
         ticket.message_unsubscribe(ticket.user_id.partner_id.ids)
         suggestions = ticket._message_get_suggested_recipients(no_create=True)
@@ -806,7 +749,6 @@ class TestAPI(ThreadRecipients):
         ):
             self.assertDictEqual(suggestion, expected)
 
-        # assigned should not be added if current user
         ticket.user_id = self.env.user
         ticket.message_unsubscribe(ticket.user_id.partner_id.ids)
         suggestions = ticket._message_get_suggested_recipients(no_create=True)
@@ -824,7 +766,6 @@ class TestAPI(ThreadRecipients):
             },
         )
 
-        # existing partner not linked -> should propose it
         ticket_partner_email = self.env["mail.test.ticket.mc"].create(
             {
                 "customer_id": False,
@@ -833,10 +774,9 @@ class TestAPI(ThreadRecipients):
                 "phone_ids": [
                     Command.create({"number": "+33199001015", "type": "landline"})
                 ],
-                "user_id": self.env.user.id,  # should not be proposed, already follower
+                "user_id": self.env.user.id,
             }
         )
-        # existing partner -> should propose it
         ticket_partner = self.env["mail.test.ticket.mc"].create(
             {
                 "customer_id": self.test_partner.id,
@@ -844,7 +784,6 @@ class TestAPI(ThreadRecipients):
                 "name": "Partner",
             }
         )
-        # existing partner in followers -> should not propose it
         ticket_partner_fol = self.env["mail.test.ticket.mc"].create(
             {
                 "customer_id": self.test_partner.id,
@@ -852,7 +791,6 @@ class TestAPI(ThreadRecipients):
                 "name": "Partner follower",
             }
         )
-        # existing partner in followers -> should not propose it
         ticket_partner_fol_user = self.env["mail.test.ticket.mc"].create(
             {
                 "customer_id": self.partner_employee.id,
@@ -860,7 +798,6 @@ class TestAPI(ThreadRecipients):
                 "name": "Partner follower (user)",
             }
         )
-        # existing partner with multiple emails -> should propose only the first one
         partner_multiemail = self.test_partner.copy(
             {"email": "test1.external@example.com,test2.external@example.com"}
         )
@@ -906,7 +843,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_get_suggested_recipients_banned(self):
-        """Ban list: public partners, aliases, alias domains"""
         domains = self.env["mail.alias.domain"].sudo().search([])
         domains_cc_list = []
         for domain in domains:
@@ -917,22 +853,18 @@ class TestAPI(ThreadRecipients):
             ]
         tickets = self.env["mail.test.ticket.mc"].create(
             [
-                # do not propose public partners
                 {
                     "customer_id": self.user_public.partner_id.id,
                     "name": "Public",
                 },
-                # do not propose root
                 {
                     "customer_id": self.user_root.partner_id.id,
                     "name": "Root",
                 },
-                # valid, but with message containing alias domain emails
                 {
                     "customer_id": self.test_partner.id,
                     "name": "Valid partner + invalid domain emails in discussion",
                 },
-                # valid, but with message containing alias emails or partners
                 {
                     "customer_id": self.test_partner_archived.id,
                     "name": "Valid partner archived + invalid in discussion",
@@ -956,11 +888,8 @@ class TestAPI(ThreadRecipients):
             subtype_id=self.env.ref("mail.mt_comment").id,
         )
         expected_all = [
-            # nobody to suggest (no public !)
             [],
-            # nobody to suggest (no root !)
             [],
-            # only valid is the customer
             [
                 {
                     "create_values": {},
@@ -969,7 +898,6 @@ class TestAPI(ThreadRecipients):
                     "partner_id": self.test_partner.id,
                 },
             ],
-            # only valid is the customer (and not aliases nor partner with alias email)
             [
                 {
                     "create_values": {},
@@ -989,8 +917,6 @@ class TestAPI(ThreadRecipients):
                     self.assertDictEqual(suggestion, expected_sugg)
 
     def _suggested_recipients_cost_on(self, count):
-        """Query cost of suggesting recipients for `count` records that each
-        carry followers and one incoming message."""
         partners = self.env["res.partner"].create(
             [
                 {"email": f"cost.{index}@test.example.com", "name": f"Cost {index}"}
@@ -1025,16 +951,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_get_suggested_recipients_batch_costs_no_query_per_record(self):
-        """`_message_get_suggested_recipients_batch` must not bill per record.
-
-        `_sort_suggested_messages` runs once per record and `filtered` narrows
-        `_prefetch_ids` to what survives it, so without restoring the pool each
-        record's chosen message is read on its own and the five fields
-        `_message_add_suggested_recipients_from_replies` takes off it cost a
-        query apiece. Measured as a marginal cost between N=2 and N=20 -- an
-        absolute count at N=1 cannot see this class of defect at all, and a
-        single N cannot tell a saving from skipped work.
-        """
         few_queries, few_suggested = self._suggested_recipients_cost_on(2)
         many_queries, many_suggested = self._suggested_recipients_cost_on(20)
         self.assertLessEqual(
@@ -1043,16 +959,12 @@ class TestAPI(ThreadRecipients):
             f"18 further records cost {many_queries - few_queries} extra queries "
             f"(2 records: {few_queries}, 20 records: {many_queries})",
         )
-        # a query budget alone cannot distinguish cheap from empty: pin that the
-        # batch still suggests somebody for every record it was given
         self.assertEqual(len(many_suggested), 20)
         self.assertTrue(all(many_suggested.values()))
         self.assertEqual(len(few_suggested), 2)
 
     @users("employee")
     def test_message_get_suggested_recipients_conversation(self):
-        """Test suggested recipients in a conversation based on discussion
-        history: email_{cc/to} of previous messages, ..."""
         test_cc_tuples = [
             ("Test Record Cc", "test.record.cc@test.example.com"),
             ("Test Msg Cc", "test.msg.cc@test.example.com"),
@@ -1116,25 +1028,25 @@ class TestAPI(ThreadRecipients):
         for recipient, expected in zip(
             recipients,
             [
-                {  # partner first: author of message
+                {
                     "create_values": {},
                     "email": self.user_portal.email_normalized,
                     "name": self.user_portal.name,
                     "partner_id": self.user_portal.partner_id.id,
                 },
-                {  # override of model for email_cc
+                {
                     "create_values": {},
                     "email": test_cc_tuples[0][1],
                     "name": test_cc_tuples[0][0],
                     "partner_id": False,
                 },
-                {  # replying message to
+                {
                     "create_values": {},
                     "email": test_to_tuples[0][1],
                     "name": test_to_tuples[0][0],
                     "partner_id": False,
                 },
-                {  # replying message  cc
+                {
                     "create_values": {},
                     "email": test_cc_tuples[1][1],
                     "name": test_cc_tuples[1][0],
@@ -1152,56 +1064,54 @@ class TestAPI(ThreadRecipients):
         for recipient, expected in zip(
             recipients,
             [
-                {  # partner first: recipient of message
+                {
                     "create_values": {},
                     "email": self.user_portal.email_normalized,
                     "name": self.user_portal.name,
                     "partner_id": self.user_portal.partner_id.id,
                 },
-                {  # override of model for email_cc
+                {
                     "create_values": {},
                     "email": test_cc_tuples[0][1],
                     "name": test_cc_tuples[0][0],
                     "partner_id": False,
-                },  # and not author, as it is odoobot's email
+                },
             ],
             strict=True,
         ):
             with self.subTest():
                 self.assertDictEqual(recipient, expected)
 
-        # discussion: should be last message
         recipients = test_record._message_get_suggested_recipients(
             reply_discussion=True, no_create=True
         )
         for recipient, expected in zip(
             recipients,
             [
-                {  # override of model for email_cc
+                {
                     "create_values": {},
                     "email": test_cc_tuples[0][1],
                     "name": test_cc_tuples[0][0],
                     "partner_id": False,
                 },
-                {  # replying message to
+                {
                     "create_values": {},
                     "email": test_to_tuples[1][1],
                     "name": test_to_tuples[1][0],
                     "partner_id": False,
                 },
-                {  # replying message  cc
+                {
                     "create_values": {},
                     "email": test_cc_tuples[2][1],
                     "name": test_cc_tuples[2][0],
                     "partner_id": False,
-                },  # and not author as he is already follower
+                },
             ],
             strict=True,
         ):
             with self.subTest():
                 self.assertDictEqual(recipient, expected)
 
-        # check with partner creation
         recipients = test_record._message_get_suggested_recipients(
             reply_message=messages[0], no_create=False
         )
@@ -1217,25 +1127,25 @@ class TestAPI(ThreadRecipients):
         for recipient, expected in zip(
             recipients,
             [
-                {  # partner first: author of message
+                {
                     "create_values": {},
                     "email": self.user_portal.email_normalized,
                     "name": self.user_portal.name,
                     "partner_id": self.user_portal.partner_id.id,
                 },
-                {  # override of model for email_cc
+                {
                     "email": test_cc_tuples[0][1],
                     "name": test_cc_tuples[0][0],
                     "partner_id": new_to.id,
                     "create_values": {},
                 },
-                {  # replying message to
+                {
                     "email": test_to_tuples[0][1],
                     "name": test_to_tuples[0][0],
                     "partner_id": new_cc_0.id,
                     "create_values": {},
                 },
-                {  # replying message  cc
+                {
                     "email": test_cc_tuples[1][1],
                     "name": test_cc_tuples[1][0],
                     "partner_id": new_cc_1.id,
@@ -1249,8 +1159,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_get_suggested_recipients_conversation_filter(self):
-        """Test sorting of messages when suggested is used in reply-all based
-        on last message."""
         test_record = self.env["mail.test.recipients"].create(
             {
                 "email_cc": '"Test Cc" <test.cc.1@test.example.com>',
@@ -1348,7 +1256,6 @@ class TestAPI(ThreadRecipients):
                 reply_discussion=True, no_create=True
             )
             expected = base_expected + expected_add
-            # as we can't use sorted directly, reorder manually, hey
             expected.sort(key=lambda item: item["partner_id"], reverse=True)
             with self.subTest(message=post_values["body"]):
                 for sugg, expected_sugg in zip(suggested, expected, strict=True):
@@ -1356,9 +1263,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_thread_to_store_suggested_recipients_match_the_singleton_api(self):
-        """`_thread_to_store` computed suggested recipients one thread at a
-        time; it now asks the batch API once and must hand each thread the
-        same answer the singleton API gives."""
         records = self.env["mail.test.ticket"].create(
             [
                 {
@@ -1425,13 +1329,11 @@ class TestAPI(ThreadRecipients):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("employee")
     def test_message_update_content(self):
-        """Test updating message content."""
         ticket_record = self.ticket_record.with_env(self.env)
         attachments = self.env["ir.attachment"].create(
             self._generate_attachments_data(2, "wizard.mail.message.send", 0)
         )
 
-        # post a note
         message = ticket_record.message_post(
             attachment_ids=attachments.ids,
             body=Markup("<p>Initial Body</p>"),
@@ -1448,13 +1350,11 @@ class TestAPI(ThreadRecipients):
         self.assertEqual(message.body, "<p>Initial Body</p>")
         self.assertEqual(message.subtype_id, self.env.ref("mail.mt_note"))
 
-        # clear the content when having attachments should show edit label
         ticket_record._message_update_content(message, body="")
         self.assertEqual(message.attachment_ids, attachments)
         self.assertEqual(
             message.body, Markup('<span class="o-mail-Message-edited"></span>')
         )
-        # update the content with new attachments
         new_attachments = self.env["ir.attachment"].create(
             self._generate_attachments_data(2, "wizard.mail.message.send", 0)
         )
@@ -1475,7 +1375,6 @@ class TestAPI(ThreadRecipients):
             Markup('<div>New Body <span class="o-mail-Message-edited"></span></div>'),
         )
 
-        # void attachments
         ticket_record._message_update_content(
             message,
             body=Markup("<p>Another Body, void attachments</p>"),
@@ -1504,7 +1403,6 @@ class TestAPI(ThreadRecipients):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("employee")
     def test_message_update_content_check(self):
-        """Test cases where updating content should be prevented"""
         ticket_record = self.ticket_record.with_env(self.env)
 
         message = ticket_record.message_post(
@@ -1517,7 +1415,6 @@ class TestAPI(ThreadRecipients):
         message.sudo().write({"subtype_id": self.env.ref("mail.mt_note")})
         ticket_record._message_update_content(message, body="<p>New Body 2</p>")
 
-        # cannot edit notifications
         for message_type in [
             "notification",
             "user_notification",
@@ -1532,21 +1429,6 @@ class TestAPI(ThreadRecipients):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("employee")
     def test_message_update_content_is_idempotent(self):
-        """Editing a message twice must not leave two "(edited)" markers.
-
-        What a client sends back on a second edit is the **stored** body, marker
-        included -- `Message.enterEditMode` seeds the composer from `this.body`
-        and `getNonEditableMentions` does not strip the span -- so appending
-        unconditionally grew the marker, and the space in front of it, by one on
-        every edit. The body is fed back here for that reason: a test that hands
-        `_message_update_content` a fresh body each time exercises nothing,
-        because a fresh body carries no marker to duplicate.
-
-        The default text composer happens to launder the marker away by
-        rebuilding its HTML from plain text, which is why nothing noticed; the
-        opt-in HTML composer sends `composerHtml` straight through. Nothing
-        covered a second edit at all before this.
-        """
         ticket_record = self.ticket_record.with_env(self.env)
         message = ticket_record.message_post(
             body=Markup("<p>Initial Body</p>"), message_type="comment"
@@ -1557,7 +1439,6 @@ class TestAPI(ThreadRecipients):
             Markup('<p>Edited <span class="o-mail-Message-edited"></span></p>'),
         )
         for _round in range(3):
-            # exactly what a client round-trips: the stored body, marker included
             ticket_record._message_update_content(message, body=message.body)
         self.assertEqual(
             message.body.count("o-mail-Message-edited"),
@@ -1573,14 +1454,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_has_message_answers_about_the_present(self):
-        """`has_message` must not answer from a cache nothing invalidates.
-
-        It is a non-stored compute reading raw SQL, so without a declared
-        dependency the ORM kept the first answer for the whole transaction:
-        posting on a record and reading the field back returned False. The web
-        client never saw it -- one transaction per RPC -- but a server action, an
-        import or a test does.
-        """
         ticket = (
             self.env["mail.test.ticket"]
             .with_context(mail_create_nolog=True, mail_create_nosubscribe=True)
@@ -1595,12 +1468,6 @@ class TestAPI(ThreadRecipients):
 
     @users("employee")
     def test_message_attachment_count_answers_about_the_present(self):
-        """Same defect, and it cannot be fixed with `@api.depends`.
-
-        The field counts `ir.attachment` rows by `(res_model, res_id)`, which is
-        no relation the ORM can follow, so the write is announced from the
-        attachment side instead.
-        """
         ticket = self.env["mail.test.ticket"].create({"name": "Counting"})
         self.assertEqual(ticket.message_attachment_count, 0)
         attachment = self.env["ir.attachment"].create(
@@ -1648,13 +1515,6 @@ class TestEmptyListHelp(MailCommon):
         )
 
     def test_a_stale_help_record_id_does_not_raise(self):
-        """The id names a record carrying an alias that has since been deleted.
-
-        `empty_list_help_id` travels in an action's context, so it outlives the
-        record it names. The method browsed it and read `alias_id` off the
-        result; on a deleted record that raises MissingError, turning a stale
-        context value into a broken list view.
-        """
         deleted_id = self.container.id
         self.container.unlink()
         help_text = self._help(
@@ -1693,7 +1553,7 @@ class TestChatterTweaks(ThreadRecipients):
 
         for recipients_limit, has_header in (
             (0, False),
-            (2, False),  # zut alors, 2 recipients is the limit !
+            (2, False),
             (10, True),
         ):
             MailTestSimple._CUSTOMER_HEADERS_LIMIT_COUNT = recipients_limit
@@ -1705,7 +1565,7 @@ class TestChatterTweaks(ThreadRecipients):
 
             headers = {
                 "Return-Path": f"{self.mail_alias_domain.bounce_email}",
-                "X-Custom": "Done",  # model override
+                "X-Custom": "Done",
                 "X-Odoo-Objects": f"{test_record._name}-{test_record.id}",
             }
             if has_header:
@@ -1728,10 +1588,6 @@ class TestChatterTweaks(ThreadRecipients):
 
     @users("employee")
     def test_post_headers_x_msg_to_add_keeps_the_incoming_order(self):
-        """The header was assembled from a set, so the extra addresses came
-        out in hash order and two identical posts could produce two different
-        headers. `assertMailMail` compares that header sorted, which is why it
-        never noticed; this reads the raw value."""
         test_record = self.test_record.with_env(self.env)
         incoming_to = (
             '"Zed" <zed@example.com>, "Alpha" <alpha@example.com>, '
@@ -1804,7 +1660,6 @@ class TestChatterTweaks(ThreadRecipients):
             original.mapped("partner_id") | self.partner_1 | self.partner_2,
         )
 
-        # check _mail_thread_customer class attribute
         new_record = self.env["mail.test.thread.customer"].create(
             {
                 "customer_id": self.partner_1.id,
@@ -1830,8 +1685,6 @@ class TestChatterTweaks(ThreadRecipients):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_chatter_context_cleaning(self):
-        """Test default keys are not propagated to message creation as it may
-        induce wrong values for some fields, like parent_id."""
         parent = self.env["res.partner"].create({"name": "Parent"})
         partner = (
             self.env["res.partner"]
@@ -1841,7 +1694,6 @@ class TestChatterTweaks(ThreadRecipients):
         self.assertFalse(partner.message_ids[-1].parent_id)
 
     def test_chatter_mail_create_nolog(self):
-        """Test disable of automatic chatter message at create"""
         rec = (
             self.env["mail.test.simple"]
             .with_user(self.user_employee)
@@ -1861,7 +1713,6 @@ class TestChatterTweaks(ThreadRecipients):
         self.assertEqual(len(rec.message_ids), 1)
 
     def test_chatter_mail_notrack(self):
-        """Test disable of automatic value tracking at create and write"""
         rec = (
             self.env["mail.test.track"]
             .with_user(self.user_employee)
@@ -1901,7 +1752,6 @@ class TestChatterTweaks(ThreadRecipients):
         )
 
     def test_chatter_tracking_disable(self):
-        """Test disable of all chatter features at create and write"""
         rec = (
             self.env["mail.test.track"]
             .with_user(self.user_employee)
@@ -1947,12 +1797,9 @@ class TestChatterTweaks(ThreadRecipients):
         )
 
     def test_cache_invalidation(self):
-        """Test that creating a mail-thread record does not invalidate the whole cache."""
-        # make a new record in cache
         record = self.env["res.partner"].new({"name": "Brave New Partner"})
         self.assertTrue(record.name)
 
-        # creating a mail-thread record should not invalidate the whole cache
         self.env["res.partner"].create({"name": "Actual Partner"})
         self.assertTrue(record.name)
 
@@ -1971,7 +1818,6 @@ class TestDiscuss(MailCommon, TestRecipients):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mark_all_as_read(self):
         def _employee_crash(recordset, operation):
-            """If employee is test employee, consider they have no access on document"""
             if recordset.env.uid == self.user_employee.id and not recordset.env.su:
                 return recordset, lambda: exceptions.AccessError(
                     "Hop hop hop Ernest, please step back."
@@ -1992,7 +1838,6 @@ class TestDiscuss(MailCommon, TestRecipients):
                 .browse(self.partner_employee.ids)
             )
 
-            # mark all as read clear needactions
             msg1 = self.test_record.message_post(
                 body="Test",
                 message_type="comment",
@@ -2017,7 +1862,6 @@ class TestDiscuss(MailCommon, TestRecipients):
                 na_count, 0, "mark all as read should conclude all needactions"
             )
 
-            # mark all as read also clear inaccessible needactions
             msg2 = self.test_record.message_post(
                 body="Zest",
                 message_type="comment",
@@ -2106,7 +1950,6 @@ class TestDiscuss(MailCommon, TestRecipients):
             body="Message 2", partner_ids=[user1.partner_id.id, user2.partner_id.id]
         )
 
-        # both notified users should have the 2 messages in Inbox initially
         res = (
             self.env["mail.message"]
             .with_user(user1)
@@ -2120,7 +1963,6 @@ class TestDiscuss(MailCommon, TestRecipients):
         )
         self.assertEqual(len(res["messages"]), 2)
 
-        # first user is marking one message as done: the other message is still Inbox, while the other user still has the 2 messages in Inbox
         message1.with_user(user1).set_message_done()
         res = (
             self.env["mail.message"]
@@ -2148,14 +1990,6 @@ class TestDiscuss(MailCommon, TestRecipients):
 
     @users("employee")
     def test_search_needaction_negative(self):
-        """'not needaction' must be the negation of 'needaction'.
-
-        Regression: the search answered 'not in' itself, by looking for a
-        notification with is_read=True. A message the reader was never notified
-        about is not needaction and has no notification row at all, so it could
-        never match and was silently dropped -- as was every record whose
-        messages are all in that state, through mixin.mail.thread's message_needaction.
-        """
         record = self.env["mail.test.simple"].create({"name": "needaction search"})
         partner = self.env.user.partner_id
         msg_unread, msg_read, msg_never = (
@@ -2206,10 +2040,6 @@ class TestDiscuss(MailCommon, TestRecipients):
             Message.search(scope + [("needaction", "=", False)]), msg_read + msg_never
         )
 
-        # and through mail.thread.message_needaction, which forwards to
-        # message_ids.needaction: "has a message that is not needaction" is not
-        # the negation of "has a needaction message", so the traversal needs its
-        # own guard on top of the mail.message fix above.
         other = self.env["mail.test.simple"].create({"name": "no needaction"})
         self.env.flush_all()
         rscope = [("id", "in", (record + other).ids)]
@@ -2228,9 +2058,6 @@ class TestDiscuss(MailCommon, TestRecipients):
 
     @users("employee")
     def test_partner_find_company_conflict(self):
-        """One address shared by records of two companies must not stamp the
-        partner with whichever record was iterated last -- that also hid the
-        contact behind the *other* company's access guard."""
         company_b = self.env["res.company"].sudo().create({"name": "Probe Co B"})
         Model = self.env["mail.test.gateway.company"]
         record_a = Model.create({"name": "ra", "company_id": self.env.company.id})
@@ -2252,7 +2079,6 @@ class TestDiscuss(MailCommon, TestRecipients):
             "a contact shared across companies belongs to neither in particular",
         )
 
-        # unchanged when the records agree: the company is still applied
         record_c = Model.create({"name": "rc", "company_id": self.env.company.id})
         self.env.flush_all()
         agreed = ['"Agreed" <agreed_company_probe@example.com>']
@@ -2276,8 +2102,6 @@ class TestNotification(MailCommon):
         )
 
     def test_notification_has_error_filter(self):
-        """Ensure message_has_error filter is only returning threads for which
-        the current user is author of a failed message."""
         message = self.test_record.with_user(self.user_admin).message_post(
             body="Test",
             message_type="comment",
@@ -2301,13 +2125,10 @@ class TestNotification(MailCommon):
                 partner_ids=[self.user_admin.partner_id.id],
             )
             self.assertTrue(message2.has_error)
-        # employee is author of message which has a failure
         threads_employee = self.test_record.with_user(self.user_employee).search(
             [("message_has_error", "=", True)]
         )
         self.assertEqual(len(threads_employee), 1)
-        # admin is also author of a message, but it doesn't have a failure
-        # and the failure from employee's message should not be taken into account for admin
         threads_admin = self.test_record.with_user(self.user_admin).search(
             [("message_has_error", "=", True)]
         )
@@ -2355,9 +2176,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_mail_composer_comment_with_template(self):
-        """This test simulates using a template, opening a composer and posting
-        a message to a non-thread record, which transforms into a user notification.
-        Check recipients computation works in non-thread mode."""
         record = self.test_record_nothread.with_env(self.env)
         template = self.test_template.with_env(self.env)
         mail_compose_message = self.env["wizard.mail.message.send"].create(
@@ -2376,7 +2194,6 @@ class TestNoThread(MailCommon, TestRecipients):
             [
                 {
                     "content": f"Hello {record.name}",
-                    # not mixin.mail.thread -> automatically transformed using message_notify
                     "message_type": "user_notification",
                     "notif": [
                         {
@@ -2390,8 +2207,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_mail_composer_mail_with_template(self):
-        """This test simulates scenarios where a required method called `_process_attachments_for_post` is missing,
-        in such case composer should fallback to the method implementation in mail.thread."""
         record = self.test_record_nothread.with_env(self.env)
         template = self.test_template.with_env(self.env)
         mail_compose_message = self.env["wizard.mail.message.send"].create(
@@ -2427,9 +2242,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_message_to_store(self):
-        """Test formatting of messages when linked to non-thread models.
-        Format could be asked notably if an inbox notification due to a
-        'message_notify' happens."""
         test_record = self.test_record_nothread.with_env(self.env)
 
         message = self.env["mail.message"].create(
@@ -2450,10 +2262,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_message_notify(self):
-        """Test notifying on non-thread models, using MixinMailThread as an abstract
-        class with model and res_id giving the record used for notification.
-
-        Test default subject computation is also tested."""
         test_record = self.test_record_nothread.with_env(self.env)
 
         for subject in ["Test Notify", False]:
@@ -2494,8 +2302,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_message_notify_composer(self):
-        """Test comment mode on composer which triggers a notify when model
-        does not inherit from mail thread."""
         test_records, _test_partners = self._create_records_for_batch(
             "mail.test.nothread", 2
         )
@@ -2549,7 +2355,6 @@ class TestNoThread(MailCommon, TestRecipients):
             "default_res_domain": [("id", "in", test_records.ids)],
             "default_template_id": test_template.id,
         }
-        # open a composer and run it in comment mode
         composer_form = Form(self.env["wizard.mail.message.send"].with_context(ctx))
         composer = composer_form.save()
 
@@ -2575,7 +2380,6 @@ class TestNoThread(MailCommon, TestRecipients):
 
     @users("employee")
     def test_message_notify_norecord(self):
-        """Test notifying on no record, just using the abstract model itself."""
         with self.assertPostNotifications(
             [
                 {
@@ -2651,7 +2455,6 @@ class TestBaseFieldRendering(MailCommon):
         )
 
     def test_mail_get_field_path_value_per_type(self):
-        """One assertion per branch of `_mail_format_field_value`."""
         record = self.record
         self.assertEqual(record._mail_get_field_path_value("char_field"), "Some Char")
         self.assertEqual(record._mail_get_field_path_value("text_field"), "Some Text")
@@ -2668,7 +2471,6 @@ class TestBaseFieldRendering(MailCommon):
         )
         self.assertIn("2024", record._mail_get_field_path_value("date_field"))
         self.assertIn("2024", record._mail_get_field_path_value("datetime_field"))
-        # float honours the field's digits, monetary its currency
         self.assertEqual(
             record._mail_get_field_path_value("float_field_with_digits"),
             "12.34560000",
@@ -2682,8 +2484,6 @@ class TestBaseFieldRendering(MailCommon):
         self.assertIn("1,234.5", record._mail_get_field_path_value("monetary_field"))
 
     def test_mail_get_field_path_value_falsy_and_void(self):
-        """Falsy values are dropped, except booleans; a void recordset renders
-        nothing rather than raising."""
         void = self.env["mail.test.track.all"]
         blank = self.env["mail.test.track.all"].create({"name": "Blank"})
         self.assertEqual(blank._mail_get_field_path_value("char_field"), "")
@@ -2701,7 +2501,6 @@ class TestBaseFieldRendering(MailCommon):
         )
 
     def test_mail_get_field_path_value_relational_and_paths(self):
-        """Relational fields render display names; a dotted path walks first."""
         self.assertEqual(
             self.record._mail_get_field_path_value("many2one_field_id"),
             self.tz_partner.display_name,
@@ -2713,13 +2512,6 @@ class TestBaseFieldRendering(MailCommon):
         )
 
     def test_mail_get_field_path_value_invalid_path(self):
-        """Every way of naming a bad path gets the message that names the path.
-
-        A missing field raises KeyError and a path walking *through* a scalar
-        ("char_field.name") raises AttributeError -- two exceptions, one meaning
-        to the caller, so both must produce the specific message rather than
-        only the first one doing so.
-        """
         for path in (
             "no_such_field",
             "many2one_field_id.no_such_field",
@@ -2738,13 +2530,6 @@ class TestBaseFieldRendering(MailCommon):
 
     @mute_logger("odoo.addons.mail.models.base")
     def test_mail_get_field_path_value_keeps_access_errors(self):
-        """An AccessError must reach the caller as an AccessError.
-
-        It is a UserError subclass carrying a message that already says what
-        went wrong and for whom; re-wrapping it as "we were not able to fetch
-        value of field X" loses that and tells the reader nothing they can act
-        on.
-        """
         with patch.object(
             type(self.record),
             "mapped",
@@ -2756,8 +2541,6 @@ class TestBaseFieldRendering(MailCommon):
 
     @mute_logger("odoo.addons.mail.models.base")
     def test_mail_get_field_path_value_wraps_the_unexpected(self):
-        """Anything that is neither a bad path nor a UserError still gets the
-        friendly message -- and leaves its traceback in the log."""
         with patch.object(
             type(self.record), "mapped", side_effect=ZeroDivisionError("boom")
         ):
@@ -2766,15 +2549,6 @@ class TestBaseFieldRendering(MailCommon):
         self.assertIn("not able to fetch", str(caught.exception))
 
     def test_mail_get_field_path_value_datetime_timezone(self):
-        """PINS A KNOWN AMBIGUITY, so that changing it has to be deliberate.
-
-        `_mail_format_field_value` receives the record the value belongs to and
-        then reads the timezone off `self`. So the same partner's datetime
-        renders in the partner's timezone when asked directly, and in the
-        reader's when reached through a path from another record. Both readings
-        are defensible; the point of this test is that the code currently picks
-        between them by the *shape of the path*, and nothing said so.
-        """
         self.env.user.tz = "Europe/Brussels"
         direct = self.tz_partner._mail_get_field_path_value("create_date")
         through_path = self.record._mail_get_field_path_value(
@@ -2789,7 +2563,6 @@ class TestBaseFieldRendering(MailCommon):
         self.assertNotEqual(direct, through_path)
 
     def test_mail_get_timezone(self):
-        """The first populated timezone-ish field wins; None when there is none."""
         self.assertEqual(self.tz_partner._mail_get_timezone(), "Asia/Tokyo")
         self.assertIsNone(
             self.record._mail_get_timezone(),
@@ -2805,7 +2578,6 @@ class TestBaseMailHooks(MailCommon):
     """The remaining `base` hooks that no `/mail,/test_mail` test reached."""
 
     def test_mail_get_message_subtypes(self):
-        """Model-specific subtypes plus the generic ones, never the hidden."""
         subtypes = self.env["mail.test.simple"]._mail_get_message_subtypes()
         self.assertTrue(subtypes)
         self.assertFalse(
@@ -2820,7 +2592,6 @@ class TestBaseMailHooks(MailCommon):
         self.assertIn(self.env.ref("mail.mt_comment"), subtypes)
 
     def test_mail_get_partner_fields_public(self):
-        """The RPC surface the web client calls: many2one partner fields only."""
         record_model = self.env["mail.test.ticket"]
         public = record_model.mail_get_partner_fields()
         private = record_model._mail_get_partner_fields()
@@ -2831,8 +2602,6 @@ class TestBaseMailHooks(MailCommon):
         )
 
     def test_mail_get_reference_model_name(self):
-        """The model a record's messages are stored under: the root of a
-        table-inheritance tree, which the web client cannot derive."""
         self.assertEqual(
             self.env["mail.test.simple"].mail_get_reference_model_name(),
             "mail.test.simple",
@@ -2856,15 +2625,6 @@ class TestBaseMailHooks(MailCommon):
         )
 
     def test_unlink_sweeps_activities_on_a_model_without_the_mixin(self):
-        """THE REASON `unlink` CANNOT SKIP MODELS WITHOUT `activity_ids`.
-
-        `mail.activity.res_model` is a related field on `res_model_id`, an
-        `ir.model`, and nothing ties it to `mixin.mail.activity` -- so an
-        activity on a model that never heard of activities is accepted. With no
-        foreign key behind `res_id` (it is a `Many2oneReference`), the sweep in
-        `Base.unlink` is the only thing that ever collects it, and narrowing
-        that sweep to models carrying `activity_ids` would orphan this row.
-        """
         record = self.env["ir.logging"].create(
             {
                 "dbname": self.env.cr.dbname,
@@ -2884,21 +2644,12 @@ class TestBaseMailHooks(MailCommon):
         self.assertFalse(activity.exists(), "the orphan must not survive its record")
 
     def test_unlink_sweeps_activities_repointed_but_not_flushed(self):
-        """An activity repointed by an unflushed write is still swept.
-
-        The sweep probes in SQL, and a raw statement cannot see a pending write
-        to `res_id`. This pins the observable behaviour rather than the
-        mechanism: it passes with `flush_model` removed too, because `unlink`
-        has already flushed by then. Kept because the contract is what matters
-        and the mechanism may not always hold, not because it isolates the
-        flush -- it does not, and no test here does.
-        """
         first, second = self.env["mail.test.activity"].create(
             [{"name": "First"}, {"name": "Second"}]
         )
         activity = self._activity_on(first)
         self.env.flush_all()
-        activity.res_id = second.id  # deferred write, deliberately not flushed
+        activity.res_id = second.id
         second.unlink()
         self.assertFalse(
             activity.exists(),
@@ -2917,8 +2668,6 @@ class TestBaseMailHooks(MailCommon):
         self.assertFalse(activities.exists())
 
     def test_get_default_activity_view(self):
-        """Reached only through `getattr(self, f'_get_default_{view_type}_view')`
-        in `ir_ui_view_base`, so a rename here fails silently at runtime."""
         arch = self.env["mail.test.activity"]._get_default_activity_view()
         self.assertEqual(arch.tag, "activity")
         self.assertEqual(

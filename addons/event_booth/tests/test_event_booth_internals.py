@@ -11,7 +11,6 @@ from odoo.addons.event_booth.tests.common import TestEventBoothCommon
 class TestEventData(TestEventBoothCommon):
     @users("user_eventmanager")
     def test_event_booth_contact(self):
-        """Test contact details computation"""
         customer = self.env["res.partner"].browse(self.event_customer.ids)
         category = self.env["event.booth.category"].browse(
             self.event_booth_category_1.ids
@@ -64,7 +63,6 @@ class TestEventData(TestEventBoothCommon):
             customer.email, customer_email, "No sync from booth to partner"
         )
 
-        # partial update of contact fields: we may end up with mixed contact information, is it a good idea ?
         booth.write({"partner_id": self.event_customer2.id})
         self.assertEqual(booth.contact_name, customer.name)
         self.assertEqual(

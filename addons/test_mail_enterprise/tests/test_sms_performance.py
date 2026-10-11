@@ -26,7 +26,6 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
             )
         )
 
-        # prepare recipients to test for more realistic workload
         Partners = self.env["res.partner"].with_context(self._test_context)
         self.partners = self.env["res.partner"]
         for x in range(10):
@@ -52,9 +51,8 @@ class TestSMSPerformance(BaseMailPerformance, sms_common.SMSCase):
         with (
             self.subTest("QueryCount"),
             self.mockSMSGateway(),
-            # +2 mail.config, +3 the company's integration_twilio_config looked up and created on first send
             self.assertQueryCount(employee=34),
-        ):  # tme: 31
+        ):
             messages = record._message_sms(
                 body="Performance Test",
                 partner_ids=pids,

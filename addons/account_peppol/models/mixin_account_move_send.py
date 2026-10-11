@@ -18,8 +18,6 @@ class MixinAccountMoveSend(models.AbstractModel):
 
     @api.model
     def _get_default_sending_methods(self, move) -> set:
-        """By default, we use the sending method set on the partner or email and peppol."""
-        # EXTENDS 'account'
         default_sending_methods = super()._get_default_sending_methods(move)
         if self._is_applicable_to_move("peppol", move):
             default_sending_methods.add("peppol")
@@ -32,12 +30,8 @@ class MixinAccountMoveSend(models.AbstractModel):
             constraints.pop("not_sale_document", None)
         return constraints
 
-    # -------------------------------------------------------------------------
-    # ALERTS
-    # -------------------------------------------------------------------------
 
     def _get_alerts(self, moves, moves_data):
-        # EXTENDS 'account'
         def peppol_partner(moves):
             return moves.partner_id.commercial_partner_id
 
@@ -49,7 +43,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             )
 
         alerts = super()._get_alerts(moves, moves_data)
-        # Check for invalid peppol partners.
         peppol_moves = moves.filtered(
             lambda m: "peppol" in moves_data[m]["sending_methods"]
         )
@@ -115,7 +108,7 @@ class MixinAccountMoveSend(models.AbstractModel):
                 ),
                 any_moves_not_sent_peppol,
                 len(peppol_not_selected_partners)
-                == 1,  # Check for not peppol partners that are on the network
+                == 1,
             )
         ):
             alerts["account_peppol_partner_want_peppol"] = {
@@ -127,12 +120,8 @@ class MixinAccountMoveSend(models.AbstractModel):
             }
         return alerts
 
-    # -------------------------------------------------------------------------
-    # SENDING METHODS
-    # -------------------------------------------------------------------------
 
     def _get_default_invoice_edi_format(self, move, **kwargs) -> str:
-        # EXTENDS 'account' - default on bis3 if Peppol is set but no format on the partner
         invoice_edi_format = super()._get_default_invoice_edi_format(move, **kwargs)
         if "peppol" in kwargs.get("sending_methods", []):
             return move.partner_id.with_company(
@@ -141,7 +130,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         return invoice_edi_format
 
     def _get_mail_layout(self) -> str:
-        # OVERRIDE 'account'
         return "account_peppol.mail_notification_layout_with_responsible_signature_and_peppol"
 
     def _do_peppol_pre_send(self, moves):
@@ -159,7 +147,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         return None
 
     def _is_applicable_to_company(self, method, company):
-        # EXTENDS 'account'
         if method == "peppol":
             return (
                 company.country_code in PEPPOL_LIST
@@ -170,7 +157,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             return super()._is_applicable_to_company(method, company)
 
     def _is_applicable_to_move(self, method, move, **move_data):
-        # EXTENDS 'account'
         if method == "peppol":
             partner = move.partner_id.commercial_partner_id.with_company(
                 move.company_id
@@ -200,9 +186,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             return super()._is_applicable_to_move(method, move, **move_data)
 
     def _hook_if_errors(self, moves_data, allow_raising=True):
-        # EXTENDS 'account'
-        # to update `peppol_move_state` as `error` to show users that something went wrong
-        # because those moves that failed XML/PDF files generation are not sent via Peppol
         moves_failed_file_generation = self.env["account.move"]
         for move, move_data in moves_data.items():
             if "peppol" in move_data["sending_methods"] and move_data.get(
@@ -215,7 +198,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         return super()._hook_if_errors(moves_data, allow_raising=allow_raising)
 
     def _call_web_service_after_invoice_pdf_render(self, invoices_data) -> None:
-        # EXTENDS 'account'
         super()._call_web_service_after_invoice_pdf_render(invoices_data)
 
         params = {"documents": []}
@@ -292,15 +274,12 @@ class MixinAccountMoveSend(models.AbstractModel):
                 invoice_data["error"] = {"error_title": e.message}
         else:
             if error_vals := response.get("error"):
-                # at the moment the only error that can happen here is ParticipantNotReady error
                 for invoice, invoice_data in invoices_data_peppol.items():
                     invoice.peppol_move_state = "error"
                     invoice_data["error"] = {
                         "error_title": get_peppol_error_message(self.env, error_vals),
                     }
             else:
-                # the response only contains message uuids,
-                # so we have to rely on the order to connect peppol messages to account.move
                 attachments_linked_message = self.env._(
                     "The invoice has been sent to the Peppol Access Point. The following attachments were sent with the XML:"
                 )
@@ -349,8 +328,6 @@ class MixinAccountMoveSend(models.AbstractModel):
                             in new_message.attachment_ids
                         ):
                             invoice.message_main_attachment_id = None
-                        # = ANY(%s)/list, not IN %s/tuple: under psycopg3 the
-                        # tuple binds as a single $1 → "IN $1" syntax error.
                         self.env.cr.execute(
                             "UPDATE ir_attachment SET res_id = NULL WHERE id = ANY(%s)",
                             [list(new_message.attachment_ids.ids)],
@@ -388,8 +365,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             }
             return action
         else:
-            # go back to previous (send and print) action
-            # to avoid doing participant SML lookup again, we don't go through action_send_and_print
             return {
                 "name": self.env._("Send"),
                 "type": "ir.actions.act_window",

@@ -149,7 +149,6 @@ class TestVoipCall(TransactionCase):
         )
 
     def test_acquire_contact_info_with_no_number_names_nobody(self):
-        # every user without an extension has an empty voip_username
         call = self.env["phone.call"].create(
             {"phone_number": False, "user_id": self.env.uid}
         )

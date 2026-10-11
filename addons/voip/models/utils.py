@@ -28,15 +28,13 @@ def extract_country_code(phone_number):
             return {"iso": "", "itu": ""}
         sanitized_number = match.group(
             "phone_number"
-        )  # the phone number without the + or 00
+        )
         for length in range(
             min(4, len(sanitized_number) + 1), 0, -1
-        ):  # 3 is the max length of a country code
+        ):
             country_code = int(sanitized_number[:length])
             if (
                 country_code in COUNTRY_CODE_TO_REGION_CODE
-                # Only accept country codes that map to exactly one region
-                # (e.g., accept 44->['GB'] for UK, reject 1->['US','CA',...] for North America)
                 and len(COUNTRY_CODE_TO_REGION_CODE[country_code]) == 1
             ):
                 region_code = phonenumbers.region_code_for_country_code(country_code)

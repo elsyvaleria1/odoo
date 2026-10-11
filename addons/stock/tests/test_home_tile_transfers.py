@@ -65,7 +65,6 @@ class TestHomeTileTransfers(TestStockCommon):
         request = [{"id": "transfers_1", "type": "transfers"}]
         self.env["home.tile"].with_user(self.user_stock_user).get_tiles(request)
         self.env.invalidate_all()
-        # stock_picking_batch adds one grouped count of the types' batches
         batch_statements = int("stock.picking.batch" in self.env)
         with self.assertQueryCount(6 + batch_statements):
             self.env["home.tile"].with_user(self.user_stock_user).get_tiles(request)

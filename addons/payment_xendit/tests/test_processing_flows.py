@@ -14,8 +14,6 @@ from odoo.addons.payment_xendit.tests.common import XenditCommon
 class TestProcessingFlow(XenditCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_xendit.models.payment_transaction")
     def test_webhook_notification_triggers_processing(self):
-        """Test that receiving a valid webhook notification and signature verified triggers the
-        processing of the payment data."""
         self._create_transaction("redirect")
         url = self._build_url(XenditController._webhook_url)
         with (
@@ -31,7 +29,6 @@ class TestProcessingFlow(XenditCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_xendit.models.payment_transaction")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(XenditController._webhook_url)
         with patch(
@@ -41,19 +38,16 @@ class TestProcessingFlow(XenditCommon, PaymentHttpCommon):
             self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_webhook_notification_with_valid_signature(self):
-        """Test the verification of a webhook notification with a valid signature."""
         tx = self._create_transaction("redirect")
         self.assertTrue(tx._is_xendit_token_valid(self.provider.xendit_webhook_token))
 
     @mute_logger("odoo.addons.payment_xendit.models.payment_transaction")
     def test_reject_notification_with_missing_signature(self):
-        """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(tx._is_xendit_token_valid(None))
 
     @mute_logger("odoo.addons.payment_xendit.models.payment_transaction")
     def test_reject_notification_with_invalid_signature(self):
-        """Test the verification of a notification with an invalid signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(tx._is_xendit_token_valid("dummy"))
 

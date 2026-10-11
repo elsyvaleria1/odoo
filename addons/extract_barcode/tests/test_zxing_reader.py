@@ -48,9 +48,6 @@ class TestZxingReader(BaseCase):
         self.assertIn("zxing_barcodes", get_known_reader_names())
 
     def test_decoding_a_page_needs_no_permission_to_spend(self):
-        """Rendering is what a page costs, and `images` is already paid for by
-        whoever asked for it. Registered above the default ceiling, a printed
-        CFDI's QR would go unread on every document nobody thought to ask."""
         self.assertLessEqual(zxing_reader.Barcodes.cost, CHEAP)
 
     def test_what_the_decoder_finds_becomes_the_payloads(self):

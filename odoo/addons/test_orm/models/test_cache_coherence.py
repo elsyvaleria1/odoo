@@ -1,16 +1,6 @@
 from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
 
-# The precomputed fields here read their inputs through many2ones only: a
-# precompute reading an x2many reads the draft twins of the saved lines,
-# which keep values from before a later write.
-#
-# A compute reading an x2many over a model with `active` reads it filtered by
-# the caller's `active_test`, and archiving a line changes that membership:
-# as upstream, the dependency on `.active` and the context key are the
-# declaration's to state. A stored compute runs in the environment of whoever
-# needs it (a flush, a read), so the stored ones here filter on `active`
-# themselves and store the same value whoever triggered them.
 
 
 class TestOrmCoherenceCategory(models.Model):

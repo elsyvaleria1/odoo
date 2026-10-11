@@ -50,9 +50,7 @@ class TestSubscriptionMultiCompany(TestSubscriptionCommon):
         ]
 
     def test_basic_price_computation_multicurrency_multicompany(self):
-        """ " Testing different setups with same product from the main company"""
 
-        # With pricelists from same currency as company
         base_so_company_1 = self.env["sale.order"].create(
             {"partner_id": self.partner.id}
         )
@@ -83,7 +81,6 @@ class TestSubscriptionMultiCompany(TestSubscriptionCommon):
             msg="conversion rate should be applied",
         )
 
-        # With pricelists from different currency as company
         so_company_1_new_currency_pl = self.env["sale.order"].create(
             {"partner_id": self.partner_new_currency.id}
         )
@@ -109,7 +106,6 @@ class TestSubscriptionMultiCompany(TestSubscriptionCommon):
             sol_company_2_base_currency_pl.price_unit, base_sol_company_1.price_unit
         )
 
-        # Checking that the computation without pricelist is the same as with empty pricelist
         self.env["product.pricelist"].search([("active", "=", True)]).action_archive()
         so_company_1_no_pl = self.env["sale.order"].create(
             {"partner_id": self.partner.id}
@@ -139,15 +135,7 @@ class TestSubscriptionMultiCompany(TestSubscriptionCommon):
         self.assertEqual(sol_company_2_no_pl.price_unit, base_sol_company_2.price_unit)
 
     def test_ignore_archived_companies_subs(self):
-        """
-        Make sure that if a company is archived, the cron doesn't continue invoicing its subscriptions.
-        """
 
-        # Create a new company called company_2, create a subscription sale
-        # order for it and confirm it. Then we want to archive the company
-        # but we can't because there is a user assigned to it, so get the
-        # user, archive it, and then archive the company. Finally trigger
-        # the recurring invoice and check that nothing has been invoiced.
 
         company_2 = self.setup_other_company(name="company_2")["company"]
 

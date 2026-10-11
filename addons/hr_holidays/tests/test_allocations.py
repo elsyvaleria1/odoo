@@ -372,15 +372,6 @@ class TestAllocations(TestHrHolidaysCommon):
         self.assertEqual(employee_allocation.name, "Custom Time Off Test (10.0 day(s))")
 
     def test_a_day_allocation_returning_from_accrual_asks_for_one_day(self):
-        """`_onchange_allocation_type` empties an allocation turned into an
-        accrual one, and offers a day back when it is turned into a regular one
-        with nothing in it.
-
-        Was `change_allocation_type_day`, which the runner never collected: the
-        name did not start with `test`, it wrote a `holiday_type` this model has
-        not had for some time, and it moved `allocation_type` through "extra",
-        which is not one of its two values.
-        """
         self.leave_type.write(
             {"name": "Custom Time Off Test", "allocation_validation_type": "hr"}
         )
@@ -434,12 +425,6 @@ class TestAllocations(TestHrHolidaysCommon):
         self.assertEqual(employee_emp_allocation.number_of_hours_display, 10)
 
     def test_an_hour_allocation_returning_from_accrual_asks_for_one_day(self):
-        """The same, for a type requested in hours.
-
-        Was `change_allocation_type_hours`, dead for the same three reasons, and
-        additionally setting `type_request_unit` in `create` -- a compute with
-        no writable side, so the unit has to come from the leave type.
-        """
         self.leave_type.write(
             {
                 "name": "Custom Time Off Test",
@@ -876,12 +861,6 @@ class TestAllocations(TestHrHolidaysCommon):
         self.assertEqual(allocation_3_days.state, "refuse")
 
     def test_shortening_an_allocation_cannot_strand_taken_leaves(self):
-        """Moving `date_to` back must be checked like reducing the days is.
-
-        `write` only looked at the duration and the state, so an end date
-        pulled in front of leaves already approved went through in silence and
-        left them uncovered.
-        """
         today = date.today()
         start_of_week = today - timedelta(days=today.weekday())
         leave_employee = self.env["hr.employee"].create(
@@ -913,11 +892,6 @@ class TestAllocations(TestHrHolidaysCommon):
             allocation.date_to = start_of_week + timedelta(days=7)
 
     def test_allocation_end_date_stays_editable_once_validated(self):
-        """The end date of a running allocation must be reachable.
-
-        Extending or trimming the validity of an accrual allocation used to
-        mean cancelling it and building a new one.
-        """
         accrual_plan = self.env["hr.leave.accrual.plan"].create(
             {"name": "Accrual Plan", "time_off_type_id": self.leave_type_paid.id}
         )
@@ -944,13 +918,6 @@ class TestAllocations(TestHrHolidaysCommon):
         self.assertEqual(allocation.date_to, date(2023, 6, 30))
 
     def test_refused_allocation_is_frozen(self):
-        """A refused allocation cannot be edited from either form.
-
-        The list already treats refuse as terminal; the form did not, and a
-        refused allocation can still be approved (_get_next_states_by_state
-        allows refuse -> validate), so an amount edited while refused would be
-        granted by whoever revives it.
-        """
         allocation = self.env["hr.leave.allocation"].create(
             {
                 "name": "Refused later on",
@@ -977,8 +944,6 @@ class TestAllocations(TestHrHolidaysCommon):
                         form.holiday_status_id = self.leave_type
 
     def test_refused_allocation_title_is_frozen(self):
-        """The manager form replaces the title field, and its replacement kept
-        no readonly of its own."""
         allocation = self.env["hr.leave.allocation"].create(
             {
                 "name": "Refused later on",

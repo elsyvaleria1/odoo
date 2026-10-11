@@ -37,6 +37,6 @@ def patch_module() -> None:
         original_init(files)
         add_web_types()
 
-    repinning: _RepinningInit = init  # type: ignore[assignment]
+    repinning: _RepinningInit = init
     repinning._odoo_repins = True
     mimetypes.init = repinning

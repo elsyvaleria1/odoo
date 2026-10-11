@@ -38,14 +38,10 @@ class TestResUsers(TestMailFullCommon):
             groups="base.group_portal",
         )
 
-        # Remove existing blacklisted email / phone (they will be sanitized, so we avoid to sanitize them here)
         cls.env["mail.blacklist"].search([]).unlink()
         cls.env["phone.blacklist"].search([]).unlink()
 
     def test_deactivate_portal_users_blacklist(self):
-        """Test that the email and the phone are blacklisted
-        when a portal user deactivate his own account.
-        """
         (
             self.portal_user | self.portal_user_2 | self.portal_user_3
         )._deactivate_portal_user(request_blacklist=True)
@@ -91,7 +87,6 @@ class TestResUsers(TestMailFullCommon):
         self.assertFalse(blacklist, "Should have skipped invalid phone")
 
     def test_deactivate_portal_users_no_blacklist(self):
-        """Test the case when the user do not want to blacklist his email / phone."""
         (self.portal_user | self.portal_user_2)._deactivate_portal_user(
             request_blacklist=False
         )

@@ -93,10 +93,6 @@ class MailAliasDomain(models.Model):
 
     @api.depends("config_ids.company_id")
     def _compute_company_ids(self) -> None:
-        # the company's domain lives on its mail.config, so the companies using
-        # a domain are the owners of the configurations that name it: a
-        # one2many on res.company would hang off a field that is no longer a
-        # column, and the ORM could neither fill nor invalidate it
         for domain in self:
             domain.company_ids = domain.config_ids.company_id.sorted("id")
 
@@ -128,8 +124,6 @@ class MailAliasDomain(models.Model):
         return domain
 
     def init(self) -> None:
-        # The MTA's recipient lookup reads this view, so an address no alias
-        # answers is refused in the SMTP dialogue rather than bounced after.
         self.env.cr.execute(
             SQL(
                 """
@@ -221,10 +215,6 @@ class MailAliasDomain(models.Model):
         if not names:
             return
 
-        # The records being checked are read from the cache and the others
-        # from the table: any fetch here would flush this model's pending
-        # rows first, and the unique index would refuse before this check can
-        # say why.
         def addresses(domain):
             return tuple(
                 f"{alias}@{domain.name}" if alias else ""

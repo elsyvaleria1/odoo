@@ -39,24 +39,13 @@ class ResUsers(models.Model):
 
     @api.model
     def signup(self, values, token=None) -> tuple:
-        """signup a user, to either:
-        - create a new user (no token), or
-        - create a user for a partner (with token, but no user for partner), or
-        - change the password of a user (with token, and existing user).
-        :param values: a dictionary with field values that are written on user
-        :param token: signup token (optional)
-        :return: (login, password) for the signed up user
-        """
         if token:
-            # signup with a token: find the corresponding partner id
             partner = self.env["res.partner"]._get_signup_partner(
                 token, check_validity=True, raise_exception=True
             )
-            # invalidate signup token
             partner.write({"signup_type": False})
             partner_user = (partner.user_ids and partner.user_ids[0]) or False
 
-            # avoid overwriting existing (presumably correct) values with geolocation data
             if partner.country_id or partner.zip or partner.city:
                 values.pop("city", None)
                 values.pop("country_id", None)
@@ -64,7 +53,6 @@ class ResUsers(models.Model):
                 values.pop("lang", None)
 
             if partner_user:
-                # user exists, modify it according to values
                 values.pop("login", None)
                 values.pop("name", None)
                 partner_user.write(values)
@@ -72,7 +60,6 @@ class ResUsers(models.Model):
                     partner_user._notify_inviter()
                 return (partner_user.login, values.get("password"))
             else:
-                # user does not exist: sign up invited user
                 values.update(
                     {
                         "name": partner.name,
@@ -85,7 +72,6 @@ class ResUsers(models.Model):
                     values["company_ids"] = [Command.set([partner.company_id.id])]
                 partner_user = self._signup_create_user(values)
         else:
-            # no token, sign up an external user
             values["email"] = values.get("email") or values.get("login")
             self._signup_create_user(values)
 
@@ -99,9 +85,7 @@ class ResUsers(models.Model):
 
     @api.model
     def _signup_create_user(self, values):
-        """signup a new user using the template user"""
 
-        # check that uninvited users may sign up
         if "partner_id" not in values:
             if self._get_signup_invitation_scope() != "b2c":
                 raise SignupError(
@@ -119,7 +103,6 @@ class ResUsers(models.Model):
 
     def _notify_inviter(self) -> None:
         for user in self:
-            # notify invite user that new user is connected
             user.create_uid._bus_send(
                 "res.users/connection",
                 {"username": user.name, "partnerId": user.partner_id.id},
@@ -142,19 +125,14 @@ class ResUsers(models.Model):
                 self.env._("Signup: no name or partner given for new user")
             )
 
-        # create a copy of the template user (attached to a specific partner_id if given)
         values["active"] = True
         try:
             with self.env.cr.savepoint():
                 return template_user.with_context(no_reset_password=True).copy(values)
         except Exception as e:
-            # copy may failed if asked login is not available.
             raise SignupError(str(e)) from e
 
     def reset_password(self, login):
-        """retrieve the user corresponding to login (login or email),
-        and reset their password
-        """
         users = self.search(self._get_domain_login(login))
         if not users:
             users = self.search(self._get_domain_email(login))
@@ -184,19 +162,16 @@ class ResUsers(models.Model):
             ) from mde
 
     def _action_reset_password(self, signup_type="reset") -> dict | None:
-        """create signup token for each user, and send their signup url by email"""
         if self.env.context.get("install_mode") or self.env.context.get("import_file"):
             return None
         if self.filtered(lambda user: not user.active):
             raise UserError(
                 self.env._("You cannot perform this action on an archived user.")
             )
-        # prepare reset password signup
         create_mode = bool(self.env.context.get("create_user"))
 
         self.mapped("partner_id").signup_prepare(signup_type=signup_type)
 
-        # send email to users with their signup url
         internal_account_created_template = None
         portal_account_created_template = None
         if create_mode:
@@ -331,8 +306,6 @@ class ResUsers(models.Model):
             ["name", "login", "create_uid"],
         ).grouped("create_uid")
 
-        # Do not use progress since we have no way of knowing to whom we have
-        # already sent e-mails.
 
         for user, invited_users in invited_by_users.items():
             invited_user_emails = [f"{u.name} ({u.login})" for u in invited_users]
@@ -365,12 +338,6 @@ class ResUsers(models.Model):
         )
         new_emails = set(emails) - inactive_matches
         res = super().web_create_users(list(new_emails))
-        # Only (re)send the signup invite to inactive users that HAVE an email:
-        # action_reset_password raises "user has no email address" for an
-        # email-less user, which would abort the WHOLE batch invite over a single
-        # login-only match (e.g. a user whose login is an email but whose email
-        # field is empty). Mirror the create() override below, which likewise
-        # filters ``users.filtered('email')`` before resetting.
         invitable_users = inactive_users.filtered("email")
         if invitable_users:
             invitable_users.with_context(create_user=True).action_reset_password()
@@ -378,7 +345,6 @@ class ResUsers(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # overridden to automatically invite user to sign up
         users = super().create(vals_list)
         if not self.env.context.get("no_reset_password"):
             users_with_email = users.filtered("email")
@@ -400,13 +366,11 @@ class ResUsers(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _ondelete_signup_cancel(self) -> None:
-        # Cancel pending partner signup when the user is deleted.
         for user in self:
             if user.partner_id:
                 user.partner_id.signup_cancel()
 
     def copy(self, default=None):
         if not default or not default.get("email"):
-            # avoid sending email to the user we are duplicating
             self = self.with_context(no_reset_password=True)
         return super().copy(default=default)

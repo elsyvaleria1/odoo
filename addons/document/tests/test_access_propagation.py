@@ -74,7 +74,6 @@ class TestAccessPropagation(TransactionCaseDocuments):
             }
         )
         leaf.sudo().owner_id = self.env.ref("base.user_admin")
-        # the edit grant a previous owner keeps goes too
         (mid | leaf).sudo().access_ids.unlink()
 
         readable = as_user.search([("id", "in", (root | mid | leaf).ids)])

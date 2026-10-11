@@ -129,11 +129,6 @@ class TestDocumentsClientFieldLists(TransactionCase):
         return path.read_text(encoding="utf-8")
 
     def _js_string_list(self, source, marker, label, which=0):
-        """Return the strings of the *which*-th ``[...]`` literal after *marker*.
-
-        `which` is needed because the call this reads takes a domain before its
-        field list, and the domain is a bracketed literal too.
-        """
         start = source.find(marker)
         self.assertNotEqual(
             start, -1, f"{label}: {marker!r} not found -- has it been renamed?"
@@ -156,27 +151,13 @@ class TestDocumentsClientFieldLists(TransactionCase):
         return set(re.findall(r'"([a-z_0-9]+)"', groups[which]))
 
     def test_the_mock_search_panel_reads_what_the_route_sends(self):
-        """The mock's field list must cover `_get_fields_search_panel()`.
-
-        The mock may read *more* (it builds the folder tree itself, so it also
-        wants `id`, `is_folder` and `type`); it may not read less, because what
-        it leaves out simply arrives empty in every test that renders it.
-        """
         source = self._read_js("static/tests/helpers/data.js")
         mock_fields = self._js_string_list(
             source,
             "async search_panel_select_range",
             "document.document mock",
-            # [0] is the `[["type", "=", "folder"]]` domain, [1] the field list
             which=1,
         )
-        # Only the fields THIS module owns. _get_fields_search_panel is
-        # extended by installed bridges -- ai_documents adds ai_sort_prompt --
-        # and this mock serves documents' own JS suite, which runs with
-        # documents' assets and never sees a bridge's field. Comparing against
-        # the live registry made the assertion depend on which modules the
-        # database happens to carry, and demanded that documents enumerate a
-        # field it does not declare.
         document = self.env["document.document"]
         served = {
             name
@@ -191,13 +172,6 @@ class TestDocumentsClientFieldLists(TransactionCase):
         )
 
     def test_the_details_panel_asks_for_fields_that_exist(self):
-        """Every name in `DOCUMENTS_VIEW_REQUIRED_FIELDS` must be a real field.
-
-        The list is injected into `activeFields` for every documents view, and
-        the web client dereferences the field definition while building the read
-        specification -- so a name that no longer resolves is not a blank panel,
-        it is a TypeError that takes the whole view's data loading down.
-        """
         source = self._read_js("static/src/views/hooks.js")
         required = self._js_string_list(
             source, "DOCUMENTS_VIEW_REQUIRED_FIELDS", "DOCUMENTS_VIEW_REQUIRED_FIELDS"

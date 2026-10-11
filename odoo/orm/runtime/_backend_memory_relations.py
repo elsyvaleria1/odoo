@@ -54,7 +54,6 @@ class _InMemoryRelationsMixin:
         *,
         probe_links: bool = False,
     ) -> dict[int, list[int]]:
-        # a dict row scan costs nothing to probe for: `probe_links` changes nothing
         position = {id2: index for index, id2 in enumerate(query.get_result_ids())}
         group: dict[int, list[int]] = defaultdict(list)
         for id1, id2 in self._read_m2m_pairs(

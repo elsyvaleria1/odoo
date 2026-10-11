@@ -9,8 +9,6 @@ from odoo.addons.account.tests.test_account_move_line_tax_details import (
 @tagged("post_install", "-at_install")
 class TestAccountFleet(TestAccountTaxDetailsReport):
     def test_tax_report_with_vehicle_split_repartition(self):
-        """Test tax report with split repartition lines across different vehicles."""
-        # Ensure user has access to fleet vehicles
         self.env.user.group_ids += self.env.ref(
             "resource_asset_vehicle.fleet_group_manager"
         )

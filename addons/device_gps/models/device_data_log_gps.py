@@ -16,8 +16,6 @@ class DeviceDataLogGps(models.Model):
     _description = "IoT GPS Tracking log"
     _rec_name = "timestamp"
 
-    # In production this table is a postgres_fdw foreign table over the
-    # marin190_gps database (t32231); see mixin.device.data.log._auto_init.
     _fdw_checked_references = ("device_id", "channel_id")
     _fdw_pointer_columns = (("device_device", "log_gps_last_id"),)
 
@@ -342,10 +340,6 @@ class DeviceDataLogGps(models.Model):
                 elapsed = (point["timestamp"] - previous["timestamp"]).total_seconds()
                 hours = min(elapsed, self._TRAIL_MAX_GAP_SECONDS) / 3600.0
                 moving = bool(point["movement"]) or speed > 0
-                # Same classification as the daily report's vehicle_state,
-                # with one deliberate fold: ignition OFF while moving is
-                # 'coasting' there, but wizard.device.device.view.trail.result has no coasting
-                # column, so it stays counted as parked here.
                 if moving and ignition is not False:
                     analytics["driving_hours"] += hours
                 elif ignition:

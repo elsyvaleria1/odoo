@@ -60,8 +60,6 @@ class TestGetViews(HomeworkingCase):
 
     @freeze_time("2026-01-28")
     def test_the_client_reads_the_rewritten_view_not_only_the_arch(self):
-        # get_view ships `ir` beside `arch` and the client reads `ir` first, so
-        # an override that rewrites only the arch rewrites nothing the user sees.
         view = self._view(
             "list", """<list><field name="today_location_name"/></list>"""
         )

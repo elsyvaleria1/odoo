@@ -77,16 +77,6 @@ class ResPartnerAttributeLine(models.Model):
 
     @api.model
     def _follow_commercial_partner(self, partners) -> None:
-        """Move captured attributes up when the contact hierarchy moves.
-
-        _check_commercial_partner is an @api.constrains on the line's
-        partner_id, and the ORM has no cross-model constrains: nothing re-runs
-        it when the *partner* is demoted to a contact. The lines would keep
-        scoring a record that is no longer the commercial entity while the new
-        one scores as if nothing had ever been captured. Moving them is
-        preferred over rejecting the move, which would block a legitimate
-        hierarchy edit for a reason the user cannot act on.
-        """
         line_model = self.with_context(active_test=False)
         for partner in partners:
             commercial = partner.commercial_partner_id

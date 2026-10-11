@@ -381,7 +381,6 @@ class TestPosOrderPricingTrust(TestPoSCommon):
         list_based = pricelist("List based")
         retail = pricelist("Retail", list_based)
         wholesale = pricelist("Wholesale", retail)
-        # the constraint forbids a cycle, data written before it may hold one
         self.env.flush_all()
         self.env.cr.execute(
             SQL(

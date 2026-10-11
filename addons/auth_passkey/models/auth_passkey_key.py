@@ -85,21 +85,13 @@ class AuthPasskeyKey(models.Model):
             passkey.public_key = public_key
 
     def _inverse_public_key(self):
-        # Deliberate no-op: `public_key` is manually column-backed (see
-        # `init()` above) but intentionally NOT `store=True`, so the ORM
-        # never persists it through this inverse. The only writer is the
-        # raw SQL UPDATE in `WizardAuthPasskeyKeyCreate.action_generate_key()` below, at
-        # creation time. A future `write({'public_key': ...})` or
-        # `create({'public_key': ...})` call will silently no-op here
-        # instead of persisting - route any new writer through raw SQL
-        # like `action_generate_key()` does, not through this field.
         pass
 
     @api.model
     def _get_session_challenge(self):
         challenge = request.session.pop("webauthn_challenge", None)
         if not challenge:
-            raise AccessDenied("Cannot find a challenge for this session")  # noqa: E8505  a developer diagnostic for a broken WebAuthn flow
+            raise AccessDenied("Cannot find a challenge for this session")
         return challenge
 
     @api.model
@@ -132,8 +124,6 @@ class AuthPasskeyKey(models.Model):
 
     @api.model
     def _get_own_authentication_options(self, challenge: bytes) -> dict[str, Any]:
-        """Options asking one of the current user's own passkeys to sign
-        ``challenge``, with the user verified (fingerprint, face or PIN)."""
         self.env.cr.execute(
             SQL(
                 "SELECT credential_identifier FROM auth_passkey_key "
@@ -160,9 +150,6 @@ class AuthPasskeyKey(models.Model):
     def _accept_own_assertion(
         self, credential: dict[str, Any], challenge: bytes
     ) -> dict[str, Any]:
-        """Verify that one of the current user's own passkeys signed ``challenge``
-        with the user verified, advance its sign count, and return what checking
-        the signature again needs. Raises AccessDenied otherwise."""
         self.env.cr.execute(
             SQL(
                 "SELECT id, public_key, sign_count FROM auth_passkey_key "
@@ -244,9 +231,6 @@ class AuthPasskeyKey(models.Model):
     def action_delete_passkey(self) -> None:
         for key in self:
             if key.create_uid.id == self.env.user.id:
-                # Force to go through `res.users.auth_passkey_key_ids` to trigger the session token cache invalidation
-                # See `res.users.write` and `_get_fields_invalidation`
-                # `self.env.user` is already sudo, so no need to re-apply `sudo` to get delete access right.
                 self.env.user.write({"auth_passkey_key_ids": [Command.delete(key.id)]})
                 new_token = self.env.user._get_session_token(request.session.sid)
                 request.session.session_token = new_token

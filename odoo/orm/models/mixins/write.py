@@ -47,9 +47,6 @@ class WriteMixin(_ModelStubs):
                     f"_increment_fields_skiplock: field {field!r} is not an integer"
                 )
 
-        # a pending write of a counter lands before the increment, and the
-        # cache drops the counters after it: a read in the same transaction
-        # answers the incremented value, not the one written or fetched before
         self.flush_recordset(fields)
         updated = self.env.backend.increment_columns_skip_locked(self, fields, self.ids)
         self._invalidate_cache(fields, self._ids, flush=False)
@@ -111,12 +108,6 @@ class WriteMixin(_ModelStubs):
             )
             if to_compute:
                 self._recompute_recordset(to_compute)
-                # A new record's stored compute is lazy: it is neither cached
-                # nor scheduled, so `_recompute_recordset` finds nothing to
-                # settle. The group would then compute on the first read
-                # AFTER this write and assign every field of the group,
-                # overwriting what was just written. Reading it settles it
-                # now, exactly as the x2many inverses above are settled.
                 new_recs = self.browse([id_ for id_ in self._ids if not id_])
                 if new_recs:
                     _debug.logic(
@@ -135,14 +126,14 @@ class WriteMixin(_ModelStubs):
         vals: ValuesType,
     ) -> None:
         for fields in inverses_by_hook.values():
-            dirty_marked = 0  # debuglog
+            dirty_marked = 0
             for field in fields:
                 if (
                     not field.store
                     and (not field.inherited or not field.is_x2many)
                     and any(field._iter_cache_missing_ids(real_recs))
                 ):
-                    dirty_marked += 1  # debuglog
+                    dirty_marked += 1
                     field.mark_dirty(
                         typing.cast("BaseModel", real_recs), vals[field.name]
                     )
@@ -375,11 +366,6 @@ class WriteMixin(_ModelStubs):
         )
 
     def _write_x2many_multi(self, fname: str, values: list[typing.Any]) -> None:
-        # `write` gives every record one value; a stored x2many whose records
-        # each take their own value (consumed lines linked to each order's
-        # produced lines) would cost one relation statement per record. The
-        # relation field applies every (record, value) pair in one pass. Like
-        # `_write_multi`, it does not run `write` overrides.
         if len(self) != len(values):
             raise ValueError(
                 f"_write_x2many_multi: len(records)={len(self)} != "
@@ -435,9 +421,6 @@ class WriteMixin(_ModelStubs):
             if not ids:
                 continue
             field = self._fields[fname]
-            # the row is one: what the tree's other models cached of it is
-            # stale, and a value one of them still holds dirty is the one its
-            # own flush leaves in the row
             overridden: set[IdType] = set()
             for sibling in field.tree_siblings:
                 if dirty := core.get_dirty(sibling):

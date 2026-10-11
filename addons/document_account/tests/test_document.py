@@ -20,7 +20,6 @@ from odoo.addons.document_account.tests.common import (
 @tagged("post_install", "-at_install", "test_document_bridge")
 class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
     def test_action_view_documents_account_move(self):
-        """Test the behaviour of opening the default folder when there is more than one document."""
         account_move_test_1, account_move_test_2 = self.env["account.move"].create(
             [
                 {
@@ -65,7 +64,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             "Should be False because no attachment is attached to this record",
         )
 
-        # If both the documents have same folder, open that folder.
         action = account_move_test_1.action_view_documents_account_move()
         self.assertEqual(
             action["context"]["searchpanel_default_user_folder_id"],
@@ -73,7 +71,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             "The 'folder A' should be the default.",
         )
 
-        # If both the documents have different folder, open the 'All' folder.
         folder_test = self.env["document.document"].create(
             {"name": "folder_test", "type": "folder"}
         )
@@ -89,7 +86,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         )
 
     def test_bridge_folder_workflow(self):
-        """Test creating the new business model (vendor bill)."""
         self.assertFalse(self.document_txt.res_model, "failed at default res model")
         account_moves_count_pre = self.env["account.move"].sudo().search_count([])
         multi_return = (
@@ -177,7 +173,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         self.assertRecordValues(document, [expected])
 
     def test_bridge_account_account_settings_on_write(self):
-        """Make sure the settings apply their values when an ir_attachment is set as message_main_attachment_id on invoices."""
         folder_test = self.env["document.document"].create(
             {"name": "folder_test", "type": "folder"}
         )
@@ -224,12 +219,10 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 document.folder_id, folder_test, "the text test document have a folder"
             )
 
-            # Ensure the main attachment is the first one and ensure the document is correctly linked
             self._assert_main_attachment_and_document(
                 invoice_test, document, attachments[0], attachments[0], []
             )
 
-            # Switch the main attachment to the second one and ensure the document is updated correctly
             invoice_test.write({"message_main_attachment_id": attachments[1].id})
             self._assert_main_attachment_and_document(
                 invoice_test,
@@ -239,7 +232,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 attachments[0].ids,
             )
 
-            # Switch the main attachment to the third one and ensure the document is updated correctly
             attachments[2].register_as_main_attachment(force=True)
             self._assert_main_attachment_and_document(
                 invoice_test,
@@ -249,7 +241,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 (attachments[0] + attachments[1]).ids,
             )
 
-            # Ensure all attachments are still linked to the invoice
             attachments = self.env["ir.attachment"].search(
                 [("res_model", "=", "account.move"), ("res_id", "=", invoice_test.id)]
             )
@@ -259,13 +250,9 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 "there should be 3 attachments linked to the invoice",
             )
 
-            # deleting the setting to prevent duplicate settings.
             setting.unlink()
 
     def test_bridge_account_account_settings_on_write_with_versioning(self):
-        """With accounting-document centralization activated, make sure the right attachment is set as main
-        attachment on the invoice when versioning is involved and only one document is created and updated.
-        """
         folder_test = self.env["document.document"].create(
             {"name": "folder_test", "type": "folder"}
         )
@@ -326,12 +313,8 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 ],
             )
 
-        # Ensure the main attachment is attachment-1
         check_main_attachment_and_document(first_attachment, first_attachment, [])
 
-        # Version the main attachment:
-        # attachment-1 become attachment-3
-        # version attachment become attachment-1
         document.write(
             {
                 "datas": TEXT,
@@ -345,7 +328,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             third_attachment, third_attachment, first_attachment.ids
         )
 
-        # Switch main attachment to attachment-2
         second_attachment.register_as_main_attachment(force=True)
         check_main_attachment_and_document(
             second_attachment,
@@ -353,7 +335,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             (first_attachment + third_attachment).ids,
         )
 
-        # restore versioned attachment (attachment-1)
         document.write({"attachment_id": document.previous_attachment_ids[0].id})
         check_main_attachment_and_document(
             second_attachment,
@@ -361,7 +342,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             (third_attachment + second_attachment).ids,
         )
 
-        # Switch main attachment to attachment-3
         third_attachment.register_as_main_attachment(force=True)
         check_main_attachment_and_document(
             third_attachment,
@@ -369,7 +349,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             (second_attachment + first_attachment).ids,
         )
 
-        # Ensure there is still only one document linked to the invoice
         document = self.env["document.document"].search(
             [("res_model", "=", "account.move"), ("res_id", "=", invoice_test.id)]
         )
@@ -378,7 +357,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         )
 
     def test_journal_entry(self):
-        """On a synced journal entry, each attachment yields its own document (entries are not centralized into one)."""
         folder_test = self.env["document.document"].create(
             {"name": "Bills", "type": "folder"}
         )
@@ -419,9 +397,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         setting.unlink()
 
     def test_bridge_account_sync_partner(self):
-        """
-        Tests that the partner is always synced on the document, regardless of settings
-        """
         partner_1, partner_2 = self.env["res.partner"].create(
             [{"name": "partner_1"}, {"name": "partner_2"}]
         )
@@ -486,7 +461,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         self.assertTrue(base64.b64decode(document.thumbnail).startswith(b"\x89PNG"))
 
     def test_move_document_unlink(self):
-        """Test that the document is sent to trash when the `account.move` is unlinked."""
         document1, document2 = self.document_txt, self.document_gif
         (document1 | document2).account_create_account_move("in_invoice")
         self.assertEqual(document1.res_model, "account.move")
@@ -507,7 +481,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
                 ("res_id", "=", move2.id),
             ]
         )
-        # attachment not linked to a document
         attachment3 = self.env["ir.attachment"].create(
             {
                 "name": "Attachment 3",
@@ -534,7 +507,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
             "That attachment is not linked to a record and so it should be removed",
         )
 
-        # removing the document in the trash clean the attachment
         document2.unlink()
         self.assertFalse(attachment2.exists())
 
@@ -565,7 +537,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         doc_in_new_company = self.document_txt.copy({"company_id": new_company.id})
 
         for sudo in False, True:
-            # Running test with sudo similulates server actions that run with sudo rights
             with self.subTest(sudo=sudo):
                 with self.assertRaises(UserError) as err:
                     doc_in_new_company.with_company(new_company).sudo(
@@ -593,9 +564,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         self.assertEqual(move.move_type, "in_receipt")
 
     def test_documents_xml_attachment(self):
-        """
-        Makes sure pdf and xml created by the system will create a document
-        """
         folder_test = self.env["document.document"].create(
             {"name": "Bills", "type": "folder"}
         )
@@ -643,11 +611,6 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         setting.unlink()
 
     def test_embeddable_server_action_domain(self):
-        """Test the domain that filters server actions that can be embedded on a folder.
-
-        Especially that server actions that create a record with a journal of a company
-        different from the current one are filtered out.
-        """
         IrActionServer = self.env["ir.actions.server"]
 
         def get_server_actions_for_company(company):
@@ -755,9 +718,6 @@ class TestAccountMoveSendDocument(
     DocumentsAccountTestCommon, TestAccountMoveSendCommon
 ):
     def test_send_and_print_document_creation(self):
-        """
-        Makes sure the documents are created when attaching pdf and xml to the move
-        """
         folder_test = self.env["document.document"].create(
             {"name": "Bills", "type": "folder"}
         )

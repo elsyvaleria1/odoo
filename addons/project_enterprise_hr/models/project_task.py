@@ -49,8 +49,6 @@ class ProjectTask(models.Model):
             _debug.logic(
                 "todo_from_incoming_mail",
                 email_from=msg_dict.get("email_from"),
-                # an inbound mail to the to-do alias is assigned to whoever
-                # sent it, matched on the From address alone
                 assigned_users=user_ids,
                 by="internal_user_from_address" if user_ids else "unassigned",
             )

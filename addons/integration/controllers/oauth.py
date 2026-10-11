@@ -25,14 +25,10 @@ from ..models.integration_service import (
 _logger = logging.getLogger(__name__)
 
 _AUTHORIZE_PATH = "/integration/oauth/authorize/<int:connection_id>"
-# the credential form's button predates connections: it authorizes the
-# connection that credential is bound to
 _CREDENTIAL_AUTHORIZE_PATH = "/api_transport/oauth/authorize/<int:credential_id>"
 _CALLBACK_PATH = OAUTH_CALLBACK_PATH
 
 _OAUTH_STATE_MAX_AGE_SECONDS = 600
-# the verifier stays in the session: the state crosses the browser and the
-# provider in the clear, and a code intercepted with its verifier is redeemable
 _PKCE_SESSION_KEY = "integration.oauth_pkce_verifier"
 
 OAUTH_STATE_SCOPE = register_signed_scope(
@@ -185,7 +181,6 @@ class OAuthController(http.Controller):
             f"{service.oauth_auth_endpoint}?{urlencode(params)}", 303
         )
 
-    # csrf=False: the OAuth state is HMAC-signed and verified in the body
     @http.route(
         [OAUTH_CALLBACK_PATH, *OAUTH_LEGACY_CALLBACK_PATHS],
         type="http",
@@ -240,13 +235,9 @@ class OAuthController(http.Controller):
                 if connection.service_id.oauth_use_pkce
                 else None,
             )
-            # a record that refuses the account it was authorized with keeps
-            # none of the tokens
             with request.env.cr.savepoint():
                 connection._oauth_store_tokens(tokens, redirect_uri)
                 if connection.res_model:
-                    # the authorizer was checked: the record hears of it whatever
-                    # the user may write of it
                     record = (
                         request.env[connection.res_model]
                         .sudo()
@@ -305,8 +296,6 @@ class OAuthController(http.Controller):
         )
 
     def _get_redirect_uri(self, connection):
-        """The service's callback, or the one this connection was last
-        authorized through: its provider's console lists that one for sure."""
         service = connection.service_id
         path = urlsplit(connection.oauth_redirect_uri or "").path
         if path not in service._oauth_callback_paths():

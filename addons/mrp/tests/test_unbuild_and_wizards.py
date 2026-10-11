@@ -455,8 +455,6 @@ class TestUnbuildAndWizards(TestMrpCommon):
     def test_unbuild_statements_per_component_are_bounded(self):
         small = self._unbuild_statements(3)
         large = self._unbuild_statements(12)
-        # One quant lookup per component, plus one UPDATE the flush splits off
-        # when the lines' done date straddles a second.
         self.assertLessEqual(large - small, (12 - 3) + 1, (small, large))
 
     def test_quantity_changes_back_and_forth_do_not_drift(self):

@@ -29,7 +29,7 @@ class COSEAlgorithmIdentifier(int, Enum):
     RSASSA_PKCS1_v1_5_SHA_256 = -257
     RSASSA_PKCS1_v1_5_SHA_384 = -258
     RSASSA_PKCS1_v1_5_SHA_512 = -259
-    RSASSA_PKCS1_v1_5_SHA_1 = -65535  # Deprecated; here for legacy support
+    RSASSA_PKCS1_v1_5_SHA_1 = -65535
 
 
 class COSEKTY(int, Enum):
@@ -52,10 +52,10 @@ class COSECRV(int, Enum):
     https://www.iana.org/assignments/cose/cose.xhtml#table-elliptic-curves
     """
 
-    P256 = 1  # EC2, NIST P-256 also known as secp256r1
-    P384 = 2  # EC2, NIST P-384 also known as secp384r1
-    P521 = 3  # EC2, NIST P-521 also known as secp521r1
-    ED25519 = 6  # OKP, Ed25519 for use w/ EdDSA only
+    P256 = 1
+    P384 = 2
+    P521 = 3
+    ED25519 = 6
 
 
 class COSEKey(int, Enum):
@@ -69,11 +69,8 @@ class COSEKey(int, Enum):
 
     KTY = 1
     ALG = 3
-    # EC2, OKP
     CRV = -1
     X = -2
-    # EC2
     Y = -3
-    # RSA
     N = -1
     E = -2

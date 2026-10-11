@@ -110,8 +110,6 @@ class ViewCase(TransactionCaseWithUserDemo):
 
 class TestNodeLocator(common.TransactionCase):
     def test_the_global_hasclass_is_the_inheritance_engines(self):
-        # lxml resolves a global function before an expression's extensions:
-        # a second hasclass here would override the engine's for every xpath
         self.assertIs(etree.FunctionNamespace(None)["hasclass"], xml.hasclass)
 
     def test_no_match_xpath(self):
@@ -1258,9 +1256,6 @@ class TestTemplating(ViewCase):
         self.patch(self.registry, "ready", True)
 
     def test_render_public_asset_as_a_plain_user(self):
-        # The mailing editor and the website builder fetch their templates
-        # through this RPC as internal users who may not read ir.ui.view;
-        # the access check reads the view's groups on the user's behalf.
         self.View.create(
             {
                 "name": "public asset",
@@ -5318,8 +5313,6 @@ class TestViewGroupRestriction(ViewCase):
         self.assertEqual(Demo.get_view()["id"], self.restricted.id)
 
     def test_a_restricted_view_is_validated_as_its_groups_see_it(self):
-        # code is system-only: the warning needs a group outside system that
-        # reads the model, which base alone does not ship (automation does)
         self.env["ir.access"].create(
             {
                 "name": "internal users read server actions",
@@ -8174,7 +8167,6 @@ class TestViewWriteContract(ViewCase):
         other = self.assertValid(
             '<form><field name="name"/></form>', name="wc o", model="res.partner"
         )
-        # the form arch reads as a spec on the other's form, so it stays
         vals = {"inherit_id": other.id}
         primary.write(vals)
         self.assertEqual(vals, {"inherit_id": other.id})
@@ -8191,7 +8183,6 @@ class TestViewWriteContract(ViewCase):
         )
         self.assertEqual(view.arch_prev, arch)
         self.assertEqual(view.arch_db, arch)
-        # and a later write still saves what it overwrites
         view.write({"arch_base": '<form><field name="email"/></form>'})
         self.assertEqual(view.arch_prev, arch)
 
@@ -8216,7 +8207,7 @@ class TestViewWriteContract(ViewCase):
             view = self.assertValid(
                 '<form><field name="name"/></form>', name="cl", model="res.partner"
             )
-            view.write({"priority": 5})  # takes the snapshot
+            view.write({"priority": 5})
             custom = Custom.create(
                 {
                     "ref_id": view.id,
@@ -8228,8 +8219,6 @@ class TestViewWriteContract(ViewCase):
             self.assertFalse(custom.exists())
 
     def test_an_overlay_replacing_the_root_with_text_is_refused(self):
-        # the XML combine used to hand back None here, a crash for every
-        # reader of the result; a replace of the root needs one element
         primary = self.assertValid(
             '<form><field name="name"/></form>', name="rt p", model="res.partner"
         )
@@ -8282,7 +8271,6 @@ class TestPreloadViews(ViewCase):
 @tagged("post_install", "-at_install")
 class TestAttributeConflicts(ViewCase):
     def _conflicts(self, view):
-        # assertLogs fails on silence, and no conflict is the point here
         records = []
         handler = logging.Handler()
         handler.emit = records.append
@@ -8338,7 +8326,6 @@ class TestAttributeConflicts(ViewCase):
             '<form><field name="name"/></form>', name="ac p3", model="res.partner"
         )
         self._set_string("ac first", primary.id, "extension", "First", priority=1)
-        # `$0` outside a replace is a spec only the XML combine applies
         self.View.create(
             {
                 "name": "ac xml way",
@@ -8457,7 +8444,6 @@ class TestCombineBatching(ViewCase):
             self._combines(lambda: extensions.write({"arch": "<data/>"})), 1
         )
         self.assertEqual(set(extensions.mapped("arch")), {"<data/>"})
-        # and it still validates: a broken arch is refused
         with mute_logger("odoo.addons.base.models.ir_ui_view"):
             with self.assertRaises(ValidationError):
                 extensions.write(
@@ -8553,7 +8539,6 @@ class TestSiblingPrimaryCheck(ViewCase):
         _root, extensions = self._tree(depth=3)
         checks = self._sibling_checks(extensions[-1]._check_xml)
         self.assertIn("siblings=2", checks[0])
-        # a broken sibling is what the check is for
         extensions[-1].write({"arch": '<group name="g2" position="replace"/>'})
         with mute_logger("odoo.addons.base.models.ir_ui_view"):
             with self.assertRaises(ValidationError):
@@ -8856,13 +8841,11 @@ class TestViewArchFileResolution(common.TransactionCase):
             path = handle.name
         self.addCleanup(os.unlink, path)
         self.assertIn("FIRST", ir_ui_view.get_view_arch_from_file(path, "base.v"))
-        # the same parse serves the second read
         with patch.object(
             ir_ui_view.etree, "parse", wraps=ir_ui_view.etree.parse
         ) as parse:
             self.assertIn("FIRST", ir_ui_view.get_view_arch_from_file(path, "base.v"))
         parse.assert_not_called()
-        # a new version of the file is parsed again
         time.sleep(0.01)
         pathlib.Path(path).write_text(record("SECOND"), encoding="utf-8")
         self.assertIn("SECOND", ir_ui_view.get_view_arch_from_file(path, "base.v"))
@@ -9146,7 +9129,6 @@ class TestSweptExtensionWhileLoading(ViewCase):
                 },
             ]
         )
-        # what an older version left: a field its new version no longer has
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE ir_ui_view SET arch_db = jsonb_build_object('en_US', %s::text) WHERE id = %s",
@@ -9898,14 +9880,11 @@ class TestPrimaryChains(ViewCase):
                 "arch": '<field name="website" position="after"><field name="function"/></field>',
             }
         )
-        # archived by a migration, as calendar 2.0 leaves the old appointment
-        # views: the primary no longer combines, and nothing serves it
         self.env.cr.execute(
             "UPDATE ir_ui_view SET active = FALSE WHERE id = ANY(%s)",
             [[extension.id, archived.id]],
         )
         self.View.invalidate_model(["active"])
-        # the data loader reloads the root with active_test=False
         root.with_context(active_test=False).write(
             {
                 "arch": '<form><field name="name"/><field name="email"/>'
@@ -9913,7 +9892,6 @@ class TestPrimaryChains(ViewCase):
             }
         )
         self.assertIn('name="vat"', root.get_combined_arch())
-        # and then reloads the archived primary itself
         archived.with_context(active_test=False).write({"arch": archived.arch_db})
         self.assertFalse(archived.active)
 

@@ -9,8 +9,6 @@ from odoo import Command, api, fields, models
 from odoo.api import ValuesType
 from odoo.tools import file_open, file_path
 
-# The data files only go so far into the future; anything outside this is a
-# typo rather than a request.
 FIRST_YEAR = 2026
 LAST_YEAR = 2050
 
@@ -57,7 +55,6 @@ class WizardResourceScheduleExceptionLoadPublicHoliday(models.TransientModel):
         return self.env.companies
 
     def _existing_holidays(self, companies):
-        """Public holidays already covering the wizard's year, per company."""
         return dict(
             self.env["resource.schedule.exception"]._read_group(
                 domain=[
@@ -72,12 +69,6 @@ class WizardResourceScheduleExceptionLoadPublicHoliday(models.TransientModel):
         )
 
     def _company_day_bounds(self, company, day) -> tuple:
-        """The UTC instants that bracket `day` as the company lives it.
-
-        A public holiday is a whole working day for everyone in the company, so
-        the timezone that decides where that day starts and ends is the one of
-        the company's working schedule -- res.company itself carries none here.
-        """
         company_tz = ZoneInfo(
             company.resource_calendar_id.tz or self.env.user.tz or "UTC"
         )
@@ -142,8 +133,6 @@ class WizardResourceScheduleExceptionLoadPublicHoliday(models.TransientModel):
 
                     name = row["holiday"].strip()
                     if day in values_by_day:
-                        # Two holidays on one day read better joined than as two
-                        # overlapping records, which our own constraint refuses.
                         values_by_day[day]["name"] += " / %s" % name
                     else:
                         values_by_day[day] = {

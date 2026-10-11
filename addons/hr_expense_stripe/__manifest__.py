@@ -1,4 +1,3 @@
-# Stripe compatible API version is '2025-01-27.acacia'
 {
     "name": "Stripe Expense Cards",
     "version": "1.2",

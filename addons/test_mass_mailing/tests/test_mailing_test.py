@@ -54,8 +54,6 @@ class TestMailingTest(TestMassMailCommon):
         with self.mock_mail_gateway():
             mailing_test.send_mail_test()
 
-        # not great but matches send_mail_test, maybe that should be a method
-        # on mailing_test?
         record = self.env[mailing.mailing_model_real].search([], limit=1)
         first_child = lxml.html.fromstring(self._mails.pop()["body"]).xpath(
             "//body/*[1]"
@@ -72,12 +70,10 @@ class TestMailingTest(TestMassMailCommon):
             "the preview node should contain the preview text",
         )
 
-        # Test if bad inline_template in the subject raises an error
         mailing.write({"subject": "Subject {{ object.name_id.id }}"})
         with self.mock_mail_gateway(), self.assertRaises(UserError):
             mailing_test.send_mail_test()
 
-        # Test if bad inline_template in the body raises an error
         mailing.write(
             {
                 "subject": "Subject {{ object.name }}",
@@ -87,7 +83,6 @@ class TestMailingTest(TestMassMailCommon):
         with self.mock_mail_gateway(), self.assertRaises(UserError):
             mailing_test.send_mail_test()
 
-        # Test if bad inline_template in the preview raises an error
         mailing.write(
             {
                 "body_html": '<p>Hello <t t-out="object.name"/></p>',
@@ -100,11 +95,6 @@ class TestMailingTest(TestMassMailCommon):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mixin_mail_render")
     def test_mailing_test_button_links(self):
-        """This tests that the link provided by the View in Browser snippet is correctly replaced
-        when sending a test mailing while the Unsubscribe button's link isn't, to preserve the testing route
-        /unsubscribe_from_list.
-        This also checks that other links containing the /view route aren't replaced along the way.
-        """
         mailing = self.test_mailing_bl.with_env(self.env)
         mailing_test = self.env["wizard.mailing.mailing.send.test"].create(
             {
@@ -112,7 +102,6 @@ class TestMailingTest(TestMassMailCommon):
                 "mass_mailing_id": mailing.id,
             }
         )
-        # Test if link snippets are correctly converted
         mailing.write(
             {
                 "body_html": """<p>
@@ -135,13 +124,11 @@ class TestMailingTest(TestMassMailCommon):
             mailing_test.send_mail_test()
 
         body_html = self._mails.pop()["body"]
-        self.assertIn(f"/mailing/{mailing.id}/view", body_html)  # Is replaced
-        self.assertIn("/unsubscribe_from_list", body_html)  # Isn't replaced
-        self.assertIn("http://www.example.com/view", body_html)  # Isn't replaced
+        self.assertIn(f"/mailing/{mailing.id}/view", body_html)
+        self.assertIn("/unsubscribe_from_list", body_html)
+        self.assertIn("http://www.example.com/view", body_html)
 
     def test_mailing_test_equals_reality(self):
-        """Check that both test and real emails will format the qweb and inline
-        placeholders correctly in body and subject."""
         mailing = self.test_mailing_bl.with_env(self.env)
         mailing.write(
             {
@@ -176,7 +163,6 @@ class TestMailingTest(TestMassMailCommon):
         )
 
         with self.mock_mail_gateway():
-            # send the mailing
             mailing.action_launch()
             self.env.ref(
                 "mass_mailing.ir_cron_mass_mailing_queue"
@@ -210,7 +196,6 @@ class TestMailingSMSTest(TestMassSMSCommon, MockSmsTwilioApi):
         cls._setup_sms_twilio(cls.user_marketing.company_id)
 
     def test_mass_sms_test_button_twilio(self):
-        """Test the testing tool when twilio is activated on company"""
         self._setup_sms_twilio(self.user_marketing.company_id)
 
         mailing = self.env["mailing.mailing"].create(
@@ -243,7 +228,7 @@ class TestMailingSMSTest(TestMassSMSCommon, MockSmsTwilioApi):
             ),
             (
                 "wrong_number_format",
-                "outgoing",  # not sure why outgoing but hey
+                "outgoing",
                 "<ul><li>Test SMS could not be sent to +32456001122: The number you're trying to reach is not correctly formatted</li></ul>",
             ),
         ]:

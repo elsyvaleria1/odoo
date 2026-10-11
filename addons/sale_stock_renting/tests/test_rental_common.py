@@ -38,7 +38,6 @@ class TestRentalCommon(common.TransactionCase):
             }
         )
 
-        # Set Stock quantities
 
         cls.lot_id1 = cls.env["product.trace"].create(
             {
@@ -94,10 +93,8 @@ class TestRentalCommon(common.TransactionCase):
         )
         quants.action_apply_inventory()
 
-        # Define rental order and lines
 
         cls.cust1 = cls.env["res.partner"].create({"name": "test_rental_1"})
-        # cls.cust2 = cls.env['res.partner'].create({'name': 'test_rental_2'})
 
         cls.user_id = mail_new_test_user(
             cls.env,

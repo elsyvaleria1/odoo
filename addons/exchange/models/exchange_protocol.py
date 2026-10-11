@@ -19,7 +19,6 @@ class ExchangeProtocol(models.AbstractModel):
     _document_kinds: dict[str, str] = {}
     _batch_size = 1
 
-    # HELPER METHODS
 
     @api.model
     def _get_protocols(self) -> dict[str, str]:
@@ -96,7 +95,6 @@ class ExchangeProtocol(models.AbstractModel):
             )
         return self.env[model_name]
 
-    # PROTOCOL METHODS
 
     def _prepare_message(self, transmission) -> Document:
         raise NotImplementedError(

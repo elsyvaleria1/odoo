@@ -1205,14 +1205,6 @@ class TestCreatePicking(ProductVariantsCommon):
         self.assertEqual(self.product_id_1.standard_price, 450.0)
 
     def test_view_picking_context_omits_default_origin(self):
-        """A transfer built from the PO's transfer list is not the PO's own.
-
-        The list is reached from the order, but «New» there creates an unrelated
-        transfer. Pre-filling its Source Document with the order name makes that
-        transfer claim an origin it does not have: `origin` is trigram-indexed
-        and feeds the move reference, so the stray transfer then shows up when
-        searching for the order.
-        """
         po = self.env["purchase.order"].create(self.po_vals)
         po.action_confirm()
 

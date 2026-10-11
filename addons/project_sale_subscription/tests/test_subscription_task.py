@@ -379,13 +379,6 @@ class TestSubscriptionTask(TestSubscriptionCommon):
         self.assertTrue(self.product_no_recurrence.name in tasks[0].name)
 
     def test_confirm_subscription_with_recurring_service_product_as_sale_manager(self):
-        """
-        Steps:
-            1. Create a user with Sale Manager access.
-            2. Create a subscription-based sale order as that user.
-            3. Add a recurring service product to the order line.
-            4. Confirm the sale order to trigger task creation with recurrence.
-        """
 
         user_salemanager = new_test_user(
             self.env, login="user_salemanager", groups="sale.group_sale_manager"
@@ -418,17 +411,6 @@ class TestSubscriptionTask(TestSubscriptionCommon):
         self.assertEqual(len(order_line.task_id.recurrence_id), 1)
 
     def test_create_recurring_task_from_template_on_sale_order_confirmation(self):
-        """
-        Test that confirming a subscription-based sale order with a recurring service product
-        creates a recurring task using the specified task template.
-
-        Steps:
-            1. Create a recurring task template.
-            2. Create a service product linked to the template.
-            3. Create a subscription sale order and add the product.
-            4. Confirm the sale order.
-            5. Assert the task is created with correct recurrence.
-        """
         self.project.allow_recurring_tasks = True
         task_template = self.env["project.task"].create(
             {

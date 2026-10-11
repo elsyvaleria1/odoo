@@ -46,10 +46,6 @@ class SaleTemporalRecurrence(models.Model):
         default="month",
         required=True,
     )
-    # overnight means:
-    # - change from 24 -> 1 (duration) and Hour -> Night (unit label)
-    # - canSelectHours False (hours but not selectable from the website)
-    # - pickup and return times visible in the period form
     overnight = fields.Boolean()
     pickup_time = fields.Float(string="Check-in")
     return_time = fields.Float(string="Check-out")
@@ -68,7 +64,6 @@ class SaleTemporalRecurrence(models.Model):
         "The pricing duration has to be greater or equal to 0.",
     )
 
-    # === COMPUTE METHODS === #
 
     @api.depends("overnight", "unit")
     def _compute_displayed_unit(self) -> None:
@@ -106,13 +101,11 @@ class SaleTemporalRecurrence(models.Model):
                 "%(duration)s %(unit)s", duration=display_duration, unit=display_label
             )
 
-    # === BUSINESS METHODS === #
 
     def _get_unit_label(self, duration):
-        """Get the translated product pricing unit label."""
         self.check_singleton()
         if duration == 1:
-            return self.env._(SINGULAR_LABELS[self.unit])  # noqa: E8502  resolves an _lt() table entry in this env's language
+            return self.env._(SINGULAR_LABELS[self.unit])
         return dict(self._fields["unit"]._description_selection(self.env))[self.unit]
 
     def _get_converted_duration_and_label(self, duration) -> list:

@@ -7,15 +7,9 @@ from odoo.tools.misc import file_open
 class WizardMailingMailingSendTest(models.TransientModel):
     _name = "wizard.mailing.mailing.send.test"
     _description = "Sample Mail Wizard"
-    # allow wizard.mailing.mailing.send.test records to live for 10h (instead of 1h default)
-    # used for quality of life in combination with '_default_email_to'
     _transient_max_hours = 10.0
 
     def _default_email_to(self):
-        """Fetch the last used 'email_to' to populate the email_to value, fallback to user email.
-        This enables a user to do quick successive tests without having to type it every time.
-        As this is a transient model, it will not always work, but is sufficient as just a default
-        value."""
         return (
             self.env["wizard.mailing.mailing.send.test"]
             .search(
@@ -61,11 +55,7 @@ class WizardMailingMailingSendTest(models.TransientModel):
         mailing = self.mass_mailing_id
         record = self.env[mailing.mailing_model_real].search([], limit=1)
 
-        # If there is atleast 1 record for the model used in this mailing, then we use this one to render the template
-        # Downside: Qweb syntax is only tested when there is atleast one record of the mailing's model
         if record:
-            # Returns a proper error if there is a syntax error with Qweb
-            # do not force lang, will simply use user context
             body = mailing._render_field(
                 "body_html",
                 record.ids,
@@ -84,7 +74,6 @@ class WizardMailingMailingSendTest(models.TransientModel):
             subject = mailing.subject
         subject = self.env._("[TEST] %(mailing_subject)s", mailing_subject=subject)
 
-        # Convert links in absolute URLs before the application of the shortener
         full_body = self.env["mixin.mail.render"]._replace_local_links(full_body)
 
         with file_open(
@@ -110,7 +99,7 @@ class WizardMailingMailingSendTest(models.TransientModel):
                 "attachment_ids": [
                     Command.link(attachment.id) for attachment in mailing.attachment_ids
                 ],
-                "auto_delete": False,  # they are manually deleted after notifying the document
+                "auto_delete": False,
                 "mail_server_id": mailing.mail_server_id.id,
                 "model": record._name,
                 "res_id": record.id,
@@ -142,7 +131,6 @@ class WizardMailingMailingSendTest(models.TransientModel):
                     + (Markup("<br/>") + mail_sudo.failure_reason)
                 )
 
-        # manually delete the emails since we passed 'auto_delete: False'
         mails_sudo.unlink()
 
         if notification_messages:

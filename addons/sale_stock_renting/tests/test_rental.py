@@ -16,37 +16,31 @@ class TestRentalWizard(TestRentalCommon):
         self._set_product_quantity(10)
         from_date = Datetime.now() + relativedelta(days=1)
         to_date = Datetime.now() + relativedelta(days=5)
-        # Ends before interval
         self._create_so_with_sol(
             rental_start_date=from_date - relativedelta(days=2),
             rental_return_date=from_date - relativedelta(days=1),
             product_qty=1,
         )
-        # Starts after interval
         self._create_so_with_sol(
             rental_start_date=to_date + relativedelta(days=1),
             rental_return_date=to_date + relativedelta(days=2),
             product_qty=1,
         )
-        # Ends during interval
         self._create_so_with_sol(
             rental_start_date=from_date - relativedelta(days=1),
             rental_return_date=to_date - relativedelta(days=1),
             product_qty=1,
         )
-        # Starts during interval
         self._create_so_with_sol(
             rental_start_date=from_date + relativedelta(days=1),
             rental_return_date=to_date + relativedelta(days=1),
             product_qty=1,
         )
-        # Covers interval
         self._create_so_with_sol(
             rental_start_date=from_date - relativedelta(days=1),
             rental_return_date=to_date + relativedelta(days=1),
             product_qty=1,
         )
-        # Doesn't increase unavailable.
         self._create_so_with_sol(
             rental_start_date=to_date - relativedelta(days=1),
             rental_return_date=to_date,
@@ -59,7 +53,6 @@ class TestRentalWizard(TestRentalCommon):
         self._set_product_quantity(10)
         from_date = Datetime.now() + relativedelta(days=1)
         to_date = Datetime.now() + relativedelta(days=5)
-        # Starts at to_date
         self._create_so_with_sol(
             rental_start_date=to_date,
             rental_return_date=to_date + relativedelta(days=1),
@@ -71,7 +64,6 @@ class TestRentalWizard(TestRentalCommon):
     def test_unavailable_qty_without_to_date_include_pickup_at_from_date(self):
         self._set_product_quantity(10)
         from_date = Datetime.now() + relativedelta(days=1)
-        # Starts at from_date == to_date
         self._create_so_with_sol(
             rental_start_date=from_date,
             rental_return_date=from_date + relativedelta(days=1),
@@ -84,7 +76,6 @@ class TestRentalWizard(TestRentalCommon):
         self._set_product_quantity(10)
         from_date = Datetime.now() + relativedelta(days=1)
         to_date = Datetime.now() + relativedelta(days=5)
-        # Starts after interval
         so = self._create_so_with_sol(
             rental_start_date=to_date + relativedelta(days=1),
             rental_return_date=to_date + relativedelta(days=2),
@@ -98,7 +89,6 @@ class TestRentalWizard(TestRentalCommon):
         self._set_product_quantity(10)
         from_date = Datetime.now() + relativedelta(days=1)
         to_date = Datetime.now() + relativedelta(days=5)
-        # Ends during interval
         so = self._create_so_with_sol(
             rental_start_date=from_date - relativedelta(days=1),
             rental_return_date=to_date - relativedelta(days=1),
@@ -123,7 +113,6 @@ class TestRentalWizard(TestRentalCommon):
             ]
         )
 
-        # Active
         self._create_so_with_sol(
             rental_start_date=from_date,
             rental_return_date=to_date,
@@ -132,7 +121,6 @@ class TestRentalWizard(TestRentalCommon):
             returned_trace_ids=[Command.set([lot2.id])],
             reserved_trace_ids=[Command.set([lot3.id])],
         )
-        # Inactive
         self._create_so_with_sol(
             rental_start_date=to_date + relativedelta(days=1),
             rental_return_date=to_date + relativedelta(days=2),
@@ -184,9 +172,6 @@ class TestRentalWizard(TestRentalCommon):
         """ In company stock valuation """
         self.assertEqual(self.product_id.quantity_svl, 4)
 
-        ####################################
-        # Cancel deliver then re-apply
-        ####################################
 
         self.order_line_id1.write({"qty_transferred": 0})
         self.assertEqual(self.product_id.qty_available, 4)
@@ -241,24 +226,19 @@ class TestRentalWizard(TestRentalCommon):
         )
         self.assertEqual(
             set(lots.ids), set(rentable_lots.ids)
-        )  # set is here to ensure that order wont break test
+        )
 
         self.order_line_id2.reserved_trace_ids += self.lot_id1
         self.order_line_id2.product_qty = 1.0
 
         self.order_line_id2.pickedup_trace_ids += self.lot_id2
 
-        # Ensure lots are unreserved if other lots are picked up in their place
-        # and qty pickedup = product_qty (qty reserved)
         self.assertEqual(
             self.order_line_id2.reserved_trace_ids,
             self.order_line_id2.pickedup_trace_ids,
         )
 
     def test_rental_lot_concurrent(self):
-        """The purpose of this test is to mimmic a concurrent picking of a rental product.
-        As the same lot is applied to the sol twice, its qty_transferred should be 1.
-        """
         so = self.lots_rental_order
         sol = self.order_line_id2
         lot = self.lot_id2
@@ -327,12 +307,6 @@ class TestRentalWizard(TestRentalCommon):
 
     @freeze_time("2025-01-01 09:10:15")
     def test_rental_forecast_with_rental_transfers(self):
-        """
-        With rental transfers enable, we check if the forecast rentable quantity takes
-        incoming and outgoing moves happening prior to the rental period and other
-        rental orders in its computation.
-        """
-        # Enable "rental transfers" and rely on the qty_in_rent fot the forecast
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": True}
         ).execute()
@@ -346,7 +320,6 @@ class TestRentalWizard(TestRentalCommon):
                 "rent_ok": True,
             }
         )
-        # Put 100 units in stock
         self.env["stock.quant"]._update_available_quantity(
             product, self.warehouse_id.lot_stock_id, 101
         )
@@ -373,7 +346,6 @@ class TestRentalWizard(TestRentalCommon):
             }
         )
         delivery.action_confirm()
-        # Create 2 rental orders: one to confirmed
         sale_orders = self.env["sale.order"].create(
             [
                 {
@@ -470,8 +442,6 @@ class TestRentalWizard(TestRentalCommon):
                 "rental_return_date": Datetime.today() + timedelta(days=4),
             }
         )
-        # We need to invalidate the cache after each change since the qty_in_rent does not have
-        # any dependence and hence will only be recomputed if it was not already set in cache
         product.invalidate_recordset()
         self.assertEqual(so.line_ids.qty_available_virtual_at_date, 80)
         so.write(
@@ -520,12 +490,6 @@ class TestRentalWizard(TestRentalCommon):
 
     @freeze_time("2025-01-01 00:00:00")
     def test_rental_forecast_with_rental_transfers_and_preparation_time(self):
-        """
-        With rental transfers enable, we check if the forecast rentable quantity takes
-        incoming and outgoing moves happening prior to the rental period as well as
-        preparation_time.
-        """
-        # Enable "rental transfers" and rely on the qty_in_rent fot the forecast
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": True}
         ).execute()
@@ -537,10 +501,9 @@ class TestRentalWizard(TestRentalCommon):
                 "name": "Lovely Product",
                 "is_storable": True,
                 "rent_ok": True,
-                "preparation_time": 24.0,  # Add one day of preparation_time
+                "preparation_time": 24.0,
             }
         )
-        # Put 100 units in stock
         self.env["stock.quant"]._update_available_quantity(
             product, self.warehouse_id.lot_stock_id, 101
         )
@@ -567,7 +530,6 @@ class TestRentalWizard(TestRentalCommon):
             }
         )
         delivery.action_confirm()
-        # Create 2 rental orders: one to confirmed
         sale_orders = self.env["sale.order"].create(
             [
                 {
@@ -664,8 +626,6 @@ class TestRentalWizard(TestRentalCommon):
                 "rental_return_date": Datetime.today() + timedelta(days=3),
             }
         )
-        # We need to invalidate the cache after each change since the qty_in_rent does not have
-        # any dependence and hence will only be recomputed if it was not already set in cache
         product.invalidate_recordset()
         self.assertEqual(so.line_ids.qty_available_virtual_at_date, 80)
         so.write(
@@ -711,12 +671,6 @@ class TestRentalWizard(TestRentalCommon):
         self.assertEqual(so.line_ids.qty_available_virtual_at_date, 30)
 
     def test_rental_forecast_without_rental_transfers(self):
-        """
-        With rental transfers disabled, we check if the forecast rentable quantity takes
-        incoming and outgoing moves happening prior to the rental period and other
-        rental orders in its computation.
-        """
-        # Disable "rental transfers" and rely on the qty_in_rent fot the forecast
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": False}
         ).execute()
@@ -730,7 +684,6 @@ class TestRentalWizard(TestRentalCommon):
                 "rent_ok": True,
             }
         )
-        # Put 100 units in stock
         self.env["stock.quant"]._update_available_quantity(
             product, self.warehouse_id.lot_stock_id, 100
         )
@@ -757,7 +710,6 @@ class TestRentalWizard(TestRentalCommon):
             }
         )
         delivery.action_confirm()
-        # Create 2 rental orders: one to confirmed
         so1, so2 = self.env["sale.order"].create(
             [
                 {
@@ -799,8 +751,6 @@ class TestRentalWizard(TestRentalCommon):
                 "rental_return_date": Datetime.today() + timedelta(days=4),
             }
         )
-        # We need to invalidate the cache after each change since the qty_in_rent does not have
-        # any dependence and hence will only be recomputed if it was not already set in cache
         product.invalidate_recordset()
         self.assertEqual(so1.line_ids.qty_available_virtual_at_date, 80)
         so1.write(
@@ -821,21 +771,6 @@ class TestRentalWizard(TestRentalCommon):
         self.assertEqual(so1.line_ids.qty_available_virtual_at_date, 80)
 
     def test_rental_forecast_without_rental_transfers_and_with_pickup(self):
-        """Ensure correct virtual availability calculation when
-        'Rental Transfers' are disabled.
-        Scenario:
-        - Create a storable rental product with 10 units in stock.
-        - Disable the 'Rental Transfer' setting.
-        - Create two rental orders for the same period:
-            * Order A: 9 units
-            * Order B: 1 unit
-        - Confirm and pick up Order A.
-        - Check that Order B still shows 1 unit available.
-        Expected:
-        - Virtual availability before any confirmation: 10
-        - After confirming and picking up Order A: Order B should still show 1 available unit.
-        """
-        # Disable rental transfers
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": False}
         ).execute()
@@ -845,7 +780,6 @@ class TestRentalWizard(TestRentalCommon):
         self.env["stock.quant"]._update_available_quantity(
             self.product_id, self.warehouse_id.lot_stock_id, 6
         )
-        # Create 2 rental orders for the same period
         start = Datetime.today() + timedelta(days=1)
         end = start + timedelta(days=1)
         so1, so2 = self.env["sale.order"].create(
@@ -880,14 +814,11 @@ class TestRentalWizard(TestRentalCommon):
         )
         (so1 | so2).line_ids.update({"is_rental": True})
         self.assertEqual(so2.line_ids.qty_available_virtual_at_date, 10)
-        # Confirm Order A (9 units)
         so1.action_confirm()
         self.assertFalse(so1.picking_ids)
         self.assertTrue(so1.has_pickable_lines)
-        # Check availability for Order B after confirming Order A
         so2.line_ids.invalidate_recordset()
         self.assertEqual(so2.line_ids.qty_available_virtual_at_date, 1)
-        # Simulate pickup of Order A
         pickup_action = so1.action_view_pickup()
         wizard = Form(
             self.env["wizard.sale.order.pickup.return"].with_context(
@@ -898,28 +829,13 @@ class TestRentalWizard(TestRentalCommon):
             wizard.apply()
         so2.line_ids.invalidate_recordset()
         self.assertFalse(so1.has_pickable_lines)
-        # Virtual availability should remain correct for Order B
         self.assertEqual(so2.line_ids.qty_available_virtual_at_date, 1)
 
     def test_rental_virtual_available_multiple_lines_partial_returned(self):
-        """
-        Ensure correct virtual availability calculation when rental
-        order consists of mutiple lines but some are returned.
-        Scenario:
-        - Create a storable rental product with 10 units in stock.
-        - Enable the 'Rental Transfer' setting.
-        - Create a rental order with two lines:
-            * line 1: 4 units
-            * line 2: 1 unit
-        - Confirm and pick up order lines
-        - Return the line with 1 unit
-        - Create another rental order: it must show 6 available
-        """
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": True}
         ).execute()
         rental_product = self.product_id
-        # There are 4 already available so we add 6 to get 10 total
         self.env["stock.quant"]._update_available_quantity(
             rental_product, self.warehouse_id.lot_stock_id, 6
         )
@@ -968,11 +884,6 @@ class TestRentalWizard(TestRentalCommon):
 
     @freeze_time("2020-01-01")
     def test_reschedule_rental_order_with_rental_transfers(self):
-        """
-        Ensures that rescheduling a rental order will propagate the new
-        schedule to the associated rental pickings.
-        """
-        # Enable "rental transfers" and rely on the qty_in_rent fot the forecast
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": True}
         ).execute()
@@ -985,7 +896,7 @@ class TestRentalWizard(TestRentalCommon):
                 "delivery_steps": "pick_ship",
             }
         )
-        self.product_id.preparation_time = 24  # Add one day of preparation_time
+        self.product_id.preparation_time = 24
         self.env["stock.quant"]._update_available_quantity(
             self.product_id, self.warehouse_id.lot_stock_id, 10
         )
@@ -1046,25 +957,25 @@ class TestRentalWizard(TestRentalCommon):
                     "date": start_date,
                     "date_deadline": start_date,
                     "state": "done",
-                },  # done pick for 3 units
+                },
                 {
                     "location_id": self.warehouse_id.lot_stock_id.id,
                     "date": start_date,
                     "date_deadline": start_date,
                     "state": "assigned",
-                },  # pick for 2 units
+                },
                 {
                     "location_id": self.warehouse_id.wh_output_stock_loc_id.id,
                     "date": start_date,
                     "date_deadline": start_date,
                     "state": "assigned",
-                },  # ship for 3 units
+                },
                 {
                     "location_id": self.warehouse_id.company_id.rental_loc_id.id,
                     "date": return_date,
                     "date_deadline": return_date,
                     "state": "waiting",
-                },  # return for 5 units
+                },
             ],
         )
         new_start_date = rental_order.rental_start_date + timedelta(days=8)
@@ -1085,31 +996,28 @@ class TestRentalWizard(TestRentalCommon):
                     "date": start_date,
                     "date_deadline": start_date,
                     "state": "done",
-                },  # done pick for 3 units
+                },
                 {
                     "location_id": self.warehouse_id.lot_stock_id.id,
                     "date": new_start_date,
                     "date_deadline": new_start_date,
                     "state": "assigned",
-                },  # pick for 2 units
+                },
                 {
                     "location_id": self.warehouse_id.wh_output_stock_loc_id.id,
                     "date": new_start_date,
                     "date_deadline": new_start_date,
                     "state": "assigned",
-                },  # ship for 3 units
+                },
                 {
                     "location_id": self.warehouse_id.company_id.rental_loc_id.id,
                     "date": new_return_date,
                     "date_deadline": new_return_date,
                     "state": "waiting",
-                },  # return for 5 units
+                },
             ],
         )
 
-    ###############################
-    #       PRIVATE METHODS       #
-    ###############################
 
     def _set_product_quantity(self, quantity):
         quant = self.env["stock.quant"].create(
@@ -1172,12 +1080,9 @@ class TestRentalPicking(TestRentalCommon):
         ).execute()
 
     def test_disable_reenable(self):
-        """When disabling rental picking then re-enabling it, make sure that
-        the route AND the rule(s) are unarchived."""
         warehouse_rental_route = self.env.ref("sale_stock_renting.route_rental")
         self.assertTrue(warehouse_rental_route.active)
         self.assertTrue(warehouse_rental_route.rule_ids)
-        # disable setting
         self.env.user.group_ids -= self.env.ref(
             "sale_stock_renting.group_rental_stock_picking"
         )
@@ -1186,7 +1091,6 @@ class TestRentalPicking(TestRentalCommon):
         settings.set_values()
         self.assertFalse(warehouse_rental_route.active)
         self.assertFalse(warehouse_rental_route.rule_ids)
-        # re-enable setting
         settings.group_rental_stock_picking = True
         settings.with_context(active_test=False).set_values()
         self.assertTrue(warehouse_rental_route.active)
@@ -1224,14 +1128,14 @@ class TestRentalPicking(TestRentalCommon):
             rental_order_1.picking_ids.move_ids.mapped("product_uom_qty"), [3.0, 3.0]
         )
 
-        outgoing_picking.move_ids.quantity = 2  # Partial pickup
+        outgoing_picking.move_ids.quantity = 2
         Form.from_action(self.env, outgoing_picking.button_validate()).save().process()
         self.assertEqual(rental_order_1.line_ids.qty_transferred, 2)
         self.assertEqual(rental_order_1.rental_status, "return")
         self.assertEqual(len(rental_order_1.picking_ids), 3)
         self.assertEqual(incoming_picking.move_ids.quantity, 2)
 
-        incoming_picking.move_ids.quantity = 1  # Partial return
+        incoming_picking.move_ids.quantity = 1
         Form.from_action(self.env, incoming_picking.button_validate()).save().process()
         self.assertEqual(rental_order_1.line_ids.qty_returned, 1)
         self.assertEqual(rental_order_1.rental_status, "return")
@@ -1254,11 +1158,11 @@ class TestRentalPicking(TestRentalCommon):
         self.assertEqual(outgoing_picking_2.move_ids.quantity, 1)
         self.assertEqual(incoming_picking_2.move_ids.quantity, 1)
 
-        rental_order_1.line_ids.write({"product_qty": 5})  # Increase asked quantity
+        rental_order_1.line_ids.write({"product_qty": 5})
         self.assertEqual(outgoing_picking_2.move_ids.product_uom_qty, 3)
         self.assertEqual(incoming_picking_2.move_ids.product_uom_qty, 4)
 
-        outgoing_picking_2.move_ids.quantity = 1  # Still partial picking
+        outgoing_picking_2.move_ids.quantity = 1
         Form.from_action(
             self.env, outgoing_picking_2.button_validate()
         ).save().process()
@@ -1267,7 +1171,6 @@ class TestRentalPicking(TestRentalCommon):
         self.assertEqual(len(rental_order_1.picking_ids), 5)
         self.assertEqual(incoming_picking_2.move_ids.quantity, 2)
 
-        # Decrease asked quantity but still partial picking
         rental_order_1.line_ids.write({"product_qty": 4})
         outgoing_picking_3 = rental_order_1.picking_ids.filtered(
             lambda p: p.picking_type_code == "outgoing" and p.state == "assigned"
@@ -1279,12 +1182,12 @@ class TestRentalPicking(TestRentalCommon):
         self.assertEqual(outgoing_picking_3.move_ids.product_uom_qty, 1)
         self.assertEqual(incoming_picking_2.move_ids.product_uom_qty, 3)
 
-        outgoing_picking_3.button_validate()  # Fully picked
+        outgoing_picking_3.button_validate()
         self.assertEqual(incoming_picking_2.move_ids.quantity, 3)
         self.assertEqual(rental_order_1.line_ids.qty_transferred, 4)
         self.assertEqual(rental_order_1.rental_status, "return")
 
-        incoming_picking_2.button_validate()  # Fully returned
+        incoming_picking_2.button_validate()
         self.assertEqual(rental_order_1.line_ids.qty_returned, 4)
         self.assertEqual(rental_order_1.rental_status, "returned")
 
@@ -1389,7 +1292,6 @@ class TestRentalPicking(TestRentalCommon):
         final_picking.button_validate()
 
     def test_flow_multisteps_2(self):
-        """Checks that if a rental SO line quantity is changed multiple times, the expected return stays correct"""
         self.warehouse_id.delivery_steps = "pick_ship"
         self.warehouse_id.reception_steps = "two_steps"
 
@@ -1399,7 +1301,6 @@ class TestRentalPicking(TestRentalCommon):
         rental_order_1.rental_return_date = self.rental_return_date
         rental_order_1.action_confirm()
 
-        # Validate the PICK, so it will create a return when reducing the quantity
         self.assertEqual(len(rental_order_1.picking_ids), 2)
         pick_picking = rental_order_1.picking_ids.filtered(
             lambda p: p.state == "assigned"
@@ -1407,7 +1308,6 @@ class TestRentalPicking(TestRentalCommon):
         pick_picking.button_validate()
         self.assertEqual(len(rental_order_1.picking_ids), 3)
 
-        # Reduce then increase the rental quantity and checks that the expected qty to return remains correct
         incoming_picking = rental_order_1.picking_ids.filtered(
             lambda p: p.picking_type_code == "incoming"
         )
@@ -1456,7 +1356,6 @@ class TestRentalPicking(TestRentalCommon):
         )
         (available_quant + reserved_quant).action_apply_inventory()
 
-        # Reserve 1 serial
         reserved_rental = self.sale_order_id.copy()
         reserved_rental.line_ids.write(
             {
@@ -1470,7 +1369,6 @@ class TestRentalPicking(TestRentalCommon):
         reserved_rental.rental_return_date = self.rental_return_date
         reserved_rental.action_confirm()
 
-        # Test with 3 serials: 1 available, 1 reserved and 1 empty
         rental_order_1 = self.sale_order_id.copy()
         rental_order_1.line_ids.write(
             {
@@ -1603,7 +1501,6 @@ class TestRentalPicking(TestRentalCommon):
         )
 
     def test_create_rental_transfers(self):
-        """E.g., a public/portal user signs & pays for an order via the portal"""
         public_user = self.env.ref("base.public_user")
         rental_order_1 = self.sale_order_id.copy()
         rental_order_1.line_ids.write({"product_qty": 1, "is_rental": True})
@@ -1611,8 +1508,6 @@ class TestRentalPicking(TestRentalCommon):
         self.assertTrue(rental_order_1.picking_ids)
 
     def test_reordering_rule_forecast(self):
-        """Test the rental orders will only consider outgoing rental move in the forecast
-        computation."""
         self.product_id.stock_quant_ids.sudo().unlink()
         date = Date.today() + timedelta(days=7)
         self.partner_1 = self.env["res.partner"].create(
@@ -1655,12 +1550,6 @@ class TestRentalPicking(TestRentalCommon):
         )
 
     def test_rental_available_reserved_lots(self):
-        """
-        The aim is to check if the `available_reserved_lots` compute
-        field correctly determines whether a batch we want to reserve
-        will be available or not.
-        """
-        # Create a sale order to reserve a lot.
         sale_order_id1 = self.env["sale.order"].create(
             {
                 "partner_id": self.cust1.id,
@@ -1679,8 +1568,6 @@ class TestRentalPicking(TestRentalCommon):
         order_line_id1.update({"is_rental": True})
         sale_order_id1.action_confirm()
 
-        # Create a second sale order and modify reserved lots, start date
-        # and return date to check if `available_reserved_lots` is correct.
         sale_order_id = self.env["sale.order"].create(
             {
                 "partner_id": self.cust1.id,
@@ -1715,11 +1602,8 @@ class TestRentalPicking(TestRentalCommon):
                 "rental_return_date": Datetime.today() + timedelta(days=6),
             }
         )
-        # will return in stock in time
         self.assertEqual(order_line_id.available_reserved_lots, True)
 
-        # Validate the delivery of the first order to test the flow
-        # when the product is not in stock
         delivery = sale_order_id1.picking_ids.filtered(
             lambda p: p.picking_type_id == self.warehouse_id.out_type_id
         )
@@ -1753,9 +1637,6 @@ class TestRentalPicking(TestRentalCommon):
         self.assertEqual(order_line_id.available_reserved_lots, True)
 
     def test_disable_rental_transfer(self):
-        """
-        Check that the rental transfers setting can be disabled
-        """
         warehouse_rental_route = self.env.ref("sale_stock_renting.route_rental")
         rental_stock_rules = warehouse_rental_route.rule_ids
         rental_order = self.sale_order_id.copy()
@@ -1774,21 +1655,15 @@ class TestRentalPicking(TestRentalCommon):
         self.assertRecordValues(
             picking_in.move_ids, [{"state": "done", "quantity": 3.0}]
         )
-        # disable the setting
         self.env.user.group_ids -= self.env.ref(
             "sale_stock_renting.group_rental_stock_picking"
         )
         settings = self.env["res.config.settings"].with_user(self.env.user).create({})
         settings.group_rental_stock_picking = False
         settings.set_values()
-        # check that the rules of the rental route have been updated
         self.assertFalse(rental_stock_rules & warehouse_rental_route.rule_ids)
 
     def test_multi_step_route_revised_order_correct_transfer_amount(self):
-        """Ensure correct quantities are encoded on stock moves for rental transfers when an order
-        gets revised and a multi-step route is used whose pick action sources product from a child
-        location of lot_stock.
-        """
         product = self.product_id
         warehouse = self.warehouse_id
         warehouse.delivery_steps = "pick_ship"
@@ -1827,9 +1702,6 @@ class TestRentalPicking(TestRentalCommon):
         )
 
     def test_rental_transfer_custom_route(self):
-        """
-        Check that custom rental routes are used if set on the orde line.
-        """
         warehouse = self.warehouse_id
         warehouse_rental_route = self.env.ref("sale_stock_renting.route_rental")
         custom_rental_route = warehouse_rental_route.copy()
@@ -1888,11 +1760,6 @@ class TestRentalPicking(TestRentalCommon):
         )
 
     def _test_rental_order_with_mixed_lines(self, rental_first=True):
-        """
-        Helper function to test delivery behavior for rental orders with mixed lines.
-
-        :param rental_first: Whether the rental product should appear first in the order lines.
-        """
         rental_order = self.sale_order_id.copy()
         rental_line = rental_order.line_ids[0]
         rental_line.write({"product_qty": 2, "is_rental": True})
@@ -1912,7 +1779,6 @@ class TestRentalPicking(TestRentalCommon):
             }
         )
 
-        # Reorder lines if sales product is first
         if not rental_first:
             rental_product = rental_line.product_id
             rental_line.unlink()
@@ -1974,22 +1840,12 @@ class TestRentalPicking(TestRentalCommon):
         self.assertEqual(sales_line.qty_transferred, 4)
 
     def test_rental_order_containing_mixed_lines_1(self):
-        """
-        Test delivery behavior for rental order where the first line contains a rental product
-        and the second line contains a sales product.
-        """
         self._test_rental_order_with_mixed_lines(rental_first=True)
 
     def test_rental_order_containing_mixed_lines_2(self):
-        """
-        Test delivery behavior for rental order where the first line contains a sales product
-        and the second line contains a rental product.
-        """
         self._test_rental_order_with_mixed_lines(rental_first=False)
 
     def test_rental_purchase_mto(self):
-        """Test that renting an MTO product without stock correctly creates
-        a PO and that the delivery picking effectively depends on it."""
         if "purchase.order" not in self.env:
             self.skipTest("`purchase` is not installed")
         mto_route = self.env.ref("stock.route_warehouse0_mto")
@@ -2035,8 +1891,6 @@ class TestRentalPicking(TestRentalCommon):
         )
 
     def test_rental_manufacture_mto(self):
-        """Test that renting an MTO product without stock correctly creates
-        a MO and that the delivery picking effectively depends on it."""
         if "mrp.production" not in self.env:
             self.skipTest("`mrp´ is not installed")
         mto_route = self.env.ref("stock.route_warehouse0_mto")
@@ -2089,11 +1943,6 @@ class TestRentalPicking(TestRentalCommon):
 
     @freeze_time("2025-01-01 00:00:00")
     def test_rental_pickup_reference(self):
-        """
-        Check that move and move lines created with respect to pickup and returns
-        of a rental order have a set reference.
-        """
-        # Disable "rental transfers" and rely on the qty_in_rent fot the forecast
         self.env["res.config.settings"].create(
             {"group_rental_stock_picking": False}
         ).execute()

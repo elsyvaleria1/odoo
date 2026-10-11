@@ -59,7 +59,6 @@ class PlanningSlot(models.Model):
         return projects
 
     def _get_fields_breaking_publication(self):
-        """Fields list triggering the `publication_warning` to True when updating shifts"""
         result = super()._get_fields_breaking_publication()
         result.append("project_id")
         return result
@@ -108,7 +107,6 @@ class PlanningSlot(models.Model):
         }
 
     def _get_open_shifts_resources(self) -> tuple:
-        # Get all resources of planned shifts having the same projects
         resources, resources_dicts = super()._get_open_shifts_resources()
         resource_ids_per_project = defaultdict(list)
         now = fields.Datetime.now()

@@ -2,8 +2,6 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools.date_utils import get_timedelta
 
-# The user-facing cadence choice, over what is stored: a period, whether it has a
-# second anchor, and whether the accrued amount is per period or per hour.
 FREQUENCY_CADENCE = {
     "hourly": ("day", False, "hour"),
     "daily": ("day", False, "period"),
@@ -138,10 +136,6 @@ class HrLeaveAccrualLevel(models.Model):
         compute="_compute_action_with_unused_accruals",
         default="lost",
         store=True,
-        # The compute only forces "lost" when carry-over is off; the rest of the
-        # time this is the user's choice in the form.  Without readonly=False the
-        # ORM reports it readonly and the import-compatible export drops it, so a
-        # reimported plan loses what happens to unused time.
         readonly=False,
         required=True,
         help="When the Carry-Over Time is reached, according to Plan's setting, select what you want "
@@ -219,10 +213,6 @@ class HrLeaveAccrualLevel(models.Model):
 
     @api.depends("start_count", "start_type")
     def _compute_sequence(self) -> None:
-        # Approximate day-equivalents for list ordering only; the actual
-        # transition date uses real calendar arithmetic (see
-        # _get_level_transition_date), so a tie/inversion here only affects
-        # display order, never accrual dates.
         start_type_multipliers = {
             "day": 1,
             "month": 30,
@@ -317,8 +307,6 @@ class HrLeaveAccrualLevel(models.Model):
             if level.frequency == "hourly":
                 gain = level.added_value * 52 * hours_per_week
             elif level.frequency == "daily":
-                # Accruing on worked time only credits the days actually worked;
-                # otherwise every day of the year counts.
                 if level.is_based_on_worked_time:
                     gain = level.added_value * 52 * days_per_week
                 else:

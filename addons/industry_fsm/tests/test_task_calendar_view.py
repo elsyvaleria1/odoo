@@ -12,15 +12,7 @@ from odoo.addons.project.tests.test_project_base import (
 
 class TestTaskCalendarView(TestProjectCommon):
     def test_simulate_task_creation_from_calendar(self):
-        """
-        Create a task in the task form 2, form called from the calendar view, and apply the same context as the calendar would.
-        """
         now = datetime.combine(datetime.now(), datetime.min.time())
-        # The keys the calendar view actually emits: its arch is
-        # date_start="date_start_effective" date_stop="date_end", and
-        # ProjectTaskCalendarModel.makeContextDefaults forwards the former onto
-        # default_date_start. Naming fields this fork does not have made the
-        # context inert, so the test applied one no calendar produces.
         default_date_start = now + relativedelta(days=3, hour=7)
         default_date_end = now + relativedelta(days=3, hour=19)
         calendar_ctx = {

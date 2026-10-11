@@ -96,8 +96,6 @@ class GenerationHandoff:
             self.replacement.send_signal(sig)
 
     def request(self) -> None:
-        # A SIGHUP reached this master.  A replacement generation asks the
-        # original supervisor to do the reload, so the chain never grows.
         _process_state.set_phoenix(False)
         _debug.lifecycle("prefork.reload_requested", supervisor=self.supervisor)
         if self.supervisor:
@@ -110,8 +108,6 @@ class GenerationHandoff:
             self.master.logger.exception("Reload failed; keeping current generation")
             _debug.logic("prefork.reload.failed", error=type(exc).__name__)
         finally:
-            # Serving again either way: on the new generation, or still on
-            # the one that was never stopped.
             notify_ready()
 
     def promote(self) -> bool:
@@ -213,7 +209,6 @@ class GenerationHandoff:
             self.reader = (read_fd, selector)
             selector.register(read_fd, selectors.EVENT_READ)
             while time.monotonic() < deadline:
-                # Shutdown must not wait for a stuck preload's deadline.
                 if master.shutdown_requested:
                     _debug.logic(
                         "prefork.reload.aborted",
@@ -222,8 +217,6 @@ class GenerationHandoff:
                     )
                     return False
                 if self.replacement is None:
-                    # The first generation still depends on this master
-                    # while the candidate preloads: keep it staffed.
                     master.supervise_once()
                 if selector.select(min(0.1, max(0, deadline - time.monotonic()))):
                     promoted = os.read(read_fd, 1) == b"1"
@@ -241,10 +234,7 @@ class GenerationHandoff:
     def stop_generation(
         self, process: subprocess.Popen, *, graceful: bool = True
     ) -> None:
-        """Bound generation shutdown, including its websocket subprocess."""
         if not graceful:
-            # An unready candidate may be stuck in preload and unable to handle
-            # queued signals. Do not pause the healthy generation to drain it.
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
             process.wait()
@@ -265,7 +255,6 @@ class GenerationHandoff:
                 os.killpg(process.pid, signal.SIGKILL)
             process.wait()
         finally:
-            # A crashed master can exit before stopping its descendants.
             with contextlib.suppress(ProcessLookupError):
                 os.killpg(process.pid, signal.SIGKILL)
             _debug.lifecycle(

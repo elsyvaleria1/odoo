@@ -167,7 +167,6 @@ class AccountJournal(models.Model):
     _name = "account.journal"
     _description = "Journal"
     _order = "sequence, type, code"
-    # upstream's fields: account.payment.method.line is account.payment.channel
     _legacy_field_names = frozendict(
         {
             "inbound_payment_method_line_ids": "inbound_payment_channel_ids",
@@ -1056,16 +1055,6 @@ class AccountJournal(models.Model):
         return self.structural_account_ids
 
     def _get_usable_account_domain(self):
-        """Domain of the accounts a journal item of this journal may use.
-
-        This is the one statement of the rule. `_is_account_allowed` answers the
-        same question for a record from it, and everything that *suggests* an
-        account (prediction, partner history, label matching, selectors) scopes
-        its candidates with it, so a suggestion can never be an account that
-        `_check_account_is_usable` will then refuse. An empty allowed list
-        means every account; the journal's own structural accounts are always
-        usable and need not be listed.
-        """
         self.check_singleton()
         if not self.allowed_account_ids:
             return Domain.TRUE

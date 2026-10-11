@@ -22,7 +22,7 @@ class TestMassMailing(CronMixinCase, TestMACommon):
                     "email": "test1@test.com",
                 },
                 {
-                    "name": "test1",  # complete duplicate, both name and email for dupe check
+                    "name": "test1",
                     "email": "test1@test.com",
                 },
                 {
@@ -35,7 +35,6 @@ class TestMassMailing(CronMixinCase, TestMACommon):
     @users("user_marketing_automation")
     @mute_logger("odoo.addons.mass_mailing.models.mailing")
     def test_mailing_duplicate_is_test(self):
-        """Check that only non-tests records can be considered as duplicates"""
         test_records = self.test_records.with_env(self.env)
         campaign = self.env["marketing.campaign"].create(
             {
@@ -46,8 +45,6 @@ class TestMassMailing(CronMixinCase, TestMACommon):
         )
         activity = self._create_activity_mail(campaign)
 
-        # test campaign flow: we want to make sure that when creating multiple test campaigns with the same customer
-        # the customer will still receive multiple mails (not considered as duplicate)
         test_result = (
             self.env["wizard.marketing.campaign.launch.test"]
             .create(
@@ -101,7 +98,6 @@ class TestMassMailing(CronMixinCase, TestMACommon):
             trace_test_2.action_execute()
         self.assertEqual(len(self._mails), 1, "test1 should have received an email")
 
-        # normal campaign flow
         self._launch_campaign(campaign, date_reference=self.date_reference)
 
         self.assertEqual(len(activity.trace_ids), 4)

@@ -199,22 +199,18 @@ class ProjectProject(models.Model):
         )
 
         for vals in vals_list:
-            # set the properties definition foreign key
             vals["database_kpi_base_definition_id"] = parent
 
             if not vals.get("database_hosting"):
-                # this isn't a database
                 continue
 
             if not vals.get("privacy_visibility"):
-                # Avoid random user to be able to access the database info and kpis
                 vals["privacy_visibility"] = "followers"
 
         return super().create(vals_list)
 
     def _field_to_sql(self, alias, fname, query=None):
         if fname == "database_kpi_base_definition_id":
-            # Allow the export to work
             parent = self.env[
                 "properties.base.definition"
             ]._get_or_create_definition_id_for_property_field(
@@ -236,7 +232,6 @@ class ProjectProject(models.Model):
 
     @api.model
     def _cron_sync_all_databases_with_odoocom(self) -> None:
-        """Fetch the list from the Odoo.com SaaS if configured so, and trigger a synchronization of all the databases"""
         wizard = self.env["wizard.project.project.synchronize.database"].create({})
         wizard._do_update_from_odoocom()
 
@@ -305,11 +300,6 @@ class ProjectProject(models.Model):
 
     @api.model
     def action_synchronize_all_databases(self):
-        """
-        Synchronize all the databases, and fetch the list from the Odoo.com SaaS if configured so.
-        If active_ids is not empty, consider that the user only wants to synchronize these specific databases,
-        and fallback to action_database_synchronize.
-        """
         if active_ids := self.env.context.get("active_ids"):
             return (
                 self.env["project.project"]
@@ -328,7 +318,6 @@ class ProjectProject(models.Model):
         return wizard._do_sync()
 
     def action_database_synchronize(self):
-        """Synchronize the kpis from the selected databases"""
         wizard = self.env["wizard.project.project.synchronize.database"].create(
             {"database_ids": self.ids}
         )
@@ -341,7 +330,6 @@ class ProjectProject(models.Model):
         self.check_singleton()
         url = None
         if self.database_hosting == "other":
-            # Stored outside of Odoo, just redirect to the url
             url = self.database_url
 
         if not url and self.database_hosting == "saas":
@@ -357,13 +345,11 @@ class ProjectProject(models.Model):
             try:
                 db_uuid = db_api.get_database_uuid()
             except ApiError:
-                # Either server unreachable or most probably no permissions to read ir.config_parameter
                 pass
             else:
                 url = f"{odoocom_url}/my/databases/connect/{db_uuid}"
 
         if not url and self._database_version_gte("saas~17.2"):
-            # Supported since odoo/odoo@c63d14a0485a553b74a8457aee158384e9ae6d3f
             url = f"{self.database_url}/odoo"
 
         if not url:

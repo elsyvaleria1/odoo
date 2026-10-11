@@ -10,8 +10,6 @@ from odoo.addons.spreadsheet_edition.tests.spreadsheet_test_case import (
 @tagged("post_install", "-at_install")
 class TestQualitySpreadsheetTemplate(HttpCase, TestQualityCommon, SpreadsheetTestCase):
     def test_create_new_spreadsheet_from_quality_form(self):
-        # Search More is offered only when the dropdown's 7 results do not
-        # hold every template, and the tour creates one through it.
         spreadsheet_template = self.env["quality.spreadsheet.template"].create(
             [
                 {

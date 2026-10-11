@@ -52,8 +52,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
             )
 
     def test_no_item_missing_from_rendering_values(self):
-        """Test that when the redirect flow is triggered, rendering_values contains the
-        API_URL corresponding to the response of API request."""
         tx = self._create_transaction("redirect")
         url = "https://dummy.com"
         return_value = {"invoice_url": url}
@@ -71,8 +69,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
         self.assertDictEqual(rendering_values, {"api_url": url})
 
     def test_empty_rendering_values_if_direct(self):
-        """Test that if it's a card payment (like in direct flow), rendering_values should be empty
-        and no API call should be committed in the process."""
         card_pm = self.env.ref("payment.payment_method_card").id
         tx = self._create_transaction("direct", payment_method_id=card_pm)
         with patch(
@@ -85,7 +81,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
 
     @mute_logger("odoo.addons.payment.models.payment_transaction")
     def test_no_input_missing_from_redirect_form(self):
-        """Test that the `api_url` key is not omitted from the rendering values."""
         tx = self._create_transaction("redirect")
         with patch(
             "odoo.addons.payment_xendit.models.payment_transaction.PaymentTransaction"
@@ -101,8 +96,7 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
         self.assertDictEqual(form_info["inputs"], {})
 
     def test_no_item_missing_from_invoice_request_payload(self):
-        """Test that the invoice request values are conform to the transaction fields."""
-        self.maxDiff = 10000  # Allow comparing large dicts.
+        self.maxDiff = 10000
         self.reference = "tx1"
         tx = self._create_transaction(flow="redirect")
         return_url = self._build_url(XenditController._return_url)
@@ -147,8 +141,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
         )
 
     def test_processing_values_contain_rounded_amount_idr(self):
-        """Ensure that for IDR currency, processing_values should contain converted_amount
-        which is the amount rounded down to the nearest 0."""
         currency_idr = self.env.ref("base.IDR")
         tx = self._create_transaction(
             "redirect", amount=1000.50, currency_id=currency_idr.id
@@ -157,8 +149,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
         self.assertEqual(processing_values.get("rounded_amount"), 1000)
 
     def test_charge_request_contains_rounded_amount_idr(self):
-        """Ensure that for IDR currency, when creating charge API, the amount in payload
-        should be rounded down to the nearest 0"""
         currency_idr = self.env.ref("base.IDR")
         tx = self._create_transaction(
             "redirect", amount=1000.50, currency_id=currency_idr.id
@@ -172,7 +162,6 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
             self.assertEqual(payload["amount"], 1000)
 
     def test_search_by_reference_returns_tx(self):
-        """Test that the transaction is found based on the payment data."""
         tx = self._create_transaction("redirect")
         tx_found = self.env["payment.transaction"]._search_by_reference(
             "xendit", self.webhook_payment_data
@@ -180,16 +169,12 @@ class TestPaymentTransaction(PaymentHttpCommon, XenditCommon):
         self.assertEqual(tx, tx_found)
 
     def test_apply_updates_confirms_transaction(self):
-        """Test that the transaction state is set to 'done' when the payment data indicate a
-        successful payment."""
         tx = self._create_transaction("redirect")
         tx._apply_updates(self.webhook_payment_data)
         self.assertEqual(tx.state, "done")
 
     @mute_logger("odoo.addons.payment_xendit.models.payment_transaction")
     def test_apply_updates_tokenizes_transaction(self):
-        """Test that the transaction is tokenized when a charge request is successfully made on a
-        transaction that saves payment details."""
         tx = self._create_transaction("direct", tokenize=True)
         with (
             patch(

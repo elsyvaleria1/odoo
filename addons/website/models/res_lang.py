@@ -35,8 +35,6 @@ class ResLang(models.Model):
             )
         return super()._get_frontend()
 
-    # The answer depends on the request being a frontend one and on the website
-    # it resolved, neither of which an ormcache key can read from the context.
     @tools.ormcache("website_id", "force_installed_langs")
     def _get_website_frontend(
         self, website_id: int, force_installed_langs: bool

@@ -15,7 +15,6 @@ class ResLang(models.Model):
     @api.readonly
     @api.model
     def get_locales_for_spreadsheet(self) -> list:
-        """Return the list of locales available for a spreadsheet."""
         langs = self.with_context(active_test=False).search([])
         _debug.pipeline("spreadsheet_locales_listed", langs=len(langs))
 
@@ -23,12 +22,10 @@ class ResLang(models.Model):
 
     @api.model
     def _get_user_spreadsheet_locale(self):
-        """Convert the odoo lang to a spreadsheet locale."""
         lang = self._get_lang_cached(self.env.user.lang or "en_US")
         return lang._odoo_lang_to_spreadsheet_locale()
 
     def _odoo_lang_to_spreadsheet_locale(self) -> dict:
-        """Convert an odoo lang to a spreadsheet locale."""
         return {
             "name": self.name,
             "code": self.code,

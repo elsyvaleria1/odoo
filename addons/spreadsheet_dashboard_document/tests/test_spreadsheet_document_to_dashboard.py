@@ -196,12 +196,6 @@ class TestSpreadsheetDocumentToDashboard(TransactionCase):
         self.assertEqual(thread.dashboard_id, dashboard)
 
     def test_add_spreadsheet_to_dashboard_purges_comments(self):
-        """
-        create a document with comments
-        -> the dashboard contains the comments
-        -> the comments are removed from the document data
-        -> the comments are linked to the dashboard
-        """
 
         group = self.env["spreadsheet.dashboard.group"].create({"name": "a group"})
         data = {

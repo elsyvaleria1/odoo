@@ -29,9 +29,7 @@ class SepaDirectDebitCommon(AccountPaymentCommon, PaymentCustomCommon):
         cls.sepa_journal = cls.sepa.journal_id
         cls.sepa_journal.bank_account_id = cls.sepa_bank_account
 
-        # create the partner bank account
         cls.partner_bank_number = "BE17412614919710"
-        # IBAN detection will rewrite the number as 'BE17 4126 1491 9710'
         cls.partner_bank = cls.env["res.partner.bank.account"].create(
             {
                 "acc_number": cls.partner_bank_number,
@@ -41,7 +39,7 @@ class SepaDirectDebitCommon(AccountPaymentCommon, PaymentCustomCommon):
         )
         cls.user.group_ids = [
             Command.link(cls.env.ref("account.group_validate_bank_account").id)
-        ]  # Required to create a sdd.mandate
+        ]
         cls.mandate = cls.env["sdd.mandate"].create(
             {
                 "partner_id": cls.partner.id,

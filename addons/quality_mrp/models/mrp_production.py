@@ -24,9 +24,6 @@ class MrpProduction(models.Model):
 
     @api.depends("check_ids.quality_state")
     def _compute_check(self) -> None:
-        # Without the dependency both flags were cached for the whole
-        # transaction, so a check created or graded afterwards never moved
-        # them -- and the barcode view reads `quality_check_todo`.
         self.check_ids.fetch(["quality_state"])
         for production in self:
             states = set(production.check_ids.mapped("quality_state"))
@@ -74,9 +71,6 @@ class MrpProduction(models.Model):
         return res
 
     def _is_quality_check_done(self) -> bool:
-        # Multi-record: `pre_button_mark_done` is called on a whole batch of
-        # orders, and `mrp_subcontracting` calls it on every production a
-        # receipt closes at once.
         return not any(self.mapped("quality_check_todo"))
 
     def open_quality_alert_mo(self):

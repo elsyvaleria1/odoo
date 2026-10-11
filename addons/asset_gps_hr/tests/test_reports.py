@@ -229,8 +229,6 @@ class TestAssetTripReportHistory(TransactionCase):
                 "date_end": end,
             }
         )
-        # An upgrade cannot recover old attachment changes. Its explicit legacy
-        # interval keeps the pre-history interpretation without a rollout cutoff.
         self.env.cr.execute(
             "UPDATE resource_gps_binding SET date_start = NULL, origin = 'legacy' "
             "WHERE resource_id = %s",

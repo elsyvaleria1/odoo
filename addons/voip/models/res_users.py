@@ -7,14 +7,6 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     last_seen_phone_call = fields.Many2one(comodel_name="phone.call")
-    # --------------------------------------------------------------------------
-    # VoIP User Configuration Fields
-    # --------------------------------------------------------------------------
-    # These fields mirror those defined in `res.users.settings`. The reason they
-    # are not directly defined in here is that we want these fields to have
-    # different access rights than the rest of the fields of `res.users`. See
-    # their definition in `res.users.settings` for comprehensive documentation.
-    # --------------------------------------------------------------------------
     external_device_number = fields.Char(
         compute="_compute_external_device_number",
         inverse="_inverse_voip_settings",
@@ -102,10 +94,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_fields_voip_user_configuration(self) -> list[str]:
-        """
-        List of the VoIP-related fields that are configurable by the user using the
-        `res.users` form view. Useful to override SELF_READABLE/WRITABLE_FIELDS.
-        """
         return [
             "external_device_number",
             "how_to_call_on_mobile",
@@ -122,9 +110,6 @@ class ResUsers(models.Model):
         self.env.user.last_seen_phone_call = last_call.id
 
     def _get_voip_config(self) -> dict:
-        """Build the value for the voipConfig key, used in the web client through the mail.tools.discuss.Store
-        Subclass to inject additional options.
-        """
         provider = self.env.user.voip_provider_id
         return {
             "callActivityTypeId": self.env["mail.activity.type"]
@@ -144,13 +129,6 @@ class ResUsers(models.Model):
         store.add_global_values(voipConfig=self._get_voip_config())
 
     def _inverse_voip_settings(self) -> None:
-        """
-        Updates the values of the VoIP User Configuration Fields in `res_users_settings_ids` to have the same values as
-        their related fields in `res.users`. If there is no `res.users.settings` record for the user, then the record is
-        created.
-
-        This method is intended to be used as an inverse for VoIP Configuration Fields.
-        """
         for user in self:
             settings = (
                 self.env["res.users.settings"]

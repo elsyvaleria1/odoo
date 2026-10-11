@@ -53,8 +53,6 @@ class InMemorySequenceStore:
 
 
 def _load(value: typing.Any) -> typing.Any:
-    # what the cursor's loaders answer for the stored value: a numeric as a
-    # float (db.lifecycle registers the loader), a json object unwrapped
     if isinstance(value, Decimal):
         return float(value)
     return _unwrap_json(value)
@@ -87,11 +85,8 @@ class InMemoryColumnStore:
     ) -> int | None:
         row = self.storage.get_row(model._table, record_id)
         if row is None:
-            # the SQL twin unpacks the RETURNING of an UPDATE that matched
-            # nothing: an absent row is an error, never a fabricated 0
             raise ValueError(f"fetch_and_add: no row {record_id} in {model._table!r}")
         value = row.get(column)
-        # NULL + delta is NULL on PostgreSQL, and the raw old value returns
         new = None if value is None else value + delta
         self.storage.update_rows(model._table, [(record_id, {column: new})])
         return value
@@ -99,9 +94,6 @@ class InMemoryColumnStore:
     def try_write(
         self, model: ModelLike, column: str, record_id: int, value: typing.Any
     ) -> bool:
-        # a value the table refuses under a unique constraint is an answer,
-        # not an error: the caller picks the next candidate (mirrors the
-        # UniqueViolation catch of the PostgreSQL twin)
         row = dict(self.storage.get_row(model._table, record_id) or {})
         row["id"] = record_id
         row[column] = value
@@ -161,9 +153,6 @@ class InMemoryColumnStore:
 
 
 def _jsonb_contains(value: object, needle: object) -> bool:
-    # PostgreSQL's jsonb @>: an object contains every key of the needle with
-    # a containing value; an array contains every needle element in some
-    # element; scalars must be equal
     if isinstance(needle, dict):
         return isinstance(value, dict) and all(
             key in value and _jsonb_contains(value[key], sub)

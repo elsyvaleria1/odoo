@@ -47,8 +47,6 @@ class TestMailTemplateReferences(TransactionCase):
         )
 
     def test_every_shipped_template_names_a_live_field(self):
-        # the analysis a save runs, guards and guard variables included, so a
-        # shipped template reads here exactly as it would be judged when edited
         broken = []
         for template in self._shipped_templates():
             if not template.model or template.model not in self.env:

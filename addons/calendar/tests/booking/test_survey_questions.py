@@ -174,9 +174,6 @@ class TestAppointmentSurveyQuestions(TransactionCase):
         self.assertEqual(event.appointment_answer_input_ids.partner_id, partners)
 
     def test_a_survey_editor_creates_a_matrix_question(self):
-        # a matrix row belongs to its question through matrix_question_id, and
-        # an appointment question is never a matrix: the choice guard must let
-        # a row with no question_id through
         editor = mail_new_test_user(
             self.env,
             login="survey_matrix_editor",

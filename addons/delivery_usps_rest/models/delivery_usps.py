@@ -42,7 +42,6 @@ class ProviderUSPS(models.Model):
             )
         },
     )
-    # Fields required to configure
     usps_eps_account_number = fields.Char(
         string="EPS Account Number",
         groups="base.group_system",
@@ -452,7 +451,6 @@ class ProviderUSPS(models.Model):
             )
             return packages
 
-        # Create all packages.
         move_lines_by_package = picking.move_line_ids.grouped("result_package_id")
         for package in picking.move_line_ids.result_package_id:
             move_lines = move_lines_by_package[package]
@@ -469,7 +467,6 @@ class ProviderUSPS(models.Model):
                 }
             )
 
-        # Create one package: either everything is in pack or nothing is.
         if picking.weight_bulk:
             commodities = self._prepare_commodity_values_from_move_lines(
                 picking.move_line_ids
@@ -727,12 +724,6 @@ class ProviderUSPS(models.Model):
             picking.write({"carrier_tracking_ref": "", "carrier_price": 0.0})
 
     def _usps_add_extra_data_to_request(self, request, request_type):
-        """Adds the extra data to the request.
-        When there are multiple items in a list, they will all be affected by
-        the change.
-        for example, with
-        "roles": {"role": {"CRID": "12345"}}
-        the CRID of each role will be updated."""
         extra_data_input = {
             "rate": self.usps_extra_data_rate_request,
             "shipment": self.usps_extra_data_shipment_request,
@@ -746,7 +737,6 @@ class ProviderUSPS(models.Model):
             ) from error
 
         def extra_data_to_request(request, extra_data):
-            """recursive method that adds the extra data to the current request"""
             for key, new_value in extra_data.items():
                 request[key] = current_value = request.get(key)
                 if isinstance(current_value, list):

@@ -206,8 +206,6 @@ class QueryTestCase(BaseCase):
             )
         )
 
-        # run on its own, the statement opens with each expression and its
-        # conditions read it from there
         statement = query.statement()
         self.assertEqual(
             statement.code,
@@ -224,8 +222,6 @@ class QueryTestCase(BaseCase):
         )
         self.assertEqual(statement.params, (["a"], 7, "50%", 3))
 
-        # what goes into another statement has no WITH to read: there each
-        # expression is back where it is used, with its parameters
         inline = "ARRAY(SELECT n FROM g WHERE r = ANY(%s) AND t LIKE 'a%%')"
         from_clause = (
             '"foo" LEFT JOIN "foo" AS "foo__up" ON ("foo"."up" = "foo__up"."id" '
@@ -264,8 +260,6 @@ class QueryTestCase(BaseCase):
             other.set_result_ids([3])
 
     def test_a_set_is_inline_in_a_statement_of_its_own(self):
-        # rendered alone, the set is back where it is used, whatever the
-        # rendering: the planner sees its estimate and chooses how to read it
         query = Query(None, "foo")
         reach = SQL("SELECT resource_id FROM reach WHERE key = ANY(%s)", [5, 9])
         first = query.once_set(reach)
@@ -312,7 +306,6 @@ class QueryTestCase(BaseCase):
             other.set_result_ids([3])
 
     def test_shared_once_states_a_set_one_time(self):
-        # the parts of one statement read one evaluation of the set
         reach = SQL("SELECT resource_id FROM reach WHERE key = ANY(%s)", [5])
         parts = []
         for value in (1, 2):
@@ -346,7 +339,6 @@ class QueryTestCase(BaseCase):
                 1,
             )
         )
-        # the same expressions, asked for in the other order
         second = Query(None, "foo")
         second.add_where(
             SQL(
@@ -376,10 +368,8 @@ class QueryTestCase(BaseCase):
         )
         self.assertEqual(statement.params, ("a", 7, 1, 2))
 
-        # a part without expressions of its own reads as its select
         plain = Query(None, "foo")
         self.assertEqual(shared.select(plain, "foo.a"), plain.select("foo.a"))
-        # nor does a scope with none open with a WITH
         self.assertEqual(SharedOnce("foo").statement(plain.select()), plain.select())
 
         with self.assertRaises(ValueError):

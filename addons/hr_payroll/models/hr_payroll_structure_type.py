@@ -61,9 +61,6 @@ class HrPayrollStructureType(models.Model):
 
     @api.constrains("country_id")
     def _check_country(self) -> None:
-        # Localization modules seed their own hr.payroll.structure.type
-        # records (e.g. l10n_mx_hr_payroll) with a fixed country_id via data
-        # files, regardless of which company is active at install time.
         if self.env.context.get("install_mode"):
             return
         for structure_type in self:

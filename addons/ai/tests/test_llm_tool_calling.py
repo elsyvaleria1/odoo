@@ -9,12 +9,6 @@ from odoo.addons.ai.utils.llm_api_service import _logger as service_logger
 @tagged("post_install", "-at_install")
 class TestLLMToolCalling(common.TransactionCase):
     def _create_mock_request(self, responses):
-        """Build a ``_request`` replacement returning the given responses in order.
-
-        :param list responses: payloads to return, one per successive call
-        :return: the mock function
-        :rtype: callable
-        """
         call_count = 0
 
         def mock_request(*args, **kwargs):
@@ -26,12 +20,6 @@ class TestLLMToolCalling(common.TransactionCase):
         return mock_request
 
     def _create_dummy_tools(self, count=1):
-        """Build dummy tools named ``dummy_tool_1`` up to ``dummy_tool_<count>``.
-
-        :param int count: number of dummy tools to create
-        :return: the tools dict and a callable telling, per tool name, whether it ran
-        :rtype: tuple
-        """
         tools = {}
         was_called_flags = {}
 
@@ -64,7 +52,6 @@ class TestLLMToolCalling(common.TransactionCase):
     def test_openai_ignore_text_with_tool_call(self, mock_request, mock_token):
         tools, was_called_flags = self._create_dummy_tools(1)
 
-        # First response: thinking text + tool call
         mock_response1 = {
             "output": [
                 {"type": "text", "text": "This is the thinking text."},
@@ -77,7 +64,6 @@ class TestLLMToolCalling(common.TransactionCase):
             ]
         }
 
-        # Second response: final text after tool call result is sent
         mock_response2 = {
             "output": [{"type": "text", "text": "This is the final answer."}]
         }
@@ -105,7 +91,6 @@ class TestLLMToolCalling(common.TransactionCase):
     def test_gemini_ignore_text_with_tool_call(self, mock_request, mock_token):
         tools, was_called_flags = self._create_dummy_tools(1)
 
-        # First response: thinking text + tool call
         mock_response1 = {
             "candidates": [
                 {
@@ -119,7 +104,6 @@ class TestLLMToolCalling(common.TransactionCase):
             ]
         }
 
-        # Second response: final text after tool call result is sent
         mock_response2 = {
             "candidates": [
                 {"content": {"parts": [{"text": "This is the final answer."}]}}
@@ -151,7 +135,6 @@ class TestLLMToolCalling(common.TransactionCase):
 
         tools, __ = self._create_dummy_tools(1)
 
-        # Always return a tool call, never a final text response
         mock_response_tool_call = {
             "output": [
                 {
@@ -164,7 +147,7 @@ class TestLLMToolCalling(common.TransactionCase):
         }
 
         mock_request.return_value = (
-            mock_response_tool_call  # Always return the same response
+            mock_response_tool_call
         )
 
         service = LLMApiService(self.env, provider="openai", purpose="ai.test")
@@ -195,7 +178,6 @@ class TestLLMToolCalling(common.TransactionCase):
 
         tools, was_called_flags = self._create_dummy_tools(2)
 
-        # First response: 2 tool calls, which is more than the limit of 1
         mock_response1 = {
             "output": [
                 {
@@ -213,7 +195,6 @@ class TestLLMToolCalling(common.TransactionCase):
             ]
         }
 
-        # Second response: final text answer
         mock_response2 = {
             "output": [
                 {"type": "text", "text": "Final answer after handling tool calls."}
@@ -243,7 +224,6 @@ class TestLLMToolCalling(common.TransactionCase):
             "AI: Tool call limit reached, stopping further tool calls",
         )
 
-        # Check the inputs for the second LLM call
         second_call_kwargs = mock_request.call_args.kwargs
         tool_responses = second_call_kwargs["body"]["input"][-2:]
 
@@ -264,7 +244,6 @@ class TestLLMToolCalling(common.TransactionCase):
     )
     @patch("odoo.addons.ai.utils.llm_api_service.LLMApiService._request")
     def test_unknown_tool_call(self, mock_request, mock_token):
-        # First response: a call to a tool that does not exist
         mock_response1 = {
             "output": [
                 {
@@ -276,7 +255,6 @@ class TestLLMToolCalling(common.TransactionCase):
             ]
         }
 
-        # Second response: final text answer
         mock_response2 = {
             "output": [
                 {"type": "text", "text": "Final answer after handling unknown tool."}
@@ -302,7 +280,6 @@ class TestLLMToolCalling(common.TransactionCase):
             error_log.message, "AI: Try to call a forbidden action unknown_tool"
         )
 
-        # Check the inputs for the second LLM call
         second_call_kwargs = mock_request.call_args.kwargs
         tool_response = second_call_kwargs["body"]["input"][-1]
 

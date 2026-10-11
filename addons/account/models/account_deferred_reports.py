@@ -29,12 +29,9 @@ class AccountDeferredReportHandler(models.AbstractModel):
             "This method is not implemented in the deferred report handler."
         )
 
-    ############################################
-    # DEFERRED COMMON (DISPLAY AND GENERATION) #
-    ############################################
 
     def _get_domain_fully_inside_period(self, options) -> list:
-        return [  # Exclude if entirely inside the period
+        return [
             "!",
             "&",
             "&",
@@ -72,7 +69,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
         )
         domain &= Domain(self._get_domain_fully_inside_period(options))
         if filter_already_generated:
-            # Avoid regenerating already generated deferrals
             domain &= Domain(
                 [
                     ("deferred_end_date", ">=", options["date"]["date_from"]),
@@ -83,8 +79,8 @@ class AccountDeferredReportHandler(models.AbstractModel):
                         [
                             ("date", "=", options["date"]["date_to"]),
                             "|",
-                            ("state", "=", "posted"),  # Either posted
-                            "&",  # Or autoposted in the future
+                            ("state", "=", "posted"),
+                            "&",
                             ("auto_post", "=", "at_date"),
                             ("date", ">=", fields.Date.context_today(self)),
                         ],
@@ -228,25 +224,13 @@ class AccountDeferredReportHandler(models.AbstractModel):
         filter_already_generated=False,
         grouping_field="account_id",
     ) -> tuple:
-        """Group the deferred amounts by grouping key and compute the totals per key and per period.
-
-        Returns (totals_per_key, totals_aggregated_by_period), where period1 = (date1, date2, label1), ...:
-        {
-            self._group_by_deferred_fields(line): {
-                'account_id': account1, 'amount_total': 600, period_1: 200, period_2: 400
-            },
-            self._group_by_deferred_fields(line): {
-                'account_id': account2, 'amount_total': 700, period_1: 300, period_2: 400
-            },
-        }, {'totals_aggregated': 1300, period_1: 500, period_2: 800}
-        """
         deferred_amounts_by_line = groupby(
             deferred_amounts_by_line,
             key=lambda x: self._group_by_deferred_fields(
                 x, filter_already_generated, grouping_field
             ),
         )
-        totals_per_key = {}  # {key: {**self._get_current_key_totals_dict(), <one entry per period>}}
+        totals_per_key = {}
         totals_aggregated_by_period = dict.fromkeys(periods + ["totals_aggregated"], 0)
         sign = 1 if is_reverse else -1
         for key, lines_per_key in deferred_amounts_by_line:
@@ -273,9 +257,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
         )
         return totals_per_key, totals_aggregated_by_period
 
-    ###########################
-    # DEFERRED REPORT DISPLAY #
-    ###########################
 
     @_debug.perf.timed
     def _custom_options_initializer(self, report, options, previous_options):
@@ -341,7 +322,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 "date_from": DEFERRED_DATE_MIN,
                 "date_to": options["columns"][-1][
                     "date_to"
-                ],  # Covers up to end of current period
+                ],
             }
         ]
         options["columns"] = (
@@ -395,14 +376,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def action_audit_cell(self, options, params):
-        """Open a list of invoices/bills and/or deferral entries for the clicked cell in a deferred report.
-
-        :param dict options: the report's `options`
-        :param dict params:  a dict containing:
-                                 `calling_line_dict_id`: line id containing the optional account of the cell
-                                 `column_group_key`: the column group key of the cell
-                                 `expression_label`: the expression label of the cell
-        """
         _debug.lifecycle("action_audit_cell", records=self)
         report = self.env["report.formula"].browse(options["report_id"])
         column_values = next(
@@ -431,31 +404,24 @@ class AccountDeferredReportHandler(models.AbstractModel):
         report_date_from = fields.Date.to_date(options["date"]["date_from"])
         report_date_to = fields.Date.to_date(options["date"]["date_to"])
 
-        # Corrections for comparisons
         if column_values["expression_label"] in ("not_started", "later"):
-            # Not Started and Later period start one day after `report_date_to`
             column_date_from = report_date_to + relativedelta(days=1)
         if column_values["expression_label"] == "before":
-            # Before period ends one day before `report_date_from`
             column_date_to = report_date_from - relativedelta(days=1)
 
-        # calling_line_dict_id is of the format `~report.formula~15|~account.account~25`
         _grouping_model, grouping_record_id = report._get_model_info_from_id(
             params.get("calling_line_dict_id")
         )
 
-        # Find the original lines to be deferred in the report period
         original_move_lines_domain = self._get_domain_deferred_lines(
             report,
             options,
             filter_not_started=column_values["expression_label"] == "not_started",
         )
         if grouping_record_id:
-            # We're auditing a specific account, so we only want moves containing this account
             original_move_lines_domain &= Domain(
                 options["deferred_grouping_field"], "=", grouping_record_id
             )
-        # We're getting all lines from the concerned moves. They are filtered later for flexibility.
         original_moves = (
             self.env["account.move.line"].search(original_move_lines_domain).move_id
         )
@@ -467,23 +433,12 @@ class AccountDeferredReportHandler(models.AbstractModel):
             original_moves=original_moves,
         )
 
-        # Lines shown per column, grouped by their journal entry and filtered by the column date bounds:
-        # - Total: lines of all invoices/bills being deferred in the current period
-        # - Not Started: lines of the deferral entries whose original invoice/bill date is before or in the
-        #   current period but whose deferral only starts after it, plus the lines of those invoices/bills
-        # - Before: lines of the deferral entries dated before the current period, created by invoices/bills
-        #   also being deferred in the current period, plus the lines of those invoices/bills
-        # - Current: lines of the deferral entries in the current period, plus those of their original invoices/bills
-        # - Later: lines of the deferral entries dated after the current period, created by invoices/bills also
-        #   being deferred in the current period, plus the lines of those invoices/bills
         domain = [
-            # For the Total period only show the original move lines
             "&",
             ("move_id", "in", original_moves.ids),
             ("deferred_end_date", ">=", report_date_from),
         ]
 
-        # Show both the original move lines and deferral move lines for all other periods
         if (
             column_values["expression_label"] != "total"
             and original_moves.deferred_move_ids
@@ -496,10 +451,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
 
         if column_values["expression_label"] == "not_started":
             domain += [("deferred_start_date", ">=", column_date_from)]
-        # If in manually & grouped mode, and deferrals have not yet been generated
-        # so no move with `date` set => instead show the candidates original deferred moves that
-        # will be deferred upon clicking the button. If totally/partially generated, we'll just
-        # use the `date` filter which will include both the originals and deferrals.
         elif not original_moves.deferred_move_ids:
             domain += [
                 ("deferred_start_date", "<=", column_date_to),
@@ -539,7 +490,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 (False, "graph"),
                 (False, "kanban"),
             ],
-            # Most filters are set here to allow auditing flexibility to the user
             "context": {
                 "search_default_pl_accounts": True,
                 f"search_default_{options['deferred_grouping_field']}": grouping_record_id,
@@ -569,7 +519,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
             already_generated = self.env["account.move"].search_count(
                 report._get_domain_generated_deferral_entries(options)
             )
-            # This will trigger a second _get_lines call, however the first one was cached, so we just need to filter again on the cache (see _get_lines)
             moves_lines_to_generate, __, __, __, __ = self._get_moves_to_defer(options)
             if moves_lines_to_generate and already_generated:
                 warnings["account.deferred_report_warning_partially_generated"] = {
@@ -612,7 +561,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
             "type": "ir.actions.act_window",
             "name": self.env._("Deferred Entries"),
             "res_model": "account.move.line",
-            # An action's domain travels to the client as JSON, which a Domain is not.
             "domain": list(domain),
             "views": [
                 (
@@ -738,9 +686,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
         )
         return report_lines
 
-    #######################
-    # DEFERRED GENERATION #
-    #######################
 
     @_debug.perf.timed
     def action_generate_entry(self, options):
@@ -844,8 +789,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 }
             )
         )
-        # We write the lines after creation, to make sure the `deferred_original_move_ids` is set.
-        # This way we can avoid adding taxes for deferred moves.
         deferred_move.write({"line_ids": move_lines})
         reverse_move = deferred_move._reverse_moves()
         reverse_move.write(
@@ -856,9 +799,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
         )
         reverse_move.line_ids.name = ref_rev
         new_deferred_moves = deferred_move + reverse_move
-        # We create the relation (original deferred move, deferral entry)
-        # using SQL. This avoids a MemoryError using the ORM which will
-        # load huge amounts of moves in memory for nothing
         self.env.cr.execute_values(
             """
             INSERT INTO account_move_deferred_rel(original_move_id, deferred_move_id)
@@ -898,12 +838,6 @@ class AccountDeferredReportHandler(models.AbstractModel):
     def _get_deferred_lines(
         self, lines, deferred_account, period, is_reverse, ref
     ) -> tuple:
-        """Build the deferred lines of a single given period.
-
-        :return: (deferred_lines, original_move_ids), the Command objects creating the deferred lines and the
-                 ids of the moves that created them, kept to track the original invoice in the deferral entry.
-        :rtype: tuple
-        """
         if not deferred_account:
             raise UserError(
                 self.env._(
@@ -934,18 +868,11 @@ class AccountDeferredReportHandler(models.AbstractModel):
         if totals_aggregated == deferred_amounts_totals[period]:
             return [], set()
 
-        # compute analytic distribution to populate on deferred lines
-        # dict of keys: self._group_by_deferred_fields(line)
-        #         values: dict of keys: "account.analytic.account.id" (string)
-        #                         values: float
         anal_dist_by_key = defaultdict(lambda: defaultdict(float))
-        # using another var for the analytic distribution of the deferral account
         deferred_anal_dist = defaultdict(lambda: defaultdict(float))
         for line in lines:
             if not line["analytic_distribution"]:
                 continue
-            # Analytic distribution should be computed from the lines with the same _group_by_deferred_fields(), except for
-            # the deferred line with the deferral account which will use _group_by_deferral_fields()
             sign = 1 if is_reverse else -1
             key_amount = deferred_amounts_by_key.get(
                 self._group_by_deferred_fields(line, True)

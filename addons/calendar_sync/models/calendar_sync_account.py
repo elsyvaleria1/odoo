@@ -20,7 +20,6 @@ from odoo.addons.calendar_sync.remote import (
 
 _logger = logging.getLogger(__name__)
 
-# what one push sends at most; the rest waits for the next run
 PUSH_BUDGET = 200
 
 
@@ -78,7 +77,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # the transaction's time, which the records it creates carry
         now = self.env.cr.now()
         floors = {}
         for vals in vals_list:
@@ -96,10 +94,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _first_floor(self, code: str):
-        """The provider's first synchronization in this database, which a new
-        account sends the events created since: the earliest floor its
-        accounts hold (Microsoft kept it as one database-wide date, which the
-        upgrade carried onto them); None before any account."""
         [(floor,)] = self._as_engine()._read_group(
             [("provider", "=", code), ("insert_since", "!=", False)],
             aggregates=["insert_since:min"],
@@ -108,7 +102,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _calendar_sync_providers(self) -> dict:
-        """{code: CalendarSyncProvider} of the installed adapters."""
         return {}
 
     @api.model
@@ -117,14 +110,12 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _find(self, user, code: str):
-        """`user`'s account with `code`, elevated, empty when none exists."""
         return self.sudo().search(
             [("user_id", "=", user.id), ("provider", "=", code)], limit=1
         )
 
     @api.model
     def _for(self, user, code: str):
-        """`user`'s account with `code`, created on first use, elevated."""
         return self._find(user, code) or self.sudo().create(
             {"user_id": user.id, "provider": code}
         )
@@ -150,8 +141,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _cron_sync(self) -> None:
-        """Every account whose user authorized it and did not stop it, provider
-        by provider, a commit per user."""
         Users = self.env["res.users"]
         for code in self._calendar_sync_providers():
             if self._is_paused(code):
@@ -159,7 +148,6 @@ class CalendarSyncAccount(models.Model):
             for user in Users._calendar_sync_candidates(code):
                 Users._calendar_sync_run_for_cron(user, code)
 
-    # -- the engine: what a provider with an adapter gets ---------------------
 
     def _adapter(self):
         self.check_singleton()
@@ -171,7 +159,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _engine_providers(self) -> dict:
-        """{code: provider} of the providers the engine runs."""
         return {
             code: provider
             for code, provider in self._calendar_sync_providers().items()
@@ -179,7 +166,6 @@ class CalendarSyncAccount(models.Model):
         }
 
     def _window(self) -> Domain:
-        """The events this account synchronizes: its user's, around today."""
         self.check_singleton()
         provider = self._provider(self.provider)
         days = 365
@@ -193,7 +179,6 @@ class CalendarSyncAccount(models.Model):
             Domain("partner_ids.user_ids", "in", self.user_id.id)
             & Domain("stop", ">", now - timedelta(days=days))
             & Domain("start", "<", now + timedelta(days=days))
-            # the series is sent for the events that follow it
             & ~(
                 Domain("recurrency", "=", True)
                 & Domain("recurrence_id", "!=", False)
@@ -207,9 +192,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _writer(self, record, code: str, running=None, active=None):
-        """The account a change of `record` goes out through: its organizer's
-        while the organizer synchronizes with `code`, else `running`.
-        `active`, an _Actives of `code`, saves asking twice of a user."""
         active = active or _Actives(self, code)
         organizer = (
             record.user_id
@@ -222,9 +204,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _may_insert(self, record, code: str, active=None) -> bool:
-        """An event goes to the provider through its organizer, or through any
-        attendee when it has none; an event of a series goes as the series,
-        and one marked recurring whose series is not made yet waits for it."""
         if record._name == "calendar.event":
             if record.follow_recurrence if record.recurrence_id else record.recurrency:
                 return False
@@ -236,20 +215,14 @@ class CalendarSyncAccount(models.Model):
         return not organizer or (active or _Actives(self, code))(organizer)
 
     def _calendar_sync(self) -> bool:
-        """Read this account's calendar into Odoo, then send what Odoo holds
-        and the calendar does not; whether anything was read."""
         read = self._read()
         if read is None:
             return False
         changes, applied = read
-        # a first or repaired synchronization does not mail every attendee
         self._queue_push(quiet=changes.full)
         return bool(applied)
 
     def _read(self):
-        """Read this account's calendar into Odoo: (the changes read, the
-        records they changed), or None when the synchronization is not
-        running or runs already."""
         self.check_singleton()
         if not self.user_id._calendar_sync_active(self.provider):
             return None
@@ -272,18 +245,13 @@ class CalendarSyncAccount(models.Model):
         self.write(values)
         return changes, applied
 
-    # -- pull ----------------------------------------------------------------
 
     def _pull(self, changes) -> list:
-        """Apply `changes` to Odoo; the records they changed. The series go
-        first: applying one links its events, which the items after it may be."""
         self.check_singleton()
         code = self.provider
         adapter = self._adapter()
         Link = self.env["calendar.sync.link"]._engine()
         links = Link._match(self, changes.events)
-        # the write dates before this pull: applying one item may write
-        # another record, which must not make its own update look older
         written = {
             link._record(): link._record().write_date
             for link in links.values()
@@ -320,8 +288,6 @@ class CalendarSyncAccount(models.Model):
 
         applied = [record for remote in masters.values() if (record := pull(remote))]
         if masters:
-            # applying a series may have deleted events: an item of one is
-            # no longer Odoo's to apply; or linked them, to items found now
             gone = {rid for rid, link in links.items() if not link.exists()}
             rest = [remote for remote in rest if remote.remote_id not in gone]
             for remote_id in gone:
@@ -329,8 +295,6 @@ class CalendarSyncAccount(models.Model):
             links |= Link._match(
                 self, [remote for remote in rest if remote.remote_id not in links]
             )
-        # an occurrence changed alone, of a series this calendar holds: the
-        # series knows where it goes
         alone = {}
         for remote in rest:
             if remote.kind == RemoteKind.OCCURRENCE and remote.remote_id not in links:
@@ -361,7 +325,6 @@ class CalendarSyncAccount(models.Model):
         return applied
 
     def _pull_one(self, applying, adapter, remote, links, written, occurrences):
-        """Apply `remote`; its record when it changed one."""
         link = links.get(remote.remote_id)
         record = link._record() if link else None
         if link and not record:
@@ -371,8 +334,6 @@ class CalendarSyncAccount(models.Model):
             and record
             and record._name != "calendar.recurrence"
         ):
-            # an event that became a series under the same id: the adapter
-            # makes the series of it
             link, record = None, None
         if remote.cancelled:
             if record:
@@ -402,8 +363,6 @@ class CalendarSyncAccount(models.Model):
 
     @api.model
     def _is_newer(self, remote, link, written) -> bool:
-        """Whether `remote` changed since Odoo last heard of it, and later
-        than Odoo changed its record."""
         if link.remote_etag and remote.etag == link.remote_etag:
             return False
         if not written or not remote.updated:
@@ -414,7 +373,6 @@ class CalendarSyncAccount(models.Model):
         return updated >= written
 
     def _applied(self, link, remote) -> None:
-        """`link`'s record holds what the provider holds: nothing to send."""
         link.remote_etag = remote.etag
         self.env["calendar.sync.link"]._of(link._record(), self.provider).write(
             {"pending": False, "error": False}
@@ -432,8 +390,6 @@ class CalendarSyncAccount(models.Model):
         return recurrence
 
     def _cancel(self, link) -> None:
-        """The item of `link` was deleted from this account's calendar: its
-        organizer's record goes, an attendee declines."""
         record = link._record()
         link.unlink()
         if record._name == "calendar.recurrence":
@@ -441,7 +397,6 @@ class CalendarSyncAccount(models.Model):
         else:
             events, organizer = record, record.user_id
         if organizer == self.user_id:
-            # gone from every calendar of the provider with its organizer's
             self.env["calendar.sync.link"]._of(record, self.provider).unlink()
             self.env["calendar.sync.link"]._of(events, self.provider).unlink()
             events.unlink()
@@ -451,18 +406,12 @@ class CalendarSyncAccount(models.Model):
             lambda attendee: attendee.partner_id == self.user_id.partner_id
         ).state = "declined"
 
-    # -- push ----------------------------------------------------------------
 
     def _queue_push(self, records=None, quiet=False) -> None:
-        """Send what these accounts owe their calendars once this transaction
-        is committed, an insert's id being committed before it is sent:
-        `records` alone, as an edit in the interface waits for them, or all
-        of it, as a run does. `quiet` sends no invitation or update mails."""
         data = self._push_queue()
         if records is None:
             data["calendar_sync.push"].update(self.ids)
         elif not records:
-            # the deletions alone: the push starts with them
             data["calendar_sync.push.deletes"].update(self.ids)
         else:
             data["calendar_sync.push.records"].update(
@@ -474,9 +423,6 @@ class CalendarSyncAccount(models.Model):
             data["calendar_sync.push.quiet"].update(self.ids)
 
     def _owe_answer(self, event, state: str) -> None:
-        """Owe `event`'s organizer this attendee's answer `state`, sent once
-        this transaction is committed when the synchronization runs, else
-        when it next does."""
         self.check_singleton()
         Link = self.env["calendar.sync.link"]._engine()
         if own := Link.search(
@@ -491,8 +437,6 @@ class CalendarSyncAccount(models.Model):
             self._push_queue()["calendar_sync.push.answers"].add(self.id)
 
     def _push_queue(self):
-        """What the push after this transaction's commit sends, started on
-        first use."""
         data = self.env.cr.postcommit.data
         if "calendar_sync.push" in data:
             return data
@@ -530,7 +474,6 @@ class CalendarSyncAccount(models.Model):
                         calendar_sync_interactive=account.id not in everything,
                     )
                     try:
-                        # a push sends the answers owed first
                         if account.id in everything or account.id in only:
                             account._push(
                                 None if account.id in everything else only[account.id]
@@ -545,16 +488,12 @@ class CalendarSyncAccount(models.Model):
         return data
 
     def _as_engine(self):
-        """These accounts as the engine reads them, whoever it runs as."""
         return self.with_privilege(
             "calendar_sync.privilege_engine",
             reason="the engine synchronizes the accounts' calendars",
         )
 
     def _push(self, only=None) -> None:
-        """Send this account's calendar what Odoo changed: deletions, changes,
-        then new records, committing after each; of the records, `only` those
-        [(model, id)] when given."""
         self.check_singleton()
         code = self.provider
         if not self.user_id._calendar_sync_active(code):
@@ -585,10 +524,6 @@ class CalendarSyncAccount(models.Model):
             writer._queue_push(None if only is None else records)
 
     def _to_push(self, only=None):
-        """[(record, writer)] of what Odoo owes the calendars of this account's
-        provider and this account may send: the records whose links wait to
-        be sent, then its events and series no calendar of the provider has;
-        of `only` [(model, id)] when given, those of them."""
         code = self.provider
         Link = self.env["calendar.sync.link"]._engine()
         active = _Actives(self, code)
@@ -653,7 +588,6 @@ class CalendarSyncAccount(models.Model):
         ]
 
     def _call(self, operation, *args):
-        """(result, None), or (None, the error) when the provider refused."""
         try:
             return operation(*args), None
         except CalendarSyncError as error:
@@ -663,10 +597,7 @@ class CalendarSyncAccount(models.Model):
             return None, self._adapter()._classify(error)
 
     def _send_delete(self, tombstone) -> bool:
-        """Delete `tombstone`'s item; whether the push goes on."""
         if not tombstone.remote_id:
-            # an insert whose answer was lost: a read since the record went
-            # would have found the item it left, so there is none
             if not tombstone.insert_id or (
                 self.last_sync_date and self.last_sync_date > tombstone.write_date
             ):
@@ -681,7 +612,6 @@ class CalendarSyncAccount(models.Model):
         return True
 
     def _send(self, record) -> bool:
-        """Send `record` to this account's calendar; whether the push goes on."""
         Link = self.env["calendar.sync.link"]._engine()
         adapter = self._adapter()
         record = record.with_env(self.env)
@@ -708,22 +638,18 @@ class CalendarSyncAccount(models.Model):
                 and own.insert_id
                 and self._provider(self.provider).capabilities.client_insert_id
             ):
-                # an insert in flight may have landed under its own id
                 own.remote_id = own.insert_id
             if own.remote_id:
                 __, error = self._call(adapter._delete, self, own.remote_id)
                 if error and error.kind not in (ErrorKind.GONE, *PERMANENT):
                     return self._failed(own, record, error)
             elif own.insert_id:
-                # the item an insert whose answer was lost may have left is
-                # found by its insert id, then deleted
                 own.write({Link._field_of(record): False, "pending": False})
                 (Link._of(record, self.provider) - own).unlink()
                 self.env.cr.commit()
                 return True
             Link._of(record, self.provider).unlink()
         elif not (values := adapter._remote_values(record, self)):
-            # nothing the provider can hold yet: a series with no event
             return True
         elif own.remote_id:
             remote, error = self._call(
@@ -736,8 +662,6 @@ class CalendarSyncAccount(models.Model):
         else:
             if own.error:
                 return True
-            # an earlier attempt whose answer was lost: what it inserted holds
-            # the values of then, and the retry resolves to that item
             retried = bool(own)
             own = own or Link.create(
                 {
@@ -747,7 +671,6 @@ class CalendarSyncAccount(models.Model):
                     "pending": True,
                 }
             )
-            # the insert id is kept before it is sent: a retry sends it again
             self.env.cr.commit()
             remote, error = self._call(
                 adapter._insert, self, record, values, own.insert_id
@@ -783,13 +706,9 @@ class CalendarSyncAccount(models.Model):
         return True
 
     def _send_answers(self) -> bool:
-        """Send the answers this attendee's calendar owes; whether the push
-        goes on. An answer stays owed until the provider takes it, or refuses
-        it for good."""
         if not self.user_id._calendar_sync_active(self.provider):
             return False
         if not self._provider(self.provider).capabilities.answer_endpoint:
-            # its answers travel in the organizer's event, owed as an edit is
             return True
         Link = self.env["calendar.sync.link"]._engine()
         adapter = self._adapter()
@@ -815,9 +734,6 @@ class CalendarSyncAccount(models.Model):
         return True
 
     def _resolve(self, record, own):
-        """This account's link of a `record` another account's calendar holds:
-        that account's id when ids are shared, else this calendar's copy of
-        the item, looked up by its iCalendar UID; empty when it has none."""
         Link = self.env["calendar.sync.link"]._engine()
         others = Link._of(record, self.provider) - own
         source = others.filtered("remote_id")[:1]
@@ -833,7 +749,6 @@ class CalendarSyncAccount(models.Model):
         return Link._adopt(self, record, remote, source)
 
     def _failed(self, link, record, error) -> bool:
-        """Apply the engine's rule for `error`; whether the push goes on."""
         if error.kind in (ErrorKind.AUTH, ErrorKind.THROTTLED):
             return False
         if error.kind in PERMANENT:

@@ -19,8 +19,6 @@ class TestSourceMapContent(HttpCase):
                 "res_model": "ir.ui.view",
                 "res_id": 0,
                 "mimetype": "application/json",
-                # past the size from which a generated asset is also stored
-                # compressed: the copies carry the whole map too
                 "raw": b'{"sourcesContent": ["// the source' + b" " * 9000 + b'"]}',
             }
         )
@@ -28,7 +26,6 @@ class TestSourceMapContent(HttpCase):
             [("url", "in", [f"{cls.map.url}.gz", f"{cls.map.url}.zst"])]
         )
         new_test_user(cls.env, "map.employee", password="map.employee.pass")
-        # what is asserted is the external mode's: the maps are the server's
         cls.env["ir.config_parameter"].set_param("web.esbuild.source_maps", "external")
 
     def _status(self, url):
@@ -41,7 +38,6 @@ class TestSourceMapContent(HttpCase):
             f"/web/image/ir.attachment/{self.map.id}/raw",
             f"/web/image?model=ir.attachment&id={self.map.id}&field=raw",
         ):
-            # a refused image answers its placeholder: what matters is the body
             self.assertNotIn(b"the source", self.url_open(url).content, url)
         self.assertEqual(
             self._status(f"/web/content?model=ir.attachment&id={self.map.id}"), 404

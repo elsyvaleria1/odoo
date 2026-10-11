@@ -22,29 +22,17 @@ IOT_CHAR = IOT_RPI_CHAR if IS_RPI else IOT_WINDOWS_CHAR if IS_WINDOWS else IOT_T
 if IS_RPI:
 
     def rpi_only(function):
-        """Decorator to check if the system is raspberry pi before running the function."""
         return function
 else:
 
     def rpi_only(_):
-        """No-op decorator for non raspberry pi systems."""
         return lambda *args, **kwargs: None
 
 
 def mtr(host) -> tuple:
-    """Run mtr command to the given host to get both
-    packet loss (%) and average latency (ms).
-
-    Note: we use ``-4`` in order to force IPv4, to avoid
-    empty results on IPv6 networks.
-
-    :param host: The host to ping.
-    :return: A tuple of (packet_loss, avg_latency) or (None, None) if the command failed.
-    """
     if IS_WINDOWS:
         return None, None
 
-    # sudo is required for probe interval < 1s, which almost divides execution time by 2
     command = [
         "sudo",
         "mtr",

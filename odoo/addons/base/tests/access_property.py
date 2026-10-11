@@ -3,10 +3,6 @@ import random
 
 from odoo.exceptions import AccessError
 
-# the differential property of the access policy: for every principal and
-# operation, the records the check admits are the records the filter finds.
-# test_access_rights runs it on PostgreSQL, where the search compiles to SQL
-# and the check evaluates in memory.
 
 OPERATIONS = ("read", "write")
 LETTERS = {"read": "r", "write": "u"}
@@ -48,8 +44,6 @@ def domain(rng: random.Random, depth: int = 0) -> str:
 
 
 def row_values(rng: random.Random, model_id: int, groups, everyone) -> dict:
-    # a permission or a guard, for a group or everyone, over a random domain
-    # or a rung of the model's anchors, for a random subset of operations
     kind = "guard" if rng.random() < 0.2 else "permission"
     group = rng.choice(groups)
     values = {
@@ -138,8 +132,6 @@ def principals(env, users, companies):
 
 
 def divergences(env, model_name: str, docs, users, companies) -> tuple[list, list]:
-    # every path's answer against the SQL (or in-memory) search of the
-    # access domain under sudo
     found, sizes = [], []
     policy = env.registry.access_policy
     for user, uenv in principals(env, users, companies):

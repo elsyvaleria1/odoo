@@ -9,7 +9,6 @@ from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCom
 @odoo.tests.tagged("post_install", "-at_install")
 class TestFrontendMobile(SelfOrderCommonTest):
     def test_order_fiscal_position(self):
-        """Orders made in take away should have the alternative fiscal position."""
 
         alternative_fp = self.env["account.fiscal.position"].create(
             {

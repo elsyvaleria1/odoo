@@ -68,7 +68,6 @@ class TestReservationQuantConsistency(TransactionCase):
             domain.append(("location_id", "=", location.id))
         return self.Quant.search(domain, order="id")
 
-    # R1
     def test_sub_precision_demand_is_reserved_not_waved_through(self):
         product = self._product(self.kg)
         self.Quant._update_available_quantity(product, self.stock, 10.0)
@@ -92,7 +91,6 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertEqual(moves[1].state, "partially_available")
         self.assertEqual(moves[1].quantity, 996.0)
 
-    # R2
     def test_editing_a_done_line_moves_stock_by_the_stored_difference(self):
         product = self._product(self.kg)
         self.Quant._update_available_quantity(product, self.stock, 10.0)
@@ -147,7 +145,6 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertEqual(untracked.reserved_quantity, 5.0)
         return move, untracked
 
-    # R3
     def test_shipping_a_lot_reserved_on_untracked_stock_takes_the_lot(self):
         product = self._product()
         lot = self._lot(product, "R3")
@@ -160,7 +157,6 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertEqual(untracked.quantity, 5.0)
         self.assertEqual(untracked.reserved_quantity, 0.0)
 
-    # R4
     def test_releasing_a_lot_reservation_reaches_an_emptied_untracked_quant(self):
         product = self._product()
         lot = self._lot(product, "R4")
@@ -178,7 +174,6 @@ class TestReservationQuantConsistency(TransactionCase):
             0.0,
         )
 
-    # R5
     def test_reverting_a_count_into_a_package_takes_from_the_package(self):
         product = self._product()
         package = self.env["stock.package"].create({"name": "R5"})
@@ -199,7 +194,6 @@ class TestReservationQuantConsistency(TransactionCase):
             {(package, 5.0)},
         )
 
-    # R6
     def test_least_packages_sees_the_packages_taken_earlier_in_the_run(self):
         least_packages = self.env["product.removal"].search(
             [("method", "=", "least_packages")], limit=1
@@ -222,7 +216,6 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertEqual(moves.mapped("state"), ["assigned"] * 3)
         self.assertEqual(moves.move_line_ids.package_id, packages)
 
-    # R7
     def test_resolving_a_conflict_keeps_the_counting_date(self):
         product = self._product()
         self.Quant._update_available_quantity(product, self.stock, 10.0)
@@ -249,7 +242,6 @@ class TestReservationQuantConsistency(TransactionCase):
         )
         self.assertEqual(moves.date, counted_at)
 
-    # R8
     def test_quant_creation_under_a_cleared_cache_context(self):
         product = self._product()
         self.Quant.with_context(quants_cache=None)._update_available_quantity(
@@ -270,7 +262,6 @@ class TestReservationQuantConsistency(TransactionCase):
             cache.under(product.id, self.stock.parent_path).mapped("quantity"), [3.0]
         )
 
-    # R9
     def test_a_sub_precision_quant_can_be_counted_to_zero(self):
         product = self._product(self.kg)
         self.Quant._update_available_quantity(product, self.stock, 0.004)
@@ -288,7 +279,6 @@ class TestReservationQuantConsistency(TransactionCase):
         quant.with_context(inventory_mode=True).action_apply_inventory()
         self.assertAlmostEqual(quant.quantity, 10.004, places=9)
 
-    # R10
     def test_force_qty_is_gone(self):
         self.assertNotIn(
             "force_qty",
@@ -307,7 +297,6 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertEqual(picked.quantity, 3.0)
         self.assertEqual(sorted(move.move_line_ids.mapped("quantity")), [3.0, 4.0])
 
-    # R11
     def test_a_removal_strategy_resolves_through_one_table(self):
         Quant = type(self.Quant)
         self.assertFalse(hasattr(Quant, "_get_removal_strategy_order"))
@@ -317,7 +306,6 @@ class TestReservationQuantConsistency(TransactionCase):
             self.Quant._get_removal_strategies()["fifo"],
         )
 
-    # R12
     def test_locking_a_quant_reads_it_in_the_same_query(self):
         product = self._product()
         self.Quant._update_available_quantity(product, self.stock, 5.0)
@@ -330,7 +318,6 @@ class TestReservationQuantConsistency(TransactionCase):
             locked = quant._lock_one_for_reservation(False)
             self.assertEqual((locked.quantity, locked.reserved_quantity), (5.0, 0.0))
 
-    # R13
     def test_a_quant_locked_by_another_transaction_is_not_reserved(self):
         product = self._product()
         shelves = self.env["stock.location"].create(

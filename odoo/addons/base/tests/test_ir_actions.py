@@ -1925,8 +1925,6 @@ class TestCustomFields(TestCommonCustomFields):
         self.env.flush_all()
 
         model_id = self.env["ir.model"]._get_id("res.partner")
-        # a partner field is also a company field (res.company _inherits
-        # res.partner), set up and fetched with the company's row
         query_count = 62
         with self.assertQueryCount(query_count):
             self.env.registry.clear_cache()

@@ -88,8 +88,6 @@ def _paths() -> list[Path]:
 
 
 def _file_declarations(path: Path) -> list[tuple]:
-    # in source order: ("depends", model, method, paths) and
-    # ("field", model, name, declared, keywords given, line)
     try:
         tree = ast.parse(path.read_text(encoding="utf-8"))
     except SyntaxError, UnicodeDecodeError:
@@ -145,9 +143,6 @@ def _file_declarations(path: Path) -> list[tuple]:
 
 @functools.cache
 def _declarations(paths: tuple[Path, ...]) -> tuple[dict, dict, dict]:
-    # per model: the fields its classes declare (merged, a later keyword
-    # replacing an earlier one), the depends of its methods, and where each
-    # field is first declared
     fields: defaultdict[str, dict[str, Declared]] = defaultdict(dict)
     depends: defaultdict[str, defaultdict[str, list[str]]] = defaultdict(
         lambda: defaultdict(list)
@@ -185,7 +180,6 @@ def _merged(known: Declared, declared: Declared, given: frozenset[str]) -> Decla
 def _field(
     declarations: tuple, model: str, name: str, seen: frozenset[str] = frozenset()
 ) -> Declared | None:
-    # the field as the model sees it: its own declarations over its parents'
     fields, _depends, _where = declarations
     info = index.models().get(model)
     result = None
@@ -254,8 +248,6 @@ def derived_findings(paths: tuple[Path, ...] | None = None) -> list[str]:
             if declared is None or declared.access or declared.discloses:
                 continue
             if declared.related:
-                # a related field takes its target's access: only the hops on
-                # the way can hide something the target does not
                 paths, include_last = [declared.related], False
             elif declared.compute and (declared.store or declared.compute_sudo):
                 paths, include_last = depends[model].get(declared.compute, []), True

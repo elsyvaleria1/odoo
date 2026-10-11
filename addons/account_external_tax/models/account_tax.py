@@ -7,8 +7,6 @@ class AccountTax(models.Model):
     def _prepare_base_line_tax_repartition_grouping_key(
         self, base_line, base_line_grouping_key, tax_data, tax_rep_data
     ):
-        """Override. By default, Odoo omits tax lines it assumes will be $0. But external tax calculators may return
-        a value different from $0, and then we need the line so we can modify it to this returned value."""
         res = super()._prepare_base_line_tax_repartition_grouping_key(
             base_line, base_line_grouping_key, tax_data, tax_rep_data
         )

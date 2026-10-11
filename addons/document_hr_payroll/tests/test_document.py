@@ -82,8 +82,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         self.assertEqual(document.access_via_link, "view")
         self.assertEqual(document.access_internal, "none")
         self.assertTrue(document.is_access_via_link_hidden)
-        # the payslip grants its employee view, who owns it anyway; their visit
-        # is the log's
         self.assertEqual(
             {a.partner_id: a.role for a in document.access_ids},
             {self.richard_emp.user_id.partner_id: "view"},
@@ -94,13 +92,12 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         )
         self.assertEqual(
             document.with_user(self.richard_emp.user_id).user_permission, "edit"
-        )  # Edit because owner
+        )
         self.check_document_no_access(document, self.doc_user_2)
         self.check_document_no_access(document, self.document_manager)
         self.check_document_no_access(document, self.payroll_manager)
 
     def test_hr_payroll_employee_declaration_document_creation_simple(self):
-        """Check that the employee is the owner of the declarations and that nobody else has access."""
         declaration = self.env["hr.payroll.employee.declaration"].create(
             {
                 "res_model": "hr.payslip",
@@ -117,7 +114,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
             "Queueing a generated declaration should move it to 'pdf_to_post'",
         )
 
-        # add required mixin.hr.payroll.declaration methods
         with (
             patch.object(
                 self.env["hr.payslip"].pool["hr.payslip"],
@@ -153,9 +149,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         self.check_document_no_access(document, self.payroll_manager)
 
     def test_apply_payslip_documents_settings_revokes_demoted_payroll_user(self):
-        """Payroll users reach the employee folder through one grant to their
-        group: a user taken out of the group loses it at once, with no run of
-        anything, and nobody is written on the folder by name."""
         folder = self.employees_folder
         company = self.env["res.company"].search(
             [("documents_employee_folder_id", "=", folder.id)]
@@ -218,9 +211,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         self.assertFalse(old_root.access_ids.filtered("group_id"))
 
     def test_apply_payslip_documents_settings_keeps_admin_tags(self):
-        """Re-applying the settings (as re-pointing the employee folder does)
-        must not rewrite payslip tags an admin configured, and must still
-        default the tag for a company that has none."""
         company = self.env.company
         custom_tag = self.env["document.tag"].create({"name": "Custom Payslip Tag"})
         company.documents_hr_payslips_tags = [(6, 0, custom_tag.ids)]
@@ -276,8 +266,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         self.assertEqual(document.access_via_link, "view")
         self.assertEqual(document.access_internal, "none")
         self.assertTrue(document.is_access_via_link_hidden)
-        # The employee has no user, so the document has no owner: its only access
-        # record is a 'view' for the employee's work contact.
         self.assertFalse(self.richard_emp.user_id)
         self.assertEqual(
             {a.partner_id: a.role for a in document.access_ids},
@@ -286,14 +274,11 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         )
         self.check_document_no_access(document, self.doc_user_2)
         self.check_document_no_access(document, self.document_manager)
-        # payroll users reach the employee folder through one grant to their
-        # group, and the workers' payroll folder is under it
         self.assertEqual(
             document.with_user(self.payroll_manager).user_permission, "edit"
         )
 
     def test_payslip_document_creation_with_no_partner(self):
-        """Check that the payslip document is created when the employee has no user."""
         self.richard_emp.user_id = False
 
         payslip = self.payslip
@@ -306,8 +291,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
 
         payslip.browse()._cron_generate_pdf()
 
-        # Every employee is a party now: the document is created for the
-        # employee's own partner even without a login user.
         document = self.env["document.document"].search(
             [("res_model", "=", payslip._name), ("res_id", "=", payslip.id)]
         )
@@ -315,7 +298,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
         self.assertEqual(document.partner_id, self.richard_emp.partner_id)
 
     def test_payslip_document_creation_with_several_payslips(self):
-        """Check that the payslip documents are created when the cron is run on several payslips."""
         contract_jul = self.jules_emp.create_version(
             {
                 "date_version": Date.to_date("2018-01-01"),
@@ -345,7 +327,6 @@ class TestCaseDocumentsBridgeHR(TestPayslipBase, TransactionCaseDocumentsHr):
 
         self.env["hr.payslip"]._cron_generate_pdf()
 
-        # Check if the documents are created
         documents = self.env["document.document"].search(
             [("res_model", "=", payslips._name), ("res_id", "in", payslips.ids)]
         )

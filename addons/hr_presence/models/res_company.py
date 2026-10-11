@@ -12,11 +12,6 @@ class ResCompany(models.Model):
 
     @ormcache()
     def _is_presence_ip_tracking_enabled(self) -> bool:
-        """Whether recording connection IPs can matter to anyone on this database.
-
-        Read on every websocket presence update, so it must not reach the
-        database when the feature is off -- which it is for most installations.
-        """
         return bool(
             self.env["hr.config"]
             .sudo()

@@ -16,7 +16,6 @@ class AIWebsiteController(http.Controller):
     def generate_website_page_content(
         self, instructions, name, sectionsArch, tone, templateId, **post
     ):
-        """Generate website content using the AI agent with text-only processing."""
         if not request.env.user.has_group("website.group_website_restricted_editor"):
             raise werkzeug.exceptions.Forbidden
 

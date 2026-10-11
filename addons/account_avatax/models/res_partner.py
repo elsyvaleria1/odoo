@@ -19,7 +19,6 @@ class ResPartner(models.Model):
         company_dependent=True,
         domain="['|', ('valid_country_ids', 'in', country_id), ('valid_country_ids', '=', False)]",
     )
-    # field used to hide the address validation button when the partner is not in the US or Canada
     avalara_show_address_validation = fields.Boolean(
         compute="_compute_avalara_show_address_validation",
         store=False,

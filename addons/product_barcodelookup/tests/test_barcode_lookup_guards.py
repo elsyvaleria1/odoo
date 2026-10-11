@@ -6,7 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 
 from odoo.addons.product_barcodelookup.tools import barcode_lookup_service
 
-# A 1x1 PNG, already base64-encoded as attachments store it.
 PNG_1PX = (
     b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk"
     b"YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
@@ -21,8 +20,6 @@ class TestBarcodeLookupGuards(TransactionCase):
         )
 
     def test_lookup_key_reads_config_parameter(self):
-        """Check that the API key helper reads the config parameter and
-        defaults to False when unset."""
         self._set_api_key("secret-key")
         self.assertEqual(
             barcode_lookup_service.get_barcode_lookup_key(self.env["product.product"]),
@@ -34,8 +31,6 @@ class TestBarcodeLookupGuards(TransactionCase):
         )
 
     def test_lookup_request_status_branches(self):
-        """Check the three response branches: passthrough on 200, authenticated
-        marker on 404 and bare status otherwise."""
         ok_response = MagicMock(status_code=200)
         with patch.object(GuardedSession, "get", return_value=ok_response):
             self.assertIs(
@@ -61,15 +56,11 @@ class TestBarcodeLookupGuards(TransactionCase):
             )
 
     def test_check_api_key_set_redirects_when_missing(self):
-        """Check that the wizard blocks with a RedirectWarning when no API key
-        is configured."""
         self._set_api_key(False)
         with self.assertRaises(RedirectWarning):
             self.env["wizard.product.product.update.image"]._check_api_key_set()
 
     def test_check_cron_status_blocks_on_pending_trigger(self):
-        """Check that a pending cron trigger raises the busy UserError while a
-        clean state passes."""
         wizard_model = self.env["wizard.product.product.update.image"]
         self.assertTrue(wizard_model._check_cron_status())
 
@@ -81,8 +72,6 @@ class TestBarcodeLookupGuards(TransactionCase):
             wizard_model._check_cron_status()
 
     def test_default_get_classifies_products(self):
-        """Check that default_get splits selected products into processable
-        (barcode, no image) and unprocessable ones."""
         self._set_api_key("secret-key")
         processable, unprocessable = self.env["product.product"].create(
             [

@@ -28,8 +28,6 @@ class TestPurchasePortalRoutes(HttpCaseWithUserPortal):
 
     @staticmethod
     def _arrival(days_ahead):
-        # the route refuses a date before today, so a literal written on the
-        # day the test was written is refused the day after
         return date.today() + timedelta(days=days_ahead)
 
     def test_order_page_without_token_redirects_home(self):
@@ -51,8 +49,6 @@ class TestPurchasePortalRoutes(HttpCaseWithUserPortal):
         self.assertTrue(self.order.acknowledged)
 
     def test_a_view_link_shows_the_order_and_does_not_acknowledge_it(self):
-        # acknowledging changes the order: it asks for the comment every vendor
-        # link carries, while a view link still opens the page
         _link, token = self.env["access.link"]._issue(self.order, role="view")
         res = self.url_open(
             f"/my/purchase/{self.order.id}?access_token={token}&acknowledge=1"

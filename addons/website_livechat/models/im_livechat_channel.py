@@ -91,7 +91,6 @@ class Im_LivechatChannel(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        # the website layout prints them into the pages the page cache serves
         if not LOADER_OPTION_FIELDS.isdisjoint(vals):
             self.env.registry.clear_cache()
         return result

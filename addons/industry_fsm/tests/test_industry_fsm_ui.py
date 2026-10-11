@@ -5,7 +5,6 @@ from odoo.tests import HttpCase, no_retry, tagged
 @tagged("post_install", "-at_install")
 class TestIndustryFsmUi(HttpCase):
     def test_ui(self):
-        # Disable onboarding tours as they can conflict with our running tours.
         self.env.ref("base.user_admin").write(
             {
                 "email": "mitchell.admin@example.com",

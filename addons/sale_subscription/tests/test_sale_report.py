@@ -164,7 +164,6 @@ class TestSaleReport(TestSubscriptionCommon):
             self.assertEqual(
                 upsell_sub.line_ids.filtered("discount").price_subtotal, 70
             )
-            # Note: on the Sales report, it is normal to lose the discount given in the upsell.
 
     def _create_expansion_log(self, order):
         self.env["sale.order.log"].sudo().create(

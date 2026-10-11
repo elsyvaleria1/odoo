@@ -74,40 +74,14 @@ def verify_registration_response(
     supported_pub_key_algs: List[COSEAlgorithmIdentifier] = default_supported_pub_key_algs,
     pem_root_certs_bytes_by_fmt: Optional[Mapping[AttestationFormat, List[bytes]]] = None,
 ) -> VerifiedRegistration:
-    """Verify an authenticator's response to navigator.credentials.create()
-
-    Args:
-        - `credential`: The value returned from `navigator.credentials.create()`. Can be either a
-          stringified JSON object, a plain dict, or an instance of RegistrationCredential
-        - `expected_challenge`: The challenge passed to the authenticator within the preceding
-          registration options.
-        - `expected_rp_id`: The Relying Party's unique identifier as specified in the precending
-          registration options.
-        - `expected_origin`: The domain, with HTTP protocol (e.g. "https://domain.here"), on which
-          the registration should have occurred. Can also be a list of expected origins.
-        - (optional) `require_user_verification`: Whether or not to require that the authenticator
-          verified the user.
-        - (optional) `supported_pub_key_algs`: A list of public key algorithm IDs the RP chooses to
-          restrict support to. Defaults to all supported algorithm IDs.
-        - (optional) `pem_root_certs_bytes_by_fmt`: A list of root certificates, in PEM format, to
-          be used to validate the certificate chains for specific attestation statement formats.
-
-    Returns:
-        Information about the authenticator and registration
-
-    Raises:
-        `helpers.exceptions.InvalidRegistrationResponse` if the response cannot be verified
-    """
     if isinstance(credential, str) or isinstance(credential, dict):
         credential = parse_registration_credential_json(credential)
 
     verified = False
 
-    # FIDO-specific check
     if bytes_to_base64url(credential.raw_id) != credential.id:
         raise InvalidRegistrationResponse("id and raw_id were not equivalent")
 
-    # FIDO-specific check
     if credential.type != PublicKeyCredentialType.PUBLIC_KEY:
         raise InvalidRegistrationResponse(
             f'Unexpected credential type "{credential.type}", expected "public-key"'
@@ -152,7 +126,6 @@ def verify_registration_response(
 
     auth_data = attestation_object.auth_data
 
-    # Generate a hash of the expected RP ID for comparison
     expected_rp_id_hash = hashlib.sha256()
     expected_rp_id_hash.update(expected_rp_id.encode("utf-8"))
     expected_rp_id_hash_bytes = expected_rp_id_hash.digest()
@@ -191,16 +164,13 @@ def verify_registration_response(
             f'Unsupported credential public key alg "{decoded_credential_public_key.alg}", expected one of: {supported_pub_key_algs}'
         )
 
-    # Prepare a list of possible root certificates for certificate chain validation
     pem_root_certs_bytes: List[bytes] = []
     if pem_root_certs_bytes_by_fmt:
         custom_certs = pem_root_certs_bytes_by_fmt.get(attestation_object.fmt)
         if custom_certs:
-            # Load any provided custom root certs
             pem_root_certs_bytes.extend(custom_certs)
 
     if attestation_object.fmt == AttestationFormat.NONE:
-        # A "none" attestation should not contain _anything_ in its attestation statement
         any_att_stmt_fields_set = any(
             [field is not None for field in asdict(attestation_object.att_stmt).values()]
         )
@@ -210,7 +180,6 @@ def verify_registration_response(
                 "None attestation had unexpected attestation statement"
             )
 
-        # There's nothing else to verify, so mark the verification successful
         verified = True
     elif attestation_object.fmt == AttestationFormat.FIDO_U2F:
         verified = verify_fido_u2f(
@@ -262,13 +231,10 @@ def verify_registration_response(
             pem_root_certs_bytes=pem_root_certs_bytes,
         )
     else:
-        # Raise exception on an attestation format we're not prepared to verify
         raise InvalidRegistrationResponse(
             f'Unsupported attestation type "{attestation_object.fmt}"'
         )
 
-    # If we got this far and still couldn't verify things then raise an error instead
-    # of simply returning False
     if not verified:
         raise InvalidRegistrationResponse("Attestation statement could not be verified")
 

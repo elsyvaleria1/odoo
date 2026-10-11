@@ -8,8 +8,6 @@ from odoo.addons.website.tests.test_website_visitor import WebsiteVisitorTests
 @tagged("website_visitor")
 class WebsiteVisitorTestsPush(WebsiteVisitorTests):
     def test_clean_inactive_visitors_social_push_notifications(self):
-        """Visitors that have subscribed to push notifications should not be deleted even if not
-        connected recently."""
 
         active_visitors = self.env["website.visitor"].create(
             [
@@ -28,8 +26,6 @@ class WebsiteVisitorTestsPush(WebsiteVisitorTests):
         self._test_unlink_old_visitors(self.env["website.visitor"], active_visitors)
 
     def test_link_to_visitor_social_push_notifications(self):
-        """Same as parent's 'test_link_to_visitor' except we also test that push subscriptions
-        are merged into main visitor."""
 
         [main_visitor, linked_visitor] = self.env["website.visitor"].create(
             [self._prepare_main_visitor_data(), self._prepare_linked_visitor_data()]
@@ -54,7 +50,6 @@ class WebsiteVisitorTestsPush(WebsiteVisitorTests):
 
         self.assertVisitorDeactivated(linked_visitor, main_visitor)
 
-        # push subscriptions of both visitors should be merged into main one
         self.assertEqual(push_subscription_1.website_visitor_id, main_visitor)
         self.assertEqual(push_subscription_2.website_visitor_id, main_visitor)
         self.assertEqual(

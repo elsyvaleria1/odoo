@@ -64,7 +64,6 @@ class TestHrAttendanceGanttData(TransactionCase):
         )
 
     def test_progress_bar_requires_internal_user(self):
-        """Check that non-internal users get an empty progress bar payload."""
         portal_user = new_test_user(
             self.env, login="gantt_portal", groups="base.group_portal"
         )
@@ -81,8 +80,6 @@ class TestHrAttendanceGanttData(TransactionCase):
         self.assertEqual(result, {})
 
     def test_progress_bar_unsupported_field(self):
-        """Check that a progress bar on any field other than employee_id is
-        rejected."""
         with self.assertRaises(NotImplementedError):
             self.env["hr.attendance"]._gantt_progress_bar(
                 "department_id",
@@ -92,7 +89,6 @@ class TestHrAttendanceGanttData(TransactionCase):
             )
 
     def test_overtime_progress_zero_worked_hours(self):
-        """Check that an attendance without worked hours reports 100% progress."""
         attendance = self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,
@@ -103,9 +99,6 @@ class TestHrAttendanceGanttData(TransactionCase):
         self.assertEqual(attendance.overtime_progress, 100)
 
     def test_gantt_data_includes_previously_active_employees(self):
-        """Check that employees with attendances only before the gantt window
-        (within the 60-day lookback) are appended as extra groups without
-        record ids."""
         past_employee = self.env["hr.employee"].create(
             {
                 "name": "Gantt Past",
@@ -156,8 +149,6 @@ class TestHrAttendanceGanttData(TransactionCase):
         self.assertEqual(gantt_data["length"], 2)
 
     def test_gantt_unavailability_standard_vs_flexible(self):
-        """Check that a standard-calendar employee gets unavailability intervals
-        while a flexible-hours employee is available for the whole window."""
         result = self.env["hr.attendance"]._gantt_unavailability(
             "employee_id",
             [self.employee.id, self.flexible_employee.id],

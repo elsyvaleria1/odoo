@@ -39,8 +39,6 @@ class _InMemoryWriteMixin:
             for fname, field in zip(columns, col_fields, strict=True):
                 if fname in stored:
                     row_dict[fname] = _unwrap_json(
-                        # same flag as the PostgreSQL _prepare_insert_rows:
-                        # a column create already converted is stored as handed in
                         field.convert_to_column_insert(
                             stored[fname],
                             model,
@@ -103,10 +101,6 @@ class _InMemoryWriteMixin:
                     if isinstance(old, dict):
                         value = {**old, **value}
                     if field.company_dependent and isinstance(value, dict):
-                        # the SQL update stores only entries that differ from
-                        # the field's fallback for their company (the
-                        # jsonb_object_agg join in the PostgreSQL twin); the
-                        # insert path already strips them
                         value = (
                             self._strip_company_fallbacks(model, field, value) or None
                         )
@@ -152,9 +146,6 @@ class _InMemoryWriteMixin:
         allow_referencing: bool = False,
         limit: int | None = None,
     ) -> ModelLike:
-        # the PostgreSQL twin's selection rule: saturating new ids win the
-        # whole limit; otherwise the limit buys real rows only, and every
-        # new id rides along, all in the recordset's order
         new_ids, real = partition(lambda i: isinstance(i, NewId), model._ids)
         if limit is not None and len(new_ids) >= limit:
             return model.browse(new_ids[:limit])
@@ -170,10 +161,6 @@ class _InMemoryWriteMixin:
     def unlink_rows(self, model: ModelLike, sub_ids: tuple[int, ...]) -> None:
         env = model.env
         wanted = set(sub_ids)
-        # what the database's foreign keys do on DELETE -- cascade through,
-        # null out or refuse the referencing many2one columns, and drop the
-        # rows of every many2many relation table naming the ids -- planned
-        # in full first, so a refusal deep in a cascade deletes nothing
         plan = _ForeignKeyPlan(self, env.registry)
         plan.add_removal(model, wanted)
 
@@ -181,14 +168,9 @@ class _InMemoryWriteMixin:
         uninstalling = env.context.get(MODULE_UNINSTALL_FLAG)
         if many2one_fields and not uninstalling:
             PostgresBackend._unlink_default_guard(model, sub_ids, many2one_fields)
-        # the company-dependent many2one references live in json objects the
-        # foreign keys do not see: refused or cleared here, as the SQL branch
-        # does with a jsonpath scan -- every refusal found before any clearing
         clearing: list[tuple[Field[typing.Any], int, dict[str, typing.Any]]] = []
         for field in many2one_fields:
             referrer = env[field.model_name]
-            # the SQL branch scans after its DELETE: a referrer the batch
-            # deletes, directly or through a foreign key, refuses nothing
             doomed = plan.rows.get(referrer._table, ())
             for row_id in self.storage.get_table_ids(referrer._table):
                 if row_id in doomed:

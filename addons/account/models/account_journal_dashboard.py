@@ -882,9 +882,6 @@ class AccountJournal(models.Model):
         return Domain("state", "=", "draft") & Domain("auto_post", "=", "no")
 
     def _get_attention_counts(self) -> dict[int, dict[str, int]]:
-        # the dashboard's own counts for what waits in each journal -- statement
-        # lines to reconcile, entries to validate, late invoices -- without the
-        # graphs, balances and onboarding its full batch computes
         counts = {
             journal.id: {"to_reconcile": 0, "to_validate": 0, "late": 0}
             for journal in self

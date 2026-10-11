@@ -83,8 +83,6 @@ class ApprovalRequestRouting(models.Model):
         return snapshot
 
     def _prepare_step_snapshot(self, steps) -> list[dict[str, Any]]:
-        """The steps as routed: what the request's state is judged by from now on
-        (`_get_routed_step`), and who could staff each, for the record."""
         self.check_singleton()
         document = self.get_source_document()
         entries = []
@@ -110,7 +108,6 @@ class ApprovalRequestRouting(models.Model):
         return entries
 
     def _get_applicable_steps(self):
-        """The category's steps whose condition this request meets, in order."""
         self.check_singleton()
         steps = self.category_id.step_ids
         matched = self._get_step_rule_matches(
@@ -523,10 +520,6 @@ class ApprovalRequestRouting(models.Model):
         return created
 
     def _settle_routing_change(self, states_before: dict[int, str]) -> None:
-        """Carry a change of the steps a request routes through -- one archived or
-        restored -- to its state the way a decision would: the rows count again,
-        and a request it approves tells its document, runs what it gated and stops
-        asking. Its other parameters are fixed at routing (`_get_routed_step`)."""
         if not self:
             return
         self.env["approval.approver"].invalidate_model(["step_ids", "decided_step_ids"])
@@ -682,7 +675,6 @@ class ApprovalRequestRouting(models.Model):
         return False
 
     def _get_manager_chain(self, user):
-        """The managers above `user`, nearest first, as a step's walk climbs them."""
         self.check_singleton()
         return self.env["res.users"]
 

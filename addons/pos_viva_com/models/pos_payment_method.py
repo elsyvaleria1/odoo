@@ -18,7 +18,6 @@ class PosPaymentMethod(models.Model):
     _name = "pos.payment.method"
     _inherit = ["pos.payment.method", "mixin.integration.connected"]
 
-    # `<order uuid> - <uuid>/<pos.session id>`, see payment_viva_com.js
     _VIVA_COM_MERCHANT_TRNS = re.compile(r"([\w -]+)/(\d+)")
 
     @api.model
@@ -37,7 +36,7 @@ class PosPaymentMethod(models.Model):
                 pm
                 for pm in methods
                 if pm.viva_com_webhook_verification_key
-                and consteq(pm.viva_com_webhook_verification_key, token)  # noqa: E8537  inbound: a signature an outside service sends us
+                and consteq(pm.viva_com_webhook_verification_key, token)
             ),
             None,
         )
@@ -63,7 +62,7 @@ class PosPaymentMethod(models.Model):
         if self.use_payment_terminal != "viva_com":
             return super()._is_inbound_request_authentic(headers, body)
         token = request.get_http_params().get("token") or ""
-        return bool(self.viva_com_webhook_verification_key) and consteq(  # noqa: E8537  inbound: a signature an outside service sends us
+        return bool(self.viva_com_webhook_verification_key) and consteq(
             self.viva_com_webhook_verification_key, token
         )
 
@@ -79,7 +78,6 @@ class PosPaymentMethod(models.Model):
         "viva_com_webhook_verification_key": "viva_com_webhook_verification_key",
     }
 
-    # Viva.com
     viva_com_merchant_id = fields.Char(
         string="Merchant ID",
         help="Log into Viva.com then navigate to Settings > API Access > Access credentials",
@@ -121,7 +119,7 @@ class PosPaymentMethod(models.Model):
         copy=True,
         classification="point_of_sale.terminal_credential",
     )
-    viva_com_latest_response = fields.Json()  # not used anymore, to remove in master
+    viva_com_latest_response = fields.Json()
     viva_com_test_mode = fields.Boolean(
         string="Test mode",
         help="Run transactions in the test environment.",
@@ -156,7 +154,6 @@ class PosPaymentMethod(models.Model):
             )
 
     def _is_write_forbidden(self, fields) -> bool:
-        # Allow the modification of these fields even if a pos_session is open
         whitelisted_fields = {
             "viva_com_bearer_token",
             "viva_com_webhook_verification_key",
@@ -186,7 +183,6 @@ class PosPaymentMethod(models.Model):
             _logger.exception("Failed to call viva_com_bearer_token endpoint")
             access_token = False
         if access_token:
-            # sudo(): a cashier only reads payment methods
             self.sudo().viva_com_bearer_token = access_token
             return {"Authorization": f"Bearer {access_token}"}
         else:
@@ -218,10 +214,6 @@ class PosPaymentMethod(models.Model):
         )
 
     def _viva_com_verification_key(self):
-        """Get the key Viva.com signs its webhook notifications with.
-
-        Not called in tests: Viva.com answers only real merchant credentials.
-        """
         self.check_singleton()
         if modules.module.current_test:
             return "viva_com_test"
@@ -295,8 +287,6 @@ class PosPaymentMethod(models.Model):
         return match.group(1), self.env["pos.session"].browse(int(match.group(2)))
 
     def _notify_session_status(self, session_id, pos_session, data_webhook):
-        # Send a request to confirm the status of the sesions_id
-        # Need wait to the status of sesions_id is updated setted in session headers; code 202
         self.check_singleton()
         if (
             not pos_session.exists()
@@ -326,7 +316,6 @@ class PosPaymentMethod(models.Model):
             )
 
     def _send_notification(self, data):
-        # Send a notification to the point of sale channel to indicate that the transaction are finish
         pos_session_sudo = self.env["pos.session"].browse(
             int(data.get("pos_session_id", False))
         )
@@ -429,7 +418,6 @@ class PosPaymentMethod(models.Model):
         return records
 
     def get_latest_viva_com_status(self) -> dict:
-        # Not used anymore, to remove in master
         return {"error": "Your POS is out of date, please refresh the page."}
 
     @api.constrains("use_payment_terminal")

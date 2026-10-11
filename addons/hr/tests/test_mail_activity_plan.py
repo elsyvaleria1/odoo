@@ -308,8 +308,6 @@ class TestActivitySchedule(ActivityScheduleHRCase):
 
             self.employee_1.parent_id = False
             self.employee_1.coach_id = False
-            # An employee whose manager and coach are not set yet: the plan
-            # still launches, and says who the activities went to instead.
             form = self._instantiate_activity_schedule_wizard(employees)
             form.plan_id = self.plan_onboarding
             self.assertFalse(form.has_error)
@@ -393,8 +391,6 @@ class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Created bare on purpose: no coach, no manager -- the org chart a
-        # brand-new hire has before anyone fills it in.
         cls.fresh_hire = cls.env["hr.employee"].create({"name": "Fresh Hire"})
 
     def _template(self, responsible_type):
@@ -437,7 +433,6 @@ class TestPlanResponsibleWithoutOrgChart(ActivityScheduleHRCase):
         self.assertIn("Manager", result["warning"])
 
     def test_a_configured_coach_is_still_the_responsible(self):
-        """The control: where the org chart is filled in, nothing changes."""
         result = self._template("coach")._get_responsible_and_complaints(
             False, self.employee_1
         )

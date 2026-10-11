@@ -20,8 +20,6 @@ _logger = logging.getLogger(__name__)
 
 IMAGE_TYPES = ("image/jpeg", "image/png", "image/gif", "image/webp")
 MAX_BYTES = 20 * 1024 * 1024
-# what an Office file may unpack to: a forwarded zip bomb is refused before
-# it fills the worker's memory
 MAX_UNPACKED = 100 * 1024 * 1024
 MAX_TEXT = 60000
 TEXT_EXTENSIONS = (
@@ -38,7 +36,6 @@ TEXT_EXTENSIONS = (
 
 
 def blocks(files) -> list:
-    """Content blocks for `files`, ``[(name, bytes, mimetype)]``."""
     result = []
     for name, content, mimetype in files:
         try:
@@ -89,7 +86,6 @@ def _blocks_of(name, content, mimetype) -> list:
 
 def _text(name, text) -> dict:
     text = text if len(text) <= MAX_TEXT else text[:MAX_TEXT] + "\n[TRUNCATED]"
-    # the file's own text cannot close the tag that marks it as data
     text = text.replace("</file", "<\\/file")
     return {
         "type": "text",
@@ -117,7 +113,6 @@ def _as_png(content) -> bytes:
 
 
 def _check_unpacked(content) -> None:
-    """Refuse an Office file whose members unpack beyond MAX_UNPACKED."""
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         size = sum(info.file_size for info in archive.infolist())
     if size > MAX_UNPACKED:
@@ -144,9 +139,6 @@ def _spreadsheet_text(content) -> str:
 
 
 def _office_text(reader, content) -> str:
-    """An Office or OpenDocument file's text, through attachment_indexation's
-    reader: its XML is parsed hardened against entity expansion, which a
-    forwarded file from anyone needs. One line per non-empty paragraph."""
     _check_unpacked(content)
     text = "\n".join(line for line in reader(content).splitlines() if line.strip())
     if not text:

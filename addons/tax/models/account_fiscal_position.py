@@ -195,7 +195,6 @@ class AccountFiscalPosition(models.Model):
 
     @_debug.perf.timed
     def _invalidate_company_configs(self) -> None:
-        # the configuration derives its positions from this model
         self.env["tax.config"].invalidate_model(
             [
                 "fiscal_position_ids",

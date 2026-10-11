@@ -109,9 +109,6 @@ class TestControllersRoute(HttpCase, TestCommonPlanning):
         )
 
     def test_planning_page_formats_its_period_in_the_employee_timezone(self):
-        # The page shows neither a shift outside the employee's working hours nor its
-        # period, and Bert works Thursdays 13:00-17:00 in his own timezone: in New York,
-        # that is 17:00-21:00 UTC.
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.resource_bert.id,
@@ -128,7 +125,6 @@ class TestControllersRoute(HttpCase, TestCommonPlanning):
             ]
         )
         self.employee_bert.tz = "America/New_York"
-        # The page reads the employee through its own request environment.
         self.env.flush_all()
         url = self.employee_bert.resource_id._planning_get_url(
             planning.start_datetime, planning.end_datetime, planning
@@ -209,18 +205,12 @@ class TestControllersRoute(HttpCase, TestCommonPlanning):
         )
 
     def test_planning_ics_file_without_assigned_employee(self):
-        """
-        Test that the planning ICS file can be generated when no employee is assigned.
-        This ensures that a fallback timezone (current user's or UTC) is used
-        when `resource_id` is not set on the slot.
-        """
         if self.env.company.resource_calendar_id.tz != "Europe/Brussels":
             self.env.company.resource_calendar_id.tz = "Europe/Brussels"
         self.slots[0].write({"resource_id": False})
         ics_url = self.slots[0]._get_ics_url(self.env["res.partner"])
         self.authenticate(None, None)
 
-        # open the ICS file
         ics_request = self.url_open(ics_url)
         self.assertEqual(
             ics_request.status_code, 200, "ICS export should return HTTP 200 OK"

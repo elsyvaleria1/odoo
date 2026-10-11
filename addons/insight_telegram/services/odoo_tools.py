@@ -13,13 +13,8 @@ DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
 MAX_GROUPS = 200
 MAX_MODELS = 40
-# A tool answer goes back to the model as text: past this it is cut, and the
-# model is told so, rather than overflowing the conversation.
 RESULT_BUDGET = 60000
 
-# Models that hold the instance's secrets rather than business data: system
-# parameters, API keys and the credential vault; and the bot's own memory,
-# where one person's conversations and pending changes are not another's.
 BLOCKED_MODEL_PREFIXES = (
     "ir.config_parameter",
     "res.users.apikeys",
@@ -27,7 +22,6 @@ BLOCKED_MODEL_PREFIXES = (
     "telegram.chat",
     "telegram.insight.log",
 )
-# Field types a question never needs and whose values are large or opaque.
 SKIPPED_FIELD_TYPES = frozenset({"binary", "image"})
 
 TOOLS = [
@@ -122,10 +116,7 @@ TOOLS = [
 
 
 MAX_PDFS = 5
-# pdf_reports' id for a partner's account statement, which no report action
-# prints
 STATEMENT_ID = -1
-# how a statement is queued for printing: a kind of request, not a report id
 STATEMENT_REQUEST = "statement"
 
 PDF_TOOLS = [
@@ -179,14 +170,10 @@ class OdooTools:
         self._tz = tz
         self._today = today
         self._writable = writable
-        # changes the agent proposes, kept until the person authorizes them
         self.proposals = []
-        # Odoo's own PDFs the agent asks to send: (report id, model, ids)
         self.pdf_requests = []
 
     def tools(self) -> list:
-        """The tool specs the model gets: the catalogued reports first, when
-        there are any, then the exploration tools."""
         if not self._queries:
             return [*(dict(tool) for tool in TOOLS), *PDF_TOOLS, *self._write_tools()]
         reports = "\n".join(
@@ -224,13 +211,6 @@ class OdooTools:
         ]
 
     def call(self, name, arguments) -> str:
-        """Run tool `name` and return its answer as JSON text.
-
-        :param str name: the tool name, one of TOOLS
-        :param dict arguments: the tool input the model produced
-        :return: the result, or an error the model can act on
-        :rtype: str
-        """
         method = getattr(self, f"_tool_{name}", None)
         if method is None:
             return json_dumps({"error": f"Unknown tool {name!r}."})
@@ -240,8 +220,6 @@ class OdooTools:
         except ReaderError as error:
             result = {"error": str(error)}
         except Exception as error:
-            # an invalid domain, an unknown field, a compute that would write:
-            # the model reads the reason and tries another way
             _logger.info("insight_telegram tool %s failed: %s", name, error)
             result = {"error": f"{type(error).__name__}: {error}"}
         text = json_dumps(result, default=_json_default)
@@ -252,7 +230,6 @@ class OdooTools:
         return text
 
     def companies(self) -> str:
-        """The companies the reader sees, with their currency, for the prompt."""
         with self._reader.env() as env:
             companies = env["res.company"].search([])
             return ", ".join(
@@ -381,7 +358,6 @@ class OdooTools:
         )
         listed = [{"id": report.id, "name": report.name} for report in reports]
         if model == "res.partner":
-            # the account statement is an accounting report, not a report action
             listed.insert(
                 0, {"id": STATEMENT_ID, "name": "Account statement (estado de cuenta)"}
             )
@@ -418,7 +394,6 @@ class OdooTools:
             "report": catalog.answer(env, query, params, tz=self._tz, today=self._today)
         }
 
-    # -- tools ----------------------------------------------------------------
 
     def _tool_find_models(self, env, query="") -> dict:
         query = (query or "").strip()
@@ -458,7 +433,6 @@ class OdooTools:
             if not field.store:
                 spec["stored"] = False
             if field.readonly and field.compute and not field.inverse:
-                # a proposal setting it is refused: the figure would be lost
                 spec["computed"] = True
             described[name] = spec
         return {"model": records._name, "fields": described}
@@ -532,8 +506,6 @@ def _is_queryable(env, model_name) -> bool:
 
 
 def _is_readable(field) -> bool:
-    # what the instance marks secret, and what only its administrators see,
-    # are the instance's configuration, never a business answer
     if field.type in SKIPPED_FIELD_TYPES:
         return False
     if (field.classification or "").startswith("secret"):
@@ -570,9 +542,6 @@ def _fields(records, names) -> list:
 
 
 def _check_path(records, path):
-    """Refuse a dotted field path that crosses a field the reader hides: a
-    filter, an order or a grouping on a secret reveals it as surely as reading
-    it would."""
     model, field = records, None
     for name in path.split("."):
         field = model._fields.get(name)
@@ -594,8 +563,6 @@ def _domain(records, domain):
         return []
     if not isinstance(domain, list):
         raise ReaderError("`domain` must be a list.")
-    # Domain() validates the shape, so a malformed one fails here with a
-    # message the model can read rather than deep in the query builder
     Domain(domain)
     _check_domain_paths(records, domain)
     return domain
@@ -614,7 +581,6 @@ def _check_domain_paths(records, domain) -> None:
                 and isinstance(value, list)
                 and any(isinstance(item, list | tuple) for item in value)
             ):
-                # a sub-domain under any / not any, on the related model
                 _check_domain_paths(records.env[field.comodel_name], value)
 
 

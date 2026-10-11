@@ -40,7 +40,7 @@ class ApprovalMiniAppController(http.Controller):
         receiver_event="mini_app",
         receiver_refusal="telegram.bot:_prepare_mini_app_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": init_data signed by the bot token, or a signed session
+        csrf=False,
         typed=True,
     )
     def approval_miniapp_pending(self, bot_id: int, **kwargs):
@@ -81,7 +81,7 @@ class ApprovalMiniAppController(http.Controller):
         receiver_event="mini_app",
         receiver_refusal="telegram.bot:_prepare_mini_app_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": init_data signed by the bot token, or a signed session
+        csrf=False,
         typed=True,
     )
     def approval_miniapp_act(self, bot_id: int, **kwargs):
@@ -203,7 +203,7 @@ class ApprovalMiniAppController(http.Controller):
         receiver_event="mini_app",
         receiver_refusal="telegram.bot:_prepare_mini_app_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": init_data signed by the bot token, or a signed session
+        csrf=False,
         typed=True,
     )
     def approval_miniapp_fix_data(self, bot_id: int, request_id: int, **kwargs):
@@ -243,7 +243,7 @@ class ApprovalMiniAppController(http.Controller):
         receiver_event="mini_app",
         receiver_refusal="telegram.bot:_prepare_mini_app_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": init_data signed by the bot token, or a signed session
+        csrf=False,
         typed=True,
     )
     def approval_miniapp_fix_save(self, bot_id: int, request_id: int, **kwargs):
@@ -303,9 +303,6 @@ class ApprovalMiniAppController(http.Controller):
 
     @staticmethod
     def _caller():
-        """The admitted bot, the Odoo user linked to the Telegram user
-        behind the call (empty when the chat is not linked), and that
-        Telegram user's id."""
         admission = request.admission
         bot = admission.subject
         telegram_user_id = admission.extra["telegram_user_id"]

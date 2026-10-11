@@ -79,8 +79,6 @@ class IrWebsocket(models.AbstractModel):
         return result
 
     def _presence_readable(self, model: str, ids_and_tokens: list[tuple]):
-        """The records of ``model`` whose presence this subscriber may hear: it
-        reads them, or holds their im_status token."""
         tokens = dict(ids_and_tokens)
         records = self.env[model].with_context(active_test=False).sudo()
         records = records.search([("id", "in", list(tokens))]).sudo(False)

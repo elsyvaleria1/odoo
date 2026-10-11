@@ -221,9 +221,6 @@ class TestCascade(BaseCase):
                 pass
 
     def test_every_representation_the_document_layer_has_can_be_needed(self):
-        """The check used to restate the list and had gone stale by one: `rows`
-        arrived with base_import's spreadsheet readers and no strategy could
-        declare it. Asking the layer is what keeps the two from drifting again."""
         for representation in REPRESENTATIONS:
             with self.subTest(representation=representation):
                 with _registered(

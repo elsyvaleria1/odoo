@@ -11,7 +11,6 @@ from odoo.addons.iot_drivers.tools.helpers import path_file
 
 _logger = logging.getLogger(__name__)
 
-# Check if the Worldline CTEP library exists, download it and set up the linker otherwise
 if not path_file(
     "odoo/addons/iot_drivers/iot_handlers/lib/ctep/libeasyctep.so"
 ).exists():
@@ -27,9 +26,7 @@ if not path_file(
 
 easyCTEP = import_ctypes_library("ctep", "libeasyctep.so")
 
-# CTEPManager* createCTEPManager(void);
 easyCTEP.createCTEPManager.restype = ctypes.c_void_p
-# int connectedTerminal(CTEPManager* manager, char* terminal_id, std::shared_ptr<ect::CTEPTerminal> terminal)
 easyCTEP.connectedTerminal.argtypes = [
     ctypes.c_void_p,
     ctypes.c_char_p,

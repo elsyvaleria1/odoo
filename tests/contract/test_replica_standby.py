@@ -167,8 +167,6 @@ class TestAgainstARealStandby:
     ):
         _standby_sql(standby, scratch_db, "SELECT pg_wal_replay_pause()")
         try:
-            # pg_wal_replay_pause() only requests; recovery honours it on its
-            # next check, and a commit sent before that is replayed anyway.
             deadline = time.monotonic() + 10
             while _standby_sql(
                 standby, scratch_db, "SELECT pg_get_wal_replay_pause_state()"
@@ -187,9 +185,6 @@ class TestAgainstARealStandby:
             assert not router.lag.is_replica_usable()
         finally:
             _standby_sql(standby, scratch_db, "SELECT pg_wal_replay_resume()")
-        # not a fixed sleep: the standby has the paused window to replay AND
-        # whatever the shared primary wrote meanwhile, which here is about
-        # 270 kB of WAL a second with no lane of our own running
         _wait_until_the_replica_is_within_the_ceiling(router)
         router.lag._last_sample = 0.0
         cr, mode = router.cursor(readonly=True)

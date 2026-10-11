@@ -24,7 +24,6 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
         self.assertEqual((partner.peppol_eas, partner.peppol_endpoint), expected)
 
     def _prepare_error_peppol_endpoint(self, eas, endpoint):
-        """Mock _prepare_error_peppol_endpoint"""
         if eas == "0184" and endpoint != "12345674":
             return f"(0184, {endpoint}) is not a valid peppol couple."
         return None
@@ -40,21 +39,17 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
         partner.company_registry = "12345674"
         partner.vat = "BA12345674"
 
-        # Base case -> (0184, company_registry)
         with self.check_peppol_vals(
             partner, expected=("0184", partner.company_registry)
         ):
             pass
 
-        # No company_registry -> (0198, vat)
         with self.check_peppol_vals(partner, expected=("0198", partner.vat)):
             partner.company_registry = False
 
-        # Invalid company_registry -> (0198, vat)
         with self.check_peppol_vals(partner, expected=("0198", partner.vat)):
             partner.company_registry = "turlututu"
 
-        # No company_registry nor vat -> (0184, False)
         with self.check_peppol_vals(partner, expected=("0184", False)):
             partner.write(
                 {
@@ -63,7 +58,6 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
                 }
             )
 
-        # Create a partner, fill the peppol fields, then set the country
         partner_1 = self.env["res.partner"].create(
             {
                 "name": "A new partner",
@@ -76,7 +70,6 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
         ):
             pass
 
-        # Create a partner, set the country, then fill the peppol fields
         partner_2 = self.env["res.partner"].create(
             {
                 "name": "A new partner",
@@ -89,7 +82,6 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
             partner_2.peppol_eas = "0184"
             partner_2.peppol_endpoint = "12345674"
 
-        # Change the country, the EAS changes but we do not overwrite the existing endpoint
         partner_2.country_id = self.env.ref("base.be")
         self.assertEqual(
             (partner_2.peppol_eas, partner_2.peppol_endpoint), ("0208", "12345674")
@@ -141,7 +133,7 @@ class TestAccountUblCii(AccountTestInvoicingCommon):
             )
             self.assertEqual(
                 partner_au._get_suggested_ubl_cii_edi_format(), "cii"
-            )  # AU matches 2 formats but 'cii' has a lower sequence
+            )
             self.assertEqual(partner_nz._get_suggested_ubl_cii_edi_format(), "peppol")
             self.assertFalse(partner_be._get_suggested_ubl_cii_edi_format())
 

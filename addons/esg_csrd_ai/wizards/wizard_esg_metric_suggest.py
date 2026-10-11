@@ -92,7 +92,6 @@ class WizardEsgMetricSuggest(models.TransientModel):
 
     def _get_company_data(self) -> dict:
         self.check_singleton()
-        # Get key suppliers and customers
         top_suppliers = [
             partner
             for partner, _ in self.env["account.move"]
@@ -165,7 +164,6 @@ class WizardEsgMetricSuggest(models.TransientModel):
     def action_generate_metrics(self) -> dict:
         self.check_singleton()
 
-        # Save the company information
         csrd_company = self.company_id
         if csrd_company.has_access("write"):
             csrd_company.write(
@@ -178,7 +176,6 @@ class WizardEsgMetricSuggest(models.TransientModel):
                 }
             )
 
-        # Prompt to AI
         company_data = self._get_company_data()
         current_fiscal_dates = self.env["esg.metric"]._get_default_dates()
         existing_metrics = self.env["esg.metric"].search(

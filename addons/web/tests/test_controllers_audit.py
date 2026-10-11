@@ -15,9 +15,6 @@ from odoo.addons.web.controllers.home import Home
 
 
 def _skip_unless_web_serves(case: HttpCase, path: str, route: RoutedMethod) -> None:
-    # A module installed after web may take the path over (website serves its
-    # own / and /robots.txt), and at_install tests wait for every installed
-    # module: web's behaviour of the path is then not what is served.
     endpoint, _args = case.env["ir.http"].routing_map().bind("").match(path)
     served = endpoint.original_endpoint
     if served is not route.original_endpoint:

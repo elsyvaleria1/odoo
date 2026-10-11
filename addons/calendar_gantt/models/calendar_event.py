@@ -11,13 +11,11 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _gantt_unavailability(self, field_name, res_ids, start, stop, scale):
-        # skip if not dealing with appointments
         if field_name not in ("resource_ids", "partner_ids"):
             return super()._gantt_unavailability(
                 field_name, res_ids, start, stop, scale
             )
 
-        # if viewing a specific appointment type generate unavailable intervals outside of the defined slots
         slots_unavailable_intervals = []
         appointment_type = self.env["appointment.type"]
         if appointment_type_id := self.env.context.get("default_appointment_type_id"):
@@ -36,7 +34,6 @@ class CalendarEvent(models.Model):
                 slot_available_intervals, start_utc, stop_utc
             )
 
-        # in staff view, add conflicting events to unavailabilities and return
         if field_name == "partner_ids":
             result = {}
             partner_unavailabilities = self._gantt_unavailabilities_events(
@@ -57,7 +54,6 @@ class CalendarEvent(models.Model):
             return result
 
         resources = self.env["resource.resource"].browse(res_ids)
-        # in multi-company, if people can't access some of the resources we don't really care
         if self.env.context.get("allowed_company_ids"):
             resources = resources.filtered_domain(
                 [
@@ -84,9 +80,6 @@ class CalendarEvent(models.Model):
                     for start, stop in resource_unavailabilities.get(resource, [])
                 ]
             )
-            # Resource projects free events, exclusive bookings, civil days and
-            # other scheduling consumers into the same percentage timeline.
-            # Summing booking lines across the display window loses simultaneity.
             unavailabilities |= Intervals(
                 [
                     (localized(left), localized(right), set())
@@ -105,18 +98,6 @@ class CalendarEvent(models.Model):
         return result
 
     def _gantt_unavailabilities_events(self, start, stop, partners) -> dict:
-        """Get a mapping from partner id to unavailabilities based on existing events.
-
-        :returns: each partner id mapped to the ``Intervals`` of its busy slots, each
-            carrying the ``res.partner`` record, e.g.
-            {5: Intervals([(monday_morning, monday_noon, <res.partner>(5))])}
-        :rtype: dict
-        """
-        # One lookup for the whole set. This sat *inside* the comprehension, so
-        # the full search over `calendar_event` ran once per attendee -- a gantt
-        # of twenty people asked the same question twenty times and threw away
-        # nineteen of the answers, since each pass then read a single key out of
-        # a mapping built for everybody.
         busy_by_partner = partners._get_busy_calendar_intervals(start, stop)
         return {
             attendee.id: Intervals(
@@ -144,7 +125,6 @@ class CalendarEvent(models.Model):
         stop_date=None,
         scale=None,
     ):
-        """Filter out rows where the partner isn't linked to an staff user."""
         gantt_data = super().get_gantt_data(
             domain,
             groupby,

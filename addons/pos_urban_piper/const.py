@@ -1,4 +1,3 @@
-# Status mapping for urban piper
 ORDER_STATUS_MAPPING = {
     "Placed": [1, "placed"],
     "Acknowledged": [2, "acknowledged"],

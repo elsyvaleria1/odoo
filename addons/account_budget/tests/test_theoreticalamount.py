@@ -65,9 +65,6 @@ class TestTheoreticalAmount(TestAccountBudgetCommon):
 
     @freeze_time("2018-06-15")
     def test_nothing_is_theoretically_spent_before_the_period_opens(self):
-        """`min(max(today, date_from), date_to)` floors the elapsed span at one
-        day, so a budget that has not started reported a day of spend -- and a
-        one-day budget reported all of it."""
         future = self.env["budget.analytic"].create(
             {"name": "next year", "date_from": "2019-01-01", "date_to": "2019-12-31"}
         )
@@ -90,8 +87,6 @@ class TestTheoreticalAmount(TestAccountBudgetCommon):
 
     @freeze_time("2018-06-15")
     def test_the_first_day_of_a_period_still_counts_as_one_day(self):
-        """The control for the guard above: the clamp is right *inside* the
-        period and must stay."""
         opening = self.env["budget.analytic"].create(
             {"name": "opens today", "date_from": "2018-06-15", "date_to": "2019-06-14"}
         )

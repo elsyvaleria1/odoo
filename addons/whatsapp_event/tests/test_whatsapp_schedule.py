@@ -19,7 +19,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # test subscription whatsapp template
         cls.whatsapp_template_sub = cls.env["whatsapp.template"].create(
             {
                 "body": "{{1}} registration confirmation.",
@@ -37,7 +36,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
             }
         )
 
-        # test reminder whatsapp template
         cls.whatsapp_template_rem = cls.env["whatsapp.template"].create(
             {
                 "body": "{{1}} reminder.",
@@ -56,7 +54,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
             }
         )
 
-        # test event
         cls.reference_now = datetime(2023, 3, 10, 14, 30, 15, 0)
         cls.test_event = cls.env["event.event"].create(
             {
@@ -68,7 +65,7 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
                     (
                         0,
                         0,
-                        {  # right at subscription
+                        {
                             "interval_unit": "now",
                             "interval_type": "after_sub",
                             "template_ref": "whatsapp.template,%i"
@@ -78,7 +75,7 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
                     (
                         0,
                         0,
-                        {  # 3 days before event
+                        {
                             "interval_nbr": 3,
                             "interval_unit": "day",
                             "interval_type": "before_event",
@@ -109,15 +106,11 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues."""
         with freeze_time(mock_dt), patch.object(self.env.cr, "now", lambda: mock_dt):
             yield
 
     @users("user_eventmanager")
     def test_assert_initial_values(self):
-        """Be sure of our initial setup"""
         sub_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "after_sub"
         )
@@ -142,7 +135,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
 
     @users("user_eventmanager")
     def test_event_type(self):
-        """Test event type support of whatsapp schedulers"""
         event_type = self.env["event.type"].create(
             {
                 "name": "Test with WA scheduler",
@@ -177,12 +169,10 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
         with self.mockWhatsappGateway():
             new_regs = self._create_registrations(test_event, 3)
 
-        # check subscription scheduler
         sub_scheduler = self.env["event.mail"].search(
             [("event_id", "=", test_event.id), ("interval_type", "=", "after_sub")]
         )
 
-        # verify that subscription scheduler was auto-executed after each registration
         self.assertEqual(
             len(sub_scheduler.mail_registration_ids), 5, "2 pre-existing + 3 new"
         )
@@ -195,16 +185,13 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
         )
         self.assertEqual(sub_scheduler.mail_count_done, 5, "2 pre-existing + 3 new")
 
-        # verify that message sent correctly after each registration
         for registration in new_regs:
             self.assertWAMessageFromRecord(registration, status="outgoing")
 
-        # check before event scheduler
         before_scheduler = self.env["event.mail"].search(
             [("event_id", "=", test_event.id), ("interval_type", "=", "before_event")]
         )
 
-        # execute event reminder scheduler explicitly
         with (
             self.mock_datetime_and_now(
                 test_event.date_begin + timedelta(days=-3, hours=1)
@@ -229,7 +216,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
         ):
             registration.state = state
 
-        # reset scheduler
         before_scheduler.last_registration_id = False
         before_scheduler.mail_count_done = 0
         before_scheduler.mail_done = False
@@ -257,8 +243,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     @mute_logger("odoo.addons.event.models.event_mail")
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_global_composer(self):
-        # Simulate a fail during composer usage e.g. invalid field path, template
-        # model change, ... to check defensive behavior
         cron = self.env.ref("event.event_mail_scheduler").sudo()
         before_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "before_event"
@@ -282,7 +266,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
 
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_global_no_registrations(self):
-        """Be sure no registrations = no crash in wa composer"""
         cron = self.env.ref("event.event_mail_scheduler").sudo()
 
         self.test_event.registration_ids.unlink()
@@ -296,14 +279,11 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     @mute_logger("odoo.addons.whatsapp_event.models.event_mail")
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_global_template_draft(self):
-        """Test flow where scheduler fails due to template ref being in draft
-        when sending global event communication (i.e. only through cron)."""
         cron = self.env.ref("event.event_mail_scheduler").sudo()
         before_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "before_event"
         )
 
-        # ensure there is a single draft template (crash in composer)
         tpl_draft = (
             self.env["whatsapp.template"]
             .sudo()
@@ -336,8 +316,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
 
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_global_template_removed(self):
-        """Test flow where scheduler fails due to template ref being removed
-        when sending global event communication (i.e. only through cron)."""
         self.whatsapp_template_rem.sudo().unlink()
         before_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "before_event"
@@ -347,8 +325,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     @mute_logger("odoo.addons.event.models.event_registration")
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_registration_composer(self):
-        """Simulate a fail during composer usage e.g. invalid field path, template
-        # model change, ... to check defensive behavior"""
         onsub_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "after_sub"
         )
@@ -383,8 +359,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     @mute_logger("odoo.addons.whatsapp_event.models.event_mail")
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_registration_template_draft(self):
-        """Test flow where scheduler fails due to template being draft."""
-        # ensure there is a single draft template (crash in composer)
         self.env["whatsapp.template"].sudo().search(
             [("model_id", "=", self.env["ir.model"]._get_id("event.registration"))]
         ).unlink()
@@ -409,7 +383,7 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
                     (
                         0,
                         0,
-                        {  # right at subscription
+                        {
                             "interval_unit": "now",
                             "interval_type": "after_sub",
                             "notification_type": "whatsapp",
@@ -441,8 +415,6 @@ class TestWhatsappSchedule(EventCase, WhatsAppCommon):
     @mute_logger("odoo.addons.event.models.event_mail")
     @users("user_eventmanager")
     def test_whatsapp_schedule_fail_registration_template_removed(self):
-        """Test flow where scheduler fails due to template being removed."""
-        # make on subscription scheduler crash, remove linked template
         self.whatsapp_template_sub.sudo().unlink()
         with self.mockWhatsappGateway():
             registration = self.env["event.registration"].create(

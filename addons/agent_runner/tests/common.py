@@ -43,8 +43,6 @@ class RunnerFixtures:
 
     @classmethod
     def _as_runner(cls, runner):
-        """``runner`` as a call it admits sees it: its service user, without su,
-        in its company, holding the gate's receiver privileges."""
         env = runner._inbound_principal_env(cls.env, runner._inbound_service_user())
         return runner.with_env(env)
 

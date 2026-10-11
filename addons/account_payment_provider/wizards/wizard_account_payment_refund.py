@@ -68,7 +68,6 @@ class WizardAccountPaymentRefund(models.TransientModel):
 
     @api.depends("amount_available_for_refund")
     def _compute_amount_to_refund(self) -> None:
-        """Set the default amount to refund to the amount available for refund."""
         for wizard in self:
             wizard.amount_to_refund = wizard.amount_available_for_refund
 
@@ -77,7 +76,7 @@ class WizardAccountPaymentRefund(models.TransientModel):
         for wizard in self:
             tx_sudo = (
                 wizard.transaction_id.sudo()
-            )  # needed for users without access to the provider
+            )
             p_support_refund = tx_sudo.provider_id.support_refund
             pm_sudo = tx_sudo.payment_method_id
             pm_support_refund = (
@@ -87,13 +86,13 @@ class WizardAccountPaymentRefund(models.TransientModel):
                 wizard.support_refund = "none"
             elif p_support_refund == "full_only" or pm_support_refund == "full_only":
                 wizard.support_refund = "full_only"
-            else:  # Both support partial refunds.
+            else:
                 wizard.support_refund = "partial"
 
-    @api.depends("payment_id")  # To always trigger the compute
+    @api.depends("payment_id")
     def _compute_has_pending_refund(self) -> None:
         for wizard in self:
-            pending_refunds_count = self.env["payment.transaction"].search_count(  # noqa: E8507 - a transient wizard: one record
+            pending_refunds_count = self.env["payment.transaction"].search_count(
                 [
                     ("source_transaction_id", "=", wizard.payment_id.transaction_id.id),
                     ("operation", "=", "refund"),

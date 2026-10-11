@@ -21,11 +21,10 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
 
         if options.get("comparison"):
             options["comparison"]["period_order"] = (
-                "ascending"  # Make comparisons ascending (always)
+                "ascending"
             )
             options["comparison"]["hide_period_order_filter"] = True
 
-        # Modify column headers and group structure
         column_headers, column_groups, columns = self._prepare_trial_balance_columns(
             report, options
         )
@@ -41,7 +40,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             columns=len(columns),
         )
 
-        # CTA
         for group_vals in options["column_groups"].values():
             group_vals["forced_options"]["date"]["currency_table_period_key"] = (
                 "_trial_balance_middle_periods"
@@ -54,11 +52,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _prepare_trial_balance_columns(self, report, options) -> tuple:
-        """Generate the column headers, column groups and columns of the trial balance report.
-
-        :return: a (headers, groups, columns) tuple
-        :rtype: tuple
-        """
         headers = []
         groups = {}
         columns = []
@@ -76,7 +69,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
         )
         block_id = 0
 
-        # Add initial balance column
         initial_date_to = initial_date_from - datetime.timedelta(days=1)
         headers, groups, columns = self._add_initial_column(
             report,
@@ -148,7 +140,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                     }
                 )
 
-            # Handle column headers
             if col_number_in_block % nb_columns_per_header == 0:
                 headers.append(original_headers.pop(0))
 
@@ -278,8 +269,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                 options
             ),
         )
-        # Only the groups carry the per-company starts: the headers stay the
-        # shape the client and the column-header assertions already know.
         for group_vals in group.values():
             group_vals["forced_options"]["fiscalyear_start_by_company"] = block_options[
                 "fiscalyear_start_by_company"
@@ -325,14 +314,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
     def _generate_column_group(
         self, report, options, new_header_name, new_values, create_single_column=True
     ) -> tuple:
-        """Generate column header, column group and columns values for a new column group.
-
-        :param bool create_single_column: create a single 'Balance' column instead of one
-                                          column per report column
-        :return: a (column_header_element, column_groups, columns) tuple
-        :rtype: tuple
-        """
-        # Used to insert the Initial Balance and End Balance columns before / after the period columns.
         default_group_vals = {
             "horizontal_groupby_element": {},
             "forced_options": {},
@@ -578,11 +559,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _custom_line_postprocessor(self, report, options, lines):
-        """Compute the end balance of each column block and horizontal group from the initial
-        balance and the period debits and credits of that same block and group.
-
-        Any value already present in the end_balance column is ignored.
-        """
 
         def get_block_and_group_key(column):
             column_group = options["column_groups"][column["column_group_key"]]
@@ -597,7 +573,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             )
             return block_id, horizontal_group, analytic_group
 
-        # Unaffected Earnings lines
         if report._parse_line_id(lines[0]["id"])[-1] == (
             "",
             "report.formula.line",
@@ -634,7 +609,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             unaffected_earning_line = (
                 report._get_markup(line["id"]) == "undistributed_profits_losses"
             )
-            # Group by column block ID and horizontal groupby element to sum up end balance
             grouped_by_block = groupby(line["columns"], key=get_block_and_group_key)
 
             for _grouping_key, columns_in_block in grouped_by_block:
@@ -647,9 +621,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                     )
                 )
 
-                # We do a separate sum for debits and credits since we need to handle both the case where
-                # there is a single Balance column (if there is no horizontal groupby) or separate Debit and
-                # Credit columns in the initial balance and end balance (if there is a horizontal groupby)
                 sum_debit = sum_credit = 0.0
                 for col_type, cols in columns_grouped_by_type.items():
                     if col_type in ("initial_balance", "period"):
@@ -691,15 +662,12 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             report=report,
             reordered=bool(lines) and not lines[0].get("parent_id"),
         )
-        # Total line
         if lines and not lines[0].get(
             "parent_id"
-        ):  # should not affect when unfolding lines
-            # The same behavior is expected with or without totals_below_sections activated
-            # Only the total line should be displayed at the bottom, in bold
+        ):
             if (
                 self.env.company.account_config_id.totals_below_sections
-            ):  # total line already exists
+            ):
                 lines.pop(0)
                 if unaffected_earning_lines:
                     total_line = lines.pop(-1)
@@ -708,11 +676,9 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             else:
                 lines.extend(unaffected_earning_lines)
                 lines.append(lines.pop(0))
-                # To make the style as if totals_below_sections was activated
                 lines[-1]["id"] = report._prepare_subline_id(
                     lines[-1]["id"], report._prepare_line_id([("total", None, None)])
                 )
-            # To make totals line not blank
             for col in lines[-1]["columns"]:
                 col["blank_if_zero"] = False
             lines[-1]["name"] = self.env._("Total")
@@ -729,7 +695,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
         offset,
         unfold_all_batch_data=None,
     ):
-        """Override the 'report.formula' method to hide move lines outside the selected period."""
         report = self.env["report.formula"].browse(options["report_id"])
         _debug.logic(
             "initial_balance_amls_hidden",
@@ -770,8 +735,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
     ):
         groupbys = report_line._get_groupby(options).replace(" ", "").split(",")
         next_groupby = "id"
-        # One query per groupby level rather than one at the deepest level
-        # aggregated in Python, so each level matches what expanding it returns.
         while groupbys:
             engine_lines = [
                 (
@@ -819,11 +782,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             params["column_group_key"]
         ]["forced_options"]
 
-        # When generating the end balance column, we didn't specify a date in the forced_options,
-        # to avoid a separate call to the custom engine (instead, the end balance is computed in
-        # the custom lines postprocessor.)
-        # But when auditing an end balance line, we need to retrieve moves from the beginning of time,
-        # so we modify the options here just for the call to report.action_audit_cell.
         if column_group_forced_options["trial_balance_column_type"] == "end_balance":
             column_group_forced_options["date"].update(
                 {
@@ -861,8 +819,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             company_id = report._get_res_id_from_line_id(
                 params["calling_line_dict_id"], "res.company"
             )
-            # list(...): this domain goes back to the client inside an
-            # ir.actions.act_window, and a Domain is not JSON serialisable.
             action["domain"] = list(
                 Domain(action["domain"])
                 & report._get_unallocated_earnings_domain(

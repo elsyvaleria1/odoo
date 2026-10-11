@@ -25,11 +25,11 @@ CONTROL_METHODS = [
 
 ACTIVATE_PERCENTAGES = [
     "co_1"
-]  # control methods that allow the user to input percentages
+]
 ACTIVATE_ROLE = [
     "co_3",
     "ngo_2",
-]  # control methods that allow the user to input auth rep role
+]
 
 AUTH_REP_ROLES = [
     ("board_member", "Board Member"),
@@ -128,10 +128,6 @@ class EquityUbo(models.Model):
 
     @api.model
     def submit_ubo_form_data(self, partner_id, data) -> dict | None:
-        """
-        :param data: list of new or existing (if has an id) equity.ubo dicts with a holder_id sub-record dict.
-            Each record may have `attachment` which holds a file that should be uploaded to the record chatter.
-        """
         try:
             with self.env.cr.savepoint():
                 self._submit_ubo_records(partner_id, data)

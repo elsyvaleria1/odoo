@@ -9,9 +9,6 @@ from odoo.addons.stock_barcode.tests.test_barcode_client_action import (
 @tagged("post_install", "-at_install")
 class TestBarcodeQualityControlMRPClientAction(TestBarcodeClientAction):
     def test_final_product_quality_check_mrp_barcode(self):
-        """
-        Test quality check on productions created in barcode.
-        """
         final_product, component = self.env["product.product"].create(
             [
                 {"name": "Lovely product", "barcode": "love724"},

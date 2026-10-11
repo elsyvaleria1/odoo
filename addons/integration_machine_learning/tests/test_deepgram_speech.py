@@ -151,8 +151,6 @@ def _word(word, start, end, confidence=0.9):
 
 @tagged("post_install", "-at_install")
 class TestDeepgramSentences(TransactionCase):
-    # the 2026-10-08 call: the callee's "¿Bueno?" and the caller's reply came
-    # back as one utterance of one speaker
     ANSWERED = {
         "transcript": "¿Bueno? Hola, Jaz.",
         "start": 0.4,

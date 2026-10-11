@@ -103,9 +103,6 @@ def import_map_specs(nodes: Iterable[AssetNode]) -> frozenset[str]:
 
 
 def import_map_names(nodes: Iterable[AssetNode]) -> frozenset[str]:
-    # what a later map must not declare again: each specifier already mapped,
-    # and each url already loaded as a module, which a key naming that url
-    # would redirect away from the copy the page holds
     return frozenset(
         name
         for node in nodes
@@ -199,14 +196,10 @@ def split_inlined_templates(esbuild_code: str) -> tuple[str, str]:
 
 
 def combine_bundle_with_templates(esbuild_code: str, esm_tpl: str) -> str:
-    # A bundle reused from the attachment store still carries the templates it
-    # was built with; the current ones replace them rather than pile on.
     if not esm_tpl and INLINED_TEMPLATES_MARKER not in esbuild_code:
         return esbuild_code
     body, directive = split_inlined_templates(esbuild_code)
     if esm_tpl and is_classic_script(body):
-        # the registrars the templates bind are constants of the global scope
-        # in a classic script, where a second bundle would declare them again
         esm_tpl = f"{{\n{esm_tpl}\n}}\n"
     templates = INLINED_TEMPLATES_MARKER + esm_tpl if esm_tpl else ""
     return body + templates + ("\n" + directive + "\n" if directive else "")

@@ -88,23 +88,17 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
 
     def test_timesheet_validation_user(self):
-        """Employee record its timesheets and Officer validate them. Then try to modify/delete it and get Access Error"""
-        # Officer validate timesheet of 'user_employee' through wizard
         timesheet_to_validate = self.timesheet1 | self.timesheet2
         timesheet_to_validate.with_user(self.user_manager).action_validate_timesheet()
 
-        # Check timesheets 1 and 2 are validated
         self.assertTrue(self.timesheet1.validated)
         self.assertTrue(self.timesheet2.validated)
 
-        # Employee can not modify validated timesheet
         with self.assertRaises(AccessError):
             self.timesheet1.with_user(self.user_employee).write({"unit_amount": 5})
-        # Employee can not delete validated timesheet
         with self.assertRaises(AccessError):
             self.timesheet2.with_user(self.user_employee).unlink()
 
-        # Employee can not create new timesheet before last validation date
         with self.assertRaises(AccessError):
             last_month = datetime.now() - relativedelta(months=1)
             self.env["account.analytic.line"].with_user(self.user_employee).create(
@@ -117,7 +111,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                 }
             )
 
-        # Employee can still create timesheet after validated date
         next_month = datetime.now() + relativedelta(months=1)
         timesheet4 = (
             self.env["account.analytic.line"]
@@ -132,20 +125,14 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                 }
             )
         )
-        # And can still update non validated timesheet
         timesheet4.write({"unit_amount": 7})
 
     def test_timesheet_validation_manager(self):
-        """Officer can see timesheets and modify the ones of other employees"""
-        # Officer validate timesheet of 'user_employee' through wizard
         timesheet_to_validate = self.timesheet1 | self.timesheet2
         timesheet_to_validate.with_user(self.user_manager).action_validate_timesheet()
-        # manager modify validated timesheet
         self.timesheet1.with_user(self.user_manager).write({"unit_amount": 5})
 
     def test_timesheet_validation_stop_timer(self):
-        """Check that the timers are stopped when validating the task even if the timer belongs to another user"""
-        # Start timer with employee user
         timesheet = self.timesheet1
         timesheet.date = fields.Date.today()
         start_unit_amount = timesheet.unit_amount
@@ -158,12 +145,8 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
         self.assertTrue(timer, "A timer has to be running for the user employee")
         with freeze_time(fields.Date.today() + timedelta(days=1)):
-            # Manager will validate the timesheet the next date but the employee forgot to stop his timer.
-            # Validate timesheet with manager user
             timesheet.with_user(self.user_manager).action_validate_timesheet()
-        # Check if old timer is stopped
         self.assertFalse(timer.exists())
-        # Check if time spent is add to the validated timesheet
         self.assertGreater(
             timesheet.unit_amount,
             start_unit_amount,
@@ -175,7 +158,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         def _now(*args, **kwargs):
             return now
 
-        # To allow testing
 
         patchers = [patch("odoo.fields.Datetime.now", _now)]
 
@@ -242,7 +224,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self._test_next_date(now, result, -3, "months")
 
     def test_minutes_computing_after_timer_stop(self):
-        """Test if unit_amount is updated after stoping a timer"""
         Timesheet = self.env["account.analytic.line"]
         timesheet_1 = Timesheet.with_user(self.user_employee).create(
             {
@@ -253,7 +234,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             }
         )
 
-        # When the timer is greater than 1 minute
         now = datetime.now()
         timesheet_1.with_user(self.user_employee).action_timer_start()
         timesheet_1.with_user(self.user_employee).user_timer_id.timer_start = (
@@ -272,14 +252,12 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id
         )
 
-        # self.project_customer.allow_timesheets = True
 
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
             "base.product_uom_hour"
         )
         self.assertTrue(self.timesheet1.display_timer)
 
-        # Force recompute field
         self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id = self.env.ref(
             "base.product_uom_day"
         )
@@ -316,7 +294,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                     "name": "Juste Leblanc",
                     "user_id": self.user_manager.id,
                     "create_date": date(2021, 1, 1),
-                    "employee_type": "freelance",  # Avoid searching the contract if hr_contract module is installed before this module.
+                    "employee_type": "freelance",
                 }
             )
         )
@@ -338,7 +316,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             "Number of hours should be 23d * 8h/d = 184h",
         )
 
-        # Create a user in the second company and link it to the employee created above
         user = (
             self.env["res.users"]
             .with_company(company)
@@ -361,7 +338,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
         employee.user_id = user
 
-        # Create a timesheet for a project in the first company for the employee in the second company
         self.assertTrue(employee.company_id != self.project_customer.company_id)
         self.assertTrue(user.company_id != self.project_customer.company_id)
         Timesheet = self.env["account.analytic.line"]
@@ -373,11 +349,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             }
         )
 
-        # Read the timesheets and working hours of the second company employee as a manager from the first company
-        # Invalidate the env cache first, because the above employee creation filled the fields data as superuser.
-        # The data of the fields must be emptied so the manager user fetches the data again.
         self.env.invalidate_all()
-        # Simulate the manager seeing the timesheet in task form view.
         employee_with_company_manager = employee.with_context(
             allowed_company_ids=self.user_manager.company_id.ids
         )
@@ -386,8 +358,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         ).get_timesheet_and_working_hours_for_employees("2021-04-01", "2021-04-30")
         self.assertEqual(working_hours[employee.id]["worked_hours"], 1.0)
 
-        # Now, same thing but archiving the employee. The manager should still be able to read his timesheet
-        # despite the fact the employee has been archived.
         employee.active = False
         self.env.invalidate_all()
         working_hours = employee_with_company_manager.with_user(
@@ -395,10 +365,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         ).get_timesheet_and_working_hours_for_employees("2021-04-01", "2021-04-30")
         self.assertEqual(working_hours[employee.id]["worked_hours"], 1.0)
 
-        # Now same thing but with the multi-company employee rule disabled
-        # Users are allowed to disable multi-company rules at will,
-        # the code should be compliant with that,
-        # and should still work/not crash when the multi-company rule is disabled
         self.env.ref("hr.hr_employee_comp_rule").active = False
         self.env.invalidate_all()
         working_hours = employee_with_company_manager.with_user(
@@ -407,7 +373,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self.assertEqual(working_hours[employee.id]["worked_hours"], 1.0)
 
     def test_timesheet_reminder(self):
-        """Reminder mail will be sent to both manager Administrator and User Officer to validate the timesheet"""
         date = datetime(2022, 3, 2, 8, 8, 15)
 
         user = self.env.ref("base.user_admin")
@@ -451,7 +416,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             )
 
     def test_timesheet_employee_reminder(self):
-        """Reminder mail will be sent to each Users' Employee"""
 
         date = datetime(2022, 3, 3, 8, 8, 15)
 
@@ -540,14 +504,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self.assertFalse(timesheet.user_timer_id)
 
     def test_grid_update_cell(self):
-        """Test updating timesheet grid cells.
-
-        - A user can update cells belonging to tasks assigned to them,
-          even if they're part of private projects.
-        - A user cannot update their own timesheets after validation.
-        - Updating validated timesheets as timesheet manager should create
-          additional timesheets instead of modifying existing ones.
-        """
         Timesheet = self.env["account.analytic.line"]
         self.empl_employee.timesheet_manager_id = self.user_manager
         self.project_customer.privacy_visibility = "followers"
@@ -567,7 +523,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
         self.timesheet1.with_user(self.user_manager).action_validate_timesheet()
 
-        # employee cannot update cell after validation
         with self.assertRaises(AccessError):
             Timesheet.with_user(self.user_employee).grid_update_cell(
                 [("id", "=", self.timesheet1.id)], "unit_amount", 2.0
@@ -583,12 +538,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
 
     def test_get_last_week(self):
-        """Test the get_last_week method. It should return grid_anchor (GA), last_week (LW),
-        where last_week is first Sunday before GA - 7 days. Example:
-        Su Mo Tu We Th Fr Sa
-        LW -- -- -- -- -- --
-        -- -- GA -- -- -- --
-        """
         AnalyticLine = self.env["account.analytic.line"]
         for d in range(8, 22):
             grid_anchor = datetime(2023, 1, d)
@@ -598,9 +547,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             self.assertEqual(last_week, date(2023, 1, ((d - 1) // 7 - 1) * 7 + 1))
 
     def test_get_daily_working_hours(self):
-        """
-        Check number of daily working hours for different timezones.
-        """
         employee = self.user_employee.employee_id
         employee.resource_calendar_id = self.env["resource.calendar"].create(
             {
@@ -685,7 +631,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self.assertEqual(working_hours_gmt_plus_12, expected_hours)
         self.assertEqual(working_hours_gmt_minus_12, expected_hours)
 
-        # test that we get correct daily hours with flexible schedules
         employee.resource_calendar_id.schedule_type = "flexible"
         employee.resource_calendar_id.hours_per_day = 2
 
@@ -703,11 +648,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self.assertEqual(flexible_expected_hours, flexible_daily_hours)
 
     def test_action_start_timer_on_old_timesheet(self):
-        """Test start timer in timesheet with a date before the current one.
-
-        In that case, the expected behaviour should be to create a new timesheet in which the date should be
-        the current one and then start the timer on that timesheet.
-        """
         Timesheet = self.env["account.analytic.line"].with_user(self.user_manager)
         self.assertFalse(
             Timesheet.search([("is_timer_running", "=", True)]),
@@ -758,7 +698,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             "The last validated timesheet date set on the employee should be the current one.",
         )
 
-        # Try to launch a timer with that employee
         self.assertFalse(timesheet2.with_user(self.user_employee).is_timer_running)
         timesheet2.with_user(self.user_employee).action_timer_start()
         self.assertTrue(timesheet2.with_user(self.user_employee).is_timer_running)
@@ -787,12 +726,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
 
     @freeze_time("2023-06-22 09:00:00")
     def test_start_timer_timezone(self):
-        """
-        Check for non-infinite recursion due to date change
-        caused by timezone offset.
-        """
         self.user_employee.tz = "Etc/GMT+12"
-        # The date for the user_employee is therefore one day before the date defined by the system
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -806,10 +740,8 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             )
         )
         timesheet.with_user(self.user_employee).action_timer_start()
-        # Causes infinite recursion if: date context < date system without timezone
 
     def test__get_timesheet_timer_data(self):
-        """Test _get_timesheet_timer_data"""
         self.timesheet1.date = fields.Date.today()
         timesheet = self.timesheet1.with_user(self.timesheet1.user_id)
         timesheet.action_timer_start()
@@ -859,10 +791,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
 
     def test_new_entry_when_timer_started_on_future_entry(self):
-        """
-        Create a timesheet with a future date.
-        Check for a new entry when a new timesheet is added from timer.
-        """
         self.user_employee.tz = "Asia/Kolkata"
         timesheet = (
             self.env["account.analytic.line"]
@@ -895,7 +823,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
     def test_timesheet_entry_with_multiple_projects(self):
         Timesheet = self.env["account.analytic.line"]
 
-        # Create project
         project_customer2 = self.env["project.project"].create(
             {
                 "name": "Project Y",
@@ -905,7 +832,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             }
         )
 
-        # Create two timesheet entries for the same employee, one for each project, with different unit amounts
         Timesheet.create(
             [
                 {
@@ -944,11 +870,9 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             "Grid update cell should create new timesheet if cell contains multiple timesheets",
         )
 
-        # Disable timesheet feature for projects
         self.project_customer.allow_timesheets = False
         project_customer2.allow_timesheets = False
 
-        # Raise user error if timesheet is disabled in both projects
         with self.assertRaises(UserError):
             Timesheet.grid_update_cell(
                 [
@@ -960,15 +884,9 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             )
 
     def test_timesheet_task_consistency_when_project_change(self):
-        """
-        Test that the change of `project` of a task results in:
-        - non-validated timesheets have the new project associated.
-        - validated timesheets do not get change and keep the initial project.
-        """
         task = self.timesheet1.task_id
         initial_project = self.timesheet1.project_id
 
-        # create a valid timesheet and non-validated timesheet under the same task
         self.timesheet1.with_user(self.user_manager).action_validate_timesheet()
         timesheet_valid = self.timesheet1
         timesheet_non_valid = (
@@ -984,12 +902,10 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             )
         )
 
-        # create a new project with timesheet feature
         new_project = self.env["project.project"].create(
             [{"name": "Project 2", "allow_timesheets": True}]
         )
 
-        # change the project of the task
         form = Form(task.with_user(self.env.user))
         form.project_id = new_project
         form.save()
@@ -1005,14 +921,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
 
     def test_timesheet_check_warning_when_project_change(self):
-        """
-        1)  Test that when a task changes its project, if the task contains at least one non-validated timesheet AND
-            the new project has no timesheet feature available, a warning notification should be raised.
-        2)  The project of the task should be changed even if a warning is raised.
-        3)  Second part checks that no warning is raised when the timesheets are validated.
-        """
 
-        # (1) create project without timesheet feature
         non_tracked_project = self.env["project.project"].create(
             {
                 "name": "Project without timesheet",
@@ -1021,26 +930,21 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
             }
         )
 
-        # first task including non-validated timesheet
         task_1 = self.timesheet1.task_id
 
-        # change the project of the task containing non-validated timesheet, to the project without timesheet feature
         task_1.with_user(self.env.user).write({"project_id": non_tracked_project.id})
         warning = task_1._onchange_project_id()
         self.assertTrue(warning, "Warning message should be returned")
 
-        # (2) verify that after the warning, the project_id is changed and its non-validated timesheets gets the new project
         self.assertEqual(
             task_1.project_id,
             non_tracked_project,
             "The task's project should be changed even if the warning is raised.",
         )
 
-        # (3) second task including only validated timesheet
         task_2 = self.timesheet2.task_id
         self.timesheet2.with_user(self.user_manager).action_validate_timesheet()
 
-        # change the project of the task only containing validated timesheet, to the project without timesheet feature
         task_2.with_user(self.env.user).write({"project_id": non_tracked_project.id})
         warning = task_2._onchange_project_id()
         self.assertFalse(
@@ -1067,10 +971,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
 
     @freeze_time("2025-06-03 00:00:00")
     def test_timer_start_with_different_timezone(self):
-        """
-        Ensure action_timer_start avoids infinite recursion caused by timezone differences
-        between the user and timesheet date by using a context flag.
-        """
         self.user_employee.tz = "America/Adak"
         AccountAnalyticLine = self.env["account.analytic.line"]
         timesheet = AccountAnalyticLine.with_user(self.user_employee).create(
@@ -1098,21 +998,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         self.assertEqual(count, 2, "There should be two entries for timesheet.")
 
     def test_timesheet_timer_timezone_resilience(self):
-        """
-        Test that recording time on a timesheet via the timer adds time to the
-        client's local Date's timesheet entry. This specifically checks that
-        the Date of the timesheet entry matches the Date of the timer
-        recording.
-
-        Note that if a timesheet entry already exists for the Date of the timer
-        "stop", we will just add time to that entry. We can test that time is
-        _only_ added to the local Date's entry by creating entries one day
-        before and one day after the local Date. If time was added to those
-        entries instead of the local Date's entry, this test should fail.
-
-        This is to prevent Datetime versus Date storage/logic issues.
-        """
-        # This user is AHEAD of UTC. Used to test "off by -1" errors.
         new_zealand_user = mail_new_test_user(
             self.env,
             name="Billy Butcher",
@@ -1127,7 +1012,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                 "user_id": new_zealand_user.id,
             }
         )
-        # This user is BEHIND UTC. Used to test "off by +1" errors.
         united_states_user = mail_new_test_user(
             self.env,
             name="Homelander",
@@ -1144,18 +1028,14 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
         )
 
         Timesheet = self.env["account.analytic.line"]
-        # Setting the timesheet rounding here so that we don't rely on the
-        # settings configured, and possibly changed, in other tests.
         self.env["res.config.settings"].create(
             {
                 "timesheet_encode_method": "hours",
-                "timesheet_min_duration": 60,  # Minimum timesheet time is 1 hour
-                "timesheet_rounding": 60,  # Round to nearest hour
+                "timesheet_min_duration": 60,
+                "timesheet_rounding": 60,
             }
         ).execute()
 
-        # Note that the below time is in UTC. This time falls on August 19th
-        # in the Pacific/Auckland timezone.
         @freeze_time("2025-08-18 15:00:00")
         def test_off_by_minus_one():
             yesterday_timesheet, today_timesheet = Timesheet.with_user(
@@ -1168,7 +1048,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                         "task_id": self.task1.id,
                         "employee_id": new_zealand_employee.id,
                         "unit_amount": 2.0,
-                        "date": date.today(),  # August 18th, timezone-agnostic
+                        "date": date.today(),
                     },
                     {
                         "name": "/",
@@ -1179,12 +1059,8 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                     },
                 ]
             )
-            # This timer is being started on August 19th from the perspective
-            # of somebody in the Pacific/Auckland timezone.
             today_timesheet.with_user(new_zealand_user).action_timer_start()
             with freeze_time(datetime.now() + timedelta(hours=1)):
-                # Simulate stopping the timer as if the "stop" button was pressed
-                # by the user. Stopping on August 19th in New Zealand.
                 today_timesheet.with_user(new_zealand_user).action_timer_stop(
                     try_to_match=True
                 )
@@ -1199,8 +1075,6 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                 "Today's timesheet should have been updated.",
             )
 
-        # Again, this time is in UTC. This time falls on August 18th in the
-        # America/New_York timezone.
         @freeze_time("2025-08-19 02:00:00")
         def test_off_by_positive_one():
             tomorrow_timesheet, today_timesheet = Timesheet.with_user(
@@ -1213,7 +1087,7 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                         "task_id": self.task1.id,
                         "employee_id": united_states_employee.id,
                         "unit_amount": 2.0,
-                        "date": date.today(),  # August 19th, timezone-agnostic
+                        "date": date.today(),
                     },
                     {
                         "name": "/",
@@ -1224,11 +1098,8 @@ class TestTimesheetValidation(TestCommonTimesheet, MockEmail):
                     },
                 ]
             )
-            # This timer is being started on August 18th from the perspective
-            # of somebody in the America/New_York timezone.
             today_timesheet.with_user(united_states_user).action_timer_start()
             with freeze_time(datetime.now() + timedelta(hours=1)):
-                # Stopping on August 18th in New York.
                 today_timesheet.with_user(united_states_user).action_timer_stop(
                     try_to_match=True
                 )

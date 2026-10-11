@@ -20,9 +20,6 @@ class AccountBankStatement(models.Model):
 
     @api.depends("line_ids.journal_id")
     def _compute_journal_id(self) -> None:
-        # A statement takes its journal from its lines, so one created to be
-        # read -- an attachment and nothing else -- would lose the journal it
-        # was created with before the reading could put lines on it.
         statements = self.filtered("line_ids")
         super(AccountBankStatement, statements)._compute_journal_id()
 
@@ -47,9 +44,6 @@ class AccountBankStatement(models.Model):
         )
 
     def _prepare_extract_line_vals_list(self, transactions) -> list[dict]:
-        # The `bank_statement` schema declares what a transaction row is and
-        # coerces it, so a row that reaches here has an amount and a description
-        # and nothing here has to guess which key carries them.
         self.check_singleton()
         return [
             {

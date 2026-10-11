@@ -2,12 +2,8 @@ from .structs import AttestationStatement
 
 
 def parse_attestation_statement(val: dict) -> AttestationStatement:
-    """
-    Turn `response.attestationObject.attStmt` into structured data
-    """
     attestation_statement = AttestationStatement()
 
-    # Populate optional fields that may exist in the attestation statement
     if "sig" in val:
         attestation_statement.sig = val["sig"]
     if "x5c" in val:

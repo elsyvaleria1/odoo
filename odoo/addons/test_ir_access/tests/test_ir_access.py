@@ -154,7 +154,6 @@ class TestIrAccess(TestIrAccessCase):
         self.assertAccess(self.mario)
 
     def test_a_permission_without_group_is_refused(self):
-        # left empty, a grant would reach every user, portal and public too
         with self.assertRaises(ValidationError):
             self.env["ir.access"].create(
                 {
@@ -305,8 +304,6 @@ class TestIrAccess(TestIrAccessCase):
                 self.make_access(group=self.group1, domain=domain)
 
     def test_a_domain_that_only_widens_with_the_user_s_groups_is_accepted(self):
-        # membership in the ids of the user's groups, and a domain a group's
-        # members are exempt from, give more records to more groups
         for domain in (
             "[('id', 'in', user.all_group_ids.ids)]",
             "[('val', 'in', user.group_ids.ids)]",
@@ -330,9 +327,6 @@ class TestIrAccess(TestIrAccessCase):
             )
 
     def test_a_row_that_does_not_evaluate_admits_nothing(self):
-        # a permission that raises for one principal grants that principal
-        # nothing, and the other rows still decide; it does not take the
-        # model down for everyone
         self.make_access(records=self.mario, group=self.group1)
         broken = self.make_access(group=self.group2)
         self.env.cr.execute(
@@ -417,8 +411,6 @@ class TestIrAccess(TestIrAccessCase):
 
 class TestCompanySelectionKey(TestIrAccessCase):
     def test_the_selection_keys_the_cache_whatever_its_order(self):
-        # the current company and the set in use: a client sending [4, 2, 3]
-        # or [4, 3, 2] shares one entry, and asking no company keys too
         Access = self.env["ir.access"]
 
         def key(companies):
@@ -431,7 +423,6 @@ class TestCompanySelectionKey(TestIrAccessCase):
         self.assertEqual(hash(key([])), hash(key([])))
 
     def test_a_search_asking_no_company_is_answered(self):
-        # knowledge's trash notification searches with allowed_company_ids=[]
         partners = (
             self.env["res.partner"]
             .with_user(self.user)
@@ -443,8 +434,6 @@ class TestCompanySelectionKey(TestIrAccessCase):
 
 @tagged("post_install", "-at_install")
 class TestStaleRows(TestIrAccessCase):
-    # once every module is in: while modules load, a field of an installed
-    # module may not be in the registry yet, and a row naming it is left be
     def test_a_row_naming_a_field_its_model_lost_admits_nothing(self):
         self.make_access(records=self.luigi, group=self.group1)
         stale = self.make_access(group=self.group2)
@@ -461,8 +450,6 @@ class TestStaleRows(TestIrAccessCase):
 
 class TestGroupLabels(TestIrAccessCase):
     def test_a_group_does_not_name_a_record_its_reader_cannot_read(self):
-        # read() hides the name of a many2one its reader cannot read; the
-        # legacy read_group labels its groups the same way
         Category = self.env["test_ir_access.category"]
         hidden, shown = Category.create([{"name": "Secret"}, {"name": "Public"}])
         self.mario.sudo().category_id = hidden
@@ -483,10 +470,6 @@ class TestGroupLabels(TestIrAccessCase):
 
 
 class TestConditionalReach(TestIrAccessCase):
-    # a restricted role's ceiling: its members reach what their accesses that
-    # say whose or which records reach, and what the role's wider variants
-    # grant, not what another group grants on every record beside, as record
-    # rules bounded access lines
     def ceiling(self, **args):
         role = self.group1._add_missing_xml_ids()[self.group1.id]
         return self.make_guard(
@@ -626,9 +609,6 @@ class TestDelegatedAccess(TestIrAccessCase):
         self._check_delegation("test_ir_access.delegated_computed", "held_id")
 
     def test_a_domain_computed_under_sudo_keeps_the_parent_s_access(self):
-        # the domain is cached per principal, not per privilege: computed first
-        # under sudo, where the parent's access reads TRUE, it must still bind
-        # the principal to the parent records it may read
         children = self.env["test_ir_access.delegated"].create(
             [{"item_id": record.id} for record in self.mario + self.bowser]
         )

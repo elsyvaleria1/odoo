@@ -178,7 +178,6 @@ class TestFrontendCommon(TestPointOfSaleHttpCommon):
             }
         )
 
-        # multiple categories product
         cls.env["product.product"].create(
             {
                 "available_in_pos": True,
@@ -190,7 +189,6 @@ class TestFrontendCommon(TestPointOfSaleHttpCommon):
             }
         )
 
-        # desk organizer (variant product)
         cls.desk_organizer = cls.env["product.product"].create(
             {
                 "name": "Desk Organizer",
@@ -198,7 +196,7 @@ class TestFrontendCommon(TestPointOfSaleHttpCommon):
                 "list_price": 5.10,
                 "pos_categ_ids": [
                     (4, drinks_category.id)
-                ],  # will put it as a drink for convenience
+                ],
             }
         )
         desk_size_attribute = cls.env["product.attribute"].create(
@@ -327,7 +325,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("TableMergeUnmergeTour", login="pos_admin")
 
     def test_02_others_bis(self):
-        # disable kitchen printer to avoid printing errors
         self.pos_config.is_order_printer = False
         self.pos_config.with_user(self.pos_admin).open_ui()
         self.start_pos_tour("ControlButtonsTour", login="pos_admin")
@@ -351,7 +348,6 @@ class TestFrontend(TestFrontendCommon):
         orders = self.env["pos.order"].search([], limit=5, order="id desc")
         order_tips = [o.tip_amount for o in orders]
 
-        # orders order can be different depending on which module is install so we sort the tips
         order_tips.sort()
         self.assertEqual(order_tips, [0.0, 0.4, 1.0, 1.0, 1.5])
 
@@ -369,7 +365,6 @@ class TestFrontend(TestFrontendCommon):
         self.assertEqual(len(orders), 2)
 
     def test_07_split_bill_screen(self):
-        # disable kitchen printer to avoid printing errors
         self.pos_config.is_order_printer = False
         self.pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("SplitBillScreenTour3")
@@ -382,7 +377,6 @@ class TestFrontend(TestFrontendCommon):
     def test_09_combo_split_bill(self):
         setup_product_combo_items(self)
         self.office_combo.product_variant_id.write({"lst_price": 40})
-        # disable kitchen printer to avoid printing errors
         self.pos_config.is_order_printer = False
         self.pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("SplitBillScreenTour4ProductCombo")
@@ -455,7 +449,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("test_pos_restaurant_course")
         order = self.pos_config.current_session_id.order_ids
         self.assertEqual(len(order), 1)
-        # Verify whether the two courses have different timestamps
         self.assertNotEqual(
             order.course_ids[0].fired_date, order.course_ids[1].fired_date
         )
@@ -636,12 +629,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("test_combo_preparation_receipt")
 
     def test_multiple_preparation_printer(self):
-        """This test make sure that no empty receipt are sent when using multiple printer with different categories
-        The tour will check that we tried did not try to print two receipt. We can achieve that by checking the content
-        of the error message. Because we do not have real printer an error message will be displayed, this will contain
-        all the receipt that failed to print. If it contains more than 1 it means that we tried to print a second receipt
-        and it should not be the case here. The only one we should see is 'Detailed Receipt'
-        """
         pos_category_1 = self.env["pos.category"].create({"name": "Category 1"})
         pos_category_2 = self.env["pos.category"].create({"name": "Category 2"})
         printer_1 = self.env["pos.printer"].create(
@@ -699,9 +686,6 @@ class TestFrontend(TestFrontendCommon):
         )
 
     def test_tax_in_merge_table_order_line(self):
-        """
-        Test that when merging orders of two tables in POS restaurant, the product tax is applied on the order lines of the destination table.
-        """
         drinks_category = self.env["pos.category"].search(
             [("name", "=", "Drinks"), ("sequence", "=", 2)]
         )
@@ -743,12 +727,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("no_ghost_floor", login="pos_admin")
 
     def test_multiple_preparation_printer_different_categories(self):
-        """This test make sure that no empty receipt are sent when using multiple printer with different categories
-        The tour will check that we tried did not try to print two receipt. We can achieve that by checking the content
-        of the error message. Because we do not have real printer an error message will be displayed, this will contain
-        all the receipt that failed to print. If it contains more than 1 it means that we tried to print a second receipt
-        and it should not be the case here. The only one we should see is 'Detailed Receipt'
-        """
         pos_category_1 = self.env["pos.category"].create({"name": "Category 1"})
         pos_category_2 = self.env["pos.category"].create({"name": "Category 2"})
         printer_1 = self.env["pos.printer"].create(
@@ -803,9 +781,6 @@ class TestFrontend(TestFrontendCommon):
         )
 
     def test_preset_timing_restaurant(self):
-        """
-        Test to set order preset hour inside a tour
-        """
         self.preset_eat_in = self.env["pos.preset"].create(
             {
                 "name": "Eat in",
@@ -881,9 +856,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("test_guest_count_bank_payment")
 
     def test_preset_future_timing_restaurant(self):
-        """
-        Test to set order preset future date inside a tour
-        """
         self.preset_eat_in = self.env["pos.preset"].create(
             {
                 "name": "Eat in",
@@ -970,9 +942,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("test_tip_after_payment")
 
     def test_customer_alone_saved(self):
-        """
-        Tests that when a customer is set, it will be saved and not be reset even if this is the only thing that changed in the order
-        """
         self.start_tour(
             f"/pos/ui?config_id={self.main_pos_config.id}",
             "test_customer_alone_saved",
@@ -980,9 +949,6 @@ class TestFrontend(TestFrontendCommon):
         )
 
     def test_open_default_register_screen_config(self):
-        """
-        Tests that the default register screen is opened when the config is set to do so
-        """
         self.pos_config.write({"default_screen": "register"})
         self.pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("test_open_default_register_screen_config")
@@ -1078,16 +1044,9 @@ class TestFrontend(TestFrontendCommon):
         )
 
     def test_transfering_orders(self):
-        """
-        We can now transfer order from one table to another and from floating order to another etc.
-        """
         self.start_pos_tour("test_transfering_orders", login="pos_user")
 
     def test_direct_sales(self):
-        """
-        Direct sales should not be synced without table_id or floating_order_name, if an order is
-        sync without one of them, we assign pos_reference in floating_order_name.
-        """
         self.start_pos_tour("test_direct_sales", login="pos_user")
         orders = self.env["pos.order"].search([], limit=3, order="id desc")
         self.assertEqual(orders[2].floating_order_name, orders[2].tracking_number)
@@ -1145,9 +1104,6 @@ class TestFrontend(TestFrontendCommon):
         self.assertEqual(order.state, "cancel")
 
     def test_combo_synchronisation(self):
-        """This test checks that when a combo line is set as dirty, the parent combo line is also set as dirty.
-        if this is not the case, the combo lines would lose their link to the parent combo line and appear as
-        normal line"""
         setup_product_combo_items(self)
         self.pos_config.is_order_printer = False
         self.pos_config.with_user(self.pos_user).open_ui()
@@ -1195,9 +1151,6 @@ class TestFrontend(TestFrontendCommon):
         self.start_pos_tour("test_name_preset_skip_screen")
 
     def test_future_orders_are_not_cancelled(self):
-        """
-        This test ensures that a future order is not cancelled when the PoS session is closed.
-        """
         self.pos_config.with_user(self.pos_user).open_ui()
 
         session = self.pos_config.current_session_id

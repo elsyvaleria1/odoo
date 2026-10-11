@@ -66,8 +66,6 @@ class WizardProductAttributeValuePropagate(models.TransientModel):
 
     def _get_domain_values_to_reprice(self) -> list:
         self.check_singleton()
-        # Archived values and templates are repriced too, though not counted:
-        # reactivating one keeps its stored price_extra.
         return [
             ("product_attribute_value_id", "=", self.attribute_value_id.id),
             *self._get_domain_company(),

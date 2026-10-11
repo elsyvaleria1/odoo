@@ -78,8 +78,6 @@ class WizardAccountMoveLineSplit(models.TransientModel):
         ):
             new_lines_vals = []
             for line in self.line_ids:
-                # Split the field the move actually reasons about, so the
-                # invoice-side recomputations stay consistent.
                 fname = (
                     "balance"
                     if line.move_id.move_type == "entry"
@@ -87,7 +85,6 @@ class WizardAccountMoveLineSplit(models.TransientModel):
                     if not self.show_simple_wizard
                     else "quantity"
                 )
-                # Round the way the field itself would.
                 convert_to_cache = line._fields[fname].convert_to_cache
 
                 if not self.show_simple_wizard:
@@ -113,11 +110,6 @@ class WizardAccountMoveLineSplit(models.TransientModel):
                         )
 
                 if fname == "balance":
-                    # `copy_data` carries `amount_currency` from the source line,
-                    # and `_sync_dynamic_lines` re-derives `balance` from it, so a
-                    # `balance`-only override is silently dropped on the copies and
-                    # every split part comes back with the original amount. Split
-                    # both, keeping the line's own rate.
                     rate = line.amount_currency / line.balance if line.balance else 0.0
                     for split_vals in vals_list[1:]:
                         split_vals["amount_currency"] = line.currency_id.round(

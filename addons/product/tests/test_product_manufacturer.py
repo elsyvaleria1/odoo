@@ -142,11 +142,6 @@ class TestProductManufacturer(TransactionCase):
         )
 
     def test_04_manufacturer_survives_archiving_the_only_variant(self):
-        """The template keeps its manufacturer when its one variant is archived.
-
-        `product_variant_ids` hides archived variants, so a compute reading it
-        alone sees no variant and clears all four fields.
-        """
         self.product1.update(
             {
                 "manufacturer_id": self.manufacturer_a.id,
@@ -180,7 +175,6 @@ class TestProductManufacturer(TransactionCase):
         )
 
     def test_05_writing_a_manufacturer_reaches_the_archived_variant(self):
-        """The inverse pushes down to the single variant even when archived."""
         variant = self.product1.product_variant_id
         variant.active = False
         self.product1.invalidate_recordset(["product_variant_ids"])
@@ -212,7 +206,6 @@ class TestManufacturerInlineCreate(TransactionCase):
     )
 
     def _field_context(self, xmlid, model):
-        """The context the client would actually send for an inline create."""
         view = self.env.ref(xmlid)
         arch = etree.fromstring(self.env[model].get_view(view.id, "form")["arch"])
         node = arch.xpath("//field[@name='manufacturer_id']")[0]

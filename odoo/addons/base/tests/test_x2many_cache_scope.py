@@ -249,11 +249,6 @@ class TestX2manyScopeInvariant(TransactionCase):
                             f"{name}'s slot of {field} for {parent_id}; after:\n  "
                             + "\n  ".join(log)
                         )
-                        # membership only: this walk renames children, and a
-                        # rename moves a member in `complete_name` order without
-                        # re-sorting the slots that hold it (the invariant's
-                        # order clause dates from the slot's last fill); the
-                        # DB-free walk, which rewrites no order key, holds order
                         self.assertEqual(set(held), set(truth), why)
 
     def _walk(self, seed, steps=40):
@@ -363,8 +358,6 @@ class TestX2manyScopeInvariant(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestSearchVisibilityFields(TransactionCase):
     def test_every_declared_visibility_field_exists_on_its_model(self):
-        # a _search override that narrows by code names the fields it reads;
-        # a name no field carries would never evict a slot
         declared = {
             name: cls._search_visibility_fields
             for name, cls in self.env.registry.items()
@@ -380,9 +373,6 @@ class TestSearchVisibilityFields(TransactionCase):
                 )
 
     def test_every_search_override_declares_its_visibility_fields(self):
-        # None is the conservative reading -- every write refetches -- and a
-        # choice nobody made; an override says what its search reads, or ()
-        # test_orm.scope_open stays undeclared on purpose: it pins that path
         undeclared = sorted(
             name
             for name, cls in self.env.registry.items()

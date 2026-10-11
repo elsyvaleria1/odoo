@@ -35,9 +35,6 @@ class TestSaleOrderLineGuard(TransactionCase):
             },
         )
 
-        # Paid immediately, so the order is about what these tests exercise: with
-        # account_credit installed, a customer with no credit type is cash-only
-        # and a deferred payment term refuses the confirmation before approval.
         cls.customer = cls.env["res.partner"].create(
             {
                 "name": "Guard Customer",

@@ -41,8 +41,6 @@ TEAMS = {
     "user.sale_team_ids.ids": "sale",
     "user.purchase_team_ids.ids": "purchase",
 }
-# a field whose search reads the principal: a condition on it is a named
-# predicate, never a fixed filter
 PREDICATE_FIELDS = {
     "user_has_access": "base.user_has_access",
     "is_member": "base.is_member",
@@ -117,7 +115,6 @@ def _flat(term: Any, operator: str) -> list[Any]:
 
 
 def _text(term: Any) -> list[str]:
-    # a term back to the items of a prefix domain
     if isinstance(term, tuple):
         operator, children = term
         prefix = [repr(operator)] * (1 if operator == "!" else len(children) - 1)
@@ -155,7 +152,6 @@ def _leaf(term: Any) -> tuple[str, str, str] | None:
             and isinstance(operator.value, str)
         ):
             return (
-                # "x.id" on a many2one is x itself
                 path.value.removesuffix(".id") if "." in path.value else path.value,
                 operator.value,
                 ast.unparse(term.elts[2]).replace('"', "'"),
@@ -164,8 +160,6 @@ def _leaf(term: Any) -> tuple[str, str, str] | None:
 
 
 def _predicate(leaf: tuple[str, str, str]) -> Part | None:
-    # a condition on a field whose search reads the principal, as the named
-    # predicate that says it, the path to the field as its `at` argument
     path, operator, value = leaf
     at, _dot, field_name = path.rpartition(".")
     name = PREDICATE_FIELDS.get(field_name)
@@ -180,7 +174,6 @@ def _predicate(leaf: tuple[str, str, str]) -> Part | None:
 
 
 def _rung(term: Any) -> Part | None:
-    # one AND term that is exactly one rung, its "or unset" folded in
     leaves = [_leaf(leaf) for leaf in _flat(term, "|")]
     if not leaves or any(leaf is None for leaf in leaves):
         return None
@@ -253,8 +246,6 @@ def _conjunction(terms: list[Any]) -> Part | None:
         try:
             ast.literal_eval(static)
         except ValueError:
-            # a fixed filter beside a reach is a literal; one calling ref()
-            # keeps the row a domain
             return None
     if not rungs:
         return Part("all", static=static)
@@ -281,7 +272,6 @@ def _dnf(term: Any, limit: int) -> list[list[Any]]:
                 raise OverflowError
         return result
     if isinstance(term, tuple) and term[0] == "|":
-        # a rung's own "or unset" stays one conjunction
         if _rung(term) is not None:
             return [[term]]
         result = [conj for child in term[1] for conj in _dnf(child, limit)]
@@ -292,7 +282,6 @@ def _dnf(term: Any, limit: int) -> list[list[Any]]:
 
 
 def propose(domain: str | None, kind: str, split_limit: int = 8) -> Proposal | None:
-    """The rows a domain becomes, or None when it is not recognized."""
     text = (domain or "").strip()
     if not text:
         return Proposal([Part("all")])
@@ -331,8 +320,6 @@ def propose(domain: str | None, kind: str, split_limit: int = 8) -> Proposal | N
     return Proposal(typing.cast("list[Part]", parts), split=True)
 
 
-# a principal nothing else is: every id distinct, so a proof that swaps two
-# of them fails
 _PRINCIPAL = {
     "user": 900001,
     "partner": 900002,
@@ -375,7 +362,6 @@ def _eval_context() -> dict[str, Any]:
 
 
 def compile_part(part: Part) -> Domain:
-    # the part's domain for the synthetic principal, as ir.access compiles it
     p = _PRINCIPAL
     static = Domain(ast.literal_eval(part.static)) if part.static else Domain.TRUE
     if part.reach == "all":
@@ -390,7 +376,6 @@ def compile_part(part: Part) -> Domain:
         return Domain(at + field_name, "=", True) & static
     path = part.path
     if part.reach == "own" and part.kind == "employee":
-        # the employees bind is every employee whose user is the principal
         domain = Domain(f"{path}.user_id", "in", [p["user"]])
     elif part.reach == "own":
         values = {
@@ -413,8 +398,6 @@ def compile_part(part: Part) -> Domain:
 
 
 def _literals(field: str, operator: str, value: Any) -> list[Any]:
-    # a condition as the literals it ORs: "= x" is "in (x,)", a value list
-    # holding False is the list or "= False", a scalar tree value a 1-list
     if operator in ("child_of", "parent_of") and not isinstance(value, (list, tuple)):
         value = [value]
     if isinstance(value, (list, tuple, set, frozenset)):
@@ -432,8 +415,6 @@ def _literals(field: str, operator: str, value: Any) -> list[Any]:
 
 
 def _dnf_of(domain: Domain, limit: int = 256) -> frozenset[frozenset[Any]]:
-    # a domain as a set of conjunctions of literals, so neither the text's
-    # association, nor its order, nor a filter repeated across a split counts
     operator = getattr(domain, "OPERATOR", None)
     if operator == "|":
         result: set[frozenset[Any]] = set()
@@ -462,7 +443,6 @@ def _dnf_of(domain: Domain, limit: int = 256) -> frozenset[frozenset[Any]]:
 
 
 def proves(domain: str | None, proposal: Proposal) -> bool:
-    """Whether the proposed rows reach what the domain did, for a principal."""
     old = (
         Domain(safe_eval(domain, _eval_context()))
         if (domain or "").strip()

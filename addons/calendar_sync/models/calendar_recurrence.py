@@ -14,7 +14,5 @@ class CalendarRecurrence(models.Model):
     )
 
     def _detach_events(self, events):
-        # a detached event is no longer an instance of the series a calendar
-        # holds: its instance id would be given to the event replacing it
         events._forget_sync_ids()
         return super()._detach_events(events)

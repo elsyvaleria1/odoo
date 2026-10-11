@@ -39,9 +39,6 @@ class HrExpense(models.Model):
     _description = "Expense"
     _order = "date desc, id desc"
     _check_company_auto = True
-    # who may make each move of the review is its verb's rows
-    # (security/ir_access.xml); a create or import that lands in a review state
-    # is not the move (decision S1)
     _access_verbs = {
         "reset": models.Verb(
             requires="read", transition=("review_state", "*", False), at_create=False
@@ -811,7 +808,7 @@ class HrExpense(models.Model):
             else:
                 expenses.selectable_payment_channel_ids = self.env[
                     "account.payment.channel"
-                ].search(  # noqa: E8507 - one query per company; expenses sharing one were merged above
+                ].search(
                     [
                         *self.env["account.journal"]._check_company_domain(company),
                         ("payment_type", "=", "outbound"),
@@ -923,9 +920,9 @@ class HrExpense(models.Model):
                     duplicates_query, {"expense_ids": list(expenses.ids)}
                 )
 
-                groups = 0  # debuglog
+                groups = 0
                 for duplicates_ids in (x[0] for x in self.env.cr.fetchall()):
-                    groups += 1  # debuglog
+                    groups += 1
                     expenses_duplicates = expenses.filtered_domain(
                         [("id", "in", duplicates_ids)]
                     )
@@ -1544,8 +1541,6 @@ class HrExpense(models.Model):
         )
         (self - expenses_autovalidated).review_state = "submitted"
         if expenses_autovalidated:
-            # nobody approves an expense that has no approver: submitting it is
-            # its approval, whoever submits
             with self.env.transaction.admitting(
                 self._name, "approve", expenses_autovalidated.ids
             ):
@@ -2132,7 +2127,7 @@ class HrExpense(models.Model):
         for company, expenses in employee_expenses.grouped("company_id").items():
             expenses = expenses.with_company(company)
             company_domain = self.env["account.journal"]._check_company_domain(company)
-            journal = company.hr_expense_config_id.expense_journal_id or expenses.env[  # noqa: E8507 - one lookup per company; expenses sharing one were merged above
+            journal = company.hr_expense_config_id.expense_journal_id or expenses.env[
                 "account.journal"
             ].search([*company_domain, ("type", "=", "purchase")], limit=1)
             expense_receipt_vals_list = [
@@ -2388,10 +2383,10 @@ class HrExpense(models.Model):
 
         if self.product_id:
             account = self.product_id.product_tmpl_id._get_product_accounts()["expense"]
-            source = "product"  # debuglog
+            source = "product"
         else:
             account = self.env.company.account_config_id.expense_account_id
-            source = "company"  # debuglog
+            source = "company"
 
         if account:
             _debug.logic("base_account", by=source, expense=self, account=account)

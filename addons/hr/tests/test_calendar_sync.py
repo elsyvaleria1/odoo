@@ -136,9 +136,6 @@ class TestContractCalendars(TestHrCommon):
         )
 
     def test_the_resource_works_the_calendar_of_whichever_version_is_current(self):
-        # the current version changes without any calendar being written: a
-        # version is created and takes over, then goes away; the resource
-        # follows each time, it is what every schedule reads
         resource = self.employee.resource_id
         self.assertEqual(resource.calendar_id, self.calendar_richard)
         cdd = self.employee.create_version(self.contract_cdd_values)
@@ -167,9 +164,6 @@ class TestContractCalendars(TestHrCommon):
             )
 
     def test_employee_resource_contract_without_and_with_date_from(self):
-        # The form collects a local day, not an instant: the exception's hours are
-        # read in its own zone, so the field that carries a zone is not the one a
-        # person types into.
         leave_form = Form(self.env["resource.schedule.exception"])
         leave_form.local_date_from = False
 
@@ -177,10 +171,6 @@ class TestContractCalendars(TestHrCommon):
         self.assertFalse(leave_form.calendar_id)
 
         leave_form.local_date_from = Date.to_date("2018-01-01")
-        # Asserted on the saved record: the local day reaches `date_from` through an
-        # inverse, which runs at save, so the contract covering the day is not known
-        # while the form is still open. The form must therefore not offer the field
-        # -- it would save the calendar it could not yet resolve.
         leave = leave_form.save()
         self.assertEqual(
             leave.calendar_id, self.employee.version_id.resource_calendar_id

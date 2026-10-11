@@ -136,9 +136,6 @@ class HrDepartment(models.Model):
         scoped = self.filtered("company_id")
         if not scoped:
             return
-        # One search for the whole batch, and a search rather than member_ids:
-        # the employee writes that put them here may still be pending in the
-        # same flush, and the one2many cache would then report none.
         members = (
             self.env["hr.employee"]
             .sudo()

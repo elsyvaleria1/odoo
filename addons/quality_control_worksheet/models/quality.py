@@ -16,7 +16,6 @@ class QualityPoint(models.Model):
         string="Template",
         domain="[('res_model', '=', 'quality.check'), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
-    # tech field used by quality_field_domain widget
     worksheet_model_name = fields.Char(
         related="worksheet_template_id.model_id.model",
         string="Model Name",
@@ -39,8 +38,6 @@ class QualityCheck(models.Model):
 
     @api.depends("point_id")
     def _compute_worksheet_template_id(self) -> None:
-        # This is what the `create` override that stood below did, one browse
-        # per vals dict; the stored compute already runs on create.
         _debug.perf.count("worksheet_template_compute", checks=self)
         for check in self:
             if check.point_id and check.point_id.test_type == "worksheet":
@@ -48,9 +45,6 @@ class QualityCheck(models.Model):
 
     @api.depends("worksheet_template_id")
     def _compute_worksheet_count(self) -> None:
-        # Grouped by template: each template has its own `x_` model, so this
-        # is one `_read_group` per distinct template rather than one
-        # `search_count` per check.
         self.worksheet_count = 0
         for template, checks in self.grouped("worksheet_template_id").items():
             if not template:
@@ -70,8 +64,6 @@ class QualityCheck(models.Model):
         check_ids = sorted(self.ids)
         check_id = self.browse(current_check_id or check_ids[0])
         if check_id.test_type == "worksheet":
-            # in this case the worksheet will pop up, while the wizard will be in the background
-            # to prevent code duplication
             action = check_id.action_quality_worksheet()
             quality_wizard = self.env["wizard.quality.check.decide"].create(
                 {
@@ -94,10 +86,6 @@ class QualityCheck(models.Model):
         _debug.pipeline("worksheet_open", checks=self)
         self.check_singleton()
         action = self.worksheet_template_id.action_id.sudo().read()[0]
-        # `limit=1`: the search was unbounded and `worksheet.id` on more than
-        # one raises rather than opening a form.  A unique constraint on
-        # `x_quality_check_id` means that cannot happen today -- measured --
-        # so this is a guard, not a fix.  Newest first, matching the report.
         worksheet = self.env[self.worksheet_template_id.model_id.sudo().model].search(
             [("x_quality_check_id", "=", self.id)], limit=1, order="create_date DESC"
         )

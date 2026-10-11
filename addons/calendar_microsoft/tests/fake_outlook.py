@@ -27,7 +27,6 @@ ANSWERS = {
     "decline": "declined",
     "tentativelyAccept": "tentativelyAccepted",
 }
-# Graph's attendee responses in Odoo's words
 STATES = {
     "accepted": "accepted",
     "declined": "declined",
@@ -46,7 +45,6 @@ def refusal(status, code="", message=""):
 
 
 def utc(when) -> datetime:
-    """A Graph time as naive UTC: the offset it carries wins over its zone."""
     moment = parse(when["dateTime"])
     if moment.tzinfo:
         return moment.astimezone(UTC).replace(tzinfo=None)
@@ -56,15 +54,11 @@ def utc(when) -> datetime:
 class FakeOutlook(FakeCalendarServer):
     def __init__(self, env) -> None:
         super().__init__(env)
-        # {iCalendar UID: the item}
         self.meetings: dict[str, dict] = {}
-        # {user id: {copy id: iCalendar UID}}
         self.calendars: dict[int, dict[str, str]] = {}
-        # {user id: [copy ids changed or removed since their last list]}
         self.changed: dict[int, list] = {}
         self.removed: dict[int, set] = {}
         self.tokens: dict[int, str] = {}
-        # {(user id, transaction id): copy id}
         self.transactions: dict[tuple[int, str], str] = {}
         self._ids = itertools.count(1)
         self._versions = itertools.count(1)
@@ -89,7 +83,6 @@ class FakeOutlook(FakeCalendarServer):
 
         return patch.object(MicrosoftCalendarService, "_request", request)
 
-    # -- Graph ---------------------------------------------------------------
 
     def request(self, user, method, path, params, body):
         if method == "GET" and path == DELTA:
@@ -203,11 +196,8 @@ class FakeOutlook(FakeCalendarServer):
         self.ops.append((user.id, "answer", copy_id))
         return 202, {}
 
-    # -- the calendars --------------------------------------------------------
 
     def _distribute(self, uid) -> dict[int, str]:
-        """A copy of the meeting in its organizer's and attendees' calendars;
-        {user id: copy id}."""
         meeting = self.meetings[uid]
         Users = self.env["res.users"]
         holders = Users.browse(meeting["organizer"]) | Users.search(
@@ -259,8 +249,6 @@ class FakeOutlook(FakeCalendarServer):
             "attendees": [
                 {
                     "type": "required",
-                    # Graph tracks the answers on the organizer's item: an
-                    # attendee's copy says none for everyone
                     "status": {"response": response if is_organizer else "none"},
                     "emailAddress": {"address": email, "name": email},
                 }

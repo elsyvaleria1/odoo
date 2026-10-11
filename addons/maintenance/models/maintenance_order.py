@@ -296,8 +296,6 @@ class MaintenanceOrder(models.Model):
             closing.filtered(lambda order: order.state == "done").activity_feedback(
                 [ORDER_ACTIVITY_TYPE]
             )
-            # sudo: opening the next occurrence is a consequence of closing this one,
-            # not an edit of the plan by whoever closes it.
             for order in closing.filtered("plan_id").sudo():
                 order.plan_id._schedule_after(order)
         replace_activity = self._is_new_activity_required(vals)
@@ -373,9 +371,6 @@ class MaintenanceOrder(models.Model):
             )
             if team.company_id and team.company_id != order.company_id:
                 team = team.browse()
-            # The company default is the last resort of this precomputed field, not a field
-            # default: a field default is filled before the compute, so a create never took the
-            # resource's (or an override's) team.
             if not team:
                 company = order.company_id
                 if company not in default_teams:
@@ -548,10 +543,6 @@ class MaintenanceOrder(models.Model):
         return ("date_scheduled_start", "date_scheduled_end")
 
     def _prepare_reservation_vals_list(self):
-        """The booking this order asks for, as the scheduling mixin reads it:
-        what an unsaved order would hold, so its conflicts show before it is
-        saved. The saved booking is written by _recreate_reservations, which
-        also books ahead and moves to a free window."""
         self.check_singleton()
         resources = self._get_booked_resources()
         if (
@@ -690,8 +681,6 @@ class MaintenanceOrder(models.Model):
         )
 
     def activity_update(self) -> None:
-        """Update maintenance activities based on current record set state.
-        It reschedule, unlink or create maintenance order activities."""
         planned = self.filtered(
             lambda order: order.date_scheduled_start and order.state in OPEN_STATES
         )

@@ -34,7 +34,7 @@ class SurveyUserInput(models.Model):
 class SurveyUserInputLine(models.Model):
     _inherit = "survey.user_input.line"
 
-    calendar_booking_id = fields.Many2one(  # noqa: E8529  One2many inverse of calendar.booking.appointment_answer_input_ids
+    calendar_booking_id = fields.Many2one(
         related="user_input_id.calendar_booking_id",
         store=True,
         index=True,

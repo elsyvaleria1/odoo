@@ -32,7 +32,6 @@ class TestSubscriptionStockCommon(
             }
         )
 
-        # Test user dedicated to avoid sharing moves and batches
         TestUsersEnv = cls.env["res.users"].with_context({"no_reset_password": True})
         cls.country_belgium = cls.env.ref("base.be")
         cls.user_portal2 = TestUsersEnv.create(
@@ -48,7 +47,6 @@ class TestSubscriptionStockCommon(
             }
         )
 
-        # Pricing
 
         pricing_commands = [
             Command.create(
@@ -65,7 +63,6 @@ class TestSubscriptionStockCommon(
             ),
         ]
 
-        # Product
 
         cls.sub_product_order = Product.create(
             {
@@ -124,7 +121,6 @@ class TestSubscriptionStockCommon(
             }
         )
 
-        # SO
 
         cls.subscription_order = SaleOrder.create(
             {
@@ -186,8 +182,6 @@ class TestSubscriptionStockCommon(
             "default_journal_id": cls.company_data["default_journal_sale"].id,
         }
 
-        # update status
-        # cls.subscription_delivery._compute_is_deferred()
 
         with (
             freeze_time("2022-03-02"),

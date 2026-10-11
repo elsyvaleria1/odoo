@@ -23,7 +23,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         super().setUp()
         self.env.user.partner_id.tz = "Europe/Brussels"
         self.google_service = GoogleCalendarService(self.env)
-        # Make sure this test will work for the next 30 years
         self.env["ir.config_parameter"].set_param(
             "calendar_google.sync.range_days", 10000
         )
@@ -280,8 +279,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     @patch_api
     def test_synced_inactive_event(self):
         google_id = "aaaaaaaaa"
-        # writing on synced event will put it in a need_sync state.
-        # Delete api will not be called but the state of the event will be set as 'cancelled'
         event = self.link_google(
             self.env["calendar.event"].create(
                 {
@@ -476,7 +473,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
         event = event_2
 
-        # Update only some events in the recurrence
         event.write(
             {
                 "name": "New name",
@@ -522,7 +518,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             "The google synchronization should be stopped",
         )
 
-        # If synchronization stopped, creating a new event should not call _google_insert.
         self.env["calendar.event"].create(
             {
                 "name": "Event",
@@ -535,7 +530,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_restart_synchronization(self):
-        # Test new event created after stopping synchronization are correctly patched when restarting sync.
         google_id = "aaaaaaaaa"
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
@@ -673,7 +667,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             }
         )
 
-        # the series goes to Google, its events with it, none of them alone
         self.push_google()
         self.assertEqual(len(self._gsync_insert_values), 1)
         self.assertIn("recurrence", self._gsync_insert_values[0][0])
@@ -681,7 +674,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_event_until_utc(self):
-        """UNTIl rrule value must be in UTC: ending with a 'Z"""
         google_id = "aaaaaaaaa"
         event = self.env["calendar.event"].create(
             {
@@ -706,7 +698,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             "RRULE:FREQ=DAILY;UNTIL=20200117T235959Z",
             "The rrule sent to google should be in UTC: end with Z",
         )
-        # Add it even if it is not the end of the string
         recurrence.write({"rrule": "FREQ=DAILY;UNTIL=20200118T235959;INTERVAL=3"})
         recurrence._apply_recurrence()
         self.assertEqual(
@@ -714,7 +705,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             "RRULE:FREQ=DAILY;UNTIL=20200118T235959Z;INTERVAL=3",
             "The rrule sent to google should be in UTC: end with Z and preserve the following parameters",
         )
-        # Don't add two Z at the end of the UNTIL value
         recurrence.write({"rrule": "FREQ=DAILY;UNTIL=20200119T235959Z"})
         recurrence._apply_recurrence()
         self.assertEqual(
@@ -750,7 +740,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                 "stop": datetime(2021, 3, 11),
             }
         )
-        # moving one event is sent; what follows is about the unsynced field
         self.push_google()
         self._gsync_patch_values.clear()
         self._gsync_insert_values.clear()
@@ -763,7 +752,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_attendee_state(self):
-        """Sync attendee state immediately"""
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
         )
@@ -873,10 +861,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_recurrence_delete_single_events(self):
-        """
-        Creates a recurrence with two events, deletes the events and assert that the recurrence was updated.
-        """
-        # Setup recurrence with two recurrences (event_1 as the recurrence base_event).
         google_id = "aaaaaaaaa"
         event_1 = self.env["calendar.event"].create(
             {
@@ -902,16 +886,12 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             ),
             google_id,
         )
-        # Delete base_event and assert that its Google instance was deleted.
         instance_id = self.google_id(event_1)
         event_1.action_mass_archive("this")
         self.assertGoogleEventDeleted(instance_id)
-        # Assert that deleted event is not active anymore and the recurrence updated its calendar_event_ids.
         self.assertFalse(event_1.active)
         self.assertEqual(recurrence.base_event_id.id, event_2.id)
         self.assertEqual(recurrence.calendar_event_ids.ids, [event_2.id])
-        # Delete last event: the event is archived, the empty recurrence deleted, and
-        # Google's series with it.
         event_2.action_mass_archive("this")
         self.assertFalse(event_2.active)
         self.assertFalse(recurrence.exists())
@@ -919,15 +899,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_create_event_with_sync_config_paused(self):
-        """
-        Creates an event with the synchronization paused, its field 'need_sync'
-        must be True for later synchronizing it with Google Calendar.
-        """
-        # Set synchronization as active and unpause the synchronization.
         self.env.user._calendar_sync_account("google").stopped = False
         self.env["calendar.sync.account"]._set_paused("google", True)
 
-        # Create record and call synchronization method.
         record = self.env["calendar.event"].create(
             {
                 "name": "Event",
@@ -937,7 +911,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
         self.send_google(record)
 
-        # Assert that synchronization is paused, insert wasn't called and record is waiting to be synced.
         self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
         self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         self.assertTrue(
@@ -948,15 +921,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_update_synced_event_with_sync_config_paused(self):
-        """
-        Updates a synced event with synchronization paused, event must be modified and have its
-        field 'need_sync' as True for later synchronizing it with Google Calendar.
-        """
-        # Set synchronization as active and unpause it.
         self.env.user._calendar_sync_account("google").stopped = False
         self.env["calendar.sync.account"]._set_paused("google", False)
 
-        # Setup synced record in Calendar.
         record = self.link_google(
             self.env["calendar.event"].create(
                 {
@@ -968,12 +935,10 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             "aaaaaaaaa",
         )
 
-        # Pause synchronization and update synced event. It will only update it locally.
         self.env["calendar.sync.account"]._set_paused("google", True)
         record.write({"name": "Updated Event"})
         self.send_google(record)
 
-        # Assert that synchronization is paused, patch wasn't called and record is waiting to be synced.
         self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
         self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         self.assertEqual(
@@ -989,15 +954,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_delete_synced_event_with_sync_config_paused(self):
-        """
-        Deletes a synced event with synchronization paused: its Google copy is
-        deleted once the synchronization resumes.
-        """
-        # Set synchronization as active and then pause synchronization.
         self.env.user._calendar_sync_account("google").stopped = False
         self.env["calendar.sync.account"]._set_paused("google", False)
 
-        # Setup synced record in Calendar.
         record = self.link_google(
             self.env["calendar.event"].create(
                 {
@@ -1009,12 +968,9 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             "aaaaaaaaa",
         )
 
-        # Pause synchronization and delete synced event.
         self.env["calendar.sync.account"]._set_paused("google", True)
         record.unlink()
 
-        # Assert that synchronization is paused, delete wasn't called and Google's copy
-        # is left to delete when the synchronization resumes.
         self.assertFalse(self.env.user._calendar_sync_account("google").stopped)
         self.assertEqual(self.env.user._calendar_sync_status("google"), "sync_paused")
         tombstone = (
@@ -1045,7 +1001,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_event_available_privacy(self):
-        """Create an event with "Available" value for 'show_as' and assert value is properly sync in google calendar."""
         event = self.env["calendar.event"].create(
             {
                 "name": "Event",
@@ -1077,7 +1032,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_event_busy_privacy(self):
-        """Create an event with "busy" value for 'show_as' and assert value is properly sync in google calendar."""
         event = self.env["calendar.event"].create(
             {
                 "name": "Event",
@@ -1110,8 +1064,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     @patch_api
     @patch.object(GoogleCalendarService, "get_events")
     def test_event_sync_after_pause_period(self, mock_get_events):
-        """Ensure that an event created during the paused synchronization period gets synchronized after resuming it."""
-        # Pause the synchronization and creates the local event.
         self.organizer_user._calendar_sync_account("google").stopped = False
         self.env["calendar.sync.account"]._set_paused("google", True)
         record = (
@@ -1130,12 +1082,10 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             )
         )
 
-        # Google has nothing new since the last synchronization
         mock_get_events.return_value = (GoogleEvent([]), "next-token", ())
         for user in (self.organizer_user, self.attendee_user):
             user._calendar_sync_account("google").sync_token = "a-token"
 
-        # With the synchronization paused, manually call the synchronization to simulate the page refresh.
         self.organizer_user.sudo()._calendar_sync_run("google")
         self.assertFalse(
             self.organizer_user._calendar_sync_account("google").stopped,
@@ -1152,7 +1102,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
         self.assertGoogleEventNotInserted()
 
-        # Unpause the synchronization and call the calendar synchronization. Ensure the event was inserted in Google side.
         self.env["calendar.sync.account"]._set_paused("google", False)
         self.organizer_user.with_user(self.organizer_user).sudo()._calendar_sync_run(
             "google"
@@ -1183,8 +1132,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_allday_duplicated_first_event_in_recurrence(self):
-        """Ensure that when creating recurrence with 'all day' events the first event won't get duplicated in Google."""
-        # Create 'all day' event: ensure that the API wasn't called.
         event = (
             self.env["calendar.event"]
             .with_user(self.organizer_user)
@@ -1202,7 +1149,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
         self.assertGoogleAPINotCalled()
 
-        # Link recurrence to the event: ensure that it got synchronized after creation and API called insert once.
         recurrence = (
             self.env["calendar.recurrence"]
             .with_user(self.organizer_user)
@@ -1240,14 +1186,7 @@ class TestSyncOdoo2Google(TestSyncGoogle):
     def test_skip_google_sync_for_non_synchronized_users_new_events(
         self, mock_get_events
     ):
-        """
-        Skip the synchro of new events by attendees when the organizer is not synchronized with Google.
-        Otherwise, the event ownership will be lost to the attendee and it could generate duplicates in
-        Odoo, as well cause problems in the future the synchronization of that event for the original owner.
-        """
         with self.mock_datetime_and_now("2023-01-10"):
-            # Stop the synchronization for the organizer and leave the attendee synchronized.
-            # Then, create an event with the organizer and attendee. Assert that it was not inserted.
             self.organizer_user._calendar_sync_account("google").stopped = True
             self.attendee_user._calendar_sync_account("google").stopped = False
             record = (
@@ -1267,18 +1206,15 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             )
             self.assertGoogleEventNotInserted()
 
-            # Google has nothing new since the last synchronization
             mock_get_events.return_value = (GoogleEvent([]), "next-token", ())
             for user in (self.organizer_user, self.attendee_user):
                 user._calendar_sync_account("google").sync_token = "a-token"
 
-            # Synchronize the attendee, and ensure that the event was not inserted after it.
             self.attendee_user.with_user(self.attendee_user).sudo()._calendar_sync_run(
                 "google"
             )
             self.assertGoogleAPINotCalled()
 
-            # Now, we synchronize the organizer and make sure the event got inserted by him.
             self.organizer_user.with_user(self.organizer_user).calendar_sync_restart(
                 "google"
             )
@@ -1373,7 +1309,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
         )
 
     def test_event_over_send_updates(self):
-        """Test that events that are over don't sent updates to attendees."""
         with self.mock_datetime_and_now("2023-01-10"):
             self.env.cr.postcommit.clear()
             with self.mock_google_service():
@@ -1392,13 +1327,12 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             self.assertGoogleEventSendUpdates("none")
 
     def test_event_not_over_send_updates(self):
-        """Test that events that are not over send updates to attendees."""
         with self.mock_datetime_and_now("2023-01-10"):
             self.env.cr.postcommit.clear()
             with self.mock_google_service():
                 future_date = datetime(
                     2023, 1, 20, 8, 0
-                )  # Fixed date instead of datetime.now()
+                )
                 future_event = self.env["calendar.event"].create(
                     {
                         "name": "Future Event",
@@ -1406,7 +1340,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                         "stop": future_date + relativedelta(hours=1),
                     }
                 )
-                # Sync the event and verify send_updates is set to 'all'
                 self.send_google(future_event)
                 self.call_post_commit_hooks()
             self.assertFalse(
@@ -1416,7 +1349,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             self.assertGoogleEventSendUpdates("all")
 
     def test_recurrence_over_send_updates(self):
-        """Test that recurrences that are over don't send updates to attendees."""
         with self.mock_datetime_and_now("2023-01-10"):
             self.env.cr.postcommit.clear()
             with self.mock_google_service():
@@ -1434,7 +1366,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                     }
                 )
                 past_recurrence._apply_recurrence()
-                # Sync the recurrence and verify send_updates is set to 'none'
                 self.send_google(past_recurrence)
                 self.call_post_commit_hooks()
             self.assertTrue(
@@ -1444,7 +1375,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
             self.assertGoogleEventSendUpdates("none")
 
     def test_recurrence_not_over_send_updates(self):
-        """Test that recurrences that are not over send updates to attendees."""
         with self.mock_datetime_and_now("2023-01-10"):
             self.env.cr.postcommit.clear()
             with self.mock_google_service():
@@ -1463,7 +1393,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
                     }
                 )
                 future_recurrence._apply_recurrence()
-                # Sync the recurrence and verify send_updates is set to 'all'
                 self.send_google(future_recurrence)
                 self.call_post_commit_hooks()
             self.assertFalse(
@@ -1494,10 +1423,6 @@ class TestSyncOdoo2Google(TestSyncGoogle):
 
     @patch_api
     def test_event_creation_for_different_user(self):
-        """
-        Test event is synchronized for organizer with active google synchronization if it is
-        created by a user with google synchronization stopped.
-        """
         self.attendee_user._calendar_sync_account("google").stopped = True
         event = (
             self.env["calendar.event"]

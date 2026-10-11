@@ -42,8 +42,6 @@ def getaddresses(fieldvalues: list[str]) -> list[tuple[str, str]]:
     try:
         return email.utils.getaddresses(fieldvalues, strict=False)
     except RecursionError:
-        # the stdlib recurses once per nested comment or group: "((((…" or
-        # "a:a:…" past the recursion limit is an unparseable header, not a crash
         _debug.logic("email.getaddresses.too_deep")
         return [("", "")]
 
@@ -55,7 +53,6 @@ single_email_re = re.compile(
     r"""^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$""", re.VERBOSE
 )
 mail_header_msgid_re = re.compile(r"<[^<>]+>")
-# starts only where a local-part run does, or a run without "@" is rescanned
 _address_pattern = re.compile(r'(?<![^"\s,;<>@])([^"\s,;<>@]++@[^"\s,;<>]++)')
 _ADDRESS_LIST_TOKEN_RE = re.compile(
     r'"(?:[^"\\]|\\.)*"?|\((?:[^()\\]|\\.)*\)?|<[^<>]*>?|[,;\r\n]|[^"(<,;\r\n]+',

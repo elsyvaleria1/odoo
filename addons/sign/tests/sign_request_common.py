@@ -327,12 +327,6 @@ class SignRequestCommon(TransactionCase):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        # cr.now() is contracted to return a naive UTC datetime, and callers do
-        # datetime arithmetic on it -- mail_thread._get_notification_scheduled_date
-        # reads now.tzinfo. Every caller here passes a date *string*, so handing
-        # it back verbatim raised
-        #     AttributeError: 'str' object has no attribute 'tzinfo'
-        # out of any message_post reached under this mock.
         frozen = fields.Datetime.to_datetime(mock_dt)
         with freeze_time(mock_dt), patch.object(self.env.cr, "now", lambda: frozen):
             yield

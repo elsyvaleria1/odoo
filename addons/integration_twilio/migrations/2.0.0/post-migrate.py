@@ -14,9 +14,6 @@ LEGACY_TOKEN_KEY = "sms_twilio_auth_token"
 
 
 def _move_account_into_vault(env, config_id, account_sid) -> bool:
-    # True once nothing of the account is left to lose: moved, or a SID with
-    # no token, which never worked; the SID goes in as it was typed, which
-    # the stricter check on new input does not judge
     config = env["integration.twilio.config"].browse(config_id)
     company = config.company_id
     auth_token = company._get_held_secret(LEGACY_TOKEN_KEY)
@@ -58,7 +55,6 @@ def _move_sms_accounts(cr, env) -> None:
         _move_account_into_vault(env, config_id, account_sid)
         for config_id, account_sid in cr.fetchall()
     ]
-    # a token with no SID behind it opens nothing: it leaves the vault
     for company in env["res.company"].with_context(active_test=False).search([]):
         if company._get_held_secret(LEGACY_TOKEN_KEY) and not (
             company.integration_twilio_config_id.credential_id
@@ -69,8 +65,6 @@ def _move_sms_accounts(cr, env) -> None:
 
 
 def _backfill_tracker_companies(cr) -> None:
-    # a status that arrives once its SMS is vacuumed is answered from the
-    # tracker, which names the company whose account signs it
     cr.execute(
         """
         UPDATE sms_tracker AS tracker

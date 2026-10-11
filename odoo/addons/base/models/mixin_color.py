@@ -68,7 +68,6 @@ class MixinColor(models.AbstractModel):
 
     @api.model
     def _color_index_to_hex(self, value, *, palette, fallback=False):
-        """Resolve an integer palette index; return fallback outside its range."""
         try:
             return get_palette_color(value, palette)
         except IndexError:

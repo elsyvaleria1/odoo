@@ -544,7 +544,6 @@ class I18n(DatabaseCommand):
         export_format = path.suffix.removeprefix(".")
         if export_format == "pot":
             export_format = "po"
-        # the export reads the file it replaces, so it is written only after
         buffer = io.BytesIO()
         with _debug.perf(
             "cli.i18n.export_file",

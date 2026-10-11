@@ -254,8 +254,6 @@ class TestSelfAccessRights(TestHrCommon):
             self.richard.with_user(self.richard).read([f])
 
     def testReadOtherUserEmployee(self):
-        # another user's HR fields are the owner's alone: a read shows them
-        # empty, an attribute read refuses (P5 R1; the whole read refused before)
         self.hubert.sudo().employee_id.private_phone_ids = [
             Command.create({"number": "31337", "type": "mobile"})
         ]
@@ -268,11 +266,6 @@ class TestSelfAccessRights(TestHrCommon):
             _ = other.private_phone_ids
 
     def testWriteSelfUserEmployee(self):
-        """Decided 2026-09-07: a user does not edit their own HR information.
-
-        This wrote each of these fields on oneself and expected it to land.
-        Reading them is untouched -- testReadSelfUserEmployee still passes.
-        """
         for f, v in self.self_protected_fields_user.items():
             val = None
             if v.type in {"char", "text"}:
@@ -367,13 +360,6 @@ class TestSelfWritableFieldsAreWritable(TestHrCommon):
         )
 
     def test_hr_grants_no_self_write_at_all(self):
-        """Decided 2026-09-07: an internal user does not edit their own HR data.
-
-        This class used to assert the opposite -- that a self-write of
-        `private_street` reached the employee. It did, and that was the
-        behaviour withdrawn: personal facts now change through
-        hr.employee.change.request, with an HR user approving.
-        """
         users = self.env["res.users"]
         self.assertFalse(
             set(HR_READABLE_FIELDS) & set(users.SELF_WRITEABLE_FIELDS),

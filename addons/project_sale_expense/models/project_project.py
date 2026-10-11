@@ -94,8 +94,6 @@ class ProjectProject(models.Model):
             amount_taxexc_invoiced_draft_sum,
             amount_taxexc_invoiced_sum,
         ) in sol_read_group:
-            # revenue is invoiced once posted: what sits on a draft is still
-            # to invoice
             amount_taxexc_to_invoice_sum += amount_taxexc_invoiced_draft_sum
             expense_data_per_product_id = expenses_per_so_id[order.id]
             set_currency_ids.add(currency.id)

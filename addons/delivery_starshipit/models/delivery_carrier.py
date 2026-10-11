@@ -84,7 +84,6 @@ class DeliveryCarrier(models.Model):
     )
 
     def _compute_can_generate_return(self) -> None:
-        """Starshipit only supports returns for some carriers."""
         super()._compute_can_generate_return()
         for carrier in self:
             if carrier.delivery_type == "starshipit":
@@ -92,12 +91,8 @@ class DeliveryCarrier(models.Model):
                     carrier.starshipit_carrier_code in CARRIER_SUPPORTING_RETURNS
                 )
 
-    # Shipping Carrier Methods
 
     def starshipit_rate_shipment(self, order) -> dict:
-        """Get the rates for the given order, according to the selected service code for this carrier.
-        This method is used when getting the rate for a specific shipping.method.
-        """
         _debug.pipeline(
             "carrier_rate_request",
             provider="starshipit",
@@ -129,17 +124,6 @@ class DeliveryCarrier(models.Model):
             }
 
     def starshipit_send_shipping(self, pickings, is_return=False):
-        """For a given picking, this method will execute a few API calls in order to get the order to be sent to the carrier.
-        The order of actions is:
-
-        - Create the order(s) on starshipit side. This will not send them, just register them and return the id(s)
-        - Get the labels for each picking, one at a time. This will return the tracking number(s) and url(s).
-        - The labels are attached to the picking as ir.attachment
-        - If return_label_on_delivery is set, generate the return label(s) for each picking too.
-        - Get the delivery order information from starshipit to fetch the final rate, and whether the order was manifested or not.
-        - Finally either manifest (send) the order(s) or archive them in test mode.
-        If sent, the manifest report is added to the picking as ir.attachment.
-        """
         _debug.pipeline(
             "carrier_ship_request",
             provider="starshipit",
@@ -154,7 +138,6 @@ class DeliveryCarrier(models.Model):
 
         for picking in pickings:
             starshipit_order_number = starshipit._get_starshipit_order_number(picking)
-            # We cant use the api that prints labels for multiple order at once because this endpoint doesn't return the tracking information.
             order = unshipped_orders.get(starshipit_order_number)
             order_id = order["order_id"]
             picking.starshipit_parcel_reference = order_id
@@ -168,17 +151,13 @@ class DeliveryCarrier(models.Model):
             )
             picking.carrier_tracking_ref = tracking_number
             try:
-                # generate return if config is set
                 if self.return_label_on_delivery:
                     self.get_return_label(picking)
             except UserError:
-                # if the return fails need to log that they failed and continue
                 picking.message_post(
                     body=self.env._("The return label creation failed.")
                 )
 
-            # Get the exact price for the shipping.
-            # Attach the labels we got to the picking
             attachment_data = [
                 {
                     "name": f"{self._get_delivery_label_prefix()}-{picking.name.replace('/', '_').lower()}.pdf",
@@ -214,13 +193,11 @@ class DeliveryCarrier(models.Model):
                     ),
                     attachment_ids=attachment_ids.ids,
                 )
-            # In production, we can manifest the order, and it will be sent to the carrier.
             if self.prod_environment:
                 if not manifested:
                     result = starshipit._manifest_orders(
                         [picking.starshipit_parcel_reference]
                     )
-                    # Starshipit API doesn't return a PDF for TNT service
                     datas = result.get("pdf")
                     pdf_name = f"{self._get_delivery_doc_prefix()}-manifest-report-{picking.name.replace('/', '_').lower()}.pdf"
                     if datas:
@@ -256,7 +233,6 @@ class DeliveryCarrier(models.Model):
                             manifest_number=order_data["order"]["manifest_number"],
                         )
                     )
-            # In test mode, we will archive the order instead to avoid any fees related to the end carrier.
             else:
                 if manifested:
                     picking.message_post(
@@ -275,10 +251,6 @@ class DeliveryCarrier(models.Model):
         return res
 
     def update_starshipit_prices(self, pickings_to_update) -> bool:
-        """
-        Called by the cron job to fetch prices for a batch of pickings.
-        This method updates the picking's carrier_price and triggers SO update.
-        """
         self.check_singleton()
         starshipit = self._get_starshipit()
 
@@ -360,7 +332,6 @@ class DeliveryCarrier(models.Model):
                         picking.name,
                     )
 
-                # Sleep for 1 second to avoid hitting the Starshipit API rate limit.
                 sleep(1)
 
             except Exception as e:
@@ -378,7 +349,6 @@ class DeliveryCarrier(models.Model):
         return True
 
     def starshipit_get_tracking_link(self, picking):
-        """Get the tracking link for the given picking."""
         _debug.logic(
             "carrier_tracking_link",
             provider="starshipit",
@@ -391,10 +361,6 @@ class DeliveryCarrier(models.Model):
         return result.get("results", {}).get("tracking_url", False)
 
     def starshipit_cancel_shipment(self, pickings) -> None:
-        """Archive the shipment on starshipit side.
-        Note that this will not do anything with the carrier and the user is expected to handle that himself.
-        This is done instead of trying to cancel as we always label right away and once labelled, we cannot cancel anymore.
-        """
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="starshipit",
@@ -406,10 +372,6 @@ class DeliveryCarrier(models.Model):
             starshipit._archive_order(picking.starshipit_parcel_reference)
 
     def starshipit_action_load_shipping_carriers(self) -> dict:
-        """The deliveryservices endpoint is used to get the list of available carriers.
-
-        As we need to give an address, we will use the company one.
-        """
         self.check_singleton()
         if self.delivery_type != "starshipit":
             raise ValidationError(
@@ -456,9 +418,6 @@ class DeliveryCarrier(models.Model):
     def starshipit_get_return_label(
         self, picking, tracking_number=None, origin_date=None
     ) -> None:
-        """Generate a return order/label for the given picking.
-        The flow is very similar  to the send shipping flow, with a few differences.
-        """
         starshipit = self._get_starshipit()
         if picking.starshipit_parcel_reference:
             order = starshipit._clone_order(picking.starshipit_parcel_reference)[
@@ -474,14 +433,11 @@ class DeliveryCarrier(models.Model):
         order_number = order["order_number"]
         label_data = self._create_label_for_order(order_id, order_number)
 
-        # if picking is not a return means we are pre-generating the return label on delivery
-        # thus we save the returned parcel id in a separate field
         if picking.is_return_picking:
             picking.starshipit_parcel_reference = order["order_id"]
         else:
             picking.starshipit_return_parcel_reference = order["order_id"]
 
-        # Attach the labels we got to the picking.
         attachment_data = [
             {
                 "name": f"{self.get_return_label_prefix()}-{picking.name.replace('/', '_').lower()}.pdf",
@@ -493,7 +449,6 @@ class DeliveryCarrier(models.Model):
             for label in label_data["labels"]
         ]
         attachment_ids = self.env["ir.attachment"].create(attachment_data)
-        # Before continuing, get the order info and check if it was automatically manifested.
         order_data = starshipit._get_order_details(order_id)
         manifested = order_data["order"]["manifested"]
         if attachment_ids:
@@ -503,13 +458,11 @@ class DeliveryCarrier(models.Model):
                 ),
                 attachment_ids=attachment_ids.ids,
             )
-        # In production, we can manifest the order, and it will be sent to the carrier.
         if self.prod_environment:
             if not manifested:
                 result = starshipit._manifest_orders(
                     [picking.starshipit_parcel_reference]
                 )
-                # Starshipit API doesn't return a PDF for TNT service
                 datas = result.get("pdf")
                 pdf_name = f"{self._get_delivery_doc_prefix()}-{picking.name.replace('/', '_').lower()}.pdf"
                 if datas:
@@ -545,7 +498,6 @@ class DeliveryCarrier(models.Model):
                         manifest_number=order_data["order"]["manifest_number"],
                     )
                 )
-        # In test mode, we will archive the order instead to avoid any fees related to the end carrier.
         else:
             if manifested:
                 picking.message_post(
@@ -586,13 +538,8 @@ class DeliveryCarrier(models.Model):
             )
             raise UserError(error_message) from e
 
-    # API HELPERS #
 
     def _starshipit_get_package_information(self, order=False, picking=False) -> tuple:
-        """Given an order or a picking, this method returns the formatted package information to send to Starshipit.
-        It also returns the list of items in the package in case the endpoint needs it.
-        The method also makes sure that the UOM used in the package information matches the one used by Starshipit. (Kgm and meter)
-        """
         packages = []
         package_items = []
         original_weight_uom = (
@@ -604,14 +551,10 @@ class DeliveryCarrier(models.Model):
         )
         target_length_uom = self.env.ref("base.product_uom_meter")
         if picking:
-            # Will get the precise package information, with the packages set on the picking if any.
-            # When used to rate the order, this will be accurate.
             delivery_packages = self._get_packages_from_picking(
                 picking, self.starshipit_default_package_type_id
             )
         elif order:
-            # Will get the package information based on the default package on the carrier.
-            # When used to rate the order, this could be inaccurate.
             delivery_packages = self._get_packages_from_order(
                 order, self.starshipit_default_package_type_id
             )
@@ -631,10 +574,6 @@ class DeliveryCarrier(models.Model):
                         "tariff_code": hs_code,
                         "country_of_origin": commodity.country_of_origin or "",
                         "quantity": commodity.qty,
-                        # round=False on every dimension below: these are declared
-                        # to Starshipit, and the "Product Unit" precision is a
-                        # product-quantity precision, not a weight or length one.
-                        # Converting mm to m, a 5 mm dimension came out as 0.01 m.
                         "weight": original_weight_uom._get_quantity_in_unit(
                             commodity.product_id.weight, target_weight_uom, round=False
                         ),
@@ -660,7 +599,6 @@ class DeliveryCarrier(models.Model):
         return packages, package_items
 
     def get_return_label(self, pickings, tracking_number=None, origin_date=None):
-        """Log a warning if the user tries to generate a return label for a carrier that doesn't support it."""
         self.check_singleton()
         if not self.can_generate_return and self.delivery_type == "starshipit":
             for picking in pickings:

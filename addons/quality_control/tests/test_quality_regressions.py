@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 """Regressions found while auditing the quality ring.
 
 Bug regressions pin the behavior that failed before the fix. Payload contracts
@@ -62,7 +61,6 @@ class TestQualityCheckStamp(TestQualityCommon):
         self.assertEqual(values["picking_id"], line.picking_id.id)
 
     def test_an_explicitly_written_author_is_not_overwritten(self):
-        """`write` fills in who closed the check only when nobody said."""
         other_user = self.env["res.users"].search(
             [("id", "!=", self.env.uid), ("share", "=", False)], limit=1
         )
@@ -81,7 +79,6 @@ class TestQualityCheckStamp(TestQualityCommon):
         self.assertTrue(check.control_date)
 
     def test_measure_success_follows_the_points_tolerances(self):
-        """`measure_success` is stored, so it has to depend on the tolerances."""
         point = self.env["quality.point"].create(
             {
                 "picking_type_ids": [Command.link(self.picking_type_id)],
@@ -101,14 +98,6 @@ class TestQualityCheckStamp(TestQualityCommon):
         self.assertFalse(check._measure_passes())
 
     def test_a_non_measure_point_is_not_graded_against_tolerances(self):
-        """A point switched away from `measure` keeps its tolerances.
-
-        The grader excluded only `passfail`, so every other type was compared
-        against numbers that no longer mean anything -- measured at HEAD, a
-        *picture* check reporting "You measured 0.00 mm and it should be
-        between 1.00 and 5.00 mm."  That text reaches the wizard's failure
-        dialog, the shop-floor dialog and the printed worksheet.
-        """
         point = self.env["quality.point"].create(
             {
                 "picking_type_ids": [Command.link(self.picking_type_id)],
@@ -167,7 +156,6 @@ class TestPickingQualityFlags(TestQualityCommon):
         )
 
     def test_quality_check_todo_follows_its_checks(self):
-        """The flag has to be invalidated, not cached for the transaction."""
         picking = self._create_picking([self.product])
         self.assertFalse(picking.quality_check_todo)
 
@@ -181,7 +169,6 @@ class TestPickingQualityFlags(TestQualityCommon):
         self.assertTrue(picking.quality_check_fail)
 
     def test_cancelling_one_move_keeps_the_operation_check(self):
-        """An operation check grades the transfer, not one of its products."""
         self.env["quality.point"].create(
             {
                 "picking_type_ids": [Command.link(self.picking_type_id)],
@@ -211,7 +198,6 @@ class TestPickingQualityFlags(TestQualityCommon):
         )
 
     def test_checks_to_do_does_not_leak_between_pickings(self):
-        """Each picking answers for its own checks."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product.id)],
@@ -235,7 +221,6 @@ class TestPickingQualityFlags(TestQualityCommon):
 @tagged("post_install", "-at_install")
 class TestQualityCheckWizardFailure(TestQualityCommon):
     def test_the_failure_dialog_is_titled_with_a_string(self):
-        """Both branches used to build a one-element tuple."""
         check = self.env["quality.check"].create({"product_id": self.product.id})
         wizard = self.env["wizard.quality.check.decide"].create(
             {"check_ids": [Command.set(check.ids)], "current_check_id": check.id}
@@ -267,12 +252,6 @@ class TestProductQualityCounters(TestQualityCommon):
         return self.env.cr.sql_statement_count - before
 
     def test_the_counters_do_not_cost_a_query_per_product(self):
-        """Both used to run one query per product from inside their loop.
-
-        Measured as a slope rather than pinned to an absolute: the fixed part
-        of the cost drifts with the schema, the per-product part is the defect.
-        Compared at N=4 and N=20 so a warm cache cannot make it vacuous.
-        """
         products = self.env["product.product"].create(
             [{"name": f"Counter probe {index}"} for index in range(20)]
         )
@@ -314,8 +293,6 @@ class TestProductQualityCounters(TestQualityCommon):
         }
 
         self.assertEqual(batched, per_product)
-        # `self.product` sits under a child of the category the second point
-        # names, so all three apply to it.
         self.assertEqual(batched[self.product.id], per_product[self.product.id])
         self.assertGreaterEqual(batched[self.product.id], 3)
 
@@ -323,12 +300,6 @@ class TestProductQualityCounters(TestQualityCommon):
 @tagged("post_install", "-at_install")
 class TestPartialFailureSplit(TestQualityCommon):
     def test_failing_most_of_a_line_does_not_lose_the_quantity(self):
-        """Fail 8 of 10.
-
-        The split used to read `move_line.quantity` *after* decrementing it,
-        so it sized the failed move at what was left: measured, a move of 2
-        carrying a line of 8, and 4 units total where there had been 10.
-        """
         point = self.env["quality.point"].create(
             {
                 "picking_type_ids": [Command.link(self.picking_type_id)],
@@ -378,7 +349,6 @@ class TestPartialFailureSplit(TestQualityCommon):
             )
 
     def test_the_whole_recordset_is_processed(self):
-        """Every arm of the `match` used to end in `return`."""
         self.env["quality.point"].create(
             {
                 "picking_type_ids": [Command.link(self.picking_type_id)],
@@ -435,8 +405,6 @@ class TestAlertMailGateway(TestQualityCommon):
         }
 
     def test_message_new_accepts_the_gateway_defaults(self):
-        """The gateway's `custom_values` is typed `dict | False | None`, and
-        `quality_control` sits above the mixin that normalises it."""
         for custom_values in ((), (None,), (False,)):
             with self.subTest(custom_values=custom_values):
                 alert = self.env["quality.alert"].message_new(
@@ -446,7 +414,6 @@ class TestAlertMailGateway(TestQualityCommon):
                 self.assertEqual(alert.title, "Broken bolts")
 
     def test_display_name_survives_a_nameless_alert(self):
-        """`name` is defaulted, not required; `False + ' - '` is a TypeError."""
         alert = self.env["quality.alert"].new(
             {"name": False, "title": "no sequence yet"}
         )
@@ -513,8 +480,6 @@ class TestCheckCreationCost(TestQualityCommon):
         return len(seen)
 
     def test_a_periodical_point_is_asked_once_for_the_whole_batch(self):
-        """Its answer reads this point's own checks, and nothing is flushed
-        between the lines, so it cannot change inside one confirm."""
         self._point(
             measure_frequency_type="periodical",
             repeat_unit="day",
@@ -530,12 +495,6 @@ class TestCheckCreationCost(TestQualityCommon):
         )
 
     def test_a_random_point_is_drawn_once_per_line(self):
-        """`random` is a trial per prospective check.
-
-        Settling it once for the batch makes a whole transfer share a single
-        coin flip -- measured while writing this: 1 draw, 12 checks, where
-        there should have been 12 draws and 6 checks.
-        """
         self._point(measure_frequency_type="random", measure_frequency_value=50.0)
         picking = self._receipt(12, "RAND")
         draws = []
@@ -554,8 +513,6 @@ class TestCheckCreationCost(TestQualityCommon):
         self.assertEqual(len(picking.check_ids), 6, "half the lines, at 50 %")
 
     def test_naming_a_batch_costs_one_search_and_one_draw(self):
-        """`next_by_code` searches *and* draws one value, so naming N records
-        with it cost 2N round trips.  `next_by_code_batch` does each once."""
         self._point(measure_frequency_type="all")
         few, many = self._receipt(4, "SEQA"), self._receipt(20, "SEQB")
 
@@ -576,7 +533,6 @@ class TestCheckCreationCost(TestQualityCommon):
         )
 
     def test_the_creation_path_is_flat_in_the_number_of_lines(self):
-        """Everything it does per line has been hoisted or batched."""
         self._point(measure_frequency_type="all")
         few, many = self._receipt(4, "FLATA"), self._receipt(20, "FLATB")
 

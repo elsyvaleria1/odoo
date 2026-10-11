@@ -13,22 +13,16 @@ class TestSMSComposerComment(SMSCommon, SMSCase):
     test_mail_sms or test_mail_full should be used."""
 
     def test_message_post_sms_vs_notification(self):
-        """Check that the conversion of html to plain text does remove links
-
-        This is necessary when an SMS is sent from message_post with sms type
-        and not from _message_sms. In this case, it can be expected to receive html
-        that should be interpreted as such instead of escaped before being sent.
-        """
         cases = [
             (
-                "Hello there, check this awesome <b>app</b> I found:<br/>https://odoo.com",  # not a `a` link in source
+                "Hello there, check this awesome <b>app</b> I found:<br/>https://odoo.com",
                 '<p>Hello there, check this awesome &lt;b&gt;app&lt;/b&gt; I found:&lt;br/&gt;<a href="https://odoo.com" target="_blank" rel="noreferrer noopener">https://odoo.com</a></p>',
                 "Hello there, check this awesome <b>app</b> I found:<br/>https://odoo.com",
             ),
             (
-                'Hello there, check this awesome <b>app</b> I found:<br/><a href="https://odoo.com">Here</a>',  # a link
+                'Hello there, check this awesome <b>app</b> I found:<br/><a href="https://odoo.com">Here</a>',
                 '<p>Hello there, check this awesome &lt;b&gt;app&lt;/b&gt; I found:&lt;br/&gt;&lt;a href="<a href="https://odoo.com" target="_blank" rel="noreferrer noopener">https://odoo.com</a>"&gt;Here&lt;/a&gt;</p>',
-                'Hello there, check this awesome <b>app</b> I found:<br/><a href="https://odoo.com">Here</a>',  # keep all information
+                'Hello there, check this awesome <b>app</b> I found:<br/><a href="https://odoo.com">Here</a>',
             ),
         ]
 
@@ -53,11 +47,6 @@ class TestSMSComposerComment(SMSCommon, SMSCase):
                 )
 
     def test_message_sms_body_sms_vs_notification(self):
-        """Check that the rendering of the sms notification is identical to the sms.
-
-        The only expected difference is that links are converted to be clickable.
-        The test verifies that MixinMailThread._message_sms() works as expected."""
-        # Cases are formatted as sms text, expected notification body
         cases = [
             (
                 "Hello there, check this awesome app I found:\nhttps://odoo.com",
@@ -68,14 +57,12 @@ class TestSMSComposerComment(SMSCommon, SMSCase):
             ),
             (
                 "Hello there, check this awesome <b>app</b> I found:\nhttps://odoo.com",
-                # b is kept as is in notification, but link is still added as well
                 (
                     "<p>Hello there, check this awesome &lt;b&gt;app&lt;/b&gt; I found:<br>"
                     '<a href="https://odoo.com" target="_blank" rel="noreferrer noopener">https://odoo.com</a></p>'
                 ),
             ),
             (
-                # Here, we check that the sms sent is the sms written.
                 "Hello there, check this awesome <b>app</b> I found:\n*https://odoo.com*",
                 (
                     "<p>Hello there, check this awesome &lt;b&gt;app&lt;/b&gt; I found:<br>"
@@ -105,7 +92,7 @@ class TestSMSComposerComment(SMSCommon, SMSCase):
                         _message_sms_patch as _patched_message_sms,
                     ):
                         messages = composer._action_send_sms()
-                        _patched_message_sms.assert_called()  # make sure we're testing `_message_sms` too
+                        _patched_message_sms.assert_called()
                 self.assertSMSNotification(
                     [{"partner": self.partner_employee}],
                     sms_content,

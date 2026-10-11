@@ -93,8 +93,6 @@ class TestNodeToolchainManifest(BaseCase):
         )
 
     def test_rtlcss_is_a_runtime_dependency(self):
-        # the server runs it to build every RTL stylesheet: a deployment
-        # installing with `npm ci --omit=dev` must still get it
         manifest, _ = self._manifests()
         self.assertIn("rtlcss", manifest["dependencies"])
         self.assertNotIn("rtlcss", manifest["devDependencies"])
@@ -216,9 +214,6 @@ class TestToolchainParticipatesInBundleIdentity(BaseCase):
     def test_the_javascript_minifier_is_part_of_the_identity(self):
         from odoo.addons.base.models.assetsbundle.common import _toolchain_versions
 
-        # rjsmin writes every min.js; an upgrade that changes its output must
-        # move the version, or a cleared attachment table serves a new byte
-        # stream under an old url
         self.assertRegex(_toolchain_versions(), r"rjsmin@\d+\.\d+")
 
     def test_the_sourcemap_generator_is_a_fingerprinted_source(self):

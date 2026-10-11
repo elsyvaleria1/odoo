@@ -130,7 +130,7 @@ class ModuleGraph:
             for name in names:
                 module = self._modules[name] = ModuleNode(name, self)
                 if not module.manifest.get("installable"):
-                    imported = name in self._imported_modules  # debuglog
+                    imported = name in self._imported_modules
                     _debug.logic(
                         "module_graph.not_installable",
                         module=name,
@@ -236,11 +236,11 @@ class ModuleGraph:
         """
         self._cr.execute(query, [list(names)])
         rows = self._cr.fetchall()
-        states: dict[str, int] = {}  # debuglog
+        states: dict[str, int] = {}
         for name, id_, state, demo, db_version in rows:
             if name not in self._modules:
                 continue
-            states[state] = states.get(state, 0) + 1  # debuglog
+            states[state] = states.get(state, 0) + 1
             if state == "uninstallable":
                 _debug.logic("module_graph.skipped", module=name, state=state)
                 _logger.warning("module %s: not installable, skipped", name)
@@ -260,9 +260,6 @@ class ModuleGraph:
             module.load_state = state
         _debug.pipeline(
             "module_graph.database_states",
-            # one expansion and no fixed keyword beside it: the state names are
-            # database values, so a fixed keyword they happened to match would
-            # raise TypeError from the call machinery, channels off included
             **{
                 "names": len(names),
                 "rows": len(rows),

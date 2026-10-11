@@ -56,10 +56,6 @@ class StockPicking(models.Model):
 
     @api.depends("move_ids.sale_line_id.order_id.picking_policy")
     def _compute_move_type(self) -> None:
-        # the sale dependency also fires when a move joins the picking: one
-        # that already carries moves and a policy keeps it unless a sale
-        # order dictates one, so adding a line never resets the policy to
-        # the picking type's default
         super(
             StockPicking,
             self.filtered(lambda picking: not (picking.move_type and picking.move_ids)),
@@ -82,9 +78,6 @@ class StockPicking(models.Model):
         return False
 
     def _is_replenishment_receipt_step(self) -> bool:
-        # What an MTO sale triggers upstream -- a vendor purchase, an inter-company or
-        # inter-warehouse resupply -- shares the sale's reference. Its receipt, and any
-        # internal step fed by it, belongs to that replenishment, not to the sale.
         self.check_singleton()
         moves = self.move_ids
         visited = self.env["stock.move"]

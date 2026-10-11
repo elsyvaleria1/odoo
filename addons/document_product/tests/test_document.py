@@ -67,9 +67,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         )
 
     def test_bridge_folder_product_settings_on_write(self):
-        """
-        Makes sure the settings apply their values when a document is assigned a res_model, res_id.
-        """
         self.company_test.write({"documents_product_settings": True})
 
         self.attachment_gif_two.write(
@@ -98,14 +95,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         )
 
     def _products_search(self, record, field_name):
-        """
-        Make sure the search documents based on product/product template.
-        Test Flow:
-            -  Actived  Centralize files attached to products
-            -  Upload three documents in the product/product template
-            -  Search a document based on the product/product template
-            -  Check search document and expected document
-        """
         self.company_test.write({"documents_product_settings": True})
         self.attachment_gif_two.write(
             {
@@ -130,9 +119,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
             [("res_id", "in", record.ids), ("res_model", "=", record._name)], order="id"
         )
         docs.flush_recordset()
-        # A document this test owns that is linked to no product, so the "no
-        # related product" case asserts against a known record instead of
-        # against every document in the database.
         unlinked_doc = self.env["document.document"].create(
             {
                 "name": "unlinked.txt",
@@ -146,10 +132,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
                 .id,
             }
         )
-        # Every expectation below is scoped to the documents this test created.
-        # Asserting against the whole table made the suite depend on demo data
-        # and on any other producer of product-linked documents: seeding a
-        # single product-linked document turned five of these subtests red.
         owned = Domain("id", "in", (docs | unlinked_doc).ids)
         cases = [
             ([(field_name, "ilike", "template")], docs[0:2]),
@@ -196,10 +178,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         return self._products_search(products, "product_id")
 
     def test_bridge_folder_product_settings_default_company(self):
-        """
-        Makes sure the settings apply their values when a document is assigned a res_model, res_id but when
-        the product/template doesn't have a company_id.
-        """
         company_test = self.env["res.company"].create(
             {
                 "name": "test bridge products two",
@@ -212,7 +190,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
                 "name": "documents test documents user",
                 "login": "dtdu",
                 "email": "dtdu@yourcompany.com",
-                # group_system is used as it is required to write on product.product and product.template
                 "group_ids": [
                     (
                         6,
@@ -268,9 +245,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         )
 
     def test_default_res_id_model(self):
-        """
-        Test default res_id and res_model from context are used for document creation.
-        """
         self.company_test.write({"documents_product_settings": True})
 
         attachment = (
@@ -312,13 +286,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         self.assertEqual(new_product.image_1920, document_gif.datas)
 
     def test_product_search_does_not_confuse_id_one_with_the_any_sentinel(self):
-        """A product id of 1 must not be read as the "any product" sentinel.
-
-        `_search_related_product_field` uses `True` to mean "linked to any
-        product". `True == 1` in Python, so testing that sentinel by membership
-        made the real id 1 trigger it and dropped the id from the value set,
-        widening the search to every product-linked document.
-        """
         Document = self.env["document.document"]
         first, last = self.env["product.template"].create(
             [
@@ -326,11 +293,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
                 {"name": "sentinel_last"},
             ]
         )
-        # `last` is created after `first`, so its id is at least 2 and can never
-        # be the colliding id 1. A domain naming only 1 and `first` must
-        # therefore exclude its document, whatever ids the database hands out -
-        # asserting "no document matches id 1" would pass vacuously on a fresh
-        # database, where these fixtures themselves can occupy the low ids.
         documents = Document.create(
             [
                 {
@@ -369,12 +331,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         )
 
     def test_create_product_template_requires_a_document(self):
-        """An empty recordset must not leave a stray product behind.
-
-        The product.template was created before the method looked at `self`, so
-        calling it on an empty recordset created a product named "Product
-        created from Documents" and returned an action opening it.
-        """
         Template = self.env["product.template"]
         before = Template.search_count([])
         with self.assertRaises(UserError):
@@ -387,12 +343,6 @@ class TestCaseDocumentsBridgeProduct(TransactionCase):
         )
 
     def test_create_product_template_ignores_the_caller_defaults(self):
-        """Documents' own `default_*` context keys must not reach the product.
-
-        The create ran in the caller's context, so `default_type='folder'` - a
-        valid document.document type, not a product one - raised a ValueError,
-        and `default_active=False` created the product archived and invisible.
-        """
         document = self.env["document.document"].create(
             {
                 "name": "spec.txt",

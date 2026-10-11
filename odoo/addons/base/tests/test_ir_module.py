@@ -458,9 +458,6 @@ class IrModuleDescriptionRenderingCase(TransactionCase):
         saved = os.dup(2)
         os.dup2(write_fd, 2)
         os.close(write_fd)
-        # the root handler is a StreamHandler on stderr too: any log line
-        # emitted inside the window (a DEBUG channel switched on) would be
-        # read as a docutils leak
         logging.disable(logging.CRITICAL)
         try:
             module.invalidate_recordset(["description_html"])

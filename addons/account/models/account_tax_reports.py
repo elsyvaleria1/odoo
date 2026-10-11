@@ -119,10 +119,6 @@ class AccountTaxUnit(models.Model):
     @api.depends("company_ids")
     @_debug.perf.timed
     def _compute_fpos_synced(self) -> None:
-        # The real input is every company partner's property_account_position_id, which
-        # no @api.depends can reach: it is company-dependent, on arbitrary partners.
-        # Whatever writes those positions has to invalidate this field -- see
-        # action_sync_unit_fiscal_positions.
         all_companies = self.env["res.company"].search([])
         for unit in self:
             synced = True
@@ -150,15 +146,6 @@ class AccountTaxUnit(models.Model):
             unit.fpos_synced = synced
 
     def _get_tax_unit_fiscal_positions(self, companies, create_or_refresh=False):
-        """Retrieve or create fiscal positions for all companies specified.
-
-        :param companies: companies for which to find/create fiscal positions
-        :param create_or_refresh: whether the fiscal positions should be created if not found
-        :return: all the fiscal positions found/created for the companies requested
-        :rtype: recordset of account.fiscal.position
-        """
-        # These fiscal positions have no taxes, so this could probably be simplified
-        # (as refresh makes no sense anymore).
         fiscal_positions = self.env["account.fiscal.position"].with_context(
             allowed_company_ids=self.env.user.company_ids.ids
         )
@@ -201,13 +188,10 @@ class AccountTaxUnit(models.Model):
                     company
                 ).partner_id.property_account_position_id = fp
 
-        # fpos_synced reads the positions just written, and depends on company_ids alone,
-        # so without this the flag keeps the value it had before the sync ran.
         self.invalidate_recordset(["fpos_synced"])
 
     @_debug.perf.timed
     def unlink(self):
-        # EXTENDS base
         _debug.lifecycle("unlink", unlink=self)
         self._get_tax_unit_fiscal_positions(
             companies=self.env["res.company"].search([])

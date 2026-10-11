@@ -6,8 +6,6 @@ def migrate(cr, version):
         cr, "telegram_bot", "statement_company_id"
     ):
         return
-    # the statements company is the bot's company now: a bot that printed for
-    # a company of its own speaks for it
     cr.execute(
         """
         UPDATE telegram_bot

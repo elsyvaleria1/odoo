@@ -24,10 +24,6 @@ class PurchaseOrder(models.Model):
     )
     def _compute_is_above_budget(self) -> None:
         for order in self:
-            # Scoped per budget.line id, not summed order-wide: several lines
-            # can legitimately share one budget (their contributions must add
-            # up), but a line's uncommitted amount must never count against a
-            # budget none of its own budget_line_ids point to.
             uncommitted_by_budget_id = defaultdict(float)
             for line in order.line_ids:
                 if not line.budget_line_ids:

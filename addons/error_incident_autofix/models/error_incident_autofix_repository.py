@@ -11,15 +11,11 @@ from odoo.tools import frozendict
 
 from odoo.addons.integration_github.tools import repository_domain
 
-# github.com itself -- after `//`, `@` or nothing, never `notgithub.com`; `www.`
-# or an ssh host alias (`github.com-odoo`) allowed -- with an ssh port or not,
-# then owner/name
 _logger = logging.getLogger(__name__)
 
 _GITHUB_REMOTE = re.compile(
     r"(?:^|[/@])(?:www\.)?github\.com(?:-[\w.-]+)?(?::\d+)?[:/]+"
     r"([\w.-]+/[\w.-]+?)(?:\.git)?/*$",
-    # ASCII: a dotless i is another host, not GitHub in other case
     re.IGNORECASE | re.ASCII,
 )
 
@@ -29,8 +25,6 @@ class OriginUnreadable(Exception):
 
 
 def _checkout_root(module: str) -> Path | None:
-    """The working tree ``module`` lives in: the nearest directory holding a
-    ``.git`` -- a directory in a clone, a file in a worktree."""
     if not module:
         return None
     path = (
@@ -47,11 +41,6 @@ def _checkout_root(module: str) -> Path | None:
 
 
 def origin_url(root: Path) -> str | None:
-    """The URL a working tree's `origin` fetches from, as git itself resolves
-    it -- includes, `insteadOf`, a worktree's shared config -- or ``None``
-    when there is no origin; `OriginUnreadable` when git cannot tell -- not
-    installed, timed out, refusing the tree. No network: `--get-url` only reads
-    the config."""
     try:
         done = subprocess.run(
             ["git", "-C", str(root), "ls-remote", "--get-url", "origin"],
@@ -70,12 +59,10 @@ def origin_url(root: Path) -> str | None:
     if done.returncode:
         raise OriginUnreadable(done.stderr.strip()[-300:])
     url = done.stdout.strip()
-    # git answers the remote's own name when there is no such remote
     return url if url and url != "origin" else None
 
 
 def github_repository_of(url: str) -> str | None:
-    """``owner/name`` of the GitHub repository ``url`` names, or ``None``."""
     remote = _GITHUB_REMOTE.search(url)
     return remote.group(1) if remote else None
 
@@ -116,19 +103,12 @@ class ErrorIncidentAutofixRepository(models.Model):
     )
 
     def _for_module(self, module: str) -> ErrorIncidentAutofixRepository:
-        """The repository of the checkout ``module`` lives in: by the GitHub
-        repository its ``origin`` fetches from, which names it wherever it is
-        cloned; by the checkout's directory name only when it has no origin.
-        An origin that is no mapped GitHub repository -- a fork, another host
-        -- is no repository's."""
         root = _checkout_root(module)
         if root is None:
             return self.browse()
         try:
             url = origin_url(root)
         except OriginUnreadable as error:
-            # unknown is not "no origin": its directory's name could name
-            # another repository
             _logger.warning("The origin of %s cannot be read: %s", root, error)
             return self.browse()
         if url is None:

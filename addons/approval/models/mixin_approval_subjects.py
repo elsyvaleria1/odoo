@@ -34,7 +34,6 @@ class MixinApprovalSubjects(models.AbstractModel):
     )
 
     def _get_approval_subject_category(self, subject_key: str):
-        """The category a request for `subject_key` belongs to."""
         raise NotImplementedError
 
     def _prepare_approval_subject_request_values(
@@ -54,7 +53,6 @@ class MixinApprovalSubjects(models.AbstractModel):
         return vals
 
     def _search_subject_approval_requests(self, domain=(), limit=None):
-        """These records' subject requests matching `domain`, latest first."""
         return (
             self.env["approval.request"]
             .sudo()
@@ -69,7 +67,6 @@ class MixinApprovalSubjects(models.AbstractModel):
         )
 
     def _get_approval_request(self, subject_key: str):
-        """The latest request raised for `subject_key`, whatever its state."""
         self.check_singleton()
         request = self._search_subject_approval_requests(
             [("subject_key", "=", subject_key)], limit=1
@@ -88,10 +85,6 @@ class MixinApprovalSubjects(models.AbstractModel):
         return request if request.state in LIVE_REQUEST_STATES else request.browse()
 
     def _raise_approval_request(self, subject_key: str):
-        """Raise and submit the request for `subject_key`, as the current user.
-
-        Refused while a request for the same subject is still waiting.
-        """
         self.check_singleton()
         if self._get_live_approval_request(subject_key):
             trace.REFUSAL.event(
@@ -156,9 +149,7 @@ class MixinApprovalSubjects(models.AbstractModel):
         return super().unlink()
 
     def _on_approval_subject_state_changed(self, request, new_state: str) -> None:
-        """`request`, raised for one of this record's subjects, reached `new_state`."""
         self.check_singleton()
 
     def _on_approval_subject_progress(self, request) -> None:
-        """A decision met a step of `request`, which is still pending."""
         self.check_singleton()

@@ -171,7 +171,6 @@ class TestMonsterIntegration(TransactionCase):
 
         with (
             freeze_time(self.today + timedelta(days=2)),
-            # Patch API call as it complains with the freeze_time
             self.patch_post_api_call(),
             self.sync_env_with_side_cursors(),
         ):
@@ -192,7 +191,6 @@ class TestMonsterIntegration(TransactionCase):
         self.assertEqual(job_post.status, "success")
         with (
             freeze_time(self.today + timedelta(days=2)),
-            # Patch API call as it complains with the freeze_time
             self.patch_post_api_call(),
             self.sync_env_with_side_cursors(),
         ):
@@ -206,7 +204,6 @@ class TestMonsterIntegration(TransactionCase):
 class TestMockupMonsterIntegration(TestMonsterIntegration):
     @contextmanager
     def patch_monster_requests(self):
-        """Mock context for requests to the Monster.com API"""
 
         class MockedClient:
             class Service:

@@ -20,7 +20,6 @@ class PosOrderLine(models.Model):
         return params
 
     def _prepare_tax_base_line_values(self):
-        # We don't want to create tax lines for settled and deposit orderlines (except on invoice to appear on it)
         if self.env.context.get("invoicing"):
             return super()._prepare_tax_base_line_values()
         lines = self.filtered(lambda line: not line._is_settle_or_deposit())

@@ -72,8 +72,6 @@ def is_constraint(func) -> bool:
     return callable(func) and hasattr(func, "_constrains")
 
 
-# Mirrors the predicate in odoo/orm/models/mixins/_constraints.py
-# (_constraint_methods), which only logs: keep the two in step.
 def is_writeable_by_constraint(field) -> bool:
     return bool(field.store or field.inverse or field.inherited or field.related)
 

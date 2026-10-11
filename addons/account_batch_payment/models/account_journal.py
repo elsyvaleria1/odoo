@@ -28,7 +28,6 @@ class AccountJournal(models.Model):
                 "number_increment": 1,
                 "use_date_range": True,
                 "prefix": "BATCH/OUT/%(year)s/",
-                # by default, share the sequence for all companies
                 "company_id": False,
             }
         )
@@ -49,7 +48,6 @@ class AccountJournal(models.Model):
                 "number_increment": 1,
                 "use_date_range": True,
                 "prefix": "BATCH/IN/%(year)s/",
-                # by default, share the sequence for all companies
                 "company_id": False,
             }
         )

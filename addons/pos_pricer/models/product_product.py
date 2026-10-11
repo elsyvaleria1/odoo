@@ -36,15 +36,10 @@ class ProductProduct(models.Model):
         help="This product will be linked to and displayed on the Pricer tags with ids listed here. It is recommended to use a barcode scanner",
     )
 
-    # Boolean to checker whether we need to create/update this product in Pricer db
     pricer_product_to_create_or_update = fields.Boolean(default=False)
 
-    # String representing price including taxes
-    # Used in requests sent to the Pricer API and displayed on tags
     pricer_display_price = fields.Char()
 
-    # for now, we don't handle pricelists available for quantities > 1, neither those based on 'formulas based on
-    # other pricelists'
     pricer_sale_pricelist_id = fields.Many2one(
         comodel_name="product.pricelist",
         string="Pricer Sales Pricelist",
@@ -68,9 +63,6 @@ class ProductProduct(models.Model):
     def compute_prices(self, on_sale=False):
         currency = self.currency_id
         price = self.on_sale_price if on_sale else self.lst_price
-        # `taxes_id` carries every company's default sale tax on purpose (see
-        # product.template._force_default_tax in `account`), so a label price has
-        # to be computed from the active company's subset alone.
         taxes = self.taxes_id._filter_taxes_by_company(self.env.company)
         if not taxes:
             return float_repr(price, currency.decimal_places)
@@ -91,10 +83,6 @@ class ProductProduct(models.Model):
             )
 
     def _acquire_pricer_product_payload(self) -> dict:
-        """
-        If the product related to a pricer tag needs to be updated:
-         - we need to add its data to the JSON body used in create/update request
-        """
         variants = [
             ",".join(record.product_attribute_value_id.mapped("name"))
             for record in self.product_template_variant_value_ids
@@ -118,7 +106,7 @@ class ProductProduct(models.Model):
             "price": self.pricer_display_price,
             "presentation": "PROMO"
             if self.pricer_sale_pricelist_id
-            else "NORMAL",  # template name used on pricer tags
+            else "NORMAL",
             "properties": {
                 "currency": self.currency_id.symbol,
                 "barcode": self.barcode or "",
@@ -132,11 +120,6 @@ class ProductProduct(models.Model):
         }
 
     def write(self, vals):
-        """
-        Called whenever we update a product variant and click "save"
-        If Pricer related fields are changed,
-        We need to send the new information to Pricer API to display it
-        """
         if any(val in PRICER_RELATED_FIELDS for val in vals):
             vals["pricer_product_to_create_or_update"] = True
 
@@ -148,7 +131,6 @@ class ProductProduct(models.Model):
 
     @api.onchange("pricer_sale_pricelist_id", "lst_price")
     def _onchange_compute_pricing(self) -> None:
-        # We use '._origin' to avoid getting a NewId (as the record is in a transient state) instead of id
         for product in self:
             if product.pricer_sale_pricelist_id:
                 product._origin.lst_price = product.lst_price

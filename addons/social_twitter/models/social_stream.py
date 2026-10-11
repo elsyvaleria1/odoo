@@ -16,7 +16,6 @@ class SocialStream(models.Model):
     twitter_searched_keyword = fields.Char(string="Search Keyword")
     twitter_followed_account_search = fields.Char(string="Search User")
     twitter_account_user_id = fields.Char(related="account_id.twitter_user_id")
-    # TODO awa: clean unused 'social.twitter.account' in a cron job
     twitter_followed_account_id = fields.Many2one(comodel_name="social.twitter.account")
 
     @api.constrains("stream_type_id", "twitter_followed_account_id")
@@ -99,7 +98,6 @@ class SocialStream(models.Model):
         tweets_endpoint_url = url_join(
             self.env["social.media"]._TWITTER_ENDPOINT, endpoint_name
         )
-        # TODO awa: check the "TE" header (Transfer-Encoding) to get a (smaller) gzip response
         headers = self.account_id._get_twitter_oauth_header(
             tweets_endpoint_url,
             params=query_params,
@@ -121,11 +119,7 @@ class SocialStream(models.Model):
                 response.text,
                 self.account_id.id,
             )
-            # an error occurred
             if "Not authorized" in result.get("title", ""):
-                # no error code is returned by the Twitter API in that case
-                # it's probably because the Twitter account we tried to add
-                # is private
                 error_message = self.env._(
                     "You cannot create a Stream from this X account.\n"
                     "It may be because it's protected. To solve this, please make sure you follow it before trying again."
@@ -133,7 +127,6 @@ class SocialStream(models.Model):
             elif response.status_code == 400 and result.get("errors", [{}])[0].get(
                 "parameters", {}
             ).get("query"):
-                # invalid query
                 error_message = self.env._(
                     "The keyword you've typed in does not look valid. Please try again with other words."
                 )
@@ -172,7 +165,6 @@ class SocialStream(models.Model):
             tweet.twitter_tweet_id: tweet for tweet in existing_tweets
         }
 
-        # TODO awa: handle deleted tweets ?
         tweets_to_create = []
 
         users_per_id = {
@@ -210,7 +202,6 @@ class SocialStream(models.Model):
                 "twitter_profile_image_url": user_info.get("profile_image_url"),
             }
 
-            # Handle quote and retweet
             referenced_tweets = tweet.get("referenced_tweets", [])
             if referenced_tweets and referenced_tweets[0]["type"] == "retweeted":
                 values["twitter_retweeted_tweet_id_str"] = referenced_tweets[0]["id"]
@@ -249,9 +240,6 @@ class SocialStream(models.Model):
                         )
                     ].get("username", self.env._("Unknown"))
                     values["message"] = unescape(f"RT @{username}: {origin_tweet_msg}")
-                # For retweets, it is more interesting to know the likes number of the actual post
-                # instead of the retweet. As this number is less likely to change a lot, contrary to
-                # the original post.
                 retweet_like_count = (
                     quote_and_retweet_per_ids.get(retweets[0].get("id"), {})
                     .get("public_metrics", {})
@@ -264,7 +252,6 @@ class SocialStream(models.Model):
             if existing_tweet:
                 existing_tweet.sudo().write(values)
             else:
-                # attachments are only extracted for new posts
                 values.update(self._extract_twitter_attachments(tweet, medias_per_id))
                 tweets_to_create.append(values)
 

@@ -60,8 +60,6 @@ class _ZipLocalEntry(NamedTuple):
 
 
 def _zip_local_entries(data: bytes) -> Iterator[_ZipLocalEntry]:
-    # the local headers in archive order: all a caller holding only the head
-    # of a file can read, the central directory being at its end
     offset = 0
     end = len(data) - _ZIP_LOCAL_HEADER.size
     while offset <= end and data.startswith(_ZIP_LOCAL_SIGNATURE, offset):
@@ -95,9 +93,6 @@ _ZIP_CENTRAL_SIGNATURE = b"PK\x01\x02"
 
 
 def _zip_central_directory(data: bytes) -> tuple[int, int] | None:
-    # where the central directory starts and how many entries it lists,
-    # measured back from the end record, so data prepended to the archive
-    # moves nothing
     end = data.rfind(_ZIP_END_SIGNATURE, max(len(data) - _ZIP_END_SEARCH, 0))
     if end < 0 or end + _ZIP_END.size > len(data):
         return None
@@ -133,16 +128,12 @@ def _zip_central_names(data: bytes, position: int, count: int) -> Iterator[bytes
 
 
 def _zip_names(data: bytes) -> Iterator[bytes]:
-    # the central directory when the data reaches the end of the archive,
-    # else the local headers its head holds
     if (directory := _zip_central_directory(data)) is None:
         return (entry.name for entry in _zip_local_entries(data))
     return _zip_central_names(data, *directory)
 
 
 def _get_ooxml_mimetype(data: bytes) -> str | None:
-    # the first part directory in archive order names the document, so the
-    # scan ends on the entries every Office writer puts first
     typed = False
     mimetype: str | None = None
     for name in _zip_names(data):
@@ -164,9 +155,6 @@ _OPEN_CONTAINER_MIMETYPE = re.compile(
 
 
 def _get_open_container_mimetype(data: bytes) -> str | None:
-    # ODF and EPUB store their type uncompressed as the first entry; a
-    # "mimetype" entry anywhere else, or naming another type, is only a zip
-    # saying what it wants to be served as
     first = next(_zip_local_entries(data), None)
     if (
         first is None
@@ -221,8 +209,6 @@ class _OlecfEntry(NamedTuple):
 
 
 def _olecf_directory(data: bytes) -> Iterator[_OlecfEntry]:
-    # the directory sectors the data holds, by the header's FAT chain: a
-    # caller holding only the head of a large file may reach none
     if len(data) < 0x200:
         return
     shift = int.from_bytes(data[0x1E:0x20], "little")
@@ -250,8 +236,6 @@ def _olecf_directory(data: bytes) -> Iterator[_OlecfEntry]:
 
 
 def _olecf_root_streams(data: bytes) -> set[bytes]:
-    # only the root storage's own streams: a document embedding another
-    # keeps the embedded one's streams under a storage of its own
     entries = list(_olecf_directory(data))
     if not entries or entries[0].kind != _OLECF_ROOT:
         return set()
@@ -299,7 +283,6 @@ _BMP_DIB_HEADER_SIZES = frozenset({12, 40, 52, 56, 64, 108, 124})
 
 
 def _get_bmp_mimetype(data: bytes) -> str | None:
-    # "BM" alone opens any text starting with those letters
     if len(data) >= 18 and data[6:10] == b"\0\0\0\0":
         if int.from_bytes(data[14:18], "little") in _BMP_DIB_HEADER_SIZES:
             return "image/bmp"
@@ -310,13 +293,6 @@ _MARKUP_START = re.compile(
     rb"<(?:\?xml|!--|!DOCTYPE|[A-Za-z_][\w.:-]*[\s/>])", re.IGNORECASE
 )
 _HTML_START = re.compile(rb"<(?:!DOCTYPE\s+html|html[\s>])", re.IGNORECASE)
-# the root element, past the prolog; each loop is possessive and each
-# alternative unambiguous, so a prolog that never closes is read once, and
-# each loop is unrolled around a character class, which the engine runs
-# without stepping a group per byte. A doctype is read token by token, its
-# literals and the declarations of its subset quoting "]" and ">" freely;
-# past the literals it is as lenient as a sloppy editor, which the parser
-# is not
 _SVG_ROOT = re.compile(
     rb"""
     (?:
@@ -347,7 +323,6 @@ _SVG_ROOT = re.compile(
     """,
     re.VERBOSE,
 )
-# UTF-32 before UTF-16: the UTF-32-LE mark opens on the UTF-16-LE one
 _WIDE_BOMS = (
     (codecs.BOM_UTF32_LE, "utf-32-le"),
     (codecs.BOM_UTF32_BE, "utf-32-be"),
@@ -357,13 +332,8 @@ _WIDE_BOMS = (
 _MARKUP_LEADING_SPACE = b"\t\n\x0b\x0c\r "
 _LEADING_SPACE = re.compile(rb"[\t\n\x0b\x0c\r ]*+")
 _OPENS_ON_MARKUP = re.compile(rb"\s*+(?:<|\Z)")
-# the parser reads all it is fed: a window growing from a few lines finds a
-# root near the top cheaply, and a long prolog in few feeds
 _MARKUP_FIRST_WINDOW = 1 << 8
 _MARKUP_LAST_WINDOW = 1 << 16
-# libxml2 builds every attribute of a start tag before it reports the tag, at
-# some thirty bytes of memory per byte of tag: the parser is fed this much of
-# the markup and no more, which no image's prolog outgrows
 _SVG_ROOT_BUDGET = 1 << 18
 
 
@@ -387,8 +357,6 @@ def opens_on_markup(head: bytes) -> bool:
 
 
 def _markup_start(data: bytes) -> tuple[int, str]:
-    # where the markup begins, past its byte order marks and, in UTF-8, the
-    # space before it, so a budget counts markup only
     start = _utf8_bom_length(data)
     if wide := _wide_bom(data, start):
         return start + len(wide[0]), wide[1]
@@ -397,8 +365,6 @@ def _markup_start(data: bytes) -> tuple[int, str]:
 
 
 def _markup_text(data: bytes, start: int, encoding: str) -> Iterator[str]:
-    # decoded a window at a time, so the parse reading it stops a text that
-    # is no markup at its first window rather than after decoding all of it
     decoder = codecs.getincrementaldecoder(encoding)(errors="replace")
     leading = True
     offset, window = start, _MARKUP_FIRST_WINDOW
@@ -414,8 +380,6 @@ def _markup_text(data: bytes, start: int, encoding: str) -> Iterator[str]:
 
 
 def _root_tag(data: bytes) -> str | Literal[False] | None:
-    # the root element's tag; False when the markup breaks or ends before a
-    # root, None when the budget runs out before one begins
     from lxml import etree
 
     start, encoding = _markup_start(data)
@@ -429,7 +393,6 @@ def _root_tag(data: bytes) -> str | Literal[False] | None:
             if (event := next(parser.read_events(), None)) is not None:
                 return event[1].tag
     except etree.XMLSyntaxError:
-        # an error past the root's start tag, in the window that held it
         event = next(parser.read_events(), None)
         return False if event is None else event[1].tag
     return None if len(data) > end else False
@@ -440,9 +403,6 @@ def _is_svg_tag(tag: str | Literal[False] | None) -> bool:
 
 
 def _svg_by_prolog(data: bytes) -> bool:
-    # a UTF-8 source is read whole, the grammar being linear; a wide one is
-    # decoded only as far as the parser reads, and a prolog the parser
-    # refuses past that is no svg a browser renders
     start, encoding = _markup_start(data)
     if encoding != "utf-8":
         window = data[start : start + _SVG_ROOT_BUDGET]
@@ -451,10 +411,6 @@ def _svg_by_prolog(data: bytes) -> bool:
 
 
 def _svg_verdict(data: bytes) -> bool | None:
-    # what either the prolog grammar or the parser roots in an svg is one: a
-    # browser renders what the parser reads, and an SVG a sloppy editor wrote
-    # is still meant as an image. None: the parser's budget ran out before
-    # the root began, and only the caller knows which answer is safe
     if not opens_on_markup(data):
         return False
     if _svg_by_prolog(data):
@@ -469,9 +425,6 @@ def is_svg(data: bytes, *, undecided: bool = False) -> bool:
 
 
 def _markup_heads(data: bytes) -> tuple[bytes, bytes]:
-    # the head the byte patterns read, decoded out of UTF-16 and UTF-32, and
-    # the head the XML parser reads, still in the encoding its declaration
-    # names
     start = _utf8_bom_length(data)
     data = data[start : start + MIMETYPE_HEAD_SIZE]
     if wide := _wide_bom(data):
@@ -501,15 +454,10 @@ def _is_xml(head: bytes, *, complete: bool, prolog: bool) -> bool:
     events = {event for event, _element in parser.read_events()}
     if complete:
         return "start" in events
-    # an unclosed start tag is a valid prefix of XML and of "<alice> hi"
-    # alike: a cut head is XML only on what prose does not write
     return prolog or not events.isdisjoint(("end", "start-ns"))
 
 
 def _get_markup_mimetype(data: bytes) -> str | None:
-    # a head is judged as a prefix, so a caller holding only the head and one
-    # holding the whole file get one answer; only a shorter input is known
-    # to end where it ends
     head, xml_head = _markup_heads(data)
     complete = len(data) < MIMETYPE_HEAD_SIZE
     if _HTML_START.match(head):
@@ -529,8 +477,6 @@ class _Entry(NamedTuple):
     mimetype: str
     signatures: list[bytes]
     discriminants: list[Callable[[bytes], str | bool | None]]
-    # False when the signature is too weak to name the type by itself: an entry
-    # none of whose discriminants answers leaves the data to later entries
     decisive: bool = True
 
 
@@ -642,8 +588,6 @@ _JSON_CLOSES = {"{": "}", "[": "]"}
 
 
 def _is_json_prefix(text: str) -> bool:
-    # a hand-walked grammar, since the stdlib parses only a whole document:
-    # every token must be where JSON allows it, and the last may be cut
     stack: list[str] = []
     expect = "value"
     position = 0
@@ -751,9 +695,6 @@ def guess_mimetype(
     return resolved or mimetype
 
 
-# libmagic says only "text" or "XML" for markup it does not place (a leading
-# newline, UTF-16), and "text/xml" where the signature table says the RFC 7303
-# name: its answer is refined by the same markup sniff
 _MAGIC_GENERIC_TEXT = frozenset({"text/plain", "text/xml", _XML_MIMETYPE})
 
 
@@ -767,8 +708,6 @@ def _probe_mimetype(bin_data: bytes, default: str) -> str:
             mimetype = _XML_MIMETYPE
     if mimetype == UNKNOWN_MIMETYPE:
         return _probe_mimetype_by_signature(bin_data, default)
-    # the signature table runs these as discriminants already: only a
-    # container libmagic named is opened here
     if mimetype in OLECF_MIMETYPES:
         try:
             if msoffice_mimetype := _get_olecf_mimetype(bin_data):
@@ -855,8 +794,6 @@ _UNNAMED_TEXT_APPLICATION_MIMETYPES = frozenset(
         "application/x-wine-extension-ini",
     }
 )
-# the system table may name another member of the family first:
-# /etc/mime.types lists .xsl before .xml under application/xml
 _CANONICAL_EXTENSIONS = {"application/xml": ".xml", "text/xml": ".xml"}
 
 
@@ -875,8 +812,6 @@ def fix_filename_extension(filename: str, mimetype: str) -> str:
             or mimetype in _UNNAMED_TEXT_APPLICATION_MIMETYPES
         )
     ):
-        # a script is text too: a sniff saying no more than that vouches only
-        # for an extension no program runs, and .txt defuses any other
         if _has_inert_text_extension(filename):
             return filename
         added = ".txt"

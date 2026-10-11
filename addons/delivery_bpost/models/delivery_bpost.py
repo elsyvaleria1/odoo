@@ -26,16 +26,7 @@ class DeliveryCarrier(models.Model):
             )
         },
     )
-    # Fields required to configure
     bpost_account_number = fields.Char(groups="base.group_system")
-    # A door onto `carrier_credential_id` (ADR-0081), landing in the vault's
-    # native `password`. The ACCOUNT NUMBER beside it stays a plain column: it
-    # goes into request URLs, so it is an identifier rather than a secret, and it
-    # was never on the backlog.
-    #
-    # `custom` rather than `basic_auth` for the category, because basic_auth
-    # requires a username too and the thing that plays that role here is the
-    # account number, which is deliberately not in the vault.
     _CREDENTIAL_FIELDS = {"bpost_developer_password": "password"}
 
     bpost_developer_password = fields.Char(
@@ -258,10 +249,6 @@ class DeliveryCarrier(models.Model):
         return f"http://track.bpost.be/btr/web/#/search?itemCode={tracking_code}&lang=en&postalCode={zip_code}"
 
     def bpost_get_tracking_link(self, picking):
-        # Using similar trick done in easypost, which is supported in the main delivery module.
-        # This looks simpler than in easypost because we don't need to make a request to the api,
-        # we just use the tracking numbers saved in picking.carrier_tracking_ref to generate
-        # the links.
         _debug.logic(
             "carrier_tracking_link",
             provider="bpost",
@@ -330,7 +317,6 @@ class DeliveryCarrier(models.Model):
             raise UserError(check_value)
         shipping = bpost.send_shipping(pickings, self, False, is_return_label=True)
         carrier_tracking_ref = shipping["main_label"]["tracking_codes"]
-        # bpost does not seem to handle multipackage
         logmessage = (
             self.env._("Return shipment created into bpost")
             + Markup("<br/> <b>")

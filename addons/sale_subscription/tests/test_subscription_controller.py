@@ -37,9 +37,6 @@ class TestSubscriptionController(
             lambda rule: rule.plan_id == cls.plan_year
         )
 
-        # FIXME dunno why we need to recreate the test product here when it's 'nearly' identical to
-        # the one in the TestSubscriptionCommon, but some tests fail without it, so keeping it for
-        # now.
         cls.sub_product_tmpl = cls.ProductTmpl.sudo().create(
             {
                 "name": "TestProduct",
@@ -98,7 +95,6 @@ class TestSubscriptionController(
         )
 
         self.partner = self.user.partner_id
-        # Test Subscription
         self.subscription = self.SaleOrder.create(
             {
                 "name": "TestSubscription",
@@ -110,12 +106,11 @@ class TestSubscriptionController(
             }
         )
         self.subscription._onchange_template_id()
-        self.subscription.end_date = False  # reset the end_date
+        self.subscription.end_date = False
         self.subscription_tmpl.flush_recordset()
         self.subscription.flush_recordset()
 
     def _pause_subscription(self, until_date):
-        """method to pause a subscription from protal."""
         data = {
             "access_token": self.subscription.access_token,
             "csrf_token": http.Request.csrf_token(self),
@@ -128,7 +123,6 @@ class TestSubscriptionController(
         )
 
     def _resume_subscription(self):
-        """method to resume a subscription from protal."""
         data = {
             "access_token": self.subscription.access_token,
             "csrf_token": http.Request.csrf_token(self),
@@ -140,7 +134,6 @@ class TestSubscriptionController(
         )
 
     def test_close_contract(self):
-        """Test subscription close"""
         with freeze_time("2021-11-18"):
             self.authenticate(None, None)
             self.subscription.plan_id.user_closable = True
@@ -212,10 +205,6 @@ class TestSubscriptionController(
         )
         legit_user_subscription._portal_get_or_create_token()
         malicious_user_subscription._portal_get_or_create_token()
-        # Payment Token exists/does not exists
-        # Payment Token is accessible to user/not accessible
-        # SO accessible to User/Accessible thanks to the token/Not Accessible (wrong token, no token)
-        # First we check a legit token assignation for a legit subscription.
         self.authenticate("ness", "nessnessness")
         data = {
             "token_id": legit_payment_method.id,
@@ -238,7 +227,6 @@ class TestSubscriptionController(
             "The new token should be saved on the order.",
         )
 
-        # Payment token is inacessible to user but the SO is OK
         self.authenticate("al", "alalalal")
         data = {
             "token_id": legit_payment_method.id,
@@ -255,7 +243,6 @@ class TestSubscriptionController(
             "No token should be saved on the order.",
         )
 
-        # The SO is not accessible but the token is mine
         data = {
             "token_id": stolen_payment_method.id,
             "order_id": legit_user_subscription.id,
@@ -283,7 +270,6 @@ class TestSubscriptionController(
             )
             subscription = self._portal_payment_controller_flow()
             subscription.transaction_ids.unlink()
-            # set automatic invoice and restart
             self.env["ir.config_parameter"].sudo().set_param(
                 "sale.automatic_invoice", "True"
             )
@@ -301,7 +287,7 @@ class TestSubscriptionController(
         subscription._onchange_template_id()
         subscription.sent = True
         subscription._portal_get_or_create_token()
-        signature = "R0lGODdhAQABAIAAAP///////ywAAAAAAQABAAACAkQBADs="  # BASE64 of a simple image
+        signature = "R0lGODdhAQABAIAAAP///////ywAAAAAAQABAAACAkQBADs="
         data = {
             "order_id": subscription.id,
             "access_token": subscription.access_token,
@@ -330,9 +316,8 @@ class TestSubscriptionController(
         self.assertEqual(subscription.next_invoice_date, datetime.date.today())
         self.assertEqual(subscription.state, "done")
         subscription.transaction_ids._create_or_link_to_invoice()
-        subscription.transaction_ids._post_process()  # Create the payment
+        subscription.transaction_ids._post_process()
         self.assertEqual(subscription.invoice_count, 1, "One invoice should be created")
-        # subscription has a payment_token_id, the invoice is created by the flow.
         subscription.invoice_ids.invoice_line_ids.account_id.account_type = "income"
         subscription.invoice_ids.auto_post = "at_date"
         self.env.ref("account.ir_cron_auto_post_draft_entry").method_direct_trigger()
@@ -355,9 +340,8 @@ class TestSubscriptionController(
         subscription._cron_recurring_create_invoice()
         invoices = subscription.invoice_ids.filtered(
             lambda am: am.state in ["draft", "posted"]
-        )  # avoid counting canceled invoices
+        )
         self.assertEqual(len(invoices), 1, "Only one invoice should be created")
-        # test transaction flow when paying from the portal
         self.assertEqual(
             len(subscription.transaction_ids),
             1,
@@ -367,7 +351,7 @@ class TestSubscriptionController(
         url = self._build_url("/my/subscriptions/%s/transaction" % subscription.id)
         amount_to_invoice = (
             subscription.amount_taxinc_to_invoice
-        )  # force a non null amount 2.3
+        )
         data = {
             "access_token": subscription.access_token,
             "landing_route": subscription.get_portal_url(),
@@ -379,13 +363,11 @@ class TestSubscriptionController(
         }
         self.call_jsonrpc(url, data)
         last_transaction_id = subscription.transaction_ids - first_transaction_id
-        # the transaction is associated to the invoice in tx._post_process()
         last_transaction_id._set_done()
         last_transaction_id._post_process()
         self.assertEqual(len(subscription.transaction_ids), 2)
         self.assertEqual(last_transaction_id.sale_order_ids, subscription)
         subscription.invoice_ids.filtered(lambda am: am.state == "draft")._post()
-        # subscription has a payment_token_id, the invoice is created by the flow.
         subscription.invoice_ids.invoice_line_ids.account_id.account_type = "asset_cash"
         subscription.invoice_ids.auto_post = "at_date"
         subscription.transaction_ids._set_done()
@@ -393,13 +375,6 @@ class TestSubscriptionController(
             subscription.next_invoice_date - subscription.plan_id.billing_period
         )
         if last_invoice_date != datetime.date.today():
-            # sometimes, the computed last_invoice_date is different than the start_date at this step.
-            # it happens for example on the 31th of march:
-            # next_invoice_date = 30th of April - billing period = 30th of March
-            # but 31th of March + billing period = 30th of April too.
-            # As this test is only making sure that the invoice is paid, we make sure to register the payment when necessary
-            # registering the payment every time could trigger
-            # UserError: You can't register a payment because there is nothing left to pay on the selected journal items.
             self.env["wizard.account.move.line.pay"].with_context(
                 active_model="account.move", active_ids=subscription.invoice_ids.ids
             ).create(
@@ -434,7 +409,6 @@ class TestSubscriptionController(
         invoice = subscription._create_invoices()
         invoice._post()
         self.assertEqual(invoice.amount_total, 46)
-        # partial refund
         refund_wizard = (
             self.env["wizard.account.move.reverse"]
             .with_context(
@@ -465,7 +439,6 @@ class TestSubscriptionController(
         }
         self.call_jsonrpc(url, data)
         invoice_transactions = subscription.invoice_ids.transaction_ids
-        # the amount should be equal to the last
         self.assertEqual(
             invoice_transactions.amount,
             subscription.amount_total,
@@ -493,12 +466,10 @@ class TestSubscriptionController(
                 subscription._onchange_template_id()
                 subscription.sent = True
                 subscription._portal_get_or_create_token()
-                # test customized /payment/pay route with sale_order_id param
-                # partial amount specified
                 subscription.prepayment_percent = 0.5
                 self.amount = (
                     subscription.amount_total / 2.0
-                )  # self.amount is used to create the right transaction
+                )
                 with MockRequest(self.env):
                     tx_context = CustomerPortal()._prepare_payment_form_context(
                         subscription, is_down_payment=True, payment_amount=self.amount
@@ -518,10 +489,8 @@ class TestSubscriptionController(
                         tx_route=tx_context["transaction_route"], **tx_route_values
                     )
                 tx_sudo = self._get_tx(processing_values["reference"])
-                # make sure to have a token on the transaction. it is needed to test the confirmation flow
                 tx_sudo.token_id = self.payment_token.id
                 self.assertEqual(tx_sudo.sale_order_ids, subscription)
-                # self.assertEqual(tx_sudo.amount, amount)
                 self.assertEqual(tx_sudo.sale_order_ids.transaction_ids, tx_sudo)
 
                 tx_sudo._set_done()
@@ -529,7 +498,7 @@ class TestSubscriptionController(
                     tx_sudo._post_process()
                 self.assertEqual(
                     subscription.state, "done"
-                )  # The prepayment amount was paid
+                )
                 self.assertEqual(subscription.next_invoice_date, datetime.date.today())
                 self.assertEqual(subscription.state, "done")
                 self.assertEqual(
@@ -539,7 +508,6 @@ class TestSubscriptionController(
                     subscription.payment_token_id, "No token should be saved"
                 )
 
-                # Renew subscription and set payment amount as half of the total amount (partial).
                 subscription._create_recurring_invoice()
                 action = subscription.prepare_renewal_order()
                 renewal_so = self.env["sale.order"].browse(action["res_id"])
@@ -547,7 +515,6 @@ class TestSubscriptionController(
                 renewal_so.prepayment_percent = 0.5
                 self.amount = renewal_so.amount_total / 2.0
 
-                # Prepare renewal subscription's payment values.
                 with MockRequest(self.env):
                     tx_context = CustomerPortal()._prepare_payment_form_context(
                         renewal_so, is_down_payment=True, payment_amount=self.amount
@@ -567,7 +534,6 @@ class TestSubscriptionController(
                         tx_route=tx_context["transaction_route"], **tx_route_values
                     )
 
-                # Make sure to have a token on the transaction, it is needed to test the confirmation flow.
                 tx_sudo = self._get_tx(processing_values["reference"])
                 tx_sudo.token_id = self.payment_token.id
                 self.assertEqual(tx_sudo.sale_order_ids, renewal_so)
@@ -576,13 +542,12 @@ class TestSubscriptionController(
                 with mute_logger("odoo.addons.sale.models.payment_transaction"):
                     tx_sudo._post_process()
 
-                # Assert that no token was saved, renewal was sent and only one invoice was registered.
                 self.assertFalse(
                     renewal_so.payment_token_id, "No token should be saved"
                 )
                 self.assertEqual(
                     renewal_so.state, "done"
-                )  # The prepayment amount was paid
+                )
                 self.assertEqual(
                     renewal_so.invoice_count,
                     1,
@@ -594,7 +559,6 @@ class TestSubscriptionController(
                 )
 
     def test_portal_payment_confirmation_email(self):
-        """Check that payment confirmation emails aren't sent for validation transactions."""
 
         def process_notification_data(data):
             tx = self.env["payment.transaction"].search(
@@ -632,7 +596,6 @@ class TestSubscriptionController(
         with patch.object(
             SaleOrder, "_send_mail_order_notification"
         ) as notification_mail_mock:
-            # Log in and save a payment method for a subscription
             self.authenticate(self.portal_user.login, self.portal_user.login)
             tx_response = self.call_jsonrpc(
                 subscription_tx_url,
@@ -649,7 +612,6 @@ class TestSubscriptionController(
                 "Setting a payment token shouldn't send a payment succeeded email",
             )
 
-            # Use saved payment method to pay subscription
             tx_response = self.call_jsonrpc(
                 subscription_tx_url,
                 {
@@ -690,7 +652,6 @@ class TestSubscriptionController(
             "odoo.addons.sale_subscription.models.sale_order.SaleOrder._do_payment",
             wraps=self._mock_subscription_do_payment,
         ):
-            # Create subscription and invoice.
             subscription = self.subscription.create(
                 {
                     "partner_id": self.partner.id,
@@ -702,7 +663,6 @@ class TestSubscriptionController(
             subscription._onchange_template_id()
             subscription.action_confirm()
             invoice = subscription._create_recurring_invoice()
-            # Define test payment token for later assignment.
             test_payment_token = (
                 self.env["payment.token"]
                 .sudo()
@@ -716,7 +676,6 @@ class TestSubscriptionController(
                     }
                 )
             )
-            # Create transaction and process payment while assigning token to subscription.
             tx_context = self._get_payment_context(
                 self._make_http_get_request(
                     f"/my/subscriptions/{subscription.id}",
@@ -741,13 +700,11 @@ class TestSubscriptionController(
             tx_sudo._set_done()
             with mute_logger("odoo.addons.sale.models.payment_transaction"):
                 tx_sudo._post_process()
-            # Ensure token was assigned after completing the payment in invoices route.
             self.assertEqual(
                 subscription.payment_token_id.id,
                 test_payment_token.id,
                 "Token must be assigned to subscription after transaction creation.",
             )
-            # Create transaction with new token without sending invoice_ids in custom_create_values.
             test_payment_token_2 = (
                 self.env["payment.token"]
                 .sudo()
@@ -774,7 +731,6 @@ class TestSubscriptionController(
             tx_sudo = self._create_transaction(**kwargs)
             tx_sudo._post_process()
             tx_sudo._set_done()
-            # Ensure token was not changed after completing the payment in invoices route.
             self.assertEqual(
                 subscription.payment_token_id.id,
                 test_payment_token.id,
@@ -782,7 +738,6 @@ class TestSubscriptionController(
             )
 
     def test_anticipate_period(self):
-        """When the payment is performed on subscription, we always create a new invoice"""
         subscription = self.subscription.create(
             {
                 "partner_id": self.partner.id,
@@ -795,7 +750,7 @@ class TestSubscriptionController(
         subscription.line_ids.price_unit = 10
         subscription.action_confirm()
         inv1 = subscription._create_invoices()
-        inv1._post()  # we won't pay it
+        inv1._post()
         existing_tx = subscription.transaction_ids
         data = {
             "access_token": subscription.access_token,
@@ -833,7 +788,6 @@ class TestSubscriptionController(
         )
 
     def test_controller_reopen_subscription(self):
-        """When the payment is performed on subscription, we always create a new invoice"""
         with freeze_time("2024-01-01"):
             subscription = self.subscription.create(
                 {
@@ -901,16 +855,13 @@ class TestSubscriptionController(
             )
 
     def test_close_at_date_contract(self):
-        """
-        Test the closing of a subscription at a specific date.
-        """
         with freeze_time("2021-11-17"):
             self.authenticate(None, None)
             self.subscription.plan_id.user_closable = True
             self.subscription.plan_id.user_closable_options = "at_date"
             self.subscription.action_confirm()
             inv1 = self.subscription._create_invoices()
-            inv1._post()  # We won't pay it
+            inv1._post()
 
         with freeze_time("2021-11-18"):
             close_reason_id = self.env.ref("sale_subscription.close_reason_1")
@@ -943,16 +894,13 @@ class TestSubscriptionController(
             )
 
     def test_close_end_of_period_contract(self):
-        """
-        Test the closing of a subscription at the end of the period.
-        """
         with freeze_time("2021-11-17"):
             self.authenticate(None, None)
             self.subscription.plan_id.user_closable = True
             self.subscription.plan_id.user_closable_options = "end_of_period"
             self.subscription.action_confirm()
             inv1 = self.subscription._create_invoices()
-            inv1._post()  # We won't pay it
+            inv1._post()
 
         with freeze_time("2021-11-18"):
             close_reason_id = self.env.ref("sale_subscription.close_reason_1")
@@ -992,10 +940,6 @@ class TestSubscriptionController(
             )
 
     def test_check_product_catalog_data(self):
-        """
-        Test that creating a sale order with both subscription and normal products
-        reflects the correct pricing in the catalog and sale order lines.
-        """
         sub_product = self.env["product.product"].create(
             {
                 "name": "Subscription Product",
@@ -1035,14 +979,12 @@ class TestSubscriptionController(
         }
         self.authenticate(self.env.user.login, self.env.user.login)
 
-        # Make the request
         response = self.url_open(
             "/product/catalog/order_lines_info",
             data=json_dumps_bytes(data),
             headers=headers,
         )
 
-        # Check the response
         self.assertEqual(response.status_code, 200)
         response_data = json_loads(response.content)
         response_prices = {
@@ -1053,7 +995,6 @@ class TestSubscriptionController(
             sub_product.id: sub_product.list_price,
             non_sub_product.id: non_sub_product.list_price,
         }
-        # Ensure both are sorted before comparison
         self.assertEqual(
             sorted(response_prices.items()),
             sorted(expected_prices.items()),
@@ -1061,9 +1002,6 @@ class TestSubscriptionController(
         )
 
     def test_modification_of_subscription_addresses(self):
-        """
-        Tests that the invoicng address linked to a subscription can be updated from the portal.
-        """
         fpos_1 = self.env["account.fiscal.position"].create(
             {
                 "name": "Test fpos 1",
@@ -1102,13 +1040,11 @@ class TestSubscriptionController(
         )
         self.portal_user.child_ids = [Command.link(invoicing_partner.id)]
         self.subscription.partner_id = self.portal_partner
-        # granted by the server: a user may not grant themselves a group
         self.subscription.user_id.sudo().group_ids += self.env.ref(
             "account.group_delivery_invoice_address"
         )
         self.subscription.action_confirm()
         original_shipping_partner = self.subscription.partner_shipping_id
-        # Update the partner
         self.authenticate(self.portal_user.login, self.portal_user.login)
         data = {
             "csrf_token": http.Request.csrf_token(self),
@@ -1134,7 +1070,6 @@ class TestSubscriptionController(
         )
 
     def test_portal_user_sees_company_subscriptions(self):
-        """Test that a portal user sees all subscriptions of their company and not others."""
         company = self.env["res.partner"].create(
             {
                 "name": "Test Company",
@@ -1147,7 +1082,6 @@ class TestSubscriptionController(
         self.subscription._onchange_template_id()
         self.subscription.action_confirm()
 
-        # Create a subscription for an external unrelated partner
         external_partner = self.env["res.partner"].create({"name": "External Partner"})
         external_subscription = self.subscription.copy(
             {
@@ -1157,12 +1091,9 @@ class TestSubscriptionController(
         external_subscription._onchange_template_id()
         external_subscription.action_confirm()
 
-        # First, remove all existing group memberships from self.user to avoid conflicts with exclusive groups
-        # Then, explicitly assign the Portal group to self.user to simulate portal-level access
         portal_group = self.env.ref("base.group_portal")
         self.user.write({"group_ids": [Command.clear(), Command.link(portal_group.id)]})
 
-        # Authenticate as self.user and access the subscriptions page
         self.authenticate(self.user.login, self.user.password)
         response = self.url_open("/my/subscriptions")
         self.assertEqual(response.status_code, 200)
@@ -1180,7 +1111,6 @@ class TestSubscriptionController(
         )
 
     def test_subscription_pause(self):
-        """Test pausing a subscription from the portal and verifying its effects."""
         with freeze_time("2021-11-17"):
             self.authenticate(None, None)
             self.subscription.plan_id.pausable_by_user = True
@@ -1221,7 +1151,6 @@ class TestSubscriptionController(
             )
 
     def test_subscription_pause_and_resume(self):
-        """Test pausing and then resuming a subscription from the portal."""
         with freeze_time("2021-11-17"):
             self.authenticate(None, None)
             self.subscription.plan_id.pausable_by_user = True
@@ -1271,7 +1200,6 @@ class TestSubscriptionController(
             )
 
     def test_reset_pause_period_after_invoice_creation(self):
-        """Test that the pause period is reset after an invoice is created."""
         with freeze_time("2021-11-17"):
             self.authenticate(None, None)
             self.subscription.plan_id.pausable_by_user = True
@@ -1296,7 +1224,6 @@ class TestSubscriptionController(
             )
 
         with freeze_time("2021-12-19"):
-            # By creating a manual invoice, we reset the user_pause_start
             self.subscription._create_invoices()._post()
             self.assertEqual(
                 self.subscription.invoice_count, 2, "Invoice count should be 2."
@@ -1365,7 +1292,6 @@ class TestSubscriptionController(
         self.assertEqual(self.subscription.plan_id, offered)
 
     def test_portal_survives_a_plan_id_that_is_not_one(self):
-        # int(kw.get("plan_id")) used to raise out of a public route.
         self.subscription.action_confirm()
         self.authenticate(None, None)
         current_plan = self.subscription.plan_id

@@ -94,7 +94,7 @@ class Export(http.Controller):
                 scoped=bool(domain),
             )
 
-            definition_records = target_model.search_fetch(  # noqa: E8507 - one query per properties field of the export
+            definition_records = target_model.search_fetch(
                 domain_definition,
                 [definition_record_field, "display_name"],
                 order="id",
@@ -232,8 +232,6 @@ class Export(http.Controller):
         relation_name: str | None,
     ) -> dict[str, Any]:
         ident = prefix + ("/" if prefix else "") + field_name
-        # an import-compatible export names a related record by its rec_name
-        # through the relation itself, which is what the import matches on
         val = prefix if field_name == relation_name else ident
         name = parent_name + ((parent_name and "/") or "") + field["string"]
         field_dict = {

@@ -53,9 +53,6 @@ class TestDeliveryPickingBatch(common.TransactionCase):
         )
 
     def test_batch_picking_pack_shipping_weight_compute(self):
-        """Having a batch transfer with 2+ of the same product across multiple pickings and adding
-        the products to the same pack should result in an accurate computed shipping weight.gau
-        """
         picking_create_vals = {
             "picking_type_id": self.picking_type_out.id,
             "location_id": self.stock_location.id,

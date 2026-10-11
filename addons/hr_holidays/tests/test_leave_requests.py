@@ -2367,9 +2367,6 @@ class TestLeaveRequests(TestHrHolidaysCommon):
             }
         )
         allocation.action_approve()
-        # responsible_ids' own domain admits only Time Off Officers, and
-        # Many2many.read applies it: a user without the group is stored and then
-        # dropped from every read of the field.
         self.user_employee.group_ids += self.env.ref(
             "hr_holidays.group_hr_holidays_user"
         )
@@ -3223,12 +3220,6 @@ class TestLeaveRequests(TestHrHolidaysCommon):
         self.assertEqual(leave.number_of_hours, 13.0)
 
     def test_allocation_error_names_the_employee_and_the_type(self):
-        """A batch that trips the allocation check must say whose and which.
-
-        `_check_validity` groups by (type, date) and walks several employees, so
-        a message with no names leaves the approver guessing which of them is
-        short and of what.
-        """
         leave_type = (
             self.env["hr.leave.type"]
             .with_user(self.user_hrmanager_id)
@@ -3276,10 +3267,6 @@ class TestLeaveRequests(TestHrHolidaysCommon):
         self.assertIn(leave_type.name, message)
 
     def test_supporting_document_notice_on_the_request(self):
-        """A type that expects a justification must say so while it is requested.
-
-        The employee finds out today only when the request comes back refused.
-        """
         leave_type = (
             self.env["hr.leave.type"]
             .with_user(self.user_hrmanager_id)
@@ -3321,13 +3308,6 @@ class TestLeaveRequests(TestHrHolidaysCommon):
         self.assertFalse(leave.leave_type_support_document_message)
 
     def test_reimporting_time_off_reports_instead_of_crashing(self):
-        """Round-tripping time off through a spreadsheet must fail legibly.
-
-        Two things went wrong on the way back in: a row whose Time Type column
-        came back empty crashed with a KeyError instead of a message, and a row
-        matching an already-approved leave was refused by an error that named
-        neither the person nor the dates.
-        """
         leave_type = (
             self.env["hr.leave.type"]
             .with_user(self.user_hrmanager_id)
@@ -3339,8 +3319,6 @@ class TestLeaveRequests(TestHrHolidaysCommon):
                 }
             )
         )
-        # A row that lost its Time Type used to crash the create with
-        # "KeyError: None" before the model ever got to fill the field in.
         typeless = (
             self.env["hr.leave"]
             .with_user(self.user_hrmanager_id)

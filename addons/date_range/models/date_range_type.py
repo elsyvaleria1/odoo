@@ -46,7 +46,6 @@ class DateRangeType(models.Model):
     )
     date_ranges_exist = fields.Boolean(compute="_compute_date_ranges_exist")
 
-    # Defaults for generating date ranges
     name_expr = fields.Text(
         string="Range name expression",
         help="Evaluated expression. E.g. "
@@ -83,12 +82,6 @@ class DateRangeType(models.Model):
         "duration_unit",
     )
     def _check_autogeneration_settings(self) -> None:
-        """Validate that autogeneration settings are complete and positive.
-
-        :raises ValidationError: if the start date is missing, the count or
-            duration is not positive, or the unit of time is unset while
-            autogeneration is configured
-        """
         for record in self:
             if not record.autogeneration_count:
                 continue
@@ -121,14 +114,6 @@ class DateRangeType(models.Model):
 
     @api.constrains("company_id")
     def _check_company_id(self) -> None:
-        """Forbid changing the company while ranges of another company use this type.
-
-        :raises ValidationError: if a referenced range belongs to a different company
-        """
-        # Reserved escape hatch for code that legitimately needs to move a
-        # type's company without this check (e.g. a future migration or
-        # import script): pass {'bypass_company_validation': True} in
-        # context. Nothing in this fork sets it today.
         if self.env.context.get("bypass_company_validation", False):
             return
         for rec in self.sudo():
@@ -155,22 +140,6 @@ class DateRangeType(models.Model):
         "autogeneration_unit",
     )
     def _compute_range_name_preview(self) -> None:
-        """Preview the first name the generator would produce for this type.
-
-        Delegated to the generator rather than reimplemented: the two used to
-        disagree — the type promised ``P1`` where the wizard, and the ranges it
-        actually created, said ``P01`` — because a second implementation had to
-        guess how many ranges there would be. Not stored: it is a hint about
-        what a future run would do, and a stored copy silently goes stale.
-
-        Only shown when autogeneration is fully configured: that is the one
-        case where the generator can derive a real end date from the type
-        alone, so the padding it previews is the padding a real run would
-        produce. Without a horizon, the count is only decided later, at
-        wizard time, by whatever end date or count the user enters —
-        previewing ``count=1`` there just repeats the same "guessed count"
-        mismatch this preview exists to avoid.
-        """
         generator = self.env["wizard.date.range.create"]
         for dr_type in self:
             has_horizon = bool(
@@ -181,37 +150,22 @@ class DateRangeType(models.Model):
             if not (dr_type.name_expr or dr_type.name_prefix) or not has_horizon:
                 dr_type.range_name_preview = False
                 continue
-            # count=1 is a floor, not an override: the autogeneration horizon
-            # checked above makes the generator derive a real end date and
-            # use that instead, so the preview shows the padding a real run
-            # would produce.
             dr_type.range_name_preview = generator.new(
                 {"type_id": dr_type.id, "count": 1}
             ).range_name_preview
 
     @api.depends("date_range_ids")
     def _compute_date_ranges_exist(self) -> None:
-        """Set whether any date range references this type."""
         for dr_type in self:
             dr_type.date_ranges_exist = bool(dr_type.date_range_ids)
 
     @api.depends("name_expr")
     def _compute_name_prefix(self) -> None:
-        """Clear the name prefix when an expression is set, so only one applies."""
-        # One-way only (prefix -> expression) to avoid wiping a hand-crafted
-        # expression by accident; clearing the expression never restores the prefix.
         for range_type in self:
             if range_type.name_expr and range_type.name_prefix:
                 range_type.name_prefix = False
 
     def write(self, vals):
-        """Cascade archiving down to the type's ranges.
-
-        One-way on purpose. ``date.range.active`` used to be computed from this
-        field, which meant restoring a type also un-archived every range someone
-        had archived by hand. Ranges archived with their type stay archived
-        until they are restored deliberately.
-        """
         res = super().write(vals)
         if vals.get("active") is False:
             ranges = (
@@ -224,12 +178,6 @@ class DateRangeType(models.Model):
 
     @api.model
     def autogenerate_ranges(self) -> None:
-        """Generate ranges for every type with complete autogeneration settings.
-
-        Called by a scheduled action. Each type is generated in its own
-        savepoint so one bad configuration cannot abort the others or poison
-        the cursor for the ones that follow.
-        """
         types = self.search(
             [
                 ("autogeneration_count", ">", 0),
@@ -245,7 +193,6 @@ class DateRangeType(models.Model):
                         {"type_id": dr_type.id}
                     )
                     if not wizard.date_end:
-                        # The configured horizon has not been reached yet.
                         continue
                     wizard.action_apply(batch=True)
             except Exception as error:

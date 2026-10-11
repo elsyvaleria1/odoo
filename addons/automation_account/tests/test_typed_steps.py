@@ -282,7 +282,6 @@ class TestDocumentStepCompany(TypedStepCase):
         partners.property_account_receivable_id = cls.other_receivable
 
     def _make_vehicle_runtime(self, **vals):
-        """A run of both companies whose money came into ours."""
         return self._make_runtime(
             st_line_id=self._statement_line().id,
             company_ids=[Command.set((self.company | self.other_company).ids)],

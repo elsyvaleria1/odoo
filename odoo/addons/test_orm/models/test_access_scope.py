@@ -71,8 +71,6 @@ class TestOrmScopeBlock(models.Model):
 class TestOrmScopeGated(models.Model):
     _name = "test_orm.scope_gated"
     _description = "Record whose _search reads another model"
-    # declared narrower than what the override reads: the searches it runs
-    # are what the cache must follow
     _search_visibility_fields = ()
 
     name = fields.Char()

@@ -67,7 +67,6 @@ class PaymentProvider(models.Model):
         help="The base URL for the API endpoints",
     )
 
-    # === CRUD METHODS === #
 
     @api.model
     def _adyen_notification_items(self):
@@ -155,7 +154,6 @@ class PaymentProvider(models.Model):
         return super().write(vals)
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "adyen":
             return super()._get_default_payment_method_codes()
@@ -163,20 +161,13 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _adyen_extract_prefix_from_api_url(self, values) -> None:
-        """Update the create or write values with the prefix extracted from the API URL.
-
-        :param dict values: The create or write values.
-        :return: None
-        """
-        if values.get("adyen_api_url_prefix"):  # Test if we're duplicating a provider.
+        if values.get("adyen_api_url_prefix"):
             values["adyen_api_url_prefix"] = re.sub(
                 r"(?:https://)?(\w+-\w+).*", r"\1", values["adyen_api_url_prefix"]
             )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "adyen").update(
             {
@@ -186,19 +177,8 @@ class PaymentProvider(models.Model):
             }
         )
 
-    # === BUSINESS METHODS === #
 
     def _adyen_get_inline_form_values(self, pm_code, amount=None, currency=None):
-        """Return a serialized JSON of the required values to render the inline form.
-
-        Note: `self.check_singleton()`
-
-        :param str pm_code: The code of the payment method whose inline form to render.
-        :param float amount: The transaction amount.
-        :param res.currency currency: The transaction currency.
-        :return: The JSON serial of the required values to render the inline form.
-        :rtype: str
-        """
         self.check_singleton()
 
         inline_form_values = {
@@ -209,15 +189,6 @@ class PaymentProvider(models.Model):
         return json_dumps(inline_form_values)
 
     def _adyen_get_formatted_amount(self, amount=None, currency=None) -> dict:
-        """Return the amount in the format required by Adyen.
-
-        The formatted amount is a dict with keys 'value' and 'currency'.
-
-        :param float amount: The transaction amount.
-        :param res.currency currency: The transaction currency.
-        :return: The Adyen-formatted amount.
-        :rtype: dict
-        """
         currency_code = currency and currency.name
         converted_amount = (
             amount
@@ -232,24 +203,10 @@ class PaymentProvider(models.Model):
         }
 
     def _adyen_compute_shopper_reference(self, partner_id) -> str:
-        """Compute a unique reference of the partner for Adyen.
-
-        This is used for the `shopperReference` field in communications with Adyen and stored in the
-        `adyen_shopper_reference` field on `payment.token` if the payment method is tokenized.
-
-        :param recordset partner_id: The partner making the transaction, as a `res.partner` id
-        :return: The unique reference for the partner
-        :rtype: str
-        """
         return f"ODOO_PARTNER_{partner_id}"
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, *, endpoint_param=None, **kwargs):
-        """Override of `payment` to build the request URL based on the API URL prefix.
-
-        The final URL follows the pattern `<_base>/V<_version>/<_endpoint>`.
-        """
         if self.code != "adyen":
             return super()._prepare_request_url(
                 endpoint, endpoint_param=endpoint_param, **kwargs
@@ -259,8 +216,8 @@ class PaymentProvider(models.Model):
         endpoint = endpoint if not endpoint_param else endpoint.format(endpoint_param)
         prefix_ = self.adyen_api_url_prefix.rstrip(
             "/"
-        )  # Remove potential trailing slash.
-        endpoint = endpoint.lstrip("/")  # Remove potential leading slash.
+        )
+        endpoint = endpoint.lstrip("/")
         test_mode_ = self.state == "test"
         prefix_ = (
             f"{prefix_}.adyen"
@@ -270,7 +227,6 @@ class PaymentProvider(models.Model):
         return f"https://{prefix_}.com/checkout/V{version}/{endpoint}"
 
     def _prepare_request_headers(self, method, *args, idempotency_key=None, **kwargs):
-        """Override of `payment` to include the API key and idempotency key in the headers."""
         if self.code != "adyen":
             return super()._prepare_request_headers(
                 method, *args, idempotency_key=idempotency_key, **kwargs
@@ -282,7 +238,6 @@ class PaymentProvider(models.Model):
         return headers
 
     def _parse_response_error(self, response):
-        """Override of `payment` to extract the error message from the response."""
         if self.code != "adyen":
             return super()._parse_response_error(response)
         return response.json().get("message", "")

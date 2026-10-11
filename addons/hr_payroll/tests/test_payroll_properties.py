@@ -120,7 +120,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 2)  # Separator + property
+        self.assertEqual(len(version_def), 2)
         self.assertEqual(version_def[0]["type"], "separator")
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[1]["name"], f"{rule.id}")
@@ -140,7 +140,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule, "hr.payslip")
 
         payslip_def = self.structure_A.payslip_properties_definition
-        self.assertEqual(len(payslip_def), 2)  # Separator + property
+        self.assertEqual(len(payslip_def), 2)
         self.assertEqual(payslip_def[0]["type"], "separator")
         self.assertEqual(payslip_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(payslip_def[1]["name"], f"{rule.id}")
@@ -161,7 +161,6 @@ class TestPayrollProperties(TestPayslipContractBase):
         version_def_initial = self.structure_A.version_properties_definition
         self.assertEqual(len(version_def_initial), 2)
 
-        # Add again
         self.structure_A._update_payroll_properties(rule, "hr.employee")
         version_def_after = self.structure_A.version_properties_definition
         self.assertEqual(len(version_def_after), 2)
@@ -301,7 +300,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule1 + rule2, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 3)  # Separator + 2 properties
+        self.assertEqual(len(version_def), 3)
         self.assertEqual(version_def[0]["type"], "separator")
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         prop_names = [prop["name"] for prop in version_def[1:]]
@@ -324,7 +323,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule1 + rule2, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 4)  # 2 separators + 2 properties
+        self.assertEqual(len(version_def), 4)
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[1]["name"], str(rule1.id))
         self.assertEqual(version_def[2]["name"], f"separator_{self.category2.id}")
@@ -358,7 +357,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         )
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 6)  # 3 separators + 3 properties
+        self.assertEqual(len(version_def), 6)
         self.assertEqual(version_def[0]["name"], f"separator_{self.category2.id}")
         self.assertEqual(version_def[1]["name"], str(rule2.id))
         self.assertEqual(version_def[2]["name"], f"separator_{self.category1.id}")
@@ -385,20 +384,19 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule1, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 2)  # 1 separators + 1 properties
+        self.assertEqual(len(version_def), 2)
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[1]["name"], str(rule1.id))
 
         self.structure_A._update_payroll_properties(rule2, "hr.employee")
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 4)  # 2 separators + 2 properties
+        self.assertEqual(len(version_def), 4)
         self.assertEqual(version_def[0]["name"], f"separator_{self.category2.id}")
         self.assertEqual(version_def[1]["name"], str(rule2.id))
         self.assertEqual(version_def[2]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[3]["name"], str(rule1.id))
 
     def test_insert_position_existing_separator_in_version_definition(self):
-        # Pre-populate with existing separator and property
         self.structure_A.version_properties_definition = [
             {
                 "name": f"separator_{self.category1.id}",
@@ -427,14 +425,14 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(rule, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 4)  # Original 3 + 1 new property
-        self.assertEqual(version_def[0]["type"], "separator")  # category1 separator
+        self.assertEqual(len(version_def), 4)
+        self.assertEqual(version_def[0]["type"], "separator")
         self.assertEqual(version_def[0]["name"], f"separator_{self.category1.id}")
         self.assertEqual(version_def[1]["name"], "existing_prop")
         self.assertEqual(
             version_def[2]["name"], str(rule.id)
-        )  # Inserted before category2 separator
-        self.assertEqual(version_def[3]["type"], "separator")  # category2 separator
+        )
+        self.assertEqual(version_def[3]["type"], "separator")
         self.assertEqual(version_def[3]["name"], f"separator_{self.category2.id}")
 
     def test_dependent_rules_in_version_definition(self):
@@ -455,7 +453,7 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.structure_A._update_payroll_properties(parent_rule, "hr.employee")
 
         version_def = self.structure_A.version_properties_definition
-        self.assertEqual(len(version_def), 4)  # 2 separators + 2 properties
+        self.assertEqual(len(version_def), 4)
         prop_names = [p["name"] for p in version_def if p.get("type") != "separator"]
         self.assertIn(str(parent_rule.id), prop_names)
         self.assertIn(str(dependent_rule.id), prop_names)
@@ -652,10 +650,6 @@ class TestPayrollProperties(TestPayslipContractBase):
         )
 
     def test_properties_computed_on_payslip(self):
-        """
-        Given 3 property rules A, B and C, if A and C and common to both the version and the payslip property definition.
-        At payslip creation, the payslip should take the values of the version inputs A and C
-        """
 
         rule_1 = self.create_property_salary_rule(
             struct_id=self.structure_A,
@@ -772,12 +766,6 @@ class TestPayrollProperties(TestPayslipContractBase):
         self.assertEqual(line_values["rule_a_3"]["sum"]["total"], 456)
 
     def test_localdict_ignores_folded_separator(self):
-        """Folding a payroll-properties group must not break the computation.
-
-        The properties widget stores a group's fold state as the *value* of its
-        `separator_<id>` entry, so that key reaches `payroll_properties` like any
-        other. It is not a salary rule and must be skipped.
-        """
         rule = self.create_property_salary_rule(
             struct_id=self.structure_A,
             code="rule_a_1",
@@ -788,7 +776,7 @@ class TestPayrollProperties(TestPayslipContractBase):
 
         version_def = self.structure_A.version_properties_definition
         self.assertEqual(version_def[0]["type"], "separator")
-        version_def[0]["value"] = False  # the user folded the group
+        version_def[0]["value"] = False
         version_def[1]["value"] = 123
 
         self.mr_property.version_id.structure_type_id = self.structure_type_A

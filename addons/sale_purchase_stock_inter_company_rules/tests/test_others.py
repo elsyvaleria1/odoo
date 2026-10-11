@@ -7,10 +7,6 @@ from .common import TestInterCompanyRulesCommonStock
 @tagged("post_install", "-at_install")
 class TestInterCompanyOthersWithStock(TestInterCompanyRulesCommonStock):
     def test_return_purchase_on_inter_company(self):
-        """
-        Check that returning the reciept of an inter-company transit
-        updates the received quantity correctly.
-        """
         super_product = self.env["product.product"].create(
             {
                 "name": "Super Product",
@@ -28,7 +24,6 @@ class TestInterCompanyOthersWithStock(TestInterCompanyRulesCommonStock):
                 line.product_id = super_product
                 line.product_qty = 10.0
 
-        # Confirm Purchase order
         purchase_order.with_company(self.company_a).action_confirm()
         receipt = purchase_order.picking_ids
         self.assertRecordValues(
@@ -40,13 +35,11 @@ class TestInterCompanyOthersWithStock(TestInterCompanyRulesCommonStock):
                 }
             ],
         )
-        # validate the receipt
         receipt.move_ids.quantity = 10.0
         receipt.move_ids.picked = True
         receipt.with_company(self.company_a).button_validate()
         self.assertEqual(receipt.state, "done")
         self.assertEqual(purchase_order.line_ids.qty_transferred, 10.0)
-        # return the units to the inter company transit location
         self.env.user.group_ids |= self.env.ref("stock.group_stock_multi_locations")
         stock_return_picking_form = Form(
             self.env["wizard.stock.picking.return"]
@@ -72,12 +65,6 @@ class TestInterCompanyOthersWithStock(TestInterCompanyRulesCommonStock):
         self.assertEqual(purchase_order.line_ids.qty_transferred, 0.0)
 
     def test_inter_company_kit_delivery_delivery_reception_1(self):
-        """Upon completion of a delivery for a kit product to another internal company, ensure
-        that the corresponding SOL reflects the qty has been delivered and received on each
-        company's related order line record.
-
-        (self.env.company == self.company_a)
-        """
         if "mrp.bom" not in self.env:
             self.skipTest("This test requires the following modules: mrp")
 
@@ -151,9 +138,6 @@ class TestInterCompanyOthersWithStock(TestInterCompanyRulesCommonStock):
         )
 
     def test_inter_company_kit_delivery_delivery_reception_2(self):
-        """In an intercompany sale/purchase of a kit product where each company has a different BoM for that product,
-        the purchase & sale lines should end up with accurate received/delivered (resp.) quantity values.
-        """
         if "mrp.bom" not in self.env:
             self.skipTest("This test requires the following modules: mrp")
 

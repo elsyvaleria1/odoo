@@ -27,9 +27,6 @@ class ProductTemplate(models.Model):
 
     @api.constrains("service_tracking")
     def _check_service_tracking_for_event_booths(self) -> None:
-        """Prevent changing the service_tracking field if the product template or any of its variants
-        is linked to an Event Booth Category.
-        """
         if product_variants_not_event_booth := self.product_variant_ids.filtered(
             lambda p: p.service_tracking != "event_booth"
         ):

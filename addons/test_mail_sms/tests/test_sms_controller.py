@@ -51,7 +51,7 @@ class TestSmsController(TestSMSActionsCommon):
                 },
             ]
         )
-        cls.sms_sent.unlink()  # as it would normally be.
+        cls.sms_sent.unlink()
 
     @mute_logger("odoo.addons.base.models.ir_http")
     def test_webhook_update_notification_from_processing_to_pending(self):

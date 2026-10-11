@@ -13,9 +13,6 @@ class ReportPosOrder(models.Model):
     _order = "date_order desc, id desc"
     _rec_name = "order_id"
 
-    # The query reads source tables directly. Without these dependencies a
-    # pending currency/configuration recomputation can leave analytics stale
-    # even though the corresponding order already shows the new value.
     _depends = {
         "pos.order": [
             "date_order",
@@ -169,8 +166,6 @@ class ReportPosOrder(models.Model):
         )
 
     def _first_pos_category_query(self, templates=None) -> SQL:
-        # The ORM order of pos.category, with the name read in en_US so the
-        # pick does not depend on who reads the report.
         return SQL(
             """
             SELECT DISTINCT ON (rel.product_template_id)
@@ -207,8 +202,6 @@ class ReportPosOrder(models.Model):
     def _read_group_select(self, aggregate_spec: str, query: Query) -> SQL:
         if aggregate_spec != "price_average:avg":
             return super()._read_group_select(aggregate_spec, query)
-        # A refunded unit carries a price too; a signed weight would let a
-        # refund drag the average outside the prices charged, or void it.
         return SQL(
             "SUM(%(f_price)s * ABS(%(f_qty)s)) / NULLIF(SUM(ABS(%(f_qty)s)), 0.0)",
             f_qty=self._field_to_sql(self._table, "product_uom_qty", query),

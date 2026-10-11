@@ -41,8 +41,6 @@ class ProductTrace(models.Model):
         }
 
     def _create_asset(self):
-        """The asset is a consequence of the serial, not an act of the user who
-        receives it: a stock user with no asset rights still gets one."""
         if not self:
             return self.env["resource.resource"]
         assets = (

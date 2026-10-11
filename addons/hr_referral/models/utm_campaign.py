@@ -7,7 +7,6 @@ class UtmCampaign(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_linked_jobs(self) -> None:
-        """Already handled by ondelete='restrict', but let's show a nice error message"""
         linked_jobs = (
             self.env["hr.job"].sudo().search([("utm_campaign_id", "in", self.ids)])
         )

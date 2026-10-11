@@ -603,7 +603,6 @@ class Website(models.Model):
     @api.model
     @_debug.perf.timed
     def configurator_apply(self, **kwargs):
-        # it saves views of the new website's layout dozens of times
         with self.env["ir.ui.view"]._validation_deferred() as views:
             return self.with_env(views.env)._configurator_apply(**kwargs)
 

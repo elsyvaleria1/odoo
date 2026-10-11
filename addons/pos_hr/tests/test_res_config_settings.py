@@ -9,8 +9,6 @@ class TestConfigureShopsPoSHR(TestPosHrHttpCommon, TestConfigureShops):
     def test_properly_deleting_pos_hr_group_all_members(self):
         self._remove_on_payment_taxes()
 
-        # Simulate removing all employees from `basic_employee_ids` and
-        # `minimal_employee_ids`. Equivalent to passing an empty command list `[]`.
         self.main_pos_config.with_context(from_settings_view=True).write(
             {"basic_employee_ids": [], "minimal_employee_ids": []}
         )

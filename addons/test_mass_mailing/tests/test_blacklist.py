@@ -79,7 +79,6 @@ class TestBLConsistency(common.TestMassMailCommon):
 
     @users("user_marketing")
     def test_bl_check_case_add(self):
-        """Test emails case when adding through _add"""
         bl_sudo = self.env["mail.blacklist"].sudo()
         existing = bl_sudo.create(
             {
@@ -94,7 +93,6 @@ class TestBLConsistency(common.TestMassMailCommon):
 
     @users("user_marketing")
     def test_bl_check_case_remove(self):
-        """Test emails case when deactivating through _remove"""
         bl_sudo = self.env["mail.blacklist"].sudo()
         existing = bl_sudo.create(
             {
@@ -109,7 +107,6 @@ class TestBLConsistency(common.TestMassMailCommon):
 
     @users("user_marketing")
     def test_bl_create_duplicate(self):
-        """Test emails are inserted only once if duplicated"""
         bl_sudo = self.env["mail.blacklist"].sudo()
         self.env["mail.blacklist"].create(
             [
@@ -129,7 +126,6 @@ class TestBLConsistency(common.TestMassMailCommon):
 
     @users("user_marketing")
     def test_bl_create_parsing(self):
-        """Test email is correctly extracted from given entries"""
         bl_sudo = self.env["mail.blacklist"].sudo()
         self.env["mail.blacklist"].create(
             [

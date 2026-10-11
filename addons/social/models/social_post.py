@@ -92,18 +92,15 @@ class SocialPost(models.Model):
         readonly=True,
         help="When the global post was published. The actual sub-posts published dates may be different depending on the media.",
     )
-    # stored for better calendar view performance
     calendar_date = fields.Datetime(
         compute="_compute_calendar_date",
         store=True,
         readonly=False,
     )
-    # technical field used by the calendar view (hatch the social post)
     is_hatched = fields.Boolean(
         string="Hatched",
         compute="_compute_is_hatched",
     )
-    # UTM
     utm_campaign_id = fields.Many2one(
         comodel_name="utm.campaign",
         string="Campaign",
@@ -112,7 +109,6 @@ class SocialPost(models.Model):
         ondelete="set null",
     )
     source_id = fields.Many2one(readonly=True)
-    # Statistics
     stream_posts_count = fields.Integer(
         string="Feed Posts Count",
         compute="_compute_stream_posts_count",
@@ -128,8 +124,7 @@ class SocialPost(models.Model):
 
     @api.constrains("account_ids")
     def _check_account_ids(self) -> None:
-        """All social accounts must be in the same company."""
-        for post in self.sudo():  # SUDO to bypass multi-company ACLs
+        for post in self.sudo():
             if not (post.account_ids <= post.account_allowed_ids):
                 raise ValidationError(
                     self.env._(
@@ -184,12 +179,6 @@ class SocialPost(models.Model):
 
     @api.depends("company_id")
     def _compute_account_allowed_ids(self) -> None:
-        """Compute the allowed social accounts for this social post.
-
-        If the company is set on the post, we can attach to it account in the same company
-        or without a company. If no company is set on this post, we can attach to it any
-        social account.
-        """
         all_account_allowed_ids = self.env["social.account"].search([])
 
         for post in self:
@@ -223,7 +212,6 @@ class SocialPost(models.Model):
 
     @api.depends("live_post_ids.account_id", "live_post_ids.display_name")
     def _compute_live_posts_by_media(self) -> None:
-        """See field 'help' for more information."""
         for post in self:
             accounts_by_media = {media_id: [] for media_id in post.media_ids.ids}
             for live_post in post.live_post_ids.filtered(
@@ -240,12 +228,9 @@ class SocialPost(models.Model):
             post.is_hatched = post.state == "draft"
 
     def _compute_click_count(self) -> None:
-        # Filter by `medium_id` so we can compute the click count based
-        # on the current companies (1 account == 1 medium)
         medium_ids = self.account_ids.mapped("utm_medium_id")
 
         if not self.source_id.ids or not medium_ids.ids:
-            # not "source_id", the records are not yet created
             for post in self:
                 post.click_count = 0
         else:
@@ -269,7 +254,6 @@ class SocialPost(models.Model):
         values = super()._prepare_preview_values(media)
         if self._name == "social.post":
             live_posts = self.live_post_ids._filtered_by_media_types([media])
-            # Take first live post for preview. Should always have at least one.
             values["live_post_link"] = (
                 live_posts[0].live_post_link if len(live_posts) >= 1 else False
             )
@@ -277,8 +261,6 @@ class SocialPost(models.Model):
 
     @api.depends("display_message", "state")
     def _compute_display_name(self):
-        """We use the first 20 chars of the message (or "Post" if no message yet).
-        We also add "(Draft)" at the end if the post is still in draft state."""
         for post in self:
             post.display_name = self._prepare_post_name(
                 post.display_message,
@@ -287,7 +269,6 @@ class SocialPost(models.Model):
 
     @api.model
     def default_get(self, fields):
-        """When created from the calendar view, we set the post as scheduled at the selected date."""
 
         result = super().default_get(fields)
         default_calendar_date = self.env.context.get("default_calendar_date")
@@ -301,10 +282,7 @@ class SocialPost(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Every post will have a unique corresponding utm.source for statistics computation purposes.
-        This way, it will be possible to see every leads/quotations generated through a particular post."""
 
-        # generate the UTM names from `message` (without having it in `_rec_name`)
         message_fields = ["message"] + list(self._message_fields().values())
         for vals in vals_list:
             if not vals.get("name"):
@@ -314,10 +292,6 @@ class SocialPost(models.Model):
                 )
                 vals["name"] = self.env["utm.source"]._generate_name(self, new_name)
 
-        # if a scheduled_date / published_date is specified, it should be the one used as the calendar date
-        # this is normally handled by the `_compute_calendar_date` but in create mode,
-        # it is not called when a default value for the calendar_date field is passed
-        # if the post_method is set to 'now' unset the calendar_date to avoid displaying it in the calendar
         for vals in vals_list:
             if vals.get("state") == "posted" and "published_date" in vals:
                 vals["calendar_date"] = vals["published_date"]
@@ -355,7 +329,6 @@ class SocialPost(models.Model):
                 fields.Datetime.from_string(vals.get("scheduled_date")),
             )
 
-        # Updating UTM source
         message_fields = ["message"] + list(self._message_fields().values())
         if set(vals) & set(message_fields):
             new_name = next(
@@ -381,9 +354,6 @@ class SocialPost(models.Model):
         return action
 
     def _check_post_access(self) -> None:
-        """
-        Raise an error if the user cannot post on a social media
-        """
         if any(not post.account_ids for post in self):
             raise UserError(
                 self.env._(
@@ -446,8 +416,6 @@ class SocialPost(models.Model):
         return action
 
     def _action_post(self) -> None:
-        """Called when the post is published on its social.accounts.
-        It will create one social.live.post per social.account and call '_post' on each of them."""
 
         to_post = self.filtered(lambda post: post.state in ("draft", "scheduled"))
         if not to_post:
@@ -469,12 +437,6 @@ class SocialPost(models.Model):
             to_post._post_live_posts()
             return
 
-        # If there's a link in the message, the Facebook / Twitter API will fetch it
-        # to build a preview. But when posting, the SQL transaction will not
-        # yet be committed, and so the link tracker associated to this link
-        # will not yet exist for the Facebook API and the preview will be
-        # broken. So we force the compute of the message field and therefor the
-        # creation of the link trackers (flush will compute only stored fields).
         to_post.mapped("live_post_ids.message")
         registry, post_ids = self.env.registry, to_post.ids
         uid, context = self.env.uid, dict(self.env.context)
@@ -491,7 +453,6 @@ class SocialPost(models.Model):
 
     def _post_live_posts(self) -> None:
         for post in self:
-            # send the live posts
             failed_posts = self.env["social.live.post"]
             for live_post in post.live_post_ids:
                 try:
@@ -520,7 +481,7 @@ class SocialPost(models.Model):
         if message:
             message = message.replace(
                 "\n", " "
-            )  # replace carriage returns as needed name is usually a Char
+            )
             if len(message) < 24:
                 name = message
             else:
@@ -557,8 +518,6 @@ class SocialPost(models.Model):
         return []
 
     def _check_post_completion(self) -> None:
-        """This method will check if all live.posts related to the post are completed ('posted' / 'failed').
-        If it's the case, we can mark the post itself as 'posted'."""
 
         posts_to_complete = self.filtered(
             lambda post: all(
@@ -591,8 +550,6 @@ class SocialPost(models.Model):
 
     @api.model
     def _cron_publish_scheduled(self) -> None:
-        """Method called by the cron job that searches for social.posts that were scheduled and need
-        to be published and calls _action_post() on them."""
 
         self.search(
             [

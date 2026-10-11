@@ -59,9 +59,6 @@ class TestControllersAccessRights(HttpCase, TestSaleCommon):
 
 @tagged("post_install", "-at_install")
 class TestSalespersonCeiling(TransactionCase):
-    # a salesperson restricted to their own orders who is also an inventory
-    # user reads and changes their own orders only: inventory's access to every
-    # order does not widen the salesperson's, as the record rules bounded it
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

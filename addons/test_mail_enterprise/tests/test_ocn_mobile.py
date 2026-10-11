@@ -103,7 +103,6 @@ class TestPushNotification(SMSCommon):
 
     @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
     def test_push_notifications(self, jsonrpc):
-        # Test No Inbox Condition
         self.record_simple.with_user(self.user_inbox).message_notify(
             partner_ids=self.user_email.partner_id.ids,
             body="Test",
@@ -132,10 +131,8 @@ class TestPushNotification(SMSCommon):
             'The body must be "Test message send via OCN"',
         )
 
-        # Reset the mock counter
         jsonrpc.reset_mock()
 
-        # Test Tracking Message
         mail_test_ticket = self.env["mail.test.ticket"].with_context(self._test_context)
         record_full = mail_test_ticket.with_user(self.user_email).create(
             {
@@ -177,7 +174,6 @@ class TestPushNotification(SMSCommon):
         )
         self.flush_tracking()
         jsonrpc.assert_called_once()
-        # As the tracking values are converted to text. We check the '→' added by ocn_client.
         self.assertIn(
             "→",
             jsonrpc.call_args[1]["params"]["data"]["body"],
@@ -186,7 +182,6 @@ class TestPushNotification(SMSCommon):
 
     @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
     def test_push_notifications_android_channel(self, jsonrpc):
-        # Test Direct Message
         self.direct_message_channel.with_user(self.user_email).message_post(
             body="Test", message_type="comment", subtype_xmlid="mail.mt_comment"
         )
@@ -195,17 +190,14 @@ class TestPushNotification(SMSCommon):
             "DirectMessage",
             "The type of Android channel must be DirectMessage",
         )
-        # FIXME: mobile apps use old "mail.channel" and cannot be changed on iOS
         self.assertEqual(
             jsonrpc.call_args[1]["params"]["data"]["model"],
             "mail.channel",
             "The model must be mail.channel (for Mobile App)",
         )
 
-        # Reset the mock counter
         jsonrpc.reset_mock()
 
-        # Test Following Message
         self.record_simple.with_user(self.user_email).message_post(
             body="Test", message_type="comment", subtype_xmlid="mail.mt_comment"
         )
@@ -215,10 +207,8 @@ class TestPushNotification(SMSCommon):
             "The type of Android channel must be Following",
         )
 
-        # Reset the mock counter
         jsonrpc.reset_mock()
 
-        # Test Channel Message
         self.group_channel.with_user(self.user_email).message_post(
             body="Test",
             partner_ids=self.user_inbox.partner_id.ids,
@@ -231,10 +221,8 @@ class TestPushNotification(SMSCommon):
             "The type of Android channel must be ChannelMessage",
         )
 
-        # Reset the mock counter
         jsonrpc.reset_mock()
 
-        # Test AtMention Message
         self.record_simple.with_user(self.user_email).message_post(
             body=Markup(
                 '<a href="/odoo" data-oe-id="%i" data-oe-model="res.partner" >@user</a>'
@@ -277,7 +265,6 @@ class TestPushNotification(SMSCommon):
                     % test_record.message_ids[-1].message_id,
                 )
             if has_notif:
-                # user_inbox is notified by Odoo, hence receives a push notification
                 jsonrpc.assert_called_once()
                 self.assertEqual(
                     jsonrpc.call_args[1]["params"]["data"]["author_name"],
@@ -295,11 +282,6 @@ class TestPushNotification(SMSCommon):
     @patch("odoo.addons.mail_mobile.models.mixin_mail_thread.iap_jsonrpc")
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_push_notifications_whatsapp(self, push_to_end_point, iap_jsonrpc):
-        """
-        Verifies that the system correctly triggers web push notifications upon posting a WhatsApp message.
-        Notifications can either be sent immediately or scheduled via cron.
-        At the time this test was written, notifications are sent directly if the number of recipient devices is fewer than MAX_DIRECT_PUSH.
-        """
 
         self.env["mail.push.device"].get_or_create_web_push_vapid_public_key()
         self.vapid_public_key = self.env[

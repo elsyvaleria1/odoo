@@ -22,16 +22,12 @@ class TestOdooFinAuth(TransactionCase):
         return requests.Request("POST", url, json=payload).prepare()
 
     def test_unsigned_without_credentials(self):
-        """Check that requests stay untouched when no client credentials
-        exist."""
         request = self._prepared_request("https://odoofin.test/proxy", {"a": 1})
         signed = OdooFinAuth()(request)
         self.assertNotIn("odoofin-signature", signed.headers)
         self.assertNotIn("odoofin-client-id", signed.headers)
 
     def test_signature_contract(self):
-        """Check the signature headers and recompute the HMAC to pin the
-        message layout (timestamp|path|client|token|query|body)."""
         url = "https://odoofin.test/proxy/exchange?b=2&a=1&a=9&empty="
         payload = {"z": 26, "m": 13}
         request = self._prepared_request(url, payload)
@@ -46,7 +42,6 @@ class TestOdooFinAuth(TransactionCase):
         self.assertEqual(signed.headers["odoofin-access-token"], "access-token")
         self.assertEqual(signed.headers["odoofin-timestamp"], 1_753_000_000)
 
-        # first value wins on repeated keys, blank values kept
         expected_query = json.dumps({"a": "1", "b": "2", "empty": ""}, sort_keys=True)
         expected_message = "1753000000|/proxy/exchange|client-1|access-token|%s|%s" % (
             expected_query,

@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase, tagged
 class CurrencyTestCase(TransactionCase):
     def setUp(self):
         super().setUp()
-        # cached here because most tests compare the USD rate count before and after the update
         self.currency_usd = self.env.ref("base.USD")
         self.test_company = self.env["res.company"].create(
             {
@@ -23,8 +22,6 @@ class CurrencyTestCase(TransactionCase):
 
     def test_live_currency_update_fta(self):
         self.test_company.currency_provider = "fta"
-        # testing Swiss Federal Tax Administration requires that Franc Suisse can be found
-        # which is not the case in runbot/demo data as l10n_ch is not always installed
         self.env.ref("base.CHF").write({"active": True})
         rates_count = len(self.currency_usd.rate_ids)
         res = self.test_company.update_currency_rates()
@@ -192,7 +189,6 @@ class CurrencyTestCase(TransactionCase):
         self.assertEqual(len(usd.rate_ids), usd_rates_count + 1)
 
     def test_live_currency_update_bsi(self):
-        """Test currency rate update from Bank of Slovenia (BSI)"""
         eur = self.env.ref("base.EUR")
         eur.active = True
         usd = self.env.ref("base.USD")

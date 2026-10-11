@@ -73,24 +73,19 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         )
 
     def _workorders_by_operation(self, mo):
-        # Work orders sharing a sequence are ordered by their planned start, which
-        # moves with the calendar; the operation says which step each one is.
         return tuple(
             mo.workorder_ids.filtered_domain([("operation_id", "=", operation.id)])
             for operation in self.bom.operation_ids
         )
 
     def test_parallel_workorders(self):
-        """Test parallel workorders: bom allowing operation dependencies without any dependency."""
 
-        # Make MO
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.finished
         mo_form.product_qty = 2.0
         mo = mo_form.save()
         mo.action_confirm()
 
-        # Check workorders initial state
         self.assertEqual(
             mo.workorder_ids[0].state, "ready", "All workorders should be ready."
         )
@@ -102,21 +97,17 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         )
 
     def test_stepped_workorders(self):
-        """Test step-by-step workorders: bom operations are interdependent."""
 
-        # Make 1st workorder depend on 3rd
         self.bom.operation_ids[0].blocked_by_operation_ids = [
             Command.link(self.bom.operation_ids[2].id)
         ]
 
-        # Make MO
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.finished
         mo_form.product_qty = 2.0
         mo = mo_form.save()
         mo.action_confirm()
         wo1, wo2, wo3 = self._workorders_by_operation(mo)
-        # Check workorders initial state
         self.assertEqual(
             wo1.state,
             "blocked",
@@ -129,21 +120,17 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
             wo3.state, "ready", "Workorder for Operation-C should be ready."
         )
         mo.button_plan()
-        # Mark 1st initial WO as done
         wo2.button_start()
         wo2.qty_producing = 2
         wo2.record_production()
-        # Check 3rd WO (not dependent on 1st)
         self.assertEqual(
             wo1.state,
             "blocked",
             "Workorder for Operation-A should STILL be Waiting for another WO (the 3rd).",
         )
-        # Mark 2nd initial WO as done
         wo3.button_start()
         wo3.qty_producing = 2
         wo3.record_production()
-        # Check dependent WO
         self.assertEqual(
             wo1.state,
             "ready",
@@ -151,17 +138,11 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         )
 
     def test_propagate_quantity_on_backorders_with_stepped_workorders(self):
-        """Create a MO for a product with several work orders.
-        Produce different quantities to test quantity propagation and workorder cancellation.
-        -> Reproduce test_propagate_quantity_on_backorders on stepped workorders
-        """
 
-        # Make 1st workorder depend on 3rd
         self.bom.operation_ids[0].blocked_by_operation_ids = [
             Command.link(self.bom.operation_ids[2].id)
         ]
 
-        # Make MO for 20 products
 
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.finished
@@ -177,12 +158,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_2.state, "ready")
         self.assertEqual(wo_3.state, "ready")
 
-        # produce 20 / 10 / 5 on workorders 2 / 3 / 1, mark as done & create backorder
-        # mo closed with 5 produced
-        # backorder for 15 created with
-        # - wo5 'cancel' (fully processed)
-        # - wo6 'ready' for 10
-        # - wo4 'blocked' for 15
 
         wo_2.button_start()
         wo_2.qty_producing = 20
@@ -218,12 +193,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_5.state, "cancel")
         self.assertEqual(wo_6.state, "ready")
 
-        # produce 10 / 5 on workorders 6 / 4, mark as done & create backorder
-        # mo closed with 5 produced
-        # backorder for 10 created with
-        # - wo8 'cancel' (already fully processed)
-        # - wo9 'cancel' (fully processed)
-        # - wo7 'ready' for 10
 
         wo_6.button_start()
         wo_6.qty_producing = 10
@@ -255,7 +224,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(wo_8.state, "cancel")
         self.assertEqual(wo_9.state, "cancel")
 
-        # produce 10 on workorder 7 and finish work
 
         wo_7.button_start()
         wo_7.qty_producing = 10
@@ -267,11 +235,6 @@ class TestWorkOrderDependencies(TestMrpWorkorderCommon):
         self.assertEqual(mo_3.state, "done")
 
     def test_allow_operation_dependency_with_deleted_workorder(self):
-        """
-        BoM with dependencies between operations to ensure an order: OP01, OP02
-        and OP03. The user creates a MO based on that BoM and removes WO02. He
-        should still be able to confirm and process the MO.
-        """
         self.bom.operation_ids[1].blocked_by_operation_ids = [
             Command.link(self.bom.operation_ids[0].id)
         ]

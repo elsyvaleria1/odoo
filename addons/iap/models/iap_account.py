@@ -29,7 +29,7 @@ class IapAccount(models.Model):
     service_name = fields.Char(related="service_id.technical_name")
     service_locked = fields.Boolean(
         default=False
-    )  # If True, the service can't be edited anymore
+    )
     description = fields.Char(related="service_id.description")
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
@@ -50,8 +50,6 @@ class IapAccount(models.Model):
     )
     company_ids = fields.Many2many(comodel_name="res.company")
 
-    # Set from the IAP server when the view loads, except warning_user_ids, which
-    # is local; both warning fields are pushed to IAP on write
     balance = fields.Char(readonly=True)
     warning_threshold = fields.Float(string="Email Alert Threshold")
     warning_user_ids = fields.Many2many(
@@ -154,11 +152,6 @@ class IapAccount(models.Model):
             route = "/iap/1/update-warning-email-alerts"
             endpoint = iap_tools.iap_get_endpoint(self.env)
             url = url_join(endpoint, route)
-            # One blocking iap_jsonrpc round-trip per account: this endpoint's
-            # contract takes a single account, unlike the batched
-            # 'iap_accounts' list _update_account_information_from_iap sends in
-            # one call. A bulk write across many accounts pays one network
-            # round-trip per record inside this write() transaction.
             for account in self:
                 data = {
                     "account_token": account.sudo().account_token,
@@ -180,7 +173,6 @@ class IapAccount(models.Model):
         return res
 
     def _update_account_information_from_iap(self) -> None:
-        # During testing, we don't want to call the iap server
         if module.current_test:
             return
         route = "/iap/1/get-accounts-information"
@@ -210,8 +202,6 @@ class IapAccount(models.Model):
             accounts = self._filtered_by_token(token)
 
             for account in accounts:
-                # Round to a unit for integer services, to 4 decimals otherwise,
-                # to avoid long decimals
                 balance_amount = round(
                     information["balance"],
                     None if account.service_id.integer_balance else 4,
@@ -225,7 +215,7 @@ class IapAccount(models.Model):
 
     def _filtered_by_token(self, token):
         return self.filtered(
-            lambda account: consteq(token, account.sudo().account_token)  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            lambda account: consteq(token, account.sudo().account_token)
         )
 
     def _get_account_info(self, account, balance, information):
@@ -233,7 +223,7 @@ class IapAccount(models.Model):
             "balance": balance,
             "warning_threshold": information["warning_threshold"],
             "state": information["registered"],
-            "service_locked": True,  # The account exists on IAP, prevent editing its service
+            "service_locked": True,
         }
 
     @api.model_create_multi
@@ -244,7 +234,6 @@ class IapAccount(models.Model):
                 account.name = account.service_id.name
 
         if self.env.registry.settings.get(self.env, "database.is_neutralized", False):
-            # Disable new accounts on a neutralized database
             for account in accounts:
                 account.account_token = (
                     f"{account.account_token.split('+')[0]}+disabled"
@@ -265,13 +254,9 @@ class IapAccount(models.Model):
         )
         if accounts_without_token:
             with self.pool.cursor() as cr:
-                # In case of a further error that will rollback the database, we should
-                # use a different SQL cursor so the accounts deletion is not undone.
 
-                # Flush the pending operations to avoid a deadlock.
                 self.env.flush_all()
                 IapAccount = self.with_env(self.env(cr=cr))
-                # Need to use sudo because regular users do not have delete right
                 IapAccount.search(
                     domain + [("credential_id", "=", False)]
                 ).sudo().unlink()
@@ -302,7 +287,6 @@ class IapAccount(models.Model):
                     )
                 )
             if module.current_test:
-                # During testing, we don't want to commit the creation of a new IAP account to the database
                 return (
                     self.sudo().create({"service_id": service.id})
                     if force_create
@@ -310,11 +294,7 @@ class IapAccount(models.Model):
                 )
 
             with self.pool.cursor() as cr:
-                # Since the account did not exist yet, we will encounter an
-                # InsufficientCreditError, which is going to rollback the database and
-                # undo the account creation, preventing the process to continue further.
 
-                # Flush the pending operations to avoid a deadlock.
                 self.env.flush_all()
                 IapAccount = self.with_env(self.env(cr=cr))
                 account = IapAccount.search(domain, order="id desc", limit=1)
@@ -322,8 +302,6 @@ class IapAccount(models.Model):
                     if not force_create:
                         return account
                     account = IapAccount.create({"service_id": service.id})
-                # fetch 'account_token' into cache with this cursor,
-                # as self's cursor cannot see this account
                 account_token = account.sudo().account_token
             account = self.browse(account.id)
             self.env.cache.set(
@@ -341,7 +319,6 @@ class IapAccount(models.Model):
 
     @api.model
     def get_credits_url(self, service_name, account_token=None) -> str:
-        """Called notably by: action_buy_credits, partner_autocomplete, snailmail, ..."""
         dbuuid = self.env.registry.settings.get(self.env, "database.uuid", False)
         endpoint = iap_tools.iap_get_endpoint(self.env)
         route = "/iap/1/credit"
@@ -360,7 +337,6 @@ class IapAccount(models.Model):
 
     @api.model
     def _hash_iap_token(self, key):
-        # disregard possible suffix
         key = (key or "").split("+")[0]
         if not key:
             raise UserError(self.env._("The IAP token provided is invalid or empty."))
@@ -377,7 +353,6 @@ class IapAccount(models.Model):
 
     @api.model
     def get_config_account_url(self):
-        """Called notably by ajax partner_autocomplete."""
         account = self.env["iap.account"].acquire_account("partner_autocomplete")
         menu = self.env.ref("iap.iap_account_menu")
         if not self.env.user.has_group("base.group_no_one"):

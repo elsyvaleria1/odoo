@@ -37,7 +37,6 @@ class TestCategorySteps(ApprovalCommon):
         cls.step_group = cls.env["res.groups"].create({"name": "Step Test Group"})
 
     def test_every_domain_editor_reads_its_model_from_a_model_name(self):
-        """The domain widget takes a model name; a many2one hands it a record value."""
         for model_name in ("approval.category.step", "approval.rule"):
             Model = self.env[model_name]
             arch = etree.fromstring(Model.get_view(view_type="form")["arch"])
@@ -73,7 +72,6 @@ class TestCategorySteps(ApprovalCommon):
             lambda activity: activity.activity_type_id == activity_type
         ).user_id
 
-    # -- the defect steps exist for ----------------------------------------
 
     def test_two_one_of_two_steps_need_one_approval_from_each(self):
         category = self._category()
@@ -104,7 +102,6 @@ class TestCategorySteps(ApprovalCommon):
         request.with_user(self.approver_2).action_approve()
         self.assertEqual(request.state, "approved")
 
-    # -- one row per user, and what exclusivity does with it ---------------
 
     def test_a_user_in_two_steps_counts_for_both_when_neither_is_exclusive(self):
         category = self._category()
@@ -145,7 +142,6 @@ class TestCategorySteps(ApprovalCommon):
         request.with_user(self.approver_2).action_approve()
         self.assertEqual(request.state, "approved")
 
-    # -- who is in the pool ----------------------------------------------
 
     def test_group_members_join_the_step_pool(self):
         self.step_group.user_ids = self.approver_4
@@ -190,7 +186,6 @@ class TestCategorySteps(ApprovalCommon):
         request.with_user(self.approver_1).action_approve()
         self.assertEqual(request.state, "approved")
 
-    # -- decisions --------------------------------------------------------
 
     def test_a_refusal_in_any_step_refuses_the_request(self):
         category = self._category()
@@ -215,7 +210,6 @@ class TestCategorySteps(ApprovalCommon):
         self.assertNotIn(self.approver_3, self._approval_activity_users(request))
 
     def test_a_later_step_may_decide_before_it_is_asked(self):
-        """Studio orders the asking, not the deciding."""
         category = self._category(notify_sequentially=True)
         self._step(category, "First", (self.approver_1,), 10)
         self._step(category, "Second", (self.approver_2,), 20)
@@ -243,7 +237,6 @@ class TestCategorySteps(ApprovalCommon):
         )
         self.assertTrue(notes, "the step's notify list got no note")
 
-    # -- configuration that could never work ------------------------------
 
     def test_confirm_refuses_a_step_that_can_never_meet_its_quorum(self):
         category = self._category()

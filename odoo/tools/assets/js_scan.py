@@ -99,8 +99,6 @@ class _Scanner:
         return None
 
     def run(self) -> None:
-        # an explicit stack, not recursion: a source nesting substitutions
-        # deeper than the interpreter's recursion limit is still scanned
         src, n = self.src, len(self.src)
         code_frames: list[int] = [0]
         template_starts: list[int] = []
@@ -110,7 +108,6 @@ class _Scanner:
             if in_template[-1]:
                 match = _TEMPLATE_STOP_RE.search(src, pos)
                 if match is None:
-                    # an unterminated literal is not something to minify by hand
                     self.nested = True
                     pos = n
                 elif (token := match.group()) == "${":
@@ -187,8 +184,6 @@ def scan(src: str) -> tuple[list[Span], bool]:
     return scanner.spans, scanner.nested
 
 
-# rjsmin (1.2) knows a regex only after punctuation or `return`; after any
-# other keyword it reads the slash as division and minifies the body as code
 _KEYWORDS_RJSMIN_MISREADS = _KEYWORDS_BEFORE_REGEX - {"return"}
 _KEYWORD_THEN_SLASH_RE = re.compile(
     r"\b(?:%s)\s*/(?![/*])" % "|".join(sorted(_KEYWORDS_RJSMIN_MISREADS))
@@ -196,11 +191,6 @@ _KEYWORD_THEN_SLASH_RE = re.compile(
 
 
 def rjsmin_misreads(source: str) -> bool:
-    # rjsmin reads a template literal as backtick to backtick: a backtick
-    # anywhere inside a substitution -- a nested literal, or one inside a
-    # string, regex or comment there -- cuts it short and the rest is minified
-    # as code. It also collapses the body of a regex that follows a keyword it
-    # does not know (`typeof /a  b/` becomes `typeof/a b/`)
     templates = "`" in source and "${" in source
     keyword_regex = bool(_KEYWORD_THEN_SLASH_RE.search(source))
     if not (templates or keyword_regex):

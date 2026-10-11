@@ -28,8 +28,6 @@ class ResPartner(models.Model):
             self.env["sale.order.line"].has_access("read")
             and self.env["stock.move"].has_access("read")
         ):
-            # a partner is readable by users who may not read its orders or
-            # moves; the rate over records they cannot see is -1, not an error
             self.customer_on_time_rate = -1
             _debug.logic("on_time_rate_unavailable", partners=self, reason="no_access")
             return

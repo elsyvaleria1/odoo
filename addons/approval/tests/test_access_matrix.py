@@ -254,8 +254,6 @@ class TestApprovalAccessMatrix(AccessMatrixCase):
         request_decided.approver_ids[:1].sudo()._record_decision("approved")
         private_decided = request(category_private, users["requester_a"])
         private_decided.approver_ids[:1].sudo()._record_decision("approved")
-        # a limit qualifies a verb with an amount, which only modules approval
-        # does not depend on declare (sale, purchase, account)
         limited = next(
             (
                 (model, name)

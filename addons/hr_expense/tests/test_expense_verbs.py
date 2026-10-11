@@ -2,8 +2,6 @@ from odoo.exceptions import AccessError
 from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 
-# row, persona, whose expense, verb: a cell the row alone grants, so switching
-# the row off takes exactly that move away
 ROW_CELLS = [
     line.split()
     for line in """
@@ -131,8 +129,6 @@ class TestExpenseVerbs(TransactionCase):
             mute_logger("odoo.addons.base.models.ir_access"),
             self.assertRaises(AccessError),
         ):
-            # an employee may write their draft, not approve it by writing its
-            # review state
             own.with_user(self.users["employee"]).write({"review_state": "approved"})
         expense = self._expense("employee")
         self.assertIsNone(

@@ -42,7 +42,6 @@ class StockMoveLine(models.Model):
     def create(self, vals_list):
         lines = super().create(vals_list)
         if self.env.context.get("no_checks"):
-            # no checks for you
             return lines
         lines._filtered_applicable_for_quality_check()._create_check()
         return lines
@@ -77,11 +76,6 @@ class StockMoveLine(models.Model):
         )
         quality_points = self.env["quality.point"].sudo().search(quality_points_domain)
 
-        # A product's own category plus every ancestor of it, read off
-        # `parent_path`.  The old code answered the same question by searching
-        # `product.product` for the whole subtree of every category of every
-        # point, then intersecting the result with the lines' own products --
-        # a table scan to decide something these few products already know.
         categ_ids_by_product = {
             product: {
                 int(categ_id)
@@ -110,9 +104,6 @@ class StockMoveLine(models.Model):
                     quality_point.id
                 )
 
-        # `check_execute_now` is a query for a `periodical` point.  Settled
-        # once for every point that answers the same for the whole batch --
-        # measured: 25 identical `COUNT(*)`s for a 25-line receipt.
         settled = quality_points._get_execute_now_by_point()
 
         for ml in self:
@@ -123,8 +114,6 @@ class StockMoveLine(models.Model):
                 quality_points_by_product_picking_type
             )
             point_ids = quality_points_product | quality_points_all_products
-            # `quality_points` already carries the model's order; filtering it
-            # keeps that order without one `search` per move line.
             check_values_list.extend(
                 ml._prepare_check_vals(quality_point)
                 for quality_point in quality_points.filtered(

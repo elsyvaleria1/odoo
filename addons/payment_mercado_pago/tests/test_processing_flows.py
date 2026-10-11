@@ -12,8 +12,6 @@ from odoo.addons.payment_mercado_pago.tests.common import MercadoPagoCommon
 class TestProcessingFlows(MercadoPagoCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_mercado_pago.controllers.main")
     def test_redirect_notification_triggers_processing(self):
-        """Test that receiving a redirect notification triggers the processing of the notification
-        data."""
         self._create_transaction(flow="redirect")
         url = self._build_url(const.PAYMENT_RETURN_ROUTE)
         with (
@@ -30,8 +28,6 @@ class TestProcessingFlows(MercadoPagoCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_mercado_pago.controllers.main")
     def test_webhook_notification_triggers_processing(self):
-        """Test that receiving a valid webhook notification triggers the processing of the
-        payment data."""
         tx = self._create_transaction(flow="redirect")
         url = self._build_url(f"{const.WEBHOOK_ROUTE}/{tx.reference}")
         with (

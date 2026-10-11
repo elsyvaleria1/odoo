@@ -33,7 +33,6 @@ class ResPartner(models.Model):
         return super()._address_fields() + ["city_id"]
 
     def _inverse_street_data(self) -> None:
-        """update self.street based on street_name, street_number and street_number2"""
         for partner in self:
             street = " ".join(
                 part for part in (partner.street_name, partner.street_number) if part
@@ -48,7 +47,6 @@ class ResPartner(models.Model):
 
     @api.depends("street")
     def _compute_street_data(self) -> None:
-        """Split the street value into its sub-fields when `street` changes."""
         for partner in self:
             partner.update(tools.street_split(partner.street))
 

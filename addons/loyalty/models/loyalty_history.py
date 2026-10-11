@@ -12,8 +12,6 @@ class LoyaltyHistory(models.Model):
         required=True,
         ondelete="cascade",
     )
-    # Stored: `loyalty_history_company_rule` filters on it, and a non-stored related
-    # turns every evaluation of that rule into a LEFT JOIN on loyalty_card.
     company_id = fields.Many2one(
         related="card_id.company_id",
     )
@@ -37,15 +35,6 @@ class LoyaltyHistory(models.Model):
 
     @api.depends("order_model", "order_id")
     def _compute_order_description(self) -> None:
-        """Name each line's order, one query per model for the whole set.
-
-        A field and not a method because the portal renders a page of lines and
-        asked each one on its own -- one query per line. Grouping by `order_model`
-        also gives the three answers the method did not have: `order_id` is a
-        `Many2oneReference`, so there is no foreign key keeping it in step, and a
-        line can name no order at all (`self.env[False]`), a model whose module has
-        since been uninstalled, or an order that has since been deleted.
-        """
         self.order_description = False
         for model, lines in self.grouped("order_model").items():
             if not model or model not in self.env:
@@ -57,5 +46,4 @@ class LoyaltyHistory(models.Model):
 
     @api.depends("order_model", "order_id")
     def _compute_order_portal_url(self) -> None:
-        """The customer-facing link to each line's order, if its model has one."""
         self.order_portal_url = False

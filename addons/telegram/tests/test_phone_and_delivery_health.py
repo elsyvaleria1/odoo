@@ -313,7 +313,6 @@ class TestBotTokenStorage(TelegramBotTestCase):
         bot = self._bot_without_token()
         token = "623456789:XYZ-DEF1234ghIkl-zyx57W2v1u123ew97"
         bot.credential_id.credential_value = token
-        # a hash stored while the token could not be read
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE telegram_bot SET token_hash = NULL WHERE id = %s", (bot.id,)

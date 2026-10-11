@@ -92,16 +92,6 @@ class Website(models.Model):
 
     @staticmethod
     def _search_get_html_fields(search_detail):
-        """Names, among a detail's `search_fields`, whose stored value is markup.
-
-        The fuzzy word enumerators index words, and words live in the text a
-        visitor reads, not in the tag and class names around it. A detail that
-        declares `html_fields` answers for itself; otherwise the answer is read
-        off the mapping, which already says which rendered field is HTML. The
-        detail is the contract here, not the model: these enumerators run over
-        whatever `_search_get_detail` names, including models that carry no
-        website mixin at all.
-        """
         declared = search_detail.get("html_fields")
         if declared is not None:
             return frozenset(declared)
@@ -113,12 +103,6 @@ class Website(models.Model):
 
     @staticmethod
     def _search_enumerate_value_words(value, field_name, html_fields, match_pattern):
-        """The words a single searchable value contributes to the fuzzy index.
-
-        One spelling for every field of every enumerator: a markup field is
-        reduced to the text a visitor reads before the words are cut out of it,
-        so a typo is never corrected to a tag name or a CSS class.
-        """
         if not isinstance(value, str):
             return ()
         if field_name in html_fields:
@@ -128,11 +112,6 @@ class Website(models.Model):
     def _search_enumerate_words(
         self, rows, records, indirect_fields, html_fields, match_pattern
     ):
-        """Every word the candidate set contributes, direct fields then paths.
-
-        `rows` are the `search_read` dicts carrying the direct fields; `records`
-        is the same candidate set as a recordset, walked once per indirect path.
-        """
         for row in rows:
             for field_name, value in row.items():
                 yield from self._search_enumerate_value_words(
@@ -397,12 +376,12 @@ class Website(models.Model):
             )
             domain = Domain.AND([domain, Domain([("id", "in", list(ids))])])
             rows = (
-                model.search_read(domain, direct_fields, limit=limit)  # noqa: E8507 - one query per searched model
+                model.search_read(domain, direct_fields, limit=limit)
                 if direct_fields
                 else []
             )
             candidates = (
-                model.search(domain, limit=limit)  # noqa: E8507 - one query per searched model
+                model.search(domain, limit=limit)
                 if indirect_fields
                 else model.browse()
             )
@@ -438,7 +417,7 @@ class Website(models.Model):
             domain &= fields_domain
             perf_limit = 1000
             records = (
-                model.search_read(domain, direct_fields, limit=perf_limit)  # noqa: E8507 - one query per searched model
+                model.search_read(domain, direct_fields, limit=perf_limit)
                 if direct_fields
                 else []
             )
@@ -452,7 +431,7 @@ class Website(models.Model):
                 if exact_records:
                     yield search
             candidates = (
-                model.search(domain, limit=limit)  # noqa: E8507 - one query per searched model
+                model.search(domain, limit=limit)
                 if indirect_fields
                 else model.browse()
             )

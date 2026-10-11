@@ -11,6 +11,5 @@ class StockMove(models.Model):
     )
 
     def initialize_lazada_order_items(self) -> None:
-        """Link Lazada order items from sale order lines to stock moves."""
         for move in self:
             move.lazada_order_item_ids = move.sale_line_id.lazada_order_item_ids

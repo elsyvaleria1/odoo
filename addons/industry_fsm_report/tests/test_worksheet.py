@@ -42,10 +42,6 @@ class TestWorksheet(TransactionCase):
         )
 
     def test_project_worksheet_template_propagation(self):
-        """
-        1) Test project template propagation when changing task project with empty worksheet template
-        2) Test project template propagation when creating new task
-        """
         self.task.write(
             {
                 "worksheet_template_id": False,
@@ -251,12 +247,6 @@ class TestWorksheet(TransactionCase):
         )
 
     def test_open_worksheet_wizard_condition(self):
-        """
-        This test ensures that the wizard is only open when needed. The conditions for it to open are the following ones:
-        - There are no worksheets in the db (and)
-        - The only available worksheet template is the template called 'Default Worksheet' (and)
-        - The user must have the system admin rights
-        """
         self.env["worksheet.template"].search([]).action_archive()
         template_vals = {
             "name": "Default Worksheet",
@@ -303,9 +293,6 @@ class TestWorksheet(TransactionCase):
         )
 
     def test_generated_template_from_wizard(self):
-        """
-        This test ensures that the template generated from the wizard is correctly created.
-        """
         wizard = self.env["wizard.project.task.create.worksheet.template"].create(
             {"task_id": self.task.id}
         )
@@ -359,9 +346,6 @@ class TestWorksheet(TransactionCase):
         )
 
     def test_send_reports_in_batches(self):
-        """
-        This test ensures that implementation of sending batches in reports is working.
-        """
         tasks = self.env["project.task"].create(
             [
                 {
@@ -414,16 +398,6 @@ class TestWorksheet(TransactionCase):
         )
 
     def test_set_worksheet_template_with_multi_company(self):
-        """
-        Verify the worksheet template based on the project company.
-        Steps
-            - Create a new company (TestCompany1)
-            - Create a worksheet template and set up a company (TestCompany1)
-            - Create project
-            - Verify the worksheet template and the project company.
-            - Set TestCompany1 to the project.
-            - Again verify the worksheet template and the project company.
-        """
 
         test_company = self.env["res.company"].create(
             {

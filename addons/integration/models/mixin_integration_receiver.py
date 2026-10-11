@@ -37,14 +37,10 @@ class MixinIntegrationReceiver(models.AbstractModel):
 
     def _inbound_payload_vals(self, admission, event_type):
         if self.processing_mode == "async":
-            # The row is the work item: the body is kept as received.
             return {"request_payload": admission.body.decode("utf-8", errors="replace")}
         return super()._inbound_payload_vals(admission, event_type)
 
     def _open_inbound_exchange(self, admission, event_type) -> None:
-        """The row is also the receipt: a copy of an event already received
-        inside the window is refused on the row that holds it. A read is no
-        event: asking twice is not delivering twice."""
         super()._open_inbound_exchange(admission, event_type)
         exchange = admission.exchange
         if admission.method not in SAFE_METHODS and self.check_duplicate_event(
@@ -181,16 +177,12 @@ class MixinIntegrationReceiver(models.AbstractModel):
     def unlink(self) -> bool:
         endpoint_refs = [f"{record._name},{record.id}" for record in self]
 
-        # a refusal outlives its endpoint: it is the record of who was turned
-        # away, and only the retention sweep removes it
         event_logs = (
             self.env["integration.exchange"]
             .sudo()
             .search([("channel_id", "in", endpoint_refs), ("state", "!=", "refused")])
         )
 
-        # Run access checks and deletion vetoes while their exchange evidence
-        # still exists. A veto must not observe history we just deleted.
         result = super().unlink()
         if event_logs:
             _logger.info(
@@ -283,9 +275,6 @@ class MixinIntegrationReceiver(models.AbstractModel):
         self.check_singleton()
 
         if event_log:
-            # the admission opened the exchange as the public user; its job is
-            # queued as the gate's principal, whom it acts for -- the public
-            # user is archived, and a job queued as it fails at its claim
             event = event_log.with_env(self.env)
             event.write({"state": "pending", "date_completed": False})
         else:
@@ -329,14 +318,6 @@ class MixinIntegrationReceiver(models.AbstractModel):
 
         endpoint_ref = f"{self._name},{self.id}"
 
-        # A failed or refused row answered its caller with an error: nothing was
-        # stored, so the caller's resend is the retry the error invited, not a
-        # duplicate. Counting it answered 409, and a sender reads 409 as
-        # "already held" and drops the event -- a phone deleted the call record
-        # the failed ingest had never stored. A row in flight or delivered still
-        # blocks the copy. This is the rule the sender's own event id already
-        # follows: integration.exchange._channel_event_uniq leaves failed,
-        # refused and duplicate rows out of its uniqueness.
         domain = [
             ("channel_id", "=", endpoint_ref),
             ("request_payload_hash", "=", payload_hash),

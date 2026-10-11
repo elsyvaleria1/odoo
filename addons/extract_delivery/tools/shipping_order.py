@@ -13,7 +13,6 @@ from odoo.addons.extract.tools import (
 )
 
 DOC_TYPE = "shipping_order"
-# a printed amount: 4,731.25
 _MONEY_RE = re.compile(r"^\$?\s*(\d{1,3}(?:,\d{3})*|\d+)\.(\d{2})$")
 _DATE_RE = re.compile(r"FECHA\s+(?:EXP|DOC)\.?\s*(\d{2})[-/](\d{2})[-/](\d{4})")
 _ORIGIN_RE = re.compile(r"^\s*ORIGEN:\s*(.+?)\s*$", re.MULTILINE)
@@ -85,12 +84,8 @@ def _amount(line: str) -> float | None:
 
 
 def find_totals(text: str) -> dict[str, float]:
-    """The total, read after its label, and the subtotal, VAT and VAT withheld
-    whose sum gives it: OCR keeps a table's labels and figures apart, so the
-    three are told by adding up, not by where they sit."""
     lines = [line.strip() for line in (text or "").splitlines()]
     total = None
-    # the last "Total" is the sheet's; an earlier one heads the charges' column
     for index in range(len(lines) - 1, -1, -1):
         if lines[index].upper() == "TOTAL":
             total = next(

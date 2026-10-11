@@ -3,7 +3,6 @@ from . import wizards
 
 
 def _post_init_hook(env) -> None:
-    """Create the Avatax fiscal position in all US companies at the same time"""
     if companies := env["res.company"].search(
         [("account_config_id.chart_template", "=", "generic_coa")], order="parent_path"
     ):

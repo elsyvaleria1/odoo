@@ -96,11 +96,6 @@ class OrderTerm(typing.NamedTuple):
 
 @functools.lru_cache(maxsize=_PARSE_CACHE_MAXSIZE)
 def parse_order(order: str) -> tuple[OrderTerm, ...] | None:
-    """Every term of `order`, or None if any of them does not parse.
-
-    Cached on the string: an order is a property of a model or of a view, so
-    the same handful of strings are parsed over and over.
-    """
     terms = []
     for part in order.split(","):
         match = regex_order.match(part)

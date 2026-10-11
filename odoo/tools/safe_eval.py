@@ -22,7 +22,7 @@ from odoo.libs.debug_log import DebugLog
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
-unsafe_eval = eval  # noqa: S307  the raw builtin, kept so safe_eval can wrap it
+unsafe_eval = eval
 
 __all__ = ["const_eval", "expr_eval", "safe_eval"]
 
@@ -31,8 +31,8 @@ _ALLOWED_MODULES = ["_strptime", "math", "time"]
 
 def _import(
     name: str,
-    globals: dict | None = None,  # noqa: A002  mirrors __import__, see comment above
-    locals: dict | None = None,  # noqa: A002  mirrors __import__, see comment above
+    globals: dict | None = None,
+    locals: dict | None = None,
     fromlist: list[str] | None = None,
     level: int = -1,
 ) -> None:
@@ -328,9 +328,6 @@ _GUARD_LOADS = frozenset(("LOAD_NAME", "LOAD_GLOBAL"))
 
 
 def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
-    # the format guard is a builtin the compiler calls by name; an expression
-    # that binds that name (a lambda parameter, a comprehension variable, a
-    # walrus, an assignment) would replace the guard with whatever it bound
     bound = {*code_obj.co_varnames, *code_obj.co_cellvars, *code_obj.co_freevars}
     if _GUARD_FORMAT_NAME not in bound and _GUARD_FORMAT_NAME not in code_obj.co_names:
         return
@@ -345,7 +342,7 @@ def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
     raise NameError("Binding the format guard is not allowed (%r)" % (expr,))
 
 
-_field_name_split = string._string.formatter_field_name_split  # type: ignore[attr-defined]
+_field_name_split = string._string.formatter_field_name_split
 
 
 def _reject_attribute_fields(field_name: str) -> None:
@@ -447,8 +444,6 @@ class _FormatGuardTransform(ast.NodeTransformer):
 
 
 def _may_call_format(expr: str) -> bool:
-    # identifiers are NFKC-normalised, so a non-ASCII source can spell
-    # `format` without containing the ASCII word
     return "format" in expr or not expr.isascii()
 
 
@@ -548,7 +543,7 @@ def compile_codeobj(
             expr = expr.strip()
         if guard_format and _may_call_format(expr):
             tree = _guard_format_tree(ast.parse(expr, filename or "", mode))
-            code_obj = compile(tree, filename or "", mode)  # type: ignore[call-overload]
+            code_obj = compile(tree, filename or "", mode)
         else:
             code_obj = compile(expr, filename or "", mode)
     except SyntaxError, TypeError, ValueError:
@@ -669,8 +664,6 @@ def safe_eval(
 
     check_values(context)
     if context and _GUARD_FORMAT_NAME in context:
-        # a global of that name would shadow the builtin guard for every
-        # .format the expression calls
         msg = f"safe_eval() context must not define {_GUARD_FORMAT_NAME!r}"
         raise ValueError(msg)
 
@@ -761,8 +754,6 @@ Pre-wrapped modules are provided as attributes of `odoo.tools.safe_eval`.
     if obj_id in seen:
         return
     seen.add(obj_id)
-    # a scalar child is skipped without the call: a render's values are mostly
-    # scalars nested in rows, and the call per scalar was most of the walk
     if isinstance(value, _MAPPINGS):
         for k, v in value.items():
             if type(k) not in _SCALAR_TYPES:
@@ -857,4 +848,4 @@ time = wrap_module(__import__("time"), ["time", "strptime", "strftime"])
 
 pytz: typing.Any = wrap_module(_tz_module, ["utc", "timezone"])
 pytz.UTC = pytz.utc
-dateutil.tz.gettz = pytz.timezone  # type: ignore[attr-defined]
+dateutil.tz.gettz = pytz.timezone

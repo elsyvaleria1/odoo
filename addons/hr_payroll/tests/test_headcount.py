@@ -11,7 +11,6 @@ class TestHeadcount(TransactionCase):
             return lst[0], lst[1:]
 
         super().setUpClass()
-        # create 2 companies with distinct resource names and ressource calendars.
         cls.company_us, cls.company_be = cls.env["res.company"].create(
             [
                 {
@@ -23,7 +22,6 @@ class TestHeadcount(TransactionCase):
             ]
         )
 
-        # create 4 resource calendars with distinct working hours.
         cls.resource_40h, cls.resource_35h, cls.resource_65h, cls.resource_30h = (
             cls.env["resource.calendar"].create(
                 [
@@ -195,9 +193,6 @@ class TestHeadcount(TransactionCase):
             )
         )
 
-        # make one contract for the BE employee and make 12 versions for US
-        # employees with some employees having two versions.
-        # note that the versions are never overlapping if an employee has two versions.
         cls.version_be = cls.employee_be.version_id
         cls.versions_us = cls.employees_us.version_id
         cls.versions_us += cls.env["hr.version"].create(
@@ -219,7 +214,6 @@ class TestHeadcount(TransactionCase):
         )
 
     def test_headcount_title_company(self):
-        """Test that the headcount name is properly set with the company."""
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -237,8 +231,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(headcount.name, "Headcount for BE on the %s" % date.today())
 
     def test_headcount_title_date_range(self):
-        """Test that the headcount name is properly when a date range is set
-        or not."""
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -267,9 +259,6 @@ class TestHeadcount(TransactionCase):
         )
 
     def test_company_consistency(self):
-        """Test that the headcount is consistent with the company of the
-        versions that are actually taken into account.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -286,12 +275,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(headcount.employee_count, 1)
 
     def test_headcount_population_large_range(self):
-        """Test that the headcount can be populated with a large range of
-        dates. This test is also used to check the working rates of the
-        versions. In addition to that it checks that the versions that are
-        draft or cancelled and the versions of other companies are not taken
-        into account.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -319,9 +302,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(first_versions, headcount.line_ids.mapped("version_id"))
 
     def test_headcount_population_no_range(self):
-        """Test that the headcount can be populated without a range of dates
-        to ensure that the headcount is working properly with no end date.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -338,11 +318,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(headcount.line_ids.version_id, self.versions_us[0:3])
 
     def test_headcount_population_no_versions_started(self):
-        """Test that the headcount can be populated where no versions have
-        started in the selected range to ensure that the headcount is still
-        consistent and don't take into account the versions that haven't
-        started yet.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -355,10 +330,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(headcount.employee_count, 0)
 
     def test_headcount_population_some_versions_over(self):
-        """Test that the headcount can be populated where some versions are
-        over in the selected range to ensure that the headcount is still
-        consistent and don't take into account the versions that are over.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -378,9 +349,6 @@ class TestHeadcount(TransactionCase):
         )
 
     def test_headcount_population_only_indefinite_versions(self):
-        """Test that the headcount can be populated properly where all the
-        versions are indefinite in the selected range.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -404,9 +372,6 @@ class TestHeadcount(TransactionCase):
         )
 
     def test_headcount_population_small_range(self):
-        """Test that the headcount can be populated with a small range of
-        dates.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -427,9 +392,6 @@ class TestHeadcount(TransactionCase):
         )
 
     def test_headcount_repopulate(self):
-        """Test that the headcount can be repopulated.
-        And that the values are actually updated.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -445,10 +407,6 @@ class TestHeadcount(TransactionCase):
         self.assertEqual(headcount.employee_count, 10)
 
     def test_special_fields_coherence(self):
-        """These tests are here to ensure that the set by the action_populate
-        method are coherent with the versions and their orders that are
-        actually taken into account.
-        """
 
         headcount = self.env["hr.payroll.headcount"].create(
             {
@@ -461,9 +419,7 @@ class TestHeadcount(TransactionCase):
         versions_by_employee = self.versions_us.grouped("employee_id")
         headcount_lines_by_employee = headcount.line_ids.grouped("employee_id")
         for employee_id, versions in versions_by_employee.items():
-            # verify uniqueness of the lines.
             self.assertEqual(len(headcount_lines_by_employee[employee_id]), 1)
-            # verify the names order of the versions.
             self.assertEqual(
                 headcount_lines_by_employee[employee_id].version_names,
                 ", ".join(
@@ -476,7 +432,6 @@ class TestHeadcount(TransactionCase):
                 headcount_lines_by_employee[employee_id].version_id.name
                 or headcount_lines_by_employee[employee_id].version_id.employee_id.name,
             )
-            # verify the working rates of the versions.
             self.assertEqual(
                 set(
                     headcount_lines_by_employee[employee_id].working_rate_ids.mapped(

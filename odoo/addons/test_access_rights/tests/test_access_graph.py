@@ -16,12 +16,6 @@ REACH_TABLE = '"test_access_right_graph_node_access_reach"'
 
 
 def oracle_role(nodes, grants, user, groups, scoped, node_id, now, in_use):
-    # the live formula, written independently of the SQL: a live grant held
-    # by the user reaches a node from the node itself or any ancestor up to
-    # the nearest boundary; an owner there holds the top role; a group counts
-    # in the companies in use it is held in (those its membership is limited
-    # to, else all the user's), on records of those companies or of none,
-    # and a group's grant limited to a company counts only there
     scope = []
     current = node_id
     while current:
@@ -30,15 +24,11 @@ def oracle_role(nodes, grants, user, groups, scoped, node_id, now, in_use):
             break
         current = nodes[current]["parent"]
     record_company = nodes[node_id]["company"]
-    # a partner's grant and an owner count on a record of a company in use,
-    # of none, or of one the user is not in
     personal = (
         not record_company
         or record_company in in_use
         or record_company not in user.company_ids.ids
     )
-    # a grant or an owner on a node that holds no children reaches that node
-    # only: what is above the record counts where it is a container
     scope = [
         node for node in scope if node == node_id or nodes[node].get("container", True)
     ]
@@ -188,11 +178,9 @@ class TestAccessGraph(TransactionCase):
         return groups, scoped
 
     def assert_agrees(self, seed, companies=None):
-        # companies: the companies in use, else all of each user's
         self.assert_state_agrees(*self.build(seed), seed=seed, companies=companies)
 
     def stored_state(self, created):
-        # what the oracle reads, from the records as they now stand
         created = created.exists()
         nodes = {
             node.id: {
@@ -218,7 +206,6 @@ class TestAccessGraph(TransactionCase):
         return created, nodes, grants, fields.Datetime.now()
 
     def assert_table_is_derived(self):
-        # the rows the triggers kept equal the rows derived from scratch
         cr = self.env.cr
         self.Node._access_graph_flush()
         table = self.Node._access_reach_table()
@@ -272,7 +259,6 @@ class TestAccessGraph(TransactionCase):
             nothing = Nodes.sudo().search(
                 [("id", "in", created.ids), ("access_role", "=", False)]
             )
-            # a run of bands is the union of its bands
             for run in (
                 ["view", "edit", "manage"],
                 ["edit", "manage"],
@@ -310,9 +296,6 @@ class TestAccessGraph(TransactionCase):
             )
 
     def test_the_table_stays_derived_through_any_writes(self):
-        # moves, boundaries, containers, owners, companies, grants written and
-        # removed, nodes deleted: after each batch the kept rows are the
-        # derived ones, and the reach still agrees with the formula
         for seed in (11, 12):
             rng = random.Random(seed)
             created, *_ = self.build(seed, size=40, grants=60)
@@ -356,9 +339,6 @@ class TestAccessGraph(TransactionCase):
                 )
 
     def test_a_grant_writes_only_the_rows_it_is_the_source_of(self):
-        # each row names the grant it comes from: adding a grant to a folder
-        # inserts that grant's rows and leaves every other row of the subtree
-        # where it was; removing it deletes those rows alone
         created, *_ = self.build(14, size=30, grants=40)
         folder = created.filtered(lambda node: node.is_container)[0]
         cr = self.env.cr
@@ -403,8 +383,6 @@ class TestAccessGraph(TransactionCase):
                     self.assert_agrees(seed, companies=company.ids)
 
     def test_a_group_counts_in_the_companies_in_use(self):
-        # the company switcher: what a group reaches in a company the user
-        # deselected is not reached, as an access row's company reach is not
         root = self.Node.create({"name": "S"})
         in_b = self.Node.create(
             {"name": "b", "parent_id": root.id, "company_id": self.company_b.id}
@@ -437,7 +415,6 @@ class TestAccessGraph(TransactionCase):
         self.assertFalse(as_alice(self.company_a).browse(in_b.id).access_role)
         self.assertFalse(as_alice(self.company_a).browse(limited.id).access_role)
         self.assertFalse(as_alice(self.company_a).browse(mine_in_b.id).access_role)
-        # dave is not in company B: what is shared with him there still is
         shared = self.Node.create({"name": "shared", "company_id": self.company_b.id})
         self.Grant.create(
             {
@@ -457,7 +434,6 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(both.browse(mine_in_b.id).access_role, "manage")
 
     def test_a_run_of_bands_is_one_reach(self):
-        # "view or above" asks the graph once, not once per role
         def reaches(domain):
             query = self.Node.with_user(self.alice).sudo()._search(domain)
             return query.select().code.count(REACH_TABLE)
@@ -524,8 +500,6 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(grants.node_id & nodes, leaf)
 
     def test_each_alias_reads_the_reach_table_once(self):
-        # a rule that walks to the graph through two aliases -- the node and
-        # its parent -- looks each up in the reach table, once
         root = self.Node.create({"name": "R"})
         mid = self.Node.create({"name": "m", "parent_id": root.id})
         leaf = self.Node.create({"name": "l", "parent_id": mid.id, "is_boundary": True})
@@ -550,8 +524,6 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(
             Node.sudo()._search(walked).statement().code.count(REACH_TABLE), 2
         )
-        # mid by its group grant, other by the partner's; leaf is a boundary
-        # the group's grant stops at, and is reached here through its parent
         self.assertEqual(Node.sudo().search(reach) & nodes, mid | other)
         self.assertEqual(Node.sudo().search(walked) & nodes, mid | leaf | other)
         self.assertEqual(
@@ -562,8 +534,6 @@ class TestAccessGraph(TransactionCase):
         )
 
     def test_the_reach_is_one_principal_lookup(self):
-        # every way of reaching is a row: the condition looks the user's
-        # principals up in one indexed column, and parses no scope per row
         Node = self.Node.with_user(self.alice)
         statement = Node.sudo()._search(Node._access_graph_reach("view")).statement()
         self.assertIn(
@@ -574,10 +544,6 @@ class TestAccessGraph(TransactionCase):
         self.assertNotIn("grant_row", statement.code)
 
     def test_opened_groups_read_each_set_of_granted_nodes_once(self):
-        # web_read_group searches every opened group with the same domain,
-        # narrowed to the group: the statement states each set of granted
-        # containers once for all its parts, and each group holds what a
-        # search of its own finds
         companies = (self.company_a | self.company_b).ids
         nodes = self.Node.create(
             [
@@ -621,7 +587,6 @@ class TestAccessGraph(TransactionCase):
         self.assertEqual(
             opened.count(REACH_TABLE), sets, "one lookup per expression, not per group"
         )
-        # a relational group without a value is not opened by auto_unfold
         opened_groups = [group for group in result["groups"] if group["company_id"]]
         self.assertEqual(len(opened_groups), 2)
         for group in result["groups"]:

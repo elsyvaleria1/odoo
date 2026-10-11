@@ -64,7 +64,7 @@ class AccountReportActions(models.Model):
             "view_mode": "form",
             "views": [
                 (view_id, "form")
-            ],  # view_id will be False in case the default view is needed
+            ],
             "res_model": target_record._name,
             "res_id": target_record.id,
             "context": self.env.context,
@@ -79,11 +79,6 @@ class AccountReportActions(models.Model):
         return {"res.partner": "base.view_partner_form"}
 
     def _resolve_caret_option_view(self, target):
-        """Retrieve the target view of the caret option.
-
-        :param target:  The target record of the redirection.
-        :return: The id of the target view.
-        """
         view_map = self._get_caret_option_view_map()
 
         view_xmlid = view_map.get(target._name)
@@ -96,26 +91,12 @@ class AccountReportActions(models.Model):
     def dispatch_report_action(
         self, options, action, action_param=None, on_sections_source=False
     ):
-        """Dispatches calls made by the client to either the report itself, or its custom handler if it exists.
-        The action should be a public method, by definition, but a check is made to make sure
-        it is not trying to call a private method.
-        """
         self.check_singleton()
 
         if on_sections_source:
             report_to_call = self.env["report.formula"].browse(
                 options["sections_source_id"]
             )
-            # on_sections_source and sections_source_id both come from the client,
-            # so the link has to be checked here: without it the guard below can
-            # never fire on this path, since the recursive call always lands on
-            # the very report the options name. Recurse on a copy, too -- the
-            # caller still holds the dict we were handed.
-            #
-            # _init_options_sections sets sections_source_id to self, or to the
-            # selected variant; the client sets it to the composite report when a
-            # section of one is on screen. Those three are the whole legitimate
-            # set, and anything else is a dispatch onto an unrelated report.
             if report_to_call != self and not (
                 self in report_to_call.section_report_ids
                 or report_to_call in self.variant_report_ids
@@ -183,7 +164,6 @@ class AccountReportActions(models.Model):
             engine=expression.engine,
             column_group_key=params["column_group_key"],
         )
-        # Audit of external values
         if expression.engine == "external":
             external_values_domain = (
                 Domain("target_report_expression_id", "=", expression.id)
@@ -229,7 +209,6 @@ class AccountReportActions(models.Model):
                 "domain": list(external_values_domain),
             }
 
-        # If we're auditing a groupby line, we need to make sure to restrict the result of what we audit to the right group values
         column = next(
             (
                 col
@@ -302,21 +281,6 @@ class AccountReportActions(models.Model):
         rounding,
         json_friendly_column_group_totals,
     ) -> dict:
-        """Edit a manual value from the report, updating or creating the corresponding report.formula.external.value object.
-
-        :param options: The option dict the report is evaluated with.
-
-        :param column_group_key: The string identifying the column group into which the change as manual value needs to be done.
-
-        :param new_value_str: The new value to be set, as a string.
-
-        :param rounding: The number of decimal digits to round with.
-
-        :param json_friendly_column_group_totals: The expression totals by column group already computed for this report, in the format returned
-                                                  by _get_json_friendly_column_group_totals. These will be used to reevaluate the report, recomputing
-                                                  only the expressions depending on the newly-modified manual value, and keeping all the results
-                                                  from the previous computations for the other ones.
-        """
         _debug.lifecycle("action_modify_manual_value", records=self)
         self.check_singleton()
 
@@ -341,8 +305,6 @@ class AccountReportActions(models.Model):
             target_expression_id=target_expression_id,
             expressions_to_recompute=expressions_to_recompute,
         )
-        # We recompute values for each column group, not only the one we modified a value in; this is important in case some date_scope is used to
-        # retrieve the manual value from a previous period.
 
         all_column_groups_expression_totals = (
             self._convert_json_friendly_column_group_totals(
@@ -426,7 +388,6 @@ class AccountReportActions(models.Model):
 
     @_debug.perf.timed
     def _create_menu_item_for_report(self) -> dict:
-        """Adds a default menu item for this report. This is called by an action on the report, for reports created manually by the user."""
         self.check_singleton()
 
         action, menuitem = self._get_existing_menuitem()
@@ -487,7 +448,6 @@ class AccountReportActions(models.Model):
         action_read = clean_action(action.read()[0], env=action.env)
 
         if action_type == "ir.actions.client":
-            # Check if we are opening another report. If so, generate options for it from the current options.
             if action.tag == "account_report":
                 target_report = self.env["report.formula"].browse(
                     self.env["ir.actions.actions"]._eval_action_context(
@@ -500,12 +460,9 @@ class AccountReportActions(models.Model):
                 )
 
         if params.get("id"):
-            # Add the id of the calling object in the action's context
             if isinstance(params["id"], int):
-                # id of the report line might directly be the id of the model we want.
                 model_id = params["id"]
             else:
-                # It can also be a generic report.formula id, as defined by _get_generic_line_id
                 model_id = self._get_model_info_from_id(params["id"])[1]
 
             context = (
@@ -523,16 +480,6 @@ class AccountReportActions(models.Model):
     def _action_modify_manual_external_value(
         self, target_column_group_options, new_value_str, target_expression_id, rounding
     ) -> None:
-        """Edit a manual value from the report, updating or creating the corresponding report.formula.external.value object.
-
-        :param target_column_group_options: The options dict of the column group where the modification happened.
-
-        :param new_value_str: The new value to be set, as a string.
-
-        :param target_expression_id: The id of the report.formula.expression the manual value belongs to.
-
-        :param rounding: The number of decimal digits to round with.
-        """
         _debug.lifecycle("_action_modify_manual_external_value", records=self)
         if len(target_column_group_options["companies"]) > 1:
             raise UserError(
@@ -541,7 +488,6 @@ class AccountReportActions(models.Model):
                 )
             )
 
-        # Create the manual value
         target_expression = self.env["report.formula.expression"].browse(
             target_expression_id
         )
@@ -563,7 +509,6 @@ class AccountReportActions(models.Model):
                 external_values_domain & Domain("date", "=", date_to)
             )
 
-            # There should be at most 1
             if len(existing_value_to_modify) > 1:
                 raise UserError(
                     self.env._(
@@ -660,7 +605,6 @@ class AccountReportActions(models.Model):
         groupby_domain = Domain(
             self._get_domain_audit_line_groupby(params["calling_line_dict_id"])
         )
-        # Aggregate all domains per date scope, then create the final domain.
         audit_or_domains_per_date_scope = defaultdict(list)
         for expression_to_audit in expression._expand_aggregations():
             expression_domain = self._get_domain_expression_audit(
@@ -692,7 +636,6 @@ class AccountReportActions(models.Model):
                 for date_scope, audit_or_domains in audit_or_domains_per_date_scope.items()
             )
         else:
-            # Happens when no expression was provided (empty recordset), or if none of the expressions had a standard engine
             domain = self._get_domain_options(column_group_options, "strict_range")
         return domain & groupby_domain
 

@@ -9,8 +9,6 @@ from odoo.tools.safe_eval import safe_eval
 
 
 def _rule_code_domain(code):
-    """Domain matching any hr.salary.rule referencing `code` (as a quoted
-    Python literal) in its condition or amount formula."""
     return Domain.OR(
         [
             Domain("condition_python", "like", "'" + code + "'"),
@@ -85,20 +83,12 @@ class HrRuleParameterValue(models.Model):
         return super().write(vals)
 
     def _log_parameter_value_updates(self, vals) -> None:
-        """Log the old and the new value on the parent parameter's chatter.
-
-        The value lines have no chatter of their own -- they are edited inline
-        in the parameter's form -- so the trace belongs to the parameter.
-        """
         for value in self:
             for fname in ("parameter_value", "date_from"):
                 if fname not in vals:
                     continue
                 field = self._fields[fname]
                 old_value = value[fname]
-                # convert through the field: vals carries the raw client value,
-                # so comparing it to the record value straight would report a
-                # change on every re-save of an untouched line.
                 new_value = field.convert_to_record(
                     field.convert_to_cache(vals[fname], value, validate=False), value
                 )
@@ -162,7 +152,6 @@ class HrRuleParameter(models.Model):
     )
 
     def copy_data(self, default=None):
-        """Suffix name and code, which `_unique_code` would otherwise reject."""
         vals_list = super().copy_data(default=default)
         default = default or {}
         for parameter, vals in zip(self, vals_list, strict=False):
@@ -180,17 +169,8 @@ class HrRuleParameter(models.Model):
         'tuple(self.env.context.get("allowed_company_ids", []))',
     )
     def _get_parameter_from_code(self, code, date=None, raise_if_not_found=True):
-        """Return the parameter value in force for code at date.
-
-        :param str code: rule parameter code
-        :param date: date to evaluate at (defaults to today)
-        :param bool raise_if_not_found: raise UserError instead of returning None when missing
-        :return: the evaluated parameter value, or None
-        """
         if not date:
             date = fields.Date.today()
-        # This should be quite fast as it uses a limit and fields are indexed
-        # moreover the method is cached
         rule_parameter = self.env["hr.rule.parameter.value"].search(
             [("code", "=", code), ("date_from", "<=", date)], limit=1
         )
@@ -214,8 +194,6 @@ class HrRuleParameter(models.Model):
             if not rule_parameter.parameter_version_ids:
                 continue
 
-            # All values are already order from most recent to oldest.
-            # Here we get the first value that is not in the future, i.e. the current value.
             for value_id in rule_parameter.parameter_version_ids:
                 if value_id.date_from <= fields.Date.today():
                     parameter_value = value_id.parameter_value or ""

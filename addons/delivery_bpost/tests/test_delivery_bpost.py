@@ -30,9 +30,6 @@ class TestDeliveryBpost(TransactionCase):
                 "vat": "BE0477472701",
             }
         )
-        # "country_id" has to be changed in another write than "vat",
-        # else "vat" field is not copied on children partners and can
-        # cause exception when VAT numbers validation is enabled
         self.your_company.write({"country_id": self.env.ref("base.be").id})
 
         self.agrolait = self.env.ref("base.res_partner_2")
@@ -119,7 +116,6 @@ class TestDeliveryBpost(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -205,7 +201,6 @@ class TestDeliveryBpost(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -266,7 +261,6 @@ class TestDeliveryBpost(TransactionCase):
 
     def test_02b_bpost_real_invoice_policy(self):
         SaleOrder = self.env["sale.order"]
-        # set invoice policy to 'real'
         self.env.ref(
             "delivery_bpost.delivery_carrier_bpost_inter"
         ).invoice_policy = "real"
@@ -283,7 +277,6 @@ class TestDeliveryBpost(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -347,7 +340,6 @@ class TestDeliveryBpost(TransactionCase):
         self.assertGreater(
             picking.carrier_price, 0.0, "bpost carrying price is probably incorrect"
         )
-        # Check that the delivery cost (previously set to 0) has been correctly updated
         self.assertEqual(
             picking.carrier_price,
             delivery_line.price_unit,

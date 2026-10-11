@@ -275,8 +275,8 @@ class ResourceScheduleException(models.Model):
 
     def _generate_public_time_off_timesheets(self, employees):
         timesheet_vals_list = []
-        skipped_calendar = 0  # debuglog
-        skipped_existing = 0  # debuglog
+        skipped_calendar = 0
+        skipped_existing = 0
         resource_calendars = self._get_resource_calendars()
         work_hours_data = self._work_time_per_day(resource_calendars)
         timesheet_read_group = self.env["account.analytic.line"]._read_group(
@@ -293,7 +293,7 @@ class ResourceScheduleException(models.Model):
                     leave.calendar_id
                     and employee.resource_calendar_id != leave.calendar_id
                 ):
-                    skipped_calendar += 1  # debuglog
+                    skipped_calendar += 1
                     continue
                 calendar = leave.calendar_id or employee.resource_calendar_id
                 work_hours_list = work_hours_data[calendar.id][leave.id]
@@ -301,7 +301,7 @@ class ResourceScheduleException(models.Model):
                 for index, (day_date, work_hours_count) in enumerate(work_hours_list):
                     generate_timesheet = day_date not in timesheet_dates
                     if not generate_timesheet:
-                        skipped_existing += 1  # debuglog
+                        skipped_existing += 1
                         continue
                     timesheet_vals = leave._timesheet_prepare_line_values(
                         index, employee, work_hours_list, day_date, work_hours_count

@@ -12,7 +12,6 @@ class TestApplicantQualificationStageChange(HttpCase):
 
         Users = cls.env["res.users"].with_context(no_reset_password=True)
 
-        # Recruitment user groups
         group_recruitment_interviewer = cls.env.ref(
             "hr_recruitment.group_hr_recruitment_interviewer"
         )
@@ -37,7 +36,6 @@ class TestApplicantQualificationStageChange(HttpCase):
             }
         )
 
-        # Department + Job
         dep_rd = cls.env["hr.department"].create({"name": "Research & Development"})
         job = cls.env["hr.job"].create(
             {
@@ -48,7 +46,6 @@ class TestApplicantQualificationStageChange(HttpCase):
             }
         )
 
-        # Applicant
         cls.applicant = (
             cls.env["hr.applicant"]
             .sudo()
@@ -61,7 +58,6 @@ class TestApplicantQualificationStageChange(HttpCase):
             )
         )
 
-        # Stage + template
         schedule_tmpl = cls.env.ref(
             "appointment_hr_recruitment.email_template_data_applicant_schedule_interview"
         )
@@ -80,7 +76,6 @@ class TestApplicantQualificationStageChange(HttpCase):
             "allowed_company_ids": [1],
         }
 
-        # move the applicant to the Qualification stage through the RPC endpoint
         payload = {
             "jsonrpc": "2.0",
             "method": "call",
@@ -108,7 +103,6 @@ class TestApplicantQualificationStageChange(HttpCase):
         self.assertIn("result", resp)
         self.assertTrue(resp["result"], "Write RPC failed")
 
-        # the stage template must have posted the interview invitation on the applicant
         applicant = self.env["hr.applicant"].browse(self.applicant.id)
 
         messages = [m for m in applicant.message_ids if m.body]
@@ -125,11 +119,9 @@ class TestApplicantQualificationStageChange(HttpCase):
 
         url = match.group(1)
 
-        # Must contain /book/<token>?applicant_code=<code>
         pattern = r"/book/[^?]+\?applicant_code=[^&]+"
         self.assertRegex(url, pattern, f"URL missing expected format: {url}")
 
-        # Open the booking page to ensure it's valid
         page = self.url_open(url)
         self.assertEqual(
             page.status_code, 200, "Booking page did not open successfully"

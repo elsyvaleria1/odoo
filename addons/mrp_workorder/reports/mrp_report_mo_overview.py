@@ -43,9 +43,6 @@ class ReportMrpReport_Mo_Overview(models.AbstractModel):
                 )
                 index += 1
             else:
-                # Theoretical cost is workorder-level (it doesn't vary per employee
-                # or cost group), so it must be added to the summary once per
-                # workorder, not once per (employee, cost) group below.
                 mo_cost = workorder._get_theoretical_employee_cost()
                 res["summary"]["mo_cost"] += mo_cost
                 for employee, time_ids in workorder.time_ids.grouped(

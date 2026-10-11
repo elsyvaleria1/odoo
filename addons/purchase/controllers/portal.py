@@ -183,8 +183,6 @@ class CustomerPortal(portal.CustomerPortal, OrderPortalMixin):
 
     @staticmethod
     def _purchase_may_act(order_id, access_token):
-        # the page opens at view; acknowledging changes the order, so a link
-        # must say comment, as every vendor link does
         try:
             request.env["access.link"]._open_record(
                 "purchase.order", order_id, access_token=access_token, role="comment"

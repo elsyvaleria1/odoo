@@ -91,12 +91,10 @@ class TestRecruitmentSurvey(common.TransactionCase):
         with self.assertRaises(AccessError):
             self.survey_custom.with_user(self.hr_recruitment_manager).read(["title"])
 
-        # Officer: unrestricted access to recruitment surveys, no interviewer gate.
         invite_recruitment.with_user(self.hr_recruitment_user).action_invite()
         with self.assertRaises(AccessError):
             self.survey_custom.with_user(self.hr_recruitment_user).read(["title"])
 
-        # Interviewer: gated on being set as interviewer, on the job or the applicant.
         user = self.hr_recruitment_interviewer
         with self.assertRaises(AccessError):
             invite_recruitment.with_user(user).action_invite()
@@ -131,7 +129,6 @@ class TestRecruitmentSurvey(common.TransactionCase):
                 self.hr_recruitment_manager
             ).action_print_survey()
 
-        # Officer: unrestricted access to recruitment surveys, no interviewer gate.
         self.job_applicant.with_user(self.hr_recruitment_user).action_print_survey()
 
     def test_invitation_link_stays_out_of_the_applicant_thread(self):

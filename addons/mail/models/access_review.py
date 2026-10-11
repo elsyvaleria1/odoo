@@ -17,9 +17,6 @@ class AccessReviewItem(models.Model):
     _inherit = ["access.review.item", "mixin.mail.activity"]
 
     def _schedule_reviews(self) -> None:
-        # the access administrators have the reviews in the Access menu; any
-        # other reviewer (a link's owner, a named reviewer) is told each item
-        # to decide, due by the review's deadline
         administrators = self.env.ref("base.group_erp_manager").all_user_ids
         by_reviewer: dict[models.BaseModel, list[int]] = {}
         for item in self:

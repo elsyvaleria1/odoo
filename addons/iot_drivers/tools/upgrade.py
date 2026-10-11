@@ -19,11 +19,6 @@ _logger = logging.getLogger(__name__)
 
 
 def git(*args):
-    """Run a git command with the given arguments, taking system
-    into account.
-
-    :param args: list of arguments to pass to git
-    """
     git_executable = "git" if IS_RPI else path_file("git", "cmd", "git.exe")
     command = [
         git_executable,
@@ -39,11 +34,6 @@ def git(*args):
 
 
 def pip(*args):
-    """Run a pip command with the given arguments, taking system
-    into account.
-
-    :param args: list of arguments to pass to pip
-    """
     python_executable = [] if IS_RPI else [path_file("python", "python.exe"), "-m"]
     command = [*python_executable, "pip", *args]
 
@@ -56,13 +46,8 @@ def pip(*args):
 
 
 def get_db_branch(server_url):
-    """Get the current branch of the database.
-
-    :param server_url: The URL of the connected Odoo database.
-    :return: the current branch of the database
-    """
     try:
-        response = requests.post(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        response = requests.post(
             server_url + "/web/webclient/version_info", json={}, timeout=5
         )
         response.raise_for_status()
@@ -81,16 +66,7 @@ def get_db_branch(server_url):
 
 @rpi_only
 def check_version_upgrades(local_branch, db_branch) -> None:
-    """
-    Check if the iot is < 19.1 and upgrading to >= saas-19.1
-    If so and current python version is less than 3.12, run the scripts
-    located in upgrade_scripts/ to upgrade the python version
-    :param local_branch: The local git branch (Ex: "19.0" / "17.0-hw-drivers-compatibility-with-trixie-yaso")
-    :param db_branch: The git branch of the connected Odoo database (Ex: "saas-19.1" / "master" etc.)
-    """
     try:
-        # 1. Check if the upgrade script needs to be ran
-        # Needed if local branch is < 19.1 and db branch is >= 19.1 + python version < 3.12
         _logger.info(
             "Checking for version upgrades for local branch %s / db_branch %s",
             local_branch,
@@ -98,7 +74,7 @@ def check_version_upgrades(local_branch, db_branch) -> None:
         )
         version_db = (
             db_branch[-4:] if db_branch != "master" else db_branch
-        )  # master is currently always >= 19.1
+        )
         version_local = local_branch[-4:] if local_branch != "master" else local_branch
         local_python_version = tuple(
             int(x) for x in platform.python_version_tuple()[:2]
@@ -132,11 +108,6 @@ def check_version_upgrades(local_branch, db_branch) -> None:
 @toggleable
 @require_db
 def check_git_branch(server_url=None) -> None:
-    """Check if the local branch is the same as the connected Odoo DB and
-    checkout to match it if needed.
-
-    :param server_url: The URL of the connected Odoo database (provided by decorator).
-    """
     if IS_TEST:
         return
     db_branch = get_db_branch(server_url)
@@ -156,18 +127,15 @@ def check_git_branch(server_url=None) -> None:
         )
 
         if db_branch != local_branch:
-            # Repository updates
             unlink_file(
                 "odoo/.git/shallow.lock"
-            )  # In case of previous crash/power-off, clean old lockfile
+            )
             check_version_upgrades(local_branch, db_branch)
             checkout(db_branch)
             update_requirements()
 
-            # System updates
             update_packages()
 
-            # Miscellaneous updates (version migrations)
             misc_migration_updates()
             _logger.warning("Update completed, restarting...")
             odoo_restart()
@@ -176,9 +144,6 @@ def check_git_branch(server_url=None) -> None:
 
 
 def _sync_production_remote() -> None:
-    """Ensure that the remote repository is the production one
-    (https://github.com/odoo/odoo.git).
-    """
     production_remote = "https://github.com/odoo/odoo.git"
     if git("remote", "get-url", "origin") != production_remote:
         _logger.info("Setting remote repository to production: %s", production_remote)
@@ -186,10 +151,6 @@ def _sync_production_remote() -> None:
 
 
 def checkout(branch) -> None:
-    """Checkout to the given branch of the given git remote.
-
-    :param branch: The name of the branch to check out.
-    """
     _logger.info("Preparing local repository for checkout")
     _sync_production_remote()
 
@@ -200,16 +161,13 @@ def checkout(branch) -> None:
     if git("reset", "FETCH_HEAD", "--hard") is None:
         _logger.error("Failed to reset on FETCH_HEAD")
         return
-    git("branch", "-m", branch)  # Rename the current branch to the target branch name
+    git("branch", "-m", branch)
 
     _logger.info("Cleaning the working directory")
     git("clean", "-dfx")
 
 
 def update_requirements() -> None:
-    """Update the Python requirements of the IoT Box, installing the ones
-    listed in the requirements.txt file.
-    """
     requirements_file = path_file(
         "odoo", "addons", "iot_box_image", "configuration", "requirements.txt"
     )
@@ -223,10 +181,6 @@ def update_requirements() -> None:
 
 @rpi_only
 def update_packages() -> None:
-    """Update apt packages on the IoT Box, installing the ones listed in
-    the packages.txt file.
-    Requires ``writable`` context manager.
-    """
     packages_file = path_file(
         "odoo", "addons", "iot_box_image", "configuration", "packages.txt"
     )
@@ -234,7 +188,6 @@ def update_packages() -> None:
         _logger.info("No packages file found, not updating.")
         return
 
-    # update and install packages in the foreground
     commands = (
         "export DEBIAN_FRONTEND=noninteractive && "
         "mount -t proc proc /proc && "
@@ -252,7 +205,6 @@ def update_packages() -> None:
         _logger.error("An error occurred while trying to update the packages")
         return
 
-    # upgrade and remove packages in the background
     background_cmd = 'chroot /root_bypass_ramdisks /bin/bash -c "apt-get upgrade -y && apt-get -y autoremove"'
     subprocess.Popen(
         ["sudo", "bash", "-c", background_cmd],
@@ -263,10 +215,8 @@ def update_packages() -> None:
 
 @rpi_only
 def misc_migration_updates() -> None:
-    """Run miscellaneous updates after the code update."""
     _logger.warning("Running version migration updates")
     if path_file("odoo", "addons", "point_of_sale").exists():
-        # TODO: remove this when v18.0 is deprecated (point_of_sale/tools/posbox/ -> iot_box_image/)
         ramdisks_service = "/root_bypass_ramdisks/etc/systemd/system/ramdisks.service"
         subprocess.run(
             [
@@ -280,7 +230,6 @@ def misc_migration_updates() -> None:
         )
 
     if path_file("odoo", "addons", "hw_drivers").exists():
-        # TODO: remove this when v18.4 is deprecated (hw_drivers/,hw_posbox_homepage/ -> iot_drivers/)
         subprocess.run(
             [
                 "sed",

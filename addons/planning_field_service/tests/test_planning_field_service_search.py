@@ -10,9 +10,6 @@ class TestPlanningFieldServiceSearch(TransactionCase):
         return self.env[model].get_view(self.env.ref(xmlid).id, "search")["arch"]
 
     def test_the_analysis_report_search_stays_valid(self):
-        # The report builds its search on the shared base; a customer field put
-        # there broke every module that extends the report's search, such as
-        # planning_holidays.
         report_search = self.env.ref("planning.planning_analysis_report_view_search")
         report_search._check_xml()
         arch = self._search_arch(

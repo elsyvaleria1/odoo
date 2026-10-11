@@ -152,8 +152,6 @@ class StockMoveMerge(models.Model):
         moves_by_neg_key = defaultdict(lambda: self.env["stock.move"])
         merge_key = self._get_merge_key(distinct_fields)
         for candidate_moves in candidate_moves_set:
-            # the sets may overlap (mrp adds the pickings of the productions
-            # it feeds): a move already merged away must not be summed twice
             candidate_moves = (
                 candidate_moves.filtered(
                     lambda m: m.state not in ("done", "cancel", "draft"),
@@ -327,12 +325,6 @@ class StockMoveMerge(models.Model):
                 round=False,
             ),
         )
-        # A split cannot conserve demand when the remainder is not representable
-        # in this move's unit: eight units of a move denominated in dozens is
-        # 0.6667, stored 0.67, which reads back as 8.04. Rounding here is the
-        # only option that keeps the move in the unit the order was placed in,
-        # so the residual is reported rather than removed -- `_split` is the one
-        # place that can still see the quantity going in and the two coming out.
         split_qty = defaults["product_uom_qty"]
         if uom_qty is None:
             split_back = split_qty
@@ -430,9 +422,6 @@ class StockMoveMerge(models.Model):
                 )
                 < 0
             ):
-                # `quantity` is stored at the move unit's precision: four units
-                # of a dozen read back as 0.33 dozen, and the remainder derived
-                # from it (0.67 dozen) is 8.04 units, not 8
                 qty_split = move.product_qty - sum(
                     move.move_line_ids.mapped("quantity_product_uom")
                 )

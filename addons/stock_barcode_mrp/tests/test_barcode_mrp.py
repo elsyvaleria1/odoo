@@ -165,9 +165,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_picking_product_with_kit_and_packaging(self):
-        """A picking with a move for a product with a kit BOM and packaging can be processed
-        in Barcode
-        """
         packaging = self.env["uom.uom"].create(
             {
                 "name": "test packaging",
@@ -224,9 +221,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(picking.state, "done")
 
     def test_picking_product_with_kit_and_component(self):
-        """A picking with a kit (comp A + comp B) and a separate move for a component(comp B) should not group the
-        two lines (the comp B line linked to the kit and the comp B line from the comp B move) in Barcode
-        """
         grp_lot = self.env.ref("stock.group_production_lot")
         self.env.user.write({"group_ids": [(4, grp_lot.id, 0)]})
         picking = self.env["stock.picking"].create(
@@ -259,9 +253,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_delivery_kit_with_tracked_compo(self):
-        """
-        Test that unreserved scanned component lots overrides the initial reservation.
-        """
         grp_lot = self.env.ref("stock.group_production_lot")
         self.env.user.group_ids |= grp_lot
         self.picking_type_out.show_reserved_sns = True
@@ -309,7 +300,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_picking_kit_variant_packaging(self):
-        """Test packaging related to a specific variant."""
         group_uom = self.env.ref("base.group_uom")
         self.env.user.write({"group_ids": [Command.link(group_uom.id)]})
         att_color = self.env["product.attribute"].create(
@@ -375,7 +365,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_only_mo_of_current_operation_are_visible(self):
-        """Test that it only returns manufacturing orders for the given picking type."""
         picking_type_1 = self.warehouse.manu_type_id
         picking_type_2 = picking_type_1.copy()
         mo_1 = self.env["mrp.production"].create(

@@ -73,26 +73,19 @@ class BlackBoxDriver(SerialDriver):
         self._certified_ref()
 
     def _set_actions(self) -> None:
-        """Initializes `self._actions`, a map of action keys sent by the frontend to backend action methods."""
 
         self._actions.update(
             {
-                "batchAction": self._batch_action,  # Batch of multiple actions to be done one after another and send all reponse at once
-                "registerReceiptWeb": self._request_registerReceiptWeb,  # 'H' from server (websocket) so requires an answer
-                "registerReceipt": self._request_registerReceipt,  # 'H'
-                "registerPIN": self._request_registerPIN,  # 'P'
-                "status": self._request_status,  # 'S'
+                "batchAction": self._batch_action,
+                "registerReceiptWeb": self._request_registerReceiptWeb,
+                "registerReceipt": self._request_registerReceipt,
+                "registerPIN": self._request_registerPIN,
+                "status": self._request_status,
             }
         )
 
     @classmethod
     def supported(cls, device):
-        """Checks whether the device at path `device` is supported by the driver.
-
-        :param dict device: path to the device
-        :return: whether the device is supported by the driver
-        :rtype: bool
-        """
         for i in range(3):
             try:
                 protocol = cls._protocol
@@ -100,7 +93,6 @@ class BlackBoxDriver(SerialDriver):
                 with serial_connection(device["identifier"], protocol) as connection:
                     connection.reset_output_buffer()
                     connection.reset_input_buffer()
-                    # ask for status then acknowledge the response
                     connection.write(probe_message)
                     buffer = connection.read_until(ETX)
                     _logger.info(
@@ -110,7 +102,7 @@ class BlackBoxDriver(SerialDriver):
                         buffer,
                     )
                     connection.write(ACK)
-                    connection.reset_input_buffer()  # flush in case bb sends status again (ACK too late)
+                    connection.reset_input_buffer()
                     if len(buffer) > 0 and buffer[0:1] == ACK:
                         return True
             except serial.SerialException:
@@ -121,22 +113,12 @@ class BlackBoxDriver(SerialDriver):
         return False
 
     def _request_status(self, data) -> None:
-        """
-        Sends a status request to the blackbox and stores the result status in self.data['message']
-        """
         blackbox_response = self._send_to_blackbox("S", data, self._connection)
         if blackbox_response:
             self.data["result"] = self._parse_blackbox_response(blackbox_response)
 
     @classmethod
     def _wrap_low_level_message_around(cls, high_level_message):
-        """Builds a low level message to be sent the blackbox.
-        :param high_level_message: The message to be transmitted to the blackbox
-        :type high_level_message: str
-        :return: The modified message as it is transmitted to the blackbox
-        :rtype: bytearray
-        :return: the response to the sent message, or None if no valid response was received
-        """
 
         bcc = cls._lrc(high_level_message)
         high_level_message_bytes = (ord(b) for b in high_level_message)
@@ -151,12 +133,6 @@ class BlackBoxDriver(SerialDriver):
 
     @staticmethod
     def _lrc(msg):
-        """Compute a message's longitudinal redundancy check value.
-
-        :param byte msg: the message the LRC is computed for
-        :return: the message LRC
-        :rtype: int
-        """
         lrc = 0
         for character in msg:
             byte = ord(character)
@@ -192,7 +168,7 @@ class BlackBoxDriver(SerialDriver):
     def send_blackbox_response(self, data, retry_nbr=0) -> None:
         server_url = helpers.get_odoo_server_url() + "/pos_self_blackbox/confirmation"
         try:
-            response = requests.post(server_url, json=data, timeout=5)  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+            response = requests.post(server_url, json=data, timeout=5)
             response.raise_for_status()
         except requests.Timeout:
             if retry_nbr < 3:
@@ -205,10 +181,6 @@ class BlackBoxDriver(SerialDriver):
             _logger.exception("Could not reach confirmation status URL: %s", server_url)
 
     def _batch_action(self, batch) -> None:
-        """Handles a batch of multiple actions to be done one after another and send all response at once.
-        :param batch: batch of arrays of action and the data to be sent to the blackbox
-        :type batch: array of tuples
-        """
         responses = []
         for data, action in batch["high_level_message"]:
             if action == "registerReceipt":
@@ -220,7 +192,6 @@ class BlackBoxDriver(SerialDriver):
                 continue
             responses.append(self.data["result"])
             if self._is_last_response_error():
-                # If the last response was an error, we do not send the next messages in the batch. They will be sent later in a new batch.
                 break
 
         self.data["result"] = responses
@@ -265,13 +236,6 @@ class BlackBoxDriver(SerialDriver):
     def _send_to_blackbox(
         self, request_type: str, data: dict, connection: serial.Serial
     ) -> str | None:
-        """Sends a message to and wait for a response from the blackbox.
-
-        :param request_type: "I", "H", "P" or "S"
-        :param data: data to be sent to the blackbox
-        :param connection: serial connection to the blackbox
-        :return: the response to the message, or None if no valid response was received
-        """
         error_code = "301"
         for retry in range(3):
             if retry > 0:
@@ -287,7 +251,6 @@ class BlackBoxDriver(SerialDriver):
                 buffer = connection.read_until(ETX)
 
                 if not len(buffer) or buffer[0:1] not in (ACK, NACK):
-                    # When the blackbox is off or poorly connected its adaptor is still detected but always replies with empty bytestrings b''
                     _logger.error(
                         "Blackbox did not respond, check the cable connection and the power supply."
                     )
@@ -299,9 +262,9 @@ class BlackBoxDriver(SerialDriver):
                     _logger.error("received NACK from blackbox.")
                     continue
                 if buffer[0:1] == ACK:
-                    buffer = buffer[1:]  # remove ACK
+                    buffer = buffer[1:]
                     for _ in range(3):
-                        response_data = buffer[1:-1]  # remove STX and ETX
+                        response_data = buffer[1:-1]
                         if (
                             len(buffer)
                             and buffer[0:1] == STX
@@ -360,7 +323,6 @@ class BlackBoxDriver(SerialDriver):
         return wrap
 
     def _set_name(self):
-        """Tries to build the device's name based on its type and protocol name but falls back on a default name if that doesn't work."""
 
         try:
             name = "%s serial %s - %s" % (

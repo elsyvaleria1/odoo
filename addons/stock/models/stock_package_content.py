@@ -69,9 +69,6 @@ class StockPackageContent(models.Model):
             )
 
     def _prefetch_move_line_ids(self) -> None:
-        # `move_line_ids` is recursive, and the ORM computes a recursive field
-        # one record at a time on a cache miss: without this every package of
-        # a list pays its own read_group and line read.
         saved = self.filtered("id")
         if len(saved) > 1:
             _debug.perf.count("move_lines_prefetched", packages=len(saved))

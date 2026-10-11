@@ -32,8 +32,6 @@ class TestSpreadsheetDocumentController(SpreadsheetTestCommon, HttpCase):
                 self.assertEqual(document.spreadsheet_data, json_dumps(data))
 
     def test_a_request_answered_with_an_osheet_json_file(self):
-        # the upload link is still "edit" when the handler becomes
-        # "spreadsheet", which a spreadsheet's CHECK refuses
         self.authenticate("admin", "admin")
         request_document = self.env["document.document"].create(
             {"name": "Requested sheet", "type": "binary", "access_via_link": "edit"}
@@ -175,33 +173,28 @@ class TestSpreadsheetDocumentController(SpreadsheetTestCommon, HttpCase):
             }
         )
 
-        self.authenticate(alice.login, alice.password)  # readonly access with token
-        # without token
+        self.authenticate(alice.login, alice.password)
         response = self.url_open("/spreadsheet/data/document.document/%s" % document.id)
         self.assertEqual(response.status_code, 403, "Forbidden")
 
-        # with wrong token
         response = self.url_open(
             "/spreadsheet/data/document.document/%s/a-wrong-token" % document.id
         )
         self.assertEqual(response.status_code, 403, "Forbidden")
 
-        # with token
         response = self.url_open(
             "/spreadsheet/data/document.document/%s/%s" % (document.id, access_token)
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["isReadonly"], True)
 
-        # without token and access
-        self.authenticate("raoul", "raoul")  # explicit edit access
+        self.authenticate("raoul", "raoul")
         response = self.url_open(
             "/spreadsheet/data/document.document/%s" % (document.id,)
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["isReadonly"], False)
 
-        # with token and access
         response = self.url_open(
             "/spreadsheet/data/document.document/%s/%s" % (document.id, access_token)
         )
@@ -247,7 +240,6 @@ class TestSpreadsheetDocumentController(SpreadsheetTestCommon, HttpCase):
 
     @mute_logger("odoo.http")
     def test_get_readonly_data_with_token(self):
-        "Readonly access"
         document = self.create_spreadsheet()
 
         document.access_via_link = "view"
@@ -259,11 +251,9 @@ class TestSpreadsheetDocumentController(SpreadsheetTestCommon, HttpCase):
 
         raoul = new_test_user(self.env, login="raoul")
         self.authenticate(raoul.login, raoul.password)
-        # without token
         response = self.url_open("/spreadsheet/data/document.document/%s" % document.id)
         self.assertEqual(response.status_code, 403, "Forbidden")
 
-        # with token
         response = self.url_open(
             "/spreadsheet/data/document.document/%s/%s" % (document.id, access_token)
         )
@@ -311,12 +301,10 @@ class TestSpreadsheetDocumentController(SpreadsheetTestCommon, HttpCase):
             response = self.url_open(
                 "/spreadsheet/data/document.document/%s" % spreadsheet.id
             )
-            # readonly
             self.assertFalse(
                 response.json().get("snapshot_requested"),
                 "It should not have requested a snapshot",
             )
-            # edit
             spreadsheet.access_internal = "edit"
             self.folder.access_internal = "edit"
             self.assertTrue(spreadsheet._is_snapshot_required())

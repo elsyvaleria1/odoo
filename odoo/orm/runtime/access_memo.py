@@ -39,9 +39,6 @@ type WatchEntry = VerdictKey | Field[typing.Any]
 
 
 def domain_read_facts(model: BaseModel, domain: Domain) -> Facts:
-    # the (model, field) pairs whose values decide which records the domain
-    # admits; None when some of it cannot be told (a custom SQL condition, a
-    # subquery, a searchable compute that declares no dependency)
     facts: set[Fact] = set()
     try:
         known = _collect_domain(model, domain, facts, 0)
@@ -97,8 +94,6 @@ def _collect_hierarchy(
     facts: set[Fact],
     depth: int,
 ) -> bool:
-    # the condition admits by the comodel's tree, so moving a node decides it
-    # as much as the field does; a root named by text is a name search
     values = value if isinstance(value, COLLECTION_TYPES) else (value,)
     if any(isinstance(v, str | Query | SQL) for v in values):
         return False
@@ -129,7 +124,6 @@ def _collect_access(
     facts: set[Fact],
     depth: int,
 ) -> bool:
-    # what the pointed-to model's security domain reads decides the condition
     if depth >= _MAX_DEPTH:
         return False
     owner = model.env[field.model_name]
@@ -188,9 +182,6 @@ def _collect_field(
 def _collect_membership(
     model: BaseModel, field: Field[typing.Any], facts: set[Fact], depth: int
 ) -> bool:
-    # which lines an x2many holds: its inverse or relation rows, the lines'
-    # active flag under active_test, and the field's own domain; a domain
-    # computed from the environment cannot be followed
     if field.is_one2many:
         facts.add((field.comodel_name, field.inverse_name))
     else:
@@ -216,9 +207,6 @@ def _relation_siblings(model: BaseModel, field: Field[typing.Any]) -> Iterator[F
 
 
 class FieldVerdicts(dict[str, "Verdict"]):
-    # a principal's verdict per field class for the transaction: to read (the
-    # dict itself) and to write, and the record domains its per-record
-    # verdicts compile to, per model
     __slots__ = ("domains", "write")
 
     def __init__(self) -> None:
@@ -228,8 +216,6 @@ class FieldVerdicts(dict[str, "Verdict"]):
 
 
 def _reads_through(registry: Registry, facts: Facts, model_name: str) -> bool:
-    # the facts read the model's rows through an x2many to it, so a row
-    # created there changes what the records it hangs under are judged on
     if facts is None:
         return False
     for fact_model, fname in facts:
@@ -240,9 +226,6 @@ def _reads_through(registry: Registry, facts: Facts, model_name: str) -> bool:
 
 
 class RecordVerdicts(dict["IdType", bool]):
-    # a principal's verdict per record under one record domain, for the
-    # transaction; the stored computed fields the domain reads, whose pending
-    # recompute changes values no write has reported yet
     __slots__ = ("computed",)
 
     def __init__(self, computed: tuple[Field[typing.Any], ...] = ()) -> None:
@@ -263,12 +246,6 @@ def _computed_inputs(registry: Registry, facts: Facts) -> tuple[Field[typing.Any
 
 
 class PrincipalVerdicts(dict[str, dict[str, bool]]):
-    # an environment's principal as the policy sees it: its signature, the
-    # moment that signature next changes (a timed grant starting or ending),
-    # and its model-level verdict per operation and model. Stamped with the
-    # registry's cache epoch, which every cleared cache group moves: a
-    # membership, a grant, an access row, a group. While modules load it is
-    # kept only for the check that read it (pinned)
     __slots__ = ("epoch", "pinned", "signature", "until")
 
     def __init__(self) -> None:
@@ -354,8 +331,6 @@ class AccessMemo:
         return facts
 
     def reads_translated(self, env: Environment, model_name: str) -> bool:
-        # whether the model's read rules can answer differently in another
-        # language: they read a translated field, or cannot be tracked
         self._sync(env.registry)
         key = (env._read_access_key, model_name)
         try:
@@ -381,8 +356,6 @@ class AccessMemo:
     def _verdicts_key(
         self, env: Environment, model_name: str
     ) -> tuple[typing.Any, str, str | None]:
-        # a condition on a translated field reads the env's language; rules
-        # that read none answer the same in every language
         lang = env.lang
         if lang == "en_US" or (lang and not self.reads_translated(env, model_name)):
             lang = None
@@ -403,8 +376,6 @@ class AccessMemo:
     def _fresh_verdicts(
         self, env: Environment, key: VerdictKey
     ) -> RecordVerdicts | None:
-        # a stored computed field the domain reads, pending recompute, holds a
-        # value its inputs' writes have already changed: the verdicts go
         verdicts = self._verdicts.get(key)
         if verdicts is None or not verdicts.computed:
             return verdicts
@@ -415,9 +386,6 @@ class AccessMemo:
         return verdicts
 
     def field_verdicts(self, env: Environment) -> FieldVerdicts:
-        # the principal's verdict per field class, for the transaction: a
-        # class reads group memberships and access rows only, whose writes
-        # clear a cache group and so move the epoch
         if self._epoch != env.registry.cache_epoch:
             self._sync(env.registry)
         key = env._read_access_key
@@ -429,16 +397,12 @@ class AccessMemo:
     def domain_verdicts(
         self, env: Environment, model_name: str, domain: Domain
     ) -> RecordVerdicts | None:
-        # the principal's verdict per record of the model under a record
-        # domain (a field class's), dropped by a write of anything the domain
-        # reads; None when that cannot be told, and nothing is kept
         self._sync(env.registry)
         key = (
             env._read_access_key,
             model_name,
             domain,
             env.context.get("active_test", True),
-            # a condition on a translated field reads the env's language
             env.lang,
         )
         verdicts = self._fresh_verdicts(env, key)
@@ -521,8 +485,6 @@ class AccessMemo:
         *,
         created: bool = False,
     ) -> list[Field[typing.Any]]:
-        # drops the verdicts the write may have changed, and answers the
-        # x2many fields whose user slots may read through the written model
         self._sync(env.registry)
         if self._rewatch:
             self._flush_rewatch()
@@ -535,7 +497,6 @@ class AccessMemo:
     def forget(
         self, registry: Registry, model_name: str, fnames: Collection[str] | None
     ) -> None:
-        # a cache invalidation says the rows may differ from what was read
         if not self._verdicts or self._epoch != registry.cache_epoch:
             return
         if fnames is None:
@@ -545,8 +506,6 @@ class AccessMemo:
             self._drop_verdicts(entries, model_name, fnames, False, registry)
 
     def _entries(self, model_name: str) -> Collection[WatchEntry]:
-        # the verdicts and x2many fields a write to the model may concern;
-        # most writes concern none, so no set is built for them
         watchers = self._watchers.get(model_name)
         everything = self._everything
         if not watchers:

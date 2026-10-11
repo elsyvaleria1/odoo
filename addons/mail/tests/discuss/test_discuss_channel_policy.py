@@ -14,7 +14,6 @@ def mock_channel_type_policies(path: str) -> dict[str, dict[str, bool | str]]:
     with file_open(path) as source_file:
         source = source_file.read()
     method = re.search(
-        # a class's method ends "}", a patch object's "},"
         r"^    _channel_type_policies\(\) \{\n(.*?)^    \},?$",
         source,
         re.MULTILINE | re.DOTALL,
@@ -75,7 +74,6 @@ class TestDiscussChannelTypePolicy(MailCommon):
                 self.assertEqual(channel._narrates_membership_changes(), narrates)
 
     def test_notify_opted_in_only_is_channel_only(self):
-        # among mail's own types: another module's type may opt in too
         opt_in = self.Channel._types_with("notify_opted_in_only")
         self.assertEqual(
             [

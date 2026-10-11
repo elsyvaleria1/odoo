@@ -23,9 +23,6 @@ class TestProduct(TestAccountReportsCommon):
         )
 
     def test_changing_intrastat_field_values_on_product(self):
-        """Test that check we can modify intrastat values in form view
-        for product.product object.
-        """
         with Form(self.product) as form:
             form.intrastat_code_id = self.intrastat_code
             form.intrastat_supplementary_unit_amount = 10
@@ -44,13 +41,6 @@ class TestProduct(TestAccountReportsCommon):
         )
 
     def test_changing_intrastat_field_values_on_product_template(self):
-        """Test that check we can modify intrastat values in form view
-        for product.template object. Modified values should be changed
-        in the product.product object related to the template.
-        We have to instanciate Form view twice in the test because by
-        changing the intrastat_code_id, we set other fields (like
-        intrastat_supplementary_unit_amount) to visible.
-        """
         with Form(self.product.product_tmpl_id) as form:
             form.intrastat_code_id = self.intrastat_code
 

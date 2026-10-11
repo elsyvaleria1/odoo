@@ -34,11 +34,6 @@ class Barcodes(BaseReader):
             return []
         found: list[str] = []
         for page in pages:
-            # Tolerated per page, not per document: a decoder that chokes on one
-            # rendering must not throw away the codes read off the others. The
-            # reader the registry replaced did this, and only one page is ever
-            # rendered today, so losing it would have been invisible until a
-            # document with two was.
             try:
                 found.extend(read_page(page))
             except Exception as e:

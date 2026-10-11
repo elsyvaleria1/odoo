@@ -14,13 +14,6 @@ class ComplianceCase(TransactionCase):
         )
 
     def _publish(self):
-        """Refresh the compliance report before reading it.
-
-        It is a materialized view, so it shows the last refresh and not the
-        current transaction. REFRESH runs inside this transaction and does see
-        its uncommitted rows -- but only the ones already flushed, because
-        refresh() deliberately does not flush for its callers.
-        """
         self.env.flush_all()
         self.env["document.compliance.report"].refresh()
         self.env.invalidate_all()

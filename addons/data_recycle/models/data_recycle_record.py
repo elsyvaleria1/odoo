@@ -8,13 +8,8 @@ from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
-# A batch that fails is retried one record at a time, so the size trades the cost
-# of that fallback against the number of round trips on the happy path.
 VALIDATE_BATCH = 1000
 
-# Anything a target model can legitimately raise to refuse being recycled. A
-# serialization failure or a lost connection is NOT in here: those must reach the
-# cron's retry instead of being recorded as "this record cannot be recycled".
 RECYCLE_REFUSALS = (UserError, ValidationError, *PG_USER_FAULT_EXCEPTIONS)
 
 RECYCLE_METHODS = {"archive": "action_archive", "unlink": "unlink"}
@@ -36,10 +31,6 @@ class Data_RecycleRecord(models.Model):
         ondelete="cascade",
     )
 
-    # `index=True` stays: the list view sorts on this column, and measured over
-    # 200k rows a `(recycle_model_id, res_id)` composite put in its place cost that
-    # sort 0.03ms -> 17.5ms while the planner ignored it for every lookup -- the
-    # partial index on `recycle_model_id` already serves those.
     res_id = fields.Integer(
         string="Record ID",
         index=True,
@@ -90,11 +81,6 @@ class Data_RecycleRecord(models.Model):
             )
 
     def _original_records(self):
-        """The live records the queue points at, keyed by ``(model name, id)``.
-
-        One mapping with one key shape: every caller needs exactly this lookup, and
-        the two that built it themselves used two different keys for the same thing.
-        """
         res_ids_per_model = defaultdict(list)
         for record in self:
             if record.res_model_name:
@@ -103,7 +89,6 @@ class Data_RecycleRecord(models.Model):
         original_records = {}
         for model_name, res_ids in res_ids_per_model.items():
             if model_name not in self.env:
-                # `ir.model` outlives the module that declared the model.
                 continue
             records = (
                 self.env[model_name]
@@ -134,19 +119,9 @@ class Data_RecycleRecord(models.Model):
                 )
             }
 
-        # A proposal whose record refused to go stays in the queue: dropping it would
-        # hide the failure, and validating it again once the obstacle is gone is the
-        # whole point of keeping it.
         self.filtered(lambda r: (r.res_model_name, r.res_id) not in refused).unlink()
 
     def _recycle_originals(self, model_name, res_ids, recycle_action):
-        """Archive or delete `res_ids` of `model_name`; return those that refused.
-
-        A single record the database or a business rule will not let go used to
-        abort the whole call -- and, in automatic mode, the whole nightly run for
-        every other rule. Each batch is tried under a savepoint and, when it fails,
-        retried record by record so the failure costs only itself.
-        """
         model = self.env[model_name].sudo()
         method = RECYCLE_METHODS[recycle_action]
         refused = set()

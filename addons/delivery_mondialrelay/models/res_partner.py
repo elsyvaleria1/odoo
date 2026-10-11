@@ -35,8 +35,6 @@ class ResPartner(models.Model):
             "type": "delivery",
             "parent_id": self.id,
         }
-        # Country and recipient are part of a pickup point's identity. Sibling
-        # contacts may use the same point with different phone numbers.
         partner = self.search(
             [(field, "=", value) for field, value in address_values.items()],
             limit=1,
@@ -54,12 +52,5 @@ class ResPartner(models.Model):
         return super()._get_avatar_placeholder_path()
 
     def _filter_editable_by_current_customer(self, **kwargs):
-        # A Mondial Relay pickup point is a carrier-owned address mirrored onto
-        # the customer's tree; editing it would desynchronise it from the relay
-        # network. Overriding the *batch* primitive rather than the singleton
-        # predicate keeps the rule in force on both -- portal's
-        # `_can_be_edited_by_current_customer` is now defined in terms of this
-        # method -- without the per-address query the singleton form imposed on
-        # every `/my/addresses` render.
         editable = super()._filter_editable_by_current_customer(**kwargs)
         return editable.filtered(lambda partner: not partner.is_mondialrelay)

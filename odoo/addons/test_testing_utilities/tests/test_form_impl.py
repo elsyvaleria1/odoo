@@ -107,10 +107,6 @@ class TestDaterange(TransactionCase):
         )
 
     def test_end_date_takes_the_widgets_visibility(self):
-        # hr_holidays, sale and 25 more views declare the end field
-        # `invisible="1"` beside the widget so the view loads it without
-        # drawing it twice; the widget draws both ends, so the harness lets the
-        # test write it exactly when it lets it write the start.
         view = self._view('<field name="date_to" invisible="1"/>')
         with Form(self.env["test_testing_utilities.daterange"], view=view) as f:
             f.date_from = "2024-01-02"

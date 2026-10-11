@@ -56,8 +56,6 @@ class TestMailManagement(MailCommon, TestRecipients):
         )
 
     def test_message_change_thread_subtype_description(self):
-        """Moving a message to a thread of a different model appends the
-        subtype description to its body (C1b, upstream ab7cb9d7)."""
         subtype = self.env["mail.message.subtype"].create(
             {
                 "name": "C1b Subtype",

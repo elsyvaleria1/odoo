@@ -53,13 +53,6 @@ class HrPresenceCase(TransactionCase):
 
     @classmethod
     def _make_user(cls, login, company, groups=()):
-        """A user whose groups this fixture chose, not the database's.
-
-        `res.users.group_ids` carries a default, and on a database with demo
-        data that default includes `hr.group_hr_manager` -- so a user created
-        without saying otherwise arrives as an HR manager, and a test asserting
-        that a plain user is refused passes only where demo data is absent.
-        """
         return cls.env["res.users"].create(
             {
                 "name": login,
@@ -132,8 +125,6 @@ class HrPresenceCase(TransactionCase):
         return messages
 
     def _assert_authored(self, employee, messages, count, internal, message_type):
-        """A test that says "these do not count" proves nothing if they were
-        never posted -- it would pass just as well against an empty chatter."""
         self.assertEqual(len(messages), count, "fixture: messages were not posted")
         self.assertEqual(
             messages.author_id,
@@ -152,7 +143,6 @@ class HrPresenceCase(TransactionCase):
         return to_timezone(None)(datetime.combine(day, time.min).replace(tzinfo=zone))
 
     def _verdict(self, employee):
-        """This module's own verdict, before any later override re-decides."""
         today = self._today_for(employee)
         working_now = frozenset(employee._get_employee_ids_working_now())
         return employee._hr_presence_verdict(today, working_now)

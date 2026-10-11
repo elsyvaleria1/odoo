@@ -255,7 +255,6 @@ class WizardApprovalApproverDelegate(models.TransientModel):
                     end=self.end_date,
                 ),
             }
-            # The row's write already handed the principal's activity over.
             handed_over = request._get_approval_activities(
                 user=self.delegate_id
             ).filtered_domain([("approver_id", "=", approver.id)])

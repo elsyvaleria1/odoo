@@ -72,9 +72,6 @@ class WebsiteAssets(models.AbstractModel):
         self._save_custom_asset(url, bundle, content, file_type)
 
     def _save_scss_customization_source(self, url, content) -> None:
-        # The bundle generates the file from the website's theme_scss_values,
-        # so an edit made in the code editor is kept as entries; anything else
-        # it added would have nowhere to live.
         template = self._get_scss_map_template(url)
         if RE_SCSS_MAP_ENTRY.sub("", content).split() != template.split():
             raise UserError(
@@ -211,8 +208,6 @@ class WebsiteAssets(models.AbstractModel):
         if runtime:
             website._set_theme_values(runtime)
         if url == THEME_VALUES_URL and "header-template" in values:
-            # Only the chosen sales header is compiled with its colour rules, so
-            # its runtime colours are judged against nothing once it changes.
             if sales := website._pop_theme_values(SALES_HEADER_KEYS):
                 self._write_scss_customization(COLOR_PALETTE_URL, sales)
         reload_bundles = bool(values) and self._write_scss_customization(url, values)
@@ -304,8 +299,6 @@ class WebsiteAssets(models.AbstractModel):
                     lambda matchobj: "var(--#{" + matchobj.group(1) + "})",
                     value,
                 )
-            # Every customization map goes through o-map-omit, so a null entry
-            # and an absent one compile alike: drop it rather than store it.
             if value == "null":
                 updated.pop(name, None)
             else:

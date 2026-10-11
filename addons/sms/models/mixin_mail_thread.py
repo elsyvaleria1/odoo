@@ -57,18 +57,12 @@ class MixinMailThread(models.AbstractModel):
 
     def _message_post_prepare_values(self, post_values) -> None:
         super()._message_post_prepare_values(post_values)
-        # When posting an 'SMS' `message_type`, make sure that the body is used as-is in the sms,
-        # and reformat the message body for the notification (mainly making URLs clickable).
         if post_values.get("message_type") == "sms":
             body = post_values.get("body", "")
             post_values["sms_content"] = body
             post_values["body"] = plaintext2html(body, with_paragraph=False)
 
     def _message_sms_schedule_mass(self, body="", template=False, **composer_values):
-        """Shortcut method to schedule a mass sms sending on a recordset.
-
-        :param template: an optional sms.template record;
-        """
         composer_context = {
             "default_res_model": self._name,
             "default_composition_mode": "mass",
@@ -100,13 +94,6 @@ class MixinMailThread(models.AbstractModel):
         partner_ids=False,
         **kwargs,
     ):
-        """Shortcut method to perform a _message_sms with an sms.template.
-
-        :param template: a valid sms.template record;
-        :param template_xmlid: XML ID of an sms.template (if no template given);
-        :param template_fallback: plaintext (inline_template-enabled) in case template
-          and template xml id are falsy (for example due to deleted data);
-        """
         self.check_singleton()
         if not template and template_xmlid:
             template = self.env.ref(template_xmlid, raise_if_not_found=False)
@@ -128,18 +115,6 @@ class MixinMailThread(models.AbstractModel):
         sms_pid_to_number=None,
         **kwargs,
     ):
-        """Main method to post a message on a record using SMS-based notification
-        method.
-
-        :param body: content of SMS;
-        :param subtype_id: mail.message.subtype used in mail.message associated
-          to the sms notification process;
-        :param partner_ids: if set is a record set of partners to notify;
-        :param number_field: if set is a name of field to use on current record
-          to compute a number to notify;
-        :param sms_numbers: see ``_notify_thread_by_sms``;
-        :param sms_pid_to_number: see ``_notify_thread_by_sms``;
-        """
         self.check_singleton()
         sms_pid_to_number = sms_pid_to_number if sms_pid_to_number is not None else {}
 
@@ -154,7 +129,6 @@ class MixinMailThread(models.AbstractModel):
             if not info_partner_ids:
                 if info_number:
                     sms_numbers = [info_number] + (sms_numbers or [])
-                    # will send a falsy notification allowing to fix it through SMS wizards
                 elif not sms_numbers:
                     sms_numbers = [False]
 
@@ -164,7 +138,7 @@ class MixinMailThread(models.AbstractModel):
         return self.message_post(
             body=body,
             partner_ids=partner_ids
-            or [],  # TDE FIXME: temp fix otherwise crash mail_thread.py
+            or [],
             message_type="sms",
             subtype_id=subtype_id,
             sms_numbers=sms_numbers,
@@ -173,7 +147,6 @@ class MixinMailThread(models.AbstractModel):
         )
 
     def _notify_thread(self, message, msg_vals=False, **kwargs):
-        # Main notification method. Override to add support of sending SMS notifications.
         scheduled_date = self._get_notification_scheduled_date(
             kwargs.get("scheduled_date")
         )
@@ -195,34 +168,12 @@ class MixinMailThread(models.AbstractModel):
         put_in_queue=False,
         **kwargs,
     ) -> bool:
-        """Notification method: by SMS.
-
-        :param record message: <mail.message> record being notified. May be
-          void as 'msg_vals' superseeds it;
-        :param list recipients_data: list of recipients data based on <res.partner>
-          records formatted like a list of dicts containing information. See
-          ``MixinMailThread._notify_get_recipients()``;
-        :param dict msg_vals: values dict used to create the message, allows to
-          skip message usage and spare some queries if given;
-
-        :param sms_content: plaintext version of body, mainly to avoid
-          conversion glitches by splitting html and plain text content formatting
-          (e.g.: links, styling.).
-          If not given, `msg_vals`'s `body` is used and converted from html to plaintext;
-        :param sms_numbers: additional numbers to notify in addition to partners
-          and classic recipients;
-        :param sms_pid_to_number: force a number to notify for a given partner ID
-          instead of taking its mobile / phone number;
-        :param put_in_queue: use cron to send queued SMS instead of sending them
-          directly;
-        """
         msg_vals = msg_vals or {}
         sms_pid_to_number = sms_pid_to_number if sms_pid_to_number is not None else {}
         sms_numbers = sms_numbers if sms_numbers is not None else []
         sms_create_vals = []
         sms_all = self.env["sms.sms"].sudo()
 
-        # pre-compute SMS data
         body = sms_content or html2plaintext(msg_vals.get("body", message.body))
         sms_base_vals = {
             "body": body,
@@ -230,7 +181,6 @@ class MixinMailThread(models.AbstractModel):
             "state": "outgoing",
         }
 
-        # notify from computed recipients_data (followers, specific recipients)
         partners_data = [r for r in recipients_data if r["notif"] == "sms"]
         partner_ids = [r["id"] for r in partners_data]
         if partner_ids:
@@ -247,7 +197,6 @@ class MixinMailThread(models.AbstractModel):
                     )
                 )
 
-        # notify from additional numbers
         if sms_numbers:
             tocreate_numbers = [
                 self._phone_format(number=sms_number) or sms_number
@@ -268,7 +217,6 @@ class MixinMailThread(models.AbstractModel):
                 if n not in existing_partners_numbers
             ]
 
-        # create sms and notification
         if sms_create_vals:
             sms_all |= self.env["sms.sms"].sudo().create(sms_create_vals)
 
@@ -283,7 +231,7 @@ class MixinMailThread(models.AbstractModel):
                     "sms_tracker_ids": [Command.create({"sms_uuid": sms.uuid})]
                     if sms.state == "outgoing"
                     else False,
-                    "is_read": True,  # discard Inbox notification
+                    "is_read": True,
                     "notification_status": "ready"
                     if sms.state == "outgoing"
                     else "exception",
@@ -313,6 +261,5 @@ class MixinMailThread(models.AbstractModel):
     def notify_cancel_by_type(self, notification_type) -> bool:
         super().notify_cancel_by_type(notification_type)
         if notification_type == "sms":
-            # TDE CHECK: delete pending SMS
             self._notify_cancel_by_type_generic("sms")
         return True

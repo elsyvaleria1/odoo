@@ -77,8 +77,6 @@ class TestTokenRotation(TelegramBotTestCase):
         before = self.test_bot.token_hash
         self.assertTrue(before)
 
-        # Cold cache, as any fresh transaction is -- and as the post-migrate
-        # recompute is: the decrypt is really attempted and really fails.
         self.env.invalidate_all()
         blow_up = patch.object(
             type(self.test_credential),

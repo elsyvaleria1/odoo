@@ -7,8 +7,6 @@ class EventRegistration(models.Model):
     date_tz = fields.Selection(related="event_id.date_tz")
 
     def _whatsapp_get_portal_url(self):
-        """Return website_url if website_event is installed (introspect fields
-        to avoid yet another bridge module)"""
         self.check_singleton()
         if "website_url" in self.event_id:
             return self.event_id.website_url

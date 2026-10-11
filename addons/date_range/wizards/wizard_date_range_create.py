@@ -20,13 +20,6 @@ class WizardDateRangeCreate(models.TransientModel):
     _name = "wizard.date.range.create"
     _description = "Date Range Generator"
 
-    # None of the generation parameters carry required=True even though all of
-    # them are needed. They are computed-and-overridable, and the ORM does not
-    # run such a compute before the INSERT, so `required` only turned a missing
-    # value into a NOT NULL violation from psycopg — create() was unusable from
-    # Python even when the type supplied every default. The form marks them
-    # required for the user and _check_settings_complete below refuses to
-    # generate without them.
     name_expr = fields.Text(
         string="Range name expression",
         compute="_compute_name_expr",
@@ -83,10 +76,6 @@ class WizardDateRangeCreate(models.TransientModel):
 
     @api.constrains("company_id", "type_id")
     def _check_company_id_type_id(self) -> None:
-        """Require matching companies when both wizard and type set one.
-
-        :raises ValidationError: if the wizard and type companies differ
-        """
         for rec in self.sudo():
             if (
                 rec.company_id
@@ -101,7 +90,6 @@ class WizardDateRangeCreate(models.TransientModel):
 
     @api.onchange("company_id")
     def _onchange_company_id(self):
-        """Clear the type when it belongs to a different company than selected."""
         for wiz in self:
             if (
                 wiz.company_id
@@ -112,68 +100,49 @@ class WizardDateRangeCreate(models.TransientModel):
 
     @api.onchange("date_end")
     def onchange_date_end(self) -> None:
-        """Clear the count when an end date is set, so only one method applies."""
         for wiz in self:
             if wiz.date_end and wiz.count:
                 wiz.count = 0
 
     @api.onchange("count")
     def onchange_count(self) -> None:
-        """Clear the end date when a count is set, so only one method applies."""
         for wiz in self:
             if wiz.count and wiz.date_end:
                 wiz.date_end = False
 
     @api.onchange("name_expr")
     def onchange_name_expr(self) -> None:
-        """Clear the name prefix when an expression is set, so only one applies."""
-        # One-way only (prefix -> expression) to avoid wiping a hand-crafted
-        # expression by accident.
         for wiz in self:
             if wiz.name_expr and wiz.name_prefix:
                 wiz.name_prefix = False
 
     @api.depends("type_id")
     def _compute_company_id(self):
-        """Inherit the company from the type, else default to the current company."""
         for wiz in self:
             wiz.company_id = wiz.type_id.company_id or self.env.company
 
     @api.depends("type_id")
     def _compute_name_expr(self) -> None:
-        """Inherit the name expression from the selected type."""
         for wiz in self:
             wiz.name_expr = wiz.type_id.name_expr or wiz.name_expr or False
 
     @api.depends("type_id")
     def _compute_name_prefix(self) -> None:
-        """Inherit the name prefix from the selected type."""
         for wiz in self:
             wiz.name_prefix = wiz.type_id.name_prefix or wiz.name_prefix or False
 
     @api.depends("type_id")
     def _compute_duration_count(self) -> None:
-        """Inherit the duration count from the selected type."""
         for wiz in self:
             wiz.duration_count = wiz.type_id.duration_count or wiz.duration_count or 0
 
     @api.depends("type_id")
     def _compute_duration_unit(self) -> None:
-        """Inherit the unit of time from the selected type."""
         for wiz in self:
             wiz.duration_unit = wiz.type_id.duration_unit or wiz.duration_unit or False
 
     @api.depends("type_id")
     def _compute_date_start(self) -> None:
-        """Compute the first range's start date.
-
-        Uses, in order: the day after the type's last range, the type's
-        autogeneration start date, or the beginning of the current year. This
-        keeps generated ranges continuous, without gaps or overlaps.
-        """
-        # One grouped read for every type in the recordset, rather than an
-        # ordered LIMIT 1 per wizard: only the latest end date per type is
-        # wanted, and that is an aggregate.
         types = self.type_id
         last_end = {}
         if types:
@@ -194,17 +163,11 @@ class WizardDateRangeCreate(models.TransientModel):
                 wiz.date_start = last + relativedelta(days=1)
             elif wiz.type_id.autogeneration_date_start:
                 wiz.date_start = wiz.type_id.autogeneration_date_start
-            else:  # default to the beginning of the current year
+            else:
                 wiz.date_start = fields.Date.context_today(wiz).replace(day=1, month=1)
 
     @api.depends("date_start", "type_id")
     def _compute_date_end(self) -> None:
-        """Compute the default end date from the type's autogeneration settings.
-
-        The horizon is measured from today, not from ``date_start``: the point
-        is to keep a fixed amount of future generated. A type whose start date
-        lies beyond that horizon is simply not due yet and yields no end date.
-        """
         for wiz in self:
             date_end = False
             dr_type = wiz.type_id
@@ -222,12 +185,6 @@ class WizardDateRangeCreate(models.TransientModel):
             wiz.date_end = date_end or wiz.date_end or False
 
     def _check_settings_complete(self, batch=False) -> bool:
-        """Return whether every parameter needed to generate is present.
-
-        :param bool batch: stay quiet and return False instead of raising
-        :rtype: bool
-        :raises ValidationError: outside batch mode, naming the missing setting
-        """
         self.check_singleton()
         missing = [
             label
@@ -239,9 +196,6 @@ class WizardDateRangeCreate(models.TransientModel):
             )
             if not value
         ]
-        # `duration_count` above only tests falsiness, so a negative value
-        # (truthy) would slip through, and _generate_intervals would step
-        # backwards from the start date and never pass the end date.
         if not missing and self.duration_count < 0:
             missing.append(self.env._("a positive duration"))
         if not missing and not self.date_end and not self.count:
@@ -267,11 +221,6 @@ class WizardDateRangeCreate(models.TransientModel):
         "duration_unit",
     )
     def _compute_range_name_preview(self) -> None:
-        """Preview the first generated range name from the current config.
-
-        An incomplete configuration is the normal state of a freshly opened
-        wizard, so it yields an empty preview rather than a logged traceback.
-        """
         for wiz in self:
             preview = False
             if (wiz.name_expr or wiz.name_prefix) and wiz._check_settings_complete(
@@ -281,10 +230,6 @@ class WizardDateRangeCreate(models.TransientModel):
                     names = wiz.generate_names(wiz._generate_intervals())
                     preview = names[0] if names else False
                 except ValidationError as error:
-                    # A broken expression is shown here rather than raised. The
-                    # preview is the natural place to report it, and raising
-                    # from a compute made the form unsavable while the user was
-                    # still editing the expression. action_apply still refuses.
                     preview = str(error)
                 except UserError:
                     preview = False
@@ -293,20 +238,7 @@ class WizardDateRangeCreate(models.TransientModel):
             wiz.range_name_preview = preview
 
     def _generate_intervals(self):
-        """Return the interval boundary dates for the ranges to generate.
-
-        The result holds one more date than the number of ranges (n+1 boundaries
-        for n ranges); the last date only supplies the final interval's end.
-
-        :return: datetime objects marking the interval boundaries
-        :rtype: list
-        :raises UserError: if the settings would generate no ranges
-        """
         self.check_singleton()
-        # Each boundary is start + k durations, never the previous one + 1: a
-        # monthly range starting on the 31st ends on the last day of February
-        # and starts again on the 31st of March. dateutil's rrule, which this
-        # used, skips a month with no 31st, which doubled the range before it.
         vals = []
         index = 0
         while True:
@@ -327,9 +259,6 @@ class WizardDateRangeCreate(models.TransientModel):
             datetime.time(),
         )
         if self.date_end:
-            # Occurrences stop at the requested end date, but nothing bounds where
-            # the last range ends, so it can run one whole duration past a date
-            # that does not fall on a boundary. Clamp it back.
             capped_end = self.date_end + relativedelta(days=1)
             if last_boundary.date() > capped_end:
                 last_boundary = datetime.datetime.combine(capped_end, datetime.time())
@@ -337,30 +266,11 @@ class WizardDateRangeCreate(models.TransientModel):
         return vals
 
     def generate_names(self, vals):
-        """Return names for the ranges using this wizard's expr/prefix config.
-
-        :param list vals: interval boundary dates from _generate_intervals
-        :return: name strings, one per range
-        :rtype: list
-        :raises ValidationError: on expression errors or when no naming method is set
-        """
         self.check_singleton()
         return self._generate_names(vals, self.name_expr, self.name_prefix)
 
     @api.model
     def _generate_names(self, vals, name_expr, name_prefix):
-        """Return names for intervals using an expression or prefix.
-
-        The expression is evaluated with the range's ``date_start`` and
-        ``date_end`` (date objects) and a zero-padded ``index`` string in scope.
-
-        :param list vals: interval boundary dates
-        :param str name_expr: expression evaluated per range
-        :param str name_prefix: prefix combined with a zero-padded index
-        :return: generated names
-        :rtype: list
-        :raises ValidationError: on expression errors or when neither is provided
-        """
         if not name_expr and not name_prefix:
             raise ValidationError(
                 self.env._(
@@ -371,8 +281,6 @@ class WizardDateRangeCreate(models.TransientModel):
         count_digits = len(str(len(vals) - 1))
         for idx, dt_start in enumerate(vals[:-1]):
             date_start = dt_start.date()
-            # always remove 1 day for the date_end since range limits are
-            # inclusive
             date_end = vals[idx + 1].date() - relativedelta(days=1)
             index = f"{idx + 1:0{count_digits}d}"
             if name_expr:
@@ -396,13 +304,6 @@ class WizardDateRangeCreate(models.TransientModel):
         return names
 
     def _generate_date_ranges(self, batch=False) -> list:
-        """Return create-vals dicts for each range to generate, without creating them.
-
-        :param bool batch: return an empty list instead of raising on an
-            incomplete configuration
-        :return: list of date.range create-vals
-        :rtype: list
-        """
         self.check_singleton()
         if not self._check_settings_complete(batch=batch):
             return []
@@ -420,18 +321,6 @@ class WizardDateRangeCreate(models.TransientModel):
         ]
 
     def action_apply(self, batch=False):
-        """Generate and create the date ranges.
-
-        Interactively, any failure surfaces as a ``UserError`` and nothing is
-        created. In batch mode (the scheduled action) the ranges are created one
-        by one so a single colliding range — most often one that already exists
-        — is skipped and logged rather than losing the whole run.
-
-        :param bool batch: run in non-interactive batch mode
-        :return: window action in interactive mode, None in batch mode
-        :rtype: dict or None
-        :raises UserError: in interactive mode if generation or creation fails
-        """
         self.check_singleton()
         DateRange = self.env["date.range"]
         try:

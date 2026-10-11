@@ -26,8 +26,6 @@ class SpreadsheetCellThread(models.Model):
     def _notify_thread_by_email(
         self, message, recipients_data, *, msg_vals=False, **kwargs
     ):
-        # Set a specific mail template to be sent to users that have been tagged inside a comment.
-        # It is a simple template comprised of the comment sent and the person that tagged the notified user.
         msg_vals = msg_vals or {}
         msg_vals["email_layout_xmlid"] = "spreadsheet_edition.mail_notification_layout"
         return super()._notify_thread_by_email(
@@ -64,7 +62,6 @@ class SpreadsheetCellThread(models.Model):
 
         related_record = self._get_spreadsheet_record()
         if related_record:
-            # client actions are not supported atm, so we rely on act_url
             url = "/web/?action=%s&spreadsheet_id=%s&thread_id=%s" % (
                 related_record.action_view_spreadsheet().get("tag"),
                 related_record.id,
@@ -74,7 +71,6 @@ class SpreadsheetCellThread(models.Model):
             return {
                 "type": "ir.actions.act_url",
                 "url": url,
-                # required to avoid being redirected to the cell thread model view
                 "target_type": "public",
             }
 

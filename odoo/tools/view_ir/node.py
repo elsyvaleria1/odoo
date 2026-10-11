@@ -4,9 +4,6 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
-# the two markup kinds an arch carries besides elements, named as the DOM
-# names them; neither has attributes of its own (a processing instruction
-# keeps its target in ``attrs["target"]``) nor children
 COMMENT = "#comment"
 PROCESSING_INSTRUCTION = "#pi"
 MARKUP_KINDS = frozenset({COMMENT, PROCESSING_INSTRUCTION})

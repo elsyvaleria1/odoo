@@ -9,7 +9,6 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 @tagged("-at_install", "post_install")
 class TestSaleTimesheet(TestCommonSaleTimesheet):
     def test_invoice_creation_running_timer(self):
-        """Test that the creation of invoice stop and take into account the running timers."""
         self.env.user.employee_id = self.env["hr.employee"].create(
             {"user_id": self.env.uid}
         )

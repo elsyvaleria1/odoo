@@ -70,10 +70,6 @@ class _InMemoryReadMixin:
 
         fetched = model.browse(result_ids)
         context = model.env.context
-        # as the SQL terms ask: a size is read from the row, and so is a
-        # language a write in another language may set at its flush (the
-        # source language of a row that had none), so the written value
-        # must reach the row first
         flushed = [
             field
             for field in column_fields
@@ -123,7 +119,6 @@ class _InMemoryReadMixin:
         prefetch_langs = bool(env.context.get("prefetch_langs"))
         for field in column_fields:
             if field.is_stored_computed:
-                # a stale PENDING marker would keep the row's value out
                 field._clear_dead_pending(records)
         rows = {
             record_id: row
@@ -136,8 +131,6 @@ class _InMemoryReadMixin:
         for field in column_fields:
             cells = self._get_column_cells(env, field, rows)
             if field.translate and prefetch_langs:
-                # the whole translation object, spread over the language
-                # caches the way the SQL read is inserted
                 for record_id, cell in cells.items():
                     field._insert_cache(
                         model.browse((record_id,)),
@@ -148,22 +141,14 @@ class _InMemoryReadMixin:
             for record_id, cell in cells.items():
                 value = _get_column_read_value(field, cell, env)
                 if value is None:
-                    # the SQL fetch caches NULL as None, which a record reads
-                    # as the field's falsy value but a pattern does not match
                     pass
                 elif field.type == "json":
                     value = fast_clone(value)
                 elif not (field.is_binary and isinstance(value, str)):
-                    # a pretty size enters the cache as the text SQL answers,
-                    # not as the bytes a binary holds
-                    # as the SQL fetch inserts the cell: what was stored is
-                    # not validated again as though it were being written
                     value = field.convert_to_cache(value, records, validate=False)
                 ids.append(record_id)
                 values.append(value)
             if field.is_stored_computed:
-                # a row whose compute is pending keeps it: the table holds the
-                # value before the change, not after it (backend.fetch)
                 members = (field, *field.tree_siblings)
                 if any(core.has_pending_field(member) for member in members):
                     keep = [
@@ -176,8 +161,6 @@ class _InMemoryReadMixin:
             if not ids:
                 continue
             try:
-                # through the field, so a relational read mirrors into the
-                # superuser scope exactly as the SQL fetch does
                 field._insert_cache(model.browse(tuple(ids)), values)
             except (KeyError, AttributeError, TypeError) as e:
                 _logger.debug(
@@ -198,8 +181,6 @@ class _InMemoryReadMixin:
     ) -> dict[int, typing.Any]:
         if field.store:
             return {record_id: row.get(field.name) for record_id, row in rows.items()}
-        # a delegated field fetched with the row: the SQL fetch reads it
-        # through the delegation join, from the parent's row
         *keys, target = field._related_field_seq
         cells = {}
         for record_id, row in rows.items():
@@ -212,8 +193,6 @@ class _InMemoryReadMixin:
                     else None
                 )
             cell = parent_row.get(target.name) if parent_row else None
-            # the SQL join reads the target through its own term, which picks
-            # a company-dependent value for the current company
             cells[record_id] = (
                 _get_column_read_value(target, cell, env)
                 if target.company_dependent

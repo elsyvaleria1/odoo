@@ -16,7 +16,6 @@ class TestCloudStorageAttachmentController(
     HttpCaseWithUserDemo, TestCloudStorageGoogleCommon
 ):
     def test_cloud_storage_google_attachment_upload(self):
-        """Test uploading an attachment with google cloud storage."""
         thread = self.env["res.partner"].create({"name": "Test"})
         self.env["ir.config_parameter"].set_param("cloud_storage_provider", "google")
         self.authenticate(self.user_demo.login, self.user_demo.login)
@@ -35,7 +34,6 @@ class TestCloudStorageAttachmentController(
             )
             res.raise_for_status()
             attachment = self.env["ir.attachment"].search([], order="id desc", limit=1)
-            # ignore signature in url
             content = re.sub(
                 r'"url":\s*"https://storage\.googleapis\.com/[^"]*"',
                 '"url":"[url]"',

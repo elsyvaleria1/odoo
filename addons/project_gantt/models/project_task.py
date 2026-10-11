@@ -87,9 +87,6 @@ class ProjectTask(models.Model):
         return self.env["res.users"]
 
     def _group_expand_user_ids(self, users, domain):
-        """Group expand by user_ids in gantt view :
-        all users which have and open task in this project + the current user if not filtered by assignee
-        """
         additional_users = self._get_additional_users(domain)
         if additional_users:
             return additional_users
@@ -156,9 +153,6 @@ class ProjectTask(models.Model):
         if not (start_date and scale) or default_project_id:
             return projects
         domain = self._expand_domain_dates(domain)
-        # Check on filtered domain is necessary in case we are in the 'All tasks' menu
-        # Indeed, the project_id != False default search would lead in a wrong result when
-        # no other search have been made
         filtered_domain = list(
             filter_domain_leaf(domain, lambda field: field == "project_id")
         )
@@ -199,25 +193,6 @@ class ProjectTask(models.Model):
         return filters
 
     def schedule_tasks(self, vals):
-        """Compute the start and end planned date for each task in the recordset.
-
-        This computation is made according to the schedule of the employee the tasks
-        are assigned to, as well as the task already planned for the user.
-        The function schedules the tasks order by dependencies, priority.
-        The transitivity of the tasks is respected in the recordset, but is not guaranteed
-        once the tasks are planned for some specific use case. This function ensures that
-        no tasks planned by it are concurrent with another.
-        If this function is used to plan tasks for the company and not an employee,
-        the tasks are planned with the company calendar, and have the same starting date.
-        Their end date is computed based on their timesheet only.
-        Concurrent or dependent tasks are irrelevant.
-
-        :return: empty dict if some data were missing for the computation
-            or if no action and no warning to display.
-            Else, return a dict { 'action': action, 'warnings'; warning_list } where action is
-            the action to launch if some planification need the user confirmation to be applied,
-            and warning_list the warning message to show if needed.
-        """
         required_written_fields = {"date_start", "date_end"}
         if not self.env.context.get("last_date_view") or any(
             key not in vals for key in required_written_fields
@@ -243,18 +218,9 @@ class ProjectTask(models.Model):
                 task.write(old_vals_per_task_id[str(task.id)])
 
     def _get_tasks_durations(self, users, start_date_field_name, stop_date_field_name):
-        """task duration is computed as the sum of the durations of the intersections between [task date_start, task date_end]
-        and valid_intervals of the user (if only one user is assigned) else valid_intervals of the company
-        """
         if not self:
             return {}
 
-        # Candidate ids come from the client, so some may carry no dates. Their
-        # False slipped into min()/max() here and into `.astimezone(UTC)` below,
-        # raising `AttributeError: 'bool' object has no attribute 'astimezone'`.
-        # A task with a booking or a written estimate is still measurable
-        # without a window (see the early continues below), so only the
-        # window-based arithmetic is skipped, not the task.
         scheduled = self.filtered(
             lambda task: task[start_date_field_name] and task[stop_date_field_name]
         )
@@ -272,10 +238,6 @@ class ProjectTask(models.Model):
 
         duration_per_task = defaultdict(int)
         for task in self:
-            # A booked task lasts one resource's share of what it books: its
-            # resources work the window in parallel. A task nobody is booked
-            # for lasts the estimate written on it; a computed estimate is
-            # only its previous placement, so without either the window answers.
             reservations = task.reservation_ids.filtered("active")
             if reservations:
                 if task.allocated_hours > 0:
@@ -304,10 +266,6 @@ class ProjectTask(models.Model):
                     ).total_seconds()
 
             if task.id not in duration_per_task:
-                # the window holds no working time of the assignee's current
-                # calendar (moved outside it, or the calendar changed since
-                # placement): the work it held when placed is scheduled_hours,
-                # and only a window with no working time at all is its span
                 duration_per_task[task.id] = (
                     task.scheduled_hours * 3600
                     if task.scheduled_hours > 0
@@ -326,11 +284,6 @@ class ProjectTask(models.Model):
         candidate_duration,
         move_in_conflicts_users=None,
     ) -> tuple:
-        """this method is used for 2 goals:
-        - compute the new dates for a task to plan, users_ids is the task users
-        - compute the start and date dates of the buffer for maintain buffer strategy, users_ids is False
-        if the 2 tasks have differents users (we follow the company calendar) else the assigned users
-        """
         if move_in_conflicts_users is None:
             move_in_conflicts_users = set()
 
@@ -396,8 +349,6 @@ class ProjectTask(models.Model):
         )
 
     def _web_gantt_get_dependency_links(self) -> dict:
-        # The linked tasks are read through the access-checked many2many; only
-        # their type and lag come from here, which project sharing may not read.
         ids = self._origin.ids
         if not ids:
             return {}
@@ -457,9 +408,6 @@ class ProjectTask(models.Model):
         stop_date_field_name,
         movable=None,
     ) -> dict:
-        # forward: the earliest start and end each candidate's predecessors
-        # outside the cascade allow; backward: the latest end and start its
-        # successors outside the cascade allow
         movable = self if movable is None else movable
         dates_per_field = {start_date_field_name: {}, stop_date_field_name: {}}
         for candidate in self:
@@ -520,9 +468,6 @@ class ProjectTask(models.Model):
     def _web_gantt_get_typed_window_edge(
         self, links, search_forward, start_date_field_name, stop_date_field_name, edge
     ):
-        # A finish-to-start link without lead places the next task after the
-        # moved one; any other link can place it before the moved task's end
-        # (forward) or after its start (backward), outside the default window.
         records = {record.id: record for record in self}
         for (predecessor_id, successor_id), (dependency_type, lag) in links.items():
             if dependency_type == "fs" and lag >= timedelta(0):
@@ -621,7 +566,6 @@ class ProjectTask(models.Model):
 
             if consume_buffer or gap_end <= gap_start:
                 continue
-            # follow users calendar if both taks belong to same users or follow company calendar
             calendar_owner = (
                 tuple(self.user_ids.ids)
                 if self.user_ids and self.user_ids == task.user_ids
@@ -699,10 +643,6 @@ class ProjectTask(models.Model):
 
         all_candidates = self.browse(candidates_ids)
 
-        # `candidates_ids` arrives from the client, so it can name tasks with no
-        # dates at all. `filtered()` then yields an empty recordset and min()
-        # raised `ValueError: min() iterable argument is empty`. There is no
-        # buffer window to compute in that case.
         starts = all_candidates.filtered(start_date_field_name).mapped(
             start_date_field_name
         )
@@ -757,7 +697,6 @@ class ProjectTask(models.Model):
 
         if search_forward:
             start_date = self[stop_date_field_name]
-            # 53 weeks = 1 year is estimated enough to plan a project (no valid proof)
             end_date = start_date + timedelta(weeks=53)
             start_date = max(
                 fields.Datetime.now(),
@@ -881,12 +820,6 @@ class ProjectTask(models.Model):
                 move_in_conflicts_users,
             )
 
-        # The bound is on the date the cascade does not lead with (the end
-        # going forward, the start going backward): lay the candidate against
-        # it from the other side, never moving its leading date against the
-        # cascade. A date the work stops short of reaches the bound when only
-        # non-working time lies between; time booked by another task does not
-        # count as such, and then the candidate starts (ends) at the bound.
         own_date = self[
             start_date_field_name if search_forward else stop_date_field_name
         ].astimezone(UTC)
@@ -986,8 +919,6 @@ class ProjectTask(models.Model):
     def _web_gantt_add_bounds_of_tasks_left_in_place(
         self, cascade, search_forward, start_date_field_name, stop_date_field_name
     ) -> None:
-        # A candidate the cascade found in no conflict stays where it is and
-        # still bounds the tasks after it, like a task outside the cascade.
         dependency_field_name, dependency_inverted_field_name = cascade[
             "dependency_fields"
         ]
@@ -1073,9 +1004,6 @@ class ProjectTask(models.Model):
             )
             return compute_start_date, compute_end_date
 
-        # no more intervals and we haven't reached the duration to plan the candidate (pill):
-        # plan in the first interval, this will lead to creating conflicts, so a notification
-        # is added to notify the user
         initial_valid_intervals_per_user = cascade["initial_valid_intervals_per_user"]
         if (
             users_ids not in initial_valid_intervals_per_user
@@ -1188,15 +1116,6 @@ class ProjectTask(models.Model):
     def _web_gantt_reschedule_is_record_candidate(
         self, start_date_field_name, stop_date_field_name
     ):
-        """Get whether the record is a candidate for the rescheduling. This method is meant to be overridden when
-        we need to add a constraint in order to prevent some records to be rescheduled. This method focuses on the
-        record itself
-
-        :param start_date_field_name: The start date field used in the gantt view.
-        :param stop_date_field_name: The stop date field used in the gantt view.
-        :return: True if record can be rescheduled, False if not.
-        :rtype: bool
-        """
         self.check_singleton()
         return (
             super()._web_gantt_reschedule_is_record_candidate(
@@ -1223,9 +1142,6 @@ class ProjectTask(models.Model):
         else:
             return ""
 
-    # ----------------------------------------------------
-    # Overlapping tasks
-    # ----------------------------------------------------
 
     @api.model
     def _gantt_unavailability(self, field_name, res_ids, start, stop, scale):
@@ -1238,9 +1154,6 @@ class ProjectTask(models.Model):
                 ],
                 order="create_date",
             )
-        # resources are ordered by create_date, so the mapping keeps the most recently
-        # created resource per user (last iterated wins) when several exist for the
-        # same employee and company
         user_resource_mapping = {
             resource.user_id.id: resource.id for resource in resources
         }
@@ -1262,9 +1175,6 @@ class ProjectTask(models.Model):
         for user_id in res_ids + [False]:
             resource_id = user_resource_mapping.get(user_id)
             calendar = leaves_mapping.get(resource_id, company_leaves)
-            # remove intervals smaller than a cell, as they will cause half a cell to turn grey
-            # ie: when looking at a week, a employee start everyday at 8, so there is a unavailability
-            # like: 2019-05-22 20:00 -> 2019-05-23 08:00 which will make the first half of the 23's cell grey
             notable_intervals = filter(
                 lambda interval: interval[1] - interval[0] >= cell_dt, calendar
             )
@@ -1338,27 +1248,18 @@ class ProjectTask(models.Model):
                     ("user_ids", "in", res_ids),
                     ("date_start", "<=", stop_naive),
                     ("date_end", ">=", start_naive),
-                    # sudo() above bypasses access domains, so the company scope
-                    # has to be reapplied by hand: without it the bar counted a
-                    # user's hours in companies the caller cannot read at all.
-                    # False belongs in the list: company_id is not required, and
-                    # a task with no company is not company-restricted, so
-                    # omitting it dropped every such task and zeroed the bar.
                     ("company_id", "in", [*self.env.companies.ids, False]),
                 ]
             )
         )
         project_tasks = project_tasks.with_context(prefetch_fields=False)
-        # Prefetch fields from database to avoid doing one query by __get__.
         project_tasks.fetch(["date_start", "date_end", "user_ids"])
-        # Get the users work intervals between start and end dates of the gantt view
         users_work_intervals, _dummy = users.sudo()._get_valid_work_intervals(
             start, stop
         )
         planned_hours_mapped = project_tasks._planned_hours_per_user_for_scale(
             users, start, stop
         )
-        # Compute employee work hours based on its work intervals.
         work_hours = {
             user_id: get_intervals_hours(work_intervals)
             for user_id, work_intervals in users_work_intervals.items()
@@ -1406,8 +1307,6 @@ class ProjectTask(models.Model):
                         ]
                     )
                 )
-                # The ratio between the workable hours in the gantt view scale and the workable hours
-                # between start and end dates of the task gives the planned hours that fall in the current scale
                 ratio = 1
                 if work_intervals_for_task:
                     ratio = work_intervals_for_scale / work_intervals_for_task
@@ -1446,16 +1345,8 @@ class ProjectTask(models.Model):
     @api.model
     @api.readonly
     def get_all_deadlines(self, date_start, date_end):
-        """Get all deadlines (milestones and projects) between date_start and date_end.
-
-        :param date_start: The start date.
-        :param date_end: The end date.
-
-        :return: A dictionary with the field_name of tasks as key and list of records.
-        """
         results = {}
         project_id = self.env.context.get("default_project_id", False)
-        # get domains
         result_domains = self._prepare_domains_for_all_deadlines(date_start, date_end)
         project_domain = Domain(result_domains["project"])
         milestone_domain = Domain(result_domains["milestone"])
@@ -1503,7 +1394,6 @@ class ProjectTask(models.Model):
 
     @api.model
     def _add_gantt_view_mode(self, view_mode) -> str:
-        """Gantt sits with the other timeline views, immediately before activity."""
         modes = view_mode.split(",")
         if "gantt" not in modes:
             index = modes.index("activity") if "activity" in modes else len(modes)

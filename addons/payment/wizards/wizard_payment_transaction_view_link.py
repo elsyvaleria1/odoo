@@ -73,7 +73,7 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
             )
             base_url = (
                 related_document.get_base_url()
-            )  # Generate links for the right website.
+            )
             url = self._prepare_url(base_url, related_document)
             query_params = self._prepare_query_params(related_document)
             anchor = self._prepare_anchor()
@@ -83,23 +83,9 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
                 payment_link.link = f"{url}?{urlencode(query_params)}{anchor}"
 
     def _prepare_url(self, base_url, related_document):
-        """Build the URL of the payment link with the website's base URL and return it.
-        :param str base_url: The website's base URL.
-        :param recordset related_document: The record for which the payment link is generated.
-        :return: The URL of the payment link.
-        :rtype: str
-        """
         return f"{base_url}/payment/pay"
 
     def _prepare_query_params(self, related_document):
-        """Prepare the query string params to append to the payment link URL.
-
-        Note: self.check_singleton()
-
-        :param recordset related_document: The record for which the payment link is generated.
-        :return: The query params of the payment link.
-        :rtype: dict
-        """
         self.check_singleton()
         return {
             "amount": self.amount,
@@ -119,12 +105,5 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
         )
 
     def _prepare_anchor(self):
-        """Prepare the anchor to append to the payment link.
-
-        Note: self.check_singleton()
-
-        :return: The anchor of the payment link.
-        :rtype: str
-        """
         self.check_singleton()
         return ""

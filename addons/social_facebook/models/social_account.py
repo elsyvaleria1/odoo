@@ -29,7 +29,6 @@ class SocialAccount(models.Model):
     )
 
     def _compute_stats_link(self) -> None:
-        """External link to this Facebook Page's 'insights' (fancy name for the page statistics)."""
         facebook_accounts = self._filtered_by_media_types(["facebook"])
         super(SocialAccount, (self - facebook_accounts))._compute_stats_link()
 
@@ -41,15 +40,6 @@ class SocialAccount(models.Model):
             )
 
     def _update_statistics(self):
-        """This method computes this Facebook Page's statistics and trends.
-        - The engagement is a computed total of the last year of data for this account.
-        - The audience is the all time total of fans (people liking) this page, as visible on the page stats.
-          We actually need a separate request to fetch that information.
-        - The trends are computed using the delta of the last 30 days compared to the (total - value of last 30 days).
-          ex:
-          - We gained 40 engagements in the last 3 months.
-          - We have 60 engagements in total (last year of data).
-          - The trend is 200% -> (40 / (60 - 40)) * 100"""
 
         facebook_accounts = self._filtered_by_media_types(["facebook"])
         super(SocialAccount, (self - facebook_accounts))._update_statistics()
@@ -92,8 +82,6 @@ class SocialAccount(models.Model):
             )
 
     def _get_statistics_facebook_360d(self, insights_endpoint_url):
-        """Facebook only accepts requests for a range of maximum 90 days.
-        We loop 4 times over 90 days to build the last 360 days of data (~ 1 year)."""
 
         total_statistics = {"page_post_engagements": 0, "page_fans": 0}
         for i in range(4):
@@ -114,32 +102,6 @@ class SocialAccount(models.Model):
     def _compute_statistics_facebook(
         self, endpoint_url, date_preset="last_30d", since=None, until=None
     ):
-        """Check https://developers.facebook.com/docs/graph-api/reference/v17.0/insights for more information
-        about the endpoint used.
-        e.g of data structure returned by the endpoint:
-        [{
-            'name':  'page_post_engagements',
-            'values': [{
-                'value': 10,
-                'end_time': '2025-08-20T07:00:00+0000'
-            }, {
-                'value': 20,
-                'end_time': '2025-08-21T07:00:00+0000'
-            }]
-        }{
-            'name':  'page_follows',
-            'values': [{
-                'value': 15,
-                'end_time': '2025-08-20T07:00:00+0000'
-            }, {
-                'value': 25,
-                'end_time': '2025-08-21T07:00:00+0000'
-            }]
-        }]
-
-        That method returns the delta of the statistics in the given
-        period of time (not the total value for the lifetime of the page).
-        """
 
         params = {
             "metric": "page_post_engagements,page_follows",
@@ -184,8 +146,6 @@ class SocialAccount(models.Model):
                 )
 
         if page_follows:
-            # "Newest - Oldest"
-            # Datetime is in "YYYY-MM-dd" format, so min / max work on string
             statistics["page_fans"] = (
                 page_follows[max(page_follows)] - page_follows[min(page_follows)]
             )
@@ -201,8 +161,6 @@ class SocialAccount(models.Model):
         return res
 
     def _create_default_stream_facebook(self) -> None:
-        """This will create a stream of type 'Page Posts' for each added accounts.
-        It helps with onboarding to have your posts show up on the 'Feed' view as soon as you have configured your accounts."""
 
         if not self:
             return

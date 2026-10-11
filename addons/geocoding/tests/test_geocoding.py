@@ -9,15 +9,12 @@ from odoo.tests import TransactionCase
 @odoo.tests.tagged("external", "-standard")
 class TestGeoLocalize(TransactionCase):
     def test_default_openstreetmap(self):
-        """Test that openstreetmap localize service works."""
         test_partner = self.env.ref("base.res_partner_2")
         test_partner.geo_localize()
         self.assertTrue(test_partner.partner_longitude)
         self.assertTrue(test_partner.partner_latitude)
         self.assertTrue(test_partner.date_localization)
 
-        # we don't check here that the localization is at right place
-        # but just that result is realistic float coordonates
         self.assertTrue(float(test_partner.partner_longitude) != 0.0)
         self.assertTrue(float(test_partner.partner_latitude) != 0.0)
 
@@ -27,8 +24,6 @@ class TestGeoLocalizeNoApiKey(TransactionCase):
     """No network call: the missing-API-key check raises before any request."""
 
     def test_googlemap_without_api_key(self):
-        """Without providing API key to google maps,
-        the service doesn't work."""
         test_partner = self.env["res.partner"].create(
             {
                 "name": "Test partner without google api key",
@@ -50,7 +45,6 @@ class TestGeoLocalizeNoApiKey(TransactionCase):
 @odoo.tests.tagged("-at_install", "post_install")
 class TestPartnerGeoLocalization(TransactionCase):
     def test_geo_localization_notification(self):
-        """Warning message is sent to the user when geolocation fails."""
         partner = self.env["res.partner"]
         user_partner = self.env.user.partner_id
 
@@ -88,7 +82,6 @@ class TestGeocoderRequestsTimeout(TransactionCase):
     """Outbound geocoding HTTP calls must bind an explicit timeout."""
 
     def test_call_openstreetmap_sets_timeout(self):
-        """A stalled nominatim.openstreetmap.org must not hang the worker forever."""
         geocoder = self.env["geocoder"]
         with patch.object(GuardedSession, "request") as mock_get:
             mock_get.return_value.status_code = 200
@@ -101,7 +94,6 @@ class TestGeocoderRequestsTimeout(TransactionCase):
         )
 
     def test_call_googlemap_sets_timeout(self):
-        """A stalled maps.googleapis.com must not hang the worker forever."""
         self.env["credential.credential"]._set_system_secret(
             "geocoding.google_map_api_key", "fake-key"
         )

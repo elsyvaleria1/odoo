@@ -20,16 +20,12 @@ class TestGanttViewDecorations(TestHolidayContract):
     """
 
     def _evaluate_decoration(self, decoration, report_row):
-        """Evaluate one ``decoration-*`` expression the way the client does."""
         view = self.env.ref("hr_holidays_gantt.hr_leave_report_calendar_view_gantt")
         expression = etree.fromstring(view.arch).get(decoration)
         self.assertTrue(expression, f"{decoration} is missing from the gantt node")
         return bool(safe_eval(expression, {"state": report_row.state}))
 
     def _report_row_for(self, leave):
-        """The Overview row the gantt would draw for ``leave``."""
-        # hr.leave.report.calendar is a SQL view over hr_leave, so pending ORM
-        # writes stay invisible to it until they actually reach the database.
         self.env.flush_all()
         row = self.env["hr.leave.report.calendar"].search(
             [("employee_id", "=", leave.employee_id.id)]
@@ -38,7 +34,6 @@ class TestGanttViewDecorations(TestHolidayContract):
         return row
 
     def _create_leave(self):
-        # A Tuesday, covered by Jules' open-ended contract (from 2015-11-16).
         return self.create_leave(
             datetime(2025, 11, 11, 7, 0, 0),
             datetime(2025, 11, 11, 18, 0, 0),
@@ -61,7 +56,6 @@ class TestGanttViewDecorations(TestHolidayContract):
         )
 
     def test_pending_time_off_is_not_decorated_as_danger(self):
-        """Guard: the danger decoration must key on the refused state alone."""
         leave = self._create_leave()
         row = self._report_row_for(leave)
 

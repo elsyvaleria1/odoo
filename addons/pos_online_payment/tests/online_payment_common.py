@@ -41,8 +41,6 @@ class OnlinePaymentCommon(PaymentHttpCommon):
     ):
         payment_context = self._fake_open_pos_order_pay_page(pos_order_id, access_token)
 
-        # Code inspired by addons/payment/tests/test_flows.py
-        # Route values are taken from payment_context result of /pay route to correctly simulate the flow
         route_values = {
             k: payment_context[k]
             for k in [

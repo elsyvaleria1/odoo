@@ -25,12 +25,9 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
 
         if status == "pickup":
             if line.product_id.tracking == "serial":
-                # If product is tracked by serial numbers
-                # Get lots in stock:
                 rentable_lots = self.env["product.trace"]._get_available_lots(
                     line.product_id, line.order_id.warehouse_id.lot_stock_id
                 )
-                # Get lots reserved/pickedup and not already returned
                 rented_lots = line.product_id._get_unavailable_lots(
                     fields.Datetime.now(),
                     line.return_date,
@@ -38,10 +35,7 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                     warehouse_id=line.order_id.warehouse_id.id,
                 )
 
-                # Don't show reserved lots if they aren't back (or were moved by another app)
                 if pickedup_lots:
-                    # As we ignored current SaleOrderLine for availability, we need to add
-                    # its pickedup_lots to the rented ones to make sure it cannot be picked-up twice.
                     rented_lots += pickedup_lots
 
                 if returned_lots:
@@ -54,10 +48,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
 
                 pickeable_lots = rentable_lots - rented_lots
 
-                # Don't count
-                # * unavailable lots
-                # * lots expected to go to another client before
-                # as reserved lots (which will be auto-filled as pickedup_lots).
                 reserved_lots &= pickeable_lots
                 default_line_vals.update(
                     {
@@ -78,8 +68,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                         "is_product_storable": True,
                     }
                 )
-                # On pickup: only show quantity currently available
-                # because the unavailable qty is in company_id.rental_loc_id.
 
             default_line_vals.update(
                 {
@@ -133,7 +121,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
 
     @api.depends("product_id")
     def _compute_is_product_storable(self) -> None:
-        """Product type ?= storable product."""
         for line in self:
             line.is_product_storable = line.product_id and line.product_id.is_storable
 
@@ -170,7 +157,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
     def _apply(self):
         serial_lines = self.filtered(lambda line: line.tracking == "serial")
 
-        # First, we deduct from the wizard the lots already picked up/returned
         for line in serial_lines:
             sol = line.order_line_id
             if line.status == "pickup":
@@ -200,12 +186,11 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
         return msg
 
     def _generate_log_message(self):
-        """Override"""
         msg = ""
         for line in self:
             order_line = line.order_line_id
             diff, old_qty, new_qty = line._get_diff()
-            if diff:  # i.e. diff>0
+            if diff:
                 msg += Markup("<li> %s") % (order_line.product_id.display_name)
 
                 if old_qty > 0:
@@ -216,8 +201,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                     )
                 elif new_qty != 1 or order_line.product_qty > 1.0:
                     msg += ": %s %s " % (new_qty, order_line.product_uom_id.name)
-                # If qty = 1, product has been picked up, no need to specify quantity
-                # But if ordered_qty > 1.0: we need to still specify pickedup/returned qty
 
                 if line.status == "pickup" and line.pickedup_trace_ids:
                     msg += ": " + ", ".join(line.pickedup_trace_ids.mapped("name"))

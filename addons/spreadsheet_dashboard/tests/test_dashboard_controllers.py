@@ -5,9 +5,6 @@ from .common import DashboardTestCommon
 
 class TestDashboardController(DashboardTestCommon, HttpCase):
     def _opening_locale(self, data):
-        # the locale may ride the snapshot or, when an edition keeps the
-        # snapshot as stored, a trailing UPDATE_LOCALE revision; a fresh
-        # dashboard carries no other revision either way
         commands = [
             command
             for revision in data["revisions"]

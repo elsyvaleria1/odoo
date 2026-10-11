@@ -23,16 +23,10 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
     The trick is to understand which rules are only NLCIUS specific and which are applied to the Bis 3 format.
     """
 
-    # -------------------------------------------------------------------------
-    # EXPORT
-    # -------------------------------------------------------------------------
 
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_nlcius.xml"
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Templates
-    # -------------------------------------------------------------------------
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":
@@ -42,7 +36,6 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
     def _ubl_default_tax_category_grouping_key(
         self, base_line, tax_data, vals, currency
     ):
-        # EXTENDS account.edi.xml.ubl_bis3
         grouping_key = super()._ubl_default_tax_category_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -53,11 +46,9 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
         return grouping_key
 
     def _ubl_add_values_tax_currency_code(self, vals):
-        # OVERRIDE account.edi.xml.ubl_bis3
         self._ubl_add_values_tax_currency_code_empty(vals)
 
     def _ubl_tax_totals_node_grouping_key(self, base_line, tax_data, vals, currency):
-        # EXTENDS account.edi.xml.ubl_bis3
         tax_total_keys = super()._ubl_tax_totals_node_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -67,7 +58,6 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
         return tax_total_keys
 
     def _ubl_get_line_allowance_charge_discount_node(self, vals, discount_values):
-        # EXTENDS account.edi.xml.ubl_bis3
         discount_node = super()._ubl_get_line_allowance_charge_discount_node(
             vals, discount_values
         )
@@ -77,9 +67,7 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
         return discount_node
 
     def _add_invoice_payment_means_nodes(self, document_node, vals):
-        # EXTENDS account.edi.xml.ubl_bis3
         super()._add_invoice_payment_means_nodes(document_node, vals)
-        # [BR-NL-29] The use of a payment means text (cac:PaymentMeans/cbc:PaymentMeansCode/@name) is not recommended
         payment_means_node = document_node["cac:PaymentMeans"]
         if "name" in payment_means_node["cbc:PaymentMeansCode"]:
             payment_means_node["cbc:PaymentMeansCode"]["name"] = None
@@ -87,9 +75,6 @@ class AccountEdiXmlUbl_Nl(models.AbstractModel):
             payment_means_node["cbc:PaymentMeansCode"]["listID"] = None
 
     def _get_address_node(self, vals):
-        # EXTENDS account.edi.xml.ubl_bis3
         address_node = super()._get_address_node(vals)
-        # [BR-NL-28] The use of a country subdivision (cac:AccountingCustomerParty/cac:Party/cac:PostalAddress
-        # /cbc:CountrySubentity) is not recommended
         address_node["cbc:CountrySubentity"] = None
         return address_node

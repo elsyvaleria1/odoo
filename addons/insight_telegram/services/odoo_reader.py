@@ -12,8 +12,6 @@ class OdooReader:
     what keeps that safe.
     """
 
-    # a report that would scan for longer is cut rather than left to load the
-    # production database
     STATEMENT_TIMEOUT_MS = 20000
 
     def __init__(self, registry, reader_uid, context=None) -> None:

@@ -1,7 +1,7 @@
 from . import controllers
 from . import models
 
-from odoo.addons import payment  # prevent circular import error with payment
+from odoo.addons import payment
 
 
 def post_init_hook(env) -> None:

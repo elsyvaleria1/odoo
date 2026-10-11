@@ -4,7 +4,6 @@ from odoo import Command, api, fields, models
 class WizardAccountMoveLinePay(models.TransientModel):
     _inherit = "wizard.account.move.line.pay"
 
-    # == Business fields ==
     payment_token_id = fields.Many2one(
         comodel_name="payment.token",
         string="Saved payment token",
@@ -18,19 +17,14 @@ class WizardAccountMoveLinePay(models.TransientModel):
         "not available.",
     )
 
-    # == Display purpose fields ==
     suitable_payment_token_ids = fields.Many2many(
         comodel_name="payment.token",
         compute="_compute_suitable_payment_token_ids",
     )
-    # Technical field used to hide or show the payment_token_id if needed
     use_electronic_payment_method = fields.Boolean(
         compute="_compute_use_electronic_payment_method"
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends("payment_channel_id")
     def _compute_suitable_payment_token_ids(self) -> None:
@@ -44,7 +38,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 wizard.suitable_payment_token_ids = (
                     self.env["payment.token"]
                     .sudo()
-                    .search(  # noqa: E8507 - a transient wizard: one record
+                    .search(
                         [
                             *self.env["payment.token"]._check_company_domain(
                                 wizard.company_id
@@ -62,8 +56,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
 
     @api.depends("payment_channel_id")
     def _compute_use_electronic_payment_method(self) -> None:
-        # Get a list of all electronic payment method codes.
-        # These codes are comprised of the codes of each payment provider.
         codes = list(
             dict(
                 self.env["payment.provider"]
@@ -90,17 +82,12 @@ class WizardAccountMoveLinePay(models.TransientModel):
             ):
                 wizard.payment_token_id = False
             elif wizard.payment_token_id in wizard.suitable_payment_token_ids:
-                # The selected payment token is still valid.
                 continue
             else:
                 wizard.payment_token_id = wizard.suitable_payment_token_ids[:1]
 
-    # -------------------------------------------------------------------------
-    # BUSINESS METHODS
-    # -------------------------------------------------------------------------
 
     def _create_payment_vals_from_wizard(self, batch_result):
-        """Override of `account` to set the selected payment token on the payment."""
         payment_vals = super()._create_payment_vals_from_wizard(batch_result)
         payment_vals["payment_token_id"] = self.payment_token_id.id
         return payment_vals

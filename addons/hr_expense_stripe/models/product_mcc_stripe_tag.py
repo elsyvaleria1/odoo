@@ -2,7 +2,6 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
 
-# https://docs.stripe.com/connect/setting-mcc#list
 class ProductMCCSTripeTag(models.Model):
     _name = "product.mcc.stripe.tag"
     _inherit = ["mixin.color"]

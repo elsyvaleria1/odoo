@@ -36,7 +36,6 @@ class TestWATraceProcess(TestWhatsAppStatistics, MockIncomingWhatsApp):
 
     @users("user_marketing_automation")
     def test_process_whatsapp_message_with_multiple_traces(self):
-        """Testing the processing of a WhatsApp message linked to multiple traces."""
         self._receive_message_update(
             account=self.whatsapp_account,
             display_phone_number="1234567890",
@@ -59,7 +58,6 @@ class TestWATraceProcess(TestWhatsAppStatistics, MockIncomingWhatsApp):
 
     @users("user_marketing_automation")
     def test_bounce_status_for_message_with_multiple_traces(self):
-        """Test processing of a WhatsApp message bounce across multiple traces."""
         self._new_wa_msg = self.shared_message
         self.shared_message.mail_message_id = self.env["mail.message"].create(
             {"model": "marketing.trace", "res_id": self.traces[0].id}

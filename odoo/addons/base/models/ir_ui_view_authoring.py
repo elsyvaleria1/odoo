@@ -18,8 +18,6 @@ from odoo.addons.base.models.ir_qweb import (
 _debug = DebugLog(__name__)
 
 ARCH_FIELDS = frozenset({"arch", "arch_base", "arch_db"})
-# a copy is checked by copy() against its original once it exists; an object,
-# so no context an RPC caller sends can carry it
 COPY_CHECKED_BY_CALLER = object()
 
 
@@ -132,10 +130,6 @@ class IrUiView(models.Model):
         module_only: bool = False,
         original: Self | None = None,
     ) -> Callable[[str], bool]:
-        # an expression the template already had, or that the module source of
-        # the view (or of the view it was copied from, for a website-specific
-        # copy) spells, was not written by this author; a copy is trusted with
-        # what its original is, so duplicating a page adds nothing
         trusted: set[str] | None = None
 
         def is_trusted(expression: str) -> bool:
@@ -166,9 +160,6 @@ class IrUiView(models.Model):
 
     @api.model
     def _audit_template_authoring(self) -> dict[str, list[str]]:
-        # every stored template whose expressions the grammar refuses and no
-        # module source spells: what an author below Settings could not save
-        # today, left by one before the rule existed or by an administrator
         findings = {}
         views = self.with_context(active_test=False).search([("type", "=", "qweb")])
         for view in views:

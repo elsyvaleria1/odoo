@@ -47,9 +47,6 @@ class TestAssetLedgerInvariants(TransactionCase):
     def test_every_reading_names_its_instrument(self):
         log = self._log(date="2026-03-01", odometer=3000)
         self.assertEqual(log.source, "manual")
-        # Name no producer's value: each one arrives through `selection_add`
-        # from a module that need not be installed here. Take whatever the
-        # field actually offers, the way `test_log_provenance` does.
         selection = self.Log._fields["source"].get_description(self.env)["selection"]
         produced = [key for key, _label in selection if key != "manual"]
         if not produced:
@@ -86,8 +83,6 @@ class TestIdentityIsTheKindsToDemand(TransactionCase):
         return self.env["product.template"].create(vals)
 
     def test_a_serial_may_be_created_without_the_identity_its_kind_expects(self):
-        """Refusing it is the kind's `enforce_identifiers`, off by default and
-        core's business now; the gap shows as `missing_identifier_type_ids`."""
         template = self._template()
         lot = self.env["product.trace"].create(
             {"name": "NOPLATE-2", "product_id": template.product_variant_ids[0].id}

@@ -31,7 +31,6 @@ class ResConfigSettings(models.TransientModel):
     def set_values(self):
         super().set_values()
         IrConfigParameter = self.env["ir.config_parameter"].sudo()
-        # get_param is cached, and thus could avoid unnecessary requests if the parameter doesn't change
         if (
             int(IrConfigParameter.get_param("hr_contract_salary.access_token_validity"))
             != self.access_token_validity

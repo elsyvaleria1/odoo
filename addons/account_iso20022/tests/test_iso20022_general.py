@@ -63,10 +63,6 @@ class TestISO20022GeneralCreditTransfer(TestISO20022CommonCreditTransfer):
         )
 
     def test_iso_20022_currency_decimal_formatting(self):
-        """
-        Test that currencies with 0 decimal places (like JPY) are formatted
-        as integers in the XML (e.g., '1000' instead of '1000.00').
-        """
         partner_jp = self.env["res.partner"].create(
             {
                 "name": "Japanese Partner",

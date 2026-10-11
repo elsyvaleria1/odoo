@@ -5,7 +5,6 @@ class TestOnboardingCommon(TransactionCaseOnboarding):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Use the admin's company and add a second one.
         cls.user_admin = cls.env.ref("base.user_admin")
 
         cls.company_1 = cls.user_admin.company_id
@@ -28,7 +27,6 @@ class TestOnboardingCommon(TransactionCaseOnboarding):
             ]
         )
 
-        # create a fake action for step opening
         cls.action_fake_open_onboarding_step = cls.env["ir.actions.act_window"].create(
             {
                 "name": "action_fake_open_onboarding_step",
@@ -36,7 +34,6 @@ class TestOnboardingCommon(TransactionCaseOnboarding):
             }
         )
 
-        # Add two steps
         cls.onboarding_1_step_1, cls.onboarding_1_step_2 = cls.env[
             "onboarding.onboarding.step"
         ].create(
@@ -50,7 +47,6 @@ class TestOnboardingCommon(TransactionCaseOnboarding):
                 for step_n in range(1, 3)
             ]
         )
-        # Add one of these in onboarding_2, and an "original" one
         cls.onboarding_2.step_ids = [cls.onboarding_1_step_1.id]
         cls.onboarding_2_step_2 = cls.env["onboarding.onboarding.step"].create(
             [
@@ -62,7 +58,6 @@ class TestOnboardingCommon(TransactionCaseOnboarding):
                 }
             ]
         )
-        # Create progress records as would happen when the panel is first rendered
         (cls.onboarding_1 + cls.onboarding_2).with_company(
             cls.company_1
         )._search_or_create_progress()

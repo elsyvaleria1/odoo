@@ -42,8 +42,6 @@ from typing import Any
 _logger = logging.getLogger("agent_runner")
 
 API = "/agent_runner/v1/"
-# complete and fail are idempotent on the lease token, so a call lost on the
-# network is sent again rather than given up on
 FINISH_ATTEMPTS = 5
 
 
@@ -75,12 +73,9 @@ class Finished:
     returncode: int | None
     stdout: str
     stderr: str
-    # "timeout" or "stopped" when it was ended before it exited
     ended: str | None = None
 
 
-# how long the output of an exited command is waited for, once it is held
-# only by a process that left the command's session
 OUTPUT_GRACE = 5.0
 
 
@@ -93,11 +88,6 @@ def run_in_session(
     stop: threading.Event | None = None,
     end_on_exit: bool = False,
 ) -> Finished:
-    """Run ``command`` in a session of its own. Run out of time or stopped,
-    it is ended with everything it started in that session; exited, so is
-    what it left there when ``end_on_exit``. Its output is read as it comes, and no longer waited for
-    than a moment once the command is gone: a process that left the session
-    and holds it cannot hold the caller."""
     process = subprocess.Popen(
         command,
         cwd=cwd,
@@ -156,9 +146,6 @@ def run_in_session(
 
 
 def end_session(process: subprocess.Popen) -> None:
-    """Kill every process of ``process``'s session: its process group, and
-    each member that made a group of its own. A session's id stays reserved
-    while any member lives, so the id names no stranger."""
     with contextlib.suppress(ProcessLookupError):
         os.killpg(process.pid, signal.SIGKILL)
     for pid in _session_members(process.pid):
@@ -176,7 +163,6 @@ def _session_members(session: int) -> list[int]:
                 stat = (entry / "stat").read_text()
             except OSError:
                 continue
-            # after the command's name: state, ppid, pgrp, session
             fields = stat.rsplit(")", 1)[-1].split()
             if len(fields) > 3 and fields[3] == str(session):
                 members.append(int(entry.name))
@@ -192,7 +178,7 @@ class Client:
         self.timeout = timeout
 
     def _post(self, verb: str, body: dict[str, Any]) -> dict[str, Any]:
-        request = urllib.request.Request(  # noqa: S310 - __init__ admits http(s) only
+        request = urllib.request.Request(
             f"{self.base_url}{API}{verb}",
             data=json.dumps(body).encode(),
             headers={
@@ -202,13 +188,12 @@ class Client:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:  # noqa: S310 - __init__ admits http(s) only
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 answer = json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as error:
             if error.code == 409:
                 raise LeaseLost(verb) from error
             raise TransportError(f"{verb}: HTTP {error.code}") from error
-        # a proxy's HTML page, a cut connection: not an answer of Odoo's
         except (
             urllib.error.URLError,
             http.client.HTTPException,
@@ -291,8 +276,6 @@ Executor = Callable[[dict[str, Any], Reporter], Outcome]
 
 
 def probe(lease: dict[str, Any], reporter: Reporter) -> Outcome:
-    """A fake agent: works ``seconds`` while reporting progress, then answers
-    with what it was handed. ``fail`` makes it fail, ``permanent`` for good."""
     payload = lease.get("payload") or {}
     seconds = float(payload.get("seconds", 0))
     steps = max(int(seconds), 1)
@@ -334,14 +317,11 @@ class Runner:
         self._reporter: Reporter | None = None
 
     def shutdown(self) -> None:
-        """Stop serving, and stop the run in hand: it goes back to Odoo as
-        retryable, for another runner, rather than waiting out its lease."""
         self.stopping.set()
         if self._reporter is not None:
             self._reporter.stop.set()
 
     def run_once(self) -> bool:
-        """Claim and finish one run; ``False`` when there was none."""
         lease = self.client.claim()
         if not lease:
             return False
@@ -389,8 +369,6 @@ class Runner:
     def _execute(
         self, lease: dict[str, Any], reporter: Reporter
     ) -> tuple[Outcome | None, tuple[str, bool, dict | None] | None]:
-        """The outcome, or why it failed, whether another attempt could
-        succeed, and what the attempt spent before it failed."""
         executor = self.executors.get(lease["kind"])
         if executor is None:
             return None, (f"this runner cannot run {lease['kind']!r}", False, None)
@@ -399,7 +377,6 @@ class Runner:
         except Stopped as error:
             usage = getattr(error, "usage", None)
             if self.stopping.is_set():
-                # the runner is going away, not the run: another runner takes it
                 return None, (f"the runner was stopped: {error}", True, usage)
             return None, (str(error) or "stopped", False, usage)
         except Permanent as error:
@@ -429,8 +406,6 @@ class Runner:
             except TransportError as error:
                 _logger.warning("heartbeat not delivered: %s", error)
             except Exception:
-                # a heartbeat that dies leaves the lease to expire under a run
-                # still at work: log, and beat again
                 _logger.exception("heartbeat failed")
 
     def _finish(self, send: Callable[[], dict[str, Any]]) -> None:
@@ -463,10 +438,6 @@ class Runner:
 
 
 def _undumpable() -> None:
-    """Keep this process's memory and /proc entries -- its environment holds
-    the runner's token -- from processes of the same user: the agent runs as
-    that user, and could read /proc/<runner>/environ. A child starts dumpable
-    again, so this binds the runner alone."""
     if not sys.platform.startswith("linux"):
         return
     pr_set_dumpable = 4
@@ -499,12 +470,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     try:
         from . import change, deploy, incident
-    except ImportError:  # run as a script
+    except ImportError:
         import change
         import deploy
         import incident
-    # a sandbox runner runs agents and never deploys; a deploy runner, on the
-    # production host, deploys and never runs an agent
     roles = {
         "sandbox": change.EXECUTORS | incident.EXECUTORS,
         "deploy": deploy.EXECUTORS,
@@ -527,8 +496,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    # One copy of this module: the executors raise its `Permanent`, which the
-    # copy running as __main__ would not recognise as its own.
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import runner
 

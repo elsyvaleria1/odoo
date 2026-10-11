@@ -13,7 +13,6 @@ from odoo.addons.document.tests.test_document_common import TransactionCaseDocum
 
 class TestLinkToRecord(TransactionCaseDocuments):
     def test_link_to_record_requires_target_write(self):
-        """Linking documents to a record requires write access on that record."""
         doc = self.env["document.document"].create(
             {
                 "name": "To link",
@@ -21,7 +20,6 @@ class TestLinkToRecord(TransactionCaseDocuments):
                 "owner_id": self.doc_user.id,
             }
         )
-        # A mail-thread record the acting documents user cannot write.
         target = self.env["res.partner"].create({"name": "Link target"})
         self.assertFalse(
             self.env["res.partner"].with_user(self.doc_user).has_access("write")

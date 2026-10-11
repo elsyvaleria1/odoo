@@ -103,8 +103,6 @@ class AccountPeppolConfig(models.Model):
             config.peppol_purchase_journal_id.is_peppol_journal = True
 
     def _inverse_peppol_purchase_journal_id(self) -> None:
-        # This avoid having 2 or more purchase journals from the same company with
-        # `is_peppol_journal` set to True (which could occur after changes).
         journals_to_reset = self.env["account.journal"].search(
             [
                 ("company_id", "in", self.company_id.ids),
@@ -131,8 +129,6 @@ class AccountPeppolConfig(models.Model):
             config.peppol_self_billing_reception_journal_id.is_peppol_journal = True
 
     def _inverse_peppol_self_billing_reception_journal_id(self) -> None:
-        # This avoid having 2 or more sale journals from the same company with
-        # `is_peppol_journal` set to True (which could occur after changes).
         journals_to_reset = self.env["account.journal"].search(
             [
                 ("company_id", "in", self.company_id.ids),
@@ -182,7 +178,6 @@ class AccountPeppolConfig(models.Model):
         for config in self:
             if not config.account_peppol_phone_number:
                 try:
-                    # precompute only if it's a valid phone number
                     phone = config.company_id.phone_ids._primary().number
                     config.company_id._normalize_peppol_phone_number(phone)
                     config.account_peppol_phone_number = phone

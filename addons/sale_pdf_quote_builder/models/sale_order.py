@@ -44,7 +44,7 @@ class SaleOrder(models.Model):
             return
         for order in self:
             order.available_quotation_document_ids = (
-                self.env["quotation.document"]  # noqa: E8507 - one query per order, on its own template
+                self.env["quotation.document"]
                 .search(
                     self.env["quotation.document"]._check_company_domain(
                         order.company_id

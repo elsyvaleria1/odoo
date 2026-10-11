@@ -22,9 +22,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def _create(self, data_list):
-        """When a record of a model with an ai field or property is created, trigger the cron to
-        fill the ai fields/properties.
-        """
         trigger_cron = False
         for fname in self._get_ai_watched_field_names():
             field = self._fields[fname]
@@ -75,9 +72,6 @@ class Base(models.AbstractModel):
         return res
 
     def write(self, vals):
-        """When a property definition is modified or when the definition record is updated, trigger
-        the cron to fill the ai properties.
-        """
         res = super().write(vals)
         if not self:
             return res
@@ -121,7 +115,6 @@ class Base(models.AbstractModel):
 
         for property_definition in properties_definition:
             if property_definition.get("system_prompt"):
-                # Equivalent of `sanitize='email_outgoing'` on mail template body
                 property_definition["system_prompt"] = html_sanitize(
                     property_definition["system_prompt"],
                     sanitize_tags=True,
@@ -173,15 +166,6 @@ class Base(models.AbstractModel):
                     self.env[comodel].browse(record_ids).check_access("read")
 
     def _update_ai_field(self, field, field_prompt=None) -> None:
-        """Assign a value to the specified field in the given records based on the response of a
-        LLM. If no prompt is provided and the field is an AI field, it uses the field's prompt.
-
-        :param field: the field object for which the values should be obtained
-        :param field_prompt: the prompt to use for generating the values. If not provided and
-          the field is an AI field, the field's default prompt is used.
-
-        :return: None
-        """
         if field_prompt is None and not (hasattr(field, "ai") and field.ai):
             raise ValueError(f"The field {field.name} has no AI prompt")
         user_prompt, context_fields, allowed_values = prepare_field_prompt_context(
@@ -202,18 +186,10 @@ class Base(models.AbstractModel):
                 )
                 if field.type in ("char", "text", "html"):
                     record[field.name] = (
-                        ""  # prevent query llm again for the field (unresolvable/timeout)
+                        ""
                     )
 
     def _update_ai_property(self, fname, property_definition) -> None:
-        """Assign values to the specified AI property field for the records in `self` using LLM.
-        The records must share the same property definition.
-
-        :param fname: the name of the properties field
-        :param property_definition: the definition of the property
-
-        :return: None
-        """
         if not property_definition.get("system_prompt"):
             raise ValueError(
                 f"The property {property_definition['string']} has no AI prompt"
@@ -240,11 +216,8 @@ class Base(models.AbstractModel):
                     e,
                     exc_info=True,
                 )
-                value = False  # prevent query llm again for the property (unresolvable/timeout)
+                value = False
 
-            # update the property value (without overriding existing properties)
-            # we don't write the definition otherwise we will retrigger the cron if there
-            # is a property that has not been processed yet
             record[fname] = {
                 p["name"]: value
                 if p["name"] == property_definition["name"]
@@ -254,15 +227,6 @@ class Base(models.AbstractModel):
             }
 
     def get_ai_field_value(self, fname, changes):
-        """Get the value of an AI field based on the response of a LLM.
-
-        :param fname: name of the field for which the value should be obtained
-        :param changes: dict of field values containing the changes to apply before querying
-            the LLM
-
-        :return: the value to apply to the field in the format of :meth:`web_read`, except for
-            many2many fields where the value is a command to apply
-        """
         self.check_access("read")
         self.check_access("write")
         record = self.new(changes, origin=self)
@@ -275,14 +239,13 @@ class Base(models.AbstractModel):
             self.env, field
         )
         if field.type in ("many2many", "many2one") and not allowed_values:
-            # add most frequent records if no record in prompt
             records = self.ai_find_default_records(
                 field.comodel_name, field.domain, fname
             )
             allowed_values = {r.id: r.display_name for r in records}
         val = get_ai_value(
             record, field.type, user_prompt, context_fields, allowed_values
-        )  # currency?
+        )
         if field.type == "many2one":
             return (
                 bool(val)
@@ -295,15 +258,6 @@ class Base(models.AbstractModel):
         return val
 
     def get_ai_property_value(self, full_name, changes):
-        """Get the value of an AI property based on the response of a LLM.
-
-        :param full_name: full name of the property (field.property) for which the value should be
-            obtained
-        :param changes: dict of field values containing the changes to apply before querying the
-            LLM
-
-        :return: The value to apply to the property field in the format of :meth:`web_read`
-        """
         self.check_access("read")
         self.check_access("write")
         record = self.new(changes, origin=self)
@@ -311,7 +265,6 @@ class Base(models.AbstractModel):
         fname, pname = full_name.split(".")
 
         if changes:
-            # use the updated property definition if it changed
             properties_definition = changes.get(fname)
 
             if properties_definition:
@@ -347,7 +300,6 @@ class Base(models.AbstractModel):
             and not allowed_values
             and property_definition.get("comodel")
         ):
-            # add most frequent records if no record in prompt
             records = self.ai_find_default_records(
                 property_definition.get("comodel"),
                 property_definition.get("domain"),
@@ -379,10 +331,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def ai_find_default_records(self, comodel, domain, field_name, property_name=None):
-        """Heuristic for relational AI fields / properties, find the most used records, and fill if necessary.
-
-        :param field_name: name of the field, empty when creating a new field in studio
-        """
         limit = int(
             self.env.registry.settings.get(
                 self.env, "ai_field.insert_x_first_records", "200"
@@ -407,7 +355,6 @@ class Base(models.AbstractModel):
                 for record_id in r[field_name].ids
             ]
         elif property_name:
-            # `any` operator not working on relational properties (because too costly to do)
             definition = self.get_property_definition(f"{field_name}.{property_name}")
             if definition:
                 values = self.search_read(
@@ -440,7 +387,7 @@ class Base(models.AbstractModel):
 
         if (
             len(records) < limit
-        ):  # If we didn't reach the limit, fill with other records
+        ):
             records |= self.env[comodel].search(
                 Domain.AND([domain, [("id", "not in", records.ids)]]),
                 limit=limit - len(records),

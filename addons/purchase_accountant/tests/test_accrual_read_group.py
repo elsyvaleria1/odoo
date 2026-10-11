@@ -47,7 +47,6 @@ class TestAccrualReadGroup(TransactionCase):
         Model = type(self.Line)
         self.patch(Model, "_get_domain_accrual", lambda records: [])
 
-        # Distinct per line, so a group summing the wrong records cannot match by luck.
         def qty_is_ordered_qty(records):
             for line in records:
                 line.qty_invoiced_at_date = line.product_qty
@@ -62,19 +61,16 @@ class TestAccrualReadGroup(TransactionCase):
         )
 
     def test_each_group_sums_its_own_records(self):
-        """Grouping on two fields used to key the sums on the first one alone."""
         rows = self.Line._read_group(
             self.domain, ["partner_id", "product_id"], ["qty_invoiced_at_date:sum"]
         )
         self.assertEqual({row[1]: row[2] for row in rows}, self.expected)
 
     def test_no_grouping_at_all(self):
-        """The signature's own default, and what a plain total reads."""
         rows = self.Line._read_group(self.domain, [], ["qty_invoiced_at_date:sum"])
         self.assertEqual(rows, [(sum(self.expected.values()),)])
 
     def test_the_patched_aggregate_keeps_its_position(self):
-        """Whatever order the caller asked its aggregates in."""
         rows = self.Line._read_group(
             self.domain,
             ["product_id"],

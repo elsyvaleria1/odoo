@@ -8,7 +8,6 @@ from odoo.tools.authority_keys import declare_authority_keys
 PROOF_PURPOSE = "approval.decision"
 SUMMARY_RECORDS = 5
 
-# set only in-process, by the entry points that take the proof as an argument
 declare_authority_keys("approval_proof", "approval_proof", "approval_proof_evidence_id")
 
 
@@ -16,8 +15,6 @@ class ApprovalRequest(models.Model):
     _inherit = "approval.request"
 
     def action_issue_decision_proof(self, decision: str) -> dict[str, Any] | None:
-        """The proof the current user must give to decide this request, or None
-        when its category needs none for that decision."""
         self.check_singleton()
         self.check_access("read")
         if decision not in ("approve", "refuse"):
@@ -71,8 +68,6 @@ class ApprovalRequest(models.Model):
         return super(ApprovalRequest, proven)._apply_decision(decision, approver, steps)
 
     def _get_decision_proof_facts(self, decision: str) -> dict[str, Any]:
-        """What a proven decision vouches for: the request's figures, the
-        decision, the deciding row and the source document's protected fields."""
         self.check_singleton()
         facts = {
             "decision": decision,

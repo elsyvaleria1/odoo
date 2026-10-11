@@ -94,8 +94,6 @@ class Stream:
 
     @classmethod
     def from_binary_field(cls, record: Any, field_name: str) -> Stream:
-        # Under bin_size a binary field answers its human size ("12.50 Kb"),
-        # which the raw-bytes fallback below would serve as the file.
         record = record.with_context(
             bin_size=False, **{f"bin_size_{field_name}": False}
         )
@@ -103,13 +101,13 @@ class Stream:
         if isinstance(data, str):
             data = data.encode()
 
-        decoded = False  # debuglog
+        decoded = False
         with contextlib.suppress(ValueError):
             data = base64.b64decode(
                 data.replace(b"\r", b"").replace(b"\n", b""),
                 validate=True,
             )
-            decoded = True  # debuglog
+            decoded = True
         _debug.lifecycle(
             "http.stream.from_field",
             model=getattr(record, "_name", None),
@@ -157,8 +155,6 @@ class Stream:
         if scheme not in _REDIRECT_SCHEMES:
             _debug.logic("http.stream.url_redirect_refused", scheme=scheme)
             raise NotFound
-        # Not a 301: browsers keep a permanent redirect forever, and an
-        # attachment's url can be edited; a cached 302 expires.
         max_age = STATIC_CACHE if self.max_age is None else self.max_age
         _debug.logic("http.stream.url_redirect", max_age=max_age, scheme=scheme)
         res = request.redirect(url, code=302, local=False)
@@ -170,8 +166,6 @@ class Stream:
         send_file_kwargs["use_x_sendfile"] = False
         x_accel_redirect: str | None = None
         settings = current_settings()
-        # the proxy serving an X-Accel-Redirect keeps only some of the
-        # response's headers, Content-Encoding not among them
         if settings.x_sendfile and not self.encoding:
             with contextlib.suppress(ValueError):
                 fspath = Path(path).relative_to(settings.filestore_root)

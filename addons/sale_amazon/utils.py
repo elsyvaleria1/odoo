@@ -20,7 +20,6 @@ from odoo.addons.sale_amazon import const
 _logger = logging.getLogger(__name__)
 
 
-# === CUSTOM EXCEPTION CLASSES ===#
 
 
 class AmazonRateLimitError(Exception):
@@ -31,54 +30,25 @@ class AmazonRateLimitError(Exception):
         super().__init__()
 
 
-# === ONBOARDING ===#
 
 
 def exchange_authorization_code(authorization_code, account) -> None:
-    """Exchange the LWA authorization code for the LWA refresh token and save it on the account.
-
-    :param str authorization_code: The authorization code to exchange with the LWA refresh token.
-    :param recordset account: The account for which a refresh token must be exchanged, as an
-                              `amazon.account` record.
-    :return: None
-    """
     data = {
         "grant_type": "authorization_code",
         "code": authorization_code,
     }
     endpoint = const.PROXY_ENDPOINTS["authorization"]
     response_content = send_proxy_request(endpoint, account.env, payload=data)
-    # sudo: the field is restricted to system users (ADR-0081) but onboarding is
-    # run by the sale manager who owns the account. The code may handle the
-    # secret; the user still may not read it back.
     account.sudo().refresh_token = response_content["refresh_token"]
 
 
 def check_account_is_set_up(account, require_marketplaces=True) -> None:
-    """Ensure that the fields required for SP-API calls are filled.
-
-    This method must be called at the start of every flow that require making API requests. If a
-    flow makes several API requests in a row, it is enough to only call this method before the first
-    request is made.
-
-    :param recordset account: The account for which the fields must be checked, as an
-                              `amazon.account` record.
-    :param bool require_marketplaces: Whether the field `active_marketplace_ids` is considered
-                                      required or not.
-    :return: None
-    :raise UserError: If one of the required fields is not filled.
-    """
-    # Check that the API keys and tokens are set.
-    # sudo, and on the credential rather than the token: this asks whether the
-    # account is authorized, and answering it by decrypting the secret would
-    # spend a rate-limited vault read on a presence check.
     if not account.sudo().credential_id or not account.seller_key:
         raise UserError(
             account.env._(
                 "You first need to authorize the Amazon account %s.", account.name
             )
         )
-    # Check that the marketplaces are set when required.
     if require_marketplaces and not account.active_marketplace_ids:
         raise UserError(
             account.env._(
@@ -88,19 +58,9 @@ def check_account_is_set_up(account, require_marketplaces=True) -> None:
         )
 
 
-# === PROXY COMMUNICATIONS ===#
 
 
 def send_proxy_request(endpoint, env, payload=None):
-    """Make a request to the Amazon proxy at the specified endpoint.
-
-    :param str endpoint: The proxy endpoint to be reached by the request.
-    :param Environment env: An `odoo.api.Environment`.
-    :param dict payload: The Amazon-specific payload of the request.
-    :return: The JSON-formatted content of the response.
-    :rtype: dict
-    :raise ValidationError: If a `RequestException` occurs.
-    """
     url = url_join(const.PROXY_URL, endpoint)
     ICP = env["ir.config_parameter"]
     data = {
@@ -141,31 +101,13 @@ def send_proxy_request(endpoint, env, payload=None):
     return response.json()
 
 
-# === API COMMUNICATIONS ===#
 
 
 def send_sp_api_request(
     account, operation, path_parameter="", payload=None, method="GET"
 ):
-    """Make a request to the SP-API for the specified operation.
-
-    See https://developer-docs.amazon.com/sp-api/docs/connecting-to-the-selling-partner-api.
-
-    Note: account.check_singleton()
-
-    :param recordset account: The Amazon account on behalf of which the request is made.
-    :param str operation: The SP-API operation to be called by the request.
-    :param str path_parameter: The variable that SP-API paths are interpolated with.
-    :param dict payload: The payload of the request.
-    :param string method: The HTTP method of the request ('GET' or 'POST').
-    :return: The JSON-formatted content of the response.
-    :rtype: dict
-    :raise ValidationError: If an HTTP error occurs.
-    :raise AmazonRateLimitError: If the rate limit was reached.
-    """
     account.check_singleton()
 
-    # Build the request URL based on the API path and domain.
     path = const.API_OPERATIONS_MAPPING[operation]["url_path"].format(
         param=path_parameter
     )
@@ -174,17 +116,15 @@ def send_sp_api_request(
 
     payload = payload or {}
 
-    # Refresh the credentials used to sign the request.
     if (
         const.API_OPERATIONS_MAPPING[operation]["restricted_resource_path"] is None
-    ):  # No RDT is required
+    ):
         refresh_access_token(account)
         access_token = account.access_token
-    else:  # The operation requires an RDT to access restricted data.
+    else:
         refresh_restricted_data_token(account)
         access_token = account.restricted_data_token
 
-    # Build the request headers
     host = url_parse(domain).netloc
     now = datetime.now(UTC)
     headers = {
@@ -204,7 +144,7 @@ def send_sp_api_request(
                 headers=headers,
                 timeout=60,
             )
-        else:  # 'POST'
+        else:
             response = account.env["ir.egress"].request(
                 "POST", url, purpose="amazon", json=payload, headers=headers, timeout=60
             )
@@ -243,16 +183,10 @@ def send_sp_api_request(
 
 
 def refresh_access_token(account):
-    """Request a new LWA access token if it is expired and save it on the account.
-
-    :param recordset account: The account for which an access token must be requested, as an
-                              `amazon.account` record.
-    :return: None
-    """
     if fields.Datetime.now() > account.access_token_expiry - timedelta(minutes=5):
         payload = {
             "grant_type": "refresh_token",
-            "refresh_token": account.sudo().refresh_token,  # sudo: see above
+            "refresh_token": account.sudo().refresh_token,
         }
         endpoint = const.PROXY_ENDPOINTS["authorization"]
         response_content = send_proxy_request(endpoint, account.env, payload=payload)
@@ -266,15 +200,6 @@ def refresh_access_token(account):
 
 
 def refresh_restricted_data_token(account) -> None:
-    """Request a new Restricted Data Token (RDT) if it is expired and save it on the account.
-
-    The request includes the restricted path of all restricted operation to avoid refreshing the RDT
-    for each new operation.
-
-    :param recordset account: The account for which a Restricted Data Token must be requested, as an
-                              `amazon.account` record.
-    :return: None
-    """
     if datetime.now(UTC).replace(
         tzinfo=None
     ) > account.restricted_data_token_expiry - timedelta(minutes=5):
@@ -308,21 +233,9 @@ def refresh_restricted_data_token(account) -> None:
         )
 
 
-# === FEEDS MANAGEMENT ===#
 
 
 def get_json_feed(account, messages):
-    """Build JSON feed data to be sent to the SP-API.
-
-    https://github.com/amzn/selling-partner-api-models/blob/main/schemas/feeds/listings-feed-schema-v2.json
-
-    :param recordset account: The Amazon account on behalf of which the feed should be built, as an
-                              `amazon.account` record.
-    :param list[dict] messages: The list of messages to include in the feed. See the reference for
-        message format.
-    :return: The JSON encoded feed.
-    :rtype: str
-    """
     return json.dumps(
         {
             "header": {
@@ -334,7 +247,7 @@ def get_json_feed(account, messages):
                 {
                     "messageId": int(datetime.now(UTC).timestamp() + i) % 2147483647
                     + 1,
-                    **message,  # Allow message to override `messageId`
+                    **message,
                 }
                 for i, message in enumerate(messages)
             ],
@@ -344,17 +257,6 @@ def get_json_feed(account, messages):
 
 
 def get_feed(account, message_type, messages_builder, *args, **kwargs):
-    """Build XML feed data to be sent to the SP-API.
-
-    :param recordset account: The Amazon account on behalf of which the feed should be built, as an
-                              `amazon.account` record.
-    :param str message_type: The category of the feed to be built.
-    :param function messages_builder: The function to build the 'Message' elements.
-    :param list args: The arguments to pass to the `messages_builder` function.
-    :param dict kwargs: The keyword arguments to pass to the `messages_builder` function.
-    :return: The XML feed.
-    :rtype: str
-    """
     XSI = "http://www.w3.org/2001/XMLSchema-instance"
     root = ET.Element(
         "AmazonEnvelope",
@@ -370,36 +272,19 @@ def get_feed(account, message_type, messages_builder, *args, **kwargs):
         message_id.text = f"{int(datetime.now(UTC).timestamp())}{i}"
         message.insert(
             0, message_id
-        )  # Insert the message ID before the other elements.
+        )
     return ET.tostring(root, encoding="UTF-8", method="xml")
 
 
 def submit_feed(
     account, feed, feed_type, feed_content_type=None, marketplace_api_refs=None
 ):
-    """Submit the provided feed to the SP-API.
-
-    :param recordset account: The Amazon account on behalf of which the feed should be submitted, as
-                              an `amazon.account` record.
-    :param str feed: The feed to submit.
-    :param str feed_type: The type of the feed to submit. E.g., 'POST_ORDER_ACKNOWLEDGEMENT_DATA'.
-    :param str feed_content_type: The mimetype of the content. E.g., 'application/json'.
-    :param list[str] marketplace_api_refs: The marketplace to which the feed must apply.
-        Defaults to the account active marketplaces.
-    :return: The feed id returned by the SP-API.
-    :rtype: str
-    """
     feed_content_type = feed_content_type or "text/xml; charset=UTF-8"
     marketplace_api_refs = (
         marketplace_api_refs or account.active_marketplace_ids.mapped("api_ref")
     )
 
     def _create_feed_document():
-        """Create a feed document.
-
-        :return: The feed document id and the pre-signed URL to upload the feed to.
-        :rtype: tuple[str, str]
-        """
         _payload = {"contentType": feed_content_type}
         _response_content = send_sp_api_request(
             account, "createFeedDocument", payload=_payload, method="POST"
@@ -407,10 +292,6 @@ def submit_feed(
         return _response_content["feedDocumentId"], _response_content["url"]
 
     def _upload_feed_data():
-        """Upload the feed to the URL returned by Amazon.
-
-        :return: None
-        """
         headers = {"content-Type": feed_content_type}
         try:
             response = account.env["ir.egress"].request(
@@ -438,11 +319,6 @@ def submit_feed(
             ) from err
 
     def _create_feed():
-        """Create the feed and return its id.
-
-        :return: The feed id.
-        :rtype: str
-        """
         _payload = {
             "feedType": feed_type,
             "marketplaceIds": marketplace_api_refs,
@@ -459,17 +335,6 @@ def submit_feed(
 
 
 def get_feed_document(account, document_ref):
-    """Return the document corresponding to the provided document reference.
-
-    The document reference is first used to fetch the URL of the document; the document is then read
-    directly from that URL.
-
-    :param amazon.account account: The Amazon account on behalf of which the document is fetched.
-    :param str document_ref: The reference of the document.
-    :return: The document content as a `dict` or `ElementTree.Element` depending on the feed type
-             this document originates from.
-    :raise ValidationError: If an HTTP error occurs.
-    """
     document_infos = send_sp_api_request(
         account, "getFeedDocument", path_parameter=document_ref
     )
@@ -510,25 +375,11 @@ def get_feed_document(account, document_ref):
     return document
 
 
-# === HELPERS ====#
 
 
 def pull_batch_data(
     account, operation, payload, path_parameter="", method="GET"
 ) -> tuple:
-    """Pull a batch of data from the SP-API.
-
-    If request results are paginated, the 'NextToken' returned with the response is added to the
-    payload to pull the next page's batch with the following call.
-
-    :param recordset account: The Amazon account on behalf of which the data must be pulled.
-    :param str operation: The SP-API operation to be called by the request.
-    :param dict payload: The payload of the request.
-    :param str path_parameter: The variable that SP-API paths are interpolated with.
-    :param string method: The HTTP method of the request ('GET' or 'POST').
-    :return: The batch data and whether a next page exists.
-    :rtype: tuple[dict, bool]
-    """
     response_content = send_sp_api_request(
         account,
         operation,
@@ -544,15 +395,6 @@ def pull_batch_data(
 
 
 def commit_preserving_credentials(account, processed=0) -> None:
-    """Commit the cron's progress, then restore the account's credentials from before the commit.
-
-    The commit invalidates the cache, and the credentials must survive it to be re-used.
-
-    :param recordset account: The Amazon account whose credentials must be preserved, as a
-                              `amazon.account` record.
-    :param int processed: The number of records the commit completes.
-    :return: None
-    """
     fields_to_preserve = [
         "access_token",
         "access_token_expiry",

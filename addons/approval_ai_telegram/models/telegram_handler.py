@@ -88,7 +88,6 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         return self._tr(bot, chat)._("Approval request")
 
     def _accepts_idle(self, bot, chat, kind, message, partner, internal_user):
-        # a voice note starts a /solicitar: only for whoever may send one
         return bool(
             kind == "voice"
             and bot._voice_payload(message)

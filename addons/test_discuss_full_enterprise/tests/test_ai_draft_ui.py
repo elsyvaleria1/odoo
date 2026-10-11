@@ -9,7 +9,6 @@ class TestAIDraftUI(HttpCase):
     def _dummy_ai_submit_to_model(
         self, prompt, chat_history=None, extra_system_context=""
     ):
-        # ensure that record data is sent with the user message
         self.assertIn(
             "The following JSON contains all of the record's details:",
             extra_system_context,

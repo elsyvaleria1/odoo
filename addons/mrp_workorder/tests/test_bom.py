@@ -5,7 +5,6 @@ from odoo.addons.mrp.tests.common import TestMrpCommon
 
 class TestBoMHr(TestMrpCommon):
     def test_bom_report_operation_cost(self):
-        """Test report bom overview with variant-exclusive operations, see if the bom cost matches."""
         self.workcenter_2.employee_costs_hour = 120
         bom = self.env["mrp.bom"].create(
             {

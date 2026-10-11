@@ -72,8 +72,6 @@ class Scorecard(models.Model):
 
     @api.model
     def _for(self, res_model, company):
-        # Superuser: which scorecard applies to a subject is a fact of the
-        # configuration, not of who asks.
         candidates = (
             self.env(su=True)[self._name]
             .with_context(active_test=True)
@@ -94,8 +92,6 @@ class Scorecard(models.Model):
 
     @api.model
     def _notify_catalog_changed(self, model_names) -> None:
-        # The ceilings are read live from the catalog; the cached computes must
-        # not outlive the weight they summed.
         self.env["scorecard.dimension"].invalidate_model(["max_points"])
         self.invalidate_model(["max_points"])
         if not self.env.registry.ready:

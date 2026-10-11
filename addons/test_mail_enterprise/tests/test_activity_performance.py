@@ -60,7 +60,6 @@ class TestActivityPerformance(BaseMailPerformance):
             )
         )
 
-        # documents records for activities
         cls.documents_test_folder = cls.env["document.document"].create(
             {"name": "Test Folder", "type": "folder", "access_internal": "edit"}
         )
@@ -100,11 +99,8 @@ class TestActivityPerformance(BaseMailPerformance):
     @users("employee")
     @warmup
     def test_activity_mixin_crud(self):
-        """Simply check CRUD operations on records having advanced mixing
-        enabled. No computed fields are involved."""
         ActivityModel = self.env["mail.test.sms.bl.activity"]
 
-        # +2: posting reads the company's mail.config
         with self.assertQueryCount(employee=9):
             record = ActivityModel.create(
                 {
@@ -120,11 +116,8 @@ class TestActivityPerformance(BaseMailPerformance):
     @users("employee")
     @warmup
     def test_activity_mixin_schedule_call(self):
-        """Simply check CRUD operations on records having advanced mixing
-        enabled. No computed fields are involved."""
         test_record = self.test_record.with_env(self.env)
 
-        # +1 net: posting reads the company's mail.config (+2)
         with self.assertQueryCount(employee=29):
             activity = test_record.activity_schedule(
                 "mail.mail_activity_data_call",
@@ -132,15 +125,12 @@ class TestActivityPerformance(BaseMailPerformance):
             )
             self.env.flush_all()
 
-        # check business information (to benefits from this test)
         self.assertEqual(activity.user_id, self.user_admin)
         self.assertEqual(test_record.activity_ids, activity)
 
     @users("employee")
     @warmup
     def test_activity_mixin_schedule_call_batch_voip(self):
-        """Simply check CRUD operations on records having advanced mixin VOIP
-        enabled. No computed fields are involved."""
         test_records = self.test_records_voip.with_env(self.env)
 
         with self.assertQueryCount(employee=32):
@@ -150,7 +140,6 @@ class TestActivityPerformance(BaseMailPerformance):
             )
             self.env.flush_all()
 
-        # check business information (to benefits from this test)
         self.assertEqual(len(activities), 10)
         self.assertEqual(activities.user_id, self.user_admin)
         self.assertEqual(test_records.activity_ids, activities)
@@ -158,11 +147,8 @@ class TestActivityPerformance(BaseMailPerformance):
     @users("employee")
     @warmup
     def test_activity_mixin_schedule_document(self):
-        """Simply check CRUD operations on records having advanced mixing
-        enabled. No computed fields are involved."""
         test_record_voip = self.test_record_voip.with_env(self.env)
 
-        # +2 mail.config read on post, and the upload folder's edit right is checked
         with self.assertQueryCount(employee=40):
             activity = test_record_voip.activity_schedule(
                 "mail.mail_activity_data_upload_document",
@@ -170,7 +156,6 @@ class TestActivityPerformance(BaseMailPerformance):
             )
             self.env.flush_all()
 
-        # check business information (to benefits from this test)
         self.assertEqual(activity.user_id, self.user_admin)
         self.assertEqual(test_record_voip.activity_ids, activity)
 
@@ -183,20 +168,12 @@ class TestActivityPerformance(BaseMailPerformance):
             activity = test_record_voip.create_call_activity()
             self.env.flush_all()
 
-        # check business information (to benefits from this test)
         self.assertEqual(activity.activity_type_id, self.phonecall_activity)
 
     @mute_logger("odoo.models.unlink")
     @users("employee")
     @warmup
     def test_generic_activities_misc_batch(self):
-        """Test generic activities performance when
-
-          * creating;
-          * updating responsible;
-          * setting as done (feedback) with attachments;
-
-        in order to see difference with other activities (generic type)."""
         test_records = self.test_records_voip.with_env(self.env)
 
         with self.assertQueryCount(employee=26):
@@ -233,20 +210,12 @@ class TestActivityPerformance(BaseMailPerformance):
     @users("employee")
     @warmup
     def test_voip_activities_misc_batch(self):
-        """Test VOIP activities performance when
-
-          * creating;
-          * updating responsible;
-          * setting as done (feedback) with attachments;
-
-        in order to see difference with other activities (generic type)."""
         test_records = self.test_records_voip.with_env(self.env)
 
         with self.assertQueryCount(employee=19):
             activities = test_records.create_call_activity()
             self.env.flush_all()
 
-        # check business information (to benefits from this test)
         self.assertEqual(activities.activity_type_id, self.phonecall_activity)
 
         with self.assertQueryCount(employee=40):

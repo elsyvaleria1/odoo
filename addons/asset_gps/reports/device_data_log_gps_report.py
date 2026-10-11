@@ -23,7 +23,6 @@ class DeviceGpsLogReport(models.Model):
         return res
 
     def _get_from_tables(self) -> list:
-        # Resource identity owns the attachment across all business models.
         res = super()._get_from_tables()
         res.append(
             (
@@ -41,7 +40,6 @@ class DeviceGpsLogReport(models.Model):
                 "asset.id = tracked_resource.id AND asset.kind_id IS NOT NULL",
             ),
         )
-        # The plate is an identifier row of the resource, whatever its kind.
         res.append(
             (
                 (

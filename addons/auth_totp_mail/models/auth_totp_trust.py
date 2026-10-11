@@ -7,7 +7,6 @@ class AuthTotpTrust(models.Model):
     _inherit = "auth.totp.trust"
 
     def unlink(self):
-        """Notify users when trusted devices are removed from their account."""
         removed_devices_by_user = self._classify_by_user()
         for user, removed_devices in removed_devices_by_user.items():
             user._notify_security_setting_update(

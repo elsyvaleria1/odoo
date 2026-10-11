@@ -120,7 +120,7 @@ class StockMoveLine(models.Model):
         index=True,
         check_company=True,
     )
-    state = fields.Selection(  # noqa: E8529  the WHERE clause of the partial index (product_id, location_id, trace_id, package_id, owner_id, company_id)
+    state = fields.Selection(
         related="move_id.state",
         store=True,
     )
@@ -493,9 +493,6 @@ class StockMoveLine(models.Model):
     @_debug.perf.timed
     def unlink(self):
         _debug.lifecycle("unlink", move_lines=self)
-        # validate before the reservations are released, as the @api.ondelete
-        # hook only runs after them -- and, like it, not while a module is
-        # uninstalled, when done lines go too and hold no reservation
         if not self.env.context.get(MODULE_UNINSTALL_FLAG):
             self._unlink_except_done_or_cancel()
         self.filtered(lambda ml: ml.state not in ("done", "cancel"))._release_quants()

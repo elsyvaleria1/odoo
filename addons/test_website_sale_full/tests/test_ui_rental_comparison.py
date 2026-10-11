@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 @tagged("-at_install", "post_install")
 class TestUi(HttpCase, TestWebsiteSaleRentingCommon):
     def test_website_sale_renting_comparison_ui(self):
-        # Checkout process in the tour assumes partner information is set.
         self.env.ref("base.user_admin").partner_id.write(
             {
                 "country_id": self.env.ref("base.be").id,
@@ -92,8 +91,6 @@ class TestUi(HttpCase, TestWebsiteSaleRentingCommon):
         self.computer.is_published = True
         self.assertTrue(self.computer.valid_product_template_attribute_line_ids)
 
-        # Make sure comparison button is enabled on /shop page (of any website, as it seems
-        # self.website is not the website used by the tour)
         for website in self.env["website"].search([]):
             website.write(
                 {

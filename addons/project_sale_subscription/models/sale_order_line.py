@@ -10,11 +10,6 @@ class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
     def _compute_product_readonly(self) -> None:
-        """Extend product_readonly for subscription/recurring lines.
-
-        Subscription products with recurring invoices are always editable (not readonly)
-        regardless of order state, allowing users to change products during subscription lifecycle.
-        """
         temporal_lines = self.filtered("recurring_invoice")
         super(SaleOrderLine, self - temporal_lines)._compute_product_readonly()
         temporal_lines.product_readonly = False
@@ -30,7 +25,6 @@ class SaleOrderLine(models.Model):
     def _timesheet_create_task(self, project):
         task = super()._timesheet_create_task(project)
         order = self.order_id
-        # if the product is not recurrent or the project doesn't allow recurring tasks, we don't bother
         if not self.product_id.recurring_invoice or not project.allow_recurring_tasks:
             return task
 
@@ -42,8 +36,6 @@ class SaleOrderLine(models.Model):
             repeat_until = task_template_id.repeat_until
             task.date_end = task_template_id.date_end
         else:
-            # if there is a recurrent task template and the subscription product has an end date,
-            # we set this end date on the task recurrence
             start_date = datetime.combine(order.next_invoice_date, datetime.min.time())
             repeat_until = order.end_date and datetime.combine(
                 order.end_date, datetime.min.time()
@@ -54,7 +46,6 @@ class SaleOrderLine(models.Model):
             repeat_type = "until" if repeat_until else "forever"
             repeat_interval = order.plan_id.repeat_interval
             repeat_unit = order.plan_id.repeat_unit
-        # if there is no task template, we set a recurrence that mimics the subscription on the created task
         recurrence = self.env["project.task.recurrence"].create(
             {
                 "task_ids": task.ids,

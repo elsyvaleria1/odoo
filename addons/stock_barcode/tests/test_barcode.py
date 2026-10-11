@@ -16,13 +16,7 @@ class TestBarcodeSearch(TransactionCase):
         )
 
     def test_filter_picking_by_product_gs1(self):
-        """Checks if a product is searched with a complete GS1 barcode, the
-        product data is correctly retrieved and the search operates only on the
-        product's part of the GS1 barcode. Also, checks a product can still be
-        searched by its raw barcode even if GS1 nomenclature is used.
-        """
         Product = self.env["product.product"]
-        # Creates three products.
         product1 = Product.create(
             {
                 "name": "product1",
@@ -40,12 +34,11 @@ class TestBarcodeSearch(TransactionCase):
         product3 = Product.create(
             {
                 "name": "product3",
-                "barcode": "00000073411048",  # Ambiguous with the product2 barcode.
+                "barcode": "00000073411048",
                 "is_storable": True,
             }
         )
 
-        # Searches while using the default barcode nomenclature.
         product = Product.search([("barcode", "=", "01304510")])
         self.assertEqual(
             len(product), 1, "Product should be found when searching by its barcode"
@@ -58,7 +51,6 @@ class TestBarcodeSearch(TransactionCase):
             "Product shouldn't be found with GS1 barcode if GS1 nomenclature is inactive",
         )
 
-        # Searches while using the GS1 barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -93,7 +85,6 @@ class TestBarcodeSearch(TransactionCase):
             )
             self.assertEqual(product, product2 | product3)
 
-        # Checks search for all products except one from a GS1 barcode is workking as expected.
         for operator in ["!=", "not ilike"]:
             products = Product.search([("barcode", operator, "01304510")])
             self.assertFalse(product1 in products)
@@ -119,7 +110,6 @@ class TestBarcodeSearch(TransactionCase):
         self.env.user.write({"group_ids": [Command.unlink(grp_pack.id)]})
 
         Package = self.env["stock.package"]
-        # Creates three packages.
         package1 = Package.create(
             {
                 "name": "1234560000000018",
@@ -132,11 +122,10 @@ class TestBarcodeSearch(TransactionCase):
         )
         package3 = Package.create(
             {
-                "name": "007189085627231896",  # Ambiguous with the package2 barcode.
+                "name": "007189085627231896",
             }
         )
 
-        # Searches while using the default barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes.default_barcode_nomenclature"
         )
@@ -151,7 +140,6 @@ class TestBarcodeSearch(TransactionCase):
             "Package shouldn't be found with GS1 barcode if GS1 nomenclature is inactive",
         )
 
-        # Searches while using the GS1 barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -186,7 +174,6 @@ class TestBarcodeSearch(TransactionCase):
             )
             self.assertEqual(package, package2 | package3)
 
-        # Checks search for all packages except one from a GS1 barcode is workking as expected.
         for operator in ["!=", "not ilike"]:
             packages = Package.search([("name", operator, "1234560000000018")])
             self.assertFalse(package1 in packages)
@@ -209,7 +196,6 @@ class TestBarcodeSearch(TransactionCase):
 
     def test_filter_picking_by_location_gs1(self):
         Location = self.env["stock.location"]
-        # Creates three locations.
         location1 = Location.create(
             {
                 "name": "loc1",
@@ -225,11 +211,10 @@ class TestBarcodeSearch(TransactionCase):
         location3 = Location.create(
             {
                 "name": "loc3",
-                "barcode": "0614141000531",  # Ambiguous with the package2 barcode.
+                "barcode": "0614141000531",
             }
         )
 
-        # Searches while using the default barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes.default_barcode_nomenclature"
         )
@@ -244,7 +229,6 @@ class TestBarcodeSearch(TransactionCase):
             "Location shouldn't be found with GS1 barcode if GS1 nomenclature is inactive",
         )
 
-        # Searches while using the GS1 barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -279,7 +263,6 @@ class TestBarcodeSearch(TransactionCase):
             )
             self.assertEqual(location, location2 | location3)
 
-        # Checks search for all locations except one from a GS1 barcode is workking as expected.
         for operator in ["!=", "not ilike"]:
             locations = Location.search([("barcode", operator, "5055218716187")])
             self.assertFalse(location1 in locations)
@@ -305,11 +288,6 @@ class TestBarcodeSearch(TransactionCase):
             self.assertFalse(location2 in locations or location3 in locations)
 
     def test_searching_lot_gs1(self):
-        """Checks if a lot is searched with a complete GS1 barcode, the
-        lot data is correctly retrieved and the search operates only on the
-        lot's part of the GS1 barcode. Also, checks a lot can still be
-        searched by its raw barcode even if GS1 nomenclature is used.
-        """
         product = self.env["product.product"].create(
             {
                 "name": "product1",
@@ -317,7 +295,6 @@ class TestBarcodeSearch(TransactionCase):
                 "tracking": "lot",
             }
         )
-        # create 2 lots
         lot1 = self.env["product.trace"].create(
             {
                 "name": "lot1",
@@ -337,7 +314,6 @@ class TestBarcodeSearch(TransactionCase):
             }
         )
 
-        # Searches while using the default barcode nomenclature.
         lot = self.env["product.trace"].search([("name", "=", "lot1")])
         self.assertEqual(
             len(lot), 1, "Lot should be found when searching by its barcode"
@@ -350,7 +326,6 @@ class TestBarcodeSearch(TransactionCase):
             "Lot shouldn't be found with GS1 barcode if GS1 nomenclature is inactive",
         )
 
-        # Searches while using the GS1 barcode nomenclature.
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -384,7 +359,6 @@ class TestBarcodeSearch(TransactionCase):
             )
             self.assertEqual(lot.ids, [lot3.id])
 
-        # Checks search for all lots except one from a GS1 barcode is working as expected.
         for operator in ["!=", "not ilike"]:
             lots = self.env["product.trace"].search([("name", operator, "10lot1")])
             self.assertFalse(lot1 in lots)
@@ -537,10 +511,6 @@ class TestBarcodeSearch(TransactionCase):
         )
 
     def test_add_and_remove_barcode_in_product(self):
-        """
-        Tests product creation with default GS1 nomenclature, ensuring barcode is saved,
-        and removed correctly.
-        """
         company = self.env.company
         company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
@@ -562,9 +532,6 @@ class TestBarcodeSearch(TransactionCase):
         self.assertFalse(product.barcode)
 
     def test_lot_duplication_with_gs1_nomenclature(self):
-        """
-        Test that two lots cannot have the same name, even when the name follows the pattern of a GS1 rule
-        """
         product = self.env["product.product"].create(
             {
                 "name": "Product",
@@ -576,7 +543,7 @@ class TestBarcodeSearch(TransactionCase):
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
         lot = {
-            "name": "101",  # Matches the 'Batch or lot number' rule (barcode_rule_gs1_10)
+            "name": "101",
             "product_id": product.id,
         }
         self.env["product.trace"].create(lot)

@@ -8,9 +8,6 @@ from odoo.addons.voip.tests.test_voip_access_rights import TestVoipAccessRights
 @tagged("-at_install", "post_install")
 class TestVoipHrAccessRights(TestVoipAccessRights):
     def test_hr_manager_access_on_subordinates_calls(self):
-        """
-        HR managers have read access to phone.call records of their subordinates.
-        """
         manager = new_test_user(self.env, login="manager", groups="hr.group_hr_user")
         manager_employee = self.env["hr.employee"].create(
             {
@@ -43,9 +40,6 @@ class TestVoipHrAccessRights(TestVoipAccessRights):
             call.with_user(manager).unlink()
 
     def test_department_manager_access_on_subordinates_calls(self):
-        """
-        Department managers have read access to phone.call records of their subordinates.
-        """
         department = self.env["hr.department"].create(
             {"name": "Hogwarts School of Witchcraft and Wizardry"}
         )
@@ -85,9 +79,6 @@ class TestVoipHrAccessRights(TestVoipAccessRights):
             call.with_user(head_of_department).unlink()
 
     def test_department_manager_access_on_non_subordinate_calls(self):
-        """
-        Department managers do not have any access to phone.call records for users who are not their subordinates.
-        """
         department = self.env["hr.department"].create(
             {"name": "HR", "manager_id": False}
         )
@@ -102,7 +93,6 @@ class TestVoipHrAccessRights(TestVoipAccessRights):
             },
         )
         department.manager_id = department_manager_employee.id
-        # Create a user and employee NOT in the manager's department
         outsider_user = new_test_user(
             self.env, login="outsider", groups="hr.group_hr_user"
         )
@@ -125,10 +115,6 @@ class TestVoipHrAccessRights(TestVoipAccessRights):
             outsider_call.with_user(department_manager).unlink()
 
     def test_hr_manager_access_on_indirect_subordinate_calls(self):
-        """
-        HR managers also have read access to phone.call records of their indirect subordinates.
-        """
-        # Create a simple hierarchy: Root Manager -> Manager -> Subordinate
         root_manager = new_test_user(
             self.env, login="root_manager", groups="hr.group_hr_user"
         )

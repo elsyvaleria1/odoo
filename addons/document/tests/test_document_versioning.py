@@ -212,13 +212,6 @@ class TestDocumentsVersionDeletion(TransactionCaseDocuments):
 @tagged("post_install", "-at_install")
 class TestDocumentsVersionCreation(TransactionCaseDocuments):
     def test_detaching_the_attachment_keeps_it_as_a_version(self):
-        """Emptying a document is replacing its content, so it keeps a version.
-
-        `write({"attachment_id": False})` used to leave nothing behind: the
-        document went empty, the outgoing attachment stayed pointing at it, and
-        the history panel offered nothing to go back to -- unlike every other
-        way of replacing the content, which archives what it replaced.
-        """
         doc = self.env["document.document"].create(
             {
                 "type": "binary",
@@ -239,7 +232,6 @@ class TestDocumentsVersionCreation(TransactionCaseDocuments):
             original,
             "the detached content is recoverable from the history",
         )
-        # ...and the history entry is usable: restoring it brings the file back.
         doc.action_restore_version(original.id)
         self.assertEqual(doc.attachment_id, original)
 

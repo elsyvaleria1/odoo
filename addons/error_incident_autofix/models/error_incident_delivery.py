@@ -11,7 +11,6 @@ from odoo.addons.integration_github.tools import get_github_client
 
 _debug = DebugLog(__name__)
 
-# A fix on its way: its pull request is followed until production runs it.
 _REVIEW_STATES = ("pushed", "testing", "test_failed", "test_passed")
 _AWAITING_PRODUCTION = ("merged", "hotfixing")
 
@@ -61,21 +60,17 @@ class ErrorIncident(models.Model):
         help="Since when production is asked whether it runs the merged fix.",
     )
 
-    # -- the pull request -------------------------------------------------------
 
     def _autofix_pull_changed(self, pull: models.BaseModel) -> None:
         self.check_singleton()
         if self.fix_state not in _REVIEW_STATES or pull != self._autofix_pull():
-            # an earlier fix's pull request speaks for that fix, not this one
             return
         snapshot = self.approval_request_id.operation_snapshot or {}
         if snapshot.get("head") and snapshot["head"] != pull.head_sha:
-            # what was asked about is gone: its approval covers nothing
             self._autofix_release_approval(
                 self.env._("the pull request moved past the commit it asked about")
             )
         elif pull.pull_state in ("merged", "closed"):
-            # merged or closed on GitHub: no merge or hotfix is left to decide
             self._autofix_release_approval(
                 self.env._("the pull request was merged or closed on GitHub")
             )
@@ -112,8 +107,6 @@ class ErrorIncident(models.Model):
         )
 
     def _autofix_pull(self) -> models.BaseModel:
-        """The pull request of the incident's newest fix: the one a merge or a
-        hotfix is about."""
         self.check_singleton()
         fix = self.fix_run_ids.filtered(lambda run: run.kind == FIX).sorted("id")[-1:]
         return fix.github_pull_id
@@ -121,7 +114,6 @@ class ErrorIncident(models.Model):
     def _autofix_policy_passes_unchecked(self) -> bool:
         return bool(self._autofix_repository().pass_without_checks)
 
-    # -- merge and hotfix, each a person's decision ------------------------------
 
     def _check_before_approval(self, verb: str) -> None:
         super()._check_before_approval(verb)
@@ -140,8 +132,6 @@ class ErrorIncident(models.Model):
         return [("approval_type", "=", "autofix")]
 
     def _get_approval_snapshot(self, operation: str) -> dict[str, Any]:
-        # what was approved is this commit: a pull request pushed to since is a
-        # new decision
         self.check_singleton()
         pull = self._autofix_pull()
         return {"pull": pull.id, "head": pull.head_sha}
@@ -159,12 +149,9 @@ class ErrorIncident(models.Model):
         )
 
     def action_autofix_merge(self) -> None:
-        """Merge the fix's pull request -- once a person approved it."""
         for incident in self:
             pull = incident._autofix_pull()
             owner, _, name = pull.repository.partition("/")
-            # the approved commit, and only it: GitHub refuses the merge when
-            # the head moved after the approval, however late its webhook is
             merged = get_github_client(self.env).merge_pull_request(
                 owner, name, pull.number, merge_method="squash", sha=pull.head_sha
             )
@@ -184,9 +171,6 @@ class ErrorIncident(models.Model):
             )
 
     def action_autofix_hotfix(self) -> None:
-        """Apply the fix to production before it is merged -- once a person
-        approved it. The deploy runner applies, upgrades and checks the server,
-        and reverts it when the server does not come back healthy."""
         policy = self.env["error.incident.autofix.policy"]._current()
         for incident in self:
             pull = incident._autofix_pull()
@@ -213,17 +197,12 @@ class ErrorIncident(models.Model):
             incident._autofix_release_approval()
 
     def _autofix_release_approval(self, reason: str | None = None) -> None:
-        """The approval is spent -- its operation ran, or what it was asked
-        about changed: the next merge or hotfix of this incident is a new
-        decision with a request of its own. One still pending is refused for
-        ``reason``, so no approver grants it after."""
         self.check_singleton()
         request = self.approval_request_id
         if not request:
             return
         _debug.logic("autofix.approval_spent", incident=self.id, request=request.id)
         if request.state == "new":
-            # reset to draft and never submitted again: cancelled, not orphaned
             request._force_terminal(
                 "cancelled",
                 body=self.env._(
@@ -244,9 +223,6 @@ class ErrorIncident(models.Model):
         self.approval_request_id = False
 
     def _split_for_approval(self, operation: str) -> tuple:
-        # a request about a commit that is no longer the pull request's head --
-        # approved, or still pending because its approval could not run -- is
-        # released, and the operation asks again, instead of refused for good
         for incident in self:
             if (
                 incident.approval_request_id
@@ -261,7 +237,6 @@ class ErrorIncident(models.Model):
                 )
         return super()._split_for_approval(operation)
 
-    # -- production --------------------------------------------------------------
 
     def _autofix_delivery_ended(self, run: models.BaseModel) -> None:
         self.check_singleton()
@@ -269,8 +244,6 @@ class ErrorIncident(models.Model):
             return
         if run.run_state != "succeeded":
             self.write({"fix_state": "test_passed"})
-            # the pull request is read again: merged or closed while the
-            # hotfix ran, the incident follows that, not the hotfix
             self._autofix_pull_changed(self._autofix_pull())
             self.message_post(
                 body=self.env._(
@@ -283,8 +256,6 @@ class ErrorIncident(models.Model):
 
     @api.model
     def _autofix_contained(self, commits: list[str]) -> None:
-        """Production runs these commits: the incidents whose fix is among them
-        are fixed -- resolved, and their users told."""
         if not commits:
             return
         incidents = self.search(
@@ -300,9 +271,6 @@ class ErrorIncident(models.Model):
 
     @api.model
     def _cron_autofix_check_production(self) -> None:
-        """Ask production which awaited fixes it runs, unless it is being asked.
-        A fix production has not run for the policy's wait is no longer asked
-        about: the incident says so, once, for a person to deploy or decide."""
         policy = self.env["error.incident.autofix.policy"]._current()
         if not policy:
             return

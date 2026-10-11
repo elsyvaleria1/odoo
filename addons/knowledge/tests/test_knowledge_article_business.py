@@ -17,23 +17,8 @@ from odoo.addons.knowledge.tests.common import KnowledgeCommon, KnowledgeCommonW
 class KnowledgeCommonBusinessCase(KnowledgeCommonWData):
     @classmethod
     def setUpClass(cls):
-        """Add some hierarchy to have mixed rights tests"""
         super().setUpClass()
 
-        # - Private         seq=997   private      none    (manager-w+)
-        #   - Child1        seq=0     "            "
-        # - Shared          seq=998   shared       none    (admin-w+,employee-r+,manager-r+)
-        #   - Child1        seq=0     "            "       (employee-w+)
-        #   - Child2        seq=0     "            "       (portal-r+)
-        #   - Child3        seq=0     "            "       (admin-w+,employee-n-)
-        # - Playground      seq=999   workspace    w+
-        #   - Child1        seq=0     "            "
-        #     - Gd Child1
-        #     - Gd Child2
-        #       - GdGd Child1
-        #   - Child2        seq=1     "            "
-        #     - Gd Child1
-        #       - GdGd Child2
 
         cls.shared_children += (
             cls.env["knowledge.article"]
@@ -60,7 +45,6 @@ class KnowledgeCommonBusinessCase(KnowledgeCommonWData):
         )
         cls.shared_children[2]._exclude_partners(cls.partner_employee)
 
-        # to test descendants computation, add some sub children
         cls.wkspace_grandchildren = cls.env["knowledge.article"].create(
             [
                 {
@@ -99,7 +83,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_create(self):
-        """Testing the helper to create articles with right values."""
         Article = self.env["knowledge.article"]
         article = self.article_workspace.with_env(self.env)
         readonly_article = self.article_shared.with_env(self.env)
@@ -108,7 +91,7 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         new = Article.article_create(title=_title, parent_id=False, is_private=False)
         self.assertMembers(
             new, "write", {self.env.user.partner_id: "write"}
-        )  # With the visibility we add directly the user as member
+        )
         self.assertEqual(new.body, f"<h1>{_title}</h1>")
         self.assertEqual(new.category, "workspace")
         self.assertEqual(new.name, _title)
@@ -151,7 +134,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
                 title=_title, parent_id=readonly_article.id, is_private=False
             )
 
-        # Test fix: cannot create under unwritable parent even if a sequence is set.
         with self.assertRaises(exceptions.AccessError):
             Article.create(
                 {
@@ -177,7 +159,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
                 "name": "AdminPrivate",
             }
         )
-        # If no body given at create, make it reflect article title.
         self.assertEqual(private_nonmember.body, "<h1>AdminPrivate</h1>")
         _title = "Fthagn, but with parent private none: cracboum"
         with self.assertRaises(exceptions.AccessError):
@@ -187,24 +168,20 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
     @users("employee")
     def test_article_get_sidebar_articles(self):
-        """Testing the main access point for the sidebar."""
         playground_root = self.article_workspace.with_env(self.env)
         playground_children = self.workspace_children.with_env(self.env)
         shared_root = self.article_shared.with_env(self.env)
-        # all articles are folded, expect only roots and no favorite
         sidebar_articles = self.env["knowledge.article"].get_sidebar_articles()
         self.assertListEqual(sidebar_articles["favorite_ids"], [])
         self.assertListEqual(
             [article["id"] for article in sidebar_articles["articles"]],
             (shared_root + playground_root).ids,
         )
-        # add both articles as favorite, favorite_ids should be populated
         (playground_root + shared_root).action_toggle_user_favorite()
         sidebar_articles = self.env["knowledge.article"].get_sidebar_articles()
         self.assertListEqual(
             sidebar_articles["favorite_ids"], (playground_root + shared_root).ids
         )
-        # remove access to shared article, favorite_ids should have one element and only playground should be kept
         shared_root.sudo()._add_members(self.partner_employee, "none", True)
         sidebar_articles = self.env["knowledge.article"].get_sidebar_articles()
         self.assertListEqual(sidebar_articles["favorite_ids"], playground_root.ids)
@@ -212,7 +189,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             [article["id"] for article in sidebar_articles["articles"]],
             playground_root.ids,
         )
-        # unfold playground, should contain its children
         sidebar_articles = self.env["knowledge.article"].get_sidebar_articles(
             playground_root.ids
         )
@@ -230,18 +206,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     )
     @users("employee")
     def test_article_invite_members(self):
-        """Test inviting members API. Create a hierarchy of 3 shared articles
-        and check privilege is not granted below invited articles.
-
-        # - Shared          seq=998   shared       none    (admin-w+,employee-r+,manager-r+)
-        #   - Child1        seq=0     "            "       (employee-w+)
-        #      - Gd Child1            "            "       (manager-w+,employee-r+)
-        #        - GdGd Child1        "            "       (employee-w+)
-        #      - Gd Child2            "            "       (employee-w+)
-        #   - Child2        seq=0     "            "       (portal-r+)
-        #   - Child3        seq=0     "            "       (admin-w+,employee-n-)
-
-        """
         direct_child_read, direct_child_write = (
             self.env["knowledge.article"]
             .sudo()
@@ -326,7 +290,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         self.assertMembers(direct_child_write, False, {self.partner_employee: "write"})
         self.assertMembers(grand_child, "read", {self.partner_employee: "write"})
 
-        # invite a mix of shared and internal people
         partners = (
             self.customer + self.partner_employee_manager + self.partner_employee2
         ).with_env(self.env)
@@ -366,7 +329,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             msg="Invite: descendants should not be impacted",
         )
 
-        # check access is effectively granted
         shared_article.with_user(self.user_employee2).check_access("write")
         shared_article.with_user(self.user_customer).check_access("write")
         direct_child_write.with_user(self.user_employee2).check_access("write")
@@ -382,7 +344,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         ):
             grand_child.with_user(self.user_customer).check_access("read")
 
-        # employee2 is downgraded, employee_manager is removed
         with self.mock_mail_gateway():
             shared_article.invite_members(partners[2], "read")
         with self.mock_mail_gateway():
@@ -404,8 +365,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     )
     @users("employee")
     def test_article_invite_members_rights(self):
-        """Testing trying to bypass granted privilege: inviting people require
-        write access."""
         article_shared = self.article_shared.with_env(self.env)
 
         partners = (
@@ -427,17 +386,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     )
     @users("employee")
     def test_article_invite_members_non_accessible_children(self):
-        """Test that user cannot give access to non-accessible children article
-        when inviting people.
-
-        # Private Parent        private    none     (employee-w+)
-        # - Child1              "          write    (employee-no)
-        #   - Gd Child1
-        # - Child2              "          write    (employee-r+)
-        #   - Gd Child1
-        # - Child3              "          "        "
-        #   - Gd Child1
-        """
         private_parent = self.env["knowledge.article"].create(
             [
                 {
@@ -534,14 +482,12 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         with self.mock_mail_gateway():
             private_parent.invite_members(partners, "read")
 
-        # Manager got read on article
         self.assertMembers(
             private_parent,
             "none",
             {self.partner_employee: "write", self.partner_employee_manager: "read"},
         )
 
-        # CHILDREN
         self.assertMembers(
             child_read_access,
             "none",
@@ -550,32 +496,27 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
         self.assertMembers(child_no_access, "none", {self.partner_admin: "write"})
 
-        # Manager got inherited read on child_write_access
         self.assertMembers(child_write_access, False, {})
         self.assertTrue(child_write_access.user_has_write_access)
         self.assertTrue(
             child_write_access.with_user(self.user_employee_manager).user_has_access
         )
 
-        # GRAND CHILDREN
-        # Manager got inherited none on child_read_access and Employee still have inherited member access
         self.assertMembers(grandchild_read_access, False, {})
         self.assertTrue(grandchild_read_access.user_has_access)
         with self.assertRaises(exceptions.AccessError):
             grandchild_read_access.with_user(
                 self.user_employee_manager
-            ).body  # Acls should trigger AccessError
+            ).body
 
-        # Manager got inherited none on child_no_access and Employee still have no access
         self.assertMembers(grandchild_no_access, False, {})
         with self.assertRaises(exceptions.AccessError):
-            grandchild_no_access.body  # Acls should trigger AccessError
+            grandchild_no_access.body
         with self.assertRaises(exceptions.AccessError):
             grandchild_no_access.with_user(
                 self.user_employee_manager
-            ).body  # Acls should trigger AccessError
+            ).body
 
-        # Manager got inherited read on grandchild_write_access and Employee still have write access
         self.assertMembers(grandchild_write_access, False, {})
         self.assertTrue(grandchild_write_access.user_has_write_access)
         self.assertTrue(
@@ -586,7 +527,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
 
     @users("employee")
     def test_article_toggle_favorite(self):
-        """Testing the API for toggling favorites."""
         playground_articles = (
             self.article_workspace + self.workspace_children
         ).with_env(self.env)
@@ -600,7 +540,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             playground_articles.mapped("is_user_favorite"), [True, False, False]
         )
 
-        # correct uid-based computation
         playground_articles_asmanager = playground_articles.with_user(
             self.user_employee_manager
         )
@@ -612,34 +551,11 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models.unlink")
     @users("employee")
     def test_article_make_private(self):
-        """Testing the API that makes an article 'private'. Making an article
-        private generally:
-          - sets internal_permission 'none';
-          - sets current environment user as only write member;
-
-        A lot of extra post-processing is applied, see ``KnowledgeArticle.
-        _move_and_make_private()`` for details.
-
-        Specific setup for this test
-        # - Playground                workspace    w+    (customer-r+)
-        #   - Child1                  "            "     (customer-r+)
-        #     - ReadMemb GrandChild   "            w+    (employee-r+)
-        #     - Gd Child1             "            "
-        #     - Gd Child2             "            "
-        #       - GdGd Child1         "            "
-        #   - Child2                  "            "
-        #     - Gd Child1             "            "
-        #       - GdGd Child          "            "
-        #   - ReadMember Child        "            w+    (employee-r+)
-        #   - ReadInternal Child      "            r+    (employee2-w+)
-        #   - Hidden Child            "            w+    (employee-no)
-        """
         article_workspace = self.article_workspace.with_env(self.env)
         workspace_children = self.workspace_children.with_env(self.env)
         wkspace_grandchildren = self.wkspace_grandchildren.with_env(self.env)
         wkspace_grandgrandchildren = self.wkspace_grandgrandchildren.with_env(self.env)
 
-        # add an additional member on 'article_workspace' and one of its children for further checks
         (self.article_workspace + self.workspace_children[0]).write(
             {
                 "article_member_ids": [
@@ -655,11 +571,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             }
         )
 
-        # add 4 extra articles for further checks
-        # - one to which 'employee' only has 'read' access (as member)
-        # - one to which 'employee' only has 'read' access (internal)
-        # - one invisible, "employee2" has access to that one in write mode
-        # - one to which 'employee' only has 'read' access (as member) as grandchild (descendants testing)
         [
             wkspace_child_read_member_access,
             wkspace_child_read_internal_access,
@@ -745,12 +656,10 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             wkspace_child_no_access.with_env(self.env).body
         article_workspace._move_and_make_private()
 
-        # 1. main article was correctly moved to private
         self.assertEqual(article_workspace.category, "private")
         self.assertEqual(article_workspace.internal_permission, "none")
         self.assertMembers(article_workspace, "none", {self.partner_employee: "write"})
 
-        # 2. accessible children were correctly moved to private
         for workspace_descendant, parent_id in zip(
             workspace_children + wkspace_grandchildren + wkspace_grandgrandchildren,
             [
@@ -769,11 +678,8 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
                 workspace_descendant.inherited_permission_parent_id, article_workspace
             )
             self.assertEqual(workspace_descendant.parent_id, parent_id)
-            # all specific members should have been wiped, no permission
             self.assertMembers(workspace_descendant, False, {})
 
-        # 3.children that were not writable are moved as a root articles and that
-        # members / internal permissions are kept
         self.assertEqual(wkspace_child_read_member_access.category, "shared")
         self.assertFalse(wkspace_child_read_member_access.parent_id)
         self.assertMembers(
@@ -801,7 +707,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             {self.partner_employee: "read", self.partner_employee2: "write"},
         )
 
-        # 'Hidden Child' is still not accessible for employee
         with self.assertRaises(exceptions.AccessError):
             wkspace_child_no_access.with_env(self.env).body
         wkspace_child_no_access.with_user(self.user_employee2).body
@@ -809,21 +714,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models.unlink")
     @users("employee")
     def test_article_make_private_w_desynchronized(self):
-        """Test a special case when making private: we have desynchronized children.
-        Children that are de-synchronized should NOT have members from their parent(s)
-        copied onto them when they are detached.
-
-        Specific setup for this test
-        # - Playground                workspace    w+    (customer-r+,employee-w+)
-        #   - Child1                  "            w+DES (customer-r+,employee-r+)
-        #     - Gd Child1             "            "
-        #     - Gd Child2             "            "
-        #       - GdGd Child1         "            "
-        #   - Child2                  "            "
-        #     - Gd Child1             "            "
-        #       - GdGd Child          "            "
-        """
-        # add employee on playground and desynchronize its child
         self.article_workspace._add_members(self.partner_employee, "write")
         self.workspace_children[0].write({"internal_permission": "read"})
         self.workspace_children[0]._add_members(self.partner_employee_manager, "write")
@@ -835,7 +725,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             .id,
             "read",
         )
-        # check updated data
         self.assertTrue(self.workspace_children[0].is_desynchronized)
         self.assertMembers(
             self.article_workspace, "write", {self.partner_employee: "write"}
@@ -851,7 +740,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             self.workspace_children.with_env(self.env)
         )
 
-        # add a member on the parent, it will NOT be propagated to the desync child
         article_workspace._add_members(self.customer, "read")
         self.assertMembers(
             article_workspace,
@@ -859,24 +747,17 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             {self.customer: "read", self.partner_employee: "write"},
         )
 
-        # now move the article to private and check the post-processing
         article_workspace._move_and_make_private()
 
-        # 1. desync article: moved to root (as employee does not have write access)
-        # and is not desynchronized (root articles are never desynchornized)
-        # should be moved to root (as employee does not have write access)
         self.assertEqual(workspace_child_desync.category, "workspace")
         self.assertFalse(workspace_child_desync.is_desynchronized)
         self.assertFalse(workspace_child_desync.parent_id)
-        # it should NOT have had customer access copied onto it as it was desync when we moved it
         self.assertMembers(
             workspace_child_desync,
             "read",
             {self.partner_employee: "read", self.partner_employee_manager: "write"},
         )
 
-        # 2. sync article: NOT moved to root (as employee has write access) and is
-        # still sunchronized
         self.assertEqual(workspace_child_tosync.category, "private")
         self.assertFalse(workspace_child_desync.is_desynchronized)
         self.assertEqual(workspace_child_tosync.parent_id, article_workspace)
@@ -884,16 +765,12 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models.unlink")
     @users("employee_manager")
     def test_article_make_private_w_parent(self):
-        """Test a special case when making private: moving under an existing private parent."""
         article_shared = self.article_shared.with_env(self.env)
         article_private_manager = self.article_private_manager.with_env(self.env)
 
-        # first test that making 'article_shared' fails since 'employee_manager'
-        # does not have write access to it (only read)
         with self.assertRaises(exceptions.AccessError):
             article_shared._move_and_make_private(parent=article_private_manager)
 
-        # then grant write access to test the flow
         article_shared.sudo().article_member_ids.filtered(
             lambda member: member.partner_id == self.partner_employee_manager
         ).write({"permission": "write"})
@@ -901,14 +778,11 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         article_shared._move_and_make_private(parent=article_private_manager)
 
         self.assertEqual(article_shared.category, "private")
-        # the internal permission should not be set as we inherit from our private parent
-        # members should be wiped as we inherit from our private parent
         self.assertMembers(article_shared, False, {})
 
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_move_to(self):
-        """Testing the API for moving articles."""
         article_workspace = self.article_workspace.with_env(self.env)
         article_shared = self.article_shared.with_env(self.env)
         workspace_children = self.workspace_children.with_env(self.env)
@@ -927,7 +801,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         ):
             article_shared[0].move_to(category="workspace")
 
-        # valid move: put second child of workspace under the first one
         workspace_children[1].move_to(parent_id=workspace_children[0].id)
         workspace_children.flush_model()
         self.assertEqual(article_workspace.child_ids, workspace_children[0])
@@ -936,13 +809,11 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         self.assertEqual(workspace_children[1].parent_id, workspace_children[0])
         self.assertEqual(workspace_children[0].parent_id, article_workspace)
 
-        # Test that desynced articles are resynced when moved to root
         workspace_children[0].sudo().write(
             workspace_children[0]._desync_access_from_parents_values()
         )
         self.assertTrue(workspace_children[0].is_desynchronized)
 
-        # other valid move: first child is moved to private section
         workspace_children[0].move_to(category="private")
         workspace_children.flush_model()
         self.assertMembers(
@@ -972,7 +843,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_move_to_shared(self):
-        """Testing the valid moves to the shared section."""
         article_private = (
             self.env["knowledge.article"]
             .sudo()
@@ -1094,14 +964,12 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         )
         shared_child = self.shared_children[0].with_env(self.env)
 
-        # valid move: shared root -> shared root (resequence)
         article_shared_employee.move_to(category="shared")
         article_shared_employee.flush_model()
         self.assertTrue(article_shared_employee.sequence > self.article_shared.sequence)
         self.assertEqual(article_shared_employee.category, "shared")
         self.assertFalse(article_shared_employee.parent_id)
 
-        # valid move: workspace -> shared child
         article_workspace.move_to(parent_id=article_shared_employee.id)
         article_workspace.flush_model()
         self.assertEqual(
@@ -1109,7 +977,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         )
         self.assertFalse(article_workspace.internal_permission)
 
-        # valid move: private -> shared child
         article_private.move_to(parent_id=article_shared_employee.id)
         article_private.flush_model()
         self.assertEqual(
@@ -1117,19 +984,16 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         )
         self.assertFalse(article_workspace.internal_permission)
 
-        # valid move: shared child -> shared child
         shared_child.move_to(parent_id=article_shared_employee.id)
         shared_child.flush_model()
         self.assertEqual(
             shared_child.inherited_permission_parent_id, article_shared_employee
         )
 
-        # valid move: shared child -> shared root
         shared_child.move_to(category="shared")
         shared_child.flush_model()
         self.assertFalse(shared_child.parent_id)
         self.assertEqual(shared_child.category, "shared")
-        # should have added inherited members on the article
         self.assertMembers(
             shared_child,
             "none",
@@ -1139,7 +1003,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
             },
         )
 
-        # valid move: workspace with 1 partner with read permission -> shared root
         article_workspace2.move_to(
             category="shared", before_article_id=article_shared_employee.id
         )
@@ -1147,7 +1010,6 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
         self.assertFalse(article_workspace2.parent_id)
         self.assertEqual(article_workspace2.category, "shared")
         self.assertTrue(article_workspace2.sequence < article_shared_employee.sequence)
-        # should have added user as member on the article
         self.assertMembers(
             article_workspace2,
             "none",
@@ -1156,11 +1018,8 @@ class TestKnowledgeArticleBusiness(KnowledgeCommonBusinessCase):
                 self.partner_employee2: "read",
             },
         )
-        # ensure that a_ws2_child_write is still a child of article_workspace2
         self.assertEqual(a_ws2_child_write.parent_id, article_workspace2)
         self.assertEqual(a_ws2_child_write.category, "shared")
-        # ensure that a_ws2_child_read has become a root since employee did not
-        # have write access on it while moving article_workspace2 to shared
         self.assertFalse(a_ws2_child_read.parent_id)
         self.assertEqual(a_ws2_child_read.category, "workspace")
 
@@ -1222,14 +1081,8 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
     )
     @users("employee")
     def test_article_duplicate(self):
-        """Test articles duplication (=copy/copy_batch methods). Verifies that
-        the children of a duplicated article are also duplicated, that
-        duplicating an article and one of its children does not duplicate the
-        children 2 times, and that employee cannot bypass access rules.
-        """
         article_workspace = self.article_workspace.with_env(self.env)
 
-        # Selecting several articles in the same hierarchy should only duplicate the highest one
         workspace_articles = article_workspace | article_workspace._get_descendants()
         duplicate = workspace_articles.copy_batch()
         self.assertEqual(
@@ -1244,7 +1097,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
             sorted([f"{name}" for name in article_workspace.mapped("child_ids.name")]),
         )
 
-        # Selecting 2 articles in different hierarchies (under same parent) should duplicate both
         workspace_children = self.workspace_children.with_env(self.env)
         duplicates = workspace_children.copy_batch()
         self.assertEqual(
@@ -1252,15 +1104,12 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
             sorted([f"{name}" for name in workspace_children.mapped("name")]),
         )
 
-        # Duplicating readonly article should raise an error
         article_readonly = self.article_shared.with_env(self.env)
         with self.assertRaises(exceptions.AccessError):
             article_readonly.copy()
-        # Duplicating hidden article should raise an error
         article_hidden = self.article_private_manager.with_env(self.env)
         with self.assertRaises(exceptions.AccessError):
             article_hidden.copy()
-        # Duplicating readonly article's child with write permission should raise an error
         article_write_member = self.shared_children[0].with_env(self.env)
         with self.assertRaises(exceptions.AccessError):
             article_write_member.copy()
@@ -1270,8 +1119,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
     )
     @users("admin")
     def test_article_duplicate_admin(self):
-        """Test duplicate (copy_batch) as admin as he has enough rights to really
-        copy articles, not like employee currently."""
         workspace_children = self.workspace_children.with_env(self.env)
         shared = self.article_shared.with_env(self.env)
         duplicates = (workspace_children + shared).copy_batch()
@@ -1314,7 +1161,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         ):
             _new_article = article_hidden.action_make_private_copy()
 
-        # Copying an article should create a private article without parent
         article_readonly = self.article_shared.with_env(self.env)
         new_article = article_readonly.action_make_private_copy()
         self.assertEqual(new_article.name, f"{article_readonly.name} (copy)")
@@ -1323,11 +1169,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         self.assertFalse(new_article.parent_id)
 
     def test_article_make_private_copy_having_embedded_views_of_article_items(self):
-        """When the user copies an article, the system should copy the body
-        of the original article and update the ID references stored within
-        it so that the embedded views listing the article items of the original
-        article now list the article items of the copy. This test will check
-        that the ID references have been updated in the body of the new article."""
         article = self.env["knowledge.article"].create({"name": "Hello"})
 
         def render_embedded_view(embedded_props):
@@ -1409,7 +1250,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         fragment = html.fragment_fromstring(article.body, create_parent=True)
         embedded_views = list(fragment.findall('.//*[@data-embedded="view"]'))
 
-        # Check that the original article contains the embedded views we want
         self.assertEqual(len(embedded_views), 3)
         for embedded_view, expected_view_type, expected_context in zip(
             embedded_views, expected_view_types, expected_contexts, strict=False
@@ -1419,7 +1259,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
             self.assertEqual(view_props["view_type"], expected_view_type)
             self.assertEqual(view_props["context"], expected_context)
 
-        # Copy the article
         new_article = article.action_make_private_copy()
 
         expected_contexts = [
@@ -1443,10 +1282,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         fragment = html.fragment_fromstring(new_article.body, create_parent=True)
         embedded_views = list(fragment.findall('.//*[@data-embedded="view"]'))
 
-        # Check that the context of the embedded views stored in the body of the
-        # newly created article have properly been updated: The embedded views
-        # listing the article items of the original article should now list the
-        # article items of the copy.
 
         self.assertEqual(len(embedded_views), 3)
         for embedded_view, expected_view_type, expected_context in zip(
@@ -1469,7 +1304,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         ):
             _new_article = article_hidden.copy()
 
-        # Copying an article should create a private article without parent nor children
         article_readonly = self.article_shared.with_env(self.env)
         with self.assertRaises(
             exceptions.AccessError,
@@ -1477,7 +1311,6 @@ class TestKnowledgeArticleCopy(KnowledgeCommonBusinessCase):
         ):
             _new_article = article_readonly.copy()
 
-        # Copy an accessible article
         article_workspace = self.article_workspace.with_env(self.env)
         new_article = article_workspace.copy()
         self.assertEqual(new_article.name, f"{article_workspace.name} (copy)")
@@ -1532,11 +1365,9 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_archive(self):
-        """Testing archive that should also archive children."""
         self._test_archive(test_trash=False)
 
     def test_archive_unactive_article(self):
-        """Checking that an already-archived (unactive) article can be sent to trash."""
         article = self.env["knowledge.article"].create({"name": "Article"})
         self.assertTrue(article.active)
         self.assertFalse(article.to_delete)
@@ -1555,17 +1386,14 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         article_shared = self.article_shared.with_env(self.env)
         article_workspace = self.article_workspace.with_env(self.env)
         wkspace_children = self.workspace_children.with_env(self.env)
-        # to test descendants computation, add some sub children
         wkspace_grandchildren = self.wkspace_grandchildren.with_env(self.env)
         wkspace_grandgrandchildren = self.wkspace_grandgrandchildren.with_env(self.env)
 
-        # no write access -> cracboum
         with self.assertRaises(
             exceptions.AccessError, msg="Employee can read thus not archive"
         ):
             getattr(article_shared, archive_method_name)()
 
-        # set the root + children inactive
         getattr(article_workspace, archive_method_name)()
         self.assertFalse(article_workspace.active)
         self.assertEqual(article_workspace.to_delete, test_trash)
@@ -1580,7 +1408,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             )
             self.assertEqual(article.to_delete, test_trash)
 
-        # reset as active
         articles_to_restore = (
             article_workspace
             + wkspace_children
@@ -1592,7 +1419,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             self.assertTrue(article.active)
             self.assertFalse(article.to_delete)
 
-        # set only part of tree inactive
         getattr(wkspace_children, archive_method_name)()
         self.assertTrue(article_workspace.active)
         self.assertFalse(article_workspace.to_delete)
@@ -1610,9 +1436,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         self._test_archive_mixed_rights(test_trash=False)
 
     def _test_archive_mixed_rights(self, test_trash=False):
-        """Test archive in case of mixed rights"""
-        # give write access to shared section, but have children in read or none
-        # and add a customer on top of shared articles to check propagation
         archive_method_name = "action_send_to_trash" if test_trash else "action_archive"
 
         self.article_shared.write(
@@ -1639,7 +1462,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             "read",
         )
 
-        # prepare comparison data as sudo
         writable_child_su = self.article_shared.child_ids.filtered(
             lambda article: article.name == "Shared Child1"
         )
@@ -1650,9 +1472,8 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             lambda article: article.name == "Shared Child3"
         )
 
-        # perform archive as user
         article_shared = self.article_shared.with_env(self.env)
-        article_shared.invalidate_model(["child_ids"])  # context dependent
+        article_shared.invalidate_model(["child_ids"])
         shared_children = article_shared.child_ids
         writable_child, readonly_child = (
             writable_child_su.with_env(self.env),
@@ -1668,7 +1489,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         )
 
         getattr(article_shared, archive_method_name)()
-        # check writable articles have been archived, readonly or hidden not
         self.assertFalse(article_shared.active)
         self.assertEqual(article_shared.to_delete, test_trash)
         self.assertFalse(writable_child.active)
@@ -1678,7 +1498,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         self.assertTrue(hidden_child_su.active)
         self.assertFalse(hidden_child_su.to_delete)
 
-        # check hierarchy
         self.assertEqual(
             writable_child.parent_id,
             article_shared,
@@ -1695,7 +1514,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         )
         self.assertEqual(hidden_child_su.root_article_id, hidden_child_su)
 
-        # verify that the child that was not accessible was moved as a root article...
         self.assertTrue(hidden_child_su.active)
         self.assertEqual(hidden_child_su.category, "shared")
         self.assertEqual(hidden_child_su.internal_permission, "none")
@@ -1709,7 +1527,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             },
         )
 
-        # Test that articles removed from trash are made roots if their parent are still in the Trash.
         if test_trash:
             writable_child.action_unarchive()
             self.assertFalse(writable_child.to_delete)
@@ -1722,7 +1539,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             self.assertEqual(
                 writable_child.internal_permission, article_shared.internal_permission
             )
-            # Note: could be different if writable_child had custom partners. Not the case here so we can use '=='.
             self.assertTrue(
                 article_shared.article_member_ids.partner_id
                 == writable_child.article_member_ids.partner_id
@@ -1731,13 +1547,11 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_trashed(self):
-        """Testing 'send to trash' that should also trash children."""
         self._test_archive(test_trash=True)
 
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_trashed_mixed_rights(self):
-        """Test Trash in case of mixed rights"""
         self._test_archive_mixed_rights(test_trash=True)
 
     @mute_logger(
@@ -1747,8 +1561,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
     )
     @users("admin")
     def test_unlink_admin(self):
-        """Admin (system) has access to unlink, test propagation and effect
-        on children."""
         article_shared = self.article_shared.with_env(self.env)
         article_shared.unlink()
         self.assertFalse(
@@ -1763,7 +1575,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
     )
     @users("employee")
     def test_unlink_employee(self):
-        """Employee cannot unlink anyway"""
         article_hidden = self.article_private_manager.with_env(self.env)
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: uhnlink is not accessible to employees"
@@ -1777,7 +1588,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             article_workspace.unlink()
 
     def test_unarchive_article_items_having_archived_parent(self):
-        """Check that the user can not unarchive an article item whose parent is archived."""
         parent_article = self.env["knowledge.article"].create(
             {
                 "active": False,
@@ -1807,7 +1617,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
 
     @users("employee")
     def test_unarchive_article_having_inaccessible_parent(self):
-        """Check that the user can restore an article whose parent is inaccessible."""
 
         parent_article = (
             self.env["knowledge.article"]
@@ -1858,18 +1667,13 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
             .with_user(self.env.user)
         )
 
-        # Check the access rights:
         parent_article.browse().check_access("read")
         with self.assertRaises(exceptions.AccessError):
             parent_article.check_access("read")
         child_article.check_access("write")
 
-        # Unarchive the child article:
         child_article.action_unarchive()
 
-        # When the parent article is in the trash, the child article should be
-        # detached from its parent so that it will not be deleted when the parent
-        # article is deleted.
 
         self.assertTrue(child_article.active)
         self.assertFalse(child_article.to_delete)
@@ -1924,7 +1728,6 @@ class TestKnowledgeArticleRemoval(KnowledgeCommonBusinessCase):
         before = datetime.now() - timedelta(
             days=self.env["knowledge.article"].DEFAULT_ARTICLE_TRASH_LIMIT_DAYS + 1
         )
-        # Older article
         with patch.object(self.env.cr, "now", return_value=before):
             trashed_to_unlink = self.env["knowledge.article"].create(
                 {
@@ -1955,8 +1758,6 @@ class TestKnowledgeShare(KnowledgeCommonWData):
     """Test share feature."""
 
     def test_article_can_invite_members_with_wizard(self):
-        """Check that the administrator is allowed to invite a new member
-        without 'write' permission by using the invitation wizard."""
         article = self.env["knowledge.article"].create(
             {
                 "name": "My article",
@@ -2033,7 +1834,6 @@ class TestKnowledgeShare(KnowledgeCommonWData):
     )
     @users("employee2")
     def test_knowledge_article_share(self):
-        # private article of "employee manager"
         knowledge_article_sudo = (
             self.env["knowledge.article"]
             .sudo()
@@ -2058,11 +1858,9 @@ class TestKnowledgeShare(KnowledgeCommonWData):
         article = knowledge_article_sudo.with_env(self.env)
         self.assertFalse(article.user_has_access)
 
-        # employee2 is not supposed to be able to share it
         with self.assertRaises(exceptions.AccessError):
             self._knowledge_article_share(article, self.partner_portal.ids, "read")
 
-        # give employee2 read access on the document
         knowledge_article_sudo.write(
             {
                 "article_member_ids": [
@@ -2079,20 +1877,16 @@ class TestKnowledgeShare(KnowledgeCommonWData):
         )
         self.assertTrue(article.user_has_access)
 
-        # still not supposed to be able to share it
         with self.assertRaises(exceptions.AccessError):
             self._knowledge_article_share(article, self.partner_portal.ids, "read")
 
-        # modify employee2 access to write
         knowledge_article_sudo.article_member_ids.filtered(
             lambda member: member.partner_id == self.partner_employee2
         ).write({"permission": "write"})
 
-        # now they should be able to share it
         with self.mock_mail_gateway(), self.mock_mail_app():
             self._knowledge_article_share(article, self.partner_portal.ids, "read")
 
-        # check that portal user received an invitation link
         self.assertEqual(len(self._new_msgs), 1)
         self.assertIn(
             knowledge_article_sudo._get_invite_url(self.partner_portal),
@@ -2100,14 +1894,10 @@ class TestKnowledgeShare(KnowledgeCommonWData):
         )
 
         with self.with_user("portal_test"):
-            # portal should now have read access to the article
-            # (re-browse to have the current user context for user_permission)
             article_asportal = knowledge_article_sudo.with_env(self.env)
             self.assertTrue(article_asportal.user_has_access)
 
     def _knowledge_article_share(self, article, partner_ids, permission="write"):
-        """Re-browse the article to make sure we have the current user context on it.
-        Necessary for all access fields compute methods in knowledge.article."""
 
         return (
             self.env["wizard.knowledge.article.invite.member"]
@@ -2128,7 +1918,6 @@ class TestKnowledgeArticleCovers(KnowledgeCommonWData):
 
     @users("employee")
     def test_article_cover_management(self):
-        # User cannot modify cover of hidden article
         article_hidden = self.article_private_manager.with_env(self.env)
         cover = self._create_cover()
         with self.assertRaises(
@@ -2141,7 +1930,6 @@ class TestKnowledgeArticleCovers(KnowledgeCommonWData):
         ):
             article_hidden.write({"cover_image_id": False})
 
-        # User cannot modify cover of readable article but has access to it
         article_read = self.article_shared.with_env(self.env)
         with self.assertRaises(
             exceptions.AccessError, msg="Cannot add cover to readable article"
@@ -2154,7 +1942,6 @@ class TestKnowledgeArticleCovers(KnowledgeCommonWData):
         ):
             article_read.write({"cover_image_id": False})
 
-        # User can reuse a cover used in another article.
         article_write = self.article_workspace.with_env(self.env)
         article_write.write({"cover_image_id": cover_2.id})
         self.assertEqual(article_write.cover_image_id, cover_2)
@@ -2179,7 +1966,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Articles:
         Article = cls.env["knowledge.article"]
         with mute_logger("odoo.models.unlink"):
             Article.search([]).unlink()
@@ -2231,8 +2017,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         Article = self.env["knowledge.article"]
         workspace_article = self.workspace_article.with_user(self.env.user)
 
-        # When creating a new article in the workspace, the article should be
-        # hidden by default and shouldn't appear in the sidebar.
 
         self.assertEqual(workspace_article.category, "workspace")
         self.assertTrue(workspace_article.user_has_access)
@@ -2263,9 +2047,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             workspace_article, "write", {self.env.user.partner_id: "write"}
         )
 
-        # If the article is hidden and the user has explicit "read" or "write"
-        # permission on the article (with the membership), the article should
-        # become visible to the user.
 
         self.assertTrue(workspace_article.is_article_visible)
         self.assertFalse(workspace_article.is_article_visible_by_everyone)
@@ -2285,9 +2066,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             self.workspace_article + self.shared_article + self.private_article,
         )
 
-        # When setting the `is_article_visible_by_everyone` field to `True`, the
-        # article should become visible to everyone (with the exception of those
-        # having no access to the article).
 
         workspace_article.set_is_article_visible_by_everyone(True)
 
@@ -2309,8 +2087,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
             self.workspace_article + self.shared_article + self.private_article,
         )
 
-        # Removing the user from the member list should not change the visibility
-        # status of the article.
 
         for member in workspace_article.article_member_ids:
             workspace_article.remove_member(member.id)
@@ -2338,9 +2114,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         Article = self.env["knowledge.article"]
         private_article = self.private_article.with_user(self.env.user)
 
-        # For the private articles, the articles should always be visible even
-        # if the article is not marked as visible to everyone and the user does
-        # not have explicit "read" or "write" permission on the article.
 
         self.assertEqual(private_article.category, "private")
         self.assertTrue(private_article.user_has_access)
@@ -2368,9 +2141,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
 
         private_article.set_is_article_visible_by_everyone(True)
 
-        # When setting the `is_article_visible_by_everyone` field to `True`, the
-        # article should remains visible to everyone (with the exception of those
-        # having no access to the article).
 
         self.assertTrue(private_article.is_article_visible)
         self.assertTrue(private_article.is_article_visible_by_everyone)
@@ -2399,9 +2169,6 @@ class TestKnowledgeArticleVisibility(KnowledgeCommon):
         Article = self.env["knowledge.article"]
         shared_article = self.shared_article.with_user(self.env.user)
 
-        # For the shared articles, the articles should always be visible even
-        # if the article is not marked as visible to everyone and the user does
-        # not have explicit "read" or "write" permission on the article.
 
         self.assertEqual(shared_article.category, "shared")
         self.assertTrue(shared_article.user_has_access)

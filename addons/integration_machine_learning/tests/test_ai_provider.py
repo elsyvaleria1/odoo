@@ -193,8 +193,6 @@ class TestSeededDefaultsMatchTheChatOperation(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestAIProviderReaders(TransactionCase):
     def test_ai_users_reach_the_providers_services_and_no_other(self):
-        # a provider binds its service's permission (plan section 3.1): the AI
-        # groups reach the services of providers, not every service
         provider = self.env["integration.ml.provider"].search([], limit=1)
         if not provider:
             self.skipTest("no provider seed")

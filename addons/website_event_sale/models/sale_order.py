@@ -73,10 +73,6 @@ class SaleOrder(models.Model):
         existing_qty = order_line.product_uom_qty if order_line else 0
         qty_added = new_qty - existing_qty
         warning = ""
-        # Always go through the helper: it combines the event (or slot) cap with
-        # the ticket cap, whereas `ticket.seats_available` only knows about the
-        # ticket and ignores a capped event selling an uncapped ticket. `None`
-        # is the helper's documented "no limit" sentinel.
         seats_available = ticket.event_id._get_seats_availability([(slot, ticket)])[0]
         if seats_available is not None and qty_added > 0 and seats_available <= 0:
             _debug.logic(
@@ -87,8 +83,6 @@ class SaleOrder(models.Model):
                 requested=new_qty,
                 kept=existing_qty,
             )
-            # Keep the existing line's quantity unchanged, and do not create a
-            # new line, if no ticket is available anymore
             new_qty = existing_qty
             warning = self.env._(
                 "Sorry, The %(ticket)s tickets for the %(event)s event are sold out.",

@@ -10,7 +10,6 @@ class TestMenuSecurity(common.TransactionCase):
     Every assertion runs against ``load_menus()``, the tree the web client draws.
     """
 
-    # Gated by their parent alone, so they must vanish with it.
     MANAGER_ONLY_LEAVES = (
         "gamification.gamification_activity_feed_menu",
         "gamification.gamification_engagement_menu",
@@ -46,39 +45,21 @@ class TestMenuSecurity(common.TransactionCase):
         )
 
     def _loaded_menu_ids(self, user):
-        """Return the menu ids ``user`` actually gets in the web client.
-
-        :param user: the ``res.users`` record to load the menus for
-        :rtype: set[int]
-        """
         menus = self.env["ir.ui.menu"].with_user(user).load_menus(False)
         return {key for key in menus if isinstance(key, int)}
 
     def _module_menu_ids(self):
-        """Return the ids of every ir.ui.menu this module owns.
-
-        :rtype: set[int]
-        """
         xmlids = self.env["ir.model.data"].search(
             [("module", "=", "gamification"), ("model", "=", "ir.ui.menu")]
         )
         return set(xmlids.mapped("res_id"))
 
     def test_root_menu_is_app(self):
-        """The root is a top-level tile, not a branch of Settings."""
         self.assertFalse(self.root.parent_id)
         self.assertTrue(self.root.web_icon)
         self.assertEqual(self.root.name, "Gamification")
 
     def test_dashboard_label_omits_the_app_name(self):
-        """Inside an app named Gamification, the leaf says Dashboard.
-
-        The label lives on the client action, not on the menuitem, so the same
-        string is the breadcrumb: renaming it in one place fixes both. 10 menus
-        and 7 actions in this database are named exactly "Dashboard"; the four
-        "<X> Dashboard" labels all qualify between sibling dashboards instead of
-        repeating their app's name.
-        """
         dashboard = self.env.ref("gamification.gamification_dashboard_menu")
         self.assertEqual(dashboard.name, "Dashboard")
         self.assertEqual(
@@ -87,18 +68,15 @@ class TestMenuSecurity(common.TransactionCase):
         )
 
     def test_root_visible_for_plain_user(self):
-        """A plain employee reaches the app without developer mode."""
         self.assertIn(self.root.id, self._loaded_menu_ids(self.employee))
 
     def test_config_and_analytics_hidden_for_user(self):
-        """Neither management branch, nor any of its leaves, reaches employees."""
         loaded = self._loaded_menu_ids(self.employee)
         for xmlid in self.MANAGER_ONLY_PARENTS + self.MANAGER_ONLY_LEAVES:
             with self.subTest(menu=xmlid):
                 self.assertNotIn(self.env.ref(xmlid).id, loaded)
 
     def test_employee_still_sees_the_participation_branches(self):
-        """Hiding the management branches must not empty the app."""
         loaded = self._loaded_menu_ids(self.employee)
         for xmlid in (
             "gamification.gamification_dashboard_menu",
@@ -110,13 +88,6 @@ class TestMenuSecurity(common.TransactionCase):
                 self.assertIn(self.env.ref(xmlid).id, loaded)
 
     def test_config_visible_and_writable_for_manager(self):
-        """The manager's branches open *and* save, not open read-only.
-
-        gamification.karma.tracking is the deliberate exception: it stays
-        system-only (karma audit trail), so its menu is filtered out for a
-        manager without base.group_system. Asserted rather than skipped, so the
-        day someone widens that ACL this test says so.
-        """
         loaded = self._loaded_menu_ids(self.manager)
         tracking_menu = self.env.ref("gamification.gamification_karma_tracking_menu")
 
@@ -138,7 +109,6 @@ class TestMenuSecurity(common.TransactionCase):
         self.assertNotIn(tracking_menu.id, loaded)
 
     def test_portal_and_public_see_no_gamification_menus(self):
-        """Promoting the tree to an app must not leak it to external audiences."""
         module_menus = self._module_menu_ids()
         portal = mail_new_test_user(
             self.env,
@@ -149,15 +119,9 @@ class TestMenuSecurity(common.TransactionCase):
         )
         for user in (portal, self.env.ref("base.public_user")):
             with self.subTest(user=user.login):
-                # The substantive gate: the root hangs off the app tier, which
-                # only base.group_user hands out.
                 self.assertFalse(user.has_group("gamification.group_gamification_user"))
                 try:
                     loaded = self._loaded_menu_ids(user)
                 except AccessError:
-                    # Measured, not assumed: these audiences cannot read
-                    # ir.ui.menu at all, so there is no backend tree for the
-                    # promotion to leak into. Should that ever change, the
-                    # assertion below starts running instead of being skipped.
                     continue
                 self.assertFalse(loaded & module_menus)

@@ -137,10 +137,6 @@ class Base(models.AbstractModel):
             )
             return result
 
-        # each part is the same domain narrowed to its group: read through
-        # one scope, what the domain states once (Query.once: an access
-        # rule's granted containers) is in the statement's WITH, not in each
-        # part
         ids_by_index: dict[int, list[int]] = {}
         for chunk in self._chunk_opened_groups(to_fetch):
             shared = SharedOnce(self._table)
@@ -183,8 +179,6 @@ class Base(models.AbstractModel):
         for index, record_ids in ids_by_index.items():
             result[index] = self.browse(record_ids)
         if ids_by_index:
-            # each id came out of a search under the read rules: the records'
-            # read then judges them no second time
             self.browse(
                 [record_id for ids in ids_by_index.values() for record_id in ids]
             )._note_readable()

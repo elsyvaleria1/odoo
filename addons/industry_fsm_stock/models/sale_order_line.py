@@ -52,13 +52,13 @@ class SaleOrderLine(models.Model):
                         qty_done_diff = move.product_uom_qty - qty_done_in_move_lines
                         if qty_done_diff == 0:
                             continue
-                        if qty_done_diff > 0:  # qty was added to the sale_line
+                        if qty_done_diff > 0:
                             move_line = move.move_line_ids[-1]
                             if not move_line.trace_id:
                                 move_line.trace_id = sol_to_treat.fsm_trace_id
                             if move_line.trace_id == sol_to_treat.fsm_trace_id:
                                 move_line.quantity += qty_done_diff
-                        else:  # qty was removed from the sale_line
+                        else:
                             for move_line in move.move_line_ids:
                                 if not move_line.trace_id:
                                     move_line.trace_id = sol_to_treat.fsm_trace_id
@@ -82,23 +82,6 @@ class SaleOrderLine(models.Model):
         return result
 
     def _get_product_catalog_lines_data(self, **kwargs):
-        """Override of `sale`
-
-        Add whether the product is tracked and change the way the read-only property is computed.
-
-        A product is considered read-only if the order is considered read-only (see
-        ``SaleOrder._is_readonly`` for more details).
-
-        :rtype: dict
-        :return: A dict with the following structure:
-            {
-                'delivered_qty': float,
-                'quantity': float,
-                'price': float,
-                'readOnly': bool,
-                'tracking': bool,
-            }
-        """
         res = super()._get_product_catalog_lines_data(**kwargs)
         res["tracking"] = self.product_id.tracking not in ["none", False]
         res["minimumQuantityOnProduct"] = (
@@ -112,5 +95,5 @@ class SaleOrderLine(models.Model):
         ):
             res["readOnly"] = (
                 self.order_id._is_readonly()
-            )  # Here we remove the readonly fixed by sale on product present on many sale order lines in the SO
+            )
         return res

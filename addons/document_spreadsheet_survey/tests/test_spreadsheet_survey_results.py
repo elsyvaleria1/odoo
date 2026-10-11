@@ -401,7 +401,6 @@ class DocumentSpreadsheetSurveyResults(TestSurveyCommon, SpreadsheetTestCommon):
         answer_date = fields.Date.from_string("2024-01-10")
         self._add_answer_line(question, answer, answer_date)
 
-        # Change question type and add second answer (datetime)
         question.write({"question_type": "datetime"})
         new_answer = self._add_answer(test_survey, self.customer)
         new_answer_datetime = fields.Datetime.from_string("2024-01-10 14:30:00")

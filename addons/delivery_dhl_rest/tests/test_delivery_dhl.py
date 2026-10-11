@@ -116,8 +116,6 @@ class TestDeliveryDHLCommon(TransactionCase):
                     ).id,
                 }
             )
-        # Ask for delivery in 5 days, at noon.
-        # This is to avoid errors where DHL return an error because it's not possible for them to deliver on time.
         self.delivery_date = (
             fields.Datetime.today() + timedelta(hours=12) + timedelta(days=5)
         )
@@ -153,9 +151,6 @@ class TestDeliveryDHLCommon(TransactionCase):
             )
 
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method.
-        """
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -169,7 +164,6 @@ class TestDeliveryDHLCommon(TransactionCase):
     def dhl_basic_be_domestic_flow_with_insurance(self):
 
         def update_shipping_rate(sale_order, carrier):
-            # I add free delivery cost in Sales order
             delivery_wizard = Form(
                 self.env["wizard.sale.order.add.shipping"].with_context(
                     {
@@ -307,7 +301,6 @@ class TestDeliveryDHLCommon(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add free delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -318,8 +311,6 @@ class TestDeliveryDHLCommon(TransactionCase):
         )
         choose_delivery_carrier = delivery_wizard.save()
         choose_delivery_carrier.update_price()
-        # doesn't work with the mocked request, because the productCode isn't the same...
-        # self.assertGreater(sum(line.price_total for line in sale_order.line_ids if line.is_delivery), 0.0, "DHL delivery cost for this SO has not been correctly estimated.")
         choose_delivery_carrier.button_confirm()
 
         sale_order.action_confirm()
@@ -388,7 +379,6 @@ class TestDeliveryDHLCommon(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add free delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -903,7 +893,7 @@ def _mock_request_call():
 
     def _mock_request(*args, **kwargs):
         url = kwargs.get("url")
-        json_ = kwargs.get("json")  # not to override the json module
+        json_ = kwargs.get("json")
         responses = (
             {
                 "rates": INSURED_RATE_MOCK_RESPONSE,
@@ -946,7 +936,6 @@ class TestMockedDeliveryDHL(TestDeliveryDHLCommon):
             super().dhl_flow_from_delivery_order()
 
     def test_05_dhl_test_export_declaration_rounding(self):
-        """Test that the rounding respects the DHL requirements"""
 
         picking = self.env["stock.picking"].create(
             {
@@ -988,7 +977,6 @@ class TestMockedDeliveryDHL(TestDeliveryDHLCommon):
         self.assertEqual(item_2["price"], 0.952)
 
     def test_06_dhl_weight_conversion_rounding(self):
-        """Test that the weight conversion method correctly rounds according to DHL requirements"""
 
         weight_with_precision_issue = 0.7000000000000001
         rounded_weight_metric = (

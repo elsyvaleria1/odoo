@@ -7,14 +7,9 @@ from odoo import api, fields, models
 from odoo.models import ValuesType
 from odoo.tools import date_utils
 
-#: Writing any of these changes a recorded gain, and therefore someone's karma.
 KARMA_VALUE_FIELDS = frozenset({"gain", "new_value", "old_value", "user_id"})
 
 
-# Each record represents a single karma change event.  The ``new_value``
-# field is the user's karma *after* the change; ``gain`` is computed as
-# ``new_value - old_value``.  Monthly consolidation compresses old records
-# into one-per-user-per-month summaries.
 class GamificationKarmaTracking(models.Model):
     """Audit log of all karma changes with source attribution."""
 
@@ -72,23 +67,10 @@ class GamificationKarmaTracking(models.Model):
         selection=lambda self: self._selection_origin_models(),
         string="Source Type",
         compute="_compute_origin_ref_model_name",
-        # Derivable from origin_ref before the row exists, so compute it into
-        # the INSERT.  Without this every batch of tracking rows paid a second
-        # statement -- an UPDATE settling this one column -- right after its own
-        # INSERT.
         precompute=True,
         store=True,
     )
 
-    # The monthly consolidation cron scans, three times over,
-    # ``tracking_date BETWEEN <month> AND consolidated IS NOT TRUE``.  A plain
-    # index on ``tracking_date`` matches every row in the month and then
-    # filters ``consolidated`` from the heap; this partial index covers only
-    # the un-consolidated rows the cron actually touches, so it stays small and
-    # its selectivity does not decay as consolidated history accumulates.
-    # (A covering ``(user_id) INCLUDE (old_value, new_value)`` index for the
-    # per-user karma SUM was measured with EXPLAIN and rejected — the planner
-    # keeps a bitmap heap scan, so it added write cost for no read benefit.)
     _unconsolidated_date_idx = models.Index(
         "(tracking_date) WHERE consolidated IS NOT TRUE"
     )
@@ -109,7 +91,6 @@ class GamificationKarmaTracking(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        # fill missing old value with current user karma
         users = self.env["res.users"].browse(
             [
                 values["user_id"]
@@ -117,10 +98,6 @@ class GamificationKarmaTracking(models.Model):
                 if "old_value" not in values and values.get("user_id")
             ]
         )
-        # Running karma per user, advanced as rows are built.  Snapshotting
-        # once before the loop made every row of a batch chain from the same
-        # pre-batch value, so two +10/+5 rows for one user both started at the
-        # old karma and only the last one counted.
         karma_per_users = {user.id: user.karma for user in users}
 
         for values in vals_list:
@@ -152,19 +129,10 @@ class GamificationKarmaTracking(models.Model):
         return res
 
     def _recompute_user_ranks(self) -> None:
-        """Re-evaluate the rank of every user these rows touch.
-
-        This is the hook ``_compute_karma`` used to carry.  Putting it on the
-        table rather than on the compute means the trigger is a write a reader
-        can point at, and it still covers every path that changes karma --
-        ``_add_karma_batch`` goes through ``create`` and the technical view goes
-        through ``create``/``write``/``unlink``.
-        """
         self.user_id._recompute_rank_if_relevant()
 
     @api.model
     def _consolidate_cron(self) -> bool:
-        """Consolidate the trackings 2 months ago. Used by a cron to cleanup tracking records."""
         from_date = date_utils.start_of(
             fields.Datetime.today(), "month"
         ) - relativedelta(months=2)
@@ -173,33 +141,11 @@ class GamificationKarmaTracking(models.Model):
     def _process_consolidate(
         self, from_date: datetime, end_date: datetime | None = None
     ) -> bool:
-        """Consolidate the karma trackings.
-
-        The consolidation keeps, for each user, the oldest "old_value" and the most recent
-        "new_value", creates a new karma tracking with those values and removes all karma
-        trackings between those dates. The origin / reason is changed on the consolidated
-        records, so this information is lost in the process.
-        """
         self.env["gamification.karma.tracking"].flush_model()
 
         if not end_date:
             end_date = date_utils.end_of(date_utils.end_of(from_date, "month"), "day")
 
-        # The consolidated row carries the SUM of the gains it replaces, not the
-        # newest row's ``new_value``.
-        #
-        # Taking the newest ``new_value`` assumed the rows telescope -- every
-        # row's ``old_value`` equal to the previous row's ``new_value``.  Nothing
-        # declares or checks that, and two ordinary administrative acts break it:
-        # editing ``old_value`` in the technical view (the list is editable and
-        # the field is exposed) and deleting a row.  Consolidation then moved
-        # karma in whichever direction the break went -- a probe measured it both
-        # losing 10 and *restoring* 20 an admin had deliberately deleted -- from a
-        # cron, up to two months later, with no log line.
-        #
-        # Summing is the same single statement and cannot do that: the row it
-        # writes has, by construction, the gain of the rows it replaces, so this
-        # operation is karma-neutral whatever shape the chain is in.
         select_query = """
         WITH window_rows AS (
             SELECT user_id,
@@ -246,21 +192,6 @@ class GamificationKarmaTracking(models.Model):
             },
         )
 
-        # Delete the collapsed rows in SQL, in the same statement style as the
-        # INSERT above.
-        #
-        # This previously went through the ORM under a
-        # ``skip_karma_computation`` context flag, whose ``_compute_karma``
-        # early-return did not merely skip the computation: Odoo clears a
-        # field's to-compute flag *before* invoking the compute, so returning
-        # without assigning consumed any pending karma recompute and left
-        # ``res_users.karma`` permanently out of sync with this table.  Because
-        # the flush was ``flush_all()``, it destroyed unrelated pending
-        # recomputes across the whole transaction, not just this one's.
-        #
-        # No flag is needed now: the consolidated row's gain equals the total
-        # gain of the rows it replaces, so under the sum-of-gains definition of
-        # karma this operation cannot change any user's karma.
         self.env.cr.execute(
             """
             DELETE FROM gamification_karma_tracking
@@ -270,16 +201,5 @@ class GamificationKarmaTracking(models.Model):
             {"from_date": from_date, "end_date": end_date},
         )
         self.env["gamification.karma.tracking"].invalidate_model()
-        # Karma is a *stored* compute over this table.  Rewriting the table in
-        # raw SQL leaves the column and the cache holding the pre-consolidation
-        # value, so drop both and let the next read recompute.  The one2many
-        # id list on `res.users` is a separate cache entry from the field
-        # values above it: a caller that already read `karma_tracking_ids` in
-        # this same transaction before consolidating would otherwise recompute
-        # `karma` from a stale id list (referencing rows this method just
-        # deleted). Not reachable through the only production caller today
-        # (`_consolidate_cron` runs in a fresh cron env with an empty cache),
-        # but nothing here should depend on every future caller remembering to
-        # invalidate on our behalf.
         self.env["res.users"].invalidate_model(["karma", "karma_tracking_ids"])
         return True

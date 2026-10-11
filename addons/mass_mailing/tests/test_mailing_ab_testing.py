@@ -119,7 +119,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
         )
         ab_mailing.invalidate_recordset()
 
-        # Check if the campaign is correctly created and the values set on the mailing are still the same
         self.assertTrue(
             ab_mailing.campaign_id, "A campaign id is present for the A/B test mailing"
         )
@@ -134,7 +133,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
             "The schedule date has been propagated correctly",
         )
 
-        # Check that while enabling the A/B testing, if campaign is already set, new one should not be created
         created_mailing_campaign = ab_mailing.campaign_id
         ab_mailing.ab_testing_enabled = False
         ab_mailing.ab_testing_enabled = True
@@ -144,8 +142,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
             "No new campaign should have been created",
         )
 
-        # Check that while enabling the A/B testing, if user manually selects a campaign, it should be saved
-        # rather than being replaced with the automatically created one
         ab_mailing.write({"ab_testing_enabled": False, "campaign_id": False})
         ab_mailing.write(
             {"ab_testing_enabled": True, "campaign_id": created_mailing_campaign}
@@ -165,7 +161,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
         ab_mailing_2.invalidate_recordset()
 
         ab_mailing_2.ab_testing_enabled = True
-        # Check if the campaign is correctly created with default values
         self.assertTrue(
             ab_mailing.campaign_id, "A campaign id is present for the A/B test mailing"
         )
@@ -180,8 +175,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
 
     @users("user_marketing")
     def test_mailing_ab_testing_compare(self):
-        # compare version feature should returns all mailings of the same
-        # campaign having a/b testing enabled.
         compare_version = self.ab_testing_mailing_1.action_compare_versions()
         self.assertEqual(
             self.env["mailing.mailing"].search(compare_version.get("domain")),
@@ -227,7 +220,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("user_marketing")
     def test_mailing_ab_testing_minimum_participants(self):
-        """Test that it should send minimum one mail(if possible) when ab_testing_pc is too small compared to the amount of targeted records."""
         mailing_list = self._create_mailing_list_of_x_contacts(10)
         ab_testing = self.env["mailing.mailing"].create(
             {
@@ -246,7 +238,6 @@ class TestMailingABTesting(TestMailingABTestingCommon):
         self.assertEqual(len(self._mails), 1)
 
     def test_mailing_ab_testing_duplicate_date(self):
-        """Test that "Send final on" date value should be copied in new mass_mailing"""
         ab_testing_mail_1 = Form(self.ab_testing_mailing_1)
         ab_testing_mail_1.ab_testing_schedule_datetime = datetime.now() + timedelta(
             days=10

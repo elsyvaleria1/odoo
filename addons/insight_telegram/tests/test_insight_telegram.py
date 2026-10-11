@@ -43,8 +43,6 @@ class TestOdooReader(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        # in test mode the reader's cursors share the test transaction, the
-        # read-only ones under a read-only savepoint
         self.reader = OdooReader(self.registry, self.reader_user.id)
 
     def test_the_reader_sees_every_company_as_superuser(self):
@@ -69,7 +67,6 @@ class TestOdooReader(TransactionCase):
 
 
 def _tiny_pdf() -> bytes:
-    """A one-page PDF any reader opens: a document's page count is read on save."""
     from pypdf import PdfWriter
 
     buffer = io.BytesIO()
@@ -98,8 +95,6 @@ class TestOdooTools(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        # the reader opens its own cursors: in test mode they share the test
-        # transaction, read-only ones under a read-only savepoint
         self.reader = OdooTools(OdooReader(self.registry, self.reader_user.id))
 
     def test_search_reads_what_the_reader_user_could_not(self):
@@ -152,8 +147,6 @@ class TestOdooTools(TransactionCase):
         self.assertNotIn("ir.config_parameter", [row["model"] for row in found])
 
     def test_a_hidden_field_cannot_be_probed_through_a_filter(self):
-        # a filter, an order or a grouping on a secret answers yes/no about
-        # its value: each is refused like a read would be
         probes = [
             {"domain": [["credential_id.name", "=like", "a%"]]},
             {"domain": [["credential_id", "any", [["name", "=", "x"]]]]},
@@ -203,7 +196,6 @@ class TestCatalog(TransactionCase):
         queries = catalog.available_queries(self.env)
         if key not in queries:
             self.skipTest(f"the {key} report needs a module not installed here")
-        # the reader reads the database, not this environment's pending writes
         self.env.flush_all()
         with self.reader.env() as env:
             return catalog.answer(
@@ -237,7 +229,7 @@ class TestCatalog(TransactionCase):
         customer = self.env["res.partner"].create({"name": "Ask Probe Customer"})
         order = self._confirmed_order(customer, 1234.5)
         self.assertEqual(order.state, "done")
-        self.env["sale.order"].create({"partner_id": customer.id})  # a quotation
+        self.env["sale.order"].create({"partner_id": customer.id})
         text = self._answer("sales", partner="Ask Probe Customer")
         self.assertIn("**$1,234.50", text)
         self.assertIn("(1 documents)", text)
@@ -321,7 +313,6 @@ class TestCatalog(TransactionCase):
         )
         invoice.action_post()
         text = self._answer("statement", partner="Ask Probe Debtor")
-        # the summary comes first: totals, no document list
         self.assertIn("Account statement", text)
         self.assertIn("Ask Probe Debtor", text)
         self.assertIn("Receivable", text)
@@ -387,8 +378,6 @@ class TestCatalog(TransactionCase):
         )
         self.assertEqual(tools.tools()[0]["name"], "run_report")
         self.env.flush_all()
-        # a report of what the module depends on: headcount needs hr, which
-        # it reads only where installed
         result = json_loads(tools.call("run_report", {"report": "payments"}))
         self.assertIn("No payments in that period.", result["report"])
         result = json_loads(tools.call("run_report", {"report": "weather"}))
@@ -490,7 +479,6 @@ class TestCatalog(TransactionCase):
         self.assertEqual(files[0][1], b"%PDF stmt")
         self.assertIn("Ask Probe Statement", files[0][0])
         self.assertEqual(names, [customer.display_name])
-        # unpatched, the report's options are the ones it accepts
         self.assertEqual(len(documents.statements(self.env, customer)), 1)
 
     def test_a_person_is_located_by_their_gps(self):
@@ -519,7 +507,6 @@ class TestCatalog(TransactionCase):
         device.log_gps_last_id = reading
         employee = self.env["hr.employee"].create({"name": "Felipe Ferreyra Probe"})
         employee.resource_id.gps_device_id = device
-        # a dictated surname misheard: the first name still finds him
         text = self._answer("location", employee="Felipe Carreira")
         self.assertIn("Felipe Ferreyra Probe", text)
         self.assertIn("https://www.google.com/maps?q=19.259600,-99.649800", text)
@@ -545,7 +532,6 @@ class TestCatalog(TransactionCase):
             self.assertFalse(catalog.find(env, "res.partner", "Victor Ramirez Probe"))
 
     def test_every_report_runs_on_an_empty_period(self):
-        # a report must answer, not crash, whatever the data
         for key in catalog.available_queries(self.env):
             with self.subTest(report=key):
                 self.assertTrue(
@@ -1032,7 +1018,6 @@ class TestWriteOperations(TransactionCase):
         self.assertIn("(removed)", text)
         self.assertIn("➕", text)
         self.assertIn("50", text, "a discount set on a line is shown")
-        # 10 × 6 at 50 % + 4 × 0; the removed 3 × 7 is not counted
         self.assertIn("Total: $30.00", text.replace("$ ", "$"))
 
     def test_a_proposal_reads_as_the_screen_shows_it(self):
@@ -1140,7 +1125,6 @@ class TestWriteOperations(TransactionCase):
         task = self.env["project.task"].create(
             {"name": "Ask Probe Task", "project_id": project.id}
         )
-        # assigning users links them: it creates and deletes nothing
         operation = write_ops.check(
             self.env,
             {
@@ -1432,7 +1416,6 @@ class TestFiles(TransactionCase):
         for cancelling in ("No", "Cancélalo", "descartar"):
             with self.subTest(text=cancelling):
                 self.assertEqual(_decision(cancelling), "cancel")
-        # a sentence that only mentions authorizing is a new question
         for question in (
             "No, no lo autorizo todavía",
             "¿Quién autorizó la OC 123?",
@@ -1671,7 +1654,6 @@ class TestSuperBotFlow(TelegramBotTestCase):
         self._job({"text": "crea Ask Probe Flow"}, agent=("Propongo.", proposal))
         self.assertEqual(self.test_chat.flow_owner, "telegram.handler.insight")
         self.assertTrue(self.test_chat._insight_pending())
-        # /cancelar, the core's command, discards them
         with self.mock_api_gateway_post(self.mock_ok):
             owner = self.env["telegram.router"]._cancel_flow(
                 self.test_bot, self.test_chat

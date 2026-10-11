@@ -22,15 +22,8 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @freeze_time("2023-12-12")
     @users("apt_manager")
     def test_appointment_availability_after_utc_conversion(self):
-        """Check that an event starting the day before in UTC still blocks the local day.
-        In Brussels TZ an event on the 19 dec from 00:15 to 18:00 is stored in UTC on
-        the 18 dec from 23:15 to 17:00; because it starts on another day, the 19th was
-        displayed as available.
-        """
         staff_user = self.staff_users[0]
         week_days = [0, 1, 2]
-        # The user works on mondays, tuesdays, and wednesdays
-        # Only one hour slot per weekday
         self.apt_type_bxls_2days.slot_ids = [(5, 0)] + [
             (
                 0,
@@ -44,21 +37,14 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             for week_day in week_days
         ]
 
-        # Available on the 12, 13, 18, 19, 20, 25, 26, 27 dec
         max_available_slots = 8
         test_data = [
-            # Test 1, after UTC
-            # Brussels TZ: 2023-12-19 00:15 to 2023-12-19 18:00 => same day
-            # UTC TZ:      2023-12-18 23:15 to 2023-12-19 17:00 => different day
             (
                 datetime(2023, 12, 18, 23, 15),
                 datetime(2023, 12, 19, 17, 0),
                 max_available_slots - 1,
                 {date(2023, 12, 19): []},
             ),
-            # Test 2, before UTC
-            # New York TZ: 2023-12-18 10:00 to 2023-12-18 22:00 => same day
-            # UTC TZ:      2023-12-18 15:00 to 2023-12-19 03:00 => different day
             (
                 datetime(2023, 12, 18, 15, 0),
                 datetime(2023, 12, 19, 3, 0),
@@ -126,9 +112,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @freeze_time("2023-01-06")
     @users("apt_manager")
     def test_appointment_availability_with_show_as(self):
-        """Checks that if a normal event and custom event both set at the same time but
-        the normal event is set as free then the custom meeting should be available and
-        available_unique_slots will contains only available slots"""
 
         employee = self.staff_users[0]
         self.env["calendar.event"].create(
@@ -229,7 +212,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     "category": "recurring",
                     "name": "Recurring Meeting 3",
                     "staff_user_ids": [(4, employee.id)],
-                    "appointment_duration": hour_fifty_float_repr_A,  # float presenting 1h 50min
+                    "appointment_duration": hour_fifty_float_repr_A,
                     "slot_creation_interval": hour_fifty_float_repr_A,
                     "appointment_tz": "UTC",
                     "slot_ids": [
@@ -237,7 +220,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                             0,
                             False,
                             {
-                                "weekday": "1",  # Monday
+                                "weekday": "1",
                                 "start_hour": 8,
                                 "end_hour": 17,
                             },
@@ -253,7 +236,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 0,
                 0,
                 "UTC",
-                datetime(2023, 1, 9, 8, 0, tzinfo=UTC),  # First monday in the future
+                datetime(2023, 1, 9, 8, 0, tzinfo=UTC),
                 duration=hour_fifty_float_repr_B,
                 allday=False,
             ),
@@ -296,13 +279,9 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @freeze_time("2025-05-19")
     def test_appointment_not_blocked_by_nextday_allday_event(self):
-        """Ensure Monday 7-8:30 PM (local) is not blocked by a Tuesday all-day event,
-        even if both overlap on May 20 UTC due to time zone conversion.
-        """
         self.staff_user_bxls.tz = "America/Chicago"
         local_tz = get_timezone(self.staff_user_bxls.tz)
 
-        # Monday 7:00 PM → 8:30 PM (local) converted to UTC - start time is Tuesday 0:0 UTC and end time is 1:30 UTC
         slot_start_utc = (
             datetime(2025, 5, 19, 19, 0)
             .replace(tzinfo=local_tz)
@@ -316,7 +295,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             .replace(tzinfo=None)
         )
 
-        busy_day = datetime(2025, 5, 20, 0, 0)  # 2025-5-20 is the following Tuesday
+        busy_day = datetime(2025, 5, 20, 0, 0)
         self.env["calendar.event"].create(
             {
                 "name": "All-Day Tuesday",
@@ -345,7 +324,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_appointment_type_create_anytime(self):
-        # Any Time: only 1 / employee
         apt_type = self.env["appointment.type"].create(
             {
                 "category": "anytime",
@@ -354,7 +332,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
         self.assertEqual(apt_type.staff_user_ids, self.apt_manager)
 
-        # should be able to create 2 'anytime' appointment types at once on different users
         self.env["appointment.type"].create(
             [
                 {
@@ -394,7 +371,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_appointment_type_create_custom(self):
-        # Custom: current user set as default
         apt_type = self.env["appointment.type"].create(
             {
                 "category": "custom",
@@ -423,7 +399,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_appointment_type_form_category_slot_scheduling_category_time_display(self):
-        """Test form reactivity and consistency on changing category_slot_scheduling and category_time_display"""
         apt_type = self.env["appointment.type"].create(
             {
                 "category": "recurring",
@@ -433,7 +408,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                         0,
                         0,
                         {
-                            "weekday": "1",  # Monday
+                            "weekday": "1",
                             "start_hour": 9,
                             "end_hour": 17,
                         },
@@ -471,7 +446,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_appointment_type_remaining_capacity_for_multiple_bookings(self):
-        """Test the remaining capacity computation for appointment type having multiple bookings."""
         apt_user, apt_resource = (
             self.apt_user_multiple_bookings,
             self.apt_resource_multiple_bookings,
@@ -497,7 +471,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             resource, start, end
         )["total_remaining_capacity"]
 
-        # Check initial remaining capacity
         self.assertEqual(
             user_remaining_capacity, 3, "Initial user remaining capacity should be 3."
         )
@@ -507,7 +480,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             "Initial resource remaining capacity should be 3.",
         )
 
-        # Create 3 bookings one-by-one for both appointment types
         for booking_number in range(1, 4):
             self.env["calendar.event"].with_context(self._test_context).create(
                 [
@@ -561,7 +533,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @mute_logger("odoo.db.cursor")
     @users("apt_manager")
     def test_appointment_slot_start_and_end_datetimes_constraint(self):
-        """Test that 'unique' slot start_datetime is before end_datetime."""
         with self.assertRaises(CheckViolation):
             self.env["appointment.type"].create(
                 {
@@ -579,7 +550,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 }
             )
 
-        # Ensure constraint does not fail when changing to 'custom' manually
         apt_type = self.env["appointment.type"].create(
             {
                 "category": "recurring",
@@ -603,7 +573,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @mute_logger("odoo.db.cursor")
     @users("apt_manager")
     def test_appointment_slot_start_end_hour_auto_correction(self):
-        """Test the autocorrection of invalid intervals [start_hour, end_hour]."""
         appt_type = self.env["appointment.type"].create(
             {
                 "category": "recurring",
@@ -614,7 +583,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                         0,
                         0,
                         {
-                            "weekday": "1",  # Monday
+                            "weekday": "1",
                             "start_hour": 9,
                             "end_hour": 17,
                         },
@@ -624,34 +593,29 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
         appt_form = Form(appt_type)
 
-        # invalid interval, no adaptation because start_hour is not changed
         with self.assertRaises(ValidationError):
             with appt_form.slot_ids.edit(0) as slot_form:
                 slot_form.end_hour = 8
             appt_form.save()
 
-        # invalid interval, adapted because start_hour is changed
         with appt_form.slot_ids.edit(0) as slot_form:
             slot_form.start_hour = 18
             self.assertEqual(slot_form.start_hour, 18)
             self.assertEqual(slot_form.end_hour, 19)
         appt_form.save()
 
-        # empty interval, adapted because start_hour is changed
         with appt_form.slot_ids.edit(0) as slot_form:
             slot_form.start_hour = 19
             self.assertEqual(slot_form.start_hour, 19)
             self.assertEqual(slot_form.end_hour, 20)
         appt_form.save()
 
-        # invalid interval, end_hour not adapted [23.5, 19] because it will exceed 24
         with self.assertRaises(ValidationError):
             with appt_form.slot_ids.edit(0) as slot_form:
                 slot_form.start_hour = 23.5
             appt_form.save()
 
     def test_generate_slots_until_midnight(self):
-        """Generate recurring slots until midnight."""
         appt_type = (
             self.env["appointment.type"]
             .create(
@@ -666,7 +630,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                             0,
                             0,
                             {
-                                "weekday": "1",  # Monday
+                                "weekday": "1",
                                 "start_hour": 18,
                                 "end_hour": 0,
                             },
@@ -687,22 +651,19 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
                 "enddate": self.global_slots_enddate,
                 "startdate": self.reference_now_monthweekstart,
                 "slots_start_hours": [18, 19, 20, 21, 22, 23],
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
-                "slots_enddate": self.reference_monday.date(),  # only test that day
+                "slots_startdate": self.reference_monday.date(),
+                "slots_enddate": self.reference_monday.date(),
             },
         )
 
     def test_appointment_type_upcoming_count(self):
-        """
-        Test upcoming count for appointment type regardless of event status.
-        """
         apt_type = self.apt_type_bxls_2days
         self.assertEqual(apt_type.appointment_count_upcoming, 0)
 
@@ -736,14 +697,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @freeze_time("2023-01-09")
     def test_booking_validity(self):
-        """
-        When confirming an appointment, we must recheck that it is indeed a valid slot,
-        because the user can modify the date URL parameter used to book the appointment.
-        We make sure the date is a valid slot, not outside of those specified by the employee,
-        and that it's not an old valid slot (a slot that is valid, but it's in the past,
-        so we shouldn't be able to book for a date that has already passed)
-        """
-        # add the timezone of the visitor on the session (same as appointment to simplify)
         session = self.authenticate(None, None)
         session["timezone"] = self.apt_type_bxls_2days.appointment_tz
         odoo.http.root.session_store.save(session)
@@ -760,7 +713,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 "staff_user_id": self.staff_user_bxls.id,
                 "date_time": datetime(
                     2023, 1, 9, 9, 0
-                ),  # 9/01/2023 is a Monday, there is a slot at 9:00
+                ),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
@@ -772,7 +725,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 "staff_user_id": self.staff_user_bxls.id,
                 "date_time": datetime(
                     2023, 1, 9, 22, 0
-                ),  # 9/01/2023 is a Monday, there is no slot at 22:00
+                ),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
@@ -785,7 +738,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             {
                 "staff_user_id": self.staff_user_bxls.id,
                 "date_time": datetime(2023, 1, 2, 22, 0),
-                # 2/01/2023 is a Monday, there is a slot at 9:00, but that Monday has already passed
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
@@ -797,10 +749,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @freeze_time("2023-04-23")
     def test_booking_validity_timezone(self):
-        """
-        When the utc offset of the timezone is large, it is possible that the day of the week no longer corresponds.
-        It is necessary to take this into account when checking the slots.
-        """
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "Pacific/Auckland",
@@ -850,9 +798,8 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertEqual(response.status_code, 200, "Response should be Ok (200)")
 
     def test_exclude_all_day_events(self):
-        """Ensure appointment slots don't overlap with "busy" allday events."""
         staff_user = self.staff_users[0]
-        valentime = datetime(2022, 2, 14, 0, 0)  # 2022-02-14 is a Monday
+        valentime = datetime(2022, 2, 14, 0, 0)
 
         slots = self.apt_type_bxls_2days._get_appointment_slots(
             self.apt_type_bxls_2days.appointment_tz,
@@ -892,12 +839,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_customer_event_description(self):
-        """Check calendar description and summary generation.
-
-        `_get_customer_description` appends the appointment type's `message_confirmation`
-        to the event base description without embedding management credentials; `_get_customer_summary` is
-        checked for both user-based and resource-based appointments.
-        """
         appointment_type = self.apt_type_bxls_2days
         appointment_type.message_confirmation = "<p>Please try to be there <strong>5 minutes</strong> before the time.<p><br>Thank you."
         booker = (
@@ -962,7 +903,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertEqual(appointment._get_customer_description(), customer_description)
         self.assertNotIn(appointment.sudo().booking_access_token, customer_description)
 
-        # Test summary for all appointment types
         resource_appointment = self.apt_type_resource
         resource_event = self.env["calendar.event"].create(
             {
@@ -986,7 +926,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @users("apt_manager")
     @freeze_time("2022-02-13T20:00:00")
     def test_generate_slots_punctual_appointment_type(self):
-        """Generates recurring slots, check begin and end slot boundaries depending on the start and end datetimes."""
         apt_type = (
             self.env["appointment.type"]
             .create(
@@ -1024,34 +963,30 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         slots_weekdays = {slot.weekday for slot in apt_type.slot_ids}
         timezone = "Europe/Brussels"
         requested_tz = get_timezone(timezone)
-        # reference_now: datetime(2022, 2, 13, 20, 0, 0) (sunday evening)
-        # apt slot_ids: Monday 8AM -> 2PM, Tuesday 8AM -> 2PM
 
         cases = [
-            # start datetime / end_datetime (UTC)
             (
                 datetime(2022, 2, 14, 9, 0, 0),
                 datetime(2022, 2, 25, 9, 0, 0),
-            ),  # Slots fully in the future
+            ),
             (
                 datetime(2022, 2, 1, 9, 0, 0),
                 datetime(2022, 2, 25, 9, 0, 0),
-            ),  # start_datetime < now < end_datetimes
+            ),
             (
                 datetime(2022, 2, 1, 9, 0, 0),
                 datetime(2022, 2, 12, 9, 0, 0),
-            ),  # Slots fully in the past
+            ),
         ]
         expected = [
-            # first slot start datetime / last slot end_datetime (UTC)
             (
                 datetime(2022, 2, 14, 9, 0, 0),
                 datetime(2022, 2, 22, 13, 0, 0),
-            ),  # start = specified start_datetime
+            ),
             (
                 datetime(2022, 2, 14, 7, 0, 0),
                 datetime(2022, 2, 22, 13, 0, 0),
-            ),  # start = 8AM from apt slots_ids converted to UTC
+            ),
             (False, False),
         ]
 
@@ -1090,7 +1025,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_generate_slots_recurring(self):
-        """Generates recurring slots, check begin and end slot boundaries."""
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
 
         with freeze_time(self.reference_now):
@@ -1102,7 +1036,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -1115,17 +1049,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     11,
                     12,
                     13,
-                ],  # based on appointment type start hours of slots, no work hours / no meetings / no leaves
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+                ],
+                "slots_startdate": self.reference_monday.date(),
                 "slots_weekdays_nowork": range(
                     2, 7
-                ),  # working hours only on Monday/Tuesday (0, 1)
+                ),
             },
         )
 
     @users("apt_manager")
     def test_generate_slots_recurring_start_hour_day_overflow(self):
-        """Generates recurring slots, make sure we don't overshoot the current day and generate meaningless slots"""
         slots = [
             {
                 "weekday": "1",
@@ -1161,9 +1094,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             }
         )
 
-        # Check around the 11AM(Brussels) mark, or 15:30PM(Kolkata)
-        # If we add 12 for the minimum schedule hour it's past 11PM
-        # Past 11 the appointment duration will put us past the current day
         brussels_tz = get_timezone("Europe/Brussels")
         for hour, minute in [[h, m] for h in [2, 9, 10, 11, 12] for m in [0, 1, 59]]:
             time = self.reference_monday.replace(hour=hour, minute=minute).replace(
@@ -1177,16 +1107,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     {
                         "name_formated": "February 2022",
                         "month_date": datetime(2022, 2, 1),
-                        "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                        "weeks_count": 5,
                     }
                 ],
                 {
                     "enddate": date(2022, 3, 5),
                     "startdate": self.reference_now_monthweekstart,
-                    "slots_day_specific": {  # +4 instead of +4.5 because the test method only accounts for the absolute hour
+                    "slots_day_specific": {
                         time.date(): [{"start": 15 + 4, "end": 16 + 4}]
                         if hour == 2
-                        else [],  # min_schedule_hours is too large
+                        else [],
                         (time + timedelta(days=1)).date(): [
                             {"start": start + 4, "end": start + 5}
                             for start in range(9, 17)
@@ -1209,8 +1139,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_generate_slots_recurring_UTC(self):
-        """Generates recurring slots, check begin and end slot boundaries. Force
-        UTC results event if everything is Europe/Brussels based."""
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
 
         with freeze_time(self.reference_now):
@@ -1222,7 +1150,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -1235,19 +1163,17 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     10,
                     11,
                     12,
-                ],  # based on appointment type start hours of slots, no work hours / no meetings / no leaves
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+                ],
+                "slots_startdate": self.reference_monday.date(),
                 "slots_weekdays_nowork": range(
                     2, 7
-                ),  # working hours only on Monday/Tuesday (0, 1)
+                ),
             },
         )
 
     @users("admin")
     def test_generate_slots_recurring_westrict(self):
-        """Generates recurring slots, check user restrictions"""
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
-        # add second staff user and split days based on the two people
         apt_type.write({"staff_user_ids": [(4, self.staff_user_aust.id)]})
         apt_type.slot_ids.filtered(lambda slot: slot.weekday == "1").write(
             {
@@ -1269,7 +1195,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -1282,15 +1208,14 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     11,
                     12,
                     13,
-                ],  # based on appointment type start hours of slots, no work hours / no meetings / no leaves
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+                ],
+                "slots_startdate": self.reference_monday.date(),
                 "slots_weekdays_nowork": range(
                     2, 7
-                ),  # working hours only on Monday/Tuesday (0, 1)
+                ),
             },
         )
 
-        # check staff_user_id
         monday_slots = [
             slot
             for month in slots
@@ -1328,28 +1253,25 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_generate_slots_recurring_wmeetings(self):
-        """Generates recurring slots, check begin and end slot boundaries
-        with leaves involved."""
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
 
-        # create meetings
         _meetings = self._create_meetings(
             self.staff_user_bxls,
             [
                 (
-                    self.reference_monday + timedelta(days=1),  # 3 hours first Tuesday
+                    self.reference_monday + timedelta(days=1),
                     self.reference_monday + timedelta(days=1, hours=3),
                     False,
                 ),
                 (
                     self.reference_monday
-                    + timedelta(days=7),  # next Monday: one full day
+                    + timedelta(days=7),
                     self.reference_monday + timedelta(days=7, hours=1),
                     True,
                 ),
                 (
                     self.reference_monday
-                    + timedelta(days=8, hours=2),  # 1 hour next Tuesday (9 UTC)
+                    + timedelta(days=8, hours=2),
                     self.reference_monday + timedelta(days=8, hours=3),
                     False,
                 ),
@@ -1357,13 +1279,13 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     self.reference_monday
                     + timedelta(
                         days=8, hours=3
-                    ),  # 1 hour next Tuesday (10 UTC, declined)
+                    ),
                     self.reference_monday + timedelta(days=8, hours=4),
                     False,
                 ),
                 (
                     self.reference_monday
-                    + timedelta(days=8, hours=5),  # 2 hours next Tuesday (12 UTC)
+                    + timedelta(days=8, hours=5),
                     self.reference_monday + timedelta(days=8, hours=7),
                     False,
                 ),
@@ -1383,7 +1305,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -1394,16 +1316,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                         {"end": 12, "start": 11},
                         {"end": 13, "start": 12},
                         {"end": 14, "start": 13},
-                    ],  # meetings on 7-10 UTC
+                    ],
                     (
                         self.reference_monday + timedelta(days=7)
-                    ).date(): [],  # on meeting "allday"
+                    ).date(): [],
                     (self.reference_monday + timedelta(days=8)).date(): [
                         {"end": 9, "start": 8},
                         {"end": 10, "start": 9},
                         {"end": 12, "start": 11},
                         {"end": 13, "start": 12},
-                    ],  # meetings 9-10 and 12-14
+                    ],
                 },
                 "slots_start_hours": [
                     8,
@@ -1412,18 +1334,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     11,
                     12,
                     13,
-                ],  # based on appointment type start hours of slots, no work hours / no meetings / no leaves
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+                ],
+                "slots_startdate": self.reference_monday.date(),
                 "slots_weekdays_nowork": range(
                     2, 7
-                ),  # working hours only on Monday/Tuesday (0, 1)
+                ),
             },
         )
 
     @users("apt_manager")
     def test_generate_slots_unique_and_options(self):
-        """Check unique slots (note: custom appointment type does not check working
-        hours). Also check min_schedule_hours, and user restriction with restrict_to_user_ids"""
         unique_slots = [
             {
                 "start_datetime": self.reference_monday.replace(microsecond=0),
@@ -1483,7 +1403,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             {
                 "name_formated": "February 2022",
                 "month_date": datetime(2022, 2, 1),
-                "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                "weeks_count": 5,
             }
         ]
         expected_slot_data = {
@@ -1492,20 +1412,19 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             "slots_day_specific": {
                 self.reference_monday.date(): [
                     {"end": 9, "start": 8}
-                ],  # first unique 1 hour long
+                ],
                 (self.reference_monday + timedelta(days=1)).date(): [
                     {"allday": True, "end": False, "start": 8}
-                ],  # second unique all day-based
+                ],
             },
-            "slots_start_hours": [],  # all slots in this tests are unique, other dates have no slots
-            "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+            "slots_start_hours": [],
+            "slots_startdate": self.reference_monday.date(),
             "slots_weekdays_nowork": range(
                 2, 7
-            ),  # working hours only on Monday/Tuesday (0, 1)
+            ),
         }
         self.assertSlots(slots, expected_months, expected_slot_data)
 
-        # Check min schedule hours
         with freeze_time(self.reference_monday - timedelta(minutes=30)):
             slots = apt_type._get_appointment_slots("Europe/Brussels")
 
@@ -1524,12 +1443,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     4,
                     5,
                     6,
-                ],  # only slot is Tuesday as Monday slot is only 30 min after freeze_time
+                ],
             }
         )
         self.assertSlots(slots, expected_months, expected_slots_custom)
 
-        # With restrict_to_user_ids:
         apt_type.slot_ids[0].restrict_to_user_ids = [
             self.apt_manager.id,
             self.staff_user_bxls.id,
@@ -1555,23 +1473,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_multi_user_slot_availabilities(self):
-        """Check _get_appointment_slots when called with no user / one user / several users:
-        with no user all staff of the appointment type is used, with one or more users only
-        those are used, and users outside the staff yield no slot at all."""
-        # Only auto-assigned appointment types are covered here: with manual assignment the
-        # user dropdown is in the view, hence a single selected user reaches the slot methods.
-        # Auto-assigned ones may receive several users when a filter is set, and receive
-        # staff_users=False when there is none (no select in view => input value is false).
         reference_monday = self.reference_monday.replace(microsecond=0)
         reccuring_slots_utc = [
             {
                 "weekday": "1",
-                "start_hour": 6.0,  # 1 slot : Monday 06:00 -> 07:00
+                "start_hour": 6.0,
                 "end_hour": 7.0,
             },
             {
                 "weekday": "2",
-                "start_hour": 9.0,  # 2 slots : Tuesday 09:00 -> 11:00
+                "start_hour": 9.0,
                 "end_hour": 11.0,
             },
         ]
@@ -1590,7 +1501,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 "appointment_tz": "UTC",
                 "is_auto_assign": True,
                 "category": "recurring",
-                "max_schedule_days": 5,  # Only consider the first three slots
+                "max_schedule_days": 5,
                 "name": "Private Guitar Lesson",
                 "slot_ids": [
                     (
@@ -1613,12 +1524,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
 
         exterior_staff_user = self.apt_manager
-        # staff_user_bxls is only available on Wed and staff_user_aust only on Mon and Tue
         self._create_meetings(
             self.staff_user_bxls,
             [
                 (
-                    reference_monday - timedelta(hours=1),  # Monday 06:00 -> 07:00
+                    reference_monday - timedelta(hours=1),
                     reference_monday,
                     False,
                 )
@@ -1629,13 +1539,12 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             [
                 (
                     reference_monday
-                    + timedelta(days=1, hours=2),  # Tuesday 09:00 -> 11:00
+                    + timedelta(days=1, hours=2),
                     reference_monday + timedelta(days=1, hours=4),
                     False,
                 )
             ],
         )
-        # staff_user_no_tz is only available on Tue between 10 and 11 AM
         self._create_meetings(
             staff_user_no_tz,
             [
@@ -1677,7 +1586,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_slots_for_today(self):
-        test_reference_now = datetime(2022, 2, 14, 11, 0, 0)  # is a Monday
+        test_reference_now = datetime(2022, 2, 14, 11, 0, 0)
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
@@ -1718,14 +1627,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_slots_days_min_schedule(self):
-        """Test that slots are generated correctly when min_schedule_hours is 47.0.
-        This means that the first returned slots should be on wednesday at 11:36.
-        """
-        test_reference_now = datetime(2022, 2, 14, 11, 45, 0)  # is a Monday
+        test_reference_now = datetime(2022, 2, 14, 11, 45, 0)
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
-                "appointment_duration": 1.2,  # 1h12
+                "appointment_duration": 1.2,
                 "slot_creation_interval": 1.2,
                 "min_schedule_hours": 47.0,
                 "max_schedule_days": 8,
@@ -1759,12 +1665,9 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 first_day < slot["UTC"][0].astimezone(UTC),
                 "A slot shouldn't be generated before the first_day datetime",
             )
-        self.assertEqual(len(slots), 12)  # 2 days of 5 slots and 2 slots on wednesday
+        self.assertEqual(len(slots), 12)
 
     def test_slot_creation_interval(self):
-        """The slot creation interval is equal to the appointment duration.
-        Regular configuration, leading to 1 slot every 'appointment duration'.
-        """
         self.apt_type_bxls_2days.write(
             {
                 "appointment_tz": "UTC",
@@ -1803,10 +1706,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertSlots(slots, expected_months, expected_slots)
 
     def test_slot_creation_interval_shorter(self):
-        """The slot creation interval is shorter than the appointment duration.
-        This configuration will create *more* slots, typically used for a restaurant to allow people
-        coming every 1 hour but staying for a duration of 2 hours.
-        """
         self.apt_type_bxls_2days.write(
             {
                 "appointment_tz": "UTC",
@@ -1845,11 +1744,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertSlots(slots, expected_months, expected_slots)
 
     def test_slot_creation_interval_longer(self):
-        """The slot creation interval is longer than the appointment duration.
-        This configuration will create *less* slots, allowing for example to leave a buffer after the appointment.
-        For example, people will book a 2h session for an escape game but you need 1h to reset the game before
-        the next slot.
-        """
         self.apt_type_bxls_2days.write(
             {
                 "appointment_tz": "UTC",
@@ -1889,14 +1783,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_slots_days_min_schedule_punctual(self):
-        """Test that slots are generated correctly when min_schedule_hours is 47.0 for punctual appointment.
-        This means that the first returned slots should be on wednesday at 11:36.
-        """
-        test_reference_now = datetime(2022, 2, 14, 11, 45, 0)  # is a Monday
+        test_reference_now = datetime(2022, 2, 14, 11, 45, 0)
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
-                "appointment_duration": 1.2,  # 1h12
+                "appointment_duration": 1.2,
                 "slot_creation_interval": 1.2,
                 "category": "punctual",
                 "min_schedule_hours": 47.0,
@@ -1931,40 +1822,37 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("staff_user_aust")
     def test_timezone_delta(self):
-        """Check slots of a Europe/Brussels appointment type rendered in Australia/Perth (UTC+8)."""
-        # As if the second user called the function
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user).with_context(
             lang="en_US",
             tz=self.staff_user_aust.tz,
             uid=self.staff_user_aust.id,
         )
 
-        # Do what the controller actually does, aka sudo
         with freeze_time(self.reference_now):
             slots = apt_type.sudo()._get_appointment_slots(
                 "Australia/Perth", filter_users=None
             )
 
-        global_slots_enddate = date(2022, 4, 2)  # last day of last week of March
+        global_slots_enddate = date(2022, 4, 2)
         self.assertSlots(
             slots,
             [
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
                     "month_date": datetime(2022, 3, 1),
-                    "weeks_count": 5,  # 28/02 -> 28/03 (03/04)
+                    "weeks_count": 5,
                 },
             ],
             {
                 "enddate": global_slots_enddate,
                 "startdate": self.reference_now_monthweekstart,
                 "slots_enddate": self.reference_now.date()
-                + timedelta(days=15),  # maximum 2 weeks of slots
+                + timedelta(days=15),
                 "slots_start_hours": [
                     15,
                     16,
@@ -1972,11 +1860,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                     18,
                     19,
                     20,
-                ],  # based on appointment type start hours of slots, no work hours / no meetings / no leaves, set in UTC+8
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
+                ],
+                "slots_startdate": self.reference_monday.date(),
                 "slots_weekdays_nowork": range(
                     2, 7
-                ),  # working hours only on Monday/Tuesday (0, 1)
+                ),
             },
         )
 
@@ -2020,14 +1908,11 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
         with freeze_time(self.reference_now):
             slots = apt_type._get_appointment_slots("Europe/Brussels")
-        # get all monday slots where apt_manager is available
         available_unique_slots = self._filter_appointment_slots(
             slots, filter_months=[(2, 2022)], filter_users=self.apt_manager
         )
         self.assertEqual(len(available_unique_slots), 2)
 
-        # Create an all day meeting before the first slot and another
-        # at the start of the second slot.
         self._create_meetings(
             self.apt_manager,
             [
@@ -2062,10 +1947,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_unique_slots_availabilities(self):
-        """Check that the availability of each unique slot is correct.
-        First we test that the 2 unique slots of the custom appointment type
-        are available. Then we check that there is now only 1 availability left
-        after the creation of a meeting which encompasses a slot."""
         reference_monday = self.reference_monday.replace(microsecond=0)
         unique_slots = [
             {
@@ -2101,7 +1982,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
         with freeze_time(self.reference_now):
             slots = apt_type._get_appointment_slots("UTC")
-        # get all monday slots where apt_manager is available
         available_unique_slots = self._filter_appointment_slots(
             slots,
             filter_months=[(2, 2022)],
@@ -2110,7 +1990,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
         self.assertEqual(len(available_unique_slots), 2)
 
-        # Create a meeting encompassing the first unique slot
         self._create_meetings(
             self.apt_manager,
             [
@@ -2138,10 +2017,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_synchronize_restricted_resource_and_staff_to_appointment_type(self):
-        """Check that when changing staff users or resources, the appointment slots adapt their
-        restricted users/resources to only keep the new staff users / resources. Remove the rest.
-        When changing schedule_based_on, remove previous mode users/ resources on both type and slots.
-        """
         appointment_type = self.apt_type_bxls_2days
         self.assertTrue(len(appointment_type.slot_ids) >= 3)
         slot_1, slot_2, slot_3 = appointment_type.slot_ids[:3]
@@ -2235,21 +2110,16 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 "staff_user_id": self.staff_user_bxls.id,
                 "date_time": datetime(
                     2023, 1, 9, 9, 0
-                ),  # 9/01/2023 is a Monday, there is a slot at 9:00
+                ),
                 "duration": 1,
                 **appointment_invite._get_redirect_url_parameters(),
             }
         )
-        # User should be able open url without timezone session
         self.url_open(url_inside_of_slot)
 
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_different_timezones_with_allday_events_availabilities(self):
-        """
-        When the utc offset of the timezone is large, it is possible that the day of the week no longer corresponds.
-        Testing that allday event slots are all not available.
-        """
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "Pacific/Auckland",
@@ -2293,23 +2163,20 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 {
                     "name_formated": "February 2022",
                     "month_date": date(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
                 "enddate": self.global_slots_enddate,
                 "startdate": self.reference_now_monthweekstart,
                 "slots_start_hours": [],
-                # second Monday after reference_now
                 "slots_startdate": self.reference_monday.date() + timedelta(days=7),
-                # last day covered by max_schedule_days (14)
                 "slots_enddate": self.reference_monday.date() + timedelta(days=14),
                 "slots_day_specific": {date(2022, 2, 28): [{"start": 1}]},
             },
         )
 
     def test_no_activity_creation_on_apt_booking(self):
-        """Test that no activity is created on appointment booking."""
         apt_type = self.apt_type_bxls_2days
         self.env["calendar.event"].with_user(self.apt_manager).with_context(
             default_res_model=apt_type._name,
@@ -2323,7 +2190,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             }
         )
         self.assertEqual(len(apt_type.activity_ids), 0)
-        # Ensure that activities are created if model is not appointment.type
         test_record = self.env["res.partner"].create(
             {
                 "name": "User 0",
@@ -2343,11 +2209,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_resource_on_leave_with_conflicting_event(self):
-        """
-        Check conflicting event with resources are correctly reflected in the unavailable_resource_ids field.
-        Overlapping times between already booked resources and the event resources should add the resource
-        to the list of unavailable resources.
-        """
         start = datetime(2022, 2, 14, 15, 0, 0)
         end = start + timedelta(hours=1)
         court1, court2, court3 = self.env["resource.resource"].create(
@@ -2394,7 +2255,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertEqual(booking_1.unavailable_resource_ids, court1)
         self.assertEqual(booking_2.unavailable_resource_ids, court1)
 
-        # Shared resource
         booking_3 = self.env["calendar.event"].create(
             {
                 "appointment_type_id": self.apt_type_resource.id,
@@ -2429,7 +2289,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertFalse(booking_3.unavailable_resource_ids)
         self.assertFalse(booking_4.unavailable_resource_ids)
 
-        # add full capacity
         booking_4.booking_line_ids = [
             (0, 0, {"resource_id": court3.id, "capacity_reserved": 3})
         ]
@@ -2439,15 +2298,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @freeze_time("2022-02-14")
     def test_resource_unavailability_with_multiple_appointment_events(self):
-        """Test that resources are correctly computed as unavailable when multiple appointments are booked
-        on the same resource and overlapping events.
-        Here are the cases which are tested, resource with:
-        - bookings in appointments, some with manage capacity True and some with False.
-        - bookings in appointment with manage capacity and exceeding the resource capacity.
-        - bookings in appointment without manage capacity and exceeding the booking appointment capacity.
-        - bookings in appointments with all manage capacity False.
-        - bookings in appointments with manage capacity and unshareable resource type.
-        """
         court1, court2, court3 = self.env["resource.resource"].create(
             [
                 {
@@ -2473,7 +2323,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         start = datetime(2022, 2, 14, 15, 0, 0)
         end = start + timedelta(hours=1)
 
-        # Book for one appointments for each resources
         booking1, booking2, booking3 = self.env["calendar.event"].create(
             [
                 {
@@ -2551,15 +2400,10 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             unavailable_resource,
             conflicting_booking,
         ) in [
-            # Multiple capacity methods
             (self.apt_resource_multiple_bookings, court3, 1, court3, booking3),
-            # All managing capacity and exceeding resource capacity (2 + 4 > 4)
             (appointment_wcapacity, court2, 4, court2, booking2),
-            # Un shareable resource in more than one appointment with manage capacity True.
             (appointment_wcapacity, court3, 2, court3, booking3),
-            # Manage capacity false and exceeding appointment booking capacity (2 > 1)
             (self.apt_resource_multiple_bookings, court1, 1, court1, booking1),
-            # All not managing capacity and booking in more than one appointment.
             (appointment_wocapacity, court1, 1, court1, booking1),
         ]:
             with self.subTest(
@@ -2597,9 +2441,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
     @freeze_time("2022-02-14")
     @users("apt_manager")
     def test_staff_user_unavailability_with_multiple_appointment_events(self):
-        """Test that unavailable users are correctly computed when multiple appointments are booked
-        on the same user at the same time.
-        """
         user1, user2 = self.staff_user_aust, self.staff_user_bxls
         start = datetime(2022, 2, 14, 15, 0, 0)
         end = start + timedelta(hours=1)
@@ -2607,7 +2448,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.apt_type_manage_capacity_users.write({"user_capacity": 5})
         self.apt_user_multiple_bookings.write({"max_bookings": 1})
 
-        # Book one appointment for each users
         booking1 = (
             self.env["calendar.event"]
             .with_context(self._test_context)
@@ -2675,11 +2515,8 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             unavailable_user,
             conflicting_booking,
         ) in [
-            # More than one appointments
             (self.apt_type_manage_capacity_users, user2, 2, user2, booking2),
-            # Exceeding appointment booking capacity (2 > 1)
             (self.apt_user_multiple_bookings, user2, 1, user2, booking2),
-            # Exceeding user capacity (6 > 5)
             (self.apt_type_manage_capacity_users, user1, 3, user1, booking1),
         ]:
             with self.subTest(
@@ -2728,7 +2565,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_appointment_user_remaining_capacity(self):
-        """Test that the remaining capacity of users are correctly computed"""
         appointment = self.apt_type_manage_capacity_users
         user_1 = self.staff_user_aust
         user_2 = self.staff_user_bxls
@@ -2745,7 +2581,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertTrue(user_1_remaining_capacity == 5)
         self.assertTrue(user_2_remaining_capacity == 5)
 
-        # Create bookings for users
         booking_1, booking_2 = (
             self.env["calendar.event"]
             .with_context(self._test_context)
@@ -2801,7 +2636,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
     @users("apt_manager")
     def test_appointment_users_shareable(self):
-        """Check a user is shareable across only one appointment type"""
 
         apt_type_manage_capacity_other = self.env["appointment.type"].create(
             [
@@ -2836,7 +2670,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             ]
         )
 
-        # User has no bookings
         with freeze_time(self.reference_now):
             slots = self.apt_type_manage_capacity_users._get_appointment_slots(
                 "UTC", asked_capacity=2
@@ -2856,7 +2689,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         self.assertIn(self.staff_user_bxls.id, available_users_1)
         self.assertIn(self.staff_user_bxls.id, available_users_2)
 
-        # Book a user on monday from 14 to 15 for 3 people
         start = datetime(2022, 2, 14, 14, 0, 0)
         end = start + timedelta(hours=1)
         event = self.env["calendar.event"].create(
@@ -2892,7 +2724,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
                 }
             ]
         )
-        # Check if user is available for 2 people again
         with freeze_time(self.reference_monday):
             slots = self.apt_type_manage_capacity_users._get_appointment_slots(
                 "UTC", asked_capacity=2
@@ -2911,9 +2742,7 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
 
         event.unlink()
 
-        # User is available on the booked appointment until capacity
         self.assertIn(self.staff_user_bxls.id, available_user_1)
-        # User is not available for other appointment when booking has been made for them.
         self.assertNotIn(self.staff_user_bxls.id, available_user_2)
 
     @users("apt_manager")
@@ -2927,7 +2756,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
             ]
         )
 
-        # Case 1: Staff user should be allowed
         event_staff = self.env["calendar.event"].create(
             {
                 "name": "Staff user event",
@@ -2947,7 +2775,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
         self.assertTrue(event_staff.exists())
 
-        # Case 2: appointment manager should be allowed
         event_apt_manager = self.env["calendar.event"].create(
             {
                 "name": "Admin non-staff event",
@@ -2967,7 +2794,6 @@ class AppointmentTest(AppointmentCommon, HttpCaseWithUserDemo):
         )
         self.assertTrue(event_apt_manager.exists())
 
-        # Case 3: User who cannot read the appointment type -> Should raise ValidationError
         with self.assertRaises(ValidationError):
             self.env["calendar.event"].create(
                 {

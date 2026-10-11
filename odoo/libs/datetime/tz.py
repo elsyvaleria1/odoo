@@ -134,8 +134,6 @@ TIMEZONE_ALIASES: dict[str, str] = {
     "Zulu": "Etc/UTC",
 }
 
-# files in the zoneinfo tree that are not IANA zone names: a host's own
-# zone, tzdata's placeholder, and the legacy POSIX-TZ rule source
 _NOT_ZONE_NAMES = frozenset({"localtime", "Factory", "posixrules"})
 
 _timezone_cache: dict[str, ZoneInfo] = {}
@@ -176,9 +174,6 @@ def localize_standard(dt: datetime, tz: tzinfo) -> datetime:
     if first.utcoffset() == second.utcoffset():
         return first
     if first.astimezone(UTC).astimezone(tz).replace(tzinfo=None) == dt:
-        # a wall time read twice is the one outside daylight saving, which is
-        # the earlier instant where tzdata models winter as negative DST
-        # (Europe/Dublin); the later instant when no side reads as standard
         standard = [instant for instant in (first, second) if not instant.dst()]
         return standard[0] if len(standard) == 1 else second
     return first
@@ -208,14 +203,11 @@ def _offset_change(earlier: datetime, later: datetime, tz: tzinfo) -> datetime:
     return earlier + timedelta(seconds=high)
 
 
-# naive UTC, as every instant here
 _FIRST_INSTANT = datetime.min.replace(tzinfo=UTC).replace(tzinfo=None)
 _LAST_INSTANT = datetime.max.replace(tzinfo=UTC).replace(tzinfo=None)
 
 
 def _wall_to_utc_within_range(wall: datetime, fold: int, tz: tzinfo) -> datetime:
-    # a wall time at the calendar's edge whose instant lies before year 1 or
-    # after year 9999 is held to the first or last instant there is
     try:
         return wall.replace(tzinfo=tz, fold=fold).astimezone(UTC).replace(tzinfo=None)
     except OverflowError:
@@ -227,14 +219,9 @@ def wall_range_to_utc(
 ) -> list[tuple[datetime, datetime | None]]:
     if start.tzinfo is not None or (end is not None and end.tzinfo is not None):
         raise ValueError(f"Cannot localize a range with tzinfo: {start}, {end}")
-    # every instant whose wall time falls in [start, end): a repeated wall time
-    # belongs to the range under both offsets, so an hour at a fall-back fold
-    # spans two UTC hours, and a range that starts or ends inside a fold is
-    # two separate spans. No end (the calendar's) is an open range.
     if end is None:
         first = min(_wall_to_utc_within_range(start, fold, tz) for fold in (0, 1))
         if first == _LAST_INSTANT:
-            # the wall time lies past the calendar: nothing is in the range
             return [(first, first)]
         return [(first, None)]
     points: set[datetime] = set()
@@ -259,7 +246,6 @@ def wall_range_to_utc(
         else:
             spans.append((low, high))
     if spans and spans[-1][1] == _LAST_INSTANT:
-        # held to the last instant there is: no instant lies past it
         spans[-1] = (spans[-1][0], None)
     return spans or [(ordered[0], ordered[0])]
 
@@ -281,8 +267,6 @@ def country_timezones() -> Mapping[str, tuple[str, ...]]:
 
 
 def _zone_table() -> str:
-    # zone.tab lists each country's principal zone first; searched where
-    # ZoneInfo itself looks, TZPATH before the tzdata package
     for directory in TZPATH:
         table = Path(directory, "zone.tab")
         if table.is_file():

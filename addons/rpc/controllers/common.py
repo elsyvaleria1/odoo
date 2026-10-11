@@ -10,9 +10,6 @@ client making the request: %s, %s.
 Mute this logger: --log-handler %s:ERROR
 https://www.odoo.com/documentation/latest/developer/reference/external_api.html#migrating-from-xml-rpc-json-rpc"""
 
-# Ordered so the oldest entry can be evicted once the cache is full: a plain
-# `set` at its cap would latch permanently silent for every new caller too,
-# not just the ones already warned.
 _WARNED_CLIENTS: OrderedDict[tuple[str, str, str], None] = OrderedDict()
 
 _WARNED_CLIENTS_LIMIT = 64

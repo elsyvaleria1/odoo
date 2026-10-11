@@ -18,10 +18,6 @@ class PurchaseOrder(models.Model):
             else False
         )
         if not warehouse:
-            # intercompany_warehouse_id's compute only auto-fills while the
-            # field is falsy and only re-runs on the generate-orders flags,
-            # so it can stay stuck empty if a warehouse is created for the
-            # company after the flags were already turned on.
             warehouse = self.env["stock.warehouse"].search(
                 [("company_id", "=", company.id)], limit=1
             )
@@ -60,7 +56,6 @@ class PurchaseOrder(models.Model):
             res["customer_lead"] = (
                 line.product_id and line.product_id.sale_delay
             ) or 0.0
-        # adds a product_custom_attribute_value_ids if the PO was generated from an SO
         so_lines = (
             self.env["stock.move"]
             .browse(line.move_ids._rollup_move_dest_ids())
@@ -102,6 +97,5 @@ class PurchaseOrder(models.Model):
                     sale_order=sale_order,
                     partner_company=partner_company,
                 )
-                # Means that's we're in inter-company transaction -> Must dropship to inter-company transit.
                 return sale_order.partner_id.property_stock_customer
         return res

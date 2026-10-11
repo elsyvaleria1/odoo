@@ -27,8 +27,6 @@ def close_at_shutdown(close: Callable[[], None]) -> None:
 
 
 def close_pipes(proc: subprocess.Popen, *, flush: bool = True) -> None:
-    # a forked child holds a copy of the parent's write buffer: flushing it
-    # would send the parent's half-written request a second time
     for pipe in (proc.stdin, proc.stdout):
         if pipe is not None:
             with contextlib.suppress(OSError):

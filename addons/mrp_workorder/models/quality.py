@@ -74,9 +74,6 @@ class MrpRoutingWorkcenter(models.Model):
 
     @api.depends("quality_point_ids")
     def _compute_quality_point_count(self) -> None:
-        # sudo() is needed here because shop-floor users don't have model-level
-        # access to quality.point; keep the company guard in the domain
-        # explicitly so the count doesn't leak points from other companies.
         read_group_res = (
             self.env["quality.point"]
             .sudo()
@@ -125,7 +122,6 @@ class QualityPoint(models.Model):
     _inherit = "quality.point"
 
     def _default_product_ids(self):
-        # Determines a default product from the default operation's BOM.
         operation_id = self.env.context.get("default_operation_id")
         if not operation_id:
             return None
@@ -171,7 +167,6 @@ class QualityPoint(models.Model):
         required=True,
     )
     worksheet_document = fields.Binary(string="Image/PDF")
-    # Used with type register_consumed_materials the product raw to encode.
     component_id = fields.Many2one(
         comodel_name="product.product",
         string="Product To Register",
@@ -219,7 +214,6 @@ class QualityPoint(models.Model):
                     point.bom_id.product_id
                     or point.bom_id.product_tmpl_id.product_variant_ids
                 )
-                # If product_ids is set the step will exist only for these product variant then we can filter out for the bom explode
                 if point.product_ids:
                     bom_products &= point.product_ids._origin
 
@@ -332,11 +326,9 @@ class QualityCheck(models.Model):
         check_company=True,
     )
 
-    # doubly linked chain for tablet view navigation
     next_check_id = fields.Many2one(comodel_name="quality.check")
     previous_check_id = fields.Many2one(comodel_name="quality.check")
 
-    # For components registration
     move_id = fields.Many2one(
         comodel_name="stock.move",
         string="Stock Move",
@@ -365,21 +357,16 @@ class QualityCheck(models.Model):
         string="Is Component Tracked",
     )
 
-    # Workorder specific fields
     is_user_working = fields.Boolean(related="workorder_id.is_user_working")
     consumption = fields.Selection(related="workorder_id.consumption")
     working_state = fields.Selection(related="workorder_id.working_state")
 
-    # Computed fields
     title = fields.Char(compute="_compute_title")
     result = fields.Char(compute="_compute_result")
 
-    # Used to group the steps belonging to the same production
-    # We use a float because it is actually filled in by the produced quantity at the step creation.
     finished_product_sequence = fields.Float(string="Finished Product Sequence Number")
     worksheet_document = fields.Binary(string="Image/PDF")
 
-    # Employees
     employee_id = fields.Many2one(comodel_name="hr.employee")
 
     @api.model_create_multi
@@ -433,7 +420,6 @@ class QualityCheck(models.Model):
         new_checks = super().copy(default)
 
         for old_check, new_check in zip(self, new_checks, strict=False):
-            # only insert into chain if the quality check is linked with another quality check
             if old_check.previous_check_id or old_check.next_check_id:
                 new_check._insert_in_chain("after", old_check)
         return new_checks
@@ -444,9 +430,6 @@ class QualityCheck(models.Model):
                 return f"{self.component_id.name} - {self.trace_ids[0].name}, {self.component_uom_id.name}"
             return f"{self.component_id.name}, {self.component_uom_id.name}"
         if self.test_type == "picture" and self.picture:
-            # `picture` is `quality`'s, which this module already depends on,
-            # so the branch belongs here beside the field it feeds rather than
-            # in a bridge that may not be installed.
             return self.env._("Picture Uploaded")
         return ""
 
@@ -463,7 +446,6 @@ class QualityCheck(models.Model):
                 self.env._("You did not set a lot/serial number for the final product")
             )
 
-        # The button goes immediately to the next step
         res["next_check_id"] = self._next()
         return res
 
@@ -547,7 +529,6 @@ class QualityCheck(models.Model):
             )
 
     def _next(self):
-        """Set this as the current check, pass it if still pending, and advance the workorder to the next check."""
         self.check_singleton()
         self.workorder_id.current_quality_check_id = self.id
 
@@ -568,16 +549,6 @@ class QualityCheck(models.Model):
         return self.workorder_id._update_current_quality_check(position="next")
 
     def _insert_in_chain(self, position, relative) -> None:
-        """Insert the quality check `self` in a chain of quality checks.
-
-        The chain of quality checks is implicitly given by the `relative` argument,
-        i.e. by following its `previous_check_id` and `next_check_id` fields.
-
-        :param position: Where we need to insert `self` according to `relative`
-        :type position: string
-        :param relative: Where we need to insert `self` in the chain
-        :type relative: A `quality.check` record.
-        """
         self.check_singleton()
         assert position in ["before", "after"]
         if position == "before":
@@ -594,9 +565,6 @@ class QualityCheck(models.Model):
             relative.next_check_id = self
 
     def _on_pass(self):
-        # Moved off `do_pass`, which only the button reached:
-        # `check_quality_checks` closes a check by writing the field, and
-        # the move it names has to end up picked either way.
         super()._on_pass()
         _debug.lifecycle("checks_passed", checks=self)
         for check in self:
@@ -604,8 +572,6 @@ class QualityCheck(models.Model):
                 check.move_id.picked = True
             if check.workorder_id:
                 if check.workorder_id.employee_id:
-                    # `check`, not `self`: this is inside the per-record loop,
-                    # and reading it off the recordset raises on more than one.
                     check.employee_id = check.workorder_id.employee_id
                 if check.workorder_id.state == "ready":
                     check.workorder_id.button_start(bypass=True)

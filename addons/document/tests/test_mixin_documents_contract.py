@@ -36,7 +36,6 @@ class TestMixinDocumentsContract(TransactionCase):
         }
 
     def test_the_hook_roster_is_not_empty(self):
-        """Negative control: an empty roster would make the sweep vacuous."""
         hooks = self._hooks()
         self.assertIn("_prepare_document_vals", hooks)
         self.assertGreaterEqual(len(hooks), 5, sorted(hooks))

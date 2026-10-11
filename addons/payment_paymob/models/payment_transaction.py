@@ -41,7 +41,6 @@ class PaymentTransaction(models.Model):
             "paymob", normalized_data, Acknowledged("")
         )
         if normalized_data["order"] != tx.provider_reference:
-            # The order the notification names is not the transaction's own.
             raise Acknowledged("", 403)
         return tx, extra
 
@@ -76,8 +75,6 @@ class PaymentTransaction(models.Model):
 
     @staticmethod
     def _normalize_paymob_response(payment_data, hmac_sig):
-        """Webhook data (parsed values) and redirect data (strings, JSON-formatted
-        booleans) in one shape."""
         response = {}
         for field in const.SIGNATURE_FIELDS:
             if isinstance(payment_data.get(field), bool):
@@ -103,7 +100,6 @@ class PaymentTransaction(models.Model):
 
     @staticmethod
     def _compute_paymob_signature(payload, hmac_key):
-        # See https://developers.paymob.com/pak/manage-callback/hmac-calculation.
         signing_string = "".join(
             payload.get(field, "false") for field in const.SIGNATURE_FIELDS
         ).encode("utf-8")
@@ -119,21 +115,8 @@ class PaymentTransaction(models.Model):
         references_in_use: set[str] | None = None,
         **kwargs,
     ) -> str:
-        """Override of `payment` to ensure that Paymob references are unique.
-
-        :param str provider_code: The code of the provider handling the transaction.
-        :param str prefix: The custom prefix used to compute the full reference.
-        :param str separator: The custom separator used to separate the prefix from the suffix.
-        :return: The unique reference for the transaction.
-        :rtype: str
-        """
         if provider_code == "paymob":
             if not prefix:
-                # If no prefix is provided, it could mean that a module has passed a kwarg intended
-                # for the `_get_reference_prefix` method, as it is only called if the prefix is
-                # empty. We call it manually here because singularizing the prefix would generate a
-                # default value if it was empty, hence preventing the method from ever being called
-                # and the transaction from receiving a reference named after the related document.
                 prefix = self.sudo()._get_reference_prefix(separator, **kwargs) or None
             prefix = payment_utils.singularize_reference_prefix(
                 prefix=prefix, separator=separator
@@ -148,15 +131,6 @@ class PaymentTransaction(models.Model):
         )
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return Paymob-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the
-                                       transaction.
-        :return: The dict of provider-specific rendering values.
-        :rtype: dict
-        """
         if self.provider_code != "paymob":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -169,7 +143,6 @@ class PaymentTransaction(models.Model):
             self._set_error(str(error))
             return {}
 
-        # The provider reference is set to allow fetching the payment status after redirection.
         self.provider_reference = payment_data.get("id")
         paymob_client_secret = payment_data.get("client_secret")
 
@@ -182,23 +155,14 @@ class PaymentTransaction(models.Model):
         return {"api_url": api_url, "url_params": url_params}
 
     def _paymob_prepare_payment_request_payload(self) -> dict:
-        """Create the payload for the payment request based on the transaction values.
-
-        :return: The request payload.
-        :rtype: dict
-        """
         partner_first_name, partner_last_name = payment_utils.split_partner_name(
             self.partner_name
         )
         payment_method_codes = [self.payment_method_code]
 
-        # If the user selects the Oman Net Payment Method to pay, Integration ID for both Card and
-        # Oman Net Integrations should be passed in the Intention API. The transaction will fail if
-        # you only pass Oman Net Integration ID.
         if self.payment_method_code == "omannet":
             payment_method_codes.append("card")
 
-        # Suffix to all payment methods with the environment.
         environment = "live" if self.provider_id.state == "enabled" else "test"
         payment_method_codes = [
             f"{code.replace('_', '')}{environment}" for code in payment_method_codes
@@ -230,13 +194,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "paymob":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("merchant_order_id")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of payment to extract the amount and currency from the payment data."""
         if self.provider_code != "paymob":
             return super()._extract_amount_data(payment_data)
 
@@ -251,11 +213,9 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "paymob":
             return super()._apply_updates(payment_data)
 
-        # Update the payment state.
         if payment_data.get("pending") == "true":
             self._set_pending()
         elif payment_data.get("success") == "true":

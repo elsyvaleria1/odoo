@@ -505,8 +505,6 @@ class IrFieldsConverter(models.AbstractModel):
 
     @staticmethod
     def _match_choice(value: Any, choices: Sequence[Sequence]) -> Any:
-        # a value outranks every label, exactly as the column index orders
-        # its tokens, so an item's label can never shadow another item's value
         word = str(value).strip().lower()
         for position in (0, 1):
             for choice in choices:
@@ -827,8 +825,6 @@ class IrFieldsConverter(models.AbstractModel):
         lang = self.env.lang or "en_US"
         if "ir.model.fields.selection" not in self.env.registry:
             _debug.logic("selection_index_untranslated", field=field.name, lang=lang)
-            # no translated labels without the table: the keys and the
-            # declared labels answer (the DB-free tier)
             return index, labels
         selections = (
             self.env["ir.model.fields.selection"]
@@ -1055,15 +1051,10 @@ class IrFieldsConverter(models.AbstractModel):
         ids = RelatedModel.name_search(name=value, operator="=")
         flushed = False
         if not ids:
-            # a miss may be a record an earlier row of this import is still
-            # holding; flushing before every search split a 3000-row import
-            # into 3000 single-row creates
             self._flush_import(model=field.comodel_name)
             flushed = True
             ids = RelatedModel.name_search(name=value, operator="=")
         elif self._flush_import(model=field.comodel_name, name=value):
-            # a hit with a namesake pending in the batch: the pending one is
-            # a match too, and the caller must see both
             flushed = True
             ids = RelatedModel.name_search(name=value, operator="=")
         _debug.perf.count(
@@ -1126,8 +1117,6 @@ class IrFieldsConverter(models.AbstractModel):
 
     @api.model
     def _is_name_prefetchable(self, comodel: models.BaseModel) -> bool:
-        # the batch below re-derives what name_search(name, operator="=")
-        # matches, which is only the default _search_display_name's contract
         cls = type(comodel)
         return (
             cls.name_search is models.BaseModel.name_search
@@ -1526,8 +1515,6 @@ class IrFieldsConverter(models.AbstractModel):
         cache = self.env.context.get("import_cache")
         converters = None
         if cache is not None:
-            # one always-hot entry of the reference LRU, so a wide import
-            # cannot evict a nested converter behind its own references
             converters = cache.get("nested_converters")
             if converters is None:
                 converters = cache["nested_converters"] = {}
@@ -1602,7 +1589,7 @@ class IrFieldsConverter(models.AbstractModel):
         convert = self._get_converter_nested(field, parent_fields_hierarchy)
 
         linked = 0
-        created = 0  # debuglog
+        created = 0
         for record in records:
             id = None
             refs = {k: v for k, v in record.items() if k in REFERENCING_FIELDS}
@@ -1630,7 +1617,7 @@ class IrFieldsConverter(models.AbstractModel):
                 if writable:
                     commands.append(Command.update(id, writable))
             elif writable or not refs:
-                created += 1  # debuglog
+                created += 1
                 commands.append(Command.create(writable))
         _debug.pipeline(
             "subrecords_to_commands",

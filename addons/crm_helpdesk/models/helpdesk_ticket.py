@@ -7,13 +7,6 @@ class HelpdeskTicket(models.Model):
     def _find_matching_partner(
         self, email_only=False, force_create=False, force_update=True
     ):
-        """Try to find a matching partner with available information on the
-        ticket, using notably customer's name, email, phone, ...
-
-        # TODO : Move this + the one from crm into mail_thread
-
-        :return: partner browse record
-        """
         self.check_singleton()
         partner = self.partner_id
 

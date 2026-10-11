@@ -46,7 +46,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
             result["batch_mode"] = True
         return result
 
-    # documents
     attachment_id = fields.Many2one(
         comodel_name="ir.attachment",
         index=True,
@@ -61,7 +60,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
     )
     batch_mode = fields.Boolean(string="Is Multiple Records")
 
-    # content
     phone = fields.Char(
         compute="_compute_number",
         compute_sudo=False,
@@ -80,7 +78,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
         compute="_compute_preview_whatsapp",
     )
 
-    # free texts
     number_of_free_text = fields.Integer(
         string="Number of free text",
         compute="_compute_number_of_free_text",
@@ -160,15 +157,9 @@ class WizardWhatsappMessageSend(models.TransientModel):
         readonly=False,
     )
 
-    # ------------------------------------------------------------
-    # COMPUTES
-    # ------------------------------------------------------------
 
     @api.depends("wa_template_id")
     def _compute_number(self) -> None:
-        """In single mode, 'phone' is the number to contact (can be set through
-        context, for example when forced through UI). In multi mode it is more
-        an informational field, holding the first record found numbers."""
         for composer in self:
             records = self.env[composer.res_model].browse(
                 literal_eval(composer.res_ids)
@@ -223,7 +214,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
 
     @api.depends(lambda self: self._get_fields_free_text())
     def _compute_preview_whatsapp(self) -> None:
-        """This method is used to compute the preview of the whatsapp message."""
         for record in self:
             rec = record._get_active_records()
             if record.wa_template_id and rec:
@@ -361,9 +351,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
             "button_dynamic_url_2",
         ] + [f"free_text_{i}" for i in range(1, 11)]
 
-    # ------------------------------------------------------------
-    # SEND MESSAGES
-    # ------------------------------------------------------------
 
     def action_send_whatsapp_template(self):
         self.check_singleton()
@@ -462,7 +449,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
         return self.env["whatsapp.message"]
 
     def _get_text_free_json(self):
-        """This method is used to prepare free text json using values set in free text field of composer."""
         self.check_singleton()
         json_vals = {}
         if self.header_text_1:
@@ -481,7 +467,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
         return json_vals
 
     def _get_html_preview_whatsapp(self, rec):
-        """This method is used to get the html preview of the whatsapp message."""
         self.check_singleton()
         template_variables_value = (
             self.wa_template_id.variable_ids._get_variables_value(rec)
@@ -506,9 +491,6 @@ class WizardWhatsappMessageSend(models.TransientModel):
             variable_values=template_variables_value
         )
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     def _get_active_records(self):
         self.check_singleton()

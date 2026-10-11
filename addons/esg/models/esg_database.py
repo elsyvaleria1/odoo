@@ -119,9 +119,6 @@ class EsgDatabase(models.Model):
 
         return response_data
 
-    # =============
-    # ADEME IMPORT
-    # =============
     def _acquire_ademe_emission_factor_vals(
         self, lines
     ) -> tuple[list[ValuesType], dict[Any, ValuesType]]:
@@ -219,8 +216,6 @@ class EsgDatabase(models.Model):
                             "activity_type_id": line.get("Type_poste", False),
                         }
                     )
-            # if the gaz decomposition is equal to the total emissions, that means that the decomposition
-            # is given with CO2 equivalent value; each line needs to be adapted to have the gaz volume instead
             if not float_compare(
                 sum(gas["quantity"] for gas in gas_lines),
                 total_emissions,
@@ -237,7 +232,7 @@ class EsgDatabase(models.Model):
         for raw_line in lines:
             if not raw_line:
                 continue
-            line = raw_line  # dict(zip(dict_keys, raw_line))
+            line = raw_line
             if (
                 line["Statut_de_l'élément"] == "Archivé"
                 or line["Type_de_l'élément"] == "Données source"
@@ -294,7 +289,6 @@ class EsgDatabase(models.Model):
         _logger.info(
             "ESG: Checking existing units, emission sources and esg activity type"
         )
-        # Prepare to process all units at once to avoid multiplying queries and loops
         units = [line["uom_id"].strip() for line in line_values]
         existing_units = dict(
             self.env["uom.uom"]._read_group(
@@ -303,7 +297,6 @@ class EsgDatabase(models.Model):
                 aggregates=["id:recordset"],
             )
         )
-        # Prepare to process all sources at once to avoid multiplying queries and loops
         source_tree_list = [
             [s.strip() for s in line["source_id"].split(">")] for line in line_values
         ]
@@ -317,7 +310,6 @@ class EsgDatabase(models.Model):
             )
         }
 
-        # Prepare to process all activity types at once to avoid multiplying queries and loops
         existing_activity_types = dict(
             self.env["esg.activity.type"]._read_group(
                 domain=[],
@@ -327,17 +319,14 @@ class EsgDatabase(models.Model):
         )
 
         _logger.info("ESG: Processing link to related records")
-        # slow loop, should be optimized
         for source_tree, unit, line in zip(
             source_tree_list, units, line_values, strict=False
         ):
-            # units
             existing_unit = existing_units.get(unit, False)
             if not existing_unit:
                 existing_unit = self.env["uom.uom"].create({"name": unit})
                 existing_units[unit] = existing_unit
             line["uom_id"] = existing_unit.id
-            # sources
             previous_existing_source = self.env["esg.emission.source"]
             for source_name in source_tree:
                 existing_source = existing_sources.get(
@@ -359,7 +348,6 @@ class EsgDatabase(models.Model):
                     )
                 previous_existing_source = existing_source
             line["source_id"] = previous_existing_source.id
-            # activity types + declare gas lines correctly
             if line["gas_line_ids"]:
                 for gas_line in line["gas_line_ids"]:
                     gas_line["gas_id"] = gas_line["gas_id"].id
@@ -381,7 +369,6 @@ class EsgDatabase(models.Model):
         new_factor_values = []
         write_factor_values = {}
         for line_value in line_values:
-            # Separate data into existing one and new one
             line_code = line_value["code"]
             if line_code in existing_factors:
                 write_factor_values[existing_factors[line_code]] = line_value
@@ -410,7 +397,7 @@ class EsgDatabase(models.Model):
 
         required_calls = math.ceil(
             ademe_data["count"] / 10000
-        )  # the api limits the amount of data lines to 10k
+        )
 
         _logger.info("ESG: Fetching ADEME data from their API")
         complete_data = []
@@ -439,9 +426,6 @@ class EsgDatabase(models.Model):
             ) from e
         return True
 
-    # =============
-    # IPCC IMPORT
-    # =============
     def _get_ipcc_xls_file(self, reset=False):
         request_headers = {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",

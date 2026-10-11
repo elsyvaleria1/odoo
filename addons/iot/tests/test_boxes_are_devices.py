@@ -31,7 +31,6 @@ class TestBoxesAreDevices(TransactionCase):
         )
 
     def test_a_box_pushes(self):
-        # Nothing dials a box: it calls /iot/log and /iot/get_handlers itself.
         self.assertEqual(self.box.device_id.link_mode, "push")
 
     def test_a_peripheral_is_a_part_of_its_box(self):
@@ -79,8 +78,6 @@ class TestBoxesAreDevices(TransactionCase):
         )
 
     def test_every_type_the_box_can_report_names_a_kind(self):
-        # A type with no kind would land its devices in the registry with no
-        # place in it, which is the failure this fold exists to prevent.
         missing = [
             value
             for value, _label in self.env["iot.device"]._fields["type"].selection
@@ -123,8 +120,6 @@ class TestBoxesAreDevices(TransactionCase):
         self.assertEqual(found.parent_id, self.box.device_id)
 
     def test_the_registry_refuses_a_peripheral_it_cannot_name(self):
-        # Identity is what a registry is for: the box reports an identifier
-        # with every device it finds, and one that carries none is not a row.
         with self.assertRaises(NotNullViolation):
             with self.env.cr.savepoint():
                 self.env["iot.device"].create(

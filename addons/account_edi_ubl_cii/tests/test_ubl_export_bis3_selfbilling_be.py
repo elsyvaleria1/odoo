@@ -40,7 +40,6 @@ class TestUblExportBis3SelfbillingBE(TestUblBis3Common, TestUblCiiBECommon):
         self._assert_invoice_ubl_file(invoice, "test_invoice_selfbilling")
 
     def test_invoice_selfbilling_reverse_charge(self):
-        # We add a VAT number so that the reverse-charge tax is correctly given TaxCategoryCode K (intra-community supply)
         self.partner_lu_dig.write(
             {
                 "peppol_endpoint": "LU12345613",

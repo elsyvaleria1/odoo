@@ -65,9 +65,6 @@ class ResConfigSettings(models.TransientModel):
         inverse="_inverse_peppol_participation_role",
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends("company_id.account_peppol_config_id.peppol_parent_company_id")
     def _compute_peppol_use_parent_company(self) -> None:
@@ -103,14 +100,12 @@ class ResConfigSettings(models.TransientModel):
                     record.peppol_participation_role == "sending_only"
                     and record.account_peppol_proxy_state != "sender"
                 ):
-                    # Reset the participant back to sender and unregister it from the SMP
                     record.account_peppol_edi_user._peppol_deregister_participant_to_sender()
                 elif (
                     record.peppol_participation_role == "sending_and_receiving"
                     and record.account_peppol_proxy_state
                     not in ("smp_registration", "receiver")
                 ):
-                    # Set the participant to sender as well as register it on the SMP
                     record.account_peppol_edi_user._peppol_register_sender_as_receiver()
                     record.account_peppol_edi_user._peppol_get_participant_status()
 
@@ -130,12 +125,10 @@ class ResConfigSettings(models.TransientModel):
             ):
                 continue
 
-            # Update company field
             company.account_peppol_config_id.account_peppol_contact_email = (
                 record.account_peppol_contact_email
             )
 
-            # Sync with IAP (Peppol proxy)
             params = {
                 "update_data": {
                     "peppol_contact_email": record.account_peppol_contact_email,
@@ -146,9 +139,6 @@ class ResConfigSettings(models.TransientModel):
                 params=params,
             )
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def action_view_peppol_form(self):
         registration_wizard = self.env["wizard.account_peppol.config.register"].create(
@@ -156,10 +146,8 @@ class ResConfigSettings(models.TransientModel):
         )
         return registration_wizard._action_view_peppol_form(reopen=False)
 
-    # Deprecated
     def button_open_peppol_config_wizard(self) -> dict:
         view = self.env.ref("account_peppol.peppol_config_wizard_form").sudo()
-        # TODO remove in master this hack to have the possibility of being only a sender
         if "button_peppol_reset_to_sender" not in view.arch_db:
             view.reset_arch(mode="hard")
         return {
@@ -190,9 +178,7 @@ class ResConfigSettings(models.TransientModel):
             },
         }
 
-    # Dreprecated
     def button_peppol_register_sender_as_receiver(self):
-        """Register the existing user as a receiver."""
         self.check_singleton()
         return (
             self.env["wizard.account_peppol.config.update.contact"]
@@ -201,20 +187,14 @@ class ResConfigSettings(models.TransientModel):
         )
 
     def button_reconnect_this_database(self) -> None:
-        """Re-establish an out-of-sync connection"""
         self.check_singleton()
         self.account_peppol_edi_user._peppol_out_of_sync_reconnect_this_database()
 
     def button_disconnect_this_database(self) -> None:
-        """Disconnect the current database from the Peppol network.
-        This does not delete or affect the IAP connection, which will remain intact.
-        So don't use this to deregister the participant/connection.
-        """
         self.check_singleton()
         self.account_peppol_edi_user._peppol_out_of_sync_disconnect_this_database()
 
     def button_peppol_deregister(self) -> bool:
-        """Unregister the user from Peppol network."""
         self.check_singleton()
 
         if self.account_peppol_edi_user:

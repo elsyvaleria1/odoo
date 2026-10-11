@@ -329,7 +329,6 @@ class TestPosProcessedOperationRpc(TestPointOfSaleHttpCommon):
             self.set_registry_readonly_mode, type(self)._registry_readonly_enabled
         )
         for replica in (True, False):
-            # without a read replica a read-only route runs on a read/write cursor
             self.set_registry_readonly_mode(replica)
             with self.subTest(replica=replica):
                 operation = str(uuid4())

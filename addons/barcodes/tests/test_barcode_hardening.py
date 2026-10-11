@@ -29,28 +29,18 @@ class TestBarcodeHardening(common.TransactionCase):
         )
 
     def test_malformed_uri_is_a_parse_failure(self):
-        """A URI that cannot be decoded returns [], it does not raise.
-
-        Every one of these used to raise ValueError out of a bare tuple unpack,
-        surfacing as an HTTP 500 with a traceback.
-        """
         for barcode in (
-            "urn:epc:id:sgtin:4012345.012345",  # too few fields
-            "urn:epc:id:sgtin:4012345.012345.99.88",  # too many fields
-            "urn:epc:id:sscc:952656789012",  # too few fields
-            "urn:epc:id:giai:4012345.999887",  # unknown identifier
-            "urn:",  # not five ':'-separated parts
-            "urn:epc:id:sscc:abcdefghijkl.03456",  # non-digit company prefix
+            "urn:epc:id:sgtin:4012345.012345",
+            "urn:epc:id:sgtin:4012345.012345.99.88",
+            "urn:epc:id:sscc:952656789012",
+            "urn:epc:id:giai:4012345.999887",
+            "urn:",
+            "urn:epc:id:sscc:abcdefghijkl.03456",
         ):
             with self.subTest(barcode=barcode):
                 self.assertEqual(self.nomenclature.parse_barcode(barcode), [])
 
     def test_non_digit_numeric_slot_is_a_parse_failure(self):
-        """A numeric slot that is not ASCII digits does not raise.
-
-        `str.isdigit` accepts numerals `int()` rejects, so a barcode carrying
-        e.g. '²' used to raise ValueError from inside the match.
-        """
         self._add_rule(pattern="21{NNDDD}")
         for barcode in ("21²²²²²", "21123ab", "2112", "21"):
             with self.subTest(barcode=barcode):
@@ -60,11 +50,6 @@ class TestBarcodeHardening(common.TransactionCase):
         self.assertEqual(self.nomenclature.parse_barcode("2112345")["value"], 12.345)
 
     def test_catastrophic_pattern_is_rejected(self):
-        """A pattern that nests repetitions is refused on write.
-
-        Patterns run on every scan; `(x+x+)+y` against a 60-character barcode
-        pinned a core for minutes, and the client disconnecting did not stop it.
-        """
         for pattern in (
             "(x+x+)+y",
             "(a+)*",
@@ -77,7 +62,6 @@ class TestBarcodeHardening(common.TransactionCase):
                 self._add_rule(pattern=pattern)
 
     def test_ordinary_patterns_are_still_accepted(self):
-        """The guard must not reject the patterns real nomenclatures use."""
         for pattern in (
             ".*",
             "^[0-9]+$",
@@ -92,12 +76,6 @@ class TestBarcodeHardening(common.TransactionCase):
                 self.assertTrue(self._add_rule(pattern=pattern))
 
     def test_python_only_syntax_is_rejected(self):
-        """A pattern the browser's RegExp cannot run is refused on write.
-
-        The point of sale and the barcode app parse scans client-side: these
-        threw a SyntaxError there on every scan that reached the rule, or --
-        `\\Z` -- silently meant the letter Z.
-        """
         for pattern in (
             "(?P<ai>21).*",
             "a++",
@@ -136,24 +114,20 @@ class TestBarcodeHardening(common.TransactionCase):
                 self.assertTrue(self._add_rule(pattern=pattern))
 
     def test_shorthand_classes_are_ascii_as_in_the_browser(self):
-        """Python's `\\d` also matches other scripts' digits; the browser's does not."""
         self._add_rule(pattern="\\d+")
         self.assertEqual(self.nomenclature.parse_barcode("\u0663")["type"], "error")
         self.assertEqual(self.nomenclature.parse_barcode("3")["type"], "product")
 
     def test_numbered_backreference_is_rejected_beside_a_value(self):
-        """The value braces become a capture group, which renumbers the rest."""
         with self.assertRaises(ValidationError):
             self._add_rule(pattern="{NN}(a)\\1")
 
     def test_oversized_barcode_is_not_matched(self):
-        """The regex subject is bounded, whatever the pattern."""
         self._add_rule(pattern=".*")
         result = self.nomenclature.parse_barcode("x" * 5000)
         self.assertEqual(result["type"], "error")
 
     def test_parse_barcode_refuses_multiple_nomenclatures(self):
-        """Parsing across a union of rule sets is a caller error, not a result."""
         other = self.env["barcode.nomenclature"].create({"name": "Other"})
         with self.assertRaises(ValueError):
             (self.nomenclature | other).parse_barcode("12345670")

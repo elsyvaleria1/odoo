@@ -71,17 +71,6 @@ class MixinHrWorkEntryExportEmployee(models.AbstractModel):
                 )
 
     def _relations_to_check(self):
-        """
-        To be overridden in order to check for missing data in related fields.
-        example:
-        ```py
-        def _relations_to_check(self):
-            relations = super()._relations_to_check()
-            return relations + ["employee_id.group_s_code"]
-        ```
-
-        :return: A list of the field to check in dot notation
-        """
         return []
 
     def _check_data(self) -> None:
@@ -120,10 +109,6 @@ class MixinHrWorkEntryExportEmployee(models.AbstractModel):
             raise ValidationError("\n\n".join(messages))
 
     def _get_work_entries_by_day_and_code(self, limit_start=None, limit_stop=None):
-        """Group work entries by day and code.
-
-        :return: A defaultdict {date: defaultdict {code: WorkEntryCollection {work_entries, duration}}}
-        """
         self.check_singleton()
         work_entries_by_day_and_code = defaultdict(
             lambda: defaultdict(

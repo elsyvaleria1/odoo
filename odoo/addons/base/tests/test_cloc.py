@@ -138,9 +138,6 @@ class TestClocCustomization(TransactionCase):
         )
 
     def create_field(self, name):
-        # no studio context: base ignores it, and web_studio would stamp a
-        # studio_customization xmlid on the field, which cloc reads as an
-        # auto-generated one -- the tests that want that add it themselves
         field = self.env["ir.model.fields"].create(
             {
                 "name": name,

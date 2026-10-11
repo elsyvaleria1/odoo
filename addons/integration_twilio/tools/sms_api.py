@@ -8,7 +8,6 @@ _logger = logging.getLogger(__name__)
 
 STATUS_ROUTE = "/integration_twilio/sms/status/"
 
-# https://www.twilio.com/docs/api/errors/<code>
 TWILIO_CODE_TO_PROVIDER_STATE = {
     20003: "twilio_authentication",
     21211: "wrong_number_format",
@@ -27,7 +26,6 @@ TWILIO_CODE_TO_PROVIDER_STATE = {
 
 
 def get_status_callback_url(company, uuid) -> str:
-    # Twilio cannot reach localhost: a local test needs a public base URL
     return urljoin(company.get_base_url(), f"{STATUS_ROUTE}{uuid}")
 
 
@@ -54,7 +52,6 @@ class SmsApiTwilio(SmsApiBase):
         company = client.company
         sender = self.sender or company._get_twilio_sender(to_number)
         data = {
-            # an empty From, not 'False', so Twilio names the missing sender
             "From": sender.number or "",
             "To": to_number,
             "Body": body,
@@ -67,12 +64,9 @@ class SmsApiTwilio(SmsApiBase):
         return None
 
     def _send_sms_batch(self, messages, delivery_reports_url=False):
-        # besides each SMS's uuid and state, a sent one carries Twilio's sid
         company = self.company or self.env.company
         client = company.integration_twilio_config_id._get_twilio_client()
         error_messages = self._get_sms_api_error_messages()
-        # no sender at all, or only numbers kept for conversations: either way
-        # Twilio would refuse an SMS with no From, so none is sent
         missing = (
             "twilio_no_automated_sender"
             if company.twilio_number_ids.filtered("is_conversation_only")
@@ -105,8 +99,6 @@ class SmsApiTwilio(SmsApiBase):
                     "state": "server_error",
                     "uuid": uuid,
                 }
-                # a 429 or a 5xx is Twilio refusing for now, not this message:
-                # it stays a server error the user can resend
                 if response is not None and (
                     response["status_code"] == 429 or response["status_code"] >= 500
                 ):

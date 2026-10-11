@@ -6,8 +6,6 @@ from odoo.exceptions import UserError
 from odoo.addons.whatsapp.tools import phone_validation as wa_phone_validation
 
 _logger = logging.getLogger(__name__)
-# country codes whose mobiles WhatsApp may report with a digit their numbers
-# no longer carry: Mexico's 1, Argentina's 9
 _MOBILE_PREFIX = {"52": "1", "54": "9"}
 
 
@@ -38,8 +36,6 @@ class WhatsappAccount(models.Model):
         )
         if not verdict:
             return
-        # a late or repeated press is refused by the answer itself: it must not
-        # fail the webhook, whose other messages would be lost with it
         try:
             with self.env.cr.savepoint():
                 delivery._answer(

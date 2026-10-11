@@ -34,7 +34,6 @@ class TestCommissionsSetup(TestSaleCommon):
         )
 
     def _make_products(self):
-        # pricelists
         self.eur_20, self.usd_8 = self.env["product.pricelist"].create(
             [
                 {
@@ -48,7 +47,6 @@ class TestCommissionsSetup(TestSaleCommon):
             ]
         )
 
-        # subscription templates
         self.template_yearly = self.env["sale.order.template"].create(
             {
                 "name": "Odoo yearly",
@@ -60,7 +58,6 @@ class TestCommissionsSetup(TestSaleCommon):
             }
         )
 
-        # odoo sh
         self.odoo_sh = self.env["product.category"].create(
             {
                 "name": "Odoo.SH",
@@ -104,7 +101,6 @@ class TestCommissionsSetup(TestSaleCommon):
             }
         )
 
-        # apps support
         self.apps_support = self.env["product.category"].create(
             {
                 "name": "Apps Support",
@@ -355,19 +351,12 @@ class TestCommissionsSetup(TestSaleCommon):
 
         self.company = self.company_data["company"]
 
-        # Test with the following access rights.
         groups = [
-            # Internal User
             self.ref("base.group_user"),
-            # Billing, implied from base.group_user
             self.ref("account.group_account_invoice"),
-            # Sales: User: All Documents
             self.ref("sale.group_sale_salesman_all_leads"),
-            # Sales: See SO
             self.ref("sale.group_sale_salesman"),
-            # Show Full Accounting Features
             self.ref("account.group_account_user"),
-            # Billing Administrator
             self.ref("account.group_account_manager"),
         ]
         currency_usd_id = self.env.ref("base.USD")
@@ -405,10 +394,8 @@ class TestCommissionsSetup(TestSaleCommon):
         self._make_commission_plans()
         self._make_grades()
 
-    # Helpers.
 
     def purchase(self, spec):
-        """Helper that simulates the user-flow and returns the resulting move."""
         self.referrer.grade_id = spec.grade.id
         self.referrer._onchange_grade_id()
 
@@ -419,8 +406,6 @@ class TestCommissionsSetup(TestSaleCommon):
         )
         form.partner_id = self.customer
         form.referrer_id = self.referrer
-        # commission_plan_frozen is False by default
-        # it's not visible if the sale order is not a recurring subscription / until it has recurring lines
 
         for l in spec.lines:
             with form.line_ids.new() as line:

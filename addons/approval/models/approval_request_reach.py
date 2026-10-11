@@ -44,13 +44,6 @@ DECIDER_CAUSES = ("approval_step", "approval_delegation", "migration")
 
 
 def _sync_decider_grants(env, users) -> None:
-    """Keep the Decider group on whoever a step names or an approver delegates to,
-    and off whoever neither names any more.
-
-    Done when the transaction flushes, not in the middle of the write that names
-    them: a membership change clears the access caches and flushes, which would
-    check a half-built step against its own constraints.
-    """
     if not users:
         return
     pending = env.cr.precommit.data.setdefault_set(DECIDER_SYNC)

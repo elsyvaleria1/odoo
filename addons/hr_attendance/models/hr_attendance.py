@@ -92,8 +92,6 @@ class HrAttendance(models.Model):
         required=True,
     )
     day_of_date = fields.Selection(
-        # The labels resource.calendar.attendance.dayofweek uses, so a schedule
-        # and the attendances worked against it read the same way.
         selection=[
             ("0", "Monday"),
             ("1", "Tuesday"),
@@ -219,8 +217,6 @@ class HrAttendance(models.Model):
     def _compute_date(self) -> None:
         for attendance in self:
             if not attendance.employee_id or not attendance.check_in:
-                # A placeholder for a half-built record; `date` is a Date, so it
-                # takes a date, not a datetime that only coerces on flush.
                 attendance.date = fields.Date.context_today(attendance)
                 continue
             tz = attendance._schedule_tz()
@@ -244,16 +240,6 @@ class HrAttendance(models.Model):
 
     @api.depends("worked_hours", "linked_overtime_ids.duration")
     def _compute_expected_hours(self) -> None:
-        """Of the hours worked, the ones that were not extra.
-
-        Against `duration`, the figure the rules computed, and not against
-        `overtime_hours`, which sums `manual_duration` -- the column a manager
-        edits. Correcting an overtime line used to change how many hours the
-        employee had been expected to work: a twelve-hour day against an
-        eight-hour schedule read 8 expected, then 11 when a manager cut the
-        overtime to one hour, then 12 when they cut it to nothing, while the
-        schedule never moved.
-        """
         for attendance in self:
             attendance.expected_hours = attendance.worked_hours - sum(
                 attendance.linked_overtime_ids.mapped("duration")
@@ -353,31 +339,9 @@ class HrAttendance(models.Model):
                 and attendance.attendance_manager_id.id == self.env.user.id
             )
 
-    # A zone offset is less than a day, so the fixed point below settles in one
-    # step. The bound is there because a fixed point without one is a loop.
     _SCHEDULE_VERSION_PASSES = 3
 
     def _schedule_version(self):
-        """The employee's version in force on the LOCAL day of this check-in.
-
-        An attendance is priced and dated by the schedule the employee was on
-        when they worked it. Reading their *current* schedule instead re-dates
-        and re-prices every day they have ever worked the moment they move to
-        another one -- and does so silently, because the stored `date` only
-        changes the next time something happens to retrigger its compute.
-
-        Which day that is, is circular: the local day needs the zone and the
-        zone comes from the version. Resolved as a fixed point rather than
-        broken in favour of UTC -- pick by the UTC date, localise in that
-        version's zone, re-pick by the local day, stop when it stops moving.
-        Broken in favour of UTC it picked the wrong side of a schedule change:
-        an attendance at 2026-09-07 22:00 UTC is already 2026-09-08 in Tokyo,
-        so an employee whose new schedule starts on the 8th was priced against
-        the old one for a day they worked entirely under the new.
-
-        Where no fixed point exists -- two versions whose zones each push the
-        day onto the other -- it stops on the last and does not oscillate.
-        """
         self.check_singleton()
         employee = self.employee_id.sudo()
         version = employee._get_version(self.check_in.date())
@@ -394,15 +358,6 @@ class HrAttendance(models.Model):
         return version
 
     def _schedule_tz(self, version=None):
-        """The zone that version's schedule is written in.
-
-        Every reader of one attendance has to agree on which zone it is: the
-        day `date` files it under, the lunch break `worked_hours` deducts, the
-        local span the overtime engine dates its lines by. Three sources were
-        in use -- the employee's current schedule, the resource's own zone and
-        the version's -- and they disagree for anyone whose personal zone or
-        schedule is not the one their work contact carries.
-        """
         return timezone((version or self._schedule_version())._get_schedule_tz())
 
     def _get_employee_calendar(self, version=None):
@@ -426,18 +381,7 @@ class HrAttendance(models.Model):
         )
 
     def _worked_hours_between(self, start_dt, end_dt):
-        """Working hours this employee's schedule places in a naive-UTC span.
-
-        Independent of `check_out`, so it can price a span for an attendance
-        that is still open -- which is what the auto-check-out cron needs to
-        find where the day's hours run out, without first writing a throwaway
-        check-out that would regenerate overtime and could overlap a later
-        attendance.
-        """
         self.check_singleton()
-        # Resolved once and handed down. Reading it is a fixed point over the
-        # employee's versions, and this path used to ask for it four times for
-        # one span -- once here and three more inside `_lunch_intervals`.
         version = self._schedule_version()
         tz = self._schedule_tz(version)
         start_dt_tz = start_dt.replace(tzinfo=UTC).astimezone(tz)
@@ -452,19 +396,6 @@ class HrAttendance(models.Model):
         )
 
     def _lunch_intervals(self, start_dt_tz, end_dt_tz, version=None):
-        """The schedule's lunch breaks inside a span, placed in the SCHEDULE's zone.
-
-        `hr.employee._get_attendance_intervals` places them in the RESOURCE's
-        zone, which follows the employee's work contact rather than the
-        schedule they work to. When the two differ the break lands hours away
-        from the span and is deducted from nothing: a nine-hour presence
-        against a schedule carrying an hour of lunch was credited as nine
-        worked hours instead of eight.
-
-        Asked WITHOUT a resource, so the answer is the calendar's own lunch
-        lines in the given zone and nothing else; a schedule that is not fully
-        fixed keeps no break.
-        """
         self.check_singleton()
         version = version or self._schedule_version()
         calendar = self._get_employee_calendar(version)
@@ -488,15 +419,6 @@ class HrAttendance(models.Model):
 
     @api.constrains("check_in", "check_out", "employee_id")
     def _check_validity(self):
-        """No employee may be in two places at once.
-
-        An attendance occupies [check_in, check_out); one that has not been
-        checked out yet occupies [check_in, infinity), because the employee is
-        still there. Treating an open attendance as a point rather than an
-        open-ended span is what used to let a completed attendance be created
-        around one -- an impossible state that only surfaced later, when
-        closing the open one produced an overlap nothing had checked.
-        """
         for employee, attendances in self.grouped("employee_id").items():
             for earlier, later in self._sorted_span_pairs(employee, attendances):
                 if earlier.check_out and earlier.check_out <= later.check_in:
@@ -518,21 +440,11 @@ class HrAttendance(models.Model):
                 )
 
     def _sorted_span_pairs(self, employee, attendances):
-        """Consecutive pairs of the employee's attendances around `attendances`.
-
-        One query per employee rather than the three per record the pairwise
-        form needed, and it compares the records being checked against each
-        other as well -- a batch that overlaps within itself never reached the
-        database in the pairwise form.
-        """
         window_start = min(attendances.mapped("check_in"))
         domain = Domain("employee_id", "=", employee.id) & Domain(
             Domain("check_out", "=", False) | Domain("check_out", ">", window_start)
         )
         if all(attendance.check_out for attendance in attendances):
-            # Every checked attendance is closed, so nothing starting after the
-            # last of them can reach back into one. An open attendance among
-            # them has no end, so no upper bound applies.
             domain &= Domain("check_in", "<", max(attendances.mapped("check_out")))
         neighbours = self.env["hr.attendance"].sudo().search(domain)
         spans = (neighbours | attendances).sorted(lambda a: (a.check_in, a.id))
@@ -568,15 +480,6 @@ class HrAttendance(models.Model):
         return merged
 
     def _overtime_windows(self):
-        """{employee: (first_date, last_date)} the overtime lines of `self`
-        depend on, in each employee's own calendar days.
-
-        A quantity rule sums a whole day, or a whole week, so every attendance
-        sharing that period with one of `self` has to be regenerated with it.
-        Rounding to the week is paid only where a weekly rule exists: it is
-        what deletes and recreates the neighbouring lines, with whatever a
-        manager had approved or corrected on them.
-        """
         windows = {}
         for employee, attendances in self.grouped("employee_id").items():
             spans = [
@@ -600,13 +503,6 @@ class HrAttendance(models.Model):
         return windows
 
     def _attendances_in_overtime_windows(self, windows) -> tuple:
-        """Close `windows` under "shares a day or week with", and return them
-        with every attendance they cover.
-
-        `date` is not the bound: an attendance is dated by its local check-in,
-        and the day it ends on can be the next one. The prefilter is wide and
-        in UTC, the exact test is on the localized span.
-        """
         Attendance = self.env["hr.attendance"].sudo()
         selected = Attendance
         closed = {}
@@ -614,7 +510,7 @@ class HrAttendance(models.Model):
             passes = 0
             while True:
                 passes += 1
-                candidates = Attendance.search(  # noqa: E8507 - walks each employee's window in pages
+                candidates = Attendance.search(
                     [
                         ("employee_id", "=", employee.id),
                         ("check_out", "!=", False),
@@ -674,12 +570,6 @@ class HrAttendance(models.Model):
         )
 
     def _update_overtime(self, windows=None) -> None:
-        """Regenerate the overtime lines of `self`'s periods, plus `windows`.
-
-        `windows` carries periods `self` no longer describes -- the day an
-        attendance was moved away from, or the one a deleted attendance stood
-        on -- in the shape `_overtime_windows` returns.
-        """
         windows = self._merge_windows(self._overtime_windows(), windows)
         if not windows:
             _debug.logic("overtime_skipped", attendances=self, reason="none_closed")
@@ -694,11 +584,6 @@ class HrAttendance(models.Model):
                 for employee, (first, last) in windows.items()
             )
         )
-        # A manager's approval or manual correction survives a regeneration
-        # that leaves the line otherwise identical -- same attendance, day,
-        # rules and computed amount. Regeneration is a system act, never a
-        # request to reset a human decision; only a real change to the overtime
-        # (a moved shift, an edited rule) drops the line back to its default.
         decisions_by_key = defaultdict(list)
         for line in superseded:
             decisions_by_key[line._regeneration_key()].append(
@@ -782,9 +667,6 @@ class HrAttendance(models.Model):
                 len(decisions) for decisions in decisions_by_key.values()
             ),
         )
-        # Each val carries its `attendance_id`; creating the lines marks the
-        # attendance's stored `linked_overtime_ids` computes dirty through the
-        # real relation, so nothing has to be marked by hand.
         Line.create(overtime_vals_list)
 
     _OVERTIME_SOURCE_FIELDS = frozenset({"employee_id", "check_in", "check_out"})
@@ -792,46 +674,17 @@ class HrAttendance(models.Model):
 
     @contextmanager
     def _deferring_overtime(self):
-        """Change several attendances, then price their periods once.
-
-        Every create, write and unlink regenerates the overtime of the whole
-        period the attendance lands in -- a day, or a week where a weekly rule
-        exists -- so a loop over twenty attendances pays for twenty
-        regenerations of periods that mostly overlap. Inside this block those
-        operations only record which periods they disturbed, and the block
-        prices all of them together on the way out.
-
-        It is not only cheaper. A regeneration deletes and recreates every line
-        of the period, so the second write of a loop runs against lines the
-        first one has just written and the manager decisions carried across
-        them are re-matched once per pass rather than once.
-
-        ONLY where nothing inside the block reads what the regeneration
-        produces. `overtime_hours`, `validated_overtime_hours`,
-        `overtime_status` and `linked_overtime_ids` are all that output, and
-        inside the block they hold whatever they held before it. The absence
-        cron cannot use this for exactly that reason: it drops a marker whose
-        `overtime_hours` came out zero, and deferred they are all zero.
-
-        Yields the recordset to work through: the operations that participate
-        are the ones reached from it, because the deferral travels in the
-        context.
-        """
         pending = self.env.context.get(self._OVERTIME_DEFERRAL)
         if pending is not None:
-            # Already inside a block; the outer one flushes.
             yield self
             return
         pending = {"windows": {}, "records": self.browse()}
         try:
             yield self.with_context(**{self._OVERTIME_DEFERRAL: pending})
         finally:
-            # `exists()` because a record created and then deleted inside the
-            # block leaves its id here; its period is still in `windows`.
             pending["records"].exists()._update_overtime(pending["windows"])
 
     def _defer_overtime(self, windows=None, records=None) -> bool:
-        """Record a disturbed period for the enclosing block, if there is one."""
         pending = self.env.context.get(self._OVERTIME_DEFERRAL)
         if pending is None:
             return False
@@ -889,14 +742,7 @@ class HrAttendance(models.Model):
     def unlink(self):
         _debug.lifecycle("unlink", attendances=self)
         windows = self._overtime_windows()
-        # Unlink the lines through the ORM rather than leaving the database's
-        # `ondelete=cascade` to drop them: a cascade at the SQL level removes
-        # the rows without the ORM noticing, so the employee's non-stored
-        # `total_overtime` keeps its pre-delete value in cache. The cascade
-        # stays as an integrity net for any path that does not come through here.
         self.linked_overtime_ids.unlink()
-        # Only the windows: the records are about to stop existing, so there is
-        # nothing left to price them from.
         deferred = self._defer_overtime(windows=windows)
         res = super().unlink()
         if not deferred:
@@ -1013,31 +859,9 @@ class HrAttendance(models.Model):
         return self.check_in.replace(tzinfo=UTC).astimezone(self._schedule_tz())
 
     def _scheduled_hours_on(self, local_day):
-        """Worked hours the schedule places on one of the employee's own days.
-
-        The calendar's own batch rather than a hand-rolled sweep of
-        `attendance_ids`: that sweep summed every line matching the weekday,
-        the lunch line included, so a 9-17 schedule with an hour's lunch
-        claimed eight expected *worked* hours where the employee works seven --
-        and it re-derived the two-week alternation the batch already knows.
-        """
         self.check_singleton()
         calendar = self._get_employee_calendar()
         tz = self._schedule_tz()
-        # Bounded by the NEXT local midnight rather than by `time.max`, so the
-        # window tiles the day by construction. A local day is not always 24
-        # hours: where the clocks go back at midnight it has 25, its last hour
-        # repeats, and `time.max` resolves to the first of the two. Measured
-        # over twelve zones and every day of 2026, the closed form leaves
-        # 3600s uncovered on America/Santiago 2026-04-04 and Asia/Beirut
-        # 2026-10-24; the half-open form leaves nothing anywhere.
-        #
-        # It changes no figure TODAY: `_attendance_intervals_batch` walks
-        # `rrule(DAILY, ...)` and materialises each calendar line once per
-        # calendar day, so it does not model the repeated hour either way --
-        # measured 0.983h from both windows for a 23:00-23:59 shift on that
-        # Santiago day. The bound is here so that a consumer which does model
-        # it is not handed a window an hour short.
         return sum(
             calendar._get_hours_by_day(
                 calendar._attendance_intervals_batch(
@@ -1050,31 +874,15 @@ class HrAttendance(models.Model):
             ).values()
         )
 
-    # A shift long enough to need more than a week of the schedule to spend its
-    # budget is a data error, not a shift; stop walking rather than loop.
     _AUTO_CHECK_OUT_HORIZON_DAYS = 7
 
     def _worked_hours_spent_at(self, budget):
-        """When `budget` worked hours have accrued since check-in.
-
-        Walked rather than added, because the answer is not `check_in + budget`:
-        a break inside the span pushes it later. And walked past local midnight,
-        because a shift that starts in the evening spends its budget on the next
-        calendar day -- which is the case the previous form got wrong twice
-        over. It anchored on `check_in.replace(hour=23, minute=59, second=59)`,
-        the end of the check-in's UTC day rather than the employee's, and then
-        subtracted the excess from that anchor, which is exact only when no
-        break falls inside the part subtracted.
-        """
         self.check_singleton()
         tz = self._schedule_tz()
         cursor = self._local_check_in()
         floor = self.check_in + timedelta(seconds=1)
         spent = 0.0
         for _day in range(self._AUTO_CHECK_OUT_HORIZON_DAYS):
-            # The next local midnight, not `time.max`: a day that ends a
-            # microsecond early leaves that microsecond of the budget to be
-            # spent on the following day, and the cut lands a microsecond late.
             day_end = datetime.combine(
                 cursor.date() + timedelta(days=1), time.min
             ).replace(tzinfo=tz)
@@ -1090,14 +898,6 @@ class HrAttendance(models.Model):
         return max(cursor.astimezone(UTC).replace(tzinfo=None), floor)
 
     def _worked_hours_already_closed(self):
-        """{employee_id: {local day: worked hours}} for what `self`'s employees
-        have already closed on the days `self` start on.
-
-        Bounded a day wider than the earliest check-in: an attendance that
-        opened before local midnight belongs to the same local day as one that
-        opened after it, and the previous bound was a naive-UTC midnight that
-        dropped it for anyone far enough east.
-        """
         totals = defaultdict(lambda: defaultdict(float))
         if not self:
             return totals
@@ -1123,15 +923,6 @@ class HrAttendance(models.Model):
         self._cron_auto_check_out_specific_time()
 
     def _cron_auto_check_out_tolerance(self) -> None:
-        """Close the attendances of employees who have run past their schedule.
-
-        Everything here is counted in *worked* hours -- what the employee is
-        credited with and what their overtime is measured from. The four
-        quantities used to be three different currencies: wall-clock presence
-        for the open attendance, worked hours for the earlier ones, and
-        scheduled presence including lunch for what was expected, so the same
-        day could be over budget by an hour of lunch nobody worked.
-        """
         to_verify = self.env["hr.attendance"].search(
             [
                 ("check_out", "=", False),
@@ -1158,9 +949,6 @@ class HrAttendance(models.Model):
         now = fields.Datetime.now()
         already_closed = to_verify._worked_hours_already_closed()
         closed = self.browse()
-        # One block for the whole sweep: each `write` below would otherwise
-        # regenerate the overtime of the day it lands in, and the employees a
-        # sweep closes together largely share their days.
         with to_verify._deferring_overtime() as attendances:
             for attendance in attendances:
                 employee = attendance.employee_id
@@ -1197,14 +985,6 @@ class HrAttendance(models.Model):
         )
 
     def _specific_time_cut_off(self):
-        """The first daily cut-off falling after this attendance's check-in.
-
-        Anchored on the check-in's own local day, not on today's: an attendance
-        left open over a weekend has to close on the evening it began, not on
-        the current one. Rolled forward a day when the check-in is already past
-        that evening -- a night shift starting at 21:00 under a 20:00 cut-off
-        closes the next one, never before it started.
-        """
         self.check_singleton()
         tz = self._schedule_tz()
         cut_off = datetime.combine(
@@ -1218,16 +998,6 @@ class HrAttendance(models.Model):
         return cut_off.astimezone(UTC).replace(tzinfo=None)
 
     def _cron_auto_check_out_specific_time(self) -> None:
-        """Close every open attendance at the company's fixed daily cut-off.
-
-        The tolerance half measures an employee against their scheduled hours,
-        so it can only reach someone who has a schedule to be measured against
-        -- it filters flexible calendars out, and an employee with no calendar
-        at all never matches either. Whoever those employees are, forgetting to
-        check out left their attendance open indefinitely, with `hours_today`
-        growing against the wall clock. This half asks nothing of the schedule
-        but its timezone.
-        """
         to_verify = self.env["hr.attendance"].search(
             [
                 ("check_out", "=", False),
@@ -1252,9 +1022,6 @@ class HrAttendance(models.Model):
 
         now = fields.Datetime.now()
         closed = self.browse()
-        # One block for the whole sweep, for the same reason as the tolerance
-        # half: each `write` would otherwise regenerate the overtime of the day
-        # it lands in.
         with to_verify._deferring_overtime() as attendances:
             for attendance in attendances:
                 cut_off = attendance._specific_time_cut_off()
@@ -1275,17 +1042,6 @@ class HrAttendance(models.Model):
         )
 
     def _log_cron_note(self, body) -> None:
-        """One chatter entry per attendance, written in one batch.
-
-        `message_post` per record costs a round of queries for each of them and
-        these are sweeps. Measured field by field, the two write the same
-        message -- same author, body, `message_type` and Note subtype, nobody
-        notified -- with one exception: `_message_log_batch` marks it
-        `is_internal`, which `message_post` leaves False. `hr.attendance` has
-        no portal surface for that flag to change anything on, but the flag is
-        restored anyway rather than left as an undocumented difference between
-        a note written by the cron and one written anywhere else.
-        """
         if not self:
             return
         self._message_log_batch(dict.fromkeys(self.ids, body)).is_internal = False
@@ -1304,22 +1060,12 @@ class HrAttendance(models.Model):
         if not companies:
             return
 
-        # Both scans are bounded by the companies that asked for absence
-        # management. Unbounded, the second one reads every attendance ever
-        # left open in the database -- in every company, back to the first one
-        # anybody forgot to close -- to answer a question about a handful of
-        # employees.
         in_scope = Domain("employee_id.company_id", "in", companies.ids)
-        # An employee who worked exactly their expected hours has no overtime
-        # line for the day; the attendances are what say they were there.
         checked_in_employees = (
             self.env["hr.attendance"]
             .search(in_scope & Domain("date", "=", yesterday))
             .employee_id
         )
-        # An employee who never checked out is not absent -- they are recorded
-        # as still being there. Marking them absent contradicts their own open
-        # attendance, and the marker cannot be placed without overlapping it.
         still_checked_in = (
             self.env["hr.attendance"]
             .search(in_scope & Domain("check_out", "=", False))
@@ -1340,10 +1086,6 @@ class HrAttendance(models.Model):
         )
 
         for emp in absent_employees:
-            # Midnight of the absent day *in the employee's own time zone*,
-            # expressed in UTC for storage. Converting the server's midnight
-            # into the employee's zone and then storing that wall clock as UTC
-            # placed the marker a whole day off for anyone far enough east.
             local_day_start = datetime.combine(yesterday, time.min).replace(
                 tzinfo=timezone(emp.sudo()._get_version(yesterday)._get_schedule_tz())
             )
@@ -1361,10 +1103,6 @@ class HrAttendance(models.Model):
         _debug.lifecycle(
             "absence_markers_created", absent=len(technical_attendances_vals)
         )
-        # NOT deferred, though the create and the unlink disturb the same days:
-        # `overtime_hours` below is the regeneration's own output, and the whole
-        # point of the filter is to drop a marker that produced none. Deferring
-        # makes every marker read zero and deletes all of them.
         technical_attendances = self.create(technical_attendances_vals)
         to_unlink = technical_attendances.filtered(lambda a: a.overtime_hours == 0)
         _debug.logic(

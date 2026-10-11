@@ -132,11 +132,6 @@ class TestWarehousePickingTypes(TransactionCase):
     OUR_LOCATIONS = ("wh_deployed_stock_loc_id", "wh_maintenance_stock_loc_id")
 
     def _forget_locations(self, warehouse):
-        # A warehouse that predates this module has these columns empty and has
-        # not been written since, which is the state core hands us. Writing
-        # False will not reproduce it -- stock.warehouse.write syncs missing
-        # locations back on the way through -- so the columns are cleared under
-        # the ORM, after flushing whatever it was still holding.
         self.env.flush_all()
         assignments = ", ".join(f'"{name}" = NULL' for name in self.OUR_LOCATIONS)
         self.env.cr.execute(
@@ -176,8 +171,6 @@ class TestWarehousePickingTypes(TransactionCase):
     def test_a_warehouse_that_predates_this_module_survives_core_adding_a_type(self):
         self._forget_locations(self.warehouse)
 
-        # point_of_sale does exactly this for every warehouse without a POS
-        # operation type; so does anything else adding a picking type later.
         self.warehouse.write(self.warehouse._create_or_update_picking_types())
 
         for name in self.OURS:

@@ -16,7 +16,6 @@ class TestMicrosoftEvent(TestCommon):
         self.create_events_for_tests()
 
     def match(self, user, items):
-        """{remote id: link} of `items`, Graph dicts, in `user`'s calendar."""
         account = self.env["calendar.sync.account"]._for(user, "microsoft")
         changes = self.env["calendar.sync.adapter.microsoft"]._changes(
             MicrosoftEvent(items)
@@ -55,8 +54,6 @@ class TestMicrosoftEvent(TestCommon):
         )
 
     def test_another_calendars_id_alone_finds_nothing(self):
-        """Outlook's ids are per calendar: the organizer's id in an attendee's
-        calendar is another item."""
         self.assertFalse(
             self.match(self.attendee_user, [{"type": "singleInstance", "id": "123"}])
         )
@@ -69,7 +66,6 @@ class TestMicrosoftEvent(TestCommon):
         self.assertEqual(found["REC123"].recurrence_id, self.recurrence)
 
     def test_a_deleted_series_is_found_though_untyped(self):
-        """A deleted item carries no type: its link knows it was a series."""
         found = self.match(
             self.organizer_user, [{"@removed": {"reason": "deleted"}, "id": "REC123"}]
         )
@@ -104,9 +100,6 @@ class TestMicrosoftEvent(TestCommon):
             dict.update(event._events, {"foo": "bar"})
 
     def test_matching_many_items(self):
-        # Test what happens when microsoft returns a lot of data
-        # This test does not aim to check what we do with the data but it ensure that we are able to process it.
-        # Other tests take care of how we update odoo records with the api result.
 
         start_date = datetime(2023, 9, 25, 17, 25)
         record_count = 10000

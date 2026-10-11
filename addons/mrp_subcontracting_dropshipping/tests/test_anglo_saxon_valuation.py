@@ -43,7 +43,6 @@ class TestSubcontractingDropshippingValuation(ValuationReconciliationTestCommon)
         )
 
     def test_valuation_subcontracted_and_dropshipped(self):
-        # pylint: disable=bad-whitespace
         all_amls_ids = self.env["account.move.line"].search_read([], ["id"])
 
         grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")

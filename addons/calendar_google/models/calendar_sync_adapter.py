@@ -35,9 +35,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
 
     @api.model
     def _changes(self, gevents, default_reminders=(), next_token=None, full=False):
-        """Google's events as the engine reads them: the series first, then
-        the events, each rescheduled instance followed by the cancellation of
-        the instance it replaces."""
         series, events = [], []
         for gevent in gevents:
             remote = self._remote(gevent, default_reminders)
@@ -45,8 +42,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
                 series.append(remote)
                 continue
             events.append(remote)
-            # Google gives an instance of a split series (ID_RANGE) a new id
-            # (ID_TIMESTAMP) when it is rescheduled: the old one is gone
             if (
                 not remote.cancelled
                 and not gevent.is_recurrence_follower()
@@ -61,7 +56,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
         cancelled = gevent.is_cancelled()
         return RemoteEvent(
             gevent.id,
-            # a cancelled item says nothing of being a series: its link does
             kind=(
                 RemoteKind.SERIES
                 if not cancelled and gevent.is_recurrence()
@@ -94,17 +88,13 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
             recurrence.with_env(Recurrence.env)._write_from_google(gevent, values)
         else:
             recurrence = Recurrence._create_from_google(gevent, [values])
-        # the series' instances take their ids from the series' own
         self.env["calendar.sync.link"]._engine()._adopt(account, recurrence, master)
         recurrence.calendar_event_ids._google_link_instances()
         return recurrence, {}
 
-    # -- sending -------------------------------------------------------------
 
     @api.model
     def _service(self, record=None) -> GoogleCalendarService:
-        """The calendar API, mailing the attendees unless the push is quiet or
-        the event is over."""
         send_updates = not self.env.context.get("calendar_sync_quiet") and not (
             record and record._is_event_over()
         )
@@ -114,7 +104,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
 
     @api.model
     def _timeout(self) -> int:
-        # an edit in the interface waits for its push
         return 3 if self.env.context.get("calendar_sync_interactive") else TIMEOUT
 
     @api.model
@@ -135,8 +124,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
 
     @api.model
     def _patch(self, account, remote_id, record, values):
-        # the version Google answers is Odoo's own: a later read of it must
-        # not overwrite an edit Odoo still owes
         response = self._service(record).patch(
             remote_id,
             values,
@@ -199,7 +186,6 @@ class CalendarSyncAdapterGoogle(models.AbstractModel):
             kind = ErrorKind.TRANSIENT
         return CalendarSyncError(kind, message)
 
-    # -- conversion, Odoo to Google -------------------------------------------
 
     @api.model
     def _synced_fields(self, model_name):

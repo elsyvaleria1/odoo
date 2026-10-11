@@ -65,11 +65,6 @@ class AuthUserClientSession(models.Model):
             return 0
         self.env["auth.user.client"].flush_model(["active"])
         self.flush_model(["session_identifier", "active"])
-        # Login and client revocation take the client before its associations.
-        # Touch it even when another session remains: under repeatable read a
-        # lock alone cannot refresh a concurrent logout's earlier snapshot.
-        # The row version makes that transaction retry instead of both last
-        # logouts seeing a live sibling and leaving the client active forever.
         self.env.cr.execute(
             SQL(
                 "UPDATE auth_user_client AS client SET active = client.active "
@@ -152,8 +147,6 @@ class AuthUserClientSession(models.Model):
         uid, now = self.env.uid, self.env.cr.now()
         client_id = _current_client_id()
         self.env["auth.user.client"].flush_model(["active"])
-        # Rotation must take the same client-before-association order as
-        # login and logout, including when retaining a session during a sweep.
         self.env.cr.execute(
             SQL("UPDATE auth_user_client SET active = active WHERE id = %s", client_id)
         )
@@ -183,7 +176,6 @@ class AuthUserClientSession(models.Model):
     @api.model
     def _mark_logged_out(self, session_identifier: str) -> None:
         if self.env.cr.readonly:
-            # the sweep archives it once the store reports the family gone
             _debug.logic("sessions_logged_out_deferred", reason="readonly_cursor")
             return
         ended = self._mark_revoked([session_identifier], reason="logout")

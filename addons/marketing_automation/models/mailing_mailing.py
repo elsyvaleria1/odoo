@@ -27,9 +27,7 @@ class MailingMailing(models.Model):
         copy=False,
     )
 
-    # TODO: remove in master
     def convert_links(self):
-        """Override convert_links so we can add marketing automation campaign instead of mass mail campaign"""
         res = {}
         done = self.env["mailing.mailing"]
         for mass_mailing in self:

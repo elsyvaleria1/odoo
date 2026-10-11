@@ -21,19 +21,10 @@ class SaleRentalReport(models.Model):
     )
 
     def _get_fields_select(self) -> dict:
-        """Split each serial-tracked line into one row per reserved lot.
-
-        For products tracked by serial number the lot joins below turn a single
-        rental line into one row per lot, so reserved / picked-up / returned
-        quantities become 1.0-or-0.0 per row instead of the line totals, and the
-        daily price is divided over the lots.
-        """
         select = super()._get_fields_select()
         base_price = select["price"]
         select.update(
             {
-                # The lot joins make (sol.id, d.date) non-unique — order by the lot
-                # too so the synthesised id is stable across queries.
                 "id": "row_number() OVER (ORDER BY sol.id, d.date, res.product_trace_id)",
                 "quantity": """CASE
                 WHEN res.product_trace_id IS NOT NULL

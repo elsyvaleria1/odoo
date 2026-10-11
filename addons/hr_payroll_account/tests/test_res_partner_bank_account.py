@@ -33,7 +33,6 @@ class TestResPartnerBank(common.TransactionCase):
         partner_bank_form = (
             "hr_payroll_account.view_partner_bank_form_inherit_hr_payroll_account"
         )
-        # This context is set in the act window.
         partner = self.env["res.partner.bank.account"].with_context(
             from_employee_bank_account=True
         )
@@ -58,9 +57,6 @@ class TestResPartnerBank(common.TransactionCase):
             self.assertIn(p_bank, partner_2.employee_ids[0].salary_bank_account_ids)
 
     def test_has_alt_bank_account_invalidates_on_sibling_creation(self):
-        """`has_alt_bank_account` must flip on an EXISTING bank record when a
-        sibling bank account is added for the same partner, not just be
-        correct on freshly-created records (F-ACC-1)."""
         partner = self.env["res.partner"].create({"name": "Cyril"})
         bank_a = self.env["res.partner.bank.account"].create(
             {"acc_number": "BE1234567890", "partner_id": partner.id}

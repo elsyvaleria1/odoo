@@ -132,7 +132,6 @@ class TestSaveAttachmentGuard(TransactionCase):
         self.assertEqual(
             bundle.save_attachment("js.map", "{}").mimetype, "application/json"
         )
-        # the same mimetype the ESM route and the bridge shims serve
         self.assertEqual(
             bundle.save_attachment("min.js", "x").mimetype, "text/javascript"
         )
@@ -192,8 +191,6 @@ class TestAuditLikeUnderscoreWildcard(TransactionCase):
         self.assertEqual(matched.raw, b"/* own */")
 
     def test_clean_attachments_still_cleans_own_versions(self):
-        # the version just replaced stays; one older than it and past the
-        # grace goes
         saved = []
         for mtime in (1.0, 2.0, 3.0):
             files = [
@@ -214,7 +211,6 @@ class TestAuditLikeUnderscoreWildcard(TransactionCase):
         self.assertTrue(v3.exists())
 
     def test_a_recent_other_version_survives_until_the_grace_ends(self):
-        # a page rendered a minute before the new version still names this one
         files_v1 = [
             asset_file("/test_assetsbundle/static/src/js/audit_g.js", PLAIN_JS, 1.0)
         ]
@@ -240,8 +236,6 @@ class TestCleanAttachmentsKeepsThePreviousVersion(TransactionCase):
         ).save_attachment("min.js", content)
 
     def test_a_long_stable_version_survives_its_first_replacement(self):
-        # stable for more than the grace, as a bundle is between deploys:
-        # replacing it must not delete it under the tabs still naming it
         v1 = self._save(1.0, "/* v1 */")
         _age_past_grace(v1)
         v2 = self._save(2.0, "/* v2 */")
@@ -278,7 +272,6 @@ class TestCleanAttachmentsIdentityFilter(TransactionCase):
                 "url": real.url,
             }
         )
-        # a later real version, so the one above is no longer the previous
         later = real.sudo().copy(
             {"url": real.url.replace(real.url.split("/")[-2], "0000000"), "raw": b"x"}
         )
@@ -535,8 +528,6 @@ class TestChecksumSeparator(TransactionCase):
         served = AssetsBundle(name, spec, env=self.env).css()
         after = urls()
 
-        # the version it replaced stays for the tabs that still name it; the
-        # grace tests cover when it goes
         self.assertEqual(len(after), 2, "the new version and the replaced one")
         self.assertIn(served.url, after)
         self.assertEqual(after - {served.url}, before)
@@ -549,8 +540,6 @@ class TestChecksumSeparator(TransactionCase):
         self.assertRegex(first, r"^[0-9a-f]{64}$")
 
     def test_ambiguous_split_is_not_a_collision(self):
-        # no content: an asset whose content arrives inline adds its digest to
-        # the descriptor, so only a url-named one can alias another's
         two = AssetsBundle(
             "test.sep",
             [asset_file("/a.js", None, 1.0), asset_file("/b.js", None, 2.0)],
@@ -806,7 +795,6 @@ class TestEsmAssetGc(TransactionCase):
 
     def test_a_reused_bridge_keeps_its_encoded_copies(self):
         rows = self._mk_encoded_bridge("c0ffee" * 5 + "ab")
-        # a reuse refreshes the shim alone
         self._age(rows.filtered(lambda row: not row.url.endswith(".js")), 400)
 
         self.env["ir.attachment"]._gc_esm_bridges()
@@ -900,7 +888,6 @@ class TestEsmAssetGc(TransactionCase):
         self.assertTrue(young.exists())
 
     def test_a_full_bridge_batch_reports_remaining_work(self):
-        # the autovacuum runner reads (done, remaining) and ignores anything else
         self.env["ir.config_parameter"].sudo().set_param(
             "web.esm.bridge_gc_grace_days", "10"
         )

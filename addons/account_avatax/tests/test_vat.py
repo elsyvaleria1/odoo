@@ -51,21 +51,10 @@ class TestAccountAvalaraVAT(TestAccountAvataxCommon):
         return res
 
     def test_business_id(self):
-        """Also known as VAT Registration ID
-
-        This data element should be found directly on the transaction (sales order, sales invoice)
-        header. Some applications may not carry that information onto the transaction itself, and
-        the connector may have to pull directly from the customer record.
-        """
         vat = self.captured_arguments["businessIdentificationNo"]
         self.assertEqual(vat, "businessid")
 
     def test_country_code(self):
-        """The country code associated with the various addresses stored on the transaction must be
-        sent.
-
-        This information should not have to be sourced from the customer record.
-        """
         self.assertTrue(
             all(
                 all(address.get("country"))
@@ -74,16 +63,10 @@ class TestAccountAvalaraVAT(TestAccountAvataxCommon):
         )
 
     def test_currency_code(self):
-        """Transaction currency code
-
-        AvaTax needs to know the currency the document is transacted in, not the default currency
-        information.
-        """
         currency_code = self.captured_arguments["currencyCode"]
         self.assertEqual(currency_code, "USD")
 
     def test_ship_to_address(self):
-        """Ship-to address must contain country code and use the shipping partner."""
         destination_address = self.captured_arguments["addresses"]["shipTo"]
         self.assertEqual(
             destination_address,
@@ -97,6 +80,5 @@ class TestAccountAvalaraVAT(TestAccountAvataxCommon):
         )
 
     def test_ship_from_address(self):
-        """Ship-from address must include country code."""
         country_code = self.captured_arguments["addresses"]["shipFrom"]["country"]
         self.assertEqual(country_code, "US")

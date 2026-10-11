@@ -66,10 +66,6 @@ CACHES_BY_KEY = {
     "memberships": ("memberships",),
 }
 
-# every write a value of these depends on invalidates them, so an entry stored by
-# a transaction that never invalidated its cache is still right after a rollback;
-# not templates.cached_values: its rendered fragments read records whose writes
-# do not clear it
 ROLLBACK_SAFE_CACHES = frozenset(
     {
         "assets",

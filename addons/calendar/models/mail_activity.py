@@ -18,27 +18,21 @@ class MailActivity(models.Model):
     )
 
     def write(self, vals):
-        # synchronize calendar events
         res = super().write(vals)
-        # protect against loops in case of ill-managed timezones
         if (
             "date_deadline" in vals
             and not self.env.context.get("calendar_event_meeting_update")
             and self.calendar_event_id
         ):
-            date_deadline = self[0].date_deadline  # updated, hence all same value
-            # also protect against loops in case of ill-managed timezones
+            date_deadline = self[0].date_deadline
             events = self.calendar_event_id.with_context(
                 mail_activity_meeting_update=True
             )
             user_tz = self.env.context.get("tz") or "UTC"
             for event in events:
-                # allday: just apply diff between dates
                 if event.allday and event.start_date != date_deadline:
                     event.start += date_deadline - event.start_date
-                # otherwise: we have to check if day did change, based on TZ
                 elif not event.allday:
-                    # old start in user timezone
                     old_deadline_dt = event.start.replace(tzinfo=UTC).astimezone(
                         timezone(user_tz)
                     )
@@ -69,7 +63,6 @@ class MailActivity(models.Model):
         return action
 
     def _action_done(self, feedback=False, attachment_ids=None):
-        # Add feedback to the internal event 'notes', which is not synchronized with the activity's 'note'
         if feedback:
             for event in self.calendar_event_id:
                 notes = event.notes if not tools.is_html_empty(event.notes) else ""
@@ -82,10 +75,6 @@ class MailActivity(models.Model):
 
     def unlink_w_meeting(self):
         events = self.mapped("calendar_event_id")
-        # Only unlink an event no OTHER activity (outside self) still
-        # references -- calendar_event_id.activity_ids is a One2many, so more
-        # than one activity can share one event, and its ondelete='cascade'
-        # would otherwise take that other activity down as collateral damage.
         events_to_unlink = events.filtered(
             lambda event: not (event.activity_ids - self)
         )

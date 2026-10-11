@@ -21,14 +21,6 @@ class SocialYoutubeController(SocialController):
         iap_expires_in=0,
         **kw,
     ):
-        """Main entry point that receives YouTube information as part of the OAuth flow.
-        There are 2 different ways of reaching this method:
-        - Database is configured to use 'Own YouTube account'
-          This method will receive a 'code' from the YouTube OAuth flow and use it to exchange for a
-          pair of valid access_token/refresh_token
-        - Using our IAP proxy (for databases with valid enterprise subscriptions)
-          This method will directly receive the valid pair of access_token/refresh_token from the
-          IAP proxy."""
 
         if not request.env.user.has_group("social.group_social_manager"):
             return request.render(
@@ -80,7 +72,6 @@ class SocialYoutubeController(SocialController):
                         "grant_type": "authorization_code",
                         "access_type": "offline",
                         "prompt": "consent",
-                        # unclear why 'redirect_uri' is necessary, probably used as a validation by Google
                         "redirect_uri": url_join(base_url, "social_youtube/callback"),
                     },
                     timeout=5,
@@ -129,9 +120,6 @@ class SocialYoutubeController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     @http.route("/social_youtube/comment", type="http", auth="user", methods=["POST"])
     def social_youtube_comment(
@@ -159,9 +147,6 @@ class SocialYoutubeController(SocialController):
         stream_post = self._get_social_stream_post(stream_post_id, "youtube")
         return stream_post._youtube_get_comments(next_page_token, count=comments_count)
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _youtube_create_accounts(self, access_token, refresh_token, expires_in):
         youtube_channels_endpoint = url_join(

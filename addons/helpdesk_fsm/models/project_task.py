@@ -12,7 +12,6 @@ class ProjectTask(models.Model):
         readonly=True,
     )
 
-    # Project Sharing fields
     display_helpdesk_ticket_button = fields.Boolean(
         export_string_translation=False,
         compute="_compute_display_helpdesk_ticket_button",

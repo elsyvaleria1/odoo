@@ -98,7 +98,6 @@ class ProductTemplate(models.Model):
                 lambda s: s.is_product_linked
             )
             urban_piper_statuses.write({"is_product_linked": False})
-        # Enable/Disable product on Urban Piper based on pos_config_ids changes.
         products_has_config_before_write = {
             p.id: p.urbanpiper_pos_config_ids for p in self.sudo()
         }
@@ -132,9 +131,6 @@ class ProductTemplate(models.Model):
         return res
 
     def toggle_product_food_delivery_availability(self, config_id):
-        """
-        Toggle a product's availability on the UrbanPiper. (if product is synced)
-        """
         self.check_singleton()
         if not self.urban_piper_status_ids.filtered(
             lambda s: s.config_id.id == config_id

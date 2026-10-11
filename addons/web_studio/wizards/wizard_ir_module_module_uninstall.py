@@ -37,9 +37,6 @@ class WizardIrModuleModuleUninstall(models.TransientModel):
 
     @api.depends("impacted_module_ids")
     def _compute_custom_reports(self) -> None:
-        # The domain names no field of the record, so this is one number for the
-        # whole set -- counted once instead of once per wizard, which is what
-        # `test_lint E8507` objects to.
         count = self.env["ir.model.data"].search_count(
             [
                 ("module", "=", "studio_customization"),
@@ -49,7 +46,6 @@ class WizardIrModuleModuleUninstall(models.TransientModel):
         self.custom_reports = count
 
     def _get_models(self):
-        # Overridden to include customizations made with studio
         res = super()._get_models()
         if self.is_studio:
             res |= self.env["ir.model"].search(
@@ -66,7 +62,6 @@ class WizardIrModuleModuleUninstall(models.TransientModel):
 
     @api.depends("impacted_module_ids")
     def _compute_custom_fields(self) -> None:
-        # Record-independent, as above: one count for the set.
         self.custom_fields = self.env["ir.model.fields"].search_count(
             [
                 ("state", "=", "manual"),

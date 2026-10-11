@@ -189,8 +189,6 @@ class AccountBankStatementLine(models.Model):
                 statement_lines[
                     index : index + AUTO_STATEMENT_PROCESSING_BATCH_SIZE
                 ]._try_auto_reconcile_statement_lines(
-                    # A later batch can learn a partner from an earlier one's
-                    # matches; only the first would repeat the lookup above.
                     detect_partner=index > 0 or not retrieve_partner
                 )
         return statement_lines

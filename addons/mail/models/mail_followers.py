@@ -265,16 +265,11 @@ class MailFollowers(models.Model):
         return res
 
     def flush_model(self, fnames: Collection[str] | None = None) -> None:
-        # a read names the fields it reads; a flush of every dirty field comes
-        # from flush_all, inside a pipeline where a notification cannot open a
-        # savepoint, and reads nothing
         if fnames is not None:
             self._finalize_auto_subscribe()
         super().flush_model(fnames)
 
     def _finalize_auto_subscribe(self) -> None:
-        # a write's auto-subscription waits for the commit, and anything that
-        # reads or writes followers before it must see it done
         if self.env.cr.precommit.data.get(AUTO_SUBSCRIBE_QUEUE):
             self.env["mixin.mail.thread"]._message_auto_subscribe_finalize()
 

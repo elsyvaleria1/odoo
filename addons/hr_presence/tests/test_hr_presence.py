@@ -23,12 +23,6 @@ class TestPresenceState(HrPresenceCase):
         self.assertEqual(employee._hr_presence_verdict(today, working), "present")
 
     def test_an_employee_at_work_with_no_sign_of_activity_is_absent(self):
-        """The module's whole point: the unexcused absence is the one it flags.
-
-        It used to require hr_holidays' is_absent, which is true only of an
-        employee whose time off was APPROVED, so the verdict landed on exactly
-        the people who were excused.
-        """
         truant = self._make_employee("truant")
         self.assertFalse(truant.is_absent)
         self.assertIn(
@@ -39,9 +33,6 @@ class TestPresenceState(HrPresenceCase):
         self.assertEqual(truant.hr_presence_state, "absent")
 
     def test_an_approved_time_off_excuses_the_absence(self):
-        """Asserted on this module's own verdict: hr_attendance, when it is
-        installed, re-decides afterwards and marks any checked-out employee in
-        working hours absent regardless of their time off."""
         excused = self._make_employee("excused")
         self.assertEqual(
             self._verdict(excused),
@@ -77,7 +68,6 @@ class TestPresenceState(HrPresenceCase):
         self.assertEqual(self._verdict(employee), "out_of_working_hour")
 
     def test_a_flexible_employee_can_still_be_present(self):
-        """The exclusion is one-sided: evidence still counts."""
         flexible = self.env["resource.calendar"].create(
             {
                 "name": "flexible present",
@@ -116,23 +106,17 @@ class TestPresenceState(HrPresenceCase):
         self.assertEqual(connected.hr_presence_state, "present")
 
     def test_evidence_of_a_previous_day_does_not_carry_over(self):
-        """The evidence is a date, so a company the cron never reaches cannot
-        keep yesterday's answer: four booleans could, until a sweep reset them."""
         stale = self._make_employee("stale")
         stale.hr_presence_ip_date = self._today_for(stale) - timedelta(days=1)
         self.assertEqual(stale.hr_presence_state, "absent")
 
     def test_an_archived_employee_keeps_the_archive_state(self):
-        """hr sets 'archive' for an inactive employee and this module used to
-        re-decide over it, making the presence_archive icon unreachable."""
         gone = self._make_employee("gone")
         gone.action_archive()
         gone.invalidate_recordset()
         self.assertEqual(gone.hr_presence_state, "archive")
 
     def test_the_state_moves_when_the_evidence_moves(self):
-        """The compute declared neither the evidence fields nor is_absent, so a
-        sweep could write its answer without the displayed state following."""
         employee = self._make_employee("watched")
         self.assertEqual(employee.hr_presence_state, "absent")
         employee.hr_presence_ip_date = self._today_for(employee)
@@ -183,8 +167,6 @@ class TestManualOverride(HrPresenceCase):
         self.assertEqual(employee.hr_presence_state, "absent")
 
     def test_the_sweep_does_not_turn_an_automatic_present_into_a_manual_one(self):
-        """write() used to stamp the manual flag on any 'present' written,
-        including the one the sweep writes itself."""
         employee = self._make_employee("automatic")
         employee.hr_presence_ip_date = self._today_for(employee)
         self.env["hr.employee"]._check_presence()
@@ -233,8 +215,6 @@ class TestEmailEvidence(HrPresenceCase):
         self.assertFalse(writer.hr_presence_email_date)
 
     def test_an_internal_log_note_is_not_an_email(self):
-        """Counting every mail.message let one internal note mark an employee
-        present, and let every tracking message the system writes do the same."""
         noter = self._make_employee("noter")
         posted = self._post_emails(noter, 5, internal=True)
         self._assert_authored(noter, posted, 5, internal=True, message_type="comment")
@@ -243,8 +223,6 @@ class TestEmailEvidence(HrPresenceCase):
         self.assertEqual(noter.hr_presence_state, "absent")
 
     def test_a_threshold_of_zero_is_met_by_writing_nothing(self):
-        """An Integer with no default: turning the control on without setting an
-        amount asks for zero emails, and must be answered uniformly."""
         self.company.hr_config_id.hr_presence_control_email_amount = 0
         silent = self._make_employee("silent")
         self.env["hr.employee"]._check_presence()
@@ -264,8 +242,6 @@ class TestEmailEvidence(HrPresenceCase):
 @tagged("post_install", "-at_install")
 class TestDayBoundary(HrPresenceCase):
     def test_the_day_is_the_employees_own_day_not_utc(self):
-        """A UTC midnight opens the window at 18:00 of the previous local day in
-        UTC-6, so yesterday evening's work counted as today's."""
         company = self.env["res.company"].create({"name": "Mexico Co"})
         calendar = self._make_calendar(company, "America/Mexico_City")
         company.write(
@@ -309,7 +285,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
     is the only thing that answers "is this declared".
     """
 
-    # Every path _compute_hr_presence_state or _hr_presence_verdict reads.
     REQUIRED = frozenset(
         {
             "active",
@@ -331,14 +306,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
         return set(self.env.registry.field_depends[field])
 
     def _declared_by_this_module(self):
-        """What THIS module's override says, independent of the merged set.
-
-        `@api.depends` is `attrsetter("_depends", args)`, so the function object
-        on our own class carries the tuple. The registry's merged set answers a
-        different question -- is the field invalidated at all, by anyone -- and
-        a path a parent also declares keeps that one green while ours declares
-        nothing.
-        """
         from odoo.addons.hr_presence.models.hr_employee import HrEmployee
 
         return set(HrEmployee._compute_hr_presence_state._depends)
@@ -352,11 +319,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
         )
 
     def test_the_two_paths_a_parent_also_declares_are_deliberate(self):
-        """`active` comes from hr and `is_absent` from hr_holidays, so the
-        registry assertion above cannot see whether we declare them. Naming
-        them here is what keeps the redundancy a decision rather than a
-        leftover: the alternative is leaning on two other modules never
-        narrowing theirs."""
         ours = self._declared_by_this_module()
         for path in ("active", "is_absent"):
             with self.subTest(path=path):
@@ -372,9 +334,6 @@ class TestComputeDeclaresWhatItReads(HrPresenceCase):
         )
 
     def test_the_stored_mirror_is_what_makes_the_state_searchable(self):
-        """The rest of the module leans on this: hr_presence_state cannot be
-        stored (it is a function of wall-clock time), so the filters and the
-        group-by read hr_presence_state_display instead."""
         employee = self.env["hr.employee"]
         self.assertFalse(employee._fields["hr_presence_state"].store)
         self.assertTrue(employee._fields["hr_presence_state_display"].store)
@@ -437,14 +396,11 @@ class TestAbstainsWhereItHasNoInstrument(HrPresenceCase):
         self.assertEqual(self._verdict_with(employee, "absent"), "absent")
 
     def test_a_colleague_with_a_login_is_still_judged(self):
-        """The abstention must be about the instrument, not about working hours:
-        the same fixture with a user attached still reads absent."""
         employee = self._make_employee("has_login")
         self.assertTrue(employee.user_id)
         self.assertEqual(self._verdict_with(employee, "out_of_working_hour"), "absent")
 
     def test_a_manager_can_still_decide_for_them(self):
-        """Abstaining from an inference is not abstaining from an instruction."""
         employee = self._employee_without_a_login("overridden_anyway")
         employee.with_user(self.manager).action_set_present()
         self.assertEqual(employee.hr_presence_state, "present")
@@ -473,45 +429,30 @@ class TestObservationOutranksInference(HrPresenceCase):
         return employee._hr_presence_verdict(today, working_now, observed)
 
     def test_the_precedence_ladder_holds_rung_by_rung(self):
-        """The order _hr_presence_verdict documents, asserted as behaviour.
-
-        Each rung is armed and then removed, so every assertion is the next rung
-        down taking over. Reordering the branches breaks this even where the
-        individual tests still pass, because each of those fixes one rung
-        against one alternative and this fixes all of them against each other.
-        """
         employee = self._make_employee("ladder")
         today = self._today_for(employee)
         at_work = frozenset([employee.id])
         verdict = employee._hr_presence_verdict
 
-        # 1. a manager's override, over this module's own evidence and over an
-        #    observation below -- an instruction is not an inference.
         employee.write(
             {"hr_presence_manual_state": "absent", "hr_presence_manual_date": today}
         )
         employee.hr_presence_ip_date = today
         self.assertEqual(verdict(today, at_work, "present"), "absent")
 
-        # 2. this module's own evidence, over an observation that disagrees.
         employee.hr_presence_manual_state = False
         self.assertEqual(verdict(today, at_work, "absent"), "present")
 
-        # 3. the observation below, over every inference under it.
         employee.hr_presence_ip_date = False
         self.assertEqual(verdict(today, at_work, "present"), "present")
 
-        # 5. not expected at work -- checked before the inference that they are.
         self.assertEqual(verdict(today, frozenset(), "absent"), "out_of_working_hour")
 
-        # 7. nothing above applies, and they are expected at work.
         self.assertEqual(verdict(today, at_work, "absent"), "absent")
 
     def test_the_abstention_rung_sits_below_the_observation_and_above_the_inference(
         self,
     ):
-        """Rung 4, which needs two employees to show: the same inputs that make
-        a colleague Absent leave an employee with no login untouched."""
         with_login = self._make_employee("laddered_user")
         today = self._today_for(with_login)
         without = self.env["hr.employee"].create(
@@ -550,8 +491,6 @@ class TestObservationOutranksInference(HrPresenceCase):
         self.assertEqual(self._verdict_with(employee, "present"), "present")
 
     def test_an_observation_does_not_survive_a_managers_override(self):
-        """An explicit human decision outranks an observation; only inference
-        yields to it."""
         employee = self._make_employee("overruled")
         employee.with_user(self.manager).action_set_absent()
         self.assertEqual(self._verdict_with(employee, "present"), "absent")
@@ -562,9 +501,6 @@ class TestObservationOutranksInference(HrPresenceCase):
         self.assertEqual(self._verdict_with(employee, "absent"), "present")
 
     def test_an_observation_outranks_the_time_off_excuse_too(self):
-        """Somebody on approved leave who is nonetheless observed at work is
-        present -- hr_holidays has a presence_holiday_present icon for exactly
-        that, so the vocabulary already expects it."""
         employee = self._make_employee("working_anyway")
         self._approve_leave(employee)
         employee.invalidate_recordset()
@@ -577,7 +513,6 @@ class TestObservationOutranksInference(HrPresenceCase):
         self.assertEqual(self._verdict_with(employee, "present"), "present")
 
     def test_nothing_observed_still_flags_the_truant(self):
-        """The repair must not undo the module's whole point."""
         employee = self._make_employee("still_truant")
         for observed in ("out_of_working_hour", "absent", "archive", False, None):
             with self.subTest(observed=observed):
@@ -649,8 +584,6 @@ class TestDayWindowsTile(HrPresenceCase):
 
     @freeze_time("2026-04-05 03:30:00")
     def test_a_message_in_the_formerly_uncovered_hour_still_counts(self):
-        """2026-04-05 03:30 UTC is 2026-04-04 23:30 in Santiago, inside the hour
-        the `time.max` end used to leave in no window at all."""
         company = self.env["res.company"].create({"name": "Santiago Co"})
         calendar = self._make_calendar(company, "America/Santiago")
         company.write(
@@ -718,8 +651,6 @@ class TestTheMirrorIsRightFromBirth(HrPresenceCase):
         )
 
     def test_a_company_that_does_not_use_the_feature_is_left_alone(self):
-        """Same population the sweep covers, and for the same reason: a company
-        that asked for nothing gets nothing written on its behalf."""
         plain = self.env["res.company"].create({"name": "Unmirrored Co"})
         calendar = self._make_calendar(plain, "UTC")
         plain.resource_calendar_id = calendar
@@ -727,8 +658,6 @@ class TestTheMirrorIsRightFromBirth(HrPresenceCase):
         self.assertEqual(employee.hr_presence_state_display, "out_of_working_hour")
 
     def test_a_batch_is_mirrored_in_one_pass(self):
-        # With a login each: this module abstains for an employee without one,
-        # and hr reads nothing but the default for one out of contract.
         users = [self._make_user(f"u_batch{index}", self.company) for index in range(8)]
         cursor_class = type(self.env.cr)
         execute = cursor_class.execute
@@ -771,9 +700,6 @@ class TestTheMirrorIsRightFromBirth(HrPresenceCase):
         )
 
     def test_the_mirror_is_a_plain_field_not_a_stored_compute(self):
-        """hr_presence_state depends on user_id.im_status, and mail.presence
-        writes a status on every websocket heartbeat -- a computed mirror would
-        write an hr_employee row at that rate."""
         field = self.env["hr.employee"]._fields["hr_presence_state_display"]
         self.assertTrue(field.store)
         self.assertFalse(field.compute)
@@ -815,8 +741,6 @@ class TestSweep(HrPresenceCase):
         self.assertEqual(employee.hr_presence_state_display, "present")
 
     def test_no_company_keeps_a_write_only_compute_stamp(self):
-        """It guarded "is this evidence from today"; the evidence carries its
-        own date now, and ir.cron.lastcall already says when the sweep ran."""
         self.assertNotIn(
             "hr_presence_last_compute_date", self.env["res.company"]._fields
         )
@@ -838,8 +762,6 @@ class TestTheCronEntryPoint(HrPresenceCase):
         )
 
     def test_running_the_cron_as_it_is_scheduled_sweeps(self):
-        """As the cron user, whose allowed company is not the one under test --
-        the sweep used to read self.env.company and reach that company only."""
         company = self.env["res.company"].create({"name": "Cron Co"})
         calendar = self._make_calendar(company, "UTC")
         company.write(
@@ -872,7 +794,6 @@ class TestSettingsTriggerTheSweep(HrPresenceCase):
     before/after comparison there always read equal."""
 
     def _save_settings(self, company, **values):
-        """What the Settings page does: create the transient, then execute it."""
         settings = (
             self.env["res.config.settings"]
             .with_company(company)
@@ -989,9 +910,6 @@ class TestOneUserTwoEmployees(HrPresenceCase):
 
     @freeze_time("2026-04-05 03:30:00")
     def test_two_employees_of_one_user_keep_their_own_timezone(self):
-        """A resource's timezone is its own -- the calendar's before the
-        partner's -- so two employees of one user, always in different
-        companies, each read "today" where they work."""
         first_company = self.env["res.company"].create({"name": "TZ One Co"})
         second_company = self.env["res.company"].create({"name": "TZ Two Co"})
         first_cal = self._make_calendar(first_company, "UTC")
@@ -1031,8 +949,6 @@ class TestOneUserTwoEmployees(HrPresenceCase):
 @tagged("post_install", "-at_install")
 class TestActions(HrPresenceCase):
     def test_the_sms_action_reaches_the_template_this_module_ships(self):
-        """The code asked for hr_presence.sms_template_presence while the data
-        file shipped sms_template_data_hr_presence, so the template was dead."""
         template = self.env.ref("hr_presence.sms_template_presence")
         self.assertEqual(template.model_id.model, "hr.employee")
         employee = self._make_employee("texted")
@@ -1049,7 +965,6 @@ class TestActions(HrPresenceCase):
         self.assertEqual(action["context"]["default_res_ids"], employee.ids)
 
     def test_the_log_note_names_the_state_in_words(self):
-        """It used to post the technical value, e.g. 'out_of_working_hour'."""
         employee = self._make_employee("logged")
         self.env["hr.employee"]._check_presence()
         employee.with_user(self.manager).action_send_log()
@@ -1076,12 +991,6 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
     """
 
     def _presence(self, employee, remote_addr):
-        """One websocket presence heartbeat from `remote_addr`.
-
-        mail's half needs a real websocket context to find the persona, so it is
-        patched out on its DEFINING class -- patching the registry class would
-        replace the whole override chain rather than one link in it.
-        """
         from odoo.addons.mail.models.ir_websocket import IrWebsocket as MailWebsocket
 
         class FakeRequest:
@@ -1134,9 +1043,6 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
         self.assertFalse(employee.hr_presence_ip_date)
 
     def test_the_stored_mirror_follows_the_connection_at_once(self):
-        """The mirror feeds the Absent/Off-Hours filters, and the cron refreshes
-        it hourly -- so without this the list said Absent for an hour after the
-        employee walked in, while the icon in the same row said Present."""
         employee = self._make_employee("filtered")
         self.env["hr.employee"]._check_presence()
         self.assertEqual(employee.hr_presence_state_display, "absent")
@@ -1159,12 +1065,10 @@ class TestTheWebsocketRecordsTheEvidence(HrPresenceCase):
         )
 
     def test_a_stamp_lost_to_a_rollback_is_recorded_again(self):
-        """Why the cursor of its own was not worth its cost: the guard is the
-        date itself, so a lost write is retried by the next heartbeat."""
         employee = self._make_employee("retried")
         self._presence(employee, "10.0.0.1")
         self.assertTrue(employee.hr_presence_ip_date)
-        employee.hr_presence_ip_date = False  # as a rollback would leave it
+        employee.hr_presence_ip_date = False
         self._presence(employee, "10.0.0.1")
         self.assertEqual(employee.hr_presence_ip_date, self._today_for(employee))
 
@@ -1232,8 +1136,6 @@ class TestGearMenuBindings(HrPresenceCase):
         )
 
     def test_no_other_action_bound_to_the_employee_claims_a_section(self):
-        """binding_sequence cannot stand in for the marker: hr's Create User
-        and hr_skills' Resume both default to 10, the same band."""
         bound = self.env["ir.actions.server"].search(
             [("binding_model_id.model", "=", "hr.employee")]
         )
@@ -1268,9 +1170,6 @@ class TestGearMenuBindings(HrPresenceCase):
 @tagged("post_install", "-at_install")
 class TestUsersLogIsNoLongerUsed(HrPresenceCase):
     def test_this_module_adds_no_field_to_res_users_log(self):
-        """The IP evidence used to live in a table base vacuums down to one row
-        per user, which both destroyed the evidence and made login_date report a
-        presence heartbeat instead of a login."""
         self.assertNotIn("ip", self.env["res.users.log"]._fields)
 
     def test_the_login_date_survives_the_vacuum(self):

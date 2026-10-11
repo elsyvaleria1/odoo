@@ -171,8 +171,6 @@ class HrJobPost(models.Model):
             )._trigger()
 
     def _remove_post(self):
-        """Delete the post on the platform.
-        to be overridden by the specific platform module."""
         pass
 
     def _contact_point_to_vector(self):

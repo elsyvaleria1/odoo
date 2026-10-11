@@ -22,7 +22,6 @@ class MixinMailThread(models.AbstractModel):
         return recipients_data
 
     def action_telegram_connect_group(self):
-        """Open the link that mirrors a Telegram group on this record."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -34,8 +33,6 @@ class MixinMailThread(models.AbstractModel):
         }
 
     def _telegram_mirror_out(self, message) -> None:
-        """Send a message posted here to the Telegram groups mirroring this
-        thread -- not one that came from there, nor an internal note."""
         if (
             self.env.context.get("telegram_inbound")
             or message.message_type != "comment"
@@ -57,8 +54,6 @@ class MixinMailThread(models.AbstractModel):
             mirror._update(message, deleted=bool(deleted))
 
     def _notify_thread_by_telegram(self, message, recipients_data) -> None:
-        """Queue the message for every recipient whose preferences ask for it
-        on Telegram, in the one chat their notifications go to."""
         if self.env.context.get("mail_telegram_skip"):
             return
         candidates = [
@@ -76,8 +71,6 @@ class MixinMailThread(models.AbstractModel):
         )
         users = operating(self.env["res.users"])
         for recipient, kind in candidates:
-            # a channel member is tagged by partner, without its user; the bot
-            # sees only the users a Telegram account is bound to
             user = users.search(
                 [("partner_id", "=", recipient["id"]), ("share", "=", False)],
                 limit=1,
@@ -95,8 +88,6 @@ class MixinMailThread(models.AbstractModel):
             )
 
     def _telegram_notification_kind(self, recipient):
-        """What a recipient's notification is, for its Telegram preference:
-        inbox, chats, mention, channel -- or None, not for Telegram."""
         return "inbox" if recipient.get("notif") == "inbox" else None
 
     @staticmethod
@@ -131,7 +122,6 @@ class MixinMailThread(models.AbstractModel):
         return self.display_name
 
     def _telegram_render(self, message) -> tuple:
-        """The Telegram HTML of a notification, and its buttons."""
         base_url = self.get_base_url()
         author = message.author_id.name or message.email_from or "Odoo"
         title = self._telegram_title()

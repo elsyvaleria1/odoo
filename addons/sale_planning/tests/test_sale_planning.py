@@ -287,7 +287,6 @@ class TestSalePlanning(TestCommonSalePlanning):
                 "Planning should be assigned to the employee previously assigned to the slot",
             )
 
-        # Ensure no one is assigned once again since employee_wout is already planned this week
         with freeze_time("2021-07-26"):
             Slot.with_context(
                 default_start_datetime="2021-08-01 00:00:00",
@@ -443,7 +442,6 @@ class TestSalePlanning(TestCommonSalePlanning):
                 can_create = PlanningSlot.action_copy_previous_week(
                     str(start),
                     [
-                        # dummy domain
                         ("start_datetime", "=", True),
                         ("end_datetime", "=", True),
                     ],
@@ -468,7 +466,6 @@ class TestSalePlanning(TestCommonSalePlanning):
             )
 
     def test_copy_no_allocated_percentage(self):
-        """Mostly to test that the copy method does not crash when there is no allocated percentage."""
         so = self.env["sale.order"].create(
             {
                 "partner_id": self.planning_partner.id,
@@ -499,7 +496,6 @@ class TestSalePlanning(TestCommonSalePlanning):
         PlanningSlot.action_copy_previous_week(
             str(copy_start),
             [
-                # dummy domain
                 ("start_datetime", "=", True),
                 ("end_datetime", "=", True),
             ],
@@ -563,7 +559,6 @@ class TestSalePlanning(TestCommonSalePlanning):
             focus_date="2021-07-31 00:00:00",
             planning_gantt_active_sale_order_id=so.id,
         )
-        # expected result: {'open_shift_assigned': [], 'sale_line_planned': []}
         shifts_data = PlanningSlot.auto_plan_ids(
             [
                 ("start_datetime", "=", "2019-07-01 00:00:00"),
@@ -602,7 +597,6 @@ class TestSalePlanning(TestCommonSalePlanning):
                 ]
             )
 
-        # Hours to plan should be 80 as 40 hours of shift is planned
         self.assertEqual(so.planning_hours_to_plan, 80)
 
         so.action_cancel()
@@ -615,7 +609,6 @@ class TestSalePlanning(TestCommonSalePlanning):
                 ]
             )
 
-        # Assert that planning hours to plan on the sale order are still correct after auto-planning, even after cancellation
         unplanned_shift = self.env["planning.slot"].search(
             [
                 ("sale_order_id", "in", so.ids),
@@ -655,7 +648,7 @@ class TestSalePlanning(TestCommonSalePlanning):
         )
         self.employee_joseph.resource_calendar_id = (
             self.env.user.company_id.resource_calendar_id
-        )  # 40h/week
+        )
         slot = self.env["planning.slot"].create(
             {
                 "start_datetime": "2021-07-29 08:00:00",
@@ -683,7 +676,6 @@ class TestSalePlanning(TestCommonSalePlanning):
     def test_consistency_change_so_company(self):
         self.plannable_so.action_confirm()
         new_company = self.env["res.company"].create({"name": "New Company"})
-        # Check that we cannot change the company of the sales order as it is already linked to shifts that are in another company
         with self.assertRaises(UserError):
             self.plannable_so.company_id = new_company
 
@@ -748,14 +740,6 @@ class TestSalePlanning(TestCommonSalePlanning):
         )
 
     def test_recurrent_shift_date_change(self):
-        """
-        Test Steps:
-        1. Define the base date for the first shift.
-        2. Create a recurring shift that repeats 3 times.
-        3. Access the second slot from the generated recurrence.
-        4. Modify the second slot's start and end datetime, and set 'recurrence_update': 'all'.
-        5. Assert that all shifts in the recurrence have updated with new date.
-        """
         first_slot_dt = datetime(2020, 11, 22, 8)
         first_slot_end = first_slot_dt + timedelta(hours=1)
         first_slot = self.env["planning.slot"].create(

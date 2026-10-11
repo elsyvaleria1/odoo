@@ -11,7 +11,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         FolderSettings = cls.env["document.account.folder.setting"]
         cls.setup_other_company()
 
-        # Delete existing settings to test their creation except for cash journal
         existing_settings = FolderSettings.search(
             [("journal_id", "any", [("type", "in", ["bank", "general"])])]
         )
@@ -19,7 +18,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         existing_settings.unlink()
         auto_configured_folders.action_archive()
 
-        # Setup translation to test the translation
         cls.env["res.lang"]._activate_lang("fr_FR")
         journal_type_sel_by_value = (
             cls.env["ir.model.fields"]
@@ -36,7 +34,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
                 lang="fr_FR"
             ).name = fr_FR_tr
 
-        # Setup journals which will automatically create the synchronization settings
         cls.company_2 = cls.env["res.company"].search([("name", "=", "company_2")])[0]
         with cls._freeze_time("2022-08-22 09:16"):
             cls.journals = cls.env["account.journal"].create(
@@ -84,12 +81,10 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         self.assertNotEqual(self.env.lang, "fr_FR")
 
     def test_auto_creation_of_settings(self):
-        """Test the creation of the documents synchronization settings when creating journals."""
         for name, expected_folder_name, expected_folder_name_fr, expected_company in (
             ("Misc company 1", "Miscellaneous", "Divers", self.env.company),
             ("Misc company 2", "Miscellaneous", "Divers", self.company_2),
             ("Bank company 2", "Bank", "Banque", self.company_2),
-            # The name of the folder is only in English as it was created before the language activation
             ("Cash company 1", "Cash", "Cash", self.env.company),
         ):
             setting = self.settings_by_name[name]
@@ -111,7 +106,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
             )
 
     def test_no_tag_is_created_for_a_journal(self):
-        """Test that creating a journal creates no tag and tags no setting."""
         FolderSettings = self.env["document.account.folder.setting"]
         with RecordCapturer(self.env["document.tag"], []) as capture:
             journal = self.env["account.journal"].create(
@@ -123,7 +117,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         self.assertFalse(setting.tag_ids)
 
     def test_create_journal_without_base_folder(self):
-        """Test that we can still create journal without account_folder_id set on the company."""
         self.env.company.account_folder_id = False
         journal = self.env["account.journal"].create(
             {
@@ -139,7 +132,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_folder_creation(self):
-        """Test that a folder is created if there are no settings for the journal type nor existing suitable folder."""
         FolderSettings = self.env["document.account.folder.setting"]
         self.misc_setting.unlink()
         (self.misc_folder | self.unused_folder_with_misc_name).unlink()
@@ -156,7 +148,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_folder_creation_existing_folder_with_wrong_company(self):
-        """Test that a folder with the wrong company is not used when creating journals."""
         FolderSettings = self.env["document.account.folder.setting"]
         self.misc_setting.unlink()
         self.misc_folder.unlink()
@@ -174,7 +165,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_folder_reuse_from_settings(self):
-        """Test the reuse of folder from existing settings with the same journal type (and company)."""
         FolderSettings = self.env["document.account.folder.setting"]
         self.misc_setting.folder_id.name = "renamed"
 
@@ -190,7 +180,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
             self.misc_setting.folder_id,
             "The folder of the configuration with the same journal type is used (same comapny).",
         )
-        # If multiple configurations for the journal type exist we take the folder of the more recent one
         replaced_folder = self.env["document.document"].create(
             {
                 "name": "replaced",
@@ -218,12 +207,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_folder_reuse_setting_of_another_company(self):
-        """Test the reuse when the setting's company is not the one of its journal.
-
-        ``company_id`` on a setting created by hand defaults to the active
-        company, which may differ from the company of its journal. The journals
-        of a type in a company must share a folder all the same.
-        """
         FolderSettings = self.env["document.account.folder.setting"]
         self.misc_setting.sudo().company_id = self.company_2
 
@@ -238,7 +221,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_folder_reuse_no_setting(self):
-        """Test that an existing folder with the right name is used if there are no settings for the journal type."""
         FolderSettings = self.env["document.account.folder.setting"]
         self.misc_setting.unlink()
         self.misc_folder.unlink()
@@ -258,8 +240,6 @@ class TestJournalSyncAutoConfig(DocumentsAccountTestCommon):
         )
 
     def test_post_init(self):
-        """Simulate the creation of the documents synchronization settings in the post init of documents_account."""
-        # Remove all settings and related folders as if we were installing documents_account
         FolderSettings = self.env["document.account.folder.setting"]
         settings = FolderSettings.search([])
         folders = settings.folder_id

@@ -7,7 +7,6 @@ class UtmMedium(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_linked_social_accounts(self) -> None:
-        """Already handled by ondelete='restrict', but let's show a nice error message"""
         linked_social_accounts = (
             self.env["social.account"]
             .sudo()

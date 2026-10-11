@@ -127,8 +127,6 @@ class TestBackendDifferential(TransactionCase):
 
     def _diff(self, classes, script, msg=""):
         registry = _isolated_registry(*classes)
-        # fold case the way this database does, not the way Python does:
-        # a C-locale cluster lowers ASCII only, and the tiers must agree on that
         registry.ilike_normalizer = self.env.registry.get_ilike_normalizer(self.env)
         with model_test_env(registry=registry) as env_a:
             obs_a = script(env_a)
@@ -781,9 +779,6 @@ class TestBackendDifferential(TransactionCase):
         self._diff((TestOrmCategory,), script)
 
     def test_fields_get_agrees_across_tiers(self):
-        # the in-memory tier builds these models from test_orm's classes alone;
-        # a field another installed module adds or extends (test_inherit_depends
-        # gives test_orm.foo a `published`) exists on one side only
         def script(env):
             described = {}
             for model_name in ("test_orm.foo", "test_orm.bar", "test_orm.category"):
@@ -972,18 +967,15 @@ class TestBackendDifferential(TransactionCase):
                     Related.search([("foo_float_id", ">", 1)]).mapped("name"),
                 ),
             }
-            # writing through a related writes the target
             foo.bar_name = "renamed"
             related.related_related_name = "r2"
             env.flush_all()
             env.invalidate_all()
             observed["written through"] = (bar.name, related.name, foo.bar_name)
-            # moving the many2one moves the related along
             foo.bar_id = other
             env.flush_all()
             env.invalidate_all()
             observed["moved"] = (foo.bar_name, foo.bar_alias == other)
-            # a change on the target reaches every reader
             other.name = "other renamed"
             observed["target renamed"] = (foo.bar_name, foo.bar_alias.name)
             env.flush_all()
@@ -1113,7 +1105,6 @@ class TestBackendDifferential(TransactionCase):
         self._diff((CalendarTest,), script, "date boundaries")
 
     def test_temporal_number_parts_tell_an_empty_value_from_zero(self):
-        # midnight reads hour 0 and a Sunday day_of_week 0, which equal False
         def script(env):
             moments = env["test_orm.autovacuumed"].create(
                 [
@@ -1171,8 +1162,6 @@ class TestBackendDifferential(TransactionCase):
                 self.assertEqual(found, observed[key.removesuffix(" filtered")], key)
 
     def test_temporal_property_foreign_values_agree_across_tiers(self):
-        # another parent writes a char under the name a date and a datetime
-        # property use: no tier may fail the cast or count it as a date
         values = ["hello", "now", "2024-02-30", "2024-03-05 23:59:60", "1 March 2024"]
 
         def script(env):
@@ -1285,7 +1274,6 @@ class TestBackendDifferential(TransactionCase):
         with model_test_env(registry=registry) as env_a:
             with self.assertRaises(InMemorySqlNotSupported):
                 env_a.cr.rollback()
-            # a savepoint snapshots the dict storage; both backends forget "temp"
             sp_a = env_a.cr.savepoint()
             env_a["test_orm.foo"].create({"name": "temp"})
             sp_a.close(rollback=True)
@@ -1465,7 +1453,6 @@ class TestBackendDifferential(TransactionCase):
                         rows = NotImplemented
                     else:
                         if spec == "attributes.peer":
-                            # a many2one property groups by the bare id
                             rows = [
                                 (Discussion.browse(key).name if key else key, *rest)
                                 for key, *rest in rows
@@ -1501,7 +1488,6 @@ class TestBackendDifferential(TransactionCase):
                     [("attributes.at.hour_number", ">", 12)],
                 ]
             ):
-                # the label carries no id: the tiers number records apart
                 observed[f"domain {index}"] = Message.search([*mine, *domain]).mapped(
                     "body"
                 )

@@ -49,12 +49,6 @@ class TestHrVersion(TestHrCommon):
             )
 
     def test_wage_cannot_be_negative(self):
-        """A negative wage is a typo, never a fact.
-
-        The check lives in the database rather than in an `@api.constrains`
-        because `wage` is written from the form, from an import and from
-        `get_values_from_contract_template`, and only a CHECK covers all three.
-        """
         employee = self.env["hr.employee"].create(
             {"name": "Payroll Typo", "date_version": "2020-01-01"}
         )
@@ -69,7 +63,6 @@ class TestHrVersion(TestHrCommon):
             employee.write({"wage": -1.0})
 
     def test_a_contract_template_may_have_no_wage_at_all(self):
-        """NULL passes the check, which is what employee-less templates need."""
         template = self.env["hr.version"].create(
             {"name": "Template with no wage", "date_version": "2020-01-01"}
         )
@@ -77,18 +70,11 @@ class TestHrVersion(TestHrCommon):
         self.assertFalse(template.wage)
 
     def _running_contract_domain(self):
-        """The domain the Running Contract filter actually ships."""
         arch = etree.fromstring(self.env.ref("hr.hr_version_search_view").arch)
         node = arch.xpath("//filter[@name='running_contract']")[0]
         return safe_eval(node.get("domain"))
 
     def test_running_contract_filter_ignores_a_version_without_a_start_date(self):
-        """A version with no start date is not a running contract.
-
-        `contract_date_start = False` means nobody has said when it begins, and
-        counting it as running puts draft paperwork in the same list as people
-        actually under contract.
-        """
         running = self.env["hr.employee"].create(
             {
                 "name": "Under Contract",

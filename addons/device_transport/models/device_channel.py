@@ -206,19 +206,9 @@ class DeviceChannel(models.Model):
         )
 
     def _hold_inbound_authority(self) -> None:
-        # Missing provisioning is refused and recorded by the verdict itself.
-        # The enrollment lock still prevents provisioning during that decision.
         self._lock_admission_authority()
 
     def _lock_admission_authority(self) -> bool:
-        """Hold authority stable until this synchronous transaction ends.
-
-        Shared locks let admitted requests coexist. Authority changes wait for
-        them; a repeatable-read snapshot older than a committed change raises a
-        serialization failure for the request retry layer. Lock the enrollment
-        before its credential/principal and the channel last: credential changes
-        can recompute channel fingerprints in that same dependency order.
-        """
         self.check_singleton()
         enrollment = self.enrollment_id
         with _debug.perf(
@@ -279,7 +269,6 @@ class DeviceChannel(models.Model):
                 reason="inactive_identity",
             )
             return False, 403, "Channel enrollment is not active", "inactive_enrollment"
-        # New scoped channels never inherit legacy audit/off exceptions.
         return super()._decide_inbound_request(
             headers,
             body=body,

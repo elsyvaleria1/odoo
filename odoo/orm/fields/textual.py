@@ -64,8 +64,6 @@ def _markup_from_cache(
 def _term_translated_from_cache(
     field: BaseString, value: typing.Any, record: BaseModel
 ) -> typing.Any:
-    # the memo already holds the value; only a term the proxy has not got
-    # (KeyError) needs the cache-miss path
     try:
         return field.convert_to_record(value, record)
     except KeyError:
@@ -517,7 +515,7 @@ class Char(BaseString):
         )
 
     @property
-    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+    def _column_type(self) -> tuple[str, str]:
         return ("varchar", pg_varchar(self.size))
 
     @override
@@ -527,8 +525,6 @@ class Char(BaseString):
 
     @override
     def _comparand_to_column(self, value: typing.Any, model: BaseModel) -> typing.Any:
-        # a stored value is cut to the size, a comparand is not: a longer one
-        # matches no row instead of the rows holding its prefix
         if self.size is None or value is None or value is False:
             return super()._comparand_to_column(value, model)
         return value.decode() if isinstance(value, bytes) else str(value)

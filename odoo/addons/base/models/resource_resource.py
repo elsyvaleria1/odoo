@@ -54,7 +54,6 @@ class ResourceResource(models.Model):
     _inherit = ["mixin.color", "mixin.image"]
     _description = "Resources"
     _order = "name"
-    # a thing's vendor is one of its company's
     _check_company_auto = True
 
     company_id = fields.Many2one(
@@ -275,9 +274,6 @@ class ResourceResource(models.Model):
     place_built = fields.Char(
         help="The place within that country: a plant, a workshop.",
     )
-    # a person's origin is a private fact of their party, read as the reader:
-    # base's guard on the private facet decides who sees it, and nothing of it
-    # is copied here
     date_origin = fields.Date(
         compute="_compute_origin",
         inverse="_inverse_origin",
@@ -321,7 +317,6 @@ class ResourceResource(models.Model):
         string="Meters",
     )
 
-    # what a thing is and where it came from, on the resource it is
     kind_id = fields.Many2one(
         comodel_name="resource.kind",
         index="btree_not_null",
@@ -350,7 +345,6 @@ class ResourceResource(models.Model):
         string="Location",
         help="Where the resource normally is, when no inventory location tracks it.",
     )
-    # a thing's odometer: the newest reading of its odometer meter
     odometer = fields.Float(
         compute="_compute_odometer",
         inverse="_inverse_odometer",
@@ -371,8 +365,6 @@ class ResourceResource(models.Model):
         store=True,
     )
 
-    # read and searched through the identifier rows; a kind model that keeps
-    # one as a column of its own declares it again
     license_plate = ResourceIdentifier(
         identifier_code="plate",
         store=False,
@@ -455,13 +447,11 @@ class ResourceResource(models.Model):
 
     @api.constrains("company_id")
     def _check_links_companies(self):
-        # a resource's company holds for every link it is part of: what create
-        # would refuse, a company change may not leave behind
         for model, ends in (
             ("resource.relation", ("parent_id", "member_id")),
             ("resource.assignment", ("resource_id", "assignee_id")),
         ):
-            self.env[model].sudo().with_context(active_test=False).search(  # noqa: E8507 - one query per link model, two of them
+            self.env[model].sudo().with_context(active_test=False).search(
                 Domain.OR(Domain(end, "in", self.ids) for end in ends)
             )._check_company()
 
@@ -485,7 +475,7 @@ class ResourceResource(models.Model):
                     resource.type != resource_type
                 )
             )
-            if incompatible and owner.search_count(  # noqa: E8507  one query per host model, not per resource
+            if incompatible and owner.search_count(
                 [("resource_id", "in", incompatible.ids)], limit=1
             ):
                 incompatible._check_host_type(resource_type)
@@ -521,7 +511,6 @@ class ResourceResource(models.Model):
         for vals in vals_list:
             if not vals.get("kind_id"):
                 continue
-            # a kind names what a thing is
             vals["type"] = "material"
             vals.setdefault("state", ASSET_INITIAL_STATE)
             if self._around_the_clock(vals):
@@ -553,8 +542,6 @@ class ResourceResource(models.Model):
             )
         }
         for values in vals_list:
-            # a falsy zone handed in, such as a user's unset tz, means "seed
-            # it": left in the values it would skip the precompute and insert NULL
             if "tz" in values and not values["tz"]:
                 del values["tz"]
             if values.get("partner_id") in named_party_ids:
@@ -605,7 +592,6 @@ class ResourceResource(models.Model):
             self.check_access("write")
             self.env["resource.relation"]._lock_graph(self.ids)
             if "calendar_id" not in vals and vals["company_id"]:
-                # a schedule of another company does not move with it
                 company = self.env["res.company"].browse(vals["company_id"])
                 foreign = self.filtered(
                     lambda resource: (
@@ -638,8 +624,6 @@ class ResourceResource(models.Model):
                 & Domain("date_end", ">", fields.Datetime.now())
             )
         if "capacity" in vals:
-            # A share is a share of the capacity: the open claims are
-            # re-projected, history keeps the share it was booked with.
             reservations = (
                 self.env["resource.reservation"]
                 .sudo()
@@ -743,8 +727,6 @@ class ResourceResource(models.Model):
 
     @api.depends("calendar_id", "company_id", "partner_id", "user_id")
     def _compute_tz(self) -> None:
-        # a zone once set is kept: the depends only let a new record's form
-        # seed it from what it already knows
         for resource in self:
             resource.tz = (
                 resource.tz
@@ -840,8 +822,6 @@ class ResourceResource(models.Model):
         "partner_id.child_ids.country_of_birth",
         "partner_id.child_ids.place_of_birth",
     )
-    # a person's origin is read through their private facet as the reader, so
-    # another reader in the same transaction computes their own
     @api.depends_context("uid")
     def _compute_origin(self) -> None:
         facets = self.filtered(
@@ -879,7 +859,6 @@ class ResourceResource(models.Model):
             )
 
     def _get_domain_by_holder(self, thing_domain, facet_domain):
-        # a thing answers for itself, a person through their party's facet
         return (Domain("type", "!=", "human") & thing_domain) | (
             Domain("type", "=", "human")
             & Domain(
@@ -1016,9 +995,6 @@ class ResourceResource(models.Model):
             else:
                 resource.default_role_id = resource.role_ids[:1]
 
-    # A party a person's resource is bound to may back a user: changing its
-    # name or address under the caller's rights keeps the partner's own checks
-    # (a login's address is its owner's or an administrator's to change).
     def _inverse_email(self) -> None:
         for resource in self.filtered("partner_id"):
             if resource.partner_id.sudo().email != resource.email:
@@ -1058,7 +1034,6 @@ class ResourceResource(models.Model):
             )
 
     def _archive_if_unused(self) -> None:
-        """Release a provisioned slot without retiring another representation."""
         if not self:
             return
         self.check_access("write")
@@ -1069,7 +1044,6 @@ class ResourceResource(models.Model):
             unused.action_archive()
 
     def _end_custody(self, at=None) -> None:
-        # What it held, whoever held it, ends: archiving and disposal call this.
         self.env["resource.assignment"]._get_custody_assignments(
             self, when="open", archived=True
         )._end(at)
@@ -1134,7 +1108,6 @@ class ResourceResource(models.Model):
     @api.model
     @tools.ormcache("owns", cache="stable")
     def _get_host_model_names(self, owns=None) -> tuple[str, ...]:
-        """Declared business representations, deduplicated by their table-inheritance root."""
         return tuple(
             sorted(
                 {
@@ -1155,14 +1128,13 @@ class ResourceResource(models.Model):
         return self._get_host_model_names(True)
 
     def _get_in_use_resource_ids(self) -> set[int]:
-        """Integrity lookup only: hosts and current/planned operational use."""
         used = set(self._get_owners())
         for name in self._get_host_model_names(False):
             hosts = (
                 self.env[name]
                 .sudo()
                 .with_context(active_test=False)
-                .search(  # noqa: E8507  one query per host model, not per resource
+                .search(
                     [
                         ("resource_id", "in", self.ids),
                     ]
@@ -1209,11 +1181,6 @@ class ResourceResource(models.Model):
         return used.intersection(self.ids)
 
     def _get_reservation_status(self, at=None):
-        """Return occupancy facts, not capacity headroom or working-calendar availability.
-
-        Resource visibility authorizes a bounded summary of private claims; no
-        booking names, owners or origin records are returned.
-        """
         if not self:
             return {}
         self.check_access("read")
@@ -1280,15 +1247,13 @@ class ResourceResource(models.Model):
         return resource_calendars_within_period
 
     def _get_owners(self) -> dict[int, models.BaseModel]:
-        """The record each resource is, by resource id: the one `mixin.resource`
-        owner whose `resource_id` names it. A resource nobody is has no entry."""
         owners: dict[int, models.BaseModel] = {}
         for model_name in self._get_owner_model_names():
             records = (
                 self.env[model_name]
                 .sudo()
                 .with_context(active_test=False)
-                .search([("resource_id", "in", self.ids)])  # noqa: E8507  one query per owner model, not per resource
+                .search([("resource_id", "in", self.ids)])
             )
             for record in records:
                 owners.setdefault(record.resource_id.id, record)
@@ -1297,13 +1262,6 @@ class ResourceResource(models.Model):
     def _get_slot_intervals_batch(
         self, start: datetime, stop: datetime, *, reservations_to_ignore=None
     ) -> SlotIntervals:
-        """Snapshot scheduled exclusive-slot inputs for these resources.
-
-        Capacity and flexible schedules use their own scheduling policies; a
-        fully flexible schedule is available at any hour. Occupancy includes
-        every positive scheduled claim, independently of its enforcement mode,
-        and exposes only interval boundaries, never private claim records.
-        """
         self.check_access("read")
         start, stop = localized(start).astimezone(UTC), localized(stop).astimezone(UTC)
         if stop <= start:
@@ -1352,7 +1310,6 @@ class ResourceResource(models.Model):
         reservations_to_ignore=None,
         snapshot: SlotIntervals | None = None,
     ) -> tuple[Intervals, Intervals]:
-        """Get scheduled working time and anonymous exclusive occupancy."""
         self.check_singleton()
         self.check_access("read")
         start, stop = localized(start).astimezone(UTC), localized(stop).astimezone(UTC)
@@ -1726,7 +1683,6 @@ class ResourceResource(models.Model):
         return work_hours
 
     def _lock_for_integrity(self) -> None:
-        """Serialize invariants on these identities across repeatable-read writers."""
         if self:
             self.env.cr.execute(
                 SQL(
@@ -1744,7 +1700,6 @@ class ResourceResource(models.Model):
             )
 
     def _get_local_date(self, moment: datetime | None = None) -> date:
-        """Calendar date in the resource's working timezone."""
         self.check_singleton()
         if moment is not None and moment.tzinfo is not None:
             moment = moment.astimezone(UTC).replace(tzinfo=None)
@@ -1753,7 +1708,6 @@ class ResourceResource(models.Model):
         )
 
     def _get_local_day_bounds(self, day: date) -> tuple[datetime, datetime]:
-        """Half-open UTC bounds of a working-calendar day, including DST."""
         self.check_singleton()
         zone = ZoneInfo(self.tz or "UTC")
         start = datetime.combine(day, time(), tzinfo=zone)
@@ -1767,10 +1721,9 @@ class ResourceResource(models.Model):
         pass
 
     def _announce_custody_change(self, role, before, after, planned=False) -> None:
-        """Hook: this thing's `role` passed from `before` to `after`."""
+        pass
 
     def _get_vals_to_write(self, vals: ValuesType) -> ValuesType:
-        """Filter unchanged related inverses before capability-specific guards."""
         if self.env.context.get("check_idempotence") and len(self) == 1:
             return changed_vals(self, vals)
         return vals
@@ -1805,7 +1758,6 @@ class ResourceResource(models.Model):
                     }
                 )
         if new_vals_list:
-            # The rivals are ended above; the create hook has nothing to supersede.
             Assignment.sudo().with_context(**{CUSTODY_SYNC: True}).create(new_vals_list)
         changed = self.browse(changes)
         changed._on_custody_changed(role, changes)
@@ -1976,7 +1928,6 @@ class ResourceResource(models.Model):
                 self.env._("A resource of a kind is a thing, not a person.")
             )
 
-    # odometer
 
     @api.depends("meter_ids.kind")
     def _compute_odometer_meter_id(self) -> None:
@@ -2025,9 +1976,6 @@ class ResourceResource(models.Model):
         return meter
 
     def _check_odometer_uom_is_not_reinterpreted(self, new_uom_id) -> None:
-        """Every reading the meter holds is a number in the asset's unit, and
-        nothing stores which unit it was taken in. Changing the unit therefore
-        restates the whole history rather than converting it."""
         changing = self.filtered(
             lambda resource: resource.odometer_uom_id.id != new_uom_id
         )
@@ -2047,7 +1995,6 @@ class ResourceResource(models.Model):
                 )
             )
 
-    # identifiers
 
     @api.model
     def _get_identifier_field_names(self) -> tuple[str, ...]:
@@ -2138,7 +2085,6 @@ class ResourceResource(models.Model):
 
         return Domain.custom(to_sql=to_sql)
 
-    # composition
 
     @api.depends(
         "membership_ids.parent_id",
@@ -2216,8 +2162,6 @@ class ResourceResource(models.Model):
         if parent == self:
             raise ValidationError(self.env._("An asset cannot be a part of itself."))
         Relation = self.env["resource.relation"]
-        # Only identities leave this integrity lookup. Authorization remains on
-        # the resources themselves before the scoped membership mutation.
         old_parents = (
             Relation.sudo()
             .search(
@@ -2226,8 +2170,6 @@ class ResourceResource(models.Model):
             .parent_id
         )
         if not parent and old_parents and not old_parents.filtered("kind_id"):
-            # Clearing an empty thing parent does not detach a resource that is
-            # not a thing. That membership is edited through the relation.
             return
         self.browse(old_parents.ids).check_access("write")
         with self.env.cr.savepoint():
@@ -2255,7 +2197,6 @@ class ResourceResource(models.Model):
 
     @api.model
     def _asset_projection_sql(self, resource_id):
-        """`resource_id` where it names a thing, NULL otherwise."""
         things = self.with_context(active_test=False)._search(
             [("kind_id", "!=", False)]
         )
@@ -2265,13 +2206,10 @@ class ResourceResource(models.Model):
             things.subselect(),
         )
 
-    # kinds
 
     @api.model
     @tools.ormcache(cache="stable")
     def _get_kind_model_names(self) -> dict[str, str]:
-        """The model that extends a resource of each kind, by kind code: a
-        model sharing its resource's id that names the kind it extends."""
         return {
             model._resource_kind_code: name
             for name, model in self.env.registry.items()
@@ -2285,20 +2223,14 @@ class ResourceResource(models.Model):
         return self._get_kind_model_names().get(kind.code, self._name)
 
     def _get_kind_models(self) -> dict[int, str]:
-        """The model each resource is extended by, by id: its kind's, where a
-        row of it exists."""
         found = {}
         for model_name in set(self._get_kind_model_names().values()):
             extended = self.env[model_name].with_context(active_test=False)
-            for record_id in extended.search([("id", "in", self.ids)]).ids:  # noqa: E8507  one query per kind model, two of them
+            for record_id in extended.search([("id", "in", self.ids)]).ids:
                 found[record_id] = model_name
         return {record_id: found.get(record_id, self._name) for record_id in self.ids}
 
     def _around_the_clock(self, vals):
-        """The fully flexible schedule: an unscheduled kind is available around
-        the clock, and a shared (company-less) thing of a scheduled kind cannot
-        take one company's hours -- every reader would then see a company
-        crossover."""
         if "calendar_id" in vals:
             return False
         kind = self.env["resource.kind"].browse(vals.get("kind_id"))
@@ -2331,9 +2263,6 @@ class ResourceResource(models.Model):
         return self.browse(created[index] for index in range(len(vals_list)))
 
     def _write_in_kind_models(self, vals) -> bool:
-        # what create dispatches to a kind's model, a write of the kind's own
-        # fields reaches there too: the kind model delegates the resource's
-        # fields back here
         by_model = defaultdict(list)
         for record_id, model_name in self._get_kind_models().items():
             by_model[model_name].append(record_id)
@@ -2355,8 +2284,6 @@ class ResourceResource(models.Model):
         return True
 
     def _notify_kind_models(self, vals) -> None:
-        """What the model extending a thing's kind keeps in step with its
-        resource hears every write of the resource."""
         by_model = defaultdict(list)
         for resource in self:
             model_name = self._get_model_for_kind(resource.kind_id)
@@ -2366,7 +2293,6 @@ class ResourceResource(models.Model):
             self.env[model_name].browse(ids)._on_resource_written(vals)
 
     def _on_kind_changed(self, vals) -> None:
-        # the kind model creating these checks them once it holds its identifiers
         if not self.env.context.get(KIND_MODEL_CREATING):
             self._check_required_identifiers()
 
@@ -2388,10 +2314,6 @@ class ResourceResource(models.Model):
                 )
 
     def _retype(self, kind) -> Self:
-        """Deliberately make these resources a kind of another model: the row
-        of the model they leave is deleted, and a row of the model their kind
-        names is added under the same id. A field only the left model declares
-        does not travel."""
         target = self._get_model_for_kind(kind)
         by_source = defaultdict(list)
         for record_id, model_name in self._get_kind_models().items():
@@ -2423,7 +2345,6 @@ class ResourceResource(models.Model):
         self.with_context(active_test=False).write({"kind_id": kind.id})
         return self.browse(self.ids)
 
-    # custody
 
     def _compute_operator_history_count(self) -> None:
         counts = dict(

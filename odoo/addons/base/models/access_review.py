@@ -31,7 +31,6 @@ REVIEW_KINDS = [
     ("timed_grants", "Grants ending soon"),
     ("break_glass", "Break-glass sessions"),
 ]
-# what each kind reviews, and how its subject and group are read
 KIND_MODELS = {
     "memberships": "res.users.grant",
     "eligibilities": "res.users.eligibility",
@@ -40,7 +39,6 @@ KIND_MODELS = {
     "timed_grants": "res.users.grant",
     "break_glass": "res.users.eligibility",
 }
-# set while a decision is written: the decision fields are the verb's alone
 _DECIDING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "access_review_deciding", default=False
 )
@@ -59,7 +57,6 @@ DECISION_FIELDS = frozenset(
         "campaign_id",
     }
 )
-# a pending item at the deadline, by kind: what the recommended default does
 REVOKED_AT_DEADLINE = frozenset({"eligibilities", "links", "exceptions"})
 
 
@@ -119,8 +116,6 @@ class MixinAccessReviewable(models.AbstractModel):
             ]
 
     def _search_review_revoker_ids(self, operator: str, value: Any) -> Domain:
-        # read when the query is built, as a bound set: a review's revocation
-        # is applied in the same transaction it is decided in
         if operator not in ("in", "="):
             return NotImplemented
         user_ids = [value] if isinstance(value, int) else list(value)
@@ -128,7 +123,6 @@ class MixinAccessReviewable(models.AbstractModel):
         return Domain("id", "in", ids) if ids else Domain.FALSE
 
     def _review_revoke(self, reason: str) -> None:
-        # what revoking this access means for its model
         raise NotImplementedError(self._name)
 
 
@@ -156,8 +150,6 @@ class AccessLink(models.Model):
         self.action_revoke(reason)
 
     def _review_issuer(self) -> models.BaseModel:
-        # who shared the link and knows why: the person who issued it; a
-        # module extends it for links the server carried over
         self.check_singleton()
         issuer = self.create_uid
         return issuer if issuer and not issuer._is_superuser() else issuer.browse()
@@ -379,8 +371,6 @@ class AccessReviewCampaign(models.Model):
         else:
             admin = group.admin_group_id or self.env.ref("base.group_erp_manager")
             reviewers = admin.all_user_ids
-        # an independent review: who gave the access does not certify it,
-        # unless the campaign asks precisely the issuers
         excluded = subject
         if self.reviewer != "issuer" and "granted_by_id" in target._fields:
             excluded |= target.granted_by_id
@@ -578,8 +568,6 @@ class AccessReviewItem(models.Model):
         )
 
     def _apply(self) -> None:
-        # the revocation runs under a privilege whose rows reach exactly the
-        # access its reviewers decided to revoke, and not yet applied
         reason = self.env._("Revoked by an access review")
         for res_model, items in self.grouped("res_model").items():
             targets = (
@@ -624,8 +612,6 @@ class AccessReviewCampaignBreakGlass(models.Model):
 
     @api.model
     def _review_break_glass(self, grants: models.BaseModel) -> None:
-        # a closed break-glass session is reviewed by an access administrator
-        # other than its holder: the running break-glass review takes it
         campaigns = self.env["ir.access"]._access_evaluator(self._name)
         campaign = campaigns.search(
             [("kind", "=", "break_glass"), ("state", "=", "running")], limit=1

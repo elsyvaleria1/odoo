@@ -67,8 +67,6 @@ class DeviceDeviceHttp(models.Model):
 
         _logger.info("HTTP request to %s for device %s", url, self.name)
         http_method = self.config_id.http_method or "GET"
-        # The connection carries the secret (basic, digest, bearer, API key),
-        # the service the timeouts, the breaker and the budget.
         try:
             response = connection._get_api_client().request(
                 http_method, url, headers=headers, raw=True

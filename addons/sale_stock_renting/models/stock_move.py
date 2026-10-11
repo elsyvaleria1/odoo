@@ -25,12 +25,6 @@ class StockMove(models.Model):
         return super()._get_picking_destination()
 
     def _get_domain_picking_for_assignation(self):
-        """This modifies the picking search domain for rental moves.
-
-        Modify the picking search domain to make sure that rental moves are on the
-        same picking as sale moves in case of hybrid rental orders, while still making
-        sure that modifying the SO line quantity is propagated to stock moves correctly.
-        """
         domain = super()._get_domain_picking_for_assignation()
         locations = self._get_locations_rental_picking_compatible()
         if locations:
@@ -74,7 +68,6 @@ class StockMove(models.Model):
         return distinct_fields
 
     def _action_assign(self):
-        """Assign the trace_id present on the SO line to the stock move lines for rental orders."""
         super()._action_assign()
 
         moves_by_product = self.grouped("product_id")
@@ -109,7 +102,6 @@ class StockMove(models.Model):
                         line.trace_id = lot
 
     def _action_done(self, cancel_backorder=False):
-        """Correctly set the qty_transferred and qty_returned of rental order lines when using pickings."""
         res = super()._action_done(cancel_backorder=cancel_backorder)
         if self.env["res.groups"]._is_feature_enabled(
             "sale_stock_renting.group_rental_stock_picking"
@@ -132,8 +124,6 @@ class StockMove(models.Model):
                         move.sale_line_id._create_delay_line(current_qty_returned)
                     move.sale_line_id.qty_returned += current_qty_returned
                 if move.picked and move.sale_line_id.tracking == "serial":
-                    # Synchronize the reserved lots with the picked lots.
-                    # Ensure reserved lots include all picked lots and any extra reserved lots.
                     sol = move.sale_line_id
                     qty_to_keep_reserved = max(
                         int(sol.product_qty),

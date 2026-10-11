@@ -88,9 +88,6 @@ class _RequestSessionMixin(RequestState):
             else:
                 session = root.session_store.get(sid)
                 if session.is_new:
-                    # The anonymous identity is the cookie, in memory only, so
-                    # the tokens a page carries stay valid across requests;
-                    # its first write re-keys it (SessionStore.save).
                     session = root.session_store.new_unstored(sid)
             span.set(found=not session.is_new)
 
@@ -102,9 +99,6 @@ class _RequestSessionMixin(RequestState):
             session.context["lang"] = self.get_default_lang()
         if session.pop("_rotate_pending", None):
             session.should_rotate = True
-        # A stored session keeps the baseline get() read, so a default added
-        # here is a change to persist; a baseline that already held it would
-        # make a merging save drop it as though a peer had deleted it.
         if session.is_new:
             session.mark_clean()
         return session
@@ -113,12 +107,12 @@ class _RequestSessionMixin(RequestState):
         root = self.app
 
         dbname = None
-        source = "none"  # debuglog
+        source = "none"
         host = self.httprequest.environ.get("HTTP_HOST", "")
         header_dbname = self.httprequest.headers.get("X-Odoo-Database")
         if session.db and root.filter_dbs_served([session.db], host):
             dbname = session.db
-            source = "session"  # debuglog
+            source = "session"
             if header_dbname and header_dbname != dbname:
                 _debug.logic(
                     "http.session.db_conflict",
@@ -141,12 +135,12 @@ class _RequestSessionMixin(RequestState):
             )
             if header_served:
                 dbname = header_dbname
-                source = "header"  # debuglog
+                source = "header"
         else:
             all_dbs = root.get_dbs_served(host)
             if len(all_dbs) == 1:
                 dbname = all_dbs[0]
-                source = "single"  # debuglog
+                source = "single"
             _debug.logic("http.session.db_inferred", candidates=len(all_dbs))
 
         if session.db != dbname:
@@ -192,14 +186,11 @@ class _RequestSessionMixin(RequestState):
             return
         current = self.session
         if self._session_written_in_transaction:
-            # An explicit-environment save persisted the session during the
-            # attempt (a rotation may have replaced its file): the disk copy is
-            # the identity the cookie must carry, the snapshot's file may be gone.
             restored = self._load_session(current.sid)
-            source = "disk"  # debuglog
+            source = "disk"
         else:
             restored = snapshot.snapshot()
-            source = "snapshot"  # debuglog
+            source = "snapshot"
         restored.can_save &= current.can_save
         self.session = restored
         self._session_save_pending = False
@@ -229,8 +220,6 @@ class _RequestSessionMixin(RequestState):
             self._update_response_from_future(self._session_response)
 
     def _get_session_max_age(self, env: odoo.api.Environment | None) -> int:
-        # An error response is built after `_serve_db` released the cursor, so the
-        # budget read while the environment was live is the one the cookie keeps.
         if env is not None and not env.cr.closed:
             self._session_max_age = get_session_max_inactivity(env)
         elif self._session_max_age is None:
@@ -324,8 +313,6 @@ class _RequestSessionMixin(RequestState):
 
         budget = self._get_session_max_age(env)
         max_age = budget if sess.uid else SESSION_LIFETIME
-        # The vacuum reaps every session idle past `budget`, an anonymous one
-        # included, so liveness is judged against the tighter of the two.
         stale = (
             sess.mtime is not None
             and time.time() - sess.mtime > min(max_age, budget) / 2
@@ -335,29 +322,29 @@ class _RequestSessionMixin(RequestState):
 
         can_rotate = not sess.uid or (env is not None and not env.cr.closed)
 
-        strategy = "none"  # debuglog
+        strategy = "none"
         try:
             if sess.should_rotate and can_rotate:
                 root.session_store.rotate(sess, env)
                 written = True
-                strategy = "rotate"  # debuglog
+                strategy = "rotate"
             elif sess.should_rotate:
                 sess["_rotate_pending"] = True
                 root.session_store.save(sess)
                 written = True
-                strategy = "rotate_pending"  # debuglog
+                strategy = "rotate_pending"
             elif can_rotate and self._is_periodic_rotation_due():
                 root.session_store.rotate(sess, env, True)
                 written = True
-                strategy = "periodic_rotate"  # debuglog
+                strategy = "periodic_rotate"
             elif content_changed or (sess.is_dirty and sess.is_new):
                 root.session_store.save(sess)
                 written = True
-                strategy = "save"  # debuglog
+                strategy = "save"
             elif sess.is_dirty or stale:
                 root.session_store.keep_alive(sess)
                 written = True
-                strategy = "keep_alive"  # debuglog
+                strategy = "keep_alive"
             else:
                 written = False
         except SessionExpiredException:

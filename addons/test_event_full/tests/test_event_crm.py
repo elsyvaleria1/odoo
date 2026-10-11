@@ -17,10 +17,7 @@ class TestEventCrm(TestEventFullCommon):
             {"event_id": cls.test_event.id}
         )
 
-        # PREPARE SO DATA
-        # ------------------------------------------------------------
 
-        # adding some tickets to SO
         cls.customer_so.write(
             {
                 "line_ids": [
@@ -51,11 +48,8 @@ class TestEventCrm(TestEventFullCommon):
 
     @users("user_sales_salesman")
     def test_event_crm_sale_customer(self):
-        """Test a SO with a real customer set on it, check partner propagation
-        as well as group-based lead update."""
         customer_so = self.env["sale.order"].browse(self.customer_so.id)
 
-        # adding some tickets to SO
         t1_reg_vals = [
             dict(
                 customer_data,
@@ -66,37 +60,30 @@ class TestEventCrm(TestEventFullCommon):
         ]
         t1_registrations = self.env["event.registration"].create(t1_reg_vals)
 
-        # check effect: registrations, leads
         self.assertEqual(self.test_event.registration_ids, t1_registrations)
         self.assertEqual(len(self.test_rule_order.lead_ids), 1)
         self.assertEqual(self.test_rule_order_done.lead_ids, self.env["crm.lead"])
-        # check lead converted based on registrations
         self.assertLeadConvertion(
             self.test_rule_order, t1_registrations, partner=customer_so.partner_id
         )
 
-        # SO is confirmed -> missing registrations should be automatically added
-        # and added to the lead as part of the same group
         customer_so.action_confirm()
         self.assertEqual(customer_so.state, "done")
         self.assertEqual(
             len(self.test_event.registration_ids),
             self.TICKET1_COUNT + self.TICKET2_COUNT,
         )
-        self.assertEqual(len(self.test_rule_order.lead_ids), 1)  # no new lead created
+        self.assertEqual(len(self.test_rule_order.lead_ids), 1)
         self.assertEqual(
             self.test_rule_order_done.lead_ids, self.env["crm.lead"]
-        )  # this one still not triggered
+        )
 
-        # check existing lead has been updated with new registrations
         self.assertLeadConvertion(
             self.test_rule_order,
             self.test_event.registration_ids,
             partner=customer_so.partner_id,
         )
 
-        # Confirm registrations -> trigger the "DONE" rule, one new lead linked to all
-        # event registrations created in this test as all belong to the same SO
         self.test_event.registration_ids.write({"state": "done"})
         self.assertLeadConvertion(
             self.test_rule_order_done,
@@ -106,8 +93,6 @@ class TestEventCrm(TestEventFullCommon):
 
     @users("user_sales_salesman")
     def test_event_crm_sale_mixed_group(self):
-        """Test a mixed sale order line creation. This should not happen in a customer
-        use case but should be supported by the code."""
         public_partner = self.env.ref("base.public_partner")
         public_so = self.env["sale.order"].create(
             {
@@ -130,7 +115,6 @@ class TestEventCrm(TestEventFullCommon):
         )
         customer_so = self.env["sale.order"].browse(self.customer_so.id)
 
-        # make a multi-SO create
         mixed_reg_vals = [
             dict(
                 self.website_customer_data[0],
@@ -170,8 +154,6 @@ class TestEventCrm(TestEventFullCommon):
 
     @users("user_sales_salesman")
     def test_event_crm_sale_public(self):
-        """Test a SO with a public partner on it, then updated when SO is confirmed.
-        This somehow simulates a simplified website_event_sale flow."""
         public_partner = self.env.ref("base.public_partner")
         customer_so = self.env["sale.order"].browse(self.customer_so.id)
         customer_so.write(
@@ -180,7 +162,6 @@ class TestEventCrm(TestEventFullCommon):
             }
         )
 
-        # adding some tickets to SO
         t1_reg_vals = [
             dict(
                 customer_data,
@@ -192,11 +173,8 @@ class TestEventCrm(TestEventFullCommon):
         t1_registrations = self.env["event.registration"].create(t1_reg_vals)
         self.assertEqual(self.test_event.registration_ids, t1_registrations)
 
-        # check lead converted based on registrations
         self.assertLeadConvertion(self.test_rule_order, t1_registrations, partner=None)
 
-        # SO is confirmed -> missing registrations should be automatically added
-        # BUT as public user -> no email -> not taken into account by rule
         customer_so.action_confirm()
         self.assertEqual(customer_so.state, "done")
         self.assertEqual(
@@ -205,14 +183,12 @@ class TestEventCrm(TestEventFullCommon):
         )
         self.assertLeadConvertion(self.test_rule_order, t1_registrations, partner=None)
 
-        # SO has a customer set -> main contact of lead is updated accordingly
         customer_so.write({"partner_id": self.event_customer.id})
         self.assertLeadConvertion(
             self.test_rule_order, t1_registrations, partner=self.event_customer
         )
 
     def test_event_update_lead(self):
-        """Make sure that we update leads without issues when question's answer is added to an event attendee."""
         self.env["event.lead.rule"].search([]).write({"active": False})
         self.env["event.lead.rule"].create(
             {

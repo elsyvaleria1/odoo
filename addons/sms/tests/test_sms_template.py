@@ -51,7 +51,6 @@ class TestSmsTemplateAccessRights(TransactionCase):
     @users("user_employee")
     @mute_logger("odoo.models.unlink")
     def test_access_rights_user(self):
-        # Check if a member of group_user can only read on sms.template
         for sms_template in self.env["sms.template"].browse(self.sms_templates.ids):
             self.assertTrue(bool(sms_template.name))
             with self.assertRaises(AccessError):
@@ -82,8 +81,6 @@ class TestSmsTemplateAccessRights(TransactionCase):
                 }
             )
 
-            # check admin is allowed to read all templates since he can be a member of
-            # other groups applying restrictions based on the model
             self.assertTrue(
                 bool(
                     self.env["sms.template"]
@@ -163,7 +160,6 @@ class TestSmsTemplateAccessRights(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestSMSTemplateReset(TransactionCase):
     def _load(self, module, filepath):
-        # pylint: disable=no-value-for-parameter
         convert_file(
             self.env,
             module="sms",
@@ -195,7 +191,6 @@ class TestSMSTemplateReset(TransactionCase):
         self.assertTrue(reset_action)
 
         self.assertEqual(sms_template.body.strip(), Markup("<div>Hello Odoo</div>"))
-        # Name is not there in the data file template, so it should be set to False
         self.assertFalse(sms_template.name, "Name should be set to False")
 
     def test_sms_template_reset_keeps_the_sidebar_action(self):

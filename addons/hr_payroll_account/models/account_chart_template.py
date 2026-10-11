@@ -30,20 +30,10 @@ class AccountChartTemplate(models.AbstractModel):
         rules_mapping=None,
         default_account=None,
     ) -> None:
-        # companies: Recordset of the companies to configure
-        # country_code: country code (e.g. 'BE') used to look up structures and the tag mapper
-        # rules_mapping: dictionary of the debit/credit accounts and tax tags for each related rule
-        # default_account: Defaut account to specify on the created journals
         account_codes = account_codes or []
         rules_mapping = rules_mapping or {}
         if not companies:
             return
-        # debit_tag_ids/credit_tag_ids on hr.salary.rule are plain Many2many,
-        # not company_dependent (unlike account_debit/account_credit below),
-        # so with_company() has no effect on them: writing them for more than
-        # one company sharing the same rule would silently let the last
-        # company processed clobber the tag configuration of every other
-        # company. Raise loudly instead of letting that happen unnoticed.
         if len(companies) > 1 and any(
             "debit_tags" in mapping or "credit_tags" in mapping
             for mapping in rules_mapping.values()
@@ -63,14 +53,8 @@ class AccountChartTemplate(models.AbstractModel):
             self.env["res.country"].search([("code", "=", country_code)]).id
         )
         for company in companies:
-            # A local, not `self`: rebinding `self` here made the 55 lines
-            # below operate on a recordset the caller never passed, and the
-            # rebinding leaked into the next iteration. Only `ref()` below
-            # needs the company-scoped template; everything else already names
-            # `company` explicitly.
             company_template = self.with_company(company)
 
-            # Enable SEPA batch payment by default for some countries
             if company.country_id.code in ["BE", "CH"]:
                 company.batch_payroll_move_lines = True
             accounts = {}
@@ -91,10 +75,6 @@ class AccountChartTemplate(models.AbstractModel):
                 journal.default_account_id = accounts.get(
                     default_account, AccountAccount
                 ).id
-            # Only set on structures that don't already have a journal, so a
-            # re-invocation of chart-template loading (`try_loading` is a real,
-            # re-runnable admin action, not one-time-only) can't silently revert
-            # a user's manual reassignment.
             structures_by_company = structures.with_company(company)
             structures_by_company.filtered(
                 lambda structure: not structure.journal_id

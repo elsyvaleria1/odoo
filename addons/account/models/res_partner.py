@@ -360,7 +360,7 @@ class ResPartner(models.Model):
             account_type=account_type,
             root_id=self.env.company.root_id.id,
             sign=-1 if account_type == "liability_payable" else 1,
-            operator=SQL(operator),  # noqa: E8501  caller whitelists the operator
+            operator=SQL(operator),
             operand=operand,
         )
 
@@ -461,8 +461,6 @@ class ResPartner(models.Model):
             )
 
     def _compute_available_invoice_template_pdf_report_ids(self) -> None:
-        # what a form shows, read when it is: a default would ask every creator
-        # of a contact, who may read no report, at create
         reports = self.env[
             "account.move"
         ]._get_available_invoice_template_pdf_report_ids()
@@ -485,8 +483,6 @@ class ResPartner(models.Model):
 
     def _aggregate_by_partner_hierarchy(self, comodel, domain, aggregate):
         self_ids = set(self._ids)
-        # a partner is readable by users who may not read what hangs off it; a
-        # statistic over records they cannot see is 0, not an AccessError
         if not self.env[comodel].has_access("read"):
             return dict.fromkeys(self_ids, 0)
         all_partners = self.with_context(active_test=False).search_fetch(

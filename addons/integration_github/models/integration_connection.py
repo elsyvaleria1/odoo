@@ -9,8 +9,6 @@ from ..tools.app import APP_CATEGORY, app_jwt, mint_installation_token
 
 _debug = DebugLog(__name__)
 
-# The installation token a GitHub App connection calls with, per credential,
-# until shortly before GitHub expires it.
 _TOKEN_MARGIN = 300
 _tokens: dict[tuple[int, str], tuple[str, float]] = {}
 _tokens_lock = threading.Lock()
@@ -31,8 +29,6 @@ class IntegrationConnection(models.Model):
         return {"Authorization": Secret.of(token).prefixed("Bearer ")}
 
     def _github_installation_token(self) -> str:
-        """A token of the whole installation, for Odoo's own calls; what a run
-        is handed is minted narrower, for its repository alone."""
         credential = self.credential_id
         key = (credential.id, str(credential.write_date))
         with _tokens_lock:

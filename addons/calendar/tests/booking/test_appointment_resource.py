@@ -87,7 +87,6 @@ class AppointmentResource(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resource_default_appointment_type(self):
-        """Check that the default appointment type is properly deduced from the default appointment resource."""
         resource_3_type_ids = self.resource_3.appointment_type_ids
         Event = self.env["calendar.event"]
 
@@ -108,7 +107,6 @@ class AppointmentResource(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resource_link(self):
-        """Test link between resources when they are combinable."""
         resource_1, resource_2 = self.env["resource.resource"].create(
             [
                 {
@@ -124,16 +122,14 @@ class AppointmentResource(AppointmentCommon):
         self.assertFalse(resource_1.combinable_resource_ids)
         self.assertFalse(resource_2.combinable_resource_ids)
 
-        # Test: link resource 2 to resource 1, and add a new resource as an
-        # embedded 2many creation
         resource_1.write(
             {
                 "combinable_resource_ids": [
-                    (4, resource_2.id),  # new link
+                    (4, resource_2.id),
                     (
                         0,
                         0,
-                        {  # embedded creation
+                        {
                             "capacity": 1,
                             "name": "OnTheFly Table of 1",
                         },
@@ -171,13 +167,11 @@ class AppointmentResource(AppointmentCommon):
             "Resource 2 is destination of link between 1 and 2",
         )
 
-        # Test: break link to resource 2, add an existing one (check duplication)
-        # and create yet another one
         resource_1.write(
             {
                 "combinable_resource_ids": [
-                    (3, resource_2.id),  # break link
-                    (4, new_resource_1.id),  # already existing
+                    (3, resource_2.id),
+                    (4, new_resource_1.id),
                     (0, 0, {"capacity": 1, "name": "OnTheFly Table of 1 (bis)"}),
                 ],
             }
@@ -209,20 +203,19 @@ class AppointmentResource(AppointmentCommon):
         self.assertFalse(resource_2.source_resource_ids)
         self.assertFalse(resource_2.destination_resource_ids)
 
-        # Test: update link based on destination, not source as previous tests
         resource_2.write(
             {
                 "combinable_resource_ids": [
-                    (4, new_resource_1.id),  # add a new entry in destination
+                    (4, new_resource_1.id),
                 ]
             }
         )
         new_resource_2.write(
             {
                 "combinable_resource_ids": [
-                    (3, resource_1.id),  # break link
-                    (4, resource_2.id),  # new link, will have both sources and dest
-                    (4, new_resource_1.id),  # new link
+                    (3, resource_1.id),
+                    (4, resource_2.id),
+                    (4, new_resource_1.id),
                 ]
             }
         )
@@ -254,7 +247,6 @@ class AppointmentResource(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resource_not_taking_responsible_capacity(self):
-        """Test that resource booking lines do not reserve any capacity of the responsible user"""
         resource_appointment = self.appointment_manage_capacity
         user_appointment = self.env["appointment.type"].create(
             [
@@ -287,7 +279,6 @@ class AppointmentResource(AppointmentCommon):
         start = datetime(2022, 2, 14, 14, 0, 0)
         end = start + timedelta(hours=1)
 
-        # Create conflicting events. Remaining capacity should be 1, as resource booking should not count.
         self.env["calendar.event"].with_context(self._test_context).create(
             [
                 {
@@ -355,7 +346,6 @@ class AppointmentResource(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_remaining_capacity(self):
-        """Test that the remaining capacity of resources are correctly computed"""
         appointment = self.appointment_manage_capacity
         resource_1 = self.resource_1
         resource_2 = self.resource_2
@@ -376,7 +366,6 @@ class AppointmentResource(AppointmentCommon):
             == 2
         )
 
-        # Create bookings for resource
         booking_1, booking_2 = (
             self.env["calendar.event"]
             .with_context(self._test_context)
@@ -530,7 +519,6 @@ class AppointmentResource(AppointmentCommon):
 
     @users("apt_user")
     def test_appointment_user_can_create_booking_with_resources_from_gantt(self):
-        """Test if a user (with user rights) can create a booking from the calendar gantt view."""
 
         gantt_context = {
             "booking_gantt_create_record": True,
@@ -553,7 +541,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
     @users("apt_manager")
     @warmup
     def test_appointment_resources(self):
-        """Slots generation and availability of appointment type with resources"""
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
@@ -587,7 +574,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
                 for i in range(20)
             ]
         )
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
         with freeze_time(self.reference_now):
@@ -625,7 +611,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable(self):
-        """Check that combinable resources are correctly process."""
         table_c2, table_c4, table_c6 = self.env["resource.resource"].create(
             [
                 {
@@ -729,10 +714,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable_avoid_losing_extra_capacity(self):
-        """Check that we don't lose capacity with the resource selected.
-        If a capacity needed is greater than the capacity of the resource initially selected
-        we should check if the linked resources of the one selected are not a better fit to avoid losing capacity.
-        """
 
         nordic, scandinavian, snow = self.env["resource.resource"].create(
             [
@@ -808,7 +789,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable_complex(self):
-        """Check resources assignation when the linked resources are not mirrored for all resources"""
 
         table1_c2, table2_c2, table3_c2 = self.env["resource.resource"].create(
             [
@@ -931,7 +911,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable_last_availability(self):
-        """Check that the last resource available is correctly computed with linked resources"""
         table_c2, table_c3 = self.env["resource.resource"].create(
             [
                 {
@@ -950,7 +929,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
         )
         table_c2.combinable_resource_ids = table_c3
 
-        # Create a booking for the first resource for all its capacity
         start = datetime(2022, 2, 14, 15, 0, 0)
         end = start + timedelta(hours=1)
         self.env["calendar.event"].with_context(self._test_context).create(
@@ -999,7 +977,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable_performance(self):
-        """Simple use case of appointment type with combinable resources"""
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
@@ -1062,11 +1039,10 @@ class AppointmentResourceBookingTest(AppointmentCommon):
         )
         table1_c6.combinable_resource_ids = table1_c4 + table2_c4 + table3_c4
 
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
         with freeze_time(self.reference_now):
-            appointment._get_appointment_slots("UTC")  # warm-up
+            appointment._get_appointment_slots("UTC")
             with self.assertQueryCount(default=4):
                 slots = appointment._get_appointment_slots("UTC")
             resource_slots = self._filter_appointment_slots(
@@ -1102,7 +1078,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_combinable_with_manual_date_first(self):
-        """Check available linked resources with 'manual' assignment and 'date' selected first"""
         table_c2, table_c3 = self.env["resource.resource"].create(
             [
                 {
@@ -1176,7 +1151,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
             reference_date=self.reference_now,
         )
 
-        # Create a booking for the first resource
         self.env["calendar.event"].with_context(self._test_context).create(
             {
                 "appointment_type_id": self.apt_type_resource.id,
@@ -1232,7 +1206,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_sequence(self):
-        """Check that the sequence is correctly taken into account when selecting resources for slots"""
 
         resource_1, resource_2 = self.env["resource.resource"].create(
             [
@@ -1308,7 +1281,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_bookable_resources_shared(self):
-        """Check shareable resources are correctly used"""
 
         resource, resource_shared = self.env["resource.resource"].create(
             [
@@ -1434,8 +1406,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_bookable_resources_shared_combined_with_capacity(self):
-        """Check that resources shareable linked together with the capacity management
-        correctly compute the remaining capacity"""
 
         resource_1, resource_2 = self.env["resource.resource"].create(
             [
@@ -1484,7 +1454,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
             "Should pick both resources as asked capacity exceeds each resource capacity",
         )
 
-        # Create a booking for the first resource for all its capacity
         start = datetime(2022, 2, 14, 15, 0, 0)
         end = start + timedelta(hours=1)
         self.env["calendar.event"].with_context(self._test_context).create(
@@ -1532,7 +1501,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_bookable_resources_shared_performance(self):
-        """Simple use case with shareable resources"""
         appointment = self.env["appointment.type"].create(
             {
                 "appointment_tz": "UTC",
@@ -1567,24 +1535,22 @@ class AppointmentResourceBookingTest(AppointmentCommon):
                 for i in range(20)
             ]
         )
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
         with freeze_time(self.reference_now):
-            appointment._get_appointment_slots("UTC")  # warm-up
+            appointment._get_appointment_slots("UTC")
             with self.assertQueryCount(default=4):
                 appointment._get_appointment_slots("UTC")
 
     @users("apt_manager")
     def test_appointment_resources_restrict_resources(self):
-        """Check that resources restricted on slots are taken into account"""
         appointment = self.env[
             "appointment.type"
         ].create(
             {
                 "appointment_tz": "UTC",
                 "is_auto_assign": False,
-                "is_date_first": True,  # easier to check all resources available for each slot
+                "is_date_first": True,
                 "min_schedule_hours": 1.0,
                 "max_schedule_days": 5,
                 "name": "Test",
@@ -1655,7 +1621,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
             available_resources_wednesday, (resource1 + resource2 + resource3).ids
         )
 
-        # Custom Appointment
         appointment.slot_ids = False
         appointment.update(
             {
@@ -1710,7 +1675,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_assign_manual_date_first(self):
-        """Check that all resources are available with 'manual' assignment and 'date' selected first"""
         self.apt_type_resource.write(
             {
                 "is_auto_assign": False,
@@ -1778,7 +1742,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_booked_for_all_appointments(self):
-        """Check that a resource can only be booked once, even if shared among appointment_types"""
         paddle_court = self.env["resource.resource"].create(
             [
                 {
@@ -1790,13 +1753,11 @@ class AppointmentResourceBookingTest(AppointmentCommon):
         )
         self.apt_type_resource_2 = self.apt_type_resource.copy()
 
-        # Assert initial data
         with freeze_time(self.reference_now):
             slots = self.apt_type_resource_2._get_appointment_slots("UTC")
             resource_slots = self._filter_appointment_slots(slots)
             self.assertEqual(len(resource_slots), 1)
 
-        # Resource is booked on its slot on appointment_type_resource
         self.env["calendar.event"].with_context(self._test_context).create(
             {
                 "appointment_type_id": self.apt_type_resource.id,
@@ -1817,7 +1778,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
             }
         )
 
-        # Check other appointment_type availabilities
         with freeze_time(self.reference_now):
             slots = self.apt_type_resource_2._get_appointment_slots("UTC")
             resource_slots = self._filter_appointment_slots(slots)
@@ -1829,7 +1789,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
         )
 
     def test_appointment_resources_dont_skip_mail_user_not_attendee(self):
-        # Resource is booked on its slot on appointment_type_resource
         event = (
             self.env["calendar.event"]
             .with_context(self._test_context)
@@ -1847,7 +1806,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_multi_edit_capacity(self):
-        """Check that the capacity reserved is correctly updated in multi-edit"""
         resource_1, resource_2 = self.env["resource.resource"].create(
             [
                 {
@@ -1929,13 +1887,11 @@ class AppointmentResourceBookingTest(AppointmentCommon):
         self.assertEqual(apt_2.total_capacity_reserved, 6)
 
         (apt_1 + apt_2).write({"total_capacity_reserved": 7})
-        # Every appointment should be updated with the new value
         self.assertEqual(apt_1.total_capacity_reserved, 7)
         self.assertEqual(apt_2.total_capacity_reserved, 7)
 
     @users("apt_manager")
     def test_appointment_resources_with_resource_calendar(self):
-        """Check that the slots correctly take into account the default resource calendar"""
         self.env["resource.resource"].create(
             {
                 "type": "material",
@@ -1956,21 +1912,20 @@ class AppointmentResourceBookingTest(AppointmentCommon):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
                 "enddate": self.global_slots_enddate,
                 "startdate": self.reference_now_monthweekstart,
-                "slots_start_hours": list(range(8, 16)),  # 8 AM => 4 PM
-                "slots_startdate": self.reference_monday.date(),  # first Monday after reference_now
-                "slots_enddate": self.reference_monday.date(),  # only test that day
+                "slots_start_hours": list(range(8, 16)),
+                "slots_startdate": self.reference_monday.date(),
+                "slots_enddate": self.reference_monday.date(),
             },
         )
 
     @users("apt_manager")
     def test_appointment_resources_duplicate(self):
-        """Check that we can correctly duplicate resource bookings"""
         table, other_table = self.env["resource.resource"].create(
             [
                 {
@@ -2052,7 +2007,6 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_appointment_resources_without_capacity_management(self):
-        """Check use case where capacity management is not activated"""
 
         self.apt_type_resource.manage_capacity = False
 
@@ -2137,13 +2091,9 @@ class AppointmentResourceBookingTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_generate_slots_until_midnight_resources(self):
-        """Check end of day slot, e.g. 23:00-00:00 for a 1h duration"""
 
         self.apt_type_resource.appointment_duration = 1
         self.apt_type_resource.max_schedule_days = 1
-        # 22:00-23:00 range in UTC will correspond to 23:00-00:00 in UTC+1.
-        # So, this matches the attendance ending at midnight in the resource calendar.
-        # The corresponding interval bound ends up as 22.59.999999 in UTC unavailabilities.
         self.env.ref(
             "calendar.appointment_default_resource_calendar"
         ).sudo().tz = "Europe/Brussels"
@@ -2173,7 +2123,7 @@ class AppointmentResourceBookingTest(AppointmentCommon):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {

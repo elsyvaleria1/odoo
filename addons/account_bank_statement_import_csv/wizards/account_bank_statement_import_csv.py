@@ -34,24 +34,17 @@ class Base_ImportImport(models.TransientModel):
         return float(value) if value else 0.0
 
     def _parse_import_data(self, data, import_fields, options):
-        # EXTENDS base
         data = super()._parse_import_data(data, import_fields, options)
         journal_id = self.env.context.get("default_journal_id")
         bank_stmt_import = options.get("bank_stmt_import")
         if not journal_id or not bank_stmt_import:
             return data
         if not data:
-            # An empty batch (e.g. the "start at line" option set beyond EOF)
-            # would make the balance block below dereference data[0]/data[-1]
-            # and crash; let base report the empty import cleanly instead.
             return data
 
         has_amount = "amount" in import_fields
         has_credit = "credit" in import_fields
         has_debit = "debit" in import_fields
-        # Exactly one of "Amount" or the "Debit"+"Credit" pair must be mapped:
-        # either field must be present alone (not both, not neither), and
-        # "Debit"/"Credit" must be mapped together (not just one of them).
         has_debit_credit_pair = has_debit and has_credit
         if (has_debit ^ has_credit) or not (has_amount ^ has_debit_credit_pair):
             raise ValidationError(
@@ -66,18 +59,8 @@ class Base_ImportImport(models.TransientModel):
         index_balance = None
         convert_to_amount = False
 
-        # check that the rows are sorted by date (ascending or descending) as we assume they are in the following code
-        # we can't order the rows for the user as two rows could have the same date
-        # and we don't have a way to know which one should be first
         if "date" in import_fields:
             index_date = import_fields.index("date")
-            # A row with no date is invisible to the ordering check below, yet it
-            # still travels with the batch: it gets reversed with everything else
-            # and can end up at data[0] or data[-1], which is where the opening
-            # and closing balances are read. Reject it here instead. Nothing is
-            # lost by being strict -- "date" is required on the statement line, so
-            # every such row already failed at load, only later and with a much
-            # worse message.
             if any(not line[index_date] for line in data):
                 raise UserError(
                     self.env._(
@@ -88,12 +71,12 @@ class Base_ImportImport(models.TransientModel):
             sorted_dates_asc = sorted(dates)
             if (
                 dates != sorted_dates_asc
-            ):  # If dates are not in ascending order, check if they are in descending order
+            ):
                 sorted_dates_desc = sorted_dates_asc[::-1]
                 if dates == sorted_dates_desc:
                     data = data[
                         ::-1
-                    ]  # reverse data if dates are in descending order to make them ascending
+                    ]
                 else:
                     raise UserError(self.env._("Rows must be sorted by date."))
 
@@ -105,7 +88,6 @@ class Base_ImportImport(models.TransientModel):
             import_fields.append("amount")
             convert_to_amount = True
 
-        # add starting balance and ending balance to statement_vals (used later to create the statement)
         if "balance" in import_fields:
             index_balance = import_fields.index("balance")
             self._parse_float_from_data(data, index_balance, "balance", options)
@@ -139,7 +121,6 @@ class Base_ImportImport(models.TransientModel):
                 remove_index.extend([index_debit, index_credit])
             if index_balance is not None:
                 remove_index.append(index_balance)
-            # Remove added field debit/credit/balance
             for removed_index in sorted(remove_index, reverse=True):
                 del line[removed_index]
             if line[index_amount]:

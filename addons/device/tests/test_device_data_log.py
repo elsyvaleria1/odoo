@@ -447,10 +447,6 @@ class TestLogMixinApiIsGeneric(DeviceTransactionCase):
     def test_the_mixin_is_inherited_by_more_than_one_model(self):
         models = self._models_inheriting_the_log_mixin()
         if len(models) < 2:
-            # `remote` installed on its own is the supported configuration and
-            # what CI runs for this module's own tag. The mixin's genericity is
-            # only observable once a sibling contributes a second concrete
-            # model, so this check waits for one instead of failing without it.
             self.skipTest(
                 f"only {models} inherits the mixin; install a sibling such as "
                 "device_gps to exercise its genericity",

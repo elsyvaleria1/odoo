@@ -49,9 +49,6 @@ class ProductTrace(models.Model):
         for lot in self:
             lot.is_deployed = lot.location_id.deployed_location
             lot.is_in_maintenance = lot.location_id.maintenance_location
-            # An asset with no location is not out on a job and not in a
-            # workshop, so it is in storage. A non-storable asset -- a parcel --
-            # never has one, and used to read as being in no state at all.
             lot.is_in_storage = not (lot.is_deployed or lot.is_in_maintenance)
 
     @api.depends(
@@ -73,8 +70,6 @@ class ProductTrace(models.Model):
     def _get_open_maintenance_state(self) -> str | None:
         self.check_singleton()
         now = fields.Datetime.now()
-        # A plan keeps its next order open ahead of time, so a preventive order
-        # counts only once it is due or already under way.
         open_types = {
             order.maintenance_type
             for order in self.asset_id.maintenance_ids

@@ -82,8 +82,6 @@ except ImportError:
 
 @contextmanager
 def mock_void_external_calls():
-    """Often, when testing social modules, we want to void all outgoing external calls methods.
-    This method creates a handy context manager that will void all external calls at once."""
     with (
         mock_void_external_calls_facebook(),
         mock_void_external_calls_instagram(),

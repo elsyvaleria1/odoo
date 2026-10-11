@@ -204,7 +204,7 @@ class WizardBaseExportGeodata(models.TransientModel):
         if not self.geo_field_id:
             raise UserError(self.env._("Please select a geometry field."))
 
-        TargetModel = self.env[self.model_name]  # pylint: disable=invalid-name
+        TargetModel = self.env[self.model_name]
         geo_field_name = self.geo_field_id.name
 
         prop_field_names = self.property_field_ids.mapped("name")

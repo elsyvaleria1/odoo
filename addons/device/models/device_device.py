@@ -226,13 +226,6 @@ class DeviceDevice(models.Model):
 
     display_endpoint = fields.Char(compute="_compute_display_endpoint")
 
-    # NULLS NOT DISTINCT: company_id merely defaults to the current company,
-    # so a device written with no company is possible and every such device
-    # escaped the identifier check -- and the identifier is how a device is
-    # addressed, so two of them sharing one is the failure this prevents.
-    # A part is named by its parent (an IoT box calls its display hdmi_0 like
-    # every other box does), so the key includes parent_id; two parts sharing
-    # an identifier are told apart by their credentials.
     _company_device_uniq = models.UniqueIndex(
         "(identifier, company_id, parent_id) NULLS NOT DISTINCT",
         "Device identifier must be unique per company and parent device.",
@@ -270,7 +263,6 @@ class DeviceDevice(models.Model):
             for field_name, default in self._DEVICE_ENDPOINT_DEFAULTS.items():
                 vals.setdefault(field_name, default)
 
-            # the form sends an empty credential as False: still none to keep
             if not vals.get("credential_id"):
                 vals["credential_id"] = self._create_inbound_credential(
                     self._credential_label(vals),
@@ -305,9 +297,6 @@ class DeviceDevice(models.Model):
         if not self:
             return True
         self.check_access("unlink")
-        # SQL cascades skip a part's transport cleanup. Discover archived and
-        # rule-hidden parts too, but require the caller's rights to delete them.
-        # RESTRICT also refuses a concurrent attachment outside this snapshot.
         tree = (
             self.sudo()
             .with_context(active_test=False)
@@ -317,13 +306,10 @@ class DeviceDevice(models.Model):
         parts = tree - roots
         parts.with_env(self.env).check_access("unlink")
         _debug.lifecycle("delete_parts", roots=len(roots), parts=len(parts))
-        # Delete leaves in batches, without recursing with the hierarchy depth.
         while parts:
             leaves = parts - parts.parent_id
             if not leaves:
-                # Structural corruption must stop even during uninstall: without
-                # a leaf this cleanup cannot progress. This is no business veto.
-                raise ValidationError(  # noqa: E8506 - prevents an infinite cleanup loop
+                raise ValidationError(
                     self.env._("A device cannot be part of itself.")
                 )
             leaves.with_env(self.env).unlink()
@@ -337,8 +323,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _credential_label(self, vals) -> str:
-        # credential names are unique per company and a part's identifier only
-        # per parent, so the label is the identifier path from the root device
         path = [vals.get("identifier") or vals.get("name") or "Unknown"]
         ancestor = self.browse(vals.get("parent_id"))
         seen = self.browse()
@@ -350,8 +334,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _inbound_credentials(self):
-        # a device manager provisions the device's own token without holding
-        # credential rights: the one elevation, shared by creation and rotation
         return self.env["credential.credential"].sudo()
 
     @api.model
@@ -419,15 +401,11 @@ class DeviceDevice(models.Model):
 
     @api.depends("device_category_id", "device_category_id.icon")
     def _compute_category_icon(self) -> None:
-        # A category owns its own icon. Overriding it by code here decided the
-        # look of categories other modules ship.
         for device in self:
             device.category_icon = device.device_category_id.icon or "fa-microchip"
 
     @api.depends("device_category_id", "device_category_id.color")
     def _compute_category_color(self) -> None:
-        # Same contract as the icon: the colour picker on the category form is
-        # the only place that decides this.
         for device in self:
             device.category_color = device.device_category_id.color or 0
 
@@ -492,18 +470,12 @@ class DeviceDevice(models.Model):
         }
 
     def _transport_method(self, verb):
-        # The transport contract. A protocol module contributes its value to
-        # comm_protocol and one method per verb in TRANSPORT_VERBS; nothing
-        # else in the device knows the protocol exists.
         self.check_singleton()
         method = getattr(self, f"{self.comm_protocol}_{verb}", None)
         return method if callable(method) else None
 
     @api.model
     def _device_kind_categories(self, kind):
-        # Which device categories count as this kind. A module that makes its
-        # own devices answer to somebody else's kind says so here, instead of
-        # the kind's owner guessing from a field value.
         return []
 
     def _is_device_kind(self, kind) -> bool:
@@ -513,21 +485,13 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _polled_protocols(self) -> list:
-        # Protocols Odoo reaches out to on a schedule. Request/response.
         return ["http", "https"]
 
     @api.model
     def _persistent_protocols(self) -> list:
-        # Protocols that hold a connection open and push. The reconnect cron
-        # leaves these alone; their own supervisor owns them. Every one of them
-        # arrives with a transport module.
         return []
 
     def _register_hook(self):
-        # The only thing a restart knows that a cron cannot: every connection
-        # this process held is gone, so a device still recorded as connected is
-        # recorded wrongly. A streamed protocol's connection is the stream
-        # worker's, and its state follows the row, so it is left alone.
         res = super()._register_hook()
         persistent_protocols = [
             protocol
@@ -567,7 +531,7 @@ class DeviceDevice(models.Model):
             )
 
         try:
-            result = connect_method()  # pylint: disable=not-callable
+            result = connect_method()
             if result is False:
                 raise UserError(
                     self.env._("Could not connect to device %s; see the server log.")
@@ -593,7 +557,7 @@ class DeviceDevice(models.Model):
 
         if disconnect_method is not None:
             try:
-                disconnect_method()  # pylint: disable=not-callable
+                disconnect_method()
             except Exception:
                 _logger.exception("Disconnection error for device %s", self.name)
 
@@ -610,7 +574,7 @@ class DeviceDevice(models.Model):
             )
 
         try:
-            read_method()  # pylint: disable=not-callable
+            read_method()
             return self._notify(
                 self.env._("Success"),
                 self.env._("Data read successfully"),
@@ -638,11 +602,6 @@ class DeviceDevice(models.Model):
                 True,
             )
 
-    # Both halves of the push route store through here. They used to build the
-    # call themselves, and the async half forgot `source`, so the same device
-    # pushing the same body to the same route landed in `webhook` or in `iot`
-    # depending on processing_mode -- a dimension device.data.log.report groups
-    # and filters by. One writer is what keeps them from drifting again.
     _PUSH_SOURCE = "webhook"
 
     def _store_push_data_point(self, data, raw_payload=None):
@@ -794,9 +753,6 @@ class DeviceDevice(models.Model):
                     "device: cron poll error",
                 )
 
-    # The cron fires every minute and one HTTP read costs up to the profile's
-    # http_timeout, so an unbounded sweep holds a cron worker while every other
-    # job waits behind it. Same treatment as _RECONNECT_BUDGET_SECONDS.
     _POLL_BUDGET_SECONDS = 45
 
     def _disconnect_timeout(self) -> dict:
@@ -817,9 +773,6 @@ class DeviceDevice(models.Model):
     @api.model
     @_debug.perf.timed
     def _cron_check_health(self) -> None:
-        # A device is connected while its data is fresh, whoever calls whom;
-        # a streamed one that holds its link open but has gone quiet is in
-        # error, because its wire is up and silent.
         now = fields.Datetime.now()
         devices = self.search([("active", "=", True)])
         timeouts = devices._disconnect_timeout()
@@ -883,8 +836,6 @@ class DeviceDevice(models.Model):
             self.browse(stale_sockets)._notify_devices_went_quiet("error")
 
     def _notify_devices_went_quiet(self, state) -> None:
-        # The state is passed in, never re-read. _write_state_retry_multi wrote it
-        # on a cursor of its own, so this transaction still sees the old value.
         for device in self:
             if not device.config_id.alert_on_disconnect:
                 continue
@@ -977,11 +928,6 @@ class DeviceDevice(models.Model):
 
     @check_identity
     def action_generate_inbound_token(self):
-        """Store a new token on the device's credential and show it once.
-
-        The token is kept encrypted in the credential and handed to the user in
-        a notification only: it cannot be read back afterwards, only replaced.
-        """
         self.check_singleton()
         self.check_access("write")
         if self.auth_type not in ("bearer", "api_key"):
@@ -1008,9 +954,6 @@ class DeviceDevice(models.Model):
                     "parent_id": self.parent_id.id,
                 }
             )
-            # a credential this device let go of may still hold the name, and
-            # names are unique per company: one that is not its own is not
-            # reused, the device's id tells the new one apart
             if Credential.with_context(active_test=False).search_count(
                 [
                     ("name", "=", f"Device {label} Token"),
@@ -1049,10 +992,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _receiver_for_identifier(self, identifier, domain=None, **_path_args):
-        """The device a machine route addresses by identifier. Identifiers are
-        unique per company and parent, not globally, so when several hold one
-        the device whose credential the request carries is the subject; when
-        none does, the first is, and the gate refuses on it."""
         candidates = self.sudo().search(
             [*(domain or []), ("identifier", "=", identifier), ("active", "=", True)]
         )
@@ -1084,8 +1023,6 @@ class DeviceDevice(models.Model):
             return 0
 
     def _dial_url(self):
-        # The address Odoo dials for a request/response protocol; empty when
-        # the device names none and the profile's default applies.
         self.check_singleton()
         if not self.endpoint:
             return ""
@@ -1095,7 +1032,6 @@ class DeviceDevice(models.Model):
             url += f":{self.port}"
         return url
 
-    # -- the connection Odoo dials the device through -------------------------
 
     @api.model
     def _connection_fields(self):
@@ -1118,8 +1054,6 @@ class DeviceDevice(models.Model):
         return self.config_id.sudo().service_id
 
     def _connection_values(self, service) -> dict | None:
-        # None when Odoo does not dial this device: a pushing or streamed
-        # protocol, or no address anywhere.
         self.check_singleton()
         if not service or self.link_mode != "pull":
             return None
@@ -1195,10 +1129,6 @@ class DeviceDevice(models.Model):
                 "value_json": data,
             }
 
-            # The savepoint is what makes the degraded write below possible: a
-            # database error here aborts the transaction, and every later
-            # statement on the same cursor -- the fallback create included --
-            # would raise InFailedSqlTransaction and lose the payload anyway.
             with self.env.cr.savepoint():
                 point = data_point_model.create(values)
             self.with_privilege(

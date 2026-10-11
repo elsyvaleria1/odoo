@@ -11,21 +11,11 @@ from odoo.addons.base.models.mixin_access_graph_reach import (
     principal_key,
 )
 
-# the ways a document is reached beside its own graph (OWN):
-# a shortcut reaches what its target reaches, and its owner edits it while
-# they read the target (the target's rows, carrying the shortcut's owner)
 TARGET = 1
-# a link-shared document, not hidden, is found by whoever reaches its folder
-# directly, at the link's role (the folder's direct rows)
 LINK = 2
-# an edit link raises whoever reaches the document directly
 EDIT_LINK = 3
-# a shortcut's owner who owns its target, in any company
 SHORTCUT_OWNER = 4
-# a shortcut's own graph: what the graph's reach counts, not the permission
 SHORTCUT_OWN = 5
-# the Documents system administrators, every document under its root; the
-# root's owner when the root is a person's drive
 SYSTEM = 6
 
 LINKED = ("view", "edit")
@@ -76,8 +66,6 @@ class DocumentsDocument(models.Model):
         ]
 
     def _access_reach_ctes(self) -> list[tuple[str, SQL]]:
-        # a node's direct rows: its own graph, a shortcut its target's, and a
-        # shortcut's owner who owns the target
         top = len(self._access_graph.roles)
         return [
             (
@@ -172,7 +160,6 @@ class DocumentsDocument(models.Model):
         ]
 
     def _access_reach_readers(self, affected: SQL) -> list[SQL]:
-        # a shortcut reads its target; a link-shared child reads its folder
         return [
             SQL(
                 "SELECT id FROM document_document WHERE shortcut_document_id = ANY(%s)",
@@ -187,12 +174,8 @@ class DocumentsDocument(models.Model):
             ),
         ]
 
-    # -- the permission ---------------------------------------------------------
 
     def _folds_system_reach(self) -> bool:
-        # the system reach is one sublink with the rest only while what binds
-        # the user is the shipped row as shipped: anything else an
-        # administrator wrote is read live
         permissions, guards = self.env["ir.access"]._bound_access_infos(
             self._name, "system_reach"
         )
@@ -219,8 +202,6 @@ class DocumentsDocument(models.Model):
         exclude_ownership: bool = False,
         system: bool = False,
     ) -> Domain:
-        # the documents reached at the role or above, in one reach query; with
-        # `system`, the system administrators' reach folded in
         user = self.env.user
         in_use = sorted(self.env.companies.ids)
         vias = [OWN, TARGET, SHORTCUT_OWNER]
@@ -228,8 +209,6 @@ class DocumentsDocument(models.Model):
             vias += [LINK, EDIT_LINK]
         alternatives = []
         if role == "edit" and self._user_is_documents_manager():
-            # managers edit wherever the employees' audience reaches, and a
-            # shortcut where it reaches the target
             audience = self._internal_audience_group()
             alternatives.append(
                 (
@@ -247,8 +226,6 @@ class DocumentsDocument(models.Model):
                 )
             )
         if system:
-            # outside another person's drive, of a company in use, of one the
-            # user is not in, or of an archived one
             system_group = self.env.ref("document.group_documents_system").id
             alternatives.append(
                 (

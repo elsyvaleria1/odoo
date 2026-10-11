@@ -231,7 +231,6 @@ class WebsiteRewrite(models.Model):
 
     @staticmethod
     def _get_redirect_source_urls(path, full_path) -> tuple:
-        """Source spellings accepted by the HTTP fallback redirect resolver."""
         return (full_path, path.rstrip("/"), path + "/")
 
     @api.constrains("url_to", "url_from", "redirect_type", "active", "website_id")
@@ -243,13 +242,6 @@ class WebsiteRewrite(models.Model):
         self._check_redirect_cycles(excluded_ids=self.ids)
 
     def _check_redirect_cycles(self, excluded_ids=()) -> None:
-        # Check the resulting configuration, including chains unmasked by an
-        # override being archived, renamed, moved to another site, or deleted.
-        # Read rows, not records. This runs as a constraint on every create,
-        # write and unlink of any redirect, so it rebuilds the whole graph each
-        # time; browsing the recordset cost ~19 us per existing redirect, which
-        # made a row-at-a-time import quadratic in wall time and not just in
-        # work. The chain walk below needs four scalars per redirect and no ORM.
         redirects = self.search_read(
             [("active", "=", True), ("id", "not in", excluded_ids)],
             ["website_id", "redirect_type", "url_from", "url_to"],
@@ -269,7 +261,6 @@ class WebsiteRewrite(models.Model):
                     or url_to.startswith("#")
                     or url_from.split("#")[0] == url_to.split("#")[0]
                 ):
-                    # The structural constraint owns these diagnostics.
                     continue
                 fallbacks_by_website.setdefault(website_id, {}).setdefault(
                     url_from, redirect
@@ -297,8 +288,6 @@ class WebsiteRewrite(models.Model):
         for website_id in website_ids:
             specific_fallbacks = fallbacks_by_website.get(website_id, {})
             routing = generic_routing | routing_by_website.get(website_id, {})
-            # A 308 publishes its controller at the destination. A 301/302
-            # fallback there does not redirect the newly published controller.
             controller_paths = {
                 redirect["url_to"]
                 for redirect in routing.values()
@@ -324,23 +313,11 @@ class WebsiteRewrite(models.Model):
         website_id,
         checked_urls,
     ) -> None:
-        """`start` and the mapping values are `search_read` rows, not records."""
         current_url = start["url_from"] or ""
-        # `checked_urls` holds urls already walked to a dead end in this website.
-        # Re-entering the loop for one of them parses and normalises it again
-        # before the memo is consulted, which is most of this constraint's cost:
-        # it is called once per fallback per website, so on 1,500 redirects a
-        # single create ran it 1,505 times and spent 0.56 s of 0.69 s here.
         if current_url in checked_urls:
             return
         seen = set()
         while current_url:
-            # A plain path -- no scheme, authority, query or fragment -- is what
-            # redirects overwhelmingly are, and for it the urlsplit/urlunsplit/
-            # parse_qsl/urljoin round trip below is pure overhead: four
-            # `_urlsplit` calls per hop, which profiled as 0.48 s of this
-            # constraint's 0.59 s on 1,500 redirects. Anything else still takes
-            # the general path.
             if (
                 ":" not in current_url
                 and "?" not in current_url
@@ -374,7 +351,6 @@ class WebsiteRewrite(models.Model):
                 break
             target = redirect["url_to"] or ""
             if target.split("#")[0] == redirect["url_from"].split("#")[0]:
-                # Structural validation owns invalid/self-referencing URLs.
                 break
             if current_url in seen:
                 _logger.debug(
@@ -406,7 +382,6 @@ class WebsiteRewrite(models.Model):
                 )
                 target = _get_url_with_params(target, params)
             if target.startswith("/") and not target.startswith("//"):
-                # urljoin of an absolute path onto any base is that path.
                 current_url = target
             else:
                 current_url = urljoin(current_url, target)

@@ -33,8 +33,6 @@ class CloudAttachmentController(AttachmentController):
         if data.get("error"):
             return response
 
-        # append upload url to the response to allow the client to directly
-        # upload files to the cloud storage
         attachment = (
             request.env["ir.attachment"].browse(data["data"]["attachment_id"]).sudo()
         )

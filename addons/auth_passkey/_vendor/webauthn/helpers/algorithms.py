@@ -19,7 +19,6 @@ from .exceptions import UnsupportedAlgorithm, UnsupportedEC2Curve
 
 
 def is_rsa_pkcs(alg_id: COSEAlgorithmIdentifier) -> bool:
-    """Determine if the specified COSE algorithm ID denotes an RSA PKCSv1 public key"""
     return alg_id in (
         COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_1,
         COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_256,
@@ -29,7 +28,6 @@ def is_rsa_pkcs(alg_id: COSEAlgorithmIdentifier) -> bool:
 
 
 def is_rsa_pss(alg_id: COSEAlgorithmIdentifier) -> bool:
-    """Determine if the specified COSE algorithm ID denotes an RSA PSS public key"""
     return alg_id in (
         COSEAlgorithmIdentifier.RSASSA_PSS_SHA_256,
         COSEAlgorithmIdentifier.RSASSA_PSS_SHA_384,
@@ -38,9 +36,6 @@ def is_rsa_pss(alg_id: COSEAlgorithmIdentifier) -> bool:
 
 
 def get_ec2_sig_alg(alg_id: COSEAlgorithmIdentifier) -> EllipticCurveSignatureAlgorithm:
-    """Turn an "ECDSA" COSE algorithm identifier into a corresponding signature
-    algorithm
-    """
     if alg_id == COSEAlgorithmIdentifier.ECDSA_SHA_256:
         return ECDSA(SHA256())
     if alg_id == COSEAlgorithmIdentifier.ECDSA_SHA_512:
@@ -50,7 +45,6 @@ def get_ec2_sig_alg(alg_id: COSEAlgorithmIdentifier) -> EllipticCurveSignatureAl
 
 
 def get_ec2_curve(crv_id: COSECRV) -> EllipticCurve:
-    """Turn an EC2 COSE crv identifier into a corresponding curve"""
     if crv_id == COSECRV.P256:
         return SECP256R1()
     elif crv_id == COSECRV.P384:
@@ -62,9 +56,6 @@ def get_ec2_curve(crv_id: COSECRV) -> EllipticCurve:
 
 
 def get_rsa_pkcs1_sig_alg(alg_id: COSEAlgorithmIdentifier) -> HashAlgorithm:
-    """Turn an "RSASSA_PKCS1" COSE algorithm identifier into a corresponding signature
-    algorithm
-    """
     if alg_id == COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_1:
         return SHA1()
     if alg_id == COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_256:
@@ -78,9 +69,6 @@ def get_rsa_pkcs1_sig_alg(alg_id: COSEAlgorithmIdentifier) -> HashAlgorithm:
 
 
 def get_rsa_pss_sig_alg(alg_id: COSEAlgorithmIdentifier) -> HashAlgorithm:
-    """Turn an "RSASSA_PSS" COSE algorithm identifier into a corresponding signature
-    algorithm
-    """
     if alg_id == COSEAlgorithmIdentifier.RSASSA_PSS_SHA_256:
         return SHA256()
     if alg_id == COSEAlgorithmIdentifier.RSASSA_PSS_SHA_384:

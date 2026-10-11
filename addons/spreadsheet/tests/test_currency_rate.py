@@ -109,7 +109,6 @@ class TestCurrencyRates(TransactionCase):
 
     @freeze_time(fake_now_utc)
     def test_rate_by_tz(self):
-        # after setting a timezone, reset the transaction to recomput env.tz
         cad = self.env.ref("base.CAD")
         self.env.user.tz = "UTC"
         self.env.flush_all()

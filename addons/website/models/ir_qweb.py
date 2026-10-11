@@ -38,10 +38,6 @@ class IrQweb(models.AbstractModel):
         return super()._get_template_cache_keys() + ["website_id", "cookies_allowed"]
 
     def _save_esm_attachment_rows(self, vals_list, bundle="", build=None) -> None:
-        # Compiled ESM rows are content-addressed and served without a website
-        # filter, so they belong to no website. Left to ir.attachment.create,
-        # they would take the request's forced website, which an autonomous
-        # save cannot see when that website is still uncommitted.
         vals_list = [dict(vals, website_id=False) for vals in vals_list]
         super()._save_esm_attachment_rows(vals_list, bundle, build)
 
@@ -74,8 +70,6 @@ class IrQweb(models.AbstractModel):
         )
 
         if has_group_restricted_editor:
-            # the builder loads its editor into this page (the preview iframe),
-            # which the page's script policy has to allow for
             self._note_page_script_bundle(
                 "website.assets_inside_builder_iframe", request.session.debug
             )
@@ -125,12 +119,6 @@ class IrQweb(models.AbstractModel):
         )
         irQweb = irQweb.with_context(cookies_allowed=is_allowed_optional_cookies)
 
-        # Guarded, and that is not stylistic: kwargs are evaluated BEFORE the
-        # call, so `_Channel.__call__`'s own isEnabledFor check comes too late to
-        # stop the two website field reads below. Unguarded they cost one extra
-        # SELECT on `website` per render with the channel OFF, which
-        # `TestWebsitePerformance.test_30_perf_sql_queries_page_no_layout`
-        # measures and refuses.
         if _debug.pipeline.enabled:
             _debug.pipeline(
                 "frontend_environment",
@@ -139,14 +127,6 @@ class IrQweb(models.AbstractModel):
                 translatable=translatable,
                 restricted_editor=has_group_restricted_editor,
                 cookies_allowed=is_allowed_optional_cookies,
-                # The last two are the remaining inputs of the third-party
-                # blocking gate in `_post_processing_att`, which logs only when
-                # it blocks. Its other two inputs were already here, so "was
-                # blocking even active for this render?" -- the question behind
-                # any complaint that an embed loaded without consent, or that one
-                # failed to load -- needed these to be answerable. Logged here
-                # rather than at the gate because the gate runs once per element
-                # and this runs once per render.
                 cookies_bar=current_website.cookies_bar,
                 block_third_party=current_website.block_third_party_domains,
             )
@@ -279,8 +259,6 @@ class IrQweb(models.AbstractModel):
         return atts
 
     def _warm_split_page_assets(self) -> None:
-        # a frontend page always renders for a website, and websites alike
-        # share their asset twin's cache entries
         Website = self.env["website"]
         twins = {
             Website._get_asset_twin_id(website.id) for website in Website.search([])

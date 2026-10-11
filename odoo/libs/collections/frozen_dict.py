@@ -6,11 +6,6 @@ from typing import Any, NoReturn, Self, override
 
 
 class FrozenList[T](list[T]):
-    # A list nothing can change, so it hashes like the tuple of its items: a
-    # frozendict holding one caches its hash, which one holding a list never
-    # may. Being a list, it still concatenates with lists, compares equal to
-    # them, and reads as one to json, safe_eval and isinstance; what + * and
-    # slicing return are plain lists the caller may change.
     __slots__ = ()
 
     def __new__(cls, iterable: Iterable[T] = (), /) -> Self:
@@ -21,7 +16,7 @@ class FrozenList[T](list[T]):
     def __init__(self, iterable: Iterable[T] = (), /) -> None:
         pass
 
-    def __hash__(self) -> int:  # type: ignore[override]
+    def __hash__(self) -> int:
         return hash(tuple(self))
 
     def __reduce__(self) -> tuple[type[Self], tuple[list[T]]]:
@@ -40,7 +35,7 @@ class FrozenList[T](list[T]):
         self._refuse("item deletion")
 
     @override
-    def __iadd__(self, value: Iterable[T], /) -> NoReturn:  # type: ignore[override]
+    def __iadd__(self, value: Iterable[T], /) -> NoReturn:
         self._refuse("+=")
 
     @override
@@ -88,19 +83,12 @@ def freehash(arg: Any) -> int:
 
 
 def _freeze(arg: Any, path: set[int], mutable: list[bool] | None) -> Any:
-    # Maps a value to a hashable one that compares equal whenever the values compare
-    # equal: a set freezes to the frozenset it equals, a tuple holding a dict to the
-    # tuple holding the equal frozendict's frozen form, so == implies equal hashes.
     if type(arg) in _SCALARS:
         return arg
     if isinstance(arg, frozendict):
         if getattr(arg, "_hash", None) is not None:
             return arg
     elif isinstance(arg, (tuple, frozenset, FrozenList)):
-        # a tuple, frozenset or FrozenList hashes even when it holds a frozendict over a
-        # list, so its items are walked: trusting its hash would cache one the list can
-        # outlive. Being immutable, it closes no cycle without a mutable value that marks
-        # the path.
         items = []
         unchanged = True
         for item in arg:
@@ -125,9 +113,6 @@ def _freeze(arg: Any, path: set[int], mutable: list[bool] | None) -> Any:
         return bytes(arg)
     marker = id(arg)
     if marker in path:
-        # A value met again on its own path closes a cycle. Equal structures close it at the
-        # same point, so a constant keeps them hashing equal; a cycle runs through a mutable
-        # value, so no frozendict on it may cache a hash the cycle's breaking would change.
         if mutable is not None:
             mutable[0] = True
         return _CYCLE
@@ -147,8 +132,6 @@ def _freeze(arg: Any, path: set[int], mutable: list[bool] | None) -> Any:
             if own[0]:
                 mutable[0] = True
             else:
-                # a hash over an unhashable value would outlive a change to that value; with
-                # none below there is no cycle either, so this form is path-independent
                 object.__setattr__(arg, "_hash", hash(frozen))
             return frozen
         if isinstance(arg, AbstractSet):
@@ -158,13 +141,11 @@ def _freeze(arg: Any, path: set[int], mutable: list[bool] | None) -> Any:
                 item if type(item) in _SCALARS else _freeze(item, path, mutable)
                 for item in arg
             )
-        # an unhashable value compares by its own __eq__, which a hash cannot see into
         return _OPAQUE
     finally:
         path.discard(marker)
 
 
-# the values a context mostly holds; hashed in place instead of through a call
 _SCALARS = frozenset({str, int, bool, float, type(None), bytes})
 _CYCLE = 0
 _OPAQUE = 1
@@ -187,7 +168,7 @@ class frozendict[K, T](dict[K, T]):
         msg = "'clear' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def pop(self, key: K, default: T | None = None) -> NoReturn:  # type: ignore[override]
+    def pop(self, key: K, default: T | None = None) -> NoReturn:
         msg = "'pop' not supported on frozendict"
         raise NotImplementedError(msg)
 
@@ -203,18 +184,18 @@ class frozendict[K, T](dict[K, T]):
         msg = "'update' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def __ior__(self, other: Any) -> NoReturn:  # type: ignore[misc]
+    def __ior__(self, other: Any) -> NoReturn:
         msg = "'|=' not supported on frozendict"
         raise NotImplementedError(msg)
 
     @classmethod
-    def fromkeys(cls, iterable: Iterable[Any], value: Any = None, /) -> Any:  # type: ignore[override]
+    def fromkeys(cls, iterable: Iterable[Any], value: Any = None, /) -> Any:
         return cls(dict.fromkeys(iterable, value))
 
     def __reduce__(self) -> tuple[Any, tuple[type, dict[K, T]]]:
         return (_rebuild_frozendict, (type(self), dict(self)))
 
-    def __hash__(self) -> int:  # type: ignore[override]
+    def __hash__(self) -> int:
         try:
             return self._hash
         except AttributeError:

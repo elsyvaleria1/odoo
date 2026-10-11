@@ -48,7 +48,6 @@ def event_handlers_in_xml(source: bytes) -> list[int]:
     try:
         root = etree.fromstring(source, _PARSER)
     except etree.XMLSyntaxError:
-        # test_assetsbundle's malformed fixtures: nothing compiles them
         return []
     return [line for line, _found in inline_event_handlers(root)]
 

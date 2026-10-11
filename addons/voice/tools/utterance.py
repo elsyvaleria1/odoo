@@ -10,7 +10,6 @@ from odoo.addons.speech.tools.hear import hear
 COMMAND_PURPOSE = "speech.transcription.command"
 UTTERANCE_MIMETYPE = "audio/wav"
 MAX_UTTERANCE_SECONDS = 15
-# 16-bit mono at 16 kHz, what the browser's recorder sends, plus the header
 MAX_UTTERANCE_BYTES = 16_000 * 2 * MAX_UTTERANCE_SECONDS + 44
 
 

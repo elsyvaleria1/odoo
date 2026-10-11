@@ -33,12 +33,9 @@ IMPORT_MAP_PLACEHOLDER = "<!-- odoo-import-map -->"
 
 CONTENT_SECURITY_POLICY = (
     "default-src 'none';"
-    # OWL requires `unsafe-eval` to render templates. The hash admits the injected
-    # import map, which is an inline script: without it the map is refused and every
-    # bare specifier on the page fails to resolve.
     "script-src 'self' 'unsafe-eval' {import_map_hash};"
     "connect-src 'self';"
-    "img-src 'self' data:;"  # `data:` scheme required as Bootstrap uses it for embedded SVGs
+    "img-src 'self' data:;"
     "style-src 'self';"
     "font-src 'self';"
 )
@@ -46,22 +43,10 @@ CONTENT_SECURITY_POLICY = (
 
 @lru_cache(maxsize=1)
 def _import_map():
-    """The page's import map, resolved on first use rather than at import.
-
-    ``import_map_for`` reads the ESM registry, which is built by scanning every
-    manifest on the addons path. Calling it while this module is still being
-    imported would run that scan as a side effect of a server-wide module load.
-    """
-    # bootstrap.esm.js imports Popper by bare specifier.
     return import_map_for("@popperjs/core")
 
 
 def _render_page(view):
-    """Serve an IoT box page, resolving its import-map placeholder.
-
-    The map cannot be written into the file: its CSP hash is derived from the
-    emitted bytes, so the two would have to be kept in sync by hand.
-    """
     import_map = _import_map()
     with file_open(f"iot_drivers/views/{view}", "r") as fd:
         page = fd.read().replace(IMPORT_MAP_PLACEHOLDER, import_map.script_tag)
@@ -96,10 +81,6 @@ class IotBoxOwlHomePage(http.Controller):
     def status_page(self):
         return _render_page("status_display.html")
 
-    # ---------------------------------------------------------- #
-    # GET methods                                                #
-    # -> Always use json.dumps() to return a JSON response       #
-    # ---------------------------------------------------------- #
     @route.iot_route("/iot_drivers/restart_odoo_service", type="http", cors="*")
     def odoo_service_restart(self):
         helpers.odoo_restart(0)
@@ -188,7 +169,7 @@ class IotBoxOwlHomePage(http.Controller):
             ssid = wifi.get_current() or wifi.get_access_point_ssid()
             for iface_id in netifaces.interfaces():
                 if iface_id == "lo":
-                    continue  # Skip loopback interface (127.0.0.1)
+                    continue
 
                 is_wifi = "wlan" in iface_id
                 network_interfaces.extend(
@@ -272,7 +253,6 @@ class IotBoxOwlHomePage(http.Controller):
         "/iot_drivers/version_info", type="http", cors="*", linux_only=True
     )
     def get_version_info(self):
-        # Check branch name and last commit hash on IoT Box
         current_commit = upgrade.git("rev-parse", "HEAD")
         current_branch = upgrade.git("rev-parse", "--abbrev-ref", "HEAD")
         if not current_commit or not current_branch:
@@ -301,7 +281,6 @@ class IotBoxOwlHomePage(http.Controller):
         return http.request.prepare_json_response(
             {
                 "status": "success",
-                # Checkout requires db to align with its version (=branch)
                 "odooIsUpToDate": current_commit == last_available_commit
                 or not bool(helpers.get_odoo_server_url()),
                 "imageIsUpToDate": IS_RPI and not bool(helpers.check_image()),
@@ -359,10 +338,6 @@ class IotBoxOwlHomePage(http.Controller):
             {"enabled": helpers.is_ngrok_enabled()}
         )
 
-    # ---------------------------------------------------------- #
-    # POST methods                                               #
-    # -> Never use json.dumps() it will be done automatically    #
-    # ---------------------------------------------------------- #
     @route.iot_route(
         "/iot_drivers/six_payment_terminal_add",
         type="jsonrpc",
@@ -458,14 +433,12 @@ class IotBoxOwlHomePage(http.Controller):
         if token:
             try:
                 if len(token.split("|")) == 4:
-                    # Old style token with pipe separators (pre v18 DB)
                     url, token, db_uuid, enterprise_code = token.split("|")
                     configuration = helpers.parse_url(url)
                     helpers.save_conf_server(
                         configuration["url"], token, db_uuid, enterprise_code
                     )
                 else:
-                    # New token using query params (v18+ DB)
                     configuration = helpers.parse_url(token)
                     helpers.save_conf_server(**configuration)
             except ValueError:
@@ -481,7 +454,6 @@ class IotBoxOwlHomePage(http.Controller):
                     "message": "Failed to write server configuration files on IoT. Please try again.",
                 }
 
-        # 1 sec delay for IO operations (save_conf_server)
         helpers.odoo_restart(1)
         return {
             "status": "success",
@@ -543,9 +515,6 @@ class IotBoxOwlHomePage(http.Controller):
             "message": "Successfully updated the IoT Box",
         }
 
-    # ---------------------------------------------------------- #
-    # Utils                                                      #
-    # ---------------------------------------------------------- #
     def _get_iot_handlers_logger(self, handlers_name, iot_handler_folder_name):
         handlers_loggers_level = {}
         for handler_name in handlers_name:
@@ -553,7 +522,6 @@ class IotBoxOwlHomePage(http.Controller):
                 handler_name, iot_handler_folder_name
             )
             if not handler_logger:
-                # Might happen if the file didn't define a logger (or not init yet)
                 handlers_loggers_level[handler_name] = False
                 _logger.debug("Unable to find logger for handler %s", handler_name)
                 continue
@@ -569,16 +537,6 @@ class IotBoxOwlHomePage(http.Controller):
     def _update_logger_level(
         self, logger_name, new_level, available_log_levels, handler_folder=False
     ):
-        """Update (if necessary) Odoo's configuration and logger to the given logger_name to the given level.
-        The responsibility of saving the config file is not managed here.
-
-        :param logger_name: name of the logging logger to change level
-        :param new_level: new log level to set for this logger
-        :param available_log_levels: iterable of logs levels allowed (for initial check)
-        :param str handler_folder: optional string of the IoT handler folder name ('interfaces' or 'drivers')
-        """
-        # We store the timestamp to reset the log level to warning after a week (7 days * 24 hours * 3600 seconds)
-        # This is to avoid sending polluted logs with debug messages to the db
         conf = {"log_level_reset_timestamp": str(time.time() + 7 * 24 * 3600)}
 
         if new_level not in available_log_levels:
@@ -607,10 +565,8 @@ class IotBoxOwlHomePage(http.Controller):
         if not IS_NEW_LEVEL_PARENT:
             intended_to_find = LOGGER_PREFIX + new_level.upper()
             if intended_to_find in LOG_HANDLERS:
-                # There is nothing to do, the entry is already inside
                 return
 
-        # We remove every occurrence for the given logger
         log_handlers_without_logger = [
             log_handler
             for log_handler in LOG_HANDLERS
@@ -618,14 +574,9 @@ class IotBoxOwlHomePage(http.Controller):
         ]
 
         if IS_NEW_LEVEL_PARENT:
-            # We must check that there is no existing entries using this logger (whatever the level)
             if len(log_handlers_without_logger) == len(LOG_HANDLERS):
                 return
 
-        # We add if necessary new logger entry
-        # If it is "parent" it means we want it to inherit from the parent logger.
-        # In order to do this we have to make sure that no entries for the logger exists in the
-        # `log_handler` (which is the case at this point as long as we don't re-add an entry)
         new_level_upper_case = new_level.upper()
         if not IS_NEW_LEVEL_PARENT:
             new_entry = LOGGER_PREFIX + new_level_upper_case
@@ -633,7 +584,6 @@ class IotBoxOwlHomePage(http.Controller):
             _logger.debug("Adding to odoo config log_handler: %s", new_entry)
         conf[ODOO_TOOL_CONFIG_HANDLER_NAME] = ",".join(log_handlers_without_logger)
 
-        # Update the logger dynamically
         real_new_level = logging.NOTSET if IS_NEW_LEVEL_PARENT else new_level_upper_case
         _logger.debug("Change logger %s level to %s", logger_name, real_new_level)
         logging.getLogger(logger_name).setLevel(real_new_level)
@@ -644,12 +594,6 @@ class IotBoxOwlHomePage(http.Controller):
         return logging.getLevelName(logger.getEffectiveLevel()).lower()
 
     def _get_iot_handler_logger(self, handler_name, handler_folder_name):
-        """
-        Get Odoo Iot logger given an IoT handler name
-        :param handler_name: name of the IoT handler
-        :param handler_folder_name: IoT handler folder name (interfaces or drivers)
-        :return: logger if any, False otherwise
-        """
         odoo_addon_handler_path = helpers.compute_iot_handlers_addon_name(
             handler_folder_name, handler_name
         )

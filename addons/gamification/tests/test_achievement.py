@@ -11,7 +11,6 @@ class TestAchievement(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Patch send_mail to avoid actual email sending
         patch_email = patch(
             "odoo.addons.mail.models.mail_template.MailTemplate.send_mail",
             lambda *args, **kwargs: None,
@@ -35,7 +34,6 @@ class TestAchievement(common.TransactionCase):
             groups="base.group_user,base.group_partner_manager",
         )
 
-        # Create a badge for achievement rewards
         cls.badge = cls.env["gamification.badge"].create(
             {
                 "name": "Achievement Test Badge",
@@ -43,11 +41,8 @@ class TestAchievement(common.TransactionCase):
             }
         )
 
-        # Use res.partner as the trigger model
         cls.partner_model = cls.env["ir.model"]._get("res.partner")
 
-        # Create achievement: unlock when user has created >= 1 partner with
-        # name containing "Achievement Test"
         cls.achievement = cls.env["gamification.achievement"].create(
             {
                 "name": "First Contact",
@@ -71,13 +66,10 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(form.model_name, "res.partner")
 
     def test_check_achievement_no_matching_records(self):
-        """No unlock when user has no matching records."""
         unlocks = self.achievement._check_achievement_for_users(self.user_1)
         self.assertFalse(unlocks, "Should not unlock without matching records")
 
     def test_check_achievement_unlock_on_match(self):
-        """Achievement unlocks when trigger domain matches."""
-        # Create a partner as user_1
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -91,7 +83,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(unlocks.achievement_id, self.achievement)
 
     def test_unlock_uniqueness(self):
-        """A user can only unlock an achievement once (unique constraint)."""
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -101,11 +92,9 @@ class TestAchievement(common.TransactionCase):
         unlocks_1 = self.achievement._check_achievement_for_users(self.user_1)
         self.assertEqual(len(unlocks_1), 1)
 
-        # Check again — should not create duplicate
         unlocks_2 = self.achievement._check_achievement_for_users(self.user_1)
         self.assertFalse(unlocks_2, "Should not re-unlock already unlocked achievement")
 
-        # Verify only one unlock record exists
         total = self.env["gamification.achievement.unlock"].search_count(
             [
                 ("achievement_id", "=", self.achievement.id),
@@ -115,7 +104,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(total, 1)
 
     def test_grant_rewards_karma(self):
-        """Unlocking an achievement grants karma reward."""
         initial_karma = self.user_1.karma
         self.env["res.partner"].with_user(self.user_1).create(
             {
@@ -133,7 +121,6 @@ class TestAchievement(common.TransactionCase):
         )
 
     def test_grant_rewards_badge(self):
-        """Unlocking an achievement grants the configured badge."""
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -154,7 +141,6 @@ class TestAchievement(common.TransactionCase):
         )
 
     def test_no_rewards_when_no_karma_or_badge(self):
-        """Achievement without karma/badge rewards doesn't crash."""
         achievement_no_reward = self.env["gamification.achievement"].create(
             {
                 "name": "No Reward Achievement",
@@ -178,7 +164,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(self.user_1.karma, initial_karma)
 
     def test_trigger_count_threshold(self):
-        """Achievement requires trigger_count matching records to unlock."""
         achievement_3 = self.env["gamification.achievement"].create(
             {
                 "name": "Three Contacts",
@@ -190,7 +175,6 @@ class TestAchievement(common.TransactionCase):
             }
         )
 
-        # Create 2 partners — not enough
         for i in range(2):
             self.env["res.partner"].with_user(self.user_1).create(
                 {
@@ -201,7 +185,6 @@ class TestAchievement(common.TransactionCase):
         unlocks = achievement_3._check_achievement_for_users(self.user_1)
         self.assertFalse(unlocks, "Should not unlock with only 2 of 3 required records")
 
-        # Create the 3rd
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Threshold Test Partner 3",
@@ -212,8 +195,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(len(unlocks), 1, "Should unlock with 3 matching records")
 
     def test_multi_user_check(self):
-        """_check_achievement_for_users checks multiple users at once."""
-        # Only user_1 creates a matching partner
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -228,7 +209,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(unlocks.user_id, self.user_1)
 
     def test_cron_check_achievements(self):
-        """Cron processes all active achievements and grants rewards."""
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -245,7 +225,6 @@ class TestAchievement(common.TransactionCase):
         )
 
     def test_unlock_count_computed(self):
-        """unlock_count reflects the number of users who unlocked."""
         self.env["res.partner"].with_user(self.user_1).create(
             {
                 "name": "Achievement Test Partner",
@@ -266,7 +245,6 @@ class TestAchievement(common.TransactionCase):
         self.assertEqual(self.achievement.unlock_count, 2)
 
     def test_inactive_achievement_skipped_by_cron(self):
-        """Inactive achievements are not processed by the cron."""
         self.achievement.active = False
         self.env["res.partner"].with_user(self.user_1).create(
             {
@@ -284,19 +262,6 @@ class TestAchievement(common.TransactionCase):
         self.assertFalse(unlocks, "Inactive achievement should not be checked by cron")
 
     def test_trigger_domain_not_referencing_user_is_accepted_as_shared(self):
-        """A trigger domain that never mentions 'user' is deliberate, not an error.
-
-        `_check_achievement_for_users` groups candidates by their
-        *evaluated* domain: every candidate whose domain does not reference
-        `user` at all evaluates to the same text, so they share one query
-        and its answer -- a company-wide achievement (e.g. "anyone closed a
-        deal") rather than a per-user one. That is intentional and must
-        keep working (TestCronErrorIsolation's "Good Achievement" fixture
-        relies on exactly this), so this only pins the field's help text
-        calling the shape out, rather than rejecting it -- a hard
-        validation was tried and reverted because it broke that legitimate
-        usage.
-        """
         achievement = self.env["gamification.achievement"].create(
             {
                 "name": "Global Trigger Achievement",
@@ -314,7 +279,6 @@ class TestAchievement(common.TransactionCase):
         )
 
     def test_trigger_domain_referencing_user_is_accepted(self):
-        """A domain that does reference 'user' saves without error."""
         achievement = self.env["gamification.achievement"].create(
             {
                 "name": "Per-User Trigger Achievement",

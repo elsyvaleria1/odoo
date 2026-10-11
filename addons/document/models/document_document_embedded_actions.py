@@ -14,14 +14,9 @@ class DocumentsDocument(models.Model):
     @api.depends_context("uid", "allowed_company_ids")
     @api.depends("folder_id", "type", "shortcut_document_id")
     def _compute_available_embedded_actions_ids(self) -> None:
-        # the folders of documents being read hold a document their reader
-        # sees: the reach filter of _get_folder_embedded_actions, a rule-laden
-        # search on every read, answers nothing new here
         embedded_actions = self._get_folder_embedded_actions(
             self.folder_id.ids, reached=True
         )
-        # one assignment per folder: each one costs the relation's bookkeeping,
-        # which per document was the most of this compute
         empty = self.env["ir.embedded.actions"]
         by_actions = self.grouped(
             lambda d: (
@@ -254,8 +249,6 @@ class DocumentsDocument(models.Model):
     def _get_folder_embedded_actions(
         self, folder_ids: list[int], *, reached: bool = False
     ) -> dict:
-        # reached: the caller knows the reader sees these folders or a
-        # document in them, and the reach filter would only repeat it
         reach = (
             []
             if reached
@@ -273,8 +266,6 @@ class DocumentsDocument(models.Model):
         return self._embedded_actions_of_folders(folders_sudo)
 
     def _embedded_actions_of_folders(self, folders_sudo: Any) -> dict:
-        # {folder id: embedded actions} pinned on the folders or, for a
-        # shortcut, on its target; the caller has settled who may see them
         if not folders_sudo:
             return {}
         all_embedded_actions_sudo = (
@@ -299,7 +290,6 @@ class DocumentsDocument(models.Model):
             )
         )
         if not all_embedded_actions_sudo:
-            # nothing pinned: which server actions the user may run is moot
             return {}
         accessible_server_actions_ids = (
             self.env["ir.actions.server"]

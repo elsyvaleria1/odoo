@@ -39,10 +39,6 @@ RECIPIENT_TOKEN_SCOPE = tools.register_signed_scope(
     "blocklist the address",
     lifetime="undated: carried by every mail of the mailing",
 )
-# ir.config_parameter: whether a recipient token signed with the bare database
-# secret, as every mail sent before mass_mailing 2.11 carries, is still
-# accepted, and the last day one was; the cron switches it off once no such
-# token has been used for LEGACY_TOKEN_IDLE_DAYS
 LEGACY_TOKEN_ENABLED = "mass_mailing.legacy_token_enabled"
 LEGACY_TOKEN_LAST_USE = "mass_mailing.legacy_token_last_use"
 LEGACY_TOKEN_IDLE_DAYS = 30
@@ -53,8 +49,6 @@ REPORT_OPT_OUT_SCOPE = tools.register_signed_scope(
     lifetime="undated: carried by every report mail the user receives",
 )
 
-# Syntax of the data URL Scheme: https://tools.ietf.org/html/rfc2397#section-3
-# Used to find inline images
 image_re = re.compile(r"data:(image/[A-Za-z]+);base64,(.*)")
 DEFAULT_IMAGE_CHUNK_SIZE = 32768
 
@@ -83,10 +77,6 @@ class MailingMailing(models.Model):
     _systray_view = "list"
 
     _unrestricted_rendering = True
-    # Declared, not inferred: the type-based guess also named
-    # `mailing_domain`, a recipient filter that no engine renders --
-    # so a domain whose literal happened to contain `{{ }}` was refused
-    # with "only members of Mail Template Editor may edit templates".
     _dynamic_field_names = frozenset(
         {
             "body_arch",
@@ -103,8 +93,6 @@ class MailingMailing(models.Model):
     def default_get(self, fields):
         vals = super().default_get(fields)
 
-        # field sent by the calendar view when clicking on a date block
-        # we use it to setup the scheduled date of the created mailing.mailing
         default_calendar_date = self.env.context.get("default_calendar_date")
         if (
             default_calendar_date
@@ -195,7 +183,6 @@ class MailingMailing(models.Model):
         copy=False,
         help="Date at which the mailing was or will be sent.",
     )
-    # don't translate 'body_arch', the translations are only on 'body_html'
     body_arch = fields.Html(
         string="Body",
         translate=False,
@@ -253,7 +240,6 @@ class MailingMailing(models.Model):
         default=lambda self: self.env.user,
         tracking=True,
     )
-    # mailing options
     mailing_type = fields.Selection(
         selection=[("mail", "Email")],
         default="mail",
@@ -277,7 +263,6 @@ class MailingMailing(models.Model):
         readonly=False,
         help="Preferred Reply-To Address",
     )
-    # recipients
     mailing_model_real = fields.Char(
         string="Recipients Real Model",
         compute="_compute_mailing_model_real",
@@ -327,7 +312,6 @@ class MailingMailing(models.Model):
         copy=False,
         help="Prevent sending messages to blacklisted contacts. Disable only when absolutely necessary.",
     )
-    # Mailing Filter
     mailing_filter_id = fields.Many2one(
         comodel_name="mailing.filter",
         string="Favorite Filter",
@@ -344,7 +328,6 @@ class MailingMailing(models.Model):
         string="# Favorite Filters",
         compute="_compute_mailing_filter_count",
     )
-    # A/B Testing
     ab_testing_completed = fields.Boolean(related="campaign_id.ab_testing_completed")
     ab_testing_description = fields.Html(
         string="A/B Testing Description",
@@ -385,7 +368,6 @@ class MailingMailing(models.Model):
         string="KPI mail required",
         copy=False,
     )
-    # statistics data
     mailing_trace_ids = fields.One2many(
         comodel_name="mailing.trace",
         inverse_name="mass_mailing_id",
@@ -402,7 +384,7 @@ class MailingMailing(models.Model):
     process = fields.Integer(compute="_compute_statistics")
     pending = fields.Integer(
         compute="_compute_statistics"
-    )  # used with SMS when not yet 'delivered'
+    )
     delivered = fields.Integer(compute="_compute_statistics")
     opened = fields.Integer(compute="_compute_statistics")
     clicked = fields.Integer(
@@ -441,7 +423,6 @@ class MailingMailing(models.Model):
         string="Scheduled date",
         compute="_compute_next_departure",
     )
-    # UX
     next_departure_is_past = fields.Boolean(compute="_compute_next_departure")
     warning_message = fields.Char(
         compute="_compute_warning_message",
@@ -459,7 +440,6 @@ class MailingMailing(models.Model):
 
     @api.constrains("mailing_model_id", "mailing_filter_id")
     def _check_mailing_filter_model(self) -> None:
-        """Check that if the favorite filter is set, it must contain the same recipient model as mailing"""
         for mailing in self:
             if (
                 mailing.mailing_filter_id
@@ -511,7 +491,7 @@ class MailingMailing(models.Model):
 
     def _compute_total(self) -> None:
         for mass_mailing in self:
-            total = self.env[mass_mailing.mailing_model_real].search_count(  # noqa: E8507 - one count per mailing, on the mailing's own model and domain
+            total = self.env[mass_mailing.mailing_model_real].search_count(
                 mass_mailing._get_domain_recipients()
             )
             if (
@@ -545,7 +525,6 @@ class MailingMailing(models.Model):
             mass_mailing.clicks_ratio = mapped_data.get(mass_mailing.id, 0)
 
     def _compute_statistics(self) -> None:
-        """Compute statistics of the mass mailing"""
         for key in (
             "scheduled",
             "expected",
@@ -627,18 +606,9 @@ class MailingMailing(models.Model):
 
     @api.depends("schedule_date", "state")
     def _compute_next_departure(self) -> None:
-        # Schedule_date should only be False if schedule_type = "now" or
-        # mass_mailing is canceled.
-        # A cron.trigger is created when mailing is put "in queue"
-        # so we can reasonably expect that the cron worker will
-        # execute this based on the cron.trigger's call_at which should
-        # be now() when clicking "Send" or schedule_date if scheduled
 
-        # If the departure time has passed but mailing is still in queue, this compute field
-        # will be used to display warning with reload button on a mailing form view.
         for mass_mailing in self:
             if mass_mailing.schedule_date:
-                # max in case the user schedules a date in the past
                 mass_mailing.next_departure = max(
                     mass_mailing.schedule_date, fields.Datetime.now()
                 )
@@ -692,11 +662,6 @@ class MailingMailing(models.Model):
 
     @api.depends("mailing_model_id")
     def _compute_reply_to_mode(self) -> None:
-        """For main models not really using chatter to gather answers (contacts
-        and mailing contacts), set reply-to as email-based. Otherwise answers
-        by default go on the original discussion thread (business document). Note
-        that mailing_model being mailing.list means contacting mailing.contact
-        (see mailing_model_name versus mailing_model_real)."""
         for mailing in self:
             if mailing.mailing_model_id.model in [
                 "res.partner",
@@ -792,7 +757,6 @@ class MailingMailing(models.Model):
             self.env, "mass_mailing.outgoing_mail_server", False
         )
 
-    # Overrides of mixin.mail.render
     @api.depends("mailing_model_real")
     def _compute_render_model(self) -> None:
         for mailing in self:
@@ -833,9 +797,6 @@ class MailingMailing(models.Model):
             "campaign_id",
         ]
 
-    # ------------------------------------------------------
-    # ORM
-    # ------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -870,7 +831,6 @@ class MailingMailing(models.Model):
             values["body_html"] = self._convert_inline_images_to_urls(
                 values["body_html"]
             )
-        # If ab_testing is already enabled on a mailing and the campaign is removed, we raise a ValidationError
         if (
             values.get("campaign_id") is False
             and any(mailing.ab_testing_enabled for mailing in self)
@@ -897,7 +857,6 @@ class MailingMailing(models.Model):
         return result
 
     def _create_ab_testing_utm_campaigns(self):
-        """Creates the A/B test campaigns for the mailings that do not have campaign set already"""
         campaign_vals = [
             mailing._prepare_ab_testing_campaign_vals()
             for mailing in self.filtered(
@@ -918,12 +877,8 @@ class MailingMailing(models.Model):
                 )
         return vals_list
 
-    # ------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------
 
     def action_set_favorite(self) -> dict:
-        """Add the current mailing in the favorites list."""
         self.is_favorite = True
 
         return {
@@ -941,7 +896,6 @@ class MailingMailing(models.Model):
         }
 
     def action_remove_favorite(self) -> dict:
-        """Remove the current mailing from the favorites list."""
         self.is_favorite = False
 
         return {
@@ -1024,8 +978,6 @@ class MailingMailing(models.Model):
         )
 
     def action_retry_failed(self):
-        """Remove all failed emails and their traces, and try sending them again."""
-        # Use batching to prevent cache overfill in unlink()
         batch_size = 1000
         failed_emails = (
             self.env["mail.mail"]
@@ -1184,7 +1136,6 @@ class MailingMailing(models.Model):
         return action
 
     def action_view_mailing_contacts(self):
-        """Show the mailing contacts who are in a mailing list selected for this mailing."""
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "mass_mailing.action_view_mass_mailing_contacts"
@@ -1201,12 +1152,6 @@ class MailingMailing(models.Model):
 
     @api.model
     def action_fetch_favorites(self, extra_domain=None):
-        """Return all mailings set as favorite and skip mailings with empty body.
-
-        Return archived mailing templates as well, so the user can archive the templates
-        while keeping using it, without cluttering the Kanban view if they're a lot of
-        templates.
-        """
         domain = Domain("is_favorite", "=", True)
         if extra_domain:
             domain &= Domain(extra_domain)
@@ -1223,7 +1168,6 @@ class MailingMailing(models.Model):
             if not tools.is_html_empty(values["body_arch"])
         ]
 
-        # You see first the mailings without responsible, then your mailings and then the others
         values_list.sort(
             key=lambda values: (
                 values["user_id"][0] != self.env.user.id if values["user_id"] else -1
@@ -1232,9 +1176,6 @@ class MailingMailing(models.Model):
 
         return values_list
 
-    # ------------------------------------------------------
-    # A/B Test
-    # ------------------------------------------------------
 
     def action_compare_versions(self) -> dict:
         self.check_singleton()
@@ -1255,17 +1196,6 @@ class MailingMailing(models.Model):
         }
 
     def action_send_winner_mailing(self):
-        """Send the winner mailing based on the winner selection field.
-        This action is used in 2 cases:
-
-        - When the user clicks on a button to send the winner mailing. There is only one mailing in self
-        - When the cron is executed to send winner mailing based on the A/B testing schedule datetime. In this
-          case 'self' contains all the mailing for the campaigns so we just need to take the first to determine the
-          winner.
-
-        If the winner mailing is computed automatically, we sudo the mailings of the campaign in order to sort correctly
-        the mailings based on the selection that can be used with sub-modules like CRM and Sales
-        """
         if len(self.campaign_id) != 1:
             raise UserError(
                 self.env._(
@@ -1306,7 +1236,7 @@ class MailingMailing(models.Model):
                 "ab_testing_pc": 100,
                 "name": self.env._(
                     " %(subject)s (final)", subject=self.name
-                ),  # Add suffix on name to show it's the final mailing
+                ),
             }
         )
         self.campaign_id.ab_testing_winner_mailing_id = final_mailing
@@ -1360,19 +1290,8 @@ class MailingMailing(models.Model):
             "user_id": values.get("user_id") or self.user_id.id or self.env.user.id,
         }
 
-    # ------------------------------------------------------
-    # Email Sending
-    # ------------------------------------------------------
 
     def _get_opt_out_list(self):
-        """Give list of opt-outed emails, depending on specific model-based
-        computation if available.
-
-        :returns: opt-outed emails, preferably normalized (aka not records)
-        """
-        # FIXME: The function and docstring say it returns a list but opt_out
-        #        is initialized as a dict, and `_mailing_get_opt_out_list`
-        #        actually returns a set. So is it a list, a set, or a dict?
         self.check_singleton()
         opt_out = {}
         target = self.env[self.mailing_model_real]
@@ -1405,7 +1324,6 @@ class MailingMailing(models.Model):
         return vals
 
     def _get_seen_list(self):
-        """Returns a set of emails already targeted by current mailing/campaign (no duplicates)"""
         self.check_singleton()
         target = self.env[self.mailing_model_real]
 
@@ -1455,7 +1373,6 @@ class MailingMailing(models.Model):
         return ("", "")
 
     def _prepare_mass_mailing_context(self) -> dict:
-        """Returns extra context items with pre-filled blacklist and seen list for massmailing"""
         return {
             "post_convert_links": self._prepare_link_tracker_vals(),
         }
@@ -1464,7 +1381,6 @@ class MailingMailing(models.Model):
         mailing_domain = self._get_domain_recipients()
         res_ids = self.env[self.mailing_model_real].search(mailing_domain).ids
 
-        # randomly choose a fragment
         if self.ab_testing_enabled and not self.ab_testing_is_winner_mailing:
             contact_nbr = self.env[self.mailing_model_real].search_count(mailing_domain)
             topick = 0
@@ -1483,7 +1399,6 @@ class MailingMailing(models.Model):
         return res_ids
 
     def _get_domain_recipients(self):
-        """Overridable getter used to get the domain of the recipients at the time of sending."""
         return Domain(self._parse_mailing_domain())
 
     def _get_remaining_recipients(self) -> list:
@@ -1574,9 +1489,7 @@ class MailingMailing(models.Model):
 
             composer_values = {
                 "auto_delete": not mailing.keep_archives,
-                # email-mode: keep original message for routing
                 "auto_delete_keep_log": mailing.reply_to_mode == "update",
-                # If current user is odoobot, use mailing responsible (no impact on email_from)
                 "author_id": mailing.user_id.partner_id.id
                 if user_partner == odoobot
                 else user_partner.id,
@@ -1613,24 +1526,20 @@ class MailingMailing(models.Model):
                 .create(composer_values)
             )
 
-            # auto-commit except in testing mode
             auto_commit = not modules.module.current_test
             composer._action_send_mail(auto_commit=auto_commit)
 
             if progress is not None and progress.stopped:
-                # the composer stopped on the cron's budget: the queue resumes it
                 mailing.state = "sending"
                 continue
             mailing.write(
                 {
                     "state": "done",
                     "sent_date": fields.Datetime.now(),
-                    # send the KPI mail only if it's the first sending
                     "kpi_mail_required": not mailing.sent_date,
                 }
             )
 
-            # ensure mailing state update after auto-commit
             if auto_commit is True:
                 self.env["ir.cron"]._commit_progress()
 
@@ -1682,7 +1591,6 @@ class MailingMailing(models.Model):
                     {
                         "state": "done",
                         "sent_date": fields.Datetime.now(),
-                        # send the KPI mail only if it's the first sending
                         "kpi_mail_required": not mass_mailing.sent_date,
                     }
                 )
@@ -1702,12 +1610,8 @@ class MailingMailing(models.Model):
             if mailings:
                 mailings._action_send_statistics()
 
-    # ------------------------------------------------------
-    # STATISTICS
-    # ------------------------------------------------------
 
     def _action_send_statistics(self):
-        """Send an email to the responsible of each finished mailing with the statistics."""
         self.kpi_mail_required = False
 
         mails_sudo = self.env["mail.mail"].sudo()
@@ -1777,11 +1681,6 @@ class MailingMailing(models.Model):
         return mails_sudo
 
     def _prepare_statistics_email_values(self):
-        """Return some statistics that will be displayed in the mailing statistics email.
-
-        Each item in the returned list will be displayed as a table, with a title and
-        1, 2 or 3 columns.
-        """
         self.check_singleton()
         mailing_type = self._get_pretty_mailing_type()
         kpi = {}
@@ -1869,39 +1768,27 @@ class MailingMailing(models.Model):
         return self.env._("Emails")
 
     def _generate_mailing_report_token(self, user_id):
-        """Generate a secure token for this user. It allows to opt out from
-        mailing reports while keeping some security in that process."""
         return tools.hmac(self.env(su=True), REPORT_OPT_OUT_SCOPE, user_id)
 
     @api.model
     def _is_mailing_report_token(self, user_id, token) -> bool:
         return tools.is_hmac_valid(self.env, REPORT_OPT_OUT_SCOPE, user_id, token)
 
-    # ------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------
 
     def _convert_inline_images_to_urls(self, html_content):
-        """
-        Find inline base64 encoded images, make an attachement out of
-        them and replace the inline image with an url to the attachement.
-        Find VML v:image elements, crop their source images, make an attachement
-        out of them and replace their source with an url to the attachement.
-        """
         root = lxml.html.fromstring(html_content)
         did_modify_body = False
 
-        conversion_info = []  # list of tuples (image: base64 image, node: lxml node, old_url: string or None, original_id))
+        conversion_info = []
         with self.env["ir.egress"].session(
             purpose="mailing_image",
             max_bytes=tools.config.get("import_file_maxbytes"),
         ) as session:
             for node in root.iter(lxml.etree.Element, lxml.etree.Comment):
                 if node.tag == "img":
-                    # Convert base64 images in img tags to attachments.
                     match = image_re.match(node.attrib.get("src", ""))
                     if match:
-                        image = match.group(2).encode()  # base64 image as bytes
+                        image = match.group(2).encode()
                         conversion_info.append(
                             (
                                 image,
@@ -1911,14 +1798,13 @@ class MailingMailing(models.Model):
                             )
                         )
                 elif "base64" in (node.attrib.get("style") or ""):
-                    # Convert base64 images in inline styles to attachments.
                     for match in re.findall(
                         r"data:image/[A-Za-z]+;base64,.+?(?=&\#34;|\"|\'|&quot;|\))",
                         node.attrib.get("style"),
                     ):
                         image = re.sub(
                             r"data:image/[A-Za-z]+;base64,", "", match
-                        ).encode()  # base64 image as bytes
+                        ).encode()
                         conversion_info.append(
                             (
                                 image,
@@ -1935,9 +1821,7 @@ class MailingMailing(models.Model):
                         and (width := re.search(r"width:\s*([0-9\.]+)\s*px", tag))
                         and (height := re.search(r"height:\s*([0-9\.]+)\s*px", tag))
                     ]
-                    # a VML image is stored cropped to its box, below
                     cropped_sources = {src for _tag, src, _w, _h in vml_images}
-                    # Convert base64 images (in img tags or inline styles) in mso comments to attachments.
                     base64_in_element_regex = re.compile(
                         r"""
                         (?:(?!^)|<)[^<>]*?(data:image/[A-Za-z]+;base64,[^<]+?)(?=&\#34;|\"|'|&quot;|\))(?=[^<]+>)
@@ -1949,7 +1833,7 @@ class MailingMailing(models.Model):
                             continue
                         image = re.sub(
                             r"data:image/[A-Za-z]+;base64,", "", match
-                        ).encode()  # base64 image as bytes
+                        ).encode()
                         conversion_info.append(
                             (
                                 image,
@@ -1974,8 +1858,6 @@ class MailingMailing(models.Model):
                             UserError,
                             ValueError,
                         ):
-                            # one image's responsive crop must not lose the mailing;
-                            # an inline one is still stored, as it was before cropping
                             if inline := image_re.match(url):
                                 conversion_info.append(
                                     (
@@ -1995,21 +1877,11 @@ class MailingMailing(models.Model):
                             )
                         )
 
-        # An inline image whose payload will not decode is not an image. A
-        # mailing body is pasted from arbitrary sources, so a truncated or
-        # mangled data: URI is an ordinary thing to receive -- and it used to
-        # raise binascii.Error straight out of create(), losing the whole
-        # mailing rather than the one image.
-        #
-        # Filtered here, before the call: `conversion_info` and `urls` are
-        # zipped positionally below, so dropping a payload any further in would
-        # shift every image after it onto the wrong node. Decoded exactly as the
-        # consumer decodes it, so nothing that works today starts being skipped.
         decodable = []
         for entry in conversion_info:
             try:
                 base64.b64decode(entry[0])
-            except ValueError:  # binascii.Error is a ValueError
+            except ValueError:
                 _logger.warning(
                     "Mailing %s: left an inline image in place, its data: URI does "
                     "not decode as base64.",
@@ -2019,7 +1891,6 @@ class MailingMailing(models.Model):
             decodable.append(entry)
         conversion_info = decodable
 
-        # Apply the changes.
         urls = self._create_attachments_from_inline_images(
             [(image, original_id) for (image, _, _, original_id) in conversion_info]
         )
@@ -2059,13 +1930,10 @@ class MailingMailing(models.Model):
             checksum = IrAttachment._get_content_checksum(base64.b64decode(b64image))
             checksums.append(checksum)
             existing_attach = existing_attachments.get(checksum)
-            # Existing_attach can be None, in which case it acts as placeholder
-            # for attachment to be created.
             attachments.append(existing_attach)
             if original_id:
                 checksum_original_id[checksum] = original_id
             if not existing_attach and checksum not in checksums_set:
-                # We create only one attachment per checksum
                 vals_for_attachs.append(
                     {
                         "datas": b64image,
@@ -2085,7 +1953,6 @@ class MailingMailing(models.Model):
 
         new_attachments = iter(IrAttachment.create(vals_for_attachs))
         checksum_iter = iter(checksums)
-        # Replace None entries by newly created attachments.
         for i in range(len(attachments)):
             checksum = next(checksum_iter)
             if attachments[i]:
@@ -2122,10 +1989,6 @@ class MailingMailing(models.Model):
             return base64.b64decode(payload, validate=True)
         if "//" in url:
             return self._get_image_by_url(url, session)
-        # a page of this database: its base URL is often private, which the
-        # egress policy refuses, so its own attachments are read, not fetched --
-        # only those an anonymous fetch would get, whoever runs this (an A/B
-        # winner is copied as superuser)
         if (local := _LOCAL_ATTACHMENT_RE.match(url)) and (
             raw := self._anonymously_readable_attachment(int(local[1]), url)
         ):
@@ -2202,8 +2065,6 @@ class MailingMailing(models.Model):
 
     @api.model
     def _receiver_for_unsubscribe(self, mailing_id=None, **path_args):
-        """The route's receiver for the one-click unsubscribe: the mailing,
-        admitted on the recipient's hash token the mail carried."""
         mailing = self.sudo().browse(mailing_id).exists()
         if not mailing:
             return mailing
@@ -2231,14 +2092,6 @@ class MailingMailing(models.Model):
         )
 
     def _generate_mailing_recipient_token(self, document_id, email):
-        """Generate a secure token for a given mailing and recipient (based on
-        their email). This allows notably to unsubscribe from the mailing or
-        to blacklist their email entirely without need of a user account.
-
-        :param int document_id: ID of the business document on which mailing
-          is performed;
-        :param str email: recipient email, used to unsubscribe / blacklist;
-        """
         self.check_singleton()
         assert isinstance(email, str)
         return tools.hmac(
@@ -2259,9 +2112,6 @@ class MailingMailing(models.Model):
             return True
         return self._is_legacy_recipient_token(signed, token)
 
-    # the one place a bare-secret token is accepted: delete it, its two
-    # parameters, its privilege, its cron and its migration once every
-    # database has switched it off
     def _is_legacy_recipient_token(self, signed, token) -> bool:
         settings = self.env.registry.settings
         if not settings.get_bool(self.env, LEGACY_TOKEN_ENABLED):
@@ -2274,7 +2124,7 @@ class MailingMailing(models.Model):
             repr((self.env.cr.dbname, *signed)).encode(),
             hashlib.sha512,
         )
-        if not consteq(token, legacy.hexdigest()):  # noqa: E8537  stateless: an older signed format the mails already sent carry
+        if not consteq(token, legacy.hexdigest()):
             return False
         today = fields.Date.to_string(fields.Date.today())
         recorded = settings.get(self.env, LEGACY_TOKEN_LAST_USE) == today

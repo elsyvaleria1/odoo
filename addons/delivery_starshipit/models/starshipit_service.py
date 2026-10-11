@@ -24,9 +24,6 @@ class Starshipit:
     def _send_request(
         self, endpoint, method="GET", data=None, params=None, route=BASE_URL
     ):
-        """Send a request to the starshipit api at the given endpoint, with the given method and data.
-        Returns the response, and use some basic error handling to raise a UserError if something went wrong.
-        """
         url = url_join(route, endpoint)
         self.logger(
             f"{url}\n{method}\n{data}\n{params}", f"starshipit request {endpoint}"
@@ -55,7 +52,7 @@ class Starshipit:
             )
         if not res.get(
             "success"
-        ):  # In case of errors from the api we can display the first issue to the user.
+        ):
             message = ""
             if res.get("errors"):
                 message = res["errors"][0]["details"]
@@ -68,9 +65,6 @@ class Starshipit:
         return res
 
     def _rate_shipment(self, packages, order=False, picking=False) -> dict:
-        """Returns the rates for the given order for every available delivery service.
-        The returned value is edited to return a dict with an easier structure to manipulate.
-        """
         if order:
             warehouse_partner = order.warehouse_id.partner_id
             destination_partner = order.partner_shipping_id
@@ -111,9 +105,6 @@ class Starshipit:
         }
 
     def _create_orders(self, carrier, pickings, is_return=False) -> dict:
-        """Creates the orders in starshipit using the provided pickings. One order will be created for each picking.
-        Orders are returned as a dict with the order_number being the keys.
-        """
         orders_to_import = []
         existing_orders = {}
 
@@ -135,7 +126,7 @@ class Starshipit:
 
             if (
                 len(starshipit_picking_number) > 50
-            ):  # Very unlikely to happen, simply a security measure.
+            ):
                 raise UserError(
                     self.env._(
                         "The picking %(picking_name)s sequence is too long for Starshipit. "
@@ -165,9 +156,8 @@ class Starshipit:
                 to_partner = picking.picking_type_id.warehouse_id.partner_id
             order = {
                 "order_date": format_date(carrier.env, picking.create_date),
-                "order_number": starshipit_picking_number,  # Displayed in starshipit
+                "order_number": starshipit_picking_number,
                 "reference": picking.partner_id.display_name[:50],
-                # The shipping method must match a rule in starshipit, so that the carrier will be assigned properly
                 "shipping_method": carrier.starshipit_service_code,
                 "return_order": is_return,
                 "currency": (
@@ -308,9 +298,6 @@ class Starshipit:
     def _get_delivery_services_with_destination(
         self, origin_partner, destination_partner, total_weight=None
     ):
-        """
-        Fetch delivery services between an origin and a destination.
-        """
         self._check_partner_fields(origin_partner)
         self._check_partner_fields(destination_partner)
         details = {
@@ -349,9 +336,6 @@ class Starshipit:
 
     @staticmethod
     def _check_partner_fields(partner) -> None:
-        """Make sure that the essential fields are filled in. Other error specific to each carrier could still arise,
-        but this should prevent too many errors with starshipit.
-        """
         required_address_fields = ["street", "city", "country_id", "state_id"]
         fields_details = partner.fields_get(required_address_fields, ["string"])
         for field in required_address_fields:
@@ -367,10 +351,6 @@ class Starshipit:
 
     @staticmethod
     def _get_starshipit_order_number(picking) -> str:
-        """Starshipit requires unique order numbers.
-        In order to reduce the risk of having duplication as much as possible, we will use the company_id and the database
-        uuid in order to get a unique but easily recomputable reference and add it to the picking number.
-        """
         database_uuid = picking.env.registry.settings.get(
             picking.env, "database.uuid", False
         )

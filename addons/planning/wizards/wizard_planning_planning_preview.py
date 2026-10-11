@@ -34,9 +34,7 @@ class WizardPlanningPlanningPreview(models.TransientModel):
                 record.slot_count = 0
                 continue
 
-            # Get start and end datetimes
             start_str, end_str = record._get_datetimes()
-            # Search all relevant slots within timeframe
             employee = record.employee_id
             planning_roles = employee.planning_role_ids
 
@@ -47,7 +45,6 @@ class WizardPlanningPlanningPreview(models.TransientModel):
                 ]
             )
 
-            # Role filtering: if employee has roles, restrict to those; else, no restriction
             if planning_roles:
                 role_domain = Domain(
                     [
@@ -79,7 +76,6 @@ class WizardPlanningPlanningPreview(models.TransientModel):
 
             slots = self.env["planning.slot"].search(domain)
 
-            # Apply attendance filtering if employee is not flexible
             if employee.resource_calendar_id.schedule_type == "fully_fixed":
                 start = fields.Datetime.from_string(start_str).replace(tzinfo=UTC)
                 end = fields.Datetime.from_string(end_str).replace(tzinfo=UTC)

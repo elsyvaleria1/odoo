@@ -8,18 +8,12 @@ class ResPartner(models.Model):
     _inherit = ["res.partner"]
 
     def get_view_opportunities_action(self, phone=None):
-        """
-        Returns the action to view all opportunities of a partner.
-        If the partner has no opportunities, it returns the action to create a new opportunity.
-        If the partner has one opportunity, it returns the action to view the form view of the opportunity.
-        If the partner has multiple opportunities, it returns the action to view all opportunities.
-        """
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "crm.crm_lead_opportunities"
         )
         if (
             not self
-        ):  # If no partner is provided, we create a new opportunity for the phone.
+        ):
             action["views"] = [[False, "form"]]
             action["context"] = {
                 "default_phone_ids": [

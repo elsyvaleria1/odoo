@@ -28,8 +28,6 @@ class WizardHrExpenseDecideDuplicate(models.TransientModel):
         return {"type": "ir.actions.act_window_close"}
 
     def action_refuse(self):
-        # Only the expenses that have a duplicate are refused as one; the rest
-        # stay submitted for a later approval.
         duplicated = self.expense_ids.filtered(
             lambda expense: (
                 expense.state == "submitted"

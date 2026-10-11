@@ -188,8 +188,6 @@ class MrpWorkcenter(models.Model):
         )
         resources.check_access("read")
         resources._lock_for_integrity()
-        # Changing a representation projects its pending bookings, including
-        # orders hidden from the editor; it does not grant access to those orders.
         pending = (
             self.env["mrp.workorder"]
             .sudo()
@@ -210,7 +208,6 @@ class MrpWorkcenter(models.Model):
         try:
             pending._sync_reservations()
         except ValidationError:
-            # Integrity projections can involve hidden orders or bookings.
             raise ValidationError(
                 self.env._(
                     "The new resource cannot accommodate this work center's pending reservations."
@@ -791,8 +788,6 @@ class MrpWorkcenter(models.Model):
             return prefetched
         _iterations, step = self._get_planning_horizon()
         range_start = localized(min(date_starts))
-        # A second window: an order's next work order on the same work center
-        # starts where the previous one ended, past the latest start.
         range_stop = localized(max(date_starts)) + 2 * step
         return self.resource_id._get_slot_intervals_batch(range_start, range_stop)
 
@@ -937,9 +932,9 @@ class MrpWorkcenter(models.Model):
             (self.env["product.product"], unit),
             (self.env["product.product"], product.uom_id),
         ]
-        rank = -1  # debuglog
+        rank = -1
         for wanted_product, wanted_unit in ranked:
-            rank += 1  # debuglog
+            rank += 1
             capacity = self.capacity_ids.filtered_domain(
                 [
                     ("product_id", "=", wanted_product.id),
@@ -1228,9 +1223,6 @@ class MrpWorkcenterProductivity(models.Model):
         now = fields.Datetime.now()
         underperformance_timers = self.browse()
         split_off = []
-        # Every timer closes at the same instant, so it is one write, not one
-        # per timer -- and the loop below reads `date_end` back, which is why it
-        # is set before rather than inside.
         self.date_end = now
         for timer in self:
             wo = timer.workorder_id

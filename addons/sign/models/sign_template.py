@@ -104,7 +104,6 @@ class SignTemplate(models.Model):
         compute="_compute_is_sharing",
         help="Checked if this template has created a shared document for you",
     )
-    # Other model integration
     model_id = fields.Many2one(
         comodel_name="ir.model",
         domain=[
@@ -147,7 +146,6 @@ class SignTemplate(models.Model):
 
     @api.model
     def name_search(self, name="", domain=None, operator="ilike", limit=100):
-        # Display favorite templates first
         domain = Domain.AND([[("display_name", operator, name)], domain or []])
         templates = self.search_fetch(domain, ["display_name"], limit=limit)
         if limit is None or len(templates) < limit:
@@ -246,11 +244,6 @@ class SignTemplate(models.Model):
         return vals_list
 
     def update_document(self, document_id, attachment_data) -> dict:
-        """Update a document in the template with a new one, preserving sign items.
-        :param int document_id: ID of the document to replace
-        :param dict attachment_data: Dictionary containing the new document data with name and datas
-        :returns dict: Action to redirect to the new template
-        """
         self.check_singleton()
         old_document = self.env["sign.document"].browse(document_id)
 
@@ -261,11 +254,8 @@ class SignTemplate(models.Model):
                 )
             )
 
-        # Check if the attachment data is valid PDF.
         self.env["sign.document"]._check_pdf_data_validity(attachment_data["datas"])
 
-        # Store the old document's sequence and create a copy of the template.
-        # Find and delete the corresponding document in the new template.
         target_sequence = old_document.sequence
         new_template = self.copy()
         corresponding_doc = new_template.document_ids.filtered(
@@ -274,8 +264,6 @@ class SignTemplate(models.Model):
         if corresponding_doc:
             corresponding_doc.unlink()
 
-        # Create the new document directly with the correct sequence.
-        # Copy sign items from old document to new document.
         attachment = self.env["ir.attachment"].create(
             {
                 "name": attachment_data["name"],
@@ -291,7 +279,6 @@ class SignTemplate(models.Model):
         )
         old_document._copy_sign_items_to(new_document)
 
-        # Return action to open new template.
         return {
             "type": "ir.actions.client",
             "tag": "sign.Template",
@@ -302,13 +289,6 @@ class SignTemplate(models.Model):
 
     @api.model
     def create_from_attachment_data(self, attachment_data_list, active=True):
-        """
-        Create a sign.template record with sign.document records from a list of attachment data.
-
-        :param attachment_data_list: List of dictionaries, each with 'name' and 'datas' keys.
-        :return: dict with 'id' (new sign.template id) and 'name' (template name)
-        :raises UserError: If the input list is empty or a dictionary is missing required keys.
-        """
 
         if not attachment_data_list:
             raise UserError(self.env._("The attachment data list cannot be empty."))
@@ -335,18 +315,9 @@ class SignTemplate(models.Model):
         }
 
     def update_from_attachment_data(self, attachment_data_list) -> None:
-        """
-        Update the current sign.template record by adding sign.document records created from a list of attachment data.
-
-        :param attachment_data_list: List of dictionaries, each with 'name' and 'datas' keys.
-                                    Example: [{'name': 'asdf', 'datas': 'asdfasdfasdf23423'}, ...]
-        :return: None. The sign.template record is updated in place.
-        """
         self._add_documents(attachment_data_list)
 
     def _add_documents(self, attachment_data_list) -> list:
-        """Add the PDFs after the template's last document, their form fields
-        flattened so the signers cannot edit them."""
         self.check_singleton()
         first = max(self.document_ids.mapped("sequence"), default=-1) + 1
         return self.env["sign.document"].create_from_attachment_data(
@@ -373,8 +344,6 @@ class SignTemplate(models.Model):
         }
 
     def _check_documents_unlocked(self) -> None:
-        """Refuse to add, remove, reorder or replace the documents of a template a
-        request uses: each request fingerprinted them when it was created."""
         if self.filtered("has_sign_requests"):
             raise UserError(
                 self.env._(
@@ -401,11 +370,6 @@ class SignTemplate(models.Model):
             )
 
     def get_radio_set_info_by_item_id(self, sign_item_ids=None):
-        """
-        :param sign_item_ids: list of sign item IDs
-        :return: dict radio_set_by_item_dict that maps each sign item ID in sign_item_ids of type "radio"
-        to a dictionary containing num_options and radio_set_id of the radio set it belongs to.
-        """
         radio_set_by_item_dict = {}
         if sign_item_ids:
             radio_items = self.sign_item_ids.filtered(
@@ -423,22 +387,6 @@ class SignTemplate(models.Model):
     def update_from_pdfviewer(
         self, sign_items=None, deleted_sign_item_ids=None, name=None, document_id=None
     ):
-        """Update a sign.template from the pdfviewer
-
-        :param dict sign_items: ``{id (str): values (dict)}``
-
-            * id: positive: sign.item's id in database (the sign item is already in the database and should be update)
-            * negative: negative random itemId(transaction_id) in pdfviewer (the sign item is new created in the pdfviewer and should be created in database)
-            * values: values to update/create
-
-        :param list[str] deleted_sign_item_ids: list of ids of deleted sign items. These deleted ids may be
-
-            * positive: the sign item exists in the database
-            * negative: the sign item is new created in pdfviewer but removed before a successful transaction
-
-        :return: dict new_id_to_item_id_map: {negative itemId(transaction_id) in pdfviewer (str): positive id in database (int)},
-            or ``False`` if the template already has sign requests
-        """
         self.check_singleton()
         if self.has_sign_requests:
             return False
@@ -451,7 +399,6 @@ class SignTemplate(models.Model):
             ):
                 document.update_attachment_name(name)
 
-        # update new_sign_items to avoid recreating sign items
         new_sign_items = dict(sign_items)
         sign_items_exist = self.sign_item_ids.filtered(
             lambda r: str(r.transaction_id) in sign_items
@@ -465,7 +412,6 @@ class SignTemplate(models.Model):
             for sign_item in sign_items_exist
         }
 
-        # unlink sign items
         deleted_sign_item_ids = (
             set() if deleted_sign_item_ids is None else set(deleted_sign_item_ids)
         )
@@ -476,7 +422,6 @@ class SignTemplate(models.Model):
             )
         ).unlink()
 
-        # update existing sign items
         for item in self.sign_item_ids.filtered(lambda r: str(r.id) in new_sign_items):
             str_item_id = str(item.id)
             if "option_ids" in new_sign_items.get(str_item_id):
@@ -486,8 +431,6 @@ class SignTemplate(models.Model):
                 new_sign_items[str_item_id]["option_ids"] = [[6, 0, new_option_ids]]
             item.write(new_sign_items.pop(str_item_id))
 
-        # create new sign items; a positive key left over names an item that is
-        # gone, and is neither created nor mapped
         new_keys = [key for key in new_sign_items if int(key) < 0]
         new_items = self.env["sign.item"].create(
             [new_sign_items[key] for key in new_keys]
@@ -550,7 +493,6 @@ class SignTemplate(models.Model):
         }
 
     def get_action_in_progress_requests(self) -> dict:
-        """Get the in-progress sign requests related to this template."""
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("In Progress Requests"),
@@ -560,7 +502,6 @@ class SignTemplate(models.Model):
         }
 
     def get_action_signed_requests(self) -> dict:
-        """Get the signed sign requests related to this template."""
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Signed Requests"),
@@ -577,7 +518,6 @@ class SignTemplate(models.Model):
 
     def trigger_template_tour(self) -> dict:
         template = self.env.ref("sign.template_sign_tour")
-        # Write access to the item's roles is needed to update the roles names.
         sign_items_access = template.sign_item_ids.mapped("responsible_id").has_access(
             "write"
         )
@@ -589,8 +529,6 @@ class SignTemplate(models.Model):
                     "active": False,
                 }
             )
-            # Remove items added by previous tour runs, as the tour guides
-            # the user to add new ones. Also avoids access errors.
             template.sign_item_ids.unlink()
         return {
             "type": "ir.actions.client",
@@ -606,7 +544,6 @@ class SignTemplate(models.Model):
             document.check_access("write")
         self.copy()
 
-    # PDF Rendering
 
     def action_template_preview(self, document_id) -> dict:
         self.check_singleton()
@@ -614,8 +551,6 @@ class SignTemplate(models.Model):
             raise UserError(
                 self.env._("This document does not belong to this template.")
             )
-        # We create the wizard here to have a proper id (not newID). The pdf_viewer widget needs it
-        # to display the pdf in the iFrame
         wizard = self.env["wizard.sign.template.preview"].create(
             {
                 "template_id": self.id,
@@ -633,7 +568,6 @@ class SignTemplate(models.Model):
         }
 
     def get_template_items_roles_info(self):
-        """Extract a unique list of role IDs and colors from self.sign_item_ids, adding an index."""
         self.check_singleton()
         roles_info = []
         for idx, role in enumerate(self.sign_item_ids.responsible_id.sorted()):
@@ -651,7 +585,6 @@ class SignTemplate(models.Model):
         return roles_info
 
     def action_template_configuration(self) -> dict:
-        """Open the template properties form view."""
         self.check_singleton()
         return {
             "name": "Edit Template Form",
@@ -666,14 +599,6 @@ class SignTemplate(models.Model):
     def create_sign_template_from_ir_attachment_data(
         self, attachment_id=False, res_id=False, res_model=False
     ) -> tuple:
-        """
-        Create a sign.template record from an existing ir.attachment.
-
-        :param attachment_id: The ID of the `ir.attachment` record to use as the source document.
-        :param res_id: ID of the related record to link as reference.
-        :param res_model: Model name of the related record to link as reference.
-        :return: A tuple containing the ID and name of the newly created `sign.template`.
-        """
         attachment = self.env["ir.attachment"].browse(attachment_id).exists()
         if not attachment:
             raise UserError(self.env._("Attachment not found."))
@@ -694,7 +619,6 @@ class SignTemplate(models.Model):
         return template_data["id"], template_data["name"]
 
     def open_sign_send_dialog(self):
-        """Create and open dialog. This is needed to be able to compute the values without onchange and default."""
         context = dict(self.env.context)
         template = self[:1]
         default_activity_id = context.get("default_activity_id")
@@ -707,7 +631,6 @@ class SignTemplate(models.Model):
                     template = activity_template
         context.update({"default_template_id": template.id})
         if template.exists() and not is_activity:
-            # Hide the template_id field
             context.update({"default_has_default_template": True})
         if context.get("default_reference_doc"):
             context.update({"sign_from_record": True})
@@ -728,7 +651,6 @@ class SignTemplate(models.Model):
 
     @api.model
     def create_item_and_role(self, document_id, role_name):
-        """Create a new sign role and a corresponding dummy sign item."""
         role = self.env["sign.item.role"].create({"name": role_name})
         signature_item_type = self.env["sign.item.type"].search([], limit=1)
         if not signature_item_type:
@@ -754,12 +676,7 @@ class SignTemplate(models.Model):
 
     @api.autovacuum
     def _gc_sign_items(self) -> None:
-        """Garbage-collect dummy sign items (page < 0) that are older than one day,
-        and remove sign roles that are no longer linked to any active sign items.
-        """
 
-        # Filter dummy items older than 1 day to avoid deleting roles that may still be
-        # used in an ongoing sign request creation session.
         one_day_ago = fields.Datetime.now() - timedelta(days=1)
         dummy_items = self.env["sign.item"].search(
             [("page", "<", 0), ("create_date", "<", one_day_ago)]

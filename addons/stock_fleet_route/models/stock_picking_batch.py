@@ -12,9 +12,7 @@ BRAND = "AgroMarin"
 DEFAULT_TZ = "UTC"
 DELAY_PARAM = "stock_fleet_route.delay_threshold_minutes"
 DEFAULT_DELAY_MINUTES = 15
-# A GPS reading older than this does not say where the vehicle is now.
 GPS_FRESH = timedelta(minutes=30)
-# A stop reached after this local hour does not make it within the working day.
 DAY_END_HOUR = 19
 
 
@@ -82,18 +80,12 @@ class StockPickingBatch(models.Model):
         )
 
     def _route_local(self, date):
-        """``date`` (naive UTC) in the warehouse's time zone."""
         return date.replace(tzinfo=UTC).astimezone(self._route_tz())
 
     def _route_hour(self, date):
         return self._route_local(date).strftime("%H:%M")
 
     def _route_etas(self, pickings, legs, start):
-        """Arrival at each of ``pickings``, visited in order from ``start``.
-
-        :return: {picking: arrival (naive UTC)}
-        :rtype: dict
-        """
         service = self._route_service()
         etas = {}
         clock = start
@@ -103,9 +95,6 @@ class StockPickingBatch(models.Model):
             clock += service
         return etas
 
-    # ------------------------------------------------------------------
-    # Suggested route
-    # ------------------------------------------------------------------
     def _route_start(self):
         now = fields.Datetime.now()
         if self.date_departure:
@@ -113,7 +102,6 @@ class StockPickingBatch(models.Model):
         return max(self.date_planned, now) if self.date_planned else now
 
     def action_route_suggest(self) -> None:
-        """Order the stops by TomTom's best route and estimate the arrivals."""
         self.check_singleton()
         if self.trip_state not in ("planned", "loaded"):
             raise UserError(
@@ -193,12 +181,7 @@ class StockPickingBatch(models.Model):
             )
         return "\n".join(warnings)
 
-    # ------------------------------------------------------------------
-    # Google Maps
-    # ------------------------------------------------------------------
     def _route_google_maps_url(self):
-        """Directions through the stops in trip order; once the trip left, from
-        wherever the phone is and through the stops still pending."""
         self.check_singleton()
         stops = self.picking_ids.filtered(lambda p: p.state != "cancel")
         if self.date_departure:
@@ -233,11 +216,7 @@ class StockPickingBatch(models.Model):
             )
         return {"type": "ir.actions.act_url", "url": url, "target": "new"}
 
-    # ------------------------------------------------------------------
-    # Telegram
-    # ------------------------------------------------------------------
     def _route_telegram(self, partner, text):
-        """Send ``text`` to the Telegram chat linked to ``partner``, if any."""
         if not partner:
             return False
         chat = self.env["telegram.chat"]._for_partner(partner)[:1]
@@ -247,8 +226,6 @@ class StockPickingBatch(models.Model):
         return chat.bot_id.send_message(chat.chat_id, text, parse_mode=None)
 
     def _route_tell_seller(self, picking, text, customer_text):
-        """Tell the seller of ``picking`` ``text``, with a WhatsApp link that
-        sends ``customer_text`` to the customer."""
         seller = picking._route_seller()
         if not seller:
             return False
@@ -263,9 +240,6 @@ class StockPickingBatch(models.Model):
             )
         return self._route_telegram(seller.partner_id, text)
 
-    # ------------------------------------------------------------------
-    # Departure notice
-    # ------------------------------------------------------------------
     def action_depart(self):
         res = super().action_depart()
         self._route_privileged()._route_notify_departure()
@@ -296,9 +270,6 @@ class StockPickingBatch(models.Model):
             )
             self._route_tell_seller(picking, text, customer_text)
 
-    # ------------------------------------------------------------------
-    # Live arrival times
-    # ------------------------------------------------------------------
     @api.model
     def _cron_route_refresh_eta(self) -> None:
         trips = self.search(
@@ -317,7 +288,6 @@ class StockPickingBatch(models.Model):
                 )
 
     def action_route_refresh_eta(self) -> None:
-        """Recompute the arrivals from where the vehicle is now."""
         self.check_singleton()
         if not self._route_privileged()._route_refresh_eta():
             raise UserError(
@@ -329,18 +299,11 @@ class StockPickingBatch(models.Model):
             )
 
     def _route_vehicle_position(self):
-        """(latitude, longitude) of the vehicle from a recent GPS reading, or None."""
         self.check_singleton()
         log = self.vehicle_id.resource_id._gps_position(max_age=GPS_FRESH)
         return (log.latitude, log.longitude) if log else None
 
     def _route_refresh_eta(self) -> bool:
-        """Estimate the pending arrivals from the vehicle's position, keeping the
-        stop order, and report the delays above the threshold.
-
-        :return: False when the vehicle has no recent position
-        :rtype: bool
-        """
         self.check_singleton()
         position = self._route_vehicle_position()
         if not position:
@@ -374,7 +337,6 @@ class StockPickingBatch(models.Model):
         return True
 
     def _route_notify_delay(self, picking, eta, minutes) -> None:
-        """Tell the crew and the seller that ``picking`` arrives ``minutes`` late."""
         hour = self._route_hour(eta)
         seller = picking._route_seller()
         crew = (

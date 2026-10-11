@@ -33,7 +33,6 @@ class MockIAPEnrich(common.TransactionCase):
             }
             if default_data:
                 sim_result.update(default_data)
-            # mock the lead enrichment endpoint
             if local_endpoint == "/iap/clearbit/1/lead_enrichment_email":
                 result = {}
                 for lead_id, email in params["domains"].items():
@@ -70,38 +69,31 @@ class MockIAPEnrich(common.TransactionCase):
         return {
             "domain": "%s.de" % base_name,
             "clearbit_id": "123_ClearbitID_%s" % base_name,
-            # Company Info
             "name": "%s GmbH" % base_name,
             "legal_name": "%s GmbH legal_name" % base_name,
             "description": "%s GmbH description" % base_name,
             "founded_year": "1930",
             "logo": "https://logo.clearbit.com/%slogo.com" % base_name,
             "company_type": "private",
-            # Contacts
             "phone_numbers": ["+4930499193937", "+4930653376208"],
             "email": [
                 "info@%s.example.com" % base_name,
                 "info2@%s.example.com" % base_name,
             ],
-            # Timezone
             "timezone": "Europe/Berlin",
             "timezone_url": "https://time.is/Berlin",
-            # Social
             "facebook": "%s Facebook Handle" % base_name,
             "linkedin": "%s Linkedin Handle" % base_name,
             "crunchbase": "organization/%s" % base_name,
-            # Twitter
             "twitter": "%s Twitter Handle" % base_name,
             "twitter_bio": "%s Twitter Bio" % base_name,
             "twitter_followers": 1250,
             "twitter_location": "Berlin",
-            # Metrics
             "estimated_annual_revenue": "1000000",
             "employees": 3.14,
             "market_cap": 6.28,
             "raised": 15000,
             "annual_revenue": 1000000,
-            # Category
             "sector": "%s sector" % base_name,
             "sector_primary": "%s sector_primary" % base_name,
             "industry": "%s industry" % base_name,
@@ -109,9 +101,7 @@ class MockIAPEnrich(common.TransactionCase):
             "sub_industry": "%s sub_industry" % base_name,
             "tag": ["Automation", "Construction"],
             "tech": ["3d_cart", "nginx"],
-            # Site
             "website_title": "%s Website Title" % base_name,
-            # GEO Data
             "location": "Mennrather Str. 123456",
             "street_number": "123456",
             "street_name": "Mennrather Str.",

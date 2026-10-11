@@ -6,14 +6,6 @@ class ProductProduct(models.Model):
 
     @api.model
     def _restore_lazada_data_product(self, default_name, default_type, xmlid):
-        """Create or restore a Lazada default product with its XML ID.
-
-        :param str default_name: Product name
-        :param str default_type: Product type
-        :param str xmlid: XML ID to assign
-        :return: Created/restored product
-        :rtype: product.product
-        """
         product = (
             self.env["product.product"]
             .with_context(mail_create_nosubscribe=True)
@@ -48,7 +40,6 @@ class ProductProduct(models.Model):
         return product
 
     def _configure_for_lazada(self) -> None:
-        """Configure Lazada default products (archive and set invoice policy)."""
         for product_template in self.product_tmpl_id:
             product_template.write(
                 {

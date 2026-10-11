@@ -15,7 +15,6 @@ class HrEmployee(models.Model):
 
     def _get_employees_working_hours(self, employees, start_datetime, end_datetime):
 
-        # the stop date is included: the period runs to the midnight after it
         start_datetime = datetime.combine(
             fields.Date.from_string(start_datetime), time.min
         )
@@ -23,7 +22,6 @@ class HrEmployee(models.Model):
             fields.Date.from_string(end_datetime) + timedelta(days=1), time.min
         )
 
-        # a resource's schedule is read in its own zone, so its days are too
         employees_work_days_data = {}
         for tz, resources in employees.sudo().resource_id.grouped("tz").items():
             zone = timezone(tz)
@@ -73,15 +71,6 @@ class HrEmployee(models.Model):
                 employee.timesheet_manager_id = False
 
     def get_timesheet_and_working_hours(self, date_start, date_stop):
-        """Get the difference between the supposed working hour (based on resource calendar) and
-        the timesheeted hours, for the given period `date_start` - `date_stop` (inclusives).
-
-        :param date_start: start date of the period to check (date string)
-        :param date_stop: end date of the period to check (date string)
-        :rtype: dict
-        :returns: a dict mapping the employee_id with his timesheeted and working hours for the
-            given period.
-        """
         employees = self.filtered(
             lambda employee: (
                 employee.resource_calendar_id.schedule_type != "fully_flexible"
@@ -99,7 +88,6 @@ class HrEmployee(models.Model):
         if not employees:
             return result
 
-        # find timesheeted hours of employees with working hours
         self.env.cr.execute(
             """
             SELECT A.employee_id as employee_id, sum(A.unit_amount) as amount_sum
@@ -126,14 +114,11 @@ class HrEmployee(models.Model):
 
     def _count_daily_working_hours(self, date_start, date_stop):
         result = defaultdict(dict)
-        # Change the type of the date from string to Date
         date_start_date = fields.Date.from_string(date_start)
         date_stop_date = min(fields.Date.from_string(date_stop), fields.Date.today())
 
-        # Compute the difference between the starting and ending date
         delta = date_stop_date - date_start_date
 
-        # Collect the number of hours that an employee should work according to their schedule without counting timeoff
         resource_work_intervals = {}
         for tz, resources in self.resource_id.grouped("tz").items():
             zone = timezone(tz)
@@ -187,20 +172,6 @@ class HrEmployee(models.Model):
         """
 
     def get_timesheet_and_working_hours_for_employees(self, date_start, date_stop):
-        """
-        Method called by the timesheet avatar widget on the frontend in gridview to get information
-        about the hours employees have worked and should work.
-
-        :param date_start: date start of the interval to search
-        :param date_stop: date stop of the interval to search
-        :return: Dictionary of dictionary:
-            ::
-
-                for each employee id =>
-                    number of units to work,
-                    what unit type are we using
-                    the number of worked units by the employees
-        """
         result = {}
         uom = str(
             self.env.company.hr_timesheet_config_id.timesheet_encode_uom_id.name
@@ -218,7 +189,6 @@ class HrEmployee(models.Model):
                 employees_work_days_data[employee.resource_id.id]
             )
 
-            # Adjustments if we work with a different unit of measure
             if uom == "days":
                 calendar = (
                     employee.resource_calendar_id

@@ -7,9 +7,6 @@ from odoo.tools.safe_eval import safe_eval
 DOMAIN_TEMPLATE = "[('store', '=', True), '|', ('model_id', '=', model_id), ('model_id', 'in', model_inherited_ids)%s]"
 
 
-# Each module wanting to define gamification objectives creates
-# ``gamification.goal.definition`` records specifying the computation
-# mode (count, sum, python, manual) and the target model/field/domain.
 class GamificationGoalDefinition(models.Model):
     """Template that defines how a goal is evaluated."""
 
@@ -133,16 +130,11 @@ class GamificationGoalDefinition(models.Model):
             goal.full_suffix = " ".join(items)
 
     def _check_domain_validity(self) -> bool:
-        # take admin as should always be present
         for definition in self:
             if definition.computation_mode not in ("count", "sum"):
                 continue
 
             if not definition.model_id:
-                # `self.env[False]` raised a bare KeyError from *outside* the
-                # try below, so a count/sum definition saved without a model
-                # produced a traceback instead of the message this method exists
-                # to produce.
                 raise exceptions.UserError(
                     self.env._(
                         "The definition %(definition)s counts records, so it "
@@ -153,8 +145,7 @@ class GamificationGoalDefinition(models.Model):
             try:
                 Obj = self.env[definition.model_id.model]
                 domain = safe_eval(definition.domain, {"user": self.env.user})
-                # dummy search to make sure the domain is valid
-                Obj.search_count(domain)  # noqa: E8507 - one probe per definition: each has its own model and domain
+                Obj.search_count(domain)
             except (KeyError, TypeError, ValueError, SyntaxError) as e:
                 msg = e
                 if isinstance(e, SyntaxError):
@@ -169,7 +160,6 @@ class GamificationGoalDefinition(models.Model):
         return True
 
     def _check_model_validity(self) -> None:
-        """Make sure the selected field and model are usable"""
         for definition in self:
             try:
                 if not (definition.model_id and definition.field_id):

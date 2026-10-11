@@ -27,8 +27,6 @@ class AppointmentInvite(models.Model):
 
     @api.model
     def default_get(self, fields):
-        """Override to suggest a default short_code, re-using the one of an identical
-        configuration when there is one, else deriving it from the appointment name."""
 
         res = super().default_get(fields)
         if "short_code" in fields and "short_code" not in res:
@@ -49,13 +47,6 @@ class AppointmentInvite(models.Model):
                     else "all_assigned_resources"
                 )
 
-            # Re-use an identical configuration by assigning its short_code along with
-            # 'identical_config_id': the UI then just copies the existing URL instead of
-            # creating yet another appointment.invite record from the numerous "Share"
-            # buttons. It is reset through an onchange when manually modified. Re-use is
-            # only attempted for 'simple' configurations (single appointment, no specific
-            # staff users or resources); code-based creation can bypass it by calling
-            # '_get_unique_short_code' explicitly.
             identical_config = False
             if (
                 not res.get("staff_user_ids")
@@ -72,9 +63,6 @@ class AppointmentInvite(models.Model):
                 short_code = identical_config.short_code
                 res["identical_config_id"] = identical_config.id
             elif appointment_type:
-                # Onboarding: on the first share of an appointment there is no invite yet,
-                # so build a friendlier short code from its name. That nicer-looking URL is
-                # then re-applied on subsequent shares by the identical config case above.
                 short_code = self._get_unique_short_code(
                     appointment_type=appointment_type
                 )
@@ -122,9 +110,6 @@ class AppointmentInvite(models.Model):
         compute="_compute_redirect_url",
     )
 
-    # Put active_test to False because we always want to be able to check all appointment types from an invitation.
-    # In case the appointment type is archived, we still want old links to work and display with a message telling
-    # that it's no longer available.
     appointment_type_ids = fields.Many2many(
         comodel_name="appointment.type",
         string="Appointment Types",
@@ -249,8 +234,6 @@ class AppointmentInvite(models.Model):
 
     @api.depends("appointment_type_ids")
     def _compute_schedule_based_on(self) -> None:
-        """Get the schedule_based_on value when selecting one appointment type.
-        This allows to personalize the warning or info message based on this value."""
         for invite in self:
             invite.schedule_based_on = (
                 invite.appointment_type_ids.schedule_based_on
@@ -260,10 +243,6 @@ class AppointmentInvite(models.Model):
 
     @api.depends("appointment_type_ids", "appointment_type_count")
     def _compute_appointment_type_info_msg(self) -> None:
-        """When more than one appointment type is shared and at least one has no staff user
-        or resource assigned, display an alert telling the current user that, without staff
-        users or resources, an appointment type won't be published.
-        """
         for invite in self:
             appt_without_staff_user = invite.appointment_type_ids.filtered_domain(
                 [("schedule_based_on", "=", "users"), ("staff_user_ids", "=", False)]
@@ -296,7 +275,7 @@ class AppointmentInvite(models.Model):
             for appointment_invite, count in appointment_data
         }
         for invite in self:
-            if not invite.id:  # new record
+            if not invite.id:
                 invite.appointment_type_count = len(invite.appointment_type_ids)
             else:
                 invite.appointment_type_count = mapped_data.get(invite.id, 0)
@@ -326,7 +305,7 @@ class AppointmentInvite(models.Model):
                 else False
             )
             invite.short_code_unique_warning = not invite.identical_config_id and bool(
-                self.env["appointment.invite"].search_count(  # noqa: E8507 - one probe per invite, on its own short code
+                self.env["appointment.invite"].search_count(
                     [
                         ("id", "!=", invite._origin.id),
                         ("short_code", "=", invite.short_code),
@@ -378,9 +357,7 @@ class AppointmentInvite(models.Model):
 
     @api.depends("base_book_url", "short_code", "book_url_params")
     def _compute_book_url(self) -> None:
-        """Compute a short link linked to an appointment invitation."""
         for invite in self:
-            # short_code is validated separately, so book_url will never be False on save
             try:
                 invite.book_url = (
                     url_join(invite.base_book_url, invite.short_code)
@@ -395,13 +372,6 @@ class AppointmentInvite(models.Model):
 
     @api.depends("appointment_type_ids", "staff_user_ids", "resource_ids")
     def _compute_redirect_url(self) -> None:
-        """Compute the link shared with the customer. It targets the appointment page when a
-        single appointment type is selected, the appointment list otherwise, and carries the
-        selection as url params (see _get_redirect_url_parameters):
-            - filter_appointment_type_ids: the appointment types to choose from
-            - filter_staff_user_ids: the staff users to choose from
-            - filter_resource_ids: the resources to choose from
-        """
         for invite in self:
             if len(invite.appointment_type_ids) == 1:
                 base_redirect_url = url_join(
@@ -437,12 +407,6 @@ class AppointmentInvite(models.Model):
         "short_code",
     )
     def _onchange_configuration(self) -> None:
-        """Reset the short code when the configuration is manually modified.
-
-           Note: Don't reset the short_code which has been modified manually via input.
-           So, we can allow the modified short_code to be saved.
-
-        See 'default_get' for details."""
         for invite in self.filtered("identical_config_id"):
             reset_identical_config = False
             if (
@@ -472,7 +436,6 @@ class AppointmentInvite(models.Model):
 
     @api.model
     def _get_invitation_url_parameters(self) -> set:
-        """Returns invitation-related url parameters we want to keep between the different steps of booking"""
         return {
             "filter_appointment_type_ids",
             "filter_resource_ids",
@@ -498,14 +461,6 @@ class AppointmentInvite(models.Model):
         return url_param
 
     def _check_appointments_params(self, appointment_types, users, resources) -> bool:
-        """Check if the params received through the URL match the appointment invite info.
-
-        :param recordset appointment_types: the appointment types representing the filter_appointment_type_ids
-        :param recordset users: the staff users representing the filter_staff_user_ids
-        :param recordset resources: the resources representing the filter_resource_ids
-        :return: whether the params match the invite
-        :rtype: bool
-        """
         self.check_singleton()
         return not (
             (
@@ -529,9 +484,6 @@ class AppointmentInvite(models.Model):
             or self.short_code
             or (self.access_token[:8] if self.access_token else secrets.token_hex(4))
         )
-        # Match exactly - an 'ilike' also counts unrelated codes that merely contain
-        # this one - and keep suffixing until the candidate is actually free, so the
-        # value returned here cannot violate the UNIQUE(short_code) constraint.
         candidate = short_code
         suffix = 1
         while self.env["appointment.invite"].search_count(
@@ -555,16 +507,12 @@ class AppointmentInvite(models.Model):
 
         return self.env["appointment.invite"].search(domain, limit=1)
 
-    # Bound one autovacuum pass; the cron runs daily, so a backlog drains over a
-    # few days instead of loading every expired invite into memory at once.
     _GC_BATCH_SIZE = 1000
 
     @api.autovacuum
     def _gc_appointment_invite(self) -> tuple:
         limit_dt = fields.Datetime.subtract(fields.Datetime.now(), months=6)
 
-        # Batch the sweep: this runs from the autovacuum cron, where an unbounded
-        # search loads every invite older than the cutoff into memory at once.
         invites = self.env["appointment.invite"].search(
             [("create_date", "<=", limit_dt)], limit=self._GC_BATCH_SIZE
         )

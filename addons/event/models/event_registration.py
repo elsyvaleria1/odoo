@@ -20,16 +20,6 @@ class EventRegistration(models.Model):
 
     @api.model
     def _count_taken_seats_by(self, fname, record_ids):
-        """Count live registrations per value of `fname`, for `record_ids`.
-
-        The seat aggregation behind ``event.event``, ``event.slot`` and
-        ``event.event.ticket`` was three copies of the same grouped count,
-        differing only in the column. Returns
-        ``{record_id: {"seats_reserved": n, "seats_used": n}}``, zero-filled.
-
-        Counted as sudo: seat availability is shown to anonymous visitors on
-        the website, and the count must not depend on who is asking.
-        """
         state_field = {"open": "seats_reserved", "done": "seats_used"}
         results = {
             record_id: dict.fromkeys(state_field.values(), 0)
@@ -38,11 +28,6 @@ class EventRegistration(models.Model):
         if not record_ids:
             return results
         self.flush_model([fname, "state", "active"])
-        # sudo: how many seats are taken is public information -- the website
-        # shows it to anonymous visitors -- while reading the registrations
-        # themselves is not. The raw SQL this replaced went around access rules
-        # by construction; _read_group does not, and without this the public
-        # user gets AccessError on event.seats_available.
         for record, state, count in self.sudo()._read_group(
             domain=[
                 (fname, "in", list(record_ids)),
@@ -57,18 +42,8 @@ class EventRegistration(models.Model):
 
     @api.model
     def _default_barcode(self) -> str:
-        """Generate a string representation of a pseudo-random 8-byte number for barcode
-        generation.
-
-        A decimal serialisation is longer than a hexadecimal one *but* it
-        generates a more compact barcode (Code128C rather than Code128A).
-
-        Generate 8 bytes (64 bits) barcodes as 16 bytes barcodes are not
-        compatible with all scanners.
-        """
         return str(int.from_bytes(os.urandom(8), "little"))
 
-    # event
     event_id = fields.Many2one(
         comodel_name="event.event",
         index=True,
@@ -100,7 +75,6 @@ class EventRegistration(models.Model):
         copy=False,
         readonly=True,
     )
-    # utm informations
     utm_campaign_id = fields.Many2one(
         comodel_name="utm.campaign",
         string="Campaign",
@@ -119,7 +93,6 @@ class EventRegistration(models.Model):
         index=True,
         ondelete="set null",
     )
-    # attendee
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Booked by",
@@ -155,7 +128,6 @@ class EventRegistration(models.Model):
         readonly=False,
         tracking=5,
     )
-    # organization
     date_closed = fields.Datetime(
         string="Attended Date",
         compute="_compute_date_closed",
@@ -208,7 +180,6 @@ class EventRegistration(models.Model):
         "Attended: registrations for which the attendee attended the event\n"
         "Cancelled: registrations cancelled manually",
     )
-    # questions
     registration_answer_ids = fields.One2many(
         comodel_name="event.registration.answer",
         inverse_name="registration_id",
@@ -220,14 +191,12 @@ class EventRegistration(models.Model):
         string="Attendee Selection Answers",
         domain=[("question_type", "=", "simple_choice")],
     )
-    # scheduled mails
     mail_registration_ids = fields.One2many(
         comodel_name="event.mail.registration",
         inverse_name="registration_id",
         string="Scheduler Emails",
         readonly=True,
     )
-    # properties
     registration_properties = fields.Properties(
         definition="event_id.registration_properties_definition",
         string="Properties",
@@ -248,8 +217,6 @@ class EventRegistration(models.Model):
         )
         if not tocheck:
             return
-        # one grouped read for the whole batch: grouping in Python and reading
-        # per event cost a query per distinct event of an import
         combinations_per_event = {}
         for event, slot, ticket in self._read_group(
             [("id", "in", tocheck.ids)],
@@ -273,13 +240,6 @@ class EventRegistration(models.Model):
         return ret_vals
 
     def _compute_from_partner(self, fname, partner_fname=None) -> None:
-        """Fill `fname` from the booking contact when the attendee left it blank.
-
-        Kept as one helper behind four one-line computes rather than a single
-        compute over the four fields: the ORM skips a shared compute for any
-        record that supplies one of its fields, which would break the
-        "give the name, take the rest from the partner" case the form relies on.
-        """
         partner_fname = partner_fname or fname
         for registration in self:
             if not registration[fname] and registration.partner_id:
@@ -305,8 +265,6 @@ class EventRegistration(models.Model):
 
     @api.depends("partner_id")
     def _compute_company_name(self) -> None:
-        # res.partner.company_name is gone; the employer a contact belongs to
-        # is now its commercial entity's name.
         self._compute_from_partner("company_name", "commercial_company_name")
 
     @api.depends("state")
@@ -445,13 +403,9 @@ class EventRegistration(models.Model):
         res.update({"status": status})
         return res
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
-        # format numbers: prefetch side records, then try to format according to country
         all_partner_ids = {
             values["partner_id"] for values in vals_list if values.get("partner_id")
         }
@@ -523,13 +477,9 @@ class EventRegistration(models.Model):
         return ret
 
     def _compute_display_name(self):
-        """Custom display_name in case a registration is not linked to an attendee"""
         for registration in self:
             registration.display_name = registration.name or f"#{registration.id}"
 
-    # ------------------------------------------------------------
-    # ACTIONS / BUSINESS
-    # ------------------------------------------------------------
 
     def action_set_draft(self) -> None:
         self.write({"state": "draft"})
@@ -538,16 +488,12 @@ class EventRegistration(models.Model):
         self.write({"state": "open"})
 
     def action_set_done(self) -> None:
-        """Close Registration"""
         self.write({"state": "done"})
 
     def action_cancel(self):
         self.write({"state": "cancel"})
 
     def action_send_badge_email(self) -> dict:
-        """Open a window to compose an email, with the template - 'event_badge'
-        message loaded by default
-        """
         self.check_singleton()
         template = self.env.ref(
             "event.event_registration_mail_template_badge", raise_if_not_found=False
@@ -571,11 +517,7 @@ class EventRegistration(models.Model):
         }
 
     def _update_mail_schedulers(self) -> None:
-        """Update schedulers to set them as running again, and cron to be called
-        as soon as possible."""
         if self.env.context.get("install_mode", False):
-            # running the scheduler for demo data can cause report rendering during
-            # server start, leading to serious crashes — skip during install
             return
 
         open_registrations = self.filtered(
@@ -597,7 +539,6 @@ class EventRegistration(models.Model):
         if not onsubscribe_schedulers:
             return
 
-        # either trigger the cron, either run schedulers immediately (scaling choice)
         async_scheduler = self.env.registry.settings.get(
             self.env, "event.event_mail_async", False
         )
@@ -605,9 +546,6 @@ class EventRegistration(models.Model):
             self.env["ir.cron"]._trigger_ref("event.event_mail_scheduler")
             self.env["ir.cron"]._trigger_ref("mail.ir_cron_mail_scheduler_action")
         else:
-            # we could simply call _create_missing_mail_registrations and let cron do their job
-            # but it currently leads to several delays. We therefore call execute until
-            # cron triggers are correctly used
             for scheduler in onsubscribe_schedulers:
                 try:
                     scheduler.with_context(
@@ -617,9 +555,6 @@ class EventRegistration(models.Model):
                     _logger.exception("Failed to run scheduler %s", scheduler.id)
                     scheduler._warn_error(e)
 
-    # ------------------------------------------------------------
-    # MAILING / GATEWAY
-    # ------------------------------------------------------------
 
     @api.model
     def _mail_template_default_values(self) -> dict:
@@ -643,8 +578,6 @@ class EventRegistration(models.Model):
         )
 
     def _message_get_default_recipients_sources(self):
-        # Prioritize registration email over partner_id, which may be shared when a single
-        # partner booked multiple seats
         results = super()._message_get_default_recipients_sources()
         for record in self:
             email_to_lst = results[record.id]["email_to_lst"]
@@ -660,9 +593,6 @@ class EventRegistration(models.Model):
 
     def _message_post_after_hook(self, message, msg_vals):
         if self.email and not self.partner_id:
-            # we consider that posting a message with a specified recipient (not a follower, a specific one)
-            # on a document without customer means that it was created through the chatter using
-            # suggested recipients. This heuristic allows to avoid ugly hacks in JS.
             email_normalized = email_normalize(self.email)
             new_partner = message.partner_ids.filtered(
                 lambda partner: (
@@ -691,9 +621,6 @@ class EventRegistration(models.Model):
                 ).write({"partner_id": new_partner[0].id})
         return super()._message_post_after_hook(message, msg_vals)
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     def _get_registration_summary(self):
         self.check_singleton()

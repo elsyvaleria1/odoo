@@ -18,16 +18,6 @@ _debug = DebugLog(__name__)
 
 
 def _is_searchable_reference_pair(model, field) -> bool:
-    """Whether a Many2oneReference and the model_field naming it can be searched.
-
-    The reference has to be stored and its model_field searchable.
-    `_repoint_model_rows` finds the rows with a domain over the model_field, so a
-    stored reference whose model_field is a computed, unstored Char with no
-    search -- `automation.rule.trg_field_ref` is one -- raises "Cannot convert
-    ... to SQL because it is not stored" and takes the whole merge with it. A
-    model_field that is a related field without a column -- `res_model` read
-    off `res_model_id.model` -- is searched through its join like any other.
-    """
     if not (field.is_many2one_reference and field.store and field.model_field):
         return False
     name_field = model._fields.get(field.model_field)
@@ -101,13 +91,6 @@ class MixinMerge(models.AbstractModel):
         return bool(self.env.cr.fetchone())
 
     def _get_unconstrained_references(self, model: str) -> list[tuple[str, str]]:
-        """Many2one columns into `model`'s table-inheritance tree.
-
-        The ORM gives such columns no foreign key -- a key on the root table
-        cannot see the rows its child tables hold -- so the catalog query in
-        _get_foreign_keys_on_table never finds them, and a merge that trusts
-        it alone leaves every one of them pointing at the absorbed record.
-        """
         target = self.env[model]
         root_table = target._table_inheritance_root
         if not root_table:
@@ -191,10 +174,6 @@ class MixinMerge(models.AbstractModel):
         relations: list[tuple[str, str]],
         src_records: models.BaseModel,
     ) -> list[tuple[models.BaseModel, list[str]]]:
-        # A repoint is raw SQL, so the merged model's own hierarchy (a child's
-        # complete_name through parent_id) is told by hand. Rows of other
-        # models keep what they computed: a posted invoice re-deriving its
-        # bank account from its new partner would rewrite a closed document.
         Model = self.env[model].sudo().with_context(active_test=False)
         columns = [
             column
@@ -439,8 +418,6 @@ class MixinMerge(models.AbstractModel):
         return sorted(
             (model._name, field.model_field, field.name)
             for model in self.env.values()
-            # a view or table query derives its rows: nothing there to repoint,
-            # and an UPDATE on one fails (ir.attachment.report has no table)
             if not model._abstract and model._is_an_ordinary_table()
             for field in model._fields.values()
             if _is_searchable_reference_pair(model, field)
@@ -582,7 +559,7 @@ class MixinMerge(models.AbstractModel):
                 continue
 
             records_ref = (
-                Model.sudo()  # noqa: E8507  Model varies per turn
+                Model.sudo()
                 .with_context(active_test=False)
                 .search([(declaration.name, "in", src_values)])
             )
@@ -855,8 +832,6 @@ class MixinMerge(models.AbstractModel):
 
     @api.model
     def _get_merge_withheld_fields(self, dst_record: models.BaseModel) -> set[str]:
-        # write_groups gate what the acting user may set on the destination; a
-        # merge is no way around them, so a gated field keeps its own value
         withheld = {
             fname
             for fname, field in dst_record._fields.items()
@@ -882,11 +857,11 @@ class MixinMerge(models.AbstractModel):
         if withheld is None:
             withheld = self._get_merge_withheld_fields(dst_record)
 
-        merged = 0  # debuglog
+        merged = 0
         for fname, field in dst_record._fields.items():
             if not field.company_dependent or fname in withheld:
                 continue
-            merged += 1  # debuglog
+            merged += 1
             self.env.execute_query(
                 SQL(
                     """
@@ -989,8 +964,6 @@ class MixinMerge(models.AbstractModel):
             ):
                 continue
             if field.company_dependent and column in summable_fields:
-                # a company-dependent column is stored too, so this has to be
-                # decided before the generic branch sums the current company only
                 records = (src_records + dst_record).sudo()
                 for company in companies:
                     values_by_company[company][column] = sum(

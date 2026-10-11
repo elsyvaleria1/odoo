@@ -32,7 +32,6 @@ class ShiftController(http.Controller):
         website=True,
     )
     def planning(self, planning_token, employee_token, message=False, **kwargs):
-        """Displays an employee's calendar and the current list of open shifts"""
         planning_data = self._planning_get(planning_token, employee_token, message)
         if not planning_data:
             raise request.prepare_not_found_error()
@@ -63,7 +62,6 @@ class ShiftController(http.Controller):
     def _prepare_slot_display_rows(
         self, slot, resource_sudo, attendance_intervals, is_open_shift
     ):
-        # This method provides a hook for customization by allowing the overriding for specific values
         person_tz = timezone(resource_sudo.tz or "UTC")
         datetime_start = slot.start_datetime.replace(tzinfo=UTC)
         datetime_end = slot.end_datetime.replace(tzinfo=UTC)
@@ -97,9 +95,6 @@ class ShiftController(http.Controller):
 
     @staticmethod
     def _planning_of(token, resource_sudo):
-        """The schedule whose page link ``token`` is, in sudo, when the link
-        was sent to ``resource_sudo`` (or is one mailed before the upgrade,
-        which names no person), else an empty recordset."""
         Planning = request.env["planning.planning"]
         if not resource_sudo:
             return Planning
@@ -119,7 +114,7 @@ class ShiftController(http.Controller):
 
     def _planning_get(self, planning_token, employee_token, message=False):
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", employee_token)], limit=1)
         )
@@ -143,7 +138,6 @@ class ShiftController(http.Controller):
         person_fullcalendar_data = []
         open_slots = []
         unwanted_slots = []
-        # storage list
         person_slots = []
 
         domain = Domain(
@@ -182,7 +176,7 @@ class ShiftController(http.Controller):
         )
         datetime_start = planning_sudo.start_datetime.replace(tzinfo=UTC)
         datetime_end = planning_sudo.end_datetime.replace(tzinfo=UTC)
-        resource_work_intervals, dummy = (  # noqa: RUF059  `dummy` is the fork throwaway-name convention
+        resource_work_intervals, dummy = (
             resource_sudo._get_valid_work_intervals(
                 datetime_start,
                 datetime_end,
@@ -190,11 +184,8 @@ class ShiftController(http.Controller):
         )
         attendance_intervals = resource_work_intervals[resource_sudo.id]
 
-        # filter and format slots
         slots_start_datetime = []
         slots_end_datetime = []
-        # Default values. In case of missing slots (an error message is shown)
-        # Avoid errors if the _work_intervals are not defined.
         checkin_min = 8
         checkout_max = 18
         planning_values = {
@@ -232,7 +223,6 @@ class ShiftController(http.Controller):
                         slot, resource_sudo, attendance_intervals, False
                     )
                     person_fullcalendar_data.extend(vals)
-                # We add the slot start and stop into the list after converting it to the timezone of the employee
                 slots_start_datetime.append(slot_start_datetime)
                 slots_end_datetime.append(slot_end_datetime)
             elif (
@@ -243,7 +233,6 @@ class ShiftController(http.Controller):
                     or slot.role_id in resource_sudo.role_ids
                 )
                 and (
-                    # This slot is for employee working flexible hours or the slot is during at least a valid working interval
                     resource_sudo._is_flexible()
                     or any(
                         slot.start_datetime.replace(tzinfo=UTC) < end
@@ -289,8 +278,6 @@ class ShiftController(http.Controller):
         for slot in slots_to_remove:
             open_slots.remove(slot)
 
-        # Calculation of the events to define the default calendar view:
-        # If the planning_sudo only spans a week, default view is week, else it is month.
         min_start_datetime = (
             slots_start_datetime and min(slots_start_datetime)
         ) or planning_sudo.start_datetime.replace(tzinfo=UTC).astimezone(
@@ -302,28 +289,22 @@ class ShiftController(http.Controller):
             person_tz
         ).replace(tzinfo=None)
         if min_start_datetime.isocalendar()[1] == max_end_datetime.isocalendar()[1]:
-            # isocalendar returns (year, week number, and weekday)
             default_view = "timeGridWeek"
         else:
             default_view = "dayGridMonth"
-        # Calculation of the minTime and maxTime values in timeGridDay and timeGridWeek
-        # We want to avoid displaying overly large hours range each day or hiding slots outside the
-        # normal working hours
         if resource_sudo.calendar_id and attendance_intervals:
             checkin_min = 24
             checkout_max = 0
             for start, end, _dummy in attendance_intervals:
                 checkin_min = min(checkin_min, start.hour)
                 checkout_max = max(checkout_max, end.hour)
-        # We calculate the earliest/latest hour of the slots. It is used in the weekview.
         if slots_start_datetime and slots_end_datetime:
-            event_hour_min = min(s.hour for s in slots_start_datetime)  # idem
-            event_hour_max = max(s.hour for s in slots_end_datetime)  # idem
+            event_hour_min = min(s.hour for s in slots_start_datetime)
+            event_hour_max = max(s.hour for s in slots_end_datetime)
             mintime_weekview, maxtime_weekview = self._get_hours_intervals(
                 checkin_min, checkout_max, event_hour_min, event_hour_max
             )
         else:
-            # Fallback when no slot is available. Still needed because open slots display a calendar
             mintime_weekview, maxtime_weekview = checkin_min, checkout_max
         if person_fullcalendar_data or open_slots or unwanted_slots:
             planning_values.update(
@@ -331,7 +312,6 @@ class ShiftController(http.Controller):
                     "person_slots_fullcalendar_data": person_fullcalendar_data,
                     "open_slots_ids": open_slots,
                     "unwanted_slots_ids": unwanted_slots,
-                    # fullcalendar does not understand complex iso code like fr_BE
                     "locale": get_lang(request.env).iso_code.split("_")[0],
                     "format_datetime": lambda dt, dt_format: tools.format_datetime(
                         request.env, dt, tz=person_tz.key, dt_format=dt_format
@@ -350,8 +330,6 @@ class ShiftController(http.Controller):
                     "open_slot_has_note": any(s.name for s in open_slots),
                     "unwanted_slot_has_role": any(s.role_id.id for s in unwanted_slots),
                     "unwanted_slot_has_note": any(s.name for s in unwanted_slots),
-                    # start_datetime and end_datetime are used in the banner. This ensures that these values are
-                    # coherent with the mail sent.
                     "start_datetime": planning_sudo.start_datetime,
                     "end_datetime": planning_sudo.end_datetime,
                     "mintime": "%02d:00:00" % mintime_weekview,
@@ -378,7 +356,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -407,7 +385,7 @@ class ShiftController(http.Controller):
 
         _debug.lifecycle("portal_self_assigned", slot=slot_sudo, employee=resource_sudo)
         slot_sudo.write({"resource_id": resource_sudo.id})
-        slot_sudo.slot_properties  # noqa: B018  necessary addition to stop the re-computation of the slot_properties field during the redirect (leads to access rights error)
+        slot_sudo.slot_properties
         if message:
             return request.redirect(
                 "/planning/%s/%s?message=%s"
@@ -440,7 +418,7 @@ class ShiftController(http.Controller):
             )
 
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -452,7 +430,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         slot_sudo.write({"resource_id": False})
-        slot_sudo.slot_properties  # noqa: B018  necessary addition to stop the re-computation of the slot_properties field during the redirect (leads to access rights error)
+        slot_sudo.slot_properties
         if message:
             return request.redirect(
                 "/planning/%s/%s?message=%s"
@@ -475,7 +453,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -505,7 +483,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -535,7 +513,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", token_employee)], limit=1)
         )
@@ -548,7 +526,7 @@ class ShiftController(http.Controller):
 
         if not slot_sudo.resource_id:
             slot_sudo.write({"resource_id": resource_sudo.id})
-            slot_sudo.slot_properties  # noqa: B018  necessary addition to stop the re-computation of the slot_properties field during the redirect (leads to access rights error)
+            slot_sudo.slot_properties
 
         return request.redirect(
             f"/planning/{token_planning}/{token_employee}?message=assign"
@@ -573,7 +551,7 @@ class ShiftController(http.Controller):
                 slot.action_self_assign()
             except AccessError, UserError:
                 raise request.prepare_not_found_error() from None
-            slot.slot_properties  # noqa: B018  necessary addition to stop the re-computation of the slot_properties field during the redirect (leads to access rights error)
+            slot.slot_properties
 
         return request.redirect("/odoo/action-planning.planning_action_view_shift")
 
@@ -597,7 +575,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         slot_sudo.write({"resource_id": False})
-        slot_sudo.slot_properties  # noqa: B018  necessary addition to stop the re-computation of the slot_properties field during the redirect (leads to access rights error)
+        slot_sudo.slot_properties
 
         return request.redirect("/odoo/action-planning.planning_action_view_shift")
 
@@ -605,9 +583,6 @@ class ShiftController(http.Controller):
         ["/slot/<string:access_token>.ics"], type="http", auth="public", website=True
     )
     def slot_get_ics_file(self, access_token, **kwargs):
-        """
-        Route to add the appointment event in a iCal/Outlook calendar
-        """
         try:
             slot = (
                 request.env["access.link"]
@@ -657,11 +632,8 @@ class ShiftController(http.Controller):
         website=True,
     )
     def planning_get_ics_file(self, planning_token, employee_token, **kwargs):
-        """
-        Route to add the appointment event in a iCal/Outlook calendar
-        """
         resource_sudo = (
-            request.env["resource.resource"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["resource.resource"]
             .sudo()
             .search([("planning_token", "=", employee_token)], limit=1)
         )
@@ -669,7 +641,7 @@ class ShiftController(http.Controller):
             raise request.prepare_not_found_error()
 
         planning_sudo = (
-            request.env["planning.planning"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["planning.planning"]
             .sudo()
             .search([("access_token", "=", planning_token)], limit=1)
         )
@@ -691,14 +663,7 @@ class ShiftController(http.Controller):
 
     @staticmethod
     def _get_hours_intervals(checkin_min, checkout_max, event_hour_min, event_hour_max):
-        """
-        This method aims to calculate the hours interval displayed in timeGrid
-        By default 0:00 to 23:59:59 is displayed.
-        We want to display work intervals but if an event occurs outside them, we adapt and display a margin
-        to render a nice grid
-        """
         if event_hour_min is not None and checkin_min > event_hour_min:
-            # event_hour_min may be equal to 0 (12 am)
             mintime = max(event_hour_min - 2, 0)
         else:
             mintime = checkin_min

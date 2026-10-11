@@ -31,7 +31,6 @@ class EventMail(models.Model):
         store=True,
     )
     error_datetime = fields.Datetime(string="Last Error")
-    # contact and status
     last_registration_id = fields.Many2one(
         comodel_name="event.registration",
         string="Last Attendee",
@@ -106,18 +105,14 @@ class EventMail(models.Model):
     @api.depends("error_datetime", "interval_type", "mail_done", "event_id")
     def _compute_mail_state(self) -> None:
         for scheduler in self:
-            # issue detected
             if scheduler.error_datetime:
                 scheduler.mail_state = "error"
-            # event cancelled
             elif (
                 not scheduler.mail_done and scheduler.event_id.kanban_state == "cancel"
             ):
                 scheduler.mail_state = "cancelled"
-            # registrations based
             elif scheduler.interval_type == "after_sub":
                 scheduler.mail_state = "running"
-            # global event based
             elif scheduler.mail_done:
                 scheduler.mail_state = "sent"
             else:
@@ -131,10 +126,8 @@ class EventMail(models.Model):
             elif scheduler.event_id.is_multi_slots:
                 scheduler._execute_slot_based()
             else:
-                # before or after event -> one shot communication, once done skip
                 if scheduler.mail_done:
                     continue
-                # do not send emails if the mailing was scheduled before the event but the event is over
                 if scheduler.scheduled_date <= now and (
                     scheduler.interval_type not in ("before_event", "after_event_start")
                     or scheduler.event_id.date_end > now
@@ -144,21 +137,10 @@ class EventMail(models.Model):
         return True
 
     def _execute_event_based(self, mail_slot=False):
-        """Main scheduler method when running in event-based mode aka
-        'after_event' or 'before_event' (and their negative counterparts).
-        This is a global communication done once i.e. we do not track each
-        registration individually.
-
-        :param mail_slot: optional <event.mail.slot> slot-specific event communication,
-          when event uses slots. In that case, it works like the classic event
-          communication (iterative, ...) but information is specific to each
-          slot (last registration, scheduled datetime, ...)
-        """
         auto_commit = not modules.module.current_test
         batch_size, cron_limit = self._get_scheduler_batch_limits()
         scheduler_record = mail_slot or self
 
-        # fetch registrations to contact
         registration_domain = [
             ("event_id", "=", self.event_id.id),
             ("state", "not in", ["draft", "cancel"]),
@@ -173,12 +155,10 @@ class EventMail(models.Model):
             registration_domain, limit=(cron_limit + 1), order="id ASC"
         )
 
-        # no registrations -> done
         if not registrations:
             scheduler_record.mail_done = True
             return
 
-        # there are more than planned for the cron -> reschedule
         if len(registrations) > cron_limit:
             registrations = registrations[:cron_limit]
             self.env["ir.cron"]._trigger_ref("event.event_mail_scheduler")
@@ -193,26 +173,15 @@ class EventMail(models.Model):
             self._refresh_mail_count_done(mail_slot=mail_slot)
             if auto_commit:
                 self.env["ir.cron"]._commit_progress()
-                # invalidate cache, no need to keep previous content in memory
                 self.env.invalidate_all()
 
     def _execute_event_based_for_registrations(self, registrations):
-        """Method doing notification and recipients specific implementation
-        of contacting attendees globally.
-
-        :param registrations: a recordset of registrations to contact
-        """
         self.check_singleton()
         if self.notification_type == "mail":
             self._send_mail(registrations)
         return True
 
     def _execute_slot_based(self) -> None:
-        """Main scheduler method when running in slot-based mode aka
-        'after_event' or 'before_event' (and their negative counterparts) on
-        events with slots. This is a global communication done once i.e. we do
-        not track each registration individually."""
-        # create slot-specific schedulers if not existing
         missing_slots = self.event_id.event_slot_ids - self.mail_slot_ids.event_slot_id
         if missing_slots:
             self.write(
@@ -224,13 +193,10 @@ class EventMail(models.Model):
                 }
             )
 
-        # filter slots to contact
         now = fields.Datetime.now()
         for mail_slot in self.mail_slot_ids:
-            # before or after event -> one shot communication, once done skip
             if mail_slot.mail_done:
                 continue
-            # do not send emails if the mailing was scheduled before the slot but the slot is over
             if mail_slot.scheduled_date <= now and (
                 self.interval_type not in ("before_event", "after_event_start")
                 or mail_slot.event_slot_id.end_datetime > now
@@ -238,14 +204,6 @@ class EventMail(models.Model):
                 self._execute_event_based(mail_slot=mail_slot)
 
     def _get_scheduler_batch_limits(self) -> tuple:
-        """Return the batch size and cron limit driving attendee-based runs.
-
-        Both fall back to a non-zero default: a batch size of 0 would iterate
-        over nothing, and a cron limit of 0 would loop.
-
-        :return: (batch_size, cron_limit)
-        :rtype: tuple
-        """
         batch_size = (
             int(self.env.registry.settings.get(self.env, "mail.batch_size", False))
             or 50
@@ -261,23 +219,8 @@ class EventMail(models.Model):
         return batch_size, cron_limit
 
     def _create_missing_attendee_mails(self, context_registrations, cron_limit):
-        """Generate the 'event.mail.registration' this scheduler still misses.
-
-        Fillup on subscription lines: generate more than to render, as
-        creating mail.registration is less costly than rendering emails.
-
-        :param list context_registrations: Optional registration ids to restrict to
-        :param int cron_limit: The cron's own limit; twice that is generated
-        :return: The newly created scheduled communications
-        :rtype: recordset of `event.mail.registration`
-        """
         self.check_singleton()
 
-        # note: original 2many domain was
-        #   ("id", "not in", self.env["event.registration"]._search([
-        #       ("mail_registration_ids.scheduler_id", "in", self.ids),
-        #   ]))
-        # but it gives less optimized sql
         new_attendee_domain = [
             ("event_id", "=", self.event_id.id),
             ("state", "not in", ("cancel", "draft")),
@@ -304,17 +247,6 @@ class EventMail(models.Model):
     def _get_attendee_mails_to_run(
         self, new_attendee_mails, context_registrations, cron_limit
     ):
-        """Return the scheduled communications this run should send.
-
-        When more than the cron limit are due, the surplus is left for a
-        re-triggered cron rather than handled in one pass.
-
-        :param recordset new_attendee_mails: The communications just generated
-        :param list context_registrations: Optional registration ids to restrict to
-        :param int cron_limit: The most to handle in one run
-        :return: The communications to run, capped at `cron_limit`
-        :rtype: recordset of `event.mail.registration`
-        """
         self.check_singleton()
 
         mail_domain = self.env["event.mail.registration"]._get_domain_skip() + [
@@ -327,7 +259,6 @@ class EventMail(models.Model):
                 mail_domain, limit=(cron_limit + 1), order="id ASC"
             )
 
-        # there are more than planned for the cron -> reschedule
         if len(new_attendee_mails) > cron_limit:
             new_attendee_mails = new_attendee_mails[:cron_limit]
             self.env["ir.cron"]._trigger_ref("event.event_mail_scheduler")
@@ -337,50 +268,24 @@ class EventMail(models.Model):
     def _execute_attendee_mail_batches(
         self, new_attendee_mails, batch_size, auto_commit
     ) -> None:
-        """Send `new_attendee_mails` in batches, committing between them.
-
-        :param recordset new_attendee_mails: The communications to run
-        :param int batch_size: How many to handle per batch
-        :param bool auto_commit: Whether to commit between batches
-        :return: None
-        """
         self.check_singleton()
 
         for chunk in (
             self.env["event.mail.registration"].browse(b)
             for b in batched(new_attendee_mails.ids, batch_size, strict=False)
         ):
-            # filter out canceled / draft, and compare to seats_taken (same heuristic)
             valid_chunk = chunk.filtered(
                 lambda m: m.registration_id.state not in ("draft", "cancel")
             )
-            # scheduled mails for draft / cancel should be removed as they won't be sent
             (chunk - valid_chunk).unlink()
 
-            # send communications, then refresh the counters. The guard that
-            # once skipped this outside cron mode is gone: mail_done is derived
-            # from the count, so skipping it left an on-subscription scheduler
-            # reporting a stale total.
             valid_chunk._execute_on_registrations()
             self._refresh_mail_count_done()
             if auto_commit:
                 self.env["ir.cron"]._commit_progress()
-                # invalidate cache, no need to keep previous content in memory
                 self.env.invalidate_all()
 
     def _execute_attendee_based(self) -> None:
-        """Main scheduler method when running in attendee-based mode aka
-        'after_sub'. This relies on a sub model allowing to know which
-        registrations have been contacted.
-
-        It currently does two main things
-          * generate missing 'event.mail.registrations' which are scheduled
-            communication linked to registrations;
-          * launch registration-based communication, splitting in batches as
-            it may imply a lot of computation. When having more than given
-            limit to handle, schedule another call of cron to avoid having to
-            wait another cron interval check;
-        """
         self.check_singleton()
         context_registrations = self.env.context.get("event_mail_registration_ids")
 
@@ -413,7 +318,7 @@ class EventMail(models.Model):
     def _refresh_mail_count_done(self, mail_slot=False) -> None:
         for scheduler in self:
             if scheduler.interval_type == "after_sub":
-                total_sent = self.env["event.mail.registration"].search_count(  # noqa: E8507 - one count per scheduler, on its own registrations
+                total_sent = self.env["event.mail.registration"].search_count(
                     [
                         ("scheduler_id", "=", scheduler.id),
                         ("mail_sent", "=", True),
@@ -421,7 +326,7 @@ class EventMail(models.Model):
                 )
                 scheduler.mail_count_done = total_sent
             elif mail_slot and mail_slot.last_registration_id:
-                total_sent = self.env["event.registration"].search_count(  # noqa: E8507 - one count per scheduler, on its own registrations
+                total_sent = self.env["event.registration"].search_count(
                     [
                         ("id", "<=", mail_slot.last_registration_id.id),
                         ("event_id", "=", scheduler.event_id.id),
@@ -438,7 +343,7 @@ class EventMail(models.Model):
                     scheduler.mail_count_done >= scheduler.event_id.seats_taken
                 )
             elif scheduler.last_registration_id:
-                total_sent = self.env["event.registration"].search_count(  # noqa: E8507 - one count per scheduler, on its own registrations
+                total_sent = self.env["event.registration"].search_count(
                     [
                         ("id", "<=", scheduler.last_registration_id.id),
                         ("event_id", "=", scheduler.event_id.id),
@@ -452,7 +357,6 @@ class EventMail(models.Model):
                 scheduler.mail_done = False
 
     def _filter_template_ref(self):
-        """Check for valid template reference: existing, working template"""
         type_info = self._template_model_by_notification_type()
 
         if not self:
@@ -493,7 +397,6 @@ class EventMail(models.Model):
         return self - missing - invalid
 
     def _send_mail(self, registrations):
-        """Mail action: send mail to attendees"""
         if self.event_id.organizer_id.email:
             author = self.event_id.organizer_id
         elif self.env.company.email:
@@ -510,23 +413,17 @@ class EventMail(models.Model):
             "res_ids": registrations.ids,
             "template_id": self.template_ref.id,
         }
-        # force author, as mailing mode does not try to find the author matching
-        # email_from (done only when posting on chatter); give email_from if not
-        # configured on template
         composer_values["author_id"] = author.id
         composer_values["email_from"] = (
             self.template_ref.email_from or author.email_formatted
         )
         composer = self.env["wizard.mail.message.send"].create(composer_values)
-        # backward compatible behavior: event mail scheduler does not force partner
-        # creation, email_cc / email_to is kept on outgoing emails
         composer.with_context(mail_composer_force_partners=False)._action_send_mail()
 
     def _warn_error(self, exception) -> None:
         last_error_dt = self.error_datetime
         now = self.env.cr.now().replace(microsecond=0)
         if not last_error_dt or last_error_dt < now - relativedelta(hours=1):
-            # message base: event, date
             event, template = self.event_id, self.template_ref
             if self.interval_type == "after_sub":
                 scheduled_date = now
@@ -538,7 +435,6 @@ class EventMail(models.Model):
                 scheduled_date=scheduled_date,
             )
 
-            # add some information on cause
             template_link = Markup('<a href="%s">%s (%s)</a>') % (
                 f"{self.get_base_url()}/odoo/{template._name}/{template.id}",
                 template.display_name,
@@ -584,29 +480,23 @@ class EventMail(models.Model):
             ).filtered(lambda p: p.active)
             self.event_id.message_post(
                 body=body,
-                force_send=False,  # use email queue, especially it could be cause of error
-                notify_author_mention=True,  # in case of event responsible creating attendees
+                force_send=False,
+                notify_author_mention=True,
                 partner_ids=recipients.ids,
             )
             self.error_datetime = now
 
     @api.model
     def run(self, autocommit=False):
-        """Backward compatible method, notably if crons are not updated when
-        migrating for some reason."""
         return self.schedule_communications(autocommit=autocommit)
 
     @api.model
     def schedule_communications(self, autocommit=False) -> bool:
         schedulers = self.search(
             [
-                # skip archived events
                 ("event_id.active", "=", True),
-                # skip if event is cancelled
                 ("event_id.kanban_state", "!=", "cancel"),
-                # scheduled
                 ("scheduled_date", "<=", fields.Datetime.now()),
-                # event-based: todo / attendee-based: running until event is not done
                 ("mail_done", "=", False),
                 "|",
                 ("interval_type", "!=", "after_sub"),
@@ -616,14 +506,11 @@ class EventMail(models.Model):
 
         for scheduler in schedulers:
             try:
-                # Prevent a mega prefetch of the registration ids of all the events of all the schedulers
                 self.browse(scheduler.id).execute()
             except Exception as e:
                 _logger.exception(
                     "Error while executing event mail scheduler %s", scheduler.id
                 )
-                # execute() commits between batches, so no savepoint can span
-                # it; a database error left the transaction for dead
                 if self.env.cr.in_failed_transaction():
                     self.env.cr.rollback()
                 self.env.invalidate_all()

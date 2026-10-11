@@ -4,7 +4,6 @@ from odoo.exceptions import UserError
 
 class CrmLead(models.Model):
     _inherit = "crm.lead"
-    # As this model has its own data merge, avoid to enable the generic data_merge on that model.
     _disable_data_merge = True
 
     def _merge_method(self, destination, source) -> dict:

@@ -27,7 +27,6 @@ class MaterializedCase(TransactionCase):
         return record
 
     def _indexes(self):
-        """``{index_name: [columns]}`` for the report's relation."""
         self.env.cr.execute(
             """
             SELECT ic.relname, array_agg(a.attname ORDER BY array_position(i.indkey, a.attnum))
@@ -74,7 +73,7 @@ class TestIntrospection(MaterializedCase):
 
     def test_relation_exists_is_kind_scoped(self):
         self.assertFalse(
-            self.report._relation_exists("mixin_report_sql_test_source")  # a table
+            self.report._relation_exists("mixin_report_sql_test_source")
         )
 
     def test_is_populated_returns_bool_for_missing(self):
@@ -106,7 +105,6 @@ class TestIndexPlan(MaterializedCase):
         self.assertIn(["grain"], self._indexes().values())
 
     def test_id_is_indexed_even_though_the_unique_key_is_not_id(self):
-        """Every ORM read ends in WHERE id IN (...); without this it seq-scans."""
         self.assertIn(["id"], self._indexes().values())
 
     def test_index_names_say_what_they_index(self):
@@ -150,7 +148,6 @@ class TestIndexPlan(MaterializedCase):
     def test_composite_index_field(self):
         self.report._create_relation(index_field=["grain", "id"])
         self.assertIn(["grain", "id"], self._indexes().values())
-        # a composite unique index still satisfies REFRESH ... CONCURRENTLY
         self.assertTrue(self.report.refresh())
 
 
@@ -176,12 +173,6 @@ class TestRefresh(MaterializedCase):
         self.assertEqual(self.report.search([("grain", "=", "a")]).total, 1.0)
 
     def test_refresh_rebuilds_when_a_bound_parameter_moved(self):
-        """A materialized definition inlines its parameters as literals.
-
-        `SQL("s.date <= %s", a_date)` freezes that date at CREATE time and
-        REFRESH re-runs the frozen definition forever, so the check has to live
-        where the cron can reach it.
-        """
         cls = type(self.report)
         self.Source.create({"date": "2020-01-01", "grain": "old", "value": 1.0})
         self.Source.create({"date": "2020-01-02", "grain": "new", "value": 1.0})
@@ -214,11 +205,6 @@ class TestRefresh(MaterializedCase):
                 self.report.refresh()
 
     def test_a_propagating_error_leaves_the_cursor_usable(self):
-        """ir.cron writes its bookkeeping after the callback, on the same cursor.
-
-        Without the SAVEPOINT that write dies in InFailedSqlTransaction and the
-        failure is never recorded.
-        """
         self.env.cr.execute(
             SQL("DROP INDEX %s", SQL.identifier(f"{self.table}__grain_uidx"))
         )
@@ -232,11 +218,6 @@ class TestRefresh(MaterializedCase):
         self.env.flush_all()
 
     def test_a_failing_rebuild_also_leaves_the_cursor_usable(self):
-        """The rebuild branch is DDL and fails as readily as the refresh.
-
-        Covering only the refresh would leave the same hole open on the path
-        that self-heals a changed definition.
-        """
 
         def broken(self):
             return [SQL("s.no_such_column = %s", 1)]
@@ -266,8 +247,6 @@ class TestRefresh(MaterializedCase):
         self.assertEqual(self.env.cr.fetchone()[0], 1)
 
     def test_cron_entry_point_is_still_named_for_the_stored_ir_cron_code(self):
-        # agromarin/remote/data/ir_cron_data.xml is noupdate="1": the stored
-        # ir.cron.code names this method and no upgrade rewrites it.
         self.assertTrue(self.report.refresh.__self__ is not None)
         self.assertTrue(self.report._cron_refresh_materialized_view())
 
@@ -281,11 +260,6 @@ class TestCreation(MaterializedCase):
                 self.report._create_relation()
 
     def test_a_model_that_sets_table_query_is_refused(self):
-        """The ORM inlines _table_query and ignores _materialized.
-
-        A model setting it gets a relation built, indexed and refreshed by this
-        mixin that nothing ever reads. That used to be silent.
-        """
         cls = type(self.report)
         with patch.object(cls, "_table_query", SQL("SELECT 1 AS id"), create=True):
             with self.assertRaises(UserError) as cm:
@@ -293,22 +267,16 @@ class TestCreation(MaterializedCase):
         self.assertIn("_query()", str(cm.exception))
 
     def test_prepare_schema_hook_runs_on_every_init(self):
-        """A schema object has its own lifetime; an edit to it moves no hash.
-
-        Running the hook only before a CREATE would mean a changed function
-        body never reached a deployment whose relation was already current.
-        """
         calls = []
         with patch.object(
             type(self.report),
             "_relation_prepare_schema",
             lambda self: calls.append(1),
         ):
-            self.report.init()  # definition unchanged: no rebuild
+            self.report.init()
         self.assertEqual(len(calls), 1)
 
     def test_prepare_schema_hook_runs_before_the_create(self):
-        """A model needing its own DDL uses this instead of overriding init()."""
         calls = []
 
         def prepare(self):
@@ -317,7 +285,6 @@ class TestCreation(MaterializedCase):
 
         with patch.object(type(self.report), "_relation_prepare_schema", prepare):
             self.report._create_relation()
-        # the hook saw the *old* relation, i.e. it ran before the drop/create
         self.assertEqual(calls, ["m"])
 
     def test_refuses_a_relation_kind_it_does_not_own(self):
@@ -335,7 +302,6 @@ class TestCreation(MaterializedCase):
         self.report._create_relation(with_data=False)
         self.assertFalse(self.report._is_populated(self.table))
         self.assertTrue(self.report._is_relation_rebuild_needed())
-        # and refresh() populates it without a full rebuild
         oid = self._oid()
         self.assertTrue(self.report.refresh())
         self.assertTrue(self.report._is_populated(self.table))
@@ -344,7 +310,7 @@ class TestCreation(MaterializedCase):
     def test_init_noop_on_the_abstract_mixin(self):
         mixin = self.env["mixin.materialized.view"]
         self.assertTrue(mixin._abstract)
-        mixin.init()  # must not raise
+        mixin.init()
 
 
 @tagged("post_install", "-at_install")
@@ -381,7 +347,6 @@ class TestRebuildSkipAndDeferral(MaterializedCase):
         oid = self._oid()
         self.report.init()
         self.assertNotEqual(self._oid(), oid)
-        # the rebuilt relation is stamped, so a second init() now skips
         oid = self._oid()
         self.report.init()
         self.assertEqual(self._oid(), oid)
@@ -405,7 +370,6 @@ class TestRebuildSkipAndDeferral(MaterializedCase):
                 self.report._register_hook()
                 self.assertNotEqual(self._oid(), oid)
                 self.assertNotIn(self.report._name, pending)
-                # the hook is idempotent once consumed
                 oid = self._oid()
                 self.report._register_hook()
                 self.assertEqual(self._oid(), oid)
@@ -418,7 +382,6 @@ class TestRebuildSkipAndDeferral(MaterializedCase):
         self.assertEqual(self._oid(), oid)
 
     def test_init_reconciles_indexes_without_rebuilding(self):
-        """An index plan that changed between versions must still land."""
         self.env.cr.execute(
             SQL("DROP INDEX %s", SQL.identifier(f"{self.table}__id_idx"))
         )

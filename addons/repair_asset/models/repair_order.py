@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 class RepairOrder(models.Model):
     _inherit = "repair.order"
 
-    # FIELDS
     asset_id = fields.Many2one(
         comodel_name="resource.resource",
         compute="_compute_asset_id",
@@ -21,19 +20,16 @@ class RepairOrder(models.Model):
         string="Asset Parts",
     )
 
-    # COMPUTE METHODS
     @api.depends("trace_id.asset_id")
     def _compute_asset_id(self) -> None:
         for repair in self:
             repair.asset_id = repair.trace_id.asset_id
 
-    # ACTION METHODS
     def action_repair_done(self):
         res = super().action_repair_done()
         self._record_asset_parts()
         return res
 
-    # LEDGER METHODS
     def _record_asset_parts(self) -> None:
         vals_list = []
         _debug.pipeline(

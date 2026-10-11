@@ -33,10 +33,6 @@ class DocumentsDocument(models.Model):
         domain=[("document_type", "=", "product_document")],
     )
 
-    # an order line's form asks which of its product's documents go inside the
-    # quote at every product change; with none attached that way that is a
-    # query per line for nothing. Only "none" has to be exact, so the answer is
-    # dropped only where such a document can appear
     @api.model
     @ormcache("self.env.access_signature")
     def _is_any_attached_inside_quotes(self) -> bool:

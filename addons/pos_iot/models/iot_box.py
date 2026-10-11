@@ -28,7 +28,6 @@ class IotBox(models.Model):
 
     @api.depends("device_ids")
     def _compute_associated_pos_config_ids(self) -> None:
-        """Compute the associated PoS config ids for the IoT Box."""
         for box in self:
             domain = Domain("is_posbox", "=", True) & Domain.OR(
                 Domain(field_name, "in", box.device_ids.ids)

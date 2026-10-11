@@ -17,15 +17,11 @@ class AILivechatController(LivechatController):
         if not channel or channel.channel_type != "livechat" or not channel.is_member:
             raise BadRequest
         url = request.httprequest.headers.get("Referer")
-        # sudo() => visitor can retrieve the rule the matches the current URL
         livechat_channel_rule = (
             request.env["im_livechat.channel.rule"]
             .sudo()
             .match_rule(channel_id=channel.livechat_channel_id.id, url=url)
         )
-        # Forward the chat to a scripted chatbot if defined on the livechat channel rule.
-        # In such case, the scripted chatbot performs some steps first before forwarding to a human operator.
-        # sudo() => The visitor should be able to forward the chat to a scripted chatbot or a human operator
         if livechat_channel_rule.chatbot_script_id:
             channel.sudo()._forward_scripted_chatbot(
                 chatbot_script_id=livechat_channel_rule.chatbot_script_id
@@ -33,7 +29,6 @@ class AILivechatController(LivechatController):
             return {"success": True, "store_data": Store().add(channel).get_result()}
 
         channel.sudo()._forward_human_operator()
-        # forwarding failed given that the ai agent is still a member of the channel.
         if channel.sudo().ai_agent_id:
             return {
                 "success": False,
@@ -54,7 +49,6 @@ class AILivechatController(LivechatController):
         non_persisted_channel_params, persisted_channel_params = (
             super()._process_extra_channel_params(**kwargs)
         )
-        # sudo() => access is managed through _is_user_access_allowed.
         ai_agent = (
             self.env["ai.agent"].sudo().search([("id", "=", kwargs.get("ai_agent_id"))])
         )

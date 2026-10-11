@@ -55,22 +55,16 @@ class OnelineWAppointmentPerformance(
             }
         )
 
-        # When website_sale is installed, rendering the web page
-        # fetches the user's current sales order leading to a loading
-        # of available pricelists for that user.
-        # A fallback mechanism is in place in pricelists (see `_get_partner_pricelist_multi`)
-        # causing the queryCount to go up when a first pricelist is not found.
         if "product.pricelist" in cls.env:
             cls.env["product.pricelist"].search([]).write({"active": False})
 
     def setUp(self):
         super().setUp()
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
     @warmup
     def test_appointment_type_page_website_whours_public(self):
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
 
         t0 = time.time()
         with freeze_time(self.reference_now):
@@ -82,25 +76,21 @@ class OnelineWAppointmentPerformance(
         _logger.info(
             "Browsed /appointment/%i, time %.3f", self.test_apt_type.id, t1 - t0
         )
-        # Time before optimization: ~1.90 (but with boilerplate)
-        # Time after optimization: ~0.50 (but with boilerplate)
 
     @warmup
     def test_appointment_type_page_website_whours_user(self):
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
 
         t0 = time.time()
         with freeze_time(self.reference_now):
             self.authenticate("staff_user_bxls", "staff_user_bxls")
-            with self.assertQueryCount(default=53):  # apt only: 43 / +1 for no-demo
+            with self.assertQueryCount(default=53):
                 self._test_url_open("/appointment/%i" % self.test_apt_type.id)
         t1 = time.time()
 
         _logger.info(
             "Browsed /appointment/%i, time %.3f", self.test_apt_type.id, t1 - t0
         )
-        # Time before optimization: ~1.90 (but with boilerplate)
-        # Time before optimization: ~0.70 (but with boilerplate)
 
     @warmup
     def test_appointment_type_resource_page_website_whours_public(self):
@@ -125,7 +115,7 @@ class OnelineWAppointmentPerformance(
         t0 = time.time()
         with freeze_time(self.reference_now):
             self.authenticate("staff_user_bxls", "staff_user_bxls")
-            with self.assertQueryCount(default=39):  # apt only: 35 / +1 for no-demo
+            with self.assertQueryCount(default=39):
                 self._test_url_open("/appointment/%i" % self.test_apt_type_resource.id)
         t1 = time.time()
 

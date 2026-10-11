@@ -36,9 +36,9 @@ if not inotify:
         )
         from watchdog.observers import Observer
     except ImportError:
-        watchdog = None  # type: ignore[assignment]
+        watchdog = None
 else:
-    watchdog = None  # type: ignore[assignment]
+    watchdog = None
 
 if TYPE_CHECKING:
     from watchdog.events import FileSystemEvent
@@ -106,11 +106,6 @@ def iter_tree_dirs(root: str | os.PathLike[str]) -> Iterator[str]:
 
 
 def _iter_python_dirs(root: str, *, assets: bool) -> Iterator[str]:
-    # Armed: a subtree already holding Python (namespace packages have no
-    # __init__.py), or a child of a directory holding Python, which can get
-    # the first module of a new subpackage. A deeper directory becomes
-    # importable only through a .py created in an armed one, and that
-    # creation arms it (FSWatcherInotify._arm_python_directory).
     unwatched = get_unwatched_dirs() | _UNIMPORTED_DIRS
     order: list[tuple[str, str, str | None]] = []
     holds_python: dict[str, bool] = {}
@@ -207,8 +202,6 @@ class FSWatcherBase:
         self._burst_timer: threading.Timer | None = None
         self._reload_triggered = False
         self._reload_requests = 0
-        # Prefork keeps this process as its supervisor across reloads. Threaded
-        # mode replaces the process, so its watcher still stops after one edit.
         self._reload_in_place = bool(current().workers)
 
     @staticmethod
@@ -301,9 +294,6 @@ class FSWatcherBase:
 
     def on_file_changed(self, path: str) -> bool:
         dev_mode = current().dev_mode
-        # The watchdog backend on Windows reports native backslash paths;
-        # a POSIX-only separator here would silently ignore every asset
-        # edit under --dev=assets there.
         posix_path = path.replace(os.sep, "/")
         if path.endswith(ASSET_SUFFIXES) and "/static/" in posix_path:
             _debug.logic(
@@ -458,8 +448,6 @@ class FSWatcherInotify(FSWatcherBase):
     def _reload_after_overflow(self) -> bool:
         if self._reload_triggered or "reload" not in current().dev_mode:
             return False
-        # A lost event may have been a .py edit, and nothing will report it
-        # again.
         return bool(self._request_reload(OVERFLOW_PATH, "python code may have changed"))
 
     def _watch_directory(self, directory: Path) -> None:
@@ -528,8 +516,6 @@ class FSWatcherInotify(FSWatcherBase):
                     mask=event.mask,
                     path=event.full_path,
                 )
-                # arm first: the reload this file asks for must not leave the
-                # directories it made eligible unwatched
                 if (
                     event.is_creation
                     and event.name.endswith(".py")
@@ -552,11 +538,6 @@ class FSWatcherInotify(FSWatcherBase):
             try:
                 entries = list(Path(directory).iterdir())
             except OSError:
-                # The directory vanished between the CREATE event and this
-                # scan (git checkout/stash, mkdtemp and editors do that).  An
-                # unhandled error here propagates through _run() and kills
-                # the watcher thread for the rest of the session — nothing
-                # restarts it.
                 _debug.logic("watcher.created_dir_vanished", path=directory)
                 continue
             for entry in entries:
@@ -572,7 +553,6 @@ class FSWatcherInotify(FSWatcherBase):
             if path in watched:
                 continue
             self._watch_directory(Path(path))
-            # a file written before the watch was in place raised no event
             try:
                 entries = list(Path(path).iterdir())
             except OSError:

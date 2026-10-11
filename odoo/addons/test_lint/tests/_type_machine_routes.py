@@ -15,8 +15,6 @@ import re
 import sys
 from pathlib import Path
 
-# A route whose caller is a program rather than a browser: its parameters are
-# a contract, so they are declared and coerced instead of arriving as strings.
 MACHINE_AUTH = frozenset({"bearer", "receiver"})
 MACHINE_TYPE = "json2"
 
@@ -106,8 +104,6 @@ def _defaults(function):
 
 
 def _annotate(lines, function, path_types):
-    # Only a parameter the rule itself names is annotated here; a body
-    # parameter is the author's to declare.
     edits = []
     defaults = _defaults(function)
     for arg in _named_args(function):
@@ -115,8 +111,6 @@ def _annotate(lines, function, path_types):
             continue
         annotation = path_types.get(arg.arg)
         if annotation is None:
-            # A parameter the rule does not name is read from its default,
-            # which is the only statement of its type the code makes.
             default = defaults.get(arg)
             if (
                 isinstance(default, ast.Constant)
@@ -136,8 +130,6 @@ def _annotate(lines, function, path_types):
 
 
 def _add_typed(lines, call):
-    # After the last keyword of the decorator, in its own style; a typed=
-    # already there is set rather than repeated.
     for keyword in call.keywords:
         if keyword.arg == "typed":
             value = keyword.value
@@ -155,7 +147,6 @@ def _add_typed(lines, call):
     line = lines[end_line]
     after = anchor.value.end_col_offset
     if call.lineno == call.end_lineno or line[after:].lstrip().startswith(")"):
-        # the decorator closes on this line: insert before its parenthesis
         lines[end_line] = line[:after] + ", typed=True" + line[after:]
         return True
     indent = len(line) - len(line.lstrip())
@@ -192,8 +183,6 @@ def rewrite(source):
     left = []
     done = 0
     for node, calls in sorted(todo, key=lambda item: item[0].lineno, reverse=True):
-        # the annotations are the function's, written once; every route
-        # decorator a program reaches it through declares typed=True
         path_types = {}
         for call, _keywords in calls:
             path_types.update(_path_types(call))
@@ -212,7 +201,6 @@ def rewrite(source):
             continue
         done += 1
     rewritten = "\n".join(lines) + "\n"
-    # what is written must compile, or it is not written at all
     compile(rewritten, "<rewrite>", "exec")
     return rewritten, done, left
 
@@ -242,11 +230,11 @@ def main(argv=None):
             total += done
             if not args.dry_run:
                 path.write_text(new)
-    print(f"{total} route(s) declared in {touched} file(s)")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"{total} route(s) declared in {touched} file(s)")
     if left:
-        print(f"{len(left)} route(s) name a parameter the rule does not:")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+        print(f"{len(left)} route(s) name a parameter the rule does not:")
         for entry in left:
-            print(f"  {entry}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+            print(f"  {entry}")
     return 0
 
 

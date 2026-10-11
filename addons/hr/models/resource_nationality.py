@@ -5,7 +5,6 @@ from odoo.tools import frozendict
 class ResourceNationality(models.Model):
     _inherit = "resource.nationality"
 
-    # a person's rows sit on their party's private facet
     _access_anchors = frozendict(
         {
             "employee_company": models.Anchor(

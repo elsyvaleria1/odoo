@@ -21,8 +21,6 @@ class TestLeaveSearchFilters(TestHrHolidaysCommon):
         return nodes[0].get("domain")
 
     def test_missing_document_filter(self):
-        """Requests whose type asks for a supporting document but that carry
-        no attachment can be isolated from the search view."""
         needs_document, plain = self.env["hr.leave.type"].create(
             [
                 {
@@ -37,7 +35,6 @@ class TestLeaveSearchFilters(TestHrHolidaysCommon):
                 },
             ]
         )
-        # one leave per day: two requests of the same employee may not overlap
         missing, documented, not_required = self.env["hr.leave"].create(
             [
                 {
@@ -63,7 +60,6 @@ class TestLeaveSearchFilters(TestHrHolidaysCommon):
                 },
             ]
         )
-        # what an upload through the form's attachment widget leaves behind
         self.env["ir.attachment"].create(
             {
                 "name": "certificate.pdf",
@@ -88,8 +84,6 @@ class TestLeaveSearchFilters(TestHrHolidaysCommon):
         )
 
     def test_active_employee_filter_defaults_on(self):
-        """Allocations of archived employees stay out of the way by default,
-        and can still be listed on demand."""
         leave_type = self.env["hr.leave.type"].create(
             {
                 "name": "Allocated Time Off",

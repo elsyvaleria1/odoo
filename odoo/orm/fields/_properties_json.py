@@ -24,7 +24,6 @@ NoneType = type(None)
 
 
 def _visible_names(records: typing.Any) -> dict[int, str | None]:
-    # the existence check costs a query, paid only when a target is gone
     try:
         names = records._visible_display_names()
     except MissingError:
@@ -107,11 +106,11 @@ class _PropertiesJsonMixin(_PropertiesMixinBase):
 
     @classmethod
     def _add_missing_names(cls, values_list: list[dict[str, typing.Any]]) -> None:
-        generated = 0  # debuglog
+        generated = 0
         for definition in values_list:
             if definition.get("definition_changed") and not definition.get("name"):
                 definition["name"] = str(uuid.uuid4()).replace("-", "")[:16]
-                generated += 1  # debuglog
+                generated += 1
         if _debug.lifecycle.enabled and generated:
             _debug.lifecycle(
                 "field.properties.names_generated",

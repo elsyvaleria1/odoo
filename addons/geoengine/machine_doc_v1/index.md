@@ -59,11 +59,11 @@ disagree, neither is authority -- go to the code.**
 | File | Lines | Models | Purpose |
 |------|-------|--------|---------|
 | `geo_types.py` | 125 | -- (enums/types) | `SpatialOperator`, `DomainOperator` enums; `CLIENT_RENDERABLE_SRIDS`; `GeometryValue` |
-| `fields.py` | 714 | `GeoField` + 6 subclasses | Geometry field types, WKT/WKB/GeoJSON conversion, auto-validation |
+| `fields.py` | 702 | `GeoField` + 6 subclasses | Geometry field types, WKT/WKB/GeoJSON conversion, auto-validation |
 | `geo_domain.py` | 305 | -- (domain registration) | Registers geo operators with Odoo domain system via `@operator_optimization` |
-| `base.py` | 443 | extends `base` (Abstract) | spatial aggregates, `get_layers()`, view validation |
+| `base.py` | 440 | extends `base` (Abstract) | spatial aggregates, `get_layers()`, view validation |
 | `geoengine_raster_layer.py` | 236 | `geoengine.raster.layer` | Raster layer config (OSM, XYZ, WMTS, WMS, Google) |
-| `geoengine_vector_layer.py` | 715 | `geoengine.vector.layer` | Vector layer config with classification, styling, heatmap/cluster, render engine |
+| `geoengine_vector_layer.py` | 685 | `geoengine.vector.layer` | Vector layer config with classification, styling, heatmap/cluster, render engine |
 | `ir_ui_view.py` | 198 | extends `ir.ui.view` | `geoengine` view type, layer o2m, `map_settings_id`, view-load validation |
 | `geoengine_view_settings.py` | 148 | `geoengine.view.settings` | Per-view map settings: projection, extents, zoom, render engine, control toggles (one row per view that departs from the defaults) |
 | `ir_model_fields.py` | 55 | extends `ir.model.fields` | `geo_type`/`dim`/`srid`/`is_geo_field` metadata. Does **not** touch `ttype` -- see models.md |
@@ -99,11 +99,11 @@ two action methods; the setup wizard's 7 surviving fields are in `models.md`.
 | File | Lines | Coverage Area |
 |------|-------|---------------|
 | `common.py` | 42 | Base test setup (test partner with geo fields) |
-| `test_geo_fields.py` | 242 | GeoField conversion (WKT/WKB/GeoJSON), validation, auto-repair |
-| `test_geo_domain.py` | 163 | Spatial domain operators (intersect, contains, within, dwithin) |
+| `test_geo_fields.py` | 240 | GeoField conversion (WKT/WKB/GeoJSON), validation, auto-repair |
+| `test_geo_domain.py` | 162 | Spatial domain operators (intersect, contains, within, dwithin) |
 | `test_geo_io.py` | 233 | GeoJSON/Shapefile/GeoPackage import/export wizard |
 | `test_ir_ui_view.py` | 169 | View validation (geometry field present, webgl_trail config) |
-| `test_get_layers_contract.py` | 195 | Every key `get_layers()` sends (top-level and per-layer) has a reader |
+| `test_get_layers_contract.py` | 192 | Every key `get_layers()` sends (top-level and per-layer) has a reader |
 | `test_ol_inventory_contract.py` | 242 | Every `ol.*` call site uses must be in the OpenLayers entry inventory |
 | `test_no_dead_js.py` | 78 | Every method this module declares must be called by something |
 | `test_setup_wizard_access.py` | 77 | Settings: group membership, byte semantics, spatial index actions (tag `geoengine_audit`) |

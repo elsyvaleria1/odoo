@@ -14,7 +14,6 @@ from . import lint_case
 
 
 def _walk_own_body(node):
-    # a class nested in a method resolves its own super()
     for child in ast.iter_child_nodes(node):
         if not isinstance(child, ast.ClassDef):
             yield child
@@ -23,8 +22,6 @@ def _walk_own_body(node):
 
 @functools.cache
 def _super_attributes(cls) -> tuple[tuple[str, bool], ...]:
-    # each super().<name> in the class body, and whether that super() is the
-    # bare form, which resolves from this class
     try:
         tree = ast.parse(textwrap.dedent(inspect.getsource(cls)))
     except OSError, TypeError, SyntaxError:
@@ -39,8 +36,6 @@ def _super_attributes(cls) -> tuple[tuple[str, bool], ...]:
 
 
 def _class_super_calls(cls) -> frozenset[str]:
-    # the method names this class body extends through super(): in the method
-    # of that name, or in a helper of the same class that calls it for them
     return frozenset(name for name, _bare in _super_attributes(cls))
 
 
@@ -56,16 +51,12 @@ def _has_source(cls) -> bool:
     return True
 
 
-# a wrapper the framework installs on a registry class (a verb door, an
-# approval binding) reaches the rest of the MRO through the method it wraps
 def _is_installed_wrapper(cls, name: str) -> bool:
     return getattr(vars(cls)[name], "__wrapped__", None) is not None and not (
         _has_source(cls)
     )
 
 
-# definitions that end their chain on purpose: what they skip would be wrong
-# or moot for their model. Named here, one reason each, so a new one is seen.
 TERMINAL_BY_DESIGN = {
     (
         "write",
@@ -153,7 +144,7 @@ def _defined_in_source(qualified: str) -> bool:
     addon = module_path.removeprefix("odoo.addons.").partition(".")[0]
     manifest = Manifest.for_addon(addon)
     if manifest is None:
-        return True  # its repository is not on this addons path
+        return True
     relative = module_path.removeprefix(f"odoo.addons.{addon}.").replace(".", "/")
     source = Path(manifest.path, f"{relative}.py")
     return source.is_file() and bool(
@@ -175,7 +166,6 @@ def stale_terminal_entries(registry) -> list[str]:
     for name, qualified in TERMINAL_BY_DESIGN:
         cls = classes.get(qualified)
         if cls is None:
-            # not installed here, or gone: only the second is stale
             if not _defined_in_source(qualified):
                 stale.append(f"{name}: {qualified} is defined nowhere")
             continue
@@ -188,8 +178,6 @@ def orphan_super_findings(registry) -> list[str]:
     orphaned: dict[tuple[str, str], set[str]] = {}
     for model_name in registry.models:
         mro = registry[model_name].__mro__
-        # a mixin extends what it is mixed into; the models it is mixed into
-        # are the ones that answer for its super()
         if getattr(registry[model_name], "_abstract", False):
             continue
         for index, cls in enumerate(mro):

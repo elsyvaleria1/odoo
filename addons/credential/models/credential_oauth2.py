@@ -16,13 +16,6 @@ class CredentialCredential(models.Model):
         return bool(expiry and expiry > fields.Datetime.now() + OAUTH2_EXPIRY_MARGIN)
 
     def _lock_for_oauth2_refresh(self) -> None:
-        """Hold this credential's row until the refreshed tokens are committed.
-
-        A transaction's snapshot is taken at its first query, so a token read after
-        waiting on any other lock can still be the one a concurrent refresh has
-        just spent. A row lock fails with a serialization error instead when that
-        refresh committed first, and the request is retried on a fresh snapshot.
-        """
         self.check_singleton()
         self.lock_for_update(allow_referencing=True)
 
@@ -69,7 +62,6 @@ class CredentialCredential(models.Model):
         credential = self.sudo()
         credential._lock_for_oauth2_refresh()
         tokens = credential._use_secret_payload(f"{purpose}:oauth2_refresh")
-        # force: the provider refused the token its expiry still calls current
         if (
             not force
             and credential._oauth2_access_token_is_current()

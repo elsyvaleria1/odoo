@@ -223,7 +223,6 @@ class TestProjectLeaves(common.TransactionCase):
         )
 
         (leave_1 + leave_2).action_approve()
-        # there is no direct link with the task, so we invalidate manually
         self.env.invalidate_all()
 
         self.assertNotEqual(
@@ -270,17 +269,6 @@ class TestProjectLeaves(common.TransactionCase):
             self.assertFalse(task_form.leave_warning)
 
     def test_multicompany_with_time_off_warning(self):
-        """
-        Ensure that time-off warnings are displayed if multi-company is activated.
-        Flow:
-            - Create a company(Opoo)
-            - Add company(Opoo) to Allowed Companies
-            - Create a time-off and validate
-            - Create task
-            - Check the time-out alert by My company.
-            - Check the time-out alert by all Companies(My company + Opoo)
-            - Check the time-out alert by Opoo Company.
-        """
         company_1 = self.env["res.company"].create({"name": "Opoo"})
         self.user_hruser.company_ids += company_1
         self.env["hr.leave"].sudo().create(

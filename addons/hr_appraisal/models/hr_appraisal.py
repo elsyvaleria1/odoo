@@ -216,11 +216,6 @@ class HrAppraisal(models.Model):
 
     @api.depends("employee_id", "manager_ids")
     def _compute_duplicate_appraisal_id(self) -> None:
-        """
-        Note: We only care for duplicate_appraisal_id when we create a
-        new appraisal. This field is currently only used in form view
-        and for performance reasons it should rather stay that way.
-        """
         ongoing_appraisals = self.search(
             [
                 ("state", "in", ["1_new", "2_pending"]),
@@ -253,17 +248,8 @@ class HrAppraisal(models.Model):
             appraisal.job_id = appraisal.employee_id.job_id
 
     @api.depends_context("uid")
-    # `state` is read by both passes below, and the flags it produces gate more
-    # than buttons: `can_see_employee_publish` decides whether
-    # `_compute_accessible_employee_feedback` discloses the raw feedback and
-    # whether `_inverse_accessible_employee_feedback` accepts a write. Without
-    # it here, a `state` write earlier in the same transaction left the flag
-    # stale and a manager could overwrite the appraisee's own feedback.
     @api.depends("employee_id", "manager_ids", "state")
     def _compute_buttons_display(self) -> None:
-        # Kept only for the `self - new_appraisals` pass below; the loop that
-        # follows assigns both flags for every record, so pre-setting them here
-        # had no observable effect.
         new_appraisals = self.filtered(lambda a: a.state == "1_new")
         user_employees = self.env.user.employee_ids
         is_manager = self.env.user.has_group("hr_appraisal.group_hr_appraisal_user")
@@ -271,7 +257,6 @@ class HrAppraisal(models.Model):
             user_employee_in_appraisal_manager = bool(
                 set(user_employees.ids) & set(appraisal.manager_ids.ids)
             )
-            # Appraisal manager can edit feedback in draft state
             appraisal.can_see_employee_publish = (
                 appraisal.employee_id in user_employees
                 or (user_employee_in_appraisal_manager and appraisal.state == "1_new")
@@ -295,11 +280,6 @@ class HrAppraisal(models.Model):
     @api.depends_context("uid")
     @api.depends("manager_ids", "employee_id", "employee_id.parent_id")
     def _compute_user_manager_rights(self) -> None:
-        # `recordset in recordset` is `len(item) == 1 and item.id in self._ids`,
-        # so it is False for any user holding more than one `hr.employee` —
-        # which `_user_uniq`, unique on (user_id, company_id), allows. Such a
-        # manager lost every button on their own direct report's appraisal.
-        # `_compute_buttons_display` above already uses the set intersection.
         user_employee_ids = set(self.env.user.employee_ids.ids)
         is_appraisal_user = self.env.user.has_group(
             "hr_appraisal.group_hr_appraisal_user"
@@ -311,9 +291,6 @@ class HrAppraisal(models.Model):
             )
 
     @api.depends_context("uid")
-    # `employee_id.user_id`, not `employee_id`: the compute reads the user
-    # behind the employee, so linking an employee record to a user must
-    # invalidate the flag.
     @api.depends("employee_id.user_id", "employee_feedback_published")
     def _compute_show_employee_feedback_full(self) -> None:
         for appraisal in self:
@@ -323,7 +300,6 @@ class HrAppraisal(models.Model):
             )
 
     @api.depends_context("uid")
-    # `manager_ids.user_id` for the same reason as above.
     @api.depends("manager_ids.user_id", "manager_feedback_published")
     def _compute_show_manager_feedback_full(self) -> None:
         for appraisal in self:
@@ -404,11 +380,10 @@ class HrAppraisal(models.Model):
 
     @api.onchange("employee_id")
     def _onchange_employee_id(self) -> None:
-        self = self.sudo()  # fields are not on the employee public
+        self = self.sudo()
         if self.employee_id:
             manager = self.employee_id.parent_id or self.env.user.employee_id
             self.manager_ids = manager if manager != self.employee_id else False
-            # Allow indirect managers to request appraisals for employees
             if (
                 self.env.user.employee_id != self.employee_id
                 and not self.env.user.has_group("hr_appraisal.group_hr_appraisal_user")
@@ -425,12 +400,8 @@ class HrAppraisal(models.Model):
             appraisal.message_subscribe(partner_ids=partners_ids)
 
     def send_appraisal(self) -> None:
-        # FIXME: probably some cleanup to do here
         if not self:
             _debug.logic("appraisal_mail_skipped", reason="empty_recordset")
-            # Called on an empty recordset from create()/write() whenever
-            # nothing needs sending; without this the warning below fires with
-            # no appraisals to name.
             return
         if not self.env.user.email:
             _debug.logic(
@@ -439,9 +410,6 @@ class HrAppraisal(models.Model):
                 appraisals=self,
                 user=self.env.user,
             )
-            # A configuration fault, not a per-recipient skip: without it every
-            # notification below is silently dropped and the appraisal moves to
-            # Ongoing with nobody informed.
             _logger.warning(
                 "No appraisal notification sent for %s: the acting user %s has no email address.",
                 self.ids,
@@ -472,7 +440,6 @@ class HrAppraisal(models.Model):
                 body = mail_template._render_field("body_html", appraisal.ids)[
                     appraisal.id
                 ]
-                # post the message
                 mail_values = {
                     "email_from": self.env.user.email_formatted,
                     "author_id": self.env.user.partner_id.id,
@@ -496,8 +463,6 @@ class HrAppraisal(models.Model):
                 self.env["mail.mail"].sudo().create(mail_values)
 
                 from_cron = self.env.context.get("from_cron")
-                # When cron creates appraisal, it creates specific activities
-                # In this case, no need to create activities, not to be repetitive
                 if employee.user_id and not from_cron:
                     appraisal.activity_schedule(
                         "mail.mail_activity_data_todo",
@@ -511,9 +476,6 @@ class HrAppraisal(models.Model):
                     )
 
     def _remove_employee_date_without_employee_write(self, vals_list) -> None:
-        # next_appraisal_date writes through to the employee; an employee
-        # requesting their own appraisal cannot write their employee record,
-        # and the form sends the date back untouched.
         if self.env["hr.employee"].has_access("write"):
             return
         for vals in vals_list:
@@ -524,9 +486,6 @@ class HrAppraisal(models.Model):
         self._remove_employee_date_without_employee_write(vals_list)
         appraisals = super().create(vals_list)
         appraisals_to_send = self.env["hr.appraisal"]
-        # Read the state off the created record, not out of the vals: `state`
-        # defaults to '1_new', so the common case - creating a draft without
-        # naming the state - never reached the branch below.
         for appraisal in appraisals:
             if appraisal.state == "2_pending":
                 appraisals_to_send |= appraisal
@@ -543,7 +502,6 @@ class HrAppraisal(models.Model):
             to_send=appraisals_to_send,
         )
         appraisals_to_send.send_appraisal()
-        # FIXME: check if we can use suggested recipients instead
         appraisals.subscribe_employees()
         return appraisals
 
@@ -613,8 +571,6 @@ class HrAppraisal(models.Model):
                 appraisal.accessible_note = appraisal.sudo().note
 
     def _inverse_accessible_note(self) -> None:
-        # The appraisee only ever sees the placeholder, so writing it back is a
-        # no-op we must tolerate: the form sends every field it holds on save.
         for appraisal in self.filtered(lambda a: not a._is_appraisee()):
             appraisal.sudo().note = appraisal.accessible_note
 
@@ -641,10 +597,6 @@ class HrAppraisal(models.Model):
             return self.appraisal_template_id.appraisal_manager_feedback_template
 
     def _find_previous_appraisals(self):
-        # Group once instead of scanning the whole result per record, and order
-        # by id: two appraisals created in the same transaction share a
-        # create_date to the microsecond, so a strict `<` on it made neither the
-        # other's predecessor.
         by_employee = (
             self.env["hr.appraisal"]
             .search(
@@ -695,11 +647,6 @@ class HrAppraisal(models.Model):
             vals["manager_feedback_published"] = published
         result = super().write(vals)
         if transitioning:
-            # After the write, never before: the mails and the chatter messages
-            # below render the appraisal, and _appraisal_plan_post reads the
-            # employee's ongoing count. Running them first shipped pre-
-            # transition data, and left them behind in the transaction when the
-            # write itself failed.
             for appraisal in self:
                 appraisal.employee_id.sudo().write(
                     {
@@ -715,8 +662,6 @@ class HrAppraisal(models.Model):
                         "The appraisal's status has been set to Done by %s",
                         self.env.user.name,
                     )
-                    # message_notify is single-record: notify each appraisal's
-                    # own followers instead of leaking the last loop variable.
                     for appraisal in self:
                         appraisal.message_notify(
                             body=body,
@@ -761,7 +706,6 @@ class HrAppraisal(models.Model):
         odoobot = self.env.ref("base.partner_root")
         dates = self.employee_id.sudo()._upcoming_appraisal_creation_date()
         for appraisal in self:
-            # The only ongoing appraisal is the current one
             if (
                 not appraisal.appraisal_plan_posted
                 and appraisal.company_id.appraisal_plan
@@ -786,7 +730,6 @@ class HrAppraisal(models.Model):
                 today.year - last_appraisal_date.year
             ) * 12 + (today.month - last_appraisal_date.month)
             if employee.user_id:
-                # an appraisal has been just created
                 if employee.appraisal_count == 1:
                     months = (
                         appraisal.date_close.year - employee.create_date.year
@@ -865,8 +808,6 @@ class HrAppraisal(models.Model):
         appraisals_with_rating = self.browse(
             self.sudo().filtered("assessment_note").ids
         )
-        # Validate the whole batch before writing anything: transitioning the
-        # rated ones and then reporting failure left the batch half committed.
         if self - appraisals_with_rating:
             _debug.logic(
                 "done_refused",
@@ -982,7 +923,6 @@ class HrAppraisal(models.Model):
     def has_demo_data(self) -> bool:
         if not self.env.user.has_group("hr_appraisal.group_hr_appraisal_user"):
             return True
-        # This record only exists if the scenario has been already launched
         goal_tag = self.env.ref(
             "hr_appraisal.hr_appraisal_goal_tag_softskills", raise_if_not_found=False
         )

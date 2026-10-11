@@ -24,8 +24,6 @@ class TestRowsOfARolledBackTransaction(TransactionCase):
             )
 
     def _gone(self, model):
-        # an id past every row of `model`: a record its transaction made and
-        # then rolled back
         self.env.cr.execute(
             SQL(
                 "SELECT COALESCE(MAX(id), 0) + 1000 FROM %s",

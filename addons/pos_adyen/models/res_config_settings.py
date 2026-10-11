@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    # pos.config fields
     pos_adyen_ask_customer_for_tip = fields.Boolean(
         compute="_compute_pos_adyen_ask_customer_for_tip",
         store=True,

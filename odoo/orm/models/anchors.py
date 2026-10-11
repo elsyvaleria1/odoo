@@ -10,8 +10,6 @@ if typing.TYPE_CHECKING:
 
     from .base import BaseModel
 
-# what each kind of anchor points at: the rung that reads it compares the
-# anchor with the principal's own records of that model
 ANCHOR_KINDS: Mapping[str, str] = {
     "company": "res.company",
     "owner": "res.users",
@@ -104,9 +102,6 @@ def collect_anchors(model_cls: type[BaseModel]) -> dict[str, Anchor]:
 def infer_company_variant(
     model_cls: type[BaseModel], anchor: Anchor, models: Mapping[str, type]
 ) -> Anchor:
-    # the Odoo convention, read from the registry: a company every hop of the
-    # path requires is strict, an optional one means "shared across companies";
-    # a model whose company check reads the parent companies reaches them too
     if anchor.kind != "company":
         return Anchor(
             anchor.path,
@@ -131,7 +126,6 @@ def infer_company_variant(
 def path_fields(
     model_cls: type[BaseModel], path: str, models: Mapping[str, type]
 ) -> list[typing.Any]:
-    # the fields a path crosses, as far as they resolve
     if path == "id":
         return []
     fields = []
@@ -150,8 +144,6 @@ def path_fields(
 def anchor_path_error(
     model_cls: type[BaseModel], key: str, anchor: Anchor, models: Mapping[str, type]
 ) -> str | None:
-    # every hop exists and can be searched, and the last one reaches the model
-    # the anchor's kind names
     target = ANCHOR_KINDS[anchor.kind or key]
     if anchor.path == "id":
         if model_cls._name != target:
@@ -159,9 +151,9 @@ def anchor_path_error(
         return None
     current: type = model_cls
     for name in anchor.path.split("."):
-        field = current._fields.get(name)  # type: ignore[attr-defined]
+        field = current._fields.get(name)
         if field is None:
-            return f"{current._name}.{name} does not exist"  # type: ignore[attr-defined]
+            return f"{current._name}.{name} does not exist"
         if not (field.store or field.related or field.search):
             return f"{field} is neither stored nor searchable"
         if not field.relational:
@@ -169,7 +161,7 @@ def anchor_path_error(
         if field.comodel_name not in models:
             return f"{field} leads to {field.comodel_name}, which is not loaded"
         current = models[field.comodel_name]
-    reached = current._name  # type: ignore[attr-defined]
+    reached = current._name
     if reached != target:
         return f"its path leads to {reached}, not to {target}"
     return None

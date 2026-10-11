@@ -51,8 +51,6 @@ class TestAccessRating(common.TransactionCase):
 
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_rating_access(self):
-        """Security test : only a employee (user group) can create and write rating object"""
-        # Public and portal user can't Access direclty to the ratings
         with self.assertRaises(AccessError):
             self.env["rating.rating"].with_user(self.user_portal).create(
                 {
@@ -78,7 +76,6 @@ class TestAccessRating(common.TransactionCase):
                 }
             )
 
-        # No error with employee
         ratting = (
             self.env["rating.rating"]
             .with_user(self.user_emp)

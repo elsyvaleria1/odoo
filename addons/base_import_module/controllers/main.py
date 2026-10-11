@@ -16,13 +16,12 @@ class ImportModule(Controller):
         save_session=False,
         readonly=False,
     )
-    def login_upload(self, login, password, force="", mod_file=None, **kw):  # noqa: E8528 - authenticates the login and password it is posted
+    def login_upload(self, login, password, force="", mod_file=None, **kw):
         try:
             if not request.db:
-                raise UserError("Could not select a database.")  # noqa: E8505 no database, so no language
+                raise UserError("Could not select a database.")
             credential = {"login": login, "password": password, "type": "password"}
             request.session.authenticate(request.env, credential)
-            # request.env.uid is None in case of MFA
             if request.env.uid and request.env.user._is_admin():
                 return request.env["ir.module.module"]._import_zipfile(
                     mod_file, force=force == "1"

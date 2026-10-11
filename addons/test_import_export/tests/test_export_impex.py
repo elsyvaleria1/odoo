@@ -31,7 +31,6 @@ class test_xids(CreatorCase):
 
     def test_no_module(self):
         record = self.make(True)
-        # add existing xid without module
         self.env["ir.model.data"].create(
             {
                 "module": "",
@@ -51,9 +50,6 @@ class test_boolean_field(CreatorCase):
         self.assertEqual(self.export(True), [[True]])
 
     def test_false(self):
-        """``False`` value to boolean fields is unique in being exported as a
-        (unicode) string, not a boolean
-        """
         self.assertEqual(self.export(False), [[False]])
 
 
@@ -104,7 +100,6 @@ class test_decimal_field(CreatorCase):
         self.assertEqual(self.export(0.0), [[0.0]])
 
     def test_epsilon(self):
-        """epsilon gets sliced to 0 due to precision"""
         self.assertEqual(self.export(0.000000000027), [[0.0]])
 
     def test_negative(self):
@@ -209,7 +204,6 @@ class test_datetime(CreatorCase):
         self.assertEqual(self.export(False), [[""]])
 
     def test_basic(self):
-        """Export value with no TZ set on the user"""
         self.env.user.write({"tz": False})
         self.assertEqual(
             self.export("2011-11-07 21:05:48"),
@@ -217,10 +211,6 @@ class test_datetime(CreatorCase):
         )
 
     def test_tz(self):
-        """Export converts the value in the user's TZ
-
-        .. note:: on the other hand, export uses user lang for display_name
-        """
         self.assertEqual(
             self.export("2011-11-07 21:05:48", context={"tz": "Pacific/Norfolk"}),
             [[fields.Datetime.from_string("2011-11-08 08:35:48")]],
@@ -239,7 +229,6 @@ class test_selection(CreatorCase):
         self.assertEqual(self.export(False), [[""]])
 
     def test_value(self):
-        """selections export the *label* for their value"""
         self.assertEqual(self.export("2"), [["Bar"]])
 
     def test_localized_export(self):
@@ -273,12 +262,10 @@ class test_m2o(CreatorCase):
         self.assertEqual(self.export(False), [[""]])
 
     def test_basic(self):
-        """Exported value is the display_name of the related object"""
         record = self.env["export.integer"].create({"value": 42})
         self.assertEqual(self.export(record.id), [[record.display_name]])
 
     def test_path(self):
-        """Can recursively export fields of m2o via path"""
         record = self.env["export.integer"].create({"value": 42})
         self.assertEqual(
             self.export(record.id, fields=["value/.id", "value/value"]),
@@ -287,8 +274,6 @@ class test_m2o(CreatorCase):
 
     def test_external_id(self):
         record = self.env["export.integer"].create({"value": 42})
-        # Expecting the m2o target model name in the external id,
-        # not this model's name
         self.assertRegex(
             self.export(record.id, fields=["value/id"])[0][0],
             "__export__.export_integer_%d_[0-9a-f]{8}" % record.id,
@@ -343,7 +328,6 @@ class test_o2m(CreatorCase):
     def test_single(self):
         self.assertEqual(
             self.export([Command.create({"value": 42})]),
-            # display_name result
             [["export.one2many.child:42"]],
         )
 
@@ -510,9 +494,6 @@ class test_o2m_multiple(CreatorCase):
         )
 
     def test_multiple(self):
-        """With two "concurrent" o2ms, exports the first line combined, then
-        exports the rows for the first o2m, then the rows for the second o2m.
-        """
         fields = ["const", "child1/value", "child2/value"]
         child1 = [
             Command.create({"value": v, "str": "record%.02d" % index})
@@ -578,7 +559,6 @@ class test_m2m(CreatorCase):
     def test_single(self):
         self.assertEqual(
             self.export([Command.create({"value": 42})]),
-            # display_name result
             [["export.many2many.other:42"]],
         )
 
@@ -731,7 +711,6 @@ class test_function(CreatorCase):
     model_name = "export.function"
 
     def test_value(self):
-        """Exports value normally returned by accessing the function field"""
         self.assertEqual(self.export(42), [[3]])
 
 

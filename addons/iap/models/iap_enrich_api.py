@@ -23,13 +23,6 @@ class IapEnrichApi(models.AbstractModel):
 
     @api.model
     def _request_enrich(self, lead_emails):
-        """Contact endpoint to get enrichment data.
-
-        :param lead_emails: dict{lead_id: email}
-        :return: dict{lead_id: company data or False}
-        :raise InsufficientCreditError: not enough credits on the 'reveal' account; its
-          ``data`` holds the remaining credit, the service name and the purchase URL
-        """
         params = {
             "domains": lead_emails,
         }

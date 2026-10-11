@@ -142,10 +142,6 @@ class TestLegacyTimezoneGrouping(TransactionCase):
         self.assertNotEqual(self._day_buckets("Asia/Kolkata"), self._day_buckets("UTC"))
 
     def _server_without(self, *zones):
-        # Whether PostgreSQL knows a legacy alias depends on the tzdata it was
-        # built against (the `backward` links): the claim under test is what
-        # happens when it does not, so the server's own list is narrowed here
-        # instead of assumed.
         names = _pg_timezone_names(self.env) - set(zones)
         return patch.object(
             type(self.env.backend),

@@ -96,19 +96,12 @@ class ProductPricelist(models.Model):
 
     @api.model
     def _access_predicate_website_offered(self, bind, args) -> Domain:
-        # the pricelists a shop visitor may price with: those the website of
-        # the request offers, and the visitor's own commercial partner's
-        # pricelist; a customer's negotiated pricelist is nobody else's
         website = self.env["website"].get_current_website(fallback=False)
         offered = Domain("website_id", "=", False) & (
             Domain("selectable", "=", True) | Domain("code", "!=", False)
         )
         if website:
             offered |= Domain("website_id", "=", website.id)
-        # the pricelist set on the reader's commercial partner in the current
-        # company, read from its column: the ORM's partner pricelist falls back
-        # to country pricelists through a pricelist search, which would ask
-        # this very predicate again
         self.env["res.partner"].flush_model(["specific_property_product_pricelist"])
         self.env.cr.execute(
             SQL(

@@ -301,7 +301,7 @@ class ResConfigSettings(models.TransientModel):
                 groups._remove_group(implied_group)
 
         IrConfigParameter = self.env["ir.config_parameter"].sudo()
-        changed_params = 0  # debuglog
+        changed_params = 0
         for name, icp in classified["config"]:
             field = self._fields[name]
             value = self[name]
@@ -320,7 +320,7 @@ class ResConfigSettings(models.TransientModel):
                 continue
             _debug.logic("setting_config_param", setting=name, key=icp)
             IrConfigParameter.set_param(icp, value)
-            changed_params += 1  # debuglog
+            changed_params += 1
         _debug.perf.count(
             "settings_config_params_written",
             model=self._name,
@@ -435,7 +435,7 @@ class ResConfigSettings(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        dropped = 0  # debuglog
+        dropped = 0
         for vals in vals_list:
             for field in self._fields.values():
                 if not (field.name in vals and field.related and not field.readonly):
@@ -457,7 +457,7 @@ class ResConfigSettings(models.TransientModel):
 
                 if old_value == new_value:
                     vals.pop(field.name)
-                    dropped += 1  # debuglog
+                    dropped += 1
 
         _debug.lifecycle(
             "settings_create", count=len(vals_list), unchanged_related_dropped=dropped

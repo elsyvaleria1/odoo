@@ -32,7 +32,6 @@ class IrAttachment(models.Model):
         super(IrAttachment, self - attachments_with_token)._to_store(
             store, field_specs, **kwargs
         )
-        # Add access_token to the knowledge article's attachments for portal users
         field_specs = [
             *field_specs,
             *store._format_fields(attachments_with_token, ["access_token"]),

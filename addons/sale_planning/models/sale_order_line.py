@@ -41,7 +41,6 @@ class SaleOrderLine(models.Model):
     def _compute_planning_hours_to_plan(self) -> None:
         sol_planning = self.filtered_domain([("state", "not in", ["draft", "sent"])])
         if sol_planning:
-            # For every confirmed SO service lines, the qty are transformed into hours
             uom_hour = self.env.ref("base.product_uom_hour")
             uom_unit = self.env.ref("base.product_uom_unit")
             for sol in sol_planning:
@@ -62,7 +61,6 @@ class SaleOrderLine(models.Model):
         PlanningSlot = self.env["planning.slot"]
         sol_planning = self.filtered_domain([("state", "not in", ["draft", "sent"])])
 
-        # For every confirmed SO service lines, the allocated hours on planned slots are summed
         group_data = PlanningSlot.with_context(
             sale_planning_prevent_recompute=True
         )._read_group(
@@ -90,7 +88,6 @@ class SaleOrderLine(models.Model):
             ),
         )
 
-    # ORM Override
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -123,18 +120,8 @@ class SaleOrderLine(models.Model):
                 name = f"{name} ({format_duration(remaining_hours)} {remaining})"
             line.display_name = name
 
-    # Business methods
 
     def _post_process_planning_sale_line(self, ids_to_exclude=None) -> None:
-        """
-        This method ensures unscheduled slot attached to a sale order line
-        has the right allocated_hours and is unique
-
-        This method is mandatory due to cyclic dependencies between planning.slot
-        and sale.order.line models.
-
-        :param ids_to_exclude: the ids of the slots already being recomputed/written.
-        """
         sol_planning = self.filtered("product_id.planning_enabled")
         if sol_planning:
             unscheduled_slots = (
@@ -151,12 +138,6 @@ class SaleOrderLine(models.Model):
             slots_to_unlink = self.env["planning.slot"]
             for slot in unscheduled_slots:
                 if slot.sale_line_id.id in sol_with_unscheduled_slot:
-                    # This slot has to be unlinked as an other exists for the
-                    # same sale order line
-                    # This 'unlink' will also avoid infinite loop
-                    # => if there are 2 unscheduled slots for a sol,
-                    # ==> then the first is written and triggers a recompute on the second
-                    # ==> then the second is written and triggers a recompute on the first
                     slots_to_unlink |= slot
                 else:
                     sol_with_unscheduled_slot.add(slot.sale_line_id.id)
@@ -171,9 +152,6 @@ class SaleOrderLine(models.Model):
             slots_to_unlink.unlink()
 
     def _planning_slot_generation(self) -> None:
-        """
-        For SO service lines with slot generation, create the planning slot.
-        """
         vals_list_per_sol = self.filtered(
             lambda sol: sol._is_planning_slot_required()
         )._planning_slot_vals_list_per_sol()

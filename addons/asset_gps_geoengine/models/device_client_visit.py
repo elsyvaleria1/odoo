@@ -88,10 +88,6 @@ class DeviceClientVisit(models.Model):
             visit.trip_speed_avg = avg
 
     def _trip_speed_by_visit(self) -> dict:
-        """{visit_id: (max, min moving, avg moving)} over the positions between
-        the device's previous departure and this arrival, bounded to the
-        arrival's own day so a visit after a night off does not read the
-        previous week's highway."""
         ids = [visit.id for visit in self if isinstance(visit.id, int)]
         if not ids:
             return {}

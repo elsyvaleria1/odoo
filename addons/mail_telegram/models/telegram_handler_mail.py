@@ -24,9 +24,7 @@ _PICK_KEY = "mail_pick_colleague"
 _RECENT_THREADS = 5
 _RECENT_CONVERSATIONS = 6
 _COLLEAGUES_SHOWN = 8
-# a conversation stays open this long after the last message written to it
 _FOCUS_TTL = timedelta(hours=1)
-# what an open conversation takes: a contact or a location is someone else's
 _FOCUS_KINDS = frozenset({"text", "photo", "document", "voice"})
 
 
@@ -86,14 +84,11 @@ class TelegramHandlerMail(models.AbstractModel):
             )
         return [(tr._("Odoo Notifications"), lines)] if lines else []
 
-    # -- the inbox Mini App ---------------------------------------------------
 
     @log_command_execution
     def _handle_inbox_command(
         self, bot, chat, args, partner=False, internal_user=False
     ) -> None:
-        """The inbox, as a button now and as the chat's menu button from now
-        on."""
         refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
         if refusal:
             self._explain_mail_refusal(bot, chat, internal_user, refusal)
@@ -124,10 +119,8 @@ class TelegramHandlerMail(models.AbstractModel):
             {"menu_button": {"type": "web_app", **inbox}},
         )
 
-    # -- replies --------------------------------------------------------------
 
     def _delivered(self, bot, chat, telegram_message_id):
-        """The mail message a Telegram message of this chat carried."""
         if not telegram_message_id:
             return self.env["mail.message"]
         ledger = self.env["telegram.message"].search(
@@ -153,8 +146,6 @@ class TelegramHandlerMail(models.AbstractModel):
         return kind in _FOCUS_KINDS and self._get_focus(chat, internal_user) is not None
 
     def _get_chat_mail_refusal(self, bot, chat, user) -> str | None:
-        """Why this chat's Telegram account may not carry `user`'s Odoo mail
-        now, in the person's words; None when it may."""
         tr = self._tr(bot, chat)
         if not user or not chat.account_id:
             return tr._("Connect Telegram to Odoo first.")
@@ -224,8 +215,6 @@ class TelegramHandlerMail(models.AbstractModel):
             )
 
     def _get_postable(self, bot, chat, message, user):
-        """`message` as Odoo can take it -- a voice note as its transcript --
-        or None when it holds nothing Odoo takes; the person is told why."""
         tr = self._tr(bot, chat)
         if not self._body_of(message) and message_kind(message) == "voice":
             heard = self._voice_text(bot, chat, message, user)
@@ -236,8 +225,6 @@ class TelegramHandlerMail(models.AbstractModel):
                     parse_mode=None,
                 )
                 return None
-            # the transcript stands for the note from here on, a pending
-            # visibility question included
             message = {**message, "text": f"🎤 {heard}"}
         if not self._body_of(message) and not self._files_of(message):
             bot.send_message(
@@ -251,10 +238,6 @@ class TelegramHandlerMail(models.AbstractModel):
     def _post_from_telegram(
         self, bot, chat, message, thread, *, parent=None, subtype="mail.mt_comment"
     ):
-        """Post a postable Telegram message on `thread`, which the posting
-        user's environment carries: its text and its photos and documents.
-        The posted message, or None when the user may not write there -- the
-        person is told so."""
         try:
             with self.env.cr.savepoint():
                 posted = thread.message_post(
@@ -277,7 +260,6 @@ class TelegramHandlerMail(models.AbstractModel):
         return posted
 
     def _thread_of(self, parent, user):
-        """The record or conversation `parent` is on, as `user` may write it."""
         if not parent.model or not parent.res_id:
             return None
         thread = self.env[parent.model].with_user(user).browse(parent.res_id).exists()
@@ -287,9 +269,6 @@ class TelegramHandlerMail(models.AbstractModel):
 
     @staticmethod
     def _visibility(thread, parent) -> str:
-        """A conversation takes a message; on a record, a reply keeps its
-        parent's visibility -- a note stays a note -- and asks before it
-        reaches external followers."""
         if thread._name == "discuss.channel":
             return "comment"
         if not parent.subtype_id or parent.subtype_id.internal:
@@ -330,8 +309,6 @@ class TelegramHandlerMail(models.AbstractModel):
     def _on_edited_message(
         self, bot, chat, message, ledger, partner, internal_user
     ) -> bool:
-        """Editing a reply in Telegram edits what it posted in Odoo, as its
-        author and within Odoo's own rule on who may edit a message."""
         posted = ledger.mail_message_id
         if (
             not posted
@@ -360,8 +337,6 @@ class TelegramHandlerMail(models.AbstractModel):
         return True
 
     def _on_reaction(self, bot, chat, ledger, account, *, added, removed) -> bool:
-        """A reaction to a delivered notification is the user's reaction to
-        the Odoo message, where they may read it."""
         posted = ledger.mail_message_id
         user = account._acting_user("internal")
         if chat.chat_type != "private" or not posted or not user:
@@ -374,7 +349,6 @@ class TelegramHandlerMail(models.AbstractModel):
         self._react(posted.with_env(thread.env), user.partner_id, added, removed)
         return True
 
-    # -- text without a reply -------------------------------------------------
 
     def _telegram_intake_label(self, bot, chat, kind):
         return self._tr(bot, chat)._("Message to a conversation")
@@ -430,7 +404,6 @@ class TelegramHandlerMail(models.AbstractModel):
         )
         return True
 
-    # -- buttons --------------------------------------------------------------
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
@@ -442,7 +415,6 @@ class TelegramHandlerMail(models.AbstractModel):
             return True
         refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
         if refusal:
-            # a button's answer holds 200 characters at most
             bot.answer_callback_query(callback_query.get("id"), refusal[:200])
             return True
         _prefix, action, argument = (data.split(":", 2) + ["", ""])[:3]
@@ -499,19 +471,15 @@ class TelegramHandlerMail(models.AbstractModel):
             return
         message.with_user(user).set_message_done()
 
-    # -- conversations ----------------------------------------------------------
 
     @log_command_execution
     def _handle_write_command(
         self, bot, chat, args, partner=False, internal_user=False
     ) -> None:
-        """Choose where what is written here goes, as in a chat: a recent
-        conversation, or a colleague -- `/escribir ana` looks one up at once."""
         refusal = self._get_chat_mail_refusal(bot, chat, internal_user)
         if refusal:
             self._explain_mail_refusal(bot, chat, internal_user, refusal)
             return
-        # another feature's flow takes this chat's messages: it ends first
         owner = self._router()._flow_owner(chat)
         if owner is not None:
             self._router()._send_flow_busy_notice(bot, chat, owner, "/escribir")
@@ -537,7 +505,6 @@ class TelegramHandlerMail(models.AbstractModel):
         )
 
     def _get_recent_conversations(self, user):
-        """The Discuss conversations `user` is in, the liveliest first."""
         return (
             self.env["discuss.channel"]
             .with_user(user)
@@ -554,7 +521,6 @@ class TelegramHandlerMail(models.AbstractModel):
 
     @staticmethod
     def _get_conversation_name(channel, user) -> str:
-        """A direct chat is named after the others in it, not after `user`."""
         if channel.channel_type == "chat":
             others = channel.channel_member_ids.partner_id - user.partner_id
             if others:
@@ -633,10 +599,8 @@ class TelegramHandlerMail(models.AbstractModel):
         if channel:
             self._open_focus(bot, chat, channel, user)
 
-    # -- the open conversation ---------------------------------------------------
 
     def _open_focus(self, bot, chat, channel, user) -> None:
-        """From now on what is written here goes to `channel`."""
         self._update_focus(chat, channel)
         tr = self._tr(bot, chat)
         bot.send_message(
@@ -660,9 +624,6 @@ class TelegramHandlerMail(models.AbstractModel):
         )
 
     def _get_focus(self, chat, user):
-        """The conversation what is written here goes to, as `user`, or None:
-        none was opened, it went quiet, or `user` left it. A stale entry stays
-        until the next one replaces it."""
         focus = chat._get_context(_FOCUS_KEY) or {}
         if not focus or not user:
             return None
@@ -677,12 +638,8 @@ class TelegramHandlerMail(models.AbstractModel):
         )
         return channel or None
 
-    # -- connecting -----------------------------------------------------------
 
     def _on_account_bound(self, bot, chat, binding) -> None:
-        """Whoever just connected learns where their notifications go: here,
-        when this bot delivers them to this account, and then here from now
-        on; else what is missing."""
         user = chat.account_id._acting_user("internal")
         if not user:
             return
@@ -723,8 +680,6 @@ class TelegramHandlerMail(models.AbstractModel):
             )
 
     def _on_phone_verified(self, bot, chat, account) -> None:
-        """A number Telegram vouched for may be what the notifications were
-        waiting for."""
         user = account._acting_user("internal")
         if not user or not bot.notify_mail:
             return
@@ -740,8 +695,6 @@ class TelegramHandlerMail(models.AbstractModel):
         )
 
     def _on_bot_membership(self, bot, chat, status):
-        """Blocking the bot that delivers someone's notifications stops them:
-        Odoo tells them, unless another chat of theirs takes over."""
         if status != "kicked" or chat.chat_type != "private" or not bot.notify_mail:
             return
         user = chat.account_id._acting_user("internal") if chat.account_id else None
@@ -757,9 +710,6 @@ class TelegramHandlerMail(models.AbstractModel):
             user.with_context(lang=user.lang).env._("you blocked the bot."),
         )
 
-    # -- content --------------------------------------------------------------
 
     def _voice_text(self, bot, chat, message, user):
-        """What a voice reply says, or None where voice notes cannot be heard
-        (mail_speech_telegram hears them)."""
         return

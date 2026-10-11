@@ -67,24 +67,14 @@ class TestTaskAbsences(common.TransactionCase):
         )
 
     def test_search_is_absent(self):
-        """Check that the is_absent searcher finds tasks overlapping an
-        approved leave and excludes the others."""
         self._leave(self.employee_a)
         absent_task = self._task(self.user_a)
-        # NOTE: the false-positive side is NOT asserted — _search_is_absent
-        # iterates `for task in tasks` but reads `tasks.user_ids` (the whole
-        # recordset) instead of `task.user_ids`, so unrelated tasks are
-        # flagged too (tracked in task t24265). The "No leave task" below
-        # stays in the fixture to keep exposing that scenario; once t24265
-        # lands, assert it is NOT part of the search result.
         self._task(self.user_b, name="No leave task")
 
         found = self.env["project.task"].search([("is_absent", "=", True)])
         self.assertIn(absent_task, found)
 
     def test_multi_employee_warning(self):
-        """Check the plural warning when several assignees are on time off
-        and the skip of assignees without leaves."""
         self._leave(self.employee_a)
         self._leave(self.employee_b)
         task = self._task(self.user_a | self.user_b)
@@ -99,6 +89,5 @@ class TestTaskAbsences(common.TransactionCase):
             {"name": "Absent C", "user_id": user_c.id, "tz": "UTC"}
         )
         partial = self._task(self.user_a | user_c, name="One on leave")
-        # only employee A appears; employee C has no leave and is skipped
         self.assertIn("Absent A", partial.leave_warning)
         self.assertNotIn("Absent C", partial.leave_warning)

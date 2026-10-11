@@ -207,8 +207,6 @@ class TestPatchOrder(lint_case.LintCase):
         )
 
     def test_the_unreviewed_baseline_only_goes_down(self):
-        # the pairs found when this gate came in: each is reviewed, with its
-        # reason, or its addons made to depend on one another
         data = json_loads(_REVIEWED_PATH.read_text())
         self.assert_ratchet(
             data["baseline"],

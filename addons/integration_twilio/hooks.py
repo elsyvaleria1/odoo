@@ -3,9 +3,6 @@ SERVICE_XMLID = "integration_twilio.service_twilio"
 
 
 def _rehome_twilio_service(cr) -> None:
-    # `integration` seeded the service until this module took it over; its row
-    # stays in every database that had `integration`, and the seed loaded
-    # here would collide with its unique code
     cr.execute(
         """
         UPDATE ir_model_data
@@ -29,8 +26,6 @@ def _rehome_twilio_service(cr) -> None:
 
 
 def _update_twilio_service(env) -> None:
-    # the seed is noupdate: a row inherited from `integration` keeps its old
-    # name and no probe until told
     service = env.ref(SERVICE_XMLID, raise_if_not_found=False)
     if not service:
         return
@@ -51,8 +46,6 @@ def pre_init_hook(env) -> None:
 
 
 def uninstall_hook(env) -> None:
-    # the vault credentials and the receivers this module made go with it: a
-    # reinstall would otherwise find its credential names taken
     configs = (
         env["integration.twilio.config"].with_context(active_test=False).search([])
     )

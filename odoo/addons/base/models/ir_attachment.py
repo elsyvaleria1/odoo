@@ -147,8 +147,6 @@ class IrAttachment(models.Model):
         index="btree_not_null",
     )
     public = fields.Boolean(string="Is public document")
-    # kept sealed by mixin.bearer.token; shown to whoever reads the attachment,
-    # and a copy of the attachment opens with the same token, as it always did
     access_token = fields.Char(
         copy=True,
         classification="base.internal",
@@ -596,9 +594,6 @@ class IrAttachment(models.Model):
             else:
                 sec_domain |= unlinked & Domain("create_uid", "=", self.env.uid)
 
-        # an attachment on a record is read where its record is, and its field
-        # where the user reads that field there: the record-level check
-        # (_check_access), as one condition the database evaluates
         asked_fields = pinned_values(self, "res_field", domain)
         within = (
             None
@@ -636,8 +631,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _attached_reach_itself(self) -> Domain:
-        # what reaches an attachment whatever it is on: public, or unlinked
-        # and the user's own (any unlinked one for a system user)
         unlinked = Domain("res_id", "=", False) | Domain("res_model", "=", False)
         if not self.env.is_system():
             unlinked &= Domain("create_uid", "=", self.env.uid)
@@ -645,8 +638,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _public_reach(self) -> Domain:
-        # public attachments, less the generated source maps the user may not
-        # read (_withheld_source_maps)
         public = Domain("public", "=", True)
         if withheld := self._withheld_source_maps():
             return public & ~withheld
@@ -654,8 +645,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _attached_record_reach(self, Owner: models.BaseModel) -> Domain:
-        # the records whose attachments the user reads; a user reads their own
-        # user's attachments whatever else the user model lets them read
         reach = Owner._record_access_domain("read")
         if Owner._name == "res.users":
             reach |= Domain("id", "=", self.env.uid)
@@ -665,9 +654,6 @@ class IrAttachment(models.Model):
     def _attached_field_reach(
         self, Owner: models.BaseModel, asked: Collection[Any] | None = None
     ) -> Domain:
-        # the attachments of a record's fields the user reads there: a field
-        # they may read everywhere, or one they read on that record only; of
-        # the fields the search asks (`asked`), where it names some
         readable: list[str | bool] = [False]
         per_record = Domain.FALSE
         fields = Owner._fields.values()
@@ -808,9 +794,6 @@ class IrAttachment(models.Model):
         if resolved != filestore and not resolved.startswith(filestore + os.sep):
             _debug.logic("store_key_refused", key=path, reason="escapes_filestore")
             raise ValueError(f"Attachment path {path!r} escapes the filestore")
-        # the configured spelling, not the resolved one: X-Accel-Redirect maps
-        # a path under the configured data_dir, which a symlinked filestore
-        # would otherwise fall outside of
         return str(Path(configured, path))
 
     @api.model
@@ -1003,21 +986,6 @@ class IrAttachment(models.Model):
         return b""
 
     def _get_content(self, size: int | None = None) -> bytes:
-        """Bytes of this attachment, wherever the blob lives.
-
-        `_get_content_prefix` reads what this database holds -- `db_datas`, the
-        filestore, a static file -- and answers `b""` for a blob a storage
-        provider holds, which is the same answer it gives for an empty file.
-        Indexation, extraction and OCR all need the bytes and none of them
-        should have to know where they came from, so this is the method that
-        may go and get them; a provider module overrides it to bring the blob
-        back over the network.
-
-        It is not on any request's cheap path and it does not swallow a failed
-        fetch: a caller that walks many attachments catches per record, so that
-        a provider being unreachable reads as an error rather than as a file
-        with nothing in it.
-        """
         self.check_singleton()
         return self._get_content_prefix(size)
 
@@ -1026,8 +994,6 @@ class IrAttachment(models.Model):
         if self.content_released_at:
             return None
         attachment = self.sudo()
-        # a size says there are bytes without loading them; a row without one
-        # (written around the ORM) is loaded to find out
         content = (
             attachment._get_content if self.file_size else attachment._get_content()
         )
@@ -1046,8 +1012,6 @@ class IrAttachment(models.Model):
         )
 
     def _keep_costly_readings(self, document: Document) -> None:
-        """Keep what a caller's document paid a metered reader for (OCR, a
-        vendor), so the next reader of these bytes does not pay again."""
         self.check_singleton()
         for representation in PERSISTED_READINGS:
             if document.read_cost(representation) < METERED:
@@ -1058,12 +1022,8 @@ class IrAttachment(models.Model):
                     representation, value, read_by=document.read_by(representation)
                 )
 
-    # --- readings --------------------------------------------------------------
-    # What a reader made of the bytes, kept so that extraction, indexing and
-    # speech share one reading instead of each deriving it again.
 
     def _share_readings(self, origins: list[Self], copies: Self) -> None:
-        # the same bytes read the same: a copy is never transcribed or OCR'd again
         read_origins = [origin.id for origin in origins if origin.has_readings]
         if not read_origins:
             return
@@ -1098,7 +1058,6 @@ class IrAttachment(models.Model):
         )
 
     def _note_readings(self) -> None:
-        # bookkeeping, not an edit of the file: no write_date, no write hooks
         if not self:
             return
         self.env.cr.execute(
@@ -1111,12 +1070,9 @@ class IrAttachment(models.Model):
         self.invalidate_recordset(["has_readings"])
 
     def _reading(self, representation: str) -> IrAttachmentReading:
-        """The reading of these bytes, whatever its state; empty when there is
-        none or the file changed since it was made."""
         self.check_singleton()
         for reading in self.reading_ids:
             if reading.representation == representation:
-                # released bytes keep their reading: the words outlive the audio
                 if (
                     reading.checksum
                     and self.checksum
@@ -1174,10 +1130,6 @@ class IrAttachment(models.Model):
         prompt: str | None = None,
         up_to: int = METERED,
     ) -> Any:
-        """Read one representation now, keep it, and tell whoever waits on it.
-
-        Returns the value, or None when another worker holds the same reading.
-        """
         self.check_singleton()
         if representation not in PERSISTED_READINGS:
             raise ValueError(f"{representation!r} is not kept as a reading")
@@ -1257,9 +1209,6 @@ class IrAttachment(models.Model):
         return job
 
     def _await_reading(self, representation: str) -> Any:
-        """The job a caller that needs this reading waits on: the one already
-        queued or running, else a new one; no job when there is nothing to
-        wait for, the reading being done or having failed."""
         self.check_singleton()
         if self._reading(representation).state in ("done", "failed"):
             return self.env["ir.job"]
@@ -1280,12 +1229,6 @@ class IrAttachment(models.Model):
         purpose: str | None = None,
         announce: bool = True,
     ) -> IrAttachmentReading:
-        """Keep a reading made outside the reader registry, e.g. by a vendor
-        before this file existed here, or by a migration.
-
-        A migration moving history passes ``announce=False``: the reading is
-        kept and indexed, and nobody waiting on new readings is told.
-        """
         self.check_singleton()
         reading = self._reading_row(representation)
         reading.write(
@@ -1535,8 +1478,6 @@ class IrAttachment(models.Model):
         if plain_fnames:
             self._mark_for_gc_multi(plain_fnames)
         if remote_fnames:
-            # a remote delete cannot be rolled back with the transaction that
-            # dropped the reference, so it waits for the commit
             self.env.cr.postcommit.add(
                 functools.partial(self._remove_remote_files, remote_fnames)
             )
@@ -2059,8 +2000,6 @@ class IrAttachment(models.Model):
             _debug.logic("rehash_skipped", reason="not_file_storage")
             return 0, 0
 
-        # keyset paging: rows it cannot read stay legacy, and a page taken from
-        # the head of the table would meet them again on every run
         ICP = self.env["ir.config_parameter"].sudo()
         after = ICP.get_param_int(_REHASH_CURSOR_PARAM, 0)
         domain = self._get_domain_legacy_keys()

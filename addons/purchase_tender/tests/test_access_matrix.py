@@ -102,8 +102,6 @@ class TestPurchaseTenderAccessMatrix(AccessMatrixCase):
             )
             records[f"tender_{key}"] = tender
             records[f"need_{key}"] = tender.line_ids
-        # tender_a is the manager's, another's to the own-documents rung;
-        # these are that rung's own and unassigned tenders
         for key, owner in (("own", cls.users["user_a"]), ("unset", False)):
             tender = cls.env["purchase.tender"].create(
                 {

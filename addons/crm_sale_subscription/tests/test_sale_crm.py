@@ -5,15 +5,6 @@ from odoo.addons.crm.tests.common import TestCrmCommon
 
 class TestCrmSubscription(TestCrmCommon):
     def test_crm_sale_subscription_revenue(self):
-        """Test the updation of the expected_revenue and the recurring_revenue when quotation is confirmed.
-        If the expected_revenue of the lead is smaller than the nonrecurring total of quote, which we are confirming upadte it with that.
-        If the recurring_revenue of the lead is smaller than the recurring monthly of quote, which we are confirming upadte it with,
-        Case 1: when no recurring plan is set on lead update it with recurring monthly.
-        Case 2 when recurring plan is set on the lead update it with (recurring monthly * number of months).
-        e.g. If the lead has an expected_revenue of $40, recurring_revenues of 10$ and doesn't contain any recurring plan,
-        Quote 1: nonrecurring total $45, recurring monthly $12.
-        Then the expected_revenue would be updated from $40 to $45 and recurring_revenue from $10 to $12.
-        """
         product1, product2, recurring_product1, recurring_product2 = self.env[
             "product.template"
         ].create(
@@ -104,11 +95,9 @@ class TestCrmSubscription(TestCrmCommon):
         self.assertEqual(self.lead_1.expected_revenue, 0)
         self.assertFalse(self.lead_1.recurring_plan)
 
-        # Revenue should not be updated when the currency of sale order is different from lead.
         so1.action_confirm()
         self.assertEqual(self.lead_1.expected_revenue, 0)
         self.assertEqual(self.lead_1.recurring_revenue, 0)
-        # Revenue should be updated when the currency is same also checking without crm_recurring_plan.
         so2.action_confirm()
         self.assertEqual(
             self.lead_1.recurring_plan.id, self.ref("crm.crm_recurring_plan_monthly")
@@ -116,7 +105,6 @@ class TestCrmSubscription(TestCrmCommon):
         self.assertEqual(self.lead_1.recurring_revenue, 20)
         self.assertEqual(self.lead_1.expected_revenue, 200)
 
-        # Checking with crm_recurring_plan.
         self.lead_1.write(
             {
                 "recurring_plan": crm_recurring_plan,

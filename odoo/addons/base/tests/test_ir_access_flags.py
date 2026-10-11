@@ -5,9 +5,6 @@ MODEL = "res.partner.industry"
 
 @tagged("post_install", "-at_install")
 class TestAccessFlagsFollowTheOperation(TransactionCase):
-    # the shape base 1.106 left on the device rows: `operation` rewritten by
-    # SQL, and the Read / Update / Create / Delete flags stored beside it
-    # still saying what it was
 
     def _row(self, operation):
         return self.env["ir.access"].create(

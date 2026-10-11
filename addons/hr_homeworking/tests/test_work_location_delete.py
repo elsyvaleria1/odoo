@@ -14,10 +14,6 @@ from odoo.addons.hr_homeworking.models.hr_homeworking import DAYS
 class TestWorkLocationDelete(HomeworkingCase):
     @freeze_time("2026-09-14 20:36:00")
     def test_the_current_day_field_is_one_of_the_seven(self):
-        # Frozen so the two clock reads cannot straddle a rollover, and against
-        # the READER's today rather than the host's -- those disagree for six
-        # hours a day on this server, so `Date.today()` here would be wrong as
-        # well as racy.
         Employee = self.env["hr.employee"]
         field = Employee._get_current_day_location_field()
         self.assertIn(field, DAYS)

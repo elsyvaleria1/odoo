@@ -23,7 +23,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
             )
 
             if existing_ir_action:
-                # Don't set the default prompt
                 return values
 
         if "ai_tool_ids" not in values:
@@ -56,13 +55,11 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
         if values.get("ai_sort_prompt", ""):
             prompt_lines.append(_("Otherwise, %s", values.get("ai_sort_prompt", "")))
 
-        # Change the default value for the prompt
         values["ai_sort_prompt"] = Markup("<br/>").join(prompt_lines)
         return values
 
     @api.model
     def _activate_demo_prompt(self, folder_id) -> None:
-        """Activate the default prompt on the given folder."""
         _ = self.env._
         create_vendor_bill = self.env.ref(
             "document_account.ir_actions_server_create_vendor_bill_code",
@@ -200,7 +197,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
             }
         )
 
-        # Create the wizard with the demo prompt and apply it to the folder
         self.create(
             {
                 "folder_id": folder_id,

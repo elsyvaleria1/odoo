@@ -6,9 +6,6 @@ from odoo.addons.pos_self_order.tests.self_order_common_test import SelfOrderCom
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPosSelfOrderPreparationDisplay(SelfOrderCommonTest):
     def test_ensure_kiosk_order_preparation_display(self):
-        """
-        This test ensures that the kiosk order is sent to the preparation display, even if unpaid
-        """
         self.pos_config.write(
             {
                 "self_ordering_mode": "kiosk",
@@ -40,9 +37,6 @@ class TestPosSelfOrderPreparationDisplay(SelfOrderCommonTest):
         )
 
     def test_ensure_mobile_order_preparation_display(self):
-        """
-        This test ensures that the mobile order is sent to the preparation display, even if unpaid
-        """
         floor = self.env["restaurant.floor"].create(
             {
                 "name": "Main Floor",
@@ -87,10 +81,6 @@ class TestPosSelfOrderPreparationDisplay(SelfOrderCommonTest):
         self.pos_config.current_session_id.set_opening_control(0, "")
 
         self_route = self.pos_config._get_self_order_route(floor.table_ids[0].id)
-        # Scoped to the logger that serves the refusal: an unrelated warning
-        # from anywhere else in the process is not this test's business, and
-        # counting every warning made this test fail on whichever test ran
-        # before it.
         with self.assertLogs("odoo.http.application", level="WARNING") as log_catcher:
             self.start_tour(self_route, "test_ensure_mobile_order_preparation_display")
 

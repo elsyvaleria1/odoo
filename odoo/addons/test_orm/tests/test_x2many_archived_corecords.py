@@ -73,9 +73,6 @@ class TestX2manyArchivedCorecords(TransactionCase):
         )
 
     def test_a_user_reads_a_related_path_through_the_active_corecords_only(self):
-        # a user's filtered_domain answers a related condition by searching:
-        # that search kept the filtered items archived or not by turning
-        # active_test off, which also counted the archived tag the path reads
         user = new_test_user(self.env, "related_reader", groups="base.group_user")
         items = self.items.with_user(user)
         self._assert_reads(

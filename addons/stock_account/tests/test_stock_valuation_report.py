@@ -12,7 +12,6 @@ class TestStockValuationReport(TestStockValuationCommon):
         cls.report = cls.env.ref("stock_account.stock_valuation_report")
 
     def _receive_ship_and_lose(self):
-        # 10 in at 10, 3 shipped, 1 lost to the inventory location
         inventory_account = self._use_inventory_location_accounting()
         product = self.product_avco.with_company(self.company)
         self._make_in_move(product, 10, unit_cost=10)

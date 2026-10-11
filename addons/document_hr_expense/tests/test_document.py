@@ -43,18 +43,7 @@ class TestCaseDocumentsBridgeExpense(TransactionCase):
 
     @mute_logger("odoo.addons.document.models.document_document", "pypdf._reader")
     def test_create_document_to_expense(self):
-        """
-        Makes sure the hr expense is created from the document.
-
-        Steps:
-            - Create user with employee
-            - Create attachment
-            - Performed action 'Create a Expense'
-            - Check if the expense is created
-            - Check the res_model of the document
-
-        """
-        self.documents_user.action_create_employee()  # Employee is mandatory in expense
+        self.documents_user.action_create_employee()
         document_txt = self._create_txt_attachment_for_documents_user()
 
         self.assertFalse(
@@ -84,10 +73,6 @@ class TestCaseDocumentsBridgeExpense(TransactionCase):
 
     @mute_logger("odoo.addons.document.models.document_document", "pypdf._reader")
     def test_create_document_to_expense_without_employee(self):
-        """
-        Make sure UserError is raised when creating expense from document
-        while the current user is not linked to an employee.
-        """
         attachment_txt = self._create_txt_attachment_for_documents_user()
         with self.assertRaisesRegex(
             UserError, "You must be linked to an employee to create an expense."

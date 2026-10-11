@@ -137,12 +137,6 @@ def geo_index_name(tablename: str, columnname: str) -> str:
 
 
 def _is_foreign_table(cr: Cursor, tablename: str) -> bool:
-    """Whether ``tablename`` is a postgres_fdw / file_fdw foreign table.
-
-    :param cr: database cursor
-    :param tablename: table name, resolved through the current search path
-    :rtype: bool
-    """
     cr.execute(
         "SELECT relkind FROM pg_class WHERE oid = to_regclass(%s)",
         (tablename,),
@@ -158,9 +152,6 @@ def create_geo_index(
     if not rebuild and index_exists(cr, indexname):
         return False
 
-    # PostgreSQL refuses to index a foreign table: the rows live in the remote
-    # database, and so must any spatial index on them. Skipping here keeps a
-    # module upgrade alive instead of aborting on the CREATE INDEX.
     if _is_foreign_table(cr, tablename):
         _schema.warning(
             "Table %r is a foreign table; not creating spatial index %r on "
@@ -309,9 +300,6 @@ def geometry_size(shape: BaseGeometry) -> int:
 
 
 def geometry_size_bound(shape: BaseGeometry) -> int:
-    # A coordinate prints as at most 25 characters (sign, 17 digits, point,
-    # exponent) plus its separator; rings, parts and the type name are covered
-    # by the per-vertex slack, as every ring has at least four vertices.
     dimensions = 3 if shape.has_z else 2
     return 64 + get_num_coordinates(shape) * (dimensions * 26 + 6)
 
@@ -613,7 +601,7 @@ class GeoField(fields.Field):
                     "ALTER TABLE %s ALTER COLUMN %s TYPE %s USING ST_Transform(%s, %s)",
                     SQL.identifier(model._table),
                     SQL.identifier(self.name),
-                    SQL(self._postgis_type()),  # noqa: E8501  the type the field declares
+                    SQL(self._postgis_type()),
                     SQL.identifier(self.name),
                     self.srid,
                 ),

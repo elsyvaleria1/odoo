@@ -4,8 +4,6 @@ from odoo.addons.base.models.ir_access_reach import Part, Proposal, propose, pro
 
 
 class TestReachRecognizer(BaseCase):
-    # the converter turns a domain into rows only when the rows it proposes
-    # reach what the domain did, for a principal whose every id is distinct
 
     def assert_converts(self, domain, *parts, kind="permission"):
         proposal = propose(domain, kind)

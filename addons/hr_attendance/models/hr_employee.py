@@ -53,10 +53,6 @@ class HrEmployee(models.Model):
         compute="_compute_attendance_state",
         groups="hr_attendance.group_hr_attendance_officer,hr.group_hr_user",
     )
-    # These four are not stored, and a non-stored compute with no `depends` is
-    # computed once and then held until something else happens to invalidate the
-    # cache -- so an attendance created after the first read did not move them.
-    # Measured: two hours read, three more worked, still two hours.
     hours_this_month = fields.Float(compute="_compute_hours_this_month")
     hours_this_month_overtime = fields.Float(compute="_compute_hours_this_month")
     hours_today = fields.Float(
@@ -101,7 +97,6 @@ class HrEmployee(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         employees = super().create(vals_list)
-        # the manager is read from the values: the field is the officers' to read
         for employee, vals in zip(employees, vals_list, strict=True):
             if vals.get("attendance_manager_id"):
                 employee._grant_attendance_officer(
@@ -110,8 +105,6 @@ class HrEmployee(models.Model):
         return employees
 
     def _grant_attendance_officer(self, users) -> None:
-        # an attendance manager is an attendance officer: the group follows
-        # the field
         officer_group = self.env.ref(
             "hr_attendance.group_hr_attendance_officer", raise_if_not_found=False
         )
@@ -182,7 +175,7 @@ class HrEmployee(models.Model):
                 .astimezone(UTC)
                 .replace(tzinfo=None)
             )
-            grouped = self.env["hr.attendance"]._read_group(  # noqa: E8507 - one query per timezone; employees sharing one were merged above
+            grouped = self.env["hr.attendance"]._read_group(
                 domain=[
                     ("employee_id", "in", employees.ids),
                     ("check_in", ">=", start_naive),
@@ -221,7 +214,7 @@ class HrEmployee(models.Model):
             )
             start_naive = start_tz.astimezone(UTC).replace(tzinfo=None)
 
-            attendances = self.env["hr.attendance"].search(  # noqa: E8507  loop is over timezones, not records
+            attendances = self.env["hr.attendance"].search(
                 [
                     ("employee_id", "in", employees.ids),
                     ("check_in", "<=", now),
@@ -286,10 +279,6 @@ class HrEmployee(models.Model):
                 att and not att.check_out and "checked_in"
             ) or "checked_out"
 
-    # Free while an employee is plausibly mistyping, then doubling, capped so a
-    # locked-out employee waits a minute rather than an afternoon. A four digit
-    # PIN is ten thousand guesses; at a minute each that is a week of sustained
-    # requests, while three fat-fingered attempts still cost nothing.
     _PIN_FAILURES_BEFORE_THROTTLE = 3
     _PIN_MAX_RETRY_DELAY = 60
 
@@ -301,19 +290,9 @@ class HrEmployee(models.Model):
         return min(2**over, self._PIN_MAX_RETRY_DELAY)
 
     def _check_attendance_pin(self, pin_code) -> bool:
-        """Whether `pin_code` opens this employee's kiosk, throttled.
-
-        The route this backs is `auth="public"`, so the only thing between a
-        four digit PIN and anyone holding the kiosk URL is what happens here.
-        The keypad's own back-off runs in the caller's browser and is not
-        reached by a request that never loads it.
-        """
         self.check_singleton()
         employee = self.sudo()
         now = fields.Datetime.now()
-        # Attempts made while throttled still count. Returning early without
-        # counting them pins the delay at whatever first triggered it, so a
-        # caller that simply retries on a timer never escalates past it.
         locked = (
             employee.attendance_pin_retry_after
             and now < employee.attendance_pin_retry_after
@@ -349,13 +328,6 @@ class HrEmployee(models.Model):
         return False
 
     def _attendance_action_change(self, geo_information=None):
-        """Check the employee in, or out if they are in, as of now.
-
-        Runs as superuser: the caller has already established that this is
-        the employee it may act for (the kiosk through its token, the systray
-        through `request.env.user.employee_id`), and the attendance fields
-        this reads are not granted to a plain user.
-        """
         self.check_singleton()
         employee = self.sudo()
         action_date = fields.Datetime.now()
@@ -396,11 +368,6 @@ class HrEmployee(models.Model):
         return attendance.with_env(self.env)
 
     def _get_attendance_systray_data(self) -> dict:
-        """What the systray and the kiosk show about the employee's day.
-
-        Sudo for the same reason as `_attendance_action_change`: an employee
-        reading their own hours is not an attendance officer.
-        """
         if not self:
             return {}
         employee = self.sudo()
@@ -421,9 +388,6 @@ class HrEmployee(models.Model):
 
     @_debug.perf.timed
     def _round_overtime_window(self, first, last) -> tuple:
-        """Widen a span of local dates to the periods its overtime is summed
-        over: whole weeks when any rule the employee has ever had is weekly,
-        whole days otherwise."""
         self.check_singleton()
         rules = self.sudo().version_ids.ruleset_id.rule_ids
         if any(
@@ -468,32 +432,7 @@ class HrEmployee(models.Model):
 
     @api.depends("user_id.im_status", "attendance_state")
     def _compute_hr_presence_state(self) -> None:
-        """An attendance is evidence of presence, over whatever `hr` concluded.
-
-        Checked in means present, for every company. An attendance record is
-        somebody standing at the kiosk: it is evidence, and evidence does not
-        need the company's permission to count.
-
-        Checked out during working hours means absent only where the company
-        asked for attendance to be its presence control. That verdict is not
-        evidence but an INFERENCE from the absence of evidence -- "no record,
-        therefore not here" -- and it is only sound where the company expects
-        its employees to clock in at all.
-
-        Gating both halves was measured and is wrong. With
-        `hr_presence_control_login` on and attendance control off, an employee
-        physically checked in read **Absent**: their branch was skipped, and
-        `hr`'s own rule then judged them by a user session they did not have.
-        `_compute_presence_icon` below has consulted this flag all along, so
-        the module used to hold both answers to whether the company opted in.
-        """
         super()._compute_hr_presence_state()
-        # The same predicate was evaluated three times -- once to choose whom
-        # to ask `_get_employee_ids_working_now` about, once to choose whom to
-        # decide for, and once more inside the loop -- each time re-deriving
-        # `.sudo()` on a single record. `attendance_state` is read once, on the
-        # superuser twin; `hr_presence_state` is read on `self`, because it is
-        # the field being computed and the twin has a cache entry of its own.
         attendance_state = {
             employee.id: employee.attendance_state for employee in self.sudo()
         }

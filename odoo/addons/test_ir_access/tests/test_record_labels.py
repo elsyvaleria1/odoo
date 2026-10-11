@@ -6,8 +6,6 @@ MODEL = "test_ir_access.labelled"
 
 
 class TestRecordLabels(TransactionCase):
-    # a record labelled with a field class reaches the principals the class
-    # grants; an unlabelled record is left to the model's rows
 
     @classmethod
     def setUpClass(cls):

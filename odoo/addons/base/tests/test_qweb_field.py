@@ -903,8 +903,6 @@ class TestQwebFieldMonetaryCurrencyFallback(common.TransactionCase):
         ranked = self.env["ir.qweb.field.monetary"]._get_currency_field_names(
             self.env["res.company"], "id"
         )
-        # an installed module may give the company other currency fields
-        # (purchase adds one through the partner): the claim is the rank
         self.assertEqual(ranked[0], "currency_id")
 
     def test_the_ranking_does_not_depend_on_field_dict_order(self):
@@ -998,9 +996,6 @@ class TestFormatAmountNegativeZero(common.TransactionCase):
 
 
 class TestQwebFieldHtmlPostProcessing(common.TransactionCase):
-    # base's contract: an override such as website's may decline the name
-    # hook (None) and rewrite URLs; these tests read the base implementation
-    # whatever the DB has installed.
     def setUp(self):
         super().setUp()
         IrQweb = self.registry["ir.qweb"]

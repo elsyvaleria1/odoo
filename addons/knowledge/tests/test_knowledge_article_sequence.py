@@ -14,17 +14,7 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
         with mute_logger("odoo.models.unlink"):
             cls.env["knowledge.article"].search([]).unlink()
 
-        # HIERARCHY
-        # - Existing 1    seq=1
-        # - Existing 2    seq=3
-        # - Article 1     seq=4
-        #   - Article 1.1
-        #   - Article 1.2
-        #     - Article 1.2.1
-        #   - Article 1.3
-        # - Article 2     seq=5
 
-        # define starting sequence for root articles
         cls.article_root_noise = cls.env["knowledge.article"].create(
             [
                 {
@@ -74,12 +64,10 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
             cls, "Article2", target_user=cls.user_employee
         )
 
-        # flush everything to ease resequencing and date-based computation
         cls.env.flush_all()
 
     @users("employee")
     def test_initial_tree(self):
-        # parents
         article_private = self.article_private.with_env(self.env)
         article_children = self.article_children.with_env(self.env)
         article_private2 = self.article_private2.with_env(self.env)
@@ -90,45 +78,32 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
         )
         self.assertEqual(article_children[2].parent_id, article_children[1])
         self.assertFalse(article_private2.parent_id)
-        # ancestors
         self.assertEqual(
             (article_private + article_children).root_article_id, article_private
         )
         self.assertEqual(article_private2.root_article_id, article_private2)
-        # categories
         self.assertEqual(article_private.category, "private")
         self.assertEqual(set(article_children.mapped("category")), {"private"})
         self.assertEqual(article_private2.category, "private")
-        # user permission
         self.assertEqual(article_private.user_permission, "write")
         self.assertEqual(set(article_children.mapped("user_permission")), {"write"})
         self.assertEqual(article_private2.user_permission, "write")
         self.assertEqual(article_private.inherited_permission, "none")
         self.assertEqual(set(article_children.mapped("inherited_permission")), {"none"})
         self.assertEqual(article_private2.inherited_permission, "none")
-        # sequences
         self.assertSortedSequence(article_private + article_private2)
         self.assertSortedSequence(article_children[0:2] + article_children[3])
 
     @users("employee")
     def test_resequence_with_move(self):
-        """Checking the sequence of the articles"""
         article_private = self.article_private.with_env(self.env)
         article_children = self.article_children.with_env(self.env)
         article_private2 = self.article_private2.with_env(self.env)
 
-        # move last child "Article 1.3" before "Article 1.2"
         last_child = article_children[3]
         last_child.move_to(
             parent_id=article_private.id, before_article_id=article_children[1].id
         )
-        # expected
-        # - Article 1
-        #     - Article 1.1
-        #     - Article 1.3
-        #     - Article 1.2
-        #         - Article 1.2.1
-        # - Article 2
         self.assertFalse(article_private.parent_id)
         self.assertEqual(
             (article_children[0:2] + article_children[3:]).parent_id, article_private
@@ -140,17 +115,9 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
             article_children[0] + article_children[3] + article_children[1]
         )
 
-        # move "Article 1.2.1" in first position under "Article 1"
         article_children[2].move_to(
             parent_id=article_private.id, before_article_id=article_children[0].id
         )
-        # expected
-        # - Article 1
-        #     - Article 1.2.1
-        #     - Article 1.1
-        #     - Article 1.3
-        #     - Article 1.2
-        # - Article 2
         self.assertFalse(article_private.parent_id)
         self.assertEqual(article_children.parent_id, article_private)
         self.assertFalse(article_private2.parent_id)
@@ -162,17 +129,9 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
             + article_children[1]
         )
 
-        # move "Article 1.1" in last position under "Article 1"
         article_children[0].move_to(
             parent_id=article_private.id, before_article_id=False
         )
-        # expected
-        # - Article 1
-        #     - Article 1.2.1
-        #     - Article 1.3
-        #     - Article 1.2
-        #     - Article 1.1
-        # - Article 2
         self.assertFalse(article_private.parent_id)
         self.assertEqual(article_children.parent_id, article_private)
         self.assertFalse(article_private2.parent_id)
@@ -186,7 +145,6 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
 
     @users("employee")
     def test_resequence_with_move_noparent(self):
-        """Test move resetting parent_id should also compute sequence"""
         article_private = self.article_private.with_env(self.env)
         article_private_child = self.article_children[0].with_env(self.env)
         article_private2 = self.article_private2.with_env(self.env)
@@ -212,7 +170,6 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
 
     @users("employee")
     def test_resequence_with_parent(self):
-        """Checking the sequence of the articles"""
         existing_private = self.article_private.with_env(self.env)
         new_private = self._create_private_article("NewPrivate")
         self.assertFalse(
@@ -236,10 +193,8 @@ class TestKnowledgeArticleSequence(KnowledgeCommon):
 
     @users("employee")
     def test_resequence_with_move_before_readonly_article(self):
-        """Test resequencing the article with move before readonly article"""
         article_root_noise = self.article_root_noise.with_env(self.env)
 
-        # making 1st article readonly
         article_root_noise[0].set_internal_permission("read")
 
         self.assertEqual(article_root_noise[0].sequence, 1)

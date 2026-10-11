@@ -112,7 +112,6 @@ class TestRunnerAuthority(RunnerFixtures, HttpCase):
         )
 
     def test_a_run_ends_even_when_its_owner_cannot_be_told(self):
-        # no module grants the runner anything on a contact
         owner = self.env["res.partner"].create({"name": "Hand-made run's owner"})
         run = self._run(res_model="res.partner", res_id=owner.id)
         token = self._lease_token(run)
@@ -151,7 +150,6 @@ class TestRunnerAuthority(RunnerFixtures, HttpCase):
 
 @tagged("post_install", "-at_install")
 class TestModelCredentialsAsRunner(test_credentials.TestModelCredentials):
-    # every credentials case, leased in the environment a runner's call runs in
     allow_inherited_tests_method = True
 
     def setUp(self):

@@ -156,8 +156,6 @@ def _value_to_datetime(
 
 
 def _is_utc(tz: tzinfo) -> bool:
-    # ZoneInfo("UTC") is not datetime.UTC; a zone answering an offset without
-    # a moment is fixed, and a fixed zero offset is UTC under any name
     return tz.utcoffset(None) == _ZERO
 
 
@@ -221,9 +219,6 @@ def temporal_part_getter(
 
 
 def refuse_boolean_part_comparand(condition: DomainCondition, part: str | None) -> None:
-    # a date part is a number: compared to True, or ordered against False,
-    # Python answers (`5 <= True`) where SQL refuses the types; False in a
-    # list still means the unset date
     if not part or part == "tz":
         return
     value = condition.value
@@ -266,8 +261,6 @@ class BaseDate[T: date](Field[T | typing.Literal[False]]):
     def _filter_in(
         self, getter: Callable[[BaseModel], typing.Any], value: typing.Any
     ) -> Callable[[BaseModel], bool]:
-        # a number part reads 0 at midnight and on Sunday, which equals False:
-        # an empty value answers only False, as IS NULL does in SQL
         match_empty = any(v is False or v is None for v in value)
         values = {v for v in value if v is not False and v is not None}
 
@@ -314,7 +307,7 @@ class BaseDate[T: date](Field[T | typing.Literal[False]]):
                 f"Error when processing the granularity {property_name} is not supported. Only {', '.join(READ_GROUP_NUMBER_GRANULARITY.keys())} are supported"
             )
         granularity = READ_GROUP_NUMBER_GRANULARITY[property_name]
-        return SQL(  # noqa: E8501  granularity is a value of a module constant
+        return SQL(
             "date_part('%s', %%s)" % granularity, sql_expr
         )
 

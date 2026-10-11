@@ -10,7 +10,6 @@ _logger = logging.getLogger(__name__)
 
 CLIENT_ID_KEY = "microsoft_calendar_client_id"
 CLIENT_SECRET_KEY = "microsoft_calendar_client_secret"
-# dotted keys, moved with the module by base 1.145
 ENDPOINT_KEYS = {
     "oauth_auth_endpoint": "integration_microsoft.auth_endpoint",
     "oauth_token_endpoint": "integration_microsoft.token_endpoint",
@@ -24,8 +23,6 @@ def migrate(cr, version):
     service = env.ref("integration_microsoft.service_microsoft")
     ICP = env["ir.config_parameter"]
     Credential = env["credential.credential"]
-    # Entra registrations list the old callback; a single-tenant one set its
-    # tenant through the two endpoint parameters
     values = {"oauth_redirect_path": LEGACY_CALLBACK_PATH}
     for field, key in ENDPOINT_KEYS.items():
         if endpoint := ICP.get_param(key):

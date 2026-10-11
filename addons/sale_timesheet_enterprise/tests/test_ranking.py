@@ -95,7 +95,6 @@ class TestSaleTimesheetEnterpriseRanking(TestCommonSaleTimesheet):
         )
 
     def test_fetch_tip(self):
-        """This test will check that a tip is actually returned when calling get_timesheet_ranking_data() with fetch_tip parameter set to true."""
         data = self.company_data["company"].get_timesheet_ranking_data(
             self.period_start, self.period_end, self.today, True
         )
@@ -105,10 +104,6 @@ class TestSaleTimesheetEnterpriseRanking(TestCommonSaleTimesheet):
         )
 
     def test_total_time_target(self):
-        """This test will check that the total time target variable is correct when calling get_timesheet_ranking_data(). This
-        variable is set if today's date is set in between or after the time window (in between period_start and
-        period_end or after period_end).
-        """
         data = [
             self.company_data["company"].get_timesheet_ranking_data(
                 self.period_start, self.period_end, date, False
@@ -134,19 +129,15 @@ class TestSaleTimesheetEnterpriseRanking(TestCommonSaleTimesheet):
         )
 
     def test_total_time(self):
-        """This test will check that the user's total time and total valid time in their ranking is correct. For
-        example if the user has timesheeted in the future, this time is invalidated and excluded in the total valid
-        time calculation. The total time is the same except there is no invalidation system based on the time.
-        """
         self.env["account.analytic.line"].create(
             {
                 "employee_id": self.employee_user.id,
                 "unit_amount": 8,
-                "date": datetime(2023, 4, 15, 7, 0, 0, 0),  # before self.today
+                "date": datetime(2023, 4, 15, 7, 0, 0, 0),
                 "project_id": self.project_billable.id,
                 "task_id": self.task_billable.id,
             }
-        )  # self.today is past the timesheet's date so it should be counted in total_valid_time
+        )
         ranking_data = self.employee_user.company_id.get_timesheet_ranking_data(
             self.period_start, self.period_end, self.today, False
         )
@@ -165,11 +156,11 @@ class TestSaleTimesheetEnterpriseRanking(TestCommonSaleTimesheet):
             {
                 "employee_id": self.employee_user.id,
                 "unit_amount": 8,
-                "date": datetime(2023, 4, 26, 7, 0, 0, 0),  # after self.today
+                "date": datetime(2023, 4, 26, 7, 0, 0, 0),
                 "project_id": self.project_billable.id,
                 "task_id": self.task_billable.id,
             }
-        )  # the timesheet's date is past self.today so it should be counted in total_valid_time
+        )
         ranking_data = self.employee_user.company_id.get_timesheet_ranking_data(
             self.period_start, self.period_end, self.today, False
         )

@@ -5,7 +5,6 @@ from odoo.tests.common import TransactionCase
 @tagged("phone_validation")
 class TestPhoneFormat(TransactionCase):
     def test_phone_format_country_guess(self):
-        # based on partner country
         partners = self.env["res.partner"].create(
             [
                 {"name": "Alex Bell", "country_id": self.env.ref("base.us").id},
@@ -132,7 +131,6 @@ class TestPhoneFormat(TransactionCase):
         test_records.invalidate_recordset()
         (country_partners + nocountry_partners).invalidate_recordset()
         countries.invalidate_recordset()
-        # 1 query per country + 4
         with self.assertQueryCount(24):
             for record in test_records:
                 record._phone_format(

@@ -51,7 +51,6 @@ class TestWhoAnUpdateActsAs(IdentityCase):
         self.assertFalse(user)
 
     def test_claiming_a_bound_username_claims_nothing(self):
-        """Telegram lets a released @username be claimed by anybody."""
         _chat, partner, user = self._resolve(
             _update("777002", "private", 777002, username="testuser")
         )
@@ -60,7 +59,6 @@ class TestWhoAnUpdateActsAs(IdentityCase):
         self.assertFalse(user)
 
     def test_a_group_serves_a_bound_member_as_unlinked(self):
-        """Whatever runs in a group answers to all its members."""
         chat, partner, user = self._resolve(_update("-100500", "supergroup", 12345))
 
         self.assertFalse(chat.account_id)

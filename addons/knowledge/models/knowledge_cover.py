@@ -26,7 +26,6 @@ class KnowledgeCover(models.Model):
 
     @api.depends("attachment_id")
     def _compute_attachment_url(self) -> None:
-        # Add an url for frontend access.
         for cover in self:
             if cover.attachment_id.url:
                 cover.attachment_url = cover.attachment_id.url
@@ -39,10 +38,6 @@ class KnowledgeCover(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Create the covers, then link the attachments used to the created
-        records, because when uploading a new cover, the attachment is uploaded
-        with res_id=0, then the cover is created using the uploaded attachment.
-        """
         if any(len(vals) == 1 and "name" in vals for vals in vals_list):
             raise UserError(
                 self.env._("You cannot create a new Knowledge Cover from here.")

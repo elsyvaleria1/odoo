@@ -126,7 +126,7 @@ class AccountDepreciationProfile(models.Model):
         for company, profiles in needs_default.grouped("company_id").items():
             if not company:
                 continue
-            journal = AccountJournal.search(  # noqa: E8507  one search per distinct company, not per profile
+            journal = AccountJournal.search(
                 [
                     *AccountJournal._check_company_domain(company),
                     ("type", "=", "general"),

@@ -42,9 +42,6 @@ class MixinSpreadsheet(models.AbstractModel):
         domain=lambda self: [("res_model", "=", self._name)],
         groups="base.group_system",
     )
-    # The last revision id known by the current transaction.
-    # Another concurrent transaction can have saved a revision after this one
-    # This means it cannot be blindly used to dispatch a new revision.
     current_revision_uuid = fields.Char(
         compute="_compute_current_revision_uuid",
         compute_sudo=True,
@@ -137,37 +134,6 @@ class MixinSpreadsheet(models.AbstractModel):
     def dispatch_spreadsheet_message(
         self, message: CollaborationMessage, access_token=None
     ):
-        """This is the entry point of collaborative editing.
-        Collaboration messages arrive here. For each received messages,
-        the server decides if it's accepted or not. If the message is
-        accepted, it's transmitted to all clients through the "bus.bus".
-        Messages which do not update the spreadsheet state (a client moved
-        joined or left) are always accepted. Messages updating the state
-        require special care.
-
-        Refused messages
-        ----------------
-
-        An important aspect of collaborative messages is their order. The server
-        checks the order of received messages. If one is out of order, it is refused.
-        How does it check the order?
-        Each message has a `serverRevisionId` property which is the revision on which
-        it should be applied. If it's not equal to the current known revision by the server,
-        it is out of order and refused.
-
-        Accepted messages
-        -----------------
-
-        If the message is found to be in order, it's accepted and the server registers it.
-        The current server revision becomes the revision carried by the message, in the
-        `nextRevisionId` property.
-        With this strategy, we are guaranteed that all accepted message are ordered.
-        See `_save_concurrent_revision`.
-
-        :param message: collaborative message to process
-        :return: if the message was accepted or not.
-        :rtype: bool
-        """
         self.check_singleton()
         _debug.lifecycle(
             "spreadsheet_message_received",
@@ -274,16 +240,6 @@ class MixinSpreadsheet(models.AbstractModel):
     def _snapshot_spreadsheet(
         self, revision_uuid: str, snapshot_revision_uuid, spreadsheet_snapshot: dict
     ):
-        """Save the spreadsheet snapshot along the revision id. Delete previous
-        revisions which are no longer needed.
-        If the `revision_uuid` is not the same as the server revision, the snapshot is
-        not accepted and is ignored.
-
-        :param revision_uuid: the revision on which the snapshot is based
-        :param snapshot_revision_uuid: snapshot revision
-        :param spreadsheet_snapshot: spreadsheet data
-        :return: True if the snapshot was saved, False otherwise
-        """
         if snapshot_revision_uuid != spreadsheet_snapshot.get("revisionId"):
             _debug.logic(
                 "spreadsheet_snapshot_rejected",
@@ -329,8 +285,6 @@ class MixinSpreadsheet(models.AbstractModel):
         return is_accepted
 
     def _get_serialized_spreadsheet_data_body(self, access_token=None):
-        # handcraft the json response body, avoiding the need for parsing and re-serializing
-        # the spreadsheet file and the revisions, which can be expensive for large files.
         with _debug.perf(
             "spreadsheet_data_body_serialized",
             cr=self.env.cr,
@@ -367,9 +321,6 @@ class MixinSpreadsheet(models.AbstractModel):
         return body
 
     def _get_revision_sequence(self) -> int:
-        # A revision is inserted only once its parent is committed, so along
-        # one spreadsheet's chain the row id only grows: the highest one this
-        # transaction sees is the state the data it serves holds.
         self.check_singleton()
         return (
             self.env["spreadsheet.revision"]
@@ -421,13 +372,6 @@ class MixinSpreadsheet(models.AbstractModel):
     def _save_concurrent_revision(
         self, next_revision_uuid, parent_revision_uuid, commands
     ) -> bool:
-        """Save the given revision if no concurrency issue is found.
-        i.e. if no other revision was saved based on the same `parent_revision_uuid`
-        :param next_revision_uuid: the new revision id
-        :param parent_revision_uuid: the revision on which the commands are based
-        :param commands: revisions commands
-        :return: the saved revision, or an empty recordset when it was refused
-        """
         self.check_singleton()
         parent_revision_id = self._get_revision_by_uuid(parent_revision_uuid)
         _debug.logic(
@@ -450,11 +394,6 @@ class MixinSpreadsheet(models.AbstractModel):
                     }
                 )
         except psycopg.IntegrityError:
-            # If the creation failed with a unique violation error, it is because the parent_revision_id has already
-            # been used. This means that at the same (relative) time, another user has made a modification to the
-            # document while this user also modified the document, without knowing about each other modification.
-            # We don't need to do anything: when the client that already did the modification will be done, the
-            # situation will resolve itself when this client receives the other client's modification.
             _logger.info("Wrong base spreadsheet revision on %s", self)
             _debug.logic(
                 "spreadsheet_revision_refused",
@@ -466,9 +405,6 @@ class MixinSpreadsheet(models.AbstractModel):
             return self.env["spreadsheet.revision"]
 
     def _prepare_spreadsheet_revision_data(self, message: CollaborationMessage) -> dict:
-        """Prepare revision data to save in the database from
-        the collaboration message.
-        """
         message = dict(message)
         message.pop("serverRevisionId", None)
         message.pop("nextRevisionId", None)
@@ -476,8 +412,6 @@ class MixinSpreadsheet(models.AbstractModel):
         return message
 
     def _get_spreadsheet_serialized_revisions(self) -> list[str]:
-        """Build spreadsheet collaboration messages from the saved
-        revision data"""
         self.check_singleton()
         return self._serialize_revisions(self.spreadsheet_revision_ids)
 
@@ -485,9 +419,6 @@ class MixinSpreadsheet(models.AbstractModel):
     def get_spreadsheet_revisions_after(
         self, revision_uuid: str, access_token=None
     ) -> list[dict] | None:
-        """The collaboration messages a client whose head is `revision_uuid`
-        has not received, in order; None when that revision is no longer in
-        the history (a restore dropped it), where only a reload catches up."""
         self.check_singleton()
         spreadsheet = self._collaborative_sudo("read", access_token)
         revisions = spreadsheet.with_context(
@@ -523,19 +454,12 @@ class MixinSpreadsheet(models.AbstractModel):
         return result
 
     def _collaborative_sudo(self, operation: str, access_token=None):
-        # The collaborative data (revisions, snapshot) is read and written past
-        # the record rules once the share or record check passed: one place
-        # that never elevates without it.
         self._check_collaborative_spreadsheet_access(operation, access_token)
         return self.sudo()
 
     def _check_collaborative_spreadsheet_access(
         self, operation: str, access_token=None, *, raise_exception=True
     ) -> bool:
-        """Check that the user has the right to read/write on the document.
-        It's used to ensure that a user can read/write the spreadsheet revisions
-        of this document.
-        """
         try:
             self._check_spreadsheet_share(operation, access_token)
         except AccessError:
@@ -552,17 +476,11 @@ class MixinSpreadsheet(models.AbstractModel):
         return True
 
     def _check_spreadsheet_share(self, operation, access_token) -> None:
-        """Delegates the sharing check to the underlying model which might
-        implement sharing in different ways.
-        """
         self.check_access(operation)
 
     def _broadcast_spreadsheet_message(
         self, message: CollaborationMessage, revision=None
     ) -> None:
-        """Send the message to the spreadsheet channel. A message that saved a
-        revision carries its row id as ``revisionSequence``: a client drops the
-        ones its loaded data already holds (``_get_revision_sequence``)."""
         self.check_singleton()
         _debug.pipeline(
             "spreadsheet_message_broadcast",
@@ -582,8 +500,6 @@ class MixinSpreadsheet(models.AbstractModel):
         self.with_context(active_test=False).sudo().spreadsheet_revision_ids.unlink()
 
     def unlink(self):
-        """Override unlink to delete spreadsheet revision. This cannot be
-        cascaded, because link is done through (res_model, res_id)."""
         if not self:
             return True
         _debug.lifecycle("spreadsheet_unlinked", records=self)
@@ -639,10 +555,6 @@ class MixinSpreadsheet(models.AbstractModel):
 
     @api.readonly
     def get_spreadsheet_history(self, from_snapshot=False) -> dict:
-        """Fetch the spreadsheet history.
-        - if from_snapshot is provided, then provides the last snapshot and the revisions since then
-        - otherwise, returns the empty skeleton of the spreadsheet with all the revisions since its creation
-        """
         self.check_singleton()
         spreadsheet_sudo = self._collaborative_sudo("read")
         _debug.lifecycle(
@@ -742,8 +654,6 @@ class MixinSpreadsheet(models.AbstractModel):
         )
         snapshot_revision_uuid = str(uuid.uuid4())
         spreadsheet_snapshot["revisionId"] = snapshot_revision_uuid
-        # other collaborative users will receive the snapshot message based on
-        # a server revision id they do not expect. This will cause them to reload.
         is_accepted = spreadsheet._snapshot_spreadsheet(
             current_revision_uuid,
             snapshot_revision_uuid,
@@ -861,15 +771,12 @@ class MixinSpreadsheet(models.AbstractModel):
         if parent_revision:
             return parent_revision.revision_uuid
         if revision.active:
-            # After snapshot: get revisionId from snapshot
             data = self._get_spreadsheet_serialized_snapshot()
         else:
-            # Before snapshot: get from initial data
             data = self.spreadsheet_data
         return json_loads(data).get("revisionId", "START_REVISION")
 
     def _remove_comments_from_data(self) -> None:
-        """Deletes comments data from the spreadsheet data and its snapshot"""
         self = self.with_context(preserve_spreadsheet_revisions=True)
         for spreadsheet in self:
             if spreadsheet.spreadsheet_data:
@@ -896,7 +803,6 @@ class MixinSpreadsheet(models.AbstractModel):
                     )
 
     def _remove_comments_from_commands(self, revision_commands_string):
-        """Deletes comments related from the commands"""
         revision_commands = json_loads(revision_commands_string)
         if not isinstance(revision_commands, dict):
             return revision_commands_string
@@ -917,9 +823,6 @@ class MixinSpreadsheet(models.AbstractModel):
         return json_dumps(revision_commands)
 
     def _copy_spreadsheet_image_attachments(self) -> None:
-        """Ensures the image attachments are linked to the spreadsheet record
-        and duplicates them if necessary and updates the spreadsheet data and revisions to
-        point to the new attachments."""
         self._check_collaborative_spreadsheet_access("write")
         for spreadsheet in self:
             revisions = (
@@ -927,7 +830,7 @@ class MixinSpreadsheet(models.AbstractModel):
                 .with_context(active_test=False)
                 .spreadsheet_revision_ids
             )
-            mapping = {}  # old_attachment_id: new_attachment
+            mapping = {}
             revisions_with_images = revisions.filtered(
                 lambda r: "CREATE_IMAGE" in r.commands
             )
@@ -1047,8 +950,6 @@ class MixinSpreadsheet(models.AbstractModel):
     @api.depends_context("uid")
     @api.depends("thumbnail")
     def _compute_display_thumbnail(self) -> None:
-        # Spreadsheet thumbnails cannot be computed from their binary data.
-        # They should be saved independently.
         spreadsheets = self.filtered(
             lambda d: (
                 (d.handler if "handler" in d._fields else "spreadsheet")

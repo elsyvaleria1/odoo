@@ -46,8 +46,6 @@ class ResConfigSettings(models.TransientModel):
     @api.depends("sign_terms_type")
     def _compute_sign_terms_preview(self) -> None:
         for setting in self:
-            # We display the preview button only if the terms_type is html in the setting but also on the company
-            # to avoid landing on an error page (see terms.py controller)
             setting.sign_preview_ready = (
                 self.env.company.sign_terms_type == "html"
                 and setting.sign_terms_type == "html"

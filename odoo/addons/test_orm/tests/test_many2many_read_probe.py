@@ -3,9 +3,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestMany2manyReadProbesRuledRelations(TransactionCase):
-    # a comodel's record rules reach the many2many read as sub-selects that can
-    # cost far more than the relation itself; a reader they apply to asks the
-    # relation first, and an empty relation ends the read there
 
     @classmethod
     def setUpClass(cls):
@@ -38,7 +35,6 @@ class TestMany2manyReadProbesRuledRelations(TransactionCase):
         self.env.invalidate_all()
 
     def _read_links(self, box):
-        # the box's own row first, so the count below is the relation's alone
         box.mapped("name")
         return box.linked_item_ids
 
@@ -59,7 +55,6 @@ class TestMany2manyReadProbesRuledRelations(TransactionCase):
         return statements
 
     def test_an_empty_relation_under_rules_is_read_by_the_probe_alone(self):
-        # browsed alone: prefetching the linked box along would find its links
         box = self.env["test_orm.scope_box"].with_user(self.user).browse(self.empty.id)
         box.mapped("name")
         statements = self._statements(lambda: self.assertFalse(box.linked_item_ids))
@@ -85,7 +80,6 @@ class TestMany2manyReadProbesRuledRelations(TransactionCase):
             .with_user(self.user)
             .search([("id", "in", self.linked.linked_item_ids.ids)])
         )
-        # same records, in the comodel's order
         self.assertEqual(read.ids, searched.ids)
 
     def test_a_reader_without_rules_keeps_one_round_trip(self):

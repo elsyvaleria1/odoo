@@ -36,8 +36,6 @@ class LLMApiService:
         self.provider = provider
         self.purpose = purpose
         self.env = env
-        # Everything provider-shaped lives on the handler; see
-        # utils/llm_provider_handlers.py.
         self.handler = get_provider_handler(env, provider)
         self.base_url = self.handler.base_url
 
@@ -73,9 +71,6 @@ class LLMApiService:
         }
 
     def _get_api_token(self):
-        # Delegated to a model so the lookup can be overridden: this class is
-        # instantiated directly, so it offers no extension point of its own.
-        # See ai/models/ai_llm_credential.py.
         return self.env["ai.llm.credential"]._get_api_token(self.provider)
 
     def _request(
@@ -91,9 +86,6 @@ class LLMApiService:
         timeout: int = 30,
     ) -> dict:
         route = f"{base_url or self.base_url}/{endpoint.strip('/')}"
-        # Delegated to a model so the transport can be overridden: this class is
-        # instantiated directly, so it offers no extension point of its own.
-        # See ai/models/ai_llm_transport.py.
         return self.env["ai.llm.transport"]._request(
             self.provider,
             method,
@@ -119,17 +111,6 @@ class LLMApiService:
         inputs=(),
         web_grounding=False,
     ) -> tuple:
-        """Make a single request to the LLM.
-
-        > https://platform.openai.com/docs/guides/responses-vs-chat-completions#why-the-responses-api
-        > https://platform.openai.com/docs/guides/pdf-files?api-mode=responses
-        > https://platform.openai.com/docs/guides/function-calling?api-mode=responses
-
-        :return: a tuple of (list of responses, list of tools to call as
-            [(tool_name, call_id, {argument_1: True, argument_2: 3})], list of inputs
-            to include in the next call in addition to the tool response)
-        :rtype: tuple
-        """
         user_content = [
             {"type": "input_text", "text": prompt} for prompt in user_prompts
         ]
@@ -169,7 +150,6 @@ class LLMApiService:
             "store": False,
         }
         if llm_model not in ("gpt-5", "gpt-5-mini"):
-            # temperature in not supported with openai reasoning models
             body["temperature"] = temperature
 
         if schema:
@@ -283,23 +263,11 @@ class LLMApiService:
         inputs=(),
         web_grounding=False,
     ) -> tuple:
-        """Make a single request to the LLM.
-
-        Gemini's OpenAI conversion layer does not support `type: file`, so we use the real API
-        > https://discuss.ai.google.dev/t/combining-openai-compatible-gemini-completions-with-file-uploads/75281/2
-
-        > https://ai.google.dev/gemini-api/docs/text-generation
-        > https://ai.google.dev/gemini-api/docs/function-calling
-        > https://ai.google.dev/gemini-api/docs/document-processing
-        """
         if (tools or web_grounding) and schema:
-            # https://discuss.ai.google.dev/t/why-is-using-a-response-schema-not-supported-when-using-grounded-search/92327
             raise NotImplementedError(
                 "Gemini does not support structured output with tools"
             )
         if web_grounding and tools:
-            # https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#native-tools
-            # see note, live api feature only for the moment
             raise NotImplementedError(
                 "Gemini does not support tools with web grounding"
             )
@@ -367,7 +335,6 @@ class LLMApiService:
             body["tools"] = {"google_search": {}}
 
         if llm_model == "gemini-2.5-flash":
-            # from testing, increasing thinking budget results in the LLM actually replying ¯\_(ツ)_/¯
             body["generationConfig"]["thinkingConfig"] = {
                 "thinkingBudget": 512,
             }
@@ -451,25 +418,6 @@ class LLMApiService:
         inputs: list[dict] | None = None,
         web_grounding: bool = False,
     ) -> list[str]:
-        """Same as `_request_llm`, but will call the tools until we are done.
-
-        >>> files = [
-        >>>     {'mimetype': 'text/plain', 'value': 'text content', 'file_ref': '<file_#1>'},
-        >>>     {'mimetype': 'image/png', 'value': 'aW1hZ2UgY29udGVudA==', 'file_ref': '<file_#2>'},
-        >>>     {'mimetype': 'application/pdf', 'value': 'cGRmIGNvbnRlbnQ=', 'file_ref': '<file_#3>'},
-        >>> ]
-
-        >>> tools = {
-        >>>     "function_1": (
-        >>>         "This function compute a sum",
-        >>>         False,  # whether the tool may carry an `__end_message` argument
-        >>>         lambda arguments: (arguments['a'] + arguments['b'], None),  # -> (result, error)
-        >>>         json_schema,
-        >>>     ),
-        >>>     "function_2": ...
-        >>> }
-        > https://json-schema.org/
-        """
         check_model_depreciation(self.env, llm_model)
         with ai_response_logging(llm_model):
             return self._request_llm_silent(
@@ -497,7 +445,6 @@ class LLMApiService:
         inputs: list[dict] | None = None,
         web_grounding: bool = False,
     ):
-        """Wraps the `_request_llm` method to handle multiple calls and tool execution."""
         AI_MAX_SUCCESSIVE_CALLS = int(
             self.env.registry.settings.get(self.env, "ai.max_successive_calls", "20")
         )
@@ -528,7 +475,7 @@ class LLMApiService:
         inputs = self.handler.translate_inputs(inputs)
 
         all_responses = []
-        for api_call in range(AI_MAX_SUCCESSIVE_CALLS):  # noqa: B007  read after the loop: the number of calls made
+        for api_call in range(AI_MAX_SUCCESSIVE_CALLS):
             responses, next_actions, inputs = self._request_llm(
                 llm_model,
                 system_prompts,
@@ -590,7 +537,7 @@ class LLMApiService:
                     else:
                         _logger.info("AI: action terminate early with empty message")
 
-            if session and len(next_actions) > 1:  # Batch of tool calls
+            if session and len(next_actions) > 1:
                 _logger.debug(
                     "[AI Tool Summary] Batch #%d completed, %d tool calls",
                     session["current_batch_id"],
@@ -611,13 +558,7 @@ class LLMApiService:
         return all_responses
 
     def _to_open_ai_tool_schema(self, schema):
-        """Convert the tool schema for this provider, if it needs it."""
         return self.handler.tool_schema(schema)
 
     def _get_tool_call_response(self, tool_call_id, return_value):
-        """Build the response for the given tool call.
-
-        :param tool_call_id: The identifier of the tool call
-        :param return_value: The value the tool returned
-        """
         return self.handler.tool_call_response(tool_call_id, return_value)

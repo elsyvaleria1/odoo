@@ -53,9 +53,6 @@ class Segment(NamedTuple):
 
 
 def iter_segments(mappings: str, *, until_line: int | None = None) -> Iterator[Segment]:
-    """The segments of a v3 ``mappings`` string, in order, stopping after
-    generated line ``until_line`` when given: the fields are deltas running
-    across lines, so reaching a line means decoding every line before it."""
     source = source_line = source_column = name = 0
     for line, text in enumerate(mappings.split(";")):
         if until_line is not None and line > until_line:
@@ -102,9 +99,6 @@ class SourceMap:
     def locate(
         self, positions: Iterable[tuple[int, int]]
     ) -> dict[tuple[int, int], Original | None]:
-        """Each 0-based generated ``(line, column)`` in the source it maps to:
-        the last segment of its line starting at or before the column. One
-        pass over the mappings serves every position."""
         wanted = set(positions)
         if not wanted:
             return {}

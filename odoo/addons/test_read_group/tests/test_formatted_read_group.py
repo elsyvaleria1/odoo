@@ -1565,8 +1565,6 @@ class TestFormattedReadGroup(common.TransactionCase):
 
     def test_groupby_datetime_groups_count_what_their_domain_finds_across_dst(self):
         Model = self.env["test_read_group.fill_temporal"]
-        # an instant each zone changes its offset at: forward and back, at
-        # midnight (Sao Paulo), by half an hour (Lord Howe), by two (Troll)
         transitions = [
             datetime(2024, 3, 31, 1),
             datetime(2024, 10, 27, 1),

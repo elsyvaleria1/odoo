@@ -120,12 +120,6 @@ class TestSecurityHR(TransactionCase):
             )
 
     def test_hr_user_reads_no_log_that_has_no_asset(self):
-        """A log with no asset carries no employee assignment.
-
-        `asset_id` is optional, so an orphan log is an ordinary row with its
-        `amount`, `vendor_id`, `inv_ref` and `notes` on it. The parent rule lets
-        an asset user reach those; the HR entry point has no reason to.
-        """
         orphan = self.ProductAssetLog.create(
             {
                 "amount": 123456.78,
@@ -140,12 +134,6 @@ class TestSecurityHR(TransactionCase):
         )
 
     def test_an_hr_user_that_is_also_an_asset_user_still_reads_orphan_logs(self):
-        """Dropping the disjunct must not narrow the parent's own permission.
-
-        `ir.access` ORs the permissions of every group a user holds, so a user
-        who is both keeps whatever `asset_ledger.group_asset_user` grants, including
-        the parent's own `('asset_id', '=', False)` disjunct.
-        """
         orphan = self.ProductAssetLog.create({"amount": 5.0})
         asset_user = self._create_user(
             "sec_hr_asset", ["hr.group_hr_user", "asset_ledger.group_asset_user"]
@@ -214,11 +202,6 @@ class TestOperatorSubtypeVisibility(TransactionCase):
             self.assertTrue(self.env.ref(xml_id).internal, xml_id)
 
     def test_the_subtypes_are_named_after_the_role_they_record(self):
-        """The stored `resource.assignment` role is `operator`, so the UI says so.
-
-        The xmlids keep the old word on purpose: `_track_subtype` resolves them,
-        and existing followers carry them in `subtype_ids`.
-        """
         self.assertEqual(
             self.env.ref("resource_mail.mt_asset_operator_updated").name,
             "Operator Updated",

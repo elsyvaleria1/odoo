@@ -1005,8 +1005,6 @@ class TestQuantGatherAndReserve(TestStockCommon):
         def lock_nothing(records, **kwargs):
             return records.browse()
 
-        # the reservation above locked the row for this transaction; the
-        # simulated miss only makes sense once that lock is forgotten
         self.env.cr.cache.pop(LOCKED_QUANTS_CACHE_KEY, None)
         with patch.object(type(self.Quant), "_try_lock", lock_nothing):
             self.Quant._update_reserved_quantity(product, self.loc, -6.0)

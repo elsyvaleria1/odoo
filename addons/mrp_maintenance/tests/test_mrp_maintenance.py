@@ -11,12 +11,10 @@ class TestMrpMaintenance(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Relative models
         cls.ResUsers = cls.env["res.users"]
         cls.asset = cls.env["resource.resource"]
         cls.workcenter = cls.env["mrp.workcenter"]
 
-        # User references
         cls.main_company = cls.env.ref("base.main_company")
         calendar = cls.env["resource.calendar"].create(
             {
@@ -36,7 +34,6 @@ class TestMrpMaintenance(common.TransactionCase):
             }
         )
 
-        # Create user
         cls.user = cls.ResUsers.create(
             {
                 "name": "employee",
@@ -47,7 +44,6 @@ class TestMrpMaintenance(common.TransactionCase):
             }
         )
 
-        # Create user with extra rights
         cls.manager = cls.ResUsers.create(
             {
                 "name": "Equipment Manager",
@@ -60,14 +56,12 @@ class TestMrpMaintenance(common.TransactionCase):
             }
         )
 
-        # Create workcenter
         cls.workcenter_id = cls.env["mrp.workcenter"].create(
             {
                 "name": "Workcenter 01",
             }
         )
 
-    # Create method for create a maintenance order
     def _create_order(self, name, date_confirmed, asset, maintenance_type):
         values = {
             "name": name,
@@ -115,7 +109,6 @@ class TestMrpMaintenance(common.TransactionCase):
     def _create_workcenter_order(
         self, name, date_confirmed, workcenter_id, maintenance_type, **kwargs
     ):
-        """Create and return a workcenter maintenance order"""
         values = {
             "name": name,
             "date_confirmed": date_confirmed,
@@ -129,25 +122,6 @@ class TestMrpMaintenance(common.TransactionCase):
         return self.env["maintenance.order"].create(values)
 
     def test_00_mrp_maintenance(self):
-        """In order to check Next preventive maintenance date"""
-        """
-        ex:  asset          =     Acer Laptop
-             date_in_service = 25-04-2018
-             period         = 5
-
-            preventive maintenance date = effective date + period
-                30-04-2018              = 25-04-2018     + 5 days
-
-            create maintenance order
-                date_confirmed  =  effective date + period
-                30-04-2018    = 25-04-2018      + 5 days
-
-            close maintenance order and calculate preventive maintenance date
-            date_done = 05-05-2018
-
-            preventive maintenance date = date_done + period
-                10-05-2018              = 05-05-2018 + 5day
-        """
 
         asset_form = Form(self.asset, view="base.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
@@ -160,7 +134,6 @@ class TestMrpMaintenance(common.TransactionCase):
         ).strftime("%Y-%m-%d")
         asset_01 = asset_form.save()
 
-        # Create a maintenance order
         maintenance_order_01 = self._create_order(
             name="Display not working",
             date_confirmed=datetime.now().date() + timedelta(days=10),
@@ -168,21 +141,17 @@ class TestMrpMaintenance(common.TransactionCase):
             maintenance_type="preventive",
         )
 
-        # check that maintenance_order is created or not
         self.assertTrue(maintenance_order_01, "Maintenance Order not created")
 
-        # check maintenance order date.
         self.assertEqual(
             maintenance_order_01.date_confirmed.date(),
             datetime.now().date() + timedelta(days=10),
             "maintenance date_confirmed is wrong",
         )
 
-        # Updating maintenance to done and its close date
         maintenance_order_01.write({"state": "done"})
         maintenance_order_01.date_done = datetime.now().date() + timedelta(days=15)
 
-        # Create another order which would still be open
         maintenance_order_02 = self._create_order(
             name="Display not working",
             date_confirmed=datetime.now().date() + timedelta(days=25),
@@ -190,13 +159,9 @@ class TestMrpMaintenance(common.TransactionCase):
             maintenance_type="preventive",
         )
 
-        # check that maintenance_order is created or not
         self.assertTrue(maintenance_order_02, "Maintenance Order not created")
 
     def test_01_mrp_maintenance(self):
-        """In order to check MTBF,MTTR,estimated next failure and estimated
-        latest failure of an asset's orders.
-        """
 
         asset_form = Form(self.asset, view="base.resource_asset_view_form")
         asset_form.name = "Acer Laptop"
@@ -207,12 +172,7 @@ class TestMrpMaintenance(common.TransactionCase):
         asset_form.date_in_service = "2017-04-13"
         asset_01 = asset_form.save()
 
-        # Create maintenance orders
 
-        # Maintenance Order          Order Date
-        #  1)                          2017-05-03
-        #  2)                          2017-05-23
-        #  3)                          2017-06-11
 
         maintenance_order_01 = self._create_order(
             name="Some keys are not working",
@@ -233,26 +193,14 @@ class TestMrpMaintenance(common.TransactionCase):
             maintenance_type="corrective",
         )
 
-        # check that maintenance_order is created or not
         self.assertTrue(maintenance_order_01, "Maintenance Order not created")
         self.assertTrue(maintenance_order_02, "Maintenance Order not created")
         self.assertTrue(maintenance_order_03, "Maintenance Order not created")
 
-        # Order  Order Date  Close Date  diff_days
-        #  1)      2017-05-03    2017-05-13     10
-        #  2)      2017-05-23    2017-05-28      5
-        #  3)      2017-06-11    2017-06-11      0
 
-        # MTTR = Day used to handle maintenance order / No of order
-        #   5  =            (10+5+0)15                  /    3
 
-        #  MTBF = Gap in days of between effective date and last order / No of order
-        #   19  = (2017-06-11 - 2017-04-13) 59                          /       3
 
-        # estimated next failure = latest failure date + MTBF
-        # 2017-06-30 00:00:00    = 2017-06-11           + 19
 
-        # maintenance_order_01 write state and date_done.
         maintenance_order_01.write({"state": "done"})
         maintenance_order_01.date_done = datetime(2017, 5, 3).date() + timedelta(
             days=10
@@ -263,7 +211,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # maintenance_order_02 write state and date_done.
         maintenance_order_02.write({"state": "done"})
         maintenance_order_02.date_done = datetime(2017, 5, 23).date() + timedelta(
             days=5
@@ -274,7 +221,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # maintenance_order_03 write state and date_done.
         maintenance_order_03.write({"state": "done"})
         maintenance_order_03.date_done = maintenance_order_03.date_confirmed.date()
         self.assertEqual(
@@ -283,21 +229,18 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # Check MTTR = Day used to handle maintenance order / No of order (15 / 3)
         self.assertEqual(
             asset_01.mttr,
             5,
             "Maintenance Equipment MTTR(Mean Time To Repair) should be 5 days",
         )
 
-        # Check MTBF = Gap in days of between effective date and last order / No of order
         self.assertEqual(
             asset_01.mtbf,
             19,
             "Maintenance Equipment MTBF(Mean Time Between Failure) should be 19 days",
         )
 
-        # Check calculation of latest failure date (should be 11-06-2017)
         date_last_failure = asset_01.date_last_failure
         self.assertEqual(
             maintenance_order_03.date_confirmed.date(),
@@ -310,8 +253,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong date_last_failure on maintenance order.",
         )
 
-        # Check calculation of estimated next failure (should be 30-06-2017)
-        # Step-1: latest failure date + MTBF
         date_next_failure = asset_01.date_last_failure + timedelta(days=asset_01.mtbf)
         self.assertEqual(
             date_next_failure,
@@ -321,9 +262,8 @@ class TestMrpMaintenance(common.TransactionCase):
 
     def test_01_mrp_maintenance_workcenter(
         self,
-    ):  # adapted from test_01_mrp_maintenance (working on an asset)
+    ):
         with self.debug_mode():
-            # Create a new workcenter
             workcenter_form = Form(
                 self.workcenter,
                 view="mrp_maintenance.mrp_workcenter_view_form_inherit_maintenance",
@@ -335,15 +275,9 @@ class TestMrpMaintenance(common.TransactionCase):
             workcenter_form.date_in_service = "2017-04-13"
             workcenter = workcenter_form.save()
 
-        # Check that workcenter is createdworkcenter
         self.assertTrue(workcenter, "Equipment not created")
 
-        # Create maintenance orders
 
-        # Maintenance Order          Order Date
-        #  1)                          2017-05-03
-        #  2)                          2017-05-23
-        #  3)                          2017-06-11
 
         maintenance_order_1 = self._create_workcenter_order(
             name="Some keys are not working",
@@ -364,26 +298,14 @@ class TestMrpMaintenance(common.TransactionCase):
             maintenance_type="corrective",
         )
 
-        # check that maintenance_orders are created or not
         self.assertTrue(maintenance_order_1, "Maintenance Order not created")
         self.assertTrue(maintenance_order_2, "Maintenance Order not created")
         self.assertTrue(maintenance_order_3, "Maintenance Order not created")
 
-        # Order  Order Date  Close Date  diff_days
-        #  1)      2017-05-03    2017-05-13     10
-        #  2)      2017-05-23    2017-05-28      5
-        #  3)      2017-06-11    2017-06-11      0
 
-        # MTTR = Day used to handle maintenance order / No of order
-        #   5  =            (10+5+0)15                  /    3
 
-        #  MTBF = Gap in days of between effective date and last order / No of order
-        #   19  = (2017-06-11 - 2017-04-13) 59                          /       3
 
-        # estimated next failure = latest failure date + MTBF
-        # 2017-06-30 00:00:00    = 2017-06-11           + 19
 
-        # maintenance_order_1 write state and date_done.
         maintenance_order_1.write({"state": "done"})
         maintenance_order_1.date_done = datetime(2017, 5, 3).date() + timedelta(days=10)
         self.assertEqual(
@@ -392,7 +314,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # maintenance_order_2 write state and date_done.
         maintenance_order_2.write({"state": "done"})
         maintenance_order_2.date_done = datetime(2017, 5, 23).date() + timedelta(days=5)
         self.assertEqual(
@@ -401,7 +322,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # maintenance_order_3 write state and date_done.
         maintenance_order_3.write({"state": "done"})
         maintenance_order_3.date_done = maintenance_order_3.date_confirmed.date()
         self.assertEqual(
@@ -410,21 +330,18 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong close date on maintenance order.",
         )
 
-        # Check MTTR = Day used to handle maintenance order / No of order (15 / 3)
         self.assertEqual(
             workcenter.mttr,
             5,
             "Maintenance Equipment MTTR(Mean Time To Repair) should be 5 days",
         )
 
-        # Check MTBF = Gap in days of between effective date and last order / No of order
         self.assertEqual(
             workcenter.mtbf,
             19,
             "Maintenance Equipment MTBF(Mean Time Between Failure) should be 19 days",
         )
 
-        # Check calculation of latest failure date (should be 11-06-2017)
         date_last_failure = workcenter.date_last_failure
         self.assertEqual(
             maintenance_order_3.date_confirmed.date(),
@@ -437,8 +354,6 @@ class TestMrpMaintenance(common.TransactionCase):
             "Wrong date_last_failure on maintenance order.",
         )
 
-        # Check calculation of estimated next failure (should be 30-06-2017)
-        # Step-1: latest failure date + MTBF
         date_next_failure = workcenter.date_last_failure + timedelta(
             days=workcenter.mtbf
         )
@@ -495,9 +410,6 @@ class TestMrpMaintenance(common.TransactionCase):
         )
 
     def test_maintenance_team_id_compute(self):
-        """Ensure that the maintenance order does not update its maintenance_team_id
-        when changing to a workcenter that does not have a maintenance_team_id.
-        """
 
         workcenter_without_team = self.env["mrp.workcenter"].create(
             {
@@ -521,12 +433,6 @@ class TestMrpMaintenance(common.TransactionCase):
 
     @freeze_time("2025-05-21 11:00:00")
     def test_maintenance_block_workcenter(self):
-        """
-        Validate that maintenance orders can create resource leaves as long as they do not
-        conflict with existing workorder intervals, regardless of working hours (unlike workorder scheduling).
-        Also verifies that recurring maintenance orders are properly rescheduled after any overlapping
-        manufacturing orders have been completed.
-        """
         product = self.env["product.product"].create({"name": "Test Product"})
         bom = self.env["mrp.bom"].create(
             {"product_tmpl_id": product.product_tmpl_id.id}
@@ -540,12 +446,11 @@ class TestMrpMaintenance(common.TransactionCase):
         )
         mo = self.env["mrp.production"].create(
             {"bom_id": bom.id, "date_start": datetime.now()}
-        )  # 11:00 AM - 12:00 PM
+        )
         mo.action_confirm()
         mo.button_plan()
         wo_finished_date = mo.workorder_ids[0].date_end
 
-        # A daily plan whose first occurrence is one day before today (past), from 07:00 to 18:00.
         date_scheduled_start = datetime(2025, 5, 20, 7, 0, 0)
         mr = self._create_workcenter_plan(
             name="Preventive Maintenance (Block Workcenter)",
@@ -557,10 +462,8 @@ class TestMrpMaintenance(common.TransactionCase):
             repeat_until=date_scheduled_start + timedelta(weeks=1),
             book_ahead_count=2,
         ).order_ids
-        # Ensure the MR is allowed to span non-working hours (e.g., 07:00-08:00, 13:00-14:00)
-        # and that booking in the past is permitted without blocking the user.
         reservations = mr.reservation_ids.sorted("date_start")
-        self.assertEqual(len(reservations), 3)  # 1 for today + 2 recurring slots
+        self.assertEqual(len(reservations), 3)
         self.assertRecordValues(
             reservations,
             [
@@ -592,7 +495,6 @@ class TestMrpMaintenance(common.TransactionCase):
             mr.write({"state": "done"})
         next_mr = mr.plan_id.order_ids - mr
 
-        # Confirm that the next MR is scheduled after the MO has finished
         self.assertEqual(
             next_mr.date_scheduled_start,
             wo_finished_date,
@@ -623,9 +525,6 @@ class TestMrpMaintenance(common.TransactionCase):
 
     @freeze_time("2025-05-21 11:00:00")
     def test_maintenance_reservation_is_unavailable_time_for_the_planner(self):
-        """A blocking order is unavailable time: a work order planned into its
-        window lands after it, and the work centre reports the window as
-        unavailable to the Gantt."""
         date_scheduled_start = datetime(2025, 5, 22, 9, 0, 0)
         mr = self._create_workcenter_order(
             name="Blocking maintenance",
@@ -673,8 +572,6 @@ class TestMrpMaintenance(common.TransactionCase):
             unavailable,
         )
 
-        # Repairing keeps the booking as the record of when the machine was
-        # down, exactly as a finished work order keeps its own.
         mr.write({"state": "done"})
         self.assertEqual(len(mr.reservation_ids), 1)
 

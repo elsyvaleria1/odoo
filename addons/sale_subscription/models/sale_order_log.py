@@ -24,7 +24,6 @@ class SaleOrderLog(models.Model):
         }
     )
 
-    # Order related
     order_id = fields.Many2one(
         comodel_name="sale.order",
         string="Sale Order",
@@ -119,9 +118,6 @@ class SaleOrderLog(models.Model):
         for log in self:
             log.display_name = self.env._("Sale order log: %s", log.id)
 
-    #######################
-    #       LOG GEN       #
-    #######################
 
     @api.model
     def _create_log(self, order, initial_values):
@@ -134,7 +130,6 @@ class SaleOrderLog(models.Model):
             "mrr_log_dispatch", order=order, old=old_state, new=new_state or "none"
         )
 
-        # Cancelling a running or churned renewal
         if (
             order.state == "cancel"
             and order.subscription_id
@@ -142,47 +137,38 @@ class SaleOrderLog(models.Model):
         ):
             return self._cancel_renewal_logs(order, initial_values)
 
-        # Cancelling anything else
         if order.state == "cancel":
             return self._cancel_logs(order, initial_values)
 
-        # Confirm subscription SO
         if new_state in SUBSCRIPTION_PROGRESS_STATE and old_state == "1_draft":
             return self._create_creation_log(order, initial_values)
 
-        # Confirm renewal SO
         if new_state in SUBSCRIPTION_PROGRESS_STATE and old_state == "2_renewal":
             return self._create_renewal_transfer_log(order, initial_values)
 
-        # Reopen churned SO
         if new_state in SUBSCRIPTION_PROGRESS_STATE and old_state == "6_churn":
             return self._unlink_churn_log(order, initial_values)
 
-        # Churn SO
         if old_state in SUBSCRIPTION_PROGRESS_STATE and new_state == "6_churn":
             return self._create_churn_log(order, initial_values)
 
-        # SO is not in progress
         if (
             new_state not in SUBSCRIPTION_PROGRESS_STATE
             and old_state not in SUBSCRIPTION_PROGRESS_STATE
         ):
             return self.env["sale.order.log"]
 
-        # Currency change
         if (
             "currency_id" in initial_values
             and initial_values["currency_id"] != order.currency_id
         ):
             return self._create_currency_transfer_log(order, initial_values)
 
-        # MRR change
         return self._create_mrr_change_log(order, initial_values)
 
     @api.model
     def _cancel_renewal_logs(self, order, initial_values):
         order.order_log_ids.unlink()
-        # Delete the transfer from the parent to the renewal that is cancelled
         transfer_log = self.search(
             [
                 ("order_id", "=", order.subscription_id.id),
@@ -228,7 +214,6 @@ class SaleOrderLog(models.Model):
             lambda log: log.event_type == "2_churn"
         )
 
-        # If at least 30 days between next invoice date and start_date, churn and creation instead of transfer
         if parent_order.next_invoice_date + timedelta(days=30) < order.start_date:
             if not parent_churn:
                 result += self._create_churn_log(parent_order, {})
@@ -292,7 +277,6 @@ class SaleOrderLog(models.Model):
 
     @api.model
     def _create_churn_log(self, order, initial_values) -> Self:
-        # All change are now effective
         order.order_log_ids.filtered(
             lambda log: not log.date_effective
         ).date_effective = order.next_invoice_date
@@ -369,14 +353,8 @@ class SaleOrderLog(models.Model):
 
     @api.model
     def _update_date_effective(self, log_date_values) -> None:
-        """Update the effective date of logs based on post date.
-        :param: log_order_values: dict containing the list of ids for
-        upsells and subscriptions
-        """
         self._write_uninvoiced_logs(log_date_values["subscription"])
         self._write_uninvoiced_logs(log_date_values["upsell"], upsell=True)
-        # This method is call as precommit and need to flush manually
-        # because precommit.run happened right after the main flush
         self.env.flush_all()
 
     def _write_uninvoiced_logs(self, log_date_values, upsell=False) -> None:

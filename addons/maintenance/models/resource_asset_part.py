@@ -5,7 +5,6 @@ from odoo.fields import Domain
 class ResourceAssetPart(models.Model):
     _inherit = "resource.part"
 
-    # FIELDS
     source = fields.Selection(
         selection_add=[("maintenance", "Maintenance")],
         ondelete={"maintenance": "set default"},
@@ -17,7 +16,6 @@ class ResourceAssetPart(models.Model):
         check_company=True,
     )
 
-    # HELPER METHODS
     def _get_domain_same_work(self):
         if self.maintenance_order_id:
             return Domain("maintenance_order_id", "=", self.maintenance_order_id.id)

@@ -22,7 +22,6 @@ class TestSignHardening(SignRequestCommon):
         item._sign(values)
         return item
 
-    # C1 -- the 'Waiting for me' filter must return what needs my signature
     def test_need_my_signature_search(self):
         mine = self.create_sign_request_1_role(self.partner_1, self.env["res.partner"])
         other = self.create_sign_request_1_role(self.partner_2, self.env["res.partner"])
@@ -33,7 +32,6 @@ class TestSignHardening(SignRequestCommon):
         self.assertIn(mine, found)
         self.assertNotIn(other, found)
 
-    # C3 -- a past validity expires only pending requests, never a signed one
     def test_validity_never_expires_signed(self):
         signed = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
@@ -49,7 +47,6 @@ class TestSignHardening(SignRequestCommon):
         pending.write({"validity": fields.Date.subtract(fields.Date.today(), days=1)})
         self.assertEqual(pending.state, "expired")
 
-    # C5 -- a completed signer's integrity survives another signer's refusal
     def test_integrity_survives_refusal(self):
         request = self.create_sign_request_2_roles(
             self.partner_1, self.partner_2, self.env["res.partner"]
@@ -65,7 +62,6 @@ class TestSignHardening(SignRequestCommon):
             "a completed signer's integrity must survive another signer's refusal",
         )
 
-    # C4 -- one tampered request must not mark a whole read batch as broken
     def test_integrity_not_contaminated_in_batch(self):
         clean = self.create_sign_request_1_role(self.partner_1, self.env["res.partner"])
         clean.request_item_ids.sudo()._sign(self.single_signer_sign_values)
@@ -83,7 +79,6 @@ class TestSignHardening(SignRequestCommon):
         self.assertTrue(clean.integrity)
         self.assertFalse(tampered.integrity)
 
-    # C6 -- generating completed documents on a multi-record set no longer crashes
     def test_create_completed_documents_multi(self):
         reqs = self.env["sign.request"]
         for partner in (self.partner_1, self.partner_2):
@@ -100,7 +95,6 @@ class TestSignHardening(SignRequestCommon):
         for r in reqs:
             self.assertEqual(len(r.completed_document_ids), 1)
 
-    # S6 -- a follower cannot flip states by a direct write
     def test_follower_cannot_write_state(self):
         request = self.create_sign_request_1_role(self.partner_2, self.partner_1)
         self.assertIn(self.partner_1, request.message_partner_ids)
@@ -111,7 +105,6 @@ class TestSignHardening(SignRequestCommon):
                 {"state": "completed"}
             )
 
-    # S4 -- a non-owner sign user cannot delete a completed document; a manager can
     def test_completed_document_unlink_restricted(self):
         request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
@@ -142,7 +135,6 @@ class TestSignHardening(SignRequestCommon):
         doc.with_user(manager).unlink()
         self.assertFalse(doc.exists())
 
-    # S5 -- a sign user cannot cascade-delete items off a locked template
     def test_radio_set_unlink_blocked_on_locked_template(self):
         radio_type = self.env.ref("sign.sign_item_type_radio")
         radio_set = self.env["sign.item.radio.set"].create({})
@@ -174,11 +166,9 @@ class TestSignHardening(SignRequestCommon):
             radio_set.with_user(stranger).unlink()
         self.assertTrue(item.exists())
 
-    # S3 -- the log keeps no signer's access token: it is a credential
     def test_log_keeps_no_access_token(self):
         self.assertNotIn("token", self.env["sign.log"]._fields)
 
-    # P3 -- the template counts stay correct while scoped to the templates read
     def test_template_counts_scoped(self):
         signed = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
@@ -190,7 +180,6 @@ class TestSignHardening(SignRequestCommon):
         self.assertEqual(template.signed_count, 1)
         self.assertEqual(template.in_progress_count, 1)
 
-    # S8 -- the SMS one-time code is 6 digits, and only its keyed hash is kept
     def test_sms_code_format(self):
         request = self.create_sign_request_1_role_sms_auth(
             self.partner_1, self.env["res.partner"]
@@ -204,7 +193,6 @@ class TestSignHardening(SignRequestCommon):
         self.assertNotIn(code, item.sms_code_hash)
         self.assertEqual(item.sms_code_hash, item._hash_sms_code(code, "+32499000000"))
 
-    # P1 -- the vectorised transparency fix must match the pixel-by-pixel version
     def test_fix_image_transparency_matches_naive(self):
         img = Image.new("RGBA", (8, 6))
         img.putdata(
@@ -226,7 +214,6 @@ class TestSignHardening(SignRequestCommon):
         _fix_image_transparency(fixed)
         self.assertEqual(list(fixed.getdata()), list(naive.getdata()))
 
-    # C10 -- a bad selection value is rejected at submission, not at final render
     def test_selection_value_validated(self):
         option = self.env["sign.item.option"].create({"value": "Yes"})
         template = self.env["sign.template"].create({"name": "sel"})
@@ -263,7 +250,6 @@ class TestSignHardening(SignRequestCommon):
         sri._update_signature_values({str(item.id): str(option.id)})
         self.assertEqual(sri.sign_item_value_ids.value, str(option.id))
 
-    # C16 -- an unrenderable (e.g. encrypted) PDF is refused, not crashed on None
     def test_completed_document_none_render_guarded(self):
         request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
@@ -286,7 +272,6 @@ class TestSignHardening(SignRequestCommon):
         ):
             completed._update_completed_document()
 
-    # C7 -- quick-sign works whatever the signature field is named
     def _quick_sign_template(self, signer, field_name):
         env = self.env(user=signer)
         data = env["sign.template"].create_from_attachment_data(
@@ -354,8 +339,6 @@ class TestSignHardeningController(TestSignControllerCommon):
     def _rpc(self, url, params):
         return self._json_url_open(url, params).json().get("result")
 
-    # S1 -- the item token, not the request token, gates get_sign_request_items,
-    # and only the caller's own pending items come back
     def test_sign_request_items_scoping(self):
         victim = self.env["res.partner"].create(
             {"name": "Victim", "email": "victim@example.com"}
@@ -368,7 +351,6 @@ class TestSignHardeningController(TestSignControllerCommon):
         caller_item = caller_req.request_item_ids
         self.authenticate(None, None)
 
-        # request token must NOT unlock the route any more
         leaked = self._rpc(
             "/sign/sign_request_items",
             {
@@ -379,7 +361,6 @@ class TestSignHardeningController(TestSignControllerCommon):
         )
         self.assertEqual(leaked, [])
 
-        # the caller's own item token returns only the caller's items
         got = self._rpc(
             "/sign/sign_request_items",
             {
@@ -391,7 +372,6 @@ class TestSignHardeningController(TestSignControllerCommon):
         tokens = {row["token"] for row in got}
         self.assertNotIn(victim_item.sudo().access_token, tokens)
 
-    # S2 -- a request token cannot download a document from another template
     def test_origin_download_ownership(self):
         req = self.create_sign_request_1_role(self.partner_1, self.env["res.partner"])
         own_doc = req.template_id.document_ids[:1]

@@ -18,7 +18,6 @@ class HrRecruitmentPlatform(models.Model):
     _inherit = "hr.recruitment.platform"
 
     def _post_api_call(self, data) -> dict:
-        # To be overridden by the specific platform
         if (
             self.id
             != self.env.ref(
@@ -52,16 +51,11 @@ class HrRecruitmentPlatform(models.Model):
         )
 
         for _i in range(3):
-            # service can be down for a short time
             try:
                 _debug.lifecycle(
                     "monster_update_jobs",
                     platform=self,
                     attempt=_i + 1,
-                    # `.get`, not `[]`: an argument evaluated with the
-                    # channels off that raised KeyError here would be caught
-                    # by the clause below and reported as Monster changing
-                    # its API
                     job_action=data.get("jobAction"),
                     job_ref_code=data.get("jobRefCode"),
                 )
@@ -103,12 +97,9 @@ class HrRecruitmentPlatform(models.Model):
         else:
             _debug.logic(
                 "monster_post_refused",
-                # three TimeoutErrors and no other outcome: the `for`/`else`
-                # runs only when every attempt timed out
                 reason="three_attempts_timed_out",
                 platform=self,
             )
-            # service is down for an unreasonable amount of time
             return {
                 "status": "failure",
                 "status_message": self.env._(
@@ -123,7 +114,6 @@ class HrRecruitmentPlatform(models.Model):
             status = "success"
 
         message_dict = defaultdict(list)
-        # This logic doesn't take into account the possibility of job variants
         for job_response in monster_response["body"]["JobResponse"]:
             if (
                 job_response["Status"]["ReturnCode"]["_value_1"] != "0"
@@ -141,9 +131,6 @@ class HrRecruitmentPlatform(models.Model):
             platform=self,
             job_action=data["jobAction"],
             responses=len(monster_response["body"]["JobResponse"]),
-            # `failure` is only assigned while the status is not already
-            # `expired`, so two responses disagreeing resolve by the order
-            # Monster returned them in
             status=status,
             description_levels=len(message_dict),
         )

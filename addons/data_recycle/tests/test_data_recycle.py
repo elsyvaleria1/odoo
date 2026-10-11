@@ -47,7 +47,6 @@ class TestDataRecycle(TransactionCase):
         )
 
     def test_recycle_flow(self):
-        # Test candidate search
         self.recycle_model._recycle_records()
 
         self.assertEqual(len(self.recycle_model.recycle_record_ids), 5)
@@ -56,7 +55,6 @@ class TestDataRecycle(TransactionCase):
             set(self.old_servers.ids),
         )
 
-        # Test record deletion outside of the recycle scope
         self.old_servers[0].unlink()
         self.assertEqual(
             self.recycle_model.recycle_record_ids[0].name, "**Record Deleted**"
@@ -109,7 +107,6 @@ class TestDataRecycle(TransactionCase):
         self.assertEqual(len(self.recycle_model.recycle_record_ids), 5)
 
     def test_include_archived_is_ignored_when_archiving(self):
-        """An already archived record has nothing left for the archive action to do."""
         self.old_servers[0].active = False
         self.recycle_model.include_archived = True
         self.recycle_model._recycle_records()
@@ -119,7 +116,6 @@ class TestDataRecycle(TransactionCase):
             "the field is hidden for the archive action, so it must not act there either",
         )
 
-    # Queue reconciliation
 
     def test_a_tightened_rule_drops_the_records_it_no_longer_selects(self):
         self.recycle_model._recycle_records()
@@ -134,7 +130,6 @@ class TestDataRecycle(TransactionCase):
         )
 
     def test_changing_the_model_does_not_retarget_the_queue(self):
-        """The res_ids of one table are meaningless in another."""
         self.recycle_model._recycle_records()
         self.assertTrue(self.recycle_model.recycle_record_ids)
         queued_res_ids = set(self.recycle_model.recycle_record_ids.mapped("res_id"))
@@ -153,13 +148,9 @@ class TestDataRecycle(TransactionCase):
         )
 
     def test_changing_the_model_empties_the_queue_at_once(self):
-        """Not only on the next run: in between, the queue reads as work to do."""
         self.recycle_model._recycle_records()
         self.assertTrue(self.recycle_model.recycle_record_ids)
 
-        # `domain` supplied alongside: the rule's own filter (a `date` condition)
-        # is not a valid one for `res.partner`, and an explicit filter now
-        # survives a model change instead of being silently reset to '[]'.
         self.recycle_model.write(
             {
                 "res_model_id": self.env["ir.model"]._get("res.partner").id,
@@ -182,8 +173,6 @@ class TestDataRecycle(TransactionCase):
         self.assertEqual(self.recycle_model.recycle_record_ids, before)
 
     def test_changing_the_model_alone_keeps_the_filter(self):
-        """A `res_model_id`-only write must not silently wipe a filter that
-        might still be valid for the new model."""
         rule = self.env["data_recycle.model"].create(
             {
                 "name": "Keeps its filter",
@@ -205,10 +194,6 @@ class TestDataRecycle(TransactionCase):
         )
 
     def test_a_stale_only_pass_survives_a_later_rules_crash(self):
-        """A rule's own reconciled stale-delete must not be lost to a crash in
-        a DIFFERENT, later rule of the same cron pass -- and the transaction
-        rollback that follows it -- when this rule itself proposed no new
-        candidates and so never took the batch-loop's own commit."""
         self.recycle_model._recycle_records()
         stale_res_id = self.old_servers[0].id
         self.old_servers[0].unlink()
@@ -231,13 +216,6 @@ class TestDataRecycle(TransactionCase):
             return original_recycle_records(model_self, batch_commits=batch_commits)
 
         self.env.flush_all()
-        # `_cron_recycle_records` only takes its commit/rollback branches
-        # outside of a test run, and a `TransactionCase` cursor forbids both
-        # outright -- so exercise them on a real, registry-test-mode cursor
-        # with that guard patched off, the same way core's own `ir.cron`
-        # tests do for code that commits mid-run. The cursor must be opened
-        # while `current_test` is still set -- `TestCursor` itself asserts
-        # that on open -- so the patch only wraps the call, not the `with`.
         with self.sync_env_with_side_cursors(), self.registry.cursor() as cr:
             env = api.Environment(cr, self.env.uid, self.env.context)
             with (
@@ -276,7 +254,6 @@ class TestDataRecycle(TransactionCase):
             "a discarded record must not outlive the rule that produced it",
         )
 
-    # Guards
 
     def test_a_rule_with_no_filter_refuses_to_run(self):
         unfiltered = self.env["data_recycle.model"].create(
@@ -290,13 +267,11 @@ class TestDataRecycle(TransactionCase):
             unfiltered._recycle_records()
         self.assertFalse(unfiltered.recycle_record_ids)
 
-        # `[(1, '=', 1)]` parses to the same domain as `[]`, so it is refused too.
         unfiltered.domain = "[(1, '=', 1)]"
         with self.assertRaises(UserError):
             unfiltered._recycle_records()
 
     def test_every_record_can_still_be_targeted_on_purpose(self):
-        """The guard must leave a way through, and its message names this one."""
         everything = self.env["data_recycle.model"].create(
             {
                 "name": "Everything, deliberately",
@@ -312,7 +287,6 @@ class TestDataRecycle(TransactionCase):
         )
 
     def test_an_age_condition_is_expressed_in_the_filter(self):
-        """`now -Ny` on a Datetime, `today -Ny` on a Date: what replaced the triple."""
         self.assertEqual(
             set(self.recycle_model.recycle_record_ids.mapped("res_id")), set()
         )
@@ -365,7 +339,6 @@ class TestDataRecycle(TransactionCase):
         with self.assertRaises(ValueError):
             rules.action_recycle_records()
 
-    # Validation robustness
 
     def test_one_undeletable_record_does_not_cost_the_others(self):
         countries = self.env["res.country"].search([("code", "in", ["BE", "LU", "MC"])])
@@ -420,7 +393,6 @@ class TestDataRecycle(TransactionCase):
         self.assertFalse(any(server.active for server in self.old_servers))
         self.assertTrue(all(server.active for server in self.new_servers))
 
-    # Notifications
 
     def test_a_silent_run_does_not_consume_the_notification_period(self):
         self.env.ref("base.user_admin").email = "mitchell.admin@example.com"
@@ -470,7 +442,6 @@ class TestDataRecycle(TransactionCase):
             "a backlog older than the notification period is still a backlog",
         )
 
-    # Queue records
 
     def test_the_queue_carries_the_company_of_its_records(self):
         company = self.env["res.company"].create({"name": "Recycle Co"})

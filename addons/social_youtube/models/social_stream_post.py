@@ -51,9 +51,6 @@ class SocialStreamPost(models.Model):
         super(SocialStreamPost, (self - youtube_posts))._compute_is_author()
         youtube_posts.is_author = True
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     def _youtube_comment_add(self, comment_id, message, is_edit=False):
         self.check_singleton()
@@ -66,7 +63,6 @@ class SocialStreamPost(models.Model):
 
         if comment_id:
             if is_edit:
-                # editing own comment
                 result_comment = (
                     self.env["ir.egress"]
                     .request(
@@ -82,7 +78,6 @@ class SocialStreamPost(models.Model):
                     .json()
                 )
             else:
-                # reply to comment, uses different endpoint that commenting a video
                 result_comment = (
                     self.env["ir.egress"]
                     .request(
@@ -101,7 +96,6 @@ class SocialStreamPost(models.Model):
                     .json()
                 )
         else:
-            # brand new comment on the video
             result_comment = (
                 self.env["ir.egress"]
                 .request(
@@ -181,9 +175,6 @@ class SocialStreamPost(models.Model):
             error_code = result_json["error"].get("code")
             error_reason = result_json["error"].get("errors", [{}])[0].get("reason")
 
-        # At the moment, the YouTube API does not provide us with a field to know if comments are
-        # disabled for the video (while fetching videos), and so we have to do it when fetching comments.
-        # TODO: keep checking the API if we can find any relevant field while fetching videos.
         comments_disabled = (
             not result.ok and error_code == 403 and error_reason == "commentsDisabled"
         )
@@ -220,9 +211,6 @@ class SocialStreamPost(models.Model):
             "nextPageToken": result_json.get("nextPageToken"),
         }
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _get_matching_post(self):
         self.check_singleton()
@@ -238,10 +226,6 @@ class SocialStreamPost(models.Model):
 
     @api.autovacuum
     def _gc_youtube_data(self) -> None:
-        """According to Youtube API terms of service, users Youtube data have to be removed
-        if they have not been updated for more than 30 days.
-        Ref: https://developers.google.com/youtube/terms/developer-policies#e.-handling-youtube-data-and-content
-        (Section 4. "Refreshing, Storing, and Displaying API Data")"""
 
         youtube_stream = self.env.ref(
             "social_youtube.stream_type_youtube_channel_videos"

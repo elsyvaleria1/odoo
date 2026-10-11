@@ -99,7 +99,6 @@ class MolecularDockingJob(models.Model):
         return super().create(vals_list)
 
     def action_refresh_gate(self):
-        """Re-read the target's gate and block or unblock the job accordingly."""
         for job in self:
             passed = job.target_id.validation_state == "pass"
             if not passed and job.status in ("pending", "running"):

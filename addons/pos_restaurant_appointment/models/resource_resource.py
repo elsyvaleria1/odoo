@@ -8,7 +8,6 @@ class ResourceResource(models.Model):
     _name = "resource.resource"
     _inherit = ["resource.resource", "mixin.pos.load"]
 
-    # this should be one2one
     pos_table_ids = fields.One2many(
         comodel_name="restaurant.table",
         inverse_name="resource_id",
@@ -37,7 +36,6 @@ class ResourceResource(models.Model):
         if not start_date_str:
             self.is_used = {}
             return
-        # start_date is a UTC server datetime; its day is the user's local day
         zone = ZoneInfo(self.env.context.get("tz") or self.env.user.tz or "UTC")
         local_start = (
             fields.Datetime.from_string(start_date_str)

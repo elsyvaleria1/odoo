@@ -9,7 +9,6 @@ from .common import create_test_template
 
 class TestStockLotDocuments(TransactionCase):
     def _set_kind_documents(self, kind_xmlid, folder=None, tags=None, centralize=None):
-        """The folder, tags and switch a kind of asset files its documents under."""
         kind = self.env.ref(kind_xmlid)
         setting = self.env["resource.kind.document"].search(
             [("kind_id", "=", kind.id), ("company_id", "=", self.company.id)], limit=1
@@ -607,8 +606,6 @@ class TestStockLotDocuments(TransactionCase):
                             self.env.ref("base.group_user").id,
                             self.env.ref("document.group_documents_user").id,
                             self.env.ref("stock.group_stock_manager").id,
-                            # The document files on the asset, so attaching one
-                            # takes the right to write the asset, not the serial.
                             self.env.ref("asset_ledger.group_enable_fleet_assets").id,
                         ]
                     )

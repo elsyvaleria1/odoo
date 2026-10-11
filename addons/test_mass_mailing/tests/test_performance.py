@@ -52,10 +52,9 @@ class TestMassMailPerformance(TestMassMailPerformanceBase):
             }
         )
 
-        # runbot needs +101 compared to local
         with (
             self.mock_mail_gateway(mail_unlink_sent=True),
-            self.assertQueryCount(__system__=1379, marketing=1383),  # 1227, 1229
+            self.assertQueryCount(__system__=1379, marketing=1383),
         ):
             mailing.action_send_mail()
 
@@ -69,8 +68,6 @@ class TestMassMailPerformance(TestMassMailPerformanceBase):
 @tagged("mail_performance", "post_install", "-at_install")
 class TestMassMailBlPerformance(TestMassMailPerformanceBase):
     def setUp(self):
-        """In this setup we prepare 20 blacklist entries. We therefore add
-        20 recipients compared to first test in order to have comparable results."""
         super().setUp()
         values = [
             {
@@ -104,8 +101,7 @@ class TestMassMailBlPerformance(TestMassMailPerformanceBase):
             }
         )
 
-        # runbot needs +153 compared to local
-        with self.assertQueryCount(__system__=1410, marketing=1417):  # 1257, 1260
+        with self.assertQueryCount(__system__=1410, marketing=1417):
             mailing.action_send_mail()
 
         self.assertEqual(mailing.sent, 50)

@@ -102,11 +102,6 @@ class PrinterDriver(PrinterDriverBase):
         super().disconnect()
 
     def print_raw(self, data, action_unique_id=None):
-        """Print raw data to the printer
-
-        :param data: The data to print
-        :param action_unique_id: The unique identifier of the action triggering the print
-        """
         if self.escpos_device:
             try:
                 return self.print_raw_escpos(data, action_unique_id)
@@ -137,7 +132,7 @@ class PrinterDriver(PrinterDriverBase):
         except IPPError:
             _logger.exception("Printing failed")
             self.send_status(status="error", message="ERROR_FAILED")
-            raise  # ensure error caught in driver.py -> don't register action_unique_id
+            raise
 
     @classmethod
     def format_star(cls, im):
@@ -186,11 +181,6 @@ class PrinterDriver(PrinterDriverBase):
         }
 
     def print_status(self, data=None):
-        """Prints the status ticket of the IoT Box on the current printer.
-
-        :param data: If not None, it means that it has been called from the action route, meaning
-        that no matter the connection type, the printer should print the status ticket.
-        """
         if not self.connected_by_usb and not data:
             return
         if self.device_subtype == "receipt_printer":
@@ -204,7 +194,6 @@ class PrinterDriver(PrinterDriverBase):
             )
 
     def print_status_receipt(self) -> None:
-        """Prints the status ticket of the IoT Box on the current printer."""
         title, body = self._printer_status_content()
 
         commands = self.RECEIPT_PRINTER_COMMANDS[self.receipt_protocol]
@@ -269,11 +258,6 @@ class PrinterDriver(PrinterDriverBase):
         self.print_raw(command.encode())
 
     def _printer_status_content(self) -> tuple:
-        """Formats the status information of the IoT Box into a title and a body.
-
-        :return: The title and the body of the status ticket
-        :rtype: tuple of bytes
-        """
         wlan = identifier = homepage = pairing_code = mac_address = ""
         iot_status = self._get_iot_status()
 
@@ -370,17 +354,14 @@ class PrinterDriver(PrinterDriverBase):
                     self.job_ids.remove(job_id)
                     self.job_action_ids.pop(job_id, None)
                     self.send_status(status="success")
-                # Generic timeout, e.g. USB printer has been unplugged
                 elif job["time-at-creation"] + self.job_timeout_seconds < time.time():
                     self._cancel_job_with_error(job_id, "ERROR_TIMEOUT")
-                # Cannot reach network printer
                 elif (
                     job_state == IPP_JOB_PROCESSING
                     and "printer is unreachable"
                     in job.get("job-printer-state-message", "")
                 ):
                     self._cancel_job_with_error(job_id, "ERROR_UNREACHABLE")
-                # Any other failure state
                 elif job_state not in [IPP_JOB_PROCESSING, IPP_JOB_PENDING]:
                     self._cancel_job_with_error(job_id, "ERROR_UNKNOWN")
         except IPPError:

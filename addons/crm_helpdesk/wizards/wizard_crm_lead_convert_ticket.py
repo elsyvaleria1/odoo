@@ -39,14 +39,12 @@ class WizardCrmLeadConvertTicket(models.TransientModel):
 
     def action_lead_to_helpdesk_ticket(self) -> dict:
         self.check_singleton()
-        # get the lead to transform
         lead = self.lead_id
         partner = self.partner_id
         if not partner and (lead.partner_name or lead.contact_name):
             lead._handle_partner_assignment(create_missing=True)
             partner = lead.partner_id
 
-        # prepare new helpdesk.ticket values
         vals = {
             "name": lead.name,
             "description": lead.description,
@@ -63,7 +61,6 @@ class WizardCrmLeadConvertTicket(models.TransientModel):
         if lead.email_from:
             vals["partner_email"] = lead.email_from
 
-        # create and add a specific creation message
         ticket_sudo = (
             self.env["helpdesk.ticket"]
             .with_context(mail_create_nosubscribe=True, mail_create_nolog=True)
@@ -76,9 +73,7 @@ class WizardCrmLeadConvertTicket(models.TransientModel):
             subtype_xmlid="mail.mt_note",
         )
 
-        # move the mail thread
         lead.message_change_thread(ticket_sudo)
-        # move attachments
         attachments = self.env["ir.attachment"].search(
             [("res_model", "=", "crm.lead"), ("res_id", "=", lead.id)]
         )
@@ -90,10 +85,8 @@ class WizardCrmLeadConvertTicket(models.TransientModel):
                 "Lead converted into ticket %s", ticket_sudo._get_html_link()
             )
         )
-        # archive the lead
         lead.action_archive()
 
-        # return to ticket (if can see) or lead (if cannot)
         if not ticket_sudo.with_env(self.env).has_access("read"):
             return {
                 "name": self.env._("Lead Converted"),
@@ -103,7 +96,6 @@ class WizardCrmLeadConvertTicket(models.TransientModel):
                 "res_id": lead.id,
             }
 
-        # return the action to go to the form view of the new Ticket
         view = self.env.ref("helpdesk.helpdesk_ticket_view_form")
         return {
             "name": self.env._("Ticket Created"),

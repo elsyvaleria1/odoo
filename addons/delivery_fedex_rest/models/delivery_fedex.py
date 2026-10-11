@@ -487,12 +487,7 @@ class ProviderFedex(models.Model):
             weight, self.env.ref(convert_to), round=False
         )
 
-        # Some users may want to ship very lightweight items; in order to give them a rating, we round the
-        # converted weight of the shipping to the smallest value accepted by FedEx: 0.01 kg or lb.
-        # (in the case where the weight is actually 0.0 because weights are not set, don't do this)
         if weight > 0.0:
             new_value = max(new_value, 0.01)
 
-        # Rounding to avoid differences between sum of values before and after conversion, caused by
-        # Floating Point Arithmetic issues (ex: .1 + .1 + .1 != .3)
         return float_repr(new_value, 10)

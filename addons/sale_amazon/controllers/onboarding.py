@@ -30,12 +30,6 @@ OAUTH_SCOPE = register_signed_scope(
 
 
 def issue_oauth_state(account):
-    """The signed state that carries ``account`` through Amazon's consent page.
-
-    :param recordset account: The account being authorized, as an `amazon.account` record.
-    :return: The signed state, which the session that asked for it consumes once.
-    :rtype: str
-    """
     return issue_session_state(
         account.env,
         OAUTH_SCOPE,
@@ -63,18 +57,10 @@ class AmazonController(http.Controller):
         sitemap=False,
     )
     def amazon_return_from_authorization(self, **data):
-        """Request a refresh token from the OAuth token and redirect to the account form.
-
-        :param dict data: The authorization data provided by Amazon upon redirection, including the
-                          custom `state` parameter.
-        :return: The account form, or an error page answered with 403 when the state is not
-                 the one this session started for an account of the company it names.
-        """
         _logger.info(
             "Returning from authorization with data:\n%s", pprint.pformat(data)
         )
 
-        # Retrieve the Amazon data and Odoo metadata from the redirect data.
         seller_key = data["selling_partner_id"]
         authorization_code = data["spapi_oauth_code"]
         account = self._amazon_account_of_state(data.get("state"))
@@ -97,10 +83,8 @@ class AmazonController(http.Controller):
             )
         account.seller_key = seller_key
 
-        # Craft the URL of the Amazon account.
         account_url = f"{_ACCOUNTS_URL}/{account.id}"
 
-        # Request and set the refresh token on the account and finalize the set up.
         try:
             amazon_utils.exchange_authorization_code(authorization_code, account)
             account.action_update_available_marketplaces()

@@ -35,13 +35,6 @@ class ApprovalRequest(models.Model):
             request.count_sale_order = len(orders)
 
     def _check_confirm(self) -> None:
-        # The check was hooked to `action_approve` alone, so the requester
-        # submitted an empty sale-target request without complaint and the
-        # error surfaced to the approver -- who cannot add the lines, and who
-        # was told they "cannot confirm" something they did not confirm. Base
-        # calls this action confirm, so the wording is right here and wrong
-        # there. It stays on approve as well: lines could be emptied after
-        # submission, and losing that net would be a real weakening.
         super()._check_confirm()
         self._check_sale_type_has_product_lines()
 

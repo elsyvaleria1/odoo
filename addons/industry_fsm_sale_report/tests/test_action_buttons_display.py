@@ -76,15 +76,10 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         )
 
     def test_timer_buttons_01(self):
-        # should not be visible if the task is marked as done
         self.task.fsm_done = True
         self.assertFalse(self.task.display_timesheet_timer)
 
     def test_timer_buttons_02(self):
-        # When the timer is not running, do not display: pause, stop, resume
-        # when the timer is running, do not display the following buttons:
-        # Start (Primary and secondary), Create sales Order, Mark as done,
-        # Create Invoice, Sign report, Send report
         self.assertFalse(self.task.timer_start)
         self.task.action_timer_start()
         self.assertTrue(self.task.timer_start)
@@ -99,12 +94,10 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.task.action_timer_stop()
 
     def test_timer_buttons_03(self):
-        # only visible if the 'Timesheet Timer' feature is enabled on the project
         self.project.allow_timesheets = False
         self.assertFalse(self.task.display_timesheet_timer)
 
     def test_timer_buttons_04(self):
-        # only visible if the user has an employee in the company or one employee for all companies
         company_2 = self.env["res.company"].create(
             {
                 "name": "Company 2",
@@ -120,7 +113,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
             allowed_company_ids=[company_3.id, company_2.id, self.env.company.id]
         )
 
-        # allow user to write on tasks
         self.project.write(
             {
                 "privacy_visibility": "followers",
@@ -133,10 +125,8 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
             }
         )
 
-        # 1 employee for 3 companies must work
         self.assertTrue(task.display_timesheet_timer)
 
-        # 2 employee for 3 companies must not work
         self.env["hr.employee"].with_company(company_2).create(
             {
                 "name": "Employee 2",
@@ -147,13 +137,7 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(task.display_timesheet_timer)
 
     def test_send_sign_report_buttons_01(self):
-        # Sign/Send not visible if Time = 0 AND Worksheet = 0 AND Products = 0
-        # Visible in non primary if Time > 0 OR Worksheet > 0 OR Products > 0
-        # Visible in primary if Time > 0 AND Worksheet > 0 AND Products > 0
-        # Send should be visible in primary if T,W,P > 0 and report not sent yet
-        # Send should be visible in secondary if T || W || P > 0 or report already sent
 
-        # Check Enabled Counter
         self.assertEqual(self.task.display_enabled_conditions_count, 3)
         self.project.allow_worksheets = False
         self.assertEqual(self.task.display_enabled_conditions_count, 2)
@@ -171,13 +155,11 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         )
         self.assertEqual(self.task.display_enabled_conditions_count, 3)
 
-        # Not visible
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(self.task.display_send_report_secondary)
 
-        # Secondary if time > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         timesheet = self.env["account.analytic.line"].create(
             {
@@ -193,10 +175,9 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
-        timesheet.task_id = False  # Unlink the task from the timesheet
+        self.assertTrue(self.task.display_send_report_secondary)
+        timesheet.task_id = False
 
-        # Secondary if worksheet > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         worksheet_vals = {
             "x_name": "This is a name",
@@ -211,10 +192,9 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
+        self.assertTrue(self.task.display_send_report_secondary)
         worksheet.unlink()
 
-        # Secondary if product > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         self.task._fsm_get_or_create_sale_order()
         self.product_material.with_context(fsm_task_id=self.task.id).fsm_add_quantity()
@@ -223,10 +203,9 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
+        self.assertTrue(self.task.display_send_report_secondary)
 
-        # Primary of all conditions met
-        timesheet.task_id = self.task  # Link the task to the timesheet
+        timesheet.task_id = self.task
         self.assertEqual(self.task.display_satisfied_conditions_count, 2)
         worksheet = self.env[self.task.worksheet_template_id.model_id.model].create(
             worksheet_vals
@@ -236,12 +215,11 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is not signed yet
+        )
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is not signed yet
+        )
 
-        # Send visible in primary if report is signed and not sent yet
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
@@ -249,16 +227,15 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.task.worksheet_signature = image
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is signed, not sent yet
+        )
         self.assertFalse(self.task.display_send_report_secondary)
         self.task.fsm_is_sent = True
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is sent then do not display button
+        )
 
     def test_send_sign_report_button_02(self):
-        # Sign not visible if the report is already signed
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
@@ -268,7 +245,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_sign_report_secondary)
 
     def test_send_sign_report_button_03(self):
-        # Sign/send only visible if 'worksheets' or 'Products on Tasks' are enabled on the project
         self.project.allow_worksheets = False
         self.project.allow_material = False
         self.assertFalse(self.task.display_sign_report_primary)
@@ -277,11 +253,9 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_send_report_secondary)
 
     def test_mark_as_done_01(self):
-        # Visible in secondary if Time = 0 OR Worksheet = 0 OR Products = 0
         self.assertFalse(self.task.display_mark_as_done_primary)
         self.assertTrue(self.task.display_mark_as_done_secondary)
 
-        # Not visible is not fsm task or already marked as done
         self.task.is_fsm = False
         self.assertFalse(self.task.display_mark_as_done_primary)
         self.assertFalse(self.task.display_mark_as_done_secondary)
@@ -291,7 +265,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_mark_as_done_secondary)
         self.task.fsm_done = False
 
-        # Visible in non primary if Time > 0 OR Worksheet > 0 OR Products > 0
         self.env["account.analytic.line"].create(
             {
                 "task_id": self.task.id,
@@ -305,7 +278,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_mark_as_done_primary)
         self.assertTrue(self.task.display_mark_as_done_secondary)
 
-        # should be visible in primary if Time > 0 AND Worksheet > 0 AND Products > 0
         self.env[self.task.worksheet_template_id.model_id.model].create(
             {
                 "x_name": "This is a name",
@@ -319,7 +291,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_mark_as_done_secondary)
 
     def test_create_invoice_01(self):
-        # Not visible is not marked as done or not fully invoice or no billable activated
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
 
@@ -329,35 +300,25 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         if self.task.sale_order_id.state != "done":
             self.task.sale_order_id.action_confirm()
 
-        # SO is to invoice, but the task is not fsm_done
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
 
-        # should be visible in primary if the SO linked to the task has one of the
-        # following invoice status: To Invoice, Upselling
         self.task.fsm_done = True
         self.assertEqual(self.task.sale_order_id.invoice_state, "to do")
         self.assertTrue(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
 
-        # Not visible if the SO is canceled
-        # Go through the transitions: writing `state` raw is refused here
-        # ("Cannot move order ... from cancel to done"), and cancelling is what the
-        # button is meant to react to anyway.
         self.task.sale_order_id.action_cancel()
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
         self.task.sale_order_id.action_draft()
         self.task.sale_order_id.action_confirm()
 
-        # only visible if the Billable feature is enabled on the project
         self.project.allow_billable = False
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
         self.project.allow_billable = True
 
-        # should be visible in non primary if the SO linked to the task has
-        # the 'Nothing to invoice' invoice status
         new_product = self.env["product.product"].create(
             {
                 "name": "Invoice on delivery product",
@@ -376,8 +337,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
             }
         )
         invoice = self.task.sale_order_id._create_invoices()
-        # the order still owes the undelivered line, so it reads "to do"; nothing
-        # can be invoiced now (the material sits on the draft), so no button
         self.assertEqual(self.task.sale_order_id.invoice_state, "to do")
         self.assertEqual(self.task.sale_order_id.amount_taxexc_to_invoice, 0.0)
         self.assertFalse(self.task.display_create_invoice_primary)
@@ -388,7 +347,6 @@ class TestTimerButtons(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_create_invoice_primary)
         self.assertFalse(self.task.display_create_invoice_secondary)
 
-        # Should not be visible after the order is fully invoiced
         invoice.action_post()
         self.assertEqual(self.task.sale_order_id.invoice_state, "done")
         self.assertFalse(self.task.display_create_invoice_primary)

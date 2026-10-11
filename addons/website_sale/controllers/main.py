@@ -994,8 +994,6 @@ class WebsiteSale(payment_portal.PaymentPortal):
         order_sudo = request.cart
         if not order_sudo or not wants_fragments():
             return request.redirect(location)
-        # what the page's own request would do before rendering it (loyalty
-        # rewards, prices and taxes follow the code)
         order_sudo._recompute_cart()
         return fragments_or_redirect(
             request.env,

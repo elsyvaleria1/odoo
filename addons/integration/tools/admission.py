@@ -35,8 +35,7 @@ class Refused(HTTPException):
         self.commit = commit
 
     @property
-    def response(self) -> werkzeug.wrappers.Response:  # type: ignore[override]
-        # Always rendered: whether the request commits is `code`'s to say.
+    def response(self) -> werkzeug.wrappers.Response:
         return self._render()
 
     @response.setter
@@ -67,7 +66,7 @@ class Refused(HTTPException):
             content_type="application/problem+json; charset=utf-8",
         )
 
-    def get_response(self, environ=None, scope=None) -> werkzeug.wrappers.Response:  # type: ignore[override]
+    def get_response(self, environ=None, scope=None) -> werkzeug.wrappers.Response:
         return self._render()
 
 
@@ -173,14 +172,11 @@ class Admission:
         raise Refused(status, reason, code, commit=True)
 
     def retag(self, event_type: str) -> None:
-        """Name the event once the body says what it is."""
         self.event_type = event_type
         if self.exchange is not None:
             self.exchange.event_type = event_type
 
     def keep(self) -> None:
-        """A withheld call that turned out to be worth a row: a poll that
-        delivered something. Opens the row now, with what was annotated."""
         if self.exchange is not None:
             return
         self.gate._open_inbound_exchange(self, self.event_type)
@@ -188,8 +184,6 @@ class Admission:
             self.exchange.write(self.annotations)
 
     def annotate(self, **vals: Any) -> None:
-        """What the handler learnt about the call that the gate could not:
-        the user it ran as, the record it touched, what it did."""
         self.annotations.update(vals)
         if self.exchange is not None:
             self.exchange.write(vals)
@@ -207,8 +201,6 @@ class Admission:
             return
         if error:
             if retry:
-                # the retry cron replays the row, so it keeps the body as
-                # received, as an async work item does, not the log copy
                 self.exchange.request_payload = self.body.decode(
                     "utf-8", errors="replace"
                 )
@@ -218,7 +210,6 @@ class Admission:
         self.exchange.duration_ms = self.elapsed_ms
 
     def _record_withheld_failure(self, error: str) -> None:
-        """A call whose kind leaves no row still leaves one when it fails."""
         vals = {
             **self.gate._inbound_exchange_vals(self, self.event_type),
             **self.annotations,
@@ -237,6 +228,4 @@ class Resolution:
     gate: Any = None
     verify: Callable[[Mapping[str, Any], bytes], bool] | None = None
     claimed: str | None = None
-    # The sender's own id for the event, when the resolver read one: the
-    # row claims it, and a redelivery is refused as a duplicate.
     event_id: str | None = None

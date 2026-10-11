@@ -76,7 +76,6 @@ class HrJob(models.Model):
     def write(self, vals):
         res = super().write(vals)
 
-        # Update the availability on all hired applicants if the mission end date is changed
         if vals.get("date_to"):
             for job in self:
                 hired_applicants = job.application_ids.filtered(

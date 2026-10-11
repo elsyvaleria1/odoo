@@ -130,9 +130,6 @@ class StockRule(models.Model):
     def _get_valid_route_ids(
         self, route_ids, packaging_uom_id, product_id, warehouse_ids
     ):
-        # `_is_route_usable_for` takes no warehouse, so each warehouse's company
-        # reaches it as `env.company`: a route shared by the warehouses of two
-        # companies is usable in the one whose company can manufacture
         if not warehouse_ids:
             return super()._get_valid_route_ids(
                 route_ids, packaging_uom_id, product_id, warehouse_ids
@@ -218,7 +215,7 @@ class StockRule(models.Model):
             mo = self.env["mrp.production"]
             if procurement.origin != "MPS":
                 domain = rule._get_domain_mo_for_procurement(procurement, bom)
-                mo = self.env["mrp.production"].sudo().search(domain, limit=1)  # noqa: E8507 - one probe per procurement: the domain is the procurement's own product, company and values
+                mo = self.env["mrp.production"].sudo().search(domain, limit=1)
             is_batch_size = bom and bom.enable_batch_size
             _debug.logic(
                 "procurement_routed", bom=bom, mo=mo, batch=bool(is_batch_size)
@@ -282,30 +279,6 @@ class StockRule(models.Model):
         return True
 
     def _get_manufacture_batches(self, procurement, bom, is_batch_size):
-        """Yield `(quantity, unit)` of each manufacturing order a procurement becomes.
-
-        Without a batch size the order is the procurement itself, in its own
-        unit: converting it into the BoM's unit rounds it up to that unit's
-        precision, so one Unit against a per-Dozen BoM would make 0.09 Dozen,
-        1.08 Units. The explosion is unit-independent, so any unit of the
-        category manufactures.
-
-        Batches are in the BoM's unit, because that is the unit `batch_size` is
-        written in. Converting the batch into the procurement's unit first and
-        counting down there rounds the batch to the procurement unit's
-        precision: a 0.4 kg batch procured in tonnes becomes 0.01 t, which is
-        10 kg, so the orders come out twenty-five times the size the BoM asked
-        for and the count explodes to match.
-
-        Every order is one batch but the last, which carries the remainder: a
-        batch size is the most one order makes, so 300 at a 200 batch is 200
-        and 100, never 400.
-
-        The count is capped the way `wizard.mrp.production.split` caps its own, and
-        for the same reason: a batch size small against the demand is a
-        configuration mistake, and answering it with thousands of orders is
-        worse than refusing it.
-        """
         if not is_batch_size:
             yield procurement.product_qty, procurement.product_uom_id
             return
@@ -360,11 +333,6 @@ class StockRule(models.Model):
             batch_size=batch_size,
             batches=batches,
         )
-        # `uom.round` is the 'Product Unit' decimal precision rounded HALF-UP;
-        # sizing a record wants the unit's own `rounding`, rounded UP, which is
-        # what `_get_quantity_in_unit` does. A batch size is the largest order,
-        # not a quantity every order must reach: the last one carries what is
-        # left, as `wizard.mrp.production.split` does.
         for _batch in range(int(whole)):
             yield uom._get_quantity_in_unit(batch_size, uom), uom
         if not uom.is_zero(remainder):

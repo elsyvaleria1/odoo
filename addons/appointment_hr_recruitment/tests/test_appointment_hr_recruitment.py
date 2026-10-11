@@ -9,7 +9,6 @@ from odoo.tests import HttpCase, tagged, users
 class AppointmentHrRecruitmentTest(HttpCase):
     @users("admin")
     def test_tour_default_opportunity_propagation(self):
-        """Check the applicant is propagated to the calendar event booked from its invitation."""
         with freeze_time(datetime(year=2025, month=2, day=12, hour=17)):
             self.env.user.tz = "Europe/Brussels"
             dep_rd = self.env["hr.department"].create(
@@ -34,7 +33,6 @@ class AppointmentHrRecruitmentTest(HttpCase):
                     }
                 )
             )
-            # the tour picks this appointment type by name
             self.env["appointment.type"].create(
                 {"name": "Test AppointmentHrRecruitment"}
             )

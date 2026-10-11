@@ -129,8 +129,6 @@ class TestPortalLinks(TestPortal):
                 },
             },
         )
-        # a hash that does not hold over the token names nobody: the token's
-        # own holder, the customer, is the author
         forged_post = self.record_portal.message_ids[0]
         self.assertNotEqual(forged_post.author_id, self.partner_2)
         self.assertEqual(forged_post.author_id, self.record_portal.partner_id)

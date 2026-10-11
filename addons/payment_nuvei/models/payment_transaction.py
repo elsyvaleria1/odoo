@@ -90,9 +90,6 @@ class PaymentTransaction(models.Model):
         return self._is_nuvei_payment_data_own(payment_data)
 
     def _is_nuvei_payment_data_own(self, payment_data) -> bool:
-        # The checksum covers neither invoice_id nor TransactionID: productId,
-        # which is signed, names the transaction, and the payment page
-        # transaction id, also signed, confirms one transaction only.
         product_id = const.normalize_product_id(payment_data.get("productId"))
         if product_id and product_id != const.normalize_product_id(self.reference):
             _logger.warning(
@@ -118,15 +115,6 @@ class PaymentTransaction(models.Model):
         return True
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return Nuvei-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the
-                                       transaction.
-        :return: The dict of provider-specific rendering values.
-        :rtype: dict
-        """
         if self.provider_code != "nuvei":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -141,21 +129,16 @@ class PaymentTransaction(models.Model):
                 )
             )
 
-        # Some payment methods don't support float values, even for currencies that does. Therefore,
-        # we must round them.
         is_mandatory_integer_pm = self.payment_method_code in const.INTEGER_METHODS
         rounding = 0 if is_mandatory_integer_pm else self.currency_id.decimal_places
         rounded_amount = float_round(self.amount, rounding, rounding_method="DOWN")
 
-        # Phone numbers need to be standardized and validated.
         phone_number = self.partner_phone and self._phone_format(
             number=self.partner_phone,
             country=self.partner_country_id,
             raise_exception=False,
         )
 
-        # When a parsing error occurs with Nuvei or the user cancels the order, they do not send the
-        # checksum back, as such we need to pass an access token token in the url.
         base_url = self.provider_id.get_base_url()
         return_url = base_url + NuveiController._return_url
         cancel_error_url_params = {
@@ -187,7 +170,7 @@ class PaymentTransaction(models.Model):
             ),
             "phone1": phone_number or "",
             "state": self.partner_state_id.code or "",
-            "user_token_id": uuid4(),  # Random string due to some PMs requiring it but not used.
+            "user_token_id": uuid4(),
             "time_stamp": self.create_date.strftime("%Y-%m-%d.%H:%M:%S"),
             "total_amount": rounded_amount,
             "version": "4.0.0",
@@ -208,20 +191,14 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "nuvei":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("invoice_id")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "nuvei":
             return super()._extract_amount_data(payment_data)
 
-        # When a user declines to pay and leaves the payment page, no information
-        # is sent back to odoo via the endpoint. As such there is no currency or
-        # amount set so we return early. This only occurs in the leaving flow so
-        # no issue should arise leaving early.
         if not payment_data:
             return None
 
@@ -237,7 +214,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "nuvei":
             return super()._apply_updates(payment_data)
 
@@ -247,21 +223,17 @@ class PaymentTransaction(models.Model):
             )
             return None
 
-        # Update the provider reference.
         self.provider_reference = payment_data.get("TransactionID")
         self.nuvei_ppp_transaction_id = (
             payment_data.get("PPP_TransactionID") or self.nuvei_ppp_transaction_id
         )
 
-        # Update the payment method.
         payment_option = payment_data.get("payment_method", "")
         payment_method = self.env["payment.method"]._get_from_code(
             payment_option, mapping=const.PAYMENT_METHODS_MAPPING
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
-        # `Status` is signed; `ppp_status` is not.
         status = payment_data.get("Status")
         if not status:
             self._set_error(self.env._("Received data with missing payment state."))
@@ -280,7 +252,7 @@ class PaymentTransaction(models.Model):
                     reason=failure_reason,
                 )
             )
-        else:  # Classify unsupported payment states as the `error` tx state.
+        else:
             status_description = payment_data.get("Reason")
             _logger.info(
                 "Received data with invalid payment status (%(status)s) and reason '%(reason)s' "

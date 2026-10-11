@@ -6,7 +6,6 @@ class WalletStatement(models.Model):
     _description = "Electronic Wallet Statement"
     _order = "date_start desc, id desc"
 
-    # FIELDS
     name = fields.Char(
         compute="_compute_name",
         precompute=True,
@@ -39,7 +38,6 @@ class WalletStatement(models.Model):
         help="The statement as the issuer published it.",
     )
 
-    # CONSTRAINTS
     _account_period_uniq = models.Constraint(
         "UNIQUE(account_id, date_start, date_end)",
         "This account already has a statement for that period.",
@@ -49,7 +47,6 @@ class WalletStatement(models.Model):
         "A statement cannot end before it starts.",
     )
 
-    # COMPUTE METHODS
     @api.depends("account_id.name", "date_start", "date_end")
     def _compute_name(self):
         for statement in self:

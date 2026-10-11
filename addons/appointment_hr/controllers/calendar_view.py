@@ -4,8 +4,6 @@ from odoo.addons.calendar.controllers.booking_calendar_view import (
 
 
 class AppointmentHRCalendarView(AppointmentCalendarView):
-    # Utility Methods
-    # ----------------------------------------------------------
 
     @classmethod
     def _prepare_appointment_type_anytime_values(cls, user):

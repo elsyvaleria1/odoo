@@ -75,7 +75,6 @@ _PRIVATE_NETWORKS = tuple(
         "172.16.0.0/12",
         "192.168.0.0/16",
         "fc00::/7",
-        # deprecated site-local (RFC 3879), still routed inside some networks
         "fec0::/10",
         "64:ff9b:1::/48",
     )
@@ -86,10 +85,6 @@ _NAT64_WELL_KNOWN = ipaddress.ip_network("64:ff9b::/96")
 _IPV4_COMPATIBLE = ipaddress.ip_network("::/96")
 _IPV4_TRANSLATED = ipaddress.ip_network("::ffff:0:0:0/96")
 _NAT64_LOCAL_USE = ipaddress.ip_network("64:ff9b:1::/48")
-# Cloud instance-metadata services answer credentials to whoever asks from the
-# host, so no scope-wide policy reaches them: AWS/GCP/Azure/OCI/DigitalOcean
-# IMDS, the AWS ECS task endpoint, AWS IMDS over IPv6, EKS Pod Identity (both
-# families), Alibaba Cloud, Tencent Cloud, and the Azure WireServer.
 _METADATA_ADDRESSES = frozenset(
     ipaddress.ip_address(address)
     for address in (
@@ -115,8 +110,6 @@ def _unwrap(address: IPAddress) -> IPAddress:
     if isinstance(address, ipaddress.IPv4Address):
         return address
     if address.scope_id is not None:
-        # a zone index names an interface, not another address: fd00:ec2::254%1
-        # is fd00:ec2::254, but it compares unequal to it
         address = ipaddress.IPv6Address(address.packed)
     if address.ipv4_mapped is not None:
         return address.ipv4_mapped
@@ -133,17 +126,12 @@ def classify(address: str | IPAddress) -> Scope:
     return _classify_ip(_unwrap(_as_address(address)))
 
 
-# where a peer sits on our side of the network: a trust hint, never a gate
 LOCAL_SCOPES = frozenset(
     {Scope.LOOPBACK, Scope.PRIVATE, Scope.SHARED, Scope.LINK_LOCAL}
 )
 
 
 def classify_peer(address: str | IPAddress | None) -> Scope | None:
-    # The scope of a peer that connected to us, for a trust decision. Only an
-    # IPv4-mapped address is unwrapped (a dual-stack socket's own spelling):
-    # a 6to4, Teredo or NAT64 source is chosen by the remote end, so reading
-    # the IPv4 inside it would let 2002:7f00:1:: pass for loopback.
     if not address:
         return None
     try:
@@ -300,9 +288,6 @@ def check_host(
     return addresses
 
 
-# an address that swallows the SYN costs a whole connect timeout, and a name
-# can publish many: one such wait may move on (a dead AAAA before a live A),
-# a second one ends the attempt
 TIMEOUTS_PASSED_OVER = 1
 
 
@@ -313,8 +298,6 @@ def dial(
     timeout: float | None,
     source_address: tuple[str, int] | None = None,
 ) -> socket.socket:
-    # the addresses check_host answered, never the name again: a second
-    # lookup is a second answer, which the check did not see
     if not addresses:
         raise ValueError("a dial needs at least one checked address")
     if timeout == 0:
@@ -374,11 +357,6 @@ def check_url(
 def check_url_syntax(
     url: str, *, schemes: Iterable[str] | None = None
 ) -> tuple[str, str, int]:
-    # Parsed as urllib3 parses it, the host requests dials. What the parsers
-    # still read differently is refused: urllib3 ends the authority at a
-    # backslash ("http://127.0.0.1\\@a.test/" is 127.0.0.1), urllib.parse
-    # does not (a.test) and drops a tab or newline anywhere before parsing.
-    # a refusal is logged: it names the URL with its credentials masked
     shown = repr(mask_url(url))
     authority = _AUTHORITY.match(url)
     if _CONTROL.search(url) or (

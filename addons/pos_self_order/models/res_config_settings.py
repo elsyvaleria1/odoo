@@ -160,7 +160,6 @@ class ResConfigSettings(models.TransientModel):
         ).data
 
     def get_pos_qr_stands(self) -> dict:
-        """Redirect to the get the free stands with the data of QR codes for the current POS config"""
         self.check_singleton()
         return {
             "type": "ir.actions.client",
@@ -218,7 +217,6 @@ class ResConfigSettings(models.TransientModel):
 
         xlsx_content = self._generate_excel(excel_rows, headers)
 
-        # Create a zip with all images in qr_images
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", 0) as zip_file:
             zip_file.writestr("Table_url.xlsx", xlsx_content)
@@ -229,14 +227,12 @@ class ResConfigSettings(models.TransientModel):
                     buf.write(qr_image["images"]["svg"].to_string())
         zip_buffer.seek(0)
 
-        # Delete previous attachments
         self.env["ir.attachment"].search(
             [
                 ("name", "=", "self_order_qr_code.zip"),
             ]
         ).unlink()
 
-        # Create an attachment with the zip
         attachment_id = self.env["ir.attachment"].create(
             {
                 "name": "self_order_qr_code.zip",
@@ -254,9 +250,6 @@ class ResConfigSettings(models.TransientModel):
         }
 
     def generate_qr_codes_page(self):
-        """
-        Generate the data needed to print the QR codes page
-        """
         if self.pos_self_ordering_mode == "mobile" and self.pos_module_pos_restaurant:
             table_ids = self.pos_config_id.floor_ids.table_ids
 
@@ -334,6 +327,6 @@ class ResConfigSettings(models.TransientModel):
                         [("currency_id", "=", currency_id)],
                     ]
                 )
-                res_config.pos_available_pricelist_ids = self.env[  # noqa: E8507 - a transient settings wizard: one record
+                res_config.pos_available_pricelist_ids = self.env[
                     "product.pricelist"
                 ].search(domain)

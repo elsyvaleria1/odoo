@@ -85,7 +85,6 @@ class PosPrepDisplay(models.Model):
         ]
 
     def load_preparation_data(self):
-        # Init our first record, in case of self_order is pos_config
         pdis_fields = self._load_pos_preparation_data_fields()
         response = {
             "pos.prep.display": self.search_read(
@@ -225,7 +224,6 @@ class PosPrepDisplay(models.Model):
                 else 0
             )
 
-    # if needed the user can instantly reset a preparation display, deleting all its open orders.
     @pos_queueable
     def reset(self) -> None:
         for preparation_display in self:
@@ -317,7 +315,6 @@ class PosPrepDisplay(models.Model):
                 raise ValidationError(
                     self.env._("A preparation display must have a minimum of one step.")
                 )
-            # If a session is open and there are open orderlines in the display, the stages cannot be modified.
             linked_pos_configs = preparation_display._get_pos_config_ids()
             if (
                 any(

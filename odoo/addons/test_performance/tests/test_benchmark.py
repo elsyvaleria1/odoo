@@ -56,9 +56,6 @@ class TestORMBenchmark(BenchmarkCase, TransactionCase):
 
     @staticmethod
     def _append_to_ledger(export_data):
-        # a reading nobody keeps is a reading nobody can compare: with
-        # ODOO_BENCHMARK_LEDGER naming a file, every run appends one JSON line
-        # carrying the commit, so a release knows its costs against the last
         path = os.environ.get("ODOO_BENCHMARK_LEDGER")
         if not path:
             return

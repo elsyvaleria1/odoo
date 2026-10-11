@@ -23,9 +23,6 @@ class ProjectProject(models.Model):
             for project in self:
                 project.display_planning_timesheet_analysis = project.allow_timesheets
 
-    # -------------------------------------------
-    # Actions
-    # -------------------------------------------
 
     def open_timesheets_planning_report(self):
         self.check_singleton()
@@ -45,9 +42,6 @@ class ProjectProject(models.Model):
         )
         return action
 
-    # ----------------------------
-    #  Project Updates
-    # ----------------------------
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

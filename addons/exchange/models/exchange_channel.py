@@ -12,9 +12,7 @@ class ExchangeChannel(models.Model):
     _inherits = {"integration.service": "endpoint_id"}
     _order = "sequence, name"
 
-    # FIELDS
 
-    # Transport block
     endpoint_id = fields.Many2one(
         comodel_name="integration.service",
         index=True,
@@ -24,7 +22,6 @@ class ExchangeChannel(models.Model):
         "endpoint. A channel adds only what the counterparty decides.",
     )
 
-    # Protocol block
     protocol = fields.Selection(
         selection="_selection_protocol",
         index=True,
@@ -44,7 +41,6 @@ class ExchangeChannel(models.Model):
         "module name. Only 'partner' is interchange in the strict sense.",
     )
 
-    # Identity block
     certificate_id = fields.Many2one(
         comodel_name="certificate.certificate",
         ondelete="restrict",
@@ -56,7 +52,6 @@ class ExchangeChannel(models.Model):
         "an issuer RFC, a taxpayer number."
     )
 
-    # Policy block
     annul_window_days = fields.Integer(
         default=0,
         help="Days after acceptance during which an annulment is still "
@@ -73,7 +68,6 @@ class ExchangeChannel(models.Model):
     )
     date_last_inbox = fields.Datetime(readonly=True)
 
-    # Transmission block
     transmission_ids = fields.One2many(
         comodel_name="exchange.transmission",
         inverse_name="channel_id",
@@ -81,18 +75,16 @@ class ExchangeChannel(models.Model):
     count_transmission = fields.Integer(compute="_compute_transmission_counts")
     count_transmission_open = fields.Integer(compute="_compute_transmission_counts")
 
-    # SELECTION METHODS
 
     @api.model
     def _selection_protocol(self) -> list[tuple[str, str]]:
         return self.env["exchange.protocol"]._selection_protocol()
 
-    # CONSTRAINT METHODS
 
     @api.constrains("protocol", "company_id", "endpoint_id", "active")
     def _check_protocol_is_unique_per_company(self) -> None:
         for channel in self.filtered("active"):
-            duplicate = self.search(  # noqa: E8507 - one probe per channel, on its own protocol and company
+            duplicate = self.search(
                 [
                     ("id", "!=", channel.id),
                     ("protocol", "=", channel.protocol),
@@ -133,7 +125,6 @@ class ExchangeChannel(models.Model):
                     self.env._("An annulment window cannot be negative."),
                 )
 
-    # COMPUTE METHODS
 
     def _compute_transmission_counts(self) -> None:
         totals = dict(
@@ -157,7 +148,6 @@ class ExchangeChannel(models.Model):
             channel.count_transmission = totals.get(channel, 0)
             channel.count_transmission_open = open_totals.get(channel, 0)
 
-    # ACTION METHODS
 
     def action_view_transmissions(self) -> dict:
         self.check_singleton()
@@ -182,7 +172,6 @@ class ExchangeChannel(models.Model):
             )
         self._read_inbox()
 
-    # TRANSPORT METHODS
 
     def is_retry_required(self, attempt_number: int) -> bool:
         self.check_singleton()
@@ -193,21 +182,9 @@ class ExchangeChannel(models.Model):
         return self.endpoint_id.get_retry_delay(attempt_number)
 
     def _enqueue_send(self, delay: int | None = None) -> None:
-        """Ask a worker to flush this channel's queue.
-
-        `identity_key` carries the coalescing: `ir_job` holds a unique index over
-        it for queued states, so a channel with fifty transmissions waiting has
-        one job, not fifty, and enqueuing again while that job is still pending
-        is a no-op rather than a second flush.
-        """
         for channel in self:
             channel.delayed(
                 identity_key=f"exchange.send:{channel.id}",
-                # Per protocol, not one "exchange" bucket: an `ir.job.channel`
-                # record caps concurrency, and a counterparty that demands one
-                # request at a time should not throttle every other one. No
-                # record means uncapped, so this ships none and leaves the cap
-                # to whoever meets an endpoint that needs it.
                 channel=f"exchange.{channel.protocol}",
                 eta=delay or None,
                 name=f"Send queued transmissions over {channel.display_name}",
@@ -215,14 +192,6 @@ class ExchangeChannel(models.Model):
 
     @api.job(channel="exchange", max_retries=0)
     def _job_send_queued(self) -> None:
-        """Send everything queued on this channel.
-
-        The job takes the channel, not the transmissions: one job flushes
-        whatever has accumulated, which is what makes the coalescing above safe.
-        `max_retries=0` because a failure here is not the job's to retry --
-        `_schedule_retry` records the attempt against each transmission, applies
-        the endpoint's own backoff, and re-enqueues.
-        """
         self.check_singleton()
         self.env["exchange.transmission"].search(
             [("channel_id", "=", self.id), ("state", "=", "queued")],
@@ -232,7 +201,6 @@ class ExchangeChannel(models.Model):
         self.check_singleton()
         return self.endpoint_id._get_api_client(credential=credential)
 
-    # EXCHANGE METHODS
 
     def _get_protocol(self):
         self.check_singleton()
@@ -244,8 +212,6 @@ class ExchangeChannel(models.Model):
             documents = protocol._read_inbox(channel)
             if documents:
                 protocol._add_from_inbox(channel, documents)
-            # Polling is the system's act, not the reader's: whoever may see a
-            # channel may trigger a read, and stamping it is bookkeeping.
             channel.sudo().date_last_inbox = fields.Datetime.now()
 
     @api.model

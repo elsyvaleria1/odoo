@@ -13,7 +13,7 @@ from odoo.addons.iot_drivers.tools.system import IS_TEST
 
 _logger = logging.getLogger(__name__)
 
-IOT_LOG_TO_SERVER_CONFIG_NAME = "iot_log_to_server"  # config name in odoo.conf
+IOT_LOG_TO_SERVER_CONFIG_NAME = "iot_log_to_server"
 
 
 class AsyncHTTPHandler(logging.Handler):
@@ -31,14 +31,11 @@ class AsyncHTTPHandler(logging.Handler):
     """How much seconds it will sleep before checking for new logs to send"""
     _REQUEST_TIMEOUT = 10
     """Amount of seconds to wait per log to send before timeout"""
-    _DELAY_BEFORE_NO_SERVER_LOG = 5 * 60  # 5 minutes
+    _DELAY_BEFORE_NO_SERVER_LOG = 5 * 60
     """Minimum delay in seconds before we log a server disconnection.
     Used in order to avoid the IoT log file to have a log recorded each _FLUSH_INTERVAL (as this value is very small)"""
 
     def __init__(self, odoo_server_url, active) -> None:
-        """
-        :param odoo_server_url: Odoo Server URL
-        """
         super().__init__()
         self._odoo_server_url = odoo_server_url
         self._db_name = helpers.get_conf("db_name") or ""
@@ -49,24 +46,20 @@ class AsyncHTTPHandler(logging.Handler):
         self.toggle_active(active)
 
     def toggle_active(self, is_active) -> None:
-        """
-        Switch it on or off the handler (depending on the IoT setting) without the need to close/reset it
-        """
         self._active = is_active
         if self._active and self._odoo_server_url:
-            # Start the thread to periodically flush logs
             self._flush_thread = threading.Thread(
                 target=self._periodic_flush, name="ThreadServerLogSender", daemon=True
             )
             self._flush_thread.start()
         else:
-            self._flush_thread and self._flush_thread.join()  # let a last flush
+            self._flush_thread and self._flush_thread.join()
 
     def _periodic_flush(self) -> None:
-        odoo_session = requests.Session()  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+        odoo_session = requests.Session()
         while (
             self._odoo_server_url and self._active
-        ):  # allow to exit the loop on thread.join
+        ):
             time.sleep(self._FLUSH_INTERVAL)
             self._flush_logs(odoo_session)
 
@@ -80,7 +73,6 @@ class AsyncHTTPHandler(logging.Handler):
         def empty_queue():
             yield convert_to_byte(f"identifier {helpers.get_identifier()}")
             for _ in range(self._MAX_BATCH_SIZE):
-                # Use a limit to avoid having too heavy requests & infinite loop of the queue receiving new entries
                 try:
                     log_record = self._log_queue.get_nowait()
                     yield convert_server_line(
@@ -89,7 +81,6 @@ class AsyncHTTPHandler(logging.Handler):
                 except queue.Empty:
                     break
 
-            # Report to the server if the queue is close from saturation
             if queue_size >= 0.8 * self._MAX_QUEUE_SIZE:
                 log_message = (
                     f"The IoT {self.__class__.__name__} queue is saturating: "
@@ -98,11 +89,10 @@ class AsyncHTTPHandler(logging.Handler):
                 )
                 _logger.warning(
                     log_message
-                )  # As we don't log our own logs, this will be part of the IoT logs
-                # In order to report this to the server (on the current batch) we will append it manually
+                )
                 yield convert_server_line(logging.WARNING, log_message)
 
-        queue_size = self._log_queue.qsize()  # This is an approximate value
+        queue_size = self._log_queue.qsize()
 
         if not self._odoo_server_url or queue_size == 0:
             return
@@ -132,8 +122,6 @@ class AsyncHTTPHandler(logging.Handler):
             _logger.exception("Unexpected error happened while sending logs to server")
 
     def emit(self, record) -> None:
-        # This is important that this method is as fast as possible.
-        # The log calls will be waiting for this function to finish
         if not self._active:
             return
         with contextlib.suppress(queue.Full):
@@ -149,16 +137,12 @@ def close_server_log_sender_handler() -> None:
 
 
 def get_odoo_config_log_to_server_option():
-    # Enabled by default if not in test mode
     return not IS_TEST and (
         helpers.get_conf(IOT_LOG_TO_SERVER_CONFIG_NAME, section="options") or True
     )
 
 
 def check_and_update_odoo_config_log_to_server_option(new_state) -> bool:
-    """
-    :return: wherever the config file need to be updated or not
-    """
     if get_odoo_config_log_to_server_option() != new_state:
         helpers.update_conf(
             {IOT_LOG_TO_SERVER_CONFIG_NAME, new_state}, section="options"
@@ -170,11 +154,9 @@ def check_and_update_odoo_config_log_to_server_option(new_state) -> bool:
 
 def _server_log_sender_handler_filter(log_record) -> bool:
     def _filter_my_logs():
-        """Filter out our own logs (to avoid infinite loop)"""
         return log_record.name == __name__
 
     def _filter_frequent_irrelevant_calls():
-        """Filter out this frequent irrelevant HTTP calls, to avoid spamming the server with useless logs"""
         return (
             log_record.name == "odoo.service.http.access"
             and log_record.args
@@ -185,9 +167,6 @@ def _server_log_sender_handler_filter(log_record) -> bool:
     return not (_filter_my_logs() or _filter_frequent_irrelevant_calls())
 
 
-# The server URL is set once at initlialisation as the IoT will always restart if the URL is changed
-# The only other possible case is when the server URL value is "Cleared",
-# in this case we force close the log handler (as it does not make sense anymore)
 _server_log_sender_handler = AsyncHTTPHandler(
     helpers.get_odoo_server_url(), get_odoo_config_log_to_server_option()
 )
@@ -198,5 +177,4 @@ if not IS_TEST:
         )
     )
     _server_log_sender_handler.addFilter(_server_log_sender_handler_filter)
-    # Set it in the 'root' logger, on which every logger (including odoo) is a child
     logging.getLogger().addHandler(_server_log_sender_handler)

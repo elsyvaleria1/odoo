@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 try:
     import websocket
 except ImportError:
-    websocket = None  # type: ignore[assignment]
+    websocket = None
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -436,7 +436,7 @@ class ChromeBrowser:
 
         port_file = pathlib.Path(self.user_data_dir, "DevToolsActivePort")
         died = None
-        start = clock.monotonic()  # debuglog
+        start = clock.monotonic()
         for iteration in range(CHECK_BROWSER_ITERATIONS):
             time.sleep(CHECK_BROWSER_SLEEP)
             if port_file.is_file() and port_file.stat().st_size > 5:
@@ -598,9 +598,9 @@ class ChromeBrowser:
         self._logger.info("Browser version: %s", version["Browser"])
 
         start = clock.monotonic()
-        polls = 0  # debuglog
+        polls = 0
         while (clock.monotonic() - start) < 5.0:
-            polls += 1  # debuglog
+            polls += 1
             ws_url = next(
                 (
                     target["webSocketDebuggerUrl"]
@@ -654,7 +654,7 @@ class ChromeBrowser:
                 continue
             except websocket.WebSocketConnectionClosedException as e:
                 settled = self._result.done()
-                cancelled = 0  # debuglog
+                cancelled = 0
                 if not settled:
                     del self.ws
                     self._result.set_exception(e)
@@ -665,7 +665,7 @@ class ChromeBrowser:
                             break
                         else:
                             pending.cancel()
-                            cancelled += 1  # debuglog
+                            cancelled += 1
                 _debug.lifecycle(
                     "test.browser.receiver_closed",
                     settled=settled,
@@ -865,9 +865,6 @@ class ChromeBrowser:
 
         if log_type == "error":
             if self.error_checker and not self.error_checker(message):
-                # an error the checker waves through is the page's own
-                # reporting (a HOOT verdict line, say), not a failure: it
-                # must neither settle the run nor poison its success signal
                 _debug.logic("test.browser.console_error", outcome="ignored_by_checker")
                 return
             self.had_failure = True
@@ -886,8 +883,6 @@ class ChromeBrowser:
             self._handle_success_signal(_logger)
 
     def _handle_log_entry(self, entry: dict) -> None:
-        # A refused script never reaches the console API: Chrome reports a
-        # Content-Security-Policy violation only as a security log entry.
         if entry.get("source") != "security" or entry.get("level") != "error":
             return
         text = entry.get("text", "")

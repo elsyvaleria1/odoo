@@ -14,30 +14,8 @@ _logger = logging.getLogger(__name__)
 
 
 class GoogleReserveIAP:
-    # ------------------------------------------------------------
-    # MERCHANTS / SERVICES
-    # ------------------------------------------------------------
 
     def register_appointment(self, appointment_type) -> None:
-        """Notify IAP we want to sync an appointment with Google Reserve.
-
-        Here is the merchant information that Google needs:
-        - Name (required)
-        - Business Category (required)
-        - Phone (optional)
-        - Website (optional - but 'highly recommended')
-        - Full Address (required):
-          - Longitude / Latitude (optional unless postal address is not specified)
-          - Postal Address (optional unless lon/lat is not specified)
-            - Country (required)
-            - City (required) ("Locality" in Google documentation)
-            - Region (optional)
-            - Zip (required) ("Postal Code" in Google documentation)
-            - Street Address (required)
-
-        Full objects definition available here:
-        - https://developers.google.com/actions-center/verticals/reservations/e2e/reference/feeds/merchants-feed
-        - https://developers.google.com/actions-center/verticals/reservations/e2e/reference/feeds/services-feed"""
 
         if not appointment_type.google_reserve_merchant_id:
             raise ValueError(
@@ -59,7 +37,6 @@ class GoogleReserveIAP:
                 "appointment_details": {
                     "appointment_type_id": appointment_type.id,
                     "google_reserve_access_token": appointment_type.google_reserve_access_token,
-                    # TODO: Google accepts a list of localized terms, should be able to pass a list of (locale, label)
                     "service_name": appointment_type.name,
                     "min_cancellation_hours": appointment_type.min_cancellation_hours,
                     "min_schedule_hours": appointment_type.min_schedule_hours,
@@ -69,7 +46,6 @@ class GoogleReserveIAP:
         )
 
     def unregister_appointment(self, appointment_type) -> None:
-        """Notify IAP we want to remove an appointment that was synced with Google Reserve"""
 
         merchant = appointment_type.google_reserve_merchant_id
         iap_jsonrpc(
@@ -86,7 +62,6 @@ class GoogleReserveIAP:
         )
 
     def update_merchant(self, merchant) -> None:
-        """Notify IAP to sync an updated Merchant"""
 
         iap_jsonrpc(
             url_join(
@@ -102,12 +77,8 @@ class GoogleReserveIAP:
             env=merchant.env,
         )
 
-    # ------------------------------------------------------------
-    # AVAILABILITIES
-    # ------------------------------------------------------------
 
     def update_availabilities(self, appointment_types, start_time, end_time) -> None:
-        """Replace the availabilities of the appointment types."""
         for appointment_type in appointment_types:
             start_time = start_time.astimezone(UTC)
             end_time = end_time.astimezone(UTC)
@@ -116,9 +87,6 @@ class GoogleReserveIAP:
                 start_time=start_time, end_time=end_time
             )
 
-            # python datetime isoformat doesn't respect the "RFC3339 UTC 'Zulu' format"
-            # which is enforced by Google
-            # there does not seem to be another way to do it than a 'dirty' replace
             data = {
                 "db_uuid": appointment_types.env.registry.settings.get(
                     appointment_types.env, "database.uuid", False
@@ -126,10 +94,10 @@ class GoogleReserveIAP:
                 "availabilities": availabilities,
                 "start_time": start_time.isoformat().replace(
                     "+00:00", "Z"
-                ),  # UTC (RFC3339)
+                ),
                 "end_time": end_time.isoformat().replace(
                     "+00:00", "Z"
-                ),  # UTC (RFC3339)
+                ),
             }
 
             try:
@@ -147,17 +115,10 @@ class GoogleReserveIAP:
             except (IAPServerError, AccessError) as e:
                 _logger.warning("Could not update availabilities: %s", e)
 
-    # ------------------------------------------------------------
-    # BOOKINGS
-    # ------------------------------------------------------------
 
     def update_booking(
         self, appointment_type, calendar_event_ids, event_update_values
     ) -> None:
-        """Update Google booking based on write values.
-
-        Note: Google wants a 'start' and a 'duration', not a 'stop' key, hence some basic
-        computation inside the method to deduce those."""
 
         if not appointment_type.google_reserve_enable:
             return
@@ -173,7 +134,6 @@ class GoogleReserveIAP:
             booking_values["startTime"] = start.isoformat() + "Z"
 
             if "stop" in event_update_values and "duration" not in event_update_values:
-                # manually compute duration
                 stop = event_update_values["stop"]
                 if isinstance(stop, str):
                     stop = fields.Datetime.from_string(stop)
@@ -215,14 +175,8 @@ class GoogleReserveIAP:
         except (IAPServerError, AccessError) as e:
             _logger.warning("Could not update booking: %s", e)
 
-    # ------------------------------------------------------------
-    # FEED
-    # ------------------------------------------------------------
 
     def upload_availabilities_feed(self, merchants) -> None:
-        """Send the appointment availabilities to the IAP Google Reserve service.
-        It will then consolidate all availabilities from all Odoo Merchants before uploading
-        the complete data to the Google servers."""
 
         for merchant in merchants:
             try:
@@ -268,9 +222,6 @@ class GoogleReserveIAP:
             except requests.exceptions.RequestException as e:
                 _logger.warning("Could not upload availability feed: %s", e)
 
-    # ------------------------------------------------------------
-    # UTILS
-    # ------------------------------------------------------------
 
     def _format_merchant_details(self, merchant) -> dict:
         return {

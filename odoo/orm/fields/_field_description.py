@@ -21,11 +21,9 @@ _debug = DebugLog(__name__)
 
 
 def description_key(attributes: Collection[str] | None) -> tuple[str, ...] | None:
-    """The hashable form of a ``fields_get`` attribute selection."""
     if attributes is None:
         return None
     if isinstance(attributes, str):
-        # a bare name would read as its letters
         raise TypeError(
             f"fields_get attributes must be a collection of names, got {attributes!r}"
         )
@@ -48,9 +46,6 @@ class _FieldDescriptionMixin(_FieldStubs):
         static: Mapping[str, typing.Any],
         dynamic: Collection[str],
     ) -> ValuesType:
-        """A fresh description from its two halves: the memoised static
-        attributes (copied, so a caller may edit the result) and the ones
-        this call evaluates against the environment."""
         desc = {
             attr: list(value) if isinstance(value, list) else value
             for attr, value in static.items()
@@ -64,9 +59,6 @@ class _FieldDescriptionMixin(_FieldStubs):
     def _describe_static(
         self, env: Environment, attributes: Collection[str] | None
     ) -> tuple[ValuesType, tuple[str, ...]]:
-        """The half of the description that is a function of the registry,
-        the language and the superuser flag, and the names of the attributes
-        that are not — evaluated on every call by ``_get_description_from_parts``."""
         dynamic = self._dynamic_description_attrs(env)
         desc = {}
         for attr, prop in self.description_attrs:
@@ -84,14 +76,8 @@ class _FieldDescriptionMixin(_FieldStubs):
         )
 
     def _dynamic_description_attrs(self, env: Environment) -> frozenset[str]:
-        """The description attributes whose value depends on more than the
-        registry, the language and the superuser flag: an aggregator that
-        needs a query the user may not be allowed to run. Subclasses add a
-        callable selection or domain."""
         if self.is_column:
             return frozenset()
-        # a non-column field sorts and groups through SQL the user must be
-        # allowed to build, which `_is_field_sortable` keys on their groups
         dynamic = {"sortable", "groupable"}
         if self.aggregator:
             dynamic.add("aggregator")
@@ -156,7 +142,7 @@ class _FieldDescriptionMixin(_FieldStubs):
     def _description_falsy_value_label(self, env: Environment) -> str | None:
         if not self.falsy_value_label:
             return None
-        return env._(self.falsy_value_label)  # noqa: E8502  _lt() at the declaration
+        return env._(self.falsy_value_label)
 
     def is_editable(self) -> bool:
         return not self.readonly

@@ -45,12 +45,9 @@ class DryRunLeavesNoTrace(TransactionCase):
         )
 
     def test_dryrun_keeps_a_pending_write_made_before_it(self):
-        """An unflushed write from before the import survives the rollback."""
         partner = self.env["res.partner"].create({"name": "Before"})
         self.env.flush_all()
 
-        # Not flushed on purpose: this is the ordinary shape of a write made
-        # earlier in the same request, and it is what used to be lost.
         partner.name = "Pending"
 
         result = self._imp(b"name\nImported Row\n").execute_import(
@@ -58,8 +55,6 @@ class DryRunLeavesNoTrace(TransactionCase):
         )
         self.assertFalse(result["messages"])
 
-        # Read through to the database: the point is what was committed to the
-        # transaction, not what the cache still remembers.
         self.env.invalidate_all()
         self.assertEqual(
             partner.name,
@@ -68,7 +63,6 @@ class DryRunLeavesNoTrace(TransactionCase):
         )
 
     def test_dryrun_leaves_no_stale_value_in_cache(self):
-        """A record the dry-run updated is not left cached with the lost value."""
         partner = self.env["res.partner"].create({"name": "Orig"})
         self.env.flush_all()
 
@@ -78,8 +72,6 @@ class DryRunLeavesNoTrace(TransactionCase):
         )
         self.assertFalse(result["messages"])
 
-        # Deliberately no invalidate_all() here: reading straight after the
-        # dry-run is what a caller does, and the cache is what answers.
         self.assertEqual(
             partner.name,
             "Orig",

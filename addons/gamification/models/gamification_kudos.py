@@ -40,38 +40,17 @@ class GamificationKudosCategory(models.Model):
         comodel_name="gamification.kudos",
         inverse_name="category_id",
     )
-    # The hand-rolled compute this replaces carried no @api.depends at all, so
-    # the ORM cached its result for the whole transaction and nothing ever marked
-    # it dirty: the count was simply wrong from the first kudos onwards.  The
-    # category had no inverse one2many, which is why it hand-rolled a _read_group
-    # in the first place; declaring the relation makes the counter one line and
-    # its invalidation the ORM's problem.
     kudos_count = fields.Count(
         count_of="kudos_ids",
         string="# Kudos",
     )
 
 
-# Fields whose value the sender picked at send-time (or that were derived
-# from that choice) and that the activity feed / the mail-thread post were
-# computed from. Editing them after create() does not re-run any of that:
-# summary re-renders (it is a stored @api.depends compute, and
-# _compute_summary depends on sender_id.name same as the other three) but
-# the activity feed / the posted message keep their original values, so they
-# would silently disagree. karma_granted is included even though it is not a
-# sender-picked input: it is derived from category_id at create() time and
-# is otherwise a plain readonly=True Integer -- UI-only, not ORM-enforced --
-# so leaving it out of this set let the sender rewrite the kudos' own record
-# of how much karma it granted, with no trace, via write()/RPC/sudo.
 KUDOS_VALUE_FIELDS = frozenset(
     {"sender_id", "recipient_id", "category_id", "message", "karma_granted"}
 )
 
 
-# Kudos are lightweight, informal recognition acts. Unlike badges (which
-# have granting rules and scarcity), any employee can send kudos to any
-# other employee at any time. Kudos integrate with mixin.mail.thread so they
-# appear in the Discuss social feed.
 class GamificationKudos(models.Model):
     """Peer-to-peer recognition message."""
 
@@ -132,7 +111,6 @@ class GamificationKudos(models.Model):
 
     @api.depends("sender_id.name", "recipient_id.name", "category_id.name")
     def _compute_summary(self) -> None:
-        """Generate a one-line summary for display."""
         for kudos in self:
             kudos.summary = self.env._(
                 "%(sender)s recognized %(recipient)s for %(category)s",
@@ -142,21 +120,6 @@ class GamificationKudos(models.Model):
             )
 
     def write(self, vals: ValuesType) -> Literal[True]:
-        """Freeze the fields that already drove karma/summary/the mail post.
-
-        Only ``create()`` grants karma and posts to the thread; editing
-        ``sender_id``/``recipient_id``/``category_id``/``message`` afterwards
-        would re-render ``summary`` (a stored compute) without touching
-        ``karma_granted`` or the already-sent post, leaving the three
-        disagreeing about what was actually recognized. ``sudo()`` (imports,
-        migrations) still bypasses this, same as ``create()``'s sender check.
-
-        The ``kudos_user_write`` permission already blocks anyone but the
-        sender from writing at all, so a non-sender's attempt must keep
-        raising the ORM's own ``AccessError`` via ``super().write()`` below
-        -- this only adds a stricter rule for the one path the permission
-        *does* allow: the sender editing their own already-sent kudos.
-        """
         if (
             not self.env.su
             and KUDOS_VALUE_FIELDS.intersection(vals)
@@ -169,16 +132,8 @@ class GamificationKudos(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        """Validate and create kudos, granting karma and posting notifications."""
         for vals in vals_list:
-            # A non-system caller can only send kudos *as themselves*. Reject a
-            # foreign ``sender_id`` loudly instead of silently rewriting it:
-            # the old coercion handed the caller back a record different from
-            # the one they asked for, with no visible error.
             if not self.env.su:
-                # Missing/falsy sender_id (imports, legacy RPC) is "no
-                # opinion", not a spoof — only a present, different id is
-                # rejected.
                 sender_id = vals.get("sender_id")
                 if sender_id and sender_id != self.env.uid:
                     raise exceptions.UserError(
@@ -192,9 +147,6 @@ class GamificationKudos(models.Model):
 
         records = super().create(vals_list)
 
-        # Batched: the caller may legitimately send many kudos at once (an
-        # import, a team-wide thank-you), and the per-record loop this replaces
-        # cost a karma write cycle, a message_post and a feed insert each.
         karma_per_user: dict[Any, dict[str, Any]] = {}
         for kudos in records:
             karma = kudos.category_id.karma_granted
@@ -209,18 +161,11 @@ class GamificationKudos(models.Model):
                 },
             )
             entry["gain"] += karma
-            # sudo(): karma_granted is now in KUDOS_VALUE_FIELDS, and write()
-            # blocks the sender from touching it -- but sender_id is always
-            # the current user right after a non-su create(), so this
-            # create-time bookkeeping write must bypass that guard the same
-            # way create()'s own sender check is bypassed by sudo().
             kudos.sudo().karma_granted = karma
         if karma_per_user:
             self.env["res.users"].sudo()._add_karma_batch(karma_per_user)
 
         for kudos in records:
-            # Post to mail thread for social visibility
-            # Use Markup so HTML tags render; %-formatting auto-escapes str values
             body = Markup(
                 '<i class="%s"/> <b>%s</b> recognized <b>%s</b> for <em>%s</em>: %s'
             ) % (

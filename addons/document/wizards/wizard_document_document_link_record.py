@@ -9,8 +9,6 @@ class WizardDocumentDocumentLinkRecord(models.TransientModel):
     _description = "Documents Link to Record"
 
     def _domain_model_id(self) -> list:
-        # the mail-thread models the user may link to, which takes write: only
-        # those are asked, not every model of the registry
         thread = self.env.registry["mixin.mail.thread"]
         models = [
             name
@@ -52,18 +50,11 @@ class WizardDocumentDocumentLinkRecord(models.TransientModel):
     )
 
     def link_to(self) -> None:
-        """Link the selected documents to the chosen record."""
         self.check_singleton()
         if not self.resource_ref:
-            # UI-unreachable (the button is ``invisible="not resource_ref"``)
-            # but the method is RPC-callable, where it raised AttributeError.
             raise UserError(self.env._("Please select a record to link to."))
-        # Enforce write access on the *specific* target record: the model-level
-        # filtering (_domain_model_id) is UI-only, so without this a documents
-        # user could link documents onto any record id of any mail-thread model.
         self.resource_ref.check_access("write")
         if linked := self.document_ids.filtered("res_model"):
-            # the same refusal action_link_to_record makes before opening this
             raise UserError(
                 self.env._(
                     "Already linked Documents: %s", ", ".join(linked.mapped("name"))

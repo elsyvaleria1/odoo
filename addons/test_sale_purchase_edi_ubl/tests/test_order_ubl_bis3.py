@@ -19,14 +19,11 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Need to enable pricelist and discount to compute discount price.
         cls._enable_pricelists()
-        # `_enable_discount()` will not work because we need this group to enable on superuser
         cls.env["res.config.settings"].create(
             {"group_discount_per_so_line": True}
         ).execute()
 
-        # Seller company: it should import PO and export SO
         supplier_company_data = cls.setup_other_company(
             name="Gestral Inc.", vat="US9357841"
         )
@@ -40,7 +37,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             }
         )
 
-        # Buyer company: it should import SO and export PO
         customer_company_data = cls.setup_other_company(
             name="Lumiere LLC", vat="US14001383"
         )
@@ -58,7 +54,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         cls.place_prdct.list_price = 50.0
 
     def get_purchase_xml(self, po_line_vals, **po_vals):
-        """Helper function to generate the UBL xml of a purchase order from the customer company."""
         po = (
             self.env["purchase.order"]
             .with_company(self.customer_company)
@@ -80,7 +75,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         )
 
     def get_sale_xml(self, so_line_vals, **so_vals):
-        """Helper function to generate the UBL xml of a sale order from the supplier company."""
         so = (
             self.env["sale.order"]
             .with_company(self.supplier_company)
@@ -102,9 +96,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         )
 
     def test_so_fallback_partner(self):
-        """Test partner assignation on a sale order when importing a PO xml."""
 
-        # same name and VAT -> same partner
         self.env.user.company_id = self.supplier_company
         xml_attachment = self.get_purchase_xml([])
         so = (
@@ -115,7 +107,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(so.partner_id, self.customer_company.partner_id)
         self.assertEqual(len(so.activity_ids), 0)
 
-        # wrong name but same VAT -> same partner
         self.customer_company.name = "Paris Corp"
         so2 = (
             self.env["sale.order"]
@@ -125,7 +116,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(so2.partner_id, self.customer_company.partner_id)
         self.assertEqual(len(so2.activity_ids), 0)
 
-        # wrong name and wrong VAT -> new partner with the new name & new VAT, activity that a new partner was created
         self.customer_company.vat = "FR123456798"
         so3 = (
             self.env["sale.order"]
@@ -137,10 +127,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(len(so3.activity_ids), 1)
         self.assertEqual(so3.activity_ids.user_id, self.env.user)
 
-        # wrong name and no VAT -> current user's partner_id with an activity in chatter
         self.customer_company.name = "Esquie's Nest"
         self.customer_company.vat = (
-            ""  # we need to remove the VAT before generating a new xml
+            ""
         )
         xml_attachment_4 = self.get_purchase_xml([])
         self.customer_company.name = "Lumiere LLC"
@@ -155,9 +144,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(so4.activity_ids.user_id, self.env.user)
 
     def test_po_fallback_partner(self):
-        """Test partner assignation on a sale order when importing a PO xml."""
 
-        # same name and VAT -> same partner
         self.env.user.company_id = self.customer_company
         xml_attachment = self.get_sale_xml([])
         po = (
@@ -168,7 +155,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(po.partner_id, self.supplier_company.partner_id)
         self.assertEqual(len(po.activity_ids), 0)
 
-        # wrong name but same VAT -> same partner
         self.supplier_company.name = "Paris Corp"
         po2 = (
             self.env["purchase.order"]
@@ -178,7 +164,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(po2.partner_id, self.supplier_company.partner_id)
         self.assertEqual(len(po2.activity_ids), 0)
 
-        # wrong name and wrong VAT -> new partner with the new name & new VAT, activity that a new partner was created
         self.supplier_company.vat = "FR123456798"
         po3 = (
             self.env["purchase.order"]
@@ -190,10 +175,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
         self.assertEqual(len(po3.activity_ids), 1)
         self.assertEqual(po3.activity_ids.user_id, self.env.user)
 
-        # wrong name and no VAT -> current user's partner_id with an activity in chatter
         self.supplier_company.name = "Esquie's Nest"
         self.supplier_company.vat = (
-            ""  # we need to remove the VAT before generating a new xml
+            ""
         )
         xml_attachment_4 = self.get_sale_xml([])
         self.supplier_company.name = "Gestral Inc."
@@ -232,11 +216,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             .with_context(default_partner_id=self.env.user.partner_id.id)
             ._create_records_from_attachments(xml_attachment)
         )
-        # Should be able to confirm order
         so.action_confirm()
         self.assertEqual(so.partner_id, self.customer_company.partner_id)
 
-        # Find first sale tax related to purchase tax
         related_sale_tax = self.env["account.tax"].search(
             [
                 *self.env["account.tax"]._check_company_domain(so.company_id),
@@ -246,11 +228,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             ],
             limit=1,
         )
-        # Update lines vals depending on sale order field names
         for line in po_line_vals:
             line_product = self.env["product.product"].browse(line["product_id"])
             line["discount"] = 0.0
-            # Set sales tax related to purchase tax
             line["tax_ids"] = related_sale_tax.ids
             line["price_unit"] = line_product.list_price
 
@@ -279,11 +259,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             .with_context(default_partner_id=self.env.user.partner_id.id)
             ._create_records_from_attachments(xml_attachment)
         )
-        # Should be able to confirm order
         po.action_confirm()
         self.assertEqual(po.partner_id, self.supplier_company.partner_id)
 
-        # Find first purchase tax related to sale tax
         related_purchase_tax = self.env["account.tax"].search(
             [
                 *self.env["account.tax"]._check_company_domain(po.company_id),
@@ -293,10 +271,8 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             ],
             limit=1,
         )
-        # Update lines vals depending on purchase order field names
         for line in so_line_vals:
             line_product = self.env["product.product"].browse(line["product_id"])
-            # Set purchase tax related to sale tax
             line["tax_ids"] = related_purchase_tax.ids
             line["price_unit"] = line_product.list_price
 
@@ -317,7 +293,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             .with_context(default_partner_id=self.env.user.partner_id.id)
             ._create_records_from_attachments(xml_attachment)
         )
-        # Update lines vals depending on sale order field names
         for line in po_line_vals:
             line_product = self.env["product.product"].browse(line["product_id"])
             product_uom_id = self.env["uom.uom"].browse(line["product_uom_id"])
@@ -360,12 +335,9 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             ._create_records_from_attachments(xml_attachment)
         )
         with self.assertRaises(UserError):
-            # Raise user error if line does not have product set
             so.action_confirm()
         line_vals[0]["product_id"] = False
-        # Should set other values properly
         self.assertRecordValues(so.line_ids, line_vals)
-        # Should create an activity if product is not found
         self.assertEqual(len(so.activity_ids), 1)
 
     def test_po_no_matching_product_found(self):
@@ -384,9 +356,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             ._create_records_from_attachments(xml_attachment)
         )
         line_vals[0]["product_id"] = False
-        # Should set other values properly
         self.assertRecordValues(po.line_ids, line_vals)
-        # Should create an activity if product is not found
         self.assertEqual(len(po.activity_ids), 1)
 
     def test_so_import_payment_terms(self):
@@ -397,7 +367,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             .with_context(default_partner_id=self.env.user.partner_id.id)
             ._create_records_from_attachments(xml_attachment)
         )
-        # Should have same payment term as PO
         self.assertEqual(so.payment_term_id, payment_term)
 
     def test_po_import_payment_terms(self):
@@ -408,7 +377,6 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
             .with_context(default_partner_id=self.env.user.partner_id.id)
             ._create_records_from_attachments(xml_attachment)
         )
-        # Should have same payment term as PO
         self.assertEqual(po.payment_term_id, payment_term)
 
     def test_po_import_document_charge(self):

@@ -53,7 +53,6 @@ class TestPlanningFieldServiceFlow(TransactionCase):
         cls.Slot = cls.env["planning.slot"]
 
     def _declare_visit(self, user=None, **values):
-        """Declare a visit the way "My Visits" does: defaults first, then the form."""
         Slot = self.Slot.with_user(user or self.visitor).with_context(
             field_service_declare_visit=True
         )
@@ -119,7 +118,6 @@ class TestPlanningFieldServiceFlow(TransactionCase):
         )
         self.assertEqual(labels["3_in_progress"], "In Progress")
         visit.with_user(self.visitor).action_complete()
-        # the report is a view: the row read above still holds the old status
         Report.invalidate_model(["state"])
         self.assertEqual(
             Report.search([("slot_id", "=", visit.id)]).state, "4_completed"

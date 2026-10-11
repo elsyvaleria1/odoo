@@ -5,11 +5,6 @@ from odoo.addons.mail_plugin.controllers import mail_plugin
 
 class MailPluginController(mail_plugin.MailPluginController):
     def _get_contact_data(self, partner):
-        """
-        Return the tickets key only if the current user can create tickets. So, if they can not
-        create tickets, the section won't be visible on the addin side (like if the Helpdesk
-        module was not installed on the database).
-        """
         contact_values = super()._get_contact_data(partner)
 
         if not request.env["helpdesk.ticket"].has_access("create"):
@@ -22,13 +17,6 @@ class MailPluginController(mail_plugin.MailPluginController):
         return contact_values
 
     def _get_partner_tickets(self, partner, offset=0, limit=5):
-        """Returns an array containing partner tickets, each ticket will have the following structure :
-        {
-            ticket_id: the ticket's id,
-            name: the ticket's name,
-            fold: True if the ticket has been closed, false otherwise
-        }
-        """
         tickets = request.env["helpdesk.ticket"].search(
             [
                 ("partner_id", "=", partner.id),

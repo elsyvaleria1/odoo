@@ -29,21 +29,15 @@ class TelegramMessage(models.Model):
 
     @api.model
     def _gc_removable_domain(self, now) -> list:
-        # a row a mail message needs -- to route a reply, to know it was
-        # delivered -- lives as long as the message does
         return [("mail_message_id", "=", False), *super()._gc_removable_domain(now)]
 
     def _still_wanted(self) -> bool:
-        """A notification already read in Odoo, or due while its recipient
-        is online and asked for Telegram only while away, is not sent."""
         if not super()._still_wanted():
             return False
         if not self.mail_message_id or not self.recipient_partner_id:
             return True
         partner = self.recipient_partner_id
         user = self._get_recipient_user()
-        # the destination is decided again when the message is due: a chat
-        # disconnected, refused or replaced meanwhile gets nothing more
         if (
             not user
             or user._get_telegram_notify_chat(self.mail_company_id) != self.chat_id
@@ -67,7 +61,6 @@ class TelegramMessage(models.Model):
         return not notification.is_read
 
     def _get_recipient_user(self):
-        """The internal user whose notification this message carries."""
         return self.recipient_partner_id.user_ids.filtered(
             lambda user: user.active and not user.share
         )[:1]

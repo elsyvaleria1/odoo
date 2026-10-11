@@ -34,11 +34,6 @@ class StockPicking(models.Model):
 
     @api.model
     def action_view_new_picking(self):
-        """Creates a new picking of the current picking type and open it.
-
-        :return: the action used to open the picking, or false
-        :rtype: dict
-        """
         context = self.env.context
         if context.get("active_model") == "stock.picking.type":
             picking_type = self.env["stock.picking.type"].browse(
@@ -56,7 +51,6 @@ class StockPicking(models.Model):
             raise UserError(self.env._("A new operation needs an operation type."))
 
     def action_view_picking_client_action(self):
-        """Open the barcode client action for the current picking."""
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             self._barcode_client_action
@@ -65,9 +59,6 @@ class StockPicking(models.Model):
         return dict(action, context=context)
 
     def action_create_return_picking(self):
-        """
-        Create a return picking for the current picking and open it in the barcode app
-        """
         _debug.pipeline("barcode_return_create", pickings=self)
         self.check_singleton()
         return_picking = (
@@ -90,13 +81,11 @@ class StockPicking(models.Model):
         return self.env.ref("stock.action_report_picking_packages").report_action(self)
 
     def _get_stock_barcode_data(self):
-        # Avoid to get the products full name because code and name are separate in the barcode app.
         _debug.perf.count("picking_barcode_data", pickings=self)
         self = self.with_context(display_default_code=False)
         move_lines = self.move_line_ids
         lots = move_lines.trace_id
         partners = move_lines.owner_id | self.partner_id
-        # Fetch all implied products in `self` and adds last used products to avoid additional rpc.
         products = self.move_ids.product_id | move_lines.product_id
 
         uoms = (
@@ -105,13 +94,11 @@ class StockPicking(models.Model):
             | move_lines.packaging_uom_id
             | products.uom_ids
         )
-        # If UoM setting is active, fetch all UoM's data.
         if self.env.user.has_group("base.group_uom"):
             uoms |= self.env["uom.uom"].search([])
 
         product_uoms = products.product_uom_ids
 
-        # Fetch `stock.location`
         source_locations = self.env["stock.location"].search(
             [("id", "child_of", self.location_id.ids)]
         )
@@ -127,7 +114,6 @@ class StockPicking(models.Model):
             | destination_locations
         )
 
-        # Fetch `stock.package` and `stock.package.type` if group_tracking_lot.
         packages = self.env["stock.package"]
         package_types = self.env["stock.package.type"]
         if self.env.user.has_group("stock.group_tracking_lot"):
@@ -162,7 +148,6 @@ class StockPicking(models.Model):
                 "stock.move.line": move_lines.read(
                     move_lines._get_fields_stock_barcode(), load=False
                 ),
-                # `self` can be a record set (e.g.: a picking batch), set only the first partner in the context.
                 "product.product": products.with_context(
                     partner_id=self[:1].partner_id.id
                 ).read(products._get_fields_stock_barcode(), load=False),
@@ -190,7 +175,6 @@ class StockPicking(models.Model):
             "source_location_ids": source_locations.ids,
             "destination_locations_ids": destination_locations.ids,
         }
-        # Extracts pickings' note if it's empty HTML.
         for picking in data["records"]["stock.picking"]:
             picking["note"] = (
                 False
@@ -233,10 +217,6 @@ class StockPicking(models.Model):
         }
 
     def _get_fields_stock_barcode(self):
-        """List of fields on the stock.picking object that are needed by the
-        client action. The purpose of this function is to be overridden in order
-        to inject new fields to the client action.
-        """
         return [
             "company_id",
             "location_dest_id",
@@ -260,14 +240,12 @@ class StockPicking(models.Model):
 
     @api.model
     def filter_on_barcode(self, barcode):
-        """Searches ready pickings for the scanned product/package/lot/packaging."""
         _debug.pipeline("picking_filter_on_barcode", pickings=self, barcode=barcode)
         barcode_type = None
         nomenclature = self.env.company.sudo().barcodes_config_id.nomenclature_id
         if nomenclature.is_gs1_nomenclature:
             parsed_results = nomenclature.parse_barcode(barcode)
             if parsed_results:
-                # filter with the last feasible rule
                 for result in parsed_results[::-1]:
                     if result["type"] in ("product", "package", "lot"):
                         barcode_type = result["type"]
@@ -284,7 +262,6 @@ class StockPicking(models.Model):
         is_uom_enabled = self.env.user.has_group("base.group_uom")
 
         picking_nums = 0
-        # `action_view_new_picking` ("New" on the filtered kanban) requires `active_model`.
         additional_context = {
             "active_id": active_id,
             "active_model": "stock.picking.type",
@@ -295,13 +272,13 @@ class StockPicking(models.Model):
             )
             if (
                 not product and is_uom_enabled
-            ):  # Packaging barcode is also of type 'product' (barcodes unique accross product & packaging)
+            ):
                 product_packaging = self.env["product.uom"].search(
                     [("barcode", "=", barcode)], limit=1
                 )
                 product = (
                     product_packaging.product_id
-                )  # identify product linked with a packaging barcode
+                )
             if product:
                 picking_nums = self.search_count(
                     base_domain + [("product_id", "=", product.id)]
@@ -339,13 +316,13 @@ class StockPicking(models.Model):
                 additional_context["search_default_trace_id"] = lot.id
         if (
             not barcode_type and not picking_nums
-        ):  # Nothing found yet, try to find picking by name.
+        ):
             picking_nums = self.search_count(base_domain + [("name", "=", barcode)])
             additional_context["search_default_name"] = barcode
 
         if not picking_nums:
             if barcode_type:
-                message = self.env._(self._BARCODE_TYPE_NOT_READY[barcode_type])  # noqa: E8502  an _lt message rendered in the environment's language
+                message = self.env._(self._BARCODE_TYPE_NOT_READY[barcode_type])
                 return {
                     "warning": {
                         "message": message % {"picking_type": picking_type.name},
@@ -367,20 +344,12 @@ class StockPicking(models.Model):
         action["context"].update(additional_context)
         return {"action": action}
 
-    # One whole sentence per GS1 type `filter_on_barcode` classifies into, rather than the
-    # technical type name spliced into a translated one.
     _BARCODE_TYPE_NOT_READY = {
         "product": _lt("No %(picking_type)s ready for this product"),
         "package": _lt("No %(picking_type)s ready for this package"),
         "lot": _lt("No %(picking_type)s ready for this lot"),
     }
 
-    # Which sentence to show when a scan matches nothing, keyed by the features enabled:
-    # (lots, packages, packaging). The eight entries used to be eight nested `if` branches,
-    # which is the same table with the enabled/disabled facts spread across 24 lines instead
-    # of listed once. Each sentence stays whole rather than being assembled from translated
-    # fragments — word order and conjunctions differ per language, so a table of complete
-    # sentences is what a translator can actually work with.
     _BARCODE_FILTER_WARNINGS = {
         (True, True, True): (
             lambda barcode: _lt(
@@ -435,4 +404,4 @@ class StockPicking(models.Model):
         title, message = self._BARCODE_FILTER_WARNINGS[
             (bool(is_lot_enabled), bool(is_pack_enabled), bool(is_uom_enabled))
         ]
-        return self.env._(title(barcode)), self.env._(message)  # noqa: E8502  _lt messages, rendered in the environment's language
+        return self.env._(title(barcode)), self.env._(message)

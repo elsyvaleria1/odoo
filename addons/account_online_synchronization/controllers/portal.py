@@ -18,11 +18,8 @@ class OnlineSynchronizationPortal(CustomerPortal):
         sitemap=False,
     )
     def portal_online_sync_renew_consent(self, journal_id, access_token=None, **kw):
-        # Display a page to the user allowing to renew the consent for his bank sync.
-        # Requires the same rights as the button in odoo.
         journal_sudo = request.link_subject
         values = self._prepare_portal_layout_values()
-        # Ignore the route if the journal isn't one using bank sync.
         if not journal_sudo.account_online_account_id:
             raise request.prepare_not_found_error()
 
@@ -69,9 +66,7 @@ class OnlineSynchronizationPortal(CustomerPortal):
         website=True,
     )
     def portal_online_sync_action_complete(self, journal_id, access_token=None, **kw):
-        # Complete the consent renewal process
         journal_sudo = request.link_subject
-        # Ignore the route if the journal isn't one using bank sync.
         if not journal_sudo.account_online_link_id:
             raise request.prepare_not_found_error()
         try:
@@ -79,8 +74,6 @@ class OnlineSynchronizationPortal(CustomerPortal):
             journal_sudo.manual_sync()
         except UserError:
             pass
-        # The client reads this with post() from @web/core/network, which
-        # refuses JSON typed as text/html.
         return request.prepare_response(
             json_dumps({"status": "done"}),
             headers=[("Content-Type", "application/json")],

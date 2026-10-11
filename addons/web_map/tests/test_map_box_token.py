@@ -106,7 +106,6 @@ class TestMapBoxTokenOnchange(TransactionCase):
         )
 
     def test_present_referer_header_is_forwarded(self):
-        """Check that a real Referer header reaches the MapBox probe untouched."""
         settings = self._settings_with_token("token")
 
         with (
@@ -121,13 +120,6 @@ class TestMapBoxTokenOnchange(TransactionCase):
         self.assertEqual(headers.get("referer"), "https://example.com")
 
     def test_missing_referer_header_is_not_sent(self):
-        """Check that a missing Referer is left out instead of sent as None.
-
-        Regression test: requests silently drops a None-valued header rather
-        than raising or sending the literal string "None", so a MapBox token
-        restricted to a specific referer used to get an ambiguous validation
-        result whenever the browser sent no Referer at all.
-        """
         settings = self._settings_with_token("token")
 
         with (

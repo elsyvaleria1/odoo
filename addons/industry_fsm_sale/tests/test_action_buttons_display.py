@@ -68,16 +68,9 @@ class TestActionButtons(TransactionCase):
         )
 
     def test_send_sign_report_buttons_visibility_conditions(self):
-        # Sign/Send not visible if Time = 0 AND Products = 0
-        # Visible in non primary if Time > 0 OR Products > 0
-        # Visible in primary if Time > 0 AND Products > 0
-        # Send should be visible in primary if T,P > 0 and report not sent yet
-        # Send should be visible in secondary if T || P > 0 or report already sent
 
-        # Check Enabled Counter
         self.assertEqual(self.task.display_enabled_conditions_count, 2)
 
-        # Sign/send only visible if 'Products on Tasks' is enabled on the project
         self.project.allow_material = False
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
@@ -96,13 +89,11 @@ class TestActionButtons(TransactionCase):
         )
         self.assertEqual(self.task.display_enabled_conditions_count, 2)
 
-        # Not visible
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(self.task.display_send_report_secondary)
 
-        # Secondary if time > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         timesheet = self.env["account.analytic.line"].create(
             {
@@ -118,10 +109,9 @@ class TestActionButtons(TransactionCase):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
-        timesheet.task_id = False  # Unlink the task from the timesheet
+        self.assertTrue(self.task.display_send_report_secondary)
+        timesheet.task_id = False
 
-        # Secondary if product > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         self.task._fsm_get_or_create_sale_order()
         self.product_material.with_context(fsm_task_id=self.task.id).fsm_add_quantity()
@@ -130,21 +120,19 @@ class TestActionButtons(TransactionCase):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
+        self.assertTrue(self.task.display_send_report_secondary)
 
-        # Primary of all conditions met
-        timesheet.task_id = self.task  # Link the task to the timesheet
+        timesheet.task_id = self.task
         self.assertEqual(self.task.display_satisfied_conditions_count, 2)
         self.assertTrue(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is not signed yet
+        )
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is not signed yet
+        )
 
-        # Send visible in primary if report is signed and not sent yet
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
@@ -152,10 +140,10 @@ class TestActionButtons(TransactionCase):
         self.task.worksheet_signature = image
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is signed, not sent yet
+        )
         self.assertFalse(self.task.display_send_report_secondary)
         self.task.fsm_is_sent = True
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is sent then do not display button
+        )

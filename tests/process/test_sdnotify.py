@@ -52,7 +52,7 @@ def test_ready_watchdog_and_stopping_reach_the_manager(server, notify_socket, wo
         workers,
         env={
             "NOTIFY_SOCKET": path,
-            "WATCHDOG_USEC": "2000000",  # a beat every second
+            "WATCHDOG_USEC": "2000000",
         },
     )
     seen = _drain(sock, lambda s: "READY=1" in s)

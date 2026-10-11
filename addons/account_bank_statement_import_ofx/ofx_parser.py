@@ -56,8 +56,6 @@ class OfxParser(ofxparse.OfxParser):
         else:
             msec = datetime.timedelta(seconds=0)
 
-        # Some banks seem to return some OFX dates as YYYY-MM-DD; so we remove
-        # the '-' characters to support them as well
         ofxDateTime = ofxDateTime.replace("-", "")
 
         try:

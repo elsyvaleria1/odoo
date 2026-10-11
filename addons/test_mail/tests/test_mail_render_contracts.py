@@ -35,13 +35,6 @@ class TestEncapsulateContext(common.MailCommon):
         cls.layouts = ["mail.mail_notification_layout", "mail.mail_notification_light"]
 
     def test_a_supplied_subtype_does_not_raise(self):
-        """It used to read `subtype.is_internal`; the field is `internal`.
-
-        No call site supplies a subtype, which is why an `AttributeError` on
-        every layout went unnoticed. The value is not passed from Python at all
-        now — both layouts open by computing `subtype_internal` themselves — so
-        this asserts the render survives, not what it produced.
-        """
         subtype = self.env.ref("mail.mt_note")
         for layout in self.layouts:
             with self.subTest(layout=layout):
@@ -54,11 +47,6 @@ class TestEncapsulateContext(common.MailCommon):
                 self.assertIn("the body", rendered)
 
     def test_an_explicit_none_record_name_does_not_desync_the_subtitle(self):
-        """`.get` cannot tell absent from None, and the spread then won.
-
-        The caller got `record_name=None` alongside `subtitles=['Rec']`: two
-        keys describing one record, disagreeing.
-        """
         ctx = self.env["mixin.mail.render"]._render_encapsulate_context(
             self.body, {"record_name": None}, self.record
         )
@@ -79,9 +67,6 @@ class TestEncapsulateContext(common.MailCommon):
         self.assertEqual(ctx["subtitles"], ["Chosen"])
 
     def test_the_model_description_comes_from_the_hook(self):
-        """`sale` overrides `_get_model_description`; reading `ir.model` directly
-        gave this path and the notification pipeline different answers for the
-        same record."""
         expected = self.record.with_context(lang=self.env.lang)._get_model_description(
             self.record._name
         )
@@ -104,13 +89,6 @@ class TestRenderLangContract(common.MailCommon):
     """`_render_lang` answers a language for every id it is given."""
 
     def test_a_template_with_no_model_answers_rather_than_raising(self):
-        """`self.env[False]` raised `KeyError: False`.
-
-        `mail.template.model_id` is not required, and every caller subscripts
-        the result on the next expression — `account`, `calendar`, `trade`,
-        `hr_recruitment` and `website_slides` all do — so a template saved
-        without a model answered a KeyError to "which language?".
-        """
         template = self.env["mail.template"].create({"name": "no model"})
         record = self.env["mail.test.track"].create(
             {"name": "R", "email_from": "r@test.example.com"}
@@ -146,7 +124,6 @@ class TestDynamicFieldNames(common.MailCommon):
         )
 
     def test_a_silent_model_still_gets_the_inferred_set(self):
-        """Dropping the inference would ungate every model that has not declared."""
         composer = self.env["wizard.mail.message.send"]
         inferred = {
             fname
@@ -177,11 +154,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
         )
 
     def _both(self, markup):
-        """Render `markup` through each renderer, with one allow-listed placeholder.
-
-        The evaluated path is reached by wrapping that placeholder in something
-        no allow-list holds, which is what a real body does by accident.
-        """
         mixin = self.env["mixin.mail.render"]
         static = mixin._render_template_qweb(
             markup + '<b t-out="object.name"/>', self.model, [self.record.id]
@@ -208,7 +180,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
                 self.assertEqual(static, evaluated)
 
     def test_an_empty_body_is_empty_not_a_collapsed_wrapper(self):
-        """The wrapper is stripped by its affixes, and `<div/>` matches neither."""
         rendered = self.env["mixin.mail.render"]._render_template_qweb(
             '<t t-out="object.user_id.name"/>', self.model, [self.record.id]
         )[self.record.id]
@@ -220,14 +191,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
         self.assertEqual(static, evaluated)
 
     def test_the_two_renderers_escape_a_value_the_same_way(self):
-        """A quote in a name used to come out `"` from one and `&#34;` from the other.
-
-        The evaluation-free path built its output by putting the value into the
-        tree and letting lxml serialise it, and lxml leaves quotes alone in text.
-        QWeb escapes a value through markupsafe. Compiling the template to
-        literal segments made the escaping this renderer's own decision, so it
-        can make QWeb's.
-        """
         mixin = self.env["mixin.mail.render"]
         for name in ('say "hi"', "it's", "a & b", "<b>x</b>", "ünï", "plain"):
             with self.subTest(name=name):
@@ -243,7 +206,6 @@ class TestRendererSerialisationAgrees(common.MailCommon):
                 self.assertEqual(str(static), str(evaluated))
 
     def test_a_markup_value_is_inserted_as_markup(self):
-        """An html field's value is markup, and both paths must keep it so."""
         mixin = self.env["mixin.mail.render"]
         self.env.user.signature = Markup("<b>Sig &amp; co</b>")
         record = self.env[self.model].create(
@@ -282,7 +244,6 @@ class TestStaticMarkerIntegrity(common.MailCommon):
             {"name": "Rec", "email_from": "marker@test.example.com"}
         )
 
-    #: what the renderer writes into a `t-out` element before serialising
     MARKER = "\ue000{}\ue001"
 
     def _render(self, src):
@@ -293,15 +254,12 @@ class TestStaticMarkerIntegrity(common.MailCommon):
         )
 
     def test_a_marker_in_the_body_does_not_become_a_placeholder(self):
-        """It rendered `<p>Rec</p>`: the author's literal text, overwritten."""
         marker = self.MARKER.format(0)
         rendered = self._render(f'<p>{marker}</p><b t-out="object.name">d</b>')
         self.assertIn(marker, rendered)
         self.assertEqual(rendered.count("Rec"), 1)
 
     def test_a_marker_naming_a_slot_that_does_not_exist_is_not_a_crash(self):
-        """`holes[5]` raised IndexError straight out of `_render_template`,
-        past `_check_render_error` and every caller's error handling."""
         rendered = self._render(
             f'<p>{self.MARKER.format(5)}</p><b t-out="object.name">d</b>'
         )
@@ -328,7 +286,6 @@ class TestEmptyRelationRendersTheDefault(common.MailCommon):
         cls.record = cls.env[cls.model].create(
             {"name": "NoUser", "email_from": "nouser@test.example.com"}
         )
-        # forces the evaluated path without touching the expression under test
         cls.force_evaluation = '<i t-out="1 + 1"/>'
 
     def test_every_engine_answers_the_default(self):
@@ -395,19 +352,11 @@ class TestStaticExpressionRoots(common.MailCommon):
         )
 
     def test_an_unreachable_root_does_not_raise_and_does_not_diverge(self):
-        """The contract is that neither renderer raises, and that they agree.
-
-        Not *what* the placeholder resolves to: an expression rooted somewhere
-        this renderer cannot reach has no value here by definition, and the
-        evaluated path resolves an allow-listed expression the same tolerant
-        way (`_mail_resolve_allowed`) precisely so the two cannot differ.
-        """
         model_cls = type(self.env[self.model])
         original = model_cls.mail_allowed_qweb_expressions
         self.patch(
             model_cls,
             "mail_allowed_qweb_expressions",
-            # `env` is in `_render_eval_context` and in no static root table
             lambda self: (*original(self), "env.uid"),
         )
         mixin = self.env["mixin.mail.render"]
@@ -477,7 +426,6 @@ class TestStaticProgramIsCompiledOnce(common.MailCommon):
         record = self.env[model].create(
             {"name": "Once", "email_from": "once@test.example.com"}
         )
-        # unique per run: the decision is cached on (model, source, options)
         src = '<p t-out="object.name"/><span>%s</span>' % record.id
         calls = []
         mixin_cls = type(self.env["mixin.mail.render"])
@@ -523,11 +471,9 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
         cls.empty = cls.env[cls.model].create(
             {"name": "Empty", "email_from": "empty@test.example.com"}
         )
-        # a placeholder no allow-list holds, so the whole body needs an evaluator
         cls.force_evaluation = '<i t-out="1 + 1"/>'
 
     def _both(self, source, record):
-        """Render one body through each renderer and hand back both."""
         mixin = self.env["mixin.mail.render"]
 
         def go(src):
@@ -571,8 +517,6 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
                 self.assertEqual(evaluation_free, evaluated)
 
     def test_an_allow_listed_field_the_model_lacks_is_not_an_error(self):
-        """It raised `UserError` on the evaluated path — so a body that renders
-        today started failing the moment anyone added a placeholder elsewhere."""
         evaluation_free, evaluated = self._both(
             '<p t-out="object.contact_name">cn</p>', self.filled
         )
@@ -580,8 +524,6 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
         self.assertEqual(evaluated, "<p>cn</p>")
 
     def test_a_valueless_placeholder_keeps_its_element_on_both(self):
-        """QWeb drops the element entirely; this renderer keeps the blank line,
-        and `mail`'s own TestRegexRendering pins keeping it."""
         evaluation_free, evaluated = self._both(
             '<p t-out="object.user_id"/>', self.empty
         )
@@ -589,8 +531,6 @@ class TestTheTwoRenderersAgreeOnAllowListedPlaceholders(common.MailCommon):
         self.assertEqual(evaluated, "<p></p>")
 
     def test_a_non_allow_listed_expression_still_reaches_the_evaluator(self):
-        """The tolerant lookup is scoped to the allow-list: everything else must
-        still compile to real Python, or `mail.template` loses its expressions."""
         rendered = self.env["mixin.mail.render"]._render_template_qweb(
             '<p t-out="object.name.upper()"/>', self.model, [self.filled.id]
         )[self.filled.id]
@@ -602,9 +542,6 @@ class TestRenderModelIsChecked(common.MailCommon):
     """A render model that is not a model is a domain error, not a `KeyError`."""
 
     def test_a_template_without_a_model_says_so(self):
-        """`self.env[False]` answered `KeyError: False`, naming neither the
-        template nor the field. `model_id` is not required, and `_render_lang`
-        was already fixed for exactly this input."""
         template = self.env["mail.template"].create(
             {"name": "no model", "subject": "Hi {{ object.name }}"}
         )
@@ -627,11 +564,6 @@ class TestUnsafeExpressionScanScope(common.MailCommon):
     """What the placeholder scan reads, and what it has no business reading."""
 
     def test_a_qweb_view_field_is_not_scanned_as_a_template_body(self):
-        """A `qweb_view` field holds a view *reference*, and a view's arch is
-        admin content this scan has no business judging. Falling through to the
-        qweb check reached "safe" by accident instead: it parsed the reference as
-        HTML, and `42` is a text node with no directives in it.
-        """
         template = self.env["mail.template"].create(
             {
                 "name": "view engine",
@@ -649,8 +581,6 @@ class TestUnsafeExpressionScanScope(common.MailCommon):
             self.patch(
                 mixin_cls, name, _get_scanning(getattr(mixin_cls, name), scanned)
             )
-        # `body_html` is the field that declares an engine at all; point it at
-        # the one whose value is a reference rather than a body
         self.assertEqual(template._fields["body_html"].render_engine, "qweb")
         self.patch(template._fields["body_html"], "render_engine", "qweb_view")
         template._has_unsafe_expression()
@@ -660,8 +590,6 @@ class TestUnsafeExpressionScanScope(common.MailCommon):
         )
 
     def test_the_scan_reports_fields_in_a_stable_order(self):
-        """Which field is blamed for a rejected template should not depend on
-        set iteration order."""
         template = self.env["mail.template"].create(
             {
                 "name": "order",

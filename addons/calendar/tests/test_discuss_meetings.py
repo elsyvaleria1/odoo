@@ -44,7 +44,6 @@ class TestDiscussMeetings(MailCommon):
         )
 
     def _create_ad_hoc_meeting(self, name):
-        # create_date comes from the database clock, which freeze_time does not reach
         with self.mock_datetime_and_now(fields.Datetime.now()):
             return self.env["discuss.channel"]._create_group(
                 self.organizer.partner_id.ids,
@@ -164,8 +163,6 @@ class TestDiscussMeetings(MailCommon):
         channel = deleted.videocall_channel_id
         channel.message_post(body="Let's review the demo", message_type="comment")
         with freeze_time("2024-05-21 10:00:00"):
-            # after the last message, or unpin_dt equals last_interest_dt,
-            # which is_pinned reads as still pinned
             deleted.unlink()
         self.assertTrue(channel.exists(), "its chat history is kept")
         self.assertFalse(channel.calendar_event_ids)
@@ -191,7 +188,6 @@ class TestDiscussMeetings(MailCommon):
         today = self._create_meeting("Product Demo", datetime(2024, 5, 20, 14, 0))
         spanning = self._create_meeting("Team Building", datetime(2024, 5, 19, 9, 0))
         spanning.stop = datetime(2024, 5, 21, 18, 0)
-        # its channel is created today, its meeting is tomorrow
         tomorrow = self._create_meeting("Weekly Sync", datetime(2024, 5, 21, 14, 0))
         ad_hoc = self._create_ad_hoc_meeting("Ad-hoc Call")
         with freeze_time("2024-05-19 10:00:00"):
@@ -208,7 +204,6 @@ class TestDiscussMeetings(MailCommon):
 
     @freeze_time("2024-05-20 23:00:00")
     def test_today_follows_the_timezone_of_the_user(self):
-        # already 2024-05-21 01:00 in Brussels
         today_for_them = self._create_meeting(
             "Product Demo", datetime(2024, 5, 21, 10, 0)
         )

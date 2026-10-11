@@ -14,8 +14,6 @@ class TestWebhookCompanyScope(TestExpenseCommon):
         cls.other_company = cls.company_data_2["company"]
 
     def _deliver(self, process, event):
-        # the webhook's environment: elevated, in the company whose signed
-        # webhook it is
         env = self.env(su=True, context={"allowed_company_ids": self.env.company.ids})
         return process(StripeIssuingController(), env, event)
 

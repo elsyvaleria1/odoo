@@ -92,11 +92,6 @@ class ResCompany(models.Model):
         )
 
     def _get_date_range(self, years=False, force_period=False):
-        """Return the date range for a production schedude depending the
-        manufacturing period and the number of columns to display specify by the
-        user. It returns a list of tuple that contains the timestamp for each
-        column.
-        """
         self.check_singleton()
         date_range = []
         period = force_period or self.manufacturing_period
@@ -178,5 +173,4 @@ class ResCompany(models.Model):
         return super().write(vals)
 
     def save_company_settings(self, vals):
-        """Function to call from JS to avoid a full reload of the page and context."""
         return self.write(vals)

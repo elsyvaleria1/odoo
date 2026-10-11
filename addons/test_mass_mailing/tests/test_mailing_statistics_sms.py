@@ -44,11 +44,9 @@ class TestMailingStatistics(TestMassSMSCommon):
         with self.mockSMSGateway():
             mailing.action_send_sms()
 
-        # simulate some delivery reports
         for record_idx in range(4):
             self.gateway_sms_delivered(mailing, target_records[record_idx])
 
-        # simulate some replies and clicks
         for record_idx in (0, 2, 3):
             self.gateway_sms_click(mailing, target_records[record_idx])
 
@@ -81,13 +79,11 @@ class TestMailingStatistics(TestMassSMSCommon):
             "Mailing: a mail should have been created for statistics",
         )
         mail = self._new_mails[0]
-        # test email values
         self.assertEqual(mail.author_id, self.user_marketing_2.partner_id)
         self.assertEqual(mail.email_from, self.user_marketing_2.email_formatted)
         self.assertEqual(mail.email_to, self.user_marketing_2.email_formatted)
         self.assertEqual(mail.reply_to, self.company_admin.partner_id.email_formatted)
         self.assertEqual(mail.state, "outgoing")
-        # test body content: KPIs
         body_html = html.fromstring(mail.body_html)
         kpi_values = body_html.xpath(
             '//table[@data-field="sms"]//*[hasclass("kpi_value")]/text()'
@@ -100,7 +96,6 @@ class TestMailingStatistics(TestMassSMSCommon):
                 str(float(mailing.bounced_ratio)),
             ],
         )
-        # test body content: clicks (a bit hackish but hey we are in stable)
         kpi_click_values = body_html.xpath(
             '//table//tr[contains(@style,"color: #888888")]/td[contains(@style,"width: 30%")]/text()'
         )
@@ -114,8 +109,6 @@ class TestMailingStatistics(TestMassSMSCommon):
         "odoo.addons.mail.models.mixin_mail_thread",
     )
     def test_sent_delivered_sms(self):
-        """Test that if we get delivered trace status first instead of sent from
-        providers for some reasons, the statistics for sent SMS will be correct."""
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
         target_records = self.env["mail.test.sms"].browse(self.records.ids)
         mailing.write(

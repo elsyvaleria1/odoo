@@ -2,9 +2,6 @@ from odoo.tests import common, tagged
 
 from odoo.addons.partner_autocomplete.tests.common import MockIAPPartnerAutocomplete
 
-# Two distinct, valid, minimal 1x1 PNGs (base64) used to tell a "manual" logo
-# apart from an "IAP-fetched" one without relying on byte-for-byte equality
-# with the un-reprocessed input (Odoo re-encodes image fields on write).
 MANUAL_LOGO = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 IAP_LOGO = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
@@ -24,13 +21,11 @@ class TestResCompany(common.TransactionCase, MockIAPPartnerAutocomplete):
 
         company.write({"email": "friedrich@heinrich.de"})
         with self.mockPartnerAutocomplete():
-            # asserts are synchronized with default mock values
             res = company._enrich()
             self.assertTrue(res)
             self.assertEqual(company.country_id, self.env.ref("base.de"))
 
     def test_enrich_does_not_overwrite_manual_logo(self):
-        """`_enrich()` must not clobber a manually-uploaded company logo."""
         company = self.env["res.company"].create({"name": "Test Company 2"})
         company.partner_id.image_1920 = MANUAL_LOGO
         manual_logo_processed = company.partner_id.image_1920
@@ -43,10 +38,6 @@ class TestResCompany(common.TransactionCase, MockIAPPartnerAutocomplete):
         self.assertEqual(company.partner_id.image_1920, manual_logo_processed)
 
     def test_enrich_ignores_fields_outside_allowlist(self):
-        """`_enrich()` must not write partner fields outside its enrichment
-        allowlist, even when the IAP response happens to include a key that
-        matches a real `res.partner` field name.
-        """
         company = self.env["res.company"].create({"name": "Test Company 3"})
         company.write({"email": "friedrich@heinrich.de"})
         with self.mockPartnerAutocomplete(

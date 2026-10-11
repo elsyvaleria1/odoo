@@ -49,9 +49,6 @@ class IrActionsServer(models.Model):
         }
 
     def _run(self, records: models.Model, eval_context: dict) -> dict | bool:
-        # A pinned action is the folder editor's delegation: the caller has been
-        # checked for the pin and for write on the records, and the action then
-        # runs with the pinner's authority rather than the caller's.
         if self._get_run_config().usage == "documents_embedded" and not records.env.su:
             _debug.logic("embedded_action_elevated", action=self, records=records)
             env = eval_context["env"](su=True)
@@ -67,10 +64,6 @@ class IrActionsServer(models.Model):
 
     def _check_access_to_run(self, records: models.Model) -> None:
         if self._get_run_config().usage == "documents_embedded":
-            # `_run` elevates, so write on the records is asked here whatever
-            # the action's groups: base checks it only for an action without
-            # them, and a groups-gated action pinned on a folder otherwise ran
-            # as superuser for a caller who could only view its documents
             if not records:
                 _debug.logic(
                     "embedded_action_refused", reason="no_records", action=self
@@ -87,8 +80,6 @@ class IrActionsServer(models.Model):
                 )
                 raise
             _debug.logic("embedded_action_write_checked", action=self, records=records)
-            # The pinned actions are a property of the folder, so resolve
-            # them once per folder rather than once per record.
             for folder_records in records.grouped("folder_id").values():
                 available_sudo = (
                     self.env["ir.actions.server"]

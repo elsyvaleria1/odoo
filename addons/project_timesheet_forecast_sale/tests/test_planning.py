@@ -33,7 +33,6 @@ class TestPlanning(TestCommonSalePlanning):
         PlanningSlot.action_copy_previous_week(
             str(copy_start),
             [
-                # dummy domain
                 ("start_datetime", "=", True),
                 ("end_datetime", "=", True),
             ],
@@ -47,7 +46,6 @@ class TestPlanning(TestCommonSalePlanning):
         )
 
     def test_planning_analysis_sale_report_fields(self):
-        """This test ensure that the fields of the planning analysis report are correctly computed"""
         so = self.env["sale.order"].create(
             {
                 "partner_id": self.planning_partner.id,

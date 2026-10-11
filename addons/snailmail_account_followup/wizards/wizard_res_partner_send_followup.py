@@ -26,9 +26,7 @@ class WizardResPartnerSendFollowup(models.TransientModel):
     @api.depends("partner_id")
     def _compute_snailmail_cost(self) -> None:
         for record in self:
-            # We send the letter to the main address of the company (self) and the followup contact
             record.snailmail_cost = len(record.partner_id._get_followup_contact()) + 1
 
     def _get_followup_request(self):
-        # EXTENDS account_followup/wizards/followup_manual_reminder.py
         return super()._get_followup_request().with_channel("snailmail", self.snailmail)

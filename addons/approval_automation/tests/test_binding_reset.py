@@ -90,7 +90,6 @@ class TestApprovalBindingReset(common.TransactionCase):
         return runs
 
     def test_the_managed_rule_keeps_its_transition_filter(self):
-        """automation.rule clears its pre-update filter whenever `trigger` moves."""
         binding = self._bind(mode="block")
         rule = binding.reset_automation_id
         self.assertEqual(rule.trigger, "on_create_or_write")
@@ -113,7 +112,6 @@ class TestApprovalBindingReset(common.TransactionCase):
         self.assertTrue(partner.active)
 
     def test_an_edit_by_a_user_who_cannot_manage_approvals_still_resets(self):
-        """Resetting an approved request needs a manager; the rule's action runs elevated."""
         binding = self._bind(mode="block", sudo_policy="enforce")
         partner = self.env["res.partner"].create({"name": "Plain", "city": "Start"})
         request = self._approved_request(partner, binding)
@@ -121,11 +119,6 @@ class TestApprovalBindingReset(common.TransactionCase):
         self.assertEqual(request.state, "new")
 
     def test_an_edit_that_keeps_the_record_in_the_condition_resets_nothing(self):
-        """Approved while already matching, then a field the condition reads changes.
-
-        The rule does not fire for a write that leaves every trigger field unchanged,
-        so only a real change within the condition exercises the transition filter.
-        """
         binding = self._bind(
             mode="block",
             sudo_policy="enforce",
@@ -150,7 +143,6 @@ class TestApprovalBindingReset(common.TransactionCase):
         self.assertEqual(request.state, "new")
 
     def test_a_second_cycle_runs_on_approval_again(self):
-        """The reset clears the one-shot stamp; a reused request is confirmed again."""
         binding = self._bind(mode="request")
         runs = self._count_runs()
         partner = self.env["res.partner"].create(
@@ -176,7 +168,6 @@ class TestApprovalBindingReset(common.TransactionCase):
         )
 
     def test_a_decision_on_a_request_still_waiting_is_reset_too(self):
-        """Studio's test_create_automation: a reset clears decisions, approved or not."""
         category = self.env["approval.category"].create(
             {"name": "Reset Steps", "allow_self_approval": True}
         )

@@ -17,7 +17,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Create some products
         self.product3 = self.env["product.product"].create(
             {
                 "name": "product3",
@@ -40,7 +39,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Create locations dedicated to package
         self.shelf5 = self.env["stock.location"].create(
             {
                 "name": "Section 5",
@@ -49,11 +47,9 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Create some packages
         self.package1 = self.env["stock.package"].create({"name": "p5pack01"})
         self.package2 = self.env["stock.package"].create({"name": "p5pack02"})
 
-        # Create some quants (for deliveries)
         Quant = self.env["stock.quant"]
         quants = Quant.with_context(inventory_mode=True).create(
             {
@@ -114,7 +110,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
         quants.action_apply_inventory()
 
-        # Create a first receipt for 2 products.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_in
         with picking_form.move_ids.new() as move:
@@ -126,7 +121,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.picking_receipt_1 = picking_form.save()
         self.picking_receipt_1.action_confirm()
 
-        # Create a second receipt for 2 products.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_in
         with picking_form.move_ids.new() as move:
@@ -138,11 +132,9 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.picking_receipt_2 = picking_form.save()
         self.picking_receipt_2.action_confirm()
 
-        # Changes name of pickings to be able to track them on the tour
         self.picking_receipt_1.name = "picking_receipt_1"
         self.picking_receipt_2.name = "picking_receipt_2"
 
-        # Create a first delivery for 2 products.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_out
         with picking_form.move_ids.new() as move:
@@ -155,7 +147,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.picking_delivery_1.action_confirm()
         self.picking_delivery_1.action_assign()
 
-        # Create a second delivery for 3 products.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_out
         with picking_form.move_ids.new() as move:
@@ -171,7 +162,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.picking_delivery_2.action_confirm()
         self.picking_delivery_2.action_assign()
 
-        # Create a delivery dedicated to package testing.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_out
         with picking_form.move_ids.new() as move:
@@ -181,8 +171,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.picking_delivery_package.action_confirm()
         self.picking_delivery_package.action_assign()
 
-        # Create another quant with package after reservation to test scan
-        # unexpected package in the Barcode App.
         Quant.with_context(inventory_mode=True).create(
             {
                 "product_id": self.product5.id,
@@ -192,7 +180,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         ).action_apply_inventory()
 
-        # Changes name of pickings to be able to track them on the tour
         self.picking_delivery_1.name = "picking_delivery_1"
         self.picking_delivery_2.name = "picking_delivery_2"
         self.picking_delivery_package.name = "picking_delivery_package"
@@ -201,9 +188,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         return f"/odoo/{batch_id}/action-stock_barcode_picking_batch.stock_barcode_picking_batch_client_action"
 
     def test_barcode_batch_receipt_1(self):
-        """Create a batch picking with 3 receipts, then open the batch in
-        barcode app and scan each product, SN or LN one by one.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -212,7 +196,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
                 ],
             }
         )
-        # Creates an additional receipt for the product tracked by lots.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_in
         with picking_form.move_ids.new() as move:
@@ -241,15 +224,10 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
 
         url = self._get_batch_client_action_url(batch_receipt.id)
         self.start_tour(url, "test_barcode_batch_receipt_1", login="admin", timeout=180)
-        # Checks user was assign on the batch and its pickings.
         self.assertEqual(batch_receipt.user_id.id, self.env.user.id)
         self.assertEqual(picking_receipt_3.user_id.id, self.env.user.id)
 
     def test_barcode_batch_delivery_1(self):
-        """Create a batch picking with 2 deliveries (split into 3 locations),
-        then open the batch in barcode app and scan each product.
-        Change the location when all products of the page has been scanned.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -259,7 +237,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
         batch_form = Form(self.env["stock.picking.batch"])
-        # Adds two quantities for product tracked by SN.
         sn1 = self.env["product.trace"].create(
             {"name": "sn1", "product_id": self.productserial1.id}
         )
@@ -283,8 +260,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         ).action_apply_inventory()
 
-        # Creates a delivery for a product tracked by SN, the purpose is to
-        # reserve sn1 and scan sn2 instead.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_out
         with picking_form.move_ids.new() as move:
@@ -320,16 +295,11 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_barcode_batch_delivery_2_move_entire_package(self):
-        """Creates a batch picking with 2 deliveries while the delivery picking type use the "move
-        entire package" setting and check lines are correctly displayed as package line when moving
-        the entire package, or as usual barcode line in other cases.
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_tracking_lot").id)]}
         )
         self.picking_type_out.show_entire_packs = True
 
-        # Creates two packages and adds some quantities on hand.
         pack1 = self.env["stock.package"].create({"name": "pack1"})
         pack2 = self.env["stock.package"].create({"name": "pack2"})
         self.env["stock.quant"].with_context(inventory_mode=True).create(
@@ -357,7 +327,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         ).action_apply_inventory()
 
-        # Creates two deliveries.
         picking_form = Form(self.env["stock.picking"])
         picking_form.picking_type_id = self.picking_type_out
         with picking_form.move_ids.new() as move:
@@ -382,11 +351,9 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         delivery_2.action_confirm()
         delivery_2.action_assign()
 
-        # Changes name of pickings to be able to track them on the tour.
         delivery_1.name = "delivery_1"
         delivery_2.name = "delivery_2"
 
-        # Creates and confirms the batch.
         batch_form = Form(self.env["stock.picking.batch"])
         batch_form.picking_ids.add(delivery_1)
         batch_form.picking_ids.add(delivery_2)
@@ -402,10 +369,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_barcode_batch_operation_buttons_count(self):
-        """Checks the count number of regular pickings and batch pickings
-        buttons is correctly computed in the Baroce app.
-        """
-        # Create a company for this test purpose and assign it to the user.
         company = self.env["res.company"].create({"name": "Company Test"})
         self.env.user.write(
             {
@@ -419,7 +382,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
         warehouse.code = "TEST"
         picking_type_in = warehouse.in_type_id
-        # Disable auto-batch for the receipts, so a batch will be created only for deliveries.
         picking_type_in.auto_batch = False
         picking_type_out = warehouse.out_type_id
         src_location = picking_type_out.default_location_src_id
@@ -427,7 +389,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.product3, src_location, 99
         )
 
-        # Create 2 receipts and 3 deliveries.
         pickings = self.env["stock.picking"]
         for ptype in ([picking_type_in] * 2) + ([picking_type_out] * 3):
             pickings |= self.env["stock.picking"].create(
@@ -454,10 +415,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_barcode_batch_scan_lots(self):
-        """Checks while scanning lots for a tracked product, the currently selected line must be
-        completed before changing the line, even if the scanned lot is planned for another picking
-        or another picking has an empty line for this product.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -479,7 +436,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.productlot1, self.stock_location, 3, trace_id=lot2
         )
 
-        # Create two receipts and batch them (test for unreserved lots.)
         receipt_form = Form(self.env["stock.picking"])
         receipt_form.picking_type_id = self.picking_type_in
         with receipt_form.move_ids.new() as move:
@@ -500,7 +456,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         batch_receipt.action_confirm()
         batch_receipt.name = "test_barcode_batch_scan_lots - receipt"
 
-        # Create two deliveries and batch them (test for reserved lots.)
         delivery_form = Form(self.env["stock.picking"])
         delivery_form.picking_type_id = self.picking_type_out
         with delivery_form.move_ids.new() as move:
@@ -521,7 +476,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         batch_delivery.action_confirm()
         batch_delivery.name = "test_barcode_batch_scan_lots - delivery"
 
-        # Process both of them (first the receipt then the delivery.)
         self.start_tour(
             "/odoo/action-stock_barcode.stock_barcode_action_main_menu",
             "test_barcode_batch_scan_lots",
@@ -529,7 +483,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             timeout=180,
         )
 
-        # Checks pickings move lines values.
         lot1, lot2, lot3 = (
             batch_receipt | batch_delivery
         ).move_line_ids.trace_id.sorted("name")
@@ -584,8 +537,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_barcode_batch_scan_other_reserved_lost(self):
-        """Checks that scanning a lot won't erase the reserved one if the
-        scanned one is reserved too."""
         self.env.user.write(
             {
                 "group_ids": [
@@ -595,7 +546,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
         self.picking_type_out.show_reserved_sns = True
-        # Create some lots and add quantity in stock for them.
         common_vals = {
             "product_id": self.productlot1.id,
             "company_id": self.env.company.id,
@@ -607,11 +557,9 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.env["stock.quant"]._update_available_quantity(
                 self.productlot1, self.stock_location, 3, trace_id=lot
             )
-        # Add 1 unit without lot
         self.env["stock.quant"]._update_available_quantity(
             self.productlot1, self.stock_location, 1, trace_id=False
         )
-        # Create a delivery and batch it alone (a batch with a single picking is enough for this test's purpose.)
         delivery = self.env["stock.picking"].create(
             {
                 "name": "delivery with lots",
@@ -646,14 +594,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_put_in_pack_from_multiple_pages(self):
-        """A batch picking of 2 internal pickings where prod1 and prod2 are reserved in shelf1 and shelf2,
-        processing all these products and then hitting put in pack should move them all in the new pack.
-
-        This is a copy of the stock_barcode `test_put_in_pack_from_multiple_pages` test with exception that
-        there are 2 internal pickings containing the 2 products. We expect the same UI and behavior with the
-        batch's `put_in_pack` button as we do with a single internal transfer so we re-use the same exact tour.
-        Note that batch `put_in_pack` logic is not the same as it is for pickings.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -675,7 +615,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.product2, self.shelf2, 1
         )
 
-        # Adapts the setting to scan only the source location.
         self.picking_type_internal.restrict_scan_dest_location = "no"
         self.picking_type_internal.restrict_scan_source_location = "mandatory"
 
@@ -740,16 +679,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.assertEqual(sum(pack.quant_ids.mapped("quantity")), 4)
 
     def test_put_in_pack_before_dest(self):
-        """A batch picking of 2 internal pickings where prod1 and prod2 are reserved in shelf1 and shelf3,
-        and have different move destinations. Processing the products and then put in pack should open a choose
-        destination wizard which will help make sure the package ends up where its expected.
-
-        This is a copy of the stock_barcode `test_put_in_pack_before_dest` test with exception that
-        there are 2 internal pickings containing the 2 products. We expect the same UI and behavior with the
-        batch's `put_in_pack` button as we do with a single internal transfer so we re-use the same exact tour.
-        For some reason the order of the move lines in the destination wizard is different, so we swap the expected
-        destination in this test (since it doesn't matter).
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -827,11 +756,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.assertEqual(pack.location_id, self.shelf2)
 
     def test_put_in_pack_scan_suggested_package(self):
-        """Create two deliveries with a line from two different locations each.
-        Then, group them in a batch and process the batch in barcode.
-        Put first picking line in a package and the second one in another package,
-        then change the location page and scan the suggested packaged for each picking lines.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -852,7 +776,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.product3, self.shelf1, 1
         )
 
-        # Creates a first delivery with 2 move lines: one from Section 1 and one from Section 2.
         delivery_form = Form(self.env["stock.picking"])
         delivery_form.picking_type_id = self.picking_type_out
         with delivery_form.move_ids.new() as move:
@@ -868,7 +791,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         delivery_1.action_confirm()
         delivery_1.action_assign()
 
-        # Creates a second delivery (same idea than the first one).
 
         delivery_form = Form(self.env["stock.picking"])
         delivery_form.picking_type_id = self.picking_type_out
@@ -882,7 +804,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         delivery_2.action_confirm()
         delivery_2.action_assign()
 
-        # Changes name of pickings to be able to track them on the tour
         delivery_1.name = "test_delivery_1"
         delivery_2.name = "test_delivery_2"
 
@@ -908,7 +829,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.assertEqual(move_line.result_package_id.name, "PACK0000002")
 
     def test_batch_create(self):
-        """Create a batch picking via barcode app from scratch"""
         self.env.user.write(
             {
                 "group_ids": [
@@ -935,16 +855,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.assertEqual(len(batch_delivery.move_line_ids), 7)
 
     def test_pack_and_same_product_several_sml(self):
-        """
-        A batch with two transfers, source and destination are the same. The
-        first picking contains 3 x P1 and 25 x P2, the second one 7 x P1 and
-        30 x P2. The 10 P1 are in a package PK1. The situation is more
-        complicated for the second product: there are 100 P2 in a package PK2.
-        When processing the batch, if the user scans the package PK1, it should
-        update all move lines related to P1. Then, when scanning PK2, it should
-        also update the move lines related to P2 and a new line should be
-        created for the surplus (45 x P2).
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_tracking_lot").id)]}
         )
@@ -957,9 +867,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             self.product2, self.shelf1, 100, package_id=package02
         )
 
-        # Two pickings,
-        #   one with 3 x P1 and 25 x P2
-        #   one with 7 x P1 and 30 x P2
         pickings = self.env["stock.picking"].create(
             [
                 {
@@ -1036,9 +943,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_setting_group_lines_by_product(self):
-        """Checks lines are correctly grouped even when from different pickings
-        in case the parameter `group_lines_by_product` is enabled.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -1049,7 +953,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
         self.picking_type_in.group_lines_by_product = True
 
-        # Creates 3 receipts.
         receipt1 = self.env["stock.picking"].create(
             {
                 "name": "receipt1",
@@ -1077,7 +980,7 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
         self.env["stock.move"].create(
             [
-                {  # receipt1 moves.
+                {
                     "location_id": self.supplier_location.id,
                     "location_dest_id": self.stock_location.id,
                     "product_id": self.product1.id,
@@ -1091,7 +994,7 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
                     "product_uom_qty": 4,
                     "picking_id": receipt1.id,
                 },
-                {  # receipt2 moves.
+                {
                     "location_id": self.supplier_location.id,
                     "location_dest_id": self.stock_location.id,
                     "product_id": self.productlot1.id,
@@ -1114,7 +1017,7 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
                     "product_uom_qty": 5,
                     "picking_id": receipt2.id,
                 },
-                {  # receipt3 moves.
+                {
                     "location_id": self.supplier_location.id,
                     "location_dest_id": self.stock_location.id,
                     "product_id": self.product1.id,
@@ -1124,7 +1027,7 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
                 },
                 {
                     "location_id": self.supplier_location.id,
-                    "location_dest_id": self.shelf2.id,  # Not the same destination, should not be grouped.
+                    "location_dest_id": self.shelf2.id,
                     "product_id": self.product1.id,
                     "product_uom_qty": 2,
                     "picking_id": receipt3.id,
@@ -1136,7 +1039,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         receipts.action_confirm()
         receipts.action_assign()
 
-        # Creates a new batch and adds receipts in it.
         batch_receipts = self.env["stock.picking.batch"].create(
             {
                 "name": "batch receipts test",
@@ -1151,9 +1053,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_setting_group_lines_by_product_when_tracking_is_off(self):
-        """This test ensures lines are grouped by product in batch if the option is enabled even if
-        tracking setting is off (used to define if lines should be grouped or not.)"""
-        # Explicitly remove the tracking group access right.
         self.env.ref("base.group_user").write(
             {
                 "implied_ids": [
@@ -1196,9 +1095,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_split_line_on_exit_for_batch(self):
-        """Ensures that exit an unfinished batch will split the uncompleted move lines to have one
-        move line with all picked quantity and one move line with the remaining quantity."""
-        # Creates a new batch.
         batch_receipts = self.env["stock.picking.batch"].create(
             {
                 "name": "batch_split_line_on_exit",
@@ -1206,8 +1102,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Creates two receipts (one for 4x product1, one for 4x product2) and add them to the batch.
-        # Creates a receipt for 4x product1 and a second receipt for 4x product2.
         receipt1 = self.env["stock.picking"].create(
             {
                 "batch_id": batch_receipts.id,
@@ -1249,7 +1143,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.start_tour(
             "odoo/barcode/", "test_split_line_on_exit_for_batch", login="admin"
         )
-        # Checks the receipts moves values.
         self.assertRecordValues(
             receipt1.move_ids,
             [
@@ -1278,9 +1171,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         )
 
     def test_scan_can_change_destination_location(self):
-        """When we have multiple pickings in a batch for the same product, we should be able to change
-        the destination location of each of them by scanning only once the destination.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -1330,15 +1220,10 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         url = self._get_batch_client_action_url(batch.id)
         self.start_tour(url, "test_scan_can_change_destination_location", login="admin")
 
-        # validate that SML destination locations changed
         move_lines = internal_picking_1.move_line_ids + internal_picking_2.move_line_ids
         self.assertEqual(move_lines.mapped("location_dest_id"), self.shelf3)
 
     def test_barcode_batch_partial_receipt_leave_reopen(self):
-        """
-        Create a batch picking with 2 receipts, open the batch and process
-        part of both pickings.
-        """
         self.picking_receipt_1.move_ids.filtered(
             lambda m: m.product_id == self.product1
         ).product_uom_qty = 5
@@ -1365,20 +1250,14 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         self.assertEqual(len(batch.move_line_ids), 7)
 
     def test_pack_batch_in_multiple_packages(self):
-        """
-        Batch deliveries and put in packs lines from different pickings.
-        Check that the lines still refer to their respective picking.
-        """
         grp_pack = self.env.ref("stock.group_tracking_lot")
         self.env.user.write({"group_ids": [Command.link(grp_pack.id)]})
-        # Creates a new batch.
         batch_receipts = self.env["stock.picking.batch"].create(
             {
                 "name": "test_pack_batch_in_multiple_packages",
                 "picking_type_id": self.picking_type_in.id,
             }
         )
-        # Creates two receipts (each containing product1 and product2) and add them to the batch.
         products = self.product1 | self.product2
         receipts = self.env["stock.picking"].create(
             [
@@ -1406,7 +1285,6 @@ class TestBarcodeBatchClientAction(TestBarcodeClientAction):
         batch_receipts.action_confirm()
         url = self._get_batch_client_action_url(batch_receipts.id)
         self.start_tour(url, "test_pack_batch_in_multiple_packages", login="admin")
-        # Checks the receipts moves values.
         self.assertFalse(receipts.backorder_ids)
         packages = (
             receipts[1]

@@ -224,8 +224,6 @@ class PosConfig(models.Model):
         max_height=1920,
     )
     customer_display_bg_img_name = fields.Char(string="Background Image Name")
-    # what the till hands a customer display: it opens the display and its
-    # channel, not the till's
     customer_display_token = fields.Char(compute="_compute_customer_display_token")
     customer_display_generation = fields.Integer(copy=False)
     restrict_price_control = fields.Boolean(
@@ -552,7 +550,7 @@ class PosConfig(models.Model):
             existing = browsed.exists()
 
             if model in domain:
-                dynamic_records[model] = self.env[model].search(domain[model])  # noqa: E8507 - one query per model
+                dynamic_records[model] = self.env[model].search(domain[model])
             delete_record_ids[model] = (browsed - existing).ids
             if model == "pos.order":
                 delete_record_ids[model] += (
@@ -745,7 +743,6 @@ class PosConfig(models.Model):
             if persisted
             else self.env["pos.session"]
         )
-        # Onchange records can contain sessions that have not reached the database.
         return sessions | (self - persisted).session_ids.filtered(
             lambda session: session.state != "closed"
         )
@@ -971,7 +968,6 @@ class PosConfig(models.Model):
 
     @api.constrains("company_id", "payment_method_ids")
     def _check_company_payment(self) -> None:
-        # a company-less method passes check_company but is refused here
         for config in self.sudo():
             if any(
                 method.company_id != config.company_id
@@ -1333,7 +1329,6 @@ class PosConfig(models.Model):
         return self.last_data_change
 
     def _get_currency_rate_change_date(self):
-        # the client caches prices converted at the rate of the day it loaded them
         company = self.company_id
         if self.currency_id == company.currency_id:
             return None
@@ -1483,7 +1478,6 @@ class PosConfig(models.Model):
                     and command[0] in (Command.CREATE, Command.UPDATE, Command.DELETE)
                     for command in val
                 ):
-                    # UPDATE conversion writes records; defer it until after validation.
                     new_vals[field] = val
                     continue
                 cache_value = config_field.convert_to_cache(val, self)
@@ -1654,7 +1648,6 @@ class PosConfig(models.Model):
             count = int(config_param)
         except TypeError, ValueError, OverflowError:
             count = -1
-        # PostgreSQL's LIMIT accepts a signed bigint, unlike Python's unbounded int.
         if 0 <= count < 2**63:
             return count
         _debug.logic(
@@ -1735,7 +1728,6 @@ class PosConfig(models.Model):
         }
 
     def _sync_trusted_config_ids(self, trusted_before) -> None:
-        # sharing open orders is mutual; the write on the other side ends the recursion
         for config in self:
             before = trusted_before[config]
             added = config.trusted_config_ids - before
@@ -1758,7 +1750,6 @@ class PosConfig(models.Model):
 
     def _has_category_limit(self) -> bool:
         self.check_singleton()
-        # the client reads an empty selection as no restriction
         return bool(self.limit_categories and self.iface_available_categ_ids)
 
     def _get_special_products(self):
@@ -1787,7 +1778,6 @@ class PosConfig(models.Model):
         self.check_access("write")
         self._pos_bus_revoke("customer_display", "customer_display_generation")
         for config in self:
-            # an open till opens its next display with the new link
             config._notify(
                 "CUSTOMER_DISPLAY_TOKEN", {"token": config.customer_display_token}
             )
@@ -2041,7 +2031,6 @@ class PosConfig(models.Model):
 
     def _get_tax_product_field_names(self) -> frozenset:
         self.check_singleton()
-        # set by load_data for its own config; JSON-RPC cannot produce a tuple
         loaded = self.env.context.get("pos_tax_product_field_names")
         if isinstance(loaded, tuple) and loaded[0] == self.id:
             return loaded[1]
@@ -2058,19 +2047,16 @@ class PosConfig(models.Model):
         )
 
     def _get_pos_pricelists(self):
-        # an order takes its preset's pricelist, offered or not
         presets = self.available_preset_ids | self.default_preset_id
         return self._get_available_pricelists() | presets.pricelist_id
 
     def _get_pos_pricing_pricelists(self):
-        # a rule priced on another pricelist needs that one in the till too, as
-        # data: without it the till falls back to the list price
         pricelists = self._get_pos_pricelists()
         Item = self.env["product.pricelist.item"]
         frontier = pricelists
         while frontier:
             frontier = (
-                Item.search(  # noqa: E8507 - one query per level of the base chain
+                Item.search(
                     [
                         ("pricelist_id", "in", frontier.ids),
                         ("base", "=", "pricelist"),

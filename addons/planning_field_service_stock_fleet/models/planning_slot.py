@@ -18,17 +18,12 @@ class PlanningSlot(models.Model):
     )
 
     def _with_visit_deliveries_privilege(self, records):
-        # a trip may be booked in another of the employee's companies than the visit
         return records.with_privilege(
             "planning_field_service_stock_fleet.privilege_visit_deliveries",
             reason="a visit ties and settles the deliveries its employee carries",
         ).with_context(allowed_company_ids=self.env.user.company_ids.ids)
 
     def _get_visit_day_bounds(self) -> tuple[datetime, datetime]:
-        """The visit's local day, as naive UTC datetimes.
-
-        :rtype: tuple[datetime, datetime]
-        """
         self.check_singleton()
         tz = self._get_tzinfo()
         local_day = self.start_datetime.replace(tzinfo=UTC).astimezone(tz).date()
@@ -37,9 +32,6 @@ class PlanningSlot(models.Model):
         return day_start, day_start + timedelta(days=1)
 
     def _get_trip_deliveries_domain(self):
-        """The customer's deliveries that the visit's employee carries on his
-        trips: still to hand over on a trip under way, or handed over from a trip
-        on the day of the visit, which may have been declared afterwards."""
         self.check_singleton()
         day_start, day_end = self._get_visit_day_bounds()
         still_carried = Domain(
@@ -53,8 +45,6 @@ class PlanningSlot(models.Model):
                 ("date_done", "<", day_end),
             ]
         )
-        # Matched by user, not by employee: a salesperson has one employee per
-        # company, and his trip may be booked in another one than the visit.
         return Domain(
             [
                 ("planning_slot_id", "=", False),
@@ -66,10 +56,6 @@ class PlanningSlot(models.Model):
         ) & (still_carried | handed_over)
 
     def action_link_trip_deliveries(self) -> None:
-        """Tie to each visit the deliveries its employee carries for its customer."""
-        # Only who may edit the visit ties deliveries to it; the domain is the
-        # visit's own reach (its employee's trips, its customer), which the
-        # employee may not be able to read trip by trip.
         self.check_access("write")
         Picking = self._with_visit_deliveries_privilege(self.env["stock.picking"])
         for slot in self:
@@ -91,7 +77,6 @@ class PlanningSlot(models.Model):
 
     def _action_complete(self):
         self.action_link_trip_deliveries()
-        # the lock holds for a visitor without inventory rights
         Picking = self._with_visit_deliveries_privilege(self.env["stock.picking"])
         pending = Picking.browse(
             Picking._search(

@@ -58,7 +58,7 @@ You must return a structured output:
 """
 
 OPENAI_ENDPOINT = "/responses"
-OPENAI_MODEL = "gpt-4.1"  # prompts are usually tweaked for a model. Double check behavior if changed.
+OPENAI_MODEL = "gpt-4.1"
 
 
 class UnresolvedQuery(UserError):
@@ -66,17 +66,6 @@ class UnresolvedQuery(UserError):
 
 
 def get_ai_value(record, field_type, user_prompt, context_fields, allowed_values):
-    """Query a LLM with the given prompt and return the cast value.
-
-    :param record: the record for which the value should be obtained
-    :param field_type: the field type for which the response should be cast
-    :param user_prompt: the "user prompt" to pass to the LLM (the request)
-    :param context_fields: list of field paths that needs to be included in the context dict
-    :param allowed_values: a dict containing the values that are allowed
-
-    :return: the value with the type expected for the given field type, or False if the value
-        could not be cast or is not in allowed_values
-    """
     if (
         field_type in ("many2many", "many2one", "selection", "tags")
         and not allowed_values
@@ -213,31 +202,15 @@ def get_ai_value(record, field_type, user_prompt, context_fields, allowed_values
 
 
 def prepare_field_prompt_context(env, field, field_prompt=None) -> tuple:
-    """Get the parsed prompt, the field paths inserted in the prompt and the allowed values for the
-    given field. If field_prompt is given, the values are obtained from this prompt instead of the
-    one defined on the field.
-
-    :param field: the field from which to get the values
-    :param field_prompt: prompt to use instead of the one defined on the field
-
-    :return: (user_prompt, fields, allowed_values)
-    """
     user_prompt, fields, allowed_values = parse_ai_prompt_values(
         env, field_prompt or field.ai, field.comodel_name
     )
     if field.type == "selection":
         allowed_values = field._selection
-    return user_prompt, fields, allowed_values  # do we need html_to_inner_content?
+    return user_prompt, fields, allowed_values
 
 
 def prepare_property_prompt_context(env, property_definition) -> tuple:
-    """Get the parsed prompt, the field paths inserted in the prompt and the allowed values for the
-    given property_definition.
-
-    :param property_definition: the property definition from which to get the values
-
-    :return: (user_prompt, fields, allowed_values)
-    """
     property_type = property_definition.get("type")
     user_prompt = property_definition.get("system_prompt")
     user_prompt, fields, allowed_values = parse_ai_prompt_values(
@@ -250,32 +223,12 @@ def prepare_property_prompt_context(env, property_definition) -> tuple:
             name: label
             for name, label, color in (property_definition.get("tags") or [])
         }
-    return user_prompt, fields, allowed_values  # do we need html_to_inner_content?
+    return user_prompt, fields, allowed_values
 
 
 def parse_ai_prompt_values(env, prompt, comodel, replace_prompt=True) -> tuple:
-    """Parse the given prompt to extract the inserted field paths and record references.
-
-    Field paths are inserted by the end user with the /field command
-    (`<span data-ai-field="name">`), records with the /record command
-    (`<span data-ai-record-id="17">`).
-
-    :param prompt: the html prompt to parse
-    :param comodel: model of the records that can be inserted in the prompt
-    :param replace_prompt: replace the field paths by {{path}} placeholders and the records by
-        their display names, and return the prompt as plain text
-    :return: (prompt, field_paths, formatted_allowed_records|inserted_record_ids) where
-        - prompt: the cleaned prompt if replace_prompt is True, the original one otherwise
-        - field_paths: set of field paths from the prompt (e.g. {'attachment_id', 'name'})
-        - formatted_allowed_records: dict of allowed existing records from the prompt formatted
-            with :meth:`_ai_format_records` if replace_prompt is True
-        - inserted_record_ids: set of record ids inserted in the prompt, if replace_prompt is
-            False (not filtered on existence, so that missing records raise)
-    """
     tree = html.fromstring(prompt)
 
-    # field paths are returned so that they can be validated (ensure read access when the end
-    # user edits the prompt) or interpreted and added as context to the LLM
     prompt_fields = set()
     for prompt_field_element in tree.xpath("//span[@data-ai-field]"):
         field_path = prompt_field_element.attrib.get("data-ai-field")
@@ -286,8 +239,6 @@ def parse_ai_prompt_values(env, prompt, comodel, replace_prompt=True) -> tuple:
                 prompt_field_element.drop_tree()
         prompt_fields.add(field_path)
 
-    # inserted records are returned so that they can be validated (ensure read access when the
-    # end user edits the prompt) or used as allowed values for relational fields
     inserted_record_ids = set()
     formatted_allowed_records = {}
     if comodel:
@@ -329,16 +280,6 @@ def parse_ai_prompt_values(env, prompt, comodel, replace_prompt=True) -> tuple:
 
 
 def parse_ai_response(response, field_type, allowed_values):
-    """Parse and cast a LLM response into the type expected for the given field type and checks
-    that the value is in the set of allowed_values if given.
-
-    :param response: a LLM response
-    :param str field_type: the type of the field for which the response should be cast
-    :param allowed_values: the values that are allowed
-
-    :return: the value with the type expected for the given field type, or False if the value
-        could not be cast or is not in allowed_values
-    """
     if not allowed_values:
         allowed_values = {}
 

@@ -42,23 +42,16 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _access_field_class(self, field: Field[typing.Any]) -> str | None:
-        # a class the model gives the field beside the field's own: here the
-        # residual class, for a field that names none, but not the automatic
-        # columns a search and a name always need. Asked once per field at
-        # registry setup, as the other two hooks below
         if field.name in _RESIDUAL_EXEMPT or field.classification:
             return None
         return self._access_residual_class
 
     @api.model
     def _access_field_write_class(self, field: Field[typing.Any]) -> str | None:
-        # a class needed to write the field, beside what reading it needs
         return None
 
     @api.model
     def _access_field_alternative_class(self, field: Field[typing.Any]) -> str | None:
-        # a class that grants reading the field on its own, whatever else the
-        # field requires (a user's own record)
         return None
 
     def _has_field_access(
@@ -79,9 +72,6 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _check_fields_write_access(self, field_names: typing.Iterable[str]) -> None:
-        # on a recordset, also refuses a field the principal may write on some
-        # records only (a group held through a grant limited to some
-        # companies) when the records reach outside them
         field_names = list(field_names)
         for field_name in field_names:
             field = self._fields.get(field_name)
@@ -92,8 +82,6 @@ class AccessMixin(_ModelStubs):
             self._check_fields_write_records(field_names)
 
     def _check_fields_write_records(self, field_names: typing.Iterable[str]) -> None:
-        # a field the principal may write on some records only, written on
-        # others: the records of a write before it, those of a create after
         if self.env.su:
             return
         for field_name in field_names:
@@ -104,8 +92,6 @@ class AccessMixin(_ModelStubs):
     def _field_access_domain(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> Domain | None:
-        # the records the principal may read (write) the field on, when its
-        # verdict is record-level; None when it is the same on every record
         classes = field.access_classes
         if classes is None or self.env.su:
             return None
@@ -114,8 +100,6 @@ class AccessMixin(_ModelStubs):
         )
 
     def _field_empty_value(self, field: Field[typing.Any]) -> typing.Any:
-        # what a masked field reads as on the records of self: its empty value,
-        # an empty recordset for a relational one
         return field.convert_to_record(
             field.convert_to_cache(False, self, validate=False), self
         )
@@ -125,8 +109,6 @@ class AccessMixin(_ModelStubs):
         field: Field[typing.Any],
         operation: typing.Literal["read", "write"] = "read",
     ) -> Self:
-        # the records of self the principal may read (write) the field on;
-        # the model-level verdict is the caller's to ask first
         outside = self._field_access_outside(field, operation)
         if not outside:
             return self
@@ -160,16 +142,12 @@ class AccessMixin(_ModelStubs):
         )
 
     def _field_masked_ids(self, field: Field[typing.Any]) -> set[IdType] | None:
-        # the records of self the principal may not read the field on, when
-        # its verdict is record-level
         outside = self._field_access_outside(field, "read")
         return None if outside is None else set(outside)
 
     def _field_access_outside(
         self, field: Field[typing.Any], operation: typing.Literal["read", "write"]
     ) -> dict[IdType, None] | None:
-        # the ids of self (in order) the principal may not read (write) the
-        # field on; None when its verdict is the same on every record
         domain = self._field_access_domain(field, operation)
         if domain is None or not self._ids:
             return None
@@ -187,9 +165,6 @@ class AccessMixin(_ModelStubs):
     def _judge_field_domain(
         self, domain: Domain, verdicts: RecordVerdicts
     ) -> Collection[IdType]:
-        # the ids of self within the domain. The real records not judged yet
-        # are judged at once with as many of the prefetch set as a fetch
-        # takes, and kept; a new record is judged on its values of the moment
         env = self.env
         ids = self._ids
         batch = dict.fromkeys(id_ for id_ in ids if id_ and id_ not in verdicts)
@@ -209,14 +184,11 @@ class AccessMixin(_ModelStubs):
                 except MissingError:
                     if len(batch) == asked:
                         raise
-                    # a record of the prefetch set is gone: self's, as asked
                     batch = dict.fromkeys(tuple(batch)[:asked])
                     within = self._ids_within(domain, tuple(batch))
                 span.set(asked=asked, judged=len(batch), within=len(within))
             memo = env.transaction.access_memo
             if memo.domain_verdicts(env, self._name, domain) is not verdicts:
-                # judging recomputed a value the domain reads, which dropped
-                # the verdicts read before it: self is judged whole, none kept
                 return self._ids_within(domain, ids)
             for id_ in batch:
                 verdicts[id_] = id_ in within
@@ -335,7 +307,7 @@ class AccessMixin(_ModelStubs):
         if self.env.su:
             return
         if result := self._check_access(operation):
-            raise result[1]()  # noqa: RSE102  result[1] builds the exception, it is not the class
+            raise result[1]()
         if self.env.privileges and operation != "read" and self._ids:
             self.env.registry.access_policy.note_privileged(
                 self.env, self._name, operation, self._ids
@@ -346,11 +318,6 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _record_access_domain(self, operation: str) -> Domain:
-        # the records the principal may perform the operation on, as a domain
-        # read in sudo, archived records included: the access rows' record
-        # domain, or for a model deciding its own access in Python, what its
-        # own search finds -- which only answers for reading. Either way a
-        # principal refused the model reaches none of its records
         env = self.env
         if type(self)._check_access is AccessMixin._check_access:
             policy = env.registry.access_policy
@@ -393,9 +360,6 @@ class AccessMixin(_ModelStubs):
         return self.browse(id_ for id_ in self._ids if id_ in allowed_ids)
 
     def _visible_display_names(self) -> dict[IdType, str | None]:
-        # each of these existing records' display name where the current user
-        # may see it, None where it is withheld: one access decision for the
-        # batch, so one unreadable record never sends the rest one by one
         named = self._filtered_display_name_access()
         names = dict(zip(named._ids, named.sudo().mapped("display_name"), strict=True))
         return {id_: names.get(id_) for id_ in self._ids}
@@ -421,8 +385,6 @@ class AccessMixin(_ModelStubs):
             verdicts = memo.read_verdicts(env, self._name)
             verdicts[0] = True
 
-        # keep the prefetch ids: the rules' Python evaluation on one record
-        # of a batch would otherwise fetch that record's row alone
         real_ids = tuple(id_ for id_ in self._ids if id_)
         if verdicts is not None:
             unknown = tuple(id_ for id_ in real_ids if id_ not in verdicts)
@@ -445,9 +407,6 @@ class AccessMixin(_ModelStubs):
                 except MissingError:
                     if self._auto:
                         raise
-                    # a query-backed model may show each principal other rows
-                    # (a report joining the companies in use): a row missing
-                    # from the principal's view is refused, not read
                     admitted = set(candidates.exists().filtered_domain(domain)._ids)
                 refused.extend(id_ for id_ in unknown if id_ not in admitted)
             if verdicts is not None:
@@ -487,11 +446,6 @@ class AccessMixin(_ModelStubs):
         )
 
     def _flush_access_facts(self, domain: Domain, cached: bool) -> None:
-        # the rule is judged against the cache, and a stored field that depends
-        # on context caches a pending write under the context that made it: a
-        # principal reading from another context would see the flushed row.
-        # Only those fields are flushed; any other pending write is visible
-        # from every context already.
         env = self.env
         facts = (
             env.transaction.access_memo.read_facts(env, self._name)
@@ -512,14 +466,10 @@ class AccessMixin(_ModelStubs):
     @api.model
     @ormcache("operation", "self.env.registry.access_policy.access_signature(self.env)")
     def _access_verdict(self, operation: str) -> bool:
-        # the model-level answer for every principal of one signature, kept
-        # for the registry as long as the domains it is read from
         return self.sudo(False)._access_allowed(operation)
 
     @api.model
     def _access_allowed(self, operation: str) -> bool:
-        # the model-level answer: the principal holds a permission whose
-        # domain can hold, with any 'access' condition resolved for it
         if self.env.su:
             return True
         domain = self._access_domain(operation)
@@ -539,15 +489,8 @@ class AccessMixin(_ModelStubs):
     @api.model
     @ormcache("operation", "self.env.registry.access_policy.access_signature(self.env)")
     def _access_domain(self, operation: str) -> Domain:
-        # the records the principal may perform the operation on, from
-        # ir.access: the OR of the permissions its groups hold, AND every guard
-        # that binds it (all principals, or the members of the guard's group),
-        # AND what each delegated parent allows through the delegate
         env = self.env
         if env.su and env.uid != SUPERUSER_ID:
-            # the principal's domain whatever the caller's privilege: under
-            # sudo a parent's access reads TRUE, and the cache, keyed on the
-            # principal alone, would serve that to the unprivileged caller
             return self.sudo(False)._access_domain(operation)
         policy = env.registry.access_policy
         if operation not in ACCESS_OPERATIONS:
@@ -570,8 +513,6 @@ class AccessMixin(_ModelStubs):
             for parent_model_name, parent_field_name in self._inherits.items():
                 delegate = self._fields[parent_field_name]
                 if not delegate.store and operation == "create":
-                    # a computed delegate is settled after the row is inserted;
-                    # the parent's own create checked the parent's access
                     continue
                 if not (delegate.store or delegate.search or delegate.related):
                     raise ValueError(
@@ -606,9 +547,6 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _access_label_guard(self, operation: str) -> Domain:
-        # a record labelled with a class reaches the principals that class
-        # grants: to read it, reading the class; to change it, writing it. An
-        # unlabelled record is left to the rows
         label = self._access_label_field or ""
         field = self._fields.get(label)
         if field is None or field.comodel_name != "ir.access.class":
@@ -623,22 +561,14 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _access_company_anchor(self) -> str | None:
-        # the field whose company a record belongs to, which a grant limited
-        # to some companies compiles against: declared in _access_anchors, or
-        # the model's own company_id / company_ids; None for a model whose
-        # records belong to no company
         anchor = self.env.registry.model_anchors.get(self._name, {}).get("company")
         return anchor.path if anchor else None
 
     def _verb_door(self, verb: str, call: Callable[[Self], typing.Any]) -> typing.Any:
-        # a door of the verb: the principal must hold it, what it obliges is
-        # asked, and the call runs admitted for its records
         self.check_access(verb)
         return self.env.registry.access_policy.verb_door(self.env, self, verb, call)
 
     def _verb_checkpoint(self, verb: str) -> tuple[int, ...]:
-        # a funnel every door of the verb passes: what no door admitted is
-        # checked here, and can be refused but never asked
         env = self.env
         admitted = env.transaction.admitted_ids(self._name, verb)
         pending = self.browse([id_ for id_ in self._ids if id_ not in admitted])
@@ -696,12 +626,6 @@ class AccessMixin(_ModelStubs):
         }
 
     def _check_anchor_moves(self, before: dict[str, dict[int, typing.Any]]) -> None:
-        # a write that moves a record to another owner, team or company is
-        # judged where it lands, since an "own" row is judged on the record
-        # before the write: a record still within the writer's write
-        # permissions has not left their reach, and one that has is admitted
-        # only where the writer could have made it. The guards stay out: they
-        # state what writing or creating needs beside whose the record is
         env = self.env
         records = self.sudo()
         moved = sorted(
@@ -746,8 +670,6 @@ class AccessMixin(_ModelStubs):
             raise policy.record_denied_error(env, "create", self.browse(refused))
 
     def _land_verb_transitions(self, moves: list[tuple[str, tuple[int, ...]]]) -> None:
-        # what each obligation does once the move it checked has landed, for
-        # every record that moved, admitted or not
         env = self.env
         for name, ids in moves:
             env.registry.access_policy.verb_landed(env, self.browse(ids), name)
@@ -775,16 +697,9 @@ class AccessMixin(_ModelStubs):
 
     @api.model
     def _access_guard(self, operation: str) -> Domain:
-        # what the model itself requires of every principal beside its rows,
-        # typically an 'access' condition on the record it belongs to; read
-        # with the rows, it is what the model-level answer, the searches and
-        # the error that names the groups that would be allowed all see
         return Domain.TRUE
 
     def _note_readable(self) -> None:
-        # the records a user's search or fetch returned passed the read rules,
-        # and the search itself the model-level check; a model whose _search
-        # is its own may narrow it differently, and is noted nothing
         env = self.env
         if (
             env.su
@@ -798,8 +713,6 @@ class AccessMixin(_ModelStubs):
             verdicts[id_] = True
 
     def _known_readable(self) -> bool:
-        # every record passed the read rules in this transaction, and nothing
-        # those rules read was written since (the memo drops the verdicts then)
         env = self.env
         if env.su or not self._ids:
             return False
@@ -871,8 +784,6 @@ class AccessMixin(_ModelStubs):
             list[tuple[int, ModelLike, BaseModel, typing.Any]],
         ],
     ) -> Iterator[tuple[int, ModelLike, str, BaseModel]]:
-        # one fetch per comodel, not one per field: stock's customer and
-        # vendor locations are two fields on the same comodel
         prefetch: defaultdict[str, dict[IdType, None]] = defaultdict(dict)
         for entries in groups.values():
             for entry in entries:

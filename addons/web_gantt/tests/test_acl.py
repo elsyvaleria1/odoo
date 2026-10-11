@@ -28,14 +28,12 @@ class TestACL(TransactionCaseWithUserDemo):
         )
 
     def test_view_delete_button_visibility(self):
-        # the demo user can't unlink
         company_view = (
             self.env["res.users"].with_user(self.user_demo).get_view(False, "gantt")
         )
         view_arch = etree.fromstring(company_view["arch"])
         self.assertEqual(view_arch.get("delete"), "False")
 
-        # the manager user can unlink
         company_view = (
             self.env["res.users"].with_user(self.user_manager).get_view(False, "gantt")
         )

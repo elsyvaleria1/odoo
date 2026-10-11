@@ -7,8 +7,6 @@ class AccountMoveLine(models.Model):
 
     @api.model
     def _get_base_tax_line_mapping_conditions(self) -> list[SQL]:
-        """Tax lines only match base lines carrying the same asset, so that two assets
-        sharing a tax are not merged into one another's base."""
         return [
             *super()._get_base_tax_line_mapping_conditions(),
             SQL(

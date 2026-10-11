@@ -14,7 +14,6 @@ from odoo.addons.test_event_full.tests.common import (
 @tagged("event_mail", "post_install", "-at_install")
 class TestEventMailInternals(TestEventMailCommon):
     def test_template_ref_delete_lines(self):
-        """When deleting a template, related lines should be deleted too"""
         event_type = self.env["event.type"].create(
             {
                 "name": "Event Type",
@@ -76,7 +75,6 @@ class TestEventMailInternals(TestEventMailCommon):
 @tagged("event_mail", "post_install", "-at_install")
 class TestEventMailSchedule(TestEventMailCommon):
     def test_event_mail_before_trigger_sent_count(self):
-        """Emails are only sent to confirmed attendees."""
         test_event = self.test_event
         mail_schedulers = test_event.event_mail_ids
         self.assertEqual(len(mail_schedulers), 6)
@@ -85,7 +83,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         )
         self.assertEqual(len(before), 2)
 
-        # Add registrations
         _dummy, _dummy, open_reg, done_reg = self.env["event.registration"].create(
             [
                 {
@@ -160,12 +157,10 @@ class TestEventMailSchedule(TestEventMailCommon):
 
     @users("user_eventmanager")
     def test_schedule_event_scalability(self):
-        """Test scalability / iterative work on event-based schedulers"""
         test_event = self.env["event.event"].browse(self.test_event.ids)
         registrations = self._create_registrations(test_event, 30)
         registrations = registrations.sorted("id")
 
-        # check event-based schedulers
         after_mail = test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "after_event" and s.notification_type == "mail"
         )
@@ -193,14 +188,12 @@ class TestEventMailSchedule(TestEventMailCommon):
         self.assertEqual(before_sms.mail_count_done, 0)
         self.assertFalse(before_sms.mail_done)
 
-        # setup batch and cron limit sizes to check iterative behavior
         batch_size, cron_limit = 5, 20
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", batch_size)
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.render.cron.limit", cron_limit
         )
 
-        # launch before event schedulers -> all communications are sent
         current_now = self.event_date_begin - timedelta(days=1)
         EventMail = type(self.env["event.mail"])
         exec_origin = EventMail._execute_event_based_for_registrations
@@ -225,7 +218,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         self.assertFalse(after_sms.last_registration_id)
         self.assertEqual(after_sms.mail_count_done, 0)
         self.assertFalse(after_sms.mail_done)
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(before_mail.last_registration_id, registrations[19])
         self.assertEqual(before_mail.mail_count_done, 20)
         self.assertFalse(before_mail.mail_done)
@@ -237,10 +229,8 @@ class TestEventMailSchedule(TestEventMailCommon):
             8,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(capture, [current_now] * 2)
 
-        # relaunch to close scheduler
         with (
             self.mock_datetime_and_now(current_now),
             self.mockSMSGateway(),
@@ -256,7 +246,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         self.assertTrue(before_sms.mail_done)
         self.assertFalse(capture.records)
 
-        # launch after event schedulers -> all communications are sent
         current_now = self.event_date_end + timedelta(hours=1)
         with (
             self.mock_datetime_and_now(current_now),
@@ -266,7 +255,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         ):
             self.event_cron_id.method_direct_trigger()
 
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(after_mail.last_registration_id, registrations[19])
         self.assertEqual(after_mail.mail_count_done, 20)
         self.assertFalse(after_mail.mail_done)
@@ -278,10 +266,8 @@ class TestEventMailSchedule(TestEventMailCommon):
             8,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(capture, [current_now] * 2)
 
-        # relaunch to close scheduler
         with (
             self.mock_datetime_and_now(current_now),
             self.mockSMSGateway(),
@@ -299,7 +285,6 @@ class TestEventMailSchedule(TestEventMailCommon):
 
     @users("user_eventmanager")
     def test_schedule_subscription_scalability(self):
-        """Test scalability / iterative work on subscription-based schedulers"""
         test_event = self.env["event.event"].browse(self.test_event.ids)
 
         sub_mail = test_event.event_mail_ids.filtered(
@@ -321,14 +306,12 @@ class TestEventMailSchedule(TestEventMailCommon):
         self.assertEqual(len(sub_sms), 1)
         self.assertEqual(sub_sms.mail_count_done, 0)
 
-        # setup batch and cron limit sizes to check iterative behavior
         batch_size, cron_limit = 5, 20
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", batch_size)
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.render.cron.limit", cron_limit
         )
 
-        # create registrations -> each one receives its on subscribe communication
         EventMailRegistration = type(self.env["event.mail.registration"])
         exec_origin = EventMailRegistration._execute_on_registrations
         with (
@@ -346,7 +329,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         ):
             self._create_registrations(test_event, 30)
 
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(sub_mail.mail_count_done, 20)
         self.assertEqual(sub_sms.mail_count_done, 20)
         self.assertEqual(
@@ -354,12 +336,10 @@ class TestEventMailSchedule(TestEventMailCommon):
             8,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(
             capture, [self.reference_now + timedelta(hours=1)] * 2
         )
 
-        # iterative work on registrations, force cron to close those
         with (
             patch.object(
                 EventMailRegistration,
@@ -375,7 +355,6 @@ class TestEventMailSchedule(TestEventMailCommon):
         ):
             self.event_cron_id.method_direct_trigger()
 
-        # finished sending communications
         self.assertEqual(sub_mail.mail_count_done, 30)
         self.assertEqual(sub_sms.mail_count_done, 30)
         self.assertFalse(capture.records)
@@ -389,7 +368,6 @@ class TestEventMailSchedule(TestEventMailCommon):
 @tagged("event_mail", "post_install", "-at_install")
 class TestEventSaleMail(TestEventFullCommon):
     def test_event_mail_on_sale_confirmation(self):
-        """Test that a mail is sent to the customer when a sale order is confirmed."""
         ticket = self.test_event.event_ticket_ids[0]
         self.test_event.env.company.partner_id.email = "test.email@test.example.com"
         order_line_vals = {
@@ -400,7 +378,6 @@ class TestEventSaleMail(TestEventFullCommon):
         }
         self.customer_so.write({"line_ids": [(0, 0, order_line_vals)]})
 
-        # check sale mail configuration
         aftersub = self.test_event.event_mail_ids.filtered(
             lambda m: m.interval_type == "after_sub"
         )
@@ -423,12 +400,10 @@ class TestEventSaleMail(TestEventFullCommon):
 
         with self.mock_mail_gateway():
             self.customer_so.action_confirm()
-            # mail send is done when writing state value, hence flushing for the test
             registration.flush_recordset()
         self.assertEqual(self.customer_so.state, "done")
         self.assertEqual(registration.state, "open")
 
-        # Ensure mails are sent to customers right after subscription
         self.assertMailMailWRecord(
             registration,
             [self.event_customer.id],

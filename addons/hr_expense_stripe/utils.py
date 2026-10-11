@@ -19,43 +19,23 @@ STRIPE_VALID_JOURNAL_CURRENCIES = {
 }
 
 HANDLED_WEBHOOK_EVENTS = {
-    # Balance
     "balance.available",
-    # Authorization
     "issuing_authorization.created",
     "issuing_authorization.request",
     "issuing_authorization.updated",
-    # Cards
-    # 'issuing_card.created',
     "issuing_card.updated",
-    # Cardholders
-    # 'issuing_cardholder.updated',
-    # Disputes
-    # 'issuing_dispute.funds_rescinded', # TODO to implement
-    # 'issuing_dispute.created', # TODO to implement
-    # 'issuing_dispute.closed', # TODO to implement
-    # 'issuing_dispute.funds_reinstated', # TODO to implement
-    # Capture transactions
     "issuing_transaction.created",
     "issuing_transaction.updated",
-    # 'issuing_transaction.purchase_details_receipt_updated', TODO check if we want it
-    # Account top-ups
-    # 'topup.created',
-    # 'topup.updated',
     "topup.succeeded",
-    # 'topup.reversed',
 }
 
-# Businesses in supported outlying territories should register for a Stripe account with the parent
-# territory selected as the Country.
-# See https://support.stripe.com/questions/stripe-availability-for-outlying-territories-of-supported-countries.
 COUNTRY_MAPPING = {
-    "MQ": "FR",  # Martinique
-    "GP": "FR",  # Guadeloupe
-    "GF": "FR",  # French Guiana
-    "RE": "FR",  # Réunion
-    "YT": "FR",  # Mayotte
-    "MF": "FR",  # Saint-Martin
+    "MQ": "FR",
+    "GP": "FR",
+    "GF": "FR",
+    "RE": "FR",
+    "YT": "FR",
+    "MF": "FR",
 }
 
 STRIPE_3D_SECURE_LOCALES = {
@@ -66,8 +46,6 @@ STRIPE_3D_SECURE_LOCALES = {
     "it",
 }
 
-# According to https://en.wikipedia.org/wiki/ISO_4217#Minor_unit_fractions
-# Taken from payment
 CURRENCY_MINOR_UNITS = {
     "ADF": 2,
     "ADP": 0,
@@ -363,7 +341,7 @@ STRIPE_REQUEST_REFUSED_REASONS = {
     "account_disabled": _lt("Your Stripe account is disabled"),
     "card_active": _lt(
         "The card is active, and there was no control setup on your Stripe account"
-    ),  # SHOULD NEVER HAPPEN
+    ),
     "card_canceled": _lt("The card used was blocked"),
     "card_expired": _lt("The card has expired"),
     "card_inactive": _lt("The card is currently inactive, please activate it first"),
@@ -407,18 +385,12 @@ STRIPE_REQUEST_REFUSED_REASONS = {
 class StripeIssuingDatabaseError:
     """Enum class to handle errors, returning the error status"""
 
-    DB_WRONG_SIGNATURE = 462  # The signature found in the request is incorrect
-    DB_ERROR = 550  # A Generic error, that occurred on the database side
-    DB_WRONG_WEBHOOK = 551  # A wrong webhook was accessed
+    DB_WRONG_SIGNATURE = 462
+    DB_ERROR = 550
+    DB_WRONG_WEBHOOK = 551
 
 
 def get_error_message_from_response(response):
-    """Return readable error message from the response status sent by the IAP proxy server
-
-    :param requests.Response response: The response from the IAP proxy server
-    :return: The lazy translation of the error message
-    :rtype: LazyTranslate
-    """
     code = response.status_code
     try:
         reason = response.json().get("message", "Unknown Error")
@@ -430,43 +402,41 @@ def get_error_message_from_response(response):
             except UnicodeDecodeError:
                 reason = reason.decode("iso-8859-1")
     iap_errors = {
-        # Stripe specific
         401: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Unauthorized
+        ),
         402: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Request Failed
+        ),
         413: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Forbidden
+        ),
         414: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Not found (because a 404 is a IAP not found)
+        ),
         409: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Conflict (idempotency)
+        ),
         410: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Bad Request code from Stripe
+        ),
         429: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Too Many Requests
+        ),
         501: _lt(
             "We received the following error from Stripe: %(reason)s", reason=reason
-        ),  # Stripe Server Error
-        # IAP specific
+        ),
         400: _lt(
             "Invalid request sent to the Odoo IAP proxy server: %(reason)s",
             reason=reason,
-        ),  # Unauthorized
+        ),
         403: _lt("Forbidden access to the IAP proxy server"),
         404: _lt("We were unable to reach Odoo IAP proxy server"),
         451: _lt("Missing Cardholder on IAP proxy server"),
         452: _lt("Wrong or Expired validation code"),
         453: _lt(
             "The sms service is currently experiencing a lot of request. Please try again in a few minutes."
-        ),  # Rate limit reached for sending SMS
+        ),
         454: _lt(
             "Stripe Issuing with Odoo is not yet implemented for the US customers."
         ),
@@ -482,7 +452,7 @@ def get_error_message_from_response(response):
         ),
         460: _lt(
             "The creation rate limit for this type of cards has been reached. Please try again later."
-        ),  # Rate limit reached for creating cards
+        ),
         461: _lt("Only licenses databases can use Odoo Stripe Issuing services."),
         500: _lt("There was an unexpected error on Odoo IAP proxy server"),
         503: _lt(
@@ -502,20 +472,6 @@ def get_error_message_from_response(response):
 def minor_to_major_currency_units(
     minor_amount, currency, arbitrary_decimal_number=None
 ):
-    """Return the amount converted to the major units of its currency.
-
-    The conversion is done by dividing the amount by 10^k where k is the number of decimals of the
-    currency as per the ISO 4217 norm.
-    To force a different number of decimals, set it as the value of the `arbitrary_decimal_number`
-    argument.
-
-    :param float minor_amount: The amount in minor units, to convert in major units
-    :param recordset currency: The currency of the amount, as a `res.currency` record
-    :param int arbitrary_decimal_number: The number of decimals to use instead of that of ISO 4217
-    :return: The amount in major units of its currency
-    :rtype: float
-    """
-    # Taken from payment
     if arbitrary_decimal_number is None:
         currency.check_singleton()
         decimal_number = CURRENCY_MINOR_UNITS.get(
@@ -529,22 +485,6 @@ def minor_to_major_currency_units(
 def major_to_minor_currency_units(
     major_amount, currency, arbitrary_decimal_number=None
 ) -> int:
-    """Return the amount converted to the minor units of its currency.
-
-    The conversion is done by multiplying the amount by 10^k where k is the number of decimals of
-    the currency as per the ISO 4217 norm.
-    To force a different number of decimals, set it as the value of the `arbitrary_decimal_number`
-    argument.
-
-    Note: currency.check_singleton() if arbitrary_decimal_number is not provided
-
-    :param float major_amount: The amount in major units, to convert in minor units
-    :param recordset currency: The currency of the amount, as a `res.currency` record
-    :param int arbitrary_decimal_number: The number of decimals to use instead of that of ISO 4217
-    :return: The amount in minor units of its currency
-    :rtype: int
-    """
-    # Taken from payment
     if arbitrary_decimal_number is None:
         currency.check_singleton()
         decimal_number = CURRENCY_MINOR_UNITS.get(
@@ -562,7 +502,6 @@ def major_to_minor_currency_units(
 
 
 def format_amount_from_stripe(amount, currency):
-    """Helper to convert currencies according to stripe formatting which is the amount in the currency's minor unit with exceptions"""
     return minor_to_major_currency_units(
         amount,
         currency,
@@ -573,7 +512,6 @@ def format_amount_from_stripe(amount, currency):
 
 
 def format_amount_to_stripe(amount, currency):
-    """Helper to convert currencies according from stripe formatting which is the amount in the currency's minor unit with exceptions"""
     return major_to_minor_currency_units(
         amount,
         currency,
@@ -584,36 +522,28 @@ def format_amount_to_stripe(amount, currency):
 
 
 def convert_dict_to_url_encoded_forms(dict_vals, level=0) -> dict:
-    """
-    Convert python dict into url encoded forms
-    """
     new_dict = {}
 
     for key, item in dict_vals.items():
         dict_key = f"{key}" if level == 0 else f"[{key}]"
         if isinstance(item, dict):
             new_sub_dict = convert_dict_to_url_encoded_forms(item, level + 1)
-            # Add sub dict to this dict
             for sub_dict_key, sub_dict_item in new_sub_dict.items():
                 new_dict[f"{dict_key}{sub_dict_key}"] = sub_dict_item
         elif isinstance(item, (tuple, list, set)):
             for idx, sub_item in enumerate(item):
                 if isinstance(sub_item, dict):
                     sub_item = convert_dict_to_url_encoded_forms(item, level + 1)
-                    # Add sub dict to this dict
                     for sub_dict_key, sub_dict_item in new_sub_dict.items():
                         new_dict[f"{dict_key}[{idx}]{sub_dict_key}"] = sub_dict_item
                 else:
                     new_dict[f"{dict_key}[{idx}]"] = sub_item
         else:
             new_dict[dict_key] = item
-    # Conversion is important else the signed payload received by IAP will be different from the one we signed
     return {key: str(value) for key, value in new_dict.items()}
 
 
 def _create_signature(signature_key, payload_data) -> str:
-    """Create the signature for IAP to authenticate the payload. We need to canonicalize the payload data because some parameters
-    will be found in the route"""
     timestamp = str(int(fields.Datetime.now().timestamp()))
     canonical_payload_str = str(
         {key: payload_data[key] for key in sorted(payload_data)}
@@ -624,7 +554,6 @@ def _create_signature(signature_key, payload_data) -> str:
 
 
 def _resolve_route_error(route):
-    """Check that the route is in the proper whitelist"""
     safe_simple_routes = {
         "accounts",
         "account_links",
@@ -643,14 +572,13 @@ def _resolve_route_error(route):
     if route in safe_simple_routes:
         return None
 
-    # Check if the route is a formatted route e.g. 'test_helpers/authorizations/ich_1MsKAB2eZvKYlo2C3eZ2BdvK/capture'
     simple_routes_pattern = "|".join(safe_simple_routes)
     pattern = re.compile(
-        rf"(?:{simple_routes_pattern})/"  # base route part
-        r"[a-z]{2,5}(?:_[a-z]{2,4})?_"  # Prefix part (e.g. 'sk_test_', 'ich_', etc.)
-        r"[a-zA-Z0-9]{16,24}"  # Stripe ID part (alphanumeric characters)
-        r"(?:/capture"  # Optional capture part (e.g. in the case of test authorizations)
-        r"|/shipping/(?:submit|ship|deliver|return|fail))?$"  # Optional shipping part (e.g. in the case of test shippings)
+        rf"(?:{simple_routes_pattern})/"
+        r"[a-z]{2,5}(?:_[a-z]{2,4})?_"
+        r"[a-zA-Z0-9]{16,24}"
+        r"(?:/capture"
+        r"|/shipping/(?:submit|ship|deliver|return|fail))?$"
     )
     if pattern.fullmatch(route):
         return None
@@ -664,17 +592,6 @@ def _resolve_route_error(route):
 def send_request_stripe_proxy(
     company, route, route_params=None, payload=None, method="POST", headers=None
 ):
-    """Main helper to make requests to the Stripe IAP proxy server.
-
-    :param :class:`~odoo.addons.base.models.res_company.ResCompany` company: The company for which the request is made
-    :param str route: The route endpoint to call on the IAP proxy server
-    :param dict route_params: The parameters to format the route with (needed that way to include it in the signature)
-    :param dict payload: The payload to send in the request
-    :param str method: The HTTP method to use for the request (default: "POST")
-    :param dict headers: Additional headers to send with the request
-    :return: The response content from the IAP proxy server
-    :rtype: dict
-    """
     if not headers:
         headers = {}
     match company.env["ir.config_parameter"].get_param(
@@ -704,7 +621,7 @@ def send_request_stripe_proxy(
     error_msg = _resolve_route_error(route)
     if error_msg:
         _debug.logic("stripe_route_refused", route=route, company=company)
-        raise UserError(company.env._(error_msg))  # noqa: E8502  resolves an _lt() message in the company's language
+        raise UserError(company.env._(error_msg))
 
     url = f"{proxy_server}/api/stripe_issuing/v1/{route}"
     _logger.info(
@@ -738,7 +655,7 @@ def send_request_stripe_proxy(
             route=route,
             status=getattr(response, "status_code", 0),
         )
-        raise UserError(company.env._(get_error_message_from_response(response)))  # noqa: E8502  resolves an _lt() message in the company's language
+        raise UserError(company.env._(get_error_message_from_response(response)))
     response_content = response.json()
     session_headers = response.headers.get("Set-Cookie", "")
     session_headers = dict(

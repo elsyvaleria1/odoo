@@ -55,13 +55,11 @@ class TestTimesheetMerge(TestCommonTimesheet):
     def test_action_merge_validated(self):
         action = (self.timesheet2 + self.timesheet3).action_merge_timesheets()
 
-        # Cannot merge a validated timesheet
         self.assertEqual(action.get("type"), "ir.actions.client")
         self.assertEqual(action.get("tag"), "display_notification")
 
         action = (self.timesheet1 + self.timesheet2).action_merge_timesheets()
 
-        # Should open the wizard
         self.assertEqual(action.get("type"), "ir.actions.act_window")
 
     def test_merge_timesheets(self):

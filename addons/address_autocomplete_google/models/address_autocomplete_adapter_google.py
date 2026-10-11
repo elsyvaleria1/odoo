@@ -16,20 +16,13 @@ GOOGLE = AddressProvider(
     adapter="address.autocomplete.adapter.google",
 )
 
-# API Documentation: https://developers.google.com/maps/documentation/geocoding/requests-geocoding#Types
-# ** sublocality indicates a first-order civil entity below a locality
-# ** administrative_area_level_1 indicates a first-order civil entity below the country level.
-#    Within the United States, these administrative levels are states.
-#    In most cases, administrative_area_level_1 short names will closely match ISO 3166-2
-# ** administrative_area_level_2 indicates a second-order civil entity below the country level.
-#    Within the United States, these administrative levels are counties.
 FIELDS_MAPPING = {
     "country": ["country"],
     "street_number": ["number"],
     "locality": [
         "city"
-    ],  # If locality exists, use it instead of the more general administrative area
-    "postal_town": ["city"],  # Used instead of locality in some countries
+    ],
+    "postal_town": ["city"],
     "route": ["street"],
     "sublocality_level_1": ["street2"],
     "postal_code": ["zip"],
@@ -37,7 +30,6 @@ FIELDS_MAPPING = {
     "administrative_area_level_2": ["state", "city"],
 }
 
-# If a google fields may correspond to multiple standard fields, the first occurrence in the list will overwrite following entries.
 FIELDS_PRIORITY = [
     "country",
     "street_number",
@@ -53,15 +45,6 @@ CREDIT_IMAGES = "/address_autocomplete_google/static/src/img"
 
 
 def _scrub(error):
-    """Describe `error` without the request URL.
-
-    A connection-level `requests` exception stringifies to the full outgoing
-    URL, and ours carries `key=<the Google Places API key>` as a query
-    parameter, so logging the exception verbatim writes the credential to the
-    server log. Only `guarded_http`'s own ResponseTooSlow is safe; everything
-    post-resolution -- ConnectTimeout, ConnectionError, SSLError, ReadTimeout,
-    ChunkedEncodingError -- reaches us as the raw requests exception.
-    """
     return type(error).__name__
 
 
@@ -154,11 +137,6 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
         except KeyError:
             return None
 
-        # Keep only the first known type from the list of types. A component
-        # with no usable `types` is skipped rather than raising: a malformed
-        # payload degrades to None like a missing one, where a missing key
-        # raised KeyError and an empty list raised IndexError, because next()'s
-        # default argument is evaluated eagerly.
         for component in components:
             types = component.pop("types", None)
             if not types:
@@ -186,8 +164,6 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
             formatted_manually = (
                 f"{address['number']} {address.get('street', '')}".strip()
             )
-            # Sometimes, the google api sends back abbreviated data :
-            # "52 High Road Street" becomes "52 HR St" for example. We usually take the result from google, but if it's an abbreviation, take our guess instead.
             if len(formatted_from_html) >= len(formatted_manually):
                 address["formatted_street_number"] = formatted_from_html
             else:
@@ -204,18 +180,13 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
             for field_standard in fields_standard:
                 if (
                     field_standard in standard_data
-                ):  # if a value is already assigned, do not overwrite it.
+                ):
                     continue
                 if field_standard == "country":
-                    country = self.env["res.country"].search(  # noqa: E8507 - one lookup per field of the autocomplete response
+                    country = self.env["res.country"].search(
                         [("code", "=", google_field["short_name"].upper())], limit=1
                     )
                     if not country:
-                        # An unknown code used to yield [False, False]: a
-                        # well-formed-looking many2one pair for a record that
-                        # does not exist, which the widget writes to the field
-                        # as {id: false}. Omitting the key lets it clear the
-                        # field cleanly instead.
                         continue
                     standard_data[field_standard] = [country.id, country.name]
                 elif field_standard == "state":
@@ -225,7 +196,7 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
                             pformat(google_fields),
                         )
                         continue
-                    state = self.env["res.country.state"].search(  # noqa: E8507 - one lookup per field of the autocomplete response
+                    state = self.env["res.country.state"].search(
                         [
                             ("code", "=", google_field["short_name"].upper()),
                             ("country_id", "=", standard_data["country"][0]),
@@ -239,12 +210,6 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
 
     @api.model
     def _guess_number_from_input(self, source_input, standard_address):
-        """
-        Google might not send the house number in case the address
-        does not exist in their database.
-        We try to guess the number from the user's input to avoid losing the info.
-        """
-        # Remove other parts from address to make better guesses
         guessed_house_number = (
             source_input.replace(standard_address.get("zip", ""), "")
             .replace(standard_address.get("street", ""), "")

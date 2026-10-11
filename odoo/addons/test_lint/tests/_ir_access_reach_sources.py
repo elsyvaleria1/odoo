@@ -54,7 +54,6 @@ def env_():
 
 
 def module_rows():
-    # every ir.access row a module ships: (module, file, xmlid, values)
     for root in ROOTS:
         for manifest in sorted(root.glob("*/__manifest__.py")):
             module = manifest.parent
@@ -163,7 +162,6 @@ def same(a: Anchor, b: Anchor) -> bool:
 
 
 def key_name(kind: str, anchor: Anchor, taken: set[str]) -> str:
-    # a second anchor of a kind, named after its path
     stem = "_".join(
         part.removesuffix("_ids").removesuffix("_id") for part in anchor.path.split(".")
     )
@@ -179,8 +177,6 @@ def key_name(kind: str, anchor: Anchor, taken: set[str]) -> str:
 
 
 def declaration(anchor: Anchor, key: str, model: str) -> str:
-    # the smallest spelling that states the anchor: a bare path when the key
-    # is its kind and the registry infers the rest
     registry = env_().registry
     bare = Anchor(anchor.path, key if key in ANCHOR_KINDS else anchor.kind)
     if key in ANCHOR_KINDS and same(resolved(model, bare), anchor):
@@ -207,8 +203,6 @@ def plan():
     rows = []
     unknown_models = Counter()
     for module, path, xmlid, values, ids in module_rows():
-        # a row with a domain and no reach, or the reach all whose filter
-        # names a field that reads the user (S2 took it for a fixed filter)
         if not values["domain"] or values["reach"] not in (None, "", "all"):
             continue
         model = model_name(module.name, values["model"])
@@ -216,8 +210,6 @@ def plan():
         if values["reach"] == "all" and (
             proposal is None or filter_reads_user(registry, model, values["domain"])
         ):
-            # beside the reach all, a filter reading the user is no fixed
-            # filter: the row says it as the domain it is
             plain = {**_part(Part("")), "static": values["domain"], "anchor": ""}
             rows.append(
                 {
@@ -264,7 +256,6 @@ def plan():
         )
         if proven and (model is None or model not in registry):
             unknown_models[model or values["model"]] += 1
-    # the anchors each model's rows need, keys assigned once per model
     needs: dict[str, list[Anchor]] = defaultdict(list)
     for row in rows:
         if not row["parts"] or row["model"] not in registry:
@@ -297,8 +288,6 @@ def plan():
             anchor = Anchor(*anchor)
             match = next((k for k, e in existing.items() if same(e, anchor)), None)
             if match is None and anchor.kind == "company":
-                # a model has one company anchor: declare it where the
-                # registry infers another, so scoped grants read it too
                 declarations[model]["company"] = declaration(anchor, "company", model)
                 taken.add("company")
                 match = "company"

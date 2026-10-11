@@ -17,8 +17,6 @@ class MailIceServer(models.Model):
     _inherit = "mail.ice.server"
 
     def _get_ice_servers(self) -> list:
-        # Discuss's own Twilio settings win; without them the company's
-        # account, already in the vault, serves its TURN servers
         if all(
             get_twilio_credentials(self.env)
         ) or not self.env.registry.settings.get_bool(

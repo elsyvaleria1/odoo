@@ -9,7 +9,6 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import (
 @tagged("post_install", "-at_install")
 class TestSaleSubscriptionComboProduct(TestSubscriptionCommon, HttpCase):
     def test_create_invoice_with_combo_product(self):
-        """Test that a subscription with a combo product generates the correct invoice."""
         combo = self.env["product.combo"].create(
             {
                 "name": "Test combo",

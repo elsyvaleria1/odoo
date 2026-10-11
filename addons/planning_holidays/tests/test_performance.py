@@ -5,13 +5,6 @@ from .test_common import TestCommon
 
 class TestPerformance(TestCommon):
     def test_performance_recompute_shifts_in_leave_periods(self):
-        """Test performance of _recompute_shifts_in_leave_periods method
-
-        This method is used in the CUD operations of `resource.calendar.leave`, so
-        we need to check the method is not too costly to not having a performance
-        issue when some public leaves are created or some leaves are validated for
-        a employe or sone leaves are renoved.
-        """
         self.employee_bert.create_date = datetime(2020, 1, 1)
         public_holiday = self.env["resource.schedule.exception"].create(
             {

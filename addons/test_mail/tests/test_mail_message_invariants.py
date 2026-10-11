@@ -30,8 +30,6 @@ class TestMailMessageInvariants(MailCommon):
 
         def spy(cr, query, params=None, log_exceptions=True):
             text = str(query)
-            # a read of the partner table, not a row of another model that
-            # reaches its party through a join
             if 'FROM "res_partner"' in text and text.lstrip().startswith("SELECT"):
                 partner_selects.append(text)
             if params is None:

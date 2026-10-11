@@ -46,9 +46,6 @@ class ResourceIdentifier(fields.Char):
         attrs = super()._get_attrs(model_class, name)
         if attrs.get("inherited"):
             return attrs
-        # Defaults belong here, not in __init__: a model inheriting the field
-        # re-instantiates it with no arguments, and a default written by
-        # __init__ would then override what the declaring model said.
         attrs.setdefault("store", True)
         attrs.setdefault("readonly", False)
         attrs.setdefault("copy", False)
@@ -65,7 +62,6 @@ class ResourceIdentifier(fields.Char):
             (f"{prefix}identifier_ids.value", f"{prefix}identifier_ids.type_id"),
         )
         if attrs.get("store"):
-            # A stored column is searched as a column.
             attrs["search"] = None
         return attrs
 
@@ -82,8 +78,6 @@ class ResourceIdentifier(fields.Char):
             )
 
     def _inverse_identifier(self, records: BaseModel) -> None:
-        # The row belongs to the resource; whoever may write this record may
-        # name the thing it is, so the row is written as the system.
         for record in records:
             resource = self._get_resource(record)
             if resource:

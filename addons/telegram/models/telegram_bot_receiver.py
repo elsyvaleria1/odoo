@@ -18,7 +18,6 @@ from odoo.addons.integration.tools.admission import Resolution
 
 _logger = logging.getLogger(__name__)
 
-# where a Mini App page sends Telegram's initData (project_telegram's shell)
 MINI_APP_INIT_DATA_HEADER = "X-Telegram-Init-Data"
 
 SECRET_TOKEN_HEADER = "X-Telegram-Bot-Api-Secret-Token"
@@ -30,7 +29,6 @@ MINI_APP_SESSION_SCOPE = register_signed_scope(
 )
 MINI_APP_SESSION_TTL_HOURS = 1
 _MINI_APP_REFUSAL_CODES = {401: "auth", 404: "not_found", 413: "too_large", 429: "busy"}
-# a webhook addressed by the bot's token hash, which is public, not secret
 _TOKEN_HASH = re.compile(r"[0-9a-f]{64}")
 WEBHOOK_SECRET_PURPOSE = "telegram_bot:webhook_secret"
 _SECRET_RE = re.compile(r"^[A-Za-z0-9_-]{1,256}$")
@@ -184,7 +182,6 @@ class TelegramBot(models.Model):
         return result
 
     def _create_missing_receivers(self) -> None:
-        """Create and attach absent receivers, preserving existing ones."""
         bots = keeping(self)
         receivers = bots.env["integration.receiver"]
         for bot in bots:
@@ -208,10 +205,6 @@ class TelegramBot(models.Model):
 
     @api.model
     def _receiver_for_webhook(self, token, **path_args):
-        """The bot a webhook URL names, by its token hash (how registration
-        addresses it, since the token never travels in a URL) or by the raw
-        token a bot registered before that still carries. A hash is no
-        credential: a bot addressed by it must enforce its webhook secret."""
         bot, by_hash = self._find_by_webhook_key(token)
         if not bot:
             fingerprint = hashlib.sha256(token.encode()).hexdigest()[:12]
@@ -233,20 +226,15 @@ class TelegramBot(models.Model):
 
     @api.model
     def _prepare_webhook_refusal_response(self, refused):
-        """Telegram redelivers on anything but 2xx and disables the webhook
-        after enough of them, so a deliberate rejection answers 200; only an
-        infrastructure failure, raised from the handler, is left to a 500."""
         return request.prepare_response("OK", status=200)
 
     def _get_or_create_webhook_receiver(self):
-        """Return the webhook receiver, provisioning absent receivers first."""
         self.check_singleton()
         if not self.webhook_receiver_id:
             self._create_missing_receivers()
         return keeping(self).webhook_receiver_id
 
     def _get_or_create_mini_app_receiver(self):
-        """Return the Mini App receiver, provisioning absent receivers first."""
         self.check_singleton()
         if not self.mini_app_receiver_id:
             self._create_missing_receivers()
@@ -266,11 +254,6 @@ class TelegramBot(models.Model):
         return credential._use_secret(WEBHOOK_SECRET_PURPOSE)
 
     def _update_webhook_secret_if_inactive(self) -> None:
-        """Provision a random secret when no active credential is attached.
-
-        An inactive credential is rewritten and reactivated; an absent one is
-        created. Without an encryption key, change nothing. Return no value.
-        """
         if not self.env["credential.credential"]._is_encryption_key_configured():
             return
         for bot in self:
@@ -278,7 +261,6 @@ class TelegramBot(models.Model):
                 bot._update_webhook_secret(secrets.token_urlsafe(32))
 
     def _update_webhook_secret(self, value) -> None:
-        """Store and activate a secret, or detach and delete it for a false value."""
         self.check_singleton()
         receiver = self._get_or_create_webhook_receiver()
         credential = receiver.credential_id
@@ -307,10 +289,6 @@ class TelegramBot(models.Model):
 
     @api.model
     def _mini_app_call(self, path_args):
-        """What a Mini App call carries, wherever the transport put it: the
-        path (`bot_id`), the form or query, the JSON-RPC params, or for
-        `init_data` the `X-Telegram-Init-Data` header, which keeps it out of
-        a page's URL."""
         params = dict(request.get_http_params())
         if request.httprequest.mimetype in ("application/json", "application/json-rpc"):
             with contextlib.suppress(ValueError, AttributeError):
@@ -324,10 +302,6 @@ class TelegramBot(models.Model):
 
     @api.model
     def _receiver_for_mini_app(self, **path_args):
-        """The bot a Mini App talks to, and the Telegram user behind the
-        call: a session the app minted earlier (`s`, signed by this
-        database) or the WebApp's `init_data`, signed by the bot's token.
-        The resolver reads who is calling; the gate proves it."""
         call = self._mini_app_call(path_args)
         try:
             bot_id = int(call.get("bot_id") or 0)
@@ -339,11 +313,6 @@ class TelegramBot(models.Model):
         session = call.get("s") or ""
         init_data = call.get("init_data") or ""
         gate = bot._get_or_create_mini_app_receiver()
-        # Resolved once, and the gate is handed the answer rather than the
-        # question. `verify` used to re-run the same resolution, and for
-        # `init_data` that means a second `_get_bot_token()`: a second
-        # credential decrypt AND a second `credential.use` increment, so the
-        # stored usage figure counted every Mini App call twice.
         if session:
             telegram_user_id = bot._resolve_mini_app_session(session)
             return Resolution(
@@ -406,16 +375,6 @@ class TelegramBot(models.Model):
         return telegram_user_id
 
     def _mini_app_user(self, telegram_user_id, tier="internal"):
-        """The Odoo user a Mini App caller may act as: the user its Telegram
-        account's active binding says it is, of the tier asked for. The
-        caller's id comes from initData Telegram signed or a session this
-        database signed; its username never enters into it.
-
-        An internal user comes back in the companies the bot serves that they
-        belong to and no other, and the Mini App call this bot admitted
-        continues as them there, as the router runs an update's sender: what
-        the app reads and writes is of those companies, whichever companies
-        the user has active in Odoo."""
         self.check_singleton()
         if not telegram_user_id:
             return self.env["res.users"]
@@ -441,16 +400,12 @@ class TelegramBot(models.Model):
 
     @api.model
     def _prepare_mini_app_refusal_response(self, refused):
-        """The app's own answer shape: `ok` false and an error code it maps
-        to a message, at 200, whatever the transport said."""
         return request.prepare_json_response(
             {"ok": False, "error": _MINI_APP_REFUSAL_CODES.get(refused.status, "auth")}
         )
 
     @api.model
     def _prepare_mini_app_rpc_refusal_response(self, refused):
-        """The JSON-RPC envelope the task app's client reads: `error` with
-        the status as code and the reason as message."""
         try:
             request_id = request.get_json_data().get("id")
         except ValueError, AttributeError:

@@ -17,11 +17,7 @@ AUDIT_LOG_EVENTS = [
     ("module_security_updated", "Security updated by a module"),
     ("denial", "Refused"),
 ]
-# the transaction's module loads, per module and model: rows created,
-# changed and removed, written to the log once the module's load commits
 MODULE_CHANGES = "ir.access.log.module_changes"
-# and the rows themselves, per module, each a change-set line: what the load
-# changed, the diff its module_update change set holds
 MODULE_LINES = "ir.access.log.module_lines"
 
 
@@ -58,8 +54,6 @@ class IrAccessLog(models.Model):
     def _record_denial(
         self, model_name: str, operation: str, ids: list[int], refusing: list[str]
     ) -> None:
-        # the refused transaction rolls back: the row goes through a cursor of
-        # its own, which a test's registry shares with the test's
         vals = {
             "event": "denial",
             "actor_id": self.env.uid,
@@ -88,7 +82,6 @@ class MixinAccessAudit(models.AbstractModel):
     _name = "mixin.access.audit"
     _description = "Security Row Whose Changes Are Logged"
 
-    # the fields whose changes are logged; empty: every stored field written
     _access_audit_fields: ClassVar[tuple[str, ...]] = ()
 
     def _access_audit_names(self, names: Any) -> list[str]:
@@ -103,8 +96,6 @@ class MixinAccessAudit(models.AbstractModel):
         )
 
     def _access_audit_snapshot(self, names: list[str]) -> dict[int, dict[str, Any]]:
-        # the log reads the rows as the policy reads its own data, whoever
-        # writes them: a refused write must stay a refused write
         records = self.env["ir.access"]._access_evaluator(self._name).browse(self.ids)
         return {
             record.id: {
@@ -210,7 +201,6 @@ class MixinAccessAudit(models.AbstractModel):
     def _access_audit_module_record(
         self, module: str, lines: list[dict[str, Any]]
     ) -> dict[str, Any]:
-        # what the module's log row links beside its summary
         return {}
 
     @api.model_create_multi
@@ -251,7 +241,6 @@ class MixinAccessAudit(models.AbstractModel):
 
     def unlink(self) -> bool:
         if self.env.context.get(MODULE_UNINSTALL_FLAG):
-            # a module's load removing the rows it no longer ships
             data = self.env["ir.model.data"].search_fetch(
                 [("model", "=", self._name), ("res_id", "in", self.ids)],
                 ["module", "res_id"],
@@ -305,7 +294,6 @@ class IrAccess(models.Model):
     )
 
     def _log_denial(self, model_name: str, operation: str, records: Any) -> None:
-        # a refused change of a model whose changes are security: someone tried
         if operation == "read" or not self.env.registry[model_name]._access_audit:
             return
         refusing = (

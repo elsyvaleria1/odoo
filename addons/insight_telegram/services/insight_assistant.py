@@ -71,15 +71,6 @@ class InsightAssistant(BotAssistant):
     SETTINGS = ("insight_ai_enabled", "insight_ai_provider_id", "insight_ai_model_id")
 
     def interpret(self, question, history, queries, *, today):
-        """Which report answers `question`, with its parameters.
-
-        :param str question: what the owner asked
-        :param list history: earlier ``{"question", "interpretation"}`` pairs
-        :param dict queries: the reports available, by key
-        :param str today: the owner's current date, ISO formatted
-        :return: ``{"query": key or "none", ...parameters}``
-        :rtype: dict
-        """
         model = self._chat_model()
         if not model:
             raise CommError(f"No chat model is usable for {PURPOSE}")
@@ -139,8 +130,6 @@ def _schema(queries) -> dict:
         "confidence": {"type": "number"},
         "top": {"type": ["integer", "null"]},
     }
-    # every key spelled out and required: against an open object some
-    # vendors answer "{}"
     return {
         "type": "object",
         "properties": properties,

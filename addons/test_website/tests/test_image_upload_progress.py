@@ -29,9 +29,7 @@ class TestImageUploadProgress(odoo.tests.HttpCase):
         def media_library_search(self, **params):
             return {"results": 0, "media": []}
 
-        # because not preprocessed by ControllerType metaclass
         media_library_search.original_endpoint.routing_type = "json"
-        # disable undraw, no third party should be called in tests
         self.patch(HTML_Editor, "media_library_search", media_library_search)
 
         @http.route("/web_unsplash/fetch_images", type="jsonrpc", auth="user")
@@ -44,12 +42,10 @@ class TestImageUploadProgress(odoo.tests.HttpCase):
                         "id": "HQqIOc8oYro",
                         "alt_description": "brown fox sitting on green grass field during daytime",
                         "urls": {
-                            # 'regular': 'https://images.unsplash.com/photo-1462953491269-9aff00919695?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwzMDUwOHwwfDF8c2VhcmNofDF8fGZveHxlbnwwfHx8fDE2MzEwMzIzNDE&ixlib=rb-1.2.1&q=80&w=1080',
                             "regular": BASE_URL
                             + "/website/static/src/img/user-restricted-image.png",
                         },
                         "links": {
-                            # 'download_location': 'https://api.unsplash.com/photos/HQqIOc8oYro/download?ixid=MnwzMDUwOHwwfDF8c2VhcmNofDF8fGZveHxlbnwwfHx8fDE2MzEwMzIzNDE'
                             "download_location": BASE_URL
                             + "/website/static/src/img/user-restricted-image.png",
                         },
@@ -63,13 +59,8 @@ class TestImageUploadProgress(odoo.tests.HttpCase):
                 ],
             }
 
-        # because not preprocessed by ControllerType metaclass
         get_unsplash_images.original_endpoint.routing_type = "json"
-        # disable undraw, no third party should be called in tests
         self.patch(Web_Unsplash, "get_unsplash_images", get_unsplash_images)
-        # the server downloads the chosen image while it answers the browser:
-        # fetching it back from this same server needs a second request thread,
-        # which a pool sized from a small db_maxconn does not have
         image_url = BASE_URL + "/website/static/src/img/user-restricted-image.png"
         with file_open("website/static/src/img/user-restricted-image.png", "rb") as f:
             image = f.read()

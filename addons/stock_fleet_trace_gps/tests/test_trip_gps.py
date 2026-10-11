@@ -225,7 +225,7 @@ class TestTripGps(TransactionCase):
         route.dwell(5)
         self._sync()
         first.action_deliver()
-        second.action_deliver()  # recorded, but the truck never went there
+        second.action_deliver()
         route.drive_to(*WAREHOUSE)
         route.dwell(2)
         self._sync()
@@ -271,7 +271,7 @@ class TestTripGps(TransactionCase):
         delivery = self._delivery(self.customer_1)
         trip = self._trip(delivery, load=False)
         trip.write({"odometer_departure": 99999.0, "fuel_departure": 70.0})
-        trip.action_depart()  # dispatched by hand, with a mistyped odometer
+        trip.action_depart()
         delivery.action_deliver()
         route = self._route()
         route.dwell(2, ignition=True)
@@ -290,7 +290,7 @@ class TestTripGps(TransactionCase):
         delivery = self._delivery(self.customer_1)
         trip = self._trip(delivery, load=False)
         trip.write({"odometer_departure": 28819.0, "fuel_departure": 80.0})
-        trip.action_depart()  # dispatched by hand before the GPS was ever read
+        trip.action_depart()
         route = self._route()
         route.dwell(3, ignition=True)
         self._sync()
@@ -321,13 +321,11 @@ class TestTripGps(TransactionCase):
         entry = route.logs.filtered(
             lambda log: log.timestamp > at_second.timestamp and self._inside(log)
         )[:1]
-        # Before the read, the truck went out again on an errand.
         route.drive_to(*ROADSIDE)
         route.drive_to(*WAREHOUSE)
         route.dwell(2)
         self._sync()
 
-        # Back, with the absent customer's goods still to unload.
         self.assertEqual(trip.trip_state, "returned")
         self.assertEqual(trip.date_return, entry.timestamp)
         self.assertAlmostEqual(

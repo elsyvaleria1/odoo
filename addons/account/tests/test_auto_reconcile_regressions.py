@@ -186,11 +186,6 @@ class TestAutoReconcileRegressions(TestBankRecWidgetCommon):
         st_lines.cron_last_check = self.env.cr.now() - timedelta(days=days)
 
     def test_cron_revisits_an_open_line_once_its_document_is_booked(self):
-        """The bill is usually booked after the bank movement it settles.
-
-        A run that looked at the transaction on import found nothing to match;
-        the next run finds the document booked in between.
-        """
         st_line = self._create_st_line(
             42.0,
             payment_ref="PAY BOOKEDLATER",
@@ -320,14 +315,6 @@ class TestAutoReconcileRegressions(TestBankRecWidgetCommon):
         )
 
     def test_on_demand_auto_reconcile_reaches_lines_past_the_retry_window(self):
-        """The whole point of the on-demand run.
-
-        `_cron_try_auto_reconcile_statement_lines` revisits a transaction only
-        while it is younger than the retry window, so a reconciliation model
-        written long after the fact is never applied to an older one. The
-        wizard searches by journal and date instead, so that line is reachable
-        again.
-        """
         self._invoice_with_ref("LATERULEAAA", 42.0)
         st_line = self._create_st_line(
             42.0, payment_ref="PAY LATERULEAAA", partner_id=self.partner_a.id
@@ -349,14 +336,6 @@ class TestAutoReconcileRegressions(TestBankRecWidgetCommon):
         )
 
     def test_on_demand_auto_reconcile_isolates_a_failing_line_without_retiring_it(self):
-        """One bad transaction costs one transaction, and stays in the cron's queue.
-
-        `_try_auto_reconcile_statement_lines` works on the whole recordset and
-        aborts on the first line that raises, which is why the cron retries line
-        by line. The on-demand run shares that protection but must not stamp
-        `cron_last_check`: an ad-hoc pass that happened to hit a bad line must
-        not push it to the back of the cron's queue.
-        """
         StatementLine = type(self.env["account.bank.statement.line"])
         genuine = StatementLine._try_auto_reconcile_statement_lines
 
@@ -387,7 +366,6 @@ class TestAutoReconcileRegressions(TestBankRecWidgetCommon):
         )
 
     def test_on_demand_auto_reconcile_wizard_defaults_resolve(self):
-        """The dialog opens on a one-month window; a raising default breaks it for everyone."""
         defaults = self.env[
             "wizard.account.bank.statement.line.reconcile.auto"
         ].default_get(["company_id", "from_date", "to_date"])

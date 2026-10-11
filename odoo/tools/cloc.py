@@ -42,8 +42,6 @@ _JS_KEYWORD_END = re.compile(
 
 
 def _strip_js_comments(s: str) -> str:
-    # A quoted string ends at the newline JavaScript rejects it at, so a
-    # misread slash (regex or division) can never run past its own line.
     out: list[str] = []
     template_braces: list[int] = []
     pos, end = 0, len(s)
@@ -265,7 +263,7 @@ class Cloc:
                 )
 
         self.book(module_name)
-        counted = excluded = 0  # debuglog
+        counted = excluded = 0
         with _debug.perf(
             "cloc.module_counted", module=module_name, exclusions=len(exclude)
         ) as span:
@@ -274,7 +272,7 @@ class Cloc:
                     file_path = str(Path(root, file_name))
 
                     if file_path in exclude:
-                        excluded += 1  # debuglog
+                        excluded += 1
                         continue
 
                     ext = Path(file_path).suffix.lower()
@@ -291,7 +289,7 @@ class Cloc:
                     content = Path(file_path).read_bytes().decode("latin1")
                     if (parsed := self.parse(content, ext)) is not None:
                         self.book(module_name, file_path, parsed)
-                        counted += 1  # debuglog
+                        counted += 1
             span.set(
                 files=counted,
                 excluded=excluded,
@@ -311,13 +309,13 @@ class Cloc:
             domain.append(("imported", "=", False))
         module_list = env["ir.module.module"].search(domain).mapped("name")
 
-        skipped = 0  # debuglog
+        skipped = 0
         for module_name in module_list:
             manifest = odoo.modules.Manifest.for_addon(module_name)
             if manifest and manifest.addons_path not in exclude_path:
                 self.count_path(manifest.path)
             else:
-                skipped += 1  # debuglog
+                skipped += 1
         _debug.pipeline(
             "cloc.modules_counted",
             installed=len(module_list),

@@ -225,7 +225,6 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
             )
 
     def test_create_user_with_doc_access(self):
-        # the user can write the document
         self._give_user_access("edit")
         with self.assertRaises(AccessError):
             self.env["spreadsheet.revision"].with_user(self.user).create(
@@ -271,7 +270,7 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
         with self.assertRaises(AccessError):
             self.spreadsheet.with_user(self.user).read()
         self._give_user_access()
-        self.spreadsheet.with_user(self.user).read()  # the user can read the document
+        self.spreadsheet.with_user(self.user).read()
         with self.assertRaises(AccessError):
             self.spreadsheet.with_user(self.user).spreadsheet_revision_ids.read()
         with self.assertRaises(AccessError):
@@ -295,7 +294,7 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
         self.env.invalidate_all()
         self.spreadsheet.with_user(self.user).write(
             {"name": "new name"}
-        )  # the user can write the document
+        )
         with self.assertRaises(AccessError):
             self.spreadsheet.with_user(self.user).spreadsheet_revision_ids.write({})
 
@@ -348,7 +347,6 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
     def test_snapshot_user_with_doc_access(self):
         self._give_user_access("edit")
         self.spreadsheet.dispatch_spreadsheet_message(
-            # add at least one revision
             self.new_revision_data(self.spreadsheet)
         )
         self.env.invalidate_all()
@@ -382,7 +380,6 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
                 "role": "view",
             }
         )
-        # can't write
         with self.assertRaises(AccessError):
             self.spreadsheet.with_user(portal_user).dispatch_spreadsheet_message(
                 self.new_revision_data(self.spreadsheet)

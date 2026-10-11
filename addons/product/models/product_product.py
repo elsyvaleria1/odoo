@@ -36,13 +36,11 @@ class ProductProduct(models.Model):
         ondelete="cascade",
         bypass_search_access=True,
     )
-    is_favorite = fields.Boolean(  # noqa: E8529  index (is_favorite) partial
+    is_favorite = fields.Boolean(
         related="product_tmpl_id.is_favorite",
         store=True,
         readonly=False,
     )
-    # Not stored, unlike its global sibling: the value differs per user, so
-    # there is no one column that could hold it.
     is_user_favorite = fields.Boolean(
         related="product_tmpl_id.is_user_favorite",
         readonly=False,
@@ -69,11 +67,6 @@ class ProductProduct(models.Model):
         string="Customer Ref",
         compute="_compute_partner_ref",
     )
-    # Verbatim from OCA product-attribute's product_manufacturer (AGPL-3;
-    # OpenERP SA and the Odoo Community Association), which reached this module
-    # through agromarin's port of it. The original provenance is recorded in
-    # research/2026-09-09-product-manufacturer-licence-provenance.md in the
-    # knowledge vault. The current module license is 0BSD (LICENSE.addons).
     manufacturer_id = fields.Many2one(comodel_name="res.partner")
     manufacturer_pname = fields.Char(string="Manufacturer Product Name")
     manufacturer_pref = fields.Char(string="Manufacturer Product Code")
@@ -266,9 +259,6 @@ class ProductProduct(models.Model):
         return products.with_env(self.env)
 
     def write(self, vals):
-        # Starring for yourself needs read access, not write, and the record
-        # that holds the favorite is the template. Forwarding it here keeps
-        # super().write()'s write-access check on the variant off that path.
         if "is_user_favorite" in vals:
             self.product_tmpl_id._update_user_favorite(vals.pop("is_user_favorite"))
             if not vals:
@@ -304,8 +294,6 @@ class ProductProduct(models.Model):
                     )
                 )
             )
-            # A variant holds no value of a no-variant line; the complete
-            # combination its creation is checked against needs one.
             combination = new_template._get_first_possible_combination(
                 necessary_values=combination
             )
@@ -718,10 +706,6 @@ class ProductProduct(models.Model):
                 )
                 limit_rest = None if limit is None else limit - len(products)
                 if limit_rest is None or limit_rest > 0:
-                    # This branch only runs when the default_code search did not
-                    # reach `limit`, so `products` already holds every matching
-                    # default_code row: reuse its ids instead of re-issuing the
-                    # same search as an exclusion subquery.
                     products |= self.search_fetch(
                         domain
                         & Domain("id", "not in", products.ids)
@@ -985,9 +969,6 @@ class ProductProduct(models.Model):
 
     @api.model
     def _get_context_seller_partners(self):
-        # The context may name a partner deleted since: it matches no seller.
-        # One already read in this transaction is cached, and unlink evicts
-        # it, so only an unread one costs the existence query.
         partners = self.env["res.partner"].browse(self.env.context.get("partner_id"))
         commercial = partners._fields["commercial_partner_id"]
         if not all(
@@ -1011,8 +992,6 @@ class ProductProduct(models.Model):
 
     @api.model
     def _keep_nearest_partner_sellers(self, sellers, partners) -> list:
-        # partners is nearest first (_get_seller_partners): a contact's own
-        # lines win over its parent's, which win over its commercial entity's.
         for partner in partners:
             nearest = [seller for seller in sellers if seller.partner_id == partner]
             if nearest:
@@ -1171,14 +1150,14 @@ class ProductProduct(models.Model):
             attribute_name = attribute_name and attribute_name.strip()
             value_name = value_name.strip()
             if not attribute_name:
-                raise ValueError(  # noqa: E8511  the import wizard shows this text
+                raise ValueError(
                     self.env._(
                         "Unable to import products with attribute value without attribute name (defined as: attribute:value): %s",
                         raw,
                     )
                 )
             if attribute_name in seen_attributes:
-                raise ValueError(  # noqa: E8511  the import wizard shows this text
+                raise ValueError(
                     self.env._(
                         "It is not possible to import different values for the same attribute: %s",
                         raw,
@@ -1250,7 +1229,7 @@ class ProductProduct(models.Model):
         for vals in with_import_values:
             name = (vals.get("name") or "").strip()
             if not name and not vals.get("product_tmpl_id"):
-                raise ValueError(  # noqa: E8511  the import wizard shows this text
+                raise ValueError(
                     self.env._(
                         "Unable to import products with attribute values but without name of product set"
                     )
@@ -1419,7 +1398,7 @@ class ProductProduct(models.Model):
             for ptal in template_attribute_to_ptal.values()
             if ptal.purpose != "variant"
         ]:
-            raise ValueError(  # noqa: E8511  the import wizard shows this text
+            raise ValueError(
                 self.env._(
                     "%(attribute)s is a specification of %(product)s, not a variant"
                     " attribute: its values cannot make variants.",
@@ -1581,11 +1560,6 @@ class ProductProduct(models.Model):
         product_field="product_id",
         context=None,
     ):
-        # sudo: re-stamping the unit on documents that already reference the
-        # product is a consistency consequence of a write the caller was allowed
-        # to make on the product itself. Requiring read access to every module's
-        # documents as well would stop a product manager from changing a unit at
-        # all -- _has_order_lines already probes the same rows this way.
         Model = self.env[model].sudo()
         if domain is None:
             domain = [(product_field, "in", self.ids)]

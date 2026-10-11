@@ -254,9 +254,6 @@ class AccountMoveTemplate(models.Model):
 
     def write(self, vals: ValuesType) -> bool:
         if "line_ids" in vals:
-            # The commands run one by one, deletions and updates before
-            # creations, so a template whose only product line is replaced
-            # is empty in between. Its own constraint judges the final lines.
             pending = {
                 *self.env.context.get("account_move_template_lines_pending", ()),
                 *self.ids,

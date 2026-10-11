@@ -1,6 +1,5 @@
 from odoo.tools.module_data import rename_model
 
-# The wizards take the name of what they do (coding guidelines §2.2.3).
 RENAMED = (("account.import.summary", "wizard.account.import.summary"),)
 
 

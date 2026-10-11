@@ -33,7 +33,6 @@ class CaptchaAdapterRecaptcha(models.AbstractModel):
 
     @api.model
     def _post_verification(self, data):
-        # it takes ~50ms to answer; a slow answer is not worth a stuck form
         return self.env.ref(
             "captcha_recaptcha.service_recaptcha"
         )._shared_egress_request(
@@ -43,9 +42,6 @@ class CaptchaAdapterRecaptcha(models.AbstractModel):
     @api.model
     def _verdict_of_success(self, ip_addr, result, action):
         if "score" not in result:
-            # v3 always scores a success: one without a score is not the answer
-            # this code reads (a v2 key, an API change), and an absent score
-            # read as 0 would pass a threshold of 0
             _logger.warning(
                 "reCAPTCHA verification for ip address %s returned no score; "
                 "treating as a failure.",

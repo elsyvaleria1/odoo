@@ -73,14 +73,7 @@ class TestSubscriptionPerformance(TestSubscriptionCommon):
 
             sale_orders.action_confirm()
 
-        # 7731 with only sale_subscription
-        # But as the invoices are created one by one,
-        # adding a request on _create_invoice has a big impact on the
-        # global count
-        # with self.assertQueryCount(__system__=9133):
-        #     sale_orders._create_recurring_invoice()
 
-        # non recurring products
         product_tmpl = self.env["product.template"].create(
             {
                 "name": "Non recurring Product",

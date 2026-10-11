@@ -523,7 +523,6 @@ class TestLinkDoor(HttpCase):
     def test_a_link_opens_its_own_model_only_whatever_the_id(self):
         node = self.env["test_access_right.graph_node"].sudo().create({"name": "n"})
         _link, token = self._issue()
-        # the token of shared_doc <id> on a route of another model with that id
         res = self.url_open(
             f"/test_access_rights/node/{self.doc.id}?access_token={token}"
         )

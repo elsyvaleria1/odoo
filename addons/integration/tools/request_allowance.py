@@ -9,12 +9,6 @@ _debug = DebugLog(__name__)
 def consume_request_allowance(
     key: tuple, consume: Callable[[], bool], *, cr=None
 ) -> bool:
-    """Spend once per HTTP request and policy, including transaction replays.
-
-    Database allowances become reusable only after their charging transaction
-    commits. In-memory caller allowances take effect immediately. No authentication
-    verdict, credential or environment is retained on the request.
-    """
     if not request:
         return consume()
     allowances = getattr(request.scratch, "inbound_allowances", None)

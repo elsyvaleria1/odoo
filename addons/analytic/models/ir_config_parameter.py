@@ -6,7 +6,6 @@ class IrConfigParameter(models.Model):
     _inherit = "ir.config_parameter"
 
     def write(self, vals):
-        """When this paramater is changed, dynamic fields needs to be recomputed"""
         param = self.filtered(lambda x: x.key == "analytic.project_plan")
         if not param:
             return super().write(vals)

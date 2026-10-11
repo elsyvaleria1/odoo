@@ -191,7 +191,6 @@ class DeliveryCarrier(models.Model):
             )
 
         if self.ups_bill_my_account and order.partner_ups_carrier_account:
-            # Don't show delivery amount, if ups bill my account option is true
             price = 0.0
 
         return {
@@ -230,7 +229,7 @@ class DeliveryCarrier(models.Model):
                 {
                     "Code": "BM",
                     "Value": picking.name,
-                },  # BM is used for Bill of Lading, cf. https://developer.ups.com/api/reference/shipping/appendix2?loc=en_BE
+                },
             ],
         }
         if picking.sale_id and picking.sale_id.carrier_id != picking.carrier_id:
@@ -477,7 +476,6 @@ class DeliveryCarrier(models.Model):
             raise ValueError
 
     def _get_delivery_type(self):
-        """Override of delivery to return the ups delivery type."""
         res = super()._get_delivery_type()
         if self.delivery_type != "ups_rest":
             return res

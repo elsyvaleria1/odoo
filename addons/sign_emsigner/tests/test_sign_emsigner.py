@@ -67,9 +67,6 @@ class SignEmsignerCommon(TestSignControllerCommon):
         )
 
     def create_signature_value(self, sign_item_ids, role_id):
-        """
-        Creates a dictionary of signature values for the given sign item IDs and role ID.
-        """
         with file_open("sign/static/demo/signature.png", "rb") as f:
             self.signature_fake = base64.b64encode(f.read())
         return {
@@ -80,10 +77,6 @@ class SignEmsignerCommon(TestSignControllerCommon):
         }
 
     def test_sign_emsigner_with_sign_is_successful(self):
-        """
-        Verifies that signing with valid emSigner status completes successfully.
-        Ensures both request item and sign request states are updated correctly.
-        """
         sign_request_item = self.sign_request_emsigner.request_item_ids[0]
         self.assertEqual(sign_request_item.state, "sent")
         vals = self.create_signature_value(
@@ -104,10 +97,6 @@ class SignEmsignerCommon(TestSignControllerCommon):
         self.assertEqual(self.sign_request_emsigner.state, "signed")
 
     def test_sign_emsigner_without_emsigner_status_raises_error(self):
-        """
-        Ensures that signing fails if the emSigner token or status is missing.
-        verifies that a ValidationError is raised and states remain unchanged
-        """
         sign_request_item = self.sign_request_emsigner.request_item_ids[0]
         self.assertEqual(sign_request_item.state, "sent")
         vals = self.create_signature_value(

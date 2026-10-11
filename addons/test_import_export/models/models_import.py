@@ -36,7 +36,6 @@ class ImportCharStillreadonly(models.Model):
     value = fields.Char(readonly=True)
 
 
-# TODO: complex field (m2m, o2m, m2o)
 class ImportM2o(models.Model):
     _name = "import.m2o"
     _description = "Tests: Base Import Model, Many to One"

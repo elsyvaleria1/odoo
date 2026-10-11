@@ -10,7 +10,6 @@ class TestIrActionsServerFull(DocumentsAccountActionsServerCommon):
     """Testing server actions linked to documents_account that need extra dependencies"""
 
     def test_documents_account_record_create_bank(self):
-        """Test documents_account_record_create action for Bank Statements."""
         expected_journal = self.journals_by_type["bank"]
         action = self.env["ir.actions.server"].create(
             {
@@ -28,7 +27,6 @@ class TestIrActionsServerFull(DocumentsAccountActionsServerCommon):
         self._run_action_and_assert_sync(action, document, expected_journal)
 
     def test_documents_account_standard_actions_bank(self):
-        """Test the pre-configured bank financial server actions."""
         finance_folder = self.env.ref("document.document_finance_folder")
         document = self.document_pdf.copy()
         document.folder_id = finance_folder

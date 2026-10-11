@@ -38,7 +38,7 @@ class WebsiteControllerPage(models.Model):
         string="Related Menus",
     )
 
-    website_id = fields.Many2one(  # noqa: E8529  UNIQUE (name_slugified, website_id) partial
+    website_id = fields.Many2one(
         related="view_id.website_id",
         store=True,
         readonly=False,

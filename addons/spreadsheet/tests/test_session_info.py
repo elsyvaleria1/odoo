@@ -21,10 +21,6 @@ class TestSessionInfo(common.HttpCase):
         }
 
     def test_session_info(self):
-        """
-        Checks that the session_info['can_insert_in_spreadsheet'] structure
-        correspond to what is expected
-        """
         self.authenticate(self.user.login, self.user_password)
         response = self.url_open(
             "/web/session/get_session_info", data=self.payload, headers=self.headers

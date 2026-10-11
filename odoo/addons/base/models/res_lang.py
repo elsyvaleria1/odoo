@@ -194,8 +194,6 @@ class ResLang(models.Model):
                             "displayed when you edit a language."
                         )
                     )
-            # what a render converts to an LDML pattern must convert at save,
-            # or every page formatting a date with it fails instead
             locale = babel_locale_parse(lang.code)
             for fmt in (lang.date_format, lang.time_format):
                 if not fmt:
@@ -507,9 +505,6 @@ class ResLang(models.Model):
     }
 
     def _check_deactivation_allowed(self, lang_codes: list[str]) -> None:
-        # one query per model, the first row by `active desc` telling whether
-        # an active holder exists; the message ranks users over contacts and
-        # active over archived
         holders = {
             model_name: self.env[model_name]
             .sudo()
@@ -536,9 +531,6 @@ class ResLang(models.Model):
                     )
 
     def _reset_environment_languages(self) -> None:
-        # Environment.lang caches whether its context language is installed;
-        # the transaction keeps recent environments alive, so a toggled
-        # language must not be answered from that cache
         envs = list(self.env.transaction.envs)
         _debug.lifecycle("environment_languages_reset", envs=len(envs))
         for env in envs:

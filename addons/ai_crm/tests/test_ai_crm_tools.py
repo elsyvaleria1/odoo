@@ -120,13 +120,10 @@ class TestAiCrmTools(TransactionCase):
         ]
         self.portal_user.function = "Data Analyst"
         lead = self._use_create_lead_tool()
-        # don't overwrite fields that are set (prefer to keep the 'manually' inserted data if any)
         self.assertEqual("Portal", lead.contact_name)
         self.assertEqual("portal@example.com", lead.email_from)
         self.assertEqual("+32987654321", lead._phone_get_number().number)
         self.assertEqual("Data Analyst", lead.function)
-        # if any address field is set on the partner, keep the one set
-        # (don't set any other address field to avoid mixing 2 potentially different addresses)
         self.assertEqual("Brussels", lead.city)
         self.assertFalse(lead.country_id)
         self.assertFalse(lead.state_id)

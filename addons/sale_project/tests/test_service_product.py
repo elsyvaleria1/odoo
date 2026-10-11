@@ -116,23 +116,6 @@ class TestServiceProductConfig(TestSaleProjectCommon):
         self.assertNotIn("task_id", res_no_ctx)
 
     def test_demo_project_template_satisfies_its_own_fields_domain(self):
-        """Whatever the demo declares for ``so_template_project`` must be
-        pickable in the dropdown that references it.
-
-        ``product_template.project_template_id`` only offers real templates
-        (`models/product_template.py`), so an archived plain project is
-        referenced by three demo products while being unpickable in the very
-        dropdown that references it -- and it takes the plain ``copy()`` branch
-        of ``_timesheet_create_project`` instead of
-        ``action_create_from_template``.
-
-        A fresh ``--with-demo`` database cannot be built on this branch (base's
-        own ``res_users_data.xml`` fails to load), so the record's declared
-        values are read straight from the demo file and replayed here, with
-        ``str2bool`` interpreting the booleans the way ``tools/convert.py:475``
-        does. Only the fields the domain actually reads are replayed; the stage
-        links are irrelevant to it.
-        """
         root = etree.parse(
             file_path("sale_project/demo/sale_project_demo.xml")
         ).getroot()
@@ -151,9 +134,6 @@ class TestServiceProductConfig(TestSaleProjectCommon):
             self.env["project.project"].with_context(active_test=False).create(declared)
         )
 
-        # The domain the web client actually receives for the field, evaluated
-        # with the values one of the referencing demo products declares -- also
-        # read from the file, since that product is demo data too.
         product = root.find('.//record[@id="product_service_create_project_and_task"]')
         self.assertEqual(
             product.find('field[@name="project_template_id"]').get("ref"),
@@ -166,8 +146,6 @@ class TestServiceProductConfig(TestSaleProjectCommon):
         domain = safe_eval(
             description["domain"],
             {
-                # the product declares no company, so the field falls back to
-                # the company-less branch of the domain
                 "company_id": False,
                 "current_company_id": self.env.company.id,
                 "service_policy": product.find('field[@name="service_policy"]').text,

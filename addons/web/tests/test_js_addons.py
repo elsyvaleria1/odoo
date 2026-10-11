@@ -10,7 +10,6 @@ class AddonSuite(HOOTCommon):
     pass
 
 
-# the desktop preset excludes tests tagged "mobile", so they need their own pass
 @odoo.tests.tagged("post_install", "-at_install", "addon_js", "-web_js")
 class MobileAddonSuite(HOOTCommon):
     browser_size = "375x667"

@@ -20,8 +20,6 @@ class TestTradeOrderCase(TransactionCase):
 
     def _make_line(self, order=None, **kw):
         order = order or self._make_order()
-        # `name` has no compute until Task 7; supply a default so callers that
-        # don't care about the description can create lines freely.
         vals = {
             "order_id": order.id,
             "product_id": self.product.id,

@@ -40,7 +40,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
             "Should have created 2 statement lines for the transactions",
         )
 
-        # Since there were no existing statement lines for the given journal, it should create an opening bank statement along one statement line.
         statement = self.env["account.bank.statement"].search(
             [("journal_id", "=", self.euro_bank_journal.id)]
         )
@@ -63,7 +62,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         created_st_lines = self.BankStatementLine.search(
             [("journal_id", "=", self.euro_bank_journal.id)], order="internal_index asc"
         )
-        # Verify that all imported bank transactions are converted into statement lines in chronological order and match the expected amounts and dates.
         self.assertRecordValues(
             created_st_lines,
             [
@@ -79,8 +77,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         self.BankStatementLine._online_sync_bank_statement(
             transactions, self.account_online_account
         )
-        # Since ending balance is 20$ and we only have 20$ of transactions and that it is the first statement
-        # it should NOT create a initial statement before this one
         created_st_lines = self.BankStatementLine.search(
             [("journal_id", "=", self.euro_bank_journal.id)], order="internal_index asc"
         )
@@ -100,8 +96,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         self.BankStatementLine._online_sync_bank_statement(
             transactions, self.account_online_account
         )
-        # Since the ending balance (-20$) equals the sum of the inverted transactions and that it is
-        # the first statement, it should NOT create an initial statement before this one
         created_st_lines = self.BankStatementLine.search(
             [("journal_id", "=", self.euro_bank_journal.id)], order="internal_index asc"
         )
@@ -228,7 +222,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
             "Account should be set on the journal",
         )
 
-        # Test with no context present, should create a new journal
         previous_number = self.env["account.journal"].search_count([])
         account_link_journal_wizard.selected_account = online_account_2
         account_link_journal_wizard.sync_now()
@@ -242,7 +235,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
             sanitize_account_number("BE61954856342317"),
         )
 
-        # Test assigning to a journal in another currency
         account_link_journal_wizard.selected_account = online_account_3
         account_link_journal_wizard.with_context(
             active_model="account.journal", active_id=bank_journal_with_account_usd.id
@@ -266,9 +258,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         "odoo.addons.account_online_synchronization.models.account_online.AccountOnlineLink._get_odoo_fin"
     )
     def test_fetch_transaction_date_start(self, patched_fetch):
-        """The start_date param used when fetching transactions is correct."""
         patched_fetch.return_value = {"transactions": []}
-        # Since no transactions exists in db, we should fetch transactions without a starting_date
         self.account_online_account._get_transactions_from_provider()
         data = {
             "start_date": False,
@@ -280,13 +270,11 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         }
         patched_fetch.assert_called_with("/proxy/v2/transactions/posted", data=data)
 
-        # No transaction exists in db but we have a value for last_sync on the online_account, we should use that date
         self.account_online_account.last_sync = "2020-03-04"
         data["start_date"] = "2020-03-04"
         self.account_online_account._get_transactions_from_provider()
         patched_fetch.assert_called_with("/proxy/v2/transactions/posted", data=data)
 
-        # We have transactions, we should use the date of the latest one instead of the last_sync date
         transactions = self._create_online_transactions(["2016-01-01", "2016-01-03"])
         self.BankStatementLine._online_sync_bank_statement(
             transactions, self.account_online_account
@@ -298,9 +286,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         patched_fetch.assert_called_with("/proxy/v2/transactions/posted", data=data)
 
     def test_multiple_transaction_identifier_fetched(self):
-        # Ensure that if we receive twice the same transaction within the same call, it won't be created twice
         transactions = self._create_online_transactions(["2016-01-01", "2016-01-03"])
-        # Add first transactions to the list again
         transactions.append(transactions[0])
         self.BankStatementLine._online_sync_bank_statement(
             transactions, self.account_online_account
@@ -334,8 +320,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         )
 
     def test_duplicate_transaction_date_amount_account(self):
-        """Transactions sharing date, amount, account number and currency are detected as duplicates."""
-        # Create 2 groups of respectively 2 and 3 duplicate transactions
         transactions = self._create_online_transactions(
             [
                 "2024-01-01",
@@ -348,7 +332,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         bsls = self.BankStatementLine._online_sync_bank_statement(
             transactions, self.account_online_account
         )
-        self.env.flush_all()  # _get_duplicate_transactions make sql request, must write to db
+        self.env.flush_all()
         duplicate_transactions = self.euro_bank_journal._get_duplicate_transactions(
             fields.Date.to_date("2000-01-01")
         )
@@ -361,17 +345,14 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
 
         self.assertEqual(duplicate_transactions, [group_1, group_2])
 
-        # check has_duplicate_transactions
         has_duplicate_transactions = self.euro_bank_journal._has_duplicate_transactions(
             fields.Date.to_date("2000-01-01")
         )
         self.assertTrue(
             has_duplicate_transactions is True
-        )  # explicit check on bool type
+        )
 
     def test_duplicate_transaction_online_transaction_identifier(self):
-        """Transactions sharing the same online_transaction_identifier are detected as duplicates."""
-        # Create transactions
         transactions = self._create_online_transactions(
             ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"]
         )
@@ -381,7 +362,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
 
         group_1, group_2 = [], []
         for bsl in bsls:
-            # have to update the online_transaction_identifier after to force duplicates
             if bsl.payment_ref in ("transaction_1", "transaction_2"):
                 group_1.append(bsl.id)
                 bsl.online_transaction_identifier = "same_oti_1"
@@ -389,7 +369,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
                 group_2.append(bsl.id)
                 bsl.online_transaction_identifier = "same_oti_2"
 
-        self.env.flush_all()  # _get_duplicate_transactions make sql request, must write to db
+        self.env.flush_all()
         duplicate_transactions = self.euro_bank_journal._get_duplicate_transactions(
             fields.Date.to_date("2000-01-01")
         )
@@ -397,7 +377,6 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
 
     @patch.object(GuardedSession, "request")
     def test_fetch_receive_error_message(self, patched_request):
-        # When an error is received, a redirectWarning with the correct parameter should be thrown.
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -419,20 +398,17 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         return_act_url = {"type": "ir.actions.act_url", "url": generated_url}
         body_generated_url = generated_url.replace(
             "&", "&amp;"
-        )  # in post_message, & has been escaped to &amp;
+        )
         message_body = f"""<p>This kind of things can happen.
 
 If you've already opened a ticket for this issue, don't report it again: a support agent will contact you shortly.<br>You can contact Odoo support <a href=\"{body_generated_url}\">Here</a></p>"""
 
-        # flush and clear everything for the new "transaction"
         self.env.invalidate_all()
         with self.sync_env_with_side_cursors(), self.env.registry.cursor() as test_cr:
             test_env = self.env(cr=test_cr)
             test_link_account = self.account_online_link.with_env(test_env)
             test_link_account.state = "connected"
 
-            # this hand-written self.assertRaises() does not roll back self.cr,
-            # which is necessary below to inspect the message being posted
             try:
                 test_link_account._get_odoo_fin("/testthisurl")
             except RedirectWarning as exception:
@@ -447,8 +423,6 @@ If you've already opened a ticket for this issue, don't report it again: a suppo
             self.assertEqual(test_link_account.message_ids[0].body, message_body)
 
     def test_account_online_link_having_journal_ids(self):
-        """The account online link exposes all the journals in the field journal_ids."""
-        # Create a bank sync connection having 2 online accounts (with one journal connected for each account)
         online_link = self.env["account.online.link"].create(
             {
                 "name": "My New Bank connection",
@@ -484,8 +458,7 @@ If you've already opened a ticket for this issue, don't report it again: a suppo
                 },
             ]
         )
-        # These journals must be reachable from the link because they carry the consent expiring date
         self.assertEqual(online_link.account_online_account_ids, online_accounts)
         self.assertEqual(
             len(online_link.journal_ids), 2
-        )  # Our online link connections should have 2 journals.
+        )

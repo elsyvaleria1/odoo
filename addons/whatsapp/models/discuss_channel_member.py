@@ -13,8 +13,6 @@ class DiscussChannelMember(models.Model):
 
     @api.autovacuum
     def _gc_unpin_whatsapp_channels(self) -> tuple:
-        """Unpin read whatsapp channels with no activity for at least one day to
-        clean the operator's interface."""
         one_day_ago = datetime.now() - timedelta(days=1)
         five_days_ago = datetime.now() - timedelta(days=5)
         members = self.env["discuss.channel.member"].search(

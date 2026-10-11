@@ -198,8 +198,6 @@ def modernize_xml_file(path: Path, *, dry_run: bool = False) -> bool | None:
 
 
 _EVAL_ATTRIBUTE = re.compile(rb"""\beval\s*=\s*(["'])(.*?)\1""", re.DOTALL)
-# XML attribute-value normalization: a line break or tab written in the
-# attribute reaches the parsed value as a space, a character reference does not
 _ATTRIBUTE_WHITESPACE = re.compile(r"\r\n|[\t\n\r]")
 
 
@@ -216,11 +214,6 @@ def _escape(value: str, quote: bytes) -> bytes:
 def _splice_evals(
     source: bytes, edits: list[tuple[etree._Element, str, str]]
 ) -> bytes | None:
-    # only the eval values change, in the file's own bytes: its quoting,
-    # spacing, entities and every other attribute stay as written
-    # the edits come in document order, so each eval is searched from where
-    # the last one ended: lxml numbers a start tag written over several lines
-    # by its last line, which can lie past the eval itself
     out, cursor = [], 0
     for _element, expression, rewritten in edits:
         for match in _EVAL_ATTRIBUTE.finditer(source, cursor):
@@ -291,12 +284,12 @@ def main(argv: list[str] | None = None) -> None:
             skipped += 1
         elif result:
             label = "would rewrite" if args.dry_run else "rewrote      "
-            print(f"  {label}  {xml_file}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+            print(f"  {label}  {xml_file}")
             changed += 1
         else:
             unchanged += 1
     verb = "would change" if args.dry_run else "rewritten"
-    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")
 
 
 if __name__ == "__main__":

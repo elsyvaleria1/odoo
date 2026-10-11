@@ -16,7 +16,6 @@ class TestOldRules(TestStockCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # the three-step reception route's third rule is the pull from Vendors
         if is_module_installed(cls.env, "purchase_stock"):
             raise unittest.SkipTest(RECEPTION_ROUTE_BOUGHT)
         cls.partner = cls.env["res.partner"].create({"name": "Partner"})

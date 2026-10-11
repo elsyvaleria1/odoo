@@ -20,7 +20,6 @@ class DestinationCase(MailTelegramCase):
         cls.test_user._telegram_settings().telegram_notify_inbox = "always"
 
     def _second_chat(self, tg_user_id="55501", bot=None, active_at=None):
-        """Another Telegram account of the test user, with its own chat."""
         account = self._bound_account(
             tg_user_id, self.test_partner, user=self.test_user
         )
@@ -112,11 +111,7 @@ class TestOneDestination(DestinationCase):
         self.assertEqual(self.test_user._get_telegram_notify_status()[0], "no_bot")
 
     def test_a_bot_of_another_company_leaves_their_own_bot_delivering(self):
-        # the other company's bot is not theirs to read: it is skipped, not a
-        # refusal of every notification and of connecting
         self._bot_of_another_company("Other Notify Bot").notify_mail = True
-        # read from the database, as a request does, not from what creating it
-        # left in the cache
         self.env.invalidate_all()
 
         self._post_to_user()

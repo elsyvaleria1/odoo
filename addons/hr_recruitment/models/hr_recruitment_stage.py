@@ -74,10 +74,6 @@ class HrRecruitmentStage(models.Model):
 
     @api.model
     def _get_first_stage_by_job(self, jobs):
-        """The stage a new application lands in, per job.
-
-        A job-specific stage wins over a generic one at the same sequence.
-        """
         none = self.browse()
         stages_by_job = dict(
             self._read_group(
@@ -94,8 +90,6 @@ class HrRecruitmentStage(models.Model):
             if not candidates:
                 first_stage_by_job[job] = none
                 continue
-            # By id, not by `stage not in job_stages`: recordset membership is a
-            # scan, and this runs inside the comparison key.
             job_stage_ids = set(job_stages._ids)
             first_stage_by_job[job] = min(
                 candidates,

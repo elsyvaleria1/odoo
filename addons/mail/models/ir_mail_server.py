@@ -170,8 +170,6 @@ class PinnedSMTP(smtplib.SMTP):
 
 
 class PinnedSMTP_SSL(smtplib.SMTP_SSL, PinnedSMTP):
-    # SMTP_SSL wraps what super()._get_socket returns, so PinnedSMTP sits
-    # between it and SMTP in this order; its own __init__ skips super()
     def __init__(
         self,
         host: str,
@@ -185,9 +183,6 @@ class PinnedSMTP_SSL(smtplib.SMTP_SSL, PinnedSMTP):
 
 
 class _PayloadWatch:
-    # smtplib hands every command to ``send`` as text and the DATA payload as
-    # bytes, so the last successful ``send`` tells whether the server holds a
-    # complete message whose verdict was lost with the connection.
     __slots__ = ("_installed", "session", "submitted")
 
     def __init__(self, session: Any) -> None:

@@ -62,10 +62,6 @@ class SaleOrderLine(models.Model):
         super(SaleOrderLine, self - event_lines)._compute_product_uom_readonly()
 
     def _init_registrations(self) -> bool:
-        """Create registrations linked to a sales order line. A sale
-        order line has a product_uom_qty attribute that will be the number of
-        registrations linked to this line."""
-        # Only ever called with one order's own lines (see action_confirm).
         self.order_id.check_singleton()
         registrations_vals = []
         for so_line in self:
@@ -79,8 +75,6 @@ class SaleOrderLine(models.Model):
                     "sale_order_line_id": so_line.id,
                     "sale_order_id": so_line.order_id.id,
                 }
-                # Keep paid registrations in draft so attendee details can be
-                # filled before confirmation; free ones stay open for seat checks.
                 if not so_line.currency_id.is_zero(so_line.price_total):
                     values["state"] = "draft"
                 registrations_vals.append(values)
@@ -116,11 +110,9 @@ class SaleOrderLine(models.Model):
 
     @api.depends("event_slot_id", "event_ticket_id")
     def _compute_name(self):
-        """Override to add the compute dependency (see _get_line_multiline_description_sale)."""
         super()._compute_name()
 
     def _get_line_multiline_description_sale(self):
-        """Return the ticket-based description when a ticket is set, else defer to the product."""
         if self.event_ticket_id:
             return (
                 self.event_ticket_id._get_ticket_multiline_description()
@@ -135,7 +127,6 @@ class SaleOrderLine(models.Model):
             return super()._get_line_multiline_description_sale()
 
     def _use_template_name(self):
-        """We do not want configured description to get rewritten by template default"""
         if self.event_ticket_id:
             return False
         return super()._use_template_name()

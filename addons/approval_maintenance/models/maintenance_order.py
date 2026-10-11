@@ -44,7 +44,6 @@ class MaintenanceOrder(models.Model):
         return Markup("").join(parts)
 
     def _submits_approval_request_on_raise(self) -> bool:
-        # the owner attaches the documents the request asks for, then submits it
         return False
 
     def _get_approval_raised_note(self, approval) -> Markup:

@@ -79,9 +79,6 @@ class CircuitBreaker:
         self.failure_threshold = failure_threshold
         self.failure_window = failure_window
         self.probe_abandon_after = probe_abandon_after
-        # probes admitted, then given up on so another could go: one still
-        # running may yet report the success that closes the breaker, until a
-        # newer probe reports a failure
         self._abandoned_probes: set[int] = set()
         self._recent_failures: deque[float] = deque()
         self._lock = threading.Lock()
@@ -91,7 +88,6 @@ class CircuitBreaker:
         self._probing_since = 0.0
         self._probe_window = probe_abandon_after
         self._generation = 0
-        # a registry may replace a breaker; an attempt of the old one is stale here
         self._id = next(_BREAKER_IDS)
         self.failures = 0
         self.trips = 0
@@ -189,8 +185,6 @@ class CircuitBreaker:
         return True
 
     def release(self, attempt: Attempt | None) -> None:
-        # an admitted call that produced no outcome frees the probe slot, so
-        # the next caller probes now instead of after the probe's window
         with self._lock:
             if (
                 attempt is not None
@@ -208,9 +202,6 @@ class CircuitBreaker:
                 return False
             closing = self._open
             if closing:
-                # an abandoned probe closing it leaves the newer probe still in
-                # flight current: that call was sent later, so its outcome is
-                # newer evidence and counts as a closed breaker's outcome
                 newer_probe_in_flight = (
                     attempt is not None
                     and attempt.generation != self._generation
@@ -250,8 +241,6 @@ class CircuitBreaker:
                     and attempt.breaker == self._id
                     and attempt.generation in self._abandoned_probes
                 ):
-                    # newer evidence: no older abandoned probe's late success
-                    # may close the breaker after it
                     self._abandoned_probes = {
                         g for g in self._abandoned_probes if g > attempt.generation
                     }

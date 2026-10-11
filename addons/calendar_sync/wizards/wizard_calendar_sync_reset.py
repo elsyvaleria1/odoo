@@ -61,8 +61,6 @@ class WizardCalendarSyncReset(models.TransientModel):
             )
         )
         if self.delete_policy in ("delete_remote", "delete_both"):
-            # deleted now, while the account the user leaves can be reached;
-            # an event of a series goes with its series
             adapter = account._adapter().with_context(calendar_sync_interactive=True)
             deleted = organized.filtered(
                 lambda link: (
@@ -74,8 +72,6 @@ class WizardCalendarSyncReset(models.TransientModel):
             )
             for link in deleted:
                 account._call(adapter._delete, account, link.remote_id)
-            # the attendees' calendars lose the items too: their links would
-            # read the deletion as their declining
             links |= Link._of(organized.event_id, code) | Link._of(
                 organized.recurrence_id, code
             )
@@ -92,7 +88,6 @@ class WizardCalendarSyncReset(models.TransientModel):
             {
                 "sync_token": False,
                 "last_sync_date": False,
-                # "new": what exists now is not sent; "all": every event is
                 "insert_since": fields.Datetime.now()
                 if self.sync_policy == "new"
                 else False,

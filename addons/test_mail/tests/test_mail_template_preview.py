@@ -26,13 +26,11 @@ class TestMailTemplateTools(TestMailTemplateCommon):
         test_record_ref = f"{test_record._name},{test_record.id}"
         test_template = self.test_template.with_user(self.env.user)
 
-        # resource_ref: should not crash if no template (hence no model)
         preview = Form(self.env["wizard.mail.template.preview"])
         self.assertFalse(preview.has_attachments)
         self.assertTrue(preview.has_several_languages_installed)
         self.assertFalse(preview.resource_ref)
 
-        # mail_template_id being invisible, create a new one for template check
         preview = Form(
             self.env["wizard.mail.template.preview"].with_context(
                 default_mail_template_id=test_template.id
@@ -47,7 +45,6 @@ class TestMailTemplateTools(TestMailTemplateCommon):
         )
 
     def test_mail_template_preview_empty_database(self):
-        """Check behaviour of the wizard when there is no record for the target model."""
         self.env["mail.test.lang"].search([]).unlink()
         test_template = self.env["mail.template"].browse(self.test_template.ids)
         preview = self.env["wizard.mail.template.preview"].create(
@@ -63,7 +60,6 @@ class TestMailTemplateTools(TestMailTemplateCommon):
             self.assertEqual(test_template[field], preview[field])
 
     def test_mail_template_preview_dynamic_attachment(self):
-        """Check behaviour with templates that use reports."""
         test_record = self.env["mail.test.lang"].browse(self.test_record.ids)
         test_report = (
             self.env["ir.actions.report"]
@@ -89,7 +85,7 @@ class TestMailTemplateTools(TestMailTemplateCommon):
             self.env["wizard.mail.template.preview"]
             .with_context(
                 {
-                    "force_report_rendering": False,  # this also invalidates the test records...
+                    "force_report_rendering": False,
                 }
             )
             .create(

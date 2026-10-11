@@ -100,7 +100,6 @@ class SpreadsheetMixinControllerTest(SpreadsheetTestCase, HttpCase):
         self.assertEqual(len(archived_revisions), 2)
         archived_revisions.unlink()
 
-        # new revision
         commands = self.new_revision_data(spreadsheet)
         spreadsheet.dispatch_spreadsheet_message(commands)
 

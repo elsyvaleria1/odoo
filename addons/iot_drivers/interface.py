@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Interface(Thread):
-    _loop_delay = 3  # Delay (in seconds) between calls to get_devices or 0 if it should be called only once
+    _loop_delay = 3
     connection_type = ""
     allow_unsupported = False
 
@@ -49,10 +49,6 @@ class Interface(Thread):
                 del unsupported_devices[identifier]
             d = supported_driver(identifier, device)
             iot_devices[identifier] = d
-            # Start the thread after creating the iot_devices entry so the
-            # thread can assume the iot_devices entry will exist while it's
-            # running, at least until the `disconnect` above gets triggered
-            # when `removed` is not empty.
             d.start()
         elif self.allow_unsupported and identifier not in unsupported_devices:
             _logger.info("Unsupported device %s is now connected", identifier)

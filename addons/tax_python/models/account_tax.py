@@ -36,14 +36,12 @@ class AccountTax(models.Model):
                 self._check_and_normalize_formula(tax.formula)
 
     def _eval_taxes_computation_prepare_product_fields(self):
-        # EXTENDS 'account'
         field_names = super()._eval_taxes_computation_prepare_product_fields()
         for tax in self.filtered(lambda tax: tax.amount_type == "code"):
             field_names.update(tax.formula_decoded_info["product_fields"])
         return field_names
 
     def _eval_taxes_computation_prepare_product_uom_fields(self):
-        # EXTENDS 'account'
         field_names = super()._eval_taxes_computation_prepare_product_uom_fields()
         for tax in self.filtered(lambda tax: tax.amount_type == "code"):
             field_names.update(tax.formula_decoded_info["product_uom_fields"])
@@ -67,9 +65,6 @@ class AccountTax(models.Model):
 
     @api.model
     def _check_and_normalize_formula(self, formula) -> tuple:
-        """Check the formula is passing the minimum check to ensure the compatibility between both evaluation
-        in python & javascript.
-        """
 
         def is_field_serializable(model, field_name) -> bool:
             assert isinstance(field_name, str), "Field name must be a string"
@@ -85,20 +80,10 @@ class AccountTax(models.Model):
         return transformed_formula, accessed_fields
 
     def _eval_tax_amount_formula(self, raw_base, evaluation_context):
-        """Evaluate the formula of the tax passed as parameter.
-
-        [!] Mirror of the same method in account_tax.js.
-        PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-
-        :param raw_base:
-        :param evaluation_context:  The context created by '_eval_taxes_computation_prepare_context'.
-        :return:                    The tax base amount.
-        """
         normalized_formula, accessed_fields = self._check_and_normalize_formula(
             self.formula_decoded_info["py_formula"]
         )
 
-        # Safe eval.
         formula_context = {
             "price_unit": evaluation_context["price_unit"],
             "quantity": evaluation_context["quantity"],
@@ -126,7 +111,6 @@ class AccountTax(models.Model):
             return 0.0
 
     def _eval_tax_amount_fixed_amount(self, batch, raw_base, evaluation_context):
-        # EXTENDS 'account'
         if self.amount_type == "code":
             return self._eval_tax_amount_formula(raw_base, evaluation_context)
         return super()._eval_tax_amount_fixed_amount(

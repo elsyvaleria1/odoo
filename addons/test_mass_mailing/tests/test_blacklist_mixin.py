@@ -38,7 +38,6 @@ class TestBLMixin(common.TestMassMailCommon):
 
     @users("employee")
     def test_bl_mixin_is_blacklisted(self):
-        """Test is_blacklisted field computation"""
         record = self.env["mailing.test.blacklist"].create(
             {"email_from": "arya.stark@example.com"}
         )
@@ -51,7 +50,6 @@ class TestBLMixin(common.TestMassMailCommon):
 
     @users("employee")
     def test_bl_mixin_search_blacklisted(self):
-        """Test is_blacklisted field search implementation"""
         record1 = self.env["mailing.test.blacklist"].create(
             {"email_from": "arya.stark@example.com"}
         )
@@ -81,7 +79,6 @@ class TestBLMixin(common.TestMassMailCommon):
 
     @users("employee")
     def test_bl_mixin_search_blacklisted_format(self):
-        """Test is_blacklisted field search using email parsing"""
         record1 = self.env["mailing.test.blacklist"].create(
             {"email_from": "Arya Stark <arya.stark@example.com>"}
         )

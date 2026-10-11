@@ -61,9 +61,6 @@ class SpreadsheetRevision(models.Model):
 
     @api.autovacuum
     def _gc_revisions(self, domain=(), inactivity_days=365) -> None:
-        """Delete the history for spreadsheets that have not been modified for more
-        than a year (overridable with an 'ir.config_parameter').
-        """
         config_param = self.env.registry.settings.get(
             self.env, "spreadsheet_edition.gc_revisions_inactivity_in_days", ""
         )
@@ -99,7 +96,6 @@ class SpreadsheetRevision(models.Model):
                     .with_context(preserve_spreadsheet_revisions=True)
                 )
                 for record in records.filtered("spreadsheet_snapshot"):
-                    # reset the initial data to the current snapshot
                     record.spreadsheet_binary_data = record.spreadsheet_snapshot
             stale_revisions = self.search(
                 [

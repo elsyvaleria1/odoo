@@ -40,7 +40,6 @@ class TestWorkEntryModificationGuard(TransactionCase):
         cls.validated_entry.state = "validated"
 
     def test_check_modification_allowed_refuses_a_validated_entry(self):
-        """The gantt asks the server before touching a selection, so the server must answer."""
         with self.assertRaises(UserError):
             (self.validated_entry | self.draft_entry).check_modification_allowed()
 
@@ -48,6 +47,5 @@ class TestWorkEntryModificationGuard(TransactionCase):
         self.draft_entry.check_modification_allowed()
 
     def test_setting_a_validated_entry_back_to_draft_still_works(self):
-        """Extracting the guard must not swallow the `state` escape `write` relies on."""
         self.validated_entry.action_set_to_draft()
         self.assertEqual(self.validated_entry.state, "draft")

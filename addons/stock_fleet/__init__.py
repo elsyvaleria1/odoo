@@ -9,10 +9,7 @@ from .models.stock_picking_trip import (
     UNBATCH_UNDELIVERED,
 )
 
-# Backdating a trip is for the server's own readers, never for a client.
 declare_authority_keys("stock_fleet", TRIP_DEPARTURE_DATE, TRIP_RETURN_DATE)
-# Taking a transfer off a departed trip, or moving it to another trip, is the
-# server's: the not-delivered and correction wizards, and merging trips.
 declare_authority_keys(
     "stock_fleet", UNBATCH_UNDELIVERED, UNBATCH_CORRECTION, MERGE_TRIPS
 )

@@ -59,7 +59,6 @@ class TelegramHandlerAttendance(models.AbstractModel):
         return bool(self._employee_companies(bot, partner))
 
     def _command_companies(self, bot, chat, command, partner, internal_user):
-        # attendance is recorded on an employee: the companies they are one in
         return self._employee_companies(bot, partner)
 
     def _explain_command_refusal(
@@ -75,9 +74,6 @@ class TelegramHandlerAttendance(models.AbstractModel):
 
     @staticmethod
     def _own_attendance(bot, partner, model_name):
-        # on behalf of the chat's contact, in the company the bot acts in: the
-        # privilege reaches that contact's employee there, whichever user the
-        # command runs as
         return in_bot_company(
             partner.env[model_name]
             .with_acting_partner(partner)
@@ -89,8 +85,6 @@ class TelegramHandlerAttendance(models.AbstractModel):
         )
 
     def _employee(self, bot, partner):
-        """The employee the chat's contact is in the company the bot acts in,
-        or none."""
         if not partner:
             return partner.env["hr.employee"]
         company = bot.with_env(partner.env)._acting_company()
@@ -100,8 +94,6 @@ class TelegramHandlerAttendance(models.AbstractModel):
         )
 
     def _employee_companies(self, bot, partner):
-        """The companies the bot serves where the chat's contact is an
-        employee."""
         served = keeping(bot).company_ids.with_env(bot.env)
         if not partner:
             return served.browse()
@@ -526,8 +518,6 @@ class TelegramHandlerAttendance(models.AbstractModel):
         attendance = self._own_attendance(bot, partner, "hr.attendance").browse(
             open_attendance_id
         )
-        # browsed elevated for a sender outside the bot's company: only the
-        # sender's own employee's attendance is ever closed here
         if (
             not attendance.exists()
             or attendance.check_out

@@ -24,7 +24,6 @@ class TestUsageCounters(TransactionCase):
         )
 
     def _stored(self):
-        """The counters as the row holds them in this transaction."""
         self.env.flush_all()
         self.env.cr.execute(
             "SELECT usage_count, success_count, error_count, success_rate, "
@@ -97,8 +96,6 @@ class TestUsageCounters(TransactionCase):
         )
 
     def _losing_registry(self, losses):
-        """A registry whose cursors lose `losses` times to a concurrent update,
-        then are this test's own."""
         tries = []
         cr = self.env.cr
 

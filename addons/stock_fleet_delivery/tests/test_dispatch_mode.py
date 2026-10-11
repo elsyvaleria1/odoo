@@ -72,10 +72,6 @@ class TestDispatchMode(TransactionCase):
                     picking.button_validate()
 
     def test_what_rides_our_vehicle_does_not_depend_on_the_type_rule(self):
-        # The GPS asks what the vehicle carries even where trips are optional:
-        # own fleet, salesperson and no mode ride it; a third-party carrier and
-        # the customer do not. The type's rule only decides whether a trip is
-        # compulsory, and only for what rides the vehicle.
         rides = {None: True, "own_fleet": True, "salesperson": True}
         rides |= {"third_party": False, "pickup": False}
         for compulsory in (True, False):
@@ -133,8 +129,6 @@ class TestDispatchMode(TransactionCase):
         return trip, salesperson
 
     def test_a_salesperson_leaves_on_friday_and_delivers_on_monday(self):
-        # Loaded on Friday at CDG, the salesperson takes the goods home for the
-        # weekend and delivers on Monday: the trip stays open until then.
         for compulsory in (True, False):
             with self.subTest(compulsory=compulsory):
                 self.out_type.dispatch_batch_required = compulsory

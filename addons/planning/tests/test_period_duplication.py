@@ -16,7 +16,7 @@ class TestPeriodDuplication(TestCommonPlanning):
                 "resource_id": cls.resource_bert.id,
                 "start_datetime": datetime(
                     2019, 6, 3, 8, 0
-                ),  # it was a slot on Sunday...
+                ),
                 "end_datetime": datetime(2019, 6, 3, 17, 0),
             }
         )
@@ -47,13 +47,6 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_dont_duplicate_recurring_slots(self):
-        """Original week :  6/2/2019 -> 6/8/2019
-        Destination week : 6/9/2019 -> 6/15/2019
-         slots:
-             6/2/2019 08:00 -> 6/2/2019 17:00
-             6/4/2019 08:00 -> 6/5/2019 17:00
-             6/3/2019 08:00 -> 6/3/2019 17:00 --> this one should be recurrent therefore not duplicated
-        """
         employee = self.employee_bert
 
         self.assertEqual(len(self.get_by_employee(employee)), 3)
@@ -98,15 +91,6 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_should_preserve_local_time(self):
-        """Original week: 10/19/2020 -> 10/23/2020
-        Destination week: 10/26/2020 -> 10/30/2020
-        Timezone: Europe/Brussels
-         slots:
-             10/19/2020 08:00 (CEST) -> 10/19/2020 17:00
-
-        After copy, we need to have a slot on Monday 10/26 with the same time
-             10/19/2020 08:00 (CET) -> 10/19/2020 17:00
-        """
         employee = self.employee_joseph
         employee.tz = "Europe/Brussels"
         self.env["planning.slot"].action_copy_previous_week(
@@ -132,20 +116,9 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_on_non_working_days_for_flexible_hours(self):
-        """When applying copy_previous week, it should copy the shifts of flexible resources when they fall on a non-working day.
-        (E.g. a shift on a Sunday for a flexible employee should be copied to the next Sunday with same allocated hours)
-
-        Test Case:
-        =========
-        1) set an employee with a flexible calendar.
-        2) create a shift on a Sunday
-        3) apply copy_previous_week and verify that the shift is copied to the next Sunday with the same allocated hours
-        """
-        # set a employee with a flexible calendar
         employee = self.resource_bert
         employee.calendar_id = self.flex_50h_calendar
 
-        # set a shift on Sunday for 7 hours
         self.env["planning.slot"].create(
             {
                 "resource_id": employee.id,
@@ -154,7 +127,6 @@ class TestPeriodDuplication(TestCommonPlanning):
             }
         )
 
-        # copy the slot to the next Sunday
         self.env["planning.slot"].action_copy_previous_week(
             "2020-10-19 00:00:00",
             [
@@ -177,18 +149,9 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_for_fully_flexible_hours(self):
-        """Test copy_previous_week for fully flexible resources.
-        Test Case:
-        =========
-        1) set an employee with a fully flexible calendar.
-        2) create 3 slots on 3 different days with each different allocated hours (Monday 5h, Tuesday 6h, Friday 11h)
-        3) apply copy_previous_week and verify that the shift is copied to the next week with the same allocated hours
-        """
-        # set an employee as a fully flexible resource
         employee = self.resource_bert
         employee.calendar_id = False
 
-        # set 3 slots on 3 different days with different allocated hours
         self.env["planning.slot"].create(
             [
                 {
@@ -212,7 +175,6 @@ class TestPeriodDuplication(TestCommonPlanning):
             ]
         )
 
-        # copy the slot to the next week
         self.env["planning.slot"].action_copy_previous_week(
             "2020-10-19 00:00:00",
             [
@@ -228,7 +190,6 @@ class TestPeriodDuplication(TestCommonPlanning):
             ]
         )
 
-        # check number of slots and their allocated hours
         self.assertEqual(3, len(duplicated_slots), "3 slots duplicated")
         self.assertEqual(
             5,
@@ -253,15 +214,6 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_open_shift(self):
-        """Test copy_previous_week with a open shift
-
-        Test Case:
-        =========
-        1) create a calendar with overlapping shifts
-        2) create an open shift planned
-        3) apply `copy_previous_week` for the next week
-        4) make sure the allocated hours for the new shift is the same than the one copied
-        """
         rescource_calendar_with_overlapping = self.env["resource.calendar"].create(
             {
                 "name": "Classic 40h/week with overlapping",
@@ -391,7 +343,6 @@ class TestPeriodDuplication(TestCommonPlanning):
                 "state": "2_published",
             }
         )
-        # copy the slot to the next week
         self.env["planning.slot"].action_copy_previous_week(
             "2020-10-19 00:00:00",
             [
@@ -416,20 +367,9 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_on_non_working_days_for_fully_flexible_hours(self):
-        """When applying copy_previous week, it should copy the shifts of flexible resources when they fall on a non-working day.
-        (E.g. a shift from Saturday toSunday for a fully flexible employee should be copied to the next week with same allocated hours)
-
-        Test Case:
-        =========
-        1) set an employee with a fully flexible calendar.
-        2) create a shift from Saturday to Sunday
-        3) apply copy_previous_week and verify that the shift is copied to the next week with the same allocated hours
-        """
-        # set an employee as a fully flexible resource
         employee = self.resource_bert
         employee.calendar_id = False
 
-        # set a shift on Saturday Evening 9PM to Sunday morning 8AM (11 hours)
         self.env["planning.slot"].create(
             {
                 "resource_id": employee.id,
@@ -439,7 +379,6 @@ class TestPeriodDuplication(TestCommonPlanning):
             }
         )
 
-        # copy the slot to the next week
         self.env["planning.slot"].action_copy_previous_week(
             "2020-10-19 00:00:00",
             [
@@ -462,19 +401,9 @@ class TestPeriodDuplication(TestCommonPlanning):
         )
 
     def test_duplication_on_non_working_days_for_regular_employee(self):
-        """When applying copy_previous week, slots of regular 9-5 employees
-        which land on non-working days should not be copied to the next week.
-
-        Test Case:
-        =========
-        1) set an employee with a regular calendar.
-        2) create a shift on a Sunday
-        3) apply copy_previous_week and verify that the shift is not copied to the next Sunday
-        """
 
         employee = self.employee_bert
 
-        # set a shift on Sunday for 8 hours
         self.env["planning.slot"].create(
             {
                 "employee_id": employee.id,
@@ -483,7 +412,6 @@ class TestPeriodDuplication(TestCommonPlanning):
             }
         )
 
-        # copy the slot to the next Sunday
         self.env["planning.slot"].action_copy_previous_week(
             "2020-10-19 00:00:00",
             [
@@ -677,21 +605,11 @@ class TestPeriodDuplication(TestCommonPlanning):
         self.assertIn(False, resource_ids, "One of the shifts should open")
 
     def test_duplication_forecasted_slot_when_unavailabilities(self):
-        """When copying a forecasted slot (> 24 hours) through the copy previous week action, we need to ensure that
-            the copied slots are correctly split in case of unavailabilities from the resource.
-        test:
-            21 August : working day
-            22 August : public holiday (2 slots created)
-            23 August : working day
-            24 August : public holiday (2 slots created)
-            25 August : working day
-        """
         self.env.user.company_id.resource_calendar_id = self.company_calendar
         self.employee_joseph.resource_calendar_id = self.company_calendar
 
         PlanningSlot = self.env["planning.slot"]
         dt = datetime(2023, 8, 14, 0, 0)
-        # create a slot from Monday to Friday (forecasted slot) and assign it to the resource
         PlanningSlot.create(
             {
                 "resource_id": self.resource_bert.id,
@@ -699,7 +617,6 @@ class TestPeriodDuplication(TestCommonPlanning):
                 "end_datetime": dt + relativedelta(days=4, hours=17),
             }
         )
-        # create leaves for the resource on the next Tuesday and Thursday
         dt_next_week = dt + relativedelta(weeks=1)
         self.env["resource.schedule.exception"].create(
             [
@@ -715,7 +632,6 @@ class TestPeriodDuplication(TestCommonPlanning):
                 },
             ]
         )
-        # copy the slot to the next week
         copied_slots_ids, _ = PlanningSlot.with_context(
             tz="Europe/Brussels"
         ).action_copy_previous_week(

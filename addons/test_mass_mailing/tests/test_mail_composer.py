@@ -12,7 +12,6 @@ class TestMailComposerMassMailing(TestMailComposer, common.TestMassMailCommon):
     @mute_logger("odoo.addons.mass_mailing.models.mailing")
     @freeze_time("2025-08-06 15:02:00")
     def test_mail_composer_mailing_creation(self):
-        """Check mailing configuration created through the mail composer."""
         for use_exclusion_list in (True, False):
             mass_mailing_name = f"Test Create Mass Mailing From Composer (use_exclusion_list: {use_exclusion_list})"
             composer = (

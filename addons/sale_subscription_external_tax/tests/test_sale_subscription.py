@@ -21,8 +21,6 @@ class TestSaleSubscriptionExternalCommon:
             for order in self.filtered(lambda record: record._name == "sale.order"):
                 order.is_tax_computed_externally = True
 
-        # autospec to capture self in call_args_list (https://docs.python.org/3/library/unittest.mock-examples.html#mocking-unbound-methods)
-        # patch out the _post because _create_recurring_invoice will auto-post the invoice which will also trigger tax computation, that's not what this test is about
         target = new_set_external_taxes or DEFAULT
         with (
             patch(
@@ -93,10 +91,8 @@ class TestSaleSubscriptionExternal(
         sub.action_confirm()
 
         def new_set_external_taxes(self, mapped_taxes):
-            """Simulate what happens for an exempt sale order: amounts that don't match the set tax."""
             sub.line_ids.write({"tax_ids": [Command.clear()]})
 
-        # Calculate initial taxes
         with self.patch_set_external_taxes(new_set_external_taxes):
             sub.button_external_tax_calculation()
 
@@ -170,7 +166,6 @@ class TestSaleSubscriptionExternal(
         sub.line_ids = sub.line_ids.filtered(lambda x: x.recurring_invoice)
 
         def new_set_external_taxes(self, mapped_taxes):
-            """Simulate what happens for an exempt sale order: amounts that don't match the set tax."""
             for line in sub.line_ids:
                 line.price_subtotal = line.price_unit * line.product_uom_qty * 0.5
                 line.price_tax = line.price_unit * line.product_uom_qty * 0.5

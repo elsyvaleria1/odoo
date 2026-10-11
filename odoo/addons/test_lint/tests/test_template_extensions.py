@@ -120,9 +120,6 @@ def unresolved_extensions(paths) -> list[str]:
                     findings.append(f"{where} fails: {error}")
         else:
             tree = copy.deepcopy(template)
-        # Extensions may target nodes another extension adds, and the browser
-        # applies them in bundle order this gate cannot see; apply whatever
-        # locates until nothing more does, and report only what never did.
         pending = list(extensions.get(name, ()))
         while pending:
             remaining = [(p, op) for p, op in pending if _locate(tree, op) is None]

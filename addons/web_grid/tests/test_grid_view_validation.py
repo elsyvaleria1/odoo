@@ -21,9 +21,6 @@ class TestGridViewValidation(TransactionCase):
         return view_validation.relaxng("grid").validate(self._arch(body))
 
     def test_the_schema_is_declared_and_loads(self):
-        """`grid` is validated because web_grid says which schema does it, not
-        because core carries a list of the types that have one.
-        """
         self.assertEqual(
             view_validation.registered_schemas().get("grid"),
             "web_grid/rng/grid_view.rng",
@@ -31,9 +28,6 @@ class TestGridViewValidation(TransactionCase):
         self.assertIsNotNone(view_validation.relaxng("grid"))
 
     def test_bare_field_is_a_row(self):
-        """A <field> with no type is a row field, which is what the schema
-        permits and what GridArchParser reads it as.
-        """
         body = '<field name="a"/><field name="d" type="col"/>'
         self.assertTrue(self._schema(body))
         self.assertTrue(valid_field_types(self._arch(body)))
@@ -64,9 +58,6 @@ class TestGridViewValidation(TransactionCase):
         self.assertFalse(self._schema(""))
 
     def test_schema_accepts_a_row_granularity(self):
-        """A date row field must state the granularity read_group needs, so the
-        schema has to allow it to.
-        """
         self.assertTrue(
             self._schema(
                 '<field name="d" type="row" granularity="month"/>'
@@ -80,9 +71,6 @@ class TestGridViewValidation(TransactionCase):
         )
 
     def test_an_invalid_grid_view_cannot_be_stored(self):
-        """The whole path: ir.ui.view validation must reject the arch, not
-        merely a predicate refusing it in isolation.
-        """
         with self.assertRaises(ValidationError):
             self.env["ir.ui.view"].create(
                 {
@@ -99,11 +87,6 @@ class TestGridViewValidation(TransactionCase):
             )
 
     def test_an_arch_only_the_schema_refuses_cannot_be_stored(self):
-        """The schema check runs from valid_view now rather than from a
-        predicate this module registers, so prove it still reaches a stored
-        view -- with an arch `valid_field_types` accepts, so that only the
-        schema can be what refuses it.
-        """
         fieldless = "<grid string='Partners'></grid>"
         self.assertTrue(
             valid_field_types(etree.fromstring(fieldless)),

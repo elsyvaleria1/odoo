@@ -88,7 +88,6 @@ class ProjectTask(models.Model):
         "However, the inventory of consumed materials will still be updated.",
     )
 
-    # Project Sharing fields
     portal_quotation_count = fields.Integer(compute="_compute_portal_quotation_count")
     portal_invoice_count = fields.Integer(
         string="Invoice Count",
@@ -244,7 +243,7 @@ class ProjectTask(models.Model):
             )
             if (
                 employee_mapping_product_ids
-            ):  # Then we need to search the product in the employee mappings
+            ):
                 is_not_timesheet_line = (
                     is_not_timesheet_line
                     and sale_line_id.product_id.id not in employee_mapping_product_ids
@@ -331,7 +330,7 @@ class ProjectTask(models.Model):
                 primary = False
             elif task.under_warranty and task._has_no_billable_products():
                 primary, secondary = False, False
-            else:  # nothing can be invoiced now
+            else:
                 primary = False
             _debug.logic(
                 "display_create_invoice",
@@ -370,7 +369,6 @@ class ProjectTask(models.Model):
     @api.depends_context("uid")
     @api.depends("sale_order_id.invoice_ids")
     def _compute_portal_invoice_count(self) -> None:
-        """The goal of portal_invoice_count field is to show the Invoices stat button in Project sharing feature."""
         is_portal_user = self.env.user._is_portal()
         invoices_by_so = {}
         available_invoices = False
@@ -402,10 +400,6 @@ class ProjectTask(models.Model):
                 continue
 
             sale_order_id = fsm_task_to_sale_order.get(task.id, False)
-            # the super call will remove the sale order from the task,
-            # if the partner on the task is not the same as the partner on the sale order.
-            # But for fsm tasks, the partner on the task could be the delivery address,
-            # so we redo the integrity check but with the shipping partner in mind
             if sale_order_id and task.partner_id.commercial_partner_id in (
                 sale_order_id.partner_id.commercial_partner_id
                 + sale_order_id.partner_shipping_id.commercial_partner_id
@@ -432,7 +426,6 @@ class ProjectTask(models.Model):
                     "type": "danger",
                 },
             }
-        # ensure the SO exists before invoicing, then confirm it
         so_to_confirm = self.filtered(
             lambda task: (
                 task.sale_order_id and task.sale_order_id.state in ["draft", "sent"]
@@ -440,7 +433,6 @@ class ProjectTask(models.Model):
         ).mapped("sale_order_id")
         so_to_confirm.action_confirm()
 
-        # redirect create invoice wizard (of the Sales Order)
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sale.action_view_sale_advance_payment_inv"
         )
@@ -450,7 +442,6 @@ class ProjectTask(models.Model):
         so_task_mapping = defaultdict(list)
         for task in self:
             if task.sale_order_id:
-                # As the key is anyway stringified in the JS, we casted the key here to make it clear.
                 so_task_mapping[str(task.sale_order_id.id)].append(task.id)
         context.update(
             {
@@ -459,7 +450,6 @@ class ProjectTask(models.Model):
                 "industry_fsm_message_post_task_id": so_task_mapping,
             }
         )
-        # the wizard derives this default for one order, not for several
         down_payment = not any(self.sale_order_id.mapped("is_invoiceable"))
         if down_payment:
             context["default_advance_payment_method"] = "percentage"
@@ -474,13 +464,11 @@ class ProjectTask(models.Model):
 
     def _get_domain_last_sol_of_customer(self):
         self.check_singleton()
-        # For FSM task, we don't want to search the last SOL of the customer.
         if self.is_fsm:
             return []
         return super()._get_domain_last_sol_of_customer()
 
     def _show_time_and_material(self):
-        # check time and material section should visible or not in portal
         return (
             self.allow_material
             and self.allow_billable
@@ -492,7 +480,6 @@ class ProjectTask(models.Model):
 
     def action_view_invoices(self):
         invoices = self.mapped("sale_order_id.invoice_ids")
-        # prevent view with onboarding banner
         list_view = self.env.ref("account.view_move_tree")
         kanban_view = self.env.ref("account.view_account_move_kanban")
         form_view = self.env.ref("account.view_move_form")
@@ -527,7 +514,6 @@ class ProjectTask(models.Model):
         }
 
     def action_project_sharing_view_invoices(self) -> dict:
-        """Action used only in project sharing feature"""
         return {
             "name": self.env._("Portal Invoices"),
             "type": "ir.actions.act_url",
@@ -587,7 +573,6 @@ class ProjectTask(models.Model):
         return action
 
     def action_project_sharing_view_quotations(self) -> dict:
-        """Action used only in project sharing feature"""
         self.check_singleton()
         return {
             "name": self.env._("Portal Quotations"),
@@ -635,7 +620,7 @@ class ProjectTask(models.Model):
         context = {
             "fsm_mode": True,
             "create": self.env["product.template"].has_access("create"),
-            "fsm_task_id": self.id,  # avoid 'default_' context key as we are going to create SOL with this context
+            "fsm_task_id": self.id,
             "pricelist": self.partner_id.property_product_pricelist.id,
             "order_id": self.sale_order_id.id,
             **self.sale_order_id.sudo()._prepare_catalog_extra_context(),
@@ -645,7 +630,6 @@ class ProjectTask(models.Model):
             "child_field": "line_ids",
         }
         if not context["product_catalog_currency_id"]:
-            # fallback currency in case no SO yet
             context["product_catalog_currency_id"] = self.currency_id.id
         return {
             "type": "ir.actions.act_window",
@@ -667,9 +651,6 @@ class ProjectTask(models.Model):
         }
 
     def action_fsm_validate(self, stop_running_timers=False):
-        """If allow billable on task, timesheet product set on project and user has privileges :
-        Create SO confirmed with time and material.
-        """
         res = super().action_fsm_validate(stop_running_timers)
         if res is True:
             billable_tasks = self.filtered(
@@ -695,8 +676,6 @@ class ProjectTask(models.Model):
             }
             for task in billable_tasks:
                 timesheet_count = timesheet_count_by_task_dict.get(task.id)
-                # Prevent creating/confirming a SO if there are no products and timesheets
-                # or task is under warranty and there is no material product on the task
                 if (not task.sale_order_id and not timesheet_count) or (
                     task.under_warranty and task.material_line_product_count == 0
                 ):
@@ -710,7 +689,6 @@ class ProjectTask(models.Model):
         return res
 
     def _fsm_get_or_create_sale_order(self):
-        """get the SO of the task. If no one, create it and return it"""
         self.check_singleton()
         if not self.sale_order_id:
             self._fsm_create_sale_order()
@@ -737,7 +715,6 @@ class ProjectTask(models.Model):
         }
 
     def _fsm_create_sale_order(self) -> None:
-        """Create the SO from the task, with the 'service product' sales line and link all timesheet to that line it"""
         self.check_singleton()
         if not self.partner_id:
             raise UserError(
@@ -758,8 +735,6 @@ class ProjectTask(models.Model):
         )
         vals = self._prepare_sale_order_values(team)
         sale_order = SaleOrder.create(vals)
-        # Set after creation: `user_id` is computed from the partner, so assigning
-        # it in the create values would be overwritten by that compute.
         if user_id:
             sale_order.user_id = user_id
 
@@ -769,49 +744,12 @@ class ProjectTask(models.Model):
         self.check_singleton()
         return {
             "order_id": self.sale_order_id.id,
-            # The project and the task are given to prevent the SOL to create a new project or task based on the config of the product.
             "project_id": self.project_id.id,
             "task_id": self.id,
         }
 
     def _fsm_create_sale_order_line(self) -> None:
-        """Generate sales order item based on the pricing_type on the project and the timesheets in the current task
-
-        When the pricing_type = 'employee_rate', we need to search the employee mappings for the employee who timesheeted
-        in the current task to retrieve the product in each mapping and generate an SOL for this product with the total
-        hours of the related timesheet(s) as the ordered quantity. Some SOLs can be already generated if the user manually
-        adds the SOL in the task or when he adds some materials in the tasks, a SO is generated.
-        If the user manually adds in the SO some service products, we must check in these before generating new one.
-        When no SOL is linked to the task before marking this task as done and no existing SOLs correspond to the default
-        product in the project, we take the first SOL generated if no generated SOL contain the default product of the project.
-        Here are the steps realized for this case:
-            1) Get all timesheets in the tasks
-            2) Classify this timesheets by employee
-            3) Search the employee mappings (project.sale.line.employee.map model or the sale_line_employee_ids field in the
-               project model) for the employee who timesheets to have the product linked to the employee.
-            4) Use the dict created in the second step to classify the timesheets in another dict in which the key is the id
-               and the price_unit of the product and the id uom. This information is important for the generation of the SOL.
-            5) if no SOL is linked in the task then we add the default service project defined in the project into the dict
-               created in the previous step and value is the remaining timesheets.
-               That is, the ones are no impacted in the employee mappings (sale_line_employee_ids field) defined in the project.
-            6) Classify the existing SOLs of the SO linked to the task, because the SO can be generated before the user clicks
-               on 'mark as done' button, for instance, when the user adds materials for this task. A dict is created containing
-               the id and price_unit of the product as key and the SOL(s) containing this product.
-                6.1) If no SOL is linked, then we check in the existing SOLs if there is a SOL with the default product defined
-                    in the product, if it is the case then the SOL will be linked to the task.
-                    This step can be useless if the user doesn't manually add a service product in the SO. In fact, this step
-                    searchs in the SOLs of the SO, if there is an SOL with the default service product defined in the project.
-                    If it is the case then the SOL will be linked to the task.
-            7) foreach in the dict created in the step 4, in this loop, first of all, we search in the dict containing the
-               existing SOLs if the id of the product is containing in an existing SOL. If yes then, we don't generate an SOL
-               and link it to the timesheets linked to this product. Otherwise, we generate the SOL with the information containing
-               in the key and the timesheets containing in the value of the dict for this key.
-
-        When the pricing_type = 'task_rate', we generate a sales order item with product_qty is equal to the total hours of timesheets in the task.
-        Once the SOL is generated we link this one to the task and its timesheets.
-        """
         self.check_singleton()
-        # Get all timesheets in the current task (step 1)
         not_billed_timesheets = (
             self.env["account.analytic.line"]
             .sudo()
@@ -824,17 +762,15 @@ class ProjectTask(models.Model):
             )
             .filtered(lambda t: t._is_not_billed())
         )
-        if not not_billed_timesheets:  # prevent creating SOL without timesheets
+        if not not_billed_timesheets:
             return
         if self.pricing_type == "employee_rate":
-            # classify these timesheets by employee (step 2)
             timesheets_by_employee_dict = defaultdict(
                 lambda: self.env["account.analytic.line"]
-            )  # key: employee_id, value: timesheets
+            )
             for timesheet in not_billed_timesheets:
                 timesheets_by_employee_dict[timesheet.employee_id.id] |= timesheet
 
-            # Search the employee mappings for the employees whose timesheets in the task (step 3)
             employee_mappings = self.env["project.sale.line.employee.map"].search(
                 [
                     ("employee_id", "in", list(timesheets_by_employee_dict.keys())),
@@ -843,10 +779,9 @@ class ProjectTask(models.Model):
                 ]
             )
 
-            # Classify the timesheets by product (step 4)
             product_timesheets_dict = defaultdict(
                 lambda: self.env["account.analytic.line"]
-            )  # key: (timesheet_product_id.id, price_unit, uom_id.id), value: list of timesheets
+            )
             for mapping in employee_mappings:
                 employee_timesheets = timesheets_by_employee_dict[
                     mapping.employee_id.id
@@ -856,15 +791,13 @@ class ProjectTask(models.Model):
                     mapping.price_unit,
                     mapping.timesheet_product_id.uom_id.id,
                 ] |= employee_timesheets
-                not_billed_timesheets -= employee_timesheets  # we remove the timesheets because are linked to the mapping
+                not_billed_timesheets -= employee_timesheets
 
             product = self.env["product.product"]
             sol_in_task = bool(self.sale_line_id)
-            if not sol_in_task:  # Then, add the default product of the project and remaining timesheets in the dict (step 5)
+            if not sol_in_task:
                 default_product = self.project_id.timesheet_product_id
                 if not_billed_timesheets:
-                    # The remaining timesheets must be added in the sol with the default product defined in the fsm project
-                    # if there is not SOL in the task
                     product = default_product
                     product_timesheets_dict[
                         product.id, product.lst_price, product.uom_id.id
@@ -876,26 +809,25 @@ class ProjectTask(models.Model):
                 ) in product_timesheets_dict:
                     product = default_product
 
-            # Get all existing service sales order items in the sales order (step 6)
             existing_service_sols = self.sudo().sale_order_id.line_ids.filtered(
                 "is_service"
             )
             sols_by_product_and_price_dict = defaultdict(
                 lambda: self.env["sale.order.line"]
-            )  # key: (product_id, price_unit), value: sales order items
+            )
             for sol in (
                 existing_service_sols
-            ):  # classify the SOLs to easily find the ones that we want.
+            ):
                 sols_by_product_and_price_dict.setdefault(
                     (sol.product_id.id, sol.price_unit), sol
                 )
 
-            task_values = defaultdict()  # values to update the current task
-            update_timesheet_commands = []  # used to update the so_line field of each timesheet in the current task.
+            task_values = defaultdict()
+            update_timesheet_commands = []
 
             if (
                 not sol_in_task and sols_by_product_and_price_dict
-            ):  # Then check in the existing sol if a SOL has the default product defined in the project to set the SOL of the task (step 6.1)
+            ):
                 sol = sols_by_product_and_price_dict.get(
                     (
                         self.project_id.timesheet_product_id.id,
@@ -913,7 +845,7 @@ class ProjectTask(models.Model):
             ), timesheets in product_timesheets_dict.items():
                 sol = sols_by_product_and_price_dict.get(
                     (timesheet_product_id, price_unit)
-                )  # get the existing SOL with the product and the correct price unit
+                )
                 mapping_uom = self.env["uom.uom"].browse(uom_id)
                 total_amount = 0
                 timesheet_product = self.env["product.product"].browse(
@@ -929,7 +861,7 @@ class ProjectTask(models.Model):
                         )
                     else:
                         total_amount += timesheet.unit_amount
-                if not sol:  # Then we create it
+                if not sol:
                     order = self.sale_order_id
                     sol_vals = {
                         **self._prepare_sale_order_line_vals(),
@@ -948,7 +880,6 @@ class ProjectTask(models.Model):
                         "product_qty": total_amount,
                     }
                     sol = self.env["sale.order.line"].sudo().create(sol_vals)
-                # Link the SOL to the timesheets
                 update_timesheet_commands.extend(
                     [
                         fields.Command.update(timesheet.id, {"so_line": sol.id})
@@ -963,8 +894,6 @@ class ProjectTask(models.Model):
                         and product.lst_price == price_unit
                     )
                 ):
-                    # If there is no sol in task and the product variable is empty then we give the first sol in this loop to the task
-                    # However, if the product is not empty then we search the sol with the same product and unit price to give to the current task
                     task_values["sale_line_id"] = sol.id
                     sol_in_task = True
 
@@ -973,7 +902,6 @@ class ProjectTask(models.Model):
 
             self.sudo().write(task_values)
         elif not self.sale_line_id:
-            # Check if there is a SOL containing the default product of the project before to create a new one.
             sale_order_line = (
                 self.sale_order_id
                 and self.sudo().sale_order_id.line_ids.filtered(
@@ -1001,9 +929,8 @@ class ProjectTask(models.Model):
                 }
                 sale_order_line = self.env["sale.order.line"].sudo().create(sol_vals)
             self.sudo().write(
-                {  # We need to sudo in case the user cannot see all timesheets in the current task.
+                {
                     "sale_line_id": sale_order_line.id,
-                    # assign SOL to timesheets
                     "timesheet_ids": [
                         fields.Command.update(
                             timesheet.id, {"so_line": sale_order_line.id}
@@ -1057,7 +984,6 @@ class ProjectTask(models.Model):
         return vals_list
 
     def _deliver_materials(self) -> None:
-        # While industry_fsm_stock is not installed then we automatically deliver materials
         read_group_timesheets = (
             self.env["account.analytic.line"]
             .sudo()
@@ -1091,8 +1017,6 @@ class ProjectTask(models.Model):
             )
         )
         for sol in sale_order_lines:
-            # if a SOL with service product that has invoicing policy based on milestones,
-            # the delivered quantity will be computed based on the milestones reached
             if sol.product_id.service_policy != "delivered_milestones":
                 sol.qty_transferred = sol.product_qty
 

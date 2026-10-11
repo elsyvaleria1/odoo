@@ -32,7 +32,6 @@ class MixinAnalytic(models.AbstractModel):
     )
 
     def init(self) -> None:
-        # Add a gin index for json search on the keys, on the models that actually have a table
         if (
             table_exists(self.env.cr, self._table)
             and self._fields["analytic_distribution"].store
@@ -52,15 +51,6 @@ class MixinAnalytic(models.AbstractModel):
 
     @api.model
     def _account_ids_from_distribution(self, distribution):
-        """Return the de-duplicated analytic account ids of one distribution dict.
-
-        :param distribution: mapping of distribution keys to percentages
-        :return: account ids in order of first appearance
-        :rtype: list
-        """
-        # Non-numeric key segments (the transient ``__update__`` marker, a
-        # trailing comma, whitespace padding) are skipped, so a malformed
-        # distribution never raises a raw ``ValueError`` when its keys are parsed.
         ordered = {}
         for key in distribution or ():
             for segment in str(key).split(","):
@@ -116,18 +106,9 @@ class MixinAnalytic(models.AbstractModel):
         pass
 
     def _search_analytic_distribution(self, operator, value):
-        # When account_report_analytic_groupby is in the context, `analytic_distribution`
-        # is not the real column: the query runs against the shadowed table built by
-        # _create_aml_shadowing_query_for_analytic_groupby, where the column holds a
-        # single analytic account id as a jsonb scalar (to_jsonb(int)). The generic
-        # Json-field search binds the compared ids as psycopg `json`, and PostgreSQL
-        # has no `jsonb = json` operator (this fork runs psycopg3), so the comparison
-        # must be spelled out against jsonb values explicitly.
         if self.env.context.get("account_report_analytic_groupby"):
             if operator not in ("in", "not in"):
                 raise UserError(self.env._("Operation not supported"))
-            # to_jsonb(<int account id>) renders as the jsonb number '5'; casting the
-            # searched ids through text to jsonb ('5'::jsonb) yields the same value.
             jsonb_ids = [str(int(v)) for v in value if v is not False]
             sql_template = (
                 "%s = ANY(%s::jsonb[])"
@@ -141,7 +122,6 @@ class MixinAnalytic(models.AbstractModel):
                     jsonb_ids,
                 )
             )
-        # Don't use this override for the "is set / not set" checks.
         if operator in ("in", "not in") and False in value:
             return Domain("analytic_distribution", operator, value)
 
@@ -152,7 +132,6 @@ class MixinAnalytic(models.AbstractModel):
                 )
             )
 
-        # reformulate the condition as <field> in/not in <ids>
         if operator in ("in", "not in"):
             ids = [
                 r
@@ -166,11 +145,9 @@ class MixinAnalytic(models.AbstractModel):
             raise UserError(self.env._("Operation not supported"))
 
         if not ids:
-            # not ids found, just let it optimize to a constant
             return Domain(operator == "not in")
 
-        # keys can be comma-separated ids, we will split those into an array and then make an array comparison with the list of ids to check
-        ids = [str(id_) for id_ in ids if id_]  # list of ids -> list of string
+        ids = [str(id_) for id_ in ids if id_]
         if operator == "in":
             return Domain.custom(
                 to_sql=lambda model, alias, query: SQL(
@@ -190,11 +167,6 @@ class MixinAnalytic(models.AbstractModel):
             )
 
     def _read_group_groupby(self, alias: str, groupby_spec: str, query: Query) -> SQL:
-        """Group by ``analytic_distribution`` by splitting it into one row per account.
-
-        :rtype: SQL
-        """
-        # Only '__count' can be passed in the `aggregates` (see `_read_group_select`).
         if groupby_spec == "analytic_distribution":
             query._tables = {
                 "distribution": SQL(
@@ -206,7 +178,6 @@ class MixinAnalytic(models.AbstractModel):
                 )
             }
 
-            # After using the from and where clauses in the nested query, they are no longer needed in the main one
             query._joins = {}
             query._where_clauses = []
             return SQL("account_id")
@@ -221,20 +192,9 @@ class MixinAnalytic(models.AbstractModel):
         return super()._read_group_select(aggregate_spec, query)
 
     def _get_count_id(self, query):
-        """Return the entity counted when grouping by ``analytic_distribution``.
-
-        :rtype: SQL
-        """
-        # Overridable hook: a model that would rather count a parent document
-        # (e.g. journal entries instead of journal items) overrides it, so the
-        # base `analytic` module needs no knowledge of the tables of the modules
-        # depending on it.
         return SQL("id")
 
     def filtered_domain(self, domain):
-        # Filter based on the accounts used (i.e. allowing a name_search) instead of the distribution
-        # A domain on a json field doesn't make sense anymore outside of set or not; and it is still doable.
-        # Hack to filter using another field.
         domain = Domain(domain).map_conditions(
             lambda cond: (
                 Domain("distribution_analytic_account_ids", cond.operator, cond.value)
@@ -245,7 +205,6 @@ class MixinAnalytic(models.AbstractModel):
         return super().filtered_domain(domain)
 
     def write(self, vals):
-        """Format the analytic_distribution float value, so equality on analytic_distribution can be done"""
         decimal_precision = self.env["decimal.precision"].get_precision(
             "Percentage Analytic"
         )
@@ -254,7 +213,6 @@ class MixinAnalytic(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Format the analytic_distribution float value, so equality on analytic_distribution can be done"""
         decimal_precision = self.env["decimal.precision"].get_precision(
             "Percentage Analytic"
         )
@@ -309,17 +267,9 @@ class MixinAnalytic(models.AbstractModel):
                     )
 
     def _analytic_distribution_consumes_update(self) -> bool:
-        """Return whether this model's write path merges the ``__update__`` marker.
-
-        :rtype: bool
-        """
-        # Only models that actually consume the marker (via `_merge_distribution`)
-        # may let it reach persistence; for every other model it is stripped in
-        # `_normalize_values` so it never corrupts the stored JSON.
         return False
 
     def _normalize_values(self, vals, decimal_precision):
-        """Normalize the distribution floats and drop the unused ``__update__`` marker"""
         if "analytic_distribution" in vals:
             distribution = vals.get("analytic_distribution")
             if (
@@ -345,7 +295,7 @@ class MixinAnalytic(models.AbstractModel):
     ) -> tuple:
         fnames_to_update = set(new_distribution.pop("__update__", ()))
         if old_distribution:
-            old_distribution.pop("__update__", None)  # might be set before in `create`
+            old_distribution.pop("__update__", None)
         project_plan, other_plans = self.env["account.analytic.plan"]._get_all_plans()
         non_changing_plans = {
             plan
@@ -396,7 +346,7 @@ class MixinAnalytic(models.AbstractModel):
         self, old_distribution: dict, new_distribution: dict
     ) -> dict:
         if "__update__" not in new_distribution:
-            return new_distribution  # update everything by default
+            return new_distribution
 
         non_changing_values, changing_values, non_changing_amount, changing_amount = (
             self._modifiying_distribution_values(

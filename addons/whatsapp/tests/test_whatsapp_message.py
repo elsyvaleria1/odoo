@@ -78,10 +78,6 @@ class WhatsAppMessage(WhatsAppCommon, MockIncomingWhatsApp):
         )
 
     def test_resend_message(self):
-        """Check that messages are effectively resent, and only when it makes sense.
-
-        i.e. Only messages that are not unrecoverable and on channels that are still active.
-        """
         self._receive_whatsapp_message(self.whatsapp_account, "Hello", "32499000000")
         with self.mock_datetime_and_now(datetime(2000, 1, 1)):
             self._receive_whatsapp_message(
@@ -153,29 +149,29 @@ class WhatsAppMessage(WhatsAppCommon, MockIncomingWhatsApp):
                 for vals, mail_message in zip(
                     (
                         {
-                            "failure_type": "whatsapp_unrecoverable",  # not resent
+                            "failure_type": "whatsapp_unrecoverable",
                         },
                         {
                             "failure_type": "whatsapp_recoverable",
                         },
                         {
-                            "failure_type": "whatsapp_recoverable",  # not resent, invalid channel
+                            "failure_type": "whatsapp_recoverable",
                         },
                         {
-                            "failure_type": "unknown",  # unknown error is resent
+                            "failure_type": "unknown",
                         },
                         {
-                            "state": "sent",  # success message is not resent
+                            "state": "sent",
                         },
                         {
-                            "failure_type": "whatsapp_unrecoverable",  # not resent
+                            "failure_type": "whatsapp_unrecoverable",
                             "wa_template_id": self.simple_whatsapp_template.id,
                             "free_text_json": {
                                 "free_text_1": "Template with Unrecoverable Error"
                             },
                         },
                         {
-                            "failure_type": "whatsapp_recoverable",  # resent
+                            "failure_type": "whatsapp_recoverable",
                             "wa_template_id": self.simple_whatsapp_template.id,
                             "free_text_json": {
                                 "free_text_1": "Template with Recoverable Error"

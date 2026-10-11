@@ -12,8 +12,6 @@ _logger = logging.getLogger(__name__)
 
 
 def adopt_settings_columns(env, code, columns, dropped=()) -> None:
-    """One account per user from `columns` of res_users_settings, given as
-    {account field: column}, then drop them and `dropped`."""
     cr = env.cr
     present = {
         field: column
@@ -26,7 +24,6 @@ def adopt_settings_columns(env, code, columns, dropped=()) -> None:
             SQL(
                 "SELECT user_id, %s FROM res_users_settings WHERE %s",
                 SQL(", ").join(SQL.identifier(column) for column in columns_),
-                # a user who never synchronized holds NULLs and a false stop
                 SQL(" OR ").join(
                     SQL(
                         "COALESCE(%s::text, 'false') NOT IN ('false', '')",
@@ -54,13 +51,10 @@ def adopt_settings_columns(env, code, columns, dropped=()) -> None:
 class RemoteIdSource:
     table: str
     link_field: str
-    # the user whose calendar holds the id of a row of `table` aliased `rec`
     owner: SQL
 
 
 def link_remote_ids(env, code, sources, column) -> None:
-    """Link every row of `sources` holding a remote id in `column` to it, in its
-    owner's calendar, then drop the column."""
     cr = env.cr
     present = [s for s in sources if schema.column_exists(cr, s.table, column)]
     if not present:
@@ -126,8 +120,6 @@ def link_remote_ids(env, code, sources, column) -> None:
 
 
 def pend_links(env, code, column) -> None:
-    """Mark the links of `code` pending where their record's `column` says
-    Odoo changed it since the provider heard of it, then drop the column."""
     cr = env.cr
     for table, field in (
         ("calendar_event", "event_id"),
@@ -155,9 +147,6 @@ def pend_links(env, code, column) -> None:
 
 
 def settle_duplicate_links(cr) -> None:
-    """Of the records linked to one remote item in one calendar, the active,
-    then the latest, keeps the link; the others keep a link with no remote id
-    and the refusal of a duplicate, which no push sends again."""
     if not schema.table_exists(cr, "calendar_sync_link"):
         return
     for field, table in (
@@ -204,24 +193,11 @@ def settle_duplicate_links(cr) -> None:
 class CalendarCopySource:
     table: str
     link_field: str
-    # the organizer of the item a row of `table` aliased `rec` stands for
     organizer: SQL
-    # {link field: column of `table`}, remote_id and universal_id among them
     columns: dict
 
 
 def link_calendar_copies(env, code, sources) -> None:
-    """Link every row of `sources` holding an id of the provider's copy of its
-    item, in the calendar the copy is likely in: the organizer's, when the
-    organizer is connected to the provider, else the creator's; then drop the
-    columns. A copy's own id differs between calendars, its universal id does
-    not: where they were stored for the last user to synchronize, a wrong
-    calendar is corrected when the copy is next read.
-
-    An event holding only a remote id another event holds with a universal id
-    is the original of the copy made to delete it when it became a series, and
-    is not linked. A remote id several records of one calendar hold stays with
-    the active, then latest, of them; the others are linked without it."""
     cr = env.cr
     present = [
         source

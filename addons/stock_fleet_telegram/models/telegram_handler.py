@@ -17,9 +17,7 @@ DELIVER = "ent:"
 FINISH = f"{DELIVER}fin"
 LIST_LIMIT = 8
 LOOKBACK_DAYS = 14
-# Bot API getFile refuses anything larger ("file is too big")
 DOWNLOAD_LIMIT = 20 * 1024 * 1024
-# What fields.Image decodes, and the PDF whose first page is the slip
 SLIP_MIMETYPES = ("image/jpeg", "image/png", "image/webp", "application/pdf")
 
 
@@ -27,7 +25,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
     _name = "telegram.handler.stock_fleet"
     _inherit = "mixin.telegram.handler"
     _description = "Telegram: Trips"
-    # A route takes longer than an hour between two deliveries.
     _telegram_flow_ttl = timedelta(hours=12)
 
     def _telegram_commands(self) -> dict:
@@ -81,9 +78,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
         return kb.single(self._tr(bot, chat)._("Finish"), FINISH)
 
     def _pending_deliveries(self, user):
-        """The sender's deliveries waiting for their signed slip: those on the
-        departed trip they drive, and those validated lately on a trip of
-        theirs, or under their responsibility, without valid evidence."""
         since = fields.Datetime.now() - timedelta(days=LOOKBACK_DAYS)
         Picking = self.env["stock.picking"].with_user(user)
         on_the_road = Picking.search(
@@ -128,7 +122,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             self._finish_markup(bot, chat),
         )
 
-    # -- files ----------------------------------------------------------------
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         if self._flow_step(chat) != "slips":
@@ -169,8 +162,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
                 self._finish_markup(bot, chat),
             )
             return True
-        # Undone whole if it fails unexpectedly, and the flow stays open for
-        # the next slip; a serialization failure still goes up to be retried.
         try:
             with self.env.cr.savepoint():
                 slip = Slip.create(
@@ -192,8 +183,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
 
     @staticmethod
     def _file_of(message) -> dict | None:
-        """The photo (its largest size) or the PDF or image file a message
-        carries."""
         if message.get("photo"):
             photo = message["photo"][-1]
             return {
@@ -297,7 +286,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             return
         self._send(bot, chat, tg.escape(text), self._finish_markup(bot, chat))
 
-    # -- buttons --------------------------------------------------------------
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
@@ -305,9 +293,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             self._clear_keyboard(bot, chat, callback_query)
             self._finish(bot, chat)
             return True
-        # A button runs outside the router's recovery: whatever it raises would
-        # roll the update back unanswered, and Telegram's redelivery is refused
-        # as a duplicate. A serialization failure still goes up to be retried.
         try:
             with self.env.cr.savepoint():
                 self._on_choice(bot, chat, callback_query, data)
@@ -329,7 +314,6 @@ class TelegramHandlerStockFleet(models.AbstractModel):
         )
 
     def _on_choice(self, bot, chat, callback_query, data) -> None:
-        """The sender chose which delivery a slip is, or none."""
         tr = self._tr(bot, chat)
         kind, _sep, rest = data.removeprefix(DELIVER).partition(":")
         slip_id, _sep, picking_id = rest.partition(":")
@@ -373,11 +357,8 @@ class TelegramHandlerStockFleet(models.AbstractModel):
             return
         self._record(bot, chat, slip, picking, "choice", content)
 
-    # -- finishing ------------------------------------------------------------
 
     def _finish(self, bot, chat) -> None:
-        """Hand the chat's open batches to administration, an interrupted or
-        expired session's too, and close the flow."""
         tr = self._tr(bot, chat)
         self._flow_end(chat)
         receipts = self.env["stock.delivery.slip.receipt"].search(

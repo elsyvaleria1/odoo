@@ -5,19 +5,10 @@ import dataclasses
 class CalendarSyncCapabilities:
     """What a provider's calendar does that the engine must know of."""
 
-    # an item's id is the same in every calendar holding it
     shared_ids: bool = False
-    # the insert id is the item's id, so a repeated insert is refused as a
-    # conflict; otherwise the provider deduplicates on it
     client_insert_id: bool = False
-    # Odoo may create a series in the provider's calendars
     series_inserts: bool = True
-    # an attendee answers in their own calendar, which tells the organizer;
-    # otherwise the organizer's copy is sent again with the answers
     answer_endpoint: bool = False
-    # a new account sends the events that existed before it; otherwise only
-    # those created since, as the provider invites every attendee of what it
-    # receives
     insert_history: bool = True
 
 
@@ -27,15 +18,11 @@ class CalendarSyncProvider:
 
     code: str
     label: str
-    # the key the calendar view and its readers file the provider's status under
     key: str
     service: str
     scope: str
     paused_param: str
-    # the adapter model the engine runs; None while the provider runs its own
     adapter: str | None = None
     capabilities: CalendarSyncCapabilities = CalendarSyncCapabilities()
-    # how many days around today a full synchronization reaches
     range_param: str | None = None
-    # the provider's calendar icon, as the interface shows it
     icon: str | None = None

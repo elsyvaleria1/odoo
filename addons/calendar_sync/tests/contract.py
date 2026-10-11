@@ -20,19 +20,12 @@ class FakeCalendarServer:
 
     def __init__(self, env) -> None:
         self.env = env
-        # (user id, operation, remote id) of every change Odoo sent
         self.ops: list[tuple[int, str, str]] = []
-        # {operation: HTTP status} refused once each
         self.refusals: dict[str, int] = {}
-        # inserts that land and then lose their answer
         self.lost_answers = 0
-        # when the provider says its changes happened: far ahead by default,
-        # so they read as newer than anything Odoo wrote; a scenario sets it
-        # to put a change before or after one of Odoo's
         self.clock = datetime(2100, 1, 1)
 
     def stamp(self, version: int) -> datetime:
-        """The time of the provider's `version`th change, naive UTC."""
         return self.clock + timedelta(seconds=version)
 
     @staticmethod
@@ -43,44 +36,32 @@ class FakeCalendarServer:
         return self.env["res.users"].browse(int(connection.rsplit("-", 1)[1]))
 
     def patched(self):
-        """The patch that puts this server behind the provider's service."""
         raise NotImplementedError
 
-    # -- what someone does in the provider's own calendars -------------------
 
     def add(self, user, name, start, stop, attendees=()) -> str:
-        """An item `user` creates in their calendar, inviting `attendees`;
-        its id there."""
         raise NotImplementedError
 
     def rename(self, user, remote_id, name) -> None:
         raise NotImplementedError
 
     def delete(self, user, remote_id) -> None:
-        """`user` deletes the item: the organizer cancels it for everyone, an
-        attendee removes their copy."""
         raise NotImplementedError
 
     def expire_token(self, user) -> None:
         raise NotImplementedError
 
-    # -- what the provider holds ----------------------------------------------
 
     def items(self, user) -> dict[str, dict]:
-        """{remote id: {"name", "start", "stop", "answers": {email: state}}}
-        of the live items of `user`'s calendar, states in Odoo's words."""
         raise NotImplementedError
 
     def copy_id(self, user, remote_id_elsewhere) -> str | None:
-        """The id `user`'s calendar has for the item another calendar knows
-        as `remote_id_elsewhere`."""
         raise NotImplementedError
 
 
 class CalendarSyncContract:
     """Scenarios every adapter answers the same."""
 
-    # the scenarios are this mixin's, run by each adapter's class
     allow_inherited_tests_method = True
     code = None
 
@@ -117,16 +98,13 @@ class CalendarSyncContract:
         self.start = datetime.now().replace(microsecond=0) + timedelta(days=3)
         self.stop = self.start + timedelta(hours=1)
 
-    # -- helpers -------------------------------------------------------------
 
     def sync(self, user):
-        """A run of `user`'s synchronization, and what it sends."""
         result = user.with_user(user).sudo()._calendar_sync_run(self.code)
         self.push()
         return result
 
     def push(self):
-        """What a commit does next: flush, then send what waits for it."""
         self.env.flush_all()
         funcs = self.env.cr.postcommit._funcs
         while funcs:
@@ -166,7 +144,6 @@ class CalendarSyncContract:
     def ops_of(self, user):
         return [op[1:] for op in self.server.ops if op[0] == user.id]
 
-    # -- read from the provider ------------------------------------------------
 
     def test_an_item_of_the_calendar_becomes_one_event(self):
         remote_id = self.server.add(
@@ -201,9 +178,6 @@ class CalendarSyncContract:
         self.assertFalse(self.events_named("Cancelled"))
 
     def test_an_attendees_copy_is_the_organizers_event(self):
-        """The attendee's calendar holds the organizer's item: reading it links
-        the attendee's calendar to the same event, under the id it has there,
-        and leaves the organizer's link as it was."""
         remote_id = self.server.add(
             self.organizer, "Shared", self.start, self.stop, [self.attendee]
         )
@@ -218,8 +192,6 @@ class CalendarSyncContract:
         )
 
     def test_an_attendee_removing_the_item_declines_it(self):
-        """Removing an invitation from one's own calendar declines it: the
-        organizer's event stays."""
         remote_id = self.server.add(
             self.organizer, "Declined", self.start, self.stop, [self.attendee]
         )
@@ -243,7 +215,6 @@ class CalendarSyncContract:
         self.sync(self.organizer)
         self.assertEqual(len(self.events_named("Missed")), 1)
 
-    # -- sent to the provider --------------------------------------------------
 
     def test_an_odoo_event_is_inserted_once_in_its_organizers_calendar(self):
         event = self.event(name="From Odoo")
@@ -379,9 +350,6 @@ class CalendarSyncContract:
         self.assertFalse(self.link(event, self.organizer).error)
 
     def test_a_reset_forgets_the_calendar_and_deletes_what_it_asks(self):
-        """A reset leaves the user free to come back with another account: their
-        calendar's links go, and the events they organize go from it when
-        asked."""
         event = self.event(name="Before the reset")
         self.push()
         remote_id = self.link(event, self.organizer).remote_id
@@ -430,8 +398,6 @@ class CalendarSyncContract:
         self.assertTrue(self.link(event, self.organizer).remote_id)
 
     def test_an_edit_made_after_a_lost_insert_answer_reaches_the_item(self):
-        """The retried insert finds the item the first attempt left, which
-        holds the values of then."""
         self.server.lost_answers = 1
         event = self.event(name="Lost")
         self.push()
@@ -497,8 +463,6 @@ class CalendarSyncContract:
         )
 
     def test_an_edit_owed_after_a_patch_is_not_overwritten_by_the_patch(self):
-        """The version a patch answers is Odoo's own: reading it back must not
-        overwrite an edit Odoo still owes."""
         event = self.event(name="V0")
         self.push()
         remote_id = self.link(event, self.organizer).remote_id
@@ -513,9 +477,6 @@ class CalendarSyncContract:
         self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "V2")
 
     def _owe_an_edit_while_the_organizer_renames(self, provider_change_at):
-        """Odoo owes the edit "Odoo's" while the organizer renames the item
-        in the provider "Theirs", at `provider_change_at` relative to Odoo's
-        edit; then the synchronization resumes."""
         event = self.event(name="Before")
         self.push()
         remote_id = self.link(event, self.organizer).remote_id
@@ -544,8 +505,6 @@ class CalendarSyncContract:
         self.assertEqual(self.server.items(self.organizer)[remote_id]["name"], "Theirs")
 
     def test_an_attendees_read_keeps_the_other_attendees_answers(self):
-        """An attendee's copy may hide the others' answers (Outlook's does):
-        reading it must not reset them."""
         event = self.event(
             partner_ids=[
                 (6, 0, (self.organizer | self.attendee | self.outsider).partner_id.ids)

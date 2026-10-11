@@ -5,8 +5,6 @@ __all__ = ["parse_amount", "split_amount_str"]
 
 _SPACES = "\u0020\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
 _GROUPINGS_RE = re.compile(f"[{_SPACES}'\u2019]")
-# a pasted amount mixes spaces (1\u00a0234 567) or apostrophes (1'234\u2019567)
-# of one kind: each class is one grouping character
 _GROUPING_CLASSES = str.maketrans({**dict.fromkeys(_SPACES, " "), "\u2019": "'"})
 
 

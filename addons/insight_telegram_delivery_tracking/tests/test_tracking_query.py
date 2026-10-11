@@ -69,7 +69,6 @@ class TestTrackingQuery(TransactionCase):
         self.assertIn("No transfer", text)
 
     def test_partial_number_does_not_disclose_a_different_shipment(self):
-        """A guide must match a whole reference, including comma-separated lists."""
         self._picking("XTOL01583026", self.other)
         self._picking("TOL015830260", self.other)
         self.assertIn("No transfer", self._answer(reference="TOL01583026"))
@@ -79,7 +78,6 @@ class TestTrackingQuery(TransactionCase):
         self.assertNotIn(self.other.name, text)
 
     def test_one_guide_uses_its_snapshot_instead_of_the_transfer_summary(self):
-        """One delivered guide does not borrow its sibling's in-transit status."""
         self._picking(
             "TOL01583026, TOL01584639",
             self.other,
@@ -108,7 +106,6 @@ class TestTrackingQuery(TransactionCase):
         self.assertNotIn("TOL01584639", text)
 
     def test_a_missing_snapshot_does_not_reuse_a_sibling_status(self):
-        """An unread guide stays unread even when a sibling has been delivered."""
         self._picking(
             "TOL01583026, TOL01584639",
             self.other,
@@ -122,7 +119,6 @@ class TestTrackingQuery(TransactionCase):
         self.assertNotIn("carrier status read", text)
 
     def test_failed_refresh_does_not_claim_a_fresh_successful_read(self):
-        """An API failure preserves the state and labels the timestamp as an attempt."""
         self._picking(
             "TOL01583026",
             self.other,
@@ -139,7 +135,6 @@ class TestTrackingQuery(TransactionCase):
         self.assertNotIn("private diagnostics", text)
 
     def test_never_read_status_is_explicit(self):
-        """A newly registered guide does not appear to have a carrier response."""
         self._picking("TOL01583026", self.other)
         text = self._answer(reference="TOL01583026")
         self.assertIn("not read yet", text)

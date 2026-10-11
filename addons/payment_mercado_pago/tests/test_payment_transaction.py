@@ -11,10 +11,9 @@ from odoo.addons.payment_mercado_pago.tests.common import MercadoPagoCommon
 @tagged("post_install", "-at_install")
 class TestPaymentTransaction(MercadoPagoCommon, PaymentHttpCommon):
     def test_no_item_missing_from_preference_request_payload(self):
-        """Test that the request values are conform to the transaction fields."""
         tx = self._create_transaction(flow="redirect")
         request_payload = tx._mercado_pago_prepare_preference_request_payload()
-        self.maxDiff = 10000  # Allow comparing large dicts.
+        self.maxDiff = 10000
         return_url = self._build_url("/payment/mercado_pago/return")
         webhook_url = self._build_url("/payment/mercado_pago/webhook")
         sanitized_reference = url_quote(tx.reference)
@@ -51,7 +50,6 @@ class TestPaymentTransaction(MercadoPagoCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment.models.payment_transaction")
     def test_no_input_missing_from_redirect_form(self):
-        """Test that the `api_url` key is not omitted from the rendering values."""
         tx = self._create_transaction(flow="redirect")
         with patch(
             "odoo.addons.payment_mercado_pago.models.payment_transaction.PaymentTransaction"
@@ -67,22 +65,17 @@ class TestPaymentTransaction(MercadoPagoCommon, PaymentHttpCommon):
         self.assertDictEqual(form_info["inputs"], {})
 
     def test_apply_updates_confirms_transaction(self):
-        """Test that the transaction state is set to 'done' when the payment data indicate a
-        successful payment."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates(self.verification_data)
         self.assertEqual(tx.state, "done")
 
     @mute_logger("odoo.addons.payment_mercado_pago.models.payment_transaction")
     def test_apply_updates_rejects_transaction(self):
-        """Test that the transaction state is set to 'error' when the payment data indicate a status of
-        404 error payment."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates(self.verification_data_for_error_state)
         self.assertEqual(tx.state, "error")
 
     def test_cop_currency_rounding(self):
-        """Ensure COP payments get sent as integer amounts to Mercado Pago."""
         self.currency = (
             self.env["res.currency"]
             .with_context(active_test=False)

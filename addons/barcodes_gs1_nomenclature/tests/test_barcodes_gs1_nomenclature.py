@@ -14,10 +14,6 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
     ]
 
     def test_invalid_fnc1_separator_raises_validation_error(self):
-        """An invalid regex in gs1_separator_fnc1 must raise a clear
-        ValidationError, not a TypeError from formatting the message: the
-        error text uses the named placeholder %(error)s, which requires the
-        exception to be passed as the `error=` keyword, not positionally."""
         nomenclature = self.env["barcode.nomenclature"].create(
             {
                 "name": "Test GS1 invalid separator",
@@ -26,12 +22,10 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
         )
         with self.assertRaises(ValidationError):
             nomenclature.gs1_separator_fnc1 = (
-                "("  # unbalanced parenthesis: invalid regex
+                "("
             )
 
     def test_fnc1_separator_is_held_to_browser_syntax(self):
-        """The barcode service rewrites scanned separators in the browser, so
-        a separator only Python reads -- or reads differently -- is refused."""
         nomenclature = self.env["barcode.nomenclature"].create(
             {"name": "Test GS1 separator syntax", "is_gs1_nomenclature": True}
         )
@@ -52,12 +46,6 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
         self.assertEqual(res, Domain(domain))
 
     def test_exact_gs1_search_stays_exact(self):
-        """`barcode = <GS1 scan>` used to become `barcode ilike <digits>`.
-
-        `(01)00000000001236` then matched 1236, 12367, 812360 and 91236, and a
-        caller taking the first result opened, filtered or scrapped another
-        product. The padded forms of the digits are matched exactly instead.
-        """
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -82,8 +70,6 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
         )
 
     def test_a_non_text_barcode_search_is_left_to_the_orm(self):
-        """A JSON client sends a numeric barcode as a number; preprocessing
-        called str methods on it and every such search raised AttributeError."""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -99,11 +85,6 @@ class TestBarcodeGS1Nomenclature(TransactionCase):
         )
 
     def test_gs1_rule_patterns_are_held_to_the_shared_checks(self):
-        """A GS1 rule skips the base pattern syntax, not its safety checks.
-
-        `(10)((?:a+)+)b` took 0.4 s to fail on 24 characters and doubled every
-        character after that, on a parse any internal user can request.
-        """
         nomenclature = self.env["barcode.nomenclature"].create(
             {"name": "GS1 checks", "is_gs1_nomenclature": True}
         )

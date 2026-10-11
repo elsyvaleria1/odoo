@@ -21,12 +21,7 @@ class BotAssistant:
         enabled, provider, preferred = self.SETTINGS
         self._bot = bot
         self._env = bot.env
-        # A webhook runs as the public user, whose company holds no credential
-        # nor policy: the model is chosen and the note heard in the company the
-        # bot acts in -- the command's or flow's, else the bot's own.
         self._company = bot._acting_company()
-        # A command runs as the requester, who may not read the AI providers
-        # the bot's settings point at; those settings are the bot's, not theirs.
         settings = bot.with_privilege(
             "integration_machine_learning.privilege_route_ml",
             reason="the bot's settings name the provider and model it routes to",
@@ -65,8 +60,6 @@ class BotAssistant:
         )
 
     def hear(self, chat, message, **options):
-        """What a message's recording says, as `telegram.bot._hear_message`
-        answers it; `unheard` while this assistant takes no voice notes."""
         if not self.supports_audio:
             return Heard(failure="unheard")
         return self._bot._hear_message(

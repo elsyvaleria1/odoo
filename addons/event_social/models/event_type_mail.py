@@ -13,7 +13,6 @@ class EventTypeMail(models.Model):
 
     @api.constrains("template_ref", "interval_type")
     def _check_interval_type(self) -> None:
-        """Cannot select "after_sub" if the notification type is "social_post"."""
         for mail in self:
             if (
                 mail.notification_type == "social_post"

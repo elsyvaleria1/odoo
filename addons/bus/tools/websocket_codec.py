@@ -46,7 +46,6 @@ HEARTBEAT_OP = {Opcode.PING, Opcode.PONG}
 VALID_CLOSE_CODES = {
     code for code in CloseCode if code is not CloseCode.ABNORMAL_CLOSURE
 }
-# 3000-3999 registered with IANA, 4000-4999 private use (RFC 6455 7.4.2)
 APPLICATION_CLOSE_CODES = range(3000, 5000)
 
 MAX_CONTROL_PAYLOAD = 125

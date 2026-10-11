@@ -12,7 +12,7 @@ class EsgEmissionFactor(models.Model):
     sequence = fields.Integer()
     active = fields.Boolean(default=True)
 
-    code = fields.Char(index=True)  # required=True
+    code = fields.Char(index=True)
 
     esg_emissions_value = fields.Float(
         string="Emissions (kgCO₂e)",

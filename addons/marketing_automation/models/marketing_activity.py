@@ -32,7 +32,6 @@ class MarketingActivity(models.Model):
     _inherit = ["mixin.utm.source"]
     _order = "interval_standardized, id ASC"
 
-    # definition and UTM
     activity_type = fields.Selection(
         selection=[("email", "Email"), ("action", "Server Action")],
         default="email",
@@ -46,7 +45,6 @@ class MarketingActivity(models.Model):
         index="btree_not_null",
         readonly=False,
     )
-    # Technical field doing the mapping of activity type and mailing type
     mass_mailing_id_mailing_type = fields.Selection(
         selection=[("mail", "Email")],
         string="Mailing Type",
@@ -79,8 +77,7 @@ class MarketingActivity(models.Model):
         related="campaign_id.utm_campaign_id",
         string="UTM Campaign",
         readonly=True,
-    )  # propagate to mailings
-    # interval
+    )
     interval_number = fields.Integer(
         string="Send after",
         default=0,
@@ -97,7 +94,6 @@ class MarketingActivity(models.Model):
         store=True,
         readonly=True,
     )
-    # validity
     validity_duration = fields.Boolean(
         help="Check this to make sure your actions are not executed after a specific amount of time after the scheduled date. (e.g. Time-limited offer, Upcoming event, …)"
     )
@@ -110,7 +106,6 @@ class MarketingActivity(models.Model):
         default="hour",
         required=True,
     )
-    # target
     domain = fields.Char(
         string="Applied Filter",
         compute="_compute_inherited_domain",
@@ -135,7 +130,6 @@ class MarketingActivity(models.Model):
         string="Model Name",
         readonly=True,
     )
-    # Related to parent activity
     parent_id = fields.Many2one(
         comodel_name="marketing.activity",
         string="Activity",
@@ -175,12 +169,10 @@ class MarketingActivity(models.Model):
         selection=[("email", "Mail")],
         compute="_compute_trigger_category",
     )
-    # cron / updates
     require_sync = fields.Boolean(
         string="Require trace sync",
         copy=False,
     )
-    # For trace
     trace_ids = fields.One2many(
         comodel_name="marketing.trace",
         inverse_name="activity_id",
@@ -195,12 +187,10 @@ class MarketingActivity(models.Model):
     total_reply = fields.Integer(compute="_compute_statistics")
     total_bounce = fields.Integer(compute="_compute_statistics")
     statistics_graph_data = fields.Char(compute="_compute_statistics_graph_data")
-    # activity summary
     activity_summary = fields.Html(compute="_compute_activity_summary")
 
     @api.constrains("trigger_type", "parent_id")
     def _check_consistency_in_activities(self) -> None:
-        """Check the consistency in the activity chaining."""
         for activity in self:
             if (
                 activity.parent_id or activity.allowed_parent_ids
@@ -315,7 +305,6 @@ class MarketingActivity(models.Model):
 
     @api.depends("activity_type", "trace_ids")
     def _compute_statistics(self) -> None:
-        # Fix after ORM-pocalyspe : Update in any case, otherwise, None to some values (crash)
         self.update(
             {
                 "total_bounce": 0,
@@ -380,9 +369,6 @@ class MarketingActivity(models.Model):
 
     @api.depends(lambda self: self._get_activity_summary_dependencies())
     def _compute_activity_summary(self) -> None:
-        """Compute activity summary based on selection made by user, which includes information about the
-        activity's starting point, the linked Server Action or Mail/SMS Template, trigger type, and the expiry duration.
-        """
         for activity in self:
             if not activity.interval_type or not activity.validity_duration_type:
                 activity.activity_summary = ""
@@ -435,7 +421,6 @@ class MarketingActivity(models.Model):
         return activities
 
     def copy_data(self, default=None):
-        """When copying the activities, we should also copy their mailings."""
         default = dict(default or {})
         if self.mass_mailing_id:
             default["mass_mailing_id"] = self.mass_mailing_id.copy().id
@@ -470,9 +455,6 @@ class MarketingActivity(models.Model):
             activities |= descendants
         return activities
 
-    # ------------------------------------------------------------
-    # WORKFLOW DEFINITION
-    # ------------------------------------------------------------
 
     def _sync_nodes(self) -> None:
         Node = self.env["ir.actions.server"].sudo()
@@ -485,7 +467,6 @@ class MarketingActivity(models.Model):
         self._sync_edges()
 
     def _prepare_node_vals(self) -> dict:
-        """Return values for this activity's ``ir.actions.server`` node."""
         self.check_singleton()
         campaign = self.campaign_id
         return {
@@ -504,7 +485,6 @@ class MarketingActivity(models.Model):
         }
 
     def _get_workflow_subject(self):
-        """Return the mailing or server action's display name, or an empty string."""
         self.check_singleton()
         return (self.mass_mailing_id or self.server_action_id).display_name or ""
 
@@ -532,7 +512,6 @@ class MarketingActivity(models.Model):
                 Edge.create(vals)
 
     def _prepare_edge_vals(self):
-        """Return ``workflow.edge`` values, or None when no incoming edge applies."""
         self.check_singleton()
         if self.trigger_type == "begin" or not self.parent_id.node_id:
             return None
@@ -598,7 +577,6 @@ class MarketingActivity(models.Model):
         return self.env.cr.dictfetchall()
 
     def _get_graph_statistics(self):
-        """Compute activities statistics based on their traces state for the last fortnight"""
         past_date = (self.env.cr.now() + timedelta(days=-14)).strftime(
             "%Y-%m-%d 00:00:00"
         )
@@ -662,19 +640,12 @@ class MarketingActivity(models.Model):
             ]
         return graph_data
 
-    # ------------------------------------------------------------
-    # EXECUTION
-    # ------------------------------------------------------------
 
     def execute(self, domain=None):
         rules = self.campaign_id.automation_rule_id.sudo()
         self.env["automation.runtime"].sudo()._dispatch_due_steps(rules=rules)
 
     def execute_on_traces(self, traces) -> None:
-        """Execute current activity on given traces, whatever their due date.
-
-        :param traces: record set of traces on which the activity should run
-        """
         self.check_singleton()
         traces.action_execute()
 
@@ -748,7 +719,6 @@ class MarketingActivity(models.Model):
         return True
 
     def _execute_email(self, traces) -> bool:
-        # we only allow to continue if the user has sufficient rights, as a sudo() follows
         if not self.env.is_superuser() and not self.env.user.has_group(
             "marketing_automation.group_marketing_automation_user"
         ):
@@ -783,7 +753,6 @@ class MarketingActivity(models.Model):
             )
             return True
 
-        # TDE Note: bounce is not really set at launch, let us consider it as an error
         failed_stats = (
             self.env["mailing.trace"]
             .sudo()
@@ -824,7 +793,7 @@ class MarketingActivity(models.Model):
         return self._action_view_documents_filtered("open")
 
     def _action_view_documents_filtered(self, view_filter):
-        if not self.mass_mailing_id:  # Only available for mass mailing
+        if not self.mass_mailing_id:
             return False
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "marketing_automation.marketing_participants_action_mail"

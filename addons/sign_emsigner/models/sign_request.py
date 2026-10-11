@@ -5,7 +5,6 @@ class SignRequest(models.Model):
     _inherit = "sign.request"
 
     def _check_sign_order_with_emsigner(self, request_item):
-        """Prevent signing if any sign request item have emsigner as auth_method and it's not the current user's turn."""
         return self.request_item_ids.filtered(
             lambda r: (
                 r.mail_sent_order < request_item.mail_sent_order
@@ -14,7 +13,6 @@ class SignRequest(models.Model):
         )
 
     def go_to_signable_document(self, request_items=None):
-        """Go to the signable document as the signers or the current user for specified request_items."""
         res = super().go_to_signable_document(request_items)
 
         if self.env.context.get("sign_all") or all(

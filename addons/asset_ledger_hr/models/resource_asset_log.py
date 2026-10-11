@@ -37,8 +37,6 @@ class ProductAssetLog(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # Work on copies: the snapshot below fills in keys the caller never wrote,
-        # and handing those back on the caller's own dictionaries is observable.
         vals_list = [dict(vals) for vals in vals_list]
         timelines = {}
         for vals in vals_list:
@@ -80,17 +78,6 @@ class ProductAssetLog(models.Model):
 
     @api.model
     def _business_day_cutoff(self, target_date):
-        """Return the naive UTC instant that closes `target_date` for the user.
-
-        A log's `date` is a business day in the user's timezone while
-        `mail_message.date` is naive UTC, so comparing the two unconverted
-        shifts the cut-off by the UTC offset: in America/Mexico_City a change
-        made at 20:00 local is stored as 02:00 UTC the next day and the day it
-        belongs to would miss it. Normalising the argument to a date first also
-        keeps the answer independent of whether the caller passed a `date`, a
-        `datetime` or an ISO string -- the web client sends strings and Python
-        callers send dates, and the two used to disagree.
-        """
         day = fields.Date.to_date(target_date) or fields.Date.context_today(self)
         zone = ZoneInfo(self.env.context.get("tz") or self.env.user.tz or "UTC")
         return (
@@ -101,9 +88,6 @@ class ProductAssetLog(models.Model):
 
     @api.model
     def _get_employee_timeline(self, asset_id, lot_field):
-        """Every hand-over of `lot_field`'s role on the asset, oldest first, as
-        {date, old, new} employee ids: one entry per assignment start and one
-        per end that nothing follows."""
         role = ROLE_BY_LOG_FIELD.get(lot_field)
         asset = self.env["resource.resource"].browse(asset_id).sudo()
         if not role or not asset:

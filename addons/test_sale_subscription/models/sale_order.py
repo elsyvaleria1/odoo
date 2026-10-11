@@ -13,12 +13,9 @@ class SaleOrder(models.Model):
 
     @api.model
     def _test_demo_flush_tracking(self):
-        """Force the creation of tracking values."""
         self.env.flush_all()
         self.env.cr.flush()
 
-    # Mocking for '_process_invoices_to_send'
-    # Otherwise the whole sending mail process will be triggered and we don't want it in the post_init hook
     def _mock_process_invoices_to_send(self, account_moves):
         account_moves.is_move_sent = True
 
@@ -36,16 +33,12 @@ class SaleOrder(models.Model):
 
     def _process_invoices_to_send(self, account_moves):
         if self.env.context.get("install_mode"):
-            # Mocking for '_process_invoices_to_send'
-            # Otherwise the whole sending mail process will be triggered and we don't want it in the post_init hook
             account_moves.is_move_sent = True
             return None
         return super()._process_invoices_to_send(account_moves)
 
     @api.model
     def _test_demo_generate_subscriptions(self):
-        # make sure install_mode is set which is used for detection of
-        # auto_commit in _create_recurring_invoice
         self.with_context(
             install_mode=True
         )._test_demo_generate_subscriptions_unpatched()
@@ -67,15 +60,12 @@ class SaleOrder(models.Model):
             if not sub_0 or not sub_1:
                 _logger.error("Could not find demo data to use")
                 return
-            # Allows multiple -i of the module
             if sub_1.locked:
                 return
 
             subs_to_invoice |= sub_0 | sub_1
-            # reset the dates that were defined "today", this allows to prevent the invoices in the past
             subs_to_invoice.start_date = False
             subs_to_invoice.next_invoice_date = False
-            # prevent tu auto close the contract when the invoice cron run later than 15 days after the next_invoice_date
             subs_to_invoice.plan_id.auto_close_limit = 60
             self._test_demo_flush_tracking()
             subs_to_invoice.action_confirm()
@@ -113,7 +103,6 @@ class SaleOrder(models.Model):
             subs_to_invoice._test_demo_create_invoices()
             self._test_demo_flush_tracking()
 
-        # Upsell SO in the middle of the period
         time_start = fields.Date.today() - relativedelta(months=9)
         with freeze_time(time_start.replace(day=20)):
             sub_5 = sub_0.copy(
@@ -151,13 +140,12 @@ class SaleOrder(models.Model):
             subs_to_invoice._test_demo_create_invoices()
             self._test_demo_flush_tracking()
 
-        # Renew
         time_start = fields.Date.today() - relativedelta(months=7)
         with freeze_time(time_start.replace(day=10)):
             action = sub_1.prepare_renewal_order()
             renew_so_1 = self.env["sale.order"].browse(action["res_id"])
             renew_so_1.require_payment = False
-            renew_so_1.line_ids[0].product_qty += 10  # 11 --> 21
+            renew_so_1.line_ids[0].product_qty += 10
             self._test_demo_flush_tracking()
             renew_so_1.action_confirm()
             self._test_demo_flush_tracking()
@@ -168,7 +156,6 @@ class SaleOrder(models.Model):
         time_start = fields.Date.today() - relativedelta(months=6)
         with freeze_time(time_start.replace(day=10)):
             sub_2 = self.env.ref("test_sale_subscription.test_subscription_portal_2")
-            # reset the dates that were defined "today", this allows to prevent the invoices in the past
             sub_2.start_date = False
             sub_2.next_invoice_date = False
             self._test_demo_flush_tracking()
@@ -207,7 +194,6 @@ class SaleOrder(models.Model):
         time_start = fields.Date.today() - relativedelta(months=2)
         with freeze_time(time_start.replace(day=10)):
             sub_3 = self.env.ref("test_sale_subscription.test_subscription_portal_3")
-            # reset the dates that were defined "today", this allows to prevent the invoices in the past
             sub_3.start_date = False
             sub_3.next_invoice_date = False
             sub_3.line_ids.product_qty = 6
@@ -223,7 +209,6 @@ class SaleOrder(models.Model):
         )
         with freeze_time(time_start.replace(day=10)):
             sub_4 = self.env.ref("test_sale_subscription.test_subscription_portal_4")
-            # reset the dates that were defined "today", this allows to prevent the invoices in the past
             sub_4.start_date = False
             sub_4.next_invoice_date = False
             sub_4.line_ids.product_qty = 4

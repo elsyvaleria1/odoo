@@ -101,10 +101,6 @@ class SaleCommissionAchievementReport(models.Model):
         readonly=True,
     )
 
-    ################################################################################
-    # Readonly Cursor hacks
-    # These methods use a readonly cursor everywhere else in odoo but here we need a RW cursor because
-    # we are creating a view (necessary even if the view is not materialized).
 
     @api.model
     def web_search_read(
@@ -119,7 +115,6 @@ class SaleCommissionAchievementReport(models.Model):
             count_limit=count_limit,
         )
 
-    # Make sure the method is never readonly in this model
     web_search_read._readonly = False
 
     @api.model
@@ -143,7 +138,6 @@ class SaleCommissionAchievementReport(models.Model):
     def formatted_read_grouping_sets(
         self, domain, grouping_sets, aggregates=(), *, order=None
     ) -> list:
-        # In the pivot view, we don't want the hierarchical naming of department_id (hr.department)
         return super().formatted_read_grouping_sets(
             domain,
             grouping_sets,
@@ -153,15 +147,9 @@ class SaleCommissionAchievementReport(models.Model):
 
     formatted_read_grouping_sets._readonly = False
 
-    ################################################################################
 
     @api.model
     def _search(self, domain, *args, **kwargs):
-        """Extract the currency conversion date form the date_to field.
-        It is used to be able to get fixed results not depending on the currency daily rates.
-        The date is converted to a string to allow updating the date value in view customizations.
-        """
-        # take date_to but not plan_id.date_to
         date_to_domain = domain and filter_domain_leaf(
             domain, lambda field: "date_to" in field and "plan_id" not in field
         )
@@ -190,7 +178,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_achievement_default_dates(self) -> tuple:
-        """Return default date_from, date_to and company sql condition for the achievements filtered results"""
         if self.env.context.get("active_plan_ids"):
             plan_ids = self.env["sale.commission.plan"].browse(
                 self.env.context["active_plan_ids"]
@@ -297,7 +284,6 @@ class SaleCommissionAchievementReport(models.Model):
         AND date <= '{datetime.strftime(date_to, "%Y-%m-%d") if date_to else today}'
         """
 
-    # ==== Materialized Achievement Generation Methods ====
 
     def _get_view_parameters(self) -> str:
         return "TEMPORARY"
@@ -309,9 +295,6 @@ class SaleCommissionAchievementReport(models.Model):
         return False
 
     def _get_report_view(self) -> str | None:
-        # test the existance of the view. _get_report_view can be called twice in a single transaction by get_views and web_search_read for example.
-        # To avoid `psycopg2.errors.DuplicateTable: relation already exists` errors, we only create the view on the first call.
-        # Unfortunately tools.sql.table_exists can't be used here because the view is created in a temporary schema
         self.env.cr.execute("""
             SELECT 1 FROM pg_catalog.pg_class AS c
                 WHERE c.relname = 'sale_commission_achievement_report_view'
@@ -320,7 +303,6 @@ class SaleCommissionAchievementReport(models.Model):
         """)
         res = self.env.cr.fetchone()
         if res:
-            # The view is already defined in this transaction
             return None
         return f"""
             CREATE {self._get_view_parameters()} VIEW sale_commission_achievement_report_view AS
@@ -348,7 +330,6 @@ class SaleCommissionAchievementReport(models.Model):
             {self._view_post_creation()}
         """
 
-    # ==== Query Helpers ====
 
     @api.model
     def _rate_to_case(self, rates) -> str:
@@ -467,7 +448,6 @@ class SaleCommissionAchievementReport(models.Model):
         if join_type == "team":
             jointure = "fm.team_id = rules.team_id"
         else:
-            # JOIN ON USER
             jointure = "fm.invoice_user_id = rules.user_id"
         return f"""
           JOIN filtered_moves fm ON {jointure}
@@ -504,7 +484,6 @@ class SaleCommissionAchievementReport(models.Model):
         if join_type == "team":
             jointure = "fo.team_id = rules.team_id"
         else:
-            # JOIN ON USER
             jointure = "fo.user_id = rules.user_id"
         return f"""
         JOIN filtered_orders fo ON {jointure}
@@ -566,7 +545,6 @@ class SaleCommissionAchievementReport(models.Model):
         """
 
     def _achievement_lines_add(self, users=None, teams=None) -> tuple:
-        # Adjustement added to a salesperson
         return (
             f"""
 {self._get_filtered_achivement_cte(users=users, teams=teams)},
@@ -606,7 +584,6 @@ achievement_commission_lines_add AS (
         )
 
     def _achievement_lines_rem(self, users=None, teams=None) -> tuple:
-        # Adjustement removed to a salesperson
         return (
             f"""
 achievement_commission_lines_rem AS (
@@ -807,10 +784,7 @@ sale_rules AS (
         ctes = self._commission_lines_cte(users, teams)
         queries = [x[0] for x in ctes]
         table_names = [x[1] for x in ctes]
-        # Each source spells its columns in its own order; the union must match them
-        # by name, or a swapped pair lands in the wrong column without any error.
         columns = ", ".join(COMMISSION_LINE_COLUMNS)
-        # create temporary table to convert currencies
         return f"""
 {",".join(queries)},
 commission_lines AS (
@@ -819,6 +793,5 @@ commission_lines AS (
 """
 
     def _pre_achievement_operation(self) -> None:
-        # Override in other modules. Mostly used in tests
         self.env.flush_all()
         self.env.invalidate_all()

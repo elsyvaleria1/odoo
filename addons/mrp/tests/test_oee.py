@@ -71,9 +71,6 @@ class TestOee(TestMrpCommon):
         end_time = time_to_string_utc_datetime(time(10, 53, 22))
         self._timers(self.workcenter_1, ("mrp.block_reason4", start_time, end_time))
 
-        # Overlaps count once: the quality stop starts a second before the
-        # availability stop ends, and the performance timer lies inside the
-        # productive one.
         blocked_time = 170 / 60
         productive_time = 13.0
 

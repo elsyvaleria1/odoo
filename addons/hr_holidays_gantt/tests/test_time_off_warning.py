@@ -6,7 +6,6 @@ from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 class TestHolidaysWarning(TestHrHolidaysCommon):
     def test_check_group_leaves(self):
 
-        # Make sure we have the rights to create, validate and delete the leaves, leave types and allocations
         LeaveType = (
             self.env["hr.leave.type"]
             .with_user(self.user_hrmanager_id)
@@ -43,7 +42,6 @@ class TestHolidaysWarning(TestHrHolidaysCommon):
                 "request_date_to": datetime(2023, 11, 9, 23, 59, 59),
             }
         )
-        # the leaves arguments of _group_leaves function are always sorted first by type, then by chronology
         periods = self.env["hr.leave"]._group_leaves(
             [time_off_validated_1, time_off_validated_2, time_off_request],
             self.employee_emp,

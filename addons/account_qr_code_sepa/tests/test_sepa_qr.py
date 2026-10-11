@@ -43,13 +43,10 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
         )
 
     def test_sepa_qr_code_generation(self):
-        """Check SEPA QR-code generation when qr_method is specified beforehand."""
         self.sepa_qr_invoice.qr_code_method = "sct_qr"
 
-        # Using a SEPA IBAN should work
         self.sepa_qr_invoice._generate_qr_code()
 
-        # Using a non-SEPA IBAN shouldn't
         self.sepa_qr_invoice.bank_account_id = self.acc_non_sepa_iban
         with self.assertRaises(
             UserError,
@@ -57,7 +54,6 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
         ):
             self.sepa_qr_invoice._generate_qr_code()
 
-        # Changing the currency should break it as well
         self.sepa_qr_invoice.bank_account_id = self.acc_sepa_iban
         self.sepa_qr_invoice.currency_id = self.env.ref("base.USD").id
         with self.assertRaises(
@@ -67,7 +63,6 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
             self.sepa_qr_invoice._generate_qr_code()
 
     def test_sepa_qr_code_detection(self):
-        """Check SEPA QR-code auto-detection when the invoice specifies no QR-method."""
         self.sepa_qr_invoice._generate_qr_code()
         self.assertEqual(
             self.sepa_qr_invoice.qr_code_method,
@@ -99,8 +94,6 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
         )
 
     def test_get_qr_vals_communication(self):
-        """A communication is placed in the structured field only when it is a valid
-        structured reference, and in the unstructured field otherwise."""
         result = self.acc_sepa_iban._prepare_qr_payload(
             qr_method="sct_qr",
             amount=100.0,
@@ -132,8 +125,8 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
             amount=100.0,
             currency=self.env.ref("base.EUR"),
             debtor_partner=None,
-            free_communication=" 5 000 0567 89012345 ",  # NL Structured reference
-            structured_communication=" 5 000 0567 89012345 ",  # NL Structured reference
+            free_communication=" 5 000 0567 89012345 ",
+            structured_communication=" 5 000 0567 89012345 ",
         )
         self.assertEqual(
             result,

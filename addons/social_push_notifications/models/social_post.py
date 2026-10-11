@@ -17,27 +17,18 @@ class SocialPost(models.Model):
                 post.use_visitor_timezone = False
 
     def _action_post(self) -> None:
-        """We also setup a CRON trigger at "now" to run the job as soon as possible to get the
-        minimum amount of delay for the end user as push notifications are only sent when the CRON
-        job runs (see social_push_notifications/social_live_post.py#_post)."""
 
         super()._action_post()
 
         if "push_notifications" in self.account_ids.mapped("media_type") and any(
             post_method == "now" for post_method in self.mapped("post_method")
         ):
-            # trigger CRON job ASAP so that push notifications are sent
             self.env["ir.cron"]._trigger_ref(
                 "social.ir_cron_post_scheduled", fields.Datetime.now()
             )
 
     @api.model
     def _cron_publish_scheduled(self) -> None:
-        """This method is overridden to gather all pending push live.posts ('ready' state) and post them.
-        This is done in the cron job instead of instantly to avoid blocking the 'Post' action of the user
-        indefinitely.
-
-        The related social.post will remain 'pending' until all live.posts are processed."""
 
         super()._cron_publish_scheduled()
 

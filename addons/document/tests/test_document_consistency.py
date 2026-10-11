@@ -33,7 +33,6 @@ class TestDocumentsRequestMessages(TransactionCaseDocuments):
         ]
 
     def test_a_request_is_answered_by_content_not_by_emptying(self):
-        # an empty binary is a request (the UI's isRequest)
         document = self.env["document.document"].create({"name": "awaited.txt"})
         document.write({"raw": b""})
         self.assertFalse(self._request_bodies(document), "emptying is no answer")

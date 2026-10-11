@@ -166,7 +166,6 @@ class TestWebhookSecurity(TransactionCase):
     def test_a_failing_call_is_recorded_with_its_error(self):
         rule = self._new_rule(auth_type="none", record_getter="model.browse([])")
 
-        # not assertRaises: its savepoint would roll the row back too
         try:
             self._call(rule, {"id": 1})
         except ValidationError:

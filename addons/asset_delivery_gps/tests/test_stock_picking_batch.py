@@ -107,8 +107,6 @@ class TestTripGpsLegs(GpsBridgeCase):
         trip = self._trip()
         trip.date_departure = self._at(0)
         second, first = self._loaded(trip), self._loaded(trip)
-        # Delivered out of the order they were loaded in: the leg follows the order
-        # of delivery.
         self._deliver(second, 90)
         self._deliver(first, 40)
         trip.date_return = self._at(150)
@@ -203,8 +201,6 @@ class TestTripGpsLegs(GpsBridgeCase):
         self.assertAlmostEqual(picking.trip_leg_km, 12.5)
 
     def test_the_return_leg_reads_the_odometer_the_vehicle_parked_with(self):
-        # The tracker goes quiet with the engine off: the trip closes 90 minutes
-        # after the last reading, and the return leg is still the odometer's.
         trip = self._trip()
         trip.date_departure = self._at(0)
         picking = self._loaded(trip)

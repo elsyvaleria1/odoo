@@ -34,7 +34,6 @@ class TestUiWebsiteSaleSlides(test_ui_wslides.TestUICommon):
                 "last_invitation_date": fields.Datetime.now(),
             }
         )
-        # the link the invitation mail carries is issued with it
         self.channel_partner_portal._issue_invitation_links()
         self.portal_invite_url = self.channel_partner_portal.invitation_link
 

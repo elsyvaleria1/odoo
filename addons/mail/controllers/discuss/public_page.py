@@ -82,7 +82,7 @@ class PublicPageController(http.Controller):
         if (
             not channel
             or not channel.sudo().uuid
-            or not consteq(channel.sudo().uuid, invitation_token)  # noqa: E8537  public: an identifier that is not meant to be secret
+            or not consteq(channel.sudo().uuid, invitation_token)
         ):
             raise NotFound
         store = Store().add_global_values(isChannelTokenSecret=True)

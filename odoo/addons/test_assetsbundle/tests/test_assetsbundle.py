@@ -68,8 +68,6 @@ class TestJavascriptAssetsBundle(FileTouchable):
         return self.env["ir.attachment"].search(domain)
 
     def _current_ira_for_bundle(self, extension, rtl=False):
-        # the version a save replaced stays for the tabs that still name it,
-        # so the current one is the newest row
         return self._any_ira_for_bundle(extension, rtl=rtl).sorted("id")[-1:]
 
     def test_01_generation(self):

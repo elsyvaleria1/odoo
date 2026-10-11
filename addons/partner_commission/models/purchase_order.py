@@ -54,14 +54,12 @@ class PurchaseOrder(models.Model):
 
     @api.model
     def _cron_confirm_purchase_orders(self) -> None:
-        # Frequency is company dependent.
         template = self.env.ref("purchase.email_template_edi_purchase_done")
         companies = self.env["res.company"]
         today = fields.Date.today()
         for company in companies.search([]):
             frequency = company.commission_automatic_po_frequency
 
-            # noop
             if frequency == "manually":
                 continue
 

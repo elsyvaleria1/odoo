@@ -30,14 +30,9 @@ class ResCompany(models.Model):
     _inherits = {"res.partner": "partner_id"}
     _order = "sequence, name"
     _rec_names_search = ["code", "name"]
-    # display_name is `code or name`; _search_display_name only narrows the
-    # default composition under `user_preference`
     _display_name_column = ("code", "name")
     _display_name_context_keys = ("user_preference",)
     _display_name_search_default = True
-    # a tenant's row is governed by the tenant's rules, and its identity is
-    # readable by whoever may read the tenant; the party's rules govern the
-    # party's other fields
     _inherits_rules = False
     _inherits_sudo_fields = (
         "name",
@@ -292,8 +287,6 @@ class ResCompany(models.Model):
                     "company_ids": [Command.link(company.id) for company in companies],
                 }
             )
-        # the creating user is a member of the new company before its
-        # configuration is written: what the write triggers may work in it
         for company, config_vals in zip(companies, config_vals_list, strict=True):
             for link, vals in config_vals.items():
                 company[link].write(vals)
@@ -425,10 +418,10 @@ class ResCompany(models.Model):
     @api.depends("image_1920")
     def _compute_logo_web(self) -> None:
         with _debug.perf("logo_web_computed", companies=len(self)) as span:
-            resized = 0  # debuglog
+            resized = 0
             for company in self:
                 img = company.image_1920
-                resized += bool(img)  # debuglog
+                resized += bool(img)
                 company.logo_web = img and base64.b64encode(
                     image_process(base64.b64decode(img), size=(180, 0))
                 )
@@ -549,11 +542,11 @@ class ResCompany(models.Model):
     @api.onchange("parent_id")
     def _onchange_parent_id(self) -> None:
         if self.parent_id:
-            synced = 0  # debuglog
+            synced = 0
             for fname in self._get_field_names_delegated_to_root():
                 if self[fname] != self.parent_id[fname]:
                     self[fname] = self.parent_id[fname]
-                    synced += 1  # debuglog
+                    synced += 1
             _debug.logic(
                 "onchange_parent_delegated", parent=self.parent_id.id, synced=synced
             )
@@ -615,8 +608,6 @@ class ResCompany(models.Model):
         return None
 
     def _config_name_of_field(self, fname: str) -> str:
-        # a related through a link names the configuration's own field, which
-        # need not share the company's name
         field = self._fields.get(fname)
         related = field is not None and getattr(field, "related", None)
         if related and related.count(".") == 1:
@@ -640,7 +631,7 @@ class ResCompany(models.Model):
             "user_ids",
         }
 
-    @ormcache("tuple(self.env.companies.ids)", "self.id", "self.env.uid")  # noqa: E8540  the companies in use and their tree, no group
+    @ormcache("tuple(self.env.companies.ids)", "self.id", "self.env.uid")
     def __get_accessible_branch_ids(self) -> list[int]:
         self.check_singleton()
 
@@ -733,11 +724,11 @@ class ResCompany(models.Model):
     ) -> tuple:
         delegated_fnames = set(self._get_field_names_delegated_to_root())
         arch, view = super()._get_view(view_id, view_type, **options)
-        marked = 0  # debuglog
+        marked = 0
         for f in arch.iter("field"):
             if f.get("name") in delegated_fnames:
                 f.set("readonly", "parent_id != False")
-                marked += 1  # debuglog
+                marked += 1
         _debug.logic("delegated_fields_readonly", view_type=view_type, fields=marked)
         return arch, view
 
@@ -804,8 +795,6 @@ class ResCompany(models.Model):
         return ~domain if operator == "not in" else domain
 
     def _compute_config_link(self, fname: str) -> None:
-        # the pairing is the registry's map, so linking a company to its
-        # configuration reads no configuration row
         Config = self.env[self._fields[fname].comodel_name]
         config_ids = Config._config_id_by_company(self)
         for company in self:
@@ -842,10 +831,6 @@ class ResCompany(models.Model):
         return [("id", "in", configs.company_id.ids)]
 
     def _split_config_vals(self, vals: dict[str, Any]) -> dict[str, dict[str, Any]]:
-        # routed by ownership, not by absence from the company: a field the
-        # company exposes as a related THROUGH a link is still the
-        # configuration's, and a related is read-only unless it says otherwise,
-        # so a write left here would be dropped rather than refused
         config_vals: dict[str, dict[str, Any]] = {}
         for key in list(vals):
             if key == "company_id":

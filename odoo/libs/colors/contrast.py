@@ -80,7 +80,6 @@ def _in_gamut(lightness: float, chroma: float, hue: float) -> bool:
 
 def oklch_to_rgb(lightness: float, chroma: float, hue: float) -> tuple[int, int, int]:
     lightness = min(max(lightness, 0.0), 1.0)
-    # out of gamut, chroma gives way: hue and lightness are what the caller chose
     if not _in_gamut(lightness, chroma, hue):
         low, high = 0.0, chroma
         for _ in range(_SEARCH_STEPS):
@@ -127,7 +126,6 @@ def with_contrast(
 
     reachable = [bound for bound in (0.0, 1.0) if passes_at(bound)]
     if not reachable:
-        # between a light and a dark surface only a middle band can pass
         band = [
             step / _GRID_STEPS
             for step in range(1, _GRID_STEPS)

@@ -56,8 +56,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
 
     @users("user_marketing_automation")
     def test_create_records_with_xml_ids(self):
-        # The function tests creation of records.
-        # If record is deleted and then re-created it has to get same xmlid.
         email = "ma.test.new.1@example.com"
         name = "MATest_new_1"
         create_xmls = {
@@ -71,7 +69,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
             {"mailing.contact": [create_xmls]}
         )
 
-        # Retrieve the records using the XML IDs and verify they exist
         record = self.env.ref(
             "marketing_automation.mail_contact_temp", raise_if_not_found=False
         )
@@ -79,7 +76,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
         self.assertEqual(record.name, name, f"The value should be {name}")
         self.assertEqual(record.email, email, f"The value should be {email}")
 
-        # Now delete the record
         record.unlink()
         self.assertFalse(record.exists(), "Record should be deleted.")
         record = self.env.ref(
@@ -90,7 +86,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
             "The record with XML ID 'marketing_automation.mail_contact_temp' should not exist.",
         )
 
-        # Now re-create record and check values again
         self.env["marketing.campaign"].sudo()._create_records_with_xml_ids(
             {"mailing.contact": [create_xmls]}
         )
@@ -103,11 +98,8 @@ class TestMarketingCampaign(MarketingAutomationCommon):
 
     @users("user_marketing_automation")
     def test_duplicate_campaign(self):
-        """Test duplicating a campaign: should not duplicate traces
-        and consider mailings as already sent through duplicates"""
         original_campaign = self.campaign.with_user(self.env.user)
 
-        # Add server activity to campaign
         server_action = (
             self.env["ir.actions.server"]
             .sudo()
@@ -144,8 +136,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
 
     @users("user_marketing_automation")
     def test_utm_source(self):
-        """Test source name modification and uniqueness check"""
-        # Setup
         campaign = self.campaign.with_user(self.env.user)
         utm_source_name = "utm_source_without_mailing"
         campaign.marketing_activity_ids.mass_mailing_id.name = utm_source_name
@@ -154,7 +144,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
             utm_source_name,
         )
 
-        # Try to remove template from campaign's activity
         with self.assertRaises(UserError):
             campaign.marketing_activity_ids.mass_mailing_id.unlink()
 
@@ -164,7 +153,6 @@ class TestMarketingCampaign(MarketingAutomationCommon):
             "Test prerequisite: UTM source should still exists, even though it's not related to any campaigns",
         )
 
-        # Create new campaign with an activity
         new_campaign = self.env["marketing.campaign"].create(
             {
                 "domain": [("name", "like", "MATest")],
@@ -181,5 +169,4 @@ class TestMarketingCampaign(MarketingAutomationCommon):
                 "interval_type": "hour",
             },
         )
-        # Reassign the original UTM source name to the new campaign (attempting to trigger unique name constraint)
         new_campaign.marketing_activity_ids.mass_mailing_id.name = utm_source_name

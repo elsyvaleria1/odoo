@@ -30,11 +30,10 @@ class TestStudioIrModel(TransactionCase):
         super().setUpClass()
         cls.partner_elon = cls.env["res.partner"].create(
             {
-                "name": "Elon Tusk",  # 🐗
+                "name": "Elon Tusk",
                 "email": "elon@spacex.com",
             }
         )
-        # custom m2m field between two models which don't have one yet
         cls.source_model = cls.env["ir.model"].search([("model", "=", "res.currency")])
         cls.destination_model = cls.env["ir.model"].search(
             [("model", "=", "res.country.state")]
@@ -71,7 +70,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertEqual(views.search_count(domain), count + 1)
 
     def test_00_model_creation(self):
-        """Test that a model gets created with the selected options."""
         model_options = [
             "use_partner",
             "use_stages",
@@ -113,7 +111,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_01_mail_inheritance(self):
-        """Test that the mail inheritance behaves as expected on custom models."""
         model_options = ["use_partner", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -124,14 +121,12 @@ class TestStudioIrModel(TransactionCase):
         self.assertTrue(
             model.is_mail_thread, "model should inherit from mixin.mail.thread"
         )
-        # create a record
         bfr = self.env[model.model].create(
             {
                 "x_name": "Big Fucking Rocket",
                 "x_studio_partner_id": self.partner_elon.id,
             }
         )
-        # ensure the partner is suggested in email and sms communication
         mail_suggested_recipients = bfr._message_get_suggested_recipients(
             reply_discussion=True,
             no_create=False,
@@ -154,7 +149,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
         self.assertTrue(model.is_mail_activity)
-        # resist to field name changes across versions
         self.assertTrue("activity_user_id" in self.env[model.model]._fields)
         got_views = self.env[model.model].get_views([(False, "search")])
         search_view = etree.fromstring(got_views["views"]["search"]["arch"])
@@ -166,7 +160,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_02_model_option_active(self):
-        """Test that the `active` behaviour is set up correctly."""
         model_options = ["use_active", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -186,7 +179,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertTrue(active_field.tracking, "the x_active field should be tracked")
 
     def test_03_model_option_sequence(self):
-        """Test that the `sequence` behaviour is set up correctly."""
         model_options = ["use_sequence", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -211,7 +203,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertEqual(tree.attrib["default_order"], "x_studio_sequence asc,id desc")
 
     def test_04_model_option_responsible(self):
-        """Test that the `responsible` behaviour is set up correctly."""
         model_options = ["use_responsible", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -233,7 +224,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_05_model_option_partner(self):
-        """Test that the `partner` behaviour is set up correctly."""
         model_options = ["use_partner", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -263,7 +253,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_06_model_option_company(self):
-        """Test that the `company` behaviour is set up correctly."""
         model_options = ["use_company", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -311,7 +300,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_07_model_option_notes(self):
-        """Test that the `notes` behaviour is set up correctly."""
         model_options = ["use_notes", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -323,7 +311,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertIn("x_studio_notes", fields, "a custom notes field should be set up")
 
     def test_08_model_option_date(self):
-        """Test that the `date` behaviour is set up correctly."""
         model_options = ["use_date", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -341,7 +328,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_09_model_option_double_dates(self):
-        """Test that the `double date` behaviour is set up correctly."""
         model_options = ["use_double_dates", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -365,7 +351,6 @@ class TestStudioIrModel(TransactionCase):
             )
 
     def test_10_model_option_value(self):
-        """Test that the `value` behaviour is set up correctly."""
         model_options = ["use_value", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -408,7 +393,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_11_model_option_image(self):
-        """Test that the `image` behaviour is set up correctly."""
         model_options = ["use_image", "use_mail"]
         (model, extra_models) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -420,7 +404,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertIn("x_studio_image", fields, "a custom image field should be set up")
 
     def test_12_model_option_stages(self):
-        """Test that the `stage` behaviour is set up correctly."""
         model_options = ["use_stages", "use_mail"]
         (model, extra_model) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -473,7 +456,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertEqual(tree.attrib["default_order"], "x_studio_priority desc,id desc")
 
     def test_13_model_option_tags(self):
-        """Test that the `tags` behaviour is set up correctly."""
         model_options = ["use_tags"]
         (model, extra_model) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -489,15 +471,11 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_14_all_options(self):
-        """Test auto-view generation for custom models with all options enabled."""
-        # Enable ALL THE OPTIONS
         (_model, _extra_model) = self.env["ir.model"].studio_model_create(
             "Rockets", options=OPTIONS_WL
         )
-        # I'm just checking it doesn't crash for now 👐
 
     def test_15_custom_model_security(self):
-        """Test that ACLs are created for a custom model."""
         model_options = []
         (model, _) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -542,7 +520,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_16_next_relation(self):
-        """Check that creating the same m2m will result in a new relation table."""
         IrModelFields = self.env["ir.model.fields"].with_context(studio=True)
         current_table = IrModelFields._get_custom_many2many_names(
             "res.currency", "res.country.state"
@@ -612,7 +589,7 @@ class TestStudioIrModel(TransactionCase):
 
     def test_18_lots_of_relations(self):
         IrModelFields = self.env["ir.model.fields"].with_context(studio=True)
-        NUM_TEST = 10  # because some people are just that stupid
+        NUM_TEST = 10
         attempt = 0
         while attempt < NUM_TEST:
             attempt += 1
@@ -645,7 +622,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_19_custom_model_security(self):
-        """Test that ACLs are created for a custom model using name create."""
 
         model_id, _name = (
             self.env["ir.model"].with_context(studio=True).name_create("X_Rockets")
@@ -703,7 +679,6 @@ class TestStudioIrModel(TransactionCase):
             )
 
     def test_21_set_view_mode_new_window_action(self):
-        """Test that the `view_mode` for window action is set correctly."""
 
         model = self.env["ir.model"].create(
             {
@@ -724,7 +699,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_22_rename_window_action(self):
-        """Test renaming a menu will rename the windows action."""
 
         model = self.env["ir.model"].create(
             {
@@ -752,7 +726,6 @@ class TestStudioIrModel(TransactionCase):
         self.assertEqual(
             action.name, new_menu.name, "action and menu name should be same"
         )
-        # rename the menu name
         new_menu.name = "new Rockets"
         self.assertEqual(
             action.name,
@@ -761,7 +734,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_23_model_option_stages_with_sequence(self):
-        """Test that the `stage` behaviour is set up correctly."""
         model_options = ["use_stages", "use_sequence", "use_mail"]
         (model, extra_model) = self.env["ir.model"].studio_model_create(
             "Rockets", options=model_options
@@ -802,7 +774,6 @@ class TestStudioIrModel(TransactionCase):
         )
 
     def test_performance_01_fields_batch(self):
-        """Test number of call to setup_models when creating a model with multiple"""
         count_setup_models = 0
         orig_setup_models = odoo.modules.registry.Registry.setup_models
 
@@ -812,8 +783,6 @@ class TestStudioIrModel(TransactionCase):
             orig_setup_models(registry, cr, *args, **kwargs)
 
         with patch("odoo.modules.registry.Registry.setup_models", new=_setup_models):
-            # not: using a specific model (PerformanceIssues and not Rockets) is important since after the rollback of the test,
-            # the model will be missing but x_rockets is still in the pool, breaking some optimizations
             self.env["ir.model"].with_context(studio=True).studio_model_create(
                 "PerformanceIssues", options=OPTIONS_WL
             )
@@ -823,9 +792,7 @@ class TestStudioIrModel(TransactionCase):
     def test_update_xmlid(self):
         record = self.env["ir.model.data"].search([], limit=1)
         ModelData = self.env["ir.model.data"].with_context(studio=True)
-        # warm the field and default caches the first create of the test pays for
         ModelData._update_xmlids([{"xml_id": "web_studio.warmup", "record": record}])
-        # one search for the existing rows, one insert
         with self.assertQueryCount(2):
             ModelData._update_xmlids([{"xml_id": "web_studio.xmlid", "record": record}])
         imd = self.env["ir.model.data"].search(
@@ -877,10 +844,6 @@ class TestStudioIrModel(TransactionCase):
 @tagged("-at_install", "post_install")
 class TestStudioIrModelHardcoded(TransactionCase):
     def test_23_export_hardcoded_models_and_fields(self):
-        """Test that all models and fields from hardcoded lists exist in the data model.
-        Executed at post install time so the models have a chance to get up
-        to date.
-        """
         needed_modules = {
             "account",
             "account_edi",
@@ -940,8 +903,6 @@ class TestStudioIrModelHardcoded(TransactionCase):
         )
 
         if ms := [m.name for m in modules if m.state != "installed"]:
-            # At least one needed module is not installed, so we would not be able
-            # to assert the hardcoded lists, so we skip the rest of the test.
             self.skipTest(f"Missing required modules {', '.join(ms)}")
 
         def check_ownership(model: str, field_name: str | None = None) -> None:
@@ -949,9 +910,6 @@ class TestStudioIrModelHardcoded(TransactionCase):
             if field_name:
                 field = self.env[model]._fields.get(field_name)
                 self.assertIsNotNone(field, f"Unknown field {model}.{field_name}")
-                # sadly Field._module returns the module which last overrode
-                # the field, and Field._modules has unstable ordering, so if
-                # the field was overridden walk the MRO from the top
                 module = (
                     field._module
                     if len(field._modules) == 1
@@ -1013,7 +971,6 @@ class TestStudioIrModelHardcoded(TransactionCase):
         self.assertEqual(needed_modules, seen_modules)
 
     def test_24_export_all_required_fields(self):
-        """Test that all required fields are exported"""
 
         for model, fields in FIELDS_TO_EXPORT.items():
             required_fields = [

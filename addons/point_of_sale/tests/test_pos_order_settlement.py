@@ -299,7 +299,6 @@ class TestPosOrderPaidPaymentEdits(PosCashRoundingSessionCommon):
                     ]
                 }
                 if sign < 0:
-                    # Preserve the existing rejection of excessive refund payments.
                     with self.assertRaises(UserError):
                         order.write(values)
                 else:

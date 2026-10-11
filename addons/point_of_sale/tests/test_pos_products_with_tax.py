@@ -660,7 +660,6 @@ class TestPoSProductsWithTax(TestPoSCommon):
         self.assertRecordValues(
             lines,
             [
-                # pylint: disable=bad-whitespace
                 {
                     "account_id": self.sale_account.id,
                     "balance": -10.0,
@@ -739,7 +738,6 @@ class TestPoSProductsWithTax(TestPoSCommon):
         self.assertRecordValues(
             lines,
             [
-                # pylint: disable=bad-whitespace
                 {
                     "account_id": self.sale_account.id,
                     "balance": -10.0,
@@ -819,7 +817,6 @@ class TestPoSProductsWithTax(TestPoSCommon):
         self.assertRecordValues(
             lines,
             [
-                # pylint: disable=bad-whitespace
                 {
                     "account_id": self.sale_account.id,
                     "balance": -9.0,
@@ -901,7 +898,6 @@ class TestPoSProductsWithTax(TestPoSCommon):
         self.assertRecordValues(
             lines,
             [
-                # pylint: disable=bad-whitespace
                 {
                     "account_id": self.sale_account.id,
                     "balance": -55.59,

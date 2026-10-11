@@ -25,12 +25,9 @@ class MixinEventMailSchedule(models.AbstractModel):
     )
     interval_type = fields.Selection(
         selection=[
-            # attendee based
             ("after_sub", "After each registration"),
-            # event based: start date
             ("before_event", "Before the event starts"),
             ("after_event_start", "After the event started"),
-            # event based: end date
             ("after_event", "After the event ended"),
             ("before_event_end", "Before the event ends"),
         ],
@@ -54,17 +51,14 @@ class MixinEventMailSchedule(models.AbstractModel):
 
     @api.depends("template_ref")
     def _compute_notification_type(self) -> None:
-        """Assigns the type of template in use, if any is set."""
         self.notification_type = "mail"
 
     def _template_model_by_notification_type(self):
-        """Which template model each notification type must point at."""
         return {
             "mail": "mail.template",
         }
 
     def _prepare_event_mail_values(self) -> dict:
-        """The scheduling half of this record, as values for the other model."""
         self.check_singleton()
         return {
             "interval_nbr": self.interval_nbr,

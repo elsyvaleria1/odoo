@@ -19,9 +19,6 @@ class TestHrAttendance(TransactionCase):
                 "check_in": time.strftime("%Y-%m-10 10:00"),
             }
         )
-        # `open_attendance` runs from 10:00 to whenever the employee checks out,
-        # which is to say it occupies the rest of time. Tests that are not about
-        # that need an employee who is not still checked in.
         cls.other_employee = cls.env["hr.employee"].create(
             {"name": "Sully", "ruleset_id": False}
         )
@@ -63,12 +60,6 @@ class TestHrAttendance(TransactionCase):
             )
 
     def test_an_attendance_cannot_be_created_around_an_open_one(self):
-        """The employee is still checked in from 10:00.
-
-        A completed 11:00-12:00 attendance says they were also somewhere else,
-        finished. Accepting it stores a state that only fails later, when the
-        open attendance is finally checked out and overlaps it.
-        """
         with self.assertRaises(ValidationError):
             self.attendance.create(
                 {
@@ -79,7 +70,6 @@ class TestHrAttendance(TransactionCase):
             )
 
     def test_an_attendance_cannot_be_extended_over_a_later_one(self):
-        """The constraint has to hold on write, not only on create."""
         first = self.attendance.create(
             {
                 "employee_id": self.other_employee.id,
@@ -98,8 +88,6 @@ class TestHrAttendance(TransactionCase):
             first.write({"check_out": time.strftime("%Y-%m-10 11:30")})
 
     def test_reopening_an_attendance_that_has_a_successor_is_refused(self):
-        """Clearing `check_out` makes the attendance open-ended, which would
-        swallow every attendance recorded after it."""
         first = self.attendance.create(
             {
                 "employee_id": self.other_employee.id,

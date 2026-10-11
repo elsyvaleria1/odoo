@@ -58,16 +58,11 @@ shortens it while draining and `reload` restores it."""
 
 
 def _read_process_title(pid: int) -> str:
-    # The worker titles itself with the request or database it is on
-    # (`Worker.setproctitle`); this is the one thing the master can still
-    # read of a child it is about to kill.
     try:
         title = Path(f"/proc/{pid}/cmdline").read_bytes()
     except OSError:
         return ""
     words = title.replace(b"\0", b" ").decode(errors="replace").strip()
-    # Without the setproctitle package the cmdline is argv, which says
-    # nothing about the request.
     return words.removeprefix("odoo: ") if words.startswith("odoo: ") else ""
 
 
@@ -86,8 +81,6 @@ def _get_exit_outcome(
     if os.WIFEXITED(status):
         if os.WEXITSTATUS(status) != 0:
             return "crash"
-        # Every policy recycle exits 0 on purpose, so the exit code alone
-        # cannot tell a leak-driven recycle from a healthy retirement.
         return recycled_for or "clean"
     if policy_kill:
         return "timeout"
@@ -150,8 +143,6 @@ class PreforkServer(CommonServer):
         }
 
     def _publish_census(self) -> None:
-        # Runs inside run()'s loop, where a raise takes the master down: the
-        # metrics are best effort, the supervision is not.
         try:
             self._census.publish(self._get_census)
         except Exception:
@@ -185,8 +176,6 @@ class PreforkServer(CommonServer):
         self.workers_stream: dict[int, WorkerStream] = {}
         self.workers: dict[int, Worker] = {}
         self._killed_workers: dict[int, Worker] = {}
-        # Worker exits since start by outcome, for the census and /metrics:
-        # a crash loop reads as a rising `crash` next to a flat `clean`.
         self._exits: dict[str, int] = dict.fromkeys(_EXIT_OUTCOMES, 0)
         self._retiring_workers: set[int] = set()
         self.generation = 0
@@ -194,8 +183,6 @@ class PreforkServer(CommonServer):
         self.long_polling_pid: int | None = None
         self.long_polling_popen: subprocess.Popen | None = None
         self.long_polling_spawn_time = 0.0
-        # One hold per population, so a crash loop in one kind does not delay
-        # the replacements of another; the spawn hold gates them all.
         self._respawn_holds: dict[str, RespawnHold] = {}
         self._selector: selectors.BaseSelector | None = None
         self._watched: dict[int, Worker] = {}
@@ -242,9 +229,6 @@ class PreforkServer(CommonServer):
                     os.close(fd)
         self._close_watchdog_selector()
         self.handoff.close_in_child()
-        # The websocket listener is the evented child's, handed over at its
-        # spawn; a forked worker holding a copy would keep the port bound
-        # past this master's death.
         if self.websocket_socket is not None:
             self.websocket_socket.close()
             self.websocket_socket = None
@@ -424,8 +408,6 @@ class PreforkServer(CommonServer):
 
     def apply_pending_signals(self, *, draining: bool = False) -> None:
         if draining:
-            # Leave reload and scaling requests in order for the next serving
-            # generation. Shutdown takes priority and must reach the outer loop.
             for sig in tuple(self.queue):
                 if sig in (signal.SIGINT, signal.SIGTERM):
                     self.queue.remove(sig)
@@ -460,13 +442,13 @@ class PreforkServer(CommonServer):
                 )
 
     def reap_exited_workers(self) -> None:
-        reaped = 0  # debuglog
+        reaped = 0
         while True:
             try:
                 wpid, status = os.waitpid(-1, os.WNOHANG)
                 if not wpid:
                     break
-                reaped += 1  # debuglog
+                reaped += 1
                 self._record_worker_exit(wpid, status)
                 self.remove_worker(wpid)
             except OSError as e:
@@ -494,13 +476,8 @@ class PreforkServer(CommonServer):
                 return
             name = worker.__class__.__name__
             lifetime = time.monotonic() - getattr(worker, "spawn_time", 0.0)
-            # A reason written just before the exit may still be in the pipe.
             self._read_worker_pipe(worker.watchdog_pipe[0], worker)
             recycled_for = worker.recycled_for
-            # The watchdog's SIGKILL of a worker that had reported ready is a
-            # policy the master applied to one long request, not a crash to
-            # back off from; the same kill on a worker that never got there
-            # is a worker that hangs at boot, which is what the back-off is for.
             policy_kill = killed_by_master and bool(worker.ready)
         outcome = _get_exit_outcome(
             status, policy_kill=policy_kill, recycled_for=recycled_for
@@ -524,7 +501,6 @@ class PreforkServer(CommonServer):
                     fast_deaths=hold.fast_deaths,
                 )
             hold.clear()
-            # A child that lived proves the process can still fork one.
             self._get_respawn_hold(SPAWN_HOLD).clear()
             return
         exited_nonzero = os.WIFEXITED(status) and os.WEXITSTATUS(status) != 0
@@ -677,7 +653,6 @@ class PreforkServer(CommonServer):
                 return
 
     def _retire_excess_workers(self) -> None:
-        """Drain excess HTTP workers once, retaining watchdog/reaping ownership."""
         active = [pid for pid in self.workers_http if pid not in self._retiring_workers]
         for pid in active[: max(0, len(active) - self.population)]:
             self._retiring_workers.add(pid)
@@ -705,13 +680,13 @@ class PreforkServer(CommonServer):
             sel = self._selector = selectors.DefaultSelector()
             self._watched = {}
         watched = self._watched
-        unregistered = 0  # debuglog
-        registered = 0  # debuglog
+        unregistered = 0
+        registered = 0
         for fd, owner in list(watched.items()):
             if fds.get(fd) is owner:
                 continue
             del watched[fd]
-            unregistered += 1  # debuglog
+            unregistered += 1
             with contextlib.suppress(KeyError, ValueError, OSError):
                 sel.unregister(fd)
         for fd, owner in fds.items():
@@ -720,7 +695,7 @@ class PreforkServer(CommonServer):
             with contextlib.suppress(KeyError, ValueError, OSError):
                 sel.register(fd, selectors.EVENT_READ)
                 watched[fd] = owner
-                registered += 1  # debuglog
+                registered += 1
         if self.pipe is not None and self.pipe[0] not in sel.get_map():
             with contextlib.suppress(KeyError, ValueError, OSError):
                 sel.register(self.pipe[0], selectors.EVENT_READ)
@@ -746,13 +721,6 @@ class PreforkServer(CommonServer):
 
     @staticmethod
     def _read_worker_pipe(fd: int, worker: Worker) -> None:
-        """Drain a worker's heartbeats, and keep what they say.
-
-        The bytes are a beat (`.`), the one-off readiness mark, and the reason
-        a worker is about to stop.  The last has to survive being read after
-        the child is already gone, which is why it is taken here and again
-        when the exit is accounted for.
-        """
         with contextlib.suppress(BlockingIOError, OSError):
             while data := os.read(fd, 4096):
                 if WORKER_READY in data:
@@ -795,9 +763,6 @@ class PreforkServer(CommonServer):
                 activated=self.settings.http_socket_activation,
                 logger=self.logger,
             )
-            # The websocket port is the master's too: the evented child
-            # adopts it, so its restarts and this master's reloads leave the
-            # port bound and the connections that arrive meanwhile queued.
             self.websocket_socket, _ = acquire_listener(
                 self.interface,
                 self.settings.gevent_port,
@@ -830,8 +795,6 @@ class PreforkServer(CommonServer):
         return any(sig in (signal.SIGINT, signal.SIGTERM) for sig in self.queue)
 
     def supervise_once(self) -> None:
-        # One supervision pass without the beat's sleep: queued heartbeats
-        # first, then deadlines, then capacity.
         self.sleep(timeout=0)
         self.reap_exited_workers()
         self.kill_timed_out_workers()
@@ -931,8 +894,6 @@ class PreforkServer(CommonServer):
         )
         while self.workers:
             try:
-                # Reload also drains workers here. Its outer supervisor loop
-                # must observe shutdown even when this nested loop handles it.
                 self.apply_pending_signals(draining=True)
             except KeyboardInterrupt:
                 self.logger.info("Forced shutdown.")
@@ -1021,8 +982,6 @@ class PreforkServer(CommonServer):
         db.close_all()
 
         self.logger.debug("starting")
-        # Only the process systemd started talks to it: a replacement
-        # generation reports through its supervisor's promotion instead.
         speaks = not self.handoff.is_supervised
         self.log_ready()
         if speaks:

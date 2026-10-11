@@ -192,9 +192,6 @@ class TestIRRuleFeedback(Feedback):
             return make_guard_row(
                 self.env, self.model.model, domain, operation=letter, name=name
             )
-        # a group's rule narrowed that group's access line for its operation:
-        # the line gives the operation up, and a permission with the domain
-        # takes its place; several of them are OR-ed as the rules were
         group = self.env.ref("base.group_user")
         for row in self.env["ir.access"].search(
             [
@@ -312,8 +309,6 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_debug_names_refused_records_to_access_administrators_only(self):
-        # debug mode shows anyone the trace; what a refused record is called,
-        # only whom may explain another person's access
         self._make_rule("rule 0", '[("val", "=", 42)]')
         named = "- %s, %s (%s: %s)" % (
             self.record._description,

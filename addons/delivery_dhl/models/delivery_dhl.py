@@ -60,7 +60,6 @@ class DeliveryCarrier(models.Model):
         string="Region",
         default="AM",
     )
-    # Nowadays hidden, by default it's the D, couldn't find any documentation on other services
     dhl_product_code = fields.Selection(
         selection=[
             ("0", "0 - Logistics Services"),
@@ -530,7 +529,6 @@ class DeliveryCarrier(models.Model):
         )
 
     def dhl_cancel_shipment(self, picking) -> None:
-        # Obviously you need a pick up date to delete SHIPMENT by DHL. So you can't do it if you didn't schedule a pick-up.
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="dhl",
@@ -555,13 +553,6 @@ class DeliveryCarrier(models.Model):
         return float_repr(weight, 3)
 
     def _update_dhl_request_custom_data(self, request, request_type) -> None:
-        """Adds the custom data to the request.
-        When there are multiple items in a list, they will all be affected by
-        the change.
-        for example, with
-        {"ShipmentDetails": {"Pieces": {"Piece": {"AdditionalInformation": "custom info"}}}}
-        the AdditionalInformation of each piece will be updated.
-        """
         if not self.dhl_custom_data_request:
             return
         try:
@@ -574,7 +565,6 @@ class DeliveryCarrier(models.Model):
             ) from error
 
         def extra_data_to_request(request, custom_data):
-            """recursive function that adds custom data to the current request."""
             for key, new_value in custom_data.items():
                 request[key] = current_value = (
                     serialize_object(request.get(key, {})) or None
@@ -590,15 +580,6 @@ class DeliveryCarrier(models.Model):
         extra_data_to_request(request, custom_data)
 
     def _get_dhl_declared_value_and_currency(self, picking) -> tuple:
-        """Return the declared amount and currency code for a picking.
-
-        Sale orders contribute non-display consumable lines, including tax.
-        Without a sale order, use move quantities at product list prices and
-        the picking company's currency.
-
-        :param picking: singleton ``stock.picking`` record
-        :rtype: tuple[float, str]
-        """
         sale_order = picking.sale_id
         if sale_order:
             total_value = sum(

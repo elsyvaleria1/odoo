@@ -51,7 +51,6 @@ class TestUi(TestPreparationDisplayHttpCommon):
             }
         )
 
-        # open a session, the /pos/ui controller will redirect to it
         self.main_pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("PreparationDisplayTour")
 
@@ -244,7 +243,5 @@ class TestUi(TestPreparationDisplayHttpCommon):
             }
         )
         self.main_pos_config.with_user(self.pos_user).open_ui()
-        # Create various orders from POS
         self.start_pos_tour("PosOrderCreationTourPdis", login="pos_user")
-        # Check orders visibility on PDIS with filters
         self.start_pdis_tour("PreparationDisplayFilterTour")

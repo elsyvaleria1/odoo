@@ -21,10 +21,8 @@ _debug = DebugLog(__name__)
 class AccountAnalyticLine(models.Model):
     _name = "account.analytic.line"
     _inherit = ["account.analytic.line", "mixin.timer"]
-    # As this model has his own data merge, avoid to enable the generic data_merge on that model.
     _disable_data_merge = True
 
-    # reset amount on copy
     amount = fields.Monetary(copy=False)
     validated = fields.Boolean(
         string="Validated line",
@@ -89,14 +87,10 @@ class AccountAnalyticLine(models.Model):
             days=1, hour=0, minute=0, second=0
         )
         unavailability_intervals_per_employee_id = {}
-        # naive datetimes are made explicit in UTC
         from_datetime = localized(start_datetime)
         to_datetime = localized(end_datetime)
-        # We need to display in grey the unavailable full days
-        # We start by getting the availability intervals to avoid false positive with range outside the office hours
 
         def get_unavailable_dates(intervals):
-            # get the dates where some work can be done in the interval. It returns a list of sets.
             availability_date_list = {
                 start.date() for start, _stop, _meta in split_at_midnight(intervals)
             }
@@ -165,7 +159,6 @@ class AccountAnalyticLine(models.Model):
         return unavailability_intervals_per_employee_id
 
     def _compute_project_id(self) -> None:
-        # override hr_timesheet to allow the check on field validated to only update the project_id on non validated timesheets.
         non_validated_timesheets = self.filtered(
             lambda t: not t.validated and t.task_id.project_id.allow_timesheets
         )
@@ -250,8 +243,8 @@ class AccountAnalyticLine(models.Model):
             "tag": "display_notification",
             "params": {
                 "message": None,
-                "type": None,  # types: success,warning,danger,info
-                "sticky": False,  # True/False will display for few seconds if false
+                "type": None,
+                "sticky": False,
             },
         }
         if not self.env.user.has_group("hr_timesheet.group_hr_timesheet_approver"):
@@ -271,8 +264,6 @@ class AccountAnalyticLine(models.Model):
             )
             return notification
 
-        # filter in sudo to access employee manager (in domain)
-        # The rest of the method and calls are anyway sudoing analytic_lines everywhere so no real impact here.
         analytic_lines = self.sudo().filtered_domain(
             self._get_domain_for_validation_timesheets()
         )
@@ -297,7 +288,6 @@ class AccountAnalyticLine(models.Model):
 
         analytic_lines.sudo().write({"validated": True})
         analytic_lines._update_last_validated_timesheet_date()
-        # Interrupt the timesheet with a timer running that is before the last validated date for each employee
         running_analytic_lines = self.env["account.analytic.line"].search(
             [
                 ("employee_id", "in", analytic_lines.employee_id.ids),
@@ -345,7 +335,6 @@ class AccountAnalyticLine(models.Model):
                     "You can only reset to draft the timesheets of employees of whom you are the manager or the timesheet approver."
                 )
             )
-        # Use the same domain for validation but change validated = False to validated = True
         domain = self._get_domain_for_validation_timesheets(validated=True)
         analytic_lines = self.sudo().filtered_domain(domain)
         if not analytic_lines:
@@ -422,7 +411,6 @@ class AccountAnalyticLine(models.Model):
                     employee.sudo().last_validated_timesheet_date
                 )
 
-                # When an user having this group tries to modify the timesheets of another user in his own team, we shouldn't raise any validation error
                 if not is_timesheet_approver or employee not in employees:
                     if line.project_id and last_validated_timesheet_date:
                         if (
@@ -457,7 +445,6 @@ class AccountAnalyticLine(models.Model):
         return date != fields.Date.today() and date <= validated_until
 
     def _check_can_create(self):
-        # Check if the user has the correct access to create timesheets
         if not (
             self.env.user.has_group("hr_timesheet.group_hr_timesheet_approver")
             or self.env.su
@@ -523,7 +510,6 @@ class AccountAnalyticLine(models.Model):
 
     def _update_existing_timers(self, vals) -> None:
         if "task_id" in vals:
-            # Check if there are some running timers linked to the timesheets to also update them.
             timers = self.env["timer.timer"].search([("res_id", "in", self.ids)])
             if timers:
                 timers.write(
@@ -544,11 +530,10 @@ class AccountAnalyticLine(models.Model):
 
     @api.model
     def grid_update_cell(self, domain, measure_field_name, value):
-        if value == 0:  # nothing to do
+        if value == 0:
             return
         timesheets = self.search(domain, limit=2)
 
-        # sudo in case of timesheeting a task belonging to a private project
         if timesheets.project_id and not all(
             timesheets.project_id.sudo().mapped("allow_timesheets")
         ):
@@ -638,7 +623,6 @@ class AccountAnalyticLine(models.Model):
     def _prepare_duplicate_timesheet_line_values(
         self, column_field, day, cell_field, change
     ) -> dict:
-        # Prepares all values that should be set/modified when duplicating the current analytic line
         return {
             "name": "/",
             column_field: day,
@@ -652,9 +636,6 @@ class AccountAnalyticLine(models.Model):
         last_week += relativedelta(weekday=SU(-2))
         return grid_anchor, last_week.date()
 
-    # ----------------------------------------------------
-    # Timer Methods
-    # ----------------------------------------------------
 
     @api.model
     def action_start_new_timesheet_timer(self, vals):
@@ -687,10 +668,6 @@ class AccountAnalyticLine(models.Model):
         }
 
     def action_timer_start(self):
-        """Action start the timer of current timesheet
-
-        * Override method of hr_timesheet module.
-        """
         if self.validated:
             raise UserError(
                 self.env._("You cannot use the timer on validated timesheets.")
@@ -726,8 +703,6 @@ class AccountAnalyticLine(models.Model):
 
     def _add_timesheet_time(self, minutes_spent, try_to_match=False):
         if self.unit_amount == 0 and not minutes_spent:
-            # Check if unit_amount equals 0,
-            # if yes, then remove the timesheet
             self.unlink()
             return 0
         minutes_spent = self.get_rounded_time(minutes_spent)
@@ -738,8 +713,6 @@ class AccountAnalyticLine(models.Model):
 
         domain = self._get_domain_last_timesheet()
         last_timesheet_id = self.search(domain, limit=1)
-        # If the last timesheet of the day for this project and task has no description,
-        # we match both together.
         if last_timesheet_id:
             last_timesheet_id.unit_amount += amount
             self.unlink()
@@ -748,16 +721,7 @@ class AccountAnalyticLine(models.Model):
         return minutes_spent
 
     def action_timer_stop(self, try_to_match=False):
-        """Action stop the timer of the current timesheet
-        try_to_match: if true, we try to match with another timesheet which corresponds to the following criteria:
-        1. Neither of them has a description
-        2. The last one is not validated
-        3. Match user, project task, and must be the same day.
-
-        * Override method of timer module.
-        """
         if self.env.user == self.sudo().user_id:
-            # sudo as we can have a timesheet related to a company other than the current one.
             self = self.sudo()
         if self.validated:
             raise UserError(
@@ -770,12 +734,6 @@ class AccountAnalyticLine(models.Model):
         return amount
 
     def _stop_all_users_timer(self, try_to_match=False) -> None:
-        """Stop ALL the timers of the timesheets (WHOEVER the timer associated user is)
-        try_to_match: if true, we try to match with another timesheet which corresponds to the following criteria:
-        1. Neither of them has a description
-        2. The last one is not validated
-        3. Match user, project task, and must be the same day.
-        """
         if any(self.sudo().mapped("validated")):
             raise UserError(
                 self.env._("Sorry, you cannot use a timer for a validated timesheet")
@@ -793,9 +751,7 @@ class AccountAnalyticLine(models.Model):
             timer.unlink()
 
     def action_timer_unlink(self) -> None:
-        """Action unlink the timer of the current timesheet"""
         if self.env.user == self.sudo().user_id:
-            # sudo as we can have a timesheet related to a company other than the current one.
             self = self.sudo()
         self.user_timer_id.unlink()
         if not self.unit_amount:
@@ -816,20 +772,11 @@ class AccountAnalyticLine(models.Model):
         ]
 
     def _coerce_concurrency_value(self, field, value):
-        # "/" is how a timer names a timesheet that has no description yet, and
-        # `_get_timesheet_timer_data` hands the client "" for it, so the client's
-        # first description is checked against a baseline of "" while the row
-        # holds "/". The two are one value: no description.
         if field.name == "name" and value == "/":
             value = ""
         return super()._coerce_concurrency_value(field, value)
 
     def _get_timesheet_timer_data(self):
-        """Get timesheet timer data needed to correctly run the timer
-
-        :return Dictionary containing timer data
-        :rtype {'field_name': field_value}
-        """
         self.check_singleton()
         timesheet_data = {"other_company": True}
         if self.company_id in self.env.companies:
@@ -859,7 +806,6 @@ class AccountAnalyticLine(models.Model):
             limit=1,
         )
         if timer:
-            # sudo as we can have a timesheet related to a company other than the current one.
             res.update(self.sudo().browse(timer.res_id)._get_timesheet_timer_data())
         return res
 
@@ -953,17 +899,6 @@ class AccountAnalyticLine(models.Model):
         return new_timesheet.id
 
     def _get_domain_for_validation_timesheets(self, validated=False):
-        """Get the domain to check if the user can validate/invalidate which timesheets
-
-        2 access rights give access to validate timesheets:
-
-        1. Approver: in this access right, the user can't validate all timesheets,
-        he can validate the timesheets where he is the manager or timesheet responsible of the
-        employee who is assigned to this timesheets or the user is the owner of the project.
-        The user cannot validate his own timesheets.
-
-        2. Manager (Administrator): with this access right, the user can validate all timesheets.
-        """
         domain = Domain("project_id", "!=", False) & Domain("validated", "=", validated)
         if not validated:
             domain &= Domain("date", "<=", fields.Date.today())

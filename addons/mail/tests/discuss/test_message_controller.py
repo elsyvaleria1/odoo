@@ -44,9 +44,6 @@ class TestMessageController(HttpCaseWithUserDemo):
         cls.channel._add_members(guests=cls.guest)
 
     def assertStoreAttachments(self, actual, expected, message):
-        # a module downstream of mail may add keys of its own through
-        # _to_store_defaults (mail_speech adds can_transcribe), so compare the
-        # payload mail itself owns rather than assert nothing else is installed
         self.assertEqual(len(actual), len(expected), message)
         self.assertEqual(
             [

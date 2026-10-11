@@ -377,9 +377,6 @@ class StockLocation(models.Model):
             return
         domain = Domain("location_id", "in", modified_locations.ids)
         if usage != "view":
-            # A bare `> 0` would false-positive on dust left by a raw SQL
-            # writer bypassing the ORM's rounding (see the analogous epsilon
-            # window in `_remove_zero_quants`).
             precision_digits = max(
                 6, self.env.ref("base.decimal_product_uom").sudo().digits * 2
             )
@@ -488,7 +485,7 @@ class StockLocation(models.Model):
                 ),
                 (self.browse(), self.browse()),
             )
-            raise UserError(  # noqa: E8506 - uninstall already excluded above
+            raise UserError(
                 self.env._(
                     "You cannot delete location %(location)s: it still contains "
                     "%(count)s sub-location(s) (archived ones included). Delete or "

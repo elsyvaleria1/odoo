@@ -57,7 +57,6 @@ def from_float(
     if not number.is_finite():
         raise ValueError(f"{value!r} has no finite value to write")
 
-    # the default context holds 28 digits, fewer than a large amount carries
     with localcontext() as context:
         context.prec = max(context.prec, number.adjusted() + places + 2)
         number = number.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)
@@ -98,8 +97,6 @@ def from_date(value: datetime.date | str, fmt: str = _ISO_DATE) -> str:
 
 
 def _carried_places(value: float | Decimal) -> int:
-    # the places a number carries: an int none, a float those of its shortest
-    # repr, a Decimal its own exponent
     if isinstance(value, int):
         return 0
     number = Decimal(repr(value)) if isinstance(value, float) else value

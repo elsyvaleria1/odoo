@@ -19,20 +19,15 @@ class IrWebsocket(models.AbstractModel):
     _description = "websocket message handling"
 
     def _bus_context(self, names: list[str]):
-        """The websocket model the names resolve under: a name may say who
-        the subscriber is (a guest token) rather than what it listens to."""
         return self
 
     def _bus_channels_by_name(self, names: list[str]) -> dict[str, list]:
-        """The channels each client name opens. A name nobody resolves opens
-        none: a made-up name is one anyone can say."""
         return {
             name: [channel] if (channel := resolve_capability(self.env, name)) else []
             for name in names
         }
 
     def _implicit_bus_channels(self) -> list:
-        """The channels a subscriber gets whatever it names."""
         broadcast = channel_with_db(self.env.cr.dbname, "broadcast")
         channels = [broadcast, *self.env.user.all_group_ids]
         if not self.env.user._is_public():
@@ -47,7 +42,6 @@ class IrWebsocket(models.AbstractModel):
         )
 
     def _get_bus_channels(self, names) -> list:
-        """Every channel a subscriber to ``names`` gets."""
         by_name, implicit = self._bus_channel_routes(list(names))
         return list(OrderedSet([*implicit, *chain.from_iterable(by_name.values())]))
 
@@ -79,17 +73,12 @@ class IrWebsocket(models.AbstractModel):
         def key(channel):
             return json_dump(channel_with_db(db, channel))
 
-        # A channel every subscriber gets reaches every tab; one only names
-        # open reaches the tabs that claimed one of them.
         implicit_keys = {key(channel) for channel in implicit}
         names_by_channel = defaultdict(set)
         for name, opened in by_name.items():
             for channel in opened:
                 if (channel_key := key(channel)) not in implicit_keys:
                     names_by_channel[channel_key].add(name)
-        # A watermark past the newest row was drawn from another history (a
-        # database restored or recreated under the same name): the client is
-        # told the one it now stands at, or it would keep it forever.
         return {
             "channels": OrderedSet(
                 channel
@@ -120,8 +109,6 @@ class IrWebsocket(models.AbstractModel):
             wsrequest.ws,
             data["routes"],
         )
-        # Only to a client that asks: an IoT box reads every frame as a list
-        # of notifications.
         if data["watermark_reset"] is not None and og_data.get(
             "report_watermark_reset"
         ):

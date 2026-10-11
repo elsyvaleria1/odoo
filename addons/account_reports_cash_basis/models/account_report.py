@@ -21,9 +21,6 @@ class AccountReport(models.Model):
 
     def get_options(self, previous_options):
         options = super().get_options(previous_options)
-        # A sections report reroutes: super() returns the options of the selected
-        # section, so the flag has to come from that report. Reading it from self
-        # hid the toggle on the composite while cash basis stayed applied.
         report = self.browse(options["report_id"]) if options.get("report_id") else self
         options["filters"]["show_cash_basis"] = report.filter_cash_basis
         return options
@@ -48,17 +45,6 @@ class AccountReport(models.Model):
 
     @api.model
     def _clear_cash_basis_temp_tables(self) -> None:
-        """Drop the cash-basis substitute tables built by
-        ``_prepare_lines_for_cash_basis``/``_prepare_lines_for_analytic_groupby_with_cash_basis``,
-        and ``cash_basis_rp_moves``, the intermediate receivable/payable-move
-        table the first builds.
-
-        They are guarded to build at most once per transaction; call this to
-        force a rebuild within the same transaction (e.g. a test modifying
-        journal entries after already rendering a cash-basis report). The
-        tables are a pure function of the journal data — rendering again with
-        different options only does not require a rebuild.
-        """
         for table in (
             "cash_basis_temp_account_move_line",
             "analytic_cash_basis_temp_account_move_line",
@@ -68,12 +54,6 @@ class AccountReport(models.Model):
 
     @api.model
     def _prepare_lines_for_cash_basis(self) -> None:
-        """Create the cash_basis_temp_account_move_line substitute table.
-
-        Mirrors account_move_line, but with the date and the amounts restated on
-        a cash basis. Call it before any report query reading account_move_line
-        in cash basis mode.
-        """
         self.env.cr.execute(
             "SELECT 1 FROM information_schema.tables WHERE table_name='cash_basis_temp_account_move_line'"
             "   AND table_schema::regnamespace = pg_my_temp_schema()"
@@ -201,12 +181,6 @@ class AccountReport(models.Model):
 
     @api.model
     def _prepare_lines_for_analytic_groupby_with_cash_basis(self) -> None:
-        """Create the analytic_cash_basis_temp_account_move_line substitute table.
-
-        Mirrors account_move_line, filled from account_analytic_line joined to
-        cash_basis_temp_account_move_line. Call it before any report query
-        reading account_move_line for the analytic columns in cash basis mode.
-        """
 
         self.env.cr.execute(
             "SELECT 1 FROM information_schema.tables WHERE table_name='analytic_cash_basis_temp_account_move_line'"
@@ -220,8 +194,6 @@ class AccountReport(models.Model):
             for fld in get_table_columns(self.env.cr, "account_move_line")
             if fld in self.env["account.move.line"]._fields
         }
-        # Take the amounts from the analytic lines, prorated by the paid portion
-        # already applied in cash_basis_temp_account_move_line.
         changed_equivalence_dict = {
             "balance": SQL(
                 "CASE WHEN aml.balance != 0 THEN -aal.amount * cash_basis_aml.balance / aml.balance ELSE 0 END"
@@ -303,7 +275,6 @@ class AccountReport(models.Model):
         self.env.cr.execute(query)
 
     def _get_report_query(self, options, date_scope, domain=None) -> Query:
-        # The context key triggers the account_move_line table shadowing in AccountMoveLine._search.
         context_self = self.with_context(
             account_report_cash_basis=options.get("report_cash_basis")
         )
@@ -313,7 +284,6 @@ class AccountReport(models.Model):
 
     def action_audit_cell(self, options, params):
         action = super().action_audit_cell(options, params)
-        # Only add the domain on the correct model (e.g. can be an account.analytic.line).
         if (
             options.get("report_cash_basis")
             and action["res_model"] == "account.move.line"

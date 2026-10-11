@@ -39,8 +39,6 @@ class TestPredicateAccess(TransactionCase):
         )
 
     def test_a_path_through_a_record_the_user_cannot_read_matches_as_the_search(self):
-        # the search's sub-select reads the tags the user may read; the
-        # predicate read the line's tag and filtered it without asking
         lines = self.lines.with_user(self.user)
         for domain, expected in (
             ([("tag_id.id", "!=", False)], ["to shown"]),
@@ -60,8 +58,6 @@ class TestPredicateAccess(TransactionCase):
             )
 
     def test_an_id_list_matches_the_relation_rows_the_user_cannot_read(self):
-        # SQL compares the ids with the relation's rows; the predicate read
-        # the user's x2many value, which leaves the hidden tag out
         tagged = self.tagged.with_user(self.user)
         domain = [("tag_ids", "in", self.hidden.ids)]
         self.env.invalidate_all()

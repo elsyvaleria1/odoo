@@ -18,7 +18,6 @@ _lt = LazyTranslate(__name__)
 SHIP = "emb:"
 FINISH = f"{SHIP}fin"
 LIST_LIMIT = 8
-# the last digits of a transfer's name, typed to find it: CDG/OUT/26/10/1204
 DIGITS = re.compile(r"[0-9]{2,6}")
 
 
@@ -78,8 +77,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         ]
 
     def _continues(self, chat, sheet) -> bool:
-        """Whether `sheet` carries the tracking number of the open flow's
-        sheet: the one an "add one more transfer" button may act on."""
         current = (
             self.env["telegram.shipment.sheet"]
             .browse(self._flow_data(chat).get("sheet") or 0)
@@ -88,8 +85,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         return bool(sheet and current) and current.tracking_ref == sheet.tracking_ref
 
     def _remember(self, chat, **values) -> None:
-        """Keep `values` on the open flow: a button pressed after it ended
-        still acts, with nothing to remember."""
         if self._owns_flow(chat):
             chat._flow_update(values)
 
@@ -116,7 +111,6 @@ class TelegramHandlerShipment(models.AbstractModel):
             self._finish_markup(bot, chat),
         )
 
-    # -- files ----------------------------------------------------------------
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         if self._flow_step(chat) != "sheets":
@@ -169,7 +163,6 @@ class TelegramHandlerShipment(models.AbstractModel):
                         "file_name": file["file_name"],
                     }
                 )
-                # the sheet typed digits apply to, until the next one arrives
                 self._remember(chat, sheet=sheet.id, incoming=False)
                 self._process(bot, chat, sheet)
         except PG_RETRY_EXCEPTIONS:
@@ -212,9 +205,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         self._offer(bot, chat, sheet, sheet._candidates())
 
     def _on_digits(self, bot, chat, digits) -> None:
-        """The person typed the last digits of a transfer's name: offer the
-        transfers ending in them, for the sheet waiting for its first one or
-        as one more for the sheet just assigned."""
         tr = self._tr(bot, chat)
         data = self._flow_data(chat)
         sheet = (
@@ -258,7 +248,6 @@ class TelegramHandlerShipment(models.AbstractModel):
     def _offer(self, bot, chat, sheet, candidates, incoming=False, digits=None) -> None:
         tr = self._tr(bot, chat)
         if digits:
-            # the buttons offered before the digits stay valid
             sheet.candidate_ids |= candidates[:LIST_LIMIT]
         else:
             sheet.candidate_ids = candidates[:LIST_LIMIT]
@@ -296,8 +285,6 @@ class TelegramHandlerShipment(models.AbstractModel):
                 "kind": self._kind(tr, incoming),
                 "digits": tg.bold(digits or ""),
             },
-            # the candidates as sorted: reading the many2many back would put
-            # them in the transfers' own order, the matching ones no longer first
             kb.record_list(
                 candidates[:LIST_LIMIT],
                 self._picking_label,
@@ -309,9 +296,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         )
 
     def _offer_more(self, bot, chat, sheet, digits=None, lines=(), offer=True) -> None:
-        """After `lines`, offer the transfers the assigned `sheet`'s number may
-        also go on: a shipment often carries several transfers. Only while the
-        flow is open and on this sheet: its buttons would not act otherwise."""
         tr = self._tr(bot, chat)
         if not (offer and self._owns_flow(chat)):
             self._send(bot, chat, "\n".join(lines), self._finish_markup(bot, chat))
@@ -358,7 +342,6 @@ class TelegramHandlerShipment(models.AbstractModel):
             "picking": tg.bold(earlier.picking_id.name or "")
         }
 
-    # -- buttons --------------------------------------------------------------
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
@@ -367,8 +350,6 @@ class TelegramHandlerShipment(models.AbstractModel):
             self._flow_end(chat)
             self._send(bot, chat, self._tr(bot, chat)._("Done."))
             return True
-        # outside the router's recovery: a failure would roll the update back
-        # unanswered; a serialization failure still goes up to be retried
         try:
             with self.env.cr.savepoint():
                 self._on_choice(bot, chat, callback_query, data)
@@ -398,7 +379,6 @@ class TelegramHandlerShipment(models.AbstractModel):
             .with_context(lang=tr.lang)
             .browse(int(sheet_id) if sheet_id.isdecimal() else 0)
             .exists()
-            # "m" puts an assigned sheet's number on one more transfer
             .filtered(
                 lambda s: (
                     s.chat_id == chat
@@ -408,7 +388,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         )
         current = self._flow_data(chat).get("sheet")
         if kind == "m" and not self._continues(chat, sheet):
-            # "one more" acts only in the open flow, on the number it is on
             sheet = sheet.browse()
         offered = (
             sheet._more_candidates() if kind == "m" and sheet else sheet.candidate_ids
@@ -457,7 +436,6 @@ class TelegramHandlerShipment(models.AbstractModel):
                 bot, chat, tg.escape(str(refusal)), self._finish_markup(bot, chat)
             )
             return
-        # an older sheet's button does not move the flow off the newest sheet
         current_now = kind == "m" or current == sheet.id
         if current_now:
             self._remember(chat, sheet=sheet.id)
@@ -491,8 +469,6 @@ class TelegramHandlerShipment(models.AbstractModel):
         return f"{text}\n{tg.escape(details)}" if details else text
 
     def _tracking_lines(self, tr, picking) -> list:
-        """The carrier's first status, when carrier tracking is installed:
-        read once, best effort, never failing the assignment."""
         if not hasattr(picking, "_fetch_carrier_tracking"):
             return []
         try:

@@ -28,7 +28,6 @@ class TestCommon(TestCommonPlanning):
         )
         cls.env.company.resource_calendar_id = cls.calendar
 
-        # Leave type
         cls.leave_type = cls.env["hr.leave.type"].create(
             {
                 "name": "time off",
@@ -37,7 +36,6 @@ class TestCommon(TestCommonPlanning):
             }
         )
 
-        # Allocations
         cls.allocation_bert = cls.env["hr.leave.allocation"].create(
             {
                 "state": "confirm",

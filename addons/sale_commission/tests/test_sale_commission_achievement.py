@@ -46,10 +46,10 @@ class TestSaleSubCommissionUser(TestSaleCommissionCommon):
                     "achieved": 100,
                     "add_user_id": self.commission_plan_manager.user_ids[
                         0
-                    ].id,  # Manager
+                    ].id,
                     "reduce_user_id": self.commission_plan_manager.user_ids[
                         1
-                    ].id,  # Sale
+                    ].id,
                 }
             ]
         )
@@ -115,7 +115,6 @@ class TestSaleSubCommissionUser(TestSaleCommissionCommon):
 
     @freeze_time("2024-04-01")
     def test_achievement_report_partner_id(self):
-        """Ensure achievement lines carry the correct partner_id from sale order and invoice."""
         self.commission_plan_user.write(
             {
                 "periodicity": "month",

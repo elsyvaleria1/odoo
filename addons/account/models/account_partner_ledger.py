@@ -29,10 +29,8 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             0,
         )
 
-        # Inject sequence on dynamic lines
         lines = [(0, line) for line in lines]
 
-        # Report total line.
         lines.append((0, self._get_report_line_total(options, totals_by_column_group)))
 
         return lines
@@ -70,8 +68,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 and not partner
                 and not accept_unknown_in_filter
             ):
-                # When printing and searching for a specific partner, make it so we only show its lines, not the 'Unknown Partner' one, that would be
-                # shown in case a misc entry with no partner was reconciled with one of the target partner's entries.
                 continue
 
             partner_values = defaultdict(dict)
@@ -146,8 +142,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
         expand_options = {
             **options,
-            # list(...): forced_domain travels inside options, which is
-            # json.dumps'd, and a Domain is not serialisable.
             "forced_domain": list(
                 Domain(options.get("forced_domain", [])) & prefix_domain
             ),
@@ -303,10 +297,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         }
 
     def _has_foreign_currency_lines(self, report, options) -> bool:
-        # The Amount Currency column is only filled for lines whose currency differs
-        # from the company's: _get_query_sums returns NULL as soon as they match. A
-        # printed scope with none of them carries the column as blank width, which
-        # on a landscape letter sheet pushes Balance past the printable area.
         domain = report._get_domain_options(options, "from_beginning") & Domain(
             "currency_id", "!=", self.env.company.currency_id.id
         )
@@ -318,7 +308,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
     ):
         partner_ids_to_expand = []
 
-        # Regular case
         for line_dict in lines_to_expand_by_function.get(
             "_report_expand_unfoldable_line_partner_ledger", []
         ):
@@ -330,7 +319,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             elif markup == "no_partner":
                 partner_ids_to_expand.append(None)
 
-        # In case prefix groups are used
         no_partner_line_label = self._get_no_partner_line_label().upper()
         partner_prefix_domains = []
         for line_dict in lines_to_expand_by_function.get(
@@ -341,7 +329,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             )
             partner_prefix_domains.append([("name", "=ilike", f"{prefix}%")])
 
-            # amls without partners are regrouped "Unknown Partner", which is also used to create prefix groups
             if no_partner_line_label.startswith(prefix):
                 partner_ids_to_expand.append(None)
 
@@ -371,8 +358,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             )
             if partner_ids_to_expand
             else {},
-            # load_more_limit cannot be passed to this call, otherwise it won't be applied per partner but on the whole result.
-            # We gain perf from batching, but load every result, even if the limit restricts them later.
             "aml_values": self._prepare_aml_values(options, partner_ids_to_expand)
             if partner_ids_to_expand
             else {},
@@ -397,14 +382,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
     @api.model
     @_debug.perf.timed
     def action_toggle_no_followup(self, line_id, all_line_ids):
-        """Toggle the `no_followup` field on the journal item corresponding to the given `line_id`.
-
-        :param line_id: The report line ID.
-        :param all_line_ids: A list containing all the report's line IDs.
-        :return: None if the line is not a journal item, otherwise a dict containing:
-            - `updated_value`: the updated `no_followup` value (`True` or `False`)
-            - `updated_line_ids`: a list of the impacted report lines, so the report can be updated dynamically
-        """
         _debug.lifecycle("action_toggle_no_followup", records=self)
         model, aml_id = self.env["report.formula"]._get_model_info_from_id(line_id)
         _debug.logic(
@@ -432,7 +409,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         }
         move = aml.move_id
         if move.is_invoice():
-            # For invoices, the `no_followup` toggle will impact all its receivable/payable lines.
             res["updated_line_ids"] = move.line_ids.filtered(
                 lambda line: (
                     line.account_type in ("asset_receivable", "liability_payable")
@@ -449,14 +425,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _query_partners(self, report, options):
-        """Executes the queries and performs all the computation.
-        :return:        A list of tuple (partner, column_group_values) sorted by the table's model _order:
-                        - partner is a res.partner record, or None for the 'Unknown Partner' entry.
-                        - column_group_values is a dict(column_group_key, fetched_values), where
-                            - column_group_key is a string identifying a column group, like in options['column_groups']
-                            - fetched_values is a dictionary containing:
-                                - debit, credit, amount, balance:  float, set directly on the dict (not nested)
-        """
 
         def update_partner_sums(row):
             fields_to_assign = ["balance", "debit", "credit", "amount"]
@@ -482,7 +450,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
         company_currency = self.env.company.currency_id
 
-        # Execute the queries and dispatch the results.
         query = self._get_query_sums(report, options)
 
         groupby_partners = {}
@@ -492,15 +459,9 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             update_partner_sums(res)
         _debug.perf.count("partner_sums_rows_fetched", rows=self.env.cr.rowcount)
 
-        # Correct the sums per partner, for the lines without partner reconciled with a line having a partner
         self._add_sums_of_lines_without_partners(options, groupby_partners)
 
-        # Retrieve the partners to browse.
-        # groupby_partners.keys() contains all account ids affected by:
-        # - the amls in the current period.
-        # - the amls affecting the initial balance.
         if groupby_partners:
-            # Note a search is done instead of a browse to preserve the table ordering.
             partners = (
                 self.env["res.partner"]
                 .with_context(active_test=False)
@@ -512,7 +473,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         else:
             partners = []
 
-        # Add 'Partner Unknown' if needed
         if None in groupby_partners:
             partners = list(partners) + [None]
         _debug.pipeline(
@@ -530,24 +490,14 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_query_sums(self, report, options) -> SQL:
-        """Construct a query retrieving all the aggregated sums to build the report. It includes:
-        - sums for all partners.
-        - sums for the initial balances.
-        :param report:              The partner ledger report.
-        :param options:             The report options.
-        :return:                    query as SQL object
-        :rtype: SQL
-        """
         queries = []
 
-        # Create the currency table.
         for (
             column_group_key,
             column_group_options,
         ) in report._split_options_per_column_group(options).items():
             query = report._get_report_query(column_group_options, "from_beginning")
 
-            # With the followup reports, date_from should be None
             date_from = report._get_date_bounds_info(
                 column_group_options, "strict_range"
             )[0]
@@ -640,7 +590,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             filter_date_range=report.filter_date_range,
         )
         if not report.filter_date_range:
-            # Happens when the report has been manually customized to not use date ranges anymore.
             return {
                 partner_id: {
                     col_group_key: {} for col_group_key in options["column_groups"]
@@ -653,8 +602,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             column_group_key,
             column_group_options,
         ) in report._split_options_per_column_group(options).items():
-            # Get sums for the initial balance.
-            # period: [('date' <= options['date_from'] - 1)]
             new_options = self._get_options_initial_balance(column_group_options)
             query = report._get_report_query(
                 new_options,
@@ -700,7 +647,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             ] = result
         _debug.perf.count("initial_balance_rows_fetched", rows=self.env.cr.rowcount)
 
-        # Correct the sums per partner, for the lines without partner reconciled with a line having a partner
         new_options = self._get_options_initial_balance(options)
         self._add_sums_of_lines_without_partners(
             new_options, init_balance_by_col_group, with_period_movements=False
@@ -715,12 +661,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         return init_balance_by_col_group
 
     def _get_options_initial_balance(self, options):
-        """Create options used to compute the initial balances for each partner.
-        The resulting dates domain will be:
-        [('date' <= options['date_from'] - 1)]
-        :param options: The report options.
-        :return:        A copy of the options, modified to match the dates to use to get the initial balances.
-        """
         new_date_to = fields.Date.from_string(options["date"]["date_from"]) - timedelta(
             days=1
         )
@@ -749,16 +689,12 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 if partner_vals := result_dict.get(row["groupby"]):
                     partner_vals[row["column_group_key"]][field] += row[field]
                 if no_partner_vals := result_dict.get(None):
-                    # Debit/credit are inverted for the unknown partner as the computation is made regarding the balance of the known partner
                     no_partner_vals[row["column_group_key"]][inverse_field] += (
                         inverse_sign * row[field]
                     )
 
     @_debug.perf.timed
     def _get_sums_without_partner(self, options, with_period_movements=True):
-        """Get the sum of lines without partner reconciled with a line with a partner, grouped by partner."""
-        # Those lines belong to the partner for the reconciled amount, as they may clear some of the partner
-        # invoice/bill and therefore have to be accounted in the partner balance.
         queries = []
         report = self.env.ref("account.partner_ledger_report")
         for (
@@ -879,7 +815,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             initial_balance=offset == 0 and not options.get("hide_initial_balance"),
             batched=bool(unfold_all_batch_data),
         )
-        # Get initial balance
         if offset == 0 and not options.get("hide_initial_balance"):
             if unfold_all_batch_data:
                 init_balance_by_col_group = unfold_all_batch_data["initial_balances"][
@@ -903,7 +838,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                         column["blank_if_zero"] = True
                 lines.append(initial_balance_line)
 
-                # For the first expansion of the line, the initial balance line gives the progress
                 progress = self._init_load_more_progress(options, initial_balance_line)
 
         limit_to_load = (
@@ -974,7 +908,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         next_progress = progress
         for result in aml_results:
             if self._is_report_limit_reached(report, options, treated_results_count):
-                # We loaded one more than the limit on purpose: this way we know we need a "load more" line
                 has_more = True
                 break
 
@@ -994,8 +927,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         )
 
     def _prepare_additional_aml_columns_sql(self):
-        """Hook returning the additional fields to select in the partner ledger query."""
-        # Meant to be overridden by other modules, e.g. SQL("account_move_line.date AS date,").
         return SQL()
 
     def _prepare_aml_order_by_sql(self):
@@ -1043,7 +974,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         ).items():
             group_options.pop(
                 "partner_ids", None
-            )  # Handled by the partner_ids parameter, to support the case of misc entries (without partner) reconciled with invoices
+            )
             query = report._get_report_query(group_options, "strict_range")
             account_alias = query.left_join(
                 lhs_alias="account_move_line",
@@ -1059,7 +990,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 account_alias, "name"
             )
 
-            # For the move lines directly linked to this partner
             queries.append(
                 SQL(
                     """
@@ -1124,7 +1054,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 )
             )
 
-            # For the move lines linked to no partner, but reconciled with this partner. They will appear in grey in the report
             queries.append(
                 SQL(
                     """
@@ -1222,11 +1151,9 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         self.env.cr.execute(query)
         for aml_result in self.env.cr.dictfetchall():
             if aml_result["key"] == "indirectly_linked_aml":
-                # Append the line to the partner found through the reconciliation.
                 if aml_result["partner_id"] in rslt:
                     rslt[aml_result["partner_id"]].append(aml_result)
 
-                # Balance it with an additional line in the Unknown Partner section but having reversed amounts.
                 if None in rslt:
                     rslt[None].append(
                         {
@@ -1252,9 +1179,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             )
         return rslt
 
-    ####################################################
-    # COLUMNS/LINES
-    ####################################################
     @_debug.perf.timed
     def _get_report_line_partners(
         self, options, partner, partner_values, level_shift=0
@@ -1314,14 +1238,6 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
 
     @api.model
     def _format_aml_name(self, line_name, move_ref, move_name=None):
-        """Format the display of an account.move.line record. As its very costly to fetch the account.move.line
-        records, only line_name, move_ref, move_name are passed as parameters to deal with sql-queries more easily.
-
-        :param line_name:   The name of the account.move.line record.
-        :param move_ref:    The reference of the account.move record.
-        :param move_name:   The name of the account.move record.
-        :return:            The formatted name of the account.move.line record.
-        """
         return self.env["account.move.line"]._format_aml_name(
             line_name, move_ref, move_name=move_name
         )

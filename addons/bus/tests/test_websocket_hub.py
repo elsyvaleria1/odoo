@@ -484,7 +484,6 @@ class TestWebsocketHub(BaseCase):
                 _wait_until(lambda: slow.state is ConnectionState.CLOSED, timeout=5)
             )
         self.assertIs(fast.state, ConnectionState.OPEN)
-        # CLOSED is set a few statements before the loop releases the slot
         self.assertTrue(_wait_until(lambda: slow_gauge.count == 0))
         self.assertEqual(self.hub.write_stalls, 1)
 
@@ -547,9 +546,6 @@ class TestDbExecutor(BaseCase):
         self.assertFalse(executor.submit(lambda: None))
 
     def test_a_drain_waiter_does_not_take_a_job_thread_s_wake_up(self):
-        # Condition.notify() wakes the oldest waiter: a wait_idle() waiting
-        # before the idle job thread used to take its wake-up, and a job
-        # submitted during shutdown sat until the deadline dropped it.
         executor = DbExecutor(2)
         self.addCleanup(executor.close)
         long_job_gate = threading.Event()
@@ -572,7 +568,6 @@ class TestDbExecutor(BaseCase):
 @tagged("-at_install", "post_install")
 class TestWebsocketHubOverHttp(WebsocketCase):
     def _shared_session_cookie(self):
-        # authenticate() deletes the session it replaces: one session for all.
         return f"session_id={self.authenticate(None, None).sid}"
 
     def test_a_broadcast_reaches_two_hundred_subscribers(self):

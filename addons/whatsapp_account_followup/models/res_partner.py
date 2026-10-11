@@ -13,15 +13,11 @@ class ResPartner(models.Model):
         )
 
     def _send_followup(self, request) -> None:
-        # EXTENDS account_followup
         super()._send_followup(request)
         if request.is_channel_enabled("whatsapp", request.followup_line.send_whatsapp):
             self._send_followup_whatsapp(request)
 
     def _send_followup_whatsapp(self, request) -> None:
-        """
-        Send a follow-up report by WhatsApp to customers in self
-        """
         report = self.env["account.followup.report"]
         for partner in self:
             report._send_whatsapp(

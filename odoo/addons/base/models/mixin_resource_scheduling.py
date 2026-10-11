@@ -84,8 +84,6 @@ class MixinResourceScheduling(models.AbstractModel):
         )
 
         def to_sql(model, alias, query):
-            # A record conflicts when one of its claims meets a claim of
-            # somebody else: its own claims overlapping each other do not count.
             return SQL(
                 """%s %s (
                     SELECT this.res_id

@@ -126,8 +126,6 @@ class WizardDocumentDocumentRequest(models.TransientModel):
             partners[self.env.user.partner_id.id] = ("edit", False)
             document.action_update_access_rights("none", partners=partners)
         else:
-            # a requestee without a user answers through the link: one
-            # tracked change of who can access, not a bare field write
             document.action_update_access_rights(
                 "none",
                 access_via_link="edit",

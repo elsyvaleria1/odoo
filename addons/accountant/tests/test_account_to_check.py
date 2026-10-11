@@ -97,12 +97,6 @@ class TestCheckAccountMoves(AccountTestInvoicingCommon):
             )
 
     def test_a_paid_invoice_reaches_in_payment_not_paid(self):
-        """`_get_invoice_in_payment_state` is what turns the `in_payment` state on
-        for this edition, and nothing in this module asserted it. Without the
-        override the same invoice would go straight to `paid`, and only core's
-        tests -- which branch on the returned value rather than requiring it --
-        would notice.
-        """
         invoice = self._create_invoice(post=True)
         self.assertEqual(invoice.payment_state, "not_paid")
 

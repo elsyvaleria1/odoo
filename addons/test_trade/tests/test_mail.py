@@ -25,7 +25,6 @@ class TestMail(TestTradeOrderCase):
     def test_track_subtype_falls_back_to_super(self):
         order = self._make_order()
 
-        # No state change -> hook returns None -> super()'s default subtype.
         subtype = order._track_subtype({"partner_id": self.partner.id})
 
         self.assertNotEqual(subtype, self.env.ref("mail.mt_note"))

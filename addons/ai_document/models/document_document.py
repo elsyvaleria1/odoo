@@ -21,8 +21,6 @@ _debug = DebugLog(__name__)
 class DocumentsDocument(models.Model):
     _inherit = "document.document"
 
-    # Field used when inserting records in a prompt
-    # (will not show "Restricted" if we have no access)
     _ai_rec_name = "name"
 
     AI_DOCUMENTS_CRON_BATCH_SIZE = 10
@@ -51,14 +49,12 @@ class DocumentsDocument(models.Model):
 
     def write(self, vals):
         if "folder_id" in vals:
-            # If the user moved the documents, remove the flag
             _debug.logic("ai_sort_flag_cleared", reason="manual_move", documents=self)
             vals["ai_to_sort"] = False
         return super().write(vals)
 
     @api.depends("shortcut_document_id", "type", "attachment_id")
     def _compute_ai_sortable(self) -> None:
-        # Only standard files can be sorted
         for document in self:
             document.ai_sortable = (
                 not document.shortcut_document_id
@@ -83,15 +79,12 @@ class DocumentsDocument(models.Model):
     def _pdf_split(
         self, new_files=(), open_files=(), first_source_ids=(), user_folder=None
     ):
-        """Skip auto-sorting when splitting documents."""
         return super(
             DocumentsDocument, self.with_context(ai_documents_skip_autosort=True)
         )._pdf_split(new_files, open_files, first_source_ids, user_folder)
 
     def _ai_action_move_in_folder(self, folder_id) -> str:
         self.check_singleton()
-        # folder is sudo-ed because any folder in the ai_sort_prompt is a valid target, regardless
-        # of the user's access rights
         folder_sudo = self.browse(folder_id).sudo()
         if folder_sudo.type != "folder":
             _debug.logic("ai_move_refused", reason="not_a_folder", target=folder_id)
@@ -107,8 +100,6 @@ class DocumentsDocument(models.Model):
                 'Moved to "%(folder)s".', folder=self._ai_truncate(folder_sudo.name)
             )
 
-        # In case the LLM first moved the document by side effect, it should be able
-        # to move to a different folder specified in the prompt
         original_folder = self.folder_id
         if (action := self.env.context.get("ai_executed_action")) and isinstance(
             action, models.BaseModel
@@ -117,7 +108,7 @@ class DocumentsDocument(models.Model):
 
         _prompt, _fields, allowed_ids = parse_ai_prompt_values(
             self.env,
-            original_folder.sudo().ai_sort_prompt,  # sudo: ai_sort_prompt has group system
+            original_folder.sudo().ai_sort_prompt,
             "document.document",
             False,
         )
@@ -134,7 +125,6 @@ class DocumentsDocument(models.Model):
                 )
             )
 
-        # sudo because the new folder might not be accessible by the user
         _debug.lifecycle(
             "ai_moved", document=self, target=folder_sudo, source=original_folder
         )
@@ -156,7 +146,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _get_domain_base_server_actions(self):
-        """Don't show tools that need arguments to be executed in documents or technical server actions."""
         return (
             super()._get_domain_base_server_actions()
             & Domain("ai_autosort_folder_id", "=", False)
@@ -174,11 +163,9 @@ class DocumentsDocument(models.Model):
     def search_panel_select_range(self, field_name, **kwargs):
         res = super().search_panel_select_range(field_name, **kwargs)
         if field_name == "user_folder_id":
-            # isinstance to filter out 'special roots' (my drive, trash, ...)
             folders_ids = [
                 vals["id"] for vals in res["values"] if isinstance(vals["id"], int)
             ]
-            # sudo: ai_sort_prompt has group system
             folders_with_sort_prompts_ids = set(
                 self.sudo()
                 .search([("id", "in", folders_ids), ("ai_sort_prompt", "!=", False)])
@@ -188,9 +175,6 @@ class DocumentsDocument(models.Model):
                 vals["ai_has_sort_prompt"] = vals["id"] in folders_with_sort_prompts_ids
         return res
 
-    ##############
-    # Mail alias #
-    ##############
 
     def _message_post_after_hook_template_values(self):
         return {
@@ -200,7 +184,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def message_new(self, msg_dict, custom_values=None):
-        """Delay the LLM calls when documents are sent on an alias to not block the incoming email CRON."""
         if custom_values and (folder_id := custom_values.get("folder_id")):
             rule = (
                 self.env["automation.rule"]
@@ -231,7 +214,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _cron_ai_sort(self) -> None:
-        """Sort documents marked to be sorted with AI."""
         cron = self.env.ref(
             "ai_document.ir_cron_ai_documents_sort",
             raise_if_not_found=False,
@@ -285,13 +267,8 @@ class DocumentsDocument(models.Model):
 
         return
 
-    #############################
-    # Setup AI Tools and Action #
-    #############################
 
     def action_ai_sort(self) -> dict | None:
-        """Manually trigger the sort action on the given documents."""
-        # sudo: ai_sort_prompt has group system
         documents = self.filtered(
             lambda d: d.ai_sortable and d.folder_id.sudo().ai_sort_prompt
         )
@@ -324,7 +301,6 @@ class DocumentsDocument(models.Model):
                         "sticky": False,
                     },
                 }
-        # sudo: any user can trigger the ai-sort on their documents
         ai_actions = (
             self.env["ir.actions.server"]
             .sudo()
@@ -338,7 +314,7 @@ class DocumentsDocument(models.Model):
                 _debug.logic("ai_sort_skipped", reason="no_action", document=document)
                 continue
 
-            document.ai_to_sort = False  # In case we sort a document sent by email
+            document.ai_to_sort = False
             ai_action._ai_action_run(document)
 
         return None
@@ -346,7 +322,6 @@ class DocumentsDocument(models.Model):
     def _ai_setup_sort_actions(self, ai_tool_ids=()) -> None:
         self.check_singleton()
 
-        # In case we only have the records, we need a parent div to be able to remove it
         content = lxml.html.fromstring(f"<div>{self.ai_sort_prompt or ''}</div>")
         for el in content.xpath("//*[@data-ai-record-id]"):
             el.drop_tree()
@@ -418,8 +393,6 @@ class DocumentsDocument(models.Model):
         return Markup('<span data-ai-record-id="%i"/>') % folder_id
 
     def _ai_format_records(self) -> dict:
-        """Return the information about the folder to insert in the prompt."""
-        # Fetch all ancestors in batch
         ancestors = self.env["document.document"].browse(
             self._get_ancestor_ids(include_self=True)
         )

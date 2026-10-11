@@ -18,14 +18,12 @@ TRACKING_STATES = [
     ("delivered", "Delivered"),
     ("other", "Other"),
 ]
-# a tracking number is no longer read this long after its transfer was created
 TRACKING_WINDOW = timedelta(days=45)
 
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
-    # FIELDS
     carrier_tracking_provider = fields.Selection(
         related="carrier_id.tracking_provider",
     )
@@ -230,12 +228,10 @@ class StockPicking(models.Model):
                 )
             )
 
-    # ACTION METHODS
     def action_fetch_carrier_tracking(self) -> None:
         self.check_access("write")
         self._fetch_carrier_tracking()
 
-    # CRON METHODS
     @api.model
     def _cron_fetch_carrier_tracking(self) -> None:
         self.search(
@@ -248,9 +244,7 @@ class StockPicking(models.Model):
             ]
         )._fetch_carrier_tracking()
 
-    # BUSINESS METHODS
     def _fetch_carrier_tracking(self) -> None:
-        """Read each carrier and number once, preserving successful snapshots."""
         groups = {}
         for picking in self:
             if picking.carrier_id.tracking_provider and picking.carrier_tracking_ref:
@@ -315,7 +309,6 @@ class StockPicking(models.Model):
         )
 
     def _aggregate_carrier_tracking(self, details, references) -> dict:
-        """Summarize all numbers without treating a partial delivery as complete."""
         order = [
             "other",
             "documented",
@@ -342,9 +335,6 @@ class StockPicking(models.Model):
         return status
 
     def _record_carrier_tracking(self, carrier, status) -> None:
-        """Write a carrier status on the transfers that share its number, post
-        what changed and hand an open transfer the carrier delivered to someone
-        who validates it."""
         news = self.filtered(
             lambda picking: (
                 (picking.carrier_status_code or "", picking.date_carrier_status or None)

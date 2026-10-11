@@ -21,7 +21,6 @@ class AuthorizeTest(AuthorizeCommon):
             ]
 
     def test_compatible_providers(self):
-        # Note: in the test common, 'USD' is specified as the currency linked to the user account.
         unsupported_currency = self._enable_currency("CHF")
         providers = self.env["payment.provider"]._get_compatible_providers(
             self.company.id,
@@ -39,7 +38,6 @@ class AuthorizeTest(AuthorizeCommon):
         self.assertIn(self.authorize, providers)
 
     def test_processing_values(self):
-        """Test custom 'access_token' processing_values for authorize provider."""
         tx = self._create_transaction(flow="direct")
         with (
             mute_logger("odoo.addons.payment.models.payment_transaction"),
@@ -63,7 +61,6 @@ class AuthorizeTest(AuthorizeCommon):
         self.assertEqual(self.authorize._get_validation_currency(), self.currency_usd)
 
     def test_amount_validation_is_skipped_when_transaction_details_are_missing(self):
-        """Test that the amount validation is skipped when the API returns with an error."""
         tx = self._create_transaction("direct")
         with patch(
             "odoo.addons.payment_authorize.models.authorize_request.AuthorizeAPI"
@@ -81,10 +78,9 @@ class AuthorizeTest(AuthorizeCommon):
                     }
                 }
             )
-        self.assertEqual(amount_data, None)  # Amount validation is skipped.
+        self.assertEqual(amount_data, None)
 
     def test_voiding_confirmed_tx_cancels_it(self):
-        """Test that voiding a transaction cancels it even if it's already confirmed."""
         source_tx = self._create_transaction("direct", state="done")
         with patch(
             "odoo.addons.payment_authorize.models.authorize_request.AuthorizeAPI"

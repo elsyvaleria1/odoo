@@ -27,7 +27,6 @@ class TestMailingUi(MassMailCommon, HttpCaseWithUserDemo):
         )
 
     def test_mailing_campaign_tour(self):
-        # self.env.ref('base.group_user').write({'implied_ids': [(4, self.env.ref('mass_mailing.group_mass_mailing_campaign').id)]})
         campaign = self.env["utm.campaign"].create(
             {
                 "name": "Test Newsletter",
@@ -64,11 +63,6 @@ class TestMailingUi(MassMailCommon, HttpCaseWithUserDemo):
         self.assertFalse(mailing)
         self.start_tour("/odoo", "mailing_editor", login="user_marketing")
 
-        # The tour created and saved a mailing. The edited version should be
-        # saved in body_arch, and its transpiled version (see convert_inline)
-        # for email client compatibility should be saved in body_html. This
-        # ensures both fields have different values (the mailing body should
-        # have been converted to a table in body_html).
         mailing = self.env["mailing.mailing"].search(
             [("subject", "=", "TestFromTour")], limit=1
         )

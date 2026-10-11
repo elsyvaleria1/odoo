@@ -145,7 +145,6 @@ class TestConversationFromTelegram(MailTelegramCase):
         self.assertIn("/escribir", self._sent(post))
 
     def test_a_bot_delivering_no_notifications_says_it_does_not_know_it(self):
-        # it used to read the command and answer nothing at all
         self.test_bot.notify_mail = False
 
         post = self._send("/escribir Colle")
@@ -157,7 +156,6 @@ class TestConversationFromTelegram(MailTelegramCase):
         self.test_chat._sync_command_menu()
         commands = [e["command"] for e in self.test_chat.command_menu]
         self.assertIn("escribir", commands)
-        # alphabetical, then the way out and the help
         self.assertEqual(commands[-2:], ["cancelar", "ayuda"])
         self.assertEqual(commands[:-2], sorted(commands[:-2]))
 

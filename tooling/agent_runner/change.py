@@ -43,7 +43,7 @@ from typing import Any
 try:
     from .gitops import GITHUB, git
     from .runner import Outcome, Permanent, Reporter, Stopped, run_in_session
-except ImportError:  # run as a script beside runner.py
+except ImportError:
     from gitops import GITHUB, git
     from runner import Outcome, Permanent, Reporter, Stopped, run_in_session
 
@@ -139,7 +139,6 @@ def _agent(
     if key:
         env |= {"ANTHROPIC_API_KEY": key, "HOME": str(cwd.parent)}
     else:
-        # the runner's own model login, kept in its home
         env["HOME"] = os.environ.get("HOME", str(cwd.parent))
     command = [
         os.environ.get("AGENT_RUNNER_CLAUDE", "claude"),
@@ -148,15 +147,11 @@ def _agent(
         payload["model"],
         "--output-format",
         "json",
-        # the session -- every file the agent read -- is not kept in its home
         "--no-session-persistence",
         *_confinement(tools),
-        # the prompt is never an option, whatever it starts with
         "--",
         prompt,
     ]
-    # the agent is ended with everything it started, so nothing of it is
-    # alive when git next runs with the repository's token
     try:
         finished = run_in_session(
             command,
@@ -193,7 +188,6 @@ def _agent(
         "cost": float(answer.get("total_cost_usd") or 0),
     }
     with spent(spend):
-        # a failed answer exits non-zero and still says what it spent
         if answer.get("is_error") or finished.returncode:
             said = answer.get("result") or answer.get("subtype") or "no reason given"
             raise RuntimeError(f"the agent failed: {str(said)[:500]}")
@@ -201,9 +195,6 @@ def _agent(
 
 
 def _forget_project(home: str, cwd: Path) -> None:
-    """Claude Code leaves an empty project directory per working directory
-    under the home it runs with, however it was told to keep no session: one
-    per clone, without end, under the runner's own home. An empty one goes."""
     project = Path(home, ".claude", "projects", re.sub(r"[^A-Za-z0-9-]", "-", str(cwd)))
     for directory in (project / "memory", project):
         with contextlib.suppress(OSError):
@@ -211,13 +202,6 @@ def _forget_project(home: str, cwd: Path) -> None:
 
 
 def _confinement(tools: str) -> list[str]:
-    """The agent's tools reach its clone and nothing else. A tool named in
-    `--allowedTools` without a path reaches every file the runner's user can
-    read or write -- its state directory, where a settings file the agent wrote
-    would run hooks in every later run. `dontAsk` refuses whatever the rules do
-    not allow, and the rules allow the clone alone (a symlink out of it is
-    resolved and refused). No settings file is read: not the runner's, not
-    one the repository or an earlier agent left."""
     rules = ["Read(./**)"]
     if "Edit" in tools.split(","):
         rules.append("Edit(./**)")
@@ -226,10 +210,8 @@ def _confinement(tools: str) -> list[str]:
         tools,
         "--allowedTools",
         ",".join(rules),
-        # the clone's git is the runner's: a deny outranks the allow above
         "--disallowedTools",
         "Edit(./.git/**)",
-        # no MCP server: not the login's connectors, not one a file names
         "--strict-mcp-config",
         "--permission-mode",
         "dontAsk",
@@ -241,9 +223,6 @@ def _confinement(tools: str) -> list[str]:
 
 
 def _result_of(output: object) -> dict[str, Any]:
-    """The agent's result message. Claude Code prints that message alone, or
-    every message of the session ending with it when `verbose` is set in the
-    settings of the home it runs under."""
     if isinstance(output, list):
         output = next(
             (
@@ -260,8 +239,6 @@ def _result_of(output: object) -> dict[str, Any]:
 
 @contextlib.contextmanager
 def spent(usage: dict[str, float]) -> Iterator[None]:
-    """A failure from here on carries what the attempt spent, for Odoo to
-    count it against the company's budget like a completion's."""
     try:
         yield
     except Exception as error:
@@ -307,7 +284,7 @@ def _open_pull_request(
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - a fixed https URL
+    with urllib.request.urlopen(request, timeout=30) as response:
         return json.loads(response.read()).get("html_url")
 
 
@@ -320,9 +297,6 @@ def apply(
     trailers: dict[str, Any],
     subject: str,
 ) -> Outcome:
-    """Run the agent with the edit tools on a new branch; commit, push and
-    open the pull request when its verdict is ``done`` and it changed
-    something."""
     payload = lease["payload"]
     branch = _ref(payload, "branch")
     footer = _trailers(lease, trailers)
@@ -337,8 +311,6 @@ def apply(
         if payload.get("push") and (
             pushed := _pushed_already(checkout, url, branch, token, lease["id"])
         ):
-            # an earlier attempt pushed it and then lost its answer: this one
-            # reports that push rather than running the agent again
             reporter.event(f"{branch} was pushed by an earlier attempt", "progress")
             return Outcome(
                 result={
@@ -437,8 +409,6 @@ def _commit_and_push(
                 payload, verdict, token, message
             )
         except Exception as error:
-            # the branch is pushed: Odoo follows its pull request by webhook,
-            # and a person can open it; the run is not failed for this
             result["pull_request"] = None
             result["pull_request_error"] = f"{type(error).__name__}: {error}"[:500]
             reporter.event(f"the pull request was not opened: {error}", "warning")
@@ -448,11 +418,6 @@ def _commit_and_push(
 def _pushed_already(
     checkout: Path, url: str, branch: str, token: str | None, run_id: object
 ) -> str | None:
-    """The commit an earlier attempt of this run pushed to ``branch``, or
-    ``None`` when the branch is not on the remote. A branch there that holds
-    no commit of this run -- none with an `Agent-Run: <this run>` trailer
-    beyond the base -- is refused, never taken for this run's work; one a
-    person pushed to after it is this run's still."""
     auth = token if url.startswith(GITHUB) else None
     listed = git(
         checkout, "ls-remote", "--heads", url, f"refs/heads/{branch}", token=auth
@@ -462,7 +427,6 @@ def _pushed_already(
     git(checkout, "fetch", "--quiet", url, f"refs/heads/{branch}", token=auth)
     log = git(checkout, "log", "--format=%H%x1f%B%x1e", "FETCH_HEAD", "--not", "HEAD")
     if not log.strip():
-        # the branch is merged into its base: its commits are the base's now
         log = git(checkout, "log", "-n", "200", "--format=%H%x1f%B%x1e", "FETCH_HEAD")
     for entry in log.split("\x1e"):
         sha, _, message = entry.strip().partition("\x1f")

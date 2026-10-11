@@ -33,7 +33,7 @@ class TestGpsReaders(StockLotGpsTestBase):
     def test_the_odometer_at_a_moment_is_the_closest_valid_reading(self):
         self._log(-20, 1000.0)
         self._log(5, 1003.0)
-        self._log(1, 0.0)  # no odometer: not a reading
+        self._log(1, 0.0)
         at = self.t0
         self.assertEqual(self.asset._gps_odometer_at(at), 1003.0)
         self.assertEqual(
@@ -44,7 +44,7 @@ class TestGpsReaders(StockLotGpsTestBase):
 
     def test_the_position_is_the_last_reading_at_the_moment_within_its_age(self):
         self._log(0, latitude=19.30)
-        self._log(10, latitude=0.0, longitude=0.0)  # no fix: not a position
+        self._log(10, latitude=0.0, longitude=0.0)
         at = self.t0 + timedelta(minutes=15)
         self.assertEqual(self.asset._gps_position(at).latitude, 19.30)
         self.assertFalse(self.asset._gps_position(at, max_age=timedelta(minutes=5)))
@@ -74,7 +74,7 @@ class TestGpsReaders(StockLotGpsTestBase):
         )
 
     def test_no_device_or_no_valid_reading_is_no_reading(self):
-        self._log(-5, 0.0)  # a position without an odometer
+        self._log(-5, 0.0)
         self.assertIsNone(self.asset._gps_odometer_reading(self.t0))
         self.asset.gps_device_id = False
         self.assertIsNone(self.asset._gps_odometer_reading(self.t0))

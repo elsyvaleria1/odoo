@@ -20,8 +20,6 @@ class _FakeSession(dict):
 class TestIrHttpAuth(TransactionCase):
     @contextmanager
     def _fake_request(self, env, path="/"):
-        # what every consumer of a request may read: an addon's ir.http
-        # (website) asks the session and the host for the current website
         fake = SimpleNamespace(
             env=env,
             session=_FakeSession(),
@@ -82,8 +80,6 @@ class TestIrHttpAuth(TransactionCase):
                 "public": False,
             }
         )
-        # base's own fallback: an addon's override (website) runs the whole
-        # frontend dispatch on top of it, which this fake request cannot carry
         serve_fallback = BaseIrHttp.__dict__["_serve_fallback"].__func__
         with self._fake_request(self.env, path=path):
             self.assertIsNone(

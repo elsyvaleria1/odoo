@@ -22,7 +22,6 @@ class IotDevice(models.Model):
 
     @api.depends("type")
     def _compute_associated_pos_config_ids(self) -> None:
-        """Compute the associated PoS config ids for the Current device"""
         pos_config = self.env["pos.config"]
         field_map = {
             "scanner": ("iface_scanner_ids", "in"),

@@ -74,7 +74,7 @@ class LRU[K, V](MutableMapping[K, V]):
 
     def __getitem__(self, key: K) -> V:
         value = self._map[key]
-        try:  # noqa: SIM105  contextlib.suppress costs a context manager per read
+        try:
             self._map.move_to_end(key)
         except KeyError:
             pass
@@ -104,13 +104,13 @@ class LRU[K, V](MutableMapping[K, V]):
         with self._lock:
             return dict(self._map)
 
-    def keys(self) -> KeysView[K]:  # type: ignore[override]
+    def keys(self) -> KeysView[K]:
         return self.snapshot.keys()
 
-    def values(self) -> ValuesView[V]:  # type: ignore[override]
+    def values(self) -> ValuesView[V]:
         return self.snapshot.values()
 
-    def items(self) -> ItemsView[K, V]:  # type: ignore[override]
+    def items(self) -> ItemsView[K, V]:
         return self.snapshot.items()
 
     def copy(self) -> dict[K, V]:
@@ -125,8 +125,6 @@ class LRU[K, V](MutableMapping[K, V]):
 
     def pop(self, key: K, /, default: typing.Any = SENTINEL) -> typing.Any:
         with self._lock:
-            # a targeted invalidation: a value computed before it must not be stored
-            # after it, which set_if_generation refuses only if the generation moved
             self._generation += 1
             try:
                 value = self._map.pop(key)

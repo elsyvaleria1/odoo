@@ -43,7 +43,6 @@ class ProjectProject(models.Model):
     def _has_demo_data(self) -> bool:
         if not self.env.user.has_group("esg.esg_group_manager"):
             return True
-        # This record only exists if the esg project demo data has been already loaded
         tag = self.env.ref("esg_project.esg_project_tags_0", raise_if_not_found=False)
         return bool(tag) or bool(
             self.env["ir.module.module"].search_count([("demo", "=", True)], limit=1)

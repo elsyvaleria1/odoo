@@ -54,8 +54,6 @@ class TestWorkLocation(TransactionCase):
         self.assertNotIn("exceptions", data[self.employee.id])
 
     def test_the_calendar_covers_every_allowed_company(self):
-        # The lookup filtered on env.company, so an employee in a second allowed
-        # company vanished from the calendar of a user who had both enabled.
         other = self.env["res.company"].create({"name": "Second"})
         partner = self.env["res.partner"].create({"name": "Elsewhere worker"})
         self.env["hr.employee"].create(

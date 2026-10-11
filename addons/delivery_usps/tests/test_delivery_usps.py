@@ -20,7 +20,6 @@ class TestDeliveryUSPS(TransactionCase):
 
         self.iPadMini = self.env.ref("product.product_product_6")
 
-        # Add a full address to "Your Company"
         self.your_company = self.env.ref("base.main_partner")
         self.your_company.write(
             {
@@ -62,7 +61,6 @@ class TestDeliveryUSPS(TransactionCase):
                 "zip": "95014-2083",
             }
         )
-        # additional test address for Canada
         self.quebec = self.env.ref("base.state_ca_qc")
         self.montreal = self.env["res.partner"].create(
             {
@@ -94,7 +92,6 @@ class TestDeliveryUSPS(TransactionCase):
         }
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -174,7 +171,6 @@ class TestDeliveryUSPS(TransactionCase):
         so_vals = {"partner_id": self.agrolait.id, "line_ids": [(0, None, sol_vals)]}
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -253,7 +249,6 @@ class TestDeliveryUSPS(TransactionCase):
         so_vals = {"partner_id": self.montreal.id, "line_ids": [(0, None, sol_vals)]}
 
         sale_order = SaleOrder.create(so_vals)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {

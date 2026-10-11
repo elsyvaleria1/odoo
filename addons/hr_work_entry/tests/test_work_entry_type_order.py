@@ -23,11 +23,6 @@ class TestWorkEntryTypeOrder(TransactionCase):
         )
 
     def test_a_manager_can_reorder_the_types(self):
-        """Without this the only handle on ``sequence`` is developer mode.
-
-        The form carries the field behind ``base.group_no_one``, which a
-        manager does not have, so the list is the one place left.
-        """
         self.assertFalse(
             self.manager.has_group("base.group_no_one"),
             "a plain manager is not in developer mode",
@@ -35,7 +30,6 @@ class TestWorkEntryTypeOrder(TransactionCase):
         self.assertIn('name="sequence"', self._list_arch())
 
     def test_sequence_decides_the_order(self):
-        """Guard: the field is load-bearing, not decoration."""
         work_entry_type = self.env["hr.work.entry.type"]
         self.assertEqual(work_entry_type._order, "sequence, id")
         last = work_entry_type.search([], order="sequence desc, id desc", limit=1)

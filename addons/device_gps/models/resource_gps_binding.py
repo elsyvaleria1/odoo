@@ -94,7 +94,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _transition(self, resources, at):
-        """Called after an authorized attachment change in the same transaction."""
         history = self.sudo()
         devices = resources.gps_device_id
         opened = history.search(
@@ -150,7 +149,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _bootstrap_legacy(self):
-        """Preserve the old current-target interpretation without inventing dates."""
         self.env["resource.resource"].flush_model(["gps_device_id", "company_id"])
         self.env.cr.execute("""
             SELECT r.id FROM resource_resource r JOIN device_device d ON d.id = r.gps_device_id
@@ -209,7 +207,6 @@ class ResourceGpsBinding(models.Model):
     def _custody_periods(
         self, resources, *, roles, assignees=None, date_start=None, date_end=None
     ) -> list[GpsCustodyPeriod]:
-        """Compose attachment and custody intervals without business identities."""
         resources.check_access("read")
         domain = [
             ("resource_id", "in", resources.ids),
@@ -278,12 +275,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _custody_query(self, *, assignment_ids=None, binding_ids=None):
-        """Shared effective attachment/role intersection for SQL consumers.
-
-        Like other SQL projections, this does not apply ORM access rules.
-        Callers constrain identities and company; the recordset API supplies
-        authorized assignment and binding IDs before returning detached values.
-        """
         return SQL(
             """
             SELECT * FROM (
@@ -308,7 +299,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _period_values_query(self, periods):
-        """A bounded SQL input of already-authorized detached custody periods."""
         return SQL(
             """SELECT * FROM UNNEST(%s::int[], %s::int[], %s::timestamp[], %s::timestamp[])
                AS periods(device_id, assignee_id, date_start, date_end)""",
@@ -320,7 +310,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _coverage(self, periods, date_from, date_to):
-        """Detached coverage per holder, using bounded index reads for FDW sources."""
         Log = self.env["device.data.log.gps"].with_privilege(
             "device_gps.privilege_read_resource_odometer",
             reason="a business adapter checks GPS coverage of its custody periods",
@@ -341,7 +330,7 @@ class ResourceGpsBinding(models.Model):
             ]
             if period.date_end:
                 domain.append(("timestamp", "<", period.date_end))
-            last = Log.search(  # noqa: E8507 - a bounded index read per custody window, as the docstring says
+            last = Log.search(
                 domain, order="timestamp desc, id desc", limit=1
             ).timestamp
             item = coverage.setdefault(
@@ -354,7 +343,7 @@ class ResourceGpsBinding(models.Model):
                 item["with_data"] |= start <= last < end
                 if not item["with_data"]:
                     item["with_data"] = bool(
-                        Log.search(  # noqa: E8507 - a bounded index read per custody window
+                        Log.search(
                             [
                                 *domain,
                                 ("timestamp", ">=", start),
@@ -423,7 +412,6 @@ class ResourceGpsBinding(models.Model):
 
     @api.model
     def _at_query(self, device, timestamp):
-        """A single half-open attachment lookup, shared by SQL consumers."""
         return SQL(
             """
             SELECT b.id AS binding_id, b.resource_id, b.company_id, b.date_start,

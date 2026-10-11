@@ -17,7 +17,6 @@ class ProjectTask(models.Model):
     _name = "project.task"
     _inherit = "project.task"
 
-    # Project Sharing fields
     portal_remaining_hours = fields.Float(
         export_string_translation=False,
         compute="_compute_project_sharing_timesheets",
@@ -57,10 +56,6 @@ class ProjectTask(models.Model):
         subtask_ids_per_task_id = (
             self.sudo().with_context(active_test=False)._get_subtask_ids_per_task_id()
         )
-        # Say `self.ids` is [1, 2, 3] and `_get_subtask_ids_per_task_id()` returns {1: [2, 4], 2: [4], 3: []}.
-        # We want to merge all subtask ids and add `self.ids` to it.
-        # Unpacking `subtask_ids_per_task_id` values in `set.union` seems to be the appropriate method:
-        # >>> set.union({}, [2, 4], [4], [], [1, 2, 3]) = {2, 4, 1, 3}
         all_task_ids = set.union(set(), *subtask_ids_per_task_id.values(), self.ids)
         timesheet_read_group = (
             self.env["account.analytic.line"]
@@ -111,17 +106,12 @@ class ProjectTask(models.Model):
             task.portal_progress = progress
 
     def read(self, fields=None, load="_classic_read"):
-        """Override read method to filter timesheets in the task(s) is the user is portal user
-        and the sale.invoiced_timesheet configuration is set to 'approved'
-        Then we need to give the id of timesheets which is validated.
-        """
         result = super().read(fields=fields, load=load)
         if (
             fields
             and "timesheet_ids" in fields
             and (self.env.user._is_portal() or "project_sharing_id" in self.env.context)
         ):
-            # We need to check if configuration
             param_invoiced_timesheet = self.env.registry.settings.get(
                 self.env, "sale.invoiced_timesheet", DEFAULT_INVOICED_TIMESHEET
             )

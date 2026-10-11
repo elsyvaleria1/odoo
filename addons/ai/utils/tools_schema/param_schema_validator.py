@@ -97,7 +97,6 @@ class ParamSchemaValidator:
             )
 
     def _check_array_item_types(self) -> None:
-        # array_item_types can be a single type '{'type': 'string'}' or a list of types {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
         failure_message = (
             f"The types of the items of the 'array' param '{self.param_name}' are not defined correctly. "
             "The types of the items must be defined as ('items': {'type': 'string'}) if all items are of the same type "

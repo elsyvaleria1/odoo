@@ -73,9 +73,6 @@ class SpeechCase(TransactionCase):
             register_reader(engine)
             self.addCleanup(unregister_reader, engine)
             return engine
-        # A writer has no cost and `Document.of` takes the first that claims the
-        # mimetype, so a stub cannot simply be added beside a real engine the
-        # way a reader can: whichever module registered first would answer.
         displaced = get_writers(engine.mimetype, engine.consumes)
         for other in displaced:
             unregister_writer(other)
@@ -89,7 +86,6 @@ class SpeechCase(TransactionCase):
             register_writer(other)
 
     def _only_writers(self, *engines):
-        """Register these writers, in this order, and no others."""
         displaced = get_writers(engines[0].mimetype, engines[0].consumes)
         for other in displaced:
             unregister_writer(other)

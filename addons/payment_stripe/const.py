@@ -3,29 +3,24 @@ from odoo.addons.payment.const import SENSITIVE_KEYS as PAYMENT_SENSITIVE_KEYS
 SENSITIVE_KEYS = {"client_secret"}
 PAYMENT_SENSITIVE_KEYS.update(
     SENSITIVE_KEYS
-)  # Add Stripe-specific keys to the global set.
+)
 
-API_VERSION = "2019-05-16"  # The API version of Stripe implemented in this module
+API_VERSION = "2019-05-16"
 
-# Stripe proxy URL
 PROXY_URL = "https://stripe.api.odoo.com/api/stripe/"
 
-# The codes of the payment methods to activate when Stripe is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
     "bancontact",
     "eps",
     "ideal",
     "p24",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",
     "discover",
 }
 
-# Mapping of payment method codes to Stripe codes.
 PAYMENT_METHODS_MAPPING = {
     "ach_direct_debit": "us_bank_account",
     "bacs_direct_debit": "bacs_debit",
@@ -35,7 +30,7 @@ PAYMENT_METHODS_MAPPING = {
     "clearpay": "afterpay_clearpay",
     "cash_app_pay": "cashapp",
     "mobile_pay": "mobilepay",
-    "unknown": "card",  # For express checkout.
+    "unknown": "card",
 }
 
 INDIAN_MANDATES_SUPPORTED_CURRENCIES = [
@@ -53,11 +48,6 @@ INDIAN_MANDATES_SUPPORTED_CURRENCIES = [
     "HKD",
 ]
 
-# Mapping of transaction states to Stripe objects ({Payment,Setup}Intent, Refund) statuses.
-# For each object's exhaustive status list, see:
-# https://stripe.com/docs/api/payment_intents/object#payment_intent_object-status
-# https://stripe.com/docs/api/setup_intents/object#setup_intent_object-status
-# https://stripe.com/docs/api/refunds/object#refund_object-status
 STATUS_MAPPING = {
     "draft": ("requires_confirmation", "requires_action"),
     "pending": ("processing", "pending"),
@@ -70,7 +60,6 @@ STATUS_MAPPING = {
     ),
 }
 
-# Events which are handled by the webhook
 HANDLED_WEBHOOK_EVENTS = [
     "payment_intent.processing",
     "payment_intent.amount_capturable_updated",
@@ -78,11 +67,10 @@ HANDLED_WEBHOOK_EVENTS = [
     "payment_intent.payment_failed",
     "payment_intent.canceled",
     "setup_intent.succeeded",
-    "charge.refunded",  # A refund has been issued.
-    "charge.refund.updated",  # The refund status has changed, possibly from succeeded to failed.
+    "charge.refunded",
+    "charge.refund.updated",
 ]
 
-# The countries supported by Stripe. See https://stripe.com/global page.
 SUPPORTED_COUNTRIES = {
     "AE",
     "AT",
@@ -101,16 +89,16 @@ SUPPORTED_COUNTRIES = {
     "FI",
     "FR",
     "GB",
-    "GI",  # Beta
+    "GI",
     "GR",
     "HK",
-    "HR",  # Beta
+    "HR",
     "HU",
-    "ID",  # Beta
+    "ID",
     "IE",
     "IT",
     "JP",
-    "LI",  # Beta
+    "LI",
     "LT",
     "LU",
     "LV",
@@ -120,7 +108,7 @@ SUPPORTED_COUNTRIES = {
     "NL",
     "NO",
     "NZ",
-    "PH",  # Beta
+    "PH",
     "PL",
     "PT",
     "RO",
@@ -128,28 +116,21 @@ SUPPORTED_COUNTRIES = {
     "SG",
     "SI",
     "SK",
-    "TH",  # Beta
+    "TH",
     "US",
 }
 
-# Businesses in supported outlying territories should register for a Stripe account with the parent
-# territory selected as the Country.
-# See https://support.stripe.com/questions/stripe-availability-for-outlying-territories-of-supported-countries.
 COUNTRY_MAPPING = {
-    "MQ": "FR",  # Martinique
-    "GP": "FR",  # Guadeloupe
-    "GF": "FR",  # French Guiana
-    "RE": "FR",  # Réunion
-    "YT": "FR",  # Mayotte
-    "MF": "FR",  # Saint-Martin
+    "MQ": "FR",
+    "GP": "FR",
+    "GF": "FR",
+    "RE": "FR",
+    "YT": "FR",
+    "MF": "FR",
 }
 
-# Stripe-specific mapping of currency codes in ISO 4217 format to the number of decimals.
-# Only currencies for which Stripe does not follow the ISO 4217 norm are listed here.
 CURRENCY_DECIMALS = {
-    # https://docs.stripe.com/currencies#special-cases
     "ISK": 2,
     "UGX": 2,
-    # https://docs.stripe.com/currencies#zero-decimal
     "MGA": 0,
 }

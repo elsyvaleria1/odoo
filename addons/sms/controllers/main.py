@@ -10,27 +10,13 @@ _logger = logging.getLogger(__name__)
 class SmsController(Controller):
     @route("/sms/status", type="jsonrpc", auth="public")
     def update_sms_status(self, message_statuses):
-        """Receive a batch of delivery reports from IAP
-
-        :param message_statuses:
-            [
-                {
-                    'sms_status': status0,
-                    'uuids': [uuid00, uuid01, ...],
-                }, {
-                    'sms_status': status1,
-                    'uuids': [uuid10, uuid11, ...],
-                },
-                ...
-            ]
-        """
         all_uuids = []
         for uuids, iap_status in (
             (status["uuids"], status["sms_status"]) for status in message_statuses
         ):
             self._check_status_values(uuids, iap_status, message_statuses)
             if (
-                sms_trackers_sudo := request.env["sms.tracker"]  # noqa: E8507 - one query per status batch of the webhook payload
+                sms_trackers_sudo := request.env["sms.tracker"]
                 .sudo()
                 .search([("sms_uuid", "in", uuids)])
             ):
@@ -48,7 +34,6 @@ class SmsController(Controller):
 
     @staticmethod
     def _check_status_values(uuids, iap_status, message_statuses):
-        """Basic checks to avoid unnecessary queries and allow debugging."""
         if (
             not uuids
             or not iap_status

@@ -15,7 +15,7 @@ class ReportIndustry_FsmWorksheet_Custom(models.AbstractModel):
                     [("x_project_task_id", "=", task.id)],
                     limit=1,
                     order="create_date DESC",
-                )  # take the last one
+                )
                 worksheet_map[task.id] = worksheet
         report_values.update({"worksheet_map": worksheet_map})
         return report_values

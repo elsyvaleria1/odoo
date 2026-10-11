@@ -28,7 +28,6 @@ _logger = logging.getLogger(__name__)
 
 
 def _is_revoked_grant(response) -> bool:
-    # RFC 6749 5.2: a refresh token revoked, expired or issued to another client
     if response is None or response.status_code not in (400, 401):
         return False
     try:
@@ -208,7 +207,6 @@ class IntegrationConnection(models.Model):
         "service_id", "company_id", "environment", "active", "user_id", "credential_id"
     )
     def _check_one_active_connection(self) -> None:
-        # a connection bound to a record is unique by its record already
         constrained = self.filtered(
             lambda connection: (
                 connection.active
@@ -342,7 +340,7 @@ class IntegrationConnection(models.Model):
 
     def _get_api_client(self, egress_policy: str = "private"):
         self.check_singleton()
-        from odoo.addons.integration.tools import (  # pylint: disable=import-outside-toplevel
+        from odoo.addons.integration.tools import (
             get_api_client,
         )
 
@@ -404,8 +402,6 @@ class IntegrationConnection(models.Model):
     def _check_oauth_authorizer(self) -> None:
         self.check_singleton()
         user = self.env.user
-        # read under privilege_oauth_authorization: who the user is, and what
-        # they may write, decides, not their access to connections
         connection = self
         if connection.service_id.auth_type != "oauth2":
             raise UserError(
@@ -432,8 +428,6 @@ class IntegrationConnection(models.Model):
             )
             if not record:
                 raise UserError(self.env._("This connection's record is gone."))
-            # a record may say who authorizes it, read whatever the user may
-            # read of it; by default, whoever may write it
             if hasattr(record, "_oauth_authorization_allowed"):
                 if not record.sudo()._oauth_authorization_allowed(user):
                     raise AccessError(
@@ -459,7 +453,6 @@ class IntegrationConnection(models.Model):
 
     def _oauth_client(self) -> tuple[str, str | None]:
         self.check_singleton()
-        # the vault: a client secret is readable by no user's rights
         vault = self.sudo()
         client_id = vault.service_id.oauth_client_id or ""
         client_secret = None
@@ -477,7 +470,6 @@ class IntegrationConnection(models.Model):
 
     def _oauth_store_tokens(self, tokens: dict[str, Any], redirect_uri: str) -> None:
         self.check_singleton()
-        # the vault: tokens are written by no user's rights
         connection = self.sudo()
         expires_in = int(tokens.get("expires_in") or 0)
         values: dict[str, Any] = {
@@ -492,8 +484,6 @@ class IntegrationConnection(models.Model):
         if connection.credential_id:
             connection.credential_id.write(values)
         else:
-            # no endpoint_id: the connection binds it, and a bound credential
-            # would sync a second connection of its own
             connection.credential_id = connection.env["credential.credential"].create(
                 {
                     "name": connection.display_name,
@@ -512,7 +502,6 @@ class IntegrationConnection(models.Model):
 
     def _oauth2_access_token(self, force: bool = False) -> str | bool:
         self.check_singleton()
-        # the API client's connection: elevated, as every secret it reads
         credential = self.credential_id
         tokens = credential._use_secret_payload("integration:oauth")
         expired = bool(credential.oauth_token_date_expiration) and not (
@@ -537,7 +526,6 @@ class IntegrationConnection(models.Model):
         except requests.HTTPError as error:
             if _is_revoked_grant(error.response):
                 self.needs_reauthorization = True
-                # the caller's failure rolls its transaction back: keep the flag
                 self._queue_circuit_values({"needs_reauthorization": True})
                 _logger.warning(
                     "OAuth grant of connection %s was refused on refresh", self.id
@@ -569,7 +557,6 @@ class IntegrationConnection(models.Model):
         return f"{url}?return_url={quote(return_url, safe='')}" if return_url else url
 
     def _forget_oauth_authorization(self) -> None:
-        # the vault: a token credential is removed by no user's rights
         for connection in self.sudo():
             credential = connection.credential_id
             connection.write(
@@ -598,7 +585,6 @@ class IntegrationConnection(models.Model):
 
     @api.model
     def _bound(self, record, service, scope: str = "") -> Self:
-        """`record`'s own connection to `service`, created on first use."""
         connection = self._find_bound(record)
         if not connection:
             company = record["company_id"] if "company_id" in record._fields else None
@@ -625,7 +611,6 @@ class IntegrationConnection(models.Model):
     @api.model
     def _find_personal(self, service, user=None) -> Self:
         user = user or self.env.user
-        # the service is read as its connection is found, whoever asks
         elevated = self.sudo()
         service = service.with_env(elevated.env)
         return elevated.search(
@@ -643,10 +628,6 @@ class IntegrationConnection(models.Model):
     def _adopt_credential(
         self, credential, expires=None, client=None, redirect_path=None
     ) -> None:
-        """Bind tokens authorized before connections existed to this
-        connection, so the authorization carries over; `client` puts an OAuth
-        client of its own beside them, `redirect_path` names the callback they
-        were authorized through when it is not the service's."""
         self.check_singleton()
         values = dict(client or {})
         if self.user_id:
@@ -681,7 +662,6 @@ class IntegrationConnection(models.Model):
         granted = (connection.oauth_scope or "").split()
         missing = [word for word in scope.split() if word not in granted]
         if missing:
-            # an added scope is a new consent: the tokens held do not carry it
             connection.write(
                 {
                     "oauth_scope": " ".join(granted + missing),
@@ -762,8 +742,6 @@ class IntegrationConnection(models.Model):
     ):
         self.check_singleton()
         connection = self.sudo()
-        # the breaker holds a probe for the call's worst case, which only a
-        # deadline makes a bound rather than an estimate
         session_options.setdefault("max_seconds", guarded_http.CALL_BUDGET)
         session = (
             self.env["ir.egress"]
@@ -811,9 +789,9 @@ class IntegrationConnection(models.Model):
             return session.request(method, url, **kwargs)
 
     def _zeep_transport(self, purpose: str, timeout: float = 30.0):
-        from zeep.transports import Transport  # pylint: disable=import-outside-toplevel
+        from zeep.transports import Transport
 
-        return Transport(  # noqa: E8518 - zeep sends through the connection's ir.egress session
+        return Transport(
             session=self._egress_session(purpose),
             timeout=timeout,
             operation_timeout=timeout,
@@ -870,14 +848,6 @@ class IntegrationConnection(models.Model):
             )
 
     def _spend_call_budget(self) -> tuple[bool, bool]:
-        """Take one call from the service's and the connection's budgets;
-        `(service_spent, connection_spent)` when either had none left.
-
-        Counted on a side cursor reading committed rows: a bucket row read in
-        the caller's transaction serialises every call of the service, and
-        the loser of two concurrent calls fails after it may already have
-        recorded what it was sending -- a Telegram outbox job then cannot know
-        whether its message went out."""
         self.check_singleton()
         service = self._get_call_service()
         with self.env.registry.cursor() as cr:

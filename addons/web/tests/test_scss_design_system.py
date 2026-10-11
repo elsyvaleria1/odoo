@@ -421,8 +421,6 @@ class TestScssDesignSystem(TransactionCase):
         return (("light", light), ("dark", dark))
 
     def _component(self, selector, scheme):
-        # a component's cascaded declarations in a scheme: the dark scheme's
-        # rules for it land on top of the light ones
         dark_selector = f":root[data-color-scheme=dark] {selector}"
         light, dark = {}, {}
         for _, settled, prop, value in settle(parse_per_selector(self.css)):
@@ -438,8 +436,6 @@ class TestScssDesignSystem(TransactionCase):
         return parse_colour(pick_dark(value) if scheme == "dark" else value)
 
     def test_filled_button_labels_meet_wcag_aa(self):
-        # a glass fill is judged where it sits: over every surface, itself
-        # over the page
         failures = []
         for scheme, scope in self._schemes():
             is_dark = scheme == "dark"
@@ -512,7 +508,6 @@ class TestScssDesignSystem(TransactionCase):
         )
 
     def test_focus_ring_is_visible_on_the_navbar(self):
-        # the bar is glass: judged blended over its scheme's page background
         failures = []
         for scheme, scope in self._schemes():
             declared = self._component(".o_main_navbar", scheme)

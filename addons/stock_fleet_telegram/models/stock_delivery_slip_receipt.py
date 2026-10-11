@@ -1,8 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-# A batch still taking slips: draft while the chat sends them, submitted once it
-# pressed Finish under /entrega and administration awaits the paper.
 OPEN_STATES = ("draft", "submitted")
 
 
@@ -86,8 +84,6 @@ class StockDeliverySlipReceipt(models.Model):
 
     @api.model
     def _get_or_create_open_receipt_for_chat(self, chat, company, user):
-        """The draft batch gathering ``chat``'s slips of ``company``; a new one
-        when the chat has none open."""
         receipt = self.search(
             [
                 ("telegram_chat_id", "=", chat.id),
@@ -105,15 +101,11 @@ class StockDeliverySlipReceipt(models.Model):
         )
 
     def _submit_from_telegram(self) -> None:
-        """The chat finished: administration now awaits the paper."""
         self.filtered(lambda receipt: receipt.state == "draft").write(
             {"state": "submitted"}
         )
 
     def action_confirm(self) -> dict:
-        """Administration has the signed slips in hand: their delivery orders
-        are received on paper, the batch takes its folio and its receipt is
-        printed."""
         self.check_singleton()
         if self.state not in OPEN_STATES:
             raise UserError(self.env._("Only an open batch can be confirmed."))
@@ -170,8 +162,6 @@ class StockDeliverySlipReceipt(models.Model):
         ).report_action(self)
 
     def action_cancel(self) -> None:
-        """Cancel the batch; a confirmed one gives its papers back as not
-        received."""
         for receipt in self:
             if receipt.state == "done":
                 pickings = receipt.slip_ids.picking_id.filtered(

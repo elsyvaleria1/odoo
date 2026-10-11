@@ -6,7 +6,6 @@ from odoo.tests import HttpCase, tagged
 class TestBarcodeClientAction(HttpCase):
     def setUp(self):
         super().setUp()
-        # Disables the sound effect so we don't go crazy while running the test tours locally.
         self.env["ir.config_parameter"].set_param(
             "stock_barcode.mute_sound_notifications", True
         )
@@ -16,7 +15,6 @@ class TestBarcodeClientAction(HttpCase):
         self.env.user.email = "info@example.com"
         self.supplier_location = self.env.ref("stock.stock_location_suppliers")
         self.customer_location = self.env.ref("stock.stock_location_customers")
-        # Create a company and a warehouse dedicated to the tests and configure its locations.
         self.company = self.env["res.company"].create({"name": "Test Company"})
         self.env.user.company_id = self.company
         self.warehouse = self.env["stock.warehouse"].search(
@@ -65,7 +63,6 @@ class TestBarcodeClientAction(HttpCase):
         self.uom_unit = self.env.ref("base.product_uom_unit")
         self.uom_dozen = self.env.ref("base.product_uom_dozen")
 
-        # Two stockable products without tracking
         self.product1 = self.env["product.product"].create(
             {
                 "name": "product1",
@@ -108,19 +105,17 @@ class TestBarcodeClientAction(HttpCase):
             }
         )
 
-        # Creates records specific to GS1 use cases.
         self.product_tln_gtn8 = self.env["product.product"].create(
             {
                 "name": "Battle Droid",
                 "default_code": "B1",
                 "is_storable": True,
                 "tracking": "lot",
-                "barcode": "76543210",  # (01)00000076543210 (GTIN-8 format)
+                "barcode": "76543210",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
-        # Remove all access rights linked to stock application to "reset" Inventory settings.
         group_uom_id = self.ref("base.group_uom")
         self.env.ref("base.group_user").write(
             {
@@ -149,6 +144,5 @@ class TestBarcodeClientAction(HttpCase):
         return f"/odoo/{picking_id}/action-stock_barcode.stock_barcode_picking_client_action"
 
     def _reset_package_sequence(self, next_number=1):
-        """Resets package sequence to be sure we'll have the attended packages name."""
         seq = self.env["ir.sequence"].search([("code", "=", "stock.package")])
         seq.number_next_actual = next_number

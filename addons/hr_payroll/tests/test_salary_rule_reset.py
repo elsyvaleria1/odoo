@@ -26,7 +26,6 @@ class TestSalaryRuleReset(tests.TransactionCase):
         cls.assertTrue(cls.data_rule_imd, "the fixture rule must come from a data file")
 
     def _run_the_weekly_update(self):
-        """What hr_payroll.ir_cron_update_payroll_data does, nothing more."""
         with patch.object(
             type(self.env["hr.payslip"]),
             "_get_data_files_to_update",
@@ -61,7 +60,6 @@ class TestSalaryRuleReset(tests.TransactionCase):
     def test_the_weekly_update_still_owns_an_untouched_rule(self):
         shipped_sequence = self.data_rule.sequence
         self.data_rule.invalidate_recordset()
-        # Write the same field the loader owns, but as the loader itself.
         self.data_rule.with_context(install_mode=True).sequence = shipped_sequence + 76
         self.assertFalse(
             self.data_rule.modified_by_user,

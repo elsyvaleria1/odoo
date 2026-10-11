@@ -14,14 +14,6 @@ class TestOverlapConstraintTotality(SkillsCase):
         cls.employee = cls.env["hr.employee"].create({"name": "Overlap employee"})
 
     def test_a_batch_mixing_a_bounded_and_an_open_ended_skill_validates(self):
-        """Two edits to one skill in one batch, one of them open-ended.
-
-        The matching domain is a single OR across the whole batch, so a stored
-        row can match because of the bounded values and then be date-compared
-        against the open-ended ones. Comparing a date to `valid_to = False`
-        raised TypeError -- a 500 out of a constraint whose job is to answer
-        with a message.
-        """
         self.env["hr.employee.skill"].create(
             {
                 "employee_id": self.employee.id,

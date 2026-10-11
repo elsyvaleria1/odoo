@@ -53,12 +53,6 @@ class TestRendererEquivalence(common.MailCommon):
         cls.model = "mail.test.track"
 
     def _both(self, expression, default="", record=None):
-        """Render the same value twice, once per renderer.
-
-        The evaluating path is reached by wrapping the expression in something
-        no allow-list holds -- `x or None` is the value of `x` -- rather than by
-        decorating the element, which no longer decides anything.
-        """
         record = record or self.record
         mixin = self.env["mixin.mail.render"]
         bare = f'<p t-out="{expression}">{default}</p>'
@@ -83,12 +77,6 @@ class TestRendererEquivalence(common.MailCommon):
         return render(bare), render(evaluated)
 
     def test_recordset_renders_as_display_name_on_both_paths(self):
-        """AUDIT F1 — expected to FAIL: QWeb renders the recordset repr.
-
-        `object.partner_id` and `object.user_id` are in the default
-        `mail_allowed_qweb_expressions()`, and the inline engine already maps a
-        recordset to its display name through `_format_template_value`.
-        """
         static, dynamic = self._both("object.user_id")
         self.assertNotIn(
             "res.users(", dynamic, "a recordset repr reached the email body"
@@ -96,7 +84,6 @@ class TestRendererEquivalence(common.MailCommon):
         self.assertEqual(static, dynamic)
 
     def test_inline_and_qweb_agree_on_a_recordset(self):
-        """AUDIT F1 — expected to FAIL: the two engines format recordsets differently."""
         mixin = self.env["mixin.mail.render"]
         inline = mixin._render_template_inline_template(
             "{{ object.user_id }}", self.model, [self.record.id]
@@ -111,22 +98,6 @@ class TestRendererEquivalence(common.MailCommon):
         self.assertEqual(str(inline), qweb)
 
     def test_the_specified_divergences_are_the_specified_ones(self):
-        """AUDIT F2/F3/F4 — NOT defects. The audit's first draft called them that.
-
-        `mail`'s own `TestRegexRendering.test_qweb_regex_rendering` pins each of
-        these against a literal expected string, so they are the evaluation-free
-        renderer's specified behaviour:
-
-        * a `t-out` whose value is missing or falsy keeps its empty element,
-          where QWeb emits nothing at all;
-        * a default body is emitted stripped, where QWeb emits it verbatim;
-        * an allow-listed path the model does not have renders empty, where
-          QWeb raises.
-
-        This test exists so that a future reader who spots the divergence finds
-        out it was considered, rather than re-deriving it and "fixing" it into a
-        red suite -- which is what happened here.
-        """
         mixin = self.env["mixin.mail.render"]
 
         def static(src, record):
@@ -153,13 +124,6 @@ class TestRendererEquivalence(common.MailCommon):
         )
 
     def test_directive_attributes_do_not_crash_the_static_renderer(self):
-        """AUDIT D1 — expected to FAIL: `SyntaxError`, not a `UserError`.
-
-        The restricted QWeb compile accepts `t-tag-open`/`t-tag-close` on a
-        `t-out` element; the static renderer accepts `{t-out}` and nothing else,
-        so it is handed a template it cannot render and raises a bare
-        `SyntaxError` that no caller catches.
-        """
         mixin = self.env["mixin.mail.render"]
         src = '<p t-out="object.name" t-tag-open="1"/>'
         try:
@@ -169,7 +133,7 @@ class TestRendererEquivalence(common.MailCommon):
                 "the two safety checks disagree and the disagreement is a SyntaxError"
             )
         except UserError:
-            pass  # an acceptable outcome: refused, but as a domain error
+            pass
 
 
 @tagged("mail_render", "post_install", "-at_install")
@@ -204,12 +168,10 @@ class TestRenderErrorPolicy(common.MailCommon):
                 ],
             }
         )
-        # an expression that trips a real ORM access check, not a synthetic raise
         cls.denied = "env['ir.config_parameter'].search([], limit=1).key"
 
     @users("render_audit_editor")
     def test_access_error_survives_the_inline_engine(self):
-        """AUDIT D4 — expected to FAIL: reported as `UserError`."""
         mixin = self.env["mixin.mail.render"]
         with self.assertRaises(AccessError):
             mixin._render_template(
@@ -221,7 +183,6 @@ class TestRenderErrorPolicy(common.MailCommon):
 
     @users("render_audit_editor")
     def test_access_error_survives_the_qweb_engine(self):
-        """AUDIT D4 — expected to PASS: this is the path that gets it right."""
         mixin = self.env["mixin.mail.render"]
         with self.assertRaises(AccessError):
             mixin._render_template(
@@ -233,7 +194,6 @@ class TestRenderErrorPolicy(common.MailCommon):
 
     @users("render_audit_editor")
     def test_access_error_survives_the_qweb_view_engine(self):
-        """AUDIT D4 — expected to FAIL: reported as `UserError`."""
         view = (
             self.env["ir.ui.view"]
             .sudo()
@@ -252,12 +212,6 @@ class TestRenderErrorPolicy(common.MailCommon):
             )
 
     def test_missing_error_survives_every_engine(self):
-        """AUDIT D4 (second direction) — expected to FAIL for the dynamic paths.
-
-        `mail.template._render_dynamic_fields` re-raises `MissingError` on
-        purpose rather than reporting a broken template; the dynamic paths turn
-        it into `UserError` first, so that guard cannot fire.
-        """
         gone = self.env["mail.test.track"].create(
             {"name": "Gone", "email_from": "gone@test.example.com"}
         )
@@ -265,10 +219,10 @@ class TestRenderErrorPolicy(common.MailCommon):
         gone.unlink()
         mixin = self.env["mixin.mail.render"]
         cases = [
-            ("inline_template", "{{ object.name }}"),  # static
-            ("inline_template", "{{ object.name or 'x' }}"),  # dynamic
-            ("qweb", '<p t-out="object.name"/>'),  # static
-            ("qweb", '<p t-out="object.name or None"/>'),  # dynamic
+            ("inline_template", "{{ object.name }}"),
+            ("inline_template", "{{ object.name or 'x' }}"),
+            ("qweb", '<p t-out="object.name"/>'),
+            ("qweb", '<p t-out="object.name or None"/>'),
         ]
         for engine, src in cases:
             with self.subTest(engine=engine, src=src), self.assertRaises(MissingError):
@@ -297,20 +251,12 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
                 "name": "audit tpl",
                 "model_id": self.env["ir.model"]._get("mail.test.track").id,
                 "email_from": "from@test.example.com",
-                # one character off `object.user_id.name`, which IS allow-listed
                 "subject": "Hi {{ object.user_id.email }}",
                 "body_html": Markup("<p>plain</p>"),
             }
         )
 
     def test_write_narrows_the_check_to_the_written_fields(self):
-        """AUDIT D5 — expected to FAIL: `_check_access_right_dynamic_template(None)`.
-
-        Asserted on the argument rather than on the outcome: the outcome depends
-        on the acting user's groups, and a test env that happens to be a
-        template editor short-circuits the check entirely, which would make this
-        pass while proving nothing.
-        """
         template = self._template()
         self.env.flush_all()
         received = []
@@ -334,11 +280,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
         )
 
     def test_write_scan_is_proportional_to_the_write(self):
-        """AUDIT D5, the cost half — expected to FAIL.
-
-        Writing one placeholder field re-parses every other placeholder field on
-        the record.
-        """
         template = self._template()
         self.env.flush_all()
         scanned = []
@@ -350,7 +291,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
             return original(self, template_txt, model, fname=fname)
 
         self.patch(model_cls, "_has_unsafe_expression_template_inline_template", spy)
-        # bypass the group short-circuit so the scan actually runs
         self.patch(
             model_cls,
             "_check_access_right_dynamic_template",
@@ -363,12 +303,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
         )
 
     def test_changing_the_model_revalidates_the_placeholders(self):
-        """AUDIT D7 — expected to FAIL: no rescan at all.
-
-        The model decides which expressions are allowed, so changing it can turn
-        a validated placeholder into a forbidden one. `write()`'s guard only
-        fires on char/text/html fields, and `model_id` is neither.
-        """
         template = self._template()
         self.env.flush_all()
         received = []
@@ -379,9 +313,6 @@ class TestDynamicTemplateWriteScope(common.MailCommon):
             received.append(fnames)
             return original(self, fnames=fnames)
 
-        # Asserted on the call, not on `_has_unsafe_expression`: the check
-        # short-circuits for a template editor, and the test env is one, so
-        # spying deeper would pass vacuously.
         self.patch(model_cls, "_check_access_right_dynamic_template", spy)
         template.write({"model_id": self.env["ir.model"]._get("mail.test.ticket").id})
         self.env.flush_all()
@@ -404,11 +335,6 @@ class TestLocalLinkReplacement(common.MailCommon):
         )
 
     def test_root_link_does_not_swallow_the_next_link(self):
-        """AUDIT D3 — expected to FAIL.
-
-        For `href="/"` the `[^/]` matches the closing quote and `[^"]+` runs on
-        to the next quote in the document, consuming the following `href="`.
-        """
         body = '<p><a href="/">Home</a> | <a href="/shop">Shop</a></p>'
         out = str(self.env["mixin.mail.render"]._replace_local_links(body))
         self.assertNotIn(
@@ -416,14 +342,12 @@ class TestLocalLinkReplacement(common.MailCommon):
         )
 
     def test_protocol_relative_urls_are_left_alone(self):
-        """Expected to PASS — the case the pattern was written for."""
         body = '<a href="//cdn.test/x">x</a>'
         self.assertEqual(
             str(self.env["mixin.mail.render"]._replace_local_links(body)), body
         )
 
     def test_short_local_paths_are_made_absolute(self):
-        """AUDIT D3 (second edge) — expected to FAIL: needs three characters."""
         body = '<a href="/a">a</a>'
         out = str(self.env["mixin.mail.render"]._replace_local_links(body))
         self.assertIn("https://ex.test/a", out)
@@ -434,12 +358,6 @@ class TestEncapsulateContract(common.MailCommon):
     """`_render_encapsulate` and the notify pipeline build the same context."""
 
     def test_missing_layout_does_not_produce_an_empty_body(self):
-        """AUDIT D6 — expected to FAIL: returns `Markup('')`.
-
-        `_notify_by_email_render_layout` falls back to the message body when the
-        layout is missing; `_render_encapsulate` returns empty, and its callers
-        assign the result straight to `body_html`.
-        """
         body = Markup("<p>the actual content</p>")
         out = self.env["mixin.mail.render"]._render_encapsulate(
             "mail.this_layout_does_not_exist", body
@@ -475,8 +393,6 @@ class TestPlaceholderValueTypes(common.MailCommon):
         )
 
     def test_binary_never_reaches_the_wire_as_a_bytes_repr(self):
-        """A binary placeholder used to emit `b'iVBORw0KGgo...'` -- payload and
-        Python repr -- into a subject line."""
         cases = [
             ("inline_template", "{{object.image_1920}}"),
             ("qweb", '<t t-out="object.image_1920"/>'),
@@ -499,8 +415,6 @@ class TestPlaceholderValueTypes(common.MailCommon):
                 self.assertEqual(self._render(src, engine), "(none)")
 
     def test_an_escaped_terminator_survives_a_round_trip(self):
-        """`}}` in a default used to truncate the placeholder and spill the
-        rest of itself into the rendered text."""
         rendered = self._render(
             r"{{object.parent_id.name ||| see \}\} here}}", "inline_template"
         )

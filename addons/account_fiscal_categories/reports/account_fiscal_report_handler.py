@@ -33,7 +33,6 @@ class AccountFiscalReportHandler(models.AbstractModel):
         return lines
 
     def _custom_options_initializer(self, report, options, previous_options):
-        # Check if there are multiple rates
         super()._custom_options_initializer(
             report, options, previous_options=previous_options
         )
@@ -117,8 +116,6 @@ class AccountFiscalReportHandler(models.AbstractModel):
             if res_model == "account.account":
                 account_audit = True
 
-        # When auditing a line while the vehicle split is active,
-        # the lines related to a vehicle must be explicitly excluded.
         if options.get("vehicle_split") and account_audit and not vehicle_audit:
             domain.append(("asset_id", "=", False))
 
@@ -144,11 +141,6 @@ class AccountFiscalReportHandler(models.AbstractModel):
     def _get_query(
         self, options, line_dict_id=None
     ) -> tuple[SQL, SQL, SQL, SQL, SQL, SQL]:
-        """Generates all the query elements based on the 'options' and the 'line_dict_id'.
-        :param options:         The report options.
-        :param line_dict_id:    The generic id of the line being expanded (optional).
-        :return:                The query, split into several elements that can be overridden in child reports.
-        """
         company_ids = tuple(self.env["report.formula"].get_report_company_ids(options))
         current = self._parse_line_id(options, line_dict_id)
         category_name = self.env["account.fiscal.category"]._field_to_sql(
@@ -272,8 +264,6 @@ class AccountFiscalReportHandler(models.AbstractModel):
             line_id = report._get_generic_line_id(
                 "account.account", current["account_id"], parent_line_id=line_id
             )
-            # This handles the case of child account lines without any rate or having 0% rate.
-            # We replicate the account_id in the line id in order to differentiate the child's line id from its parent.
             if len(current) != level and not current.get("account_rate"):
                 parent_line_id = line_id
                 line_id = report._get_generic_line_id(

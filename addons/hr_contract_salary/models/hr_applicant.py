@@ -202,14 +202,6 @@ class HrApplicant(models.Model):
             archived_versions.sign_request_ids.write(
                 {"state": "canceled", "active": False}
             )
-            # Only the draft hires this applicant produced. The salary
-            # configurator creates the candidate's employee archived
-            # (`controllers/main.py`, `"active": False`) and activates it only
-            # once every signature is in, so an ACTIVE employee here is
-            # somebody who already works for us - an internal candidate, or a
-            # previous offer that was signed. Deleting whatever
-            # `archived_versions.employee_id` pointed at destroyed those too,
-            # along with their live version and their employment record.
             archived_versions.employee_id.filtered(
                 lambda employee: not employee.active
             ).unlink()

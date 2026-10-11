@@ -37,9 +37,6 @@ class TelegramBot(models.Model):
     def _hears_voice_notes(
         self, purpose=TRANSCRIPTION_PURPOSE, filename=None, company=None
     ):
-        """Whether some speech engine may hear a voice note -- or the recording
-        named `filename` -- under the policy of `company`, else the
-        environment's, for `purpose`."""
         mimetype = mimetype_of(filename) if filename else VOICE_NOTE_MIMETYPE
         return can_transcribe(mimetype, self.env, purpose, company)
 
@@ -59,11 +56,6 @@ class TelegramBot(models.Model):
         notice=None,
         company=None,
     ):
-        """What the recording a Telegram message carries says, as `Heard`.
-
-        The chat is told `notice`, if any, and sees the bot typing while the
-        recording is downloaded and heard; the recording is kept nowhere.
-        """
         self.check_singleton()
         payload = voice_payload(message)
         if not payload:
@@ -99,8 +91,6 @@ class TelegramBot(models.Model):
         purpose: str = TRANSCRIPTION_PURPOSE,
         company=None,
     ) -> str | None:
-        """The words of a voice note sent to this bot, or None; the note is
-        heard and kept nowhere."""
         self.check_singleton()
         if not audio:
             return None

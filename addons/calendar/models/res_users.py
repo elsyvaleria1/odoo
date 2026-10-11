@@ -29,7 +29,6 @@ class ResUsers(models.Model):
         return self._get_calendar_event_resources()[self]
 
     def _get_calendar_event_resources(self):
-        """Resolve people through their party, one query per company represented."""
         resources = {}
         for company, users in self.grouped("company_id").items():
             by_partner = users.partner_id._get_calendar_event_resources(company)
@@ -95,9 +94,6 @@ class ResUsers(models.Model):
             vals.get("calendar_default_privacy") or default_privacy
             for vals in vals_list
         ]
-        # kept for internal users only, and a new user's groups are known once
-        # its create has made its grants: through the inverse, the create would
-        # ask them first
         users = super().create(
             [
                 {k: v for k, v in vals.items() if k != "calendar_default_privacy"}
@@ -241,8 +237,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _calendar_provider_client_id(self, provider: str) -> str:
-        """The OAuth client ID `provider`'s calendar authorizes with, "" while
-        its module is not installed."""
         return ""
 
     @api.model

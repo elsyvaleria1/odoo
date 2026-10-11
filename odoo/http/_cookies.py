@@ -15,11 +15,8 @@ from .core import request
 
 _debug = DebugLog(__name__)
 
-# RFC 6265 cookie-octet, less "%": the escape character escapes itself.
 _COOKIE_VALUE_SAFE = "!#$&'()*+-./:<=>?@[]^_`{|}~"
 _MALFORMED_ESCAPE_RE = re.compile(r"%(?![0-9A-Fa-f]{2})")
-# werkzeug < 3.1.9 wrote a value outside cookie-octet as a quoted string with
-# octal slash escapes; browsers still hold those for the cookie's lifetime.
 _LEGACY_QUOTED_RE = re.compile(r'"(?:[^\\"]|\\.)*"')
 _LEGACY_SLASH_ESCAPE_RE = re.compile(rb"\\([0-3][0-7]{2}|.)")
 
@@ -73,8 +70,6 @@ def get_cookie_name(set_cookie_value: str) -> str:
 
 
 def get_cookie_identity(value: str) -> tuple[str, str, str, bool]:
-    # A Set-Cookie field contains one cookie followed by attributes. Unknown
-    # attributes are ignored by browsers, not parsed as additional cookies.
     cookie, *attributes = value.split(";")
     scope = {}
     for attribute in attributes:
@@ -166,8 +161,6 @@ def _set_cookie_on(
         samesite=samesite,
         partitioned=partitioned,
     )
-    # Compare the encoded domain/path that the browser receives, not the
-    # caller's Unicode spelling. Serialize successfully before replacing a cookie.
     _remove_duplicate_cookies(carrier)
 
 

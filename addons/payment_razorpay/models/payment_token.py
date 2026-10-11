@@ -8,19 +8,11 @@ class PaymentToken(models.Model):
     _inherit = "payment.token"
 
     def _razorpay_get_limit_exceed_warning(self, amount, currency_id) -> str:
-        """Return a warning message when the maximum payment amount is exceeded.
-
-        :param float amount: The amount to be paid.
-        :param currency_id: The currency of the amount.
-        :return: A warning message when the maximum payment amount is exceeded.
-        :rtype: str
-        """
         self.check_singleton()
 
         if not amount or self.provider_code != "razorpay":
             return ""
 
-        # Try to get the maximum amount based on the transaction from which this token was created.
         Transaction = self.env["payment.transaction"]
         primary_tx = Transaction.search(
             [
@@ -31,7 +23,7 @@ class PaymentToken(models.Model):
         )
         if primary_tx:
             mandate_max_amount = primary_tx._razorpay_get_mandate_max_amount()
-        else:  # Get the maximum amount based on the token's payment method code.
+        else:
             pm = (
                 self.payment_method_id.primary_payment_method_id
                 or self.payment_method_id
@@ -43,7 +35,6 @@ class PaymentToken(models.Model):
                 mandate_max_amount_INR, currency_id
             )
 
-        # Return the warning message if the amount exceeds the maximum amount; else an empty string.
         if amount > mandate_max_amount:
             return self.env._(
                 "You can not pay amounts greater than %(currency_symbol)s %(max_amount)s with this"

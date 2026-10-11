@@ -144,8 +144,6 @@ class TestAccessDeviceWebhookAuth(DeviceHttpCase):
                 "Authorization": f"Bearer {tracker.credential_id.sudo().credential_value}"
             },
         )
-        # No access-control device answers to that identifier: it is unknown
-        # here, whatever it is elsewhere.
         self.assertEqual(response.status_code, 404)
 
     def test_audit_mode_keeps_unprovisioned_readers_working(self):

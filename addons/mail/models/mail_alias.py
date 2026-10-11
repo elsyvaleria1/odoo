@@ -433,8 +433,6 @@ class MailAlias(models.Model):
     @api.model
     @ormcache(cache="mail")
     def _get_alias_addresses(self) -> AliasAddresses:
-        # One query builds the whole cache: the parent's model name is joined
-        # in rather than read through ir.model afterwards.
         self.flush_model(
             [
                 "alias_name",

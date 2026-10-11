@@ -56,15 +56,12 @@ class WhatsAppCalendar(WhatsAppCommon, MockOutgoingWhatsApp, CronMixinCase):
 
     @freeze_time("2023-12-19 10:00:00")
     def test_whatsapp_alarm(self):
-        """Test that whatsapp alarm sends message(s) to suitable partner(s) based on the notify_responsible configuration."""
         now = fields.Datetime.now()
-        # Ensure consistent phone number when demo data is missing
         self.env.ref("base.partner_admin").phone_ids = [
             Command.create({"number": "+1 555-555-5555", "type": "mobile"})
         ]
         for calendar_event, last_call_minutes, expected_phone_numbers in [
             (
-                # Calendar event with notify_responsible and with organizer
                 {
                     "name": "Test calendar event 1",
                     "start": now + relativedelta(minutes=3),
@@ -79,7 +76,7 @@ class WhatsAppCalendar(WhatsAppCommon, MockOutgoingWhatsApp, CronMixinCase):
                     ],
                     "user_id": self.env.ref("base.user_admin").id,
                 },
-                7,  # last call: 7 minutes before current time
+                7,
                 [
                     p._phone_get_number("whatsapp", "mobile").number
                     for p in self.partners
@@ -88,10 +85,9 @@ class WhatsAppCalendar(WhatsAppCommon, MockOutgoingWhatsApp, CronMixinCase):
                     self.env.ref("base.partner_admin")
                     ._phone_get_number("whatsapp", "mobile")
                     .number
-                ],  # 3 messages sent: one to organizer, two to partners
+                ],
             ),
             (
-                # Calendar event without notify_responsible and with organizer
                 {
                     "name": "Test calendar event 2",
                     "start": now + relativedelta(minutes=6),
@@ -106,14 +102,13 @@ class WhatsAppCalendar(WhatsAppCommon, MockOutgoingWhatsApp, CronMixinCase):
                     ],
                     "user_id": self.env.ref("base.user_admin").id,
                 },
-                4,  # last call: 4 minutes before current time
+                4,
                 [
                     p._phone_get_number("whatsapp", "mobile").number
                     for p in self.partners
-                ],  # 2 messages sent: both to partners
+                ],
             ),
             (
-                # Calendar event without organizer
                 {
                     "name": "Test calendar event 3",
                     "start": now + relativedelta(minutes=9),
@@ -126,11 +121,11 @@ class WhatsAppCalendar(WhatsAppCommon, MockOutgoingWhatsApp, CronMixinCase):
                     ],
                     "user_id": False,
                 },
-                1,  # last call: 1 minute before current time
+                1,
                 [
                     p._phone_get_number("whatsapp", "mobile").number
                     for p in self.partners
-                ],  # 2 messages sent: both to partners
+                ],
             ),
         ]:
             with self.capture_triggers("calendar.ir_cron_scheduler_alarm") as capt:

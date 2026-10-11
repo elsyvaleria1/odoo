@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 
 class PrinterInterface(Interface):
     connection_type = "printer"
-    _loop_delay = 20  # Default delay between calls to get_devices
+    _loop_delay = 20
 
     def __init__(self) -> None:
         super().__init__()
@@ -36,7 +36,6 @@ class PrinterInterface(Interface):
         printers = self.conn.getPrinters()
         devices = self.conn.getDevices()
 
-        # get and adjust configuration of printers already added in cups
         for printer_name, printer in printers.items():
             path = printer.get("device-uri")
             if path and printer_name != self.get_identifier(path):
@@ -45,13 +44,12 @@ class PrinterInterface(Interface):
                     {
                         "already-configured": True,
                         "device-class": device_class,
-                        "device-make-and-model": printer_name,  # give name set in Cups
+                        "device-make-and-model": printer_name,
                         "device-id": "",
                     }
                 )
                 devices.update({printer_name: printer})
 
-        # filter devices (both added and not added in cups) to show as detected by the IoT Box
         for path, device in devices.items():
             identifier, device = self.process_device(path, device)
 
@@ -65,20 +63,14 @@ class PrinterInterface(Interface):
             if (url_is_supported and model_is_valid) or printer_is_usb:
                 discovered_devices.update({identifier: device})
 
-        # Let get_devices be called again every 20 seconds (get_devices of PrinterInterface
-        # takes between 4 and 15 seconds) but increase the delay to 2 minutes if it has been
-        # running for more than 1 hour
         if self.start_time and time.time() - self.start_time > 3600:
             self._loop_delay = 120
             self.start_time = (
-                None  # Reset start_time to avoid changing the loop delay again
+                None
             )
 
         self.printer_devices.update(self.deduplicate_printers(discovered_devices))
 
-        # Devices previously discovered but not found this call
-        # When the printer disconnects it can still be listed in cups and print after reconnecting
-        # Wait for 3 consecutive misses before removing it from the list allows us to avoid errors and unnecessary double prints
         missing = set(self.printer_devices) - set(discovered_devices)
         for identifier in missing:
             printer = self.printer_devices[identifier]
@@ -109,23 +101,6 @@ class PrinterInterface(Interface):
         return identifier, device
 
     def get_identifier(self, path):
-        """
-        Necessary because the path is not always a valid Cups identifier,
-        as it may contain characters typically found in URLs or paths,
-        or it may exceed the length limit.
-
-          - Removes characters: ':', '/', '.', '\', and space.
-          - Removes the exact strings: "uuid=" and "serial=".
-          - Truncates the string to 127 characters.
-
-        Example 1:
-            Input: "ipp://printers/printer1:1234/abcd"
-            Output: "ippprintersprinter11234abcd"
-
-        Example 2:
-            Input: "uuid=1234-5678-90ab-cdef"
-            Output: "1234-5678-90ab-cdef
-        """
         return re.sub(r"[:\/\.\\ ]|(uuid=)|(serial=)", "", path)[:127]
 
     def get_ip(self, device_path):
@@ -266,10 +241,6 @@ class PrinterInterface(Interface):
         )
 
     def set_up_printer_in_cups(self, device: dict) -> bool:
-        """Configure detected printer in cups: ppd files, name, info, groups, ...
-
-        :param dict device: printer device to configure in cups (detected but not added)
-        """
         if device.get("already-configured"):
             return True
         fallback_model = device.get("device-make-and-model", "")

@@ -80,7 +80,6 @@ class TestSubscriptionsPartnership(SubscriptionsPartnershipCommon):
         )
 
     def test_salesmanager_order_cancelation_for_internal_user(self):
-        """Test that a sales manager can cancel an order for an internal user"""
         salesperson_partner = self.env["res.partner"].create(
             {"name": "Sales manager Partner"}
         )

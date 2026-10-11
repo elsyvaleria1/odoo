@@ -30,7 +30,6 @@ class TelegramInboxController(http.Controller):
     def inbox_page(self, bot_id, **_kwargs):
         if not operating(request.env["telegram.bot"]).browse(bot_id).exists():
             raise request.prepare_not_found_error()
-        # the page says what went wrong even when its first call fails
         labels = request.env["telegram.inbox"]._labels()
         return request.prepare_response(
             self._page(bot_id, self._asset_version(), request.csp_nonce, labels),

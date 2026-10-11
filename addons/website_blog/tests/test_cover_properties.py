@@ -44,7 +44,6 @@ class TestCoverProperties(TransactionCase):
         )
 
     def test_unparseable_incoming_properties_are_still_refused(self):
-        """The stored-side fallback must not soften the incoming-side guard."""
         post = self._post()
         with self.assertRaises(ValidationError):
             post.write({"cover_properties": "not json at all"})

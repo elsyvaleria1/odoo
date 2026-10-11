@@ -10,7 +10,6 @@ from odoo.tools import html2plaintext
 
 ODOOBOT_XMLID = "base.partner_root"
 
-# sequence forms -- arrows, double-bang, copyright, keycap digits -- that no
 _EMOJI_BMP_RANGES = (
     (0x231A, 0x231B),
     (0x2328, 0x2328),

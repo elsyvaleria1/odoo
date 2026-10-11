@@ -22,8 +22,6 @@ class DocumentsDocument(models.Model):
         is_download_blocked=None,
         is_access_restricted=None,
     ):
-        # the audience lands as grants, past write: the settings are checked
-        # where every access change passes
         self._check_employee_roots_stay_closed(
             {
                 key: value
@@ -46,9 +44,6 @@ class DocumentsDocument(models.Model):
         )
 
     def _check_employee_roots_stay_closed(self, vals) -> None:
-        # an employees root holds every employee's file: nothing opens it,
-        # sudo included -- a company re-points it instead. Closing is always
-        # allowed, which is how a root is secured
         opening = (
             vals.get("access_internal", "none") != "none"
             or vals.get("access_via_link", "none") != "none"
@@ -56,7 +51,6 @@ class DocumentsDocument(models.Model):
         )
         if not opening or not self.ids:
             return
-        # whoever may write the folder reaches its company
         roots = (
             self.env["res.company"]
             .with_context(active_test=False)
@@ -74,8 +68,6 @@ class DocumentsDocument(models.Model):
             )
 
     def _get_unauthorized_root_document_owners_sudo(self):
-        """As portal users can be employees, and as they need to access their employee related documents
-        via their "My drive", allow portal user that are linked to employee to own root documents"""
         unauthorized_owners_sudo = super()._get_unauthorized_root_document_owners_sudo()
         return unauthorized_owners_sudo.with_context(active_test=False).filtered(
             lambda u: not u.employee_id

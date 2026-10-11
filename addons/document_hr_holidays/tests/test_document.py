@@ -65,5 +65,4 @@ class TestCaseDocumentsBridgeHR(TransactionCaseDocumentsHr):
         self.assertTrue(document.is_access_via_link_hidden)
 
     def test_hr_leave_document_creation_permission_employee_only(self):
-        """Test that created hr.leave documents are only viewable by the employee and editable by hr managers."""
         self.check_document_creation_permission(self.leave)

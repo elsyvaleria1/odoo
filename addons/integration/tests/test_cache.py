@@ -364,7 +364,7 @@ class TestResponseCache(APITransportTestCase):
                     )
                     new_cr.commit()
                     successful_writes.append(thread_id)
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:
                 errors.append((thread_id, repr(e)))
 
         self.assertEqual(

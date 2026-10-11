@@ -23,10 +23,6 @@ class AccessPolicy:
     __slots__ = ()
 
     def model_allowed(self, env: Environment, model_name: str, operation: str) -> bool:
-        # the hot path of every model-level question: the environment keeps
-        # its verdicts for as long as its principal's signature holds, and a
-        # verdict it has not asked yet comes from the registry's, keyed on
-        # that signature
         if env.su:
             return True
         principal = env._principal_verdicts
@@ -45,8 +41,6 @@ class AccessPolicy:
             if registry.ready or principal.pinned:
                 verdict = env[model_name]._access_verdict(operation)
             else:
-                # the verdict's own cache keys read the signature again, twice;
-                # the rows cannot change within the check, only between checks
                 principal.pinned = True
                 try:
                     verdict = env[model_name]._access_verdict(operation)
@@ -56,9 +50,6 @@ class AccessPolicy:
         return verdict
 
     def _principal(self, env: Environment) -> PrincipalVerdicts:
-        # the environment's principal, read again once a cache group was
-        # cleared or its signature's validity ran out; not kept while modules
-        # load, where the rows in play change without a clear
         principal = env._principal_verdicts
         if principal.pinned:
             return principal
@@ -92,9 +83,6 @@ class AccessPolicy:
     def field_allowed(
         self, env: Environment, classes: FieldAccessClasses, operation: str
     ) -> bool:
-        # the field's classes grant the operation to the principal, on some
-        # records at least; each class verdict is computed once per principal
-        # and transaction
         return self._field_verdict(env, classes, operation) is not False
 
     def field_domain(
@@ -104,9 +92,6 @@ class AccessPolicy:
         classes: FieldAccessClasses,
         operation: str,
     ) -> Domain | None:
-        # the records of the model the field's classes grant the operation on,
-        # when that differs from record to record; None when the verdict is
-        # the same on every record
         if self._field_verdict(env, classes, operation) is not PER_RECORD:
             return None
         verdicts = env.transaction.access_memo.field_verdicts(env)
@@ -133,8 +118,6 @@ class AccessPolicy:
     def _field_verdict(
         self, env: Environment, classes: FieldAccessClasses, operation: str
     ) -> Verdict:
-        # the AND of the field's classes, or of its alternative classes; the
-        # hot path of every field check, so the class loop is inlined
         if operation == "read":
             keys, alternative = classes.read, classes.read_alternative
         else:
@@ -182,9 +165,6 @@ class AccessPolicy:
     def label_domain(
         self, env: Environment, model_name: str, label: str, operation: str
     ) -> Domain:
-        # the records of the model whose label class grants the principal the
-        # operation: unlabelled, labelled with a class it holds everywhere, or
-        # with one it holds on some records, there only
         verdicts = env.transaction.access_memo.field_verdicts(env)
         access = env["ir.access"]
         everywhere = []
@@ -282,6 +262,4 @@ class AccessPolicy:
         return env["ir.access"]._bound_access_rows(model_name, operation)
 
 
-# every registry decides from the ir.access model it hosts; an in-memory one
-# that hosts none raises its tier's marker the moment a principal is checked
 ACCESS_POLICY = AccessPolicy()

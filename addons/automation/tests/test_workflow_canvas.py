@@ -145,7 +145,6 @@ class TestStepRemoval(TestWorkflowCanvasState):
         )
 
     def test_the_withheld_step_is_the_one_that_cannot_be_unlinked(self):
-        """The flag's whole reason, measured rather than asserted."""
         self._record_a_run_over(self.second)
 
         with self.assertRaises(IntegrityError), mute_logger("odoo.db.cursor"):
@@ -163,13 +162,6 @@ class TestStepRemoval(TestWorkflowCanvasState):
         self.assertTrue(self.env["workflow.edge"].browse(edge_ids[1]).exists())
 
     def test_a_run_of_another_company_still_withholds_the_step(self):
-        """The flag answers for Postgres, not for the reader's companies.
-
-        `automation.runtime.line` carries a global multi-company rule, so a
-        reader outside the run's company sees no line for it. Read without
-        `sudo` the payload offered this step for removal and the constraint then
-        refused it, which is the one shape the flag exists to prevent.
-        """
         elsewhere = self.env["res.company"].create({"name": "Elsewhere Co"})
         runtime = self.env["automation.runtime"].create(
             {

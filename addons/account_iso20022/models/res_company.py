@@ -40,8 +40,6 @@ class ResCompany(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            # Overridden in order to set the name of the company as default value
-            # for iso20022_initiating_party_name field
             name = vals.get("name")
             if name and "iso20022_initiating_party_name" not in vals:
                 vals["iso20022_initiating_party_name"] = normalize_communication(name)
@@ -49,10 +47,6 @@ class ResCompany(models.Model):
 
     @api.depends("partner_id.country_id")
     def _compute_iso20022_orgid(self) -> None:
-        """Set default value if missing for :
-        - iso20022_orgid_issr, which correspond to the field 'Issuer' of an 'OrganisationIdentification', as described in ISO 20022.
-        - iso20022_orgid_id, which correspond to the field 'Identification' of an 'OrganisationIdentification', as described in ISO 20022.
-        """
         for company in self:
             if company.iso20022_orgid_id or company.iso20022_orgid_issr:
                 continue

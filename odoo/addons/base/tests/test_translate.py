@@ -35,8 +35,6 @@ re_escaped_replacements = {"n": "\n", "t": "\t"}
 
 
 def _install_only_languages(env, *codes: str) -> None:
-    # The database may run languages of its own (marin activates es_MX), and the
-    # classes calling this compare translations against the exact installed set.
     Lang = env["res.lang"]
     for code in codes:
         Lang._activate_lang(code)

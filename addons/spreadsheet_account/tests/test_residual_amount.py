@@ -89,7 +89,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
             }
         )
 
-        # Post the move and payment and reconcile them
         (cls.move_22 + cls.move_23).action_post()
         (cls.payment_move_22 + cls.payment_move_23).action_post()
         (cls.move_22 + cls.payment_move_22.move_id).line_ids.filtered(
@@ -105,9 +104,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_residual_no_account_codes(self):
-        """Tests that when no account codes are provided, we are returned the residual
-        amount for the receivable and payable accounts.
-        """
         residual_amount = self.env["account.account"].spreadsheet_fetch_residual_amount(
             [
                 {
@@ -139,7 +135,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_residual_yearly(self):
-        """Test that only moves in the given year are returned when performing a yearly filtering."""
         residual_amount = self.env["account.account"].spreadsheet_fetch_residual_amount(
             [
                 {
@@ -156,7 +151,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         self.assertEqual(residual_amount, [{"amount_residual": 1500 - 150}])
 
     def test_residual_quarterly(self):
-        """Test that only moves in the given quarter are returned when performing a quarterly filtering."""
         residual_amount = self.env["account.account"].spreadsheet_fetch_residual_amount(
             [
                 {
@@ -190,7 +184,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_residual_daily(self):
-        """Test that only moves in the given day are returned when performing a daily filtering."""
         residual_amount = self.env["account.account"].spreadsheet_fetch_residual_amount(
             [
                 {

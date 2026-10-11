@@ -355,7 +355,6 @@ class TestStudioApprovalPost(StudioApprovalCase):
         )
 
     def test_approval_method_patch_sudo(self):
-        """Studio let any sudo() call through its gate; a binding lets only the superuser."""
         partner = self.env["res.partner"].with_user(self.user).search([], limit=1)
         self._step(method="open_commercial_entity")
         result = partner.with_user(self.user).sudo().open_commercial_entity()

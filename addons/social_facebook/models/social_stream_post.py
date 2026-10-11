@@ -25,7 +25,7 @@ class SocialStreamPost(models.Model):
     facebook_likes_count = fields.Integer(string="Likes")
     facebook_reactions_count = fields.Char(
         string="Reactions Count"
-    )  # contains a JSON like {"LIKE": 1337, "CARE": 1234}
+    )
     facebook_user_likes = fields.Boolean(string="User Likes")
     facebook_comments_count = fields.Integer(string="Comments")
     facebook_shares_count = fields.Integer(string="Shares")
@@ -60,9 +60,6 @@ class SocialStreamPost(models.Model):
                 post.facebook_author_id == post.account_id.facebook_account_id
             )
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     def _facebook_remove_comment(self, comment_id) -> bool:
         self.env["ir.egress"].request(
@@ -138,8 +135,6 @@ class SocialStreamPost(models.Model):
         params = {
             "message": message,
             "access_token": self.stream_id.account_id.facebook_access_token,
-            # The response received from the post request to post the comment
-            # does not return all the fields mentioned here.
             "fields": self.FACEBOOK_COMMENT_FIELDS,
         }
 
@@ -147,7 +142,6 @@ class SocialStreamPost(models.Model):
             params.update({"attachment_id": existing_attachment_id})
 
         extracted_url = self.env["social.post"]._extract_url_from_message(message)
-        # can't combine with images
         if extracted_url and not attachment and not existing_attachment_id:
             params.update({"link": extracted_url})
 
@@ -161,7 +155,7 @@ class SocialStreamPost(models.Model):
                 files={"source": ("source", attachment.read(), attachment.content_type)}
                 if attachment
                 else None,
-                timeout=15,  # can take some time if there are attached images to upload
+                timeout=15,
             )
             .json()
         )
@@ -198,9 +192,6 @@ class SocialStreamPost(models.Model):
                 data=params,
             )
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     @api.model
     def _format_facebook_published_date(self, comment):
@@ -221,10 +212,8 @@ class SocialStreamPost(models.Model):
             return super()._get_matching_post()
 
     def _format_facebook_comment(self, comment):
-        """Modify `comment` for the web client."""
         comment = {
             **comment,
-            # overwrite comment keys
             "formatted_created_time": self._format_facebook_published_date(comment),
             "message": self.stream_id._format_facebook_message(
                 comment.get("message"), comment.get("message_tags")
@@ -239,6 +228,5 @@ class SocialStreamPost(models.Model):
         if "from" not in comment:
             comment["from"] = {"name": self.env._("Unknown")}
         if comment.get("attachment", {}).get("type") == "sticker":
-            # stickers are just image
             comment["attachment"]["type"] = "photo"
         return comment

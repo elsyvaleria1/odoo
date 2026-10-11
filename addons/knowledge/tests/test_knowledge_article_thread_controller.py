@@ -10,18 +10,12 @@ class TestKnowledgeArticleThreadController(KnowledgeArticlePermissionsCase, Http
         cls.Threads = cls.env["knowledge.article.thread"].with_context(
             {"mail_create_nolog": True}
         )
-        # readable article for portal and employee
         cls.readable_article = cls.article_read_contents[1]
-        # readable and writable thread for portal and employee
         cls.readable_article_thread = cls.Threads.create(
             {"article_id": cls.readable_article.id}
         )
 
     def test_mail_threads_messages_as_portal(self):
-        """
-        Test that a portal user can properly access attachments through
-        access tokens for comments in the Thread of an Article they have read
-        access to."""
         employee_attachment = self.env["ir.attachment"].create(
             {
                 "name": "Employee attachment",

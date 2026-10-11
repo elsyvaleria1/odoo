@@ -36,7 +36,6 @@ class MarketingTestPerformance(models.Model):
     )
     description = fields.Text()
     customer_id = fields.Many2one("res.partner", "Partner")
-    # dummy selection fields to easily write server actions
     selection_field = fields.Selection(
         [("key1", "Key 1"), ("key2", "Key 2"), ("key3", "Key 3")]
     )

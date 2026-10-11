@@ -58,7 +58,7 @@ def get_neutralization_queries(modules: Iterable[str]) -> Iterator[str]:
 
 def neutralize_database(cursor: SqlReader) -> None:
     with _debug.perf("modules.neutralize", cr=cursor) as span:
-        executed = 0  # debuglog
+        executed = 0
         for module, query in iter_neutralization_queries(
             get_installed_module_names(cursor)
         ):
@@ -71,6 +71,6 @@ def neutralize_database(cursor: SqlReader) -> None:
                     f"while neutralizing {module} ({module}/data/neutralize.sql)"
                 )
                 raise
-            executed += 1  # debuglog
+            executed += 1
         span.set(executed=executed)
     _logger.info("Neutralization finished")

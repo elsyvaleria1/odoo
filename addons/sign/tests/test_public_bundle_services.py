@@ -4,8 +4,6 @@ from odoo.addons.web.tests.bundle_services import BundleServicesCase, addon_sour
 
 PUBLIC_BUNDLES = ("sign.assets_public_sign", "web.assets_frontend")
 
-# NextDirectSignDialog ships in the public bundles through the dialogs/** glob,
-# but only the backend action passes the name_list that makes _sign() open it.
 BACKEND_ONLY_REQUIREMENTS = {
     "/sign/static/src/dialogs/next_direct_sign_dialog.js": {"action"},
 }

@@ -17,12 +17,6 @@ class TestGpsKanbanAnchors(TransactionCase):
 
     @staticmethod
     def _container_of(node):
-        """The nearest ancestor that is a real element, not a `t-if` wrapper.
-
-        Everything this module inserts is wrapped in
-        `<t t-if="record.gps_device_id.raw_value">`, so the immediate parent of
-        an inserted node is that `t` and carries no class of its own.
-        """
         parent = node.getparent()
         while parent is not None and parent.tag == "t":
             parent = parent.getparent()
@@ -93,8 +87,6 @@ class TestGpsKanbanAnchors(TransactionCase):
         )
 
     def test_the_fleet_badges_land_in_the_card_body(self):
-        """Core fleet's card is a bare `<main>`: it ships no badge strip, no
-        footer and no title block, so the badges hang off `<main>` itself."""
         arch = self._card("asset_ledger.resource_asset_view_kanban_fleet")
 
         badges = [
@@ -134,8 +126,6 @@ class TestGpsKanbanAnchors(TransactionCase):
         )
 
     def test_the_connection_badge_follows_the_name_on_every_card(self):
-        """agromarin's own card keeps a title block; core fleet's does not, so
-        there the badge follows the name inside `<main>`."""
         for xml_id, expected in (
             ("asset_ledger.resource_asset_view_kanban_fleet", {"main"}),
             ("asset_ledger.resource_asset_view_kanban_general", {"div"}),
@@ -155,7 +145,6 @@ class TestGpsKanbanAnchors(TransactionCase):
                 )
 
     def _column_of(self, arch, icon_class):
-        """The live-status column whose icon carries `icon_class`."""
         column = next(
             (
                 icon.getparent()
@@ -170,11 +159,6 @@ class TestGpsKanbanAnchors(TransactionCase):
         return column
 
     def test_an_empty_tank_is_not_reported_as_no_data(self):
-        """`0` is falsy in JS, so guarding a value branch on the value's own
-        truthiness sends an empty tank to the "N/A" branch -- and empty is
-        precisely the reading worth seeing. The speed column beside it already
-        knows this and writes `|| 0`.
-        """
         arch = self._card("asset_ledger.resource_asset_view_kanban_fleet")
         column = self._column_of(self._live_status_block(arch), "fa-gas-pump")
 
@@ -197,11 +181,6 @@ class TestGpsKanbanAnchors(TransactionCase):
         )
 
     def test_every_gps_field_the_fleet_card_fetches_is_rendered(self):
-        """A field in the kanban's <field> list is fetched for every card, and
-        all of these are non-stored related fields reaching into device.device.
-        An unrendered one is therefore computed and thrown away once per card.
-        gps_battery_level was exactly that.
-        """
         arch = self._card("asset_ledger.resource_asset_view_kanban_fleet")
         rendered = etree.tostring(arch, encoding="unicode")
 
@@ -230,10 +209,6 @@ class TestGpsDeviceKanbanAsset(TransactionCase):
         )
 
     def test_the_asset_is_rendered_as_a_many2one(self):
-        """asset_id is a Many2one. An x2many widget such as many2many_tags
-        breaks the web client's arch parser on the whole kanban, so the GPS
-        Devices action would not open at all.
-        """
         arch = self._card()
         widgets = [
             node.get("widget")
@@ -245,8 +220,6 @@ class TestGpsDeviceKanbanAsset(TransactionCase):
         self.assertEqual(set(widgets), {None})
 
     def test_the_asset_line_shows_when_an_asset_is_assigned(self):
-        """A Many2one's raw value has no length; a `.length` guard hid the line
-        on every card."""
         lines = self._card().xpath("//div[@name='asset_line']")
 
         self.assertEqual(len(lines), 1)

@@ -4,10 +4,10 @@ import io
 import logging
 
 import docutils.core
-import docutils.nodes  # noqa: F401  registers node classes with docutils
-import docutils.parsers.rst.directives  # noqa: F401  registers rst directives
-import docutils.parsers.rst.directives.admonitions  # noqa: F401  registers admonitions
-import docutils.parsers.rst.roles  # noqa: F401  registers rst roles
+import docutils.nodes
+import docutils.parsers.rst.directives
+import docutils.parsers.rst.directives.admonitions
+import docutils.parsers.rst.roles
 
 from odoo.libs.docstring import RST_INFO_FIELDS
 from odoo.tests.common import tagged
@@ -275,7 +275,7 @@ class TestDocstring(LintCase):
 
         class _Fake:
             def method(self):
-                """:returns set: the ids"""
+                pass
 
         offenders = []
         try:

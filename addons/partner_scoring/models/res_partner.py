@@ -7,7 +7,6 @@ class ResPartner(models.Model):
 
     _score_line_model = "partner.score.line"
 
-    # Fields that can move a partner in or out of being the commercial entity.
     _COMMERCIAL_FIELDS = ("parent_id", "is_company", "type")
 
     attribute_line_ids = fields.One2many(
@@ -70,10 +69,6 @@ class ResPartner(models.Model):
         tier_model = self.env["partner.tier"]
         commercial = self.filtered(lambda p: p.commercial_partner_id == p)
         for partner in commercial:
-            # The partner's own company, never the acting user's: this field is
-            # stored and shared, so falling back to env.company would store
-            # whichever scale the last user to trigger the compute happened to
-            # be in. A company-less partner resolves against company-less bands.
             partner.tier_id = (
                 tier_model._classify(partner.score, partner.company_id)
                 if partner.score_line_count

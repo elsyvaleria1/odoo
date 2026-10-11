@@ -95,8 +95,6 @@ class TestCardLedger(TransactionCase):
         asset = self._asset("SN-HWY-NEW")
         toll = self._card(asset, self.toll_account, "T-NEW", opening=500.0)
         self._log(asset, self.toll_product, 150.0, state="new")
-        # `cancelled` is not an entry state: reach it the way the machine
-        # does, from `new`.
         self._log(asset, self.toll_product, 100.0, state="new").action_set_cancelled()
         self.assertEqual(toll.amount_balance, 500.0)
 

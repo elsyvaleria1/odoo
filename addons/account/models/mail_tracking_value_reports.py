@@ -8,7 +8,6 @@ class MailTrackingValue(models.Model):
     _inherit = "mail.tracking.value"
 
     def _tracking_value_format_model(self, model):
-        """Label the workflow-specific state field of a return as "State" in the chatter."""
         formatted_list = super()._tracking_value_format_model(model)
 
         if model != "account.return":

@@ -53,8 +53,6 @@ _SENSITIVE_KEY_FRAGMENTS: tuple[str, ...] = (
     "x_amz_signature",
 )
 
-# Words too short or too common to find inside a longer one ("pass" in
-# "compass", "sid" in "inside"), matched only as a whole word of the key.
 _SENSITIVE_KEY_WORDS: tuple[str, ...] = (
     "pass",
     "otp",
@@ -85,8 +83,6 @@ _VALUE_SHAPES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("github_token", re.compile(r"\bgh[pousr]_[a-zA-Z0-9]{36}\b")),
     ("github_fine_grained_token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{22,}")),
     ("slack_token", re.compile(r"\bxox[abposr]-[A-Za-z0-9-]{10,}")),
-    # tried once per run, from its start to its first eyJ (a later one fails
-    # with it): tried after every "-", an "eyJa-" run was rescanned per start
     (
         "json_web_token",
         re.compile(
@@ -113,11 +109,8 @@ REGISTERED_PATTERNS: list[
     tuple[re.Pattern[str], str | Callable[[re.Match[str]], str]]
 ] = []
 
-# a scheme starts only where its run of scheme characters does: tried from
-# every word boundary, a long hyphenated or dotted run was rescanned per start
 _URL_IN_TEXT = re.compile(r"(?<![A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]*+://[^\s'\"<>]+")
 
-# "auth" is a fragment everywhere but in "author", which names a person
 _SENSITIVE_KEY = re.compile(
     "|".join(
         "auth(?!or)" if fragment == "auth" else re.escape(fragment)
@@ -125,9 +118,6 @@ _SENSITIVE_KEY = re.compile(
     )
 )
 
-# A key is one identifier run, found at its start only, so a run is scanned
-# once however many fragments repeat in it; it is sensitive when a fragment
-# is followed by nothing or by further _/- segments, as in secret_key.
 _KEY_CANDIDATE = re.compile(r"(?<![A-Za-z0-9_-])[A-Za-z0-9_-]++(?=[\"']?\s*[:=])")
 _SENSITIVE_KEY_TAIL = re.compile(
     "(?:"
@@ -137,10 +127,6 @@ _SENSITIVE_KEY_TAIL = re.compile(
     )
     + ")(?=[_-]|$)"
 )
-# A bare value ends before a run of , ) ] } that closes the structure around
-# it (a run followed by a delimiter or the end), so masking `'token': 1},`
-# keeps the `},`; a value opening a bracket, or a call such as Decimal(...),
-# is masked through its balanced close.
 _KEY_VALUE_AFTER = re.compile(
     r"(?i)(?P<sep>[\"']?\s*[:=]\s*)"
     r"(?:(?P<prefix>b?)(?P<quote>[\"'])(?:\\[\s\S]?|(?!(?P=quote))[^\\])*(?:(?P=quote)|\Z)"
@@ -153,9 +139,6 @@ _NESTED_TOKEN = re.compile(
     r"""[^()\[\]{}'"]++|(['"])(?:\\[\s\S]?|(?!\1)[^\\])*+(?:\1|\Z)|[(\[{]|[)\]}]"""
 )
 _LITERALS = frozenset(("True", "False", "None", "true", "false", "null"))
-# a card label masked before it got here: four or more mask glyphs, in
-# groups, then the card's last four digits ("•••• 4242"); a short glyph run
-# such as "*1234" may well be a secret
 _MASKED_LABEL = re.compile(r"[•●*]{4}(?:[ -]?[•●*]{4})*[ -]?\d{4}(?!\w)")
 
 _LABEL_TAIL = re.compile(r"[.,:;!?]")
@@ -204,8 +187,6 @@ def _apply_registered(value: str) -> str:
     return value
 
 
-# a value that is itself a URL (a login's `redirect=`) carries its own query,
-# encoded, which the pair split above cannot see into
 _NESTED_URL_DEPTH = 3
 
 
@@ -269,8 +250,6 @@ def _mask_url(url: str, depth: int) -> str:
     )
 
 
-# a sensitive word counting or naming a record (token_count, session_id) whose
-# value is a plain number carries no secret
 _COUNTER_KEY = re.compile(r"(?:^|[_-])(?:count|total|length|len|size|limit|ttl|id)$")
 _DIGITS = re.compile(r"\d+")
 
@@ -317,9 +296,6 @@ def _match_end(pattern: re.Pattern[str], text: str, at: int) -> int:
 
 
 def _balanced_end(text: str, start: int) -> int:
-    # each bracket closes only its own opener. In `Xy7(Q]zz9` the `]` closes
-    # nothing, and nothing tells where the value ends: like an unclosed
-    # structure, it runs to the end of the text, where whatever it held still is
     expected: list[str] = []
     pos = start
     while token := _NESTED_TOKEN.match(text, pos):
@@ -335,9 +311,6 @@ def _balanced_end(text: str, start: int) -> int:
 
 
 def _label_spans(text: str, start: int, end: int) -> bool:
-    # "•••• 4242" stops the bare value at its space; the label must still
-    # cover the whole value but for one closing punctuation mark, or
-    # "****1234-hunter2" and "****1234!@#$" pass as one
     label = _MASKED_LABEL.match(text, start)
     return label is not None and (
         label.end() >= end or _LABEL_TAIL.fullmatch(text, label.end(), end) is not None
@@ -352,8 +325,6 @@ def _value_mask(
         return None
     start = value.end("sep")
     if value["open"] is not None:
-        # what is glued after the close belongs to the value too:
-        # `pa(ss)word123` is one password
         closed = _balanced_end(text, value.start("open"))
         end = max(
             _match_end(_BARE_VALUE, text, start), _match_end(_BARE_TAIL, text, closed)
@@ -405,9 +376,6 @@ def _listed_key_pattern(keys: frozenset[str]) -> re.Pattern[str]:
     return re.compile(rf"""(?<![\w.-])(?P<kq>['"]?)(?:{names})(?=(?P=kq)\s*[:=])""")
 
 
-# A bounded mask reads this much past the limit, so a secret straddling the
-# cut is still matched whole: every fixed-length shape is far shorter, and the
-# open-ended ones (a quoted value, a PEM block) match to the end of the window.
 _WINDOW_MARGIN = 4096
 
 
@@ -424,8 +392,6 @@ def mask_text(
     return _mask_text(str(text), listed)
 
 
-# What every match of a shape contains, found far faster than the shape: a
-# text without it skips that shape's scan, the bulk of the mask's cost.
 _SHAPE_GATES: dict[str, re.Pattern[str]] = {
     "private_key_pem": re.compile(r"PRIVATE KEY(?: BLOCK)?-----"),
     "github_token": re.compile(r"gh[pousr]_"),
@@ -442,9 +408,6 @@ _SHAPE_GATES: dict[str, re.Pattern[str]] = {
 
 def _mask_text(text: str, keys: frozenset[str] = frozenset()) -> str:
     masked = _apply_registered(text)
-    # a PEM block first: a key-value pass ahead of it would mask only its
-    # first line under a key such as private_key, and the shape no longer
-    # matches the body left behind
     if "-----BEGIN" in masked:
         masked = _PEM.sub(MASK, masked)
     masked = _URL_IN_TEXT.sub(lambda match: mask_url(match.group(0)), masked)
@@ -512,8 +475,6 @@ _WALKED = (Mapping, list, tuple, set, frozenset)
 
 
 def _item_pairs(value: typing.Any) -> list[tuple[typing.Any, typing.Any]] | None:
-    # header and multi-value containers (werkzeug Headers, email messages) are
-    # no Mapping, yet carry their credentials as (name, value) items
     items = getattr(value, "items", None)
     if isinstance(value, (str, bytes)) or not callable(items):
         return None
@@ -542,7 +503,6 @@ def dump_masked(
 ) -> str:
     limit = max_bytes or None
     if limit is None:
-        # nothing to stop early for: the C encoder over the masked copy is faster
         try:
             return json.dumps(
                 mask_data(data, max_depth=max_depth), default=_json_default

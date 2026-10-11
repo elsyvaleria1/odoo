@@ -261,13 +261,6 @@ class TestPartnerAgeRange(TransactionCase):
         )
 
     def test_15_a_cohort_name_is_unique_regardless_of_casing(self):
-        """UNIQUE(name) let "Baby boomer" and "baby boomer" both exist.
-
-        The rule is a unique index over lower(name) rather than a constraint,
-        which is a conversion the framework refused to perform until
-        2c60f5f3d33: it left the old constraint in force and the database
-        unupgradable afterwards.
-        """
         self.AgeRange.create({"min_value": 1400, "max_value": 1410, "name": "Casing"})
         with self.assertRaises(UniqueViolation):
             with self.env.cr.savepoint():
@@ -276,9 +269,6 @@ class TestPartnerAgeRange(TransactionCase):
                 )
 
     def test_16_an_overlap_inside_one_batch_is_still_rejected(self):
-        """The scale is searched once for the batch, so the batch's own members
-        have to be compared in memory or two overlapping cohorts created
-        together would both pass."""
         with self.assertRaises(ValidationError):
             self.AgeRange.create(
                 [
@@ -288,12 +278,6 @@ class TestPartnerAgeRange(TransactionCase):
             )
 
     def test_17_checking_a_scale_does_not_cost_a_query_per_band(self):
-        """`_check_band` ran one sibling search per record, from a constraint.
-
-        The assertion is on scaling rather than on a number: what matters is
-        that a wider batch does not buy more queries, and an exact count would
-        pin every incidental search the create path happens to make today.
-        """
         AgeRange = type(self.AgeRange)
         original = AgeRange.search
         counted = []
@@ -347,12 +331,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         cls.AgeRange.search([]).active = False
 
     def test_the_display_name_names_the_years_the_cohort_contains(self):
-        """The bounds are half-open, which is the module's oldest trap.
-
-        ``max_value`` is the first year *after* the cohort, so the last year it
-        contains is one less. A name that repeats the stored bound would teach
-        the mistake instead of settling it.
-        """
         closed = self.AgeRange.create(
             {"name": "Closed", "min_value": 1965, "max_value": 1981}
         )
@@ -388,11 +366,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.assertEqual(empty.partner_count, 0)
 
     def test_a_gap_in_the_scale_is_reported(self):
-        """A contact born in a gap classifies into nothing, silently.
-
-        ``mixin.band`` rejects overlaps and says nothing about the space
-        between two bands, so a scale can look finished while dropping a decade.
-        """
         self.AgeRange.create({"name": "Low", "min_value": 1000, "max_value": 1010})
         high = self.AgeRange.create(
             {"name": "High", "min_value": 1020, "max_value": 1030}
@@ -413,7 +386,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.assertFalse(second.gap_before)
 
     def test_the_oldest_cohort_is_not_a_gap(self):
-        """Nothing below the oldest band is intended, not uncovered."""
         oldest = self.AgeRange.create(
             {"name": "Oldest", "min_value": 1200, "max_value": 1210}
         )
@@ -421,8 +393,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.assertFalse(oldest.gap_before)
 
     def test_an_empty_cohort_still_appears_in_the_group_by(self):
-        """The group-by is where a distribution is read, so a hole in it reads
-        as "nobody was born then" rather than as an unused band."""
         used = self.AgeRange.create(
             {"name": "Used", "min_value": 1400, "max_value": 1410}
         )
@@ -432,10 +402,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.Partner.create({"name": "Born 1405", "birthdate": "1405-02-02"})
         self.env.flush_all()
 
-        # web_read_group, not formatted_read_group: group_expand is gated on
-        # the read_group_expand context key that web/model/relational_model
-        # sets on every grouped view, so only the client's own entry point
-        # exercises it.
         grouped = self.Partner.with_context(read_group_expand=True).web_read_group(
             [], ["age_range_id"], ["__count"]
         )
@@ -461,22 +427,11 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.assertIn(partner, found)
 
     def test_an_unnamed_cohort_does_not_render_its_missing_name(self):
-        """`display_name` is read before the name is typed.
-
-        The form defaults the bounds, so a brand-new record already has a span
-        to render and would otherwise show it beside the string "False".
-        """
         draft = self.AgeRange.new({"min_value": 1600, "max_value": 0})
 
         self.assertFalse(draft.display_name)
 
     def test_closing_a_gap_from_the_neighbour_clears_it(self):
-        """`gap_before` reads the whole scale, which no @api.depends can say.
-
-        Moving the band *below* leaves the reported gap untouched unless the
-        cache is dropped where the scale changes, so a cohort goes on reporting
-        years the edit just covered.
-        """
         below = self.AgeRange.create(
             {"name": "below", "min_value": 1000, "max_value": 1010}
         )
@@ -494,12 +449,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         )
 
     def test_archiving_a_middle_band_opens_a_gap_above_it(self):
-        """An archived band classifies nobody, so it covers nothing either.
-
-        Three bands, not two: archiving the *lowest* one only moves the open
-        lower edge of the scale, which is intended and no gap at all. It takes
-        a band with something still below it to leave a hole behind.
-        """
         self.AgeRange.create({"name": "arch low", "min_value": 1030, "max_value": 1040})
         middle = self.AgeRange.create(
             {"name": "arch middle", "min_value": 1040, "max_value": 1050}
@@ -515,7 +464,6 @@ class TestPartnerAgeRangeScale(TransactionCase):
         self.assertEqual(top.gap_before, "1040-1049")
 
     def test_archiving_the_lowest_band_is_not_a_gap(self):
-        """It becomes the scale's open lower edge, which the oldest band owns."""
         lowest = self.AgeRange.create(
             {"name": "edge low", "min_value": 1070, "max_value": 1080}
         )
@@ -582,7 +530,6 @@ class TestPartnerAgeRangeClassificationRights(TransactionCase):
         )
 
     def test_the_writer_cannot_read_the_cohorts(self):
-        """The fixture is only meaningful while this holds."""
         with self.assertRaises(AccessError):
             self.AgeRange.with_user(self.outsider).search([])
 

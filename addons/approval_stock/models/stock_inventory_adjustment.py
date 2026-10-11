@@ -331,8 +331,6 @@ class StockInventoryAdjustment(models.Model):
         super()._on_approval_reset()
         if self.state != "cancelled":
             return
-        # A count taken against stock that has since moved is recounted into a new
-        # adjustment; reopening it would only be cancelled again on approval.
         if not self.line_ids.filtered(lambda line: line._has_moved()):
             self.state = "draft"
 

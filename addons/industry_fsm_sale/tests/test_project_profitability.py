@@ -17,7 +17,7 @@ class TestIndustryFsmSaleProjectProfitability(TestProjectProfitabilityCommon):
                     "partner_id": cls.partner.id,
                     "partner_invoice_id": cls.partner.id,
                     "partner_shipping_id": cls.partner.id,
-                    "task_id": cls.task.id,  # means the quotation is created via this task.
+                    "task_id": cls.task.id,
                     "line_ids": [
                         Command.create(
                             {
@@ -31,9 +31,6 @@ class TestIndustryFsmSaleProjectProfitability(TestProjectProfitabilityCommon):
         )
 
     def test_profitability_of_non_billable_project(self):
-        """Test no data is found for the project profitability when the project is non billable
-        even if a task of that prooject has an additional quotations confirmed.
-        """
         self.assertFalse(self.project.allow_billable)
         self.assertDictEqual(
             self.project._get_profitability_items(False),

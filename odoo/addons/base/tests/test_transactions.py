@@ -16,7 +16,6 @@ class TestTransactionEnvs(TransactionCase):
         base_env = base_x.env
         self.assertIn(base_env, self._live_envs())
         del base_x
-        # a dropped environment stays for RECENT_ENVIRONMENTS constructions
         self.assertEqual(self._live_envs(), starting_envs | {base_env})
         del base_env
         self._evict_recent_envs()

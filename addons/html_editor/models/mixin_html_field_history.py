@@ -76,7 +76,7 @@ class MixinHtmlFieldHistory(models.AbstractModel):
                 model=self._name,
                 fields=sorted(versioned_fields),
             )
-            raise ValidationError(  # noqa: E8505  a developer error in a model's field declaration
+            raise ValidationError(
                 "Ensure all versioned fields ( %s ) in model %s are declared as sanitize=True"
                 % (str(versioned_fields), self._name)
             )

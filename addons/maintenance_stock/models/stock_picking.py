@@ -8,7 +8,6 @@ _debug = DebugLog(__name__)
 class StockPicking(models.Model):
     _inherit = "stock.picking"
 
-    # FIELDS
     maintenance_order_id = fields.Many2one(
         comodel_name="maintenance.order",
         index="btree_not_null",
@@ -17,7 +16,6 @@ class StockPicking(models.Model):
         help="The maintenance this transfer takes the equipment to, or back from.",
     )
 
-    # CONSTRAINT METHODS
     def _check_returned_equipment(self) -> None:
         for picking in self.filtered(
             lambda picking: picking.maintenance_order_id and picking.return_id
@@ -35,7 +33,6 @@ class StockPicking(models.Model):
                 )
             )
 
-    # ACTION METHODS
     def action_view_maintenance_order(self) -> dict:
         self.check_singleton()
         return {
@@ -46,7 +43,6 @@ class StockPicking(models.Model):
             "target": "current",
         }
 
-    # STOCK METHODS
     def _action_done(self, **kwargs):
         self._check_returned_equipment()
         result = super()._action_done(**kwargs)
@@ -60,13 +56,10 @@ class StockPicking(models.Model):
             returns=coming_back,
         )
         for picking in coming_back:
-            # sudo: closing the order is a consequence of the equipment coming back,
-            # not an edit by whoever receives it, who may have no maintenance rights.
             picking.maintenance_order_id.sudo()._mark_returned(picking)
         (maintenance - coming_back).maintenance_order_id.sudo()._mark_sent()
         return result
 
-    # HELPER METHODS
     def _is_maintenance_return(self) -> bool:
         self.check_singleton()
         depth, picking = 0, self.return_id

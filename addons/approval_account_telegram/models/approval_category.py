@@ -24,9 +24,6 @@ class ApprovalCategory(models.Model):
 
     @api.model
     def _get_telegram_intake_category(self, intake, company):
-        """The category `intake` requests of `company` are filed in: the
-        company's own, else one of no company; none when neither exists or the
-        reader may not see it."""
         categories = self.search(
             [
                 ("telegram_intake", "=", intake),

@@ -71,7 +71,6 @@ class TestScheduleRelativePayslip(TransactionCase):
 
     def test_payslip_adapting_to_schedule(self):
         with freeze_time("2023-01-12"):
-            # Test default monthly payslip
             payslip_monthly = self.env["hr.payslip"].new(
                 {
                     "name": "Black Spot",
@@ -90,7 +89,6 @@ class TestScheduleRelativePayslip(TransactionCase):
                 f"Delta for monthly payslip should be {PAY_SCHEDULES['monthly']} days",
             )
 
-            # Test other pay schedules
             for pay_schedule, expected_delta in PAY_SCHEDULES.items():
                 self.billy_contract.write(
                     {

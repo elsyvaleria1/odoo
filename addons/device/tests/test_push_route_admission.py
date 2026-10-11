@@ -104,7 +104,6 @@ class TestPushRouteAdmission(DeviceHttpCase):
         )
 
     def test_an_empty_size_limit_is_the_default_not_zero_bytes(self):
-        # a device that predates the column's default holds NULL there
         self.env.cr.execute(
             "UPDATE device_device SET max_payload_size = NULL WHERE id = %s",
             [self.device.id],

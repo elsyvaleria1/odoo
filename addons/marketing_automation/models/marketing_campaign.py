@@ -66,7 +66,6 @@ class MarketingCampaign(models.Model):
         store=True,
         readonly=False,
     )
-    # Mailing Filter
     mailing_filter_id = fields.Many2one(
         comodel_name="mailing.filter",
         string="Favorite Filter",
@@ -83,7 +82,6 @@ class MarketingCampaign(models.Model):
         string="# Favorite Filters",
         compute="_compute_mailing_filter_count",
     )
-    # activities
     marketing_activity_ids = fields.One2many(
         comodel_name="marketing.activity",
         inverse_name="campaign_id",
@@ -106,7 +104,6 @@ class MarketingCampaign(models.Model):
         string="Sync of participants is required",
         compute="_compute_require_sync",
     )
-    # participants
     participant_ids = fields.One2many(
         comodel_name="marketing.participant",
         inverse_name="campaign_id",
@@ -132,7 +129,6 @@ class MarketingCampaign(models.Model):
 
     @api.constrains("model_id", "mailing_filter_id")
     def _check_mailing_filter_model(self) -> None:
-        """Check that if the favorite filter is set, it must contain the same target model as campaign"""
         for campaign in self:
             if (
                 campaign.mailing_filter_id
@@ -186,7 +182,6 @@ class MarketingCampaign(models.Model):
 
     @api.depends("marketing_activity_ids.mass_mailing_id")
     def _compute_mass_mailing_count(self) -> None:
-        # TDE NOTE: this could be optimized but is currently displayed only in a form view, no need to optimize now
         for campaign in self:
             campaign.mass_mailing_count = len(
                 campaign.mapped("marketing_activity_ids.mass_mailing_id").filtered(
@@ -237,8 +232,6 @@ class MarketingCampaign(models.Model):
             campaign.test_participant_count = campaign_data.get("is_test", 0)
 
     def copy(self, default=None):
-        """Copy the activities of the campaign, each parent_id of each child
-        activities should be set to the new copied parent activity."""
         new_compaigns = super().copy(dict(default or {}))
 
         for old_campaign, new_compaign in zip(self, new_compaigns, strict=False):
@@ -289,7 +282,6 @@ class MarketingCampaign(models.Model):
         return super().create(vals_list)
 
     def _prepare_rule_vals(self):
-        """Return values for this campaign's ``automation.rule`` record."""
         self.check_singleton()
         return {
             "name": self.name,
@@ -343,9 +335,6 @@ class MarketingCampaign(models.Model):
                 running = campaign.state == "running"
                 if rule.active != running:
                     rule_vals["active"] = running
-                # a stopped campaign holds its participants where they stand,
-                # and a restarted one moves them on: archiving alone retires a
-                # rule and lets its runs finish
                 if rule.is_paused == running:
                     rule_vals["is_paused"] = not running
                 if rule_vals:
@@ -357,15 +346,10 @@ class MarketingCampaign(models.Model):
         return res
 
     def action_set_synchronized(self) -> None:
-        """Reset campaign and activities 'need synchronization' flags."""
         self.write({"last_sync_date": self.env.cr.now()})
         self.mapped("marketing_activity_ids").write({"require_sync": False})
 
     def action_update_participants(self) -> None:
-        """Bring the running participants of the campaign up to date with its
-        activities: activities added since the participants started get their
-        traces, and delays changed on activities not yet reached apply. What
-        already ran keeps what it ran under."""
         for campaign in self:
             participants = campaign.participant_ids.filtered(
                 lambda participant: participant.state != "unlinked"
@@ -398,7 +382,6 @@ class MarketingCampaign(models.Model):
                 )
             )
 
-        # trigger CRON job ASAP so that participants are synced
         self.env["ir.cron"]._trigger_ref(
             "marketing_automation.ir_cron_campaign_sync_participants",
             self.env.cr.now(),
@@ -422,13 +405,11 @@ class MarketingCampaign(models.Model):
         action["context"] = dict(self.env.context)
         action["context"].update(
             {
-                # defaults
                 "default_mailing_model_id": self.model_id.id,
                 "default_campaign_id": self.utm_campaign_id.id,
                 "default_use_in_marketing_automation": True,
                 "default_mailing_type": "mail",
                 "default_state": "done",
-                # action
                 "create": False,
             }
         )
@@ -442,23 +423,6 @@ class MarketingCampaign(models.Model):
         return action
 
     def sync_participants(self):
-        """Synchronize campaign participants, based on records in DB. New
-        participants are created taking into account campaign filter and unique
-        field. Note that traces for 'begin' activities are created when
-        creating participants.
-
-        If records have been unlinked since last synchornization, matching
-        participants are set as removed.
-
-        It also updates ``last_sync_date`` that is used to know if a new
-        synchronization is necessary, based on activities 'require_sync'
-        flag.
-
-        This method is called by a cron mainly. It can be called manually on
-        campaign form view.
-
-        :return: new participants to the campaign
-        """
 
         def _uniquify_list(seq):
             seen = set()
@@ -466,7 +430,6 @@ class MarketingCampaign(models.Model):
 
         participants = self.env["marketing.participant"]
         now = self.env.cr.now()
-        # auto-commit except in testing mode
         auto_commit = not modules.module.current_test
         for campaign in self.filtered(lambda c: c.marketing_activity_ids):
             if not campaign.last_sync_date:
@@ -475,7 +438,6 @@ class MarketingCampaign(models.Model):
             user_id = campaign.user_id or self.env.user
             RecordModel = self.env[campaign.model_name].with_context(lang=user_id.lang)
 
-            # Fetch existing participants
             participants_data = participants.search_read(
                 [("campaign_id", "=", campaign.id)], ["res_id"]
             )
@@ -487,7 +449,7 @@ class MarketingCampaign(models.Model):
             db_rec_ids = _uniquify_list(RecordModel.search(record_domain).ids)
             to_create = [
                 rid for rid in db_rec_ids if rid not in existing_rec_ids
-            ]  # keep ordered IDs
+            ]
             to_remove = set(existing_rec_ids) - set(db_rec_ids)
             unique_field = campaign.unique_field_id.sudo()
             if unique_field.name != "id":
@@ -497,8 +459,6 @@ class MarketingCampaign(models.Model):
                     .browse(existing_rec_ids)
                     .exists()
                 )
-                # Split the read in batch of 1000 to avoid the prefetch
-                # crawling the cache for the next 1000 records to fetch
                 unique_field_vals = {
                     rec[unique_field.name]
                     for index in range(0, len(existing_records), 1000)
@@ -509,7 +469,6 @@ class MarketingCampaign(models.Model):
                     to_create
                 ):
                     field_val = rec[unique_field.name]
-                    # we exclude the empty recordset with the first condition
                     if (
                         not unique_field.relation or field_val
                     ) and field_val not in unique_field_vals:
@@ -544,24 +503,16 @@ class MarketingCampaign(models.Model):
                 )
                 for index in range(0, len(participants_to_unlink), 1000):
                     participants_to_unlink[index : index + 1000].action_set_unlink()
-                    # Commit only every 100 operation to avoid committing to often
-                    # this mean every 10k record. It should be ok, it takes 1sec second to process 10k
                     if auto_commit and not index % (BATCH_SIZE * 100):
                         self.env["ir.cron"]._commit_progress()
 
         return participants
 
     def execute_activities(self) -> None:
-        """Execute activities by fetching all scheduled traces and execute them
-        if their deadline is in the past. Called by cron or manually on campaign
-        form view."""
         self.env["automation.runtime"].sudo()._dispatch_due_steps(
             rules=self.automation_rule_id.sudo()
         )
 
-    # --------------------------------------
-    # Prepare actions data
-    # --------------------------------------
 
     def _prepare_res_partner_category_tag_hot_data(self) -> dict:
         return {
@@ -580,7 +531,6 @@ class MarketingCampaign(models.Model):
         }
 
     def _prepare_ir_actions_server_partner_tag_data(self) -> dict:
-        # Add the "Hot" category on partners who will click on a mail sent to them.
         self._create_records_with_xml_ids(
             {"res.partner.tag": [self._prepare_res_partner_category_tag_hot_data()]}
         )
@@ -605,7 +555,6 @@ class MarketingCampaign(models.Model):
         }
 
     def _prepare_ir_actions_server_partner_todo_data(self) -> dict:
-        # Assign activity to admin called Bounced: check email address.
         return {
             "xml_id": "marketing_automation.ir_actions_server_partner_todo",
             "values": {
@@ -622,7 +571,6 @@ class MarketingCampaign(models.Model):
         }
 
     def _prepare_ir_actions_server_contact_blacklist_data(self) -> dict:
-        # If mail bounces on some contact, blacklist that contact.
         return {
             "xml_id": "marketing_automation.ir_actions_server_contact_blacklist",
             "values": {
@@ -640,7 +588,6 @@ for record in records:
         }
 
     def _prepare_ir_actions_server_contact_add_list_data(self) -> dict:
-        # If partner clicks on sent mail, add that contact to separate list called 'Confirmed contacts'.
         return {
             "xml_id": "marketing_automation.ir_actions_server_contact_add_list",
             "values": {
@@ -686,9 +633,6 @@ for record in records:
                         }
                     )
 
-    # --------------------------------------
-    # Sample Templates Creation
-    # --------------------------------------
 
     @api.model
     def get_action_marketing_campaign_from_template(
@@ -794,10 +738,6 @@ for record in records:
         }
 
     def _create_campaign_from_template_hot_contacts(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         convert.convert_file(
             self.sudo().env,
             "marketing_automation",
@@ -874,7 +814,7 @@ for record in records:
                                 "mass_mailing_id": None,
                                 "interval_number": 2,
                                 "name": self.env._("Add Tag"),
-                                "campaign_id": campaign.id,  # use the campaign_id here too,
+                                "campaign_id": campaign.id,
                                 "server_action_id": self.env.ref(
                                     "marketing_automation.ir_actions_server_partner_tag"
                                 ).id,
@@ -888,7 +828,7 @@ for record in records:
                                 "mass_mailing_id": None,
                                 "interval_number": 2,
                                 "name": self.env._("Check Bounce Contact"),
-                                "campaign_id": campaign.id,  # use the campaign_id here too,
+                                "campaign_id": campaign.id,
                                 "server_action_id": self.env.ref(
                                     "marketing_automation.ir_actions_server_partner_todo"
                                 ).id,
@@ -901,10 +841,6 @@ for record in records:
         return campaign
 
     def _create_campaign_from_template_welcome(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         convert.convert_file(
             self.sudo().env,
             "marketing_automation",
@@ -925,8 +861,8 @@ for record in records:
             "mailing.mailing": [
                 {
                     "subject": self.env._("Get 10% OFF"),
-                    "body_arch": rendered_template,  # set Yellow 10% template
-                    "body_html": rendered_template,  # set Yellow 10% template
+                    "body_arch": rendered_template,
+                    "body_html": rendered_template,
                     "mailing_model_id": self.env["ir.model"]._get_id("mailing.contact"),
                     "reply_to_mode": "update",
                     "mailing_type": "mail",
@@ -976,7 +912,7 @@ for record in records:
                             "interval_number": 2,
                             "name": self.env._("Blacklist Bounces"),
                             "parent_id": None,
-                            "campaign_id": campaign.id,  # use the campaign_id here too,
+                            "campaign_id": campaign.id,
                             "server_action_id": self.env.ref(
                                 "marketing_automation.ir_actions_server_contact_blacklist"
                             ).id,
@@ -988,10 +924,6 @@ for record in records:
         return campaign
 
     def _create_campaign_from_template_double_opt_in(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         convert.convert_file(
             self.sudo().env,
             "marketing_automation",
@@ -1066,7 +998,7 @@ for record in records:
                             "interval_number": 0,
                             "name": self.env._("Add to list"),
                             "parent_id": None,
-                            "campaign_id": campaign.id,  # use the campaign_id here too,
+                            "campaign_id": campaign.id,
                             "server_action_id": self.env.ref(
                                 "marketing_automation.ir_actions_server_contact_add_list"
                             ).id,
@@ -1078,10 +1010,6 @@ for record in records:
         return campaign
 
     def _create_campaign_from_template_commercial_prospection(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         convert.convert_file(
             self.sudo().env,
             "marketing_automation",
@@ -1181,7 +1109,7 @@ for record in records:
                                 "interval_number": 1,
                                 "name": self.env._("Message for sales person"),
                                 "parent_id": None,
-                                "campaign_id": campaign.id,  # use the campaign_id here too,
+                                "campaign_id": campaign.id,
                                 "server_action_id": self.env.ref(
                                     "marketing_automation.ir_actions_server_partner_message"
                                 ).id,

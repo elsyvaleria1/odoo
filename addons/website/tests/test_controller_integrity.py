@@ -101,10 +101,6 @@ class TestControllerIntegrity(TransactionCase):
                 self.subTest(name=name, encoded_size=len(data)),
                 MockRequest(self.env, website=self.website),
                 patch.object(website_theme, "MAX_FONT_FILE_SIZE", 64),
-                # No `create=True`: it would make a patch aimed at the wrong
-                # module look like it worked, which is how these limits moving
-                # to controllers/theme.py stayed invisible in two of the three
-                # font tests until the others errored.
                 patch.object(website_theme, "MAX_FONT_ARCHIVE_SIZE", 100),
                 patch.object(website_theme, "MAX_FONT_ARCHIVE_ENTRIES", 3),
                 patch.object(
@@ -385,14 +381,6 @@ class TestControllerIntegrity(TransactionCase):
             extract.assert_not_called()
 
     def test_hybrid_results_follow_the_pager_for_out_of_range_pages(self):
-        """The pager decides the window and `autocomplete` renders exactly it.
-
-        `hybrid_list` used to ask for MAX_PAGE_SEARCH_RESULTS rows and slice
-        them itself, which made `len(results)` the pager's total -- a cap
-        reported as a count -- and rendered every row on every page view. It now
-        asks once for the counts and once for the page, so what this pins is the
-        offset it asks for and the page it lands on.
-        """
         page_rows = [{"name": str(i)} for i in range(50)]
         controller = Website()
         for page, expected_offset in [(0, 0), (99, 50), ("2", 50)]:
@@ -401,10 +389,6 @@ class TestControllerIntegrity(TransactionCase):
                 MockRequest(self.env, website=self.website) as req,
             ):
                 req.render = Mock(return_value="<rendered/>")
-                # Every call answers with both counts: the controller reads
-                # them from whichever search renders the page, and a mock
-                # that only answers on one call shape pins the shape rather
-                # than the behaviour.
                 fake_autocomplete = Mock(
                     return_value={
                         "results": page_rows,
@@ -990,9 +974,6 @@ class TestDynamicSnippetTemplates(HttpCase):
             return {t["key"]: t for t in Website().get_dynamic_snippet_templates()}
 
     def test_a_leading_comment_does_not_erase_the_data_attributes(self):
-        """lxml counts a comment as a child, so `children[0]` was the comment and
-        every `data-*` came back None -- the snippet rendered with defaults and
-        nothing said so."""
         templates = self._templates()
         plain = templates["website.dynamic_filter_template_probe_plain"]
         commented = templates["website.dynamic_filter_template_probe_commented"]

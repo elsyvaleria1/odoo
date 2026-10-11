@@ -29,7 +29,6 @@ class UtmSource(models.Model):
                 )
 
     def _generate_name(self, record, content) -> str | None:
-        """Generate the UTM source name based on the content of the source."""
         if not content:
             return None
 

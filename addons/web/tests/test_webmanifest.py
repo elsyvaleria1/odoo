@@ -7,8 +7,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 class WebManifestRoutesTest(HttpCaseWithUserDemo):
     def setUp(self):
         super().setUp()
-        # the manifest names whatever web.web_app_name says, which a deployment
-        # may brand: pin it rather than assume the default
         self.env["ir.config_parameter"].sudo().set_param(
             "web.web_app_name", "Manifest App"
         )

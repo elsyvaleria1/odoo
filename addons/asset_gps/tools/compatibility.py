@@ -2,7 +2,6 @@ from odoo import Command
 
 
 def register_legacy_gps_privileges(env):
-    """Retain old XML IDs while moving their policy to the shared privilege."""
     group = env.ref("device_gps.privilege_read_resource_odometer")
     access = env.ref("device_gps.privilege_read_resource_odometer_logs")
     old_group = env.ref(
@@ -12,7 +11,6 @@ def register_legacy_gps_privileges(env):
         "asset_gps.privilege_read_vehicle_gps_logs", raise_if_not_found=False
     )
     if old_group and old_group != group:
-        # Preserve extensions of the old policy rather than deleting their rows.
         env["ir.access"].search([("group_id", "=", old_group.id)]).write(
             {"group_id": group.id}
         )

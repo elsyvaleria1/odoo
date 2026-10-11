@@ -198,14 +198,6 @@ class HrJob(models.Model):
 
     @api.depends_context("uid")
     def _compute_activity_count(self) -> None:
-        """This user's activities on the still-running applications of these jobs.
-
-        The applications used to be *loaded* only to build an id -> job map, so a
-        job with ten thousand applications read ten thousand records to count a
-        handful of activities. The set is narrowed in SQL instead, and only the
-        applications that actually carry one of this user's activities are
-        mapped back to their job.
-        """
         running = self.env["hr.applicant"]._search(
             [("job_id", "in", self.ids), ("stage_id.hired_stage", "!=", True)]
         )
@@ -239,11 +231,6 @@ class HrJob(models.Model):
 
     @api.depends("application_ids.interviewer_ids")
     def _compute_extended_interviewer_ids(self) -> None:
-        """Every interviewer named on any application of these jobs.
-
-        Aggregated rather than read: ``search_read`` loaded each application and
-        rendered ``job_id``'s display name only to throw both away.
-        """
         interviewers_by_job = defaultdict(set)
         for job, interviewer in (
             self.env["hr.applicant"]
@@ -260,12 +247,6 @@ class HrJob(models.Model):
             ]
 
     def _compute_documents(self) -> None:
-        """Documents on these jobs and on their applications that became nobody.
-
-        The application ids are collected by aggregate rather than by loading
-        `application_ids` for every job, which fetched whole applicant rows to
-        read one column off each.
-        """
         job_by_applicant_id = {
             applicant.id: job
             for job, applicants in self.env["hr.applicant"]._read_group(
@@ -319,11 +300,6 @@ class HrJob(models.Model):
             job.all_application_count = result.get(job.id, 0)
 
     def _compute_application_counts(self) -> None:
-        """Total, hired and first-stage application counts in one read_group.
-
-        The three used to be three ``_read_group`` calls over the same active
-        applications, so a job kanban paid for the same scan three times.
-        """
         first_stage_by_job = self.env["hr.recruitment.stage"]._get_first_stage_by_job(
             self
         )
@@ -461,11 +437,6 @@ class HrJob(models.Model):
         )
 
     def _archive_applications(self) -> None:
-        """Archive the applications still running on these jobs, reversibly.
-
-        Only the active ones: an application refused on its own is already
-        archived and must not be restored by restoring the job.
-        """
         applications = self.application_ids
         _debug.lifecycle("cascade_archive", jobs=self, applications=len(applications))
         if applications:
@@ -533,11 +504,6 @@ class HrJob(models.Model):
 
     @api.model
     def is_recruitment_scenario_loaded(self) -> bool:
-        """Whether ``_action_load_recruitment_scenario`` has already run.
-
-        Keyed on the scenario's xml id rather than on a tag label, so a tag a
-        user happens to name "Demo" neither hides nor fakes the scenario.
-        """
         return bool(
             self.env.ref("hr_recruitment.tag_applicant_demo", raise_if_not_found=False)
         )

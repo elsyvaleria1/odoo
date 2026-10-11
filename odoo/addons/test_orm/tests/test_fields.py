@@ -259,9 +259,6 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
             WHERE model = 'x_test_10_compute_store_x_name' AND name = 'x_name'
         """)
         if not self.registry.loaded:
-            # while modules load, a manual many2one to a model the registry
-            # has not seen is deferred without a field, not skipped with a
-            # warning (ir.model.fields._is_field_ready_now)
             with self.assertNoLogs("odoo.registry", level="WARNING"):
                 self.registry.setup_models(self.cr, ["x_test_10_compute_store_x_name"])
             self.assertNotIn(
@@ -962,11 +959,6 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         self.assertCountEqual(log, ["inverse", "constraint"])
 
     def test_15_constraint_inverse_runs_after_the_inverse_on_create(self):
-        """A constraint over a stored and an inverted field waits for the inverse.
-
-        write always deferred it; create ran it in the stored pass, before the
-        inverse had written, and never again.
-        """
         log = []
         model = self.env["test_orm.compute.inverse"].with_context(
             log=log, log_constraint=True
@@ -1454,9 +1446,6 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
             ]
         )
         self.env.invalidate_all()
-        # the column, one verification per model, the partners' and the
-        # currencies' rows: the record a Reference answers carries the
-        # siblings naming its model as prefetch ids, as a many2one's does
         with self.assertQueryCount(3):
             names = [record.reference.display_name for record in records]
         self.assertEqual(names[1], "ref partner 1")
@@ -2758,8 +2747,6 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         record, dead, live = self._record_relating_to_an_archived_one()
         draft = record.new(origin=record)
         draft.active_relatives_ids = [Command.link(live.id)]
-        # A draft's corecords snapshot their origin, archived flag included, so the
-        # field keeps hiding the archived one; what must survive is the relation.
         field = draft._fields["active_relatives_ids"]
         related = draft.env[field.comodel_name].browse(field._get_raw_ids(draft))
         self.assertEqual(related._origin, dead + live)
@@ -4400,9 +4387,6 @@ class TestHtmlField(TransactionCase):
         self.model = self.env["test_orm.mixed"]
 
     def test_create_sanitizes_once_and_caches_the_column_value(self):
-        """2ea81a5dbb81 dropped html from the create cache to stop a second
-        sanitize; the column value is now cached instead, so a read right
-        after create (every message_post does one) costs neither."""
         dirty = "<p onclick='x'>kept<script>dropped</script></p>"
         with patch(
             "odoo.orm.fields.textual.html_sanitize",
@@ -5030,7 +5014,6 @@ class TestSelectionUpdates(TransactionCase):
 
     def test_selection_related_readonly(self):
         related_record = self.env[self.MODEL_BASE].create({"my_selection": "foo"})
-        # warm the model's defaults cache; the pin counts the create, not the cache
         self.env[self.MODEL_RELATED].create({"selection_id": related_record.id})
         with self.assertQueryCount(1):
             record = self.env[self.MODEL_RELATED].create(
@@ -6309,8 +6292,6 @@ class TestUpdateDbNotNull(TransactionCase):
         self.assertEqual(column_default, "7")
 
     def test_a_decided_default_is_not_repeated_by_the_schema(self):
-        # a callable default answers per record and per environment (the
-        # current company, the clock); the column carries no frozen copy
         model, field = self._apply_notnull(lambda m: m.env.company.id)
         is_nullable, column_default = self._column_state(model, field)
         self.assertEqual(is_nullable, "NO")

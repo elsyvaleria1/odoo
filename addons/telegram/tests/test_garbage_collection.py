@@ -178,8 +178,6 @@ class TestChatAutoVacuum(TelegramBotTestCase):
 
 class TestAutovacuumContract(TelegramBotTestCase):
     def test_every_collection_reports_what_it_did_and_whether_more_remains(self):
-        # the autovacuum takes (done, remaining) or None, and warns about
-        # anything else on every run
         Vacuum = self.env["ir.autovacuum"]
         for model, method in (
             ("telegram.chat", "_gc_expired_flows"),

@@ -159,7 +159,7 @@ class TestResPartner(TestSalesCommon):
                     elif key == "opportunity_count":
                         if hasattr(
                             case["input"], "opportunity_count"
-                        ):  # Only check if input is a partner
+                        ):
                             self.assertEqual(case["input"].opportunity_count, value)
                     elif key == "domain":
                         self.assertEqual(action["domain"], value)

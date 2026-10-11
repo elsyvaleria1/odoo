@@ -174,7 +174,7 @@ class IrActionsServer(models.Model):
         help="The automation a Sub-workflow step runs and waits for",
     )
 
-    step_key = fields.Char(  # noqa: E8520 — names a step in code, not a credential
+    step_key = fields.Char(
         string="Key",
         help="How the code of later steps names this one: steps.<key>. "
         "Unique within the automation; derived from the name when left empty.",
@@ -364,8 +364,6 @@ class IrActionsServer(models.Model):
         return result
 
     def _assign_missing_step_keys(self) -> None:
-        """Key every step of an automation that has none, from its name: a step
-        attached to an automation after it was created arrives without one."""
         keyless = self.filtered(
             lambda node: node.automation_rule_id and not node.step_key
         )
@@ -387,7 +385,6 @@ class IrActionsServer(models.Model):
         return super().unlink()
 
     def _check_key_not_referenced(self, new_key) -> None:
-        """Refuse to rename or remove a step whose key another step reads."""
         for action in self.filtered(
             lambda node: node.automation_rule_id and node.step_key != new_key,
         ):
@@ -414,7 +411,6 @@ class IrActionsServer(models.Model):
                 )
 
     def _get_form_questions(self) -> list[dict]:
-        """Return the questions of this step's form, separators left out."""
         self.check_singleton()
         return [
             question
@@ -423,7 +419,6 @@ class IrActionsServer(models.Model):
         ]
 
     def _get_upstream_nodes(self):
-        """Return every step of the automation this one transitively waits for."""
         self.check_singleton()
         upstream = self.browse()
         frontier = self._get_predecessors()
@@ -433,12 +428,6 @@ class IrActionsServer(models.Model):
         return upstream
 
     def _collect_step_references(self) -> References:
-        """Return the step keys this step names, read without running it.
-
-        A module whose step type names another step adds that key here, so the
-        same upstream rule judges it, and adds what it reads to the depends of
-        `_compute_step_references`.
-        """
         self.check_singleton()
         if self.state != "code":
             return References()
@@ -563,18 +552,10 @@ class IrActionsServer(models.Model):
         return get_timedelta(self.validity_delay, self.validity_unit)
 
     def _get_line_input_fields(self):
-        """Return the fields of its run step this step needs filled before it runs.
-
-        The step's own list, which a module extends with what its step types
-        need on the run step itself.
-        """
         self.check_singleton()
         return self.line_input_field_ids
 
     def _render_approval_note(self, record) -> str:
-        """What the activity of an Approval step asks, with the record the run
-        is about filled in: the step's note rendered as an inline template over
-        `record`, or the step's name when there is no note or it renders empty."""
         self.check_singleton()
         note = self.approval_note
         if not note:

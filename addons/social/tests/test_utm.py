@@ -24,7 +24,6 @@ class TestUTMConsistencySocial(TestUTMCommon, SocialCase):
     @users("user_social_manager")
     @mock_void_external_calls()
     def test_utm_consistency_mass_mailing_user(self):
-        # social manager user should be able to unlink all UTM models
         self.utm_campaign.unlink()
         self.utm_medium.unlink()
         self.utm_source.unlink()
@@ -32,12 +31,9 @@ class TestUTMConsistencySocial(TestUTMCommon, SocialCase):
     @users("__system__")
     @mock_void_external_calls()
     def test_utm_consistency_social_account(self):
-        # the medium is automatically created when creating a social account
         utm_medium = self.social_account.utm_medium_id
 
         with self.assertRaises(UserError):
-            # can't unlink the medium as it's used by a social.post as it's medium
-            # unlinking the medium would break sent link trackers
             utm_medium.unlink()
 
     @users("__system__")
@@ -49,12 +45,9 @@ class TestUTMConsistencySocial(TestUTMCommon, SocialCase):
                 "message": "Message 1",
             }
         )
-        # the source is automatically created when creating a post
         utm_source = social_post.source_id
 
         with self.assertRaises(UserError):
-            # can't unlink the source as it's used by a social.post as its source
-            # unlinking the source would break sent link trackers
             utm_source.unlink()
 
     @classmethod

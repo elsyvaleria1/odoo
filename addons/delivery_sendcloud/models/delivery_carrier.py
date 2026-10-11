@@ -33,9 +33,6 @@ class DeliveryCarrier(models.Model):
     )
     _CREDENTIAL_FIELDS = {"sendcloud_secret_key": "api_secret"}
 
-    # A door onto `carrier_credential_id` (ADR-0081). The PUBLIC key stays a
-    # plain column beside it -- it is half of a pair and is not a secret, which
-    # is why only this one was ever on the backlog.
     sendcloud_secret_key = fields.Char(
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
@@ -128,11 +125,6 @@ class DeliveryCarrier(models.Model):
         return res
 
     def action_load_sendcloud_shipping_products(self) -> dict:
-        """
-        Returns a wizard to choose from available sendcloud shipping products.
-        Since the shipping product ids in sendcloud change overtime they are not saved,
-        instead they are fetched everytime and passed to the context of the wizard
-        """
         self.check_singleton()
         if self.delivery_type != "sendcloud":
             raise ValidationError(self.env._("Must be a Sendcloud carrier!"))
@@ -143,7 +135,6 @@ class DeliveryCarrier(models.Model):
                 )
             )
         sendcloud = self._get_sendcloud()
-        # Get normal and return shipping products (can't get both at once)
         shipping_products = sendcloud._get_shipping_products(
             from_country=self.country_id.code
         )
@@ -186,7 +177,6 @@ class DeliveryCarrier(models.Model):
         return res
 
     def sendcloud_rate_shipment(self, order) -> dict:
-        """Returns shipping rate for the order and chosen shipping method"""
         _debug.pipeline(
             "carrier_rate_request",
             provider="sendcloud",
@@ -221,12 +211,10 @@ class DeliveryCarrier(models.Model):
                 )
             )
 
-        # Check if the products individually fit in the delivery method
         max_weight_user_uom = self.sendcloud_convert_weight(
             self.sendcloud_shipping_id.max_weight - 1, grams=True, reverse=True
         )
         for sol in order.line_ids:
-            # We only assume the following as a warning as there's no notion of unbreakable unit in Odoo
             if sol.product_id.weight > max_weight_user_uom:
                 messages.append(
                     self.env._(
@@ -239,7 +227,6 @@ class DeliveryCarrier(models.Model):
         return {"success": True, "price": price, "warning_message": message}
 
     def sendcloud_send_shipping(self, pickings):
-        """Sends Shipment to sendcloud, must request rate to return exact price"""
         _debug.pipeline(
             "carrier_ship_request",
             provider="sendcloud",
@@ -249,9 +236,7 @@ class DeliveryCarrier(models.Model):
         sendcloud = self._get_sendcloud()
         res = []
         for pick in pickings:
-            # multiple parcels if several packages used
             parcels = sendcloud._send_shipment(pick)
-            # fetch the ids, tracking numbers and url for each parcel
             parcel_ids, parcel_tracking_numbers, doc_ids = self._store_parcel_documents(
                 pick, parcels, sendcloud
             )
@@ -264,30 +249,23 @@ class DeliveryCarrier(models.Model):
                 )
             pick.sendcloud_parcel_ref = parcel_ids
             try:
-                # generate return if config is set
                 if pick.carrier_id.return_label_on_delivery:
                     self.get_return_label(pick)
             except UserError:
-                # if the return fails need to log that they failed and continue
                 pick.message_post(body=self.env._("Failed to create the return label!"))
 
             try:
-                # get exact price of shipment
                 price = 0.0
                 for parcel in parcels:
-                    # get price for each parcel
                     shipping_rate = sendcloud._get_shipping_rate(
                         pick.carrier_id, picking=pick, parcel=parcel
                     )
                     if shipping_rate:
                         price += shipping_rate[0]
             except UserError:
-                # if the price fetch fails need to log that they failed and continue
                 pick.message_post(body=self.env._("Failed to get the actual price!"))
 
-            # get tracking numbers for parcels
             parcel_tracking_numbers = ",".join(parcel_tracking_numbers)
-            # if in test env, sendcloud does not have one, so we cancel the shipment ASAP
             if not self.prod_environment:
                 self.cancel_shipment(pick)
                 msg = self.env._("Shipment %s cancelled", parcel_tracking_numbers)
@@ -308,9 +286,8 @@ class DeliveryCarrier(models.Model):
         sendcloud = self._get_sendcloud()
         if not picking.sendcloud_parcel_ref:
             return None
-        # since there can be more than one id stored, comma seperated, only the first will be tracked
         parcel_id = picking.sendcloud_parcel_ref[0]
-        if isinstance(parcel_id, list):  # Multicollo
+        if isinstance(parcel_id, list):
             parcel_id = parcel_id[0]
         res = sendcloud._track_shipment(parcel_id)
         return res["tracking_url"]
@@ -320,19 +297,15 @@ class DeliveryCarrier(models.Model):
     ) -> None:
         sendcloud = self._get_sendcloud()
         parcels = sendcloud._send_shipment(picking=picking, is_return=True)
-        # fetch the ids, tracking numbers and url for each parcel
         parcel_ids, _, doc_ids = self._store_parcel_documents(
             picking, parcels, sendcloud
         )
-        # Add Tracking info and docs in chatter
         picking.message_post_with_source(
             "delivery_sendcloud.sendcloud_label_tracking",
             render_values={"type": "Return", "parcels": parcels},
             subtype_xmlid="mail.mt_note",
             attachment_ids=doc_ids.ids,
         )
-        # if picking is not a return means we are pregenerating the return label on delivery
-        # thus we save the returned parcel id in a seperate field
         if picking.is_return_picking:
             picking.sendcloud_parcel_ref = parcel_ids
         else:
@@ -353,7 +326,6 @@ class DeliveryCarrier(models.Model):
             )
             for parcel_id in parcels:
                 if isinstance(parcel_id, list):
-                    # In Multicollo, cancelling 1 parcel of the bactch cancel the whole batch
                     parcel_id = parcel_id[0]
                 res = sendcloud._cancel_shipment(parcel_id)
                 if res.get("status") not in ["deleted", "cancelled", "queued"]:
@@ -368,10 +340,6 @@ class DeliveryCarrier(models.Model):
             )
 
     def sendcloud_convert_weight(self, weight, grams=False, reverse=False):
-        """
-        Each API request for sendcloud usually requires
-        weight in kilograms but pricing supports grams.
-        """
         from_uom_id = (
             self.env["product.template"].sudo()._get_uom_from_setting("weight")
         )
@@ -384,25 +352,9 @@ class DeliveryCarrier(models.Model):
             from_uom_id, to_uom_id = to_uom_id, from_uom_id
         if float_is_zero(weight, precision_rounding=from_uom_id.rounding):
             return weight
-        # round=False: this value goes straight to Sendcloud. `_get_quantity_in_unit`
-        # would quantise it at the "Product Unit" *quantity* precision of the
-        # destination unit -- 0.01 kg -- so a shop weighing in grams would
-        # declare a 1 g item as 10 g. The carrier's own precision governs here,
-        # not Odoo's product-quantity precision.
         return from_uom_id._get_quantity_in_unit(weight, to_uom_id, round=False)
 
     def sendcloud_convert_length(self, length, reverse=False, unit="cm"):
-        """
-        Each API request for sendcloud usually requires length in centimeters but also supports millimeters and meters.\n
-        Length sent to Sendcloud must be of type integer as Sendcloud doesn't support floating numbers in its API.
-        :param delivery.carrier self: the Sendcloud delivery carrier
-        :param float length: the original length in the user default's UoM
-        :param bool reverse: reverse the source and destination units of the conversion, default to False
-        :param str unit: The destination unit, default to "cm", can also be "mm" or "m"
-        :return: The converted length rounded up as an integer
-        :rtype: int
-        :raises UserError: if 'unit' is not in ("mm", "cm", "m")
-        """
         if length == 0:
             return length
         length_uom_id = (
@@ -417,9 +369,6 @@ class DeliveryCarrier(models.Model):
             return length
         elif reverse:
             dest_uom_id, length_uom_id = length_uom_id, dest_uom_id
-        # round=False: the very next line rounds up to the integer Sendcloud
-        # requires, so the conversion's own rounding is at best redundant and at
-        # worst a coarser pre-quantisation of the value being rounded.
         converted_length = length_uom_id._get_quantity_in_unit(
             length, dest_uom_id, round=False
         )
@@ -429,8 +378,6 @@ class DeliveryCarrier(models.Model):
 
     def _set_sendcloud_products(self, shipping_product, return_product) -> bool:
         self.check_singleton()
-        # delete old shipping product since it will be replaced
-        # self.sendcloud_shipping_id.unlink()
         products_to_create = [
             {
                 "name": shipping_product["name"],
@@ -442,7 +389,6 @@ class DeliveryCarrier(models.Model):
             }
         ]
         if return_product:
-            # self.sendcloud_return_id.sudo().unlink()
             products_to_create.append(
                 {
                     "name": return_product["name"],
@@ -516,10 +462,6 @@ class DeliveryCarrier(models.Model):
         for parcel in parcels:
             parcel_ids.setdefault(parcel["colli_uuid"], []).append(parcel["id"])
             parcel_tracking_numbers.append(parcel.get("tracking_number"))
-            # this will include documents to print such as label
-            # https://api.sendcloud.dev/docs/sendcloud-public-api/parcel-documents/operations/get-a-parcel-document
-            # sendcloud docs mention there are 7 doc types
-            # so we limit the loop to 7 docs
             for doc in parcel["documents"][:7]:
                 doc_content = sendcloud._get_document(doc["link"])
                 if doc["type"].lower() == "label":
@@ -543,7 +485,6 @@ class DeliveryCarrier(models.Model):
         return list(parcel_ids.values()), parcel_tracking_numbers, doc_ids
 
     def _get_delivery_type(self):
-        """Override of delivery to return the sendcloud delivery type."""
         res = super()._get_delivery_type()
         if self.delivery_type != "sendcloud":
             return res

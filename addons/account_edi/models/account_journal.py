@@ -24,8 +24,6 @@ class AccountJournal(models.Model):
     )
 
     def write(self, vals):
-        # OVERRIDE
-        # Don't allow the user to deactivate an edi format having at least one document to be processed.
         if vals.get("edi_format_ids"):
             old_edi_format_ids = self.edi_format_ids
             res = super().write(vals)
@@ -37,7 +35,6 @@ class AccountJournal(models.Model):
                     ("state", "in", ("to_cancel", "to_send")),
                 ]
             )
-            # If the formats we are unchecking do not need a webservice, we don't need them to be correctly sent
             if documents.filtered(lambda d: d.edi_format_id._is_web_service_required()):
                 raise UserError(
                     self.env._(
@@ -45,7 +42,6 @@ class AccountJournal(models.Model):
                         ", ".join(documents.edi_format_id.mapped("display_name")),
                     )
                 )
-            # remove these documents which: do not need a web service & are linked to the edi formats we are unchecking
             if documents:
                 documents.unlink()
             return res
@@ -104,7 +100,6 @@ class AccountJournal(models.Model):
                 ]
             )
 
-            # The existing edi formats that are already in use so we can't remove it.
             protected_edi_format_ids = protected_edi_formats_per_journal.get(
                 journal.id, set()
             )

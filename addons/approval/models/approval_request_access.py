@@ -19,8 +19,6 @@ class ApprovalRequestAccess(models.Model):
 
     @contextlib.contextmanager
     def _producing_documents(self) -> Iterator[None]:
-        # Kept on the cursor rather than in the context: an RPC caller writes the
-        # context it sends, and nothing such a caller sends may open this window.
         self.check_singleton()
         producing = self.env.cr.cache.setdefault(_PRODUCING_REQUESTS, Counter())
         producing[self.id] += 1
@@ -34,7 +32,6 @@ class ApprovalRequestAccess(models.Model):
         return self.env.cr.cache.get(_PRODUCING_REQUESTS, {}).get(self.id, 0) > 0
 
     def _link_produced_documents(self, documents) -> None:
-        """Link records this request produced, of its category's `target_model`."""
         self.check_singleton()
         with self._producing_documents():
             for document in documents:
@@ -258,9 +255,6 @@ class ApprovalRequestAccess(models.Model):
 
     _SYSTEM_LOCKED_FIELDS = frozenset({"name"})
 
-    # What the engine records about the request's course. Writing one is taking a
-    # decision, granting, revoking or silencing reminders without the funnel that
-    # does it, so only the engine's own elevated writes set them, in any state.
     _WORKFLOW_FIELDS = frozenset(
         {
             "applied_rule_ids",
@@ -283,9 +277,6 @@ class ApprovalRequestAccess(models.Model):
         },
     )
 
-    # What the request is about. Its approval acts on that: it runs the operation,
-    # grants the subject, covers the document. The source raises the request with
-    # them (_create_raised), and nothing rewrites them afterwards.
     _SOURCE_LINK_FIELDS = frozenset(
         {
             "binding_id",
@@ -344,7 +335,6 @@ class ApprovalRequestAccess(models.Model):
 
     @api.model
     def _create_raised(self, vals_list: list[dict]) -> Self:
-        """Create the requests source records raise, each naming its source."""
         with contextlib.ExitStack() as stack:
             for vals in vals_list:
                 stack.enter_context(
@@ -355,9 +345,6 @@ class ApprovalRequestAccess(models.Model):
             return self.create(vals_list)
 
     def _refresh_from_source(self) -> None:
-        """Bring a request reset to draft up to its document before it is asked
-        again: amount, snapshot and the rest are what the document is now, not
-        what it was when the request was first raised."""
         self.check_singleton()
         document = self.get_source_document()
         if (
@@ -395,9 +382,6 @@ class ApprovalRequestAccess(models.Model):
 
     @contextlib.contextmanager
     def _recording(self) -> Iterator[None]:
-        """Let the engine write its own workflow fields on these requests, as the
-        user it acts for: in the transaction, which nothing an RPC caller sends
-        reaches, and for these ids only."""
         with self.env.transaction.admitting(
             "approval.request", _RECORD_ADMISSION, self.ids
         ):
@@ -409,12 +393,6 @@ class ApprovalRequestAccess(models.Model):
         )
 
     def _without_engine_defaults(self):
-        """`self` without context defaults for the engine's own fields.
-
-        `create` checks the values it is given; defaults are filled in after, so a
-        `default_res_id` would set a source link nobody checked. Leaked defaults
-        are common (the attachment action carries `default_res_model`), so they are
-        dropped rather than refused."""
         owned = self._WORKFLOW_FIELDS | self._SOURCE_LINK_FIELDS
         context = {
             key: value
@@ -536,8 +514,6 @@ class ApprovalRequestAccess(models.Model):
         return self.browse(request.id for (request,) in logged)
 
     def _granted_by_privilege(self, operation: str) -> bool:
-        # code acting under a privilege writes what the privilege's own rows
-        # allow, owner or not; the rows bound which requests that is
         if not self.env.privileges:
             return False
         domain = self.env["ir.access"]._privilege_domain("approval.request", operation)
@@ -674,7 +650,6 @@ class ApprovalRequestAccess(models.Model):
         return is_manager or is_own or later_step
 
     def _can_decide_step(self, step, user) -> bool:
-        """Whether `user` has decided neither this step nor one that excludes it."""
         self.check_singleton()
         decided = self.approver_ids.filtered(
             lambda a: (
@@ -697,12 +672,6 @@ class ApprovalRequestAccess(models.Model):
         return can
 
     def _get_rows_decidable_by(self, user):
-        """The user's rows an approval naming no step decides.
-
-        Pending rows, and approved rows with a step still open to the user: one whose
-        decided step was archived, or one decided from the approval button for some of
-        its steps only.
-        """
         self.check_singleton()
         decidable = self.approver_ids.filtered(
             lambda approver: (
@@ -729,7 +698,6 @@ class ApprovalRequestAccess(models.Model):
         return decidable
 
     def _is_later_step_member(self, approvers, user, steps=None) -> bool:
-        """Whether `user` may act on these rows as the approver of a later step."""
         self.check_singleton()
         own_steps = steps or approvers.decided_step_ids or approvers.step_ids
         if not own_steps:
@@ -796,16 +764,6 @@ class ApprovalRequestAccess(models.Model):
             )
 
     def _check_not_deciding_own_request(self, approver: models.BaseModel) -> None:
-        """Separation of duties, held by the engine rather than by each adopter.
-
-        Checked before the superuser early return on purpose: it is not a
-        question of who is calling but of whose decision would be recorded. A
-        row carries no decision from the one who asked, nor from the one the
-        document names as its requester, whether they decide it themselves or a
-        delegate decides it for them, unless the category allows self-approval
-        or an access exception names that person -- otherwise a `sudo()` in any
-        adopter reopens the hole the routing closes.
-        """
         self.check_singleton()
         own_users = self.request_owner_id | self._get_requester()
         own = approver.filtered(
@@ -848,8 +806,6 @@ class ApprovalRequestAccess(models.Model):
             self._get_own_decision_exception(user)._record_use(self.display_name)
 
     def _get_requester(self):
-        """Whom the request is for, when the document names someone: frozen at
-        raise."""
         self.check_singleton()
         return self.requester_id
 
@@ -861,8 +817,6 @@ class ApprovalRequestAccess(models.Model):
         return self.env["ir.access.exception"]._find(user, kind, self.category_id)
 
     def _get_excluded_approvers(self):
-        """Who may not decide this request: whoever asked and whom it is for,
-        unless the category allows self-approval or an exception names them."""
         self.check_singleton()
         excluded = self.env["res.users"]
         if self.category_id.allow_self_approval:
@@ -874,16 +828,6 @@ class ApprovalRequestAccess(models.Model):
 
     @api.constrains("request_owner_id", "company_id", "res_model", "res_id")
     def _check_owner_company(self) -> None:
-        """A request typed in by hand belongs to someone of its company; a request
-        raised for a document takes its company from the document and its owner
-        from whoever the document names.
-
-        The generic `check_company` said the first for both, and the second
-        broke on real data: an allocation for an employee of company B owned by
-        that employee's user, whose login only reaches company A, or by the
-        officer acting for an employee with no user at all. Access domains on
-        `company_id` still decide who sees the request.
-        """
         for request in self:
             if request.res_model or not request.company_id:
                 continue

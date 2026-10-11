@@ -193,7 +193,6 @@ def _is_opaque(literal):
     return len(parts) == 3
 
 
-# the web client never sets html's font-size, so a rem is the browser's 16px
 ROOT_FONT_SIZE_PX = 16
 
 _REM_RE = re.compile(r"(?<![\w.-])(-?\d*\.?\d+)rem\b")
@@ -206,9 +205,6 @@ def norm(value):
     return canonical_colours(_KEYWORDS.get(value, value))
 
 
-# A colour is compared by what it paints, not how it is spelled: a token
-# rewrite turns `mix()` or `rgba($x, .1)` into color-mix(), rgb(from ...) or
-# hsl(...), and the dark bundle serves the literal Sass computed.
 _COLOUR_FUNCTIONS = ("rgba", "rgb", "hsla", "hsl", "color-mix")
 _NAMED_HEX = {
     "aliceblue": "f0f8ff",
@@ -564,8 +560,6 @@ def _parse_mix(inner):
 
 
 def _format_colour(red, green, blue, alpha):
-    # what reaches the screen: 8-bit channels, so Sass's and the browser's
-    # arithmetic agree once rounded the way the paint rounds them
     if round(alpha, 2) == 0:
         return "rgb(0,0,0,0)"
     parts = [str(round(channel)) for channel in (red, green, blue)]
@@ -624,8 +618,6 @@ _CANONICAL_RE = re.compile(r"rgb\((\d+),(\d+),(\d+)((?:,[0-9.]+)?)\)")
 
 
 def same_paint(left, right):
-    # Sass and the browser can land on either side of a .5 channel -- darken()
-    # of #ff453a is exactly 236.5 red -- so one 8-bit step is the same paint
     if left == right:
         return True
     if _CANONICAL_RE.sub("rgb()", left) != _CANONICAL_RE.sub("rgb()", right):

@@ -417,12 +417,6 @@ class TestWorkingHoursWithVersion(TestHrContractCalendarCommon):
         )
 
     def test_working_hours_with_employee_without_contract(self):
-        """An employee without a contract still works their schedule.
-
-        E has no version over the window, so it works its current one (the
-        company's 40 hours), which covers all of A's 35: the common hours are
-        A's own week.
-        """
         self.env.user.company_id = self.company_A
         self.env.user.company_ids = [self.company_A.id]
 

@@ -15,7 +15,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
 
     @users("employee")
     def test_favorites(self):
-        """Testing the API for toggling favorites."""
         playground_articles = (
             self.article_workspace + self.workspace_children
         ).with_env(self.env)
@@ -98,9 +97,8 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
             sorted(articles.ids, reverse=True),
         )
 
-    @users("admin")  # test as admin as this is a technical sync done as sudo
+    @users("admin")
     def test_favorites_active_sync(self):
-        """Make sure the 'is_article_active' is synchronized with the article 'active' field."""
 
         article_favorites = self.env["knowledge.article.favorite"].create(
             [
@@ -141,7 +139,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
 
             self.patch(self.env.cr, "now", lambda: _reference_dt + timedelta(days=1))
 
-            # fields that does not change content
             with freeze_time(_reference_dt + timedelta(days=1)):
                 article.with_user(self.user_employee2).write(
                     {"name": "NoContentEdition"}
@@ -153,7 +150,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
                 "Body did not change: no history should have been created",
             )
 
-            # fields that change content
             body_changes_count = 0
             with freeze_time(_reference_dt + timedelta(days=1)):
                 body_value = body_values[
@@ -163,8 +159,6 @@ class TestKnowledgeArticleFields(KnowledgeCommonWData):
                 body_changes_count += (
                     1 if body_value != body and (bool(body_value) or bool(body)) else 0
                 )
-                # the with_user() below is necessary for the test to succeed,
-                # and that's kind of a bad smell...
                 article.with_user(self.user_employee2).flush_model()
             self.assertEqual(article.last_edition_uid, self.user_employee2)
             self.assertEqual(
@@ -210,12 +204,11 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
                 )
 
     def test_display_name(self):
-        """Test our custom display_name / name_search / name_create."""
 
         KnowledgeArticle = self.env["knowledge.article"]
         icon_placeholder = KnowledgeArticle._get_no_icon_placeholder()
 
-        KnowledgeArticle.search([]).unlink()  # remove other articles to ease testing
+        KnowledgeArticle.search([]).unlink()
         [article_no_icon, article_icon] = KnowledgeArticle.create(
             [
                 {
@@ -231,7 +224,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
 
         self.assertEqual(article_icon.display_name, "🚀 Article With Icon")
 
-        # test the 'ilike' operator
         for search_input, expected_articles in zip(
             [
                 "Article With",
@@ -253,7 +245,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
                 "Not matching for input '%s'" % search_input,
             )
 
-        # test the '=' operator
         for search_input, expected_articles in zip(
             [
                 "Article Without Icon",
@@ -279,7 +270,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
                 "Not matching for input '%s'" % search_input,
             )
 
-        # now test the name_create custom implementation
         for create_input, (expected_name, expected_icon) in zip(
             [
                 "a",
@@ -295,7 +285,6 @@ class TestKnowledgeArticleInternals(KnowledgeCommonWData):
             ],
             strict=False,
         ):
-            # result of name_create is a display_name
             new_article = KnowledgeArticle.browse(
                 KnowledgeArticle.name_create(create_input)[0]
             )
@@ -359,8 +348,6 @@ class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
 
     @users("employee")
     def test_article_get_ancestor_ids(self):
-        # Using ids from method docstring for easy matching.
-        # Order doesn't matter for this line
         article_2, article_6 = self.env["knowledge.article"].create(
             [{"name": "Article 2"}, {"name": "Article 6"}]
         )
@@ -374,7 +361,6 @@ class TestKnowledgeArticleUtilities(KnowledgeCommonWData):
             {"name": "Article 11", "parent_id": article_6.id}
         )
 
-        # Use lists to assert correct order (_get_ancestor_ids_nearest_first returns an OrderedSet)
         self.assertEqual(
             list(article_8._get_ancestor_ids_nearest_first()),
             [article_4.id, article_2.id],
@@ -395,8 +381,6 @@ class TestKnowledgeCommonWDataInitialValue(KnowledgeCommonWData):
     to do it."""
 
     def test_initial_values(self):
-        """Ensure all tests have the same basis (global values computed as root)"""
-        # root
         article_workspace = self.article_workspace
         self.assertTrue(article_workspace.category, "workspace")
         self.assertEqual(article_workspace.sequence, 999)
@@ -404,7 +388,6 @@ class TestKnowledgeCommonWDataInitialValue(KnowledgeCommonWData):
         self.assertTrue(article_shared.category, "shared")
         self.assertTrue(article_shared.sequence, 998)
 
-        # workspace children
         workspace_children = article_workspace.child_ids
         self.assertEqual(
             workspace_children.mapped("inherited_permission"), ["write", "write"]
@@ -416,16 +399,12 @@ class TestKnowledgeCommonWDataInitialValue(KnowledgeCommonWData):
             workspace_children.mapped("internal_permission"), [False, False]
         )
         self.assertEqual(workspace_children.root_article_id, article_workspace)
-        # articles are not ordered by sequence.
-        # Make explicit check that first created has sequence 0, second has 1, etc.
         self.assertEqual(self.workspace_children[0].sequence, 0)
         self.assertEqual(self.workspace_children[1].sequence, 1)
 
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_initial_values_as_employee(self):
-        """Ensure all tests have the same basis (user specific computed as
-        employee for acl-dependent tests)"""
         article_workspace = self.article_workspace.with_env(self.env)
         self.assertTrue(article_workspace.user_has_access)
         self.assertTrue(article_workspace.user_has_write_access)

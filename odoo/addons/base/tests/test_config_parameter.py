@@ -98,8 +98,6 @@ class TestSealedDatabaseSecret(TransactionCase):
         super().setUp()
         self.ICP = self.env["ir.config_parameter"].sudo()
         self.real_key = {sealing.ENV_KEY: Fernet.generate_key().decode()}
-        # the database's own secret is sealed with whatever key the server ran
-        # under, which no test's key opens: each test starts from a clear one
         self._store_in_clear("the-installed-secret")
 
     def _stored(self):

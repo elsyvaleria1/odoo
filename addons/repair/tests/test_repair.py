@@ -11,14 +11,12 @@ class TestRepairCommon(common.TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Partners
         cls.res_partner_1 = cls.env["res.partner"].create({"name": "Wood Corner"})
         cls.res_partner_address_1 = cls.env["res.partner"].create(
             {"name": "Willie Burke", "parent_id": cls.res_partner_1.id}
         )
         cls.res_partner_12 = cls.env["res.partner"].create({"name": "Partner 12"})
 
-        # Products
         cls.product_product_3 = cls.env["product.product"].create(
             {"name": "Desk Combination"}
         )
@@ -39,7 +37,6 @@ class TestRepairCommon(common.TransactionCase):
             {"name": "Corner Desk Left Sit"}
         )
 
-        # Storable products
         cls.product_storable_no = cls.env["product.product"].create(
             {
                 "name": "Product Storable No Tracking #1",
@@ -69,7 +66,6 @@ class TestRepairCommon(common.TransactionCase):
             }
         )
 
-        # Repair product
         cls.product_order_repair = cls.env["product.product"].create(
             {
                 "name": "Repair Service",
@@ -78,7 +74,6 @@ class TestRepairCommon(common.TransactionCase):
             }
         )
 
-        # Location
         cls.stock_warehouse = cls.env["stock.warehouse"].search(
             [("company_id", "=", cls.env.company.id)], limit=1
         )
@@ -89,7 +84,6 @@ class TestRepairCommon(common.TransactionCase):
             }
         )
 
-        # Repair Orders
         cls.repair1 = cls.env["repair.order"].create(
             {
                 "product_id": cls.product_product_3.id,
@@ -220,22 +214,12 @@ class TestRepairCommon(common.TransactionCase):
 class TestRepair(TestRepairCommon):
     def test_01_repair_states_transition(self):
         repair = self._create_simple_repair_order()
-        # Draft -> Confirmed -> Cancel -> Draft -> Done -> Failing Cancel
-        # draft -> confirmed (action_validate -> _action_repair_confirm)
-        # PRE
-        # lines' qty >= 0 !-> UserError
-        # product's qty IS available !-> Warning w/ choice
-        # POST
-        # state = confirmed
-        # move_ids in (partially reserved, fully reserved, waiting availability)
 
-        #  Line A with qty < 0 --> UserError
         lineA = self._create_simple_part_move(repair.id, -1.0, self.product_storable_no)
         repair.move_ids |= lineA
         with self.assertRaises(UserError):
             repair.action_validate()
 
-        #  Line A with qty > 0 & not available, Line B with qty >= 0 & available --> Warning (wizard.repair.order.confirm.insufficient.stock)
         lineA.product_uom_qty = 2.0
         lineB = self._create_simple_part_move(repair.id, 2.0, self.product_storable_lot)
         repair.move_ids |= lineB
@@ -252,7 +236,6 @@ class TestRepair(TestRepairCommon):
             validate_action.get("res_model"),
             "wizard.repair.order.confirm.insufficient.stock",
         )
-        # Warn qty Wizard only apply to "product TO repair"
         warn_qty_wizard = Form(
             self.env["wizard.repair.order.confirm.insufficient.stock"].with_context(
                 **validate_action["context"]
@@ -277,10 +260,7 @@ class TestRepair(TestRepairCommon):
             'Repair line #3 should be in "Waiting Availability" state.',
         )
 
-        # Create quotation
-        # No partner warning -> working case -> already linked warning
 
-        # Ensure SO doesn't exist
         self.assertEqual(len(repair.sale_order_id), 0)
         repair.partner_id = None
         with self.assertRaises(UserError) as err:
@@ -288,19 +268,11 @@ class TestRepair(TestRepairCommon):
         self.assertIn("You need to define a customer", err.exception.args[0])
         repair.partner_id = self.res_partner_12.id
         repair.action_create_sale_order()
-        # Ensure SO and SOL were created
         self.assertNotEqual(len(repair.sale_order_id), 0)
         self.assertEqual(len(repair.sale_order_id.line_ids), 3)
         with self.assertRaises(UserError) as err:
             repair.action_create_sale_order()
 
-        # (*) -> cancel (action_repair_cancel)
-        # PRE
-        # state != done !-> UserError (cf. end of this test)
-        # POST
-        # moves_ids state == cancelled
-        # 'Lines" SOL product_qty == 0
-        # state == cancel
 
         self.assertNotEqual(repair.state, "done")
         repair.action_repair_cancel()
@@ -313,58 +285,33 @@ class TestRepair(TestRepairCommon):
             )
         )
 
-        # (*)/cancel -> draft (action_repair_cancel_draft)
-        # PRE
-        # state == cancel !-> action_repair_cancel()
-        # state != done !~> UserError (transitive..., don't care)
-        # POST
-        # move_ids.state == draft
-        # state == draft
 
         repair.action_repair_cancel_draft()
         self.assertEqual(repair.state, "draft")
         self.assertTrue(all(m.state == "draft" for m in repair.move_ids))
 
-        # draft -> confirmed
-        # Enforce product_id availability to skip warning
         quant = self.create_quant(self.product_storable_serial, 1)
         quant.action_apply_inventory()
         repair.trace_id = quant.trace_id
         repair.action_validate()
         self.assertEqual(repair.state, "confirmed")
 
-        # confirmed -> under_repair (action_repair_start)
-        # Purely informative state
         repair.action_repair_start()
         self.assertEqual(repair.state, "under_repair")
 
-        # under_repair -> done (action_repair_end -> action_repair_done)
-        # PRE
-        # state == under_repair !-> UserError
-        # lines' quantity >= lines' product_uom_qty !-> Warning
-        # line tracked => line has trace_ids !-> ValidationError
-        # POST
-        # lines with quantity == 0 are cancelled (related sol product_uom_qty is consequently set to 0)
-        # repair.product_id => repair.move_id
-        # move_ids.state == (done || cancel)
-        # state == done
-        # move_ids with quantity (LOWER or HIGHER than) product_uom_qty MUST NOT be splitted
-        # Any line with quantity < product_uom_qty => Warning
         repair.move_ids.picked = True
         self.assertTrue(repair.has_uncomplete_moves)
-        # LineB : no serial => ValidationError
         lot = lineB.move_line_ids.trace_id
         with self.assertRaises(UserError) as err:
             lineB.move_line_ids.trace_id = False
             repair.action_repair_done()
 
-        # LineB with lots
         lineB.move_line_ids.trace_id = lot
 
-        lineA.quantity = 2  # quantity = product_uom_qty
-        lineC.quantity = 2  # quantity > product_uom_qty (No warning)
+        lineA.quantity = 2
+        lineC.quantity = 2
         lineD = self._create_simple_part_move(repair.id, 0.0)
-        repair.move_ids |= lineD  # product_uom_qty = 0   : state is cancelled
+        repair.move_ids |= lineD
 
         self.assertEqual(lineD.state, "assigned")
         num_of_lines = len(repair.move_ids)
@@ -376,30 +323,15 @@ class TestRepair(TestRepairCommon):
         )
         self.assertEqual(repair.state, "done")
         done_moves = repair.move_ids - lineD
-        # line a,b,c are 'done', line d is 'cancel'
         self.assertTrue(all(m.state == "done" for m in done_moves))
         self.assertEqual(lineD.state, "cancel")
         self.assertEqual(len(repair.move_id), 1)
-        self.assertEqual(len(repair.move_ids), num_of_lines)  # No split
+        self.assertEqual(len(repair.move_ids), num_of_lines)
 
-        # (*) -> cancel (action_repair_cancel)
-        # PRE
-        # state != done !-> UserError
         with self.assertRaises(UserError) as err:
             repair.action_repair_cancel()
 
     def test_02_repair_sale_order_binding(self):
-        # Binding from SO to RO(s)
-        #   On SO Confirm
-        #     - Create linked RO per line (only if service_tracking == 'repair')
-        #   Create Repair SOL
-        #     - sol qty updated to 0 -> RO canceled (Reciprocal is true too)
-        #     - sol qty back to >0 -> RO Confirmed (Reciprocal is not true)
-        #   RO Parts SOL
-        #     - SOL qty change is NOT propagated to RO
-        #     - However, these changes FROM RO are propagated to SO
-        # ----------------------------------------------------------------------------------
-        #  Binding from RO to SO
         so_form = Form(self.env["sale.order"])
         so_form.partner_id = self.res_partner_1
         with so_form.line_ids.new() as line:
@@ -413,7 +345,6 @@ class TestRepair(TestRepairCommon):
         line_section = sale_order.line_ids[1]
         self.assertEqual(len(sale_order.repair_order_ids), 0)
         sale_order.action_confirm()
-        # Quantity set on the "create repair" product doesn't affect the number of RO created
         self.assertEqual(len(sale_order.repair_order_ids), 1)
         repair_order = sale_order.repair_order_ids[0]
         self.assertEqual(sale_order, repair_order.sale_order_id)
@@ -427,7 +358,6 @@ class TestRepair(TestRepairCommon):
         self.assertTrue(float_is_zero(order_line.product_qty, 2))
         order_line.product_qty = 3
         self.assertEqual(repair_order.state, "confirmed")
-        # Add RO line
         ro_form = Form(repair_order)
         with ro_form.move_ids.new() as ro_line_form:
             ro_line_form.repair_line_type = "add"
@@ -439,25 +369,20 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(
             float_compare(sol_part_0.product_qty, ro_line_0.product_uom_qty, 2), 0
         )
-        # chg qty in SO -> No effect on RO
         sol_part_0.product_qty = 5
         self.assertNotEqual(
             float_compare(sol_part_0.product_qty, ro_line_0.product_uom_qty, 2), 0
         )
-        # chg qty in RO -> Update qty in SO
         ro_line_0.product_uom_qty = 3
         self.assertEqual(
             float_compare(sol_part_0.product_qty, ro_line_0.product_uom_qty, 2), 0
         )
-        # with/without warranty
         self.assertFalse(float_is_zero(sol_part_0.price_unit, 2))
         repair_order.under_warranty = True
         self.assertTrue(float_is_zero(sol_part_0.price_unit, 2))
         repair_order.under_warranty = False
         self.assertFalse(float_is_zero(sol_part_0.price_unit, 2))
 
-        # stock_move transitions
-        #   add -> remove -> add -> recycle -> add transitions
         ro_line_0.repair_line_type = "remove"
         self.assertTrue(float_is_zero(sol_part_0.product_qty, 2))
         ro_line_0.repair_line_type = "add"
@@ -470,7 +395,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(
             float_compare(sol_part_0.product_qty, ro_line_0.product_uom_qty, 2), 0
         )
-        #   remove and recycle line : not added to SO.
         sol_count = len(sale_order.line_ids)
         with ro_form.move_ids.new() as ro_line_form:
             ro_line_form.repair_line_type = "remove"
@@ -483,20 +407,15 @@ class TestRepair(TestRepairCommon):
         ro_form.save()
         ro_line_1 = repair_order.move_ids[1]
         self.assertEqual(len(sale_order.line_ids), sol_count)
-        # remove to add -> added to SO
         ro_line_1.repair_line_type = "add"
         sol_part_1 = ro_line_1.sale_line_id
         self.assertNotEqual(len(sale_order.line_ids), sol_count)
         self.assertEqual(
             float_compare(sol_part_1.product_qty, ro_line_1.product_uom_qty, 2), 0
         )
-        # delete 'remove to add' line in RO -> SOL qty set to 0
         repair_order.move_ids = [(2, ro_line_1.id, 0)]
         self.assertTrue(float_is_zero(sol_part_1.product_qty, 2))
 
-        # repair_order.action_repair_end()
-        #   -> order_line.qty_delivered == order_line.product_qty
-        #   -> "RO Lines"'s SOL.qty_delivered == move.quantity
         repair_order.action_repair_start()
         for line in repair_order.move_ids:
             line.quantity = line.product_uom_qty
@@ -582,10 +501,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(repair_order.recycle_location_id, self.stock_location_14)
 
     def test_purchase_price_so_create_from_repair(self):
-        """
-        Test that the purchase price is correctly set on the SO line,
-        when creating a SO from a repair order.
-        """
         if not self.env["ir.module.module"].search(
             [("name", "=", "sale_margin"), ("state", "=", "installed")]
         ):
@@ -617,10 +532,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(repair.sale_order_id.line_ids.purchase_price, 10)
 
     def test_repair_from_return(self):
-        """
-        create a repair order from a return delivery and ensure that the stock.move
-        resulting from the repair is not associated with the return picking.
-        """
 
         product = self.env["product.product"].create(
             {
@@ -632,7 +543,6 @@ class TestRepair(TestRepairCommon):
             product, self.stock_location_14, 1
         )
         picking_form = Form(self.env["stock.picking"])
-        # create a delivery order
         picking_form.picking_type_id = self.stock_warehouse.out_type_id
         picking_form.partner_id = self.res_partner_1
         with picking_form.move_ids.new() as move:
@@ -644,7 +554,6 @@ class TestRepair(TestRepairCommon):
         picking.button_validate()
 
         self.assertEqual(picking.state, "done")
-        # Create a return
         stock_return_picking_form = Form(
             self.env["wizard.stock.picking.return"].with_context(
                 active_ids=picking.ids,
@@ -665,7 +574,6 @@ class TestRepair(TestRepairCommon):
         res_dict = return_picking.action_repair_return()
         repair_form = Form.from_action(self.env, res_dict)
         repair_form.product_id = product
-        # The repair needs to be saved to ensure the context is correctly set.
         repair = repair_form.save()
         repair_form = Form(repair)
         with repair_form.move_ids.new() as move:
@@ -698,14 +606,8 @@ class TestRepair(TestRepairCommon):
         )
 
     def test_repair_with_product_in_package(self):
-        """
-        Test That a repair order can be validated when the repaired product is tracked and in a package
-        """
-        # `is_storable` first: tracking requires it, and each assignment is its
-        # own write, so the state between them has to be legal too.
         self.product_product_3.is_storable = True
         self.product_product_3.tracking = "serial"
-        # Create two serial numbers
         sn_1 = self.env["product.trace"].create(
             {"name": "sn_1", "product_id": self.product_product_3.id}
         )
@@ -713,11 +615,9 @@ class TestRepair(TestRepairCommon):
             {"name": "sn_2", "product_id": self.product_product_3.id}
         )
 
-        # Create two packages
         package_1 = self.env["stock.package"].create({"name": "Package-test-1"})
         package_2 = self.env["stock.package"].create({"name": "Package-test-2"})
 
-        # update the quantity of the product in the stock
         self.env["stock.quant"]._update_available_quantity(
             self.product_product_3,
             self.stock_warehouse.lot_stock_id,
@@ -733,12 +633,10 @@ class TestRepair(TestRepairCommon):
             package_id=package_2,
         )
         self.assertEqual(self.product_product_3.qty_available, 2)
-        # create a repair order
         repair_order = self.env["repair.order"].create(
             {
                 "product_id": self.product_product_3.id,
                 "product_uom_id": self.product_product_3.uom_id.id,
-                # 'guarantee_limit': '2019-01-01',
                 "location_id": self.stock_warehouse.lot_stock_id.id,
                 "trace_id": sn_1.id,
                 "picking_type_id": self.stock_warehouse.repair_type_id.id,
@@ -756,7 +654,6 @@ class TestRepair(TestRepairCommon):
                 ],
             }
         )
-        # Validate and complete the repair order
         repair_order.action_validate()
         self.assertEqual(repair_order.state, "confirmed")
         repair_order.action_repair_start()
@@ -766,9 +663,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(repair_order.state, "done")
 
     def test_sn_with_no_tracked_product(self):
-        """
-        Check that the trace_id field is cleared after updating the product in the repair order.
-        """
         self.env.ref("base.group_user").implied_ids += self.env.ref(
             "stock.group_production_lot"
         )
@@ -785,9 +679,6 @@ class TestRepair(TestRepairCommon):
         self.assertFalse(repair_order.trace_id)
 
     def test_onchange_picking_type_id_and_name(self):
-        """
-        Test that when changing the picking_type_id, the name of the repair order should be changed too
-        """
         stock_location_1 = self.env.ref("stock.stock_location_stock")
         stock_location_2 = stock_location_1.copy()
         picking_type_1 = self.env["stock.picking.type"].create(
@@ -846,9 +737,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(move.reference, "WH/PT1/00002")
 
     def test_repair_components_lots_show_in_invoice(self):
-        """
-        Test that the lots of the components of a repair order are shown in the invoice
-        """
         quant = self.create_quant(self.product_storable_serial, 1)
         quant.action_apply_inventory()
         repair_order = self.env["repair.order"].create(
@@ -888,9 +776,6 @@ class TestRepair(TestRepairCommon):
         )
 
     def test_create_repair_order_from_cross_company_sn(self):
-        """
-        Test that a repair order can be created from a cross-company SN.
-        """
         sn_01 = self.env["product.trace"].create(
             {"name": "sn_1", "product_id": self.product_product_3.id}
         )
@@ -909,9 +794,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(repair_order.company_id, self.env.company)
 
     def test_delivered_qty_of_generated_so(self):
-        """
-        Test that checks that `qty_delivered` of the generated SOL is correctly set when the repair is done.
-        """
         repair_order = self.env["repair.order"].create(
             {
                 "product_id": self.product_order_repair.id,
@@ -940,9 +822,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(sale_order.line_ids.qty_transferred, 1.0)
 
     def test_repair_order_uncomplete_moves(self):
-        """
-        This test checks that the `has_uncomplete_moves` field is correctly set on a repair order.
-        """
         repair_order = self.env["repair.order"].create(
             {
                 "product_id": self.product_order_repair.id,
@@ -981,9 +860,6 @@ class TestRepair(TestRepairCommon):
         repair_order.action_repair_end()
 
     def test_repair_final_product_generate_lot_and_serial(self):
-        """
-        This test checks that the product trace_id value generate on the fly.
-        """
         self.stock_warehouse.repair_type_id.use_create_lots = True
         repair_order = self.env["repair.order"].create(
             {
@@ -1009,9 +885,6 @@ class TestRepair(TestRepairCommon):
         self.assertTrue(repair_order.trace_id.name)
 
     def test_trigger_orderpoint_from_repair(self):
-        """
-        Test that the order point triggered by the repair order creates a move linked to a picking.
-        """
         self.assertFalse(
             self.env["stock.move"].search(
                 [("product_id", "=", self.product_storable_no.id)]
@@ -1048,8 +921,6 @@ class TestRepair(TestRepairCommon):
                 "trigger": "auto",
             }
         )
-        # The product to be repaired should be storable and out of stock
-        # to trigger the wizard indicating that the product has an insufficient quantity.
         self.product_product_3.is_storable = True
         repair_order = self.env["repair.order"].create(
             {
@@ -1101,9 +972,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(move.location_dest_id, self.stock_location_14)
 
     def test_open_and_create_repair_from_lot(self):
-        """
-        Test that the repair order can be opened from the lot and that it is created correctly.
-        """
         sn_1 = self.env["product.trace"].create(
             {"name": "sn_1", "product_id": self.product_storable_serial.id}
         )
@@ -1147,14 +1015,10 @@ class TestRepair(TestRepairCommon):
             )
         ]
         self.assertEqual(repair_order.trace_id, sn_1)
-        # duplicate the move and check that the link to the repair order is not copied
         copied_move = repair_order.move_ids.copy()
         self.assertFalse(copied_move.repair_id)
 
     def test_missing_inventory_loss_location_raises_user_error(self):
-        """
-        Test that a missing inventory loss location raises a UserError when creating a warehouse.
-        """
         inv_locations = self.env["stock.location"].search(
             [
                 ("usage", "=", "inventory"),
@@ -1172,7 +1036,6 @@ class TestRepair(TestRepairCommon):
             )
 
     def test_add_product_from_catalog(self):
-        """Check that only consumable products are available in the catalog."""
         catalog_action = self.repair0.action_add_from_catalog()
         domain = catalog_action.get("domain")
         self.assertEqual(self.product_order_repair.type, "service")
@@ -1181,9 +1044,6 @@ class TestRepair(TestRepairCommon):
         self.assertFalse(self.product_order_repair.filtered_domain(domain))
 
     def test_search_date_category(self):
-        """
-        Test that the date_category field search functionality works correctly.
-        """
         self.env["repair.order"].search([]).unlink()
         repair_order = self.env["repair.order"].create(
             {
@@ -1199,9 +1059,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(len(repairs), 1)
 
     def test_sale_order_line_discount_on_repair_order(self):
-        """
-        Test that the discount on the sale order line created from a repair order is correctly set.
-        """
         repair_order = self.repair0
         repair_order.action_create_sale_order()
         sale_line = repair_order.move_ids.sale_line_id
@@ -1212,10 +1069,6 @@ class TestRepair(TestRepairCommon):
         self.assertEqual(sale_line.discount, 15)
 
     def test_delete_repair_resets_outgoing_stock_moves(self):
-        """
-        Test that deleting draft repair order clears its outgoing stock quantities and
-        related moves are unlinked
-        """
         repair = self._create_simple_repair_order()
         self._create_simple_part_move(repair.id, 1.0)
         moves = repair.move_ids
@@ -1248,7 +1101,6 @@ class TestRepair(TestRepairCommon):
 @tagged("post_install", "-at_install")
 class TestRepairHttp(HttpCase):
     def test_repair_without_product_in_parts(self):
-        """Test that setting and unsetting a product in repair line triggers has_uncomplete_moves compute correctly."""
         self.env["res.partner"].create({"name": "A Partner"})
         product = self.env["product.product"].create(
             {"name": "A Product", "default_code": "1234"}

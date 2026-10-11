@@ -8,8 +8,6 @@ class TestRecurrentEventLegacy(common.TransactionCase):
         self.CalendarEvent = self.env["calendar.event"]
 
     def test_recurrent_meeting1(self):
-        # In order to test recurrent meetings in Odoo, I create meetings with different recurrence using different test cases.
-        # I create a recurrent meeting with daily recurrence and fixed amount of time.
         self.CalendarEvent.create(
             {
                 "repeat_number": 5,
@@ -21,14 +19,12 @@ class TestRecurrentEventLegacy(common.TransactionCase):
                 "repeat_unit": "day",
             }
         )
-        # I search for all the recurrent meetings
         meetings_count = self.CalendarEvent.with_context(
             {"virtual_id": True}
         ).search_count([("start", ">=", "2011-03-13"), ("stop", "<=", "2011-05-13")])
         self.assertEqual(meetings_count, 5, "Recurrent daily meetings are not created!")
 
     def test_recurrent_meeting2(self):
-        # I create a weekly meeting till a particular end date.
         self.CalendarEvent.create(
             {
                 "start": "2011-04-18 11:47:00",
@@ -48,7 +44,6 @@ class TestRecurrentEventLegacy(common.TransactionCase):
             }
         )
 
-        # I search for all the recurrent weekly meetings.
         meetings_count = self.CalendarEvent.search_count(
             [("start", ">=", "2011-03-13"), ("stop", "<=", "2011-05-13")]
         )

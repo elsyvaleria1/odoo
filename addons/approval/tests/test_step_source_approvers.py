@@ -128,7 +128,6 @@ class TestStepSourceApprovers(ApprovalCommon):
         self.assertEqual(step["source_user_path"], "user_id")
         self.assertEqual(step["members"], [self.approver_3.id])
 
-    # -- configuration that could never work ------------------------------
 
     def test_a_source_step_needs_no_members_or_group(self):
         category = self._make_category(name=f"Source {self.id()}")

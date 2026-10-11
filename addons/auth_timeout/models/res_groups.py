@@ -52,7 +52,6 @@ class ResGroups(models.Model):
         help="Enable two-factor authentication when the inactivity timeout is reached.",
     )
 
-    # Technical fields for the user interface
     has_lock_timeout = fields.Boolean(
         compute="_compute_has_lock_timeout",
         readonly=False,
@@ -156,8 +155,8 @@ class ResGroups(models.Model):
                 group.lock_timeout = False
                 group.lock_timeout_mfa = False
             else:
-                group.lock_timeout = 1440  # 1 day by default
-                group.lock_timeout_mfa = True  # Require 2FA by default
+                group.lock_timeout = 1440
+                group.lock_timeout_mfa = True
 
     @api.onchange("lock_timeout_delay_unit", "lock_timeout_delay_in_unit")
     def _onchange_lock_timeout_delay_unit(self) -> None:
@@ -174,9 +173,9 @@ class ResGroups(models.Model):
                 group.lock_timeout_inactivity = False
                 group.lock_timeout_inactivity_mfa = False
             else:
-                group.lock_timeout_inactivity = 15  # 15 minutes by default
+                group.lock_timeout_inactivity = 15
                 group.lock_timeout_inactivity_mfa = (
-                    False  # Do not Require 2FA by default
+                    False
                 )
 
     @api.onchange(
@@ -191,7 +190,6 @@ class ResGroups(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override to clear the shared default ormcache group (including `_get_lock_timeouts`) if timeout fields are set on creation."""
         if any(
             field in vals for vals in vals_list for field in CACHE_INVALIDATE_FIELDS
         ):
@@ -199,47 +197,23 @@ class ResGroups(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Override to clear the shared default ormcache group (including `_get_lock_timeouts`) if timeout fields are updated."""
         if any(field in vals for field in CACHE_INVALIDATE_FIELDS):
             self.env.registry.clear_cache()
         return super().write(vals)
 
     def unlink(self):
-        """Override to clear the shared default ormcache group (including `_get_lock_timeouts`) if timeout fields exist on deleted records."""
         if self.filtered(lambda r: any(r[field] for field in CACHE_INVALIDATE_FIELDS)):
             self.env.registry.clear_cache()
         return super().unlink()
 
     @ormcache("self._ids")
     def _get_lock_timeouts(self):
-        """
-        Compute the session and inactivity timeout settings for the user.
-
-        This method returns the shortest configured timeouts (in seconds) across all groups
-        implied by the user's group membership. For each type of timeout, it distinguishes
-        between those that require MFA and those that do not.
-
-        :return: A dictionary with timeout types as keys and a list of tuples as values.
-            Each tuple is of the form (timeout_in_seconds, requires_mfa), ordered from shortest to longest.
-
-            Example::
-
-                {
-                    "lock_timeout": [(43200, False), (86400, True)],
-                    "lock_timeout_inactivity": [(900, False)],
-                }
-
-        :rtype: dict
-        """
         result = {}
 
         for key, mfa_key in [
             ("lock_timeout", "lock_timeout_mfa"),
             ("lock_timeout_inactivity", "lock_timeout_inactivity_mfa"),
         ]:
-            # `with_context({})` because
-            # - Same reasons than https://github.com/odoo/odoo/commit/7a0255665714f2c0129d04d4a3f14a3137c159f1
-            # - As this method is decorated with `@ormcache('self._ids')`, it cannot depend on the context
             values = [
                 (g[key], g[mfa_key])
                 for g in self.with_context({}).all_implied_ids
@@ -257,7 +231,6 @@ class ResGroups(models.Model):
             if min_non_mfa and (not min_mfa or min_non_mfa < min_mfa):
                 result[key].append((min_non_mfa * 60, False))
 
-            # Sort from lowest timeout to highest
             result[key].sort()
 
         return result

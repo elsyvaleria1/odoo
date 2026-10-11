@@ -134,15 +134,6 @@ class TestServerAction(SMSCommon, TestSMSRecipients):
         )
 
     def test_the_configured_method_survives_a_write_of_the_state(self):
-        """`Note only` reverting to `SMS` starts sending messages for real.
-
-        `_compute_sms_method` assigned its default on every pass, and the ORM
-        marks a dependent modified on any write naming a dependency -- a write
-        of the same value included. So an export and re-import of the action,
-        which is how one is moved between databases and which resends every
-        column whether it changed or not, turned an action configured to log a
-        note into one that sends the SMS: to the customer, at the usual price.
-        """
         self.action.sms_method = "note"
         self.action.write({"state": "sms"})
         self.assertEqual(
@@ -170,7 +161,6 @@ class TestServerAction(SMSCommon, TestSMSRecipients):
         self.assertEqual(self.action.sms_method, "note")
 
     def test_leaving_and_re_entering_sms_seeds_the_method_again(self):
-        """Preserving is not the same as never seeding."""
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Fresh",

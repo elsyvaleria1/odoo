@@ -20,7 +20,6 @@ class WizardEsgEmissionFactorApplyMoveLine(models.TransientModel):
     )
 
     def action_save(self):
-        """Auto assign the emission factors and show the view of updated emissions."""
         self.check_singleton()
         updated_amls = set()
         emission_factors = self.env["esg.emission.factor"].browse(
@@ -47,7 +46,6 @@ class WizardEsgEmissionFactorApplyMoveLine(models.TransientModel):
         )
 
         if self.env.context.get("from_list_view"):
-            # Only redirect to the list of updated emissions when coming from the Emission Factor list view.
             return {
                 "name": self.env._("Updated Emissions"),
                 "type": "ir.actions.act_window",

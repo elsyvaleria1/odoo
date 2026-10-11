@@ -23,19 +23,6 @@ class MixinMailThread(models.AbstractModel):
         return recipients_data
 
     def _notify_thread_by_ocn(self, message, recipients_data, msg_vals=False, **kwargs):
-        """Method to send cloud notifications for every mentions of a partner
-        and every direct message. We have to take into account the risk of
-        duplicated notifications in case of a mention in a channel of `chat` type.
-
-        :param record message: <mail.message> record being notified. May be
-          void as 'msg_vals' superseeds it;
-        :param list recipients_data: list of recipients data based on <res.partner>
-          records formatted like a list of dicts containing information. See
-          ``MixinMailThread._notify_get_recipients()``;
-        :param dict msg_vals: values dict used to create the message, allows to
-          skip message usage and spare some queries if given;
-
-        """
         icp_sudo = self.env["ir.config_parameter"].sudo()
         if not icp_sudo.get_param("odoo_ocn.project_id") or not icp_sudo.get_param_bool(
             "mail_mobile.enable_ocn"
@@ -53,12 +40,6 @@ class MixinMailThread(models.AbstractModel):
     def _notify_by_ocn_send(
         self, message, partner_ids, msg_vals=False, **kwargs
     ) -> None:
-        """Send the notification to a list of partners
-
-        :param message: current mail.message record
-        :param partner_ids: list of partner IDs
-        :param msg_vals: see ``_notify_thread_by_ocn()``;
-        """
         if not partner_ids:
             return
         receiver_ids = (
@@ -116,10 +97,6 @@ class MixinMailThread(models.AbstractModel):
     def _notify_by_ocn_prepare_payload(
         self, message, receiver_ids, msg_vals=False, force_record_name=False
     ):
-        """Returns dictionary containing message information for mobile device.
-        This info will be delivered to mobile device via Google Firebase Cloud
-        Messaging (FCM). And it is having limit of 4000 bytes (4kb)
-        """
         msg_vals = msg_vals or {}
         author_id = msg_vals.get("author_id", message.author_id.ids)
         author_name = self.env["res.partner"].browse(author_id).name
@@ -150,11 +127,6 @@ class MixinMailThread(models.AbstractModel):
 
     @api.model
     def _at_mention_analyser(self, body):
-        """
-        Analyse the message to see if there is a @Mention in the notification
-        :param body: original body of current mail.message record
-        :return: a array with the list of ids for the @Mention partners
-        """
         if isinstance(body, bytes):
             body = body.decode("utf-8")
 

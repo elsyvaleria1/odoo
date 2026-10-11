@@ -33,7 +33,6 @@ class RepairOrder(models.Model):
     _date_category_field = "schedule_date"
     _check_company_auto = True
 
-    # Common Fields
     name = fields.Char(
         string="Repair Reference",
         default="New",
@@ -91,7 +90,6 @@ class RepairOrder(models.Model):
         check_company=True,
     )
 
-    # Specific Fields
     internal_notes = fields.Html()
     tag_ids = fields.Many2many(
         comodel_name="repair.tags",
@@ -113,9 +111,7 @@ class RepairOrder(models.Model):
         copy=True,
     )
 
-    # Product To Repair
     move_id = fields.Many2one(
-        # Generated in 'action_repair_done', needed for traceability
         comodel_name="stock.move",
         string="Inventory Move",
         copy=False,
@@ -164,7 +160,6 @@ class RepairOrder(models.Model):
         readonly=False,
     )
 
-    # Picking & Locations
     picking_type_id = fields.Many2one(
         comodel_name="stock.picking.type",
         string="Operation Type",
@@ -255,7 +250,6 @@ class RepairOrder(models.Model):
         help="This is the location where the repair parts are located.",
     )
 
-    # Parts
     move_ids = fields.One2many(
         comodel_name="stock.move",
         inverse_name="repair_id",
@@ -263,7 +257,7 @@ class RepairOrder(models.Model):
         copy=True,
         domain=[("repair_line_type", "!=", False)],
         check_company=True,
-    )  # Once RO switch to state done, a binded move is created for the "Product to repair" (move_id), this move appears in 'move_ids' if not filtered
+    )
     parts_availability = fields.Char(
         string="Component Status",
         compute="_compute_parts_availability_and_state",
@@ -290,7 +284,6 @@ class RepairOrder(models.Model):
         store=True,
     )
 
-    # Sale Order Binding
     sale_order_id = fields.Many2one(
         comodel_name="sale.order",
         index="btree_not_null",
@@ -312,7 +305,6 @@ class RepairOrder(models.Model):
         help="Sale Order Line Description.",
     )
 
-    # Return Binding
     picking_id = fields.Many2one(
         comodel_name="stock.picking",
         string="Transfer",
@@ -331,7 +323,6 @@ class RepairOrder(models.Model):
         comodel_name="product.trace",
         compute="_compute_allowed_trace_ids",
     )
-    # UI Fields
     has_uncomplete_moves = fields.Boolean(compute="_compute_has_uncomplete_moves")
     unreserve_visible = fields.Boolean(
         string="Allowed to Unreserve Production",
@@ -416,7 +407,7 @@ class RepairOrder(models.Model):
             domain = Domain("product_id", "=", repair.product_id.id)
             if repair.picking_id:
                 domain &= Domain("id", "in", repair.picking_id.move_ids.trace_ids.ids)
-            repair.allowed_trace_ids = self.env["product.trace"].search(domain)  # noqa: E8507 - one query per repair: the lots are scoped to its own product and picking
+            repair.allowed_trace_ids = self.env["product.trace"].search(domain)
 
     @api.depends("product_id", "product_id.uom_id")
     def _compute_product_uom_id(self):
@@ -490,7 +481,6 @@ class RepairOrder(models.Model):
         other_repairs.parts_availability_state = False
 
         all_moves = repairs.move_ids
-        # Force to prefetch more than 1000 by 1000
         all_moves._fields["forecast_availability"].compute_value(all_moves)
         for repair in repairs:
             if any(
@@ -590,7 +580,6 @@ class RepairOrder(models.Model):
 
     @api.model
     def default_get(self, fields):
-        # Adds the picking_id if it comes from a return. Avoids having a default_picking_id pollute the context for further move creation.
         res = super().default_get(fields)
         if (
             "picking_id" not in res
@@ -614,8 +603,6 @@ class RepairOrder(models.Model):
                 picking_type = self._picking_type_for_create(vals)
                 vals["name"] = picking_type.sequence_id.next_by_id()
             if not vals.get("reference_ids"):
-                # References are system-managed plumbing: repair users have no
-                # create rights on stock.reference.
                 vals["reference_ids"] = [
                     Command.link(
                         self.env["stock.reference"]
@@ -724,7 +711,6 @@ class RepairOrder(models.Model):
             for repair in self
         ]
         self.env["sale.order"].create(sale_order_values_list)
-        # Add Sale Order Lines for 'add' move_ids
         self.move_ids._create_repair_sale_order_line()
         return self.action_view_sale_order()
 
@@ -740,8 +726,8 @@ class RepairOrder(models.Model):
             if repair.sale_order_id:
                 repair.sale_order_line_id.write(
                     {"product_qty": 0.0}
-                )  # Quantity of the product that generated the RO is set to 0
-        self.move_ids._action_cancel()  # Quantity of parts added from the RO to the SO is set to 0
+                )
+        self.move_ids._action_cancel()
         return self.write({"state": "cancel"})
 
     def action_repair_cancel_draft(self) -> None:
@@ -758,29 +744,21 @@ class RepairOrder(models.Model):
         self.state = "draft"
 
     def action_repair_done(self):
-        """Creates stock move for final product of repair order.
-        Writes move_id and move_ids state to 'done'.
-        Writes repair order state to 'Repaired'.
-        @return: True
-        """
 
         _debug.pipeline("repair_done_enter", repairs=self)
         precision = self.env["decimal.precision"].get_precision("Product Unit")
         product_move_vals = []
 
-        # Cancel moves with 0 quantity
         self.move_ids.filtered(
             lambda m: m.product_uom_id.is_zero(m.quantity)
         )._action_cancel()
 
         no_service_policy = "service_policy" not in self.env["product.template"]
-        # SOL qty delivered = repair.move_ids.quantity
         for repair in self:
             if all(not move.picked for move in repair.move_ids):
                 repair.move_ids.picked = True
             if repair.sale_order_line_id:
                 ro_origin_product = repair.sale_order_line_id.product_template_id
-                # TODO: As 'service_policy' only appears with 'sale_project' module, isolate conditions related to this field in a 'sale_project_repair' module if it's worth
                 if ro_origin_product.type == "service" and (
                     no_service_policy
                     or ro_origin_product.service_policy == "ordered_prepaid"
@@ -802,7 +780,6 @@ class RepairOrder(models.Model):
                     )
                 )
 
-            # Try to create move with the appropriate owner
             owner_id = False
             available_qty_owner = self.env["stock.quant"]._get_available_quantity(
                 repair.product_id,
@@ -868,9 +845,6 @@ class RepairOrder(models.Model):
         self.state = "done"
 
     def action_repair_end(self):
-        """Checks before action_repair_done.
-        @return: True
-        """
         _debug.lifecycle("repair_end", repairs=self)
         if self.filtered(lambda repair: repair.state != "under_repair"):
             raise UserError(
@@ -886,7 +860,6 @@ class RepairOrder(models.Model):
         return self.action_repair_done()
 
     def action_repair_start(self):
-        """Writes repair order state to 'Under Repair'"""
         _debug.lifecycle("repair_start", repairs=self)
         if self.filtered(lambda repair: repair.state != "confirmed"):
             self._action_repair_confirm()
@@ -975,10 +948,6 @@ class RepairOrder(models.Model):
         return self.env.ref("repair.action_report_repair_order").report_action(self)
 
     def _action_repair_confirm(self):
-        """Repair order state is set to 'Confirmed'.
-        @param *arg: Arguments
-        @return: True
-        """
         _debug.pipeline("repair_confirm_enter", repairs=self)
         repairs_to_confirm = self.filtered(lambda repair: repair.state == "draft")
         repairs_to_confirm._check_company()
@@ -997,7 +966,6 @@ class RepairOrder(models.Model):
     def _get_picking_type(self):
         companies = self.company_id or self.env.company
         if not self:
-            # default case
             default_warehouse = self.env.user.with_company(
                 companies.id
             )._get_default_warehouse_id()
@@ -1052,9 +1020,6 @@ class RepairOrder(models.Model):
             else:
                 add_moves.sale_line_id._compute_price_and_discount()
 
-    # -------------------------------------------------------------------------
-    # CATALOG
-    # -------------------------------------------------------------------------
 
     def action_add_from_catalog(self):
         res = super().action_add_from_catalog()
@@ -1118,9 +1083,6 @@ class RepairOrder(models.Model):
 
         return self.env["product.product"].browse(product_id).list_price
 
-    # ------------------------------------------------------------
-    # MAIL.THREAD
-    # ------------------------------------------------------------
 
     def _message_post_prepare_values(self, post_values) -> None:
         super()._message_post_prepare_values(post_values)
@@ -1132,8 +1094,4 @@ class RepairTags(models.Model):
 
     _name = "repair.tags"
     _description = "Repair Tags"
-    # `name` (translated, unique on the source term), `active`, `color` and
-    # `code` come from the mixin, whose index replaces the `unique (name)`
-    # constraint this model declared -- that one compares whole jsonb documents
-    # once `name` is translatable. Flat: repair tags do not nest.
     _inherit = ["mixin.tag"]

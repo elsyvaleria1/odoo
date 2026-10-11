@@ -188,8 +188,6 @@ class TestEnsureHooks(TransactionCase):
 
 @tagged("-at_install", "post_install")
 class TestIdsDrawnAtCommit(BaseCase):
-    # Real transactions, committed: the redraw is a deferred trigger, and the
-    # test cursor never commits.
     CHANNEL = "bus_ids_drawn_at_commit"
 
     def setUp(self):

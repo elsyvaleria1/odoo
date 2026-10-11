@@ -107,8 +107,6 @@ def get_cache_miss_from_storage(
 
 
 def origin_read_key(field: Field[typing.Any], env: Environment) -> object:
-    # a draft's x2many value is one for every scope (the pending slot), any
-    # other field cached per context is held per context
     if field.is_x2many or field not in env.registry.field_depends_context:
         return None
     return env.get_cache_key(field)
@@ -182,9 +180,6 @@ def get_cache_miss_by_compute(
     field: Field[typing.Any], record: BaseModel, env: Environment, record_id: IdType
 ) -> typing.Any:
     if env.is_protected(field, record):
-        # protection is a fact of the row: the value a sibling model of the
-        # tree, or another access scope, holds for it is the row's value,
-        # read through this field
         value = _get_tree_sibling_cached(field, env, record_id)
         from_sibling = value is not SENTINEL
         if not from_sibling:
@@ -201,10 +196,6 @@ def get_cache_miss_by_compute(
         if value is SENTINEL:
             value = field.convert_to_cache(False, record, validate=False)
             if _depends_on_more_than_access(field, env):
-                # protection is of the row, not of a context: the write that
-                # holds it assigns this field in its own context, and a False
-                # kept in this one would outlive the write and mask the value
-                # this context computes afterwards
                 return value
         if not from_scope:
             field._update_cache(record, value)
@@ -292,19 +283,19 @@ def get_cache_miss[T](
     field: Field[T], record: BaseModel, env: Environment, record_id: IdType
 ) -> T:
     if field.fetched_with_row and record_id and field.delegation_key_settled(env):
-        source = "storage"  # debuglog
+        source = "storage"
         value = get_cache_miss_from_storage(field, record, env, record_id)
     elif field.store and record._has_origin and not (field.compute and field.readonly):
-        source = "origin"  # debuglog
+        source = "origin"
         value = get_cache_miss_from_origin(field, record, env, record_id)
     elif field.compute:
-        source = "compute"  # debuglog
+        source = "compute"
         value = get_cache_miss_by_compute(field, record, env, record_id)
     elif field.is_delegating and not record_id:
-        source = "delegation"  # debuglog
+        source = "delegation"
         value = get_cache_miss_by_delegation(field, record, env)
     else:
-        source = "default"  # debuglog
+        source = "default"
         value = get_cache_miss_from_default(field, record, env, record_id)
 
     if _debug.logic.enabled:

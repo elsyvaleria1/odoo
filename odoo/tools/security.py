@@ -24,8 +24,6 @@ _debug = DebugLog(__name__)
 
 
 def consteq(presented: object, expected: object) -> bool:
-    # hmac.compare_digest raises TypeError on a non-ASCII str, and a token
-    # comes from the client: compare bytes, and refuse what is not a string.
     if isinstance(presented, _Secret):
         presented = presented.reveal_bytes()
     if isinstance(expected, _Secret):
@@ -36,7 +34,6 @@ def consteq(presented: object, expected: object) -> bool:
         expected = expected.encode()
     if not isinstance(presented, bytes) or not isinstance(expected, bytes):
         return False
-    # an unset secret stored as "" would otherwise admit an empty token
     if not expected:
         return False
     return hmac_lib.compare_digest(presented, expected)
@@ -78,10 +75,6 @@ _SIGNED_SCOPES: dict[str, SignedScope] = {}
 
 
 def register_signed_scope(name: str, *, purpose: str, lifetime: str) -> str:
-    """Declare an HMAC scope, which :func:`hmac` and every signer built on it
-    refuse until some module declares: what the signature lets its holder do,
-    and how long it lives (a date the payload carries, or why it carries
-    none). Returns the name, for the module to keep as its constant."""
     if not name or not purpose or not lifetime:
         raise ValueError("a signed scope states its name, purpose and lifetime")
     known = _SIGNED_SCOPES.get(name)
@@ -103,8 +96,6 @@ def _check_registered(scope: str) -> None:
 def is_hmac_valid(
     env: Environment, scope: str, message: typing.Any, token: object
 ) -> bool:
-    """Whether ``token`` is the HMAC of ``message`` in ``scope``: the one
-    place a stateless signed token is compared (decision F1)."""
     _check_registered(scope)
     if not isinstance(token, str) or not token or not token.isascii():
         return False
@@ -203,10 +194,6 @@ def issue_session_state(
     *,
     max_age_seconds: int,
 ) -> str:
-    """Sign ``claims`` into the ``state`` a redirect carries through a third
-    party (an OAuth provider) and back, bound to the database, the user and a
-    nonce kept in ``session``: :func:`consume_session_state` accepts it once,
-    in that session, within ``max_age_seconds``."""
     if max_age_seconds <= 0:
         raise ValueError("a session state lives a positive number of seconds")
     if clash := set(claims).intersection(_SESSION_STATE_BINDING):
@@ -223,10 +210,6 @@ def consume_session_state(
     session: MutableMapping[str, Any],
     state: object,
 ) -> dict[str, Any] | None:
-    """The claims :func:`issue_session_state` signed into ``state``, or None
-    when it is malformed, tampered, expired, issued to another database, user
-    or session, or already consumed. Every call ends the session's pending
-    state in ``scope``, accepted or not."""
     _check_registered(scope)
     expected_nonce = session.pop(_session_state_nonce_key(scope), None)
     if not isinstance(state, str):

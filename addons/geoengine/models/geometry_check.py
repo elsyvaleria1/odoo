@@ -23,7 +23,6 @@ from .fields import (
 )
 from .geo_types import GeometryValue
 
-# GEOS writes a reason as "Self-intersection[5 5]"; a 3D one adds a z.
 _LOCATED_REASON = re.compile(r"^(?P<kind>[^\[]*)\[(?P<x>\S+) (?P<y>\S+)(?: \S+)?\]$")
 
 
@@ -55,8 +54,6 @@ def find_geometry_problem(
     value: GeometryValue,
     record: BaseModel,
 ) -> GeometryProblem | None:
-    """The first reason ``value`` cannot be stored in ``field`` as it is, with
-    the place it occurs in the value's own coordinates, or None."""
     try:
         shape = field.entry_to_shape(value, record=record)
     except ValidationError as error:

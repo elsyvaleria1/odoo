@@ -32,11 +32,6 @@ class ResPartner(models.Model):
         help="Whether this contact is an Employee.",
     )
 
-    # What a person IS, kept where an employee's confidential facts already
-    # live: on the private facet, a child partner behind its own access guard.
-    # They are declared by hr because hr owns their vocabulary and is their
-    # only reader; base owns the facet and its guard. Where they were born is
-    # resource's, as the origin of a human resource.
     marital = fields.Selection(
         selection="_selection_marital_status",
         string="Marital Status",
@@ -108,11 +103,6 @@ class ResPartner(models.Model):
         }
 
     def _get_all_addr(self):
-        # An employee's home address is a private child of their work contact,
-        # so this reads the child's own address rather than
-        # six prefixed columns on the employee. It keeps the "employee" contact
-        # type the ISO20022 and batch-payment callers already expect, and still
-        # puts the home address first.
         self.check_singleton()
         private = self.child_ids.filtered(lambda partner: partner.type == "private")
         if not private:

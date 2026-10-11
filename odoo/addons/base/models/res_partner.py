@@ -467,8 +467,6 @@ class ResPartner(models.Model):
         inverse_name="partner_id",
         string="Resources",
     )
-    # what a person IS lives on the private facet of their party, a child of
-    # type private behind base's guard, where it shows to no one but its readers
     place_of_birth = fields.Char()
     country_of_birth = fields.Many2one(comodel_name="res.country")
     nationality_ids = fields.One2many(
@@ -581,8 +579,6 @@ class ResPartner(models.Model):
     def _check_barcode_unicity(self) -> None:
         self.flush_model(["barcode"])
         cid = str(self.env.company.id)
-        # one pass: a batch member against every other row, itself excluded,
-        # through the gin index on the jsonb column
         self.env.cr.execute(
             tools.SQL(
                 """
@@ -643,11 +639,8 @@ class ResPartner(models.Model):
         if self.env.context.get("_partners_skip_fields_sync"):
             return partners
 
-        # `_fields_sync` reads the synced names and nothing else, and the
-        # defaults for everything else were already applied inside `super()`
         synced = self._synced_field_names()
         missing_defaults_cache: dict[frozenset[str], list[str]] = {}
-        # partners created with the same synced values sync as one batch
         batches: dict[str, tuple[dict[str, Any], list[int]]] = {}
         for partner, vals in zip(partners, vals_list, strict=True):
             vals = self.env["res.partner"]._add_missing_default_values(
@@ -718,9 +711,6 @@ class ResPartner(models.Model):
         if commercial_moved and privileged.search_count(
             [("id", "child_of", self.ids), ("user_ids", "!=", False)], limit=1
         ):
-            # a user's commercial partner is what the partner rows compile
-            # into the domain the registry caches for that user: a move above
-            # a user's partner changes it
             _debug.lifecycle("write_cache_cleared", reason="user_commercial_partner")
             self.env.registry.clear_cache()
         self._invalidate_company_caches(vals)
@@ -728,9 +718,6 @@ class ResPartner(models.Model):
         return result
 
     def _invalidate_company_caches(self, vals: dict[str, Any]) -> None:
-        # a company reads these fields from its partner (_inherits): written
-        # on the partner itself they never reach res.company.write, whose
-        # invalidation hook names them
         Company = self.env["res.company"]
         written = {
             fname
@@ -811,8 +798,6 @@ class ResPartner(models.Model):
             self._fields["type"]._description_selection(clean_self.env)
         )
         for partner in clean_self:
-            # normalised exactly as _compute_display_name normalises its result,
-            # so the stored column is the display name and not only nearly
             partner.complete_name = _RE_WHITESPACE_BEFORE_NEWLINE.sub(
                 "\n", partner._get_complete_name(type_description)
             ).strip()
@@ -1406,7 +1391,7 @@ class ResPartner(models.Model):
                 str(threshold),
             )
         )
-        self.env.cr.execute(query)  # noqa: E8501  built via SQL() by the caller
+        self.env.cr.execute(query)
         rows = self.env.cr.fetchall()
         _debug.logic(
             "trigram_threshold_scoped",
@@ -1587,7 +1572,6 @@ class ResPartner(models.Model):
         return self._phone_get_numbers(fname=fname)._primary(*types)
 
     def _prepare_phone_replacement_vals(self, number) -> dict:
-        """Replace this contact's selected number, preserving other linked numbers."""
         current = self._phone_get_number()
         if current == number:
             _debug.logic("phone_replacement_noop", partner=self.id, phone=number.id)
@@ -1784,8 +1768,6 @@ class ResPartner(models.Model):
         descendants = self._get_contact_descendants(new=new)
         if not descendants:
             return
-        # one write per distinct value set: a batch written the same values
-        # syncs every stale descendant of every partner at once
         stale_by_values: dict[str, ResPartner] = {}
         sync_vals_by_key: dict[str, dict[str, Any]] = {}
         sync_vals_by_commercial = {
@@ -1843,7 +1825,6 @@ class ResPartner(models.Model):
             )
             if address_values:
                 followers = children
-                # a new partner's children were created from it, already in sync
                 if not new:
                     followers |= children._get_contact_descendants(sharing_address=True)
                 followers._update_address(address_values)
@@ -1922,7 +1903,6 @@ class ResPartner(models.Model):
         tracked_fields: set[str],
         pre_values_list: list[dict[str, Any]],
     ) -> None:
-        # partners whose same fields changed took the same values: one sync
         groups: dict[tuple[frozenset[str], bool, bool], ResPartner] = {}
         for partner, pre_values in zip(self, pre_values_list, strict=True):
             changed = frozenset(
@@ -2072,7 +2052,6 @@ class ResPartner(models.Model):
             commercial_changed=commercial_changed,
             was_commercial=was_commercial,
         )
-        # pushing up is per record: each parent compares against one child
         for partner in self:
             partner._sync_to_parent(
                 values, joined_with_own_values=commercial_changed and was_commercial
@@ -2126,8 +2105,6 @@ class ResPartner(models.Model):
                 add_id = partner.parent_id.id
             groups[(cp_id, add_id)].append(partner.id)
 
-        # one fetch per field set for every group's source, so a file whose
-        # rows each name a different parent costs two queries, not two per row
         commercial = self.sudo().browse([cp_id for cp_id, _add_id in groups if cp_id])
         commercial.fetch(self._commercial_fields())
         address_parents = self.browse([add_id for _cp_id, add_id in groups if add_id])
@@ -2342,8 +2319,6 @@ class ResPartner(models.Model):
     def _address_get_multi(
         self, adr_pref: list[str] | None = None
     ) -> dict[int, dict[str, int | bool]]:
-        # address_get for every partner of a batch, answered per partner from
-        # one tree load: a compute over many orders asks once, not per order
         adr_pref = set(adr_pref or [])
         adr_pref.add("contact")
         chains = self._address_get_chains()
@@ -2512,7 +2487,6 @@ class ResPartner(models.Model):
         return self.filtered(moves)
 
     def _get_private_facets(self) -> dict:
-        # searched as the reader, so base's guard hides a facet they may not see
         facets = self.search(
             [("parent_id", "in", self.ids), ("type", "=", "private")], order="id desc"
         )

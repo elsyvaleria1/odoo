@@ -19,24 +19,19 @@ class TestKnowledgeUICommon(HttpCaseWithUserDemo, MailCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # remove existing articles to ease tour management
         cls.env["knowledge.article"].with_context(active_test=False).search([]).unlink()
 
         cls.user_portal = cls._create_portal_user()
 
-        # Ensure we can send emails from tours using admin user
         cls.env.ref("base.user_admin").write({"email": "test.admin@test.example.com"})
 
 
 @tagged("post_install", "-at_install", "knowledge", "knowledge_tour")
 class TestKnowledgeUI(TestKnowledgeUICommon):
     def test_knowledge_history(self):
-        """This tour will check that the history works properly."""
         self.start_tour("/odoo?debug=1", "knowledge_history_tour", login="demo")
 
     def test_knowledge_load_template(self):
-        """This tour will check that the user can create a new article by using
-        the template gallery."""
         category = self.env["knowledge.article.template.category"].create(
             {"name": "Personal"}
         )
@@ -66,8 +61,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         )
         self.assertEqual(len(article), 1)
 
-        # Strip collaborative steps ids from the body for content-only
-        # comparison
         body = re.sub(r'\s*data-last-history-steps="[^"]*"', "", article.body)
         body = re.sub(r'\s*data-oe-version="[^"]*"', "", body)
 
@@ -80,9 +73,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
 
     def test_knowledge_main_flow(self):
 
-        # Patching 'now' to allow checking the order of trashed articles, as
-        # they are sorted using their deletion date which is based on the
-        # 'write_date' field
         self.patch(
             self.env.cr, "now", lambda: fields.Datetime.now() - timedelta(days=1)
         )
@@ -95,9 +85,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         )
         article_1.flush_recordset()
 
-        # as the knowledge.article#_resequence method is based on write date
-        # force the write_date to be correctly computed
-        # otherwise it always returns the same value as we are in a single transaction
         self.patch(self.env.cr, "now", fields.Datetime.now)
         self.env["knowledge.article"].create(
             {
@@ -117,8 +104,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         with self.mock_mail_gateway(), self.mock_mail_app():
             self.start_tour("/odoo", "knowledge_main_flow_tour", login="admin")
 
-        # check our articles were correctly created
-        # with appropriate default values (section / internal_permission)
         private_article = self.env["knowledge.article"].search(
             [("name", "=", "My Private Article")]
         )
@@ -143,11 +128,9 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
             lambda article: article.name == "Child Article 2"
         )
 
-        # as we re-ordered children, article 2 should come first
         self.assertEqual(children_workspace_articles[0], child_article_2)
         self.assertEqual(children_workspace_articles[1], child_article_1)
 
-        # workspace article should have one partner invited on it
         invited_member = workspace_article.article_member_ids.filtered(
             lambda member: member.partner_id != workspace_article.create_uid.partner_id
         )
@@ -156,7 +139,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertEqual(len(invited_partner), 1)
         self.assertEqual(invited_partner.name, "micheline@knowledge.com")
         self.assertEqual(invited_partner.email, "micheline@knowledge.com")
-        # check that the partner received an invitation link
         invitation_message = self.env["mail.message"].search(
             [("partner_ids", "in", invited_partner.id)]
         )
@@ -166,25 +148,15 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
             self._new_mails.body_html,
         )
 
-        # as we re-ordered our favorites, private article should come first
         article_favorites = self.env["knowledge.article.favorite"].search([])
         self.assertEqual(len(article_favorites), 2)
         self.assertEqual(article_favorites[0].article_id, private_article)
         self.assertEqual(article_favorites[1].article_id, workspace_article)
 
     def test_knowledge_main_flow_portal(self):
-        """Same goal as 'test_knowledge_main_flow' but for a portal user.
-        Portal users have limited rights, they can only access articles to which they have been
-        given specific write access to."""
 
-        # as the knowledge.article#_resequence method is based on write date
-        # force the write_date to be correctly computed
-        # otherwise it always returns the same value as we are in a single transaction
         self.patch(self.env.cr, "now", fields.Datetime.now)
 
-        # create initial set of data:
-        # - one regular internal article
-        # - one article to which portal has access to
         self.env["knowledge.article"].create(
             [
                 {
@@ -217,8 +189,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
             "/knowledge/home", "knowledge_main_flow_tour_portal", login="portal_test"
         )
 
-        # check our articles were correctly created
-        # with appropriate default values (section / internal_permission)
         private_article = self.env["knowledge.article"].search(
             [("name", "=", "My Private Article")]
         )
@@ -229,7 +199,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         workspace_article = self.env["knowledge.article"].search(
             [("name", "=", "Workspace Article")]
         )
-        # check that workspace article's content has been properly modified
         self.assertIn(
             "Edited Content of Workspace Article",
             workspace_article.body,
@@ -243,21 +212,15 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
             "Portal should have been able to create 2 children",
         )
 
-        # as we re-ordered our favorites, private article should come first
         article_favorites = self.env["knowledge.article.favorite"].search([])
         self.assertEqual(len(article_favorites), 2)
         self.assertEqual(article_favorites[0].article_id, private_article)
         self.assertEqual(article_favorites[1].article_id, workspace_article)
 
     def test_knowledge_pick_emoji(self):
-        """This tour will check that the emojis of the form view are properly updated
-        when the user picks an emoji from an emoji picker."""
         self.start_tour("/odoo", "knowledge_pick_emoji_tour", login="admin")
 
     def test_knowledge_cover_selector(self):
-        """Check the behaviour of the cover selector when unsplash credentials
-        are not set.
-        """
         with io.BytesIO() as f:
             Image.new("RGB", (50, 50)).save(f, "PNG")
             f.seek(0)
@@ -274,9 +237,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.start_tour("/odoo", "knowledge_cover_selector_tour", login="admin")
 
     def test_knowledge_readonly_favorite(self):
-        """Make sure that a user can add readonly articles to its favorites and
-        resequence them.
-        """
         articles = self.env["knowledge.article"].create(
             [
                 {
@@ -334,9 +294,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         )
 
     def test_knowledge_resequence_children_of_readonly_parent_tour(self):
-        """Make sure that a user can move children articles under a readonly
-        parent.
-        """
         parent = self.env["knowledge.article"].create(
             {
                 "name": "Readonly Parent",
@@ -376,7 +333,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         )
 
     def test_knowledge_properties_tour(self):
-        """Test article properties panel"""
         parent_article = self.env["knowledge.article"].create(
             [
                 {
@@ -397,14 +353,12 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.start_tour("/odoo", "knowledge_properties_tour", login="admin")
 
     def test_knowledge_items_search_favorites_tour(self):
-        """Test search favorites for items view"""
         self.env["knowledge.article"].create(
             [{"name": "Article 1", "is_article_visible_by_everyone": True}]
         )
         self.start_tour("/odoo", "knowledge_items_search_favorites_tour", login="admin")
 
     def test_knowledge_search_favorites_tour(self):
-        """Test search favorites with searchModel state"""
         self.env["knowledge.article"].create(
             [{"name": "Article 1", "is_article_visible_by_everyone": True}]
         )
@@ -412,10 +366,8 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
 
     @users("admin")
     def test_knowledge_sidebar(self):
-        # This tour checks that the features of the sidebar work as expected
         self.start_tour("/odoo", "knowledge_sidebar_tour", login="admin", timeout=100)
 
-        # Check section create button and article icon button
         workspace_article = self.env["knowledge.article"].search(
             [("name", "=", "Workspace Article")]
         )
@@ -424,7 +376,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertFalse(workspace_article.parent_id)
         self.assertFalse(workspace_article.icon)
 
-        # Check article create and icon buttons
         workspace_child = self.env["knowledge.article"].search(
             [("name", "=", "Workspace Child")]
         )
@@ -432,7 +383,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertFalse(workspace_child.icon)
         self.assertTrue(workspace_child.is_user_favorite)
 
-        # Check drag and drop to trash
         shared_article = (
             self.env["knowledge.article"]
             .with_context(active_test=False)
@@ -442,7 +392,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertEqual(shared_article.category, "shared")
         self.assertFalse(shared_article.active)
 
-        # Check favorites resequencing
         private_article = self.env["knowledge.article"].search(
             [("name", "=", "Private Article")]
         )
@@ -454,14 +403,12 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
             workspace_child.user_favorite_sequence,
         )
 
-        # Check articles resequencing and article icon button
         private_children = private_article.child_ids.sorted("sequence")
         self.assertEqual(private_children[0].name, "Private Child 3")
         self.assertTrue(private_children[0].icon)
         self.assertEqual(private_children[1].name, "Private Child 4")
         self.assertEqual(private_children[2].name, "Private Child 1")
 
-        # Check drag and drop to other section
         moved_to_share = (
             self.env["knowledge.article"]
             .with_context(active_test=False)
@@ -472,7 +419,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertEqual(moved_to_share.category, "shared")
         self.assertFalse(moved_to_share.active)
 
-        # Check drag and drop to root and to trash
         private_child_2 = (
             self.env["knowledge.article"]
             .with_context(active_test=False)
@@ -483,7 +429,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         self.assertGreater(private_child_2.sequence, private_article.sequence)
         self.assertFalse(private_child_2.active)
 
-        # Check that some features are restricted with read only articles
         private_article.write(
             {
                 "internal_permission": "read",
@@ -491,7 +436,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
                 "sequence": workspace_article.sequence + 1,
             }
         )
-        # show the workspace article in the sidebar
         workspace_article.write(
             {
                 "is_article_visible_by_everyone": True,
@@ -499,7 +443,6 @@ class TestKnowledgeUI(TestKnowledgeUICommon):
         )
         self.start_tour("/odoo", "knowledge_sidebar_readonly_tour", login="demo")
 
-        # Check that articles did not move
         self.assertFalse(workspace_article.parent_id)
         self.assertGreater(private_article.sequence, workspace_article.sequence)
 
@@ -523,7 +466,4 @@ class TestKnowledgeUIWithUnsplash(TestKnowledgeUICommon):
         )
 
     def test_knowledge_cover_selector_unsplash(self):
-        """Check the behaviour of the cover selector when unsplash credentials
-        are set.
-        """
         self.start_tour("/odoo", "knowledge_random_cover_tour", login="demo")

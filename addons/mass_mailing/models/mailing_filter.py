@@ -13,7 +13,6 @@ class MailingFilter(models.Model):
     _description = "Mailing Favorite Filters"
     _order = "create_date DESC"
 
-    # override create_uid field to display default value while creating filter from 'Configuration' menus
     create_uid = fields.Many2one(
         comodel_name="res.users",
         string="Saved by",
@@ -42,11 +41,10 @@ class MailingFilter(models.Model):
 
     @api.constrains("mailing_domain", "mailing_model_id")
     def _check_mailing_domain(self) -> None:
-        """Check that if the mailing domain is set, it is a valid one"""
         for mailing_filter in self:
             if mailing_filter.mailing_domain != "[]":
                 try:
-                    self.env[mailing_filter.mailing_model_id.model].search_count(  # noqa: E8507 - validates each filter's own domain on its own model
+                    self.env[mailing_filter.mailing_model_id.model].search_count(
                         literal_eval(mailing_filter.mailing_domain)
                     )
                 except Exception as err:

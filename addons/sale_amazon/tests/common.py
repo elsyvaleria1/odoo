@@ -118,7 +118,6 @@ class TestAmazonCommon(TransactionCase):
             }
         )
 
-        # Create an offer linked to the product
         self.stock_location = self.env.ref("stock.stock_location_stock")
         self.product = self.env["product.product"].create(
             {"name": "This is a storable product", "is_storable": True}
@@ -134,11 +133,10 @@ class TestAmazonCommon(TransactionCase):
             }
         )
 
-        # Create a delivery carrier
         self.carrier = self.env["delivery.carrier"].create(
             {
                 "name": "My Truck",
                 "product_id": self.product.id,
-            }  # delivery_type == 'fixed'
+            }
         )
         self.tracking_ref = "dummy tracking ref"

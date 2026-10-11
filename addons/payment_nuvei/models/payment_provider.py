@@ -37,10 +37,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "nuvei":
             supported_currencies = supported_currencies.filtered(
@@ -48,32 +46,21 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "nuvei":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS === #
 
     def _nuvei_get_api_url(self) -> str:
         if self.state == "enabled":
             return "https://secure.safecharge.com/ppp/purchase.do"
-        else:  # 'test'
+        else:
             return "https://ppp-test.safecharge.com/ppp/purchase.do"
 
     def _get_nuvei_signature(self, data, incoming=True):
-        """Compute the signature for the provided data according to the Nuvei documentation.
-
-        :param dict data: The data to sign.
-        :param bool incoming: If the signature must be generated for an incoming (Nuvei to Odoo) or
-                              outgoing (Odoo to Nuvei) communication.
-        :return: The calculated signature.
-        :rtype: str
-        """
         self.check_singleton()
         if incoming:
             data = dict(

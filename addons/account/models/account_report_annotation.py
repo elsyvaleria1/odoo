@@ -5,7 +5,6 @@ class AccountReportAnnotation(models.Model):
     _name = "account.report.annotation"
     _description = "Account Report Annotation"
 
-    # This field is a OneToOne to a mail.message.
     message_id = fields.Many2one(
         comodel_name="mail.message",
         index=True,

@@ -187,9 +187,6 @@ class TestSecurityChangeLog(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestDenialLog(TransactionCase):
-    # a refusal is logged on a cursor of its own, as the refused transaction
-    # rolls back; in a test that cursor shares the test's transaction, which
-    # assertRaises rolls back to its savepoint, so the refusals are spied on
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -279,7 +276,6 @@ class TestAccessLogIntegrity(TransactionCase):
 
         with self.assertRaises(UserError):
             row.with_user(user).sudo().unlink()
-        # the superuser included: a purge states its reason, and is logged
         with self.assertRaises(UserError):
             row.unlink()
         with self.assertRaises(UserError):
@@ -330,7 +326,6 @@ class TestAccessLogIntegrity(TransactionCase):
         self.assertIsNone(Log._get_seal_chain_error())
 
     def test_a_sealed_row_changed_behind_the_database_breaks_the_chain(self):
-        # as someone who switched the trigger off would, owning the table
         Log = self.env["ir.access.log"]
         rows = Log._record(
             [{"event": "grant_created", "reason": f"probe {n}"} for n in range(3)]
@@ -355,10 +350,8 @@ class TestAccessLogIntegrity(TransactionCase):
             "UPDATE ir_access_log SET reason = 'probe 1' WHERE id = %s", [rows[1].id]
         )
         self.assertIsNone(Log._get_seal_chain_error())
-        # the end of the chain deleted leaves no gap, only a head it misses
         self.env.cr.execute("DELETE FROM ir_access_log WHERE id = %s", [rows[2].id])
         self.assertIn("the end of the chain was deleted", Log._get_seal_chain_error())
-        # a row deleted inside the chain is a gap
         self.env.cr.execute("DELETE FROM ir_access_log WHERE id = %s", [rows[0].id])
         self.assertIn(
             "is missing: a sealed row was deleted", Log._get_seal_chain_error()

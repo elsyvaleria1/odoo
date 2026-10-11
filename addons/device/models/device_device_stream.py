@@ -19,8 +19,6 @@ class DeviceDeviceStream(models.Model):
 
     @api.model
     def _streamed_protocols(self) -> list:
-        # Persistent protocols whose connection is an integration.stream: the
-        # stream worker holds it, and the device's state follows the row.
         return []
 
     @api.model
@@ -39,8 +37,6 @@ class DeviceDeviceStream(models.Model):
         )
 
     def _stream_vals(self):
-        # What the device's stream row says, or None when its protocol keeps
-        # no connection of its own; a streamed protocol module answers.
         self.check_singleton()
 
     @_debug.perf.timed

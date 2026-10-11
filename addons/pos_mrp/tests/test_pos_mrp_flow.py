@@ -87,17 +87,12 @@ class TestPosMrp(CommonPosMrpTest):
         self.pos_config_usd.current_session_id.action_pos_session_closing_control()
 
     def test_bom_kit_different_uom_invoice_valuation(self):
-        """This test make sure that when a kit is made of product using UoM A but the bom line uses UoM B
-        the price unit is correctly computed on the invoice lines.
-        """
         self.env.user.group_ids += self.env.ref("base.group_uom")
 
-        # Edit kit product and component product
         self.product_product_kit_one.categ_id = self.category_fifo_realtime
         self.product_product_comp_one.standard_price = 12000
         self.product_product_comp_one.uom_id = self.env.ref("base.product_uom_dozen").id
 
-        # Edit kit product quantity
         self.bom_one_line.bom_line_ids[0].product_qty = 6.0
         self.bom_one_line.bom_line_ids[0].product_uom_id = self.env.ref(
             "base.product_uom_unit"
@@ -201,7 +196,6 @@ class TestPosMrp(CommonPosMrpTest):
             }
         )
 
-        # Create attribute values
         self.value_1_1 = self.env["product.attribute.value"].create(
             {
                 "name": "Red",
@@ -217,7 +211,6 @@ class TestPosMrp(CommonPosMrpTest):
             }
         )
 
-        # Create the configurable product with attributes
         self.configurable_product = self.env["product.product"].create(
             {
                 "name": "Configurable Chair",
@@ -237,7 +230,6 @@ class TestPosMrp(CommonPosMrpTest):
             ]
         )
 
-        # Create the component products
         self.component_common = self.env["product.product"].create(
             {
                 "name": "Common Frame",
@@ -262,12 +254,11 @@ class TestPosMrp(CommonPosMrpTest):
             }
         )
 
-        # Create BOM for the configurable product
         self.bom = self.env["mrp.bom"].create(
             {
                 "product_tmpl_id": self.configurable_product.product_tmpl_id.id,
                 "product_qty": 1.0,
-                "type": "phantom",  # Kit type
+                "type": "phantom",
                 "bom_line_ids": [
                     Command.create(
                         {
@@ -366,8 +357,6 @@ class TestPosMrp(CommonPosMrpTest):
         self.assertEqual(len(current_session.picking_ids.move_line_ids), 4)
 
     def test_bom_variant_exclusive_bom_lines(self):
-        """This test make sure that the cost is correctly computed when a product has a BoM with lines linked
-        to specific variant."""
         category = self.env["product.category"].create(
             {
                 "name": "Category for kit",
@@ -506,8 +495,6 @@ class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
     """The anglo-saxon cost of a kit is the sum of its components' costs."""
 
     def _make_delivered_order(self, product):
-        # Anglo-saxon costing reads valuation layers: without a real-time
-        # FIFO category the price unit is always 0.
         (
             self.product_product_kit_one | self.product_product_comp_one
         ).categ_id = self.category_fifo_realtime
@@ -525,7 +512,6 @@ class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
         return order
 
     def test_kit_price_unit_sums_its_components(self):
-        """A one-component kit costs exactly what that component costs."""
         order = self._make_delivered_order(self.product_product_kit_one)
 
         price_unit = order._get_pos_anglo_saxon_price_unit(
@@ -535,7 +521,6 @@ class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
         self.assertEqual(price_unit, self.product_product_comp_one.standard_price)
 
     def test_non_kit_product_delegates_to_super(self):
-        """A product without a phantom BoM keeps the standard behaviour."""
         order = self._make_delivered_order(self.product_product_comp_one)
 
         price_unit = order._get_pos_anglo_saxon_price_unit(
@@ -545,7 +530,6 @@ class TestPosMrpAngloSaxonPriceUnit(CommonPosMrpTest):
         self.assertEqual(price_unit, self.product_product_comp_one.standard_price)
 
     def test_kit_price_unit_unknown_without_real_time_category(self):
-        """A kit left on a non real-time category returns the 0.0 unknown sentinel."""
         (
             self.product_product_kit_one | self.product_product_comp_one
         ).categ_id = self.category_average

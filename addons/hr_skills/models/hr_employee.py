@@ -137,11 +137,6 @@ class HrEmployee(models.Model):
             )
         }
 
-        # activity_schedule already creates one activity per record of the
-        # recordset it is called on, in a single create(). Calling it per
-        # employee paid the whole scheduling path -- activity type lookup, model
-        # lookup, the mail create hooks -- once per activity instead of once per
-        # group of employees that share a summary, a deadline and a responsible.
         to_schedule = defaultdict(lambda: self.env["hr.employee"])
         for employee in employees:
             responsible = (
@@ -214,12 +209,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _get_cv_printable_employees(self, employee_ids):
-        """The employees the current user may print, or an empty recordset.
-
-        An HR user prints whichever employees they can read; anyone else prints
-        only themself. The report renders as superuser, so this is the only
-        access check it gets.
-        """
         user = self.env.user
         employees = self.browse(employee_ids).exists()
         if not user._is_internal() or len(employees) != len(set(employee_ids)):
@@ -266,8 +255,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _version_span(self, version, next_version, clip_to_contract) -> tuple:
-        """The days ``version`` describes: from its start to the day before the
-        next version, narrowed to the contract when the reader may see one."""
         start = version.date_version
         end = (
             next_version.date_version - relativedelta(days=1) if next_version else False
@@ -281,9 +268,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _internal_resume_lines(self, versions, clip_to_contract=True):
-        """One line per run of consecutive versions sharing a job title, most
-        recent first. A version without a title is a hole between runs; a run
-        ends where the contract does, even if the next version carries on."""
         lines = []
         for version, next_version in zip(versions, [*versions[1:], None], strict=True):
             if not version.job_title:

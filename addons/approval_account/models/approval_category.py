@@ -164,11 +164,6 @@ class ApprovalCategory(models.Model):
         self.check_singleton()
         company_currency = company.currency_id
         if not self.company_id:
-            # A global category has no currency of its own. Converting from
-            # `move_amount_currency_id` would read the fallback below, which is
-            # the *reader's* active company — the same invoice would then need
-            # approval for one user and not for another. The thresholds are
-            # taken as already expressed in the document company's currency.
             return self.move_amount_min, self.move_amount_max
 
         threshold_currency = self.move_amount_currency_id

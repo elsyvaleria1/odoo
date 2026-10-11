@@ -163,4 +163,4 @@ class AuthTotpTrust(models.Model):
             )
             nbr_days = TRUSTED_DEVICE_AGE_DAYS
 
-        return nbr_days * 86400  # seconds
+        return nbr_days * 86400

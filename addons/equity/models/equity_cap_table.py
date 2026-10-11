@@ -143,7 +143,6 @@ class EquityCapTable(models.Model):
 
     @api.model
     def get_cap_table_data(self, partner_ids) -> dict:
-        # {partner_id: {holder_id: {...}}}
         partner_holder_data = defaultdict(
             lambda: defaultdict(
                 lambda: {
@@ -185,7 +184,6 @@ class EquityCapTable(models.Model):
             )
 
         for partner_id, security_class_ids in partner_classes_ids.items():
-            # to have a deterministic order of share classes on the cap table
             partner_classes_ids[partner_id] = (
                 self.env["equity.security.class"]
                 .browse(security_class_ids)
@@ -209,7 +207,6 @@ class EquityCapTable(models.Model):
         limit: int | None = None,
         order: str | None = None,
     ):
-        # Always fetch all the fields when searching to avoid doing a lookup by id afterwards
         return self.search_fetch(
             domain, list(self._fields), offset=offset, limit=limit, order=order
         )

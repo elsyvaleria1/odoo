@@ -28,8 +28,6 @@ class TestSignWizard(SignRequestCommon):
         self.assertFalse(wizard.display_download_button)
 
     def test_sign_send_request_single_signer_mail_sent_order(self):
-        """The single-signer (no role) path of create_request() must default
-        mail_sent_order to 1, like every other creation path, not 0."""
         wizard = self.env["wizard.sign.request.send"].create(
             {
                 "template_id": self.template_no_item.id,

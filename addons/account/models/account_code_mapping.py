@@ -2,8 +2,6 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.tools import Query
 
-# Must exceed any realistic res.company id: undersizing it silently decodes
-# a packed id to the wrong account/company instead of raising.
 COMPANY_OFFSET = 10**6
 
 
@@ -106,8 +104,6 @@ class AccountCodeMapping(models.Model):
 
     @api.model
     def _access_guard(self, operation: str) -> Domain:
-        # a mapping is its company's: the check admits exactly what the search
-        # lists, the companies the user belongs to
         return super()._access_guard(operation) & Domain(
             "company_id", "in", self._mapped_company_ids()
         )

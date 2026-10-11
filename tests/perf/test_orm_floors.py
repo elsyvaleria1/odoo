@@ -68,8 +68,6 @@ def test_partner_write_loop(env, counter, check):
 
 
 def test_partner_read_warm(env, counter, check):
-    # one attribute read per record, everything cached: the descriptor path a
-    # loop over records pays on every field it touches
     partners = env["res.partner"].create(
         [{"name": f"warm{i}", "ref": f"r{i}", "color": i} for i in range(1000)]
     )
@@ -147,9 +145,6 @@ def test_partner_read_check_repeated(env, counter, check):
 
 
 def _policy_user(env, login):
-    # an internal user holding a group of its own, whose five rows on
-    # res.partner are a company rung, a partner rung, a static filter, a
-    # domain reading the user and a guard binding its members
     group = env["res.groups"].create({"name": f"{login} policy"})
     user = env["res.users"].create(
         {

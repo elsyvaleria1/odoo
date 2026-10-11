@@ -7,17 +7,6 @@ class IrActionsReport(models.Model):
     _inherit = "ir.actions.report"
 
     def _check_report_approval(self, report_ref, res_ids):
-        """Refuse to render records an approval binding on this report does not cover.
-
-        Checked at every render entry point, not inside the rendering context: a PDF
-        already stored as an attachment is returned without rendering again, so a
-        check further in would let every reprint through. A render that passed is
-        admitted for its records while it runs, so the PDF path, which can fall back
-        to HTML, is not checked twice; the admission is the server's, never the
-        context's, which the report route takes from the client.
-
-        Returns the records the render is admitted for, or None when nothing gates it.
-        """
         if not res_ids:
             return None
         Binding = self.env["approval.binding"]

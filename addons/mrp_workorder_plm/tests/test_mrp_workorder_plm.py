@@ -29,9 +29,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         )
 
     def test_create_eco_from_production_with_wo(self):
-        """Creates an ECO from a Manufacturing Order and checks the
-        modifications done in the MO are in the revised BoM."""
-        # Creates a new MO, modifies some fields and confirms it.
         mo_form = Form(self.env["mrp.production"])
         mo_form.bom_id = self.bom_table
         mo_form.product_qty = 3
@@ -43,12 +40,10 @@ class TestMrpWorkorderPlm(TestPlmCommon):
             op1_wo.duration_expected = 45
         mo = mo_form.save()
         mo.action_confirm()
-        # Generates an ECO from the MO and starts the revision.
         action = mo.action_create_eco()
         new_eco_form = Form(self.env["mrp.eco"].with_context(action["context"]))
         new_eco = new_eco_form.save()
         new_eco.action_new_revision()
-        # Checks the ECO's revision BoM has the expected changes.
         new_bom = new_eco.new_bom_id
         self.assertEqual(new_bom.bom_line_ids[1].product_qty, 4)
         self.assertEqual(new_bom.operation_ids[0].time_cycle_manual, 15)
@@ -61,11 +56,8 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         )
 
     def test_create_eco_from_production_with_wo_using_uom(self):
-        """Creates an ECO from a Manufacturing Order and checks the modifications done in the MO
-        are correct even if the UoM used in the MO is different than the BoM's one."""
         self.env.user.group_ids += self.env.ref("base.group_uom")
         uom_dozen = self.env.ref("base.product_uom_dozen")
-        # Creates a new MO and modifies some fields. Don't confirm it since we want to keep the dozen as the used UoM.
         mo_form = Form(self.env["mrp.production"])
         mo_form.bom_id = self.bom_table
         mo_form.product_uom_id = uom_dozen
@@ -78,12 +70,10 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         with mo_form.workorder_ids.edit(0) as op1_wo:
             op1_wo.duration_expected = 360
         mo = mo_form.save()
-        # Generates an ECO from the MO and starts the revision.
         action = mo.action_create_eco()
         new_eco_form = Form(self.env["mrp.eco"].with_context(action["context"]))
         new_eco = new_eco_form.save()
         new_eco.action_new_revision()
-        # Checks the ECO's revision BoM has the expected changes.
         new_bom = new_eco.new_bom_id
         self.assertEqual(
             new_bom.bom_line_ids[0].product_qty,
@@ -93,33 +83,22 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         self.assertEqual(new_bom.operation_ids[0].time_cycle_manual, 15)
 
     def test_operation_change(self):
-        "Test eco with bom operation changes."
-        # --------------------------------
-        # Create ecos for bill of material.
-        # ---------------------------------
 
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
 
-        # Start new revision of eco1
         eco1.action_new_revision()
 
-        # -----------------------------------------
-        # Check eco status after start new revision.
-        # ------------------------------------------
 
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
 
-        # change quality_point_test1 type
         eco1.new_bom_id.operation_ids[0].quality_point_ids[
             0
         ].test_type_id = self.env.ref("quality.test_type_picture")
 
-        # remove quality_point_test2
         eco1.new_bom_id.operation_ids[0].quality_point_ids[1].unlink()
 
-        # add quality_point_test3
         self.env["quality.point"].create(
             {
                 "name": "QP3",
@@ -130,7 +109,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
             }
         )
 
-        # Check correctness
         self.assertEqual(
             eco1.routing_change_ids[0].change_type,
             "update",
@@ -148,10 +126,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         )
 
     def test_add_new_step_to_wo_aside_bom(self):
-        """
-        Test that adding a step to WO that isn't in the BoM
-        doesn't create any QCP/ECO
-        """
         mo = self.env["mrp.production"].create(
             {
                 "product_id": self.table.id,
@@ -197,8 +171,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         self.assertFalse(self.bom_table.eco_ids)
 
     def test_add_new_step_to_multi_mo(self):
-        """Test that adding a step to multiple MOs of the same bom does not trigger
-        singleton errors."""
         for _i in range(3):
             mo_form = Form(self.env["mrp.production"])
             mo_form.bom_id = self.bom_table
@@ -215,8 +187,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
             add_step.with_user(self.env.user).add_check_in_chain()
 
     def test_adding_suggestion_after_delete_suggestion(self):
-        """Adding a delete suggestion should not prevent the user
-        from adding suggestions after the one they suggested deleting."""
         mo = self.env["mrp.production"].create(
             {
                 "product_id": self.table.id,
@@ -227,7 +197,6 @@ class TestMrpWorkorderPlm(TestPlmCommon):
         mo.action_confirm()
         wo = mo.workorder_ids[0]
 
-        # Add two suggestion steps one after another
         for _i in range(2):
             action = wo.action_add_step()
             add_step_form = Form(
@@ -238,7 +207,7 @@ class TestMrpWorkorderPlm(TestPlmCommon):
             last_step.add_check_in_chain()
             wo.write(
                 {"current_quality_check_id": last_step.id}
-            )  # JS popup "Indicate after which step you would like to add this one"
+            )
 
         action = wo.action_propose_change(
             change_type="remove_step", check_id=last_step.id
@@ -252,7 +221,7 @@ class TestMrpWorkorderPlm(TestPlmCommon):
 
         wo.write(
             {"current_quality_check_id": last_step.id}
-        )  # Select to add a new suggestion after the one we just suggested deleting
+        )
         action = wo.action_add_step()
         add_step_form = Form(
             self.env[action["res_model"]].with_context(action["context"]),

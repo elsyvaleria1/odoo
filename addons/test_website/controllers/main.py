@@ -103,7 +103,6 @@ class WebsiteTest(Home):
     def test_lang_url(self, **kwargs):
         return request.render("test_website.test_view")
 
-    # Test Session
 
     @http.route(
         "/test_get_dbname", type="jsonrpc", auth="public", website=True, sitemap=False
@@ -111,7 +110,6 @@ class WebsiteTest(Home):
     def test_get_dbname(self, **kwargs):
         return request.env.cr.dbname
 
-    # Test Error
 
     @http.route(
         "/test_error_view", type="http", auth="public", website=True, sitemap=False
@@ -280,7 +278,6 @@ class WebsiteTest(Home):
     def get_post_method_no_multilang(self, **kw):
         return request.prepare_response("get_post_nomultilang")
 
-    # Test Perfs
 
     @http.route(
         ["/empty_controller_test"],
@@ -293,7 +290,6 @@ class WebsiteTest(Home):
     def empty_controller_test(self, **kw):
         return "Basic Controller Content"
 
-    # Test Redirects
     @http.route(
         ['/test_website/country/<model("res.country"):country>'],
         type="http",
@@ -380,7 +376,6 @@ class WebsiteTest(Home):
     def test_countries_308(self, **kwargs):
         return request.prepare_response("ok")
 
-    # Test Sitemap
     @staticmethod
     def sitemap_test(env, rule, qs):
         if not qs or qs.lower() in "/test_website_sitemap":

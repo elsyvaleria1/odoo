@@ -76,7 +76,6 @@ class TestSeatsAvailabilityContract(EventCase):
         )
 
     def test_availability_is_scoped_to_the_pairs_asked_about(self):
-        """Asking about one slot/ticket pair must not count another's seats."""
         event = self.env["event.event"].create(
             {
                 "date_begin": (self.now + timedelta(days=1)).replace(
@@ -113,14 +112,6 @@ class TestSeatsAvailabilityContract(EventCase):
         self.assertEqual(event._get_seats_availability([(slots[0], ticket)]), [6])
 
     def test_the_seat_count_does_not_depend_on_who_is_asking(self):
-        """Seat counts are computed as sudo, whoever reads them.
-
-        The three seat computes used raw SQL, which went around access rules by
-        construction; the grouped read that replaced it does not. Availability
-        is public information -- the website shows it to anonymous visitors --
-        so it must not vary with the reader, and reading it must not require
-        access to the registrations behind it.
-        """
         registration_model = self.env["event.registration"]
         origin = type(registration_model)._read_group
         sudo_flags = []

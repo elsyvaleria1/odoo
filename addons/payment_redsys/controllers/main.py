@@ -21,10 +21,6 @@ class RedsysController(http.Controller):
         typed=True,
     )
     def redsys_return_from_checkout(self, **encoded_data):
-        """Process the payment data sent by Redsys after redirection.
-
-        :param dict encoded_data: The encoded payment data.
-        """
         data = request.admission.extra["data"]
         _logger.info(
             "Handling redirection from Redsys with data:\n%s", pprint.pformat(data)
@@ -32,7 +28,6 @@ class RedsysController(http.Controller):
         request.admission.subject._process("redsys", data)
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -43,12 +38,6 @@ class RedsysController(http.Controller):
         typed=True,
     )
     def redsys_webhook(self, **encoded_data):
-        """Process the payment data sent by Redsys to the webhook.
-
-        :param dict encoded_data: The encoded payment data.
-        :return: The 'OK' string to acknowledge the notification.
-        :rtype: str
-        """
         data = request.admission.extra["data"]
         _logger.info(
             "Received webhook notification from Redsys:\n%s", pprint.pformat(data)

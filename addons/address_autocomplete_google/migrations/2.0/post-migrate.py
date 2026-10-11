@@ -20,8 +20,6 @@ def migrate(cr, version):
         Credential._set_system_secret(NEW_KEY, key)
         Credential._set_system_secret(OLD_KEY, False)
 
-    # Google was the only provider there was: a database that installed it
-    # chose it
     icp = env["ir.config_parameter"]
     if not icp.get_param("address_autocomplete.provider"):
         icp.set_param("address_autocomplete.provider", "google")
@@ -29,8 +27,6 @@ def migrate(cr, version):
     rewrite_views(cr)
 
 
-# what the rename changed in an arch: the widget is the generic module's, under
-# the generic key; web's setting and its toggle are named for the adapter
 RULES = (
     (
         re.compile(r"""(widget=["'])google_address_autocomplete(["'])"""),
@@ -60,8 +56,6 @@ def _rewritten(arch: str) -> str:
 
 
 def rewrite_views(cr) -> None:
-    """Every stored arch, Studio's and a soft reset's previous one included,
-    and the users' customised dashboards."""
     rewritten = 0
     cr.execute(
         "SELECT id, arch_db, arch_prev FROM ir_ui_view"

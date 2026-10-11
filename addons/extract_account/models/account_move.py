@@ -140,9 +140,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _extract_line_seed(self, line: dict) -> dict:
-        # `invoice.lines` declares a row and requires its description, so a line
-        # with nothing to call it never arrives and no name has to be invented
-        # for it. Quantity and price are optional and keep their defaults.
         quantity = line.get("quantity")
         price = line.get("unit_price")
         return {

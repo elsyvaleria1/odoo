@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 __all__ = ["icon_accent"]
 
-# below this OKLCH chroma a colour reads as grey, and a grey has no hue to lend
 MIN_CHROMA = 0.04
 HUE_BINS = 24
 SAMPLE_SIZE = (64, 64)
@@ -205,8 +204,6 @@ def _path_numbers(d: str) -> Iterator[str | float]:
 
 
 def _path_area(d: str) -> float:
-    # the polygon through each segment's end points: curves are chords, which
-    # ranks shapes by size as well as an icon's dominant fill needs
     area = 0.0
     subpath: list[tuple[float, float]] = []
     x = y = start_x = start_y = 0.0

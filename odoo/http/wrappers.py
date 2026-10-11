@@ -40,8 +40,6 @@ def prepare_content_disposition_header(
     if disposition_type not in ("attachment", "inline"):
         e = f"Invalid disposition_type: {disposition_type!r}"
         raise ValueError(e)
-    # werkzeug's send_file spelling: a plain filename when it is ASCII, else
-    # an ASCII fallback beside the RFC 5987 form a client that knows it reads.
     filename = sanitize_download_name(filename)
     try:
         filename.encode("ascii")
@@ -93,8 +91,6 @@ else:
 
 
 class HTTPRequest(_HTTPRequestProxied):
-    # A name missing from HTTPREQUEST_ATTRIBUTES must fail loudly: set on the
-    # facade it would shadow nothing and werkzeug would never see it.
     __slots__ = ("__environ", "__wrapped", "environ")
 
     def __init__(self, environ: dict[str, Any]) -> None:
@@ -118,8 +114,6 @@ class HTTPRequest(_HTTPRequestProxied):
         self.environ = filtered
         httprequest.headers = werkzeug.datastructures.EnvironHeaders(filtered)
         if _debug.lifecycle.enabled:
-            # the four are parsed from the environ: 7 us a request, for a
-            # line nobody reads unless the channel is on
             _debug.lifecycle(
                 "http.httprequest.created",
                 method=httprequest.method,
@@ -138,9 +132,6 @@ class HTTPRequest(_HTTPRequestProxied):
 
     @property
     def raw_url(self) -> str:
-        # What the thread is serving, for an operator: the environ as the
-        # server handed it over, a twentieth of what werkzeug's normalised
-        # IRI costs. PEP 3333 carries the path as latin-1-decoded bytes.
         environ = self.__environ
         path = f"{environ.get('SCRIPT_NAME', '')}{environ.get('PATH_INFO', '')}"
         path = path.encode("latin-1", "replace").decode("utf-8", "replace")
@@ -378,7 +369,7 @@ class Headers(Proxy):
     add = ProxyFunc(None)
     add_header = ProxyFunc(None)
     clear = ProxyFunc(None)
-    copy = ProxyFunc(lambda v: Headers(v))  # noqa: PLW0108  self-reference: Headers isn't defined yet when the class body evaluates this lambda, so PLW0108's "redundant lambda" check doesn't apply
+    copy = ProxyFunc(lambda v: Headers(v))
     extend = ProxyFunc(None)
     get = ProxyFunc()
     get_all = ProxyFunc()
@@ -399,7 +390,7 @@ class Headers(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 class ResponseCacheControl(Proxy):
@@ -429,7 +420,7 @@ class ResponseCacheControl(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 class ResponseStream(Proxy):
@@ -469,7 +460,7 @@ class Response(Proxy):
     delete_cookie = ProxyFunc(None)
     direct_passthrough = ProxyAttr(bool)
     expires = ProxyAttr()
-    force_type = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108  self-reference, see Headers.copy
+    force_type = ProxyFunc(lambda v: Response(v))
     freeze = ProxyFunc(None)
     get_data = ProxyFunc()
     get_etag = ProxyFunc()
@@ -482,7 +473,7 @@ class Response(Proxy):
     json = ProxyAttr()
     last_modified = ProxyAttr()
     location = ProxyAttr(str)
-    make_conditional = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108  self-reference, see Headers.copy
+    make_conditional = ProxyFunc(lambda v: Response(v))
     make_sequence = ProxyFunc(None)
     max_cookie_size = ProxyAttr(int)
     mimetype = ProxyAttr(str)

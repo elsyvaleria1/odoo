@@ -47,11 +47,7 @@ class TestOrderInvoiceRefundChain(TransactionCase):
                 },
             )
         ]
-        # First-level orphan: reverses the real invoice directly, but has no
-        # invoice_line_ids of its own linking it back to the order line.
         refund_1 = self._invoice("out_refund", reversed_entry_id=invoice.id)
-        # Second-level orphan: reverses the first orphan refund, not the
-        # original invoice -- unreachable without following the whole chain.
         refund_2 = self._invoice("out_refund", reversed_entry_id=refund_1.id)
 
         self.order.invalidate_recordset(["invoice_ids", "invoice_count"])

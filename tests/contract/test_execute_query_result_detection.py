@@ -45,8 +45,6 @@ class TestDescriptionAgreesWithFetchallInsideAPipelineToo:
     def test_inside_a_pipeline_the_raw_description_is_none_while_rows_exist(
         self, scratch_cursor
     ):
-        # psycopg's own cursor does not sync for `description`; this is the
-        # staleness `Cursor.description` exists to hide.
         cr = scratch_cursor
         with cr.pipeline():
             cr.execute("SELECT 1 AS a")

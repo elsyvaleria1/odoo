@@ -34,9 +34,6 @@ class WizardSaleOrderLineUpdateEvent(models.TransientModel):
     def check_event_id(self) -> None:
         error_messages = []
         for record in self:
-            # guard on the ticket being set, as the slot branch below does:
-            # otherwise a not-yet-chosen ticket is reported as a wrong one and
-            # the message renders the empty recordset's name
             if (
                 record.event_ticket_id
                 and record.event_id.id != record.event_ticket_id.event_id.id
@@ -80,7 +77,6 @@ class WizardSaleOrderLineUpdateEvent(models.TransientModel):
 
     @api.depends("is_multi_slots")
     def _compute_event_slot_id(self) -> None:
-        """Pre-select the slot of the multi slots event selected if it is the only one"""
         multi_slot_configurators = self.filtered("is_multi_slots")
         (self - multi_slot_configurators).event_slot_id = False
         slots_by_event = (
@@ -96,7 +92,6 @@ class WizardSaleOrderLineUpdateEvent(models.TransientModel):
 
     @api.depends("event_id")
     def _compute_event_ticket_id(self) -> None:
-        """Pre-select the ticket of the event selected if it is the only one"""
         tickets_by_pair = (
             self.env["event.event.ticket"]
             .search(

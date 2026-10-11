@@ -35,7 +35,6 @@ class ResourceResource(models.Model):
     )
 
     def _init_column(self, column_name, *, new_column=False):
-        # One token per row, not one default shared by every row.
         if column_name != "planning_token":
             super()._init_column(column_name, new_column=new_column)
             return
@@ -54,10 +53,6 @@ class ResourceResource(models.Model):
         values_args = [(row["id"], str(uuid.uuid4())) for row in rows]
         if not values_args:
             return
-        # The table name goes through SQL.identifier for the injection barrier
-        # (§10.4), but the statement cannot be one SQL object: the `%s` below is
-        # execute_values' VALUES marker, and SQL() escapes a literal `%%` to
-        # `%%s`, which the marker parser then skips.
         table = SQL.identifier(self._table).code
         query = f"""
             UPDATE {table}
@@ -83,17 +78,10 @@ class ResourceResource(models.Model):
         return result
 
     def action_reset_planning_token(self):
-        """A new calendar-feed and schedule-page identity for this person: the
-        .ics subscriptions and pages sent before stop opening (decision PL-A)."""
         for resource in self:
             resource.planning_token = str(uuid.uuid4())
 
     def _get_planning_email(self):
-        """The address a schedule reaches this person at.
-
-        An employee's work email is their party's email, so this is the one
-        address whether or not the person is employed.
-        """
         self.check_singleton()
         return self.sudo().partner_id.email
 

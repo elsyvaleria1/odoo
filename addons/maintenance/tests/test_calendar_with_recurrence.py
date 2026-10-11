@@ -8,7 +8,6 @@ from odoo.tests import HttpCase, tagged
 @tagged("post_install", "-at_install")
 class TestCalendarWithRecurrence(HttpCase):
     def test_dblclick_event_from_calendar(self):
-        """Make sure double clicking on an event and its recurrences lead to the correct record"""
         self.env["team.team"].create(
             {
                 "use_maintenance": True,
@@ -52,10 +51,6 @@ class TestCalendarWithRecurrence(HttpCase):
         )
 
     def test_drag_and_drop_calendar_event(self):
-        """
-        Make sure dragging and dropping an event changes the correct record
-        Occurences should be locked, drag and drop should have no effect
-        """
         self.env["team.team"].create(
             {
                 "use_maintenance": True,
@@ -79,7 +74,7 @@ class TestCalendarWithRecurrence(HttpCase):
                 "name": "clean the room",
                 "date_first_occurrence": datetime.combine(
                     datetime.now().replace(day=6), time.min.replace(hour=10)
-                ),  # 6th of the month at 10 AM
+                ),
                 "repeat_interval": 1,
                 "repeat_type": "until",
                 "repeat_until": datetime.now() + relativedelta(weeks=+2),
@@ -93,7 +88,7 @@ class TestCalendarWithRecurrence(HttpCase):
 
         target_datetime = datetime.combine(
             datetime.now().replace(day=15), time.min.replace(hour=10)
-        )  # 15h of the month at 10 AM
+        )
         self.assertEqual(
             order.date_scheduled_start,
             target_datetime,

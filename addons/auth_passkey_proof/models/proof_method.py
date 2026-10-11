@@ -61,7 +61,5 @@ class ProofMethod(models.Model):
         }
 
     def _get_passkey_challenge(self, challenge: models.BaseModel) -> bytes:
-        # one-time (the token's hash) and bound to the figures (the digest):
-        # the authenticator signs over it, so the signature covers both
         challenge.check_singleton()
         return sha256(f"{challenge.token_hash}:{challenge.digest}".encode()).digest()

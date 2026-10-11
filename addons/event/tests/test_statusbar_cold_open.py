@@ -27,9 +27,6 @@ class TestStatusBarColdOpen(HttpCase):
         stages = self.env["event.stage"].search([], limit=4)
         self.assertTrue(stages, "the statusbar needs stages to render")
         event = self.env["event.event"].create({"name": "cold open"})
-        # A fresh browser profile per browser_js call, opened straight at the
-        # form: the first read through useSpecialData is the one that used to
-        # hang, so anything that warms the cache first would hide the defect.
         code = """
             (async () => {
                 const deadline = performance.now() + 20000;

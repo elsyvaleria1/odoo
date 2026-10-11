@@ -26,7 +26,6 @@ class TestMailingRetrySMS(MassSMSCommon, CronMixinCase):
         )
         mailing.action_send_sms()
 
-        # force the SMS sending to fail to test our retry mechanism
         def patched_sms_sms_send(
             sms_records, unlink_failed=False, unlink_sent=True, raise_exception=False
         ):

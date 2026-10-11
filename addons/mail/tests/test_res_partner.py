@@ -850,7 +850,6 @@ class TestThreadUnlinkRefused(MailCommon):
         self.assertTrue(follower)
         reader = mail_new_test_user(self.env, login="reader", groups="base.group_user")
         try:
-            # caught without a savepoint, as a caller that recovers would
             partner.with_user(reader).unlink()
         except AccessError:
             pass

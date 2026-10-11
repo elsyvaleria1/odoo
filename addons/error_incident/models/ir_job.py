@@ -14,8 +14,6 @@ class IrJob(models.Model):
         super()._notify_failed(cr, job, exc)
         if is_expected(exc):
             return
-        # The drain cursor, which also marks the job failed: both commit
-        # together, and `_capture_quietly` keeps a failure here off the job.
         env = api.Environment(cr, SUPERUSER_ID, {})
         env["error.incident"]._capture_quietly(
             capture_payload(

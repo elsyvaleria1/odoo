@@ -50,7 +50,6 @@ class PosConfig(models.Model):
         comodel_name="iot.device",
         compute="_compute_iot_device_ids",
     )
-    # TODO: Remove this field, it's not being used.
     payment_terminal_device_ids = fields.Many2many(
         comodel_name="iot.device",
         compute="_compute_payment_terminal_device_ids",

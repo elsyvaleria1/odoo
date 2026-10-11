@@ -64,7 +64,6 @@ class TestStaticMap(TransactionCase):
         frame = frame_for([Point(0, 0)], 600, 400, 24)
         span = static_map.POINT_SPAN_M
         tightest = max(span / (600 - 48), span / (400 - 48))
-        # A whole zoom level is at most twice the tightest resolution.
         self.assertGreaterEqual(frame.resolution, tightest)
         self.assertLess(frame.resolution, 2 * tightest)
 

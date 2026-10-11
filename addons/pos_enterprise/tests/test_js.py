@@ -24,8 +24,6 @@ ALL_SUITE_PREFIXES = ("@pos_enterprise/unit",)
 class PosEnterpriseSuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_pos_enterprise_unit(self):
-        """@pos_enterprise/unit — the pos_enterprise JS unit suites (models,
-        components, services)."""
         self._run_hoot("@pos_enterprise/unit", preset="desktop", timeout=900)
 
     def test_suite_filters_cover_every_test_file(self):

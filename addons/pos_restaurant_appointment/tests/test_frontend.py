@@ -97,16 +97,12 @@ class TestUi(TestFrontend):
                 },
             ]
         )
-        # open a session, the /pos/ui controller will redirect to it
         self.pos_config.with_user(self.pos_admin).open_ui()
 
         self.start_pos_tour("RestaurantAppointmentTour", login="pos_admin")
 
     @freeze_time("2025-08-27 12:18:56", ignore=["odoo.tests.browser"])
     def test_appointment_kanban_view(self):
-        # Search More is offered only when the autocomplete has more results.
-        # Resources are listed by name, so the spares sort last and leave the
-        # tables this tour asserts on inside the dropdown's first page.
         self.env["resource.resource"].create(
             [
                 {

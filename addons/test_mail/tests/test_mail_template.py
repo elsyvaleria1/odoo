@@ -59,7 +59,6 @@ class TestMailTemplateCommon(MailCommon, TestRecipients):
         cls.email_2 = "test2@example.com"
         cls.email_3 = cls.partner_1.email
 
-        # create a complete test template
         cls.test_template = cls._create_template(
             "mail.test.lang",
             {
@@ -78,19 +77,15 @@ class TestMailTemplateCommon(MailCommon, TestRecipients):
             },
         )
 
-        # activate translations
         cls._activate_multi_lang(
             layout_arch_db='<body><t t-out="message.body"/> English Layout for <t t-esc="model_description"/></body>',
             test_record=cls.test_record,
             test_template=cls.test_template,
         )
 
-        # admin should receive emails
         cls.user_admin.write({"notification_type": "email"})
-        # Force the attachments of the template to be in the natural order.
         cls.test_template.invalidate_recordset(["attachment_ids"])
 
-        # dynamic reports
         cls.test_report = cls.env["ir.actions.report"].create(
             [
                 {
@@ -109,17 +104,13 @@ class TestMailTemplate(TestMailTemplateCommon):
     def test_template_add_context_action(self):
         self.test_template.create_action()
 
-        # check template act_window has been updated
         self.assertTrue(bool(self.test_template.ref_ir_act_window))
 
-        # check those records
         action = self.test_template.ref_ir_act_window
         self.assertEqual(action.name, "Send Mail (%s)" % self.test_template.name)
         self.assertEqual(action.binding_model_id.model, "mail.test.lang")
 
     def test_template_fields(self):
-        """Test computed fields"""
-        # has_dynamic_reports: based on ir.actions.report
         test_template_lang = self.test_template.with_user(self.user_employee)
         self.assertFalse(test_template_lang.has_dynamic_reports)
         test_template_ticket_mc = (
@@ -132,31 +123,22 @@ class TestMailTemplate(TestMailTemplateCommon):
             )
         )
         self.assertTrue(test_template_ticket_mc.has_dynamic_reports)
-        # has_mail_server: based on ir.mail_server available
         self.assertTrue(test_template_lang.has_mail_server)
         self.assertTrue(test_template_ticket_mc.has_mail_server)
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("employee")
     def test_template_schedule_email(self):
-        """Test scheduling email sending from template."""
         now = datetime.datetime(2024, 4, 29, 10, 49, 59)
         test_template = self.test_template.with_env(self.env)
 
-        # schedule the mail in 3 days -> patch safe_eval.datetime access
         safe_eval_orig = safe_eval.safe_eval
 
         def _safe_eval_hacked(*args, **kwargs):
-            """safe_eval wraps 'datetime' and freeze_time does not mock it;
-            simplest solution found so far is to directly hack safe_eval just
-            for this test"""
             if args[0] == "datetime.datetime.now() + datetime.timedelta(days=3)":
                 return now + datetime.timedelta(days=3)
             return safe_eval_orig(*args, **kwargs)
 
-        # patch datetime and safe_eval.datetime, as otherwise using standard 'now'
-        # might lead to errors due to test running right before minute switch it
-        # sometimes ends at minute+1 and assert fails - see runbot-54946
         with patch.object(
             safe_eval, "safe_eval", autospec=True, side_effect=_safe_eval_hacked
         ):
@@ -172,7 +154,6 @@ class TestMailTemplate(TestMailTemplateCommon):
         )
         self.assertEqual(mail.state, "outgoing")
 
-        # check a wrong format
         test_template.scheduled_date = '{{"test " * 5}}'
         with freeze_time(now):
             mail_id = test_template.send_mail(self.test_record.id)
@@ -182,8 +163,6 @@ class TestMailTemplate(TestMailTemplateCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_template_send_mail_body(self):
-        """Test that the body and body_html is set correctly in 'mail.mail'
-        when sending an email from mail.template"""
         mail_id = self.test_template.send_mail(self.test_record.id)
         mail = self.env["mail.mail"].sudo().browse(mail_id)
         body_result = "<p>EnglishBody for %s</p>" % self.test_record.name
@@ -198,18 +177,14 @@ class TestMailTemplate(TestMailTemplateCommon):
 class TestMailTemplateLanguages(TestMailTemplateCommon):
     @classmethod
     def setUpClass(cls):
-        """Create lang-based records and templates, to test batch and performances
-        with language involved."""
         super().setUpClass()
 
-        # use test notification layout
         cls.test_template.write(
             {
                 "email_layout_xmlid": "mail.test_layout",
             }
         )
 
-        # double record, one in each lang
         cls.test_records = cls.test_record + cls.env["mail.test.lang"].create(
             {
                 "email_from": "ignasse.es@example.com",
@@ -218,14 +193,12 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
             }
         )
 
-        # pure batch, 100 records
         cls.test_records_batch, test_partners = cls._create_records_for_batch(
             "mail.test.lang",
             100,
         )
         test_partners[:50].lang = "es_ES"
 
-        # have a template with dynamic templates to check impact
         cls.test_template_wreports = cls.test_template.copy(
             {
                 "email_layout_xmlid": "mail.test_layout",
@@ -255,16 +228,12 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
     def setUp(self):
         super().setUp()
-        # warm up group access cache: 5 queries + 1 query per user
         self.user_employee.has_group("base.group_user")
-        # we don't use mock_mail_gateway thus want to mock smtp to test the stack
         self._mock_smtplib_connection()
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_send_email(self):
-        """Test 'send_email' on template on a given record, used notably as
-        contextual action."""
         self.env.invalidate_all()
         with self.with_user(self.user_employee.login), self.assertQueryCount(13):
             mail_id = self.test_template.with_env(self.env).send_mail(
@@ -289,7 +258,6 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_send_email_nolayout(self):
-        """Test without layout, just to check impact"""
         self.test_template.email_layout_xmlid = False
         self.env.invalidate_all()
         with self.with_user(self.user_employee.login), self.assertQueryCount(12):
@@ -314,27 +282,7 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_send_email_batch(self):
-        """Test 'send_email' on template in batch"""
         self.env.invalidate_all()
-        # 35 (was 33, 29, itself 25). The move is six queries in, captured with
-        # `query_hooks` at 83d19c2d051 (29) and diffed against the trace here:
-        #   + LOCK TABLE ... IN ROW EXCLUSIVE MODE           x2
-        #   + SELECT pg_get_serial_sequence(..., 'id')       x2
-        #   + WITH RECURSIVE resolved ... (column types)     x2
-        # The six are `odoo/db/bulk.py`'s per-table setup for the COPY create
-        # path -- id sequence, row lock, column-type introspection -- one of
-        # each for `mail_message` and `mail_mail`, and cached on the cursor's
-        # `TransactionSchemaCache` for the rest of the transaction. They are the
-        # price of writing the rows with COPY instead of INSERT, so they are the
-        # same work moved rather than work added, and they do not repeat per
-        # chunk: the second chunk here costs only nextval + COPY. The two
-        # `INSERT INTO mail_message_res_partner_rel` left when the send stopped
-        # writing message.partner_ids and are back with it: they are the
-        # recipient list the chatter renders, one write per chunk.
-        #
-        # What this number cannot tell you is whether the send grew a per-record
-        # query -- that would move it by a constant too. See
-        # test_template_send_email_batch_costs_per_chunk_not_per_record below.
         with self.with_user(self.user_employee.login), self.assertQueryCount(35):
             template = self.test_template.with_env(self.env)
             mails_sudo = template.send_mail_batch(self.test_records_batch.ids)
@@ -362,28 +310,10 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_template_send_email_batch_costs_per_chunk_not_per_record(self):
-        """The send issues no per-record query: its cost follows the number of
-        ``mail.mail._get_send_batch_size`` chunks, and nothing else.
-
-        This is the property the exact pin above cannot state. That pin sends
-        one batch size, so a per-record query inside the send path moves it by
-        a constant and reads as ordinary drift -- and the number is read for
-        every unrelated change too, which is why it has spent weeks away from
-        its floor while the send path was being reworked. Measured across a
-        chunk boundary instead: 51 records and 100 records are two chunks
-        either way, so the 49 extra records must cost nothing.
-
-        The larger batch is measured *second* on purpose. Whatever the first
-        send warms can only make the second cheaper, so the comparison is
-        one-sided in the safe direction: a per-record query would put 49
-        queries on the wrong side of it and no amount of warming could hide
-        them. The count assertion is paired with the outcome assertion,
-        because a bound alone is equally satisfied by the send not happening.
-        """
         self.env.invalidate_all()
         template = self.test_template.with_env(self.env)
         record_ids = self.test_records_batch.ids
-        template.send_mail_batch(record_ids[:5])  # warm the shared caches
+        template.send_mail_batch(record_ids[:5])
 
         counts, sent = {}, {}
         for size in (51, 100):
@@ -412,21 +342,7 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_send_email_wreport(self):
-        """Test 'send_email' on template on a given record, used notably as
-        contextual action, with dynamic reports involved"""
         self.env.invalidate_all()
-        # tm: 22, nightly: +1
-        # 21 -> 22: the budget disagreed with the annotation one line above it,
-        # and the annotation was right. The extra query is this fork's own
-        # `res.partner.phone` -> `phone_ids`: mail declares it `tracking=2`
-        # (models/res_partner.py), and a tracked Many2many costs a
-        # `res_partner_phone_number_rel` read where a stored Char cost none.
-        # Chased to that query in a debug_sql trace rather than assumed --
-        # it appears exactly once per pass.
-        # 21 -> 22: a company's report layout is a report.config row (odoo
-        # 361b8d3c6d7c); rendering the report reads it once, found and filled
-        # in one query by `mixin.company.config._for_each`.
-        # +1: the company's mail configuration is a row of its own (mixin.company.config), read once per transaction on a cold cache.
         with self.with_user(self.user_employee.login), self.assertQueryCount(23):
             mail_id = self.test_template_wreports.with_env(self.env).send_mail(
                 self.test_record.id
@@ -450,16 +366,7 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_send_email_wreport_batch(self):
-        """Test 'send_email' on template in batch with dynamic reports"""
         self.env.invalidate_all()
-        # 240 (was 236, itself was 232): the same six-in / two-out move as
-        # test_template_send_email_batch, on top of the dynamic-report path.
-        # Measured, not inferred -- the trace here carries the same six COPY
-        # setup queries and the baseline carried none.
-        # 149 -> 150 for the same one query as test_template_send_email_wreport
-        # above: the tracked `phone_ids` relation read. Same delta, same cause.
-        # 51 -> 52: the report.config read, as above.
-        # +1: the company's mail configuration is a row of its own (mixin.company.config), read once per transaction on a cold cache.
         with self.with_user(self.user_employee.login), self.assertQueryCount(53):
             template = self.test_template_wreports.with_env(self.env)
             mails_sudo = template.send_mail_batch(self.test_records_batch.ids)
@@ -509,12 +416,10 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_template_send_email_wreport_batch_scalability(self):
-        """Test 'send_email' on template in batch, using configuration parameter
-        for batch rendering."""
         for batch_size, exp_mail_create_count in [
-            (False, 2),  # unset, default is 50
-            (0, 2),  # 0: fallbacks on default
-            (30, 4),  # 100 / 30 -> 4 iterations
+            (False, 2),
+            (0, 2),
+            (30, 4),
         ]:
             with self.subTest(batch_size=batch_size):
                 self.env["ir.config_parameter"].sudo().set_param(
@@ -569,7 +474,6 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_template_translation_lang(self):
-        """Test template rendering using lang defined directly on the record"""
         test_record = self.test_record.with_env(self.env)
         test_record.write(
             {
@@ -589,8 +493,6 @@ class TestMailTemplateLanguages(TestMailTemplateCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @warmup
     def test_template_translation_partner_lang(self):
-        """Test template rendering using lang defined on a sub-record aka
-        'partner_id.lang'"""
         test_records = self.env["mail.test.lang"].browse(self.test_records.ids)
         customers = self.env["res.partner"].create(
             [

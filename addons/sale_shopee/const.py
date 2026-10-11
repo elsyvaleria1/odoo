@@ -1,4 +1,3 @@
-# API Paths
 API_PATHS = {
     "production_singapore": "https://partner.shopeemobile.com",
     "production_china": "https://openplatform.shopee.cn",
@@ -7,7 +6,6 @@ API_PATHS = {
     "test_china": "https://openplatform.sandbox.test-stable.shopee.cn",
 }
 
-# Mapping of Shopee API operations to their respective URL path, HTTP method, and API type
 API_OPERATIONS_MAPPING = {
     "auth_partner": {
         "url_path": "/api/v2/shop/auth_partner",
@@ -63,20 +61,17 @@ API_OPERATIONS_MAPPING = {
     },
 }
 
-# Mapping of Shopee fulfillment type to Shopee status to synchronize
 ORDER_STATUSES_TO_SYNC = {
     "fbs": ["SHIPPED", "COMPLETED"],
     "fbm": ["READY_TO_SHIP", "PROCESSED"],
     "hybrid": ["READY_TO_SHIP", "PROCESSED"],
 }
 
-# Mapping of fulfillment type names of Shopee API
 FULFILLMENT_TYPE_MAPPING = {
     "fulfilled_by_shopee": "fbs",
     "fulfilled_by_local_seller": "fbm",
     "fulfilled_by_cb_seller": "hybrid",
 }
-# Mapping of fulfillment type names of Shopee API
 DELIVERY_STATUS_MAPPING = {
     "READY_TO_SHIP": "draft",
     "PROCESSED": "confirmed",
@@ -87,7 +82,6 @@ DELIVERY_STATUS_MAPPING = {
     "RETRY_SHIP": "error",
 }
 
-# Mapping of Shopee statuses to Odoo picking statuses
 LOWER_SHIPPING_LABEL_MAPPING = {
     "NOT AVAILABLE": "not available",
     "PROCESSING": "processing",
@@ -96,14 +90,12 @@ LOWER_SHIPPING_LABEL_MAPPING = {
     "FAILED": "failed",
 }
 
-# Mapping of Shopee Shop Statuses to Odoo Shop Statuses
 SHOP_STATUS_MAPPING = {
     "NORMAL": "active",
     "FROZEN": "active",
     "BANNED": "error",
 }
 
-# Shopee API's limits
 ACCESS_TOKEN_EXPIRATION_THRESHOLD = 1
 ORDER_LIST_DAYS_LIMIT = 15
 ORDER_LIST_SIZE_LIMIT = 100

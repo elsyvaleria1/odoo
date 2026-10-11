@@ -79,7 +79,6 @@ class IrHttp(models.AbstractModel):
                 )
                 for mode in (debug or "").split(",")
             )
-            # a static file reads no session: it learns debug=assets here
             if "assets" in request.session.debug:
                 request.future_response.set_cookie(
                     DEBUG_ASSETS_COOKIE, "1", max_age=SESSION_LIFETIME, httponly=True
@@ -173,8 +172,6 @@ class IrHttp(models.AbstractModel):
             "is_public": user._is_public(),
             "is_internal_user": user._is_internal(),
             "registry_hash": registry_hash,
-            # a host that cannot precompile templates says so, and its pages
-            # neither ask for the artifact nor wait for it
             "precompiled_templates": self.env[
                 "ir.qweb"
             ]._precompiled_templates_available(),
@@ -312,8 +309,6 @@ class IrHttp(models.AbstractModel):
         )
 
     def _get_home_menu_default(self) -> dict[str, Any] | None:
-        # A public or portal session reads the configuration too, and the
-        # configuration row is the administrator's to see.
         return (
             self.env["res.company"]
             .sudo()
@@ -414,9 +409,6 @@ class IrHttp(models.AbstractModel):
         info.update(
             is_website_user=self.env.user._is_public(),
             is_frontend=True,
-            # its page may still run without 'unsafe-eval'
-            # (ir.qweb._is_script_bundle_eval_needed); one that cannot (an editor's)
-            # takes the backend's bounded wait instead
             await_precompiled_templates=not (request and request.csp_scripts_need_eval),
         )
         return info

@@ -74,8 +74,6 @@ class TestOpenAPIContract(common.TransactionCase):
         self.assertTrue(document["paths"], "rpc describes no door")
 
     def test_every_schema_in_it_is_a_schema(self):
-        # OpenAPI 3.1's schema objects are JSON Schema 2020-12, so the
-        # validator checks them without the network the meta-document needs.
         document = self.document()
         checked = 0
         for path, item in document["paths"].items():
@@ -196,8 +194,6 @@ class TestGeneratedClient(common.TransactionCase):
         )
 
     def test_a_call_the_document_does_not_describe_does_not_compile(self):
-        # Without this the compile proves nothing: a client whose every
-        # method took `any` would pass the test above unchanged.
         errors = self._compile(
             {
                 "client.ts": CLIENT.read_text(),

@@ -290,8 +290,6 @@ class TestDocumentsUploadRoute(HttpCase, TransactionCaseDocuments):
             ),
             RecordCapturer(self.env["document.document"], []) as capture,
         ):
-            # the browser posts an empty file and sends the bytes to the
-            # provider itself
             response = self._upload(
                 content=b"", user_folder_id="MY", cloud_storage="1", file_size="12345"
             )
@@ -313,7 +311,6 @@ class TestDocumentsUploadRoute(HttpCase, TransactionCaseDocuments):
         )
 
     def test_direct_cloud_upload_refuses_a_negative_size(self):
-        # the client states the size; the zip cap adds it up
         if not self.env["ir.module.module"].search_count(
             [("name", "=", "cloud_storage"), ("state", "=", "installed")]
         ):
@@ -453,8 +450,6 @@ class TestDocumentsMultiFileUpload(HttpCase):
 
         documents = capture.records
         self.assertEqual(len(documents), 5)
-        # Pairing is the whole risk of batching: a shifted zip would still
-        # create five documents, each holding the wrong file.
         self.assertEqual(
             [(d.name, d.attachment_id.raw) for d in documents.sorted("name")],
             payloads,
@@ -485,14 +480,6 @@ class TestDocumentsMultiFileUpload(HttpCase):
             )
 
     def test_the_post_hook_receives_each_document_with_its_own_values(self):
-        """The contract batching introduced, pinned directly.
-
-        `_documents_upload_post(document, vals)` promises that `vals` is the
-        one `document` was created from. Nothing observable through the default
-        hook depends on that -- its message is the same for every file -- so a
-        misaligned pairing passes every end-to-end assertion while quietly
-        handing an override the wrong record. Checked at the hook itself.
-        """
         self.authenticate("multi_uploader", "multi_uploader")
         seen = []
         original = ShareRoute._documents_upload_post
@@ -515,7 +502,6 @@ class TestDocumentsMultiFileUpload(HttpCase):
             )
 
     def test_a_single_file_still_works(self):
-        """Negative control: the batched path must not need a crowd."""
         self.authenticate("multi_uploader", "multi_uploader")
 
         with RecordCapturer(self.env["document.document"], []) as capture:
@@ -555,7 +541,6 @@ class TestDocumentsMultiFileUploadCost(HttpCase):
         )
 
     def _cost_of_uploading(self, count, tag):
-        """Queries the SERVER runs for one upload request, not the test's."""
         calls = {"n": 0}
         original = Cursor.execute
 
@@ -578,7 +563,7 @@ class TestDocumentsMultiFileUploadCost(HttpCase):
 
     def test_the_marginal_cost_of_one_more_file_is_small(self):
         self.authenticate("cost_uploader", "cost_uploader")
-        self._cost_of_uploading(1, "warm")  # the caches a first request fills
+        self._cost_of_uploading(1, "warm")
 
         one = self._cost_of_uploading(1, "one")
         eleven = self._cost_of_uploading(11, "eleven")

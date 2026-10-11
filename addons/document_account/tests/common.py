@@ -31,7 +31,6 @@ class DocumentsAccountHelpersCommon:
 
     @classmethod
     def setup_sync_journal_folder(cls, journal, folder, company=False):
-        """Update or create configuration for journal document synchronization."""
         if setting := cls.env["document.account.folder.setting"].search(
             [
                 ("journal_id", "=", journal.id),
@@ -144,7 +143,6 @@ class DocumentsAccountActionsServerCommon(DocumentsAccountTestCommon):
         assert cls.actions_by_type
 
     def _run_action_and_assert_sync(self, action, document, expected_journal):
-        """Execute action and assert that the document/record are correctly linked and synced."""
         target_model = (
             "account.bank.statement"
             if expected_journal.type == "bank"
@@ -164,10 +162,7 @@ class DocumentsAccountActionsServerCommon(DocumentsAccountTestCommon):
         )
         self.assertEqual(created_record.journal_id, expected_journal)
 
-        # Bank statements will only be synced correctly from 19.1.
         if created_record._name != "account.bank.statement":
             expected_folder = self.journal_type_labels[expected_journal.type]
             self.assertEqual(document.folder_id.name, expected_folder)
-            # Only the tags configured by hand on the setting are applied, and
-            # none is: the journal is readable from the move the document holds.
             self.assertFalse(document.tag_ids)

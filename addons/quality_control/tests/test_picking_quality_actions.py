@@ -30,7 +30,6 @@ class TestPickingQualityActions(TestQualityCommon):
         return picking
 
     def test_picking_quality_flags_and_search(self):
-        """Check todo/fail flags and the quality_check_todo searcher."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product.id)],
@@ -51,8 +50,6 @@ class TestPickingQualityActions(TestQualityCommon):
         self.assertFalse(picking.quality_check_todo)
 
     def test_picking_quality_actions(self):
-        """Check the window actions carry the picking defaults and the
-        single-alert form shortcut."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product.id)],
@@ -85,7 +82,6 @@ class TestPickingQualityActions(TestQualityCommon):
         self.assertEqual(action["views"], [(False, "form")])
 
     def test_picking_cancel_removes_pending_checks(self):
-        """Check that cancelling a picking unlinks its pending checks."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product.id)],
@@ -98,8 +94,6 @@ class TestPickingQualityActions(TestQualityCommon):
         self.assertFalse(picking.check_ids)
 
     def test_picking_done_with_pending_checks_is_refused(self):
-        """Check that finishing a picking with pending quality checks is
-        refused."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product.id)],
@@ -113,7 +107,6 @@ class TestPickingQualityActions(TestQualityCommon):
             picking._action_done()
 
     def test_lot_quality_counters_and_actions(self):
-        """Check the lot counters and window actions for checks/alerts."""
         lot = self.env["product.trace"].create(
             {"name": "LOT-QC-1", "product_id": self.product.id}
         )

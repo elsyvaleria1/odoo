@@ -48,9 +48,6 @@ class TestStatementBalances(TransactionCase):
         self.assertIn("30.0", message, "the message names the difference")
 
     def test_an_available_balance_is_not_reconciled(self):
-        # CLAV excludes holds and includes float, so it does not bracket the
-        # entries; `test_camt.xml` is a real file of exactly this shape and is
-        # off by 30.00 while being perfectly valid.
         self._check(
             self._statement(
                 [-6306.71],
@@ -74,8 +71,6 @@ class TestStatementBalances(TransactionCase):
         )
 
     def test_rounding_does_not_make_a_statement_fail(self):
-        # Three thirds of a cent: the sum is 0.30000000000000004 in binary
-        # floating point, which an exact comparison would reject.
         self._check(
             self._statement(
                 [0.1, 0.1, 0.1],

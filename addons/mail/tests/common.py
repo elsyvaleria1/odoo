@@ -55,8 +55,6 @@ mail_new_test_user = partial(
 
 
 def mail_access_both_ways(documents, message_operation):
-    # (per record, as a domain): the documents whose messages `documents.env.user`
-    # may `message_operation`, answered by each of the two consumers
     per_record = documents.env["mail.message"]._get_accessible_documents(
         documents._name, documents.ids, message_operation
     )
@@ -68,8 +66,6 @@ def mail_access_both_ways(documents, message_operation):
 
 @contextmanager
 def rebinding(name, checked, rebound):
-    # the first lookup of `name` answers `checked`, every later one `rebound`:
-    # a dial that looks the name up again reaches `rebound`
     real = socket.getaddrinfo
     answers = iter([checked])
 
@@ -158,8 +154,6 @@ class MockSmtplibCase:
                 "odoo.addons.mail.models.ir_mail_server.PinnedSMTP",
                 side_effect=lambda *args, **kwargs: self.testing_smtp_session,
             ),
-            # The dial is faked, so the address check that precedes it is too:
-            # the test hosts are names that do not resolve.
             patch.object(
                 type(self.env["ir.egress"]), "check_host", lambda *args, **kwargs: ()
             ),
@@ -2416,8 +2410,6 @@ class MailCommon(MailCase):
                     "notification_type": "inbox",
                 }
             )
-            # the number belongs to the partner: a command list on the user's
-            # related phone_ids has no stored field to land on and is dropped
             cls.partner_admin.write(
                 {
                     "phone_ids": [

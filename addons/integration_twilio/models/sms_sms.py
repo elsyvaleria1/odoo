@@ -48,8 +48,6 @@ class SmsSms(models.Model):
         if not uuid or not UUID_PATTERN.match(uuid):
             _logger.warning("Twilio SMS: status callback for a malformed uuid %r", uuid)
             raise NotFound
-        # a sent SMS is deleted at the next autovacuum, its tracker is kept:
-        # a status arriving after it is still the tracker's
         subject = self.search([("uuid", "=", uuid)], limit=1)
         if subject:
             company = subject._get_sms_company()
@@ -74,9 +72,6 @@ class SmsSms(models.Model):
         return super().create(vals_list)
 
     def _split_by_api(self):
-        # a company sends through its own account, and an SMS pinned to a
-        # sender, a conversation's reply, goes through Twilio whatever the
-        # company's provider for its other SMS
         batches = defaultdict(self.browse)
         through_iap = self.browse()
         for sms in self:
@@ -110,7 +105,6 @@ class SmsSms(models.Model):
         return super()._get_send_batch_size()
 
     def _handle_call_result_hook(self, results):
-        # the tracker keeps Twilio's sid: the SMS itself is deleted once sent
         twilio_sms = self.filtered(
             lambda sms: (
                 sms.twilio_sender_id
@@ -132,7 +126,6 @@ class SmsSms(models.Model):
                 )
             if result.get("failure_type") == "twilio_opted_out":
                 opted_out.append(sms.number)
-        # Twilio stops sending to whoever replied STOP: Odoo stops trying too
         if opted_out:
             self.env["phone.blacklist"]._add(
                 opted_out,

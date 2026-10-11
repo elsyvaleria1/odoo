@@ -133,11 +133,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         self.assertFalse(self.task.display_create_invoice_primary)
 
     def test_invoice_fsm_task_with_diff_shipping_address(self):
-        """
-        When the shipping address is different from the invoice address,
-        the task should be able to be invoiced once done.
-        """
-        # activate setting for splitting the invoice and shipping address
         config = self.env["res.config.settings"].create(
             {
                 "group_sale_delivery_address": True,
@@ -244,15 +239,11 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         self.assertEqual(task.sale_order_id.id, sale_order_2.id)
 
     def test_qty_to_invoice_from_fsm(self):
-        """
-        Check that sale order lines coming from an fsm task and for a product with a price of zero
-        are not going to be invoiced.
-        """
         product = self.product_a.with_context({"fsm_task_id": self.task.id})
         product.set_fsm_quantity(2)
         so = self.task.sale_order_id
         if so.state == "draft":
-            so.action_confirm()  # needed if stock is not installed
+            so.action_confirm()
         sol = so.line_ids[-1]
         self.assertEqual(sol.qty_to_invoice, 2.0)
 
@@ -277,7 +268,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         )
 
     def test_uom_conversion_fsm_task_to_so(self):
-        """Checks that the hours recorded on Timesheets are converted to the correct UOM on the Sales Order"""
 
         quarter_hour = self.env["uom.uom"].create(
             {
@@ -286,7 +276,7 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
                 "relative_uom_id": self.env.ref("base.product_uom_hour").id,
             }
         )
-        self.service_timesheet._update_service_policy_fields()  # trigger value changes for invoice policy and service_type
+        self.service_timesheet._update_service_policy_fields()
         self.service_timesheet.uom_id = quarter_hour
         self.service_timesheet.list_price = 40
         self.fsm_project.sale_line_employee_ids = [
@@ -307,7 +297,7 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
                         {
                             "employee_id": self.employee_user2.id,
                             "name": "/",
-                            "unit_amount": 1.75,  # 01:45
+                            "unit_amount": 1.75,
                             "product_uom_id": self.env["uom.uom"]
                             .search([("name", "=", "Hours")])
                             .id,
@@ -327,16 +317,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         )
 
     def test_prevent_empty_sol_for_timesheet(self):
-        """
-        Test that when adding a product to the task and mark as done that task then,
-        it does not create an empty SOL for timesheet if no timesheets are added.
-
-        Test Case:
-        =========
-        1. Create a task and add a product to it
-        2. Validate the task
-        3. Check the sale order line should not be created for timesheet
-        """
         self.fsm_project.write(
             {
                 "timesheet_product_id": self.service_timesheet.id,
@@ -353,10 +333,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         self.assertEqual(sale_order_lines.product_id, self.service_product_ordered)
 
     def test_task_sale_order_auto_fills_salesperson(self):
-        """
-        Check that sale order has an assigned salesperson by default when adding products to it.
-        Expected behavior is: 1st assignee if any, current user if not
-        """
         assignee_1 = new_test_user(self.env, login="john")
         assignee_2 = new_test_user(self.env, login="albert")
 
@@ -381,19 +357,10 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
 
         task_no_assignee._fsm_create_sale_order()
         task_with_assignee._fsm_create_sale_order()
-        # The rule this code implements is that the task's first assignee becomes the
-        # order's salesperson. With no assignee the order simply keeps whatever
-        # `_compute_user_id` derived from the customer -- which is not the current user
-        # as it was upstream, and is env-dependent through its fallback, so what is
-        # pinned here is only that nothing was taken from the task.
         self.assertNotIn(
             task_no_assignee.sale_order_id.user_id,
             assignee_1 | assignee_2,
         )
-        # `_fsm_create_sale_order` takes `user_ids[0]`, and that is first by the
-        # users' own ordering, not by the order they were listed in -- 'albert'
-        # precedes 'john'. Asserting against the same expression keeps the rule
-        # under test and drops a dependency on how res.users happens to sort.
         self.assertEqual(
             task_with_assignee.sale_order_id.user_id,
             task_with_assignee.user_ids[0],
@@ -515,7 +482,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         self.assertTrue(fsm_task_with_recurrence.sale_order_id.invoice_ids)
 
     def test_invoice_without_sale_order(self):
-        """Should return a red toast notification if no sale order is linked."""
         res = self.task.action_create_invoice()
         self.assertEqual(
             res["params"]["type"], "danger", "Expected a red toast notification"
@@ -558,7 +524,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
 
     def test_invoice_state_in_anglo_saxon(self):
         self.task.partner_id = self.partner_1.id
-        # Case 1: Product price is zero and Anglo-Saxon accounting is enabled.
         self.service_product_delivered.list_price = 0.0
         self.service_product_delivered.with_user(self.project_user).with_context(
             {"fsm_task_id": self.task.id}
@@ -566,7 +531,7 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         so = self.task.sale_order_id
         sol = so.line_ids[0]
         if so.state == "draft":
-            so.action_confirm()  # needed if stock is not installed
+            so.action_confirm()
         self.assertEqual(
             sol.invoice_state,
             "to do",
@@ -575,7 +540,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
         self.assertEqual(
             sol.qty_to_invoice, 1.0, "Qty to invoice should be set on anglo-saxon lines"
         )
-        # Case 2: Product price is greater than zero and Anglo-Saxon accounting is enabled.
         self.service_product_ordered.with_user(self.project_user).with_context(
             {"fsm_task_id": self.task.id}
         ).fsm_add_quantity()
@@ -591,7 +555,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
             "A draft invoice claims the line's quantity without invoicing it: "
             "nothing is left to raise, and the line is not invoiced until it is posted.",
         )
-        # Case 3: Product price is zero and Anglo-Saxon accounting is disabled.
         self.env.company.account_config_id.anglo_saxon_accounting = False
         self.service_product_delivered.with_user(self.project_user).with_context(
             {"fsm_task_id": self.task.id}
@@ -601,7 +564,6 @@ class TestFsmFlowSale(TestFsmFlowSaleCommon):
             "no",
             "Invoice status should be 'no' when Anglo-Saxon accounting is disabled and the price is zero.",
         )
-        # Case 4: create SO in self env company which has anglo saxon true and task company is different where anglo saxon is false
         self.env.company.account_config_id.anglo_saxon_accounting = True
         fsm_project_second = self.env["project.project"].create(
             {

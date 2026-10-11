@@ -40,7 +40,6 @@ class AccountMove(models.Model):
         return res
 
     def _is_downpayment(self):
-        # EXTENDS sale
         self.check_singleton()
         if self.line_ids.sale_line_ids:
             return super()._is_downpayment()

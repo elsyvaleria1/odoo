@@ -17,8 +17,6 @@ from .ir_access import (
 
 
 def _writes_without_reading(rows: typing.Iterable[AccessInfo]) -> bool:
-    # some principal the class lets write and not read: a permission granting
-    # writing and not reading, or a guard refusing reading and not writing
     for row in rows:
         reads, writes = covers(row, "read"), covers(row, "write")
         reach = row.reach or "all"
@@ -164,8 +162,6 @@ class IrAccess(models.Model):
         self._check_class_still_labels()
 
     def _check_class_still_labels(self) -> None:
-        # a class a record carries as its label keeps letting no one write it
-        # without reading it, or that record hides from those it lets edit
         classes = self.class_id
         if not classes:
             return
@@ -187,8 +183,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _labelling_classes(self, classes: typing.Any) -> typing.Any:
-        # the classes some record carries as its own sensitivity label, read
-        # whoever may see those records
         graph = self.env.registry["mixin.access.graph"]
         tables = [
             model_cls._table
@@ -212,7 +206,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _class_model_names(self, name: str) -> list[str]:
-        # the models with a field of the class
         registry = self.env.registry
         return sorted(
             model_name
@@ -226,9 +219,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _label_classes(self) -> tuple[tuple[int, str], ...]:
-        # the classes a label can be granted through: those with rows, none of
-        # which lets anyone write without reading; a class without rows, or
-        # archived, grants nothing, so a record it labels reaches no one
         return tuple(
             sorted(
                 (rows[0].class_id, name)
@@ -250,8 +240,6 @@ class IrAccess(models.Model):
         return self._get_access_rows()[1]
 
     def _access_class_infos(self, accesses: typing.Any) -> frozendict:
-        # the rows of the active field classes, by class name, read in the
-        # same search as the rows of models
         rows = accesses.filtered(lambda access: access.class_id.active)
         result: dict[str, list[AccessInfo]] = {}
         for access in rows:
@@ -273,12 +261,6 @@ class IrAccess(models.Model):
         return frozendict({name: tuple(infos) for name, infos in result.items()})
 
     def _field_view_groups(self, definitions, field, operation: str = "read"):
-        # the group expression a field is visible to, for the view compiler:
-        # the intersection over its classes, each class the union of its read
-        # (or write) permission groups minus the guards that deny them. A
-        # per-record reach or company scope is not a group fact, so a field a
-        # group may read on some records stays in the arch and its value is
-        # masked per record at read time.
         return field_view_groups(
             definitions,
             field,
@@ -310,10 +292,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _field_class_allowed(self, name: str, operation: str) -> bool | str:
-        # the model formula applied to a class: some permission of a group the
-        # principal holds, and no guard binding it that refuses. A row that
-        # reaches some records only, or a group held through a grant limited
-        # to some companies, makes the verdict per record (_field_class_domain)
         spec = anonymous_spec(name)
         if spec is not None:
             return self._field_group_spec_allowed(spec)
@@ -350,8 +328,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _field_group_spec_allowed(self, spec: str) -> bool | str:
-        # has_groups, told per record: a group held through a grant limited to
-        # some companies answers on their records only
         user = self.env.user
         if not user._get_group_signature()[1]:
             return user.has_groups(spec)
@@ -374,9 +350,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _group_spec_terms(self, spec: str) -> tuple[bool, list[int], list[int]] | None:
-        # whether the spec names a group to hold, and the named and the
-        # excluded groups the principal holds (the debug group in debug mode
-        # only); None for a spec nobody holds
         if spec == NO_ACCESS:
             return None
         user = self.env.user
@@ -398,9 +371,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _field_class_domain(self, name: str, operation: str, model_name: str) -> Domain:
-        # the records of the model a per-record class verdict grants the
-        # operation on: the rows the principal holds, each through the model's
-        # anchor and the companies of the grant that holds it
         scopes = self.env.user._get_group_scopes()
         permissions: list[Domain] = []
         guards: list[Domain] = []
@@ -442,8 +412,6 @@ class IrAccess(models.Model):
         return Domain.OR(permissions) & Domain.AND(guards)
 
     def _row_reaches_model(self, row: AccessInfo, model_name: str) -> bool:
-        # a class row's reach reads the model's anchor; a model the class is
-        # a label on may declare none, and the row then reaches no record
         if row.reach not in REACH_ANCHOR:
             return True
         key = row.anchor or REACH_ANCHOR[row.reach]
@@ -452,8 +420,6 @@ class IrAccess(models.Model):
     def _scoped_verdict(
         self, model_name: str, permission: bool, companies: frozenset[int] | None
     ) -> Domain:
-        # a group of a groups= spec, held in some companies: it grants (or,
-        # excluded, refuses) on the records of those companies
         domain = Domain.TRUE if permission else Domain.FALSE
         if companies is None:
             return domain

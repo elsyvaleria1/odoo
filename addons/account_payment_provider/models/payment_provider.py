@@ -25,7 +25,6 @@ class PaymentProvider(models.Model):
         "Leave empty to allow it whatever the customer's pricelist.",
     )
 
-    # === COMPUTE METHODS ===#
 
     def _sync_payment_channel(self, allow_create=True) -> None:
         self.check_singleton()
@@ -50,9 +49,6 @@ class PaymentProvider(models.Model):
                 return
 
         if not pay_method_line:
-            # Only reuse a line already sitting on the provider's own journal:
-            # reusing one configured on a different journal would silently
-            # move it away from wherever a user had it configured.
             pay_method_line = self.env["account.payment.channel"].search(
                 [
                     *self.env["account.payment.channel"]._check_company_domain(
@@ -147,24 +143,11 @@ class PaymentProvider(models.Model):
     def _get_provider_payment_method(self, code):
         return self.env["account.payment.method"].search([("code", "=", code)], limit=1)
 
-    # === BUSINESS METHODS ===#
 
     @api.model
     def _get_compatible_providers(
         self, company_id, partner_id, *args, report=None, **kwargs
     ):
-        """Override of `payment` to drop the providers the customer's pricelist rules out.
-
-        A provider that lists no pricelist is available whatever the customer's, so the
-        restriction stays opt-in.
-
-        :param int company_id: The company to which providers must belong, as a `res.company` id.
-        :param int partner_id: The partner making the payment, as a `res.partner` id.
-        :param dict report: The report in which each provider's availability status and reason must
-                            be logged.
-        :return: The compatible providers.
-        :rtype: payment.provider
-        """
         providers = super()._get_compatible_providers(
             company_id, partner_id, *args, report=report, **kwargs
         )
@@ -189,7 +172,6 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _setup_provider(self, code, **kwargs) -> None:
-        """Override of `payment` to create the payment method of the provider."""
         super()._setup_provider(code, **kwargs)
         self._setup_payment_method(code)
 
@@ -217,9 +199,7 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _remove_provider(self, code, **kwargs) -> None:
-        """Override of `payment` to delete the payment method of the provider."""
         payment_method = self._get_provider_payment_method(code)
-        # If the payment method is used by any payments, we block the uninstallation of the module.
         if self._has_existing_payment(payment_method):
             raise UserError(
                 self.env._(

@@ -13,9 +13,6 @@ class StockPicking(models.Model):
 
     @api.model
     def _cron_starshipit_update_prices(self, auto_commit=True) -> bool:
-        """
-        Cron job to trigger price updates for pickings with pending Starshipit prices.
-        """
         pickings_by_carrier = self.env["stock.picking"]._read_group(
             domain=[
                 ("carrier_price", "=", 0.0),
@@ -53,7 +50,6 @@ class StockPicking(models.Model):
         return True
 
     def action_print_starshipit_labels(self) -> dict:
-        """Returns the starshipit labels for all pickings in self."""
         labels = self.env["ir.attachment"].search(
             [
                 ("res_model", "=", "stock.picking"),

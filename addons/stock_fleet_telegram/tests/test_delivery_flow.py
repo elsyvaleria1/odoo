@@ -21,7 +21,6 @@ def _pdf(seed) -> bytes:
 
 
 def _png(seed) -> bytes:
-    """A distinct valid image per seed: the same bytes are one file sent twice."""
     buffer = io.BytesIO()
     Image.new("RGB", (1 + seed % 50, 1 + seed // 50)).save(buffer, format="PNG")
     return buffer.getvalue()
@@ -228,7 +227,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
     def _last_slip(self, chat=DRIVER_CHAT):
         return self.Slip.search([("chat_id", "=", self._chat(chat).id)], limit=1)
 
-    # -- identifying and delivering ------------------------------------------
 
     def test_the_code_names_the_delivery_and_its_driver_delivers_it(self):
         first = self.pickings[0]
@@ -318,7 +316,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertEqual(set(self.pickings.mapped("state")), {"done"})
         self.assertFalse(self.trip.date_return)
 
-    # -- filing without delivering -------------------------------------------
 
     def test_someone_off_the_trip_only_files_the_slip(self):
         first = self.pickings[0]
@@ -375,7 +372,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertTrue(first.delivery_proof)
         self.assertIn("only Odoo asks", reply)
 
-    # -- refusals -------------------------------------------------------------
 
     def test_a_delivery_with_valid_evidence_is_not_filed_again(self):
         first = self.pickings[0]
@@ -410,7 +406,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
             self.Slip.search_count([("chat_id", "=", self._chat(OFFICE_CHAT).id)]), 1
         )
 
-    # -- handing the papers in ------------------------------------------------
 
     def test_finish_hands_the_batch_to_administration(self):
         self._say("/entrega")
@@ -472,7 +467,6 @@ class TestDeliveryFlow(TelegramBotTestCase):
         self.assertEqual(receipt.state, "cancel")
         self.assertFalse(self.pickings.filtered("delivery_paper_received"))
 
-    # -- second review --------------------------------------------------------
 
     def test_a_redirect_warning_keeps_the_slip_and_says_why(self):
         first = self.pickings[0]

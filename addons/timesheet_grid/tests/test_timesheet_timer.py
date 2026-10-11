@@ -83,7 +83,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_timer_in_task(self):
-        """Test the timer on a task"""
         task = self.task1.with_user(self.user_employee)
         self.assertTrue(
             task.display_timesheet_timer, "The timer should be available in that task."
@@ -111,7 +110,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_timer_sync_timesheet_to_task(self):
-        """Test sync between timesheet and task"""
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -127,13 +125,11 @@ class TestTimesheetTimer(TestCommonTimesheet):
             )
         )
 
-        # Start the timer on timesheet
         timesheet.action_timer_start()
         self.assertTrue(
             timesheet.is_timer_running, "Timer should be started on timesheet"
         )
 
-        # Stop the timer from the task through the wizard
         task = self.task1.with_user(self.user_employee)
         self.assertTrue(
             task.user_timer_id,
@@ -155,8 +151,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_timer_sync_task_to_timesheet(self):
-        """Start the timer from the task and stop the timer from the timesheet"""
-        # start timer from the task
         task = self.task1.with_user(self.user_employee)
         with freeze_time(datetime.now() - relativedelta(minutes=1)):
             task.action_timer_start()
@@ -170,7 +164,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
             "A timesheet should be generated in the task in which the timer is started.",
         )
 
-        # stop timer from the timesheet
         timesheet.with_user(self.user_employee).action_timer_stop(True)
         self.assertFalse(task.user_timer_id, "Timer should be stopped on ticket")
         self.assertGreater(
@@ -180,17 +173,12 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_switch_timer_task(self):
-        """
-        Stop the running timer and log the timesheet entry on task when same user start the timer on another task
-        """
         task1 = self.task1.copy()
         task2 = self.task1.copy()
 
-        # Start the timer on task1
         with freeze_time(datetime.now() - relativedelta(minutes=1)):
             task1.with_user(self.user_employee).action_timer_start()
 
-        # Start the timer on task2
         task2.with_user(self.user_employee).action_timer_start()
         self.assertFalse(task1.timer_start, "Timer should be stoped on task1")
         self.assertEqual(
@@ -201,7 +189,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_update_timesheet(self):
-        """Test if when the task is updated on the timesheet, the timer is also updated"""
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -218,7 +205,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         self.assertEqual(timer.parent_res_id, self.task1.id)
 
     def test_update_project_on_task_linked_to_timesheet_with_timer_running(self):
-        """Test if when the project is updated on the task linked to the timesheet with timer running, the timer is also updated"""
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -321,10 +307,6 @@ class TestTimesheetTimer(TestCommonTimesheet):
         )
 
     def test_first_description_of_a_timer_timesheet_is_not_a_conflict(self):
-        """A timer names its timesheet "/" and hands the client "" for it, so the
-        client's first description arrives with a baseline of "" against a row
-        holding "/". That is the same value, not another user's edit.
-        """
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)

@@ -16,8 +16,6 @@ class TestAppraisalGoalSkills(TransactionCase):
         cls.skill = cls.env["hr.skill"].create(
             {"name": "Python", "skill_type_id": cls.skill_type.id}
         )
-        # A second skill lets one goal carry a current and an expired window
-        # without tripping the same-skill overlap constraint.
         cls.skill_sql = cls.env["hr.skill"].create(
             {"name": "SQL", "skill_type_id": cls.skill_type.id}
         )
@@ -47,7 +45,6 @@ class TestAppraisalGoalSkills(TransactionCase):
         )
 
     def test_current_goal_skills_exclude_expired(self):
-        """Check that an expired validity window leaves the current set."""
         current = self._goal_skill()
         self._goal_skill(
             skill=self.skill_sql, valid_to=FROZEN_TODAY - timedelta(days=1)
@@ -56,8 +53,6 @@ class TestAppraisalGoalSkills(TransactionCase):
         self.assertEqual(self.goal.current_goal_skill_ids, current)
 
     def test_search_current_goal_skills(self):
-        """Check the custom search matches goals only through skills whose
-        validity window is still open."""
         current = self._goal_skill()
         expired = self._goal_skill(
             skill=self.skill_sql, valid_to=FROZEN_TODAY - timedelta(days=1)
@@ -75,15 +70,12 @@ class TestAppraisalGoalSkills(TransactionCase):
         )
 
     def test_search_current_goal_skills_rejects_other_operators(self):
-        """Check that the searcher refuses operators it cannot translate."""
         with self.assertRaises(NotImplementedError):
             self.env["hr.appraisal.goal"]._search_current_individual_skill_ids(
                 "like", "Python"
             )
 
     def test_copy_recreates_skills_on_new_goal(self):
-        """Check that copying a goal rebuilds its skills against the copy
-        (goal.skill records are not duplicable directly)."""
         self._goal_skill()
         copy = self.goal.copy()
 

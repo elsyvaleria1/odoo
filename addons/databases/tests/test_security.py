@@ -135,7 +135,6 @@ class TestDatabasesSecurity(TestDatabasesCommon):
 
     @users("employee@company.tld")
     def test_employee_given_group_should_have_access(self):
-        # unless they have a database user role
         self.user_employee.group_ids = [
             Command.link(self.ref("databases.group_databases_user"))
         ]
@@ -152,5 +151,4 @@ class TestDatabasesSecurity(TestDatabasesCommon):
         with self.assertRaises(AccessError):
             self.env["project.project"].action_synchronize_all_databases()
 
-        # Ensure that above of the Odoo AccessError, there isn't any call made to the outsite world
         self.mock_requests_request.authenticate.assert_not_called()

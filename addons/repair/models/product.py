@@ -13,7 +13,6 @@ class ProductProduct(models.Model):
     )
 
     def _compute_product_catalog_product_is_in_repair(self) -> None:
-        # Just to enable the _search method
         self.product_catalog_product_is_in_repair = False
 
     def _search_product_catalog_product_is_in_repair(self, operator, value):

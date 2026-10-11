@@ -44,7 +44,6 @@ class ProjectProject(models.Model):
 
     @api.depends("is_fsm")
     def _compute_company_id(self):
-        # The super() call is done first in order to set the company of the fsm projects to the company of its account if a company is set on it.
         super()._compute_company_id()
         fsm_projects = self.filtered(
             lambda project: project.is_fsm and not project.company_id
@@ -95,7 +94,6 @@ class ProjectProject(models.Model):
             if self.env.context.get("copy_from_template") and self.env.context.get(
                 "default_is_fsm"
             ):
-                # For a FSM project to be created from template company_id is required constraint
                 vals["company_id"] = (
                     self.env.context.get("default_company_id")
                     or project.company_id.id

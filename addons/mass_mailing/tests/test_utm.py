@@ -20,26 +20,18 @@ class TestUTMConsistencyMassMailing(TestUTMCommon, MassMailCommon):
                 "mailing_model_id": self.env["ir.model"]._get("res.partner").id,
             }
         )
-        # the source is automatically created when creating a mailing
         utm_source = mailing.source_id
 
         with self.assertRaises(UserError):
-            # can't unlink the source as it's used by a mailing.mailing as its source
-            # unlinking the source would break all the mailing statistics
             utm_source.unlink()
 
-        # the medium "Email" (from module XML data) is automatically assigned
-        # when creating a mailing
         utm_medium = mailing.medium_id
 
         with self.assertRaises(UserError):
-            # can't unlink the medium as it's used by a mailing.mailing as its medium
-            # unlinking the medium would break all the mailing statistics
             utm_medium.unlink()
 
     @users("user_marketing")
     def test_utm_consistency_mass_mailing_user(self):
-        # mass mailing user should be able to unlink all UTM models
         self.utm_campaign.unlink()
         self.utm_medium.unlink()
         self.utm_source.unlink()

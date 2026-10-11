@@ -19,12 +19,6 @@ def hear(
     prompt: str | None = None,
     company: Any = None,
 ) -> list[Cue]:
-    """What a recording says, heard now and kept nowhere.
-
-    For audio that is a message rather than a file: a voice command, a voice
-    note sent to a bot. A recording that belongs to a record is an attachment
-    and is read with `_read`/`_transcribe_later`, which keep the transcript.
-    """
     if not audio:
         return []
     company = company or env.company

@@ -10,13 +10,7 @@ from odoo.addons.social.controllers.main import (
 
 class SocialLinkedinController(SocialController):
     @http.route("/social_linkedin/callback", type="http", auth="user")
-    def social_linkedin_callback(self, access_token=None, code=None, state=None, **kw):  # noqa: E8539  inbound: a token an outside service hands over, not one of ours
-        """
-        We can receive
-        - code directly from LinkedIn
-        - access_token from IAP
-        - state from LinkedIn/IAP, the state avoid the CSRF attack
-        """
+    def social_linkedin_callback(self, access_token=None, code=None, state=None, **kw):
         if not request.env.user.has_group("social.group_social_manager"):
             return request.render(
                 "social.social_http_error_view",
@@ -51,7 +45,6 @@ class SocialLinkedinController(SocialController):
                     access_token, media
                 )
 
-            # Both _get_linkedin_access_token and _create_linkedin_accounts may raise a SocialValidationException
             except SocialValidationException as e:
                 return request.render(
                     "social.social_http_error_view",
@@ -63,9 +56,6 @@ class SocialLinkedinController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     @http.route("/social_linkedin/comment", type="http", auth="user", methods=["POST"])
     def social_linkedin_add_comment(
@@ -106,9 +96,6 @@ class SocialLinkedinController(SocialController):
         stream_post = self._get_social_stream_post(stream_post_id, "linkedin")
         return stream_post._linkedin_like_comment(comment_id, like)
 
-    # ========================================================
-    # POST EDITION
-    # ========================================================
 
     @http.route("/social_linkedin/edit_post", type="jsonrpc", auth="user")
     def social_linkedin_edit_post(self, stream_post_id, new_message):
@@ -120,17 +107,8 @@ class SocialLinkedinController(SocialController):
         stream_post = self._get_social_stream_post(stream_post_id, "linkedin")
         return stream_post._linkedin_remove_post()
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _linkedin_get_access_token(self, linkedin_authorization_code, media):
-        """
-        Take the `authorization code` and exchange it for an `access token`
-        We also need the `redirect uri`
-
-        :return: the access token
-        """
         linkedin_url = "https://www.linkedin.com/oauth/v2/accessToken"
         linkedin_app_id = request.env.registry.settings.get(
             request.env, "social.linkedin_app_id", False

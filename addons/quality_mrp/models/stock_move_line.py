@@ -14,11 +14,6 @@ class StockMoveLine(models.Model):
         _debug.lifecycle("write", lines=self, fields=list(vals))
         if not vals.get("trace_id"):
             return res
-        # a move line write can DELETE members of `self`: stock's reservation
-        # engine settles an over-allocation by unlinking competing
-        # reservations, and a line of this very batch can be among them.
-        # `trace_id` is one of the fields that reaches that path, so reading
-        # `check_ids` off the pre-write recordset dereferences a deleted row.
         survivors = self._survivors_since(mark)
         if survivors.sudo().check_ids:
             survivors.check_ids.filtered(

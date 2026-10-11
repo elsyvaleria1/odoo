@@ -78,8 +78,6 @@ class TestWorkEntryInvariants(TransactionCase):
 
     def test_validated_entry_without_a_type_is_not_flagged(self):
         validated = self._create()
-        # untyped while still a draft, then the state alone, as validation
-        # writes it: hr_payroll refuses any other edit of a validated entry
         validated.with_context(hr_work_entry_no_check=True).write(
             {"work_entry_type_id": False}
         )

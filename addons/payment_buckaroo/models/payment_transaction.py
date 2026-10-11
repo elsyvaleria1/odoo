@@ -32,7 +32,6 @@ class PaymentTransaction(models.Model):
 
     @staticmethod
     def _normalize_buckaroo_keys(data) -> dict:
-        # Buckaroo's parameter names are case-insensitive.
         return {key.lower(): val for key, val in data.items()}
 
     def _is_notification_signature_valid(self, payment_data) -> bool:
@@ -57,14 +56,6 @@ class PaymentTransaction(models.Model):
         return True
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of payment to return Buckaroo-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific processing values
-        :rtype: dict
-        """
         if self.provider_code != "buckaroo":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -77,7 +68,6 @@ class PaymentTransaction(models.Model):
             "Brq_amount": self.amount,
             "Brq_currency": self.currency_id.name,
             "Brq_invoicenumber": self.reference,
-            # Include all 4 URL keys despite they share the same value as they are part of the sig.
             "Brq_return": return_url,
             "Brq_returncancel": return_url,
             "Brq_returnerror": return_url,
@@ -92,13 +82,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "buckaroo":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("brq_invoicenumber")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "buckaroo":
             return super()._extract_amount_data(payment_data)
 
@@ -110,27 +98,21 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "buckaroo":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         transaction_keys = payment_data.get("brq_transactions")
         if not transaction_keys:
             self._set_error(self.env._("Received data with missing transaction keys"))
             return None
-        # BRQ_TRANSACTIONS can hold multiple, comma-separated, tx keys. In practice, it holds only
-        # one reference. So we split for semantic correctness and keep the first transaction key.
         self.provider_reference = transaction_keys.split(",")[0]
 
-        # Update the payment method.
         payment_method_code = payment_data.get("brq_payment_method")
         payment_method = self.env["payment.method"]._get_from_code(
             payment_method_code, mapping=const.PAYMENT_METHODS_MAPPING
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         status_code = int(payment_data.get("brq_statuscode") or 0)
         if status_code in const.STATUS_CODES_MAPPING["pending"]:
             self._set_pending()

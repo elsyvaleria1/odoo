@@ -109,8 +109,6 @@ def _start_watcher(
     ):
         return None
     if not (inotify or watchdog):
-        # inotify is the kernel's own on Linux; anywhere else the watchdog
-        # package is the only backend, and it is a dev requirement.
         _debug.logic(
             "server.watcher_unavailable",
             module="watchdog",

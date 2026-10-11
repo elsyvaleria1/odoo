@@ -76,8 +76,6 @@ class SocialFacebookCase(SocialFacebookCommon):
         )
 
     def test_format_facebook_post_date(self):
-        """Facebook has its own format to return date values.
-        Let's make sure those are correctly formatted."""
 
         formatted_value = self.env[
             "social.stream.post"

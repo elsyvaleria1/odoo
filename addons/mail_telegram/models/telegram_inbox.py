@@ -33,7 +33,6 @@ class TelegramInbox(models.AbstractModel):
     @api.model
     def _overview(self) -> dict:
         partner = self.env.user.partner_id
-        # the user's own notifications, whose messages they are addressed
         notifications = self.env["mail.notification"].search(
             [
                 ("res_partner_id", "=", partner.id),
@@ -110,7 +109,6 @@ class TelegramInbox(models.AbstractModel):
                 channel.self_member_id._mark_as_read(last.id)
         return True
 
-    # -- shapes ---------------------------------------------------------------
 
     @api.model
     def _record(self, model, res_id):

@@ -29,21 +29,7 @@ class SocialStream(models.Model):
         return None
 
     def _sync_channel_videos(self) -> bool:
-        """The method to retrieve the channel videos is a bit tricky.
-        The best way to do it would be to use the API '/search' endpoint, specifying
-        we only want to search for record of types 'video' and for our own channel.
-        BUT, this endpoint 'costs' 100 quota points.
 
-        Instead, we use a query to retrieve the "playlistItems" of our "uploads" playlist
-        (the 'youtube_upload_playlist_id' field of the social.account).
-        This call only costs a single quota point.
-
-        Then we use the retrieved videos IDs to query the '/videos' endpoint to fetch
-        all the necessary data (title, description, thumbnail, statistics, ...).
-        This also costs one quota point, for a total of 2 points VS 100 points for the search."""
-
-        # 1. get the playlist items from the "all uploads" playlist
-        # results are returned by published desc by default
         playlist_items_endpoint = url_join(
             self.env["social.media"]._YOUTUBE_ENDPOINT, "youtube/v3/playlistItems"
         )
@@ -76,7 +62,6 @@ class SocialStream(models.Model):
         if not youtube_video_ids:
             return False
 
-        # 2. get the videos information from the playlist items retrieved at step 1.
         video_endpoint = url_join(
             self.env["social.media"]._YOUTUBE_ENDPOINT, "youtube/v3/videos"
         )
@@ -102,7 +87,6 @@ class SocialStream(models.Model):
         elif not video_items_response.get("items"):
             return False
 
-        # 3. create or update social.stream.post based on fetched videos
         existing_posts = self.env["social.stream.post"].search(
             [("stream_id", "=", self.id), ("youtube_video_id", "in", youtube_video_ids)]
         )

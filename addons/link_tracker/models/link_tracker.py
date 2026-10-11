@@ -17,15 +17,9 @@ _logger = logging.getLogger(__name__)
 
 LINK_TRACKER_UNIQUE_FIELDS = ("url", "campaign_id", "medium_id", "source_id", "label")
 
-#: A short code is handed to everyone who receives a mailing and is resolved
-#: through a public, unthrottled route, so a guessable one discloses its target.
-#: Three characters is 62**3, which a single-threaded client walks in under an
-#: hour; eight is 2.2e14. Codes already issued keep working -- the column is not
-#: fixed-width and only newly generated codes get the longer form.
 LINK_TRACKER_MIN_CODE_LENGTH = 8
 LINK_TRACKER_CODE_ALPHABET = string.ascii_letters + string.digits
 
-#: Read on every redirect, so it is worth not paying for the whole record.
 LINK_TRACKER_CLICK_ROUTE_FIELDS = ("ip", "country_id", "link_id")
 
 
@@ -38,12 +32,9 @@ class LinkTracker(models.Model):
     _name = "link.tracker"
     _rec_name = "short_url"
     _description = "Link Tracker"
-    # `count` alone is not a total order: ties would paginate nondeterministically
-    # and make "which duplicate did the constraint name?" depend on the plan.
     _order = "count DESC, id DESC"
     _inherit = ["mixin.utm"]
 
-    # URL info
     url = fields.Char(
         string="Target URL",
         required=True,
@@ -66,7 +57,6 @@ class LinkTracker(models.Model):
     )
     title = fields.Char(string="Page Title")
     label = fields.Char(string="Button label")
-    # Tracking
     link_code_ids = fields.One2many(
         comodel_name="link.tracker.code",
         inverse_name="link_id",
@@ -88,10 +78,6 @@ class LinkTracker(models.Model):
         compute="_compute_count",
         store=True,
     )
-    # The five unique fields, digested. Indexing the tuple itself is not an
-    # option: `url` and `label` are unbounded, and a btree entry is capped at
-    # ~2704 bytes. The digest is fixed-width, so one indexed `IN` answers what
-    # used to be an N-way OR over an unindexed column -- see `_unique_key_domain`.
     key_hash = fields.Char(
         string="Unique key digest",
         compute="_compute_key_hash",
@@ -99,24 +85,13 @@ class LinkTracker(models.Model):
         index="btree",
         copy=False,
     )
-    # UTMs - enforcing the fact that we want to 'set null' when relation is unlinked
     campaign_id = fields.Many2one(ondelete="set null")
     medium_id = fields.Many2one(ondelete="set null")
     source_id = fields.Many2one(ondelete="set null")
 
-    # ------------------------------------------------------------
-    # UNIQUE KEY
-    # ------------------------------------------------------------
 
     @api.model
     def _unique_key_from_values(self, values) -> tuple:
-        """Return the canonical unique key of ``values``.
-
-        ``values`` is either a vals dict or a ``link.tracker`` record. The whole
-        point is that there is exactly one spelling of this tuple: ``label``
-        carries both ``''`` and ``NULL`` in the wild (see ``_normalize_vals``),
-        and every consumer used to re-implement that carve-out.
-        """
         if isinstance(values, models.BaseModel):
             values.check_singleton()
             return (
@@ -149,19 +124,10 @@ class LinkTracker(models.Model):
 
     @api.model
     def _unique_key_domain(self, keys):
-        """Domain matching every tracker whose unique key is one of ``keys``.
-
-        One indexed ``IN`` over ``key_hash``. A digest collision would only widen
-        the result set, and callers re-derive the real key from each record, so
-        the answer stays exact.
-        """
         if not keys:
             return Domain.FALSE
         return Domain("key_hash", "in", [self._unique_key_digest(key) for key in keys])
 
-    # ------------------------------------------------------------
-    # COMPUTE
-    # ------------------------------------------------------------
 
     @api.depends("url")
     def _compute_absolute_url(self) -> None:
@@ -174,11 +140,6 @@ class LinkTracker(models.Model):
             try:
                 tracker.absolute_url = tools.urls.urljoin(base_url, urlunsplit(url))
             except ValueError as err:
-                # A schemeless url is legitimate here — it is resolved against the
-                # base url, which is what this branch is for — but urljoin refuses a
-                # foreign host and any dot segment, and `write` does not normalise.
-                # Report it the way `_compute_short_url` reports its own join
-                # failure, rather than letting a bare ValueError out of a compute.
                 raise UserError(
                     self.env._(
                         "“%s” is not a valid link.",
@@ -216,13 +177,6 @@ class LinkTracker(models.Model):
 
     @api.depends("link_code_ids.code")
     def _compute_code(self) -> None:
-        """The most recently issued code of each tracker, in one query.
-
-        The dependency is what makes this correct: without it the ORM caches the
-        value for the whole transaction, so renaming a code -- or adding a second
-        one, which is what ``/website_links/add_code`` does -- left every reader
-        of ``code``, ``short_url`` and therefore ``display_name`` on the old value.
-        """
         Code = self.env["link.tracker.code"]
         latest_ids = {
             link.id: code_id
@@ -237,12 +191,6 @@ class LinkTracker(models.Model):
             tracker.code = codes.get(latest_ids.get(tracker.id), False)
 
     def _inverse_code(self) -> None:
-        """Rename the tracker's latest code, or issue one if it has none.
-
-        Batched, and without ``check_singleton``: an inverse is handed the whole
-        recordset, and this one used to raise a bare ValueError on any
-        multi-record write.
-        """
         Code = self.env["link.tracker.code"].sudo()
         trackers = self.filtered("code")
         if not trackers:
@@ -275,12 +223,6 @@ class LinkTracker(models.Model):
         "source_id.name",
     )
     def _compute_redirected_url(self) -> None:
-        """Compute the URL to which we will redirect the user.
-
-        UTM values are added as GET parameters; when the system parameter
-        `link_tracker.no_external_tracking` is set, only for URLs pointing to
-        the local website (base URL).
-        """
         no_external_tracking = self.env.registry.settings.get(
             self.env, "link_tracker.no_external_tracking", False
         )
@@ -303,8 +245,6 @@ class LinkTracker(models.Model):
                     query[key] = attr
 
             query = urlencode(query)
-            # '...' is detected as malicious by some nginx
-            # configurations, encoding it solves the issue
             query = query.replace("...", "%2E%2E%2E")
             tracker.redirected_url = urlunsplit(parsed._replace(query=query))
 
@@ -317,17 +257,9 @@ class LinkTracker(models.Model):
             return preview["og_title"]
         return url
 
-    # ------------------------------------------------------------
-    # VALIDATION
-    # ------------------------------------------------------------
 
     @api.model
     def _normalize_vals(self, vals):
-        """Bring one vals dict to the canonical shape the unique key assumes.
-
-        ``label`` reaches the column as both ``''`` and ``NULL`` otherwise, which
-        is why the unique key needed a carve-out at every call site.
-        """
         if "label" in vals and not vals["label"]:
             vals["label"] = False
         if "url" in vals:
@@ -343,13 +275,6 @@ class LinkTracker(models.Model):
         return vals
 
     def _check_url_is_not_a_short_url(self, vals_list) -> None:
-        """Refuse a target that is one of our own short URLs.
-
-        ``test_no_loop`` is named for this hazard but only guarded ``?`` and
-        ``#``. A tracker pointed at its own ``/r/<code>`` 301s to itself, and
-        because the click is recorded before the redirect resolves, one browser
-        page-load records as many clicks as the browser's redirect limit.
-        """
         short_prefix = self.env["link.tracker"].get_base_url() + "/r/"
         for vals in vals_list:
             url = vals.get("url")
@@ -369,12 +294,6 @@ class LinkTracker(models.Model):
                 )
 
     def _check_unicity_of_keys(self, keys, exclude=None) -> None:
-        """Raise if ``keys`` collide with each other or with existing trackers.
-
-        Replaces the table scan the old ``@api.constrains`` ran: the lookup is a
-        single indexed ``IN`` over ``key_hash`` rather than an N-way OR over an
-        unindexed ``url``.
-        """
         seen, duplicates = set(), []
         for key in keys:
             if key in seen:
@@ -422,9 +341,6 @@ class LinkTracker(models.Model):
                 )
             )
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -436,26 +352,16 @@ class LinkTracker(models.Model):
                 )
         self._check_url_is_not_a_short_url(vals_list)
 
-        # Taken out before `super`: `code` is a non-stored inverse field, and the
-        # inverse runs while the tracker still has no `link.tracker.code` row --
-        # it used to find nothing, return silently, and let `create` overwrite the
-        # requested code with a generated one, leaving the record reporting a
-        # short URL that resolved to nothing.
         requested_codes = [vals.pop("code", False) for vals in vals_list]
 
         for vals in vals_list:
             if not vals.get("title"):
-                # Display-only, and `link_preview` fetches it over the network with
-                # a 10s deadline per link. That does not belong in a transaction on
-                # the mailing send path; `_cron_update_titles` backfills it, and a
-                # caller that needs it now asks for it.
                 vals["title"] = (
                     self._get_title_from_url(vals["url"])
                     if self.env.context.get("link_tracker_fetch_title")
                     else vals["url"]
                 )
 
-            # Prevent the UTMs from being set by the values of UTM cookies
             for __, fname, __ in self.env["mixin.utm"].tracking_fields():
                 if fname not in vals:
                     vals[fname] = False
@@ -506,13 +412,9 @@ class LinkTracker(models.Model):
             self._check_unicity_of_keys(keys, exclude=self)
         return super().write(vals)
 
-    # ------------------------------------------------------------
-    # API
-    # ------------------------------------------------------------
 
     @api.model
     def search_or_create(self, vals_list) -> Self:
-        """Get existing or newly created records matching vals_list items in preserved order supporting duplicates."""
         if not isinstance(vals_list, list):
             _logger.warning(
                 "Deprecated usage of LinkTracker.search_or_create which now expects a list of dictionaries as input."
@@ -525,7 +427,6 @@ class LinkTracker(models.Model):
                     self.env._("Creating a Link Tracker without URL is not possible")
                 )
             self._normalize_vals(vals)
-            # fill vals so `_unique_key_from_values` sees the defaults a create would apply
             self._add_missing_default_values(vals)
             vals.update(
                 {key: False for key in LINK_TRACKER_UNIQUE_FIELDS if not vals.get(key)}
@@ -541,7 +442,6 @@ class LinkTracker(models.Model):
         }
 
         if len(unique_keys) != len(key_to_trackers_map):
-            # Create trackers for values with unique keys not found
             seen_keys = set(key_to_trackers_map)
             new_trackers = self.create(
                 [
@@ -560,19 +460,10 @@ class LinkTracker(models.Model):
                 lambda tracker: not tracker.title or tracker.title == tracker.url
             )._update_titles()
 
-        # Build final recordset following input order
         return self.browse([key_to_trackers_map[key].id for key in keys])
 
     @api.model
     def _resolve_and_track(self, code, **route_values):
-        """Resolve a short code to its redirect target, recording the click.
-
-        The single entry point every ``/r/`` route shares. It exists because the
-        four controllers that used to spell this out drifted: two kept the
-        ``is_a_bot`` guard and two lost it -- including the ``/r/<code>/m/<trace>``
-        route that every mass-mailing link points at -- and all four resolved the
-        same code twice, once to record the click and once to read the target.
-        """
         tracker_code = (
             self.env["link.tracker.code"].sudo().search([("code", "=", code)], limit=1)
         )
@@ -586,11 +477,6 @@ class LinkTracker(models.Model):
 
     @api.model
     def _click_is_from_a_bot(self):
-        """Whether the current request looks like a crawler or link previewer.
-
-        False outside an HTTP request: demo data and tests call ``add_click``
-        directly and there is no user agent to read.
-        """
         if not request:
             return False
         return self.env["ir.http"].is_a_bot()
@@ -615,8 +501,6 @@ class LinkTracker(models.Model):
 
     @api.model
     def recent_links(self, sort_by, limit):
-        # `search_read([])` returned all twenty fields, computed ones included,
-        # for a dashboard that renders five of them.
         fields_to_read = [
             "code",
             "short_url",
@@ -644,8 +528,6 @@ class LinkTracker(models.Model):
                 order="write_date DESC, id DESC",
                 limit=limit,
             )
-        # Returning {'Error': ...} put a dict where the only caller does
-        # `links.reverse()`, so a bad filter surfaced as a TypeError in the browser.
         raise UserError(self.env._("“%s” is not a known sort order.", sort_by))
 
     @api.model
@@ -661,7 +543,6 @@ class LinkTracker(models.Model):
 
     @api.model
     def _cron_update_titles(self, limit=200) -> None:
-        """Backfill the titles `create` no longer fetches over the network."""
         trackers = self.sudo().search([("title", "=", False)], limit=limit)
         trackers |= (
             self.sudo()
@@ -703,11 +584,6 @@ class LinkTrackerCode(models.Model):
 
     @api.model
     def _get_random_code_strings(self, n=1):
-        """``n`` codes that are unused, and unguessable.
-
-        ``random`` is a Mersenne Twister: fine for a shuffle, not for a value
-        whose only protection is that nobody can guess it.
-        """
         if not n:
             return []
         size = LINK_TRACKER_MIN_CODE_LENGTH
@@ -763,12 +639,6 @@ class LinkTrackerClick(models.Model):
 
     @api.model
     def add_click(self, code, *, tracker_code=None, **route_values):
-        """Main API to add a click on a link.
-
-        :param tracker_code: the already-resolved ``link.tracker.code``, when the
-          caller has one. Every ``/r/`` route resolves the code to find its
-          redirect target anyway, and used to pay for a second lookup here.
-        """
         if tracker_code is None:
             tracker_code = self.env["link.tracker.code"].search(
                 [("code", "=", code)], limit=1
@@ -783,12 +653,6 @@ class LinkTrackerClick(models.Model):
 
     @api.model
     def _cron_clear_expired_ips(self, batch_size=10000) -> None:
-        """Clear the stored IP of clicks older than the configured retention.
-
-        ``link_tracker.click_ip_retention_days`` is unset by default, which keeps
-        the previous behaviour: an IP is kept forever. Set it to a number of days
-        to have this cron forget them.
-        """
         days = self.env.registry.settings.get(
             self.env, "link_tracker.click_ip_retention_days", False
         )

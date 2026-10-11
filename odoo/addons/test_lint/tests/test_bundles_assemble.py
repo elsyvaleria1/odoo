@@ -85,9 +85,6 @@ class TestBundlesAssemble(lint_case.LintCase):
             bundles = self.served_bundle_names(env)
             self.assertTrue(bundles, "no bundles found -- the scan reached nothing")
 
-            # the declared fallback list only: the circuit breaker is the
-            # process's memory of a bundle that already failed, which is the
-            # bundle this gate exists to report
             declined = qweb._get_esbuild_bundles_forced_fallback()
             compiled = 0
             for bundle in bundles:

@@ -42,7 +42,7 @@ class MixinHrPayrollDeclaration(models.AbstractModel):
     pdf_error = fields.Text(string="PDF Error Message")
 
     def unlink(self):
-        self.line_ids.unlink()  # We need to unlink the child line_ids as well to prevent orphan records
+        self.line_ids.unlink()
         return super().unlink()
 
     def action_generate_declarations(self):

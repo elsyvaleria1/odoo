@@ -76,8 +76,6 @@ def colour_literals(text: str, *, plain_css: bool = False) -> list[int]:
 
 
 def page_colour_literals(text: str) -> list[int]:
-    # a page the browser fetches by URL reaches no SCSS palette: the custom
-    # properties of its :root are its palette, and every other colour reads one
     return colour_literals(
         PAGE_PALETTE_RE.sub(
             lambda block: CUSTOM_PROPERTY_RE.sub(_keep_newlines, block.group(0)),

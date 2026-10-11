@@ -51,7 +51,6 @@ class AutomationLeadTest(models.Model):
 
     @api.depends("partner_id.test_automation_employee", "priority")
     def _compute_employee_deadline(self):
-        # this method computes two fields on purpose; don't split it
         for record in self:
             record.employee = record.partner_id.test_automation_employee
             if not record.priority or not record.create_date:
@@ -63,8 +62,6 @@ class AutomationLeadTest(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        # force recomputation of field 'deadline' via 'employee': the action
-        # based on 'deadline' must be triggered
         self.mapped("employee")
         return result
 

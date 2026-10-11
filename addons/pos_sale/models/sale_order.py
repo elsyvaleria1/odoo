@@ -121,7 +121,6 @@ class SaleOrder(models.Model):
     def _compute_amounts_invoice(self) -> None:
         super()._compute_amounts_invoice()
         for order in self:
-            # We need to account for all amount paid in POS with and without invoice
             pos_amount = sum(
                 order.sudo().pos_order_line_ids.mapped("price_subtotal_incl")
             )
@@ -129,7 +128,6 @@ class SaleOrder(models.Model):
 
             if order.invoice_state == "done":
                 continue
-            # We need to account for the downpayment paid in POS with and without invoice
             downpayment_amount = sum(
                 order.sudo()
                 .pos_order_line_ids.filtered(
@@ -143,7 +141,6 @@ class SaleOrder(models.Model):
             order.amount_taxinc_invoiced += downpayment_amount
 
     def _prepare_down_payment_line_values_from_base_line(self, base_line):
-        # EXTENDS 'sale'
         so_line_values = super()._prepare_down_payment_line_values_from_base_line(
             base_line
         )

@@ -24,7 +24,6 @@ class StripeIssuingController(Controller):
         receiver="res.company:_receiver_for_stripe_issuing",
         receiver_event="stripe_issuing",
         receiver_refusal="res.company:_refuse_stripe_issuing",
-        # auth="receiver": the Iap-Signature HMAC over the body
         csrf=False,
         save_session=False,
         typed=True,
@@ -47,9 +46,6 @@ class StripeIssuingController(Controller):
             "Content-Type": "application/json",
         }
         company_sudo = admission.subject
-        # stopgap until the receiver has its own service user: the request's
-        # user is the archived public user, whom nothing may be made or
-        # authored by; the company pin keeps the event to its own company
         env = request.env(
             user=SUPERUSER_ID,
             su=True,
@@ -85,13 +81,12 @@ class StripeIssuingController(Controller):
                         "approved": False,
                         "message": f"Invalid event type '{event['type']}'",
                     }
-        except Exception as e:  # Catch all exceptions to avoid crashing the webhook and having it disabled by Stripe
+        except Exception as e:
             response = {
                 "approved": False,
                 "message": str(e),
             }
             _logger.exception("Stripe Issuing webhook event failed")
-            # Because the request awaits a response, we decline the authorization request to prevent the webhook from being disabled by Stripe
             status = (
                 StripeIssuingDatabaseError.DB_ERROR
                 if event["type"] != "issuing_authorization.request"
@@ -101,9 +96,6 @@ class StripeIssuingController(Controller):
             data=response, headers=response_headers, status=status
         )
 
-    # --------------------------------------------
-    # Events processing methods
-    # --------------------------------------------
 
     @api.model
     def _process_authorization_event(self, env, event):
@@ -136,10 +128,8 @@ class StripeIssuingController(Controller):
                 amount, mcc, country
             )
             if can_pay:
-                # We only create it when the capture happens
                 return {"message": "Authorization request approved", "approved": True}
             else:
-                # There will be no capture, we need to create a refused expense to log the refusal reason
                 env["hr.expense"]._create_from_stripe_authorization(
                     auth_object, refusal_reason
                 )
@@ -156,7 +146,6 @@ class StripeIssuingController(Controller):
                 "request_history", default_request_history
             )[0]
             if auth_object["status"] == "closed" and not request_history["approved"]:
-                # There will be no capture, we need to create a refused expense to log the refusal reason
                 technical_reason = request_history["reason"]
                 if technical_reason == "webhook_declined":
                     refusal_reason = auth_object["metadata"].get(
@@ -193,7 +182,7 @@ class StripeIssuingController(Controller):
                 "message": "Balance ignored, a more recent one was already received"
             }
         stripe_currency = journal.stripe_currency_id
-        if issuing_object["available"]:  # May be empty if 0
+        if issuing_object["available"]:
             issuing_amount = format_amount_from_stripe(
                 issuing_object["available"][0]["amount"], stripe_currency
             )
@@ -246,7 +235,6 @@ class StripeIssuingController(Controller):
 
         split_id = False
         if transaction_id and not authorization_id:
-            # In case of a force capture
             existing_expenses = env["hr.expense"].search(
                 [
                     ("stripe_transaction_id", "=", transaction_id),
@@ -284,7 +272,7 @@ class StripeIssuingController(Controller):
                 existing_expenses.split_expense_origin_id = split_id
                 existing_expenses = env[
                     "hr.expense"
-                ]  # If double transaction is detected, create a new existing_expenses
+                ]
             elif expense_transaction_ids:
                 existing_expenses = existing_expenses.filtered(
                     lambda exp: exp.stripe_transaction_id == transaction_id
@@ -306,7 +294,6 @@ class StripeIssuingController(Controller):
                 ]
             )
             if existing_statement_line:
-                # if the event is sent twice
                 existing_statement_line._update_from_stripe_transaction(tr_object)
             else:
                 env["account.bank.statement.line"]._create_from_stripe_transaction(

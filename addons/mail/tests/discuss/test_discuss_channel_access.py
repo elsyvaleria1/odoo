@@ -477,9 +477,6 @@ class TestDiscussChannelAccess(MailCommon):
         elif channel_key == "group_failing":
             channel.group_public_id = self.env.ref("base.group_system")
         if sub_channel:
-            # the fixture builds the tree as the superuser: the creating user may
-            # not read the parent (group_failing), and an x2many slot lists
-            # only what its reader may read
             channel.sudo()._create_sub_channel()
             channel = channel.sudo().sub_channel_ids[0]
             if membership == "member":

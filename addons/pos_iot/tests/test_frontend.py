@@ -8,7 +8,6 @@ class TestUi(TestPointOfSaleHttpCommon):
     def test_01_pos_iot_scale(self):
         env = self.env
 
-        # Create IoT Box
         iotbox_id = (
             env["iot.box"]
             .sudo()
@@ -21,7 +20,6 @@ class TestUi(TestPointOfSaleHttpCommon):
             )
         )
 
-        # Create IoT device
         iot_device_id = (
             env["iot.device"]
             .sudo()
@@ -36,7 +34,6 @@ class TestUi(TestPointOfSaleHttpCommon):
             )
         )
 
-        # Select IoT Box, tick electronic scale
         self.main_pos_config.write(
             {
                 "iface_scale_id": iot_device_id.id,

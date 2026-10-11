@@ -72,15 +72,10 @@ class RuleScript(models.Model):
             )[:1]
 
     def _evaluate(self, code, on_date, **inputs):
-        """The value of rule `code` at `on_date` for keyword inputs, computed by
-        the version in force that day. Raises UserError when no version is in
-        force or the rule fails."""
         value, _trace = self._evaluate_traced(code, on_date, inputs)
         return value
 
     def _evaluate_for(self, record, purpose, code, on_date, **inputs):
-        """_evaluate, keeping a rule.script.trace on `record`: what a filed or
-        posted figure was computed by, to answer for it later."""
         value, trace = self._evaluate_traced(code, on_date, inputs)
         self.env["rule.script.trace"]._record(
             record, purpose, code, fields.Date.to_date(on_date), inputs, value, trace
@@ -88,8 +83,6 @@ class RuleScript(models.Model):
         return value
 
     def _evaluate_traced(self, code, on_date, inputs) -> tuple:
-        """(value, trace): the trace lists every rule evaluated, nested calls
-        included, as {code, version id, inputs, value} in completion order."""
         trace = []
         try:
             value = self._resolve_and_run(
@@ -133,8 +126,6 @@ class RuleScript(models.Model):
 
     @api.model
     def _load_module_rules(self, module) -> None:
-        """Load the rule files a module ships under rules/ as shipped versions;
-        called from the module's data so every install and update reloads them."""
         root = Path(get_module_path(module))
         sources = {
             str(path.relative_to(root)): path.read_text(encoding="utf-8")
@@ -144,12 +135,6 @@ class RuleScript(models.Model):
 
     @api.model
     def _load_rule_sources(self, module, sources) -> None:
-        """Make {path: source} the shipped versions of `module`. An unchanged
-        file keeps its version; a changed one retires it and activates a new
-        version, which must pass its examples or the load fails; a file gone
-        retires its version. New versions activate callees first. A shipped
-        version a local version overlaps stays draft, and the overlap is
-        logged."""
         Version = self.env["rule.script.version"]
         shipped = Version.with_context(active_test=False).search(
             [

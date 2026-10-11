@@ -19,13 +19,10 @@ from odoo.addons.web.controllers.utils import (
 
 
 class UserInputSession(http.Controller):
-    # The host screen scrolls free-text answers live; past this many the display is
-    # unusable anyway. The count of what was left out travels with the payload rather
-    # than the slice being silent about it.
     MAX_LIVE_ANSWERS = 100
 
     def _get_from_token(self, survey_token: str) -> Any:
-        return request.env["survey.survey"].search(  # noqa: E8537  public: an identifier that is not meant to be secret
+        return request.env["survey.survey"].search(
             [("access_token", "=", survey_token)]
         )
 
@@ -115,8 +112,6 @@ class UserInputSession(http.Controller):
             template_values["is_rpc_call"] = True
             template_values["going_back"] = go_back
 
-            # the next screen replaces the whole session screen, so its own
-            # interaction starts from what the server rendered
             return render_fragments(
                 request.env,
                 Fragment(
@@ -191,9 +186,6 @@ class UserInputSession(http.Controller):
             return request.redirect(survey.get_start_url())
 
         SurveySudo = request.env["survey.survey"].sudo()
-        # Same guard _resolve_short_token applies below: redirecting here hands the
-        # survey's access_token -- a bearer secret -- to an anonymous visitor, and for
-        # an invite-only survey they cannot answer with it anyway.
         survey = SurveySudo.search(
             [
                 ("slug", "=", session_code),

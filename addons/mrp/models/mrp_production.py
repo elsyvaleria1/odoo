@@ -354,14 +354,6 @@ class MrpProduction(models.Model):
         readonly=False,
         domain=_NON_INVENTORY_MOVE_DOMAIN,
     )
-    # Undomained siblings of `move_raw_ids` and `move_finished_ids`, and the
-    # reason they are declared is not that anything reads them. `modified()`
-    # navigates from a written `stock.move` back to the productions whose
-    # dependent fields need recomputing, and it does that through an inverse
-    # One2many; the domained pair cannot serve, so without these two the ORM
-    # falls back to one query per production on every move written. Measured on
-    # a fresh database, `mrp.production.create()` of 20 orders: 4 queries per
-    # order with them, 6 without.
     all_move_raw_ids = fields.One2many(
         comodel_name="stock.move",
         inverse_name="raw_material_production_id",
@@ -375,11 +367,6 @@ class MrpProduction(models.Model):
         compute="_compute_move_byproduct_ids",
         inverse="_inverse_move_byproduct_ids",
     )
-    # Stored so that a by-product's share written on the move itself, not
-    # through the order, is checked too: the recompute runs at flush, on the
-    # final shares. A constraint on `stock.move.cost_share` would instead see
-    # every intermediate state of a rebalancing edit (70/30 -> 30/70 writes
-    # one move first) and refuse it.
     byproduct_cost_share = fields.Float(
         string="By-products Cost Share (%)",
         digits=0,
@@ -636,7 +623,7 @@ class MrpProduction(models.Model):
             if companies_with_warehouse is None:
                 companies_with_warehouse = {
                     company.id
-                    for [company] in self.env["stock.warehouse"]._read_group(  # noqa: E8507 - computed once, on first need, over every company of the batch
+                    for [company] in self.env["stock.warehouse"]._read_group(
                         [("company_id", "in", self.company_id.ids)], ["company_id"]
                     )
                 }
@@ -1124,19 +1111,19 @@ class MrpProduction(models.Model):
     )
     def _compute_state(self):
         for production in self:
-            by = "stays_draft"  # debuglog
+            by = "stays_draft"
             if (
                 not production.state
                 or not production.product_uom_id
                 or not (production.id or production._origin.id)
             ):
-                by = "no_identity"  # debuglog
+                by = "no_identity"
                 production.state = "draft"
             elif production.state == "cancel" or (
                 production.move_finished_ids
                 and all(move.state == "cancel" for move in production.move_finished_ids)
             ):
-                by = "all_finished_cancelled"  # debuglog
+                by = "all_finished_cancelled"
                 production.state = "cancel"
             elif production.state == "draft":
                 pass
@@ -1153,7 +1140,7 @@ class MrpProduction(models.Model):
                     for move in production.move_finished_ids
                 )
             ):
-                by = "all_moves_closed"  # debuglog
+                by = "all_moves_closed"
                 production.state = "done"
             elif (
                 production.workorder_ids
@@ -1168,7 +1155,7 @@ class MrpProduction(models.Model):
                 )
                 >= 0
             ):
-                by = "qty_reached_or_wo_closed"  # debuglog
+                by = "qty_reached_or_wo_closed"
                 production.state = "to_close"
             elif (
                 any(
@@ -1181,10 +1168,10 @@ class MrpProduction(models.Model):
                 )
                 or any(production.move_raw_ids.mapped("picked"))
             ):
-                by = "wo_started_or_qty_producing"  # debuglog
+                by = "wo_started_or_qty_producing"
                 production.state = "progress"
             elif production.state != "draft":
-                by = "reopened_confirmed"  # debuglog
+                by = "reopened_confirmed"
                 production.state = "confirmed"
             _debug.logic(
                 "production_state",
@@ -1459,12 +1446,12 @@ class MrpProduction(models.Model):
                 ("product_id", "in", batch_lines.product_id.ids),
             ]
             unchained_owners = defaultdict(set)
-            for product, raw_production in Move._read_group(  # noqa: E8507 - one query per batch of orders
+            for product, raw_production in Move._read_group(
                 [*scope, ("move_orig_ids", "=", False)],
                 ["product_id", "raw_material_production_id"],
             ):
                 unchained_owners[product].add(raw_production.id)
-            chained = Move.search([*scope, ("move_orig_ids", "in", batch_lines.ids)])  # noqa: E8507 - one query per batch of orders
+            chained = Move.search([*scope, ("move_orig_ids", "in", batch_lines.ids)])
 
             for order in orders:
                 lines = lines_by_order[order.id]
@@ -1645,21 +1632,6 @@ class MrpProduction(models.Model):
 
     @api.model
     def _create_deferred_records(self, model_name, vals_list) -> None:
-        """Create in one call the children an x2many assignment would flush singly.
-
-        `Command.create` inside `production.move_raw_ids = [...]` (or
-        `move_finished_ids`, `workorder_ids`) is written out by that assignment:
-        the ORM folds each record's commands on its own and calls the child
-        model's `create()` once per record. Collecting the vals and creating
-        them here costs one call for the whole batch, and the rows are
-        identical -- they already carry the inverse, which is what the command
-        would have set. Measured on 25 orders of three components: 50 calls to
-        `stock.move.create()` became 2.
-
-        Deferring is only possible for a production that already has a real id.
-        A `NewId` parent -- a Form, an onchange -- keeps the command, because
-        the inverse cannot be written before the parent exists.
-        """
         if vals_list:
             self.env[model_name].create(vals_list)
 
@@ -2195,16 +2167,9 @@ class MrpProduction(models.Model):
             for rec, vals in zip(res, vals_list, strict=True)
             if vals.get("date_end")
         )
-        # the work orders are computed after the insert, and creating them
-        # modifies their duration, a dependency of date_end: a given date_end
-        # would not survive its own creation
         with self.env.protecting([self._fields["date_end"]], given_date_end):
             given_date_end.workorder_ids.mapped("duration_expected")
         reference_vals_list = []
-        # One write per distinct value rather than one per order: a procurement
-        # run creates orders that share a start date, and the moves the compute
-        # built already carry their production's group, so the regrouping set is
-        # usually empty.
         moves_by_group = defaultdict(lambda: self.env["stock.move"])
         raw_moves_by_date = defaultdict(lambda: self.env["stock.move"])
         finished_moves_by_date = defaultdict(lambda: self.env["stock.move"])
@@ -2228,7 +2193,6 @@ class MrpProduction(models.Model):
                         ],
                     }
                 )
-            # a form builds the move commands before its user sets the dates
             raw_moves_by_date[rec.date_start] |= rec.move_raw_ids.filtered(
                 lambda move, date=rec.date_start: move.date != date
             )
@@ -2544,9 +2508,6 @@ class MrpProduction(models.Model):
         main_moves = self._get_main_finished_moves()
         byproducts = self.move_byproduct_ids
         bom_byproducts = byproducts.filtered("byproduct_id")
-        # Without a move of the order's product the product itself changed, and
-        # nothing tells the previous main move from a by-product added by hand:
-        # both are rebuilt, as the order's own BoM says.
         kept = (byproducts - bom_byproducts) if main_moves else byproducts.browse()
         byproduct_moves = {}
         for move in bom_byproducts:
@@ -2679,8 +2640,6 @@ class MrpProduction(models.Model):
         for production in self:
             production._sync_serial_qty_producing()
             updated_moves.extend(production._set_moves_quantity_from_qty_producing())
-        # Reading `quantity` recomputes it from the lines; deciding after every
-        # order's lines are written recomputes once rather than once per order.
         self.env["stock.move"].concat(*updated_moves).filtered(
             lambda move: (
                 (not move.manual_consumption or pick_manual_consumption_moves)
@@ -2777,9 +2736,6 @@ class MrpProduction(models.Model):
             old_qty = move.product_uom_qty
             new_qty = move.product_uom_id.round(old_qty * factor, rounding_method="UP")
             bom_line = move.bom_line_id
-            # A move still at its BoM demand takes the demand a new order of
-            # the new size would get, so back-and-forth changes do not drift
-            # on rounding; a hand-edited one rescales from what was entered.
             if bom_line in old_demand and bom_line in new_demand:
                 line_uom = bom_line.product_uom_id
                 at_demand = line_uom._get_quantity_in_unit(
@@ -2805,8 +2761,6 @@ class MrpProduction(models.Model):
                     in ("confirmed", "progress", "to_close")
                 )
             )._run_procurement(old_qties)
-        # The references are the production's own, so every move that needs them
-        # needs the same ones: one relational write, not one per move.
         if moves_to_reference:
             moves_to_reference.reference_ids = self.reference_ids.ids
         _debug.pipeline(
@@ -3173,8 +3127,6 @@ class MrpProduction(models.Model):
             if move.operation_id:
                 workorder = workorder_per_operation.get(move.operation_id)
                 moves_by_workorder[workorder.id if workorder else False] |= move
-        # Several moves share one operation, so they share one work order: one
-        # write per work order rather than one per move.
         for workorder_id, moves in moves_by_workorder.items():
             moves.write({"workorder_id": workorder_id})
 
@@ -3578,13 +3530,6 @@ class MrpProduction(models.Model):
         linked_line_ids = []
         consumed = []
         for order in self:
-            # Only the lines this pass produced, and only when this pass
-            # consumed something. An order can be posted more than once -- post
-            # part of it, then mark the rest done -- and `move_finished_ids`
-            # carries every batch, so writing the whole set would hand the
-            # earlier batch's produced lines this batch's components. When the
-            # raw moves were already done, `consume_move_lines` is empty and a
-            # replace would erase the first batch's traceability outright.
             consume_move_lines = moves_to_do_by_order[order.id].move_line_ids
             produced_lines = finished_lines_by_order.get(order)
             if not consume_move_lines or not produced_lines:
@@ -3910,9 +3855,6 @@ class MrpProduction(models.Model):
                     workorder.qty_produced = min(
                         workorder.qty_produced, workorder.qty_production
                     )
-            # A backorder's work orders are copies of the production's, made in id
-            # order, so their ids pair them with the quantities above. Their _order
-            # does not: work orders sharing a sequence sort by planned start.
             for backorder in backorders.sorted("id"):
                 for index, workorder in enumerate(backorder.workorder_ids.sorted("id")):
                     remaining_qty = remaining_qtys[index]

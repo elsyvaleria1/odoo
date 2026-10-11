@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
 from odoo.libs.json import loads as json_loads
@@ -13,7 +12,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # necessary to ensure successful return checks
         cls.company_data["company"].write(
             {
                 "vat": "US12345671",
@@ -169,7 +167,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         )
         tax_return.action_validate()
 
-        # There should be an external value of -1000.0
         external_value = self.env["report.formula.external.value"].search(
             [("company_id", "=", self.company_1.id)]
         )
@@ -180,12 +177,10 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         self.assertEqual(external_value.date, fields.Date.from_string("2021-12-31"))
         self.assertEqual(external_value.value, -1000.0)
 
-        # There should be no value in the report since there is a carryover
         options = self._generate_options(self.report, "2021-01-01", "2021-12-31")
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -193,18 +188,15 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be a carryover pop-up of value -1000.0
         info_popup_data = json_loads(lines[0]["columns"][0]["info_popup_data"])
         self.assertEqual(info_popup_data["carryover"], "-1,000.00")
 
-        # The carry over should be applied on the next period
         options = self._generate_options(self.report, "2022-01-01", "2022-12-31")
 
         lines = self.report._get_lines(options)
 
         self.assertLinesValues(
             lines,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -297,13 +289,11 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
 
         self.env.flush_all()
 
-        # There should be no external value for company 1 at this point
         external_value_company_1 = self.env[
             "report.formula.external.value"
         ].search_count([("company_id", "=", self.company_1.id)])
         self.assertEqual(external_value_company_1, 0)
 
-        # Closes both companies
         tax_return = self.env["account.return"].create(
             {
                 "name": "Tax return",
@@ -329,13 +319,12 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             "Posting the main company's closing should post every other closing of this unit",
         )
 
-        # There should be two external value for company_1: -1000.0 and 1000.0
         external_value_company_1 = self.env["report.formula.external.value"].search(
             [("company_id", "=", self.company_1.id)]
         )
         external_value_company_1 = sorted(
             external_value_company_1, key=lambda x: x.value
-        )  # To make sure they are always in the same order
+        )
 
         self.assertEqual(
             external_value_company_1[0].target_report_expression_label,
@@ -355,22 +344,16 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         )
         self.assertEqual(external_value_company_1[1].value, 1000.0)
 
-        # There should be no external value for company_2
         external_value_company_2 = self.env[
             "report.formula.external.value"
         ].search_count([("company_id", "=", self.company_2.id)])
         self.assertEqual(external_value_company_2, 0)
 
-        # TAX UNIT REPORT (current period)
-        # ==============================================================================================================
-        # There should be a value of 1000.0 in the report since the sum of the balance of both companies is positive,
-        # there is no carryover
         options = self._generate_options(self.report, "2021-01-01", "2021-12-31")
 
         lines_tax_unit = self.report._get_lines(options)
         self.assertLinesValues(
             lines_tax_unit,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 1000.0),
@@ -378,12 +361,8 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be no carryover pop-up
         self.assertTrue("info_popup_data" not in lines_tax_unit[0]["columns"][0])
 
-        # COMPANY 1 REPORT (current period)
-        # ==============================================================================================================
-        # There should be no value in the report since there is a carryover
         report_company_1 = self.report.with_context(
             allowed_company_ids=self.company_1.ids
         )
@@ -392,7 +371,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         lines_company_1 = report_company_1._get_lines(options)
         self.assertLinesValues(
             lines_company_1,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -400,15 +378,11 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be a carryover pop-up
         info_popup_data = json_loads(
             lines_company_1[0]["columns"][0]["info_popup_data"]
         )
         self.assertEqual(info_popup_data["carryover"], "-1,000.00")
 
-        # COMPANY 2 REPORT (current period)
-        # ==============================================================================================================
-        # There should be a value of 2000.0 in the report since there is no carryover
         report_company_2 = self.report.with_context(
             allowed_company_ids=self.company_2.ids
         )
@@ -417,7 +391,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         lines_company_2 = report_company_2._get_lines(options)
         self.assertLinesValues(
             lines_company_2,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 2000.0),
@@ -425,17 +398,13 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be no carryover pop-up
         self.assertTrue("info_popup_data" not in lines_company_2[0]["columns"][0])
 
-        # TAX UNIT REPORT (next period)
-        # ==============================================================================================================
         options = self._generate_options(self.report, "2022-01-01", "2022-12-31")
 
         lines_tax_unit = self.report._get_lines(options)
         self.assertLinesValues(
             lines_tax_unit,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -443,11 +412,8 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be no carryover pop-up
         self.assertTrue("info_popup_data" not in lines_tax_unit[0]["columns"][0])
 
-        # COMPANY 1 REPORT (next period)
-        # ==============================================================================================================
         report_company_1 = self.report.with_context(
             allowed_company_ids=self.company_1.ids
         )
@@ -456,7 +422,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         lines_company_1 = report_company_1._get_lines(options)
         self.assertLinesValues(
             lines_company_1,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -466,8 +431,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
 
         self.assertTrue("info_popup_data" not in lines_company_1[0]["columns"][0])
 
-        # COMPANY 2 REPORT (next period)
-        # ==============================================================================================================
         report_company_2 = self.report.with_context(
             allowed_company_ids=self.company_2.ids
         )
@@ -476,7 +439,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
         lines_company_2 = report_company_2._get_lines(options)
         self.assertLinesValues(
             lines_company_2,
-            #   Name                                    Balance
             [0, 1],
             [
                 ("Test carryover", 0.0),
@@ -484,7 +446,6 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
             options,
         )
 
-        # There should be no carryover pop-up
         self.assertTrue("info_popup_data" not in lines_company_2[0]["columns"][0])
 
     def _validated_return_with_carryover(self):

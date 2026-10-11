@@ -14,11 +14,6 @@ class HrContractSalaryBenefit(models.Model):
         help="Select the salary rule associated with this benefit",
     )
 
-    # `source` too: the body branches on it below, and the parent only
-    # declares `res_field_id` - depends accumulate along the MRO, so without
-    # this a benefit switched between the two sources kept the other one's
-    # field name, and `_prepare_benefit_vals` (which never checks `source`)
-    # then wrote the submitted amount onto that stale version field.
     @api.depends("salary_rule_id", "source")
     def _compute_field(self) -> None:
         for record in self:

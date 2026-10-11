@@ -87,10 +87,6 @@ class IrHttp(models.AbstractModel):
         rewriting = bool(path and rewrite_count and eligible)
         rewritten = path
         if rewriting:
-            # url_rewrite consults the routing map, not website.rewrite: it
-            # answers `path` unchanged whenever no rule redirects it, which is
-            # the common case even on a website that has rewrites. Comparing is
-            # the only way to tell "the rewriter ran" from "the URL changed".
             rewritten, _ = request.env["ir.http"].url_rewrite(path)
             url_from = rewritten + suffix
 
@@ -101,11 +97,6 @@ class IrHttp(models.AbstractModel):
                 to=rewritten,
                 website=request.website_routing,
             )
-        # The four ways of not rewriting are indistinguishable from the caller
-        # and from a log that only speaks on success -- "this website has no
-        # rewrites", "this path is excluded" and "no rule matched it" are
-        # different diagnoses for the same complaint. Guarded because this runs
-        # once per URL in every rendered page.
         if _debug.logic.enabled and rewritten == path:
             _debug.logic(
                 "url_for_not_rewritten",
@@ -136,8 +127,6 @@ class IrHttp(models.AbstractModel):
             ("website_id", "=", False),
             ("website_id", "=", website_id),
         ]
-        # Insert generic rules first so a website-specific rule always wins,
-        # even when the generic rule was created later.
         with _debug.perf("rewrites_loaded", cr=self.env.cr, website=website_id) as span:
             rewrites = (
                 self.env["website.rewrite"]
@@ -382,11 +371,6 @@ class IrHttp(models.AbstractModel):
     def _get_url_website(self):
         return self.env["website"].sudo().get_current_website()
 
-    # Off the frontend these two answer only the URL generation of a website
-    # link built in a backend request (a slide's embed code, a menu
-    # suggestion): that link is judged by the website it points into, not by
-    # the backend's active languages and ir.default, or a backend user's
-    # language lands in it as a prefix the website 404s.
     @api.model
     def _frontend_url_codes(self) -> list[str]:
         if request and not getattr(request, "is_frontend", True):
@@ -465,21 +449,14 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _serve_redirect(cls):
-        # the path as routed, not REQUEST_URI: that one still carries the
-        # language prefix, which no url_from is written with
         req_page = request.httprequest.path
         query = request.httprequest.query_string.decode("utf-8")
         req_page_with_qs = f"{req_page}?{query}" if query else req_page
         Rewrite = request.env["website.rewrite"].sudo()
         if req_page != "/" and req_page.endswith("/"):
-            # a slashed URL is matched as spelled: its slashless twin, which a
-            # page or a route may still serve, is judged after the slash
-            # redirect, or /x/ would follow a stale rule for /x that /x ignores
             sources = (req_page_with_qs, req_page)
         else:
             sources = Rewrite._get_redirect_source_urls(req_page, req_page_with_qs)
-        # one query: ordering on website_id sorts the generic rules (NULL)
-        # after this website's, so a website's own rule wins as it should
         return Rewrite.search(
             Domain("redirect_type", "in", ("301", "302"))
             & Domain("url_from", "in", sources)
@@ -504,14 +481,9 @@ class IrHttp(models.AbstractModel):
             _debug.pipeline("serve_fallback", verdict="page")
             return website_page
 
-        # before the trailing-slash redirect: a rule written for /old/ answers
-        # /old/ in one hop, not through /old (see _serve_redirect)
         redirect = cls._serve_redirect()
         if redirect:
             target = redirect.url_to
-            # a target without a language prefix is followed in the visitor's
-            # language: /fr/old leads to /fr/new, not to the default /new a
-            # cookie-less crawler would then be served
             if cls._lang_url_split(cls._url_split_suffix(target)[0])[0] is None:
                 target = cls._url_for(target)
             _debug.pipeline(
@@ -520,8 +492,6 @@ class IrHttp(models.AbstractModel):
                 code=redirect.redirect_type,
                 to=target,
             )
-            # the query only: request.params also holds a POST's form and
-            # files, which a Location would publish -- passwords included
             return request.redirect(
                 get_url_with_params(
                     target, request.httprequest.args.to_dict(flat=False), doseq=True

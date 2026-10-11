@@ -39,9 +39,6 @@ class AppraisalSurvey(Survey):
         access_data = super()._get_access_data(
             survey_token, answer_token, ensure_token, check_partner
         )
-        # `super()` opens by resolving both tokens and returns what it found;
-        # re-resolving them here doubled the lookup on every survey page in the
-        # database, appraisal or not, since the test below runs after it.
         survey_sudo = access_data["survey_sudo"]
         answer_sudo = access_data["answer_sudo"]
 
@@ -56,19 +53,12 @@ class AppraisalSurvey(Survey):
             if user in appraisal.manager_ids.mapped("user_id") or user.has_group(
                 "hr_appraisal.group_hr_appraisal_user"
             ):
-                # If the deadline is reached, Appraisal Manager should be able to consult answers
                 access_data["can_answer"] = False
                 access_data["validity_code"] = True
         return access_data
 
     @staticmethod
     def _get_id_param(post, name):
-        """Read ``name`` from the query parameters as a positive database id.
-
-        The value arrives straight from the query string, so it cannot be fed
-        to ``int()`` unguarded: anything that is not a positive integer is
-        treated as if the parameter had not been passed at all.
-        """
         value = post.get(name)
         if isinstance(value, bool):
             return 0
@@ -80,17 +70,6 @@ class AppraisalSurvey(Survey):
 
     @staticmethod
     def _appraisal_results_role(appraisal):
-        """Return what the current user is allowed to see of ``appraisal``.
-
-        ``"all"`` for someone entitled to every rater's answer, ``"own"`` for a
-        colleague who was only asked for feedback, ``None`` for everybody else.
-
-        One predicate on purpose: the page and the filter helper below used to
-        decide this separately and disagreed about it. `base.group_system`
-        appeared in the page's list and not in the helper's, so a system
-        administrator who was not also an appraisal officer or a manager was
-        granted every answer by one gate and refused by the other.
-        """
         user = request.env.user
         if (
             user.has_group("hr_appraisal.group_hr_appraisal_user")
@@ -122,8 +101,6 @@ class AppraisalSurvey(Survey):
         "/appraisal/<int:appraisal_id>/results", type="http", auth="user", website=True
     )
     def appraisal_survey_results(self, appraisal_id, **post):
-        """Display survey Results & Statistics for given appraisal."""
-        # block the appraised employee; access below is group/manager based
         appraisal = request.env["hr.appraisal"].sudo().browse(int(appraisal_id))
         if appraisal.employee_id.user_id == request.env.user:
             return request.env["ir.http"]._serve_error_page(
@@ -147,12 +124,9 @@ class AppraisalSurvey(Survey):
             )
         )
         if role == "own":
-            # a colleague who was asked for feedback only reaches their own answer
             answers_sudo = answers_sudo.filtered(
                 lambda answer: answer.partner_id == user.partner_id
             )
-        # an appraisal can hold feedback on several surveys; the page renders one
-        # at a time, so which one has to be asked for rather than picked at random
         appraisal_surveys_sudo = answers_sudo.survey_id
         if survey_id:
             survey_sudo = appraisal_surveys_sudo.filtered(
@@ -174,11 +148,6 @@ class AppraisalSurvey(Survey):
             )
         )
 
-        # Narrow from `answers_sudo`, never re-search. The template renders
-        # each answer's `access_token` as a /survey/print link, so a fresh
-        # unrestricted search handed a colleague who was only asked for
-        # feedback a working capability URL to every peer's submission - the
-        # very thing the filtering above exists to prevent.
         answers = answers_sudo.filtered(
             lambda answer: answer.survey_id == survey_sudo and answer.state == "done"
         )
@@ -191,7 +160,7 @@ class AppraisalSurvey(Survey):
             "question_and_page_data": question_and_page_data,
             "survey_data": survey_data,
             "search_filters": search_filters,
-            "search_finished": "true",  # always finished
+            "search_finished": "true",
             "appraisal_id": appraisal_id,
             "appraisal_date": appraisal.date_close,
             "employee_name": appraisal.employee_id.name,

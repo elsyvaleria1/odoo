@@ -105,9 +105,6 @@ class TestReports(odoo.tests.HttpCase):
         public_device_log_count_before = self.env[
             "auth.user.client.address"
         ].search_count([("client_id.user_id", "=", public.id)])
-        # The records bound the print (bfdd12837e3c): a user who may not read
-        # the partner is refused before the PDF engine is asked for anything,
-        # so nothing is fetched as anyone and no device is logged in.
         report = report.with_user(public)
         with MockRequest(self.env, is_frontend=False) as mock_request:
             mock_request.session = self.authenticate(None, None)

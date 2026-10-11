@@ -2559,8 +2559,6 @@ class TestPartnerForm(TransactionCase):
         self.env["res.lang"]._activate_lang("de_DE")
         self.env["res.lang"]._activate_lang("fr_FR")
 
-        # a form of its own: an installed module may replace the editable
-        # language of the shipped partner form with its own fields
         language_form = self.env["ir.ui.view"].create(
             {
                 "name": "test.res.partner.language.form",
@@ -2775,7 +2773,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
     """
 
     def test_moving_the_address_clears_the_coordinates(self):
-        """Check that a write that changes the address drops the position."""
         partner = self.env["res.partner"].create(
             {
                 "name": "Moving",
@@ -2791,7 +2788,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_longitude, 0.0)
 
     def test_a_batch_write_clears_only_the_partners_that_moved(self):
-        """Check that a partner already at the written address keeps its pin."""
         mx = self.env.ref("base.mx")
         staying, moving = self.env["res.partner"].create(
             [
@@ -2816,11 +2812,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(moving.partner_longitude, 0.0)
 
     def test_moving_street2_clears_the_coordinates(self):
-        """Check that street2 counts as part of the address.
-
-        It was missing from the list this override checks, so editing the
-        second address line moved the partner while leaving its old pin.
-        """
         partner = self.env["res.partner"].create(
             {
                 "name": "Second Line",
@@ -2836,11 +2827,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_latitude, 0.0)
 
     def test_restating_the_same_address_keeps_the_coordinates(self):
-        """Check that a write that moves no address part keeps the position.
-
-        A caller replaying a full payload — an import, or an unchanged dict —
-        used to discard a geocoding result that was still correct.
-        """
         partner = self.env["res.partner"].create(
             {
                 "name": "Stationary",
@@ -2857,7 +2843,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_longitude, 6.0)
 
     def test_a_write_supplying_both_coordinates_keeps_them(self):
-        """Check that an address write carrying a new position keeps it."""
         partner = self.env["res.partner"].create(
             {"name": "Relocated", "street": "Old street"}
         )
@@ -2874,7 +2859,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_longitude, 8.0)
 
     def test_a_write_supplying_one_coordinate_clears_both(self):
-        """Check that half a position is refused rather than half-applied."""
         partner = self.env["res.partner"].create(
             {
                 "name": "Half Located",
@@ -2890,7 +2874,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_longitude, 0.0)
 
     def test_a_write_outside_the_address_keeps_the_coordinates(self):
-        """Check that a write touching no address field keeps the position."""
         partner = self.env["res.partner"].create(
             {
                 "name": "Renamed",
@@ -2906,7 +2889,6 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_longitude, 6.0)
 
     def test_the_reset_does_not_mutate_the_caller_s_values(self):
-        """Check that the coordinate reset does not leak into the caller's dict."""
         partner = self.env["res.partner"].create(
             {"name": "Shared vals", "street": "Old street"}
         )

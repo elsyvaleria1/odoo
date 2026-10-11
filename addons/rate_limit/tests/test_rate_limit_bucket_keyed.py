@@ -29,7 +29,6 @@ class TestConsumeForKey(TransactionCase):
         return self.Bucket.search([("bucket_key", "=", key)], limit=1)
 
     def test_no_record_is_needed(self):
-        """The whole point: a namespace and an id, not a browsable model."""
         allowed = self.Bucket.consume_for_key(
             _KEY, subject_model="test.subject", subject_id=7, capacity=3
         )
@@ -72,11 +71,6 @@ class TestConsumeForKey(TransactionCase):
         )
 
     def test_refill_rate_defaults_to_one_capacity_per_window(self):
-        """A caller states a window; the per-second rate is arithmetic.
-
-        Both callers were computing `limit / window` at the call site, which is
-        the kind of thing that is right in one place and wrong in the other.
-        """
         self.Bucket.consume_for_key(
             _KEY,
             subject_model="test.subject",
@@ -86,7 +80,6 @@ class TestConsumeForKey(TransactionCase):
         )
         bucket = self._bucket()
 
-        # 59 left, and a full window would restore exactly the 60 it started at.
         self.assertEqual(bucket.tokens, 59.0)
         self.assertEqual(
             bucket._refilled_tokens(

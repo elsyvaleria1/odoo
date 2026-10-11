@@ -24,8 +24,6 @@ class Home(web_home.Home):
 
     @staticmethod
     def _share_access_token(subpath: str, params: Any) -> str:
-        # `/odoo/documents` alone is the app, not a share link; only what
-        # follows `documents/` (or an explicit parameter) is a token.
         if subpath == "documents":
             return params.get("access_token") or ""
         if subpath.startswith("documents/"):
@@ -54,8 +52,6 @@ class Home(web_home.Home):
             access_token, follow_shortcut=False
         )
         if document_sudo.env.context.get("document_access_link"):
-            # the link opens the shared page, not the app: a visit grants
-            # nothing the app could read the document with
             _debug.pipeline("web_client", by="link_to_share", document=document_sudo)
             return request.redirect(
                 f"/documents/{quote(access_token, safe='')}?{keep_query('*')}",

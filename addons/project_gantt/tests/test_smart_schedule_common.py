@@ -8,8 +8,6 @@ from odoo.addons.project.tests.test_project_base import TestProjectCommon
 class TestSmartScheduleCommon(TestProjectCommon):
     @classmethod
     def _resource_of(cls, user):
-        # a person is one human resource per company: with hr installed the
-        # manager already holds one through the employee the fixture gave them
         resource = user.resource_ids.filtered(
             lambda resource: resource.company_id == user.company_id
         )[:1]
@@ -36,7 +34,6 @@ class TestSmartScheduleCommon(TestProjectCommon):
 
         tasks = cls.env["project.task"].create(
             [
-                # Tasks with project pigs
                 {
                     "name": "task_project_pigs_with_planned_hours_user",
                     "planned_hours": 8,
@@ -70,7 +67,6 @@ class TestSmartScheduleCommon(TestProjectCommon):
                     "project_id": cls.project_pigs.id,
                     "user_ids": None,
                 },
-                # Tasks with project goats
                 {
                     "name": "task_project_goats_with_planned_hours_user",
                     "project_id": cls.project_goats.id,

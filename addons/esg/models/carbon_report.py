@@ -62,7 +62,6 @@ class CarbonReportHandler(models.AbstractModel):
         query = report._get_report_query(options, date_scope)
 
         groupby_sql = ""
-        # Handle custom groupby values supported by this report
         if current_groupby == "carbon_report_source_hierarchy":
             groupby_sql = SQL("esg_emission_source.id")
         elif current_groupby == "carbon_report_source_scope":
@@ -195,11 +194,10 @@ class CarbonReportHandler(models.AbstractModel):
             highest_emission_source_in_hierarchy = self.env.context.get(
                 "highest_emission_source_in_hierarchy"
             )
-            totals_including_child_sources = {}  # in the form {source_id: {gas: value}}
+            totals_including_child_sources = {}
             sources_with_sublines = set()
 
             for query_res in query_res_lines:
-                # Find the highest parent that can be displayed ; it will receive the value of all its children
                 source_id = query_res["grouping_key"]
                 while (
                     source_parent := source_parents.get(source_id)
@@ -254,9 +252,6 @@ class CarbonReportHandler(models.AbstractModel):
                         }
                     )
             elif line_dict.get("groupby"):
-                # This will happen when has_sublines gives a falsy value in the custom engine.
-                # In this case, if there is still a level of grouping, we stop the hierarchy cycling.
-                # We then need to make the line unfoldable again, to allow proceeding to this next groupby level.
                 line_dict["unfoldable"] = True
 
         if current_groupby in (
@@ -315,10 +310,6 @@ class CarbonReportHandler(models.AbstractModel):
         offset,
         unfold_all_batch_data=None,
     ):
-        # esg.emission_source model defines a recursive hierarchy of records. This custom groupby behaves differently
-        # than the traditional groupby used by reports, in that it will not always correspond to a single level of lines.
-        # To handle that, we use this custom expand function, which uses a specific context key to limit the next unfolding, and restores
-        # the same groupby on the next level if needed.
         report = self.env["report.formula"].browse(options["report_id"])
 
         unfolded_source_id = report._get_res_id_from_line_id(
@@ -356,7 +347,6 @@ class CarbonReportHandler(models.AbstractModel):
         elif markup.get("groupby") == "esg_emission_factor_id":
             domain += [("esg_emission_factor_id", "=", value)]
 
-        # Other groupings aren't auditable
 
         return {
             "name": self.env._("Audit Emissions"),

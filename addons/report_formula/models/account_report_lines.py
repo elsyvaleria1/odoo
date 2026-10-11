@@ -42,10 +42,10 @@ class AccountReportLines(models.Model):
         for column_group_val in all_column_group_vals_in_order:
             horizontal_group_key_tuple = self._get_dict_hashable_key_tuple(
                 column_group_val["horizontal_groupby_element"]
-            )  # Empty tuple if no grouping
+            )
             column_group_key = str(
                 self._get_dict_hashable_key_tuple(column_group_val)
-            )  # Unique identifier for the column group
+            )
 
             column_groups[column_group_key] = {
                 "forced_options": column_group_val["forced_options"],
@@ -58,7 +58,6 @@ class AccountReportLines(models.Model):
                     horizontal_group_key_tuple
                 )
 
-            # for budget, only one column in needed, regardless of the number of columns in the report
             if any(
                 budget_key in column_group_val["forced_options"]
                 for budget_key in ("compute_budget", "budget_percentage")
@@ -111,7 +110,6 @@ class AccountReportLines(models.Model):
 
     @api.model
     def _get_line_from_xml_id(self, lines, xml_id):
-        """Helper function to get a specific account report line from the xmlid"""
         report_line = self.env.ref(xml_id, raise_if_not_found=False)
         return next(
             line
@@ -153,7 +151,6 @@ class AccountReportLines(models.Model):
         self.check_singleton()
 
         if options["report_id"] != self.id:
-            # Should never happen; just there to prevent BIG issues and directly spot them
             raise UserError(
                 self.env._(
                     "Inconsistent report_id in options dictionary. Options says %(options_report)s; report is %(report)s.",
@@ -162,13 +159,11 @@ class AccountReportLines(models.Model):
                 )
             )
 
-        # Necessary to ensure consistency of the data if some of them haven't been written in database yet
         self.env.flush_all()
 
         if warnings is not None:
             self._add_common_warnings(options, warnings)
 
-        # Merge static and dynamic lines in a common list
         if all_column_groups_expression_totals is None:
             self._init_currency_table(options)
             all_column_groups_expression_totals = (
@@ -191,18 +186,16 @@ class AccountReportLines(models.Model):
         )
 
         lines = []
-        line_cache = {}  # {report_line: report line dict}
+        line_cache = {}
         hide_if_zero_lines = self.env["report.formula.line"]
 
-        for line in self.line_ids:  # _order ensures the sequence of the lines
-            # Inject all the dynamic lines whose sequence is inferior to the next static line to add
+        for line in self.line_ids:
             while dynamic_lines and line.sequence > dynamic_lines[0][0]:
                 lines.append(dynamic_lines.pop(0)[1])
 
             parent_generic_id = None
 
             if line.parent_id:
-                # Normally, the parent line has necessarily been treated in a previous iteration
                 try:
                     parent_generic_id = line_cache[line.parent_id]["id"]
                 except KeyError as e:
@@ -230,7 +223,6 @@ class AccountReportLines(models.Model):
         for _dummy, left_dynamic_line in dynamic_lines:
             lines.append(left_dynamic_line)
 
-        # Manage growth comparison
         if options.get("column_percent_comparison") == "growth":
             for line in lines:
                 if options["comparison"]["period_order"] == "descending":
@@ -262,7 +254,6 @@ class AccountReportLines(models.Model):
                         green_on_positive=green_on_positive,
                     )
                 )
-        # Manage budget comparison
         elif options.get("column_percent_comparison") == "budget":
             for line in lines:
                 self._set_budget_column_comparisons(options, line)
@@ -279,10 +270,6 @@ class AccountReportLines(models.Model):
                     )
                 )
 
-        # Manage hide_if_zero lines:
-        # - If they have column values: hide them if all those values are 0 (or empty)
-        # - If they don't: hide them if all their children's column values are 0 (or empty)
-        # Also, hide all the children of a hidden line.
         hidden_lines_dict_ids = set()
         for line in hide_if_zero_lines:
             children_to_check = line
@@ -317,19 +304,14 @@ class AccountReportLines(models.Model):
             lines,
         )
 
-        # Create the hierarchy of lines if necessary
         if options.get("hierarchy"):
             lines = self._create_hierarchy(lines, options)
 
-        # Clean up before generating totals, so _add_totals_below_sections doesn't create
-        # a total line for a parent whose children were all hidden.
         if hidden_lines_dict_ids:
             lines = self._cleanup_empty_sections(lines)
 
-        # Handle totals below sections for static lines
         lines = self._add_totals_below_sections(lines, options)
 
-        # Unfold lines (static or dynamic) if necessary and add totals below section to dynamic lines
         lines = self._fully_unfold_lines_if_needed(lines, options)
 
         lines = self._add_account_status_on_lines(lines, options)
@@ -358,7 +340,6 @@ class AccountReportLines(models.Model):
                     self, options, all_column_groups_expression_totals, warnings
                 )
 
-        # Format values in columns of lines that will be displayed
         self._format_column_values(options, lines)
 
         if options.get("export_mode") == "print" and options.get("hide_0_lines"):
@@ -370,7 +351,6 @@ class AccountReportLines(models.Model):
 
         return lines
 
-    # Deprecated, removed in master.
     @api.model
     def format_column_values(self, options, lines):
         self._format_column_values(options, lines, force_format=True)
@@ -378,7 +358,6 @@ class AccountReportLines(models.Model):
         return lines
 
     def format_column_values_from_client(self, options, lines):
-        """Format column values for display. Called via dispatch_report_action when rounding unit changes on client side."""
         self._format_column_values(options, lines, force_format=True)
 
         return lines
@@ -396,8 +375,6 @@ class AccountReportLines(models.Model):
         for line_dict in line_dict_list:
             for column_dict in line_dict["columns"]:
                 if "name" in column_dict and not force_format:
-                    # Columns which have already received a name are assumed to be already formatted; nothing needs to be done for them.
-                    # This gives additional flexibility to custom reports, if needed.
                     continue
 
                 if not column_dict:
@@ -416,12 +393,9 @@ class AccountReportLines(models.Model):
 
                 column_dict["name"] = rslt
 
-            # Handle the total in case of an horizontal group when there is no comparison and only one level of horizontal group
             if options.get("show_horizontal_group_total"):
-                # In case the line has no formula
                 if all(column["no_format"] is None for column in line_dict["columns"]):
                     continue
-                # In case total below section, some line don't have the value displayed
                 if (
                     self._get_totals_below_sections()
                     and not options.get("ignore_totals_below_sections")
@@ -454,8 +428,6 @@ class AccountReportLines(models.Model):
         self, line, options, all_column_groups_expression_totals, groupby_model=None
     ):
         line_expressions_map = {expr.label: expr for expr in line.expression_ids}
-        # The totals of a line only depend on its column group, not on the individual
-        # column, so resolve them once per group rather than once per column.
         reportable_expressions = [
             expr
             for expr in line.expression_ids
@@ -492,11 +464,9 @@ class AccountReportLines(models.Model):
                 line_expressions_map,
             )
 
-            # Handle manual edition popup
             edit_popup_data = {}
             formatter_params = {}
             if float_rounding_opt := options.get("float_rounding"):
-                # This option key allows forcing the rounding of "float' figure type, to include more or less decimals
                 formatter_params["digits"] = float_rounding_opt
 
             if (
@@ -504,7 +474,6 @@ class AccountReportLines(models.Model):
                 and column_expression.subformula
                 and len(options["companies"]) == 1
             ):
-                # Compute rounding for manual values
                 rounding = None
                 if figure_type == "integer":
                     rounding = 0
@@ -537,10 +506,9 @@ class AccountReportLines(models.Model):
             if editable_cell_data:
                 edit_popup_data = editable_cell_data
 
-            # Build result
             if (
                 column_value is not None
-            ):  # In case column value is zero, we still want to go through the condition
+            ):
                 foreign_currency_id = target_line_res_dict.get(
                     f"_currency_{column_expr_label}", {}
                 ).get("value")
@@ -592,7 +560,6 @@ class AccountReportLines(models.Model):
         has_sublines=False,
         report_line_id=None,
     ):
-        # Empty column
         if col_value is None and col_data is None:
             return {}
 
@@ -689,26 +656,19 @@ class AccountReportLines(models.Model):
             a_model = self._get_model_info_from_id(a_line_dict["id"])[0]
             b_model = self._get_model_info_from_id(b_line_dict["id"])[0]
 
-            # static lines are not sorted
             if a_model == b_model == "report.formula.line":
                 return 0
 
             if a_total:
-                if b_total:  # a_total & b_total
+                if b_total:
                     return 0
-                else:  # a_total & !b_total
+                else:
                     return -1 if descending else 1
-            if b_total:  # => !a_total & b_total
+            if b_total:
                 return 1 if descending else -1
 
-            # A line is free to carry fewer cells than options["columns"] declares --
-            # the journal report's tax section headings carry none at all -- so read
-            # the cell defensively and let a missing one land in the None bucket
-            # below rather than raising IndexError.
             a_val = _cell_value(a_line_dict)
             b_val = _cell_value(b_line_dict)
-            # A custom handler is free to put any type in a column; sort what the table
-            # does not know about after everything it does, rather than raising.
             type_a = type_seq.get(type(a_val), len(type_seq))
             type_b = type_seq.get(type(b_val), len(type_seq))
 
@@ -729,11 +689,6 @@ class AccountReportLines(models.Model):
             for tree_subelem in sorted(elem, key=comp_key, reverse=descending):
                 merge_tree(tree_subelem, ls)
 
-        # This is called straight from the client with client-supplied options, so an
-        # order_column that names nothing is reachable input. Returning the lines
-        # untouched is what the docstring promises; sorting on a column that was never
-        # found makes every comparison equal and collapses the tree walk, which drops
-        # all but one line.
         order_column = options.get("order_column") or {}
         column_index = next(
             (
@@ -755,7 +710,7 @@ class AccountReportLines(models.Model):
 
         descending = (
             order_column.get("direction") == "DESC"
-        )  # To keep total lines at the end, used in compare_values & merge_tree scopes
+        )
 
         comp_key = cmp_to_key(compare_values)
         sorted_list = []
@@ -770,13 +725,6 @@ class AccountReportLines(models.Model):
             else:
                 tree[line_parent].append(line)
 
-        # A line is a root when its parent is not itself in the list: either it has
-        # no parent at all, or the parent was not rendered -- the groupby line being
-        # unfolded, or the hierarchy's own root, which is referenced but never
-        # emitted. Picking the roots by reachability rather than by the None
-        # sentinel is what makes "every line comes back" structural; keying on None
-        # alone returned an empty list for every multi-root list, silently dropping
-        # all of them.
         roots = [
             tree_elem
             for parent, tree_elems in tree.items()
@@ -800,15 +748,12 @@ class AccountReportLines(models.Model):
     def _prepare_column_headers_render_data(self, options):
         column_headers_render_data = {}
 
-        # We only want to consider the columns that are visible in the current report and don't rely on self.column_ids
-        # since custom reports could alter them (e.g. for multi-currency purposes)
         columns = [
             col
             for col in options["columns"]
             if col["column_group_key"] == next(k for k in options["column_groups"])
         ]
 
-        # Compute the colspan of each header level, aka the number of single columns it contains at the base of the hierarchy
         level_colspan_list = column_headers_render_data["level_colspan"] = []
         for i in range(len(options["column_headers"])):
             nb_columns = max(len(columns), 1)
@@ -816,7 +761,6 @@ class AccountReportLines(models.Model):
             budget_col_number = 0
 
             for level_header in options["column_headers"][i + 1 :]:
-                # Separate non-budget and budget headers
                 budget_base_count = sum(
                     1
                     for header in level_header
@@ -835,8 +779,6 @@ class AccountReportLines(models.Model):
                     - budget_amount_and_percentage_count
                 )
 
-                # budget headers (amount and percentage) can only contain a single column each, regardless of the amount of columns in the report.
-                # This implies that we first need to multiply for the 'regular' columns and then add the budget columns.
                 colspan *= non_budget_count
                 budget_col_number += (
                     budget_base_count * nb_columns
@@ -844,7 +786,6 @@ class AccountReportLines(models.Model):
 
             level_colspan_list.append(colspan + budget_col_number)
 
-        # Compute the number of times each header level will have to be repeated, and its colspan to properly handle horizontal groups/comparisons
         column_headers_render_data["level_repetitions"] = []
         for i in range(len(options["column_headers"])):
             colspan = 1
@@ -857,7 +798,6 @@ class AccountReportLines(models.Model):
                 colspan *= valid_headers_length
             column_headers_render_data["level_repetitions"].append(colspan)
 
-        # Custom reports have the possibility to define custom subheaders that will be displayed between the generic header and the column names.
         column_headers_render_data["custom_subheaders"] = options.get(
             "custom_columns_subheaders", []
         ) * len(options["column_groups"])
@@ -927,14 +867,10 @@ class AccountReportLines(models.Model):
             for line in rslt:
                 line["horizontal_split_side"] = horizontal_split_side
 
-        # Apply integer rounding to the result if needed.
-        # The groupby expansion function is the only one guaranteed to call the expressions computation,
-        # so the values computed for it will already have been rounded if integer rounding is enabled. No need to round them again.
         if expand_function_name != "_report_expand_unfoldable_line_with_groupby":
             self._apply_integer_rounding_to_dynamic_lines(options, rslt)
 
         if expansion_result.get("has_more"):
-            # We only add load_more line for groupby
             next_offset = offset + expansion_result["offset_increment"]
             rslt.append(
                 self._get_load_more_line(
@@ -947,7 +883,6 @@ class AccountReportLines(models.Model):
                 )
             )
 
-        # In some specific cases, we may want to add lines that are always at the end. So they need to be added after the load more line.
         if expansion_result.get("after_load_more_lines"):
             rslt.extend(expansion_result["after_load_more_lines"])
 
@@ -963,7 +898,6 @@ class AccountReportLines(models.Model):
         offset,
         unfold_all_batch_data=None,
     ):
-        # The line we're expanding might be an inner groupby; we first need to find the report line generating it
         report_line_id = None
         for _markup, model, model_id in reversed(self._parse_line_id(line_dict_id)):
             if model == "report.formula.line":
@@ -981,11 +915,8 @@ class AccountReportLines(models.Model):
         line = self.env["report.formula.line"].browse(report_line_id)
 
         if "," not in groupby and options["export_mode"] is None:
-            # if ',' not in groupby, then its a terminal groupby (like 'id' in 'partner_id, id'), so we can use the 'load more' feature if necessary
-            # When printing, we want to ignore the limit.
             limit_to_load = self.load_more_limit or None
         else:
-            # Else, we disable it
             limit_to_load = None
             offset = 0
 
@@ -1050,7 +981,6 @@ class AccountReportLines(models.Model):
     ):
         threshold = options["prefix_groups_threshold"]
 
-        # When grouping by prefix, we ignore the totals
         lines_to_group_without_totals = list(
             filter(lambda x: self._get_markup(x["id"]) != "total", lines_to_group)
         )
@@ -1069,7 +999,6 @@ class AccountReportLines(models.Model):
             or threshold <= 0
             or len(lines_to_group_without_totals) < threshold
         ):
-            # No grouping needs to be done
             return lines_to_group
 
         char_index = len(matched_prefix)
@@ -1088,11 +1017,9 @@ class AccountReportLines(models.Model):
         for prefix_key, prefix_sublines in sorted(
             prefix_groups.items(), key=lambda x: x[0]
         ):
-            # Compute the total of this prefix line, summming all of its content
             prefix_expression_totals_by_group = {}
             for column_index, column_data in enumerate(options["columns"]):
                 if column_data["figure_type"] in float_figure_types:
-                    # Then we want to sum this column's value in our children
                     for prefix_subline in prefix_sublines:
                         prefix_expr_label_result = (
                             prefix_expression_totals_by_group.setdefault(
@@ -1128,7 +1055,6 @@ class AccountReportLines(models.Model):
             prefix_to_display = prefix_key.upper()
 
             if re.match(r"\s", prefix_to_display[-1]):
-                # In case the last character of the prefix to_display is blank, replace it by "[ ]", to make the space more visible to the user.
                 prefix_to_display = f"{prefix_to_display[:-1]}[ ]"
 
             if sublines_nber == 1:
@@ -1176,7 +1102,6 @@ class AccountReportLines(models.Model):
         offset,
         unfold_all_batch_data=None,
     ):
-        """Expand function used by prefix_group lines generated for groupby lines."""
         report_line_id = None
         parent_groupby_count = 0
         for markup, model, model_id in reversed(self._parse_line_id(line_dict_id)):
@@ -1244,12 +1169,8 @@ class AccountReportLines(models.Model):
         }
 
     def _filter_out_0_lines(self, lines):
-        """Returns a list containing all lines that are not zero or that are parent to non-zero lines.
-        Can be used to ensure printed report does not include 0 lines, when hide_0_lines is toggled.
-        """
-        lines_to_hide = set()  # contain line ids to remove from lines
-        has_visible_children = set()  # contain parent line ids
-        # Traverse lines in reverse to keep track of visible parent lines required by children lines
+        lines_to_hide = set()
+        has_visible_children = set()
         for line in reversed(lines):
             is_zero_line = all(
                 col.get("figure_type") not in NUMBER_FIGURE_TYPES
@@ -1278,24 +1199,14 @@ class AccountReportLines(models.Model):
 
     @api.model
     def _get_model_info_from_id(self, line_id):
-        """Parse the provided generic report line id.
-
-        :param line_id: the report line id (i.e. markup~model~value|markup2~model2~value2 where | is the LINE_ID_HIERARCHY_DELIMITER)
-        :return: tuple(model, id) of the report line. Each of those values can be None if the id contains no information about them.
-        """
         last_id_tuple = self._parse_line_id(line_id)[-1]
         return last_id_tuple[-2:]
 
     @api.model
     def _get_markup(self, line_id):
-        """Directly returns the markup associated with the provided line_id."""
         return self._parse_line_id(line_id)[-1][0] if line_id else None
 
     def _get_custom_report_function(self, function_name, prefix):
-        """Returns a report function from its name, first checking it to ensure it's private (and raising if it isn't).
-        This helper is used by custom report fields containing function names.
-        The function will be called on the report's custom handler if it exists, or on the report itself otherwise.
-        """
         self.check_singleton()
         function_name_prefix = f"_report_{prefix}_"
         if not function_name.startswith(function_name_prefix):
@@ -1329,7 +1240,6 @@ class AccountReportLines(models.Model):
                 function_name=function_name,
             )
             raise UserError(self.env._("Invalid method “%s”", function_name))
-        # function_name was already validated to start with the private prefix above.
         _debug.logic(
             "custom_function_on_report",
             report=self,
@@ -1339,8 +1249,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def _prefetch_unfold_all_batch_records(self, unfold_all_batch_data) -> None:
-        # Each expansion browses its own grouping keys, so without this every
-        # expanded line reads its records' labels in queries of its own.
         source_model = self._get_required_source_model()
         custom_handler_name = self._get_custom_handler_model()
         custom_groupby_map = (
@@ -1380,10 +1288,9 @@ class AccountReportLines(models.Model):
             return line_dict.get("unfolded") and line_dict.get("expand_function")
 
         custom_unfold_all_batch_data = None
-        lines_in = len(lines)  # debuglog
-        expansions = 0  # debuglog
+        lines_in = len(lines)
+        expansions = 0
 
-        # If it's possible to batch unfold and we're unfolding all lines, compute the batch, so that individual expansions are more efficient
         if options["unfold_all"] and self.custom_handler_model_id:
             lines_to_expand_by_function = {}
             for line_dict in lines:
@@ -1415,7 +1322,6 @@ class AccountReportLines(models.Model):
         )
         i = 0
         while i < len(lines):
-            # We iterate in such a way that if the lines added by an expansion need expansion, they will get it as well
             line_dict = lines[i]
             if line_need_expansion(line_dict):
                 groupby = line_dict.get("groupby")
@@ -1431,7 +1337,7 @@ class AccountReportLines(models.Model):
                     unfold_all_batch_data=custom_unfold_all_batch_data,
                 )
                 lines = lines[: i + 1] + to_insert + lines[i + 1 :]
-                expansions += 1  # debuglog
+                expansions += 1
             i += 1
 
         _debug.pipeline(
@@ -1497,7 +1403,6 @@ class AccountReportLines(models.Model):
         if options["show_debug_column"]:
             first_group_key = next(iter(options["column_groups"].keys()))
             column_group_totals = all_column_groups_expression_totals[first_group_key]
-            # Only consider the first column group, as show_debug_column is only true if there is but one.
 
             engine_selection_labels = dict(
                 self.env["report.formula.expression"]
@@ -1522,10 +1427,6 @@ class AccountReportLines(models.Model):
                     options, column_group_totals[expression]["value"], figure_type
                 )
                 if not isinstance(value, (str, int, float, bool, type(None))):
-                    # figure_type "none" returns the value unformatted, so anything the
-                    # engine produced reaches json.dumps as-is. Stringify it here rather
-                    # than let the dump fail: by then the offending expression is no
-                    # longer identifiable.
                     value = str(value)
                 expressions_detail[engine_label].append(
                     (
@@ -1538,7 +1439,6 @@ class AccountReportLines(models.Model):
                     )
                 )
 
-            # Sort results so that they can be rendered nicely in the UI
             for details in expressions_detail.values():
                 details.sort(key=lambda x: x[0])
             sorted_expressions_detail = sorted(
@@ -1586,7 +1486,6 @@ class AccountReportLines(models.Model):
                         and column_dict.get("figure_type") == "monetary"
                         and column_dict.get("no_format")
                     ):
-                        # If 'name' is already in it, no need to round the amount ; it is forced by the custom report already
                         column_dict["no_format"] = float_round(
                             column_dict["no_format"],
                             precision_digits=0,
@@ -1595,7 +1494,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def _add_totals_below_sections(self, lines, options):
-        """Returns a new list, corresponding to lines with the required total lines added as sublines of the sections it contains."""
         if _debug.logic.enabled:
             _debug.logic(
                 "totals_below_sections_checked",
@@ -1609,24 +1507,20 @@ class AccountReportLines(models.Model):
         ):
             return lines
 
-        # Gather the lines needing the totals
         lines_needing_total_below = set()
         for line_dict in lines:
             line_markup = self._get_markup(line_dict["id"])
 
             if line_markup != "total":
-                # If we are on the first level of an expandable line, we arelady generate its total
                 if line_dict.get("unfoldable") or (
                     line_dict.get("unfolded") and line_dict.get("expand_function")
                 ):
                     lines_needing_total_below.add(line_dict["id"])
 
-                # All lines that are parent of other lines need to receive a total
                 line_parent_id = line_dict.get("parent_id")
                 if line_parent_id:
                     lines_needing_total_below.add(line_parent_id)
 
-        # Inject the totals
         if lines_needing_total_below:
             lines_with_totals_below = []
             totals_below_stack = []
@@ -1661,11 +1555,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def _cleanup_empty_sections(self, lines):
-        """Resets the fold state for parents left without visible children, and removes their orphaned total lines.
-        The total line removal only applies when called after _add_totals_below_sections.
-        """
-        # Collect parent IDs that still have at least one non-total child visible.
-        # Total lines are generated from the parent itself and don't count as expandable children.
         parents_with_non_total_child = set()
         markups = {}
         for line in lines:
@@ -1676,14 +1565,11 @@ class AccountReportLines(models.Model):
                 parents_with_non_total_child.add(parent_id)
 
         result = []
-        folds_reset = 0  # debuglog
+        folds_reset = 0
         for line in lines:
-            # Lines with an expand_function load their children on demand, so hide_if_zero doesn't affect them.
             if line.get("expand_function"):
                 result.append(line)
             elif markups[line["id"]] == "total":
-                # Keep report-level totals (no parent), and keep section totals only if
-                # their parent still has non-total children.
                 if (
                     line.get("parent_id") is None
                     or line.get("parent_id") in parents_with_non_total_child
@@ -1695,7 +1581,7 @@ class AccountReportLines(models.Model):
                 line["unfoldable"] = False
                 line["unfolded"] = False
                 result.append(line)
-                folds_reset += 1  # debuglog
+                folds_reset += 1
 
         _debug.pipeline(
             "empty_sections_cleaned",
@@ -1712,23 +1598,6 @@ class AccountReportLines(models.Model):
     def _get_load_more_line(
         self, offset, parent_line_id, expand_function_name, groupby, progress, options
     ):
-        """Returns a 'Load more' line allowing to reach the subsequent elements of an unfolded line with an expand function if the maximum
-        limit of sublines is reached (we load them by batch, using the load_more_limit field's value).
-
-        :param offset: The offset to be passed to the expand function to generate the next results, when clicking on this 'load more' line.
-
-        :param parent_line_id: The generic id of the line this load more line is created for.
-
-        :param expand_function_name: The name of the expand function this load_more is created for (so, the one of its parent).
-
-        :param progress: A json-formatted dict(column_group_key, value) containing the progress value for each column group, as it was
-                         returned by the expand function. This is for example used by reports such as the general ledger, whose lines display a
-                         cumulative sum of their balance and the one of all the previous lines under the same parent. In this case, progress
-                         will be the total sum of all the previous lines before the load_more line, that the subsequent lines will need to use as
-                         base for their own cumulative sum.
-
-        :param options: The options dict corresponding to this report's state.
-        """
         _debug.logic(
             "load_more_line_added",
             report=self,
@@ -1748,7 +1617,7 @@ class AccountReportLines(models.Model):
             "unfoldable": False,
             "unfolded": False,
             "offset": offset,
-            "groupby": groupby,  # We keep the groupby value from the parent, so that it can be propagated through js
+            "groupby": groupby,
             "progress": progress,
         }
 
@@ -1760,8 +1629,6 @@ class AccountReportLines(models.Model):
                 prefix_piece = markup["groupby_prefix_group"]
                 matched_prefix += prefix_piece.upper()
             else:
-                # Might happen if a groupby is grouped by prefix, then a subgroupby is grouped by another subprefix.
-                # In this case, we want to reset the prefix group to only consider the one used in the subgroupby.
                 matched_prefix = ""
 
         return matched_prefix
@@ -1780,7 +1647,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def _format_value(self, options, value, figure_type, format_params=None):
-        """Formats a value for display in a report (not especially numerical). figure_type provides the type of formatting we want."""
         if value is None:
             return ""
 
@@ -1824,7 +1690,6 @@ class AccountReportLines(models.Model):
         if self._is_value_zero(
             value, figure_type, format_params, formatLang_params["rounding_unit"]
         ):
-            # Make sure -0.0 becomes 0.0
             value = abs(value)
 
         if self.env.context.get("no_format"):
@@ -1842,14 +1707,6 @@ class AccountReportLines(models.Model):
     def _is_value_zero(
         self, amount, figure_type, format_params, rounding_unit="decimals"
     ):
-        """Tell whether a value renders as zero, at the precision it is rendered with.
-
-        The caller must pass the same rounding_unit that reaches _format_value: formatLang
-        divides by the unit and drops every decimal, so at any unit other than "decimals"
-        a value is displayed as 0 long before the currency would call it zero. Answering
-        this from format_params alone makes a report shown in millions render -400,000 as
-        "-0", and makes hide_0_lines keep rows whose every cell reads 0.
-        """
         if amount is None:
             return True
 
@@ -1871,29 +1728,8 @@ class AccountReportLines(models.Model):
 
         return float_is_zero(amount, precision_digits=format_params.get("digits", 1))
 
-    ####################################################
-    # LINE IDS MANAGEMENT HELPERS
-    ####################################################
     @_debug.perf.timed
     def _get_generic_line_id(self, model_name, value, markup=None, parent_line_id=None):
-        """Generates a generic line id from the provided parameters.
-
-        Such a generic id consists of a string repeating 1 to n times the following pattern:
-        markup-model-value, each occurence separated by a LINE_ID_HIERARCHY_DELIMITER character from the previous one.
-
-        Each pattern corresponds to a level of hierarchy in the report, so that
-        the n-1 patterns starting the id of a line actually form the id of its generator line.
-        EX: a~b~c|d~e~f|g~h~i => This line is a subline generated by a~b~c|d~e~f where | is the LINE_ID_HIERARCHY_DELIMITER.
-
-        Each pattern consists of the three following elements:
-        - markup:  a (possibly empty) free string or json-formatted dict allowing finer identification of the line
-                   (like the name of the field for account.accounting.reports)
-
-        - model:   the model this line has been generated for, or an empty string if there is none
-
-        - value:   the groupby value for this line (typically the id of a record
-                   or the value of a field), or an empty string if there isn't any.
-        """
         self.check_singleton()
 
         if parent_line_id:
@@ -1901,8 +1737,6 @@ class AccountReportLines(models.Model):
         else:
             parent_id_list = [(None, "report.formula", self.id)]
 
-        # In case the markup is a dict, it must be converted to a string, but in a way such that the keys are ordered alphabetically.
-        # This is useful, notably for annotations where the ids of the lines are stored, therefore requiring a consistent ordering
         if isinstance(markup, dict):
             markup = json.dumps(markup, sort_keys=True)
 
@@ -1914,7 +1748,7 @@ class AccountReportLines(models.Model):
             return markup
         try:
             result = json_loads(markup)
-        except json.JSONDecodeError:  # the markup is not a JSON object
+        except json.JSONDecodeError:
             return markup
         if isinstance(result, dict):
             return result
@@ -1924,19 +1758,9 @@ class AccountReportLines(models.Model):
     @api.model
     @_debug.perf.timed
     def _parse_line_id(self, line_id, markup_as_string=False):
-        """Parse the provided string line id and convert it to its list representation.
-        Empty strings for model and value will be converted to None.
-
-        For instance if line_id is markup1~account.account~5|markup2~res.partner~8 (where | is the LINE_ID_HIERARCHY_DELIMITER),
-        it will return [('markup1', 'account.account', 5), ('markup2', 'res.partner', 8)]
-        :param line_id (str): the generic line id to parse
-        """
         if not line_id:
             return []
 
-        # Line ids reach this from the client on every caret, audit, unfold and
-        # sort action, so a malformed one is input, not a programming error: it
-        # has to surface as a UserError rather than as a 500.
         def parse_segment(key):
             parts = key.rsplit("~", 2)
             if len(parts) != 3:
@@ -1959,8 +1783,6 @@ class AccountReportLines(models.Model):
             else:
                 value = value or None
             return (
-                # When there is a model, value is an id, so we cast it to an int. Else, we keep the original value (for groupby lines on
-                # non-relational fields, for example).
                 self._parse_markup(markup) if not markup_as_string else markup,
                 model or None,
                 value,
@@ -1977,7 +1799,6 @@ class AccountReportLines(models.Model):
         if next_levels_headers:
             rslt = []
 
-            # Separate headers into those with "no_subheader_division" and those without
             headers_with_no_subdivision = [
                 header
                 for header in next_levels_headers[0]
@@ -1989,7 +1810,6 @@ class AccountReportLines(models.Model):
                 if "no_subheader_division" not in header.get("forced_options", {})
             ]
 
-            # Process headers without "no_subheader_division"
             for header_element in valid_next_level_headers:
                 current_level_group_vals = {
                     key: {
@@ -2002,7 +1822,6 @@ class AccountReportLines(models.Model):
                     next_levels_headers[1:], current_level_group_vals
                 )
 
-            # Process headers with "no_subheader_division" as standalone groups
             for header_element in headers_with_no_subdivision:
                 current_level_group_vals = {
                     key: {
@@ -2020,12 +1839,6 @@ class AccountReportLines(models.Model):
     @api.model
     @_debug.perf.timed
     def _prepare_parent_line_id(self, current):
-        """Build the parent_line id based on the current position in the report.
-
-        For instance, if current is [('markup1', 'account.account', 5), ('markup2', 'res.partner', 8)], it will return
-        markup1~account.account~5
-        :param current (list<tuple>): list of tuple(markup, model, value)
-        """
         to_process = [
             (json_dumps(markup) if isinstance(markup, dict) else markup, model, value)
             for markup, model, value in current[:-1]
@@ -2034,37 +1847,15 @@ class AccountReportLines(models.Model):
 
     @api.model
     def _get_unfolded_lines(self, lines, parent_line_id):
-        """Return a list of all children lines for specified parent_line_id.
-        NB: It will return the parent_line itself!
-
-        For instance if parent_line_ids is '~report.formula.line~84|{"groupby": "currency_id"}~res.currency~174'
-        (where | is the LINE_ID_HIERARCHY_DELIMITER), it will return every subline for this currency.
-        :param lines: list of report lines
-        :param parent_line_id: id of a specified line
-        :return: A list of all children lines for a specified parent_line_id
-        """
         return [line for line in lines if line["id"].startswith(parent_line_id)]
 
     @api.model
     def _get_res_id_from_line_id(self, line_id, target_model_name):
-        """Parses the provided generic line id and returns the most local (i.e. the furthest on the right) record id it contains which
-        corresponds to the provided model name. If line_id does not contain anything related to target_model_name, None will be returned.
-
-        For example, parsing ~account.move~1|~res.partner~2|~account.move~3 (where | is the LINE_ID_HIERARCHY_DELIMITER)
-        with target_model_name='account.move' will return 3.
-        """
         dict_result = self._get_res_ids_from_line_id(line_id, [target_model_name])
         return dict_result[target_model_name] if dict_result else None
 
     @api.model
     def _get_res_ids_from_line_id(self, line_id, target_model_names):
-        """Parses the provided generic line id and returns the most local (i.e. the furthest on the right) record ids it contains which
-        correspond to the provided model names, in the form {model_name: res_id}. If a model is not present in line_id, its model will be absent
-        from the resulting dict.
-
-        For example, parsing ~account.move~1|~res.partner~2|~account.move~3 with target_model_names=['account.move', 'res.partner'] will return
-        {'account.move': 3, 'res.partner': 2}.
-        """
         result = {}
         models_to_find = set(target_model_names)
         for _markup, model, value in reversed(self._parse_line_id(line_id)):
@@ -2076,7 +1867,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def _prepare_subline_id(self, parent_line_id, subline_id_postfix):
-        """Creates a new subline id by concatanating parent_line_id with the provided id postfix."""
         return f"{parent_line_id}{LINE_ID_HIERARCHY_DELIMITER}{subline_id_postfix}"
 
     @_debug.perf.timed
@@ -2088,31 +1878,19 @@ class AccountReportLines(models.Model):
             ),
             "level": section_line_dict["level"]
             if section_line_dict["level"] != 0
-            else 1,  # Total line should not be level 0
+            else 1,
             "name": self.env._("Total %s", section_line_dict["name"]),
             "parent_id": section_line_dict["id"],
             "unfoldable": False,
             "unfolded": False,
             "caret_options": None,
             "action_id": None,
-            # A total is not expandable, so it must not carry the section's expansion
-            # handles: they were shipped to the client on every total line of every
-            # render, and get_expanded_lines aimed at one raises IndexError.
             "expand_function": None,
             "groupby": None,
-            "page_break": False,  # If the section's line possesses a page break, we don't want the total to have it.
+            "page_break": False,
         }
 
     def _split_options_per_column_group(self, options):
-        """Get a specific option dict per column group, each enforcing the comparison and horizontal grouping associated
-        with the column group. Each of these options dict will contain a new key 'owner_column_group', with the column group key of the
-        group it was generated for.
-
-        :param options: The report options upon which the returned options be be based.
-
-        :return:        A dict(column_group_key, options_dict), where column_group_key is the string identifying each column group (the keys
-                        of options['column_groups'], and options_dict the generated options for this group.
-        """
         options_per_group = {}
         for group_key in options["column_groups"]:
             group_options = self._get_column_group_options(options, group_key)
@@ -2127,9 +1905,6 @@ class AccountReportLines(models.Model):
         expressions_to_exclude=None,
         col_groups_to_exclude=None,
     ):
-        """json_friendly_column_group_totals contains ids instead of expressions (because it comes from js) ; this function is used
-        to convert them back to records.
-        """
         all_column_groups_expression_totals = {}
         for (
             column_group_key,
@@ -2142,7 +1917,7 @@ class AccountReportLines(models.Model):
             for expr_id, expr_totals in expression_totals.items():
                 expression = self.env["report.formula.expression"].browse(
                     int(expr_id)
-                )  # Should already be in cache, so acceptable
+                )
                 if (
                     not expressions_to_exclude
                     or expression not in expressions_to_exclude
@@ -2168,7 +1943,6 @@ class AccountReportLines(models.Model):
     def _get_json_friendly_column_group_totals(
         self, all_column_groups_expression_totals
     ):
-        # Convert all_column_groups_expression_totals to a json-friendly form (its keys are records)
         json_friendly_column_group_totals = {}
         for (
             column_group_key,
@@ -2181,9 +1955,6 @@ class AccountReportLines(models.Model):
         return json_friendly_column_group_totals
 
     def _filter_out_folded_children(self, lines):
-        """Returns a list containing all the lines of the provided list that need to be displayed when printing,
-        hence removing the children whose parent is folded (especially useful to remove total lines).
-        """
         rslt = []
         folded_lines = set()
         for line in lines:
@@ -2196,34 +1967,19 @@ class AccountReportLines(models.Model):
 
     def _get_cell_type_value(self, cell):
         if "date" not in cell.get("class", "") or not cell.get("name"):
-            # cell is not a date
             return ("text", cell.get("name", ""))
         if isinstance(cell["name"], (float, datetime.date, datetime.datetime)):
-            # the date is xlsx compatible
             return ("date", cell["name"])
         try:
-            # the date is parsable to a xlsx compatible date
             lg = get_lang(self.env, self.env.user.lang)
             return ("date", datetime.datetime.strptime(cell["name"], lg.date_format))
         except ValueError, TypeError:
-            # the date is not parsable thus is returned as text
             return ("text", cell["name"])
 
     @_debug.perf.timed
     def _get_column_percent_comparison_data(
         self, options, value1, value2, green_on_positive=True
     ):
-        """Build the additional percentage column requested by options['column_percent_comparison'].
-
-        Supported comparison types are 'growth', 'budget' and 'analytic_coverage'.
-
-        :param options:             The report options.
-        :param value1:              The value in the current period.
-        :param value2:              The value in the compared period.
-        :param green_on_positive:   A flag customizing the value with a green color depending if the growth is positive.
-        :return:                    The column dict to add to line['columns'].
-        :rtype:                     dict
-        """
         if (
             not isinstance(value1, (int, float))
             or not isinstance(value2, (int, float))
@@ -2236,13 +1992,6 @@ class AccountReportLines(models.Model):
             values_diff = value1 - value2
             growth = round(values_diff / value2 * 100, 1)
 
-            # In case the comparison is made on a negative figure, the color should be the other
-            # way around. For example:
-            #                       2018         2017           %
-            # Product Sales      1000.00     -1000.00     -200.0%
-            #
-            # The percentage is negative, which is mathematically correct, but my sales increased
-            # => it should be green, not red!
             if float_is_zero(growth, 1):
                 return {"name": "0.0%", "mode": "muted"}
             else:
@@ -2256,7 +2005,6 @@ class AccountReportLines(models.Model):
         elif comparison_type == "budget":
             percentage_value = value1 / value2 * 100
             if float_is_zero(percentage_value, 1):
-                # To avoid negative 0
                 return {"name": "0.0%", "mode": "green"}
 
             comparison_value = float_compare(value1, value2, 1)
@@ -2303,7 +2051,7 @@ class AccountReportLines(models.Model):
             offset,
             horizontal_split_side,
         )
-        expanded_count = len(lines)  # debuglog
+        expanded_count = len(lines)
         lines = self._fully_unfold_lines_if_needed(lines, options)
 
         lines = self._add_account_status_on_lines(lines, options)
@@ -2340,9 +2088,6 @@ class AccountReportLines(models.Model):
         offset,
         horizontal_split_side,
     ):
-        """Readonly version of get_expanded_lines, to be called from RPC when options['readonly_query'] is True,
-        to better spread the load on servers when possible.
-        """
         return self.get_expanded_lines(
             options,
             line_dict_id,
@@ -2366,7 +2111,6 @@ class AccountReportLines(models.Model):
 
     @_debug.perf.timed
     def get_report_information(self, options):
-        """Return the dictionary of information consumed by the AccountReport component."""
         self.check_singleton()
         self.env.flush_all()
 
@@ -2384,7 +2128,6 @@ class AccountReportLines(models.Model):
                 )
             )
 
-        # Convert all_column_groups_expression_totals to a json-friendly form (its keys are records)
         json_friendly_column_group_totals = self._get_json_friendly_column_group_totals(
             all_column_groups_expression_totals
         )
@@ -2423,8 +2166,6 @@ class AccountReportLines(models.Model):
 
     @staticmethod
     def _line_for_client(line):
-        # a column keeps its currency record for the server-side readers (ledger
-        # totals, exports); the AccountReport component gets its id
         columns = line.get("columns")
         if not columns:
             return line
@@ -2440,20 +2181,9 @@ class AccountReportLines(models.Model):
 
     @api.readonly
     def get_report_information_readonly(self, options):
-        """Readonly version of get_report_information, to be called from RPC when options['readonly_query'] is True,
-        to better spread the load on servers when possible.
-        """
         return self.get_report_information(options)
 
     def _format_lines_for_display(self, lines, options):
-        """Apply report-specific formatting to the lines before printing.
-
-        Overridden by reports needing it, such as the generic tax report for its carryover.
-
-        :param lines: A list with the lines for this report.
-        :param options: The options for this report.
-        :return: The formatted list of lines
-        """
         return lines
 
     def format_date(self, options, dt_filter="date"):

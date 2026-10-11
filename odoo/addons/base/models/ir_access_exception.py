@@ -16,14 +16,10 @@ EXCEPTION_LOG_EVENTS = [
     ("exception_used", "Exception used"),
     ("exception_revoked", "Exception revoked"),
 ]
-# how long an exception may last
 EXCEPTION_MAX_DAYS = 365
-# who revoked an exception, and when: written by its revocation alone
 REVOCATION_FIELDS = frozenset(
     {"revoked_at", "revoked_by_id", "revoke_reason", "granted_by_id"}
 )
-# set while action_revoke writes the revocation; an in-process marker, not a
-# context key a client could send
 _REVOKING: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "ir_access_exception_revoking", default=False
 )
@@ -272,9 +268,6 @@ class IrAccessException(models.Model):
                     )
                 )
             if not _REVOKING.get():
-                # a revocation is final and is Revoke's to write: a revoked
-                # exception written back to life would let its person through
-                # again with no trace
                 if REVOCATION_FIELDS & set(vals):
                     raise UserError(
                         self.env._("An exception is revoked with Revoke, for good.")
@@ -300,8 +293,6 @@ class IrAccessException(models.Model):
         return result
 
     def _check_length(self) -> None:
-        # an exception is a named way past a strict rule for a while, reviewed
-        # at its end: past the longest while it stops being an exception
         if self.env.su:
             return
         days = EXCEPTION_MAX_DAYS

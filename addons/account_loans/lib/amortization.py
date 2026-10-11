@@ -79,14 +79,13 @@ def _get_day_count_thirty_day(start, end, convention, period_is_end_of_month):
     elif convention == "30E/360":
         d1 = 30 if d1 == 31 else d1
         d2 = 30 if d2 == 31 else d2
-    else:  # 30E/360 ISDA
+    else:
         d1 = 30 if d1 == start_eom else d1
         d2 = 30 if d2 == end_eom and end.month != 2 else d2
     return 360 * (end.year - start.year) + 30 * (end.month - start.month) + (d2 - d1)
 
 
 def _get_year_fraction_actual_actual_isda(start, end):
-    """Each calendar year contributes its own days over its own length."""
 
     def get_year_day_count(year):
         return 366 if calendar.isleap(year) else 365
@@ -110,11 +109,6 @@ def _has_leap_day(start, end) -> bool:
 
 
 def _get_year_fraction_actual_actual_afb(start, end):
-    """Whole years count as one each; the stub is measured over 365 or 366.
-
-    The AFB rule takes whole years off the *end* of the period and divides the
-    remainder by 366 only when that remainder actually contains a 29 February.
-    """
     whole_years = 0
     cursor = end
     while cursor - relativedelta(years=1) >= start:
@@ -128,7 +122,6 @@ def _get_year_fraction_actual_actual_afb(start, end):
 
 
 def year_fraction(start, end, convention, period_is_end_of_month=False) -> Decimal:
-    """The fraction of a year between two dates under a day-count convention."""
     if convention not in DAY_COUNT_CONVENTIONS:
         raise ScheduleError(f"Unknown day-count convention {convention!r}.")
     if convention.startswith("30"):
@@ -206,11 +199,6 @@ def generate(
     payments_per_year=12,
     convention="30E/360",
 ):
-    """Build the amortization schedule for a constant-payment (annuity) loan.
-
-    A zero rate degenerates to equal principal instalments, which is what a
-    constant payment means once there is no interest to carry.
-    """
     _check_schedule_parameters(
         amount,
         annual_rate,
@@ -252,8 +240,6 @@ def generate(
             interest = Decimal("0.00")
             principal = _round_to_cents(instalment)
         if index == count - 1:
-            # The closing payment absorbs every rounding difference, so the
-            # principals sum to the amount borrowed exactly.
             principal = balance
         principal = max(Decimal("0.00"), min(principal, balance))
         balance -= principal

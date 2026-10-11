@@ -25,7 +25,6 @@ class TestCreditRedirect(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # A credit document is one filed under the company's credit folder.
         cls.folder = cls.env["document.document"].create(
             {"name": "Redirect Credit Folder", "type": "folder"}
         )

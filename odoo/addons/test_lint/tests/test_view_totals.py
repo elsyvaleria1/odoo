@@ -11,8 +11,6 @@ AGGREGATABLE = ("integer", "float", "monetary")
 
 
 def _totals_asked(view_type: str, arch: etree._Element):
-    # the field names a view shows a total of: a list column's sum/avg, a
-    # pivot or graph measure, a kanban progress bar's sum_field
     for node in arch.iter():
         if not isinstance(node.tag, str):
             continue

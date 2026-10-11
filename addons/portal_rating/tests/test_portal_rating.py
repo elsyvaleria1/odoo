@@ -58,7 +58,6 @@ class TestPortalRating(TransactionCase):
                 {**rating_vals, "rating": 3, "consumed": False},
             ]
         )
-        # Distinct dates make the intended chronology independent of transaction time.
         self.env.cr.execute(
             "UPDATE rating_rating SET create_date = %s WHERE id = %s",
             ("2026-09-12 10:00:00", older.id),
@@ -157,12 +156,10 @@ class TestPortalRating(TransactionCase):
         cls.Rating = cls.env["rating.rating"]
 
     def test_format_properties_exclude_rating_by_default(self):
-        """Rating fields are not requested unless the caller opts in."""
         names = self.Message._portal_get_default_format_properties_names()
         self.assertNotIn("rating", names)
 
     def test_format_properties_include_rating_on_option(self):
-        """The rating_include option adds the rating fields to the request."""
         names = self.Message._portal_get_default_format_properties_names(
             options={"rating_include": True}
         )
@@ -170,7 +167,6 @@ class TestPortalRating(TransactionCase):
         self.assertIn("rating_value", names)
 
     def test_format_rating_with_publisher(self):
-        """A rating with a publisher exposes the avatar, name, and comment."""
         formatted = self.Message._portal_message_format_rating(
             {
                 "publisher_id": [7, "Bob"],
@@ -187,7 +183,6 @@ class TestPortalRating(TransactionCase):
         )
 
     def test_format_rating_without_publisher(self):
-        """A rating with no publisher blanks the avatar, name, and comment."""
         formatted = self.Message._portal_message_format_rating(
             {
                 "publisher_id": False,
@@ -202,13 +197,11 @@ class TestPortalRating(TransactionCase):
         self.assertEqual(formatted["publisher_datetime"], "")
 
     def test_synchronize_publisher_values_fills_metadata(self):
-        """A publisher comment auto-stamps the publisher partner and datetime."""
         values = self.Rating._prepare_publisher_values({"publisher_comment": "Nice"})
         self.assertEqual(values["publisher_id"], self.env.user.partner_id.id)
         self.assertTrue(values["publisher_datetime"])
 
     def test_publisher_comment_requires_write_access(self):
-        """Commenting a rating needs write access on the related record."""
         company = self.env.ref("base.main_company")
         rating = self.Rating.create(
             {

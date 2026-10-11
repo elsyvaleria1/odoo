@@ -11,9 +11,6 @@ class TestMultiCompany(TestSaleCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # industry_fsm_stock confirms an FSM order as soon as it exists, which is the
-        # flow these tests assert does not happen: they hold only while its code is
-        # not loaded, i.e. at_install of a database installing both modules at once
         fsm_stock = cls.env.ref(
             "base.module_industry_fsm_stock", raise_if_not_found=False
         )
@@ -23,7 +20,6 @@ class TestMultiCompany(TestSaleCommon):
             )
         cls.env.user.group_ids += cls.quick_ref("industry_fsm.group_fsm_user")
 
-        # adding groups to users to use through the various tests
         user_group_employee = cls.env.ref("base.group_user")
         user_project_group_employee = cls.env.ref("project.group_project_user")
 
@@ -34,7 +30,6 @@ class TestMultiCompany(TestSaleCommon):
         cls.companyA = cls.env["res.company"].create({"name": "test_company_A"})
         cls.companyB = cls.env["res.company"].create({"name": "test_company_B"})
 
-        # create default accounts on company A
         cls.account_receivable_a, cls.account_sale_a = cls.env[
             "account.account"
         ].create(
@@ -192,7 +187,6 @@ class TestMultiCompany(TestSaleCommon):
     def test_task(self):
         task_company_id = self.task_1.company_id.id
 
-        # This should not raise an error.
         self.task_1.with_context(
             allowed_company_ids=[self.companyA.id, self.companyB.id]
         ).with_company(self.companyB).action_fsm_view_material()
@@ -206,7 +200,6 @@ class TestMultiCompany(TestSaleCommon):
             "draft",
             "Sale order should not be confirmed",
         )
-        # Validating a task while in another company should not impact the propagation of the company_id to the sale order
         self.task_1.with_context(
             allowed_company_ids=[self.companyA.id, self.companyB.id]
         ).with_company(self.companyB).action_fsm_validate()
@@ -219,7 +212,6 @@ class TestMultiCompany(TestSaleCommon):
             task_company_id,
             "The company of the sale order should be the same as the one from the task",
         )
-        # Generating an invoice from a task while in another company should not impact the propagation of the company_id to the invoice, the company of the SO should be propagated
         self.assertTrue(self.task_1.task_to_invoice, "Task should be invoiceable")
         invoice_ctx = self.task_1.action_create_invoice()["context"]
         invoice_ctx["allowed_company_ids"] = [self.companyB.id, so_company_id]
@@ -230,9 +222,6 @@ class TestMultiCompany(TestSaleCommon):
             .create({})
         )
         invoice_wizard.create_invoices()
-        # An invoice counts toward the order's invoiced quantity once posted, not
-        # while draft, so the task stays invoiceable until the wizard's invoice is
-        # validated -- which is what "invoiced" means here.
         self.task_1.sale_order_id.invoice_ids.action_post()
         self.assertFalse(self.task_1.task_to_invoice, "Task should not be invoiceable")
         self.assertEqual(

@@ -180,8 +180,6 @@ class ResourceCalendar(models.Model):
 
     @api.constrains("tz", "schedule_type")
     def _check_tz(self) -> None:
-        # A schedule with no hours has no zone of its own: whoever holds it
-        # reads their own, or their company's.
         if missing := self.filtered(
             lambda c: not c.tz and c.schedule_type != "fully_flexible"
         ):
@@ -292,17 +290,12 @@ class ResourceCalendar(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        # default_get offers the company's lines without knowing the kind asked
-        # for; a schedule without fixed hours takes none
         for vals in vals_list:
             if vals.get("schedule_type", "fully_fixed") != "fully_fixed":
                 vals.setdefault("attendance_ids", [])
         return super().create(vals_list)
 
     def _get_tz(self, resource=None) -> str:
-        """The zone this schedule is read in: its holder's, else its own, else
-        the reader's. The shared Fully Flexible schedule has no zone of its
-        own, so its days are its holder's or the reader's, never UTC's."""
         return (resource and resource.tz) or self.tz or self._default_tz()
 
     def _default_tz(self):
@@ -324,7 +317,6 @@ class ResourceCalendar(models.Model):
     def _get_fields_schedule(self) -> frozenset[str]:
         return frozenset(
             {
-                # a change of lines recomputes from the lines' own hooks
                 "two_weeks_calendar",
                 "duration_based",
                 "schedule_type",
@@ -367,8 +359,6 @@ class ResourceCalendar(models.Model):
                 lambda a: a.week_type == "1"
             )
 
-    # The company's full time, taken when the company is set: an edit of the
-    # company's schedule is not a change of what full time means elsewhere.
     @api.depends("company_id")
     def _compute_full_time_required_hours(self) -> None:
         for calendar in self.filtered("company_id"):
@@ -379,7 +369,6 @@ class ResourceCalendar(models.Model):
 
     @api.depends("company_id", "schedule_type")
     def _compute_attendance_ids(self) -> None:
-        # only fixed hours are written as lines
         self.filtered(
             lambda c: c.schedule_type != "fully_fixed" and c.attendance_ids
         ).attendance_ids = [Command.clear()]
@@ -628,8 +617,6 @@ class ResourceCalendar(models.Model):
 
     @staticmethod
     def _center_block_on_noon(day, hours, tz, free) -> tuple | None:
-        # counted hours are drawn around noon, in the free span holding noon
-        # when it is long enough, else in the longest one
         noon = datetime.combine(day, time(12, 0)).replace(tzinfo=tz)
         spans = [(start, stop) for start, stop, _meta in free]
         if not spans:
@@ -650,9 +637,6 @@ class ResourceCalendar(models.Model):
 
     @classmethod
     def _place_flexible_hours(cls, day, hours, tz, free, start, stop) -> list:
-        # a window that holds the whole day leaves the hours unanchored, so
-        # they are drawn around noon; one that cuts the day anchors them at
-        # its earliest free time
         midnight = datetime.combine(day, time.min).replace(tzinfo=tz)
         if start <= midnight and stop >= midnight + timedelta(days=1):
             block = cls._center_block_on_noon(day, hours, tz, free)
@@ -804,7 +788,6 @@ class ResourceCalendar(models.Model):
         for low, high in bounds_per_tz.values():
             start = min(start, low.replace(tzinfo=UTC))
             end = max(end, high.replace(tzinfo=UTC))
-        # rrule reads an empty byweekday as every day
         days = (
             rrule(DAILY, start.date(), until=end.date(), byweekday=weekdays)
             if weekdays
@@ -839,8 +822,6 @@ class ResourceCalendar(models.Model):
     def _schedule_intervals_batch(
         self, start_dt, end_dt, resources_list, tz
     ) -> dict[int | bool, Intervals]:
-        # a schedule without fixed hours is read whole, whoever reads it: the
-        # caller chose this calendar for these resources and this period
         read = (
             self._get_fully_flexible_intervals
             if self.schedule_type == "fully_flexible"
@@ -872,8 +853,6 @@ class ResourceCalendar(models.Model):
         return dt0, dt1
 
     def _get_domain_exceptions(self, domain: list | None) -> Domain:
-        # The kernel's one question of a kind of time: does it come out of the
-        # working schedule. A caller naming the kind itself is left alone.
         given = Domain(domain or Domain.TRUE)
         if any(
             condition.field_expr.startswith("time_type_id")
@@ -901,8 +880,6 @@ class ResourceCalendar(models.Model):
         resources_list = list(resources) if resources else []
 
         resources_list.append(self.env["resource.resource"])
-        # A resource's own absence holds whatever schedule it is read through;
-        # only the exceptions closing a whole schedule belong to a calendar.
         schedule_wide = Domain("resource_id", "=", False) & Domain(
             "calendar_id", "in", [False, *self.ids]
         )
@@ -924,8 +901,6 @@ class ResourceCalendar(models.Model):
             for resource in resources_list
         ]
 
-        # a resource's own exception reaches it alone; one closing a schedule
-        # reaches every resource of its company, and the schedule itself
         window_by_resource = {window[0].id: window for window in window_per_resource}
         windows_by_company = defaultdict(list)
         windows_of_no_company = []
@@ -998,8 +973,6 @@ class ResourceCalendar(models.Model):
                 for r in resources_list
             }
         if exclude_bookings:
-            # Booked time is still working time: only a caller looking for
-            # free time takes the enforced bookings out of it.
             booked = self.env[
                 "resource.reservation"
             ]._get_enforced_booking_intervals_batch(start_dt, end_dt, resources)
@@ -1012,8 +985,6 @@ class ResourceCalendar(models.Model):
     def _flexible_work_intervals_batch(
         self, start_dt, end_dt, resources, resources_list, domain, tz
     ) -> dict[int | bool, Intervals]:
-        # a week's leaves decide how its hours fall, so they are read for every
-        # whole week the window touches, not only for the window
         if isinstance(tz, str):
             tz = timezone(tz)
         zones = {r.id: tz or timezone(self._get_tz(r)) for r in resources_list}
@@ -1093,8 +1064,6 @@ class ResourceCalendar(models.Model):
 
         result = {}
         if by_leaves:
-            # a schedule without fixed hours is open all day: only its closures
-            # and absences take time away
             leaves = self._leave_intervals_batch(
                 start_dt, end_dt, flexible, domain, tz=tz
             )
@@ -1157,7 +1126,6 @@ class ResourceCalendar(models.Model):
 
     @api.model
     def _normalize_calendar_vals(self, vals: ValuesType, fname: str) -> ValuesType:
-        # Every holder of a schedule has one: "none" is the fully flexible one.
         if fname in vals and not vals[fname]:
             vals = dict(vals, **{fname: self._get_fully_flexible_calendar().id})
         return vals
@@ -1169,7 +1137,6 @@ class ResourceCalendar(models.Model):
         day_hours = self._get_hours_by_day(attendance_intervals)
         day_days = defaultdict(float)
         if len(self) == 1 and self.schedule_type != "fully_fixed":
-            # a day's hours turn hours into days, a day at most whatever it holds
             hours_per_day = self.hours_per_day or HOURS_PER_DAY
             for day, hours in day_hours.items():
                 day_days[day] = min(1.0, hours / hours_per_day)
@@ -1239,8 +1206,6 @@ class ResourceCalendar(models.Model):
         if not self:
             return {}
         self.check_singleton()
-        # The bounds name days; a day is read in this schedule's own zone, so
-        # an evening shift past UTC midnight still belongs to its day.
         first_day, last_day = start_dt.date(), end_dt.date()
         tz = timezone(self._get_tz())
         start = datetime.combine(first_day, time.min, tz)
@@ -1337,8 +1302,6 @@ class ResourceCalendar(models.Model):
         domain: list | None = None,
         tz: ZoneInfo | str | None = None,
     ) -> dict[str, float]:
-        # domain chooses the exceptions read; without them, the schedule's own
-        # hours are read whole (get_attendance_duration_data filters lines)
         if not compute_leaves:
             return self.get_attendance_duration_data(from_datetime, to_datetime, tz=tz)
         intervals = self._work_intervals_batch(
@@ -1475,8 +1438,6 @@ class ResourceCalendar(models.Model):
                 self._attendance_intervals_batch, resources=resource
             )
         resource_id = resource.id
-        # windows double over the same horizon: a plan found late costs a few
-        # readings of the schedule, not one every two weeks
         horizon = _PLAN_WINDOW * _PLAN_MAX_ITERATIONS
         offset, width = timedelta(0), _PLAN_WINDOW
         while offset < horizon:
@@ -1509,7 +1470,6 @@ class ResourceCalendar(models.Model):
         ):
             interval_hours = elapsed_hours(start, stop)
             if hours <= interval_hours:
-                # hours are elapsed, also across a daylight-saving switch
                 if forward:
                     return revert(start.astimezone(UTC) + timedelta(hours=hours))
                 return revert(stop.astimezone(UTC) - timedelta(hours=hours))

@@ -41,10 +41,6 @@ class TestWebLogin(TestWebLoginCommon):
         self.assertEqual(res_post.request.path_url, "/odoo")
 
     def test_web_login_external(self):
-        # web sends a non-internal user to /web/login_successful; portal, when
-        # installed, overrides _login_redirect and its own test pins /my. What
-        # web guarantees on every database: the user is logged in and lands
-        # neither on the login page nor in the backend.
         res_post = self.login("portal_user", "portal_user")
         landing = res_post.request.path_url
         self.assertNotEqual(landing, "/web/login")

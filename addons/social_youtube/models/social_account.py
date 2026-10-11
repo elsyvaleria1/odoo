@@ -43,7 +43,6 @@ class SocialAccount(models.Model):
     )
 
     def _compute_stats_link(self) -> None:
-        """External link to this Youtube Page's Analytics."""
         youtube_accounts = self._filtered_by_media_types(["youtube"])
         super(SocialAccount, (self - youtube_accounts))._compute_stats_link()
 
@@ -62,7 +61,6 @@ class SocialAccount(models.Model):
         return res
 
     def action_youtube_revoke(self) -> dict:
-        """Open the "social account revoke youtube" wizard in order to revoke the access token of this account."""
         self.check_singleton()
 
         if self.media_type != "youtube":
@@ -85,9 +83,6 @@ class SocialAccount(models.Model):
         }
 
     def _create_default_stream_youtube(self) -> None:
-        """This will create a stream to show the account video for each created account.
-        It helps with onboarding to have your videos show up on the 'Feed' view as
-        soon as you have configured your accounts."""
 
         page_posts_stream_type = self.env.ref(
             "social_youtube.stream_type_youtube_channel_videos"
@@ -104,15 +99,6 @@ class SocialAccount(models.Model):
         )
 
     def _refresh_youtube_token(self) -> None:
-        """YouTube works with both an access_token, used to authenticate API requests, and a
-        refresh_token used to grant a new refresh_token when it expires.
-        Access tokens have a very short life span (a few hours) so we have to make sure we're
-        refreshing the token often, ideally checking before every single API call.
-        This method handles both:
-        - Database is configured to use 'Own YouTube account'
-          That will negotiate the new access_token using the Google API directly
-        - Using our IAP proxy (for databases with valid enterprise subscriptions)
-          That will receive the new access_token from our IAP proxy."""
 
         youtube_oauth_client_id = self.env.registry.settings.get(
             self.env, "social.youtube_oauth_client_id", False

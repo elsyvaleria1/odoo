@@ -201,16 +201,6 @@ class TestRentalKits(TestRentalCommon):
         self.assertEqual(late_fee_order_line.price_unit, 30)
 
     def test_subkits_and_same_component(self):
-        """
-        - Kit
-            - 1 x C1
-                - 1 x C2
-                - 1 x C3
-            - 2X C2
-
-        Rental with delivery
-        Ensure that qties of both delivery and return are correct
-        """
         stock_location = self.warehouse_id.lot_stock_id
         rental_location = self.env.company.rental_loc_id
 
@@ -240,7 +230,6 @@ class TestRentalKits(TestRentalCommon):
         rental.line_ids.write({"product_qty": 1, "is_rental": True})
         rental.action_confirm()
 
-        # The BoM line sequence should be respected when exploding a BoM that contains a kit.
         self.assertRecordValues(
             rental.picking_ids.move_ids,
             [
@@ -284,20 +273,16 @@ class TestRentalKits(TestRentalCommon):
         )
 
     def test_pickup_kit_from_rental(self):
-        """Create a rental with a kit and confirm it. Then, pickup the kit."""
-        # disable the setting to don't create a picking and allow the user to pickup the kit
         self.env.user.group_ids -= self.env.ref(
             "sale_stock_renting.group_rental_stock_picking"
         )
         settings = self.env["res.config.settings"].with_user(self.env.user).create({})
         settings.group_rental_stock_picking = False
         settings.set_values()
-        # create a rental with kit
         rental = self.sale_order_id.copy()
         rental.line_ids.write({"product_qty": 1, "is_rental": True})
         self.assertEqual(rental.line_ids.product_id.is_kit, True)
         rental.action_confirm()
-        # pickup the kit
         self.assertEqual(rental.line_ids.qty_transferred, 0)
         action_dict = rental.action_view_pickup()
         pickup_wizard = (

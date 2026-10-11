@@ -75,8 +75,6 @@ class TestPosDiscountSaleDetails(TestPoSCommon):
         sale = self._paid_order(
             (self.product, 1, 100, {}), (self.discount_product, 1, -10, {})
         )
-        # the ticket screen does not refund the discount line: it applies the
-        # global discount again to the refund, which yields quantity 1, price 10
         self._paid_order(
             (self.product, -1, 100, {"refunded_orderline_id": sale.lines[0].id}),
             (self.discount_product, 1, 10, {}),

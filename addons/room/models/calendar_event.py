@@ -18,10 +18,6 @@ class CalendarEvent(models.Model):
     _inherit = "calendar.event"
 
     def _prepare_room_booking_data(self) -> RoomBookingData:
-        # A kiosk is public and reads its bookings elevated, past the masking
-        # calendar applies to a private event's name for anyone not invited.
-        # It says "Busy" itself, in its own language: a notification is
-        # prepared in the language of whoever changed the booking.
         self.check_singleton()
         hidden = self.effective_privacy in ("private", "confidential")
         return {

@@ -30,7 +30,6 @@ class TestPlanningPrintReport(HttpCase, TestCommonPlanning):
         )
 
     def _print_planning_url(self):
-        """Build the report URL the Print button opens, for that one week."""
         action = (
             self.env["planning.slot"]
             .with_context(discard_logo_check=True)
@@ -58,16 +57,11 @@ class TestPlanningPrintReport(HttpCase, TestCommonPlanning):
         self.assertEqual(
             len(shifts), 1, "one shift in the week, so one block in the report"
         )
-        # No role and no partial allocation: the title is the time range alone,
-        # which is what makes the block a single line in the first place.
         self.assertLessEqual(
             len(shifts[0]["title"]),
             20,
             "this test only means something while the printed title fits on one line",
         )
-        # The report reads its payload from the query string: that is how the
-        # Print button reaches it, and the template already indexes weeks with
-        # `str(week[0])`, i.e. it expects the keys JSON leaves behind.
         return "/report/html/planning.slot_report?" + urlencode(
             {"options": json_dumps(data)}
         )

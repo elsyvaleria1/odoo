@@ -90,7 +90,6 @@ class SaleOrderLine(models.Model):
         return super().write(vals)
 
     def _action_launch_stock_rule(self, **kwargs):
-        # Picking must be generated for products created from the SO but not for parts added from the RO, as they're already handled there
         _debug.pipeline("repair_stock_rule_launch", lines=self)
         lines_without_repair_move = self.filtered(
             lambda line: not line.move_ids.sudo().repair_id
@@ -103,7 +102,6 @@ class SaleOrderLine(models.Model):
         _debug.pipeline("repair_order_from_sale", lines=self)
         new_repair_vals = []
         for line in self:
-            # One RO for each line with at least a quantity of 1, quantities > 1 don't create multiple ROs
             if (
                 any(
                     line.id == ro.sale_order_line_id.id
@@ -139,7 +137,6 @@ class SaleOrderLine(models.Model):
             self.env["repair.order"].sudo().create(new_repair_vals)
 
     def _cancel_repair_order(self) -> None:
-        # Each RO binded to a SO line with Qty set to 0 or cancelled is set to 'Cancelled'
         _debug.lifecycle("repair_order_cancel_from_sale", lines=self)
         binded_ro_ids = self.env["repair.order"]
         for line in self:

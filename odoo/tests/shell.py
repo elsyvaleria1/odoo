@@ -132,12 +132,12 @@ def _run_tests(db_name: str, modules: list[str]) -> OdooTestResult:
 
 
 def _clear_loaded_test_modules() -> None:
-    removed = 0  # debuglog
+    removed = 0
     for module_key in list(sys.modules):
         if TEST_MODULE_NAME_PATTERN.match(module_key):
             _logger.debug("Removing module from sys.modules for reload: %s", module_key)
             del sys.modules[module_key]
-            removed += 1  # debuglog
+            removed += 1
     _debug.lifecycle("test.shell.modules_reloaded", removed=removed)
 
 

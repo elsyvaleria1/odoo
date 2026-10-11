@@ -15,7 +15,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
 
         cls.env.user.group_ids += cls.quick_ref("event.group_event_manager")
 
-        # Adding sale users to test the access rights
         cls.salesman = mail_new_test_user(
             cls.env,
             name="Salesman",
@@ -24,10 +23,8 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             groups="sale.group_sale_salesman",
         )
 
-        # Setup partner since user salesman don't have the right to create it on the fly
         cls.env["res.partner"].create({"name": "Tajine Saucisse"})
 
-        # Setup attributes and attributes values
         product_attribute_age = cls.env["product.attribute"].create(
             {
                 "name": "Age",
@@ -63,7 +60,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             }
         )
 
-        # Create product template
         cls.event_product_template = cls.env["product.template"].create(
             {
                 "name": "Registration Event (TEST variants)",
@@ -73,7 +69,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             }
         )
 
-        # Generate variants
         cls.env["product.template.attribute.line"].create(
             [
                 {
@@ -89,7 +84,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             ]
         )
 
-        # Apply a price_extra for the attributes
         cls.event_product_template.attribute_line_ids[0].product_template_value_ids[
             0
         ].price_extra = -20.00
@@ -100,7 +94,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             3
         ].price_extra = 30.00
 
-        # Create the event and link it to the product variants as event tickets
         cls.event = cls.env["event.event"].create(
             {
                 "name": "TestEvent",
@@ -134,7 +127,6 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
                     }
                 )
 
-            # Adding an optional product
             cls.product_product_memorabilia = cls.env["product.template"].create(
                 {
                     "name": "Memorabilia (TEST)",
@@ -155,6 +147,5 @@ class TestEventProductConfiguratorUi(AccountTestInvoicingCommon, HttpCase):
             [("create_uid", "=", self.salesman.id)]
         )
 
-        # Check that all the so lines are in the so and that the total amount is correct
         self.assertEqual(len(sale_order.line_ids), 4)
         self.assertEqual(sale_order.amount_total, 277.73)

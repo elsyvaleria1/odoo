@@ -27,20 +27,17 @@ class TestLoyaltyCardHelpers(TransactionCase):
         )
 
     def test_generate_code_is_nonempty_string(self):
-        """The default code generator yields a non-empty string."""
         code = self.env["loyalty.card"]._prepare_code()
         self.assertIsInstance(code, str)
         self.assertTrue(code)
 
     def test_format_points_includes_amount_and_label(self):
-        """Point formatting embeds the amount and the program's point label."""
         card = self._card(points=12.0)
         formatted = card._format_points(12.0)
         self.assertIn("12", formatted)
         self.assertIn(card.program_id.portal_point_name, formatted)
 
     def test_display_name_includes_code(self):
-        """The card display name carries its code."""
         card = self._card(code="LCHELPER-XYZ")
         card.invalidate_recordset(["display_name"])
         self.assertIn("LCHELPER-XYZ", card.display_name)

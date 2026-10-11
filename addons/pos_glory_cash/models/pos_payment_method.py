@@ -31,6 +31,4 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def _load_pos_data_till_secret_fields(self, config) -> list[str]:
-        # the browser logs into the cash machine over its local websocket,
-        # which the server cannot reach
         return [*super()._load_pos_data_till_secret_fields(config), "glory_password"]

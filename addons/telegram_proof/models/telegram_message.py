@@ -7,8 +7,6 @@ class TelegramMessage(models.Model):
     _inherit = "telegram.message"
 
     def _still_wanted(self) -> bool:
-        # a question withdrawn or answered elsewhere while it waited in the
-        # outbox does not go out
         delivery = self._get_proof_delivery()
         if delivery and delivery.state != "sent":
             return False

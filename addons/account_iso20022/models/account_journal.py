@@ -57,16 +57,12 @@ class AccountJournal(models.Model):
         compute="_compute_has_iso20022_payment_method"
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
     @api.depends(
         "bank_acc_number",
         "company_id.tax_config_id.account_fiscal_country_id",
         "company_id.country_id",
     )
     def _compute_sepa_pain_version(self) -> None:
-        """Set default value for the field sepa_pain_version"""
         pains_by_country = {
             "DE": "pain.001.001.03.de",
             "AT": "pain.001.001.03.austrian.004",
@@ -74,7 +70,6 @@ class AccountJournal(models.Model):
         for rec in self:
             if rec.bank_account_id and rec.bank_account_id.acc_type == "iban":
                 country_code = rec.bank_acc_number[:2].upper()
-            # Then try from the company's fiscal country, and finally from the company's country
             else:
                 country_code = (
                     rec.company_id.tax_config_id.account_fiscal_country_id.code
@@ -83,8 +78,6 @@ class AccountJournal(models.Model):
             if country_code in pains_by_country:
                 rec.sepa_pain_version = pains_by_country.get(country_code)
             else:
-                # Having a sepa_pain_version set at pain.001.001.03 means that the user changed it manually,
-                # since the default is 09. In this case, we keep the user's change.
                 rec.sepa_pain_version = (
                     "pain.001.001.09"
                     if rec.sepa_pain_version != "pain.001.001.03"
@@ -113,9 +106,6 @@ class AccountJournal(models.Model):
                 )
             )
 
-    # -------------------------------------------------------------------------
-    # GENERIC OVERRIDES
-    # -------------------------------------------------------------------------
     def _default_outbound_payment_methods(self):
         res = super()._default_outbound_payment_methods()
         if self._is_payment_method_available("sepa_ct"):
@@ -131,14 +121,10 @@ class AccountJournal(models.Model):
 
         return res
 
-    # -------------------------------------------------------------------------
-    # DOCUMENT CREATION
-    # -------------------------------------------------------------------------
 
     def create_iso20022_credit_transfer(
         self, payments, payment_method_code, batch_booking=False
     ):
-        """Returns the content of the XML file."""
         Document = self.create_iso20022_credit_transfer_content(
             payments, payment_method_code, batch_booking=batch_booking
         )
@@ -149,9 +135,6 @@ class AccountJournal(models.Model):
     def create_iso20022_credit_transfer_content(
         self, payments, payment_method_code, batch_booking=False
     ):
-        """
-        Creates the body of the XML file for the ISO20022 document.
-        """
         Document = etree.Element(
             "Document",
             nsmap={
@@ -161,7 +144,6 @@ class AccountJournal(models.Model):
         )
         CstmrCdtTrfInitn = etree.SubElement(Document, "CstmrCdtTrfInitn")
 
-        # Create the GrpHdr XML block
         GrpHdr = etree.SubElement(CstmrCdtTrfInitn, "GrpHdr")
         MsgId = etree.SubElement(GrpHdr, "MsgId")
         val_MsgId = str(time.time())
@@ -179,7 +161,6 @@ class AccountJournal(models.Model):
         CtrlSum.text = self._get_CtrlSum(payments)
         GrpHdr.append(self._prepare_initiating_party_element(payment_method_code))
 
-        # Create one PmtInf XML block per execution date, per currency
         eur_currency = self.env.ref("base.EUR")
         chf_currency = self.env.ref("base.CHF")
         payments_date_instr_wise = defaultdict(list)
@@ -211,9 +192,6 @@ class AccountJournal(models.Model):
 
             group_payment_method_code = payment_method_code
             if iso20022_ch_force_sepa and payment_method_code == "iso20022_ch":
-                # The Swiss ISO20022 implementation considers SEPA as a subset of what it allows (payment type S),
-                # as well as more generic ISO20022 payments (payment type X). To handle that, we change the payment_method_code
-                # dynamically when adding the grouped payments to the XML file.
                 if currency_id == eur_currency.id:
                     group_payment_method_code = "sepa_ct"
                 elif currency_id != chf_currency.id:
@@ -224,7 +202,7 @@ class AccountJournal(models.Model):
             )
             if (
                 len(PmtTpInf) != 0
-            ):  # Boolean conversion from etree element triggers a deprecation warning ; this is the proper way
+            ):
                 PmtInf.append(PmtTpInf)
 
             ReqdExctnDt = self._prepare_execution_date_element(
@@ -255,7 +233,6 @@ class AccountJournal(models.Model):
                     )
                 )
 
-            # One CdtTrfTxInf per transaction
             for payment in payments_list:
                 PmtInf.append(
                     self._prepare_credit_transfer_element(
@@ -267,11 +244,7 @@ class AccountJournal(models.Model):
                 )
         return Document
 
-    # -------------------------------------------------------------------------
-    # NODES CREATION
-    # -------------------------------------------------------------------------
     def _get_CtrlSum(self, payments):
-        # To override per pain version
         return float_repr(sum(payment["amount"] for payment in payments), 2)
 
     def _prepare_initiating_party_element(self, payment_method_code) -> etree._Element:
@@ -297,7 +270,7 @@ class AccountJournal(models.Model):
             Cd.text = SvcLvlTxt
 
         CtgyPurp = self._prepare_category_purpose_element(payment_method_code)
-        if CtgyPurp is not None:  # avoid FutureWarning
+        if CtgyPurp is not None:
             PmtTpInf.append(CtgyPurp)
 
         LclInstrm = self._prepare_local_instrument_element(payment_method_code)
@@ -323,8 +296,6 @@ class AccountJournal(models.Model):
         self, payment_method_code: str
     ) -> etree._Element | None:
         if self.env.context.get("sepa_payroll_sala"):
-            # The SALA purpose code is standard for all SEPA, and guarantees a series
-            # of things in instant payment: https://www.sepaforcorporates.com/sepa-payments/sala-sepa-salary-payments.
             CtgyPurp = etree.Element("CtgyPurp")
             Cd = etree.SubElement(CtgyPurp, "Cd")
             Cd.text = "SALA"
@@ -347,7 +318,6 @@ class AccountJournal(models.Model):
         )
         return Dbtr
 
-    # TODO: remove payments arg in master
     def _prepare_debtor_account_element(
         self, payment_method_code=None, payments=None
     ) -> etree._Element:
@@ -368,7 +338,6 @@ class AccountJournal(models.Model):
         ) or self.company_id.currency_id.name
         return DbtrAcct
 
-    # TODO: remove partner_acc_type arg in master
     def _prepare_debtor_other_account_element(
         self, payment_method_code=None, partner_acc_type=None
     ) -> etree._Element:
@@ -515,7 +484,6 @@ class AccountJournal(models.Model):
         Id = etree.SubElement(Othr, "Id")
         acc_number = bank_account.acc_number
 
-        # CH case when we have non-unique account numbers
         if " " in bank_account.sanitized_acc_number and " " in bank_account.acc_number:
             acc_number = bank_account.acc_number.split(" ")[0]
         Id.text = acc_number
@@ -560,7 +528,6 @@ class AccountJournal(models.Model):
             RmtInf.append(
                 self._prepare_remittance_reference_element(ref, reference_type)
             )
-        # Check whether we have a structured communication
         else:
             Ustrd = etree.SubElement(RmtInf, "Ustrd")
             Ustrd.text = normalize_communication(payment["memo"])
@@ -574,7 +541,6 @@ class AccountJournal(models.Model):
         issr=True,
         schme_nm=False,
     ) -> list[etree._Element]:
-        """Returns a PartyIdentification32 element identifying the current journal's company"""
         ret = []
 
         Nm = etree.Element("Nm")
@@ -610,9 +576,6 @@ class AccountJournal(models.Model):
 
         return ret
 
-    # -------------------------------------------------------------------------
-    # HELPERS/HOOKS
-    # -------------------------------------------------------------------------
 
     def get_document_namespace(self, payment_method_code):
         namespace = "pain.001.001.03"
@@ -621,7 +584,6 @@ class AccountJournal(models.Model):
         return "urn:iso:std:iso:20022:tech:xsd:%s" % namespace
 
     def _get_bic_tag(self, payment_method_code):
-        # To override per pain version
         return "BIC"
 
     def iso20022_get_company_name(self):
@@ -643,7 +605,6 @@ class AccountJournal(models.Model):
             PstlAdr = etree.Element("PstlAdr")
             Ctry = etree.SubElement(PstlAdr, "Ctry")
             Ctry.text = partner_address["country"]
-            # Some banks seem allergic to having the zip in a separate tag, so we do as before
             if partner_address.get("street"):
                 AdrLine = etree.SubElement(PstlAdr, "AdrLine")
                 AdrLine.text = normalize_communication(partner_address["street"][:70])
@@ -688,11 +649,6 @@ class AccountJournal(models.Model):
         return self._prepare_structured_remittance_element(ref, cd="SCOR", issr="ISO")
 
     def _get_cleaned_bic_code(self, bank_account, payment_method_code):
-        """
-        Checks if the BIC code is matching the pattern from the XSD to avoid having files generated here that are
-        refused by banks after.
-        It also returns a cleaned version of the BIC as a convenient use.
-        """
         if not bank_account.bank_bic:
             return None
         regex = self._get_regex_for_bic_code(payment_method_code)
@@ -718,11 +674,6 @@ class AccountJournal(models.Model):
         return "[A-Z]{6,6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3,3}){0,1}"
 
     def _is_qr_iban(self, payment_dict) -> bool:
-        """Tells if the bank account linked to the payment has a QR-IBAN account number.
-        QR-IBANs are specific identifiers used in Switzerland as references in
-        QR-codes. They are formed like regular IBANs, but are actually something
-        different.
-        """
         partner_bank = self.env["res.partner.bank.account"].browse(
             payment_dict["bank_account_id"]
         )
@@ -740,7 +691,7 @@ class AccountJournal(models.Model):
         iid = get_iban_part(iban, "bank")
         return bool(
             re.match(r"\d+", iid) and 30000 <= int(iid) <= 31999
-        )  # Those values for iid are reserved for QR-IBANs only
+        )
 
     def _prepare_structured_remittance_element(
         self,

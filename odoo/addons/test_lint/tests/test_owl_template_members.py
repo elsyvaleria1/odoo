@@ -11,11 +11,6 @@ from odoo.tools.assets.owl_precompile import precompile_templates, web_static_pa
 
 from . import lint_case
 
-# OWL 3 compiles a bare name in a template to ctx['name'], a template-scope
-# variable that no longer falls back to the component: `showBackend` where the
-# component defines `get showBackend()` reads undefined. The compiled code says
-# which names a template reads and never assigns; the JavaScript says which of
-# them its component (or a patch of it) defines.
 _ENTRY = re.compile(
     r'^("(?:[^"\\]|\\.)+"): \[".*?", \[.*?\], (function \(app, bdom, helpers\) \{.*?)\],$',
     re.MULTILINE | re.DOTALL,
@@ -56,8 +51,6 @@ def _block(text: str, start: int) -> str:
 
 
 def component_members(sources) -> dict[str, set[str]]:
-    # template name -> the getters and methods its component and the patches
-    # of that component's class define
     classes = defaultdict(set)
     members = defaultdict(set)
     for text in sources:
@@ -76,7 +69,6 @@ def component_members(sources) -> dict[str, set[str]]:
 
 
 def bare_member_findings(registrations: str, compiled_script: str, sources):
-    # a template reached through t-call reads its caller's variables
     called = set(_T_CALL.findall(registrations))
     members = component_members(sources)
     return sorted(

@@ -17,9 +17,6 @@ class TestApprovalRequestCount(TransactionCase):
             [("approval_type", "=", "sale"), ("target_model", "=", False)],
         ).write({"active": False})
 
-        # Paid immediately, so the order is about what these tests exercise: with
-        # account_credit installed, a customer with no credit type is cash-only
-        # and a deferred payment term refuses the confirmation before approval.
         cls.customer = cls.env["res.partner"].create(
             {
                 "name": "Count Customer",
@@ -46,8 +43,6 @@ class TestApprovalRequestCount(TransactionCase):
         )
 
     def _source_request(self):
-        """A request whose category produces sale orders: the one kind of request
-        several orders may answer to, each created from it."""
         category = self.env["approval.category"].create(
             {
                 "name": "Count Source Category",

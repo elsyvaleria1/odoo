@@ -5,11 +5,6 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def _create_move_from_pos_order_lines(self, lines):
-        # `move_ids` on sale.order.line is only defined when `sale_stock` is
-        # installed. `pos_sale` does not depend on it (`sale_stock` requires
-        # the non-auto_install `trade_stock`), so a POS+sale deployment
-        # without delivery-stock integration must skip this warehouse-mismatch
-        # logic entirely instead of crashing on the missing field.
         has_move_ids = "move_ids" in self.env["sale.order.line"]._fields
         lines_to_unreserve = self.env["pos.order.line"]
         for line in lines:

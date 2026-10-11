@@ -92,7 +92,6 @@ class BaseLRUCache:
             return list(self._cache.keys())
 
     def _is_expired(self, entry: dict[str, Any]) -> bool:
-        # from creation, not last use: a value read every hour would never age
         if not self._ttl:
             return False
         return fields.Datetime.now() - entry["created_at"] > self._ttl

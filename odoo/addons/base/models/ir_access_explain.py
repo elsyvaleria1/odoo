@@ -26,9 +26,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _explain_record(self, record: models.BaseModel, operation: str) -> dict:
-        # why the principal of self.env may or may not perform the operation
-        # on the record: every row of the model for it, evaluated one by one
-        # against the record as the decision evaluates them together
         record.check_singleton()
         env = self.env
         model_name = record._name
@@ -125,9 +122,6 @@ class IrAccess(models.Model):
         }
 
     def _explain_grants(self) -> dict[int, list[dict]]:
-        # the live grants of the principal, read as the principal (a user
-        # reads their own grants), per group they carry: the group itself and
-        # every group it implies
         grants = self.env["res.users.grant"]
         if not grants.has_access("read"):
             return {}
@@ -168,7 +162,6 @@ class IrAccess(models.Model):
         return parents
 
     def _explain_fields(self, target: models.BaseModel) -> list[dict]:
-        # the fields a sensitivity class hides from the principal on the record
         hidden = []
         for name, field in target._fields.items():
             if field.access_classes is None:
@@ -192,8 +185,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _who_can(self, record: models.BaseModel, operation: str) -> list[dict]:
-        # the active users who may perform the operation on the record, each
-        # asked in every company they work in, with the rows that admit them
         record.check_singleton()
         self._check_operation(record._name, operation)
         groups = self._get_groups_with_access(record._name, operation)
@@ -233,8 +224,6 @@ class IrAccess(models.Model):
     def _explain_as(
         self, user: models.BaseModel, record: models.BaseModel, operation: str
     ) -> dict[str, Any]:
-        # someone else's access: who may ask is the caller's rows to decide
-        # (wizard.base.explain.access's), and the question is logged
         if user != self.env.user:
             self.env["ir.access.log"]._record(
                 [

@@ -97,7 +97,7 @@ class PurchaseAgreementLine(models.Model):
                             "You cannot have a negative or unit price of 0 for an already confirmed blanket order."
                         )
                     )
-                supplier_infos = self.env["product.supplierinfo"].search(  # noqa: E8507 - one lookup per confirmed line, on its own product and vendor
+                supplier_infos = self.env["product.supplierinfo"].search(
                     [
                         ("product_id", "=", vals.get("product_id")),
                         (

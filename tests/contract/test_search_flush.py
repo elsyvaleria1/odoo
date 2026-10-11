@@ -17,7 +17,6 @@ from .conftest import requires_pg
 
 @pytest.fixture
 def search_env(scratch_cursor):
-    """Use the same model definitions with the real PostgreSQL adapter."""
     with model_test_env(FlushGroup, FlushItem, RecNode, RecAlternating) as template:
         cr = scratch_cursor
         cr.execute(

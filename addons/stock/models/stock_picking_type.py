@@ -34,8 +34,6 @@ class GroupingCriterion(NamedTuple):
 
 class StockPickingType(models.Model):
     _name = "stock.picking.type"
-    # the thread goes last: mixin.user.favorite's write returns before super()
-    # on a favourite-only toggle, which then skips the tracking snapshot
     _inherit = ["mixin.date.category", "mixin.user.favorite", "mixin.mail.thread"]
     _description = "Picking Type"
     _order = "is_user_favorite desc, sequence, id"
@@ -597,9 +595,6 @@ class StockPickingType(models.Model):
             if current and picking_type._is_default_location_suitable(
                 current, partner_usage
             ):
-                # the silent half of this gate used to be the one people ask
-                # about: "why did my operation type NOT pick up the new
-                # default?" produced nothing in any trace
                 _debug.logic(
                     "default_location_kept",
                     picking_type=picking_type.id,
@@ -625,17 +620,8 @@ class StockPickingType(models.Model):
             undecidable._raise_undecidable_default_locations()
 
     def _is_default_location_suitable(self, location, partner_usage) -> bool:
-        # `code` is the derivation's only trigger, so assigning unconditionally
-        # reset Pack's (Packing Zone -> Output), Receipts' Input and Delivery's
-        # Output on any write of `code`, including one that changed nothing.
-        # The derivation is a default, not a definition: it applies when the
-        # field is empty, and when what it holds contradicts the new code.
         self.check_singleton()
         if PARTNER_USAGE_BY_PICKING_CODE.get(self.code) == partner_usage:
-            # a transit location is the inter-warehouse and inter-company
-            # stand-in for the partner one: an incoming type resupplied from
-            # another warehouse receives from transit, not from Vendors, and
-            # re-deriving it would undo that configuration
             return location.usage in (partner_usage, "transit")
         return location.usage not in PARTNER_LOCATION_USAGES
 

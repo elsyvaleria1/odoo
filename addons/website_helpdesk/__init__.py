@@ -11,8 +11,6 @@ PUBLISHED_PUBLIC_DOMAIN = (
 
 
 def _narrow_public_team_rule(env, domain) -> None:
-    # permissions OR per group, so a second public row could only widen
-    # helpdesk's own; the website narrows that one to published teams instead
     access = env.ref("helpdesk.helpdesk_team_public_rule", raise_if_not_found=False)
     if access:
         access.sudo().write({"domain": domain, "active": True})

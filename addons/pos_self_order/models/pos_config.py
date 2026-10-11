@@ -137,10 +137,7 @@ class PosConfig(models.Model):
         string="Has paper",
         default=True,
     )
-    # printed in the QR codes and the kiosk URL, so public: it opens the self
-    # order and names the channel its devices listen on, never the till's
-    # channel, which is access_token
-    self_ordering_access_token = fields.Char(  # noqa: E8520 — published on purpose: printed in every QR code and kiosk URL
+    self_ordering_access_token = fields.Char(
         string="Self-Order Token",
         default=lambda self: str(uuid.uuid4()),
         copy=False,
@@ -149,8 +146,6 @@ class PosConfig(models.Model):
     def _init_column(self, column_name, *, new_column=False):
         if column_name != "self_ordering_access_token":
             return super()._init_column(column_name, new_column=new_column)
-        # the default is evaluated once for the whole column: every point of
-        # sale would open every other one's self order
         self.env.cr.execute(
             SQL(
                 "UPDATE pos_config SET self_ordering_access_token = gen_random_uuid()::text"
@@ -174,8 +169,6 @@ class PosConfig(models.Model):
         )
 
     def _notify_self_order(self, name, message) -> None:
-        """Send a notification every self-order device of this point of sale
-        receives: anyone holding a QR code can listen, so nothing private."""
         self.check_singleton()
         if not self.self_ordering_access_token:
             return
@@ -232,7 +225,7 @@ class PosConfig(models.Model):
 
     def _create_missing_self_order_custom_btn(self) -> None:
         for record in self:
-            exists = record.env["pos_self_order.custom_link"].search_count(  # noqa: E8507 - one probe per config, on its own links
+            exists = record.env["pos_self_order.custom_link"].search_count(
                 [
                     ("pos_config_ids", "in", record.id),
                     ("url", "=", f"/pos-self/{record.id}/products"),
@@ -363,8 +356,6 @@ class PosConfig(models.Model):
                 ]
             )
         else:
-            # Here we use "range" to determine the number of QR codes to generate from
-            # this list, which will then be inserted into a PDF.
             table_qr_code.extend(
                 [
                     {
@@ -484,7 +475,6 @@ class PosConfig(models.Model):
 
     @api.model
     def _load_pos_self_data_fields(self, config):
-        # a self-order device is public: it opens no customer display
         return [
             fname
             for fname in super()._load_pos_self_data_fields(config)
@@ -497,8 +487,6 @@ class PosConfig(models.Model):
         if not read_records:
             return read_records
         record = read_records[0]
-        # the till's read, for its computed extras, but only the fields a
-        # public self-order device is given
         allowed = set(self._load_pos_self_data_fields(config))
         for fname in [f for f in record if f in self._fields and f not in allowed]:
             del record[fname]
@@ -555,10 +543,6 @@ class PosConfig(models.Model):
         return response
 
     def _split_qr_codes_list(self, floors: list[dict], cols: int) -> list[dict]:
-        """
-        :param floors: the list of floors
-        :param cols: the number of qr codes per row
-        """
         self.check_singleton()
         return [
             {
@@ -621,7 +605,6 @@ class PosConfig(models.Model):
         return ["adyen", "razorpay", "stripe", "pine_labs"]
 
     def has_valid_self_payment_method(self) -> bool:
-        """Checks if the POS config has a valid payment method (terminal or online)."""
         self.check_singleton()
         if self.self_ordering_mode == "mobile":
             return False

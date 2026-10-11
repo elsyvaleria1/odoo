@@ -9,13 +9,10 @@ from odoo.libs.json import loads as json_loads
 
 from ..utils.cloud_storage_google_utils import generate_signed_url_v4
 
-CloudStorageGoogleCredentials = {}  # {db_name: (account_info, credential)}
+CloudStorageGoogleCredentials = {}
 
 
 def get_cloud_storage_google_credential(env):
-    """Get the credentials object of currently used account info.
-    This method is cached to because from_service_account_info is slow.
-    """
     cached_account_info, cached_credential = CloudStorageGoogleCredentials.get(
         env.registry.db_name, (None, None)
     )
@@ -62,7 +59,6 @@ class IrAttachment(models.Model):
             **kwargs,
         )
 
-    # OVERRIDES
     def _generate_cloud_storage_url(self):
         if (
             self.env.registry.settings.get(self.env, "cloud_storage_provider", False)

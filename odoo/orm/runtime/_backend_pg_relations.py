@@ -37,9 +37,6 @@ class _PostgresRelationsMixin:
                 list(records.ids),
             )
         ):
-            # PostgreSQL plans and runs the uncorrelated sub-selects of the
-            # comodel's record rules even when no link row exists; the relation's
-            # own index answers the empty case alone
             return group
         query.add_join(
             "JOIN",
@@ -60,7 +57,6 @@ class _PostgresRelationsMixin:
         column2: str,
         query: Query,
     ) -> dict[int, int]:
-        # one row per record, not one per pair: what a Count field is for
         sql_id1 = SQL.identifier(relation, column1)
         rows = records.env.execute_query(
             SQL(

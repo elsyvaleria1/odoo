@@ -21,7 +21,6 @@ class SocialPostTemplate(models.Model):
         string="Push Icon Image",
         help="This icon will be displayed in the browser notification",
     )
-    # Preview
     has_push_notifications_account = fields.Boolean(
         compute="_compute_has_push_notifications_account"
     )
@@ -31,7 +30,6 @@ class SocialPostTemplate(models.Model):
     push_notifications_preview = fields.Html(
         compute="_compute_push_notifications_preview"
     )
-    # Visitor
     use_visitor_timezone = fields.Boolean(
         string="Send at Visitors' Timezone",
         help="e.g: If you post at 15:00 your time, all visitors will receive the post at 15:00 their time.",
@@ -100,7 +98,6 @@ class SocialPostTemplate(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Assign a default push_notification_target_url is none specified and we can extract one from the message"""
         for index, values in enumerate(vals_list):
             if not values.get("push_notification_target_url") and values.get("message"):
                 message = self._prepare_post_content(
@@ -118,7 +115,6 @@ class SocialPostTemplate(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Assign a default push_notification_target_url is none specified and we can extract one from the message"""
         if not any(post.push_notification_target_url for post in self) and vals.get(
             "message"
         ):
@@ -137,7 +133,6 @@ class SocialPostTemplate(models.Model):
         return super().write(vals)
 
     def _prepare_social_post_values(self):
-        """Return the values to generate a social post from the social post template."""
         values = super()._prepare_social_post_values()
         values.update(
             {
@@ -152,7 +147,6 @@ class SocialPostTemplate(models.Model):
 
     @api.model
     def _message_fields(self) -> dict:
-        """Return the message field per media."""
         return {
             **super()._message_fields(),
             "push_notifications": "push_notification_message",

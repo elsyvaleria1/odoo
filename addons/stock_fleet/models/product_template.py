@@ -43,10 +43,5 @@ class ProductProduct(models.Model):
                 )
 
     def _trip_weight(self, quantity):
-        """What ``quantity`` of this product weighs, in its unit, without packaging.
-
-        :param float quantity: quantity in the product's unit of measure
-        :rtype: float
-        """
         self.check_singleton()
         return quantity * self.weight

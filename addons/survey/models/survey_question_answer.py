@@ -85,8 +85,6 @@ class SurveyQuestionAnswer(models.Model):
         help="External URL to redirect to when 'Redirect to URL' action is selected.",
     )
 
-    # `value` is translate=True, so the column is jsonb: a CHECK for NOT NULL passes
-    # on {"en_US": ""}, which is exactly the case it was written to reject.
     @api.constrains("value", "value_image")
     def _check_value_not_empty(self) -> None:
         for label in self:
@@ -189,7 +187,6 @@ class SurveyQuestionAnswer(models.Model):
 
     @staticmethod
     def _index_to_letters(index: int) -> str:
-        """Spreadsheet-style column naming: 0 -> "A", 25 -> "Z", 26 -> "AA", ..."""
         letters = ""
         index += 1
         while index > 0:

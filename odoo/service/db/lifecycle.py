@@ -150,7 +150,7 @@ def create_empty_database(
         def _create() -> None:
             nonlocal already_exists
             try:
-                cr.execute(  # noqa: E8501  parameterised SQL(), built above
+                cr.execute(
                     create_sql, log_exceptions=False
                 )
             except psycopg.errors.DuplicateDatabase, psycopg.errors.UniqueViolation:
@@ -232,10 +232,6 @@ def _open_public_schema(cr: BaseCursor, name: str) -> None:
 
 
 def _announce_database(db_name: str) -> None:
-    # A listener sweeping from the catalogue admits a name it has never
-    # listed only on a notify for it (`CronSchedule`); nothing in a fresh
-    # database sends one until a job triggers, so its scheduled crons would
-    # wait for the next periodic sweep.
     try:
         with closing(odoo.db.db_connect("postgres").cursor()) as cr:
             cr.connection.autocommit = True
@@ -461,7 +457,6 @@ def _database_exists(db_name: str) -> bool:
             cr.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
             return cr.fetchone() is not None
     except Exception:
-        # Unknown is treated as present: the DROP below reports the truth.
         _logger.debug("DROP DB %r: existence probe failed", db_name, exc_info=True)
         _debug.logic("database.drop.probe_failed", db=db_name)
         return True
@@ -621,11 +616,6 @@ def _rollback_db_rename(cr: BaseCursor, old_name: str, new_name: str) -> None:
             )
         )
 
-    # A backend can connect to the new name between the rename and this
-    # rollback (a catalog sweep, another cluster member, a curious psql).
-    # The forward rename already terminates and retries on ObjectInUse;
-    # giving up here instead escalates a recoverable race to "database and
-    # filestore are out of sync — manual intervention required".
     _retry_terminate_then_ddl(
         cr, new_name, f"ROLLBACK RENAME DB: {new_name} -> {old_name}", _rename_back
     )

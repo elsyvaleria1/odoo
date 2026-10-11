@@ -428,9 +428,6 @@ class TestWebsiteTourBundle(odoo.tests.TransactionCase):
         }
 
     def test_a_frontend_tour_page_inlines_no_web_client_module(self):
-        # web.assets_tests rides on frontend pages too, where the web client is
-        # not loaded: a module it drags in registers services (action) whose
-        # dependencies (title) the page never provides
         page = self._specs("web.assets_frontend")
         tests = self._specs("web.assets_tests")
         reached = discover_transitive_import_specifiers(

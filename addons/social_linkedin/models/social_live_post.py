@@ -56,9 +56,6 @@ class SocialLivePost(models.Model):
 
             session = self.env["ir.egress"].session(purpose="social_linkedin")
 
-            # The LinkedIn API limit the query parameters to 4KB
-            # An LinkedIn URN is approximatively 40 characters
-            # So we keep a big margin and we split over 50 LinkedIn posts
             for batch_linkedin_post_ids in batched(linkedin_post_ids, 50, strict=False):
                 response = account._linkedin_request(
                     "socialMetadata",
@@ -187,15 +184,10 @@ class SocialLivePost(models.Model):
                 }
 
                 if response_json.get("serviceErrorCode") == 65600:
-                    # Invalid access token
                     self.account_id._action_disconnect_accounts(response)
 
             live_post.write(values)
 
     def _format_to_linkedin_little_text(self, input_string):
-        """
-        Replaces the special characters `(){}<>[]_` with escaped versions of themselves, i.e. `\\(\\)\\{\\}\\<\\>\\[\\]`.
-        https://learn.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/little-text-format?view=li-lms-2023-03#text
-        """
         pattern = r"[\(\)\<\>\{\}\[\]\_\|\*\~\#\@]"
         return re.sub(pattern, lambda match: rf"\{match.group(0)}", input_string)

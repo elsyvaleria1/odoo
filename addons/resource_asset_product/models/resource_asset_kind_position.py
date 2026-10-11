@@ -6,7 +6,6 @@ class ResourceAssetKindPosition(models.Model):
     _description = "Asset Part Position"
     _order = "kind_id, sequence, id"
 
-    # FIELDS
     kind_id = fields.Many2one(
         comodel_name="resource.kind",
         index=True,
@@ -38,7 +37,6 @@ class ResourceAssetKindPosition(models.Model):
         help="A replacement at this position sooner than this distance on the meter is flagged.",
     )
 
-    # CONSTRAINTS
     _kind_code_uniq = models.Constraint(
         "UNIQUE(kind_id, code)", "A position code is unique within its asset kind."
     )
@@ -47,6 +45,5 @@ class ResourceAssetKindPosition(models.Model):
         "An expected life cannot be negative.",
     )
 
-    # HELPER METHODS
     def _selection_meter_kind(self):
         return self.env["resource.meter"]._fields["kind"].selection

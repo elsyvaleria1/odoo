@@ -58,8 +58,6 @@ class PortalChatter(ThreadController):
             )
             can_react = can_post
             if request.env.user._is_public():
-                # an anonymous visitor is offered the composer on a credential
-                # only, as the pages invite one to sign in to comment otherwise
                 can_post = can_post and bool(kwargs.get("token") or kwargs.get("hash"))
                 if portal_partner := get_portal_partner(
                     thread,
@@ -119,8 +117,6 @@ class PortalChatter(ThreadController):
         )
 
         Message = request.env["mail.message"]
-        # the credentials /portal/chatter_init and posting read: the signed
-        # hash names the visitor whose messages are theirs to edit
         token, _hash, pid = kw.get("token"), kw.get("hash"), kw.get("pid")
         if token or _hash:
             thread = self._get_thread_with_access(

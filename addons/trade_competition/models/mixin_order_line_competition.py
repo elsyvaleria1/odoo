@@ -3,7 +3,6 @@ from odoo import api, fields, models
 from .mixin_order_competition import POSITIONS
 from odoo.addons.trade_competition.tools import from_comparable, to_comparable
 
-# how far behind the market still counts as matching it
 MATCH_TOLERANCE = 0.01
 
 

@@ -108,7 +108,6 @@ class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
                 self.assertFalse(line.answer_type)
 
     def test_extract_comment_from_answers_preserves_zero(self):
-        """The controller decided this before validation ever ran."""
         from odoo.addons.survey.controllers.main import Survey
 
         controller = Survey()
@@ -123,7 +122,6 @@ class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
                 self.assertFalse(question._is_unanswered(extracted))
 
     def test_zero_is_not_a_valid_rating(self):
-        """A rating runs 1..N, so 0 must be rejected rather than silently skipped."""
         rating = self.questions_by_type["rating"]
         self.assertTrue(rating._check_answer(0), "rating 0 must be a validation error")
         self.assertTrue(rating._check_answer("0"))
@@ -141,7 +139,6 @@ class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
                 self.assertNotEqual(line.display_name, "Skipped")
 
     def test_nps_counts_a_zero_as_a_detractor(self):
-        """The whole point: a lost 0 does not just vanish, it inflates the score."""
         nps = self.questions_by_type["nps"]
         for score in (0, 9, 10):
             answer = self.zero_survey._create_answer(email=f"nps{score}@test.com")
@@ -157,7 +154,6 @@ class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
         self.assertEqual(summary["nps_score"], 33)
 
     def test_validation_bounds_of_zero_reach_the_dom(self):
-        """QWeb omits a t-att- whose value is falsy, and 0 is falsy."""
         question = self.env["survey.question"].create(
             {
                 "survey_id": self.zero_survey.id,
@@ -288,7 +284,6 @@ class TestZeroIsAnAnswer(common.TestSurveyCommon, HttpCase):
         self.assertEqual([bar.get("data-width-ratio") for bar in bars], ["1.0", "0.0"])
 
     def test_submit_route_keeps_a_json_number_zero(self):
-        """/survey/submit is jsonrpc: a JSON number is what a non-browser client sends."""
         answer = self.zero_survey._create_answer(email="rpc@test.com")
         answer._mark_in_progress()
         payload = {

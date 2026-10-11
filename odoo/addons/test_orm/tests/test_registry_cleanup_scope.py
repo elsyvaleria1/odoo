@@ -3,8 +3,6 @@ from odoo.tests import common
 
 class TestRegistryCleanupScopeUntouched(common.TransactionCase):
     def test_a_class_that_changes_nothing_starts_clean(self):
-        # the loader may hold the flag while at_install suites run; the class
-        # is judged by its own changes, so it starts with none
         self.assertFalse(self.registry.registry_invalidated)
         self.assertEqual(self.registry.invalidated_model_names, set())
         self.assertEqual(self._registry_guard.models_touched, set())

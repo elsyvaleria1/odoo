@@ -34,7 +34,6 @@ class TestRoomBooking(RoomCommon):
         self.assertTrue(asset.access_token)
 
     def test_an_asset_of_another_kind_cannot_become_a_room(self):
-        # A room is a model of its own, and no row moves between tables.
         asset = self.env["resource.resource"].create(
             {
                 "name": "Parcel",

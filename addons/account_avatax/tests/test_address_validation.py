@@ -57,10 +57,6 @@ class TestAccountAvalaraAddressValidation(TestAccountAvalaraAddressValidationCom
             self._test_address_validation_flow()
 
     def test_address_validation_NA_only(self):
-        """Avalara Address Validation endpoint only works with US and Canadian Addresses.
-
-        Do not call the service for other countries.
-        """
         partner = self._create_partner()
         partner.country_id = self.country_not_us
         with self.assertRaises(ValidationError):
@@ -74,7 +70,6 @@ class TestAccountAvalaraAddressValidation(TestAccountAvalaraAddressValidationCom
         self.fp_avatax.auto_apply = True
         self.fp_avatax.state_ids = self.partner.state_id
 
-        # ensure this doesn't raise ValidationError from _check_address
         self.env["account.payment"].create({"partner_id": self.partner.id})
 
 

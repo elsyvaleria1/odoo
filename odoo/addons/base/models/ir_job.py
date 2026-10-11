@@ -50,9 +50,6 @@ _debug = DebugLog(__name__)
 
 NOTIFY_PENDING_KEY = "ir.job.notify"
 
-# what of its caller's context a job keeps: the locale, the company scope and,
-# with the authority it holds, on whose behalf it acts and why a privilege is
-# held (the access log reads it)
 ALLOWED_CONTEXT_KEYS = (
     "lang",
     "tz",
@@ -689,9 +686,6 @@ class IrJob(models.Model):
     def _widen_deduplicated_company_scope(
         self, job_id: int, companies: list[int]
     ) -> None:
-        # one job serves every caller of its identity: it works in every
-        # company one of them named, the first caller's first still current;
-        # a job queued with no scope keeps its user's own and is not narrowed
         cr = self.env.cr
         cr.execute(
             SQL(
@@ -741,9 +735,6 @@ class IrJob(models.Model):
         )
         env = self.env
         if row and (env.su or env.privileges):
-            # one job serves every caller of its identity: it runs with the
-            # widest authority among them, so an elevated caller is not served
-            # by a job queued without its elevation
             env.cr.execute(
                 SQL(
                     "UPDATE ir_job SET elevated = elevated OR %s, privileges = ("
@@ -1116,9 +1107,6 @@ class IrJob(models.Model):
         for attempt in range(1, CLAIM_MAX_ATTEMPTS + 1):
             try:
                 if serialise:
-                    # the capacity count and the pick must see every claim
-                    # committed before the lock was granted; a snapshot taken
-                    # at or before the lock statement does not
                     cr.use_read_committed()
                     cr.execute(
                         "SELECT pg_advisory_xact_lock("
@@ -1199,8 +1187,6 @@ class IrJob(models.Model):
     def _get_claimed_target(
         cr, job: dict[str, Any]
     ) -> tuple[api.Environment, models.BaseModel]:
-        # a job holds the authority its caller held: superuser mode and the
-        # privileges that still are privileges
         privileges = frozenset()
         if job["privileges"]:
             privileges = frozenset(
@@ -1217,8 +1203,6 @@ class IrJob(models.Model):
             su=bool(job["elevated"]),
             privileges=privileges,
         )
-        # the public user is archived so that nobody logs in as it, not
-        # because it left: what an anonymous caller queued runs as it
         if is_user_archived(env) and not env.user._is_public():
             _debug.logic("job.terminal", job=job["id"], reason="user_archived")
             raise TerminalJobError(
@@ -1266,7 +1250,6 @@ class IrJob(models.Model):
                 )
             )
         if idle_timeout := job_config.get("idle_timeout"):
-            # transaction-local: the server-wide timeout still guards the rest
             cr.execute(
                 SQL(
                     "SELECT set_config('idle_in_transaction_session_timeout', %s, true)",
@@ -1725,7 +1708,6 @@ class IrJob(models.Model):
 
     @api.model
     def _expedite(self, identity_key: str) -> None:
-        """A job asked for again without a date runs as soon as it can."""
         self.env.cr.execute(
             SQL(
                 "UPDATE ir_job SET eta = NULL, state = %s,"

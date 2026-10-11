@@ -45,8 +45,6 @@ class Test_PerformanceBase(models.Model):
 
     @api.model
     def contended_increment(self, record_id, lock_first=False):
-        # the subject of qualities.md scenario 5: N writers on one row, with
-        # and without taking the row lock before the read-modify-write
         record = self.browse(record_id)
         if lock_first:
             record.lock_for_update(wait=True)

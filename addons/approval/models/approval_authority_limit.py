@@ -73,11 +73,6 @@ class ApprovalAuthorityLimit(models.Model):
 
     @api.model
     def _get_user_limits(self, users, model_name: str, verb: str, request) -> dict:
-        """The highest live limit each of `users` holds, in the request's currency.
-
-        A limit holds while its grant does, in the companies the grant is scoped to;
-        an unscoped grant's limit holds everywhere.
-        """
         if not users:
             return {}
         company = request.company_id

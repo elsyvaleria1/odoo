@@ -6,10 +6,10 @@ from odoo.tools import safe_eval
 from odoo.addons.base.models.ir_ui_view_arch import ElementHandler, register
 
 GANTT_VALID_ATTRIBUTES = {
-    "__validate__",  # ir.ui.view implementation detail
+    "__validate__",
     "date_start",
     "date_stop",
-    "default_scale",  # should be dropped -- tracked in t27957
+    "default_scale",
     "default_range",
     "class",
     "js_class",
@@ -33,7 +33,7 @@ GANTT_VALID_ATTRIBUTES = {
     "disable_drag_drop",
     "duration_field",
     "total_row",
-    "scales",  # should be renamed to ranges -- tracked in t27957
+    "scales",
     "thumbnails",
     "precision",
     "color",
@@ -56,8 +56,6 @@ class IrUiView(models.Model):
 
     type = fields.Selection(selection_add=[("gantt", "Gantt")])
 
-    # What the client's scale table accepts, scale by scale; a key or a part
-    # outside this used to be dropped without a word.
     _GANTT_CELL_PRECISIONS = {
         "day": ("full", "half", "quarter"),
         "week": ("full", "half"),

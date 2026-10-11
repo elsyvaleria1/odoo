@@ -48,7 +48,6 @@ class LazadaOrderItem(models.Model):
 
     @api.constrains("sale_order_line_id", "stock_move_id")
     def _check_stock_move(self) -> None:
-        """Ensure stock move matches the sale order line."""
         for order_item in self:
             if (
                 order_item.stock_move_id
@@ -63,10 +62,6 @@ class LazadaOrderItem(models.Model):
                 )
 
     def write(self, vals):
-        """Update order item and adjust sale order line quantity if canceled.
-
-        :param dict vals: Values to write
-        """
         if "status" in vals:
             new_status = vals["status"]
             diff_order_items = self.filtered(

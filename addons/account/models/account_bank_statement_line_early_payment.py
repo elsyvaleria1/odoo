@@ -228,11 +228,6 @@ class AccountBankStatementLine(models.Model):
         return self._is_payment_difference_written_off(currency, shortfall, limit)
 
     def _is_payment_difference_written_off(self, currency, difference, limit) -> bool:
-        """Tell whether a difference in `currency` is small enough to write off.
-
-        The limit is an amount of the company currency, so a difference in any
-        other currency is never read against it.
-        """
         return (
             bool(limit)
             and currency == self.company_currency_id
@@ -251,18 +246,6 @@ class AccountBankStatementLine(models.Model):
         return config.amount_payment_difference
 
     def _prepare_payment_difference_vals(self, move_lines, new_lines, other_lines):
-        """Return the line that books what is left once `move_lines` are settled.
-
-        `None` when nothing is left, when what is left is more than the company
-        writes off, or when a currency other than the company's is involved:
-        there the remainder is an exchange matter and stays on the suspense
-        account for a person.
-
-        :param recordset move_lines: the journal items being settled
-        :param list new_lines: the values of the counterpart lines being added
-        :param recordset other_lines: the counterpart lines already on the move
-        :rtype: dict | None
-        """
         self.check_singleton()
         company_currency = self.company_currency_id
         if self._get_transaction_currency() != company_currency or any(
@@ -333,18 +316,12 @@ class AccountBankStatementLine(models.Model):
                 amount_currency, transaction_currency_id, self.company_id, self.date
             )
         elif transaction_amount := self._get_accounting_amounts_and_currencies()[0]:
-            # The statement line's rate is its rounded company amount over its
-            # transaction amount, so applying it to a residual larger than the
-            # transaction scales that rounding error up with the ratio.
             rate_noise = (
                 self.company_currency_id.rounding
                 / 2
                 * abs(amounts_in_st_curr["amount_currency"] / transaction_amount)
             )
 
-        # Compare the rounded difference with the unrounded noise: rounding the
-        # noise too turns the half cent of a full payment into a whole cent and
-        # swallows a genuine one-cent difference.
         exchange_diff = self.company_currency_id.round(origin_balance - amount)
         if abs(exchange_diff) <= rate_noise:
             _debug.logic(

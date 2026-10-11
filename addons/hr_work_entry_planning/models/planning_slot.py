@@ -17,23 +17,12 @@ class PlanningSlot(models.Model):
     _inherit = "planning.slot"
 
     def _create_work_entries(self) -> None:
-        # Similar to `_create_work_entries` for attendances but this function assumes big batches
-        # (due to the publish button that published all slots)
-        # Also note that slots are assumed to stay as is after being published, any other change will need a
-        # full work entry regeneration.
         self_with_employee = self.filtered(lambda s: s.employee_id)
         if not self_with_employee:
             _debug.logic(
                 "planning_work_entries_skipped", reason="no_employee", slots=self
             )
             return
-        # The procedure for creating a work entry within an already generated period
-        # is more complicated for planning slots than for leaves because leaves override
-        # attendance periods, here we are not able to just archive work entries we do not want
-        # etc...
-        # We will instead archive all work entries that are touched by the current planning slot's period
-        # (slots don't have an overlap constraint), and regenerate all work entries that were covered by them.
-        # Since all we need is already in the database we can use that query to have better performance.
         with _debug.perf(
             "planning_slot.create_work_entries", slots=self_with_employee
         ) as span:
@@ -83,8 +72,6 @@ class PlanningSlot(models.Model):
             )
             query_result = self.env.cr.dictfetchall()
             span.set(matched_slots=len(query_result))
-            # Group by period to generate to profit from batching
-            # Contains [(start, stop)] = [version_ids]
             periods_to_generate = defaultdict(list)
             work_entries_to_archive = []
             for row in query_result:
@@ -192,7 +179,6 @@ class PlanningSlot(models.Model):
             )
 
     def unlink(self):
-        # Archive linked work entries upon deleting slots
         if _debug.lifecycle.enabled:
             _debug.lifecycle(
                 "planning_slots_unlinked",
@@ -207,15 +193,6 @@ class PlanningSlot(models.Model):
         return super().unlink()
 
     def _get_planning_duration(self, date_start, date_stop):
-        """
-        If the interval(date_start, date_stop) is equal to the planning_slot's interval, return the slot's allocated hours.
-        If the interval(date_start, date_stop) is a subset of the planning_slot's interval,
-        a new (non saved) planning_slot will be created to compute the duration according to planning rules.
-        If the interval(date_start, date_stop) is not fully inside of the planning_slot's interval the behaviour is undefined
-
-        :return: The real duration according to the planning app
-        :rtype: number
-        """
         self.check_singleton()
         if self.start_datetime == date_start and self.end_datetime == date_stop:
             _debug.logic(

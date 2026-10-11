@@ -13,8 +13,6 @@ class TestVersionPayslipIntegrity(TestPayslipBase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Richard already has one version of his running contract; a second one
-        # makes it archivable at all (hr forbids leaving an employee with none).
         cls.version = cls.richard_emp.create_version(
             {
                 "date_version": date(2025, 1, 1),
@@ -34,7 +32,6 @@ class TestVersionPayslipIntegrity(TestPayslipBase):
         )
 
     def test_archive_version_with_draft_payslip(self):
-        """A draft payslip does not pin anything."""
         self._create_payslip()
         self.version.action_archive()
         self.assertFalse(self.version.active)
@@ -47,7 +44,6 @@ class TestVersionPayslipIntegrity(TestPayslipBase):
         with self.assertRaises(ValidationError):
             self.version.action_archive()
 
-        # ...and it becomes archivable again once the payslip is back to draft
         payslip.action_payslip_draft()
         self.version.action_archive()
         self.assertFalse(self.version.active)

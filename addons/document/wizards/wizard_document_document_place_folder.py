@@ -16,7 +16,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
 
     @api.model
     def default_get(self, fields: list[str]) -> dict:
-        """Return the default values, computing the destination folder."""
         result = super().default_get(fields)
         if "destination" in fields and not result.get("destination"):
             if self.env.user.share:
@@ -55,15 +54,11 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
         compute="_compute_destination_children_ids",
     )
 
-    # the destination's name: the client sets it as the user picks a folder,
-    # the server computes it from `destination` whatever the client sent
     display_name = fields.Char(
         string="Destination Display Name",
         compute="_compute_display_name",
         readonly=False,
     )
-    # Destination-related fields updated by the client for the client - do not use in the backend. No need
-    # for compute/search because all is already fetched for the searchpanel and must be kept locally consistent
     user_permission = fields.Selection(
         selection=[("edit", "Editor"), ("view", "Viewer"), ("none", "None")],
         string="Destination User Permission",
@@ -73,9 +68,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
 
     @api.depends("destination")
     def _compute_display_name(self) -> None:
-        # what the success toast and the confirm button name: the destination,
-        # never the wizard ("wizard.document.document.place.folder,1") -- the
-        # web client reads display_name through this compute whatever it sent
         labels = {
             UserFolder.MY: self.env._("My Drive"),
             UserFolder.COMPANY: self.env._("Company"),
@@ -101,9 +93,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
     @api.depends("destination")
     def _compute_destination_children_ids(self) -> None:
         locations_to_targets = {}
-        # `destination` is a `user_folder_id`: a real folder, or a virtual root
-        # with no folder to look up. `.isnumeric()` on it also assumed a string,
-        # which a wizard whose destination is not set yet is not.
         destinations = {wizard: UserFolder.parse(wizard.destination) for wizard in self}
         if wizards_with_folders_locations := self.filtered(
             lambda w: destinations[w] is not None and destinations[w].is_folder
@@ -119,9 +108,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
                 ),
                 ["shortcut_document_id"],
             )
-            # Key by id, never by position: ``search_fetch`` returns rows in the
-            # model's ``_order``, not in wizard order, and a missing folder
-            # (unreadable or stale destination) would shift every later pair.
             folders_by_id = folders.grouped("id")
             for wizard in wizards_with_folders_locations:
                 if folder := folders_by_id.get(destinations[wizard].folder_id):
@@ -136,8 +122,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
             Domain("user_folder_id", "in", list(set(targets.values())))
             & Domain("type", "!=", "folder")
         )
-        # user_folder_id reads as a string (a folder id is its str), while a
-        # resolved folder target is an int the search side accepts as well.
         by_target = children.grouped("user_folder_id")
         for wizard in self:
             target = targets[wizard]
@@ -146,7 +130,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
             )
 
     def action_confirm(self) -> None:
-        """Execute the selected operation on the documents."""
         self.check_singleton()
         _debug.pipeline(
             "operation",
@@ -184,17 +167,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
                 "user_folder_id": self.destination,
             }
             if attachment_copy.type == "url":
-                # A `document.document` of type url keeps its address in its OWN
-                # `url` field; an `ir.attachment` keeps it in the attachment's.
-                # Copying only the type produced a url document with no url --
-                # `_is_safe_redirect_url(False)` is False, so `/documents/content`
-                # answered 404 and the entry pointed nowhere, silently.
-                #
-                # Carrying it also re-imposes `_check_url`, which is the point
-                # rather than a side effect: a document url must be complete, so
-                # an attachment holding a relative one (`/web/content/42`, which
-                # is how Odoo links its own files) is now refused with that
-                # constraint's own message instead of becoming a broken entry.
                 values["url"] = attachment_copy.url
             self.env["document.document"].create(values)
         elif self.operation == "shortcut":
@@ -208,7 +180,6 @@ class WizardDocumentDocumentPlaceFolder(models.TransientModel):
     @api.readonly
     @api.model
     def get_any_editor_destination(self) -> list:
-        """Return one folder the user has editor access to, if any."""
         return self.env["document.document"].search_read(
             [
                 ("type", "=", "folder"),

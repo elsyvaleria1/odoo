@@ -6,7 +6,6 @@ from odoo.addons.hr_payroll.tests.common import TestPayslipBase
 @tagged("-at_install", "post_install", "payslip_line")
 class TestPayslipLineEdit(TestPayslipBase, HttpCase):
     def test_ui(self):
-        """Test editing payslip line flow"""
         self.user_admin = self.env.ref("base.user_admin")
         self.user_admin.company_ids |= self.company_us
         self.user_admin.write(

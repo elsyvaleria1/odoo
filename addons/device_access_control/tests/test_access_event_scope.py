@@ -70,8 +70,6 @@ class TestAccessEventCompanyScope(TransactionCase):
         )
 
     def test_a_command_goes_only_to_a_door_its_sender_operates(self):
-        # a command opens or closes a door: it is sent to a device its sender
-        # may write, as the door buttons write it, and read where the device is
         manager = self.env["res.users"].create(
             {
                 "name": "Door Manager A",
@@ -102,9 +100,6 @@ class TestAccessEventCompanyScope(TransactionCase):
         read = commands.with_user(manager).search([("device_id", "in", doors.ids)])
         self.assertEqual(read, sent)
         self.assertNotIn(elsewhere, read)
-        # reading no door, a plain user has no command to read at all: the
-        # search is refused where device.device is closed to them, and empty
-        # where another module opens some of its rows (iot)
         with contextlib.suppress(AccessError):
             self.assertFalse(
                 commands.with_user(self.user_a).search([("device_id", "in", doors.ids)])

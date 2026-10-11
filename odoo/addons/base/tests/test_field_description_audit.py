@@ -120,8 +120,6 @@ class TestFieldDescriptionMemo(TransactionCaseWithUserDemo):
         Bank = self.env["res.partner.bank.account"]
         field = Bank._fields["acc_type"]
         self.assertIn("selection", field._dynamic_description_attrs(self.env))
-        # what the installed modules answer, not a literal: account_iban
-        # and several l10n modules extend the selection
         supported = Bank._get_account_types_supported()
         self.assertEqual(
             Bank.fields_get(["acc_type"], ["selection"])["acc_type"]["selection"],

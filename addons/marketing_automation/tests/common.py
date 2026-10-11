@@ -17,7 +17,6 @@ class MarketingAutomationCase(MassMailCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # store MA crons on cls, always handy to have them available without ref
         cls.cron_ma_sync_participants = cls.env.ref(
             "marketing_automation.ir_cron_campaign_sync_participants"
         )
@@ -27,15 +26,9 @@ class MarketingAutomationCase(MassMailCase):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues."""
         with freeze_time(mock_dt), patch.object(self.env.cr, "now", lambda: mock_dt):
             yield
 
-    # ------------------------------------------------------------
-    # TOOLS AND ASSERTS
-    # ------------------------------------------------------------
 
     def assertMarketAutoTraces(
         self,
@@ -45,40 +38,10 @@ class MarketingAutomationCase(MassMailCase):
         canceled_res_ids=None,
         **trace_values,
     ):
-        """Check content of traces.
-
-        :param participants_info: [{
-            # participants
-            'participants': participants record_set,      # optional: allow to check coherency of expected participants
-            'status': status,                             # marketing trace status (processed, ...) for all records
-            # record info
-            'records': records,                           # records going through this activity
-            'records_to_partner: {rec.id: <res.partner>}  # linked partner (recipient)
-            'records_to_status: {rec.id: status}          # record-specific override of 'status'
-            # marketing trace
-            'fields_values': dict                         # optional fields values to check on marketing.trace
-            # mailing/sms trace
-            'trace_author': author of mail/sms            # used notably to ease finding emails / sms
-            'trace_content': content of mail/sms          # content of sent mail / sms / whatsapp
-            'trace_email': email logged on trace          # may differ from 'email_normalized'
-            'trace_email_to_mail': email logged on mail   # for assertMailMail
-            'trace_email_to_recipients': email            # for assertSentEmail
-            'trace_failure_type': failure_type of trace   # to check status update in case of failure
-            'trace_status': status of mailing trace,      # if not set: check there is no mailing trace
-            'mail_values': mail.mail check                # for assertMailMail
-        }, {}, ... ]
-        :param activity: a marketing.activity on which marketing traces are about
-            to be checked, as well as sub records like mailing.trace if requested
-            by status;
-        :param strict: whether activity traces must match given records IDs;
-        :param canceled_res_ids: quick check for canceled marketing traces not given
-            in participants_info (e.g. unlinked records, quick validation, ...);
-        """
         all_records = self.env[activity.campaign_id.model_name]
         for info in participants_info:
             all_records += info["records"]
 
-        # find traces linked to activity, ensure we have one trace / record
         traces = self.env["marketing.trace"].search(
             [
                 ("activity_id", "in", activity.ids),
@@ -99,7 +62,6 @@ class MarketingAutomationCase(MassMailCase):
             )
         debug_info = "\n".join(traces_info)
 
-        # check traces / records coherency through campaign
         canceled_res_ids = canceled_res_ids or set()
         all_record_ids = set(all_records.ids) | canceled_res_ids
         if strict:
@@ -127,7 +89,6 @@ class MarketingAutomationCase(MassMailCase):
             self.assertEqual(set(traces.mapped(key)), {value})
 
         for info in participants_info:
-            # check input
             invalid = set(info.keys()) - {
                 "fields_values",
                 "participants",
@@ -137,19 +98,17 @@ class MarketingAutomationCase(MassMailCase):
                 "records_to_email_to_recipients",
                 "records_to_partner",
                 "records_to_trace_status",
-                "status",  # marketing.trace status
+                "status",
                 "trace_content",
                 "trace_email",
                 "trace_email_to_mail",
                 "trace_email_to_recipients",
                 "trace_failure_reason",
                 "trace_failure_type",
-                "trace_status",  # mailing.trace status
+                "trace_status",
                 "mail_values",
-                # sms (see sms modules)
                 "check_sms",
                 "trace_sms_number",
-                # whatsapp (see wa modules)
                 "wa_from_mock",
             }
             if invalid:
@@ -160,7 +119,6 @@ class MarketingAutomationCase(MassMailCase):
                 [trace.id for trace in traces if trace.res_id in records.ids]
             )
 
-            # check link to records, continue if no records (aka no traces)
             if not records:
                 self.assertFalse(linked_traces)
                 continue
@@ -168,14 +126,12 @@ class MarketingAutomationCase(MassMailCase):
                 set(linked_traces.mapped("res_id")), set(info["records"].ids)
             )
 
-            # check trace details
             fields_values = info.get("fields_values") or {}
             records_by_id = records.grouped(lambda r: r.id)
             for trace in linked_traces:
                 record = records_by_id.get(trace.res_id, records.browse())
                 trace_info = f"Trace {trace.id}: doc {trace.res_id} ({record.email_normalized}-{record.name})"
 
-                # asked marketing.trace values
                 self.assertEqual(
                     trace.state,
                     info["status"],
@@ -196,7 +152,6 @@ class MarketingAutomationCase(MassMailCase):
                                 f"Marketing Trace: expected {fvalue} for {fname}, got {trace[fname]} for {trace_info}",
                             )
 
-            # check sub-records (mailing related notably)
             if info.get("trace_status") and activity.activity_type == "mail":
                 self.assertMarketAutoTracesMail(info, activity, traces)
             elif not info.get("trace_status"):
@@ -209,7 +164,6 @@ class MarketingAutomationCase(MassMailCase):
         return traces
 
     def assertMarketAutoTracesMail(self, participant_info, activity, traces):
-        # prepare optional record-specific values
         partners = participant_info.get("records_to_partner", {})
         trace_emails = participant_info.get("records_to_trace_email", {})
         mail_emails = participant_info.get("records_to_email_to_mail", {})
@@ -244,16 +198,13 @@ class MarketingAutomationCase(MassMailCase):
         self.assertMailTraces(
             [
                 {
-                    # record info
                     "record": record,
-                    # mail.mail
                     "content": participant_info.get("trace_content"),
                     "failure_type": participant_info.get("trace_failure_type", False),
                     "failure_reason": participant_info.get(
                         "trace_failure_reason", False
                     ),
                     "mail_values": participant_info.get("mail_values"),
-                    # mailing.trace + mail info
                     **add_info,
                 }
                 for record, add_info in zip(
@@ -265,16 +216,12 @@ class MarketingAutomationCase(MassMailCase):
         )
 
     def assertActivityWoTrace(self, activities):
-        """Ensure activity has no traces linked to it"""
         for activity in activities:
             with self.subTest(activity=activity):
                 self.assertMarketAutoTraces(
                     [{"records": self.env[activity.model_name]}], activity
                 )
 
-    # ------------------------------------------------------------
-    # RECORDS TOOLS
-    # ------------------------------------------------------------
 
     @classmethod
     def _create_mailing(cls, model, user=None, **mailing_values):
@@ -393,8 +340,6 @@ class MarketingAutomationCase(MassMailCase):
         )
 
     def _force_activity_create_date(self, activities, create_date):
-        """As create_date is set through sql NOW it is not possible to mock
-        it easily."""
         self.env.cr.execute(
             "UPDATE marketing_activity SET create_date=%s WHERE id = ANY(%s)",
             (

@@ -15,9 +15,6 @@ from odoo.tools.misc import file_path
 
 _debug = DebugLog(__name__)
 
-# Side margins are explicit: a company paperformat with margin_left/right at 0 lets a
-# table wider than the sheet bleed into the printer's non-printable edge and lose the
-# last digit of its widest column.
 PDF_PAPERFORMAT_ARGS = {
     "data-report-margin-top": 10,
     "data-report-margin-left": 7,
@@ -37,9 +34,6 @@ class AccountReportExport(models.Model):
             or False
         )
 
-    ####################################################
-    # OPTIONS: EXPORT
-    ####################################################
     def _init_options_export(self, options, previous_options):
         options["report_title"] = previous_options.get("report_title")
 
@@ -297,16 +291,12 @@ class AccountReportExport(models.Model):
             annotated_lines=len(report_annotations),
         )
 
-        # For reports with lines generated for accounts, the account name and codes are shown in a single column.
-        # To help user post-process the report if they need, we should in such a case split the account name and code in two columns.
         account_lines_split_names = {}
         for line in lines:
             split_name = self._split_line_name_for_xlsx(line)
             if split_name:
                 account_lines_split_names[line["id"]] = split_name
 
-        # Set the (Account) Name column width to 50.
-        # If we have account lines and split the name and code in two columns, we will also set the code column.
         if len(account_lines_split_names) > 0:
             sheet.column(0, 0, 13)
             sheet.column(1, 1, 50)
@@ -322,17 +312,13 @@ class AccountReportExport(models.Model):
         if not options.get("no_xlsx_currency_code_columns"):
             self._add_xlsx_currency_codes_columns(options, lines)
 
-        # keep tracks of cells merged vertically
         merged_rowspan_cells = set()
 
         original_x_offset = 1 if len(account_lines_split_names) > 0 else 0
 
         y_offset = 0
-        # 1 and not 0 to leave space for the line name. original_x_offset allows making place for the code column if needed.
         x_offset = original_x_offset + 1
 
-        # Add headers.
-        # For this, iterate in the same way as done in main_table_header template
         column_headers_render_data = self._prepare_column_headers_render_data(options)
         for header_level_index, header_level in enumerate(options["column_headers"]):
             for header_to_render in (
@@ -370,7 +356,6 @@ class AccountReportExport(models.Model):
                     rowspan=rowspan,
                 )
 
-                # tracks cells merged vertically
                 if rowspan > 1:
                     for row in range(1, rowspan):
                         merged_rowspan_cells.update(
@@ -423,7 +408,6 @@ class AccountReportExport(models.Model):
         x_offset = original_x_offset + 1
 
         if account_lines_split_names:
-            # If we have a separate account code column, add a title for it
             write_cell(sheet, x_offset - 2, y_offset, self.env._("Code"), title_format)
             write_cell(
                 sheet, x_offset - 1, y_offset, self.env._("Account Name"), title_format
@@ -454,7 +438,6 @@ class AccountReportExport(models.Model):
         if options.get("order_column"):
             lines = self.sort_lines(lines, options)
 
-        # Disable bold styling for the max level.
         max_level = max(line.get("level", -1) for line in lines) if lines else -1
         _debug.logic(
             "xlsx_max_level_unbolded",
@@ -465,13 +448,11 @@ class AccountReportExport(models.Model):
             header_rows=y_offset,
         )
         if max_level in {0, 1, 2}:
-            # Total lines are supposed to be a level above, so we don't touch them.
             for wb_format in (
                 s for s in workbook_formats[max_level] if "total" not in s
             ):
                 workbook_formats[max_level][wb_format]["bold"] = False
 
-        # Add lines.
         counter = 1
         for y, line in enumerate(lines):
             level = line.get("level")
@@ -484,7 +465,6 @@ class AccountReportExport(models.Model):
             is_initial_line = line_id[-1][0] == "initial" if line_id else False
             is_total_line = line_id[-1][0] == "total" if line_id else False
 
-            # Write the first column(s), with a specific style to manage the indentation.
             cell_type, cell_value = self._get_cell_type_value(line)
             account_code_cell_format = get_format("text", level)
 
@@ -499,9 +479,7 @@ class AccountReportExport(models.Model):
 
             x_offset = original_x_offset + 1
             if line["id"] in account_lines_split_names:
-                # Write the Account Code and Name columns.
                 code, name = account_lines_split_names[line["id"]]
-                # Don't indent the account code and don't format is as a monetary value either.
                 write_cell(sheet, 0, y + y_offset, code, account_code_cell_format)
                 write_cell(sheet, 1, y + y_offset, name, cell_format)
             else:
@@ -534,7 +512,6 @@ class AccountReportExport(models.Model):
                         account_code_cell_format,
                     )
 
-            # Write all the remaining cells.
             columns = line["columns"]
             if (
                 options.get("column_percent_comparison")
@@ -563,7 +540,6 @@ class AccountReportExport(models.Model):
                     datetime=cell_type == "date",
                 )
 
-            # Write annotations.
             if report_annotations and (
                 line_annotations := report_annotations.get(line["id"])
             ):
@@ -632,7 +608,6 @@ class AccountReportExport(models.Model):
             lines=len(lines),
         )
 
-        # Add 'Currency Code' values to each line
         for line in lines:
             new_column_values = []
 
@@ -652,7 +627,6 @@ class AccountReportExport(models.Model):
 
     @_debug.perf.timed
     def _get_xlsx_options_sheet(self, options_list):
-        """A sheet summarising every filter and option active at the moment of the export."""
         filters_sheet = SheetBuilder(self.env._("Filters"))
         filters_sheet.column(0, 0, 20)
         filters_sheet.column(1, 1, 50)
@@ -668,12 +642,10 @@ class AccountReportExport(models.Model):
             )
             return filters_sheet
 
-        # Find uncommon keys
         options_sets = list(map(set, options_list))
         common_keys = set.intersection(*options_sets)
         all_keys = set.union(*options_sets)
         uncommon_options_keys = all_keys - common_keys
-        # Try to find the common filter values between all reports to avoid duplication.
         common_options_values = {}
         for key in common_keys:
             first_value = options_list[0][key]
@@ -689,7 +661,6 @@ class AccountReportExport(models.Model):
             uncommon=len(uncommon_options_keys),
         )
 
-        # Write common options to the sheet.
         filters_sheet.cell(y_offset, 0, self.env._("All"), name_style)
         y_offset += 1
         y_offset = self._write_report_options_to_xlsx_sheet(
@@ -707,7 +678,6 @@ class AccountReportExport(models.Model):
 
             if y_offset == new_offset:
                 y_offset -= 1
-                # Clear the report name's cell since it didn't add any data to the xlsx.
                 filters_sheet.cell(y_offset, 0, " ")
             else:
                 y_offset = new_offset
@@ -725,10 +695,9 @@ class AccountReportExport(models.Model):
             return y_offset
 
         def is_option_printable(option_key) -> bool:
-            """Check if the option should be printed based on options_to_print."""
             return not options_to_print or option_key in options_to_print
 
-        start_y_offset = y_offset  # debuglog
+        start_y_offset = y_offset
         for _sequence, option_key, title, lines in sorted(
             self._get_xlsx_printable_filters(options, options_to_print),
             key=lambda entry: entry[0],
@@ -745,7 +714,6 @@ class AccountReportExport(models.Model):
         return y_offset
 
     def get_default_report_filename(self, options, extension):
-        """The default to be used for the file when downloading pdf,xlsx,..."""
         self.check_singleton()
         if title := options.get("report_title"):
             _debug.logic("filename_from_title", report=self, extension=extension)
@@ -757,7 +725,6 @@ class AccountReportExport(models.Model):
         def _transform_period(period=""):
             if dates := re.findall(r"\d{2}/\d{2}/\d{4}", period):
                 return f"{'_'.join(dates).replace('/', '')}"
-            # We replace _-_ to handle periods with type 'quarter'
             return f"{period.replace(' ', '_').replace('_-_', '_').lower()}"
 
         def _get_company_name(companies):
@@ -834,7 +801,6 @@ class AccountReportExport(models.Model):
             bodies = []
 
             for report, report_options in reports_with_options:
-                # Use custom handler's PDF export method if available
                 custom_handler_model = report._get_custom_handler_model()
                 handler = (
                     self.env[custom_handler_model]
@@ -896,7 +862,6 @@ class AccountReportExport(models.Model):
         if len(files_stream) > 1:
             result_stream = action_report._merge_pdfs(files_stream)
             result = result_stream.getvalue()
-            # Close the different stream
             result_stream.close()
             for file_stream in files_stream:
                 file_stream.close()
@@ -961,7 +926,6 @@ class AccountReportExport(models.Model):
             "css_custom_class", ""
         )
 
-        # Render.
         return self.env["ir.qweb"]._render(template, render_values)
 
     def _get_layout_footer(self, rcontext):

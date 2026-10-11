@@ -28,8 +28,6 @@ class TestChangeset(TransactionCase):
             }
         )
         if "approval.binding" in cls.env:
-            # the approval overlay would turn an activation into a request;
-            # this suite pins the activation rules themselves
             cls.env["approval.binding"].sudo().search(
                 [
                     (
@@ -154,7 +152,6 @@ class TestChangeset(TransactionCase):
         self.assertIn(implied, self.readers.implied_ids, "a module's load")
 
     def test_the_model_form_and_an_import_stage_as_the_access_form_does(self):
-        # the same person's edit of the same row, through another door
         for door in ("ir.model", "base_import.import"):
             with self.subTest(door=door), calling(door):
                 self.guard.with_user(self.admin).write(
@@ -202,7 +199,6 @@ class TestChangeset(TransactionCase):
         return self.changeset()
 
     def test_a_widening_is_another_persons_to_activate(self):
-        # the reader, held to the a-industries, would read every industry
         changeset = self.stage("[('name', '!=', False)]")
         changeset.with_user(self.admin).action_propose()
 
@@ -229,7 +225,6 @@ class TestChangeset(TransactionCase):
         other = new_test_user(
             self.env, login="access_admin_2", groups="base.group_erp_manager"
         )
-        # meanwhile the reader leaves the group the change set moves
         self.reader.group_ids = [Command.unlink(self.readers.id)]
 
         with self.assertRaisesRegex(UserError, "propose it again"):

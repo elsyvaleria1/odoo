@@ -1,6 +1,5 @@
 from odoo import fields, models
 
-# Diagnosis reads the code; only a fix writes a branch and opens its pull request.
 DIAGNOSE_PERMISSIONS = {"contents": "read", "metadata": "read"}
 
 

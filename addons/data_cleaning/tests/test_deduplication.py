@@ -125,7 +125,6 @@ class TestDeduplication(test_common.TestCommon):
             self.MyModel.create_threshold, 0, "Suggestion Threshold should be at 0"
         )
 
-        # both records are grouped
         self.MyModel.find_duplicates()
         self.MyModel._compute_records_to_merge_count()
 
@@ -133,7 +132,6 @@ class TestDeduplication(test_common.TestCommon):
             self.MyModel.records_to_merge_count, 2, "2 record should have been found"
         )
 
-        # raising the suggestion threshold above the similarity drops the group
         self.MyModel.create_threshold = 70
         self.MyModel._compute_records_to_merge_count()
 
@@ -141,7 +139,6 @@ class TestDeduplication(test_common.TestCommon):
             self.MyModel.records_to_merge_count, 0, "0 record should have been found"
         )
 
-        # lowering the threshold again does not re-create the group on its own
         self.MyModel.create_threshold = 40
         self.MyModel._compute_records_to_merge_count()
 
@@ -149,7 +146,6 @@ class TestDeduplication(test_common.TestCommon):
             self.MyModel.records_to_merge_count, 0, "0 record should have been found"
         )
 
-        # only a new find_duplicates run re-creates it
         self.MyModel.find_duplicates()
         self.MyModel._compute_records_to_merge_count()
 

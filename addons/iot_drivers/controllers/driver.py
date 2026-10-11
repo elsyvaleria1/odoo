@@ -32,10 +32,6 @@ class DriverController(http.Controller):
     @helpers.toggleable
     @route.iot_route("/iot_drivers/action", type="jsonrpc", cors="*")
     def action(self, session_id, device_identifier, data):
-        """This route is called when we want to make an action with device (take picture, printing,...)
-        We specify in data from which session_id that action is called
-        And call the action of specific device
-        """
         if device_identifier == helpers.get_identifier():
             match data.get("action"):
                 case "restart_odoo":
@@ -49,14 +45,11 @@ class DriverController(http.Controller):
                     )
                     time.sleep(
                         2
-                    )  # wait for the server to catch the event before restarting
+                    )
                     return helpers.odoo_restart()
                 case _:
-                    # Special case for testing if longpolling protocol is working
                     return True
 
-        # If device_identifier is a type of device, we take the first device of this type
-        # required for longpolling with community db
         if device_identifier in DEVICE_TYPES:
             device_identifier = next(
                 (
@@ -76,7 +69,7 @@ class DriverController(http.Controller):
             return False
 
         data["session_id"] = (
-            session_id  # ensure session_id is in data as for websocket communication
+            session_id
         )
         _logger.debug(
             "Calling action %s for device %s", data.get("action", ""), device_identifier
@@ -87,11 +80,7 @@ class DriverController(http.Controller):
     @helpers.toggleable
     @route.iot_route("/iot_drivers/event", type="jsonrpc", cors="*")
     def event(self, listener):
-        """
-        listener is a dict in witch there are a sessions_id and a dict of device_identifier to listen
-        """
         req = event_manager.add_request(listener)
-        # Search for previous events and remove events older than 5 seconds
         oldest_time = time.time() - 5
         for event in list(event_manager.events):
             if event["time"] < oldest_time:
@@ -107,7 +96,6 @@ class DriverController(http.Controller):
                 )
                 return event
 
-        # Wait for new event
         if req["event"].wait(50):
             req["event"].clear()
             req["result"]["session_id"] = req["session_id"]
@@ -118,9 +106,6 @@ class DriverController(http.Controller):
         "/iot_drivers/download_logs", type="http", methods=["GET"], cors="*"
     )
     def download_logs(self):
-        """
-        Downloads the log file
-        """
         log_path = tools.config["logfile"] or "/var/log/odoo/odoo-server.log"
         try:
             stat = pathlib.Path(log_path).stat()
@@ -130,8 +115,6 @@ class DriverController(http.Controller):
             ) from None
         check = adler32(log_path.encode())
         log_file_name = f"iot-odoo-{gethostname()}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-        # intentionally don't use Stream.from_path as the path used is not in the addons path
-        # for instance, for the iot-box it will be in /var/log/odoo
         return http.Stream(
             type="path",
             path=log_path,

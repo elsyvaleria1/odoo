@@ -18,8 +18,6 @@ class LivechatWebhookCase(LivechatTelegramCase):
 
     @classmethod
     def _customer_contact(cls, tg_id, name):
-        # bound beforehand: this module's authority is under test, not the
-        # core's making of a new sender's stand-in contact
         contact = cls._create_partner({"name": name})
         account = cls.env["telegram.account"]._from_telegram(
             {"id": int(tg_id), "first_name": name}

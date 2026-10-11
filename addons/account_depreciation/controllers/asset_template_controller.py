@@ -109,7 +109,7 @@ class AssetTemplateController(http.Controller):
         def account_name(account_types):
             for account_type in account_types:
                 if (
-                    account := env["account.account"]  # noqa: E8507  a short preference list, the first type with an account wins
+                    account := env["account.account"]
                     .with_company(current_company)
                     .search(
                         [

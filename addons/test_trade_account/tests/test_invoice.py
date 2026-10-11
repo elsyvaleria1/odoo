@@ -54,7 +54,7 @@ class TestInvoice(TestTradeOrderCase):
         self.assertEqual(len(moves.invoice_line_ids), 1)
 
     def test_create_invoices_nothing_to_invoice_raises(self):
-        order = self._make_order()  # no lines
+        order = self._make_order()
 
         with self.assertRaises(UserError):
             order._create_invoices()
@@ -73,7 +73,6 @@ class TestInvoice(TestTradeOrderCase):
                 "sequence": 10,
             },
         )
-        # The values must be directly usable to create the section line.
         section = self.env["test_trade.order.line"].create({**vals, "name": "DP"})
         self.assertEqual(section.display_type, "line_section")
         self.assertTrue(section.is_downpayment)
@@ -132,9 +131,6 @@ class TestInvoice(TestTradeOrderCase):
         self.assertLess(section.sequence, min(lines.mapped("sequence")))
 
     def test_down_payment_lines_are_attached_to_the_order(self):
-        """``_create_order_lines`` links rather than concatenates; the lines
-        must still end up on ``line_ids`` — and nothing already there may be
-        dropped by the link."""
         order = self._make_order()
         existing = self._line_on(order, sequence=5)
 
@@ -153,14 +149,6 @@ class TestInvoice(TestTradeOrderCase):
         self.assertIn(existing, order.line_ids)
 
     def test_down_payment_lines_can_be_added_to_a_locked_order(self):
-        """Down payments run *after* confirmation, so the order is often locked.
-
-        ``_create_order_lines`` links the new ids onto ``line_ids``, which is an
-        order-level x2many write — and ``_check_write_locked_order`` rejects
-        every x2many write on a locked order without inspecting it. The link
-        only re-states what the ``create`` already did, so it must not be
-        rejected.
-        """
         order = self._make_order()
         self._line_on(order, sequence=5)
         order.action_confirm()
@@ -211,12 +199,6 @@ class TestInvoice(TestTradeOrderCase):
         self.assertEqual(found, uninvoiced)
 
     def test_search_invoice_ids_mixes_an_invoice_with_false(self):
-        """The two halves are alternatives, not a conjunction.
-
-        The raw-SQL path this replaced ANDed them, so asking for `[a move,
-        False]` asked for orders that both carry that move and carry no
-        invoice at all -- which is nothing, every time.
-        """
         invoiced = self._make_order()
         self._line_on(invoiced)
         invoiced.action_confirm()
@@ -238,13 +220,6 @@ class TestInvoice(TestTradeOrderCase):
         self.assertEqual(found, invoiced + uninvoiced)
 
     def test_an_all_negative_invoice_is_turned_into_a_refund(self):
-        """`_switch_negative_moves` flips a move whose total came out below zero.
-
-        An order invoiced past its ordered quantity has a negative quantity
-        left to invoice, so the move built from it totals below zero. A
-        customer invoice for a negative amount is not what was meant -- it is
-        a credit note, and the move type is switched to say so.
-        """
         order = self._make_order()
         self._line_on(order, product_qty=2.0, price_unit=50.0, qty_invoiced_input=5.0)
         order.action_confirm()

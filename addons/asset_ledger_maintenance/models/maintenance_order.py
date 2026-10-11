@@ -28,9 +28,6 @@ class MaintenanceOrder(models.Model):
 
     def _prepare_service_log_vals(self, lot, return_picking):
         vals = super()._prepare_service_log_vals(lot, return_picking)
-        # The asset's own product is a vehicle or a machine, and its category
-        # types no log, so booking the service against it lands the row in no
-        # bucket. The service product is what a maintenance costs.
         service_product = self.env.ref(
             "asset_ledger.product_product_maintenance", raise_if_not_found=False
         )

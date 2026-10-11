@@ -22,9 +22,6 @@ class AppointmentAccountPaymentPortal(account_payment_portal.PaymentPortal):
         sitemap=False,
     )
     def appointment_post_payment(self, appointment_type_id, invoice_token, **kwargs):
-        """Landing route of the payment flow of an appointment booking. Redirect to the event
-        page when the event was created after a successful payment, to the booking page
-        otherwise (payment failure or pending, for instance)."""
         try:
             invoice_sudo = (
                 request.env["access.link"]
@@ -34,7 +31,6 @@ class AppointmentAccountPaymentPortal(account_payment_portal.PaymentPortal):
         except LinkRefused, LinkLoginRequired:
             raise NotFound from None
 
-        # Should be a singleton functionally
         booking = invoice_sudo.calendar_booking_ids
         if not booking:
             raise NotFound
@@ -55,9 +51,6 @@ class AppointmentAccountPaymentPortal(account_payment_portal.PaymentPortal):
         )
 
     def _prepare_extra_payment_form_context(self, **kwargs):
-        """Override of `payment`: add the appointment specific rendering values of the payment
-        page, as well as custom landing and transaction routes. The template rendered with
-        those values is appointment_payment, see _get_payment_page_template_xmlid."""
         rendering_context_values = super()._prepare_extra_payment_form_context(**kwargs)
         appointment_type_id = self._cast_as_int(kwargs.get("appointment_type_id"))
 

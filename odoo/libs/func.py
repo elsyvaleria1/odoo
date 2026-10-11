@@ -49,7 +49,7 @@ class classproperty[T]:
         return self.fget.__get__(None, owner)()
 
     @property
-    def __doc__(self) -> str | None:  # type: ignore[override]
+    def __doc__(self) -> str | None:
         return self.fget.__doc__
 
 
@@ -61,10 +61,6 @@ class lazy:
 
     @property
     def _value(self) -> Any:
-        # Not single-evaluation: concurrent first reads may each call the thunk,
-        # which no caller risks as every lazy is local to one request or render.
-        # What does hold is that no reader finds neither thunk nor value: the
-        # slot is read once and the value is published before it is cleared.
         thunk = self._thunk
         if thunk is None:
             return self._cached_value
@@ -261,7 +257,7 @@ class lazy:
     def __imod__(self, other: Any) -> Any:
         return operator.imod(self._value, other)
 
-    def __ipow__(self, other: Any) -> Any:  # type: ignore[misc]
+    def __ipow__(self, other: Any) -> Any:
         return operator.ipow(self._value, other)
 
     def __ilshift__(self, other: Any) -> Any:

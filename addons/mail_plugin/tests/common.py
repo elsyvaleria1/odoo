@@ -25,8 +25,6 @@ def outlook_api_key(env, login):
 
 
 def as_outlook_user(login):
-    """Run the test with a real Outlook-scoped API key in the Authorization
-    header, so the route's `auth="bearer", scope=...` is what admits it."""
 
     def decorator(method):
         @functools.wraps(method)

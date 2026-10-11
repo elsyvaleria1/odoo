@@ -14,38 +14,17 @@ from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_
 
 _logger = logging.getLogger(__name__)
 
-# A stay shorter than this is a traffic light or a queue at a toll booth,
-# not a stop.
 MIN_STOP_MINUTES = 5
-# Two still positions farther apart than this are two places, not one stop:
-# the tracker lost signal on the road and woke up somewhere else.
 STOP_RADIUS_M = 200
-# A position within this distance of a geofence is "at" it -- the same rule
-# as the client-visit tracker in device_gps_geoengine.
 AT_GEOFENCE_M = 50
-# Past this radius the nearest client parcel stops describing where a stop
-# was, and only the state and the coordinates are given.
 NEARBY_CLIENT_M = 3000
-# How far before the window the scan starts, so a stop that began just
-# before it is found whole instead of cut at the window's edge.
 SCAN_LOOKBACK = timedelta(hours=12)
-# How far back an ongoing stop is followed until it ends. Older ones are a
-# tracker that died, not a vehicle still parked.
 ONGOING_MAX_AGE = timedelta(days=7)
-# Parked longer than this, a vehicle is working there, not passing by. At a
-# place nobody has marked -- no client geofence, no internal one -- the stop
-# is a place to mark, and stays orange on the map until someone does.
 LONG_PARK_MINUTES = 20
-# A place within this distance of a client or internal geofence is marked:
-# the same rule as a stop being "at" a geofence.
 MARKED_WITHIN_M = 50
-# Map colours of a stop's point: at a marked place, at a place to mark, and
-# a short stop anywhere else. Geofences to mark are COLOR_TO_MARK too.
 COLOR_MARKED = "#198754"
 COLOR_TO_MARK = "#fd7e14"
 COLOR_SHORT_STOP = "#0d6efd"
-# OpenStreetMap's Nominatim allows one request a second; a run of the ten-minute cron
-# names at most this many new places and leaves the rest for the next.
 MAX_PLACE_LOOKUPS = 30
 
 
@@ -226,10 +205,6 @@ class DeviceGpsStop(models.Model):
 
     @api.model
     def _to_mark_sql(self, alias):
-        """A stop longer than LONG_PARK_MINUTES with no client or internal
-        geofence around it -- read from the geofences as they are now, not
-        as they were when the stop was stored, so marking a place clears
-        every stop there at once."""
         return SQL(
             """
             %(s)s.kind = 'stop'
@@ -297,8 +272,6 @@ class DeviceGpsStop(models.Model):
             )
 
     def action_view_trail(self):
-        """The stop on the map: the device's trail from a little before it
-        arrived to a little after it left."""
         self.check_singleton()
         end = self.departure or fields.Datetime.now()
         wizard = self.env["wizard.device.device.view.trail"].create(
@@ -311,9 +284,6 @@ class DeviceGpsStop(models.Model):
         )
         return wizard.action_generate_trails()
 
-    # ------------------------------------------------------------------
-    # REFRESH
-    # ------------------------------------------------------------------
 
     @api.model
     def _local_day_start_utc(self, day, timezone=None):
@@ -357,9 +327,6 @@ class DeviceGpsStop(models.Model):
             if rebuild:
                 settled = settled_all.filtered_domain([("device_id", "in", group.ids)])
                 if settled:
-                    # A change between UTC+14 and UTC-12 can move a local date
-                    # by two days. Include those boundaries and clear old
-                    # No Positions rows before rebuilding under the new zone.
                     date_from = min(
                         date_from, min(settled.mapped("date")) - timedelta(days=2)
                     )
@@ -369,10 +336,6 @@ class DeviceGpsStop(models.Model):
 
     @api.model
     def _name_places(self, since, devices=None, limit=MAX_PLACE_LOOKUPS):
-        """Name the places of the stops outside every geofence, from the
-        cache or from Nominatim: vehicles parked right now first, then the
-        longest stops. At most `limit` lookups; the rest wait for the next
-        run. A failing Nominatim ends the run, never the refresh."""
         stops = self.search(
             [
                 ("kind", "=", "stop"),
@@ -402,13 +365,6 @@ class DeviceGpsStop(models.Model):
 
     @api.model
     def _refresh(self, date_from, date_to, devices=None):
-        """Rewrite the stops arriving on the local days date_from..date_to,
-        both included, and the No Positions rows of those days.
-
-        Idempotent: a second run over the same days leaves the same rows.
-        A stop still ongoing from an earlier day is rewritten too, so it
-        gets its departure once the vehicle leaves.
-        """
         if devices is None:
             devices = self.env["device.device"].search([("is_gps_device", "=", True)])
         for timezone, group in devices.grouped(
@@ -462,17 +418,6 @@ class DeviceGpsStop(models.Model):
         return min(earliest, utc_from) if earliest else utc_from
 
     def _insert_stops(self, devices, keep_from, utc_to, timezone):
-        """Sessionize the positions into stops and place each one.
-
-        A stop is a run of consecutive positions below MOVING_MIN_KMH, broken
-        when two of them lie more than STOP_RADIUS_M apart. It ends at the
-        first moving position after it -- a parked tracker sleeps, so the
-        last still position is usually long before the vehicle left -- or,
-        when the tracker woke up somewhere else, at the next stop.
-
-        The scan's predicate is constants only, so postgres_fdw ships it
-        whole and the remote (device_id, timestamp) index bounds it.
-        """
         self.env["device.data.log.gps"].flush_model(
             ["device_id", "speed", "the_point", "timestamp"]
         )
@@ -626,13 +571,6 @@ class DeviceGpsStop(models.Model):
         )
 
     def _insert_no_signal(self, devices, date_from, date_to, timezone):
-        """One row per device and local day without a single position, so a
-        vehicle whose tracker was off still shows up in the report.
-
-        Two aggregate queries rather than one correlated lookup per day:
-        postgres_fdw ships a bare GROUP BY whole, and a correlated subquery
-        would fetch the device's whole history to evaluate here.
-        """
         utc_from = self._local_day_start_utc(date_from, timezone)
         utc_to = self._local_day_start_utc(date_to + timedelta(days=1), timezone)
         self.env.cr.execute(
@@ -715,7 +653,6 @@ class DeviceGpsStop(models.Model):
                     last_seen = last_by_day[device.id][day]
                     continue
                 if day < created and not last_seen:
-                    # Not silent: the device did not exist yet.
                     continue
                 at = self._local_day_start_utc(day, timezone) + timedelta(hours=12)
                 binding = by_device.get(

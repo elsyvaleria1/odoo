@@ -8,16 +8,7 @@ from .test_vector_tiles import TileFixture, tile_bounds
 from odoo.addons.geoengine.models import ogc_features as ogc
 from odoo.addons.geoengine.tests.mvt import decode
 
-# Statements each map server path runs for a plain user once its caches are
-# warm. A change that adds a query per tile, per cell or per page fails here;
-# one that saves a query is logged ("less than expected"): lower the pin then.
-# Only per-request paths are pinned: get_layers and the collection list grow
-# with the modules installed beside geoengine (10 alone, 11 with the GPS
-# bridges; 23 and 70 statements), so their counts belong to no single module.
 BUDGETS = {
-    # A tile, an extent or a heat view is one query inside the budget's
-    # savepoint and its two statement-timeout settings, plus the layer's
-    # field and model names.
     "point_tile": 7,
     "polygon_tile": 7,
     "tile_extent": 7,

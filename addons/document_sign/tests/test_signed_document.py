@@ -9,7 +9,7 @@ from odoo.addons.document_sign.tests.test_document import TestCaseDocumentsBridg
 
 
 class TestSignedDocument(TestCaseDocumentsBridgeSign):
-    def setUp(cls):  # noqa: N805  preexisting: instance setUp named `cls`; renaming is out of the comment-sweep scope
+    def setUp(cls):
         super().setUp()
         partner = cls.env["res.partner"]
         user = cls.env["res.users"].create(
@@ -54,18 +54,10 @@ class TestSignedDocument(TestCaseDocumentsBridgeSign):
         )
 
     def test_gc_clear_bin(self):
-        """Ensure that old, auto-deletable (in the trash) documents linked to sign requests and sign documents are not
-        deleted by the garbage collector.
-        """
 
         self.assertFalse(self.sign_doc.active)
         self.assertFalse(self.signed_document_pdf.active)
         self.assertFalse(self.trash_doc.active)
-        # The purge reads the deletion date stamped when a document entered the
-        # trash, not `write_date`, so that a later write to a trashed document
-        # cannot postpone a deletion its own chatter message already promised.
-        # Freezing to the day after every promise here is what makes all three
-        # eligible; which of them the GC then spares is the thing under test.
         documents = self.sign_doc | self.signed_document_pdf | self.trash_doc
         documents_deletion_date = max(documents.mapped("deletion_date")) + timedelta(
             days=1
@@ -88,12 +80,6 @@ class TestSignedDocument(TestCaseDocumentsBridgeSign):
 
     @mute_logger("odoo.models.unlink")
     def test_signed_document_unlink(self):
-        """A sign or signed document cannot be deleted while a sign document or
-        sign request still holds its attachment. The refusal is a UserError with
-        the reason: sign.document.attachment_id is ondelete="restrict", so
-        without the guard the database refuses it as a psycopg RestrictViolation
-        that reaches the client as a 500.
-        """
         self.assertFalse(self.sign_doc.active)
         self.assertFalse(self.signed_document_pdf.active)
 

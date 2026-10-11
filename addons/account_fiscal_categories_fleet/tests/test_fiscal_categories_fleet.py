@@ -157,7 +157,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             }
         )
 
-        # Create a second bill at a later date in order to have multiple rates in the annual report.
         bill_2 = cls.env["account.move"].create(
             {
                 "partner_id": cls.partner_a.id,
@@ -214,7 +213,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             }
         )
 
-        # Create a third bill with yet another date.
         bill_3 = cls.env["account.move"].create(
             {
                 "partner_id": cls.partner_a.id,
@@ -253,11 +251,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         return report, options
 
     def _prepare_column_values(self, lines):
-        """Helper that adds each line's level to its columns, so that the level can be tested in assertLinesValues().
-        It also cleans unwanted characters in the line name.
-        """
         for line in lines:
-            # This is just to prevent the name override in l10n_be_hr_payroll_fleet from making the test crash.
             line["name"] = line["name"].split(" \u2022 ")[0]
             line["columns"].append({"name": line["level"]})
 
@@ -267,9 +261,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         self._prepare_column_values(lines)
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # Name                                         Total Amount     Rate         Deuctible Amount     Level
             [0, 1, 2, 3, 4],
             [
                 ("2345 DNA category", 3200.0, "", 1088.0, 1),
@@ -294,9 +286,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         self._prepare_column_values(lines)
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # Name                                        Total Amount     Rate          Deuctible Amount     Level
             [0, 1, 2, 3, 4],
             [
                 ("2345 DNA category", 3200.0, "", 1088.0, 1),
@@ -351,7 +341,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             }
         )
 
-        # Create journal entries, using a DNA category without a rate to test totals with blank 'Deuctible Amount  '
         entry_data = [
             ("2022-08-15", 21.0),
             ("2022-07-15", 25.0),
@@ -388,10 +377,7 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self._prepare_column_values(lines)
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            #                                 [                    2022                     ]      [                      2021                   ]
-            # Name                            Total Amount     Rate          Deuctible Amount      Total Amount     Rate          Deuctible Amount      Level
             [0, 1, 2, 3, 4, 5, 6, 7],
             [
                 ("2345 DNA category", 3200.0, "", 1088.0, "", "", "", 1),
@@ -415,34 +401,12 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         )
 
     def test_fiscal_account_id_and_vehicle_id_confusion_regression_test(self):
-        """
-        This test aims to reproduce an issue where two invoice lines were aggregated under the same
-        hierarchy when they should have been segregated.
-        To reproduce:
-            - Create one vehicle and one account sharing the same ID.
-            - Create two account move lines: both with the account set on it, but only one of them with the vehicle.
-            - Create a DNA category with a rate and set it on the aforementioned account.
-            - Set a rate on the vehicle.
-        The problem to reproduce:
-            - The line with the vehicle should appear in the dedicated vehicle section and should not be included
-            in the section related to the account without the vehicle.
-        """
-        # This test is done in 3 phases:
-        #   1) Test technical preparation
-        #   2) Test business preparation
-        #   3) The reporting test
 
-        # 1) Test technical preparation
-        # Prepare the sequence to ensure account.id == vehicle.id later on.
 
-        # Check sequence number and advance the smallest one.
         self.env.cr.execute(
             "SELECT currval('resource_resource_id_seq'), currval('account_account_id_seq')"
         )
         fleet_vehicle_max_id, account_account_max_id = self.env.cr.fetchone()
-        # In theory, account sequence will always be bigger but the test should be able to run on a db that already
-        # lived and that might have much more vehicles than accounts which means the test should be able to set any
-        # of those 2 sequences accordingly
         if fleet_vehicle_max_id < account_account_max_id:
             self.env.cr.execute(
                 "SELECT setval('resource_resource_id_seq', %s)",
@@ -461,7 +425,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             "At this point the current id should be the same"
         )
 
-        # 2) Test business preparation
         expense_account = self.company_data["default_account_expense"].copy(
             {
                 "name": "Super expense",
@@ -497,10 +460,8 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             }
         )
 
-        # Remove any noise from the report
         self.env["account.move"].search([("state", "=", "posted")]).action_draft()
 
-        # Fill some data for the report
         bill = self.env["account.move"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -529,14 +490,11 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         )
         bill.action_post()
 
-        # 3) The reporting test
         report, options = self._setup_base_report(unfold=True, split=True)
         lines = report._get_lines(options)
         self._prepare_column_values(lines)
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # Name                                        Total Amount     Rate            Deuctible Amount      Level
             [0, 1, 2, 3, 4],
             [
                 ("bob DNA category", 1_100.0, "", 425.0, 1),
@@ -597,7 +555,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             }
         )
 
-        # Remove any noise from the report
         self.env["account.move"].search([("state", "=", "posted")]).action_draft()
 
         bill = self.env["account.move"].create(
@@ -648,7 +605,6 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self._prepare_column_values(lines)
         expected_lines = [
-            # pylint: disable=C0326
             ("bob DNA category", 111_100.0, "", 29_425.0, 1),
             ("Batmobile", 100_100.0, "25.00%", 25_025.0, 2),
             ("605555 Super expense", 100.0, "25.00%", 25.0, 3),
@@ -662,18 +618,15 @@ class TestAccountFiscalCategoriesFleetReport(TestAccountReportsCommon):
             ("Total", 111_100.0, "", 29_425.0, 1),
         ]
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # Name        Base Amount     Rate         Fiscal Amount       Level
             [0, 1, 2, 3, 4],
             expected_lines,
             options,
         )
 
-        # For each report line, ensure that the audited move lines have the same total amount.
         for name, amount, _dummy, _dummy, level in expected_lines[
             :-1
-        ]:  # 'Total' line can't be audited.
+        ]:
             with self.subTest(name=name, amount=amount, level=level):
                 line_id = next(
                     line["id"]

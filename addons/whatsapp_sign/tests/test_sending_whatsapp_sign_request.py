@@ -7,14 +7,10 @@ from odoo.addons.whatsapp_sign.tests.whatsapp_sign_common import WhatsAppSignCom
 
 class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
     def test_sign_request_templates_wa_validations(self):
-        """
-        This method checks if a validation error occurs when verifying the existence of signature request WhatsApp templates.
-        """
         partner_ids = [self.partner_1.id, self.partner_2.id, self.partner_3.id]
         wizard = self.create_sign_send_request_wizard(
             self.template_3_roles, partner_ids
         )
-        # Changing the ID of one of the templates to simulate deletion, then returning the ID
         ICP = self.env["ir.config_parameter"].sudo()
         ICP.set_param("whatsapp_sign.whatsapp_template_id", "dummy")
 
@@ -23,9 +19,6 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
             wizard.with_context(send_channel="whatsapp").create_request()
 
     def test_sign_request_item_partner_phone_validations(self):
-        """
-        This method checks if a validation error occurs when verifying a partner's phone number during signature request item creation.
-        """
         partner_ids = [
             self.partner_1.id,
             self.partner_2.id,
@@ -40,9 +33,6 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
             wizard.with_context(send_channel="whatsapp").create_request()
 
     def test_sign_send_wizard_wa_checks(self):
-        """
-        This method checks if a validation error occurs when verifying the existence of a partner's phone number before sending messages within the sending wizard.
-        """
         partner_ids = [
             self.partner_1.id,
             self.partner_2.id,
@@ -57,9 +47,6 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
             wizard.send_via_whatsapp()
 
     def test_send_via_whatsapp_and_sign_completion(self):
-        """
-        This method checks if WhatsApp signature request and completion messages are sent properly.
-        """
         wa_templates = self.get_whatsapp_templates()
 
         partner_ids = [self.partner_1.id, self.partner_2.id, self.partner_3.id]
@@ -73,7 +60,7 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
         messages = self.search_for_wa_messages(wa_templates[0].id)
         self.assertEqual(
             len(messages), 1
-        )  # it's only sent to the first one in the list of signers (signing order enabled)
+        )
 
         sign_items[0].sign(self.signer_1_sign_values)
         messages = self.search_for_wa_messages(wa_templates[0].id)
@@ -88,9 +75,6 @@ class TestSignRequest(SignRequestCommon, WhatsAppCommon, WhatsAppSignCommon):
         self.assertEqual(len(messages), 3)
 
     def test_sign_refusal(self):
-        """
-        This method checks if WhatsApp signature refusal messages are sent properly.
-        """
         wa_templates = self.get_whatsapp_templates()
 
         partner_ids = [self.partner_1.id, self.partner_2.id, self.partner_3.id]

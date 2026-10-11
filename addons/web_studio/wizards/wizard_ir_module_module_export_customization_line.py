@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from odoo import api, fields, models
 
-# List of models to export (the order ensures that dependencies are satisfied)
 
 
 class WizardIrModuleModuleExportCustomizationLine(models.TransientModel):
@@ -61,15 +60,11 @@ class WizardIrModuleModuleExportCustomizationLine(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Compute the needed names and xmlids for the records."""
         models = defaultdict(list)
         for vals in vals_list:
             models[vals["model"]].append(vals["res_id"])
 
         if "ir.actions.actions" in models:
-            # We should replace "ir.actions.actions" records by their proper
-            # models, as we never want to export an abstract ir.actions.actions
-            # but instead the concrete actions models.
             actions_by_type = (
                 self.env["ir.actions.actions"]
                 .sudo()

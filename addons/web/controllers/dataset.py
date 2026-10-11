@@ -46,9 +46,6 @@ class DataSet(http.Controller):
         try:
             model_class = request.registry[model_name]
         except KeyError:
-            # This runs before authentication: answering NotFound here told an
-            # anonymous caller which models exist. The endpoint refuses it once
-            # the caller is authenticated (_get_called_model).
             _debug.logic("rpc_readonly_probe_unknown_model", model=model_name)
             return True
         readonly = api.is_readonly(model_class, method_name)

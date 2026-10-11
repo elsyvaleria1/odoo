@@ -13,7 +13,6 @@ class TestPayslipMultiContract(TestPayslipContractBase):
         work_entries = self.richard_emp.version_ids.generate_work_entries(start, end)
         work_entries.action_validate()
 
-        # First contact: 40h, start of the month
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "November 2015",
@@ -31,7 +30,6 @@ class TestPayslipMultiContract(TestPayslipContractBase):
         self.assertEqual(out_of_contract_line.number_of_hours, 88)
         self.assertEqual(out_of_contract_line.number_of_days, 11)
 
-        # Second contract: 35h, end of the month
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "November 2015",

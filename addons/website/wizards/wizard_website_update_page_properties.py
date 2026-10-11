@@ -56,7 +56,7 @@ class WizardWebsiteUpdatePageProperties(models.TransientModel):
     @api.depends("url", "website_id")
     def _compute_menu_ids(self) -> None:
         for record in self:
-            record.menu_ids = self.env["website.menu"].search(record._get_domain_menu())  # noqa: E8507 - a transient wizard over one page; the domain is the record's own
+            record.menu_ids = self.env["website.menu"].search(record._get_domain_menu())
 
     @api.depends("menu_ids")
     def _compute_is_in_menu(self) -> None:

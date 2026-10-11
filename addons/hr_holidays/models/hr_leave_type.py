@@ -461,15 +461,6 @@ class HrLeaveType(models.Model):
                 holiday_type.country_id = holiday_type.company_id.country_id
 
     def _search_balance(self, field_name, operator, value, always_matches=None):
-        """Search a balance field by the value its compute would report.
-
-        Every balance on this model is a view of ``get_allocation_data`` for
-        the employee in context, so the only spelling of the search that can
-        agree with the compute is to run the compute. An allocation-level
-        aggregate cannot: it is in days where the field is in hours, and it
-        misses every type that has no allocation row at all -- including the
-        ones whose balance is legitimately zero.
-        """
         op = DOMAIN_PREDICATES.get(operator)
         if not op:
             return NotImplemented

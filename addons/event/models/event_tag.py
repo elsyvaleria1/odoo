@@ -7,11 +7,6 @@ class EventTagCategory(models.Model):
     _order = "sequence"
 
     def _default_sequence(self):
-        """
-        Here we use a _default method instead of ordering on 'sequence, id' to
-        prevent adding a new related stored field in the 'event.tag' model that
-        would hold the category id.
-        """
         return (self.search([], order="sequence desc", limit=1).sequence or 0) + 1
 
     name = fields.Char(

@@ -1,7 +1,5 @@
 from odoo import api, fields, models
 
-# What the caller must send, in the caller's terms. Each entry is the line a
-# person reads on the gate's form and repeats to whoever is integrating.
 _SCHEME_SENTENCES = {
     "none": "No credential. The path, the address allow-list and the call "
     "budget are what admit the caller.",
@@ -60,16 +58,10 @@ class MixinInboundGate(models.AbstractModel):
 
     @api.model
     def _inbound_routes_by_model(self) -> dict[str, list[str]]:
-        """Which rules name which model in their ``receiver=``.
-
-        Read from the routing map, so a route that stopped existing stops
-        being promised and a new one appears without anyone editing a text
-        field.
-        """
         routes: dict[str, list[str]] = {}
         try:
             routing_map = self.env["ir.http"].routing_map()
-        except Exception:  # a contract is never worth a traceback
+        except Exception:
             return routes
         for rule in routing_map.iter_rules():
             routing = getattr(rule.endpoint, "routing", {})
@@ -87,8 +79,6 @@ class MixinInboundGate(models.AbstractModel):
         return routes
 
     def _contract_models(self) -> list[str]:
-        """The models a route may name to reach this gate: this one, and the
-        record this gate answers for when it answers for another."""
         self.check_singleton()
         models_named = [self._name]
         if "res_model" in self._fields and self.res_model:

@@ -31,8 +31,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_synchronize_databases(self):
-        """Synchronize the databases from the Odoo.com SaaS"""
-        # First-time-seen database creates a project
         Project = self.env["project.project"]
         self.json2_mocked_calls["www.odoo.com"]["odoo.database"]["list"] = [
             {
@@ -76,7 +74,6 @@ class TestSynchronization(TestDatabasesCommon):
             ],
         )
 
-        # Already-seen database update the project, based on the URL
         self.json2_mocked_calls["www.odoo.com"]["odoo.database"]["list"] = [
             {
                 "name": "Odoo",
@@ -184,8 +181,6 @@ class TestSynchronization(TestDatabasesCommon):
             ],
         )
 
-        # Already-seen database update the project, based on the URL
-        # Other dbs should stay untouched
         self.json2_mocked_calls["www.odoo.com"]["odoo.database"]["list"] = [
             {
                 "name": "Odoo",
@@ -232,7 +227,6 @@ class TestSynchronization(TestDatabasesCommon):
         )
 
     def test_odoocom_db_synchronization(self):
-        # First-time-seen database creates a project
         Project = self.env["project.project"]
         self.json2_mocked_calls["www.odoo.com"]["odoo.database"]["list"] = [
             {
@@ -311,7 +305,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_synchronizing_a_saas_db_with_just_a_url_should_raise_an_error(self):
-        """Trying to synchronize one single database missing a db name should raise a User Friendly error"""
         db = self.env["project.project"].create(
             [
                 {
@@ -330,15 +323,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_synchronizing_several_db_with_one_missing_its_name_and_api_info(self):
-        """In case several db gets synchronized, it shouldn't raise an Error but show it later on in the wizard
-
-        - Create a fully legit db record by synchronizing all dbs with Odoo.com
-        - Create manually a db missing its name and credentials
-        - Try to synchronize both db at the same time
-        => No error raised
-        => Any issue should be reported in the wizard
-        """
-        # gets one legit database created through odoo.com synchronization and sync it
         Project = self.env["project.project"]
         self.json2_mocked_calls["www.odoo.com"]["odoo.database"]["list"] = [
             {
@@ -361,7 +345,6 @@ class TestSynchronization(TestDatabasesCommon):
         )
         dbs = Project.search([])
         self.assertEqual(len(dbs), 2)
-        # Synchronizing several db shouldn't raise any error
         self.json2_mocked_calls["odoo-sa.my.odoo.test"]["version"] = "16.0+e"
         self.json2_mocked_calls["odoo-sa.my.odoo.test"]["res.users"]["search_read"] = []
         self.json2_mocked_calls["odoo-sa.my.odoo.test"]["kpi.provider"][
@@ -380,13 +363,6 @@ class TestSynchronization(TestDatabasesCommon):
     def test_synchronizing_all_databases_shouldnt_raise_but_should_report_any_issue(
         self,
     ):
-        """In case several db gets synchronized, it shouldn't raise an Error but show it later on in the wizard
-
-        - Create manually a db missing its name and credentials
-        - Synchronize everything, creating a new db record from sync
-        => The db synced from odoo.com should be there
-        => Any issue should be reported in the wizard
-        """
         Project = self.env["project.project"]
         Project.create(
             [
@@ -412,7 +388,6 @@ class TestSynchronization(TestDatabasesCommon):
         self.mock_json2_calls_for_db("odoo-sa.my.odoo.test")
         self.json2_mocked_calls["odoo-sa.my.odoo.test"]["version"] = "saas~18.3a1+e"
 
-        # This shouldn't raise any error
         with self.capture_wizard() as captured:
             Project.action_synchronize_all_databases()
         dbs = Project.search([])
@@ -454,16 +429,10 @@ class TestSynchronization(TestDatabasesCommon):
         )
 
         self.mock_json2_calls_for_db("odoo-sa.my.odoo.test")
-        # This shouldn't raise any error
         self.env["project.project"].action_synchronize_all_databases()
 
     @users("db_manager@company.tld")
     def test_sync_pull_db_record_already_registered_as_saas_manually(self):
-        """If a db was manually created as a saas db and synchronized later on, the information should be udpated
-        - Manually Create a saas db record with missing informations
-        - Trigger the synchronization
-        => The db informations should be updated
-        """
         Project = self.env["project.project"]
         self.assertFalse(Project.search([]), "There shouldn't be any project yet")
         Project.create(
@@ -516,14 +485,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_db_on_premise_configured_shouldnt_be_modified(self):
-        """Fully configured on premise Db reported by odoo.com shouldn't be updated as it could wrongly override
-        the data and be very frustrating to the db manager.
-        - Manually create an on premise db
-        - configure the login and apikey
-        - update all dbs
-        => The database should have been left untouched
-        => The wizard should display a warning
-        """
         Project = self.env["project.project"]
         self.assertFalse(Project.search([]), "There shouldn't be any project yet")
         Project.create(
@@ -587,11 +548,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_db_on_premise_not_configured_should_be_updated_to_saas_db(self):
-        """A NOT configured on premise Db reported by odoo.com should be updated with odoo.com data
-        - Manually create an on premise db
-        - update all dbs
-        => The database should have been updated and be reported as a saas databases
-        """
         Project = self.env["project.project"]
         self.assertFalse(Project.search([]), "There shouldn't be any project yet")
         Project.create(
@@ -650,12 +606,10 @@ class TestSynchronization(TestDatabasesCommon):
 
         wizard = self.env["wizard.project.project.synchronize.database"].create({})
 
-        # This shouldn't raise any error
         wizard._do_update_from_odoocom()
 
     @users("db_manager@company.tld")
     def test_synchronization_wizard_update_from_odoocom_with_authenticate_error(self):
-        # Simulate an invalid API key error
         self.mock_requests_request.configure_mock(
             **{
                 "side_effect": None,
@@ -673,7 +627,6 @@ class TestSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_synchronization_wizard_update_from_odoocom_with_call_error(self):
-        # Simulate an exception
         self.mock_requests_request.configure_mock(
             **{
                 "side_effect": None,
@@ -852,7 +805,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
     def setUp(self):
         super().setUp()
 
-        # Simulate a server where /json/2 is not implemented, but let calls to odoo.com pass through
         def mock_requests_request(method, uri, *args, **kwargs):
             if urllib.parse.urlparse(uri).hostname == "www.odoo.com":
                 return prev_mock_requests_request(method, uri, *args, **kwargs)
@@ -861,7 +813,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
         prev_mock_requests_request = self.mock_requests_request.side_effect
         self.mock_requests_request.configure_mock(side_effect=mock_requests_request)
 
-        # Return a specific mock object for each ServerProxy
         self.odoo_sa_xmrpc_common = MagicMock(**{"authenticate.return_value": -128})
         self.odoo_sa_xmrpc_object = MagicMock()
         self.call_resolution_per_uri = {
@@ -889,8 +840,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
 
     @users("db_manager@company.tld")
     def test_synchronize_databases(self):
-        """Synchronize the databases from the Odoo.com SaaS"""
-        # First-time-seen database creates a project
         Project = self.env["project.project"]
         self.set_returned_databases_list(
             [
@@ -919,7 +868,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
             ],
         )
 
-        # Already-seen database updates the project, based on the URL
         self.set_returned_databases_list(
             [
                 {
@@ -1012,8 +960,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
             ],
         )
 
-        # Already-seen database update the project, based on the URL
-        # Other dbs should stay untouched
         self.set_returned_databases_list(
             [
                 {
@@ -1061,7 +1007,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
         )
 
     def test_odoocom_db_synchronization(self):
-        # First-time-seen database creates a project
         Project = self.env["project.project"]
         self.set_returned_databases_list(
             [
@@ -1180,7 +1125,6 @@ class TestXmlRpcSynchronization(TestDatabasesCommon):
             }
         )
         invite_wizard.action_remove_users()
-        # TODO: self.odoo_sa_xmrpc_common.authenticate.assert_not_called()  # should have recycled the client
         self.assertCountEqual(
             self.odoo_sa_xmrpc_object.execute_kw.mock_calls,
             [

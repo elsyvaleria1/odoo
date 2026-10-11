@@ -34,7 +34,6 @@ def _coerce_bool(value: Any, default: bool) -> bool:
         return bool(value)
     if not isinstance(value, str):
         return default
-    # an empty query parameter (`&quiet=`) switches the flag off
     return str2bool(value.strip() or "0", default)
 
 
@@ -359,9 +358,6 @@ class IrActionsReport(models.Model):
             elif len(value) == 13:
                 barcode_type = "EAN13"
         elif barcode_type == "auto":
-            # a scanner reports a 0-led EAN-13 as the 12-digit UPC-A its bars
-            # also spell, so only a symbol that scans back as the stored value
-            # is guessed; anything else is drawn as Code128, which always does
             encoding = _AUTO_GTIN_ENCODINGS.get(len(value))
             barcode_type = (
                 encoding.upper()

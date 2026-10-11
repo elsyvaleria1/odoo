@@ -52,7 +52,6 @@ class TestCarrierMatchWeightOnPicking(TransactionCase):
         )
 
     def test_two_dozen_one_kilo_units_exceed_ten_kilos(self):
-        # 2 Dozen of a 1 kg unit is 24 kg; weighing the move quantity said 2 kg.
         self.assertFalse(self.carrier._match_weight(self.picking))
 
     def test_two_dozen_one_litre_units_exceed_ten_litres(self):

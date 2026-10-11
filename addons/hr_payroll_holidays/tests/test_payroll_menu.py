@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 class TestPayrollHolidaysWorkEntriesMenu(TransactionCase):
     def _work_entries_menu(self, user):
-        """Return the menu entry carrying the work entries action, as the user sees it."""
         action = self.env.ref("hr_work_entry.hr_work_entry_action")
         menus = self.env["ir.ui.menu"].with_user(user).load_menus(False)
         for key, menu in menus.items():
@@ -17,13 +16,6 @@ class TestPayrollHolidaysWorkEntriesMenu(TransactionCase):
         return None
 
     def test_work_entries_action_stays_on_a_leaf_menu(self):
-        """The navbar only fires the action of a section that has no children.
-
-        `hr_payroll_holidays` hangs "Time Offs" off the same root, so moving the
-        action up onto that root -- as upstream did, where it was the only child
-        -- would render it as a dropdown button and make the gantt unreachable
-        for anyone who can also see the time off entry.
-        """
         manager = new_test_user(
             self.env,
             login="hr_and_holidays_manager",

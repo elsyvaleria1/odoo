@@ -50,11 +50,9 @@ class DateRange(models.Model):
         "date range type archives its ranges too; restoring the type does not "
         "restore them, so a range archived by hand stays archived.",
     )
-    allow_overlap = fields.Boolean(  # noqa: E8529  EXCLUDE date_range_date_range_no_overlap; index (type_id) partial
+    allow_overlap = fields.Boolean(
         related="type_id.allow_overlap",
         store=True,
-        # Denormalised so the ``date_range_no_overlap`` exclusion constraint can
-        # test it: an index predicate cannot reach into date_range_type.
         help="Technical mirror of the type's setting; do not set by hand.",
     )
     duration_days = fields.Integer(
@@ -93,18 +91,6 @@ class DateRange(models.Model):
         store=True,
     )
 
-    # The last word on overlap belongs to PostgreSQL: two transactions can each
-    # pass a Python check and still commit ranges that overlap each other, and
-    # only the database sees both. DEFERRABLE INITIALLY DEFERRED puts the check
-    # at commit, after ``_check_no_overlap`` below has had its chance to say
-    # which two ranges collide — an immediate constraint fires during the INSERT
-    # and the user gets a raw ExclusionViolation instead.
-    # COALESCE mirrors the semantics of a not-yet-written row: absent company or
-    # parent means "no company"/"top level", absent active means active.
-    # `date_start <= date_end` belongs in the predicate, not in a CHECK: an
-    # inverted range would make daterange() raise from inside the index before
-    # _check_dates gets to say which range is wrong and why. Excluded from the
-    # index instead, it reaches the Python check untouched.
     _date_range_no_overlap = models.Constraint(
         "EXCLUDE USING gist ("
         "COALESCE(company_id, 0) WITH =, type_id WITH =,"
@@ -117,26 +103,6 @@ class DateRange(models.Model):
     )
 
     def _auto_init(self) -> None:
-        """Provide the btree_gist extension the exclusion constraint needs.
-
-        Plain GiST cannot index the scalar equality columns, so the constraint
-        cannot be created without it. It is a PostgreSQL "trusted" extension,
-        so a database owner can create it without superuser rights; if the role
-        may not, the constraint is skipped (the registry logs it) and
-        ``_check_no_overlap`` below remains the only guard.
-
-        This belongs in ``_auto_init`` and not in ``init``, even though ``init``
-        is the usual home for schema side effects. ``_auto_init`` is where a
-        ``models.Constraint`` reaches the database (``Constraint.apply_to_database``
-        in ``odoo/orm/models/table_objects.py``), and the registry runs it
-        strictly before ``init`` for every model in the pass
-        (``odoo/orm/runtime/registry.py``). A constraint that raises during the
-        *install* phase is logged and dropped rather than requeued
-        (``post_constraint`` in ``odoo/orm/runtime/_registry_schema.py``), so
-        creating the extension from ``init`` always arrived one step too late:
-        a fresh install emitted an ``odoo.schema`` ERROR and picked the
-        constraint up only if some later pass happened to re-run ``_auto_init``.
-        """
         try:
             with self.env.cr.savepoint(flush=False):
                 self.env.cr.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
@@ -151,14 +117,6 @@ class DateRange(models.Model):
 
     @api.constrains("parent_id")
     def _check_parent_recursion(self) -> None:
-        """Reject a range nested into its own descendant.
-
-        ``parent_id`` has no ``_parent_store``, so Odoo's automatic cycle
-        guard never runs for this model; without this check, two ranges could
-        point at each other as parent/child with no error.
-
-        :raises ValidationError: if the record is its own ancestor
-        """
         if self._has_cycle():
             raise ValidationError(
                 self.env._("You cannot nest a date range inside itself.")
@@ -174,11 +132,6 @@ class DateRange(models.Model):
         "allow_overlap",
     )
     def _check_dates(self) -> None:
-        """Validate date order and containment inside the parent range.
-
-        :raises ValidationError: if start > end, or a sub-range falls outside
-            its parent
-        """
         for this in self:
             if this.date_start > this.date_end:
                 raise ValidationError(
@@ -229,21 +182,10 @@ class DateRange(models.Model):
         "allow_overlap",
     )
     def _check_no_overlap(self) -> None:
-        """Report overlapping siblings with a readable message.
-
-        The exclusion constraint is what actually guarantees the rule; this
-        runs first only so the user sees which two ranges collide instead of a
-        raw ``ExclusionViolation``. One statement covers the whole recordset.
-
-        :raises ValidationError: if two ranges of a non-overlapping type share
-            a company, a parent and at least one day
-        """
         candidates = self.filtered(
             lambda r: (
                 not r.allow_overlap
                 and r.active
-                # An inverted range is _check_dates' business; daterange() below
-                # would raise on it rather than report it.
                 and r.date_start
                 and r.date_end
                 and r.date_start <= r.date_end
@@ -251,11 +193,6 @@ class DateRange(models.Model):
         )
         if not candidates:
             return
-        # IS NOT DISTINCT FROM, not `=`: `company_id = NULL` is never true, and
-        # that one token used to switch the whole check off for company-less
-        # ranges — which is every range in the shipped data files.
-        # COALESCE(dt.active, TRUE) covers rows written before `active` became a
-        # plain column; it is NOT NULL for anything this version writes.
         self.env.cr.execute(
             """
             SELECT v.id, dt.id
@@ -292,20 +229,6 @@ class DateRange(models.Model):
 
     @api.constrains("name", "type_id", "company_id")
     def _check_unique_name(self) -> None:
-        """Reject two ranges of the same type and company sharing a name.
-
-        This is a Python check rather than a SQL ``UNIQUE``: ``name`` is
-        translated, so the column holds a JSON document per record and a unique
-        index compares whole documents — translating one of two identically
-        named ranges was enough to make them distinct. Searching through the ORM
-        compares the value in the active language, which is what a user means.
-
-        One search covers the whole recordset: a per-record query here made the
-        cost of the wizard grow with the number of ranges it creates, and the
-        generator creates them by the dozen.
-
-        :raises ValidationError: if the name is already taken
-        """
         if not self:
             return
         candidates = self.with_context(active_test=False).search(
@@ -316,8 +239,6 @@ class DateRange(models.Model):
                 for this in self
             )
         )
-        # Keyed on the value the ORM read back, so the comparison stays in the
-        # active language — the whole reason this is not a SQL UNIQUE.
         seen = {}
         for candidate in candidates:
             seen.setdefault(
@@ -336,7 +257,6 @@ class DateRange(models.Model):
 
     @api.depends("date_start", "date_end")
     def _compute_duration_days(self) -> None:
-        """Compute the inclusive day count between start and end dates."""
         for record in self:
             if record.date_start and record.date_end:
                 record.duration_days = (record.date_end - record.date_start).days + 1
@@ -345,12 +265,6 @@ class DateRange(models.Model):
 
     @api.depends("date_start", "date_end")
     def _compute_day_counts(self) -> None:
-        """Split the range into Mon-Fri and Sat-Sun day counts.
-
-        Closed form rather than a day-by-day walk: whole weeks contribute five
-        business days each and only the remainder needs looking at, so the cost
-        does not grow with the length of the range.
-        """
         for record in self:
             if not (record.date_start and record.date_end):
                 record.business_days = 0
@@ -367,25 +281,10 @@ class DateRange(models.Model):
 
     @api.depends("parent_id")
     def _compute_is_sub_range(self) -> None:
-        """Flag the range as a sub-range when it has a parent."""
         for record in self:
             record.is_sub_range = bool(record.parent_id)
 
     def get_domain_for_field(self, field_name) -> list:
-        """Return a domain matching records whose field falls within this range.
-
-        The bounds are in the natural order, which is also the one the web
-        client's ``in range`` operator recognises. Until 19.0.1.1.0 they were
-        mirrored — ``<=`` before ``>=`` — so that this module's own
-        ``daterange`` operator could claim a domain shape core would not. There
-        is no separate operator now: a period is a plain range whose bounds the
-        editor recognises, so it wants core's order. See
-        ``static/src/js/date_range_provider.js``.
-
-        :param str field_name: date or datetime field to filter on
-        :return: domain [(field, '>=', start), (field, '<=', end)]
-        :rtype: list
-        """
         self.check_singleton()
         return [
             (field_name, ">=", self.date_start),
@@ -394,26 +293,12 @@ class DateRange(models.Model):
 
     @api.model
     def get_current_range(self, date=None, type_id=None, company_id=None) -> Self:
-        """Return the active range containing a date.
-
-        :param date date: date to locate, defaults to today in the user's timezone
-        :param type_id: optional ``date.range.type`` record or id to restrict to
-        :param company_id: optional ``res.company`` record or id; defaults to the
-            current company. Pass ``False`` to search every company.
-        :return: earliest matching ``date.range``, or an empty recordset
-        :rtype: Self
-        """
         date = date or fields.Date.context_today(self)
         domain = [("date_start", "<=", date), ("date_end", ">=", date)]
         domain += self._scope_domain(type_id, company_id)
         return self.search(domain, order="date_start, id", limit=1)
 
     def get_next_range(self) -> Self:
-        """Return the next range of the same type, company and parent.
-
-        :return: next ``date.range`` or empty recordset
-        :rtype: Self
-        """
         self.check_singleton()
         return self.search(
             [
@@ -427,11 +312,6 @@ class DateRange(models.Model):
         )
 
     def get_previous_range(self) -> Self:
-        """Return the previous range of the same type, company and parent.
-
-        :return: previous ``date.range`` or empty recordset
-        :rtype: Self
-        """
         self.check_singleton()
         return self.search(
             [
@@ -446,16 +326,6 @@ class DateRange(models.Model):
 
     @api.model
     def _scope_domain(self, type_id=None, company_id=None):
-        """Build the type/company part of a lookup domain.
-
-        ``company_id`` defaults to the current company because a range is a
-        per-company object; pass ``False`` explicitly to search across
-        companies. Company-less ranges always match.
-
-        :param type_id: ``date.range.type`` record, id, or None
-        :param company_id: ``res.company`` record, id, False, or None
-        :rtype: list
-        """
         domain = []
         if type_id:
             domain.append(("type_id", "=", int(type_id)))
@@ -466,16 +336,6 @@ class DateRange(models.Model):
         return domain
 
     def split_by(self, unit="month"):
-        """Return create-vals partitioning this range into sub-ranges.
-
-        The sub-ranges are children of this one, so they may span it without
-        tripping the overlap rule; they still may not overlap each other.
-
-        :param str unit: 'week' (calendar weeks, Monday-based) or 'month'
-        :return: list of ``date.range`` create-vals
-        :rtype: list
-        :raises ValueError: for an unknown unit
-        """
         self.check_singleton()
         if unit not in ("week", "month"):
             raise ValueError(f"Unknown split unit {unit!r}")

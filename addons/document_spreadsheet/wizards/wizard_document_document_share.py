@@ -124,7 +124,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.depends("error_message_spreadsheet")
     def _compute_has_warning_link_with_more_rights(self) -> None:
-        """Hide other errors if we show the spreadsheet errors."""
         with_spreadsheet_errors = self.filtered("error_message_spreadsheet")
         with_spreadsheet_errors.has_warning_link_with_more_rights = False
         super(
@@ -133,7 +132,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.depends("error_message_spreadsheet")
     def _compute_has_warning_partners_without_access(self) -> None:
-        """Hide other errors if we show the spreadsheet errors."""
         with_spreadsheet_errors = self.filtered("error_message_spreadsheet")
         with_spreadsheet_errors.has_warning_partners_without_access = False
         super(

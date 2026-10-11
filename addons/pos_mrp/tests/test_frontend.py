@@ -10,7 +10,6 @@ class TestUi(TestPointOfSaleHttpCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Ensure minimum rights (avoid new groups added through modules installation)
         group_internal_user = cls.env.ref("base.group_user")
         group_pos_user = cls.env.ref("point_of_sale.group_pos_user")
         cls.pos_user.group_ids = [
@@ -63,13 +62,6 @@ class TestUi(TestPointOfSaleHttpCommon):
         )
 
     def test_ship_later_kit_and_mto_manufactured_product(self):
-        """
-        Ship Later PoS. Sell a kit and a manufactured product. Before selling
-        them, the PoS user reads their product information. The second one has
-        both MTO and manufacture routes. Once sold, the delivery should contain
-        the manufactured product and the kit's components. Thanks to the routes,
-        there should also be a MO for the manufactured product.
-        """
         self.main_pos_config.write(
             {
                 "ship_later": True,

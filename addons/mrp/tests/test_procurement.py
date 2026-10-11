@@ -1373,15 +1373,6 @@ class TestProcurement(TestMrpCommon):
         return product, component
 
     def test_a_batch_size_is_honoured_in_the_unit_it_is_written_in(self):
-        """`batch_size` belongs to the BoM, so the split must be done in its unit.
-
-        Counting the demand down in the *procurement's* unit means converting
-        the batch into that unit first, and the conversion rounds: a 0.4 kg
-        batch procured in tonnes is rounded to the tonne's own precision of
-        0.01 t, so a 25 kg batch becomes a 30 kg one: the orders come out a
-        fifth larger than the BoM asked for, there are 34 of them instead of
-        40, and they add up to 1020 kg against a demand of 1000.
-        """
         kg = self.env.ref("base.product_uom_kgm")
         ton = self.env.ref("base.product_uom_ton")
         product = self.env["product.product"].create(
@@ -1413,7 +1404,6 @@ class TestProcurement(TestMrpCommon):
         self.assertEqual(sum(orders.mapped("product_qty")), 1000.0)
 
     def test_an_unbatched_procurement_is_not_converted(self):
-        """A gram of a kilogram-based product is a gram, not 0.01 kg (10 g)."""
         kg = self.env.ref("base.product_uom_kgm")
         gram = self.env.ref("base.product_uom_gram")
         product = self.env["product.product"].create(
@@ -1521,13 +1511,6 @@ class TestProcurement(TestMrpCommon):
         self.assertEqual(order.product_qty, 5.0)
 
     def test_a_batch_size_too_small_for_the_demand_is_refused_not_obeyed(self):
-        """A thousand-order answer is worse than saying the configuration is wrong.
-
-        `wizard.mrp.production.split` already refuses beyond MAX_SPLITS with a message
-        naming the count; the procurement rule looped without a bound, and with
-        a batch that rounds to zero in the procurement's unit it never
-        terminated at all.
-        """
         product = self.env["product.product"].create(
             {"name": "Tiny batch", "is_storable": True}
         )

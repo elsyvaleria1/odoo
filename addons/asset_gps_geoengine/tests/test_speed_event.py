@@ -56,8 +56,6 @@ class TestSpeedEvent(common.TransactionCase):
             )
 
     def _raise_for_this_device(self):
-        # the cron alerts every device: demo bursts dated today land in its
-        # window or not depending on the time of day
         return (
             self.env["device.gps.speed.alert"]
             ._cron_raise_critical()
@@ -72,9 +70,7 @@ class TestSpeedEvent(common.TransactionCase):
 
     def test_bursts_are_split_by_gap_and_graded_by_peak(self):
         t0 = datetime(2026, 9, 7, 15, 0)
-        # 60 -> 85 -> 95 -> 125 -> 70: one burst peaking above critical.
         self._drive(t0, [60, 85, 95, 125, 70])
-        # Ten minutes later, a mild one: 90 then back down.
         self._drive(t0 + timedelta(minutes=10), [90, 88, 50])
 
         events = self._events()
@@ -128,7 +124,7 @@ class TestSpeedEvent(common.TransactionCase):
                 ),
             }
         )
-        self._drive(t0, [30, 110, 50], lat=19.9)  # on the road
+        self._drive(t0, [30, 110, 50], lat=19.9)
         visit = self.env["device.client.visit"].create(
             {
                 "device_id": self.device.id,
@@ -145,10 +141,6 @@ class TestSpeedEvent(common.TransactionCase):
             {
                 "name": "Fleet Boss",
                 "login": "fleet.boss@test.example",
-                # Deliberately not the environment's zone: context_timestamp
-                # reads the ENVIRONMENT's, so a note built in the cron user's
-                # environment stamps the wrong clock, and two equal zones
-                # cannot see that.
                 "tz": "Pacific/Kiritimati",
             }
         )

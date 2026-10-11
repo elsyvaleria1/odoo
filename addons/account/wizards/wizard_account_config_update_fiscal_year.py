@@ -60,8 +60,6 @@ class WizardAccountConfigUpdateFiscalYear(models.TransientModel):
 
     @api.model
     def _company_fields_to_update(self) -> set:
-        # The return settings trigger tax return generation: they go in the same
-        # company write so that generation runs once.
         return {
             "fiscalyear_last_day",
             "fiscalyear_last_month",

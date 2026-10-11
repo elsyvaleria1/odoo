@@ -33,8 +33,6 @@ _MAX_IDENTIFIER_BYTES = 63
 def _check_identifier(name: str) -> None:
     if not (name.isidentifier() or IDENT_RE.match(name)):
         raise ValueError(f"{name!r} invalid for SQL.identifier()")
-    # PostgreSQL truncates a longer name without error, aliasing any two that share
-    # their first NAMEDATALEN - 1 bytes; a UTF-8 character is at most 4 bytes.
     if (
         len(name) > _MAX_IDENTIFIER_BYTES // 4
         and len(name.encode()) > _MAX_IDENTIFIER_BYTES
@@ -84,8 +82,6 @@ class SQL:
         code_list: list[str] = []
         params_list: list = []
         to_flush_list: list = []
-        # an argument already composed was checked when it was built: only an
-        # empty tuple placed here, bare or wrapped, can newly follow a NOT IN
         inserts_empty_tuple = False
         for arg in args:
             if isinstance(arg, SQL):

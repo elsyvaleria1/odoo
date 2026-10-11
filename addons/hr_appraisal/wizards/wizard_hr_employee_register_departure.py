@@ -20,9 +20,6 @@ class WizardHrEmployeeRegisterDeparture(models.TransientModel):
                     ("date_close", ">", self.departure_date),
                 ]
             )
-            # Only drafts can be deleted - `_unlink_if_new_or_cancel` raises for
-            # anything else, which used to make the whole departure fail. An
-            # ongoing appraisal is archived instead, so the record of it stays.
             drafts = future_appraisals.filtered(lambda a: a.state == "1_new")
             (future_appraisals - drafts).action_archive()
             drafts.unlink()

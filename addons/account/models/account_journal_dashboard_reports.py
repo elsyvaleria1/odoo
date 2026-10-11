@@ -39,9 +39,6 @@ class AccountJournal(models.Model):
 
     @_debug.perf.timed
     def action_view_bank_balance_in_gl(self):
-        """Show the bank balance inside the General Ledger report.
-        :return: An action opening the General Ledger.
-        """
         _debug.lifecycle("action_view_bank_balance_in_gl", records=self)
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(

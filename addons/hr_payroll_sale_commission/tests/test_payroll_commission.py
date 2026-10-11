@@ -15,7 +15,6 @@ class TestPayrollCommission(TestPayslipContractBase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # User
         cls.employee_user = cls.env["res.users"].create(
             {
                 "login": "Salesman",
@@ -23,7 +22,6 @@ class TestPayrollCommission(TestPayslipContractBase):
                 "group_ids": [Command.set(cls.env.ref("sale.group_sale_salesman").ids)],
             }
         )
-        # Payslip Input Type
         cls.input = cls.env["hr.payslip.input.type"].create(
             {"name": "Commission", "code": "COMMISSION", "country_id": False}
         )
@@ -46,7 +44,6 @@ class TestPayrollCommission(TestPayslipContractBase):
             }
         )
 
-        # Commission
         product = self.env["product.product"].create({"name": "Chocolate Cake"})
         commission_plan = self.env["sale.commission.plan"].create(
             {
@@ -86,7 +83,6 @@ class TestPayrollCommission(TestPayslipContractBase):
         )
         commission_plan.action_approve()
 
-        # Sale order
         partner = self.env["res.partner"].create(
             {"name": "Buyer", "company_id": self.env.company.id}
         )
@@ -131,7 +127,6 @@ class TestPayrollCommission(TestPayslipContractBase):
 
     @freeze_time("2026-01-15")
     def test_multiple_commission_in_payslip(self):
-        """Ensure commissions from multiple plans are aggregated into a single payslip input."""
         base_company = self.env.ref("base.main_company")
         today = fields.Date.today()
         employee = self.env["hr.employee"].create(
@@ -158,7 +153,6 @@ class TestPayrollCommission(TestPayslipContractBase):
             "commission_payroll_input": self.input.id,
             "user_ids": [Command.create({"user_id": self.employee_user.id})],
         }
-        # Commission Plans - have a default 5% 'amount_invoiced' achievement
         plans = self.env["sale.commission.plan"].create(
             [
                 dict(common_plan_vals, name="5% on Sales"),
@@ -173,7 +167,6 @@ class TestPayrollCommission(TestPayslipContractBase):
         )
         plans.action_approve()
 
-        # Create and invoice a sale order assigned to the commission user
         so = (
             self.env["sale.order"]
             .with_company(base_company)
@@ -215,13 +208,11 @@ class TestPayrollCommission(TestPayslipContractBase):
         )
         self.assertEqual(len(achievements), 2)
 
-        # expected total commission from all plans
         total_commission = sum(
             so.amount_untaxed * plan.achievement_ids[0].rate for plan in plans
         )
         self.assertEqual(sum(achievements.mapped("achieved")), total_commission)
 
-        # Ensure payslip aggregates all commissions into the same input line
         payslip = (
             self.env["hr.payslip"]
             .with_company(base_company)

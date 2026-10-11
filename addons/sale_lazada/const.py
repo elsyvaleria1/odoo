@@ -6,7 +6,6 @@ for Lazada integration.
 
 AUTH_URL = "https://auth.lazada.com/oauth/authorize"
 
-# API Paths
 API_ENDPOINTS = {
     "VN": "https://api.lazada.vn/rest/",
     "SG": "https://api.lazada.sg/rest/",
@@ -27,7 +26,6 @@ ALLOWED_LAZADA_DOC_HOSTS = {
     "lazada.com.ph",
 }
 
-# Mapping of Lazada API operations to their respective URL path, HTTP method, and API type
 API_OPERATIONS_MAPPING = {
     "GenerateAccessToken": {"url_path": "auth/token/create", "api_type": "public"},
     "RefreshAccessToken": {"url_path": "auth/token/refresh", "api_type": "public"},
@@ -48,10 +46,8 @@ API_OPERATIONS_MAPPING = {
     "SetReadyToShip": {"url_path": "order/package/rts", "api_type": "fulfillment"},
 }
 
-# Mapping of Lazada fulfillment type to Lazada status to synchronize
 ORDER_STATUSES_TO_SYNC = {"fbm": ["pending"], "fbl": ["confirmed"]}
 
-# Mapping of Lazada order item statuses to Odoo order item statuses
 ORDER_ITEM_STATUS_MAPPING = {
     "pending": "draft",
     "packed": "confirmed",
@@ -63,10 +59,8 @@ ORDER_ITEM_STATUS_MAPPING = {
     "canceled": "canceled",
 }
 
-# Supported shipping provider types
 SUPPORTED_SHIPPING_PROVIDER_TYPES = ["express", "standard", "economy"]
 
-# Lazada API's limits
 ORDER_LIST_DAYS_LIMIT = 15
 ORDER_LIST_SIZE_LIMIT = 100
 ORDER_DETAIL_SIZE_LIMIT = 50

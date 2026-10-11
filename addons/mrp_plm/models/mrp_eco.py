@@ -197,8 +197,6 @@ class MrpEcoApprovalTemplate(models.Model):
         }
 
     def _sync_approval_step(self) -> None:
-        """Each role is one step of the Engineering Change category, asked only on an ECO
-        in the role's stage; a mandatory role blocks, the others advise."""
         for template in self.sudo():
             values = template._prepare_approval_step_values()
             if template.step_id:
@@ -562,7 +560,6 @@ class MrpEco(models.Model):
                 eco.effectivity_date = False
 
     def _mark_rebase_conflicts(self, new_bom_lines, changes=None):
-        # Find rebase lines having conflict or not.
         reb_conflicts = self.env["mrp.eco.bom.change"]
         if changes is None:
             changes = self.env["mrp.eco.bom.change"]
@@ -703,18 +700,10 @@ class MrpEco(models.Model):
         return new_bom_commands
 
     def rebase(self, old_bom_lines, new_bom_lines, rebase_lines) -> bool:
-        """Apply changes in a new revision of BoM.
-
-        :param old_bom_lines: previous (old-version) BoM lines.
-        :param new_bom_lines: new-version BoM lines.
-        :param rebase_lines:  changes done in the previous version.
-        :return: True
-        """
         for reb_line in rebase_lines:
             new_bom_line = new_bom_lines.get(reb_line.product_id, None)
             if new_bom_line:
                 if new_bom_line.product_qty + reb_line.upd_product_qty > 0.0:
-                    # Update line if it exist in new bom.
                     new_bom_line.write(
                         {
                             "product_qty": new_bom_line.product_qty
@@ -724,17 +713,14 @@ class MrpEco(models.Model):
                         }
                     )
                 else:
-                    # Unlink lines if old bom removed lines
                     new_bom_line.unlink()
             else:
-                # Add bom line in new bom for rebase.
                 old_line = old_bom_lines.get(reb_line.product_id, None)
                 if old_line:
                     old_line.copy({"bom_id": self.new_bom_id.id})
         return True
 
     def apply_rebase(self):
-        """Apply rebase changes in new version of BoM"""
         self.check_singleton()
         vals = {"state": "progress"}
         if self.bom_rebase_ids:
@@ -749,7 +735,6 @@ class MrpEco(models.Model):
                     line.product_id: line for line in self.bom_id.bom_line_ids
                 }
                 self.rebase(old_bom_lines, new_bom_lines, self.bom_rebase_ids)
-                # Remove all rebase line of current eco.
                 self.bom_rebase_ids.unlink()
         if self.previous_change_ids:
             new_bom_lines = {
@@ -765,7 +750,6 @@ class MrpEco(models.Model):
                 self.rebase(
                     new_activated_bom_lines, new_bom_lines, self.previous_change_ids
                 )
-                # Remove all rebase line of current eco.
                 self.previous_change_ids.unlink()
         if self.current_bom_id:
             self.new_bom_id.write(
@@ -804,7 +788,6 @@ class MrpEco(models.Model):
         "new_bom_id.byproduct_ids.bom_product_template_attribute_value_ids",
     )
     def _compute_bom_change_ids(self) -> None:
-        # Compute difference between old bom and new bom revision.
         for eco in self:
             eco.bom_change_ids = eco._prepare_bom_change_commands(
                 eco.bom_id, eco.new_bom_id
@@ -820,7 +803,6 @@ class MrpEco(models.Model):
     def _compute_previous_bom_change(self) -> None:
         for eco in self:
             if eco.current_bom_id:
-                # Compute difference between old bom and newly activated bom.
                 eco.previous_change_ids = eco._prepare_bom_change_commands(
                     eco.bom_id, eco.current_bom_id
                 )
@@ -854,7 +836,6 @@ class MrpEco(models.Model):
                 continue
             new_routing_commands = [Command.clear()]
             old_routing_lines = defaultdict(lambda: self.env["mrp.routing.workcenter"])
-            # Two operations could have the same values so we save them with the same key
             for op in rec.bom_id.operation_ids:
                 old_routing_lines[op._get_sync_values()] |= op
             if rec.new_bom_id and rec.bom_id:
@@ -926,7 +907,6 @@ class MrpEco(models.Model):
             rec.routing_change_ids = new_routing_commands
 
     def _prepare_detailed_change_commands(self, new, old):
-        """Necessary for overrides to track change of quality checks"""
         return []
 
     @api.depends(
@@ -1000,7 +980,6 @@ class MrpEco(models.Model):
 
     @api.depends("stage_id", "approval_request_ids.state")
     def _compute_kanban_state(self) -> None:
-        """State of the ECO is the state of its current stage's approval request."""
         for rec in self:
             request = (
                 rec._get_stage_request() if rec.id else rec.env["approval.request"]
@@ -1077,7 +1056,6 @@ class MrpEco(models.Model):
     def write(self, vals):
         if vals.get("stage_id"):
             newstage = self.env["mrp.eco.stage"].browse(vals["stage_id"])
-            # raise exception only if we increase the stage, not on decrease
             for eco in self:
                 if eco.stage_id and (
                     (newstage.sequence, newstage.id)
@@ -1149,9 +1127,6 @@ class MrpEco(models.Model):
 
     @api.model
     def _read_group_stage_ids(self, stages, domain):
-        """Read group customization in order to display all the stages of the ECO type
-        in the Kanban view, even if there is no ECO in that stage
-        """
         search_domain = []
         if self.env.context.get("default_type_ids"):
             search_domain = [("type_ids", "in", self.env.context["default_type_ids"])]
@@ -1176,9 +1151,6 @@ class MrpEco(models.Model):
 
     def _prepare_approval_subject_request_values(self, subject_key, category):
         vals = super()._prepare_approval_subject_request_values(subject_key, category)
-        # A stage request is asked on behalf of the change, not of whoever moved it
-        # into the stage: its owner is the ECO's responsible, which is also who the
-        # engine keeps from approving their own change.
         vals["request_owner_id"] = self.user_id.id or self.env.ref("base.user_root").id
         vals["name"] = self.env._(
             "%(eco)s at %(stage)s", eco=self.display_name, stage=self.stage_id.name
@@ -1186,7 +1158,6 @@ class MrpEco(models.Model):
         return vals
 
     def _get_stage_request(self):
-        """The request of the ECO's current stage: the waiting one, else the latest."""
         self.check_singleton()
         return self.sudo()._get_approval_request(self._get_stage_subject_key())
 
@@ -1199,7 +1170,6 @@ class MrpEco(models.Model):
             eco._raise_approval_request(eco._get_stage_subject_key())
 
     def _cancel_stage_request(self) -> None:
-        """Leaving a stage cancels its request if undecided; a decided one stays as history."""
         self.check_singleton()
         request = self.sudo()._get_live_approval_request(self._get_stage_subject_key())
         if request:
@@ -1213,8 +1183,6 @@ class MrpEco(models.Model):
             )
 
     def _restart_stage_request(self, refused):
-        """A fresh request for the same stage, carrying every decision but the one
-        being changed: an approver changing their mind asks nobody else again."""
         self.check_singleton()
         request = self._raise_approval_request(self._get_stage_subject_key())
         changer = self.env.user
@@ -1274,7 +1242,6 @@ class MrpEco(models.Model):
             request.sudo().with_context(skip_wizard=True).action_refuse(approver=rows)
 
     def _record_comment_advice(self) -> None:
-        """A comment role's decision is its comment: it approves that role's rows."""
         self.check_singleton()
         request = self.sudo()._get_live_approval_request(self._get_stage_subject_key())
         if not request:
@@ -1299,7 +1266,6 @@ class MrpEco(models.Model):
         if self.current_bom_id:
             vals.update({"bom_id": self.current_bom_id.id, "current_bom_id": False})
         self.write(vals)
-        # Set previous BoM on new revision and change version of BoM.
         self.new_bom_id.write(
             {
                 "version": (self.will_update_version and self.bom_id.version + 1)
@@ -1307,7 +1273,6 @@ class MrpEco(models.Model):
                 "previous_bom_id": self.bom_id.id,
             }
         )
-        # Remove all rebase lines.
         rebase_lines = self.bom_rebase_ids + self.previous_change_ids
         _debug.lifecycle(
             "eco_conflict_resolved", eco=self.id, rebase_lines=len(rebase_lines)
@@ -1325,7 +1290,6 @@ class MrpEco(models.Model):
             )
             if eco.type == "bom":
                 if eco.production_id:
-                    # This ECO was generated from a MO. Uses it MO as base for the revision.
                     eco.new_bom_id = eco.production_id._create_revision_bom(
                         eco.will_update_version
                     )
@@ -1700,8 +1664,4 @@ class MrpEcoRoutingChange(models.Model):
 class MrpEcoTag(models.Model):
     _name = "mrp.eco.tag"
     _description = "ECO Tags"
-    # `name` (translated, unique on the source term), `active`, `color` and
-    # `code` come from the mixin, whose index replaces the `unique (name)`
-    # constraint this model declared -- that one compares whole jsonb documents
-    # once `name` is translatable. Flat: ECO tags do not nest.
     _inherit = ["mixin.tag"]

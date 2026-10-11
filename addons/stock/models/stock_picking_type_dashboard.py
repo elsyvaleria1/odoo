@@ -122,7 +122,7 @@ class StockPickingTypeDashboard(models.Model):
     def _update_graph_data(self, summaries) -> None:
         data_category_mapping = {}
         for key, _upper, label, kind in self.DATE_CATEGORIES:
-            text = self.env._(label)  # noqa: E8502  resolves an _lt() table entry in this env's language
+            text = self.env._(label)
             data_category_mapping[f"total_{key}"] = {"label": text, "type": kind}
 
         for picking_type in self:

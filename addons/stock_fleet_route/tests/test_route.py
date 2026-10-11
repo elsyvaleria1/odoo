@@ -12,11 +12,10 @@ from odoo.libs import sealing
 from odoo.tests import TransactionCase, tagged
 
 TZ = ZoneInfo("America/Mexico_City")
-LEG = 10_000  # metres per leg in the canned TomTom answers
+LEG = 10_000
 
 
 def tomtom_answer(seconds, order=None):
-    """A calculateRoute answer with one leg per entry of ``seconds``."""
     answer = {
         "routes": [
             {
@@ -164,7 +163,6 @@ class TestTripRoute(TransactionCase):
             ("102", cls.supervisor),
             ("103", cls.driver_user),
         ):
-            # A private chat reaches a partner through its account's binding.
             account = cls.env["telegram.account"].create({"tg_user_id": chat_id})
             cls.env["telegram.binding"].create(
                 {
@@ -184,9 +182,6 @@ class TestTripRoute(TransactionCase):
             )
             cls.chats[chat_id] = user
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     def _delivery(self, customer):
         order = self.env["sale.order"].create(
             {
@@ -224,7 +219,6 @@ class TestTripRoute(TransactionCase):
         )
 
     def _tomtom(self, *answers):
-        """Patch TomTom with ``answers``; the calls land in the returned list."""
         calls = []
         answers = list(answers)
 
@@ -240,7 +234,6 @@ class TestTripRoute(TransactionCase):
         return calls
 
     def _telegram(self):
-        """Patch the bot's send; the messages land in the returned list."""
         sent = []
 
         def fake(bot, chat_id, text, reply_markup=None, parse_mode="Markdown"):
@@ -260,9 +253,6 @@ class TestTripRoute(TransactionCase):
         today = datetime.now(TZ).date() + timedelta(days=1)
         return self._local_to_utc(datetime(today.year, today.month, today.day, hour))
 
-    # ------------------------------------------------------------------
-    # Suggested route
-    # ------------------------------------------------------------------
     def test_suggest_applies_the_best_order_and_cumulative_etas(self):
         a = self._delivery(self.customer_a)
         b = self._delivery(self.customer_b)
@@ -270,7 +260,6 @@ class TestTripRoute(TransactionCase):
         start = self._tomorrow_at(8)
         trip = self._trip(a | b | c, date_planned=start)
         a.batch_sequence, b.batch_sequence, c.batch_sequence = 1, 2, 3
-        # TomTom visits C, A, B; the fourth leg returns to the warehouse.
         calls = self._tomtom(tomtom_answer([600, 1200, 900, 1800], order=[2, 0, 1]))
 
         trip.with_user(self.supervisor).action_route_suggest()
@@ -307,11 +296,9 @@ class TestTripRoute(TransactionCase):
         self.assertEqual((b | a | nowhere).mapped("batch_sequence"), [1, 2, 3])
         self.assertFalse(nowhere.trip_eta)
         self.assertIn("Customer Nowhere", trip.route_warning)
-        # Leaving at 18:00, A arrives at 19:40: past the working day.
         self.assertIn("Does not make it within the day: Customer A", trip.route_warning)
 
     def _egress(self, answer):
-        """Patch the connection's wire; the requests land in the returned list."""
         sent = []
 
         def fake(connection, method, url, **kwargs):
@@ -382,9 +369,6 @@ class TestTripRoute(TransactionCase):
         ):
             trip.action_route_suggest()
 
-    # ------------------------------------------------------------------
-    # Google Maps
-    # ------------------------------------------------------------------
     def test_google_maps_url_follows_the_trip_order(self):
         a = self._delivery(self.customer_a)
         b = self._delivery(self.customer_b)
@@ -404,9 +388,6 @@ class TestTripRoute(TransactionCase):
             "&travelmode=driving",
         )
 
-    # ------------------------------------------------------------------
-    # Departure notice
-    # ------------------------------------------------------------------
     def test_departure_tells_the_seller_with_a_whatsapp_link(self):
         a = self._delivery(self.customer_a)
         nowhere = self._delivery(self.customer_far)
@@ -429,9 +410,6 @@ class TestTripRoute(TransactionCase):
         self.assertIn("has no phone number", text_nowhere)
         self.assertNotIn("wa.me", text_nowhere)
 
-    # ------------------------------------------------------------------
-    # Live arrival times
-    # ------------------------------------------------------------------
     def _departed_trip_with_gps(self, **trip_vals):
         a = self._delivery(self.customer_a)
         b = self._delivery(self.customer_b)
@@ -445,8 +423,6 @@ class TestTripRoute(TransactionCase):
         device = self.env["device.device"].create(
             {"name": "Truck GPS", "identifier": "ROUTE-GPS-1"}
         )
-        # the truck carried its tracker before this trip: a reading counts
-        # from the device's attachment on
         with patch.object(fields.Datetime, "now", lambda: now - timedelta(days=1)):
             trip.vehicle_id.gps_device_id = device
         self.env["device.data.log.gps"].create(
@@ -462,7 +438,6 @@ class TestTripRoute(TransactionCase):
     def test_refresh_reports_a_delay_above_the_threshold(self):
         trip, a, b = self._departed_trip_with_gps()
         baseline_b = b.trip_eta_notified
-        # A: 25 min away (+5, below 15). B: 25 + 30 service + 50 = 105 (+25).
         calls = self._tomtom(tomtom_answer([25 * 60, 50 * 60]))
         sent = self._telegram()
 

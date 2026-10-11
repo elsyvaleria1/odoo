@@ -15,7 +15,6 @@ _EPOCH_RE = re.compile(r"^\d+(\.\d+)?$")
 
 
 def _is_epoch_string(value) -> bool:
-    """Recognize unsigned decimal epoch syntax in a string, without range checks."""
     return bool(_EPOCH_RE.match(value.strip()))
 
 
@@ -54,12 +53,6 @@ def _get_future_tolerance(env=None) -> int:
 
 
 def _admit_unsigned_request(env=None) -> bool:
-    """Apply the configured unsigned-request policy and log the decision.
-
-    Preserve the legacy allowance when no environment is available.
-
-    :rtype: bool
-    """
     env = _resolve_env(env)
 
     if env:
@@ -115,17 +108,10 @@ def is_bearer_token_valid(headers, expected_token) -> bool:
         _logger.error("No expected token provided")
         return False
 
-    return consteq(token, expected_token)  # noqa: E8537  inbound: a signature an outside service sends us
+    return consteq(token, expected_token)
 
 
 def _execute_custom_verification(verification_method, headers, body, env=None) -> bool:
-    """Execute an allowed verification callback with sudo and return its verdict.
-
-    The callback may have side effects. Configuration or callback errors return
-    false after logging; the method-name prefix restriction applies unchanged.
-
-    :rtype: bool
-    """
     if not verification_method:
         return False
 
@@ -205,13 +191,6 @@ def is_hmac_signature_valid(
 def execute_signature_verification(
     signature_type, headers, body, secret=None, **kwargs
 ):
-    """Dispatch signature verification, including custom callback execution.
-
-    Return false for unsupported schemes or caught errors. The custom branch
-    may mutate state; the unsigned branch applies its configured admission rule.
-
-    :rtype: bool
-    """
     try:
         if signature_type == "hmac_sha256":
             return is_hmac_signature_valid(
@@ -305,7 +284,6 @@ def is_timestamp_valid(
 
 
 def is_ip_in_allowlist(remote_addr, allowlist) -> bool:
-    """Match an IP against comma-separated addresses/networks, ignoring bad entries."""
     if not remote_addr:
         return False
     try:

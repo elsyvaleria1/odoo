@@ -59,8 +59,6 @@ class TestDocumentsDownloadBlocked(TransactionCase):
         self.assertTrue(self.document.with_user(self.editor)._is_download_allowed())
 
     def test_a_viewer_may_not_attach_a_blocked_document_an_editor_may(self):
-        # the copy is a plain attachment, outside the document's block; the
-        # composer's picker attaches to a wizard not saved yet (res_id 0)
         with self.assertRaisesRegex(AccessError, "download is blocked"):
             self.document.with_user(self.viewer).add_documents_attachment(
                 "wizard.mail.message.send", 0
@@ -122,7 +120,6 @@ class TestDocumentsDownloadBlocked(TransactionCase):
             self.document.action_update_access_rights(is_download_blocked="yes")
 
     def test_a_viewer_may_not_duplicate_a_blocked_document(self):
-        # the copy would be theirs to edit, and so to download
         with self.assertRaises(AccessError):
             self.document.with_user(self.viewer).copy({"user_folder_id": "MY"})
         copied = self.document.with_user(self.editor).copy({"user_folder_id": "MY"})
@@ -186,7 +183,6 @@ class TestDocumentsDownloadBlockedOverRpc(TransactionCase):
     def test_processing_previews_and_editors_are_untouched(self):
         viewer_document = self.document.with_user(self.viewer)
         self.assertEqual(viewer_document.raw, b"PK\x03\x04ledger")
-        # the app previews an email document from its raw: viewing, not taking
         email = self.env["document.document"].create(
             {"name": "mail.eml", "raw": b"From: a", "is_download_blocked": True}
         )
@@ -263,7 +259,6 @@ class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
                 self.assertEqual(response.status_code, 404)
                 self.assertNotIn(b"secret", response.content)
 
-        # /web/image answers a refusal with its placeholder, never the file
         for url in (
             f"/web/image/{document.attachment_id.id}",
             f"/web/image/{document.id}?model=document.document",
@@ -285,8 +280,6 @@ class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
         self.assertEqual(response.status_code, 200)
 
     def test_the_block_binds_only_who_reaches_the_document(self):
-        # a file attached to a record is that record's too: whoever reads the
-        # record without reaching the document is no viewer the block is about
         partner = self.env["res.partner"].create({"name": "holder of the file"})
         attachment = self.env["ir.attachment"].create(
             {
@@ -314,8 +307,6 @@ class TestDocumentsDownloadBlockedGenericRoutes(HttpCase):
         self.assertEqual(response.content, b"PK\x03\x04contract")
 
     def test_a_visitor_still_streams_a_public_attachment(self):
-        # the gate asks who reaches a document; a visitor, who may read none,
-        # is asked nothing and keeps every file that is public anyway
         attachment = self.env["ir.attachment"].create(
             {"name": "logo.txt", "raw": b"public bytes", "public": True}
         )
@@ -784,7 +775,6 @@ class TestDocumentsDownloadAudit(HttpCase, TransactionCaseDocuments):
         )
 
     def test_split_access_token_refuses_junk(self):
-        # "42" (no separator), "0x", "_" and blanks were read by int(..., 16)
         for junk in (
             "",
             "no-separator",
@@ -856,7 +846,6 @@ class TestDocumentsDownloadBlockedLinkEditor(HttpCase):
         self.assertEqual(response.content, b"secret")
 
     def test_a_public_link_viewer_still_may_not(self):
-        """The negative control: the block still blocks the audience it is for."""
         document = self.env["document.document"].create(
             {
                 "name": "watch-only.txt",
@@ -920,9 +909,6 @@ class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
                 "group_ids": [Command.set([cls.env.ref(group).id for group in groups])],
             }
             if companies:
-                # Keep the main company in `company_ids` and merely make the
-                # other one current: a user belonging ONLY to a fresh company
-                # trips `digest` at create time, which is not what is under test.
                 values["company_ids"] = [
                     Command.set([cls.env.company.id, *(c.id for c in companies)])
                 ]
@@ -1011,7 +997,6 @@ class TestDocumentsLinkEditPermissionInvariant(TransactionCase):
         )
 
     def test_the_sweep_can_see_a_viewer_at_all(self):
-        """Negative control: without it, an empty result proves nothing."""
         self.assertTrue(
             [row for row in self._permissions_on("view") if row[-1] == "view"],
             "the same sweep over a link-VIEW document must find viewers, or it "
@@ -1069,7 +1054,6 @@ class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
         self.assertNotIn(b"secret", inline.content)
 
     def test_a_blocked_document_the_browser_renders_is_still_previewable(self):
-        """The control: the block is a viewing restriction, not a reading one."""
         document = self._blocked("watch.txt", b"secret", "text/plain")
 
         inline = self.url_open(f"/documents/content/{document.access_token}?download=0")
@@ -1078,7 +1062,6 @@ class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
         self.assertEqual(inline.content, b"secret")
 
     def test_the_inline_path_is_recorded_in_the_access_log(self):
-        """A retrieval that leaves no trace is worse than one that is refused."""
         document = self._blocked("watch2.txt", b"secret", "text/plain")
         self.assertEqual(self._log_rows(document), 0)
 
@@ -1094,18 +1077,6 @@ class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
         )
 
     def test_the_textual_thumbnail_route_takes_the_same_gate(self):
-        """Two of its branches stream the WHOLE file, not a 4 KB head.
-
-        The route's normal answer is the first 4 KB re-wrapped in HTML, which is
-        looking rather than taking and stays ungated. Its `text/html` branch and
-        its empty-prefix branch instead hand back `stream.prepare_response`, the
-        same bytes `/documents/content` serves, so they answer the same question
-        and now take the same gate.
-
-        `is_mimetype_textual` and the inline-rendered set are not the same list
-        -- `application/xml` is textual and is not rendered in place -- so this
-        is the seam that reopens if either list moves.
-        """
         rendered = self._blocked("page.html", b"<b>secret</b>", "text/html")
         self.assertEqual(
             self.url_open(
@@ -1128,7 +1099,6 @@ class TestDocumentsDownloadBlockedInlineBypass(HttpCase):
         )
 
     def test_an_unblocked_document_is_unaffected_on_every_path(self):
-        """Negative control: the gate must bite only where the block is set."""
         document = self.env["document.document"].create(
             {
                 "name": "open.zip",

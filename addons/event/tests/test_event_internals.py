@@ -42,7 +42,7 @@ class TestEventInternalsCommon(EventCase):
                     (
                         0,
                         0,
-                        {  # right at subscription
+                        {
                             "interval_unit": "now",
                             "interval_type": "after_sub",
                             "template_ref": "mail.template,%i"
@@ -54,7 +54,7 @@ class TestEventInternalsCommon(EventCase):
                     (
                         0,
                         0,
-                        {  # 1 days before event
+                        {
                             "interval_nbr": 1,
                             "interval_unit": "day",
                             "interval_type": "before_event",
@@ -68,7 +68,6 @@ class TestEventInternalsCommon(EventCase):
             }
         )
 
-        # Mock dates to have reproducible computed fields based on time
         cls.reference_now = datetime(2020, 1, 31, 10, 0, 0)
         cls.reference_beg = datetime(2020, 2, 1, 8, 30, 0)
         cls.reference_end = datetime(2020, 2, 4, 18, 45, 0)
@@ -87,7 +86,6 @@ class TestEventInternalsCommon(EventCase):
 class TestEventData(TestEventInternalsCommon):
     @users("user_eventmanager")
     def test_event_configuration_question_from_type(self):
-        """Enure configuration & translations are copied from Event Type on Event creation"""
         self.env["res.lang"].sudo()._activate_lang("nl_NL")
 
         event_type = self.event_type_questions.with_user(self.env.user)
@@ -140,7 +138,6 @@ class TestEventData(TestEventInternalsCommon):
             set(event.general_question_ids[0].mapped("answer_ids.name")),
             {"Q2-Answer1", "Q2-Answer2"},
         )
-        # verify translations
         event_question_nl = event.specific_question_ids.filtered_domain(
             [
                 ("title", "=", self.event_question_1.title),
@@ -165,12 +162,8 @@ class TestEventData(TestEventInternalsCommon):
     @users("user_eventmanager")
     @mute_logger("odoo.models.unlink")
     def test_event_configuration_from_type(self):
-        """Test data computation of event coming from its event.type template."""
         self.assertEqual(self.env.user.tz, "Europe/Brussels")
 
-        # ------------------------------------------------------------
-        # STARTING DATA
-        # ------------------------------------------------------------
 
         event_type = self.env["event.type"].browse(self.event_type_complex.id)
 
@@ -193,11 +186,7 @@ class TestEventData(TestEventInternalsCommon):
 
         self._create_registrations(event, 1)
 
-        # ------------------------------------------------------------
-        # FILL SYNC TEST
-        # ------------------------------------------------------------
 
-        # change template to a one with mails -> fill event as it is void
         event_type.write(
             {
                 "event_type_mail_ids": [
@@ -223,7 +212,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.date_tz, "Europe/Paris")
         self.assertTrue(event.seats_limited)
         self.assertEqual(event.seats_max, event_type.seats_max)
-        # check 2many fields being populated
         self.assertEqual(len(event.event_mail_ids), 1)
         self.assertEqual(event.event_mail_ids.interval_nbr, 1)
         self.assertEqual(event.event_mail_ids.interval_unit, "day")
@@ -233,15 +221,13 @@ class TestEventData(TestEventInternalsCommon):
         )
         self.assertEqual(len(event.event_ticket_ids), 1)
 
-        # update template, unlink from event -> should not impact event
         event_type.write({"has_seats_limitation": False})
         self.assertEqual(event_type.seats_max, 0)
         self.assertTrue(event.seats_limited)
-        self.assertEqual(event.seats_max, 30)  # original template value
+        self.assertEqual(event.seats_max, 30)
         event.write({"event_type_id": False})
         self.assertEqual(event.event_type_id, self.env["event.type"])
 
-        # set template back -> update event
         event.write({"event_type_id": event_type.id})
         self.assertFalse(event.seats_limited)
         self.assertEqual(event.seats_max, 0)
@@ -251,13 +237,6 @@ class TestEventData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_event_configuration_mails_from_type(self):
-        """Test data computation (related to mails) of event coming from its event.type template.
-        This test uses pretty low level Form data checks, as manipulations in a non-saved Form are
-        required to highlight an undesired behavior when switching event_type templates :
-        event_mail_ids not linked to a registration were generated and kept when switching between
-        different templates in the Form, which could rapidly lead to a substantial amount of
-        undesired lines."""
-        # setup test records
         event_type_default = self.env["event.type"].create(
             {
                 "name": "Type Default",
@@ -315,30 +294,22 @@ class TestEventData(TestEventInternalsCommon):
         mail = event.event_mail_ids[0]
         registration = self._create_registrations(event, 1)
         self.assertEqual(registration.state, "open")
-        # verify that mail is linked to the registration
         self.assertEqual(
             set(mail.mapped("mail_registration_ids.registration_id.id")),
             {registration.id},
         )
-        # start test scenario
         event_form = Form(event)
-        # verify that mail is linked to the event in the form
         self.assertEqual(
             {m.get("id", None) for m in event_form.event_mail_ids._records}, {mail.id}
         )
-        # switch to an event_type with a mail template which should be computed
         event_form.event_type_id = event_type_mails
-        # verify that 2 mails were computed
         self.assertEqual(len(event_form.event_mail_ids._records), 2)
-        # verify that the mail linked to the registration was kept
         self.assertTrue(
             filter(
                 lambda m: m.get("id", None) == mail.id,
                 event_form.event_mail_ids._records,
             )
         )
-        # since the other computed event.mail is to be created from an event.type.mail template,
-        # verify that its attributes are the correct ones
         computed_mail = next(
             filter(
                 lambda m: m.get("id", None) != mail.id,
@@ -349,9 +320,7 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(computed_mail.get("interval_nbr", None), 77)
         self.assertEqual(computed_mail.get("interval_unit", None), "day")
         self.assertEqual(computed_mail.get("interval_type", None), "after_event")
-        # switch back to an event type without a mail template
         event_form.event_type_id = event_type_default
-        # verify that the mail linked to the registration was kept, and the other removed
         self.assertEqual(
             {m.get("id", None) for m in event_form.event_mail_ids._records}, {mail.id}
         )
@@ -372,13 +341,11 @@ class TestEventData(TestEventInternalsCommon):
             }
         )
 
-        # verify that note is not propagated if the event type contains blank html
         event.write({"note": "<p>Event Note</p>"})
         event_type.write({"note": "<p><br></p>"})
         event.write({"event_type_id": event_type.id})
         self.assertEqual(event.note, "<p>Event Note</p>")
 
-        # verify that note is correctly propagated if it contains non empty html
         event.write({"event_type_id": False})
         event_type.write({"note": "<p>Event Type Note</p>"})
         event.write({"event_type_id": event_type.id})
@@ -386,7 +353,6 @@ class TestEventData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_event_configuration_questions_from_type(self):
-        """Test that the questions of an event are updated as the event type changes."""
         (
             event_type_1_question,
             event_type_1_removed_question,
@@ -398,7 +364,6 @@ class TestEventData(TestEventInternalsCommon):
                 {"title": "Event Type 1 Removed Question"},
                 {"title": "Event Type 2 Question"},
                 {
-                    # To check that a question removed from an event can be added again using an event_type.
                     "title": "Event Type Common Question"
                 },
             ]
@@ -432,11 +397,9 @@ class TestEventData(TestEventInternalsCommon):
                 "date_end": self.reference_end,
             }
         )
-        # Check that the questions of the event are updated with those of the event type.
         self.assertEqual(event.question_ids, event_type_1.question_ids)
 
         event_type_1.question_ids = [Command.clear()]
-        # Check that the questions of the event are not updated when the questions of the event type are removed.
         self.assertTrue(event.question_ids, event_type_1_questions)
 
         self.env["event.registration.answer"].create(
@@ -449,8 +412,6 @@ class TestEventData(TestEventInternalsCommon):
             }
         )
         event.write({"event_type_id": event_type_2.id})
-        # Check that the questions of the event are updated with those of the new event type of the event
-        # and that the question with attendee answer is not removed.
         self.assertEqual(
             event.question_ids,
             event_type_1_question + event_type_2_question + event_type_common_question,
@@ -458,13 +419,6 @@ class TestEventData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_event_configuration_tickets_from_type(self):
-        """Test data computation (related to tickets) of event coming from its event.type template.
-        This test uses pretty low level Form data checks, as manipulations in a non-saved Form are
-        required to highlight an undesired behavior when switching event_type templates :
-        event_ticket_ids not linked to a registration were generated and kept when switching between
-        different templates in the Form, which could rapidly lead to a substantial amount of
-        undesired lines."""
-        # setup test records
         event_type_default = self.env["event.type"].create(
             {
                 "name": "Type Default",
@@ -515,25 +469,18 @@ class TestEventData(TestEventInternalsCommon):
         )
         ticket = event.event_ticket_ids[0]
         registration = self._create_registrations(event, 1)
-        # link the ticket to the registration
         registration.write({"event_ticket_id": ticket.id})
-        # start test scenario
         event_form = Form(event)
-        # verify that the ticket is linked to the event in the form
         self.assertEqual(
             {m.get("name", None) for m in event_form.event_ticket_ids._records},
             {"Registration Ticket"},
         )
-        # switch to an event_type with a ticket template which should be computed
         event_form.event_type_id = event_type_tickets
-        # verify that both tickets are computed
         self.assertEqual(
             {m.get("name", None) for m in event_form.event_ticket_ids._records},
             {"Registration Ticket", "Default Ticket"},
         )
-        # switch back to an event_type without default tickets
         event_form.event_type_id = event_type_default
-        # verify that the ticket linked to the registration was kept, and the other removed
         self.assertEqual(
             {m.get("name", None) for m in event_form.event_ticket_ids._records},
             {"Registration Ticket"},
@@ -575,7 +522,6 @@ class TestEventData(TestEventInternalsCommon):
             registration.invalidate_recordset(["event_date_range"])
             self.assertEqual(registration.event_date_range, "on Mar 1, 2020")
 
-            # Is actually 8:30 to 20:00 in Mexico
             event.write(
                 {
                     "date_begin": datetime(2020, 1, 31, 14, 30, 0),
@@ -585,7 +531,6 @@ class TestEventData(TestEventInternalsCommon):
             )
             self.assertTrue(event.is_one_day)
 
-        # Checks case when mocked today changes date before event, when event.date_tz considered
         with freeze_time(datetime(2020, 6, 20, 20, 0, 0)):
             event.write(
                 {
@@ -594,13 +539,9 @@ class TestEventData(TestEventInternalsCommon):
                     "date_tz": "America/Los_Angeles",
                 }
             )
-            # event_date_tz = 2020-06-26 18:00
-            # today_tz = 2020-06-20 13:00
-            # event_date_tz.date() - today_tz.date() = 6 days
             registration.invalidate_recordset(["event_date_range"])
             self.assertEqual(registration.event_date_range, "in 6 days")
 
-        # Checks case when event changes date before mocked today, when event.date_tz considered
         with freeze_time(datetime(2020, 6, 20, 13, 0, 0)):
             event.write(
                 {
@@ -609,9 +550,6 @@ class TestEventData(TestEventInternalsCommon):
                     "date_tz": "Australia/Sydney",
                 }
             )
-            # event_date_tz = 2020-06-26 06:00
-            # today_tz = 2020-06-20 23:00
-            # event_date_tz.date() - today_tz.date() = 6 days
             registration.invalidate_recordset(["event_date_range"])
             self.assertEqual(registration.event_date_range, "in 6 days")
 
@@ -619,7 +557,6 @@ class TestEventData(TestEventInternalsCommon):
     @users("user_eventmanager")
     def test_event_date_timezone(self):
         event = self.event_0.with_user(self.env.user)
-        # Is actually 8:30 to 20:00 in Mexico
         event.write(
             {
                 "date_begin": datetime(2020, 1, 31, 14, 30, 0),
@@ -630,7 +567,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertTrue(event.is_one_day)
         self.assertFalse(event.is_ongoing)
 
-        # Should apply default datetimes
         with freeze_time(self.reference_now):
             default_event = self.env["event.event"].create(
                 {
@@ -657,7 +593,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.date_tz, self.env.user.tz)
         self.assertFalse(event.seats_limited)
 
-        # Event Communications: when no event type, default configuration
         self.assertEqual(len(event.event_mail_ids), 3)
         self.assertEqual(event.event_mail_ids[0].interval_unit, "now")
         self.assertEqual(event.event_mail_ids[0].interval_type, "after_sub")
@@ -682,11 +617,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.event_mail_ids, self.env["event.mail"])
 
     def test_event_mail_filter_template_on_event(self):
-        """Test that the mail template are filtered to show only those which are related to the event registration model.
-
-        This is important to be able to show only relevant mail templates on the related
-        field "template_ref".
-        """
         self.env["mail.template"].search(
             [("model", "=", "event.registration")]
         ).unlink()
@@ -725,7 +655,6 @@ class TestEventData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_event_question_defaults(self):
-        """Test that default questions are linked to the new events and shared by all of them."""
         event_0, event_1 = self.env["event.event"].create(
             [
                 {
@@ -740,17 +669,14 @@ class TestEventData(TestEventInternalsCommon):
                 },
             ]
         )
-        # Check that event has been linked to the default questions.
         self.assertCountEqual(
             event_0.question_ids.mapped("question_type"), ["name", "email", "phone"]
         )
-        # Check that default questions are shared by events.
         self.assertEqual(event_0.question_ids, event_1.question_ids)
 
     @freeze_time("2020-01-31 10:00:00")
     @users("user_eventmanager")
     def test_event_registrable(self):
-        """Test if `_compute_event_registrations_open` works properly."""
         event = self.event_0.with_user(self.env.user)
         event.write(
             {
@@ -766,7 +692,6 @@ class TestEventData(TestEventInternalsCommon):
         )
         self.assertTrue(event.event_registrations_open)
 
-        # ticket without dates boundaries -> ok
         ticket = self.env["event.event.ticket"].create(
             {
                 "name": "TestTicket",
@@ -775,7 +700,6 @@ class TestEventData(TestEventInternalsCommon):
         )
         self.assertTrue(event.event_registrations_open)
 
-        # even with valid tickets, date limits registrations
         event.write(
             {
                 "date_begin": datetime(2020, 1, 28, 15, 0, 0),
@@ -784,7 +708,6 @@ class TestEventData(TestEventInternalsCommon):
         )
         self.assertFalse(event.event_registrations_open)
 
-        # no more seats available
         registration = self.env["event.registration"].create(
             {
                 "name": "Albert Test",
@@ -801,12 +724,10 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.seats_available, 0)
         self.assertFalse(event.event_registrations_open)
 
-        # seats available are back
         registration.unlink()
         self.assertEqual(event.seats_available, 1)
         self.assertTrue(event.event_registrations_open)
 
-        # but tickets are expired
         ticket.write({"end_sale_datetime": datetime(2020, 1, 30, 15, 0, 0)})
         self.assertTrue(ticket.is_expired)
         self.assertFalse(event.event_registrations_open)
@@ -814,7 +735,6 @@ class TestEventData(TestEventInternalsCommon):
     @freeze_time("2020-01-31 10:00:00")
     @users("user_eventmanager")
     def test_event_multi_slots_registrable(self):
-        """Test if `_compute_event_registrations_open` works properly on multi slots events."""
         event = self.event_0.with_user(self.env.user)
         self.assertTrue(event.event_registrations_open)
         event.write(
@@ -826,9 +746,7 @@ class TestEventData(TestEventInternalsCommon):
         )
         self.assertFalse(event.event_ticket_ids)
         self.assertFalse(event.event_slot_ids)
-        # Should be closed if no slot
         self.assertFalse(event.event_registrations_open)
-        # Should be open with a slot and no tickets
         event.write(
             {
                 "event_slot_ids": [
@@ -854,7 +772,6 @@ class TestEventData(TestEventInternalsCommon):
             }
         )
         self.assertTrue(event.event_registrations_open)
-        # Should be open with a slot, a ticket and slot-ticket availabilities
         event.write(
             {
                 "event_ticket_ids": [
@@ -871,7 +788,6 @@ class TestEventData(TestEventInternalsCommon):
             }
         )
         self.assertTrue(event.event_registrations_open)
-        # Should be closed if all slots are sold out (event seats max)
         event.write(
             {
                 "seats_limited": True,
@@ -896,7 +812,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertTrue(slot2.is_sold_out)
         self.assertFalse(event.event_registrations_open)
         regs.unlink()
-        # Should be closed if ticket sold out for each slot (ticket seats max)
         event.write({"seats_limited": False})
         self.assertTrue(event.event_registrations_open)
         regs = self.env["event.registration"].create(
@@ -969,14 +884,12 @@ class TestEventData(TestEventInternalsCommon):
         )
 
         self.assertEqual(event.address_id, self.env.user.company_id.partner_id)
-        # seats: coming from event type configuration
         self.assertTrue(event.seats_limited)
         self.assertEqual(event.seats_available, event.event_type_id.seats_max)
         self.assertEqual(event.seats_reserved, 0)
         self.assertEqual(event.seats_used, 0)
         self.assertEqual(event.seats_taken, 0)
 
-        # create registration in order to check the seats computation
         reg_open_multiple = self.env["event.registration"].create(
             [
                 {
@@ -1008,11 +921,7 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.seats_used, 1)
         self.assertEqual(event.seats_taken, 6)
 
-        # ------------------------------------------------------------
-        # SEATS AVAILABILITY AND (UN-)ARCHIVING REGISTRATIONS
-        # ------------------------------------------------------------
 
-        # Archiving and seats availability
         reg_open.action_archive()
         self.assertEqual(event.seats_reserved, 4)
         self.assertEqual(event.seats_available, event.event_type_id.seats_max - 5)
@@ -1022,7 +931,6 @@ class TestEventData(TestEventInternalsCommon):
         self.assertEqual(event.seats_available, event.event_type_id.seats_max - 5)
         self.assertEqual(event.seats_taken, 5)
 
-        # Un-archiving confirmed seats requires available seat(s)
         reg_open.action_unarchive()
         self.assertEqual(event.seats_reserved, 5)
         self.assertEqual(event.seats_available, event.event_type_id.seats_max - 6)
@@ -1035,23 +943,17 @@ class TestEventData(TestEventInternalsCommon):
         reg_open.action_archive()
         self.assertEqual(event.seats_reserved, 4)
 
-        # It is not possible to unarchive a confirmed seat if the event is fully booked
         event.write({"seats_max": 5})
         with self.assertRaises(exceptions.ValidationError):
             reg_open.action_unarchive()
 
-        # raising the limit allows it
         event.write({"seats_max": 6})
         self.assertEqual(reg_open.state, "open")
         reg_open.action_unarchive()
 
-        # It is not possible to confirm a draft reservation if the event is
-        # fully booked
         with self.assertRaises(exceptions.ValidationError):
             reg_draft.write({"state": "open"})
 
-        # It is not possible to create an open registration (default value)
-        # when the event is full
         new_open_registration = {
             "event_id": event.id,
             "name": "reg_open",
@@ -1059,7 +961,6 @@ class TestEventData(TestEventInternalsCommon):
         with self.assertRaises(exceptions.ValidationError):
             self.env["event.registration"].create(new_open_registration)
 
-        # If the seats limitation is removed, it becomes possible of course
         event.write({"seats_limited": 0})
         self.env["event.registration"].create(new_open_registration)
         reg_draft.write({"state": "open"})
@@ -1069,7 +970,6 @@ class TestEventData(TestEventInternalsCommon):
 class TestEventRegistrationData(TestEventInternalsCommon):
     @users("user_eventmanager")
     def test_registration_attended_log(self):
-        """Test changes in date_closed field when state is changed."""
         with self.mock_datetime_and_now("2025-05-03 17:00:00"):
             event = self.env["event.event"].create(
                 {
@@ -1123,7 +1023,6 @@ class TestEventRegistrationData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_registration_partner_sync(self):
-        """Test registration computed fields about partner"""
         test_email = '"Nibbler In Space" <nibbler@futurama.example.com>'
         test_phone = "0456001122"
         test_phone_fmt = "+32456001122"
@@ -1131,7 +1030,6 @@ class TestEventRegistrationData(TestEventInternalsCommon):
         event = self.env["event.event"].browse(self.event_0.ids)
         customer = self.env["res.partner"].browse(self.event_customer.id)
 
-        # take all from partner
         event.write(
             {
                 "registration_ids": [
@@ -1153,7 +1051,6 @@ class TestEventRegistrationData(TestEventInternalsCommon):
             new_reg._phone_get_number().number, customer._phone_get_number().number
         )
 
-        # partial update
         event.write(
             {
                 "registration_ids": [
@@ -1187,7 +1084,6 @@ class TestEventRegistrationData(TestEventInternalsCommon):
             "Registration should take partner value if not user input",
         )
 
-        # already filled information should not be updated
         event.write(
             {
                 "registration_ids": [
@@ -1218,11 +1114,9 @@ class TestEventRegistrationData(TestEventInternalsCommon):
 
     @users("user_eventmanager")
     def test_registration_partner_sync_company(self):
-        """Test synchronization involving companies"""
         event = self.env["event.event"].browse(self.event_0.ids)
         customer = self.env["res.partner"].browse(self.event_customer.id)
 
-        # create company structure (using sudo as required partner manager group)
         company = (
             self.env["res.partner"]
             .sudo()
@@ -1251,7 +1145,6 @@ class TestEventRegistrationData(TestEventInternalsCommon):
             )
         )
 
-        # take all from partner
         event.write(
             {
                 "registration_ids": [
@@ -1325,27 +1218,23 @@ class TestEventRegistrationPhone(EventCase):
 
     @users("user_eventregistrationdesk")
     def test_registration_phone_format(self):
-        """Test phone formatting: based on partner (BE numbers) or event
-        (IN numbers) or company (BE numbers)."""
         event = self.test_event.with_user(self.env.user)
 
-        # customer_id, phone -> based on partner or event country
         sources = [
-            (self.event_customer.id, None),  # BE local on partner
-            (self.event_customer2.id, None),  # BE local on partner
-            (self.event_customer2.id, "0456001122"),  # BE local + on partner
-            (False, "0456778899"),  # BE local
-            (False, "7200000000"),  # IN local
-            (False, "+917200000088"),  # IN global
+            (self.event_customer.id, None),
+            (self.event_customer2.id, None),
+            (self.event_customer2.id, "0456001122"),
+            (False, "0456778899"),
+            (False, "7200000000"),
+            (False, "+917200000088"),
         ]
-        # expected phone
         expected = [
-            "0485112233",  # partner values, no format (phone only)
-            "0456987654",  # partner values, no format (both: phone wins)
-            "+32456001122",  # BE on partner
-            "0456778899",  # IN on event -> cannot format BE
-            "+917200000000",  # IN on event
-            "+917200000088",  # already formatted
+            "0485112233",
+            "0456987654",
+            "+32456001122",
+            "0456778899",
+            "+917200000000",
+            "+917200000088",
         ]
         for (partner_id, phone), exp_phone in zip(sources, expected, strict=True):
             with self.subTest(partner_id=partner_id, phone=phone):
@@ -1360,7 +1249,6 @@ class TestEventRegistrationPhone(EventCase):
                 reg = self.env["event.registration"].create(create_vals)
                 self.assertEqual(reg._phone_get_number().number, exp_phone)
 
-        # no country on event -> based on partner or event company country
         self.test_event.write({"address_id": False})
         sources = [
             (self.event_customer.id, None),
@@ -1371,12 +1259,12 @@ class TestEventRegistrationPhone(EventCase):
             (False, "+917200000099"),
         ]
         expected = [
-            "0485112233",  # partner values, no format (phone only)
-            "0456987654",  # partner values, no format (both: phone wins)
-            "+32456001133",  # BE on company
-            "+32456778800",  # BE on company
-            "7200000011",  # BE on company -> cannot format IN
-            "+917200000099",  # already formatted
+            "0485112233",
+            "0456987654",
+            "+32456001133",
+            "+32456778800",
+            "7200000011",
+            "+917200000099",
         ]
         for (partner_id, phone), exp_phone in zip(sources, expected, strict=True):
             with self.subTest(partner_id=partner_id, phone=phone):
@@ -1397,7 +1285,6 @@ class TestEventTicketData(TestEventInternalsCommon):
     @freeze_time("2020-01-31 10:00:00")
     @users("user_eventmanager")
     def test_event_ticket_fields(self):
-        """Test event ticket fields synchronization"""
         INITIAL_TICKET_SEATS_MAX = 30
         event = self.event_0.with_user(self.env.user)
         event.write(
@@ -1415,7 +1302,7 @@ class TestEventTicketData(TestEventInternalsCommon):
                     (
                         0,
                         0,
-                        {  # limited in time, available (01/10 (start) < 01/31 (today) < 02/10 (end))
+                        {
                             "name": "Second Ticket",
                             "start_sale_datetime": datetime(2020, 1, 10, 0, 0, 0),
                             "end_sale_datetime": datetime(2020, 2, 10, 23, 59, 59),
@@ -1438,11 +1325,9 @@ class TestEventTicketData(TestEventInternalsCommon):
         self.assertFalse(second_ticket.seats_limited)
         self.assertTrue(second_ticket.sale_available)
         self.assertFalse(second_ticket.is_expired)
-        # sale is ended
         second_ticket.write({"end_sale_datetime": datetime(2020, 1, 20, 23, 59, 59)})
         self.assertFalse(second_ticket.sale_available)
         self.assertTrue(second_ticket.is_expired)
-        # sale has not started
         second_ticket.write(
             {
                 "start_sale_datetime": datetime(2020, 2, 10, 0, 0, 0),
@@ -1451,7 +1336,6 @@ class TestEventTicketData(TestEventInternalsCommon):
         )
         self.assertFalse(second_ticket.sale_available)
         self.assertFalse(second_ticket.is_expired)
-        # sale started today
         second_ticket.write(
             {
                 "start_sale_datetime": datetime(2020, 1, 31, 0, 0, 0),
@@ -1461,13 +1345,11 @@ class TestEventTicketData(TestEventInternalsCommon):
         self.assertTrue(second_ticket.sale_available)
         self.assertTrue(second_ticket.is_launched)
         self.assertFalse(second_ticket.is_expired)
-        # incoherent dates are invalid
         with self.assertRaises(exceptions.UserError):
             second_ticket.write(
                 {"end_sale_datetime": datetime(2020, 1, 20, 23, 59, 59)}
             )
 
-        # test if event start/end dates are taking datetime fields (hours, minutes, seconds) into account
         second_ticket.write({"start_sale_datetime": datetime(2020, 1, 31, 11, 0, 0)})
         self.assertFalse(second_ticket.sale_available)
         self.assertFalse(second_ticket.is_launched)
@@ -1488,11 +1370,7 @@ class TestEventTicketData(TestEventInternalsCommon):
         self.assertFalse(second_ticket.sale_available)
         self.assertTrue(second_ticket.is_expired)
 
-        # ------------------------------------------------------------
-        # (UN -)ARCHIVING REGISTRATIONS AND SEATS AVAILABILITY
-        # ------------------------------------------------------------
 
-        # Archiving and seats availability
         reg_draft_multiple = self.env["event.registration"].create(
             [
                 {
@@ -1503,7 +1381,6 @@ class TestEventTicketData(TestEventInternalsCommon):
                 for idx in range(3)
             ]
         )
-        # Draft registrations should not impact seats
         reg_draft_multiple.state = "draft"
         reg_draft = reg_draft_multiple[0]
 
@@ -1536,7 +1413,6 @@ class TestEventTicketData(TestEventInternalsCommon):
         self.assertEqual(first_ticket.seats_reserved, 0)
         self.assertEqual(first_ticket.seats_available, INITIAL_TICKET_SEATS_MAX)
 
-        # Un-archiving confirmed/done seats requires available seat(s)
         reg_open.action_unarchive()
         self.assertEqual(first_ticket.seats_reserved, 1)
         self.assertEqual(first_ticket.seats_available, INITIAL_TICKET_SEATS_MAX - 1)
@@ -1548,14 +1424,10 @@ class TestEventTicketData(TestEventInternalsCommon):
         reg_open.action_archive()
         first_ticket.write({"seats_max": 1})
 
-        # It is not possible to unarchive confirmed seat if ticket is fully booked
         with self.assertRaises(exceptions.ValidationError):
             reg_open.action_unarchive()
 
-        # SEATS AVAILABILITY
 
-        # It is impossible to create an open registration when the
-        # ticket is fully booked (1 used + 1 reserved)
         self.assertEqual(event.seats_available, 0)
         with self.assertRaises(exceptions.ValidationError):
             self.env["event.registration"].create(
@@ -1566,8 +1438,6 @@ class TestEventTicketData(TestEventInternalsCommon):
                 }
             )
 
-        # It is not possible to convert a draft to an open registration
-        # when the event is fully booked
         with self.assertRaises(exceptions.ValidationError):
             reg_draft.write({"state": "open"})
 
@@ -1576,8 +1446,6 @@ class TestEventTicketData(TestEventInternalsCommon):
 class TestEventTypeData(TestEventInternalsCommon):
     @users("user_eventmanager")
     def test_event_type_fields(self):
-        """Test event type fields synchronization"""
-        # create test type and ensure its initial values
         event_type = self.env["event.type"].create(
             {
                 "name": "Testing fields computation",
@@ -1588,7 +1456,6 @@ class TestEventTypeData(TestEventInternalsCommon):
         self.assertTrue(event_type.has_seats_limitation)
         self.assertEqual(event_type.seats_max, 30)
 
-        # reset seats limitation
         event_type.write({"has_seats_limitation": False})
         self.assertFalse(event_type.has_seats_limitation)
         self.assertEqual(event_type.seats_max, 0)
@@ -1596,11 +1463,6 @@ class TestEventTypeData(TestEventInternalsCommon):
 
 class TestEventMessageAccess(EventCase):
     def test_desk_posting_is_one_rule_both_ways(self):
-        """The registration desk posts with read access alone, defined once.
-
-        The per-record answer and the domain the activity guard searches with
-        must pick the same events.
-        """
         events = self.env["event.event"].create(
             [
                 {

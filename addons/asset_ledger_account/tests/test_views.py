@@ -6,7 +6,6 @@ from odoo.tests import TransactionCase, tagged
 @tagged("post_install", "-at_install")
 class TestViewExtensions(TransactionCase):
     def test_the_asset_pivot_row_is_available_not_default(self):
-        """The base analytic pivot belongs to every module that uses it."""
         pivot = self.env.ref("analytic.view_account_analytic_line_pivot")
         arch = self.env["account.analytic.line"].get_view(pivot.id, "pivot")["arch"]
 
@@ -22,8 +21,6 @@ class TestViewExtensions(TransactionCase):
         )
 
     def test_the_bills_button_hides_itself_when_there_are_none(self):
-        """`_compute_move_ids` answers 0 without accounting rights, so an
-        unguarded button is a permanent empty one for every warehouse user."""
         form = self.env.ref("asset_ledger.resource_asset_view_form_ledger")
         arch = self.env["resource.resource"].get_view(form.id, "form")["arch"]
 

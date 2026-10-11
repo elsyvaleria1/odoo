@@ -874,8 +874,6 @@ class CreditProfile(models.Model):
 
     def _evaluate(self, kind, amount=0.0, immediate=False, term_days=None):
         if not self:
-            # no standing is no opinion: the policy judges only a partner a
-            # credit user has given a profile
             _debug.logic("credit_no_standing", kind=kind)
             return CreditVerdict()
         self.check_singleton()
@@ -1068,8 +1066,6 @@ class CreditProfile(models.Model):
             result[profile] = (bought + (amount or 0.0), oldest)
         return result
 
-    # Each measure is one observation the scorecard bands; None is "nothing to
-    # measure", which a skip dimension leaves out of the denominator.
 
     def _score_observe_dbt(self, dimension):
         self.check_singleton()

@@ -60,8 +60,6 @@ class TestContractSignWizard(SignTemplateFixture, TransactionCase):
         )
 
     def test_single_template_defaults_employee_role(self):
-        """Check that one selected template collapses the common roles and
-        defaults the employee role."""
         template = self._template("Contract", 1)
         wizard = self.wizard_model.new(
             {"sign_template_ids": [Command.set(template.ids)]}
@@ -76,7 +74,6 @@ class TestContractSignWizard(SignTemplateFixture, TransactionCase):
         self.assertFalse(wizard.has_both_template)
 
     def test_two_role_template_flags_both(self):
-        """Check that a two-responsible template raises the has_both flag."""
         template = self._template("Dual", 2)
         wizard = self.wizard_model.new(
             {"sign_template_ids": [Command.set(template.ids)]}
@@ -84,13 +81,6 @@ class TestContractSignWizard(SignTemplateFixture, TransactionCase):
         self.assertTrue(wizard.has_both_template)
 
     def test_mail_displayed_follows_mail_to_choice(self):
-        """Check the displayed email switches between work and private and
-        blanks out for multiple employees."""
-        # NOTE: every wizard here is a single record. `_compute_mail_displayed`
-        # used to read `self.mail_to` inside its `for wizard in self` loop,
-        # which only happened to work because `self` was always a singleton
-        # here too — the bug was fixed under task t24783 (now `wizard.mail_to`),
-        # so this still isn't exercising the multi-wizard-recordset path.
         wizard = self.wizard_model.new(
             {"employee_ids": [Command.set(self.employee.ids)], "mail_to": "work"}
         )
@@ -111,24 +101,15 @@ class TestContractSignWizard(SignTemplateFixture, TransactionCase):
         self.assertFalse(wizard_multi.mail_displayed)
 
     def test_open_employee_sign_requests_action_without_requests(self):
-        """Check that a user with no pending requests gets the kanban action
-        with an empty domain instead of a direct document jump."""
         user = self.env["res.users"].create(
             {"name": "Sign User", "login": "hr_sign_user"}
         )
         self.employee.user_id = user
-        # NOTE: `user.with_user(user)` collapses record and session user.
-        # open_employee_sign_requests used to mix `self.env.user.employee_ids`
-        # (session) with `self.partner_id` (record), so calling it on another
-        # user's record answered for the wrong person; fixed under task
-        # t24784 (now reads `self.employee_ids`, record-consistent).
         action = user.with_user(user).open_employee_sign_requests()
         self.assertEqual(action["res_model"], "sign.request")
         self.assertEqual(action["domain"], [("id", "in", [])])
 
     def test_open_employee_sign_requests_rejects_multi_user(self):
-        """Check that opening the sign requests of several users at once is
-        refused by the singleton guard."""
         users = self.env["res.users"].create(
             [
                 {"name": "Multi One", "login": "hr_sign_multi_1"},

@@ -18,7 +18,6 @@ class AccountImportSummary(models.TransientModel):
 
     @api.depends("import_summary_analytic_ids", "import_summary_analytic_line_ids")
     def _compute_import_summary_have_data(self) -> None:
-        # EXTENDS 'account_base_import'
         super()._compute_import_summary_have_data()
         for record in self:
             if not record.import_summary_have_data:

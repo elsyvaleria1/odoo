@@ -26,8 +26,6 @@ class MailActivityPlanTemplate(models.Model):
 
     @api.constrains("activity_type_id", "sign_template_id", "employee_role_id")
     def _check_employee_role_id(self) -> None:
-        # The form view enforces this conditionally, but plans built by
-        # RPC/import bypass it and would crash the schedule wizard mid-plan.
         for template in self:
             if template.is_signature_request and not template.employee_role_id:
                 raise ValidationError(

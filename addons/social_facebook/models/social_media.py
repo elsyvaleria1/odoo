@@ -23,12 +23,6 @@ class SocialMedia(models.Model):
     media_type = fields.Selection(selection_add=[("facebook", "Facebook")])
 
     def _action_add_account(self):
-        """Builds the URL to Facebook with the appropriate page rights request, then redirects the client.
-        Redirect is done in 'self' since Facebook will then return back to the app with the 'redirect_uri' param.
-
-        Redirect URI from Facebook will land on this module controller's 'facebook_account_callback' method.
-
-        Facebook will display an error message if the callback URI is not correctly defined in the Facebook APP settings."""
 
         self.check_singleton()
 
@@ -122,8 +116,6 @@ class SocialMedia(models.Model):
 
     @api.model
     def _receiver_for_facebook_deletion(self, **path_args):
-        """IAP relays a user's data-deletion request with the shared secret
-        in the form; the receiver is the Facebook medium."""
         media = self.env.ref(
             "social_facebook.social_media_facebook", raise_if_not_found=False
         )
@@ -146,5 +138,4 @@ class SocialMedia(models.Model):
         )
 
     def _get_social_facebook_deletion_shared_secret(self):
-        """Shared secret between the database and IAP, derived from the database secret."""
         return tools.hmac(self.env(su=True), DELETION_SECRET_SCOPE, None)

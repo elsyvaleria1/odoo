@@ -38,15 +38,10 @@ class TestGrantProjection(GrantCase):
         self.assertEqual(grant.granted_by_id, self.env.user)
 
     def test_a_user_holds_the_groups_it_is_created_with(self):
-        # the groups a user holds are read from its grants, which its create
-        # makes after the row: whatever read the groups while the row was
-        # being created must not stand as the answer
         Users = self.env["res.users"]
         follow = type(self.Grant)._follow_membership
 
         def read_groups_first(grants, added, removed, fresh_user_ids=()):
-            # a computed field or an override reading the new user's groups
-            # before its grants exist, as approval's do
             for user_id in fresh_user_ids:
                 Users.browse(user_id)._get_group_ids()
             return follow(grants, added, removed, fresh_user_ids)
@@ -189,8 +184,6 @@ class TestGrantProjection(GrantCase):
         self.assertNotIn(self.group_partner_manager, self.user.group_ids)
 
     def test_a_membership_no_grant_covers_counts_beside_the_grants(self):
-        # a membership a migration writes below the ORM after its user holds
-        # grants: has_group reads the same membership group_ids shows
         self.env.flush_all()
         self.env.cr.execute(
             "INSERT INTO res_groups_users_rel (uid, gid) VALUES (%s, %s)",
@@ -249,8 +242,6 @@ class TestGrantProjection(GrantCase):
 
 @tagged("post_install", "-at_install")
 class TestGroupStateCache(GrantCase):
-    # a user's group state has a cache of its own: a clear of anything else
-    # keeps it, and every change to what it is computed from clears it
 
     def assertWarm(self, user):
         user._get_group_ids()
@@ -331,7 +322,6 @@ class TestGrantWindow(GrantCase):
         )
         self.assertTrue(self.user.has_group("base.group_partner_manager"))
         with self.at(now + timedelta(hours=2)):
-            # the cached answer knows when it goes stale, before any cron ran
             self.assertEqual(grant.state, "active")
             self.assertFalse(self.user.has_group("base.group_partner_manager"))
             self.Grant._cron_cross_boundaries()
@@ -384,8 +374,6 @@ class TestGrantWindow(GrantCase):
             self.Grant._cron_cross_boundaries()
         self.assertEqual(ending.state, "expired")
         self.assertNotIn(self.group_partner_manager, self.other.group_ids)
-        # a scheduled grant counts from its start whether the cron ran or not:
-        # a start the cron refuses is revoked, or the group would be held
         self.assertEqual(refused.state, "revoked")
         self.assertIn("refused at its start", refused.revoke_reason)
         self.assertNotIn(self.env.ref("base.group_portal"), self.user.group_ids)
@@ -424,7 +412,6 @@ class TestGrantWindow(GrantCase):
         self.assertEqual(timed.state, "active")
 
     def test_the_last_administrator_cannot_be_deleted(self):
-        # deleting leaves no administrator as surely as archiving does
         last = new_test_user(self.env, login="last_admin", groups="base.group_system")
         self.env.ref("base.user_admin").write(
             {"group_ids": [Command.unlink(self.group_system.id)]}
@@ -537,8 +524,6 @@ class TestGrantDelegation(GrantCase):
             self.grant_as(self.admin, self.user, self.delegable)
 
     def test_an_access_administrator_cannot_grant_themselves(self):
-        # the access administrators give groups, never to themselves: another
-        # person does, or an eligibility activated for a while
         manager = new_test_user(
             self.env, login="access_manager", groups="base.group_erp_manager"
         )
@@ -556,8 +541,6 @@ class TestGrantDelegation(GrantCase):
         self.assertIn(self.delegable, manager.group_ids)
 
     def test_an_access_administrator_ends_their_own_grant(self):
-        # ending a grant only narrows it, so the self-grant refusal lets its
-        # holder do it; who may write grants at all is still the rows' say
         manager = new_test_user(
             self.env, login="ending_manager", groups="base.group_erp_manager"
         )

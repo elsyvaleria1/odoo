@@ -14,8 +14,6 @@ class WizardBudgetAnalyticCreate(models.TransientModel):
     _name = "wizard.budget.analytic.create"
     _description = "Budget Split Wizard"
 
-    # every combination of accounts across the selected plans becomes a line, so
-    # the count is the product of the plan sizes times the number of periods
     MAX_GENERATED_LINES = 10_000
 
     PERIODS = {
@@ -68,16 +66,10 @@ class WizardBudgetAnalyticCreate(models.TransientModel):
         return defaults
 
     def _get_periods(self):
-        """The periods to cover, with the trailing partial one clamped.
-
-        Dropping it instead would silently produce eleven budgets for a request
-        spanning twelve months minus a fortnight.
-        """
         step, date_format = self.PERIODS[self.period]
         name = partial(format_date, self.env, date_format=date_format)
         starts = list(date_utils.date_range(self.date_from, self.date_to, step))
         ends = [start - relativedelta(days=1) for start in starts[1:]]
-        # the next start lies past date_to, so the last period ends on it
         ends.append(self.date_to)
         return [
             (name(date_from), date_from, date_to)

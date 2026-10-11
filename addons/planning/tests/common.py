@@ -53,11 +53,11 @@ class TestCommonPlanning(TransactionCase):
     def setUpDates(cls):
         cls.random_date = datetime(
             2020, 11, 27
-        )  # it doesn't really matter but it lands on a Friday
+        )
         cls.random_sunday_date = datetime(
             2024, 3, 10
-        )  # this should be a Sunday and thus a closing day
-        cls.random_monday_date = datetime(2024, 3, 11)  # this should be a Monday
+        )
+        cls.random_monday_date = datetime(2024, 3, 11)
 
     @classmethod
     def setUpCalendars(cls):
@@ -279,9 +279,6 @@ class TestUiCommon(HttpCase):
         )
 
     def _create_open_shift_auto_plan_can_fill(self):
-        """The tour's auto-plan step expects one open shift to be assigned and
-        the other pills to fade; auto-plan assigns only a resource holding the
-        shift's role, so Aaron gets the role and the shift is created here."""
         role = self.env["resource.role"].search([("name", "=", "Developer")], limit=1)
         self.employee_thibault.resource_id.role_ids |= role
         return self.env["planning.slot"].create(

@@ -63,12 +63,6 @@ class TestPlmCommon(common.TransactionCase):
             }
         )
 
-        # ------------------------------------------------------
-        # Create bill of material for table
-        # Computer Table
-        #       Table Sheet 1 Unit
-        #       Table Lag 3 Unit
-        # -------------------------------------------------------
 
         cls.bom_table = cls.Bom.create(
             {

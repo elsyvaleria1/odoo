@@ -12,8 +12,6 @@ class DocumentComplianceReport(models.Model):
     _description = "Document Compliance Report"
     _inherit = ["mixin.sql.report", "mixin.materialized.view"]
     _auto = False
-    # The row id is entity_id::bigint * 1000 + <model ordinal>, unique per
-    # entity, which is what REFRESH ... CONCURRENTLY needs.
     _relation_index_field = "id"
     _rec_name = "entity_name"
     _order = "compliance_percentage desc"
@@ -112,13 +110,9 @@ class DocumentComplianceReport(models.Model):
 
     @api.model
     def _get_entity_conditions(self) -> dict[str, str]:
-        """An SQL condition on `t` narrowing a model's rows to its entities,
-        by model; a model absent here is entities in every active row."""
         return {}
 
     def _get_entities_union(self) -> str:
-        # a document names its entity by the entity's reference model, which
-        # for a record that extends another's row is that other model
         conditions = self._get_entity_conditions()
         parts = [
             f"SELECT '{model}' AS entity_type, "
@@ -130,11 +124,6 @@ class DocumentComplianceReport(models.Model):
         return "\n                UNION ALL\n                ".join(parts)
 
     def _get_type_scope_conditions(self) -> list[str]:
-        """What makes a document type required *of this entity*.
-
-        Joined with AND, so an extension narrows rather than widens: a bridge
-        that knows a sub-kind of its entity adds its own clause here.
-        """
         return ["dt.applies_to = 'all' OR dt.applies_to = e.entity_type"]
 
     def _with_cte(self) -> SQL:
@@ -219,9 +208,6 @@ class DocumentComplianceReport(models.Model):
             f"WHEN '{model}' THEN {ordinal}"
             for ordinal, model in enumerate(self._get_entity_model_map())
         )
-        # entity_id is int4 on all three entity tables, so the multiplication
-        # must be widened: int4 * 1000 raises "integer out of range" from
-        # id 2 147 484 on, and it raises for the whole query, not just the row.
         return (
             f"edt.entity_id::bigint * 1000 + "
             f"(CASE edt.entity_type {ordinals} ELSE 999 END)"
@@ -235,9 +221,6 @@ class DocumentComplianceReport(models.Model):
             "entity_id": "edt.entity_id",
             "total_required": "COUNT(edt.document_type_id)",
             "total_present": "COUNT(edt.document_type_id) FILTER (WHERE edt.document_count > 0)",
-            # The CTE's four buckets are a strict ladder emitting 1/0, so each
-            # total reads its own bucket: no bucket has to subtract another,
-            # and the four sum to total_required.
             "total_valid": "COUNT(edt.document_type_id) FILTER (WHERE edt.is_valid = 1)",
             "total_expiring": "COUNT(edt.document_type_id) FILTER (WHERE edt.is_expiring = 1)",
             "total_expired": "COUNT(edt.document_type_id) FILTER (WHERE edt.is_expired = 1)",
@@ -265,11 +248,6 @@ class DocumentComplianceReport(models.Model):
         return ["edt.entity_type", "edt.entity_id", "edt.company_id"]
 
     def _get_entity_name_column(self, model: str) -> str:
-        """SQL expression naming an entity on its own table.
-
-        A plain ``name`` column by default; a bridge whose entity has a
-        translated name returns the key to read from it.
-        """
         return "name"
 
     def _get_entity_name_expression(self) -> str:
@@ -280,11 +258,6 @@ class DocumentComplianceReport(models.Model):
         case_parts = []
         for model, table in model_map.items():
             if model in self.env:
-                # COALESCE, not a bare subquery: the ELSE only covers an unknown
-                # model, so a known model whose row has a NULL name rendered an
-                # empty Entity cell with no id to identify the row by. A stock
-                # install already has one -- the private address auto-created
-                # under a user's partner.
                 case_parts.append(
                     f"WHEN edt.entity_type = '{model}' THEN COALESCE("
                     f"(SELECT {self._get_entity_name_column(model)} FROM {table} "

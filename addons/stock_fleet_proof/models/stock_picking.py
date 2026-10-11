@@ -16,8 +16,6 @@ class StockPicking(models.Model):
 
     def _action_done(self, *, cancel_backorder=False):
         res = super()._action_done(cancel_backorder=cancel_backorder)
-        # a customer who confirmed at the door what was delivered is not asked
-        # again; one who confirmed more than left is
         self.filtered(
             lambda picking: picking.state == "done" and picking._is_customer_delivery()
         )._ask_confirmation()
@@ -25,7 +23,6 @@ class StockPicking(models.Model):
 
     def _is_customer_delivery(self) -> bool:
         self.check_singleton()
-        # a return to a vendor leaves by the delivery type too, to no customer
         return bool(
             self.partner_id and not self.return_id and self._requires_delivery_proof()
         )
@@ -46,7 +43,6 @@ class StockPicking(models.Model):
     def _get_delivered_quantities(self) -> list[tuple[models.BaseModel, float]]:
         quantities = defaultdict(float)
         moves = self.move_ids.filtered(lambda move: move.state != "cancel")
-        # what leaves: the moves picked when some are, all of them before then
         moves = moves.filtered("picked") or moves
         for move in moves:
             quantities[move.product_id] += move.product_uom_id._get_quantity_report(
@@ -112,8 +108,6 @@ class StockPicking(models.Model):
                     "I confirm this delivery as it is (%(sent_to)s).", sent_to=sent_to
                 )
             )
-            # the customer's word is evidence: once, and as a reviewer's tick,
-            # which a reviewer may take back
             if not self.delivery_proof_ok:
                 self.with_privilege(
                     "stock_fleet_proof.privilege_accept_customer_confirmation",
@@ -146,7 +140,6 @@ class StockPicking(models.Model):
         )
 
     def _post_customer_answer(self, body: str) -> None:
-        # the customer's own words, kept as a note in their name
         self.message_post(
             author_id=self.partner_id.commercial_partner_id.id,
             body=body,

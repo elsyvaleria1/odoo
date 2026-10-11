@@ -36,8 +36,6 @@ class TestDurationTrackingInvalidates(MailCommon):
         cls.env.flush_all()
 
     def test_duration_tracking_follows_the_tracked_field(self):
-        # assert on which buckets exist, not on the seconds in them: a slow run
-        # would make the durations non-zero and say nothing about invalidation
         self.assertEqual(
             set(self.record.duration_tracking),
             {str(self.customer_a.id)},
@@ -55,8 +53,7 @@ class TestDurationTrackingInvalidates(MailCommon):
         )
 
     def test_client_is_not_handed_a_stale_bucket(self):
-        """The same thing through the entry point the web client actually uses."""
-        self.assertTrue(self.record.duration_tracking)  # prime the cache
+        self.assertTrue(self.record.duration_tracking)
 
         result = self.record.web_save(
             {"customer_id": self.customer_b.id}, {"duration_tracking": {}}
@@ -70,12 +67,6 @@ class TestDurationTrackingInvalidates(MailCommon):
         )
 
     def test_a_model_without_a_tracked_field_still_sets_up(self):
-        """The dependency is resolved per model, so it must tolerate absence.
-
-        ``mixin.mail.tracking.duration`` itself declares no
-        ``_track_duration_field``; a callable ``@api.depends`` that assumed one
-        would break registry setup rather than this assertion.
-        """
         mixin = self.env["mixin.mail.tracking.duration"]
         self.assertEqual(mixin._get_duration_tracking_depends_fields(), [])
         self.assertEqual(

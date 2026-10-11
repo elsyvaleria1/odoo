@@ -88,16 +88,12 @@ class TestSignIntegrity(SignRequestCommon):
         self.assertIn("Signature", sign_request.integrity_error)
 
     def test_entries_hashed_before_versioning_still_verify(self):
-        """Version 1 entries, hashed here by an independent copy of the 1.6
-        formula, verify under the current code; a forged value still breaks them."""
         sign_request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
         )
         item = sign_request.request_item_ids
         item.sudo().sign(self.single_signer_sign_values)
         self.env.flush_all()
-        # 1.6 wrote no completion entry; the one 1.7 just wrote would chain to the
-        # signature hash rewritten below
         self.env.cr.execute(
             "DELETE FROM sign_log WHERE sign_request_id = %s AND action = 'complete'",
             [sign_request.id],
@@ -167,7 +163,6 @@ class TestSignIntegrity(SignRequestCommon):
                 [self.env["sign.log"]._get_or_check_hash(vals), log.id],
             )
             self.env.invalidate_all()
-        # the browser became part of an entry's hash with version 3 only
         self.env.cr.execute(
             "UPDATE sign_log SET user_agent = 'changed' WHERE id = ANY(%s)", [logs.ids]
         )

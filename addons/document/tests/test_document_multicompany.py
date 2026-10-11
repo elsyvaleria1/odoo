@@ -356,7 +356,6 @@ class TestDocumentsMulticompany(TransactionCaseDocuments):
             }
         )
 
-        # the folder's member reaches the document live, in the companies in use
         self.assertEqual(
             document.with_context(
                 allowed_company_ids=self.company_disabled.ids

@@ -30,15 +30,6 @@ class BudgetReport(models.Model):
     committed = fields.Float(readonly=True)
 
     def _get_report_timezone(self):
-        """The timezone the order dates are read in, as PostgreSQL knows it.
-
-        `date_order` is a UTC timestamp while the budget bounds are plain dates,
-        so the two only line up once the timestamp is rendered in the zone the
-        user sees it in. The name is checked against `pg_timezone_names` here
-        rather than trusted: Odoo's dropdown offers every zoneinfo name and
-        PostgreSQL rejects some of them, which `AT TIME ZONE` would report as
-        InvalidParameterValue instead of a report.
-        """
         tz = self.env.user.tz
         if not tz:
             return "UTC"
@@ -139,7 +130,6 @@ class BudgetReport(models.Model):
     @property
     def _table_query(self):
         if self._get_scoped_analytic_line_ids() is not None:
-            # purchase lines are no analytic line: a scoped report has none
             return super()._table_query
         self.env["account.move.line"].flush_model()
         self.env["purchase.order"].flush_model()

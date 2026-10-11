@@ -34,8 +34,6 @@ class WizardHrPayslipUpdateLine(models.TransientModel):
         wizard_line = self.env["wizard.hr.payslip.update.line.payslip.line"].browse(
             line_id
         )
-        # `line_id` llega del cliente: sin esto, cualquiera puede recomputar
-        # una linea de OTRO asistente pasando su id.
         if wizard_line not in self.line_ids:
             raise UserError(
                 self.env._("This payslip line does not belong to this wizard.")

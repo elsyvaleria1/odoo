@@ -389,13 +389,6 @@ class Website(models.Model):
 
     @tools.ormcache("self.id", cache="templates")
     def _get_blocked_third_party_domains_tuple(self):
-        # Split once per website rather than once per rendered element: qweb
-        # calls _post_processing_att for every element it compiles, and for
-        # every element carrying a dynamic attribute on every render, and the
-        # default blocklist is ~200 lines. Cached in the "templates" group,
-        # which `write` already clears for `custom_blocked_third_party_domains`
-        # (TEMPLATE_AFFECTING_FIELDS). Cached as a tuple: an ormcache must not
-        # hand out a mutable object for a caller to mutate in place.
         return tuple(
             domain
             for line in (self.blocked_third_party_domains or "").split("\n")
@@ -490,7 +483,6 @@ class Website(models.Model):
             self.env.registry.clear_cache("templates")
 
         if "theme_id" in values:
-            # which websites share their bundles (_get_asset_twin_id)
             self.env.registry.clear_cache("assets")
 
         if "sequence" in values or "company_id" in values:
@@ -668,11 +660,6 @@ class Website(models.Model):
     @api.model
     @tools.ormcache("website_id", cache="assets")
     def _get_asset_twin_id(self, website_id: int) -> int:
-        # A website changes a bundle only through its theme, its SCSS
-        # customizations and its own ir.asset rows; websites alike in all three
-        # build the same files, so they share the lowest one's builds and URLs
-        # instead of each rebuilding every bundle group. A /_custom/ row
-        # serves that website's attachment, which only it holds.
         reader = self.with_privilege(
             "website.privilege_read_asset_twin", reason="asset twin of a website"
         )
@@ -1004,7 +991,7 @@ class Website(models.Model):
                     )
                 )
 
-            dependency_records = Model.search(Domain.OR(domains))  # noqa: E8507 - one query per dependent model, over every url at once
+            dependency_records = Model.search(Domain.OR(domains))
             if model_name == "ir.ui.view":
                 dependency_records = _handle_views_and_pages(dependency_records)
             if dependency_records:
@@ -1346,11 +1333,6 @@ class Website(models.Model):
     def _get_website_pages(self, domain=None, order="name", limit=None):
         website = self.get_current_website()
         domain = Domain(domain or Domain.TRUE) & website.website_domain()
-        # The limit is applied AFTER the shadowed generics are dropped. Applied
-        # in SQL it cut the rows the dedup was about to choose between, so a url
-        # carrying both a generic page and this website's override could lose
-        # both: `_get_website_pages([("url", "=", u)], limit=1)` answered with
-        # nothing for a url that serves, and `is_page_existing(u)` said False.
         with _debug.perf("website_pages", cr=self.env.cr, website=website.id) as span:
             pages = self.env["website.page"].sudo().search(domain, order=order)
             span.set(found=len(pages))
@@ -1579,15 +1561,6 @@ class Website(models.Model):
         return html_fields
 
     def _get_snippet_occurrences(self, snippet_ids, html_fields):
-        """Every stored element carrying one of `snippet_ids`, grouped by id.
-
-        One scan for all of them. This used to be one `UNION` over every stored
-        html field of every model *per snippet asset*, and the SQL depends only
-        on the snippet id -- so a snippet with three versions in two flavours
-        re-ran the identical scan six times. On a stock install that was 82
-        scans over 22 fields, 1,804 `regexp_matches` branches, to answer a
-        question that fits in one query.
-        """
         occurrences = {snippet_id: [] for snippet_id in snippet_ids}
         if not snippet_ids or not html_fields:
             return occurrences
@@ -1685,9 +1658,6 @@ class Website(models.Model):
         )
         html_fields = self._get_fields_html()
 
-        # One pass to learn which snippets exist, then ONE scan of the stored
-        # html for all of them, then the per-(version, flavour) decision. The
-        # scan used to run once per asset and depends only on the snippet id.
         parsed = []
         for snippet_asset in snippet_assets:
             match = snippet_re.match(snippet_asset.path)

@@ -191,9 +191,6 @@ class Base(models.AbstractModel):
         style: MapStyle | None = None,
         **options: Any,
     ) -> Markup | None:
-        """These records' geometries as a static map for a printed document
-        (static_map.render_static_map): the named geo fields, or every
-        readable stored one. None when none of them has a value."""
         if isinstance(field_names, str):
             field_names = [field_names]
         fields = [
@@ -409,7 +406,7 @@ class Base(models.AbstractModel):
     @api.model
     def _check_vector_layer(
         self,
-        layer: GeoVectorLayer,  # pylint: disable=used-before-assignment
+        layer: GeoVectorLayer,
         view: IrUiView,
         errors: list[str],
         models_with_geo_view: set[str],

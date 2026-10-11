@@ -19,7 +19,6 @@ class AppointmentGanttTestCommon(AppointmentCommon):
             [{"name": "gantt attendee 1"}, {"name": "gantt attendee 2"}]
         )
 
-        # create some appointments and users to ensure they are not linked to anything else
         [cls.user_bob, cls.user_john] = [
             mail_new_test_user(
                 cls.env,
@@ -238,8 +237,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
 
     @freeze_time("2025-12-29 10:00:00")
     def test_timeline_defaults_and_iso_week_are_owned_by_the_adapter(self):
-        # Global actions consider every active offer. Isolate the fixture from
-        # existing bookings, including records preserved by upgrade tests.
         self.env["appointment.type"].search(
             [("id", "not in", self.apt_types.ids)]
         ).write({"active": False})
@@ -286,27 +283,17 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
 
     @users("apt_manager")
     def test_default_assign_user_attendees(self):
-        """
-        1> A single attendee should be set as the organizer by default
-        (typically when selecting a specific slot in the booking gantt view).
-
-        2> (special gantt case) The current user should be an attendee if
-        he is set as the organizer.
-        """
-        # context while clicking the 'New' btn
         no_attendees_context = {
             "booking_gantt_create_record": True,
             "appointment_default_assign_user_attendees": True,
             "default_partner_ids": [],
         }
 
-        # context while clicking the time slot of the staff user
         single_attendee_context = {
             **no_attendees_context,
             "default_partner_ids": [self.user_bob.partner_id.id],
         }
 
-        # Case 1: Specify a single attendee, simulating clicking a slot on the gantt view
         event_with_partner = (
             self.env["calendar.event"]
             .with_context(single_attendee_context)
@@ -317,7 +304,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                 }
             )
         )
-        # Case 2: Create an appointment without specifying attendees
         event_without_partner = (
             self.env["calendar.event"]
             .with_context(no_attendees_context)
@@ -329,13 +315,11 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
             )
         )
 
-        # Case 1 check
         self.assertEqual(
             event_with_partner.user_id,
             self.user_bob,
             "Single attendee should be set as an organizer by default",
         )
-        # Case 2 check
         self.assertEqual(
             event_without_partner.user_id,
             self.apt_manager,
@@ -375,7 +359,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
         )
 
     def test_gantt_calendar_unavailability(self):
-        """Checks whether the Gantt view correctly excludes free events and considers only busy events for calculating unavailability."""
         self._create_meetings(
             self.user_john,
             [
@@ -385,7 +368,7 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                     False,
                 )
             ],
-            show_as="busy",  # Event with 'busy' status
+            show_as="busy",
         )
         self._create_meetings(
             self.user_bob,
@@ -396,10 +379,9 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                     False,
                 )
             ],
-            show_as="free",  # Event with 'free' status
+            show_as="free",
         )
 
-        # Call the _gantt_unavailability function
         unavailabilities = self.env["calendar.event"]._gantt_unavailability(
             "partner_ids",
             [self.user_john.partner_id.id, self.user_bob.partner_id.id],
@@ -421,7 +403,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
 
     @users("apt_manager")
     def test_gantt_default_calendar_event_values(self):
-        """Make sure all of the defaults are sensible with respect to the appointment type used."""
         quick_create_form = self.env.ref(
             "calendar.calendar_event_view_form_gantt_booking"
         )
@@ -436,12 +417,12 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                 resource_appointment_type,
                 {"manage_capacity": False},
                 2,
-            ),  # 1 per resource
+            ),
             (
                 resource_appointment_type,
                 {"manage_capacity": True},
                 3,
-            ),  # sum of capacities
+            ),
         ]:
             with self.subTest(
                 appointment=appointment_type.name, write_values=write_values
@@ -466,7 +447,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                 CalendarEvent = self.env["calendar.event"].with_context(
                     appointment_context
                 )
-                # check defaultget
                 self.assertDictEqual(
                     {
                         field_name: value
@@ -478,7 +458,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                     },
                     expected_default_dict,
                 )
-                # check created values match up when created via the gantt view
                 event = Form(CalendarEvent, quick_create_form).save()
                 event.invalidate_recordset(
                     ["total_capacity_reserved", "user_id", "resource_ids"]
@@ -494,7 +473,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
                 event.unlink()
 
     def test_gantt_empty_groups(self):
-        """Check that the data sent to gantt includes the right groups in the context of appointments."""
         gantt_data = (
             self.env["calendar.event"]
             .with_context(self.gantt_context)
@@ -512,7 +490,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
             "Staff not assigned to any appointment type should be hidden",
         )
 
-        # add john as a staff user of an appointment type -> in the default groups
         self.apt_types[1].staff_user_ids = self.user_john
 
         gantt_data = (
@@ -524,7 +501,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
         self.assertIn(self.user_bob.partner_id.id, group_partner_ids)
         self.assertIn(self.user_john.partner_id.id, group_partner_ids)
 
-        # have default appointment in context -> only show staff assigned to that type
         context = self.gantt_context | {
             "default_appointment_type_id": self.apt_types[0].id
         }
@@ -542,11 +518,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
         )
 
     def test_gantt_hide_non_staff(self):
-        """Check that only the attendees that are part of the staff are used to compute the gantt data.
-
-        The other attendees, such as the website visitors that created the meeting,
-        are excluded and should not be displayed as gantt rows.
-        """
         meeting = self._create_meetings(
             self.apt_users[0],
             [
@@ -575,7 +546,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
         self.assertEqual(gantt_data["records"], [{"id": meeting.id}])
 
     def test_gantt_resource_unavailabilities(self):
-        """Check whether the Gantt view includes already booked resource and exclude sharable resource for calculating unavailability."""
         self.apt_resource_2.booking_exclusive = False
         self.env["calendar.event"].sudo().create(
             {
@@ -639,7 +609,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
 
     @users("staff_user_bxls")
     def test_gantt_resource_unavailabilities_multi_company(self):
-        """Check that resources outside of allowed companies don't get calendar unavailabilities."""
         company_a = self.env.company
         company_b = (
             self.env["res.company"]
@@ -652,7 +621,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
         )
         self.env.user.sudo().company_ids += company_a + company_b
 
-        # the schedule is closed on Sundays, the whole Brussels day
         resource_calendar_unavailabilities = Intervals(
             [
                 (
@@ -781,15 +749,6 @@ class AppointmentGanttTest(AppointmentGanttTestCommon):
 
     @users("apt_manager")
     def test_gantt_read_group_resource_events_privacy(self):
-        """Check that every resource events are correctly displayed in the gantt view.
-
-        Due to the events formatted_read_group privacy domain, resource events booked from the front-end
-        (meaning having OdooBot as user_id) weren't displayed in the gantt view.
-        Making sure every resource events are now visible and accessible no matter their privacy and user_id.
-
-        Using apt_manager to be sure the privacy part of the formatted_read_group domain is correctly added
-        as it is only included when we're not in super user.
-        """
         meeting = self._create_meetings(
             self.env.ref("base.user_root"),
             [

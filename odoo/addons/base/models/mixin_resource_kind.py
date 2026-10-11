@@ -3,16 +3,11 @@ from odoo.exceptions import ValidationError
 
 from .resource_utils import ASSET_INITIAL_STATE, KIND_MODEL_CREATING
 
-# what a thing decides at its creation, which a person's defaults must not
 THING_DECIDES = ("type", "state", "calendar_id")
 THING_STARTS = {"type": "material", "state": ASSET_INITIAL_STATE}
 
 
 def without_resource_defaults(model, fields, defaults):
-    """The resource's defaults for what a thing decides itself are not values a
-    model delegating to it hands down: a thing starts in its own state, as the
-    thing it is. A required one is given the thing's own value, so a form can
-    be saved; the calendar is left to create, which reads the kind."""
     for name in THING_DECIDES:
         if name in fields and f"default_{name}" not in model.env.context:
             if name in THING_STARTS:
@@ -48,8 +43,6 @@ class MixinResourceKind(models.AbstractModel):
         ondelete="cascade",
     )
 
-    # the asset form's buttons call the resource; a form of this model shows
-    # them, and an object button must name a method of the record it is on
     action_accept_operator_change = _resource_action("action_accept_operator_change")
     action_create_maintenance_order = _resource_action(
         "action_create_maintenance_order"
@@ -91,7 +84,6 @@ class MixinResourceKind(models.AbstractModel):
         calendar_id = defaults.get("calendar_id")
         defaults = without_resource_defaults(self, fields, defaults)
         if "calendar_id" in fields and "default_calendar_id" not in self.env.context:
-            # what create decides for this kind, so a form of it can be saved
             defaults["calendar_id"] = (
                 calendar_id
                 if self._get_kind().scheduled
@@ -122,7 +114,6 @@ class MixinResourceKind(models.AbstractModel):
         records = super(
             MixinResourceKind, self.with_context(**{KIND_MODEL_CREATING: self._name})
         ).create(vals_list)
-        # the identifiers this model holds are written only now
         records.resource_id.with_context(
             **{KIND_MODEL_CREATING: False}
         )._check_required_identifiers()
@@ -130,7 +121,6 @@ class MixinResourceKind(models.AbstractModel):
 
     def write(self, vals):
         res = super().write(vals)
-        # what is written on the resource is heard through it
         own = {
             name: value
             for name, value in vals.items()
@@ -141,5 +131,4 @@ class MixinResourceKind(models.AbstractModel):
         return res
 
     def _on_resource_written(self, vals) -> None:
-        """Hook: these records, or the resources they extend, were written
-        `vals`."""
+        pass

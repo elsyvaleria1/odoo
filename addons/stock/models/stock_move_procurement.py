@@ -22,8 +22,6 @@ class StockMoveProcurement(models.Model):
         quantities = self.with_context(
             consumed_from_stock_dict=consumed_from_stock_dict,
         )._prepare_procurement_qty()
-        # (quantity, unit) pairs: a remainder the move's unit cannot express
-        # is procured in the product's unit
         _debug.pipeline("run_procurements", moves=self, quantities=quantities[:8])
         procurement_requests = [
             self.env["stock.rule"].Procurement(
@@ -276,8 +274,6 @@ class StockMoveProcurement(models.Model):
         routes = values.get("route_ids")
         warehouse = values.get("warehouse_id")
         packaging_uom = values.get("packaging_uom_id")
-        # the product itself, not only its routes: `_is_route_usable_for`
-        # decides per product (purchase_stock: sellers, mrp: BoMs)
         key = (
             self.location_dest_id.id,
             self.product_id.id,
@@ -526,10 +522,6 @@ class StockMoveProcurement(models.Model):
             )._procure_orderpoint_confirm(company_id=company, raise_user_error=False)
 
     def _get_orderpoints_to_update(self):
-        # every write of a move's state, date, quantity or locations asks
-        # which orderpoints it reaches; the answer per (product, warehouses)
-        # is memoized for the transaction and discarded when an orderpoint's
-        # scope changes
         Orderpoint = self.env["stock.warehouse.orderpoint"]
         if not self:
             return Orderpoint

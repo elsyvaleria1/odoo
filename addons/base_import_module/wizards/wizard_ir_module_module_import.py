@@ -41,11 +41,6 @@ class WizardIrModuleModuleImport(models.TransientModel):
         _message, module_names = IrModule._import_zipfile(
             fp, force=self.force, with_demo=self.with_demo
         )
-        # `state`/`import_message` are never set to 'done' here, so the form
-        # view's whole "done" branch is dead (t24068 gap, report-only — the
-        # redirect-away-on-success UX may be intentional; see the audit shard
-        # for the fuller "show a real success message" option). At minimum,
-        # log what was imported so it's not silently discarded.
         _logger.info(
             "Imported modules from zip: %s", ", ".join(module_names) or "(none)"
         )

@@ -44,7 +44,6 @@ class ResUsers(models.Model):
     )
     next_rank_id = fields.Many2one(comodel_name="gamification.karma.rank")
 
-    # XP progress fields for UI display
     xp_to_next_rank = fields.Integer(
         string="XP to Next Rank",
         compute="_compute_xp_progress",
@@ -59,7 +58,6 @@ class ResUsers(models.Model):
         string="Streaks",
     )
 
-    # Profile enhancements
     featured_badge_ids = fields.Many2many(
         comodel_name="gamification.badge.user",
         relation="gamification_featured_badge_rel",
@@ -86,40 +84,10 @@ class ResUsers(models.Model):
 
     @property
     def SELF_WRITEABLE_FIELDS(self) -> list[str]:
-        """Let users control their own gamification privacy setting.
-
-        Without this the field is rendered on the user's own profile form but
-        rejected on write, so the only person who could not make a profile
-        private was its owner.
-        """
         return super().SELF_WRITEABLE_FIELDS + ["gamification_visibility"]
 
     @api.depends("karma_tracking_ids.new_value", "karma_tracking_ids.old_value")
     def _compute_karma(self) -> None:
-        """Karma is the sum of every recorded gain.
-
-        This deliberately sums ``new_value - old_value`` rather than taking the
-        most recent row's ``new_value``.  "Latest row wins" silently dropped
-        karma in two reachable cases: a row inserted with an older
-        ``tracking_date`` never became the winner, and several rows created in
-        one batch all chained from the same pre-batch value so only the last
-        one counted.  Summing gains is also what every other consumer of this
-        table already does (``_get_tracking_karma_gain_position``, the season
-        leaderboard, the engagement snapshots), so the whole module now agrees
-        on a single definition of karma.
-
-        Consolidation is karma-neutral under this definition: collapsing a
-        month of rows into one whose gain equals their total leaves the sum
-        unchanged, which is why no "skip computation" escape hatch is needed.
-
-        This computes karma and nothing else.  Re-ranking used to hang off the
-        end of it, which put ``_rank_changed`` -- outbound mail, badge creation,
-        activity rows and mentor payouts -- behind an ORM flush, reached through
-        a stack of five recompute frames.  It now hangs off
-        ``gamification.karma.tracking`` writes instead: that is the one table
-        every karma change goes through, including the technical view, so the
-        coverage is the same and the trigger is a place a reader can find.
-        """
         self.env["gamification.karma.tracking"].flush_model()
 
         select_query = """
@@ -135,12 +103,8 @@ class ResUsers(models.Model):
         for user in self:
             user.karma = user_karma_map.get(user.id, 0)
 
-    # `badge_ids` alone missed the level: re-grading a badge from bronze to gold
-    # left every holder's counters on the old split until some unrelated grant
-    # moved them.
     @api.depends("badge_ids", "badge_ids.badge_id.level")
     def _compute_badge_level_counts(self) -> None:
-        """Count each user's badges per level (gold, silver, bronze)."""
         for user in self:
             user.gold_badge = 0
             user.silver_badge = 0
@@ -159,13 +123,8 @@ class ResUsers(models.Model):
         )
 
         for user_id, level, count in self.env.cr.fetchall():
-            # levels are gold, silver, bronze but fields have _badge postfix
             self.browse(user_id)[f"{level}_badge"] = count
 
-    # The thresholds are read off the rank records, so the m2o alone is not
-    # enough: gamification.karma.rank.write() re-ranks whoever actually changes
-    # rank, but a user whose rank is unchanged and whose *distance* to the next
-    # one moved gets no trigger without these two.
     @api.depends(
         "karma",
         "rank_id",
@@ -174,16 +133,9 @@ class ResUsers(models.Model):
         "next_rank_id.karma_min",
     )
     def _compute_xp_progress(self) -> None:
-        """Compute XP progress toward the next rank for progress bar display."""
-        # One read of the ladder for the whole recordset. _get_next_rank() runs
-        # its own search per call, so asking it per user cost one query each:
-        # 5 users measured 7 queries and 40 measured 42. Its public behaviour is
-        # a contract with website_profile and website_slides, so the batching
-        # lives here rather than in it.
         ladder = self.env["gamification.karma.rank"].search([], order="karma_min")
 
         def next_above(rank):
-            """Lowest rank strictly above `rank`, mirroring _get_next_rank()."""
             floor = rank.karma_min if rank else None
             for candidate in ladder:
                 if floor is None or candidate.karma_min > floor:
@@ -209,14 +161,10 @@ class ResUsers(models.Model):
                     round(100.0 * (user.karma - current_min) / span, 1),
                 )
 
-    #: Upper bound for the ``limit`` of any gamification list a client can ask
-    #: for over RPC.  These endpoints are public, so the parameter is attacker
-    #: controlled and ``limit=10**9`` was a valid call.
     GAMIFICATION_MAX_LIMIT = 100
 
     @api.model
     def _gamification_clamp_limit(self, limit: int, default: int = 10) -> int:
-        """Return a sane ``limit`` for a public gamification endpoint."""
         try:
             limit = int(limit)
         except TypeError, ValueError:
@@ -225,14 +173,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_domain_gamification_listable(self) -> list[Any]:
-        """Domain for users who may appear in a gamification list.
-
-        One definition, four call sites.  It used to be four hand-written
-        domains -- the leaderboard, the activity feed and the season board each
-        filtered ``gamification_visibility``, and the mentor suggestions did
-        not.  Three agreeing implementations of a rule is three chances for the
-        fourth to disagree, and it did.
-        """
         return [
             ("active", "=", True),
             ("share", "=", False),
@@ -242,11 +182,6 @@ class ResUsers(models.Model):
     def _send_gamification_notification(
         self, notif_type: str, data: dict[str, Any]
     ) -> None:
-        """Send a real-time bus notification for gamification events.
-
-        :param notif_type: one of 'badge', 'streak', 'level_up', 'achievement'.
-        :param data: notification payload (title, message, etc.).
-        """
         self._bus_send("gamification/notification", {"type": notif_type, **data})
 
     @api.model_create_multi
@@ -269,12 +204,6 @@ class ResUsers(models.Model):
 
     def write(self, vals: ValuesType) -> Literal[True]:
         if "karma" in vals:
-            # Record the change as a tracking entry and let ``_compute_karma``
-            # (and the ``_recompute_rank`` it triggers) set the karma value.
-            # Writing ``karma`` directly in ``vals`` would protect the stored
-            # computed field from recomputation for these records, so the
-            # tracking would be created but ``rank_id`` / ``next_rank_id`` would
-            # stay stale until some later karma event.
             target = int(vals.pop("karma"))
             self._add_karma_batch(
                 {
@@ -320,34 +249,6 @@ class ResUsers(models.Model):
         from_date: date | None = None,
         to_date: date | None = None,
     ) -> list[dict[str, Any]]:
-        """Get absolute position in term of gained karma for users. First a ranking
-        of all users is done given a user_domain; then the position of each user
-        belonging to the current record set is extracted.
-
-        Example: in website profile, search users with name containing Norbert. Their
-        positions should not be 1 to 4 (assuming 4 results), but their actual position
-        in the karma gain ranking (with example user_domain being karma > 1,
-        website published True).
-
-        :param user_domain: general domain (i.e. active, karma > 1, website, ...)
-          to compute the absolute position of the current record set
-        :param from_date: compute karma gained after this date (included) or from
-          beginning of time;
-        :param to_date: compute karma gained before this date (included) or until
-          end of time;
-
-        :rtype: list[dict[str, Any]]
-        :return:
-          ::
-
-            [{
-                'user_id': user_id (belonging to current record set),
-                'karma_gain_total': integer, karma gained in the given timeframe,
-                'karma_position': integer, ranking position
-            }, {..}]
-
-          ordered by descending karma position
-        """
         if not self:
             return []
 
@@ -384,35 +285,11 @@ WHERE final.user_id = ANY(%s)""",
         return self.env.cr.dictfetchall()
 
     def _get_karma_position(self, user_domain: list[Any]) -> list[dict[str, Any]]:
-        """Get absolute position in term of total karma for users. First a ranking
-        of all users is done given a user_domain; then the position of each user
-        belonging to the current record set is extracted.
-
-        Example: in website profile, search users with name containing Norbert. Their
-        positions should not be 1 to 4 (assuming 4 results), but their actual position
-        in the total karma ranking (with example user_domain being karma > 1,
-        website published True).
-
-        :param user_domain: general domain (i.e. active, karma > 1, website, ...)
-          to compute the absolute position of the current record set
-
-        :rtype: list[dict[str, Any]]
-        :return:
-
-            ::
-
-                [{
-                    'user_id': user_id (belonging to current record set),
-                    'karma_position': integer, ranking position
-                }, {..}] ordered by karma_position desc
-        """
         if not self:
             return []
 
         where_query = self.env["res.users"]._search(user_domain, bypass_access=True)
 
-        # we search on every user in the DB to get the real positioning (not the one inside the subset)
-        # then, we filter to get only the subset.
         sql = SQL(
             """
 SELECT sub.user_id, sub.karma_position
@@ -430,15 +307,6 @@ WHERE sub.user_id = ANY(%s)""",
         return self.env.cr.dictfetchall()
 
     def _rank_changed(self) -> None:
-        """Notify users of a rank change and auto-grant the rank's badges.
-
-        Batched throughout: one search for the already-granted badges, one
-        ``create`` for the missing ones, one activity insert and one mentorship
-        pass for the whole set.  The per-user shape cost a search, a create and
-        a ``send_mail`` each, which is what a bulk re-rank multiplies.
-
-        Skipped during module installation to avoid spamming.
-        """
         if self.env.context.get("install_mode", False):
             return
 
@@ -446,7 +314,6 @@ WHERE sub.user_id = ANY(%s)""",
         if not ranked:
             return
 
-        # --- badges the new ranks unlock, in two queries rather than 2N ---
         BadgeUser = self.env["gamification.badge.user"].sudo()
         wanted = {
             (user.id, badge.id)
@@ -471,7 +338,6 @@ WHERE sub.user_id = ANY(%s)""",
                     ]
                 )._send_badge()
 
-        # --- bus notification: inherently per user, it targets their own feed ---
         for user in ranked:
             user._send_gamification_notification(
                 "level_up",
@@ -506,42 +372,11 @@ WHERE sub.user_id = ANY(%s)""",
                 )
 
     def _recompute_rank_if_relevant(self) -> None:
-        """Re-rank only the users a rank change could actually move.
-
-        A user with no karma and no rank is already where they belong, and the
-        callers of this are write hooks that fire on every karma event, so the
-        filter is what keeps a bulk import from walking the whole user table.
-        """
-        # Filter in the caller's environment and only then sudo: `self.sudo()`
-        # first hands back records in a *different* env, whose cache is empty, so
-        # the filter re-reads karma and rank that the caller had already loaded.
         movable = self.filtered(lambda u: u.karma > 0 or u.rank_id)
         if movable:
             movable.sudo()._recompute_rank()
 
     def _recompute_rank(self) -> None:
-        """Set rank_id and next_rank_id from karma, for the whole recordset.
-
-        One query for the ranks and at most one write per distinct target rank,
-        however many users are being re-ranked.
-
-        What that does NOT do is make re-ranking flat: `_rank_changed` sends one
-        bus message and queues one email per user who actually moved, and those
-        are per recipient by nature. Re-ranking 60 users with every rank
-        changing measured 385 queries here against 429 for the second
-        implementation this replaces -- the saving is the writes and the badge
-        search, not the notifications, and it is about 10%.
-
-        That second implementation, ``_recompute_rank_bulk``, was dispatched to
-        above ``len(ranks) * 3`` users because the original loop wrote once per
-        user. Grouping by target rank removed its reason to exist, and it is
-        deleted rather than left unreachable: it also skipped ``_rank_changed``
-        for users dropping below the lowest rank, so the two paths did not agree
-        on behaviour either.
-
-        Callers should still pre-filter to users who can move; see
-        ``_recompute_rank_if_relevant``.
-        """
         ranks = [
             {"rank": rank, "karma_min": rank.karma_min}
             for rank in self.env["gamification.karma.rank"].search(
@@ -552,9 +387,6 @@ WHERE sub.user_id = ANY(%s)""",
         if not ranks:
             return
 
-        # Group by the (rank, next_rank) pair each user lands on, so the whole
-        # set costs one write and one _rank_changed per distinct rank rather
-        # than one of each per user.
         by_target: dict[tuple[int | bool, int | bool], list[int]] = {}
         changed_ids: list[int] = []
         for user in self:
@@ -566,7 +398,6 @@ WHERE sub.user_id = ANY(%s)""",
                     )
                     break
             else:
-                # Karma below every rank — clear the rank, point at the lowest.
                 target = (False, ranks[-1]["rank"].id)
             if (user.rank_id.id or False) != target[0]:
                 changed_ids.append(user.id)
@@ -581,11 +412,6 @@ WHERE sub.user_id = ANY(%s)""",
             self.browse(changed_ids)._rank_changed()
 
     def _get_next_rank(self) -> models.Model:
-        """Return the next karma rank for this user.
-
-        For fresh users with 0 karma that don't yet have ``rank_id`` /
-        ``next_rank_id``, returns the lowest-karma rank as a default.
-        """
         if self.next_rank_id:
             return self.next_rank_id
         domain = [("karma_min", ">", self.rank_id.karma_min)] if self.rank_id else []
@@ -594,16 +420,10 @@ WHERE sub.user_id = ANY(%s)""",
         )
 
     def prepare_rank_email_links(self) -> list[dict[str, str]]:
-        """Hook for other modules to add redirect buttons in the rank-reached email.
-
-        :return: list of dicts with 'url' and 'label' keys,
-            e.g. ``[{'url': '/forum', 'label': 'Go to Forum'}]``
-        """
         self.check_singleton()
         return []
 
     def action_karma_report(self) -> dict[str, Any]:
-        """Open the karma tracking history for this user."""
         self.check_singleton()
         return {
             "name": self.env._("Karma Updates"),
@@ -619,22 +439,14 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def get_gamification_dashboard_data(self) -> dict[str, Any]:
-        """Aggregate all gamification data for the current user's dashboard.
-
-        Returns a single dict consumed by the OWL dashboard component.
-        Designed for one RPC round-trip.
-        """
         user = self.env.user
         Streak = self.env["gamification.streak"]
         BadgeUser = self.env["gamification.badge.user"]
         AchUnlock = self.env["gamification.achievement.unlock"]
         Goal = self.env["gamification.goal"]
 
-        # Creates any missing streak rows and hands back the whole set, so the
-        # section below does not search for what we just built.
         user_streaks = Streak._get_or_create_user_streaks(user)
 
-        # Profile
         next_rank = user.next_rank_id or user._get_next_rank()
         featured = [
             {
@@ -659,7 +471,6 @@ WHERE sub.user_id = ANY(%s)""",
             "visibility": user.gamification_visibility,
         }
 
-        # Active streaks
         streaks = [
             {
                 "id": s.id,
@@ -672,7 +483,6 @@ WHERE sub.user_id = ANY(%s)""",
             for s in user_streaks
         ]
 
-        # Active challenge goals
         goals = [
             {
                 "id": g.id,
@@ -695,7 +505,6 @@ WHERE sub.user_id = ANY(%s)""",
             )
         ]
 
-        # Recent badges (last 10)
         badges = [
             {
                 "id": bu.id,
@@ -713,10 +522,8 @@ WHERE sub.user_id = ANY(%s)""",
             )
         ]
 
-        # Unified activity feed (replaces kudos-only feed)
         activity_feed = self.env["gamification.activity"].get_activity_feed(limit=20)
 
-        # Recent achievement unlocks
         achievements = [
             {
                 "id": u.id,
@@ -734,7 +541,6 @@ WHERE sub.user_id = ANY(%s)""",
             )
         ]
 
-        # Karma leaderboard (top 10 in same company)
         leaderboard = self._get_karma_leaderboard(limit=10)
 
         return {
@@ -749,13 +555,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _get_karma_leaderboard(self, limit=10) -> list:
-        """Return top karma users in the current user's company.
-
-        Respects ``gamification_visibility`` — private users are excluded.
-
-        :param int limit: max entries to return.
-        :return: list of dicts with user_id, user_name, karma, rank_name.
-        """
         users = self.search(
             [
                 ("company_id", "=", self.env.company.id),
@@ -779,13 +578,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def send_kudos_from_dashboard(self, recipient_id, category_id, message) -> dict:
-        """Create a kudos record directly from the dashboard.
-
-        :param int recipient_id: target user id.
-        :param int category_id: kudos category id.
-        :param str message: recognition message.
-        :return: dict with the created kudos summary.
-        """
         kudos = self.env["gamification.kudos"].create(
             {
                 "sender_id": self.env.uid,
@@ -804,16 +596,10 @@ WHERE sub.user_id = ANY(%s)""",
             "karma_granted": kudos.karma_granted,
         }
 
-    # ── Engagement Nudges ───────────────────────────────────────────
 
     NUDGE_COOLDOWN_DAYS = 7
 
     def _mark_eligible_users_nudged(self) -> Self:
-        """Return the subset of users eligible for a nudge (not nudged within cooldown).
-
-        Also marks the returned users as nudged today so subsequent
-        nudge methods in the same cron run won't double-send.
-        """
         cutoff = fields.Date.today() - timedelta(days=self.NUDGE_COOLDOWN_DAYS)
         eligible = self.filtered(
             lambda u: (
@@ -827,16 +613,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _cron_engagement_nudges(self) -> None:
-        """Detect engagement patterns and send targeted nudges.
-
-        Runs daily.  Checks for:
-        - Streaks about to expire (1 freeze day left, no activity yesterday)
-        - Users close to next rank (within 10% of karma threshold)
-        - Goals close to completion (>80% but not reached)
-        - Users inactive for 7+ days (had karma activity before)
-
-        Each user receives at most one nudge per ``NUDGE_COOLDOWN_DAYS`` period.
-        """
         self._nudge_streak_warning()
         self._nudge_close_to_rank()
         self._nudge_goals_almost_done()
@@ -844,7 +620,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _nudge_streak_warning(self) -> None:
-        """Warn users whose streaks have 0 freeze days left."""
         streaks = self.env["gamification.streak"].search(
             [
                 ("state", "=", "active"),
@@ -870,8 +645,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _nudge_close_to_rank(self) -> None:
-        """Notify users within 10% of their next rank."""
-        # Push arithmetic filter to SQL instead of loading all users into Python
         self.env["res.users"].flush_model()
         self.env.cr.execute(
             """
@@ -905,7 +678,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _nudge_goals_almost_done(self) -> None:
-        """Notify users with goals >80% complete (handles both 'higher' and 'lower' conditions)."""
         goals = self.env["gamification.goal"].search(
             [
                 ("state", "=", "inprogress"),
@@ -913,11 +685,6 @@ WHERE sub.user_id = ANY(%s)""",
                 ("target_goal", ">", 0),
             ]
         )
-        # Narrow to goals that actually warrant a nudge *before* asking who is
-        # eligible: ``_mark_eligible_users_nudged`` marks the users it returns as nudged, so
-        # calling it on every goal owner burned the weekly nudge budget of
-        # users who were nowhere near completion and never got a message —
-        # which also blocked them from the other three nudge types.
         almost_done = goals.filtered(lambda g: 80 <= g.completeness < 100)
         if not almost_done:
             return
@@ -939,7 +706,6 @@ WHERE sub.user_id = ANY(%s)""",
 
     @api.model
     def _nudge_inactive_users(self) -> None:
-        """Re-engage users who were active but haven't earned karma in 7+ days."""
         cutoff = fields.Date.today() - timedelta(days=7)
         cr = self.env.cr
 

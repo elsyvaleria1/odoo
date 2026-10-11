@@ -336,7 +336,6 @@ class TestCounters(DocumentTypeCase):
                 self.assertEqual(action["res_model"], "document.document")
 
     def test_a_type_opens_its_documents_in_the_documents_app(self):
-        # a bare "list,form" opened the lowest-priority form: add-a-URL
         action = self.doc_type.action_view_documents()
         view_ids = [view_id for view_id, __ in action["views"]]
         self.assertNotIn(
@@ -591,19 +590,11 @@ class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
         )
 
     def _stale_documents(self):
-        """Two documents whose stored state disagrees with their date.
-
-        Written behind the ORM's back on purpose: going through `write` would
-        recompute the field and leave nothing for the cron to find.
-        """
         document_type = self.env["document.type"].create(
             {
                 "name": "Cron Type",
                 "code": "crontype",
                 "has_expiration": True,
-                # company-less: the documents below deliberately straddle two
-                # companies, and `_check_document_type_company` refuses a typed
-                # document whose company differs from its type's.
                 "company_id": False,
             }
         )
@@ -649,7 +640,6 @@ class TestExpirationRefreshCronIsUserIndependent(DocumentTypeCase):
         )
 
     def test_the_shipped_superuser_cron_still_refreshes(self):
-        """Negative control: the arm that always worked must keep working."""
         documents = self._stale_documents()
 
         self.env["document.document"].with_user(

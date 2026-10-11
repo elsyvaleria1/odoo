@@ -73,7 +73,6 @@ class Field:
             text.rstrip(self.pad) if self.align == LEFT else text.lstrip(self.pad)
         )
         if not stripped and text and self.pad != " ":
-            # a field of nothing but its pad is the pad's value: a zero amount
             stripped = self.pad
         if self.parse is not None:
             return self.parse(stripped)

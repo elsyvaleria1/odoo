@@ -25,16 +25,6 @@ _validators: collections.defaultdict[str, list[Validator]] = collections.default
 )
 _relaxng_cache: dict[str, etree.RelaxNG | None] = {}
 
-# view type -> the module-relative path of the RelaxNG schema that validates its
-# arch, or None for a type that deliberately has none. A view type declares its
-# entry with register_schema(); `valid_view` consults this before running the
-# per-tag predicates, so a type is schema-validated because it said it has a
-# schema and not because it was added to a decorator in this file.
-#
-# None is a meaningful declaration, not an absence: `form` and `kanban` are
-# qweb-based and validated structurally by the element handlers of ir_ui_view_arch, and
-# saying so here is what lets a gate tell them apart from a type whose author
-# forgot.
 _view_schemas: dict[str, str | None] = {}
 
 IGNORED_IN_EXPRESSION = {
@@ -206,9 +196,6 @@ def _get_expression_contextual_values(item_ast: ast.AST) -> set[str]:
 
 
 def _get_keyword_contextual_values(call: ast.Call) -> set[str]:
-    # a keyword value nothing here can read (a lambda, a comprehension) is opaque:
-    # its names are missed, as they were before keywords were read at all, rather
-    # than the whole view refused
     values: set[str] = set()
     for keyword in call.keywords:
         try:
@@ -244,7 +231,7 @@ def get_dict_asts(expr: str | ast.AST) -> dict[str, ast.AST]:
         msg = "Non-string literal dict key"
         raise ValueError(msg)
     return {
-        key.value: val  # type: ignore[union-attr]
+        key.value: val
         for key, val in zip(expr.keys, expr.values, strict=False)
     }
 
@@ -279,9 +266,6 @@ def valid_view(arch: etree._Element, **kwargs: object) -> bool:
 
 
 def ir_valid(arch: etree._Element) -> bool:
-    """Reject what the view IR schema calls an error: a tag no view type knows,
-    a required attribute missing, a value the attribute's type cannot read.
-    Undeclared attributes are warnings there and do not fail here."""
     view_type = view_ir.schema().view_type_of(arch.tag)
     if view_type is None:
         _debug.logic("view_validation.ir_skipped", root=arch.tag)
@@ -317,17 +301,6 @@ def register_validator(*view_types: str) -> Callable[[Validator], Validator]:
 
 
 def register_schema(view_type: str, path: str | None) -> None:
-    """Declare which RelaxNG schema validates ``view_type``'s arch.
-
-    ``path`` is module-relative, resolved through ``file_open`` like any other
-    addon resource -- ``"web_gantt/rng/gantt_view.rng"``. Pass ``None`` to state
-    that the type has no schema on purpose.
-
-    Call it at import time, beside the ``ir.ui.view.type`` selection_add that
-    introduces the type, so the type and its schema are declared together. A
-    second registration for the same type replaces the first and drops the
-    cached schema, which is what makes a module reloadable in tests.
-    """
     _debug.lifecycle(
         "view_validation.schema_registered",
         view_type=view_type,
@@ -340,12 +313,10 @@ def register_schema(view_type: str, path: str | None) -> None:
 
 
 def registered_schemas() -> dict[str, str | None]:
-    """The declared schema of every view type, for gates and tests to read."""
     return dict(_view_schemas)
 
 
 def relaxng(view_type: str) -> etree.RelaxNG | None:
-    """The compiled schema for ``view_type``, or None if it declared none."""
     if view_type not in _relaxng_cache:
         path = _view_schemas.get(view_type)
         if path is None:
@@ -372,10 +343,8 @@ def relaxng(view_type: str) -> etree.RelaxNG | None:
 
 
 def schema_valid(arch: etree._Element, **kwargs: object) -> bool:
-    """Check the arch against the schema its view type declared."""
     view_type = arch.tag
     if _view_schemas.get(view_type) is None:
-        # Declared no schema, or is not a registered view type at all.
         _debug.logic(
             "view_validation.schema_absent",
             view_type=view_type,
@@ -384,10 +353,6 @@ def schema_valid(arch: etree._Element, **kwargs: object) -> bool:
         return True
     validator = relaxng(view_type)
     if validator is None:
-        # A declared schema that will not load is a packaging error, and
-        # answering True here would turn it into silence: the type would stop
-        # being validated and every arch would pass. Refuse instead, so the
-        # first view of this type names the problem.
         _logger.error(
             "view type %r declares the RelaxNG schema %r, which failed to load",
             view_type,

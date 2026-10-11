@@ -246,8 +246,6 @@ class AccountMove(models.Model):
         if not self.company_id.sale_config_id.is_credit_uninvoiced_counted:
             return exclude_amount
         for order in self.line_ids.sale_line_ids.order_id:
-            # an invoice takes out of the credit still to invoice no more
-            # than its order put in
             order_amount = min(
                 self._get_sale_order_invoiced_amount(order),
                 order._get_credit_to_invoice_amount(),

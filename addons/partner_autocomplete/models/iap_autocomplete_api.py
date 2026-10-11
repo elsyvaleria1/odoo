@@ -22,8 +22,6 @@ class IapAutocompleteApi(models.AbstractModel):
 
     @api.model
     def _contact_iap(self, local_endpoint, action, params, timeout=15):
-        # Spending the company's paid IAP credit balance requires the same
-        # authority as managing partner records, not just being logged in.
         self.env["res.partner"].browse().check_access("write")
         account = self.env["iap.account"].acquire_account("partner_autocomplete")
         if not account.sudo().account_token:
@@ -54,11 +52,6 @@ class IapAutocompleteApi(models.AbstractModel):
     def _request_partner_autocomplete(
         self, action, params, timeout=15
     ) -> tuple[dict, Literal[False]] | tuple[Literal[False], str]:
-        """Contact endpoint to get autocomplete data.
-
-        :returns: a 2-element tuple (results, error code)
-        :rtype: tuple[dict, Literal[False]] | tuple[Literal[False], str]
-        """
         try:
             results = self._contact_iap("/api/dnb/1", action, params, timeout=timeout)
         except (

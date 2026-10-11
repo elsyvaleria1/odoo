@@ -69,7 +69,6 @@ class Schema:
         if view_type is not None:
             spec = self.types.get(view_type)
             return spec.nodes.get(kind) if spec else None
-        # an inheritance spec carries no view type: any type's vocabulary is admissible
         for spec in self.types.values():
             if kind in spec.nodes:
                 return spec.nodes[kind]

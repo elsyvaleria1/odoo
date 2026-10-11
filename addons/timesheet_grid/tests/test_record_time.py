@@ -18,7 +18,6 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
 
     def test_timesheet_overtime(self):
         self.empl_employee.resource_calendar_id.schedule_type = "flexible"
-        # Get this week's Monday (or next Monday if today is Sunday)
         relevant_monday = date.today() + timedelta(
             days=-date.today().weekday() + (7 if date.today().weekday() == 6 else 0)
         )
@@ -56,10 +55,8 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
         )
 
     def test_timesheet_availabilty_days(self):
-        # Create company
         company = self.env["res.company"].create({"name": "New Test Company"})
 
-        # Create user
         test_user = self.env["res.users"].create(
             {
                 "name": "Test User",
@@ -71,7 +68,6 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             }
         )
 
-        # Create flexible calendar
         calendar = self.env["resource.calendar"].create(
             {
                 "name": "Calendar 8h",
@@ -83,7 +79,6 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             }
         )
 
-        # Create employee linked to user
         employee = self.env["hr.employee"].create(
             {
                 "name": "Test Employee",
@@ -93,7 +88,6 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             }
         )
 
-        # Ensure company calendar is NOT flexible (to avoid global override)
         company.resource_calendar_id = self.env["resource.calendar"].create(
             {
                 "name": "Company Calendar (Rigid)",
@@ -102,7 +96,6 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             }
         )
 
-        # Call grid_unavailability() with the employee
         unavailable_days = (
             self.env["account.analytic.line"]
             .with_user(test_user)
@@ -110,10 +103,8 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             .grid_unavailability(date.today(), date.today() + timedelta(days=7))
         )
 
-        # No unavailable days for flexible schedule in my Timesheet
         self.assertFalse(len(unavailable_days[False]))
 
-        # Call again, this time with groupby='employee_id'
         unavailable_days = (
             self.env["account.analytic.line"]
             .with_company(company)
@@ -125,6 +116,5 @@ class TestRecordTime(TestCommonTimesheet, HttpCase):
             )
         )
 
-        # Company availability
         self.assertTrue(len(unavailable_days[False]))
         self.assertFalse(unavailable_days[employee.id])

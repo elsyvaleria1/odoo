@@ -27,9 +27,6 @@ _logger = logging.getLogger("odoo.registry")
 _debug = DebugLog(__name__)
 
 
-# what a model's descendants inherit into their tables or their reflection: a
-# definition class setting none of these, nor adding fields, table objects or
-# parents, leaves every descendant's schema as it was
 _SCHEMA_ATTRIBUTES = frozenset(
     {
         "_abstract",
@@ -67,9 +64,6 @@ def changes_descendant_schema(model_def: type[BaseModel]) -> bool:
 _MISSING = object()
 
 
-# every write to a class, and every delete even of a missing name, spends one
-# of the type's version tags; past CPython's budget of 1000 the type stops
-# caching attribute lookups, and each one on a model walks its whole MRO
 def set_class_attr(cls: type, name: str, value: object) -> None:
     current = cls.__dict__.get(name, _MISSING)
     if type(current) is not type(value) or current != value:
@@ -432,9 +426,6 @@ def _collect_and_install_fields(
             merged_names.add(name)
             merged_keys[name] = _merged_field_key(fields_, defined)
 
-    # a merged or inherited field is set again over the previous one: deleting
-    # it first would spend another of the class's version tags. An inherited
-    # one the setup does not set again goes once the parents' are added
     kept = []
     for name, field in model_cls._fields.items():
         if name in merged_names:
@@ -467,9 +458,6 @@ def _collect_and_install_fields(
     return kept
 
 
-# a field is a function of what it is built from: rebuilt from the same
-# definitions it would only replace itself on the class, which spends one of
-# the class's version tags for nothing (see set_class_attr)
 def _merged_field_key(
     fields_: list[Field[typing.Any]], defined: int
 ) -> tuple[object, ...]:
@@ -557,9 +545,6 @@ def _patch_company_dependent_field(
 
 
 def _get_declared_class_attr(model_cls: type[BaseModel], name: str) -> typing.Any:
-    # what the model's definitions say, ignoring the values previous setups
-    # derived on registry classes: the model's own, and those of the models and
-    # mixins it inherits, which its MRO holds ahead of their definitions
     for cls in model_cls.__mro__:
         if not is_registry_class(cls) and name in cls.__dict__:
             return cls.__dict__[name]

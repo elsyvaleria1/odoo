@@ -49,7 +49,6 @@ class MrpWorkorder(models.Model):
         check_company=True,
     )
 
-    # QC-related fields
     allow_producing_quantity_change = fields.Boolean(
         string="Allow Changes to Producing Quantity",
         default=True,
@@ -97,20 +96,17 @@ class MrpWorkorder(models.Model):
         related="production_id.product_description_variants"
     )
 
-    # used to display the connected employee that will start a workorder on the tablet view
     employee_id = fields.Many2one(
         comodel_name="hr.employee",
         compute="_compute_employee_id",
     )
     employee_name = fields.Char(compute="_compute_employee_id")
 
-    # employees that started working on the wo
     employee_ids = fields.Many2many(
         comodel_name="hr.employee",
         string="Working employees",
         copy=False,
     )
-    # employees assigned to the wo
     employee_assigned_ids = fields.Many2many(
         comodel_name="hr.employee",
         relation="mrp_workorder_employee_assigned",
@@ -119,19 +115,15 @@ class MrpWorkorder(models.Model):
         string="Assigned",
         domain="[('company_id', 'in', allowed_company_ids)]",
     )
-    # employees connected
     connected_employee_ids = fields.Many2many(
         comodel_name="hr.employee",
         search="_search_connected_employee_ids",
         store=False,
     )
 
-    # list of employees allowed to work on the workcenter
     allowed_employees = fields.Many2many(related="workcenter_id.employee_ids")
-    # True if all employees are allowed on that workcenter
     all_employees_allowed = fields.Boolean(compute="_compute_all_employees_allowed")
 
-    # Technical field to store the estimated hourly cost of employee at time of work order completion (i.e. to keep a consistent cost).
     employee_costs_hour = fields.Float(
         string="Employee Cost per hour",
         default=0.0,
@@ -213,7 +205,6 @@ class MrpWorkorder(models.Model):
             self.button_pending()
         domain = [("state", "not in", ["done", "cancel", "blocked"])]
         if self.env.context.get("from_manufacturing_order"):
-            # from workorder on MO
             action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
                 "mrp_workorder.mrp_workorder_action_tablet"
             )
@@ -229,7 +220,6 @@ class MrpWorkorder(models.Model):
                 "from_manufacturing_order": True,
             }
         elif self.env.context.get("from_production_order"):
-            # from workorder list view
             action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
                 "mrp.mrp_workorder_todo"
             )
@@ -241,7 +231,6 @@ class MrpWorkorder(models.Model):
         elif self.env.context.get("mrp_display"):
             return None
         else:
-            # from workcenter kanban view
             action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
                 "mrp_workorder.mrp_workorder_action_tablet"
             )
@@ -268,15 +257,6 @@ class MrpWorkorder(models.Model):
         return self.production_id.action_generate_serial(self)
 
     def _update_current_quality_check(self, position):
-        """Change the quality check currently set on the workorder `self`.
-
-        The workorder points to a check. A check belongs to a chain.
-        This method allows to change the selected check by moving on the checks
-        chain according to `position`.
-
-        :param position: Where we need to change the cursor on the check chain
-        :type position: string
-        """
         self.check_singleton()
         assert position in ["first", "next", "previous", "last"]
         checks_to_consider = self.check_ids.filtered(
@@ -398,10 +378,6 @@ class MrpWorkorder(models.Model):
                     raise UserError(
                         self.env._("There is no session chief. Please log in.")
                     )
-            # Only block the whole batch if none of its workorders permit this
-            # employee; the per-workorder loop below already restricts employee
-            # assignment individually, so a mixed batch shouldn't be blocked
-            # entirely by one restricted workorder.
             if self and all(
                 main_employee not in [emp.id for emp in wo.allowed_employees]
                 and not wo.all_employees_allowed
@@ -439,7 +415,6 @@ class MrpWorkorder(models.Model):
         return res
 
     def button_finish(self):
-        """When using the Done button of the simplified view, validate directly some types of quality checks"""
         for workorder in self:
             if workorder.state in ("done", "cancel"):
                 continue
@@ -531,7 +506,7 @@ class MrpWorkorder(models.Model):
             "search_default_name": self.production_id.name,
             "shouldHideNewWorkcenterButton": True,
         }
-        action["context"].pop("search_default_filter_ready", None)  # Remove MO Ready
+        action["context"].pop("search_default_filter_ready", None)
         return action
 
     def action_log_note(self):
@@ -574,7 +549,6 @@ class MrpWorkorder(models.Model):
                 finished_moves=len(move_finished_ids),
             )
             for point in wo.quality_point_ids:
-                # Check if we need a quality control for this point
                 if point.check_execute_now():
                     moves = self.env["stock.move"]
                     values = {
@@ -584,8 +558,6 @@ class MrpWorkorder(models.Model):
                         "team_id": point.team_id.id,
                         "company_id": wo.company_id.id,
                         "product_id": production.product_id.id,
-                        # Two steps are from the same production
-                        # if and only if the produced quantities at the time they were created are equal.
                         "finished_product_sequence": wo.qty_produced,
                         "previous_check_id": previous_check.id,
                         "worksheet_document": point.worksheet_document,
@@ -616,17 +588,14 @@ class MrpWorkorder(models.Model):
                         check = self.env["quality.check"].create(values)
                         previous_check.next_check_id = check
                         previous_check = check
-                    # Create 'register ...' checks
                     for move in moves:
                         check_vals = values.copy()
                         check_vals.update(wo._prepare_check_vals_from_move(move))
-                        # Create quality check and link it to the chain
                         check_vals.update({"previous_check_id": previous_check.id})
                         check = self.env["quality.check"].create(check_vals)
                         previous_check.next_check_id = check
                         previous_check = check
 
-            # Set default quality_check
             wo._update_current_quality_check(position="first")
 
     def _get_byproduct_move_to_update(self):
@@ -662,7 +631,6 @@ class MrpWorkorder(models.Model):
         self.pre_record_production()
 
         backorder = False
-        # Trigger the backorder process if we produce less than expected
         if (
             float_compare(
                 self.qty_producing,
@@ -754,9 +722,6 @@ class MrpWorkorder(models.Model):
             )
         return vals
 
-    # --------------------------
-    # Buttons from quality.check
-    # --------------------------
 
     def open_tablet_view(self):
         self.check_singleton()
@@ -787,7 +752,6 @@ class MrpWorkorder(models.Model):
                     res["context"] = dict(res.get("context", {}), from_workorder=True)
                     return res
         except (UserError, ValidationError) as e:
-            # log next activity on MO with error message
             self.production_id.activity_schedule(
                 "mail.mail_activity_data_warning",
                 note=str(e),
@@ -814,7 +778,6 @@ class MrpWorkorder(models.Model):
             self._set_default_time_log()
             if action is not True:
                 return action
-        # workorder list view action should redirect to the same view instead of workorder kanban view when WO mark as done.
         return self.action_back()
 
     def _action_confirm(self):
@@ -847,13 +810,6 @@ class MrpWorkorder(models.Model):
         start_date_field_name,
         stop_date_field_name,
     ):
-        # `reservations_to_ignore=self.reservation_id`: mrp moved work order
-        # bookings from `resource.schedule.exception` to `resource.reservation`,
-        # and `_get_first_available_slot` no longer has a `leaves_to_ignore`
-        # parameter. This call therefore raised TypeError -- dragging a work
-        # order in the Gantt could not reschedule it. Ignoring the work order's
-        # own booking is the point: otherwise it collides with itself and the
-        # search skips past the slot it already occupies.
         from_date, to_date = self.workcenter_id._get_first_available_slot(
             date_candidate,
             self.duration_expected,
@@ -982,7 +938,6 @@ class MrpWorkorder(models.Model):
 
     @api.model
     def _gantt_unavailability(self, field_name, res_ids, start, stop, scale):
-        """Get unavailabilities data to display in the Gantt view."""
         if field_name != "workcenter_id":
             return super()._gantt_unavailability(
                 field_name, res_ids, start, stop, scale
@@ -1033,9 +988,7 @@ class MrpWorkorder(models.Model):
         )
 
     def _search_connected_employee_ids(self, operator, value) -> list:
-        # retrieving employees connected in the session
         main_employee_connected = self.env["hr.employee"].get_session_owner()
-        # if no one is connected, all records are valid
         if not main_employee_connected:
             return []
         search_query = self.env["mrp.workorder"]._search(
@@ -1085,9 +1038,6 @@ class MrpWorkorder(models.Model):
         )._close()
 
     def _is_timer_start_required(self) -> bool:
-        """The shop floor and the form start a timer per employee; a call with
-        nobody to time -- no request and a user without an employee: a cron, a
-        server action, a test -- keeps mrp's own timer instead of none."""
         self.check_singleton()
         return not request and not self.env.user.employee_id
 
@@ -1112,7 +1062,6 @@ class MrpWorkorder(models.Model):
 
     def button_pending(self) -> None:
         Employee = self.env["hr.employee"]
-        # Determine current employee
         if self.env.context.get("mrp_display") and not (
             Employee.get_employees_connected()
         ):
@@ -1121,7 +1070,6 @@ class MrpWorkorder(models.Model):
             )
         employee = self._get_acting_employee()
         if employee:
-            # Stop productivity only for the current employee
             self.stop_employee([employee.id])
         super().button_pending()
 
@@ -1212,7 +1160,6 @@ class MrpWorkorder(models.Model):
         self.check_singleton()
         self.production_id.set_qty_producing()
 
-        # Find first uncompleted step of type register production (if it exists) in the chain
         current_check = self.check_ids.filtered(lambda c: not c.previous_check_id)[:1]
         while (
             current_check
@@ -1229,10 +1176,8 @@ class MrpWorkorder(models.Model):
             and current_check.test_type == "register_production"
             and current_check.quality_state == "none"
         ):
-            # Check exists already, mark as done.
             current_check.action_next()
         elif not any(c.test_type == "register_production" for c in self.check_ids):
-            # Add a register production step for this WO only (at the front of the list)
             first_check = self.check_ids.filtered(lambda c: not c.previous_check_id)
             new_check = self.env["quality.check"].create(
                 [

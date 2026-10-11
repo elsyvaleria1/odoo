@@ -10,7 +10,6 @@ class EventMail(models.Model):
         return super()._execute_event_based_for_registrations(registrations)
 
     def _send_sms(self, registrations) -> None:
-        """SMS action: send SMS to attendees"""
         registrations._message_sms_schedule_mass(
             template=self.template_ref, mass_keep_log=True
         )

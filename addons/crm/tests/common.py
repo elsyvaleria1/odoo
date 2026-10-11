@@ -57,26 +57,6 @@ class TestCrmCommon(TestSalesCommon, MailCase):
         optional_queries: Mapping[str, int] | None = None,
         **budgets: int,
     ) -> T:
-        """Count the queries of ``fn`` after one rolled-back rehearsal.
-
-        The rehearsal starts from the same empty record cache as the counted
-        run, so it takes the same path and fills the registry caches that path
-        reads (access rows, group membership, defaults, the company's
-        configuration rows), which a fresh process fills on
-        first use with ten to twenty queries that belong to no code under
-        test and vary with the installed module set. It flushes as the counted
-        run does, so the commit hooks ``fn`` queues (tracking, follower
-        subscription, notifications) run inside it: the rollback discards
-        them, and a rehearsal that stopped short of them would leave that
-        path cold for the counted run. The random state is restored so a
-        seeded draw in ``fn`` is the one the test asserts.
-
-        ``budgets`` pins the CRM dependency closure. ``optional_queries`` names
-        additional models whose installed integrations do work in this fixture
-        (for example, reading visitor links during a merge). Each declared cost
-        is fixed in advance, never inferred from the observed query count. All
-        queries, including those integrations, remain inside the assertion.
-        """
         optional_cost = sum(
             count
             for model, count in (optional_queries or {}).items()

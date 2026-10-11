@@ -36,7 +36,7 @@ class WorkflowEdge(models.Model):
         required=True,
         ondelete="cascade",
     )
-    automation_rule_id = fields.Many2one(  # noqa: E8529  One2many inverse, cascading FK
+    automation_rule_id = fields.Many2one(
         comodel_name="automation.rule",
         related="source_node_id.automation_rule_id",
         string="Automation Rule",
@@ -213,7 +213,6 @@ class WorkflowEdge(models.Model):
         return References.from_json(self.step_references)
 
     def _get_step_reference_problems(self) -> list[str]:
-        """What the expression reads that is neither its source nor upstream of it."""
         self.check_singleton()
         refs = self._get_step_references()
         source = self.source_node_id

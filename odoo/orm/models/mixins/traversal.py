@@ -62,14 +62,12 @@ class ReversibleComparator:
         less: bool = item < item_cmp
         return less
 
-    # equal means "neither sorts first", or a tuple key would stop at two
-    # items __lt__ cannot order (origin-less NewIds) and skip the later terms
     def __eq__(self, other: object) -> bool:
         if other.__class__ is not ReversibleComparator:
             return NotImplemented
-        return not self < other and not other < self  # type: ignore[operator]
+        return not self < other and not other < self
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
     def __repr__(self) -> str:
         return f"<ReversibleComparator {self.__item!r}{' reverse' if self.__reverse else ''}>"
@@ -172,7 +170,7 @@ class TraversalMixin(_ModelStubs):
     @api.private
     def filtered(
         self, func: str | Callable[..., typing.Any] | Domain
-    ) -> Self:  # a predicate binding a loop variable as a default is one argument here
+    ) -> Self:
         if not func:
             return self
         if not self:
@@ -373,9 +371,6 @@ class TraversalMixin(_ModelStubs):
         _fields = self._fields
         env = self.env
 
-        # five guards send `sorted()` to the Python fallback, and the caller
-        # logs only that it went; which guard decided is the question a slow
-        # sort actually raises, so the reason is carried to one exit
         terms = parse_order(order)
         refused = "unparsable_order" if terms is None else ""
         refused_field = ""
@@ -565,8 +560,6 @@ class TraversalMixin(_ModelStubs):
     def _get_descendant_ids(self, include_self: bool = False) -> OrderedSet[int]:
         if not self.ids:
             return OrderedSet()
-        # the shape of the tree, as _get_ancestor_ids reads it from the paths:
-        # a record rule hiding a node must not cut its subtree off
         found = OrderedSet(
             self.sudo()
             .with_context(active_test=False)
@@ -633,10 +626,6 @@ class TraversalMixin(_ModelStubs):
 
         ids = self.ids
         if field.is_many2one:
-            # a row inserted a moment ago has no row pointing at it yet, so no
-            # cycle can pass through it until something is written; a
-            # many2many is left alone, because its inverse field on the same
-            # relation writes the edge back into the new row at create
             transaction = self.env.transaction
             ids = [
                 id_

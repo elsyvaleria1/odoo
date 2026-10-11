@@ -14,7 +14,6 @@ from odoo.addons.hr_payroll_holidays.tests.common import TestPayrollHolidaysBase
 @tagged("post_install", "-at_install")
 class TestTimeoffDefer(TestPayrollHolidaysBase):
     def test_no_defer(self):
-        # create payslip -> waiting or draft
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "Donald Payslip",
@@ -22,10 +21,8 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             }
         )
 
-        # Puts the payslip to draft/waiting
         payslip.compute_sheet()
 
-        # create a time off for our employee, validating it now should not put it as to_defer
         leave = self.env["hr.leave"].create(
             {
                 "name": "Golf time",
@@ -42,7 +39,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         )
 
     def test_to_defer(self):
-        # create payslip
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "Donald Payslip",
@@ -50,11 +46,9 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             }
         )
 
-        # Puts the payslip to draft/waiting
         payslip.compute_sheet()
         payslip.action_payslip_done()
 
-        # create a time off for our employee, validating it now should put it as to_defer
         leave = self.env["hr.leave"].create(
             {
                 "name": "Golf time",
@@ -68,17 +62,13 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(leave.payslip_state, "blocked", "Leave should be to defer")
 
     def test_multi_payslip_defer(self):
-        # A leave should only be set to defer if ALL colliding with the time period of the time off are in a done state
-        # it should not happen if a payslip for that time period is still in a waiting state
 
-        # create payslip -> waiting
         waiting_payslip = self.env["hr.payslip"].create(
             {
                 "name": "Donald Payslip draft",
                 "employee_id": self.emp.id,
             }
         )
-        # payslip -> validated
         done_payslip = self.env["hr.payslip"].create(
             {
                 "name": "Donald Payslip done",
@@ -86,13 +76,10 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             }
         )
 
-        # Puts the waiting payslip to draft/waiting
         waiting_payslip.compute_sheet()
-        # Puts the done payslip to the done state
         done_payslip.compute_sheet()
         done_payslip.action_payslip_done()
 
-        # create a time off for our employee, validating it now should not put it as to_defer
         leave = self.env["hr.leave"].create(
             {
                 "name": "Golf time",
@@ -141,7 +128,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         leave_1.sudo().action_approve()
         self.assertEqual(leave_1.payslip_state, "blocked", "Leave should be to defer")
 
-        # A Simple User can request a leave if a payslip is paid
         leave_2 = (
             self.env["hr.leave"]
             .with_user(self.vlad)
@@ -158,7 +144,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         leave_2.sudo().action_approve()
         self.assertEqual(leave_2.payslip_state, "blocked", "Leave should be to defer")
 
-        # Check overlapping periods with no payslip
         leave_3 = (
             self.env["hr.leave"]
             .with_user(self.vlad)
@@ -242,10 +227,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(reported_work_entries[0].duration, 8)
 
     def test_report_to_next_month_overlap(self):
-        """
-        If the time off overlap over 2 months, only report the exceeding part from january
-        In case leaves go over two months, only the leaves that are in the first month should be defered
-        """
         self.emp.version_ids.generate_work_entries(date(2022, 1, 1), date(2022, 2, 28))
         payslip = self.env["hr.payslip"].create(
             {
@@ -298,7 +279,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(reported_work_entries[0].duration, 8)
 
     def test_report_to_next_month_not_enough_days(self):
-        # If the time off contains too many days to be reported to next months, raise
         self.emp.version_ids.generate_work_entries(date(2022, 1, 1), date(2022, 2, 28))
         payslip = self.env["hr.payslip"].create(
             {
@@ -332,7 +312,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             leave.action_report_to_next_month()
 
     def test_report_to_next_month_long_time_off(self):
-        # If the time off overlap over more than 2 months, raise
         self.emp.version_ids.generate_work_entries(date(2022, 1, 1), date(2022, 2, 28))
         payslip = self.env["hr.payslip"].create(
             {
@@ -366,9 +345,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             leave.action_report_to_next_month()
 
     def test_report_to_next_month_2_months_time_off(self):
-        """
-        In this test, we want to defer a timeoff with a not rounded duration (7.6h)
-        """
         self.emp.version_ids.generate_work_entries(date(2026, 2, 1), date(2026, 2, 28))
         resource_calendar = self.env["resource.calendar"].create(
             {
@@ -620,10 +596,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(2, leave_worked_day_line.number_of_hours)
 
     def test_defer_next_month_double_time_off(self):
-        """
-        If you have a time off 5 days on Jun and 3 days on july, when you "defer it to next month"
-        it's only the 5 days of Jun that should be postponed to july.
-        """
         self.emp.version_ids._generate_work_entries(
             datetime(2023, 6, 1), datetime(2023, 7, 31)
         )
@@ -658,7 +630,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         leaves = self.env["hr.leave"].create(leave_data)
         leaves.action_approve()
         leaves[0].action_report_to_next_month()
-        # reported work entries between the 1st of july 2023 to the 31st of july 2023
         july_work_entries = self.env["hr.work.entry"].search(
             [
                 ("employee_id", "=", self.emp.id),
@@ -676,8 +647,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             ],
             order="date",
         )
-        # The length of reported work entries is 8 because we are generating records for 8 days of leave.
-        # These leaves cover July 3rd-12th excluding the weekend (July 8th-9th).
         self.assertEqual(len(july_work_entries), 8)
         self.assertEqual(
             list({we.date.day for we in july_work_entries}), [3, 4, 5, 6, 7, 10, 11, 12]
@@ -686,17 +655,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(july_work_entries[0].duration, 8)
 
     def test_leave_overlaping_over_2_month(self):
-        """
-        The part of the leave in the first month closed by a payslip should be deferred on the next month.
-
-        - A leave for the 2 whole weeks (2025-05-26 -> 2025-06-06) overlapping over 2 months
-        - May payslip computed and validated
-        - Compute the payslip of June
-
-        5 leave day from May should be deferred and added to the leave of june on work entries and payslip of june.
-        This should results in 10 leave day on June.
-        """
-        # Generate the work entries
         may_work_entries = self.emp.version_ids._generate_work_entries(
             datetime.fromisoformat("2025-05-01"), datetime.fromisoformat("2025-05-31")
         )
@@ -709,8 +667,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         )
         self.assertEqual(set(may_work_entries.mapped("state")), {"draft"})
 
-        # Create and validate payslips like an HR user would do:
-        # create a payslip batch, gets the payslips created through the wizard call and validate the batch
         may_payslip_batch = self.env["hr.payslip.run"].create(
             {
                 "name": "May 2025 payslip batch",
@@ -723,7 +679,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         may_payslip_batch.action_validate()
         self.assertEqual(set(may_work_entries.mapped("state")), {"validated"})
 
-        # Create a time off overlaping over 2 months
         overlapping_work_entry_type = self.env["hr.work.entry.type"].create(
             {
                 "name": "Annoying overlaping work entry type",
@@ -754,10 +709,8 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             overlapping_leave.payslip_state, "blocked", "Leave should be to defer"
         )
 
-        # Defer the blocked time off
         overlapping_leave.action_report_to_next_month()
 
-        # Ensure the timeoff work entries have been deferred on June and that May stays untouched
         self.assertEqual(
             len(
                 june_work_entries.filtered(
@@ -768,7 +721,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             "There should only have 10 OVERLAPING101 work entry deferred (1 Work entry per leave day)",
         )
 
-        # Ensure the worked days lines gets computed correctly on June payslip
         june_payslip_batch = self.env["hr.payslip.run"].create(
             {
                 "name": "June 2025 payslip batch",
@@ -786,17 +738,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         )
 
     def test_timeoff_overlaping_with_a_public_holiday_shouldnt_be_deferred(self):
-        """
-        A leave overlaping on a public holiday shouldn't be deferred as the public holiday was already a leave.
-
-        - Public holiday on Thursday 2025-05-29 with code LEAVECANTMISS3000
-        - May payslip already computed and validated
-        - A leave for the 2 whole weeks (2025-05-26 -> 2025-06-06) overlapping with the Public holiday
-        - Compute the payslip of June
-
-        Only 4 leave day from May should be deferred on work entries and payslip of june.
-        """
-        # Register a public holiday with a specific work entry type
         self.env["resource.schedule.exception"].create(
             {
                 "name": "Supreme leader party you can't miss",
@@ -814,7 +755,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             }
         )
 
-        # Generate the work entries
         may_work_entries = self.emp.version_ids._generate_work_entries(
             datetime.fromisoformat("2025-05-01"), datetime.fromisoformat("2025-05-31")
         )
@@ -822,7 +762,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             datetime.fromisoformat("2025-06-01"), datetime.fromisoformat("2025-06-30")
         )
 
-        # Ensure the public holiday was taken into account
         self.assertRecordValues(
             may_work_entries.work_entry_type_id,
             [{"code": "WORK100"}, {"code": "LEAVECANTMISS3000"}],
@@ -831,8 +770,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             june_work_entries.work_entry_type_id, [{"code": "WORK100"}]
         )
 
-        # Create and validate payslips like an HR user would do:
-        # create a payslip batch, gets the payslips created through the wizard call and validate the batch
         may_payslip_batch = self.env["hr.payslip.run"].create(
             {
                 "name": "May 2025 payslip batch",
@@ -844,7 +781,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         may_payslip_batch.generate_payslips(employee_ids=self.emp.ids)
         may_payslip_batch.action_validate()
 
-        # Create a time off overlaping with the public holiday
         overlapping_work_entry_type = self.env["hr.work.entry.type"].create(
             {
                 "name": "Annoying overlaping work entry type",
@@ -875,10 +811,8 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             overlapping_leave.payslip_state, "blocked", "Leave should be to defer"
         )
 
-        # Defer the blocked time off
         overlapping_leave.action_report_to_next_month()
 
-        # Ensure the timeoff work entries have been deferred on June and that May stays untouched
         self.assertEqual(
             set(may_work_entries.work_entry_type_id.mapped("code")),
             {"WORK100", "LEAVECANTMISS3000"},
@@ -899,7 +833,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             "There should only have 9 OVERLAPING101 work entry deferred (1 Work entry per leave day)",
         )
 
-        # Ensure the worked days lines gets computed correctly on June payslip
         june_payslip_batch = self.env["hr.payslip.run"].create(
             {
                 "name": "June 2025 payslip batch",
@@ -917,9 +850,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         )
 
     def test_report_to_next_month_skips_a_paid_month(self):
-        """The month after the time off can be paid already, which locks its
-        work entries. The time off must then land on the next month that can
-        still be edited, generating its work entries if it has none."""
         self.emp.version_ids.generate_work_entries(date(2022, 1, 1), date(2022, 2, 28))
         for date_from, date_to in [
             ("2022-01-01", "2022-01-31"),
@@ -949,9 +879,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
             february_entries.filtered(lambda we: we.state == "draft"),
             "February is paid, so none of its work entries can be edited",
         )
-        # The daily "Generate Missing Work Entries" cron only reaches the end of
-        # next month, so a month this far out normally has nothing yet. Clear
-        # what validating the payslips generated, to test that case too.
         self.env["hr.work.entry"].search(
             [("employee_id", "=", self.emp.id), ("date", ">=", date(2022, 3, 1))]
         ).unlink()
@@ -989,9 +916,6 @@ class TestTimeoffDefer(TestPayrollHolidaysBase):
         self.assertEqual(leave.payslip_state, "done")
 
     def test_to_defer_filter_excludes_refused_leaves(self):
-        """Refusing a time off does not clear its payslip state, so a refused
-        one stays 'blocked' forever. The "To Defer" filter must leave it out
-        the way the "Time Off to Defer" action next to it already does."""
         self.emp.version_ids.generate_work_entries(date(2022, 1, 1), date(2022, 1, 31))
         payslip = self.env["hr.payslip"].create(
             {

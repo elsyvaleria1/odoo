@@ -63,18 +63,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_group_expand_project_ids(self):
-        """
-        Validate that a project with tasks planned in the last or current period
-        is displayed in the Gantt view.
-        Case 1: Default domain
-        - Ensure `self.project_gantt_test_1` is displayed in the Gantt view as its tasks
-          fall within the domain (2023-01-01 to 2023-01-04).
-        - Ensure `self.project_gantt_test_2` is not displayed as its tasks fall outside
-          the domain.
-        Case 2: Explicit filter
-        - Ensure `project_test` is displayed in the Gantt view when explicitly filtered
-          using the domain (`project_id` contains 'Project Test').
-        """
         project_test = self.env["project.project"].create({"name": "Project Test"})
         domain = [
             ("date_start", ">=", Datetime.to_datetime("2023-01-01")),
@@ -106,17 +94,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_group_expand_partner_ids(self):
-        """
-        Validate that a partner with tasks planned in the last or current period
-        is displayed in the Gantt view.
-
-        The test checks:
-        Case 1: In the first call:
-        - Partner 1 has tasks planned within the period and should be displayed.
-        - Partner 2 has tasks planned outside the period and should not be displayed.
-        Case 2: In the second call (with a partner_id filter applied):
-        - Partner 3, who has no tasks but matches the name filter, should still be displayed.
-        """
         Task = self.env["project.task"].with_context(
             {
                 "gantt_start_date": Datetime.to_datetime("2023-02-01"),
@@ -146,10 +123,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_empty_line_task_last_period(self):
-        """In the gantt view of the tasks of a project, there should be an empty
-        line for a user if they have a task planned in the last or current
-        period for that project, whether or not is open.
-        """
         self.env["project.task"].with_context({"mail_create_nolog": True}).create(
             [
                 {
@@ -210,11 +183,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_empty_line_task_last_period_all_tasks(self):
-        """In the gantt view of the 'All Tasks' action, there should be an empty
-        line for a user if they have a task planned in the last or current
-        period for any project (private tasks are excluded), whether or not
-        that task is open.
-        """
         self.env["project.task"].with_context({"mail_create_nolog": True}).create(
             [
                 {
@@ -397,7 +365,7 @@ class TestTaskGanttView(TestProjectCommon):
                 "date_start": "2024-03-07 00:00:00",
                 "date_end": "2024-03-08 23:59:59",
             }
-        )  # 16 working hours in the window
+        )
         self.assertEqual(
             self.tasks.mapped("planned_hours"),
             [16.0, 16.0],
@@ -405,15 +373,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_planned_hours_are_not_split_between_tasks(self):
-        """Two tasks sharing a window are each estimated at the full window.
-
-        project_enterprise used to divide the window's calendar capacity
-        between them (8h + 8h here), which fabricated a smaller estimate purely
-        so the assignee would not look over-allocated.  project.task now owns
-        the estimate -- planned_hours = scheduled_hours x planned_resources x
-        units -- and the double-booking it exposes is what allocation_state and
-        schedule_overlap_count are for.
-        """
         self.tasks.write(
             {
                 "user_ids": [self.project_gantt_test_1.user_id.id],
@@ -442,7 +401,6 @@ class TestTaskGanttView(TestProjectCommon):
         )
 
     def test_gantt_view_with_empty_schedule(self):
-        """Ensure the Gantt view loads correctly even if a user has no working schedule"""
 
         self.env.company.resource_calendar_id = False
 
@@ -471,7 +429,6 @@ class TestTaskGanttView(TestProjectCommon):
         task._compute_allocated_hours()
 
     def test_gantt_view_company_calendar_flexible_hours(self):
-        """Ensure the Gantt view handles correctly company calendars with flexible hours"""
 
         company_calendar = self.env.company.resource_calendar_id
         company_calendar.write({"schedule_type": "flexible"})

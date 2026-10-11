@@ -2325,8 +2325,6 @@ class TestStockFlow(TestStockCommon):
         self.assertEqual(picking_out.state, "confirmed")
 
     def test_74_move_state_waiting_mto(self):
-        # pins the stock-alone routing: the reception route pulls from Vendors,
-        # so an MTO move on a product without a vendor still finds a rule
         if is_module_installed(self.env, "purchase_stock"):
             self.skipTest(RECEPTION_ROUTE_BOUGHT)
         picking_out = self.PickingObj.create(
@@ -3547,10 +3545,6 @@ class TestStockFlowTourPostInstall(TestStockCommon, HttpCase):
             .sudo()
             .search_count([("name", "=", "marin"), ("state", "=", "installed")])
         ):
-            # marin offers Mark as To Do and Validate only to the users each
-            # operation type lists, by design: on its deployment those lists are
-            # part of the minimal rights this flow needs, on the types the
-            # Receipts and Deliveries actions create their transfers in
             pickings = self.env["stock.picking"]
             self.env["stock.picking.type"].browse(
                 [

@@ -453,7 +453,6 @@ class TestUrlLocalized(TestUrlCommon):
             )
 
     def test_dot_segments_degrade_instead_of_raising(self):
-        """A scanner probing with '..' must not break the page being rendered."""
         with MockRequest(self.env, context={"lang": "en_US"}, mock_router=False):
             for url in (
                 "/no/such/../../etc/passwd",

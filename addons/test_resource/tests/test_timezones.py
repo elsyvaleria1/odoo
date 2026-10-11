@@ -15,30 +15,24 @@ class TestTimezones(TestResourceCommon):
         self.tz4 = "Etc/GMT+10"
 
     def test_work_hours_count(self):
-        # When no timezone => UTC
         count = self.calendar_jean.get_work_hours_count(
             self.datetime_tz(2018, 4, 10, 8, 0, 0),
             self.datetime_tz(2018, 4, 10, 12, 0, 0),
         )
         self.assertEqual(count, 4)
 
-        # This timezone is not the same as the calendar's one
         count = self.calendar_jean.get_work_hours_count(
             self.datetime_tz(2018, 4, 10, 8, 0, 0, tzinfo=self.tz1),
             self.datetime_tz(2018, 4, 10, 12, 0, 0, tzinfo=self.tz1),
         )
         self.assertEqual(count, 0)
 
-        # Using two different timezones
-        # 10-04-2018 06:00:00 - 10-04-2018 02:00:00
         count = self.calendar_jean.get_work_hours_count(
             self.datetime_tz(2018, 4, 10, 8, 0, 0, tzinfo=self.tz2),
             self.datetime_tz(2018, 4, 10, 12, 0, 0, tzinfo=self.tz3),
         )
         self.assertEqual(count, 0)
 
-        # Using two different timezones
-        # 2018-04-10 06:00:00 - 2018-04-10 22:00:00
         count = self.calendar_jean.get_work_hours_count(
             self.datetime_tz(2018, 4, 10, 8, 0, 0, tzinfo=self.tz2),
             self.datetime_tz(2018, 4, 10, 12, 0, 0, tzinfo=self.tz4),
@@ -58,54 +52,42 @@ class TestTimezones(TestResourceCommon):
         dt = self.calendar_jean.plan_days(2, self.datetime_tz(2018, 4, 10, 8, 0, 0))
         self.assertEqual(dt, self.datetime_tz(2018, 4, 11, 14, 0, 0))
 
-        # We lose one day because of timezone
         dt = self.calendar_jean.plan_days(
             2, self.datetime_tz(2018, 4, 10, 8, 0, 0, tzinfo=self.tz4)
         )
         self.assertEqual(dt, self.datetime_tz(2018, 4, 12, 4, 0, 0, tzinfo=self.tz4))
 
     def test_work_data(self):
-        # 09-04-2018 10:00:00 - 13-04-2018 18:00:00
         data = self.jean._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0),
             self.datetime_tz(2018, 4, 13, 16, 0, 0),
         )[self.jean.id]
         self.assertEqual(data, {"days": 4.75, "hours": 38})
 
-        # 09-04-2018 00:00:00 - 13-04-2018 08:00:00
         data = self.jean._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0, tzinfo=self.tz3),
             self.datetime_tz(2018, 4, 13, 16, 0, 0, tzinfo=self.tz3),
         )[self.jean.id]
         self.assertEqual(data, {"days": 4, "hours": 32})
 
-        # 09-04-2018 08:00:00 - 14-04-2018 12:00:00
         data = self.jean._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0, tzinfo=self.tz2),
             self.datetime_tz(2018, 4, 13, 16, 0, 0, tzinfo=self.tz4),
         )[self.jean.id]
         self.assertEqual(data, {"days": 5, "hours": 40})
 
-        # Jules with 2 weeks calendar
-        # 02-04-2018 00:00:00 - 6-04-2018 23:59:59
         data = self.jules._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 2, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2018, 4, 6, 23, 59, 59, tzinfo=self.jules.tz),
         )[self.jules.id]
         self.assertEqual(data, {"days": 4, "hours": 30})
 
-        # Jules with 2 weeks calendar
-        # 02-04-2018 00:00:00 - 14-04-2018 23:59:59
         data = self.jules._get_work_duration_data_batch(
             self.datetime_tz(2018, 4, 2, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2018, 4, 14, 23, 59, 59, tzinfo=self.jules.tz),
         )[self.jules.id]
         self.assertEqual(data, {"days": 6, "hours": 46})
 
-        # Jules with 2 weeks calendar
-        # 12-29-2014 00:00:00 - 27-12-2019 23:59:59 => 261 weeks
-        # 130 weeks type 1: 131*4 = 524 days and 131*30 = 3930 hours
-        # 131 weeks type 2: 130*2 = 260 days and 130*16 = 2080 hours
         data = self.jules._get_work_duration_data_batch(
             self.datetime_tz(2014, 12, 29, 0, 0, 0, tzinfo=self.jules.tz),
             self.datetime_tz(2019, 12, 27, 23, 59, 59, tzinfo=self.jules.tz),
@@ -123,21 +105,18 @@ class TestTimezones(TestResourceCommon):
             }
         )
 
-        # 09-04-2018 10:00:00 - 13-04-2018 18:00:00
         data = self.jean._get_leave_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0),
             self.datetime_tz(2018, 4, 13, 16, 0, 0),
         )[self.jean.id]
         self.assertEqual(data, {"days": 0.5, "hours": 4})
 
-        # 09-04-2018 00:00:00 - 13-04-2018 08:00:00
         data = self.jean._get_leave_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0, tzinfo=self.tz3),
             self.datetime_tz(2018, 4, 13, 16, 0, 0, tzinfo=self.tz3),
         )[self.jean.id]
         self.assertEqual(data, {"days": 0.75, "hours": 6})
 
-        # 09-04-2018 08:00:00 - 14-04-2018 12:00:00
         data = self.jean._get_leave_duration_data_batch(
             self.datetime_tz(2018, 4, 9, 8, 0, 0, tzinfo=self.tz2),
             self.datetime_tz(2018, 4, 13, 16, 0, 0, tzinfo=self.tz4),
@@ -240,10 +219,6 @@ class TestTimezones(TestResourceCommon):
         )
 
     def test_flexible_resource_leave_interval(self):
-        """
-        Test whole day off for a flexible resource.
-        The standard 8 - 17 leave should be converted to a whole day leave interval for the flexible resource.
-        """
 
         flexible_calendar = self.env["resource.calendar"].create(
             {

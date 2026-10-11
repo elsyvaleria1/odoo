@@ -6,7 +6,6 @@ class TrainingSimulator(models.Model):
     _name = "training.simulator"
     _description = "Training Simulator"
     _order = "area, sequence, name"
-    # one catalogue every company plays from
     _access_anchors = frozendict({"company": ""})
 
     name = fields.Char(
@@ -86,16 +85,8 @@ class TrainingSimulator(models.Model):
         action["domain"] = [("simulator_id", "=", self.id)]
         return action
 
-    # ------------------------------------------------------------------
-    # Training center
-    # ------------------------------------------------------------------
     @api.model
     def get_training_dashboard(self):
-        """What the training center shows the current user.
-
-        :return: one card per simulator with the scenarios the user practised
-        :rtype: dict
-        """
         user = self.env.user
         sessions = self.env["training.simulator.session"].search(
             [("user_id", "=", user.id)]
@@ -105,7 +96,6 @@ class TrainingSimulator(models.Model):
         area_labels = dict(self._fields["area"]._description_selection(self.env))
         cards = []
         for simulator in simulators:
-            # Learning progress, not a ranking: which scenarios this user has practised.
             mine = done.filtered(lambda s, sim=simulator: s.simulator_id == sim)
             best = len(set(mine.mapped("scenario")))
             last = sessions.filtered(lambda s, sim=simulator: s.simulator_id == sim)[:1]
@@ -143,31 +133,13 @@ class TrainingSimulator(models.Model):
         }
 
     def _training_card_detail(self):
-        """Short line under the simulator's name in the training center, e.g. its routes.
-
-        :rtype: str
-        """
         self.check_singleton()
         return ""
 
     def _training_card_tags(self):
-        """Labelled chips on the simulator's card in the training center, e.g. its routes.
-
-        :return: ``{"label": str, "items": [str]}``, or an empty dict for none
-        :rtype: dict
-        """
         self.check_singleton()
         return {}
 
     def _training_snapshot(self, session):
-        """Real data the session plays on, read when it starts.
-
-        Each simulator module overrides it for its code and reads with a read-only
-        privilege, so building the snapshot cannot write anything either.
-
-        :param session: the session that starts
-        :return: JSON-serializable data the game page receives
-        :rtype: dict
-        """
         self.check_singleton()
         return {}

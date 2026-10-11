@@ -16,24 +16,22 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
                 "name": "Shipping Partner",
                 "street": "234 W 18th Ave",
                 "city": "Columbus",
-                "state_id": cls.env.ref("base.state_us_30").id,  # Ohio
+                "state_id": cls.env.ref("base.state_us_30").id,
                 "country_id": cls.env.ref("base.us").id,
                 "zip": "43210",
             }
         )
 
-        # Partner to use for the warehouse's address
         warehouse_address_partner = cls.env["res.partner"].create(
             {
                 "name": "Address for second warehouse",
                 "street": "100 Ravine Lane NE",
                 "city": "Bainbridge Island",
-                "state_id": cls.env.ref("base.state_us_48").id,  # Washington
+                "state_id": cls.env.ref("base.state_us_48").id,
                 "country_id": cls.env.ref("base.us").id,
                 "zip": "98110",
             }
         )
-        # Warehouse with different address than the company's
         cls.warehouse_with_different_address = cls.env["stock.warehouse"].create(
             {
                 "name": "Warehouse #2",
@@ -41,7 +39,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
                 "code": "WH02",
             }
         )
-        # Warehouse with the same address as the company
         cls.warehouse_with_same_address = cls.env["stock.warehouse"].create(
             {
                 "name": "Warehouse #3",
@@ -125,10 +122,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
             )
 
     def test_line_level_address_with_different_warehouse_address(self):
-        """Ensure that invoices created from a sale order with items shipped from a different address than the
-        company's have the correct line level addresses and items shipped from the same address as the
-        company have no line level addresses.
-        """
         with self._capture_request(
             return_value={"lines": [], "summary": []}
         ) as capture:
@@ -177,8 +170,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
                 "Three stock moves should be created from the sale order.",
             )
 
-            # Change the source location of the first move to a warehouse with different address and the source location
-            # of the second move to a warehouse with the same address as the company's. Third move is unchanged.
             move01 = sale_order.picking_ids.move_ids[0]
             move01.location_id = self.warehouse_with_different_address.lot_stock_id
             move02 = sale_order.picking_ids.move_ids[1]
@@ -187,7 +178,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
             invoice = sale_order._create_invoices()
             invoice.button_external_tax_calculation()
 
-        # Line 1
         line_addresses = capture.val["json"]["createTransactionModel"]["lines"][0].get(
             "addresses", False
         )
@@ -215,7 +205,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
             },
             "Line level address should have the correct shipForm and shipTo",
         )
-        # Line 2
         line_addresses = capture.val["json"]["createTransactionModel"]["lines"][1].get(
             "addresses", False
         )
@@ -223,7 +212,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
             line_addresses,
             "Line level addresses should not be created for a warehouse with the same address as the company.",
         )
-        # Line 3
         line_addresses = capture.val["json"]["createTransactionModel"]["lines"][2].get(
             "addresses", False
         )
@@ -233,9 +221,6 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
         )
 
     def test_line_level_address_with_backorders(self):
-        """Send line-level addresses even if a sale order line has multiple stock moves. As long as they're linked to a
-        single warehouse address, it's ok to send.
-        """
         with self._capture_request(
             return_value={"lines": [], "summary": []}
         ) as capture:
@@ -259,9 +244,8 @@ class TestAccountAvalaraStock(TestAccountAvataxSaleCommon):
                 }
             )
             sale_order.action_confirm()
-            sale_order.picking_ids.move_ids.quantity = 1  # do half
+            sale_order.picking_ids.move_ids.quantity = 1
 
-            # validate and create backorder
             res_dict = sale_order.picking_ids.button_validate()
             self.env["wizard.stock.picking.validate.partial"].with_context(
                 res_dict["context"]

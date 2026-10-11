@@ -7,7 +7,6 @@ class UtmSource(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_linked_activities(self) -> None:
-        """Already handled by ondelete='restrict', but let's show a nice error message"""
         linked_activities = (
             self.env["marketing.activity"]
             .sudo()

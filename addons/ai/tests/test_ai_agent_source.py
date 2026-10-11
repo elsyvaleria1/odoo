@@ -230,7 +230,6 @@ class TestAIAgentSource(TransactionCase, CronMixinCase):
             )
 
     def test_robots_txt_handling_with_multiple_domains(self):
-        """Test robots.txt handling with internal/external domains and punycode."""
         mock_internal_domains = ["internal.example.com", "xn--mnchen-3ya.example.com"]
 
         allowed = self._create_url_source(

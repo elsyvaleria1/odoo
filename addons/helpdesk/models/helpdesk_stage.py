@@ -121,8 +121,6 @@ class HelpdeskStage(models.Model):
 
     def action_unlink_wizard(self, stage_view=False) -> dict:
         self = self.with_context(active_test=False)
-        # retrieves all the teams with a least 1 ticket in that stage
-        # a ticket can be in a stage even if the team is not assigned to the stage
         readgroup = (
             self.with_context(active_test=False)
             .env["helpdesk.ticket"]

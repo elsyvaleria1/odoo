@@ -197,8 +197,6 @@ class WizardBaseExplainAccess(models.TransientModel):
         return "\n".join(lines)
 
     def _refusal_lines(self, explanation: dict) -> list[str]:
-        # what everyone is told of a refusal: the guards that refuse (or that
-        # no access of theirs reaches the record) and whom to ask
         env = self.env
         refusing = [
             guard["name"]

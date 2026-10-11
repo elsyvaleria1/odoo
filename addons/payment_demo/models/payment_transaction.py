@@ -10,15 +10,8 @@ class PaymentTransaction(models.Model):
 
     capture_manually = fields.Boolean(related="provider_id.capture_manually")
 
-    # === ACTION METHODS ===#
 
     def action_demo_set_done(self) -> None:
-        """Set the state of the demo transaction to 'done'.
-
-        Note: self.check_singleton()
-
-        :return: None
-        """
         self.check_singleton()
         if self.provider_code != "demo":
             return
@@ -27,12 +20,6 @@ class PaymentTransaction(models.Model):
         self._process("demo", payment_data)
 
     def action_demo_set_canceled(self) -> None:
-        """Set the state of the demo transaction to 'cancel'.
-
-        Note: self.check_singleton()
-
-        :return: None
-        """
         self.check_singleton()
         if self.provider_code != "demo":
             return
@@ -41,12 +28,6 @@ class PaymentTransaction(models.Model):
         self._process("demo", payment_data)
 
     def action_demo_set_error(self) -> None:
-        """Set the state of the demo transaction to 'error'.
-
-        Note: self.check_singleton()
-
-        :return: None
-        """
         self.check_singleton()
         if self.provider_code != "demo":
             return
@@ -54,10 +35,8 @@ class PaymentTransaction(models.Model):
         payment_data = {"reference": self.reference, "simulated_state": "error"}
         self._process("demo", payment_data)
 
-    # === BUSINESS METHODS === #
 
     def _send_payment_request(self):
-        """Override of `payment` to simulate a payment request."""
         if self.provider_code != "demo":
             return super()._send_payment_request()
 
@@ -67,20 +46,18 @@ class PaymentTransaction(models.Model):
         return None
 
     def _send_capture_request(self):
-        """Override of `payment` to simulate a capture request."""
         if self.provider_code != "demo":
             return super()._send_capture_request()
 
         payment_data = {
             "reference": self.reference,
             "simulated_state": "done",
-            "manual_capture": True,  # Distinguish manual captures from regular one-step captures.
+            "manual_capture": True,
         }
         self._process("demo", payment_data)
         return None
 
     def _send_void_request(self):
-        """Override of `payment` to simulate a void request."""
         if self.provider_code != "demo":
             return super()._send_void_request()
 
@@ -89,7 +66,6 @@ class PaymentTransaction(models.Model):
         return None
 
     def _send_refund_request(self):
-        """Override of `payment` to simulate a refund."""
         if self.provider_code != "demo":
             return super()._send_refund_request()
 
@@ -98,28 +74,19 @@ class PaymentTransaction(models.Model):
         return None
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to skip the amount validation for demo flows."""
         if self.provider_code != "demo":
             return super()._extract_amount_data(payment_data)
         return None
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "demo":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         self.provider_reference = f"demo-{self.reference}"
 
-        # Create the token.
         if self.tokenize:
-            # The reasons why we immediately tokenize the transaction instead of in `payment` are:
-            # - To save the simulated state and payment details on the token while we have them.
-            # - To allow customers to create tokens whose transactions will always end up in the
-            #   said simulated state.
             self._tokenize(payment_data)
 
-        # Update the payment state.
         state = payment_data["simulated_state"]
         if state == "pending":
             self._set_pending()
@@ -128,26 +95,22 @@ class PaymentTransaction(models.Model):
                 self._set_authorized()
             else:
                 self._set_done()
-                # Immediately post-process the transaction if it is a refund, as the post-processing
-                # will not be triggered by a customer browsing the transaction from the portal.
                 if self.operation == "refund":
                     self.env["ir.cron"]._trigger_ref(
                         "payment.cron_post_process_payment_tx"
                     )
         elif state == "cancel":
             self._set_canceled()
-        else:  # Simulate an error state.
+        else:
             self._set_error(
                 self.env._("You selected the following demo payment status: %s", state)
             )
         return None
 
     def _extract_token_values(self, payment_data) -> dict:
-        """Override of `payment` to extract the token values from the payment data."""
         if self.provider_code != "demo":
             return super()._extract_token_values(payment_data)
 
-        # Do not tokenize the transaction twice as `_update_from_payment_data` already does.
         if self.state in ("done", "authorized"):
             return {}
 

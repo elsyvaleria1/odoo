@@ -14,10 +14,6 @@ class PlantedField:
         self.__dict__.update(attrs)
 
 
-# Keys the ORM keys the column itself by (company_dependent, translate), keys
-# that shape a read and not the value (bin_size), and the access scope where
-# Environment.get_cache_key holds it constant: a compute_sudo compute reads it
-# as None, and a relation's rows are what every reader's slot is filtered from.
 def storage_keys(field) -> frozenset[str]:
     keys = set()
     if field.company_dependent:

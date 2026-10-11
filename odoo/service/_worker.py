@@ -100,9 +100,6 @@ def watch_accept(selector: selectors.BaseSelector, sock: socket.socket) -> bool:
     epoll = getattr(selector, "_selector", None)
     if not _EPOLLEXCLUSIVE or not isinstance(epoll, select.epoll):
         return False
-    # Every worker sleeps on this one inherited socket; without EPOLLEXCLUSIVE
-    # each connection wakes all of them and all but one accept EAGAIN.  The
-    # flag is refused by EPOLL_CTL_MOD, so the fd is registered again.
     epoll.unregister(key.fd)
     epoll.register(key.fd, select.EPOLLIN | _EPOLLEXCLUSIVE)
     return True
@@ -229,8 +226,6 @@ class Worker:
             )
 
     def stop_for(self, reason: str) -> None:
-        """Stop, and put the reason on the wire before the exit reaches the
-        master, which otherwise sees only the exit code every policy shares."""
         self.alive = False
         code = _RECYCLE_BYTES.get(reason)
         _debug.lifecycle(
@@ -310,9 +305,6 @@ class Worker:
                     len(Registry.registries),
                 )
         except CpuTimeLimitExceeded:
-            # The kernel keeps sending SIGXCPU once a second while the process
-            # stays over the soft limit; the first one is the verdict, and a
-            # second raise would escape this handler as a crash.
             signal.signal(signal.SIGXCPU, signal.SIG_IGN)
             self.logger.warning(
                 "CPU time limit (%ss) exceeded; recycling worker.",
@@ -337,19 +329,6 @@ class Worker:
             self.stop()
 
     def _supervise_work_thread(self, work: threading.Thread) -> bool:
-        # The main thread has nothing to do but wait, so it is the worker's
-        # own budget monitor: a unit of work over `watchdog_timeout` has its
-        # queries cancelled here, from inside the process.  Work still stuck
-        # after the grace -- a stall in Python, not in a query -- ends the
-        # worker itself, a clean exit the master replaces at once instead of
-        # a SIGKILL a full timeout later.
-        #
-        # The master's clock is fed the whole way through: it last heard from
-        # the work thread before the accept, up to a beat before the work
-        # began, so left alone it ran out first in three of eight measured
-        # phases, once before the budget itself had elapsed.  Fed from here,
-        # its SIGKILL is reached only when this thread stops feeding it: the
-        # grace ran out (the worker exits on its own) or the process is wedged.
         worker = as_worker_thread(work)
         cancelled_for: float | None = None
         grace_until = 0.0
@@ -412,8 +391,6 @@ class Worker:
                     signal.SIGUSR2,
                 },
             )
-            # Readiness means the work thread actually started. A heartbeat
-            # during listener reconnect or main-thread setup cannot prove it.
             os.write(self.watchdog_pipe[1], WORKER_READY)
             _debug.lifecycle("worker.ready", kind=self.__class__.__name__, pid=self.pid)
             worker = current_worker_thread()
@@ -469,8 +446,6 @@ class WorkerHTTP(Worker):
                         client, addr, self.multi.app, identity, self.limits
                     )
         finally:
-            # An upgrade handed the socket to its own thread; every other
-            # way out, including an exception before serving, closes it here.
             if outcome is not Outcome.UPGRADED:
                 with contextlib.suppress(OSError):
                     client.close()
@@ -488,8 +463,6 @@ class WorkerHTTP(Worker):
         )
 
     def process_work(self) -> None:
-        # A beat that timed out has nothing to accept; only a wake on the
-        # listening socket does, and losing that one to a sibling is the race.
         if self.multi.socket is None or not self._listener_ready:
             return
         try:
@@ -674,8 +647,6 @@ class WorkerCron(Worker):
         Worker.start(self)
         if self.multi.socket:
             self.multi.socket.close()
-        # Spread the sweeps of sibling cron workers, as the threaded server
-        # does with its thread number; the pid is the child's only here.
         self.schedule.refresh_interval = CRON_POLL_INTERVAL_S + os.getpid() % 10
         registries_size = get_env_int(
             "ODOO_REGISTRY_LRU_SIZE_CRON", 0, minimum=0, logger=self.logger

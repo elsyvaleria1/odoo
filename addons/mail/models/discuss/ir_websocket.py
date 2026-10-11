@@ -19,8 +19,6 @@ class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
     def _bus_context(self, names: list[str]):
-        # a guest's token names who listens, not what: everything resolves
-        # under that guest
         websocket = super()._bus_context(names)
         for name in names:
             if name.startswith("mail.guest_"):
@@ -49,9 +47,6 @@ class IrWebsocket(models.AbstractModel):
         return requested
 
     def _discuss_reach(self, channel_ids) -> DiscussReach:
-        # which named channels the subscriber reads and which channels it is a
-        # member of, in one query: both hooks of a subscription need them, and
-        # _bus_context computes them once for the pair
         named = frozenset(channel_ids)
         reach = self.env.context.get("discuss_reach")
         if reach and reach.named == named:

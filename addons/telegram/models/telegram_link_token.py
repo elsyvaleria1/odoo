@@ -10,8 +10,6 @@ from ..tools.authority import operating
 TOKEN_TTL_MINUTES = 10
 INVITATION_TTL_DAYS = 7
 GROUP_LINK_TTL_MINUTES = 30
-# Telegram's `start` parameter: at most 64 of A-Z, a-z, 0-9, _ and -.
-# token_urlsafe(24) is 32 of them.
 TOKEN_SHAPE = re.compile(r"^[A-Za-z0-9_-]{32}$")
 
 
@@ -100,7 +98,6 @@ class TelegramLinkToken(models.Model):
 
     @api.model
     def _issue_for_session(self, bot):
-        """A token binding the current user, minted by their own session."""
         user = self.env.user
         return self._issue(
             bot,
@@ -122,9 +119,6 @@ class TelegramLinkToken(models.Model):
 
     @api.model
     def _issue_group_link(self, bot, record, purpose="group"):
-        """A token connecting the group the current user adds the bot to (or,
-        `broadcast`, the channel they post it in) with `record`, made by their
-        own session."""
         user = self.env.user
         return self._issue(
             bot,
@@ -155,8 +149,6 @@ class TelegramLinkToken(models.Model):
 
     @api.model
     def _consume(self, bot, token, account, purpose="bind"):
-        """The token's link, consumed by `account`, or an empty record when
-        the token is unknown, expired, spent or for another bot."""
         if not token or not TOKEN_SHAPE.match(token):
             return self.browse()
         self.flush_model(["token_hash", "bot_id", "purpose", "consumed_at", "date_to"])

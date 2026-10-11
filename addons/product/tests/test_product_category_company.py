@@ -31,8 +31,6 @@ class TestProductCategoryCompany(ProductCommon):
             self.assertEqual(product.categ_id, self.categ_shared)
 
     def test_restricted_category_refuses_a_foreign_company_product(self):
-        # check_company is enforced by the framework, which raises UserError
-        # (ValidationError's superclass), not by our own @api.constrains.
         with self.assertRaises(UserError):
             self.env["product.template"].create(
                 {
@@ -53,10 +51,6 @@ class TestProductCategoryCompany(ProductCommon):
             )
 
     def test_restricted_category_accepts_a_child_company_product(self):
-        # This fork runs product.template on check_company_domain_parent_of, so a
-        # child company's product may use its parent company's category.  The
-        # semantics come from the co-record's model, hence the same override on
-        # product.category.
         product = self.env["product.template"].create(
             {
                 "name": "Child company product",

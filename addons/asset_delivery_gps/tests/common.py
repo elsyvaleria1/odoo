@@ -52,8 +52,6 @@ class GpsBridgeCase(TransactionCase):
                 "comm_protocol": "http",
             }
         )
-        # the vehicle carried its tracker long before the readings the tests
-        # write: a reading counts from the device's attachment on
         attached = fields.Datetime.subtract(fields.Datetime.now(), days=800)
         with patch.object(fields.Datetime, "now", lambda: attached):
             cls.vehicle = cls.env["product.trace"].create(

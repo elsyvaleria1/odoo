@@ -14,8 +14,6 @@ from odoo.addons.calendar_microsoft.utils.microsoft_event import MicrosoftEvent
 
 
 def distinct_inserts(prefix):
-    """Outlook's answers to successive inserts: a new id and universal id
-    each time, as no calendar holds two items under one id."""
     numbers = itertools.count(1)
 
     def insert(*args, **kwargs):
@@ -32,7 +30,6 @@ def mock_get_connection(user, code=None):
 def authorize_microsoft_calendar(
     user, access_token="an-access", refresh_token="a-refresh"
 ):
-    """What the OAuth callback leaves behind for `user`'s calendar."""
     env = user.env
     connection = env["integration.connection"]._personal(
         env.ref("integration_microsoft.service_microsoft"), user, scope=CALENDAR_SCOPE
@@ -49,21 +46,14 @@ def authorize_microsoft_calendar(
 
 
 def _modified_date_in_the_future(event):
-    """
-    Add some seconds to the event write date to be sure to have a last modified date
-    in the future
-    """
     return (event.write_date + timedelta(seconds=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-# What Odoo sends Outlook goes after the commit: an HttpCase runs it by hand,
-# see `call_post_commit_hooks`.
 class TestCommon(HttpCase):
     def setUp(self):
         super().setUp()
         self.env["calendar.sync.account"]._set_paused("microsoft", False)
 
-        # prepare users
         self.organizer_user = self.env["res.users"].search(
             [("name", "=", "Mike Organizer")]
         )
@@ -94,9 +84,6 @@ class TestCommon(HttpCase):
                 }
             )
 
-        # -----------------------------------------------------------------------------------------
-        # To create Odoo events
-        # -----------------------------------------------------------------------------------------
         self.start_date = datetime(2021, 9, 22, 10, 0, 0, 0)
         self.end_date = datetime(2021, 9, 22, 11, 0, 0, 0)
         self.recurrent_event_interval = 2
@@ -105,7 +92,6 @@ class TestCommon(HttpCase):
             days=self.recurrent_event_interval * self.recurrent_events_count
         )
 
-        # simple event values to create a Odoo event
         self.simple_event_values = {
             "name": "simple_event",
             "description": "my simple event",
@@ -138,11 +124,7 @@ class TestCommon(HttpCase):
             "weekday": "WED",
         }
 
-        # -----------------------------------------------------------------------------------------
-        # Expected values for Odoo events converted to Outlook events (to be posted through API)
-        # -----------------------------------------------------------------------------------------
 
-        # simple event values converted in the Outlook format to be posted through the API
         self.simple_event_ms_values = {
             "subject": self.simple_event_values["name"],
             "body": {
@@ -237,9 +219,6 @@ class TestCommon(HttpCase):
             },
         }
 
-        # -----------------------------------------------------------------------------------------
-        # Events coming from Outlook (so from the API)
-        # -----------------------------------------------------------------------------------------
 
         self.simple_event_from_outlook_organizer = {
             "type": "singleInstance",
@@ -296,9 +275,6 @@ class TestCommon(HttpCase):
             self.simple_event_from_outlook_organizer, isOrganizer=False
         )
 
-        # -----------------------------------------------------------------------------------------
-        # Expected values for Outlook events converted to Odoo events
-        # -----------------------------------------------------------------------------------------
 
         self.expected_odoo_event_from_outlook = {
             "name": "simple_event",
@@ -337,10 +313,6 @@ class TestCommon(HttpCase):
                 self.recurrent_event_interval,
                 self.recurrence_end_date.strftime("%Y-%m-%d"),
             ),
-            # The stored rule is the RRULE payload alone: `_rrule_value` drops the
-            # DTSTART line dateutil renders, because `_rrule_serialize` builds the
-            # rule with no dtstart and that line therefore carried the moment the
-            # field was last computed rather than the start of the series.
             "rrule": "FREQ=DAILY;INTERVAL=%s;UNTIL=%s"
             % (
                 self.recurrent_event_interval,
@@ -530,42 +502,22 @@ class TestCommon(HttpCase):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """
-        Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues.
-        """
-        # cr.now() is contractually a datetime; coerce a string so consumers
-        # doing datetime arithmetic on it (e.g. ir.cron._now) don't break.
         now_dt = (
             fields.Datetime.to_datetime(mock_dt)
             if isinstance(mock_dt, str)
             else mock_dt
         )
-        # cr.now() is naive UTC in production; normalize a tz-aware freeze
-        # point so it (and freeze_time) stay on that convention, else
-        # naive/aware comparisons (e.g. ir.cron._now) crash. Mirrors mail
-        # freeze_all_time.
         if now_dt.tzinfo is not None:
             now_dt = now_dt.astimezone(UTC).replace(tzinfo=None)
         with freeze_time(now_dt), patch.object(self.env.cr, "now", lambda: now_dt):
             yield
 
     def sync_odoo_recurrences_with_outlook_feature(self):
-        """
-        Returns the status of the recurrence synchronization feature with Outlook.
-        True if it is active and False otherwise. This function guides previous tests to abort before they are checked.
-        """
         return False
 
     def create_events_for_tests(self):
-        """
-        Create some events for test purpose
-        """
 
-        # ---- create some events that will be updated during tests -----
 
-        # a simple event
         self.simple_event = self.env["calendar.event"].search(
             [("name", "=", "simple_event")]
         )
@@ -579,7 +531,6 @@ class TestCommon(HttpCase):
                 "456",
             )
 
-        # a group of events
         self.several_events = self.env["calendar.event"].search(
             [("name", "like", "event%")]
         )
@@ -597,7 +548,6 @@ class TestCommon(HttpCase):
             for i, event in enumerate(self.several_events, start=1):
                 self.link_microsoft(event, self.organizer_user, f"e{i}", f"u{i}")
 
-        # a recurrent event with 7 occurrences
         self.recurrent_base_event = self.env["calendar.event"].search(
             [("name", "=", "recurrent_event")],
             order="id",
@@ -605,8 +555,6 @@ class TestCommon(HttpCase):
         )
         already_created = self.recurrent_base_event
 
-        # Currently, it is forbidden to create recurrences in Odoo. A trick for deactivating the checking
-        # is needed below in this test setup: deactivating the synchronization during recurrences creation.
         sync_previous_state = self.env.user._calendar_sync_account("microsoft").stopped
         self.env.user._calendar_sync_account("microsoft").stopped = False
 
@@ -621,10 +569,7 @@ class TestCommon(HttpCase):
             [("base_event_id", "=", self.recurrent_base_event.id)]
         )
 
-        # set ids set by Outlook
         if not already_created:
-            # the series computes its rule before Outlook gives it ids, as a
-            # series read from Outlook does
             self.env.flush_all()
             self.link_microsoft(
                 self.recurrence, self.organizer_user, "REC123", "REC456"
@@ -647,14 +592,9 @@ class TestCommon(HttpCase):
             )
             self.recurrent_events_count = len(self.recurrent_events)
 
-        # Rollback the synchronization status after setup.
         self.env.user._calendar_sync_account("microsoft").stopped = sync_previous_state
 
     def assert_odoo_event(self, odoo_event, expected_values):
-        """
-        Assert that an Odoo event has the same values than in the expected_values dictionary,
-        for the keys present in expected_values.
-        """
         self.assertTrue(expected_values)
         expected_values = self._assert_held_ids(odoo_event, expected_values)
 
@@ -671,10 +611,6 @@ class TestCommon(HttpCase):
                 self.assertEqual(v, odoo_event_values.get(k), msg=f"'{k}' mismatch")
 
     def assert_odoo_recurrence(self, odoo_recurrence, expected_values):
-        """
-        Assert that an Odoo recurrence has the same values than in the expected_values dictionary,
-        for the keys present in expected_values.
-        """
         expected_values = self._assert_held_ids(odoo_recurrence, expected_values)
         odoo_recurrence_values = odoo_recurrence.read(list(expected_values.keys()))[0]
 
@@ -682,8 +618,6 @@ class TestCommon(HttpCase):
             self.assertEqual(v, odoo_recurrence_values.get(k), msg=f"'{k}' mismatch")
 
     def _assert_held_ids(self, record, expected_values):
-        """Check the Outlook ids among `expected_values` against `record`'s
-        links; the other values."""
         held = {
             "microsoft_id": "remote_id",
             "ms_universal_event_id": "universal_id",
@@ -700,18 +634,15 @@ class TestCommon(HttpCase):
 
     def assert_dict_equal(self, dict1, dict2):
 
-        # check missing keys
         keys = set(dict1.keys()) ^ set(dict2.keys())
         self.assertFalse(
             keys, msg="Following keys are not in both dicts: %s" % ", ".join(keys)
         )
 
-        # compare key by key
         for k, v in dict1.items():
             self.assertEqual(v, dict2.get(k), f"'{k}' mismatch")
 
     def call_post_commit_hooks(self):
-        """What a commit does next: flush, then send what waits for it."""
         self.env.flush_all()
         funcs = self.env.cr.postcommit._funcs
         while funcs:
@@ -719,8 +650,6 @@ class TestCommon(HttpCase):
         self.env.invalidate_all()
 
     def apply_microsoft(self, items, user):
-        """What a synchronization of `user` reads of `items`, Graph dicts,
-        applied; the records it changed."""
         user = user._calendar_sync_as_owner()
         account = user._calendar_sync_account("microsoft")._as_engine()
         changes = self.env["calendar.sync.adapter.microsoft"]._changes(
@@ -729,14 +658,12 @@ class TestCommon(HttpCase):
         return account._pull(changes)
 
     def sync_microsoft(self, user):
-        """A run of `user`'s synchronization, and what it sends."""
         user.with_user(user).sudo()._calendar_sync_run("microsoft")
         self.call_post_commit_hooks()
 
     def link_microsoft(
         self, record, user, remote_id, universal_id=None, master_id=None
     ):
-        """Link `record` to the item `remote_id` of `user`'s calendar."""
         Link = self.env["calendar.sync.link"]._engine()
         account = self.env["calendar.sync.account"]._for(user, "microsoft")
         field = Link._field_of(record)
@@ -754,8 +681,6 @@ class TestCommon(HttpCase):
         return record
 
     def held_id(self, record, field="remote_id"):
-        """`field` of the link of `record` its organizer's calendar holds, or
-        of its only link."""
         links = self.env["calendar.sync.link"]._of(record, "microsoft")
         organizer = (
             record.user_id
@@ -766,7 +691,6 @@ class TestCommon(HttpCase):
         return (link or links)[:1][field]
 
     def find_microsoft(self, model, operator, value, field="remote_id"):
-        """The records of `model` Outlook holds under `field` matching."""
         Link = self.env["calendar.sync.link"]._engine()
         fk = Link._field_of(self.env[model])
         links = Link.search(
@@ -779,7 +703,6 @@ class TestCommon(HttpCase):
         return self.env[model].search([("id", "in", links[fk].ids)])
 
     def microsoft_id(self, record, user):
-        """`record`'s id in `user`'s calendar."""
         return self.microsoft_link(record, user).remote_id
 
     def microsoft_link(self, record, user):
@@ -793,8 +716,6 @@ class TestCommon(HttpCase):
         )
 
     def assert_patched(self, mock_patch, remote_id, values, user):
-        """`mock_patch` sent `values` among the item's once, to `remote_id` of
-        `user`'s calendar."""
         mock_patch.assert_called_once()
         (sent_id, sent), kwargs = mock_patch.call_args
         self.assertEqual(sent_id, remote_id)
@@ -802,7 +723,5 @@ class TestCommon(HttpCase):
         self.assertEqual(kwargs["connection"], mock_get_connection(user))
 
     def awaits_push(self, record):
-        """Whether Outlook has yet to hear of `record`: a link of it waits to be
-        sent, or it has none and is active."""
         links = self.env["calendar.sync.link"]._of(record, "microsoft")
         return bool(links.filtered("pending")) or (not links and record.active)

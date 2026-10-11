@@ -43,8 +43,6 @@ class TelegramHandlerDeliveryTracking(models.AbstractModel):
                 % {"example": tg.code("/rastreo TOL01583026")},
             )
             return
-        # Keep the router's company scope and language, but explicitly discard
-        # superuser mode before reading any shipment.
         reader = self.with_user(internal_user).with_context(lang=tr_env.lang)
         try:
             text = catalog.answer(

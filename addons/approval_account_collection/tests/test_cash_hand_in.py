@@ -13,7 +13,6 @@ class TestCashHandIn(CollectionCommon):
         cls.category = cls.env.ref(
             "approval_account_collection.approval_category_cash_hand_in"
         )
-        # a software passkey is phase 2's business; the password proves the flow
         cls.category.sudo().proof_method_ids = cls.env.ref(
             "proof.proof_method_password"
         )

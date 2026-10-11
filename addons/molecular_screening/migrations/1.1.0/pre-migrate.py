@@ -10,9 +10,6 @@ def migrate(cr, version):
         schema.create_column(
             cr, "molecular_screening_campaign", "company_id", "integer"
         )
-        # Before campaigns had a tenant, their responsible user was their only
-        # ownership information. Keep that user's company, falling back to the
-        # creator's company for unassigned campaigns, never the upgrader's.
         cr.execute("""
             UPDATE molecular_screening_campaign campaign
                SET company_id = COALESCE(

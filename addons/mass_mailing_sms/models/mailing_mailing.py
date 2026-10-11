@@ -25,17 +25,11 @@ class MailingMailing(models.Model):
             res["keep_archives"] = True
         return res
 
-    # mailing options
     mailing_type = fields.Selection(
         selection_add=[("sms", "SMS")],
         ondelete={"sms": "set default"},
     )
 
-    # 'sms_subject' added to override 'subject' field (string attribute should be labelled "Title" when mailing_type == 'sms').
-    # 'sms_subject' should have the same helper as 'subject' field when 'mass_mailing_sms' installed.
-    # otherwise 'sms_subject' will get the old helper from 'mass_mailing' module.
-    # overriding 'subject' field helper in this model is not working, since the helper will keep the new value
-    # even when 'mass_mailing_sms' removed (see 'mailing_mailing_view_form_sms' for more details).
     sms_subject = fields.Char(
         related="subject",
         string="Title",
@@ -44,7 +38,6 @@ class MailingMailing(models.Model):
         help="For an email, the subject your recipients will see in their inbox.\n"
         "For an SMS, the internal title of the message.",
     )
-    # sms options
     body_plaintext = fields.Text(
         string="SMS Body",
         compute="_compute_body_plaintext",
@@ -59,21 +52,19 @@ class MailingMailing(models.Model):
     sms_has_insufficient_credit = fields.Boolean(
         string="Insufficient IAP credits",
         compute="_compute_sms_has_iap_failure",
-    )  # used to propose buying IAP credits
+    )
     sms_has_unregistered_account = fields.Boolean(
         string="Unregistered IAP account",
         compute="_compute_sms_has_iap_failure",
-    )  # used to propose to Register the SMS IAP account
+    )
     sms_force_send = fields.Boolean(
         string="Send Directly",
         help="Immediately send the SMS Mailing instead of queuing up. Use at your own risk.",
     )
-    # opt_out_link
     sms_allow_unsubscribe = fields.Boolean(
         string="Include opt-out link",
         default=False,
     )
-    # A/B Testing
     ab_testing_sms_winner_selection = fields.Selection(
         related="campaign_id.ab_testing_sms_winner_selection",
         default="clicks_ratio",
@@ -137,22 +128,14 @@ class MailingMailing(models.Model):
             elif failure_type == "sms_acc":
                 mass_mailing.sms_has_unregistered_account = True
 
-    # --------------------------------------------------
-    # ORM OVERRIDES
-    # --------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            # Get subject from "sms_subject" field when SMS installed (used to
-            # build the name of record in the super 'create' method)
             if vals.get("mailing_type") == "sms" and vals.get("sms_subject"):
                 vals["subject"] = vals["sms_subject"]
         return super().create(vals_list)
 
-    # --------------------------------------------------
-    # BUSINESS / VIEWS ACTIONS
-    # --------------------------------------------------
 
     def action_retry_failed(self):
         mass_sms = self.filtered(lambda m: m.mailing_type == "sms")
@@ -207,17 +190,8 @@ class MailingMailing(models.Model):
             "url": url,
         }
 
-    # --------------------------------------------------
-    # SMS SEND
-    # --------------------------------------------------
 
     def _get_opt_out_list_sms(self):
-        """Give list of opt-outed records, depending on specific model-based
-        computation if available.
-
-        :returns: opt-outed record IDs
-        :rtype: list
-        """
         self.check_singleton()
         opt_out = []
         target = self.env[self.mailing_model_real]
@@ -238,7 +212,6 @@ class MailingMailing(models.Model):
         return opt_out
 
     def _get_seen_list_sms(self) -> tuple:
-        """Returns a set of emails already targeted by current mailing/campaign (no duplicates)"""
         self.check_singleton()
         target = self.env[self.mailing_model_real]
 
@@ -305,12 +278,10 @@ class MailingMailing(models.Model):
 
     def _send_sms_get_composer_values(self, res_ids):
         return {
-            # content
             "body": self.body_plaintext,
             "template_id": self.sms_template_id.id,
             "res_model": self.mailing_model_real,
             "res_ids": repr(res_ids),
-            # options
             "composition_mode": "mass",
             "mailing_id": self.id,
             "mass_keep_log": self.keep_archives,
@@ -337,16 +308,8 @@ class MailingMailing(models.Model):
                 )
                 composer._action_send_sms()
 
-    # ------------------------------------------------------
-    # STATISTICS
-    # ------------------------------------------------------
 
     def _prepare_statistics_email_values(self):
-        """Return some statistics that will be displayed in the mailing statistics email.
-
-        Each item in the returned list will be displayed as a table, with a title and
-        1, 2 or 3 columns.
-        """
         values = super()._prepare_statistics_email_values()
         if self.mailing_type == "sms":
             mailing_type = self._get_pretty_mailing_type()
@@ -383,9 +346,6 @@ class MailingMailing(models.Model):
             return self.env._("SMS Text Message")
         return super()._get_pretty_mailing_type()
 
-    # --------------------------------------------------
-    # TOOLS
-    # --------------------------------------------------
 
     def convert_links(self):
         sms_mailings = self.filtered(lambda m: m.mailing_type == "sms")
@@ -398,15 +358,6 @@ class MailingMailing(models.Model):
         return res
 
     def get_sms_link_replacements_placeholders(self) -> dict:
-        """Get placeholders for replaced links in sms widget for accurate computation of sms counts.
-
-        Reminders and assumptions:
-
-        * Links wille be transformed to the format ``"[base_url]/r/[link_tracker_code]/s/[sms_id]"``.
-        * unsubscribe is formatted as: ``"STOP SMS : [base_url]/sms/[mailing_id]/[trace_code]"``.
-
-        :returns: Character counts used for links, formatted as ``{link: str, unsubscribe: str}``.
-        """
         if self:
             self.check_singleton()
 
@@ -417,7 +368,7 @@ class MailingMailing(models.Model):
         )
         sms_id_length = (
             max(len(str(max_sms[0]["id"])), 5) if max_sms else 5
-        )  # Assumes a mailing won't be more than 10⁵ sms at once
+        )
         max_code = (
             self.env["link.tracker.code"]
             .sudo()
@@ -450,9 +401,6 @@ class MailingMailing(models.Model):
             "unsubscribe": f"\n{self.env['wizard.sms.sms.send']._get_unsubscribe_info(opt_out_url)}",
         }
 
-    # ------------------------------------------------------
-    # A/B Test Override
-    # ------------------------------------------------------
 
     def _get_fields_ab_testing_description_modifying(self):
         fields_list = super()._get_fields_ab_testing_description_modifying()

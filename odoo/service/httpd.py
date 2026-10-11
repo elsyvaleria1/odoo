@@ -45,16 +45,12 @@ QUEUE_PER_THREAD = 8
 
 
 def count_listener_permits(settings: ServerSettings, *, listeners_spawned: bool) -> int:
-    # Every cron, job and stream listener thread holds one db_maxconn permit
-    # (its LISTEN session) for as long as the server runs; a --stop-after-init
-    # run returns before spawning any of them.
     if not listeners_spawned:
         return 0
     return settings.max_cron_threads + settings.job_workers + settings.stream_workers
 
 
 def get_http_pool_size(settings: ServerSettings, *, evented: bool = False) -> int:
-    # the evented child's pool is db_maxconn_gevent (odoo/db/settings.py)
     return (settings.db_maxconn_gevent if evented else 0) or settings.db_maxconn
 
 
@@ -70,8 +66,6 @@ def compute_http_thread_limit(
 ) -> tuple[int, int]:
     listeners = count_listener_permits(settings, listeners_spawned=listeners_spawned)
     pool = get_http_pool_size(settings, evented=evented)
-    # The evented child's requests are websocket handshakes; half its pool is
-    # left to the websocket hub's database threads (get_websocket_db_threads).
     share = _http_pool_share(evented)
     auto_limit = max((pool - listeners) // share, 1)
     limit = get_env_int("ODOO_MAX_HTTP_THREADS", auto_limit, minimum=0, logger=_logger)
@@ -385,8 +379,8 @@ class ThreadedHTTPServer:
         )
 
     def _serve_connection(self, conn: Connection) -> None:
-        served = 0  # debuglog
-        capped = False  # debuglog
+        served = 0
+        capped = False
         for _ in range(_MAX_PIPELINED):
             outcome = serve_one(
                 conn,
@@ -395,7 +389,7 @@ class ThreadedHTTPServer:
                 self.limits,
                 allow_keep_alive=not self._shutdown.is_set(),
             )
-            served += 1  # debuglog
+            served += 1
             if outcome is Outcome.UPGRADED:
                 _debug.pipeline(
                     "httpd.connection_upgraded", peer=conn.addr[0], served=served
@@ -413,7 +407,7 @@ class ThreadedHTTPServer:
                 buffered=len(conn.source.buffer),
             )
             conn.ready_at = time.monotonic()
-            capped = served == _MAX_PIPELINED  # debuglog
+            capped = served == _MAX_PIPELINED
         if _debug.logic.enabled and capped:
             _debug.logic(
                 "httpd.pipeline_cap_reached",
@@ -493,8 +487,6 @@ class ThreadedHTTPServer:
 
     @staticmethod
     def _refuse(conn: Connection) -> None:
-        # Written from the selector thread: a blocking send to a client that
-        # does not read would stall every other connection behind it.
         with contextlib.suppress(OSError):
             conn.sock.setblocking(False)
             conn.sock.send(_UNAVAILABLE_RESPONSE)
@@ -528,11 +520,6 @@ class ThreadedHTTPServer:
             self._evict_oldest_idle()
 
     def _evict_oldest_idle(self) -> bool:
-        # _idle is keyed in parking order, so the first entries are the oldest. A
-        # connection idle between requests goes first because its client reconnects
-        # without losing anything; after that the oldest goes, whether it never sent
-        # a byte or is part way through a head, or a slowloris client could hold
-        # every slot while each newcomer is closed before it can speak.
         victim = next(
             (c for c in self._idle.values() if c.requests and not c.head_started),
             None,
@@ -560,7 +547,7 @@ class ThreadedHTTPServer:
         conn.close()
 
     def _accept(self, now: float) -> None:
-        accepted = 0  # debuglog
+        accepted = 0
         for _ in range(256):
             try:
                 sock, addr = self.socket.accept()
@@ -581,7 +568,7 @@ class ThreadedHTTPServer:
                     self._accept_starved(exc, now)
                 return
             sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            accepted += 1  # debuglog
+            accepted += 1
             self._park(Connection(sock, addr), now)
         _debug.logic("httpd.accept_batch_full", connections=accepted)
 
@@ -595,8 +582,6 @@ class ThreadedHTTPServer:
                 len(self._idle),
                 self._pool.busy,
             )
-        # The listener stays readable while accept fails, so without freeing a
-        # descriptor or leaving the selector the loop would spin on it.
         evicted = self._evict_oldest_idle()
         if not evicted:
             self._accept_paused_until = now + _ACCEPT_BACKOFF
@@ -684,9 +669,6 @@ class ThreadedHTTPServer:
             if self._shutdown.is_set():
                 conn.close()
             elif self._holds_complete_head(conn):
-                # A pipelined head the worker left behind at _MAX_PIPELINED: no
-                # byte will ever wake the selector for it, so it goes back to
-                # the pool now rather than parking until the head timeout.
                 _debug.pipeline(
                     "httpd.returned_head_resubmitted",
                     peer=conn.addr[0],
@@ -701,7 +683,6 @@ class ThreadedHTTPServer:
         try:
             return find_head(conn.source.buffer, self.limits.head, scanned) is not None
         except ProtocolError as exc:
-            # A malformed head is complete for dispatch: serve_one answers it.
             _debug.logic(
                 "httpd.head_malformed_while_idle",
                 peer=conn.addr[0],
@@ -711,13 +692,6 @@ class ThreadedHTTPServer:
             return True
 
     def _update_listening(self) -> None:
-        # `bequeath_listener` hands the listening socket to the process that
-        # replaces this one by detaching it, and `server_close` closes it;
-        # either way its fileno is -1 from then on while this loop is still
-        # running. Registering that is `ValueError: Invalid file descriptor:
-        # -1` raised inside the serving thread, and unregistering it looks the
-        # selector up by a fileno the socket no longer has -- so the fd that
-        # was registered is remembered rather than asked for twice.
         listener_alive = self.socket.fileno() != -1
         want = (
             listener_alive
@@ -808,10 +782,6 @@ class ThreadedHTTPServer:
         self._stopped.wait()
 
     def bequeath_listener(self) -> None:
-        # A re-exec keeps this process, its pid and every inheritable fd:
-        # the listener stays bound through the interpreter restart and the
-        # connections that arrive meanwhile wait in its backlog.  A
-        # socket-activated listener already survives as LISTEN_FDS.
         if self.listener_outlives_exec:
             return
         fd = bequeath_socket(self.socket, os.environ)
@@ -832,10 +802,6 @@ class ThreadedHTTPServer:
         return self._pool.busy
 
     def drain(self, timeout: float, *, stuck: int = 0) -> int:
-        # `shutdown()` stopped the listener and every idle connection; the
-        # pool's busy threads are answering real requests, and closing the
-        # socket under them is what a stop used to do to their clients.  The
-        # caller names how many of the busy threads it has given up on.
         def pending() -> int:
             return max(self._pool.busy - stuck, 0)
 

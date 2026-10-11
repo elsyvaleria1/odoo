@@ -29,7 +29,6 @@ DEFAULT_MODELS_TO_EXPORT = [
     "approval.binding",
 ]
 
-# List of fields to export by model
 FIELDS_TO_EXPORT = {
     "automation.rule": [
         "action_server_ids",
@@ -274,7 +273,6 @@ FIELDS_TO_EXPORT = {
         "sequence",
         "active",
     ],
-    # Only use for export attachment config in studio export models
     "ir.attachment": [
         "name",
         "type",
@@ -299,13 +297,11 @@ FIELDS_TO_EXPORT = {
     ],
 }
 
-# List of models to mark as noupdate.
 MODELS_WITH_NOUPDATE = [
     "ir.attachment",
     "ir.access",
 ]
 
-# List of relational fields NOT to export, by model.
 RELATIONS_NOT_TO_EXPORT = {
     "automation.rule": ["trg_date_calendar_id"],
     "ir.actions.server": ["partner_ids"],
@@ -317,13 +313,6 @@ RELATIONS_NOT_TO_EXPORT = {
 
 
 def _find_circular_dependencies(elems):
-    """Return a list of circular dependencies encountered in `elems`.
-
-    :param elems: specifies the elements to sort with their dependencies; it is
-        a dictionary like `{element: dependencies}`.
-
-    :returns: a list of lists of elements forming circular dependencies.
-    """
     circular_dependencies = []
 
     def traverse(elem, visited, stack):
@@ -374,7 +363,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
             ]
         )
 
-        # filter active data
         active_ids = {}
         for model_name, model_data_list in groupby(data, lambda d: d.model):
             records = self.env[model_name].browse(d.res_id for d in model_data_list)
@@ -440,10 +428,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
 
     @api.depends("additional_models", "default_export_data")
     def _compute_export_data(self) -> None:
-        """
-        Compute the list of records that are exported in addition to the ones
-        defined in the default export data. (a.k.a. "not from the studio customizations ones")
-        """
         to_update = self.filtered("additional_models")
         (self - to_update).additional_export_data = False
         for rec in to_update:
@@ -461,8 +445,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                 lambda r: r.model == model
             ).mapped("res_id")
 
-            # FIXME: This prevents the same record to be exported multiple times
-            # but what do we do if the first record is demo and the second not?
             model_default_data_ids += [
                 export_data["res_id"]
                 for export_data in export_data_vals
@@ -541,7 +523,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                 mail_templates = to_export.mail_template_id
                 add(export_model, "mail.template", mail_templates)
 
-            # add attachments
             if export_model.include_attachment:
                 fields = _get_attachment_fields(self.env, export_model.model_name)
                 pre_attachments = self.env["ir.attachment"].search(
@@ -573,13 +554,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
         return export_data_vals
 
     def get_export_info(self) -> tuple:
-        """
-        Gather all the data to export from the wizard and return it in the correct order.
-
-        :return: A tuple containing the data to export, the list of xml files to generate and
-                 the list of circular dependencies found.
-        :rtype: tuple
-        """
         self.check_singleton()
         all_data = self.default_export_data | self.additional_export_data
         no_update_models = MODELS_WITH_NOUPDATE + self.additional_models.filtered(
@@ -610,7 +584,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                         group_fields.remove(field_to_exclude)
 
                 if not group_fields:
-                    # no fields to export
                     continue
 
                 path_info = (group, suffix)
@@ -650,7 +623,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
         return all_data, pre_export + export + post_export, circular_dependencies
 
     def _get_fields_to_export_by_models(self):
-        """Return a dict of {model_name: [fields_to_export]}"""
         self.check_singleton()
         all_data = self.default_export_data | self.additional_export_data
         model_names = set(all_data.mapped("model"))
@@ -665,7 +637,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
             ]
 
             if not fields_to_export:
-                # deduce the fields_to_export from available data
                 fields_to_export = list(
                     OrderedSet(Model._fields.keys()) - OrderedSet(models.MAGIC_COLUMNS)
                 )
@@ -676,7 +647,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                     - OrderedSet(RELATIONS_NOT_TO_EXPORT.get(model_name))
                 )
 
-            # Remove the excluded fields from fields_to_export
             export_model = additional_models_by_name.get(
                 model_name, self.additional_models.browse()
             )
@@ -685,7 +655,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                 f for f in fields_to_export if f not in export_model_fields_to_exclude
             ]
 
-            # Sort
             fields_details = Model.fields_get(fields_to_export)
             field_deps = OrderedDict.fromkeys(fields_to_export)
             for field in fields_to_export:
@@ -700,10 +669,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
         return result
 
     def _get_models_to_export(self) -> tuple:
-        """
-        Returns a sorted list of tuple (model_name, is_demo, groups_to_export)
-        The groups_to_export is a list of tuple ("data"|"demo", fields_to_export)
-        """
         self.check_singleton()
         fields_by_models = self._get_fields_to_export_by_models()
         result = []
@@ -711,7 +676,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
         all_data = self.default_export_data | self.additional_export_data
 
         data_by_is_demo = all_data.grouped("is_demo_data")
-        # (*) Important that we do demo data before master data
         for is_demo in [True, False]:
             data = data_by_is_demo.get(is_demo, all_data.browse())
             data_by_model = data.grouped("model")
@@ -719,8 +683,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
             model_names = [m for m in DEFAULT_MODELS_TO_EXPORT if m in current_models]
             model_names += sorted([m for m in current_models if m not in model_names])
 
-            # Note that here we can use the result in construction
-            # as we have already done the demo data, see (*) above.
             demo_records = {m: records for (m, demo, _, _, records) in result if demo}
 
             model_grouped_fields = {}
@@ -766,8 +728,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
                 (is_demo, circular_dependency)
                 for circular_dependency in _find_circular_dependencies(models_deps)
             )
-            # Cycles are expected and already collected above, so they can be
-            # reported to the user; the order only has to be as good as possible.
             result.extend(
                 (
                     model,
@@ -791,10 +751,6 @@ class WizardIrModuleModuleExportCustomization(models.TransientModel):
 
         all_data = self.default_export_data | self.additional_export_data
 
-        # For master data (non demo) we do not want to export fields
-        # related to demo records, if any.
-        # Instead we want to export the master data records ALSO as demo
-        # but only with the fields related to demo records.
         fields_relations = {
             field_name: field_info["relation"]
             for (field_name, field_info) in self.env[model]

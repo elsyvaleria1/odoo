@@ -26,7 +26,6 @@ ALL_SUITE_PREFIXES = ("@base_import",)
 class BaseImportSuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_base_import_unit(self):
-        """@base_import — the import action and import records JS suites."""
         self._run_hoot("@base_import", preset="desktop", timeout=900)
 
     def test_suite_filters_cover_every_test_file(self):

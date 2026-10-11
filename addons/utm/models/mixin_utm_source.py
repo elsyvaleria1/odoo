@@ -22,13 +22,10 @@ class MixinUtmSource(models.AbstractModel):
 
     @api.model
     def default_get(self, fields):
-        # Exclude 'name' from fields to avoid retrieving it from context.
         return super().default_get([field for field in fields if field != "name"])
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Create the UTM sources if necessary, generate the name based on the content in batch."""
-        # Create all required <utm.source>
         utm_sources = self.env["utm.source"].create(
             [
                 {
@@ -43,11 +40,9 @@ class MixinUtmSource(models.AbstractModel):
             ]
         )
 
-        # Update "vals_list" to add the ID of the newly created source
         vals_list_missing_source = [
             values for values in vals_list if not values.get("source_id")
         ]
-        # both are filtered/created by the same `not source_id` condition, so equal-length by construction
         for values, source in zip(vals_list_missing_source, utm_sources, strict=True):
             values["source_id"] = source.id
 
@@ -79,11 +74,9 @@ class MixinUtmSource(models.AbstractModel):
         return super().write(vals)
 
     def copy_data(self, default=None):
-        """Increment the counter when duplicating the source."""
         default = default or {}
         default_name = default.get("name")
         vals_list = super().copy_data(default=default)
-        # copy_data returns one vals dict per record (ORM contract), so self and vals_list align
         for source, vals in zip(self, vals_list, strict=True):
             vals["name"] = self.env["mixin.utm"]._get_unique_names(
                 "utm.source", [default_name or source.name]

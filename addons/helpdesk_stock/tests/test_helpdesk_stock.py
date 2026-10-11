@@ -10,7 +10,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
     """Test used to check that the functionalities of After sale in Helpdesk (stock)."""
 
     def test_helpdesk_stock(self):
-        # give the test team ability to create coupons
         self.test_team.helpdesk_use_product_returns = True
 
         product = self.env["product.product"].create(
@@ -91,7 +90,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
 
         return_picking.move_ids[0].quantity = 1
         return_picking.button_validate()
-        # Trigger _compute_state
         return_picking.state
 
         last_message = str(ticket.message_ids[0].body)
@@ -102,9 +100,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
         )
 
     def test_helpdesk_stock_return(self):
-        """
-        You should be able to return a product that has an open backorder.
-        """
         product = self.env["product.product"].create(
             {
                 "name": "test product",
@@ -127,13 +122,9 @@ class TestHelpdeskStock(common.HelpdeskCommon):
             }
         )
         so.action_confirm()
-        # get delivery order
         delivery_order = so.picking_ids[0]
-        # validated only 3 units
         delivery_order.move_ids[0].quantity = 3
-        # validate delivery order
         delivery_order.button_validate()
-        # create backorder with form
         Form(
             self.env["wizard.stock.picking.validate.partial"].with_context(
                 {
@@ -152,7 +143,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
             }
         )
         try:
-            # create a return picking on ticket
             Form(
                 self.env["wizard.stock.picking.return"].with_context(
                     {"active_model": "helpdesk.ticket", "default_ticket_id": ticket.id}
@@ -165,10 +155,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
             )
 
     def test_helpdesk_ticket_partner_has_picking(self):
-        """
-        This test case verifies that a helpdesk ticket correctly identifies if its associated partner
-        or the partner's commercial entity has related delivery orders after confirming a sale order.
-        """
         product = self.env["product.product"].create(
             {
                 "name": "Product 2",
@@ -182,7 +168,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
                 "is_company": True,
             }
         )
-        # Create a child partner
         partner = self.env["res.partner"].create(
             {
                 "name": "Customer 2",
@@ -222,7 +207,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
             "The ticket should have a related delivery order for the partner.",
         )
 
-        # assign commercial_partner to partner_id in ticket
         ticket.partner_id = commercial_partner
 
         self.assertTrue(
@@ -280,13 +264,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
             )
 
     def test_ensure_has_partner_picking(self):
-        """
-        It is possible to return some products from a ticket. To do so, the user
-        clicks on the Return button. That button will only be displayed in a
-        condition strongly based on the field `has_partner_picking` (tldr: the
-        client must have an outgoing done picking). This test ensures the field
-        value is correct in several cases.
-        """
         product, service = self.env["product.product"].create(
             [
                 {"name": "Amazing Product", "type": "consu"},
@@ -355,8 +332,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
         self.assertEqual(other_tickets.mapped("has_partner_picking"), [False] * 5)
 
     def test_set_picking_to_false_in_wizard(self):
-        """This test ensure that when the picking field of the wizard is set to False, no traceback is triggered during
-        the product_return_moves compute."""
         product = self.env["product.product"].create(
             {
                 "name": "test product",
@@ -400,8 +375,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
         wizard_form.picking_id = self.env["stock.picking"]
 
     def test_return_product_no_sale_order(self):
-        """This test ensure that when the picking field of the wizard is not set, we can return
-        the product without any issue."""
         product = self.env["product.product"].create(
             {
                 "name": "test product",
@@ -459,11 +432,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
         )
 
     def test_return_picking_default_multistep_delivery(self):
-        """
-        Tests that when returning a product from a helpdesk ticket, the correct
-        delivery order is selected by default in multi-step delivery scenarios.
-        The default should always be the final customer-facing operation (Ship/Out).
-        """
 
         warehouse = self.env["stock.warehouse"].create(
             {

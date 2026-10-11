@@ -14,9 +14,6 @@ class HrAttendanceConfig(models.Model):
         "Two companies cannot share a kiosk key.",
     )
 
-    # `float_to_time` raises outside [0, 24], and the cron reads this straight
-    # into it once per open attendance: a 25.0 stored here would not surface as
-    # a bad setting but as a cron that dies for every employee in the company.
     _auto_check_out_specific_time_in_day = models.Constraint(
         """CHECK (
             auto_check_out_mode IS DISTINCT FROM 'specific_time'
@@ -100,9 +97,6 @@ class HrAttendanceConfig(models.Model):
             )
 
     def _get_new_attendance_kiosk_key(self):
-        # `.hex` to match the field default and `_regenerate_attendance_kiosk_key`;
-        # a configuration whose key is back-filled at column-init must not end up
-        # with a differently shaped token from every other one's.
         return uuid.uuid4().hex
 
     def _init_column(self, column_name, *, new_column=False):

@@ -65,7 +65,6 @@ class TelegramUnavailable(TelegramApiError):
 
 
 def classify(body):
-    """The exception a failed Bot API answer stands for."""
     code = body.get("error_code") or 0
     description = body.get("description") or ""
     parameters = body.get("parameters") or {}

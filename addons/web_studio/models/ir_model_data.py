@@ -14,9 +14,6 @@ class IrModelData(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """When editing an ir.model.data with Studio, we put it in noupdate to
-        avoid the customizations to be dropped when upgrading the module.
-        """
         if self.env.context.get("studio"):
             vals["noupdate"] = True
             vals["studio"] = True

@@ -9,10 +9,6 @@ class AccountMove(models.Model):
         index=True,
         copy=False,
         readonly=True,
-        # NOT "cascade": a database-level cascade deletes journal entries in SQL,
-        # below unlink(), the audit trail and the hash chain. account.loan guards
-        # its own deletion and disposes of these entries through
-        # _unlink_or_reverse(), which keeps audit-protected ones as cancelled.
         ondelete="set null",
         help="Line of the loan that generated this entry",
     )

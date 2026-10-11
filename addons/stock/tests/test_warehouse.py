@@ -1236,8 +1236,6 @@ class TestWarehouse(TestStockCommon):
 
     @contextmanager
     def _without_archive_guards(self):
-        # these tests are about the multi-warehouse group, and archiving every
-        # warehouse also meets whatever transfers and stock the database holds
         with (
             patch.object(type(self.env["stock.warehouse"]), "_check_archivable"),
             patch.object(type(self.env["stock.location"]), "_check_archivable"),

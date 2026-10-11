@@ -203,7 +203,6 @@ class TestCreditStatusComputation(TransactionCase):
                 "type": "folder",
             }
         )
-        # A credit document is one filed under the company's credit folder.
         cls.env.company.credit_folder_id = cls.folder
         cls.doc_type = cls.env["document.type"].create(
             {"name": "Status Type", "code": "TEST_STATUS"}
@@ -351,7 +350,6 @@ class TestCreditFileOutsideCreditFolder(TransactionCase):
         self.assertIn(doc, self.partner.credit_document_ids)
 
     def test_the_file_is_the_same_whoever_reads_it(self):
-        """The credit figures are stored from the file, so its scope ignores the reader."""
         other_company = self.env["res.company"].create({"name": "Other Credit Co"})
         outsider = new_test_user(
             self.env, login="credit_file_outsider", groups="base.group_user"
@@ -382,7 +380,6 @@ class TestCreditTypeWarning(TransactionCase):
                 "type": "folder",
             }
         )
-        # A credit document is one filed under the company's credit folder.
         cls.env.company.credit_folder_id = cls.folder
         cls.doc_type = cls.env["document.type"].create(
             {
@@ -547,7 +544,6 @@ class TestCreditLimit(TransactionCase):
                 "type": "folder",
             }
         )
-        # A credit document is one filed under the company's credit folder.
         cls.env.company.credit_folder_id = cls.folder
         cls.doc_type = cls.env["document.type"].create(
             {
@@ -792,7 +788,6 @@ class TestComplianceCreditIntegration(TransactionCase):
         cls.folder = cls.env["document.document"].create(
             {"name": "Integration Folder", "type": "folder"}
         )
-        # A credit document is one filed under the company's credit folder.
         cls.env.company.credit_folder_id = cls.folder
         cls.doc_type = cls.env["document.type"].create(
             {

@@ -23,7 +23,6 @@ _debug = DebugLog(__name__)
 
 _NESTED_VIEW_TAGS = frozenset({"form", "list", "graph", "kanban", "calendar"})
 
-# graph and pivot read an invisible <field> as "hide from the group-by menu"
 _RECORD_VIEW_TAGS = frozenset(
     {"form", "list", "kanban", "calendar", "hierarchy", "activity"}
 )
@@ -869,9 +868,6 @@ class ButtonHandler(ElementHandler):
         name_manager: NameManager,
         node_info: dict[str, Any],
     ) -> None:
-        # a button that runs a door of a verb is offered as the user holds the
-        # verb: the cached arch is everyone's, so only the model and the verb
-        # are stamped here, and _apply_verb_access resolves them per user
         if node.get("type") != "object" or not (method := node.get("name")):
             return
         model_name = name_manager.model._name

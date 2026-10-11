@@ -23,7 +23,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         session_ids=False,
         **kwargs,
     ):
-        """Report selected sales; reconcile drawers only for complete sessions."""
         if not session_ids:
             date_start, date_stop = self._get_date_start_and_date_stop(
                 date_start, date_stop
@@ -38,8 +37,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         )
         currency = self._get_report_currency(configs)
         sessions.check_access("read")
-        # Completeness counts every captured order, including those the user
-        # cannot read: the drawer and fiscal counters cover all of them.
         complete_sessions = self.sudo()._get_complete_sessions(orders, sessions)
         companies = configs.company_id or self.env.company
         _debug.pipeline(
@@ -103,7 +100,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
     def _finalize_sale_details(
         self, data, orders, configs, sessions, *, currency, complete_sessions
     ):
-        """Extend a report using its resolved selection instead of searching again."""
         return data
 
     @api.model
@@ -149,7 +145,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
             ).replace(tzinfo=self.env.tz)
             date_start = today.astimezone(UTC).replace(tzinfo=None)
 
-        # Add a calendar day before converting: DST days are not 24 hours.
         default_stop = (
             (today + self._get_default_report_span())
             .astimezone(UTC)
@@ -637,7 +632,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return move_by_key
 
     def _get_legacy_difference_keys(self, move, methods, ref_by_key) -> set:
-        """Resolve old linked entries by accounting identity before mutable labels."""
         if not move.pos_diff_session_id:
             return {
                 key
@@ -660,7 +654,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return {(session.id, method.id) for method in exact or candidates}
 
     def _get_session_cash_moves(self, session, statement_lines_by_session):
-        """Exclude closing entries using purpose tags or legacy reconciliation."""
         moves = (
             statement_lines_by_session.get(
                 session.id, self.env["account.bank.statement.line"]
@@ -691,7 +684,6 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return moves
 
     def _get_cash_moves_without_legacy_difference(self, session, moves):
-        """Exclude only a uniquely identifiable old counting adjustment."""
         difference = (
             session.cash_register_balance_end_real - session.cash_register_balance_end
         )
@@ -953,16 +945,9 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
         return session.currency_id._convert(amount, currency, session.company_id, date)
 
     def _prepare_invoice_section(self, orders, currency) -> dict:
-        """List invoices from the same order selection as sales and payments.
-
-        An invoice also covering unselected orders counts only the selected
-        orders' totals, so that adjacent windows add up to what was invoiced.
-        """
         invoice_list = []
         invoice_total = 0.0
         invoiced_orders = orders.filtered("is_invoiced").sorted("id")
-        # a consolidated invoice covers several orders, possibly of several sessions:
-        # listed once, under the first of them, naming every selected order
         orders_by_move = invoiced_orders.grouped("account_move")
         listed_moves = self.env["account.move"]
         for session, session_orders in invoiced_orders.grouped("session_id").items():

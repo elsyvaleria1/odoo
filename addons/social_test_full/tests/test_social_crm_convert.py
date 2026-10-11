@@ -65,25 +65,9 @@ class TestSocialCrmConvert(common.SocialCase):
     @users("user_social_crm")
     @mock_void_external_calls()
     def test_social_crm_convert_from_post(self):
-        """When converting from a stream.post with a matching social.post, the wizard will be
-        initialized with the data from the stream.post and the resulting lead after conversion will
-        have as UTMs: the same campaign as the social.post, the medium from the related
-        social.account and the source as the social.post's source.
-
-        Since we found a perfect match on a single partner, the action will be set to 'exist' and
-        the partner_id will be initialized with this partner."""
 
         self.social_stream_post.write({"facebook_post_id": "abc123"})
         john_doe = self.env["res.partner"].sudo().create({"name": "John Doe"})
-        # <form string="Convert Post to Lead">
-        #     ...
-        #             <field name="conversion_source" invisible="1"/>
-        #             <field name="post_content" invisible="1"/>
-        #             ...
-        #             <field name="social_account_id" invisible="1"/>
-        #             <field name="social_stream_post_id" invisible="1"/>
-        #     ...
-        # </form>
         convert_wizard_form = Form(
             self.env["wizard.social.stream.post.create.lead"].with_context(
                 default_social_account_id=self.social_account,
@@ -114,8 +98,6 @@ class TestSocialCrmConvert(common.SocialCase):
     @users("user_social_crm")
     @mock_void_external_calls()
     def test_social_crm_convert_from_comment(self):
-        """When converting from a comment the resulting lead after conversion will have as UTMs:
-        no campaign, the medium from the related social.account and source set to our master data."""
 
         self.env["res.partner"].sudo().create({"name": "Doug"})
         convert_wizard_form = Form(

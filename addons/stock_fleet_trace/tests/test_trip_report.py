@@ -33,7 +33,6 @@ class TestTripReport(TripFixtureMixin, TransactionCase):
             (stops[delivered]["departure"], stops[delivered]["delivered"]),
             (100.0, 100.0),
         )
-        # Brought back: exactly what the delivery weighed when it left.
         self.assertEqual(
             (stops[absent]["departure"], stops[absent]["back"]), (40.0, 40.0)
         )
@@ -43,7 +42,6 @@ class TestTripReport(TripFixtureMixin, TransactionCase):
         self.assertIn(absent.name, sheet)
 
     def test_the_rescue_trip_rides_in_the_broken_down_trip_sheet(self):
-        # Paty's scenario 5, with scenario 3's spill before the breakdown.
         first = self._delivery(5)
         rest = self._delivery(2)
         trip = self._trip(first | rest)
@@ -87,7 +85,6 @@ class TestTripReport(TripFixtureMixin, TransactionCase):
         stops = self._stops(trip)
 
         self.assertEqual(trip.trip_handover_to_ids, rescue)
-        # 40 kg left on the rest: 20 spilled, 20 rode on with the rescue.
         self.assertEqual(
             (
                 stops[rest]["departure"],
@@ -106,7 +103,6 @@ class TestTripReport(TripFixtureMixin, TransactionCase):
         self.assertIn(rest.name, sheet)
         self.assertIn("Engine failure", sheet)
         self.assertIn(trip.name, self._sheet(rescue))
-        # What was lost, which lot and where it went; every move of the trip.
         self.assertIn("o_trip_write_offs", sheet)
         self.assertIn(spill.name, sheet)
         self.assertIn(spill.scrap_ids.name, sheet)
@@ -134,7 +130,6 @@ class TestTripReport(TripFixtureMixin, TransactionCase):
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY"
             "42YAAAAASUVORK5CYII="
         )
-        # A weight with more decimals than the sheet shows.
         self.product.weight = 0.333
         delivery = self._delivery(5)
         trip = self._trip(delivery)

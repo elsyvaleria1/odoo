@@ -60,7 +60,6 @@ class TestAttendanceFollowsItsOvertimeLines(TransactionCase):
                 "ruleset_id": cls.ruleset.id,
             }
         )
-        # Monday, ten hours worked against an eight-hour day: two hours over.
         cls.attendance = cls.env["hr.attendance"].create(
             {
                 "employee_id": cls.employee.id,
@@ -93,21 +92,6 @@ class TestAttendanceFollowsItsOvertimeLines(TransactionCase):
         )
 
     def test_correcting_the_encoded_hours_moves_the_extra_hours_only(self):
-        """A correction to `manual_duration` is what a manager actually does.
-
-        The attendance's `overtime_hours`, `validated_overtime_hours` and
-        `expected_hours` are all derived from these lines, but declared
-        `@api.depends` on `check_in`/`check_out`/`employee_id` instead -- their
-        real trigger was hand-rolled in `hr.attendance.overtime.line.write`.
-        Any field left out of that list kept its old value, and the attendance
-        then reported two extra-hours figures that disagreed with each other.
-
-        `expected_hours` is in the list and still recomputes; it just does not
-        MOVE, because it is measured against `duration` -- what the rules
-        computed -- and not against the column the manager edited. It read 5.0
-        while it subtracted `manual_duration`, which let a correction restate
-        how many hours the schedule had expected.
-        """
         self.line.manual_duration = 5.0
         self.assertEqual(
             self._reread(),

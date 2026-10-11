@@ -21,14 +21,12 @@ class SaleOrder(models.Model):
     )
 
     def _action_confirm(self):
-        """Generate inter company purchase order based on conditions"""
         res = super()._action_confirm()
         for order in self:
             if (
                 not order.company_id
-            ):  # if company_id not found, return to normal behavior
+            ):
                 continue
-            # if company allow to create a Purchase Order from Sales Order, then do it!
             company = self.env["res.company"]._find_company_from_partner(
                 order.partner_id.id
             )
@@ -52,19 +50,11 @@ class SaleOrder(models.Model):
         return res
 
     def inter_company_create_purchase_order(self, company) -> None:
-        """Create a Purchase Order from the current SO (self)
-        Note : In this method, reading the current SO is done as sudo, and the creation of the derived
-        PO as intercompany_user, minimizing the access right required for the trigger user
-        :param company : the company of the created PO
-        :rtype company : res.company record
-        """
         for rec in self:
             if not company or not rec.company_id.partner_id:
                 continue
 
-            # find user for creating and validating SO/PO from company
             intercompany_uid = company._get_intercompany_uid_or_raise()
-            # check intercompany user access rights
             if (
                 not self.env["purchase.order"]
                 .with_user(intercompany_uid)
@@ -84,7 +74,6 @@ class SaleOrder(models.Model):
                 )
 
             company_partner = rec.company_id.partner_id.with_user(intercompany_uid)
-            # check purchase currency should be same with SO/PO document
             if (
                 company_partner.property_purchase_currency_id
                 and rec.currency_id.id
@@ -110,8 +99,6 @@ class SaleOrder(models.Model):
                     )
                 )
 
-            # create the PO and generate its lines from the SO
-            # read it as sudo, because inter-compagny user can not have the access right on SO
             po_vals = rec.sudo()._prepare_purchase_order_data(company, company_partner)
             for line in rec.line_ids.sudo():
                 po_vals["line_ids"] += [
@@ -131,21 +118,13 @@ class SaleOrder(models.Model):
             )
             purchase_order.message_post(body=msg)
 
-            # write customer reference field on SO
             if not rec.client_order_ref:
                 rec.client_order_ref = purchase_order.name
 
-            # auto-validate the purchase order if needed
             if company.intercompany_document_state == "posted":
                 purchase_order.with_user(intercompany_uid).action_confirm()
 
     def _prepare_purchase_order_data(self, company, company_partner):
-        """Generate purchase order values, from the SO (self)
-        :param company_partner : the partner representing the company of the SO
-        :rtype company_partner : res.partner record
-        :param company : the company in which the PO line will be created
-        :rtype company : res.company record
-        """
         self.check_singleton()
 
         return {
@@ -167,16 +146,8 @@ class SaleOrder(models.Model):
 
     @api.model
     def _prepare_purchase_order_line_data(self, so_line, date_order, company) -> dict:
-        """Generate purchase order line values, from the SO line
-        :param so_line : origin SO line
-        :rtype so_line : sale.order.line record
-        :param date_order : the date of the orgin SO
-        :param company : the company in which the PO line will be created
-        :rtype company : res.company record
-        """
-        # discount is copied as its own field below, not folded into price_unit
         price = so_line.price_unit or 0.0
-        quantity = so_line.product_uom_qty  # already in the product's reference UoM
+        quantity = so_line.product_uom_qty
         price = (
             so_line.product_id
             and so_line.product_uom_id._get_price_in_unit(

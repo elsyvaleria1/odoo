@@ -73,7 +73,7 @@ class TestHrWorkEntryAttendancePerformance(TransactionCase):
                 dtstart=date.today() - relativedelta(months=2),
                 until=date.today(),
             ):
-                vals.append(  # noqa: PERF401  explicit loop reads clearer
+                vals.append(
                     {
                         "employee_id": employee.id,
                         "check_in": day.strftime("%Y-%m-%d 08:00:%S"),
@@ -83,11 +83,6 @@ class TestHrWorkEntryAttendancePerformance(TransactionCase):
         cls.attendances = cls.env["hr.attendance"].create(vals)
 
     def test_regenerate_work_entries(self):
-        # The budget is the measured cost, not headroom. It read 1081 against a
-        # measurement of 129 -- a gap wide enough that the whole regeneration
-        # could have stopped batching without the test noticing, and
-        # `assertQueryCount` only LOGS when it comes in under, so nothing said
-        # so in the lane output either.
         slots = [
             {"date": attendance.date, "employee_id": attendance.employee_id.id}
             for attendance in self.attendances
@@ -98,16 +93,8 @@ class TestHrWorkEntryAttendancePerformance(TransactionCase):
                     slots=slots
                 )
 
-        # And that it did the work: a budget met by a call that regenerated
-        # nothing is the cheapest possible pass.
         work_entries = self.env["hr.work.entry"].search(
             [("employee_id", "in", self.attendances.employee_id.ids)]
         )
         self.assertEqual(len(work_entries.employee_id), 100)
-        # An attendance on a day the schedule does not cover produces no work
-        # entry, so this is not one per attendance: the fixture spans two
-        # months of calendar days and read 4500 of 6300, which is the weekday
-        # share. The bound is loose on purpose -- the fixture is relative to
-        # `date.today()`, so the exact weekday count moves daily, and a figure
-        # that moves daily is a flake, not a measurement.
         self.assertGreater(len(work_entries), 0.6 * len(self.attendances))

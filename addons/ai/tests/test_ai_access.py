@@ -13,7 +13,6 @@ class TestAiFieldsAccess(TransactionCase):
         cls.internal_user = new_test_user(cls.env, "internal")
 
     def test_ai_access_agent_system(self):
-        # system: every right
         agent = self.env["ai.agent"].create({"name": "test agent"})
         agent.write({"subtitle": "bloups"})
         self.assertEqual(
@@ -24,7 +23,6 @@ class TestAiFieldsAccess(TransactionCase):
 
     @users("internal")
     def test_ai_access_agent_internal(self):
-        # internal: readonly
         with self.assertRaises(AccessError):
             self.env["ai.agent"].create({"name": "test agent"})
         agent_sudo = self.env["ai.agent"].sudo().create({"name": "test agent"})
@@ -50,11 +48,10 @@ class TestAiFieldsAccess(TransactionCase):
         self.assertNotIn("ir.config_parameter", agents._get_available_models())
 
     def test_ai_access_embedding_system(self):
-        # system: every right
         attachment = self.env["ir.attachment"].create(
             {
                 "name": "test attachment",
-                "datas": "dGVzdA==",  # "test" in base64
+                "datas": "dGVzdA==",
                 "res_model": "ai.embedding",
                 "res_id": 0,
             }
@@ -75,11 +72,10 @@ class TestAiFieldsAccess(TransactionCase):
 
     @users("internal")
     def test_ai_access_embedding_internal(self):
-        # internal: readonly
         attachment = self.env["ir.attachment"].create(
             {
                 "name": "test attachment",
-                "datas": "dGVzdA==",  # "test" in base64
+                "datas": "dGVzdA==",
                 "res_model": "ai.embedding",
                 "res_id": 0,
             }
@@ -112,7 +108,6 @@ class TestAiFieldsAccess(TransactionCase):
             embedding.unlink()
 
     def test_ai_access_topic_system(self):
-        # system: every right
         topic = self.env["ai.topic"].create(
             {
                 "name": "test topic",
@@ -126,7 +121,6 @@ class TestAiFieldsAccess(TransactionCase):
 
     @users("internal")
     def test_ai_access_topic_internal(self):
-        # internal: readonly
         with self.assertRaises(AccessError):
             self.env["ai.topic"].create(
                 {
@@ -154,7 +148,6 @@ class TestAiFieldsAccess(TransactionCase):
 
     @users("internal")
     def test_generate_response_non_admin_tool_access(self):
-        """A non-admin user calls `_generate_response` without access errors on `tool_ids`."""
 
         tool = (
             self.env["ir.actions.server"]

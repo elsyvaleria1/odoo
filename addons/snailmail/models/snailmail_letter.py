@@ -182,7 +182,7 @@ class SnailmailLetter(models.Model):
                 "res_partner_id": letter.partner_id.id,
                 "notification_type": "snail",
                 "letter_id": letter.id,
-                "is_read": True,  # discard Inbox notification
+                "is_read": True,
                 "notification_status": "ready",
             }
             for letter in letters
@@ -216,10 +216,6 @@ class SnailmailLetter(models.Model):
         return filename, pdf_bin
 
     def _acquire_attachment(self) -> IrAttachment:
-        """
-        This method will check if we have any existent attachement matching the model
-        and res_ids and create them if not found.
-        """
         self.check_singleton()
         if not self.attachment_id:
             report = self.report_template
@@ -239,7 +235,6 @@ class SnailmailLetter(models.Model):
                 and paperformat.page_height != 297
             ) or paperformat.format != "A4":
                 raise UserError(self.env._("Please use an A4 Paper format."))
-            # The external_report_layout_id is changed just for the snailmail pdf generation if the layout is not supported
             prev = self.company_id.report_config_id.external_report_layout_id
             if prev in {
                 self.env.ref(f"web.external_layout_{layout}")
@@ -264,7 +259,7 @@ class SnailmailLetter(models.Model):
                     "datas": base64.b64encode(pdf_bin),
                     "res_model": "snailmail.letter",
                     "res_id": self.id,
-                    "type": "binary",  # override default_type from context, possibly meant for another model!
+                    "type": "binary",
                 }
             )
             self.write({"attachment_id": attachment.id})
@@ -272,52 +267,12 @@ class SnailmailLetter(models.Model):
         return self.attachment_id
 
     def _count_pages_pdf(self, bin_pdf):
-        """Count the number of pages of the given pdf file.
-        :param bin_pdf : binary content of the pdf file
-        """
         pages = 0
         for match in re.compile(rb"/Count\s+(\d+)").finditer(bin_pdf):
             pages = int(match.group(1))
         return pages
 
     def _snailmail_create(self, route) -> dict:
-        """
-        Create a dictionnary object to send to snailmail server.
-
-        :return: Dict in the form:
-        {
-            account_token: string,    //IAP Account token of the user
-            documents: [{
-                pages: int,
-                pdf_bin: pdf file
-                res_id: int (client-side res_id),
-                res_model: char (client-side res_model),
-                address: {
-                    name: char,
-                    street: char,
-                    street2: char (OPTIONAL),
-                    zip: int,
-                    city: char,
-                    state: char (state code (OPTIONAL)),
-                    country_code: char (country code)
-                }
-                return_address: {
-                    name: char,
-                    street: char,
-                    street2: char (OPTIONAL),
-                    zip: int,
-                    city: char,at
-                    state: char (state code (OPTIONAL)),
-                    country_code: char (country code)
-                }
-            }],
-            options: {
-                color: boolean (true if color, false if black-white),
-                duplex: boolean (true if duplex, false otherwise),
-                currency_name: char
-            }
-        }
-        """
         account_token = (
             self.env["iap.account"].acquire_account("snailmail").sudo().account_token
         )
@@ -338,7 +293,6 @@ class SnailmailLetter(models.Model):
                 )
                 continue
             document = {
-                # generic informations to send
                 "letter_id": letter.id,
                 "res_model": letter.model,
                 "res_id": letter.res_id,
@@ -368,13 +322,9 @@ class SnailmailLetter(models.Model):
                     "country_code": letter.company_id.partner_id.country_id.code,
                 },
             }
-            # Specific to each case:
-            # If we are estimating the price: 1 object = 1 page
-            # If we are printing -> attach the pdf
             if route == "estimate":
                 document.update(pages=1)
             else:
-                # adding the web logo from the company for future possible customization
                 document.update(
                     {
                         "company_logo": (
@@ -426,7 +376,6 @@ class SnailmailLetter(models.Model):
                 "duplex": self and self[0].duplex,
                 "currency_name": "EUR",
             },
-            # this will not raise the InsufficientCreditError which is the behaviour we want for now
             "batch": True,
         }
 
@@ -498,19 +447,6 @@ class SnailmailLetter(models.Model):
         self.message_id._notify_message_notification_update()
 
     def _snailmail_print_valid_address(self) -> None:
-        """
-        get response
-        {
-            'request_code': RESPONSE_OK, # because we receive 200 if good or fail
-            'total_cost': total_cost,
-            'credit_error': credit_error,
-            'request': {
-                'documents': documents,
-                'options': options
-                }
-            }
-        }
-        """
         endpoint = self.env.registry.settings.get(
             self.env, "snailmail.endpoint", DEFAULT_ENDPOINT
         )
@@ -622,8 +558,7 @@ class SnailmailLetter(models.Model):
         for letter in letters_send:
             letter._snailmail_print()
             if letter.error_code == "CREDIT_ERROR":
-                break  # avoid spam
-            # Commit after every letter sent to avoid to send it again in case of a rollback
+                break
             if autocommit:
                 self.env["ir.cron"]._commit_progress()
 
@@ -638,7 +573,6 @@ class SnailmailLetter(models.Model):
             show_address=True, lang="en_US"
         ).display_name.split("\n")
         if self.country_id.code == "DE":
-            # Germany requires specific address formatting for Pingen
             if self.street2:
                 address_split[1] = f"{self.street} // {self.street2}"
             address_split[2] = f"{self.zip} {self.city}"
@@ -676,7 +610,6 @@ class SnailmailLetter(models.Model):
         cover_file = PdfReader(cover_bin)
         out_writer.append_pages_from_reader(cover_file)
 
-        # Add a blank buffer page to avoid printing behind the cover page
         if self.duplex:
             out_writer.add_blank_page()
 
@@ -687,33 +620,26 @@ class SnailmailLetter(models.Model):
         return out_buff.getvalue()
 
     def _overwrite_margins(self, invoice_bin: bytes):
-        """Fill the margins with white for validation purposes."""
         pdf_buf = io.BytesIO()
         canvas = Canvas(pdf_buf, pagesize=A4)
         canvas.setFillColorRGB(1, 1, 1)
         page_width = A4[0]
         page_height = A4[1]
 
-        # Horizontal Margin
         hmargin_width = page_width
         hmargin_height = 5 * mm
 
-        # Vertical Margin
         vmargin_width = 5 * mm
         vmargin_height = page_height
 
-        # Bottom left square
         sq_width = 15 * mm
 
-        # Draw the horizontal margins
         canvas.rect(0, 0, hmargin_width, hmargin_height, stroke=0, fill=1)
         canvas.rect(0, page_height, hmargin_width, -hmargin_height, stroke=0, fill=1)
 
-        # Draw the vertical margins
         canvas.rect(0, 0, vmargin_width, vmargin_height, stroke=0, fill=1)
         canvas.rect(page_width, 0, -vmargin_width, vmargin_height, stroke=0, fill=1)
 
-        # Draw the bottom left white square
         canvas.rect(0, 0, sq_width, sq_width, stroke=0, fill=1)
         canvas.save()
         pdf_buf.seek(0)
@@ -722,13 +648,10 @@ class SnailmailLetter(models.Model):
         curr_pdf = PdfReader(io.BytesIO(invoice_bin))
         out = BrandedFileWriter()
         for page in curr_pdf.pages:
-            # Add the reader page to the writer first, then merge onto the
-            # writer's writable copy — mutating a reader page triggers pypdf's
-            # replace_contents deprecation and can corrupt object references.
             out.add_page(page)
             added_page = out.pages[-1]
             added_page.merge_page(new_pdf.pages[0])
-            added_page.compress_content_streams()  # bound memory/output size
+            added_page.compress_content_streams()
         out_stream = io.BytesIO()
         out.write(out_stream)
         out_bin = out_stream.getvalue()

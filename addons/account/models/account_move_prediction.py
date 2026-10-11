@@ -264,9 +264,6 @@ class AccountMoveLine(models.Model):
         _debug.logic(
             "prediction_account_group_excluded", move=move, excluded=excluded_group
         )
-        # The candidates are the accounts the move's journal accepts. The history
-        # below is restricted to these same accounts, so neither a name match nor
-        # a past bill can propose an account the journal will refuse.
         account_query = self.env["account.account"]._search(
             Domain.AND(
                 [
@@ -325,8 +322,6 @@ class AccountMoveLine(models.Model):
         if journal and not journal._is_account_allowed(
             self.env["account.account"].browse(predicted_account_id)
         ):
-            # `_predict_specific_account` is scoped to the journal already; this
-            # keeps an override of it from setting an account the journal refuses.
             _debug.logic(
                 "predicted_account_refused_by_journal",
                 line=self,

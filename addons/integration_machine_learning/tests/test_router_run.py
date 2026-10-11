@@ -29,7 +29,6 @@ class TestRouterRun(TransactionCase):
         if not cls.env["integration.ml.model"].search(
             [("kind", "=", "speech")], limit=1
         ):
-            # speech_ai seeds the voices; the router synthesises without it.
             cls.env["integration.ml.model"].create(
                 {
                     "name": "Test voice",

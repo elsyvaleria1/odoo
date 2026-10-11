@@ -8,7 +8,6 @@ from odoo.addons.hr_payroll.tests.common import TestPayslipContractBase
 @tagged("2_weeks_calendar")
 class TestPayslipContractCalendar2Weeks(TestPayslipContractBase):
     def test_contract_2_weeks(self):
-        # Create a payslip for a month with a contract with 2 weeks period.
         payslip = self.env["hr.payslip"].create(
             {
                 "name": "November 2015",
@@ -29,7 +28,6 @@ class TestPayslipContractCalendar2Weeks(TestPayslipContractBase):
         )
 
     def test_contract_2_weeks_holiday(self):
-        # Leave during small week (just 2 days of work)
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "leave name",
@@ -80,7 +78,6 @@ class TestPayslipContractCalendar2Weeks(TestPayslipContractBase):
         )
 
     def test_contract_2_big_weeks_holiday(self):
-        # Leave during big week (4 days of work)
         leave = self.env["resource.schedule.exception"].create(
             {
                 "name": "leave name",

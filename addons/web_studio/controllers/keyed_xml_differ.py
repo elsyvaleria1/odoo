@@ -12,7 +12,6 @@ from lxml import etree
 Element = etree.Element
 
 
-## SOME XML UTILS
 INDENT_RE = re.compile(r"(^\n[\s\t]*)|(\n[\s\t]*$)")
 
 
@@ -34,14 +33,6 @@ def dedent_tree(elem):
 
 
 def indent_tree(elem, level=1, spaces=2):
-    """
-    The lxml library doesn't pretty_print xml tails, this method aims
-    to solve this.
-
-    Returns the elem with properly indented text and tail
-    """
-    # See: http://lxml.de/FAQ.html#why-doesn-t-the-pretty-print-option-reformat-my-xml-output
-    # Below code is inspired by http://effbot.org/zone/element-lib.htm#prettyprint
     indent_texts = elem.tag == "xpath"
 
     len_elem = len(elem)
@@ -78,7 +69,6 @@ def _visit_new_node(new_node):
     yield from visit(new_node, lambda n: not n.get(DIFF_ATTRIBUTE))
 
 
-## TOOLS TO MAKE THE DIFF
 def diff_dicts(
     old: etree._Attrib, new: etree._Attrib, ignored_keys: set | None = frozenset()
 ) -> dict:
@@ -90,19 +80,6 @@ def diff_dicts(
 
 
 def longest_increasing_subsequence(arr):
-    """Returns the longest increasing subsequence of a list of unordered values
-    Largely inspired from https://en.wikipedia.org/wiki/Longest_increasing_subsequence
-    and by https://cp-algorithms.com/sequences/longest_increasing_subsequence.html
-
-    It compares items on their value: in the case items are string: "11" < "2" == True.
-    So, transforming an item to its value if necessary should be done before hand
-
-    As it returns the biggest list of stable elements in the list,
-    it is useful to compute the least amount of moving items into that list
-
-    eg: [3,1,2] : 1 and 2 did not move, 3 is just placed before 1
-    longest_increasing_subsequence = [2,1] (the output is the reversed of the subsequence)
-    """
     if not arr:
         return []
 
@@ -129,8 +106,6 @@ def longest_increasing_subsequence(arr):
 
 Position = Literal["replace", "attributes", "move", "before", "after", "inside"]
 
-# Leaves are representation of the elements in the Tree
-# to ease their management
 
 
 @dataclass
@@ -160,18 +135,6 @@ type XMLInput = etree._ElementTree | etree._Element | str
 
 
 def _group_by_pivot(iterable: Iterable, is_pivot: Callable):
-    """Group the iterable's elements according to an unmoving pivor (or target). Similar to
-    itertools.groupy, except it needed to be "read ahead" as the target of a leaf
-    can be before any pivot node.
-    returns a Generator, of which iterations are composed by a tuple (target, position), elements
-        if target and position are None, no pivot has been found.
-        if position is None, the pivot is the last one.
-
-    :param: iterable
-    :param: is_pivot
-
-    :return: Generator: Tuple: (target, position), list[elements].
-    """
     current_pivot = None
     current_group = []
     left_overs = []
@@ -211,15 +174,6 @@ def _get_pivot_finder(pivot_nodes: set[str]) -> Callable[[Leaf], str | None]:
 def _get_subtree_and_ancestors(
     node: etree._Element, is_subtree=lambda n: False
 ) -> tuple[etree._Element | None, list[etree._Element]]:
-    """For a node, returns its subtree parent (a relevant parent node that indicates a tree that could be separate)
-    eg:
-    <form> (this is a subtree)
-        <div>
-            <field>
-                <list> (this is a subtree)
-
-    and its ancestors (excluding the subtree) in opposite order from the document's (ie bottom-up)
-    """
     ancestors = []
     for ancestor in node.iterancestors(etree.Element):
         if is_subtree(ancestor):
@@ -229,9 +183,6 @@ def _get_subtree_and_ancestors(
 
 
 def _standardize_target_position(target, position, parent):
-    """The _group_by_pivot function returns an abstract target/position tuple
-    This function converts that into the behavior we want.
-    """
     if target is not None and position is None:
         return target, "after"
     else:
@@ -345,13 +296,13 @@ class DiffAnalyzer:
                 ]
             )
 
-        leaves = []  # represents children and texts. They will be grouped according to their nearest unmoving sibling
-        kept_nodes = []  # nodes' id that are still present
-        children_to_diff = {}  # a map id to new node to continue the iteration of the tree
+        leaves = []
+        kept_nodes = []
+        children_to_diff = {}
         removed_nodes = set(
             old_set_node_ids
-        )  # children of the main node that will be removed
-        candidates_move = []  # gather new nodes that potentially have a removed counterpart
+        )
+        candidates_move = []
 
         leaves.append(TextLeaf(new.text))
         for child in new.iterchildren(tag=(etree.Element, etree.Comment)):
@@ -419,11 +370,6 @@ class DiffAnalyzer:
             self._diff_nodes(self.map_id_to_node_old[nid], new_child)
 
     def _get_moving_candidate_key(self, node):
-        """From a node, determines whether it is electable to be a moving
-        node. Valid candidates should:
-        - be empty (no children, no text)
-        - have a not None key
-        - be in a subtree that was here in the old tree (has a DIFF ID)"""
         if len(node) > 0 or (node.text or "").strip():
             return None
         key = self.__get_moving_candidate_key(node)
@@ -470,7 +416,6 @@ class KeyedXmlDiffer:
         xpath_with_meta=False,
         get_moving_candidate_key=lambda n: None,
     ):
-        # User-defined parameters
         self.ignore_attributes = set(
             [] if ignore_attributes is None else ignore_attributes
         )
@@ -487,7 +432,6 @@ class KeyedXmlDiffer:
         self.is_subtree = is_subtree
         self.xpath_with_meta = xpath_with_meta
 
-        # Internal State
         self.new_id = 1
 
         self.analyzer = DiffAnalyzer(
@@ -497,11 +441,9 @@ class KeyedXmlDiffer:
             get_moving_candidate_key=get_moving_candidate_key,
         )
 
-    # Basic diffing abstraction
     def diff(self, old: XMLInput, new: XMLInput):
         return self.analyzer.diff(old, new)
 
-    # Methods that concern the building of the Odoo's xpath semantic tree
     def diff_xpath(self, old: XMLInput, new: XMLInput, flat: bool = False) -> str:
         diff = self.diff(old, new)
         changes = diff["changes"]
@@ -513,7 +455,6 @@ class KeyedXmlDiffer:
         return self._get_xpath_operations(changes, flat)
 
     def _get_xpath_operations(self, changes: dict, flat: bool) -> str:
-        # gather nodes that are moving around
         for change in changes.values():
             for rm_id in change.get("removed_nodes", []):
                 if self.tracker.is_removed(rm_id):
@@ -535,7 +476,6 @@ class KeyedXmlDiffer:
                     self.tracker.delay_remove(ancestor_id)
                     break
 
-        # Gather virtual xpaths operations
         xpath_operations_bundles = []
 
         for main_id, change in changes.items():
@@ -546,9 +486,6 @@ class KeyedXmlDiffer:
             sub_xpath_list = []
             replace_targets = set()
 
-            ## O. Heart of the system: inside a node, determines unmoving children
-            ## Determine what operations to do around those pivots (replace/after/before/inside)
-            ## Determine whether we *can* do those operation given the surrounding texts.
             if "kept_nodes" in change:
                 kept_nodes_ids = []
                 for key in change["kept_nodes"]:
@@ -562,8 +499,6 @@ class KeyedXmlDiffer:
                 pivot_nodes = {
                     str(k) for k in longest_increasing_subsequence(kept_nodes_ids)
                 }
-                # a removed node leaves its tail behind, and no xpath removes
-                # a text: the content is rewritten instead
                 should_full_replace = self._removal_leaves_text(change["old_leaves"])
 
                 is_pivot = _get_pivot_finder(pivot_nodes)
@@ -619,7 +554,6 @@ class KeyedXmlDiffer:
                     xpath_operations_bundles.append([main_xpaths_list, sub_xpath_list])
                     continue
 
-            ## 1. Remove nodes first, that way browsing that subtree will be easier
             for cnid in change.get("removed_nodes", []):
                 if (
                     self.tracker.is_removed(cnid, include_delayed=False)
@@ -629,15 +563,11 @@ class KeyedXmlDiffer:
                         Element("xpath", expr=cnid, position="replace")
                     )
 
-            ## 2. Make the changes onto the attributes. It is last because the node's identifiers
-            ## and consequently the node's xpath may be affected
             main_xpaths_list.extend(
                 self._get_xpaths_attributes(change["attributes"], main_id)
             )
             xpath_operations_bundles.append([main_xpaths_list, sub_xpath_list])
 
-            ## 3. Build xpath for new nodes which have a fully removed counterpart
-            ## that is close enough (same key) to be reconciled with it.
             for candidate_key, in_new_node in change.get("candidates_move", []):
                 ref, candid = self.tracker.get_from_key(candidate_key)
                 if ref is not None:
@@ -650,7 +580,6 @@ class KeyedXmlDiffer:
                     else:
                         main_xpaths_list.extend(xpath_ops)
 
-        ## Remove nodes for which at least one children was moved around and still present
         if self.tracker.delayed_remove:
             delayed_xpaths = []
             xpath_operations_bundles.append([delayed_xpaths])
@@ -658,7 +587,6 @@ class KeyedXmlDiffer:
                 xpath_element = Element("xpath", expr=rm_id, position="replace")
                 delayed_xpaths.append(xpath_element)
 
-        ## Build the actual xpath tree
         diff_as_arch = Element("data")
         for operation_bundle in xpath_operations_bundles:
             bundle_sub_element = Element("data") if not flat else diff_as_arch
@@ -676,7 +604,6 @@ class KeyedXmlDiffer:
             ):
                 diff_as_arch.append(bundle_sub_element)
 
-        ## Clean up the result from some metadata
         for node in diff_as_arch.iter(etree.Element):
             node.attrib.pop("o-diff-new-id", None)
 
@@ -720,13 +647,6 @@ class KeyedXmlDiffer:
                         sub_xpath_list.extend(sub_operations)
 
     def _apply_xpath_operation(self, xpath_node):
-        """Apply the relevant changes of xpath_node onto the old tree.
-        We are incrementally changing the old tree to be able to locate each node and
-        accurately compute their xpath as they move around.
-        This function reproduces partially what is done in template_inheritance.
-        Except that here we don't care about tails or texts or attributes, as only the relative
-        position of nodes is crucial for us.
-        """
         expr, position, new_target = [
             xpath_node.get(attr) for attr in ["expr", "position", "new_target"]
         ]
@@ -745,8 +665,6 @@ class KeyedXmlDiffer:
         last_target = target_node
         sentinel = None
         if replaces_content:
-            # the content is built ahead of the children it replaces, where its
-            # own moves still find each other
             sentinel = etree.Element("sentinel")
             target_node.insert(0, sentinel)
         for content in xpath_node:
@@ -778,11 +696,6 @@ class KeyedXmlDiffer:
         return None
 
     def _handle_new_node(self, new_node):
-        """When a node was not present in the old tree (it doesn't have an DIFF-ID)
-        we should browse it recursively to detect old nodes that have been moved inside.
-        We build xpaths to place those move correctly.
-        The new node may be altered when a old node has been moved inside, surrounded by texts.
-        """
         new_node = deepcopy(new_node)
         new_node.tail = None
         parents = {}
@@ -857,12 +770,6 @@ class KeyedXmlDiffer:
     def _get_descendants_axis_xpath(
         self, node: etree._Element, subtree: etree._Element | None = None
     ) -> str:
-        """Computes the xpath for `node` in terms of the descendants axis
-        eg: [subtree]//[node's identification]
-        If more than one node is found, the function returns an empty string
-
-        subtree is a reference node for which we can compute the xpath separately
-        """
         xpath_template = "//%s[@%s='%s']"
         if subtree is None:
             subtree = node.getroottree()
@@ -887,12 +794,6 @@ class KeyedXmlDiffer:
         ancestors: list[etree._Element],
         subtree: etree._Element | None = None,
     ) -> str:
-        """Computes the xpath of `node` in terms of direct children hierarchy
-        eg: /form/div/notebook
-
-        ancestors is in opposite order (bottom-up)
-        subtree is a reference node for which we can compute the xpath separately
-        """
         if subtree is not None:
             xpath = self._get_xpath(subtree)
         else:
@@ -902,11 +803,6 @@ class KeyedXmlDiffer:
         return xpath
 
     def _get_node_xpath(self, node):
-        """Computes the relative xpath of node in the context of its parent.
-        Only the part concerning the location of the node inside the parent is returned
-        eg: /field[@name='display_name'][1]
-            /div[4]
-        """
         identifiers = list(self._get_identifiers(node).items())
         main_identifier = identifiers and identifiers[0]
 
@@ -921,7 +817,7 @@ class KeyedXmlDiffer:
             )
         else:
             count = len(list(iter_siblings))
-        count += 1  # As usual, xpath index starts at 1
+        count += 1
 
         if main_identifier:
             local_xpath = f"/{node.tag}[@{main_identifier[0]}='{main_identifier[1]}']"
@@ -941,10 +837,6 @@ class KeyedXmlDiffer:
         return self._get_children_axis_xpath(node, ancestors, subtree)
 
     def _redo_xpath_node(self, xpath_node, target_node):
-        """Until now, we prepared "virtual" xpath nodes that have the correct position but only
-        a target's DIFF ID as its expression.
-        This method converts that virtual expression into its real XPATH representation,
-        and applies some clean up to have deterministic output"""
         attribs = {}
         for attr in ("expr", "position", "mode"):
             if attr in xpath_node.attrib:
@@ -960,20 +852,12 @@ class KeyedXmlDiffer:
                 xpath_node.set(f"meta-{attr}", target_node.get(attr))
 
     def _handle_node_full_replace(self, node_id, change):
-        """When texts in an old node are incompatible with texts in a new node
-        we replace the whole node by its new tag, attributes and contents.
-        We don't want to loose references of its children though.
-        So, we build a temporary node in which we push and move everything
-        to replace the old node with that new one in a second operation
-        """
         main_node = self.map_id_to_node_old[node_id]
         new_node = change["new_node"]
         attribs = dict(new_node.attrib)
         main_xpaths_list = []
         sub_xpath_list = []
         if main_node.getparent() is None:
-            # the root has no place a replacement could take: its content is
-            # replaced instead, which drops the texts along with the children
             replace_inner = Element(
                 "xpath", expr=node_id, position="replace", mode="inner"
             )
@@ -993,8 +877,6 @@ class KeyedXmlDiffer:
             main_xpaths_list.append(replace_xpath)
             return main_xpaths_list, sub_xpath_list
 
-        # Append a temporary node inside the main one to store elements.
-        # <oldnode>[*children]<tempnode /></oldnode>
         xpath_temp = Element("xpath", expr=node_id, position="inside")
         new_id = self.new_id
         self.new_id += 1
@@ -1011,7 +893,6 @@ class KeyedXmlDiffer:
 
         self.update_xpath_node(change["new_leaves"], inside_temp_xpath, sub_xpath_list)
 
-        # Replace the original node with the temporary one
         replace_with_temp = Element(
             "xpath", expr=node_id, position="replace", replace_all="1"
         )
@@ -1031,17 +912,6 @@ class KeyedXmlDiffer:
         )
 
     def _parse_old_leaves(self, leaves):
-        """leaves represents the texts and nodes that were present in the old tree
-        before or after a given pivot node.
-        This function applies the changes on the old tree to determine
-        what would be this old section of the tree once we remove or replace nodes.
-        In Odoo's inheritance mechanism, moved and removed nodes both leave their tail
-        behind; a removed node with a text tail never reaches this method, its parent's
-        content is replaced instead, so the tail seen here is layout only.
-        This process allows, in a section of an old tree (before or after a pivot node),
-        to select a removed node (replace_target) to build a replace xpath instead of a before/after
-        one.
-        """
         iter_leaves = iter(leaves)
         replace_target = None
         old_leaf = next(iter_leaves, None)
@@ -1053,9 +923,6 @@ class KeyedXmlDiffer:
             if nid and self.tracker.is_removed(nid, include_delayed=False):
                 if replace_target is None:
                     replace_target = nid
-                # The next leaf is necessarily a text-like one.
-                # since the removal of a node implies the removal of its tail
-                # we just ignore the removed node's tail.
                 next(iter_leaves, None)
                 old_leaves_with_removals.append(TextLeaf())
             else:
@@ -1065,11 +932,6 @@ class KeyedXmlDiffer:
         return replace_target, old_leaves_with_removals
 
     def _leaves_text_compatibility(self, old_leaves, new_leaves, position):
-        """Compares texts in old_leaves to new leaves according to position.
-        The Odoo's inheritance mechanism doesn't really allow replacing texts
-        This algorithm is used to determine beforehand if we can apply an xpath containing texts
-        and whether to include a specific text or not in the xpath
-        """
         left_old = left_new = right_old = right_new = None
         if old_leaves:
             left_old = old_leaves[0]
@@ -1100,8 +962,6 @@ class KeyedXmlDiffer:
                 new.ignores.add(position)
 
         if position == "replace":
-            # The replace instruction doesn't support the xpath node to have a text
-            # and doesn't push tails if the element is a move xpath
             has_text = False
             has_moves = False
             for index, new_leaf in enumerate(new_leaves):

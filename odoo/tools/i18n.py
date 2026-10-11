@@ -31,6 +31,4 @@ def format_list(
     try:
         return lists.format_list(items, style, locale)
     except KeyError, ValueError:
-        # an unknown style is a ValueError; a style the locale defines only in
-        # part (es_MX `unit-short` has an `end` and no `start`) is a KeyError
         return lists.format_list(items, "standard", locale)

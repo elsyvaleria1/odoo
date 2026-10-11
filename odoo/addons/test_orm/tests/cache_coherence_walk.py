@@ -136,23 +136,17 @@ PLAIN = frozenset(
 )
 RECURSIVE = frozenset(("depth", "full_name", "trail", "subtree_total"))
 
-# the properties an order's category may define, of each kind a value takes:
-# a scalar, a default, a record
 DEFINITIONS = (
     {"name": "p_int", "type": "integer", "string": "Int", "default": 3},
     {"name": "p_char", "type": "char", "string": "Char"},
     {"name": "p_bool", "type": "boolean", "string": "Bool"},
     {"name": "p_tag", "type": "many2one", "string": "Tag", "comodel": TAG},
 )
-# what a draft order and its saved lines' twins keep or read from their origin
 DRAFT_FIELDS = ("name", "priority", "category_id", "fallback_tag_id")
 DRAFT_LINE_FIELDS = ("qty", "price")
 LIVE_DRAFTS = 3
 
-# a savepoint's end is a checkpoint as well: what its rollback must undo is
-# best compared before later work happens to undo it too
 CHECKPOINTS = frozenset(("check", "close_savepoint"))
-# what a walk's checks compare, each of which a bounded run must reach
 KINDS_COMPARED = ("cache", "recompute", "ormcache", "properties", "drafts")
 
 _KINDS = (
@@ -174,10 +168,6 @@ _KINDS = (
 )
 
 
-# Each seed walks one profile, the seed modulo their count, so any range of
-# as many seeds visits every area: a profile watches some models more than
-# the others and favours some kinds of operation, the rest of the seed's
-# configuration is drawn
 PROFILES = (
     {"watched": (CATEGORY,), "boost": {"read": 2, "invalidate": 2, "ancestor": 3}},
     {"watched": (ITEM, SPECIAL), "boost": {}},
@@ -224,10 +214,6 @@ class _Draw:
         self.recent = []
 
     def _focus(self, fnames):
-        # the derived fields, where the engine has something to get wrong,
-        # are three times as likely to be watched as the plain ones, and the
-        # recursive ones, whose invalidation walks a tree, twice as likely
-        # again
         weights = [
             1 if fname in PLAIN else 6 if fname in RECURSIVE else 3 for fname in fnames
         ]
@@ -254,21 +240,15 @@ class _Draw:
         return model, self.rng.choice(self.focus[model])
 
     def refs(self):
-        # no draw names every row, as a report or a list view reads them
         if self.rng.random() < 0.25:
             return ()
         return tuple(self.number() for _ in range(self.rng.choice((1, 1, 2, 3))))
 
     def unit(self, depth=0):
-        # a savepoint wraps a few operations, as `with cr.savepoint():` wraps
-        # a unit of work, and ends released or rolled back
         operation = self.operation()
         if operation[0] == "ancestor":
             return self.ancestor_unit(*operation[1:])
         if operation[0] == "company" and self.rng.random() < 0.4:
-            # what a company caches through a company-dependent many2one, a
-            # rename from another company must reach: drawn step by step,
-            # the three steps almost never line up
             _kind, _write, draws, viewer, other, payload = operation
             return [("company_rename", draws, viewer, other, payload), ("check",)]
         if operation[0] != "savepoint" or depth > 1:
@@ -279,11 +259,6 @@ class _Draw:
         return [operation, *inner, ("close_savepoint", self.rng.random() < 0.6)]
 
     def ancestor_unit(self, draw, fname, viewer, payload):
-        # a node's derived value is cached, a level above it is dropped from
-        # the cache alone, then a level at or above that one is written: the
-        # invalidation must walk through the level holding nothing to reach
-        # the node below it, which a walk drawing each step on its own
-        # almost never lines up
         rng = self.rng
         dropped = rng.choice((1, 1, 2))
         written = dropped + rng.choice((0, 1))
@@ -356,9 +331,6 @@ class _Draw:
 
 
 def viewers(env, user_id, company_id):
-    """Every principal and context a walk reads and writes through: the
-    superuser, a user without record rules and that user under sudo, each
-    with and without French, archived records and the second company."""
     contexts = [
         {
             **({"lang": "fr_FR"} if lang else {}),
@@ -401,14 +373,9 @@ class Walk:
         self.savepoints = []
         self.log = []
         self.compared = Counter()
-        # records a DELETE command of the operation being drawn removes: a
-        # later command or value of the same operation must not name them
         self.doomed = set()
-        # the drafts the walk keeps editing, and what was assigned on each
-        # twin: twins of one origin are equal records, so they share it
         self.drafts = []
         self.assigned = {}
-        # environments `with_company` made, whose slots the check compares
         self.company_envs = []
         other = next(
             viewer.context["allowed_company_ids"][0]
@@ -439,7 +406,6 @@ class Walk:
     def _failure(self, signature, exc):
         return Failure(signature, f"{type(exc).__name__}: {exc}")
 
-    # -- operations ---------------------------------------------------------
 
     def _viewer(self, draw):
         return self.viewers[draw % len(self.viewers)]
@@ -476,7 +442,6 @@ class Walk:
             "category_id" in vals
             or len(self.env[model_name].browse(ids).category_id) > 1
         ):
-            # the ORM refuses values for records of several definitions
             del vals["attributes"]
         if vals:
             self.log[-1] += f" {ids} {vals}"
@@ -486,9 +451,6 @@ class Walk:
         if ids := self._pick(model_name, draws):
             self._viewer(viewer)[model_name].browse(ids).unlink()
             self.log[-1] += f" -> {ids}"
-            # a draft of a deleted record raises MissingError when read, as
-            # upstream's: it is let go, while the twins it was given keep
-            # being read
             self._drop_dead_drafts()
 
     def _op_archive(self, model_name, draws, viewer, archive):
@@ -501,7 +463,6 @@ class Walk:
             self.log[-1] += f" -> {ids}"
 
     def _op_read(self, model_name, draws, viewer, fname):
-        # no draw reads every row, as a report or a list view would
         ids = self._pick(model_name, draws) if draws else self._alive(model_name)
         records = self._viewer(viewer)[model_name].browse(ids)
         if len(records) > 1 and fname != "parent_path":
@@ -530,9 +491,6 @@ class Walk:
         return node
 
     def _op_graft(self, draw, levels, viewer, payload):
-        # a category without as many ancestors gets them (and the walk a
-        # category, when it has none): a chain of new categories above its
-        # root, as an import would file it
         rng = random.Random(payload)
         Category = self._viewer(viewer)[CATEGORY]
         node = self._ancestor(draw, 0)
@@ -564,7 +522,6 @@ class Walk:
         if fname == "parent_id":
             vals = {fname: self._parent_outside(rng, ancestor.ids)}
         else:
-            # a write that changes nothing walks no trigger
             pool = (*CODES, False) if fname == "code" else NAMES
             vals = {fname: rng.choice([v for v in pool if v != ancestor[fname]])}
         self.log[-1] += f" -> {ancestor.id} {vals}"
@@ -607,8 +564,6 @@ class Walk:
         )
 
     def _note_assigned(self, record, vals):
-        # a field depending on the context (a company's value) is assigned
-        # for the record in that context only
         origin = record._origin.id
         if not origin:
             return
@@ -630,8 +585,6 @@ class Walk:
         self.log[-1] += f" -> origin {origin} {vals}"
         self._note_assigned(draft, vals)
         if "line_ids" in vals:
-            # a saved line given to this draft is the twin every draft
-            # shares: it leaves the other drafts' lines as it joins these
             for other in self.drafts:
                 self._note_assigned(other, {"line_ids": True})
         for command in vals.get("line_ids") or ():
@@ -650,8 +603,6 @@ class Walk:
             self.drafts = [*self.drafts[1 - LIVE_DRAFTS :], draft]
 
     def _drop_dead_drafts(self):
-        # a rolled-back savepoint takes the origins it created with it: their
-        # drafts are let go unread, since reading one raises MissingError
         alive = set(self.harness.alive_ids(ORDER))
         self.drafts = [draft for draft in self.drafts if draft._origin.id in alive]
 
@@ -682,8 +633,6 @@ class Walk:
         self._assert_no_leak(before)
 
     def _dirty_values(self):
-        # the pending writes on saved records, and the stored computes still
-        # to compute, which any read may compute and write
         core = self.env.core
         found = {}
         pending = {
@@ -706,11 +655,8 @@ class Walk:
         return found, pending
 
     def _assert_no_leak(self, before):
-        # a draft's edits are its own: no saved record gets a pending write
         before, pending = before
         after, _pending = self._dirty_values()
-        # a pending write that changed, or a new one; a value cached for a
-        # context it was not cached for before is a read of the saved record
         was_dirty = {(field, id_) for field, id_, _key in before}
         if leaked := sorted(
             f"{field} of {id_}"
@@ -767,7 +713,6 @@ class Walk:
     def _op_check(self):
         pass
 
-    # -- values ---------------------------------------------------------------
 
     def _vals(self, rng, model_name, ids, nested=False):
         vals = {}
@@ -856,8 +801,6 @@ class Walk:
                 return rng.choice(alive) if alive and rng.random() < 0.8 else False
 
     def _attributes(self, rng):
-        # values by name, or the definitions with their values: written as a
-        # list a changed definition is the category's new definition
         chosen = self._definition(rng)
         if rng.random() < 0.6:
             return {d["name"]: self._property_value(rng, d) for d in chosen}
@@ -867,21 +810,15 @@ class Walk:
         return values
 
     def _category_by_code(self, rng):
-        # a reference resolved by its code, as an import resolves one: the
-        # lookup is ormcached, so what a rolled-back savepoint left in that
-        # cache names a row that is gone
         if rng.random() >= 0.4:
             return None
         found = self.env[CATEGORY]._get_category_id_by_code(rng.choice(CODES))
         return found if found and (CATEGORY, found) not in self.doomed else None
 
     def _parent_outside(self, rng, ids):
-        # a parent inside the subtree of a written category would close a
-        # cycle, which the walk never asks for
         alive = self._alive(CATEGORY)
         if not alive or rng.random() < 0.2:
             return False
-        # the newest rows are favoured, so the trees grow deep, not wide
         candidate = self._category_by_code(rng) or rng.choice(
             alive[-3:] if rng.random() < 0.6 else alive
         )
@@ -930,7 +867,6 @@ class Walk:
                     commands.append(Command.set(chosen))
         return commands
 
-    # -- the invariants -------------------------------------------------------
 
     def check(self):
         try:
@@ -1025,9 +961,6 @@ class Walk:
                 ids = sorted(self.harness.alive_ids(model_name))
                 records = env[model_name].browse(ids)
                 for field in records._fields.values():
-                    # a properties field's compute adds its definition's
-                    # defaults to what it holds: no function of the inputs
-                    # the stored value could be compared with
                     if (
                         field.store
                         and field.compute
@@ -1077,8 +1010,6 @@ class Walk:
         return (signature, mismatches) if mismatches else None
 
     def _check_properties(self):
-        # what a reader is shown: the values under their container's
-        # definition, as the walk's caches and a fresh read see them
         mismatches = []
         ids = sorted(self.harness.alive_ids(ORDER))
         with self.harness.fresh() as fresh:
@@ -1099,11 +1030,6 @@ class Walk:
         return next(iter(by_key.values())) if by_key else record[fname]
 
     def _check_drafts(self):
-        # a draft shows, for each field, what its origin holds now or what it
-        # was assigned: a value read from the origin before a write to the
-        # origin is neither. An assignment the cache forgot (a broad
-        # invalidation drops drafts' values, as upstream's does) shows the
-        # origin's value again
         mismatches = []
         self._drop_dead_drafts()
 
@@ -1115,8 +1041,6 @@ class Walk:
             pairs = [(draft, origin, DRAFT_FIELDS)]
             held = sorted(line._origin.id or 0 for line in draft.line_ids)
             truth = sorted(origin.line_ids.ids)
-            # twins of one origin share their cache: a line another draft
-            # archived or restored leaves or rejoins every draft holding it
             shown = sorted(
                 line.id
                 for line in origin.with_context(active_test=False).line_ids
@@ -1196,7 +1120,6 @@ def _same(field, held, truth):
 
 
 def shrink(ops, reproduces):
-    """ddmin over the operation list: the shortest walk still failing alike."""
     granularity = 2
     while len(ops) >= 2:
         chunk = -(-len(ops) // granularity)
@@ -1214,11 +1137,6 @@ def shrink(ops, reproduces):
 
 
 def explore(run, seed, steps):
-    """Run one seed; on failure return the report of its shrunk walk.
-
-    `run(ops)` executes a walk on fresh data and returns its `Failure`
-    (or None) together with the walk's log.
-    """
     ops = generate(seed, steps)
     failure, _log = run(ops)
     if failure is None:

@@ -106,9 +106,6 @@ class WizardAccountBankStatementLineStartAutomation(models.TransientModel):
 
     @api.depends(lambda self: self._get_plan_triggers())
     def _compute_plan(self) -> None:
-        # The dialog opens in one company and may describe a run of two: the
-        # preview reads the bank line, the journals and the taxes in every
-        # company the user has.
         Runtime = self.env["automation.runtime"].with_context(
             allowed_company_ids=list(self.env.user._get_company_ids()),
         )
@@ -156,9 +153,6 @@ class WizardAccountBankStatementLineStartAutomation(models.TransientModel):
                     "company_ids": [Command.set(st_line.company_id.ids)],
                 },
             )
-            # The line's partner is whoever its payment was booked to. When
-            # the caller names the customer the collection is really for,
-            # that one is the run's partner and the line's stands in for him.
             customer = res.get("partner_id")
             if not customer:
                 res["partner_id"] = st_line.partner_id.id

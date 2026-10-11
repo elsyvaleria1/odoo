@@ -22,7 +22,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
         )
         cls.change_company_country(company, test_country)
 
-        # Create some tax report
         cls.tax_report = cls.env["report.formula"].create(
             {
                 "name": "Test",
@@ -54,7 +53,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
             "Refund Tax", cls.tax_report, tag_name="pos_refund_tax", sequence=3
         )
 
-        # Create a tax using the created report
         cls.pos_tax = cls.env["account.tax"].create(
             {
                 "name": "Impôt recto",
@@ -124,7 +122,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
             {"account_id": pos_tax_account.id}
         )
 
-        # Create POS objects
         pos_journal = cls.env["account.journal"].create(
             {
                 "name": "POS journal",
@@ -160,7 +157,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Add the payment method to the pos_config
         cls.pos_config.write(
             {"payment_method_ids": [(4, cls.pos_payment_method.id, 0)]}
         )
@@ -168,7 +164,7 @@ class POSTestTaxReport(TestAccountReportsCommon):
     def _create_and_pay_pos_order(self, qty, price_unit):
         tax_amount = (
             (self.pos_tax.amount / 100) * qty * price_unit
-        )  # Only possible because the tax is 'percent' and price excluded. Don't do this at home !
+        )
         rounded_total = self.company_data["company"].currency_id.round(
             tax_amount + price_unit * qty
         )
@@ -203,7 +199,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Pay the order
         context_payment = {"active_ids": [order.id], "active_id": order.id}
         pos_make_payment = (
             self.env["wizard.pos.order.pay"]
@@ -221,11 +216,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
         self._check_tax_report_content()
 
     def test_pos_tax_report_caba(self):
-        """
-        Test that cash-based (caba) taxes behave as expected on the tax report..
-        For PoS session closing moves we do not use caba accounts or create caba entries.
-        So caba taxes should behave the "same" as other taxes.
-        """
         self.company_data["company"].account_config_id.tax_exigibility = True
         caba_transition_account = self.env["account.account"].create(
             {
@@ -260,7 +250,6 @@ class POSTestTaxReport(TestAccountReportsCommon):
         report_opt = self._generate_options(self.tax_report, today, today)
         self.assertLinesValues(
             self.tax_report._get_lines(report_opt),
-            #   Name                                                Balance
             [0, 1],
             [
                 (self.pos_tax_report_line_invoice_base.name, 30),

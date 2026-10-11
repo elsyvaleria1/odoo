@@ -8,12 +8,6 @@ class ProductUom(models.Model):
 
     @api.model
     def _search(self, domain, *args, **kwargs):
-        # A packaging's barcode lives in the GS1 product AI space (see
-        # `stock.picking.filter_on_barcode`), so a scanned `(01)` payload has to be unpadded
-        # here the same way `product.product` unpads it. Every other barcode model in this
-        # module carries this override; `product.uom` was the one that did not, and the GS1
-        # unpadding for it happened by hand in the barcode controller instead — one model's
-        # search behaviour implemented in a route.
         domain = self.env.company.sudo().barcodes_config_id.nomenclature_id._preprocess_gs1_search_args(
             domain, ["product"]
         )

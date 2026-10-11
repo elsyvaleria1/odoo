@@ -15,8 +15,6 @@ from odoo.addons.payment_razorpay.tests.common import RazorpayCommon
 class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
     def test_webhook_notification_triggers_processing(self):
-        """Test that receiving a valid webhook notification triggers the processing of the
-        payment data."""
         self._create_transaction("direct")
         url = self._build_url(RazorpayController._webhook_url)
         with (
@@ -32,7 +30,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(RazorpayController._webhook_url)
         with (
@@ -47,7 +44,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
             self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_webhook_notification_with_valid_signature(self):
-        """Test the verification of a webhook notification with a valid signature."""
         tx = self._create_transaction("redirect")
         with patch(
             "odoo.addons.payment_razorpay.models.payment_provider.PaymentProvider"
@@ -62,7 +58,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
     def test_reject_notification_with_missing_signature(self):
-        """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         self.assertFalse(
             tx._is_razorpay_signature_valid(self.webhook_payment_data, None)
@@ -70,7 +65,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
     def test_reject_notification_with_invalid_signature(self):
-        """Test the verification of a notification with an invalid signature."""
         tx = self._create_transaction("redirect")
         with patch(
             "odoo.addons.payment_razorpay.models.payment_provider.PaymentProvider"
@@ -85,7 +79,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_razorpay.models.payment_transaction")
     def test_reject_notification_with_a_signature_that_is_no_ascii_string(self):
-        """Test that a non-ASCII or non-string signature is refused, not raised on."""
         tx = self._create_transaction("redirect")
         with patch(
             "odoo.addons.payment_razorpay.models.payment_provider.PaymentProvider"
@@ -298,8 +291,6 @@ class TestProcessingFlows(RazorpayCommon, PaymentHttpCommon):
     def test_a_return_with_the_payment_of_another_order_is_refused(self):
         tx = self._create_transaction("redirect")
         tx.razorpay_order_id = "order_of_the_transaction"
-        # Signed by Razorpay and described as the transaction: the description
-        # is the customer's to set in the checkout options.
         response = self._return_from_checkout(
             tx, self._get_captured_payment_entity(tx, tx.reference)
         )

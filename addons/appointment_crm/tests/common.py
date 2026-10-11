@@ -32,7 +32,6 @@ class TestAppointmentCrmCommon(TestCrmCommon):
             company_id=cls.env.ref("base.main_company").id,
             groups="base.group_user",
         )
-        # Used to test the staff user forcing during the run of appointment_crm_forced_staff_user_tour.
         cls.user_sales_leads_2 = mail_new_test_user(
             cls.env,
             login="user_sales_leads_2",

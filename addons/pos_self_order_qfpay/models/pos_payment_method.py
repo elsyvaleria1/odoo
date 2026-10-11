@@ -30,11 +30,6 @@ class PosPaymentMethod(models.Model):
         return super().qfpay_sign_request(payload)
 
     def _check_qfpay_kiosk_trade(self, payload) -> None:
-        # the kiosk's browser builds the trade and the server signs whatever
-        # it is given: the charge is bound to the order here. amt is in major
-        # units, as every trade and refund of this module and pos_qfpay; the
-        # notification's txamt is not compared, since nothing here settles
-        # its unit and accepting both would accept a hundredth of the price
         self.check_singleton()
         if payload.get("func_type") != 1001:
             return

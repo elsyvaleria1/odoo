@@ -12,8 +12,6 @@ _BROWSER = (
 @tagged("post_install", "-at_install")
 class TestLoginOutsideTheWebsiteCompany(MockEmail, HttpCase):
     def test_a_new_browser_signs_in_a_user_the_website_company_does_not_hold(self):
-        # the login page runs as the website's public user, in the website's
-        # company; the user signing in holds only another one
         website = self.env["website"].browse(
             self.env["website"]._get_current_website_id(HOST)
         )
@@ -28,7 +26,6 @@ class TestLoginOutsideTheWebsiteCompany(MockEmail, HttpCase):
             company_ids=[Command.set(other.ids)],
         )
         self.assertNotIn(website.company_id, user.company_ids)
-        # a device already known, so this browser is news worth an alert
         self.env["auth.user.client"].sudo().create(
             {
                 "user_id": user.id,

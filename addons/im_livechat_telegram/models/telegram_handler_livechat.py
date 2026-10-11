@@ -37,8 +37,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         )
 
     def _claims_message(self, bot, chat, message, partner, internal_user) -> bool:
-        # a customer in an open session writes to it, whatever else the bot
-        # takes; a first message is anyone's, as idle intake decides
         return self._is_customer_chat(bot, chat, internal_user) and bool(
             self._serving(self.env["discuss.channel"]).search_count(
                 [("telegram_chat_id", "=", chat.id), ("livechat_end_dt", "=", False)],
@@ -59,24 +57,17 @@ class TelegramHandlerLivechat(models.AbstractModel):
 
     @staticmethod
     def _serving(records):
-        """`records` holding what answering a Telegram customer in their live
-        chat session needs, whoever the update runs as: a customer is no
-        Odoo user and no member the session's own rules know."""
         return records.with_privilege(
             "im_livechat_telegram.privilege_serve_customers",
             "mail.privilege_post_as_author",
             reason="a Telegram customer is answered in their live chat session",
         )
 
-    # -- customers ------------------------------------------------------------
 
     def _customer(self, chat):
-        """The contact a customer writes as."""
         return chat.account_id._contact()
 
     def _session(self, bot, chat, partner) -> tuple:
-        """The customer's open session, or a new one, and whether the new one
-        waits for help (an internal field a customer does not read)."""
         sessions = self._serving(self.env["discuss.channel"])
         session = sessions.search(
             [("telegram_chat_id", "=", chat.id), ("livechat_end_dt", "=", False)],
@@ -115,7 +106,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         )
 
     def _session_options(self, bot, chat):
-        """What else a new session of the bot opens with."""
         return {"extra_vals": {"telegram_chat_id": chat.id}}
 
     def _on_message(self, bot, chat, message, partner, internal_user):
@@ -154,21 +144,13 @@ class TelegramHandlerLivechat(models.AbstractModel):
         return True
 
     def _customer_posted(self, bot, chat, session, posted, opened) -> None:
-        """What answers a customer's message: the session's chatbot."""
-        # the message that opened a session came before its welcome question
-        # was asked: it is no answer to it
         if session.chatbot_current_step_id and not opened:
             session._chatbot_run()
 
-    # -- business accounts ----------------------------------------------------
 
     def _on_business_message(
         self, bot, connection, chat, message, from_owner, edited
     ) -> bool:
-        """A chat of a business account the bot manages is a session its
-        owner answers: the customer's messages open it, and the owner may
-        answer from Odoo or from their phone -- then it is posted as theirs,
-        not sent again."""
         if not bot.livechat_channel_id:
             return False
         if edited:
@@ -214,7 +196,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         return sessions.browse(session.ids)
 
     def _on_business_deleted(self, bot, connection, chat, ledgers) -> bool:
-        """What was deleted in Telegram is removed in Odoo as well."""
         for posted in ledgers.mail_message_id:
             session = self._serving(self.env["discuss.channel"]).browse(posted.res_id)
             if posted.model == "discuss.channel" and session.telegram_chat_id == chat:
@@ -242,7 +223,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
             posted.with_env(session.env), body=body
         )
 
-    # -- buttons --------------------------------------------------------------
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
         data = callback_query.get("data") or ""
@@ -258,8 +238,6 @@ class TelegramHandlerLivechat(models.AbstractModel):
         return True
 
     def _on_session_button(self, bot, chat, action, args):
-        """A press of a button another module put on session messages; True
-        when handled."""
         return False
 
     def _open_session_of(self, chat):

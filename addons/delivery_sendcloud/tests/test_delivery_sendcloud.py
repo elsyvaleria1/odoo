@@ -13,7 +13,7 @@ from ..models.sendcloud_service import SendCloud
 BALEARES_RANGE = {str(i) for i in range(7025, 7035)}
 CARRIER_CODE_BY_METHOD_ID = {
     4: "spain_express:baleares",
-}  # as shipping-price has method_id only
+}
 
 
 @contextmanager
@@ -21,9 +21,6 @@ def _mock_sendcloud_call(warehouse_id):
     def is_baleares_carrier_applicable(
         params, code=None, method_id=None, for_listing=False
     ):
-        """
-        Returns True if 'spain_express:baleares' is applicable for the given shipping params.
-        """
         carrier_code = code or CARRIER_CODE_BY_METHOD_ID.get(method_id)
         from_pc = params.get("from_postal_code")
         to_pc = params.get("to_postal_code")
@@ -32,7 +29,7 @@ def _mock_sendcloud_call(warehouse_id):
         if carrier_code != "spain_express:baleares":
             return True
         if not to_country:
-            return for_listing  # for listing shipping methods
+            return for_listing
         if to_country != "ES":
             return False
         if from_pc and to_pc:
@@ -155,7 +152,7 @@ def _mock_sendcloud_call(warehouse_id):
                     1: [
                         {
                             "price": "1.1",
-                            "currency": "USD",  # Usually, Sendcloud use EUR, but we here use USD to avoid currency conversion and ease the testing
+                            "currency": "USD",
                         }
                     ],
                     2: [{"price": "2.2", "currency": "USD"}],
@@ -195,7 +192,7 @@ def _mock_sendcloud_call(warehouse_id):
                             code=product.get("code"),
                             for_listing=True,
                         ):
-                            continue  # do not include the product
+                            continue
                         if "weight" in kwargs.get("params", {}):
                             weight = kwargs["params"]["weight"]
                             product["methods"] = [
@@ -258,7 +255,6 @@ class TestDeliverySendCloud(TransactionCase):
                 ],
             }
         )
-        # deco_art will be in europe
         cls.eu_partner = cls.env["res.partner"].create(
             {
                 "name": "Acme Corporation",
@@ -274,7 +270,6 @@ class TestDeliverySendCloud(TransactionCase):
                 ],
             }
         )
-        # partner in us (azure)
         cls.us_partner = cls.env["res.partner"].create(
             {
                 "name": "Azure Interior",
@@ -334,7 +329,7 @@ class TestDeliverySendCloud(TransactionCase):
             api_res = cls.sendcloud._get_sendcloud()._get_shipping_products("BE")
             user_chosen_product = cls._set_product_local_cache(
                 cls, api_res[0]
-            )  # only grab the first response and apply client-side transformations
+            )
             cls.sendcloud._set_sendcloud_products(user_chosen_product, False)
 
     def _set_product_local_cache(self, sc_product):
@@ -353,7 +348,6 @@ class TestDeliverySendCloud(TransactionCase):
         func_cache = sc_product["local_cache"]["functionalities"]
         for key, values in sc_product["available_functionalities"].items():
             name = humanize(key)
-            # Values is always of type List
             if any(isinstance(v, bool) and v for v in values):
                 func_cache["bool_func"].append(name)
             else:
@@ -417,9 +411,6 @@ class TestDeliverySendCloud(TransactionCase):
             )
 
     def test_deliver_outside_eu(self):
-        """
-        Same workflow as inside EU but tests other inner workings of sendcloud service
-        """
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.us_partner.id,
@@ -462,10 +453,6 @@ class TestDeliverySendCloud(TransactionCase):
             )
 
     def test_rate_shipment(self):
-        """Unit Test
-        In Weight : 1 pkg of id in {1,2}
-        Overweight : N pkg of id 3
-        """
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.eu_partner.id,
@@ -498,13 +485,10 @@ class TestDeliverySendCloud(TransactionCase):
         self.assertAlmostEqual(res2["price"], 2.2, places=2)
         self.assertAlmostEqual(
             res3["price"], 4.4, places=2
-        )  # 2 packages with method_id 2
+        )
         self.assertIsNotNone(res3["warning_message"])
 
     def test_user_filters(self):
-        """
-        Unit test
-        """
         self.sendcloud.sendcloud_product_functionalities = {
             "signature": [True],
         }
@@ -534,11 +518,6 @@ class TestDeliverySendCloud(TransactionCase):
             )
 
     def test_partial_shipment(self):
-        """Functional Test
-        SO -> Picking
-        Partial picking
-        Partial qty
-        """
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.eu_partner.id,
@@ -580,7 +559,6 @@ class TestDeliverySendCloud(TransactionCase):
                 "The Sales Order did not generate pickings for ups shipment.",
             )
             picking = sale_order.picking_ids[0]
-            # Assign Qty Done
             picking.action_assign()
             for move_line in picking.move_line_ids:
                 move_line.quantity /= 2.0
@@ -589,21 +567,15 @@ class TestDeliverySendCloud(TransactionCase):
             self.assertGreater(
                 picking.weight, 0.0, "Picking weight should be positive."
             )
-            # Create parcels
             sender_id = api._get_pick_sender_address(picking)
             parcels = api._prepare_parcel(picking, sender_id, is_return=False)
 
-        # Check qty & total weight in parcel(s)
-        # qty in DeliveryPackage commodities are rounded (integer)
         items = parcels[0].get("parcel_items", [])
         self.assertEqual(items[0].get("quantity"), 1)
         self.assertEqual(items[1].get("quantity"), 1)
         self.assertAlmostEqual(12, float(parcels[0].get("weight")))
 
     def test_multicollo(self):
-        """Functional Test
-        Single batch
-        """
         self.sendcloud.sendcloud_use_batch_shipping = True
 
         sale_order = self.env["sale.order"].create(
@@ -648,7 +620,6 @@ class TestDeliverySendCloud(TransactionCase):
             )
             picking = sale_order.picking_ids[0]
             picking.action_assign()
-            # Create packages
             picking.move_ids.quantity = 0
             picking.move_ids[0].quantity = 2.0
             wiz_action = picking.action_put_in_pack()
@@ -683,12 +654,9 @@ class TestDeliverySendCloud(TransactionCase):
             self.assertGreater(
                 picking.weight, 0.0, "Picking weight should be positive."
             )
-            # Create parcels
             sender_id = api._get_pick_sender_address(picking)
             parcels = api._prepare_parcel(picking, sender_id, is_return=False)
 
-        # Check qty & total weight in parcel(s)
-        # qty in DeliveryPackage commodities are rounded (integer)
         self.assertEqual(len(parcels), 1)
         parcel = parcels[0]
         self.assertEqual(parcel.get("quantity"), 2)
@@ -713,13 +681,6 @@ class TestDeliverySendCloud(TransactionCase):
             self.assertEqual(api._get_house_number(address[0]), address[1])
 
     def test_sendcloud_picking_batch_validation(self):
-        """
-        Create 2 delivery orders with sendcloud carrier. Make them respectively
-        valid and invalid on the carrier side. Validate the pickings in batch
-        Since the pickings are processed unbatched on the carrier side the
-        "UserError" of the invalid picking can not be raised and should be
-        replaced by a warning activity.
-        """
         alien = self.env["res.users"].create(
             {
                 "login": "Mars Man",
@@ -758,7 +719,6 @@ class TestDeliverySendCloud(TransactionCase):
         send_shipment = SendCloud._send_shipment
 
         def fail_send_shipment(pick):
-            # side effect to throw an error for a given picking but resolve the normal call for the other
             def _throw_error_on_chosen_picking(client, picking, *args, **kwargs):
                 if picking == pick:
                     raise UserError(
@@ -773,7 +733,6 @@ class TestDeliverySendCloud(TransactionCase):
                 choose_delivery_carriers[i].update_price()
                 choose_delivery_carriers[i].button_confirm()
                 sale_orders[i].action_confirm()
-                # check that a delivery was created for the associated carrier
                 self.assertEqual(
                     sale_orders[i].picking_ids.carrier_id.id,
                     sale_orders[i].carrier_id.id,
@@ -788,7 +747,6 @@ class TestDeliverySendCloud(TransactionCase):
                 side_effect=fail_send_shipment(pickings[1]),
             ):
                 pickings.with_user(alien).button_validate()
-        # both pickings should be validated but and activity should have been created for the invalid picking
         self.assertEqual(pickings.mapped("state"), ["done", "done"])
         self.assertTrue(
             self.env["mail.activity"].search(
@@ -802,22 +760,13 @@ class TestDeliverySendCloud(TransactionCase):
         )
 
     def test_sendcloud_zonal_pricing_and_product(self):
-        """
-        Test zonal shipping:
-        - Case 1: When the company is outside Baleares and the customer is in Baleares,
-        the carrier is rejected during price fetch due to zone mismatch with a clear UserError.
-        - Case 2: When both company and customer are in Baleares, the correct zonal
-        product is used and a valid shipping price is returned.
-
-        Ensures invalid carriers are blocked early and valid carriers return correct zonal pricing.
-        """
         self.your_company.write(
             {
                 "country_id": self.env.ref("base.es").id,
                 "zip": "8013",
                 "city": "Barcelona",
             }
-        )  # Non-Balearic Company
+        )
 
         with _mock_sendcloud_call(self.warehouse_id):
             api_res = self.sendcloud._get_sendcloud()._get_shipping_products("ES")
@@ -839,7 +788,6 @@ class TestDeliverySendCloud(TransactionCase):
                 "line_ids": [Command.create({"product_id": self.product_to_ship1.id})],
             }
         )
-        # Case 1: Ensure Correct Shipping Method
         with _mock_sendcloud_call(self.warehouse_id):
             res_spain = self.sendcloud.sendcloud_rate_shipment(sale_order_spain)
             self.assertFalse(
@@ -858,9 +806,8 @@ class TestDeliverySendCloud(TransactionCase):
             {
                 "zip": "7026",
             }
-        )  # Baleares Company
+        )
 
-        # Case 2: Ensure Correct Shipping Price
         with _mock_sendcloud_call(self.warehouse_id):
             res_baleares = self.sendcloud.sendcloud_rate_shipment(sale_order_spain)
             self.assertEqual(res_baleares["price"], 6.6)
@@ -870,10 +817,6 @@ class TestDeliverySendCloud(TransactionCase):
         self.assertEqual(amazon_expected_delivery_type, "test")
 
     def test_picking_carrier_tracking_url(self):
-        """
-        Test that the manually setting the carrier tracking reference
-        on a picking does raise a UserError when trying to open the website URL.
-        """
         picking = self.env["stock.picking"].create(
             {
                 "partner_id": self.eu_partner.id,
@@ -888,26 +831,22 @@ class TestDeliverySendCloud(TransactionCase):
             picking.open_website_url()
 
     def test_overweight_individual_products_error_message(self):
-        """
-        Test that when individual products are too heavy for the shipping method,
-        a specific error message is raised mentioning the overweight products.
-        """
         products = self.env["product.product"].create(
             [
                 {
                     "name": "Super Heavy Door",
                     "type": "consu",
-                    "weight": 25.0,  # exceeds the 20kg limit
+                    "weight": 25.0,
                 },
                 {
                     "name": "Massive Window",
                     "type": "consu",
-                    "weight": 30.0,  # also exceeds the limit
+                    "weight": 30.0,
                 },
                 {
                     "name": "Light Chair",
                     "type": "consu",
-                    "weight": 5.0,  # within limits
+                    "weight": 5.0,
                 },
             ]
         )
@@ -959,9 +898,6 @@ class TestDeliverySendCloud(TransactionCase):
             self.assertNotIn("Light Chair", error_message)
 
     def test_sendcloud_delivery_with_downpayment(self):
-        """
-        Test validating the delivery of a SO with a downpayment.
-        """
         basic_tax = self.env["account.tax"].create(
             {
                 "name": "Basic 15% tax",
@@ -983,7 +919,6 @@ class TestDeliverySendCloud(TransactionCase):
                 ],
             }
         )
-        # Create downpayment
         so_context = {
             "active_model": "sale.order",
             "active_ids": [sale_order.id],
@@ -999,7 +934,6 @@ class TestDeliverySendCloud(TransactionCase):
             .create(payment_params)
         )
         downpayment.create_invoices()
-        # Downpayment adds 2 SOL
         self.assertEqual(len(sale_order.line_ids), 3)
 
         wiz_action = sale_order.action_view_delivery_wizard()
@@ -1024,9 +958,6 @@ class TestDeliverySendCloud(TransactionCase):
             self.assertTrue(picking.sendcloud_parcel_ref)
 
     def test_customs_information(self):
-        """
-        Ensure customs information is correctly transmitted in the parcel request
-        """
         original_send_request = SendCloud._send_request
 
         def patched_send_request(

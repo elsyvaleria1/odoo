@@ -22,8 +22,6 @@ class Base(models.AbstractModel):
         return result
 
     def _register_hook(self):
-        # Campaign scaffolding: wraps the entry points approval_trace.CALL_TRACES
-        # names. Removing the campaign removes these two overrides whole.
         super()._register_hook()
         trace.instrument(self)
 

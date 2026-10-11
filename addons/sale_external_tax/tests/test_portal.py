@@ -62,7 +62,6 @@ class TestSaleExternalTaxesSalePortal(HttpCaseWithUserPortal):
         )
 
     def test_01_portal_test_optional_products(self):
-        """Make sure that adding, deleting and changing the qty on optional products calculates taxes externally."""
         self.env["product.pricelist"].search([]).unlink()
         portal_partner = (
             self.env["res.users"].sudo().search([("login", "=", "portal")]).partner_id
@@ -76,14 +75,9 @@ class TestSaleExternalTaxesSalePortal(HttpCaseWithUserPortal):
         )
         order = self._create_sale_order(portal_partner)
 
-        # Moving the portal user to order.company_id still results in
-        # request.env.company.id == 1 in the /my/quotes controller
-        # when called through start_tour. To work around this disable
-        # the multi-company guards just for this test.
         self.env.ref("sale.sale_order_comp_rule").active = False
         self.env.ref("sale.sale_order_line_comp_rule").active = False
 
-        # must be sent to the user, so he can see it
         order.action_quotation_sent()
 
         mixin_path = "odoo.addons.account_external_tax.models.mixin_account_external_tax.MixinAccountExternalTax"
@@ -99,10 +93,6 @@ class TestSaleExternalTaxesSalePortal(HttpCaseWithUserPortal):
             self.start_tour("/", "sale_external_optional_products", login="portal")
             mocked_get_and_set.assert_called()
 
-            # There should be 3 calls:
-            # 1/ when the quote is displayed via portal_my_order()
-            # 2/ when the tour increments the quantity on the optional product
-            # 3/ when the tour decrements the quantity on the optional product
             self.assertEqual(
                 mocked_get_and_set.call_count,
                 3,

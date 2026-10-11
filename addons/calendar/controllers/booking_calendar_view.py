@@ -14,44 +14,15 @@ class AppointmentInvitationData(TypedDict):
 
 
 class AppointmentCalendarView(http.Controller):
-    # ------------------------------------------------------------
-    # APPOINTMENT JSON ROUTES FOR BACKEND
-    # ------------------------------------------------------------
 
     @route("/appointment/appointment_type/create_custom", type="jsonrpc", auth="user")
     def appointment_type_create_custom(self, slots, context=None):
-        """
-        Return the info (id and url) of the custom appointment type
-        that is created with the time slots in the calendar.
-
-        Users would typically use this feature to create a custom
-        appointment type for a specific customer and suggest a few
-        hand-picked slots from the calendar view that work best for that
-        appointment.
-
-        Contrary to regular appointment types that are meant to be re-used
-        several times week after week (e.g.: "Schedule Demo"), this category
-        of appointment type is meant for a single, one-off use.
-
-        - slots format:
-            [{
-                'start': '2021-06-25 13:30:00',
-                'end': '2021-06-25 15:30:00',
-                'allday': False,
-            }, {
-                'start': '2021-06-25 22:00:00',
-                'end': '2021-06-26 22:00:00',
-                'allday': True,
-            },...]
-        The timezone used for the slots is UTC
-        """
         if not slots:
             raise ValidationError(
                 request.env._(
                     "A list of slots information is needed to create a custom appointment type"
                 )
             )
-        # Check if the user is a member of group_user to avoid portal user and the like to create appointment types
         if not request.env.user._is_internal():
             raise Forbidden
         if context:
@@ -88,10 +59,6 @@ class AppointmentCalendarView(http.Controller):
 
     @route("/appointment/appointment_type/update_custom", type="jsonrpc", auth="user")
     def appointment_type_update_custom(self, appointment_type_id, slots):
-        """
-        Updates the slots of a custom appointment when a user changes them on
-        the calendar view, on sharing link / opening the configuration form.
-        """
         if not appointment_type_id or not request.env.user._is_internal():
             raise Forbidden
         if not slots:
@@ -134,10 +101,6 @@ class AppointmentCalendarView(http.Controller):
 
     @route("/appointment/appointment_type/get_book_url", type="jsonrpc", auth="user")
     def appointment_get_book_url(self, appointment_type_id, context=None):
-        """
-        Get the information of the appointment invitation used to share the link
-        of the appointment type selected.
-        """
         if context:
             request.update_context(**context)
         appointment_type = (
@@ -178,14 +141,7 @@ class AppointmentCalendarView(http.Controller):
 
     @classmethod
     def _appointment_type_search_create_anytime(cls, context=None, user=None):
-        """
-        Return the info (id and url) of the anytime appointment type of the actual user.
-
-        Search and return the anytime appointment type for the user.
-        In case it doesn't exist yet, it creates an anytime appointment type.
-        """
         user = user or request.env.user
-        # Check if the user is a member of group_user to avoid portal user and the like to create appointment types
         if not user._is_internal():
             raise Forbidden
         AppointmentType = request.env["appointment.type"].sudo()
@@ -201,8 +157,6 @@ class AppointmentCalendarView(http.Controller):
             ).create(appt_type_vals)
         return cls._acquire_staff_invitation_data(appointment_type)
 
-    # Utility Methods
-    # ----------------------------------------------------------
 
     @classmethod
     def _prepare_appointment_type_anytime_values(cls, user):
@@ -236,8 +190,6 @@ class AppointmentCalendarView(http.Controller):
                 ),
             }
             if appointment_type.category == "custom":
-                # Custom appointment users may be edited on the spot. 'all_assigned_resources'
-                # allows the link copied to be correctly configured with latest users.
                 invitation_values.update(
                     {
                         "resources_choice": "all_assigned_resources",
@@ -265,14 +217,6 @@ class AppointmentCalendarView(http.Controller):
 
     @classmethod
     def _get_domain_staff_user_appointment_invite(cls, appointment_type, user):
-        """Returns the domain used to search for an existing invitation when copying a link
-        to any 'punctual' or 'recurring' appointment type in the calendar view. When sharing an
-        'anytime' appointment, we search for existing invitations (as the appointment may already
-        exist). This prevents duplicating appointment.invite.
-        The user can modify 'custom' appointments and share their link more than once. Indeed, the
-        'configure' button allows them to change staff users. They can even remove themselves from
-        the staff users. As a new 'custom' appointment is created on using the 'select dates' feature
-        on the fly, we want to search for the invitation that has been created by the current user."""
         if appointment_type.category == "custom":
             return [
                 ("appointment_type_ids", "=", appointment_type.id),

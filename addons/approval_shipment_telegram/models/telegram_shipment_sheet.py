@@ -9,22 +9,18 @@ from odoo.exceptions import AccessError, ValidationError
 
 from odoo.addons.telegram.tools import format as tg
 
-# a sheet's date, at noon where the carrier documents it
 SHEET_TIMEZONE = "America/Mexico_City"
 
 
 class TelegramShipmentSheet(models.Model):
     _inherit = "telegram.shipment.sheet"
 
-    # BUSINESS METHODS
     def _on_shipment_sheet_assigned(self, content) -> list:
         lines = super()._on_shipment_sheet_assigned(content)
         picking = self.picking_id
         category = self.carrier_id.freight_approval_category_id
         if picking.picking_type_code != "outgoing" or not category:
             return lines
-        # a refused freight request leaves the tracking number and the sheet
-        # on the transfer: only the request is left to whoever may prepare it
         try:
             with self.env.cr.savepoint():
                 return [*lines, self._prepare_freight(category, content)]
@@ -42,12 +38,6 @@ class TelegramShipmentSheet(models.Model):
             ]
 
     def _prepare_freight(self, category, content) -> str:
-        """Put this sheet's transfer on the open freight request of its
-        number, or prepare that request as a draft.
-
-        :return: the line for the chat's reply
-        :rtype: str
-        """
         picking = self.picking_id
         Request = self.env["approval.request"]
         existing = Request.search(
@@ -139,8 +129,6 @@ class TelegramShipmentSheet(models.Model):
         }
 
     def _freight_journal(self, category):
-        """The category's journal when it names one; else the one its last
-        request of this company used."""
         if len(category.journal_ids) == 1:
             return category.journal_ids
         return (

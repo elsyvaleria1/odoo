@@ -19,14 +19,13 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             cls.setUpEmployees()
             cls.setUpProjects()
 
-        # planning_shift on one day (planning mode)
         cls.slot = cls.env["planning.slot"].create(
             {
                 "project_id": cls.project_opera.id,
                 "resource_id": cls.employee_bert.resource_id.id,
                 "start_datetime": datetime(
                     2019, 6, 6, 8, 0, 0
-                ),  # 6/6/2019 is a thursday, so a working day
+                ),
                 "end_datetime": datetime(2019, 6, 6, 17, 0, 0),
             }
         )
@@ -41,13 +40,12 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             self.slot.allocated_hours, 4.0, "resource hours should be a half duration"
         )
 
-        # self.slot on non working days
         values = {
             "allocated_percentage": 100,
-            "start_datetime": datetime(2019, 6, 2, 8, 0, 0),  # sunday morning
+            "start_datetime": datetime(2019, 6, 2, 8, 0, 0),
             "end_datetime": datetime(
                 2019, 6, 2, 17, 0, 0
-            ),  # sunday evening, same sunday, so employee is not working
+            ),
         }
         self.slot.write(values)
 
@@ -57,13 +55,12 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             "resource hours should be a full day working hours",
         )
 
-        # self.slot on multiple days (forecast mode)
         values = {
-            "allocated_percentage": 100,  # full week
-            "start_datetime": datetime(2019, 6, 3, 0, 0, 0),  # 6/3/2019 is a monday
+            "allocated_percentage": 100,
+            "start_datetime": datetime(2019, 6, 3, 0, 0, 0),
             "end_datetime": datetime(
                 2019, 6, 8, 23, 59, 0
-            ),  # 6/8/2019 is a saturday, so we have a full week
+            ),
         }
         self.slot.write(values)
 
@@ -86,13 +83,12 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             self.slot.allocated_hours, 4.0, "resource hours should be a half duration"
         )
 
-        # self.slot on non working days
         values = {
             "allocated_percentage": 100,
-            "start_datetime": datetime(2019, 6, 2, 8, 0, 0),  # sunday morning
+            "start_datetime": datetime(2019, 6, 2, 8, 0, 0),
             "end_datetime": datetime(
                 2019, 6, 2, 17, 0, 0
-            ),  # sunday evening, same sunday, so employee is not working
+            ),
         }
         self.slot.write(values)
 
@@ -102,13 +98,12 @@ class TestForecastCreationAndEditing(TestCommonForecast):
             "resource hours should be a full day working hours",
         )
 
-        # self.slot on multiple days (forecast mode)
         values = {
-            "allocated_percentage": 100,  # full week
-            "start_datetime": datetime(2019, 6, 3, 0, 0, 0),  # 6/3/2019 is a monday
+            "allocated_percentage": 100,
+            "start_datetime": datetime(2019, 6, 3, 0, 0, 0),
             "end_datetime": datetime(
                 2019, 6, 8, 23, 0, 0
-            ),  # 6/8/2019 is a saturday, so we have a full week
+            ),
         }
         self.slot.write(values)
         self.assertEqual(
@@ -210,7 +205,6 @@ class TestForecastCreationAndEditing(TestCommonForecast):
 
     def test_consistency_change_project_company(self):
         new_company = self.env["res.company"].create({"name": "New Company"})
-        # Check that we cannot change the company of the project as it is already linked to shifts that are in another company
         with self.assertRaises(UserError):
             self.project_opera.company_id = new_company
 

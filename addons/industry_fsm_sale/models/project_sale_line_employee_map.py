@@ -20,9 +20,6 @@ class ProjectSaleLineEmployeeMap(models.Model):
     def _compute_sale_line_id(self) -> None:
         fsm_mappings = self.filtered(lambda map_entry: map_entry.project_id.is_fsm)
         if fsm_mappings:
-            # Remove the trigger on _compute_price_unit method
-            # Because in fsm projects the SOL is not shown and set in employee mappings.
-            # That is why, we need to remove the trigger to allow the user to edit the price unit if it is needed for him.
             price_unit_field = self._fields["price_unit"]
             currency_id_field = self._fields["currency_id"]
             self.env.remove_to_compute(price_unit_field, fsm_mappings)

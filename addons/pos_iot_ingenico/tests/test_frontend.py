@@ -9,7 +9,6 @@ class TestUi(TestPointOfSaleHttpCommon):
     def test_01_pos_iot_payment_terminal(self):
         env = self.env
 
-        # Create IoT Box
         iotbox_id = (
             env["iot.box"]
             .sudo()
@@ -22,7 +21,6 @@ class TestUi(TestPointOfSaleHttpCommon):
             )
         )
 
-        # Create IoT device
         payment_terminal_device = (
             env["iot.device"]
             .sudo()
@@ -56,7 +54,6 @@ class TestUi(TestPointOfSaleHttpCommon):
             }
         )
 
-        # Select IoT Box, tick Payment terminal and set payment method in pos config
         self.main_pos_config.write(
             {
                 "payment_method_ids": [
@@ -81,7 +78,6 @@ class TestUi(TestPointOfSaleHttpCommon):
 
         orders = env["pos.order"].search([])
         self.assertEqual(len(orders.ids), 1, "There should be 1 orders.")
-        # First order at index 1 because orders are sorted in descending order.
         self.assertEqual(
             orders[0].state,
             "paid",

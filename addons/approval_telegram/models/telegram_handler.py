@@ -35,8 +35,6 @@ class TelegramHandlerApproval(models.AbstractModel):
         return True
 
     def _flow_guard_blocks(self, bot, chat, data) -> bool:
-        """Only the actions that open a decision flow wait for another open
-        flow; approving, and skipping a comment, go through regardless."""
         parts = (data or "").split(":")
         action = parts[1] if len(parts) > 1 else ""
         if action not in _FLOW_STARTING_ACTIONS or self._owns_flow(chat):

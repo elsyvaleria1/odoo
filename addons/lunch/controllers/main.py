@@ -214,11 +214,6 @@ class LunchController(http.Controller):
         )
 
     def _get_state(self, lines):
-        """
-        This method returns the lowest state of the list of lines
-
-        eg: [confirmed, confirmed, new] will return ('new', 'To Order')
-        """
         states_to_int = {
             "new": 0,
             "ordered": 1,

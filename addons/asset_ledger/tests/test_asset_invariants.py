@@ -207,11 +207,6 @@ class TestAssetInvariants(TransactionCase):
         self.assertEqual(lot.asset_id.kind_id.code, "vehicle")
 
     def test_every_date_default_agrees_on_which_day_it_is(self):
-        """`Date.today` is UTC; `Date.context_today` is the user's day.
-
-        Mixing them means an evening create in America/Mexico_City (UTC-6)
-        stamps tomorrow on one field and today on the next.
-        """
         offenders = []
         for model_name in ("product.trace", "resource.log"):
             model = self.env[model_name]
@@ -226,8 +221,6 @@ class TestAssetInvariants(TransactionCase):
         )
 
     def test_every_stat_button_keeps_the_actions_own_context(self):
-        """The XML action's search defaults belong to all four buttons, not just
-        the one that used to add a key back by hand."""
         action = self.env.ref("asset_ledger.action_product_asset_log")
         declared = ast.literal_eval(action.context or "{}")
         self.assertTrue(
@@ -249,9 +242,6 @@ class TestAssetInvariants(TransactionCase):
             self.assertEqual(context["default_asset_id"], asset.asset_id.id)
 
     def test_no_visible_header_button_can_raise(self):
-        """A header button the user can see must never be a transition
-        `_check_state_transition` refuses. Not offering a permitted transition
-        is a UI choice; offering a refused one is a bug."""
         arch = etree.fromstring(
             self.env.ref("asset_ledger.view_form_product_asset_log").arch
         )
@@ -282,9 +272,6 @@ class TestAssetInvariants(TransactionCase):
                 )
 
     def test_the_statusbar_does_not_offer_clicks_the_model_refuses(self):
-        """The widget cannot gate individual states, so it must be locked in
-        any state from which some click would raise. From `cancelled` the only
-        accepted target is `new`, which the header offers as its own button."""
         arch = etree.fromstring(
             self.env.ref("asset_ledger.view_form_product_asset_log").arch
         )
@@ -365,8 +352,6 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
             )
 
     def test_an_asset_user_cannot_edit_even_the_asset_models_they_enable(self):
-        """Asset users read `product.template` and never write it: the module
-        grants write on the model to `group_asset_manager` alone."""
         with self.assertRaises(AccessError):
             self.vehicle.with_user(self.asset_user).write({"name": "Vehicle Model B"})
 
@@ -381,15 +366,11 @@ class TestAssetUserCannotEditTheCatalogue(TransactionCase):
             estate.with_user(self.asset_user).write({"name": "Not mine"})
 
     def test_an_asset_user_still_reads_the_products_a_log_points_at(self):
-        """Fuel and service products are plain catalogue items, so the rule
-        must not touch reads."""
         fuel = self.env.ref("asset_ledger.product_product_fuel_debit")
         self.assertFalse(fuel.product_tmpl_id.asset_kind_id)
         self.assertTrue(fuel.with_user(self.asset_user).display_name)
 
     def test_a_product_manager_who_is_also_an_asset_user_keeps_the_catalogue(self):
-        """Holding `group_asset_user` on top of `product.group_product_manager`
-        must not cost a product manager the catalogue."""
         manager = self.env["res.users"].create(
             {
                 "name": "Product Manager and Asset User",
@@ -457,7 +438,6 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
         )
 
     def test_a_company_less_asset_is_the_ordinary_case(self):
-        """If this ever stops holding, the constraint below guards nothing."""
         self.assertFalse(self.asset.company_id)
         self.assertFalse(self.asset.product_id.company_id)
 
@@ -475,8 +455,6 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
         self.assertEqual(sum(self.asset.log_ids.mapped("amount")), 150.0)
 
     def test_the_odometer_check_cannot_cite_another_companys_reading(self):
-        """PA-05: the refusal used to quote the value and date of a log the
-        writer had no right to read. It cannot exist on the same asset now."""
         self.Log.with_company(self.company_a).create(
             {
                 "asset_id": self.asset.asset_id.id,
@@ -502,8 +480,6 @@ class TestOneAssetOneCompanyLedger(TransactionCase):
             second.write({"company_id": self.company_b.id})
 
     def test_one_company_per_ledger_leaves_single_company_use_alone(self):
-        """The overwhelmingly common install has one company; nothing there
-        may become harder."""
         for amount in (10.0, 20.0, 30.0):
             self._fuel_log(self.company_a, amount)
         self.asset.invalidate_recordset()
@@ -552,7 +528,6 @@ class TestLicensePlateIsActuallyUnique(TransactionCase):
         self.env.flush_all()
 
     def test_assets_with_no_plate_do_not_collide(self):
-        """Most of Inventory carries no plate; they must not be forced apart."""
         self._lot("PLATE-E")
         self._lot("PLATE-F")
         self.env.flush_all()
@@ -606,7 +581,6 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         )
 
     def _stored_service_activity(self):
-        """Read the column, not the cache: the cache would hide the bug."""
         self.env.flush_all()
         self.env.cr.execute(
             "SELECT service_activity FROM resource_resource WHERE id = %s",
@@ -615,8 +589,6 @@ class TestServiceActivityRollsOverWithTheCalendar(TransactionCase):
         return self.env.cr.fetchone()[0]
 
     def _let_the_deadline_pass(self):
-        """Move the deadline into the past WITHOUT an ORM write, which is what
-        the clock advancing looks like to the ORM: no watched field changes."""
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE mail_activity SET date_deadline = %s WHERE id = %s",
@@ -685,8 +657,6 @@ class TestOneNameForTheAsset(TransactionCase):
     -- is naming a lot, and ``trace_id`` is what core calls it.
     """
 
-    # A qualifier is allowed only where the role genuinely differs from
-    # "the asset this record is about".
     QUALIFIED = {
         ("device.device", "own_asset_id"),
     }
@@ -716,18 +686,12 @@ class TestOneNameForTheAsset(TransactionCase):
                     field.type == "many2one"
                     and field.comodel_name in ("product.trace", "resource.resource")
                     and field._module in ours
-                    # A self-reference names a *different* asset -- the lot this
-                    # one was reconditioned from -- not the asset this record is
-                    # about, because the record is the asset.
                     and model_name != "product.trace"
                 ):
                     found.add((model_name, name))
         return found
 
     def test_the_sweep_reaches_more_than_product_asset_itself(self):
-        """The invariants below are only meaningful while bridges are
-        installed. An absent precondition is a skip, not a red: this module's
-        own suite has to be green on this module alone."""
         reached = self._asset_aware_modules()
         if reached == {"asset_ledger"}:
             self.skipTest("no module depending on asset_ledger is installed")
@@ -776,9 +740,6 @@ class TestLedgerFieldsRouteThroughTheAsset(TransactionCase):
         )
 
     def test_the_lot_mirrors_nothing_of_the_asset_it_does_not_relay(self):
-        """A read-only copy of an asset field on the lot has no reader: no lot
-        view shows one, and code that wants the value says asset_id. Thirty-eight
-        of them existed and every one was dead."""
         Lot = self.env["product.trace"]
         ledger = set(Lot._asset_ledger_field_names())
         mirrors = {
@@ -797,11 +758,6 @@ class TestLedgerFieldsRouteThroughTheAsset(TransactionCase):
         )
 
     def test_every_ledger_field_is_relayed_and_not_merely_named(self):
-        """`_asset_ledger_field_names` is derived from the map, and the map is
-        what `create` and `write` read. A layer that extends the names instead
-        names a field the relay never carries, and a lot created with a value
-        for it drops it silently -- `write` still works, because the plain
-        related write reaches an asset that exists by then."""
         Lot = self.env["product.trace"]
         named = set(Lot._asset_ledger_field_names())
         relayed = set(Lot._asset_ledger_field_map())

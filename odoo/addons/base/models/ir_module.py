@@ -235,8 +235,6 @@ class IrModuleModule(models.Model):
     _rec_names_search = ["name", "shortdesc", "summary"]
     _description = "Module"
     _order = "application desc,sequence,name"
-    # upstream's computed manifest version; db_version is what upstream
-    # calls latest_version
     _legacy_field_names = frozendict({"installed_version": "manifest_version"})
     _allow_sudo_commands = False
 
@@ -754,9 +752,9 @@ class IrModuleModule(models.Model):
             return bool(required)
 
         to_install = self
-        rounds = 0  # debuglog
+        rounds = 0
         while to_install:
-            rounds += 1  # debuglog
+            rounds += 1
             _debug.pipeline(
                 "install_round", round=rounds, modules=to_install.mapped("name")
             )
@@ -891,9 +889,9 @@ class IrModuleModule(models.Model):
         blocked = set(known_deps.ids) | set(self.ids)
         closure: set[int] = set()
         frontier = Module.browse(self.ids)
-        rounds = 0  # debuglog
+        rounds = 0
         while frontier:
-            rounds += 1  # debuglog
+            rounds += 1
             if direction == "downstream":
                 step = Dependency.search(
                     [("name", "in", frontier.mapped("name"))]
@@ -1042,8 +1040,6 @@ class IrModuleModule(models.Model):
         )
         function(self)
 
-        # a _validation_deferred block around this call wrote views that are
-        # about to be committed
         self.env["ir.ui.view"]._check_deferred_now()
         self.env.cr.commit()
         with _debug.perf("registry_reload", db=self.env.cr.dbname):
@@ -1145,9 +1141,6 @@ class IrModuleModule(models.Model):
         )
 
     def _keep_imported_modules_installed(self) -> None:
-        # an imported module has no code on disk to reload: left 'to upgrade' it
-        # is never loaded and stays pending. base_import_module owns the column,
-        # but an upgrade asked on the command line runs while only base is loaded
         if not column_exists(self.env.cr, "ir_module_module", "imported"):
             return
         self.flush_model(["state"])
@@ -1229,8 +1222,6 @@ class IrModuleModule(models.Model):
         stamped, overridden_modules, stored_files = {}, {}, {}
         for module_id, checksum, data_files in self.env.cr.fetchall():
             stamped[module_id] = checksum
-            # an entry of another checksum version may miss references the
-            # current one records, so it says nothing about what the module writes
             files = get_stored_data_files(data_files)
             overridden_modules[module_id] = _get_modules_whose_records_it_writes(files)
             if files is not None:
@@ -1247,10 +1238,6 @@ class IrModuleModule(models.Model):
                 unchanged.append(module)
             else:
                 marked_ids.append(module.id)
-        # An unchanged module whose data points at a record by id (a view's
-        # %(xmlid)d, a menu's action) that was recreated since it was applied
-        # holds a dangling id: the per-file check in modules/loading.py
-        # re-applies such a file, but only in a module that is loaded at all.
         if unchanged_files := {
             (module.id, filename): entry
             for module in unchanged
@@ -1272,12 +1259,6 @@ class IrModuleModule(models.Model):
                 _debug.logic("upgrade_checksum.refs_moved", module=module.name)
                 marked_ids.append(module.id)
                 unchanged.remove(module)
-        # An unchanged module whose data writes a record another module
-        # declares (website_sale re-activating sale_team.salesteam_website_sales) has its
-        # effect in the load order, not in its bytes: once the declaring module
-        # reloads, the override must be re-applied or it is silently reverted.
-        # The per-file skip in modules/loading.py already refuses to skip such
-        # a file; a module that is not loaded at all never reaches it.
         marked_names = {m.name for m in cascade if m.id in set(marked_ids)}
         unchanged_by_name = {m.name: m for m in unchanged}
         for name, written in _get_modules_writing_records_of(

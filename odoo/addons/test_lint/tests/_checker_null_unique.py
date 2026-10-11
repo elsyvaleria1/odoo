@@ -65,16 +65,10 @@ class Violation:
 
 
 def resolve_required(classes: list[ModelClass]) -> dict[str, dict[str, bool]]:
-    """{model: {field: required}} folded over every declaration and _inherit.
-
-    required wins over not-required wherever two declarations disagree: one
-    ``required=True`` anywhere is what puts NOT NULL on the column.
-    """
     return fold(classes, "required")
 
 
 def _column_list(text: str) -> str | None:
-    """The text between the first balanced parentheses, or None."""
     start = text.find("(")
     if start < 0:
         return None
@@ -106,14 +100,6 @@ def _split_top_level(raw: str) -> list[str]:
 
 
 def _columns(text: str) -> tuple[str, ...] | None:
-    """The plain column names of this constraint, or None if it is not a plain
-    column list.
-
-    A functional index -- lower(name), COALESCE(warehouse_id, 0) -- is a
-    different animal: COALESCE is how a key deliberately folds its NULLs, and
-    judging the rest needs semantics this checker does not have. Those are left
-    alone rather than guessed at.
-    """
     raw = _column_list(text)
     if raw is None:
         return None

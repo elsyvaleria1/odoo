@@ -5,13 +5,6 @@ from odoo.tools import parse_version
 
 _logger = logging.getLogger(__name__)
 
-# The rule is noupdate: the data file no longer switching it off reaches an
-# existing database only through this write, and only on one whose last loaded
-# code still toggled it. That is every 1.31, but 1.32 shipped both with the
-# toggle (f783acac189b) and without it (41bf38ea8c56), where a rule found off
-# was turned off by an admin. The version cannot tell them apart; the group
-# 41bf38ea8c56 removed can: its xmlid is still there, until this upgrade ends,
-# only on a database that never loaded code past the toggle
 TOGGLE_ERA_XMLID = ("project", "privilege_manage_feature_groups")
 
 

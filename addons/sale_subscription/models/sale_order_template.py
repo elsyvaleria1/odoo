@@ -14,22 +14,21 @@ class SaleOrderTemplate(models.Model):
         string="Recurring Plan",
     )
 
-    # Duration, user duration property for access to the timedelta
     is_unlimited = fields.Boolean(
         string="Last Forever",
         default=True,
-    )  # old recurring_rule_boundary
+    )
     duration_value = fields.Integer(
         string="End After",
         default=1,
         required=True,
-    )  # old recurring_rule_count
+    )
     duration_unit = fields.Selection(
         selection=time_unit_selection("month", "year"),
         default="month",
         required=True,
         help="Contract duration",
-    )  # old duration_unit
+    )
 
     _check_duration_value = models.Constraint(
         "CHECK(is_unlimited OR duration_value > 0)",

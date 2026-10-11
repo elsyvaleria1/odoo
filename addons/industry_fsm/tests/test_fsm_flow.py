@@ -133,13 +133,11 @@ class TestFsmFlow(TestIndustryFsmCommon):
         ).create({"line_ids": [Command.create({"task_id": self.task.id})]})
 
     def test_default_user_not_assigned_to_task(self):
-        # Create a task without specifying the assignee.
         task = (
             self.env["project.task"]
             .with_context(fsm_mode=True)
             .create({"name": "New Task"})
         )
-        # Ensure that the default user is not set as the assignee.
         self.assertNotEqual(
             task.user_ids,
             self.env.user,
@@ -165,7 +163,6 @@ class TestFsmFlow(TestIndustryFsmCommon):
             self.fsm_project.workflow_step_ids,
             "FSM project should have default FSM task types assigned.",
         )
-        # Create a new FSM project
         new_fsm_project = self.env["project.project"].create(
             {
                 "name": "New FSM Project",
@@ -180,12 +177,10 @@ class TestFsmFlow(TestIndustryFsmCommon):
         )
 
     def test_new_fsm_stage_linked_with_existing_project(self):
-        """Check whether the new FSM stage is linked to the existing project or not."""
         Project = self.env["project.project"]
         fsm_stage = self.env["project.workflow.step"].search(
             [("project_ids.is_fsm", "=", True)]
         )
-        # To create a new stage; otherwise, the old FSM stage is linked.
         fsm_stage.action_archive()
         fsm_project_no_stages = Project.create(
             {
@@ -202,9 +197,6 @@ class TestFsmFlow(TestIndustryFsmCommon):
                 "company_id": self.env.company.id,
             }
         )
-        # Every project owns at least one workflow step (project creates a
-        # default "New" for a stepless one); what an explicitly stepless FSM
-        # project must not receive is the shared FSM stage set.
         self.assertFalse(
             fsm_project_no_stages.workflow_step_ids
             & fsm_project_with_stages.workflow_step_ids,
@@ -259,10 +251,6 @@ class TestFsmFlow(TestIndustryFsmCommon):
         self.assertEqual(wizard.timesheet_id.project_id, self.project)
 
     def test_project_template_user_access(self):
-        """
-        test that checks that even if a user doesn't have enough rights to create a project from a template,
-        the view will still open
-        """
         project_template = self.env["project.project"].create(
             {
                 "name": "Field Service",

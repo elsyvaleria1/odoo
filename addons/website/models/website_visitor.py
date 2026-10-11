@@ -437,7 +437,7 @@ class WebsiteVisitor(models.Model):
             return self.env["website.visitor"].sudo().browse(visitor_id)
 
         visitor = (
-            self.env["website.visitor"]  # noqa: E8537  public: an identifier that is not meant to be secret
+            self.env["website.visitor"]
             .sudo()
             .search_fetch([("access_token", "=", access_token)])
         )
@@ -470,11 +470,6 @@ class WebsiteVisitor(models.Model):
         if not request.env.uid:
             _debug.logic("visitor_skipped", reason="no_request_env")
             return
-        # A read-only cursor (a replica's) cannot record the view, and a
-        # replay on the primary would render the page twice: it is recorded on
-        # a cursor of its own once the request's is released. request.env is
-        # gone by then, so every value the upsert reads from the request is
-        # taken now; False, not None, keeps _prepare_upsert_vals off it.
         access_token = self._get_access_token()
         values = {
             "lang_id": request.lang.id or False,
@@ -504,10 +499,6 @@ class WebsiteVisitor(models.Model):
             not last_view
             or last_view.visit_datetime < datetime.now() - timedelta(minutes=30)
         )
-        # Logged before the branch, with the inputs, so one site answers both
-        # outcomes. Logging only the taken side made "this page view was not
-        # counted" -- an ordinary complaint about visitor analytics --
-        # indistinguishable from "_add_tracking was never called".
         _debug.lifecycle(
             "visitor_track",
             visitor=self.id,

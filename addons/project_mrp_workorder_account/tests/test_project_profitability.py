@@ -14,9 +14,6 @@ class TestProjectProfitabilityMrpEmployee(TestProjectProfitabilityCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Both groups below are required to make fields `product_uom_id` and
-        # `workorder_ids' visible in the view of `mrp.production`. The
-        # subviews of`workorder_ids` must be present in the test to create records.
         cls.env.user.group_ids += cls.env.ref("base.group_uom") + cls.env.ref(
             "mrp.group_mrp_routings"
         )
@@ -95,14 +92,6 @@ class TestProjectProfitabilityMrpEmployee(TestProjectProfitabilityCommon):
         )
 
     def test_profitability_mrp_employee_project(self):
-        """
-        This test ensures that when hr.employee, project & mrp are installed, the section 'manufacturing order' of the
-        project profitability is correctly computed.
-        The expected content of this section is the following value :
-        - the total cost of the product consumed by the MO
-        - the total wage of the employee working on the work center
-        - the total cost of the work center
-        """
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.product_produced
         mo_form.bom_id = self.bom
@@ -111,14 +100,13 @@ class TestProjectProfitabilityMrpEmployee(TestProjectProfitabilityCommon):
         mo = mo_form.save()
         with freeze_time("2027-10-01 10:00:00"):
             mo.workorder_ids.start_employee(self.employee_ggg.id)
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         with freeze_time("2027-10-01 11:00:00"):
             mo.workorder_ids.stop_employee([self.employee_ggg.id])
-            self.env.flush_all()  # need flush to trigger compute
+            self.env.flush_all()
         mo.action_confirm()
         mo.button_mark_done()
 
-        # The expected total is 30 + 150 + 5*5 ( work center costs - employee cost - products consumed)
         self.assertEqual(
             self.project._get_profitability_items(False)["costs"]["data"],
             [

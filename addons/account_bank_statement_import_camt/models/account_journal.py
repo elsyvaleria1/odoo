@@ -56,12 +56,9 @@ class AccountJournal(models.Model):
             )[0]
             statement_date = CAMT._get_statement_date(statement, namespaces=ns)
 
-            # Transaction Entries 0..n
             transactions = []
             sequence = 0
 
-            # Account Number    1..1
-            # if not IBAN value then... <Othr><Id> would have.
             account_no = sanitize_account_number(
                 statement.xpath(
                     "ns:Acct/ns:Id/ns:IBAN/text() | ns:Acct/ns:Id/ns:Othr/ns:Id/text()",
@@ -69,7 +66,6 @@ class AccountJournal(models.Model):
                 )[0]
             )
 
-            # Currency 0..1
             currency = statement.xpath(
                 "ns:Acct/ns:Ccy/text() | ns:Bal/ns:Amt/@Ccy", namespaces=ns
             )[0]
@@ -78,7 +74,6 @@ class AccountJournal(models.Model):
                 continue
 
             for entry in statement.findall("ns:Ntry", ns):
-                # Date 0..1
                 date = (
                     CAMT._get_transaction_date(entry, namespaces=ns) or statement_date
                 )
@@ -189,8 +184,6 @@ class AccountJournal(models.Model):
                     if abs(entry_vals["amount"]) >= abs(largest_entry_vals["amount"]):
                         largest_entry_vals = entry_vals
 
-                # In a multi-currency entry (Ntry) with multiple entry details, we might have some rounding differences when applying the currency rate.
-                # We add this difference back on the largest amount.
                 transaction_amount = float(entry.find("ns:Amt", namespaces=ns).text)
                 transaction_amount = (
                     -transaction_amount
@@ -212,10 +205,6 @@ class AccountJournal(models.Model):
             ) = CAMT._get_signed_balance_and_code(
                 node=statement, namespaces=ns, getters=CAMT._end_balance_getters
             )
-            # Only a pair of *booked* balances brackets the entries exactly. An
-            # available balance excludes holds and includes float, so a file
-            # carrying CLAV rather than CLBD is consistent while its arithmetic
-            # is not -- test_camt.xml is exactly that, off by 30.00.
             statement_vals["balances_are_booked"] = {start_code, end_code} <= {
                 "OPBD",
                 "PRCD",
@@ -223,11 +212,9 @@ class AccountJournal(models.Model):
                 "ITBD",
             }
 
-            # Save statements and currency
             statements_per_iban.setdefault(account_no, []).append(statement_vals)
             currency_per_iban[account_no] = currency
 
-        # If statements target multiple journals, returns those targeting the current journal
         if len(statements_per_iban) > 1:
             account_no = sanitize_account_number(self.bank_acc_number)
             _logger.warning(
@@ -246,7 +233,6 @@ class AccountJournal(models.Model):
                     )
                 )
 
-        # Otherwise, returns those from only account_no
         statement_list = statements_per_iban.get(account_no, [])
         currency = currency_per_iban.get(account_no)
 

@@ -31,7 +31,6 @@ class TestMailComposer(MailCommon, TestRecipients):
     def setUpClass(cls):
         super().setUpClass()
 
-        # force 'now' to ease test about schedulers
         cls.reference_now = FieldDatetime.from_string("2022-12-24 12:00:00")
 
         cls.user_employee_2 = mail_new_test_user(
@@ -45,7 +44,6 @@ class TestMailComposer(MailCommon, TestRecipients):
         )
         cls.partner_employee_2 = cls.user_employee_2.partner_id
 
-        # User without the group "mail.group_mail_template_editor"
         cls.user_rendering_restricted = mail_new_test_user(
             cls.env,
             login="user_rendering_restricted",
@@ -125,20 +123,13 @@ class TestMailComposer(MailCommon, TestRecipients):
             }
         )
 
-        # activate translations
         cls._activate_multi_lang(
-            layout_arch_db=None,  # use default mail.test_layout
+            layout_arch_db=None,
             test_record=cls.test_records,
             test_template=cls.template,
         )
 
     def _get_web_context(self, records, add_web=True, **values):
-        """Helper to generate composer context. Will make tests a bit less
-        verbose.
-
-        :param add_web: add web context, generally making noise especially in
-          mass mail mode (active_id/ids both present in context)
-        """
         return self._get_mail_composer_web_context(records, add_web=add_web, **values)
 
 
@@ -154,20 +145,15 @@ class TestComposerForm(TestMailComposer):
         )
 
     def test_assert_initial_data(self):
-        """Ensure class initial data to ease understanding"""
         self.assertTrue(self.template.auto_delete)
 
     def test_composer_comment_without_res_ids(self):
-        """A comment composer created with a model but no active_ids (RPC /
-        automation) must not crash its computes on the empty recordset
-        (browse([])._message_compute_subject() used to raise check_singleton())."""
         composer = self.env["wizard.mail.message.send"].create(
             {
                 "model": "res.partner",
                 "composition_mode": "comment",
             }
         )
-        # touching the guarded compute must not raise
         self.assertFalse(composer.subject)
         self.assertFalse(composer._evaluate_res_ids())
 
@@ -227,9 +213,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_comment_mc(self):
-        """Test values specific to multi-company setup, in comment mode, using
-        the Form tool."""
-        # add access to second company to avoid MC rules on ticket model
         self.env.user.company_ids = [(4, self.company_2.id)]
         test_record = self.test_record.with_env(self.env)
         source_company = [
@@ -240,7 +223,7 @@ class TestComposerForm(TestMailComposer):
         expected = [
             (self.company_admin, self.mail_alias_domain),
             (self.company_2, self.mail_alias_domain_c2),
-            (self.company_admin, self.mail_alias_domain),  # env company
+            (self.company_admin, self.mail_alias_domain),
         ]
         for company, (exp_company, exp_alias_domain) in zip(
             source_company, expected, strict=True
@@ -257,9 +240,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_comment_attachments(self):
-        """Tests that all attachments are added to the composer, static attachments
-        are not duplicated and while reports are re-generated, and that intermediary
-        attachments are dropped."""
         attachment_data = self._generate_attachments_data(
             2, self.template._name, self.template.id
         )
@@ -280,7 +260,6 @@ class TestComposerForm(TestMailComposer):
             }
         )
 
-        # begins without attachments
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -290,7 +269,6 @@ class TestComposerForm(TestMailComposer):
         )
         self.assertEqual(len(composer_form.attachment_ids), 0)
 
-        # change template: 2 static (attachment_ids) and 2 dynamic (reports)
         composer_form.template_id = template_1
         self.assertEqual(len(composer_form.attachment_ids), 4)
         report_attachments = [
@@ -304,7 +282,6 @@ class TestComposerForm(TestMailComposer):
         ].concat(*report_attachments)
         self.assertEqual(tpl_attachments, template_1_attachments)
 
-        # change template: 0 static (attachment_ids) and 1 dynamic (report)
         composer_form.template_id = template_2
         self.assertEqual(len(composer_form.attachment_ids), 1)
         report_attachments = [
@@ -318,7 +295,6 @@ class TestComposerForm(TestMailComposer):
         ].concat(*report_attachments)
         self.assertFalse(tpl_attachments)
 
-        # change back to template 1
         composer_form.template_id = template_1
         self.assertEqual(len(composer_form.attachment_ids), 4)
         report_attachments = [
@@ -332,13 +308,11 @@ class TestComposerForm(TestMailComposer):
         ].concat(*report_attachments)
         self.assertEqual(tpl_attachments, template_1_attachments)
 
-        # reset template
         composer_form.template_id = self.env["mail.template"]
         self.assertEqual(len(composer_form.attachment_ids), 0)
 
     @users("employee")
     def test_mail_composer_comment_batch(self):
-        """Batch mode of composer in comment mode."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -443,7 +417,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_comment_wtpl_batch(self):
-        """Batch mode of composer in comment mode."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -507,7 +480,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_comment_wtpl_domain(self):
-        """Batch mode of composer in comment mode, using a domain."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 default_composition_mode="comment",
@@ -573,8 +545,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_comment_wtpl_norecords(self):
-        """Test specific case when running without records, to see the rendering
-        when nothing is given as context."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 default_composition_mode="comment",
@@ -621,7 +591,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_mass(self):
-        """Test composer called in mass mailing mode."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(self.test_records, add_web=True)
@@ -674,8 +643,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_mass_wtpl(self):
-        """Test composer called in mass mailing mode with a template. It globally
-        takes the template value raw (aka not rendered)."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -741,8 +708,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_mass_wtpl_domain(self):
-        """Same as test_mail_composer_mass_wtpl, but using a domain instead
-        of res_ids, to check support of domain."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 default_composition_mode="mass_mail",
@@ -810,8 +775,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_mass_wtpl_norecords(self):
-        """Test specific case when running without records, to see the rendering
-        when nothing is given as context."""
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 default_composition_mode="mass_mail",
@@ -873,10 +836,6 @@ class TestComposerForm(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_template_switching(self):
-        """Ensure that the current user's identity serves as the sender,
-        particularly when transitioning from a template with a designated sender to one lacking such specifications.
-        Moreover, we verify that switching to a template lacking any subject maintains the existing subject intact."""
-        # Setup: Prepare Templates
         template_complete = self.template.copy(
             {
                 "email_from": "not_current_user@template_complete.com",
@@ -899,7 +858,6 @@ class TestComposerForm(TestMailComposer):
         }
         for composition_mode, form in forms.items():
             with self.subTest(composition_mode=composition_mode):
-                # Use Template with Sender and Subject
                 form.template_id = template_complete
                 self.assertEqual(
                     form.email_from,
@@ -912,7 +870,6 @@ class TestComposerForm(TestMailComposer):
                     "subject not set correctly to form this test",
                 )
 
-                # Switch to Template without Sender
                 form.template_id = template_no_sender
                 self.assertEqual(
                     form.email_from,
@@ -920,7 +877,6 @@ class TestComposerForm(TestMailComposer):
                     "email_from not updated to current user",
                 )
 
-                # Switch to Template without Subject
                 form.template_id = template_no_subject
                 self.assertEqual(
                     form.subject,
@@ -934,7 +890,6 @@ class TestComposerInternals(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_attachments(self):
-        """Test attachments management in both comment and mass mail mode."""
         attachment_data = self._generate_attachments_data(
             3, self.template._name, self.template.id
         )
@@ -994,7 +949,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # values coming from template: attachment_ids + report in comment
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(len(composer.attachment_ids), 5)
                     for attach in attachs:
@@ -1018,13 +972,11 @@ class TestComposerInternals(TestMailComposer):
                         generated.mapped("res_model"), ["wizard.mail.message.send"] * 2
                     )
                     self.assertEqual(generated.mapped("res_id"), [0] * 2)
-                # values coming from template: attachment_ids only (report is dynamic)
                 else:
                     self.assertEqual(
                         sorted(composer.attachment_ids.ids), sorted(attachs.ids)
                     )
 
-                # manual update
                 composer.write(
                     {
                         "attachment_ids": [(4, extra_attach.id)],
@@ -1037,9 +989,6 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     self.assertEqual(composer.attachment_ids, attachs + extra_attach)
 
-                # update with template with void values: values are kept, void
-                # value is not forced in rendering mode as well as when copying
-                # template values
                 composer.write({"template_id": template_void.id})
 
                 if composition_mode == "comment" and not batch:
@@ -1049,7 +998,6 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     self.assertEqual(composer.attachment_ids, attachs + extra_attach)
 
-                # reset template: values are reset
                 composer.write({"template_id": False})
                 if composition_mode == "comment" and not batch:
                     self.assertFalse(composer.attachment_ids)
@@ -1059,8 +1007,6 @@ class TestComposerInternals(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_author(self):
-        """Test author_id / email_from synchronization, in both comment and mass
-        mail modes."""
         template_void = self.template.copy(
             default={
                 "email_from": False,
@@ -1092,12 +1038,10 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # default values are current user
                 self.assertEqual(composer.author_id, self.env.user.partner_id)
                 self.assertEqual(composer.composition_mode, composition_mode)
                 self.assertEqual(composer.email_from, self.env.user.email_formatted)
 
-                # author update should reset email (FIXME: currently not synchronized)
                 composer.write({"author_id": self.partner_1})
                 self.assertEqual(composer.author_id, self.partner_1)
                 self.assertEqual(
@@ -1105,9 +1049,7 @@ class TestComposerInternals(TestMailComposer):
                     self.env.user.email_formatted,
                     "MailComposer: TODO: author / email_from are not synchronized",
                 )
-                # self.assertEqual(composer.email_from, self.partner_1.email_formatted)
 
-                # changing template should update its email_from
                 composer.write({"template_id": self.template.id})
 
                 if composition_mode == "comment" and not batch:
@@ -1133,8 +1075,6 @@ class TestComposerInternals(TestMailComposer):
                         "MailComposer: should take email_from raw from template",
                     )
 
-                # manual values are kept over template values; if email does not
-                # match any author, reset author
                 composer.write({"email_from": self.test_from})
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
@@ -1159,8 +1099,6 @@ class TestComposerInternals(TestMailComposer):
                         "MailComposer: manual values should be kept",
                     )
 
-                # Update with template with void email_from field, should result in reseting email_from to a default value
-                # rendering mode as well as when copying template values
                 composer.write({"template_id": template_void.id})
 
                 if composition_mode == "comment" and not batch:
@@ -1178,7 +1116,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                     self.assertEqual(composer.email_from, self.env.user.email_formatted)
 
-                # reset template: values are reset due to call to default_get
                 composer.write({"template_id": False})
 
                 if composition_mode == "comment" and not batch:
@@ -1198,9 +1135,6 @@ class TestComposerInternals(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_configuration(self):
-        """Test content configuration (auto_delete_*, email_*, message_type,
-        subtype) in both comment and mass mailing mode. Template update is also
-        tested when it applies."""
         template_falsy = self.template.copy(
             default={
                 "auto_delete": False,
@@ -1222,7 +1156,6 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     ctx["default_res_ids"] = test_records.ids
 
-                # 1. check without template (default values) + template update
                 composer = (
                     self.env["wizard.mail.message.send"]
                     .with_context(ctx)
@@ -1233,7 +1166,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # default creation values
                 if composition_mode == "comment":
                     self.assertTrue(
                         composer.auto_delete, "By default, remove notification emails"
@@ -1263,10 +1195,8 @@ class TestComposerInternals(TestMailComposer):
                 self.assertEqual(composer.email_layout_xmlid, "mail.test_layout")
                 self.assertEqual(composer.message_type, "comment")
 
-                # changing template should update its content
                 composer.write({"template_id": self.template.id})
 
-                # values come from template
                 if composition_mode == "comment":
                     self.assertTrue(composer.auto_delete)
                     self.assertFalse(
@@ -1292,7 +1222,6 @@ class TestComposerInternals(TestMailComposer):
                     self.assertEqual(composer.message_type, "comment")
                     self.assertFalse(composer.subtype_id)
 
-                # manual update
                 composer.write(
                     {
                         "message_type": "notification",
@@ -1303,8 +1232,6 @@ class TestComposerInternals(TestMailComposer):
                 self.assertEqual(composer.subtype_id, self.env.ref("mail.mt_note"))
                 self.assertTrue(composer.subtype_is_log)
 
-                # update with template with void values: void value is forced for
-                # booleans, cannot distinguish
                 composer.write({"template_id": template_falsy.id})
 
                 if composition_mode == "comment":
@@ -1320,11 +1247,6 @@ class TestComposerInternals(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_content(self):
-        """Test content management (body, mail_server_id, scheduled_date,
-        subject) in both comment and mass mailing mode. Template update is also
-        tested.
-
-        TDE TODO: add test for record_alias_domain_id and record_company_id"""
         template_void = self.template.copy(
             default={
                 "body_html": False,
@@ -1349,7 +1271,6 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     ctx["default_res_ids"] = test_records.ids
 
-                # 1. check without template + template update
                 composer = (
                     self.env["wizard.mail.message.send"]
                     .with_context(ctx)
@@ -1363,7 +1284,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # creation values are taken
                 self.assertEqual(
                     composer.body, '<p>Test Body <t t-out="record.name"/></p>'
                 )
@@ -1376,10 +1296,8 @@ class TestComposerInternals(TestMailComposer):
                     composer.subject, "My amazing subject for {{ record.name }}"
                 )
 
-                # changing template should update its content
                 composer.write({"template_id": self.template.id})
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
                         composer.body, f"<p>TemplateBody {self.test_record.name}</p>"
@@ -1404,7 +1322,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                     self.assertEqual(composer.subject, self.template.subject)
 
-                # manual values is kept over template
                 composer.write(
                     {
                         "body": '<p>Back to my amazing body <t t-out="record.name"/></p>',
@@ -1426,8 +1343,6 @@ class TestComposerInternals(TestMailComposer):
                     composer.subject, "Back to my amazing subject for {{ record.name }}"
                 )
 
-                # update with template with void values: void value is not forced in
-                # rendering mode as well as in raw mode
                 composer.write({"template_id": template_void.id})
 
                 if composition_mode == "comment" and not batch:
@@ -1459,10 +1374,8 @@ class TestComposerInternals(TestMailComposer):
                         "Back to my amazing subject for {{ record.name }}",
                     )
 
-                # reset template should reset values
                 composer.write({"template_id": False})
 
-                # values are reset with compute field
                 if composition_mode == "comment" and not batch:
                     self.assertFalse(composer.body)
                     self.assertFalse(composer.mail_server_id.id)
@@ -1481,7 +1394,6 @@ class TestComposerInternals(TestMailComposer):
                     self.assertFalse(composer.scheduled_date)
                     self.assertFalse(composer.subject)
 
-                # 2. check with default
                 ctx["default_template_id"] = self.template.id
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1493,7 +1405,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
                         composer.body, f"<p>TemplateBody {self.test_record.name}</p>"
@@ -1518,7 +1429,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                     self.assertEqual(composer.subject, self.template.subject)
 
-                # 3. check at create
                 ctx.pop("default_template_id")
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1530,7 +1440,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
                         composer.body, f"<p>TemplateBody {self.test_record.name}</p>"
@@ -1555,7 +1464,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                     self.assertEqual(composer.subject, self.template.subject)
 
-                # 4. template + user input
                 ctx["default_template_id"] = self.template.id
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1570,7 +1478,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # creation values are taken
                 self.assertEqual(composer.body, "<p>Test Body</p>")
                 self.assertEqual(composer.mail_server_id.id, False)
                 self.assertEqual(
@@ -1582,9 +1489,6 @@ class TestComposerInternals(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.models.unlink")
     def test_mail_composer_recipients(self):
-        """Test content management (partner_ids, reply_to) in both comment and
-        mass mailing mode. Template update is also tested. Add some tests for
-        partner creation based on unknown emails as this is part of the process."""
         base_recipients = self.partner_1 + self.partner_2
         self.template.write(
             {"email_cc": "test.cc.1@test.example.com, test.cc.2@test.example.com"}
@@ -1631,7 +1535,6 @@ class TestComposerInternals(TestMailComposer):
                 else:
                     ctx["default_res_ids"] = test_records.ids
 
-                # 1. check without template + template update
                 composer = (
                     self.env["wizard.mail.message.send"]
                     .with_context(ctx)
@@ -1645,7 +1548,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # creation values are taken
                 self.assertEqual(composer.partner_ids, base_recipients)
                 self.assertEqual(composer.reply_to, "my_reply_to@test.example.com")
                 self.assertTrue(
@@ -1654,9 +1556,6 @@ class TestComposerInternals(TestMailComposer):
                 )
                 self.assertEqual(composer.reply_to_mode, "new")
 
-                # update with template with void values: void value is not forced in
-                # rendering mode as well as when copying template values (and recipients
-                # are not computed until sending in rendering mode)
                 composer.write({"template_id": template_void.id})
 
                 if composition_mode == "comment":
@@ -1668,9 +1567,8 @@ class TestComposerInternals(TestMailComposer):
                     self.assertEqual(composer.reply_to, "my_reply_to@test.example.com")
                     self.assertTrue(composer.reply_to_force_new)
 
-                # changing template should update its content
                 composer.write({"template_id": self.template.id})
-                composer.flush_recordset()  # to be able to search for new partners
+                composer.flush_recordset()
 
                 new_partners = self.env["res.partner"].search(
                     [
@@ -1685,7 +1583,6 @@ class TestComposerInternals(TestMailComposer):
                     ]
                 )
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(len(new_partners), 2)
                     self.assertEqual(
@@ -1716,14 +1613,11 @@ class TestComposerInternals(TestMailComposer):
                         "Mass mode: reply_to -> consider this is for new threads",
                     )
 
-                # manual values is kept over template
                 composer.write({"partner_ids": [(5, 0), (4, self.partner_admin.id)]})
                 self.assertEqual(composer.partner_ids, self.partner_admin)
 
-                # reset template should reset values
                 composer.write({"template_id": False})
 
-                # values are reset
                 if composition_mode == "comment" and not batch:
                     self.assertFalse(composer.partner_ids)
                     self.assertFalse(composer.reply_to)
@@ -1733,7 +1627,6 @@ class TestComposerInternals(TestMailComposer):
                     self.assertFalse(composer.reply_to)
                     self.assertFalse(composer.reply_to_force_new)
 
-                # 2. check with default
                 ctx["default_template_id"] = self.template.id
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1745,7 +1638,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
                         composer.partner_ids, self.partner_1 + new_partners
@@ -1758,12 +1650,11 @@ class TestComposerInternals(TestMailComposer):
                     self.assertEqual(composer.reply_to, self.template.reply_to)
                 self.assertTrue(
                     composer.reply_to_force_new
-                )  # note: this should be updated with reply-to
+                )
                 self.assertEqual(
                     composer.reply_to_mode, "new"
-                )  # note: this should be updated with reply-to
+                )
 
-                # 3. check at create
                 ctx.pop("default_template_id")
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1775,7 +1666,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # values come from template
                 if composition_mode == "comment" and not batch:
                     self.assertEqual(
                         composer.partner_ids, self.partner_1 + new_partners
@@ -1789,7 +1679,6 @@ class TestComposerInternals(TestMailComposer):
                 self.assertTrue(composer.reply_to_force_new)
                 self.assertEqual(composer.reply_to_mode, "new")
 
-                # 4. template + user input
                 ctx["default_template_id"] = self.template.id
                 composer = (
                     self.env["wizard.mail.message.send"]
@@ -1804,7 +1693,6 @@ class TestComposerInternals(TestMailComposer):
                     )
                 )
 
-                # creation values are taken
                 self.assertEqual(composer.partner_ids, base_recipients)
                 self.assertFalse(composer.reply_to)
                 self.assertFalse(composer.reply_to_force_new)
@@ -1828,8 +1716,6 @@ class TestComposerInternals(TestMailComposer):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_parent(self):
-        """Test specific management in comment mode when having parent_id set:
-        subject, parent's partners."""
         parent_subject = "Parent Subject"
         parent = self.test_record.message_post(
             body="Test",
@@ -1851,7 +1737,6 @@ class TestComposerInternals(TestMailComposer):
             )
         )
 
-        # creation values taken from parent
         self.assertEqual(composer.body, "<p>Test Body</p>")
         self.assertEqual(composer.parent_id, parent)
         self.assertEqual(composer.partner_ids, self.partner_1 + self.partner_2)
@@ -1865,7 +1750,6 @@ class TestComposerInternals(TestMailComposer):
         "odoo.models.unlink",
     )
     def test_mail_composer_rights_attachments(self):
-        """Ensure a user without write access to a template can send an email"""
         template_1 = self.template.copy(
             {
                 "report_template_ids": [(6, 0, self.test_report.ids)],
@@ -1883,7 +1767,6 @@ class TestComposerInternals(TestMailComposer):
             }
         )
         with self.assertRaises(AccessError):
-            # ensure user_rendering_restricted has no write access
             template_1.with_user(self.env.user).write({"name": "New Name"})
 
         template_1_attachments = template_1.attachment_ids
@@ -1918,13 +1801,10 @@ class TestComposerInternals(TestMailComposer):
     )
     def test_mail_composer_rights_portal(self):
         portal_user = self._create_portal_user()
-        # give read access to the record to portal (for check access rule)
         self.test_record.message_subscribe(partner_ids=portal_user.partner_id.ids)
 
-        # patch check access rights for write access, required to post a message by default
         with patch.object(MailTestTicket, "_check_access", return_value=None):
             with self.assertRaises(AccessError):
-                # ensure portal can not send messages
                 self.env["wizard.mail.message.send"].with_user(
                     portal_user
                 ).with_context(self._get_web_context(self.test_record)).create(
@@ -1947,7 +1827,6 @@ class TestComposerInternals(TestMailComposer):
             }
         ).create_mail_template()
 
-        # Test: email_template subject, body_html, model
         template = self.env["mail.template"].search(
             [("model", "=", self.test_record._name), ("name", "=", "My Template")],
             limit=1,
@@ -1963,9 +1842,7 @@ class TestComposerInternals(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_schedule_message(self):
-        """Test scheduling of a message from the composer"""
 
-        # cannot schedule a message in mass_mail mode
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -1982,7 +1859,6 @@ class TestComposerInternals(TestMailComposer):
         with self.assertRaises(UserError):
             composer.action_schedule_message()
 
-        # schedule a message in mono-comment mode
         attachment_data = self._generate_attachments_data(
             1, "wizard.mail.message.send", 0
         )[0]
@@ -2000,7 +1876,6 @@ class TestComposerInternals(TestMailComposer):
                 }
             )
         )
-        # cannot schedule a message without a scheduled date
         with self.assertRaises(UserError):
             composer.action_schedule_message()
 
@@ -2014,7 +1889,6 @@ class TestComposerInternals(TestMailComposer):
         composer_attachment = composer.attachment_ids
         with self.mock_datetime_and_now(self.reference_now):
             composer.action_schedule_message()
-        # should have created a scheduled message with correct parameters
         scheduled_message = self.env["mail.scheduled.message"].search(
             [
                 ["model", "=", self.test_record._name],
@@ -2033,16 +1907,12 @@ class TestComposerInternals(TestMailComposer):
         self.assertEqual(scheduled_message.partner_ids, self.test_record.customer_id)
         self.assertFalse(scheduled_message.is_note)
         self.assertEqual(scheduled_message.send_context, {"additional_ctx_key": True})
-        # attachment transfer
         self.assertEqual(composer_attachment.res_model, scheduled_message._name)
         self.assertEqual(composer_attachment.res_id, scheduled_message.id)
 
     @users("erp_manager")
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.models.unlink")
     def test_mail_composer_wtpl_populate_new_recipients_mc(self):
-        """Test auto-populate of auto created partner with related record
-        values when sending a mail with a template, in multi-company environment.
-        """
         companies = self.company_admin + self.company_2
         test_records = self.env["mail.test.ticket.mc"].create(
             [
@@ -2120,8 +1990,6 @@ class TestComposerInternals(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_wtpl_schedule_message(self):
-        """Test scheduling message using a template. Should use the scheduled date of the
-        template if not date is passed."""
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -2144,7 +2012,6 @@ class TestComposerInternals(TestMailComposer):
             with self.subTest(params=additional_params):
                 if additional_params:
                     composer.write(additional_params)
-                # scheduling the message
                 with self.mock_datetime_and_now(self.reference_now):
                     scheduled_message = composer._action_schedule_message()
 
@@ -2194,7 +2061,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
     notification and emails generated during this process."""
 
     def test_assert_initial_data(self):
-        """Ensure class initial data to ease understanding"""
         self.assertTrue(self.template.auto_delete)
 
         self.assertEqual(len(self.test_record), 1)
@@ -2217,14 +2083,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
 
     @users("employee")
     def test_mail_composer_default_subject(self):
-        """Make sure the default subject is applied in the composer."""
         simple_record = self.env["mail.test.simple"].create({"name": "TestA"})
         ticket_record = self.env["mail.test.ticket"].create({"name": "Test1"})
         nonthread_record = self.env["mail.test.nothread"].create(
             {"name": "TestNoThread"}
         )
 
-        # default behavior: use the record name
         ctx = self._get_web_context(
             simple_record, add_web=False, default_composition_mode="comment"
         )
@@ -2240,7 +2104,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         )
         self.assertEqual(message.subject, simple_record.name)
 
-        # default behavior without thread: use record name
         ctx = self._get_web_context(
             nonthread_record, add_web=False, default_composition_mode="comment"
         )
@@ -2257,7 +2120,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         )
         self.assertEqual(message.subject, nonthread_record.name)
 
-        # custom subject
         ctx = self._get_web_context(
             ticket_record, add_web=False, default_composition_mode="comment"
         )
@@ -2277,7 +2139,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             f"Ticket for {ticket_record.name} on {ticket_record.datetime.strftime('%m/%d/%Y, %H:%M:%S')}",
         )
 
-        # forced value
         ctx = self._get_web_context(
             ticket_record, add_web=False, default_composition_mode="comment"
         )
@@ -2299,7 +2160,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_notifications_delete(self):
-        """Notifications are correctly deleted once sent"""
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -2317,14 +2177,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
 
-        # notifications
         message = self.test_record.message_ids[0]
         self.assertEqual(
             message.notified_partner_ids,
             self.partner_employee_2 + self.partner_1 + self.partner_2,
         )
 
-        # global outgoing
         self.assertEqual(
             len(self._mails), 3, "Should have sent an email each recipient"
         )
@@ -2337,7 +2195,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             self._new_mails.exists(), "Should have deleted mail.mail records"
         )
 
-        # Check ``auto_delete`` field usage (note: currently not correctly managed)
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(
@@ -2356,14 +2213,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
 
-        # notifications
         message = self.test_record.message_ids[0]
         self.assertEqual(
             message.notified_partner_ids,
             self.partner_employee_2 + self.partner_1 + self.partner_2,
         )
 
-        # global outgoing
         self.assertEqual(
             len(self._mails), 3, "Should have sent an email each recipient"
         )
@@ -2383,9 +2238,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_post_parameters(self):
-        """Test various fields and tweaks in comment mode used for message_post
-        parameters and process.."""
-        # default behavior
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -2409,7 +2261,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             self.env.ref("mail.mt_comment", "Mail: default subtype is comment"),
         )
 
-        # tweaks
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -2431,7 +2282,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         self.assertEqual(message.message_type, "notification")
         self.assertEqual(message.subtype_id, self.env.ref("mail.mt_note"))
 
-        # subtype through xml id
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(
@@ -2447,10 +2297,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         _mail, message = composer._action_send_mail()
         self.assertEqual(message.subtype_id, self.env.ref("mail.mt_note"))
 
-        # Check that the message created from the mail composer gets the values
-        # we passed to the composer context. When we provide a custom `body`
-        # and `email_add_signature` flag, the message should keep those values
-        # and should not add any signature to the message body.
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(
@@ -2477,15 +2323,14 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         self.assertTrue(message.email_add_signature)
         self.assertEqual(message.body, "<p>Hi there</p>")
 
-        # check author notification parameters support
         self.assertTrue(
             self.user_employee.partner_id in self.test_record.message_partner_ids
         )
         for notify_author, notify_author_mention, add_pid, should_mention in [
-            (False, False, False, False),  # never add, even in pids
-            (False, False, True, False),  # never add, even in pids
-            (False, True, False, False),  # needs to be in pids
-            (False, True, True, True),  # needs to be in pids
+            (False, False, False, False),
+            (False, False, True, False),
+            (False, True, False, False),
+            (False, True, True, True),
             (True, False, False, True),
         ]:
             with self.subTest(
@@ -2523,7 +2368,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         self.user_employee.partner_id in message.notified_partner_ids
                     )
 
-        # check notification control parameter support
         self.assertEqual(
             self.test_record.message_partner_ids,
             self.partner_employee + self.partner_employee_2,
@@ -2561,7 +2405,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     )
                 self.assertEqual(message.partner_ids, self.partner_admin)
 
-        # check notification UI control parameters
         for option in (False, "reply_all", "forward"):
             with self.subTest(option=option):
                 composer = (
@@ -2600,7 +2443,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_recipients(self):
-        """Test partner_ids given to composer are given to the final message."""
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(self._get_web_context(self.test_record))
@@ -2622,9 +2464,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
 
     @users("employee")
     def test_mail_composer_recipients_batch(self):
-        """The recipients chosen on a batch comment reach every record's message,
-        as they do on a single record (upstream's `TDE FIXME` in
-        `_prepare_mail_values_dynamic`: rendering mode dropped them)."""
         composer = (
             self.env["wizard.mail.message.send"]
             .with_context(
@@ -2660,7 +2499,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         "notif": [
                             {
                                 "partner": partner,
-                                "status": "ready",  # batch mode queues its mails
+                                "status": "ready",
                                 "type": "email",
                             }
                             for partner in (
@@ -2675,7 +2514,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             )
 
     def test_mail_composer_recipients_email_only(self):
-        """Check that messages can be sent to standalone emails, with no associated partner."""
         email_addrs = [
             "test1@test.lan",
             "test2@test.lan",
@@ -2769,7 +2607,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 if is_customer_subscribed:
                     test_record.message_subscribe(
                         partner_ids=external_partner.ids
-                    )  # add external follower
+                    )
                     self.assertTrue(
                         composer.notified_bcc_contains_share,
                         "The created partner is external so should be True",
@@ -2777,16 +2615,13 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 else:
                     test_record.message_unsubscribe(
                         external_partner.ids
-                    )  # remove external follower
+                    )
                     self.assertFalse(
                         composer.notified_bcc_contains_share,
                         "External follower should be unsubscribed",
                     )
 
     def test_notified_bcc_contains_share_sees_partners_the_user_cannot_read(self):
-        """The flag must answer from the recipient data, not from an ACL-filtered
-        search: a follower in another company is invisible to `search` yet is
-        still going to be mailed."""
         company_b = self.env["res.company"].sudo().create({"name": "BCC Company B"})
         share_partner = (
             self.env["res.partner"]
@@ -2837,24 +2672,18 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_server_config(self):
-        """Test various configuration to check behavior of outgoing mail
-        servers, notifications, ...."""
-        # add access to second company to avoid MC rules on ticket model
         self.env.user.company_ids = [(4, self.company_2.id)]
 
-        # initial data
         self.assertEqual(self.env.company, self.company_admin)
         self.assertEqual(self.user_admin.company_id, self.company_admin)
 
-        # update test configuration
         test_records = self.test_records
         test_companies = self.company_admin + self.company_2
         self.company_2.alias_domain_id = self.mail_alias_domain
         for company, record in zip(test_companies, test_records, strict=True):
             record.company_id = company.id
 
-        # various from / servers configuration
-        self.template.write({"mail_server_id": False})  # allow server archive
+        self.template.write({"mail_server_id": False})
         server_other = (
             self.env["ir.mail_server"]
             .sudo()
@@ -2882,7 +2711,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         "default_from": f"notifications@{self.alias_domain}",
                         "from_filter": self.alias_domain,
                     },
-                ),  # odoo-style configuration
+                ),
             ],
             [
                 (
@@ -2895,16 +2724,14 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         f'"{self.env.user.name}" <notifications@{self.alias_domain}>',
                     ],
                     self.alias_domain,
-                ),  # no spoof
+                ),
             ],
             strict=True,
         ):
             with self.subTest(emails_from=emails_from, servers_active=servers_active):
-                # update servers
                 servers_all.active = False
                 if servers_active:
                     servers_active.active = True
-                # update mail config
                 default_from = mail_config.get("default_from", self.default_from)
                 from_filter = mail_config.get("from_filter", self.default_from_filter)
                 self.mail_alias_domain.default_from = default_from
@@ -2917,14 +2744,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 ):
                     self.env.user.email = email_from
 
-                    # open a composer and run it in comment mode
                     composer = Form(
                         self.env["wizard.mail.message.send"].with_context(
                             default_composition_mode="comment",
-                            default_force_send=True,  # force sending emails directly to check SMTP
+                            default_force_send=True,
                             default_model=test_records._name,
                             default_res_ids=test_records.ids,
-                            # avoid successive tests issues with followers
                             mail_post_autofollow_author_skip=True,
                         )
                     )
@@ -2940,7 +2765,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     self.assertSMTPEmailsSent(
                         smtp_from=exp_smtp_from,
                         smtp_to_list=[self.partner_employee_2.email_normalized],
-                        emails_count=2,  # same on both records
+                        emails_count=2,
                         message_from=exp_msg_from,
                         from_filter=exp_from_filter,
                     )
@@ -2952,46 +2777,18 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         "odoo.addons.mail.models.mail_message_schedule",
     )
     def test_mail_composer_wtpl_complete(self):
-        """Test a posting process using a complex template, holding several
-        additional recipients and attachments. It is done in monorecord and
-        in batch since this is now supported.
-
-        This tests notifies: 2 new email_to (+ 1 duplicated), 1 email_cc,
-        test_records followers and partner_admin added in partner_to.
-
-        Global notification
-          * monorecord: send notifications right away (force_send=True)
-          * multirecord: delay notification sending (force_send=False)
-
-        Use cases
-          * scheduled_date: creates mail.message.schedule (no email sent), then
-            scheduling send notifications with notification parameters kept
-          * otherwise: global behavior
-
-        Test with and without notification layout specified.
-
-        Test with and without languages.
-
-        Setup with batch and langs
-          * record1: customer lang=es_ES
-                     follower partner_employee_2 lang=en_US
-                     3 new partners (en_US) created by template
-          * record2: customer lang=en_US
-                     follower partner_employee_2 lang=en_US
-                     3 new partners (en_US) created by template
-        """
         attachment_data = self._generate_attachments_data(
             2, self.template._name, self.template.id
         )
         email_to_1 = "test.to.1@test.example.com"
         email_to_2 = "test.to.2@test.example.com"
         email_to_3 = (
-            "test.to.1@test.example.com"  # duplicate: should not sent twice the email
+            "test.to.1@test.example.com"
         )
         email_cc_1 = "test.cc.1@test.example.com"
         self.template.write(
             {
-                "auto_delete": False,  # keep sent emails to check content
+                "auto_delete": False,
                 "attachment_ids": [(0, 0, a) for a in attachment_data],
                 "email_to": "%s, %s, %s" % (email_to_1, email_to_2, email_to_3),
                 "email_cc": email_cc_1,
@@ -3032,7 +2829,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 reply_to=reply_to,
                 use_lang=use_lang,
             ):
-                # update test configuration
                 batch = bool(batch_mode)
                 self.template.write(
                     {
@@ -3058,7 +2854,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         self.partner_1.lang = False
                 test_records = self.test_records if batch else self.test_record
 
-                # ensure initial data
                 self.assertEqual(len(test_records.customer_id), len(test_records))
                 self.assertEqual(test_records.user_id, self.user_employee_2)
                 self.assertEqual(
@@ -3069,9 +2864,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     "default_model": test_records._name,
                     "default_composition_mode": "comment",
                     "default_template_id": self.template.id,
-                    # avoid successive tests issues with followers
                     "mail_post_autofollow_author_skip": True,
-                    # just to check template dynamic code evaluation (see reply_to above)
                     "custom_reply_to": "custom.reply.to@test.example.com",
                 }
                 if batch_mode == "domain":
@@ -3079,14 +2872,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 else:
                     ctx["default_res_ids"] = test_records.ids
 
-                # open a composer and run it in comment mode
                 composer_form = Form(
                     self.env["wizard.mail.message.send"].with_context(ctx)
                 )
                 composer = composer_form.save()
                 self.assertEqual(composer.email_layout_xmlid, email_layout_xmlid)
 
-                # ensure some parameters used afterwards
                 if batch:
                     author = self.env.user.partner_id
                     self.assertEqual(
@@ -3123,7 +2914,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     self.assertFalse(composer.reply_to)
                     self.assertFalse(composer.reply_to_force_new)
 
-                # due to scheduled_date, cron for sending notification will be used
                 schedule_cron_id = self.env.ref(
                     "mail.ir_cron_send_scheduled_message"
                 ).id
@@ -3135,22 +2925,16 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 ):
                     composer._action_send_mail()
 
-                    # notification process should not have been sent
                     if scheduled_date:
                         self.assertFalse(self._new_mails)
                         self.assertFalse(self._mails)
-                    # monorecord: force_send notifications
                     elif not batch:
-                        # as there are recipients with different langs: we have
-                        # 3 outgoing mails: partner_employee2 (user) then customers
-                        # in two langs
                         if use_lang:
                             self.assertEqual(
                                 len(self._new_mails),
                                 3,
                                 "Should have created 1 mail for user, then 2 for customers that belong to 2 langs",
                             )
-                        # without lang, recipients are grouped by main usage aka user and customer
                         else:
                             self.assertEqual(
                                 len(self._new_mails),
@@ -3166,10 +2950,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             5,
                             "Should have sent 5 emails, one per recipient per record",
                         )
-                    # multirecord: use email queue
                     else:
-                        # see not-batch comment, then add 2 mails for the second
-                        # record as all customers have same language
                         if use_lang:
                             self.assertEqual(
                                 len(self._new_mails),
@@ -3191,10 +2972,8 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             0,
                             "Should have put emails in queue and not sent any emails",
                         )
-                        # simulate cron sending emails
                         self.env["mail.mail"].sudo().process_email_queue()
 
-                # notification process should not have been sent
                 if scheduled_date:
                     self.assertEqual(
                         capt.records.mapped("call_at"),
@@ -3204,7 +2983,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 else:
                     self.assertFalse(capt.records)
 
-                # check new partners have been created based on emails given
                 new_partners = self.env["res.partner"].search(
                     [("email", "in", [email_to_1, email_to_2, email_to_3, email_cc_1])]
                 )
@@ -3222,9 +3000,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     {"en_US"},
                 )
 
-                # if scheduled_date is set: simulate cron for sending notifications
                 if scheduled_date:
-                    # Send the scheduled message from the CRON
                     with (
                         self.mock_mail_gateway(mail_unlink_sent=False),
                         self.mock_mail_app(),
@@ -3236,18 +3012,13 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             "mail.message.schedule"
                         ].sudo()._send_notifications_cron()
 
-                        # monorecord: force_send notifications
                         if not batch:
-                            # as there are recipients with different langs: we have
-                            # 3 outgoing mails: partner_employee2 (user) then customers
-                            # in two langs
                             if use_lang:
                                 self.assertEqual(
                                     len(self._new_mails),
                                     3,
                                     "Should have created 1 mail for user, then 2 for customers that belong to 2 langs",
                                 )
-                            # without lang, recipients are grouped by main usage aka user and customer
                             else:
                                 self.assertEqual(
                                     len(self._new_mails),
@@ -3263,10 +3034,7 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                                 5,
                                 "Should have sent 5 emails, one per recipient per record",
                             )
-                        # multirecord: use email queue
                         else:
-                            # see not-batch comment, then add 2 mails for the second
-                            # record as all customers have same language
                             if use_lang:
                                 self.assertEqual(
                                     len(self._new_mails),
@@ -3288,21 +3056,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                                 0,
                                 "Should have put emails in queue and not sent any emails",
                             )
-                            # simulate cron sending emails
                             self.env["mail.mail"].sudo().process_email_queue()
 
-                # template is sent only to partners (email_to are transformed)
                 for test_record, exp_lang in zip(test_records, langs, strict=True):
                     message = test_record.message_ids[0]
 
-                    # check created mail.mail and outgoing emails. In comment
-                    # 2 or 3 mails are generated (due to group-based layouting):
-                    # - one for recipient that is a user
-                    # - one / two for recipients that are customers, one / lang
-                    # Then each recipient receives its own outgoing email. See
-                    # 'assertMailMail' for more details.
 
-                    # user email (one user, one email)
                     if exp_lang == "es_ES":
                         exp_body = f"SpanishBody for {test_record.name}"
                         exp_subject = f"SpanishSubject for {test_record.name}"
@@ -3319,10 +3078,10 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         self.partner_employee_2,
                         "sent",
                         mail_message=message,
-                        author=author,  # author is different in batch and monorecord mode (raw or rendered email_from)
+                        author=author,
                         email_values={
                             "body_content": exp_body,
-                            "email_from": test_record.user_id.email_formatted,  # set by template
+                            "email_from": test_record.user_id.email_formatted,
                             "reply_to": exp_reply_to,
                             "subject": exp_subject,
                             "attachments_info": [
@@ -3352,16 +3111,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         },
                     )
 
-                    # customers emails (several customers, one or two emails depending
-                    # on multi-lang testing environment)
                     if use_lang and test_record == test_records[0]:
-                        # in this case, we are in a multi-lang customers testing
                         emails_recipients = [
-                            test_record.customer_id,  # es_ES
-                            new_partners,  # en_US (default lang of new customers)
+                            test_record.customer_id,
+                            new_partners,
                         ]
                     else:
-                        # all recipients have same language, one email
                         emails_recipients = [test_record.customer_id + new_partners]
 
                     for recipients in emails_recipients:
@@ -3369,10 +3124,10 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             recipients,
                             "sent",
                             mail_message=message,
-                            author=author,  # author is different in batch and monorecord mode (raw or rendered email_from)
+                            author=author,
                             email_values={
                                 "body_content": exp_body,
-                                "email_from": test_record.user_id.email_formatted,  # set by template
+                                "email_from": test_record.user_id.email_formatted,
                                 "subject": exp_subject,
                                 "attachments_info": [
                                     {
@@ -3400,13 +3155,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             },
                         )
 
-                    # Specifically for the language-specific recipient, perform
-                    # low-level checks on outgoing email for the recipient to
-                    # check layouting and language. Note that standard layout
-                    # is not tested against translations, only the custom one
-                    # to ease translations checks.
-                    # We could do the check for other layouts but it would be
-                    # mainly noisy / duplicated check
                     email = self._find_sent_email(
                         test_record.user_id.email_formatted,
                         [test_record.customer_id.email_formatted],
@@ -3426,13 +3174,11 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                         else:
                             self.assertIn(exp_layout_content_en, email["body"])
                             self.assertIn(exp_button_en, email["body"])
-                    # check default layouting applies
                     elif exp_lang == "es_ES":
                         self.assertIn('html lang="es_ES"', email["body"])
                     else:
                         self.assertIn('html lang="en_US"', email["body"])
 
-                    # message is posted and notified admin
                     self.assertEqual(
                         message.subtype_id, self.env.ref("mail.mt_comment")
                     )
@@ -3446,7 +3192,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                             }
                         ],
                     )
-                    # attachments are copied on message and linked to document
                     self.assertEqual(
                         set(message.attachment_ids.mapped("name")),
                         {
@@ -3472,12 +3217,8 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_mc(self):
-        """Test specific to multi-company environment, notably company propagation
-        or aliases."""
-        # add access to second company to avoid MC rules on ticket model
         self.env.user.company_ids = [(4, self.company_2.id)]
 
-        # initial data
         self.assertEqual(self.env.company, self.company_admin)
         self.assertEqual(self.user_admin.company_id, self.company_admin)
 
@@ -3487,12 +3228,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         email_to_1 = "test.to.1@test.example.com"
         self.template.write(
             {
-                "auto_delete": False,  # keep sent emails to check content
+                "auto_delete": False,
                 "attachment_ids": [(0, 0, a) for a in attachment_data],
-                "email_from": False,  # use current user as author
+                "email_from": False,
                 "email_layout_xmlid": "mail.test_layout",
                 "email_to": email_to_1,
-                "mail_server_id": False,  # let it find a server
+                "mail_server_id": False,
                 "partner_to": '%s, {{ object.customer_id.id if object.customer_id else "" }}'
                 % self.partner_admin.id,
             }
@@ -3514,20 +3255,17 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             ),
         ]:
             with self.subTest(batch=batch, companies=companies):
-                # update test configuration
                 test_records = self.test_records if batch else self.test_record
                 for company, record in zip(companies, test_records, strict=True):
                     record.company_id = company.id
 
-                # open a composer and run it in comment mode
                 composer = Form(
                     self.env["wizard.mail.message.send"].with_context(
                         default_composition_mode="comment",
-                        default_force_send=True,  # force sending emails directly to check SMTP
+                        default_force_send=True,
                         default_model=test_records._name,
                         default_res_ids=test_records.ids,
                         default_template_id=self.template.id,
-                        # avoid successive tests issues with followers
                         mail_post_autofollow_author_skip=True,
                     )
                 ).save()
@@ -3541,7 +3279,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                     [("email_normalized", "=", "test.to.1@test.example.com")]
                 )
                 self.assertEqual(len(new_partner), 1)
-                # check output, company-specific values mainly for this test
                 for record, exp_company, exp_alias_domain in zip(
                     test_records,
                     expected_companies,
@@ -3598,9 +3335,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_recipients_email_fields(self):
-        """Test various combinations of corner case / not standard filling of
-        email fields: multi email, formatted emails, ... on template, used to
-        post a message using the composer."""
         existing_partners = self.env["res.partner"].search([])
         partner_format_tofind, partner_multi_tofind, partner_at_tofind = self.env[
             "res.partner"
@@ -3658,7 +3392,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         self.partner_2.write(
             {"email": "valid.other.1@agrolait.com, valid.other.cc@agrolait.com"}
         )
-        # ensure values used afterwards for testing
         self.assertEqual(
             self.partner_employee.email_formatted,
             '"Ernest Employee" <email.from.1@test.mycompany.com,email.from.2@test.mycompany.com>',
@@ -3675,7 +3408,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             "Formatting: wrong formatting due to multi-email",
         )
 
-        # instantiate composer, post message
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -3689,9 +3421,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
             composer.action_send_mail()
 
-        # find partners created during sending (as emails are transformed into partners)
-        # FIXME: currently email finding based on formatted / multi emails does
-        # not work
         new_partners = (
             self.env["res.partner"]
             .search([])
@@ -3760,13 +3489,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             "Mail: currently setting name = email, not taking into account formatted emails",
         )
 
-        # global outgoing: two mail.mail (all customer recipients, then all employee recipients)
-        # and 11 emails, and 1 inbox notification (admin)
-        # FIXME template is sent only to partners (email_to are transformed) ->
-        #   wrong / weird emails (see email_formatted of partners) is kept
-        # FIXME: more partners created than real emails (see above) -> due to
-        #   transformation from email -> partner in template 'generate_recipients'
-        #   there are more partners than email to notify;
         self.assertEqual(len(self._new_mails), 2, "Should have created 2 mail.mail")
         self.assertEqual(
             len(self._mails),
@@ -3779,14 +3501,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             author=self.partner_employee,
             email_values={
                 "body_content": f"TemplateBody {self.test_record.name}",
-                # single email event if email field is multi-email
                 "email_from": formataddr(
                     (self.user_employee.name, "email.from.1@test.mycompany.com")
                 ),
                 "subject": f"TemplateSubject {self.test_record.name}",
             },
             fields_values={
-                # currently holding multi-email 'email_from'
                 "email_from": formataddr(
                     (
                         self.user_employee.name,
@@ -3818,14 +3538,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             + [[email] for email in new_partners[2:].mapped("email_formatted")],
             email_values={
                 "body_content": f"TemplateBody {self.test_record.name}",
-                # single email event if email field is multi-email
                 "email_from": formataddr(
                     (self.user_employee.name, "email.from.1@test.mycompany.com")
                 ),
                 "subject": f"TemplateSubject {self.test_record.name}",
             },
             fields_values={
-                # currently holding multi-email 'email_from'
                 "email_from": formataddr(
                     (
                         self.user_employee.name,
@@ -3835,19 +3553,15 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
             },
             mail_message=self.test_record.message_ids[0],
         )
-        # actual emails sent through smtp
         for recipient in recipients:
-            # multi emails -> send multiple emails (smart)
             if recipient == self.partner_2:
                 smtp_to_list = [
                     "valid.other.1@agrolait.com",
                     "valid.other.cc@agrolait.com",
                 ]
-            # find.me.format
             elif recipient == new_partners[0]:
                 self.assertEqual(recipient, partner_format_tofind)
                 smtp_to_list = ["find.me.format@test.example.com"]
-            # find.me.multi was split into two partners
             elif recipient == new_partners[1]:
                 self.assertEqual(recipient, partner_multi_tofind)
                 smtp_to_list = [
@@ -3856,7 +3570,6 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 ]
             elif recipient == new_partners[3]:
                 smtp_to_list = ["find.me.multi.2@test.example.com"]
-            # bike@home: name is not recognized as email anymore
             elif recipient == new_partners[2]:
                 self.assertEqual(recipient, partner_at_tofind)
                 smtp_to_list = ["find.me.at@test.example.com"]
@@ -3866,15 +3579,12 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 smtp_from=f"{self.alias_bounce}@{self.alias_domain}",
                 smtp_to_list=smtp_to_list,
                 mail_server=self.mail_server_domain,
-                # msg_from takes only first found normalized email to make a valid email_from
                 message_from=formataddr(
                     (
                         self.user_employee.name,
                         "email.from.1@test.mycompany.com",
                     )
                 ),
-                # similar envelope, assertSMTPEmailsSent cannot distinguish
-                # records (would have to dive into content, too complicated)
                 emails_count=1,
             )
 
@@ -3886,23 +3596,14 @@ class TestComposerResultsCommentStatus(TestMailComposer):
 
     @classmethod
     def setUpClass(cls):
-        """Test data: 4 records with a customer set, then some additional
-        records based on emails, duplicates, ...
-
-        Record0: partner is blacklisted
-        Record1: Record4 has the same email (but no customer set)
-        Record5 and Record6 have same email (notlinked to any customer)
-        """
         super().setUpClass()
 
-        # add 2 new records with customers
         cls.test_records, cls.test_partners = cls._create_records_for_batch(
             "mail.test.ticket.el",
             4,
             additional_values={"user_id": cls.user_employee_2.id},
             prefix="el_",
         )
-        # create bl / optout / duplicates, see docstring
         cls.env["mail.blacklist"]._add(cls.test_partners[0].email_formatted)
         cls.test_records += cls.env[cls.test_records._name].create(
             [
@@ -3932,7 +3633,6 @@ class TestComposerResultsCommentStatus(TestMailComposer):
         )
 
     def test_assert_initial_data(self):
-        """Ensure class initial data to ease understanding"""
         self.assertFalse(self.template.auto_delete)
 
         self.assertEqual(len(self.test_records), 7)
@@ -3953,9 +3653,6 @@ class TestComposerResultsCommentStatus(TestMailComposer):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_comment_blacklist(self):
-        """Tests a document-based comment with the excluded emails. It is
-        currently bypassed, as we consider posting bypasses the exclusion list.
-        """
         test_record = self.test_records[0].with_env(self.env)
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
@@ -3968,7 +3665,6 @@ class TestComposerResultsCommentStatus(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
             composer._action_send_mail()
 
-        # one mail to the customer, one mail to the follower
         message = test_record.message_ids[0]
         for recipient in test_record.customer_id + self.partner_employee_2:
             with self.subTest(recipient=recipient):
@@ -3976,9 +3672,9 @@ class TestComposerResultsCommentStatus(TestMailComposer):
                     recipient,
                     "sent",
                     mail_message=message,
-                    author=self.partner_employee_2,  # author synchronized with email_from
+                    author=self.partner_employee_2,
                     email_values={
-                        "email_from": self.user_employee_2.email_formatted,  # set by template
+                        "email_from": self.user_employee_2.email_formatted,
                     },
                 )
         self.assertEqual(
@@ -4004,8 +3700,6 @@ class TestComposerResultsMass(TestMailComposer):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_delete(self):
-        """Check mail / msg delete support"""
-        # ensure initial data
         self.assertTrue(self.template.auto_delete)
         self.assertEqual(self.test_records.user_id, self.user_employee_2)
         self.assertEqual(self.test_records.message_partner_ids, self.partner_employee_2)
@@ -4051,7 +3745,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Should not have deleted mail.notification",
         )
 
-        # force composer auto_delete field
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -4094,7 +3787,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Should not have deleted mail.notification",
         )
 
-        # check composer auto_delete_keep_log
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -4109,7 +3801,6 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=True), self.mock_mail_app():
             composer._action_send_mail()
 
-        # global outgoing
         self.assertEqual(len(self._mails), 2, "Should have sent 1 email per record")
         self.assertEqual(
             len(self._new_mails), 2, "Should have created 1 mail.mail per record"
@@ -4133,13 +3824,7 @@ class TestComposerResultsMass(TestMailComposer):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mail_composer_duplicates(self):
-        """Ensures emails sent to the same recipient multiple times
-        are only sent when they are not duplicates
-        """
-        # add access to Mail Template Editor
         self.user_employee.group_ids += self.env.ref("mail.group_mail_template_editor")
-        # Access can also be made available to all users.
-        # self.env['ir.config_parameter'].sudo().set_param('mail.restrict.template.rendering', False)
 
         self.template.write(
             {
@@ -4151,7 +3836,6 @@ class TestComposerResultsMass(TestMailComposer):
             }
         )
 
-        # Guarantee points of variation for test_report_3
         self.test_records[0].write({"count": 1, "name": "A"})
         self.test_records[1].write({"count": 2, "name": "B"})
 
@@ -4188,7 +3872,6 @@ class TestComposerResultsMass(TestMailComposer):
             return composer
 
         base_customer_values = [{"email": "test@test.lan"}]
-        # different recipients should always receive emails
         customer_diff_emails = [{"email": f"difftest{n}@test.lan"} for n in range(2)]
         base_template_values = {
             "attachment_ids": [Command.clear()],
@@ -4198,12 +3881,10 @@ class TestComposerResultsMass(TestMailComposer):
         }
         same_attachments = {"attachment_ids": template_attachment.ids}
         diff_body = {"body_html": '<p><t t-esc="object.name"></t></p>'}
-        # regardless of whether they have different bodies or not, they are considered duplicates
         diff_attachment_same_content = {"report_template_ids": [self.test_report_2.id]}
         diff_attachment_diff_content = {"report_template_ids": [self.test_report_3.id]}
         diff_subject = {"subject": "{{ object.name }}"}
 
-        # all template variations using same recipients
         diff_combinations = product(
             [
                 [diff_body],
@@ -4215,19 +3896,12 @@ class TestComposerResultsMass(TestMailComposer):
             ],
             [base_customer_values],
         )
-        # no template variations using different recipients
         diff_combinations = chain(diff_combinations, [[[], customer_diff_emails]])
-        # expect all sent
         for template_changes, customer_changes in diff_combinations:
             test_template_values = dict(base_template_values)
             for change in template_changes:
                 test_template_values.update(change)
             self.template.write(test_template_values)
-            # Not strict: the three sequences do not agree in length by design --
-            # customer_ids is 2, base_customer_values is 1, and customer_changes is 1
-            # or 2 depending on the branch -- so this has always stopped after one
-            # customer. Which length is intended is a judgment about what the
-            # duplicate cases should exercise, not a lint fix.
             for customer, base_vals, update_vals in zip(
                 customer_ids, base_customer_values, customer_changes, strict=False
             ):
@@ -4242,9 +3916,7 @@ class TestComposerResultsMass(TestMailComposer):
                 ):
                     composer._action_send_mail()
                 self.assertEqual(len(self._new_mails), 2)
-                # check emails
                 for record in self.test_records[:2]:
-                    # email_to will be normalized and formatted, even if already formatted
                     expected_subject = base_template_values["subject"]
                     if (
                         test_template_values["subject"]
@@ -4292,7 +3964,6 @@ class TestComposerResultsMass(TestMailComposer):
                         },
                     )
 
-        # expect duplicates
         cases = [
             (False, []),
             (composer_attachment, []),
@@ -4304,7 +3975,6 @@ class TestComposerResultsMass(TestMailComposer):
             for change in template_changes:
                 test_template_values.update(change)
             self.template.write(test_template_values)
-            # reset customers to have the same email
             for customer in customer_ids:
                 customer.write(base_customer_values[0])
             with self.subTest(
@@ -4321,7 +3991,6 @@ class TestComposerResultsMass(TestMailComposer):
                     composer._action_send_mail()
                 self.assertEqual(len(self._new_mails), 2)
                 self.assertEqual(len(self._mails), 1)
-                # check email
                 expected_attachment_info = []
                 if template_changes:
                     expected_attachment_info.append(
@@ -4368,7 +4037,6 @@ class TestComposerResultsMass(TestMailComposer):
 
     @users("employee")
     def test_mail_composer_scalability(self):
-        """Test scalability (big batch of emails) and related configuration"""
         batch_records, _partners = self._create_records_for_batch(
             "mail.test.ticket.mc",
             10,
@@ -4379,10 +4047,10 @@ class TestComposerResultsMass(TestMailComposer):
             exp_state,
         ) in zip(
             [
-                (False, False),  # unset
-                (8, 0),  # 0 = always use queue
-                (8, False),  # send limit defaults to 100, so force_send is set
-                (0, 8),  # render: defaults to 500 hence 1 iteration in test
+                (False, False),
+                (8, 0),
+                (8, False),
+                (0, 8),
             ],
             [
                 (1, True, "sent"),
@@ -4425,9 +4093,8 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl(self):
-        self.template.auto_delete = False  # keep sent emails to check content
+        self.template.auto_delete = False
 
-        # ensure initial data
         self.assertEqual(self.test_records.user_id, self.user_employee_2)
         self.assertEqual(self.test_records.message_partner_ids, self.partner_employee_2)
 
@@ -4456,17 +4123,14 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
 
-        # global outgoing
         self.assertEqual(
             len(self._new_mails), 2, "Should have created 1 mail.mail per record"
         )
         self.assertEqual(len(self._mails), 2, "Should have sent 1 email per record")
 
         for record in self.test_records:
-            # message copy is kept
             message = record.message_ids[0]
 
-            # template is sent directly using customer field, meaning we have recipients
             self.assertMailMail(
                 record.customer_id,
                 "sent",
@@ -4478,7 +4142,6 @@ class TestComposerResultsMass(TestMailComposer):
                 },
             )
 
-            # message content
             self.assertEqual(message.subject, "TemplateSubject %s" % record.name)
             self.assertEqual(message.body, "<p>TemplateBody %s</p>" % record.name)
             self.assertEqual(message.author_id, self.user_employee.partner_id)
@@ -4489,19 +4152,12 @@ class TestComposerResultsMass(TestMailComposer):
             self.assertEqual(
                 composer.attachment_ids.datas, message.attachment_ids.datas
             )
-            # post-related fields are void
             self.assertFalse(message.subtype_id)
             self.assertFalse(message.partner_ids)
 
     @users("employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_complete(self):
-        """Test a composer in mass mode with a quite complete template, containing
-        notably email-based recipients and attachments.
-
-        Translations and email layout supported are also tested.
-        """
-        # as we use the email queue, don't have failing tests due to other outgoing emails
         self.env["mail.mail"].sudo().search([]).unlink()
 
         attachment_data = self._generate_attachments_data(
@@ -4510,12 +4166,12 @@ class TestComposerResultsMass(TestMailComposer):
         email_to_1 = "test.to.1@test.example.com"
         email_to_2 = "test.to.2@test.example.com"
         email_to_3 = (
-            "test.to.1@test.example.com"  # duplicate: should not sent twice the email
+            "test.to.1@test.example.com"
         )
         email_cc_1 = "test.cc.1@test.example.com"
         self.template.write(
             {
-                "auto_delete": False,  # keep sent emails to check content
+                "auto_delete": False,
                 "attachment_ids": [(0, 0, a) for a in attachment_data],
                 "email_to": "%s, %s, %s" % (email_to_1, email_to_2, email_to_3),
                 "email_cc": email_cc_1,
@@ -4531,7 +4187,6 @@ class TestComposerResultsMass(TestMailComposer):
         )
         self.assertEqual(len(attachs), 2)
 
-        # ensure initial data
         self.assertEqual(self.test_records.user_id, self.user_employee_2)
         self.assertEqual(self.test_records.message_partner_ids, self.partner_employee_2)
 
@@ -4558,7 +4213,6 @@ class TestComposerResultsMass(TestMailComposer):
                 reply_to=reply_to,
                 use_lang=use_lang,
             ):
-                # update test configuration
                 self.template.write(
                     {
                         "reply_to": reply_to,
@@ -4577,24 +4231,21 @@ class TestComposerResultsMass(TestMailComposer):
                     "default_model": self.test_records._name,
                     "default_composition_mode": "mass_mail",
                     "default_template_id": self.template.id,
-                    # just to check template dynamic code evaluation (see reply_to above)
                     "custom_reply_to": "custom.reply.to@test.example.com",
                 }
                 if use_domain:
                     ctx["default_res_domain"] = [("id", "in", self.test_records.ids)]
-                    ctx["default_force_send"] = True  # otherwise domain = email queue
+                    ctx["default_force_send"] = True
                 else:
                     ctx["default_res_ids"] = self.test_records.ids
                 if email_layout_xmlid:
                     ctx["default_email_layout_xmlid"] = email_layout_xmlid
 
-                # launch composer in mass mode
                 composer_form = Form(
                     self.env["wizard.mail.message.send"].with_context(ctx)
                 )
                 composer = composer_form.save()
 
-                # ensure some parameters used afterwards
                 author = self.partner_employee
                 self.assertEqual(
                     composer.author_id,
@@ -4609,7 +4260,6 @@ class TestComposerResultsMass(TestMailComposer):
                 ):
                     composer._action_send_mail()
 
-                    # partners created from raw emails
                     new_partners = self.env["res.partner"].search(
                         [
                             (
@@ -4626,14 +4276,12 @@ class TestComposerResultsMass(TestMailComposer):
                         "New partners lang is always the default DB one, whatever the context",
                     )
 
-                    # check global outgoing
                     self.assertEqual(
                         len(self._new_mails),
                         2,
                         "Should have created 1 mail.mail per record",
                     )
                     if not scheduled_date:
-                        # emails sent directly
                         self.assertEqual(
                             len(self._mails), 10, "Should have sent emails"
                         )
@@ -4641,7 +4289,6 @@ class TestComposerResultsMass(TestMailComposer):
                             self._new_mails.mapped("scheduled_date"), [False] * 2
                         )
                     else:
-                        # emails not sent due to scheduled_date
                         self.assertEqual(
                             len(self._mails),
                             0,
@@ -4652,20 +4299,16 @@ class TestComposerResultsMass(TestMailComposer):
                             [self.reference_now + timedelta(days=2)] * 2,
                         )
 
-                        # simulate cron queue at right time for sending
                         with self.mock_datetime_and_now(
                             self.reference_now + timedelta(days=2)
                         ):
                             self.env["mail.mail"].sudo().process_email_queue()
 
-                        # everything should be sent now
                         self.assertEqual(
                             len(self._mails), 10, "Should have sent 5 emails per record"
                         )
 
-                # check email content
                 for record, exp_lang in zip(self.test_records, langs, strict=True):
-                    # message copy is kept
                     message = record.message_ids[0]
 
                     if exp_lang == "es_ES":
@@ -4683,7 +4326,6 @@ class TestComposerResultsMass(TestMailComposer):
                                 f"{self.alias_catchall}@{self.alias_domain}",
                             )
                         )
-                    # template is sent only to partners (email_to are transformed)
                     self.assertMailMail(
                         record.customer_id + new_partners + self.partner_admin,
                         "sent",
@@ -4708,7 +4350,6 @@ class TestComposerResultsMass(TestMailComposer):
                             ],
                             "body_content": exp_body,
                             "email_from": self.partner_employee_2.email_formatted,
-                            # profit from this test to check references are set to message_id in mailing emails
                             "references_message_id_check": True,
                             "reply_to": exp_reply_to,
                             "subject": exp_subject,
@@ -4722,10 +4363,6 @@ class TestComposerResultsMass(TestMailComposer):
                         },
                     )
 
-                    # Low-level checks on outgoing email for the recipient to
-                    # check layouting and language. Note that standard layout
-                    # is not tested against translations, only the custom one
-                    # to ease translations checks.
                     sent_mail = self._find_sent_email(
                         self.partner_employee_2.email_formatted,
                         [
@@ -4776,18 +4413,13 @@ class TestComposerResultsMass(TestMailComposer):
                             self.assertIn(exp_button_es, sent_mail["body"])
                         else:
                             self.assertIn(exp_layout_content_en, sent_mail["body"])
-                            # self.assertIn(exp_button_es, sent_mail['body'])
                             self.assertIn(exp_button_en, sent_mail["body"])
 
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_mc(self):
-        """Test specific to multi-company environment, notably company propagation
-        or aliases."""
-        # add access to second company to avoid MC rules on ticket model
         self.env.user.company_ids = [(4, self.company_2.id)]
 
-        # initial data
         self.assertEqual(self.env.company, self.company_admin)
         self.assertEqual(self.user_admin.company_id, self.company_admin)
 
@@ -4797,12 +4429,12 @@ class TestComposerResultsMass(TestMailComposer):
         email_to_1 = "test.to.1@test.example.com"
         self.template.write(
             {
-                "auto_delete": False,  # keep sent emails to check content
+                "auto_delete": False,
                 "attachment_ids": [(0, 0, a) for a in attachment_data],
-                "email_from": False,  # use current user as author
+                "email_from": False,
                 "email_layout_xmlid": "mail.test_layout",
                 "email_to": email_to_1,
-                "mail_server_id": False,  # let it find a server
+                "mail_server_id": False,
                 "partner_to": '%s, {{ object.customer_id.id if object.customer_id else "" }}'
                 % self.partner_admin.id,
             }
@@ -4822,20 +4454,17 @@ class TestComposerResultsMass(TestMailComposer):
             ),
         ]:
             with self.subTest(companies=companies):
-                # update test configuration
                 test_records = self.test_records
                 for company, record in zip(companies, test_records, strict=True):
                     record.company_id = company.id
 
-                # open a composer and run it in comment mode
                 composer = Form(
                     self.env["wizard.mail.message.send"].with_context(
                         default_composition_mode="mass_mail",
-                        default_force_send=True,  # force sending emails directly to check SMTP
+                        default_force_send=True,
                         default_model=test_records._name,
                         default_res_ids=test_records.ids,
                         default_template_id=self.template.id,
-                        # avoid successive tests issues with followers
                         mail_post_autofollow_author_skip=True,
                     )
                 ).save()
@@ -4849,14 +4478,12 @@ class TestComposerResultsMass(TestMailComposer):
                     [("email_normalized", "=", "test.to.1@test.example.com")]
                 )
                 self.assertEqual(len(new_partner), 1)
-                # check output, company-specific values mainly for this test
                 for record, exp_company, exp_alias_domain in zip(
                     test_records,
                     expected_companies,
                     expected_alias_domains,
                     strict=True,
                 ):
-                    # message copy is kept
                     message = record.message_ids[0]
                     recipients = record.customer_id + new_partner + self.partner_admin
                     self.assertMailMail(
@@ -4901,9 +4528,6 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_recipients(self):
-        """Test various combinations of recipients: res_domain, active_id,
-        active_ids, ... to ensure fallback behavior are working."""
-        # 1: active ids
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 active_ids=self.test_records.ids,
@@ -4920,14 +4544,12 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
 
-        # should create emails in a single batch
         self.assertEqual(
             self.build_email_mocked.call_count, 2, "One build email per outgoing email"
         )
         self.assertEqual(
             self.mail_mail_create_mocked.call_count, 1, "Emails are created in batch"
         )
-        # global outgoing
         self.assertEqual(
             len(self._new_mails),
             2,
@@ -4940,12 +4562,10 @@ class TestComposerResultsMass(TestMailComposer):
         )
 
         for record in self.test_records:
-            # template is sent directly using customer field, even if author is partner_employee
             self.assertSentEmail(
                 self.partner_employee_2.email_formatted, record.customer_id
             )
 
-        # 2: default_res_ids + active_ids -> res_ids takes lead
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -4964,7 +4584,6 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             composer._action_send_mail()
 
-        # global outgoing
         self.assertEqual(
             len(self._new_mails), 1, "Should have taken default_res_ids (1 record)"
         )
@@ -4972,12 +4591,10 @@ class TestComposerResultsMass(TestMailComposer):
             len(self._mails), 1, "Should have taken default_res_ids (1 record)"
         )
 
-        # template is sent directly using customer field, even if author is partner_employee
         self.assertSentEmail(
             self.partner_employee_2.email_formatted, self.test_record.customer_id
         )
 
-        # 3: fallback on active_id if not active_ids
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 active_id=self.test_record.id,
@@ -4992,13 +4609,11 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=False):
             composer._action_send_mail()
 
-        # global outgoing
         self.assertEqual(
             len(self._new_mails), 1, "Should have created 1 mail.mail per record"
         )
         self.assertEqual(len(self._mails), 1, "Should have sent 1 email per record")
 
-        # 4: _batch_size limit for active_ids
         with patch.object(WizardMailMessageSend, "_batch_size", new=1):
             composer_form = Form(
                 self.env["wizard.mail.message.send"].with_context(
@@ -5018,10 +4633,8 @@ class TestComposerResultsMass(TestMailComposer):
             with self.mock_mail_gateway(mail_unlink_sent=True):
                 composer._action_send_mail()
 
-        # should create emails in 2 batches of 1
         self.assertEqual(self.build_email_mocked.call_count, 2)
         self.assertEqual(self.mail_mail_create_mocked.call_count, 2)
-        # global outgoing
         self.assertEqual(
             len(self._new_mails),
             2,
@@ -5033,7 +4646,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Should have sent 1 email per record based on  on active_ids",
         )
 
-        # 5: mail.batch_size config parameter support, for sending only
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", 1)
         with patch.object(WizardMailMessageSend, "_batch_size", new=50):
             composer_form = Form(
@@ -5054,10 +4666,8 @@ class TestComposerResultsMass(TestMailComposer):
             with self.mock_mail_gateway(mail_unlink_sent=True):
                 composer._action_send_mail()
 
-        # should create emails in 2 batches of 1
         self.assertEqual(self.build_email_mocked.call_count, 2)
         self.assertEqual(self.mail_mail_create_mocked.call_count, 2)
-        # global outgoing
         self.assertEqual(
             len(self._new_mails),
             2,
@@ -5069,7 +4679,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Should have sent 1 email per record based on  on active_ids",
         )
 
-        # 6: void is void: raise in comment mode, just don't send anything in mass mail mode
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 default_model="mail.test.ticket.mc",
@@ -5098,9 +4707,6 @@ class TestComposerResultsMass(TestMailComposer):
             composer._action_send_mail()
         self.assertNotSentEmail()
 
-        # 7: invalid email in mass mode is exception, unless deleting messages
-        # If keeping logs, then it is useful to let users know that the logged message was not actually sent
-        # If not keeping logs, then the message would not appear anyway and we can cancel it to avoid creating it
         invalid_partners = self.env["res.partner"].create(
             [
                 {"name": "Invalid", "email": "InvalidEmail"},
@@ -5158,8 +4764,6 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_recipients_email_fields(self):
-        """Test various combinations of corner case / not standard filling of
-        email fields: multi email, formatted emails, ..."""
         existing_partners = self.env["res.partner"].search([])
         partner_format_tofind, partner_multi_tofind, partner_at_tofind = self.env[
             "res.partner"
@@ -5218,7 +4822,6 @@ class TestComposerResultsMass(TestMailComposer):
         self.partner_2.write(
             {"email": "valid.other.1@agrolait.com, valid.other.cc@agrolait.com"}
         )
-        # ensure values used afterwards for testing
         self.assertEqual(
             self.partner_employee.email_formatted,
             '"Ernest Employee" <email.from.1@test.mycompany.com,email.from.2@test.mycompany.com>',
@@ -5235,7 +4838,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Formatting: wrong formatting due to multi-email",
         )
 
-        # instantiate composer, send mailing
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -5249,9 +4851,6 @@ class TestComposerResultsMass(TestMailComposer):
         with self.mock_mail_gateway(mail_unlink_sent=False), self.mock_mail_app():
             composer.action_send_mail()
 
-        # find partners created during sending (as emails are transformed into partners)
-        # FIXME: currently email finding based on formatted / multi emails does
-        # not work
         new_partners = (
             self.env["res.partner"]
             .search([])
@@ -5320,14 +4919,6 @@ class TestComposerResultsMass(TestMailComposer):
             "Mail: when possible, find name in formatted emails, otherwise fallback on email",
         )
 
-        # global outgoing: one mail.mail (all customer recipients), * 2 records
-        #   Note that employee is not mailed here compared to 'comment' mode as he
-        #   is not in the template recipients, only a follower
-        # FIXME template is sent only to partners (email_to are transformed) ->
-        #   wrong / weird emails (see email_formatted of partners) is kept
-        # FIXME: more partners created than real emails (see above) -> due to
-        #   transformation from email -> partner in template 'generate_recipients'
-        #   there are more partners than email to notify;
         self.assertEqual(len(self._new_mails), 2, "Should have created 2 mail.mail")
         self.assertEqual(
             len(self._mails),
@@ -5357,7 +4948,6 @@ class TestComposerResultsMass(TestMailComposer):
                 + [[email] for email in new_partners[2:].mapped("email_formatted")],
                 email_values={
                     "body_content": f"TemplateBody {record.name}",
-                    # single email event if email field is multi-email
                     "email_from": formataddr(
                         (self.user_employee.name, "email.from.1@test.mycompany.com")
                     ),
@@ -5370,7 +4960,6 @@ class TestComposerResultsMass(TestMailComposer):
                     "subject": f"TemplateSubject {record.name}",
                 },
                 fields_values={
-                    # currently holding multi-email 'email_from'
                     "email_from": self.partner_employee.email_formatted,
                     "reply_to": formataddr(
                         (
@@ -5379,22 +4968,18 @@ class TestComposerResultsMass(TestMailComposer):
                         )
                     ),
                 },
-                mail_message=record.message_ids[0],  # message copy is kept
+                mail_message=record.message_ids[0],
             )
 
-            # actual emails sent through smtp
             for recipient in recipients:
-                # multi emails -> send multiple emails (smart)
                 if recipient == self.partner_2:
                     smtp_to_list = [
                         "valid.other.1@agrolait.com",
                         "valid.other.cc@agrolait.com",
                     ]
-                # find.me.format
                 elif recipient == new_partners[0]:
                     self.assertEqual(recipient, partner_format_tofind)
                     smtp_to_list = ["find.me.format@test.example.com"]
-                # find.me.multi was split into two partners
                 elif recipient == new_partners[1]:
                     self.assertEqual(recipient, partner_multi_tofind)
                     smtp_to_list = [
@@ -5403,7 +4988,6 @@ class TestComposerResultsMass(TestMailComposer):
                     ]
                 elif recipient == new_partners[3]:
                     smtp_to_list = ["find.me.multi.2@test.example.com"]
-                # bike@home: name is not recognized as email anymore
                 elif recipient == new_partners[2]:
                     self.assertEqual(recipient, partner_at_tofind)
                     smtp_to_list = ["find.me.at@test.example.com"]
@@ -5413,35 +4997,30 @@ class TestComposerResultsMass(TestMailComposer):
                     smtp_from=f"{self.alias_bounce}@{self.alias_domain}",
                     smtp_to_list=smtp_to_list,
                     mail_server=self.mail_server_domain,
-                    # msg_from takes only first found normalized email to make a valid email_from
                     message_from=formataddr(
                         (
                             self.user_employee.name,
                             "email.from.1@test.mycompany.com",
                         )
                     ),
-                    # similar envelope, assertSMTPEmailsSent cannot distinguish
-                    # records (would have to dive into content, too complicated)
                     emails_count=2,
                 )
 
     @users("employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_reply_to_default_to_from(self):
-        # test without catchall filling reply-to
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
                     self.test_records,
                     add_web=True,
-                    default_reply_to_force_new=False,  # force usage of standard reply to computation
+                    default_reply_to_force_new=False,
                     default_template_id=self.template.id,
                 )
             )
         )
         composer = composer_form.save()
 
-        # remove alias so that _notify_get_reply_to will return the default value instead of alias
         self.company_admin.write(
             {
                 "alias_domain_id": False,
@@ -5451,7 +5030,6 @@ class TestComposerResultsMass(TestMailComposer):
             composer.action_send_mail()
 
         for record in self.test_records:
-            # template is sent only to partners (email_to are transformed)
             self.assertMailMail(
                 record.customer_id,
                 "sent",
@@ -5470,11 +5048,8 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.mail.models.mail_mail")
     def test_mail_composer_wtpl_reply_to_force_new(self):
-        """Test no auto thread behavior, notably with reply-to."""
-        # add access to Mail Template Editor
         self.user_employee.group_ids += self.env.ref("mail.group_mail_template_editor")
 
-        # launch composer in mass mode
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -5516,7 +5091,6 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.tests")
     def test_mail_composer_wtpl_lang_reaches_the_template_render(self):
-        """The composer's language drives the reports, not the template's."""
         self.env["res.lang"].sudo()._activate_lang("fr_FR")
         self.template.write(
             {"report_template_ids": [Command.set(self.test_report.ids)]}
@@ -5560,8 +5134,6 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.tests")
     def test_mail_composer_wtpl_layout_is_rendered_once_per_mail(self):
-        """A mail carries one body, so its layout is rendered once for all of
-        its recipients, however a module classifies them."""
         self.template.write({"email_layout_xmlid": "mail.test_layout"})
         composer = Form(
             self.env["wizard.mail.message.send"].with_context(
@@ -5626,7 +5198,6 @@ class TestComposerResultsMass(TestMailComposer):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.tests")
     def test_mail_composer_duplicates_across_batches(self):
-        """Duplicate detection remembers the recipients of earlier batches."""
         self.template.write(
             {
                 "body_html": "<p>Common Body</p>",
@@ -5672,23 +5243,14 @@ class TestComposerResultsMassStatus(TestMailComposer):
 
     @classmethod
     def setUpClass(cls):
-        """Test data: 4 records with a customer set, then some additional
-        records based on emails, duplicates, ...
-
-        Record0: partner is blacklisted
-        Record1: Record4 has the same email (but no customer set)
-        Record5 and Record6 have same email (notlinked to any customer)
-        """
         super().setUpClass()
 
-        # add 2 new records with customers
         cls.test_records, cls.test_partners = cls._create_records_for_batch(
             "mail.test.ticket.el",
             4,
             additional_values={"user_id": cls.user_employee_2.id},
             prefix="el_",
         )
-        # create bl / optout / duplicates, see docstring
         cls.env["mail.blacklist"]._add(cls.test_partners[0].email_formatted)
         cls.test_records += cls.env[cls.test_records._name].create(
             [
@@ -5717,7 +5279,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
         )
 
     def test_assert_initial_data(self):
-        """Ensure class initial data to ease understanding"""
         self.assertTrue(self.template.auto_delete)
 
         self.assertEqual(len(self.test_records), 7)
@@ -5738,8 +5299,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
         "odoo.tests", "odoo.addons.mail.models.mail_mail", "odoo.models.unlink"
     )
     def test_mailing_blacklist_mixin(self):
-        """Tests a document-based mass mailing with excluded emails. Their emails
-        are canceled if the model inherits from the blacklist mixin."""
         test_records = self.test_records[:2].with_env(self.env)
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
@@ -5761,7 +5320,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
                 self.assertMailMail(
                     record.customer_id,
                     expected_state,
-                    # author is current user, email_from is coming from template (user_id of record)
                     author=self.user_employee.partner_id,
                     fields_values={
                         "email_from": self.user_employee_2.email_formatted,
@@ -5778,7 +5336,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
             "Should have sent 1 email, and skipped an excluded email.",
         )
 
-        # test exclusion list bypass
         composer_form = Form(
             self.env["wizard.mail.message.send"].with_context(
                 self._get_web_context(
@@ -5802,7 +5359,6 @@ class TestComposerResultsMassStatus(TestMailComposer):
                 self.assertMailMail(
                     record.customer_id,
                     expected_state,
-                    # author is current user, email_from is coming from template (user_id of record)
                     author=self.user_employee.partner_id,
                     fields_values={
                         "email_from": self.user_employee_2.email_formatted,
@@ -5836,13 +5392,6 @@ class TestComposerMassMailEnvironment(TestMailComposer):
         )
 
     def test_selection_lists_stay_out_of_the_rendering_context(self):
-        """Every `with_context` hashes its whole context to key the environment.
-
-        With the selection (`default_res_ids`, `active_ids`) still in it, that
-        is a hash of the whole selection per environment, and rendering opens
-        several per record: measured at 2000 records, 0.62 s of a mass mailing
-        spent hashing a list it had already read.
-        """
         composer = self._mass_composer()
         self.assertIn("default_res_ids", composer.env.context)
         contexts = []
@@ -5867,13 +5416,6 @@ class TestComposerMassMailEnvironment(TestMailComposer):
             )
 
     def test_a_mass_mailing_does_not_rewrite_the_crons_counters(self):
-        """The composer reported recipients into whichever cron was running it.
-
-        mass_mailing's queue counts *mailings* (`remaining=len(mailings)`,
-        `processed=1`); the composer overwrote `remaining` with its own
-        recipient count, so after one mailing the cron read 0 left and stopped
-        with others still queued.
-        """
         composer = self._mass_composer()
         reports = []
 

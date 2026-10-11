@@ -32,7 +32,6 @@ if typing.TYPE_CHECKING:
 
 _BINARY = memoryview
 
-# base64 characters read to tell markup from the binary formats
 _MARKUP_PROBE = 64
 
 
@@ -47,9 +46,6 @@ def _base64_or_raw(value: bytes, *, head: bool = False) -> bytes:
 
 
 def _is_svg_upload(value: bytes) -> bool:
-    # an SVG may open on a byte order mark and any run of whitespace, which
-    # a first-byte test let through; markup whose root the sniff cannot
-    # reach is refused as one
     if not opens_on_markup(_base64_or_raw(value[:_MARKUP_PROBE], head=True)):
         return False
     data = _base64_or_raw(value)
@@ -101,12 +97,6 @@ class Binary(Field[bytes | typing.Literal[False]]):
     def setup(self, model: BaseModel) -> None:
         super().setup(model)
         if self.bin_size_field and self.store and not model._abstract:
-            # `bin_size_field` answers a human size in place of the content,
-            # and a stored field's column holds the content -- so the cache
-            # carries "5.00 bytes" where the column carries the bytes, and
-            # `CacheInvalidError` fires the moment anything refetches the row.
-            # Both users of this attribute in the workspace are non-stored,
-            # which is the only reason the combination has never bitten.
             raise TypeError(
                 f"{self}: bin_size_field answers a size instead of the "
                 f"content, so it cannot be stored; declare store=False or "
@@ -114,7 +104,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
             )
 
     @functools.cached_property
-    def column_type(self) -> tuple[str, str] | None:  # type: ignore[override]
+    def column_type(self) -> tuple[str, str] | None:
         return None if self.attachment else ("bytea", "bytea")
 
     @override
@@ -182,8 +172,6 @@ class Binary(Field[bytes | typing.Literal[False]]):
         self, records: BaseModel, value: typing.Any
     ) -> tuple[BaseModel, typing.Any]:
         records, cache_value = super()._mark_dirty_prologue(records, value)
-        # a column is flushed without validation, so a write is checked here,
-        # as the writer: an attachment is checked by ir.attachment
         if records and self.store and not self.attachment:
             self._refuse_svg_upload(cache_value, records.env)
         return records, cache_value
@@ -334,7 +322,6 @@ class Binary(Field[bytes | typing.Literal[False]]):
         records = records.with_context(
             **{"bin_size": False, "bin_size_" + self.name: False}
         )
-        # the size a bin_size read cached describes the content being replaced
         self._invalidate_sizes(records.env, records._ids)
         if not self.attachment:
             super().mark_dirty(records, value)
@@ -391,7 +378,6 @@ class Binary(Field[bytes | typing.Literal[False]]):
         operator: str,
         value: typing.Any,
     ) -> Callable[[BaseModel], bool]:
-        # the cache holds bytes; a domain spells the base64 as text
         if operator == "in" and isinstance(value, COLLECTION_TYPES):
             value = {v.encode() if isinstance(v, str) else v for v in value}
         return super().filter_function(records, field_expr, operator, value)

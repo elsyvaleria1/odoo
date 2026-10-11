@@ -222,8 +222,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _raise_if_filed_into_others_drive(self, owner_ids: Iterable[int]) -> None:
-        # a document without a folder sits in its owner's My Drive, which only
-        # they, a Documents manager, or a server flow holding the privilege fill
         others = {owner_id for owner_id in owner_ids if owner_id} - {self.env.uid}
         if (
             not others

@@ -11,13 +11,6 @@ T = TypeVar("T", bound="BaseModel | Request")
 
 
 def requires_hr_version_context(key=HR_VERSION_CTX_KEY):
-    """
-    Decorator that asserts the decorated method is called within a savepoint context for hr.version
-
-    If also using ``@api.private``, that decorator must be applied *below* this one
-    (i.e. closer to the function), since this decorator's privacy check reads the
-    `_api_private` attribute at decoration time.
-    """
 
     def decorator(func):
         if not callable(func):
@@ -29,8 +22,6 @@ def requires_hr_version_context(key=HR_VERSION_CTX_KEY):
             hasattr(func, "_api_private") and func._api_private
         )
         if not is_private:
-            # By definition, the method needs to be called within `hr_version_context`;
-            # therefore, it's impossible for it to be externally exposed for API access.
             raise ValueError(
                 f"Method '{func.__name__}' must be private to use @requires_hr_version_context() decorator."
             )
@@ -68,19 +59,11 @@ def _hr_version_ctx_request(req: Request, **overrides):
 
 
 @contextmanager
-def hr_version_context(  # noqa: UP047  PEP 695 generics are a separate modernization (reported)
+def hr_version_context(
     container: T,
     key: str = HR_VERSION_CTX_KEY,
     **overrides,
 ) -> AbstractContextManager[T]:
-    """
-    Context manager for hr.version operations that require isolated database operations.
-
-    Creates a savepoint, yields with a prepared context for hr.version operations,
-    then rolls back all changes made within the context.
-
-    If `container` is a Request, the global `request` object is mutated, so the yielded result can be ignored at the caller site.
-    """
     if key in overrides:
         raise ValueError(f"'{key}' is reserved and cannot be passed as an override.")
 
@@ -103,7 +86,7 @@ def hr_version_context(  # noqa: UP047  PEP 695 generics are a separate moderniz
             )
 
     container.env.flush_all()
-    with container_ctx(container, **ctx_overrides) as container:  # noqa: PLR1704  intentional rebind of `container`
+    with container_ctx(container, **ctx_overrides) as container:
         with container.env.cr.savepoint(flush=False) as sp:
             try:
                 yield container
@@ -111,16 +94,4 @@ def hr_version_context(  # noqa: UP047  PEP 695 generics are a separate moderniz
                 container.env.flush_all()
                 sp.rollback()
 
-    # `sp.rollback()` undid the writes in the DATABASE; the ORM cache still holds
-    # them, so without this every later read in the same transaction still sees the
-    # simulation's values -- a caller that ran two simulations in a row scaled the
-    # second one off the first one's wage. The rollback and the invalidation are two
-    # halves of one operation, so this is not optional and not scoped to hr.version:
-    # the savepoint discarded writes to whatever the block touched.
-    # `flush=False` is required -- flushing here would write back the very values
-    # the savepoint just discarded.
-    # `keep_new_records=True` because a new record's values exist only in the cache,
-    # where no rollback reaches them: dropping them wiped an onchange's unsaved edits,
-    # so a picked contract template came back empty and the offer's wage computes,
-    # which each open this context, kept recomputing one another.
     container.env.invalidate_all(flush=False, keep_new_records=True)

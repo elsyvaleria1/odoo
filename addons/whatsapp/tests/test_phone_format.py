@@ -10,8 +10,6 @@ from odoo.addons.whatsapp.tools import phone_validation as wa_phone_validation
 @tagged("phone_validation")
 class PhoneFormat(WhatsAppCommon):
     def test_phone_format(self):
-        """Test various phone format done in whatsapp, as it uses some specific
-        custom format tools."""
         us_country = self.env.ref("base.us")
         be_country = self.env.ref("base.be")
         base_record = self.env["res.partner"].create(
@@ -21,14 +19,13 @@ class PhoneFormat(WhatsAppCommon):
             }
         )
         test_numbers = [
-            "32485221100",  # this is normally what we expect from WA as input
-            "0485221100",  # local
-            "+32485221100",  # E164
-            "+32 485 22 11 00",  # INTL
+            "32485221100",
+            "0485221100",
+            "+32485221100",
+            "+32 485 22 11 00",
             "0032485221100",
         ]
         expecteds = [
-            # formats are: E164, INTL, WHATSAPP
             "+32485221100",
             "+32 485 22 11 00",
             "32485221100",
@@ -58,30 +55,28 @@ class PhoneFormat(WhatsAppCommon):
                 )
                 self.assertEqual(formatted, expected)
 
-            # local number cannot be formatted with wrong or missing country code
             if number == "0485221100":
                 with self.assertRaises(UserError):
                     formatted = wa_phone_validation.wa_phone_format(
                         base_record,
                         number=number,
-                        country=us_country,  # force wrong country
+                        country=us_country,
                         force_format=force_format,
                     )
                 with self.assertRaises(UserError):
                     formatted = wa_phone_validation.wa_phone_format(
-                        self.env["res.partner"],  # force no country
+                        self.env["res.partner"],
                         number=number,
                         force_format=force_format,
                     )
                 continue
-            # other numbers are complete and ignore wrong or missing country code
             with self.subTest(
                 number=number, force_format=force_format, force_country=us_country
             ):
                 formatted = wa_phone_validation.wa_phone_format(
                     base_record,
                     number=number,
-                    country=us_country,  # force wrong country
+                    country=us_country,
                     force_format=force_format,
                 )
                 self.assertEqual(formatted, expected)
@@ -90,7 +85,7 @@ class PhoneFormat(WhatsAppCommon):
                 number=number, force_format=force_format, force_country=False
             ):
                 formatted = wa_phone_validation.wa_phone_format(
-                    self.env["res.partner"],  # force no country
+                    self.env["res.partner"],
                     number=number,
                     force_format=force_format,
                 )

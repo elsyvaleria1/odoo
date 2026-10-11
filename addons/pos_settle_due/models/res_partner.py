@@ -18,7 +18,6 @@ class ResPartner(models.Model):
             self.pos_orders_amount_due = 0.0
             return
         commercial_partner_ids = {p.id: p.commercial_partner_id.id for p in self}
-        # Fetch the total sum of 'customer_due_total' grouped by 'commercial_partner_id'
         pos_orders = self.env["pos.order"]._read_group(
             domain=[
                 ("commercial_partner_id", "in", set(commercial_partner_ids.values())),
@@ -40,7 +39,6 @@ class ResPartner(models.Model):
             self.invoices_amount_due = 0.0
             return
         commercial_partner_ids = {p.id: p.commercial_partner_id.id for p in self}
-        # Fetch the sum of 'pos_amount_unsettled' of unpaid invoices grouped by 'commercial_partner_id'
         invoices = self.env["account.move"]._read_group(
             domain=[
                 ("commercial_partner_id", "in", set(commercial_partner_ids.values())),
@@ -82,7 +80,7 @@ class ResPartner(models.Model):
         if group_pos_user in self.env.user.all_group_ids:
             self_sudo = (
                 self.sudo()
-            )  # allow POS users without accounting rights to settle dues
+            )
 
         total_due = (
             self_sudo.parent_id.total_due if self.parent_id else self_sudo.total_due
@@ -142,9 +140,6 @@ class ResPartner(models.Model):
 
     def _compute_has_moves(self) -> None:
         super()._compute_has_moves()
-        # total_due is gated by the accounting groups; the cashier who settles
-        # a due at the register is not in them, and only the boolean reaches
-        # the POS, so the gated amount is read as superuser for that alone
         for partner, elevated in zip(self, self.sudo(), strict=True):
             if not partner.has_moves:
                 partner.has_moves = elevated.total_due != 0

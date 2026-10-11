@@ -160,8 +160,6 @@ class TestPrivateAddressWrittenByHr(TestHrCommon):
         self.assertEqual(home.state_id, state)
 
     def test_the_officer_authors_the_tracked_address_change(self):
-        # The employee was created in setUpClass, and a record stays untracked until the
-        # precommit hooks that follow its creation have run.
         self.env.flush_all()
         self.env.cr.precommit.run()
         self.home_employee.with_user(self.officer).write(
@@ -294,12 +292,6 @@ class TestFixedSalaryAllocationIsValidated(TestHrCommon):
         return employee, account
 
     def test_a_negative_fixed_amount_is_rejected(self):
-        """The refusal is the database's, so it lands at the flush.
-
-        A fixed amount is not covered by the percentage total, which skips an
-        employee with no percentage row at all -- the CHECK constraint is the
-        only guard, and a constraint speaks when the rows reach storage.
-        """
         employee, _account = self._employee_with_account()
         with self.assertRaises(CheckViolation), self.env.cr.savepoint():
             employee.salary_allocation_ids.write(
@@ -308,14 +300,6 @@ class TestFixedSalaryAllocationIsValidated(TestHrCommon):
             self.env.flush_all()
 
     def test_a_non_numeric_fixed_amount_cannot_be_stored(self):
-        """The JSON could hold "abc"; a Float column cannot.
-
-        This used to need a hand-written `isinstance(amount, (float, int))`
-        check, because a jsonb value carries whatever was put in it. The
-        amount is a typed column now, so the rejection is the field's rather
-        than a constraint's -- which is why the exception is a ValueError and
-        not a ValidationError.
-        """
         employee, _account = self._employee_with_account()
         with self.assertRaises(ValueError):
             employee.salary_allocation_ids.write({"amount": "abc"})

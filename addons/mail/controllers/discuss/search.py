@@ -39,9 +39,6 @@ class SearchController(http.Controller):
         )
         base_domain = named_domain
         if not request.env.user._is_public():
-            # a member reads the names of the other members of its conversations:
-            # the persona match bypasses the persona rules, the outer is_member
-            # keeps it to the user's own conversations
             base_domain |= (
                 Domain(
                     "channel_type", "in", Channel._member_based_naming_channel_types()

@@ -6,8 +6,6 @@ from odoo.tests.common import TransactionCase
 @tagged("post_install", "-at_install", "scoring")
 class TestScorecard(TransactionCase):
     def test_every_dimension_code_resolves_to_a_hook_on_its_host(self):
-        # A module that ships a dimension record without the hook its code
-        # names is red at install, the way a HOOT file without a runner is.
         dimensions = (
             self.env["scorecard.dimension"].with_context(active_test=False).search([])
         )

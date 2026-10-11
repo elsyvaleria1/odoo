@@ -26,7 +26,7 @@ class HelpdeskSlaStatus(models.Model):
         comodel_name="helpdesk.stage",
         related="sla_id.stage_id",
         export_string_translation=False,
-    )  # need to be stored for the search in `_sla_reach`
+    )
     deadline = fields.Datetime(
         compute="_compute_deadline",
         compute_sudo=True,
@@ -70,26 +70,22 @@ class HelpdeskSlaStatus(models.Model):
             deadline = status.ticket_id.create_date
             working_calendar = status.ticket_id.team_id.resource_calendar_id
             if not working_calendar:
-                # Normally, having a working_calendar is mandatory
                 status.deadline = deadline
                 continue
 
             if status.sla_id.exclude_stage_ids:
                 if status.ticket_id.stage_id in status.sla_id.exclude_stage_ids:
-                    # We are in the freezed time stage: No deadline
                     status.deadline = False
                     continue
 
             avg_hour = (
                 working_calendar.hours_per_day or 8
-            )  # default to 8 working hours/day
+            )
             time_days = math.floor(status.sla_id.time / avg_hour)
             if time_days > 0:
                 deadline = working_calendar.plan_days(
                     time_days + 1, deadline, compute_leaves=True
                 )
-                # We should also depend on ticket creation time, otherwise for 1 day SLA, all tickets
-                # created on monday will have their deadline filled with tuesday 8:00
                 create_dt = working_calendar.plan_hours(0, status.ticket_id.create_date)
                 deadline = deadline and deadline.replace(
                     hour=create_dt.hour,
@@ -103,7 +99,6 @@ class HelpdeskSlaStatus(models.Model):
             if status.sla_id.exclude_stage_ids:
                 sla_hours += status._get_freezed_hours(working_calendar)
 
-            # Except if ticket creation time is later than the end time of the working day
             deadline_for_working_cal = working_calendar.plan_hours(0, deadline)
             if (
                 deadline_for_working_cal
@@ -111,9 +106,6 @@ class HelpdeskSlaStatus(models.Model):
                 and time_days > 0
             ):
                 deadline = deadline.replace(hour=0, minute=0, second=0, microsecond=0)
-            # We should execute the function plan_hours in any case because, in a 1 day SLA environment,
-            # if I create a ticket knowing that I'm not working the day after at the same time, ticket
-            # deadline will be set at time I don't work (ticket creation time might not be in working calendar).
             status.deadline = deadline and working_calendar.plan_hours(
                 sla_hours, deadline, compute_leaves=True
             )
@@ -123,11 +115,11 @@ class HelpdeskSlaStatus(models.Model):
         for status in self:
             if (
                 status.reached_datetime and status.deadline
-            ):  # if reached_datetime, SLA is finished: either failed or succeeded
+            ):
                 status.status = (
                     "reached" if status.reached_datetime < status.deadline else "failed"
                 )
-            else:  # if not finished, deadline should be compared to now()
+            else:
                 status.status = (
                     "ongoing"
                     if not status.deadline or status.deadline > fields.Datetime.now()
@@ -218,13 +210,11 @@ class HelpdeskSlaStatus(models.Model):
         old_time = self.ticket_id.create_date
         for tracking_line in tracking_lines:
             if tracking_line.old_value_integer in freeze_stages:
-                # We must use get_work_hours_count to compute real waiting hours (as the deadline computation is also based on calendar)
                 hours_freezed += working_calendar.get_work_hours_count(
                     old_time, tracking_line.create_date
                 )
             old_time = tracking_line.create_date
         if tracking_lines[-1].new_value_integer in freeze_stages:
-            # the last tracking line is not yet created
             hours_freezed += working_calendar.get_work_hours_count(
                 old_time, fields.Datetime.now()
             )

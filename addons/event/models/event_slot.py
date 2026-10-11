@@ -45,7 +45,6 @@ class EventSlot(models.Model):
         store=True,
     )
 
-    # Registrations
     is_sold_out = fields.Boolean(
         string="Sold Out",
         compute="_compute_is_sold_out",
@@ -97,13 +96,6 @@ class EventSlot(models.Model):
                 )
 
     def _is_within_event_range(self) -> bool:
-        """Whether this slot lies inside its event's own time range.
-
-        Shared with ``event.event._check_slots_dates``: an ORM constraint only
-        fires on the model whose fields changed, so moving a slot out of range
-        and shrinking an event under a slot need two constraints -- but not two
-        definitions of what "in range" means.
-        """
         self.check_singleton()
         event_start = self.event_id.date_begin
         event_end = self.event_id.date_end
@@ -151,11 +143,6 @@ class EventSlot(models.Model):
     @api.depends("seats_available")
     @api.depends_context("name_with_seats_availability")
     def _compute_display_name(self):
-        """Adds slot seats availability if requested by context.
-        Always display the name without availabilities if the event is multi slots
-        because the availability displayed won't be relative to the possible ticket combinations
-        but only relative to the event and this will confuse the user.
-        """
         for slot in self:
             date = format_date(self.env, slot.date, date_format="medium")
             start = format_time(
@@ -200,7 +187,6 @@ class EventSlot(models.Model):
         for slot in self:
             slot.seats_available = 0
             slot.update(results.get(slot._origin.id or slot.id, base_vals))
-            # seats_max is the per-slot cap on multi-slot events
             if slot.event_id.seats_max > 0:
                 slot.seats_available = slot.event_id.seats_max - (
                     slot.seats_reserved + slot.seats_used

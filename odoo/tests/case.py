@@ -228,7 +228,7 @@ class TestCase(_TestCase):
     def _callCleanup(self, function: Any, *args: Any, **kwargs: Any) -> None:
         function(*args, **kwargs)
 
-    def run(self, result: Any) -> Any:  # type: ignore[override]  # a result is mandatory here
+    def run(self, result: Any) -> Any:
         result.startTest(self)
 
         testMethod = getattr(self, self._testMethodName)
@@ -305,7 +305,7 @@ class TestCase(_TestCase):
     def doCleanups(self) -> None:
 
         assert self._outcome is not None
-        count = len(self._cleanups)  # debuglog
+        count = len(self._cleanups)
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with self._outcome.testPartExecutor(self):
@@ -321,7 +321,7 @@ class TestCase(_TestCase):
     @classmethod
     def doClassCleanups(cls) -> None:
         cls.tearDown_exceptions = []
-        count = len(cls._class_cleanups)  # debuglog
+        count = len(cls._class_cleanups)
         while cls._class_cleanups:
             function, args, kwargs = cls._class_cleanups.pop()
             try:

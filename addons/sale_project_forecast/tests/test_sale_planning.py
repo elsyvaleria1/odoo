@@ -108,7 +108,6 @@ class TestSaleForecast(TestCommonSalePlanning):
         )
 
         slot1.write({"project_id": line2_project.id})
-        # changing project of slot should not change to new project's sol if sol of slot is already set
         self.assertEqual(
             slot1.sale_line_id,
             line1_project.sale_line_id,

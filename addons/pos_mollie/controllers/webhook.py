@@ -10,7 +10,6 @@ _logger = logging.getLogger(__name__)
 class PosMollie(http.Controller):
     _PAYMENT_ID = re.compile(r"tr_[A-Za-z0-9]+")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/pos_mollie/webhook",
         methods=["POST"],

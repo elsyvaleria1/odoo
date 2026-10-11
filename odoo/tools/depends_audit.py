@@ -57,8 +57,6 @@ _PASS_THROUGH = _opnames("GET_ITER", "UNARY_NOT", "TO_BOOL")
 _CALLS = _opnames("CALL", "CALL_KW")
 _SUBSCRIPT = 26
 _GLOBAL: typing.Final = 2
-# the value an inlined comprehension saves and restores around its loop
-# variable: storing it back is not a binding the taint should count
 _SAVED_LOCAL: typing.Final = 3
 
 
@@ -70,7 +68,7 @@ class _Function:
         return False
 
 
-def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
+def _scan_code(
     bytecode: dis.Bytecode,
     foreign_locals: set[str],
     names: set[str],
@@ -88,7 +86,7 @@ def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
         if value != _SAVED_LOCAL:
             stores.setdefault(name, []).append(value)
 
-    entries = bytecode.exception_entries  # type: ignore[attr-defined]
+    entries = bytecode.exception_entries
     protected = {entry.start: entry for entry in entries}
     handlers = {entry.target: entry for entry in entries}
     entry_stacks: dict[int, list[typing.Any]] = {}
@@ -98,8 +96,6 @@ def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
         if entry := protected.get(instruction.offset):
             entry_stacks[entry.target] = stack[: entry.depth]
         if handler := handlers.get(instruction.offset):
-            # a handler is entered with the stack its range was entered with,
-            # not with what the straight-line walk left before it
             stack[:] = entry_stacks.get(handler.target, [False] * handler.depth)
             stack.extend([False] * (2 if handler.lasti else 1))
         opname = instruction.opname
@@ -137,8 +133,6 @@ def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
             extra = 1 if opname == "CALL_KW" else 0
             popped = pop(arg + 2 + extra)
             functions = [item for item in popped if isinstance(item, _Function)]
-            # a function argument walks the receiver or a positional argument;
-            # a keyword value (reverse=, default=) hands it nothing to read
             walked = popped[: 2 + arg - (len(keywords) if extra else 0)]
             if any(item is True for item in walked):
                 foreign_functions.update(function.code for function in functions)
@@ -152,8 +146,6 @@ def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
         elif opname == "FOR_ITER":
             stack.append(stack[-1] if stack else False)
         elif opname == "END_FOR":
-            # reached by FOR_ITER's exhausted jump, whose extra value this
-            # straight-line walk never pushed
             pass
         elif opname == "UNPACK_SEQUENCE":
             (value,) = pop()
@@ -183,7 +175,6 @@ def _scan_code(  # noqa: C901  one arm per opcode family of a stack simulation
                 pop(-effect)
             else:
                 stack.extend([False] * effect)
-        # CALL_KW's keyword names: the constant tuple loaded right before it
         keywords = (
             argval if opname == "LOAD_CONST" and isinstance(argval, tuple) else ()
         )
@@ -280,7 +271,7 @@ def audit_registry(
     include_stored: bool = False,
 ) -> Iterator[DependsFinding]:
     registry._get_field_triggers()
-    audited = findings = 0  # debuglog
+    audited = findings = 0
     for model_class in registry.models.values():
         if model_class._abstract:
             continue
@@ -299,10 +290,10 @@ def audit_registry(
                 )
             ):
                 continue
-            audited += 1  # debuglog
+            audited += 1
             finding = audit_field(registry, model_class, field)
             if finding is not None:
-                findings += 1  # debuglog
+                findings += 1
                 _debug.logic(
                     "depends_audit.finding",
                     model=finding.model_name,

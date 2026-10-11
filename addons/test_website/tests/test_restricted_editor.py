@@ -48,17 +48,9 @@ class TestRestrictedEditor(HttpCaseWithWebsiteUser):
             login="website_user",
         )
 
-    # FIXME the logic of the commit that introduced the fix at 8c41c147a4c6a415e
-    # was reverted, so this test is disabled for now. Branding *on views* as
-    # a restricted editor is something we want in some custo (e.g. odoo.com).
-    # See commit messages for details.
     @unittest.skip
     @mute_logger("odoo.addons.http_routing.models.ir_http", "odoo.http")
     def test_03_restricted_editor_tester(self):
-        """
-        Tests that restricted users cannot edit ir.ui.view records despite being
-        on a page of a record (main_object) they can edit.
-        """
         self.user_website_user.group_ids += self.env.ref(
             "test_website.group_test_website_tester"
         )

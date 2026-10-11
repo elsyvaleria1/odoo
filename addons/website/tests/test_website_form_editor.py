@@ -25,8 +25,6 @@ class TestWebsiteFormEditor(HttpCaseWithUserPortal):
         )
 
     def _without_livechat_popups(self):
-        # website_livechat's demo opens a chatbot on /contactus by itself; the
-        # form tour must not race a window over the form, demo data or not
         if "im_livechat.channel.rule" in self.env:
             self.env["im_livechat.channel.rule"].search(
                 [("action", "=", "auto_popup")]

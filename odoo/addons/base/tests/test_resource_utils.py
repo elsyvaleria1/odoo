@@ -178,11 +178,6 @@ class TestResourceUtils(TransactionCase):
         )
 
     def test_resource_creation_with_date_from(self):
-        """The form collects local days and hours, and stores the instants.
-
-        The exception's zone is the schedule's, so what a reader types is not read
-        in the reader's own zone: 08:00 on this calendar is 08:00 there.
-        """
         with Form(self.env["resource.schedule.exception"]) as res:
             res.calendar_id = self.env.company.resource_calendar_id
             res.local_date_from = date(2026, 3, 4)

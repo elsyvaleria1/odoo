@@ -184,7 +184,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.slot.template_id = self.template
         self.env.flush_all()
 
-        # simulate public user (no tz)
         self.env.user.tz = False
         self.slot.resource_id = self.employee_janice.resource_id
         self.assertEqual(
@@ -197,7 +196,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_change_employee(self):
-        """Ensures that changing the employee does not have an impact to the shift."""
         self.env.user.tz = "UTC"
         self.slot.resource_id = self.employee_joseph.resource_id
         self.assertEqual(
@@ -223,9 +221,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_create_with_employee(self):
-        """This test's objective is to mimic shift creation from the gant view and ensure that the correct behavior is met.
-        This test objective is to test the default values when creating a new shift for an employee when provided defaults are within employee's calendar workdays
-        """
         self.env.user.tz = "UTC"
         PlanningSlot = self.env["planning.slot"].with_context(
             tz="UTC",
@@ -268,9 +263,7 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_create_with_employee_outside_schedule(self):
-        """This test objective is to test the default values when creating a new shift for an employee when provided defaults are not within employee's calendar workdays"""
         self.env.user.tz = "UTC"
-        # Case 1: Create a planning slot on non-working days with a specific employee resource
         PlanningSlot = self.env["planning.slot"].with_context(
             tz="UTC",
             default_start_datetime="2019-06-26 00:00:00",
@@ -291,7 +284,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "It should adjust to employee calendar: 0am -> 5am",
         )
 
-        # Case 2: Create a planning slot on non-working days without a specific employee resource
         PlanningSlot = self.env["planning.slot"].with_context(
             tz="UTC",
             default_start_datetime="2019-12-07 00:00:00",
@@ -313,7 +305,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_create_without_employee(self):
-        """This test objective is to test the default values when creating a new shift when no employee is set"""
         self.env.user.tz = "UTC"
         PlanningSlot = self.env["planning.slot"].with_context(
             tz="UTC",
@@ -336,7 +327,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_unassign_employee_with_template(self):
-        # we are going to put everybody in EDT, because if the employee has a different timezone from the company this workflow does not work.
         self.env.user.tz = "America/New_York"
         self.env.user.company_id.resource_calendar_id.tz = "America/New_York"
         self.slot.template_id = self.template
@@ -347,7 +337,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "It should set time from template, in user timezone (11am EDT -> 3pm UTC)",
         )
 
-        # simulate public user (no tz)
         self.env.user.tz = False
         self.slot.resource_id = self.resource_janice.id
         self.env.flush_all()
@@ -407,15 +396,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertEqual(0, self.slot_6_3.overlap_slot_count, "no slot overlap")
 
     def test_compute_datetime_with_template_slot(self):
-        """Test if the start and end datetimes of a planning.slot are correctly computed with the template slot
-
-        Test Case:
-        =========
-        1) Create a planning.slot.template with start_hours = 11 am, end_hours = 2pm and duration_days = 2.
-        2) Create a planning.slot for one day and add the template.
-        3) Check if the start and end dates are on two days and not one.
-        4) Check if the allocating hours is equal to the working hours of the resource.
-        """
         self.employee_bert.resource_calendar_id = self.company_calendar
         template_slot = self.env["planning.slot.template"].create(
             {
@@ -456,14 +436,12 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_planning_state(self):
-        """The purpose of this test case is to check the planning state"""
         self.slot.resource_id = self.employee_bert.resource_id
         self.assertEqual(self.slot.state, "1_draft", "Planning is draft mode.")
         self.slot.action_send()
         self.assertEqual(self.slot.state, "2_published", "Planning is published.")
 
     def test_create_working_calendar_period(self):
-        """A default dates should be calculated based on the working calendar of the company whatever the period"""
         test = Form(
             self.env["planning.slot"].with_context(
                 default_start_datetime=datetime(2019, 5, 27, 0, 0),
@@ -482,7 +460,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "It should adjust to employee calendar: 0am -> 9pm",
         )
 
-        # For weeks period
         test_week = Form(
             self.env["planning.slot"].with_context(
                 default_start_datetime=datetime(2019, 6, 23, 0, 0),
@@ -503,7 +480,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_create_planing_slot_without_start_date(self):
-        "Test to create planning slot with template id and without start date"
         planning_role = self.env["resource.role"].create({"name": "role x"})
         template = self.env["planning.slot.template"].create(
             {
@@ -520,7 +496,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             self.assertEqual(slot_form.template_id, self.template)
 
     def test_shift_switching(self):
-        """The purpose of this test is to check the main back-end mechanism of switching shifts between employees"""
         bert_user = new_test_user(
             self.env,
             login="bert_user",
@@ -538,7 +513,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
         self.employee_joseph.user_id = joseph_user.id
 
-        # Lets first try to switch a shift that is in the past - should throw an error
         self.slot.resource_id = self.employee_bert.resource_id
         self.assertEqual(
             self.slot.is_past, True, "The shift for this test should be in the past"
@@ -546,7 +520,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         with self.assertRaises(UserError):
             self.slot.with_user(bert_user).action_switch_shift()
 
-        # Lets now try to switch a shift that is not ours - it should again throw an error
         self.assertEqual(
             self.slot.resource_id,
             self.employee_bert.resource_id,
@@ -555,7 +528,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         with self.assertRaises(UserError):
             self.slot.with_user(joseph_user).action_switch_shift()
 
-        # Lets now to try to switch a shift that is both in the future and is ours - this should not throw an error
         test_slot = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime.now() + relativedelta(days=2),
@@ -579,7 +551,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
                 "After the switch action, the request to switch should be True",
             )
 
-            # Lets now assign another user to the shift - this should remove the request to switch and assign the shift
             test_slot.with_user(joseph_user).action_self_assign()
             self.assertEqual(
                 test_slot.request_to_switch,
@@ -592,7 +563,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
                 "The shift should now be assigned to Joseph",
             )
 
-            # Lets now create a new request and then change the start datetime of the switch - this should remove the request to switch
             test_slot.with_user(joseph_user).action_switch_shift()
             self.assertEqual(
                 test_slot.request_to_switch,
@@ -708,11 +678,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             )
 
     def test_avoid_rounding_error_when_creating_template(self):
-        """
-        Regression test: in some odd circumstances,
-        a floating point error during the divmod conversion from float -> hours/min can lead to incorrect minutes
-        5.1 after a divmod(1) gives back minutes = 0.0999999999964 instead of 1, hence the source of error
-        """
         template = self.env["planning.slot.template"].create(
             {
                 "start_time": 8,
@@ -738,10 +703,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_end_time_rounding_edge_case(self):
-        """
-        Test to ensure 0.996 doesn't round to 60,
-        minutes need to be between 0 and 59.
-        """
         shift_template = self.env["planning.slot.template"].create(
             {
                 "start_time": 8.995,
@@ -752,18 +713,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertEqual(re.sub(r"\s+", " ", shift_template.name), "8:59 - 17:59")
 
     def test_copy_planning_shift(self):
-        """Test state of the planning shift is only copied once we are in the planning split tool
-
-        Test Case:
-        =========
-        1) Create a planning shift with state published.
-        2) Copy the planning shift as we are in the planning split tool (planning_split_tool=True in the context).
-        3) Check the state of the new planning shift is published.
-        4) Copy the planning shift as we are not in the planning split tool (planning_split_tool=False in the context).
-        5) Check the state of the new planning shift is draft.
-        6) Copy the planning shift without the context (= diplicate a shift).
-        7) Check the state of the new planning shift is draft.
-        """
         self.env.user.tz = "UTC"
         slot = self.env["planning.slot"].create(
             {
@@ -793,7 +742,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_calculate_slot_duration_flexible_hours(self):
-        """Ensures that _get_slot_duration_capped function rounds up days only when there is an extra non-full day left"""
 
         employee = self.env["hr.employee"].create(
             {
@@ -803,7 +751,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
         employee.resource_id.calendar_id = self.flex_40h_calendar
 
-        # the diff between start and end is exactly 6 days
         planning_slot_1 = self.env["planning.slot"].create(
             {
                 "resource_id": employee.resource_id.id,
@@ -817,7 +764,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "day 23, 24 and 25 belong to week 8 (8*3 = 24h) / day 26, 27, 28 (8*3 = 24h) and 29 (6 hours from 0h to 6h) belong to week 9",
         )
 
-        # the diff between start and end is 6 days and 8 hours, hence the diff should be approximated to 7 days
         planning_slot_2 = self.env["planning.slot"].create(
             {
                 "resource_id": employee.resource_id.id,
@@ -825,13 +771,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
                 "end_datetime": datetime(2024, 2, 24, 16, 0, 0),
             }
         )
-        # The weekly budget is bucketed by ISO week, so Sun 18/02 is week 7 (8h)
-        # and Mon 19/02 -> Sat 24/02 is week 8 (6 x 8h = 48h, capped at the 40h
-        # weekly limit): 8 + 40 = 48.  This used to read 40.0 because the bucket
-        # came from the acting user's locale, which starts the week on Sunday
-        # for en_US and so swallowed 18/02 into week 8 — note that the
-        # assertion above already describes ISO weeks (the 25/02 -> 26/02
-        # boundary is a Monday), so the two were mutually inconsistent.
         self.assertEqual(
             planning_slot_2.allocated_hours,
             48.0,
@@ -839,18 +778,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_auto_plan_employee_with_break_company_no_breaks(self):
-        """Test auto-planning an employee with break, while company calendar without breaks
-
-        Test Case:
-        =========
-        1) Create company calendar with 24 hours per day.
-        2) Create employee with night shifts calendar, with 30 minutes break at midnight.
-        3) Create shift from 21:30 to 6:00 with 8 allocated hours.
-        4) Auto-plan the shift.
-        5) Check the shift is assigned to the employee.
-        6) Check the allocated hours remain the same.
-        """
-        # Create a 24-hour company calendar
         calendar_24hr = self.env["resource.calendar"].create(
             {
                 "name": "24/24 Company Calendar",
@@ -938,7 +865,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             }
         )
         role = self.env["resource.role"].create({"name": "test role"})
-        # Create an employee linked to this calendar
         night_employee = self.env["hr.employee"].create(
             {
                 "name": "Night employee",
@@ -947,7 +873,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             }
         )
 
-        # Create a shift from 21:30 to 6:00 with an allocated 8 hours
         night_shift = self.env["planning.slot"].create(
             {
                 "name": "Night Shift",
@@ -957,7 +882,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             }
         )
         night_shift.allocated_hours = 8
-        # Execute auto-plan to assign the employee
         night_shift.auto_plan_id()
 
         self.assertEqual(
@@ -975,7 +899,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_write_multiple_slots(self):
-        """Test that we can write a resource_id on multiple slots at once."""
         slots = self.env["planning.slot"].create(
             [
                 {
@@ -1033,11 +956,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_flexible_contract_slot(self):
-        """
-        A flexible contract should have no constraints on the slots in terms of start/end time,
-        but the duration cannot exceed the hours_per_day defined in the contract.
-        """
-        # Create a shift longer than the calendar's hours_per_day
         self.employee_bert.resource_calendar_id = self.flex_50h_calendar
         slot = self.env["planning.slot"].create(
             {
@@ -1054,7 +972,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             slot.allocated_percentage, 100, "The allocated percentage should be 100%%"
         )
 
-        # Create a night shift that spans over two days, but shorter than the calendar's hours_per_day
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.resource_bert.id,
@@ -1068,7 +985,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             slot.allocated_percentage, 100, "The allocated percentage should be 100%%"
         )
 
-        # Create a night shift that spans over two days and is longer than the calendar's hours_per_day
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.resource_bert.id,
@@ -1086,7 +1002,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             slot.allocated_percentage, 100, "The allocated percentage should be 100%%"
         )
 
-        # Changing the allocated time percentage should be reflected in the allocated hours
         slot.allocated_percentage = 50
         self.assertEqual(
             slot.allocated_hours,
@@ -1095,9 +1010,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_fully_flexible_contract_slot(self):
-        """
-        A fully flexible contract should not have any constraints on the slots in terms of duration and start time.
-        """
         self.employee_bert.resource_calendar_id = False
         slot = self.env["planning.slot"].create(
             {
@@ -1114,7 +1026,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             slot.allocated_percentage, 100, "The allocated percentage should be 100%%"
         )
 
-        # Changing the allocated time percentage should be reflected in the allocated hours
         slot.allocated_percentage = 50
         self.assertEqual(
             slot.allocated_hours,
@@ -1123,15 +1034,11 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_open_shift_planning_slot_including_weekend(self):
-        """
-        When an open shift is scheduled spanning between weekday and weekends (e.g. Sunday 8 AM to Monday 5 PM),
-        allocated time should be equal to 16h instead of 8h (same behavior as for employees working flexible hours):
-        """
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": False,
-                "start_datetime": datetime(2022, 1, 16, 8, 0),  # Sunday 8AM
-                "end_datetime": datetime(2022, 1, 17, 17, 0),  # Monday 5PM
+                "start_datetime": datetime(2022, 1, 16, 8, 0),
+                "end_datetime": datetime(2022, 1, 17, 17, 0),
                 "state": "2_published",
             }
         )
@@ -1183,10 +1090,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_planning_expand_resource(self):
-        """
-        When planning_expand_resource = True and there are slots assigned to the resource in the previous or next period,
-        the resource is also displayed in the gantt view with value = 0.
-        """
         self.employee_bert.resource_calendar_id = self.flex_50h_calendar
         self.slot.resource_id = self.employee_bert.resource_id
         group_by = ["resource_id"]
@@ -1232,12 +1135,9 @@ class TestPlanning(TestCommonPlanning, MockEmail):
                 )
 
     def test_allocated_hours_open_shift(self):
-        """Ensure that the allocated hours for an open shift are correctly computed based on the
-        company calendar."""
         self.employee_joseph.user_id = self.env.user.id
         PlanningSlot = self.env["planning.slot"]
 
-        # Create a slot NOT during the employee working hours
         slot = PlanningSlot.create(
             {
                 "start_datetime": datetime(2019, 5, 1, 8, 0),
@@ -1250,7 +1150,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "The allocated hours should be 8.0 for the open shift based on the company calendar",
         )
 
-        # Create a slot during the employee working hours
         slot = PlanningSlot.create(
             {
                 "start_datetime": datetime(2019, 5, 2, 8, 0),
@@ -1264,7 +1163,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_planning_slot_default_datetime(self):
-        """This test ensures that when selecting the datetime in Gantt view, the default hours are set correctly"""
         self.resource_joseph.tz = "Europe/Brussels"
         PlanningSlot = (
             self.env["planning.slot"]
@@ -1298,17 +1196,14 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertFalse(slot.resource_id)
         self.assertEqual(slot2.resource_id, self.resource_bert)
 
-        # Exception we keep the archived resource if it is given in parameter of copy method
         slot, slot2 = slots.copy({"resource_id": self.resource_joseph.id})
         self.assertEqual(slot.resource_id, self.resource_joseph)
         self.assertEqual(slot2.resource_id, self.resource_joseph)
 
-        # Exception we keep the archived resource if the shift is split
         slot = self.slot.with_context(planning_split_tool=True).copy()
         self.assertEqual(slot.resource_id, self.resource_joseph)
 
     def test_unavailability_open_shift(self):
-        """Ensure that there is no unavailabilities for open shifts."""
         gantt_unavailabilities = self.env["planning.slot"]._gantt_unavailability(
             "resource_id",
             self.resource_bert.ids,
@@ -1328,13 +1223,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_batch_creation_from_calendar(self):
-        """
-        This test ensure that when planning slots are created from the "create multi" of the calendar view inconsistent slot
-        are not created.
-        employee with standard calendar : the slot is valid if it is contained at least partially in the employee's schedule.
-        e.a. employee with 9-17 working schedule. slot 8-12 is valid. slot 18-20 is invalid.
-        employee with flexible working hours : all slots are valid.
-        """
         template_valid, template_invalid = self.env["planning.slot.template"].create(
             [
                 {
@@ -1402,19 +1290,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_batch_creation_from_calendar_with_duration_days_template(self):
-        """
-        This test ensure that when planning slots are created from the "create multi" of the calendar view with shift
-        template with duration days > 1, then the unavailable days are skipped.
-        Test case :
-            Create 2 new slots for Bert, flexible employee.
-            - weekend are ignored.
-            - start dates : Monday 07, Tuesday 08
-            - expected end dates : Friday 11, Saturday 12
-            Create 2 new slots for Joseph, fixed schedule 40h
-            - weekend are computed
-            - start dates : Monday 07, Tuesday 08
-            - expected end dates: Friday 11, Monday 14
-        """
         shift_template = self.env["planning.slot.template"].create(
             {"start_time": 8, "end_time": 12, "duration_days": 5}
         )
@@ -1473,22 +1348,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_copy_slots_when_time_off(self):
-        """
-        week_1: 19-01-2020 -> 25-01-2020
-            original slot: 20-01-2020 08:00 -> 24-01-2020 17:00 (5 days)
-            allocated_hours: 50 hours and allocated_percentage: 125
-        --------------------------------------------------------------------------------------------
-        week_2: 26-01-2020 -> 01-02-2020
-            resource on leave: 28-01-2020 8:00 -> 29-01-2020 17:00 (2 days i.e 16 hours)
-            copy slot: 27-01-2020 08:00 -> 31-01-2020 17:00
-        -------------------------------------------------------------------------------------------
-        Expected result:
-        Total 4 slots will create, 3 slot assigned to resource and 1 open slot
-            1) 27-01-2020 08:00 -> 27-01-2020 12:00 (4 hrs)(assigned slot)
-            2) 27-01-2020 13:00 -> 27-01-2020 19:00 (4 hrs)(assigned slot)
-            3) 28-01-2020 08:00 -> 29-01-2020 19:00 (16 hrs)(open slot)
-            4) 30-01-2020 08:00 -> 31-01-2020 19:00 (16 hrs)(assigned slot)
-        """
         employee_bert = self.env["hr.employee"].create(
             {
                 "name": "Test",
@@ -2091,7 +1950,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
     def test_auto_plan_flexible_week_uses_resource_timezone(self):
         self.env.user.tz = "UTC"
         self.flex_employee.resource_id.tz = "Pacific/Auckland"
-        # The local Monday-Friday bookings fall in the following UTC ISO week.
         for day in range(28, 32):
             self._create_flexible_reservation(
                 datetime(2025, 7, day, 0), datetime(2025, 7, day, 8)
@@ -2308,7 +2166,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertEqual(shift4.resource_id.employee_id, self.flex_employee)
         self.assertFalse(shift5.resource_id.employee_id)
 
-        # assert _compute_allocated_hours works fine for flexible resources (triggered after setting the resource on the shift, then again when setting the allocated hours)
         self.assertEqual(
             shift1.allocated_hours, 12.0, "should be the same original value"
         )
@@ -2378,13 +2235,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertEqual(shift.resource_id.employee_id, self.flex_employee)
 
     def test_print_planning(self):
-        """
-        In this test, we make sure that the split works well for:
-        1- slots starting before the week first day: we split the pill, and eliminate the part before the week start day
-        2- slots ending before the week end day: we split the pill, and eliminate the part after the week end day
-        3- the remaining part (inside the week) is splitted into many pills (pill per day), allocated hours, start_datetime and end_datetime
-        are computed for each pill based on the resource availabilities
-        """
         flexEmployee, standardEmployee = self.env["hr.employee"].create(
             [
                 {
@@ -2402,9 +2252,7 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         standardEmployee.resource_id.calendar_id = self.company_calendar
         slots_count = self.env["planning.slot"].search_count([])
 
-        # the diff between start and end is exactly 6 days
         self.env.user.tz = "UTC"
-        # Case 1: Create a planning slot on non-working days with a specific employee resource
         slot1, slot2, slot3 = (
             self.env["planning.slot"]
             .with_context(tz="UTC")
@@ -2464,7 +2312,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             )
         )
 
-        # make sure fake slots are not created in db
         self.assertEqual(
             current_slots_count,
             self.env["planning.slot"].search_count([]),
@@ -2477,19 +2324,14 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             ]
         )
 
-        # make sure existing slots are not updated when manipulating fake slots
         slots_after_printing = all_slots & slots
         self.assertDictEqual(original_values, get_slots_values(slots_after_printing))
 
-        # OPEN SHIFTS: from 18 to 19, other are eliminated because they're outside the week period,
-        # each slot is from 00:00 to 23:59 (because there is no calendar to follow) and has 8 allocated hours following the company work schedule
-        # except day 19 as it takes the slot end_datetime
         self.assertEqual(
             len(action["data"]["group_by_slots_per_day_per_week"]), 1, "one week"
         )
         self.assertEqual(len(action["data"]["group_by_slots_per_day_per_week"][0]), 3)
 
-        # resources should be sorted as (False, display named in non DESC order)
         self.assertEqual(
             action["data"]["group_by_slots_per_day_per_week"][0][0],
             (
@@ -2511,9 +2353,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             ),
         )
 
-        # FLEX EMPLOYEE: from 18 to 20, other are eliminated because they're outside the week period,
-        # each slot is from 00:00 to 23:59 and has 8 allocated hours following the flex_40h_calendar
-        # except day 20 as it takes the slot end_datetime
 
         self.assertEqual(
             action["data"]["group_by_slots_per_day_per_week"][0][1][0],
@@ -2534,8 +2373,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             },
         )
 
-        # STANDARD EMPLOYEE: from 22 to 23, other are eliminated because they're outside the week period and 24 is part of the weekend
-        # each slot is from 08:00 to 17:00 and has 8 allocated hours, except day 22 (from 6 to 15) following exaclty company_calendar
         self.assertEqual(
             action["data"]["group_by_slots_per_day_per_week"][0][2][0],
             standardEmployee.resource_id.id,
@@ -2573,11 +2410,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_gantt_progress_bar_split_when_flexible(self):
-        """
-        Test if a slot is shared between two weeks the progress bar
-        should be split between both weeks. Not showing the whole allocated
-        hours in both weeks.
-        """
         self.employee_bert.resource_calendar_id = self.flex_40h_calendar.id
 
         dt = datetime(2025, 8, 22, 0, 0)
@@ -2614,8 +2446,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_compute_slots_data(self):
-        """Test that wizard.planning.slot.publish wizard computes slot_ids and resource_ids correctly, including active_domain."""
-        # Create two employees
         employee_a, employee_b = self.env["hr.employee"].create(
             [
                 {"name": "Employee A"},
@@ -2623,7 +2453,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             ]
         )
 
-        # Create a planning role
         role_dev, role_other = self.env["resource.role"].create(
             [
                 {"name": "Dev"},
@@ -2631,7 +2460,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             ]
         )
 
-        # Create slots: one in range (role = Tester), one out of range
         slot_in_range = self.env["planning.slot"].create(
             [
                 {
@@ -2654,7 +2482,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
         slot_in_range = slot_in_range[0]
 
-        # Create wizard with a time window that only includes slot_in_range
         wizard = self.env["wizard.planning.slot.publish"].create(
             {
                 "start_datetime": datetime(2023, 11, 20, 8, 0),
@@ -2663,20 +2490,17 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
         wizard._compute_slots_data()
 
-        # Wizard should only include slot_in_range
         self.assertIn(
             slot_in_range,
             wizard.slot_ids,
             "Wizard should include slots inside the range.",
         )
 
-        # The wizard names the people of slot_in_range
         self.assertEqual(
             wizard.resource_ids,
             employee_a.resource_id,
         )
 
-        # Now test with active_domain filtering by role = Dev → should exclude slot_in_range
         wizard_ctx = wizard.with_context(active_domain=[("role_id", "=", role_dev.id)])
         wizard_ctx._compute_slots_data()
         self.assertFalse(
@@ -2722,7 +2546,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         self.assertEqual(data.get("name"), "Test Emp")
 
     def test_multi_shift_creation_excludes_non_working_days(self):
-        """Ensure multi-shift creation automatically skips weekends (non-working days)."""
         self.employee_bert.resource_calendar_id = self.flex_40h_calendar
         slots = (
             self.env["planning.slot"]
@@ -2816,7 +2639,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             "The action should open a form view to complete missing work email",
         )
 
-        # since the user has no access in edit to `hr.employee`, we will not send the planning to the employee without email set.
         self.assertFalse(
             self.env["hr.employee"]
             .with_user(self.planning_manager_user)
@@ -2855,7 +2677,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_repeat_until_before_start_datetime_raises(self):
-        """`repeat_until` set before the shift's `start_datetime` should be rejected."""
         with self.assertRaises(UserError):
             self.env["planning.slot"].create(
                 {
@@ -2868,7 +2689,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             )
 
     def test_end_datetime_before_start_datetime_raises(self):
-        """`end_datetime` must be strictly after `start_datetime` (SQL constraint)."""
         with (
             self.assertRaises(IntegrityError),
             mute_logger("odoo.db.cursor"),
@@ -2883,12 +2703,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
             self.env.flush_all()
 
     def test_group_expand_resource_id_expands_on_department(self):
-        """Filtering the gantt by department must list every member of it.
-
-        Grouping by resource with a department facet used to show only the
-        resources that already had a shift in the window, so a member with an
-        empty schedule had no row to drop an open shift onto.
-        """
         department = self.env["hr.department"].create({"name": "Test Department"})
         (self.employee_joseph + self.employee_bert).department_id = department
         self.env["planning.slot"].create(
@@ -2898,8 +2712,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
                 "end_datetime": datetime(2019, 6, 27, 17, 0),
             }
         )
-        # The gantt model ORs ('resource_id', '=', False) into the domain as
-        # soon as the facet is a department, see planning_gantt_model.js.
         domain = [
             "&",
             "|",
@@ -2930,8 +2742,6 @@ class TestPlanning(TestCommonPlanning, MockEmail):
         )
 
     def test_open_shifts_action_expands_roles_without_shifts(self):
-        """The Open Shifts gantt groups by role, so a role with no open shift
-        still needs a row to create one in."""
         role = self.env["resource.role"].create({"name": "Bartender"})
         action = self.env.ref("planning.planning_action_view_shifts")
         context = literal_eval(action.context)

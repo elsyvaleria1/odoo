@@ -14,11 +14,6 @@ class StockPickingBatch(models.Model):
     picking_type_code = fields.Selection(related="picking_type_id.code")
 
     def action_client_action(self):
-        """Open the mobile view specialized in handling barcodes on mobile devices.
-
-        :return: the action used to select pickings for the new batch picking
-        :rtype: dict
-        """
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             self._barcode_client_action
@@ -26,7 +21,6 @@ class StockPickingBatch(models.Model):
         return dict(action, context={"active_id": self.id})
 
     def action_view_batch_picking(self):
-        """Method to open the form view of the current record from a button on the kanban view."""
         self.check_singleton()
         view_id = self.env.ref("stock_picking_batch.stock_picking_batch_form").id
         return {
@@ -46,16 +40,12 @@ class StockPickingBatch(models.Model):
 
     @api.model
     def open_new_batch_picking(self):
-        """Opens the client action to select the pickings of a batch that does not exist yet:
-        confirming the selection creates it (`action_create_from_barcode_draft`)."""
         return self._action_open_barcode_draft(
             self.default_get(sorted(self._barcode_draft_fields))
         )
 
     @api.model
     def action_create_from_barcode_draft(self, draft, vals):
-        """Creates the batch and adds the selected pickings in one transaction, so a refused
-        selection leaves no empty batch behind."""
         return self._create_from_barcode_draft(draft).action_add_pickings_and_confirm(
             vals
         )
@@ -76,7 +66,6 @@ class StockPickingBatch(models.Model):
 
     @api.model
     def action_get_new_batch_status(self, picking_batch_id) -> dict:
-        """Return the initial state of a new batch picking as a dict."""
         picking_batch = self.env["stock.picking.batch"].browse(picking_batch_id)
         picking_states = dict(
             self.env["stock.picking"].fields_get(["state"])["state"]["selection"]
@@ -92,7 +81,6 @@ class StockPickingBatch(models.Model):
             allowed_picking_ids.read(["name", "user_id", "state", "picking_type_id"]),
             key=itemgetter("name"),
         )
-        # convert to selection label
         for picking in allowed_picking_ids:
             picking["state"] = picking_states[picking["state"]]
 
@@ -104,15 +92,6 @@ class StockPickingBatch(models.Model):
 
     @api.model
     def action_confirm_batch_picking(self, picking_batch_id, picking_ids=None):
-        """Confirms selected pickings for a batch picking.
-
-        Errors are expected to be handled in parent class and automatically stops batch confirmation
-        and pickings.write(...). If picking_ids=None or picking_ids.types not the same => expect UserError.
-
-        :param picking_batch_id: newly created batch
-        :param picking_ids: pickings ids to add to new batch
-        :return: boolean if successful
-        """
         if picking_ids:
             pickings = self.env["stock.picking"].browse(picking_ids)
             pickings.write({"batch_id": picking_batch_id})
@@ -121,9 +100,7 @@ class StockPickingBatch(models.Model):
 
     def _get_stock_barcode_data(self):
         picking_data = {}
-        if not self.picking_ids:  # Add some data for new batch.
-            # `_origin`: on a draft batch (`new()`) the computed pickings are new records
-            # wrapping the real ones, and would read as their NewIds.
+        if not self.picking_ids:
             allowed_picking_ids = self.allowed_picking_ids._origin.filtered(
                 lambda p: p.state == "assigned"
             )
@@ -155,12 +132,11 @@ class StockPickingBatch(models.Model):
                 ),
                 "stock.picking.type": picking_types.read(["name"], False),
             }
-        else:  # Get data from batch's pickings.
+        else:
             picking_data = self.picking_ids._get_stock_barcode_data()
             picking_data["records"]["stock.picking.batch"] = self.read(
                 self._get_fields_stock_barcode(), load=False
             )
-        # Add picking_id sorted by name to be consistent with the older version.
         for batch in picking_data["records"]["stock.picking.batch"]:
             batch["picking_ids"] = (
                 self.browse(batch["id"])

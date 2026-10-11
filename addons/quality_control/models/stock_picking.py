@@ -33,11 +33,6 @@ class StockPicking(models.Model):
 
     @api.depends("check_ids.quality_state")
     def _compute_check(self) -> None:
-        # Without the dependency both flags were cached for the whole
-        # transaction: a check created or graded afterwards never moved them,
-        # and `quality_check_todo` is what the barcode UI and the batch view
-        # read to decide whether anything is left to do.
-        # Only prefetch needed QC fields to avoid to bloat the cache by fetching other QC data.
         self.check_ids.fetch(["quality_state"])
         for picking in self:
             states = set(picking.check_ids.mapped("quality_state"))
@@ -64,10 +59,6 @@ class StockPicking(models.Model):
             else:
                 checkable_lines = picking.move_line_ids
             checkable_products = checkable_lines.product_id
-            # `picking.check_ids`, not `self.check_ids`: every picking used to
-            # be offered the whole recordset's checks, so validating two
-            # transfers together pulled in a sibling's check whenever *this*
-            # picking happened to move the same product.
             checks_to_do = picking.check_ids._filtered_to_do(
                 checkable_products, check_picked=has_picked
             )
@@ -87,7 +78,6 @@ class StockPicking(models.Model):
         if self.env.context.get("skip_check"):
             return res
         for backorder in res:
-            # Do not link the QC of move lines with quantity of 0 in backorder.
             backorder.move_line_ids.filtered(
                 lambda ml: (
                     not float_is_zero(

@@ -235,16 +235,13 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _enter_api_scope(cls, scope: str, uid: int) -> None:
-        """The door's scope, for `service.model.call_kw` to enforce on every
-        call this request makes, and its budget spent for this call."""
         scope_row = request.env["res.users.apikeys.scope"]._get_or_create(scope)
         request.update_context(api_scope_id=scope_row.id)
         cls._consume_api_scope_budget(scope_row, uid)
 
     @classmethod
     def _consume_api_scope_budget(cls, scope, uid: int) -> None:
-        """A scope's per-key budget is a rate-limit bucket, which `rate_limit`
-        provides; base has none and spends nothing."""
+        pass
 
     @classmethod
     def _auth_method_user(cls) -> None:
@@ -273,9 +270,6 @@ class IrHttp(models.AbstractModel):
         link_param: str = "access_token",
         link_refused: str | None = None,
     ) -> None:
-        # a record that may be sent to someone outside: the session's own
-        # access first, then a link presented with the request; the handler
-        # reads request.link_subject, and request.access_link says which link
         cls._auth_method_public()
         if not link:
             _logger.error(
@@ -295,8 +289,6 @@ class IrHttp(models.AbstractModel):
             and record.exists()
             and record.has_access("read")
         ):
-            # the session's own access; the handler gets the record as a link
-            # holder does, in sudo, and the door names it (decision I1)
             request.link_subject = record.with_user(SUPERUSER_ID)
             _debug.logic("link_auth", by="session", model=model_name)
             return
@@ -377,8 +369,6 @@ class IrHttp(models.AbstractModel):
         ):
             raise
         except (*PG_RETRY_EXCEPTIONS, ConcurrencyError):
-            # Admission can lock authoritative security rows. A stale snapshot
-            # must reach the transaction retry layer, not become bad credentials.
             raise
         except Exception as exc:
             _debug.logic("auth_failed", auth=auth, error=type(exc).__name__)
@@ -416,8 +406,6 @@ class IrHttp(models.AbstractModel):
 
         request.dispatcher.pre_dispatch(rule, args)
 
-        # the access domains of the record arguments read the context (the
-        # companies, a website): it is settled before any of them is checked
         cls._update_request_context()
 
         model_params = 0
@@ -594,8 +582,6 @@ class IrHttp(models.AbstractModel):
 
     @api.model
     def _get_webclient_translation_modules(self) -> list[list[str]]:
-        # sorted: a message two modules translate differently falls back to
-        # the last module listed, and a set's order changes with the process
         return [
             sorted(
                 self.env.registry.loaded_modules.union(
@@ -659,6 +645,4 @@ class IrHttp(models.AbstractModel):
 
     @api.model
     def _check_request_captcha_token(self, action: str) -> None:
-        """Refuse the current request unless its captcha proves a human asked
-        for `action`; without a captcha module there is nothing to check."""
         return

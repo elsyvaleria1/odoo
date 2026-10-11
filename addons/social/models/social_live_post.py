@@ -100,7 +100,6 @@ class SocialLivePost(models.Model):
         )
     )
     def _compute_message(self) -> None:
-        """Prepares the message of the parent post, and shortens links to contain UTM data."""
         message_field_per_media = self.env["social.post"]._message_fields()
         for live_post in self:
             message_field = message_field_per_media.get(live_post.account_id.media_type)
@@ -147,7 +146,6 @@ class SocialLivePost(models.Model):
 
     @api.depends("state", "account_id")
     def _compute_display_name(self):
-        """ex: [Facebook] Odoo Social: posted, [Twitter] Mitchell Admin: failed, ..."""
         state_description_values = dict(
             self._fields["state"]._description_selection(self.env)
         )
@@ -171,9 +169,6 @@ class SocialLivePost(models.Model):
 
     @api.model
     def refresh_statistics(self):
-        # as refreshing the statistics is a recurring task, we ignore occasional "read timeouts"
-        # from the third party services, as it would most likely mean a temporary slow connection
-        # and/or a slow response from their side
         try:
             self.env["social.live.post"]._refresh_statistics()
         except requests.exceptions.ConnectionError, requests.exceptions.Timeout:
@@ -182,21 +177,9 @@ class SocialLivePost(models.Model):
             )
 
     def _refresh_statistics(self):
-        """Every social module should override this method.
-
-        This is the method responsible for fetching the post data per social media.
-
-        It will be called manually every time we need to refresh the social.stream data:
-            - social.stream creation/edition
-            - 'Feed' kanban loading
-            - 'Refresh' button on 'Feed' kanban
-            - ...
-        """
         pass
 
     def _post(self):
-        """Every social module should override this method.
-        This will make the actual post on the related social.account through the third party API"""
         pass
 
     def _prepare_utm_vals(self) -> ValuesType:

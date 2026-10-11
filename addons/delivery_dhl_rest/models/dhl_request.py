@@ -66,8 +66,6 @@ class DHLProvider:
                 "DHL account number is missing, please modify your delivery method settings."
             )
 
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not recipient.street
             and not recipient.street2

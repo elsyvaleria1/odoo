@@ -36,8 +36,6 @@ class USPSRequest:
         self, recipient, delivery_nature, shipper, order=False, picking=False
     ):
         recipient_required_field = ["city", "zip", "country_id"]
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not recipient.street
             and not recipient.street2
@@ -95,20 +93,16 @@ class USPSRequest:
             weight_uom_id = order.env["product.template"]._get_uom_from_setting(
                 "weight"
             )
-            # round=False: this feeds a threshold comparison, not a record. The
-            # rounding is UP at the destination unit's precision, so a parcel
-            # just under the 4 lb limit could be quantised over it and refused.
             weight_in_pounds = weight_uom_id._get_quantity_in_unit(
                 tot_weight, order.env.ref("base.product_uom_lb"), round=False
             )
             if (
                 weight_in_pounds > 4 and order.carrier_id.usps_service == "First Class"
-            ):  # max weight of FirstClass Service
+            ):
                 return self.env._(
                     "Please choose another service (maximum weight of this service is 4 pounds)"
                 )
         if picking and picking.move_ids:
-            # https://www.usps.com/business/web-tools-apis/evs-international-label-api.htm
             if max(picking.move_ids.mapped("product_uom_qty")) > 999:
                 return self.env._(
                     "Quantity for each move line should be less than 1000."
@@ -118,7 +112,7 @@ class USPSRequest:
     def _usps_request_data(self, carrier, order):
         currency = carrier.env["res.currency"].search(
             [("name", "=", "USD")], limit=1
-        )  # USPS Works in USDollars
+        )
         tot_weight = order._get_estimated_weight()
         total_weight = carrier._usps_convert_weight(tot_weight)
         total_value = (
@@ -169,7 +163,6 @@ class USPSRequest:
             "Girth": carrier.usps_custom_container_girth,
         }
 
-        # Shipping to Canada requires additional information
         if order.partner_shipping_id.country_id.code == "CA":
             rate_detail.update(OriginZip=order.warehouse_id.partner_id.zip)
 
@@ -202,14 +195,12 @@ class USPSRequest:
                 errors_number[0].text if errors_number else "", errors_return[0].text
             )
             return dict_response
-        # Domestic Rate
         elif root.tag == "RateV4Response":
             package_root = root.findall("Package")
             postage_roots = package_root[0].findall("Postage")
             for postage_root in postage_roots:
                 rate = postage_root.findtext("Rate")
                 dict_response["price"] = float(rate)
-        # International Rate
         else:
             package_root = root.findall("Package")
             services = package_root[0].findall("Service")
@@ -232,7 +223,7 @@ class USPSRequest:
             "Description": line.name,
             "Quantity": max(
                 int(line.product_uom_qty), 1
-            ),  # the USPS API does not accept 1.0 but 1
+            ),
             "Value": price,
             "NetPounds": weight["pound"],
             "NetOunces": round(weight["ounce"], 0),
@@ -285,7 +276,7 @@ class USPSRequest:
             "GrossPounds": gross_weight["pound"],
             "GrossOunces": int(
                 round(gross_weight["ounce"], 0)
-            ),  # API want 1 and no 1.0
+            ),
             "MailType": carrier.usps_mail_type,
             "FirstClassMailType": "LETTER",
             "ImageType": carrier.usps_label_file_type,
@@ -312,7 +303,6 @@ class USPSRequest:
             "Machinable": str(carrier.usps_machinable),
             "Container": carrier.usps_container,
             "IsReturn": is_return,
-            # We pass the function so that the template can use it too
             "func_split_zip": split_zip_plus_four,
         }
         if not is_return:
@@ -393,7 +383,6 @@ class USPSRequest:
             "delivery_usps.usps_cancel_request", cancel_detail
         )
         dict_response = {"ShipmentDeleted": False, "error_found": False}
-        # If the account isn't validated by USPS you can't use cancelling methods. It returns an authentication error.
         if not account_validated:
             dict_response["ShipmentDeleted"] = True
         else:

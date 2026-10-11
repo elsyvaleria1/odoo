@@ -8,8 +8,6 @@ class WalletCard(models.Model):
     _order = "account_id, number, id"
     _check_company_auto = True
 
-    # FIELDS
-    # Core identification
     name = fields.Char(
         compute="_compute_name",
         precompute=True,
@@ -40,7 +38,6 @@ class WalletCard(models.Model):
         help="Who carries the card.",
     )
     note = fields.Text()
-    # Balance block
     currency_id = fields.Many2one(related="company_id.currency_id")
     amount_balance = fields.Monetary(
         compute="_compute_amount_balance",
@@ -61,7 +58,6 @@ class WalletCard(models.Model):
         comodel_name="wallet.balance",
         inverse_name="card_id",
     )
-    # Transaction block
     transaction_ids = fields.One2many(
         comodel_name="wallet.transaction",
         inverse_name="card_id",
@@ -69,13 +65,11 @@ class WalletCard(models.Model):
     count_transaction = fields.Count(count_of="transaction_ids")
     amount_spent = fields.Monetary(compute="_compute_amount_spent")
 
-    # CONSTRAINTS
     _number_account_uniq = models.Constraint(
         "UNIQUE(number, account_id)",
         "A card number must be unique per wallet account.",
     )
 
-    # COMPUTE METHODS
     @api.depends("number", "account_id.name")
     def _compute_name(self):
         for card in self:
@@ -91,7 +85,6 @@ class WalletCard(models.Model):
 
     @api.depends("amount_balance", "date_balance", "account_id.amount_threshold_low")
     def _compute_is_low_balance(self) -> None:
-        # a card never read has no balance yet, not a balance of zero
         for card in self:
             card.is_low_balance = bool(card.date_balance) and (
                 card.amount_balance < card.amount_threshold_low
@@ -108,7 +101,6 @@ class WalletCard(models.Model):
         for card in self:
             card.amount_spent = totals.get(card.id, 0.0)
 
-    # ACTION METHODS
     def action_view_transactions(self) -> dict:
         self.check_singleton()
         return {

@@ -57,8 +57,6 @@ __all__ = [
 
 MODULE_NAME_RE = re.compile(r"^\w{1,256}$", re.ASCII)
 MANIFEST_NAMES = ["__manifest__.py"]
-# the description renders as reStructuredText: a README.md is for the
-# repository host, and a module with one declares its manifest `description`
 README = ["README.rst", "README.txt", "README"]
 
 _DEFAULT_MANIFEST = {
@@ -356,7 +354,7 @@ class Manifest(Mapping[str, typing.Any]):
                 return manifest
             del Manifest._resolution_cache[module]
             _debug.logic("module.manifest.resolution_stale", module=module, path=known)
-        for scanned, adp in enumerate(odoo.addons.__path__, 1):  # debuglog
+        for scanned, adp in enumerate(odoo.addons.__path__, 1):
             path = str(Path(adp, module))
             if manifest := Manifest._from_path(path):
                 Manifest._resolution_cache[module] = path
@@ -444,15 +442,15 @@ class Manifest(Mapping[str, typing.Any]):
         with _debug.perf(
             "module.manifests.scan", paths=len(odoo.addons.__path__)
         ) as span:
-            entries = shadowed = 0  # debuglog
+            entries = shadowed = 0
             for adp in odoo.addons.__path__:
                 if not Path(adp).is_dir():
                     _logger.warning("addons path is not a directory: %s", adp)
                     continue
                 for entry in Path(adp).iterdir():
-                    entries += 1  # debuglog
+                    entries += 1
                     if entry.name in modules:
-                        shadowed += 1  # debuglog
+                        shadowed += 1
                         _debug.logic(
                             "module.manifest.shadowed",
                             module=entry.name,
@@ -745,7 +743,7 @@ def load_odoo_module(module_name: str) -> None:
                 "class does not need to be importable at field definition time."
             ).with_traceback(err.__traceback__) from None
         raise
-    except Exception as err:  # debuglog
+    except Exception as err:
         _debug.logic(
             "module.import.failed", module=module_name, error=type(err).__name__
         )

@@ -68,8 +68,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 amount_to_pay,
                 currency_id=pos_order_sudo.currency_id.id,
             )
-        )  # In sudo mode to read the fields of providers and partner (if logged out).
-        # Return the payment providers configured in the pos.payment.method that are compatible for the payment API
+        )
         return compatible_providers_sudo & payment_method._get_online_payment_providers(
             pos_order_sudo.config_id.id, error_if_invalid=False
         )
@@ -105,17 +104,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         sitemap=False,
     )
     def pos_order_pay(self, pos_order_id, access_token=None, exit_route=None):
-        """Behaves like payment.PaymentPortal.payment_pay but for POS online payment.
-
-        :param int pos_order_id: The POS order to pay, as a `pos.order` id
-        :param str access_token: The access token used to verify the user
-        :param str exit_route: The URL to open to leave the POS online payment flow
-
-        :return: The rendered payment form
-        :rtype: str
-        :raise: AccessError if the provided order or access token is invalid
-        :raise: ValidationError if data on the server prevents the payment
-        """
         pos_order_sudo = self._check_order_access(pos_order_id, access_token)
         self._check_session_open(pos_order_sudo)
 
@@ -159,7 +147,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
             return self._render_pay(rendering_context)
         rendering_context["amount"] = amount_to_pay
 
-        # Select all the payment methods and tokens that match the payment context.
         providers_sudo = self._get_allowed_providers_sudo(
             pos_order_sudo, partner_sudo.id, amount_to_pay
         )
@@ -171,13 +158,13 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 partner_sudo.id,
                 currency_id=currency_id.id,
             )
-        )  # In sudo mode to read the fields of providers.
+        )
         if logged_in:
             tokens_sudo = (
                 request.env["payment.token"]
                 .sudo()
                 ._get_available_tokens(providers_sudo.ids, partner_sudo.id)
-            )  # In sudo mode to be able to read the fields of providers.
+            )
             show_tokenize_input_mapping = self._get_show_tokenize_input_mapping(
                 providers_sudo, **kwargs
             )
@@ -207,19 +194,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         sitemap=False,
     )
     def pos_order_pay_transaction(self, pos_order_id, access_token=None, **kwargs):
-        """Behaves like payment.PaymentPortal.payment_transaction but for POS online payment.
-
-        :param int pos_order_id: The POS order to pay, as a `pos.order` id
-        :param str access_token: The access token used to verify the user
-        :param str exit_route: The URL to open to leave the POS online payment flow
-        :param dict kwargs: Data from payment module
-
-        :return: The mandatory values for the processing of the transaction
-        :rtype: dict
-        :raise: AccessError if the provided order or access token is invalid
-        :raise: ValidationError if data on the server prevents the payment
-        :raise: UserError if data provided by the user is invalid/missing
-        """
         pos_order_sudo = self._check_order_access(pos_order_id, access_token)
         self._check_session_open(pos_order_sudo)
         exit_route = request.httprequest.args.get("exit_route")
@@ -243,7 +217,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
             raise UserError(
                 request.env._("The provided partner_id is different than expected.")
             )
-        # Avoid tokenization for the public user.
         kwargs.update(
             {
                 "partner_id": partner_sudo.id,
@@ -265,7 +238,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         currency_id = pos_order_sudo.currency_id
         if not currency_id.active:
             raise ValidationError(request.env._("The currency is invalid."))
-        # Ignore the currency provided by the customer
         kwargs["currency_id"] = currency_id.id
 
         amount_to_pay = self._get_amount_to_pay(pos_order_sudo)
@@ -300,10 +272,10 @@ class PaymentPortal(payment_portal.PaymentPortal):
         elif kwargs.get("provider_id") not in providers_sudo.ids:
             raise UserError(request.env._("The payment provider is invalid."))
 
-        kwargs["reference_prefix"] = None  # Computed with pos_order_id
+        kwargs["reference_prefix"] = None
         kwargs.pop(
             "pos_order_id", None
-        )  # _create_transaction kwargs keys must be different than custom_create_values keys
+        )
 
         tx_sudo = self._create_transaction(**kwargs)
         tx_sudo.landing_route = PaymentPortal._get_landing_route(
@@ -323,18 +295,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
     def pos_order_pay_confirmation(
         self, pos_order_id, tx_id=None, access_token=None, exit_route=None, **kwargs
     ):
-        """Behaves like payment.PaymentPortal.payment_confirm but for POS online payment.
-
-        :param int pos_order_id: The POS order to confirm, as a `pos.order` id
-        :param str tx_id: The transaction to confirm, as a `payment.transaction` id
-        :param str access_token: The access token used to verify the user
-        :param str exit_route: The URL to open to leave the POS online payment flow
-        :param dict kwargs: Data from payment module
-
-        :return: The rendered confirmation page
-        :rtype: str
-        :raise: AccessError if the provided order or access token is invalid
-        """
         tx_id = self._cast_as_int(tx_id)
         rendering_context = {
             "state": "error",
@@ -357,7 +317,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
             amount=tx_sudo.amount,
             currency=tx_sudo.currency_id,
             provider_name=tx_sudo.provider_id.name,
-            tx=tx_sudo,  # for the payment.state_header template
+            tx=tx_sudo,
         )
 
         if tx_sudo.state not in ("authorized", "done"):

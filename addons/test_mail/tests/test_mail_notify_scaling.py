@@ -92,8 +92,6 @@ class TestMailNotifyScaling(MailCommon):
         costs = []
         for size in (1, 3, 12):
             record = self._followed_record(self.inbox_users[:size]).with_env(self.env)
-            # a cold group state for every recipient: each used to cost two
-            # statements, and each recipient's follower one partner fetch
             self.env.registry.clear_cache("memberships")
             costs.append(
                 self._statements(
@@ -230,9 +228,6 @@ class TestMailNotifyScaling(MailCommon):
                 )
             )
         _logger.debug("template post on 3 then 12 records: statements=%s", costs)
-        # one composer per record keeps its single-record computes, created and
-        # rendered together: what remains per record is its composer's
-        # recipients relation row, its field read and its follower query
         self.assertLessEqual(costs[1] - costs[0], 9 * 4)
 
     @users("employee")

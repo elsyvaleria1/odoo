@@ -13,7 +13,6 @@ class TestSMSSchedule(EventCase, SMSCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # consider asynchronous sending as default sending
         cls.env["ir.config_parameter"].set_param("event.event_mail_async", False)
 
         cls.sms_template_sub = cls.env["sms.template"].create(
@@ -47,7 +46,7 @@ class TestSMSSchedule(EventCase, SMSCase):
                         (
                             0,
                             0,
-                            {  # right at subscription
+                            {
                                 "interval_unit": "now",
                                 "interval_type": "after_sub",
                                 "notification_type": "sms",
@@ -58,7 +57,7 @@ class TestSMSSchedule(EventCase, SMSCase):
                         (
                             0,
                             0,
-                            {  # 3 days before event
+                            {
                                 "interval_nbr": 3,
                                 "interval_unit": "day",
                                 "interval_type": "before_event",
@@ -79,7 +78,6 @@ class TestSMSSchedule(EventCase, SMSCase):
         with self.mock_datetime_and_now(self.reference_now), self.mockSMSGateway():
             self._create_registrations(test_event, 3)
 
-        # check subscription scheduler
         sub_scheduler = self.env["event.mail"].search(
             [("event_id", "=", test_event.id), ("interval_type", "=", "after_sub")]
         )
@@ -90,7 +88,6 @@ class TestSMSSchedule(EventCase, SMSCase):
             "event: incorrect scheduled date for checking controller",
         )
 
-        # verify that subscription scheduler was auto-executed after each registration
         self.assertEqual(len(sub_scheduler.mail_registration_ids), 3)
         self.assertTrue(
             all(m.mail_sent is True for m in sub_scheduler.mail_registration_ids)
@@ -113,7 +110,6 @@ class TestSMSSchedule(EventCase, SMSCase):
             )
         self.assertEqual(sub_scheduler.mail_count_done, 3)
 
-        # clear notification queue to avoid conflicts when checking next notifications
         self.env["mail.notification"].sudo().search(
             [("sms_number", "in", sanitized_numbers)]
         ).unlink()
@@ -121,7 +117,6 @@ class TestSMSSchedule(EventCase, SMSCase):
             [("number", "in", sanitized_numbers)]
         ).unlink()
 
-        # check before event scheduler
         before_scheduler = self.env["event.mail"].search(
             [("event_id", "=", test_event.id), ("interval_type", "=", "before_event")]
         )
@@ -130,14 +125,12 @@ class TestSMSSchedule(EventCase, SMSCase):
             before_scheduler.scheduled_date, test_event.date_begin + timedelta(days=-3)
         )
 
-        # execute event reminder scheduler explicitly
         with (
             self.mock_datetime_and_now(self.reference_now + timedelta(days=3)),
             self.mockSMSGateway(),
         ):
             before_scheduler.execute()
 
-        # verify that subscription scheduler was auto-executed after each registration
         for registration in test_event.registration_ids:
             reg_sanitized_number = phone_validation.phone_format(
                 registration._phone_get_number().number, "BE", "32", force_format="E164"
@@ -152,7 +145,6 @@ class TestSMSSchedule(EventCase, SMSCase):
 
     @users("user_eventmanager")
     def test_sms_schedule_fail_registration_template_removed(self):
-        """Test flow where scheduler fails due to template being removed."""
         self.sms_template_sub.sudo().unlink()
         after_sub_scheduler = self.test_event.event_mail_ids.filtered(
             lambda s: s.interval_type == "after_sub"

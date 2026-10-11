@@ -107,8 +107,6 @@ _NOTIFY_TRANSPORT_PARAMETERS = frozenset(
 )
 
 
-# ir.config_parameter: until when an action link signed with the unscoped
-# SHA-1 HMAC of before 2026-08 is still accepted
 LEGACY_ACTION_LINKS_UNTIL = "mail.legacy_action_links_until"
 ACTION_LINK_SCOPE = tools.register_signed_scope(
     "mail.action_link",
@@ -659,13 +657,8 @@ class MixinMailThread(models.AbstractModel):
             followers=len(followers),
             scheduled=len(scheduled),
         )
-        # what may delete the chatter is judged while its records exist
         messages._check_unlink_before_their_records()
         result = super().unlink()
-        # the chatter goes as the superuser, so only once the record has: a
-        # caller refused the record keeps it. A record that shares its parent's
-        # id shares its chatter, which may have gone with that parent; only
-        # such a model pays the existence check.
         for chatter in (messages, followers, scheduled):
             (chatter.exists() if self._inherits_shared_id else chatter).unlink()
         return result
@@ -823,9 +816,6 @@ class MixinMailThread(models.AbstractModel):
         writer_uids = self.env.cr.precommit.data.setdefault_dict(
             f"mail.tracking.uid.{self._name}"
         )
-        # a company-dependent field's value is the one of the company it was
-        # written in: the new value is read there too, not in the company of
-        # whichever write registered the finalization first
         writer_companies = self.env.cr.precommit.data.setdefault_dict(
             f"mail.tracking.company.{self._name}"
         )
@@ -882,8 +872,6 @@ class MixinMailThread(models.AbstractModel):
         ids = [id_ for id_, vals in initial_values.items() if vals]
         if not ids:
             return
-        # each writer captured the fields it may read, in the order its
-        # _track_get_fields gave them; only captured fields are compared
         fnames = OrderedSet(fname for id_ in ids for fname in initial_values[id_])
         context = clean_context(self.env.context)
         default_company = (context.get("allowed_company_ids") or [None])[0]
@@ -973,9 +961,6 @@ class MixinMailThread(models.AbstractModel):
 
     @ormcache()
     def _track_get_declared_fields(self) -> frozenset[str]:
-        # a record sharing its parent's id shares its parent's thread, where the
-        # parent tracks its own fields: tracked here too, a change would be
-        # recorded twice
         shared = self._get_inherits_shared_parent()
         if shared and not isinstance(self.env[shared], self.pool["mixin.mail.thread"]):
             shared = ""
@@ -2026,9 +2011,6 @@ class MixinMailThread(models.AbstractModel):
     def _message_post_batch_follower_data(
         self, message_type: str, values_list: list[dict], include_followers: bool = True
     ) -> dict:
-        # a recipient row says whether its partner follows *that* record, so
-        # records are grouped by the partners they name: a partner named on one
-        # record must not be read as following another
         res_ids_by_audience = defaultdict(list)
         for record, values in zip(self, values_list, strict=True):
             audience = (
@@ -2368,9 +2350,6 @@ class MixinMailThread(models.AbstractModel):
             subtype_id = self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_note")
 
         if template:
-            # one single-record composer per record, as their computes (suggested
-            # recipients, force_send, signature) are what callers rely on, but
-            # created together so that those computes run over one prefetch set
             composers = (
                 self.env["wizard.mail.message.send"]
                 .with_context(
@@ -3706,7 +3685,7 @@ class MixinMailThread(models.AbstractModel):
         )
         mail_values_list = []
         notif_targets = []
-        groups = 0  # debuglog
+        groups = 0
         for (
             _lang,
             render_values,
@@ -3733,7 +3712,7 @@ class MixinMailThread(models.AbstractModel):
             ):
                 mail_values_list.append(mail_values)
                 notif_targets.append(target)
-            groups += 1  # debuglog
+            groups += 1
 
         _debug.pipeline(
             "email_prepared",
@@ -4417,8 +4396,6 @@ class MixinMailThread(models.AbstractModel):
         if modules.module.current_test:
             self._web_push_deliver(deliveries, private_key, public_key)
             return
-        # a push cannot be taken back: sent before the commit, every retry of a
-        # transaction that fails to commit would push it again
         dbname, context, model_name = self.env.cr.dbname, self.env.context, self._name
         _debug.pipeline("web_push_deferred", model=model_name, devices=len(deliveries))
 
@@ -4454,7 +4431,7 @@ class MixinMailThread(models.AbstractModel):
                     "Push endpoint temporarily unresolvable, keeping device %s",
                     device["id"],
                 )
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 _logger.exception("An error occurred while contacting the endpoint")
 
         _debug.pipeline(
@@ -5050,16 +5027,13 @@ class MixinMailThread(models.AbstractModel):
         ):
             return True
         legacy = self._encode_link_legacy_sha1(base_link, signed)
-        if legacy and consteq(legacy, token):  # noqa: E8537  stateless: an older signed format the mails already sent carry
+        if legacy and consteq(legacy, token):
             _logger.info("Accepted a legacy SHA-1 action link token on %s", base_link)
             return True
         return False
 
     @api.model
     def _receiver_for_unfollow_link(self, **path_args):
-        """The route's receiver for /mail/unfollow: the followed record, admitted
-        by the company's action-link receiver on the signed token the mail
-        carried."""
         params = request.get_http_params()
         try:
             res_id, pid = int(params.get("res_id")), int(params.get("pid"))
@@ -5103,10 +5077,6 @@ class MixinMailThread(models.AbstractModel):
 
     @api.model
     def _encode_link_legacy_sha1(self, base_link: str, params: dict) -> str | None:
-        """The token a link signed before the scoped HMAC carried, while such a
-        link still opens: until the date mail 1.39 set when it upgraded the
-        database, a year on (decision C1); None on a database installed since,
-        and after that date."""
         ICP = self.env["ir.config_parameter"].sudo()
         until = ICP.get_param(LEGACY_ACTION_LINKS_UNTIL)
         if not until or fields.Datetime.now() >= fields.Datetime.to_datetime(until):
@@ -5183,8 +5153,6 @@ class MixinMailThread(models.AbstractModel):
         if len(encoded) <= max_bytes:
             return value
         cut = encoded[:max_bytes]
-        # a cut inside a UTF-8 sequence, an escape or a surrogate pair does not
-        # decode; backing off a byte at a time ends on a whole character
         while True:
             try:
                 return json_loads(b'"' + cut + b'"')
@@ -5588,8 +5556,6 @@ class MixinMailThread(models.AbstractModel):
             return
         env = self.env
         if not env.registry.ready:
-            # the notification is skipped while the registry loads, which is
-            # when the write happened, whenever the queue is finalized
             env = self.with_context(mail_auto_subscribe_no_notify=True).env
         precommit = self.env.cr.precommit
         pending = precommit.data.setdefault_dict(AUTO_SUBSCRIBE_QUEUE)
@@ -5607,14 +5573,11 @@ class MixinMailThread(models.AbstractModel):
             count=len(self),
             pending=len(pending),
         )
-        # flushing the followers' inverse would finalize the queue at once
         self.env["mail.followers"]._invalidate_documents(
             [(res_model, id_) for id_ in self._ids], flush=False
         )
 
     def _message_auto_subscribe_finalize_pending(self) -> None:
-        # a pending record written again or unlinked is subscribed and notified
-        # first, from the values of the write that assigned it
         pending = self.env.cr.precommit.data.get(AUTO_SUBSCRIBE_QUEUE)
         if not pending or not self._ids:
             return
@@ -5630,7 +5593,6 @@ class MixinMailThread(models.AbstractModel):
         data = self.env.cr.precommit.data
         while pending := data.pop(AUTO_SUBSCRIBE_QUEUE, None):
             _debug.pipeline("auto_subscribe_finalized", records=len(pending))
-            # consecutive writes of a model in one environment are one batch
             for (model_name, env), entries in groupby(
                 pending.items(), key=lambda item: item[1][:2]
             ):

@@ -34,7 +34,6 @@ class ProductTemplate(models.Model):
         help="First rental pricing of the product",
     )
 
-    # Delays pricing
 
     extra_hourly = fields.Float(
         string="Hourly Fine",
@@ -52,7 +51,6 @@ class ProductTemplate(models.Model):
         rental_priced_products = rental_products.filtered("product_pricing_ids")
         (self - rental_products).display_price = ""
         for product in rental_products - rental_priced_products:
-            # No rental pricing defined, fallback on list price
             product.display_price = self.env._(
                 "%(amount)s (fixed)",
                 amount=format_amount(self.env, product.list_price, product.currency_id),
@@ -92,8 +90,6 @@ class ProductTemplate(models.Model):
         return ["rent_ok"] + super()._get_incompatible_types()
 
     def action_view_rentals(self):
-        """Access Schedule view of rental order lines, filtered on variants of the current
-        templates."""
         return self.product_variant_ids.action_view_rentals()
 
     @api.depends("rent_ok")
@@ -109,13 +105,6 @@ class ProductTemplate(models.Model):
     def _get_best_pricing_rule(
         self, product=False, start_date=False, end_date=False, **kwargs
     ):
-        """Return the best pricing rule for the given duration.
-
-        :param ProductProduct product: a product recordset (containing at most one record)
-        :param datetime start_date: start date of leasing period
-        :param datetime end_date: end date of leasing period
-        :return: least expensive pricing rule for given duration
-        """
         self.check_singleton()
         best_pricing_rule = self.env["product.pricing"]
         if not self.product_pricing_ids or not (start_date and end_date):
@@ -126,7 +115,7 @@ class ProductTemplate(models.Model):
         duration_dict = self.env["product.pricing"]._get_duration_vals(
             start_date, end_date
         )
-        min_price = float("inf")  # positive infinity
+        min_price = float("inf")
         available_pricings = self.env["product.pricing"]._get_suitable_pricings(
             product or self, pricelist=pricelist
         )
@@ -207,19 +196,6 @@ class ProductTemplate(models.Model):
         end_date=None,
         **kwargs,
     ):
-        """Override of `sale` to append rental data.
-
-        :param product.product|product.template product_or_template: The product for which to get
-            additional data.
-        :param datetime date: The date to use to compute prices.
-        :param res.currency currency: The currency to use to compute prices.
-        :param product.pricelist pricelist: The pricelist to use to compute prices.
-        :param datetime|None start_date: The rental start date, to compute the rental duration.
-        :param datetime|None end_date: The rental end date, to compute the rental duration.
-        :param dict kwargs: Locally unused data passed to `super`.
-        :rtype: dict
-        :return: A dict containing additional data about the specified product.
-        """
         data = super()._get_additional_configurator_data(
             product_or_template,
             date,
@@ -241,8 +217,6 @@ class ProductTemplate(models.Model):
                 rental_duration = self.env["product.pricing"]._get_duration_vals(
                     start_date, end_date
                 )[pricing.recurrence_id.unit]
-                # Some locales might swap the duration and the unit, so we need to use the
-                # translation function.
                 duration, label = (
                     pricing.recurrence_id._get_converted_duration_and_label(
                         rental_duration
@@ -256,7 +230,6 @@ class ProductTemplate(models.Model):
         return data
 
     def _has_multiple_uoms(self) -> bool:
-        # multi-uoms doesn't work with rental (for now)
         if self.rent_ok:
             return False
         return super()._has_multiple_uoms()

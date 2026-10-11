@@ -5,11 +5,6 @@ from typing import List, Literal, Optional, Union
 from .cose import COSEAlgorithmIdentifier
 
 
-################
-#
-# Fundamental data structures
-#
-################
 
 
 class AuthenticatorTransport(str, Enum):
@@ -273,11 +268,6 @@ class CollectedClientData:
     token_binding: Optional[TokenBinding] = None
 
 
-################
-#
-# Registration
-#
-################
 
 
 @dataclass
@@ -321,7 +311,6 @@ class AuthenticatorAttestationResponse:
 
     client_data_json: bytes
     attestation_object: bytes
-    # Optional in L2, but becomes required in L3. Play it safe until L3 becomes Recommendation
     transports: Optional[List[AuthenticatorTransport]] = None
 
 
@@ -444,11 +433,6 @@ class AttestationObject:
     att_stmt: AttestationStatement = field(default_factory=AttestationStatement)
 
 
-################
-#
-# Authentication
-#
-################
 
 
 @dataclass
@@ -513,11 +497,6 @@ class AuthenticationCredential:
     type: Literal[PublicKeyCredentialType.PUBLIC_KEY] = PublicKeyCredentialType.PUBLIC_KEY
 
 
-################
-#
-# Credential Backup State
-#
-################
 
 
 class CredentialDeviceType(str, Enum):

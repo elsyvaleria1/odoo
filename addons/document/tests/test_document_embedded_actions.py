@@ -59,8 +59,6 @@ class TestDocumentsEmbeddedActions(TransactionCaseDocuments):
         )
 
     def test_a_viewer_cannot_run_a_group_gated_pin_as_superuser(self):
-        # an action with groups skips base's write check on the records, and
-        # a pinned one runs elevated: the pin must still ask for write
         action = self._server_action(
             name="rename pinned",
             usage="documents_embedded",

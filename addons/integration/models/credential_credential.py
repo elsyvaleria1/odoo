@@ -240,13 +240,6 @@ class CredentialCredential(models.Model):
         )
 
     def _probe_health(self) -> dict[str, Any]:
-        """Probe the linked service and store credential health statistics.
-
-        Record latency, counters and the outcome; on success also record the
-        validation timestamp. Unlinked credentials delegate to the base probe.
-
-        :returns: ``success`` and ``message``, or the base probe's result
-        """
         self.check_singleton()
         if not self.endpoint_id:
             return super()._probe_health()

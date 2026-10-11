@@ -7,7 +7,6 @@ from odoo.libs.filesystem import get_essential_mimetype
 from odoo.tools.image import base64_to_image
 
 SUPPORTED_IMAGE_EXTENSIONS = ("gif", "jpg", "png", "svg", "webp")
-# Every spelling of each format, mapped to the extension a file of it is written under.
 SUPPORTED_IMAGE_MIMETYPES = {
     mimetype: f".{extension}"
     for extension in SUPPORTED_IMAGE_EXTENSIONS

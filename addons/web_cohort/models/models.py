@@ -10,7 +10,6 @@ from odoo.fields import Domain
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT, date_utils, format_date
 from odoo.tools.misc import get_lang
 
-# babel patterns, so a label is in the user's language, not the host's locale
 DISPLAY_FORMATS = {
     "day": "dd MMM y",
     "month": "MMMM y",
@@ -25,20 +24,6 @@ class Base(models.AbstractModel):
     def get_cohort_data(
         self, date_start, date_stop, measure, interval, domain, mode, timeline
     ) -> dict:
-        """
-        Get all the data needed to display a cohort view
-
-        :param date_start: the starting date to use in the group_by clause
-        :param date_stop: the date field which mark the change of state
-        :param measure: the field to aggregate
-        :param interval: the interval of time between two cells ('day', 'week', 'month', 'quarter', 'year')
-        :param domain: a domain to limit the _read_group
-        :param mode: the mode of aggregation ('retention', 'churn')
-        :param timeline: the direction to display data ('forward', 'backward')
-        :return: dictionary with 'rows' (a list of rows, each holding up to 16 cells)
-                 and 'avg' (average value and per-column averages).
-        :rtype: dict
-        """
         rows = []
         columns_avg = defaultdict(lambda: {"percentage": 0, "count": 0})
         total_value = 0
@@ -73,7 +58,7 @@ class Base(models.AbstractModel):
 
         locale = get_lang(self.env).code
 
-        domain &= Domain(date_start, "!=", False)  # date not set are no take in account
+        domain &= Domain(date_start, "!=", False)
         row_groups = self._read_group(
             domain=domain,
             groupby=[date_start + ":" + interval],
@@ -133,8 +118,6 @@ class Base(models.AbstractModel):
                     col_end_date = col_start_date + relativedelta(years=1)
 
                 if col_start_date > today:
-                    # ensure the key exists even for placeholder columns: the xlsx
-                    # export controller indexes 0..columns_length-1 unconditionally
                     columns_avg.setdefault(col_index, {"percentage": 0, "count": 0})
                     columns.append(
                         {
@@ -147,8 +130,6 @@ class Base(models.AbstractModel):
 
                 col_value = sub_group_per_period.get(col_start_date, 0.0)
 
-                # In backward timeline, if columns are out of given range, we need
-                # to set initial value for calculating correct percentage
                 if timeline == "backward" and col_index == 0:
                     outside_timeline_domain = group_domain & (
                         Domain(date_stop, "=", False)
@@ -175,7 +156,6 @@ class Base(models.AbstractModel):
 
                 columns_avg[col_index]["percentage"] += percentage
                 columns_avg[col_index]["count"] += 1
-                # For 'week' interval, we display a better tooltip (range like : '02 Jul - 08 Jul')
                 if interval == "week":
                     period = "%s - %s" % (
                         format_date(self.env, col_start_date, date_format="dd MMM"),

@@ -40,7 +40,6 @@ class TestMoveAccessChanges(TransactionCaseDocuments):
     def assertRefused(self, documents, folder, expected, watched=None):
         watched = watched or documents
         before = self._levels(watched)
-        # not assertRaises, which rolls back by itself: the refusal must
         try:
             documents.with_context(**{MOVE_ACCESS_CHECK: True}).write(
                 {"folder_id": folder.id}
@@ -76,7 +75,6 @@ class TestMoveAccessChanges(TransactionCaseDocuments):
         document = self._file("raised", self.folder_view)
         document.action_update_access_rights(access_internal="edit")
         self.assertFalse(document.is_access_restricted)
-        # its own grant outranks the destination's: nothing changes
         self.assertMoved(document, self.folder_none)
         self.assertEqual(document.access_internal, "edit")
 

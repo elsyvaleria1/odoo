@@ -1,8 +1,4 @@
-# This file contains dicts defining the order of nodes of UBL 2.1 elements.
-# These are the elements used in the Invoice, CreditNote, DebitNote and Order documents.
 
-# If you need to use a new element, you should define it below so that it will be added at the
-# correct place in the XML.
 
 Period = {
     "cbc:StartDate": {},

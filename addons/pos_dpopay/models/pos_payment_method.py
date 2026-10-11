@@ -71,7 +71,6 @@ class PosPaymentMethod(models.Model):
         return super()._selection_payment_terminals() + [("dpopay", "DPO Pay")]
 
     def _is_write_forbidden(self, fields) -> bool:
-        # Allow the modification of these fields even if a pos_session is open
         whitelisted_fields = {"dpopay_bearer_token", "dpopay_payment_mode"}
         return super()._is_write_forbidden(fields - whitelisted_fields)
 
@@ -131,8 +130,6 @@ class PosPaymentMethod(models.Model):
                 )
             )
 
-        # The token is short-lived and refreshed automatically to keep the payment flow working.
-        # sudo() is used because POS users only have read access to this model.
         self.sudo().write({"dpopay_bearer_token": access_token})
         return access_token
 
@@ -173,7 +170,6 @@ class PosPaymentMethod(models.Model):
             errorCode = response_json.get("error_code") or response_json.get(
                 "resultCode"
             )
-            # Refresh Token and Retry the request if the token is expired (999912) or invalid (999913)
             if response.status_code == 401 and errorCode in ("999912", "999913"):
                 _logger.info("Token expired or invalid — regenerating token...")
                 response, response_json = _send_request(token_expired=True)

@@ -4,9 +4,6 @@ from odoo.tests import common, tagged
 @tagged("voip", "post_install", "-at_install")
 class TestVoipT9(common.TransactionCase):
     def test_t9_name_is_correctly_computed(self):
-        """
-        Tests that the "t9_name" field on res.partner is correctly computed.
-        """
         xanto, eric, shrek, pangram, oenone = self.env["res.partner"].create(
             [
                 {"name": "xanto du 93"},

@@ -2,9 +2,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestX2manyScopeFollowsWhatTheRulesRead(TransactionCase):
-    # a user's x2many slot holds what the user's search returned; a sudo
-    # write that changes that search's answer must empty the slot, however
-    # far from the comodel the value the search read is stored
 
     @classmethod
     def setUpClass(cls):

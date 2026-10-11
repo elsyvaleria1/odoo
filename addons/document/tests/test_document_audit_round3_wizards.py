@@ -43,7 +43,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
             }
         )
 
-        # A folder shared through its link: this is the token the attacker holds.
         cls.shared_folder = Doc.create(
             {
                 "type": "folder",
@@ -52,7 +51,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
                 "access_via_link": "edit",
             }
         )
-        # Private vault, unreachable both anonymously and for internal_user.
         cls.private_folder = Doc.create(
             {
                 "type": "folder",
@@ -72,7 +70,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
                 "raw": PRIVATE_CONTENT,
             }
         )
-        # A target that *is* legitimately link-shared: must keep working.
         cls.shared_target = Doc.create(
             {
                 "type": "binary",
@@ -84,7 +81,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
                 "raw": SHARED_CONTENT,
             }
         )
-        # A plain (non-shortcut) file of the shared folder, always included.
         cls.shared_file = Doc.create(
             {
                 "type": "binary",
@@ -102,8 +98,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
         cls.legit_shortcut = cls.shared_target.sudo().action_create_shortcut(
             str(cls.shared_folder.id)
         )
-        # The shortcut carries permissive rights of its own while its target
-        # stays private -- e.g. the target's rights were revoked afterwards.
         cls.leak_shortcut.sudo().write(
             {
                 "access_internal": "edit",
@@ -122,7 +116,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
             )
 
     def test_zip_public_does_not_leak_shortcut_target(self):
-        """Anonymous folder zip must skip a shortcut to a private document."""
         self.authenticate(None, None)
         names, blob = self._zip_namelist(self.shared_folder)
 
@@ -134,12 +127,10 @@ class TestDocumentsZipShortcutLeak(HttpCase):
         self.assertNotIn(
             PRIVATE_CONTENT, blob, "the private target's content leaked into the zip"
         )
-        # ... but do not over-block: the legitimately shared target stays in.
         self.assertEqual(names, ["shared-file.txt", "shared-target.txt"])
         self.assertIn(SHARED_CONTENT, blob)
 
     def test_zip_internal_does_not_leak_shortcut_target(self):
-        """Same for an internal user with ``user_permission='none'`` on the target."""
         self.assertEqual(
             self.private_target.with_user(self.internal_user).user_permission,
             "none",
@@ -153,7 +144,6 @@ class TestDocumentsZipShortcutLeak(HttpCase):
         self.assertIn("shared-target.txt", names)
 
     def test_zip_shortcut_target_own_token_is_refused(self):
-        """Sanity check: the direct routes already refuse both tokens."""
         self.authenticate(None, None)
         for document in (self.private_target, self.leak_shortcut):
             with self.subTest(document=document.name):
@@ -166,7 +156,6 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
     """``mail.activity.write`` must not re-date a *permanent* access grant."""
 
     def _prepare_request(self):
-        """Create a document request and return (document, activity, access)."""
         wizard = self.env["wizard.document.document.request"].create(
             {
                 "name": "Audit3 Request",
@@ -187,17 +176,9 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
         return document, activity, access
 
     def test_permanent_grant_is_never_expired(self):
-        """A permanent (``date_to = False``) grant must stay permanent.
-
-        Odoo renders ``!=`` as ``col != v OR col IS NULL``, so the sync domain
-        used to match permanent grants too and silently gave them the deadline.
-        """
         __, activity, access = self._prepare_request()
-        # The requestee was subsequently granted *permanent* access (e.g. via
-        # the sharing dialog).
         access.date_to = False
 
-        # `action_reschedule_today` writes `date_deadline` unconditionally.
         activity.action_reschedule_today()
 
         self.assertFalse(
@@ -206,16 +187,13 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
         )
 
     def test_noop_deadline_write_does_not_resync_expiration(self):
-        """Writing the *same* deadline must not snap the expiration back."""
         __, activity, access = self._prepare_request()
         activity.date_deadline = fields.Date.context_today(activity)
-        # The grant was manually extended past the deadline.
         extended = datetime.combine(
             activity.date_deadline + timedelta(days=10), datetime.max.time()
         )
         access.date_to = extended
 
-        # A no-op write: the deadline is already today.
         activity.action_reschedule_today()
 
         self.assertEqual(
@@ -225,7 +203,6 @@ class TestDocumentsActivityExpirationSync(TransactionCaseDocuments):
         )
 
     def test_real_deadline_change_still_syncs_expiration(self):
-        """Do not over-block: a genuine deadline change must still sync."""
         __, activity, access = self._prepare_request()
         new_deadline = activity.date_deadline + timedelta(days=3)
 
@@ -244,7 +221,6 @@ class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
     """Requesting a document from yourself must keep the permanent grant."""
 
     def test_self_request_keeps_permanent_grant(self):
-        """When requester == requestee, the permanent grant must win."""
         document = (
             self.env["wizard.document.document.request"]
             .with_user(self.doc_user)
@@ -265,8 +241,6 @@ class TestDocumentsRequestWizardSelfRequest(TransactionCaseDocuments):
             ]
         )
         self.assertEqual(len(access), 1)
-        # the request keeps out the employees and keeps what else reached it:
-        # the requester owns its folder, so manages it
         self.assertEqual(access.role, "manage")
         self.assertFalse(
             access.date_to,
@@ -279,7 +253,6 @@ class TestDocumentsOperationBatch(TransactionCaseDocuments):
     """``_compute_destination_children_ids`` must pair wizards to folders by id."""
 
     def test_destination_children_are_not_shifted_in_batch(self):
-        """Computing in batch must not swap one wizard's children for another's."""
         Doc = self.env["document.document"]
         child_a, child_b = Doc.create(
             [
@@ -292,7 +265,6 @@ class TestDocumentsOperationBatch(TransactionCaseDocuments):
                 for folder in (self.folder_a, self.folder_b)
             ]
         )
-        # Reverse order on purpose: `search_fetch` returns `_order`, not this.
         wizards = self.env["wizard.document.document.place.folder"].create(
             [
                 {"operation": "move", "destination": str(folder.id)}
@@ -313,13 +285,11 @@ class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
     """Small hardening fixes of the link-to-record wizard."""
 
     def test_link_to_without_record_raises_user_error(self):
-        """``link_to()`` is RPC-callable and must not raise AttributeError."""
         wizard = self.env["wizard.document.document.link.record"].create({})
         with self.assertRaises(UserError):
             wizard.link_to()
 
     def test_target_model_selection_uses_a_real_boolean(self):
-        """The ``is_mail_thread`` domain must compare against a boolean."""
         models = dict(
             self.env["wizard.document.document.link.record"]._selection_target_model()
         )
@@ -332,7 +302,6 @@ class TestDocumentsLinkToRecordWizard(TransactionCaseDocuments):
         )
 
     def test_dead_field_is_gone(self):
-        """``accessible_model_ids`` was dead code and must stay removed."""
         self.assertNotIn(
             "accessible_model_ids",
             self.env["wizard.document.document.link.record"]._fields,
@@ -344,7 +313,6 @@ class TestDocumentsInboxAlias(TransactionCase):
     """The seeded Inbox alias must expose its parent document."""
 
     def test_inbox_alias_has_a_parent_model(self):
-        """Without ``alias_parent_model_id`` the parent document is unreachable."""
         alias = self.env.ref(
             "document.document_inbox_folder_mail_alias", raise_if_not_found=False
         )
@@ -447,13 +415,6 @@ class TestDocumentsOperationWizard(TransactionCaseDocuments):
         )
 
     def test_add_a_url_attachment_keeps_its_address(self):
-        """A url document keeps its address in its OWN url field.
-
-        Copying only the attachment's `type` produced `type = "url"` with
-        `url = False`: `/documents/content` then answers 404 because
-        `_is_safe_redirect_url(False)` is False, and the entry silently points
-        nowhere.
-        """
         attachment = (
             self.env["ir.attachment"]
             .with_context(no_document=True)
@@ -475,12 +436,6 @@ class TestDocumentsOperationWizard(TransactionCaseDocuments):
         self.assertEqual(document.url, "https://www.odoo.com/page/x")
 
     def test_add_a_url_attachment_odoo_cannot_serve_is_refused(self):
-        """An `ir.attachment` may hold a relative url; a document may not.
-
-        `_check_url` says a document url must be complete. Before, such an
-        attachment became a url document with no url at all -- broken, and
-        silently so. Refusing names the reason.
-        """
         attachment = (
             self.env["ir.attachment"]
             .with_context(no_document=True)

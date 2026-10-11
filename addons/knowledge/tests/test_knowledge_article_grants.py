@@ -60,8 +60,6 @@ class TestKnowledgeArticleGrants(KnowledgeCommon):
         )
 
     def test_the_rows_reach_articles_through_the_access_graph(self):
-        # the rows are base.graph_reach, on the article or through its path:
-        # an explanation says a grant reaches it, not that a field says so
         Access = self.env["ir.access"].with_user(self.user_employee2)
         reason = "a grant on it or on the records above it"
         for model, operation in (

@@ -11,9 +11,6 @@ _logger = logging.getLogger(__name__)
 @tagged("-standard", "external")
 class TestDeliveryEasypost(EasypostTestCommon):
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method.
-        """
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -25,11 +22,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         wiz.save().action_put_in_pack()
 
     def test_easypost_one_package_shipping(self):
-        """Try to rate and ship an order from
-        New York to Miami. It will not use a specific
-        package and everything will be consider to be
-        inside the same package.
-        """
         SaleOrder = self.env["sale.order"]
         sol_1_vals = {"product_id": self.server.id}
         sol_2_vals = {"product_id": self.miniServer.id}
@@ -39,7 +31,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         }
 
         sale_order_fedex = SaleOrder.create(so_vals_fedex)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -72,7 +63,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
             picking_fedex.weight, 0.0, "Picking weight should be positive.(ep-fedex)"
         )
 
-        # Set a service in order to test rate request for a specific service.
         self.easypost_fedex_carrier.easypost_default_service_id = (
             self.env["easypost.service"]
             .search([("name", "=", "STANDARD_OVERNIGHT")])
@@ -97,13 +87,7 @@ class TestDeliveryEasypost(EasypostTestCommon):
             "Easypost did not return any tracking number (fedex)",
         )
 
-    # broken -> FedEx returned error: Ground Shipping is not authorized for this User
     def test_easypost_multiple_packages_shipping(self):
-        """Same than test with one package. This
-        time it will use the put in pack functionality.
-        It will send twice the default package type with
-        2 servers and 3 mini servers.
-        """
         SaleOrder = self.env["sale.order"]
         sol_1_vals = {"product_id": self.server.id}
         sol_2_vals = {"product_id": self.miniServer.id}
@@ -113,7 +97,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         }
 
         sale_order_fedex = SaleOrder.create(so_vals_fedex)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -177,9 +160,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         )
 
     def test_easypost_one_package_international_shipping(self):
-        """Same than test_easypost_one_package_shipping with
-        an international shipping. (it matters due to customs info).
-        """
         SaleOrder = self.env["sale.order"]
         sol_1_vals = {"product_id": self.server.id}
         sol_2_vals = {"product_id": self.miniServer.id}
@@ -188,13 +168,10 @@ class TestDeliveryEasypost(EasypostTestCommon):
             "line_ids": [(0, None, sol_1_vals), (0, None, sol_2_vals)],
         }
 
-        # Modify price due to US customs info. If you a value greater than
-        # 2500$, it requires an specific AES code.
         self.server["list_price"] = 10.0
         self.miniServer["list_price"] = 10.0
 
         sale_order_fedex = SaleOrder.create(so_vals_fedex)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -251,9 +228,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         )
 
     def test_easypost_extralight_package_shipping(self):
-        """Try to rate and ship an order from
-        New York to Miami. Use a very light product.
-        """
         SaleOrder = self.env["sale.order"]
         sol_1_vals = {"product_id": self.microServer.id}
         so_vals_fedex = {
@@ -262,7 +236,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
         }
 
         sale_order_fedex = SaleOrder.create(so_vals_fedex)
-        # I add delivery cost in Sales order
         delivery_wizard = Form(
             self.env["wizard.sale.order.add.shipping"].with_context(
                 {
@@ -290,7 +263,6 @@ class TestDeliveryEasypost(EasypostTestCommon):
 @tagged("standard", "-external")
 class TestMockedDeliveryEasypost(TestDeliveryEasypost):
     def setUp(self):
-        # this is needed because we use call the API for the carrier setup.
         with self.patch_easypost_requests():
             super().setUp()
 

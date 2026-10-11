@@ -18,7 +18,6 @@ class StockPackage(models.Model):
 
     @api.model
     def action_create_from_barcode(self, vals) -> dict:
-        """Creates a new package then returns its data to be added in the client side cache."""
         _debug.lifecycle("barcode_package_create", packages=self)
         res = self.create(vals)
         return {"stock.package": res.read(self._get_fields_stock_barcode(), load=False)}
@@ -38,11 +37,6 @@ class StockPackage(models.Model):
             "contained_quant_ids",
         ]
 
-    # How many reusable/unlocated packages a barcode payload may carry. They are prefetched so
-    # that scanning one resolves without a round trip, but they are unrelated to the operation
-    # being opened, so an unbounded set is pure payload: a 5-line picking was shipping every
-    # package in the database. Overridable with the `stock_barcode.usable_packages_limit`
-    # config parameter.
     USABLE_PACKAGES_LIMIT = 200
 
     @api.model
@@ -61,8 +55,6 @@ class StockPackage(models.Model):
         )
         loc_ids = self.env.context.get("pack_locs")
         if loc_ids:
-            # Bounded like the reusable ones: an unbounded set shipped every package stored
-            # under the destination. A package left out is fetched by barcode when scanned.
             packages |= self.env["stock.package"].search(
                 [("location_id", "in", loc_ids)],
                 limit=records_limit,

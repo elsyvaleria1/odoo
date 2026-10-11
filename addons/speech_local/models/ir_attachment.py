@@ -15,16 +15,11 @@ class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
     def _on_read(self, representation, reading):
-        # before the speakers are made from the cues, so they are made from
-        # the voices this server told apart
         if representation == CUES and reading.state == "done":
             self._separate_voices(reading)
         super()._on_read(representation, reading)
 
     def _separate_voices(self, reading) -> None:
-        """Label the cues by voice when the transcriber heard fewer than two:
-        a vendor asked to tell speakers apart can return one for a phone call
-        recorded in mono. The text and its timing stay the transcriber's."""
         self.check_singleton()
         if reading.read_by == LocalTranscription.name:
             return

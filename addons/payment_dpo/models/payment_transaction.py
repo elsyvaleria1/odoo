@@ -14,14 +14,6 @@ class PaymentTransaction(models.Model):
     _inherit = "payment.transaction"
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return DPO-specific processing values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`.
-
-        :param dict processing_values: The generic processing values of the transaction.
-        :return: The dict of provider-specific processing values.
-        :rtype: dict
-        """
         if self.provider_code != "dpo":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -31,13 +23,6 @@ class PaymentTransaction(models.Model):
         return {"api_url": api_url}
 
     def _dpo_create_token(self):
-        """Create a transaction token and return the response data.
-
-        The token is used to redirect the customer to the payment page.
-
-        :return: The transaction token data.
-        :rtype: dict
-        """
         self.check_singleton()
 
         return_url = urls.urljoin(
@@ -82,13 +67,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "dpo":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("CompanyRef")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "dpo":
             return super()._extract_amount_data(payment_data)
 
@@ -100,14 +83,11 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "dpo":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         self.provider_reference = payment_data.get("TransID")
 
-        # Update the payment state.
         status_code = payment_data.get("Result")
         if status_code in const.PAYMENT_STATUS_MAPPING["pending"]:
             self._set_pending()

@@ -138,8 +138,6 @@ class TestImDispatchChannelManagement(TransactionCase):
     def _make_dispatch(self):
         d = ImDispatch()
         d._channels_to_ws = {}
-        # Started, it would LISTEN on a connection of its own until the
-        # process exits.
         d._start_if_stopped = lambda: None
         return d
 
@@ -533,8 +531,6 @@ class TestKeepSessionAliveWhileIdle(BaseCase):
 
 
 class _ThisThreadOnly:
-    # the server's own dispatcher thread reads the same module globals while
-    # the test runs; only the test thread may see the scripted answers
     def __init__(self, real, **scripted):
         self._real = real
         self._owner = threading.get_ident()

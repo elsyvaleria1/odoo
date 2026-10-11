@@ -13,16 +13,6 @@ from .common import TestHelpdeskTimesheetCommon
 @tagged("-at_install", "post_install")
 class TestTimesheet(TestHelpdeskTimesheetCommon):
     def test_timesheet_cannot_be_linked_to_task_and_ticket(self):
-        """Test if an exception is raised when we want to link a task and a ticket in a timesheet
-
-        Normally, now we cannot have a ticket and a task in one timesheet.
-
-        Test Case:
-        =========
-        1) Create ticket and a task,
-        2) Create timesheet with this ticket and task and check if an exception is raise.
-        """
-        # 1) Create ticket and a task
         ticket = self.helpdesk_ticket
         task = self.env["project.task"].create(
             {
@@ -31,7 +21,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             }
         )
 
-        # 2) Create timesheet with this ticket and task and check if an exception is raise
         with self.assertRaises(ValidationError):
             self.env["account.analytic.line"].create(
                 {
@@ -83,9 +72,9 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         user = self.user_employee
         ticket = self.helpdesk_ticket.with_user(user)
         timezones = [
-            "Pacific/Niue",  # UTC-11,
-            "Europe/Brussels",  # UTC+1
-            "Pacific/Kiritimati",  # UTC+14
+            "Pacific/Niue",
+            "Europe/Brussels",
+            "Pacific/Kiritimati",
         ]
         test_cases = {
             "2024-01-24 08:30": (-1, +0, +0),
@@ -96,7 +85,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         for utc_time, day_diffs in test_cases.items():
             with freeze_time(utc_time):
                 for tz, diff in zip(timezones, day_diffs, strict=False):
-                    # reset all timezones on the environments
                     user.tz = tz
                     self.env.flush_all()
                     self.env.transaction.reset()
@@ -123,20 +111,12 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
                     )
 
     def test_log_timesheet_with_ticket_analytic_account(self):
-        """Test whether the analytic account of the project is set on the ticket.
-
-        Test Case:
-        ----------
-            1) Create Ticket
-            2) Check the default analytic account of the project and ticket
-        """
 
         helpdesk_ticket = self.helpdesk_ticket
 
         self.assertEqual(helpdesk_ticket.analytic_account_id, self.project.account_id)
 
     def test_compute_project_id(self):
-        """Test compute project_id works as expected when helpdesk_ticket_id changes on a timesheet"""
         helpdesk_ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -194,8 +174,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_timesheet_bulk_creation_of_timesheets_for_seperate_ticket_id(self):
-        """Test whether creating timesheets in bulk for separate ticket ids works"""
-        # (1) create 2 tickets
         helpdesk_ticket_1, helpdesk_ticket_2 = self.env["helpdesk.ticket"].create(
             [
                 {
@@ -211,7 +189,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             ]
         )
 
-        # (2) create timesheet for each ticket in a bulk create
         timesheet_1, timesheet_2 = self.env["account.analytic.line"].create(
             [
                 {
@@ -227,7 +204,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             ]
         )
 
-        # (3) Verify each timesheet exists
         self.assertTrue(
             timesheet_1,
             "Bulk creation of timesheets should work for separate ticket ids",
@@ -240,13 +216,7 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         self.assertEqual(timesheet_2.helpdesk_ticket_id, helpdesk_ticket_2)
 
     def test_timesheet_ticket_consistency_when_helpdesk_team_change(self):
-        """
-        Test that the change of `helpdesk_team` of a helpdesk_ticket results in:
-        - non-validated timesheets have the new project associated.
-        - validated timesheets does not get change and keep the initial project.
-        """
         self.env.user.tz = "UTC"
-        # Create ticket and store initial project (helpdesk_team)
         helpdesk_ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -256,7 +226,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
         initial_project = helpdesk_ticket.project_id
 
-        # create a valid timesheet and non-validated timesheet under the same helpdesk_ticket/project
         timesheet_valid, timesheet_non_valid = self.env["account.analytic.line"].create(
             [
                 {
@@ -276,7 +245,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         timesheet_valid.action_validate_timesheet()
         self.assertTrue(timesheet_valid.validated, "The timesheet should be validated.")
 
-        # create a new project and helpdesk_team with timesheet feature
         new_project = self.env["project.project"].create(
             {
                 "name": "Project 2",
@@ -293,7 +261,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             }
         )
 
-        # change the helpdesk_team of the helpdesk_ticket
         form = Form(helpdesk_ticket)
         form.team_id = new_helpdesk_team
         form.save()
@@ -309,14 +276,7 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_timesheet_check_warning_when_helpdesk_team_change(self):
-        """
-        1)  Test that when a ticket changes its project (helpdesk_team), if the ticket contains at least one non-validated timesheet AND
-            the new project has no timesheet feature available, a warning notification should be raised.
-        2)  The tickets's helpdesk_team and non-validated timesheets should be changed despite the warning raised.
-        3)  Checks that no warning is raised when the timesheets are validated.
-        """
         self.env.user.tz = "UTC"
-        # (1) create tickets and timesheets
         helpdesk_ticket_non_valid, helpdesk_ticket_valid = self.env[
             "helpdesk.ticket"
         ].create(
@@ -349,7 +309,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             ]
         )
 
-        # create helpdesk_team without timesheet feature
         no_timesheet_helpdesk_team = self.env["team.team"].create(
             {
                 "use_helpdesk": True,
@@ -367,7 +326,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         with patch.object(
             logging.getLogger("odoo.tests.form").getChild("onchange"), "warning"
         ) as mock_warning:
-            # change the helpdesk_team of the ticket containing non-validated timesheet, to the helpdesk_team without timesheet feature
             helpdesk_ticket_form = Form(
                 helpdesk_ticket_non_valid,
                 view="helpdesk_timesheet.helpdesk_ticket_view_form_inherit_helpdesk_timesheet",
@@ -378,20 +336,17 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             )
             helpdesk_ticket_form.save()
 
-        # (2) verify that after the warning, the helpdesk_team is changed
         self.assertEqual(
             helpdesk_ticket_non_valid.team_id,
             no_timesheet_helpdesk_team,
             "The ticket's helpdesk_team should be changed despite the warning raised.",
         )
 
-        # (3) Create ticket including only validated timesheet
         timesheet_validated.action_validate_timesheet()
         self.assertTrue(
             timesheet_validated.validated, "The timesheet should be validated."
         )
 
-        # change the helpdesk_team of the ticket only containing validated timesheet, to the helpdesk_team without timesheet feature
         helpdesk_ticket_valid.write({"team_id": no_timesheet_helpdesk_team.id})
         warning = helpdesk_ticket_valid._onchange_team_id()
         self.assertFalse(
@@ -400,7 +355,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_default_company_id_for_timesheet(self):
-        """This test ensures that the default company_id used when a timesheet is created from the ticket form view is the company_id of its project."""
         new_company = self.env["res.company"].create({"name": "Do the extra miles"})
         company_second = self.env["res.company"].create({"name": "Second company"})
         self.env["hr.employee"].create(
@@ -432,7 +386,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
                 "partner_id": self.partner.id,
             }
         )
-        # Use the default values sent by the form view
         vals = {
             "date": "2023-11-03",
             "user_id": False,
@@ -450,7 +403,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             "The expected company of the timesheet is the company from the project of its ticket",
         )
 
-        # Test to ensure provided company_id is not overridden
         vals.update(
             {
                 "company_id": new_company.id,
@@ -467,9 +419,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_launch_the_timer_for_a_ticket(self):
-        """Test if starting and stopping the timer on a timesheet entry linked to a helpdesk ticket creates a new entry
-        with the ticket_id set
-        """
         yesterday = date.today() - timedelta(days=1)
 
         timesheet = (
@@ -535,7 +484,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         timesheet_2.sudo()._add_timesheet_time(15, True)
         timesheet_3.sudo()._add_timesheet_time(15, True)
 
-        # timesheets 2 and 3 should be merged since they belong to the same ticket, timesheet 1 must be kept separate
         self.assertTrue(timesheet_1.exists(), "Timesheet 1 should not have been merged")
         self.assertFalse(
             timesheet_2.exists(), "Timesheet 2 should have been merged into 3"
@@ -547,7 +495,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         self.assertAlmostEqual(timesheet_3.unit_amount, 0.5, 2)
 
     def test_change_helpdesk_team_on_ticket_with_timer_running(self):
-        """Test that changing the helpdesk team of a ticket with a running timer does not stop the timer"""
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -610,8 +557,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_total_hours_spent(self):
-        """Test the total_hours_spent field is correctly computed"""
-        # create 5 tickets with a timesheet each of 10 minutes
         tickets = self.env["helpdesk.ticket"].create(
             [
                 {
@@ -627,14 +572,13 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
             self.env["account.analytic.line"].create(
                 {
                     "name": "Test Timesheet",
-                    "unit_amount": 1 / 6,  # 10 minutes in hours
+                    "unit_amount": 1 / 6,
                     "project_id": self.project.id,
                     "helpdesk_ticket_id": ticket.id,
                     "employee_id": self.empl_employee.id,
                 }
             )
 
-        # check sum of total_hours_spent is 5/6 hours
         total_hours_spent = sum(ticket.total_hours_spent for ticket in tickets)
         self.assertAlmostEqual(
             total_hours_spent,
@@ -644,10 +588,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_timesheet_value_conversion_hours_days(self):
-        """
-        Ensure that the timesheet value is correctly converted when changing
-        the encoding unit from hours to days and vice versa.
-        """
         helpdesk_ticket = self.helpdesk_ticket
         self.env["account.analytic.line"].create(
             {
@@ -667,7 +607,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_the_running_timer_reports_its_own_timesheet_hours(self):
-        """The ticket's timer amount must come from the timer's own timesheet."""
         timesheet = (
             self.env["account.analytic.line"]
             .with_user(self.user_employee)
@@ -702,7 +641,6 @@ class TestTimesheet(TestHelpdeskTimesheetCommon):
         )
 
     def test_a_second_timesheet_for_one_ticket_keeps_its_own_company(self):
-        """A batch create must not leak one line's company onto the next."""
         other_company = self.env["res.company"].create({"name": "Other Co"})
         lines = self.env["account.analytic.line"].create(
             [

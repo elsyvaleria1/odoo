@@ -15,7 +15,6 @@ class TestBatchPayment(TestAccountBankStatement):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Create a bank journal
         cls.journal = cls.company_data["default_journal_bank"]
         cls.batch_deposit_method = cls.env.ref(
             "account_batch_payment.account_payment_method_batch_deposit"
@@ -27,7 +26,6 @@ class TestBatchPayment(TestAccountBankStatement):
 
     @classmethod
     def create_payment(cls, partner, amount, **kwargs):
-        """Create a batch deposit payment"""
         payment = cls.env["account.payment"].create(
             {
                 "journal_id": cls.journal.id,
@@ -71,11 +69,6 @@ class TestBatchPayment(TestAccountBankStatement):
         )
 
     def test_exchange_diff_batch_payment(self):
-        """
-        This test will do a basic case where the company is in US Dollars but the st_line and the payment are in
-        another currencies. Between the moment where we created the batch payment and the st_line a difference of
-        rates happens and so an exchange diff is created.
-        """
         self.other_currency = self.setup_other_currency(
             "EUR", rates=[("2016-01-03", 2.0), ("2017-01-03", 1.0)]
         )
@@ -130,7 +123,6 @@ class TestBatchPayment(TestAccountBankStatement):
         )
 
     def test_partner_account_batch_payments_with_journal_entry(self):
-        """Test the account for batch payments with a linked journal entry"""
         for payment_type, account_a, account_b in [
             (
                 "inbound",
@@ -332,12 +324,10 @@ class TestBatchPayment(TestAccountBankStatement):
         st_line = self._create_st_line(amount=100)
         st_line.set_batch_payment_bank_statement_line(payment.batch_payment_id.id)
 
-        # When removing the payment line, the payment should go back to in_process but the batch remains untouched
         st_line.remove_reconciled_line(st_line.line_ids[-1].id)
         self.assertEqual(payment.state, "in_process")
 
     def test_batch_reconciliation_multiple_installments_payment_term(self):
-        """Test reconciliation of payments for multiple installments payment term lines"""
         payment_term = self.env["account.payment.term"].create(
             {
                 "name": "20-80_payment_term",
@@ -357,7 +347,6 @@ class TestBatchPayment(TestAccountBankStatement):
         )
         invoice.invoice_payment_term_id = payment_term
         invoice.action_post()
-        # register payment for the first installment
         payment_1 = (
             self.env["wizard.account.move.line.pay"]
             .with_context(
@@ -387,7 +376,6 @@ class TestBatchPayment(TestAccountBankStatement):
             ],
         )
 
-        # register payment for the second installment
         payment_2 = (
             self.env["wizard.account.move.line.pay"]
             .with_context(
@@ -440,9 +428,6 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
             )
 
     def test_partner_account_batch_payments_without_journal_entry(self):
-        """Test that account receivable is used for inbound payments and account payable for outbound ones
-        when no journal entry is linked to the payment
-        """
         for payment_type, account_a, account_b in [
             (
                 "inbound",
@@ -1182,12 +1167,6 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
         )
 
     def test_bank_rec_widget_batch_with_epd_with_exch_diff_without_entries(self):
-        """Tests a batch payment of a grouped payment with an amount too large for:
-            - 1 invoice with an early payment discount AND exchange diff
-            - 1 invoice with an early payment discount
-        During reconciliation, a payment with move should be created for the first invoice (to correctly handle the EPD),
-        the second invoice should correctly be added to the widget, and the surplus should be added as a payment.
-        """
         chf_currency = self.setup_other_currency(
             "CHF", rates=[("2016-01-01", 2.0), ("2019-01-03", 4.0)]
         )
@@ -1252,14 +1231,12 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
                     "balance": 200.0,
                     "reconciled": False,
                 },
-                # The first invoice and payment have been changed into a payment with move to handle the exchange diff. The next line comes from that move.
                 {
                     "account_id": outstanding_account.id,
                     "amount_currency": -90.0,
                     "balance": -22.5,
                     "reconciled": True,
                 },
-                # The 2 following lines correspond to the second invoice + EPD.
                 {
                     "account_id": invoice_without_exch_diff.account_id.id,
                     "amount_currency": -100.0,
@@ -1272,7 +1249,6 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
                     "balance": 2.5,
                     "reconciled": False,
                 },
-                # The remaining amount from the payment is added as is.
                 {
                     "account_id": payment.partner_id.property_account_receivable_id.id,
                     "amount_currency": -20.0,
@@ -1296,11 +1272,6 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
         )
 
     def test_bank_rec_widget_batch_foreign_currency_journal_without_entries(self):
-        """Tests a batch payment of payments recorded in another journal with
-        foreign currency and no outstanding account set.
-        - 2 invoices in company currency paid in foreign currency
-        - 1 bank transaction in foreign currency
-        """
         chf_currency = self.setup_other_currency("CHF", rates=[("2019-01-01", 1.5)])
         foreign_journal = self.env["account.journal"].create(
             {

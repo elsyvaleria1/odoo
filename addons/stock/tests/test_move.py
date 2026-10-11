@@ -8597,8 +8597,6 @@ class TestStockMove(TestStockCommon):
         picking.action_confirm()
         self.assertEqual(picking.state, "assigned")
 
-        # a form of its own: an installed module may make the serial numbers of
-        # the shipped picking form read-only
         move_form_view = self.env["ir.ui.view"].create(
             {
                 "name": "test.stock.move.trace.form",

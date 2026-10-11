@@ -14,9 +14,6 @@ class ResUsersEligibility(models.Model):
     def _notify_administrators(
         self, event: str, grant: models.BaseModel, reason: str | None
     ) -> None:
-        # an activation is told to the access administrators: those holding
-        # the group now and those who may activate system or access
-        # administration, the person activating aside
         read = self.env["ir.access"]._access_evaluator
         administrators = read("res.groups").browse(
             [

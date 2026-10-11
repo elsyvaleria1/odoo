@@ -20,8 +20,6 @@ class CalendarAlarm(models.Model):
 
     @api.model
     def _get_responsible_aware_alarm_types(self):
-        # `whatsapp_calendar._send_reminder` filters out the event organizer
-        # unless this flag is set, so it is meaningful for this type.
         return super()._get_responsible_aware_alarm_types() | {"whatsapp"}
 
     @api.depends("alarm_type")

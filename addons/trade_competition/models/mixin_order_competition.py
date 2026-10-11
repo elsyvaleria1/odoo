@@ -68,8 +68,6 @@ class MixinOrderCompetition(models.AbstractModel):
         return bool(best) and self._direction.price_sign * (ours - theirs) > 0
 
     def _best_rival_prices(self, offer):
-        # the offer's best same-or-comparable price per product, by the
-        # direction's rule: the lowest when we sell, the highest when we buy
         sign = self._direction.price_sign
         best = {}
         for line in offer.line_ids.filtered(

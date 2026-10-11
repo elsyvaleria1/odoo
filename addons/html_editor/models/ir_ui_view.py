@@ -132,7 +132,7 @@ class IrUiView(models.Model):
 
         for custom_snippet_el in tree.xpath('//*[hasclass("s_custom_snippet")]'):
             custom_snippet_name = custom_snippet_el.get("data-name")
-            custom_snippet_view = self.search(  # noqa: E8507 - one lookup per custom snippet in the arch
+            custom_snippet_view = self.search(
                 [("name", "=", custom_snippet_name)], limit=1
             )
             if custom_snippet_view:
@@ -327,10 +327,6 @@ class IrUiView(models.Model):
         }:
             ancestor = self.inherit_id.inherit_id.inherit_id
             if not ancestor:
-                # The website footer inheritance chain this shim expects is
-                # shallower than usual (e.g. a customized/truncated chain);
-                # skip the mega-footer column-class fixup rather than crash
-                # on `ancestor.arch` (False on an empty recordset).
                 _logger.warning(
                     "Skipping mega-footer column-class fixup for %s: "
                     "inherit_id chain is shorter than expected.",

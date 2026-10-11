@@ -26,7 +26,6 @@ def locate_node(arch: etree._Element, spec: etree._Element) -> etree._Element | 
         if not expr:
             message = _lt("Missing 'expr' attribute in xpath specification")
         elif isinstance(e.__cause__, etree.XPathSyntaxError):
-            # the msgid the translations carry, curly quotes included
             message = _lt("Invalid Expression while parsing xpath “%s”", expr)
         else:
             message = _lt("The xpath “%s” must select elements, not a value", expr)

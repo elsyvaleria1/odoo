@@ -97,7 +97,6 @@ class TestKarmaTrackingCommon(common.TransactionCase):
     def test_consolidation_cron(self):
         Tracking = self.env["gamification.karma.tracking"]
 
-        # Sanity check
         self.assertFalse(
             Tracking.search_count(
                 [("user_id", "in", (self.test_user | self.test_user_2).ids)]
@@ -115,7 +114,6 @@ class TestKarmaTrackingCommon(common.TransactionCase):
             self.test_user_2, karma=10, steps=20, track_date=test_date, days_delta=2
         )
 
-        # Sanity check
         self.assertEqual(
             Tracking.search_count([("user_id", "=", self.test_user.id)]), 2
         )
@@ -125,19 +123,12 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(self.test_user.karma, 40)
         self.assertEqual(self.test_user_2.karma, 200)
 
-        # 8 -> 2: the statement pair is all consolidation does now.  It used to
-        # drag a karma recompute and a rank re-evaluation behind it, because
-        # `_compute_karma` ended by calling `_recompute_rank` and the ORM reached
-        # both through the flush.  The rank hook lives on this table's own
-        # create/write/unlink now, and consolidation writes in raw SQL precisely
-        # because it is karma-neutral -- so there is nothing for it to trigger.
         with (
             self.assertQueryCount(2),
             patch.object(self.registry["res.users"], "write") as patched_user_write,
         ):
             Tracking._consolidate_cron()
 
-        # consolidation should not change user karma
         self.assertFalse(
             patched_user_write.called,
             "User karma didn't change during consolidation, it should not be updated",
@@ -172,7 +163,7 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(consolidated_2.old_value, 0)
         self.assertEqual(
             consolidated_2.new_value, 10 * 9
-        )  # 9 records have been consolidated
+        )
         self.assertEqual(
             consolidated_2.reason, "Consolidation from 2020-12-01 to 2020-12-31"
         )
@@ -213,15 +204,15 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(consolidated.old_value, base_test_user_2_karma)
         self.assertEqual(
             consolidated.new_value, base_test_user_2_karma + 150
-        )  # 15 2-days span, from 1 to 29 included = 15 steps -> 150 karma
+        )
 
         remaining = Tracking.search(
             [("user_id", "=", self.test_user_2.id), ("consolidated", "=", False)]
         )
-        self.assertEqual(len(remaining), 5)  # 15 steps consolidated, remaining 5
+        self.assertEqual(len(remaining), 5)
         self.assertEqual(
             remaining[0].tracking_date, self.test_date + relativedelta(months=1, day=9)
-        )  # ordering: last first
+        )
         self.assertEqual(
             remaining[-1].tracking_date, self.test_date + relativedelta(months=1, day=1)
         )
@@ -236,27 +227,26 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(len(consolidated), 2)
         self.assertEqual(
             consolidated[0].new_value, base_test_user_2_karma + 200
-        )  # 5 remaining 2-days span, from 1 to 9 included = 5 steps -> 50 karma
+        )
         self.assertEqual(
             consolidated[0].old_value, base_test_user_2_karma + 150
-        )  # coming from previous iteration
+        )
         self.assertEqual(
             consolidated[0].tracking_date.date(),
             self.test_date.date() + relativedelta(months=1),
-        )  # tracking set at beginning of month
+        )
         self.assertEqual(
             consolidated[-1].new_value, base_test_user_2_karma + 150
-        )  # previously created one still present
+        )
         self.assertEqual(
             consolidated[-1].old_value, base_test_user_2_karma
-        )  # previously created one still present
+        )
 
         remaining = Tracking.search(
             [("user_id", "=", self.test_user_2.id), ("consolidated", "=", False)]
         )
         self.assertFalse(remaining)
 
-        # current user not-in-details tests
         current_user_trackings = Tracking.search(
             [
                 ("user_id", "=", self.test_user.id),
@@ -267,11 +257,6 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(current_user_trackings[-1].old_value, base_test_user_karma)
 
     def test_consolidation_preserves_origin_ref_model_name(self):
-        """Consolidated records have origin_ref_model_name set correctly.
-
-        Regression: _process_consolidate uses raw INSERT, which previously
-        bypassed the ORM compute for origin_ref_model_name, leaving it NULL.
-        """
         Tracking = self.env["gamification.karma.tracking"]
         self._create_trackings(self.test_user, 20, 5, self.test_date, days_delta=3)
 
@@ -321,7 +306,7 @@ class TestKarmaTrackingCommon(common.TransactionCase):
             .sudo()
             .search([("user_id", "=", user.id)], order="create_date ASC, id ASC")
         )
-        self.assertEqual(len(trackings), 2)  # create + add_karma
+        self.assertEqual(len(trackings), 2)
         self.assertEqual(trackings[0].origin_ref, self.test_user)
         self.assertIn(self.env._("User Creation"), trackings[0].reason)
         self.assertIn(str(self.test_user.id), trackings[0].reason)
@@ -375,7 +360,6 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         )
         self.assertEqual(user.karma, 139)
 
-        # add manually karma to a user (e.g. from the technical view)
         tracking = self.env["gamification.karma.tracking"].create(
             {
                 "user_id": user.id,
@@ -387,14 +371,10 @@ class TestKarmaTrackingCommon(common.TransactionCase):
         self.assertEqual(tracking.gain, 11)
         self.assertEqual(user.karma, 150)
 
-        # write directly on the karma field, should generate <gamification.karma.tracking>
-        self.test_user_2.karma = 100  # won't change
+        self.test_user_2.karma = 100
         last_tracking_3 = self.test_user_2.karma_tracking_ids.sorted("id")[-1]
 
         users = (user | self.test_user | self.test_user_2).with_user(self.test_user)
-        # A direct ``karma`` write now recomputes rank_id/next_rank_id (and fires
-        # the rank-up notifications) just like ``_add_karma`` does — previously it
-        # created the tracking but left the rank stale.  Hence the higher budget.
         with self.assertQueryCount(23):
             users.karma = 100
 
@@ -525,7 +505,6 @@ class TestComputeRankCommon(common.TransactionCase):
         self.assertEqual(len(self.users), 35)
 
         self.rank_3.karma_min = 100
-        # rank_1 -> rank_3 -> rank_2 -> rank_4
 
         self.assertEqual(
             len(self.rank_1.user_ids & self.users),
@@ -585,20 +564,6 @@ class TestComputeRankCommon(common.TransactionCase):
         )
 
     def test_03_reranking_writes_once_per_rank_not_once_per_user(self):
-        """The write count follows the ranks, not the users.
-
-        Two earlier versions of this test measured nothing, and both are worth
-        recording. The first re-ranked users whose rank was already correct, so
-        the ORM skipped every write and the count was identical whatever the
-        loop did. The second cleared the ranks but asserted on TOTAL queries --
-        which do scale with users, because `_rank_changed` sends a bus message
-        and queues an email per user who moved, and no grouping can remove
-        those.
-
-        So assert the thing that actually changed: how many `write` calls the
-        re-ranking makes. One per distinct target rank is the property;
-        one per user is the regression.
-        """
         self.assertEqual(len(self.users), 35)
         self.users.sudo().write({"rank_id": False, "next_rank_id": False})
         self.env.flush_all()
@@ -629,12 +594,6 @@ class TestComputeRankCommon(common.TransactionCase):
         )
 
     def test_get_next_rank(self):
-        """Test the computation of the next user rank.
-
-        The test is based on the users and ranks defined in the setup ("|" represents rank switches (karma_min)):
-        (user idx, user karma): (0, -1) | (1, 25)...(8, 235) | (9, 265)...(16, 475) | (17, 505)...(33, 985) | (34, 1015)
-        """
-        # user idx, karma:
         for user, expected_next_rank in chain(
             ((self.users[0], self.rank_1),),
             zip(self.users[1:8], repeat(self.rank_2)),
@@ -642,7 +601,7 @@ class TestComputeRankCommon(common.TransactionCase):
             zip(self.users[17:33], repeat(self.rank_4)),
             ((self.users[34], self.env["gamification.karma.rank"]),),
         ):
-            user.next_rank_id = False  # Force the computation of the next rank
+            user.next_rank_id = False
             self.assertEqual(user._get_next_rank(), expected_next_rank)
 
 
@@ -680,7 +639,6 @@ class TestKarmaRankTieBreak(common.TransactionCase):
         )
 
     def test_tied_karma_min_orders_by_id(self):
-        """The lowest id sorts first among ranks tied on karma_min."""
         ranks = self.env["gamification.karma.rank"].search(
             [("id", "in", (self.rank_low_id | self.rank_high_id).ids)],
             order="karma_min DESC, id",
@@ -692,7 +650,6 @@ class TestKarmaRankTieBreak(common.TransactionCase):
         )
 
     def test_recompute_rank_assigns_deterministically_on_tie(self):
-        """A user landing exactly on a tied threshold always gets the same rank."""
         user = mail_new_test_user(
             self.env,
             login="tie_user",

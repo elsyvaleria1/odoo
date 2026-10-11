@@ -13,9 +13,6 @@ class TestConfigureShopsEnterprise(TestConfigureShops):
     """
 
     def _remove_on_payment_taxes(self):
-        """Call this when testing the res.config.settings with Form.
-        The `on_payment` taxes need to be removed, otherwise, a warning will show in the log.
-        """
         self.env["account.tax"].search(
             [
                 ("company_ids", "in", [self.env.company.id]),
@@ -24,7 +21,6 @@ class TestConfigureShopsEnterprise(TestConfigureShops):
         ).unlink()
 
     def test_should_not_affect_other_pos_config(self):
-        """Change in one pos.config should not reflect to the other."""
         self._remove_on_payment_taxes()
 
         pos_config1 = self.env["pos.config"].create(
@@ -36,7 +32,6 @@ class TestConfigureShopsEnterprise(TestConfigureShops):
         self.assertEqual(pos_config1.receipt_header, False)
         self.assertEqual(pos_config2.receipt_header, False)
 
-        # Modify Shop 1.
         with Form(self.env["res.config.settings"]) as form:
             form.pos_config_id = pos_config1
             form.pos_is_header_or_footer = True
@@ -46,7 +41,6 @@ class TestConfigureShopsEnterprise(TestConfigureShops):
         self.assertEqual(pos_config1.receipt_header, "xxxxx")
         self.assertEqual(pos_config2.receipt_header, False)
 
-        # Modify Shop 2.
         with Form(self.env["res.config.settings"]) as form:
             form.pos_config_id = pos_config2
             form.pos_is_header_or_footer = True

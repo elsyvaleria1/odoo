@@ -17,11 +17,7 @@ from .proof_method import CODE_DIGITS, CODE_SCOPE, MODES, VERDICTS
 
 CHALLENGE_LIFETIME = timedelta(minutes=5)
 CONFIRMATION_LIFETIME = timedelta(days=3)
-# what a link to a question keeps working past its lifetime, to tell a late
-# contact it is no longer current rather than show them nothing
 LINK_GRACE = timedelta(days=30)
-# codes a contact can be sent for one act in a window: each is a fresh
-# challenge with its own tries, and a public page can ask for them
 CODE_ISSUE_BURST = 3
 CODE_ISSUE_WINDOW = timedelta(minutes=10)
 CHALLENGE_RETENTION = timedelta(days=1)
@@ -160,16 +156,6 @@ class ProofChallenge(models.Model):
         summary: list[list[str]] | None = None,
         partner: models.BaseModel | None = None,
     ) -> dict[str, Any]:
-        """Ask the current user to prove they vouch for ``facts`` about ``record``,
-        and return what the client needs to ask them: the only place the
-        challenge's token is ever given out, since the challenge keeps its hash.
-
-        ``facts`` must be JSON-serialisable and carry every figure the user agrees
-        to; redeeming recomputes the digest from the facts as they are then, so a
-        figure that moved in between refuses the proof. ``summary`` is what the
-        user is shown, as label/value pairs. With ``partner``, the contact is the
-        one who proves, through the current user, who enters their answer.
-        """
         record.check_singleton()
         user = self.env.user
         methods = methods.filtered(lambda method: method.mode == "submit")
@@ -224,14 +210,6 @@ class ProofChallenge(models.Model):
         facts: dict[str, Any],
         verdict: str | None = None,
     ) -> models.BaseModel:
-        """Accept the current user's answer to a challenge and record it.
-
-        Returns the ``proof.evidence`` row. Raises UserError when the challenge is
-        unknown, used, expired, someone else's, issued for another act, answered
-        with a method it did not offer, when the facts moved since it was issued,
-        or when the method refuses the proof. ``verdict`` is what a contact
-        answered to what they were asked to confirm, when they were.
-        """
         record.check_singleton()
         challenge = self._with_proof_privilege().search(
             [("token_hash", "=", self._get_token_hash(token or ""))], limit=1
@@ -259,11 +237,6 @@ class ProofChallenge(models.Model):
         lifetime: timedelta = CONFIRMATION_LIFETIME,
         remind_after: timedelta | None = None,
     ) -> ProofChallenge:
-        """Ask ``partner`` to confirm ``facts`` about ``record`` on every channel
-        of theirs a confirmation method reaches; they answer there, until
-        ``lifetime`` runs out. A challenge no channel reached is still issued,
-        with no message out, so the record shows its contact was unreachable.
-        """
         record.check_singleton()
         partner.check_singleton()
         methods = (
@@ -275,7 +248,6 @@ class ProofChallenge(models.Model):
         challenge = self._with_proof_privilege().create(
             {
                 "kind": "confirm",
-                # never handed out: the contact answers on the messages sent
                 "token_hash": self._get_token_hash(secrets.token_urlsafe(32)),
                 "user_id": self.env.user.id,
                 "partner_id": partner.id,
@@ -348,7 +320,6 @@ class ProofChallenge(models.Model):
         return evidence
 
     def _withdraw(self) -> None:
-        """Take back what was asked: its messages can no longer be answered."""
         challenges = self._with_proof_privilege().browse(self.ids)
         challenges.filtered(lambda c: c.state == "issued").state = "withdrawn"
         challenges._withdraw_deliveries()
@@ -359,19 +330,12 @@ class ProofChallenge(models.Model):
             delivery.method_id._withdraw_delivery(delivery)
 
     def _get_asker_env(self) -> api.Environment:
-        """The environment of the user who asked the contact, in their own
-        companies: what the contact's answer, from outside, acts as."""
         self.check_singleton()
-        # a fresh context: the request's language, website or companies are
-        # the contact's, not the asker's
         asker_env = self.env(user=self.user_id.id, context={})
         lang = asker_env.user.lang
         return asker_env(context={"lang": lang}) if lang else asker_env
 
     def _reach_again(self) -> None:
-        """Ask again, on the channels that reach the contact now and did not
-        when they were asked: one they connected since. The channels that
-        already carry the question keep it."""
         confirm_methods = (
             self._with_proof_privilege()
             .env["proof.method"]
@@ -403,8 +367,6 @@ class ProofChallenge(models.Model):
                         method._deliver_confirmation(challenge)
 
     def _get_record_links(self) -> list[tuple[str, str]]:
-        """The links the record sends along with what its contact confirms, in
-        the contact's language."""
         self.check_singleton()
         record = (
             self.env[self.res_model]
@@ -418,14 +380,8 @@ class ProofChallenge(models.Model):
 
     def _notify_record(self, hook: str, *args: Any) -> None:
         self.check_singleton()
-        # the contact answers from outside, as no user of ours and inside no
-        # company: the record hears it as the user who asked them
         record = self._get_asker_env()[self.res_model].browse(self.res_id).exists()
-        # a record outside the confirmation mixin asked its contact directly
-        # and follows the answer from the challenge
         if record and hasattr(record, hook):
-            # what the record does with the answer is ours: when it fails, the
-            # contact's answer still stands, and the failure is logged
             with _guarded(self, hook):
                 getattr(record, hook)(*args)
 
@@ -444,7 +400,6 @@ class ProofChallenge(models.Model):
             reached = challenge._has_reached_contact()
             challenge.state = "expired"
             challenge._withdraw_deliveries()
-            # a contact nobody reached did not fail to answer
             if reached:
                 challenge._notify_record("_on_confirmation_expired")
         due = challenges.search(
@@ -487,10 +442,6 @@ class ProofChallenge(models.Model):
         }
 
     def _send_codes(self) -> dict[int, dict[str, Any]]:
-        """Send one code to every channel a code method reaches the signer on,
-        so whichever they read it on is the one the challenge takes, and return
-        each method's options. A channel that refuses it is left out; when none
-        takes it and nothing else is offered, its refusal is the error."""
         methods = self.method_ids.filtered(lambda method: method._uses_code())
         if not methods:
             return {}
@@ -611,11 +562,9 @@ class ProofChallenge(models.Model):
 
     @api.autovacuum
     def _gc_challenges(self) -> tuple[int, bool]:
-        # a confirmation stays: its record reads its state from it
         stale = self.search(
             [
                 ("kind", "=", "submit"),
-                # a redeemed one stays: a record may read its answer from it
                 ("state", "!=", "redeemed"),
                 ("date_expire", "<", fields.Datetime.now() - CHALLENGE_RETENTION),
             ],
@@ -627,10 +576,6 @@ class ProofChallenge(models.Model):
 
 @contextmanager
 def _guarded(challenge, step):
-    """Run what follows a proof's own work in a savepoint of its own: when it
-    fails, what the proof recorded stands and the failure is logged. A conflict
-    with a concurrent transaction is not the step's failure: it is raised, for
-    the request to be retried."""
     try:
         with challenge.env.cr.savepoint():
             yield

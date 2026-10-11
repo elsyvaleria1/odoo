@@ -20,10 +20,6 @@ class MailActivity(models.Model):
                     lambda act: act.activity_type_id.id == type_to_defer_id
                 )
         if leave_activities:
-            # The activity being completed IS the "defer to next payslip"
-            # activity, so the leave it points to has just been reported —
-            # matching hr.leave.activity_feedback()'s equivalent write for
-            # the same activity type.
             self.env["hr.leave"].browse(leave_activities.mapped("res_id")).write(
                 {"payslip_state": "done"}
             )

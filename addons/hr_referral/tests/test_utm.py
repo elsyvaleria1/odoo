@@ -13,12 +13,9 @@ class TestUTMConsistencyHrReferral(TestUTMCommon):
         )
 
         with self.assertRaises(UserError):
-            # can't unlink the campaign as it's used by a job as it's referral campaign
-            # unlinking the campaign would break sent referral links
             self.utm_campaign.unlink()
 
         hr_job.write({"utm_campaign_id": False})
-        # once the campaign is not linked to the job, it can be deleted
         self.utm_campaign.unlink()
 
     @users("__system__")
@@ -34,10 +31,7 @@ class TestUTMConsistencyHrReferral(TestUTMCommon):
         )
 
         with self.assertRaises(UserError):
-            # can't unlink the source as it's used by a user as it's referral source
-            # unlinking the source would break sent referral links
             self.utm_source.unlink()
 
         hr_referral_user.write({"utm_source_id": False})
-        # once the source is not linked to the employee, it can be deleted
         self.utm_source.unlink()

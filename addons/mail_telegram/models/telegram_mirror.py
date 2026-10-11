@@ -114,8 +114,6 @@ class TelegramMirror(models.Model):
         )
 
     def _record(self):
-        # the group speaks on its thread with the rights of whoever connected
-        # it, in the names of its own people
         self.check_singleton()
         owner = self.with_user(self.user_id).with_privilege(
             "telegram.privilege_operate_bot",
@@ -124,10 +122,8 @@ class TelegramMirror(models.Model):
         )
         return owner.env[self.res_model].browse(self.res_id).exists()
 
-    # -- Odoo -> Telegram -----------------------------------------------------
 
     def _send(self, message):
-        """Queue a message posted on the mirrored thread for the group."""
         self.check_singleton()
         chat = self.chat_id
         if chat.bot_blocked or chat.migrated_to_id:
@@ -153,19 +149,13 @@ class TelegramMirror(models.Model):
                 caption = None
 
     def _render(self, message):
-        """Telegram HTML for a message: its author's name, then its body --
-        the bot cannot speak as the author."""
         body = tg.from_odoo_html(message.body, self.get_base_url())
         author = message.author_id.name
-        # a channel publishes: its posts speak for it, not for their author
         if not author or self.kind == "broadcast":
             return body
         return f"{tg.bold(author)}: {body}" if body else ""
 
     def _show_typing(self) -> None:
-        """Show the bot typing in the group while someone types in Odoo, at
-        most once per Telegram's few seconds of it, and outside the typing
-        request: Telegram's answer is nobody's to wait for."""
         self.check_singleton()
         if self.kind == "broadcast" or self.chat_id.bot_blocked:
             return
@@ -187,7 +177,6 @@ class TelegramMirror(models.Model):
         )
 
     def _uid_of(self, mail_message):
-        """The Telegram message of this chat that carried `mail_message`."""
         if not mail_message:
             return False
         ledger = operating(self.env["telegram.message"]).search(
@@ -202,7 +191,6 @@ class TelegramMirror(models.Model):
         return ledger.msg_uid or False
 
     def _update(self, message, *, deleted) -> None:
-        """Follow an edit or a deletion of a message the bot sent."""
         self.check_singleton()
         sent = operating(self.env["telegram.message"]).search(
             [

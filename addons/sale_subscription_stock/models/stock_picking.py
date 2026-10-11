@@ -9,7 +9,6 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def copy_data(self, default=None):
-        # override picking linked to subscriptions to make sure the date are copied
         default = dict(default or {})
         vals_list = super().copy_data(default=default)
         for old_picking, vals in zip(self, vals_list, strict=False):
@@ -35,8 +34,6 @@ class StockPicking(models.Model):
         for move in self.move_ids:
             picking = move.picking_id
             sale_order = picking.sale_id
-            # Creates new SO line only when pickings linked to a sale order and
-            # for moves with qty. done and not already linked to a SO line.
             if (
                 not sale_order
                 or move.location_dest_id.usage != "customer"
@@ -45,7 +42,6 @@ class StockPicking(models.Model):
                 continue
 
             if sale_order.subscription_state == "7_upsell":
-                # we need to compute the parent id, because it was not computed when we created the SOL in _subscription_update_line_data
                 self.env.add_to_compute(
                     self.env["sale.order.line"]._fields["parent_line_id"],
                     move.sale_line_id,

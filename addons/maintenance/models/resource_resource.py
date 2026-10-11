@@ -97,8 +97,6 @@ class ResourceResource(models.Model):
             )
 
     def _get_or_create_maintenance_profile(self):
-        """The profile is the resource's facet: whoever may write the resource
-        may give it a profile, so it is created and written as the system."""
         self.check_singleton()
         profile = self.maintenance_profile_id
         if not profile:

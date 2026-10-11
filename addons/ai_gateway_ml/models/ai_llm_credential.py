@@ -37,11 +37,4 @@ class AiLlmCredential(models.AbstractModel):
 
     @api.model
     def _get_vault_credential(self, endpoint_code):
-        """The active credential for `endpoint_code` in the current company.
-
-        Kept as a name of this module's own because `_get_api_token` reads
-        better for it, but the lookup itself is integration's: it was written
-        out here, and in four other places, before
-        `credential.credential._get_for_endpoint_code` existed.
-        """
         return self.env["credential.credential"]._get_for_endpoint_code(endpoint_code)

@@ -15,7 +15,6 @@ class StockPicking(models.Model):
 
     lazada_order_ref = fields.Char(related="sale_id.lazada_order_ref")
 
-    # Computed fields for Lazada package management
     lazada_package_status = fields.Selection(
         selection=[
             ("draft", "Package Pending on Lazada"),
@@ -28,7 +27,6 @@ class StockPicking(models.Model):
         compute="_compute_lazada_package_status",
     )
 
-    # Lazada-specific fields
     last_lazada_picking_sync_date = fields.Datetime(
         default=fields.Datetime.now,
         readonly=True,
@@ -49,7 +47,6 @@ class StockPicking(models.Model):
         help="The attachments that are related to the Lazada label.",
     )
 
-    # === COMPUTED FIELDS === #
 
     @api.depends("move_ids.lazada_order_item_ids.status")
     def _compute_lazada_package_status(self) -> None:
@@ -58,17 +55,11 @@ class StockPicking(models.Model):
                 picking.move_ids.lazada_order_item_ids.mapped("status")
             )
 
-    # === BUSINESS METHODS === #
 
     def _pack_lazada_package(self) -> None:
-        """Pack Lazada packages for eligible pickings.
-
-        Packs order items with 'draft' status.
-        """
         pickings_by_shop = self._get_lazada_pickings_by_shop()
 
         for all_pickings in pickings_by_shop.values():
-            # Filter pickings that need packing
             to_pack_pickings = all_pickings.filtered(
                 lambda p: (
                     p.move_ids.lazada_order_item_ids
@@ -83,15 +74,10 @@ class StockPicking(models.Model):
                 picking._pack_picking()
 
     def _download_lazada_labels_and_mark_ready_to_ship(self) -> None:
-        """Fetch shipping labels and set Ready to Ship status.
-
-        Downloads labels via PrintAWB API and updates status via SetReadyToShip API.
-        """
         pickings_by_shop = self._get_lazada_pickings_by_shop()
 
         error_messages = []
         for shop, all_pickings in pickings_by_shop.items():
-            # Download shipping labels
             to_download_pickings = all_pickings.filtered(
                 lambda p: p.lazada_package_status not in ["canceled", "draft"]
             )
@@ -104,7 +90,6 @@ class StockPicking(models.Model):
                     )
                     continue
 
-            # Set Ready to Ship status
             to_update_rts_pickings = all_pickings.filtered(
                 lambda p: (
                     p.lazada_package_status == "processing"
@@ -136,16 +121,8 @@ class StockPicking(models.Model):
                 )
             )
 
-    # === LAZADA API METHODS === #
 
     def _get_shipment_provider_data(self, order_id, order_item_ids):
-        """Fetch shipment provider information from Lazada API.
-
-        :param int order_id: Order identifier
-        :param list order_item_ids: List of order item IDs
-        :return: Shipment provider data
-        :rtype: dict
-        """
         shop = self.sale_id.lazada_shop_id
         shop.check_singleton()
         response = utils.send_lazada_api_request(
@@ -172,10 +149,6 @@ class StockPicking(models.Model):
         )
 
     def _set_lazada_rts(self, shop) -> None:
-        """Set Ready to Ship status on Lazada for pickings.
-
-        :param shop: Lazada shop record
-        """
         for pickings in (
             self.browse(b)
             for b in batched(self.ids, const.SET_RTS_SIZE_LIMIT, strict=False)
@@ -209,10 +182,6 @@ class StockPicking(models.Model):
             pickings.lazada_package_status = "processing"
 
     def _download_lazada_shipping_label(self, shop) -> None:
-        """Download shipping label PDF and attach to picking.
-
-        :param shop: Lazada shop record
-        """
         for picking in self:
             payload = picking._prepare_lazada_shipping_label_payload()
             content = utils.send_lazada_api_request(
@@ -263,7 +232,6 @@ class StockPicking(models.Model):
             picking.move_ids.lazada_order_item_ids.status = "processing"
 
     def _pack_picking(self) -> None:
-        """Pack products on Lazada via PackagePack API."""
         self.check_singleton()
         try:
             payload = self._prepare_package_payload()
@@ -346,10 +314,6 @@ class StockPicking(models.Model):
             ) from e
 
     def _update_lazada_shipping_allocation(self) -> None:
-        """Update the picking's shipping allocation from Lazada.
-
-        Determines shipping_allocate_type (NTFS/TFS) for the picking.
-        """
         self.check_singleton()
         if not self.lazada_order_ref:
             raise UserError(
@@ -382,14 +346,8 @@ class StockPicking(models.Model):
         )
         self.lazada_shipping_allocate_type = data["shipping_allocate_type"]
 
-    # === HELPER METHODS === #
 
     def _get_lazada_pickings_by_shop(self):
-        """Group pickings by Lazada shop.
-
-        :return: Dict mapping shop to pickings
-        :rtype: dict
-        """
         domain = [
             ("id", "in", self.ids),
             ("sale_id.lazada_shop_id", "!=", False),
@@ -400,18 +358,13 @@ class StockPicking(models.Model):
         return self.search(domain).grouped(lambda p: p.sale_id.lazada_shop_id)
 
     def _prepare_package_payload(self) -> dict:
-        """Prepare payload for PackagePack API request.
-
-        :return: Package payload dict
-        :rtype: dict
-        """
         self.check_singleton()
         if not self.lazada_order_ref:
             raise ValidationError(self.env._("No Lazada order reference found."))
 
         result = {
             "shipping_allocate_type": self.lazada_shipping_allocate_type,
-            "delivery_type": "dropship",  # Must be dropship
+            "delivery_type": "dropship",
         }
         draft_order_item_extern_ids = self.move_ids.lazada_order_item_ids.filtered(
             lambda i: i.status == "draft"
@@ -430,30 +383,17 @@ class StockPicking(models.Model):
         }
 
     def _prepare_lazada_shipping_label_payload(self) -> dict:
-        """Prepare payload for PrintAWB API request.
-
-        :return: Shipping label payload dict
-        :rtype: dict
-        """
         self.check_singleton()
         return {"packages": [{"package_id": self.package_extern_id}], "doc_type": "PDF"}
 
     def _prepare_lazada_rts_payload(self) -> dict:
-        """Prepare payload for SetReadyToShip API request.
-
-        :return: RTS payload dict
-        :rtype: dict
-        """
         return {
             "packages": [{"package_id": picking.package_extern_id} for picking in self]
         }
 
-    # === ACTION METHODS === #
 
     def action_fetch_shipping_label(self) -> None:
-        """Manually fetch shipping label for this picking."""
         self._download_lazada_labels_and_mark_ready_to_ship()
 
     def action_pack_lazada_package(self) -> None:
-        """Manually pack this Lazada package."""
         self._pack_lazada_package()

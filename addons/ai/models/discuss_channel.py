@@ -9,11 +9,6 @@ from odoo.addons.mail.tools.discuss import Store
 
 
 def is_ai_chat_channel(channel) -> bool:
-    """Predicate to filter channels for which the channel type is 'ai_chat'.
-
-    :return: Whether the channel is an ai_chat channel.
-    :rtype: bool
-    """
     return channel.channel_type == "ai_chat"
 
 
@@ -55,9 +50,6 @@ class DiscussChannel(models.Model):
         }
 
     ai_env_context = fields.Json(string="Context for AI agent")
-    # Having ai_agent_id written by users can compromise the security of channels. For example, adding ai_agent_id
-    # to a channel will make it garbage collected, a channel member can unlink an ai agent from the channel, etc.
-    # Thus, the field has group fields.NO_ACCESS so that the field can only be written in controlled flows.
     ai_agent_id = fields.Many2one(
         comodel_name="ai.agent",
         index="btree_not_null",
@@ -80,7 +72,7 @@ class DiscussChannel(models.Model):
         text_selection=None,
     ) -> dict:
         ai_composer = None
-        if record_model:  # if we call the AI within a specific model, we search for composer configs that might include that model and we take the last one
+        if record_model:
             ai_composer = (
                 self.env["ai.composer"]
                 .sudo()
@@ -93,7 +85,7 @@ class DiscussChannel(models.Model):
                     order="create_date DESC",
                 )
             )
-        if not ai_composer:  # if we don't find any composer configs or we call the ai from a place with no specific model, fallback to the basic composers
+        if not ai_composer:
             ai_composer = (
                 self.env["ai.composer"]
                 .sudo()
@@ -115,9 +107,7 @@ class DiscussChannel(models.Model):
             if channel_title
             else ai_agent.name
         )
-        # create a new AI chat
         channel = ai_agent._create_ai_chat_channel(channel_name=channel_name)
-        # Create the initial context for the AI - the default prompt from the composer
         model_context = []
         if composer_prompt := ai_composer.default_prompt:
             model_context.append(composer_prompt)
@@ -125,19 +115,15 @@ class DiscussChannel(models.Model):
         model_has_thread = False
         if record_model:
             original_record = self.env[record_model].search([("id", "=", record_id)])
-            # Add extra info that are relevant to the where we call the AI from (record info, chatter info, pre-prompts, etc.)
             model_context += original_record._ai_initialise_context(
                 caller_component, text_selection, front_end_info
             )
             if isinstance(original_record, self.pool["mixin.mail.thread"]):
                 model_has_thread = True
 
-        # Finally pass the complete "save" the context to the channel
         channel.ai_env_context = model_context
 
         prompts = ai_composer.available_prompts
-        # Don't show prompts related to chatter if the model does not inherit from mixin.mail.thread
-        # (note: name is misleading, 'chatter_ai_button' means 'from the systray in a form view')
         if caller_component == "chatter_ai_button" and not model_has_thread:
             chatter_prompts = {
                 self.env.ref(
@@ -158,8 +144,6 @@ class DiscussChannel(models.Model):
         }
 
     def _ai_answering(self):
-        # what an agent's answer needs and nothing more, held by whoever asked
-        # for it: never the superuser, so an agent's tools stay the caller's
         return self.with_privilege(
             "ai.privilege_answer_in_channel",
             "mail.privilege_post_as_author",
@@ -174,7 +158,6 @@ class DiscussChannel(models.Model):
 
     @api.autovacuum
     def _remove_ai_chat_channels(self) -> None:
-        # sudo() => ai_agent_id has group fields.NO_ACCESS and the method is only called from cron jobs.
         self.sudo().search(
             Domain("ai_agent_id", "!=", False)
             & Domain("channel_type", "=", "ai_chat")

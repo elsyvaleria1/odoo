@@ -27,8 +27,6 @@ class PosPaymentMethod(models.Model):
         if not isinstance(data, dict):
             _logger.warning("QFPay notification is not a JSON object")
             raise Acknowledged.json(None)
-        # The trade number is `<payment uuid>--<session>--<method>`; the
-        # signature is checked against the method it names, once resolved.
         trade_no = data.get("orig_out_trade_no", data.get("out_trade_no"))
         try:
             payment_uuid, session_id, pm_id = (
@@ -134,27 +132,22 @@ class PosPaymentMethod(models.Model):
             )
 
         key = self.sudo().qfpay_pos_key
-        # AES IV is a constant as stated in the documentation
         aes_iv = "qfpay202306_hjsh"
 
-        # Sort the payload items and format
         payload_items = sorted((k, "" if v is None else v) for k, v in payload.items())
         formated_payload = ",".join(
             f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" for k, v in payload_items
         )
         formated_payload = "{" + formated_payload + "}"
 
-        # Generate Digest
         md5 = hashlib.md5()
         md5.update((formated_payload + key).encode("utf-8"))
         digest = md5.hexdigest().upper()
 
-        # Prepare the payload to encrypt
         payload_to_encrypt = (
             "{content:" + formated_payload + ", digest:'" + digest + "'}"
         )
 
-        # Encrypt the payload
         cipher = Cipher(
             algorithms.AES(key.encode("utf-8")), modes.CBC(aes_iv.encode("utf-8"))
         )

@@ -18,11 +18,6 @@ GONE = "gone.module.model"
 @tagged("post_install", "-at_install")
 class TestDanglingResModel(TransactionCase):
     def _orphaned(self, name, with_content=True):
-        """A document pointing at a model the registry does not have.
-
-        Written through SQL because there is no supported way to reach this
-        state forwards -- it is what an uninstall leaves behind.
-        """
         vals = {"name": name, "type": "binary"}
         if with_content:
             vals["raw"] = b"before"
@@ -37,21 +32,12 @@ class TestDanglingResModel(TransactionCase):
         return document
 
     def test_reading_a_dangling_link_answers_rather_than_raises(self):
-        """The three sites that already got this right, pinned."""
         document = self._orphaned("orphan-read.txt")
 
         self.assertFalse(document.res_name)
         self.assertFalse(document.res_model_name)
 
     def test_filling_an_empty_orphaned_document_clears_the_link(self):
-        """The `KeyError` path: an upload request against an uninstalled model.
-
-        `_write_attach_empty_document` already cleared the link when the linked
-        RECORD was gone; a model that is gone is the strongest form of that, and
-        it used to index `self.env[res_model]` before testing for it -- raising
-        `KeyError: '<model>'`, which reaches the client as a 500 rather than as
-        anything a caller could handle.
-        """
         document = self._orphaned("orphan-empty.txt", with_content=False)
 
         document.write({"raw": b"uploaded at last"})
@@ -66,9 +52,6 @@ class TestDanglingResModel(TransactionCase):
         )
 
     def test_a_new_attachment_never_inherits_a_dead_model(self):
-        """`ir.attachment` denies access to anything it cannot access-check, so
-        stamping a dead `res_model` onto a fresh attachment makes that
-        attachment unreadable -- the document poisons its own new version."""
         document = self._orphaned("orphan-swap.txt", with_content=False)
         document.write({"raw": b"first"})
         replacement = self.env["ir.attachment"].create(
@@ -90,7 +73,6 @@ class TestDanglingResModel(TransactionCase):
         self.assertEqual(document.attachment_id, replacement)
 
     def test_a_live_link_is_left_alone(self):
-        """Negative control: the guard must not unlink a document that is fine."""
         partner = self.env["res.partner"].create({"name": "still here"})
         document = self.env["document.document"].create(
             {"name": "linked.txt", "type": "binary"}

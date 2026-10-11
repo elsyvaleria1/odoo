@@ -78,8 +78,6 @@ class TestEventVisitor(TestEventOnlineCommon, WebsiteVisitorTestsCommon):
         self._test_unlink_old_visitors(self.env["website.visitor"], active_visitors)
 
     def test_registration_desk_ir_rule_scoping(self):
-        """Round-1 fix WEM-04: a registration-desk user must only read
-        visitors linked to an event registration, not every visitor."""
         desk_user = mail_new_test_user(
             self.env,
             login="user_registration_desk",

@@ -67,7 +67,6 @@ def probe(tmp_path_factory):
     run.db = db
     try:
         run("-i", f"base,mail,{PROBE}")
-        # the first update stamps the data-file checksums a skip compares against
         run("-u", PROBE)
         yield run
     finally:

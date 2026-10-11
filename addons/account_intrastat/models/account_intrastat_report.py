@@ -20,7 +20,7 @@ _merchandise_import_code = {
 
 _unknown_country_code = {
     "BE": "QU",
-    "FR": "QU",  # source: https://www.douane.gouv.fr/debweb/cf.srv when trying with the simulation tool
+    "FR": "QU",
     "NL": "QV",
 }
 
@@ -54,12 +54,10 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             report, options, previous_options=previous_options
         )
 
-        # Filter only partners with VAT
         options["intrastat_with_vat"] = previous_options.get(
             "intrastat_with_vat", False
         )
 
-        # Filter types of invoices
         default_type = [
             {"name": self.env._("Arrival"), "selected": False, "id": "arrival"},
             {"name": self.env._("Dispatch"), "selected": False, "id": "dispatch"},
@@ -68,7 +66,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         options["country_format"] = previous_options.get("country_format")
         options["commodity_flow"] = previous_options.get("commodity_flow")
 
-        # Filter the domain based on the types of invoice selected
         include_arrivals, include_dispatches = self._get_inclusion(options)
 
         invoice_types = []
@@ -77,16 +74,12 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         if include_dispatches:
             invoice_types += ["out_invoice", "in_refund"]
 
-        # When only one type is selected, we can display a total line
         options.setdefault("forced_domain", []).append(
             ("move_id.move_type", "in", invoice_types)
         )
 
-        # Filter report type (extended form)
         options["intrastat_extended"] = previous_options.get("intrastat_extended", True)
 
-        # 2 columns are conditional and should only appear when rendering the extended intrastat report
-        # Some countries don't use the region code column; we hide it for them.
         excluded_columns = set()
         if not options["intrastat_extended"]:
             excluded_columns |= {"transport_code", "incoterm_code"}
@@ -98,7 +91,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             if col["expression_label"] not in excluded_columns:
                 new_columns.append(col)
 
-                # Replace country names by codes if necessary (for file exports)
                 if options.get("country_format") == "code":
                     if col["expression_label"] == "country_name":
                         col["expression_label"] = "country_code"
@@ -111,14 +103,12 @@ class AccountIntrastatReportHandler(models.AbstractModel):
                         )
         options["columns"] = new_columns
 
-        # Only pick Sale/Purchase journals (+ divider)
         report._init_options_journals(
             options,
             previous_options=previous_options,
             additional_journals_domain=[("type", "in", ("sale", "purchase"))],
         )
 
-        # When printing the report to xlsx, we want to use country codes instead of names
         xlsx_button_option = next(
             button_opt
             for button_opt in options["buttons"]
@@ -143,29 +133,18 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             include_arrivals = include_dispatches = True
         return include_arrivals, include_dispatches
 
-    ####################################################
-    # OVERRIDES
-    ####################################################
 
     def _show_region_code(self):
-        """Return a bool indicating if the region code is to be displayed for the country concerned in this localisation."""
-        # TO OVERRIDE
         return True
 
     def _prepare_intrastat_export_select(self):
-        # TO OVERRIDE
         return SQL()
 
     def _prepare_intrastat_export_row(self, result_dict, query_res):
-        # TO OVERRIDE
         return result_dict
 
-    ####################################################
-    # OPTIONS: INIT
-    ####################################################
 
     def export_to_xlsx(self, options, response=None):
-        # We need to regenerate the options to make sure we hide the country name columns as expected.
         report = self.env["report.formula"].browse(options["report_id"])
         new_options = report.get_options(
             previous_options={
@@ -176,9 +155,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         )
         return report.export_to_xlsx(new_options, response=response)
 
-    ####################################################
-    # REPORT LINES: CORE
-    ####################################################
 
     def _report_custom_engine_intrastat(
         self,
@@ -197,7 +173,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
 
                 if res["supplementary_units"]:
                     supplementary_units = f"{sum(line.get('supplementary_units', 0) for line in query_res_lines)}"
-                    # To remove trailing zeros
                     digit = 1 if int(float(supplementary_units) * 100 % 10) == 0 else 2
                     supplementary_units = formatLang(
                         self.env,
@@ -327,7 +302,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         warnings=None,
         order_by=True,
     ):
-        """Generates query for intrastat report."""
 
         assert all(
             key in query_params
@@ -447,7 +421,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             GROUP BY
                 %(groupby)s, grouping_key, invoice_currency.name
             """,
-            # select
             select_from_groupby=select_from_groupby or "",
             import_merchandise_code=_merchandise_import_code.get(
                 self.env.company.country_id.code, "29"
@@ -495,19 +468,16 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             exporting_data=self._prepare_intrastat_export_select()
             if options.get("export_mode") == "file"
             else SQL(),
-            # from
             table_references=report_query.from_clause,
             currency_table_join=report._currency_table_aml_join(options),
             country_table_join=query_params["country_table_join"],
             weight_rounding=self.env["decimal.precision"].get_precision("Stock Weight"),
-            # where
             search_condition=report_query.where_clause,
             product_type_condition=query_params["product_type_condition"],
             vat_condition=SQL("AND partner.vat IS NOT NULL")
             if options["intrastat_with_vat"]
             else SQL(),
             country_condition=query_params["country_condition"],
-            # group by
             groupby=SQL(", ").join(SQL(key) for key in _grouping_keys)
             if options["export_mode"] != "file"
             and current_groupby == "intrastat_grouping"
@@ -522,7 +492,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
                 )
             )
             query = SQL("\n").join([query, SQL("ORDER BY %s", order_by_clause)])
-        # query tail
         return SQL("\n").join([query, report._get_engine_query_tail(offset, limit)])
 
     def _custom_line_postprocessor(self, report, options, lines):
@@ -552,10 +521,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
         return keys_names_in_sequence
 
     def _prepare_intrastat_custom_domain_blocks(self, grouping_key_dict):
-        """
-        Build custom domain dict for intrastat report.
-        This is a dict to allow easy overrides of domains based on grouping_key_dict keys.
-        """
         if grouping_key_dict["intrastat_product_origin_country_code"] == "XU":
             grouping_key_dict["intrastat_product_origin_country_code"] = "GB"
 
@@ -683,16 +648,9 @@ class AccountIntrastatReportHandler(models.AbstractModel):
             self._prepare_intrastat_custom_domain_blocks(loads(grouping_key)).values()
         )
 
-    ####################################################
-    # REPORT LINES: HELPERS
-    ####################################################
 
     @api.model
     def _update_missing_values(self, vals_list):
-        """Template method to be overidden to retrieve complex data
-
-        :param vals_list:    A dictionary created by the dictfetchall method.
-        """
         return vals_list
 
     def _get_export_groupby_clause(self):
@@ -700,9 +658,6 @@ class AccountIntrastatReportHandler(models.AbstractModel):
              inv_transport.id, comp_transport.id, product_country.id, account_move_line.id, account_move.id,
              inv_line_uom.factor, prod_uom.id, partner.id, prod.id, prodt.id""")
 
-    ####################################################
-    # ACTIONS
-    ####################################################
 
     def action_invalid_code_moves(self, options, params) -> dict:
         return {

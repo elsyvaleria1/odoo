@@ -232,11 +232,9 @@ class TestXMLID(TransactionCase):
 
         xmlid = "base.test_xmlid"
         records = self.env["ir.model.data"].search([], limit=6)
-        # warm the field, default and clock caches the first create pays for
         self.env["ir.model.data"]._update_xmlids(
             [{"xml_id": "base.test_xmlid_warmup", "record": records[5]}]
         )
-        # one read of the existing rows, then one insert or one update
         with self.assertQueryCount(2):
             self.env["ir.model.data"]._update_xmlids(
                 [
@@ -2773,8 +2771,6 @@ class TestIrModelConstraintReflection(TransactionCase):
             self.env["ir.model.data"]._process_end(["base"])
 
     def test_process_end_keeps_a_selection_value_the_registry_still_declares(self):
-        # what a module skipped by an upgrade leaves unloaded: its models are
-        # not reflected, so base's xmlids for their values are not loaded either
         value = self.env.ref("base.selection__res_partner__type__invoice")
         self._process_end_without("base.selection__res_partner__type__invoice")
         self.assertTrue(value.exists())
@@ -2989,7 +2985,6 @@ class TestRefusedFieldRename(BaseCase):
             )
             self.model_id = model.id
             cr.commit()
-        # committed and set up; what the test watches is what the rename sets
         self.registry.registry_invalidated = False
         self.addCleanup(self._drop_model)
 

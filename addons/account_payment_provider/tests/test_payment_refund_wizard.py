@@ -16,7 +16,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_amount_to_refund_defaults_to_amount_available_for_refund(self):
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
 
         wizard = self._create_wizard(tx.payment_id)
 
@@ -30,7 +30,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_refunded_amount_reflects_already_refunded_transactions(self):
         self.provider.support_refund = "partial"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self._create_transaction(
             "redirect",
             reference=f"{tx.reference}-refund",
@@ -52,7 +52,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_support_refund_none_when_provider_does_not_support_it(self):
         self.provider.support_refund = "none"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
 
         wizard = self._create_wizard(tx.payment_id)
 
@@ -61,7 +61,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_support_refund_full_only_when_provider_only_supports_that(self):
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
 
         wizard = self._create_wizard(tx.payment_id)
 
@@ -70,7 +70,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_has_pending_refund_true_when_a_refund_is_in_progress(self):
         self.provider.support_refund = "partial"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         self._create_transaction(
             "redirect",
             reference=f"{tx.reference}-refund",
@@ -87,7 +87,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_amount_to_refund_rejects_zero(self):
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         wizard = self._create_wizard(tx.payment_id)
 
         with self.assertRaises(ValidationError):
@@ -96,7 +96,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_amount_to_refund_rejects_amount_above_available(self):
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         wizard = self._create_wizard(tx.payment_id)
 
         with self.assertRaises(ValidationError):
@@ -105,7 +105,7 @@ class TestPaymentRefundWizard(AccountPaymentCommon):
     def test_action_refund_delegates_to_transaction(self):
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
-        tx._post_process()  # Create the payment
+        tx._post_process()
         wizard = self._create_wizard(tx.payment_id)
 
         wizard.action_refund()

@@ -35,7 +35,7 @@ class CustomerPortal(portal.CustomerPortal):
             "ticket_link_section": [],
             "ticket_closed": kwargs.get("ticket_closed", False),
             "preview_object": ticket,
-            "res_company": ticket.company_id,  # Used to display correct company logo
+            "res_company": ticket.company_id,
         }
         return self._get_page_view_values(
             ticket, access_token, values, "my_tickets_history", False, **kwargs
@@ -152,11 +152,6 @@ class CustomerPortal(portal.CustomerPortal):
             )
         )
 
-        # Clamp all three to their declared vocabularies. These come straight off
-        # the query string and each was a distinct HTTP 500 on an unknown value:
-        # `filterby` a KeyError below, and `sortby` / `groupby` are interpolated
-        # into the `order=` string (and `groupby` into `itemgetter`), so an
-        # unknown key reached the ORM as a nonexistent field to order by.
         sortby = self._resolve_searchbar_option(
             searchbar_sortings, sortby, next(iter(searchbar_sortings))
         )
@@ -170,11 +165,9 @@ class CustomerPortal(portal.CustomerPortal):
                 "create_date", "<=", date_end
             )
 
-        # search
         if search and search_in:
             domain &= Domain(self._ticket_get_search_domain(search_in, search))
 
-        # pager
         tickets_count = request.env["helpdesk.ticket"].search_count(domain)
         pager = portal_pager(
             url="/my/tickets",

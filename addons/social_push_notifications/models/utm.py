@@ -23,10 +23,6 @@ class UtmCampaign(models.Model):
     )
 
     def _compute_social_post_ids(self) -> None:
-        """social_post_ids has to contain every posts that have at least one 'real' social media
-        like twitter or facebook. Posts that are nothing but push notifications are filtered out of social_post_ids
-        and affected to social_push_notification_ids.
-        Posts that are linked to real social media and push notifications will be present in both fields"""
 
         push_notification_media_id = self.env.ref(
             "social_push_notifications.social_media_push_notifications"
@@ -38,7 +34,6 @@ class UtmCampaign(models.Model):
             campaign.social_push_notification_ids = campaign.social_post_ids.filtered(
                 lambda post: push_notification_media_id in post.media_ids.ids
             )
-            # Filter out the posts who are only push notifications
             campaign.social_post_ids -= campaign.social_push_notification_ids.filtered(
                 lambda push_notif: len(push_notif.media_ids) == 1
             )

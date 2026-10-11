@@ -63,7 +63,6 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
     def setUpClass(cls):
         super().setUpClass()
 
-        # user with restricted groups
         cls.simple_accountman = (
             cls.env["res.users"]
             .with_company(cls.company_2.id)
@@ -73,7 +72,6 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
                     "login": "simple_accountman",
                     "password": "simple_accountman",
                     "group_ids": [
-                        # the `account` specific groups from get_default_groups()
                         Command.link(cls.env.ref("account.group_account_manager").id),
                         Command.link(cls.env.ref("account.group_account_user").id),
                     ],
@@ -112,10 +110,8 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
             }
         )
 
-        # Enable centralization of accounting in one documents folder for company_2
         cls.company_2.account_folder_id = cls.folder_finance_company2.id
 
-        # Link the journal to the folder
         cls.setup_sync_journal_folder(
             cls.journal_company2, cls.folder_finance_company2, cls.company_2
         )
@@ -126,7 +122,6 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
             RecordCapturer(self.env["account.move"], []) as move_capture,
             RecordCapturer(self.env["document.document"], []) as doc_capture,
         ):
-            # required because of how `format_and_process` & `account_move.create()` work
             self.format_and_process(
                 template,
                 "external.sender@example.com",
@@ -141,11 +136,6 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
     @users("simple_accountman")
     @mute_logger("odoo.addons.mail.models.mixin_mail_thread")
     def test_incoming_mail_to_journal_alias_attachment_company(self):
-        """
-        Tests that incoming emails with attachments are correctly processed and documents
-        centralized in the correct company's folder when using multi-company setup and aliases,
-        specifically in the context where the target folder belongs to a specific company.
-        """
         new_move, new_document = self._mail_journal_company2(
             VENDOR_BILL_MAIL, "<account-company-2-mail-test@odoo.com>"
         )
@@ -182,8 +172,6 @@ class TestMultiCompanyDocumentsAccountMail(MailCommon, DocumentsAccountHelpersCo
     @users("simple_accountman")
     @mute_logger("odoo.addons.mail.models.mixin_mail_thread")
     def test_a_forwarded_email_alone_is_no_bill_to_file(self):
-        """A raw email is never a record's main attachment, so a mail whose only
-        attachment is a forwarded message gets a move and no document."""
         new_move, new_document = self._mail_journal_company2(
             MAIL_EML_ATTACHMENT, "<account-company-2-forward-test@odoo.com>"
         )

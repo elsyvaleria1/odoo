@@ -74,7 +74,6 @@ class TestLoadPublicHolidays(TestHrHolidaysCommon):
         self.assertEqual(len(created), expected)
         self.assertTrue(created.filtered(lambda leave: leave.name == "Navidad"))
 
-        # A second pass must not duplicate them.
         again = self.wizard_model.create({"year": 2026})
         self.assertFalse(again.line_ids)
         self.assertIn("2026", again.warning_message)
@@ -86,7 +85,6 @@ class TestLoadPublicHolidays(TestHrHolidaysCommon):
         christmas = self._public_holidays(2026).filtered(
             lambda leave: leave.name == "Navidad"
         )
-        # Mexico City is UTC-6, so a full local day starts at 06:00 UTC.
         self.assertEqual(christmas.date_from, datetime(2026, 12, 25, 6, 0, 0))
         self.assertEqual(christmas.date_to, datetime(2026, 12, 26, 6, 0, 0))
 

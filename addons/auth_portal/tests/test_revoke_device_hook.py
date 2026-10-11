@@ -20,18 +20,13 @@ from odoo.tests import tagged
 
 from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 
-#: Must equal ``RevokeTrustedDevice.selector`` in
-#: ``static/src/interactions/revoke_trusted_device.js``.
 REVOKE_DEVICE_HOOK_CLASS = "o_totp_portal_revoke_device"
 
 
 @tagged("post_install", "-at_install")
 class TestRevokeDeviceHook(HttpCaseWithUserPortal):
     def _portal_user_with_a_trusted_device(self):
-        """Enable 2FA on the portal user and give it one trusted device."""
         user = self.user_portal
-        # auth_totp_mail notifies the user that 2FA went on; the mail itself is
-        # not what this checks, so keep it queued rather than sent.
         user.sudo().with_context(mail_notify_force_send=False).write(
             {"totp_secret": "test"}
         )
@@ -85,7 +80,6 @@ class TestRevokeDeviceHook(HttpCaseWithUserPortal):
         self.assertTrue(plain.active)
 
     def test_revoking_one_device_removes_it(self):
-        """Click the button, answer the identity check, and lose the device."""
         user = self._portal_user_with_a_trusted_device()
 
         self.start_tour(

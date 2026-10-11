@@ -333,9 +333,6 @@ class IrModel(models.Model):
                         kind,
                     )
             else:
-                # nothing defines the model any more: its table, when the
-                # migration retiring it did not drop it, is left for want of
-                # knowing it is the model's
                 table = model.model.replace(".", "_")
                 if not sql.table_exists(self.env.cr, table):
                     _debug.logic(
@@ -395,7 +392,6 @@ class IrModel(models.Model):
         model_data.unlink()
         _debug.pipeline("unlink_cascade", crons=len(crons), xmlids=len(model_data))
 
-        # while the tables their referrers live in still exist
         self._unlink_inheritance_rows_cascaded()
 
         self.field_id._drop_m2m_tables()

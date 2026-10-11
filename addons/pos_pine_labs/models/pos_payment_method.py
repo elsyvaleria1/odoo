@@ -50,14 +50,6 @@ class PosPaymentMethod(models.Model):
         return super()._selection_payment_terminals() + [("pine_labs", "Pine Labs")]
 
     def pine_labs_make_payment_request(self, data) -> dict:
-        """
-        Sends a payment request to the Pine Labs POS API.
-
-        :param dict data: Contains `amount`, `transactionNumber`, and `sequenceNumber`.
-        :return: On success, returns `responseCode`, `status`, and `plutusTransactionReferenceID`.
-                On failure, returns an error message.
-        :rtype: dict
-        """
         body = {
             "Amount": data["amount"],
             "TransactionNumber": data["transactionNumber"],
@@ -88,14 +80,6 @@ class PosPaymentMethod(models.Model):
         return {"error": error}
 
     def pine_labs_fetch_payment_status(self, data) -> dict:
-        """
-        Fetches payment status from the Pine Labs POS API.
-
-        :param dict data: Contains `plutusTransactionReferenceID` for the status request.
-        :return: On success, returns `responseCode`, `status`, `plutusTransactionReferenceID`, and `data` (formatted transaction details).
-                On failure, returns an error message.
-        :rtype: dict
-        """
         body = {"PlutusTransactionReferenceID": data["plutusTransactionReferenceID"]}
         response = call_pine_labs(
             payment_method=self, endpoint="GetCloudBasedTxnStatus", payload=body
@@ -125,13 +109,6 @@ class PosPaymentMethod(models.Model):
         return {"error": error}
 
     def pine_labs_cancel_payment_request(self, data) -> dict:
-        """
-        Cancels a payment request via Pine Labs POS API.
-
-        :param dict data: Contains `amount` and `plutusTransactionReferenceID`.
-        :return: Success response with `responseCode` and `notification` or error with `errorMessage`.
-        :rtype: dict
-        """
         body = {
             "Amount": data["amount"],
             "PlutusTransactionReferenceID": data["plutusTransactionReferenceID"],

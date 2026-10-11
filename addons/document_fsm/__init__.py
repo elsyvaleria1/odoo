@@ -4,7 +4,6 @@ from . import models
 def _documents_fsm_post_init(env) -> None:
     fsm_projects = env["project.project"].search([("is_fsm", "=", True)])
 
-    # Search for folders that are descendants of fsm_projects folders and have documents
     subfolders_with_documents = env["document.document"].search(
         [
             ("id", "child_of", fsm_projects.documents_folder_id.ids),

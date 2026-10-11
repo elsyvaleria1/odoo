@@ -88,7 +88,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
 
         self.assertLinesValues(
-            # pylint: disable=bad-whitespace
             lines,
             [0, 1, 2],
             [
@@ -145,8 +144,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1],
             [
@@ -168,13 +165,9 @@ class TestAnalyticReport(TestAccountReportsCommon):
             },
         )
 
-        # Set the unused analytic account in filter, as no move is
-        # using this account, the column should be empty
         options["analytic_accounts"] = [self.analytic_account_child.id]
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1],
             [
@@ -258,9 +251,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
     def test_report_analytic_groupby_and_filter(self):
-        """
-        Test that the analytic filter is applied on the groupby columns
-        """
 
         out_invoice = self.env["account.move"].create(
             [
@@ -286,7 +276,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
         out_invoice.action_post()
 
-        # Test with only groupby
         options = self._generate_options(
             self.report,
             "2023-01-01",
@@ -300,8 +289,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1, 2, 3],
             [
@@ -328,16 +315,12 @@ class TestAnalyticReport(TestAccountReportsCommon):
             },
         )
 
-        # Adding analytic filter for the two analytic accounts used on the invoice line
-        # The two groupby columns should still be filled
         options["analytic_accounts"] = [
             self.analytic_account_parent.id,
             self.analytic_account_child.id,
         ]
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1, 2, 3],
             [
@@ -363,13 +346,9 @@ class TestAnalyticReport(TestAccountReportsCommon):
                 2: {"currency": self.env.company.currency_id},
             },
         )
-        # Keep only first analytic account on filter, the groupby column
-        # for this account should still be filled, unlike the other
         options["analytic_accounts"] = [self.analytic_account_parent.id]
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1, 2, 3],
             [
@@ -396,13 +375,9 @@ class TestAnalyticReport(TestAccountReportsCommon):
             },
         )
 
-        # Keep only the child analytic account on filter, the groupby column
-        # for this account should still be filled, unlike the other
         options["analytic_accounts"] = [self.analytic_account_child.id]
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1, 2, 3],
             [
@@ -429,13 +404,9 @@ class TestAnalyticReport(TestAccountReportsCommon):
             },
         )
 
-        # Set an unused analytic account in filter, all the columns
-        # should be empty, as no move is using this account
         options["analytic_accounts"] = [self.analytic_account_parent_2.id]
 
         self.assertLinesValues(
-            # pylint: disable=C0326
-            # pylint: disable=bad-whitespace
             self.report._get_lines(options),
             [0, 1, 2, 3],
             [
@@ -552,9 +523,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
     def test_audit_cell_analytic_groupby_and_filter(self):
-        """
-        Test that the analytic filters are applied on the auditing of the cells
-        """
 
         def _get_action_dict(options, column_index):
             lines = self.report._get_lines(options)
@@ -627,7 +595,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
             lambda line: line.auto_account_id == other_account
         )
 
-        # Test with only groupby
         options = self._generate_options(
             self.report,
             "2023-01-01",
@@ -639,45 +606,44 @@ class TestAnalyticReport(TestAccountReportsCommon):
                 ],
             },
         )
-        action_dict = _get_action_dict(options, 0)  # First Column => Parent
+        action_dict = _get_action_dict(options, 0)
         self.assertEqual(
             self.env["account.analytic.line"].search(action_dict["domain"]),
             analytic_lines_parent,
             "Only the Analytic Line related to the Parent should be shown",
         )
-        action_dict = _get_action_dict(options, 1)  # Second Column => Other
+        action_dict = _get_action_dict(options, 1)
         self.assertEqual(
             self.env["account.analytic.line"].search(action_dict["domain"]),
             analytic_lines_other,
             "Only the Analytic Line related to the Parent should be shown",
         )
 
-        action_dict = _get_action_dict(options, 2)  # Third Column => AMLs
+        action_dict = _get_action_dict(options, 2)
         self.assertEqual(
             out_invoices.line_ids.filtered_domain(action_dict["domain"]),
             out_invoices.invoice_line_ids,
             "Both amls should be shown",
         )
 
-        # Adding analytic filter for the two analytic accounts used on the invoice line
         options["analytic_accounts"] = [
             self.analytic_account_parent.id,
             other_account.id,
         ]
-        action_dict = _get_action_dict(options, 0)  # First Column => Parent
+        action_dict = _get_action_dict(options, 0)
         self.assertEqual(
             self.env["account.analytic.line"].search(action_dict["domain"]),
             analytic_lines_parent,
             "Still only the Analytic Line related to the Parent should be shown",
         )
-        action_dict = _get_action_dict(options, 1)  # Second Column => Other
+        action_dict = _get_action_dict(options, 1)
         self.assertEqual(
             self.env["account.analytic.line"].search(action_dict["domain"]),
             analytic_lines_other,
             "Still only the Analytic Line related to the Parent should be shown",
         )
 
-        action_dict = _get_action_dict(options, 2)  # Third Column => AMLs
+        action_dict = _get_action_dict(options, 2)
         self.assertEqual(
             out_invoices.line_ids.search(action_dict["domain"]),
             out_invoices.invoice_line_ids,
@@ -718,7 +684,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             general_ledger_report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 4, 5, 6],
             [
                 ["400000 Product Sales", 0.00, 100.00, -100.00],
@@ -764,8 +729,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             general_ledger_report._get_lines(options),
-            #                                           [             Analytic account             ]|[                 Total                   ]
-            #   Name                                    Debit           Credit          Balance     |   Debit           Credit          Balance
             [0, 4, 5, 6, 10, 11, 12],
             [
                 ["121000 Account Receivable", 0.00, 0.00, 0.00, 300.00, 0.00, 300.00],
@@ -870,7 +833,7 @@ class TestAnalyticReport(TestAccountReportsCommon):
                 "rule_ids": [
                     Command.create(
                         {
-                            "field_name": "move_id",  # this field is specific to account.move.line and not in account.analytic.line
+                            "field_name": "move_id",
                             "domain": f"[('id', 'in', {(out_invoice_1 + out_invoice_2).ids})]",
                         }
                     ),
@@ -894,8 +857,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Horizontal groupby                                    [             Move 2              ]     [               Move 1                ]
-            #   Analytic groupby                                           A1          A2      A3      Balance     A1          A2       A3         Balance
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
             [
                 ["Revenue", 100.00, 0.00, 0.00, 100.00, 0.00, 400.00, -50.00, 500.00],
@@ -983,10 +944,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
     def test_analytic_groupby_with_analytic_simulations(self):
-        """
-        Create an analytic simulation (analytic line without a move line)
-        and check that it is taken into account in the report
-        """
 
         self.env["account.analytic.line"].create(
             {
@@ -1032,9 +989,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         )
 
     def test_analytic_groupby_plans_without_analytic_accounts(self):
-        """
-        Ensure that grouping on several analytic plans without any analytic accounts works as expected
-        """
         analytic_plans_without_accounts = self.env["account.analytic.plan"].create(
             [
                 {"name": "Plan 1"},
@@ -1059,7 +1013,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                                         Plan 1      Plan 2          Total
             [0, 1, 2, 3],
             [
                 ("Revenue", 0.00, 0.00, 0.00),
@@ -1121,9 +1074,6 @@ class TestAnalyticReport(TestAccountReportsCommon):
         self.assertEqual(test_journal.display_name, "Test Journal (EUR)")
 
     def test_show_analytic_coverage_column(self):
-        """
-        Ensures that the column of analytic coverage only appears when only one plan is shown
-        """
         options = self._generate_options(
             self.report,
             "2019-01-01",
@@ -1265,7 +1215,7 @@ class TestAnalyticReport(TestAccountReportsCommon):
 
         action_dict = _get_action_dict(
             options, 0
-        )  # First column: analytic lines of parent plan
+        )
         self.assertEqual(action_dict["context"].get("group_by"), "move_line_id")
         self.assertEqual(
             self.env["account.analytic.line"]
@@ -1274,7 +1224,7 @@ class TestAnalyticReport(TestAccountReportsCommon):
             analytic_lines,
         )
 
-        action_dict = _get_action_dict(options, 1)  # Second column: account move lines
+        action_dict = _get_action_dict(options, 1)
         move_lines = (
             self.env["account.move.line"]
             .with_context(action_dict["context"])

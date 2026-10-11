@@ -34,10 +34,6 @@ class HrPayslipLine(models.Model):
 
     @api.depends("salary_rule_id", "company_id")
     def _compute_salary_rule_accounts(self) -> None:
-        # `account_debit` and `account_credit` are company_dependent on the rule,
-        # so reading them off it with a plain `related=` would answer in whatever
-        # company the user happens to be in rather than in the one the payslip
-        # belongs to.
         for line in self:
             rule = line.salary_rule_id.with_company(line.company_id or self.env.company)
             line.salary_rule_account_debit = rule.account_debit
@@ -45,12 +41,10 @@ class HrPayslipLine(models.Model):
 
     @api.depends("salary_rule_id")
     def _compute_debit_tags(self) -> None:
-        # To be overridden for specific localisation cases
         for record in self:
             record.debit_tag_ids = record.salary_rule_id.debit_tag_ids.ids
 
     @api.depends("salary_rule_id")
     def _compute_credit_tags(self) -> None:
-        # To be overridden for specific localisation cases
         for record in self:
             record.credit_tag_ids = record.salary_rule_id.credit_tag_ids.ids

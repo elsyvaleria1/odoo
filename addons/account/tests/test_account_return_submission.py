@@ -70,9 +70,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         submission.action_send()
         return tax_return, submission
 
-    # ------------------------------------------------------------------
-    # The manual channel: the user filed outside Odoo and records it
-    # ------------------------------------------------------------------
 
     def test_submitting_opens_a_draft_submission_without_submitting_yet(self):
         tax_return = self._reviewed_return()
@@ -299,9 +296,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
             tax_return, [{"state": "submitted", "is_completed": True}]
         )
 
-    # ------------------------------------------------------------------
-    # The channel contract, against fakes shaped like the real channels
-    # ------------------------------------------------------------------
 
     def _draft_submission(self):
         tax_return = self._reviewed_return()
@@ -309,7 +303,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         return tax_return, tax_return.submission_ids
 
     def test_a_synchronous_channel_submits_on_the_spot(self):
-        """Belgian Intervat: the authority answers the request itself."""
 
         def send(_self, submission):
             submission._update_from_channel("accepted", external_ref="BE-1")
@@ -322,7 +315,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         self.assertEqual(tax_return.state, "submitted")
 
     def test_an_acknowledging_channel_submits_once_a_poll_says_accepted(self):
-        """Dutch SBR, UK GovTalk: acknowledge now, decide later."""
         answers = iter(["acknowledged", "accepted"])
 
         def send(_self, submission):
@@ -387,7 +379,6 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         self.assertEqual(tax_return.state, "reviewed")
 
     def test_a_channel_needing_a_login_hands_back_an_action_and_resumes(self):
-        """UK MTD, Belgian OAuth: the user logs in at the authority first."""
         logged_in = []
         login_action = {"type": "ir.actions.act_url", "url": "https://authority/login"}
 

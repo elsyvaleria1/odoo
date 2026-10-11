@@ -20,7 +20,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _formatting_address_fields(self):
-        """Returns the list of address fields usable to format addresses."""
         return [
             field
             for field in super()._formatting_address_fields()
@@ -29,14 +28,6 @@ class ResPartner(models.Model):
 
     @api.model
     def update_latitude_longitude(self, partners) -> dict:
-        """Store the coordinates the map view geocoded client-side.
-
-        Called over RPC by the map view, so the payload is untrusted: entries
-        that are not an id plus a well-formed pair of coordinates are dropped,
-        and the caller must be able to read a partner before its position can
-        be written. The write itself runs in sudo for internal users, who read
-        partners on the map that they have no right to write.
-        """
         coordinates_by_id = {}
         for entry in partners:
             position = self._get_partner_position(entry)
@@ -62,7 +53,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _get_partner_position(self, entry) -> tuple | None:
-        """Return `entry`'s coordinates as a float pair, or None if malformed."""
         if not isinstance(entry, dict):
             return None
         if not isinstance(entry.get("id"), int) or isinstance(entry["id"], bool):

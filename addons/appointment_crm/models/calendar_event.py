@@ -22,7 +22,6 @@ class CalendarEvent(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         events = super().create(vals_list)
-        # We want only event with the right appointment type and another attendee than the employee
         events.filtered(
             lambda e: (
                 e.appointment_type_id.lead_create
@@ -68,7 +67,6 @@ class CalendarEvent(models.Model):
             partner = event.partner_ids - event.user_id.partner_id
             lead_values.append(event._prepare_lead_vals(partner[:1]))
 
-        # Create leads within the event organizer's company
         leads = (
             self.env["crm.lead"]
             .with_context(mail_create_nosubscribe=True)

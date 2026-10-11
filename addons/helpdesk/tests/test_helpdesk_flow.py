@@ -21,12 +21,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
     """
 
     def test_access_rights(self):
-        # helpdesk user should only be able to:
-        #   read: teams, stages, SLAs,
-        #   read, create, write, unlink: tickets, tags
-        # helpdesk manager:
-        #   read, create, write, unlink: everything (from helpdesk)
-        # we consider in these tests that if the user can do it, the manager can do it as well (as the group is implied)
         def test_write_and_unlink(record):
             record.write({"name": "test_write"})
             record.unlink()
@@ -36,10 +30,7 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 record.write({"name": "test_write"})
             with self.assertRaises(AccessError):
                 record.unlink()
-            # self.assertRaises(AccessError, record.write({'name': 'test_write'})) # , "Helpdesk user should not be able to write on %s" % record._name)
-            # self.assertRaises(AccessError, record.unlink(), "Helpdesk user could unlink %s" % record._name)
 
-        # helpdesk.team access rights
         team = (
             self.env["team.team"]
             .with_user(self.helpdesk_manager)
@@ -51,7 +42,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             team.with_user(self.helpdesk_user).create({"name": "test create"})
         test_write_and_unlink(team)
 
-        # helpdesk.ticket access rights
         ticket = (
             self.env["helpdesk.ticket"]
             .with_user(self.helpdesk_user)
@@ -60,7 +50,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
         ticket.read()
         test_write_and_unlink(ticket)
 
-        # helpdesk.stage access rights
         stage = (
             self.env["helpdesk.stage"]
             .with_user(self.helpdesk_manager)
@@ -82,7 +71,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             )
         test_write_and_unlink(stage)
 
-        # helpdesk.sla access rights
         sla = (
             self.env["helpdesk.sla"]
             .with_user(self.helpdesk_manager)
@@ -106,7 +94,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             )
         test_write_and_unlink(sla)
 
-        # helpdesk.tag access rights
         tag = (
             self.env["helpdesk.tag"]
             .with_user(self.helpdesk_user)
@@ -116,7 +103,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
         test_write_and_unlink(tag)
 
     def test_assign_close_dates(self):
-        # helpdesk user create a ticket
         with self._ticket_patch_now("2019-01-08 12:00:00"):
             ticket1 = (
                 self.env["helpdesk.ticket"]
@@ -130,9 +116,7 @@ class TestHelpdeskFlow(HelpdeskCommon):
             )
 
         with self._ticket_patch_now("2019-01-10 13:00:00"):
-            # the helpdesk user takes the ticket
             ticket1.user_id = self.helpdesk_user
-            # we verify the ticket is correctly assigned
             self.assertEqual(
                 ticket1.user_id.id,
                 ticket1.env.uid,
@@ -143,7 +127,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             )
 
         with self._ticket_patch_now("2019-01-10 15:00:00"):
-            # we close the ticket and verify its closing time
             ticket1.write({"stage_id": self.stage_done.id})
             self.assertEqual(
                 ticket1.close_hours, 19, "Close time for ticket not correct"
@@ -167,7 +150,7 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 },
             ]
         )
-        self.assertTrue(tickets[0].ticket_ref > tickets[1].ticket_ref)  # '99' > '100'
+        self.assertTrue(tickets[0].ticket_ref > tickets[1].ticket_ref)
 
         ticket_search = tickets.search(
             [("name", "=", "test ticket_ref ordering")], order="ticket_ref ASC"
@@ -178,9 +161,7 @@ class TestHelpdeskFlow(HelpdeskCommon):
         self.assertEqual(ticket_search[1], tickets[1])
 
     def test_ticket_partners(self):
-        # we create a partner
         partner = self.env["res.partner"].create({"name": "Freddy Krueger"})
-        # helpdesk user creates 2 tickets for the partner
         ticket1 = (
             self.env["helpdesk.ticket"]
             .with_user(self.helpdesk_user)
@@ -205,15 +186,12 @@ class TestHelpdeskFlow(HelpdeskCommon):
         )
 
     def test_team_assignation_randomly(self):
-        # we put the helpdesk user and manager in the test_team's members
         self.test_team.member_ids = [
             (6, 0, [self.helpdesk_user.id, self.helpdesk_manager.id])
         ]
-        # we set the assignation method to randomly (=uniformly distributed)
         self.test_team.update(
             {"helpdesk_assign_method": "randomly", "helpdesk_auto_assignment": True}
         )
-        # we create a bunch of tickets
         self.env["helpdesk.ticket"].create(
             [
                 {
@@ -223,7 +201,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 for i in range(5)
             ]
         )
-        # add unassigned ticket to test if the distribution is kept equal.
         self.env["helpdesk.ticket"].create(
             {
                 "name": "ticket unassigned",
@@ -241,7 +218,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 for i in range(5, 12)
             ]
         )
-        # ensure both members have the same amount of tickets assigned
         self.assertEqual(
             self.env["helpdesk.ticket"].search_count(
                 [("user_id", "=", self.helpdesk_user.id)]
@@ -255,7 +231,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             6,
         )
 
-        # tickets created in a folded stage should not be assigned
         closed_ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "closed ticket",
@@ -283,15 +258,12 @@ class TestHelpdeskFlow(HelpdeskCommon):
         )
 
     def test_team_assignation_balanced(self):
-        # we put the helpdesk user and manager in the test_team's members
         self.test_team.member_ids = [
             (6, 0, [self.helpdesk_user.id, self.helpdesk_manager.id])
         ]
-        # we set the assignation method to randomly (=uniformly distributed)
         self.test_team.update(
             {"helpdesk_assign_method": "balanced", "helpdesk_auto_assignment": True}
         )
-        # we create a bunch of tickets
         self.env["helpdesk.ticket"].create(
             [
                 {
@@ -301,7 +273,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 for i in range(4)
             ]
         )
-        # ensure both members have the same amount of tickets assigned
         self.assertEqual(
             self.env["helpdesk.ticket"].search_count(
                 [("user_id", "=", self.helpdesk_user.id)]
@@ -315,12 +286,10 @@ class TestHelpdeskFlow(HelpdeskCommon):
             2,
         )
 
-        # helpdesk user finishes his 2 tickets
         self.env["helpdesk.ticket"].search(
             [("user_id", "=", self.helpdesk_user.id)]
         ).write({"stage_id": self.stage_done.id})
 
-        # we create 4 new tickets
         self.env["helpdesk.ticket"].create(
             [
                 {
@@ -331,7 +300,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             ]
         )
 
-        # ensure both members have the same amount of tickets assigned
         self.assertEqual(
             self.env["helpdesk.ticket"].search_count(
                 [("user_id", "=", self.helpdesk_user.id), ("close_date", "=", False)]
@@ -345,7 +313,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             3,
         )
 
-        # tickets created in a folded stage should not be assigned
         closed_ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "closed ticket",
@@ -422,7 +389,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
                 for i in range(5)
             ]
         )
-        # Both users should now have an equal amount of open tickets
         self.assertEqual(
             self.env["helpdesk.ticket"].search_count(
                 [("user_id", "=", self.helpdesk_user.id)]
@@ -516,7 +482,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
             "The ticket should still not get assigned if the tag is added while it's in a folded stage.",
         )
 
-        # Same tests but with SET command
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -681,10 +646,6 @@ class TestHelpdeskFlow(HelpdeskCommon):
         )
 
     def test_ticket_sequence_created_from_multi_company(self):
-        """
-        In this test we ensure that in a multi-company environment, mail sent to helpdesk team
-        create a ticket with the right sequence.
-        """
         company0 = self.env.company
         company1 = self.env["res.company"].create({"name": "new_company0"})
 
@@ -777,9 +738,6 @@ Content-Transfer-Encoding: quoted-printable
         self.assertTrue(helpdesk_ticket1.ticket_ref.startswith("SecondCompany"))
 
     def test_email_non_ascii(self):
-        """
-        Ensure that non-ascii characters are correctly handled in partner email addresses
-        """
         new_message = """MIME-Version: 1.0
 Date: Thu, 27 Dec 2018 16:27:45 +0100
 Message-ID: blablabla1
@@ -812,7 +770,6 @@ Content-Transfer-Encoding: quoted-printable
         self.assertEqual(helpdesk_ticket.partner_email, "client_b@someprovaîdère.com")
 
     def test_team_assignation_balanced_sla(self):
-        # We create an sla policy with minimum priority set as '2'
         self.test_team.helpdesk_use_sla = True
         sla = self.env["helpdesk.sla"].create(
             {
@@ -824,25 +781,19 @@ Content-Transfer-Encoding: quoted-printable
             }
         )
 
-        # We create a ticket with priority less than what's on the sla policy
         ticket_1 = self.env["helpdesk.ticket"].create(
             {"name": "test ", "team_id": self.test_team.id, "priority": "1"}
         )
 
-        # We create a ticket with priority equal to what's on the sla policy
         ticket_2 = self.env["helpdesk.ticket"].create(
             {"name": "test sla ticket", "team_id": self.test_team.id, "priority": "2"}
         )
 
-        # We create a ticket with priority greater than what's on the sla policy
         ticket_3 = self.env["helpdesk.ticket"].create(
             {"name": "test sla ticket", "team_id": self.test_team.id, "priority": "3"}
         )
-        # We confirm that the sla policy has been applied successfully on the ticket.
-        # sla policy must not be applied
         self.assertTrue(sla not in ticket_1.sla_status_ids.mapped("sla_id"))
         self.assertTrue(sla not in ticket_3.sla_status_ids.mapped("sla_id"))
-        # sla policy must be applied
         self.assertTrue(sla in ticket_2.sla_status_ids.mapped("sla_id"))
 
     def test_automatic_ticket_closing(self):
@@ -870,7 +821,6 @@ Content-Transfer-Encoding: quoted-printable
         with freeze_time(datetime.now() + relativedelta(days=10)):
             self.test_team._cron_auto_close_tickets()
 
-        # With no from_stage_ids, all tickets from non closing stages should be moved
         self.assertEqual(ticket_1.stage_id, self.stage_cancel)
         self.assertEqual(ticket_2.stage_id, self.stage_cancel)
         self.assertEqual(ticket_3.stage_id, self.stage_done)
@@ -883,7 +833,6 @@ Content-Transfer-Encoding: quoted-printable
         with freeze_time(datetime.now() + relativedelta(days=10)):
             self.test_team._cron_auto_close_tickets()
 
-        # Only tasks in the stages in from_stage_ids should be moved
         self.assertEqual(ticket_4.stage_id, self.stage_new)
         self.assertEqual(ticket_5.stage_id, self.stage_cancel)
         self.assertEqual(ticket_6.stage_id, self.stage_done)
@@ -893,7 +842,6 @@ Content-Transfer-Encoding: quoted-printable
         with freeze_time(datetime.now() + relativedelta(days=5)):
             self.test_team._cron_auto_close_tickets()
 
-        # Tickets under the threshold should not be moved (5 < 7)
         self.assertEqual(ticket_7.stage_id, self.stage_progress)
 
     def test_create_from_email(self):
@@ -905,21 +853,19 @@ Content-Transfer-Encoding: quoted-printable
         customer_partner = self.env["res.partner"].create({"name": "Luc Mélanchetout"})
         helpdesk_partner = self.helpdesk_user.partner_id
 
-        # hours utc to fit in 08:00 - 17:00 belgian calendar
         hours_and_authors = [
             ("08", customer_partner),
-            ("09", helpdesk_partner),  #   2h since creation (= first_response_hours)
+            ("09", helpdesk_partner),
             ("10", helpdesk_partner),
             ("11", customer_partner),
             ("12", customer_partner),
             (
                 "14",
                 helpdesk_partner,
-            ),  # + 2h since last customer's message (3h - 1h break)
+            ),
             ("15", customer_partner),
-            ("16", helpdesk_partner),  # + 1h since last customer's message
-        ]  # -----
-        # = 5h /3responses = 1.67h /response (= avg_response_hours)
+            ("16", helpdesk_partner),
+        ]
         comment_subtype = self.env.ref("mail.mt_comment")
         email_vals = {
             "model": "helpdesk.ticket",
@@ -944,10 +890,8 @@ Content-Transfer-Encoding: quoted-printable
         self.assertEqual(helpdesk_ticket.avg_response_hours, 5 / 3)
 
     def test_ticket_count_according_to_partner(self):
-        # 1) create a partner
         partner = self.env["res.partner"].create({"name": "Freddy Krueger"})
 
-        # 2) create one open and one closed ticket
         open_ticket, closed_ticket = (
             self.env["helpdesk.ticket"]
             .with_user(self.helpdesk_user)
@@ -968,7 +912,6 @@ Content-Transfer-Encoding: quoted-printable
             )
         )
 
-        # 3) check ticket count according to partner ticket
         self.assertEqual(
             open_ticket.partner_open_ticket_count,
             0,
@@ -1111,10 +1054,6 @@ Content-Transfer-Encoding: quoted-printable
         self.assertEqual(helpdesk.member_ids, self.env.user)
 
     def test_create_from_internal_for_internal(self):
-        """
-        Test that we can create a ticket from an internal user for an internal user, without raising any access error.
-        Also test that empty phone number doesn't overwrite the partner's phone number.
-        """
         user = self.env["res.users"].create(
             {
                 "name": "User",
@@ -1166,33 +1105,21 @@ Content-Transfer-Encoding: quoted-printable
         )
 
     def test_ticket_display_name(self):
-        """
-        Test to verify that the display_name should not display the ID of its record when
-        it is not yet defined, leading to the display of '#False' in the interface.
-        Additionally test the display of partner_name in the display_name when passed in context.
-
-        The ticket is created in cache with the method `new` to allow the display_name
-        to be computed with the ticket_id still being `False`.
-        """
         ticket = self.env["helpdesk.ticket"].new(
             {"name": "test ticket", "partner_id": self.partner.id}
         )
         self.assertEqual(ticket.display_name, "test ticket")
 
-        # create a record with the values passed from above ticket
         record = self.env["helpdesk.ticket"].create(
             {"name": ticket.name, "partner_id": ticket.partner_id.id}
         )
-        # verify that the ticket_ref is now added to the display_name
         self.assertEqual(record.display_name, f"test ticket (#{record.ticket_ref})")
 
-        # create another record with the partner_name in the context
         record_partner = (
             self.env["helpdesk.ticket"]
             .with_context(with_partner=True)
             .create({"name": "test ticket with partner", "partner_id": self.partner.id})
         )
-        # verify that the partner_name is now added to the display_name
         self.assertEqual(
             record_partner.display_name,
             f"test ticket with partner (#{record_partner.ticket_ref}) - {self.partner.name}",
@@ -1284,24 +1211,11 @@ Content-Transfer-Encoding: quoted-printable
         )
         self.assertEqual(ticket_b.user_id, self.helpdesk_manager)
 
-        # exception if the user gives the archived user in the default parameter
         ticket2_a, ticket2_b = tickets.copy({"user_id": self.helpdesk_user.id})
         self.assertEqual(ticket2_a.user_id, self.helpdesk_user)
         self.assertEqual(ticket2_b.user_id, self.helpdesk_user)
 
     def test_assigned_customer_multicompany(self):
-        """
-        Test in multicompany that the assigned customer is in the same company as the ticket
-
-        Test Case:
-        ==========
-        1. Create 2 companies
-        2. Create `res.partner` `test_partner` in company1
-        3. Create ticket for helpdesk_team2 from company2
-           with email of `test_partner`
-        4. Check that the partner on the ticket is a newly
-           created partner in company2 and different from `test_partner`
-        """
 
         company1 = self.main_company_id
         company2, company3 = self.env["res.company"].create(
@@ -1311,7 +1225,6 @@ Content-Transfer-Encoding: quoted-printable
             ]
         )
 
-        # Create a partner in company1
         test_partner, test_partner2 = self.env["res.partner"].create(
             [
                 {
@@ -1328,7 +1241,6 @@ Content-Transfer-Encoding: quoted-printable
             ]
         )
 
-        # Create a helpdesk team in company2
         helpdesk_team, helpdesk_team_company3 = self.env["team.team"].create(
             [
                 {"use_helpdesk": True, "name": "test team", "company_id": company2.id},
@@ -1336,7 +1248,6 @@ Content-Transfer-Encoding: quoted-printable
             ]
         )
 
-        # Create a ticket in company2 with email of test_partner
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "partner_name": "Test Name",
@@ -1363,7 +1274,6 @@ Content-Transfer-Encoding: quoted-printable
         self.assertFalse(ticket2.partner_id.company_id)
 
     def test_ticket_created_in_closed_stage_sets_close_date(self):
-        """Test that a ticket created directly in a folded (closed) stage sets close_date."""
         with self._ticket_patch_now("2024-06-01 10:00:00"):
             ticket = self.env["helpdesk.ticket"].create(
                 {
@@ -1398,7 +1308,6 @@ Content-Transfer-Encoding: quoted-printable
         self.assertFalse(ticket.tag_ids)
 
     def test_create_ticket_with_stage_days_to_rot(self):
-        """Test that creating a ticket with stage New having Days to rot > 0"""
         self.stage_new.rotting_threshold_days = 1
         ticket_form = Form(self.env["helpdesk.ticket"])
         ticket_form.name = "Test Ticket"

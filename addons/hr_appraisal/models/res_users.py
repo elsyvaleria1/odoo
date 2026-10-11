@@ -12,9 +12,6 @@ class ResUsers(models.Model):
         user_employees = Employee.search([("user_id", "=", self.id)])
         children = Employee
         if user_employees:
-            # child_of expands the hierarchy in SQL without flushing pending
-            # parent_id writes (t32371), so an unflushed re-parenting would be
-            # invisible to the subtree this method authorizes.
             Employee.flush_model(["parent_id"])
             children = Employee.search(
                 [

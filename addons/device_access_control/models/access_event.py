@@ -96,10 +96,6 @@ class AccessEvent(models.Model):
         help="Attendance status reported by device (checkIn, checkOut, etc.)."
     )
 
-    # Partial on purpose: event_uid is what the device offers for
-    # deduplication and an event without one cannot be deduplicated, so those
-    # rows are exempt. A plain UNIQUE exempted them too, by PostgreSQL's NULL
-    # rule rather than by saying so; this says so.
     _event_uid_uniq = models.UniqueIndex(
         "(device_id, event_uid) WHERE event_uid IS NOT NULL",
         "Duplicate event detected for this device!",
@@ -107,9 +103,6 @@ class AccessEvent(models.Model):
 
     @api.model
     def _employee_for_badge(self, badge: str) -> int | None:
-        # a badge is an employee's private identifier (hr.private), which no
-        # privilege should open wide: the lookup elevates, and only the id of
-        # the employee it names, in the reader's companies, leaves it
         employee = (
             self.env["hr.employee"]
             .sudo()

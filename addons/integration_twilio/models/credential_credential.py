@@ -11,9 +11,6 @@ class CredentialCredential(models.Model):
     _inherit = "credential.credential"
 
     def _probe_health(self):
-        # the hourly probe proves the credential; a Twilio account's status
-        # and balance, which stop SMS and calls before any call fails, are read
-        # on the same round
         result = super()._probe_health()
         if not result.get("success") or self.endpoint_id.code != "twilio":
             return result

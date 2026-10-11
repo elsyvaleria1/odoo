@@ -95,15 +95,6 @@ _SQL_WORD_MAX_LEN = len(_CONFORMING_STRINGS)
 _IDENT_START_ASCII = frozenset(string.ascii_letters + "_")
 _IDENT_CONT_ASCII = frozenset(string.ascii_letters + string.digits + "_$")
 
-# A dollar-quote tag follows the rules of an unquoted identifier except that
-# it cannot hold a dollar sign, and an unquoted identifier may hold any
-# non-ASCII letter the encoding admits.  An ASCII-only tag pattern left
-# `$café$ ... $café$` unrecognised: the body was scanned as SQL, one
-# apostrophe in it opened a string that never closed, and the scanner went
-# blind to the end of the file while psql closed the tag and ran what came
-# after.  The file is read as latin-1, so a multi-byte tag arrives as several
-# characters that are each >= \x80 -- which is why the class, not a decoded
-# codepoint, is what has to match.
 _DOLLAR_TAG_RE = re.compile(
     r"\$(?:[A-Za-z_\x80-\U0010FFFF][A-Za-z0-9_\x80-\U0010FFFF]*)?\$"
 )
@@ -297,20 +288,6 @@ class _PsqlSqlScanner:
         return self._setting_violation
 
     def _setting_token(self, token: str, *, quoted: bool = False) -> None:
-        """Recognize SET's bounded prefix outside comments and quoted bodies.
-
-        Only explicit true values preserve the lexer's string-escape contract.
-        Token state survives physical lines without retaining SQL statements.
-
-        A quoted occurrence of the setting's own name is refused outright,
-        whatever the statement around it.  `SET` is not the only way to reach
-        the parameter -- `select set_config('standard_conforming_strings',
-        'off', false)` changes it for the session, the server reports the
-        change, and psql's lexer follows it -- and recognising the call itself
-        would mean carrying every function name past this scanner's word
-        limit.  pg_dump quotes exactly one setting name, `search_path`, so
-        refusing this one costs a legitimate dump nothing.
-        """
         word = token.upper()
         if quoted and word == _CONFORMING_STRINGS:
             self._setting_violation = (

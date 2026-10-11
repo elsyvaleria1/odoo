@@ -45,8 +45,6 @@ class MixinCalendarSync(models.AbstractModel):
         return result
 
     def _calendar_sync_alone(self):
-        """These records but the events following their series: a provider
-        holds those as the series, which is sent for them."""
         if self._name != "calendar.event":
             return self
         return self.filtered(
@@ -54,7 +52,6 @@ class MixinCalendarSync(models.AbstractModel):
         )
 
     def _calendar_sync_series(self, vals):
-        """The series a write to all of its events changes."""
         if self._name == "calendar.event" and vals.get("recurrence_update") == "all":
             return self.recurrence_id
         return None
@@ -69,29 +66,22 @@ class MixinCalendarSync(models.AbstractModel):
         for code, provider in providers.items():
             links = self.env["calendar.sync.link"]._of(self, code)
             if code == applying:
-                # deleted in the provider's calendars already
                 links.unlink()
                 continue
             if provider.capabilities.client_insert_id:
-                # an insert in flight may have landed under its own id
                 for link in links.filtered(lambda l: not l.remote_id and l.insert_id):
                     link.remote_id = link.insert_id
-            # one whose id the provider chooses stays a tombstone too: the item
-            # it may have inserted is found by its insert id, then deleted
             unsent = links.filtered(lambda link: not (link.remote_id or link.insert_id))
-            # dated now: a read after this is what tells whether it landed
             links.filtered(lambda link: not link.remote_id and link.insert_id).write(
                 {"pending": False}
             )
             unsent.unlink()
             accounts |= (links - unsent).account_id
-        # the links left become tombstones: their items are deleted next
         result = super().unlink()
         accounts._queue_push(self.browse())
         return result
 
     def _calendar_sync_queue(self, codes) -> None:
-        """Have the accounts these records go out through send them."""
         Account = self.env["calendar.sync.account"]
         for code in codes:
             active = Account._actives(code)

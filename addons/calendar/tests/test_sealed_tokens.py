@@ -29,7 +29,6 @@ class TestSealedEventToken(TransactionCase):
         self.assertEqual(event.access_token, token)
         self.assertEqual(event.access_token_hash, hash_bearer_token(token))
         self.assertIn(token, event.videocall_location)
-        # the join route finds the event by the token it is given
         self.assertEqual(Event.sudo().search([("access_token", "=", token)]), event)
         event._update_access_token()
         self.assertNotEqual(event.access_token, token)

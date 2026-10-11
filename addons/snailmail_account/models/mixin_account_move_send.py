@@ -4,11 +4,7 @@ from odoo import api, models
 class MixinAccountMoveSend(models.AbstractModel):
     _inherit = "mixin.account.move.send"
 
-    # -------------------------------------------------------------------------
-    # ALERTS
-    # -------------------------------------------------------------------------
     def _get_alerts(self, moves, moves_data):
-        # EXTENDS 'account'
         alerts = super()._get_alerts(moves, moves_data)
         if snailmail_moves_without_valid_address := moves.filtered(
             lambda m: (
@@ -32,9 +28,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             }
         return alerts
 
-    # -------------------------------------------------------------------------
-    # HELPERS
-    # -------------------------------------------------------------------------
     @api.model
     def _prepare_snailmail_letter_values(self, move) -> dict:
         return {
@@ -47,18 +40,13 @@ class MixinAccountMoveSend(models.AbstractModel):
             .id,
         }
 
-    # -------------------------------------------------------------------------
-    # SENDING METHODS
-    # -------------------------------------------------------------------------
     def _is_applicable_to_move(self, method, move, **move_data):
-        # EXTENDS 'account'
         if method == "snailmail":
             return self.env["snailmail.letter"]._is_valid_address(move.partner_id)
         else:
             return super()._is_applicable_to_move(method, move, **move_data)
 
     def _hook_if_success(self, moves_data, from_cron=False):
-        # EXTENDS 'account'
         to_send = {
             move: move_data
             for move, move_data in moves_data.items()

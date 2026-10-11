@@ -52,19 +52,13 @@ type IdRef = dict[str, int | Literal[False]]
 class ParseError(Exception): ...
 
 
-# the two models ir.access replaced (base 1.97 converted them, 1.100 dropped them)
 RETIRED_ACCESS_MODELS = frozenset({"ir.model.access", "ir.rule"})
-# the addon state key under which the loader names the module whose data it
-# loads: its lines and rules are left to ir.access._load_legacy_access
 LEGACY_ACCESS_MODULE = "legacy_access_module"
 
 
 def _legacy_access_data(
     env: Environment, model: str | None, module: str, fname: str
 ) -> bool:
-    # a module's own data files may ship the lines and rules of stock Odoo:
-    # ir.access._load_legacy_access loads what they amount to once the
-    # module's data is in, so each record is skipped here
     if model not in RETIRED_ACCESS_MODELS:
         return False
     registry = env.registry
@@ -1195,7 +1189,6 @@ def convert_xml_import(
 
 
 def _record_noupdate(record: etree._Element) -> bool:
-    # the innermost data root stating noupdate decides, as _tag_root nests them
     for element in record.iterancestors():
         if (
             element.tag in xml_import.DATA_ROOTS
@@ -1208,8 +1201,6 @@ def _record_noupdate(record: etree._Element) -> bool:
 def data_file_records(
     file: str | Path, select: Callable[[etree._Element, bool], bool]
 ) -> io.BytesIO | None:
-    # a record is copied inside copies of the data roots around it: they hold
-    # the context, uid and noupdate it loads with
     source = etree.parse(str(file))
     selected: list[etree._Element] = []
     partial: set[etree._Element] = set()
@@ -1229,8 +1220,6 @@ def data_file_records(
             parent = element.getparent()
             attrib = dict(element.attrib)
             if element in partial:
-                # auto_sequence numbers a record after the records before it,
-                # which a part of the block does not hold: it keeps its sequence
                 attrib.pop("auto_sequence", None)
             copy = copies[element] = (
                 etree.Element(element.tag, attrib)

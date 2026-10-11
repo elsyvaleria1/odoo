@@ -115,11 +115,6 @@ class TestStockBarcodeController(HttpCase):
         self.assertIn(["product_id", "=", product.id], result["action"]["domain"])
 
     def test_main_menu_returns_product_location_action(self):
-        """Test that calling main_menu with a product barcode that does not respect
-        the GS1 nomenclature does not block the flow. The GS1 parsing error is
-        ignored and the standard main menu resolution logic continues, resulting
-        in an action opening the product location view.
-        """
         product = self.env["product.product"].create(
             {
                 "name": "Test Product",
@@ -193,9 +188,6 @@ class TestStockBarcodeController(HttpCase):
         self.assertEqual(response.status_code, 404)
 
     def test_saving_answers_in_the_company_the_switcher_selected(self):
-        """`get_barcode_data` scoped its records to the cookie's company; the save route,
-        which returns the same payload, did not, so a save in company B answered with
-        company A's nomenclature."""
         company_b = self.env["res.company"].create({"name": "Barcode company B"})
         admin = self.env.ref("base.user_admin")
         admin.company_ids = [Command.link(company_b.id)]
@@ -232,9 +224,6 @@ class TestStockBarcodeController(HttpCase):
         self.assertEqual(result["nomenclature_id"], nomenclature_b.id)
 
     def test_main_menu_reads_the_selected_companys_nomenclature(self):
-        """The main menu opens with no company in its context: the scan used the user's
-        default company, its nomenclature and the GS1 unpadding of its searches, so a
-        GS1 barcode scanned in a GS1 company selected in the switcher found nothing."""
         company_b = self.env["res.company"].create({"name": "GS1 company"})
         self.env.ref("base.user_admin").company_ids = [Command.link(company_b.id)]
         company_b.barcodes_config_id.nomenclature_id = self.env.ref(
@@ -252,8 +241,6 @@ class TestStockBarcodeController(HttpCase):
         self.assertIn(["product_id", "=", product.id], result["action"]["domain"])
 
     def test_main_menu_finds_the_product_of_a_weight_embedded_barcode(self):
-        """`21.....{NNDDD}` embeds a weight: the product's barcode is the scanned one with
-        those digits zeroed, which the main menu never searched."""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes.default_barcode_nomenclature"
         )
@@ -268,9 +255,6 @@ class TestStockBarcodeController(HttpCase):
         self.assertIn(["product_id", "=", product.id], result["action"]["domain"])
 
     def test_specific_barcode_data_names_the_products_it_sent_every_quant_of(self):
-        """The client used to guess which products `fetch_quants` had completed by matching
-        the barcodes it searched: a GS1-padded search fooled it, and a packaging's product came
-        without its quants, to be fetched again when counted."""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )

@@ -39,7 +39,6 @@ class ProductTemplatePosLoad(models.Model):
         return (removed | (unlisted - referenced)).ids
 
     def _get_pos_referenced_templates(self, templates, listed_domain) -> Self:
-        # an incremental load resends neither of these for an unchanged listed template
         if not templates:
             return self.browse()
         items = self.env["product.combo.item"].search(

@@ -10,8 +10,6 @@ from odoo.addons.iot_drivers.iot_handlers.lib.ctypes_terminal_driver import (
 
 _logger = logging.getLogger(__name__)
 
-# All the terminal errors can be found in the section "Codes d'erreur" here:
-# https://help.winbooks.be/space/HelpLogFr/1278150/Liaison+vers+le+terminal+de+paiement+Banksys+en+TCP%2FIP#Codes-d'erreur
 TERMINAL_ERRORS = {
     "1802": "Terminal is busy",
     "1803": "Timeout expired",
@@ -89,27 +87,24 @@ TERMINAL_ERRORS = {
     "9006": "Bad MDC",
 }
 
-# Manually cancelled by cashier, do not show these errors
 IGNORE_ERRORS = [
-    "2628",  # External Equipment Cancellation
-    "2630",  # Device Cancellation
+    "2628",
+    "2630",
 ]
 
 easyCTEP = import_ctypes_library("ctep", "libeasyctep.so")
 
-# int startTransaction(
 easyCTEP.startTransaction.argtypes = [
-    ctypes.c_void_p,  # std::shared_ptr<ect::CTEPTerminal> trm
-    ctypes.c_char_p,  # char const* amount
-    ctypes.c_char_p,  # char const* reference
-    ctypes.c_ulong,  # unsigned long action_identifier
-    ctypes.c_char_p,  # char* merchant_receipt
-    ctypes.c_char_p,  # char* customer_receipt
-    ctypes.c_char_p,  # char* card
-    ctypes.c_char_p,  # char* error
+    ctypes.c_void_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_ulong,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
 ]
 
-# int abortTransaction(std::shared_ptr<ect::CTEPTerminal> trm, char* error)
 easyCTEP.abortTransaction.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
 
@@ -128,12 +123,9 @@ class WorldlineDriver(CtypesTerminalDriver):
                 request_data=transaction,
             )
 
-        # Force to wait before starting the transaction if necessary
         self._check_transaction_delay()
-        # Notify transaction start
         self.send_status(stage="WaitingForCard", request_data=transaction)
 
-        # Transaction
         merchant_receipt = create_ctypes_string_buffer()
         customer_receipt = create_ctypes_string_buffer()
         card = create_ctypes_string_buffer()
@@ -148,20 +140,20 @@ class WorldlineDriver(CtypesTerminalDriver):
             transaction_action_identifier,
         )
         result = easyCTEP.startTransaction(
-            ctypes.byref(self.dev),  # std::shared_ptr<ect::CTEPTerminal> trm
+            ctypes.byref(self.dev),
             ctypes.c_char_p(
                 str(transaction_amount).encode("utf-8")
-            ),  # char const* amount
+            ),
             ctypes.c_char_p(
                 str(transaction_id).encode("utf-8")
-            ),  # char const* reference
+            ),
             ctypes.c_ulong(
                 transaction_action_identifier
-            ),  # unsigned long action_identifier
-            merchant_receipt,  # char* merchant_receipt
-            customer_receipt,  # char* customer_receipt
-            card,  # char* card
-            error_code,  # char* error
+            ),
+            merchant_receipt,
+            customer_receipt,
+            card,
+            error_code,
         )
         self.next_transaction_min_dt = datetime.datetime.now() + datetime.timedelta(
             seconds=self.DELAY_TIME_BETWEEN_TRANSACTIONS
@@ -169,7 +161,6 @@ class WorldlineDriver(CtypesTerminalDriver):
 
         if result == 1:
             _logger.info("succesfully finished transaction #%d", transaction_id)
-            # Transaction successful
             self.send_status(
                 response="Approved",
                 ticket=customer_receipt.value.decode(),
@@ -180,17 +171,14 @@ class WorldlineDriver(CtypesTerminalDriver):
             )
         elif result == 0:
             error_code = error_code.value.decode("utf-8")
-            # Transaction failed
             if error_code not in IGNORE_ERRORS:
                 error_msg = f"transaction #{transaction_id} error: {error_code}: {TERMINAL_ERRORS.get(error_code, 'Transaction Error')}"
                 _logger.info(error_msg)
                 self.send_status(error=error_msg, request_data=transaction)
-            # Transaction was cancelled
             else:
                 _logger.info("transaction #%d cancelled by PoS user", transaction_id)
                 self.send_status(stage="Cancel", request_data=transaction)
         elif result == -1:
-            # Terminal disconnection, check status manually
             _logger.warning(
                 "terminal disconnected during transaction #%d", transaction_id
             )
@@ -198,7 +186,6 @@ class WorldlineDriver(CtypesTerminalDriver):
         return None
 
     def cancelTransaction(self, transaction):
-        # Force to wait before starting the transaction if necessary
         self._check_transaction_delay()
         self.send_status(stage="waitingCancel", request_data=transaction)
 
@@ -206,7 +193,7 @@ class WorldlineDriver(CtypesTerminalDriver):
         _logger.info("cancel transaction request for %s", transaction)
         result = easyCTEP.abortTransaction(
             ctypes.byref(self.dev), error_code
-        )  # std::shared_ptr<ect::CTEPTerminal> trm
+        )
         _logger.debug("end cancel transaction request")
 
         if not result:

@@ -1,8 +1,6 @@
 from odoo import models
 from odoo.http import request
 
-# The routes our own links carry a signup token to. Any other URL could plant
-# someone else's token in a visitor's session for the next signup to consume.
 SIGNUP_TOKEN_ROUTES = frozenset({"/web/signup", "/web/reset_password", "/mail/view"})
 
 

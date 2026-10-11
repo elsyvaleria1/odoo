@@ -41,7 +41,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                     options, group_date["date_from"]
                 ).items()
             }
-        # Remove multi-currency columns if needed
         if self.env.user.has_group("base.group_multi_currency"):
             options["multi_currency"] = True
         else:
@@ -51,7 +50,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 if column["expression_label"] != "amount_currency"
             ]
 
-        # Automatically unfold the report when printing it, unless some specific lines have been unfolded
         options["unfold_all"] = (
             options["export_mode"] == "print" and not options.get("unfolded_lines")
         ) or options["unfold_all"]
@@ -111,7 +109,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             "view_mode": "form",
             "views": [
                 (view_id, "form")
-            ],  # view_id will be False in case the default view is needed
+            ],
             "res_model": target_record._name,
             "res_id": target_record.id,
             "context": self.env.context,
@@ -125,7 +123,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
     @_debug.perf.timed
     def _get_custom_groupby_map(self) -> dict:
         def custom_label_builder(grouping_keys):
-            """Batch label builder for the accumulated-balance groupby: labels journal item rows with their move line name, and balance rows with "Initial Balance"."""
             keys_names_in_sequence = {}
 
             ids_to_browse = []
@@ -228,7 +225,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                     rows_by_key[aml_key]["has_sublines"] = False
                     rows_by_key[aml_key]["account_id"] = row[
                         "account_id"
-                    ]  # Needed for batching
+                    ]
 
                     if "balance_line" not in aml_key:
                         rows_by_key[aml_key]["date"] = row["date"]
@@ -266,7 +263,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         if not current_groupby:
             return rows_by_key[
                 None
-            ]  # None is the key for total line as there is no groupby
+            ]
 
         return [(key, entry) for key, entry in rows_by_key.items()]
 
@@ -377,12 +374,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             "account_move_line", "account_id", "account_account", "id", "account_id"
         )
         if current_groupby == "account_id" or order_by_account:
-            # psycopg3 renumbers the params of a reused SQL object across GROUP BY
-            # and ORDER BY, so the same account-order expression is not recognized
-            # as identical and PG rejects it (GroupingError). Emit it once, only in
-            # ORDER BY, wrapped in ANY_VALUE(): accounts are grouped by their PK so
-            # the ordering value is deterministic per group. Same idiom as the ORM's
-            # _read_group_orderby.
             report_query._any_value_orderby = True
             try:
                 order_clause = [
@@ -459,9 +450,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         offset,
         unfold_all_batch_data=None,
     ):
-        """Shadow report.formula's expansion to use progress when computing the accumulated balance, so the
-        'id_with_accumulated_balance' groupby supports partial expand.
-        """
         report = self.env["report.formula"].browse(options["report_id"])
         result = report._report_expand_unfoldable_line_with_groupby(
             line_dict_id, groupby, options, progress, offset, unfold_all_batch_data
@@ -531,9 +519,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _custom_line_postprocessor(self, report, options, lines):
-        """Append the unallocated earnings lines, attach the chatter to journal item lines and move the total
-        line to the bottom, as it must always be last in the general ledger.
-        """
         general_ledger_custom_engine_line = self.env.ref(
             "account.general_ledger_custom_engine_line"
         )
@@ -542,8 +527,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         account_move_lines = []
         unaffected_earning_values = defaultdict(float)
 
-        # Get the unaffected earning lines if the whole report has been generated
-        # (e.g., not when loading more lines in a group)
         if report._parse_line_id(lines[0]["id"])[-1] == (
             "",
             "report.formula.line",
@@ -570,7 +553,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 main_line_dict = line
             elif markup == "undistributed_profits_losses":
                 for column in line["columns"]:
-                    # Swap no_format from 0.0 to None for unaffected lines, to match the other lines
                     if (
                         column["expression_label"] == "amount_currency"
                         and column["is_zero"]
@@ -601,8 +583,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         )
         if account_move_lines:
             line_ids = (line["chatter"]["id"] for line in account_move_lines)
-            # load=False keeps move_id a bare id -- same reasoning as the
-            # chatter map in account_report_ledger.py.
             account_moves = {
                 line["id"]: line["move_id"]
                 for line in self.env["account.move.line"]
@@ -669,8 +649,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             for grouping_key, _value in totals["value"]
             if "balance_line" not in grouping_key
         }
-        # The label builder runs once per expanded account; reading every label
-        # here lets each of those calls hit the cache.
         self.env["account.move.line"].browse(aml_ids).mapped("display_name")
         return unfold_all_batch_data
 
@@ -834,7 +812,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 agg_lines_options
             )
 
-            # Exclude total lines
             account_lines = []
             accounts = []
             for agg_line in agg_lines:
@@ -899,7 +876,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 progress = aml_line["balance"] = progress + aml_line["balance"]
                 yield csv_format_aml_res(aml_line)
 
-            # These are the "Result Brought Forward" lines
             for account_line in account_lines_iter:
                 yield csv_format_account_line(account_line, has_code=False)
 

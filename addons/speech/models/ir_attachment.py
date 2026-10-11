@@ -35,8 +35,6 @@ TRANSCRIPT_STATES = [
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
-    # a transcript is the file's `cues` reading (base ir.attachment.reading);
-    # these fields read it
     transcript_state = fields.Selection(
         selection=TRANSCRIPT_STATES,
         compute="_compute_transcript",
@@ -81,8 +79,6 @@ class IrAttachment(models.Model):
         "reading_ids.checksum",
     )
     def _compute_transcript(self) -> None:
-        # only a recording is ever transcribed: the rest need not read the
-        # readings at all
         recordings = self.filtered(lambda a: is_recording(a.mimetype or ""))
         (self - recordings).update(
             {
@@ -211,7 +207,6 @@ class IrAttachment(models.Model):
             CUES, eta=eta, priority=priority, channel=JOB_CHANNEL, language=language
         )
 
-    # jobs queued before transcripts became readings still name this method
     @api.job(channel=JOB_CHANNEL, max_retries=1)
     def _job_transcribe(self, language: str | None = None) -> None:
         self.check_singleton()
@@ -224,8 +219,6 @@ class IrAttachment(models.Model):
         return cues if self._reading(CUES).state == "done" else None
 
     def _read(self, representation: str, **options: Any) -> Any:
-        # a recording is heard under its owner's purpose; captions a file
-        # carries (vtt, srt) are read like any other representation
         if representation != CUES or not is_recording(self.mimetype or ""):
             return super()._read(representation, **options)
         self.check_singleton()
@@ -273,7 +266,6 @@ class IrAttachment(models.Model):
         return owner._as_transcript_owner()._media_transcription_options()
 
     def _transcript_segments(self, limit: int | None = None):
-        # whoever queued the transcript, the timeline it was heard on is told
         return (
             self.env["media.segment"]
             .with_privilege(

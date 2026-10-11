@@ -101,9 +101,6 @@ class TestResPartnerBank(SavepointCaseWithUserDemo):
 
     @mute_logger("odoo.db")
     def test_unique_constraint_counts_archived_rows(self):
-        # The number is unique per company, and SQL compares two null
-        # companies as unknown rather than equal, so the holder needs one for
-        # the constraint this pins to be the one under test.
         partner = self.env["res.partner"].create(
             {"name": "Pepper Test", "company_id": self.env.company.id}
         )

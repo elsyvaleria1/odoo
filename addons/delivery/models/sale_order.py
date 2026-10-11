@@ -33,7 +33,6 @@ class SaleOrder(models.Model):
     )
 
     def _compute_partner_shipping_id(self) -> None:
-        """Override to reset the delivery address when a pickup location was selected."""
         super()._compute_partner_shipping_id()
         for order in self:
             if order.partner_shipping_id.is_pickup_location:
@@ -67,16 +66,10 @@ class SaleOrder(models.Model):
                 order.recompute_delivery_price = True
 
     def _get_order_lines_price_updatable(self):
-        """Exclude delivery lines from price list recomputation based on product instead of carrier"""
         lines = super()._get_order_lines_price_updatable()
         return lines.filtered(lambda line: not line.is_delivery)
 
     def _remove_delivery_line(self) -> None:
-        """Remove delivery products from the sales orders"""
-        # A pickup location is only ever meaningful for the carrier that was
-        # selected when it was set; nothing else in this module keeps it in
-        # sync with a carrier change, so clear it here, unconditionally,
-        # every time the current delivery line is dropped.
         self.pickup_location_data = {}
         delivery_lines = self.line_ids.filtered("is_delivery")
         if not delivery_lines:
@@ -113,11 +106,6 @@ class SaleOrder(models.Model):
         return True
 
     def _set_pickup_location(self, pickup_location_data) -> None:
-        """Set the pickup location on the current order.
-
-        :param str pickup_location_data: The JSON-formatted pickup location address.
-        :return: None
-        """
         self.check_singleton()
         use_locations_fname = f"{self.carrier_id.delivery_type}_use_locations"
         if hasattr(self.carrier_id, use_locations_fname):
@@ -130,12 +118,6 @@ class SaleOrder(models.Model):
             self.pickup_location_data = pickup_location
 
     def _check_pickup_location_data(self, pickup_location) -> None:
-        """Ensure a pickup location payload carries the fields `_action_confirm` relies on.
-
-        :param dict pickup_location: The decoded pickup location address.
-        :raise UserError: If the payload is not an object or required fields are invalid.
-        :return: None
-        """
         if not isinstance(pickup_location, dict):
             raise UserError(
                 self.env._("The pickup location must contain address information.")
@@ -160,19 +142,9 @@ class SaleOrder(models.Model):
             )
 
     def _get_pickup_locations(self, zip_code=None, country=None, **kwargs):
-        """Return the pickup locations of the delivery method close to a given zip code.
-
-        Use provided `zip_code` and `country` or the order's delivery address to determine the zip
-        code and the country to use.
-
-        :param str zip_code: The zip code to look up to, optional.
-        :param res.country country: The country to look up to, required if `zip_code` is provided.
-        :return: The close pickup locations data.
-        :rtype: dict
-        """
         self.check_singleton()
         if zip_code:
-            assert country  # country is required if zip_code is provided.
+            assert country
             partner_address = self.env["res.partner"].new(
                 {
                     "active": False,
@@ -274,7 +246,7 @@ class SaleOrder(models.Model):
             )
             recipient = order.env["res.partner"].browse(address_values["parent_id"])
             phone = recipient._phone_get_number()
-            shipping_partner = order.env["res.partner"].search(  # noqa: E8507 - resolve each order's recipient-owned pickup address
+            shipping_partner = order.env["res.partner"].search(
                 [(field, "=", value) for field, value in address_values.items()],
                 limit=1,
             ) or order.env["res.partner"].create(
@@ -293,16 +265,13 @@ class SaleOrder(models.Model):
 
     def _prepare_delivery_line_vals(self, carrier, price_unit):
         if self.partner_id:
-            # set delivery detail in the customer language
             carrier = carrier.with_context(lang=self.partner_id.lang)
 
-        # Apply fiscal position
         taxes = carrier.product_id.taxes_id._filter_taxes_by_company(self.company_id)
         taxes_ids = taxes.ids
         if self.partner_id and self.fiscal_position_id:
             taxes_ids = self.fiscal_position_id.map_tax(taxes).ids
 
-        # Build the sales order line values
 
         if carrier.product_id.description_sale:
             so_description = "%s: %s" % (
@@ -315,9 +284,6 @@ class SaleOrder(models.Model):
             "order_id": self.id,
             "name": so_description,
             "price_unit": price_unit,
-            # `product_qty`, the writable quantity: `product_uom_qty` is computed
-            # from it and discards anything written here (see
-            # trade/models/order_line_amount_mixin.py).
             "product_qty": 1,
             "product_id": carrier.product_id.id,
             "tax_ids": [Command.set(taxes_ids)],
@@ -353,13 +319,6 @@ class SaleOrder(models.Model):
         return weight
 
     def _update_order_line_info(self, product_id, quantity, **kwargs):
-        """Override of `sale` to recompute the delivery prices.
-
-        :param int product_id: The product, as a `product.product` id.
-        :return: The unit price price of the product, based on the pricelist of the sale order and
-                 the quantity selected.
-        :rtype: float
-        """
         price_unit = super()._update_order_line_info(product_id, quantity, **kwargs)
         self._flag_delivery_price_stale()
         return price_unit

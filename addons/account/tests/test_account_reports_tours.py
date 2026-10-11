@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 
 from odoo import fields
 from odoo.tests import tagged
@@ -16,7 +15,6 @@ class TestAccountReportsTours(AccountTestInvoicingHttpCommon):
         cls.report = cls.env.ref("account.balance_sheet")
         cls.report.column_ids.sortable = True
 
-        # Test the root reports. We don't want to choose US variants if some are installed.
         cls.env["report.formula"].search([]).variant_report_ids.active = False
 
         cls.account_101401 = cls.env["account.account"].search(
@@ -37,7 +35,6 @@ class TestAccountReportsTours(AccountTestInvoicingHttpCommon):
             ]
         )
         if not cls.account_101404:
-            # additional outstanding accounts are created when accounting is not installed
             cls.account_101404 = cls.env["account.account"].search(
                 [
                     ("company_ids", "=", cls.company_data["company"].id),

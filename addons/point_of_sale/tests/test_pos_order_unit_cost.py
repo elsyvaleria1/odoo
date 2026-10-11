@@ -90,7 +90,6 @@ class TestPosOrderLineCostConversion(PosCashRoundingSessionCommon):
         original.product_id.standard_price = 10
         original._update_total_cost(self.env["stock.move"])
         self.assertEqual(original.total_cost, 40)
-        # Legacy lines can carry a total without a recorded source unit cost.
         original.price_cost = 0
         refund = self._create_bare_order(
             session_id=order.session_id.id,

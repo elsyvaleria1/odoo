@@ -1,10 +1,6 @@
 from odoo import fields, models
 
 
-# Trackers are keyed by SMS UUID rather than linked to the SMS record directly,
-# because SMS records can be deleted after sending.
-# Only admins/system user should need to access (a fortiori modify) these
-# technical records, so no "sudo" is used nor should be required here.
 class SmsTracker(models.Model):
     """Links a sent SMS to its mail.notification or mailing.trace tracking record."""
 
@@ -36,14 +32,9 @@ class SmsTracker(models.Model):
     )
 
     def _action_update_from_provider_error(self, provider_error) -> tuple:
-        """
-        :param str provider_error: value returned by SMS service provider (IAP) or any string.
-            If provided, notification values will be derived from it.
-            (see this method's own failure_type/error_status derivation below)
-        """
         failure_reason = self.env.context.get(
             "sms_known_failure_reason"
-        )  # TODO RIGR in master: pass as param instead of context
+        )
         failure_type = f"sms_{provider_error}"
         error_status = None
         if failure_type not in self.env["sms.sms"].DELIVERY_ERRORS:
@@ -72,8 +63,6 @@ class SmsTracker(models.Model):
     def _update_sms_notifications(
         self, notification_status, failure_type=False, failure_reason=False
     ) -> None:
-        # canceled is a state which means that the SMS sending order should not be sent to the SMS service.
-        # `process`, `pending` are sent to IAP which is not revertible (as `sent` which means "delivered").
         notifications_statuses_to_ignore = {
             "canceled": ["canceled", "process", "pending", "sent"],
             "ready": ["ready", "process", "pending", "sent"],

@@ -11,15 +11,10 @@ class TestWorkEntryTypeTracking(TransactionCase):
         cls.work_entry_type = cls.env["hr.work.entry.type"].create(
             {"name": "Night shift", "code": "TRACK100", "amount_rate": 1.0}
         )
-        # `create` ends on `_track_discard`, which parks a None against the new
-        # id in the precommit batch. Left there, it makes every write in the
-        # same unflushed transaction record nothing at all.
         cls.flush_tracking(cls.env)
 
     @staticmethod
     def flush_tracking(env):
-        """Tracking values are built by a precommit callback, so flushing the
-        ORM is not enough to see them: the cursor has to flush too."""
         env.flush_all()
         env.cr.flush()
 
@@ -44,7 +39,6 @@ class TestWorkEntryTypeTracking(TransactionCase):
         self.assertEqual(tracking.new_value_char, "TRACK200")
 
     def test_time_off_flag_change_is_traced(self):
-        """``is_leave`` decides whether the hours are work time at all."""
         self.work_entry_type.is_leave = True
         self.assertEqual(len(self._tracked("is_leave")), 1)
 

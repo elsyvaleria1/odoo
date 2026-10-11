@@ -75,7 +75,6 @@ class TestCloudStorageGoogle(TestCloudStorageGoogleCommon):
 
     def test_uninstall_success(self):
         uninstall_hook(self.env)
-        # make sure all sensitive data are removed
         ICP = self.env["ir.config_parameter"]
         self.assertFalse(ICP.get_param("cloud_storage_provider"))
         self.assertFalse(ICP.get_param("cloud_storage_google_bucket_name"))

@@ -55,18 +55,13 @@ class MixinHrLeaveApproval(models.AbstractModel):
             )
 
     def _get_next_states_by_state(self):
-        """The moves no verb grants, by state: what a state's verb grants is its
-        ir.access rows' (`_get_approval_granted_ids`)."""
         raise NotImplementedError
 
     def _get_approval_granted_ids(self, states):
-        """For each state a verb moves into, the records the user may move there."""
         granted = {}
         for state in states:
             if not self._is_approval_verb_granted(state):
                 continue
-            # the verb's domain rather than has_access, so a record not saved yet
-            # is judged on its values as a saved one is
             domain = self._access_domain(self._get_approval_sync_verb(state))
             granted[state] = set(
                 self.sudo().with_context(active_test=False).filtered_domain(domain)._ids
@@ -77,12 +72,9 @@ class MixinHrLeaveApproval(models.AbstractModel):
         return self._get_approval_sync_verb(state) in self._get_approval_granted_verbs()
 
     def _get_approval_granted_verbs(self) -> tuple:
-        """The verbs whose rows state who may make the move, rather than the
-        moves `_get_next_states_by_state` lists."""
         return ("reset", "approve", "validate", "refuse")
 
     def _state_labels(self):
-        """The Status selection as ``{value: translated label}``."""
         return dict(self._fields["state"]._description_selection(self.env))
 
     def _get_approval_precheck_error(self, state) -> str:
@@ -267,11 +259,6 @@ class MixinHrLeaveApproval(models.AbstractModel):
     def _prepare_approval_request_values(self, category):
         vals = super()._prepare_approval_request_values(category)
         vals["request_owner_id"] = (self.employee_id.user_id or self.env.user).id
-        # The request belongs to the employee the document is about, not to
-        # whoever happens to be in env.company: a backfill or a cron runs in
-        # company 1, and _check_company refuses a request there whose owner is
-        # an employee of another company. hr.leave.allocation carries no
-        # company_id of its own, so the super() falls back to env.company.
         company = self.employee_id.company_id
         if company:
             vals["company_id"] = company.id

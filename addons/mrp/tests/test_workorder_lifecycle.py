@@ -554,7 +554,6 @@ class TestWorkorderLifecycle(TestMrpCommon):
     def test_the_back_fill_does_not_freeze_a_kit_it_cannot_place(self):
         kit, _bom, production = self._leg_kit_order()
         workorder = self._work_forty_minutes_and_finish(production)
-        # a work order finished before the freeze existed
         workorder.write(
             {"operation_demand_qty": 0, "operation_demand_product_id": False}
         )

@@ -76,7 +76,6 @@ class TestBearerToken(TransactionCase):
         self.assertTrue(copy._access_token_opens("right-token"))
 
     def test_a_token_sealed_under_another_secret_opens_but_is_not_shown(self):
-        # after the database secret changed, a URL already sent keeps opening
         self.env["ir.config_parameter"].sudo().set_param(
             "database.secret", "another secret"
         )

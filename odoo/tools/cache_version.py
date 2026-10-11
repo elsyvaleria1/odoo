@@ -49,9 +49,6 @@ def versioned[**P, R](method: Callable[P, R]) -> Callable[P, R]:
 
 
 def versioned_dispatched[**P, R](method: Callable[P, R]) -> Callable[P, R]:
-    # the stamp only lets the client's RPC cache compare two answers: a caller
-    # in this process (a controller, another method) never reads it, and on
-    # a large list its digest costs what serializing the whole answer does
     @wraps(method)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         result = method(*args, **kwargs)
@@ -86,8 +83,5 @@ def versioned_envelope[**P, R](method: Callable[P, R]) -> Callable[P, R]:
 
 
 def _is_dispatched_call(request: Request, method: Callable[..., object]) -> bool:
-    # the envelope's version describes the response; a versioned method called
-    # from inside another one (onchange snapshots its record through web_read)
-    # would otherwise stamp its own digest onto a response it is not
     params = getattr(request, "params", None) or {}
     return params.get("method") == method.__name__

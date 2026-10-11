@@ -659,11 +659,6 @@ class TestForumMailOperationMap(TestForumCommon):
                     )
 
     def test_operation_map_is_one_rule_both_ways(self):
-        """The karma gate is defined once, as `_mail_operation_domains`.
-
-        The per-record answer and the domain the activity guard searches with
-        must pick the same posts, on both sides of each threshold.
-        """
         self.user_employee.karma = (KARMA["edit_own"] + KARMA["edit_all"]) // 2
         self.user_employee_2.karma = KARMA["edit_all"]
         own_post = (

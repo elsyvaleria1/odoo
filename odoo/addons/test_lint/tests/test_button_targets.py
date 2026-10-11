@@ -55,8 +55,6 @@ def _read(path: Path) -> str | None:
 
 
 def _scan_python(entry: tuple[Path, bool]) -> tuple[set[str], list[Dispatch]]:
-    # the methods a file defines, anywhere on the path, and the action_*
-    # calls it makes, judged in this checkout only
     path, core = entry
     source = _read(path)
     if source is None:

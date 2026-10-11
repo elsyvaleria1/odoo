@@ -48,7 +48,6 @@ class SaleOrder(models.Model):
         sale_orders = super().copy(default=default)
         if "spreadsheet_ids" not in default:
             for order, new_order in zip(self, sale_orders, strict=False):
-                # copy the spreadsheet, with all the revisions history
                 _debug.pipeline(
                     "quotation_spreadsheets_copied",
                     source=order,

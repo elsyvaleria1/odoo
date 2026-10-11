@@ -5,9 +5,6 @@ from odoo.tests import TransactionCase, tagged
 from odoo.addons.base.tests import access_memo_property
 
 _logger = logging.getLogger(__name__)
-# two seeds per theme; ACCESS_MEMO_PROPERTY_SEEDS and _STEPS run a campaign,
-# and access_memo_property.SCOPE_EPISODES sets how often an episode fills a
-# user x2many slot and changes a line of it behind the ORM
 SEEDS = range(
     1, (access_memo_property.SEEDS or 2 * len(access_memo_property.THEMES)) + 1
 )
@@ -22,9 +19,6 @@ NAMES = {
 
 @tagged("post_install", "-at_install")
 class TestAccessMemoProperty(TransactionCase):
-    # the property's PostgreSQL leg: the memo under test reads the rows the
-    # transaction wrote, the principal from scratch reads them back through
-    # SQL, and the record verdicts are also the access domain searched in SQL
 
     @classmethod
     def setUpClass(cls):

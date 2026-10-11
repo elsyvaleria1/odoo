@@ -34,7 +34,7 @@ if __package__:
     )
 else:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from _field_spelling import (  # type: ignore[no-redef]
+    from _field_spelling import (
         bound_names,
         canonical_order,
         is_field_call,
@@ -102,13 +102,6 @@ def _render(
     call_start, call_end = _span(lines, call)
     spans = {name: _span(lines, value) for name, value in arguments.items()}
     call_line_end = source.find(b"\n", func_end)
-    # A comment inside an argument's own span stays there with the source
-    # slice; one trailing an argument's last line travels with the argument;
-    # one on the line of the call stays on it, because a noqa marker there is
-    # read as the declaration's; one on a line of its own explains the
-    # argument that follows it and travels with that one; one after the last
-    # argument has nothing to follow. `after` trails a call written on one
-    # line, and stays on the line of the call too.
     opening = after
     trailing: dict[str, bytes] = {}
     leading: dict[str, list[bytes]] = {}
@@ -262,7 +255,7 @@ def main() -> int:
         subprocess.run([args.ruff, "format", "--quiet", *changed], check=True)
     for line in declined:
         _logger.warning("%s", line)
-    print(  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(
         f"{total} declaration(s) in {len(changed)} file(s), {len(declined)} declined"
         f"{' (dry run)' if args.dry_run else ''}"
     )

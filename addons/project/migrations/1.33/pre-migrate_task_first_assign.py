@@ -4,10 +4,6 @@ from odoo.db import schema
 
 _logger = logging.getLogger(__name__)
 
-# date_first_assign is a stored compute: a column the ORM creates is computed
-# for every row at the upgrade's clock, so the column comes first, filled with
-# the best record there is: the last assignment, else the creation of a task
-# that has an assignee
 
 
 def migrate(cr, version):

@@ -6,9 +6,6 @@ class IrAccess(models.Model):
     _inherit = "ir.access"
 
     def _access_bind_teams(self, usage: str | None) -> list[int]:
-        # the teams the principal is an active member of, as res.users'
-        # team_ids and <usage>_team_ids read them, in SQL: the rows are
-        # compiled for any principal, portal and public included
         self.env["team.member"].flush_model(["user_id", "team_id", "active"])
         condition = SQL()
         if usage:

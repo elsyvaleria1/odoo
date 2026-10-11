@@ -29,11 +29,6 @@ class WorkerThread(Protocol):
     cursor_mode: str | None
     rpc_model_method: str
 
-    # Not request-scoped: these describe the thread's role and the unit of
-    # work it is on, and outlive any one request. `forget_request` drops
-    # everything above and resets `rpc_model_method`; a new attribute here
-    # has to be one or the other, which is what
-    # `test_every_declared_attribute_is_accounted_for` asks.
     type: str
 
     start_time: float | None
@@ -96,11 +91,6 @@ def working_on_database(db_name: str) -> Iterator[None]:
 
 
 def describe_thread_work(thread: threading.Thread) -> str:
-    # What the operator will want beside the thread name or pid: the request
-    # it is serving (the http layer stamps `url` and `request_id`, the RPC
-    # dispatcher `rpc_model_method`) or the database a cron/job pass is
-    # sweeping.  The verdicts naming it are logged from a monitor thread, so
-    # the request id has to travel in the message to join the request's lines.
     kind = getattr(thread, "type", None)
     if kind == "http":
         url = getattr(thread, "url", "")

@@ -83,8 +83,6 @@ class PosController(PortalAccount):
             return request.redirect(_POS_MENU_URL)
 
         if not pos_session:
-            # the service worker refetches this page to cache it; only a cashier
-            # navigating here may open a session
             fetch_mode = request.httprequest.headers.get("Sec-Fetch-Mode", "navigate")
             if fetch_mode != "navigate":
                 _debug.logic(
@@ -97,8 +95,6 @@ class PosController(PortalAccount):
                     headers=[("Cache-Control", "no-store")],
                     status=409,
                 )
-            # the Lax session cookie rides along a navigation from another site,
-            # and a sibling subdomain of a shared parent domain is not ours either
             fetch_site = request.httprequest.headers.get("Sec-Fetch-Site")
             if fetch_site not in (None, "same-origin", "none"):
                 _debug.logic(
@@ -117,7 +113,6 @@ class PosController(PortalAccount):
             except UniqueViolation as exc:
                 if exc.diag.constraint_name != "pos_session_open_per_config_uniq":
                     raise
-                # A committed opener can be invisible to this request's snapshot.
                 _debug.logic("pos_ui_opened_after_snapshot", config=pos_config.id)
                 return request.redirect(_POS_MENU_URL)
             pos_session = pos_config.current_session_id
@@ -186,7 +181,6 @@ class PosController(PortalAccount):
             ticket_date = date.fromisoformat(value)
         except TypeError, ValueError:
             return None
-        # The lookup includes the previous day and the following two days.
         if date.min < ticket_date <= date.max - timedelta(days=2):
             return ticket_date
         return None

@@ -1,9 +1,6 @@
 from odoo import api, fields, models
 from odoo.fields import Domain
 
-# ------------------------------------------------------------
-# RECIPIENTS
-# ------------------------------------------------------------
 
 
 class MailTestRecipients(models.Model):
@@ -46,9 +43,6 @@ class MailTestThreadCustomer(models.Model):
     _primary_email = "customer_email"
 
 
-# ------------------------------------------------------------
-# PROPERTIES
-# ------------------------------------------------------------
 
 
 class MailTestProperties(models.Model):
@@ -64,9 +58,6 @@ class MailTestProperties(models.Model):
     definition_properties = fields.PropertiesDefinition("Definitions")
 
 
-# ------------------------------------------------------------
-# ROTTING RESOURCES
-# ------------------------------------------------------------
 
 
 class MailTestStageField(models.Model):

@@ -11,7 +11,6 @@ from odoo.addons.payment.logging import get_payment_logger
 
 _logger = get_payment_logger(__name__)
 
-# The id is inserted in the path of an API request: no character may change which endpoint it is.
 HOSTED_CHECKOUT_ID = re.compile(r"[0-9A-Za-z_-]{1,64}")
 
 
@@ -21,11 +20,6 @@ class WorldlineController(http.Controller):
 
     @http.route(_return_url, type="http", auth="public", methods=["GET"])
     def worldline_return_from_checkout(self, **data):
-        """Process the payment data sent by Worldline after redirection.
-
-        :param dict data: The payment data, including the provider id appended to the URL in
-                          `_prepare_redirect_form_values`.
-        """
         _logger.info(
             "Handling redirection from Worldline with data:\n%s", pprint.pformat(data)
         )
@@ -48,7 +42,6 @@ class WorldlineController(http.Controller):
             raise Forbidden
 
         try:
-            # Fetch the checkout session data from Worldline.
             checkout_session_data = provider_sudo._send_api_request(
                 "GET", f"hostedcheckouts/{hosted_checkout_id}"
             )
@@ -61,7 +54,6 @@ class WorldlineController(http.Controller):
             )
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -72,16 +64,9 @@ class WorldlineController(http.Controller):
         typed=True,
     )
     def worldline_webhook(self):
-        """Process the payment data sent by Worldline to the webhook.
-
-        See https://docs.direct.worldline-solutions.com/en/integration/api-developer-guide/webhooks.
-
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from Worldline with data:\n%s",
             pprint.pformat(request.get_json_data()),
         )
         request.admission.subject._process("worldline", request.admission.extra["data"])
-        return request.prepare_json_response("")  # Acknowledge the notification.
+        return request.prepare_json_response("")

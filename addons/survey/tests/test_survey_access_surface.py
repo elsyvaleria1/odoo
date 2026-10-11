@@ -57,7 +57,6 @@ class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
                 )
 
     def test_blank_slug_is_stored_as_null(self):
-        """Otherwise the second survey with an empty slug trips the unique constraint."""
         first = self.env["survey.survey"].create({"title": "No slug 1", "slug": ""})
         second = self.env["survey.survey"].create({"title": "No slug 2", "slug": "  "})
         self.assertFalse(first.slug)
@@ -89,7 +88,6 @@ class TestSurveyAccessSurface(common.TestSurveyCommon, HttpCase):
         self.assertEqual(response.status_code, 200)
 
     def test_cross_tabulation_refuses_a_restricted_officer(self):
-        """The route used to browse() a raw id; only an incidental read stopped this."""
         owner = common.mail_new_test_user(
             self.env,
             login="xtab_owner",

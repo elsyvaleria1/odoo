@@ -16,19 +16,16 @@ class TestBaseModuleInstallRequest(TransactionCase):
         )
 
     def test_get_depending_apps_without_module_raises(self):
-        """An empty module recordset is rejected by the review wizard."""
         Review = self.env["wizard.ir.module.module.install"]
         with self.assertRaises(UserError):
             Review._get_depending_apps(self.env["ir.module.module"])
 
     def test_get_depending_apps_installed_module_raises(self):
-        """Requesting the review of an already-installed module is rejected."""
         Review = self.env["wizard.ir.module.module.install"]
         with self.assertRaises(UserError):
             Review._get_depending_apps(self.installed_module)
 
     def test_get_depending_apps_includes_target_module(self):
-        """The dependency set of an uninstalled app contains the module itself."""
         self.assertTrue(
             self.uninstalled_app, "core-only DB must expose an uninstalled app"
         )
@@ -39,7 +36,6 @@ class TestBaseModuleInstallRequest(TransactionCase):
         self.assertTrue(all(record._name == "ir.module.module" for record in apps))
 
     def test_compute_user_ids_are_system_users(self):
-        """The request wizard targets exactly the members of the System group."""
         request = self.env["base.module.install.request"].create(
             {"module_id": self.uninstalled_app.id}
         )
@@ -48,7 +44,6 @@ class TestBaseModuleInstallRequest(TransactionCase):
         self.assertEqual(set(request.user_ids.ids), set(system_users.ids))
 
     def test_compute_modules_description_lists_target_module(self):
-        """The review wizard lists its target module among the depending apps."""
         review = self.env["wizard.ir.module.module.install"].create(
             {"module_id": self.uninstalled_app.id}
         )
@@ -56,7 +51,6 @@ class TestBaseModuleInstallRequest(TransactionCase):
         self.assertTrue(review.modules_description)
 
     def test_action_view_install_request_wires_default_module(self):
-        """The module action opens the request wizard prefilled with the module."""
         action = self.uninstalled_app.action_view_install_request()
         self.assertEqual(action["res_model"], "base.module.install.request")
         self.assertEqual(action["target"], "new")

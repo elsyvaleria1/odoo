@@ -47,8 +47,6 @@ class TestCalendarSyncAccessMatrix(AccessMatrixCase):
 
     @classmethod
     def build(cls):
-        # no provider is installed with the engine alone: a fake one, for the
-        # class, as what a test creates is flushed after its own patches
         Account = cls.env["calendar.sync.account"]
         cls.startClassPatcher(
             patch.object(

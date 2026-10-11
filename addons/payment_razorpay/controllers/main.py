@@ -13,7 +13,6 @@ class RazorpayController(http.Controller):
     _return_url = "/payment/razorpay/return"
     _webhook_url = "/payment/razorpay/webhook"
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _return_url,
         type="http",
@@ -25,23 +24,6 @@ class RazorpayController(http.Controller):
         typed=True,
     )
     def razorpay_return_from_checkout(self, reference: str, **data):
-        """Process the payment data sent by Razorpay after redirection from checkout.
-
-        The route is configured with save_session=False to prevent Odoo from creating a new session
-        when the user is redirected here via a POST request. Indeed, as the session cookie is
-        created without a `SameSite` attribute, some browsers that don't implement the recommended
-        default `SameSite=Lax` behavior will not include the cookie in the redirection request from
-        the payment provider to Odoo. However, the redirection to the /payment/status page will
-        satisfy any specification of the `SameSite` attribute, the session of the user will be
-        retrieved and with it the transaction which will be immediately post-processed.
-
-        The payment is fetched back from Razorpay: the signature covers the order and payment ids,
-        not the reference of the return URL nor the amount, and the order must be the one created
-        for the transaction.
-
-        :param str reference: The transaction reference, a query parameter of the return URL.
-        :param dict data: The payment data.
-        """
         _logger.info(
             "Handling redirection from Razorpay with data:\n%s", pprint.pformat(data)
         )
@@ -71,7 +53,6 @@ class RazorpayController(http.Controller):
             tx_sudo._process("razorpay", payment)
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -82,17 +63,10 @@ class RazorpayController(http.Controller):
         typed=True,
     )
     def razorpay_webhook(self):
-        """Process the payment data sent by Razorpay to the webhook.
-
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from Razorpay with data:\n%s",
             pprint.pformat(request.get_json_data()),
         )
-        # The admitted subject is the refunded transaction when the refund was initiated from
-        # Razorpay: the refund transaction is only created once the notification is verified.
         request.admission.subject.env["payment.transaction"]._process(
             "razorpay", request.admission.extra["data"]
         )

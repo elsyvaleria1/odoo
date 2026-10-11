@@ -31,14 +31,6 @@ class TestDeliverMaterialsWhenTaskDone(TestFsmFlowSaleCommon):
         )
 
     def test_deliver_materials_when_task_done(self):
-        """Test system automatically updates materials when task is done.
-
-        Test Case:
-        =========
-        1) Add some materials, only the qty_transferred is empty (equal to 0)
-        2) Mark the task as done
-        3) Check if qty_transferred for each SOL contain material of the task is updated and equal to the product_qty.
-        """
         self.assertFalse(
             self.task.material_line_product_count,
             "No product should be linked to a new task.",
@@ -72,18 +64,6 @@ class TestDeliverMaterialsWhenTaskDone(TestFsmFlowSaleCommon):
         )
 
     def test_milestone_service_product_delivery_when_task_done(self):
-        """Test system doesn't automatically updates delivered quantities
-        for milestone service products when task is done.
-        Instead, it's computed based on reached milestones.
-
-        Test Case:
-        =========
-        1) Add service product with invoice policy 'milestone'
-        2) Mark the task as done
-        3) Check if qty_transferred for SOL is still 0. (no milestone is created yet)
-        4) Create a milestone with quantity 50%
-        5) Check if qty_transferred for SOL is updated to 0.5.
-        """
         SaleOrder = self.env["sale.order"].with_context(tracking_disable=True)
         SaleOrderLine = self.env["sale.order.line"].with_context(tracking_disable=True)
 

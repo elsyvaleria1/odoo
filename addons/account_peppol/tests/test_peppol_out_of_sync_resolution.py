@@ -53,7 +53,7 @@ class TestTokenSyncResolution(TransactionCase):
         ):
             settings = self.env["res.config.settings"].create({})
             settings.account_peppol_contact_email = (
-                "a@a.com"  # triggers the inverse to update the mail
+                "a@a.com"
             )
 
         self.assertIn(

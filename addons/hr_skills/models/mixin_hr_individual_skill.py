@@ -675,10 +675,6 @@ class MixinHrIndividualSkill(models.AbstractModel):
                         if individual:
                             individual_command[linked_field] = individual.id
                         else:
-                            # The owner is being created: copy_data hands over the
-                            # lines with the *old* owner's id, which the ORM will
-                            # overwrite. Resolving collisions against it would
-                            # close the skills of the record being copied.
                             individual_command.pop(linked_field, None)
                         created_values.append(individual_command)
                     case Command.UPDATE:

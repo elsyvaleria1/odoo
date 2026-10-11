@@ -592,8 +592,6 @@ class TelegramHandlerApprovalAccount(models.AbstractModel):
 
     @staticmethod
     def _intake_category(bot, intake):
-        """The category `intake` requests are filed in, in the company the bot
-        acts in."""
         return bot.env["approval.category"]._get_telegram_intake_category(
             intake, bot._acting_company()
         )

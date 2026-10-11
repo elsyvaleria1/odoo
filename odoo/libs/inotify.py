@@ -95,7 +95,7 @@ _libc: ctypes.CDLL | None = None
 
 
 def _get_libc() -> ctypes.CDLL:
-    global _libc  # noqa: PLW0603  one handle on libc per process
+    global _libc
     if _libc is None:
         _libc = _load_libc()
     return _libc
@@ -127,9 +127,6 @@ class Inotify:
             raise _errno_error("inotify_init1")
         self._fd = fd
         self._wd_by_path: dict[str, int] = {}
-        # One watch can answer to several spellings of a path ("d", "d/"):
-        # the kernel returns the same descriptor for each. The newest
-        # spelling is last, and is the one events are reported under.
         self._paths_by_wd: dict[int, list[str]] = {}
         self._identity_by_wd: dict[int, tuple[int, int] | None] = {}
         self._epoll: select.epoll | None = None
@@ -158,8 +155,6 @@ class Inotify:
 
     def add_watch(self, path: str | os.PathLike[str], mask: int) -> int:
         path = os.fspath(path)
-        # A moved directory keeps its watch, and its descriptor, under every
-        # path it was added by; IN_MOVE_SELF is what tells those paths stale.
         wd = _get_libc().inotify_add_watch(
             self._fd, os.fsencode(path), mask | IN_MOVE_SELF
         )
@@ -191,8 +186,6 @@ class Inotify:
         self._forget(wd)
         if _get_libc().inotify_rm_watch(self._fd, wd) < 0:
             code = ctypes.get_errno()
-            # A watch the kernel dropped itself (the directory is gone) is
-            # already removed; anything else is a real fault.
             if code != errno.EINVAL:
                 raise InotifyError(code, f"inotify_rm_watch: {os.strerror(code)}")
 
@@ -208,8 +201,6 @@ class Inotify:
             self._drop_stale_descendants(alias)
 
     def _drop_stale_descendants(self, path: str) -> None:
-        # Only the moved directory itself gets IN_MOVE_SELF; the watches
-        # below it are still spelled under its old path.
         prefix = path.rstrip(os.sep) + os.sep
         below = [
             (alias, wd)
@@ -228,11 +219,6 @@ class Inotify:
         self._identity_by_wd.pop(wd, None)
 
     def read(self, timeout_s: float | None) -> list[Event]:
-        """Wait up to `timeout_s` for activity, then drain every queued event.
-
-        Raises `QueueOverflow`, carrying the events drained with it, once the
-        batch held the kernel's overflow marker.
-        """
         epoll = self._epoll
         if self.closed or epoll is None:
             raise InotifyError(errno.EBADF, "inotify instance is closed")
@@ -254,8 +240,6 @@ class Inotify:
         return events
 
     def _parse(self, data: bytes) -> tuple[list[Event], bool]:
-        # Each read returns whole records only (inotify(7)), so the buffer
-        # never ends inside one.
         events: list[Event] = []
         overflowed = False
         offset = 0

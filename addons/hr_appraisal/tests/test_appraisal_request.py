@@ -62,7 +62,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         )
 
     def request_appraisal_from(self, record, user):
-        """An appraisal can be requested from appraisal form only"""
         return (
             self.env["wizard.hr.appraisal.send"]
             .with_user(user)
@@ -71,7 +70,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         )
 
     def test_manager_simple_request(self):
-        """Manager requests an appraisal for one of his employee"""
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -85,7 +83,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         request.action_invite()
 
     def test_manager_request_work_email(self):
-        """Send appraisal to work email"""
         self.employee.user_id = False
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
@@ -96,7 +93,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         request.action_invite()
 
     def test_manager_request_work_email_2(self):
-        """Send appraisal to work email"""
         self.employee.user_id = False
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
@@ -105,10 +101,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         self.assertEqual(request.recipient_ids.email, self.employee.work_email)
 
     def test_manager_request_himself(self):
-        """Send appraisal to only manager if HR asks for himself
-        Employee sends an appraisal request to it's manager
-        For appraisal manager_ids needs to be explicitly set
-        """
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -116,7 +108,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         self.assertEqual(request.recipient_ids, self.manager_user.partner_id)
 
     def test_manager_activity(self):
-        """Check that appraisal request mail is posted in chatter"""
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -134,7 +125,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         self.assertTrue("<p>My awesome message</p>" in message_ids.body)
 
     def test_employee_simple_request(self):
-        """Employee requests an appraisal from his manager"""
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -148,7 +138,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         request.action_invite()
 
     def test_custom_body(self):
-        """Custom body should be sent"""
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -165,9 +154,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         self.assertTrue("<p>My awesome message</p>" in notification.body)
 
     def test_compute_can_request_appraisal(self):
-        # Read the field through the same env it was computed under. Reading it
-        # from the class-level env passed only because the field was uid-blind:
-        # whichever user computed last won for every reader.
         self.assertTrue(
             self.employee.with_user(self.manager_2_user).can_request_appraisal,
             "A manager of the employee can request an appraisal for them",
@@ -178,7 +164,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         )
 
     def test_user_body(self):
-        """user body should be sent"""
         appraisal = self.env["hr.appraisal"].create(
             {"employee_id": self.employee.id, "manager_ids": self.employee.parent_id}
         )
@@ -205,8 +190,6 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         )
         template = template.with_env(self.env)
         sensitive = '<p><t t-out="object.sudo().employee_id.name"/></p>'
-        # below Settings, even a mail template editor may not add an expression
-        # that reaches past the data (daa7d27013c5)
         template_editor = new_test_user(
             self.env,
             login="appraisal_template_editor",
@@ -214,21 +197,14 @@ class TestHrAppraisalRequest(TransactionCase, MockEmail):
         )
         with self.assertRaisesRegex(AccessError, "Only administrators"):
             template.with_user(template_editor).body_html = sensitive
-        # an administrator may, and the template's placeholders render for
-        # whoever sends it
         template.body_html = sensitive
         request_as_employee = self.request_appraisal_from(
             appraisal, user=self.employee_user
         )
 
-        # The employee can change the body of its appraisal
         request_as_employee.body = "Hello"
-        # As long as it doesn't contain sensitive placeholders: template
-        # rendering is restricted (mail.restrict_template_rendering), so an
-        # employee is no template editor and is refused before the grammar
         with self.assertRaisesRegex(AccessError, "Mail Template Editor"):
             request_as_employee.body = '<t t-out="object.sudo().name"/>'
-        # The employee cannot change the template to an arbitrary template
         with self.assertRaisesRegex(
             ValidationError, "Appraisal for Michaël Hawkins should be using"
         ):

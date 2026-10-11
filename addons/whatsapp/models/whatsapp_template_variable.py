@@ -219,12 +219,8 @@ class WhatsappTemplateVariable(models.Model):
 
         return value_by_name
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     def _find_value_from_field_chain(self, record):
-        """Get the value of field, returning display_name(s) if the field is a model."""
         self.check_singleton()
         return self._resolve_field_path_value(record.sudo(False))
 
@@ -248,7 +244,6 @@ class WhatsappTemplateVariable(models.Model):
         return record._mail_get_field_path_value(self.field_name)
 
     def _extract_variable_index(self) -> int | None:
-        """Extract variable index, located between '{{}}' markers."""
         self.check_singleton()
         try:
             return int(self.name.removeprefix("{{").removesuffix("}}"))

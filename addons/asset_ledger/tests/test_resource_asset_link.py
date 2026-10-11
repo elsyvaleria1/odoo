@@ -94,9 +94,6 @@ class TestResourceAssetLink(TransactionCase):
         self.assertEqual(fuel.log_type, "fuel")
 
     def test_deleting_the_newest_reading_walks_the_meter_back(self):
-        """The lot's odometer falls back to the previous reading, so the meter
-        has to fall with it. Nothing links a meter reading to the log that
-        produced it, so the correction is recorded rather than erased."""
         lot = self._lot(name="PK-UNLINK")
         log_model = self.env["resource.log"]
         fuel = self.env.ref("asset_ledger.product_product_fuel_debit")
@@ -133,9 +130,6 @@ class TestResourceAssetLink(TransactionCase):
         self.assertTrue(first.exists())
 
     def test_deleting_the_only_reading_leaves_the_meter_alone(self):
-        """With no ledger reading left there is nothing to record: 0 is not a
-        measurement, so the meter keeps its last reading and the lot, which
-        reads the meter now, keeps showing it."""
         lot = self._lot(name="PK-UNLINK-LAST")
         log = self.env["resource.log"].create(
             {
@@ -157,8 +151,6 @@ class TestResourceAssetLink(TransactionCase):
         self.assertEqual(len(meter.reading_ids), 1)
 
     def test_retyping_the_model_retypes_the_asset(self):
-        """`kind_id` is what every bridge reads to know what this asset is. It
-        was written once at create and never again."""
         lot = self._lot(name="PK-RETYPE")
         asset = lot.asset_id
         self.assertEqual(asset.kind_id.code, "vehicle")
@@ -183,8 +175,6 @@ class TestResourceAssetLink(TransactionCase):
         self.assertEqual(asset.company_id, other)
 
     def test_demoting_the_model_leaves_the_kind_alone(self):
-        """`resource.asset.kind_id` is required, so a template demoted back to
-        a plain product must not blank it -- the asset keeps what it was."""
         lot = self._lot(name="PK-DEMOTE")
         asset = lot.asset_id
         plain = create_test_product(self.env, name="Bolt crate", tracking="serial")
@@ -201,9 +191,6 @@ class TestResourceAssetLink(TransactionCase):
         self.assertFalse(lot.asset_id)
 
     def test_the_lifecycle_attributes_follow_the_lot(self):
-        """`date_acquisition`, `model_year` and `brand_new` existed on both
-        models and were written on neither side's behalf; `date_write_off` is
-        the asset's `date_disposal`."""
         acquired = datetime(2024, 5, 1).date()
         lot = self._lot(
             name="PK-DATES",

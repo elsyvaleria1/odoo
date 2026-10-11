@@ -51,37 +51,30 @@ class TestCloudStorage(TransactionCase):
         )
 
     def test_generate_url_is_abstract(self):
-        """The provider-agnostic base leaves blob URL generation unimplemented."""
         with self.assertRaises(NotImplementedError):
             self.attachment._generate_cloud_storage_url()
 
     def test_generate_download_info_is_abstract(self):
-        """The base module has no download-info implementation."""
         with self.assertRaises(NotImplementedError):
             self.attachment._generate_cloud_storage_download_info()
 
     def test_generate_upload_info_is_abstract(self):
-        """The base module has no upload-info implementation."""
         with self.assertRaises(NotImplementedError):
             self.attachment._generate_cloud_storage_upload_info()
 
     def test_post_add_create_without_provider_raises(self):
-        """Flagging an attachment as cloud storage needs an enabled provider."""
         self.env["ir.config_parameter"].sudo().set_param("cloud_storage_provider", "")
         with self.assertRaises(UserError):
             self.attachment._post_add_create(cloud_storage=True)
 
     def test_blob_name_is_scoped_to_attachment(self):
-        """The blob name embeds the attachment id, a uuid4, and the file name."""
         blob_name = self.attachment._generate_cloud_storage_blob_name()
         prefix, token, name = blob_name.split("/")
         self.assertEqual(prefix, str(self.attachment.id))
         self.assertEqual(name, self.attachment.name)
-        # a malformed token would raise ValueError and fail the test
         self.assertEqual(str(uuid.UUID(token)), token)
 
     def test_get_values_reports_min_file_size_in_mb(self):
-        """Settings expose the byte threshold converted to megabytes."""
         self.env["ir.config_parameter"].sudo().set_param(
             "cloud_storage_min_file_size", "30000000"
         )
@@ -89,12 +82,10 @@ class TestCloudStorage(TransactionCase):
         self.assertEqual(values["cloud_storage_min_file_size_mb"], 30)
 
     def test_documents_are_not_excluded_from_the_cloud(self):
-        """Only main-attachment models keep their bytes on the server."""
         unsupported = self.env["ir.attachment"]._get_cloud_storage_unsupported_models()
         self.assertNotIn("document.document", unsupported)
 
     def test_get_content_downloads_the_blob_a_provider_holds(self):
-        """A cloud attachment has no local bytes: the fetch goes and gets them."""
         remote = self.env["ir.attachment"].create({"name": "remote.pdf"})
         remote.type = "cloud_storage"
         self.assertFalse(remote.raw, "the blob is not in this database")
@@ -143,7 +134,6 @@ class TestCloudStorage(TransactionCase):
         self.assertEqual(calls[1][4], 64, "a sized read never accepts more")
 
     def test_get_content_of_a_local_blob_stays_local(self):
-        """An attachment this database stores is never fetched over the network."""
 
         def explode(*args, **kwargs):
             raise AssertionError("a local blob must not reach the provider")
@@ -153,7 +143,6 @@ class TestCloudStorage(TransactionCase):
             self.assertEqual(self.attachment._get_content(3), b"pay")
 
     def test_unconfigured_cloud_content_is_missing_to_every_reader(self):
-        """Without a configured provider the blob is unreachable: each reader says so."""
         remote = self._cloud_attachment("statement.pdf", "application/pdf")
 
         def explode(*args, **kwargs):
@@ -172,7 +161,6 @@ class TestCloudStorage(TransactionCase):
                     reader()
 
     def test_unconfigured_cloud_content_is_never_redirected_to_its_blob(self):
-        """The unsigned blob URL is an identifier, not a download link."""
         remote = self._cloud_attachment("statement.pdf", "application/pdf")
         with self.assertRaises(MissingError):
             remote._to_http_stream()
@@ -183,7 +171,6 @@ class TestCloudStorage(TransactionCase):
         self.assertEqual(stream.url, "https://bucket/blob?signed")
 
     def test_a_reader_of_a_cloud_stream_gets_the_blob(self):
-        """Code that reads a stream (a zip, an export) is handed the bytes."""
         remote = self._cloud_attachment("statement.pdf", "application/pdf")
         configured, signed, egress = self._configured(b"%PDF-1.7 blob")
         with configured, signed, egress:
@@ -193,7 +180,6 @@ class TestCloudStorage(TransactionCase):
             self.assertEqual(stream.read(), b"%PDF-1.7 blob")
 
     def test_an_inline_stream_carries_the_blob(self):
-        """A caller that asks for the bytes gets a data stream, not a redirect."""
         remote = self._cloud_attachment("statement.pdf", "application/pdf")
         configured, signed, egress = self._configured(b"%PDF-1.7 blob")
         with configured, signed, egress:
@@ -224,7 +210,6 @@ class TestCloudStorage(TransactionCase):
         return partner, image.getvalue()
 
     def test_a_cloud_image_field_is_resized_like_a_local_one(self):
-        """/web/image sizes come from the blob instead of a full-size redirect."""
         partner, png = self._cloud_image_field()
         configured, signed, egress = self._configured(png)
         with configured, signed, egress:
@@ -235,7 +220,6 @@ class TestCloudStorage(TransactionCase):
         self.assertEqual(Image.open(io.BytesIO(stream.data)).size, (64, 64))
 
     def test_a_cloud_field_download_is_named_after_the_record(self):
-        """The signed URL carries the requested name, not the field's."""
         partner, png = self._cloud_image_field()
         configured, signed, egress = self._configured(png)
         with configured, signed, egress:
@@ -246,7 +230,6 @@ class TestCloudStorage(TransactionCase):
         self.assertEqual(stream.download_name, "logo.png")
 
     def test_a_cloud_pdf_reaches_the_pdf_tools(self):
-        """A PDF the provider holds is read like a local one, page extraction included."""
         pdf = (
             b"%PDF-1.1\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
             b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
@@ -266,7 +249,6 @@ class TestCloudStorage(TransactionCase):
         return remote
 
     def test_raw_of_a_cloud_blob_is_fetched_from_the_provider(self):
-        """Code that reads raw or datas gets the blob, not empty bytes."""
         remote = self._sized_cloud_attachment()
         configured, signed, egress = self._configured(b"payload")
         with configured, signed, egress:
@@ -274,7 +256,6 @@ class TestCloudStorage(TransactionCase):
             self.assertEqual(remote.datas, b"cGF5bG9hZA==")
 
     def test_raw_of_a_cloud_blob_is_empty_without_a_provider(self):
-        """A neutralized copy keeps answering empty bytes, never calling out."""
         remote = self._sized_cloud_attachment()
 
         def explode(*args, **kwargs):
@@ -284,7 +265,6 @@ class TestCloudStorage(TransactionCase):
             self.assertFalse(remote.raw)
 
     def test_writing_bytes_on_a_cloud_attachment_stores_them_here(self):
-        """New content no longer belongs to the blob the attachment pointed at."""
         remote = self._sized_cloud_attachment()
 
         def explode(*args, **kwargs):
@@ -298,7 +278,6 @@ class TestCloudStorage(TransactionCase):
             self.assertTrue(remote.store_fname)
 
     def test_an_explicit_type_keeps_the_attachment_in_the_cloud(self):
-        """_post_add_create empties the bytes and names the type itself."""
         local = self.env["ir.attachment"].create({"name": "up.txt", "raw": b"x"})
         local.write({"raw": False, "type": "cloud_storage", "url": "https://bucket/b"})
         self.assertEqual(local.type, "cloud_storage")

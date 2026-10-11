@@ -249,8 +249,6 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         self.assertEqual(fix._github_permissions()["contents"], "write")
 
     def test_the_payload_carries_what_the_runner_reads(self):
-        # tooling/agent_runner/incident.py: what each executor reads of
-        # lease["payload"]; a key missing here fails the run on the runner.
         incident = self._occur(2)
         diagnosis = self._runs(incident).payload
         common = {"prompt", "model", "timeout", "repository", "base_branch", "incident"}

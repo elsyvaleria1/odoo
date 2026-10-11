@@ -108,10 +108,6 @@ class Row:
         return f"{self.path}:{self.line} {self.xmlid}"
 
 
-# The repositories a repository's rows are read against: a row can only rely on
-# the models and the predicates of what its module builds on, so odoo's rows are
-# judged against odoo alone at every scope and their counts do not move when
-# enterprise is put on the path.
 _scope: tuple[str, ...] = ("odoo",)
 
 
@@ -282,7 +278,6 @@ def predicates() -> dict[str, Predicate]:
 
 @functools.cache
 def _scoped_predicates(_in_scope: tuple[str, ...]) -> dict[str, Predicate]:
-    # every ir.access.predicate record the core modules declare, by xml id
     found = {}
     for manifest in _module_manifests():
         for path in _walk(Path(manifest.path), ".xml"):
@@ -320,7 +315,6 @@ def privileges() -> frozenset[str]:
 
 @functools.cache
 def _scoped_privileges(_in_scope: tuple[str, ...]) -> frozenset[str]:
-    # every res.groups record any module declares with is_privilege set
     found = set()
     for manifest in _module_manifests():
         for path in _walk(Path(manifest.path), ".xml"):
@@ -392,8 +386,6 @@ def _string(node: ast.AST | None) -> str | None:
 
 
 def _anchor(key: str, node: ast.AST) -> tuple[str, str] | None:
-    # a declared anchor as (path, kind): a bare path, or models.Anchor(path,
-    # kind=..., ...)
     if (path := _string(node)) is not None:
         return path, key
     if isinstance(node, ast.Call) and getattr(node.func, "attr", None) == "Anchor":
@@ -688,9 +680,6 @@ def parse_domain(text: str) -> ast.AST:
 
 
 def conditions(node: ast.AST) -> tuple[list[Condition], list[str]]:
-    # the conditions a domain states literally, and what makes it malformed;
-    # a part built at evaluation time (a call, a name, a concatenation) is not
-    # judged, only its literal parts are
     found: list[Condition] = []
     problems: list[str] = []
     if isinstance(node, ast.IfExp):
@@ -782,7 +771,6 @@ def _validate(model_name: str, node: ast.AST) -> list[str]:
 
 
 def access_edges(row: Row) -> list[tuple[str, str]]:
-    # the (model, operation) the row's 'access' conditions make its own depend on
     if not row.domain or "access" not in row.domain or not known_model(row.model):
         return []
     try:
@@ -804,7 +792,6 @@ def access_edges(row: Row) -> list[tuple[str, str]]:
 
 
 def anchors(model_name: str) -> dict[str, tuple[str, str]]:
-    # every anchor the model declares or the ORM infers, as (path, kind)
     result: dict[str, tuple[str, str]] = {}
     info = models().get(model_name)
     if info is not None:
@@ -824,9 +811,6 @@ def anchors(model_name: str) -> dict[str, tuple[str, str]]:
 
 
 def company_anchor(model_name: str) -> str | None:
-    # the field a grant limited to some companies compiles against, as the
-    # ORM's _access_company_anchor reads it: declared, else the model's own
-    # company_id / company_ids
     info = models().get(model_name)
     if info is not None:
         for parent in [model_name, *info.inherit]:

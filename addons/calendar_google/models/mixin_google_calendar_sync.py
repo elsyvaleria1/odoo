@@ -16,8 +16,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
     active = fields.Boolean(default=True)
 
     def _google_links(self):
-        """The Google links of these records, elevated: one per calendar holding
-        a record, each under the record's one Google id."""
         fk = self.env["calendar.sync.link"]._field_of(self)
         return (
             self.env["calendar.sync.link"]
@@ -29,8 +27,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         )
 
     def _google_id(self) -> str | bool:
-        """This record's id in Google, the same in every calendar holding it;
-        False while Google does not hold it."""
         self.check_singleton()
         google_ids = set(self._google_links().mapped("remote_id")) - {False}
         if len(google_ids) > 1:
@@ -41,7 +37,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
     @api.model
     def _google_records(self, google_ids):
-        """The records of this model Google holds under `google_ids`."""
         fk = self.env["calendar.sync.link"]._field_of(self)
         links = (
             self.env["calendar.sync.link"]
@@ -58,8 +53,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         return self.browse(links[fk].ids)
 
     def _google_link(self, account, google_ids) -> None:
-        """Link records to their Google id in `account`'s calendar, given as
-        {record id: Google id}."""
         fk = self.env["calendar.sync.link"]._field_of(self)
         self.env["calendar.sync.link"]._engine().create(
             [
@@ -69,11 +62,10 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         )
 
     def _google_unlink(self) -> None:
-        """These records forget their Google id."""
         self._google_links().unlink()
 
     def _google_link_instances(self) -> None:
-        """Link the records Google identifies through another record's id."""
+        pass
 
     def write(self, vals):
         result = super().write(vals)
@@ -88,7 +80,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
         return records
 
     def _prepare_post_sync_vals(self, request_values, google_values) -> ValuesType:
-        """The values this record takes from Google's answer to its insert."""
         return {}
 
     def _write_from_google(self, gevent, vals) -> None:
@@ -100,23 +91,6 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
     @api.model
     def _get_sync_partner(self, emails) -> dict:
-        """Map each address in `emails` to its partner, keyed as Google spelled it.
-
-        This returned a *recordset*, and both callers then walked it with
-        `zip(emails, partners, google_attendees)`. That is only correct when the
-        resolver gives back exactly one partner per address, in the order asked,
-        and it guarantees neither: two attendees sharing an address collapse to
-        one partner, and an address that normalises to nothing contributes none.
-        Either shortens the recordset, and from the first gap onwards every
-        attendee was handed the partner belonging to some other attendee --
-        silently, because the `zip` passed `strict=False` and the sort key
-        (`k.get(p.email_normalized, -1)`) compared a *normalised* address
-        against a dict built from the raw ones, so anything Google spelled with
-        a display name or different case sorted to the front rather than raising.
-
-        A mapping has no positions to misalign. An address with no partner maps
-        to an empty recordset, which is the answer, not a missing row.
-        """
         normalized = {email: email_normalize(email) for email in emails}
         partners = self.env[
             "mixin.mail.thread"
@@ -131,21 +105,10 @@ class MixinGoogleCalendarSync(models.AbstractModel):
 
     @api.model
     def _odoo_values(self, google_event: GoogleEvent, default_reminders=()):
-        """Implements this method to return a dict of Odoo values corresponding
-        to the Google event given as parameter
-        :return: dict of Odoo formatted values
-        """
         raise NotImplementedError
 
     def _google_values(self):
-        """Implements this method to return a dict with values formatted
-        according to the Google Calendar API
-        :return: dict of Google formatted values
-        """
         raise NotImplementedError
 
     def _get_fields_google_synced(self):
-        """Return a set of field names. Changing one of these fields
-        marks the record to be re-synchronized.
-        """
         raise NotImplementedError

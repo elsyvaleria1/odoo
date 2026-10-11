@@ -24,11 +24,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_gs1_receipt_expiration_date(self):
-        """Creates a new receipt and scans barcodes with expiration date and/or
-        best before date. When only a best before date is scanned, it will be
-        convert to expiration date according to the setting on the product. When
-        both dates are scanned, only the expiration date will be used.
-        """
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -64,10 +59,6 @@ class TestPickingBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(receipt.move_line_ids.mapped("qty_done"), [8, 4, 8])
 
     def test_delivery_package_with_expiration_dates(self):
-        """
-        Scan a package with a tracked product that has an expiration date.
-        Ensure that the date is displayed on the line
-        """
         self.env.user.write(
             {
                 "group_ids": [

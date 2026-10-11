@@ -27,7 +27,6 @@ class FakeGoogle(FakeCalendarServer):
     def __init__(self, env) -> None:
         super().__init__(env)
         self.events: dict[str, dict] = {}
-        # {user id: ids changed since their last list}
         self.changed: dict[int, set] = {}
         self.tokens: dict[int, str] = {}
         self._ids = itertools.count(1)
@@ -45,7 +44,6 @@ class FakeGoogle(FakeCalendarServer):
 
         return patch.object(GoogleCalendarService, "_request", request)
 
-    # -- the API -------------------------------------------------------------
 
     def request(self, user, method, path, params, body):
         match = EVENTS.match(path)
@@ -124,7 +122,6 @@ class FakeGoogle(FakeCalendarServer):
         self.ops.append((user.id, "delete", remote_id))
         return False
 
-    # -- the calendars --------------------------------------------------------
 
     def _sees(self, user, event) -> bool:
         return event["organizer"]["email"] == user.email or any(
@@ -183,7 +180,6 @@ class FakeGoogle(FakeCalendarServer):
         if event["organizer"]["email"] == user.email:
             event["status"] = "cancelled"
         else:
-            # an attendee deleting an invitation declines it
             for attendee in event["attendees"]:
                 if attendee["email"] == user.email:
                     attendee["responseStatus"] = "declined"

@@ -67,7 +67,7 @@ class OdooDatabaseXmlrpcApi:
         return self.execute_kw(
             "res.users",
             "search_read",
-            [("share", "=", False)],  # internal users only
+            [("share", "=", False)],
             ["name", "login", "login_date"],
         )
 
@@ -150,7 +150,6 @@ class OdooDatabaseApi(BaseApi):
                 if version := response.json().get("version"):
                     return _humanize_version(version)
 
-            # Fallback to XML RPC call to common.version
             with guarded_http.guarded_session(
                 netguard.PRIVATE_ALLOWED, timeout=TIMEOUT
             ) as session:
@@ -185,7 +184,7 @@ class OdooDatabaseApi(BaseApi):
         return self.post_json2(
             "res.users",
             "search_read",
-            domain=[("share", "=", False)],  # internal users only
+            domain=[("share", "=", False)],
             fields=["name", "login", "login_date"],
         )
 
@@ -217,7 +216,6 @@ class OdooDatabaseApi(BaseApi):
 
 
 def _humanize_version(version):
-    # only keep the series part from the version, e.g. 18.5a1+e becomes 18.5
     if m := re.match(r"^((:?saas[~-])?\d+.\d+)", version):
         return m.group(1).replace("-", "~")
     return None

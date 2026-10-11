@@ -46,9 +46,6 @@ MISC_SUITES = (
     "@web/mock_server",
     "@web/modules",
 )
-# one desktop runner over @html_editor took ~760 s of its 900 s budget and ran
-# out on a loaded machine; split, the three measured 164 s (the rest), 269 s
-# (blocks) and 78 s (content) on 2026-09-26
 HTML_EDITOR_BLOCK_SUITES = (
     "@html_editor/list",
     "@html_editor/format",
@@ -326,9 +323,6 @@ class HOOTCommon(odoo.tests.HttpCase):
         )
 
     def _filtered_module_scope_param(self):
-        # a filtered run narrows the bundle like the lane it filters would:
-        # on a database with point_of_sale installed an unscoped page loads
-        # the POS app's global patches over web's own suites
         selected = [f for sign, f in _get_filters(self._test_params) if sign == "+"]
         return self._get_module_scope_param(selected) if selected else ""
 
@@ -345,7 +339,6 @@ class HOOTCommon(odoo.tests.HttpCase):
             )
             scope_param = self._get_module_scope_param(suite_names)
         tag_param = f"&tag={tag}" if tag else ""
-        # the browser's makeLogger namespaces, relayed by --log-handler <this module>:DEBUG
         log_param = f"&log={spec}" if (spec := os.environ.get("ODOO_HOOT_LOG")) else ""
         env_extra = os.environ.get("ODOO_HOOT_EXTRA", "")
         if env_extra:
@@ -499,8 +492,6 @@ class WebSuite(HOOTCommon):
         )
 
     def test_bundled_unit_test_files_live_under_static_tests(self):
-        # addons_bundling_unit_tests walks <addon>/static/tests only, so a
-        # bundled test file anywhere else is selected by nothing and never runs
         misplaced = sorted(
             path.as_posix()
             for path in unit_bundle_test_files()

@@ -37,9 +37,6 @@ class SaleReport(models.Model):
         }
     )
 
-    # ------------------------------------------------------------
-    # FIELDS
-    # ------------------------------------------------------------
 
     order_reference = fields.Reference(
         selection_add=[("pos.order", "POS Order")],
@@ -52,9 +49,6 @@ class SaleReport(models.Model):
         ]
     )
 
-    # ------------------------------------------------------------
-    # HELPER METHODS
-    # ------------------------------------------------------------
 
     @api.model
     def _get_done_states(self):
@@ -62,15 +56,11 @@ class SaleReport(models.Model):
         done_states.extend(["paid", "invoiced", "posted"])
         return done_states
 
-    # ------------------------------------------------------------
-    # QUERY OVERRIDE (UNION ALL with POS)
-    # ------------------------------------------------------------
 
     @property
     def _table_query(self) -> SQL:
         sale_query = super()._table_query
 
-        # Build POS query using registries
         pos_select = self._select_pos()
         pos_from = self._from_pos()
         pos_where = self._where_pos()
@@ -86,9 +76,6 @@ class SaleReport(models.Model):
 
         return SQL("( %s ) UNION ALL ( %s )", sale_query, pos_query)
 
-    # ------------------------------------------------------------
-    # POS QUERY BUILDERS (similar to mixin pattern)
-    # ------------------------------------------------------------
 
     def _select_pos(self) -> SQL:
         fields = self._get_fields_pos_select()
@@ -110,9 +97,7 @@ class SaleReport(models.Model):
         from_parts = []
         for table_name, alias, join_type, on_condition in tables:
             if join_type is None:
-                # Base table
                 from_parts.append(SQL("%s %s", SQL(table_name), SQL(alias)))
-            # JOIN clause
             elif isinstance(table_name, SQL):
                 from_parts.append(
                     SQL(
@@ -143,16 +128,13 @@ class SaleReport(models.Model):
         fields = self._get_fields_pos_group_by()
         return SQL(",\n    ").join([SQL(field) for field in fields])
 
-    # ------------------------------------------------------------
-    # POS REGISTRIES (similar to mixin pattern)
-    # ------------------------------------------------------------
 
     def _get_fields_pos_select(self) -> dict:
         currency_rate_pos = self._case_value_or_one("pos.currency_rate")
         currency_rate_table = self._case_value_or_one("account_currency_table.rate")
 
         fields = {
-            "id": "-MIN(l.id)",  # Negative to avoid ID conflicts with sale orders
+            "id": "-MIN(l.id)",
             "order_reference": "CONCAT('pos.order', ',', pos.id)",
             "company_id": "pos.company_id",
             "currency_id": str(self.env.company.currency_id.id),
@@ -165,7 +147,7 @@ class SaleReport(models.Model):
             "pricelist_id": "pos.pricelist_id",
             "team_id": "pos.team_id",
             "user_id": "pos.user_id",
-            "campaign_id": "NULL",  # POS doesn't have UTM fields
+            "campaign_id": "NULL",
             "medium_id": "NULL",
             "source_id": "NULL",
             "date_order": "pos.date_order",
@@ -246,7 +228,7 @@ class SaleReport(models.Model):
         )
 
         return [
-            ("pos_order_line", "l", None, None),  # Base table
+            ("pos_order_line", "l", None, None),
             ("pos_order", "pos", "JOIN", "l.order_id = pos.id"),
             (
                 "res_partner",
@@ -275,7 +257,7 @@ class SaleReport(models.Model):
 
     def _get_pos_where_conditions(self) -> list:
         return [
-            "l.sale_order_line_id IS NULL",  # Exclude lines linked to sale orders
+            "l.sale_order_line_id IS NULL",
         ]
 
     def _get_fields_pos_group_by(self) -> list:
@@ -315,7 +297,6 @@ class SaleReport(models.Model):
     def _get_pos_field_expressions(self, additional_fields):
         filled_fields = {}
 
-        # Only include fields that are in the additional_fields from sale.report
         available_pos_mappings = self._available_additional_pos_fields()
         for fname in additional_fields:
             if fname in available_pos_mappings:

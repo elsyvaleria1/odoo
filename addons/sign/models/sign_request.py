@@ -58,10 +58,6 @@ class SignRequest(models.Model):
         return self.validity and datetime.combine(self.validity, day_time(23, 59, 59))
 
     def _issue_request_links(self) -> None:
-        """The request's view link: its page read-only, its state and its
-        documents, which the requester's and followers' mails carry and every
-        signer's page is given, until the request's validity or for a
-        notification's lifetime (decision B1)."""
         Link = self.env["access.link"]
         for sign_request in self:
             __, token = Link._issue(
@@ -74,9 +70,6 @@ class SignRequest(models.Model):
             sign_request._update_cache({"access_token": token}, validate=False)
 
     def _signer_chatter_token(self, partner) -> str:
-        """The token a signer's portal page writes in the request's history
-        with: a link to comment that only `partner`, signed in, opens, living
-        as the request's view link does."""
         self.check_singleton()
         __, token = self.env["access.link"]._issue(
             self,
@@ -90,8 +83,6 @@ class SignRequest(models.Model):
 
     @api.model
     def _from_request_token(self, token, request_id):
-        """The request whose live view link ``token`` is, in sudo, or an empty
-        recordset."""
         try:
             return (
                 self.env["access.link"]
@@ -445,7 +436,6 @@ class SignRequest(models.Model):
         constant_items = self.template_id.sign_item_ids.filtered("constant")
         if not constant_items:
             return
-        # linked fields are read with the sender's rights, as quick sign reads them
         for request_item in self.request_item_ids:
             values = {
                 str(item.id): request_item._get_constant_value(item)
@@ -471,8 +461,6 @@ class SignRequest(models.Model):
         return res
 
     def _move_signer_links(self) -> None:
-        # a signer's link lives as long as the request is valid: a new validity
-        # moves it, earlier or later
         items = self.request_item_ids
         Link = self.env["access.link"]
         notification = Domain("cause", "=", "notification")
@@ -493,10 +481,6 @@ class SignRequest(models.Model):
             link.date_to = ends.get((link.res_model, link.res_id)) or link.date_to
 
     def _is_state_write_allowed(self) -> bool:
-        """A follower/signer must not flip a request's state by a direct write; the
-        state only moves through the model's own methods (which run in sudo) or by
-        its owner (cancel/archive). Managers keep full control.
-        """
         return bool(
             self.env.su
             or self.env.user.has_group("sign.group_sign_manager")
@@ -519,9 +503,6 @@ class SignRequest(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_if_not_signed(self) -> None:
-        """
-        Raise an error if any of the records are in 'signed' state.
-        """
         if any(r.state == "signed" for r in self):
             raise UserError(
                 self.env._(
@@ -622,7 +603,6 @@ class SignRequest(models.Model):
         }
 
     def go_to_signable_document(self, request_items=None):
-        """go to the signable document as the signers for specified request_items or the current user"""
         self.check_singleton()
         if not request_items:
             request_items = self.request_item_ids.filtered(
@@ -683,11 +663,9 @@ class SignRequest(models.Model):
             }
 
     def _get_linked_record_action(self, default_action=None):
-        """Return the default action for any kind of record. This method can be overridden for specific record kinds."""
         self.check_singleton()
         if not default_action:
             default_action = {}
-        # user might not have access to Action Window model
         action_rec_sudo = (
             self.env["ir.actions.act_window"]
             .sudo()
@@ -715,7 +693,6 @@ class SignRequest(models.Model):
 
     def get_close_values(self):
         self.check_singleton()
-        # link back to the referenced record if the request has one the user can read, else the default sign action
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sign.sign_request_action"
         )
@@ -743,8 +720,6 @@ class SignRequest(models.Model):
             try:
                 error = document.sign_log_ids._get_integrity_error()
             except Exception:
-                # a check that cannot run is reported, not allowed to break the
-                # request's form or its certificate, whose readers need no traceback
                 _logger.warning(
                     "sign.request %s: integrity check failed",
                     document.id,
@@ -755,17 +730,12 @@ class SignRequest(models.Model):
             document.integrity = not error
 
     def _refuse(self, refuser, refusal_reason):
-        """Refuse a SignRequest. It can only be used in SignRequestItem._refuse
-        :param res.partner refuser: the refuser who refuse to sign
-        :param str refusal_reason: the refusal reason provided by the refuser
-        """
         self.check_singleton()
         if self.state != "sent":
             raise UserError(self.env._("This sign request cannot be refused"))
         self._check_senders_validity()
         self.cancel()
 
-        # cancel request and activities for other unsigned users
         for user in self.request_item_ids.partner_id.user_ids.filtered(
             lambda u: u.has_group("sign.group_sign_user")
         ):
@@ -773,7 +743,6 @@ class SignRequest(models.Model):
                 ["sign.mail_activity_data_signature_request"], user_id=user.id
             )
 
-        # send emails to signers and cc_partners
         for sign_request_item in self.request_item_ids:
             self._send_refused_message(
                 refuser,
@@ -838,7 +807,6 @@ class SignRequest(models.Model):
         )
 
     def send_signature_accesses(self) -> None:
-        # Send/Resend accesses for 'sent' sign.request.items by email
         allowed_request_ids = self.filtered(lambda sr: sr.state == "sent")
         allowed_request_ids._check_senders_validity()
         for sign_request in allowed_request_ids:
@@ -870,7 +838,6 @@ class SignRequest(models.Model):
         ).send_signature_accesses()
 
     def _sign(self):
-        """Sign a SignRequest. It can only be used in the SignRequestItem._sign"""
         self.check_singleton()
         if self.state != "sent" or any(
             sri.state != "completed" for sri in self.request_item_ids
@@ -882,14 +849,11 @@ class SignRequest(models.Model):
         if self.reference_doc:
             model = self.env["ir.model"]._get(self.reference_doc._name)
             if model.is_mail_thread:
-                # one note and one set of copies on the record; the contacts in
-                # copy already had the signed documents mailed
                 self.reference_doc.message_post_with_source(
                     "sign.message_signature_link",
                     render_values={"request": self},
                     subtype_xmlid="mail.mt_note",
                 )
-                # attach a copy of the signed document to the record for easy retrieval
                 attachment_values = [
                     {
                         "name": doc.document_id.name,
@@ -911,7 +875,6 @@ class SignRequest(models.Model):
         self._issue_request_links()
         self.request_item_ids._cancel()
 
-        # cancel activities for signers
         for user in self.request_item_ids.sudo().partner_id.user_ids.filtered(
             lambda u: u.has_group("sign.group_sign_user")
         ):
@@ -927,7 +890,6 @@ class SignRequest(models.Model):
         )
 
     def _send_completed_documents(self) -> None:
-        """Send the completed document to signers and Contacts in copy with emails"""
         self.check_singleton()
         if self.state != "signed":
             raise UserError(self.env._("The sign request has not been fully signed"))
@@ -1028,30 +990,18 @@ class SignRequest(models.Model):
 
     @api.autovacuum
     def _gc_expired_sr(self) -> None:
-        """
-        Deletes all the shared sign requests which have an expired validity date
-        """
         sign_request = self.env["sign.request"].search(
             [("state", "=", "shared"), ("validity", "<", fields.Date.today())]
         )
         sign_request.unlink()
 
-    ##################
-    # PDF Rendering  #
-    ##################
 
     def _get_user_formatted_datetime(self, datetime_val):
-        """
-        Get the user's preferred datetime format based on their language settings.
-        """
         return format_datetime(
             self.env, datetime_val, tz="UTC", lang_code=self.create_uid.lang
         )
 
     def _get_final_signature_log_hash(self):
-        """
-        Fetch the log_hash of the final signature from the sign.log table.
-        """
         self.check_singleton()
         if not self.certificate_reference:
             return False
@@ -1068,8 +1018,6 @@ class SignRequest(models.Model):
         return final_log.log_hash if final_log else False
 
     def _log_completion(self) -> None:
-        """Fingerprint the signed PDFs delivered, once: rendered here, or handed
-        over by a signing provider (emSigner) before the request completes."""
         self.check_singleton()
         if self.completed_document_ids and not self.sign_log_ids.filtered(
             lambda log: log.action == "complete"
@@ -1079,8 +1027,6 @@ class SignRequest(models.Model):
             )
 
     def _get_signed_values(self) -> dict[int, dict]:
-        """The values the signers filled, keyed by sign item id, as
-        ``sign.document.render_document_with_items`` draws them."""
         self.check_singleton()
         values = self.env["sign.request.item.value"].search(
             [("sign_request_item_id", "in", self.request_item_ids.ids)]
@@ -1114,7 +1060,6 @@ class SignRequest(models.Model):
                     ]
                 )
                 record.completed_document_ids._update_completed_document()
-                # before the certificate, so the integrity it states covers them
                 record._log_completion()
                 attachment_ids = self.env["ir.attachment"].create(
                     [
@@ -1129,14 +1074,8 @@ class SignRequest(models.Model):
                     ]
                 )
 
-                # print the report with the public user in a sudoed env
-                # public user because we don't want groups to pollute the result
-                # (e.g. if the current user has the group Sign Manager,
-                # some private information will be sent to *all* signers)
-                # sudoed env because we have checked access higher up the stack
                 public_user = self.env.ref("base.public_user", raise_if_not_found=False)
                 if not public_user:
-                    # public user was deleted, fallback to avoid crash (info may leak)
                     public_user = self.env.user
                 pdf_content, __ = (
                     self.env["ir.actions.report"]
@@ -1168,16 +1107,8 @@ class SignRequest(models.Model):
                 ] + [Command.link(att.id) for att in attachment_ids]
 
     def _get_signing_field_name(self) -> str:
-        """Generate a name for the signing field of the pdf document.
-
-        :return: the name of the signature field
-        :rtype: str
-        """
         return self.env.company.name
 
-    ##################
-    # Mail overrides #
-    ##################
 
     def _message_send_mail(
         self,
@@ -1187,7 +1118,6 @@ class SignRequest(models.Model):
         record_name=False,
         force_send=False,
     ):
-        """Shortcut to sent a notification or an email."""
         notif_values = notif_values or {}
         company = notif_values.get("company")
         model_description = notif_values.get("model_description")

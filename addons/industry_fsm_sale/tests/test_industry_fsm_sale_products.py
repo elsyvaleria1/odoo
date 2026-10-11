@@ -63,10 +63,6 @@ class TestFsmSaleProducts(HttpCase, TestFsmFlowCommon):
         )
 
     def test_industry_fsm_sale_products_from_fsm_tour(self):
-        """
-        Checks that the catalogs associated to field services tasks generated from the same main SO
-        do not share their catalogs.
-        """
         self.partner_1.name = "fsm tester"
         admin = self.env.ref("base.user_admin")
         field_service = self.env.ref("industry_fsm_sale.field_service_product")
@@ -179,9 +175,6 @@ class TestFsmSaleProducts(HttpCase, TestFsmFlowCommon):
         )
 
     def test_industry_fsm_sale_add_product_on_invoice(self):
-        """
-        Checks that we can add the products in the draft invoice.
-        """
         self.env["product.product"].create(
             {
                 "name": "Sale Product",

@@ -54,7 +54,6 @@ class QueryStringConstants:
     SIGNED_KEY_VERSION = "skv"
     SIGNED_ENCRYPTION_SCOPE = "ses"
 
-    # for ADLS
     SIGNED_AUTHORIZED_OID = "saoid"
     SIGNED_UNAUTHORIZED_OID = "suoid"
     SIGNED_CORRELATION_ID = "scid"
@@ -115,14 +114,11 @@ class _BlobSharedAccessHelper:
     def add_resource_signature(
         self, account_name, account_key, path, user_delegation_key=None
     ) -> None:
-        # pylint: disable = no-member
         if path[0] != "/":
             path = "/" + path
 
         canonicalized_resource = "/blob/" + account_name + path + "\n"
 
-        # Form the string to sign from shared_access_policy and canonicalized
-        # resource. The order of values is important.
         string_to_sign = (
             self.get_value_to_append(QueryStringConstants.SIGNED_PERMISSION)
             + self.get_value_to_append(QueryStringConstants.SIGNED_START)
@@ -183,7 +179,6 @@ class _BlobSharedAccessHelper:
             + self.get_value_to_append(QueryStringConstants.SIGNED_CONTENT_TYPE)
         )
 
-        # remove the trailing newline
         if string_to_sign[-1] == "\n":
             string_to_sign = string_to_sign[:-1]
 
@@ -198,8 +193,6 @@ class _BlobSharedAccessHelper:
         )
 
     def get_token(self):
-        # a conscious decision was made to exclude the timestamp in the generated token
-        # this is to avoid having two snapshot ids in the query parameters when the user appends the snapshot timestamp
         exclude = [BlobQueryStringConstants.SIGNED_TIMESTAMP]
         return "&".join(
             [
@@ -262,82 +255,6 @@ def generate_blob_sas(
     content_language=None,
     content_type=None,
 ):
-    """Generates a shared access signature for a blob.
-
-    This function is a simplified version of the azure.storage.blob.generate_blob_sas
-    without supporting parameters: snapshot and some **kwargs
-    for simplicity. And permission can only be str for simplicity.
-
-    Use the returned signature with the credential parameter of any BlobServiceClient,
-    ContainerClient or BlobClient.
-
-    :param str account_name:
-        The storage account name used to generate the shared access signature.
-    :param str container_name:
-        The name of the container.
-    :param str blob_name:
-        The name of the blob.
-    :param str account_key:
-        The account key, also called shared key or access key, to generate the shared access signature.
-        Either `account_key` or `user_delegation_key` must be specified.
-    :param ~azure.storage.blob.UserDelegationKey user_delegation_key:
-        Instead of an account shared key, the user could pass in a user delegation key.
-        A user delegation key can be obtained from the service by authenticating with an AAD identity;
-        this can be accomplished by calling :func:`~azure.storage.blob.BlobServiceClient.get_user_delegation_key`.
-        When present, the SAS is signed with the user delegation key instead.
-    :param permission:
-        The permissions associated with the shared access signature. The
-        user is restricted to operations allowed by the permissions.
-        Permissions must be ordered racwdxytmei.
-        Required unless an id is given referencing a stored access policy
-        which contains this field. This field must be omitted if it has been
-        specified in an associated stored access policy.
-    :type permission: str
-    :param expiry:
-        The time at which the shared access signature becomes invalid.
-        Required unless an id is given referencing a stored access policy
-        which contains this field. This field must be omitted if it has
-        been specified in an associated stored access policy. Azure will always
-        convert values to UTC. If a date is passed in without timezone info, it
-        is assumed to be UTC.
-    :type expiry: ~datetime.datetime or str
-    :param start:
-        The time at which the shared access signature becomes valid. If
-        omitted, start time for this call is assumed to be the time when the
-        storage service receives the request. Azure will always convert values
-        to UTC. If a date is passed in without timezone info, it is assumed to
-        be UTC.
-    :type start: ~datetime.datetime or str
-    :param str policy_id:
-        A unique value up to 64 characters in length that correlates to a
-        stored access policy. To create a stored access policy, use
-        :func:`~azure.storage.blob.ContainerClient.set_container_access_policy`.
-    :param str ip:
-        Specifies an IP address or a range of IP addresses from which to accept requests.
-        If the IP address from which the request originates does not match the IP address
-        or address range specified on the SAS token, the request is not authenticated.
-        For example, specifying ip=168.1.5.65 or ip=168.1.5.60-168.1.5.70 on the SAS
-        restricts the request to those IP addresses.
-    :keyword str protocol:
-        Specifies the protocol permitted for a request made. The default value is https.
-    :keyword str cache_control:
-        Response header value for Cache-Control when resource is accessed
-        using this shared access signature.
-    :keyword str content_disposition:
-        Response header value for Content-Disposition when resource is accessed
-        using this shared access signature.
-    :keyword str content_encoding:
-        Response header value for Content-Encoding when resource is accessed
-        using this shared access signature.
-    :keyword str content_language:
-        Response header value for Content-Language when resource is accessed
-        using this shared access signature.
-    :keyword str content_type:
-        Response header value for Content-Type when resource is accessed
-        using this shared access signature.
-    :return: A Shared Access Signature (sas) token.
-    :rtype: str
-    """
     if not policy_id:
         if not expiry:
             raise ValueError(
@@ -389,26 +306,12 @@ def acquire_user_delegation_key(
     key_start_time: date,
     key_expiry_time: date,
 ) -> UserDelegationKey:
-    """
-    logically equivalent to the following code for azure library
-    ```
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-    service_client = BlobServiceClient(
-        account_url=f"https://{account_name}.blob.core.windows.net",
-        credential=credential,
-    )
-    delegation_key = service_client.get_user_delegation_key(
-        key_start_time=key_start_time, key_expiry_time=key_expiry_time
-    )
-    ```
-    """
 
-    # Get OAuth 2.0 access token using client credentials flow
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     token_data = {
         "client_id": client_id,
         "client_secret": client_secret,
-        "scope": f"https://{account_name}.blob.core.windows.net/.default",  # https://storage.azure.com/.default
+        "scope": f"https://{account_name}.blob.core.windows.net/.default",
         "grant_type": "client_credentials",
     }
     with guarded_http.guarded_session(netguard.PUBLIC_ONLY) as session:
@@ -418,10 +321,9 @@ def acquire_user_delegation_key(
             f"Failed to get access token: {token_response.content}"
         )
     if token_response.status_code != 200:
-        raise ValidationError(f"Failed to get access token: {token_response.content}")  # noqa: E8505  carries Azure's own untranslated response
+        raise ValidationError(f"Failed to get access token: {token_response.content}")
     access_token = token_response.json()["access_token"]
 
-    # Generate User Delegation Key using Azure Storage Blob Service REST API
     key_data = f"""<?xml version='1.0' encoding='utf-8'?>
     <KeyInfo><Start>{_to_utc_datetime(key_start_time)}</Start><Expiry>{_to_utc_datetime(key_expiry_time)}</Expiry></KeyInfo>"""
     key_request_url = f"https://{account_name}.blob.core.windows.net/?restype=service&comp=userdelegationkey"
@@ -437,7 +339,7 @@ def acquire_user_delegation_key(
                 key_request_url, data=key_data, headers=headers, timeout=5
             )
     except requests.exceptions.ConnectionError:
-        raise ValidationError(  # noqa: E8505  an Azure connection diagnostic for the administrator
+        raise ValidationError(
             "Failed to get user delegation key: the account name may be incorrect"
         ) from None
     if key_response.status_code in (401, 403):
@@ -445,11 +347,10 @@ def acquire_user_delegation_key(
             f"Failed to get user delegation key: {key_response.content}"
         )
     if key_response.status_code != 200:
-        raise ValidationError(  # noqa: E8505  carries Azure's own untranslated response
+        raise ValidationError(
             f"Failed to get user delegation key: {key_response.content}"
         )
 
-    # Parse the user delegation key from the response
     key_response_xml = etree.fromstring(key_response.content)
     user_delegation_key = UserDelegationKey()
     user_delegation_key.signed_oid = key_response_xml.findtext("SignedOid")

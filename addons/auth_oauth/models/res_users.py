@@ -82,7 +82,7 @@ class ResUsers(models.Model):
                 timeout=10,
             )
 
-        if response.ok:  # nb: could be a successful failure
+        if response.ok:
             return response.json()
 
         auth_challenge = parse_auth(response.headers.get("WWW-Authenticate"))
@@ -97,7 +97,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_oauth_identity(self, provider, access_token):
-        """return the validation data corresponding to the access token"""
         oauth_provider = self.env["auth.oauth.provider"].browse(provider)
         validation = self._auth_oauth_rpc(
             oauth_provider.validation_endpoint, access_token
@@ -107,18 +106,15 @@ class ResUsers(models.Model):
         if oauth_provider.data_endpoint:
             data = self._auth_oauth_rpc(oauth_provider.data_endpoint, access_token)
             validation.update(data)
-        # unify subject key, pop all possible and get most sensible. When this
-        # is reworked, BC should be dropped and only the `sub` key should be
-        # used (here, in _generate_signup_values, and in _auth_oauth_signin)
         subject = next(
             filter(
                 None,
                 [
                     validation.pop(key, None)
                     for key in [
-                        "sub",  # standard
-                        "id",  # google v1 userinfo, facebook opengraph
-                        "user_id",  # google tokeninfo, odoo (tokeninfo)
+                        "sub",
+                        "id",
+                        "user_id",
                     ]
                 ],
             ),
@@ -149,16 +145,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _auth_oauth_signin(self, provider, validation, params, signup_token=None):
-        """retrieve and sign in the user corresponding to provider and validated access token
-        :param provider: oauth provider id (int)
-        :param validation: result of validation of access token (dict)
-        :param params: oauth parameters (dict)
-        :param signup_token: the signup token the signed sign-in state carries (str)
-        :return: user login (str)
-        :raise: AccessDenied if signin failed
-
-        This method can be overridden to add alternative signin methods.
-        """
         oauth_uid = validation["user_id"]
         try:
             oauth_user = self.search(
@@ -187,21 +173,14 @@ class ResUsers(models.Model):
 
     @api.model
     def auth_oauth(self, provider, params, signup_token=None):
-        # Advice by Google (to avoid Confused Deputy Problem)
-        # if validation.audience != OUR_CLIENT_ID:
-        #   abort()
-        # else:
-        #   continue with the process
         access_token = params.get("access_token")
         validation = self._get_oauth_identity(provider, access_token)
 
-        # retrieve and sign in user
         login = self._auth_oauth_signin(
             provider, validation, params, signup_token=signup_token
         )
         if not login:
             raise AccessDenied
-        # return user credentials
         return (self.env.cr.dbname, login, access_token)
 
     def _check_credentials(self, credential, env):

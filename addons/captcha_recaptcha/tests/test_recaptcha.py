@@ -9,7 +9,6 @@ from odoo.addons.captcha.provider import CaptchaProvider
 from odoo.addons.captcha_recaptcha.models.ir_http import RECAPTCHA
 
 ADAPTER = "odoo.addons.captcha_recaptcha.models.captcha_adapter_recaptcha"
-# a provider configured beside reCAPTCHA, on the base adapter
 OTHER = CaptchaProvider(code="turnstile", label="Other", adapter="captcha.adapter")
 
 
@@ -69,8 +68,6 @@ class TestRecaptcha(TransactionCase):
                 )
 
     def test_a_success_without_a_score_is_not_human(self):
-        """v3 scores every success: a scoreless one (a v2 key, an API change)
-        read as 0 passed a minimum of 0, and logged a score never sent."""
         for minimum in ("0.7", "0.0"):
             with self.subTest(minimum=minimum):
                 self.icp.set_param("captcha_recaptcha.min_score", minimum)
@@ -108,8 +105,6 @@ class TestRecaptcha(TransactionCase):
         Credential._set_system_secret("recaptcha_private_key", secret)
 
     def test_a_recaptcha_without_a_secret_leaves_turnstile_checking(self):
-        """reCAPTCHA with a site key and no secret checked nothing, while a
-        configured Turnstile did: the upgrade keeps Turnstile checking."""
         self._old_recaptcha(secret=False)
         with (
             patch.object(

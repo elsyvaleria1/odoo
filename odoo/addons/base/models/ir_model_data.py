@@ -290,7 +290,6 @@ class IrModelData(models.Model):
         touch_groups = "res.groups" in models_
         _debug.lifecycle("unlink", count=len(self), touch_groups=touch_groups)
         res = super().unlink()
-        # the loaded menus carry their xmlids, in the "default" group
         self.env.registry.clear_cache("default" if "ir.ui.menu" in models_ else "xmlid")
         if touch_groups:
             self.env.registry.clear_cache("groups")
@@ -399,7 +398,6 @@ class IrModelData(models.Model):
             created=len(to_create),
             repointed=repointed,
         )
-        # create() and write() above own the cache invalidation the raw upsert had to do here
 
         xml_ids = {f"{prefix}.{suffix}" for prefix, suffix in rows}
         self.pool.loaded_xmlids.update(xml_ids)
@@ -647,8 +645,8 @@ class IrModelData(models.Model):
     def _remove_uninstalled_xmlids(
         self, module_data: models.BaseModel, undeletable_ids: list[int]
     ) -> None:
-        kept = 0  # debuglog
-        unprobed = 0  # debuglog
+        kept = 0
+        unprobed = 0
         for data in self.browse(undeletable_ids).exists():
             if data.model not in self.env.registry:
                 continue
@@ -656,11 +654,11 @@ class IrModelData(models.Model):
             try:
                 with self.env.cr.savepoint():
                     if record.exists():
-                        kept += 1  # debuglog
+                        kept += 1
                         module_data -= data
                         continue
             except psycopg.ProgrammingError:
-                unprobed += 1  # debuglog
+                unprobed += 1
                 _debug.logic(
                     "remove_xmlids.exists_failed", model=data.model, res_id=data.res_id
                 )
@@ -752,7 +750,7 @@ class IrModelData(models.Model):
                     continue
 
                 parent_field = inheriting._inherits[model]
-                children = inheriting.with_context(active_test=False).search(  # noqa: E8507  inheriting varies
+                children = inheriting.with_context(active_test=False).search(
                     [(parent_field, "=", res_id)]
                 )
                 children_xids = {
@@ -786,9 +784,6 @@ class IrModelData(models.Model):
                     )
                     continue
 
-            # a module that adds a value to a field of another module's model
-            # names the value's xmlid; when that model's module is skipped, the
-            # model is not reflected and the xmlid is not loaded, yet declared
             if model == "ir.model.fields.selection" and self._is_selection_declared(
                 xmlid.split(".", 1)[0], Model.browse(res_id)
             ):

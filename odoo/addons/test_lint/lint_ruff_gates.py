@@ -1,14 +1,3 @@
-# The Odoo rules of the ruff fork (`E85`, Agro-Marin/ruff) held to test_lint's
-# floors: each `lint_<rule name>_<repo>` in tests/floors.json is the exact count
-# of that rule's unsuppressed findings in that repository, counted here with
-# `ruff check --select E85` under the repository's own ruff.toml.
-#
-#   python odoo/addons/test_lint/lint_ruff_gates.py [--ruff <binary>] [--workspace <dir>]
-#
-# The siblings are read from --workspace (default: beside this checkout), so a
-# worktree of this checkout still finds them.
-#
-# Exit 1 when a count is off its floor, or when the ruff given is not the fork.
 import argparse
 import collections
 import json
@@ -23,18 +12,12 @@ CHECKOUT = HERE.parents[2]
 FLOORS = HERE / "tests" / "floors.json"
 _logger = logging.getLogger("odoo.addons.test_lint.ruff_gates")
 
-# test_lint's corpus leaves out vendored code and migration scripts. Kept out of
-# the repositories' ruff.toml: a stock ruff, as an editor bundles, refuses an
-# E85 code there.
 NOT_OURS = ("**/_vendor/**", "**/upgrades/**", "**/migrations/**")
-# The doors that compare a bearer token by design: access.link's resolver and
-# mixin.bearer.token's store (link-token-compare's own exemption).
 LINK_DOORS = (
     "odoo/addons/base/models/access_link.py",
     "odoo/addons/base/models/mixin_bearer_token.py",
     "odoo/tools/security.py",
 )
-# Counted with every noqa ignored: a call to a removed method cannot be waived.
 UNSUPPRESSABLE = ("E8535",)
 
 
@@ -79,8 +62,6 @@ def main() -> int:
     parser.add_argument("--ruff", default=str(Path(sys.executable).with_name("ruff")))
     parser.add_argument("--workspace", type=Path, default=CHECKOUT.parent)
     args = parser.parse_args()
-    # each repository is checked from its own root, so a relative path to ruff
-    # is anchored here first
     ruff = shutil.which(args.ruff)
     if ruff is None:
         sys.exit(f"no ruff at {args.ruff}")

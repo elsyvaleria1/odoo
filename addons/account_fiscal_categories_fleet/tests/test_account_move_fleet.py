@@ -32,7 +32,6 @@ class TestAccountMoveFleet(AccountTestInvoicingCommon):
             "default_tax_purchase"
         ].invoice_repartition_line_ids.use_in_tax_closing = False
 
-        # Create bill with vehicle id on invoice line and tax, will create a tax line with the same vehicle id
         bill = self.env["account.move"].create(
             [
                 {
@@ -61,14 +60,12 @@ class TestAccountMoveFleet(AccountTestInvoicingCommon):
             ]
         )
 
-        # Check vehicle id is set on product and tax line
         self.assertFalse(
             bill.line_ids.filtered(
                 lambda l: l.display_type in ("product", "tax") and not l.asset_id
             )
         )
 
-        # Remove vehicle id from invoice line, should remove also from the tax line
         bill.invoice_line_ids.write({"asset_id": False})
         self.assertRecordValues(
             bill.line_ids.sorted("balance"),

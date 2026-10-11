@@ -12,7 +12,6 @@ class BudgetAnalytic(models.Model):
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _order = "date_from desc, id desc"
 
-    # state -> the states it may move to
     STATE_TRANSITIONS = {
         "draft": {"confirmed", "revised", "canceled"},
         "confirmed": {"revised", "done", "canceled", "draft"},
@@ -101,11 +100,6 @@ class BudgetAnalytic(models.Model):
                 )
 
     def _get_revisions(self):
-        """Self plus every revision below it, at any depth.
-
-        `parent_id` cascades on delete, so a revision is removed by the database
-        without `_unlink_except_draft_or_cancel` ever seeing it.
-        """
         budgets = self
         generation = self.children_ids
         while generation:
@@ -184,12 +178,10 @@ class BudgetAnalytic(models.Model):
         return revised._get_records_action()
 
     def _get_revised_budget_name(self) -> str:
-        """Return the budget name with a `` - REV(<timestamp>)`` suffix, replacing any existing revision marker."""
         self.check_singleton()
         current_time = fields.Datetime.context_timestamp(self, fields.Datetime.now())
         datetime_str = current_time.strftime("%Y-%m-%d %H:%M")
 
-        # Extract existing revision pattern and base name
         match = re.search(r"(.*) - REV\([^)]+\)$", self.name.strip())
         base_name = match.group(1).strip() if match else self.name.strip()
         return f"{base_name} - REV({datetime_str})"
@@ -223,7 +215,6 @@ class BudgetAnalytic(models.Model):
         return result
 
     def unlink(self):
-        # budget lines cascade in the database, so `budget.line.unlink` never runs
         self.env["budget.line"]._invalidate_budget_cache()
         return super().unlink()
 
@@ -231,4 +222,4 @@ class BudgetAnalytic(models.Model):
         arch, view = super()._get_view(view_id, view_type, **options)
         return self.env["budget.line"]._patch_view(
             arch, view, view_type
-        )  # patch the budget lines list view
+        )

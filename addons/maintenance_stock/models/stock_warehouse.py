@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 class StockWarehouse(models.Model):
     _inherit = "stock.warehouse"
 
-    # FIELDS
     allow_maintenance = fields.Boolean(
         tracking=True,
         help="Equipment can be sent out for maintenance and received back through dedicated operations.",
@@ -32,7 +31,6 @@ class StockWarehouse(models.Model):
         tracking=True,
     )
 
-    # CRUD METHODS
     def write(self, vals):
         res = super().write(vals)
         if "allow_maintenance" in vals:
@@ -51,7 +49,6 @@ class StockWarehouse(models.Model):
                     warehouse.write(picking_type_vals)
         return res
 
-    # HELPER METHODS
     def _get_fields_location_step(self):
         return [*super()._get_fields_location_step(), "allow_maintenance"]
 

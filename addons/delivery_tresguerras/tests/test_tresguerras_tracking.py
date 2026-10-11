@@ -9,8 +9,6 @@ from odoo.addons.delivery_tresguerras.models.delivery_carrier import TRACKING_UR
 
 
 def _answer(code, event, branch, day, hour, kind, received="", estimated=""):
-    """A Tres Guerras answer shaped like the ones read on 2026-10-09, with the
-    people's names left out."""
     return {
         "Respuesta": {
             "ultimo_estado": {
@@ -121,7 +119,6 @@ class TestTresGuerrasTracking(TransactionCase):
         self.assertEqual(picking.carrier_delivery_kind, "home")
         self.assertEqual(picking.carrier_status_code, "07")
         self.assertEqual(picking.carrier_status_branch, "IGUALA, GRO.")
-        # Mexico City keeps UTC-6 all year
         self.assertEqual(picking.date_carrier_status, datetime(2026, 10, 8, 22, 9))
         self.assertEqual(picking.carrier_received_by, "Recipient")
         self.assertFalse(picking.carrier_tracking_error)

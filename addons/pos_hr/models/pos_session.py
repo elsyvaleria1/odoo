@@ -84,7 +84,6 @@ class PosSession(models.Model):
             payments=all_payments,
             employees=len(payments_by_employee),
         )
-        # Sort such that "Others" is always the last item
         return sorted(
             payments_by_employee, key=lambda p: (p["id"] == "others", p["name"])
         )

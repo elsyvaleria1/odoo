@@ -20,13 +20,6 @@ class ResPartner(models.Model):
     static_map_url_is_valid = fields.Boolean(compute="_compute_static_map_url_is_valid")
 
     def _compute_event_count(self) -> None:
-        """Count the events each partner attends, its child contacts included.
-
-        One grouped read plus one query per level of the contact hierarchy,
-        instead of a ``child_of`` search per record: ``res.partner`` is not a
-        ``_parent_store``, so the ancestors are walked rather than read off a
-        materialised path.
-        """
         self.event_count = 0
         if not self.ids:
             return
@@ -39,7 +32,6 @@ class ResPartner(models.Model):
         if not events_per_attendee:
             return
 
-        # walk up to whichever records of self each attendee belongs to
         parent_of = {}
         frontier = self.browse(events_per_attendee)
         while frontier:
@@ -69,11 +61,6 @@ class ResPartner(models.Model):
 
     @api.depends("static_map_url")
     def _compute_static_map_url_is_valid(self) -> None:
-        """Compute whether the link is valid.
-
-        This should only remain valid for a relatively short time.
-        Here, for the duration it is in cache.
-        """
         session = self.env["ir.egress"].session(purpose="static_map")
         for partner in self:
             url = partner.static_map_url
@@ -82,7 +69,6 @@ class ResPartner(models.Model):
                 continue
 
             is_valid = False
-            # If the response isn't strictly successful, assume invalid url
             try:
                 res = session.get(url, timeout=2)
                 if res.ok and not res.headers.get("X-Staticmap-API-Warning"):
@@ -102,19 +88,12 @@ class ResPartner(models.Model):
 
     @api.model
     def _decode_google_maps_secret(self, secret):
-        """Decode a Google URL-signing secret, or None if it is not valid base64.
-
-        Google issues these unpadded, so the padding is added here rather than
-        expected from the user; settings validation and signing must agree on
-        that or a valid secret is refused at one end and accepted at the other.
-        """
         try:
             return base64.urlsafe_b64decode(secret + "====")
         except binascii.Error:
             return None
 
     def _google_map_signed_img(self, zoom=13, width=298, height=298):
-        """Create a signed static image URL for the location of this partner."""
         GOOGLE_MAPS_STATIC_API_KEY = self.env[
             "credential.credential"
         ]._get_system_secret("google_maps.signed_static_api_key")
@@ -128,7 +107,6 @@ class ResPartner(models.Model):
         )
         if api_secret_bytes is None:
             return None
-        # generate signature as per https://developers.google.com/maps/documentation/maps-static/digital-signature#server-side-signing
         location_string = f"{self.street}, {self.city} {self.zip}, {(self.country_id and self.country_id.display_name) or ''}"
         params = {
             "center": location_string,

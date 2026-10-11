@@ -121,7 +121,6 @@ class SaleOrder(models.Model):
     def _acquire_insufficient_stock_data(
         self, wh_id: int | None
     ) -> dict[SaleOrderLine, int]:
-        """Calculate shortages and write each affected line's pickup warning."""
         shortages = self._prepare_insufficient_stock_data(wh_id)
         for line, available_qty in shortages.items():
             line.shop_warning = self.env._(

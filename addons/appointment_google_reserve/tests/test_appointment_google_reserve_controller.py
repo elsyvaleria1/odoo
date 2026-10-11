@@ -14,17 +14,11 @@ from odoo.addons.calendar.models.utils import generate_calendar_token
 
 @tagged("appointment_google_reserve")
 class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCase):
-    # --------------------------------------
-    # AVAILABILITIES - RESOURCES
-    # --------------------------------------
 
     @freeze_time("2022-02-14 07-00-00")
     def test_google_reserve_availability_lookup(self):
-        """ " Test the batch availability endpoint and make sure it returns proper availabilities
-        based on the appointment type configuration."""
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
-        # Batch (page load)
         response = self.opener.get(
             f"{self.base_url()}/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/availabilities",
             data=json_dumps(
@@ -56,7 +50,7 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 "party_size": 5,
                 "start_time": 15,
                 "available": False,
-            },  # party size too big
+            },
             {"party_size": 1, "start_time": 16, "available": True},
             {"party_size": 2, "start_time": 16, "available": True},
             {"party_size": 3, "start_time": 16, "available": True},
@@ -65,7 +59,7 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 "party_size": 5,
                 "start_time": 16,
                 "available": False,
-            },  # party size too big
+            },
             {"party_size": 1, "start_time": 17, "available": True},
             {"party_size": 2, "start_time": 17, "available": True},
             {"party_size": 3, "start_time": 17, "available": True},
@@ -74,16 +68,16 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 "party_size": 5,
                 "start_time": 17,
                 "available": False,
-            },  # party size too big
-            {"party_size": 1, "start_time": 18, "available": False},  # too late
-            {"party_size": 2, "start_time": 18, "available": False},  # too late
-            {"party_size": 3, "start_time": 18, "available": False},  # too late
-            {"party_size": 4, "start_time": 18, "available": False},  # too late
+            },
+            {"party_size": 1, "start_time": 18, "available": False},
+            {"party_size": 2, "start_time": 18, "available": False},
+            {"party_size": 3, "start_time": 18, "available": False},
+            {"party_size": 4, "start_time": 18, "available": False},
             {
                 "party_size": 5,
                 "start_time": 18,
                 "available": False,
-            },  # too late & party size too big
+            },
         ]
 
         for availability, expected_availability in zip(
@@ -102,7 +96,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 availability.get("available"), expected_availability["available"]
             )
 
-        # Single (slot click)
         response = self.opener.get(
             f"{self.base_url()}/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/availabilities",
             data=json_dumps(
@@ -147,7 +140,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             }
         )
 
-        # create some dummy bookings to test more cases
         self.env["calendar.event"].create(
             [
                 {
@@ -197,7 +189,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         )
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
-        # Batch (page load)
         response = self.opener.get(
             f"{self.base_url()}/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/availabilities",
             data=json_dumps(
@@ -227,72 +218,72 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 "party_size": 3,
                 "start_time": 15,
                 "available": False,
-            },  # table 1 not available
+            },
             {
                 "party_size": 4,
                 "start_time": 15,
                 "available": False,
-            },  # table 1 not available
+            },
             {
                 "party_size": 5,
                 "start_time": 15,
                 "available": False,
-            },  # table 1 not available
+            },
             {
                 "party_size": 6,
                 "start_time": 15,
                 "available": False,
-            },  # table 1 not available
+            },
             {
                 "party_size": 7,
                 "start_time": 15,
                 "available": False,
-            },  # party size too big
+            },
             {
                 "party_size": 8,
                 "start_time": 15,
                 "available": False,
-            },  # party size too big
+            },
             {
                 "party_size": 1,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 2,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 3,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 4,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 5,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 6,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 7,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {
                 "party_size": 8,
                 "start_time": 16,
                 "available": False,
-            },  # no tables available
+            },
             {"party_size": 1, "start_time": 17, "available": True},
             {"party_size": 2, "start_time": 17, "available": True},
             {"party_size": 3, "start_time": 17, "available": True},
@@ -303,12 +294,12 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 "party_size": 7,
                 "start_time": 17,
                 "available": False,
-            },  # party size too big
+            },
             {
                 "party_size": 8,
                 "start_time": 17,
                 "available": False,
-            },  # party size too big
+            },
         ]
 
         for availability, expected_availability in zip(
@@ -327,9 +318,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 availability.get("available"), expected_availability["available"]
             )
 
-    # --------------------------------------
-    # BOOKINGS - RESOURCES
-    # --------------------------------------
 
     @freeze_time("2022-02-14 07-00-00")
     @patch(
@@ -337,15 +325,9 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         autospec=True,
     )
     def test_google_reserve_create_cancel_booking(self, update_availabilities):
-        """Test a complete create/cancel scenario:
-        - A first booking is made
-        - A second booking is made but conflicts with the first one (no more room)
-        - The first booking is canceled
-        - The second booking is retried and no-longer conflicts."""
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
 
-        # STEP 1: create booking
         slot_creation_data = {
             "confirmation_mode": "CONFIRMATION_MODE_SYNCHRONOUS",
             "duration_sec": "3600",
@@ -398,7 +380,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(args[2], calendar_event.start)
         self.assertEqual(args[3], calendar_event.stop)
 
-        # Rotating a conference credential must not change provider retry identity.
         old_conference_token = calendar_event.access_token
         calendar_event.access_token = generate_calendar_token()
         self.assertNotEqual(calendar_event.access_token, old_conference_token)
@@ -411,7 +392,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(retry_response.json()["booking"]["booking_id"], booking_id)
         self.assertEqual(update_availabilities.call_count, 1)
 
-        # STEP 2: try to create another booking on the same slot, with no more room available
         second_booking_data = {
             "idempotency_token": "token2",
             "slot": slot_creation_data,
@@ -440,7 +420,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         )
         self.assertFalse(bool(create_data.get("booking").get("booking_id")))
 
-        # STEP 3: CANCEL THE FIRST BOOKING
         cancel_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -469,7 +448,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.env["calendar.event"].flush_model()
         self.assertFalse(calendar_event.active)
 
-        # step 3b: cancel the first booking again (custom booking_failure)
         cancel_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -490,10 +468,8 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             cancel_data.get("booking_failure").get("cause"), "BOOKING_ALREADY_CANCELLED"
         )
 
-        # did not call update availabilities as no update
         self.assertEqual(update_availabilities.call_count, 2)
 
-        # step 4: retry second booking, should work now
         create_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/create",
             data=json_dumps({"idempotency_token": "token3", **second_booking_data}),
@@ -528,15 +504,9 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         autospec=True,
     )
     def test_google_reserve_create_update_booking(self, update_availabilities):
-        """Test a complete create/update scenario:
-        - A first booking is made (2 people, 3PM)
-        - It is then updated (4 people, 5PM)
-        - It is updated again for 5 people but there is not enough room (USER_OVER_BOOKING_LIMIT)
-        - It is updated again for another time outside appointment slots (SLOT_UNAVAILABLE)"""
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
 
-        # STEP 1: create booking (2 people, 3PM)
         create_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/create",
             data=json_dumps(
@@ -587,7 +557,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(args[2], calendar_event.start)
         self.assertEqual(args[3], calendar_event.stop)
 
-        # STEP 2: update booking -> 4 people, 5PM
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -626,7 +595,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         )
         self.assertEqual(args[3], calendar_event.stop)
 
-        # STEP 3: update booking -> 5 people -> not enough room
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -655,10 +623,8 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(calendar_event.total_capacity_reserved, 4)
         self.assertEqual(calendar_event.start, start_slot + timedelta(hours=2))
 
-        # did not call update availabilities as no update
         self.assertEqual(update_availabilities.call_count, 2)
 
-        # STEP 4: update booking -> 6PM -> outside appointment type time slots
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -686,7 +652,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(calendar_event.total_capacity_reserved, 4)
         self.assertEqual(calendar_event.start, start_slot + timedelta(hours=2))
 
-        # did not call update availabilities as no update
         self.assertEqual(update_availabilities.call_count, 2)
 
     @freeze_time("2022-02-14 07-00-00")
@@ -697,11 +662,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
     def test_google_reserve_create_update_booking_combinable(
         self, update_availabilities
     ):
-        """Test a complete create/update scenario for combinable resources (more complex backend logic):
-        - A first booking is made (6 people)
-        - It is then updated (11 people)
-        - It is updated again for 15 people but there is not enough room (USER_OVER_BOOKING_LIMIT)
-        - And finally updated again to 4 people to check that we also handle removing booking lines."""
 
         self.apt_type_resources_table_3 = self.env["resource.resource"].create(
             {
@@ -735,7 +695,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             }
         )
 
-        # STEP 1: create booking (6 people)
         create_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/create",
             data=json_dumps(
@@ -788,7 +747,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             self.apt_type_resources_table_3,
         )
 
-        # STEP 2: update booking -> 11 people
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -830,7 +788,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 1,
             )
 
-        # STEP 3: update booking -> 15 people -> not enough room
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -858,7 +815,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         calendar_event.flush_recordset()
         self.assertEqual(calendar_event.total_capacity_reserved, 11)
 
-        # STEP 4: update booking -> 4 people
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -901,8 +857,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         autospec=True,
     )
     def test_google_reserve_move_booking(self, update_availabilities):
-        """When moving a booking to a new date, if the currently used resources are not available
-        at the new time, make sure we check if other resources are available."""
 
         bookings = self.env["calendar.event"].create(
             [
@@ -974,8 +928,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
 
         edited_booking = bookings[0]
 
-        # STEP 1: update to take a different time where used resource is not available
-        # -> but another table is available
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{edited_booking.id}/update",
             data=json_dumps(
@@ -1009,8 +961,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             self.apt_type_resources_table_1,
         )
 
-        # STEP 2: update to take a different time where no resources are available
-        # -> should fail and not update the existing calendar.event
         update_response = self.url_open(
             f"/appointment/{self.apt_type_resource_google.id}/{self.apt_type_resource_google.google_reserve_access_token}/google_reserve/booking/{edited_booking.id}/update",
             data=json_dumps(
@@ -1045,9 +995,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             self.apt_type_resources_table_1,
         )
 
-    # --------------------------------------
-    # AVAILABILITIES - STAFF USERS
-    # --------------------------------------
 
     @freeze_time("2022-02-14 07-00-00")
     @patch(
@@ -1055,8 +1002,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         autospec=True,
     )
     def test_google_reserve_availability_lookup_staff(self, update_availabilities):
-        """ " Same logic but for staff users and not resources.
-        Main difference is that we don't have a party size."""
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
         response = self.opener.get(
@@ -1081,7 +1026,7 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             {"start_time": 15, "available": True},
             {"start_time": 16, "available": True},
             {"start_time": 17, "available": True},
-            {"start_time": 18, "available": False},  # False
+            {"start_time": 18, "available": False},
         ]
 
         for availability, expected_availability in zip(
@@ -1096,7 +1041,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                 availability.get("available"), expected_availability["available"]
             )
 
-        # add some meetings to our staff
         self.env["calendar.event"].create(
             [
                 {
@@ -1135,9 +1079,9 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertTrue(bool(response.json()))
 
         expected_availabilities = [
-            {"start_time": 15, "available": True},  # staff_user_bxls is available
-            {"start_time": 16, "available": False},  # no staff users available
-            {"start_time": 17, "available": True},  # both staff users are available
+            {"start_time": 15, "available": True},
+            {"start_time": 16, "available": False},
+            {"start_time": 17, "available": True},
         ]
 
         for availability, expected_availability in zip(
@@ -1156,9 +1100,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
                     availability.get("available"), expected_availability["available"]
                 )
 
-    # --------------------------------------
-    # AVAILABILITIES - STAFF USERS
-    # --------------------------------------
 
     @freeze_time("2022-02-14 07-00-00")
     @patch(
@@ -1166,15 +1107,9 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         autospec=True,
     )
     def test_google_reserve_create_update_booking_staff(self, update_availabilities):
-        """Test a complete create/update scenario:
-        - A first booking is made (3PM)
-        - It is then updated (4PM)
-        - It is updated again (5PM) but the staff user is no longer available (SLOT_UNAVAILABLE)
-        - And finally updated again for another time outside appointment slots (SLOT_UNAVAILABLE)"""
 
         start_slot = datetime(2022, 2, 14, 15, 0, 0)
 
-        # only keep one staff user to make checks more simple
         self.apt_type_staff_google.staff_user_ids = [(6, 0, [self.staff_user_bxls.id])]
         self.env["calendar.event"].create(
             {
@@ -1185,7 +1120,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
             }
         )
 
-        # STEP 1: create booking (3PM)
         create_response = self.url_open(
             f"/appointment/{self.apt_type_staff_google.id}/{self.apt_type_staff_google.google_reserve_access_token}/google_reserve/booking/create",
             data=json_dumps(
@@ -1231,7 +1165,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         self.assertEqual(args[2], calendar_event.start)
         self.assertEqual(args[3], calendar_event.stop)
 
-        # STEP 2: update booking -> 4PM
         update_response = self.url_open(
             f"/appointment/{self.apt_type_staff_google.id}/{self.apt_type_staff_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -1258,7 +1191,6 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
 
         self.assertEqual(update_availabilities.call_count, 2)
 
-        # STEP 3: update booking -> 5PM -> staff user is busy
         update_response = self.url_open(
             f"/appointment/{self.apt_type_staff_google.id}/{self.apt_type_staff_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -1285,10 +1217,8 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         calendar_event.flush_recordset()
         self.assertEqual(calendar_event.start, start_slot + timedelta(hours=1))
 
-        # did not call update availabilities as no update
         self.assertEqual(update_availabilities.call_count, 2)
 
-        # STEP 4: update booking -> 6PM -> outside appointment type time slots
         update_response = self.url_open(
             f"/appointment/{self.apt_type_staff_google.id}/{self.apt_type_staff_google.google_reserve_access_token}/google_reserve/booking/{booking_id}/update",
             data=json_dumps(
@@ -1315,12 +1245,8 @@ class AppointmentGoogleReserveControllerTest(GoogleReserveCommon, common.HttpCas
         calendar_event.flush_recordset()
         self.assertEqual(calendar_event.start, start_slot + timedelta(hours=1))
 
-        # did not call update availabilities as no update
         self.assertEqual(update_availabilities.call_count, 2)
 
-    # --------------------------------------
-    # UTILS
-    # --------------------------------------
 
     def _to_utc(self, slot_datetime):
         return str(cal.timegm((slot_datetime).timetuple()))

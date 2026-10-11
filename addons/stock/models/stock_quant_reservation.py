@@ -223,8 +223,6 @@ class StockQuantReservation(models.Model):
         return self
 
     def _filter_not_blocked(self, quants):
-        # the gather domain's block exclusion, read from the gathering
-        # environment and applied to quants the cache holds under its own
         excluded = self._get_block_types_excluded()
         if excluded is None:
             excluded = self.env[
@@ -303,9 +301,6 @@ class StockQuantReservation(models.Model):
                     product_id.id, location_id.id, False, package_key, owner_key
                 ]
             else:
-                # the cache holds every quant under the loaded locations: a
-                # non-strict gather reads its subtree from it as the strict
-                # one reads its exact key
                 res = quants_cache.under(
                     product_id.id,
                     location_id.parent_path or "",
@@ -313,8 +308,6 @@ class StockQuantReservation(models.Model):
                     package_key,
                     owner_key,
                 )
-            # cached quants carry the environment the cache was built in; the
-            # expiry cutoff lives in the gathering one
             res = self._filter_not_blocked(
                 res.with_env(self.env)._filtered_not_expired()
             )
@@ -333,9 +326,6 @@ class StockQuantReservation(models.Model):
     def _is_gather_domain_extended(
         self, domain, product_id, location_id, trace_id, package_id, owner_id, strict
     ) -> bool:
-        # This class's own definition, not type(self)'s: an override is what is
-        # being detected, so resolving through the registry's MRO would compare
-        # the extended domain with itself and serve the cache to every caller.
         return domain != StockQuantReservation._get_domain_gather(
             self, product_id, location_id, trace_id, package_id, owner_id, strict
         )
@@ -409,10 +399,6 @@ class StockQuantReservation(models.Model):
         return (self.location_id, self.trace_id, self.package_id, self.owner_id)
 
     def _lock_one_for_reservation(self, reserved_quantity):
-        # a row this transaction already holds needs neither the lock query
-        # nor a fresh read: nobody else can have written it since, and the
-        # pick is the one the lock query makes -- the first lockable row in
-        # recordset order -- as a row of ours is always lockable
         if not self:
             return self.env["stock.quant"]
         lockable = self
@@ -434,8 +420,6 @@ class StockQuantReservation(models.Model):
         return quant
 
     def _try_lock(self, limit=None):
-        # the row may have changed before the lock was ours: the lock query
-        # returns the two columns it guards, so no second read is needed
         fnames = ["quantity", "reserved_quantity"]
         self.flush_recordset(fnames)
         lockable_ids = list(self.ids)
@@ -778,8 +762,6 @@ class StockQuantReservation(models.Model):
                         or q.trace_id
                     ),
                 )
-        # a release must reach the row that holds the reservation, whatever its
-        # lot or quantity: the reservation of a lot can sit on an untracked quant
         reserved_quants = gathered if reserved_quantity < 0 else quants
 
         if location_id.is_reservation_bypass_required():

@@ -13,7 +13,6 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 @tagged("-at_install", "post_install", "payroll_dashboard_ui")
 class TestDashboardUi(HttpCase):
     def test_dashboard_ui(self):
-        # This test is meant to test the basic features of the dashboard
         company = self.env["res.company"].create(
             {
                 "name": "Payroll Dashboard Company",
@@ -36,7 +35,6 @@ class TestDashboardUi(HttpCase):
                 "company_id": company.id,
             }
         )
-        # this will make one of the action box non empty
         self.env["hr.employee"].create(
             {
                 "user_id": user.id,
@@ -45,7 +43,6 @@ class TestDashboardUi(HttpCase):
                 "resource_calendar_id": company.resource_calendar_id.id,
             }
         )
-        # The test will break if sign is installed
         if self.env["ir.module.module"].search(
             [("name", "=", "sign"), ("state", "=", "installed")]
         ):
@@ -105,7 +102,6 @@ class TestDashboard(TransactionCase):
         )
 
     def test_multi_sections(self):
-        # Test that the dashboard function returns a dict with all keys, regardless of emptyness
         Payslip = self.env["hr.payslip"]
 
         all_sections = Payslip._get_dashboard_default_sections()
@@ -118,9 +114,6 @@ class TestDashboard(TransactionCase):
         self.assertTrue(all(section in dashboard for section in sub_sections))
 
     def test_dashboard_batches(self):
-        # Tests the dates for batches, by default it should return
-        # the batches for the last 3 'active' months ignoring
-        # any month that has been skipped
         payslip_runs = self.env["hr.payslip.run"].create(
             [
                 {
@@ -170,7 +163,6 @@ class TestDashboard(TransactionCase):
             )
 
     def test_dashboard_empty_stats(self):
-        # Tests that when stats are empty they are tagged as sample
         dashboard = (
             self.env["hr.payslip"]
             .with_user(self.user)
@@ -179,7 +171,6 @@ class TestDashboard(TransactionCase):
         self.assertTrue(all(stats["is_sample"] is True for stats in dashboard["stats"]))
 
     def _test_dashboard_stats(self):
-        # Tests that the result inside of the stats dashboard is somewhat coherent
         today = date.today()
         self.env["hr.employee"].create(
             [
@@ -218,7 +209,6 @@ class TestDashboard(TransactionCase):
             .with_user(self.user)
             .get_payroll_dashboard_data(sections=["stats"])
         )
-        # Identify the different sections
         employer_cost = employees = None
         for section in dashboard["stats"]:
             if section["id"] == "employer_cost":
@@ -227,18 +217,14 @@ class TestDashboard(TransactionCase):
                 employees = section
         self.assertTrue(all([employer_cost, employees]))
 
-        # Check employees monthly
-        # Employees contains the number of unique employees that worked on that period
         employees_stat = employees["data"]["monthly"]
         self.assertEqual(employees_stat[0]["value"], 1)
         self.assertEqual(employees_stat[1]["value"], 2)
         self.assertEqual(employees_stat[2]["value"], 3)
 
-        # Check yearly employees outside the function as the assertions are dependent on the freeze time date
         return employees["data"]["yearly"]
 
     def test_dashboard_stat_end_of_year(self):
-        # Tests the dashboard at the end of a year
         with freeze_time(date(2021, 12, 1)):
             employees_stat = self._test_dashboard_stats()
             self.assertEqual(employees_stat[0]["value"], 0)
@@ -246,7 +232,6 @@ class TestDashboard(TransactionCase):
             self.assertEqual(employees_stat[2]["value"], 3)
 
     def test_dashboard_stat_start_of_year(self):
-        # Tests the dashboard again but at the start of a year
         with freeze_time(date(2021, 1, 1)):
             employees_stat = self._test_dashboard_stats()
             self.assertEqual(employees_stat[0]["value"], 1)
@@ -254,7 +239,6 @@ class TestDashboard(TransactionCase):
             self.assertEqual(employees_stat[2]["value"], 3)
 
     def test_dashboard_stat_middle_of_year(self):
-        # Tests the dashboard again but at the middle of the year
         with freeze_time(date(2021, 6, 1)):
             employees_stat = self._test_dashboard_stats()
             self.assertEqual(employees_stat[0]["value"], 0)
@@ -262,9 +246,7 @@ class TestDashboard(TransactionCase):
             self.assertEqual(employees_stat[2]["value"], 3)
 
     def test_dashboard_no_english_language_access(self):
-        # Tests that we can access the dashboard when we don't have english language active
         Payslip = self.env["hr.payslip"]
-        # We remove english from every model of the app that needed it to get french as main and unique language
         self.env["res.lang"]._activate_lang("fr_FR")
         fr_lang = self.env["res.lang"].search([["code", "=", "fr_FR"]])
         if "website" in self.env:
@@ -274,15 +256,11 @@ class TestDashboard(TransactionCase):
         self.env["res.users"].with_context(active_test=False).search([]).write(
             {"lang": "fr_FR"}
         )
-        # Include archived partners: Odoo core forbids deactivating a
-        # language still used by archived contacts.
         self.env["res.partner"].with_context(active_test=False).search([]).write(
             {"lang": "fr_FR"}
         )
 
         self.env["res.lang"].search([["code", "=", "en_US"]]).active = False
 
-        # We only test that we won't receive a traceback when we don't have access to the english language
-        # The normal flow of the functions are tested above
         Payslip.get_payroll_dashboard_data()
         Payslip.get_dashboard_warnings()

@@ -21,15 +21,6 @@ def post_init_hook(env) -> None:
 
 
 def uninstall_hook(env):
-    """
-    Unfortunately, the grid view is defined in enterprise, and the
-    timesheet actions (community) are inherited in enterprise to
-    add the grid view in the view_modes.
-    As they override view_mode directly instead of creating
-    ir.actions.act_window.view that would be unlinked properly
-    when uninstalling timesheet_grid, here we clean the view_mode
-    manually.
-    """
     root_menu = env.ref("hr_timesheet.timesheet_menu_root", raise_if_not_found=False)
     if root_menu and root_menu.active:
         root_menu.write({"active": False})
@@ -50,7 +41,6 @@ def uninstall_hook(env):
             if view_mode != "grid"
         )
 
-    # revert module override of external view inherit_id
     inherit_ids = {
         "hr_timesheet.hr_timesheet_line_my_timesheet_search": "hr_timesheet.hr_timesheet_line_search",
     }

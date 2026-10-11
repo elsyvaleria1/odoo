@@ -2,15 +2,12 @@
 
 from odoo.tests import TransactionCase, tagged
 
-# `mixin.rating` answers "how is THIS record rated", off rating.rating.res_id.
 RATED_FIELDS = (
     "rating_ids",
     "rating_count",
     "rating_avg",
     "rating_percentage_satisfaction",
 )
-# `mixin.rating.parent` answers "how are the records BELOW it rated", off
-# rating.rating.parent_res_id. Same five questions, a vocabulary that says so.
 PARENT_FIELDS = (
     "rating_child_ids",
     "rating_child_count",
@@ -23,16 +20,6 @@ PARENT_FIELDS = (
 @tagged("post_install", "-at_install")
 class TestRatingMixinCollision(TransactionCase):
     def test_the_two_mixins_share_no_field_name(self):
-        """The invariant the rename bought, and the one worth guarding.
-
-        While they shared `rating_ids`, `rating_count`, `rating_avg` and
-        `rating_percentage_satisfaction`, a model carrying both got one mixin's
-        question and the other's answer, and nothing in the name said which. It
-        cost three separate workarounds before it was named: a redeclaration on
-        `project.project`, a direct `rating.rating` search inside this mixin's
-        own `write`, and a compute that overwrote three fields it no longer
-        owned.
-        """
         parent = self.env["mixin.rating.parent"]._fields
         rated = self.env["mixin.rating"]._fields
         shared = sorted(set(parent) & set(rated) & set(RATED_FIELDS + PARENT_FIELDS))
@@ -48,9 +35,6 @@ class TestRatingMixinCollision(TransactionCase):
                 self.assertIn(name, parent)
 
     def test_rating_child_avg_percentage_is_not_computed_beside_its_average(self):
-        """Kept from the defect that opened this: sharing a compute let reading
-        one field silently rewrite the others, reproduced as 5.0 becoming 1.0 on
-        one record in one transaction with no write between the reads."""
         parent = self.env["mixin.rating.parent"]._fields
         self.assertNotEqual(
             parent["rating_child_avg_percentage"].compute,

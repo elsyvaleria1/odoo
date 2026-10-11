@@ -9,7 +9,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 @tagged("post_install", "-at_install")
 class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
     def _import_file(self, csv_file_path, csv_fields=False):
-        # Create a bank account and journal corresponding to the CSV file (same currency and account number)
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank 123456",
@@ -20,7 +19,6 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
             }
         )
 
-        # Use an import wizard to process the file
         with file_open(csv_file_path, "rb") as csv_file:
             action = bank_journal.create_document_from_attachment(
                 self.env["ir.attachment"]
@@ -66,7 +64,7 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
         )
         while (
             not res["messages"] and res["nextrow"] != 0
-        ):  # no error and there is a next row
+        ):
             import_wizard_options["skip"] = res["nextrow"] + 1
             res = import_wizard.execute_import(
                 import_wizard_fields, [], import_wizard_options, dryrun=False
@@ -77,7 +75,6 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
             "account_bank_statement_import_csv/test_csv_file/test_csv.csv"
         )
 
-        # Check the imported bank statement
         imported_statement = self.env["account.bank.statement"].search(
             [("company_id", "=", self.env.company.id)]
         )
@@ -238,21 +235,12 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
             )
 
     def test_csv_file_empty_date(self):
-        """A row with no date is rejected, and for that reason.
-
-        The fixture's dates ascend, so the ordering check passes and only the
-        blank date can raise. Asserting the message matters: with an unsorted
-        fixture this test passed on "Rows must be sorted by date." and never
-        exercised a blank date at all.
-        """
         with self.assertRaisesRegex(UserError, "Every row must have a date"):
             self._import_file(
                 "account_bank_statement_import_csv/test_csv_file/test_csv_empty_date.csv"
             )
 
     def test_csv_file_import_skip_beyond_eof(self):
-        """An empty batch (skip past the last row) with a balance column mapped
-        must not crash with a raw IndexError: base should report it cleanly."""
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank 123456",
@@ -296,7 +284,6 @@ class TestAccountBankStatementImportCSV(AccountTestInvoicingCommon):
             "float_decimal_separator": ".",
             "advanced": False,
         }
-        # Must not raise IndexError; and no statement is wrapped for an empty import.
         res = import_wizard.execute_import(
             ["date", False, "payment_ref", "amount", "balance"],
             [],

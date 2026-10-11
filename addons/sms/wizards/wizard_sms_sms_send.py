@@ -32,7 +32,6 @@ class WizardSmsSmsSend(models.TransientModel):
 
         return result
 
-    # documents
     composition_mode = fields.Selection(
         selection=[
             ("numbers", "Send to numbers"),
@@ -64,7 +63,6 @@ class WizardSmsSmsSend(models.TransientModel):
         compute_sudo=False,
         help="Indicates if the SMS composer targets a single specific recipient",
     )
-    # options for comment and mass mode
     mass_keep_log = fields.Boolean(
         string="Keep a note on document",
         default=True,
@@ -78,7 +76,6 @@ class WizardSmsSmsSend(models.TransientModel):
         copy=False,
         help="Prevent sending messages to blacklisted contacts. Disable only when absolutely necessary.",
     )
-    # recipients
     recipient_valid_count = fields.Integer(
         string="# Valid recipients",
         compute="_compute_recipients",
@@ -119,7 +116,6 @@ class WizardSmsSmsSend(models.TransientModel):
         compute="_compute_sanitized_numbers",
         compute_sudo=False,
     )
-    # content
     template_id = fields.Many2one(
         comodel_name="sms.template",
         string="Use Template",
@@ -217,7 +213,6 @@ class WizardSmsSmsSend(models.TransientModel):
                 composer.recipient_single_number_itf = ""
                 continue
             records.check_singleton()
-            # If the composer was opened with a specific field use that, otherwise get the partner's
             res = records._sms_get_recipients_info(
                 force_field=composer.number_field_name,
                 partner_fallback=not composer.number_field_name,
@@ -278,7 +273,6 @@ class WizardSmsSmsSend(models.TransientModel):
                 sanitized_numbers = [
                     record._phone_format(number=number) for number in numbers
                 ]
-                # sanitized_numbers is built from numbers just above, so they are equal-length
                 invalid_numbers = [
                     number
                     for sanitized, number in zip(
@@ -317,9 +311,6 @@ class WizardSmsSmsSend(models.TransientModel):
             elif record.template_id:
                 record.body = record.template_id.body
 
-    # ------------------------------------------------------------
-    # Actions
-    # ------------------------------------------------------------
 
     def action_send_sms(self):
         if self.composition_mode in ("numbers", "comment"):
@@ -372,9 +363,6 @@ class WizardSmsSmsSend(models.TransientModel):
         return sms_su
 
     def _action_send_sms_comment_single(self, records=None):
-        # If we have a recipient_single_number_itf, it's possible this number has been corrected in the popup
-        # if invalid. As a consequence, the test cannot be based on recipient_invalid_count, which count is based
-        # on the numbers in the database.
         records = records if records is not None else self._get_records()
         records.check_singleton()
         if not self.number_field_name or self.number_field_name not in records:
@@ -439,22 +427,11 @@ class WizardSmsSmsSend(models.TransientModel):
             return self.env["sms.sms"].sudo().search([("id", "in", sms_all.ids)])
         return sms_all
 
-    # ------------------------------------------------------------
-    # Mass mode specific
-    # ------------------------------------------------------------
 
     def _filter_out_and_handle_revoked_sms_values(self, sms_values_all):
-        """Meant to be overridden to filter out and handle sms that must not be sent.
-
-        :param dict sms_values_all: sms values by res_id
-        :returns: filtered sms_vals_all
-        :rtype: dict
-        """
         return sms_values_all
 
     def _get_blacklist_record_ids(self, records, recipients_info):
-        """Get a list of blacklisted records. Those will be directly canceled
-        with the right error code."""
         if self.use_exclusion_list:
             bl_numbers = self.env["phone.blacklist"].sudo().search([]).mapped("number")
             return [
@@ -465,13 +442,9 @@ class WizardSmsSmsSend(models.TransientModel):
         return []
 
     def _get_optout_record_ids(self, records, recipients_info):
-        """Compute opt-outed contacts, not necessarily blacklisted. Void by default
-        as no opt-out mechanism exist in SMS, see SMS Marketing."""
         return []
 
     def _get_done_record_ids(self, records, recipients_info):
-        """Get a list of already-done records. Order of record set is used to
-        spot duplicates so pay attention to it if necessary."""
         done_ids, done = [], []
         for record in records:
             sanitized = recipients_info[record.id]["sanitized"]
@@ -557,21 +530,10 @@ class WizardSmsSmsSend(models.TransientModel):
             "message_type": "sms",
         }
 
-    # ------------------------------------------------------------
-    # Render
-    # ------------------------------------------------------------
 
     def _get_additional_render_context(self) -> dict:
-        """
-        Return a dict associating fields with their relevant render context if any.
-
-        e.g. {'body': {'additional_value': self.env.context.get('additional_value')}}
-        """
         return {}
 
-    # ------------------------------------------------------------
-    # Tools
-    # ------------------------------------------------------------
 
     def _prepare_composer_vals(
         self, composition_mode, res_model, res_id, body, template_id

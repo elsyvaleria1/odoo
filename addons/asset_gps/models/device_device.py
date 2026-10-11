@@ -29,8 +29,6 @@ class DeviceDevice(models.Model):
             for device in self:
                 target = device.asset_id
                 previous = device.tracked_resource_id
-                # clearing an empty asset projection leaves a tracked resource
-                # that is not a thing alone
                 if previous and previous != target and (previous.kind_id or target):
                     previous.gps_device_id = False
                 if target:
@@ -53,10 +51,6 @@ class DeviceDevice(models.Model):
         return ~domain if operator.startswith("not") else domain
 
     def action_view_tracked_asset(self) -> dict | None:
-        # Not action_view_own_asset: asset_device names that for the asset a
-        # device IS -- a phone, an access terminal -- and it auto-installs beside
-        # us, so taking its name would shadow it. This one is the asset a device
-        # reports FOR.
         self.check_singleton()
         if not self.asset_id:
             _debug.logic("tracked_asset.none", device=self)

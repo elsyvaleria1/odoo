@@ -19,7 +19,6 @@ _logger = logging.getLogger(__name__)
 
 ACCOUNT_SID_PATTERN = re.compile(r"^AC[0-9a-fA-F]{32}$")
 EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>'
-# the same token on every retry of one webhook, a new one for the next event
 IDEMPOTENCY_HEADER = "I-Twilio-Idempotency-Token"
 
 
@@ -166,8 +165,6 @@ class IntegrationTwilioConfig(models.Model):
         return TwilioClient(self)
 
     def _prepare_twilio_resolution(self, subject, purpose, label, signed_urls=()):
-        # the body is not read here: the gate reads it itself, under its size
-        # cap, and hashes and logs what it read
         self.check_singleton()
         if not self._get_held_secret("username"):
             raise NotFound
@@ -181,9 +178,6 @@ class IntegrationTwilioConfig(models.Model):
         )
 
     def _is_twilio_request_authentic(self, headers, body, signed_urls=()) -> bool:
-        # Twilio signs the URL it was given: the one Odoo builds from its base
-        # URL, or one Twilio reported for the number. Never the request's own
-        # URL, whose host is the caller's to choose without proxy_mode.
         self.check_singleton()
         httprequest = request.httprequest
         query = httprequest.query_string.decode()
@@ -207,9 +201,6 @@ class IntegrationTwilioConfig(models.Model):
 
     @api.model
     def _prepare_twilio_refusal_response(self, refused):
-        # a redelivery Odoo already processed is answered as a success, or
-        # Twilio keeps it in its error log; every other refusal keeps its status
-        # the problem names no company or receiver: refusals reach whoever asks
         if refused.error_code == "duplicate_event":
             return Response(EMPTY_TWIML, status=200, content_type="text/xml")
         return request.prepare_json_response(
@@ -221,7 +212,6 @@ class IntegrationTwilioConfig(models.Model):
         client = self._get_twilio_client()
         account = client.call("GET", client.account_url())
         balance = client.call("GET", "Balance")
-        # a subaccount's balance is its parent's: Twilio gives it none
         vals = {
             "twilio_account_status": account.get("status"),
             "twilio_account_type": account.get("type"),
@@ -255,8 +245,6 @@ class IntegrationTwilioConfig(models.Model):
         }
 
     def _schedule_account_alerts(self) -> None:
-        # one open activity per problem, known by its type rather than its
-        # translated summary: raised once, closed when the problem clears
         for type_xmlid, raised in self._get_account_alerts().items():
             activity_type = self.env.ref(type_xmlid)
             existing = self.activity_ids.filtered(

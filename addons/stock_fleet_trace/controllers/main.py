@@ -9,18 +9,10 @@ from odoo.tools import file_open
 
 DRIVER_PAGE = "/stock_fleet_trace/driver"
 DRIVER_STATIC = "stock_fleet_trace/static/driver"
-# Files whose content decides the service worker's version.
 DRIVER_SHELL_FILES = ("app.js", "canonical.js", "db.js", "driver.css", "sw.js")
 
 
 def _driver_terms(env):
-    """Every text the driver screen shows, translated for the user.
-
-    The page embeds them so they work offline; ``%(name)s`` placeholders are
-    filled in on the phone.
-
-    :rtype: dict
-    """
     _ = env._
     return {
         "title": _("Driver Screen"),
@@ -149,10 +141,6 @@ def _driver_terms(env):
 
 
 def _driver_version():
-    """Hash of the driver screen's files: it changes whenever one of them does.
-
-    :rtype: str
-    """
     digest = hashlib.sha256()
     for name in DRIVER_SHELL_FILES:
         with file_open(f"{DRIVER_STATIC}/{name}", "rb") as file:
@@ -178,7 +166,6 @@ class StockFleetTraceOffline(http.Controller):
     def trip_package(self, batch_id, head=None):
         batch = self._trip(batch_id)
         package = batch._trip_offline_package(head=head)
-        # Where a phone with no events of its own starts its hash chain.
         package["chain_head"] = batch._trip_last_event_hash()
         return package
 
@@ -191,9 +178,6 @@ class StockFleetTraceOffline(http.Controller):
     def trip_events(self, batch_id, events, head=None):
         return self._trip(batch_id)._trip_receive_offline_events(events, head=head)
 
-    # ------------------------------------------------------------------
-    # Driver screen
-    # ------------------------------------------------------------------
     @http.route(DRIVER_PAGE, methods=["GET"], type="http", auth="user", readonly=True)
     def driver_screen(self, **kwargs):
         env = request.env
@@ -216,13 +200,9 @@ class StockFleetTraceOffline(http.Controller):
         )
 
     def _get_driver_terms(self, env):
-        """Every text the driver screen shows, a plugin's included."""
         return _driver_terms(env)
 
     def _get_driver_plugins(self):
-        """Scripts of other modules the driver screen loads after its own: each
-        registers in ``window.sftDriverPlugins``. They need a connection; the
-        service worker does not keep them."""
         return []
 
     @http.route(
@@ -271,8 +251,6 @@ class StockFleetTraceOffline(http.Controller):
             content,
             headers=[
                 ("Content-Type", "text/javascript"),
-                # The page sits at /stock_fleet_trace/driver, outside the
-                # default scope of a worker served from .../driver/sw.js.
                 ("Service-Worker-Allowed", DRIVER_PAGE),
                 ("Cache-Control", "no-cache"),
             ],

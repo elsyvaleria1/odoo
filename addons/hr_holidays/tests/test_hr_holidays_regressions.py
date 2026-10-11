@@ -900,17 +900,12 @@ class TestBackToWorkDate(TestHrHolidaysCommon):
         self.assertEqual(back_on.date(), date(2026, 3, 2))
 
     def test_an_employee_already_at_work_is_back_at_that_moment(self):
-        """And the answer must not depend on where the batch began."""
         employees = self.env["hr.employee"].create(
             [
                 {"name": f"Midshift {index}", "company_id": self.company.id}
                 for index in range(2)
             ]
         )
-        # The calendar is Brussels, so on 2026-03-02 (CET) the morning runs
-        # 07:00-11:00 UTC. One employee asks from its very start, the other
-        # from the middle of it -- near enough to share a batch, which is the
-        # case where nothing clips the interval to the second one's question.
         shift_start = datetime(2026, 3, 2, 7, 0)
         midshift = datetime(2026, 3, 2, 9, 0)
         together = employees._get_first_working_interval_batch(
@@ -1008,13 +1003,6 @@ class TestBackToWorkDate(TestHrHolidaysCommon):
         )
 
     def test_the_batch_reports_what_it_answered(self):
-        """On the campaign's shared channel, in the campaign's line shape.
-
-        `odoo.debug.<channel>.<scope>` and `event=<name> k=v` are fixed by
-        `odoo.libs.debug_log` so one grep finds a site on both the Python and
-        the JS side, and so the strip pass at the end of the campaign has one
-        vocabulary to remove rather than one per module.
-        """
         employee = self._employee_with_two_calendar_periods()
         with self.assertLogs(
             "odoo.debug.logic.hr_holidays.hr_employee", level="DEBUG"
@@ -1133,16 +1121,6 @@ class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
         )
 
     def test_both_presence_computes_declare_what_they_read(self):
-        """This module's own overrides say they read `is_absent`.
-
-        Asserted on the class rather than on `registry.field_depends`, which is
-        the union every installed module contributes: a sibling declaring the
-        same path would keep that green with this module's declaration deleted,
-        and on a database carrying hr_presence one of these two is exactly that
-        case. The behavioural test above covers the icon; `hr_presence_state`
-        is reached through `user_id.im_status`, invalidated often enough that
-        no behavioural test of it can fail.
-        """
         for compute in (
             HrEmployee._compute_presence_icon,
             HrEmployee._compute_hr_presence_state,
@@ -1155,7 +1133,6 @@ class TestPresenceFollowsTheLeave(TestHrHolidaysCommon):
             )
 
     def test_both_presence_fields_are_invalidated_by_it(self):
-        """And the declaration reaches the field the client reads."""
         for field_name in ("hr_icon_display", "hr_presence_state"):
             field = self.env["hr.employee"]._fields[field_name]
             self.assertIn(
@@ -1213,12 +1190,6 @@ class TestOverlapWarning(TestHrHolidaysCommon):
         )
 
     def test_the_warning_only_ever_looks_at_the_requester(self):
-        """It says "an employee", and it means this one.
-
-        The conflict search is bounded by `self.employee_id`, so the third
-        person in the message is about who is reading it, not about a second
-        employee. A colleague off on the same day is not a conflict here.
-        """
         subject = self._request(self.employee_emp)
         self._request(self.employee_hruser)
         subject.invalidate_recordset(["dashboard_warning_message"])
@@ -1492,8 +1463,6 @@ class TestCreatingManyRequests(TestHrHolidaysCommon):
         )
 
     def _statements_to_create(self, count):
-        """Statements, not rows: one INSERT of twenty rows is one question, and
-        `sql_log_count` would read it as twenty."""
         self.env.flush_all()
         self.env.invalidate_all()
         before = self.env.cr.sql_statement_count
@@ -1502,7 +1471,7 @@ class TestCreatingManyRequests(TestHrHolidaysCommon):
         return self.env.cr.sql_statement_count - before
 
     def test_the_cost_does_not_grow_with_the_number_of_requests(self):
-        self._statements_to_create(5)  # warm what the first call of anything warms
+        self._statements_to_create(5)
         few = self._statements_to_create(5)
         many = self._statements_to_create(20)
         self.assertEqual(
@@ -1622,7 +1591,6 @@ class TestLeaveStatusesTravelWithTheMemberList(TestHrHolidaysCommon):
     VOCABULARY_PATH = "hr_holidays/static/src/store_service_patch.js"
 
     def _bundles_containing(self, path):
-        """Every assembled bundle whose expanded contents include `path`."""
         IrAsset = self.env["ir.asset"]
         params = IrAsset._prepare_assets_params()
         installed = set(
@@ -1678,7 +1646,6 @@ class TestReportDoesNotLeakTheDescription(TestHrHolidaysCommon):
                 "company_id": cls.company.id,
             }
         )
-        # A department manager who is neither an officer nor anybody's approver.
         cls.department = cls.env["hr.department"].create(
             {"name": "Reporting dept", "company_id": cls.company.id}
         )
@@ -2032,7 +1999,6 @@ class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
                 "date_from": "2026-03-03 00:00:00",
             }
         )
-        # a public holiday is a day of its own zone
         holiday.write(
             {"local_date_from": date(2026, 3, 3), "local_date_to": date(2026, 3, 3)}
         )
@@ -2062,8 +2028,6 @@ class TestFlexibleDurationOverAPublicHoliday(TestHrHolidaysCommon):
         return leave.number_of_days, leave.number_of_hours
 
     def test_the_holiday_is_not_charged_on_either_schedule(self):
-        """Half of Monday, all of Tuesday, half of Wednesday -- with Tuesday a
-        public holiday, that is one day, not two."""
         self.assertEqual(
             self._duration(self.flexible),
             self._duration(self.fixed),

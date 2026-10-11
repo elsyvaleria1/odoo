@@ -429,25 +429,17 @@ class AccountReportLine(models.Model):
         load_one_more=False,
         unfold_all_batch_data=None,
     ):
-        """Expand function used to get the sublines of a groupby.
-        groupby param is a string consisting of one or more coma-separated field names. Only the first one
-        will be used for the expansion; if there are subsequent ones, the generated lines will themselves used them as
-        their groupby value, and point to this expand_function, hence generating a hierarchy of groupby).
-        """
         self.check_singleton()
 
         group_indent = 0
         line_id_list = self.report_id._parse_line_id(line_dict_id)
 
-        # Parse groupby
         groupby_data = self._parse_groupby(options, groupby_to_expand=groupby)
         groupby_model = groupby_data["current_groupby_model"]
         next_groupby = groupby_data["next_groupby"]
         current_groupby = groupby_data["current_groupby"]
         custom_groupby_map = groupby_data["custom_groupby_map"]
 
-        # If this line is a sub-groupby of groupby line (for example, when grouping by partner, id; the id line is a subgroup of partner),
-        # we need to add the domain of the parent groupby criteria to the options
         prefix_groups_count = 0
         sub_groupby_domain = []
         full_sub_groupby_key_elements = []
@@ -485,7 +477,6 @@ class AccountReportLine(models.Model):
             sub_groupby_domain_len=len(sub_groupby_domain),
         )
 
-        # If the report transmitted custom_unfold_all_batch_data dictionary, use it
         full_sub_groupby_key = (
             f"[{self.id}]{','.join(full_sub_groupby_key_elements)}=>{current_groupby}"
         )
@@ -515,8 +506,6 @@ class AccountReportLine(models.Model):
             load_one_more=load_one_more,
         )
 
-        # Put similar grouping keys from different totals/periods together, so that we don't display multiple
-        # lines for the same grouping key
 
         figure_types_defaulting_to_0 = {"monetary", "percentage", "integer", "float"}
 
@@ -527,7 +516,6 @@ class AccountReportLine(models.Model):
             for col_opt in options["columns"]
         }
 
-        # Gather default value for each expression, in case it has no value for a given grouping key
         default_value_per_expression = {}
         for expression in self.expression_ids:
             if expression.figure_type:
@@ -541,7 +529,6 @@ class AccountReportLine(models.Model):
 
             default_value_per_expression[expression] = {"value": default_value}
 
-        # Build each group's result
         aggregated_group_totals = defaultdict(
             lambda: defaultdict(default_value_per_expression.copy)
         )
@@ -559,11 +546,8 @@ class AccountReportLine(models.Model):
                         "sublines_info": grouping_key in sublines_info,
                     }
 
-        # Generate groupby lines
         group_lines_by_keys = {}
         for grouping_key, group_totals in aggregated_group_totals.items():
-            # For this, we emulate a dict formatted like the result of _compute_expression_totals_for_each_column_group, so that we can call
-            # _prepare_static_line_columns like on non-grouped lines
             line_id = self.report_id._get_generic_line_id(
                 groupby_model,
                 grouping_key,
@@ -588,7 +572,6 @@ class AccountReportLine(models.Model):
             )
 
             group_line_dict = {
-                # 'name' key will be set later, so that we can browse all the records of this expansion at once (in case we're dealing with records)
                 "id": line_id,
                 "unfoldable": has_children,
                 "unfolded": (has_children and next_groupby and options["unfold_all"])
@@ -612,7 +595,6 @@ class AccountReportLine(models.Model):
                     self.report_id, options, group_line_dict, current_groupby
                 )
 
-            # Growth comparison column.
             if options.get("column_percent_comparison") == "growth":
                 compared_expression = self.expression_ids.filtered_domain(
                     [("label", "=", group_line_dict["columns"][0]["expression_label"])]
@@ -637,7 +619,6 @@ class AccountReportLine(models.Model):
                         green_on_positive=compared_expression.green_on_positive,
                     )
                 )
-            # Manage budget comparison
             elif options.get("column_percent_comparison") == "budget":
                 self.report_id._set_budget_column_comparisons(options, group_line_dict)
             elif options.get("column_percent_comparison") == "analytic_coverage":
@@ -658,9 +639,8 @@ class AccountReportLine(models.Model):
             column_groups=len(all_column_groups_expression_totals),
             percent_comparison=options.get("column_percent_comparison"),
         )
-        draft_entries = {}  # move state used order to color the line if it's draft
-        # Sort grouping keys in the right order and generate line names
-        keys_and_names_in_sequence = {}  # Order of this dict will matter
+        draft_entries = {}
+        keys_and_names_in_sequence = {}
 
         custom_groupby_name_builder = custom_groupby_map.get(current_groupby, {}).get(
             "label_builder"
@@ -698,7 +678,7 @@ class AccountReportLine(models.Model):
         elif custom_groupby_name_builder:
             keys_and_names_in_sequence = custom_groupby_name_builder(
                 group_lines_by_keys.keys()
-            )  # Batch this when we have a label builder. This function also ensures the order of the name sequence
+            )
         else:
             for non_relational_key in sorted(
                 group_lines_by_keys.keys(),
@@ -733,7 +713,6 @@ class AccountReportLine(models.Model):
             named=len(keys_and_names_in_sequence),
         )
 
-        # Build result: add a name to the groupby lines and handle totals below section for multi-level groupby
         group_lines = []
         for grouping_key, line_name in keys_and_names_in_sequence.items():
             group_line_dict = group_lines_by_keys[grouping_key]
@@ -756,28 +735,6 @@ class AccountReportLine(models.Model):
 
     @_debug.perf.timed
     def _parse_groupby(self, options, groupby_to_expand=None) -> dict:
-        """Retrieves the information needed to handle the groupby feature on the current line.
-
-        :param groupby_to_expand:    A coma-separated string containing, in order, all the fields that are used in the groupby we're expanding.
-                                     None if we're not expanding anything.
-
-        :return: A dictionary with 4 keys:
-            'current_groupby':       The name of the value to be used to retrieve the results of the current groupby we're
-                                     expanding, or None if nothing is being expanded. That value can be either a field of account.move.line, or
-                                     a custom groupby value defined in this report's custom handler's _get_custom_groupby_map function.
-
-            'next_groupby':          The subsequent groupings to be applied after current_groupby, as a string of coma-separated values (again,
-                                     either field names from account.move.line or a custom groupby defined on the handler).
-                                     If no subsequent grouping exists, next_groupby will be None.
-
-            'current_groupby_model': The model name corresponding to current_groupby, or None if current_groupby is None.
-
-            'custom_groupby_map';    The groupby map, used to handle custom groupby values, as returned by the _get_custom_groupby_map function
-                                     of the custom handler (by default, it will be an empty dict)
-
-        Each expansion consumes the leftmost field of groupby_to_expand into current_groupby and
-        leaves the remainder in next_groupby, which becomes the groupby_to_expand of the next level.
-        """
         self.check_singleton()
 
         if groupby_to_expand:
@@ -839,8 +796,7 @@ class AccountReportLine(models.Model):
         return self.user_groupby
 
     def _get_indenting_groupby_models(self) -> tuple:
-        """Models whose records, met in a line id, indent the lines under them."""
         return ()
 
     def _get_groupby_record_state(self, groupby_model, record):
-        """The state that marks a grouped record as a draft, or None."""
+        pass

@@ -43,8 +43,6 @@ class TestTrackingRefFormat(TransactionCase):
         self.assertEqual(self.picking.carrier_tracking_ref, "TOL01584639")
 
     def test_malformed_reference_is_refused_with_the_example(self):
-        # One digit short, lowercase letters, a stray character: what a hand
-        # copying the slip gets wrong.
         for wrong in ("TOL0158463", "tol01584639", "TOL-01584639", "TO01584639"):
             with (
                 self.subTest(wrong=wrong),

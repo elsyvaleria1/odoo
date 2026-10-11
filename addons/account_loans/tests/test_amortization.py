@@ -93,18 +93,13 @@ class TestAmortization(BaseCase):
                 self.assertGreater(sum(p.interest for p in schedule), 0)
 
     def test_day_count_conventions_against_known_values(self):
-        """Spot values a wrong implementation cannot reproduce."""
         day = datetime.date
         cases = [
-            # exact whole years must be exactly whole under AFB
             ("A/A AFB", day(2024, 1, 1), day(2025, 1, 1), Decimal(1)),
             ("A/A AFB", day(2023, 1, 1), day(2026, 1, 1), Decimal(3)),
-            # a leap year is exactly one year under ISDA
             ("A/A ISDA", day(2024, 1, 1), day(2025, 1, 1), Decimal(1)),
-            # a stub containing 29 February is measured over 366, otherwise 365
             ("A/A AFB", day(2024, 2, 1), day(2024, 3, 1), Decimal(29) / 366),
             ("A/A AFB", day(2023, 2, 1), day(2023, 3, 1), Decimal(28) / 365),
-            # 30E/360 pulls a 31st back to the 30th
             ("30E/360", day(2024, 1, 31), day(2024, 2, 29), Decimal(29) / 360),
             ("A/360", day(2024, 1, 1), day(2024, 1, 31), Decimal(30) / 360),
             ("A/365F", day(2024, 1, 1), day(2024, 1, 31), Decimal(30) / 365),
@@ -116,7 +111,6 @@ class TestAmortization(BaseCase):
                 )
 
     def test_isda_splits_across_calendar_years(self):
-        """Nov 2023 -> May 2024: 61 days of a 365-day year, 121 of a 366-day one."""
         fraction = amortization.year_fraction(
             datetime.date(2023, 11, 1), datetime.date(2024, 5, 1), "A/A ISDA"
         )

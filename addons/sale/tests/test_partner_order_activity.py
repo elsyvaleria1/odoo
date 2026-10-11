@@ -15,8 +15,6 @@ class TestPartnerOrderActivity(TransactionCase):
                 "order_cycle_unit": "month",
             },
         )
-        # a deployment may narrow which partners carry the figures; these tests
-        # are about sale as a source, so every partner is in the activity set
         cls.classPatch(
             type(cls.env["res.partner"]),
             "_get_order_activity_partners",

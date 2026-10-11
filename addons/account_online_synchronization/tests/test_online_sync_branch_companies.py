@@ -37,14 +37,6 @@ class TestSynchInBranches(AccountOnlineSynchronizationCommon):
         )
 
     def test_show_sync_actions(self):
-        """Sync actions are displayed based on the selected and enabled companies.
-
-        Company A has an online link; company B is a branch of company A.
-
-        - If we only have company A enabled and selected, the sync actions should be shown.
-        - If company A and B are enabled, no matter which company is selected, the sync actions should be shown.
-        - If we only have company B enabled and selected, the sync actions should be hidden.
-        """
         self.assertTrue(
             self.mother_account_online_link.with_context(
                 allowed_company_ids=(self.mother_company)._ids
@@ -78,13 +70,6 @@ class TestSynchInBranches(AccountOnlineSynchronizationCommon):
         )
 
     def test_show_bank_connect(self):
-        """The 'connect' bank button appears on the journal dashboard depending on the selected company.
-
-        Company A has a bank journal; company B is a branch of company A.
-
-        - On the dashboard of company A, the connect bank button should appear on the journal.
-        - On the dashboard of company B, the connect bank button should not appear on the journal, even with company A enabled.
-        """
         dashboard_data = (
             self.mother_bank_journal.with_context(
                 allowed_company_ids=(self.mother_company)._ids

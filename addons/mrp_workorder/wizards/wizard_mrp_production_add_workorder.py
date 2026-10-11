@@ -41,7 +41,6 @@ class WizardMrpProductionAddWorkorder(models.TransientModel):
     )
 
     def add_workorder(self) -> None:
-        """Create production workorder for the additional workorder."""
         if self.production_id.state in ("done", "cancel"):
             _debug.logic(
                 "add_workorder_refused",
@@ -53,12 +52,12 @@ class WizardMrpProductionAddWorkorder(models.TransientModel):
                     "You cannot add a work order to a closed manufacturing order."
                 )
             )
-        by = "default"  # debuglog
+        by = "default"
         if self.blocked_by_workorder_id:
-            by = "after_selected"  # debuglog
+            by = "after_selected"
             new_wo_sequence = self.blocked_by_workorder_id.sequence
         elif self.production_id.workorder_ids:
-            by = "before_first"  # debuglog
+            by = "before_first"
             new_wo_sequence = self.production_id.workorder_ids[0].sequence - 1
         else:
             new_wo_sequence = 100
@@ -89,12 +88,10 @@ class WizardMrpProductionAddWorkorder(models.TransientModel):
         if wo.date_start:
             wo.date_end = wo._get_date_end()
         if self.blocked_by_workorder_id:
-            # Make sure the new workorder will block the same workorders as the workorder it is blocked by.
             for next_wo in self.blocked_by_workorder_id.needed_by_workorder_ids:
                 if next_wo.id != wo.id:
                     next_wo.blocked_by_workorder_ids = [Command.link(wo.id)]
         elif self.production_id.workorder_ids - wo:
-            # If new WO is placed at the beginning, make sure it blocks the now second workorder
             self.production_id.workorder_ids.sorted()[1].blocked_by_workorder_ids = [
                 Command.link(wo.id)
             ]

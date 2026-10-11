@@ -504,7 +504,6 @@ class CustomerPortal(Controller):
             **extra_form_data
         )
         if current_partner and partner_sudo != current_partner:
-            # Company name is editable only on the main address, including at checkout.
             extra_form_data.pop("company_name", None)
 
         if verify_address_values:
@@ -865,11 +864,6 @@ class CustomerPortal(Controller):
         return True
 
     def _resolve_address_phone_values(self, address_values, partner_sudo=None):
-        """Resolve/create the shared number and select it for this contact.
-
-        Called after address validation; number creation and the ensuing partner
-        write belong to the same request transaction.
-        """
         if "phone" not in address_values:
             return address_values
         values = dict(address_values)
@@ -1076,7 +1070,6 @@ class CustomerPortal(Controller):
             attachment_sudo = attachment.with_user(SUPERUSER_ID).exists()
             if not attachment_sudo:
                 raise MissingError(request.env._("This attachment does not exist."))
-            # the uploader holds the attachment's own token (H1), not a link
             if not attachment.has_access("read") and not (
                 access_token
                 and attachment_sudo._can_return_content(access_token=access_token)

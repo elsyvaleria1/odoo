@@ -610,7 +610,6 @@ class TestPurchaseOrderInvoice(PurchaseTestCommon):
             },
             verbs="post",
         )
-        # posted in a later request than the one that drafted it
         self.env.invalidate_all()
 
         entry.with_user(clerk).with_privilege(privilege).action_post()

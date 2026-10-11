@@ -11,11 +11,6 @@ class TestReports(TestAccountReportsCommon):
         super().setUpClass()
 
         cls.report = cls.env.ref("account.balance_sheet")
-        # A folder is an access boundary, and the company's accounting folder
-        # is one a deployment may well have closed, leaving the accountant who
-        # exports the report outside it: the create is then refused on the
-        # folder, which says nothing about the values this test is here for.
-        # So the export goes to a folder of its own, open to internal users.
         cls.export_folder = (
             cls.env["document.document"]
             .sudo()
@@ -30,10 +25,6 @@ class TestReports(TestAccountReportsCommon):
         cls.env.company.sudo().account_folder_id = cls.export_folder
 
     def test_report_export_wizard(self):
-        """The wizard in documents_account overrides the one in account.
-
-        This test makes sure that the folder_id and tag_ids are properly set on _prepare_attachment_vals().
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),

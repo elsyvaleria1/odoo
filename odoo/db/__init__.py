@@ -44,7 +44,7 @@ __all__ = [
     "is_maintenance_db",
     "is_pooled",
     "observing_statements",
-    "sql_counter",  # noqa: F822  served by the module-level __getattr__ below
+    "sql_counter",
 ]
 
 _debug = DebugLog(__name__)

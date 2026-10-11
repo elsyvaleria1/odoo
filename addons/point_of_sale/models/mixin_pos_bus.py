@@ -12,9 +12,6 @@ from odoo.addons.bus.tools.channel_capability import (
 
 _debug = DebugLog(__name__)
 
-# The audiences a person holds: a till or a kitchen display is opened by a user
-# who reads its record. A customer display or a tracking screen is a device,
-# whose link is the capability.
 USER_AUDIENCES = frozenset({"till"})
 
 
@@ -66,7 +63,6 @@ class MixinPosBus(models.AbstractModel):
             return self.access_token
         token = _new_access_token()
         _debug.lifecycle("access_token_minted", records=self)
-        # a cashier opens the channel of a pos.config it may not write
         self.sudo().access_token = token
         return token
 
@@ -76,8 +72,6 @@ class MixinPosBus(models.AbstractModel):
             record.access_token = _new_access_token()
 
     def _pos_bus_audience_generation(self, audience) -> int:
-        """How many times ``audience``'s link and channel were revoked alone,
-        beside the record's token: 0 for an audience only the token revokes."""
         return 0
 
     def _pos_bus_key(self, audience) -> str:
@@ -87,16 +81,12 @@ class MixinPosBus(models.AbstractModel):
         return f"{self._name}.{self.id}.{audience}.{revision}"
 
     def _pos_bus_revoke(self, audience, generation_field) -> None:
-        """Revoke ``audience``'s link and channel: its open screens are told
-        to reload, and their link then opens nothing."""
         for record in self:
             record._notify("LINK_REVOKED", {}, audience=audience)
             _debug.lifecycle("audience_revoked", record=record, audience=audience)
             record[generation_field] += 1
 
     def _pos_bus_channel(self, audience="till") -> str:
-        """The name the devices of ``audience`` subscribe with; it also
-        prefixes the notification types they listen to."""
         self.check_singleton()
         return channel_capability(self.env, POS_CHANNEL, self._pos_bus_key(audience))
 

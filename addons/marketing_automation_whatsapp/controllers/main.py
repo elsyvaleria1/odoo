@@ -11,9 +11,6 @@ class MarketingAutomationWhatsappController(http.Controller):
             request.env["whatsapp.message"].sudo().browse(whatsapp_id).exists().id
         )
 
-        # Through the shared helper: this route used to record the click and
-        # resolve the code separately -- two lookups of the same row -- and it
-        # never checked `is_a_bot`, so link previewers counted as clicks.
         redirect_url = request.env["link.tracker"]._resolve_and_track(
             code,
             ip=request.httprequest.remote_addr,

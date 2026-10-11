@@ -27,7 +27,6 @@ class TestWebhookIntegration(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls):
-        """Set up test data."""
         super().setUpClass()
 
         cls.Automation = cls.env["automation.rule"]
@@ -38,19 +37,14 @@ class TestWebhookIntegration(common.TransactionCase):
         cls.model_lead = cls.env["ir.model"]._get("automation.lead.test")
         cls.model_project = cls.env["ir.model"]._get("test_automation.project")
 
-        # Create test lead
         cls.test_lead = cls.Lead.create(
             {
                 "name": "Webhook Test Lead",
             }
         )
 
-    # =========================================================================
-    # Test Webhook Setup and Configuration
-    # =========================================================================
 
     def test_webhook_trigger_creates_uuid(self):
-        """Test webhook trigger automatically generates UUID."""
         _logger.info("Testing webhook UUID generation")
 
         automation = self.Automation.create(
@@ -61,12 +55,10 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Verify UUID generated
         self.assertTrue(automation.webhook_uuid)
-        self.assertEqual(len(automation.webhook_uuid), 36)  # UUID format
+        self.assertEqual(len(automation.webhook_uuid), 36)
 
     def test_webhook_url_computed(self):
-        """Test webhook URL is computed correctly."""
         _logger.info("Testing webhook URL computation")
 
         automation = self.Automation.create(
@@ -77,16 +69,13 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Verify URL computed
         self.assertTrue(automation.url)
         self.assertIn("/web/hook/", automation.url)
         self.assertIn(automation.webhook_uuid, automation.url)
 
     def test_webhook_url_only_for_webhook_trigger(self):
-        """Test URL only exists for webhook trigger type."""
         _logger.info("Testing webhook URL specificity")
 
-        # Non-webhook automation
         automation = self.Automation.create(
             {
                 "name": "Not Webhook",
@@ -95,11 +84,9 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Should not have URL
         self.assertFalse(automation.url)
 
     def test_webhook_uuid_rotation(self):
-        """Test webhook UUID can be rotated."""
         _logger.info("Testing webhook UUID rotation")
 
         automation = self.Automation.create(
@@ -113,16 +100,13 @@ class TestWebhookIntegration(common.TransactionCase):
         old_uuid = automation.webhook_uuid
         old_url = automation.url
 
-        # Rotate UUID
         automation.action_rotate_webhook_uuid()
 
-        # Verify changed
         self.assertNotEqual(automation.webhook_uuid, old_uuid)
         self.assertNotEqual(automation.url, old_url)
         self.assertIn(automation.webhook_uuid, automation.url)
 
     def test_webhook_uuid_unique(self):
-        """Test each webhook automation gets unique UUID."""
         _logger.info("Testing webhook UUID uniqueness")
 
         automation1 = self.Automation.create(
@@ -141,16 +125,11 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # UUIDs should be different
         self.assertNotEqual(automation1.webhook_uuid, automation2.webhook_uuid)
         self.assertNotEqual(automation1.url, automation2.url)
 
-    # =========================================================================
-    # Test Webhook Execution
-    # =========================================================================
 
     def test_webhook_basic_execution(self):
-        """Test basic webhook execution with simple payload."""
         _logger.info("Testing basic webhook execution")
 
         automation = self.Automation.create(
@@ -173,15 +152,12 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Execute webhook
         payload = {"event": "test"}
         automation._execute_webhook(payload)
 
-        # Verify execution
         self.assertEqual(self.test_lead.name, "Webhook triggered")
 
     def test_webhook_with_payload_data(self):
-        """Test webhook can access payload data in record_getter."""
         _logger.info("Testing webhook with payload data")
 
         automation = self.Automation.create(
@@ -204,15 +180,12 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Execute with payload containing lead_id
         payload = {"lead_id": self.test_lead.id, "event": "lead_update"}
         automation._execute_webhook(payload)
 
-        # Verify execution
         self.assertEqual(self.test_lead.name, "Payload processed")
 
     def test_webhook_with_model_and_id_payload(self):
-        """Test webhook with standard _model and _id payload format."""
         _logger.info("Testing webhook with _model/_id payload")
 
         automation = self.Automation.create(
@@ -220,9 +193,6 @@ class TestWebhookIntegration(common.TransactionCase):
                 "name": "Standard Payload Webhook",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                # `model` is the automation's own model; the environment is
-                # reached through it, which is exactly what the stock
-                # Odoo-to-Odoo record getter does.
                 "record_getter": (
                     "model.env[payload['_model']].browse(int(payload['_id']))"
                 ),
@@ -240,15 +210,12 @@ class TestWebhookIntegration(common.TransactionCase):
             }
         )
 
-        # Execute with standard payload
         payload = {"_model": "automation.lead.test", "_id": self.test_lead.id}
         automation._execute_webhook(payload)
 
-        # Verify execution
         self.assertEqual(self.test_lead.name, "Standard payload")
 
     def test_webhook_multiple_executions(self):
-        """Test webhook can be executed multiple times."""
         _logger.info("Testing webhook multiple executions")
 
         automation = self.Automation.create(
@@ -277,19 +244,15 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute webhook 3 times
         self.test_lead.write({"state": "draft"})
         for i in range(3):
             automation._execute_webhook({"iteration": i})
 
-        # Should have executed 3 times (draft -> cancel -> open -> pending)
         self.assertEqual(self.test_lead.state, "pending")
 
     def test_webhook_with_complex_record_getter(self):
-        """Test webhook with complex record_getter logic."""
         _logger.info("Testing webhook with complex record_getter")
 
-        # Create test leads
         priority_lead = self.Lead.create({"name": "Priority Lead", "priority": True})
         regular_lead = self.Lead.create({"name": "Regular Lead", "priority": False})
 
@@ -298,9 +261,6 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "Complex Getter Webhook",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                # record_getter is evaluated as a single expression
-                # (safe_eval in eval mode), so branching uses a conditional
-                # expression rather than statements.
                 "record_getter": (
                     "model.browse(payload.get('lead_id')) "
                     "if payload.get('is_priority') else model.browse([])"
@@ -319,22 +279,16 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute for priority - should process
         payload1 = {"lead_id": priority_lead.id, "is_priority": True}
         automation._execute_webhook(payload1)
         self.assertEqual(priority_lead.name, "Priority webhook")
 
-        # Execute for non-priority - should not process (no record)
         payload2 = {"lead_id": regular_lead.id, "is_priority": False}
         with self.assertRaises(ValidationError):
             automation._execute_webhook(payload2)
 
-    # =========================================================================
-    # Test Webhook with Actions
-    # =========================================================================
 
     def test_webhook_with_multiple_actions(self):
-        """Test webhook executes multiple actions in sequence."""
         _logger.info("Testing webhook with multiple actions")
 
         automation = self.Automation.create(
@@ -346,7 +300,6 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Create 2 actions
         self.Action.create(
             {
                 "name": "Action 1",
@@ -371,15 +324,12 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute webhook
         automation._execute_webhook({"test": "multi_action"})
 
-        # Both actions should execute
         self.assertEqual(self.test_lead.name, "Action1")
         self.assertEqual(self.test_lead.state, "open")
 
     def test_webhook_with_object_write_action(self):
-        """Test webhook with object_write action type."""
         _logger.info("Testing webhook with object_write action")
 
         automation = self.Automation.create(
@@ -396,7 +346,6 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "Write Action",
                 "model_id": self.model_lead.id,
                 "state": "object_write",
-                # update_path is the input; update_field_id is derived from it
                 "update_path": "name",
                 "evaluation_type": "value",
                 "value": "Object write from webhook",
@@ -405,17 +354,13 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute webhook
         automation._execute_webhook({})
 
-        # Verify object_write executed
         self.assertEqual(self.test_lead.name, "Object write from webhook")
 
     def test_webhook_with_mail_action(self):
-        """Test webhook can send email via mail_post action."""
         _logger.info("Testing webhook with mail action")
 
-        # Use threaded lead for mail
         LeadThread = self.env["automation.lead.thread.test"]
         thread_lead = LeadThread.create({"name": "Mail Test Lead"})
 
@@ -451,21 +396,14 @@ record.write({'state': next_states.get(current, 'cancel')})
         )
         messages_before = thread_lead.message_ids
 
-        # Execute webhook
         automation._execute_webhook({"subject": "Test notification"})
 
-        # The action must have posted; the record already carried its creation
-        # message, so counting messages at all only ever measured that one.
         posted = thread_lead.message_ids - messages_before
         self.assertEqual(len(posted), 1)
         self.assertEqual(posted.subject, "Webhook on Mail Test Lead")
 
-    # =========================================================================
-    # Test Webhook Error Handling
-    # =========================================================================
 
     def test_webhook_invalid_record_getter(self):
-        """Test webhook with invalid record_getter raises error."""
         _logger.info("Testing webhook with invalid record_getter")
 
         automation = self.Automation.create(
@@ -473,7 +411,7 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "Invalid Getter",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                "record_getter": "invalid_python_code {",  # Syntax error
+                "record_getter": "invalid_python_code {",
             }
         )
 
@@ -488,12 +426,10 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Should raise error
         with self.assertRaises(SyntaxError):
             automation._execute_webhook({})
 
     def test_webhook_record_getter_returns_no_record(self):
-        """Test webhook fails when record_getter returns no record."""
         _logger.info("Testing webhook with no record")
 
         automation = self.Automation.create(
@@ -501,7 +437,7 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "No Record",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                "record_getter": "model.browse([])",  # Empty recordset
+                "record_getter": "model.browse([])",
             }
         )
 
@@ -516,15 +452,12 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Should raise ValidationError
         with self.assertRaises(ValidationError):
             automation._execute_webhook({})
 
     def test_webhook_record_getter_returns_deleted_record(self):
-        """Test webhook fails when record_getter returns deleted record."""
         _logger.info("Testing webhook with deleted record")
 
-        # Create and delete lead
         temp_lead = self.Lead.create({"name": "Temp Lead"})
         temp_id = temp_lead.id
         temp_lead.unlink()
@@ -549,12 +482,10 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Should raise ValidationError (record doesn't exist)
         with self.assertRaises(ValidationError):
             automation._execute_webhook({})
 
     def test_webhook_action_execution_error(self):
-        """Test webhook handles action execution errors."""
         _logger.info("Testing webhook action error handling")
 
         automation = self.Automation.create(
@@ -577,14 +508,12 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Should raise exception
         with self.assertRaises(ValueError) as context:
             automation._execute_webhook({})
 
         self.assertIn("Action failed!", str(context.exception))
 
     def test_webhook_empty_payload(self):
-        """Test webhook works with empty payload."""
         _logger.info("Testing webhook with empty payload")
 
         automation = self.Automation.create(
@@ -607,18 +536,12 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute with empty payload
         automation._execute_webhook({})
 
-        # Should still work
         self.assertEqual(self.test_lead.name, "Empty payload OK")
 
-    # =========================================================================
-    # Test Webhook Logging
-    # =========================================================================
 
     def test_webhook_logging_enabled(self):
-        """Test webhook logging when log_webhook_calls is enabled."""
         _logger.info("Testing webhook logging")
 
         automation = self.Automation.create(
@@ -657,7 +580,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         self.assertIn("logging", call.request_payload)
 
     def test_webhook_logging_error(self):
-        """Test webhook logs errors when log_webhook_calls is enabled."""
         _logger.info("Testing webhook error logging")
 
         automation = self.Automation.create(
@@ -665,7 +587,7 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "Error Logged Webhook",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                "record_getter": "model.browse([])",  # Will fail
+                "record_getter": "model.browse([])",
                 "log_webhook_calls": True,
             }
         )
@@ -681,7 +603,6 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute webhook - will fail
         admission = open_admission(automation, body=b"{}", path="/web/hook/x")
         with contextlib.suppress(ValidationError):
             automation._execute_webhook({}, admission=admission)
@@ -694,15 +615,10 @@ record.write({'state': next_states.get(current, 'cancel')})
         self.assertEqual(call.state, "failed")
         self.assertIn("No record to run the automation on", call.error_message)
 
-    # =========================================================================
-    # Test Webhook with Different Models
-    # =========================================================================
 
     def test_webhook_on_different_model(self):
-        """Test webhook can work with different models."""
         _logger.info("Testing webhook on project model")
 
-        # Create project
         project = self.Project.create({"name": "Test Project"})
 
         automation = self.Automation.create(
@@ -725,17 +641,13 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute webhook
         automation._execute_webhook({"project_id": project.id})
 
-        # Verify execution
         self.assertEqual(project.name, "Webhook triggered")
 
     def test_webhook_search_by_field(self):
-        """Test webhook can find record by custom field."""
         _logger.info("Testing webhook with field search")
 
-        # Create lead with specific state
         self.test_lead.write({"state": "draft"})
 
         automation = self.Automation.create(
@@ -758,25 +670,13 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Execute with field value
         payload = {"state": "draft"}
         automation._execute_webhook(payload)
 
-        # Verify found and executed
         self.assertEqual(self.test_lead.name, "Found by field")
 
-    # =========================================================================
-    # Test Webhook Edge Cases
-    # =========================================================================
 
     def test_webhook_with_no_record_getter_runs_record_less(self):
-        """No record_getter is a create-from-payload receiver, not an error.
-
-        This fork removed the default record_getter deliberately: a default
-        assumes a payload shape the sender may not use. An empty getter now
-        means "run the actions once with no active record", with the parsed body
-        on the context — see automation.rule._run_webhook_recordless.
-        """
         _logger.info("Testing record-less webhook")
 
         automation = self.Automation.create(
@@ -784,7 +684,7 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "name": "No Getter Webhook",
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
-                "record_getter": False,  # record-less receiver
+                "record_getter": False,
             }
         )
 
@@ -814,7 +714,6 @@ record.write({'state': next_states.get(current, 'cancel')})
         )
 
     def test_webhook_with_record_getter_that_finds_nothing(self):
-        """A configured getter resolving to nothing IS a misconfiguration."""
         automation = self.Automation.create(
             {
                 "name": "Getter Finds Nothing",
@@ -837,7 +736,6 @@ record.write({'state': next_states.get(current, 'cancel')})
             automation._execute_webhook({})
 
     def test_webhook_inactive_automation(self):
-        """Test inactive webhook automation still executes via direct call."""
         _logger.info("Testing inactive webhook automation")
 
         automation = self.Automation.create(
@@ -846,7 +744,7 @@ record.write({'state': next_states.get(current, 'cancel')})
                 "model_id": self.model_lead.id,
                 "trigger": "on_webhook",
                 "record_getter": f"model.browse({self.test_lead.id})",
-                "active": False,  # Inactive
+                "active": False,
             }
         )
 
@@ -861,14 +759,11 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Direct execution still works (method doesn't check active status)
         automation._execute_webhook({})
 
-        # Should execute (method doesn't check active status)
         self.assertEqual(self.test_lead.name, "Inactive executed")
 
     def test_webhook_with_large_payload(self):
-        """Test webhook handles large payload data."""
         _logger.info("Testing webhook with large payload")
 
         automation = self.Automation.create(
@@ -891,18 +786,14 @@ record.write({'state': next_states.get(current, 'cancel')})
             }
         )
 
-        # Create large payload (1000 items)
         large_payload = {f"item_{i}": f"value_{i}" for i in range(1000)}
 
-        # Execute webhook
         automation._execute_webhook(large_payload)
 
-        # Should handle large payload
         self.assertTrue(self.test_lead.name)
         self.assertIn("Payload size:", self.test_lead.name)
 
     def test_webhook_payload_access_in_action(self):
-        """Test payload is accessible in action execution context."""
         _logger.info("Testing payload access in action")
 
         automation = self.Automation.create(
@@ -928,8 +819,6 @@ record.write({'name': f'Event: {event_type}'})
             }
         )
 
-        # Execute with payload
         automation._execute_webhook({"event_type": "lead.created"})
 
-        # Action should access payload
         self.assertEqual(self.test_lead.name, "Event: lead.created")

@@ -7,7 +7,6 @@ from .sign_request_common import SignRequestCommon
 
 class TestSignLog(SignRequestCommon):
     def test_sign_request_integrity_depends_on_sign_log_ids(self):
-        """`integrity` must be recomputed whenever `sign_log_ids` changes."""
         sign_request = self.create_sign_request_no_item(
             signer=self.partner_1, cc_partners=self.env["res.partner"]
         )
@@ -36,8 +35,6 @@ class TestSignLog(SignRequestCommon):
             )
 
     def test_sign_request_create_on_template_without_documents(self):
-        """Creating a sign request on a template with 0 documents must not crash
-        while computing the first sign.log hash (see sign.log._get_or_check_hash)."""
         empty_template = self.env["sign.template"].create(
             {"name": "template_no_document"}
         )

@@ -28,12 +28,6 @@ class DiscussChannel(models.Model):
         )
 
     def _start_call_recording(self, rtc_session: models.Model) -> bool:
-        """Make ``rtc_session`` this call's one recorder, or refuse.
-
-        Each start is a new recorder clock counting from zero, so the offset
-        is taken again from where the timeline ends now: a second recording in
-        the same call follows the first instead of overlapping it.
-        """
         history = self._open_or_create_call_history()
         if history.recorder_session_id not in (rtc_session, rtc_session.browse()):
             return False

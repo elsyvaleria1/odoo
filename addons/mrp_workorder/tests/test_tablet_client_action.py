@@ -73,17 +73,12 @@ class TestWorkorderClientActionCommon(TestMrpWorkorderCommon):
         )
 
 
-# IMPORTANT: These tests need to be at_install because expected behavior is different when plm is installed
-# Also, since tours are ONLY allowed in the post_install case, we do a pure python recreation of the flow
-# here and only run tours in the corresponding plm module
 class TestPickingWorkorderClientActionSuggestImprovement(
     TestWorkorderClientActionCommon
 ):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # at_install runs deferred until the graph is loaded on this fork, so
-        # the plm override is in the registry whenever the module is installed
         if cls.env["ir.module.module"]._get("mrp_workorder_plm").state == "installed":
             raise SkipTest(
                 "mrp_workorder_plm turns a suggested step into an ECO instead of "
@@ -91,10 +86,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
             )
 
     def test_add_step(self):
-        """Add 2 new steps as instruction in the tablet view via the 'suggest
-        worksheet improvement' and check that BoM chatter messages are correct:
-         - One with title + instructions,
-         - One with NO title or instructions (i.e. check no 'False' values displayed)"""
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.potion
         mo = mo_form.save()
@@ -106,14 +97,12 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         new_step_title = "New Magical Step"
         new_step_note = "Do extra magic"
 
-        # add step with title + instructions
         add_step_form = Form.from_action(self.env, wo.action_add_step())
         add_step_form.title = new_step_title
         add_step_form.note = new_step_note
         add_step = add_step_form.save()
         add_step.with_user(self.user_admin).add_check_in_chain()
 
-        # add step with NO title or instructions
         Form.from_action(self.env, wo.action_add_step()).save().with_user(
             self.user_admin
         ).add_check_in_chain()
@@ -136,12 +125,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         )
 
     def test_remove_step(self):
-        """Removes steps in the tablet view via the 'suggest
-        worksheet improvement' and check that BoM chatter message is correct:
-        - Existing BoM step with a comment (for why step should be removed),
-        - Existing BoM step without a comment, i.e. check no 'False' values displayed
-        - An added step (via 'suggest worksheet improvement'), i.e. check NO activity created about its removal
-        """
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.potion
         mo = mo_form.save()
@@ -153,21 +136,18 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         remove_step_comment = "The magic is already within me"
         new_step_title = "Temporary Magical Step"
 
-        # remove existing BoM step with a comment
         action = wo.action_propose_change("remove_step", wo.check_ids[0].id)
         remove_step_form = Form.from_action(self.env, action)
         remove_step_form.comment = remove_step_comment
         remove_step = remove_step_form.save()
         remove_step.with_user(self.user_admin).process()
 
-        # add a temporary new step (via suggestion) => remove it
         add_step_form = Form.from_action(self.env, wo.action_add_step())
         add_step_form.title = new_step_title
         add_step = add_step_form.save()
         add_step.with_user(self.user_admin).add_check_in_chain()
         wo.current_quality_check_id = add_step
 
-        # remove existing BoM step without a comment
         wo.current_quality_check_id = wo.check_ids[1]
         action = wo.action_propose_change("remove_step", wo.check_ids[1].id)
         remove_step_form = Form.from_action(self.env, action)
@@ -204,11 +184,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         )
 
     def test_update_instructions(self):
-        """'Update Instructions' for a step in the tablet view via the 'suggest
-        worksheet improvement' and check that the BoM chatter messages are correct:
-        - Existing BoM step with no title provided (i.e. keep original title) + no note + no comment, i.e. check no 'False' values displayed
-        - Existing BoM step with a title + note + comment
-        - An added step (via 'suggest worksheet improvement'), i.e. check activity is created for its update"""
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.potion
         mo = mo_form.save()
@@ -224,7 +199,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         new_step_title = "Extra Magical Step"
         new_step_note = "Make it extra magical"
 
-        # update existing BoM step with NO title + NO instruction + NO comment
         action = wo.action_propose_change("update_step", wo.check_ids[0].id)
         update_step_form = Form.from_action(self.env, action)
         update_step_form.title = ""
@@ -236,7 +210,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
             "When no title provided, keep original title",
         )
 
-        # update existing BoM step with title + instruction + comment
         action = wo.action_propose_change("update_step", wo.check_ids[0].id)
         update_step_form = Form.from_action(self.env, action)
         update_step_form.title = updated_title
@@ -255,7 +228,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
             "Instruction didn't correctly update",
         )
 
-        # add a new step (via suggestion) => update it
         add_step_form = Form.from_action(self.env, wo.action_add_step())
         add_step_form.title = new_step_title
         add_step = add_step_form.save()
@@ -312,11 +284,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         )
 
     def test_update_instructions_w_images(self):
-        """'Update Instructions' for a step in the tablet view via the 'suggest
-        worksheet improvement' when images are involved and check that the BoM chatter messages are correct:
-        - Step with no image + update with an new_image => instruction should be: completely overwritten (only new_image)
-        - Step with image and text + update only with 'new_text' => instruction should be: 'new_text' + image
-        - Step with image + update with new_image + 'new_text' => instruction should be: new_image + 'new_text'"""
 
         mo_form = Form(self.env["mrp.production"])
         mo_form.product_id = self.potion
@@ -330,7 +297,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
         updated_note = "Improved magic instructions"
         updated_image = Markup('<p><img src="/mrp/static/description/icon.png"></p>')
 
-        # update existing BoM step containing only text instructions with only an image
         action = wo.action_propose_change("update_step", wo.check_ids[0].id)
         update_step_form = Form.from_action(self.env, action)
         update_step_form.note = image
@@ -342,7 +308,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
             "Step's note should have been updated to only be the new instruction image",
         )
 
-        # update existing BoM step containing text + image instructions with only text
         wo.current_quality_check_id = wo.check_ids[1]
         action = wo.action_propose_change("update_step", wo.check_ids[1].id)
         update_step_form = Form.from_action(self.env, action)
@@ -355,7 +320,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
             "Step's note should have been updated to updated text + original image",
         )
 
-        # update existing BoM step containing text + image instructions with image + text
         action = wo.action_propose_change("update_step", wo.check_ids[1].id)
         update_step_form = Form.from_action(self.env, action)
         update_step_form.note = updated_image + Markup("<p>%s</p>" % updated_note)
@@ -401,15 +365,6 @@ class TestPickingWorkorderClientActionSuggestImprovement(
 
 class TestWorkorderClientActionBack(TestWorkorderClientActionCommon):
     def test_back_from_a_manufacturing_order_does_not_raise(self):
-        """mrp.workorder.action_back
-
-        The tablet's back button reads `mrp_workorder_action_tablet`'s context,
-        which is `{'search_default_workcenter_id': active_id, ...}`. It was read
-        with `ast.literal_eval`, which cannot evaluate a name, so the button
-        raised for every tablet opened from a manufacturing order. It is read the
-        way the framework reads a stored context now: evaluated against the
-        caller's own context, falling back to {} rather than raising.
-        """
         mo = self.env["mrp.production"].create(
             {
                 "product_id": self.product_6.id,
@@ -434,7 +389,6 @@ class TestWorkorderClientActionBack(TestWorkorderClientActionCommon):
         self.assertFalse(action["context"]["search_default_workcenter_id"])
 
     def test_back_context_is_json_serializable(self):
-        """action_back's context reaches the client as JSON, so it holds no recordset."""
         mo = self.env["mrp.production"].create(
             {
                 "product_id": self.product_6.id,

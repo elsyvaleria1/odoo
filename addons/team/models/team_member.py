@@ -256,8 +256,6 @@ class TeamMember(models.Model):
             ]
 
     def _enforce_mono_membership(self) -> None:
-        # the later of two memberships wins, whether it was created in this batch
-        # or before; eviction is bookkeeping the joining user may not see or write
         active = self.filtered(lambda member: member.active and member.team_id)
         if not active:
             return

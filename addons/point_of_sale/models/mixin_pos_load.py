@@ -127,7 +127,6 @@ class MixinPosLoad(models.AbstractModel):
     def _get_inactive_ids(self, config):
         if "active" not in self._fields:
             return []
-        # a record the session's user cannot read is not loaded as active
         return (self - self._filtered_access("read").filtered("active")).ids
 
     @api.model

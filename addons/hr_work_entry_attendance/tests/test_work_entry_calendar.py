@@ -278,7 +278,7 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
                     date(2022, 12, 26),
                     14,
                     self.overtime_type,
-                ),  # 9h from the rule employee is off and 5h from the rules schedule quantity and employee is off
+                ),
                 (date(2022, 12, 26), 8, self.work_entry_type_public_type_off),
             ],
         )

@@ -140,8 +140,6 @@ class Cache:
     def _values_replaced(
         self, records: BaseModel, field: Field[typing.Any], dirty: bool
     ) -> None:
-        # a value set behind write() still decides access verdicts: a dirty
-        # one is a write, a clean one replaces what a verdict was judged on
         if dirty:
             records._access_inputs_written((field.name,))
         else:
@@ -219,8 +217,6 @@ class Cache:
         for field, ids in spec:
             core.invalidate(field, ids)
             if env is None:
-                # no environment to evict a user x2many slot through: the
-                # verdicts the rows were judged on go at least
                 memo.forget(self.transaction.registry, field.model_name, (field.name,))
             else:
                 env[field.model_name]._access_inputs_forgotten((field.name,))
@@ -251,7 +247,6 @@ class Cache:
             )
             rows: typing.Iterable[tuple[typing.Any, typing.Any]]
             if model._table_query is None:
-                # the stored column as either backend holds it
                 rows = env.backend.columns.read(model, field.name, ids).items()
                 if bin_size:
                     rows = [
@@ -281,7 +276,7 @@ class Cache:
                     )
                 )
 
-        checked = 0  # debuglog
+        checked = 0
         with _debug.perf("recordset_cache.check", cr=env.cr) as span:
             for field in list(core.iter_cached_fields()):
                 if (
@@ -292,7 +287,7 @@ class Cache:
                 ):
                     continue
 
-                checked += 1  # debuglog
+                checked += 1
                 model = env[field.model_name]
                 if field in depends_context:
                     for context_keys, inner_cache in core.iter_context_caches(field):

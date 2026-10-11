@@ -78,8 +78,6 @@ class SaleOrderLine(models.Model):
         ]
 
     def _prepare_reorder_combo_items(self, quantity) -> list[dict]:
-        # the combo as the configurator offers it today: per combo, the choice
-        # made then if still offered, else the only one it holds, else none
         if self.product_id.type != "combo":
             return []
         chosen = {

@@ -22,16 +22,10 @@ class SocialStream(models.Model):
             )
 
     def _sync_stream_data(self):
-        """Fetch stream data, return True if new data.
-
-        We need to perform 2 HTTP requests. One to retrieve all the posts of
-        the organization page and the other, in batch, to retrieve the
-        statistics of all posts (there are 2 different endpoints)."""
         self.check_singleton()
         if self.media_id.media_type != "linkedin":
             return super()._sync_stream_data()
 
-        # retrieve post information
         if self.stream_type_id.stream_type != "linkedin_company_post":
             raise UserError(self.env._('Wrong stream type for "%s"', self.name))
 
@@ -59,7 +53,6 @@ class SocialStream(models.Model):
             for stream_post_data in stream_post_data
         }
 
-        # retrieve post statistics
         stats_response = self.account_id._linkedin_request(
             "socialActions",
             params={"count": 100},
@@ -79,7 +72,6 @@ class SocialStream(models.Model):
                     }
                 )
 
-        # create/update post values
         existing_post_urns = {
             stream_post.linkedin_post_urn: stream_post
             for stream_post in self.env["social.stream.post"].search(
@@ -127,21 +119,16 @@ class SocialStream(models.Model):
         )
 
     def _update_linkedin_stream_post_images(self, posts_data) -> None:
-        """Fetch the images and videos URLs and insert their URL in posts_data."""
         all_image_urns = set()
         all_video_urns = set()
         for post in posts_data:
-            # multi-images post
             images = post.get("content", {}).get("multiImage", {}).get("images", [])
             all_image_urns |= {image["id"] for image in images}
-            # single image post
             if media_urn := post.get("content", {}).get("media", {}).get("id"):
-                # make sure it's an image or a video
                 if "image" in media_urn:
                     all_image_urns.add(media_urn)
                 elif "video" in media_urn:
                     all_video_urns.add(media_urn)
-            # article thumbnail
             if (
                 thumbnail_urn := post.get("content", {})
                 .get("article", {})
@@ -154,14 +141,11 @@ class SocialStream(models.Model):
             **self._media_urn_to_url("videos", all_video_urns),
         }
 
-        # Insert images and videos in the result like the LinkedIn projection should do...
         for post in posts_data:
-            # multi-images post
             images = post.get("content", {}).get("multiImage", {}).get("images", [])
             for image in images:
                 image["downloadUrl"] = url_by_urn.get(image.get("id"), "")
 
-            # single image or video post
             if media_urn := post.get("content", {}).get("media", {}).get("id"):
                 if "image" in media_urn:
                     post["content"]["media"]["downloadUrl"] = url_by_urn.get(
@@ -172,7 +156,6 @@ class SocialStream(models.Model):
                         f"{post.get('commentary', '')}\n{url_by_urn.get(media_urn, '')}".strip()
                     )
 
-            # article thumbnail
             if (
                 thumbnail_urn := post.get("content", {})
                 .get("article", {})
@@ -208,12 +191,10 @@ class SocialStream(models.Model):
         }
 
     def _extract_linkedin_image(self, post_data) -> list:
-        # single image post
         single_image = post_data.get("content", {}).get("media", {}).get("downloadUrl")
         if single_image:
             return [{"image_url": self._enforce_url_scheme(single_image)}]
 
-        # multi-images post
         if (
             images := post_data.get("content", {})
             .get("multiImage", {})
@@ -225,7 +206,6 @@ class SocialStream(models.Model):
                 if image.get("downloadUrl")
             ]
 
-        # article with thumbnail
         if (
             thumbnail_url := post_data.get("content", {})
             .get("article", {})
@@ -247,20 +227,11 @@ class SocialStream(models.Model):
         }
 
     def _enforce_url_scheme(self, url):
-        """Some URLs doesn't starts by "https://". But if we use those bad URLs
-        in a HTML link, it will redirect the user the actual website.
-        That's why we need to fix those URLs.
-        e.g.:
-            <a href="www.bad_url.com"/>
-        """
         if not url or urlparse(url).scheme:
             return url
 
         return "https://%s" % url
 
     def _format_from_linkedin_little_text(self, input_string):
-        """
-        Replaces escaped versions of the characters `(){}<>[]_` with their original characters,
-        """
         pattern = "\\\\([\\(\\)\\<\\>\\{\\}\\[\\]\\_\\|\\*\\~\\#\\@])"
         return re.sub(pattern, lambda match: match.group(1), input_string)

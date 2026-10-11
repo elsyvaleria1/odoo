@@ -37,7 +37,7 @@ class AccessDeviceController(http.Controller):
         receiver_event="access_event",
         receiver_refusal="device.device:_prepare_access_device_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the reader
+        csrf=False,
         save_session=False,
         typed=True,
     )
@@ -100,7 +100,6 @@ class AccessDeviceController(http.Controller):
                 )
 
             if result:
-                # A poll leaves no row; a delivery does.
                 admission.retag("command_delivery")
                 admission.keep()
                 admission.annotate(processing_result=f"{len(result)} command(s)")
@@ -122,7 +121,7 @@ class AccessDeviceController(http.Controller):
         receiver=_RECEIVER,
         receiver_event="command_result",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the reader
+        csrf=False,
         save_session=False,
         typed=True,
     )
@@ -174,7 +173,7 @@ class AccessDeviceController(http.Controller):
         receiver_event="access_heartbeat",
         receiver_refusal="device.device:_prepare_access_device_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the reader
+        csrf=False,
         save_session=False,
         typed=True,
     )

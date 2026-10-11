@@ -220,9 +220,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         return invoice_lines, tax_lines, counterpart_lines
 
     def test_update_tax_tags(self):
-        """When we change the tags on the taxes and use the wizard to update history,
-        tags should be updated on amls within the wizard date range.
-        """
         moves = self._create_invoice(taxes=self.tax_1) + self._create_invoice(
             taxes=self.tax_1
         )
@@ -247,7 +244,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
 
     def test_update_date_from(self):
-        """Only the amls that are concerned by the date_from constraint should be updated."""
         move_included = self._create_invoice(
             date_invoice="2023-02-23", taxes=self.tax_1
         )
@@ -275,7 +271,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
 
     def test_update_multiple_taxes(self):
-        """Test in case there are multiple taxes set on the invoice line."""
         tax_2 = self._create_tax(
             "update_test_tax_2",
             15,
@@ -312,7 +307,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
 
     def test_update_multi_company(self):
-        """Tests that only the company that is selected when opening the wizard will have its amls updated."""
         move_1 = self._create_invoice(taxes=self.tax_1)
         self._change_tax_tag(
             self.tax_1,
@@ -338,7 +332,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
 
         tax_line_1 = move_1.line_ids.filtered(lambda aml: aml.tax_line_id)
         tax_line_2 = move_2.line_ids.filtered(lambda aml: aml.tax_line_id)
-        # Only the first move_id should be updated since it belongs to first company which was initialized in the wizard
         self.assertEqual(
             tax_line_1.tax_tag_ids.name, "invoice_tax_tag_changed_for_company_1"
         )
@@ -347,9 +340,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
 
     def test_update_all_move_type(self):
-        """Tests that all move type are correctly updated with the corresponding tags."""
         move_types = [
-            # 'entry' tested in test_update_move_type_entry since it's more complex
             "out_invoice",
             "in_invoice",
             "out_refund",
@@ -378,7 +369,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                     super_type = move_type.split("_")[1]
                     if super_type == "receipt":
                         super_type = (
-                            "invoice"  # receipt type acts just like invoice one
+                            "invoice"
                         )
                     self._change_tax_tag(
                         tax_2,
@@ -423,15 +414,9 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                         )
 
     def test_update_move_type_entry(self):
-        """Test that move of type 'entry' are correctly updated.
-        If a line has a negative balance and use a sale tax, it should act as an invoice.
-        If a line has a positive balance and use a sale tax, it should act as a refund.
-        If a line has a negative balance and use a purchase tax, it should act as a refund.
-        If a line has a positive balance and use a purchase tax, it should be treated as an invoice.
-        """
         account = self.company_data[
             "default_account_assets"
-        ]  # Account is not relevant for the test but must be set.
+        ]
         for tax_type in ["sale", "purchase"]:
             tax = self._create_tax(
                 f"test_{tax_type}_tax",
@@ -482,7 +467,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                         self.assertEqual(tax_line.tax_tag_ids.name, "refund_tax_tag")
 
     def test_update_amls_all_states(self):
-        """Tests that moves are correctly updated, regardless of their state."""
         move_states = ("posted", "cancel", "draft")
         moves = [
             self._create_invoice(
@@ -516,7 +500,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
                 )
 
     def test_update_no_tag_before(self):
-        """Tests that update happens on aml that had no tag previously."""
         tax = self._create_tax("test_tax_no_tag", 15)
         move = self._create_invoice(taxes=tax)
         self._change_tax_tag(tax, "new_tag_name", invoice=True, base=True)
@@ -528,7 +511,7 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         move = self._create_invoice(taxes=self.tax_1)
         self.tax_1.invoice_repartition_line_ids.write(
             {"tag_ids": [Command.clear()]}
-        )  # Command.CLEAR both base and tax lines
+        )
         self.wizard.update_amls_tax_tags()
 
         invoice_line, tax_line, counterpart_line = self._get_amls_by_type(move)
@@ -540,7 +523,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
 
     def test_update_child_tax(self):
-        """Make sure groups of taxes are correctly handled."""
         tax_child_1 = self._create_tax(
             "tax_child_1",
             15,
@@ -572,7 +554,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         )
         move = self._create_invoice(taxes=tax_parent)
 
-        # Check that lines are set as expected before update.
         invoice_line, tax_lines, counterpart_line = self._get_amls_by_type(move)
         self.assertEqual(
             invoice_line.tax_tag_ids.sorted("name").mapped("name"),
@@ -610,7 +591,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
         self.assertFalse(counterpart_line.tax_tag_ids)
 
     def test_update_with_caba_taxes(self):
-        """Ensure the CABA (cash basis) moves linked to the invoices are updated too."""
         self.env.company.account_config_id.tax_exigibility = True
         tax = self._create_tax(
             "caba_tax",
@@ -620,7 +600,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
             cash_basis_transition_account_id=self.cash_basis_transfer_account.id,
         )
         invoice = self._create_invoice(taxes=tax, state="posted")
-        # make payment
         self.env["wizard.account.move.line.pay"].with_context(
             active_model="account.move", active_ids=invoice.ids
         ).create(
@@ -686,7 +665,6 @@ class TestAccountUpdateTaxTagsWizard(AccountTestInvoicingCommon):
             taxes=tax,
             post=True,
         )
-        # make payment
         self.env["wizard.account.move.line.pay"].with_context(
             active_model="account.move", active_ids=invoice.ids
         ).create(

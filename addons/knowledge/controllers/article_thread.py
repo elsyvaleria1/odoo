@@ -13,7 +13,7 @@ class ArticleThreadController(KnowledgeController):
         self,
         article_id,
         article_anchor_text="",
-        fields=["id", "article_anchor_text"],  # noqa: B006  route default; reassigned not mutated (reported)
+        fields=["id", "article_anchor_text"],
     ):
         article_thread = request.env["knowledge.article.thread"].create(
             {
@@ -46,7 +46,6 @@ class KnowledgeThreadController(ThreadController):
         output = {}
         for thread_id in thread_ids:
             domain = self._get_domain_thread_messages(thread_model, thread_id)
-            # TODO: optimize duration. Currently very slow because of mail.message._to_store
             res = request.env["mail.message"]._message_fetch(domain, limit=limit)
             messages = res.pop("messages")
             output[thread_id] = {
@@ -60,11 +59,11 @@ class KnowledgeThreadController(ThreadController):
         return [
             ("res_id", "=", int(thread_id)),
             ("model", "=", thread_model),
-            ("message_type", "=", "comment"),  # only user input
+            ("message_type", "=", "comment"),
             (
                 "subtype_id",
                 "=",
                 request.env.ref("mail.mt_comment").id,
-            ),  # regular discussion comments only, not internal notes
-            ("is_internal", "=", False),  # respect internal users only flag
+            ),
+            ("is_internal", "=", False),
         ]

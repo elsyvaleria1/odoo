@@ -6,11 +6,6 @@ from odoo.tests.common import new_test_user
 @tagged("voip", "post_install", "-at_install")
 class TestVoipHrRecruitmentMailActivity(common.TransactionCase):
     def test_voip_hr_recruitment_fetch_applicant_related_call_activities(self):
-        """
-        Tests that "call activities" associated with an hr.applicant record are
-        fetched correctly, and only if the user has the appropriate access
-        rights.
-        """
         interviewer = new_test_user(
             self.env,
             "interviewer",

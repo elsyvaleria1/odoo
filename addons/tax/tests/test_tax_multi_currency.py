@@ -20,9 +20,6 @@ class TestTaxMultiCurrency(BaseTaxCommon):
         Tax = self.env["account.tax"]
         foreign = self._foreign_currency()
 
-        # rate: units of `foreign` per unit of company currency, matching the
-        # convention `_add_tax_details_in_base_line` divides by (company
-        # amount = currency amount / rate).
         base_line = self._base_line(tax, 100.0, currency_id=foreign, rate=2.0)
         Tax._add_tax_details_in_base_line(base_line, self.company)
         Tax._round_base_lines_tax_details([base_line], self.company)
@@ -35,9 +32,6 @@ class TestTaxMultiCurrency(BaseTaxCommon):
         self.assertAlmostEqual(totals["base_amount"], 50.0, places=2)
 
     def test_rate_of_one_keeps_both_fields_equal(self):
-        """Edge case: rate == 1.0 (the default) must leave `*_currency` and
-        company-currency fields numerically identical even with a distinct
-        `currency_id`, since the two currencies are still 1:1 for this line."""
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
         foreign = self._foreign_currency()

@@ -124,7 +124,7 @@ class SaleSubscriptionReport(models.Model):
     )
     margin = (
         fields.Float()
-    )  # not used but we want to avoid creating a bridge module for nothing
+    )
     subscription_state = fields.Selection(
         selection=SUBSCRIPTION_STATES,
         readonly=True,

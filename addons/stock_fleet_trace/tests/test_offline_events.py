@@ -4,7 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 from .common import OfflineEventsMixin
 
-# A standalone 1x1 transparent PNG, valid enough for the Image field to accept.
 TEST_PNG_B64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY"
     "42YAAAAASUVORK5CYII="
@@ -92,14 +91,7 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         cls.damaged = cls.env.ref("stock_fleet_trace.unbatch_reason_damaged_product")
         cls.absent = cls.env.ref("stock_fleet.unbatch_reason_customer_absent")
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     def _delivery(self, lines):
-        """A delivery fed through the shipping transit, as CDG runs SHIP -> OUT.
-
-        :param list lines: (product, quantity) pairs
-        """
         delivery = self.env["stock.picking"].create(
             {
                 "picking_type_id": self.out_type.id,
@@ -177,9 +169,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
     def _checkpoint(self, trip, event_type):
         return trip.trip_checkpoint_ids.filtered(lambda c: c.event_type == event_type)
 
-    # ------------------------------------------------------------------
-    # Applying
-    # ------------------------------------------------------------------
     def test_a_delivery_captured_offline_keeps_its_time_and_place(self):
         delivery = self._delivery([(self.product, 5)])
         trip = self._trip(delivery)
@@ -228,7 +217,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         self.assertEqual(len(self._checkpoint(trip, "delivery")), 1)
 
     def test_a_partial_delivery_captured_offline_flags_it_for_review(self):
-        """The phone sends no quantities: the goods stay on board for the supervisor."""
         delivery = self._delivery([(self.product, 5)])
         trip = self._trip(delivery)
         trip.action_depart()
@@ -245,7 +233,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         )
 
         self.assertEqual(result["uuid-partial"]["state"], "applied", result)
-        # Not validated: the vehicle still carries what it left with.
         self.assertEqual(delivery.state, "assigned")
         self.assertTrue(delivery.trip_partial_review)
         self.assertEqual(delivery.trip_receiver_name, "Juan Perez")
@@ -277,7 +264,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
             trip, self._event("uuid-partial", "partial", delivery, note="Check it")
         )
         self.assertTrue(delivery.trip_partial_review)
-        # The flag does not keep the trip itself from returning.
         self._return(trip)
         unload = trip.trip_support_picking_ids.filtered(
             lambda p: p.trip_support_kind == "unload"
@@ -342,7 +328,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
 
         self.assertEqual(result["uuid-bad"]["state"], "review")
         self.assertIn("is not a stop of trip", result["uuid-bad"]["error"])
-        # One failure does not hold back the events after it.
         self.assertEqual(result["uuid-good"]["state"], "applied")
         self.assertEqual(stranger.state, "assigned")
         activity = trip.activity_ids.filtered(lambda a: "Offline event" in a.summary)
@@ -372,7 +357,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
             ),
         )
         self._return(trip)
-        # The phone syncs after the trip closed: nothing left to deliver.
         self._send(trip, self._event("uuid-late", "deliver", delivery))
         unload = trip.trip_support_picking_ids.filtered(
             lambda p: p.trip_support_kind == "unload"
@@ -389,7 +373,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         result = self._send(
             trip,
             self._event("uuid-slip", "scan", code=delivery.name),
-            # The slip already counted every unit; the lot label only checks it.
             self._event("uuid-lot", "scan", delivery, code=self.lot.name),
             self._event("uuid-done", "deliver", delivery),
         )
@@ -429,16 +412,12 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         self.assertEqual(incident.line_ids.quantity, 1)
         self.assertEqual(self._checkpoint(trip, "incident").method, "manual")
 
-    # ------------------------------------------------------------------
-    # Phone hash chain
-    # ------------------------------------------------------------------
     def test_a_tampered_event_goes_to_review_and_breaks_the_chain(self):
         delivery = self._delivery([(self.product, 5)])
         trip = self._trip(delivery)
         trip.action_depart()
         event = self._event("uuid-tampered", "deliver", delivery)
         self._chain(trip, [event])
-        # Altered after the phone hashed it: the hash no longer matches the data.
         event["latitude"] = 0.0
 
         result = self._send(trip, event, chain=False)
@@ -456,7 +435,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         first = self._event("uuid-first", "scan", code=trip.name)
         second = self._event("uuid-second", "deliver", delivery)
         self._chain(trip, [first, second])
-        # The phone lost "first": "second" chains to a hash the trip never saw.
         second["prev_hash"] = "not-a-real-hash"
         second["event_hash"] = self.env["stock.trip.offline.event"]._trip_hash_event(
             second
@@ -487,19 +465,14 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         trip.action_depart()
         self._send(trip, self._event("uuid-deliver", "deliver", delivery))
 
-        # The phone still holds an event beyond the last one the trip received.
         self._send(trip, head="a-later-hash-the-trip-never-received")
         with self.assertRaisesRegex(UserError, "unsent events"):
             self._return(trip)
 
-        # Once the phone's head matches what the trip has, it returns.
         self._send(trip, head=trip._trip_last_event_hash())
         self._return(trip)
         self.assertEqual(trip.trip_state, "closed")
 
-    # ------------------------------------------------------------------
-    # The package the phone downloads
-    # ------------------------------------------------------------------
     def test_the_package_lists_the_stops_in_route_order(self):
         first = self._delivery([(self.product, 5)])
         second = self._delivery([(self.lot_product, 2)])
@@ -524,7 +497,6 @@ class TestOfflineEvents(OfflineEventsMixin, TransactionCase):
         reasons = {
             reason["id"]: reason["scope"] for reason in package["unbatch_reasons"]
         }
-        # A stop not delivered takes a reason for the whole delivery.
         self.assertNotIn(self.not_ordered.id, reasons)
         self.assertIn(self.absent.id, reasons)
         self.assertIn("spill", [t["code"] for t in package["incident_types"]])

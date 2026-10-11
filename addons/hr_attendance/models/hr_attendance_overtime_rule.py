@@ -624,8 +624,6 @@ class HrAttendanceOvertimeRule(models.Model):
             for attendance, intervals in intervals_by_attendance.items():
                 date = attendance.date
                 duration_by_day_by_rules = defaultdict(lambda: defaultdict(float))
-                # Several quantity rules can each report a shortfall for the
-                # same day; the smallest shortfall is the one owed.
                 duration, rules = max(intervals, key=lambda x: x[0])
                 duration_by_day_by_rules[date][rules] += duration
                 _add_overtime_val(attendance, duration_by_day_by_rules)

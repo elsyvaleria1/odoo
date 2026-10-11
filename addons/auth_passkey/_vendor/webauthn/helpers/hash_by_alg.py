@@ -23,11 +23,6 @@ SHA_1 = [
 
 
 def hash_by_alg(to_hash: bytes, alg: Optional[COSEAlgorithmIdentifier] = None) -> bytes:
-    """
-    Generate a hash of `to_hash` by the specified COSE algorithm ID. Defaults to hashing
-    with SHA256
-    """
-    # Default to SHA256 for hashing
     hash = hashlib.sha256()
 
     if alg in SHA_384:

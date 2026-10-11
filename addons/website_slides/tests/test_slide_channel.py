@@ -648,11 +648,6 @@ class TestSequencing(slides_common.SlidesCase):
         self.slide.sequence = 5
 
         copied = self.channel.copy()
-        # Both sides read back in the slides' order: a sequence write does not
-        # re-sort the original's cached one2many, so comparing against the cache
-        # compared insertion order, not what the copy preserved. Read as the
-        # superuser, because a refetch reaches modules (survey) the officer
-        # cannot read, and this test is about the data, not the access.
         self.env.invalidate_all()
         self.assertEqual(
             copied.sudo().slide_ids.mapped("sequence"),

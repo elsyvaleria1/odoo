@@ -90,9 +90,6 @@ class DeviceDevice(models.Model):
         return super()._require_connection()
 
     def http_read_data(self):
-        # A dialled panel has no data at its connection's root, and an EHOME
-        # bridge answers its root with a 404: reading a panel is checking that
-        # it answers, the bridge's device list or the panel's deviceInfo.
         if not self.is_access_device:
             return super().http_read_data()
         if self.access_connection_mode == "ehome":

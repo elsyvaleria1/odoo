@@ -26,8 +26,6 @@ class Base(models.AbstractModel):
                 reason="no_sender",
             )
             return error
-        # `=ilike`, not `ilike`: `%` and `_` are legal in a local part, and a
-        # substring match would let `%@example.com` stand for every employee.
         pattern = tools.escape_psql(email_address)
         employee = self.env["hr.employee"].search(
             [

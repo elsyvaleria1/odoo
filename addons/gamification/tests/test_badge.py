@@ -14,7 +14,6 @@ class TestBadgeGranting(common.TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Patch send_mail to avoid actual email sending
         patch_email = patch(
             "odoo.addons.mail.models.mail_template.MailTemplate.send_mail",
             lambda *args, **kwargs: None,
@@ -47,10 +46,8 @@ class TestBadgeGranting(common.TransactionCase):
             groups="base.group_user",
         )
 
-    # --- rule_auth = 'everyone' ---
 
     def test_everyone_can_grant(self):
-        """Badge with rule_auth='everyone' can be granted by any user."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Everyone Badge",
@@ -60,10 +57,8 @@ class TestBadgeGranting(common.TransactionCase):
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.CAN_GRANT)
 
-    # --- rule_auth = 'nobody' ---
 
     def test_nobody_can_grant(self):
-        """Badge with rule_auth='nobody' cannot be granted by regular users."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Nobody Badge",
@@ -74,7 +69,6 @@ class TestBadgeGranting(common.TransactionCase):
         self.assertEqual(status, badge.NOBODY_CAN_GRANT)
 
     def test_nobody_admin_override(self):
-        """Admin can always grant regardless of rule_auth."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Nobody Badge",
@@ -84,10 +78,8 @@ class TestBadgeGranting(common.TransactionCase):
         status = badge.with_user(self.user_admin)._get_badge_grant_status()
         self.assertEqual(status, badge.CAN_GRANT)
 
-    # --- rule_auth = 'users' ---
 
     def test_users_authorized_can_grant(self):
-        """User in the authorized list can grant."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "VIP Badge",
@@ -99,7 +91,6 @@ class TestBadgeGranting(common.TransactionCase):
         self.assertEqual(status, badge.CAN_GRANT)
 
     def test_users_unauthorized_cannot_grant(self):
-        """User NOT in the authorized list gets USER_NOT_VIP."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "VIP Badge",
@@ -110,10 +101,8 @@ class TestBadgeGranting(common.TransactionCase):
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.USER_NOT_VIP)
 
-    # --- rule_auth = 'having' ---
 
     def test_having_with_prerequisite_badge(self):
-        """User with the prerequisite badge can grant."""
         prereq_badge = self.env["gamification.badge"].create(
             {
                 "name": "Prerequisite Badge",
@@ -127,7 +116,6 @@ class TestBadgeGranting(common.TransactionCase):
                 "rule_auth_badge_ids": [(6, 0, [prereq_badge.id])],
             }
         )
-        # Grant prerequisite to granter
         self.env["gamification.badge.user"].create(
             {
                 "user_id": self.user_granter.id,
@@ -140,7 +128,6 @@ class TestBadgeGranting(common.TransactionCase):
         self.assertEqual(status, badge.CAN_GRANT)
 
     def test_having_without_prerequisite_badge(self):
-        """User without the prerequisite badge gets BADGE_REQUIRED."""
         prereq_badge = self.env["gamification.badge"].create(
             {
                 "name": "Prerequisite Badge",
@@ -157,10 +144,8 @@ class TestBadgeGranting(common.TransactionCase):
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.BADGE_REQUIRED)
 
-    # --- Monthly limits ---
 
     def test_monthly_limit_not_exceeded(self):
-        """Badge with monthly limit allows granting when under the cap."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Limited Badge",
@@ -173,7 +158,6 @@ class TestBadgeGranting(common.TransactionCase):
         self.assertEqual(status, badge.CAN_GRANT)
 
     def test_monthly_limit_exceeded(self):
-        """Badge returns TOO_MANY when monthly limit is reached."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Limited Badge",
@@ -182,7 +166,6 @@ class TestBadgeGranting(common.TransactionCase):
                 "rule_max_number": 1,
             }
         )
-        # Grant once (as granter via wizard to respect create_uid)
         self.env["gamification.badge.user"].with_user(self.user_granter).create(
             {
                 "user_id": self.user_recipient.id,
@@ -191,13 +174,11 @@ class TestBadgeGranting(common.TransactionCase):
             }
         )
 
-        # Invalidate computed stats
         badge.invalidate_recordset()
         status = badge.with_user(self.user_granter)._get_badge_grant_status()
         self.assertEqual(status, badge.TOO_MANY)
 
     def test_remaining_sending_calc(self):
-        """remaining_sending correctly computes remaining grants."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Limited Badge",
@@ -207,11 +188,9 @@ class TestBadgeGranting(common.TransactionCase):
             }
         )
         badge_as_granter = badge.with_user(self.user_granter)
-        # No grants yet — should have 3 remaining
         self.assertEqual(badge_as_granter.remaining_sending, 3)
 
     def test_remaining_sending_unlimited(self):
-        """Badge without monthly limit returns -1 (infinite)."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Unlimited Badge",
@@ -223,7 +202,6 @@ class TestBadgeGranting(common.TransactionCase):
         self.assertEqual(badge_as_granter.remaining_sending, -1)
 
     def test_remaining_sending_nobody(self):
-        """Badge with rule_auth='nobody' returns 0 remaining."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Nobody Badge",
@@ -233,10 +211,8 @@ class TestBadgeGranting(common.TransactionCase):
         badge_as_granter = badge.with_user(self.user_granter)
         self.assertEqual(badge_as_granter.remaining_sending, 0)
 
-    # --- check_granting raises ---
 
     def test_check_granting_raises_on_nobody(self):
-        """check_granting raises UserError for nobody badges."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Nobody Badge",
@@ -247,7 +223,6 @@ class TestBadgeGranting(common.TransactionCase):
             badge.with_user(self.user_granter).check_granting()
 
     def test_check_granting_raises_on_unauthorized_user(self):
-        """check_granting raises UserError when user is not in auth list."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "VIP Badge",
@@ -259,7 +234,6 @@ class TestBadgeGranting(common.TransactionCase):
             badge.with_user(self.user_granter).check_granting()
 
     def test_check_granting_raises_on_missing_prerequisite(self):
-        """check_granting raises UserError when prerequisite badge is missing."""
         prereq_badge = self.env["gamification.badge"].create(
             {
                 "name": "Prerequisite",
@@ -277,7 +251,6 @@ class TestBadgeGranting(common.TransactionCase):
             badge.with_user(self.user_granter).check_granting()
 
     def test_check_granting_raises_on_too_many(self):
-        """check_granting raises UserError when monthly limit exceeded."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Limited Badge",
@@ -297,17 +270,14 @@ class TestBadgeGranting(common.TransactionCase):
         with self.assertRaises(UserError):
             badge.with_user(self.user_granter).check_granting()
 
-    # --- Badge stats ---
 
     def test_badge_granted_count(self):
-        """granted_count and granted_users_count are computed correctly."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Stats Badge",
                 "rule_auth": "everyone",
             }
         )
-        # Grant twice to same user + once to another
         self.env["gamification.badge.user"].create(
             {
                 "user_id": self.user_recipient.id,

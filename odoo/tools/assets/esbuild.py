@@ -104,9 +104,6 @@ def _dangles(root_dir: Path) -> bool:
 
 
 def _prune_dangling_roots(base: Path, keep: str) -> int:
-    # a root is named after its addon paths, so every worktree or checkout
-    # that ever served leaves one behind; once its targets are gone it can
-    # resolve nothing, and nothing else removes it
     pruned = 0
     for root_dir in base.iterdir():
         name = root_dir.name
@@ -142,9 +139,6 @@ def _shared_resolution_root(base: Path, name: str, roots: Mapping[str, Path]) ->
     root_dir = base / name
     if _holds_exactly(root_dir, roots):
         return root_dir
-    # another compile may be resolving through the root this call would
-    # replace: only one caller rebuilds at a time, and a root that holds
-    # exactly the expected links is never moved aside
     with _root_lock(base, name):
         if _holds_exactly(root_dir, roots):
             return root_dir
@@ -177,12 +171,8 @@ class EsbuildResult(NamedTuple):
     code: str
     metafile: str | None
     sourcemap: str | None
-    # a digest of what esbuild was given; the published build keyed on it
-    # lets the next process serve this result without running esbuild
     source_key: str | None = None
-    # served from a published build: the code already carries the templates
     prebuilt: bool = False
-    # which build of the bundle this is (page scope, standalone, assets params)
     variant: str = ""
 
 
@@ -225,12 +215,6 @@ def _esbuild_argv(
         *external_flags,
         f"--target={target}",
         "--resolve-extensions=.js,.mjs,.json",
-        # Every addons repo carries a tsconfig.json whose `paths` point "@web/*"
-        # and kin at the checkout BESIDE it, for tsc. esbuild honours the
-        # nearest tsconfig.json per source file, so a sibling repo's modules
-        # would resolve core through that mapping instead of the aliases
-        # above -- a second copy of every core module whenever the served
-        # tree is not that sibling (a worktree), and a split singleton.
         "--tsconfig-raw={}",
         *output_flags,
         f"--metafile={metafile_path}",
@@ -287,13 +271,9 @@ def classic_script(
                 "--format=iife",
                 "--minify",
                 f"--target={target}",
-                # what the first pass left external and a dynamic import()
-                # names stays for the import map to resolve
                 "--packages=external",
                 "--external:/web/static/lib/*",
-                # esbuild does not carry a module's strictness into an iife
                 f"--banner:js={CLASSIC_SCRIPT_BANNER}",
-                # the one reader of import.meta falls back to the loader
                 "--log-override:empty-import-meta=silent",
                 "--log-level=error",
                 *alias_flags,
@@ -318,8 +298,6 @@ def classic_script(
             )
             return None
         classic = (tmp / "bundle.classic.js").read_text(encoding="utf-8")
-        # esbuild exits 0 on a static import it was told to leave external and
-        # has no import statement to leave in: it emits a require() that throws
         unprovided = sorted(
             {
                 imported["path"]
@@ -367,12 +345,10 @@ _ESBUILD_PATH: str | None = None
 
 
 def _get_esbuild_path() -> str | None:
-    global _ESBUILD_PATH  # noqa: PLW0603  process-wide memo of a filesystem lookup
+    global _ESBUILD_PATH
     if _ESBUILD_PATH is not None:
         return _ESBUILD_PATH
     odoo_root = Path(odoo.__path__[0]).parent
-    # the version package.json pins before whatever PATH offers: a compile's
-    # output must not depend on the shell that started the server
     _ESBUILD_PATH = shutil.which(
         "esbuild", path=str(odoo_root / "node_modules" / ".bin")
     ) or shutil.which("esbuild")
@@ -383,7 +359,6 @@ _ESBUILD_VERSIONS: dict[str, str] = {}
 
 
 def get_esbuild_version() -> str:
-    # a build is keyed on it: another esbuild emits other code from one source
     esbuild = _get_esbuild_path()
     if esbuild is None:
         return ""
@@ -398,8 +373,6 @@ def get_esbuild_version() -> str:
                 check=True,
             ).stdout.strip()
         except OSError, subprocess.SubprocessError:
-            # not remembered: a probe that timed out under load would key
-            # every build of this process apart from the other workers' builds
             _debug.lifecycle("esbuild.version_probe_failed", path=esbuild)
             return ""
         _ESBUILD_VERSIONS[esbuild] = version
@@ -525,9 +498,8 @@ class EsbuildCompiler:
 
     @classmethod
     def _get_esbuild_addon_flags(cls, odoo_root: Path) -> tuple[list[str], list[str]]:
-        from odoo.addons import __path__ as _addon_paths  # type: ignore[attr-defined]
+        from odoo.addons import __path__ as _addon_paths
 
-        # relpath uses lexical paths; resolving symlinks would merge distinct roots.
         addon_paths = tuple(Path(path).absolute() for path in _addon_paths)
         cache_key = (odoo_root.absolute(), addon_paths)
         cached = cls._esbuild_addon_scan_cache
@@ -544,10 +516,6 @@ class EsbuildCompiler:
                 name = entry.name
                 if name in seen_addons or not entry.is_dir():
                     continue
-                # A name is claimed only where the module loader resolves it:
-                # a directory left behind with only bytecode, or holding a
-                # manifest the loader cannot read, would otherwise shadow the
-                # real module further down the path.
                 if not (MODULE_NAME_RE.match(name) and Manifest._from_path(str(entry))):
                     continue
                 seen_addons.add(name)
@@ -679,8 +647,6 @@ class EsbuildCompiler:
                     odoo_root,
                 )
 
-                # Parent-owned members are supplied by the stubs when imported.
-                # Registering them again as entry modules creates a second namespace.
                 entry_modules = [
                     asset
                     for asset in self.native_modules
@@ -918,13 +884,6 @@ class EsbuildCompiler:
         return None
 
     def _mirrored_path(self, url: str) -> str | None:
-        # a mirrored addon's static/src lives in the layout with its siblings
-        # (tests, lib) symlinked next to it, and esbuild preserves symlinks
-        # there: an entry spelled by its real path and an alias import of the
-        # same file (`@website/../tests/tours/x`) are two modules to esbuild,
-        # each registering its tours once. An addon resolved through the
-        # resolution root is the same case: `@mail/x` reaches esbuild as
-        # `<root>/@mail/x`, so its entry is spelled there too
         addon, _, rest = url.lstrip("/").partition("/static/")
         if not rest:
             return None
@@ -1017,9 +976,6 @@ class EsbuildCompiler:
 
         for ext_name, int_name in external_lib_aliases().items():
             if int_name in registered_specs:
-                # through registerNativeModules, not modules.set: an alias that
-                # rebinds an already registered namespace must raise the
-                # singleton-split signal like any other registration
                 entry_lines.append(
                     f"odoo.loader.registerNativeModules({{{json.dumps(ext_name)}:"
                     f"odoo.loader.modules.get({json.dumps(int_name)})}});"
@@ -1091,11 +1047,6 @@ class EsbuildCompiler:
         node_path: str | None,
         odoo_root: Path,
     ) -> list[str]:
-        # a module aliased by file (`@odoo/o-spreadsheet`) and imported by its
-        # addon path too (`@spreadsheet/o_spreadsheet/o_spreadsheet`) reaches
-        # esbuild under two paths once the addon resolves through a mirror or
-        # the root's symlinks (--preserve-symlinks): two modules, each running
-        # its top level. The alias goes wherever its addon resolves
         def parse(flag: str) -> tuple[str, str]:
             spec, _, target = flag.removeprefix("--alias:").partition("=")
             return spec, target
@@ -1156,8 +1107,6 @@ class EsbuildCompiler:
         digest = hashlib.sha1(
             "\n".join(f"{spec}={path}" for spec, path in sorted(roots.items())).encode()
         ).hexdigest()[:12]
-        # under data_dir, never a shared temp dir: whoever can plant a
-        # directory under the predictable name decides what @web resolves to
         base = Path(config["data_dir"]) / "esbuild-roots"
         try:
             _create_private_dir(base)

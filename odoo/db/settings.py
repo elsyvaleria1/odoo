@@ -30,7 +30,7 @@ REPLICA_OVERRIDABLE: tuple[tuple[str, str], ...] = (
 def _coerce_optional_int(value: object) -> int | None:
     if value is None or value == "" or value is False:
         return None
-    return int(value)  # type: ignore[call-overload]
+    return int(value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,12 +121,12 @@ class PoolSettings:
 
     def connection_keywords(self, readonly: bool = False) -> dict[str, Any]:
         keywords: dict[str, Any] = {}
-        overrides = 0  # debuglog
+        overrides = 0
         for name, replica_name in REPLICA_OVERRIDABLE:
             value = getattr(self, name)
             if readonly:
                 replica_value = getattr(self, replica_name)
-                overrides += bool(replica_value)  # debuglog
+                overrides += bool(replica_value)
                 value = replica_value or value
             if value:
                 keywords[name] = value

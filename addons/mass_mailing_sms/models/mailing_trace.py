@@ -21,8 +21,6 @@ class MailingTrace(models.Model):
         compute="_compute_sms_id",
         store=False,
     )
-    # Integer because the related sms.sms can be deleted separately from its statistics.
-    # However, the ID is needed for several action and controllers.
     sms_id_int = fields.Integer(
         string="SMS ID",
         index="btree_not_null",
@@ -43,17 +41,14 @@ class MailingTrace(models.Model):
             ("sms_registration_needed", "Country-specific Registration Required"),
             ("sms_server", "Server Error"),
             ("sms_acc", "Unregistered Account"),
-            # mass mode specific codes
             ("sms_blacklist", "Blacklisted"),
             ("sms_duplicate", "Duplicate"),
             ("sms_optout", "Opted Out"),
-            # delivery report errors
             ("sms_expired", "Expired"),
             ("sms_invalid_destination", "Invalid Destination"),
             ("sms_not_allowed", "Not Allowed"),
             ("sms_not_delivered", "Not Delivered"),
             ("sms_rejected", "Rejected"),
-            # twilio specific: to move in bridge module in master
             ("twilio_authentication", 'Authentication Error"'),
             ("twilio_callback", "Incorrect callback URL"),
             ("twilio_from_missing", "Missing From Number"),
@@ -93,9 +88,6 @@ class MailingTrace(models.Model):
         return super().create(vals_list)
 
     def _get_random_code(self) -> str:
-        """Generate a random code for trace. Uniqueness is not really necessary
-        as it serves as obfuscation when unsubscribing. A valid trio
-        code / mailing_id / number will be requested."""
         return "".join(
             random.choice(string.ascii_letters + string.digits)
             for dummy in range(self.CODE_SIZE)

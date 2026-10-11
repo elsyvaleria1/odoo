@@ -29,9 +29,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         ondelete={"peppol": "cascade"},
     )
 
-    # -------------------------------------------------------------------------
-    # HELPER METHODS
-    # -------------------------------------------------------------------------
 
     def _get_proxy_urls(self):
         urls = super()._get_proxy_urls()
@@ -43,7 +40,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
     @api.model
     def _get_peppol_error_message(self, error_vals):
-        # DEPRECATED - to remove in master
         return get_peppol_error_message(self.env, error_vals)
 
     @handle_demo
@@ -80,7 +76,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                         "account_peppol_migration_key": False,
                     }
                 )
-                # commit the above changes before raising below
                 if not modules.module.current_test:
                     self.env["ir.cron"]._commit_progress()
                 raise UserError(
@@ -158,9 +153,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             }
         )
 
-        # trigger participant status update after resync to confirm token & keep state in sync
-        # but run async, since sync may confirm token server-side (thus increment token_sync_version)
-        # yet fail before commit, leaving unrecoverable state
         self.env["ir.cron"]._trigger_ref(
             "account_peppol.ir_cron_peppol_get_participant_status"
         )
@@ -168,7 +160,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     def _peppol_out_of_sync_disconnect_this_database(self) -> None:
         self.check_singleton()
         assert self.is_token_out_of_sync
-        # delete this record and company's proxy state
         self.company_id._reset_peppol_configuration(soft=True)
         self.unlink()
 
@@ -176,9 +167,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     def _get_domain_can_send(self) -> tuple:
         return ("sender", "smp_registration", "receiver")
 
-    # -------------------------------------------------------------------------
-    # CRONS
-    # -------------------------------------------------------------------------
 
     def _cron_peppol_get_new_documents(self) -> None:
         edi_users = self.search(
@@ -210,7 +198,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         edi_users = self.search([("proxy_type", "=", "peppol")])
         edi_users._peppol_get_participant_status()
 
-        # throughout the registration process, we need to check the status more frequently
         if self.search_count(
             [
                 (
@@ -238,9 +225,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         )
         edi_users._peppol_reset_webhook()
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def _get_proxy_identification(self, company, proxy_type):
         if proxy_type == "peppol":
@@ -256,21 +240,10 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     def _peppol_import_invoice(
         self, attachment, peppol_state, uuid, journal=None
     ) -> dict:
-        """Save new documents in an accounting journal, when one is specified on the company.
-
-        :param attachment: the new document
-        :param peppol_state: the state of the received Peppol document
-        :param uuid: the UUID of the Peppol document
-        :param journal: journal to use for the new move (otherwise the company's peppol journal will be used)
-        :return: the created move (if any)
-        """
         self.check_singleton()
 
         file_data = self.env["account.move"]._to_files_data(attachment)[0]
 
-        # Self-billed invoices are invoices which your customer creates on your behalf and sends you via Peppol.
-        # In this case, the invoice needs to be created as an out_invoice in a sale journal.
-        # 329/527: Self-billing invoice; 261: Self-billing credit note
         is_self_billed = False
         if (
             file_data["xml_tree"].findtext(".//{*}InvoiceTypeCode") in ["389", "527"]
@@ -322,7 +295,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         return {"uuid": uuid, "move": move}
 
     def _peppol_get_new_documents(self, skip_no_journal=False) -> None:
-        # Context added to not break stable policy: useful to tweak on databases processing large invoices
         job_count = self.env.context.get("peppol_crons_job_count") or BATCH_SIZE
         need_retrigger = False
         params = {
@@ -345,7 +317,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
             params["domain"]["receiver_identifier"] = edi_user.edi_identification
             try:
-                # request all messages that haven't been acknowledged
                 messages = edi_user._call_peppol_proxy(
                     "/api/peppol/1/get_all_documents",
                     params=params,
@@ -368,7 +339,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
             created_moves = self.env["account.move"]
             uuids_to_ack = []
-            # retrieve attachments for filtered messages
             all_messages = edi_user._call_peppol_proxy(
                 "/api/peppol/1/get_document",
                 params={"message_uuids": message_uuids},
@@ -378,7 +348,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 document_content = content["document"]
                 filename = (
                     content["filename"] or "attachment"
-                )  # default to attachment, which should not usually happen
+                )
                 decoded_document = edi_user._decrypt_data(document_content, enc_key)
                 attachment = self.env["ir.attachment"].create(
                     {
@@ -410,12 +380,11 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             )
 
     def _peppol_get_message_status(self) -> None:
-        # Context added to not break stable policy: useful to tweak on databases processing large invoices
         job_count = self.env.context.get("peppol_crons_job_count") or BATCH_SIZE
         need_retrigger = False
         for edi_user in self:
             edi_user = edi_user.with_company(edi_user.company_id)
-            edi_user_moves = self.env["account.move"].search(  # noqa: E8507 - one query per EDI user, in that user's company
+            edi_user_moves = self.env["account.move"].search(
                 [
                     ("peppol_move_state", "=", "processing"),
                     ("company_id", "=", edi_user.company_id.id),
@@ -436,8 +405,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
             for uuid, content in messages_to_process.items():
                 if uuid == "error":
-                    # this rare edge case can happen if the participant is not active on the proxy side
-                    # in this case we can't get information about the invoices
                     edi_user_moves.peppol_move_state = "error"
                     log_message = self.env._("Peppol error: %s", content["message"])
                     edi_user_moves._message_log_batch(
@@ -448,8 +415,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 move = message_uuids[uuid]
                 if error_vals := content.get("error"):
                     if error_vals["code"] == 702:
-                        # "Peppol request not ready" error:
-                        # thrown when the IAP is still processing the message
                         continue
 
                     move.peppol_move_state = "error"
@@ -483,12 +448,9 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 )
             except AccountEdiProxyError as e:
                 if e.code == "client_gone":
-                    # reset the connection if it was archived/deleted on IAP side
                     edi_user.sudo().company_id._reset_peppol_configuration()
                     edi_user.action_archive()
                 else:
-                    # don't auto-deregister users on any other errors to avoid settings client-side to states
-                    # that are not recoverable without user action if an error on IAP side ever occurs
                     _logger.error(
                         "Error while updating Peppol participant status: %s", e
                     )
@@ -523,19 +485,14 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                     edi_user.id,
                 )
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def _get_company_details(self):
-        # DEPRECATED - to remove in master
         self.check_singleton()
         return self.env["wizard.account_peppol.config.register"]._get_company_details(
             self.company_id
         )
 
     def _peppol_register_sender(self, peppol_external_provider=None) -> None:
-        # DEPRECATED - to remove in master
         self.check_singleton()
 
     def _peppol_register_sender_as_receiver(self) -> None:
@@ -543,14 +500,13 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         company = self.company_id
 
         if company.account_peppol_config_id.account_peppol_proxy_state != "sender":
-            # a participant can only try registering as a receiver if they are currently a sender
             peppol_states = dict(
                 self.env["ir.model.fields"].get_field_selection(
                     "res.company", "account_peppol_proxy_state"
                 )
             )[
                 company.account_peppol_config_id.account_peppol_proxy_state
-            ]  # handles translation correctly
+            ]
             raise UserError(
                 self.env._(
                     "Cannot register a user with a %s application", peppol_states
@@ -579,8 +535,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 ),
             },
         )
-        # once we sent the migration key over, we don't need it
-        # but we need the field for future in case the user decided to migrate away from Odoo
         company.sudo().account_peppol_migration_key = False
         company.account_peppol_config_id.account_peppol_proxy_state = "smp_registration"
         company.account_peppol_config_id.peppol_external_provider = None
@@ -596,19 +550,14 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
         proxy_state = None
         try:
-            # call _prepare_request directly because _peppol_get_participant_status()
-            # is cron-safe and swallows AccountEdiProxyError.
             proxy_user = self._prepare_request(
                 f"{self._get_server_url()}/api/peppol/2/participant_status"
             )
             proxy_state = proxy_user.get("peppol_state")
         except AccountEdiProxyError as e:
-            # If user no longer exists on IAP side, don't try to fetch docs/statuses (they will fail).
             if e.code not in ["client_gone", "no_such_user_found"]:
                 raise
         if proxy_state in ("sender", "smp_registration", "receiver"):
-            # fetch all documents and message statuses before unlinking the edi user
-            # so that the invoices are acknowledged
             self._cron_peppol_get_message_status()
             self._cron_peppol_get_new_documents()
             if not modules.module.current_test:
@@ -626,8 +575,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
             self.company_id.account_peppol_config_id.account_peppol_proxy_state
             == "receiver"
         ):
-            # fetch all documents and message statuses before unlinking the edi user
-            # so that the invoices are acknowledged
             self._cron_peppol_get_message_status()
             self._cron_peppol_get_new_documents()
             if not modules.module.current_test:
@@ -638,22 +585,19 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
     @api.model
     def _peppol_auto_register_services(self, module):
-        # DEPRECATED - to remove in master
         pass
 
     @api.model
     def _peppol_auto_deregister_services(self, module):
-        # DEPRECATED - to remove in master
         pass
 
     def _peppol_get_services(self):
-        """Get information from the IAP regarding the Peppol services."""
         self.check_singleton()
         return self._call_peppol_proxy("/api/peppol/2/get_services")
 
     @api.model
     def _generate_webhook_token(self, company):
-        expiration = 30 * 24  # in 30 days
+        expiration = 30 * 24
         msg = [company.id, company._get_peppol_webhook_endpoint()]
         return tools.hash_sign(
             self.sudo().env, WEBHOOK_SCOPE, msg, expiration_hours=expiration

@@ -1297,9 +1297,6 @@ class SaleOrder(models.Model):
         )
 
     def _get_credit_to_invoice_amount(self):
-        """What the order has not turned into a receivable yet, and so adds to
-        its customer's credit still to invoice: the part no invoice claims and
-        the part on draft invoices, which are no more a receivable than it."""
         self.check_singleton()
         return self.amount_taxexc_to_invoice + self.amount_taxexc_invoiced_draft
 

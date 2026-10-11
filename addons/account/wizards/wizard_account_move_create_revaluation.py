@@ -101,7 +101,7 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         for record in self:
             last_move = (
                 self.env["account.move.line"]
-                .search(  # noqa: E8507 - a transient wizard opened on one company
+                .search(
                     [
                         (
                             "account_id",
@@ -238,7 +238,6 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         ):
             parsed_line_id = report._parse_line_id(report_line.get("id"))
             balance = _get_adjustment_balance(report_line)
-            # parsed_line_id[-1][-2] corresponds to res_model of the current line
             if parsed_line_id[-1][
                 -2
             ] == "account.account" and not self.env.company.currency_id.is_zero(

@@ -24,8 +24,6 @@ class ResourceResource(models.Model):
         return data
 
     def _track_prepare(self, fields_iter):
-        # a thing's history is its chatter's; a person's or an intangible's
-        # resource keeps none
         return super(ResourceResource, self.filtered("kind_id"))._track_prepare(
             fields_iter
         )

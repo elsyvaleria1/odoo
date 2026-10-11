@@ -16,10 +16,7 @@ class CalendarEvent(models.Model):
             event.conversation_count = len(event.sudo().conversation_ids)
 
     def action_start_conversation(self) -> dict:
-        """Open the meeting's conversation, creating it with the attendees as participants."""
         self.check_singleton()
-        # Whoever starts the meeting reaches its one conversation, readable or
-        # not to them yet: a second one would split the record.
         conversation = self.sudo().conversation_ids.sorted("id")[-1:]
         if not conversation:
             organiser = self.user_id or self.env.user
@@ -49,7 +46,6 @@ class CalendarEvent(models.Model):
         }
 
     def _customer_partner(self):
-        """The first attendee who is not one of us, if any."""
         self.check_singleton()
         for partner in self.partner_ids:
             if not partner._is_colleague():

@@ -75,10 +75,6 @@ class TestMobileIngestFailure(DeviceHttpCase):
         self.assertEqual(self._events()[-1].state, "success")
 
     def test_a_database_error_during_ingest_still_says_why_on_the_event_log(self):
-        # A partner matched by _match_partners and deleted before the create
-        # lands is an ordinary concurrent-write outcome; the foreign key is
-        # what makes it a DATABASE error rather than a Python one, and a
-        # database error aborts the cursor for the rest of the transaction.
         with patch.object(
             type(self.env["phone.call"]),
             "_match_partners",

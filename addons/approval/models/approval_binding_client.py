@@ -23,8 +23,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def get_button_approvals(self, specs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """One answer per spec, asked by button kind: a list of 80 rows asks each
-        binding, its coverage and its requests once, not once per row."""
         trace.BUTTON.event("batch_asked", specs=len(specs), uid=self.env.uid)
         by_button = defaultdict(list)
         for index, spec in enumerate(specs):
@@ -55,9 +53,6 @@ class ApprovalBinding(models.Model):
     def check_button_approval(
         self, model: str, res_id: int | list[int], method=False, action_id=False
     ) -> dict[str, Any]:
-        """Whether the button may run on `res_id` (one record, or a list header's
-        selection) now. A Block or Request binding not covering them asks for the
-        caller, and the button runs nothing until that is approved."""
         if not self._enabled():
             return {"approved": True, "request_id": False}
         bindings = self._get_button_bindings(model, method, action_id)
@@ -200,10 +195,6 @@ class ApprovalBinding(models.Model):
         action_id=False,
         configured: bool = False,
     ) -> list[dict[str, Any]]:
-        """One button's state on each of `res_ids` (False: a record not saved yet).
-
-        `configured` answers what is configured, kill switch or not: Studio's
-        editor shows and edits the steps while bindings are switched off."""
         ungated = {"gated": False, "approved": True, "request": False, "steps": []}
         if not (configured or self._enabled()):
             return [ungated] * len(res_ids)
@@ -343,9 +334,6 @@ class ApprovalBinding(models.Model):
         )
 
     def _check_someone_asked(self, records, request) -> None:
-        """An approver deciding from the button decides what a caller asked: a
-        request they raised themselves would be theirs, and theirs to approve only
-        where the category allows self-approval."""
         self.check_singleton()
         if (
             "approval_request_id" in records._fields

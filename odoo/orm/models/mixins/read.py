@@ -87,12 +87,6 @@ class ReadMixin(_ModelStubs):
         attributes: tuple[str, ...] | None,
         field_names: tuple[str, ...] | None,
     ) -> frozendict[str, tuple[frozendict[str, typing.Any], tuple[str, ...]]]:
-        """Per field, the memoised half of its description and the names of
-        the attributes ``fields_get`` evaluates on every call. Keyed on what
-        the static half reads besides the registry: the language (labels,
-        selection labels, decimal precisions) and the superuser flag (a
-        non-stored related field sorts only under sudo). Field-level access
-        is applied by the caller, never memoised."""
         fields_ = (
             self._fields.values()
             if field_names is None
@@ -151,9 +145,6 @@ class ReadMixin(_ModelStubs):
 
         return result
 
-    # An x2many is read by searching its comodel, which raises for a user without
-    # read access to that model, while a many2one merely reads as empty. Such a
-    # field cannot be read, so it is not part of "every field" either.
     @api.model
     def _is_readable_by_default(self, field: Field[typing.Any]) -> bool:
         return (
@@ -325,8 +316,6 @@ class ReadMixin(_ModelStubs):
 
         scalar_fnames = []
         record_fnames = []
-        # a field the principal may read on some of the records only reads as
-        # empty on the others; the cache keeps their true value
         masked: dict[str, set[IdType]] = {}
         for name in fnames:
             field = _fields[name]
@@ -429,8 +418,6 @@ class ReadMixin(_ModelStubs):
         )
         rules_applied = any(field.column_type for field in fields_to_fetch)
         if rules_applied and self._known_readable():
-            # read again what a search of the same transaction found: the
-            # rules it passed are not judged a second time
             rules_applied = False
             query = self._as_query(ordered=False)
         elif rules_applied:
@@ -460,7 +447,7 @@ class ReadMixin(_ModelStubs):
                         reason="missing",
                     )
                     raise PrefetchBatchDenied(self._name) from None
-                before = len(self)  # debuglog
+                before = len(self)
                 self = self.exists()
                 _debug.logic(
                     "read.fetch.missing_records_dropped",
@@ -555,20 +542,20 @@ class ReadMixin(_ModelStubs):
             self._check_field_access(field, "read")
             fields_todo.append(field)
 
-        cached = 0  # debuglog
-        expanded = 0  # debuglog
+        cached = 0
+        expanded = 0
         while fields_todo:
             field = fields_todo.popleft()
             if field in fields_done:
                 continue
             fields_done.add(field)
             if ignore_when_in_cache and not field._has_cache_misses(self):
-                cached += 1  # debuglog
+                cached += 1
                 continue
             if field.fetched_with_row:
                 fields_to_fetch.append(field)
             else:
-                expanded += 1  # debuglog
+                expanded += 1
                 for dotname in self.pool.field_depends[field]:
                     dep_field = self._fields[dotname.split(".", 1)[0]]
                     if (not dep_field.store) or (
@@ -607,13 +594,9 @@ class ReadMixin(_ModelStubs):
             other_fields=len(other_fields),
         )
         if self._table_inheritance_root:
-            # a cache miss here says nothing about the other models of the
-            # tree, whose dirty values land in the rows and relation tables
-            # this fetch reads
             self._flush_table_inheritance_siblings(
                 [field.name for field in (*column_fields, *other_fields)], self._ids
             )
-        # the port answers with the recordset it was handed
         return typing.cast(
             "Self", self.env.backend.fetch(self, query, column_fields, other_fields)
         )

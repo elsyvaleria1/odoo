@@ -20,18 +20,9 @@ MARK_PREFIX = "ui_stability:"
 STYLE_EVENTS = ("UpdateLayoutTree", "RecalculateStyles")
 
 PROBE_ELEMENTS = 600
-# A write on a container names the container: what it restyles beyond that is
-# what some selector in the page asked every such write to re-match. The probe
-# holds no link and no button: html_editor's formatting rules reach both
-# through a font or span ancestor's style, so those are re-matched by design.
 RESTYLED_PER_WRITE_BUDGET = 8
 
 PARTNERS = 40
-# The elements a view mount may style, as a multiple of the elements the view
-# ends up with: once each, plus the chrome the change touches and, for the
-# list, the partial restyles of its column-width pass. Restyling the cards
-# already there for each batch built reads 1.68 on the kanban of this suite; a
-# second styling of a whole view adds 1.
 MOUNT_RESTYLE_BUDGET = {"list": 1.8, "kanban": 1.4}
 SLOW_RPC_MS = 600
 
@@ -40,11 +31,6 @@ with file_open("web/static/src/ui/loading/loading_threshold.js") as threshold_so
         re.search(r"SHOW_AFTER_DELAY = (\d+);", threshold_source.read()).group(1)
     )
 
-# What is on screen, read once per animation frame: a state that never makes a
-# frame is one nobody saw, and one that makes a single frame is a flash. Each
-# state is reported with the milliseconds between the interaction and its
-# first frame, because the rule under test is about time: before the loading
-# threshold nothing may stand between the view left and the view reached.
 FRAME_PROBE = """
 const framesOf = (() => {
     const read = () => {

@@ -102,8 +102,6 @@ class TestWebhookLetsConcurrencyRetry(TelegramBotHttpCase):
             "could not serialize access due to concurrent update"
         )
 
-        # every bot enforces its webhook secret: an unsigned update never
-        # reaches the handler, and the conflict could not surface at all
         self.test_bot._update_webhook_secret("conflict_secret_1")
         self.env.flush_all()
 

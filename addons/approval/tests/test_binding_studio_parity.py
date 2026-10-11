@@ -72,7 +72,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         return request, steps
 
     def test_a_record_no_step_applies_to_is_not_gated(self):
-        """test_03_single_rule_with_domain."""
         self._member_step(
             "action_archive", subject_domain="[('is_company', '=', True)]"
         )
@@ -88,7 +87,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         )
 
     def test_an_exclusive_approval_counts_toward_the_exclusive_step_first(self):
-        """test_05_different_users."""
         request, (_base, strict) = self._request(
             {
                 "name": "Base",
@@ -109,7 +107,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         self.assertEqual(request.state, "approved")
 
     def test_an_archived_step_is_ignored_whatever_the_context(self):
-        """test_08_archive and test_09_archive_reverse."""
         request, (_first, second) = self._request(
             {
                 "name": "First",
@@ -129,7 +126,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         self.assertFalse(request.with_context(active_test=False)._get_unmet_steps())
 
     def test_a_group_member_decides_but_only_listed_members_are_asked(self):
-        """test_no_responsible."""
         request, (_step,) = self._request(
             {
                 "name": "Mixed",
@@ -146,7 +142,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         self.assertEqual(request.state, "approved")
 
     def test_a_step_holding_decisions_is_archived_not_deleted(self):
-        """test_00_constraints."""
         request, (step,) = self._request(
             {"name": "Held", "user_ids": [Command.set(self.member.ids)]},
         )
@@ -157,7 +152,6 @@ class TestApprovalStudioParity(common.TransactionCase):
         self.assertFalse(step.active)
 
     def test_what_a_binding_gates_is_fixed_once_it_has_requests(self):
-        """test_00_constraints."""
         step = self._member_step("action_archive")
         binding = self.Binding.search([("category_id", "=", step.category_id.id)])
         self.partner.with_user(self.plain).action_archive()

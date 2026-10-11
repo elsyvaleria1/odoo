@@ -12,7 +12,6 @@ MOLBLOCK = """water
 M  END
 """
 
-# Resolves once 3Dmol has drawn its canvas inside the field widget
 WAIT_FOR_CANVAS = """
 const timer = setInterval(() => {
     if (document.querySelector(".o_molecule_viewer_3d canvas")) {

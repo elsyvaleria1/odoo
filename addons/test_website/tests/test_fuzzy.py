@@ -27,7 +27,6 @@ class TestAutoComplete(TransactionCase):
         search_type="test",
         options=None,
     ):
-        """Calls the autocomplete for a given term and performs general checks"""
         with MockRequest(self.env, website=self.website):
             suggestions = self.WebsiteController.autocomplete(
                 search_type=search_type,
@@ -61,7 +60,6 @@ class TestAutoComplete(TransactionCase):
         )
 
     def test_01_many_records(self):
-        # REF1000~REF3999
         data = [
             {
                 "name": "REF%s" % count,
@@ -70,7 +68,6 @@ class TestAutoComplete(TransactionCase):
             for count in range(1000, 4000)
         ]
         self.env["test.model"].create(data)
-        # NUM1000~NUM1998
         data = [
             {
                 "name": "NUM%s" % count,
@@ -79,39 +76,23 @@ class TestAutoComplete(TransactionCase):
             for count in range(1000, 1999)
         ]
         self.env["test.model"].create(data)
-        # There are more than 1000 "R*" records
-        # => Find exact match through the fallback
         self._autocomplete("REF3000", 1, False)
-        # => No exact match => Find fuzzy within first 1000 (distance=3: replace D by F, move 3, add 1)
         self._autocomplete(
             "RED3000", 1, "ref3000" if self.env.registry.has_trigram else "ref1003"
         )
-        # => Find exact match through the fallback
         self._autocomplete("REF300", 10, False)
-        # => Find exact match through the fallback
         self._autocomplete("REF1", 1000, False)
-        # => No exact match => Nothing close enough (min distance=5)
         self._autocomplete("REFX", 0, None)
-        # => Find exact match through the fallback - unfortunate because already in the first 1000 records
         self._autocomplete("REF1230", 1, False)
-        # => Find exact match through the fallback
         self._autocomplete("REF2230", 1, False)
 
-        # There are less than 1000 "N*" records
-        # => Fuzzy within N* (distance=1: add 1)
         self._autocomplete("NUM000", 1, "num1000")
-        # => Exact match (distance=0 shortcut logic)
         self._autocomplete("NUM100", 10, False)
-        # => Exact match (distance=0 shortcut logic)
         self._autocomplete("NUM199", 9, False)
-        # => Exact match (distance=0 shortcut logic)
         self._autocomplete("NUM1998", 1, False)
-        # => Fuzzy within N* (distance=1: replace 1 by 9)
         self._autocomplete("NUM1999", 1, "num1199")
-        # => Fuzzy within N* (distance=1: add 1)
         self._autocomplete("NUM200", 1, "num1200")
 
-        # There are no "X*" records
         self._autocomplete("XEF1000", 0, None)
 
     def test_02_pages_search(self):
@@ -126,11 +107,6 @@ class TestAutoComplete(TransactionCase):
                 return
 
         with MockRequest(self.env, website=self.env["website"].browse(1)):
-            # This should not crash. This ensures that when searching on `name`
-            # field of `website.page` model, it works properly when `pg_trgm` is
-            # activated.
-            # Indeed, `name` is a field of `website.page` record but only at the
-            # ORM level, not in SQL, due to how `inherits` works.
             self.env["website"].browse(1)._search_with_fuzzy(
                 "pages",
                 "test",
@@ -149,7 +125,6 @@ class TestAutoComplete(TransactionCase):
         test_page = self.env.ref("test_website.test_page")
         test_page.name = "testTotallyUnique"
 
-        # Editor and Designer see pages in result
         self._autocomplete_page("testTotallyUnique", 1, False)
 
         test_page.visibility = "connected"
@@ -160,7 +135,6 @@ class TestAutoComplete(TransactionCase):
         self._autocomplete_page("testTotallyUnique", 1, False)
         test_page.group_ids = False
 
-        # Public user don't see restricted page
         saved_env = self.env
         self.website.env = self.env = self.env(user=self.website.user_id)
         self._autocomplete_page("testTotallyUnique", 0, None)
@@ -181,13 +155,10 @@ class TestAutoComplete(TransactionCase):
         test_page.visibility = "connected"
         self._autocomplete_page("testTotallyUnique", 0, None)
 
-        # restore website env for next tests
         self.website.env = self.env = saved_env
 
     def test_indirect(self):
         self._autocomplete("module", 4, "model")
         self._autocomplete("rechord", 3, "record")
         self._autocomplete("suborder", 1, "submodel")
-        # Sub-sub-fields are currently not supported.
-        # Adapt expected result if this becomes a feature.
         self._autocomplete("tagg", 0, None)

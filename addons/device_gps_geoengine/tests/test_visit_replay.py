@@ -75,7 +75,6 @@ class TestVisitReplay(DeviceTransactionCase):
         self.assertEqual(visits.mapped("duration_hours"), [3, 0])
 
     def test_generic_wizard_uses_half_open_days_in_its_selected_timezone(self):
-        # New York's spring transition has a 23-hour calendar day.
         self._position("2026-03-08 05:00:00")
         self._position("2026-03-08 06:00:00")
         self._position("2026-03-09 04:00:00")

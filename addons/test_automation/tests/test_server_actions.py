@@ -60,9 +60,6 @@ class TestServerActionsValidation(TestServerActionsBase):
         )
         with self.assertRaises(ValidationError) as ve:
             self.action.write({"update_path": "parent_id.name.something_else"})
-        # Assert what the message must convey, not its exact prose: this fork
-        # rewords validation messages to be more actionable, and pinning the
-        # full string turns every such improvement into a test failure.
         message = ve.exception.args[0]
         self.assertIn("Field to Update Path", message)
         self.assertIn("non-relational", message)
@@ -105,7 +102,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
     """
 
     def _configured(self, state, model):
-        """The action for `state`, set up so that it needs its record."""
         values = {"name": f"Act {state}", "model_id": model.id, "state": state}
         if state in ("object_create", "object_copy"):
             values["link_field_id"] = (
@@ -138,7 +134,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
                 )
 
     def test_a_state_that_survives_its_record_does_not_warn(self):
-        """The warning is not `any mail-ish state`: `code` runs on anything."""
         model = self.env["ir.model"]._get("mail.test.lead")
         action = self.env["ir.actions.server"].create(
             {"name": "Log it", "model_id": model.id, "state": "code", "code": "pass"}
@@ -154,12 +149,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
         self.assertFalse(rule._onchange_trigger_or_actions())
 
     def test_a_create_with_nothing_to_link_to_survives_its_record(self):
-        """`object_create` is in the set, and still does not always mind.
-
-        It reads the deleted record only to write the new one onto its
-        `link_field_id`. With no link field there is nothing to read, and the
-        rule creates its record whether or not the trigger deleted one.
-        """
         model = self.env["ir.model"]._get("mail.test.lead")
         action = self.env["ir.actions.server"].create(
             {
@@ -184,7 +173,6 @@ class TestOnUnlinkWarnsForActionsNeedingTheirRecord(TestServerActionsBase):
         self.assertFalse(rule._onchange_trigger_or_actions())
 
     def test_the_warning_names_the_actions_it_found(self):
-        """It used to say "you cannot send an email" whatever the action was."""
         model = self.env["ir.model"]._get("mail.test.lead")
         action = self._configured("object_write", model)
         rule = self.env["automation.rule"].new(
@@ -280,7 +268,6 @@ class TestAutomationBatchesWhatItCan(TransactionCase):
             self.assertIn(partner, lead.message_partner_ids, "and it did the work")
 
     def test_a_code_action_still_runs_once_per_record(self):
-        """`record` in user code means one record; batching would silently lie."""
         automation = create_automation(
             self,
             model_id=self.lead_model.id,
@@ -353,7 +340,6 @@ class TestMultiActionTakesTheBatchWhenItsChildrenCan(TransactionCase):
         cls.follower = cls.env["res.partner"].create({"name": "Follower"})
 
     def _child(self, **values):
-        """A *configured* child: base refuses a `multi` over a child that warns."""
         if values.get("state") in ("followers", "remove_followers"):
             values.setdefault("followers_type", "specific")
             values.setdefault("partner_ids", [(6, 0, self.follower.ids)])

@@ -220,12 +220,6 @@ def _evaluate(node: typing.Any, row: Mapping[str, typing.Any]) -> bool | None:
 
 
 def violates_check(definition: str, row: Mapping[str, typing.Any]) -> bool:
-    """Whether PostgreSQL would refuse `row` for this CHECK.
-
-    False whenever that cannot be established -- an expression outside the
-    grammar, a column the row does not carry, or a comparison that is NULL
-    and therefore unknown -- so this never refuses what the database accepts.
-    """
     body = definition.strip()
     if not body.upper().startswith("CHECK"):
         return False

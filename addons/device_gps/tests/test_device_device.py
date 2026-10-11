@@ -51,9 +51,6 @@ class TestRemoteDeviceGps(DeviceTransactionCase):
         self.assertTrue(self.device.is_gps_device)
 
     def test_an_imei_alone_no_longer_makes_a_device_a_gps_device(self):
-        # It used to: the compute ORed bool(imei), so a SIM-equipped access
-        # terminal qualified. Company phones, the case that clause was really
-        # serving, now qualify because device_mobile declares their category.
         category = self.env["device.kind"].create(
             {"name": "Cellular Terminal", "code": "cellular_terminal"}
         )

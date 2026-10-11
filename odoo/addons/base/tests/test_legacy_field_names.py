@@ -33,8 +33,6 @@ class TestLegacyFieldNames(TransactionCase):
         )
 
     def test_every_declared_rename_points_at_a_field_here(self):
-        # a stale entry would send callers to a field that is not there, or
-        # shadow one that came back under its upstream name
         for name in self.env.registry:
             model = self.env[name]
             for old, new in model._legacy_field_names.items():

@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-# The mobile platforms odoo.libs._vendor.useragents.UserAgentParser can emit.
 _MOBILE_PLATFORMS = frozenset(
     {"android", "iphone", "ipad", "blackberry", "symbian", "windows phone"}
 )
@@ -43,8 +42,6 @@ _DISPLAY_NAMES = {
     "samsung": "Samsung Internet",
 }
 
-# An identifier, never a credential: it groups a browser's sessions and nothing
-# may trust it. The server keeps only its hash.
 CLIENT_KEY_COOKIE = "device_key"
 _CLIENT_KEY_MAX_AGE = 400 * 24 * 60 * 60
 _CLIENT_KEY_RE = re.compile(r"[A-Za-z0-9_-]{43}")
@@ -75,7 +72,6 @@ def _sha256(text: str) -> str:
 
 
 def _browser_key(req: Any, *, issue: bool) -> str | None:
-    # a key issued earlier in this request is only in the response's cookies
     key = getattr(req, "device_key", None) or req.httprequest.cookies.get(
         CLIENT_KEY_COOKIE
     )
@@ -101,8 +97,6 @@ def _device_key_hash(
 ) -> str:
     if key:
         return _sha256(key)
-    # a client without the cookie (RPC, API keys) is one device per session and
-    # browser, as before browsers were recognized
     return _sha256(
         "\x1f".join(("session", session_identifier, platform or "", browser or ""))
     )
@@ -210,7 +204,6 @@ class AuthUserClient(models.Model):
     ) -> SQL:
         current = _current_client_id()
         if current is None:
-            # no session to compare against: the term sorts nothing
             return SQL.EMPTY
         _debug.logic("order_by_is_current", direction=str(direction))
         return SQL("%s = %s %s", SQL.identifier(alias, "id"), current, direction)
@@ -224,7 +217,6 @@ class AuthUserClient(models.Model):
         return super().write(vals)
 
     def action_archive(self) -> dict[str, Any] | None:
-        # archiving a device is revoking it: its sessions end with it
         return self.revoke()
 
     def action_unarchive(self) -> None:
@@ -339,10 +331,6 @@ class AuthUserClient(models.Model):
         if not client_id or generation is None or epoch is None:
             _debug.logic("binding_refused", uid=session.uid, reason="missing_binding")
             return False
-        # Revocation is read from a fresh primary snapshot, even when the business
-        # request reads a replica or has already established a repeatable-read
-        # snapshot. A caller already holding one (a websocket, whose cursors come
-        # from its pool-aware acquisition) passes it instead of opening another.
         if fresh_primary_cr is not None:
             valid = self._binding_is_current(
                 fresh_primary_cr, session, client_id, generation, epoch
@@ -589,8 +577,6 @@ class AuthUserClient(models.Model):
     def _schedule_session_cleanup(self, identifiers: list[str]) -> None:
         if not identifiers:
             return
-        # The external store cannot roll back with the authority rows. Capture
-        # neither an environment nor a recordset across the commit boundary.
         store = root.session_store
         identifiers = list(identifiers)
 
@@ -606,7 +592,6 @@ class AuthUserClient(models.Model):
         self.env.cr.postcommit.add(cleanup_sessions)
 
     def _notify_new_client(self) -> None:
-        # a login from a browser this user had never used: mail sends the alert
         _debug.lifecycle("new_device", device=self.id, user=self.user_id.id)
 
     @api.autovacuum

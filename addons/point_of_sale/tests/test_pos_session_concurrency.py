@@ -76,7 +76,6 @@ class TestPosSessionConcurrency(TestPoSCommon):
         def locked_execute(query, *args, **kwargs):
             code = getattr(query, "code", query)
             if '"pos_session"' in code and "SKIP LOCKED" in code:
-                # another transaction holds the row: SKIP LOCKED returns nothing
                 return execute("SELECT id FROM pos_session WHERE false")
             return execute(query, *args, **kwargs)
 
@@ -88,7 +87,6 @@ class TestPosSessionConcurrency(TestPoSCommon):
                     self.assertIn("Another user is currently closing", str(error))
                 else:
                     self.fail("A locked session must refuse closing")
-            # Do not let assertRaises' savepoint repair the transaction for us.
             self.cr.execute("SELECT 1")
             self.assertEqual(self.cr.fetchone(), (1,))
             _logger.debug("Close refusal left the transaction usable")

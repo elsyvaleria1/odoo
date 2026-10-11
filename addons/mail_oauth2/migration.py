@@ -10,7 +10,6 @@ from odoo.tools import SQL
 
 _logger = logging.getLogger(__name__)
 
-# (table, model, field naming the server type)
 SERVER_TABLES = (
     ("ir_mail_server", "ir.mail_server", "smtp_authentication"),
     ("fetchmail_server", "fetchmail.server", "server_type"),
@@ -18,8 +17,6 @@ SERVER_TABLES = (
 
 
 def servers_holding_tokens(cr, server_type):
-    """(model, id, name, credential id) of each
-    server of `server_type` whose tokens wait for adoption."""
     rows = []
     for table, model, type_field in SERVER_TABLES:
         if not schema.column_exists(cr, table, "oauth2_credential_id"):
@@ -38,8 +35,6 @@ def servers_holding_tokens(cr, server_type):
 
 
 def refuse_without_client(env, server_type, label, has_client) -> None:
-    """The Odoo SA relay is gone: a server it authorized has no client to
-    refresh its tokens with, and the upgrade waits for one."""
     if has_client:
         return
     if servers := servers_holding_tokens(env.cr, server_type):
@@ -61,8 +56,6 @@ def refuse_without_client(env, server_type, label, has_client) -> None:
 def adopt_servers(
     env, server_type, service, scope_of, legacy_path, expiry_column, client
 ):
-    """Bind each server's tokens to its own connection on `service`, then drop
-    the vendor's expiry column and clear the shared credential link."""
     cr = env.cr
     Credential = env["credential.credential"].with_context(active_test=False)
     adopted = 0
@@ -112,8 +105,6 @@ def adopt_servers(
 
 
 def move_client(env, service, client_id_key, client_secret_key, label):
-    """The mail client of old: the vendor's client when it has none, else
-    beside each server's tokens when it differs (returned for them)."""
     ICP = env["ir.config_parameter"]
     Credential = env["credential.credential"]
     client_id = ICP.get_param(client_id_key)
@@ -127,7 +118,6 @@ def move_client(env, service, client_id_key, client_secret_key, label):
         return None
     if service._oauth_client_id(False) == client_id:
         return None
-    # D1: one client per vendor; a second one stays beside the tokens it issued
     _logger.warning(
         "%s mail servers keep their own OAuth client %r beside their tokens: the "
         "company's %s client is %r",

@@ -58,13 +58,6 @@ class KnowledgeCommon(MailCommon):
     def assertMembers(
         self, articles, exp_internal_permission, exp_partners_permissions, msg=None
     ):
-        """Custom assert for members, to ease writing tests. Check state of
-        members on articles, as sudo to avoid ACLs-based misunderstanding.
-
-        :param exp_internal_permission: global internal permission of articles;
-        :param exp_partners_permissions: dict of pid: permission that are members
-          expected to be on articles;
-        """
         for article in articles.sudo():
             self.assertEqual(article.internal_permission, exp_internal_permission)
             self.assertEqual(
@@ -77,11 +70,6 @@ class KnowledgeCommon(MailCommon):
             )
 
     def assertSortedSequence(self, articles):
-        """Assert that the articles are properly sorted according to their sequence
-        number
-
-        :param articles (Model<knowledge.article>): Recordset of knowledge.article
-        """
         for k in range(len(articles) - 1):
             self.assertTrue(
                 articles[k].sequence <= articles[k + 1].sequence,
@@ -89,9 +77,6 @@ class KnowledgeCommon(MailCommon):
             )
 
     def _create_private_article(self, name, target_user=None):
-        """Due to membership model constraints, create test records as sudo
-        and return a record in current user environment. Creation itself is
-        not tested here."""
         target_user = self.env.user if target_user is None else target_user
         if target_user:
             vals = {
@@ -140,14 +125,6 @@ class KnowledgeCommonWData(KnowledgeCommon):
         with mute_logger("odoo.models.unlink"):
             cls.env["knowledge.article"].search([]).unlink()
 
-        # - Private         seq=997   private      none    (manager-w+)
-        #   - Child1        seq=0     "            "
-        # - Shared          seq=998   shared       none    (admin-w+,employee-r+,manager-r+)
-        #   - Child1        seq=0     "            "       (employee-w+)
-        #   - Child2        seq=0     "            "       (portal-r+)
-        # - Playground      seq=999   workspace    w+
-        #   - Child1        seq=0     "            "
-        #   - Child2        seq=1     "            "
         cls._base_sequence = 999
         cls.article_workspace = cls.env["knowledge.article"].create(
             {
@@ -302,31 +279,6 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
         with mute_logger("odoo.models.unlink"):
             cls.env["knowledge.article"].search([]).unlink()
 
-        # ------------------------------------------------------------
-        #                         Perm (" = inherited) + exceptions
-        # WRITABLE ROOT           write
-        # - Community             " (w)
-        #   - Members             " (w)   (-employee-read)
-        #   - Readonly            read    (+manager-write)
-        #   - Writable            " (w)   (+portal-read)
-        #     - Writable child    " (w)
-        #       - Child           "
-        #     - Nyarlathotep      DESYNC  read, manager-write
-        #       - Child           "
-        # READABLE ROOT           read    (+manager-write)
-        # - TTRPG                 " (r)
-        #   - OpenCthulhu         write   (+portal-read)
-        #     - MansionsOfTerror  DESYNC  none, employee-write, manager-read
-        #       - Child           "
-        #   - OpenParanoïa        read    (+employee-read, +portal-read)
-        #   - Proprietary         " (r)
-        #   - Secret              none
-        #     - Child             "
-        # - Board Games           " (r)
-        # SHARED ROOT             none    (+manager-write, +employee-read)
-        # PRIVATE ROOT            none    (+employee-write)
-        #
-        # ------------------------------------------------------------
         cls.article_roots = cls.env["knowledge.article"].create(
             [
                 {
@@ -343,7 +295,7 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
                                 "permission": "write",
                             },
                         ),
-                    ],  # ensure at least one write access
+                    ],
                     "internal_permission": "read",
                     "name": "Readable Root",
                     "is_article_visible_by_everyone": True,
@@ -392,12 +344,10 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
         )
         cls.article_headers = cls.env["knowledge.article"].create(
             [
-                # writable
                 {
                     "name": "Write-Community",
                     "parent_id": cls.article_roots[0].id,
                 },
-                # readable
                 {
                     "name": "Read-TTRPG",
                     "parent_id": cls.article_roots[1].id,
@@ -408,7 +358,6 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
                 },
             ]
         )
-        # Under Write internal permission
         cls.article_write_contents = cls.env["knowledge.article"].create(
             [
                 {
@@ -439,7 +388,7 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
                                 "permission": "write",
                             },
                         ),
-                    ],  # ensure at least one write access
+                    ],
                     "internal_permission": "read",
                     "name": "Readonly Subarticle",
                     "parent_id": cls.article_headers[0].id,
@@ -484,7 +433,6 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
         )
         cls.article_write_desync = cls.env["knowledge.article"].create(
             [
-                # Community/Writable
                 {
                     "article_member_ids": [
                         (
@@ -512,10 +460,8 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
             ]
         )
 
-        # Under Read internal permission
         cls.article_read_contents = cls.env["knowledge.article"].create(
             [
-                # TTRPG
                 {
                     "article_member_ids": [
                         (
@@ -575,7 +521,6 @@ class KnowledgeArticlePermissionsCase(KnowledgeCommon):
         )
         cls.article_read_desync = cls.env["knowledge.article"].create(
             [
-                # Read/TTRPG: Open Cthulhu
                 {
                     "article_member_ids": [
                         (

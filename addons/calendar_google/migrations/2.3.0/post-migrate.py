@@ -13,6 +13,5 @@ def migrate(cr, version):
             "sync_token": "google_calendar_sync_token",
             "stopped": "google_synchronization_stopped",
         },
-        # written, never read
         dropped=("google_calendar_cal_id",),
     )

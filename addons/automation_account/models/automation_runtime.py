@@ -41,7 +41,6 @@ class AutomationRuntime(models.Model):
 
     @api.constrains("st_line_id", "automation_id", "state")
     def _check_one_run_per_statement_line(self) -> None:
-        """A payment may start several workflows, but each one only once."""
         runs = self.filtered(lambda run: run.st_line_id and run.state != "cancel")
         if not runs:
             return
@@ -73,44 +72,21 @@ class AutomationRuntime(models.Model):
         return len(self.company_ids) > 1
 
     def _get_vehicle_company(self) -> models.Model:
-        """Return the company that received the money: the bank line's own.
-
-        A run without a bank statement line has no vehicle to tell apart, and
-        answers its first company.
-        """
         self.check_singleton()
-        # The run is listed in each of its companies, and the bank line
-        # belongs to one: it is read in every company the user has, not only
-        # in the ones his company switcher holds.
         st_line = self.st_line_id.with_context(
             allowed_company_ids=list(self.env.user._get_company_ids()),
         )
-        # `_origin`: the start dialog asks an unsaved run, whose companies
-        # are stand-ins no journal or tax search can be scoped to.
         return (st_line.company_id or self.company_ids[:1])._origin
 
     def _get_transaction_company(self) -> models.Model:
-        """Return the company that holds the transaction with the partner.
-
-        It is the run's other company when a vehicle received the money for
-        it, and the vehicle itself when the run stays in one company.
-        """
         self.check_singleton()
         vehicle = self._get_vehicle_company()
         return (self.company_ids._origin - vehicle)[:1] or vehicle
 
     def _execution_company_ids(self) -> list[int]:
-        """Companies a step of this run must see, the vehicle first."""
         self.check_singleton()
-        # A run of two companies creates and reconciles documents in both, so
-        # both are allowed whatever the company switcher holds. The user still
-        # needs access to both: this widens what is visible, never what is
-        # permitted.
         companies = self.company_ids._origin
         if not self.env.su:
-            # Read as the user, a saved run only shows the companies he
-            # belongs to, so the ones he lacks are asked for past the company
-            # rule; an unsaved one still holds whatever it was given.
             granted = list(self.env.user._get_company_ids())
             if any(company.id not in granted for company in companies) or (
                 self.ids
@@ -145,8 +121,6 @@ class AutomationRuntime(models.Model):
     @api.depends(lambda self: self._get_problem_triggers())
     def _compute_problem_message(self) -> None:
         for runtime in self:
-            # A reader who may open the run but not its workflow's steps or
-            # templates is told nothing, rather than refused the run.
             try:
                 problems = runtime._get_workflow_problems()
             except AccessError:
@@ -154,7 +128,6 @@ class AutomationRuntime(models.Model):
             runtime.problem_message = "\n".join(problems)
 
     def _get_pending_steps(self) -> models.Model:
-        """Return the steps this run has not settled, in running order."""
         self.check_singleton()
         if self.state in ("done", "cancel"):
             return self.env["ir.actions.server"]
@@ -173,8 +146,6 @@ class AutomationRuntime(models.Model):
         if not self._get_pending_steps():
             return []
         if self._is_intercompany():
-            # Asked from one company's screen, the other company's journals
-            # and taxes are out of scope; a step sees both, so does this.
             try:
                 self = self.with_context(
                     allowed_company_ids=self._execution_company_ids(),

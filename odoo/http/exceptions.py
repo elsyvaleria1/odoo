@@ -67,7 +67,6 @@ def is_http_answer(exc: BaseException) -> bool:
 
 
 def abort(status: int | Response, *args: Any, **kwargs: Any) -> NoReturn:
-    # A package Response is a proxy; werkzeug gets the response it wraps.
     target: Any = getattr(status, "_wrapped__", status)
     _debug.logic("http.abort", status=getattr(target, "status_code", target))
     werkzeug.exceptions.abort(target, *args, **kwargs)
@@ -80,7 +79,7 @@ def get_error_response(exc: BaseException) -> ErrorResponse | None:
 
 def set_error_response(exc: BaseException, response: ErrorResponse) -> None:
     carrier: Any = exc
-    replaced = get_error_response(exc) is not None  # debuglog
+    replaced = get_error_response(exc) is not None
     carrier.error_response = response
     _debug.lifecycle(
         "http.error_response.attached",

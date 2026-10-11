@@ -14,12 +14,6 @@ class TestPlanningTimesheet(TestCommonForecast):
         cls.setUpProjects()
 
     def test_gantt_progress_bar_group_by_project(self):
-        """
-        This test ensures that the _gantt_progress_bar_project_id return values is correct.
-        - Every project_id present in the res_ids should be present in the dict.
-        - The 'value' should be 0 if the project contains no planning slot available in the date range given, else it should be equal to the total of every available slot for the given date range.
-        - The 'max value' should be equal to the 'allocated_hours' field for each project.
-        """
         projects = (
             project_without_slot,
             project_slot_not_in_date_range,
@@ -80,7 +74,7 @@ class TestPlanningTimesheet(TestCommonForecast):
             project_slot_in_date_range.id: {
                 "value": 16.0,
                 "max_value": 60.0,
-            },  # 12 hours in the 1st slot + 4 hours in the 2nd slot
+            },
         }
         values = self.env["planning.slot"]._gantt_progress_bar_project_id(
             res_ids, start_date, end_date
@@ -97,7 +91,6 @@ class TestPlanningTimesheet(TestCommonForecast):
                 "resource_id": self.resource_bert.id,
                 "allocated_hours": 40,
                 "start_datetime": datetime(2019, 6, 6, 8, 0, 0),
-                # 6/8/2019 and 6/9/2019 are weekend days
                 "end_datetime": datetime(2019, 6, 12, 17, 0, 0),
                 "allocated_percentage": 100,
                 "state": "1_draft",
@@ -136,7 +129,6 @@ class TestPlanningTimesheet(TestCommonForecast):
         self.assertEqual(slot.effective_hours, 2)
 
     def test_planning_analysis_report_fields(self):
-        """This test ensure that the fields of the planning analysis report are correctly computed"""
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.employee_bert.resource_id.id,
@@ -272,9 +264,6 @@ class TestPlanningSlotEffectiveCost(TestCommonForecast):
     def test_the_slot_costs_its_timesheets_at_what_they_recorded(self):
         timesheet = self._timesheet()
         self.assertEqual(timesheet.amount, -40.0)
-        # Read the slot before rewriting the amount, so the first recompute has
-        # to land: without it both writes fold into one pending compute and the
-        # test passes whether or not `amount` is a dependency of it.
         self.assertEqual(self._read("effective_hours_cost"), 40.0)
 
         timesheet.amount = -380.0
@@ -333,10 +322,6 @@ class TestPlanningSlotEffectiveCost(TestCommonForecast):
         )
 
     def _cost_of_a_timesheet_with(self, extra_slots):
-        # The recompute has to be provoked, not merely read: `effective_hours_cost`
-        # is stored, so reading it after `invalidate_all` is a column read and
-        # costs the same whatever the compute does. Writing a timesheet is what
-        # marks every slot of the project dirty.
         self._slots(extra_slots)
         self.env.flush_all()
         self.env.invalidate_all()

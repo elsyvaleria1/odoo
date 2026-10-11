@@ -16,8 +16,6 @@ class TestIapAccountNotifications(TransactionCase):
         )
 
     def _bus_send_and_capture(self, method, *args, **kwargs):
-        """Call ``method`` on iap.account with res.users._bus_send mocked, and
-        return the (channel, params) it was called with."""
         with patch(
             "odoo.addons.bus.models.mixin_bus_listener.MixinBusListener._bus_send",
             autospec=True,
@@ -45,7 +43,6 @@ class TestIapAccountNotifications(TransactionCase):
         self.assertEqual(params, {"message": "Something broke", "type": "danger"})
 
     def test_send_status_notification_without_title(self):
-        """title is omitted from params entirely when not provided."""
         _channel, params = self._bus_send_and_capture(
             "_send_status_notification", "msg", "success"
         )

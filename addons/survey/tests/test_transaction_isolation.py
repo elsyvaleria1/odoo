@@ -53,7 +53,6 @@ class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
         return answer, response
 
     def test_out_of_range_prefill_does_not_500(self):
-        """value_scale is int4: 2**31 fails at the database, not in Python."""
         _answer, response = self._begin({f"Q{self.scale_question.id}": str(2**31)})
         self.assertEqual(response.status_code, 200)
         payload = response.json()
@@ -78,7 +77,6 @@ class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
         self.assertEqual(line.value_scale, 5)
 
     def test_bad_prefill_does_not_discard_the_good_ones(self):
-        """The loop must survive one bad value and keep going."""
         text_question = self.prefill_survey.question_ids[1]
         answer, response = self._begin(
             {
@@ -94,12 +92,6 @@ class TestTransactionIsolation(common.TestSurveyCommon, HttpCase):
         self.assertEqual(text_line.value_char_box, "kept")
 
     def test_calculated_fields_actually_compute(self):
-        """The broad handler hid a TypeError that killed the feature outright.
-
-        safe_eval in this fork takes no ``nocopy`` argument, so every evaluation
-        raised and was swallowed at warning level: a calculated question never
-        produced a value.
-        """
         survey = self.env["survey.survey"].create(
             {
                 "title": "Working calculated survey",

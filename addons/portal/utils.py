@@ -15,12 +15,6 @@ _debug = DebugLog(__name__)
 def get_url_with_params(
     url_string, query_params, remove_duplicates=True, *, doseq=False
 ):
-    """Merge query parameters while preserving the URL path and fragment.
-
-    Replace only supplied keys by default; repeated unrelated keys and blank
-    values retain their meaning. Set ``remove_duplicates=False`` to append,
-    or ``doseq=True`` to encode sequence values as repeated parameters.
-    """
     if not query_params:
         return url_string
     url = urlsplit(url_string)
@@ -53,8 +47,6 @@ def thread_link(
     action: str | None = None,
     role: str = "view",
 ):
-    """The live access.link `token` opens `thread` with at `role` or above, or
-    an empty link."""
     Link = thread.env["access.link"]
     if not thread:
         return Link
@@ -84,12 +76,8 @@ def is_thread_hash_pid_valid(
         pid = int(pid)
     except ValueError:
         return False
-    # a hash signs the token its URL carries: an old URL's token is a link
-    # carried over from before, and its hash still holds over it
     presented = thread_link(thread, token) if token else thread.env["access.link"]
     signed_over = token if presented else None
-    # the hash speaks for `pid` with what the link it signs allows; a token
-    # the record keeps that is no link (a course's) leaves the hash alone
     signed_link = presented or thread_link(
         thread, thread[thread._mail_post_token_field]
     )

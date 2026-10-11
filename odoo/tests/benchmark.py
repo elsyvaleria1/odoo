@@ -439,7 +439,7 @@ class BenchmarkCase:
 
     @classmethod
     def setUpClass(cls) -> None:
-        super().setUpClass()  # type: ignore[misc]  # the concrete suite mixes in TransactionCase
+        super().setUpClass()
         cls.all_results = []
 
     def _run_benchmark(

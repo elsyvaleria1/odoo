@@ -97,7 +97,6 @@ class DocumentsDocument(models.Model):
         )
 
     def _last_visits_sql(self) -> SQL:
-        # each document the user visited, with the last visit
         return SQL(
             """(SELECT document_id, max(access_date) AS last_access_date
                   FROM document_access_log
@@ -209,8 +208,6 @@ class DocumentsDocument(models.Model):
             unique_folder_id = self.env.context.get("documents_unique_folder_id")
             if unique_folder_id:
                 domain &= Domain("folder_id", "child_of", unique_folder_id)
-            # without counters the tree is the same whatever the search: a
-            # search domain here is a refetch that changes nothing
             _debug.pipeline(
                 "search_panel_range",
                 counters=enable_counters,
@@ -278,7 +275,6 @@ class DocumentsDocument(models.Model):
 
             special_roots = []
             if unique_folder_id:
-                # the folder the view is scoped to is the tree's only root
                 if unique_folder_id in values_range:
                     values_range[unique_folder_id]["user_folder_id"] = False
             elif not self.env.user.share:

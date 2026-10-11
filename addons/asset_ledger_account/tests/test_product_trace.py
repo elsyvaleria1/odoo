@@ -29,10 +29,6 @@ class TestProductTrace(AccountTestInvoicingCommon):
         cls.AccountMove = cls.env["account.move"].with_company(cls.test_company)
         cls.AccountMoveLine = cls.env["account.move.line"]
         cls.ProductTrace = cls.env["product.trace"]
-        # sudo: these are fixtures. marin gates product.template.standard_price
-        # with write_groups, so building them as the suite's deliberately
-        # under-privileged accounting user dies in setUpClass wherever it is
-        # installed. Access is exercised by the tests, not by the setup.
         cls.ProductProduct = cls.env["product.product"].sudo()
         cls.Partner = cls.env["res.partner"]
 
@@ -258,7 +254,6 @@ class TestProductTrace(AccountTestInvoicingCommon):
         self.assertFalse(vehicle.asset_id.account_move_ids)
 
     def test_bill_lines_follow_accounting_access(self):
-        """Inventory readers open the serial without gaining access to its bills."""
         move = self.AccountMove.create(self._bill_vals(self.fuel_vendor))
         line = self.AccountMoveLine.create(
             {

@@ -16,7 +16,6 @@ class FullBaseMailPerformance(BaseMailPostPerformance):
     def setUpClass(cls):
         super().setUpClass()
 
-        # records
         cls.record_containers = cls.env["mail.test.container.mc"].create(
             [
                 {
@@ -77,7 +76,6 @@ class FullBaseMailPerformance(BaseMailPostPerformance):
 @tagged("mail_performance", "post_install", "-at_install")
 class TestMailPerformance(FullBaseMailPerformance):
     def test_assert_initial_values(self):
-        """Simply ensure some values through all tests"""
         record_ticket = self.env["mail.test.ticket.mc"].browse(
             self.record_ticket_mc.ids
         )
@@ -96,18 +94,14 @@ class TestMailPerformance(FullBaseMailPerformance):
     @users("employee")
     @warmup
     def test_message_post_w_followers(self):
-        """Aims to cover as much features of message_post as possible"""
         record_ticket = self.env["mail.test.ticket.mc"].browse(
             self.record_ticket_mc.ids
         )
         attachments = self.env["ir.attachment"].create(self.test_attachments_vals)
-        self.push_to_end_point_mocked.reset_mock()  # reset as executed twice
+        self.push_to_end_point_mocked.reset_mock()
         self.flush_tracking()
 
-        # 108 -> 105: the send batch's pending-notification snapshot now answers
-        # "none" for a mail it does not list, instead of sending _mark_sending and
-        # _postprocess_sent_message back to a per-mail search.
-        with self.assertQueryCount(employee=105):  # test_mail_full: 106
+        with self.assertQueryCount(employee=105):
             new_message = record_ticket.message_post(
                 attachment_ids=attachments.ids,
                 body=Markup("<p>Test Content</p>"),
@@ -155,7 +149,6 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
             + cls.user_follower_portal
         )
 
-        # rating-enabled test records
         with cls.mock_push_to_end_point(cls):
             cls.record_ratings = cls.env["mail.test.rating"].create(
                 [
@@ -168,7 +161,6 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
                 ]
             )
 
-        # messages and ratings
         user_id_field = cls.env["ir.model.fields"]._get(
             cls.record_ratings._name, "user_id"
         )
@@ -290,7 +282,6 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
             cls.env[message.model].browse(message.res_id)
             for message in cls.messages_all
         ]
-        # ratings values related to rating-enabled records
         cls.ratings_all = (
             cls.env["rating.rating"]
             .with_user(cls.user_admin)
@@ -330,7 +321,6 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
         messages_all = self.messages_all.with_user(self.env.user)
 
         with self.assertQueryCount(employee=14):
-            # res = messages_all.portal_message_format(options=None)
             res = messages_all.portal_message_format(options={"rating_include": False})
 
         comment_subtype = self.env.ref("mail.mt_comment")
@@ -396,7 +386,6 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
             self.assertEqual(
                 format_res["subtype_id"], (comment_subtype.id, comment_subtype.name)
             )
-            # should not be in, not asked
             self.assertNotIn("rating_id", format_res)
             self.assertNotIn("rating_stats", format_res)
             self.assertNotIn("rating_value", format_res)
@@ -409,7 +398,7 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
     def test_portal_message_format_rating(self):
         messages_all = self.messages_all.with_user(self.env.user)
 
-        with self.assertQueryCount(employee=28):  # sometimes +1
+        with self.assertQueryCount(employee=28):
             res = messages_all.portal_message_format(options={"rating_include": True})
 
         self.assertEqual(len(res), len(messages_all))
@@ -450,7 +439,7 @@ class TestPortalFormatPerformance(FullBaseMailPerformance):
     def test_portal_message_format_monorecord(self):
         message = self.messages_all[0].with_user(self.env.user)
 
-        with self.assertQueryCount(employee=19):  # randomness: 18+1
+        with self.assertQueryCount(employee=19):
             res = message.portal_message_format(options={"rating_include": True})
 
         self.assertEqual(len(res), 1)
@@ -495,7 +484,6 @@ class TestRatingPerformance(FullBaseMailPerformance):
             )
         )
 
-        # create records with 2 ratings to check batch statistics on them
         responsibles = [cls.user_admin, cls.user_employee, cls.env["res.users"]]
         with cls.mock_push_to_end_point(cls):
             cls.record_ratings = cls.env["mail.test.rating"].create(
@@ -509,10 +497,8 @@ class TestRatingPerformance(FullBaseMailPerformance):
                 ]
             )
             rates = [enum % 5 for enum, _rec in enumerate(cls.record_ratings)]
-            # create rating from 1 -> 5 for each record
             for rate, record in zip(rates, cls.record_ratings, strict=True):
                 record.rating_apply(rate + 1, token=record._rating_get_access_token())
-            # create rating with 4 or 5 (half records)
             for record in cls.record_ratings[:10]:
                 record.rating_apply(4, token=record._rating_get_access_token())
             for record in cls.record_ratings[10:]:
@@ -541,7 +527,7 @@ class TestRatingPerformance(FullBaseMailPerformance):
     @warmup
     def test_rating_api_rating_get_operator(self):
         user_names = []
-        with self.assertQueryCount(employee=4):  # tmf: 4
+        with self.assertQueryCount(employee=4):
             ratings = self.record_ratings.with_env(self.env)
             user_names.extend(rating._rating_get_operator().name for rating in ratings)
         expected_names = ["Mitchell Admin", "Ernest Employee", False] * 6 + [
@@ -555,7 +541,7 @@ class TestRatingPerformance(FullBaseMailPerformance):
     @warmup
     def test_rating_api_rating_get_partner(self):
         partner_names = []
-        with self.assertQueryCount(employee=3):  # tmf: 3
+        with self.assertQueryCount(employee=3):
             ratings = self.record_ratings.with_env(self.env)
             partner_names.extend(
                 rating._rating_get_partner().name for rating in ratings
@@ -589,25 +575,25 @@ class TestRatingPerformance(FullBaseMailPerformance):
     @users("employee")
     @warmup
     def test_rating_last_value_perfs(self):
-        with self.assertQueryCount(employee=274):  # tmf: 274
+        with self.assertQueryCount(employee=274):
             self.create_ratings("mail.test.rating.thread")
 
-        with self.assertQueryCount(employee=324):  # tmf: 283
+        with self.assertQueryCount(employee=324):
             self.apply_ratings(1)
 
-        with self.assertQueryCount(employee=284):  # tmf: 242
+        with self.assertQueryCount(employee=284):
             self.apply_ratings(5)
 
     @users("employee")
     @warmup
     def test_rating_last_value_perfs_with_rating_mixin(self):
-        with self.assertQueryCount(employee=317):  # tmf: 317
+        with self.assertQueryCount(employee=317):
             self.create_ratings("mail.test.rating")
 
-        with self.assertQueryCount(employee=366):  # tmf: 325
+        with self.assertQueryCount(employee=366):
             self.apply_ratings(1)
 
-        with self.assertQueryCount(employee=346):  # tmf: 304
+        with self.assertQueryCount(employee=346):
             self.apply_ratings(5)
 
         with self.assertQueryCount(employee=1):

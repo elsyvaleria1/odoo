@@ -24,8 +24,6 @@ ALL_SUITE_PREFIXES = ("@pos_loyalty/unit",)
 class PosLoyaltySuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_pos_loyalty_unit(self):
-        """@pos_loyalty/unit — the pos_loyalty JS unit suites (models,
-        components)."""
         self._run_hoot("@pos_loyalty/unit", preset="desktop", timeout=900)
 
     def test_suite_filters_cover_every_test_file(self):

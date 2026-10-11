@@ -121,7 +121,6 @@ class FrontdeskVisitor(models.Model):
         self.served = True
 
     def _notify(self):
-        """Send a notification to the frontdesk's responsible users and the visitor's hosts when the visitor checks in."""
         for visitor in self:
             msg = ""
             visitor_name = visitor.name
@@ -161,7 +160,6 @@ class FrontdeskVisitor(models.Model):
                     visitor._notify_by_sms()
 
     def _notify_to_people(self) -> None:
-        """Send notification to the drink's responsible users when the visitor checks in."""
         for visitor in self:
             if visitor.drink_ids.notify_user_ids:
                 action = visitor.env.ref("frontdesk.action_frontdesk_visitor").id

@@ -48,8 +48,6 @@ class TestSmsProcessQueue(TransactionCase):
             patch.object(
                 SmsApi, "_send_sms_batch", autospec=True, side_effect=_send_sms_batch
             ),
-            # _commit_progress calls cr.commit(), forbidden on a test cursor:
-            # stub the cron bookkeeping, the behavior under test is the send.
             patch.object(
                 type(self.env["ir.cron"]),
                 "_commit_progress",
@@ -65,11 +63,6 @@ class TestSmsProcessQueue(TransactionCase):
         )
 
     def test_split_by_api_groups_by_company_scoped_iap_account(self):
-        """A batch spanning companies with distinctly-scoped `iap.account`
-        records must resolve each company's SMS against its own account, not
-        collapse into a single group that silently uses one company's
-        account for another company's messages.
-        """
         company_a = self.env["res.company"].create({"name": "Audit Company A"})
         company_b = self.env["res.company"].create({"name": "Audit Company B"})
         sms_service = self.env["iap.service"].search(

@@ -6,10 +6,6 @@ class IrModuleModule(models.Model):
 
     @api.model
     def get_or_create_studio_module(self):
-        """Returns the Studio module gathering all customizations done in
-        Studio (freshly created apps and customizations of existing apps).
-        Creates that module if it doesn't exist yet.
-        """
         studio_module = self.search([("name", "=", "studio_customization")])
         if not studio_module:
             studio_module = self.create(

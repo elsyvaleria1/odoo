@@ -203,10 +203,10 @@ class MrpBom(models.Model):
         subcomponents_by_product = {}
         checked = self.browse()
         boms_to_check = self
-        rounds = 0  # debuglog
+        rounds = 0
         with _debug.perf("bom_cycle_check", cr=self.env.cr, boms=self) as span:
             while boms_to_check:
-                rounds += 1  # debuglog
+                rounds += 1
                 reached = self.env["product.product"]
                 for bom in boms_to_check:
                     if not bom.active:
@@ -570,9 +570,6 @@ class MrpBom(models.Model):
         self.show_copy_operations_button = exist_operation
 
     def _get_production_warehouses(self) -> dict:
-        # Where an order of the BoM is made: its operation type, else the one a
-        # new manufacturing order defaults to, else the company's first
-        # warehouse.
         companies = self.company_id | self.env.company
         PickingType = self.env["stock.picking.type"]
         default_type_by_company = self.env[
@@ -1013,11 +1010,6 @@ class MrpBom(models.Model):
         return cost
 
     def _get_costing_quantity(self, quantity, as_component) -> tuple:
-        # Operation cycles are counted in the order that runs them: a kit's run
-        # in its parent's order, at the quantity the parent needs; a
-        # manufactured sub-assembly is made in its own orders, so a parent pays
-        # its share of one batch of the sub-assembly's BoM. Components and a
-        # subcontractor's price are bought at the quantity needed.
         self.check_singleton()
         if as_component and self.type != "phantom":
             batch = self.product_qty or 1.0
@@ -1098,9 +1090,9 @@ class MrpBom(models.Model):
         _debug.perf.count("kit_closure_memo", hit=False, bom=self.id)
         product_boms = {}
         frontier = [(line, product) for line in self.bom_line_ids]
-        depth = 0  # debuglog
+        depth = 0
         while frontier:
-            depth += 1  # debuglog
+            depth += 1
             products = self.env["product.product"].browse()
             for line, parent in frontier:
                 if (

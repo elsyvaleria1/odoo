@@ -91,9 +91,6 @@ class SearchMixin(_ModelStubs):
         batch_size: int = 1000,
         field_names: Sequence[str] | None = None,
     ) -> typing.Iterator[Self]:
-        # each batch is its own search, keyed on the last id seen: a domain
-        # that shrinks as its rows are processed is never re-read from an
-        # offset, and no id list of the whole set is held
         if batch_size <= 0:
             raise ValueError(f"batch_size must be positive, got {batch_size}")
         domain = Domain(domain)
@@ -268,12 +265,10 @@ class SearchMixin(_ModelStubs):
         positive_operator = Domain.NEGATIVE_OPERATORS.get(operator)
         aggregator = Domain.AND if positive_operator else Domain.OR
         domains: list[DomainType] = []
-        values_dropped = 0  # debuglog
+        values_dropped = 0
         for field_name in search_fnames:
             field = self._get_rec_names_search_field(field_name)
             if field.relational and positive_operator:
-                # a negative operator on the path would skip the rows whose
-                # field is empty: negate the positive match instead
                 domains.append(
                     ~Domain(field_name + ".display_name", positive_operator, value)
                 )
@@ -286,17 +281,12 @@ class SearchMixin(_ModelStubs):
                 for v in value:
                     with contextlib.suppress(ValueError, TypeError):
                         typed_value.append(field.convert_to_write(v, self))
-                values_dropped += len(value) - len(typed_value)  # debuglog
+                values_dropped += len(value) - len(typed_value)
                 domains.append([(field_name, operator, typed_value)])
             else:
                 with contextlib.suppress(ValueError, TypeError):
                     typed_value = field.convert_to_write(value, self)
                     domains.append([(field_name, operator, typed_value)])
-        # A value that converts for none of the search fields leaves no branch
-        # at all, and `Domain.OR([])` is FALSE while `Domain.AND([])` is TRUE
-        # -- so a name search silently matches nothing, or everything under a
-        # negative operator. Both are defensible readings of "no field can
-        # hold this value"; neither is visible without these two counts.
         _debug.logic(
             "search.display_name.match_domain",
             model=self._name,

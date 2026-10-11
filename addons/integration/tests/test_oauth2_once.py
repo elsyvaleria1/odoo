@@ -364,7 +364,6 @@ class TestTokenUse(OAuthOnceCase):
             fields.Datetime.now() - timedelta(minutes=5)
         )
         refused = _api_response(400, {"error": "invalid_grant"})
-        # not assertRaises: its savepoint would take the flag back with it
         with self._refresh_grant(refused):
             try:
                 self._client().get("/events")

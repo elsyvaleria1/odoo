@@ -11,7 +11,6 @@ class WizardAccountJournalTopup(models.TransientModel):
     _inherit = "wizard.account.journal.topup"
 
     def action_simulate_topup(self) -> None:
-        """Test-mode push only, send the topup simulation request to stripe so we can test payments without going to stripe dashboard"""
         self.check_singleton()
 
         if self.is_live_mode or self.pull_push_funds == "pull":

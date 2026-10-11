@@ -148,8 +148,6 @@ class PhoneNumber(models.Model):
 
     @api.model
     def _search_number_ids(self, operator, value) -> list:
-        """The phone numbers matching ``value`` -- one term, or a collection of
-        them under ``in`` -- in a single statement."""
         if operator == "in":
             operator, values = "=", value
         else:

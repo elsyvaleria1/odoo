@@ -7,10 +7,6 @@ class MixinTimesheetGrid(models.AbstractModel):
     _description = "Timesheet Grid mixin"
 
     def get_planned_and_worked_hours(self):
-        """
-        Method called by the timesheet widgets on the frontend in gridview to get information
-        about the hours allocated and worked for each record.
-        """
         company = self.env.company
         uom = company.hr_timesheet_config_id.timesheet_encode_uom_id
         day_uom = self.env.ref("base.product_uom_day")

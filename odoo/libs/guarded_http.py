@@ -66,9 +66,6 @@ SCHEMES = ("http", "https")
 
 _CONTENT_LENGTH = re.compile(r"[0-9]{1,19}")
 
-# The proxy variables requests would read from the environment. A guarded
-# session never does: a proxy resolves the name again, after the check, so it
-# is declared once for the process and reached with the checked address.
 ENVIRONMENT_PROXY_VARIABLES = (
     "HTTP_PROXY",
     "HTTPS_PROXY",
@@ -84,7 +81,7 @@ _debug = DebugLog(__name__)
 
 
 def configure_egress_proxy(url: str | None) -> None:
-    global _egress_proxy  # noqa: PLW0603 one process-wide egress route
+    global _egress_proxy
     if url:
         parts = parse_url(url)
         if parts.scheme not in SCHEMES or not parts.host:
@@ -110,13 +107,8 @@ class CallBudget:
         return "CALL_BUDGET"
 
 
-# max_seconds=CALL_BUDGET: each call's deadline is what its own timeout and
-# retries allow one well-behaved exchange (get_call_budget); redirect hops,
-# further addresses and drained bodies spend from it instead of adding to it
 CALL_BUDGET = CallBudget()
 
-# between a caller timing a call and the adapter starting its deadline: the
-# request is prepared, and after the deadline the call unwinds a closed socket
 _UNWIND_SECONDS = 1.0
 
 
@@ -135,8 +127,6 @@ def _get_timeout_pair(timeout: typing.Any) -> tuple[float, float] | None:
 def _get_retry_after_max(retry: Retry, read: float) -> float:
     if not retry.respect_retry_after_header:
         return 0
-    # urllib3's own default is six hours a try: a server's Retry-After then
-    # held the call budget, and a breaker's probe, for a day and more
     if retry.retry_after_max == Retry.DEFAULT_RETRY_AFTER_MAX:
         return read
     return retry.retry_after_max
@@ -162,7 +152,6 @@ class RefusedDestination(requests.exceptions.InvalidURL, netguard.DestinationRef
         request: PreparedRequest | None = None,
         kind: netguard.RefusalKind | None = None,
     ) -> None:
-        # the request keyword requests' base reads and ValueError's ignores
         requests.exceptions.RequestException.__init__(self, *args, request=request)
         if kind is not None:
             self.kind = kind
@@ -206,7 +195,6 @@ class GuardedAdapter(HTTPAdapter):
         self.max_bytes = max_bytes
         self.max_seconds = max_seconds
         self._proxy = proxy
-        # set before super().__init__, which builds the pool manager
         self._ssl_context = ssl_context
         super().__init__(**kwargs)
 
@@ -237,8 +225,6 @@ class GuardedAdapter(HTTPAdapter):
         return self.max_seconds
 
     def get_worst_case_seconds(self, timeout: typing.Any = None) -> float | None:
-        # only a deadline bounds a call: a read timeout bounds each wait, and a
-        # body trickled under it, a redirect chain or a dead address list run on
         limit = self.get_max_seconds(timeout)
         return None if limit is None else limit + _UNWIND_SECONDS
 
@@ -259,7 +245,7 @@ class GuardedAdapter(HTTPAdapter):
         return manager
 
     @typing.override
-    def send(  # type: ignore[override]
+    def send(
         self,
         request: PreparedRequest,
         stream: bool = False,
@@ -277,9 +263,6 @@ class GuardedAdapter(HTTPAdapter):
         addresses = request.__dict__.pop("netguard_addresses", None)
         if addresses is None:
             addresses = self._check(request, deadline)
-        # the route is the adapter's own: whatever proxies requests merged in
-        # (the environment's, a caller's) would re-resolve the checked name,
-        # and a proxy credential would reach the destination
         del proxies
         request.headers.pop("Proxy-Authorization", None)
         if deadline is not None:
@@ -304,8 +287,6 @@ class GuardedAdapter(HTTPAdapter):
     ) -> tuple[IPAddress, ...]:
         if deadline is None:
             return self._check_now(request)
-        # getaddrinfo takes no timeout: the name is resolved aside and waited
-        # on until the deadline, and a resolver still stuck after it is left
         resolved: dict[str, typing.Any] = {}
 
         def resolve() -> None:
@@ -354,7 +335,7 @@ class GuardedAdapter(HTTPAdapter):
         timeouts = 0
         try:
             for position, address in enumerate(addresses, start=1):
-                request.netguard_address = str(address)  # type: ignore[attr-defined]
+                request.netguard_address = str(address)
                 _passing_over.active = position < len(addresses)
                 try:
                     return super().send(request, **options)
@@ -370,7 +351,7 @@ class GuardedAdapter(HTTPAdapter):
             raise AssertionError("check_host returns at least one address")
         finally:
             _passing_over.active = False
-            del request.netguard_address  # type: ignore[attr-defined]
+            del request.netguard_address
             if added_host:
                 del request.headers["Host"]
 
@@ -396,9 +377,6 @@ class GuardedAdapter(HTTPAdapter):
         if host_params.get("scheme") == "https":
             pool_kwargs["assert_hostname"] = name
             pool_kwargs["server_hostname"] = name
-        # through a proxy the checked address is still the destination: a
-        # CONNECT to it for https, an absolute-form request line naming it for
-        # http (request_url), with TLS and the Host header on the name
         manager = self.proxy_manager_for(self.proxy) if self.proxy else self.poolmanager
         return manager.connection_from_host(**host_params, pool_kwargs=pool_kwargs)
 
@@ -461,13 +439,12 @@ class GuardedAdapter(HTTPAdapter):
         def capped(
             chunk_size: int | None = 1, decode_unicode: bool = False
         ) -> Iterator[typing.Any]:
-            # the cap counts bytes: decoding first would count characters
             chunks = capped_bytes(chunk_size)
             if decode_unicode:
                 return stream_decode_response_unicode(chunks, response)
             return chunks
 
-        response.iter_content = capped  # type: ignore[method-assign]
+        response.iter_content = capped
         return response
 
 
@@ -479,7 +456,6 @@ def _socket_of(raw: typing.Any) -> socket.socket | None:
     sock = getattr(getattr(raw, "connection", None), "sock", None)
     if sock is not None:
         return sock
-    # a response to "Connection: close" owns the socket its connection let go
     reader = getattr(getattr(raw, "_fp", None), "fp", None)
     return getattr(getattr(reader, "raw", None), "_sock", None)
 
@@ -512,8 +488,6 @@ def _start_watchdog(
 
 
 class _Deadline(Timeout):
-    # carries the response deadline through requests and urllib3 to the pool
-    # that holds the connection, which is where the status line is waited on
     def __init__(
         self,
         connect: typing.Any,
@@ -550,25 +524,22 @@ class _Deadline(Timeout):
         return self.fired.is_set() or time.monotonic() >= self.deadline
 
     def _within(self, value: typing.Any) -> float:
-        # a socket timeout of 0 means non-blocking, not expired
         remaining = max(self.deadline - time.monotonic(), 0.001)
         value = Timeout.resolve_default_timeout(value)
         return remaining if value is None else min(value, remaining)
 
     @property
     @typing.override
-    def connect_timeout(self) -> float:  # type: ignore[override]
+    def connect_timeout(self) -> float:
         return self._within(super().connect_timeout)
 
     @property
     @typing.override
-    def read_timeout(self) -> float:  # type: ignore[override]
+    def read_timeout(self) -> float:
         return self._within(super().read_timeout)
 
 
 class _RetryWithinDeadline(Retry):
-    # what urllib3 sleeps between tries, after a Retry-After or a backoff, ends
-    # at the deadline: the try after it is then refused at once
     deadline: float
 
     @typing.override
@@ -603,20 +574,14 @@ def _retry_within(retry: Retry, deadline: float) -> Retry:
         )
     bounded = copy.copy(retry)
     bounded.__class__ = bounded_class
-    bounded.deadline = deadline  # type: ignore[attr-defined]
+    bounded.deadline = deadline
     return bounded
 
 
-# set while a host's address other than its last is tried: a connection it
-# refuses or lets time out passes to the next address instead of being retried
 _passing_over = threading.local()
 
 
 class _WatchedPool:
-    # The watchdog on the body starts once a response exists; this one covers
-    # the connection before it: the request sent and the status line and
-    # headers waited on, which a read timeout bounds per recv only. A response
-    # urllib3 retries or follows is drained here too, under the same deadline.
     def urlopen(
         self,
         method: str,
@@ -638,15 +603,15 @@ class _WatchedPool:
             if timeout.passed():
                 timeout.fired.set()
                 raise MaxRetryError(
-                    self,  # type: ignore[arg-type]
+                    self,
                     url,
-                    ReadTimeoutError(self, url, "the response deadline passed"),  # type: ignore[arg-type]
+                    ReadTimeoutError(self, url, "the response deadline passed"),
                 )
             if isinstance(retries, Retry) and not isinstance(
                 retries, _RetryWithinDeadline
             ):
                 retries = _retry_within(retries, timeout.deadline)
-        return super().urlopen(  # type: ignore[misc]
+        return super().urlopen(
             method, url, body, headers, retries, *args, **kwargs
         )
 
@@ -659,7 +624,7 @@ class _WatchedPool:
         **kwargs: typing.Any,
     ) -> typing.Any:
         timeout = kwargs.get("timeout")
-        make_request = super()._make_request  # type: ignore[misc]
+        make_request = super()._make_request
         if not isinstance(timeout, _Deadline):
             return make_request(conn, method, url, *args, **kwargs)
 
@@ -726,8 +691,6 @@ def _revealed_auth(auth: typing.Any) -> typing.Any:
     if isinstance(auth, (HTTPBasicAuth, HTTPDigestAuth)):
         pair = (auth.username, auth.password)
         revealed = _revealed(pair)
-        # each holds its credential as text and formats it into the header (or
-        # the digest) itself: a Secret there would go out as the mask
         return auth if revealed is pair else type(auth)(*revealed)
     if isinstance(auth, (tuple, list)) and len(auth) == 2:
         return _revealed(auth)
@@ -768,16 +731,13 @@ def _refuse_rendered(prepared: PreparedRequest) -> None:
             )
 
 
-class GuardedSession(requests.Session):  # noqa: E8518  the guard itself: it mounts GuardedAdapter for both schemes
+class GuardedSession(requests.Session):
     def __init__(self) -> None:
         super().__init__()
-        # the environment names neither a route nor credentials: a proxy would
-        # re-resolve the checked name, and a netrc entry (a `default` one for
-        # every host) would authenticate to whatever destination passed
         self.trust_env = False
 
     @typing.override
-    def merge_environment_settings(  # type: ignore[override]
+    def merge_environment_settings(
         self,
         url: str | None,
         proxies: typing.Any,
@@ -801,8 +761,6 @@ class GuardedSession(requests.Session):  # noqa: E8518  the guard itself: it mou
     def prepare_request(self, request: requests.Request) -> PreparedRequest:
         given_url = request.url
         request = self._reveal_secrets(request)
-        # requests spells a URL's port only when it is truthy, so ":0" would
-        # reach the adapter as the scheme's default port
         try:
             port = parse_url(request.url or "").port
         except LocationParseError:
@@ -869,7 +827,7 @@ class GuardedSession(requests.Session):  # noqa: E8518  the guard itself: it mou
         return {}
 
     @typing.override
-    def send(  # type: ignore[override]
+    def send(
         self,
         request: PreparedRequest,
         *,
@@ -878,12 +836,9 @@ class GuardedSession(requests.Session):  # noqa: E8518  the guard itself: it mou
     ) -> Response:
         adapter = self.get_adapter(url=request.url or "")
         if isinstance(adapter, GuardedAdapter):
-            # a redirect hop is sent from inside the first send, with the same
-            # keywords: max_seconds bounds the whole chain, not each hop, and
-            # starts before the name is resolved
             started = time.monotonic() if chain_started is None else chain_started
             limit = adapter.get_max_seconds(kwargs.get("timeout"))
-            request.netguard_addresses = adapter._check(  # type: ignore[attr-defined]
+            request.netguard_addresses = adapter._check(
                 request, None if limit is None else started + limit
             )
             kwargs["chain_started"] = started
@@ -929,17 +884,13 @@ class GuardedXmlRpcTransport(xmlrpc.client.Transport):
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
 
-    def request(  # type: ignore[override]
+    def request(
         self,
         host: str,
         handler: str,
         request_body: bytes,
         verbose: bool = False,
     ) -> typing.Any:
-        # `host` is the URL's netloc as ServerProxy parsed it; the base URL
-        # given at construction carries the scheme too, so it is the one used
-        # to send. The netloc still carries the URL's userinfo, which stdlib
-        # turns into a Basic Authorization header.
         _, auth_headers, _ = self.get_host_info(host)
         url = f"{self._base_url}{handler}"
         response = self._session.post(

@@ -79,7 +79,7 @@ class TestReportSession(TestPoSCommon):
             p for p in report["payments"] if p.get("id", 0) == self.bank_split_pm1.id
         ]
         self.assertEqual(split_payment_bank[0]["cash_moves"][0]["amount"], 50)
-        bank_payment = [  # noqa: F841 -- kept for the pending assertion below
+        bank_payment = [
             p for p in report["payments"] if p.get("id", 0) == self.bank_pm1.id
         ]
         self.assertEqual(

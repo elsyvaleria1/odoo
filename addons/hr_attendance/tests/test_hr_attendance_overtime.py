@@ -670,16 +670,7 @@ class TestHrAttendanceOvertime(HttpCase):
 
         with freeze_time("2024-01-01 22:00:00"):
             Attendance._cron_auto_check_out()
-            # The schedule is written in Europe/Brussels, so its 12:00-13:00
-            # lunch is 11:00-12:00 UTC and falls inside the 08:00-12:00 morning:
-            # three worked hours, not four. This read 9 and cut at 18:00 while
-            # the break was placed in the RESOURCE's zone (UTC here) instead of
-            # the schedule's, which put it at 12:00-13:00 UTC -- outside both
-            # attendances, deducted from neither.
             self.assertEqual(morning.worked_hours, 3)
-            # The day is cut at exactly its budget: eight scheduled hours plus
-            # an hour of tolerance. Three were worked in the morning, so six
-            # more from the 13:00 UTC check-in.
             self.assertEqual(afternoon.worked_hours, 6)
             self.assertEqual(morning.worked_hours + afternoon.worked_hours, 9)
             self.assertEqual(afternoon.check_out, datetime(2024, 1, 1, 19, 0))
@@ -720,17 +711,6 @@ class TestHrAttendanceOvertime(HttpCase):
 
     @freeze_time("2024-02-02 23:00:00")
     def test_auto_check_out_specific_time(self):
-        """A fixed daily cut-off reaches the employees tolerance mode cannot.
-
-        `_cron_auto_check_out_tolerance` measures an employee against their
-        scheduled hours, so it filters on
-        `resource_calendar_id.schedule_type = fully_fixed` -- which matches
-        neither a flexible-schedule employee nor a fully flexible one. Either of
-        them who forgets to check out stays open for ever, and `hours_today`
-        grows with the wall clock. The specific-time mode needs no schedule: it
-        closes every open attendance at the company's cut-off, read in the
-        employee's own zone.
-        """
         self.company.write(
             {
                 "auto_check_out": True,
@@ -738,20 +718,14 @@ class TestHrAttendanceOvertime(HttpCase):
                 "auto_check_out_specific_time": 20.0,
             }
         )
-        # `_schedule_tz` prefers the version's own `tz` over the calendar's, so
-        # the employee is what has to move, not the calendar.
         self.flexible_employee.tz = "Asia/Tokyo"
 
-        # 08:00 UTC on the 1st is 17:00 in Tokyo, before that day's 20:00
-        # cut-off -- which fell at 11:00 UTC and is long past.
         overdue = self.env["hr.attendance"].create(
             {
                 "employee_id": self.flexible_employee.id,
                 "check_in": datetime(2024, 2, 1, 8, 0),
             }
         )
-        # 22:00 UTC on the 2nd is 07:00 on the 3rd in Tokyo: that day's cut-off
-        # is the evening still to come.
         not_due_yet = self.env["hr.attendance"].create(
             {
                 "employee_id": self.jpn_employee.id,
@@ -1187,8 +1161,6 @@ class TestHrAttendanceOvertime(HttpCase):
         )
 
     def test_employee_overtime_with_multiple_attendance_lines(self):
-        # The kiosk reports "today" in the employee's own zone, which is
-        # Brussels here; the server's date is behind it for two hours a day.
         employee_today = (
             fields.Datetime.now()
             .replace(tzinfo=UTC)

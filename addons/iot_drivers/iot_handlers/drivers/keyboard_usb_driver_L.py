@@ -27,14 +27,6 @@ xlib = ctypes.cdll.LoadLibrary("libX11.so.6")
 
 
 class KeyboardUSBDriver(Driver):
-    # The list of devices can be found in /proc/bus/input/devices
-    # or "ls -l /dev/input/by-path"
-    # Note: the user running "evdev" commands must be inside the "input" group
-    # Each device's input will correspond to a file in /dev/input/event*
-    # The exact file can be found by looking at the "Handlers" line in /proc/bus/input/devices
-    # Example: "H: Handlers=sysrq kbd leds event0" -> The file used is /dev/input/event0
-    # If you read the file "/dev/input/event0" you will get the input from the device in real time
-    # One usb device can have multiple associated event files (like a foot pedal which has 3 event files)
 
     connection_type = "usb"
     keyboard_layout_groups = []
@@ -58,13 +50,12 @@ class KeyboardUSBDriver(Driver):
             }
         )
 
-        # from https://github.com/xkbcommon/libxkbcommon/blob/master/test/evdev-scancodes.h
         self._scancode_to_modifier = {
             42: "left_shift",
             54: "right_shift",
             58: "caps_lock",
             69: "num_lock",
-            100: "alt_gr",  # right alt
+            100: "alt_gr",
         }
         self._tracked_modifiers = dict.fromkeys(
             self._scancode_to_modifier.values(), False
@@ -95,7 +86,6 @@ class KeyboardUSBDriver(Driver):
 
     @classmethod
     def get_status(cls):
-        """Allows `hw_proxy.Proxy` to retrieve the status of the scanners"""
         status = (
             "connected"
             if any(iot_devices[d].device_type == "scanner" for d in iot_devices)
@@ -107,7 +97,7 @@ class KeyboardUSBDriver(Driver):
     @helpers.require_db
     def send_layouts_list(cls, server_url=None) -> None:
         try:
-            response = requests.post(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+            response = requests.post(
                 server_url + "/iot/keyboard_layouts",
                 data={"available_layouts": json_dumps(cls.available_layouts)},
                 timeout=5,
@@ -174,7 +164,7 @@ class KeyboardUSBDriver(Driver):
                             else:
                                 self._tracked_modifiers[modifier_name] = bool(
                                     data.keystate
-                                )  # 1 for keydown, 0 for keyup
+                                )
                         elif data.keystate == 1:
                             self.key_input(data.scancode)
 
@@ -182,14 +172,6 @@ class KeyboardUSBDriver(Driver):
             _logger.warning(err, exc_info=True)
 
     def _change_keyboard_layout(self, new_layout) -> None:
-        """Change the layout of the current device to what is specified in
-        new_layout.
-
-        :param dict new_layout: a dict with two keys:
-
-            - ``layout`` (str): the layout code
-            - ``variant`` (str): optional, the variant of the selected layout
-        """
         if hasattr(self, "keyboard_layout"):
             KeyboardUSBDriver.keyboard_layout_groups.remove(self.keyboard_layout)
 
@@ -210,19 +192,10 @@ class KeyboardUSBDriver(Driver):
             ]
         )
 
-        # Close then re-open display to refresh the mapping
         xlib.XCloseDisplay(KeyboardUSBDriver.display)
         KeyboardUSBDriver.display = xlib.XOpenDisplay(bytes(":0.0", "utf-8"))
 
     def save_layout(self, layout):
-        """Save the layout to a file on the box to read it when restarting it.
-        We need that in order to keep the selected layout after a reboot.
-
-        :param dict layout: a dict with two keys:
-
-            - ``layout`` (str): the layout code
-            - ``variant`` (str): optional, the variant of the selected layout
-        """
         file_path = helpers.path_file("odoo-keyboard-layouts.conf")
         if file_path.exists():
             data = json_loads(file_path.read_text())
@@ -232,9 +205,6 @@ class KeyboardUSBDriver(Driver):
         helpers.write_file("odoo-keyboard-layouts.conf", json_dumps(data))
 
     def load_layout(self) -> None:
-        """Read the layout from the saved filed and set it as current layout.
-        If no file or no layout is found we use 'us' by default.
-        """
         file_path = helpers.path_file("odoo-keyboard-layouts.conf")
         if file_path.exists():
             data = json_loads(file_path.read_text())
@@ -247,9 +217,6 @@ class KeyboardUSBDriver(Driver):
         self.data["value"] = ""
 
     def _is_scanner(self) -> bool:
-        """Read the device type from the saved filed and set it as current type.
-        If no file or no device type is found we try to detect it automatically.
-        """
         device_name = self.device_name.lower()
         scanner_name = ["barcode", "scanner", "reader"]
         is_scanner = (
@@ -266,27 +233,12 @@ class KeyboardUSBDriver(Driver):
         return bool(is_scanner)
 
     def _keyboard_input(self, scancode) -> None:
-        """Deal with a keyboard input. Send the character corresponding to the
-        pressed key represented by its scancode to the connected Odoo instance.
-
-        :param int scancode: The scancode of the pressed key.
-        """
         self.data["value"] = self._scancode_to_char(scancode)
         if self.data["value"]:
             event_manager.device_changed(self)
 
     def _barcode_scanner_input(self, scancode) -> None:
-        """Deal with a barcode scanner input. Add the new character scanned to
-        the current barcode or complete the barcode if "Return" is pressed.
-        When a barcode is completed, two tasks are performed:
-            - Send a device_changed update to the event manager to notify the
-            listeners that the value has changed (used in Enterprise).
-            - Add the barcode to the list barcodes that are being queried in
-            Community.
-
-        :param int scancode: The scancode of the pressed key.
-        """
-        if scancode == 28:  # Return
+        if scancode == 28:
             self.data["value"] = self._current_barcode
             event_manager.device_changed(self)
             self._barcodes.put((time.time(), self._current_barcode))
@@ -295,9 +247,6 @@ class KeyboardUSBDriver(Driver):
             self._current_barcode += self._scancode_to_char(scancode)
 
     def _save_is_scanner(self, data) -> None:
-        """Save the type of device.
-        We need that in order to keep the selected type of device after a reboot.
-        """
         is_scanner = {"is_scanner": data.get("is_scanner")}
         file_path = helpers.path_file("odoo-keyboard-is-scanner.conf")
         if file_path.exists():
@@ -319,10 +268,6 @@ class KeyboardUSBDriver(Driver):
         self.save_layout(layout)
 
     def _set_device_type(self, device_type="keyboard") -> None:
-        """Modify the device type between 'keyboard' and 'scanner'
-
-        :param str device_type: the type to switch to
-        """
         if device_type == "scanner":
             self.device_type = "scanner"
             self.key_input = self._barcode_scanner_input
@@ -337,17 +282,6 @@ class KeyboardUSBDriver(Driver):
         self.load_layout()
 
     def _scancode_to_char(self, scancode):
-        """Translate a received scancode to a character depending on the
-        selected keyboard layout and the current state of the keyboard's
-        modifiers.
-
-        :param int scancode: The scancode of the pressed key, to be translated to
-            a character
-
-        :return: The translated scancode.
-        :rtype: str
-        """
-        # Scancode -> Keysym : Depends on the keyboard layout
         group = KeyboardUSBDriver.keyboard_layout_groups.index(self.keyboard_layout)
         modifiers = self._get_active_modifiers(scancode)
         keysym = ctypes.c_int(
@@ -356,7 +290,6 @@ class KeyboardUSBDriver(Driver):
             )
         )
 
-        # Translate Keysym to a character
         key_pressed = ctypes.create_string_buffer(5)
         xlib.XkbTranslateKeySym(
             KeyboardUSBDriver.display,
@@ -371,17 +304,6 @@ class KeyboardUSBDriver(Driver):
         return ""
 
     def _get_active_modifiers(self, scancode):
-        """Get the state of currently active modifiers.
-
-        :param int scancode: The scancode of the key being translated
-
-        :return: The current state of the modifiers:
-            0 -- Lowercase
-            1 -- Highercase or (NumLock + key pressed on keypad)
-            2 -- AltGr
-            3 -- Highercase + AltGr
-        :rtype: int
-        """
         modifiers = 0
         uppercase = (
             self._tracked_modifiers["right_shift"]
@@ -399,15 +321,7 @@ class KeyboardUSBDriver(Driver):
         return modifiers
 
     def read_next_barcode(self):
-        """Get the value of the last barcode that was scanned but not sent yet
-        and not older than 5 seconds. This function is used in Community, when
-        we don't have access to the IoTLongpolling.
 
-        :return: The next barcode to be read or an empty string.
-        :rtype: str
-        """
-
-        # Previous query still running, stop it by sending a fake barcode
         if self.read_barcode_lock.locked():
             self._barcodes.put((time.time(), ""))
 

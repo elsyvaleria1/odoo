@@ -7,9 +7,6 @@ DEMO_BILL_PATH = "account_peppol/tools/demo_bill"
 DEMO_ENC_KEY = "account_peppol/tools/enc_key"
 DEMO_PRIVATE_KEY = "account_peppol/tools/private_key.pem"
 
-# -------------------------------------------------------------------------
-# HELPERS
-# -------------------------------------------------------------------------
 
 
 def get_demo_vendor_bill(user) -> dict:
@@ -25,9 +22,6 @@ def get_demo_vendor_bill(user) -> dict:
     }
 
 
-# -------------------------------------------------------------------------
-# MOCKED FUNCTIONS
-# -------------------------------------------------------------------------
 def _mock_call_peppol_proxy(func, self, endpoint, params=None):
 
     def _mock_get_all_documents(user):
@@ -45,7 +39,6 @@ def _mock_call_peppol_proxy(func, self, endpoint, params=None):
         return {message_uuid: {"state": "done"}}
 
     def _mock_send_document(user):
-        # Trigger the reception of vendor bills
         get_messages_cron = (
             user.env["ir.cron"]
             .sudo()
@@ -72,7 +65,6 @@ def _mock_call_peppol_proxy(func, self, endpoint, params=None):
     endpoint = endpoint.rsplit("/", 1)[-1]
     params = params or {}
     return {
-        # participant routes
         "register_sender": lambda _user: {},
         "register_receiver": lambda _user: {},
         "register_sender_as_receiver": lambda _user: {},
@@ -81,12 +73,10 @@ def _mock_call_peppol_proxy(func, self, endpoint, params=None):
         "unregister_to_sender": _mock_unregister_to_sender,
         "participant_status": lambda _user: {"peppol_state": "receiver"},
         "set_webhook": lambda _user: {},
-        # document routes
         "get_all_documents": _mock_get_all_documents,
         "get_document": _mock_get_document,
         "send_document": _mock_send_document,
         "ack": lambda _user: {},
-        # service routes are not available in demo mode, mocked by safety
         "add_services": lambda _user: {},
         "get_services": lambda _user: {
             "services": self.env["res.company"]._peppol_supported_document_types()
@@ -107,7 +97,6 @@ def _mock_get_peppol_verification_state(func, self, *args, **kwargs) -> str:
 
 
 def _mock_check_peppol_participant_exists(func, self, *args, **kwargs) -> bool:
-    # in demo, no participant already exists
     return False
 
 
@@ -176,25 +165,17 @@ def _mock_connection_options(func, self, *args, **kwargs) -> dict:
 
 
 _demo_behaviour = {
-    "_call_peppol_proxy": _mock_call_peppol_proxy,  # account_edi_proxy_client.user
-    "_get_peppol_verification_state": _mock_get_peppol_verification_state,  # res.partner
-    "_check_peppol_participant_exists": _mock_check_peppol_participant_exists,  # res.partner
-    "_create_connection": _mock_create_connection,  # wizard.account_peppol.config.register
-    "_get_connection_options": _mock_connection_options,  # wizard.account_peppol.config.register
-    "_peppol_deregister_participant": _mock_peppol_deregister_participant,  # account_edi_proxy_client.user
+    "_call_peppol_proxy": _mock_call_peppol_proxy,
+    "_get_peppol_verification_state": _mock_get_peppol_verification_state,
+    "_check_peppol_participant_exists": _mock_check_peppol_participant_exists,
+    "_create_connection": _mock_create_connection,
+    "_get_connection_options": _mock_connection_options,
+    "_peppol_deregister_participant": _mock_peppol_deregister_participant,
 }
 
-# -------------------------------------------------------------------------
-# DECORATORS
-# -------------------------------------------------------------------------
 
 
 def handle_demo(func, /):
-    """This decorator is used on methods that should be mocked in demo mode.
-
-    First handle the decision: "Are we in demo mode?", and conditionally decide which function to
-    execute.
-    """
 
     def wrapped(self, *args, **kwargs):
         if self.env.company._get_peppol_edi_mode() == "demo":

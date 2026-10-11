@@ -13,7 +13,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         cls.env["res.currency"]._activate_group_multi_currency()
 
     def _generate_draft_purchase_order(self, company, partner):
-        """Generate a purchase order, without confirming it."""
         purchase_order = Form(self.env["purchase.order"])
         purchase_order.partner_id = partner
         purchase_order.company_id = company
@@ -29,22 +28,15 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         return purchase_order
 
     def generate_purchase_order(self, company, partner):
-        """Generate purchase order and confirm its state"""
         purchase_order = self._generate_draft_purchase_order(company, partner)
-        # Confirm Purchase order
         purchase_order.action_confirm()
-        # Check purchase order state should be purchase.
         self.assertEqual(
             purchase_order.state, "done", "Purchase order should be in purchase state."
         )
         return purchase_order
 
     def validate_generated_sale_order(self, purchase_order, company, partner):
-        """Validate sale order which has been generated from purchase order
-        and test its state, total_amount, product_name and product_quantity.
-        """
 
-        # Find related sale order based on client order reference.
         sale_order = (
             self.env["sale.order"]
             .with_company(partner)
@@ -90,11 +82,7 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         self.assertEqual(sale_order.fiscal_position_id, fp)
 
     def test_00_inter_company_sale_purchase(self):
-        """Configure "Sale/Purchase" option and then Create purchase order and find related
-        sale order to related company and compare them.
-        """
 
-        # Generate purchase order in company A for company B
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": True,
@@ -104,11 +92,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         purchase_order = self.generate_purchase_order(
             self.company_a, self.company_b.partner_id
         )
-        # Check sale order is created in company B ( for company A )
         self.validate_generated_sale_order(
             purchase_order, self.company_a, self.company_b
         )
-        # reset configuration of company B
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": False,
@@ -116,7 +102,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
             }
         )
 
-        # Generate purchase order in company B for company A
         self.company_a.update(
             {
                 "intercompany_generate_sales_orders": True,
@@ -126,11 +111,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         purchase_order = self.generate_purchase_order(
             self.company_b, self.company_a.partner_id
         )
-        # Check sale order is created in company A ( for company B )
         self.validate_generated_sale_order(
             purchase_order, self.company_b, self.company_a
         )
-        # reset configuration of company A
         self.company_a.update(
             {
                 "intercompany_generate_sales_orders": False,
@@ -139,11 +122,7 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         )
 
     def test_01_inter_company_purchase_order_with_configuration(self):
-        """Configure only "purchase" option and then Create purchase order and find related
-        sale order to related company and compare them.
-        """
 
-        # Generate purchase order in company A for company B
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": True,
@@ -152,18 +131,15 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         purchase_order = self.generate_purchase_order(
             self.company_a, self.company_b.partner_id
         )
-        # Check sale order is created in company B ( for company A )
         self.validate_generated_sale_order(
             purchase_order, self.company_a, self.company_b
         )
-        # reset configuration of company B
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": False,
             }
         )
 
-        # Generate purchase order in company B for company A
         self.company_a.update(
             {
                 "intercompany_generate_sales_orders": True,
@@ -172,11 +148,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         purchase_order = self.generate_purchase_order(
             self.company_b, self.company_a.partner_id
         )
-        # Check sale order is created in company A ( for company B )
         self.validate_generated_sale_order(
             purchase_order, self.company_b, self.company_a
         )
-        # reset configuration  of company A
         self.company_a.update(
             {
                 "intercompany_generate_sales_orders": False,
@@ -184,15 +158,10 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         )
 
     def test_02_inter_company_purchase_order_without_configuration(self):
-        """Without any Configuration Create purchase order and try to find related
-        sale order to related company.
-        """
 
-        # without any inter_company configuration generate purchase_order in company A for company B
         purchase_order = self.generate_purchase_order(
             self.company_a, self.company_b.partner_id
         )
-        # Find related sale order based on client order reference.
         sale_order = self.env["sale.order"].search(
             [("client_order_ref", "=", purchase_order.name)], limit=1
         )
@@ -201,11 +170,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
             "Sale order created for company B from Purchase order of company A without configuration",
         )
 
-        # without any inter_company configuration generate purchase_order in company B for company A
         purchase_order = self.generate_purchase_order(
             self.company_b, self.company_a.partner_id
         )
-        # Find related sale order based on client order reference.
         sale_order = self.env["sale.order"].search(
             [("client_order_ref", "=", purchase_order.name)], limit=1
         )
@@ -215,17 +182,11 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         )
 
     def test_06_inter_company_purchase_order_from_so_with_sales_team(self):
-        """
-        Check that the default sales team used on the automatically generated SO
-        belongs to the appropriate company.
-        """
-        # Automatically generate SO in COMP B if a PO is confirmed in COMP A for COMP B
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": True,
             }
         )
-        # Archive all the sales team and create a sales team for COMP A but not for COMP B
         self.env["team.team"].search([]).action_archive()
         self.env["team.team"].create(
             {
@@ -234,11 +195,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
                 "company_id": self.company_a.id,
             }
         )
-        # Generate purchase order in company A for company B
         purchase_order = self.generate_purchase_order(
             self.company_a, self.company_b.partner_id
         )
-        # Check sale order is created in company B ( for company A )
         sale_order = (
             self.env["sale.order"]
             .with_company(self.company_b)
@@ -253,7 +212,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
                 }
             ],
         )
-        # Create a sales Team for COMP B, proceed the same steps and check that it has been set as a default value
         valid_sales_team = self.env["team.team"].create(
             {
                 "use_sale": True,
@@ -261,11 +219,9 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
                 "company_id": self.company_b.id,
             }
         )
-        # Generate purchase order in company A for company B
         purchase_order_2 = self.generate_purchase_order(
             self.company_a, self.company_b.partner_id
         )
-        # Check sale order is created in company B ( for company A )
         sale_order = (
             self.env["sale.order"]
             .with_company(self.company_b)
@@ -282,9 +238,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
         )
 
     def test_07_no_intercompany_user_raises_clear_error(self):
-        """Calling the PO->SO generation with no intercompany user configured
-        raises a clear error instead of silently running as the superuser
-        (SPIC-5 regression)."""
         self.company_b.intercompany_user_id = False
         purchase_order = self._generate_draft_purchase_order(
             self.company_a, self.company_b.partner_id
@@ -293,13 +246,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
             purchase_order.inter_company_create_sale_order(self.company_b)
 
     def test_08_access_rights_checked_against_intercompany_user_not_caller(self):
-        """The access-rights check inside `inter_company_create_sale_order`
-        must block based on the INTERCOMPANY user's rights, not the (fully
-        privileged) direct caller's — this is exactly the check round 1 fixed
-        by adding `.with_user(intercompany_uid)` (SPIC-4 regression). Called
-        directly (as this test's own fully-privileged user), bypassing
-        `_action_confirm`'s own `with_user(...)` wrapping, to exercise exactly
-        the externally-callable path the original finding was about."""
         unprivileged_user = self._create_unprivileged_user(
             "unprivileged_intercompany_po_so", self.company_b
         )
@@ -311,13 +257,6 @@ class TestInterCompanyPurchaseToSale(TestInterCompanyRulesCommonSOPO):
             purchase_order.inter_company_create_sale_order(self.company_b)
 
     def test_09_reconfirm_does_not_duplicate_sale_order(self):
-        """Resetting a confirmed PO to draft and re-confirming it must not
-        generate a second, non-cancelled sale order in the counterparty
-        company (SPIC-1 regression, PO->SO mirror of
-        `test_07_reconfirm_does_not_duplicate_purchase_order` in
-        `test_inter_company_so_to_po.py`). The guard now lives in
-        `PurchaseOrder._action_confirm`, which IS reached by the real
-        `action_confirm()` workflow (see SPIC-9)."""
         self.company_b.update(
             {
                 "intercompany_generate_sales_orders": True,

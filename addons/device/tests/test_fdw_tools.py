@@ -98,7 +98,6 @@ class TestFdwHelpers(DeviceTransactionCase):
         self.assertIn(
             "trg_device_device_fdw_no_delete_device_data_log BEFORE DELETE", joined
         )
-        # "%" would be read as a parameter placeholder by the cursor.
         self.assertNotIn("%", joined)
 
 
@@ -182,8 +181,6 @@ class TestRemoteDdlFollowsTheLocalTransaction(DeviceTransactionCase):
             patch.object(fdw, "holds_remote_lock", return_value=True),
             patch.object(fdw, "dblink_available", return_value=True),
             patch.object(fdw, "remote_exec") as remote_exec,
-            # past the remote, the local ALTER FOREIGN TABLE refuses this
-            # regular table: the remote phase let the run through
             self.assertRaises(psycopg.errors.WrongObjectType),
             self.env.cr.savepoint(),
         ):
@@ -234,7 +231,6 @@ class TestRemoteIndexValidity(DeviceTransactionCase):
         )
         self.env.cr.execute(query)
         self.assertTrue(self.env.cr.fetchone())
-        # what a failed CREATE INDEX CONCURRENTLY leaves behind
         self.env.cr.execute(
             "UPDATE pg_index SET indisvalid = false WHERE indexrelid = %s::regclass",
             [f"{LOG_TABLE}_device_timestamp_idx"],
@@ -392,7 +388,6 @@ class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
         self.assertIsNone(self.env.cr.fetchone()[0])
 
     def test_pointer_constraints_are_found_and_dropped(self):
-        # rolled back, so the constraint is there for the tests that follow
         savepoint = self.env.cr.savepoint()
         try:
             dropped = fdw.drop_pointer_foreign_keys(
@@ -415,7 +410,6 @@ class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
         self.assertTrue(
             all(fdw._installs_existing_trigger(self.env.cr, s) for s in table_ddl)
         )
-        # a function body may change, and replacing it locks no table
         self.assertFalse(
             any(fdw._installs_existing_trigger(self.env.cr, s) for s in functions)
         )
@@ -437,8 +431,6 @@ class TestFdwGuardsOnARegularTable(DeviceTransactionCase):
         )
 
     def test_guards_left_by_a_rename_of_the_log_table_are_stale(self):
-        # A rename carries the log's guards along under the old name, and a
-        # referenced table keeps a guard naming a log table that is gone.
         self.env.cr.execute(
             f"""
             CREATE FUNCTION old_log_fdw_fk_check() RETURNS trigger

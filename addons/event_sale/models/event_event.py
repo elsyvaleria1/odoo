@@ -22,15 +22,9 @@ class EventEvent(models.Model):
         "sale_order_lines_ids.currency_id",
         "sale_order_lines_ids.company_id",
         "sale_order_lines_ids.order_id.date_order",
-        # the _read_group below filters on it, so cancelling an order has to
-        # drop its lines back out of the total
         "sale_order_lines_ids.state",
     )
     def _compute_sale_price_total(self) -> None:
-        """Sum confirmed sale.order.line amounts, converted to the event company's currency."""
-        # Conversion rates are taken as of 'today' rather than each sale.order's own date,
-        # to avoid one currency-conversion request per sale.order (one is created per
-        # event ticket sold).
         date_now = fields.Datetime.now()
         event_subtotals = self.env["sale.order.line"]._read_group(
             [
@@ -54,7 +48,6 @@ class EventEvent(models.Model):
             event.sale_price_total = event_subtotals_mapping.get(event._origin, 0)
 
     def action_view_linked_orders(self):
-        """Redirects to only the confirmed orders linked to the current events"""
         sale_order_action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "sale.action_sale_order"
         )

@@ -1,5 +1,4 @@
 def records_action(name, records) -> dict:
-    """An act_window onto exactly `records`, in list then form."""
     return {
         "name": name,
         "type": "ir.actions.act_window",

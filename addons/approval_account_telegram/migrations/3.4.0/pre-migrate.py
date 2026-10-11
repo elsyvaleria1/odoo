@@ -3,8 +3,6 @@ from odoo.tools import SQL
 
 
 def migrate(cr, version):
-    # the category a bot filed /pago and /especie requests in becomes the one
-    # its company files them in, before the bot's columns are dropped
     if not version:
         return
     if not schema.column_exists(cr, "approval_category", "telegram_intake"):
@@ -15,7 +13,6 @@ def migrate(cr, version):
     ):
         if not schema.column_exists(cr, "telegram_bot", column):
             continue
-        # one category per company and command: the first bot's wins
         cr.execute(
             SQL(
                 """

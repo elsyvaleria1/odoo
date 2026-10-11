@@ -84,8 +84,6 @@ class WebClient(http.Controller):
         else:
             _debug.logic("translations_hash_match", hash=current_hash[:12])
 
-        # the URL names the client's hash, not the current one: a cached answer
-        # ("up to date", or a body) goes stale as soon as translations change
         return request.prepare_json_response(body, [("Cache-Control", "no-cache")])
 
     @http.route("/web/webclient/version_info", type="jsonrpc", auth="none")
@@ -111,7 +109,6 @@ class WebClient(http.Controller):
         readonly=False,
     )
     def bundle(self, bundle_name: str, **bundle_params: Any) -> Response:
-        """Persist cold-generated assets before returning their descriptor URLs."""
         if _debug.lifecycle.enabled:
             _debug.lifecycle("bundle", bundle=bundle_name, params=sorted(bundle_params))
         if "lang" in bundle_params:

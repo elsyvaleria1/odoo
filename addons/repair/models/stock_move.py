@@ -152,7 +152,6 @@ class StockMove(models.Model):
         for move in self:
             if not move.repair_id:
                 continue
-            # checks vals update
             if (
                 not move.sale_line_id
                 and "sale_line_id" not in vals
@@ -172,7 +171,6 @@ class StockMove(models.Model):
         repair_order = self.env["repair.order"].browse(self.env.context.get("order_id"))
         return repair_order.action_add_from_catalog()
 
-    # Needed to also cancel the lastly added part
     def _action_cancel(self):
         self._clean_repair_sale_order_line()
         return super()._action_cancel()
@@ -198,7 +196,7 @@ class StockMove(models.Model):
                 {
                     "order_id": move.repair_id.sale_order_id.id,
                     "product_id": move.product_id.id,
-                    "product_qty": product_qty,  # When relying only on so_line compute method, the sol quantity is only updated on next sol creation
+                    "product_qty": product_qty,
                     "product_uom_id": move.product_uom_id.id,
                     "move_ids": [Command.link(move.id)],
                     "qty_transferred": move.quantity if move.state == "done" else 0.0,
@@ -282,7 +280,6 @@ class StockMove(models.Model):
         return super()._is_assignment_required()
 
     def _split(self, qty, restrict_partner_id=False):
-        # When setting the Repair Order as done with partially done moves, do not split these moves
         if self.repair_id:
             return []
         return super()._split(qty, restrict_partner_id)

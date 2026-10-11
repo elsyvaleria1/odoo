@@ -15,26 +15,14 @@ from odoo.addons.account_edi_ubl_cii.models.account_edi_common import (
 
 _logger = logging.getLogger(__name__)
 
-# Factur-X PDF/A extension schema, as a self-contained <rdf:RDF> block.
-# WeasyPrint appends xmp_metadata fragments inside its own <x:xmpmeta> AFTER its
-# generated PDF/A identification (pdfaid part/conformance), so this fragment must
-# be a complete rdf:RDF of its own — NOT a full <?xml?><x:xmpmeta> packet (that
-# would nest and break XMP well-formedness) and NOT bare <rdf:Description>
-# elements (they would land outside rdf:RDF). See odoo/tools/pdf and the
-# WeasyPrint metadata assembly (pdf/metadata.py). The pdfa identification and
-# output intent are emitted natively by WeasyPrint's pdf/a-3b variant.
 FACTURX_PDFA_XMP_RDF = b"""<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"><rdf:Description rdf:about="" xmlns:pdfaExtension="http://www.aiim.org/pdfa/ns/extension/" xmlns:pdfaSchema="http://www.aiim.org/pdfa/ns/schema#" xmlns:pdfaProperty="http://www.aiim.org/pdfa/ns/property#"><pdfaExtension:schemas><rdf:Bag><rdf:li rdf:parseType="Resource"><pdfaSchema:schema>Factur-X PDFA Extension Schema</pdfaSchema:schema><pdfaSchema:namespaceURI>urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#</pdfaSchema:namespaceURI><pdfaSchema:prefix>fx</pdfaSchema:prefix><pdfaSchema:property><rdf:Seq><rdf:li rdf:parseType="Resource"><pdfaProperty:name>DocumentFileName</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>name of the embedded XML invoice file</pdfaProperty:description></rdf:li><rdf:li rdf:parseType="Resource"><pdfaProperty:name>DocumentType</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>INVOICE</pdfaProperty:description></rdf:li><rdf:li rdf:parseType="Resource"><pdfaProperty:name>Version</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>The actual version of the Factur-X XML schema</pdfaProperty:description></rdf:li><rdf:li rdf:parseType="Resource"><pdfaProperty:name>ConformanceLevel</pdfaProperty:name><pdfaProperty:valueType>Text</pdfaProperty:valueType><pdfaProperty:category>external</pdfaProperty:category><pdfaProperty:description>The conformance level of the embedded Factur-X data</pdfaProperty:description></rdf:li></rdf:Seq></pdfaSchema:property></rdf:li></rdf:Bag></pdfaExtension:schemas></rdf:Description><rdf:Description rdf:about="" xmlns:fx="urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#"><fx:ConformanceLevel>EN 16931</fx:ConformanceLevel><fx:DocumentFileName>factur-x.xml</fx:DocumentFileName><fx:DocumentType>INVOICE</fx:DocumentType><fx:Version>1.0</fx:Version></rdf:Description></rdf:RDF>"""
 
 
 class MixinAccountMoveSend(models.AbstractModel):
     _inherit = "mixin.account.move.send"
 
-    # -------------------------------------------------------------------------
-    # ALERTS
-    # -------------------------------------------------------------------------
 
     def _get_alerts(self, moves, moves_data):
-        # EXTENDS 'account'
         alerts = super()._get_alerts(moves, moves_data)
 
         peppol_formats = set(self.env["res.partner"]._get_peppol_formats())
@@ -94,18 +82,13 @@ class MixinAccountMoveSend(models.AbstractModel):
                     }
         return alerts
 
-    # -------------------------------------------------------------------------
-    # ATTACHMENTS
-    # -------------------------------------------------------------------------
 
     def _get_invoice_extra_attachments(self, move):
-        # EXTENDS 'account'
         return super()._get_invoice_extra_attachments(move) + move.ubl_cii_xml_id
 
     def _prepare_mail_attachment_placeholders(
         self, move, invoice_edi_format=None, extra_edis=None, pdf_report=None
     ):
-        # EXTENDS 'account'
         results = super()._prepare_mail_attachment_placeholders(
             move,
             invoice_edi_format=invoice_edi_format,
@@ -158,14 +141,10 @@ class MixinAccountMoveSend(models.AbstractModel):
         )
         return accepted_attachments, attachments - accepted_attachments
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def _hook_invoice_document_before_pdf_report_render(
         self, invoice, invoice_data
     ) -> None:
-        # EXTENDS 'account'
         super()._hook_invoice_document_before_pdf_report_render(invoice, invoice_data)
 
         if invoice._is_ubl_cii_xml_required(invoice_data["invoice_edi_format"]):
@@ -177,7 +156,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             )._export_invoice(invoice)
             filename = builder._export_invoice_filename(invoice)
 
-            # Failed.
             if errors:
                 invoice_data["error"] = {
                     "error_title": self.env._(
@@ -194,7 +172,7 @@ class MixinAccountMoveSend(models.AbstractModel):
                     "mimetype": "application/xml",
                     "res_model": invoice._name,
                     "res_id": invoice.id,
-                    "res_field": "ubl_cii_xml_file",  # Binary field
+                    "res_field": "ubl_cii_xml_file",
                 }
                 invoice_data["ubl_cii_xml_options"] = {
                     "ubl_cii_format": invoice_data["invoice_edi_format"],
@@ -202,16 +180,8 @@ class MixinAccountMoveSend(models.AbstractModel):
                 }
 
     def _get_invoice_pdf_render_options(self, invoice, invoice_data):
-        # EXTENDS 'account'
-        # For Factur-X, render the invoice PDF natively as PDF/A-3b with the CII
-        # XML embedded (relationship "Data") and the Factur-X XMP extension
-        # schema, in one WeasyPrint pass. This replaces the old post-processing
-        # (pypdf attach + convert_to_pdfa), which produced invalid PDF/A on
-        # WeasyPrint output.
         options = super()._get_invoice_pdf_render_options(invoice, invoice_data)
         xml_options = invoice_data.get("ubl_cii_xml_options") or {}
-        # Under test_enable the PDF path is normally stubbed, so skip the native
-        # PDF/A render unless a test explicitly forces real rendering.
         renders_pdf = not tools.config["test_enable"] or self.env.context.get(
             "force_report_rendering"
         )
@@ -239,17 +209,14 @@ class MixinAccountMoveSend(models.AbstractModel):
     def _hook_invoice_document_after_pdf_report_render(
         self, invoice, invoice_data
     ) -> None:
-        # EXTENDS 'account'
         super()._hook_invoice_document_after_pdf_report_render(invoice, invoice_data)
 
-        # Add PDF to XML
         if (
             "ubl_cii_xml_options" in invoice_data
             and invoice_data["ubl_cii_xml_options"]["ubl_cii_format"] != "facturx"
         ):
             self._postprocess_invoice_ubl_xml(invoice, invoice_data)
 
-        # Always silently generate a Factur-X and embed it inside the PDF for inter-portability
         if (
             invoice_data.get("ubl_cii_xml_options", {}).get("ubl_cii_format")
             == "facturx"
@@ -258,7 +225,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         else:
             xml_facturx = self.env["account.edi.xml.cii"]._export_invoice(invoice)[0]
 
-        # during tests, PDF rendering is skipped — create the attachment directly
         if tools.config["test_enable"]:
             self.env["ir.attachment"].sudo().create(
                 {
@@ -270,16 +236,9 @@ class MixinAccountMoveSend(models.AbstractModel):
             )
             return
 
-        # Factur-X invoices are rendered natively as PDF/A-3b with the CII XML
-        # already embedded and the Factur-X XMP schema in place (see
-        # _get_invoice_pdf_render_options). The pypdf attach + convert_to_pdfa
-        # post-processing below is then unnecessary AND unsafe: a pypdf
-        # round-trip strips the PDF/A output intent, trailer ID and XMP,
-        # invalidating conformance.
         if invoice_data.pop("facturx_pdfa_native", False):
             return
 
-        # Read pdf content.
         pdf_values = (
             (
                 not self.env.context.get("custom_template_facturx")
@@ -291,13 +250,11 @@ class MixinAccountMoveSend(models.AbstractModel):
         reader_buffer = io.BytesIO(pdf_values["raw"])
         reader = OdooPdfFileReader(reader_buffer, strict=False)
 
-        # Post-process.
         writer = OdooPdfFileWriter()
         writer.clone_reader_document_root(reader)
 
         writer.add_attachment("factur-x.xml", xml_facturx, subtype="text/xml")
 
-        # PDF-A.
         if (
             invoice_data.get("ubl_cii_xml_options", {}).get("ubl_cii_format")
             == "facturx"
@@ -308,7 +265,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             except Exception:
                 _logger.exception("Error while converting to PDF/A")
 
-            # Extra metadata to be Factur-x PDF-A compliant.
             content = self.env["ir.qweb"]._render(
                 "account_edi_ubl_cii.account_invoice_pdfa_3_facturx_metadata",
                 {
@@ -318,7 +274,6 @@ class MixinAccountMoveSend(models.AbstractModel):
             )
             writer.add_file_metadata(content.encode())
 
-        # Replace the current content.
         writer_buffer = io.BytesIO()
         writer.write(writer_buffer)
         pdf_values["raw"] = writer_buffer.getvalue()
@@ -327,17 +282,6 @@ class MixinAccountMoveSend(models.AbstractModel):
 
     @api.model
     def _postprocess_invoice_ubl_xml(self, invoice, invoice_data):
-        """
-        Include the PDF in the UBL as an AdditionalDocumentReference element.
-
-        According to UBL 2.1 standard, the AdditionalDocumentReference element should be
-        placed above ProjectReference which isn't usually in xml files.
-        So usually it's set above AccountingSupplierParty. Here, we try to find a suitable anchor point among
-        the available element to insert our PDF attachment. If none of these are found, we
-        skip adding the attachment to avoid breaking the XML structure.
-        Inside CreditNote, the ProjectReference element is not used in xml.
-        So we look for OriginatorDocumentReference instead.
-        """
         tree = etree.fromstring(invoice_data["ubl_cii_xml_attachment_values"]["raw"])
 
         localname = etree.QName(tree).localname
@@ -414,7 +358,6 @@ class MixinAccountMoveSend(models.AbstractModel):
         )
 
     def _link_invoice_documents(self, invoices_data) -> None:
-        # EXTENDS 'account'
         super()._link_invoice_documents(invoices_data)
 
         attachments_vals = [

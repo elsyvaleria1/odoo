@@ -2,14 +2,6 @@ from .valence import kekulize
 
 
 def parse_molblock(molblock):
-    """Read atoms and bonds out of a V2000 molblock.
-
-    :param str molblock: V2000 connection table
-    :return: ``(atoms, bonds)`` as lists of dicts, atom indices 1-based
-    :rtype: tuple[list[dict], list[dict]]
-    :raises ValueError: if the counts line or a record cannot be read, or the
-        aromatic bonds cannot be kekulized
-    """
     lines = molblock.replace("\r\n", "\n").split("\n")
     if len(lines) < 4 or "V2000" not in lines[3]:
         raise ValueError("Only V2000 molblocks are supported.")
@@ -33,7 +25,6 @@ def parse_molblock(molblock):
             order = int(line[6:9])
             bonds.append(
                 {
-                    # normalised so the same bond cannot enter twice reversed
                     "atom_a": min(a, b),
                     "atom_b": max(a, b),
                     "bond_order": 1 if order == 4 else order,
@@ -52,22 +43,11 @@ def parse_molblock(molblock):
         raise ValueError(f"Malformed V2000 molblock: {err}") from None
     if len(atoms) != atom_count or len(bonds) != bond_count:
         raise ValueError("The molblock declares more records than it carries.")
-    # Aromatic bonds (type 4) become alternating orders, so every count derived
-    # downstream sees the hydrogens the ring actually carries.
     kekulize(atoms, bonds)
     return atoms, bonds
 
 
 def build_molblock(atoms, bonds, title="molecular-screening", dimension="2D"):
-    """Write a V2000 molblock, charges included as an ``M  CHG`` block.
-
-    :param list[dict] atoms: atoms with ``element``, ``x``, ``y``, ``z`` and
-        ``formal_charge``, in the order they should be numbered
-    :param list[dict] bonds: bonds with ``atom_a``, ``atom_b``, ``bond_order``
-    :param str title: first line of the file
-    :param str dimension: ``2D`` or ``3D``, recorded in the header
-    :rtype: str
-    """
     lines = [title, f"  molecular_screening      {dimension}", ""]
     lines.append(f"{len(atoms):>3}{len(bonds):>3}  0  0  0  0  0  0  0  0999 V2000")
     for atom in atoms:

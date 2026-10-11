@@ -309,8 +309,6 @@ class StockValuationReportHandler(models.AbstractModel):
         company.check_singleton()
         account_move = company._close_stock_valuation(at_date=date or None)
         if not account_move:
-            # the button answers "nothing to close" as a notice, not an error:
-            # a report's actions run on any company, a closed one included
             return {
                 "type": "ir.actions.client",
                 "tag": "display_notification",

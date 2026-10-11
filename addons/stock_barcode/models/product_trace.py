@@ -8,7 +8,6 @@ class ProductTrace(models.Model):
 
     @api.model
     def _search(self, domain, *args, **kwargs):
-        # sudo is added for external users to get the lots
         domain = self.env.company.sudo().barcodes_config_id.nomenclature_id._preprocess_gs1_search_args(
             domain, ["lot"], field="name"
         )

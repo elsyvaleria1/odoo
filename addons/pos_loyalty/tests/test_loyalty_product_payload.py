@@ -46,9 +46,6 @@ class TestPosLoyaltyProductPayload(CommonPosTest):
         )
 
     def _an_image(self):
-        # a real 1x1 png, not a donor search: CommonPosTest builds its own products
-        # and none carries an image, so a missing donor would make the assertion
-        # below pass on any tree at all
         return base64.b64encode(
             base64.b64decode(
                 "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQ"

@@ -33,9 +33,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         )
 
     def test_archive_folder_on_projects_unlinked(self):
-        """
-        Projects folders should be archived if every related projects have been unlinked.
-        """
         folder_1, folder_2, folder_3, folder_4 = self.env["document.document"].create(
             [{"name": f"F{i}", "type": "folder"} for i in range(4)]
         )
@@ -117,9 +114,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         self.assertFalse(unlinked_folder.active)
 
     def test_bridge_parent_folder(self):
-        """
-        Tests the "Parent Folder" setting
-        """
         parent_folder = self.env.company.documents_project_folder_id
         self.assertEqual(
             self.project_pigs.documents_folder_id.folder_id,
@@ -138,14 +132,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         )
 
     def test_project_task_access_document(self):
-        """
-        Tests that 'MissingRecord' error should not be raised when trying to switch
-        folder for a non-existing document.
-
-        - The 'active_id' here is the 'id' of a non-existing document.
-        - We then try to access 'All' folder by calling the 'search_panel_select_range'
-            method. We should be able to access the folder.
-        """
         missing_id = (
             self.env["document.document"].search([], order="id DESC", limit=1).id + 1
         )
@@ -157,12 +143,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         self.assertTrue(result)
 
     def test_copy_project(self):
-        """
-        When duplicating a project, there should be exactly one copy of the folder linked to the project.
-        If there is the `no_create_folder` context key, then the folder should not be copied (note that in normal flows,
-        when this context key is used, it is expected that a folder will be copied/created manually, so that we don't
-        end up with a project having the documents feature enabled but no folder).
-        """
         last_folder_id = (
             self.env["document.document"]
             .search([("type", "=", "folder")], order="id desc", limit=1)
@@ -186,10 +166,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
 
     @users("proj_admin")
     def test_rename_project(self):
-        """
-        When renaming a project, the corresponding folder should be renamed as well.
-        Even when the user does not have write access on the folder, the project should be able to rename it.
-        """
         new_name = "New Name"
         self.project_pigs.with_user(self.env.user).name = new_name
         self.assertEqual(
@@ -199,9 +175,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         )
 
     def test_delete_project_folder(self):
-        """
-        It should not be possible to delete the "Projects" folder.
-        """
         project_folder = self.env.ref("document_project.document_project_folder")
         with self.assertRaises(
             UserError, msg="It should not be possible to delete the 'Projects' folder"
@@ -224,7 +197,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         ):
             current.unlink()
 
-        # But it shouldn't interfere with legit deletion/archiving
         project_folder.action_update_access_rights(
             access_internal="none",
             access_via_link="none",
@@ -237,9 +209,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         self.assertFalse(self.document_txt.exists())
 
     def test_changing_project_folder_moves_documents(self):
-        """
-        When a project folder changes, move documents.
-        """
         project = self.env["project.project"].create({"name": "Project"})
         project_document, other_folder = self.env["document.document"].create(
             [
@@ -263,9 +232,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         self.assertEqual(project_document, project.document_ids)
 
     def test_delete_folder_used_by_project(self):
-        """
-        It shouldn't be possible to delete a folder that is used by one or multiple projects.
-        """
         project = self.env["project.project"].create(
             {
                 "name": "Test",
@@ -317,14 +283,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         self.assertFalse(folder.company_id)
 
     def test_gc_clear_bin_skips_project_folders(self):
-        """The trash GC must delete expired documents without deleting folders used by projects.
-
-        Regression test for tasks 20131 and 23528: a folder assigned to an
-        archived project ended up empty after its trashed children were
-        garbage collected. The opportunistic parent-folder cleanup in unlink()
-        then tried to delete it, unlink_except_project_folder raised a
-        UserError and the whole GC batch was rolled back on every run.
-        """
         project = self.env["project.project"].create({"name": "GC Test Project"})
         folder = project.documents_folder_id
         trashed_docs = self.env["document.document"].create(
@@ -350,12 +308,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
         folder.action_archive()
         project.action_archive()
 
-        # Bring their deletion date forward so they become GC-eligible. The
-        # purge reads the date `action_archive` stamps, not `write_date`, so
-        # that a later write to a trashed document can no longer postpone a
-        # deletion its own chatter message already promised. The folder is
-        # brought forward too: it must be excluded by the GC domain, not merely
-        # survive the cascade.
         self.env.flush_all()
         (
             trashed_docs | unrelated_doc | folder
@@ -406,13 +358,6 @@ class TestDocumentsBridgeProject(TestProjectCommon, TransactionCaseDocuments):
             )
 
     def test_project_copy_includes_linked_documents(self):
-        """
-        Test that copying a project also copies its linked document.
-        Steps:
-        1. Link a document to the project (set folder and res_id).
-        2. Copy the project.
-        3. Check that the copied project has one linked document.
-        """
         self.document_txt_2.write(
             {
                 "folder_id": self.project_pigs.documents_folder_id.id,

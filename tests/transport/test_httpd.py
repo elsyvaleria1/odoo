@@ -24,7 +24,6 @@ _SLOW_GATE = threading.Event()
 
 
 def _read_body(environ):
-    # PEP 3333's validator insists on read(size); a chunked body has no size.
     stream = environ["wsgi.input"]
     if environ.get("CONTENT_LENGTH"):
         return stream.read(int(environ["CONTENT_LENGTH"]))
@@ -348,13 +347,6 @@ def test_a_partial_head_times_out_with_408_without_a_worker():
 
 
 def test_a_malformed_request_is_not_logged_against_the_last_ones_database():
-    """The 400 path runs no application, so nothing else clears the thread.
-
-    `serve_one` answers a malformed head itself and logs it, on the pool
-    thread that served the previous request on the same connection. Until
-    that path forgot the whole request, the error line carried the previous
-    request's database and user -- the shorter of two hand-kept lists.
-    """
     seen = []
 
     def app(environ, start_response):
@@ -703,8 +695,6 @@ def _talk_in_two_parts(port, first, second, pause):
 
 
 def test_a_prefork_head_may_pause_longer_than_the_socket_timeout():
-    """The head phase is bounded by ODOO_HTTP_HEAD_TIMEOUT, as deployment.md
-    states; the per-read socket timeout governs bodies and responses."""
     with _prefork_listener(
         ODOO_HTTP_SOCKET_TIMEOUT="0.1", ODOO_HTTP_HEAD_TIMEOUT="5"
     ) as port:
@@ -774,13 +764,6 @@ def test_socket_activation_adopts_only_a_handover_meant_for_this_process():
 
 
 def test_a_closed_pool_refuses_instead_of_queueing():
-    """The first of two refusals `submit` can make, and neither was executed.
-
-    The 503 test below patches `submit` to return False, so it pins what the
-    caller does with a refusal and says nothing about whether a refusal ever
-    happens. Measured 2026-09-21 with a line tracer: `submit` never returned
-    False anywhere in this suite.
-    """
     pool = httpd.WorkerPool(1, lambda conn: None)
     pool.close()
     assert pool.submit(object()) is False
@@ -788,13 +771,6 @@ def test_a_closed_pool_refuses_instead_of_queueing():
 
 
 def test_a_pool_that_cannot_start_a_thread_refuses_and_drops_the_job():
-    """Thread exhaustion, which is a real production path and untested.
-
-    `thread.start()` raises `RuntimeError` under `RLIMIT_NPROC` or memory
-    pressure. `submit` has to both answer False and take its job back off the
-    deque; keeping it there parks a connection no worker will ever pick up,
-    and the only visible effect is a socket that is never answered.
-    """
     pool = httpd.WorkerPool(4, lambda conn: None)
     with patch.object(
         httpd.threading.Thread, "start", side_effect=RuntimeError("can't start")
@@ -867,7 +843,6 @@ def test_the_thread_budget_leaves_a_permit_to_every_listener_that_runs(
 
 
 def test_the_evented_child_reads_its_own_pool_and_holds_no_listener(monkeypatch):
-    # the production configuration that logged "At most 1 HTTP request(s)"
     monkeypatch.delenv("ODOO_MAX_HTTP_THREADS", raising=False)
     with server_settings.override(
         db_maxconn=8,
@@ -1034,16 +1009,6 @@ def test_connection_per_request_clients_are_not_stalled_by_saturation():
     not pathlib.Path("/proc/self/fd").is_dir(), reason="needs /proc to count fds"
 )
 def test_no_descriptor_survives_a_client_that_leaves_badly():
-    """Eight ways to abandon a connection, none of which may cost an fd.
-
-    A descriptor the server keeps after the client is gone is the failure
-    that does not show up in any single request: the server serves correctly
-    for days and then stops accepting with EMFILE. Every close here is on a
-    different path out of `serve_one` -- an unread body, a head that never
-    arrives, a response nobody reads, a pipeline past the inline cap, a
-    malformed head answered by the transport itself -- and each one has its
-    own cleanup.
-    """
 
     def app(environ, start_response):
         if environ["PATH_INFO"] == "/big":
@@ -1100,13 +1065,6 @@ def test_no_descriptor_survives_a_client_that_leaves_badly():
             return False
 
         def returned_to(baseline):
-            """Coming back is an eventual property, so ask for it that way.
-
-            A connection accepted between the settled() check and the
-            snapshot is open for as long as it takes the selector to reach
-            it -- real, and gone a moment later. A leak is the one that
-            never goes.
-            """
             deadline = time.monotonic() + 10
             while time.monotonic() < deadline:
                 leaked = open_fds() - baseline
@@ -1178,12 +1136,7 @@ def _pipeline(port, n, timeout=3.0):
 
 
 def test_a_pipeline_longer_than_the_inline_cap_is_answered_in_full():
-    """Request _MAX_PIPELINED + 1 sits fully buffered when the worker hands the
-    connection back; nothing else will ever arrive to wake the selector for
-    it, so it must be resubmitted, not parked until the head timeout."""
     n = httpd._MAX_PIPELINED + 1
-    # A parked request would show as a 408 at the head timeout; the client
-    # outlasts it, and the timeout outlasts a loaded machine's scheduling.
     with _server(ODOO_HTTP_HEAD_TIMEOUT="4") as srv:
         raw = _pipeline(srv.server_port, n, timeout=8.0)
     assert raw.count(b"HTTP/1.1 200 OK") == n
@@ -1313,8 +1266,6 @@ class TestTheEnvironIsWsgiCompliant:
         with _server(app=validator(_app)) as srv:
             raw = _talk(srv.server_port, b"GET /p?q=1 HTTP/1.1\r\nHost: h\r\n\r\n")
             assert raw.startswith(b"HTTP/1.1 200")
-            # The validator's iterator wrapper has no len(), so the reply is
-            # chunked; HTTP/1.0 makes it close-delimited and plain to read.
             raw = _talk(
                 srv.server_port,
                 b"POST /p HTTP/1.0\r\nHost: h\r\nContent-Length: 3\r\n\r\nabc",
@@ -1343,17 +1294,6 @@ class TestTheListenerSurvivesAReexec:
                 kept.close()
 
     def test_the_serving_loop_survives_the_listener_going_out_from_under_it(self):
-        """`bequeath_listener` detaches the socket while the loop still runs.
-
-        From then on `self.socket.fileno()` is -1, and the next pass through
-        `_update_listening` registered it: `ValueError: Invalid file
-        descriptor: -1`, raised inside the serving thread, which pytest
-        surfaces only as an unhandled-thread-exception warning.
-
-        The test takes the loop's passes itself, on a server whose loop is not
-        running: `_update_listening` belongs to the serving thread, and a
-        second caller races it on the selector.
-        """
         with (
             _server(serve=False) as srv,
             patch.dict(os.environ, {}, clear=False),

@@ -18,7 +18,6 @@ class TestLoyaltyWizards(TransactionCase):
         )
 
     def test_update_balance_issues_points_and_logs_history(self):
-        """Raising the balance updates the card and logs the issued points."""
         wizard = self.env["wizard.loyalty.card.update.balance"].create(
             {"card_id": self.card.id, "new_balance": 80.0, "description": "Bonus"}
         )
@@ -31,7 +30,6 @@ class TestLoyaltyWizards(TransactionCase):
         )
 
     def test_update_balance_rejects_same_or_negative(self):
-        """An unchanged or negative balance is rejected."""
         wizard = self.env["wizard.loyalty.card.update.balance"].create(
             {"card_id": self.card.id, "new_balance": 50.0, "description": "noop"}
         )
@@ -39,7 +37,6 @@ class TestLoyaltyWizards(TransactionCase):
             wizard.action_update_card_point()
 
     def test_generate_anonymous_coupons(self):
-        """Generating anonymous coupons creates the requested quantity."""
         wizard = self.env["wizard.loyalty.program.create.card"].create(
             {
                 "program_id": self.program.id,
@@ -53,7 +50,6 @@ class TestLoyaltyWizards(TransactionCase):
         self.assertTrue(all(coupon.points == 10 for coupon in coupons))
 
     def test_generate_requires_positive_quantity(self):
-        """Generating with a non-positive quantity is rejected."""
         wizard = self.env["wizard.loyalty.program.create.card"].create(
             {
                 "program_id": self.program.id,

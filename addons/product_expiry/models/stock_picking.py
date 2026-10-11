@@ -20,8 +20,6 @@ class StockPicking(models.Model):
 
     def _get_expired_move_lines(self):
         _debug.logic("expired_move_lines", pickings=self)
-        # Reshelving expired goods inside their warehouse hands them to no one;
-        # the confirmation is asked where they leave it or are consumed.
         return self.move_line_ids._filtered_expired()._filtered_leaving_warehouse()
 
     def _action_generate_expired_wizard(

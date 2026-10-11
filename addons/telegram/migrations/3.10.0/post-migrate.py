@@ -1,6 +1,4 @@
 def migrate(cr, version):
-    # every bot serves the company that owns it, as it did before it could
-    # serve several
     if not version:
         return
     cr.execute(

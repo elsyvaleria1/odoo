@@ -68,17 +68,6 @@ class ApprovalRequest(models.Model):
         return documents_from_lines | documents_from_mixin
 
     def _documents_of_model_by_request(self, model, link_field, parent_field) -> dict:
-        """``_get_documents_of_model`` for a whole recordset, in one search.
-
-        The singleton helper above is right for a caller holding one request,
-        and wrong for one holding many: it searches per record. Consumers that
-        need the batch were left to roll their own -- ``approval_account`` did
-        -- so it belongs here, where the dependency direction already points.
-
-        Returns ``{request_id: documents}``, with an empty recordset for a
-        request that has none. Same two halves as the singleton form: the
-        lines, which traverse, and the mixin backlink, which needs the search.
-        """
         empty = self.env[model]
         persisted = self.filtered(lambda request: request._origin.id)
         from_mixin: dict[int, Any] = {}
@@ -100,8 +89,6 @@ class ApprovalRequest(models.Model):
         }
 
     def _check_withdraw_blocked_by(self, documents, label) -> None:
-        # the document a request was raised about is held by the engine's own
-        # acted-on guard: counted here, a draft order refused every withdrawal
         sources = {(request.res_model, request.res_id) for request in self.sudo()}
         active = documents.filtered(
             lambda document: (

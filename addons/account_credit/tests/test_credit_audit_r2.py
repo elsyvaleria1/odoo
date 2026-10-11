@@ -169,10 +169,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         partner.invalidate_recordset()
         return partner, document
 
-    # CM2-01 -----------------------------------------------------------------
     def test_wizard_opens_without_an_accounting_group(self):
-        """The wizard's compute reads the partner's receivable through sudo,
-        so the credit manager it exists for can open it."""
         self.assertFalse(
             self.credit_manager.has_group("account.group_account_readonly")
         )
@@ -205,10 +202,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         )
         wizard.web_read({fname: {} for fname in kept})
 
-    # CM2-02 -----------------------------------------------------------------
     def test_committed_exposure_uses_the_order_company(self):
-        """An order of company B is measured against B's committed exposure
-        even when company A is the active one."""
         partner = self.env["res.partner"].create({"name": "Audit R2 Multi"})
         for company in (self.company_a, self.company_b):
             self._grant(partner, 10000.0, company)
@@ -225,10 +219,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
             "B has 9000 committed plus this 5000 against B's 10000 limit",
         )
 
-    # CM2-04 -----------------------------------------------------------------
     def test_credit_limit_follows_a_shared_input_in_every_company(self):
-        """credit_document_ids is not company scoped, so a collateral filed
-        while working in company A must move both companies' limits."""
         partner = self.env["res.partner"].create({"name": "Audit R2 Shared"})
         for company in (self.company_a, self.company_b):
             scoped = partner.with_company(company)
@@ -266,8 +257,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         )
 
     def test_a_credit_type_set_in_one_company_does_not_leak(self):
-        """Control for the per-company recompute: a company-dependent input
-        still only moves its own company."""
         partner = self.env["res.partner"].create({"name": "Audit R2 Scoped"})
         self._grant(partner, 10000.0, self.company_a)
         partner.env.flush_all()
@@ -280,9 +269,7 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
             (10000.0, 0.0),
         )
 
-    # CM2-05 -----------------------------------------------------------------
     def test_a_credit_manager_cannot_erase_an_authorization(self):
-        """The record naming who authorised an excess is not deletable."""
         partner = self.env["res.partner"].create({"name": "Audit R2 Erase"})
         self._grant(partner, 10000.0)
         order = self._order(partner, 15000.0)
@@ -300,7 +287,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         with self.assertRaises(AccessError):
             authorization.with_user(self.credit_manager).unlink()
 
-    # CM2-06 / CM2-07 --------------------------------------------------------
     def test_a_partner_manager_cannot_grant_a_credit_exception(self):
         partner, _document = self._compliant_partner("Audit R2 Exception")
         with self.assertRaises(AccessError):
@@ -332,7 +318,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
             )
 
     def test_a_credit_manager_still_writes_the_credit_fields(self):
-        """Control: the gate must not lock out the actor it is written for."""
         partner = self.env["res.partner"].create({"name": "Audit R2 Allowed"})
         partner.with_user(self.credit_manager).write(
             {
@@ -344,7 +329,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         partner.invalidate_recordset()
         self.assertTrue(partner.credit_exception)
 
-    # CM2-08 -----------------------------------------------------------------
     def test_a_document_type_flag_refreshes_the_credit_status(self):
         partner, document = self._compliant_partner("Audit R2 Flags")
         self.assertEqual(partner.credit_status, "authorized", "precondition")
@@ -354,7 +338,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
         self.assertFalse(document.amount, "precondition: no amount on the document")
         self.assertEqual(partner.credit_status, "review")
 
-    # CM2-09 -----------------------------------------------------------------
     def test_a_credit_note_is_not_blocked_by_the_credit_gate(self):
         partner = self.env["res.partner"].create(
             {"name": "Audit R2 Refund", "credit_grade_id": self.rule_type.id}
@@ -415,7 +398,6 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
             }
         )
 
-    # CM2-11 -----------------------------------------------------------------
     def test_the_authorization_search_view_reaches_the_withdrawn_ones(self):
         arch = self.env["credit.facility"].get_view(view_type="search")["arch"]
         self.assertIn("inactive", arch)

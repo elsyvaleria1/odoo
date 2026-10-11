@@ -1,4 +1,3 @@
-# ruff: noqa: EXE001, EXE003, EXE005  the vendor protocol table documents each constant with a Doxygen `#!<` trailing marker, which ruff reads as a shebang
 import contextlib
 import logging
 import socket
@@ -14,13 +13,6 @@ from odoo.addons.iot_drivers.iot_handlers.interfaces.SocketInterface import (
 
 _logger = logging.getLogger(__name__)
 
-# Because drivers don't get loaded as normal Python modules but directly in
-# load_iot_handlers called by Manager.run, the log levels that get applied to the odoo
-# import hierarchy won't apply here. This means DEBUG level messages will not display
-# even if specified and INFO messages will show even if the log level is configured to
-# be ERROR at the odoo-bin level. In order to work around this, it's possible to
-# uncomment this line and set the desired level directly for this module.
-# _logger.setLevel(logging.DEBUG)
 
 
 class IngenicoTagType:
@@ -32,33 +24,12 @@ class IngenicoTagType:
     """
 
     def __init__(self, name, tag, tagFormat, tagLen) -> None:
-        """
-        :param str name: Human readable tag name.
-        :param bytes tag: Identification tag formated as a byteArray.
-        :param str tagFormat: Format of the tag content.
-            * b: boolean values. Each boolean is 1 bit.
-            * a: ASCII characters
-            * i: Binari Code Decimals
-            * x: Hexadecimal digits
-        :param int tagLen: Length of the tag content. This value is always the numbers of bytes
-            (This is not always the case in the official documentation provided by Ingenico!!)
-        """
         self.name = name
         self.tag = tag
         self.format = tagFormat
         self.len = tagLen
 
     def getDict(self) -> dict:
-        """Get a dictionary with the tag
-
-        Returns {
-            name (str): tag name,
-            tag (b): Tag identifier,
-            tagLen (int): The length of the tag identifier,
-            format (str): format of the tag content,
-            len (int): Length of the tag content
-            }
-        """
         return {
             "name": self.name,
             "tag": self.tag,
@@ -68,13 +39,6 @@ class IngenicoTagType:
         }
 
     def hasTag(self, tag) -> bool:
-        """Check if tag is equal
-
-        Check if a tag is equal, regardless of the case of the characters. The case does not change anything
-        in hexadecimal, but comparing without upper/lower would still give false negatives.
-
-        Returns True if equal
-        """
         return tag.upper() == self.tag.upper()
 
 
@@ -92,67 +56,65 @@ class IngenicoMessage:
             "keepAliveInterval": b"\x00\x05",
             "magic": b"P4Y-ECR!",
             "messageType": {
-                "HelloRequest": b"\x00\x00\x00\x16",  #!< Request# a# connection# with# the# ECR.
-                "HelloResponse": b"\x00\x00\x00\x17",  #!< Result# of# the# connection# request.
-                "KeepAliveRequest": b"\x00\x00\x00\x18",  #!< Notification# of# status# and# keep-alive.
-                "KeepAliveResponse": b"\x00\x00\x00\x19",  #!< Result# of# the# notification.
-                "ByeRequest": b"\x00\x00\x00\x20",  #!< Request# to# terminate# the# connection.
-                "ByeResponse": b"\x00\x00\x00\x21",  #!< Result# of# terminate# connection# request.
-                "AcquirerDownloadListRequest": b"\x00\x00\x00\x30",  # The# ECR# Requests# CTAP# to# give# a# list# with# available# acquirers# (used# to# select# one# for# an# acquirer# download)
-                "AcquirerDownloadListResponse": b"\x00\x00\x00\x31",  # CTAP# sends# the# ECR# a# list# of# available# acquirers# (used# to# select# one# for# an# acquirer# download)
-                "AcquirerDelMsgListRequest": b"\x00\x00\x00\x32",  # The# ECR# Requests# CTAP# to# give# a# list# with# available# acquirers# (used# to# select# one# for# an# acquirer# download)
-                "AcquirerDelMsgListResponse": b"\x00\x00\x00\x33",  # CTAP# sends# the# ECR# a# list# of# available# acquirers# (used# to# select# one# for# an# acquirer# download)
-                "AcquirerDelMsgRequest": b"\x00\x00\x00\x34",  # The# ECR# Requests# CTAP# to# give# a# list# with# available# acquirers# (used# to# select# one# for# an# acquirer# download)
-                "AcquirerDelMsgResponse": b"\x00\x00\x00\x35",  # CTAP# sends# the# ECR# a# list# of# available# acquirers# (used# to# select# one# for# an# acquirer# download)
+                "HelloRequest": b"\x00\x00\x00\x16",
+                "HelloResponse": b"\x00\x00\x00\x17",
+                "KeepAliveRequest": b"\x00\x00\x00\x18",
+                "KeepAliveResponse": b"\x00\x00\x00\x19",
+                "ByeRequest": b"\x00\x00\x00\x20",
+                "ByeResponse": b"\x00\x00\x00\x21",
+                "AcquirerDownloadListRequest": b"\x00\x00\x00\x30",
+                "AcquirerDownloadListResponse": b"\x00\x00\x00\x31",
+                "AcquirerDelMsgListRequest": b"\x00\x00\x00\x32",
+                "AcquirerDelMsgListResponse": b"\x00\x00\x00\x33",
+                "AcquirerDelMsgRequest": b"\x00\x00\x00\x34",
+                "AcquirerDelMsgResponse": b"\x00\x00\x00\x35",
                 "PerformAcqDownLoadRequest": b"\x00\x00\x00\x36",
                 "PerformAcqDownLoadResponse": b"\x00\x00\x00\x37",
-                "SecuritySchemeListRequest": b"\x00\x00\x00\x38",  # The# ECR# Requests# CTAP# to# give# a# list# with# available# security-schemes# (used# to# select# one# for# an# security-scheme# download)
-                "SecuritySchemeListResponse": b"\x00\x00\x00\x39",  # CTAP# sends# the# ECR# a# list# of# available# security-schemes# (used# to# select# one# for# an# security-scheme# download)
+                "SecuritySchemeListRequest": b"\x00\x00\x00\x38",
+                "SecuritySchemeListResponse": b"\x00\x00\x00\x39",
                 "PerformKeyLoadRequest": b"\x00\x00\x00\x40",
                 "PerformKeyLoadResponse": b"\x00\x00\x00\x41",
                 "PrintInfoRequest": b"\x00\x00\x00\x46",
                 "PrintInfoResponse": b"\x00\x00\x00\x47",
-                "TransactionRequest": b"\x00\x00\x00\x48",  #!< Request# to# perform# a# transaction.
-                "TransactionResponse": b"\x00\x00\x00\x49",  #!< Result# of# the# transaction.
-                "TotalsRequest": b"\x00\x00\x00\x50",  #!< Request# an# overview# of# the# counters# (print# on# terminal# or# send# to# ECR).
-                "TotalsResponse": b"\x00\x00\x00\x51",  #!< Result# of# the# totals# request.
-                "LastTicketRequest": b"\x00\x00\x00\x52",  #!< Request# the# last# ticket# (print# on# terminal# or# send# to# ECR).# (Was# called# print# request# in# IDD).
-                "LastTicketResponse": b"\x00\x00\x00\x53",  #!< Result# of# the# last# ticket# request.# (Was# called# print# response# in# IDD).
-                "CancelRequest": b"\x00\x00\x00\x54",  #!< Request# the# cancellation# of# an# on-going# operation.
-                "CancelResponse": b"\x00\x00\x00\x55",  #!< Result# of# the# cancellation# request.
-                "LastTransactionRequest": b"\x00\x00\x00\x56",  #!< Request# the# result# of# the# last# transaction.
-                "LastTransactionResponse": b"\x00\x00\x00\x57",  #!< Result# of# the# last# transaction# request.
-                "PrintConfirmationRequest": b"\x00\x00\x00\x64",  #!< Print# confirmation# from# ECR# to# terminal# when# a# card# holder# ticket# must# be# printed# on# the# ECR.
-                "PrintConfirmationResponse": b"\x00\x00\x00\x65",  #!< Print# confirmation# from# ECR# to# terminal# when# a# card# holder# ticket# must# be# printed# on# the# ECR.
-                "PrintRequest": b"\x00\x00\x00\x66",  #!< Request# to# print# some# data# (e.g.# ECR# ticket)# on# the# terminal# printer.# (ECR# does# not# need# a# printer# then)# (this# message# is# not# in# IDD).
-                "PrintResponse": b"\x00\x00\x00\x67",  #!< Result# of# the# print# request# (this# message# is# not# in# IDD).
-                "IntermediateResultRequest": b"\x00\x00\x00\x68",  #!< Request# with# the# intermediate# result.
-                "IntermediateResultResponse": b"\x00\x00\x00\x69",  #!< Result# of# the# intermediate# result# request# (continue/abort# transaction).
-                "InformationReport": b"\x00\x00\x00\x80",  #!< Report# the# progress# of# a# transaction# and# other# information# like# merchant# messages.
-                "SettingsRequest": b"\x00\x00\x00\x82",  #!< Change# one# or# more# settings# in# the# terminal.
-                "SettingsResponse": b"\x00\x00\x00\x83",  #!< Result# of# the# change# settings# request.
-                "VersionInformationRequest": b"\x00\x00\x00\x90",  #!< Request# the# version# of# the# terminal# software
-                "VersionInformationResponse": b"\x00\x00\x00\x91",  #!< Result# of# the# version# request.
+                "TransactionRequest": b"\x00\x00\x00\x48",
+                "TransactionResponse": b"\x00\x00\x00\x49",
+                "TotalsRequest": b"\x00\x00\x00\x50",
+                "TotalsResponse": b"\x00\x00\x00\x51",
+                "LastTicketRequest": b"\x00\x00\x00\x52",
+                "LastTicketResponse": b"\x00\x00\x00\x53",
+                "CancelRequest": b"\x00\x00\x00\x54",
+                "CancelResponse": b"\x00\x00\x00\x55",
+                "LastTransactionRequest": b"\x00\x00\x00\x56",
+                "LastTransactionResponse": b"\x00\x00\x00\x57",
+                "PrintConfirmationRequest": b"\x00\x00\x00\x64",
+                "PrintConfirmationResponse": b"\x00\x00\x00\x65",
+                "PrintRequest": b"\x00\x00\x00\x66",
+                "PrintResponse": b"\x00\x00\x00\x67",
+                "IntermediateResultRequest": b"\x00\x00\x00\x68",
+                "IntermediateResultResponse": b"\x00\x00\x00\x69",
+                "InformationReport": b"\x00\x00\x00\x80",
+                "SettingsRequest": b"\x00\x00\x00\x82",
+                "SettingsResponse": b"\x00\x00\x00\x83",
+                "VersionInformationRequest": b"\x00\x00\x00\x90",
+                "VersionInformationResponse": b"\x00\x00\x00\x91",
                 "PerformTmsSessionReuqest": b"\x00\x00\x00\x92",
                 "PerformTmsSessionResponse": b"\x00\x00\x00\x93",
-                "RebootAndClearCtapDataBaseRequest": b"\x00\x00\x01\x00",  # there# is# no# response# on# this# command:# the# terminal# will# reboot
-                # Transparent# mode# messages.
-                "TmTransparentModeRequest": b"\x00\x00\x10\x00",  #!< Request# to# start# or# stop# transparent# mode.
-                "TmTransparentModeResponse": b"\x00\x00\x10\x01",  #!< Result# of# the# request# to# start# or# stop# transparent# mode.
-                "TmUiControlRequest": b"\x00\x00\x10\x02",  #!< Request# to# update# the# user# interface# (buzzer,# display,# LEDs)# when# in# transparent# mode.
-                "TmUiControlResponse": b"\x00\x00\x10\x03",  #!< Result# of# the# UI# request.
-                "TmAuthenticateRequest": b"\x00\x00\x10\x04",  #!< Request# to# authenticate# to# the# card# when# in# transparent# mode.
-                "TmAuthenticateResponse": b"\x00\x00\x10\x05",  #!< Result# of# the# authenticate# request.
-                "TmReadCardDataRequest": b"\x00\x00\x10\x06",  #!< Request# to# read# data# from# the# card# when# in# transparent# mode.
-                "TmReadCardDataResponse": b"\x00\x00\x10\x07",  #!< Result# of# the# read# card# data# request.
-                "TmWriteCardDataRequest": b"\x00\x00\x10\x08",  #!< Request# to# write# data# to# the# card# when# in# transparent# mode.
-                "TmWriteCardDataResponse": b"\x00\x00\x10\x09",  #!< Result# of# the# write# card# data# request.
-                "TmStatusRequest": b"\x00\x00\x10\x10",  #!< Request# the# status# of# the# transparent# mode.
-                "TmStatusResponse": b"\x00\x00\x10\x11",  #!< Result# of# the# status# request.
+                "RebootAndClearCtapDataBaseRequest": b"\x00\x00\x01\x00",
+                "TmTransparentModeRequest": b"\x00\x00\x10\x00",
+                "TmTransparentModeResponse": b"\x00\x00\x10\x01",
+                "TmUiControlRequest": b"\x00\x00\x10\x02",
+                "TmUiControlResponse": b"\x00\x00\x10\x03",
+                "TmAuthenticateRequest": b"\x00\x00\x10\x04",
+                "TmAuthenticateResponse": b"\x00\x00\x10\x05",
+                "TmReadCardDataRequest": b"\x00\x00\x10\x06",
+                "TmReadCardDataResponse": b"\x00\x00\x10\x07",
+                "TmWriteCardDataRequest": b"\x00\x00\x10\x08",
+                "TmWriteCardDataResponse": b"\x00\x00\x10\x09",
+                "TmStatusRequest": b"\x00\x00\x10\x10",
+                "TmStatusResponse": b"\x00\x00\x10\x11",
             },
             "tagType": [
                 IngenicoTagType("None", "00", "", False),
-                # Header, body, footer primitive tags.
                 IngenicoTagType("TransactionStage", "0E", "x", 1),
                 IngenicoTagType("StageMessage", "0F", "a", False),
                 IngenicoTagType("ProtocolId", "10", "i", 4),
@@ -170,27 +132,22 @@ class IngenicoMessage:
                 IngenicoTagType("Mdc", "1C", "x", False),
                 IngenicoTagType("MerchantText", "1D", "a", False),
                 IngenicoTagType("CancelReason", "1E", "x", 1),
-                # Communication parameter group tags.
                 IngenicoTagType("IpAddress", "40", "", False),
                 IngenicoTagType("PortNumber", "41", "", False),
-                # Connection parameters groups tags.
                 IngenicoTagType("ConnectionTimeout", "47", "", False),
                 IngenicoTagType("ConnectionRetries", "48", "", False),
                 IngenicoTagType("KeepAliveInterval", "49", "i", 2),
-                # Ticket data group tags.
                 IngenicoTagType("TicketType", "4A", "x", False),
                 IngenicoTagType("TicketHeader", "4B", "", False),
                 IngenicoTagType("TicketBody", "4C", "a", False),
                 IngenicoTagType("TicketFooter", "4D", "", False),
-                # Print data group.
                 IngenicoTagType("PrintOrigin", "4E", "", False),
                 IngenicoTagType("PaperWidth", "4F", "", False),
-                # Transaction (information) group tags.
                 IngenicoTagType("Amount", "50", "i", 4),
                 IngenicoTagType("CurrencyCode", "51", "i", 4),
                 IngenicoTagType(
                     "CurrencyExponent", "52", "i", 2
-                ),  # Named Decimal in IDD.
+                ),
                 IngenicoTagType("ProgressReportLanguage", "53", "a", 2),
                 IngenicoTagType("TransactionType", "54", "", False),
                 IngenicoTagType("MerchantTransactionReference", "55", "", False),
@@ -200,14 +157,12 @@ class IngenicoMessage:
                 IngenicoTagType("TransactionMode", "59", "", False),
                 IngenicoTagType("AuthorisationCode", "1F70", "", False),
                 IngenicoTagType("Token", "1F71", "", False),
-                # Settings# (result) group.
                 IngenicoTagType("SettingId", "5A", "", False),
                 IngenicoTagType("SettingType", "5B", "", False),
                 IngenicoTagType("SettingValue", "5C", "", False),
                 IngenicoTagType("SettingResult", "5D", "", False),
                 IngenicoTagType("TotalsType", "5F54", "", False),
                 IngenicoTagType("InfoType", "5F55", "", False),
-                # Version information tags.
                 IngenicoTagType("ApplicationId", "80", "", False),
                 IngenicoTagType("LogicalId", "81", "a", False),
                 IngenicoTagType("SerialNumber", "82", "a", False),
@@ -216,7 +171,6 @@ class IngenicoMessage:
                 IngenicoTagType("ExtraInformationName", "85", "", False),
                 IngenicoTagType("ExtraInformationValue", "86", "", False),
                 IngenicoTagType("ExtraInformationUnit", "87", "", False),
-                # Group tags.
                 IngenicoTagType("Group_EncryptionParameters", "A0", "GRP", False),
                 IngenicoTagType("Group_CommunicationParameters", "A1", "GRP", False),
                 IngenicoTagType("Group_SupportedLanguages", "A2", "TBL", False),
@@ -231,42 +185,37 @@ class IngenicoMessage:
                 IngenicoTagType("Group_SerialParameters", "AB", "GRP", False),
                 IngenicoTagType("Group_Settings", "AC", "GRP", False),
                 IngenicoTagType("Group_SettingsResult", "AD", "GRP", False),
-                # General group tags.
                 IngenicoTagType("Group_Header", "E1", "GRP", False),
                 IngenicoTagType("Group_Body", "E2", "GRP", False),
                 IngenicoTagType("Group_Footer", "E3", "GRP", False),
                 IngenicoTagType(
                     "Group_TableRecord", "EF", "REC", False
-                ),  # Used for repeated fields. e.g. The ticket data tag contains for each ticket a table record tag.
+                ),
                 IngenicoTagType("Group_Root", "F0", "GRP", False),
-                # Transparent mode tags.
                 IngenicoTagType("TmTransparentMode", "1F01", "", False),
                 IngenicoTagType("TmCardDetectionTimeout", "1F02", "", False),
                 IngenicoTagType("TmCardUid", "1F10", "", False),
                 IngenicoTagType("TmCardAtr", "1F11", "", False),
                 IngenicoTagType("TmCardType", "1F12", "", False),
-                # Transparent mode UI Control tags.
                 IngenicoTagType("TmDisplayText", "1F20", "", False),
                 IngenicoTagType("TmBeepType", "1F21", "", False),
                 IngenicoTagType("TmLedControl", "1F22", "", False),
-                # Transparent mode authentication/read data/writ,.
                 IngenicoTagType("TmKey", "1F30", "", False),
                 IngenicoTagType("TmAddress", "1F31", "", False),
                 IngenicoTagType("TmDataSize", "1F32", "", False),
                 IngenicoTagType("TmData", "1F33", "", False),
-                # Transparent mode groups.
                 IngenicoTagType("Group_TmTransparentMode", "3F01", "", False),
                 IngenicoTagType("Group_TmUiControl", "3F02", "", False),
                 IngenicoTagType("RebootAndClearType", "C1", "", False),
                 IngenicoTagType(
                     "SendOrDelete", "C2", "", False
-                ),  # used# for# pending# messages# :# 1=send# 2=delete
+                ),
                 IngenicoTagType(
                     "Group_AcquirerList", "E7", "", False
-                ),  # group: AcquirerIdentifier=0xDF68, AcquirerLabelName=0xDF69
+                ),
                 IngenicoTagType(
                     "Group_SecuritySchemeList", "BF01", "", False
-                ),  # group: SecuritySchemeIdentifier=0xDF6A, SecuritySchemeLabelName=0xDF6B
+                ),
                 IngenicoTagType("CardholderLanguage", "DF1A", "", False),
                 IngenicoTagType("Card_Brand_Identifier", "DF5F", "i", 2),
                 IngenicoTagType("SecuritySchemeIdentifier", "DF8204", "", False),
@@ -314,12 +263,6 @@ class IngenicoMessage:
 
     @classmethod
     def _getTagDetailsByCode(cls, tagCode):
-        """Search for tag in _const using the hex identifier.
-
-        Returns InenicoTagType instance.
-
-        :param bytes tagCode: hexadecimal identifier of tag.
-        """
         return next(
             (tagType for tagType in cls._const.tagType if tagType.hasTag(tagCode)),
             None,
@@ -327,35 +270,17 @@ class IngenicoMessage:
 
     @classmethod
     def _getTagDetailsByName(cls, tagName):
-        """Search for tag in _const providing the Human readable name.
-
-        Returns InenicoTagType instance.
-
-        :param str tagName: human readable tag name.
-        """
         return next(
             (tagType for tagType in cls._const.tagType if tagType.name == tagName), None
         )
 
     def __init__(self, dev) -> None:
-        """Base Initialisation of Ingenico Message.
-
-        :param dev: tcp socket (or other device with byte-based send and recv function)
-        """
         self.dev = dev
 
 
 class OutgoingIngenicoMessage(IngenicoMessage):
     @staticmethod
     def _withLength(msg, length):
-        """Return tag content with given length.
-
-        Some tags have to have a fixed length to be accepted by the payment terminal. This function will add null-bytes
-        to match the required length.
-
-        :param bytes msg: the message to edit
-        :param int length: wanted length
-        """
         toAdd = length - len(msg)
         if toAdd > 0:
             return b"\x00" * toAdd + msg
@@ -363,23 +288,10 @@ class OutgoingIngenicoMessage(IngenicoMessage):
 
     @staticmethod
     def _getCRC32(msg):
-        """Return the crc for the specified message as a bytestring.
-
-        The result will always be 4 bytes long.
-
-        :param bytes msg: the message to calculate the CRC for
-        """
         return unhexlify(f"{crc32(msg):08x}")
 
     @classmethod
     def _generateTag(cls, tagName, content):
-        """Return formatted tag with tag identifier + length + content.
-
-        The content of a tag often includes other tags, these have to be already formatted.
-
-        :param str tagName: Human readable tag name
-        :param bytes content: formatted tag content
-        """
 
         tag = cls._getTagDetailsByName(tagName)
         if tag.len:
@@ -392,10 +304,6 @@ class OutgoingIngenicoMessage(IngenicoMessage):
 
     @classmethod
     def _generateMsg(cls, header, body, footer):
-        """Return The formatted outgoing message including MessageLength and Magic string.
-
-        This is the very last step of the message generation. All arguments have to be completely formatted.
-        """
         root = cls._generateTag("Group_Root", header + body + footer)
         msgLength = (len(cls._const.magic + root)).to_bytes(3, byteorder="big")
         while len(msgLength) < 4:
@@ -405,21 +313,6 @@ class OutgoingIngenicoMessage(IngenicoMessage):
     def __init__(
         self, dev, terminalId, ecrId, protocolId, messageType, sequence, **kwargs
     ) -> None:
-        """Initialisation of Outgoing Ingenico messages.
-
-        After initialisation the message will be automatically generated. the send function can be called to send the
-        message to the device.
-
-        :param dev: tcp socket (or other device with byte-based send and recv function)
-
-        Kwargs:
-            keepAliveInterval
-            keepAliveResult
-            resultCode
-            transactionId
-            amount
-            reason
-        """
         super().__init__(dev)
 
         self.terminalId = terminalId
@@ -448,10 +341,6 @@ class OutgoingIngenicoMessage(IngenicoMessage):
         self.send()
 
     def _generateHeader(self):
-        """Return formatted header.
-
-        The header does not depend on the message type.
-        """
         return self._generateTag(
             "Group_Header",
             self._generateTag("ProtocolId", self.protocolId)
@@ -462,28 +351,12 @@ class OutgoingIngenicoMessage(IngenicoMessage):
         )
 
     def _generateFooter(self, mdc):
-        """Return the formatted footer
-
-        The footer can only be created after the body has been generated.
-
-        :param bytes mdc: The Modification Detection Code generated on the Body tag.
-        """
         return self._generateTag("Group_Footer", mdc)
 
     def _generateMDC(self, innerBody):
-        """Return the Modification Detection Code needed to generate the footer.
-
-        This function gets called after generating the body and before generating the footer.
-
-        :param bytes innerBody: formatted body excluding body-tag and length.
-        """
         return self._generateTag("Mdc", self._getCRC32(innerBody))
 
     def _generateBody(self, messageTypeId) -> tuple:
-        """Return formatted body and Modification Detection Code.
-
-        :param bytes messageTypeId: Hexadecimal message type identifier.
-        """
         innerBody = b""
         messageTypes = self._const.messageType
         if messageTypeId == messageTypes["HelloResponse"]:
@@ -522,10 +395,6 @@ class OutgoingIngenicoMessage(IngenicoMessage):
         return self._generateTag("Group_Body", innerBody), self._generateMDC(innerBody)
 
     def send(self):
-        """Send the generated message to the device.
-
-        This is the only function that has to be called manually!
-        """
         self.dev.send(self.message)
 
 
@@ -535,15 +404,6 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return int.from_bytes(byteArray, byteorder="big")
 
     def _getMsg(self, length) -> tuple:
-        """Return a dictionary of the next tag in the buffer.
-
-        Returns the decoded content of an message tag. If the tag is an group of other tags, this function will get
-        called again to generate an dictionary of the entire message tree.
-
-        Returns length left in parent tag.
-
-        :param int length: length left to be read in the parent tag.
-        """
         tag = self._getTag()
         tag["len"], lengthBytes = self._getLength()
         if tag["format"] in ["GRP", "REC"]:
@@ -571,54 +431,22 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return tag, length - (tag["len"] + lengthBytes + tag["tagLen"])
 
     def __init__(self, dev) -> None:
-        """Initialisation of incomming Ingenico messages.
-
-        After initialisation there will be a check if there is an Ingenico message available. If so, the message will
-        be requested from the socket buffer and will be decoded. The data will be made available in the variable
-        _tagTree
-
-        All data is read directly from the device buffer. It is from upmost importance to call the read functions in the
-        correct sequence. The messages from Ingenico have the Tag Length Value format. Becouse the mixed content of the
-        messages the standard Python TLV library cannot be used to decode the messages.
-
-        :raises ValueError: If the `Magic String` is not found an error will be thrown indicating the received message is
-            no Ingenico message.
-
-        :param dev: tcp socket (or other device with byte-based send and recv function)
-        """
         super().__init__(dev)
 
-        # If we're being called in `supported`, `self.dev` will be a socket. If we're
-        # being called in `run`, `self.dev` will be an IngenicoDriver and `self.dev.dev`
-        # will be the socket.
         if hasattr(self.dev, "dev"):
             _logger.debug("Listening on: %s", self.dev.dev)
 
-        # Receive message length and reduce it with length of magic string
         _logger.debug("Waiting for message length")
         length = self._hexToInt(self.dev.recv(4)) - 8
-        # Check if message is from Ingenico terminal by comparing magic string
         _logger.debug("Waiting for magic string")
         self.magic = self.dev.recv(8)
         if self.magic and self.magic == self._const.magic:
-            # Receive and decode message
             self._tagTree, _leftLength = self._getMsg(length)
         else:
             _logger.warning("Out of magic!")
 
     def _getLength(self) -> tuple:
-        """Returns the message length of the tag as well as the length of the message length itself
 
-        The length is read directly from the device buffer. It is important to call this function only after receiving
-        the tag identifier.
-        """
-
-        # The message length has a short form that fits in one byte (for lengths < 128)
-        # and a variable length long form where bit 8 is set on the first byte and
-        # the other bits specify the amount of bytes that follow. Those bytes then
-        # contain the length of the actual message. See section 2.1.2 in v1.0.9 of the
-        # TLV Cash Register Interface Specification. It's allowed to encode
-        # lengths < 128 using the long form.
         length = int(self.dev.recv(1).hex(), 16)
         if length // 128 == 1:
             return int(self.dev.recv(length % 128).hex(), 16), 1 + length % 128
@@ -626,10 +454,6 @@ class IncomingIngenicoMessage(IngenicoMessage):
             return length, 1
 
     def _getTag(self):
-        """Return the tag identifier
-
-        The tag identifier is read directly from the device buffer.
-        """
         tagLength = 1
         tag = self.dev.recv(1).hex()
         if int(tag, 16) % 32 == 31:
@@ -644,15 +468,12 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return tagObject.getDict()
 
     def getProtocolId(self):
-        """Return The Protocol Id from the tagtree."""
         return self._tagTree["msg"]["Group_Header"]["ProtocolId"]
 
     def getTerminalId(self):
-        """Return The Protocol Id from the tagtree."""
         return self._tagTree["msg"]["Group_Header"]["TerminalId"]
 
     def getTransactionResult(self):
-        """Return The Protocol Id from the tagtree."""
         if "TransactionResult" in self._tagTree["msg"]["Group_Body"]:
             return self._const.transactionResult[
                 self._tagTree["msg"]["Group_Body"]["TransactionResult"]
@@ -660,10 +481,6 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return False
 
     def getTransactionStage(self):
-        """Return The Transaction Stage from the tagtree.
-
-        If the transaction stage is not found return False.
-        """
         if "TransactionStage" in self._tagTree["msg"]["Group_Body"]:
             return self._const.transactionStage[
                 self._tagTree["msg"]["Group_Body"]["TransactionStage"]
@@ -671,15 +488,7 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return False
 
     def getTransactionTicket(self):
-        """Return The Transaction ticket from the tagtree.
-
-        If there is no ticket data available return False.
-        """
         if "Group_TicketData" in self._tagTree["msg"]["Group_Body"]:
-            # We currently don't do anything with different ticket types and ignore
-            # headers and footers. The TLV Cash Register Interface spec mentions header
-            # (4.5.7.2) and footer (4.5.7.4) currently being empty, but that they might
-            # be implemented in the future.
             ticket_data = self._tagTree["msg"]["Group_Body"]["Group_TicketData"]
             ticket_bodies = [
                 r["TicketBody"] for r in ticket_data if r.get("TicketBody")
@@ -688,10 +497,6 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return False
 
     def getKeepAliveInterval(self):
-        """Return the keep alive interval from the tagtree.
-
-        If there is connection data available return False.
-        """
         if "Group_ConnectionParameters" in self._tagTree["msg"]:
             return self._tagTree["msg"]["Group_ConnectionParameters"][
                 "KeepAliveInterval"
@@ -699,16 +504,11 @@ class IncomingIngenicoMessage(IngenicoMessage):
         return False
 
     def getKeepAliveReasonId(self):
-        """Return The keep alive reason from the tagtree.
-
-        If the message is no keep alive message return False.
-        """
         if "KeepAliveReason" in self._tagTree["msg"]["Group_Body"]:
             return self._tagTree["msg"]["Group_Body"]["KeepAliveReason"]
         return False
 
     def getMessageType(self):
-        """Return The message type from the constants, as found in the tagtree."""
         messageTypeId = self._tagTree["msg"]["Group_Header"]["MessageType"]
         return next(
             (
@@ -744,11 +544,7 @@ class IngenicoDriver(Driver):
 
     @classmethod
     def supported(cls, device):
-        """Try to initialize a connection with the payment terminal.
-        Override
-        """
         try:
-            # Setup socket connection
             msg = IncomingIngenicoMessage(device.dev)
             if (
                 msg
@@ -789,20 +585,7 @@ class IngenicoDriver(Driver):
             return False
 
     def disconnect(self):
-        # Close the socket but leave the socket_devices entry. If we were to delete it,
-        # and the SocketInterface gets a new connection from the terminal, it would
-        # create a new socket_devices entry with the same key. Interface's
-        # update_iot_devices method would not detect that something changed and no new
-        # IngenicoDriver thread would be created, resulting in a deadlock. What will
-        # instead happen by leaving the socket_devices entry, is that
-        # replace_socket_device will get called instead. It will update
-        # _detected_devices in Interface, so update_iot_devices will create a new
-        # IngenicoDriver thread. None of this is ideal, but a cleaner fix would require
-        # changing the architecture of Interface and how interfaces and drivers can
-        # talk to each other.
         sock = socket_devices[self.device_identifier].dev
-        # A bad file descriptor OSError will be thrown if the socket was already
-        # closed
         with contextlib.suppress(OSError):
             sock.shutdown(socket.SHUT_RD)
         sock.close()
@@ -810,16 +593,10 @@ class IngenicoDriver(Driver):
         super().disconnect()
 
     def _getSequence(self):
-        """Returns the sequence number for the next outgoing message.
-
-        The sequence of incomming and outgoing messages are unrelated. If the sequence of outgoing messages is wrong
-        the terminal will automatically close the connection.
-        """
         self._sequence += 1
         return (self._sequence % (256**2)).to_bytes(2, byteorder="big")
 
     def _outgoingMessage(self, messageType, **kwargs) -> None:
-        """Base function to generate in instance of OutgoingIngenicoMessage."""
         OutgoingIngenicoMessage(
             self,
             self._terminalId,
@@ -831,9 +608,6 @@ class IngenicoDriver(Driver):
         )
 
     def _action_default(self, data):
-        """Action trigered on request from Odoo.
-        Override
-        """
         try:
             self.data = {
                 "value": "",
@@ -873,9 +647,6 @@ class IngenicoDriver(Driver):
             _logger.error("Socket error in send: %s", e)
 
     def run(self):
-        """If an payment terminal is found, start listening for messages from the terminal.
-        Override
-        """
         try:
             self.data = {
                 "value": "",

@@ -1,4 +1,3 @@
-# pylint: disable=import-outside-toplevel
 from shapely.geometry import Point
 
 from odoo.tests import common

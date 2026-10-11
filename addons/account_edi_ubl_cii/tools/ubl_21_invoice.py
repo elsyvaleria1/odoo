@@ -1,5 +1,3 @@
-# The Invoice dict defines the structure of a UBL 2.1 Invoice, with all nodes in the correct order.
-# It can be passed as the `template` argument to `dict_to_xml` to enforce the order of nodes.
 
 import odoo.addons.account_edi_ubl_cii.tools.ubl_21_common as cac
 

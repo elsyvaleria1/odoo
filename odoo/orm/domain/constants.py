@@ -62,8 +62,6 @@ LIKE_CONDITION_OPERATORS: Final[frozenset[str]] = frozenset(
     op for op in STANDARD_CONDITION_OPERATORS if op.endswith("like")
 )
 
-# a POSIX regular expression the column must match (`~`), like `=like`
-# without wildcard wrapping and without unaccent
 REGEX_CONDITION_OPERATORS: Final[frozenset[str]] = frozenset(("=~", "not =~"))
 
 INTERNAL_CONDITION_OPERATORS: Final[frozenset[str]] = frozenset(("any!", "not any!"))

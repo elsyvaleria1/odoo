@@ -100,7 +100,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         )
         partner = self.env["res.partner"].create({"name": "Partner"})
 
-        # a frozen folder is a boundary: what its folder grants stops there
         folder.action_update_access_rights(
             access_internal="edit", partners={partner: ("edit", None)}
         )
@@ -149,7 +148,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         self.assertEqual(shortcut.handler, "spreadsheet")
 
     def archive_existing_spreadsheet(self):
-        """Existing spreadsheet in the database can influence some test results"""
         self.env["document.document"].search(
             [("handler", "=", "spreadsheet")]
         ).active = False
@@ -169,7 +167,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             )
         )
         self.assertFalse(document.folder_id, "The spreadsheet is created in My Drive")
-        # And only user1 have access to it
         self.assertEqual(document.owner_id, user1)
         self.assertEqual(document.access_internal, "none")
         self.assertEqual(document.access_via_link, "none")
@@ -178,7 +175,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         )
 
     def test_spreadsheet_no_default_folder(self):
-        """Folder is not overwritten by the default spreadsheet folder"""
         document = self.env["document.document"].create(
             {
                 "spreadsheet_data": "{}",
@@ -230,16 +226,13 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             }
         )
 
-        # inherit access from parent folder (My Drive)
         self.assertFalse(document_1.folder_id, False)
         self.assertEqual(document_1.access_internal, "none")
         self.assertEqual(document_1.access_via_link, "none")
 
-        # inherit access from parent folder (My Drive)
         self.assertEqual(document_2.access_internal, "none")
         self.assertEqual(document_2.access_via_link, "none")
 
-        # inherit access from parent folder (Test folder)
         self.assertEqual(document_3.access_internal, "view")
         self.assertEqual(document_3.access_via_link, "none")
         self.assertEqual(document_3._member_roles()[user.partner_id], "view")
@@ -283,32 +276,25 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         with self._freeze_time("2020-02-07"):
             spreadsheet6 = self.create_spreadsheet(name="SP 6")
 
-        #########
-        # ADMIN #
-        #########
 
-        # Only the last opened spreadsheet.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [], offset=0, limit=1
         )
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet6.id])
 
-        # Two last opened spreadsheets.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [], offset=0, limit=2
         )
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet6.id, spreadsheet5.id])
 
-        # Ordered first by last opened, and then by id.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [], offset=2, limit=2
         )
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet3.id, spreadsheet4.id])
 
-        # Ordered first by last opened, and then by id without limit.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [], offset=2
         )
@@ -318,7 +304,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             [spreadsheet3.id, spreadsheet4.id, spreadsheet2.id, spreadsheet1.id],
         )
 
-        # Ordered first by last opened, and then by id without limit with a domain.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [("name", "ilike", "My Spreadsheet")]
         )
@@ -327,7 +312,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             spreadsheet_ids, [spreadsheet3.id, spreadsheet2.id, spreadsheet1.id]
         )
 
-        # Ordered first by last opened, and then by id without limit with a domain.
         spreadsheets = self.env["document.document"]._get_spreadsheets_to_display(
             [("name", "ilike", "SP ")]
         )
@@ -336,11 +320,7 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             spreadsheet_ids, [spreadsheet6.id, spreadsheet5.id, spreadsheet4.id]
         )
 
-        ########
-        # JEAN #
-        ########
 
-        # Only the last opened spreadsheet.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -349,7 +329,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet4.id])
 
-        # Two last opened spreadsheets.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -358,7 +337,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet4.id, spreadsheet2.id])
 
-        # Ordered first by last opened, and then by id.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -367,7 +345,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         spreadsheet_ids = [s["id"] for s in spreadsheets]
         self.assertEqual(spreadsheet_ids, [spreadsheet1.id, spreadsheet6.id])
 
-        # Ordered first by last opened, and then by id without limit.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -379,7 +356,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             [spreadsheet1.id, spreadsheet6.id, spreadsheet5.id, spreadsheet3.id],
         )
 
-        # Ordered first by last opened, and then by id without limit with a domain.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -390,7 +366,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             spreadsheet_ids, [spreadsheet2.id, spreadsheet1.id, spreadsheet3.id]
         )
 
-        # Ordered first by last opened, and then by id without limit with a domain.
         spreadsheets = (
             self.env["document.document"]
             .with_user(user)
@@ -491,7 +466,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
 
         manager_doc = self.create_spreadsheet(user=user)
         visible_doc = self.create_spreadsheet(user=user)
-        # a guard, because the permissions the group holds would widen a permission
         self.env["ir.access"].create(
             {
                 "name": "test record rule",
@@ -830,9 +804,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
         user = new_test_user(self.env, login="Jean", groups="base.group_user")
         spreadsheet.dispatch_spreadsheet_message(self.new_revision_data(spreadsheet))
 
-        #########
-        # ADMIN #
-        #########
         copy_admin = spreadsheet.copy()
         self.assertEqual(
             len(copy_admin.spreadsheet_revision_ids),
@@ -840,9 +811,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             "The revision should be copied with admin access right",
         )
 
-        #############
-        # NON-ADMIN #
-        #############
         spreadsheet.invalidate_recordset()
         copy_non_admin = spreadsheet.with_user(user).copy()
         self.assertEqual(
@@ -1122,10 +1090,8 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
     def test_get_only_spreadsheet_documents(self):
         self.env["document.document"].search([("handler", "=", "spreadsheet")]).unlink()
 
-        # a spreadsheet
         spreadsheet = self.create_spreadsheet()
 
-        # a regular document
         self.env["document.document"].create(
             {
                 "datas": GIF,
@@ -1134,7 +1100,6 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
             }
         )
 
-        # a frozen spreadsheet
         frozen_spreadsheet = self.create_spreadsheet()
         frozen_spreadsheet.access_internal = "view"
         frozen_spreadsheet.handler = "frozen_spreadsheet"

@@ -107,7 +107,6 @@ class TestAppointmentNotificationsMicrosoftCalendar(
 
     def setUp(self):
         super().setUp()
-        # attendee user in parent class is created in setUp
         sync_paused_attendee = self.attendee_user.copy(
             default={
                 "email": "ms.sync.paused@test.lan",
@@ -124,7 +123,6 @@ class TestAppointmentNotificationsMicrosoftCalendar(
     )
     def test_appointment_cancel_notification_msftcalendar(self):
         appointment = self.calendar_event
-        # the organizer's calendar holds it
         self.link_microsoft(appointment, appointment.user_id, "test_msft_id")
         with (
             self.mock_mail_gateway(),
@@ -153,7 +151,6 @@ class TestAppointmentNotificationsMicrosoftCalendar(
         ),
     )
     def test_sync_or_email_resource_appointment(self):
-        """Check that resource appointments are synced even if there is no organizer, unless the attendee is not syncing."""
         inserts = distinct_inserts(f"booked_by_{self.env.user.id}")
         for with_organizer in [True, False]:
             with self.subTest(with_organizer=with_organizer):
@@ -191,7 +188,6 @@ class TestAppointmentNotificationsMicrosoftCalendar(
                     self.env.flush_all()
                     self.cr.precommit.run()
                     self.cr.postcommit.run()
-                # sent through its organizer, or the booking user without one
                 sender = self.organizer_user if with_organizer else self.env.user
                 if sender._calendar_sync_active("microsoft"):
                     mock_insert.assert_called_once()

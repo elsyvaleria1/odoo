@@ -23,13 +23,12 @@ _barcode_init: tuple[Any, str] | None = None
 
 _COURIER = "Courier"
 _SUBSTITUTE_FONT = "NimbusMonoPS-Regular"
-# Courier's vertical metrics: the substitute stands in for Courier
 _SUBSTITUTE_METRICS = {"ascent": 629, "descent": -157}
 _UNSET = object()
 
 
 def _init_barcode() -> tuple[Any, str]:
-    global _barcode_init  # noqa: PLW0603  one-shot lazy init of the reportlab barcode tables
+    global _barcode_init
     with _barcode_init_lock:
         if _barcode_init is not None:
             return _barcode_init
@@ -72,8 +71,6 @@ def _validated_font(barcode: Any) -> str:
             fontName=candidate,
         ).asString("png")
     except Exception as error:
-        # the font is reportlab's, shared by the process: a candidate that
-        # failed leaves it as it found it
         for name, value in saved.items():
             if value is _UNSET:
                 vars(font).pop(name, None)
@@ -155,7 +152,6 @@ def is_barcode_encoding_valid(barcode: object, encoding: object) -> bool:
     if barcode_size is None:
         _debug.logic("barcode.encoding_unknown", encoding=encoding)
         return False
-    # a leading zero is the nomenclature's UPC-A marker, not a symbol rule
     valid = is_gtin_valid(barcode, barcode_size) and (
         encoding != "ean13" or barcode[0] != "0"
     )

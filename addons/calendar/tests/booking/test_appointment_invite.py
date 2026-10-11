@@ -22,7 +22,6 @@ class AppointmentInviteTest(AppointmentCommon):
         self.assertEqual(invitations.search(domain), invitation)
 
     def test_gc_appointment_invite(self):
-        """Remove invitations > 6 months old, with latest end of linked meeting > 6 months old"""
         appt_invite = self.env["appointment.invite"].create(
             {
                 "appointment_type_ids": [(4, self.apt_type_bxls_2days.id)],
@@ -50,7 +49,6 @@ class AppointmentInviteTest(AppointmentCommon):
             self.env["appointment.invite"]._gc_appointment_invite()
         self.assertTrue(appt_invite.exists())
 
-        # Remove the most recent meeting. The one left is > 6 months old and should be removed by the GC.
         meeting_1.unlink()
         with freeze_time(self.reference_now):
             self.env["appointment.invite"]._gc_appointment_invite()
@@ -58,16 +56,6 @@ class AppointmentInviteTest(AppointmentCommon):
 
     @users("apt_manager")
     def test_short_code_generation(self):
-        """
-        Case 1: Create appointment name based short_code when no link exist for the same appointment given that
-                short_code does not exist for any invites.
-
-        Case 2: Retrieve the existing short_code based on the given configuration else generate random short_code.
-
-        Case 3: Generate random short_code if the user changes the given configuration (for already fetched short_code).
-
-        Case 4: Allow to alter the already fetched short_code and save it.
-        """
         apt_users = self.apt_manager + self.staff_users
         appointment_types = self.env["appointment.type"].create(
             [
@@ -86,17 +74,14 @@ class AppointmentInviteTest(AppointmentCommon):
         AppointmentInvite2 = self.env["appointment.invite"].with_context(
             default_appointment_type_ids=[appointment_types[1].id]
         )
-        # Case 1
         with Form(AppointmentInvite1) as appointment_invite:
             self.assertEqual(
                 appointment_invite.short_code,
                 "test-users-0",
                 "Appointment name based short_code should be generated",
             )
-            # manually change short code, important for next test
             appointment_invite.short_code = "code-to-reuse"
 
-        # Case 2(i)
         appointment_invite_reuse = Form(AppointmentInvite1)
         self.assertEqual(
             appointment_invite_reuse.short_code,
@@ -104,7 +89,6 @@ class AppointmentInviteTest(AppointmentCommon):
             "The existing short_code should be retrieved",
         )
 
-        # Case 2(ii)
         with Form(AppointmentInvite2) as appointment_invite_other_config:
             appointment_invite_other_config.resources_choice = "all_assigned_resources"
             self.assertEqual(appointment_invite_other_config.short_code, "test-users-1")
@@ -116,7 +100,6 @@ class AppointmentInviteTest(AppointmentCommon):
             "The random short_code should be generated",
         )
 
-        # Case 3
         appointment_invite_change_config = Form(AppointmentInvite1)
         self.assertEqual(appointment_invite_change_config.short_code, "code-to-reuse")
         appointment_invite_change_config.resources_choice = "all_assigned_resources"
@@ -126,7 +109,6 @@ class AppointmentInviteTest(AppointmentCommon):
             "The random short_code should be generated when config changes",
         )
 
-        # Case 4
         with Form(AppointmentInvite1) as appointment_invite_change_code:
             appointment_invite_change_code.short_code = "custom-code"
         self.assertEqual(

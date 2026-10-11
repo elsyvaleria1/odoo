@@ -55,7 +55,6 @@ class TestAccountMissingTransactionsWizard(AccountOnlineSynchronizationCommon):
         gbp_currency = self.env["res.currency"].search([("name", "=", "GBP")])
 
         self.assertEqual(2, len(transient_transactions))
-        # Posted Transaction
         self.assertEqual(
             transient_transactions[0]["online_transaction_identifier"], "ABCD01"
         )
@@ -65,7 +64,6 @@ class TestAccountMissingTransactionsWizard(AccountOnlineSynchronizationCommon):
         self.assertEqual(transient_transactions[0]["state"], "posted")
         self.assertEqual(transient_transactions[0]["foreign_currency_id"], egp_currency)
         self.assertEqual(transient_transactions[0]["amount_currency"], 8.0)
-        # Pending Transaction
         self.assertEqual(
             transient_transactions[1]["online_transaction_identifier"], "ABCD02_pending"
         )
@@ -121,7 +119,6 @@ class TestAccountMissingTransactionsWizard(AccountOnlineSynchronizationCommon):
     def test_fetch_missing_transaction_with_end_to_end_uuid(
         self, patched_fetch_odoofin
     ):
-        """The wizard fetches posted and pending transactions when OdooFin sends an end-to-end uuid."""
         self.account_online_link.state = "connected"
         patched_fetch_odoofin.side_effect = [
             {
@@ -163,7 +160,6 @@ class TestAccountMissingTransactionsWizard(AccountOnlineSynchronizationCommon):
     def test_fetch_pending_transaction_with_end_to_end_uuid(
         self, patched_fetch_odoofin
     ):
-        """Only pending transactions are listed when OdooFin sends an end-to-end uuid."""
         self.account_online_link.state = "connected"
         patched_fetch_odoofin.side_effect = [
             {

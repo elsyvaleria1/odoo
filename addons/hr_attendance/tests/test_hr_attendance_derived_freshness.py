@@ -6,7 +6,6 @@ from odoo import Command, fields
 from odoo.tests.common import TransactionCase, tagged
 
 
-# noon on a mid-month day: "six hours ago" is still today and still this month
 @freeze_time("2025-06-17 12:00:00")
 @tagged("post_install", "-at_install")
 class TestTheHourTotalsFollowTheAttendances(TransactionCase):

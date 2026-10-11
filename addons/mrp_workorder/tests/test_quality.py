@@ -55,32 +55,18 @@ class TestQuality(TransactionCase):
                 default_product_ids=[self.product_2.id]
             )
         )
-        # Form should keep the default products set
         self.assertEqual(len(quality_point_form.product_ids), 1)
         self.assertEqual(quality_point_form.product_ids[0].id, self.product_2.id)
-        # <field name="operation_id" invisible="not is_workorder_step"/>
-        # @api.depends('operation_id', 'picking_type_ids')
-        # def _compute_is_workorder_step(self):
-        #     for quality_point in self:
-        #         quality_point.is_workorder_step = quality_point.operation_id or quality_point.picking_type_ids and\
-        #             all(pt.code == 'mrp_operation' for pt in quality_point.picking_type_ids)
         quality_point_form.picking_type_ids.add(
             self.env["stock.picking.type"].search(
                 [("code", "=", "mrp_operation")], limit=1
             )
         )
-        # Select a workorder operation
         quality_point_form.operation_id = self.bom.operation_ids[0]
-        # Product should be replaced by the product linked to the bom
         self.assertEqual(len(quality_point_form.product_ids), 1)
         self.assertEqual(quality_point_form.product_ids[0].id, self.bom.product_id.id)
 
     def test_delete_move_linked_to_quality_check(self):
-        """
-        Test that a quality check is deleted when its linked move is deleted.
-        """
-        # `is_storable` first: tracking requires it, and each assignment is its
-        # own write, so the state between them has to be legal too.
         self.bom.bom_line_ids.product_id.is_storable = True
         self.bom.bom_line_ids.product_id.tracking = "lot"
         self.bom.operation_ids[0].quality_point_ids = [
@@ -118,9 +104,6 @@ class TestQuality(TransactionCase):
         self.assertFalse(qc.exists())
 
     def test_label_printed_qty(self):
-        """
-        Check that the label printing instructions print the expected quantities.
-        """
         super_product = self.env["product.product"].create(
             {
                 "name": "Super Product",
@@ -164,14 +147,6 @@ class TestQuality(TransactionCase):
         self.assertEqual(mo.workorder_ids.current_quality_check_id._get_print_qty(), 7)
 
     def test_copy_quality_check(self):
-        """Test that a copied quality check is correctly added into the chain.
-
-        Scenario:
-            - Given a chain of quality checks A -> B -> C.
-            - When B is copied.
-            - Then the resulting chain should be A -> B -> B' -> C,
-            ensuring the copied quality check is inserted directly after its original quality check.
-        """
         quality_point = self.env["quality.point"].create(
             {
                 "product_ids": [(4, self.product_1.id)],
@@ -192,13 +167,11 @@ class TestQuality(TransactionCase):
             [check_vals, check_vals, check_vals]
         )
 
-        # Create a chain of Quality checks 0 -> 1 -> 2
         quality_checks[1]._insert_in_chain("after", quality_checks[0])
         quality_checks[2]._insert_in_chain("after", quality_checks[1])
 
         new_check = quality_checks[1].copy()
 
-        # chain of Quality checks should be 0 -> 1 -> Copy of 1 -> 2
         self.assertEqual(quality_checks[1].next_check_id, new_check)
         self.assertEqual(new_check.previous_check_id, quality_checks[1])
         self.assertEqual(new_check.next_check_id, quality_checks[2])
@@ -210,8 +183,6 @@ class TestQuality(TransactionCase):
         production = self.env["mrp.production"].create(
             {"product_id": self.product_1.id, "product_qty": 1}
         )
-        # a byproduct is a finished product of the order, which is where
-        # quality_mrp lets a check of the order point when it is installed
         production.write(
             {
                 "move_byproduct_ids": [
@@ -240,11 +211,6 @@ class TestQuality(TransactionCase):
         self.assertEqual(check.product_tracking, "serial")
 
     def test_merge_mo_from_orderpoints(self):
-        """
-        Ensure that triggering a manufacturing reordering rule:
-        - Updates an existing MO if none of its quality check has been performed yet
-        - Creates a new MO if the last MO's product_qty cannot be updated due to a performed quality check
-        """
         self.env["mrp.routing.workcenter"].create(
             {
                 "name": "Assembly2",
@@ -349,8 +315,6 @@ class TestQuality(TransactionCase):
         )
 
     def test_workorder_form_lists_pending_quality_checks(self):
-        """The work order form must show the steps still to be performed, not only
-        the ones already answered."""
         self.env["quality.point"].create(
             {
                 "product_ids": [Command.link(self.product_1.id)],
@@ -372,7 +336,6 @@ class TestQuality(TransactionCase):
         production.action_confirm()
         workorder = production.workorder_ids[0]
 
-        # Nothing has been answered yet: the old field is empty by construction.
         self.assertTrue(
             workorder.check_ids.filtered(lambda c: c.quality_state == "none")
         )
@@ -385,7 +348,6 @@ class TestQuality(TransactionCase):
         )
 
     def test_workorder_quality_points_follow_the_operation(self):
-        """A point added to the operation after the workorder exists reaches the workorder."""
         production = self.env["mrp.production"].create(
             {"product_id": self.product_1.id, "bom_id": self.bom.id}
         )
@@ -408,7 +370,6 @@ class TestQuality(TransactionCase):
         self.assertFalse(workorder.quality_point_ids)
 
     def test_batch_lot_producing_write_keeps_each_mo_lots(self):
-        """Writing trace_producing_ids on several MOs updates each MO's checks with its own lots."""
         self.product_1.is_storable = True
         self.product_1.tracking = "serial"
         register = self.env.ref("mrp_workorder.test_type_register_production")
@@ -446,7 +407,6 @@ class TestQuality(TransactionCase):
             self.assertEqual(checks.trace_ids, production.trace_producing_ids)
 
     def test_shop_floor_lot_scan_uses_the_picker_domain(self):
-        """A scanned lot resolves to a quant the "Add line" picker would list."""
         self.product_2.is_storable = True
         self.product_2.tracking = "lot"
         production = self.env["mrp.production"].create(

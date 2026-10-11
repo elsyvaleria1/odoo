@@ -21,7 +21,6 @@ class TrainingSimulatorController(http.Controller):
             {"simulator_id": simulator.id}
         )
         session.snapshot = simulator._training_snapshot(session)
-        # Options the game passes along, e.g. the seed to replay the same conditions.
         query = urlencode(
             {
                 "session": session.id,

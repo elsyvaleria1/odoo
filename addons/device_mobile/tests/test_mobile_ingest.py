@@ -94,9 +94,6 @@ class TestMobileIngest(DeviceTransactionCase):
         return ingest, sum(read)
 
     def test_a_resend_reads_the_stored_rows_at_its_stamps_not_the_span(self):
-        # A backlog flushed after days offline spans days in one batch, and the
-        # dedup read every stored fix between its first and last stamp to
-        # compare against two hundred.
         stored = self._fixes(300)
         self.gps.create_from_mobile(self.device, stored)
         self.env.flush_all()

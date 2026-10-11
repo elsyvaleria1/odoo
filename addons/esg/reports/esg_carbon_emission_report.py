@@ -190,7 +190,6 @@ class EsgCarbonEmissionReport(models.Model):
             field_description._get_cache(self.env).update({self.id: value})
 
     def write(self, vals):
-        # To refactor
         other_emissions_from_report = self.filtered(lambda rec: rec.id > 0)
         account_emissions_from_report = self.filtered(lambda rec: rec.id < 0)
 
@@ -261,7 +260,7 @@ class EsgCarbonEmissionReport(models.Model):
     def unlink(self):
         account_emissions_from_report = self.filtered(lambda rec: rec.id < 0)
         if account_emissions_from_report:
-            raise UserError(self.env._("You cannot delete journal items from here."))  # noqa: E8506  a report view: unlink forwards to its source rows, and a journal item is not one
+            raise UserError(self.env._("You cannot delete journal items from here."))
 
         other_emissions_from_report = self.filtered(lambda rec: rec.id > 0)
         other_emissions = self.env["esg.other.emission"].browse(

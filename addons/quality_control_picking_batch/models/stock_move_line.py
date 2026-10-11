@@ -11,8 +11,6 @@ class StockMoveLine(models.Model):
         _debug.lifecycle("batch_quality_line_write", lines=self, fields=len(vals))
         res = super().write(vals)
         if "picking_id" in vals:
-            # `qc.measure_on`, not `qc.point_id.measure_on`: the check stores
-            # its own copy, and a check created without a point has no point to ask.
             self.check_ids.filtered(
                 lambda qc: qc.measure_on == "move_line"
             ).picking_id = vals["picking_id"]

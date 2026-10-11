@@ -12,13 +12,10 @@ from odoo.addons.stock.tests.common import TestStockCommon
 
 @tagged("post_install", "-at_install")
 class TestStock(common.TestAmazonCommon, TestStockCommon):
-    # As this test class is exclusively intended to test Amazon-related check on pickings, the
-    # normal flows of stock are put aside in favor of manual updates on quantities.
 
     def setUp(self):
         super().setUp()
 
-        # Create sales order
         self.partner = self.env["res.partner"].create({"name": "Gederic Frilson"})
         amazon_offer = self.account._acquire_offer(
             "test SKU", self.account.base_marketplace_id
@@ -43,7 +40,6 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             }
         )
 
-        # Create picking
         self.picking = self.PickingObj.create(
             {
                 "picking_type_id": self.picking_type_in.id,
@@ -64,10 +60,9 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         self.move_2 = self.MoveObj.create(move_vals)
         self.picking.sale_id = (
             self.sale_order.id
-        )  # After creating the moves as it clears the field
+        )
 
     def test_confirm_picking_trigger_SOL_check(self):
-        """Test that confirming a picking triggers a check on sales order lines completion."""
 
         with patch(
             "odoo.addons.sale_amazon.models.stock_picking.StockPicking"
@@ -76,7 +71,7 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         ) as mock:
             self.picking.date_done = (
                 fields.Datetime.now()
-            )  # Trigger the check for SOL completion
+            )
             self.assertEqual(
                 mock.call_count,
                 1,
@@ -85,7 +80,6 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             )
 
     def test_check_SOL_completion_no_move(self):
-        """Test that the check on SOL completion passes if no move is confirmed."""
 
         self.assertIsNone(
             self.picking._check_sales_order_line_completion(),
@@ -94,7 +88,6 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         )
 
     def test_check_SOL_completion_all_moves(self):
-        """Test that the check on SOL completion passes if all moves are confirmed."""
 
         self.move_1.quantity = 1
         self.move_2.quantity = 1
@@ -105,22 +98,17 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         )
 
     def test_check_SOL_completion_some_moves(self):
-        """Test that the check on SOL completion fails if only some moves are confirmed."""
 
         self.move_1.quantity = 1
         with self.assertRaises(UserError):
-            # The check of SOL completion should raise for pickings with completions of ]0%, 100%[
-            # (some moves related to a given sales order line are confirmed, but not all)
             self.picking._check_sales_order_line_completion()
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_check_carrier_details_compliance_delivered_for_amazon(self):
-        """Test the validation of a picking when Amazon already flagged it as being delivered."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -163,17 +151,15 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
                 }
             )
             picking.location_dest_id.usage = "customer"
-            picking._check_carrier_details_compliance()  # Don't raise when Amazon has the info
+            picking._check_carrier_details_compliance()
 
     @mute_logger("odoo.addons.sale_amazon.models.stock_picking")
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_check_carrier_details_compliance_no_carrier(self):
-        """Test the validation of a picking when the delivery carrier is not set."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -217,12 +203,10 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
     @mute_logger("odoo.addons.sale_amazon.models.stock_picking")
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_check_carrier_details_compliance_intermediate_delivery_step(self):
-        """Test the validation of a picking when the delivery is in an intermediate step."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -261,17 +245,15 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             picking.carrier_tracking_ref = self.tracking_ref
             intermediate_destination_id = self.env.ref("stock.location_pack_zone").id
             picking.location_dest_id = intermediate_destination_id
-            picking._check_carrier_details_compliance()  # Don't raise if intermediate delivery step
+            picking._check_carrier_details_compliance()
 
     @mute_logger("odoo.addons.sale_amazon.models.stock_picking")
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_check_carrier_details_compliance_no_tracking_number(self):
-        """Test the validation of a picking when the tracking reference is not set."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -316,12 +298,10 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
     def test_check_carrier_details_compliance_requirements_met_in_last_step_delivery(
         self,
     ):
-        """Test the validation of a picking when the delivery carrier and tracking ref are set."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -360,27 +340,22 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
                 self.carrier,
                 self.tracking_ref,
             )
-            picking._check_carrier_details_compliance()  # Everything is fine, don't raise
+            picking._check_carrier_details_compliance()
 
     def test_get_carrier_details_returns_carrier_name_when_unsupported(self):
-        """Test that we fall back on the custom carrier's name if it's not supported by Amazon."""
         self.picking.carrier_id = self.carrier
         carrier_name = self.picking._get_formatted_carrier_name()
         self.assertEqual(carrier_name, self.carrier.name)
 
     def test_get_carrier_details_returns_formatted_carrier_name_when_supported(self):
-        """Test that we use the formatted carrier name when it is supported by Amazon."""
         self.carrier.name = "d_H l)"
         self.picking.carrier_id = self.carrier
         carrier_name = self.picking._get_formatted_carrier_name()
         self.assertEqual(carrier_name, "DHL")
 
     def test_sync_orders_confirms_pickings_with_a_pending_status(self):
-        """Test pickings with a status of pending in odoo are updated when receiving the
-        information that the order is delivered from Amazon."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mock response without making an actual call to the Selling Partner API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrder":
                 response_ = {"payload": dict(common.ORDER_MOCK, OrderStatus="Shipped")}
@@ -392,9 +367,7 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=get_sp_api_response_mock,
         ):
-            # Set up the test pickings
             self.picking.update({"amazon_sync_status": "error", "state": "cancel"})
-            # Create a new picking
             pending_picking = self.PickingObj.create(
                 {
                     "picking_type_id": self.picking_type_in.id,
@@ -429,11 +402,8 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             )
 
     def test_sync_orders_confirms_pickings_with_an_errored_status(self):
-        """Test pickings with a status of errored in odoo are updated when receiving the
-        information that the order is delivered from Amazon."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mock response without making an actual call to the Selling Partner API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrder":
                 response_ = {"payload": dict(common.ORDER_MOCK, OrderStatus="Shipped")}
@@ -445,7 +415,6 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=get_sp_api_response_mock,
         ):
-            # Set up the test pickings
             self.picking.update({"amazon_sync_status": "error"})
 
             self.account._sync_order_by_reference(self.sale_order.amazon_order_ref)
@@ -474,7 +443,6 @@ class TestStock(common.TestAmazonCommon, TestStockCommon):
         self.assertEqual(self.picking.amazon_sync_status, "done", msg=msg)
 
     def test_action_retry_amazon_sync_set_waiting_state_after_resync(self):
-        # Make sure we have those fields set on the company.
         self.env.company.partner_id.write(
             {
                 "street": "Company Street Office 2",

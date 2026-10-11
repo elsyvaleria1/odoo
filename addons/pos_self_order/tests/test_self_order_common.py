@@ -24,16 +24,13 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
         self.pos_admin.group_ids += self.env.ref("account.group_account_invoice")
         self_route = self.pos_config._get_self_order_route()
 
-        # Verify behavior when self Order is closed
         self.start_tour(self_route, "self_order_is_close")
 
     def test_self_order_consultation_open(self):
-        """Verify than when the pos is open and self ordering is set to consultation the banner isn't shown"""
         self.pos_config.write({"self_ordering_mode": "consultation"})
 
         self_route = self.pos_config._get_self_order_route()
 
-        # Verify behavior when self Order is opened
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")
         self.start_tour(self_route, "self_order_is_open_consultation")
@@ -47,10 +44,6 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
             )
 
     def test_self_order_pos_closed(self):
-        """
-        Verify than when the pos is closed and self ordering is set to mobile, consultation or kiosk,
-        we can see the attributes of a product or the choices of a combo
-        """
         setup_product_combo_items(self)
         self.env["product.combo.item"].create(
             {
@@ -62,11 +55,9 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
 
         for mode in ("mobile", "consultation"):
             self.pos_config.write({"self_ordering_mode": mode})
-            # The returned route depend of the pos_config mode
             self_route = self.pos_config._get_self_order_route()
             self.start_tour(self_route, "self_order_pos_closed")
 
-        # Kiosk test
         self.pos_config.write({"self_ordering_mode": "kiosk"})
         self_route = self.pos_config._get_self_order_route()
         self.start_tour(self_route, "kiosk_order_pos_closed")
@@ -81,10 +72,8 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
                 self.pos_config.write({"self_ordering_default_user_id": False})
 
     def test_self_order_product_availability(self):
-        """Test product visibility and cart behavior for kiosk and mobile self-ordering modes."""
         setup_product_combo_items(self)
 
-        # Remove all combo items except desks_combo
         self.office_combo.write(
             {
                 "combo_ids": [
@@ -110,7 +99,6 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
             }
         )
 
-        # --- Kiosk Mode Tour ---
         self.pos_config.write(
             {
                 "self_ordering_mode": "kiosk",
@@ -125,7 +113,6 @@ class TestSelfOrderCommon(SelfOrderCommonTest):
             "test_self_order_kiosk_product_availability",
         )
 
-        # --- Mobile Mode Tour ---
         self.pos_config.write(
             {
                 "self_ordering_mode": "mobile",

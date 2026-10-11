@@ -58,9 +58,6 @@ class BridgeUse(NamedTuple):
 def get_evaluation_time_bridge_uses(
     modules: Iterable[NativeModuleLike], bridged: Collection[str]
 ) -> list[BridgeUse]:
-    # A bridge is a binding the loader fills when the child bundle registers:
-    # right for a call made later, undefined for a module that reads it while
-    # it is evaluated (extends it, calls it, registers it at top level).
     bridged = frozenset(bridged)
     found: list[BridgeUse] = []
     for module in modules:
@@ -234,7 +231,7 @@ class BridgeShimManager:
 
         shims_by_spec: dict[str, str] = {}
         skip_legacy_tests = self.bundle_name in esm_registry().import_map_includes
-        skipped_tests = 0  # debuglog
+        skipped_tests = 0
         for asset in self.native_modules:
             specifier = asset.module_path
             if not specifier.startswith("@"):
@@ -242,7 +239,7 @@ class BridgeShimManager:
             if skip_legacy_tests and "/static/tests/" in (
                 getattr(asset, "url", None) or ""
             ):
-                skipped_tests += 1  # debuglog
+                skipped_tests += 1
                 continue
             src = asset.raw_content
             names, _ = _extract_esm_exports(
@@ -309,12 +306,6 @@ class BridgeShimManager:
         modules: Sequence[NativeModuleLike] | None = None,
         resolver: _BridgeExportResolver | None = None,
     ) -> tuple[dict[str, None], set[str]]:
-        # esbuild follows an alias into the source file of any specifier we do
-        # not stub, so a helper the page does not provide is inlined with its
-        # whole import tree -- and a page module reached only through that
-        # tree, unstubbed, is evaluated a second time (registries report it as
-        # a duplicate). The reach therefore has to be transitive: every
-        # discovered specifier the page does not provide is lexed in turn.
         discovered, ext_seen = self._discover_bridge_specifiers(
             native_specifiers, ext_lib_names, modules
         )
@@ -432,14 +423,8 @@ class BridgeShimManager:
         provided: frozenset[str] | set[str],
         modules: Sequence[NativeModuleLike] | None = None,
     ) -> tuple[dict[str, str], set[str]]:
-        # a bundle served per file on a page that already carries some of
-        # what it reaches: the page's copy answers through a bridge, the rest
-        # resolves per file -- a second per-file copy of a page module is a
-        # second registry registration and a second class
         if modules is None:
             modules = self.native_modules
-        # one resolver for the walk and the export surfaces: a helper both
-        # reach is read and lexed once
         resolver = _BridgeExportResolver(external_libs(), self.bundle_name)
         discovered, _ext = self._discover_reachable_specifiers(
             native_specifiers,

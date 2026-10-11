@@ -38,13 +38,6 @@ class MixinResourceLedger(models.AbstractModel):
 
     @api.model
     def _sync_projection_batch(self, entries) -> models.BaseModel:
-        """Reconcile the rows of several records at once.
-
-        `entries` holds (record, vals_list, existing-or-None). A row already
-        equal to a wanted value is kept untouched; the rest are deleted, then
-        rewritten, then created, so no intermediate state holds both an
-        outgoing and an incoming claim at the same time.
-        """
         entries = [
             (record, vals_list, existing)
             for record, vals_list, existing in entries

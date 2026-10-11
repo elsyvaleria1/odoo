@@ -16,8 +16,6 @@ from odoo.tools import LazyTranslate
 
 _lt = LazyTranslate(__name__)
 _logger = logging.getLogger(__name__)
-# uncomment to enable logging of SOAP requests and responses
-# logging.getLogger('zeep.transports').setLevel(logging.DEBUG)
 
 
 UPS_ERROR_MAP = {
@@ -151,12 +149,10 @@ class UPSRequest:
         prod_environment,
     ) -> None:
         self.debug_logger = debug_logger
-        # Product and Testing url
         self.endurl = "https://onlinetools.ups.com/webservices/"
         if not prod_environment:
             self.endurl = "https://wwwcie.ups.com/webservices/"
 
-        # Basic detail require to authenticate
         self.username = username
         self.password = password
         self.shipper_number = shipper_number
@@ -168,7 +164,6 @@ class UPSRequest:
         self.ns = {"err": "http://www.ups.com/XMLSchema/XOLTWS/Error/v1.1"}
 
     def _add_security_header(self, client, api) -> None:
-        # set the detail which require to authenticate
         user_token = {"Username": self.username, "Password": self.password}
         access_token = {"AccessLicenseNumber": self.access_number}
         security = client.get_element("ns0:UPSSecurity")(
@@ -189,7 +184,6 @@ class UPSRequest:
         )
         self.factory_ns2 = client.type_factory("ns2")
         self.factory_ns3 = client.type_factory("ns3")
-        # ns4 only exists for Ship API - we only use it for the invoice
         self.factory_ns4 = (
             client.type_factory("ns4") if api == "Ship" else self.factory_ns3
         )
@@ -203,7 +197,6 @@ class UPSRequest:
         self, shipper, ship_from, ship_to, order=False, picking=False
     ) -> str | Literal[False]:
         required_field = {"city": "City", "country_id": "Country", "phone_ids": "Phone"}
-        # Check required field for shipper
         res = [required_field[field] for field in required_field if not shipper[field]]
         if shipper.country_id.code in ("US", "CA", "IE") and not shipper.state_id.code:
             res.append("State")
@@ -218,7 +211,6 @@ class UPSRequest:
             )
         if len(self._clean_phone_number(shipper.phone_ids._primary().number)) < 10:
             return str(UPS_ERROR_MAP.get("120115"))
-        # Check required field for warehouse address
         res = [
             required_field[field] for field in required_field if not ship_from[field]
         ]
@@ -238,7 +230,6 @@ class UPSRequest:
             )
         if len(self._clean_phone_number(ship_from.phone_ids._primary().number)) < 10:
             return str(UPS_ERROR_MAP.get("120313"))
-        # Check required field for recipient address
         res = [
             required_field[field]
             for field in required_field
@@ -246,8 +237,6 @@ class UPSRequest:
         ]
         if ship_to.country_id.code in ("US", "CA", "IE") and not ship_to.state_id.code:
             res.append("State")
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not ship_to.street
             and not ship_to.street2
@@ -292,8 +281,6 @@ class UPSRequest:
                     "Packages %s do not have a positive shipping weight.",
                     ", ".join(packages_without_weight.mapped("display_name")),
                 )
-        # The phone isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if not phone and not ship_to.env.context.get(
             "express_checkout_partial_delivery_address", False
         ):
@@ -303,8 +290,6 @@ class UPSRequest:
                 "The recipient address is missing or wrong.\n(Missing field(s) : %s)",
                 ",".join(res),
             )
-        # The phone isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not ship_to.env.context.get(
                 "express_checkout_partial_delivery_address", False
@@ -324,7 +309,6 @@ class UPSRequest:
     def save_label(self, image64, label_file_type="GIF"):
         img_decoded = base64.decodebytes(image64.encode("utf-8"))
         if label_file_type == "GIF":
-            # Label format is GIF, so need to rotate and convert as PDF
             image_string = io.BytesIO(img_decoded)
             im = Image.open(image_string)
             label_result = io.BytesIO()
@@ -393,7 +377,7 @@ class UPSRequest:
                     package.PackageServiceOptions.DeclaredValue.Type = (
                         self.factory_ns2.DeclaredValueType()
                     )
-                    package.PackageServiceOptions.DeclaredValue.Type.Code = "01"  # EVS
+                    package.PackageServiceOptions.DeclaredValue.Type.Code = "01"
 
             package.PackageWeight = self.factory_ns2.PackageWeightType()
             package.PackageWeight.UnitOfMeasurement = MeasurementType()
@@ -404,8 +388,6 @@ class UPSRequest:
                 p.weight, carrier.ups_package_weight_unit
             )
 
-            # Package and shipment reference text is only allowed for shipments within
-            # the USA and within Puerto Rico. This is a UPS limitation.
             if (
                 p.name
                 and " " not in p.name
@@ -434,7 +416,6 @@ class UPSRequest:
             unit_type.UnitOfMeasurement = uom_type
 
             product = self.factory_ns4.ProductType()
-            # split the name of the product to maximum 3 substrings of length 35
             name = commodity.product_id.name
             product.Description = [
                 line for line in [name[35 * i : 35 * (i + 1)] for i in range(3)] if line
@@ -470,7 +451,7 @@ class UPSRequest:
         contact.SoldTo = sold_to
 
         invoice = self.factory_ns4.InternationalFormType()
-        invoice.FormType = "01"  # Invoice
+        invoice.FormType = "01"
         invoice.Product = invoice_products
         invoice.CurrencyCode = shipment_info.get("itl_currency_code")
         invoice.InvoiceDate = shipment_info.get("invoice_date")
@@ -498,7 +479,7 @@ class UPSRequest:
         request.RequestOption = "Rate"
 
         classification = self.factory_ns2.CodeDescriptionType()
-        classification.Code = "00"  # Get rates for the shipper account
+        classification.Code = "00"
         classification.Description = "Get rates for the shipper account"
 
         request_type = "rating"
@@ -522,7 +503,6 @@ class UPSRequest:
         if shipper.country_id.code in ("US", "CA", "IE"):
             shipment.Shipper.Address.StateProvinceCode = shipper.state_id.code or ""
         shipment.Shipper.ShipperNumber = self.shipper_number or ""
-        # shipment.Shipper.Phone.Number = shipper.phone_ids._primary().number or ''
 
         shipment.ShipFrom = self.factory_ns2.ShipFromType()
         shipment.ShipFrom.Name = ship_from.name or ""
@@ -536,7 +516,6 @@ class UPSRequest:
         shipment.ShipFrom.Address.CountryCode = ship_from.country_id.code or ""
         if ship_from.country_id.code in ("US", "CA", "IE"):
             shipment.ShipFrom.Address.StateProvinceCode = ship_from.state_id.code or ""
-        # shipment.ShipFrom.Phone.Number = ship_from.phone_ids._primary().number or ''
 
         shipment.ShipTo = self.factory_ns2.ShipToType()
         shipment.ShipTo.Name = ship_to.name or ""
@@ -550,7 +529,6 @@ class UPSRequest:
         shipment.ShipTo.Address.CountryCode = ship_to.country_id.code or ""
         if ship_to.country_id.code in ("US", "CA", "IE"):
             shipment.ShipTo.Address.StateProvinceCode = ship_to.state_id.code or ""
-        # shipment.ShipTo.Phone.Number = ship_to.phone_ids._primary().number or ''
         if not ship_to.commercial_partner_id.is_company:
             shipment.ShipTo.Address.ResidentialAddressIndicator = None
 
@@ -574,14 +552,12 @@ class UPSRequest:
         shipment.ShipmentRatingOptions.NegotiatedRatesIndicator = 1
 
         try:
-            # Get rate using for provided detail
             response = service.ProcessRate(
                 Request=request,
                 CustomerClassification=classification,
                 Shipment=shipment,
             )
 
-            # Check if ProcessRate is not success then return reason for that
             if response.Response.ResponseStatus.Code != "1":
                 return self.get_error_message(
                     response.Response.ResponseStatus.Code,
@@ -591,7 +567,6 @@ class UPSRequest:
             rate = response.RatedShipment[0]
             charge = rate.TotalCharges
 
-            # Some users are qualified to receive negotiated rates
             if (
                 "NegotiatedRateCharges" in rate
                 and rate.NegotiatedRateCharges
@@ -715,7 +690,6 @@ class UPSRequest:
         shipment.ShipmentRatingOptions = self.factory_ns2.RateInfoType()
         shipment.ShipmentRatingOptions.NegotiatedRatesIndicator = 1
 
-        # Shipments from US to CA or PR require extra info
         if ship_from.country_id.code == "US" and ship_to.country_id.code in [
             "CA",
             "PR",
@@ -728,12 +702,10 @@ class UPSRequest:
                 "ilt_monetary_value"
             )
 
-        # set the default method for payment using shipper account
         payment_info = self.factory_ns2.PaymentInfoType()
         shipcharge = self.factory_ns2.ShipmentChargeType()
         shipcharge.Type = "01"
 
-        # Bill Recevier 'Bill My Account'
         if ups_carrier_account:
             shipcharge.BillReceiver = self.factory_ns2.BillReceiverType()
             shipcharge.BillReceiver.Address = self.factory_ns2.BillReceiverAddressType()
@@ -791,7 +763,6 @@ class UPSRequest:
                 LabelSpecification=self.label,
             )
 
-            # Check if shipment is not success then return reason for that
             if response.Response.ResponseStatus.Code != "1":
                 return self.get_error_message(
                     response.Response.ResponseStatus.Code,
@@ -809,7 +780,7 @@ class UPSRequest:
                 result["invoice_binary_data"] = self.save_label(
                     response.ShipmentResults.Form.Image.GraphicImage,
                     label_file_type="pdf",
-                )  # only pdf supported currently
+                )
             result["tracking_ref"] = (
                 response.ShipmentResults.ShipmentIdentificationNumber
             )
@@ -817,7 +788,6 @@ class UPSRequest:
                 response.ShipmentResults.ShipmentCharges.TotalCharges.CurrencyCode
             )
 
-            # Some users are qualified to receive negotiated rates
             negotiated_rate = (
                 "NegotiatedRateCharges" in response.ShipmentResults
                 and response.ShipmentResults.NegotiatedRateCharges

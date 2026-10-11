@@ -21,7 +21,6 @@ class TestGanttData(TransactionCase):
         return [("id", "in", self.partners.ids)]
 
     def test_gantt_data_without_groupby_returns_single_group(self):
-        """Without groupby every record lands in one synthetic group."""
         result = self.env["res.partner"].get_gantt_data(self._domain(), [], self.spec)
 
         self.assertEqual(result["length"], 1)
@@ -34,7 +33,6 @@ class TestGanttData(TransactionCase):
         )
 
     def test_gantt_data_without_groupby_hides_internal_keys(self):
-        """The raw aggregate and extra domain never reach the client payload."""
         result = self.env["res.partner"].get_gantt_data(self._domain(), [], self.spec)
 
         group = result["groups"][0]
@@ -42,14 +40,11 @@ class TestGanttData(TransactionCase):
         self.assertNotIn("__extra_domain", group)
 
     def test_gantt_data_grouped_splits_records_per_group(self):
-        """Grouping by a many2one distributes the records over its values."""
         result = self.env["res.partner"].get_gantt_data(
             self._domain(), ["parent_id"], self.spec
         )
 
         self.assertEqual(result["length"], 2)
-        # The grouped branch strips the internal keys of every real
-        # read_group result, __fold included.
         for group in result["groups"]:
             self.assertNotIn("id:array_agg", group)
             self.assertNotIn("__extra_domain", group)
@@ -64,7 +59,6 @@ class TestGanttData(TransactionCase):
         self.assertEqual(ids_per_group[False], [self.parent.id])
 
     def test_gantt_data_empty_domain_returns_empty_group(self):
-        """A domain matching nothing still returns the one-group envelope."""
         result = self.env["res.partner"].get_gantt_data([("id", "=", 0)], [], self.spec)
 
         self.assertEqual(result["length"], 1)
@@ -72,7 +66,6 @@ class TestGanttData(TransactionCase):
         self.assertEqual(result["records"], [])
 
     def test_gantt_data_progress_bar_and_unavailability_hooks_are_empty(self):
-        """The base hooks answer per requested field with an empty mapping."""
         result = self.env["res.partner"].get_gantt_data(
             self._domain(),
             ["parent_id"],

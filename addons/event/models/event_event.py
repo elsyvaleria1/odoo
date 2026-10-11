@@ -44,7 +44,6 @@ class EventEvent(models.Model):
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _order = "date_begin, id"
 
-    # Maximum number of tickets that can be ordered at one time on a same line
     EVENT_MAX_TICKETS = 30
 
     @api.model
@@ -52,7 +51,6 @@ class EventEvent(models.Model):
         result = super().default_get(fields)
         if "date_begin" in fields and "date_begin" not in result:
             now = Datetime.now()
-            # Round the datetime to the next half hour (e.g. 08:17 => 08:30 and 08:37 => 09:00)
             result["date_begin"] = now.replace(second=0, microsecond=0) + timedelta(
                 minutes=-now.minute % 30
             )
@@ -71,7 +69,6 @@ class EventEvent(models.Model):
         return self.env["event.stage"].search([], limit=1)
 
     def _default_description(self):
-        # avoid template branding with rendering_bundle=True
         return (
             self.env["ir.ui.view"]
             .with_context(rendering_bundle=True)
@@ -146,11 +143,9 @@ class EventEvent(models.Model):
         store=True,
         readonly=False,
     )
-    # properties
     registration_properties_definition = fields.PropertiesDefinition(
         string="Registration Properties"
     )
-    # Kanban fields
     kanban_state = fields.Selection(
         selection=[
             ("normal", "In Progress"),
@@ -173,7 +168,6 @@ class EventEvent(models.Model):
         ondelete="restrict",
         tracking=True,
     )
-    # Seats and computation
     seats_max = fields.Integer(
         string="Maximum Attendees",
         compute="_compute_seats_max",
@@ -217,7 +211,6 @@ class EventEvent(models.Model):
         readonly=True,
         aggregator="sum",
     )
-    # Registration fields
     registration_ids = fields.One2many(
         comodel_name="event.registration",
         inverse_name="event_id",
@@ -273,7 +266,6 @@ class EventEvent(models.Model):
         compute="_compute_start_sale_datetime",
         help="If ticketing is used, contains the earliest starting sale date of tickets.",
     )
-    # Date fields
     date_tz = fields.Selection(
         selection=_selection_timezones,
         string="Display Timezone",
@@ -304,7 +296,6 @@ class EventEvent(models.Model):
         compute="_compute_is_finished",
         search="_search_is_finished",
     )
-    # Location and communication
     address_id = fields.Many2one(
         comodel_name="res.partner",
         string="Venue",
@@ -345,7 +336,6 @@ class EventEvent(models.Model):
         string="Language",
         help="All the communication emails sent to attendees will be translated in this language.",
     )
-    # ticket reports
     badge_format = fields.Selection(
         selection=[
             ("A4_french_fold", "A4 foldable"),
@@ -368,7 +358,6 @@ class EventEvent(models.Model):
         readonly=False,
         help="This information will be printed on your tickets.",
     )
-    # questions
     question_ids = fields.Many2many(
         comodel_name="event.question",
         relation="event_event_event_question_rel",
@@ -400,25 +389,14 @@ class EventEvent(models.Model):
             record.use_barcode = use_barcode
 
     def _compute_event_share_url(self) -> None:
-        """Get the URL to use to redirect to the event, overriden in website for fallback."""
         for event in self:
             event.event_share_url = event.event_url
 
     @api.depends("event_type_id")
     def _compute_question_ids(self) -> None:
-        """Update event questions from its event type. Depends are set only on
-        event_type_id itself to emulate an onchange. Changing event type content
-        itself should not trigger this method.
-
-        When synchronizing questions:
-
-          * lines with no registered answers for the event are removed;
-          * type lines are added;
-        """
         for event in self:
             questions_tokeep_ids = []
             if self._origin.question_ids:
-                # Keep questions with attendee answers for the event.
                 questions_tokeep_ids.extend(
                     (
                         event.registration_ids.registration_answer_ids.question_id
@@ -453,7 +431,6 @@ class EventEvent(models.Model):
         "registration_ids.active",
     )
     def _compute_seats(self) -> None:
-        """Determine available, reserved, used and taken seats."""
         base_vals = {"seats_reserved": 0, "seats_used": 0}
         results = self.env["event.registration"]._count_taken_seats_by(
             "event_id", self.ids
@@ -461,9 +438,6 @@ class EventEvent(models.Model):
         for event in self:
             event.seats_available = 0
             event.update(results.get(event._origin.id or event.id, base_vals))
-            # on a multi-slot event seats_max is a per-slot cap, so this total
-            # is a remaining capacity across slots, not a bookable number --
-            # per-slot availability lives on event.slot.seats_available
             seats_max = (
                 event.seats_max * event.event_slot_count
                 if event.is_multi_slots
@@ -477,8 +451,6 @@ class EventEvent(models.Model):
 
     @api.depends("start_sale_datetime")
     def _compute_event_registrations_started(self) -> None:
-        # see _compute_is_expired on event.event.ticket: converting both sides
-        # to the display timezone cannot change an ordering comparison
         now = fields.Datetime.now()
         for event in self:
             event.event_registrations_started = (
@@ -495,15 +467,6 @@ class EventEvent(models.Model):
         "event_ticket_ids.sale_available",
     )
     def _compute_event_registrations_open(self) -> None:
-        """Compute whether people may take registrations for this event
-
-        * for cancelled events, registrations are not open;
-        * event.date_end -> if event is done, registrations are not open anymore;
-        * event.start_sale_datetime -> lowest start date of tickets (if any; start_sale_datetime
-          is False if no ticket are defined, see _compute_start_sale_datetime);
-        * any ticket is available for sale (seats available) if any;
-        * seats are unlimited or seats are available;
-        """
         for event in self:
             event = event._set_tz_context()
             current_datetime = fields.Datetime.context_timestamp(
@@ -524,7 +487,6 @@ class EventEvent(models.Model):
                     or event.seats_available
                 )
                 and (
-                    # Not multi slots: open if no tickets or at least a sale available ticket
                     (
                         not event.is_multi_slots
                         and (
@@ -536,7 +498,6 @@ class EventEvent(models.Model):
                         )
                     )
                     or
-                    # Multi slots: open if at least a slot and no tickets or at least an ongoing ticket with availability
                     (
                         event.is_multi_slots
                         and event.event_slot_count
@@ -549,12 +510,6 @@ class EventEvent(models.Model):
             )
 
     def _has_available_slot_ticket(self) -> bool:
-        """Whether any sellable ticket still has room in any slot.
-
-        One availability read for the whole slot x ticket grid: asking per
-        ticket issued a grouped query each time, and the cost only showed up
-        once tickets stopped being available -- exactly when the event is busy.
-        """
         self.check_singleton()
         sellable = self.event_ticket_ids.filtered(
             lambda ticket: ticket.is_launched and not ticket.is_expired
@@ -570,8 +525,6 @@ class EventEvent(models.Model):
 
     @api.depends("event_ticket_ids.start_sale_datetime")
     def _compute_start_sale_datetime(self) -> None:
-        """Compute the start sale date of an event. Currently lowest starting sale
-        date of tickets if they are used, of False."""
         for event in self:
             start_dates = [
                 ticket.start_sale_datetime
@@ -589,14 +542,6 @@ class EventEvent(models.Model):
         "seats_limited",
     )
     def _compute_event_registrations_sold_out(self) -> None:
-        """Max seats limits for events and sum of limits for all its tickets may not be
-        equal to enable flexibility.
-        E.g. max 20 seats for ticket A, 20 seats for ticket B
-            * With max 20 seats for the event
-            * Without limit set on the event (=40, but the customer didn't explicitly write 40)
-        When the event is multi slots, instead of checking if every tickets is sold out,
-        checking if every slot-ticket combination is sold out.
-        """
         for event in self:
             event.event_registrations_sold_out = (
                 event.seats_limited
@@ -635,8 +580,6 @@ class EventEvent(models.Model):
     @api.depends("date_begin", "date_end", "date_tz")
     def _compute_is_one_day(self) -> None:
         for event in self:
-            # Need to localize because it could begin late and finish early in
-            # another timezone
             event = event._set_tz_context()
             begin_tz = fields.Datetime.context_timestamp(event, event.date_begin)
             end_tz = fields.Datetime.context_timestamp(event, event.date_end)
@@ -704,19 +647,13 @@ class EventEvent(models.Model):
             return Domain("address_id", operator, domain)
         if operator == "ilike" and isinstance(value, str):
             return Domain("address_id", "any", get_codomain(value))
-        # for the trivial "empty" case, there is no empty address
         if operator == "in" and (not value or not any(value)):
             return Domain(False)
         return NotImplemented
 
-    # seats
 
     @api.depends("event_type_id")
     def _compute_seats_max(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method."""
         for event in self:
             if not event.event_type_id:
                 event.seats_max = event.seats_max or 0
@@ -725,31 +662,16 @@ class EventEvent(models.Model):
 
     @api.depends("event_type_id")
     def _compute_seats_limited(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method."""
         for event in self:
             event.seats_limited = event.event_type_id.has_seats_limitation
 
     @api.depends("event_type_id")
     def _compute_event_mail_ids(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method.
-
-        When synchronizing mails:
-
-          * lines that are not sent and have no registrations linked are remove;
-          * type lines are added;
-        """
         for event in self:
             if not event.event_type_id and not event.event_mail_ids:
                 event.event_mail_ids = self._get_default_event_mail_ids()
                 continue
 
-            # lines to keep: those with already sent emails or registrations
             mails_to_remove = event.event_mail_ids.filtered(
                 lambda mail: (
                     not (mail._origin.mail_done)
@@ -758,7 +680,6 @@ class EventEvent(models.Model):
             )
             command = [Command.unlink(mail.id) for mail in mails_to_remove]
 
-            # lines to add: those which do not have the exact copy available in lines to keep
             if event.event_type_id.event_type_mail_ids:
                 mails_to_keep_vals = {
                     frozendict(mail._prepare_event_mail_values())
@@ -773,35 +694,17 @@ class EventEvent(models.Model):
 
     @api.depends("event_type_id")
     def _compute_tag_ids(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method."""
         for event in self:
             if not event.tag_ids and event.event_type_id.tag_ids:
                 event.tag_ids = event.event_type_id.tag_ids
 
     @api.depends("event_type_id")
     def _compute_event_ticket_ids(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method.
-
-        When synchronizing tickets:
-
-          * lines that have no registrations linked are remove;
-          * type lines are added;
-
-        Updating event_ticket_ids triggers _compute_start_sale_datetime
-        (start_sale_datetime computation) so ensure result to avoid cache miss.
-        """
         for event in self:
             if not event.event_type_id and not event.event_ticket_ids:
                 event.event_ticket_ids = False
                 continue
 
-            # lines to keep: those with existing registrations
             tickets_to_remove = event.event_ticket_ids.filtered(
                 lambda ticket: not ticket._origin.registration_ids
             )
@@ -844,7 +747,6 @@ class EventEvent(models.Model):
 
     @api.depends("address_id")
     def _compute_address_inline(self) -> None:
-        """Use venue address if available, otherwise its name, finally ''."""
         for event in self:
             if (event.address_id.contact_address or "").strip():
                 event.address_inline = ", ".join(
@@ -857,7 +759,6 @@ class EventEvent(models.Model):
 
     @api.depends("address_id")
     def _compute_event_url(self) -> None:
-        """Reset url field as it should only be used for events with no physical location."""
         self.filtered("address_id").event_url = ""
 
     @api.constrains("date_begin", "date_end", "event_slot_ids", "is_multi_slots")
@@ -899,7 +800,6 @@ class EventEvent(models.Model):
 
     @api.onchange("event_url")
     def _onchange_event_url(self) -> None:
-        """Correct the url by adding scheme if it is missing."""
         for event in self.filtered("event_url"):
             parsed_url = urlparse(event.event_url)
             if parsed_url.scheme not in ("http", "https"):
@@ -930,11 +830,9 @@ class EventEvent(models.Model):
     )
     @api.depends_context("name_with_seats_availability")
     def _compute_display_name(self):
-        """Adds ticket seats availability if requested by context."""
         if not self.env.context.get("name_with_seats_availability"):
             return super()._compute_display_name()
         for event in self:
-            # event or its tickets are sold out
             if event.event_registrations_sold_out:
                 name = self.env._("%(event_name)s (Sold out)", event_name=event.name)
             elif event.seats_limited and event.seats_max:
@@ -956,9 +854,6 @@ class EventEvent(models.Model):
         ]
 
     def copy_translations(self, new, excluded=()) -> None:
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
@@ -969,9 +864,6 @@ class EventEvent(models.Model):
         if message_operation == "create" and self.env.user.has_group(
             "event.group_event_registration_desk"
         ):
-            # allow the registration desk users to post messages on Event
-            # can not be done with "_mail_post_access" otherwise public user will be
-            # able to post on published Event (see website_event)
             return {"read": Domain.TRUE}
         return super()._mail_operation_domains(message_operation)
 
@@ -980,8 +872,6 @@ class EventEvent(models.Model):
         return self.with_context(tz=self.date_tz or "UTC")
 
     def _get_seats_availability(self, slot_tickets):
-        """Get availabilities for given combinations of slot / ticket. Returns
-        a list following input order. None denotes no limit."""
         self.check_singleton()
         if not (all(len(item) == 2 for item in slot_tickets)):
             raise ValueError("Input should be a list of tuples containing slot, ticket")
@@ -995,8 +885,6 @@ class EventEvent(models.Model):
                 for (slot, ticket, count) in self.env["event.registration"]
                 .sudo()
                 ._read_group(
-                    # scoped to the pairs asked about: unscoped, asking for one
-                    # pair grouped every registration of the event
                     domain=[
                         ("event_slot_id", "in", asked_slots),
                         ("event_ticket_id", "in", asked_tickets),
@@ -1012,13 +900,11 @@ class EventEvent(models.Model):
         availabilities = []
         for slot, ticket in slot_tickets:
             available = None
-            # event is constrained: max stands for either each slot, either global (no slots)
             if self.seats_limited and self.seats_max:
                 if slot:
                     available = slot.seats_available
                 else:
                     available = self.seats_available
-            # ticket is constrained: max standard for either each slot / ticket, either global (no slots)
             if ticket and ticket.seats_max:
                 if slot:
                     ticket_available = (
@@ -1036,15 +922,6 @@ class EventEvent(models.Model):
         return availabilities
 
     def _check_seats_availability(self, slot_tickets) -> None:
-        """Check event seats availability, for combinations of slot / ticket.
-
-        :param slot_tickets: a list of tuples(slot, ticket, count). Slot and
-          ticket are optional, depending on event configuration. If count is 0
-          it is a simple check current values do not overflow limit. If count
-          is given, it serves as a check there are enough remaining seats.
-        :raises ValidationError: if the event / slot / ticket do not have
-          enough available seats
-        """
         self.check_singleton()
         if not (all(len(item) == 3 for item in slot_tickets)):
             raise ValueError(
@@ -1058,7 +935,7 @@ class EventEvent(models.Model):
         for (slot, ticket, count), available in zip(
             slot_tickets, availabilities, strict=True
         ):
-            if available is None:  # unconstrained
+            if available is None:
                 continue
             if available < count:
                 if slot and ticket:
@@ -1072,9 +949,9 @@ class EventEvent(models.Model):
                 sold_out.append((name, count - available))
 
         if sold_out:
-            info = []  # note: somehow using list comprehension make translate.py crash in default lang
+            info = []
             for item in sold_out:
-                info.append(  # noqa: PERF401 - see note above, do not rewrite as a list comprehension
+                info.append(
                     self.env._(
                         "%(slot_name)s: missing %(count)s seat(s)",
                         slot_name=item[0],
@@ -1089,9 +966,6 @@ class EventEvent(models.Model):
                 )
             )
 
-    # ------------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------------
 
     def action_view_slot_calendar(self) -> dict:
         self.check_singleton()
@@ -1107,19 +981,14 @@ class EventEvent(models.Model):
             "domain": [("event_id", "=", self.id)],
             "context": {
                 "default_event_id": self.id,
-                # Default hours for the list view and mobile quick create.
-                # Desktop calendar multi create using defaults in local storage
-                # (= the last selected time range or fallback on 12PM-1PM).
                 "default_start_hour": next_hour.hour,
                 "default_end_hour": (next_hour + timedelta(hours=1)).hour,
-                # To disable calendar days outside of event date range.
                 "event_calendar_range_start_date": self.date_begin.astimezone(
                     timezone(self.date_tz)
                 ).date(),
                 "event_calendar_range_end_date": self.date_end.astimezone(
                     timezone(self.date_tz)
                 ).date(),
-                # Calendar view initial date.
                 "initial_date": min(
                     max(datetime.now(), self.date_begin), self.date_end
                 ),
@@ -1127,11 +996,6 @@ class EventEvent(models.Model):
         }
 
     def action_set_done(self) -> None:
-        """
-        Action which will move the events
-        into the first next (by sequence) stage defined as "Ended"
-        (if they are not already in an ended stage)
-        """
         first_ended_stage = self.env["event.stage"].search(
             [("pipe_end", "=", True)], limit=1, order="sequence"
         )
@@ -1164,13 +1028,6 @@ class EventEvent(models.Model):
         )
 
     def _get_external_description(self):
-        """
-        Description of the event shortened to maximum 1900 characters to
-        leave some space for addition by sub-modules.
-        Meant to be used for external content (ics/icalc/Gcal).
-
-        Reference Docs for URL limit -: https://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers
-        """
         self.check_singleton()
         description = ""
         if self.event_share_url:
@@ -1181,11 +1038,9 @@ class EventEvent(models.Model):
         return description
 
     def _get_external_description_url_encoded(self):
-        """Get a url-encoded version of the description for mail templates."""
         return urllib.parse.quote_plus(self._get_external_description())
 
     def _prepare_ics_files(self, slot=None) -> dict[int, bytes]:
-        """Build invitation files, using the selected slot's dates when supplied."""
         if not vobject:
             return {}
         slot = slot or self.env["event.slot"]
@@ -1203,9 +1058,6 @@ class EventEvent(models.Model):
         }
 
     def _get_tickets_access_hash(self, registration_ids):
-        """Returns the ground truth hash for accessing the tickets in route /event/<int:event_id>/my_tickets.
-        The dl links are always made event-dependant, hence the method linked to the record in self.
-        """
         self.check_singleton()
         return tools.hmac(
             self.env(su=True),
@@ -1215,7 +1067,6 @@ class EventEvent(models.Model):
 
     @api.autovacuum
     def _gc_mark_events_done(self) -> None:
-        """move every ended events in the next 'ended stage'"""
         ended_events = self.env["event.event"].search(
             [
                 ("date_end", "<", fields.Datetime.now()),

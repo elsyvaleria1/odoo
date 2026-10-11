@@ -223,13 +223,6 @@ class HrEmployee(models.Model):
         return self._get_first_working_interval_batch({self.id: dt})[self.id]
 
     def _calendar_windows_from(self, start_by_employee_id, lookahead_days):
-        """Group the employees' search windows by the calendar that answers them.
-
-        A window is a calendar period clipped to the employee's own
-        ``[start, start + lookahead_days]``. Periods that clip to nothing are
-        dropped: ``_get_calendar_periods`` clamps both ends to the requested
-        range, so a version starting after it comes back inverted.
-        """
         starts = {
             employee: start_by_employee_id[employee.id].replace(tzinfo=UTC)
             for employee in self
@@ -255,13 +248,6 @@ class HrEmployee(models.Model):
         return windows_by_calendar
 
     def _first_working_moment(self, intervals, start, stop):
-        """The first moment in ``[start, stop)`` the resource is working.
-
-        An interval that already contains ``start`` answers ``start`` itself:
-        the employee is at work then. Reading the interval's own beginning
-        instead would make the answer depend on where the batch happened to
-        begin, because that is the only thing clipping it.
-        """
         for interval_start, interval_stop, _meta in intervals:
             if interval_stop <= start:
                 continue
@@ -271,13 +257,6 @@ class HrEmployee(models.Model):
         return None
 
     def _cluster_windows(self, windows, lookahead_days):
-        """Group windows so that no batched question spans much more than the
-        lookahead it was asked for.
-
-        One employee whose leave ends a year out would otherwise make every
-        other employee on the same calendar pay for a year of attendance
-        intervals to answer a seven-day question.
-        """
         span = timedelta(days=2 * lookahead_days)
         clusters = []
         for window in sorted(windows, key=lambda window: window[1]):
@@ -288,13 +267,6 @@ class HrEmployee(models.Model):
         return clusters
 
     def _get_first_working_interval_batch(self, start_by_employee_id):
-        """Map each employee id to the start of its first working interval at or
-        after that employee's datetime, or None when it finds none in two years.
-
-        Every calendar is asked once per cluster of employees looking at nearby
-        dates -- the same question asked per employee costs one
-        ``_work_intervals_batch`` each.
-        """
         result = dict.fromkeys(start_by_employee_id)
         pending = self.filtered(
             lambda employee: employee.id in start_by_employee_id
@@ -431,7 +403,6 @@ class HrEmployee(models.Model):
         return employees
 
     def _grant_leave_approver(self, users) -> None:
-        # a leave manager approves time off: the group follows the field
         approver_group = self.env.ref(
             "hr_holidays.group_hr_holidays_responsible", raise_if_not_found=False
         )
@@ -443,11 +414,6 @@ class HrEmployee(models.Model):
 
     def write(self, vals):
         values = vals
-        # Read the caller's flag before setting our own: this method re-enters
-        # itself through the `leave_manager_id` write below, and the guard is
-        # there to stop that recursion -- not to stop the resync it is tested
-        # against further down, which is what happened when the two were read
-        # from the same context.
         resync_leaves = not self.env.context.get("no_leave_resource_calendar_update")
         self = self.with_context(no_leave_resource_calendar_update=True)
         if "parent_id" in values:
@@ -565,12 +531,6 @@ class HrEmployee(models.Model):
                 "employee_id": self.ids,
                 "search_default_filter_date_from": 1,
                 "search_default_group_date_from": 1,
-                # `employee_id` above is a list and only `onchange` reads it, so
-                # without this the New button falls back to the field default and
-                # prepares the request for whoever is looking at the form.
-                # Sliced, not `self.id`: the action is called with a whole
-                # selection as well as with one record, and a default wants one
-                # employee -- asking a two-record set for its id only raised.
                 "default_employee_id": self[:1].id,
             },
         }
@@ -653,14 +613,6 @@ class HrEmployee(models.Model):
         )
 
     def _calendar_companies(self):
-        """The companies a calendar screen about this employee may read.
-
-        The one the employee belongs to, and nothing else -- which is already
-        what the day grid does, through the company `hr.employee._get_unusual_days`
-        hands to `resource.calendar`. Reading `env.companies` instead let a
-        sister company's days land on this employee's calendar, and made the
-        grid and the side panel of the same screen disagree about a day.
-        """
         return self.company_id or self.env.company
 
     def _get_public_holidays(self, date_start, date_end):
@@ -734,13 +686,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _get_contextual_employee(self):
-        """The one employee the screen in context is about.
-
-        The key arrives as an id or as a list of them -- a form button sends
-        its record, `action_time_off_dashboard` sends its whole selection so
-        the calendar can filter on it -- while every reader here wants one
-        employee and raises `Expected singleton` given more.
-        """
         ctx = self.env.context
         for key in ("employee_id", "default_employee_id"):
             if ctx.get(key) is not None:

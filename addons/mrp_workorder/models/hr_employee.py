@@ -13,11 +13,6 @@ _debug = DebugLog(__name__)
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
-    # Use the session to remember the current employee between views; the main
-    # purpose is to avoid a hash implementation on the client side. The session
-    # has two attributes: EMPLOYEES_CONNECTED (the connected employees) and
-    # SESSION_OWNER (the main employee; only the owner can start/stop a running
-    # workorder).
 
     def pin_validation(self, pin=False) -> bool:
         if not pin:
@@ -38,9 +33,6 @@ class HrEmployee(models.Model):
         return False
 
     def logout(self, pin=False, unchecked=False):
-        # For some reason, if the session owner does not get changed during a run of this logout function, the writes
-        # to the connected employees are not persisted in the session. To hack around this we always set the owner
-        # to the user that is logging out, and we change it back after (or to False if the admin logs out).
         employees = request.session.get(EMPLOYEES_CONNECTED, [])
         owner = request.session.get(SESSION_OWNER, False)
         if (self.pin_validation(pin) or unchecked) and self.id in employees:
@@ -69,10 +61,6 @@ class HrEmployee(models.Model):
         ]
 
     def _connect_employee(self) -> None:
-        """
-        This function sets the employee that is connecting (or that is already connected)
-        as the first element of the array
-        """
         employees = request.session.get(EMPLOYEES_CONNECTED, [])
         if len(employees) == 0:
             request.session[EMPLOYEES_CONNECTED] = [self.id]
@@ -81,10 +69,6 @@ class HrEmployee(models.Model):
             request.session[EMPLOYEES_CONNECTED] = [self.id] + employees
 
     def get_employees_wo_by_employees(self, employees_ids):
-        """
-        Return each employee (by id) augmented with the open workcenter timers
-        and last-activity time drawn from their in-progress workorders.
-        """
         employees = [{"id": id} for id in employees_ids]
         workorders = self.env["mrp.workorder"].search([("state", "=", "progress")])
         time_ids = self.env["mrp.workcenter.productivity"]._read_group(
@@ -115,15 +99,12 @@ class HrEmployee(models.Model):
                 )
             else:
                 employee["last_active"] = max(
-                    employee.get("last_active", datetime.min),  # noqa: DTZ901  a floor for max() over naive datetimes
+                    employee.get("last_active", datetime.min),
                     *(d for d in end_dates if d),
                 )
         return employees
 
     def get_wo_time_by_employees_ids(self, wo_id):
-        """
-        return the time timesheeted by an employee on a workorder
-        """
         time_ids = self.env["mrp.workcenter.productivity"].search(
             [("employee_id", "=", self.id), ("workorder_id", "=", wo_id)]
         )
@@ -138,12 +119,6 @@ class HrEmployee(models.Model):
         return sum_time_seconds / 60
 
     def stop_all_workorder_from_employee(self) -> None:
-        """
-        This stops all the workorders that the employee is currently working on
-        We could use the stop_employee from mrp_workorder but it implies that me make several calls to the backend:
-        1) get all the WO
-        2) stop the employee on these WO
-        """
         work_orders = self.env["mrp.workorder"].search(
             ["&", ("state", "=", "progress"), ("employee_ids.id", "in", self.ids)]
         )
@@ -153,7 +128,6 @@ class HrEmployee(models.Model):
         if request:
             return request.session.get(EMPLOYEES_CONNECTED, [])
         else:
-            # Test cases
             return [self.env.user.employee_id.id]
 
     def set_employees_connected(self) -> None:
@@ -163,32 +137,19 @@ class HrEmployee(models.Model):
         request.session[EMPLOYEES_CONNECTED] = new_employees.ids
 
     def get_session_owner(self):
-        """The id of the session's main employee, or ``False``.
-
-        A scalar id, never a list: `SESSION_OWNER` is written as one everywhere it
-        is set, every caller browses or compares it as one, and the client matches
-        it against `employee.id`. The test branch used to wrap it in a list, so
-        with no employee on the user it produced the truthy `[False]` -- which
-        `_compute_employee_id` then assigned to a Many2one (ValueError) and
-        `_is_start_required` read as "an employee is logged in".
-        """
         if request:
             return request.session.get(SESSION_OWNER, False)
-        # No HTTP session to read the owner from (tests, crons).
         return self.env.user.employee_id.id
 
     def login_user_employee(self) -> None:
         if self.get_session_owner():
             return
-        # If no admin is set, try to set the users employee as admin.
         user_employee = self.env.user.employee_id
         if user_employee and user_employee.login():
             return
-        # If the user does not have an employee set, try the other logged in employees.
         for employee in self.get_employees_connected():
             if self.browse(employee).login():
                 return
-        # Just show the user's employee in the list.
         if user_employee:
             user_employee._connect_employee()
 

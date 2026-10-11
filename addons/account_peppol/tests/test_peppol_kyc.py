@@ -129,7 +129,6 @@ class TestPeppolKYC(PeppolConnectorCommon, HttpCase):
             "not_registered",
         )
 
-        # a window is opened with the url above, the KYC flow happens and calls back
         with (
             self._mock_create_connection_method() as connect_mock,
         ):
@@ -144,7 +143,6 @@ class TestPeppolKYC(PeppolConnectorCommon, HttpCase):
             )
         self.assertTrue(response.history[0].is_redirect)
         self.assertEqual(response.status_code, 200)
-        # callback-action closes the window opened for the authentication and displays a notification
         self.assertIn("/odoo/peppol-auth-callback-action?success=True", response.url)
         connect_mock.assert_called_once()
         self.assertEqual(
@@ -163,10 +161,6 @@ class TestPeppolKYC(PeppolConnectorCommon, HttpCase):
         )
 
     def test_connect_with_itsme_failed_auth_case_1(self):
-        """
-        Checks that if somehow the button_register_peppol_participant is called without
-        authentication first when it is necessary, the route raises an error.
-        """
         company = self.env.company
         with self._mock_requests(
             [
@@ -254,7 +248,7 @@ class TestPeppolKYC(PeppolConnectorCommon, HttpCase):
                 params={
                     "auth_type": "itsme",
                     "connect_token": connect_token,
-                    "auth_token": None,  # the authentication failed!
+                    "auth_token": None,
                 },
             )
         self.assertTrue(response.history[0].is_redirect)

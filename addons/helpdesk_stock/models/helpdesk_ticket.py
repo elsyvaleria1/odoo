@@ -48,10 +48,6 @@ class HelpdeskTicket(models.Model):
 
     @api.depends("partner_id")
     def _compute_suitable_product_ids(self) -> None:
-        """
-        Computes the suitable products for the given tickets based on the associated
-        partner's sales orders and outgoing deliveries.
-        """
         _debug.perf.count("ticket_suitable_products_compute", tickets=self)
         suitable_partners_ids_by_commercial_partner_id = {
             commercial_partner_id.id: ids
@@ -95,13 +91,12 @@ class HelpdeskTicket(models.Model):
                     ("state", "=", "done"),
                     ("partner_id", "in", suitable_partner_ids),
                     ("picking_type_code", "=", "outgoing"),
-                    ("is_replacement", "=", False),  # exclude replacement pickings
+                    ("is_replacement", "=", False),
                 ],
                 ["partner_id"],
                 ["id:array_agg"],
             )
 
-            # it was not correct, it took only products of stock_move_line from the first partner_id of self
             picking_ids = [id_ for __, ids in picking_data for id_ in ids]
             outgoing_product = {}
             if picking_ids:

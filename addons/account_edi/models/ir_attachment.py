@@ -7,7 +7,6 @@ class IrAttachment(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_government_document(self) -> None:
-        # sudo: account.edi.document - constraint that must be applied regardless of ACL
         linked_edi_documents = (
             self.env["account.edi.document"]
             .sudo()

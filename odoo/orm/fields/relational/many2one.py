@@ -45,7 +45,6 @@ def _optimize_comodel_id_lookup(condition: DomainCondition) -> Domain | None:
     ):
         return None
     val = subdomain.value
-    # a many2one holds one value, so `not any!` flips each operator
     flip = operator == "not any!"
 
     def condition_on(op: str, value: typing.Any) -> DomainCondition:
@@ -69,11 +68,6 @@ def _optimize_comodel_id_lookup(condition: DomainCondition) -> Domain | None:
 class Many2one(_Relational):
     type = "many2one"
     is_many2one = True
-    # the cache holds the foreign key, so a scan of it sorts the records the
-    # way ORDER BY on that column does -- but only when the comodel is ordered
-    # by id, since SQL sorts a many2one through the comodel's own _order.
-    # `_sorted_by_ids` is what applies that condition; without this flag its
-    # many2one guard was unreachable and every many2one took the Python sort.
     cache_is_orderable = True
     _column_type = ("int4", "int4")
 
@@ -374,10 +368,6 @@ class Many2one(_Relational):
 
         records = self._filter_not_equal(records, cache_value)
         if isinstance(cache_value, int) and not any(records._ids):
-            # new records already pointing at the new version of that record
-            # keep it: a recompute handing back the stored id would move them
-            # out of the new version's one2many, which an onchange reports as
-            # a deletion
             records = self._filter_not_equal(records, NewId(cache_value))
         if not records:
             return
@@ -474,8 +464,6 @@ class Many2one(_Relational):
                 )
                 added = valid_records._ids
                 if corecord.id:
-                    # a saved record's slot claims what its row will list
-                    # after the flush, which no draft ever reaches
                     added = tuple(id_ for id_ in added if id_)
                 if added:
                     additions[corecord.id] = tuple(
@@ -491,9 +479,6 @@ class Many2one(_Relational):
                     continue
                 ids1 = tuple(unique((ids0 or ()) + added))
                 if coid and not _is_cache_order_stable(model, ids1):
-                    # never invalidate here: the next read would fetch, and a
-                    # fetch flushes the half-written transaction this call is
-                    # part of
                     sorted_ids = model.browse(ids1)._sorted_by_ids(model._order, False)
                     if sorted_ids is not None:
                         ids1 = sorted_ids

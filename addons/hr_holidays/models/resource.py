@@ -96,10 +96,6 @@ class ResourceScheduleException(models.Model):
         previous_durations = leaves.mapped("number_of_days")
         previous_states = leaves.mapped("state")
         self.env.add_to_compute(self.env["hr.leave"]._fields["number_of_days"], leaves)
-        # add_to_compute only schedules that one field: it does not walk the
-        # dependency graph, so anything computed *from* number_of_days keeps its
-        # cached value.  Saying it moved is what refreshes duration_display and
-        # any future reader of the duration.
         leaves.modified(["number_of_days"])
         leaves.sudo().write(
             {
@@ -217,8 +213,6 @@ class ResourceResource(models.Model):
 
     leave_date_to = fields.Date(related="user_id.leave_date_to")
 
-    # a person's maintenance is their leave: validated time off covering now
-    # puts them in it, and its end returns them where they were
     def _sync_state_from_leaves(self) -> None:
         people = self.filtered(lambda resource: resource.type == "human")
         if not people:

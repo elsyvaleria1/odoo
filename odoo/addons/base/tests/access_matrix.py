@@ -25,7 +25,6 @@ class Persona:
     def __init__(
         self, *groups: str, company="a", companies=(), portal=None, public=False
     ):
-        # public: the anonymous visitor, base.public_user itself
         object.__setattr__(self, "groups", groups)
         object.__setattr__(self, "company", company)
         object.__setattr__(self, "companies", tuple(companies) or (company,))
@@ -59,17 +58,11 @@ class Cell:
         today: dict[str, str | dict[str, str]] | None = None,
         **expected: str,
     ):
-        # expected: what each persona may do, the intention; today: where the
-        # system still does something else, named by its finding, so that the
-        # deviation is asserted as a deviation and its fix turns the cell red
         object.__setattr__(self, "model", model)
         object.__setattr__(self, "record", record)
         object.__setattr__(self, "note", note)
         object.__setattr__(self, "finding", finding)
         object.__setattr__(self, "needs", needs)
-        # what a co-installed module changes in a persona's answer, by design:
-        # {"website_sale": {"portal_c": "r"}} adds read when website_sale is
-        # installed, {"hr_recruitment": {"officer_a": "-wcd"}} withdraws
         object.__setattr__(
             self,
             "installed",
@@ -103,8 +96,6 @@ class Cell:
 
 
 def parse_operations(spec: str) -> frozenset[str]:
-    # "rw confirm": letters of crud as one token, a verb by its name; "?read"
-    # an operation whose answer raises
     found = set()
     for token in spec.split():
         if token.startswith("?"):
@@ -135,8 +126,6 @@ class Verdict:
 
 
 def recompute(explanation: dict) -> bool:
-    # the decision rebuilt from the explanation's parts, never from its
-    # "allowed", which is the check itself
     if not explanation["model_allowed"]:
         return False
     permitted = any(entry["admits"] for entry in explanation["permissions"])
@@ -173,9 +162,6 @@ def describe(explanation: dict) -> str:
 
 
 class AccessMatrixCase(TransactionCase):
-    # a module's access matrix: personas x records x operations, each cell
-    # asked three ways -- the check, the SQL filter, the explanation -- and
-    # every persona a cell does not name expects nothing
 
     personas: typing.ClassVar[dict[str, Persona]] = {}
     cells: typing.ClassVar[tuple[Cell, ...]] = ()
@@ -203,8 +189,6 @@ class AccessMatrixCase(TransactionCase):
             for name, persona in cls.personas.items()
         }
         cls.records = cls.build()
-        # None: a record the installed modules cannot supply, whose cells say
-        # what they need
         empty = sorted(
             name
             for name, record in cls.records.items()
@@ -269,8 +253,6 @@ class AccessMatrixCase(TransactionCase):
         return OPERATIONS + tuple(sorted(verbs))
 
     def ask(self, persona_name: str, record, operation: str) -> Verdict:
-        # an answer that raises is an answer too: the cell reports the error
-        # instead of the matrix stopping at it
         env = self._principal(persona_name)
         target = env[record._name].browse(record.id)
         errors = []
@@ -313,8 +295,6 @@ class AccessMatrixCase(TransactionCase):
         )
 
     def observed(self) -> str:
-        # today's answers of the check, as cells, for writing a matrix; an
-        # answer is not an intention, so every line is to be read before use
         reverse = {operation: letter for letter, operation in LETTERS.items()}
         lines = []
         for name, record in self.records.items():

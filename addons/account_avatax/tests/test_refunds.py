@@ -69,12 +69,10 @@ class TestAccountAvalaraRefunds(TestAccountAvataxCommon):
         return res
 
     def test_post_tax_credit_memento(self):
-        """Ensure that returns are committed/posted for reporting appropriately."""
         self.assertEqual(self.refund_captured_arguments["type"], "ReturnInvoice")
         self.assertTrue(self.refund_commit_captured_arguments["commit"])
 
     def test_original_invoice_date(self):
-        """Send original invoice date as tax calculation date for return orders/credit memos."""
         self.assertTrue("taxOverride" not in self.invoice_captured_arguments)
         self.assertEqual(self.invoice_captured_arguments["date"], "2020-01-01")
 
@@ -85,6 +83,5 @@ class TestAccountAvalaraRefunds(TestAccountAvataxCommon):
         )
 
     def test_current_transaction_date(self):
-        """Send current transaction date as document date for return orders/credit memos"""
         self.assertEqual(self.invoice_captured_arguments["date"], "2020-01-01")
         self.assertEqual(self.refund_captured_arguments["date"], "2020-02-01")

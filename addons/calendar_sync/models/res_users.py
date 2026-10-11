@@ -17,18 +17,14 @@ class ResUsers(models.Model):
         groups="base.group_system",
     )
 
-    # -- what the engine asks of a user, provider by provider ----------------
 
     def _calendar_sync_existing_account(self, code: str):
-        """This user's account with `code`, elevated, empty when none exists;
-        read through the user's accounts, cached for the transaction."""
         self.check_singleton()
         return self.sudo().calendar_sync_account_ids.filtered(
             lambda account: account.provider == code
         )
 
     def _calendar_sync_account(self, code: str):
-        """This user's account with `code`, created on first use, elevated."""
         return self._calendar_sync_existing_account(code) or self.env[
             "calendar.sync.account"
         ]._for(self, code)
@@ -37,8 +33,6 @@ class ResUsers(models.Model):
         return self._calendar_sync_existing_account(code).stopped
 
     def _calendar_sync_connection(self, code: str):
-        """This user's authorized connection to `code`'s provider, elevated as
-        the API client reads it; empty while it is not authorized."""
         Connection = self.env["integration.connection"]
         if not self:
             return Connection.browse()
@@ -49,8 +43,6 @@ class ResUsers(models.Model):
         )
 
     def _calendar_sync_status(self, code: str) -> str:
-        """sync_paused (for everyone), sync_stopped (by this user), else
-        sync_active."""
         self.check_singleton()
         if self.env["calendar.sync.account"]._is_paused(code):
             return "sync_paused"
@@ -60,7 +52,6 @@ class ResUsers(models.Model):
         return "sync_stopped" if stopped else "sync_active"
 
     def _calendar_sync_active(self, code: str) -> bool:
-        """Synchronizing now: authorized, not stopped, not paused."""
         self.check_singleton()
         return bool(
             self._calendar_sync_connection(code)
@@ -69,8 +60,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _calendar_sync_candidates(self, code: str):
-        """The users the cron synchronizes with `code`: an authorized
-        connection, found in SQL, and no stop."""
         Account = self.env["calendar.sync.account"]
         connections = (
             self.env["integration.connection"]
@@ -107,22 +96,16 @@ class ResUsers(models.Model):
             self.env.cr.rollback()
 
     def _calendar_sync_as_owner(self):
-        """This user, as the engine runs their synchronization: their own
-        records, elevated to reach their connection and accounts."""
         self.check_singleton()
         return self.with_user(self).sudo()
 
-    # -- what an adapter answers ---------------------------------------------
 
     def _calendar_sync_run(self, code: str) -> bool:
-        """Synchronize this user's calendar with `code`; whether the calendar
-        view must reload."""
         if code not in self.env["calendar.sync.account"]._engine_providers():
             raise NotImplementedError(code)
         return self._calendar_sync_account(code)._as_engine()._calendar_sync()
 
     def _calendar_sync_restart(self, code: str) -> None:
-        """Mark what this user's restarted synchronization sends again."""
         if code not in self.env["calendar.sync.account"]._engine_providers():
             return
         account = self._calendar_sync_account(code)._as_engine()
@@ -131,11 +114,9 @@ class ResUsers(models.Model):
         ).pending = True
         account._queue_push()
 
-    # -- the calendar view ---------------------------------------------------
 
     @api.model
     def calendar_sync_providers(self) -> list[dict]:
-        """The installed providers, as the calendar view lists them."""
         return [
             {"code": code, "label": provider.label, "key": provider.key}
             for code, provider in self.env["calendar.sync.account"]

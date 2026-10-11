@@ -129,10 +129,6 @@ class RateLimitExceededError(Exception):
 
 
 class _ServerClock:
-    # freezegun answers time.monotonic() with frozen or real time depending on
-    # how deep the caller sits under a threading frame, so the loop and job
-    # threads would mix both clocks for one connection; a reference held on a
-    # class is one it does not rewrite.
     monotonic = staticmethod(time.monotonic)
 
 
@@ -300,9 +296,6 @@ class NotificationDispatchState:
 
 
 class Websocket:
-    # (channel, client names that reach it): a notification on one of these
-    # channels carries the names, and the worker hands it only to the tabs
-    # that claimed one; every other channel reaches every tab
     _routes = frozenset()
 
     MESSAGE_MAX_SIZE = 2**20
@@ -321,9 +314,6 @@ class Websocket:
     WRITE_BUFFER_LIMIT = 256 * 1024
     SEND_BUFFER = 128 * 1024
 
-    # The dispatch round a batched wake authorised this connection to share an
-    # answer in, None otherwise. Declared on the class so a connection that
-    # never went through a wake reads None rather than raising.
     _poll_round = None
     _linger_until = None
     _linger_allowed = True
@@ -401,24 +391,16 @@ class Websocket:
         if self.state is not ConnectionState.OPEN:
             return
         if self._waiting_for_dispatch:
-            # Still queued from an earlier wake: it may share this newer
-            # round's answer, which was polled after both notifications.
-            # Left on the old round, whose answers are gone, a backlog only
-            # grows: every late connection polls for itself.
             if poll_round is not None:
                 self._poll_round = poll_round
             return
         self._waiting_for_dispatch = True
-        # Only a caller that woke a BATCH passes a round, and only that round
-        # lets this connection share another's answer. A lone trigger -- a
-        # re-arm, a test, anything outside the dispatcher -- shares nothing.
         self._poll_round = poll_round
         self._on_loop(self._dispatch_requested)
 
     def _adopt(self, sock, buffered, addr) -> None:
         self._hub = _hub
         _hub.adopt(self, buffered)
-        # Only once the hub holds it: before that, _abandon gives the slot back.
         self._adopted = True
 
     def _abandon(self) -> None:
@@ -439,9 +421,6 @@ class Websocket:
             hub.call_soon(func, *args)
 
     def on_attached(self, buffered) -> None:
-        # The kernel would otherwise grow the send buffer to megabytes for a
-        # client that reads nothing, all of it progress as far as the stall
-        # timer can tell, and dispatches for it would go on until it filled.
         with suppress(OSError):
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.SEND_BUFFER)
         try:
@@ -523,9 +502,6 @@ class Websocket:
         return self._receive(data)
 
     def _receive(self, data) -> list:
-        # A control frame behind a message waits for that message to be served,
-        # in the lane: a client may send a message, then a ping, and read the
-        # pong as proof the message was handled.
         items = []
         for frame in self._parser.feed(data):
             self._timeout_manager.acknowledge_frame_receipt(frame)
@@ -631,15 +607,12 @@ class Websocket:
             self._job_serves_message = False
 
     def _drop_messages(self) -> None:
-        # In place: _pump may be draining this very lane.
         frames = [item for item in self._lane if isinstance(item, Frame)]
         self._lane.clear()
         self._lane.extend(frames)
         self._dispatch_pending = False
 
     def _dispatch_held(self) -> bool:
-        # A dispatch only adds to what the peer has not taken yet: a slow
-        # reader waits for its own buffer, every reader for the process's.
         if len(self._outbuf) > self.WRITE_BUFFER_LIMIT:
             return True
         hub = self._hub
@@ -653,8 +626,6 @@ class Websocket:
 
     def _run_job(self, job) -> None:
         try:
-            # A job thread serves every database's connections: its log lines
-            # name the one it works for now.
             with working_on_database(self._db):
                 job()
         except Exception as exc:
@@ -799,9 +770,6 @@ class Websocket:
         if manager.has_keep_alive_timed_out() and self.state is ConnectionState.OPEN:
             self._disconnect(CloseCode.KEEP_ALIVE_TIMEOUT)
             return
-        # While the lane holds the socket unread, the answer to a ping and the
-        # rest of a frame wait unread too: that wait is this server's, not the
-        # client's.
         if self._reading and manager.has_frame_response_timed_out():
             self._terminate()
             return
@@ -877,10 +845,6 @@ class Websocket:
         if hub is not None:
             hub.release_outbound(len(self._outbuf))
         self._outbuf.clear()
-        # Half-close, then read until the peer closes too: closing a socket
-        # with unread input sends a reset, and a reset can make the peer drop
-        # the close frame it has not read yet. The loop only reads what is
-        # there; the rest of the wait is the linger timer's.
         self._linger_until = self._clock() + self.LINGER_SECONDS
         with suppress(OSError):
             self.__socket.shutdown(socket.SHUT_WR)
@@ -933,8 +897,6 @@ class Websocket:
             _logger.warning("Error during websocket teardown cleanup", exc_info=True)
 
     def _handle_control_frame(self, frame) -> None:
-        # The close handshake ends the conversation: a frame read after the
-        # peer's close is neither answered nor taken for a second close.
         if self._close_received or self.state is ConnectionState.CLOSED:
             return
         if frame.opcode is Opcode.PING:
@@ -971,8 +933,6 @@ class Websocket:
         self._on_loop(self._close_after_error, code, reason)
 
     def _registry_reloaded(self) -> bool:
-        # The check queries the database, or loads the registry: never on the
-        # loop thread, which every connection of the process waits on.
         hub = self._hub
         if hub is not None and hub.in_loop():
             return False
@@ -999,14 +959,6 @@ class Websocket:
             self._terminate()
 
     def _limit_rate(self, opcode) -> None:
-        # GCRA: each frame is due one interval after the one before; a burst of
-        # RL_BURST may come early, and one more is refused. Two floats per
-        # connection where the last RL_BURST timestamps took two deques. Unlike
-        # that window, the bucket refills continuously: a window of T admits
-        # up to RL_BURST + T / interval frames, the same rate over time. The
-        # bound sits half an interval past the burst so that the sum of float
-        # intervals cannot refuse the burst's last frame; after a full burst
-        # the next frame is admitted half an interval later.
         now = self._clock()
         if opcode in DATA_OP:
             interval = self.RL_DELAY
@@ -1028,10 +980,6 @@ class Websocket:
         )
 
     def _revalidate_session(self, cr, now) -> bool:
-        """Follow the session to its live successor and ask whether it is still
-        valid, on the caller's cursor; a valid one is trusted again for up to
-        SESSION_VALIDITY_TTL. A session logged out or revoked since is gone
-        from the store, and as invalid as an expired one."""
         try:
             session = _follow_session_chain(self._session)
         except SessionExpiredException:
@@ -1046,8 +994,6 @@ class Websocket:
         return True
 
     def _trust_session(self, sid, now) -> None:
-        # Up to SESSION_VALIDITY_TTL, never past it: connections that
-        # subscribed together must not all come due together.
         self._session_validated_until = now + self.SESSION_VALIDITY_TTL * (
             1 - self.SESSION_VALIDITY_JITTER * random.random()
         )
@@ -1056,15 +1002,6 @@ class Websocket:
     def _dispatch_bus_notifications(self) -> None:
         now = self._clock()
         self._waiting_for_dispatch = False
-        # Subscribers to a busy channel converge on one cursor, so a dispatch
-        # round asks the same question once per connection. Each wake
-        # authorises at most one shared answer, in the newest round that woke
-        # the connection while it waited: a dispatch nobody woke, or a second
-        # dispatch inside one round, queries for itself. That keeps a hit to
-        # rows committed before the notification that opened the round;
-        # anything later wakes the connection again, because
-        # _waiting_for_dispatch is cleared above.
-        # The result is read-only downstream -- _send only serialises it.
         poll_round, self._poll_round = self._poll_round, None
         notifications, truncated, expired = _answer_round(
             [self], self._dispatch_key(), poll_round, now
@@ -1125,7 +1062,6 @@ class TimeoutManager:
         self._next_ping_time = now + self._inactivity_timeout()
 
     def _inactivity_timeout(self) -> float:
-        # Connections opened together would otherwise ping together, forever.
         jitter = self.PING_JITTER
         return self.INACTIVITY_TIMEOUT * random.uniform(1 - jitter, 1 + jitter)
 
@@ -1134,8 +1070,6 @@ class TimeoutManager:
         self._expiration_time_by_opcode.pop(frame.opcode, None)
 
     def acknowledge_frame_sent(self, frame) -> None:
-        # Only the peer's silence calls for a ping: what this side sends says
-        # nothing of whether anyone still reads it.
         now = self._clock()
         if frame.opcode is Opcode.PING:
             self._next_ping_time = now + self._inactivity_timeout()
@@ -1290,8 +1224,6 @@ class WebsocketRequest:
 
     def _serve_ir_websocket(self, event_name, data):
         self.env["ir.websocket"]._authenticate()
-        # The message has just checked the session its dispatches would
-        # check again.
         self.ws._trust_session(self.session.sid, self.ws._clock())
         if event_name == "subscribe":
             self.env["ir.websocket"]._subscribe(data)
@@ -1317,8 +1249,6 @@ class WebsocketRequest:
 
 
 def websocket_on_gevent_port() -> bool:
-    # Prefork without a reverse proxy serves pages on http_port and websockets
-    # on gevent_port.
     return bool(config["workers"]) and not config["proxy_mode"]
 
 
@@ -1327,8 +1257,6 @@ def _effective_port(url) -> int | None:
 
 
 def is_own_http_port_origin(origin, host_url) -> bool:
-    # On gevent_port, a page of this server's own HTTP port is another origin
-    # only by its port.
     if not websocket_on_gevent_port():
         return False
     try:
@@ -1387,9 +1315,6 @@ class WebsocketConnectionHandler:
         try:
             public_session = cls._handle_public_configuration(request)
             if public_session is None and request.session.is_new:
-                # Nothing is stored for an anonymous visitor until it writes,
-                # and its cookie is never written under: the socket serves it
-                # as the public user, as an untrusted origin is served.
                 public_session = cls._get_shared_public_session(request.db)
             httprequest = request.httprequest
             websocket = Websocket(
@@ -1411,10 +1336,6 @@ class WebsocketConnectionHandler:
             )
             response.call_on_close(websocket._abandon)
             if public_session is None and request.session.can_save:
-                # The websocket authenticates from the stored session; marking
-                # it dirty instead would resend its session_id cookie, which a
-                # handshake answered between a login and the next request uses
-                # to put the pre-login session back in the browser.
                 root.session_store.save(request.session)
         except BaseException:
             gauge.release()
@@ -1442,8 +1363,6 @@ class WebsocketConnectionHandler:
         origin = request.httprequest.headers.get("origin", "")
         if cls._is_trusted_origin(origin, request):
             return None
-        # Every handshake of a page embedded on another site (a live chat)
-        # comes here: the downgrade is the defence, the event no incident.
         _debug.logic(
             "session_downgraded",
             host=request.httprequest.host,
@@ -1461,8 +1380,6 @@ class WebsocketConnectionHandler:
                 session
                 and time.time() - (session.mtime or 0) > _PUBLIC_SESSION_TOUCH_INTERVAL
             ):
-                # Every anonymous socket of the database rides this session:
-                # reaped as idle, it would close them all at once.
                 try:
                     root.session_store.keep_alive(session)
                 except SessionExpiredException:
@@ -1479,7 +1396,6 @@ class WebsocketConnectionHandler:
         try:
             url = urlparse(origin.strip())
         except ValueError:
-            # an origin no URL can be read from is nobody's: never trusted
             return ""
         scheme = url.scheme.lower()
         netloc = url.netloc.lower()
@@ -1569,10 +1485,6 @@ _BATCH_JOB = object()
 
 
 def _trigger_dispatch(websockets, poll_round) -> None:
-    # The idle subscribers of one round that would ask the same question are
-    # asked once, on one database thread, and handed the same encoded frame;
-    # those due a session check are checked on that thread's cursor first. The
-    # busy ones dispatch one by one.
     batches = {}
     for websocket in websockets:
         if poll_round is not None and websocket._can_join_batch():
@@ -1590,8 +1502,6 @@ def _trigger_dispatch(websockets, poll_round) -> None:
 
 
 def _addressed(notifications, routes) -> list:
-    # What a connection sends: the channel stays on the server; a notification
-    # its routes reach through client names carries those names instead.
     names_by_channel = dict(routes)
     addressed = []
     for notification in notifications:
@@ -1604,8 +1514,6 @@ def _addressed(notifications, routes) -> list:
 
 def _answer_round(members, key, poll_round, now) -> tuple:
     due = [websocket for websocket in members if websocket._session_check_due(now)]
-    # the routes only address the answer: connections polling the same rows
-    # share it whatever names they claimed them by
     poll_key = key[:4]
     answer = dispatch.poll_memo_get(poll_round, poll_key)
     shared = answer is not None
@@ -1723,9 +1631,6 @@ def get_drain_timeout() -> float:
 
 
 def _drain_on_stop() -> None:
-    # A stop is not every user leaving: the close hooks (presence going
-    # offline, a row per connection) are skipped, the clients reconnect to the
-    # next server and carry on.
     open_count = len(_hub.connections)
     started = time.monotonic()
     cut = _hub.stop(get_drain_timeout(), CloseCode.GOING_AWAY)

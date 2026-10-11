@@ -15,7 +15,6 @@ class WizardAccountMoveSendBatch(models.TransientModel):
             wizard.send_by_post_stamps = len(partner_with_valid_address)
 
     def _compute_summary_data(self) -> None:
-        # EXTENDS 'account'
         super()._compute_summary_data()
         for wizard in self:
             if wizard.summary_data and "snailmail" in wizard.summary_data:

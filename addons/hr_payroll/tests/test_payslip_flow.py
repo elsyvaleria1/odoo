@@ -11,9 +11,7 @@ from odoo.addons.mail.tests.common import mail_new_test_user
 
 class TestPayslipFlow(TestPayslipBase):
     def test_00_payslip_flow(self):
-        """Testing payslip flow and report printing"""
 
-        # I create an employee Payslip
         richard_payslip = self.env["hr.payslip"].create(
             {
                 "name": "Payslip of Richard",
@@ -24,30 +22,22 @@ class TestPayslipFlow(TestPayslipBase):
         payslip_input = self.env["hr.payslip.input"].search(
             [("payslip_id", "=", richard_payslip.id)]
         )
-        # I assign the amount to Input data
         payslip_input.write({"amount": 5.0})
 
-        # I verify the payslip is in draft state
         self.assertEqual(richard_payslip.state, "draft", "State not changed!")
 
         richard_payslip.compute_sheet()
 
-        # Then I click on the 'Confirm' button on payslip
         richard_payslip.action_payslip_done()
 
-        # I verify that the payslip is in validated state
         self.assertEqual(richard_payslip.state, "validated", "State not changed!")
 
-        # Then I click on the 'Mark as paid' button on payslip
         richard_payslip.action_payslip_paid()
 
-        # I verify that the payslip is in paid state
         self.assertEqual(richard_payslip.state, "paid", "State not changed!")
 
-        # I want to check refund payslip so I click on refund button.
         richard_payslip.refund_sheet()
 
-        # I check on new payslip Credit Note is checked or not.
         payslip_refund = self.env["hr.payslip"].search(
             [
                 ("name", "like", "Refund: " + richard_payslip.name),
@@ -56,7 +46,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
         self.assertTrue(bool(payslip_refund), "Payslip not refunded!")
 
-        # I want to generate a payslip from Payslip run.
         payslip_run = self.env["hr.payslip.run"].create(
             {
                 "date_end": "2011-09-30",
@@ -65,15 +54,11 @@ class TestPayslipFlow(TestPayslipBase):
             }
         )
 
-        # I create record for generating the payslip for this Payslip run.
 
-        # The contract of Richard starts in 2018, the payrun is for 2011, no valid versions can be found.
-        # So the generate_payslip without versions must raise an error
         with self.assertRaises(UserError):
             payslip_run.generate_payslips(employee_ids=[self.richard_emp.id])
 
     def test_01_batch_with_specific_structure(self):
-        """Generate payslips for the employee whose running contract is based on the same Salary Structure Type"""
 
         specific_structure_type = self.env["hr.payroll.structure.type"].create(
             {"name": "Structure Type Test"}
@@ -86,7 +71,6 @@ class TestPayslipFlow(TestPayslipBase):
             }
         )
 
-        # 13th month pay
         payslip_run = self.env["hr.payslip.run"].create(
             {
                 "date_start": datetime.date.today()
@@ -101,7 +85,6 @@ class TestPayslipFlow(TestPayslipBase):
         with self.assertRaises(UserError):
             payslip_run.generate_payslips(payslip_run._get_valid_version_ids())
 
-        # Update the structure type and generate payslips again
         specific_structure_type.default_struct_id = specific_structure.id
         self.richard_emp.version_ids[0].structure_type_id = specific_structure_type.id
 
@@ -127,10 +110,8 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertEqual(payslip_run.slip_ids.struct_id.id, specific_structure.id)
 
     def test_02_payslip_batch_with_archived_employee(self):
-        # archive his contact
         self.richard_emp.action_archive()
 
-        # 13th month pay
         payslip_run = self.env["hr.payslip.run"].create(
             {
                 "date_start": datetime.date.today()
@@ -140,17 +121,11 @@ class TestPayslipFlow(TestPayslipBase):
                 "name": "End of the year bonus",
             }
         )
-        # I create record for generating the payslip for this Payslip run.
         payslip_run.generate_payslips(employee_ids=[self.richard_emp.id])
 
         self.assertEqual(len(payslip_run.slip_ids), 1)
 
     def test_03_payslip_batch_with_payment_process(self):
-        """
-        Test to check if some payslips in the batch are already paid,
-        the batch status can be updated to 'paid' without affecting
-        those already paid payslips.
-        """
         self.contract_jules = self.jules_emp.version_id.write(
             {
                 "date_version": datetime.date.today()
@@ -186,7 +161,6 @@ class TestPayslipFlow(TestPayslipBase):
             "State not changed!",
         )
 
-        # Mark the first payslip as paid and store the paid date
         payslip_run.slip_ids[0].action_payslip_paid()
         paid_date = payslip_run.slip_ids[0].paid_date
 
@@ -209,10 +183,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
 
     def test_04_payslip_batch_wizard_for_employee_selection_mode(self):
-        """
-        Test employee_ids selection in batch payslip generating wizard
-        based on employee selection mode fields
-        """
         self.richard_emp.version_ids[0].contract_date_end = False
         self.contract_jules = self.jules_emp.version_id.write(
             {
@@ -249,10 +219,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
 
     def test_05_payslip_batch_wizard_for_department_selection_mode(self):
-        """
-        Test employee_ids selection in batch payslip generating wizard
-        based on department selection mode fields
-        """
         self.richard_emp.version_ids[0].date_end = False
         self.contract_jules = self.jules_emp.version_id.write(
             {
@@ -287,10 +253,6 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertEqual(employees.ids[0], self.jules_emp.id)
 
     def test_06_payslip_batch_wizard_for_job_selection_mode(self):
-        """
-        Test employee_ids selection in batch payslip generating wizard
-        based on job selection mode fields
-        """
         self.richard_emp.version_ids[0].date_end = False
         job_developer = self.env["hr.job"].create(
             {
@@ -321,10 +283,6 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertTrue(self.richard_emp in employees)
 
     def test_07_payslip_batch_wizard_for_category_selection_mode(self):
-        """
-        Test employee_ids selection in batch payslip generating wizard
-        based on category selection mode fields
-        """
         self.richard_emp.version_ids[0].date_end = False
         self.contract_jules = self.jules_emp.version_id.write(
             {
@@ -467,11 +425,6 @@ class TestPayslipFlow(TestPayslipBase):
             }
         )
 
-        # Batch A for only structure A
-        # For february YEAR-1
-        # Expected employees/contracts
-        # Timmy  contract A (YEAR-1/01/01 -> YEAR-1/03/15)
-        # Gerard contract A (YEAR-1/01/01 -> no end date )
         payslip_runA.generate_payslips(payslip_runA._get_valid_version_ids())
         self.assertEqual(len(payslip_runA.slip_ids.employee_id.ids), 2)
         self.assertEqual(len(payslip_runA.slip_ids.ids), 2)
@@ -483,11 +436,6 @@ class TestPayslipFlow(TestPayslipBase):
             )
         )
 
-        # Batch B for only structure B
-        # For april YEAR-1
-        # Expected employees/contracts
-        # Timmy  contract B (YEAR-1/03/16 -> no end date)
-        # Michel contract B (YEAR-1/01/01 -> no end date)
         payslip_runB.generate_payslips(payslip_runB._get_valid_version_ids())
         self.assertEqual(len(payslip_runB.slip_ids.employee_id.ids), 2)
         self.assertEqual(len(payslip_runB.slip_ids.ids), 2)
@@ -499,13 +447,6 @@ class TestPayslipFlow(TestPayslipBase):
             )
         )
 
-        # Batch C for two structures
-        # For march YEAR-1
-        # Expected employees/contracts
-        # Timmy| contract A (YEAR-1/01/01 -> YEAR-1/03/15)
-        #      | contract B (YEAR-1/03/16 -> no end date )
-        # Gerard contract A (YEAR-1/01/01 -> no end date )
-        # Michel contract B (YEAR-1/01/01 -> no end date )
         payslip_runC.generate_payslips(payslip_runC._get_valid_version_ids())
         self.assertEqual(len(payslip_runC.slip_ids.employee_id.ids), 2)
         self.assertEqual(len(payslip_runC.slip_ids.ids), 2)
@@ -529,7 +470,6 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertTrue(payslip_form)
 
     def test_10_related_payslip_not_flagged_as_duplicate(self):
-        """Refund/Correction payslips must NOT be treated as duplicates."""
 
         original = self.env["hr.payslip"].create(
             {
@@ -581,7 +521,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
 
     def test_04_cancel_a_done_payslip_with_payroll_admin(self):
-        """Cancel a validated payslip using a new user with Payroll Admin access."""
         test_user = mail_new_test_user(
             self.env,
             name="Test user",
@@ -600,7 +539,6 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertEqual(richard_payslip.state, "cancel")
 
     def test_hr_payslip_without_date_to(self):
-        """Ensure payslip creation fails if date_to is missing."""
         employee = self.env["hr.employee"].create(
             {
                 "name": "Jethalal Gada",
@@ -617,7 +555,6 @@ class TestPayslipFlow(TestPayslipBase):
         self.assertTrue(payslip_form)
 
     def test_05_fully_flexible_contracts_payslip(self):
-        """Test payslip generation for fully flexible contracts (no working schedule) with attendance-based work entries"""
 
         if not self.env["ir.module.module"].search(
             [("name", "=", "hr_work_entry_attendance"), ("state", "=", "installed")]
@@ -628,7 +565,6 @@ class TestPayslipFlow(TestPayslipBase):
             "hr_work_entry.work_entry_type_attendance"
         )
 
-        # Case 1: contract with no calendar
         date_from = datetime.date.today()
         date_to = date_from + relativedelta(months=1)
 
@@ -687,7 +623,6 @@ class TestPayslipFlow(TestPayslipBase):
             attendance_line_1.number_of_hours, 40, "payslip should record 40 hours"
         )
 
-        # Case 2: employee with no calendar, contract with no calendar (full flexibility in both)
         employee_no_calendar = self.env["hr.employee"].create(
             {
                 "name": "employee 2",
@@ -740,10 +675,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
 
     def test_06_pay_run_payslip_name(self):
-        """
-        This test checks that the name of the payslip contains the name and the period for which the pay run is
-        being run.
-        """
         payslip_run = self.env["hr.payslip.run"].create(
             {
                 "date_end": "2025-11-30",
@@ -794,8 +725,6 @@ class TestPayslipFlow(TestPayslipBase):
         )
 
     def test_12_version_selector_hidden_when_employee_has_a_single_record(self):
-        """The Employee Record selector only has something to choose from once
-        the employee has a second version; until then it is noise on the form."""
         self.assertEqual(len(self.jules_emp.version_ids), 1)
 
         payslip_form = Form(self.env["hr.payslip"])
@@ -825,5 +754,4 @@ class TestPayslipFlow(TestPayslipBase):
 @tagged("-at_install", "post_install")
 class TestPayslipUi(HttpCase):
     def test_tour_date_input(self):
-        """Test payslip form date input."""
         self.start_tour("/odoo", "hr_payroll_form_view_date_input_tour", login="admin")

@@ -1042,7 +1042,6 @@ class TestOrderpointEdgeCases(TransactionCase):
         self.patch(
             StockWarehouseOrderpointReplenish, "_get_quantity_in_progress", recording
         )
-        # the count is stock's own; purchase_stock adds its vendor lookups
         counted = (
             nullcontext()
             if is_module_installed(self.env, "purchase_stock")

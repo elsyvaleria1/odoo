@@ -1158,7 +1158,6 @@ class TestUnityRead(TransactionCase):
         )
 
     def _partial_lesson_reader(self):
-        # reads the lessons named "open…" and no other
         group = self.env["res.groups"].create({"name": "open lesson readers"})
         self.env["ir.access"].create(
             {

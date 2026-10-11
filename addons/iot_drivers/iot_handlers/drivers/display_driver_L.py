@@ -52,7 +52,7 @@ class DisplayDriver(Driver):
 
     @classmethod
     def supported(cls, device):
-        return True  # All devices with connection_type == 'display' are supported
+        return True
 
     @classmethod
     def get_default_display(cls):
@@ -68,7 +68,6 @@ class DisplayDriver(Driver):
                 self.url != "http://localhost:8069/status/"
                 and self.browser.state != BrowserState.KIOSK
             ):
-                # Refresh the page every minute
                 self.browser.refresh()
 
     def update_url(self, url=None) -> None:
@@ -83,13 +82,8 @@ class DisplayDriver(Driver):
 
     @helpers.require_db
     def get_url_from_db(self, server_url=None):
-        """Get the display URL provided by the connected database.
-
-        :param server_url: The URL of the connected database (provided by decorator).
-        :return: URL to display or None.
-        """
         try:
-            response = requests.get(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+            response = requests.get(
                 f"{server_url}/iot/box/{helpers.get_identifier()}/display_url",
                 timeout=5,
             )
@@ -124,11 +118,6 @@ class DisplayDriver(Driver):
             return
 
         origin = helpers.get_odoo_server_url() or http.request.httprequest.origin
-        # The route is /pos_customer_display/<id_>/<device_uuid> and
-        # authenticates via an access_token QUERY parameter (same shape as
-        # the /pos-self URL built above). Passing the token as the
-        # device_uuid path segment sent no token at all, so the hardened
-        # route answered 404 and the display stayed blank.
         self.update_url(
             f"{origin}/pos_customer_display/{data['pos_id']}/{self.device_identifier}"
             f"?access_token={data['access_token']}"
@@ -159,7 +148,6 @@ class DisplayDriver(Driver):
             ],
             check=True,
         )
-        # Update touchscreen mapping to this display
         subprocess.run(
             [
                 "sed",
@@ -169,7 +157,6 @@ class DisplayDriver(Driver):
             ],
             check=False,
         )
-        # Tell labwc to reload its configuration
         subprocess.run(["pkill", "-HUP", "labwc"], check=False)
         helpers.save_browser_state(orientation=orientation)
 

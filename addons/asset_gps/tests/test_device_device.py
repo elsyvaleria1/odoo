@@ -119,13 +119,6 @@ class TestRemoteDeviceAssetComputation(DeviceDeviceAssetTestBase):
         self.assertFalse(device.asset_id)
 
     def test_asset_id_survives_archiving_the_asset(self):
-        """Archiving an asset must not strand its GPS device.
-
-        The One2one reads across archived assets: the unique index on
-        gps_device_id spans archived rows, so a device that forgot its
-        archived asset would read as free while remaining impossible to
-        reassign.
-        """
         device = self.DeviceDevice.create(
             {
                 "name": "Archive Test Device",
@@ -161,8 +154,6 @@ class TestRemoteDeviceAssetComputation(DeviceDeviceAssetTestBase):
         )
 
     def test_asset_id_clears_when_the_asset_releases_the_device(self):
-        """The archive case must not make the field sticky: releasing the
-        device really does empty it."""
         device = self.DeviceDevice.create(
             {
                 "name": "Release Test Device",
@@ -281,16 +272,11 @@ class TestRemoteDeviceAssetAction(DeviceDeviceAssetTestBase):
 
         action = device.action_view_tracked_asset()
 
-        # a vehicle-kind thing opens as the vehicle it is
         self.assertEqual(action["type"], "ir.actions.act_window")
         self.assertEqual(action["res_model"], "resource.asset.vehicle")
         self.assertEqual(action["res_id"], vehicle.asset_id.id)
 
     def test_the_two_asset_buttons_do_not_shadow_each_other(self):
-        """asset_device auto-installs beside us and names its own
-        action_view_own_asset for the asset a device IS. Ours is the asset a device
-        reports FOR, so the two must resolve to different records.
-        """
         device = self.DeviceDevice.create(
             {
                 "name": "Dual Role Device",

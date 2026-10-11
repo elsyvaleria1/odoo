@@ -220,9 +220,9 @@ class Deploy(Command):
         try:
             print("Zipping module directory...")
             with _debug.perf("cli.deploy.zip", module=module_dir.name) as span:
-                files = 0  # debuglog
-                symlinks = 0  # debuglog
-                excluded = 0  # debuglog
+                files = 0
+                symlinks = 0
+                excluded = 0
                 with zipfile.ZipFile(
                     temp, "w", compression=zipfile.ZIP_DEFLATED
                 ) as zfile:
@@ -230,10 +230,10 @@ class Deploy(Command):
                         kept_dirs = []
                         for dirname in dirnames:
                             if dirname in EXCLUDED_DIR_NAMES:
-                                excluded += 1  # debuglog
+                                excluded += 1
                                 continue
                             if (dirpath / dirname).is_symlink():
-                                symlinks += 1  # debuglog
+                                symlinks += 1
                                 print(
                                     f"WARNING: skipping symlink {dirpath / dirname}",
                                     file=sys.stderr,
@@ -244,7 +244,7 @@ class Deploy(Command):
                         for filename in filenames:
                             filepath = dirpath / filename
                             if filepath.is_symlink():
-                                symlinks += 1  # debuglog
+                                symlinks += 1
                                 print(
                                     f"WARNING: skipping symlink {filepath}",
                                     file=sys.stderr,
@@ -253,12 +253,12 @@ class Deploy(Command):
                             if not filepath.is_file():
                                 continue
                             if _is_file_excluded(filepath):
-                                excluded += 1  # debuglog
+                                excluded += 1
                                 continue
                             zfile.write(
                                 filepath, filepath.relative_to(module_dir.parent)
                             )
-                            files += 1  # debuglog
+                            files += 1
                 span.set(
                     files=files,
                     symlinks=symlinks,

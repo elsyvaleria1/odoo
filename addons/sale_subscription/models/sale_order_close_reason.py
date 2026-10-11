@@ -38,7 +38,6 @@ class SaleOrderCloseReason(models.Model):
         translate=True,
     )
     empty_retention_message = fields.Boolean(compute="_compute_empty_retention_message")
-    # protected reasons can't be deleted as they are used by odoo bot
     is_protected = fields.Boolean(default=False)
 
     @api.depends("retention_message")
@@ -64,9 +63,6 @@ class SaleOrderCloseReason(models.Model):
 
     @api.model
     def _get_reopen_reasons(self) -> Self:
-        # Only a subscription closed for want of payment reopens once paid: the
-        # failed automatic renewal and the unpaid-invoice cron. One closed on
-        # purpose, by the customer or a salesperson, stays closed.
         return self.browse(
             reason.id
             for xmlid in (

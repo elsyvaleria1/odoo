@@ -130,7 +130,6 @@ class TestActivityMixin(TestActivityCommon):
             now_user = now_utc.astimezone(timezone(self.env.user.tz or "UTC"))
             today_user = now_user.date()
 
-            # Test various scheduling of activities
             act1 = self.test_record.activity_schedule(
                 "test_mail.mail_act_test_todo",
                 today_user + relativedelta(days=1),
@@ -149,10 +148,6 @@ class TestActivityMixin(TestActivityCommon):
                 user_id=self.user_employee.id,
             )
             self.assertEqual(self.test_record.activity_state, "overdue")
-            # `activity_user_id` is defined as `fields.Many2one('res.users', 'Responsible User', related='activity_ids.user_id')`
-            # it therefore relies on the natural order of `activity_ids`, according to which activity comes first.
-            # As we just created the activity, its not yet in the right order.
-            # We force it by invalidating it so it gets fetched from database, in the right order.
             self.test_record.invalidate_recordset(["activity_ids"])
             self.assertEqual(self.test_record.activity_user_id, self.user_employee)
 
@@ -162,17 +157,12 @@ class TestActivityMixin(TestActivityCommon):
                 user_id=self.user_employee.id,
             )
             self.assertEqual(self.test_record.activity_state, "overdue")
-            # `activity_user_id` is defined as `fields.Many2one('res.users', 'Responsible User', related='activity_ids.user_id')`
-            # it therefore relies on the natural order of `activity_ids`, according to which activity comes first.
-            # As we just created the activity, its not yet in the right order.
-            # We force it by invalidating it so it gets fetched from database, in the right order.
             self.test_record.invalidate_recordset(["activity_ids"])
             self.assertEqual(self.test_record.activity_user_id, self.user_employee)
 
             self.test_record.invalidate_recordset()
             self.assertEqual(self.test_record.activity_ids, act1 | act2 | act3)
 
-            # Perform todo activities for admin
             self.test_record.activity_feedback(
                 ["test_mail.mail_act_test_todo"],
                 user_id=self.user_admin.id,
@@ -181,7 +171,6 @@ class TestActivityMixin(TestActivityCommon):
             self.assertEqual(self.test_record.activity_ids, act2 | act3)
             self.assertFalse(act1.active)
 
-            # Reschedule all activities, should update the record state
             self.assertEqual(self.test_record.activity_state, "overdue")
             self.test_record.activity_reschedule(
                 ["test_mail.mail_act_test_meeting", "test_mail.mail_act_test_todo"],
@@ -189,13 +178,11 @@ class TestActivityMixin(TestActivityCommon):
             )
             self.assertEqual(self.test_record.activity_state, "planned")
 
-            # Perform todo activities for remaining people
             self.test_record.activity_feedback(
                 ["test_mail.mail_act_test_todo"], feedback="Test feedback 2"
             )
             self.assertFalse(act3.active)
 
-            # Setting activities as done should delete them and post messages
             self.assertEqual(self.test_record.activity_ids, act2)
             self.assertEqual(len(self.test_record.message_ids), 3)
             self.assertEqual(len(self.test_record.message_ids), 3)
@@ -204,10 +191,8 @@ class TestActivityMixin(TestActivityCommon):
                 (feedback2 + feedback1).subtype_id, self.env.ref("mail.mt_activities")
             )
 
-            # Unlink meeting activities
             self.test_record.activity_unlink(["test_mail.mail_act_test_meeting"])
 
-            # Canceling activities should simply remove them
             self.assertEqual(self.test_record.activity_ids, self.env["mail.activity"])
             self.assertEqual(
                 len(self.test_record.message_ids),
@@ -220,7 +205,6 @@ class TestActivityMixin(TestActivityCommon):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_activity_mixin_not_only_automated(self):
 
-        # Schedule activity and create manual activity
         act_type_todo = self.env.ref("test_mail.mail_act_test_todo")
         auto_act = self.test_record.activity_schedule(
             "test_mail.mail_act_test_todo",
@@ -237,7 +221,6 @@ class TestActivityMixin(TestActivityCommon):
         self.assertEqual(auto_act.automated, True)
         self.assertEqual(man_act.automated, False)
 
-        # Test activity reschedule on not only automated activities
         self.test_record.activity_reschedule(
             ["test_mail.mail_act_test_todo"],
             date_deadline=date.today() + relativedelta(days=2),
@@ -246,7 +229,6 @@ class TestActivityMixin(TestActivityCommon):
         self.assertEqual(auto_act.date_deadline, date.today() + relativedelta(days=2))
         self.assertEqual(man_act.date_deadline, date.today() + relativedelta(days=2))
 
-        # Test activity feedback on not only automated activities
         self.test_record.activity_feedback(
             ["test_mail.mail_act_test_todo"],
             feedback="Test feedback",
@@ -256,7 +238,6 @@ class TestActivityMixin(TestActivityCommon):
         self.assertFalse(auto_act.active)
         self.assertFalse(man_act.active)
 
-        # Test activity unlink on not only automated activities
         auto_act = self.test_record.activity_schedule(
             "test_mail.mail_act_test_todo",
         )
@@ -291,9 +272,6 @@ class TestActivityMixin(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_activity_mixin_archive_user(self):
-        """
-        Test when archiving an user, we unlink all his related activities
-        """
         test_users = self.env["res.users"]
         for i in range(5):
             test_users += mail_new_test_user(
@@ -303,11 +281,10 @@ class TestActivityMixin(TestActivityCommon):
             self.test_record.activity_schedule(user_id=user.id)
         archived_users = self.env["res.users"].browse(
             x.id for x in random.sample(test_users, 2)
-        )  # pick 2 users to archive
+        )
         archived_users.action_archive()
         active_users = test_users - archived_users
 
-        # archive user with company disabled
         user_admin = self.user_admin
         user_employee_c2 = self.user_employee_c2
         self.assertIn(self.company_2, user_admin.company_ids)
@@ -331,7 +308,6 @@ class TestActivityMixin(TestActivityCommon):
             any(archived_users.mapped("active")), "Users should be archived."
         )
 
-        # activities of active users shouldn't be touched, each has exactly 1 activity present
         activities = self.env["mail.activity"].search(
             [("user_id", "in", active_users.ids)]
         )
@@ -346,7 +322,6 @@ class TestActivityMixin(TestActivityCommon):
             "We should have 3 different users linked to the activities of the active users",
         )
 
-        # ensure the user's activities are removed
         activities = self.env["mail.activity"].search(
             [("user_id", "in", archived_users.ids)]
         )
@@ -360,7 +335,6 @@ class TestActivityMixin(TestActivityCommon):
         )
         self.assertEqual(rec.activity_ids[0].user_id, self.user_admin)
 
-        # reschedule its own should not alter other's activities
         rec.activity_reschedule(
             ["test_mail.mail_act_test_todo"],
             user_id=self.user_employee.id,
@@ -406,8 +380,6 @@ class TestActivityMixin(TestActivityCommon):
             ]
         )
 
-        # Checking if the attachment has been forwarded to the message
-        # when marking an activity as "Done"
         activity.action_feedback()
         activity_message = test_record.message_ids[0]
         self.assertEqual(set(activity_message.attachment_ids.ids), set(attachments.ids))
@@ -437,7 +409,6 @@ class TestActivityMixin(TestActivityCommon):
             first_activity.action_feedback(feedback="Done")
         self.assertFalse(first_activity.active)
 
-        # check chained activity
         new_activity = test_record.activity_ids
         self.assertNotEqual(new_activity.id, first_activity_id)
         self.assertEqual(new_activity.summary, "Take the second step.")
@@ -470,7 +441,6 @@ class TestActivityMixin(TestActivityCommon):
             first_activity.action_feedback(feedback="Done")
         self.assertFalse(first_activity.active)
 
-        # check chained activity
         new_activity = test_record.activity_ids
         self.assertNotEqual(new_activity.id, first_activity_id)
         self.assertEqual(new_activity.summary, "Take the second step.")
@@ -481,22 +451,6 @@ class TestActivityMixin(TestActivityCommon):
         )
 
     def test_mail_activity_state(self):
-        """Create 3 activity for 2 different users in 2 different timezones.
-
-        User UTC (+0h)
-        User Australia (+11h)
-        Today datetime: 1/1/2020 16h
-
-        Activity 1 & User UTC
-            1/1/2020 - 16h UTC       -> The state is today
-
-        Activity 2 & User Australia
-            1/1/2020 - 16h UTC
-            2/1/2020 -  1h Australia -> State is overdue
-
-        Activity 3 & User UTC
-            1/1/2020 - 23h UTC       -> The state is today
-        """
         record = self.env["mail.test.activity"].create({"name": "Record"})
 
         with freeze_time(datetime(2020, 1, 1, 16)):
@@ -525,7 +479,6 @@ class TestActivityMixin(TestActivityCommon):
 
     @users("employee")
     def test_mail_activity_mixin_search_activity_user_id_false(self):
-        """Test the search method on the "activity_user_id" when searching for non-set user"""
         MailTestActivity = self.env["mail.test.activity"]
         test_records = self.test_record | self.test_record_2
         self.assertFalse(test_records.activity_ids)
@@ -541,10 +494,6 @@ class TestActivityMixin(TestActivityCommon):
                 "res_id": self.test_record.id,
             }
         )
-        # An unassigned activity leaves activity_user_id unset, so both records
-        # still answer "no responsible". This asserted the opposite while the
-        # search read '= True' as "has an activity row" rather than "has a
-        # responsible", which is not what the field holds.
         self.assertFalse(unassigned.user_id)
         self.assertFalse(self.test_record.activity_user_id)
         self.assertEqual(
@@ -570,11 +519,6 @@ class TestActivityMixin(TestActivityCommon):
         )
 
     def test_mail_activity_mixin_search_exception_decoration(self):
-        """Test the search on "activity_exception_decoration".
-
-        Domain ('activity_exception_decoration', '!=', False) should only return
-        records that have at least one warning/danger activity.
-        """
         record_warning, record_normal, _ = (
             self.test_record,
             self.test_record_2,
@@ -594,14 +538,7 @@ class TestActivityMixin(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_activity_mixin_search_state_basic(self):
-        """Test the search method on the "activity_state".
 
-        Test all the operators and also test the case where the "activity_state" is
-        different because of the timezone. There's also a tricky case for which we
-        "reverse" the domain for performance purpose.
-        """
-
-        # Create some records without activity schedule on it for testing
         self.env["mail.test.activity"].create(
             [{"name": "Record %i" % record_i} for record_i in range(5)]
         )
@@ -717,8 +654,6 @@ class TestActivityMixin(TestActivityCommon):
                 all_activity_mixin_record.filtered(lambda p: not p.activity_state),
             )
 
-            # test tricky case when the domain will be reversed in the search method
-            # because of falsy value
             result = self.env["mail.test.activity"].search(
                 [("activity_state", "not in", ("today", False))]
             )
@@ -741,7 +676,6 @@ class TestActivityMixin(TestActivityCommon):
                 ),
             )
 
-            # Check that activity done are not taken into account by group and search by activity_state.
             Model = self.env["mail.test.activity"]
             search_params = {
                 "domain": [
@@ -774,13 +708,7 @@ class TestActivityMixin(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mail_activity_mixin_search_state_different_day_but_close_time(self):
-        """Test the case where there's less than 24 hours between the deadline and now_tz,
-        but one day of difference (e.g. 23h 01/01/2020 & 1h 02/02/2020). So the state
-        should be "planned" and not "today". This case was tricky to implement in SQL
-        that's why it has its own test.
-        """
 
-        # Create some records without activity schedule on it for testing
         self.env["mail.test.activity"].create(
             [{"name": "Record %i" % record_i} for record_i in range(5)]
         )
@@ -877,7 +805,6 @@ class TestActivityMixin(TestActivityCommon):
 
     @users("employee")
     def test_record_unlinked_orphan_activities(self):
-        """Test the fix preventing error on corrupted database where activities without related record are present."""
         test_record = (
             self.env["mail.test.activity"]
             .with_context(self._test_context)
@@ -888,7 +815,6 @@ class TestActivityMixin(TestActivityCommon):
             "test_mail.mail_act_test_todo", summary="Orphan activity"
         )
         act.action_done()
-        # Delete the record while preventing the cascade deletion of the activity to simulate a corrupted database
         with patch.object(MailActivity, "unlink", lambda self: None):
             test_record.unlink()
         self.assertTrue(act.exists())
@@ -913,8 +839,6 @@ class TestORM(TestActivityCommon):
     """Test for read_progress_bar"""
 
     def test_groupby_activity_state_progress_bar_behavior(self):
-        """Test activity_state groupby logic on mail.test.lead when 'activity_state'
-        is present multiple times in the groupby field list."""
         lead_timedelta_setup = [0, 0, -2, -2, -2, 2]
 
         leads = self.env["mail.test.lead"].create(
@@ -937,7 +861,6 @@ class TestORM(TestActivityCommon):
                 ]
             )
 
-            # grouping by 'activity_state' and 'activity_state' as the progress bar
             domain = [("name", "!=", "")]
             groupby = "activity_state"
             progress_bar = {
@@ -963,16 +886,10 @@ class TestORM(TestActivityCommon):
             self.assertEqual(dict(progressbars), expected_progressbars)
 
     def test_week_grouping(self):
-        """The labels associated to each record in read_progress_bar should match
-        the ones from read_group, even in edge cases like en_US locale on sundays
-        """
         MailTestActivityCtx = self.env["mail.test.activity"].with_context(
             {"lang": "en_US"}
         )
 
-        # Don't mistake fields date and date_deadline:
-        # * date is just a random value
-        # * date_deadline defines activity_state
         with freeze_time("2024-09-24 10:00:00"):
             self.env["mail.test.activity"].create(
                 {
@@ -1021,7 +938,6 @@ class TestORM(TestActivityCommon):
                 },
             }
 
-            # call read_group to compute group names
             groups = MailTestActivityCtx.formatted_read_group(domain, groupby=[groupby])
             progressbars = MailTestActivityCtx.read_progress_bar(
                 domain, group_by=groupby, progress_bar=progress_bar
@@ -1029,9 +945,6 @@ class TestORM(TestActivityCommon):
             self.assertEqual(len(groups), 3)
             self.assertEqual(len(progressbars), 3)
 
-        # format the read_progress_bar result to get a dictionary under this
-        # format: {activity_state: group_name}; the original format
-        # (after read_progress_bar) is {group_name: {activity_state: count}}
         pg_groups = {
             next(state for state, count in data.items() if count): group_name
             for group_name, data in progressbars.items()
@@ -1069,9 +982,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_fields_follow_the_activity_being_completed(self):
-        """Completing an activity changes the o2m's membership, which none of
-        these fields used to depend on: they kept showing the completed
-        activity for the rest of the transaction."""
         self.type_todo.sudo().write({"decoration_type": "warning", "icon": "fa-warn"})
         for completion in ("archive", "feedback", "mixin_feedback"):
             with self.subTest(completion=completion):
@@ -1106,9 +1016,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_next_activity_searches_match_the_value_shown(self):
-        """These fields show the *first* activity; searching them used to match
-        *any*, so a record whose next activity is due today answered a filter
-        asking for next month."""
         record = self.env["mail.test.activity"].create({"name": "two activities"})
         today = fields.Date.today()
         self._create_activity(
@@ -1167,8 +1074,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_my_activity_deadline_does_not_double_count(self):
-        """crm and purchase_agreement ship these three filters; one record
-        used to answer both 'Late' and 'Future'."""
         record = self.env["mail.test.activity"].create({"name": "mine"})
         today = fields.Date.today()
         self._create_activity(
@@ -1194,9 +1099,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_searches_ignore_completed_activities(self):
-        """A record whose only activity is done has no responsible and no
-        deadline; the 'is not set' filters used to disagree because the empty
-        test counted archived rows."""
         record = self.env["mail.test.activity"].create({"name": "done only"})
         self._create_activity(record, user_id=self.env.uid).action_feedback()
         self.env.invalidate_all()
@@ -1222,9 +1124,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_exception_decoration_aggregates(self):
-        """Unlike its neighbours this field aggregates: danger outranks
-        warning outranks none. The search has to answer the same, and the icon
-        has to come from the most urgent activity, not the last one seen."""
         urgent = (
             self.env["mail.activity.type"]
             .sudo()
@@ -1294,7 +1193,6 @@ class TestActivityMixinProjection(TestActivityCommon):
             )
         )
 
-        # danger outranks warning, in the field and in the filter
         danger = (
             self.env["mail.activity.type"]
             .sudo()
@@ -1324,9 +1222,6 @@ class TestActivityMixinProjection(TestActivityCommon):
         )
 
     def test_state_is_resolved_the_same_way_everywhere(self):
-        """compute, search and group-by used to be three translations of
-        'today': the group-by fell back on the *reader's* timezone where the
-        other two fall back on UTC."""
         no_tz_user = mail_new_test_user(
             self.env, login="act_no_tz", groups="base.group_user", name="No TZ"
         )
@@ -1357,9 +1252,6 @@ class TestActivityMixinProjection(TestActivityCommon):
                 )
 
     def test_state_survives_a_timezone_postgresql_does_not_know(self):
-        """Odoo's tz dropdown offers every zoneinfo name; PostgreSQL knows a
-        subset. user_tz is denormalised onto the activity, so one user picking
-        a legacy alias used to 500 the activity filters for everybody."""
         self.env.cr.execute("SELECT name FROM pg_timezone_names")
         pg_names = {name for [name] in self.env.cr.fetchall()}
         legacy = sorted(
@@ -1371,10 +1263,6 @@ class TestActivityMixinProjection(TestActivityCommon):
             - pg_names
         )
         if not legacy:
-            # PostgreSQL 18 ships a tz catalogue that covers all of zoneinfo's
-            # names, so there is no legacy alias left to feed the filters. The
-            # guard the test exists for still stands; this environment cannot
-            # exercise it.
             self.skipTest("this PostgreSQL knows every name Odoo's tz list offers")
         victim_tz = "Asia/Calcutta" if "Asia/Calcutta" in legacy else legacy[0]
 
@@ -1397,7 +1285,6 @@ class TestActivityMixinProjection(TestActivityCommon):
                 self.env["mail.activity"]._today_in_tz(victim_tz),
             ),
         )
-        # grouping a plain datetime field is the same trap, one layer down
         self.assertTrue(
             self.env["mail.activity"]
             .with_context(tz=victim_tz)
@@ -1442,8 +1329,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_automation_helpers_return_activities(self):
-        """Every helper answers with a recordset, so a caller can chain on it
-        whatever the context, and 'nothing matched' is distinguishable."""
         record = self.env["mail.test.activity"].create({"name": "returns"})
         xmlids = ["test_mail.mail_act_test_todo"]
         Activity = self.env["mail.activity"]
@@ -1456,8 +1341,6 @@ class TestActivityMixinProjection(TestActivityCommon):
         self.assertEqual(skipped.activity_feedback(xmlids), Activity)
         self.assertEqual(skipped.activity_unlink(xmlids), Activity)
 
-        # a manual activity is not automated, so the helpers must report that
-        # they matched nothing rather than answering True
         manual = self._create_activity(record, automated=False, user_id=self.env.uid)
         self.assertEqual(record.activity_feedback(xmlids), Activity)
         self.assertTrue(manual.active)
@@ -1484,9 +1367,6 @@ class TestActivityMixinProjection(TestActivityCommon):
         "odoo.addons.mail.models.mixin_mail_gateway",
     )
     def test_send_mail_refuses_a_template_of_another_model(self):
-        """A public RPC method, and every internal user may read every
-        template: without this check the composer rendered the *other* model's
-        record of the same id and posted it here."""
         record = self.env["mail.test.activity"].create({"name": "templated"})
         foreign = (
             self.env["mail.template"]
@@ -1520,10 +1400,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_send_mail_needs_the_chatter_not_the_activities(self):
-        """It posts a message from a template and reads nothing from the
-        activity side, so it belongs to mixin.mail.thread. A model with the
-        chatter and no activities must be able to call it, which is the whole
-        reason it moved."""
         record = self.env["mail.performance.thread"].create({"name": "threaded"})
         self.assertFalse(
             isinstance(record, self.env.registry["mixin.mail.activity"]),
@@ -1544,12 +1420,6 @@ class TestActivityMixinProjection(TestActivityCommon):
         self.assertTrue(record.activity_send_mail(template.id))
         self.assertEqual(record.message_ids[0].subject, "About threaded")
 
-        # the move widens which models expose this RPC, so pin what stops it
-        # widening who: mail.template is readable to base.group_user and up, and
-        # the browse here is not sudoed. Invalidate first -- the sudoed create
-        # above left the template in cache, and a cached read never reaches the
-        # rule, so without this the refusal comes from somewhere else entirely
-        # and the assertion passes while pinning nothing.
         portal = mail_new_test_user(
             self.env(su=True), login="send_portal", groups="base.group_portal"
         )
@@ -1559,9 +1429,6 @@ class TestActivityMixinProjection(TestActivityCommon):
             record.sudo(False).with_user(portal).activity_send_mail(template.id)
 
     def test_activity_fields_are_reserved_to_employees(self):
-        """All ten of them, not seven: three used to be ungrouped, and the
-        related one among those was readable by a portal user through the
-        restricted o2m."""
         Model = self.env["mail.test.activity"]
         activity_fields = [
             "activity_ids",
@@ -1592,11 +1459,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_state_search_ignores_values_the_field_cannot_hold(self):
-        """The ORM does not check selection values in a domain, so anything can
-        arrive here -- a stale saved filter, a hand-written URL, or 'done',
-        which mail.activity really does have and this projection does not.
-        Indexing a lookup table by the value answered all of those with a
-        KeyError, through search, web_search_read and read_group alike."""
         record = self.env["mail.test.activity"].create({"name": "state"})
         self._create_activity(record, user_id=self.env.uid)
         self.env.invalidate_all()
@@ -1618,10 +1480,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_next_deadline_searches_match_the_minimum(self):
-        """These filters read the *first* activity's deadline, which is the
-        smallest one, so each operator has to answer about that minimum and not
-        about any activity: a record whose next deadline is today must not
-        answer '> today' just because it also has an activity next month."""
         Model = self.env["mail.test.activity"]
         today = fields.Date.today()
         record = Model.create({"name": "spread"})
@@ -1683,9 +1541,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_state_search_reads_each_activity_in_its_own_timezone(self):
-        """The state comparison is per activity, against the day it is in the
-        assignee's timezone -- not against one server-wide 'today'. Two records
-        an hour apart on the date line must disagree."""
         Model = self.env["mail.test.activity"]
         Activity = self.env["mail.activity"].sudo()
         east = mail_new_test_user(
@@ -1721,11 +1576,6 @@ class TestActivityMixinProjection(TestActivityCommon):
 
     @users("employee")
     def test_res_name_follows_display_name_not_just_rec_name(self):
-        """mail.activity.res_name is a stored copy of the document's
-        display_name, across a reference @api.depends cannot follow, so write()
-        refreshes it by hand. Keying that off _rec_name alone missed every model
-        that computes its display name from something else: reparenting a
-        contact rewrites it without touching `name`."""
         partner = self.env["res.partner"].sudo()
         company = partner.create({"name": "ACME Corp", "is_company": True})
         contact = partner.create({"name": "Jane"})
@@ -1809,15 +1659,11 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         )
 
     def assertProjectionIsFresh(self, record, because):
-        """What the record reports must survive dropping the cache."""
         seen = self._projection(record)
         self.env.invalidate_all()
         self.assertEqual(seen, self._projection(record), because)
 
     def test_projection_follows_a_newly_scheduled_earlier_activity(self):
-        """Scheduling is the common case, and it reorders as surely as a
-        reschedule does: the ORM appends to the cached one2many rather than
-        inserting in _order, so whoever trusts that order keeps the old head."""
         record = self.env["mail.test.activity"].create({"name": "schedule"})
         record.activity_schedule(
             "mail.mail_activity_data_todo",
@@ -1867,9 +1713,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(record.activity_summary, "LATE")
 
     def test_projection_matches_the_search_after_a_reschedule(self):
-        """The searches resolve the first activity in SQL over columns the
-        domain layer never sees, so they need their own flush; without it the
-        record and the search disagree inside one transaction."""
         record = self.env["mail.test.activity"].create({"name": "search-agree"})
         self._activity(record, date(2030, 1, 1), "FIRST")
         late = self._activity(
@@ -1890,9 +1733,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertNotIn(record, Model.search([("activity_summary", "=", "FIRST")]))
 
     def test_projection_ignores_completed_activities_in_any_context(self):
-        """activity_ids honours active_test; the projections declare no context
-        dependency, so one read under active_test=False used to cache a
-        completed activity as "next" for the whole transaction."""
         record = self.env["mail.test.activity"].create({"name": "ctx"})
         done = self._activity(record, date(2020, 1, 1), "DONE")
         self._activity(record, date(2035, 1, 1), "OPEN", activity_type=self.type_todo)
@@ -1911,8 +1751,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         )
 
     def test_activity_state_groups_through_a_many2one(self):
-        """_read_group_groupby is handed the alias the caller joined this model
-        under, which is not self._table once the model is a many2one's comodel."""
         partner = self.env["res.partner"].create({"name": "grouped"})
         lead = self.env["mail.test.lead"].create(
             {"name": "lead", "partner_id": partner.id}
@@ -1931,9 +1769,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(groups, [("planned", 1)])
 
     def test_activity_order_through_a_many2one_inside_read_group(self):
-        """Ordering a read_group through a many2one needs both halves of the
-        ORM contract: the caller's alias, and a term Postgres will accept next
-        to a GROUP BY -- wrapped in an aggregate or added to the grouping."""
         partner = self.env["res.partner"].create({"name": "ordered"})
         self.env["mail.test.lead"].create({"name": "lead", "partner_id": partner.id})
         partner_cls = type(self.env["res.partner"])
@@ -1951,9 +1786,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(groups, [(partner, 1)])
 
     def test_schedule_never_mixes_two_activity_types(self):
-        """The xml id decides the type AND the summary/note/assignee defaults, so
-        an activity_type_id in **act_values must not swap the type out from
-        under the defaults copied from the other one."""
         record = self.env["mail.test.activity"].create({"name": "conflict"})
         self.type_todo.write({"summary": "TODO-SUMMARY"})
         activity = record.activity_schedule(
@@ -1968,10 +1800,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(activity.activity_type_id, self.type_call)
 
     def test_projection_stays_one_query_per_batch(self):
-        """The projections resolve the head of the open activities in Python, so
-        they are one prefetch group away from an N+1: filtered() narrows the
-        prefetch ids to the matches, and every later field read then costs one
-        query per record. Pin the batch shape, not a wall-clock number."""
         records = self.env["mail.test.activity"].create(
             [{"name": f"batch-{i}"} for i in range(50)]
         )
@@ -2014,12 +1842,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(set(expected.mapped("date_deadline")), {today})
 
     def test_projection_survives_an_activity_without_a_deadline(self):
-        """date_deadline is required, so only an unsaved activity can hold False
-        for it -- a cache state the field permits and `required=` does not reach.
-        The sort key was a bare tuple, so it compared a date against a bool and
-        raised, taking all six projected fields down with it. No view in the tree
-        puts activity_ids in an editable one2many today, so this pins a legal
-        cache state rather than a live path."""
         record = self.env["mail.test.activity"].create({"name": "pending"})
         self._activity(record, date(2030, 1, 1), "first")
         self._activity(record, date(2030, 1, 2), "second")
@@ -2033,8 +1855,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(activities.mapped("summary"), ["first", "second"])
         activities[0].date_deadline = False
 
-        # the one still carrying a deadline is the head; the unset one ranks
-        # last, the way NULLS LAST ranks it in SQL
         self.assertEqual(onchanging.activity_summary, "second")
         self.assertEqual(onchanging.activity_date_deadline, date(2030, 1, 2))
         self.assertEqual(onchanging.activity_state, "planned")
@@ -2043,9 +1863,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mixin_mail_activity")
     def test_schedule_refuses_an_activity_type_of_another_model(self):
-        """activity_type_id's own domain is `res_model in (False, res_model)`.
-        Scheduling from code used to warn about a type bound elsewhere and then
-        write it anyway, which is the one path that could break that domain."""
         foreign = self.env["mail.activity.type"].create(
             {"name": "foreign", "res_model": "res.partner"}
         )
@@ -2072,10 +1889,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mixin_mail_activity")
     def test_an_xmlid_of_another_model_is_not_an_activity_type(self):
-        """_xmlid_to_res_id answers with the target's id whatever model owns it:
-        a mistyped xml id used to be browsed as mail.activity.type, raising
-        MissingError -- or, where a type happened to carry the same id, silently
-        scheduling that one."""
         partner = self.env["res.partner"].create({"name": "not a type"})
         self.env["ir.model.data"].create(
             {
@@ -2098,11 +1911,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         )
 
     def test_reschedule_with_nothing_to_change_does_not_write(self):
-        """activity_reschedule(xmlids) with neither a deadline nor an assignee
-        reached write({}). That costs no query and does not move write_date --
-        measured, 0 and unchanged -- so asserting on either pins nothing; what
-        it does reach is check_access("write"), for a write of no values. Assert
-        the call itself, which is the whole of what the guard removes."""
         record = self.env["mail.test.activity"].create({"name": "noop"})
         activity = record.activity_schedule(
             "test_mail.mail_act_test_todo", user_id=self.env.uid
@@ -2116,16 +1924,12 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
             )
             write.assert_not_called()
 
-        # and it still writes when there is something to write
         record.activity_reschedule(
             ["test_mail.mail_act_test_todo"], date_deadline=date(2030, 1, 1)
         )
         self.assertEqual(activity.date_deadline, date(2030, 1, 1))
 
     def test_unlink_answers_with_what_it_removed(self):
-        """The helpers all answer with a recordset so "nothing matched" stays
-        distinguishable from "matched and acted". unlink cannot hand back live
-        records, so pin what the caller does get: ids, and nothing else."""
         record = self.env["mail.test.activity"].create({"name": "gone"})
         activity = record.activity_schedule(
             "test_mail.mail_act_test_todo", user_id=self.env.uid
@@ -2134,11 +1938,9 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(removed.ids, activity.ids)
         self.assertFalse(removed.exists())
         with self.assertRaises(exceptions.MissingError):
-            removed.summary  # reading one is the thing being pinned
+            removed.summary
 
     def test_my_next_activity_is_the_next_one_filtered_by_assignee(self):
-        """_my_next_activity is _next_activity with an assignee, and both must
-        answer from the same ordering -- they used to be two implementations."""
         record = self.env["mail.test.activity"].create({"name": "mine"})
         theirs = self._activity(record, date(2030, 1, 1), "theirs", self.other_user)
         mine = self._activity(record, date(2030, 1, 2), "mine")
@@ -2159,10 +1961,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         )
 
     def test_the_next_activity_breaks_a_tied_deadline_on_id(self):
-        """`_next_activity` takes the minimum of (deadline, id) in one pass
-        rather than sorting, so the tiebreak has to be pinned separately from
-        the ordering: a total order and its first element agree only while the
-        second component is honoured."""
         record = self.env["mail.test.activity"].create({"name": "tied"})
         same_day = date(2030, 6, 1)
         first = self._activity(record, same_day, "first")
@@ -2189,7 +1987,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         )
 
     def test_completing_the_head_advances_to_the_next(self):
-        """The projection follows the minimum, not a cached first element."""
         record = self.env["mail.test.activity"].create({"name": "advance"})
         head = self._activity(record, date(2030, 1, 1), "head")
         tail = self._activity(record, date(2030, 2, 1), "tail")
@@ -2204,8 +2001,6 @@ class TestNextActivityProjectionAgreement(TestActivityCommon):
         self.assertEqual(record.activity_date_deadline, date(2030, 2, 1))
 
     def test_display_name_roots_expand_a_root_first_seen_through_a_path(self):
-        """`roots` is the answer, not the visited marker: a field reached first
-        through a dotted dependency still owns dependencies of its own."""
         fnames = self.env["res.partner"]._display_name_field_names()
         self.assertIn("name", fnames)
         self.assertIn("parent_id", fnames)
@@ -2235,7 +2030,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
             {
                 "res_model_id": model_id,
                 "res_id": record.id,
-                # a tight range guarantees ties on date_deadline
                 "date_deadline": today + timedelta(days=rng.randint(-3, 3)),
                 "summary": rng.choice(["a", "b", False]),
                 "user_id": rng.choice(users).id,
@@ -2345,10 +2139,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
     def test_read_group_order_and_decoration_agree_on_a_randomised_population(
         self,
     ):
-        """The sibling property test pins compute against search. Three more
-        translations of the same projection ship in this mixin -- the groupby
-        SQL, the ordering SQL and the exception decoration -- and each was
-        pinned only by a hand-built fixture."""
         Model = self.env["mail.test.activity"]
         Activity = self.env["mail.activity"]
         model_id = self.env["ir.model"]._get_id("mail.test.activity")
@@ -2390,7 +2180,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
             }
             for record in records
         }
-        # a population that only ever produced one value would pin nothing
         for field in truth[records[0].id]:
             self.assertGreater(
                 len({values[field] for values in truth.values()}),
@@ -2443,8 +2232,6 @@ class TestNextActivityProjectionProperties(TestActivityCommon):
                         sorted(dated, reverse=direction == "desc"),
                         "ORDER BY must rank the way the field reads",
                     )
-                    # a record with no activity has no deadline: last either
-                    # way, which is why the mixin forces NULLS LAST
                     self.assertEqual(
                         seen,
                         dated + [False] * (len(seen) - len(dated)),
@@ -2457,9 +2244,6 @@ class TestNextActivityInvariants(TestActivityCommon):
     """Assumptions the activity projection rests on and nothing else asserts."""
 
     def test_activity_state_ordering_agrees_with_the_compute(self):
-        """compute, search and group-by are pinned against each other already;
-        the ordering hook is a fourth translation of the same 'today' and was
-        not."""
         zones = ("UTC", "Pacific/Kiritimati", "Asia/Kathmandu", "Pacific/Midway")
         records = self.env["mail.test.activity"]
         model_id = self.env["ir.model"]._get_id("mail.test.activity")
@@ -2500,11 +2284,6 @@ class TestNextActivityInvariants(TestActivityCommon):
                 )
 
     def test_the_state_aggregate_is_built_once_per_query(self):
-        """_sql_state embeds the current day, and read_progress_bar joins the
-        state aggregate twice against one Query. Rebuilding it renders different
-        SQL the moment the two calls land either side of a midnight, and
-        Query.add_join refuses the alias -- a 500 on the kanban progress bar,
-        once a day, for whoever is unlucky."""
         Activity = self.env["mail.activity"]
         model_id = self.env["ir.model"]._get_id("mail.test.activity")
         record = self.env["mail.test.activity"].create({"name": "midnight"})
@@ -2538,11 +2317,8 @@ class TestNextActivityInvariants(TestActivityCommon):
                 group_by="activity_state",
                 progress_bar=progress_bar,
             )
-        # one "today" for the whole query, so the two uses cannot disagree
         self.assertEqual(sum(sum(v.values()) for v in counts.values()), 1)
 
-        # ordering by state and by deadline in one query is the same shape:
-        # both columns come off the one aggregate, built with one "today"
         with patch.object(type(Activity), "_now", rolling):
             ordered = self.env["mail.test.activity"].search(
                 [("id", "=", record.id)],
@@ -2551,9 +2327,6 @@ class TestNextActivityInvariants(TestActivityCommon):
         self.assertEqual(ordered, record)
 
     def test_state_and_deadline_share_one_aggregate_join(self):
-        """State and deadline used to each build their own GROUP BY over the
-        same activity rows. One join carries both; only the assignee's own
-        deadline, keyed on the user, is a second one."""
         Model = self.env["mail.test.activity"]
         query = Model._search([], order="activity_state, activity_date_deadline")
         self.assertEqual(query.from_clause.code.count("GROUP BY res_id"), 1)
@@ -2568,10 +2341,6 @@ class TestNextActivityInvariants(TestActivityCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_next_activity_search_does_not_widen_access(self):
-        """The next-activity subquery runs with bypass_access, mirroring
-        activity_ids' bypass_search_access: the document governs access, and the
-        outer search applies its rules. Searching by a projected field must
-        therefore never return a record that a plain search would not."""
         model_id = self.env["ir.model"]._get_id("mail.test.activity")
         employee = mail_new_test_user(
             self.env, login="acc_employee", groups="base.group_user"
@@ -2599,8 +2368,6 @@ class TestNextActivityInvariants(TestActivityCommon):
         for user, reachable in (
             (self.env.user, set(records.ids)),
             (employee, set(records.ids)),
-            # activity_summary is groups="base.group_user", so portal is refused
-            # the field outright -- narrower than the document, never wider
             (portal, None),
         ):
             with self.subTest(user=user.login):

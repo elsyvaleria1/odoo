@@ -153,7 +153,6 @@ _started: list[MemoryWatch] = []
 
 
 def _restart_in_child() -> None:
-    # a forked worker inherits the watch but not its thread
     for watch in _started:
         watch._thread = None
         watch.start()

@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -45,7 +44,6 @@ class TestLoyaltyBatching(TransactionCase):
         return self.env.cr.sql_statement_count - before
 
     def test_resolving_discounted_products_costs_one_search(self):
-        """`all_discount_product_ids` used to search once per reward."""
         small, large = self._rewards(2), self._rewards(20)
         self._queries(lambda: small.mapped("all_discount_product_ids"))
 
@@ -60,12 +58,6 @@ class TestLoyaltyBatching(TransactionCase):
         )
 
     def test_the_batched_products_are_the_ones_a_search_would_find(self):
-        """Cheaper is worthless if it answers differently.
-
-        The batch searches the union of the rewards' domains and applies each
-        reward's own domain in memory, so it has to agree with a per-reward search
-        for every shape a reward can carry.
-        """
         category = self.env["product.category"].create({"name": "Batched cat"})
         child = self.env["product.category"].create(
             {"name": "Batched child", "parent_id": category.id}
@@ -113,7 +105,6 @@ class TestLoyaltyBatching(TransactionCase):
         self.assertIn(deep, batched[rewards[1]], "the category reaches its subtree")
 
     def _product_searches(self, operation):
-        """Count the statements that read `product_product` while `operation` runs."""
         self.env.flush_all()
         self.env.invalidate_all()
         cursor = self.env.cr
@@ -133,13 +124,6 @@ class TestLoyaltyBatching(TransactionCase):
         return sum('FROM "product_product"' in query for query in executed)
 
     def test_describing_rewards_reads_the_products_once(self):
-        """Naming the single product a reward discounts used to search per reward.
-
-        Counted as reads of `product_product` rather than as a total: recomputing
-        `description` still costs one UPDATE per reward, because the field is
-        `translate=True` and stored, and that is a separate question from the search
-        this batches.
-        """
         small, large = self._rewards(2), self._rewards(20)
         self._product_searches(lambda: small.write({"discount": 3}))
 
@@ -155,11 +139,6 @@ class TestLoyaltyBatching(TransactionCase):
         self.assertEqual(large[0].description, "4% on Batched 0")
 
     def test_recomputing_descriptions_stays_linear_in_writes_only(self):
-        """What is left after the search is batched: one UPDATE per reward.
-
-        Recorded rather than fixed. `description` is a stored `translate=True` field
-        whose value this module computes, so each row's jsonb is written on its own.
-        """
         small, large = self._rewards(2), self._rewards(20)
         self._queries(lambda: small.write({"discount": 5}))
 
@@ -175,7 +154,6 @@ class TestLoyaltyBatching(TransactionCase):
         )
 
     def test_the_discount_product_switch_reads_one_vocabulary(self):
-        """The parameter is an on/off flag, and its shipped value means off."""
         Param = self.env["ir.config_parameter"].sudo()
         reward = self._rewards(1)
 

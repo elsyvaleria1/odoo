@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -31,7 +30,6 @@ class TestLoyaltyDescription(TransactionCase):
             cls.env.flush_all()
 
     def _stored(self, reward):
-        """Return the raw jsonb behind `description`, not one language's view of it."""
         self.env.flush_all()
         self.env.cr.execute(
             "SELECT description FROM loyalty_reward WHERE id = %s", (reward.id,)
@@ -51,7 +49,6 @@ class TestLoyaltyDescription(TransactionCase):
         )
 
     def test_the_source_term_is_the_source_language(self):
-        """Creating a reward in Spanish must not make its English text Spanish."""
         if not self.spanish:
             self.skipTest("es_ES is not available in this database")
 
@@ -62,7 +59,6 @@ class TestLoyaltyDescription(TransactionCase):
         self.assertEqual(self._stored(reward)["en_US"], "10% on your order")
 
     def test_each_language_gets_its_own_text_on_recompute(self):
-        """And a recompute fills every installed language, not just the session's."""
         if not self.spanish:
             self.skipTest("es_ES is not available in this database")
         reward = self._reward()
@@ -80,7 +76,6 @@ class TestLoyaltyDescription(TransactionCase):
         self.assertEqual(reward.with_context(lang="es_ES").description, stored["es_ES"])
 
     def test_a_single_language_database_is_unaffected(self):
-        """The common case still writes one term and nothing else."""
         reward = self._reward()
 
         reward.discount = 20
@@ -89,7 +84,6 @@ class TestLoyaltyDescription(TransactionCase):
         self.assertEqual(self._stored(reward)["en_US"], "20% on your order")
 
     def test_the_description_names_one_specific_product(self):
-        """The content the batched product lookup feeds."""
         product = self.env["product.product"].create(
             {"name": "Only one", "type": "consu"}
         )

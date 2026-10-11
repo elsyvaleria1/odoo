@@ -12,8 +12,6 @@ API_URLS = {
     },
 }
 
-# Mapping of currency ISO 4217 codes AsiaPay's currency codes.
-# See https://www.paydollar.com/pdf/op/enpdintguide.pdf for the list of currency codes.
 CURRENCY_MAPPING = {
     "AED": "784",
     "AUD": "036",
@@ -39,8 +37,6 @@ CURRENCY_MAPPING = {
     "VND": "704",
 }
 
-# Mapping of both country codes (e.g., 'es') and IETF language tags (e.g.: 'fr-BE') to AsiaPay
-# language codes. If a language tag is not listed, the country code prefix can serve as fallback.
 LANGUAGE_CODES_MAPPING = {
     "en": "E",
     "zh_HK": "C",
@@ -55,18 +51,14 @@ LANGUAGE_CODES_MAPPING = {
     "vi_VN": "S",
 }
 
-# The codes of the payment methods to activate when Asiapay is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",
     "discover",
 }
 
-# Mapping of payment method codes to AsiaPay codes.
 PAYMENT_METHODS_MAPPING = {
     "alipay": "ALIPAY",
     "alipay_hk": "ALIPAYHKONL",
@@ -124,7 +116,6 @@ PAYMENT_METHODS_MAPPING = {
     "tmb": "TMB",
 }
 
-# The keys of the values to use in the calculation of the signature.
 SIGNATURE_KEYS = {
     "outgoing": [
         "merchant_id",
@@ -145,7 +136,6 @@ SIGNATURE_KEYS = {
     ],
 }
 
-# Mapping of transaction states to AsiaPay success codes.
 SUCCESS_CODE_MAPPING = {
     "done": ("0",),
     "error": ("1",),

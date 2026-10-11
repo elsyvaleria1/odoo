@@ -78,7 +78,7 @@ def float_to_time(hours: float) -> time:
     if not 0.0 <= hours <= 24.0:
         msg = f"hours must be a number in [0.0, 24.0], got {hours!r}"
         raise ValueError(msg)
-    if hours == 24.0:  # noqa: RUF069  exact boundary: 24.0 is representable and the range is already checked
+    if hours == 24.0:
         return time.max
     fractional, integral = math.modf(hours)
     minutes = int(float_round(60 * fractional, precision_digits=0))
@@ -234,7 +234,7 @@ def start_of[D: (date, datetime)](value: D, granularity: Granularity) -> D:
         )
 
     if isinstance(value, datetime):
-        assert isinstance(result, datetime)  # every branch above preserved the class
+        assert isinstance(result, datetime)
         return _existing(
             datetime.combine(result, time.min, value.tzinfo), 0, last=False
         )
@@ -268,15 +268,12 @@ def end_of[D: (date, datetime)](value: D, granularity: Granularity) -> D:
         )
 
     if isinstance(value, datetime):
-        assert isinstance(result, datetime)  # every branch above preserved the class
+        assert isinstance(result, datetime)
         return _existing(datetime.combine(result, time.max, value.tzinfo), 1, last=True)
     return result
 
 
 def _existing(wall: datetime, fold: int, *, last: bool) -> datetime:
-    # fold picks the earlier or later reading of a repeated wall time; a wall
-    # time in a gap is clamped to the gap's edge instead, the transition for a
-    # period's first instant and the instant before it for its last
     tz = wall.tzinfo
     if not isinstance(tz, ZoneInfo):
         return wall
@@ -296,8 +293,6 @@ def _read_past_gap(wall: datetime) -> datetime:
 
 
 def _hour_bound(value: datetime, wall: datetime, *, last: bool = False) -> datetime:
-    # a bound repeated by a fold reads with the value's own offset when it can;
-    # when the offset changed between them, the hour is cut where it changed
     bound = _existing(wall, value.fold, last=last)
     if bound.utcoffset() == value.utcoffset():
         return bound
@@ -312,10 +307,6 @@ def _hour_bound(value: datetime, wall: datetime, *, last: bool = False) -> datet
 
 
 def _offset_change(earlier: datetime, later: datetime) -> datetime:
-    # the first instant, in UTC, that reads with later's offset, between two
-    # instants an offset change separates; a fold or gap that is not a whole
-    # hour cuts the hour holding it in two there, so hours still partition
-    # time. UTC, because arithmetic on a zoned datetime moves its wall clock
     tz = later.tzinfo
     before, after = earlier.astimezone(UTC), later.astimezone(UTC)
     offset_after = later.utcoffset()
@@ -330,8 +321,6 @@ def _offset_change(earlier: datetime, later: datetime) -> datetime:
 
 
 def _gap_transition(wall: datetime) -> datetime:
-    # fold 1 reads a skipped wall time with the offset after the gap, fold 0
-    # with the one before: the two UTC readings bracket the transition
     before = wall.replace(fold=1).astimezone(UTC)
     after = wall.replace(fold=0).astimezone(UTC)
     offset_after = after.astimezone(wall.tzinfo).utcoffset()
@@ -411,10 +400,6 @@ def sub_day_timedelta(step: relativedelta) -> timedelta | None:
 def date_range[D: (date, datetime)](
     start: D, end: D, step: relativedelta = relativedelta(months=1)
 ) -> Iterator[D]:
-    # Each value is start + k steps, never the previous value + one step, so a
-    # monthly range from the 31st lands on the 29th in February and back on the
-    # 31st in March. A step below a day on aware datetimes is exact elapsed time,
-    # stepped in UTC; any other step is local wall time.
     if (
         not isinstance(start, date)
         or not isinstance(end, date)
@@ -438,8 +423,6 @@ def date_range[D: (date, datetime)](
             if mismatched:
                 msg = "Timezones of start argument and end argument seem inconsistent"
                 raise ValueError(msg)
-    # a start one step from the calendar's end is checked on a mid-calendar
-    # stand-in: the step's shape does not depend on where it starts
     probe = start if _steps_within(start, step) else start.replace(year=2000)
     if not isinstance(start, datetime) and type(probe + step) is not type(start):
         msg = "the step interval must add only entire days"
@@ -474,7 +457,6 @@ def _elapsed_range(
     )
     yield start
     k = 1
-    # a step past year 9999 is past any end
     while (instant := _step_or_none(origin, exact, k)) is not None and instant <= bound:
         yield instant if tz is None else instant.astimezone(tz)
         k += 1
@@ -515,8 +497,6 @@ def _wall_range[D: (date, datetime)](
         wall_start, wall_end = start.replace(tzinfo=None), end.replace(tzinfo=None)
         end_instant, last_instant = end.astimezone(UTC), start.astimezone(UTC)
     yield start
-    # an absolute field (day=31, weekday=FR) can land k steps on the value k-1
-    # steps reached; that value is skipped, and the relative part moves on
     previous = wall_start
     k = 0
     while (
@@ -528,8 +508,6 @@ def _wall_range[D: (date, datetime)](
         if end_instant is None or not isinstance(wall, datetime):
             yield wall
             continue
-        # a wall time inside a DST gap reads as the instant after it, which
-        # can pass the end or repeat the value before (02:00 and 03:00 alike)
         assert isinstance(wall, datetime)
         value = _read_past_gap(wall.replace(tzinfo=tz))
         instant = value.astimezone(UTC)
@@ -541,8 +519,6 @@ def _wall_range[D: (date, datetime)](
 
 
 def elapsed_hours(start: datetime, stop: datetime) -> float:
-    # two datetimes of one tzinfo subtract by the wall clock: a day of a
-    # daylight-saving switch would read 24 hours
     if start.tzinfo is not None and stop.tzinfo is not None:
         start, stop = start.astimezone(UTC), stop.astimezone(UTC)
     return (stop - start).total_seconds() / 3600
@@ -566,8 +542,6 @@ def weeknumber(locale: babel.Locale, date: date) -> tuple[int, int]:
 
 
 def _first_week_start(year: int, first_week_day: int, min_week_days: int) -> int:
-    # a day ordinal: the first week of year 1 begins in 1 BC, and the year
-    # after 9999 is asked about, neither of which a date can hold
     new_year = _new_year_ordinal(year)
     start = new_year - (new_year - 1 - first_week_day) % 7
     if 7 - (new_year - start) < min_week_days:
@@ -596,18 +570,6 @@ real_cpu_time = _time.thread_time
 real_datetime_now = datetime.now
 
 
-# Two shapes of schedule. A cadence is every N units from a start: below a day
-# it steps exact elapsed time, from a day up it steps local wall time, so a
-# daily 02:00 job stays at 02:00 across a DST change. An anchored schedule is
-# fixed points inside a period, and a day past the end of a short month is
-# clamped to its last day -- what leave accrual has always done, and what
-# iCalendar's BYMONTHDAY does not: it skips the month instead.
-#
-# An anchor's occurrence is a boundary: the period it closes ends at the start of
-# that day. A last-day anchor is the one exception to how a day is named. Its
-# boundary is the first day of the following month, so the period it closes is
-# the whole calendar month, but the day it names is the month's last day, which
-# anchor_day returns.
 
 _EXACT_UNITS: dict[TimeUnit, str] = {"minute": "minutes", "hour": "hours"}
 _ANCHOR_UNITS = frozenset({"day", "week", "month", "year"})
@@ -643,18 +605,12 @@ def occurrences_after[D: (date, datetime)](
             yield start + k * step
             k += 1
 
-    # Each occurrence is start + k units, never the previous one + 1 unit: a
-    # series started on the 31st lands on the 28th in February and back on the
-    # 31st in March, instead of staying on the 28th for good.
     delta = get_timedelta(interval, unit)
     local_start: date = start
     local_after: date = after
     if tz is not None and isinstance(start, datetime) and isinstance(after, datetime):
         local_start = start.replace(tzinfo=UTC).astimezone(tz)
         local_after = after.replace(tzinfo=UTC).astimezone(tz)
-    # One period short of the whole periods elapsed is strictly before `after`
-    # whatever a short month clamps, so the walk starts there instead of at the
-    # first occurrence of a series that may be years old.
     k = max(0, _count_elapsed_units(local_start, local_after, unit) // interval - 1)
     while True:
         candidate: Any = local_start + delta * k

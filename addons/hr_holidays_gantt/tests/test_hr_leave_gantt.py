@@ -5,11 +5,6 @@ from odoo.addons.hr_holidays.tests.common import TestHolidayContract
 
 class TestHrLeaveGantt(TestHolidayContract):
     def test_gantt_view_without_schedule(self):
-        """
-        Test that the Time Off Gantt view works correctly even
-        when an employee contract has no working schedule set.
-        """
-        # Remove the working schedule (resource calendar) from the employee's contract
         self.contract_cdi.write(
             {
                 "date_start": datetime.strptime("2025-01-01", "%Y-%m-%d").date(),
@@ -18,14 +13,12 @@ class TestHrLeaveGantt(TestHolidayContract):
             }
         )
 
-        # Create a time off for the employee
         start = datetime.strptime("2025-11-11 07:00:00", "%Y-%m-%d %H:%M:%S")
         end = datetime.strptime("2025-11-11 18:00:00", "%Y-%m-%d %H:%M:%S")
         self.create_leave(
             start, end, name="Doctor Appointment", employee_id=self.jules_emp.id
         )
 
-        # Get the Gantt overview data for employees's time off data
         start_date = "2025-11-01 00:00:00"
         stop_date = "2025-11-30 00:00:00"
         gantt_domain = [("employee_id.active", "=", True)]

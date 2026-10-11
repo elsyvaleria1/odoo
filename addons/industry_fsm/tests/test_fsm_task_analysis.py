@@ -17,8 +17,6 @@ class TestFsmTaskAnalysis(TestIndustryFsmCommon):
         self.task.write(
             {
                 "user_ids": [Command.set([self.george_user.id])],
-                # remaining_hours and progress read the estimate (planned_hours);
-                # allocated_hours is the commitment derived from the reservations.
                 "planned_hours": 16,
                 "timesheet_ids": [
                     Command.create(
@@ -45,8 +43,6 @@ class TestFsmTaskAnalysis(TestIndustryFsmCommon):
             }
         )
 
-        # As the value of lead_time_days might change depending on the calendar (holidays, weekend)
-        # as well as the time of execution, we use an assertTrue instead of an assertEqual.
         self.assertTrue(self.task.lead_time_days)
         self.assertTrue(self.task.lead_time_hours)
         self.assertTrue(self.task.queue_time_days)
@@ -64,7 +60,6 @@ class TestFsmTaskAnalysis(TestIndustryFsmCommon):
                 "queue_time_hours",
             ]
         )[0]
-        # flush before accessing an SQL view...
         self.env.flush_all()
         task_report = self.env["report.project.task.user"].search_read(
             [("project_id", "=", self.fsm_project.id), ("task_id", "=", self.task.id)],

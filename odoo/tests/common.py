@@ -87,10 +87,6 @@ __all__ = [
 
 
 def request_stand_in(**attributes: Any) -> DotDict:
-    # a pushed stand-in for odoo.http.request: the per-request state
-    # Request.__init__ creates fresh, which framework code reads without a test
-    # setting it (asset rendering keeps its page state in attempt_scratch),
-    # then what the test sets; an attribute neither names reads as None
     return DotDict(
         {
             "scratch": types.SimpleNamespace(),
@@ -230,8 +226,6 @@ def new_test_user(env, login="", groups="base.group_user", context=None, **kwarg
             create_values["email"] = f"{login[0]}.{login[0]}@example.com"
     if "company_id" in create_values and "company_ids" not in create_values:
         create_values["company_ids"] = [(4, create_values["company_id"])]
-    # the user reads in the language and dates in the zone of the environment the
-    # test runs in, not in whatever ir.default an installed module gives new partners
     create_values.setdefault(
         "lang", context.get("lang") or env.context.get("lang") or "en_US"
     )
@@ -307,14 +301,6 @@ def warmup(func: Callable, /) -> Callable:
         self.env.flush_all()
         self.env.invalidate_all()
         self.warm = False
-        # Two cold passes. Recomputing an ormcached method loads records as a side
-        # effect, so the pass that fills the ormcache does not take the path the
-        # steady state takes: it finds in the record cache what a later run has to
-        # fetch, and never caches what that fetch needs (the rule domain of the
-        # model, say). Whether the first pass recomputes depends on what ran
-        # before the test, which made a pinned count read one higher inside a
-        # suite than alone. The second pass starts from a full ormcache and an
-        # empty record cache, like the measured one.
         for cold_pass in (1, 2):
             with (
                 _debug.perf(
@@ -463,7 +449,7 @@ class freeze_time:
     stop = __exit__
 
 
-freezegun.freeze_time = freeze_time  # type: ignore[assignment]
+freezegun.freeze_time = freeze_time
 
 _HTTP_EXPORTS = ("HttpCase", "JsonRpcException", "Opener", "Transport")
 """Names this module publishes on behalf of :mod:`odoo.tests.http`."""

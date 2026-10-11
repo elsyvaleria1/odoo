@@ -48,36 +48,28 @@ class TestAccessRights(TransactionCase):
             return data[0][field]
         return [r[field] for r in data]
 
-    # don't spam logs with ACL failures from portal
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_privacy(self):
         event = self.create_event(
             self.john, privacy="private", name="my private event", location="in the Sky"
         )
         for user, field, expect, error in [
-            # public field, any employee can read
             (self.john, "privacy", "private", None),
             (self.george, "privacy", "private", None),
             (self.raoul, "privacy", "private", None),
             (self.portal, "privacy", None, AccessError),
-            # substituted private field, only owner and invitees can read, other
-            # employees get substitution
             (self.john, "name", "my private event", None),
             (self.george, "name", "my private event", None),
             (self.raoul, "name", "Busy", None),
             (self.portal, "name", None, AccessError),
-            # computed from private field
             (self.john, "display_name", "my private event", None),
             (self.george, "display_name", "my private event", None),
             (self.raoul, "display_name", "Busy", None),
             (self.portal, "display_name", None, AccessError),
-            # non-substituted private field, only owner and invitees can read,
-            # other employees get an empty field
             (self.john, "location", "in the Sky", None),
             (self.george, "location", "in the Sky", None),
             (self.raoul, "location", False, None),
             (self.portal, "location", None, AccessError),
-            # non-substituted sequence field
             (self.john, "partner_ids", self.george.partner_id, None),
             (self.george, "partner_ids", self.george.partner_id, None),
             (self.raoul, "partner_ids", self.env["res.partner"], None),
@@ -105,7 +97,6 @@ class TestAccessRights(TransactionCase):
             privacy="public",
             location="In Hell",
         )
-        # invalidate cache before reading, otherwise read() might leak private data
         self.env.invalidate_all()
         [private_location, public_location] = self.read_event(
             self.raoul, private + public, "location"
@@ -158,11 +149,6 @@ class TestAccessRights(TransactionCase):
         self.assertTrue(data, "It should be able to read group")
 
     def test_message_access_is_one_rule_both_ways(self):
-        """Reading a private event's messages needs write access, unless invited.
-
-        `_mail_operation_domains` defines it once; the per-record answer and the
-        domain the activity guard searches with must pick the same events.
-        """
         events = self.create_event(
             self.john, privacy="private", name="private"
         ) + self.create_event(self.john, privacy="public", name="public")
@@ -201,10 +187,8 @@ class TestAccessRights(TransactionCase):
             self.read_event(self.portal, event, "location")
 
     def test_meeting_edit_access_notification_handle_in_odoo(self):
-        # set notifications to "handle in Odoo" in Preferences for john, raoul, and george
         (self.john | self.raoul | self.george).write({"notification_type": "inbox"})
 
-        # raoul creates a meeting for john, excluding themselves
         meeting = (
             self.env["calendar.event"]
             .with_user(self.raoul)
@@ -219,10 +203,6 @@ class TestAccessRights(TransactionCase):
             )
         )
 
-        # george tries to modify the start date of the meeting to a future date
-        # this verifies that users with "handle in Odoo" notification setting can
-        # successfully edit meetings created by other users. If this write fails,
-        # it indicates that there might be an issue with access rights for meeting attendees.
         meeting = meeting.with_user(self.george)
         new_start = datetime.now() + timedelta(days=2)
         new_stop = datetime.now() + timedelta(days=2, hours=2)
@@ -239,15 +219,12 @@ class TestAccessRights(TransactionCase):
         )
 
     def test_event_default_privacy_as_private(self):
-        """Check the privacy of events with owner's event default privacy as 'private'."""
-        # Set organizer default privacy as 'private' and create event privacies default, public, private and confidential.
         self.george.with_user(self.george).calendar_default_privacy = "private"
         default_event = self.create_event(self.george)
         public_event = self.create_event(self.george, privacy="public")
         private_event = self.create_event(self.george, privacy="private")
         confidential_event = self.create_event(self.george, privacy="confidential")
 
-        # With another user who is not an event attendee, try accessing the events.
         query_default_event = (
             self.env["calendar.event"]
             .with_user(self.raoul)
@@ -269,7 +246,6 @@ class TestAccessRights(TransactionCase):
             ._read_group([("id", "=", confidential_event.id)], groupby=["name"])
         )
 
-        # Ensure that each event is accessible or not according to its privacy.
         self.assertFalse(
             query_default_event,
             "Event must be inaccessible because the user has default privacy as 'private'.",
@@ -286,10 +262,6 @@ class TestAccessRights(TransactionCase):
         )
 
     def test_edit_private_event_of_other_user(self):
-        """
-        Ensure that it is not possible editing the private event of another user when the current user is not an
-        attendee/organizer of that event. Attendees should be able to edit it, others will receive AccessError on write.
-        """
 
         def ensure_user_can_update_event(self, event, user):
             event.with_user(user).write({"name": user.name})
@@ -299,14 +271,12 @@ class TestAccessRights(TransactionCase):
                 "Event name should be updated by user %s" % user.name,
             )
 
-        # Prepare events attendees/partners including organizer (john) and another user (raoul).
         events_attendees = [
             (0, 0, {"partner_id": self.john.partner_id.id, "state": "accepted"}),
             (0, 0, {"partner_id": self.raoul.partner_id.id, "state": "accepted"}),
         ]
         events_partners = [self.john.partner_id.id, self.raoul.partner_id.id]
 
-        # Set calendar default privacy as private and create a normal event, only attendees/organizer can edit it.
         self.john.with_user(self.john).calendar_default_privacy = "private"
         johns_default_privacy_event = self.create_event(
             self.john,
@@ -331,7 +301,6 @@ class TestAccessRights(TransactionCase):
                 {"name": "blocked-update-by-non-attendee"}
             )
 
-        # Set calendar default privacy as public and create a private event, only attendees/organizer can edit it.
         self.john.with_user(self.john).calendar_default_privacy = "public"
         johns_private_event = self.create_event(
             self.john,
@@ -358,11 +327,6 @@ class TestAccessRights(TransactionCase):
             )
 
     def test_admin_cant_fetch_uninvited_private_events(self):
-        """
-        Administrators must not be able to fetch information from private events which
-        they are not attending (i.e. events which it is not an event partner). The privacy
-        of the event information must always be kept. Public events can be read normally.
-        """
         john_private_evt = self.create_event(
             self.john,
             name="priv",
@@ -375,7 +339,6 @@ class TestAccessRights(TransactionCase):
         )
         self.env.invalidate_all()
 
-        # For the private event, ensure that no private field can be read, such as: 'name', 'location' and 'description'.
         for field, value in [
             ("name", "Busy"),
             ("location", False),
@@ -391,7 +354,6 @@ class TestAccessRights(TransactionCase):
                 % field,
             )
 
-        # For the public event, ensure that the same fields can be read by the admin.
         for field, value in [
             ("name", "pub"),
             ("location", "loc_2"),
@@ -403,9 +365,6 @@ class TestAccessRights(TransactionCase):
                 "The field '%s' information must be readable by the admin." % field,
             )
 
-        # The description is rendered HTML; assert on the organizer/contact
-        # substrings it must contain rather than the exact markup, so an
-        # unrelated template change doesn't break this privacy test.
         description = self.read_event(self.admin_user, john_public_evt, "description")
         for expected_substring in ("pub", "j.j@example.com", "g.g@example.com"):
             self.assertIn(
@@ -415,10 +374,6 @@ class TestAccessRights(TransactionCase):
             )
 
     def test_admin_cant_edit_uninvited_private_events(self):
-        """
-        Administrators must not be able to edit private events that they are not attending.
-        The event is property of the organizer and its attendees only (for private events in the backend).
-        """
         john_private_evt = self.create_event(
             self.john,
             name="priv",
@@ -427,27 +382,20 @@ class TestAccessRights(TransactionCase):
             description="priv",
         )
 
-        # Ensure that uninvited admin can not edit the event since it is not an event partner (attendee).
         with self.assertRaises(AccessError):
             john_private_evt.with_user(self.admin_user)._compute_user_can_edit()
 
-        # Ensure that AccessError is raised when trying to update the uninvited event.
         with self.assertRaises(AccessError):
             john_private_evt.with_user(self.admin_user).write(
                 {"name": "forbidden-update"}
             )
 
     def test_admin_edit_uninvited_non_private_events(self):
-        """
-        Administrators must be able to edit (public, confidential) events that they are not attending.
-        This feature is widely used for customers since it is useful editing normal user's events on their behalf.
-        """
         for privacy in ["public", "confidential"]:
             john_event = self.create_event(
                 self.john, name="event", privacy=privacy, location="loc"
             )
 
-            # Ensure that uninvited admin can edit this type of event.
             john_event.with_user(self.admin_user)._compute_user_can_edit()
             self.assertTrue(
                 john_event.user_can_edit,
@@ -461,11 +409,6 @@ class TestAccessRights(TransactionCase):
             )
 
     def test_hide_sensitive_fields_private_events_from_uninvited_admins(self):
-        """
-        Ensure that it is not possible fetching sensitive fields for uninvited administrators,
-        i.e. admins who are not attendees of private events. Sensitive fields are fields that
-        could contain sensitive information, such as 'name', 'description', 'location', etc.
-        """
         sensitive_fields = {
             "name",
             "location",
@@ -478,7 +421,6 @@ class TestAccessRights(TransactionCase):
             "videocall_location",
         }
 
-        # Create event with all sensitive fields defined on it.
         john_private_evt = self.create_event(
             self.john,
             name="private-event",
@@ -490,8 +432,6 @@ class TestAccessRights(TransactionCase):
         )
         john_private_evt.message_post(body="Message to be hidden.")
 
-        # Search_fetch the event as an uninvited administrator and ensure that the sensitive fields were hidden.
-        # This method goes through the _fetch_query method which covers all variations of read(), search_read() and export_data().
         private_event_domain = ("id", "=", john_private_evt.id)
         search_fetch_event = (
             self.env["calendar.event"]
@@ -518,13 +458,7 @@ class TestAccessRights(TransactionCase):
                 )
 
     def test_user_update_calendar_default_privacy(self):
-        """
-        Ensure that administrators and normal users can update their own calendar
-        default privacy from the 'res.users' related field without throwing any error.
-        Updates from others users are blocked during write (except for Default User Template from admins).
-        """
         for privacy in ["public", "private", "confidential"]:
-            # Update normal user and administrator 'calendar_default_privacy' simulating their own update.
             self.john.with_user(self.john).write({"calendar_default_privacy": privacy})
             self.admin_system_user.with_user(self.admin_system_user).write(
                 {"calendar_default_privacy": privacy}
@@ -540,12 +474,10 @@ class TestAccessRights(TransactionCase):
                 "Admin must be able to update its calendar default privacy.",
             )
 
-            # Update the Default 'calendar.default_privacy' as an administrator.
             self.env["ir.config_parameter"].sudo().set_param(
                 "calendar.default_privacy", privacy
             )
 
-            # All calendar default privacy updates must be blocked during write.
             with self.assertRaises(AccessError):
                 self.john.with_user(self.admin_system_user).write(
                     {"calendar_default_privacy": privacy}
@@ -556,8 +488,6 @@ class TestAccessRights(TransactionCase):
                 )
 
     def test_check_private_event_conditions_by_internal_user(self):
-        """Ensure that internal user (non-admin) will see that admin's event is private."""
-        # Update admin calendar_default_privacy with 'private' option. Create private event for admin.
         self.admin_user.with_user(self.admin_user).write(
             {"calendar_default_privacy": "private"}
         )
@@ -568,7 +498,6 @@ class TestAccessRights(TransactionCase):
             partner_ids=[self.admin_user.partner_id.id],
         )
 
-        # Ensure that intrnal user will see the admin's event as private.
         self.assertTrue(
             admin_user_private_evt.with_user(
                 self.raoul
@@ -577,10 +506,6 @@ class TestAccessRights(TransactionCase):
         )
 
     def test_recurring_event_with_alarms_for_non_admin(self):
-        """
-        Test that a non-admin user can create a recurring event with an alarm
-        and then add an attendee to it, without triggering access errors.
-        """
 
         alarm = self.env["calendar.alarm"].create(
             {

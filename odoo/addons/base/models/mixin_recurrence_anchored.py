@@ -43,9 +43,6 @@ MONTH_SELECTION = [
 ]
 
 
-# Days and months are Selections of strings rather than integers because the day
-# picker narrows its options by the month next to it, and that widget is a
-# Selection field; the arithmetic reads them as integers.
 class MixinRecurrenceAnchored(models.AbstractModel):
     _name = "mixin.recurrence.anchored"
     _description = "Anchored Recurrence Mixin"
@@ -114,10 +111,6 @@ class MixinRecurrenceAnchored(models.AbstractModel):
                     )
                 record.repeat_day = clamped
 
-    # The second anchor's default depends on the period: the middle of a month,
-    # the first of a half-year. It is filled only once a second anchor exists,
-    # so a level created as twice a year, whose period is set after the record
-    # is, does not keep the month's default.
     @api.depends("repeat_second_month", "repeat_unit", "repeat_twice")
     def _compute_repeat_second_day(self) -> None:
         for record in self:
@@ -243,8 +236,6 @@ class MixinRecurrenceAnchored(models.AbstractModel):
                     self.env._("The two dates fall on the same day in shorter months.")
                 )
 
-    # 2024 is a leap year, so no day a record can hold is clamped before it is
-    # compared, and January is long enough for every day of a monthly anchor.
     @staticmethod
     def _get_boundary_in_reference_period(anchor):
         first = date(2024, anchor.month or 1, 1)
@@ -252,8 +243,6 @@ class MixinRecurrenceAnchored(models.AbstractModel):
             return first + relativedelta(months=1)
         return first.replace(day=anchor.day)
 
-    # 2023 is not a leap year: February is the shortest month a day can be
-    # clamped into, where anchors on distinct days of a long month meet.
     @staticmethod
     def _get_anchor_day_in_short_period(anchor):
         month = anchor.month or 2

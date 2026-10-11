@@ -95,7 +95,7 @@ class PopulateContext:
             for index in indexes:
                 try:
                     with model.env.cr.savepoint():
-                        model.env.cr.execute(index["definition"])  # noqa: E8501  pg_indexes.indexdef, read back from the catalog
+                        model.env.cr.execute(index["definition"])
                 except Exception:
                     _logger.exception(
                         "Could not restore index %s on %s; the table is left "
@@ -145,8 +145,6 @@ class PopulateContext:
             try:
                 yield
             finally:
-                # on an aborted transaction nothing can be restored, and the
-                # rollback that follows puts the dropped indexes back itself
                 if model.env.cr.in_failed_transaction():
                     _debug.logic(
                         "populate.indexes_left_to_rollback", table=model._table
@@ -178,8 +176,6 @@ class PopulateContext:
         try:
             yield
         finally:
-            # an aborted transaction refuses the RESET, and the rollback that
-            # follows undoes the SET itself
             if model.env.cr.in_failed_transaction():
                 _debug.logic(
                     "populate.replication_role_left_to_rollback", table=model._table
@@ -475,9 +471,6 @@ def populate_member(
         with ctx.ignore_fkey_constraints(member), ctx.ignore_indexes(member):
             populate_model(member, populated, factors, separator_code, id_offset)
         return
-    # session_replication_role=replica would also silence the trigger that
-    # rechecks a deferrable unique or exclusion constraint, and copies that
-    # violate it would commit
     _debug.logic(
         "populate.fkey_checks_kept",
         table=member._table,
@@ -579,8 +572,6 @@ def populate_models(model_factors: dict[Any, int], separator_code: int) -> None:
                 model_factors.setdefault(delegated, model_factors[member])
                 process(delegated)
 
-        # The tables of an inheritance tree share the root's id sequence: their
-        # copies take one offset past the whole tree, or they collide.
         id_offset = get_last_id(model_) if model_._table_inheritance_root else None
         _debug.logic(
             "populate.members",

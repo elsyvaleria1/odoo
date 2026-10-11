@@ -23,7 +23,6 @@ class TrainingSimulatorSession(models.Model):
         index=True,
         required=True,
     )
-    # the snapshot is of this company's data
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
@@ -69,11 +68,6 @@ class TrainingSimulatorSession(models.Model):
             )
 
     def _training_finish(self, result):
-        """Close the session with what the game reports.
-
-        :param dict result: the game's report; ``scenario``, ``mode``, ``passed``,
-            ``error_count`` and ``summary`` are copied to fields
-        """
         self.check_singleton()
         if self.state != "running" or self.user_id != self.env.user:
             raise UserError(self.env._("Only the player can finish a running session."))

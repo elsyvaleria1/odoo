@@ -88,13 +88,6 @@ class PurchaseOrderLine(models.Model):
                 line.budget_line_ids = budget_lines
 
     def _get_uncommitted_amount(self):
-        """Amount of this line not yet invoiced, on the report's basis.
-
-        Uses the same discounted, tax-exclusive per-unit basis `_get_pol_query`
-        uses for `committed_amount`, so both halves of the budget comparison are
-        measured consistently. Zero once the order is done: there is nothing
-        left uncommitted.
-        """
         self.check_singleton()
         if self.order_id.state == "done":
             return 0.0

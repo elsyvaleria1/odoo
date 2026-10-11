@@ -8,10 +8,6 @@ class Base_ImportImport(models.TransientModel):
 
     @api.model
     def get_fields_tree(self, model, depth=FIELDS_RECURSION_LIMIT):
-        """Overridden to add 'move_id', 'journal_id', 'date'
-        to the list of fields that can be imported, even though they
-        are readonly.
-        """
         if model != "account.move.line":
             return super().get_fields_tree(model, depth=depth)
         fields_list = super().get_fields_tree(model, depth=depth)

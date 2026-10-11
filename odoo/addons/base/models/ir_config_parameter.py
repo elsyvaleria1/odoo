@@ -59,8 +59,6 @@ class IrConfig_Parameter(models.Model):
                 _debug.lifecycle("default_param_set", key=key, force=force)
                 self.set_param(key, func())
             elif force:
-                # a fresh value replaces the stored one unread: a restored copy
-                # cannot open a secret sealed under its source's key
                 _debug.lifecycle("default_param_replaced", key=key)
                 present[key].write({"value": func()})
 
@@ -108,7 +106,6 @@ class IrConfig_Parameter(models.Model):
 
     def _clear_caches_reading_keys(self, keys: list[str | None]) -> None:
         groups = ["stable"]
-        # the compiled bundles and the nodes naming them are built under these
         if any(key and key.startswith("web.esbuild.") for key in keys):
             groups.append("assets")
         self.env.registry.clear_cache(*groups)
@@ -174,9 +171,6 @@ class IrConfig_Parameter(models.Model):
                         param.key,
                     )
             elif not sealing.is_configured():
-                # A server that never held a key is a supported setup (a module
-                # must install without one); a server that lost its key finds
-                # the parameter sealed and reports the error above instead.
                 _logger.info(
                     "The system parameter %s is stored in clear: set "
                     "ODOO_API_ENCRYPTION_KEY so every backup stops carrying it",
@@ -226,8 +220,6 @@ class IrConfig_Parameter(models.Model):
     @api.model
     @ormcache("key", cache="stable")
     def _get_param(self, key: str) -> tuple[int, str] | None:
-        # the row id goes with the value so get_param checks access on that
-        # row: a permission scoped to one key must not read every other key
         param = self.sudo().search_fetch([("key", "=", key)], ["value"], limit=1)
         _debug.perf.count("param_read", key=key, found=bool(param))
         return (param.id, param.value) if param else None

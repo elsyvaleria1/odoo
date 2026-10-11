@@ -34,7 +34,7 @@ class AutomationRuleTestUi(HttpCase):
         self.assertEqual(automation.trigger, "on_create_or_write")
         self.assertEqual(
             automation.action_server_ids.state, "object_write"
-        )  # only one action
+        )
         self.assertEqual(automation.action_server_ids.model_name, "res.partner")
         self.assertEqual(automation.action_server_ids.update_field_id.name, "function")
         self.assertEqual(automation.action_server_ids.value, "Test")
@@ -308,13 +308,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas(self):
-        """Drive the flow-editor canvas in a real browser.
-
-        This is the only end-to-end exercise of the drawing path: that
-        `get_workflow_graph` feeds the editor, that the auto-layout runs, and
-        that the classes the stylesheet declares are the ones the steps carry.
-        A HOOT test can reach none of that.
-        """
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {
@@ -358,9 +351,6 @@ class AutomationRuleTestUi(HttpCase):
             login="admin",
         )
 
-        # The canvas laid the graph out and wrote the coordinates back through
-        # the plain ORM. This is the only assertion in the suite that the write
-        # side of the canvas reaches the database at all.
         actions.invalidate_recordset(["pos_x", "pos_y"])
         self.assertTrue(
             any(actions.mapped("pos_x")) or any(actions.mapped("pos_y")),
@@ -368,13 +358,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas_edit(self):
-        """Remove a connection by clicking it on the canvas.
-
-        The destructive path, and the one with no server-side API of its own:
-        the canvas unlinks a `workflow.edge` through the plain ORM, so this is
-        also the proof that the write side is subject to the ordinary access
-        rules rather than a bespoke endpoint.
-        """
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Edit", "model_id": model.id, "trigger": "on_hand"}
@@ -414,12 +397,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas_remove_step(self):
-        """Remove a step from the canvas, and prove the withheld one is withheld.
-
-        Deleting the middle step deletes both edges through the cascade on
-        `workflow.edge`, so this is also the round trip for the editor's
-        follow-up disconnect of connections the database has already dropped.
-        """
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Remove", "model_id": model.id, "trigger": "on_hand"}
@@ -443,9 +420,6 @@ class AutomationRuleTestUi(HttpCase):
                 {"source_node_id": second.id, "target_node_id": third.id},
             ]
         )
-        # A run over "third" alone, so the canvas has one step it must refuse
-        # and one it must offer -- a tour where every step is removable cannot
-        # tell the flag from a constant.
         runtime = self.env["automation.runtime"].create(
             {
                 "automation_id": rule.id,
@@ -473,7 +447,6 @@ class AutomationRuleTestUi(HttpCase):
         self.assertEqual(rule.action_server_ids, first + third)
 
     def test_workflow_canvas_remove_last_step(self):
-        """Removing the last step hands the canvas back to the empty message."""
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Empty", "model_id": model.id, "trigger": "on_hand"}
@@ -500,11 +473,6 @@ class AutomationRuleTestUi(HttpCase):
         self.assertFalse(rule.action_server_ids)
 
     def test_workflow_canvas_drag(self):
-        """Drag a step and check the move reached the database.
-
-        Auto-layout already proves the *write* works; this proves the editor's
-        drag-end callback behind a user's drag fires at all.
-        """
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Drag", "model_id": model.id, "trigger": "on_hand"}
@@ -543,7 +511,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas_resize(self):
-        """Resize a step, and check the new rect reached the database."""
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Resize", "model_id": model.id, "trigger": "on_hand"}
@@ -582,8 +549,6 @@ class AutomationRuleTestUi(HttpCase):
         self.assertLess(first.pos_height, bounds["max"]["height"])
 
     def test_workflow_canvas_framing(self):
-        """Open the Workflow tab, then the workflow full screen: each time the
-        box is in view and the graph is centred in it."""
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Framing", "model_id": model.id, "trigger": "on_hand"}
@@ -621,15 +586,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_canvas_connect(self):
-        """Create a connection by dragging between two steps.
-
-        The last untested interaction, and the one with the most moving parts:
-        a port-to-port drag resolved with `elementFromPoint`, the editor's own
-        connection validation, and an ORM create the server may refuse.
-
-        The port dragged from is what carries the condition, so this also
-        proves the port-per-condition mapping reaches `workflow.edge`.
-        """
         model = self.env["ir.model"]._get("res.partner")
         rule = self.env["automation.rule"].create(
             {"name": "Canvas Connect", "model_id": model.id, "trigger": "on_hand"}
@@ -677,13 +633,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_workflow_run_canvas(self):
-        """Read a failed run on its own diagram, then retry it from the form.
-
-        The run form draws the same canvas from another payload and in another
-        mode, so nothing the definition's tours drive proves that it draws, that
-        only the failed step is shown failed, or that the diagram follows the
-        form's own buttons.
-        """
         model = self.env["ir.model"]._get("res.partner")
         partner = self.env["res.partner"].create({"name": "Run Canvas Partner"})
         rule = self.env["automation.rule"].create(
@@ -768,7 +717,6 @@ class AutomationRuleTestUi(HttpCase):
         )
 
     def test_on_change_rule_creation(self):
-        """test on_change rule creation from the UI"""
         self.start_tour(
             "/odoo/action-automation.automation_act",
             "automation.on_change_rule_creation",

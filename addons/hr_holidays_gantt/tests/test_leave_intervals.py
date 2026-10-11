@@ -27,8 +27,6 @@ class TestLeaveIntervals(TransactionCase):
         )
 
     def test_requested_leave_is_collected(self):
-        """Check that a confirmed (non-validated) leave shows up in the
-        employee's interval map."""
         leave = self._leave(date(2024, 1, 10), date(2024, 1, 11))
         self.assertEqual(leave.state, "confirm")
 
@@ -38,8 +36,6 @@ class TestLeaveIntervals(TransactionCase):
         self.assertIn(leave, intervals[self.employee.id])
 
     def test_validated_leave_is_collected_as_calendar_leave(self):
-        """Check that a validated leave reaches the map through its
-        resource.schedule.exception record."""
         leave = self._leave(date(2024, 1, 10), date(2024, 1, 11))
         leave.action_approve()
 
@@ -54,8 +50,6 @@ class TestLeaveIntervals(TransactionCase):
         )
 
     def test_leave_warning_wording_for_requested_leave(self):
-        """Check that the gantt warning names the employee and uses the
-        requested wording for non-validated leaves."""
         self._leave(date(2024, 1, 10), date(2024, 1, 11))
         leaves = self.env["hr.leave"]._get_leave_interval(
             datetime(2024, 1, 8), datetime(2024, 1, 14), self.employee

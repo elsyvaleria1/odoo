@@ -10,7 +10,6 @@ class MailCommonAI(TestMailComposer):
 
     @contextmanager
     def _patch_agent_generate_response(self, response=None, body_html=None):
-        """Patch the _generate_response method of the AI agent to control its output."""
 
         def _generate_response_patch(*args, **kwargs):
             if isinstance(response, Exception):
@@ -28,7 +27,6 @@ class MailCommonAI(TestMailComposer):
 
     @contextmanager
     def _patch_template_eval_prompts(self):
-        """Patch the _eval_ai_prompts method to capture the HTML to be evaluated."""
         original_eval_prompts = self.env.registry["ai.agent"]._eval_ai_prompts
 
         html_to_eval = [None]

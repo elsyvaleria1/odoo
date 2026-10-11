@@ -16,7 +16,6 @@ from odoo.addons.barcodes.models.barcode_rule import (
 )
 
 FNC1_CHAR = "\x1d"
-# What a camera scanner prefixes a GS1 read with to name its symbology.
 SYMBOLOGY_IDENTIFIERS = ("]C1", "]e0", "]d2", "]Q3", "]J1")
 _ASCII_DIGITS = re.compile(r"\A[0-9]+\Z")
 
@@ -30,18 +29,10 @@ def _gs1_element_regex(pattern, separator_group):
     )
 
 
-# The zero-padded lengths a stored GTIN or SSCC can carry: EAN-8, UPC-A,
-# EAN-13, GTIN-14 and SSCC.
 PADDED_KEY_LENGTHS = (8, 12, 13, 14, 18)
 
 
 def _unpadded_condition(field, operator, digits):
-    """Match `digits` whatever zero padding the stored barcode carries.
-
-    An exact operator stays exact: an `ilike` on the digits would also match
-    every barcode that merely contains them, and a caller taking the first
-    result would act on another product.
-    """
     if operator in ("ilike", "not ilike"):
         return Domain(field, operator, digits)
     candidates = [digits] + [
@@ -79,7 +70,6 @@ class BarcodeNomenclature(models.Model):
                             error=error,
                         )
                     ) from error
-                # the barcode service rewrites scanned separators in the browser
                 if construct := unportable_construct(nom.gs1_separator_fnc1):
                     raise ValidationError(
                         self.env._(
@@ -96,15 +86,6 @@ class BarcodeNomenclature(models.Model):
 
     @api.model
     def gs1_date_to_date(self, gs1_date):
-        """Converts a GS1 date into a datetime.date.
-
-        :param gs1_date: A date formatted as yymmdd
-        :type gs1_date: str
-        :return: converted date
-        :rtype: datetime.date
-        """
-        # See 7.12 Determination of century in dates:
-        # https://www.gs1.org/sites/default/files/docs/barcodes/GS1_General_Specifications.pdf
         now = datetime.date.today()
         current_century = now.year // 100
         substract_year = int(gs1_date[0:2]) - (now.year % 100)
@@ -118,7 +99,7 @@ class BarcodeNomenclature(models.Model):
         try:
             if (
                 gs1_date[-2:] == "00"
-            ):  # Day is not mandatory, when not set -> last day of the month
+            ):
                 date = datetime.datetime.strptime(str(year) + gs1_date[2:4], "%Y%m")
                 date = date.replace(
                     day=calendar.monthrange(year, int(gs1_date[2:4]))[1]
@@ -135,14 +116,6 @@ class BarcodeNomenclature(models.Model):
         return date.date()
 
     def parse_gs1_rule_pattern(self, match, rule) -> dict | None:
-        """Read a matched GS1 element as its rule's content type.
-
-        Content the type cannot hold -- a measure or identifier that is not
-        digits, a date that is not on the calendar, a wrong check digit -- is
-        not this rule: None, so decomposition tries the next one. Raising here
-        failed a scan with a configuration error, and the browser read the
-        same element as NaN or a rolled-over date.
-        """
         ai, raw = match.group(1), match.group(2)
         value, rejection = self._gs1_element_value(rule, ai, raw)
         if rejection:
@@ -188,15 +161,8 @@ class BarcodeNomenclature(models.Model):
             return None, "not a calendar date"
 
     def gs1_decompose_extended(self, barcode):
-        """Decompose a GS1 element string into its elements, in order.
-
-        Each element is matched from the first rule again, by sequence, and a
-        run of separators ends a variable-length element. Returns None when
-        some part of the barcode is read by no rule.
-        """
         self.check_singleton()
         separator_group = self._gs1_separator_group()
-        # a camera scanner's symbology identifier, then any leading FNC1
         for identifier in SYMBOLOGY_IDENTIFIERS:
             if barcode.startswith(identifier):
                 barcode = barcode[len(identifier) :]
@@ -209,8 +175,6 @@ class BarcodeNomenclature(models.Model):
         ]
 
         def next_element(remaining):
-            # at least two groups: the AI, then the value (named groups
-            # differ between Python and the browser, so they go unused)
             for rule, regex in regexes:
                 match = regex.match(remaining)
                 if match and len(match.groups()) >= 2:
@@ -236,11 +200,6 @@ class BarcodeNomenclature(models.Model):
 
     @api.model
     def _preprocess_gs1_search_args(self, domain, barcode_types, field="barcode"):
-        """Preprocess `domain` in `_search` to support searching with a GS1 barcode.
-
-        Strip the GS1 padding when searching on `barcode`, keeping only the
-        significant digits of the parsed value.
-        """
         domain = Domain(domain)
         nomenclature = self.env.company.sudo().barcodes_config_id.nomenclature_id
         if not self.env.context.get("skip_preprocess_gs1"):
@@ -251,8 +210,6 @@ class BarcodeNomenclature(models.Model):
                     or not nomenclature.is_gs1_nomenclature
                 ):
                     return condition
-                # Check operator
-                # handle `in` first and check the rest
                 operator = condition.operator
                 value = condition.value
                 if not value:
@@ -271,7 +228,6 @@ class BarcodeNomenclature(models.Model):
                 elif operator not in ("ilike", "not ilike", "=", "!="):
                     return condition
 
-                # a number is the ORM's to compare, as for any Char field
                 if not value or not isinstance(value, str):
                     return condition
                 parsed_data = nomenclature.parse_barcode(value) or []
@@ -290,7 +246,6 @@ class BarcodeNomenclature(models.Model):
                             )
                         break
 
-                # The barcode isn't a valid GS1 barcode, checks if it can be unpadded.
                 if not parsed_data:
                     match = re.match(r"0+([0-9]+)$", value)
                     if match:

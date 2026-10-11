@@ -150,9 +150,6 @@ class TestOwnAttendanceForm(TransactionCase):
         )
 
     def test_the_form_of_ones_own_attendance_loads_its_overtime_lines(self):
-        """`action_view_this_month_attendances` opens the attendance form, whose
-        notebook lists the overtime lines; an employee must be able to see
-        the lines of their own day."""
         values = self.own.with_user(self.user).web_read(
             {
                 "linked_overtime_ids": {
@@ -209,7 +206,6 @@ class TestRegenerationWindow(TransactionCase):
         return self.Line.search([("employee_id", "=", employee.id)], order="id")
 
     def _nz_monday(self, employee):
-        # 2026-08-31 is a Monday; NZST is UTC+12, so 07:00 local is Sunday 19:00 UTC.
         morning = self.env["hr.attendance"].create(
             {
                 "employee_id": employee.id,
@@ -229,7 +225,6 @@ class TestRegenerationWindow(TransactionCase):
     def test_saving_the_morning_again_does_not_add_a_second_line(self):
         employee = _employee(self.env, self.company, self.calendar, self.daily)
         morning, afternoon = self._nz_monday(employee)
-        # 4 + 6 hours against a scheduled 8: two over.
         self.assertEqual(self._lines(employee).mapped("duration"), [2.0])
         morning.write({"check_out": morning.check_out})
         self.assertEqual(self._lines(employee).mapped("duration"), [2.0])
@@ -248,7 +243,6 @@ class TestRegenerationWindow(TransactionCase):
     def test_moving_an_attendance_recounts_both_days(self):
         employee = _employee(self.env, self.company, self.calendar, self.daily)
         _morning, afternoon = self._nz_monday(employee)
-        # Tuesday 12:00-18:00 local.
         afternoon.write(
             {
                 "check_in": datetime(2026, 9, 1, 0, 0),
@@ -259,9 +253,6 @@ class TestRegenerationWindow(TransactionCase):
         self.assertEqual(by_date, {date(2026, 8, 31): -4.0, date(2026, 9, 1): -2.0})
 
     def test_a_daily_ruleset_leaves_the_neighbouring_day_alone(self):
-        """Regeneration deletes and recreates lines, and with them whatever a
-        manager corrected. With no weekly rule, the day next door is not
-        part of the sum and its line must survive untouched."""
         employee = _employee(self.env, self.company, self.calendar, self.daily)
         self._nz_monday(employee)
         monday_line = self._lines(employee)
@@ -278,7 +269,7 @@ class TestRegenerationWindow(TransactionCase):
 
     def test_a_weekly_ruleset_recounts_the_week(self):
         employee = _employee(self.env, self.company, self.calendar, self.weekly)
-        for offset in range(5):  # Mon 31 Aug .. Fri 4 Sep, 08:00-18:00 local
+        for offset in range(5):
             check_out = datetime.combine(
                 date(2026, 8, 31) + timedelta(days=offset), time(6, 0)
             )
@@ -426,7 +417,6 @@ class TestAbsenceDetection(TransactionCase):
         cls.punctual = make("Punctual")
         cls.absent = make("Absent")
         cls.gone = make("Gone", contract_date_end=date(2026, 8, 15))
-        # Tuesday 2026-09-01, exactly the scheduled eight hours.
         cls.env["hr.attendance"].create(
             {
                 "employee_id": cls.punctual.id,
@@ -502,8 +492,6 @@ class TestOvertimeLineForeignKey(TransactionCase):
         )
 
     def test_editing_a_line_moves_the_derived_fields_with_no_hand_rolled_marking(self):
-        # 08:00-19:00 against an eight-hour schedule: eleven worked, three of
-        # them extra by the rules.
         self.assertEqual(self.attendance.worked_hours, 11.0)
         self.assertEqual(self.line.duration, 3.0)
 
@@ -512,20 +500,9 @@ class TestOvertimeLineForeignKey(TransactionCase):
         self.env.invalidate_all()
         self.assertEqual(self.attendance.overtime_hours, 5.0)
         self.assertEqual(self.attendance.validated_overtime_hours, 5.0)
-        # And `expected_hours` does NOT move: it is measured against `duration`,
-        # what the rules computed, so a manager correcting the overtime cannot
-        # restate how many hours the schedule expected. This assertion still
-        # exercises the propagation the test is named for -- the field is
-        # recomputed through the real relation either way -- it just pins the
-        # value that does not depend on the correction. It read 6.0 while
-        # `expected_hours` subtracted `manual_duration`, which made a twelve-
-        # hour day's expectation follow whatever a manager typed.
         self.assertEqual(self.attendance.expected_hours, 8.0)
 
     def test_two_same_check_in_attendances_no_longer_collide(self):
-        """The old join keyed on `time_start == check_in`; distinct employees
-        with the same check-in used to be told apart only by employee. The FK
-        removes the ambiguity entirely."""
         other = _employee(
             self.env, self.company, self.calendar, self.ruleset, name="Other"
         )
@@ -559,7 +536,6 @@ class TestApprovalSurvivesRegeneration(TransactionCase):
         cls.employee = _employee(cls.env, cls.company, cls.calendar, cls.weekly)
 
     def _monday(self):
-        # 2026-08-31 is a Monday; 08:00-18:00 = two hours over an 8h day.
         return self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,
@@ -583,8 +559,6 @@ class TestApprovalSurvivesRegeneration(TransactionCase):
         self.assertEqual(line.status, "to_approve")
         line.action_approve()
         self.assertEqual(monday.overtime_status, "approved")
-        # A Tuesday attendance in the same week regenerates Monday's line too
-        # (weekly rule). Monday's overtime is unchanged, so the approval holds.
         self._tuesday()
         monday.invalidate_recordset()
         self.assertTrue(monday.linked_overtime_ids)
@@ -606,8 +580,6 @@ class TestApprovalSurvivesRegeneration(TransactionCase):
     def test_a_real_change_resets_the_decision(self):
         monday = self._monday()
         monday.linked_overtime_ids.action_approve()
-        # Editing Monday itself changes its overtime amount, so the approval
-        # no longer describes what is there: it must fall back to to_approve.
         monday.write({"check_out": datetime(2026, 8, 31, 19, 0)})
         self.assertEqual(
             monday.linked_overtime_ids.status,
@@ -633,8 +605,6 @@ class TestAutoCheckOut(TransactionCase):
         cls.employee = _employee(cls.env, cls.company, cls.calendar, cls.ruleset)
 
     def test_an_over_long_open_attendance_is_closed_once_at_the_allowance(self):
-        # Monday 2026-08-31, scheduled 08:00-16:00 (8h). Open since 08:00; the
-        # cron runs at 20:00, well past 8h + 1h tolerance.
         with freeze_time("2026-08-31 20:00:00"):
             attendance = self.env["hr.attendance"].create(
                 {
@@ -661,5 +631,4 @@ class TestAutoCheckOut(TransactionCase):
             "the attendance is closed in a single write, not first to end-of-day "
             "and then to the real cut-off",
         )
-        # 8h scheduled + 1h tolerance = the attendance keeps 9 worked hours.
         self.assertAlmostEqual(attendance.worked_hours, 9.0, 2)

@@ -73,7 +73,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ).partner_id.button_account_peppol_check_partner_endpoint()
 
     def test_create_participant_missing_data(self):
-        # creating a participant without eas/endpoint/document should not be possible
         wizard = self.env["wizard.account_peppol.config.register"].create(
             {
                 "peppol_eas": False,
@@ -86,7 +85,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
     def test_register_participant_for_the_first_time_as_sender_then_receiver_then_unregister(
         self,
     ):
-        # Register the use for the very first time as sender.
         with self._mock_requests(
             [
                 self._mock_connection_options(),
@@ -106,7 +104,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # sender -> receiver.
         settings = self.env["res.config.settings"].create({})
         with self._mock_requests(
             [
@@ -125,7 +122,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # receiver -> not_registered.
         with self._mock_requests(
             [
                 self._mock_participant_status("receiver"),
@@ -230,7 +226,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Change the email.
         config_wizard = self.env["wizard.account_peppol.config.update.contact"].create(
             {"account_peppol_contact_email": "another@email.be"}
         )
@@ -296,7 +291,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             }
         )
 
-        # You can't register the branch using the same EAS/Endpoint than the parent company.
         with self.assertRaises(ValidationError):
             wizard.button_register_peppol_participant()
 
@@ -351,7 +345,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Disconnect from the network.
         with self._mock_requests(
             [
                 self._mock_participant_status("sender"),
@@ -364,13 +357,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
                 .create({})
             )
             config_wizard.button_peppol_unregister()
-        # `settings` was read before the unregister, and `res.config.settings`
-        # is transient: `Field._setup_depends` cuts a transient model's
-        # dependency chain the moment it reaches a permanent one, so a write to
-        # the company never invalidates a related field cached on a settings
-        # record. That cut is deliberate -- without it every write to
-        # `res.company` would search `res_config_settings` -- so the record has
-        # to be re-read here rather than the ORM taught to chase it.
         settings.invalidate_recordset()
         self.assertRecordValues(
             settings,
@@ -389,7 +375,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Back to the initial state.
         wizard = (
             self.env["wizard.account_peppol.config.register"]
             .with_context(allowed_company_ids=(branch + self.env.company).ids)
@@ -434,7 +419,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Check the initial state of the wizard for the branch.
         wizard = (
             self.env["wizard.account_peppol.config.register"]
             .with_context(allowed_company_ids=(branch + self.env.company).ids)
@@ -457,7 +441,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Register the parent company.
         wizard = (
             self.env["wizard.account_peppol.config.register"]
             .with_context(allowed_company_ids=self.env.company.ids)
@@ -505,7 +488,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Back to the branch.
         wizard = (
             self.env["wizard.account_peppol.config.register"]
             .with_context(allowed_company_ids=branch.ids)
@@ -577,7 +559,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Disconnect from the network.
         with self._mock_requests(
             [
                 self._mock_cancel_peppol_registration(),
@@ -590,13 +571,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
                 .create({})
             )
             config_wizard.button_peppol_unregister()
-        # `settings` was read before the unregister, and `res.config.settings`
-        # is transient: `Field._setup_depends` cuts a transient model's
-        # dependency chain the moment it reaches a permanent one, so a write to
-        # the company never invalidates a related field cached on a settings
-        # record. That cut is deliberate -- without it every write to
-        # `res.company` would search `res_config_settings` -- so the record has
-        # to be re-read here rather than the ORM taught to chase it.
         settings.invalidate_recordset()
         self.assertRecordValues(
             settings,
@@ -615,7 +589,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
             ],
         )
 
-        # Back to the initial state.
         wizard = (
             self.env["wizard.account_peppol.config.register"]
             .with_context(allowed_company_ids=branch.ids)
@@ -639,7 +612,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
         )
 
     def test_deregister_with_client_gone_error(self):
-        """Test deregistration succeeds even when proxy returns client_gone error"""
         with self._mock_requests(
             [
                 self._mock_connection_options(),
@@ -663,7 +635,6 @@ class TestPeppolParticipant(PeppolConnectorCommon):
         ):
             config_wizard.button_peppol_unregister()
 
-        # Should successfully deregister despite Exception
         self.assertEqual(
             self.env.company.account_peppol_config_id.account_peppol_proxy_state,
             "not_registered",

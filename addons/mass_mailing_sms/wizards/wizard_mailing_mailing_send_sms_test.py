@@ -73,11 +73,9 @@ class WizardMailingMailingSendSmsTest(models.TransientModel):
         record = self.env[self.mailing_id.mailing_model_real].search([], limit=1)
         body = self.mailing_id.body_plaintext
         if record:
-            # Returns a proper error if there is a syntax error with qweb
             body = self.env["mixin.mail.render"]._render_template(
                 body, self.mailing_id.mailing_model_real, record.ids
             )[record.id]
-        # create and send SMS for valid numbers (skip other, likely to crash)
         sms_values_list, trace_values_list = [], []
         for sanitized_number in valid_numbers:
             if not sanitized_number:
@@ -87,8 +85,6 @@ class WizardMailingMailingSendSmsTest(models.TransientModel):
                 "uuid": uuid4().hex,
                 "state": "outgoing",
             }
-            # include unsubscribe link and generate fake trace to test unsubscribe
-            # flow if sms_allow_unsubscribe is enabled
             sms_body = body
             if self.mailing_id.sms_allow_unsubscribe:
                 trace_values, sms_body = self._prepare_test_trace_values(
@@ -118,8 +114,6 @@ class WizardMailingMailingSendSmsTest(models.TransientModel):
         sms_uuid_to_number_map = {sms.uuid: sms.number for sms in sms_sudo}
         for sent_sms in sent_sms_list:
             recipient = sms_uuid_to_number_map.get(sent_sms.get("uuid"))
-            # 'success' and 'sent' IAP/Twilio both resolve to 'pending' SMS state
-            # (= send for Odoo) via IAP_TO_SMS_STATE_SUCCESS
             if sent_sms.get("state") in ("success", "sent"):
                 notification_messages.append(
                     self.env._("Test SMS successfully sent to %s", recipient)

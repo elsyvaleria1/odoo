@@ -14,14 +14,13 @@ class BuckarooCommon(PaymentCommon):
             },
         )
 
-        # Override defaults
         cls.provider = cls.buckaroo
         cls.currency = cls.currency_euro
 
         cls.sync_payment_data = {
             "brq_payment": "ABCDEF0123456789ABCDEF0123456789",
             "brq_payment_method": "paypal",
-            "brq_statuscode": "190",  # confirmed
+            "brq_statuscode": "190",
             "brq_statusmessage": "Transaction successfully processed",
             "brq_invoicenumber": cls.reference,
             "brq_amount": str(cls.amount),
@@ -34,7 +33,7 @@ class BuckarooCommon(PaymentCommon):
         cls.async_payment_data = {
             "brq_transactions": "0123456789ABCDEF0123456789ABCDEF",
             "brq_transaction_method": "paypal",
-            "brq_statuscode": "190",  # confirmed
+            "brq_statuscode": "190",
             "brq_statusmessage": "Transaction successfully processed",
             "brq_invoicenumber": cls.reference,
             "brq_amount": str(cls.amount),

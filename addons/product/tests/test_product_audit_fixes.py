@@ -69,10 +69,6 @@ class TestProductAuditFixes(ProductCommon):
         self.assertFalse(item.product_id)
 
     def test_settings_save_does_not_archive_pricelists_when_already_disabled(self):
-        # The toggle is a group implied on base.group_user, and that implication
-        # is what res.config.settings reads back. Dropping the group from the
-        # current user leaves the feature on, so turn it off the way the
-        # settings themselves do, before there is a pricelist to lose.
         self.env["res.config.settings"].create(
             {"group_product_pricelist": False}
         ).execute()
@@ -521,7 +517,7 @@ class TestProductAuditFixes(ProductCommon):
         templates = self.env["product.template"].create(
             [{"name": f"ComboProbe{i}"} for i in range(100)]
         )
-        quantities = list(range(1, 52))  # 100 * 51 > MAX_PRICE_COMPUTATIONS (5000)
+        quantities = list(range(1, 52))
         self.assertLessEqual(len(templates), Report.MAX_PRODUCTS)
         self.assertLessEqual(len(quantities), Report.MAX_QUANTITIES)
         with self.assertRaises(UserError):

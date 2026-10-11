@@ -250,9 +250,6 @@ class CreateMixin(_ModelStubs):
                     inverses_by_hook[field.inverse].add(field)
                 elif not field.store and not field.compute:
                     cached_only[key] = val
-                # a delegated value was applied by the parent's create, which has
-                # returned: protected here, it reads (and caches) as empty from
-                # anything an inverse below flushes or computes
                 if (
                     field.compute
                     and (not field.readonly or field.precompute)
@@ -421,10 +418,6 @@ class CreateMixin(_ModelStubs):
         return records
 
     def _check_created(self, data_list: list[dict[str, typing.Any]]) -> None:
-        # The second half of write's two passes: every constraint that reads a
-        # field inverted in this batch runs once the inverses have written, on
-        # every record of the batch, including one that constrains a stored field
-        # as well and was therefore left out of the stored pass in _create.
         inversed_names = {name for data in data_list for name in data["inversed"]}
         if inversed_names:
             self.browse([data["record"].id for data in data_list])._check_fields(
@@ -515,10 +508,6 @@ class CreateMixin(_ModelStubs):
             for vals in vals_list
             if any(field.name not in vals for field in precomputable)
         ]
-        # a record whose draft reads its x2many commands otherwise than the
-        # create applies them is computed once its lines exist; a required
-        # field cannot wait for that (its column refuses NULL), so it is
-        # precomputed all the same and computed again after the create
         skipped_ids = {
             id(vals) for vals in self._get_vals_a_draft_reads_otherwise(vals_list)
         }
@@ -610,14 +599,6 @@ class CreateMixin(_ModelStubs):
     def _get_vals_a_draft_reads_otherwise(
         self, vals_list: list[ValuesType]
     ) -> list[ValuesType]:
-        # the precompute reads a draft per record, each alone; the create
-        # applies the x2many commands of the batch in turn. They disagree
-        # where a command reaches a record that exists: an UPDATE links its
-        # record into a draft and not into a created one, a record of the
-        # batch may delete, detach, update or take a line another one reads,
-        # and a CLEAR or SET of a one2many drops from a draft the lines
-        # created or linked before it in the same list, which a create keeps.
-        # Those records are computed once the batch's lines exist instead
         batch = len(vals_list) > 1
         for vals in vals_list:
             for field, command in self._iter_x2many_commands(vals):
@@ -668,9 +649,6 @@ class CreateMixin(_ModelStubs):
     def _restore_given_values(
         record: BaseModel, vals: ValuesType, given: dict[Field[typing.Any], typing.Any]
     ) -> None:
-        # a compute that assigns its whole group, or the invalidation of what
-        # depends on a field it assigns, may have replaced a given value since
-        # the draft was made: only then is it converted and applied again
         id_ = record._ids[0]
         env = record.env
         clobbered = {
@@ -694,10 +672,7 @@ class CreateMixin(_ModelStubs):
         fields = self._get_precompute_scratch_fields().union(
             _fields[name] for name in given_names if name in _fields
         )
-        # drafts the scratch rows hold through relational values (lines from
-        # Command.create, a many2one from a dict) were made for them alone
         scratch: dict[str, OrderedSet[NewId]] = defaultdict(OrderedSet)
-        # drafts of existing rows a scratch row was linked into, per inverse
         linked: dict[Field[typing.Any], OrderedSet[NewId]] = defaultdict(OrderedSet)
         field_inverses = self.pool.field_inverses
         todo: list[tuple[BaseModel, Collection[Field[typing.Any]]]] = [
@@ -741,8 +716,6 @@ class CreateMixin(_ModelStubs):
         for invf, drafts_linked in linked.items():
             if scratch_ids := scratch.get(invf.comodel_name):
                 invf._forget_draft_links(env, drafts_linked, scratch_ids)
-        # Scratch rows never become database rows. Leaving their queued
-        # computes behind makes a later flush recompute an empty NewId.
         if env.core.has_pending():
             for field in env.core.get_pending_fields():
                 scratch_ids = scratch.get(field.model_name)
@@ -758,8 +731,6 @@ class CreateMixin(_ModelStubs):
         prof = _OrmProfile(_orm_crud)
 
         other_fields: OrderedSet[Field[typing.Any]] = OrderedSet()
-        # the backend chooses how to send the rows (INSERT batches, or one COPY
-        # that preallocates every id at once), so it is handed all of them
         stored_list = [data["stored"] for data in data_list]
         fnames = sorted({name for stored in stored_list for name in stored})
 
@@ -779,7 +750,6 @@ class CreateMixin(_ModelStubs):
         self._convert_column_values(stored_list, col_fields)
         ids = self.env.backend.create_rows(self, stored_list, columns, col_fields)
         if self._inherits_shared_id:
-            # the id was the backend's to insert, and is the record's from here on
             for stored in stored_list:
                 stored.pop("id", None)
 
@@ -837,10 +807,7 @@ class CreateMixin(_ModelStubs):
             records._check_fields(
                 chain(
                     (name for data in data_list for name in data["stored"]),
-                    # a related field without a column is in no `stored` list, and a
-                    # new record has a value for it as soon as its path is written
                     self._constrained_projection_names,
-                    # an omitted required file is as missing as a False one
                     self._required_attachment_names,
                 ),
                 {name for data in data_list for name in data["inversed"]},
@@ -897,9 +864,6 @@ class CreateMixin(_ModelStubs):
             record_ids.append(record._ids[0])
 
         supplied = set().union(*set_vals_list) if set_vals_list else set()
-        # a new row has no relation rows: the empty value is primed in the
-        # creating scope and mirrored to the superuser one, where a compute_sudo
-        # compute reads it -- unmirrored, that read fetched the relation
         for x2m_field in _stored_x2m_fields:
             x2m_field._update_cache(records, (), created=True)
         for _field, fname, cache, default in _stored_scalar_caches:

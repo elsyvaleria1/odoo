@@ -8,12 +8,8 @@ class AccountFollowupReport(models.AbstractModel):
     _name = "account.followup.report"
     _description = "Follow-up Report"
 
-    ####################################################
-    # REPORT COMPUTATION - TEMPLATE RENDERING
-    ####################################################
 
     def get_followup_report_html(self, request):
-        """Return the html of the followup report for `request`."""
         return self.env["ir.qweb"]._render(
             "account_followup.template_followup_report",
             {
@@ -24,21 +20,9 @@ class AccountFollowupReport(models.AbstractModel):
             },
         )
 
-    ####################################################
-    # DEFAULT BODY AND EMAIL SUBJECT
-    ####################################################
 
     @api.model
     def _get_rendered_body(self, partner_id, template_src, default_body, **kwargs):
-        """Render `template_src` for `partner_id`, or return `default_body` unchanged if unset.
-
-        :param partner_id: id of the res.partner to render for
-        :param template_src: mail template to render, or a falsy value to skip rendering
-        :param default_body: value returned as-is when `template_src` is falsy
-        :param kwargs: forwarded to mixin.mail.composer._render_template
-        :return: the rendered body, or `default_body`
-        :rtype: str
-        """
         if template_src:
             return (
                 self.env["mixin.mail.composer"]
@@ -52,7 +36,7 @@ class AccountFollowupReport(models.AbstractModel):
 
     @api.model
     def _get_sms_body(self, request):
-        if request.sms_body:  # the wizard already has what the user typed
+        if request.sms_body:
             return request.sms_body
 
         partner = request.partner
@@ -71,9 +55,6 @@ class AccountFollowupReport(models.AbstractModel):
 
     @api.model
     def _get_email_from(self, request):
-        # The sender may itself be a template, e.g.
-        # "{{ object._get_followup_responsible().email_formatted }}", so it is
-        # rendered whether it came from the wizard or from the level's template.
         email_from = request.email_from or request.mail_template.email_from
         return (
             self.env["mixin.mail.composer"]
@@ -86,13 +67,11 @@ class AccountFollowupReport(models.AbstractModel):
 
     @api.model
     def _get_email_reply_to(self, request):
-        # Falling through to False would make the reply-to behave unexpectedly,
-        # so an unset template reply-to means the catch-all one.
         return request.mail_template.reply_to or self._notify_get_reply_to()[False]
 
     @api.model
     def _get_main_body(self, request):
-        if request.body:  # the wizard already has what the user typed
+        if request.body:
             return request.body
 
         partner = request.partner
@@ -121,7 +100,7 @@ Best Regards,
 
         default_body_html = (
             plaintext2html(default_body) + responsible_signature
-        )  # responsible_signature is an html field
+        )
         return self._get_rendered_body(
             partner.id,
             template_src,
@@ -132,7 +111,7 @@ Best Regards,
 
     @api.model
     def _get_email_subject(self, request):
-        if request.subject:  # the wizard already has what the user typed
+        if request.subject:
             return request.subject
 
         template_src = None
@@ -169,13 +148,9 @@ Best Regards,
             recipients |= partner.browse(rendered_values.get("partner_ids"))
         return recipients
 
-    ####################################################
-    # EXPORT
-    ####################################################
 
     @api.model
     def _send_sms(self, request) -> None:
-        """Send by SMS the followup to the customer's follow-up contact."""
         partner = request.partner
         contact = partner._get_followup_contact() or partner
         contact_phone = contact._phone_get_number().number
@@ -186,9 +161,6 @@ Best Regards,
                     partner.name,
                 )
             )
-        # Logged on the customer, addressed to the contact -- the same split the
-        # email path makes. Numbering the message for the customer while dialling
-        # the contact's phone made the two disagree about who was reached.
         partner._message_sms(
             body=self.with_context(lang=request.lang)._get_sms_body(request),
             partner_ids=contact.ids,
@@ -197,7 +169,6 @@ Best Regards,
 
     @api.model
     def _send_email(self, request):
-        """Send by email the followup to the customer's followup contacts."""
         partner = request.partner
         recipients = self._get_email_recipients(request).filtered(
             lambda contact: contact.email and contact.email.strip()
@@ -210,19 +181,13 @@ Best Regards,
                 )
             )
 
-        # Subject, body, sender and reply-to are functions of the customer and
-        # the request alone -- never of which address the mail goes to. Building
-        # them inside the loop rendered the whole report once per address.
         report = self.with_context(lang=request.lang)
         message_vals = {
-            # Contains the followup report, plus the invoice attachments when join_invoices is set.
             "attachment_ids": list(request.attachment_ids),
             "body": report.with_context(mail=True).get_followup_report_html(request),
             "email_from": report._get_email_from(request),
             "subject": report._get_email_subject(request),
             "reply_to": report._get_email_reply_to(request),
-            # Manual follow-ups are authored by the logged-in user; automatic ones
-            # by the follow-up responsible, or OdooBot.
             "author_id": (
                 request.author or partner._get_followup_responsible().partner_id
             ).id,
@@ -243,11 +208,6 @@ Best Regards,
 
     @api.model
     def _print_followup_letter(self, request) -> dict:
-        """Generate the followup letter for the request's customer.
-        The letter is saved as ir.attachment and linked in the chatter.
-
-        Returns a client action downloading this letter and closing the wizard.
-        """
         partner = request.partner
         attachment = partner._create_followup_letter_attachment(request)
         partner.message_post(

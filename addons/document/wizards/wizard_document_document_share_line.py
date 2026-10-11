@@ -17,7 +17,6 @@ class WizardDocumentDocumentShareLine(models.TransientModel):
         ondelete="cascade",
     )
 
-    # Rights edition
     role = fields.Selection(
         selection="_selection_access_roles",
         required=True,
@@ -31,13 +30,11 @@ class WizardDocumentDocumentShareLine(models.TransientModel):
     original_expiration_date = fields.Datetime(string="Original Expiration")
     is_deleted = fields.Boolean()
 
-    # Additional readonly fields for displaying information
     partner_is_me = fields.Boolean(
         string="Is me",
         compute="_compute_partner_is_me",
     )
 
-    # Edition flags
     has_user = fields.Boolean(compute="_compute_has_user")
     has_warning_no_access = fields.Boolean(compute="_compute_has_warning_no_access")
     is_on_single_document = fields.Boolean(related="documents_sharing_id.is_single")
@@ -67,9 +64,8 @@ class WizardDocumentDocumentShareLine(models.TransientModel):
     )
     def _compute_has_warning_no_access(self) -> None:
         for record in self:
-            # a member being removed needs no way in
             record.has_warning_no_access = (
-                not record.documents_sharing_id.invite_partner_ids  # we are modifying rights not inviting
+                not record.documents_sharing_id.invite_partner_ids
                 and record.documents_sharing_id.access_via_link.endswith("none")
                 and not record.has_user
                 and not record.is_deleted

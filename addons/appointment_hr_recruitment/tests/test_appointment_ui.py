@@ -82,9 +82,7 @@ class AppointmentCrmUITest(AppointmentCommon, common.HttpCase):
         appointment_type = self.env["appointment.type"].browse(
             result["appointment_type_id"]
         )
-        # The default_is_auto_assign should be ignored as the field is not whitelisted
         self.assertFalse(appointment_type.is_auto_assign)
-        # applicant_id is not whitelisted in this module, unlike appointment_crm's opportunity_id
         self.env["appointment.invite"].search(
             [("appointment_type_ids", "in", appointment_type.ids)]
         )

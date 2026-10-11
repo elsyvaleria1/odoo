@@ -31,7 +31,6 @@ class TestSaleCommissionPlan(TestSaleCommissionCommon):
 
     @freeze_time("2024-01-15")
     def test_targets_preserved_when_extending_date_range(self):
-        """Test that existing targets are preserved when extending the plan's date range."""
         plan = self.env["sale.commission.plan"].create(
             {
                 "name": "Test Plan 2024",
@@ -44,16 +43,13 @@ class TestSaleCommissionPlan(TestSaleCommissionCommon):
             len(plan.target_ids), 4, "Should have 4 quarterly targets for 2024."
         )
 
-        # Set custom amounts to simulate user configuration.
         plan.target_ids[0].amount = 10000
         plan.target_ids[1].amount = 15000
         plan.target_ids[2].amount = 12000
         plan.target_ids[3].amount = 18000
 
-        # Extend the plan to 2025.
         plan.date_to = "2025-12-31"
 
-        # Verify: 2024 targets preserved with amounts, 2025 targets added.
         self.assertEqual(
             len(plan.target_ids),
             8,
@@ -85,7 +81,6 @@ class TestSaleCommissionPlan(TestSaleCommissionCommon):
 
     @freeze_time("2024-01-15")
     def test_targets_removed_when_shortening_date_range(self):
-        """Test that targets outside the new range are removed when shortening the plan."""
         plan = self.env["sale.commission.plan"].create(
             {
                 "name": "Test Plan 2024",
@@ -98,10 +93,8 @@ class TestSaleCommissionPlan(TestSaleCommissionCommon):
             len(plan.target_ids), 4, "Should have 4 quarterly targets for 2024."
         )
 
-        # Shorten to first half of 2024.
         plan.date_to = "2024-06-30"
 
-        # Only Q1 and Q2 should remain.
         self.assertEqual(
             len(plan.target_ids),
             2,
@@ -119,7 +112,6 @@ class TestSaleCommissionPlan(TestSaleCommissionCommon):
         )
 
     def test_unrelated_targets_removed_when_updating_periodicity(self):
-        """Test that the targets of a commission plan are properly removed if they don't belong to the new periodicity set."""
         plan = self.env["sale.commission.plan"].create(
             {
                 "name": "Test Plan",

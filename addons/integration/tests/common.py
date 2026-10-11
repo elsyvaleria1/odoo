@@ -244,27 +244,27 @@ class APITransportTestCase(TransactionCase):
             },
         )
 
-    def assertValidResponse(self, response):  # pylint: disable=invalid-name
+    def assertValidResponse(self, response):
         self.assertIsInstance(response, dict)
         self.assertIn("status_code", response)
         self.assertIn("body", response)
         self.assertIn("headers", response)
 
-    def assertSuccessResponse(self, response):  # pylint: disable=invalid-name
+    def assertSuccessResponse(self, response):
         self.assertValidResponse(response)
         self.assertTrue(
             200 <= response["status_code"] < 300,
             f"Expected success status code, got {response['status_code']}",
         )
 
-    def assertCacheHit(self, response):  # pylint: disable=invalid-name
+    def assertCacheHit(self, response):
         self.assertValidResponse(response)
         self.assertTrue(
             response.get("from_cache", False),
             "Expected response from cache",
         )
 
-    def assertCacheMiss(self, response):  # pylint: disable=invalid-name
+    def assertCacheMiss(self, response):
         self.assertValidResponse(response)
         self.assertFalse(
             response.get("from_cache", False),
@@ -295,8 +295,6 @@ def open_admission(
     remote_addr="203.0.113.1",
     headers=None,
 ):
-    """An admitted call of `gate` outside an HTTP request: the row it opens,
-    on a mocked request, is what a handler test settles and reads."""
     from odoo.addons.integration.tools.admission import Admission
 
     admission = Admission(

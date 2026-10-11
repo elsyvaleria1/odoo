@@ -21,21 +21,10 @@ REPO_ROOT = repo_root()
 FLOORS = Path(__file__).with_name("floors.json")
 ADDONS_PATH = f"{REPO_ROOT / 'odoo' / 'addons'},{REPO_ROOT / 'addons'}"
 
-# a time floor is one machine's; the tolerance absorbs a busy neighbour, a
-# regression of a fifth does not hide under it
 TIME_TOLERANCE = float(os.environ.get("ODOO_PERF_TOLERANCE", "0.25"))
-# the SQL text a flow sends is as deterministic as its statement count, but an
-# alias or a reordered clause moves it by a few characters: a band, judged both
-# ways and on every machine, catches a query that doubles and a shrink to bank
 SIZE_TOLERANCE = 0.10
 
-# a time floor is judged only on a machine running at the speed it was set on:
-# measured 2026-09-22, the same code read 51 ms and 127 ms an hour apart as the
-# CPUs throttled under other work, and dividing by a calibration loop
-# over-corrected (the loop slowed 3x where the ORM slowed 1.9x), so a slower
-# machine is reported as not judged rather than red
 CALIBRATION_KEY = "calibration_ms"
-# readings kept for the record: a floor on one would be judged as a time
 RECORD_ONLY = frozenset(
     {
         "rounds",
@@ -201,11 +190,6 @@ def pytest_sessionstart(session):
 
 
 def _pin_to_performance_cores() -> None:
-    # a hybrid CPU runs the calibration loop at 15.2 ms on a performance core,
-    # 23.6 on an efficiency one and 44.0 on a low-power one (Core Ultra 9 185H,
-    # 2026-10-09, none waiting for a CPU): unpinned, the calibration and the
-    # rounds land on different classes and a floor reads red on a still
-    # machine. The floors were set on the performance class.
     try:
         listed = Path("/sys/devices/cpu_core/cpus").read_text(encoding="ascii")
     except OSError:
@@ -309,14 +293,11 @@ def base_db(odoo_config, request):
     yield from _install("base", "base", request.config)
 
 
-# the documents' grant graph: a principal's reach read at query time
 @pytest.fixture(scope="session")
 def document_db(odoo_config, request):
     yield from _install("document", "document", request.config)
 
 
-# the four-module set qualities.md measures: the order flows exercise the
-# compute graph, the x2many write path and the confirmation's stock moves
 @pytest.fixture(scope="session")
 def sale_db(odoo_config, request):
     yield from _install("sale,purchase,stock,account", "sale", request.config)

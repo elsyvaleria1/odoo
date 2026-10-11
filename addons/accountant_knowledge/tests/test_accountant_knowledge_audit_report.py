@@ -13,8 +13,6 @@ from odoo.addons.base.tests.common import TransactionCaseWithUserDemo
 
 class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
     def test_automatically_invite_responsible_users_on_root_article(self):
-        """Check that the responsible users are automatically invited to the
-        article linked to the audit report."""
 
         audit_report = self.env["audit.report"].create(
             {
@@ -35,8 +33,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         self.assertEqual(article.article_member_ids[1].permission, "write")
 
     def test_create_applies_template_and_names_article(self):
-        """Check that creating an audit report renames the generated root
-        article after the report title and applies the template tree."""
         audit_report = self.env["audit.report"].create(
             {
                 "title": "FY2025 Audit",
@@ -51,8 +47,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         )
 
     def test_write_invites_new_responsible_users(self):
-        """Check that linking a new responsible user on an existing audit
-        report invites them on the linked article with write access."""
         audit_report = self.env["audit.report"].create(
             {
                 "title": "My Audit Report",
@@ -75,8 +69,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         self.assertEqual(members.permission, "write")
 
     def test_audit_report_access_restricted_to_account_users(self):
-        """Check that internal users without accounting rights can not access
-        audit reports."""
         internal_user = new_test_user(
             self.env, login="no_accounting_rights", groups="base.group_user"
         )
@@ -85,8 +77,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
             self.env["audit.report"].with_user(internal_user).search([])
 
     def test_action_audit_report_pdf(self):
-        """Check the download action URL contract of the audit report PDF
-        export."""
         audit_report = self.env["audit.report"].create(
             {
                 "title": "My Audit Report",
@@ -103,8 +93,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         )
 
     def test_flatten_outline(self):
-        """Check that nested PDF outlines are flattened in title order with
-        their depth, including the empty boundary case."""
         h1, h2, h3, h1_bis = (
             {"/Title": title} for title in ("h1", "h2", "h3", "h1 bis")
         )
@@ -116,9 +104,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         self.assertEqual(list(flatten_outline([])), [])
 
     def test_is_html_element_empty(self):
-        """Check that the `is_html_element_empty` method correctly identifies
-        empty HTML elements, ignoring all empty tags and whitespace
-        characters."""
         self.assertTrue(
             is_html_element_empty(
                 etree.fromstring("""
@@ -168,7 +153,6 @@ class TestAccountantKnowledgeAuditReport(TransactionCaseWithUserDemo):
         """)
             )
         )
-        # NBSP character (\u00A0):
         self.assertTrue(
             is_html_element_empty(
                 etree.fromstring("""

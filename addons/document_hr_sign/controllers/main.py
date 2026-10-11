@@ -10,13 +10,9 @@ _debug = DebugLog(__name__)
 class SignContract(Sign):
     @http.route()
     def sign(self, sign_request_id, token, sms_token=False, signature=None, **kwargs):
-        """Once a signature request is complete, file its signed documents with
-        the employee or the contract version it was sent for."""
         result = super().sign(
             sign_request_id, token, sms_token=sms_token, signature=signature, **kwargs
         )
-        # a replayed or refused signature signs nothing: filing again on it
-        # made a new set of the signed documents per call to this public route
         if not result.get("success"):
             return result
         request_item = request.env["sign.request.item"]._from_signer_token(token)
@@ -54,8 +50,6 @@ class SignContract(Sign):
     def _file_signed_documents(
         self, sign_request, employee, record, version, request_item
     ):
-        # the signed copies, filed in the employee's contracts and linked to
-        # the record they were signed for (res_model restricts them to HR)
         if not (
             record.company_id.documents_hr_settings and employee.hr_employee_folder_id
         ):

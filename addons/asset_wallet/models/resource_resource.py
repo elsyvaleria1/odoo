@@ -7,10 +7,6 @@ _debug = DebugLog(__name__)
 class ResourceResource(models.Model):
     _inherit = "resource.resource"
 
-    # A card describes the asset, not the reader's data, and its balance is
-    # the wallet app's to show: an asset user with no wallet rights reads the
-    # asset without reading the card. The figures below are the asset's own
-    # summary of its cards and stay ungated; nothing here is stored.
     wallet_card_ids = fields.One2many(
         comodel_name="wallet.card",
         inverse_name="asset_id",
@@ -56,8 +52,6 @@ class ResourceResource(models.Model):
         compute="_compute_card_summary",
     )
 
-    # Every dependency walks the stored link, wallet_card_ids, never the
-    # computed card by kind: a trigger cannot invert an unstored many2one.
     @api.depends(
         "wallet_card_ids.kind",
         "wallet_card_ids.active",

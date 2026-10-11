@@ -13,15 +13,8 @@ _logger = logging.getLogger(__name__)
 
 _debug = DebugLog(__name__)
 
-# An amount names a document by itself only when it is an unusual one: the bill
-# must be the only payable of that amount dated within a year of the
-# transaction, and dated within a week of it. Round amounts recur and fail the
-# first test; a bill waiting since last quarter fails the second. The date is
-# the bill's own, not the period it was booked in.
 AMOUNT_ALONE_RARE_DAYS = 365
 AMOUNT_ALONE_NEAR_DAYS = 7
-# A bank's bill for a month's charges is dated from a few days before the
-# month ends to the first days of the next.
 CHARGES_BILL_BEFORE_DAYS = 10
 CHARGES_BILL_AFTER_DAYS = 15
 
@@ -144,16 +137,6 @@ class AccountBankStatementLine(models.Model):
 
     @_debug.perf.timed
     def _match_amount_alone(self, account_ids, remaining_st_line_ids):
-        """Match an outgoing transaction without a partner to the one bill of its amount.
-
-        The match is left for a person to review: it rests on the amount alone,
-        and the partner it puts on the transaction is a deduction. Incoming
-        money is never matched this way, since two customers owing the same
-        amount is ordinary.
-
-        :return: the ids of the transactions it matched in full
-        :rtype: set
-        """
         processed_st_line_ids = set()
         st_lines = (
             self.browse(remaining_st_line_ids)
@@ -175,8 +158,6 @@ class AccountBankStatementLine(models.Model):
         )
         if not (st_lines and payable_ids):
             return processed_st_line_ids
-        # The candidates are read once, by the amounts being looked for: joined
-        # line by line, every transaction scans its company's journal items.
         self.env.cr.execute(
             SQL(
                 """
@@ -271,19 +252,6 @@ class AccountBankStatementLine(models.Model):
         return processed_st_line_ids
 
     def _match_period_charges(self, remaining_st_line_ids):
-        """Settle a month's bank charges against the one bill issued for them.
-
-        A bank takes a month's fees and their taxes as several transactions
-        and invoices them in one bill. On a journal naming who invoices its
-        charges and how their labels read, the month's open charge
-        transactions are settled together against that partner's one posted,
-        unpaid bill of exactly their total. Any other case is left to a
-        person. The month is read from the database, not from this batch, so
-        a month split across CRON batches is still settled whole.
-
-        :return: the ids of the transactions it settled, of this batch or not
-        :rtype: set
-        """
         charged = (
             self.browse(remaining_st_line_ids)
             .with_prefetch(self._prefetch_ids)
@@ -351,8 +319,6 @@ class AccountBankStatementLine(models.Model):
         return settled_ids
 
     def _get_charges_payables(self, journals, first, last):
-        """Return, per journal, the open payable lines of the posted bills its
-        charges invoicer dated around the months from `first` to `last`."""
         payables = self.env["account.move.line"].search(
             [
                 ("company_id", "in", journals.company_id.ids),
@@ -389,9 +355,6 @@ class AccountBankStatementLine(models.Model):
         }
 
     def _pick_charges_bill(self, journal, payables, month_end, total):
-        """Return the payable lines of the one bill among `payables` dated
-        around `month_end`, open in full and of exactly `total`; nothing when
-        there is no such bill, or more than one."""
         currency = journal.company_id.currency_id
         if not currency.compare_amounts(total, 0) > 0:
             return self.env["account.move.line"]

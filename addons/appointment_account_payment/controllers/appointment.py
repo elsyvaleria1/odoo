@@ -23,10 +23,8 @@ class AppointmentAccountPayment(AppointmentController):
         sitemap=False,
     )
     def calendar_booking_cancel(self, booking_token):
-        """Cancel (unlink) the booking linked to booking_token and redirect to the page of
-        the corresponding appointment type to take another appointment."""
         booking_sudo = (
-            request.env["calendar.booking"]  # noqa: E8537  session: a checkout's handle to the record it is filling
+            request.env["calendar.booking"]
             .sudo()
             .search([("booking_token", "=", booking_token)], limit=1)
         )
@@ -55,11 +53,8 @@ class AppointmentAccountPayment(AppointmentController):
         sitemap=False,
     )
     def calendar_booking_view(self, booking_token):
-        """View the booking summary, reached at the end of the appointment flow when the
-        payment is pending, failed or was cancelled. Redirect to the calendar event page
-        instead when the event exists, which means the booking was paid."""
         booking_sudo = (
-            request.env["calendar.booking"]  # noqa: E8537  session: a checkout's handle to the record it is filling
+            request.env["calendar.booking"]
             .sudo()
             .search([("booking_token", "=", booking_token)], limit=1)
         )
@@ -122,10 +117,6 @@ class AppointmentAccountPayment(AppointmentController):
         booking_line_values=None,
         extra_calendar_event_params=None,
     ):
-        """Override: when a payment step is necessary, store the information in a calendar.booking
-        record instead of a calendar.event, and redirect to payment. The booking is turned into
-        a calendar.event on payment, see _create_event_from_paid_booking on calendar.booking."""
-        # Using a booking prevents synchronizing calendars with non-confirmed events.
         if appointment_type.has_payment_step and (
             appointment_type.product_id.service_tracking
             in ["task_in_project", "project_only", "task_global_project"]
@@ -194,10 +185,6 @@ class AppointmentAccountPayment(AppointmentController):
         )
 
     def _redirect_to_payment(self, calendar_booking):
-        """Create a draft invoice linked to the booking and redirect to the payment page,
-        called from the appointment form submission when the flow has a payment step."""
-        # A new invoice is created each time a booking is created after filling the form.
-        # Overridden when eCommerce is installed to use sale orders instead.
         invoice = calendar_booking.sudo()._create_booking_invoices()
         if not invoice:
             raise NotFound

@@ -28,7 +28,6 @@ class ResourceResource(models.Model):
     def _check_gps_device_available(self, device_id, resource_ids=()):
         if not device_id:
             return
-        # Availability includes archived resources and every business host.
         occupied = (
             self.sudo()
             .with_context(active_test=False)

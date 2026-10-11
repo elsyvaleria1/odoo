@@ -9,9 +9,6 @@ class TestFavorite(HttpCase):
             "_order",
             "sequence desc, id desc",
         )
-        # the tour finds the module it pins first, and the category it groups
-        # by, under names the test gives them: any module on the addons path
-        # outside the Apps filter will do, whatever repositories that path holds
         category = self.env["ir.module.category"].create(
             {"name": "Favorite Tour Category", "sequence": -1}
         )

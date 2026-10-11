@@ -32,17 +32,12 @@ class TestMapLabels(common.TransactionCase):
         self.assertFalse(self.device.map_subtitle)
 
     def test_the_labels_are_read_from_the_record_every_time(self):
-        # Nothing stores these, so a rename is on the map at the next read.
-        # A stored value here would need a depends and a migration; the map
-        # asks for at most a few dozen markers, so it never earned one.
         self.assertFalse(self.env["device.device"]._fields["map_title"].store)
         self.assertFalse(self.env["device.device"]._fields["map_subtitle"].store)
         self.device.name = "GPS-LABEL-01-RENAMED"
         self.assertEqual(self.device.map_title, "GPS-LABEL-01-RENAMED")
 
     def test_the_map_arch_still_asks_for_both_labels(self):
-        # get_views only sends the fields the arch names, so a marker whose
-        # template reads a field the <geoengine> node dropped renders blank.
         arch = etree.fromstring(
             self.env["device.device"].get_view(
                 self.env.ref("device_gps_geoengine.view_device_device_geoengine").id,

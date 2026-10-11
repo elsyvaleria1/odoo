@@ -4,7 +4,6 @@ from odoo.tests import HttpCase, tagged
 @tagged("post_install", "-at_install", "data_recycle")
 class TestDataRecycleUi(HttpCase):
     def test_validate_a_grouped_selection(self):
-        """The Validate button reaches `model.root`, which grouping replaces."""
         banks = self.env["res.bank"].create(
             [{"name": "Tour bank %s" % i} for i in range(3)]
         )
@@ -27,7 +26,6 @@ class TestDataRecycleUi(HttpCase):
         self.assertFalse(any(bank.active for bank in banks))
 
     def test_the_unfiltered_warning_tracks_the_filter(self):
-        """`invisible="domain and domain != '[]'"` -- both branches."""
         bank_model = self.env["ir.model"]._get("res.bank")
         unfiltered = self.env["data_recycle.model"].create(
             {

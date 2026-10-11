@@ -120,7 +120,7 @@ class AccountMove(models.Model):
                     domain &= Domain("date", ">=", start_date)
                 if end_date:
                     domain &= Domain("date", "<=", end_date)
-                timesheets = self.env["account.analytic.line"].sudo().search(domain)  # noqa: E8507 - one query per invoiced line, on its own timesheet domain
+                timesheets = self.env["account.analytic.line"].sudo().search(domain)
                 _debug.lifecycle(
                     "timesheets_invoiced",
                     move=line.move_id,

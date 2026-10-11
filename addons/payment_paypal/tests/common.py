@@ -15,7 +15,6 @@ class PaypalCommon(PaymentCommon):
             },
         )
 
-        # Override default values
         cls.provider = cls.paypal
         cls.currency = cls.currency_euro
         cls.order_id = "123DUMMY456"

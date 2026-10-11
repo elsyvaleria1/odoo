@@ -306,9 +306,6 @@ def insert_cache(
     else:
         lang = get_translation_lang(field, env)
         for id_, val in zip(records._ids, values, strict=True):
-            # a NULL row still answers the language read: a slot holding other
-            # languages, or none left (a PENDING marker dropped from it), would
-            # otherwise stay a miss for it after the fetch meant to fill it
             cache_value = field_cache.setdefault(id_, None if val is None else {})
             if cache_value is not None:
                 cache_value.setdefault(lang, val)
@@ -364,13 +361,13 @@ def mark_dirty(field: BaseString, records: BaseModel, value: typing.Any) -> None
 
     lang = get_translation_lang(field, records.env)
     if not (field.store and any(records._ids)):
-        strategy = "unstored"  # debuglog
+        strategy = "unstored"
         _mark_dirty_unstored(field, records, cache_value, lang)
     elif not callable(field.translate):
-        strategy = "model"  # debuglog
+        strategy = "model"
         _mark_dirty_model_translation(field, records, cache_value, lang, dirty_ids)
     else:
-        strategy = "terms"  # debuglog
+        strategy = "terms"
         mark_dirty_model_term_translation(field, records, cache_value, lang)
     _debug.logic(
         "field.translation.mark_dirty",
@@ -479,14 +476,6 @@ def get_mirrored_ids_by_language(
     if not ids:
         return {}
     env = records.env
-    # A follower is another INSTALLED language storing the same term, so with
-    # one language installed there is nobody to follow and the read below can
-    # only ever return that one language -- which the loop then skips. Without
-    # this, every write of a translated field costs a SELECT, and a loop
-    # writing one record at a time costs one per record: measured at 101
-    # statements for 100 writes against 1 for the same writes on a plain
-    # field. A language stored but no longer installed is deliberately left
-    # alone rather than followed.
     if len(env.registry.locale.installed_langs(env)) < 2:
         _debug.logic(
             "field.translation.mirroring_skipped",

@@ -149,10 +149,6 @@ class TestTranslationWritePropagation(odoo.tests.TransactionCase):
         )
 
     def test_one_installed_language_costs_no_mirroring_read(self):
-        """A follower is another INSTALLED language holding the same term, so
-        with one language there is nobody to follow. The read that looks for
-        one used to run per write, which made a loop writing one record at a
-        time cost one SELECT per record."""
         records = self.Model.create([{"name": f"n{i}"} for i in range(20)])
         self.env.flush_all()
 
@@ -180,14 +176,6 @@ class TestTranslationWritePropagation(odoo.tests.TransactionCase):
         self.assertEqual(self.stored(records[0]), {"en_US": "edited0"})
 
     def test_a_second_language_still_follows_the_edit(self):
-        """The single-language short-circuit must not reach a database that
-        has a second language.
-
-        Only the follower half is asserted here: that a language holding the
-        same term still follows. The other half, that an authored translation
-        survives a source write, is `test_authored_translation_survives_a_
-        source_write` above, and it exercises the same code path.
-        """
         follower = self.Model.with_context(lang="fr_FR").create({"name": "Same"})
         self.assertEqual(
             self.stored(follower),

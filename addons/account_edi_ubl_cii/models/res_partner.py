@@ -40,7 +40,7 @@ class ResPartner(models.Model):
     is_ubl_format = fields.Boolean(compute="_compute_is_ubl_format")
     is_peppol_edi_format = fields.Boolean(
         compute="_compute_is_peppol_edi_format"
-    )  # TODO remove in master
+    )
     peppol_endpoint = fields.Char(
         compute="_compute_peppol_endpoint",
         store=True,
@@ -175,9 +175,9 @@ class ResPartner(models.Model):
             "ubl_a_nz": {
                 "countries": ["NZ", "AU"],
                 "on_peppol": False,
-            },  # Not yet available through Odoo's Access Point, although it's a Peppol valid format
+            },
             "nlcius": {"countries": ["NL"], "on_peppol": True},
-            "ubl_sg": {"countries": ["SG"], "on_peppol": False},  # Same.
+            "ubl_sg": {"countries": ["SG"], "on_peppol": False},
             "facturx": {"countries": ["FR"], "on_peppol": False},
         }
 
@@ -204,7 +204,6 @@ class ResPartner(models.Model):
         country_code = self.commercial_partner_id._deduce_country_code()
         if country_code in format_mapping:
             formats_by_country = format_mapping[country_code]
-            # return the format with the smallest sequence
             if len(formats_by_country) == 1:
                 return formats_by_country[0]
             else:
@@ -212,7 +211,7 @@ class ResPartner(models.Model):
                 return min(
                     formats_by_country,
                     key=lambda e: formats_info[e].get("sequence", 100),
-                )  # we use a sequence of 100 by default
+                )
         return False
 
     def _get_suggested_peppol_edi_format(self):
@@ -240,8 +239,6 @@ class ResPartner(models.Model):
         ]
 
     def _peppol_eas_endpoint_depends(self):
-        # field dependencies of methods _compute_peppol_endpoint() and _compute_peppol_eas()
-        # because we need to extend depends in l10n modules
         return ["country_code", "vat", "company_registry"]
 
     @api.depends_context("company")
@@ -278,7 +275,6 @@ class ResPartner(models.Model):
 
     @api.depends(lambda self: self._peppol_eas_endpoint_depends() + ["peppol_eas"])
     def _compute_peppol_endpoint(self) -> None:
-        """If the EAS changes and a valid endpoint is available, set it. Otherwise, keep the existing value."""
         for partner in self:
             partner.peppol_endpoint = normalize_peppol_endpoint(
                 partner.peppol_endpoint, partner.peppol_eas
@@ -300,10 +296,6 @@ class ResPartner(models.Model):
 
     @api.depends(lambda self: self._peppol_eas_endpoint_depends())
     def _compute_peppol_eas(self) -> None:
-        """
-        If the country_code changes, recompute the EAS only if there is a country_code, it exists in the
-        EAS_MAPPING, and the current EAS is not consistent with the new country_code.
-        """
         for partner in self:
             partner.peppol_eas = partner.peppol_eas
             country_code = partner._deduce_country_code()
@@ -311,7 +303,6 @@ class ResPartner(models.Model):
                 eas_to_field = EAS_MAPPING[country_code]
                 if partner.peppol_eas not in eas_to_field:
                     new_eas = next(iter(EAS_MAPPING[country_code].keys()))
-                    # Iterate on the possible EAS until a valid one is found
                     for eas, field in eas_to_field.items():
                         if field and field in partner._fields:
                             value = partner._get_peppol_endpoint_value(
@@ -327,11 +318,9 @@ class ResPartner(models.Model):
     @api.depends_context("company")
     @api.depends("company_id")
     def _compute_available_peppol_eas(self) -> None:
-        # TO OVERRIDE
         self.available_peppol_eas = list(dict(self._fields["peppol_eas"].selection))
 
     def _prepare_error_peppol_endpoint(self, eas, endpoint) -> str | None:
-        """This function contains all the rules regarding the peppol_endpoint."""
         if eas == "0208" and not re.match(r"^\d{10}$", endpoint):
             return self.env._(
                 "The Peppol endpoint is not valid. The expected format is: 0239843188"

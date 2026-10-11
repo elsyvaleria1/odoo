@@ -11,9 +11,6 @@ class WizardSignRequestSend(models.TransientModel):
 
     @api.depends("template_id")
     def _compute_is_whatsapp_feature_enabled(self) -> None:
-        """
-        Checks if all required WhatsApp templates are configured and approved.
-        """
         self.is_whatsapp_feature_enabled = self.env[
             "sign.request.item"
         ]._check_whatsapp_template_exists(check_if_approved=True)

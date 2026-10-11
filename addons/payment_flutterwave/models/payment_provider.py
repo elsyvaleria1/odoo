@@ -40,10 +40,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS ===#
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "flutterwave").update(
             {
@@ -52,7 +50,6 @@ class PaymentProvider(models.Model):
         )
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "flutterwave":
             supported_currencies = supported_currencies.filtered(
@@ -60,22 +57,18 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "flutterwave":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS ===#
 
     @api.model
     def _get_compatible_providers(
         self, *args, is_validation=False, report=None, **kwargs
     ):
-        """Override of `payment` to filter out Flutterwave providers for validation operations."""
         providers = super()._get_compatible_providers(
             *args, is_validation=is_validation, report=report, **kwargs
         )
@@ -92,28 +85,23 @@ class PaymentProvider(models.Model):
 
         return providers
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "flutterwave":
             return super()._prepare_request_url(endpoint, **kwargs)
         return url_join("https://api.flutterwave.com/v3/", endpoint)
 
     def _prepare_request_headers(self, *args, **kwargs):
-        """Override of `payment` to build the request headers."""
         if self.code != "flutterwave":
             return super()._prepare_request_headers(*args, **kwargs)
         return {"Authorization": f"Bearer {self.flutterwave_secret_key}"}
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "flutterwave":
             return super()._parse_response_error(response)
         return response.json().get("message", "")
 
     def _parse_response_content(self, response, **kwargs):
-        """Override of `payment` to parse the response content."""
         if self.code != "flutterwave":
             return super()._parse_response_content(response, **kwargs)
         return response.json()["data"]

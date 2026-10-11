@@ -7,18 +7,6 @@ from odoo.addons.industry_fsm.tests.common import TestIndustryFsmCommon
 @tagged("post_install", "-at_install")
 class TestProjectTask(TestIndustryFsmCommon):
     def test_group_expand_worksheet_template_ids(self):
-        """
-        Validate that a worksheet template with tasks planned in the last or current period
-        is displayed in the Gantt view.
-        Case 1: Default domain
-        - Ensure `worksheet1` is displayed as its task falls within the domain
-          (2023-01-02 to 2023-01-03).
-        - Ensure `worksheet2` is not displayed as its task falls outside the domain
-          (2023-01-05 to 2023-01-06).
-        Case 2: Explicit filter
-        - Ensure `worksheet2` is displayed when explicitly filtered using the domain
-          ('worksheet_template_id', 'ilike', 'Worksheet 2').
-        """
         worksheet1, worksheet2 = self.env["worksheet.template"].create(
             [
                 {"name": "Worksheet 1", "res_model": "project.task"},
@@ -82,7 +70,6 @@ class TestProjectTask(TestIndustryFsmCommon):
             },
         )
 
-        # Create a timesheet to make sure there is a report to send
         self.env["account.analytic.line"].create(
             {
                 "project_id": self.task.project_id.id,
@@ -91,7 +78,6 @@ class TestProjectTask(TestIndustryFsmCommon):
                 "employee_id": self.employee_user.id,
             }
         )
-        # Make sure we can send a report for that task since there is a timesheet on it.
         self.task.invalidate_recordset(
             [
                 "display_send_report_primary",
@@ -117,7 +103,7 @@ class TestProjectTask(TestIndustryFsmCommon):
         )
 
         self.env.company.report_config_id.external_report_layout_id = (
-            False  # make sure no layout exists
+            False
         )
         action = self.task.action_send_report()
         self.assertEqual(
@@ -127,7 +113,6 @@ class TestProjectTask(TestIndustryFsmCommon):
         self.assertEqual(action["res_model"], "wizard.report.config.update.layout")
         self.assertDictEqual(action["context"]["report_action"], report_action)
 
-        # Set default layout to check if the action returned by `action_send_report` is the report action
         self.env.company.report_config_id.external_report_layout_id = self.env.ref(
             "web.external_layout_standard"
         ).id

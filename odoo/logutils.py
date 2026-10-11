@@ -469,7 +469,7 @@ def _apply_configured_levels() -> None:
 
 
 def init_logger() -> None:
-    global showwarning  # noqa: PLW0603  saves the stdlib hook we replace, once per process
+    global showwarning
     if logging.getLogRecordFactory() is LogRecord:
         return
 
@@ -514,7 +514,7 @@ PSEUDOCONFIG_MAPPER: Final[dict[str, list[str]]] = {
 
 RUNBOT: Final[int] = 25
 
-logging.RUNBOT = RUNBOT  # type: ignore[attr-defined]
+logging.RUNBOT = RUNBOT
 logging.addLevelName(RUNBOT, "INFO")
 logging._nameToLevel["INFO"] = logging.INFO
 IGNORE: Final[frozenset[str]] = frozenset(
@@ -563,4 +563,4 @@ def runbot(self: logging.Logger, message: str, *args: object, **kws: Any) -> Non
     self.log(RUNBOT, message, *args, **kws)
 
 
-logging.Logger.runbot = runbot  # type: ignore[attr-defined]
+logging.Logger.runbot = runbot

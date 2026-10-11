@@ -44,8 +44,6 @@ class MixinBomVariantLine(models.AbstractModel):
         )
 
     def _get_variant_conditions(self):
-        # A specification holds for every variant of its product: a condition
-        # on one of its values is met by all of them, though none carries it.
         return self.bom_product_template_attribute_value_ids.filtered(
             lambda value: (
                 value.product_attribute_value_id

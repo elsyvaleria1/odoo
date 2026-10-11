@@ -10,11 +10,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def create_step_for_button(self, model: str, method=False, action_id=False) -> int:
-        """Add an approval step to a button, binding the button first if it has none.
-
-        The binding takes the shape a Studio approval rule always had: Request mode,
-        approved on invoke, and the operation left to the next call.
-        """
         binding = self._get_or_create_binding_for_button(model, method, action_id)
         category = binding.category_id
         steps = category.step_ids
@@ -59,8 +54,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _get_or_create_binding_for_button(self, model: str, method, action_id) -> Self:
-        """The button's request binding: its own, made one if it only observed or was
-        archived (the unique key holds those too), or a new one."""
         action = False if method else self._parse_button_action(action_id)
         binding = self.with_context(active_test=False).search(
             [
@@ -114,8 +107,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _create_button_category(self, ir_model, operation: str):
-        # A button's approval restricts who may press it; the person pressing is
-        # the one whose approval is recorded. That is self-approval by design.
         return self.env["approval.category"].create(
             {
                 "name": self.env._(

@@ -18,7 +18,6 @@ from odoo.addons.calendar_sync.remote import (
 )
 from odoo.addons.calendar_sync.service import InvalidSyncToken
 
-# Outlook's answer endpoints, by the attendee's state in Odoo
 ANSWERS = {
     "accepted": "accept",
     "declined": "decline",
@@ -41,7 +40,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
 
     @api.model
     def _timeout(self) -> int:
-        # an edit in the interface waits for its push
         if self.env.context.get("calendar_sync_interactive"):
             return self.env["calendar.event"]._get_microsoft_graph_timeout()
         return TIMEOUT
@@ -92,11 +90,9 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             return None
         return self._remote(MicrosoftEvent(values))
 
-    # -- sending -------------------------------------------------------------
 
     @api.model
     def _insert(self, account, record, values, insert_id):
-        # Outlook keeps the first item sent under a transaction id
         event = self._service().insert(
             dict(values, transactionId=insert_id),
             connection=self._connection(account),
@@ -108,8 +104,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
 
     @api.model
     def _patch(self, account, remote_id, record, values):
-        # a meeting's online link is decided when it is inserted: Outlook
-        # keeps it whatever a later change says
         values = {
             key: value
             for key, value in values.items()
@@ -170,7 +164,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             kind = ErrorKind.TRANSIENT
         return CalendarSyncError(kind, message)
 
-    # -- conversion, Odoo to Outlook ------------------------------------------
 
     @api.model
     def _synced_fields(self, model_name):
@@ -182,7 +175,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
 
     @api.model
     def _remote_values(self, record, account):
-        # an occurrence names its series by the id it has in this calendar
         own = record._microsoft_links().filtered(
             lambda link: link.account_id == account
         )
@@ -191,7 +183,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             series_master_id=own.remote_master_id,
         )
 
-    # -- conversion, Outlook to Odoo ------------------------------------------
 
     @api.model
     def _odoo_values(self, remote, model_name, record):
@@ -217,7 +208,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             occurrences = occurrences[:MAX_RECURRENT_OCCURRENCES]
         links = self.env["calendar.sync.link"]._engine()._match(account, occurrences)
         events = {}
-        # the series' events where Outlook has them, by series and timeslot
         timeslots = {}
         for remote in occurrences:
             mevent = remote.payload["event"]
@@ -233,7 +223,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
                 )[:1]
                 if not event:
                     continue
-                # the timeslot it was found by is the one it keeps
                 values.pop("start")
                 values.pop("stop")
             elif master:
@@ -241,8 +230,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
             event.write(values)
             events[remote.remote_id] = event
         if master:
-            # Outlook's list of the series is the series: an event it no
-            # longer has leaves
             detached = recurrence._apply_recurrence(timeslots)
             detached._microsoft_forget()
             detached.unlink()
@@ -250,8 +237,6 @@ class CalendarSyncAdapterMicrosoft(models.AbstractModel):
 
     @api.model
     def _create_series(self, master, occurrences):
-        """The recurrence of `master`, created with an event per occurrence;
-        (recurrence, {remote id: event})."""
         Event = self.env["calendar.event"]
         mevent = master.payload["event"]
         values = self.env["calendar.recurrence"]._microsoft_to_odoo_values(mevent)

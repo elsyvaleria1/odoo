@@ -207,7 +207,6 @@ class TestOutbound(MirrorCase):
             subtype_xmlid="mail.mt_comment",
         )
         sent = self._queued(chat).filtered(lambda m: m.mail_message_id == message)
-        # as the web route does: access checked, then the message in sudo
         self.channel.with_user(self.test_user)._message_update_content(
             message.sudo(), body="Salimos a las 8"
         )

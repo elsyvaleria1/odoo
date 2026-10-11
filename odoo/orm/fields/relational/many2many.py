@@ -188,8 +188,6 @@ class Many2many(_RelationalMulti):
         _ddl.update_db_foreign_keys(self, model)
 
     def _relation_siblings(self, records: BaseModel) -> list[str]:
-        # every many2many of the model that reads the same relation table:
-        # a link written through one of them is read through the others
         if not self.store or not self.relation:
             return [self.name]
         model_name = records._name
@@ -225,9 +223,6 @@ class Many2many(_RelationalMulti):
             ) from e
 
         relation, column1, column2 = self._get_relation_triple()
-        # record rules reach `query` as sub-selects that can cost far more than
-        # the relation (document.document's: ~130 ms, on an empty relation);
-        # a rule-free comodel keeps its single round trip
         probe_links = not filter_access and not (
             records.env.registry.access_policy.record_domain(
                 comodel.env, comodel._name, "read"
@@ -245,12 +240,12 @@ class Many2many(_RelationalMulti):
             probe_links=probe_links,
         )
         if _debug.logic.enabled and not domain.is_true():
-            cols = (relation, column1, column2)  # debuglog
-            be = records.env.backend  # debuglog
-            all_q = comodel._search([], bypass_access=filter_access)  # debuglog
-            rows = be.read_m2m_groups(records, *cols, all_q)  # debuglog
-            stored = sum(len(ids) for ids in rows.values())  # debuglog
-            returned = sum(len(ids) for ids in group.values())  # debuglog
+            cols = (relation, column1, column2)
+            be = records.env.backend
+            all_q = comodel._search([], bypass_access=filter_access)
+            rows = be.read_m2m_groups(records, *cols, all_q)
+            stored = sum(len(ids) for ids in rows.values())
+            returned = sum(len(ids) for ids in group.values())
             _debug.logic(
                 "field.many2many.read.field_domain_applied",
                 model=self.model_name,
@@ -301,11 +296,6 @@ class Many2many(_RelationalMulti):
         self._update_cache_relation(
             records, comodel, new_relation, store=store, created=created
         )
-        # Two fields of one model may read the same relation table the same
-        # way round, one of them through a domain (product.product's variant
-        # values beside its attribute values). A write through one changes
-        # what the other reads, and `create` has already cached the other as
-        # empty: the siblings answer from the table again.
         siblings = [
             name for name in self._relation_siblings(records) if name != self.name
         ]
@@ -370,8 +360,6 @@ class Many2many(_RelationalMulti):
         store: bool,
         created: bool,
     ) -> None:
-        # records ending on the same relation share one cache update: the
-        # scope bookkeeping in _update_cache is per call, not per record
         record_ids_by_value: defaultdict[tuple[IdType, ...], list[IdType]] = (
             defaultdict(list)
         )
@@ -379,9 +367,6 @@ class Many2many(_RelationalMulti):
             record_ids_by_value[tuple(new_relation[record_id])].append(record_id)
         for ids, record_ids in record_ids_by_value.items():
             if store and not _is_cache_order_stable(comodel, ids):
-                # a stored slot reads as a fetch would: in the comodel's order
-                # when the sort keys are in memory, else in the commands'
-                # order; a computed value keeps the order its compute produced
                 sorted_ids = comodel.browse(ids)._sorted_by_ids(comodel._order, False)
                 if _debug.logic.enabled and sorted_ids is None:
                     _debug.logic(
@@ -453,13 +438,8 @@ class Many2many(_RelationalMulti):
     def _with_owner_link(
         self, records: BaseModel, vals_list: list[ValuesType]
     ) -> list[ValuesType]:
-        # a record created through this field is linked to its owners from the
-        # start, as a one2many line gets its inverse: its create then knows
-        # who holds it (a phone number reads its contact's country)
         field: Field[typing.Any] = self
         owners = records
-        # a related field (an inherited one included) creates here and hands
-        # the ids to its target: the owners are the target's records
         while field.related:
             *path, fname = field.related.split(".")
             for part in path:
@@ -579,9 +559,6 @@ class Many2many(_RelationalMulti):
         )
 
         if self.store and not model.env.su:
-            # a field with no table of its own writes no link row: the values
-            # it puts in cache are a computed projection of a stored field,
-            # which is checked where it is written
             _debug.logic(
                 "field.many2many.new_links_access_checked",
                 model=self.model_name,
@@ -605,9 +582,6 @@ class Many2many(_RelationalMulti):
         records_commands_list: Sequence[tuple[BaseModel, list[CommandValue]]],
         missing_ids: set[IdType],
     ) -> None:
-        # a compute assigning the field record by record over a batch hands
-        # each record with the batch as its prefetch: the relation is read for
-        # the batch once, as a getter would, not once per assignment
         for recs, _commands in records_commands_list:
             field_cache = self._get_cache(recs.env)
             for record in recs:
@@ -642,11 +616,6 @@ class Many2many(_RelationalMulti):
             for id_ in recs._ids:
                 new_relation[id_] = delta.get_final_ids(new_relation[id_], created_ids)
 
-        # order included: `OrderedSet.__eq__` ignores it, and this field
-        # carries the commands' order into the cache -- `_apply_relation_delta`
-        # stores `tuple(new_relation[id])` -- so a set() that only reorders is
-        # a change. It is observable on a non-stored many2many, whose read is
-        # not re-sorted into the comodel's order.
         if all(
             tuple(new_relation[key]) == tuple(old_relation[key]) for key in old_relation
         ):

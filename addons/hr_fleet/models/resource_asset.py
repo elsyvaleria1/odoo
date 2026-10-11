@@ -17,7 +17,5 @@ class ResourceAsset(models.Model):
         }
 
     def _get_manager_user(self):
-        # A resource names its user only when its person had a login when the
-        # resource was made; the party is what carries the login afterwards.
         manager = self.manager_id.sudo()
         return manager.user_id or manager.partner_id.user_ids[:1]

@@ -90,12 +90,8 @@ class SocialStreamPost(models.Model):
                 tweet.twitter_retweeted_tweet_id_str
                 and tweet.twitter_author_id == account.twitter_user_id
             ):
-                # If the tweet is a retweet and has been posted with the given account, the user will not
-                # be allowed to retweet the tweet.
                 tweet.twitter_can_retweet = False
                 continue
-            # Otherwise, the user will be allowed to retweet the tweet if there does not exist a retweet
-            # of that tweet posted with the given account.
             original_tweet_id = (
                 tweet.twitter_retweeted_tweet_id_str or tweet.twitter_tweet_id
             )
@@ -112,12 +108,8 @@ class SocialStreamPost(models.Model):
         for post in twitter_posts:
             post.is_author = post.twitter_author_id == post.account_id.twitter_user_id
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     def _twitter_comment_add(self, stream, comment_id, message, attachment):
-        """Create a reply to a tweet."""
         self.check_singleton()
         tweet_id = comment_id or self.twitter_tweet_id
         tweet = self._twitter_post_tweet(
@@ -127,14 +119,6 @@ class SocialStreamPost(models.Model):
         return tweet
 
     def _twitter_get_comments(self, page=1) -> dict:
-        """Find the tweets in the same thread, but after the current one.
-
-        All tweets have a `conversation_id` field, which correspond to the first tweet
-        in the same thread. "comments" do not really exist in Twitter, so we take all
-        the tweet in the same thread (same `conversation_id`), after the current one.
-
-        https://developer.twitter.com/en/docs/twitter-api/tweets/search/integrate/build-a-query
-        """
         self.check_singleton()
 
         if not self.twitter_conversation_id:
@@ -288,7 +272,6 @@ class SocialStreamPost(models.Model):
         return True
 
     def _twitter_do_retweet(self) -> bool:
-        """Creates a new retweet for the given stream post on Twitter."""
         if not self.twitter_can_retweet:
             raise UserError(self.env._("A repost already exists"))
 
@@ -308,7 +291,7 @@ class SocialStreamPost(models.Model):
             timeout=5,
         )
 
-        if result.ok:  # 200-series HTTP code
+        if result.ok:
             return True
         elif result.status_code == 401:
             account.write({"is_media_disconnected": True})
@@ -320,7 +303,6 @@ class SocialStreamPost(models.Model):
         raise UserError(self.env._("Unknown error"))
 
     def _twitter_undo_retweet(self) -> bool:
-        """Deletes the retweet of the given stream post from Twitter"""
         tweet_id = self.twitter_retweeted_tweet_id_str or self.twitter_tweet_id
         account = self.stream_id.account_id
         unretweet_endpoint = url_join(
@@ -357,11 +339,6 @@ class SocialStreamPost(models.Model):
         return True
 
     def _twitter_tweet_quote(self, message, attachment):
-        """
-        :param werkzeug.datastructures.FileStorage attachment:
-        Creates a new quotes for the current stream post on Twitter.
-        If the stream post does not have any message, a retweet will be created instead of a quote.
-        """
         self.check_singleton()
         if not message and not attachment:
             return self._twitter_do_retweet()
@@ -370,9 +347,6 @@ class SocialStreamPost(models.Model):
         )
         return True
 
-    # ========================================================
-    # UTILITY / MISC
-    # ========================================================
 
     def _get_matching_post(self):
         self.check_singleton()
@@ -432,8 +406,6 @@ class SocialStreamPost(models.Model):
 
         tweet = result.json()["data"]
 
-        # we can not use fields expansion when creating a tweet,
-        # so we fill manually the missing values to not recall the API
         tweet.update(
             {
                 "author_id": self.account_id.twitter_user_id,
@@ -448,8 +420,6 @@ class SocialStreamPost(models.Model):
             }
         )
         if images_attachments_ids:
-            # the image didn't create an attachment, and it will require an extra
-            # API call to get the URL, so we just base 64 encode the image data
             b64_image = base64.b64encode(bytes_data).decode()
             link = "data:%s;base64,%s" % (attachment.content_type, b64_image)
             tweet["medias"] = [{"url": link, "type": "photo"}]

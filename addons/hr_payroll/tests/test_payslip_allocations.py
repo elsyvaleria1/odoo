@@ -14,7 +14,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Add two bank accounts for Richard
         cls.bank1 = cls.env["res.partner.bank.account"].create(
             {
                 "acc_number": "111-222",
@@ -31,7 +30,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
             Command.set([cls.bank1.id, cls.bank2.id])
         ]
 
-        # Default salary distribution: 100% to bank1
         set_salary_allocations(
             cls.richard_emp,
             {
@@ -58,7 +56,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
         return self.richard_payslip.compute_salary_allocations(total_amount=total)
 
     def test_split_hundred_zero_percentages(self):
-        """If percentages split are 100% and 0%, both should appear in allocations"""
         self.richard_payslip.net_wage = 1000
         allocations = self._compute_alloc()
         self.assertEqual(len(allocations), 2)
@@ -72,7 +69,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
         self.assertAlmostEqual(allocations[str(self.bank2.id)], 0)
 
     def test_split_fixed_and_percentage(self):
-        """Fixed allocation goes first, remainder is distributed by percentage"""
         set_salary_allocations(
             self.richard_emp,
             {
@@ -93,7 +89,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
         self.assertAlmostEqual(allocations[str(self.bank2.id)], 4000.0)
 
     def test_percentage_split(self):
-        """Two percentages should split the wage proportionally"""
         set_salary_allocations(
             self.richard_emp,
             {
@@ -114,19 +109,12 @@ class TestPayslipAllocations(TestPayslipContractBase):
         self.assertAlmostEqual(allocations[str(self.bank2.id)], 400.0)
 
     def test_too_much_fixed_raises(self):
-        """If fixed allocations exceed net wage, ValidationError is raised
-
-        Both accounts are named, and the second at a fixed zero rather than
-        left out: an account the employee holds has an allocation row now, so
-        omitting it here would leave a lone 0% row and the percentages would
-        total zero. The JSON this replaces could simply not mention it.
-        """
         set_salary_allocations(
             self.richard_emp,
             {
                 self.bank1: {
                     "sequence": 1,
-                    "amount": 6000.0,  # > wage
+                    "amount": 6000.0,
                     "amount_is_percentage": False,
                 },
                 self.bank2: {
@@ -159,7 +147,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
             self._compute_alloc(total=5000.0)
 
     def test_three_accounts_fixed_and_percentages(self):
-        """One fixed + two percentage allocations"""
         self.richard_emp.salary_bank_account_ids = [
             Command.set([self.bank1.id, self.bank2.id])
         ]
@@ -179,32 +166,29 @@ class TestPayslipAllocations(TestPayslipContractBase):
             {
                 self.bank1: {
                     "sequence": 1,
-                    "amount": 2000.0,  # fixed
+                    "amount": 2000.0,
                     "amount_is_percentage": False,
                 },
                 self.bank2: {
                     "sequence": 2,
-                    "amount": 30.0,  # percentage
+                    "amount": 30.0,
                     "amount_is_percentage": True,
                 },
                 bank3: {
                     "sequence": 3,
-                    "amount": 70.0,  # percentage
+                    "amount": 70.0,
                     "amount_is_percentage": True,
                 },
             },
         )
 
         allocations = self._compute_alloc(total=10000.0)
-        # bank1 gets 2000 fixed
         self.assertAlmostEqual(allocations[str(self.bank1.id)], 2000.0)
 
-        # 8000 left → 30% = 2400, 70% = 5600
         self.assertAlmostEqual(allocations[str(self.bank2.id)], 2400.0)
         self.assertAlmostEqual(allocations[str(bank3.id)], 5600.0)
 
     def test_three_accounts_multiple_fixed_and_percentage(self):
-        """Two fixed amounts and one percentage allocation"""
         bank3 = self.env["res.partner.bank.account"].create(
             {
                 "acc_number": "777-888",
@@ -220,17 +204,17 @@ class TestPayslipAllocations(TestPayslipContractBase):
             {
                 self.bank1: {
                     "sequence": 1,
-                    "amount": 1000.0,  # fixed
+                    "amount": 1000.0,
                     "amount_is_percentage": False,
                 },
                 self.bank2: {
                     "sequence": 2,
-                    "amount": 2500.0,  # fixed
+                    "amount": 2500.0,
                     "amount_is_percentage": False,
                 },
                 bank3: {
                     "sequence": 3,
-                    "amount": 100.0,  # percentage
+                    "amount": 100.0,
                     "amount_is_percentage": True,
                 },
             },
@@ -242,7 +226,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
         self.assertAlmostEqual(allocations[str(bank3.id)], 3500.0)
 
     def test_four_accounts_mixed_distribution(self):
-        """Combination of multiple fixed and percentage across 4 accounts"""
         bank3 = self.env["res.partner.bank.account"].create(
             {
                 "acc_number": "999-000",
@@ -264,37 +247,34 @@ class TestPayslipAllocations(TestPayslipContractBase):
             {
                 self.bank1: {
                     "sequence": 1,
-                    "amount": 500.0,  # fixed
+                    "amount": 500.0,
                     "amount_is_percentage": False,
                 },
                 self.bank2: {
                     "sequence": 2,
-                    "amount": 20.0,  # %
+                    "amount": 20.0,
                     "amount_is_percentage": True,
                 },
                 bank3: {
                     "sequence": 3,
-                    "amount": 30.0,  # %
+                    "amount": 30.0,
                     "amount_is_percentage": True,
                 },
                 bank4: {
                     "sequence": 4,
-                    "amount": 50.0,  # %
+                    "amount": 50.0,
                     "amount_is_percentage": True,
                 },
             },
         )
 
         allocations = self._compute_alloc(total=10000.0)
-        # fixed first
         self.assertAlmostEqual(allocations[str(self.bank1.id)], 500.0)
-        # 9500 left → split 20/30/50
         self.assertAlmostEqual(allocations[str(self.bank2.id)], 1900.0)
         self.assertAlmostEqual(allocations[str(bank3.id)], 2850.0)
         self.assertAlmostEqual(allocations[str(bank4.id)], 4750.0)
 
     def test_rounding_residual_is_absorbed(self):
-        """Rounding differences must be absorbed so that the sum equals the net wage"""
         bank3 = self.env["res.partner.bank.account"].create(
             {
                 "acc_number": "131-313",
@@ -309,7 +289,6 @@ class TestPayslipAllocations(TestPayslipContractBase):
             }
         )
 
-        # Fixed 3-way split: 33.33%, 33.33%, 33.34%
         set_salary_allocations(
             self.richard_emp,
             {
@@ -338,5 +317,4 @@ class TestPayslipAllocations(TestPayslipContractBase):
             allocations = self._compute_alloc(total=total)
             summed = sum(allocations.values())
 
-            # Sum must equal net wage to 2 decimals
             self.assertAlmostEqual(summed, total, places=2)

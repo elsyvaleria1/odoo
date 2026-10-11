@@ -109,8 +109,6 @@ class QualityPoint(models.Model):
 
     @api.depends("test_type", "check_ids.quality_state", "check_ids.measure")
     def _compute_standard_deviation_and_average(self) -> None:
-        # The variance and mean are computed with Welford's method, using Bessel's
-        # correction because we work on a sample.
         _debug.perf.count("quality_spc_stats_compute", points=self)
         self.filtered(lambda point: point.test_type == "measure").check_ids.fetch(
             ["quality_state", "measure"]
@@ -148,18 +146,6 @@ class QualityPoint(models.Model):
             self.tolerance_max = self.norm
 
     def check_execute_now(self):
-        """Decide whether this point should produce a check right now.
-
-        `periodical` gates on the *point*, not on the candidate product: it
-        asks "has any check existed for this point_id since the period
-        started", with no product term in the query. On a point shared by
-        several products (via `product_category_ids`, or no product/category
-        restriction at all), one product drawing a check silently pauses
-        every other product sharing that point until the period rolls over —
-        by design, not an oversight (see `_is_check_execution_sampled`), but
-        worth knowing before configuring a shared point expecting "one check
-        per product per period".
-        """
         _debug.pipeline("quality_check_execute_now", points=self)
         self.check_singleton()
         if self.measure_frequency_type == "all":
@@ -185,10 +171,6 @@ class QualityPoint(models.Model):
         return super().check_execute_now()
 
     def _is_check_execution_sampled(self) -> bool:
-        # `random` draws afresh on every call, by design: each prospective
-        # check is its own trial.  `periodical` reads this point's own checks,
-        # and nothing is flushed between the lines of one batch, so it answers
-        # the same for all of them and is settled once.
         _debug.logic("quality_check_sampled", points=self)
         self.check_singleton()
         return (
@@ -276,18 +258,6 @@ class QualityPoint(models.Model):
     def _get_domain_quality_points(
         self, product_ids, picking_type_id, measure_on=False, on_demand=False
     ):
-        """Helper that returns a domain for quality.point based on the products and picking type
-        pass as arguments. It will search for quality point having:
-        - No product_ids and no product_category_ids
-        - At least one variant from product_ids
-        - At least one category that is a parent of the product_ids categories
-
-        :param product_ids: the products that could require a quality check
-        :type product_ids: :class:`~odoo.addons.product.models.product.ProductProduct`
-        :param picking_type_id: the operation types that could require a quality check
-        :type picking_type_id: :class:`~odoo.addons.stock.models.stock_picking.StockPickingType`
-        :returns: the domain for quality point with given picking_type_id for all the product_ids
-        """
         _debug.logic("quality_points_domain", points=self)
         domain = Domain("picking_type_ids", "in", picking_type_id.ids)
         domain_in_products_or_categs = Domain(
@@ -449,18 +419,6 @@ class QualityCheck(models.Model):
                 check.allowed_product_ids = check.picking_id.move_ids.product_id
 
     def _source_document_fields(self):
-        """The m2o fields that anchor a check to a business document.
-
-        One name per bridge module.  A check belongs to at most one of them,
-        and the form hides the links to the others -- that is all `hide_<name>`
-        ever meant.  It used to be a three-valued integer (-1 mine / 0 none /
-        1 someone else's) recomputed by twelve `_should_hide_*` methods across
-        four modules, none of which the views could read as anything but
-        `> 0`.
-
-        Every name added here must come with a matching `hide_<name>` Boolean
-        declared in the same module: the compute below assigns them by name.
-        """
         return ("picking_id",)
 
     @api.depends(lambda self: self._source_document_fields())
@@ -552,9 +510,6 @@ class QualityCheck(models.Model):
         "point_id.tolerance_max",
     )
     def _compute_measure_success(self) -> None:
-        # The tolerances belong to the point, and the field is stored: without
-        # them in `depends`, editing a point's tolerance left every check it
-        # had already graded sitting on the old verdict.
         for rec in self:
             if rec.point_id.test_type != "measure":
                 rec.measure_success = "none"
@@ -615,8 +570,6 @@ class QualityCheck(models.Model):
         return True
 
     def _measure_passes(self) -> bool:
-        # Reads the graded field rather than re-deriving the rule: the two
-        # spellings had already drifted apart on which test types they graded.
         self.check_singleton()
         return self.measure_success != "fail"
 
@@ -719,15 +672,6 @@ class QualityCheck(models.Model):
         return bool(self.quality_state == "fail" and self.picking_id)
 
     def _move_to_failure_location(self, failure_location_id, failed_qty=None) -> None:
-        """This function is used to fail move lines and can optionally:
-             - split it into failed and passed qties (i.e. 2 moves w/1 check each)
-             - send the failed qty to a failure location
-        :param failure_location_id: id of location to send failed qty to
-        :param failed_qty: qty failed on check; for a move-line check, a falsy value (the None default) passes the check instead of failing any quantity
-        """
-        # Every branch below used to end in `return`, so the first check that
-        # had nothing to do abandoned the rest of the recordset -- and the
-        # wizard hands this whole picking's failed checks at once.
         for check in self:
             if not check._can_move_to_failure_location():
                 continue
@@ -746,11 +690,6 @@ class QualityCheck(models.Model):
     def _move_to_failure_location_move_line(
         self, failure_location_id, failed_qty
     ) -> None:
-        """Send `failed_qty` of this check's move line to the failure location.
-
-        Splits the move line in two when only part of it failed, and hands the
-        untouched half a passed check of its own.
-        """
         self.check_singleton()
         if not failed_qty:
             self.do_pass()
@@ -758,8 +697,6 @@ class QualityCheck(models.Model):
         move_line = self.move_line_id
         move = move_line.move_id
         dest_location = failure_location_id or move_line.location_dest_id.id
-        # `failed_qty` is bounded by what the line actually holds: the caller
-        # is a wizard field, and the split below cannot fail more than there is.
         failed_qty = min(failed_qty, move_line.quantity)
         self.failure_location_id = dest_location
         if failed_qty == move_line.quantity:
@@ -788,9 +725,6 @@ class QualityCheck(models.Model):
                 "quantity": failed_qty,
             }
         )
-        # `failed_qty`, not `min(failed_qty, move_line.quantity)`: the line had
-        # just been decremented, so the old expression sized the failed move at
-        # what was *left* whenever more than half of the line failed.
         move.copy(
             {
                 "location_dest_id": dest_location,
@@ -800,8 +734,6 @@ class QualityCheck(models.Model):
                 "move_line_ids": [Command.link(failed_move_line.id)],
             }
         )
-        # switch the checks, check in self should always be the failed one,
-        # new check linked to original move line will be passed check
         new_check = self.create(failed_move_line._prepare_check_vals(self.point_id))
         self.move_line_id = failed_move_line
         new_check.move_line_id = move_line
@@ -845,7 +777,6 @@ class QualityCheck(models.Model):
             if self.move_line_id:
                 if not self.move_line_id._is_checkable(check_picked):
                     return False
-        # Only process qc related to tracked product if its lot is set
         if self.move_line_id and self.product_id.tracking in ["serial", "lot"]:
             if (
                 self.move_line_id.picking_type_use_create_lots
@@ -880,15 +811,12 @@ class QualityAlert(models.Model):
     @api.depends("name", "title")
     def _compute_display_name(self):
         for record in self:
-            # `name` is only defaulted, not required: concatenating it raised
-            # TypeError on an alert whose sequence had not been drawn yet.
             record.display_name = " - ".join(
                 part for part in (record.name, record.title) if part
             )
 
     @api.model
     def name_create(self, name):
-        """Create an alert from a quick-create name (used by name_create)."""
         record = self.create(
             {
                 "title": name,
@@ -898,9 +826,6 @@ class QualityAlert(models.Model):
 
     @api.model
     def message_new(self, msg_dict, custom_values=None):
-        # We need to add the name in custom_values or it will use the subject.
-        # `custom_values` defaults to None all the way up the mail gateway, and
-        # the gateway calls this with one argument.
         custom_values = dict(custom_values or {})
         custom_values["name"] = self.env["ir.sequence"].next_by_code(
             "quality.alert"
@@ -930,11 +855,6 @@ class ProductTemplate(models.Model):
 
     @api.depends("product_variant_ids")
     def _compute_quality_check_qty(self) -> None:
-        # Two queries for the whole recordset, not two per template: the loop
-        # called `_count_quality_checks` (a `_read_group`) and
-        # `_count_quality_points` (a raw `COUNT`) once each per template.
-        # An archived template still counts its (archived) variants' points,
-        # which is what `active_test=product_tmpl.active` said.
         point_variants_by_tmpl = {
             product_tmpl: product_tmpl.with_context(
                 active_test=product_tmpl.active
@@ -1024,12 +944,6 @@ class ProductProduct(models.Model):
         groups="quality.group_quality_user",
     )
 
-    # The reverse side of `quality.check.product_id`, on the column that field
-    # already owns.  It is what lets the counter declare a dependency at all:
-    # the other half of the count -- operation-level checks reached through
-    # the picking's moves -- is not a relation the ORM can follow, so a check
-    # of *that* kind still needs an explicit invalidation.  Half a dependency
-    # beats none: the named case is the common one.
     quality_check_ids = fields.One2many(
         comodel_name="quality.check",
         inverse_name="product_id",
@@ -1039,10 +953,6 @@ class ProductProduct(models.Model):
     @api.depends("quality_check_ids.quality_state")
     @api.depends_context("company")
     def _compute_quality_check_qty(self) -> None:
-        # Both counters are scoped to `self.env.company`, and both used to run
-        # a query per product from inside this loop -- 84 queries for 40
-        # products, measured -- so the two helpers below answer for the whole
-        # recordset at once.
         checks_by_product = self._count_quality_checks_by_product()
         points_by_product = self._count_quality_points_by_product()
         for product in self:
@@ -1059,12 +969,6 @@ class ProductProduct(models.Model):
         return quality_fail_qty, quality_pass_qty
 
     def _count_quality_checks_by_product(self):
-        """Graded checks per product id, as ``{id: (failed, passed)}``.
-
-        A check counts for a product either because it names it, or because it
-        is an operation-level check on a picking that moves it -- which is why
-        the group-by is on the picking's moves as well as on `product_id`.
-        """
         counts = dict.fromkeys(self.ids, (0, 0))
         if not self:
             return counts
@@ -1104,20 +1008,9 @@ class ProductProduct(models.Model):
         return counts
 
     def _count_quality_points(self):
-        """Compute the count of all related quality points, which means quality points that have either
-        the product in common, a product category parent of this product's category or no product/category
-        set at all.
-        """
         return sum(self._count_quality_points_by_product().values())
 
     def _count_quality_points_by_product(self):
-        """Applicable quality points per product id.
-
-        A point applies to a product when it names the product, when it names a
-        category the product's own category descends from, or when it names
-        neither.  One query for the whole recordset: the caller used to ask per
-        product, and the answer is a group-by away.
-        """
         counts = dict.fromkeys(self.ids, 0)
         if not self:
             return counts
@@ -1129,8 +1022,6 @@ class ProductProduct(models.Model):
         if additional_where_clause:
             query.add_where(additional_where_clause)
 
-        # `parent_path` is '1/7/12/', so every id but the trailing empty one is
-        # this product's category or one of its ancestors.
         categ_ids_by_product = {
             product.id: [
                 int(parent_id)

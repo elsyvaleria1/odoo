@@ -5,9 +5,6 @@ from odoo.exceptions import UserError
 
 from odoo.addons.pos_self_order.controllers.orders import PosSelfOrderController
 
-# razorpay_fetch_payment_status's statuses: a failed or cancelled one carries
-# payment_messageCode, these say the money went back; the device's own
-# progress is the last word of its message code
 RAZORPAY_FAILED = frozenset({"VOIDED", "AUTHORIZED_REFUNDED"})
 RAZORPAY_PENDING = frozenset({"RECEIVED", "SENT", "QUEUED"})
 
@@ -39,7 +36,7 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def razorpay_payment_status(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def razorpay_payment_status(
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_razorpay_kiosk_order(
@@ -55,7 +52,7 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def razorpay_cancel_status(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def razorpay_cancel_status(
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_razorpay_kiosk_order(
@@ -64,13 +61,10 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         response = payment_method.razorpay_cancel_payment_request(
             {"p2pRequestId": order.kiosk_terminal_request}
         )
-        # razorpay_cancel_payment_request reports a cancellation as "error"
-        # and a refused one as "errorMessage"
         if "error" in response:
             order._send_payment_result("fail")
             response["outcome"] = "failed"
             return response
-        # the device would not cancel: it may have taken the card
         status = self._fetch_razorpay_status(order, payment_method)
         response["outcome"] = self._settle_razorpay(
             order, payment_method, status, final=True
@@ -83,10 +77,6 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         )
 
     def _settle_razorpay(self, order, payment_method, response, final=False) -> str:
-        # "approved"; "failed": the kiosk may pay again; "pending" or
-        # "unknown": it keeps polling; "unverified": staff check the terminal.
-        # An outcome still unknown when the kiosk gives up (final) holds the
-        # order: offering to pay again could charge twice
         status = response.get("status")
         if status == "AUTHORIZED":
             return self._pay_razorpay(order, payment_method, response)
@@ -123,8 +113,6 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
                     },
                 )
         except UserError as error:
-            # the terminal took a card, but not for this order as asked:
-            # staff decide, the customer is not asked to pay again
             response["error"] = error.args[0]
             order._hold_kiosk_payment_to_verify(
                 payment_method,
@@ -133,7 +121,6 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
             )
             return "unverified"
         if order.kiosk_payment_to_verify_method_id:
-            # the terminal settled what staff were asked to check
             order._clear_kiosk_payment_to_verify()
         if paid:
             order._send_payment_result("Success")

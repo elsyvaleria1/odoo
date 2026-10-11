@@ -95,7 +95,6 @@ _RE_CREATE_SEQUENCE = _re.compile(
 _RE_ROLLBACK_TO_SAVEPOINT = _re.compile(
     _LEADING_COMMENTS + r"ROLLBACK\s+TO\b", _re.IGNORECASE | _re.DOTALL
 )
-# Only behind a comment: a bare SET is told from SELECT by its third letter.
 _RE_COMMENTED_SET = _re.compile(
     _LEADING_COMMENTS + r"SET\b", _re.IGNORECASE | _re.DOTALL
 )

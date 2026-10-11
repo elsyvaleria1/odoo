@@ -60,8 +60,6 @@ class TestPlanningForm(TestCommonPlanning):
             cls.resource_calendar_38_hours_per_week.id
         )
 
-        # `resource_calendar_id` is a Many2one: it needs the calendar's id, not
-        # the field's own name (a copy/paste slip dating back to 5e397b74a08).
         cls.test_user = new_test_user(
             cls.env,
             login="testuser",
@@ -71,18 +69,6 @@ class TestPlanningForm(TestCommonPlanning):
         )
 
     def test_planning_no_employee_no_company(self):
-        """Test the `allocated_hours` compute for a multi-day slot with no resource
-        and a momentarily-empty `company_id` (no employee, no company).
-
-        `company_id` is required on `planning.slot`, but the `required` modifier
-        is only enforced by `Form` while the field is visible, and it is only
-        visible to users in `base.group_multi_company` (added below). So the
-        field is intentionally cleared here to exercise `allocated_hours` with
-        no company, then restored to `self.env.company` before the `Form`
-        context manager exits and re-validates required fields.
-        """
-        # Required for `company_id` to be visible in the view, and thus for its
-        # `required` modifier to actually be checked by `Form` on exit.
         self.env.user.group_ids += self.env.ref("base.group_multi_company")
         with Form(self.env["planning.slot"]) as slot:
             start, end = datetime(2020, 1, 1, 8, 0), datetime(2020, 1, 11, 18, 0)
@@ -94,7 +80,6 @@ class TestPlanningForm(TestCommonPlanning):
             self.assertEqual(
                 slot.allocated_hours, (end - start).total_seconds() / (60 * 60)
             )
-            # Restore `company_id` before the Form validates required fields on exit.
             slot.company_id = self.env.company
 
     def planning_form(self, timezone, start, end, expected_start, expected_end):
@@ -129,23 +114,11 @@ class TestPlanningForm(TestCommonPlanning):
             )
 
     def test_planning_employee_different_timezone(self):
-        # When a slot is selected on the frontend, the start and end datetime are from 00:00:00 to 23:59:59 in the user timezone
         start, end = datetime(2020, 1, 1, 23, 0, 0), datetime(2020, 1, 2, 22, 59, 59)
         self.planning_form("Asia/Kolkata", start, end, 8, 16.6)
         self.planning_form("America/Montreal", start, end, 8, 16.6)
 
     def test_create_material_resource_and_assign_role(self):
-        """
-        Verify that material resources are created and assigned roles correctly.
-
-        Steps:
-            - Create a planning role
-            - Assign Officer: Manage all employees to the planning manager
-            - Create a material-type resource
-            - Confirm no roles are initially assigned
-            - Assign a role to the resource
-            - Check the assigned planning role and default role
-        """
         toolkit_role = self.env["resource.role"].create({"name": "Toolkit"})
 
         self.test_user.group_ids += self.env.ref("hr.group_hr_user")

@@ -7,7 +7,6 @@ class ProductPricelistItem(models.Model):
 
     @api.model
     def _access_predicate_website_offered(self, bind, args) -> Domain:
-        # the items of the pricelists a shop visitor may price with
         return Domain(
             "pricelist_id",
             "any",

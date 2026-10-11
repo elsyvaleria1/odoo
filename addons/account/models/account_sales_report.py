@@ -16,7 +16,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
     def _dynamic_lines_generator(
         self, report, options, all_column_groups_expression_totals, warnings=None
     ):
-        """Generate the dynamic lines for the report in a vertical style (one line per tax per partner)."""
         lines = []
         totals_by_column_group = {
             column_group_key: {
@@ -50,7 +49,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
         for partner, results in self._query_partners(report, options, warnings):
             for tax_ec_category in ("goods", "triangular", "services"):
                 if not ec_tax_filter_selection[tax_ec_category]:
-                    # Skip the line if the tax is not selected
                     continue
                 partner_values = defaultdict(dict)
                 country_specific_code = operation_categories.get(tax_ec_category)
@@ -109,7 +107,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
             partner_lines=len(lines),
             total_line=bool(lines),
         )
-        # Report total line.
         if lines:
             lines.append(
                 (
@@ -123,7 +120,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
         return lines
 
     def _caret_options_initializer(self):
-        """Add custom caret option for the report to link to the partner and allow cleaner overrides."""
         return {
             "ec_sales": [
                 {
@@ -135,12 +131,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _custom_options_initializer(self, report, options, previous_options):
-        """Add the invoice lines search domain that is specific to the country: typically the taxes tag_ids
-        relative to the country for the triangular, sale of goods or services.
-
-        :param dict options: Report options
-        :param dict previous_options: Previous report options
-        """
         super()._custom_options_initializer(
             report, options, previous_options=previous_options
         )
@@ -168,8 +158,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
                     "services": (),
                     "triangular": (),
                     "use_taxes_instead_of_tags": True,
-                    # We can't use tags as we don't have a country tax report correctly set, 'use_taxes_instead_of_tags'
-                    # should never be used outside this case
                 }
             }
         )
@@ -212,11 +200,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _init_core_custom_options(self, report, options, previous_options) -> None:
-        """Add the invoice lines search domain that is common to all countries.
-
-        :param dict options: Report options
-        :param dict previous_options: Previous report options
-        """
         default_tax_filter = [
             {"id": "goods", "name": self.env._("Goods"), "selected": True},
             {"id": "triangular", "name": self.env._("Triangular"), "selected": True},
@@ -226,8 +209,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
         ec_tax_filter_selection = previous_options.get(
             "ec_tax_filter_selection", default_tax_filter
         )
-        # In case we have a EC sale list report with more ec_tax_filter_selection the previous options will have extra
-        # item we just keep the default ones, and we let variant extend the function to add the ones they need
         if ec_tax_filter_selection != default_tax_filter:
             filtered_ec_tax_filter_selection = [
                 item
@@ -254,14 +235,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
     def _get_report_line_partner(
         self, report, options, partner, partner_values, markup=""
     ) -> dict:
-        """Convert the partner values to a report line.
-
-        :param dict options: Report options
-        :param recordset partner: the corresponding res.partner record
-        :param dict partner_values: Dictionary of values for the report line
-        :return: the values for the report line
-        :rtype: dict
-        """
         column_values = []
         for column in options["columns"]:
             value = partner_values[column["column_group_key"]].get(
@@ -283,13 +256,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_report_line_total(self, report, options, totals_by_column_group) -> dict:
-        """Convert the total values to a report line.
-
-        :param dict options: Report options
-        :param dict totals_by_column_group: Dictionary of values for the total line
-        :return: the values for the report line
-        :rtype: dict
-        """
         column_values = []
         for column in options["columns"]:
             col_value = totals_by_column_group[column["column_group_key"]].get(
@@ -311,37 +277,10 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _query_partners(self, report, options, warnings=None):
-        """Execute the queries, perform all the computation, then return a list of tuple
-        (partner, fetched_values) sorted by the res.partner model _order:
-            - partner is a res.partner record.
-            - fetched_values is a dictionary keyed by column_group_key, each value containing:
-                - sums by operation type:           {'goods': float,
-                                                     'triangular': float,
-                                                     'services': float,
-
-                - tax identifiers:                   'tax_element_id': list[int], > the tag_id in almost every case
-                                                     'sales_type_code': list[str],
-
-                - partner identifier elements:       'vat_number': str,
-                                                     'full_vat_number': str,
-                                                     'country_code': str}
-
-        :param options:             The report options.
-        :return:                    A list of (res.partner record, fetched_values) tuples.
-        :rtype:                     list
-        """
         groupby_partners = {}
         vat_set = set()
 
         def update_partner_sums(row):
-            """Assign the values of a query row to the groupby_partners dictionary: dispatch a non-zero
-            balance to the operation type its tax element belongs to, then store the partner identifiers
-            (vat number, country code, ...).
-
-            :param dict row: One row of the _get_query_sums result.
-            """
-            # Balances are kept per operation type so the report can be rendered either vertically (up to 3
-            # lines per partner, one per operation type) or horizontally (one line with 3 columns).
             if not company_currency.is_zero(row["balance"]):
                 vat = row["vat_number"] or ""
                 vat_country_code = vat[:2] if vat[:2].isalpha() else None
@@ -358,8 +297,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
                     row["column_group_key"]
                 ]
                 for key in options["sales_report_taxes"]:
-                    # options['sales_report_taxes'][key] could be either a list, set, tuple or boolean, in case of boolean
-                    # the in operator would traceback
                     if (
                         not isinstance(options["sales_report_taxes"][key], bool)
                         and row["tax_element_id"] in options["sales_report_taxes"][key]
@@ -407,7 +344,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
         company_currency = self.env.company.currency_id
 
-        # Execute the queries and dispatch the results.
         query = self._get_query_sums(report, options)
         self.env.cr.execute(query)
 
@@ -439,19 +375,10 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_query_sums(self, report, options) -> SQL:
-        """Construct a query retrieving all the aggregated sums to build the report. It includes:
-        - sums for all partners.
-
-        :param options:             The report options.
-        :return:                    The SQL query.
-        :rtype:                     SQL
-        """
         queries = []
         allowed_ids = self._get_tag_ids_filtered(options)
         service_ids = self._get_tag_ids_filtered(options, operation_types=["services"])
 
-        # In the case of the generic report, we don't have a country defined. So no reliable tax report whose
-        # tag_ids can be used. So we have a fallback to tax_ids.
 
         if options.get("sales_report_taxes", {}).get("use_taxes_instead_of_tags"):
             tax_elem_table = SQL("account_tax")
@@ -538,14 +465,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
 
     @api.model
     def _get_tag_ids_filtered(self, options, operation_types=None) -> set:
-        """Get all the ids concerned by the report for the given options.
-
-        :param dict options: Report options
-        :param list operation_types: only retrieve the taxes or tags of the specified types (if selected)
-        :return: the ids stored in options['sales_report_taxes'] for the selected operation types; tax
-            tag ids, or tax ids when 'use_taxes_instead_of_tags' is set
-        :rtype: set
-        """
         return {
             tag_id
             for op in options.get("ec_tax_filter_selection", [])
@@ -557,12 +476,6 @@ class AccountEcSalesReportHandler(models.AbstractModel):
     @api.model
     @_debug.perf.timed
     def _get_ec_country_codes(self, options):
-        """Return the country codes of the EC countries.
-
-        :param dict options: Report options
-        :return: the country codes applicable at the report date (see the GB and MC cases below)
-        :rtype: set
-        """
         rslt = {
             "AT",
             "BE",
@@ -594,12 +507,10 @@ class AccountEcSalesReportHandler(models.AbstractModel):
             "XI",
         }
 
-        # GB left the EU on January 1st 2021. But before this date, it's still to be considered as a EC country
         if fields.Date.from_string(
             options["date"]["date_from"]
         ) < fields.Date.from_string("2021-01-01"):
             rslt.add("GB")
-        # Monaco  is treated as part of France for VAT purposes (but should not be displayed within FR context)
         if self.env.company.tax_config_id.account_fiscal_country_id.code != "FR":
             rslt.add("MC")
 

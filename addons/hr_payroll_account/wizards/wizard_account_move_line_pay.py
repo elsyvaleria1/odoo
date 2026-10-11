@@ -6,9 +6,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
 
     @api.model
     def _get_line_batch_key(self, line):
-        """OVERRIDE to use the bank account defined on the line, if any.
-        :context payment_consider_partner: (boolean) wether the bank of the `line.partner_id` will be considered for the `bank_account_id` of the returned dict
-        """
         res = super()._get_line_batch_key(line)
         if line.employee_bank_account_id:
             res["bank_account_id"] = line.employee_bank_account_id.id

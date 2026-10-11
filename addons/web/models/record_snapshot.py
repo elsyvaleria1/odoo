@@ -8,7 +8,7 @@ from odoo.tools.authority_keys import strip_authority_keys
 
 class RecordSnapshot(dict):
     __slots__ = ["fields_spec", "record"]
-    __hash__ = None  # type: ignore[assignment]  # unhashable: overrides __eq__
+    __hash__ = None
 
     def __init__(
         self, record: BaseModel, fields_spec: dict, update_all: bool = True
@@ -26,8 +26,6 @@ class RecordSnapshot(dict):
         return self.record == other.record and super().__eq__(other)
 
     def _value(self, field_name: str) -> Any:
-        # a field the user may read on some records only reads as empty on
-        # the others, as read() shows it
         record = self.record
         field = record._fields[field_name]
         if field.access_classes is not None and record._field_masked_ids(field):

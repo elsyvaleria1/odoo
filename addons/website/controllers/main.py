@@ -40,8 +40,6 @@ _debug = DebugLog(__name__)
 LOC_PER_SITEMAP = 45000
 SITEMAP_CACHE_TIME = datetime.timedelta(hours=12)
 MAX_PAGE_SEARCH_RESULTS = 500
-# textwrap.shorten refuses a width below its placeholder, and the width comes
-# straight off a public route, so it is clamped rather than trusted.
 MIN_AUTOCOMPLETE_CHARS = 8
 MAX_AUTOCOMPLETE_CHARS = 10000
 
@@ -400,7 +398,7 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         )
         return response
 
-    def sitemap_website_info(env, rule, qs):  # noqa: N805 -- sitemap callback, first arg is the env
+    def sitemap_website_info(env, rule, qs):
         website = env["website"].get_current_website()
         if not (
             website.is_view_active("website.website_info")
@@ -625,11 +623,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         readonly=True,
     )
     def get_dynamic_snippet_templates(self, filter_name=False):
-        # Scoped to this website, like every other route here and like its own
-        # sibling `get_dynamic_snippet_filters` three routes up. Without it this
-        # public route answered with every website's templates: on a two-site
-        # database, site A's visitors were handed the keys, names and layout of
-        # templates belonging only to site B.
         domain = request.website.website_domain() & Domain(
             [["key", "ilike", ".dynamic_filter_template_"], ["type", "=", "qweb"]]
         )
@@ -642,12 +635,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         )
 
         for t in templates:
-            # The first ELEMENT child, not the first child: lxml counts comments
-            # and processing instructions as children, and a leading comment --
-            # ordinary in a view arch -- made `children[0].attrib` empty, so the
-            # snippet silently rendered with default columns, counts and thumb
-            # instead of the ones its template declares. No shipped template
-            # starts with one today; nothing would have said so if one did.
             first = etree.fromstring(t.pop("arch_db")).find("*")
             attribs = first.attrib if first is not None else {}
             t["numOfEl"] = attribs.get("data-number-of-elements")
@@ -752,9 +739,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 key=lambda r: r.get("name", ""),
                 reverse=bool(order) and "name desc" in order,
             )
-        # Slice to the window BEFORE rendering: every pager page used to render
-        # the whole capped set through shortening, highlighting and value_to_html
-        # and then throw all but its own rows away.
         results_data = results_data[offset : offset + limit]
         result = [
             self._render_autocomplete_record(
@@ -887,8 +871,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
     )
     def hybrid_list(self, page=1, search="", search_type="all", **kw):
         if not search:
-            # The template reads both counts; an empty search must still supply
-            # them rather than leave the names undefined.
             return request.render(
                 "website.list_hybrid",
                 {"search_count": 0, "search_count_reachable": 0},
@@ -908,12 +890,6 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 options=options,
             )
 
-        # One search in the common case. Asking once for MAX_PAGE_SEARCH_RESULTS
-        # rows made `len(results)` the pager's total -- a cap reported as a count
-        # -- and rendered every one of them on every page view before slicing 50
-        # out. The count comes back from the same search that renders the page,
-        # so the pager is built from it; only a page the pager then clamps costs
-        # a second search.
         try:
             requested_offset = max(int(page) - 1, 0) * step
         except TypeError, ValueError:
@@ -1045,7 +1021,7 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 group["is_custom"] = True
                 result.append(group)
                 continue
-            for template in View.search(  # noqa: E8507 - one query per template group; the groups are a fixed list rendered from a template
+            for template in View.search(
                 [
                     ("mode", "=", "primary"),
                     "|",

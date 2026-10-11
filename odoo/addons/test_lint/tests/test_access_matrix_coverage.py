@@ -10,7 +10,6 @@ MATRIX_FILE = Path("tests") / "test_access_matrix.py"
 
 
 def granted_models(rows, models) -> dict[str, set[str]]:
-    # per module, the stored models its own production permission rows name
     granted: defaultdict[str, set[str]] = defaultdict(set)
     for row in rows:
         if (
@@ -25,7 +24,6 @@ def granted_models(rows, models) -> dict[str, set[str]]:
 
 
 def matrix_models(path: Path) -> set[str]:
-    # the models a matrix names: Cell("<model>", ...) or Cell(model="<model>")
     tree = ast.parse(path.read_text(encoding="utf-8"))
     found = set()
     for node in ast.walk(tree):

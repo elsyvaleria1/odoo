@@ -42,8 +42,6 @@ class TestAmazonCredentials(TestAmazonCommon):
         )
 
     def test_an_account_with_no_credential_reads_empty(self):
-        # The shared fixture creates its account already holding a token, so a
-        # never-connected account has to be made here.
         account = self.env["amazon.account"].create(
             {
                 "name": "NeverConnected",
@@ -57,8 +55,6 @@ class TestAmazonCredentials(TestAmazonCommon):
         self.assertEqual(account.state, "disconnected")
 
     def test_the_offer_domain_selects_on_the_credential(self):
-        # `('refresh_token', '!=', False)` could not survive the field becoming a
-        # door: an unstored compute is not searchable. The credential is.
         self.account.refresh_token = "Atzr|searchable"
         found = self.env["amazon.account"].search([("credential_id", "!=", False)])
         self.assertIn(self.account, found)
@@ -93,8 +89,6 @@ class TestAmazonCredentials(TestAmazonCommon):
         )
 
     def test_a_sale_manager_reads_the_account_but_not_the_token(self):
-        # This group owns the model (an ir.access permission grants it CRUD), so every
-        # ordinary flow runs as it. `state` has to survive; the secret must not.
         account = self.account.with_user(self._sale_manager())
         account.invalidate_recordset()
 

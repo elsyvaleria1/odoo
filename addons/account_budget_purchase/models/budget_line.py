@@ -21,9 +21,6 @@ class BudgetLine(models.Model):
     @api.model
     def _invalidate_budget_cache(self) -> None:
         super()._invalidate_budget_cache()
-        # `purchase.order.line.budget_line_ids` is a non-stored compute that
-        # *searches* `budget.line`, so no ORM dependency reaches it: creating or
-        # retiring a budget left every order's above-budget warning behind.
         self.env["purchase.order.line"].invalidate_model(
             ["budget_line_ids", "is_above_budget"]
         )

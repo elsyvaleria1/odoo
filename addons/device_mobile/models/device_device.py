@@ -8,10 +8,6 @@ MOBILE_CATEGORY_CODE = "mobile_phone"
 
 
 def mobile_e164(number, country=None) -> str | None:
-    """The E.164 form of a mobile number, or None when it is no valid number:
-    one written without its country code is read in `country`. Mexico dropped
-    the 1 of its mobile numbers in 2019; one registered before, as Telegram
-    still reports it (+521...), is the same line without it."""
     raw = (number or "").strip()
     digits = "".join(character for character in raw if character.isdigit())
     if not digits:
@@ -104,9 +100,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _device_kind_categories(self, kind):
-        # A company phone reports its position like a tracker does, so it is a
-        # GPS device. It used to qualify by carrying an IMEI, which also made a
-        # SIM-equipped access terminal one.
         codes = super()._device_kind_categories(kind)
         if kind == "gps":
             return [*codes, MOBILE_CATEGORY_CODE]

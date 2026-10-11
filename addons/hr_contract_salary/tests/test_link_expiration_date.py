@@ -119,7 +119,6 @@ class TestLinkExpirationDate(HttpCase):
         self.assertFalse(self.employee.version_id.salary_offer_ids.access_token)
 
     def test_generate_offer_by_hr_user(self):
-        """Test that HR & Recruitment user can generate salary offer for applicant"""
         hr_user = mail_new_test_user(
             self.env,
             name="HR Officer User",
@@ -143,12 +142,6 @@ class TestLinkExpirationDate(HttpCase):
         self.assertEqual(applicant.salary_offers_count, 1)
 
     def test_link_for_applicant(self):
-        """
-        Applicant should be able to access salary configurator before the link Expires.
-        After the link expiration date, applicant should be redirected to the invalid link page.
-        """
-        # If there is no demo version templates, then creating a version as follows will be necessary.
-        # Otherwise, the following version creation can be deleted.
         self.env["hr.version"].create(
             {
                 "name": "Contract Template",

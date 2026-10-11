@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
@@ -15,14 +14,12 @@ from .common_report_engine import TestAccountReportsCommon
 @tagged("post_install", "-at_install")
 class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
     def _assert_filter_date(self, report, previous_options, expected_date_values):
-        """Compute the 'date' option for the given report and previous_options, and assert it matches expected_date_values."""
         options = report.get_options(previous_options)
         self.assertDictEqual(options["date"], expected_date_values)
 
     def _assert_filter_comparison(
         self, report, previous_options, expected_period_values
     ):
-        """Compute the 'comparison' option for the given report and previous_options, and assert its periods match expected_period_values."""
         options = report.get_options(previous_options)
 
         self.assertEqual(
@@ -51,16 +48,11 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             }
         )
 
-        # Test the default account_report reports. Don't choose US variants based on the fiscal country.
         cls.env["report.formula"].search([]).variant_report_ids.active = False
 
-    ####################################################
-    # DATES RANGE
-    ####################################################
 
     @freeze_time("2017-12-31")
     def test_filter_date_month_range(self):
-        """Test the filter_date with 'this_month'/'last_month' in 'range' mode."""
         self._assert_filter_date(
             self.date_range_report,
             {"date": {"filter": "this_month", "mode": "range"}},
@@ -181,7 +173,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_quarter_range(self):
-        """Test the filter_date with 'this_quarter'/'last_quarter' in 'range' mode."""
         self._assert_filter_date(
             self.date_range_report,
             {"date": {"filter": "this_quarter", "mode": "range"}},
@@ -302,7 +293,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_range_full_year(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'range' mode when the fiscal year ends the 12-31."""
         self._assert_filter_date(
             self.date_range_report,
             {"date": {"filter": "this_year", "mode": "range"}},
@@ -423,7 +413,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_range_overlap_years(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'range' mode when the fiscal year overlaps 2 years."""
         self.env.company.account_config_id.fiscalyear_last_day = 30
         self.env.company.account_config_id.fiscalyear_last_month = "6"
 
@@ -547,8 +536,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_range_custom_years(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'range' mode with custom account.fiscal.year records."""
-        # Create a custom fiscal year for the nine previous quarters.
         today = fields.Date.from_string("2017-12-31")
         for i in range(9):
             quarter_df, quarter_dt = date_utils.get_quarter(
@@ -563,7 +550,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
                 }
             )
         quarter_df, quarter_dt = date_utils.get_quarter(today + relativedelta(months=3))
-        # Adding a next quarter
         self.env["account.fiscal.year"].create(
             {
                 "name": "custom next quarter",
@@ -693,7 +679,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_custom_range(self):
-        """Test the filter_date with a custom dates range."""
         self._assert_filter_date(
             self.date_range_report,
             {
@@ -791,9 +776,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_custom_range_recognition(self):
-        """Test the period_type inferred from a custom dates range: a range covering a whole month,
-        quarter, fiscal year, or a custom account.fiscal.year must be recognized as such.
-        """
         self._assert_filter_date(
             self.date_range_report,
             {
@@ -909,13 +891,9 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             },
         )
 
-    ####################################################
-    # SINGLE DATE
-    ####################################################
 
     @freeze_time("2017-12-30")
     def test_filter_date_today_single(self):
-        """Test the filter_date with 'today' in 'single' mode."""
         self._assert_filter_date(
             self.single_date_report,
             {"date": {"filter": "today", "mode": "single"}},
@@ -1002,7 +980,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_month_single(self):
-        """Test the filter_date with 'this_month'/'last_month' in 'single' mode."""
         self._assert_filter_date(
             self.single_date_report,
             {"date": {"filter": "this_month", "mode": "single"}},
@@ -1071,7 +1048,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_quarter_single(self):
-        """Test the filter_date with 'this_quarter'/'last_quarter' in 'single' mode."""
         self._assert_filter_date(
             self.single_date_report,
             {"date": {"filter": "this_quarter", "mode": "single"}},
@@ -1140,7 +1116,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_single_full_year(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'single' mode when the fiscal year ends the 12-31."""
         self._assert_filter_date(
             self.single_date_report,
             {"date": {"filter": "this_year", "mode": "single"}},
@@ -1209,7 +1184,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_single_overlap_years(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'single' mode when the fiscal year overlaps 2 years."""
         self.env.company.account_config_id.fiscalyear_last_day = 30
         self.env.company.account_config_id.fiscalyear_last_month = "6"
 
@@ -1281,8 +1255,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_fiscalyear_single_custom_years(self):
-        """Test the filter_date with 'this_year'/'last_year' in 'single' mode with custom account.fiscal.year records."""
-        # Create a custom fiscal year for the nine previous quarters.
         today = fields.Date.from_string("2017-12-31")
         for i in range(9):
             quarter_df, quarter_dt = date_utils.get_quarter(
@@ -1365,7 +1337,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2017-12-31")
     def test_filter_date_custom_single(self):
-        """Test the filter_date with a custom date in 'single' mode."""
         self._assert_filter_date(
             self.single_date_report,
             {"date": {"filter": "custom", "mode": "single", "date_to": "2018-01-15"}},
@@ -1434,8 +1405,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
     @freeze_time("2021-09-01")
     def test_filter_date_custom_single_period_type_month(self):
-        """Test the filter_date with a custom date in 'single' mode, when the previous options carry a
-        stale 'today' period_type that must be recomputed from the date range."""
         self._assert_filter_date(
             self.single_date_report,
             {
@@ -1485,13 +1454,9 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             ],
         )
 
-    ####################################################
-    # User Defined Filters on Journal Items
-    ####################################################
 
     @freeze_time("2023-09-01")
     def test_filter_aml_ir_filters(self):
-        # Test user-defined filter set on journal items used as report options
 
         filter_record = self.env["ir.filters"].create(
             {
@@ -1550,10 +1515,8 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
                 opt["selected"] = True
                 break
 
-        # Ensure that only the move with the 'checked' at false attribute is included in the report
         self.assertLinesValues(
             report._get_lines(options),
-            #      Name   Balance
             [0, 1],
             [("Line 1", 1000)],
             options,
@@ -1654,11 +1617,9 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
                 options
             )
             if match_active:
-                # Active company should match
                 self.assertEqual(
                     computed_company_ids[0], expected_companies[0].id, message
                 )
-            # Selected companies should match, whatever their order
             self.assertEqual(
                 set(computed_company_ids), set(expected_companies.ids), message
             )
@@ -1682,7 +1643,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         other_company = self.env["res.company"].create({"name": "Other company"})
 
-        # Test 'tax_units' when no tax unit is defined and VAT is shared
         self.single_date_report.filter_multi_company = "tax_units"
 
         _check_company_filter(
@@ -1713,7 +1673,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             "Choosing a subset of branches in the company selector should keep that selection in the report.",
         )
 
-        # Test 'selector' filter
         self.single_date_report.filter_multi_company = "selector"
 
         _check_company_filter(
@@ -1757,7 +1716,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             main_company + branch_1_1 + branch_1_2 + branch_2 + other_company,
         )
 
-        # Test 'tax_units' filter, with no tax unit, and non-shared VAT numbers
         self.single_date_report.filter_multi_company = "tax_units"
         branch_1_1.vat = "456"
         branch_2.vat = "789"
@@ -1784,7 +1742,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             "Only the current company and its sub-branches sharing its vat number should be selected.",
         )
 
-        # Test 'tax_units' filter, with an existing tax unit object
         self.single_date_report.country_id = self.env.ref("base.be")
         self.single_date_report.availability_condition = "country"
 
@@ -1826,7 +1783,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             "with the same VAT as the active company.",
         )
 
-        # Test 'tax_units' filter, with no tax unit, and no VAT number on branches (only one on main company)
         branch_1.vat = None
         branch_1_1.vat = None
         branch_1_2.vat = None
@@ -1897,18 +1853,13 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         for i, val in enumerate(new_expected_values):
             self.assertDictEqual(new_options["column_headers"][0][i], val)
 
-    ####################################################
-    # RETURN PERIODS
-    ####################################################
 
     @freeze_time("2024-09-01")
     def test_returns_period_filter(self):
         generic_tax_report = self.env.ref("account.generic_tax_report")
 
-        # l10n_us_reports adds a return type for this report; we make sure that none is set at this point, for testing purposes
         generic_tax_report.return_type_ids.unlink()
 
-        # When the tax report isn't linked to a return type, it should fallback on 'this_month'
         self._assert_filter_date(
             generic_tax_report,
             {"no_report_reroute": True},
@@ -1923,7 +1874,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             },
         )
 
-        # Assigning a return type without periodicity should now make use of the periodicity set on the company (monthly, by default),
         return_type = self.env["account.return.type"].create(
             {
                 "name": "Zaphod Beeblebrox",
@@ -2007,7 +1957,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.env.company.account_config_id.fiscalyear_last_month = "12"
 
-        # Setting a periodicity on the return type should take precedence over the company setting
         return_type.deadline_periodicity = "semester"
 
         self._assert_filter_date(
@@ -2025,7 +1974,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             },
         )
 
-        # Check filter fallback
         return_type.deadline_periodicity = "monthly"
 
         self._assert_filter_date(
@@ -2209,9 +2157,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             },
         )
 
-    ####################################################
-    # CONSOLIDATION
-    ####################################################
 
     def test_filter_consolidation(self):
         company1 = self.company_data["company"]
@@ -2310,7 +2255,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_available_variants_options(self):
-        # Ensure variants are visible in the variants selector if their availability condition is met
         def assert_available_variants_match(options, reports):
             expected_variants = [v["id"] for v in options.get("available_variants", [])]
             actual_reports = reports.mapped("id")
@@ -2371,14 +2315,12 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             }
         )
 
-        # Selecting Root Report
         options = self._generate_options(root_report, "2024-01-01", "2024-12-31")
         expected_reports = (
             root_report + report_always + report_generic_coa + report_us_country
         )
         assert_available_variants_match(options, expected_reports)
 
-        # Selecting a child shouldn't change the order
         options = self._generate_options(report_always, "2024-01-01", "2024-12-31")
         assert_available_variants_match(options, expected_reports)
 
@@ -2391,7 +2333,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             }
         )
 
-        # Adding fiscal position should make BE-reports available since it allows foreign vat
         options = self._generate_options(root_report, "2024-01-01", "2024-12-31")
         assert_available_variants_match(options, expected_reports + report_be_country)
 
@@ -2401,7 +2342,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.company_data["company"].account_config_id.chart_template = "us"
         options = self._generate_options(root_report, "2024-01-01", "2024-12-31")
-        # Multi-company environment with first company with US COA and second with generic COA
         assert_available_variants_match(
             options,
             root_report
@@ -2411,7 +2351,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
             + report_us_country,
         )
 
-        # only allow company 1 (US COA)
         self.env.user.company_ids = self.company_data["company"]
         options = self._generate_options(root_report, "2024-01-01", "2024-12-31")
         assert_available_variants_match(
@@ -2419,7 +2358,6 @@ class TestAccountReportsFilters(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_send_customer_statement_without_template(self):
-        """Test sending the customer statement without an email template."""
         report = self.env.ref("account.customer_statement_report")
         options = report.get_options({})
         options["partner_ids"] = [self.partner.id]

@@ -14,7 +14,6 @@ class AccountMove(models.Model):
         return super()._auto_complete_from_document(source)
 
     def _load_template_data(self, template) -> None:
-        """Apply literal template values using the shared move-line serializer."""
         self.check_singleton()
         template.check_singleton()
         template.check_access("read")
@@ -47,8 +46,6 @@ class AccountMove(models.Model):
                 }
             )
         )
-        # Share account validation, but keep wizard pricing/product policies out
-        # of autocomplete: zero prices and empty tax sets are explicit values.
         accounts = wizard._get_template_line_accounts(
             template.line_ids.filtered(lambda line: line.display_type == "product"),
             self.company_id,
@@ -66,8 +63,6 @@ class AccountMove(models.Model):
         if template.invoice_payment_term_id:
             self.invoice_payment_term_id = template.invoice_payment_term_id
         self.invoice_line_ids = commands
-        # New invoice lines recompute product defaults when linked to a move.
-        # Finish those computes before reinstating the explicit template values.
         for line, command in zip(self.invoice_line_ids, commands[1:], strict=True):
             if line.display_type == "product":
                 _ = line.name, line.price_unit, line.tax_ids
@@ -78,7 +73,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _prepare_template_move_line_vals(self, line, move_type, partner):
-        """Serialize a prepared template line for both generation and autocomplete."""
         vals = {"name": line.name, "sequence": line.sequence}
         if line.display_type != "product":
             return {**vals, "display_type": line.display_type}
@@ -106,7 +100,6 @@ class AccountMove(models.Model):
         return vals
 
     def _prepare_move_line_from_template(self, template_line):
-        """Compatibility helper; resolve codes in the destination company."""
         self.check_singleton()
         accounts = template_line._resolve_codes_in_company(
             [template_line.account_code],

@@ -15,10 +15,7 @@ from odoo.addons.telegram.tools.authority import operating
 
 _logger = logging.getLogger(__name__)
 
-# What an answer can be, in the router's own words (`message_kind`).
 ANSWER_KINDS = ("text", "photo", "document", "voice", "contact", "location")
-# The files of a message, by kind: the largest size of a photo, a file under
-# the name it was sent with.
 _FILE_KEYS = ("photo", "document", "video", "voice", "audio")
 _DEFAULT_NAMES = {
     "photo": "photo.jpg",
@@ -27,19 +24,12 @@ _DEFAULT_NAMES = {
     "voice": "voice.ogg",
     "audio": "audio",
 }
-# A failed delivery is tried again past these delays, in minutes, the last one
-# repeating; past MAX_ATTEMPTS the answer is given up and the run says why. A
-# transaction lost to a concurrent one is tried again after the first delay.
 RETRY_MINUTES = (1, 2, 4, 8)
 MAX_ATTEMPTS = 5
 OPEN_RUN_STATES = ("in_progress", "waiting_resume")
 
 
 def _lost_to_concurrency(error) -> bool:
-    """Whether `error`, or one it was raised while handling, is a transaction
-    lost to a concurrent one, or a statement refused because an earlier one of
-    the transaction failed. Neither says anything of the answer itself: a step
-    may catch the first and leave only the second to be seen."""
     seen = set()
     while error is not None and id(error) not in seen:
         seen.add(id(error))
@@ -169,8 +159,6 @@ class AutomationTelegramWait(models.Model):
 
     @api.model
     def _cron_deliver_answers(self) -> int:
-        """Hand each recorded answer to its step, and let go of the questions
-        whose run ended unanswered."""
         stale = self.search([("state", "=", "waiting")]).filtered(
             lambda wait: not wait._is_live()
         )
@@ -186,8 +174,6 @@ class AutomationTelegramWait(models.Model):
                 concurrent = _lost_to_concurrency(error)
                 wait._record_failure(error, concurrent=concurrent)
                 if concurrent:
-                    # this transaction's snapshot predates the one it lost to:
-                    # the next answers go to a fresh run of the job
                     break
         return delivered
 
@@ -200,9 +186,6 @@ class AutomationTelegramWait(models.Model):
         return kind in self._get_accepted_kinds()
 
     def _is_live(self) -> bool:
-        """Whether an answer would still be heard: the run is open and the
-        asking step's edge for this event has neither received it nor been
-        closed by another branch."""
         self.check_singleton()
         if self.state != "waiting" or self.runtime_id.state not in OPEN_RUN_STATES:
             return False
@@ -216,10 +199,6 @@ class AutomationTelegramWait(models.Model):
 
     @api.model
     def _find_for_message(self, chat, message, kind):
-        """`(wait, refused)`: the open question `message` answers in `chat`,
-        and the one it was a reply to but cannot answer, being of another
-        kind. A reply to a question goes to that question; any other message
-        to the latest question that takes its kind."""
         waits = self.search(
             [("chat_id", "=", chat.id), ("state", "=", "waiting")]
         ).filtered(lambda wait: wait._is_live())
@@ -243,7 +222,6 @@ class AutomationTelegramWait(models.Model):
         return waits.filtered(lambda wait: wait._accepts(kind))[:1], self
 
     def _record_answer(self, message, kind) -> None:
-        """Keep what the answer is, for the dispatcher to hand on."""
         self.check_singleton()
         payload = {"files": self._file_ids_of(message)}
         if message.get("contact"):
@@ -276,8 +254,6 @@ class AutomationTelegramWait(models.Model):
         return files
 
     def _deliver(self) -> None:
-        """Fetch the answer's files onto the run, make the answer the asking
-        step's output, and deliver its event."""
         self.check_singleton()
         line = self.line_id
         runtime = self.runtime_id
@@ -288,7 +264,6 @@ class AutomationTelegramWait(models.Model):
                 raise UserError(
                     self.env._("Telegram did not hand over the file %s.", name)
                 )
-            # a photo's name is Telegram's stored one, which carries the extension
             if name == _DEFAULT_NAMES["photo"]:
                 name = downloaded["file_path"].rsplit("/", 1)[-1] or name
             attachments |= attachments.create(

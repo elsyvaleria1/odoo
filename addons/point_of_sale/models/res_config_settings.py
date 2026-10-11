@@ -467,7 +467,7 @@ class ResConfigSettings(models.TransientModel):
                 if vals.get("pos_use_presets") is not None:
                     vals["group_pos_preset"] = (
                         bool(
-                            self.env["pos.config"].search_count(  # noqa: E8507 - a transient settings wizard: one record
+                            self.env["pos.config"].search_count(
                                 [
                                     ("use_presets", "=", True),
                                     ("id", "!=", pos_config_id),
@@ -593,7 +593,7 @@ class ResConfigSettings(models.TransientModel):
                     res_config.pos_iface_available_categ_ids
                 )
             else:
-                res_config.pos_selectable_categ_ids = self.env["pos.category"].search(  # noqa: E8507 - a transient settings wizard: one record
+                res_config.pos_selectable_categ_ids = self.env["pos.category"].search(
                     []
                 )
 
@@ -652,7 +652,7 @@ class ResConfigSettings(models.TransientModel):
                 if res_config.pos_journal_id.currency_id
                 else res_config.pos_config_id.company_id.currency_id.id
             )
-            pricelists_in_current_currency = self.env["product.pricelist"].search(  # noqa: E8507 - a transient settings wizard: one record
+            pricelists_in_current_currency = self.env["product.pricelist"].search(
                 [
                     *self.env["product.pricelist"]._check_company_domain(
                         res_config.pos_config_id.company_id
@@ -686,7 +686,7 @@ class ResConfigSettings(models.TransientModel):
                 )
             else:
                 res_config.pos_allowed_pricelist_ids = (
-                    self.env["product.pricelist"].search([]).ids  # noqa: E8507 - a transient settings wizard: one record
+                    self.env["product.pricelist"].search([]).ids
                 )
 
     @api.depends("pos_is_posbox", "pos_config_id")

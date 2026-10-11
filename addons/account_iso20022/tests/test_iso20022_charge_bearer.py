@@ -54,14 +54,10 @@ class TestISO20022ChargeBearer(TestISO20022CommonCreditTransfer):
                 "currency_id": cls.env.ref("base.USD").id,
             }
         )
-        # A country is required for sepa transfer
         cls.partner_a.country_id = cls.env.ref("base.us")
         cls.partner_b.country_id = cls.env.ref("base.us")
 
     def test_default_charge_bearer(self):
-        """
-        The default charge bearer should be 'SHAR'.
-        """
         payment = self.create_payment(
             self.bank_journal,
             self.partner_a,
@@ -85,9 +81,6 @@ class TestISO20022ChargeBearer(TestISO20022CommonCreditTransfer):
         self.assertEqual(charge_bearer, "SHAR")
 
     def test_journal_charge_bearer(self):
-        """
-        The charge bearer should be the one set on the journal.
-        """
         self.bank_journal.iso20022_charge_bearer = "CRED"
         payment = self.create_payment(
             self.bank_journal,
@@ -112,9 +105,6 @@ class TestISO20022ChargeBearer(TestISO20022CommonCreditTransfer):
         self.assertEqual(charge_bearer, "CRED")
 
     def test_payment_charge_bearer(self):
-        """
-        The charge bearer should be the one set on the payment.
-        """
         self.bank_journal.iso20022_charge_bearer = "CRED"
         payment = self.create_payment(
             self.bank_journal,
@@ -140,9 +130,6 @@ class TestISO20022ChargeBearer(TestISO20022CommonCreditTransfer):
         self.assertEqual(charge_bearer, "DEBT")
 
     def test_payment_multiple_charge_bearers(self):
-        """
-        The charge bearer should be set on the payments if there are multiple.
-        """
         payment_1 = self.create_payment(
             self.bank_journal,
             self.partner_a,

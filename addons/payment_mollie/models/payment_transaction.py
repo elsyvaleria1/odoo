@@ -25,19 +25,9 @@ class PaymentTransaction(models.Model):
     def _is_inbound_request_authentic(self, headers, body) -> bool:
         if self.provider_code != "mollie":
             return super()._is_inbound_request_authentic(headers, body)
-        # Nothing in the notification is trusted: the handler fetches the
-        # payment from Mollie's API and processes that answer.
         return True
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of payment to return Mollie-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific rendering values
-        :rtype: dict
-        """
         if self.provider_code != "mollie":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -48,24 +38,14 @@ class PaymentTransaction(models.Model):
             self._set_error(str(error))
             return {}
 
-        # The provider reference is set now to allow fetching the payment status after redirection
         self.provider_reference = payment_data.get("id")
 
-        # Extract the checkout URL from the payment data and add it with its query parameters to the
-        # rendering values. Passing the query parameters separately is necessary to prevent them
-        # from being stripped off when redirecting the user to the checkout URL, which can happen
-        # when only one payment method is enabled on Mollie and query parameters are provided.
         checkout_url = payment_data["_links"]["checkout"]["href"]
         parsed_url = url_parse(checkout_url)
         url_params = dict(parse_qsl(parsed_url.query))
         return {"api_url": checkout_url, "url_params": url_params}
 
     def _mollie_prepare_payment_request_payload(self) -> dict:
-        """Create the payload for the payment request based on the transaction values.
-
-        :return: The request payload
-        :rtype: dict
-        """
         user_lang = self.env.context.get("lang")
         base_url = self.provider_id.get_base_url()
         redirect_url = urls.urljoin(base_url, MollieController._return_url)
@@ -86,21 +66,17 @@ class PaymentTransaction(models.Model):
                     self.payment_method_code, self.payment_method_code
                 )
             ],
-            # Since Mollie does not provide the transaction reference when returning from
-            # redirection, we include it in the redirect URL to be able to match the transaction.
             "redirectUrl": f"{redirect_url}?ref={self.reference}",
             "webhookUrl": f"{webhook_url}?ref={self.reference}",
         }
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "mollie":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("ref")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "mollie":
             return super()._extract_amount_data(payment_data)
 
@@ -113,11 +89,9 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "mollie":
             return super()._apply_updates(payment_data)
 
-        # Update the payment method.
         payment_method_type = payment_data.get("method", "")
         if payment_method_type == "creditcard":
             payment_method_type = (
@@ -128,7 +102,6 @@ class PaymentTransaction(models.Model):
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         payment_status = payment_data.get("status")
         if payment_status in ("pending", "open"):
             self._set_pending()

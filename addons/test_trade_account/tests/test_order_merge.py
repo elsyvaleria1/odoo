@@ -72,12 +72,10 @@ class TestOrderMergeMixin(TransactionCase):
         )
 
     def test_collapse_matches_does_not_bridge_non_matching_lines(self):
-        """Two lines that individually match a third line's date, but not
-        each other's, must not be folded together through it."""
         now = fields.Datetime.now()
         date_a = now
-        date_b = now + timedelta(hours=36)  # outside the 24h threshold of a
-        date_source = now + timedelta(hours=18)  # inside threshold of both
+        date_b = now + timedelta(hours=36)
+        date_source = now + timedelta(hours=18)
 
         target = self.PurchaseOrder.create({"partner_id": self.partner_a.id})
         Line = self.env["purchase.order.line"]
@@ -127,9 +125,6 @@ class TestOrderMergeMixin(TransactionCase):
         self.assertEqual(sorted(remaining.mapped("product_qty")), [1.0, 2.0])
 
     def test_collapse_matches_routes_through_the_merge_line_hook(self):
-        """Multi-candidate collapse must fold through `_merge_order_line`,
-        the same overridable hook the single-match path already uses --
-        not a second, independently-maintained aggregation policy."""
         target = self._order(self.partner_a)
         line_1 = self.env["sale.order.line"].create(
             {
@@ -180,9 +175,6 @@ class TestOrderMergeMixin(TransactionCase):
         )
 
     def test_merge_metadata_deduplicates_repeated_origin(self):
-        """Merging the same target again must not keep piling up duplicate
-        origin/partner_ref values from a source that was already folded
-        in once before."""
         target = self._order(self.partner_a)
         target.write({"origin": "SO001", "partner_ref": "REF001"})
         source = self._order(self.partner_a)

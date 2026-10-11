@@ -67,9 +67,6 @@ class ResPartnerRelation(models.Model):
         )
         if not relations:
             return
-        # A mirror has its two ends swapped, so it can never be the record
-        # itself, and the batch must not be excluded: two rows mirroring each
-        # other inside one create are exactly what has to be caught.
         mirrors = self.search(
             Domain.OR(
                 Domain("partner_id", "=", rel.other_partner_id.id)
@@ -151,8 +148,6 @@ class ResPartnerRelation(models.Model):
     )
     def _compute_labels(self) -> None:
         for relation in self:
-            # A record being composed in the form has no type yet, and the
-            # onchange computes both labels before the user picks one.
             if not relation.type_id:
                 relation.label = False
                 relation.label_inverse = False
@@ -189,8 +184,6 @@ class ResPartnerRelation(models.Model):
         subject = self.other_partner_id if is_inverse else self.partner_id
         return self.type_id._get_label(is_inverse=is_inverse, gender=subject.gender)
 
-    # The graph is what is in force today: a tie whose end date has passed is
-    # kept on the contact as history but reaches nobody.
     @api.model
     def _get_domain_touching(self, partner_ids):
         touching = Domain("partner_id", "in", partner_ids) | Domain(

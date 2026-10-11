@@ -21,13 +21,6 @@ class AutomationRuntimeLine(models.Model):
         return res
 
     def _create_missing_marketing_traces(self) -> None:
-        """Create absent traces for reached lines with participants and activities.
-
-        A line is reached if it has no incoming edge or at least one predecessor
-        is done, errored or canceled. Existing traces are left unchanged.
-
-        :rtype: None
-        """
         reached = self.filtered(
             lambda line: (
                 not line.marketing_trace_ids

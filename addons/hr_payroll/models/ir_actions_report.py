@@ -10,8 +10,6 @@ class IrActionsReport(models.Model):
         payslip_ids, _data = self._normalize_render_args(res_ids, data, "pdf")
         report = self._get_report(report_ref)
         if payslip_ids and report.model == "hr.payslip":
-            # Every payslip report honours the error gate, not only the
-            # default one: a payslip with errors must not print at all.
             self.env["hr.payslip"].browse(payslip_ids)._check_printable()
         payslip_report = self.env.ref("hr_payroll.action_report_payslip", False)
         if not payslip_ids or report != payslip_report:

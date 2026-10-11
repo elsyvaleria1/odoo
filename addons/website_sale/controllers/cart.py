@@ -27,8 +27,6 @@ from odoo.addons.website_sale.controllers.main import WebsiteSale
 
 _debug = DebugLog(__name__)
 
-# the products a route put in the cart before redirecting to it, for the cart
-# page to report as added (@website_sale/interactions/tracking)
 ADD_TO_CART_TRACKING_KEY = "website_sale_add_to_cart_tracking"
 
 
@@ -87,8 +85,6 @@ class Cart(PaymentPortal):
                 "website_sale_order": order_sudo,
                 "date": fields.Date.today(),
                 "suggested_products": [],
-                # a refresh in place (another tab following the cart) leaves
-                # it to the visit it was put there for
                 "add_to_cart_tracking": (
                     None
                     if request.httprequest.headers.get(PARTIAL_NAVIGATION_HEADER)
@@ -317,7 +313,6 @@ class Cart(PaymentPortal):
             line_id = int(line_id)
         except ValueError:
             raise NotFound from None
-        # one of the user's own past orders on this website, as the history lists them
         line = (
             request.env["sale.order.line"]
             .with_privilege(
@@ -441,8 +436,6 @@ class Cart(PaymentPortal):
 
     @staticmethod
     def _cart_line_quantity(line, quantity, delta):
-        # a typed quantity wins over the -/+ button that came with it: Enter
-        # in the field submits the form with its first button, the minus
         try:
             typed = int(quantity) if quantity not in (None, "") else None
             if typed is not None and (typed != int(line.product_uom_qty) or not delta):

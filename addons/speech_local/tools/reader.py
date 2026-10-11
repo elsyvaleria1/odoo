@@ -62,7 +62,6 @@ def local_engine(env: Any, purpose: str | None = None) -> LocalEngine | None:
     return _ENGINES.setdefault(directory, LocalEngine(directory))
 
 
-# the speaker models alone are enough: no Whisper is needed to tell voices apart
 def local_diarizer(env: Any, purpose: str | None = None) -> LocalDiarizer | None:
     directory = model_dir(env, purpose)
     if directory in _DIARIZERS:
@@ -85,8 +84,6 @@ class LocalTranscription(BaseReader):
         env = options.get("env")
         return env is not None and local_engine(env, options.get("purpose")) is not None
 
-    # a purpose given its own models was chosen to be heard here first; every
-    # other purpose keeps this server as the fallback behind its vendors
     def defers_on(self, document: Any) -> bool:
         env = document.options.get("env")
         purpose = document.options.get("purpose")

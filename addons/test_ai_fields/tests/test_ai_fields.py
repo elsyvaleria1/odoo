@@ -18,7 +18,6 @@ from odoo.addons.base.tests.test_ir_cron import CronMixinCase
 class TestAiFieldsCrons(TransactionCase, CronMixinCase):
     def test_ai_fields_cron_trigger(self):
         ai_field_cron_id = self.env.ref("ai_fields.ir_cron_fill_ai_fields").id
-        # cron not triggered when creating a record on a model without ai field
         with self.capture_triggers(ai_field_cron_id) as capt:
             self.env["test.ai.fields.no.ai"].create({"name": "Record"})
             self.assertFalse(len(capt.records))
@@ -33,19 +32,16 @@ class TestAiFieldsCrons(TransactionCase, CronMixinCase):
             "system_prompt": "System Prompt {{object.name}}",
         }
 
-        # cron triggered when creating an ai field
         with self.capture_triggers(ai_field_cron_id) as capt:
             self.env["ir.model.fields"].create(values | values_ai)
             self.assertTrue(len(capt.records))
 
-        # cron not triggered when creating a non ai field, but triggered when making it an ai field
         with self.capture_triggers(ai_field_cron_id) as capt:
             field = self.env["ir.model.fields"].create(values | {"name": "x_ai_char_2"})
             self.assertFalse(len(capt.records))
             field.write(values_ai)
             self.assertTrue(len(capt.records))
 
-        # cron triggered when creating a record on a model with an ai field
         with self.capture_triggers(ai_field_cron_id) as capt:
             self.env["test.ai.fields.no.ai"].create({"name": "Record"})
             self.assertTrue(len(capt.records))
@@ -68,12 +64,10 @@ class TestAiFieldsCrons(TransactionCase, CronMixinCase):
             }
         )
 
-        # cron not triggered when creating a record with a property definition without an ai property
         with self.capture_triggers(ai_properties_cron) as capt:
             self.env["test.ai.fields.model"].create({"parent_id": definition_no_ai.id})
             self.assertFalse(len(capt.records))
 
-        # cron triggered when adding an AI property to an existing definition
         with self.capture_triggers(ai_properties_cron) as capt:
             definition_no_ai.write(
                 {
@@ -90,16 +84,14 @@ class TestAiFieldsCrons(TransactionCase, CronMixinCase):
             self.assertTrue(len(capt.records))
 
         definition_no_ai.properties_definition = []
-        # cron not triggered if changing the definition record to a definition without an ai property
         record = self.env["test.ai.fields.model"].create(
             {"parent_id": definition_with_ai.id}
         )
         with self.capture_triggers(ai_properties_cron) as capt:
             record.write({"parent_id": definition_no_ai.id})
-            record.flush_recordset()  # triggers the write on properties
+            record.flush_recordset()
             self.assertFalse(len(capt.records))
 
-        # cron triggered if changing the definition record to a definition with an ai property
         record = self.env["test.ai.fields.model"].create(
             {"parent_id": definition_no_ai.id}
         )
@@ -107,7 +99,6 @@ class TestAiFieldsCrons(TransactionCase, CronMixinCase):
             record.parent_id = definition_with_ai
             self.assertTrue(len(capt.records))
 
-        # cron triggered if creating a record with a definition that has an ai property
         with self.capture_triggers(ai_properties_cron) as capt:
             self.env["test.ai.fields.model"].create(
                 {"parent_id": definition_with_ai.id}
@@ -124,7 +115,6 @@ class TestAiFields(TransactionCase):
         return patch.object(LLMApiService, "_get_api_token", _mock_get_api_token)
 
     def test_ai_field_cron_fields(self):
-        """Check that the cron only process NULL textual fields (that are in the ai_domain)."""
 
         def _mocked_llm_api_request(self, method, endpoint, headers, body):
             return {
@@ -147,7 +137,6 @@ class TestAiFields(TransactionCase):
 
         model = self.env["test.ai.fields.model"]
 
-        # create ai fields of different types
         field_definitions = [
             {
                 "name": "x_ai_char",
@@ -188,7 +177,6 @@ class TestAiFields(TransactionCase):
             for f in field_definitions
         }
 
-        # create records with different AI field values
         records = model.create(
             [
                 {
@@ -215,10 +203,8 @@ class TestAiFields(TransactionCase):
             ]
         )
 
-        # update ai_domain to exclude record[0]
         ai_fields["x_ai_char"].write({"ai_domain": [["id", "!=", records[0].id]]})
 
-        # sanity check, ensure values are correct in database
         self.env.flush_all()
         self.env.cr.execute(
             SQL(
@@ -234,7 +220,6 @@ class TestAiFields(TransactionCase):
             result[records[2].id], ("existing", "existing", "<p>existing</p>", 5, True)
         )
 
-        # run the cron job
         with (
             patch.object(LLMApiService, "_request", _mocked_llm_api_request),
             self.sync_env_with_side_cursors(),
@@ -262,7 +247,6 @@ class TestAiFields(TransactionCase):
             ),
             "Textual fields should have been updated (except char which is excluded by ai_domain)",
         )
-        # only NULL textual fields should be updated
         self.assertEqual(
             result[records[1].id],
             ("", "", "", 0, False),
@@ -296,7 +280,6 @@ class TestAiFields(TransactionCase):
 
         parent = self.env["test.ai.fields.parent"].create({})
 
-        # Record created before the definition has been created
         record_0 = self.env["test.ai.fields.model"].create({})
         record_1 = self.env["test.ai.fields.model"].create({"parent_id": parent.id})
 
@@ -337,7 +320,6 @@ class TestAiFields(TransactionCase):
         )
         records |= record_0 | record_1
 
-        # Change the `ai_domain`
         parent.write(
             {
                 "properties_definition": [
@@ -352,7 +334,6 @@ class TestAiFields(TransactionCase):
             }
         )
 
-        # Sanity check, ensure the values are correct in database
         self.env.cr.execute(
             SQL(
                 "SELECT id, properties FROM test_ai_fields_model WHERE id = ANY(%s)",
@@ -479,11 +460,11 @@ class TestAiFields(TransactionCase):
         )
         vals, files = record._get_ai_context(
             [
-                "price",  # check that currency is added
-                "message_ids.body",  # check that only inner_content is used
-                "message_ids.attachment_ids",  # check that images and pdfs are handled separately as binaries
-                "create_date",  # check that dates are formatted
-                "message_partner_ids.bank_account_ids.acc_number",  # check nested M2M
+                "price",
+                "message_ids.body",
+                "message_ids.attachment_ids",
+                "create_date",
+                "message_partner_ids.bank_account_ids.acc_number",
             ]
         )
         vals = json_loads(vals)
@@ -578,7 +559,6 @@ class TestAiFields(TransactionCase):
             ],
         )
 
-        # Check that the name are truncated
         partner_2.name = "_" * 1000
         for field_path in (
             "message_partner_ids",
@@ -589,7 +569,6 @@ class TestAiFields(TransactionCase):
             self.assertNotIn(partner_2.name, vals)
             self.assertIn(partner_2._ai_truncate(partner_2.name), vals)
 
-        # Check we have correct ids when record is a temporary record
         tmp_record = record.new(origin=record)
         vals, files = tmp_record._get_ai_context(
             ["message_partner_ids.bank_account_ids"]
@@ -630,7 +609,6 @@ class TestAiFields(TransactionCase):
             ],
         )
 
-        # Check we have correct ids when record is a new record
         new_record = self.env["test.ai.read.model"].new(
             {
                 "message_partner_ids": [
@@ -690,7 +668,6 @@ class TestAiFields(TransactionCase):
             record.read(["properties"])[0]["properties"][0]["system_prompt"], expected
         )
 
-        # Check that value in database is sanitized
         self.env.cr.execute(
             "SELECT properties_definition[0]->'system_prompt' FROM test_ai_fields_parent WHERE id = %s",
             [parent.id],
@@ -726,7 +703,6 @@ class TestAiFields(TransactionCase):
         )
         self.assertEqual(field.system_prompt, expected)
 
-        # Test that the HTML generated by the LLM is sanitized
         self.env["ir.model.fields"].create(
             {
                 "name": "x_ai_html",
@@ -851,7 +827,6 @@ class TestAiFields(TransactionCase):
         self.assertEqual(str(cm_2.exception), "Missing context")
 
     def test_fill_ai_field_exception(self):
-        """Check that if an error occurs during the method filling the fields, an empty string is set so that field will not be reprocessed for the record"""
 
         def _mocked_llm_api_request(self, method, endpoint, headers, body):
             return {
@@ -899,7 +874,6 @@ class TestAiFields(TransactionCase):
         self.assertEqual(res[0], "")
 
     def test_fill_ai_property_exception(self):
-        """Check that if an error occurs during the method filling the properties, a falsy value is set so that the property will not be reprocessed for the record"""
 
         def _mocked_llm_api_request(self, method, endpoint, headers, body):
             return {

@@ -68,11 +68,9 @@ class EventMail(models.Model):
         return info
 
     def _filter_wa_template_ref(self):
-        """Check for valid template reference: existing, working template"""
         return self._filter_template_ref()
 
     def _send_whatsapp(self, registrations):
-        """Whatsapp action: send whatsapp to attendees"""
         self.env["wizard.whatsapp.message.send"].with_context(
             {"active_ids": registrations.ids}
         ).create(

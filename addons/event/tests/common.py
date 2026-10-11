@@ -24,7 +24,6 @@ class EventCase(common.TransactionCase):
             }
         )
         cls.company_admin = cls.admin_user.company_id
-        # set country in order to format Belgian numbers
         cls.company_admin.write(
             {
                 "country_id": cls.env.ref("base.be").id,
@@ -32,7 +31,6 @@ class EventCase(common.TransactionCase):
             }
         )
 
-        # Test users to use through the various tests
         cls.user_portal = mail_new_test_user(
             cls.env,
             company_id=cls.company_admin.id,
@@ -173,7 +171,6 @@ class EventCase(common.TransactionCase):
 
     @classmethod
     def _create_registrations(cls, event, reg_count):
-        # create some registrations
         create_date = fields.Datetime.now()
         return cls.env["event.registration"].create(
             [
@@ -283,20 +280,11 @@ class EventCase(common.TransactionCase):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues."""
-        # cr.now() is contractually a datetime; coerce a string so consumers
-        # doing datetime arithmetic on it (e.g. ir.cron._now) don't break.
         now_dt = (
             fields.Datetime.to_datetime(mock_dt)
             if isinstance(mock_dt, str)
             else mock_dt
         )
-        # cr.now() is naive UTC in production; normalize a tz-aware freeze
-        # point so it (and freeze_time) stay on that convention, else
-        # naive/aware comparisons (e.g. ir.cron._now) crash. Mirrors mail
-        # freeze_all_time.
         if now_dt.tzinfo is not None:
             now_dt = now_dt.astimezone(UTC).replace(tzinfo=None)
         with freeze_time(now_dt), patch.object(self.env.cr, "now", lambda: now_dt):

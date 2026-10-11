@@ -42,7 +42,6 @@ class TestRecurrenceRule(TransactionCase):
         self.assertEqual(recurrence.name, "Every 2 Days")
 
     def test_weekly_count(self):
-        """Every week, on Tuesdays, for 3 occurences"""
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "repeat_unit": "week",
@@ -58,7 +57,6 @@ class TestRecurrenceRule(TransactionCase):
         )
 
     def test_weekly_until(self):
-        """Every week, on Tuesdays, for 3 occurences"""
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "repeat_unit": "week",
@@ -75,7 +73,6 @@ class TestRecurrenceRule(TransactionCase):
         )
 
     def test_weekly_none(self):
-        """Every week, on Tuesdays, for 3 occurences"""
         recurrence = self.env["calendar.recurrence"].create(
             {
                 "repeat_unit": "week",

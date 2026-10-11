@@ -5,8 +5,6 @@ from odoo.addons.calendar.controllers.booking import AppointmentController
 
 class AppointmentCrmController(AppointmentController):
     def _get_forced_staff_user(self, appointment_type, possible_staff_users):
-        """Fetch the staff user from the leads linked to the visitor's partner if the appointment_type
-        has a random staff user selection."""
         forced_user = super()._get_forced_staff_user(
             appointment_type, possible_staff_users
         )

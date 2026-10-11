@@ -26,7 +26,6 @@ class TestLoanComputeWizard(TransactionCase):
         )
 
     def test_validation_rejects_invalid_inputs(self):
-        """The guards must hold on write, not only through the onchange."""
         cases = [
             ("negative amount", {"loan_amount": -1}),
             ("rate above 100%", {"interest_rate": 101}),
@@ -48,12 +47,10 @@ class TestLoanComputeWizard(TransactionCase):
                 self._wizard(**values)
 
     def test_first_payment_date_is_ignored_at_end_of_month(self):
-        """It is hidden in that mode, so it must not be able to block the wizard."""
         wizard = self._wizard(loan_term=1, first_payment_date=date(2027, 6, 1))
         self.assertTrue(wizard._get_loan_payment_schedule())
 
     def test_schedule_repays_exactly(self):
-        """The principals must sum to the amount borrowed, to the cent."""
         for amount, rate, term in [
             (12000.0, 12.0, 1),
             (10000.0, 0.0, 1),
@@ -76,7 +73,6 @@ class TestLoanComputeWizard(TransactionCase):
                 self.assertTrue(all(p.principal >= 0 for p in schedule))
 
     def test_balance_never_grows(self):
-        """A high rate must not silently turn into negative amortization."""
         schedule = self._wizard(
             loan_amount=250000.0, interest_rate=19.99, loan_term=20
         )._get_loan_payment_schedule()
@@ -93,7 +89,6 @@ class TestLoanComputeWizard(TransactionCase):
         self.assertNotEqual(total(4.567), total(4.57))
 
     def test_schedule_dates_are_dates(self):
-        """pyloan returned midnight datetimes, which format_date shifts by timezone."""
         schedule = self._wizard()._get_loan_payment_schedule()
         self.assertTrue(all(type(p.date) is date for p in schedule))
 
@@ -113,7 +108,6 @@ class TestLoanComputeWizard(TransactionCase):
         )
 
     def test_preview_matches_what_action_save_stores(self):
-        """The preview is the schedule, not a second rendering of it."""
         wizard = self._wizard()
         previewed = [(line.date, line.principal) for line in wizard.preview_line_ids]
         wizard.action_save()

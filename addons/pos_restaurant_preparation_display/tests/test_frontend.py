@@ -18,14 +18,12 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
             }
         )
 
-        # open a session, the /pos/ui controller will redirect to it
         self.pos_config.printer_ids.unlink()
         self.pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("PreparationDisplayTourResto")
 
         self.start_pdis_tour("PreparationDisplayFrontEndCancelTour")
 
-        # Order 1 should have 2 preparation orderlines (Coca-Cola and Water)
         order1 = self.env["pos.order"].search(
             [("pos_reference", "ilike", "%-000001")], limit=1
         )
@@ -36,7 +34,6 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
             len(pdis_order1.prep_line_ids), 2, "Should have 2 preparation orderlines"
         )
 
-        # Order 2 should have 1 preparation orderline (Coca-Cola)
         order2 = self.env["pos.order"].search(
             [("pos_reference", "ilike", "%-000002")], limit=1
         )
@@ -50,8 +47,6 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
             pdis_order2.prep_line_ids.quantity, 1, "Should have 1 quantity of Coca-Cola"
         )
 
-        # Order 3 should have 3 preparation orderlines (Coca-Cola, Water and Minute Maid)
-        # with one cancelled Minute Maid
         order3 = self.env["pos.order"].search(
             [("pos_reference", "ilike", "%-000003")], limit=1
         )
@@ -79,12 +74,10 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
             }
         )
 
-        # open a session, the /pos/ui controller will redirect to it
         self.pos_config.printer_ids.unlink()
         self.pos_config.with_user(self.pos_user).open_ui()
         self.start_pos_tour("PreparationDisplayTourResto2")
 
-        # Order 1 should have 1 preparation orderlines (Coca-Cola) with quantity 2
         order1 = self.env["pos.order"].search(
             [("pos_reference", "ilike", "%-000001")], limit=1
         )
@@ -108,7 +101,6 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
 
         self.start_pdis_tour("PreparationDisplayFrontEndNoteTour")
 
-        # Order 1 should have 2 preparation orderlines (Coca-Cola and Water)
         order1 = self.env["pos.order"].search(
             [("pos_reference", "ilike", "%-000001")], limit=1
         )
@@ -149,7 +141,6 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
         def _send_load_orders_message(self, sound, notification, orderId):
             notifications.append(self.id)
 
-        # open a session, the /pos/ui controller will redirect to it
         with patch(
             "odoo.addons.pos_enterprise.models.pos_prep_display.PosPrepDisplay._send_load_orders_message",
             new=_send_load_orders_message,
@@ -158,7 +149,6 @@ class TestUi(test_frontend.TestFrontendCommon, TestPreparationDisplayHttpCommon)
             self.pos_config.with_user(self.pos_user).open_ui()
             self.start_pos_tour("PreparationDisplayCancelOrderTour")
 
-        # Should receive 2 notifications, 1 placing the order, 1 cancelling it
         self.assertEqual(notifications.count(self.pdis.id), 2)
 
     def test_payment_does_not_cancel_display_orders(self):

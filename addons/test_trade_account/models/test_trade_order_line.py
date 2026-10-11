@@ -9,10 +9,6 @@ class TestTradeOrderLine(models.Model):
     _name = "test_trade.order.line"
     _inherit = ["test_trade.order.line", "mixin.order.line.invoice"]
 
-    # The order-line side of the link to `account.move.line`. Declared on the
-    # mixin without a relation table, so a concrete model that does not name
-    # one shares nothing with its invoice lines and every search over
-    # `invoice_ids` comes back empty.
     invoice_line_ids = fields.Many2many(
         relation="account_move_line_test_trade_order_line_rel",
         column1="order_line_id",
@@ -21,12 +17,7 @@ class TestTradeOrderLine(models.Model):
 
     _direction = replace(SALE, invoice_policy_field="test_trade_order_invoice_policy")
 
-    #: Test input. `_compute_invoice_amounts` is abstract on the mixin because
-    #: only a concrete model knows where invoiced quantities come from; here
-    #: they come from this field, so a test can put a line into any invoicing
-    #: state -- including over-invoiced -- without an `account.move`.
     qty_invoiced_input = fields.Float(digits="Product Unit")
-    #: Test input: the quantity standing on invoices that are not posted.
     qty_invoiced_draft_input = fields.Float(digits="Product Unit")
 
     @api.depends(
@@ -58,9 +49,6 @@ class TestTradeOrderLine(models.Model):
             line.amount_taxexc_to_invoice = line.qty_to_invoice * price
             line.amount_taxinc_to_invoice = line.amount_taxexc_to_invoice
 
-    # No `_compute_invoice_state` override on purpose: the mixin's own state
-    # machine is what this module exists to exercise, and an override here
-    # would leave it running in production and asserted by nothing.
     @api.depends(
         "qty_to_invoice",
         "qty_invoiced",

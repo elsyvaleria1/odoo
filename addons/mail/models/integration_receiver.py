@@ -14,8 +14,6 @@ class IntegrationReceiver(models.Model):
         )
 
     def _inbound_event_id(self, admission, event_type: str | None) -> str | None:
-        # The MTA resends the same envelope after a lost answer; the row claims
-        # it, so a resend after a success is a duplicate and not a second copy.
         if self._is_inbound_mail_receiver():
             return admission.payload_hash
         return super()._inbound_event_id(admission, event_type)

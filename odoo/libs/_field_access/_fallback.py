@@ -15,9 +15,6 @@ _I64_MIN = -(2**63)
 _I64_MAX = 2**63 - 1
 
 
-# the extension takes each argument as exactly its declared type (a list is
-# no tuple, an int no bool): the twin refuses what it refuses, or code that
-# passes without it fails once it is built
 def require_type(function: str, name: str, value: object, kind: type) -> None:
     if not isinstance(value, kind):
         raise TypeError(

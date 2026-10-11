@@ -11,9 +11,6 @@ class TestAIMethods(HttpCase, AICommon):
     @patch("odoo.addons.ai.models.ai_agent.AIAgent._generate_response")
     @users("user")
     def test_ai_methods_call_without_error(self, mock_generate_response):
-        """The `/ai/generate_response` route and `get_direct_response` run without errors."""
-        # Sudo => creating an agent requires creating a 'res.partner' to be used for chat channels.
-        # This is only allowed for admins
         agent = self.env["ai.agent"].sudo().create({"name": "Test AI Agent"})
         channel = agent._get_or_create_ai_chat()
         mail_message = self.env["mail.message"].create(
@@ -24,7 +21,6 @@ class TestAIMethods(HttpCase, AICommon):
             }
         )
 
-        # Test generate_response method
         mock_generate_response.return_value = ["Mocked response"]
         self.authenticate(self.test_user.login, self.test_user.login)
         self.call_jsonrpc(
@@ -33,7 +29,6 @@ class TestAIMethods(HttpCase, AICommon):
         )
         self.assertTrue(mock_generate_response.called)
 
-        # Test get_direct_response method
         mock_generate_response.reset_mock()
         result = agent.get_direct_response("Direct prompt")
         self.assertTrue(mock_generate_response.called)

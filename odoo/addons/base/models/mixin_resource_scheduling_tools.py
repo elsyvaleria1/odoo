@@ -34,8 +34,6 @@ class MixinResourceSchedulingTools(models.AbstractModel):
             return (end_utc - start_utc).total_seconds() / 3600.0
 
         if calendar and calendar != resource.calendar_id:
-            # A flexible resource reads any schedule through its own rules, so
-            # a schedule imposed on it is read whole, without the resource.
             if calendar.schedule_type != "fully_fixed" or resource._is_flexible():
                 return calendar.get_work_hours_count(
                     start_utc,

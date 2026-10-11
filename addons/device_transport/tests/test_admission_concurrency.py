@@ -266,7 +266,6 @@ class TestAdmissionConcurrency(BaseCase):
             raise SerializationFailure("retry after admission")
         with self.db.cursor() as cr:
             self._admit(self._channel(cr), request_state).settle()
-        # Only transaction replay shares the allowance; a new request still pays.
         with self.assertRaises(Refused) as refused, self.db.cursor() as cr:
             self._admit(self._channel(cr))
         self.assertEqual(refused.exception.status, 429)
@@ -282,7 +281,6 @@ class TestAdmissionConcurrency(BaseCase):
                 side_effect=SerializationFailure("verdict did not commit"),
             ):
                 self._admit(channel, request_state)
-        # Another request spends the token whose first consumption rolled back.
         with self.db.cursor() as cr:
             self._admit(self._channel(cr)).settle()
         with self.assertRaises(Refused) as refused, self.db.cursor() as cr:
@@ -315,7 +313,6 @@ class TestAdmissionConcurrency(BaseCase):
         self._limit_first_channel()
         with self.db.cursor() as cr:
             channel = self._channel(cr)
-            # Leave one of the default ten pre-auth slots for this request.
             for _ in range(9):
                 self.assertTrue(channel._consume_caller_allowance("127.0.0.1"))
         request_state = request_stand_in()
@@ -347,9 +344,6 @@ class TestAdmissionConcurrency(BaseCase):
         self.assertEqual(refused.exception.error_code, "duplicate_event")
 
     def test_another_requests_retry_of_a_failed_attempt_is_admitted(self):
-        # The failed attempt answered its caller with an error, so the caller's
-        # resend is the retry it was invited to make; a 409 would have told it
-        # the event was held when nothing had been stored.
         self._mutate(lambda c: c.write({"duplicate_detection_enabled": True}))
         with self.assertRaises(SerializationFailure), self.db.cursor() as cr:
             self._admit(self._channel(cr))

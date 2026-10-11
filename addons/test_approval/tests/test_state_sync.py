@@ -55,7 +55,6 @@ class TestApprovalStateSync(ApprovalCommon):
             )
         return category, steps
 
-    # -- raising the request -----------------------------------------------
 
     def test_a_document_created_pending_raises_its_request(self):
         document = self._document(state="submitted")
@@ -118,7 +117,6 @@ class TestApprovalStateSync(ApprovalCommon):
 
         self.assertFalse(document.approval_request_id)
 
-    # -- the document moves, the request follows -----------------------------
 
     def test_an_approver_approving_the_document_records_a_decision(self):
         document = self._document(state="submitted")
@@ -210,7 +208,6 @@ class TestApprovalStateSync(ApprovalCommon):
             )
         )
 
-    # -- a decision on the request moves the document ------------------------
 
     def test_a_decision_on_the_request_moves_the_document_once(self):
         document = self._document(state="submitted")
@@ -258,8 +255,6 @@ class TestApprovalStateSync(ApprovalCommon):
     def test_the_document_policy_vetoes_a_request_decision(self):
         document = self._document(state="submitted", policy_refusal="Not yours")
 
-        # assertRaises rolls the failed decision back to a savepoint, as the transaction
-        # would; assertRaisesRegex does not, and would leave the approval written.
         with self.assertRaises(UserError) as caught:
             document.approval_request_id.with_user(self.approver_1).action_approve()
         self.assertIn("Not yours", str(caught.exception))
@@ -274,7 +269,6 @@ class TestApprovalStateSync(ApprovalCommon):
 
         self.assertEqual(document.state, "cancelled")
 
-    # -- a refusal note travels with the document's refusal ------------------
 
     def test_a_refusal_note_reaches_a_decided_refusal(self):
         document = self._document(state="submitted")
@@ -322,7 +316,6 @@ class TestApprovalStateSync(ApprovalCommon):
         self.assertEqual(request.state, "cancelled")
         self.assertFalse(request.refusal_note)
 
-    # -- the request is not moved from elsewhere ------------------------------
 
     def test_the_document_chooses_the_activity_an_approver_is_asked_with(self):
         category, steps = self._two_step_category([self.approver_1], [self.approver_2])
@@ -380,7 +373,6 @@ class TestApprovalStateSync(ApprovalCommon):
 
         self.assertEqual(request.state, "cancelled")
 
-    # -- every move is a verb whose obligation is that the move decides ------
 
     def test_the_decider_holds_the_verb_of_the_move(self):
         document = self._document(state="submitted")

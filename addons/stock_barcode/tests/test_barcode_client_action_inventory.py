@@ -15,7 +15,6 @@ _logger = logging.getLogger(__name__)
 
 @tagged("post_install", "-at_install")
 class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
-    # === HELPER METHODS ===#
     def create_serial_numbers(self, product, start_index, quantity=1, prefix="sn"):
         return self.env["product.trace"].create(
             [
@@ -28,15 +27,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             ]
         )
 
-    # === TESTS ===#
     def test_inventory_adjustment(self):
-        """Simulate the following actions:
-        - Open the inventory from the barcode app.
-        - Scan twice the product 1.
-        - Edit the line.
-        - Add a product with the form view.
-        - Validate
-        """
         self.start_tour(
             "/odoo/barcode", "test_inventory_adjustment", login="admin", timeout=180
         )
@@ -62,7 +53,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(quants.mapped("inventory_diff_quantity"), [0, 0])
 
     def test_inventory_adjustment_dont_update_location(self):
-        """Ensures the existing quants location cannot be update."""
         self.env.user.write(
             {
                 "group_ids": [
@@ -73,15 +63,12 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "True"
         )
-        # Adds some quants and request a count.
-        # Adds quants for the same product in two locations.
         self.env["stock.quant"]._update_available_quantity(
             self.product1, self.stock_location, 5
         )
         self.env["stock.quant"]._update_available_quantity(
             self.product1, self.shelf2, 5
         )
-        # Marks them as to count by the user.
         quants = self.env["stock.quant"].search([("product_id", "=", self.product1.id)])
         quants.user_id = self.env.user
         quants.inventory_quantity_set = True
@@ -109,13 +96,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_adjustment_multi_company(self):
-        """When doing an Inventory Adjustment in Barcode:
-        - ensures only products belonging to the current company or to no
-          company can be scanned;
-        - ensures that only request counts of the current company are displayed
-          in the Barcode main menu.
-        """
-        # Creates two companies and assign them to the user.
         company_a = self.env["res.company"].create({"name": "Comp A - F2 FTW"})
         company_b = self.env["res.company"].create({"name": "Comp B - F3 Wee-Wee Pool"})
         self.env.user.write(
@@ -124,7 +104,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "company_id": company_a.id,
             }
         )
-        # Changes the company of some products.
         self.product1.company_id = company_a
         self.product2.company_id = company_b
         product_no_company = self.env["product.product"].create(
@@ -134,7 +113,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 "barcode": "product_no_company",
             }
         )
-        # Create a quant, then request_count in the company A.
         company_a_location = self.env["stock.location"].search(
             [("company_id", "=", company_a.id), ("usage", "=", "internal")], limit=1
         )
@@ -155,7 +133,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             login="admin",
             timeout=180,
         )
-        # Checks an inventory adjustment was correctly validated for each company.
         inventory_moves = self.env["stock.move"].search(
             [
                 ("is_inventory", "=", True),
@@ -193,14 +170,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_adjustment_multi_location(self):
-        """Simulate the following actions:
-        - Generate those lines with scan:
-        WH/stock product1 qty: 2
-        WH/stock product2 qty: 1
-        WH/stock/shelf1 product2 qty: 1
-        WH/stock/shelf2 product1 qty: 1
-        - Validate
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -260,17 +229,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(inventory_move_in_shelf2.quantity, 1.0)
 
     def test_inventory_adjustment_tracked_product(self):
-        """Simulate the following actions:
-        - Generate those lines with scan:
-        productlot1 with a lot named lot1 (qty 2)
-        productserial1 with serial1 (qty 1)
-        productserial1 with serial2 (qty 1)
-        productserial1 with serial3 (qty 1)
-        productserial1 without serial (qty 1)
-        productlot1 with a lot named lot2 (qty 1)
-        productlot1 with a lot named lot3 (qty 1)
-        - Validate
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_production_lot").id)]}
         )
@@ -319,12 +277,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertFalse(moves_with_sn.trace_ids.company_id)
 
     def test_inventory_adjustment_tracked_product_multilocation(self):
-        """This test ensures two things:
-        - When the user has to count the same lot from multiple locations, the right line will be
-        incremented when they scan the lot's barcode, depending of the previous scanned location.
-        - When scanning a tracked product, if this product alread has quants, it will retrieve and
-        create a barcode line for each quant.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -337,7 +289,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "True"
         )
-        # Adds some quants for the product tracked by lots in two locations.
         lot_1 = self.env["product.trace"].create(
             {"product_id": self.productlot1.id, "name": "lot1"}
         )
@@ -347,7 +298,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.env["stock.quant"]._update_available_quantity(
             self.productlot1, self.shelf2, 5, trace_id=lot_1
         )
-        # Marks them as to count by the user.
         quants = self.env["stock.quant"].search(
             [("product_id", "=", self.productlot1.id)]
         )
@@ -356,7 +306,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         quants.inventory_date = fields.Date.today()
         quants[0].inventory_quantity = 3
         quants[1].inventory_quantity = 0
-        # Adds some quants for the product tracked by serial numbers in two locations.
         for location, numbers in [(self.shelf1, [1, 2, 3]), (self.shelf3, [4, 5])]:
             for n in numbers:
                 serial_number = self.env["product.trace"].create(
@@ -365,7 +314,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 self.env["stock.quant"]._update_available_quantity(
                     self.productserial1, location, 1, trace_id=serial_number
                 )
-        # Opens the inventory adjustement and process it.
         self.start_tour(
             "/odoo/barcode",
             "test_inventory_adjustment_tracked_product_multilocation",
@@ -374,13 +322,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_adjustment_tracked_product_permissive_quants(self):
-        """Make an inventory adjustment for a product tracked by lot having quants without lot.
-        The following actions are made in the barcode app:
-         - Scan productlot1
-         - Scan lot1 twice
-         - Set productlot1 quantity without lot to available
-         - Validate
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_production_lot").id)]}
         )
@@ -432,7 +373,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_create_quant(self):
-        """Creates a quant and checks it will not be deleted until the inventory was validated."""
         Quant = self.env["stock.quant"]
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "True"
@@ -446,18 +386,13 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(len(product1_quant), 1)
         self.assertEqual(product1_quant.inventory_quantity, 0.0)
 
-        # Validates the inventory, then checks there is no 0 qty quant.
         product1_quant.action_validate()
-        Quant.invalidate_model()  # Updates the cache.
+        Quant.invalidate_model()
         Quant._remove_zero_quants()
         product1_quant = Quant.search([("product_id", "=", self.product1.id)])
         self.assertEqual(len(product1_quant), 0)
 
     def test_inventory_dialog_not_counted_serial_numbers(self):
-        """This test ensures when some SN were counted in a location, if there
-        is uncounted SN in this location, a dialog asks the user if they want to
-        count them as missing when the inventory adjustment is applied.
-        """
         self.env["ir.config_parameter"].set_param(
             "stock_barcode.barcode_separator_regex", "[,;]"
         )
@@ -470,7 +405,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             }
         )
         Quant = self.env["stock.quant"]
-        # Creates some serial numbers and adds them in the stock.
         productserial2 = self.env["product.product"].create(
             {
                 "name": "productserial2",
@@ -482,12 +416,10 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         serial1_sns = self.create_serial_numbers(self.productserial1, 1, 6)
         serial2_sns = self.create_serial_numbers(productserial2, 1, 3)
-        # Adds 3 SNs in Shelf 1 and adds 6 SNs in Shelf 2.
         for sn in serial1_sns[:3]:
             Quant._update_available_quantity(sn.product_id, self.shelf1, 1, trace_id=sn)
         for sn in serial1_sns[3:] | serial2_sns:
             Quant._update_available_quantity(sn.product_id, self.shelf2, 1, trace_id=sn)
-        # Marks created quants as to count.
         quants = Quant.search(
             [("product_id", "in", [self.productserial1.id, productserial2.id])]
         )
@@ -565,12 +497,9 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_image_visible_for_quant(self):
-        """Ensure the product's image is visible in the Barcode quant form view."""
-        # Load an image and use it for a product.
         img_url = "stock_barcode/static/img/barcode.png"
         img_content = base64.b64encode(file_open(img_url, "rb").read())
         self.product1.image_1920 = img_content
-        # Creates two quants to count.
         self.env["stock.quant"]._update_available_quantity(
             self.product1, self.stock_location, 4
         )
@@ -596,8 +525,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_nomenclature(self):
-        """Simulate scanning a product and its weight
-        thanks to the barcode nomenclature"""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes.default_barcode_nomenclature"
         )
@@ -624,7 +551,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(quantity.qty_done, 12.35)
 
     def test_inventory_package(self):
-        """Simulate an adjustment where a package is scanned and edited"""
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_tracking_lot").id)]}
         )
@@ -646,16 +572,12 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             "/odoo/barcode", "test_inventory_package", login="admin", timeout=180
         )
 
-        # Check the package is updated after adjustment
         self.assertDictEqual(
             {q.product_id: q.quantity for q in pack.quant_ids},
             {self.product1: 7, self.product2: 21},
         )
 
     def test_inventory_packaging(self):
-        """Scans a product's packaging and ensures its quantity is correctly
-        counted regardless if there is already products in stock or not.
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
@@ -684,9 +606,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(self.product1.qty_available, 15.0)
 
     def test_inventory_serial_product_packaging(self):
-        """This test ensures that correct packaging lines generated
-        for serial product in inventory adjustments.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -719,10 +638,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_packaging_button(self):
-        """
-        Check that the product packaging button are correctly dipslayed on the
-        digipad when creating an invetory adjustment.
-        """
         self.product1.name = "Lovely Product"
         self.product1.uom_ids = self.env["uom.uom"].create(
             {
@@ -746,10 +661,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(quant.inventory_quantity, 15.0)
 
     def test_inventory_packaging_location(self):
-        """
-        Check that scanning a packaging on the barcode main screen shows the
-        location of the product contained in that packaging.
-        """
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("base.group_uom").id)]}
         )
@@ -772,7 +683,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.start_tour(
             "/odoo/barcode", "test_inventory_packaging_location", login="admin"
         )
-        # Relaunch the same tour with a mobile device config.
         self.browser_size = "375x667"
         self.touch_enabled = True
         self.start_tour(
@@ -808,10 +718,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(inventory_moves.move_line_ids.owner_id.id, self.owner.id)
 
     def test_inventory_setting_count_entire_locations_on(self):
-        """
-        Check the scenario when the "Count Entire Locations" setting is enabled,
-        considering both tracked and untracked products and the usage of multiple locations.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -824,7 +730,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         Quant = self.env["stock.quant"]
 
-        # Create lots and serial numbers.
         lots = self.env["product.trace"].create(
             [
                 {
@@ -837,7 +742,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         shelf1_serial_numbers = self.create_serial_numbers(self.productserial1, 1, 3)
         shelf2_serial_numbers = self.create_serial_numbers(self.productserial1, 4, 3)
 
-        # Adds quantity in WH/Stock/Shelf1.
         Quant._update_available_quantity(self.product1, self.shelf1, 10)
         Quant._update_available_quantity(self.product2, self.shelf1, 20)
         Quant._update_available_quantity(
@@ -850,7 +754,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             Quant._update_available_quantity(
                 self.productserial1, self.shelf1, 1, trace_id=sn
             )
-        # Adds quantity in WH/Stock/Shelf2.
         Quant._update_available_quantity(self.product1, self.shelf2, 30)
         Quant._update_available_quantity(
             self.productlot1, self.shelf2, 5, trace_id=lots[2]
@@ -863,7 +766,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 self.productserial1, self.shelf2, 1, trace_id=sn
             )
 
-        # Mark quant for product1 in shelf 1 as to count.
         quants = Quant.search(
             [
                 ("product_id", "=", self.product1.id),
@@ -886,10 +788,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_setting_count_entire_locations_off(self):
-        """
-        Check the scenario when the "Count Entire Locations" setting is disabled,
-        considering both tracked and untracked products and the usage of multiple locations.
-        """
         self.env.user.write(
             {
                 "group_ids": [
@@ -899,13 +797,10 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         Quant = self.env["stock.quant"]
 
-        # Adds quantity in WH/Stock/Shelf1.
         Quant._update_available_quantity(self.product1, self.shelf1, 10)
         Quant._update_available_quantity(self.product2, self.shelf1, 20)
-        # Adds quantity in WH/Stock/Shelf2.
         Quant._update_available_quantity(self.product1, self.shelf2, 30)
 
-        # Mark quant for product1 in shelf 1 as to count.
         quants = Quant.search(
             [
                 ("product_id", "=", self.product1.id),
@@ -928,11 +823,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_setting_show_quantity_to_count(self):
-        """
-        Check the scenario when "Show Quantity to Count" setting is enabled or
-        disabled, considering both tracked and untracked products.
-        """
-        # Enables multilocations and tracking.
         self.env.user.write(
             {
                 "group_ids": [
@@ -943,7 +833,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         Quant = self.env["stock.quant"]
 
-        # Creates some lots and serial numbers.
         serial_numbers = self.create_serial_numbers(self.productserial1, 1, 3)
         lots = self.env["product.trace"].create(
             [
@@ -955,7 +844,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             ]
         )
 
-        # Adds quantity in stock for the products.
         for sn in serial_numbers:
             Quant._update_available_quantity(
                 self.productserial1, self.stock_location, 1, trace_id=sn
@@ -968,7 +856,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         Quant._update_available_quantity(self.product1, self.stock_location, 5)
 
-        # Mark added quants as to count.
         quants = Quant.search(
             [
                 (
@@ -993,7 +880,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             login="admin",
             timeout=180,
         )
-        # Disable the "Show Quantity to Count" setting and launch second tour.
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "False"
         )
@@ -1005,13 +891,9 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_inventory_using_buttons(self):
-        """Creates an inventory from scratch, then scans products and verifies
-        the buttons behavior is right.
-        """
         self.env["ir.config_parameter"].set_param(
             "stock.show_expected_quantity_count", "True"
         )
-        # Adds some quantities for product2.
         self.env["stock.quant"]._update_available_quantity(
             self.product2, self.stock_location, 10
         )
@@ -1048,7 +930,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Simulate moving 1 unit of product1 from Customer Location to Inventory Adjustment Location
         self.env["stock.quant"].create(
             {
                 "product_id": self.product1.id,
@@ -1057,7 +938,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             }
         )
 
-        # Create a quant in Inventory adjustment location
         self.env["stock.quant"].create(
             {
                 "product_id": self.product1.id,
@@ -1091,10 +971,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(quants.inventory_quantity, 0)
         self.assertEqual(quants.inventory_diff_quantity, 0)
 
-    # === RFID TESTS ===#
     def test_rfid_inventory_scan_sgtin(self):
-        """Checks multiple products can be scanned at once for an Inventory
-        Adjustment using RFID."""
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_production_lot").id)]}
         )
@@ -1105,7 +982,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
 
-        # Create a bunch of products with EAN13.
         product_common_vals = {
             "is_storable": True,
             "uom_id": self.env.ref("base.product_uom_unit").id,
@@ -1126,7 +1002,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 ]
             ]
         )
-        # Create a few products tracked by SN with EAN13.
         tracked_products = self.env["product.product"].create(
             [
                 {
@@ -1142,7 +1017,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 ]
             ]
         )
-        # Create serial numbers for those products.
         p1_serial_numbers = self.env["product.trace"].create(
             [
                 {
@@ -1161,7 +1035,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 for i in [12, 10, 15, 16, 9]
             ]
         )
-        # Add some quantity in stock.
         self.env["stock.quant"]._update_available_quantity(
             products[0], self.stock_location, 12
         )
@@ -1176,7 +1049,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
                 serial_number.product_id, self.stock_location, 1, trace_id=serial_number
             )
 
-        # Mock the calls to the route to count the call amount.
         self1 = self
         get_specific_barcode_data_orig = (
             StockBarcodeController.get_specific_barcode_data
@@ -1187,13 +1059,11 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         def mocked_data_batch_method(self, **kwargs):
             if self1.call_count == 0:
-                # First call: product and serial numbers.
                 self1.assertEqual(
                     list(kwargs["barcodes_by_model"].keys()),
                     ["product.product", "product.uom", "product.trace"],
                 )
             elif self1.call_count == 1:
-                # First call: serial numbers only (no new product's barcode scanned).
                 self1.assertEqual(
                     list(kwargs["barcodes_by_model"].keys()), ["product.trace"]
                 )
@@ -1214,11 +1084,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             self.assertEqual(self.call_count, 2)
 
     def test_inventory_count_with_line_deletion(self):
-        """
-        Check that the quant data of the barcode cache is not
-        corrupted by line deletions.
-        """
-        # Put 5 units of prodcut1 in stock and start an inventory count
         self.env["stock.quant"]._update_available_quantity(
             self.product1, self.stock_location, 5
         )
@@ -1236,9 +1101,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
         self.assertEqual(quant.quantity, 5, "deleting a count must not apply it")
 
-    # === GS1 TESTS ===#
     def test_gs1_inventory_gtin_8(self):
-        """Simulate scanning a product with his gs1 barcode"""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -1247,7 +1110,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
-                "barcode": "82655853",  # GTIN-8 format
+                "barcode": "82655853",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
@@ -1256,7 +1119,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             "/odoo/barcode", "test_gs1_inventory_gtin_8", login="admin", timeout=180
         )
 
-        # Checks the inventory adjustment correclty created a move line.
         move_line = self.env["stock.move.line"].search(
             [
                 ("product_id", "=", product.id),
@@ -1267,7 +1129,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(move_line.qty_done, 78)
 
     def test_gs1_inventory_product_units(self):
-        """Scans a product with a GS1 barcode containing multiple quantities."""
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -1276,7 +1137,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
-                "barcode": "82655853",  # GTIN-8 format
+                "barcode": "82655853",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
@@ -1299,10 +1160,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(quantity.qty_done, 102)
 
     def test_gs1_inventory_package(self):
-        """Scans existing packages and checks their products are correclty added
-        to the inventory adjustment. Then scans some products, scans a new package
-        and checks the package was created and correclty assigned to those products.
-        """
         self.env.company.barcodes_config_id.nomenclature_id = self.env.ref(
             "barcodes_gs1_nomenclature.default_gs1_nomenclature"
         )
@@ -1322,17 +1179,15 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "PRO_GTIN_8",
                 "is_storable": True,
-                "barcode": "82655853",  # GTIN-8 format
+                "barcode": "82655853",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
             }
         )
 
-        # Creates a first package in Section 1 and adds some products.
         pack_1 = self.env["stock.package"].create({"name": "987654123487568456"})
         self.env["stock.quant"]._update_available_quantity(
             self.product1, self.shelf1, 8, package_id=pack_1
         )
-        # Creates a second package in Section 2 and adds some other products.
         pack_2 = self.env["stock.package"].create({"name": "487325612456785124"})
         self.env["stock.quant"]._update_available_quantity(
             self.product2, self.shelf2, 6, package_id=pack_2
@@ -1347,9 +1202,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(pack_3.quant_ids.product_id.ids, [product.id])
 
     def test_gs1_inventory_lot_serial(self):
-        """Checks tracking numbers and quantites are correctly got from GS1
-        barcodes for tracked products.
-        Also, this test is an opportunity to ensure custom GS1 separators are used clientside."""
         self.env.user.write(
             {"group_ids": [Command.link(self.env.ref("stock.group_production_lot").id)]}
         )
@@ -1364,7 +1216,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "PRO_GTIN_12_lot",
                 "is_storable": True,
-                "barcode": "111155555717",  # GTIN-12 format
+                "barcode": "111155555717",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
                 "tracking": "lot",
             }
@@ -1374,7 +1226,7 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
             {
                 "name": "PRO_GTIN_14_serial",
                 "is_storable": True,
-                "barcode": "15222222222219",  # GTIN-14 format
+                "barcode": "15222222222219",
                 "uom_id": self.env.ref("base.product_uom_unit").id,
                 "tracking": "serial",
             }
@@ -1418,11 +1270,6 @@ class TestInventoryAdjustmentBarcodeClientAction(TestBarcodeClientAction):
         )
 
     def test_scan_product_lot_with_package(self):
-        """
-        Check that a lot can be scanned in the inventory Adjustments,
-        when the package is set in the quant.
-        """
-        # Enable the package option
         self.env["res.config.settings"].create(
             {"group_stock_tracking_lot": True}
         ).execute()

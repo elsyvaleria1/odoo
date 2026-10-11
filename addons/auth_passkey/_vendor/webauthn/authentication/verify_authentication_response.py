@@ -53,38 +53,12 @@ def verify_authentication_response(
     credential_current_sign_count: int,
     require_user_verification: bool = False,
 ) -> VerifiedAuthentication:
-    """Verify a response from navigator.credentials.get()
-
-    Args:
-        - `credential`: The value returned from `navigator.credentials.get()`. Can be either a
-          stringified JSON object, a plain dict, or an instance of RegistrationCredential
-        - `expected_challenge`: The challenge passed to the authenticator within the preceding
-          authentication options.
-        - `expected_rp_id`: The Relying Party's unique identifier as specified in the preceding
-          authentication options.
-        - `expected_origin`: The domain, with HTTP protocol (e.g. "https://domain.here"), on which
-          the authentication ceremony should have occurred.
-        - `credential_public_key`: The public key for the credential's ID as provided in a
-          preceding authenticator registration ceremony.
-        - `credential_current_sign_count`: The current known number of times the authenticator was
-          used.
-        - (optional) `require_user_verification`: Whether or not to require that the authenticator
-          verified the user.
-
-    Returns:
-        Information about the authenticator
-
-    Raises:
-        `helpers.exceptions.InvalidAuthenticationResponse` if the response cannot be verified
-    """
     if isinstance(credential, str) or isinstance(credential, dict):
         credential = parse_authentication_credential_json(credential)
 
-    # FIDO-specific check
     if bytes_to_base64url(credential.raw_id) != credential.id:
         raise InvalidAuthenticationResponse("id and raw_id were not equivalent")
 
-    # FIDO-specific check
     if credential.type != PublicKeyCredentialType.PUBLIC_KEY:
         raise InvalidAuthenticationResponse(
             f'Unexpected credential type "{credential.type}", expected "public-key"'
@@ -128,7 +102,6 @@ def verify_authentication_response(
 
     auth_data = parse_authenticator_data(authenticator_data_bytes)
 
-    # Generate a hash of the expected RP ID for comparison
     expected_rp_id_hash = hashlib.sha256()
     expected_rp_id_hash.update(expected_rp_id.encode("utf-8"))
     expected_rp_id_hash_bytes = expected_rp_id_hash.digest()
@@ -147,9 +120,6 @@ def verify_authentication_response(
     if (
         auth_data.sign_count > 0 or credential_current_sign_count > 0
     ) and auth_data.sign_count <= credential_current_sign_count:
-        # Require the sign count to have been incremented over what was reported by the
-        # authenticator the last time this credential was used, otherwise this might be
-        # a replay attack
         raise InvalidAuthenticationResponse(
             f"Response sign count of {auth_data.sign_count} was not greater than current count of {credential_current_sign_count}"
         )

@@ -27,12 +27,10 @@ else:
         "https://nightly.odoo.com/master/posbox/iotbox/six-timapiv25_10_l.zip"
     )
 
-# Download and unzip timapi library, overwriting the existing one
 TIMAPI_ZIP_PATH = f"{LIB_PATH}/tim.zip"
 helpers.download_from_url(DOWNLOAD_URL, TIMAPI_ZIP_PATH)
 helpers.unzip_file(TIMAPI_ZIP_PATH, f"{LIB_PATH}/tim")
 
-# Make TIM SDK dependency libraries visible for the linker
 if IS_WINDOWS:
     LIB_PATH = file_path("iot_drivers/iot_handlers/lib")
     os.environ["PATH"] = (
@@ -59,19 +57,14 @@ else:
     except subprocess.CalledProcessError as e:
         _logger.error("Failed to link the TIM SDK dependent library: %s", e.output)
 
-# Import Odoo Timapi Library
 LIB_NAME = "libsix_odoo_w.dll" if IS_WINDOWS else "libsix_odoo_l.so"
 TIMAPI = import_ctypes_library("tim", LIB_NAME)
 
-# --- Setup library prototypes ---
-# void *six_initialize_manager(int buffer_size) {
 TIMAPI.six_initialize_manager.argtypes = [ctypes.c_int]
 TIMAPI.six_initialize_manager.restype = ctypes.c_void_p
 
-# int six_setup_terminal_settings(t_terminal_manager *terminal_manager, char *terminal_id);
 TIMAPI.six_setup_terminal_settings.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
 
-# int six_terminal_connected(t_terminal_manager *terminal_manager);
 TIMAPI.six_terminal_connected.argtypes = [ctypes.c_void_p]
 
 
@@ -95,9 +88,6 @@ class TIMInterface(Interface):
         if not self.manager:
             return {}
 
-        # As this code is fetched by the IoT Box from the DB, we can't be sure
-        # that the IoT Box has the new method `get_conf`.
-        # This try-except should be replaced by a simple call to `get_conf` in master
         try:
             new_tid = helpers.get_conf("six_payment_terminal")
         except AttributeError:
@@ -107,7 +97,6 @@ class TIMInterface(Interface):
             new_tid = helpers.read_file_first_line("odoo-six-payment-terminal.conf")
         devices = {}
 
-        # If the Six TID setup has changed, reset the settings
         if new_tid != self.tid:
             self.tid = new_tid
             encoded_tid = new_tid.encode() if new_tid else None
@@ -118,7 +107,6 @@ class TIMInterface(Interface):
                 _logger.exception("Failed to setup Six terminal settings")
                 return {}
 
-        # Check if the terminal is online and responsive
         try:
             if self.tid and TIMAPI.six_terminal_connected(self.manager):
                 devices[self.tid] = ctypes.cast(self.manager, ctypes.c_void_p)

@@ -81,7 +81,6 @@ class SpreadsheetTestTourCommon(SpreadsheetTestCommon, HttpCase):
         super().setUpClass()
         cls.spreadsheet_user.partner_id.country_id = cls.env.ref("base.us")
         cls.env["res.users"].browse(2).partner_id.country_id = cls.env.ref("base.be")
-        # Avoid interference from the demo data which rename the admin user
         cls.env["res.users"].browse(2).write({"name": "AdminDude"})
         data_path = misc.file_path(
             "document_spreadsheet/tests/test_spreadsheet_data.json"

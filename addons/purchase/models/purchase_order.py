@@ -675,9 +675,6 @@ class PurchaseOrder(models.Model):
                     supplierinfo["product_uom_id"] = line.product_uom_id.id
                 supplierinfo["product_tmpl_id"] = tmpl.id
                 vals_by_company[order.company_id].append(supplierinfo)
-        # the vendor it just confirmed with becomes a seller of the product, and
-        # that does not move this order's promised dates, which a line derives
-        # from its selected seller
         promised_dates = [
             ([self.line_ids._fields["date_commitment"]], self.line_ids),
             ([self._fields["date_commitment"]], self),
@@ -828,7 +825,7 @@ class PurchaseOrder(models.Model):
             _update(
                 key,
                 result,
-                self._read_group(  # noqa: E8507 - one aggregate per literal count domain
+                self._read_group(
                     domain, ["priority", "user_id"], ["id:count_distinct"]
                 ),
             )

@@ -5,12 +5,8 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# The two ways a pending transfer leaves a trip that has departed: as not
-# delivered, when the goods travelled and came back, or as a correction, when the
-# transfer never should have travelled on that trip.
 UNBATCH_UNDELIVERED = "trip_unbatch_undelivered"
 UNBATCH_CORRECTION = "trip_unbatch_correction"
-# Merging trips moves their transfers into one on purpose.
 MERGE_TRIPS = "trip_merge"
 
 
@@ -49,30 +45,13 @@ class StockPicking(models.Model):
     )
 
     def _requires_trip(self):
-        """Whether this transfer may only be validated inside a departed trip:
-        its goods ride the trip's vehicle, and its type asks for trips or it
-        already boards one.
-
-        :rtype: bool
-        """
         self.check_singleton()
-        # Boarded on a trip with its vehicle, the goods travel on it whatever the
-        # type asks: the trip waits for their outcome, a salesperson's ends at its
-        # last stop, and they are delivered from it.
         return bool(
             (self.picking_type_id.dispatch_batch_required or self.batch_id.vehicle_id)
             and self._rides_trip_vehicle()
         )
 
     def _rides_trip_vehicle(self) -> bool:
-        """Whether the goods of this transfer travel on the vehicle of its trip.
-
-        Whatever the operation type asks for: who reads the vehicle (its GPS)
-        needs to know what it carries even where trips are not compulsory.
-        Bridges narrow it, e.g. by the carrier that takes the goods.
-
-        :rtype: bool
-        """
         self.check_singleton()
         return bool(
             self.picking_type_id.code == "outgoing"
@@ -80,19 +59,10 @@ class StockPicking(models.Model):
         )
 
     def _trip_vehicle_returns(self) -> bool:
-        """Whether the vehicle goes back to the trip's warehouse after this transfer.
-
-        :rtype: bool
-        """
         self.check_singleton()
         return True
 
     def _check_dispatch_requirements(self) -> None:
-        """Refuse to validate a transfer that must travel in a trip outside one.
-
-        Reads the transfer's own batch: a batch validates its transfers twice, the
-        first time without passing itself along.
-        """
         for picking in self:
             if not picking._requires_trip():
                 continue
@@ -116,7 +86,6 @@ class StockPicking(models.Model):
                 )
 
     def _get_domain_possible_batches(self, excluded_batches=None):
-        # Auto-batching must not board a transfer onto a trip that already left.
         return super()._get_domain_possible_batches(excluded_batches) & Domain(
             "date_departure", "=", False
         )
@@ -135,8 +104,6 @@ class StockPicking(models.Model):
                 trip._check_trip_takes_no_new_pickings(
                     self.filtered(lambda picking: picking.batch_id != trip)
                 )
-        # A departed trip is the record of what the vehicle carried: a delivered
-        # transfer stays on it when the batch sheds its done transfers.
         if "batch_id" in vals and not vals["batch_id"]:
             kept = self.filtered(
                 lambda picking: (
@@ -154,14 +121,8 @@ class StockPicking(models.Model):
         return super().write(vals)
 
     def _check_departed_trip_keeps_its_pickings(self, batch) -> None:
-        """Refuse to take a pending transfer off a trip that has departed.
-
-        :param batch: the batch the transfers move to, as an id, a record or False
-        """
         if self.env.context.get(UNBATCH_UNDELIVERED):
             return
-        # The context alone does not open the way: the caller must hold the access
-        # of the correction wizard, which belongs to the trip corrections group.
         if self.env.context.get(UNBATCH_CORRECTION) and self.env[
             "wizard.stock.picking.unbatch.correction"
         ].has_access("create"):
@@ -180,7 +141,6 @@ class StockPicking(models.Model):
                 pickings=leaving,
                 batches=leaving.batch_id,
             )
-            # The refusal carries the way out: the reasons, for the first transfer.
             raise RedirectWarning(
                 self.env._(
                     "%(pickings)s travels on trip %(batch)s, which has already "
@@ -194,20 +154,11 @@ class StockPicking(models.Model):
             )
 
     def _check_transfer_rides_one_trip(self, batch) -> None:
-        """Refuse to put a transfer that is on a trip into another batch.
-
-        Before departure the transfer leaves its trip freely; it is moved only once
-        it has been taken off, so that no trip loses a stop without anyone noticing.
-
-        :param batch: the batch the transfers move to, as an id, a record or False
-        """
         if self.env.context.get(MERGE_TRIPS):
             return
         batch_id = batch.id if isinstance(batch, models.BaseModel) else batch or False
         if not batch_id:
             return
-        # Only where transfers are delivered in trips: elsewhere batches and waves
-        # regroup transfers freely, as stock_picking_batch intends.
         on_other_trip = self.filtered(
             lambda picking: (
                 picking.batch_id
@@ -231,18 +182,12 @@ class StockPicking(models.Model):
             )
 
     def _detach_from_batch_before_backorder(self):
-        # A transfer partly delivered on a departed trip stays on it, since the trip
-        # records what it delivered; its backorder is born off the trip.
         on_trip = self.filtered(lambda picking: picking.batch_id.date_departure)
         if on_trip:
             _debug.logic("trip_keeps_partial_delivery", pickings=on_trip)
         return super(StockPicking, self - on_trip)._detach_from_batch_before_backorder()
 
-    # ------------------------------------------------------------------
-    # The driver's outcome per stop
-    # ------------------------------------------------------------------
     def action_deliver(self):
-        """Driver button: the customer received the goods as loaded."""
         self.check_singleton()
         if self.state != "assigned":
             raise UserError(
@@ -264,27 +209,18 @@ class StockPicking(models.Model):
         return result
 
     def action_not_delivered(self) -> dict:
-        """Driver button: the goods come back; ask why."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Not delivered"),
             "res_model": "wizard.stock.picking.unbatch.undelivered",
             "view_mode": "form",
-            # A RedirectWarning hands the action to the client as is, with no
-            # server pass to derive its views from view_mode.
             "views": [(False, "form")],
             "target": "new",
             "context": {"default_picking_id": self.id},
         }
 
     def _register_delivery_failure(self, reason):
-        """Take the transfer off its trip with the reason on both records.
-
-        The transfer stays ready, in transit, for the next trip.
-
-        :param str reason: why the goods were not delivered
-        """
         self.check_singleton()
         batch = self.batch_id
         _debug.lifecycle("trip_delivery_failure", pickings=self, batches=batch)
@@ -310,13 +246,6 @@ class StockPicking(models.Model):
                 batch._close_trip_at_last_stop()
 
     def _take_off_trip_as_correction(self, reason):
-        """Take pending transfers off their departed trip as they are.
-
-        Nothing failed on the route: no undelivered reason is set and the transfers
-        keep their state and reservation, ready for another trip.
-
-        :param str reason: why the transfers should not have travelled on the trip
-        """
         trip = self.batch_id
         trip.check_singleton()
         trip_state = dict(

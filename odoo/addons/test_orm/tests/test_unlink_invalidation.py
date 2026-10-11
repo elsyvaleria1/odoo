@@ -111,9 +111,6 @@ class TestUnlinkInvalidation(TransactionCase):
         self.assertFalse(line.exists())
 
     def test_a_compute_reading_a_deleted_record_waits_for_the_deletion(self):
-        # the part's own weight is still pending when it is deleted, and its
-        # recompute is dropped: the tally's compute, pending too, must not run
-        # in the deletion's flush on the value that was never computed
         tally = self.env["test_orm.unlink_tally"].create({})
         self.env["test_orm.unlink_tally_part"].create({"tally_id": tally.id, "size": 1})
         self.env.flush_all()

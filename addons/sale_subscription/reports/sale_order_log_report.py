@@ -241,8 +241,6 @@ class SaleOrderLogReport(models.Model):
         """
 
     def _from(self):
-        # To avoid looking at the res_currency table for all records, we build a small table with one line per
-        # currency. Joining on these values will be faster.
         currency_id = self.env.company.currency_id.id
         active_id = self.env.context.get(
             "active_model"

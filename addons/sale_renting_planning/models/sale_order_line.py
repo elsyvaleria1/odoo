@@ -96,7 +96,6 @@ class SaleOrderLine(models.Model):
 
             shuffle(free_resource_ids)
 
-            # FIXME: check why it is needed
             if free_resource_ids and free_resource_ids[0] not in flexible_resource_ids:
                 days_per_week = (
                     sol.company_id.resource_calendar_id.get_work_duration_data(

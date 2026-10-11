@@ -1,50 +1,27 @@
 from odoo.tests import TransactionCase, tagged
 
-# Magic columns collide for every pair of models in the registry.
 MAGIC = frozenset(
     {"id", "create_date", "create_uid", "write_date", "write_uid", "display_name"}
 )
 
-# The names hr.employee shadows on res.partner today, with what the
-# employee-as-a-role design says becomes of each. Shrinking this set is the
-# remaining work; growing it is the regression
-# this test exists to catch.
 KEEP_SHADOWED = frozenset(
     {
-        "parent_id",  # Manager, not the partner's Related Company
-        "child_ids",  # subordinates, not the partner's addresses
-        "user_id",  # the login account, not the partner's Salesperson
-        "company_id",  # employment is company-scoped; the party is company-less
-        "active",  # ending an employment must not archive the person
-        # An employee's tags are not their contact's tags. The tag merge
-        # folded the two VOCABULARIES into res.partner.tag but deliberately kept
-        # two ASSIGNMENTS: employee_tag_rel beside
-        # res_partner_res_partner_tag_rel. Decided 2026-09-05: they stay
-        # separate. A role tag ("forklift certified") on the party row would
-        # surface in every contact list and filter sales reads on HR
-        # vocabulary; the party's tags stay the contact's.
+        "parent_id",
+        "child_ids",
+        "user_id",
+        "company_id",
+        "active",
         "tag_ids",
-        # The resource's timezone drives scheduling and a material resource
-        # has one too; the resource follows its party's tz, and the employee
-        # reads the resource's.
         "tz",
-        # A kanban colour index for the employee list, not the contact's.
         "color",
     }
 )
 SEPARATE_DESTINATION = frozenset(
     {
-        # A Badge ID, computed from the party's BADGE identifier row; the partner's
-        # barcode is the contact's own.
         "barcode",
     }
 )
 DELEGATION_PROVIDES = frozenset({"name", "lang", "phone_ids", "email", "im_status"})
-# What the employee reads from the PRIVATE FACET rather than from the party:
-# confidential person data, on a child row of type 'private' that an access guard
-# hides from everyone but HR. Putting these on the party would show an
-# employee's marital status or home address to every internal user, and giving
-# them a field group on res.partner would hide a customer's from sales.
 FACET_PROVIDES = frozenset(
     {
         "sex",
@@ -71,23 +48,10 @@ FACET_PROVIDES = frozenset(
         "study_school",
     }
 )
-# inherited=True today, but from hr.version -- so it satisfies a naive
-# "is it inherited" check while resolving to the wrong parent.
 WRONG_PARENT = frozenset({"country_code"})
 
-# Names that shadow only once another module contributes them to res.partner.
-# The gate reads the registry, so its answer is a property of the INSTALLED SET,
-# not of the source: an hr-only lane cannot see a shadow account creates. Listing
-# these separately keeps that limit visible rather than silent, and keeps the
-# recorded set honest in a narrow lane where they genuinely do not collide.
 CONDITIONAL = {
-    # account adds currency_id to res.partner, computed from its pricelist or
-    # company; hr.employee's own is the EMPLOYMENT currency the wage is
-    # expressed in. Same name, different subject -- so keep-shadowed when both
-    # are present.
     "currency_id": "account",
-    # documents_hr counts the employee's own documents; the partner's count is
-    # the contact's. Same name, different subject.
     "document_count": "document_hr",
 }
 
@@ -113,22 +77,12 @@ class TestPartnerShadowGate(TransactionCase):
         for name in set(employee) & set(partner):
             if name in MAGIC:
                 continue
-            # base sits under every model, and since resource moved into it
-            # declares the resource fields an employee shadows: sharing it
-            # proves no shared declaration
             shared = (
                 set(employee[name]._modules or ()) & set(partner[name]._modules or ())
             ) - {"base"}
             if shared:
-                # One module declares both sides. Either both models inherit
-                # the same mixin -- an employee's chatter is not the contact's
-                # chatter, and delegating it would be wrong -- or hr put the
-                # field on res.partner itself for the private facet to carry,
-                # which test_the_facet_fields_are_read_from_the_facet pins.
                 continue
             if name in FACET_PROVIDES and name not in EXPECTED:
-                # read from the private facet, whichever module declares it on
-                # res.partner, as test_the_facet_fields_are_read_from_the_facet pins
                 continue
             field = employee[name]
             if field.inherited and field.inherited_field.model_name == "res.partner":
@@ -148,7 +102,6 @@ class TestPartnerShadowGate(TransactionCase):
 
     @classmethod
     def _expected_here(cls):
-        """EXPECTED, minus conditionals whose contributing module is absent."""
         installed = set(
             cls.env["ir.module.module"]
             .search([("state", "=", "installed")])
@@ -159,7 +112,6 @@ class TestPartnerShadowGate(TransactionCase):
         }
 
     def test_the_recorded_set_has_not_silently_shrunk(self):
-        """Every recorded name must still shadow, or the record is stale."""
         gone = self._expected_here() - self._shadowed()
         self.assertFalse(
             gone,
@@ -168,14 +120,6 @@ class TestPartnerShadowGate(TransactionCase):
         )
 
     def test_the_recorded_set_is_complete_only_for_the_installed_modules(self):
-        """The gate reads the registry, so its answer depends on what is installed.
-
-        `currency_id` collides only once `account` is installed, because account
-        is what adds it to res.partner -- an hr-only lane cannot see a shadow
-        contributed by a module outside hr. Recording that here makes the limit
-        a stated absence rather than a silent one: a lane narrower than this
-        list under-reports, and the fix is to install more, not to trust it.
-        """
         installed = set(
             self.env["ir.module.module"]
             .search([("state", "=", "installed")])
@@ -186,25 +130,12 @@ class TestPartnerShadowGate(TransactionCase):
         self.assertIn("currency_id", self._shadowed())
 
     def test_inherited_alone_does_not_satisfy_the_gate(self):
-        """country_code is inherited=True -- from hr.version, not res.partner.
-
-        After step 7 hr.employee carries two delegations, so the check has to
-        name the parent model rather than trust the flag.
-        """
         field = self.env["hr.employee"]._fields["country_code"]
         self.assertTrue(field.inherited)
         self.assertEqual(field.inherited_field.model_name, "hr.version")
         self.assertIn("country_code", self._shadowed())
 
     def test_the_facet_fields_are_read_from_the_facet(self):
-        """Confidential person data is the private facet's, not a column of the
-        employee's own and not the party's.
-
-        The shadow check above skips a name that one module declares on both
-        models, which is exactly the shape these have; without this test that
-        skip would also hide an employee field that quietly kept its own
-        column beside the partner's.
-        """
         Employee = self.env["hr.employee"]
         for name in FACET_PROVIDES:
             field = Employee._fields[name]
@@ -221,7 +152,6 @@ class TestPartnerShadowGate(TransactionCase):
             )
 
     def test_delegation_provides_what_it_promised(self):
-        """These names reach the employee from res.partner and nowhere else."""
         employee = self.env["hr.employee"]._fields
         for name in DELEGATION_PROVIDES:
             field = employee[name]

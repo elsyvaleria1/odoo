@@ -18,7 +18,6 @@ class Model(models.AbstractModel):
     _inherit = "base"
 
     def _ai_truncate(self, value, size=60):
-        # Limit the size of the field we can, to try to limit prompt injection...
         if not isinstance(value, str) or len(value) < size:
             return value
         return value[: max(0, size - 3)] + "..."
@@ -41,16 +40,14 @@ class Model(models.AbstractModel):
                 field_value = self._ai_truncate(field_value)
 
             try:
-                # Handle relational fields
                 if field_type in ("many2one", "one2many", "many2many"):
                     linked_records = self.env[field_value._name].browse(field_value.ids)
                     if (
                         len(linked_records) > 50
-                    ):  # too many linked records flood the context, skip the field
+                    ):
                         continue
                     names = linked_records._visible_display_names()
                     if None in names.values():
-                        # a name the user may not see keeps the field out
                         continue
                     truncated = [self._ai_truncate(name) for name in names.values()]
                     if field_type == "many2one":
@@ -58,8 +55,7 @@ class Model(models.AbstractModel):
                     else:
                         result[field_name] = truncated
                 elif field_type == "binary":
-                    continue  # we don't include binary fields in the record info JSON
-                # Handle basic field types (dates, etc.)
+                    continue
                 elif isinstance(field_value, datetime.datetime):
                     user_tz = timezone(self.env.user.tz or "UTC")
                     result[field_name] = (
@@ -68,11 +64,10 @@ class Model(models.AbstractModel):
                         else None
                     )
                 elif isinstance(field_value, models.BaseModel):
-                    # Handle unexpected recordset returns (shouldn't happen for non-relational fields)
                     result[field_name] = field_value.ids
                 else:
                     result[field_name] = field_value
-            except AccessError:  # if the user doesn't have access to a field, don't include it in the AI's context
+            except AccessError:
                 continue
 
         return json.dumps(result, default=str)
@@ -82,19 +77,16 @@ class Model(models.AbstractModel):
     ):
         context = []
 
-        # If we have record info available from the front-end, pass it to the model's context
         if caller_component in ["html_field_record", "chatter_ai_button"]:
             context.append(
                 f"You were called within an Odoo {self._name} record. Your answers should take the record's details into account. The following JSON contains all of the record's details: {front_end_info}"
             )
 
-        # If we don't have record info from the front-end and it's required, fetch the record information and pass it to the model's context
         if caller_component == "mail_composer":
             context.append(
                 f"You were called within an Odoo {self._name} record. Your answers should take the record's details into account. The following JSON contains all of the records details: {self._ai_serialize_fields_data()}"
             )
 
-        # Add some additional details for some special cases and finish the context by the "first" message sent by the assistant
         if caller_component == "html_field_text_select":
             context.append(
                 f"The text that you will be rewritting is the following: {text_selection}"
@@ -106,39 +98,26 @@ class Model(models.AbstractModel):
 
         return context
 
-    # Override on any model that requires sending more than the display name when its records
-    # are included in a prompt (such as attachments). Files are handled separately, as they
-    # must be sent independently to LLMs.
     def _ai_read(self, fnames, files_dict) -> tuple:
-        """Retrieve and format field values for LLM processing.
-
-        :param fnames: list of field names to read and format, defaults to ``display_name``
-        :param files_dict: dict mapping file checksums to metadata dicts each with keys
-            'mimetype', 'value' and 'file_ref'
-        :return: (vals_list, files_dict) where vals_list holds one dict per record mapping
-            field names to their formatted values, and files_dict is the given dict extended
-            with the files found on the records
-        :rtype: tuple
-        """
         if not fnames:
-            fnames = ["display_name"]  # by default, send display names
+            fnames = ["display_name"]
         vals_list = self.read(fnames, load=None)
         for fname in fnames:
             field = self._fields.get(fname)
             if field.type in ("binary", "image"):
                 if (
                     field.attachment and self.ids
-                ):  # attachment is not created yet in quick creation
+                ):
                     attachments = self.env["ir.attachment"].search(
                         [
                             ("res_model", "=", self._name),
                             ("res_field", "=", fname),
-                            ("res_id", "in", self.ids),  # ._origin?
+                            ("res_id", "in", self.ids),
                         ]
                     )
                     __, files_dict = attachments._ai_read(
                         None, files_dict
-                    )  # populate file dict
+                    )
                 for vals in vals_list:
                     if not vals[fname]:
                         continue
@@ -151,7 +130,6 @@ class Model(models.AbstractModel):
                         extension = mimetype.split("/")[-1]
                         file_ref = f"<file_#{len(files_dict) + 1}>"
                         if extension in (*AI_SUPPORTED_IMG_TYPES, "pdf"):
-                            # todo: keep 5 pages max and resize images
                             value = vals[fname].decode()
                         else:
                             try:
@@ -181,15 +159,13 @@ class Model(models.AbstractModel):
                 "one2many",
                 "reference",
             ):
-                # can't use result of read because we might have temporary records (with NewId), so
-                # the ids won't be the ids we expect (origin ids or none for virtual records)
                 vals_by_ids = {vals["id"]: vals for vals in vals_list}
                 for record in self:
                     record_vals = vals_by_ids[record.id]
                     co_records = record[fname]
                     if not co_records:
                         record_vals[fname] = (
-                            False  # keep falsy values consistent for the LLM
+                            False
                         )
                     if field.type == "many2one_reference":
                         record_vals[fname] = (
@@ -220,35 +196,6 @@ class Model(models.AbstractModel):
         return vals_list, files_dict
 
     def _get_ai_context(self, field_paths) -> tuple:
-        """Get the json-encoded context dict for a record given a list of field paths.
-
-        :param field_paths: list of dot-separated field paths to include in the snapshot
-        :return: (json-encoded snapshot, list of file metadata dicts)
-        :rtype: tuple
-
-        The snapshot is a mini-orm view of the records, with values formatted for LLM usage:
-
-        .. code-block:: python
-
-            {
-                "model_A": [
-                    {
-                        "id": 1,
-                        "field_A": "val_1",
-                        "field_B": {"model": "model_B", "ids": [3]},
-                    },
-                    {
-                        "id": 2,
-                        "field_A": "val_2",
-                        "field_B": {"model": "model_B", "ids": [4]},
-                    },
-                ],
-                "model_B": [
-                    {"id": 3, "field_C": "val_3"},
-                    {"id": 4, "field_C": "val_4"},
-                ],
-            }
-        """
         self.check_singleton()
         models = {}
 
@@ -279,12 +226,11 @@ class Model(models.AbstractModel):
                         _map_to_models(self.env[ref_model].browse(ref_id), path[1:])
             models[model]["fields"].add(fname)
 
-        # get a mapping {model: {fields, ids}} to know which fields to read on which records
         for path in field_paths:
             _map_to_models(self, path.split("."))
 
         snapshot = {}
-        files_dict = {}  # files are sent separately to LLMs
+        files_dict = {}
         for model, info in models.items():
             records = self.env[model].browse(info["ids"])
             snapshot[model], files_dict = records._ai_read(
@@ -292,7 +238,6 @@ class Model(models.AbstractModel):
             )
 
         def _ai_context_json_default(obj):
-            """NewId is not json serializable, use its string representation"""
             if isinstance(obj, NewId):
                 return obj.origin or str(obj)
             return obj
@@ -302,9 +247,4 @@ class Model(models.AbstractModel):
         ), list(files_dict.values())
 
     def _ai_format_records(self) -> dict:
-        """Format the records that are inserted in a prompt.
-
-        :return: dict keyed by record id, the values can be anything
-        :rtype: dict
-        """
         return {record.id: record.display_name for record in self}

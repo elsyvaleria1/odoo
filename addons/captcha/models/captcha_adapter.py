@@ -6,9 +6,6 @@ from odoo import api, models
 
 _logger = logging.getLogger(__name__)
 
-# How much of a refused token reaches the log: the value is attacker-controlled
-# and bounded only by the request size, so a prefix correlates without letting
-# a caller choose how much is written.
 TOKEN_LOG_PREFIX = 12
 
 
@@ -22,7 +19,6 @@ class CaptchaAdapter(models.AbstractModel):
 
     @api.model
     def _site_key(self) -> str | None:
-        """The key the browser script runs with; None when not configured."""
         raise NotImplementedError
 
     @api.model
@@ -31,19 +27,14 @@ class CaptchaAdapter(models.AbstractModel):
 
     @api.model
     def _has_secret(self) -> bool:
-        """Whether a secret is set, without reading it."""
         raise NotImplementedError
 
     @api.model
     def _post_verification(self, data: dict) -> requests.Response:
-        """Send `data` to the provider's siteverify endpoint."""
         raise NotImplementedError
 
     @api.model
     def _verdict(self, ip_addr: str, token, action: str) -> str:
-        """The provider's verdict on `token`, sent from `ip_addr` for `action`:
-        is_human, is_bot, no_secret, wrong_secret, wrong_token, wrong_action,
-        timeout or bad_request."""
         secret = self._secret()
         if not secret:
             return "no_secret"
@@ -64,8 +55,6 @@ class CaptchaAdapter(models.AbstractModel):
             KeyError,
             TypeError,
         ) as error:
-            # the class, not the message, which could echo what was sent: it
-            # tells a TLS error from a parse error from an answer of another shape
             _logger.error(
                 "captcha verification got a malformed answer (%s)",
                 type(error).__name__,
@@ -94,8 +83,6 @@ class CaptchaAdapter(models.AbstractModel):
 
     @api.model
     def _verdict_of_success(self, ip_addr: str, result: dict, action: str) -> str:
-        """The verdict on a token the provider accepted: a token obtained for
-        another action does not prove this one."""
         if action and result.get("action") and result["action"] != action:
             _logger.warning(
                 "captcha verification for ip address %s was for action %s, not %s",

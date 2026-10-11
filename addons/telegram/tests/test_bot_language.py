@@ -23,7 +23,6 @@ class TestBotLanguage(TelegramBotTestCase):
         self.assertEqual(self.test_bot.get_lang(self.unlinked_chat), "es_MX")
 
     def test_the_telegram_app_s_language_comes_before_the_contact_s(self):
-        # Odoo in English, Telegram in Spanish: the bot speaks Spanish
         self.test_account.language_code = "es"
         self.assertEqual(self.test_bot.get_lang(self.test_chat), "es_MX")
 

@@ -37,7 +37,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_aggregates(self):
-        # debit and credit are hidden by the group when account is installed
         fields_to_agg = (
             ["balance", "debit", "credit"]
             if self.env.user.has_group("account.group_account_readonly")
@@ -51,7 +50,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_get_plans_without_options(self):
-        """Test that the plans with an applicable applicability are returned when no options are given"""
         kwargs = {}
         plans_json = self.env["account.analytic.plan"].get_relevant_plans(**kwargs)
         self.assertEqual(
@@ -69,7 +67,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_get_plans_with_option(self):
-        """Test the plans returned with applicability rules and options"""
         kwargs = {"business_domain": "general"}
         plans_json = self.env["account.analytic.plan"].get_relevant_plans(**kwargs)
         self.assertEqual(
@@ -118,7 +115,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_analytic_distribution_model(self):
-        """Test the distribution returned from the distribution model"""
         distribution_json = self.env[
             "account.analytic.distribution.model"
         ]._get_distribution({})
@@ -151,7 +147,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_order_analytic_distribution_model(self):
-        """Test the distribution returned with company field"""
         distribution_3 = self.env["account.analytic.distribution.model"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -226,7 +221,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_analytic_plan_account_child(self):
-        """Check that the root plan is retrieved when the account is on a third (or deeper) child plan."""
         self.analytic_plan = self.env["account.analytic.plan"].create(
             {
                 "name": "Parent Plan",
@@ -319,8 +313,6 @@ class TestAnalyticAccount(AnalyticCommon):
         self.assertEqual(plan.create_uid, analyst)
 
     def test_analytic_account_branches(self):
-        """Test that an analytic account defined in a parent company is accessible in its branches (children)"""
-        # timesheet adds a rule to force a project_id; account overrides it
         timesheet_user = self.env.ref(
             "hr_timesheet.group_hr_timesheet_user", raise_if_not_found=False
         )
@@ -343,7 +335,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_change_plan(self):
-        """Changing the plan of an account updates columns of the analytic lines."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         self.assertNotEqual(plan_1_col, plan_2_col)
@@ -365,7 +356,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_change_plan_conflict(self):
-        """Don't allow changing the plan if some lines already have values set for that plan."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         self.assertNotEqual(plan_1_col, plan_2_col)
@@ -380,7 +370,6 @@ class TestAnalyticAccount(AnalyticCommon):
             self.analytic_account_1.plan_id = self.analytic_plan_2
 
     def test_change_plan_no_conflict(self):
-        """Exception for the previous test if it was already the correct value that is set."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         self.assertNotEqual(plan_1_col, plan_2_col)
@@ -403,7 +392,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_change_parent_plan(self):
-        """Changing the parent of a plan updates account columns of the analytic lines."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         line = self.env["account.analytic.line"].create(
@@ -413,7 +401,6 @@ class TestAnalyticAccount(AnalyticCommon):
             }
         )
 
-        # Setting a parent plan should lead to the line having analytic_account_1 under Plan 2
         self.analytic_plan_1.parent_id = self.analytic_plan_2
         self.assertRecordValues(
             line,
@@ -423,10 +410,8 @@ class TestAnalyticAccount(AnalyticCommon):
                 }
             ],
         )
-        # plan_1_col should no longer be a field of the analytic line
         self.assertNotIn(plan_1_col, line)
 
-        # Removing the parent plan should fully reverse the analytic line
         self.analytic_plan_1.parent_id = False
         self.assertRecordValues(
             line,
@@ -439,7 +424,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_change_parent_plan_conflict(self):
-        """Changing the parent plan is refused when it would put two accounts under the same plan in a line."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         self.env["account.analytic.line"].create(
@@ -455,7 +439,6 @@ class TestAnalyticAccount(AnalyticCommon):
             self.analytic_plan_1.parent_id = self.analytic_plan_2
 
     def test_change_parent_plan_with_intermediate(self):
-        """All the accounts are updated even if not direct members of the plan changed."""
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
         intermediate_plan = self.env["account.analytic.plan"].create(
@@ -472,7 +455,6 @@ class TestAnalyticAccount(AnalyticCommon):
             }
         )
 
-        # Setting a parent plan should lead to the line having analytic_account_1 under Plan 2
         self.analytic_plan_1.parent_id = self.analytic_plan_2
         self.assertRecordValues(
             line,
@@ -483,7 +465,6 @@ class TestAnalyticAccount(AnalyticCommon):
             ],
         )
 
-        # Removing the parent plan should fully reverse the analytic line
         self.analytic_plan_1.parent_id = False
         self.assertRecordValues(
             line,
@@ -496,9 +477,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_update_analytic_distribution_clean_all_plans(self):
-        """Clearing all the percentages in the analytic distribution wizard leaves the line unchanged."""
-        # Regression: an empty final distribution used to reach `vals_list[0]` in the
-        # inverse method and raise an IndexError.
         plan_1_col = self.analytic_plan_1._column_name()
         plan_2_col = self.analytic_plan_2._column_name()
 
@@ -510,18 +488,14 @@ class TestAnalyticAccount(AnalyticCommon):
             }
         )
 
-        # Simulate the wizard cleaning all percentages: update all plans but provide no values
-        # This results in an empty final distribution in the inverse method.
         line.write(
             {
                 "analytic_distribution": {
                     "__update__": [plan_1_col, plan_2_col],
-                    # No other entries -> cleaned percentages
                 }
             }
         )
 
-        # No crash and the line remains unchanged (still exists, same accounts)
         self.assertTrue(
             line.exists(), "The analytic line should still exist after update"
         )
@@ -536,7 +510,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_change_sys_param(self):
-        """Test if changing project_plan param updates dynamic fields on account.analytic.line"""
         current_project_plan, _other_plans = self.env[
             "account.analytic.plan"
         ]._get_all_plans()
@@ -548,15 +521,6 @@ class TestAnalyticAccount(AnalyticCommon):
         self.analytic_account_1._check_company_consistency()
 
     def test_get_distribution_does_not_mutate_caller_vals(self):
-        """`_get_distribution` must treat the vals it is given as read-only.
-
-        Callers memoize on that dict --
-        `account.move.line._compute_analytic_distribution` keys a frozendict on
-        it -- so an in-place `partner_tag_id += [False]` changed a key that
-        was already inserted in the cache: every later lookup compared unequal,
-        the cache missed once per line and re-ran this search per invoice line.
-        The append was also cumulative across calls.
-        """
         Model = self.env["account.analytic.distribution.model"]
         categories = []
         vals = {"partner_id": self.partner_a.id, "partner_tag_id": categories}
@@ -565,15 +529,6 @@ class TestAnalyticAccount(AnalyticCommon):
         self.assertEqual(categories, [], "the caller's list must come back untouched")
 
     def test_get_distribution_is_memoizable_on_a_frozendict_key(self):
-        """The vals dict must stay usable as a cache key across calls.
-
-        Assert on the number of *misses*, not on ``len(cache)``: the mutation
-        happened while evaluating the right-hand side of ``cache[key] = ...``,
-        so the key being inserted was already mutated and simply overwrote the
-        previous, equal one. The cache therefore stayed at a single entry while
-        missing every single time -- which is exactly the shape that made this
-        look memoized while re-querying once per invoice line.
-        """
         from odoo.tools import frozendict
 
         Model = self.env["account.analytic.distribution.model"]
@@ -594,20 +549,6 @@ class TestAnalyticAccount(AnalyticCommon):
         )
 
     def test_the_balance_follows_its_lines_in_one_transaction(self):
-        """Reading `debit` once must not freeze it for the transaction.
-
-        `debit`, `credit` and `balance` are computed by `_read_group` over
-        `account.analytic.line` and declare `@api.depends("line_ids.amount")`.
-        That declaration cannot fire: `line_ids`'s inverse is
-        `auto_account_id`, a context-dependent compute with no column, so the
-        ORM has no trigger from a line back to the accounts it names. Measured
-        before `account.analytic.line` started announcing the change itself,
-        every read after the first returned the value the first one cached --
-        for a write, a create and an unlink alike, in both directions.
-
-        Each step below asserts without an explicit invalidation on purpose:
-        an `invalidate_all()` between them makes the whole test vacuous.
-        """
         account = self.analytic_account_3
         column = account.plan_id._column_name()
         Line = self.env["account.analytic.line"]

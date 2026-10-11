@@ -490,11 +490,6 @@ class AccountMoveLine(models.Model):
         )
 
     def _plan_assets(self):
-        # Several profiles on one account describe one purchase from several angles
-        # (a depreciable half and a non-depreciable one), so the first board lands
-        # on the asset and each further one on a component of it. A line naming an
-        # asset never creates an unrelated root: its board joins that asset, or
-        # becomes its component when it already depreciates.
         self.check_singleton()
         account = self.account_id
         units = max(1, int(self.quantity)) if account.multiple_assets_per_line else 1

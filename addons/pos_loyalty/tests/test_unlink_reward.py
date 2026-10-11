@@ -21,7 +21,6 @@ class TestUnlinkReward(CommonPosLoyaltyTest):
                 ],
             }
         )
-        # Ensure the reward is archived and not deleted
         self.twenty_dollars_reward.unlink()
         self.assertTrue(self.twenty_dollars_reward.exists())
         self.assertFalse(self.twenty_dollars_reward.active)

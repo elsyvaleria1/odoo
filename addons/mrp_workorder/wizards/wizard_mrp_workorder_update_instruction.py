@@ -90,7 +90,6 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
         if not is_html_empty(self.step_id.note) and (
             is_blank or re.sub(self.IMG_REGEX, "", self.note) == self.note
         ):
-            # blank suggestion or only text => keep existing images if they exist
             existing_imgs = re.findall(self.IMG_REGEX, self.step_id.note)
         if existing_imgs:
             self.step_id.note = Markup("<p>%s</p>") % Markup("<br>").join(
@@ -132,7 +131,6 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
         if not self.step_id.point_id and not (
             self.step_id.test_type.startswith("register_")
         ):
-            # remove additionmal step
             _debug.lifecycle(
                 "step_removed", step=self.step_id.id, workorder=self.workorder_id.id
             )
@@ -151,7 +149,6 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
 
     @api.model
     def image_url(self, record, field) -> str:
-        """Returns a local url that points to the image field of a given browse record."""
         return "/web/image/%s/%s/%s" % (record._name, record.id, field)
 
     def _get_set_picture_note(self):
@@ -165,7 +162,6 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
 
     def _update_picture(self, notify_bom=True) -> None:
         self.check_singleton()
-        # remove html existing images, but keep existing text
         existing_text = False
         if not is_html_empty(self.step_id.note):
             existing_text = Markup(re.sub(self.IMG_REGEX, "", self.step_id.note))

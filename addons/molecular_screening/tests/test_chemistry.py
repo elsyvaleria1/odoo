@@ -5,7 +5,6 @@ from ..tools.molfile import parse_molblock
 from .common import SDF_SAMPLE
 from .test_molfile import CHARGED
 
-# Same molecule as CHARGED, written with its atoms in another order
 REORDERED = """anion reordered
      RDKit          2D
 

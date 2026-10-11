@@ -65,9 +65,6 @@ class ResourceResource(models.Model):
             "asset_manager_id": self.manager_employee_id.id,
             "product_id": self._get_product_operator_assignment().id or False,
             "date_start": fields.Date.context_today(self),
-            # No odometer: the asset's current figure is the last reading
-            # someone took, not a measurement made at handover. Stamped with
-            # today's date it read as one, and the ledger took it as a reading.
             "log_type": "operator",
             "source": "assignment",
             "state": "done",

@@ -439,12 +439,6 @@ class MixinSurveyQuestionStatistics(models.AbstractModel):
     }
 
     def _stop_words(self) -> frozenset[str]:
-        """Keyed by the answers' language, not hardcoded to one of them.
-
-        A single English list applied to Spanish answers returns de/la/que/el as
-        the most frequent words, which is the whole word cloud. An unlisted
-        language filters nothing rather than filtering the wrong thing.
-        """
         lang = (self.env.context.get("lang") or self.env.lang or "en").split("_")[0]
         return self._STOP_WORDS_BY_LANG.get(lang, frozenset())
 

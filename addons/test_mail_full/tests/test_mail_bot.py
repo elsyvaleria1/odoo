@@ -35,13 +35,6 @@ class TestOdoobot(MailCommon, TestRecipients):
         cls.test_record_employe = cls.test_record.with_user(cls.user_employee)
 
     def assertNoAnswer(self, record, message):
-        """No message was posted on `record` after `message`.
-
-        Scoped to the thread and to "anything newer", rather than to the single
-        id following the message: `mail.message` ids are global, so `id + 1`
-        asserted against whatever the rest of the transaction happened to create
-        next.
-        """
         later = self.env["mail.message"].search(
             [
                 ("model", "=", record._name),
@@ -79,7 +72,6 @@ class TestOdoobot(MailCommon, TestRecipients):
             {"mail_post_autofollow": True}
         ).message_post(**kwargs)
         self.assertNoAnswer(self.test_record, message)
-        # Odoobot should not be a follower but user_employee and user_admin should
         follower = self.test_record.message_follower_ids.mapped("partner_id")
         self.assertNotIn(self.odoobot, follower)
         self.assertIn(self.user_employee.partner_id, follower)

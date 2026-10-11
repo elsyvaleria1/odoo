@@ -5,16 +5,8 @@ class MixinScoreCatalog(models.AbstractModel):
     _name = "mixin.score.catalog"
     _description = "Scored Catalog Mixin"
 
-    # Field carrying the points a record is worth. It answers "did this record
-    # contribute anything", which is the right question on create and unlink.
     _score_weight_field = None
 
-    # Fields whose change can move a ceiling or rewrite a breakdown label. The
-    # weight alone is not enough: archiving a weighted value, renaming it, or
-    # re-homing it under another attribute each move something the score
-    # depends on, and none of them touches the weight field. Left empty, the
-    # mixin falls back to _score_weight_field, and treats every write as
-    # relevant only when neither is set.
     _score_catalog_fields = ()
 
     def _has_score_weight(self) -> bool:
@@ -24,7 +16,6 @@ class MixinScoreCatalog(models.AbstractModel):
         return any(record[field_name] for record in self)
 
     def _score_catalog_trigger_fields(self):
-        """Names of the fields whose change invalidates the score catalog."""
         if self._score_catalog_fields:
             return self._score_catalog_fields
         if self._score_weight_field:
@@ -52,11 +43,6 @@ class MixinScoreCatalog(models.AbstractModel):
 
     @api.model
     def _score_catalog_models(self):
-        """The catalog models a change to this one moves the ceiling of.
-
-        A value belongs to its attribute's catalog: a dimension names the
-        attribute model, and a weight edited on a value is that ceiling moving.
-        """
         names = [self._name]
         attribute = self._fields.get("attribute_id")
         if attribute is not None and attribute.comodel_name:
@@ -88,12 +74,6 @@ class MixinScoreCatalog(models.AbstractModel):
 
     @api.model
     def _score_labels(self, keys):
-        """Resolve '<code>:<attribute>:<value|none>' keys into reader-language labels.
-
-        Archived records still label their rows: a row outlives the archive
-        until the next refresh drops it, and a key is a worse label than the
-        name of the thing it names.
-        """
         parsed = {}
         for key in keys:
             _code, attribute_id, value_id = key.split(":")

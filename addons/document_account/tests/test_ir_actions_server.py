@@ -12,7 +12,6 @@ from odoo.addons.document_account.tests.common import (
 @tagged("post_install", "-at_install", "test_document_bridge")
 class TestIrActionsServer(DocumentsAccountActionsServerCommon):
     def test_documents_account_record_create(self):
-        """Test documents_account_record_create action server type (state)."""
         test_cases = [
             ("in_invoice", "purchase"),
             ("in_refund", "purchase"),
@@ -46,7 +45,6 @@ class TestIrActionsServer(DocumentsAccountActionsServerCommon):
                 self._run_action_and_assert_sync(action, document, expected_journal)
 
     def test_documents_account_standard_actions(self):
-        """Test the pre-configured financial server actions work as expected."""
         IrEmbeddedActions = self.env["ir.embedded.actions"]
 
         for journal_type, action_xml_ids in self.actions_by_type.items():
@@ -82,7 +80,6 @@ class TestIrActionsServer(DocumentsAccountActionsServerCommon):
                 )
 
                 if journal_type == "bank":
-                    # These are tested in test_documents_full for dependency reasons
                     continue
 
                 with self.subTest(action_name=action.name):
@@ -90,7 +87,6 @@ class TestIrActionsServer(DocumentsAccountActionsServerCommon):
                     self._run_action_and_assert_sync(action, document, expected_journal)
 
     def test_documents_account_record_create_on_invalid_model(self):
-        """Test that calling a documents_account_record_create action on a non-document record does nothing."""
         partner = self.env["res.partner"].create({"name": "test"})
         with patch.object(
             self.env.registry["document.document"],
@@ -110,7 +106,6 @@ class TestIrActionsServer(DocumentsAccountActionsServerCommon):
             mock.assert_not_called()
 
     def test_documents_account_record_create_documents_only(self):
-        """Test model enforcement on documents_account_record_create server action (can only be applied on Document)."""
         with self.assertRaises(
             ValidationError, msg='"New Journal Entry" can only be applied to Document.'
         ):

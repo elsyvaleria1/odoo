@@ -86,9 +86,6 @@ class ResUsersApikeysScope(models.Model):
 
     @api.model
     def _get_or_create(self, key: str):
-        """The scope a key string names; one is made for a string no record
-        carries yet, reaching everything, so a key generated for a door that
-        was never described keeps working as it did."""
         scope = self._get(key)
         if not scope:
             scope = self.sudo().create({"name": key, "key": key})
@@ -131,9 +128,6 @@ class ResUsersApikeysScope(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Upserts on `key`: a module's data record for a door that a
-        migration or `_get_or_create` already made a row for takes that row,
-        so the xml id binds to it instead of tripping the key's uniqueness."""
         ids = [None] * len(vals_list)
         to_create = []
         for index, vals in enumerate(vals_list):

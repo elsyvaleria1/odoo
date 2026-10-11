@@ -2,7 +2,6 @@ from odoo.db import schema
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import SQL
 
-# what a call-log entry said in one word, as (direction, outcome)
 CALL_TYPES = {
     "incoming": ("incoming", "terminated"),
     "outgoing": ("outgoing", "terminated"),
@@ -12,7 +11,6 @@ CALL_TYPES = {
     "blocked": ("incoming", "blocked"),
     "unknown": (None, "unknown"),
 }
-# the call-log columns phone.call holds under another name, or not at all
 NOT_COPIED = {
     "id",
     "direction",

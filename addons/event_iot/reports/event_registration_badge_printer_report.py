@@ -21,16 +21,6 @@ class EventRegistrationBadgePrinterReport(models.AbstractModel):
         crop_mode: Literal["contain", "cover"] = "contain",
         flip=False,
     ):
-        """
-        Saves an image to the printer under the name `{filename}.PNG`.
-
-        If `size` is specified, the image is resized first.
-        The resizing behaviour is determined by `crop_mode`:
-        - `"contain"`: Add transparent padding if needed
-        - `"cover"`: Crop original image if needed
-
-        If `flip` is `True`, the image is rotated 180° before uploading.
-        """
         if not image_field:
             return None
 
@@ -83,10 +73,6 @@ class EventRegistrationBadgePrinterReport(models.AbstractModel):
 
     @api.model
     def escape(self, text: str):
-        """
-        Escapes text to be safe for the ESC/Label format.
-        You must precede the ^FD command with ^FH to enable escaping.
-        """
         return Markup(text).replace("_", "_5f").replace("^", "_5e")
 
     @api.model

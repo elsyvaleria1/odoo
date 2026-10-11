@@ -178,9 +178,6 @@ class TestClaudeRagEmbeddingProvider(TransactionCase):
         self.assertEqual(other._get_embedding_provider(), "openai")
 
     def test_the_candidate_list_is_derived_from_the_registry(self):
-        # It was the literal ["openai", "google"]. Both names must still come
-        # out, and they must come out because integration.ml.provider says so — not because
-        # a list in this module repeats what that table already holds.
         self.assertEqual(
             self.agent._embedding_capable_providers(), ["openai", "google"]
         )
@@ -196,8 +193,6 @@ class TestClaudeRagEmbeddingProvider(TransactionCase):
         self.assertEqual(self.agent._embedding_capable_providers(), ["google"])
 
     def test_claude_is_never_a_candidate_for_its_own_fallback(self):
-        # The whole point of the override: Anthropic has no embeddings API, and
-        # the registry is where that is recorded.
         claude = self.env["integration.ml.provider"].search(
             [("endpoint_id.code", "=", "claude")], limit=1
         )

@@ -9,13 +9,6 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _get_next_recurring_date(self, date, date_origin):
-        """The accounting date of the occurrence following `date`.
-
-        Anchored on the series origin rather than stepped off `date`, so a move
-        whose date was edited by hand does not shift every later occurrence:
-        the count of whole periods since the origin decides, and the answer is
-        always back on the series' own grid.
-        """
         self.check_singleton()
         if self.repeat_unit == "year":
             elapsed = date.year - date_origin.year
@@ -39,8 +32,6 @@ class AccountMove(models.Model):
         if not moves_next_dates:
             return
 
-        # A reset-and-repost, or the cron, reaches a period whose recurrence already
-        # exists; copying again would post that period twice.
         self.flush_model(["date", "auto_post_origin_id"])
         values = SQL(", ").join(
             SQL(

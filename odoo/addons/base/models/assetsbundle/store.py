@@ -96,7 +96,6 @@ class AssetAttachmentStore:
     ) -> None:
         variants = attachments._encoded_variants()
         if keep:
-            # a twin shares the kept row's url, and so its copies' urls
             variants -= variants.browse(keep._newest_encoded_variant_ids().values())
         attachments |= variants
         fname_by_id = {
@@ -141,10 +140,6 @@ class AssetAttachmentStore:
     def _clean_attachments(self, extension: str, keep_id: int) -> None:
         ira = self.env["ir.attachment"].sudo()
         to_clean_pattern = self.get_asset_url_pattern(extension)
-        # the version just replaced always stays, whatever its age: tabs opened
-        # before this save still name it. Older ones stay through the same
-        # grace as ESM builds, then go. A row at the kept row's own url is no
-        # other version but a twin the save superseded, and goes at once
         others = ira._get_domain_generated_assets(
             url_pattern=to_clean_pattern
         ) & Domain("id", "!=", keep_id)
@@ -186,7 +181,6 @@ class AssetAttachmentStore:
             versioned=not ignore_version,
         )
         ira = self.env["ir.attachment"].sudo()
-        # parallel transactions can each store the same version; one row per name
         attachment_ids = [
             max_id
             for _name, max_id in ira._read_group(

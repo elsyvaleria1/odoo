@@ -35,19 +35,12 @@ class StockWarehouse(models.Model):
     )
     has_trip_geofence = fields.Boolean(compute="_compute_has_trip_geofence")
 
-    # The geofence is opt-in: only an origin set on the warehouse draws one. Every
-    # geocoded address fencing its warehouse would close trips at a warehouse
-    # they only drive by, and warehouses sharing one address would overlap.
     @api.depends("trip_origin_latitude", "trip_origin_longitude")
     def _compute_has_trip_geofence(self) -> None:
         for warehouse in self:
             warehouse.has_trip_geofence = bool(warehouse._trip_origin_set())
 
     def _trip_geofence_contains(self, latitude, longitude) -> bool:
-        """Whether a position is inside the geofence around the trips' origin.
-
-        :rtype: bool
-        """
         self.check_singleton()
         origin = self._trip_origin_set()
         if not origin:

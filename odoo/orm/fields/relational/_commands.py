@@ -107,16 +107,12 @@ class CommandDelta:
                     ids = command[2]
                     if ids.__class__ is int:
                         ids = (ids,)
-                    # an RPC payload can carry false/null where the ids go;
-                    # clear, like the empty list, instead of a raw TypeError
                     delta._replace(tuple(normalize(id_) for id_ in ids or ()))
                 case _:
                     raise ValueError(f"Unknown x2many command {command!r}")
         return delta
 
     def _link(self, id_: IdType) -> None:
-        # the later command wins, whichever way round: a delete after a link
-        # drops the link above, and a link after a delete keeps the row
         self.linked.add(id_)
         self.unlinked.discard(id_)
         self.unlinked_since_replace.discard(id_)
@@ -146,8 +142,6 @@ class CommandDelta:
 
     @property
     def removed_from_set(self) -> AbstractSet[IdType]:
-        # what a later command takes out of the replacement: an unlink before
-        # it is superseded by it, a deleted row is gone whatever the order
         return self.unlinked_since_replace | self.deleted
 
     def get_final_ids(

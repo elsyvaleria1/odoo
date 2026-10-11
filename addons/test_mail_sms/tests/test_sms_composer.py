@@ -51,10 +51,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
 
     def test_composer_comment_not_mail_thread(self):
         with self.with_user("employee"):
-            # any model that is NOT a mixin.mail.thread -- 'test_performance.base'
-            # was used until the test_performance addon was folded into
-            # test_orm, leaving this test erroring on an unknown model.
-            # test_orm.category is a plain model reachable from our depends.
             record = self.env["test_orm.category"].create({"name": "TestBase"})
             composer = (
                 self.env["wizard.sms.sms.send"]
@@ -109,7 +105,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
 
     @users("employee")
     def test_composer_comment_field(self):
-        """Check that setting a field correctly uses it, even if invalid."""
         record_numbers_all = [
             {
                 "mobile_nbr_ids": self.test_numbers[0],
@@ -237,7 +232,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
         )
 
     def test_composer_comment_invalid_field(self):
-        """Test the Send Message in SMS Composer when a Model does not contain a number field name"""
         test_record = self.env["mail.test.sms.partner"].create(
             {
                 "name": "Test",
@@ -262,7 +256,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
         )
 
     def test_composer_comment_nofield(self):
-        """Test the Send Message in SMS Composer when a Model does not contain any phone number related field"""
         test_record = self.env["mail.test.sms.partner"].create({"name": "Test"})
         sms_composer = self.env["wizard.sms.sms.send"].create(
             {
@@ -279,7 +272,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
         )
 
     def test_composer_default_recipient(self):
-        """Test default description of SMS composer must be partner name"""
         self.test_record.write(
             {
                 "phone_nbr_ids": [
@@ -309,7 +301,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
         )
 
     def test_composer_nofield_w_customer(self):
-        """Test SMS composer without number field, the number on partner must be used instead"""
         test_record = self.env["mail.test.sms.partner"].create(
             {
                 "name": "Test",
@@ -383,7 +374,6 @@ class TestSMSComposerComment(SMSCommon, TestSMSRecipients):
         self.assertEqual(self.test_record.phone_nbr_ids.number, self.random_numbers[0])
 
     def test_composer_comment_wo_partner_wo_value_update(self):
-        """Test record without partner and without phone values: should allow updating first found phone field"""
         self.test_record.write(
             {
                 "customer_id": False,
@@ -706,8 +696,6 @@ class TestSMSComposerMass(SMSCommon):
             )
 
     def test_composer_mass_active_ids_w_blacklist_and_done(self):
-        """Create some duplicates + blacklist. record[5] will have duplicated
-        number on 6 and 7."""
         self.env["phone.blacklist"].create(
             [
                 {
@@ -752,7 +740,6 @@ class TestSMSComposerMass(SMSCommon):
                 partner.phone_sanitized,
                 content="Hello %s zizisse an SMS." % record.name,
             )
-        # duplicates
         for partner, record in zip(self.partners[6:8], self.records[6:8], strict=True):
             self.assertSMSCanceled(
                 partner,
@@ -760,7 +747,6 @@ class TestSMSComposerMass(SMSCommon):
                 failure_type="sms_duplicate",
                 content="Hello %s zizisse an SMS." % record.name,
             )
-        # blacklist
         for partner, record in zip(self.partners[:5], self.records[:5], strict=True):
             self.assertSMSCanceled(
                 partner,
@@ -801,13 +787,11 @@ class TestSMSComposerMass(SMSCommon):
         self.sms_template.with_context(
             lang="fr_FR"
         ).body = "Cher·e· {{ object.display_name }} ceci est un SMS."
-        # set template to try to use customer lang
         self.sms_template.write(
             {
                 "lang": "{{ object.customer_id.lang }}",
             }
         )
-        # set one customer as french speaking
         self.partners[2].write({"lang": "fr_FR"})
 
         with self.with_user("employee"):
@@ -874,20 +858,15 @@ class TestSMSComposerMass(SMSCommon):
             )
 
     def test_composer_template_context_action(self):
-        """Test the context action from a SMS template (Add context action button)
-        and the usage with the sms composer"""
-        # Create the lang info
         self.env["res.lang"]._activate_lang("fr_FR")
         self.sms_template.with_context(
             lang="fr_FR"
         ).body = "Hello {{ object.display_name }} ceci est en français."
-        # set template to try to use customer lang
         self.sms_template.write(
             {
                 "lang": "{{ object.customer_id.lang }}",
             }
         )
-        # create a second record linked to a customer in another language
         self.partners[2].write({"lang": "fr_FR"})
         test_record_2 = self.env["mail.test.sms"].create(
             {
@@ -901,7 +880,6 @@ class TestSMSComposerMass(SMSCommon):
                 "customer_id": self.partners[1].id,
             }
         )
-        # Composer creation with context from a template context action (simulate) - comment (single recipient)
         with self.with_user("employee"):
             composer = (
                 self.env["wizard.sms.sms.send"]
@@ -936,7 +914,6 @@ class TestSMSComposerMass(SMSCommon):
             messages,
         )
 
-        # Composer creation with context from a template context action (simulate) - mass (multiple recipient)
         with self.with_user("employee"):
             composer = (
                 self.env["wizard.sms.sms.send"]
@@ -956,7 +933,6 @@ class TestSMSComposerMass(SMSCommon):
                 )
             )
             self.assertEqual(composer.composition_mode, "mass")
-            # In english because by default but when sinding depending of record
             self.assertEqual(
                 composer.body, "Dear {{ object.display_name }} this is an SMS."
             )

@@ -179,7 +179,6 @@ class TestSwedishIsoCreditTransfer(TestISO20022CommonCreditTransfer):
                 "bic": "SWEDSESSXXX",
             }
         )
-        # the Swedish pain version should be able to handle empty address fields
         company.update(
             {
                 "vat": "SE123456789701",

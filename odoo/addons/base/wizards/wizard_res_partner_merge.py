@@ -153,13 +153,11 @@ class WizardResPartnerMerge(models.TransientModel):
     def _merge_bank_accounts(
         self, src_partners: models.BaseModel, dst_partner: models.BaseModel
     ) -> None:
-        # archived accounts too: a source's account dies with it by cascade,
-        # and one an invoice or a payment names refuses to
         src_partners = src_partners.sudo().with_context(active_test=False)
         dst_partner = dst_partner.sudo().with_context(active_test=False)
         all_src_accounts = src_partners.bank_account_ids
 
-        absorbed = 0  # debuglog
+        absorbed = 0
         for src_account in all_src_accounts:
             duplicate_account = dst_partner.bank_account_ids.filtered_domain(
                 [("sanitized_acc_number", "=", src_account.sanitized_acc_number)]
@@ -174,7 +172,7 @@ class WizardResPartnerMerge(models.TransientModel):
                     "res.partner.bank.account", src_account, duplicate_account
                 )
                 src_account.unlink()
-                absorbed += 1  # debuglog
+                absorbed += 1
             else:
                 src_account.write({"partner_id": dst_partner.id})
         _debug.pipeline(
@@ -189,7 +187,6 @@ class WizardResPartnerMerge(models.TransientModel):
         self, src_partners: models.BaseModel, dst_partner: models.BaseModel
     ) -> None:
         src_partners = src_partners.with_context(active_test=False)
-        # Capture the choice before unlinking source relations clears their preferences.
         preferred = (
             dst_partner.preferred_phone_id
             or src_partners.mapped("preferred_phone_id")[:1]
@@ -213,8 +210,6 @@ class WizardResPartnerMerge(models.TransientModel):
     def _merge_identifiers(
         self, src_partners: models.BaseModel, dst_partner: models.BaseModel
     ) -> None:
-        # access guards hide a confidential identifier from all but its holder,
-        # and one left on a source is deleted with it by cascade
         src_partners = src_partners.sudo().with_context(active_test=False)
         dst_partner = dst_partner.sudo().with_context(active_test=False)
         held_types = set(dst_partner.identifier_ids.type_id.ids)
@@ -245,8 +240,6 @@ class WizardResPartnerMerge(models.TransientModel):
     def _get_unalterable_sources(
         self, src_partners: models.BaseModel
     ) -> dict[str, models.BaseModel]:
-        # the sources whose references a merge must not rewrite, by why: the
-        # one hook a module locking partners extends
         return {}
 
     def _check_sources_alterable(self, src_partners: models.BaseModel) -> None:
@@ -410,7 +403,6 @@ class WizardResPartnerMerge(models.TransientModel):
                 sql_fields.append(SQL("lower(%s)", col))
                 filters.append(SQL("trim(%s) <> ''", col))
             elif field == "vat":
-                # '/' states that the partner is not subject to tax, not a tax id
                 vat = SQL("replace(%s, ' ', '')", col)
                 sql_fields.append(vat)
                 filters.append(SQL("%s NOT IN ('', '/')", vat))
@@ -727,7 +719,7 @@ class WizardResPartnerMerge(models.TransientModel):
         if self._get_selected_groupby_fields() or not self.match_similar_names:
             exact_fields = self._get_selected_groupby()
             query = self._generate_query(exact_fields, self.maximum_group)
-            self.env.cr.execute(query)  # noqa: E8501  built via SQL() by _generate_query
+            self.env.cr.execute(query)
             groups.extend(self.env.cr.fetchall())
             _debug.pipeline("exact_groups", fields=exact_fields, groups=len(groups))
 

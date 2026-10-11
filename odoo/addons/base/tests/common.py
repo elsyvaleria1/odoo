@@ -26,8 +26,6 @@ def make_access_row(
     name=None,
     xmlid=None,
 ):
-    # an ir.access row a test ships as a module would, with its external id
-    # when the test is about the module it comes from
     if isinstance(group, str):
         group = env.ref(group)
     row = (
@@ -54,8 +52,6 @@ def make_access_row(
 
 
 def make_guard_row(env, model_name, domain, group=None, *, operation="crud", **kwargs):
-    # a global rule's equivalent binds everyone; given a group, the guard binds
-    # its members only, which is what a rule narrowing that group meant
     return make_access_row(
         env,
         model_name,
@@ -69,8 +65,6 @@ def make_guard_row(env, model_name, domain, group=None, *, operation="crud", **k
 
 
 def row_domains(env, accesses):
-    # each row as ir.access compiles it for the environment's user: its reach
-    # through the model's anchor, or its predicate, and its fixed filter
     domain_of = env["ir.access"]._row_domains()
     return {
         info.id: domain_of(model_name, info)
@@ -80,8 +74,6 @@ def row_domains(env, accesses):
 
 
 def reaches_own_creation(domain, uid):
-    # whether a compiled row holds the records the user created, and only
-    # those: a condition create_uid = user among its conjuncts
     conditions = (
         domain.children if getattr(domain, "OPERATOR", None) == "&" else [domain]
     )
@@ -98,15 +90,12 @@ def reaches_own_creation(domain, uid):
 
 
 def names_field(domain, field_expr):
-    # whether a compiled row reads a field: a condition on it anywhere
     return any(
         condition.field_expr == field_expr for condition in domain.iter_conditions()
     )
 
 
 def converted_reach(env, model_name, user, operation="read"):
-    # what the ir.access rows of the model give the user, counted as the
-    # superuser from the rows themselves, beside the ORM's own answer
     env.flush_all()
     accesses = (
         env["ir.access"]
@@ -116,8 +105,6 @@ def converted_reach(env, model_name, user, operation="read"):
     compiled = row_domains(env(user=user), accesses)
 
     def text_of(access):
-        # a row with a reach says it through the model's anchor; the combinator
-        # reads domains, so the reach goes in as the domain it compiles to
         if access.reach:
             return repr(list(compiled[access.id]))
         return access.domain
@@ -263,8 +250,6 @@ class BaseCommon(TransactionCase):
 
     @classmethod
     def _create_company(cls, **create_values):
-        # the test company's country is the test's to choose, not whatever
-        # ir.default an installed module gives new partners
         company = cls.env["res.company"].create(
             {
                 "name": "Test Company",

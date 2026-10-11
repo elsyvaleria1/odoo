@@ -20,7 +20,6 @@ STATES = [
     ("failed", "Failed"),
 ]
 
-#: A reading still `running` this long after it started lost its worker.
 INTERRUPTED_AFTER = timedelta(hours=6)
 
 
@@ -77,8 +76,6 @@ class IrAttachmentReading(models.Model):
         return readings
 
     def _access_owner_operation(self, operation: str) -> str:
-        # what readable bytes say is recorded by whoever may read them: keeping
-        # a reading is not a write to the file
         _ = operation
         return "read"
 

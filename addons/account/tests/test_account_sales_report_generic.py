@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 
 from freezegun import freeze_time
 
@@ -20,7 +19,6 @@ class AccountSalesReportTest(AccountSalesReportCommon):
             {
                 "country_id": cls.env.ref("base.us").id,
                 "vat": "US123456789047",
-                #  Country outside of EU to avoid local reports being chosen over this one (wanted behaviour)
             }
         )
         return res
@@ -85,24 +83,24 @@ class AccountSalesReportTest(AccountSalesReportCommon):
                     self.partner_a,
                     t_tax[:1],
                     300,
-                ),  # Should be ignored due to purchase tax
+                ),
                 (
                     self.partner_b,
                     t_tax[:1],
                     100,
-                ),  # Should be ignored due to purchase tax
+                ),
                 (self.partner_a, s_tax[:1], 400),
                 (self.partner_b, s_tax[:1], 500),
                 (
                     self.partner_b,
                     bad_tax_1[:1],
                     700,
-                ),  # Should be ignored due to fixed amount
+                ),
                 (
                     self.partner_b,
                     bad_tax_2[:1],
                     700,
-                ),  # Should be ignored due to non-null amount
+                ),
             ]
         )
         report = self.env.ref("account.generic_ec_sales_report")
@@ -110,8 +108,6 @@ class AccountSalesReportTest(AccountSalesReportCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            # pylint: disable=C0326
-            #   Partner,                country code,             VAT Number,               Amount
             [0, 1, 2, 3],
             [
                 (
@@ -246,9 +242,6 @@ class AccountSalesReportTest(AccountSalesReportCommon):
 
     @freeze_time("2019-12-31")
     def test_ec_sales_report_with_northern_irish_customer(self):
-        """
-        Ensure that partners located in Northern Ireland are included in the EC sales report.
-        """
         northern_ireland = self.env.ref("base.xi", raise_if_not_found=False)
 
         if not northern_ireland:
@@ -272,7 +265,6 @@ class AccountSalesReportTest(AccountSalesReportCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Partner,                country code,             VAT Number,               Amount
             [0, 1, 2, 3],
             [
                 (
@@ -287,14 +279,6 @@ class AccountSalesReportTest(AccountSalesReportCommon):
         )
 
     def test_ec_sales_set_as_main(self):
-        """Test setting a partner as the main in EC Sales Report when two partners share the same VAT.
-
-        Scenario:
-        - Two partners have the same VAT.
-        - Set one partner as the main partner.
-        - Validate that the second partner is linked correctly as a child and that moves are updated.
-        """
-        # Prepare partners
         partner_main = self.partner_a
         partner_duplicate = self.partner_b
         partner_duplicate.vat = partner_main.vat
@@ -312,23 +296,19 @@ class AccountSalesReportTest(AccountSalesReportCommon):
                 )
             ],
         }
-        # Create and post invoice for the main partner
         move_main = self.env["account.move"].create(
             {**move_vals, "partner_id": partner_main.id}
         )
         move_main.action_post()
-        # Create and post invoice for the duplicate partner
         move_duplicate = self.env["account.move"].create(
             {**move_vals, "partner_id": partner_duplicate.id}
         )
         move_duplicate.action_post()
 
-        # Call with context
         partner_main.with_context(
             duplicated_partners_vat=[partner_main.vat, partner_duplicate.vat]
         ).set_commercial_partner_main()
 
-        # Assertions: partner relationships
         self.assertEqual(
             partner_duplicate.commercial_partner_id,
             partner_main,
@@ -340,14 +320,12 @@ class AccountSalesReportTest(AccountSalesReportCommon):
             "Duplicate partner's parent should be set to the main partner.",
         )
 
-        # Assertions: accounting move reassignment
         self.assertEqual(
             move_duplicate.commercial_partner_id,
             partner_main,
             "The move's commercial partner should also be reassigned.",
         )
 
-        # Assertions: journal items (move lines)
         self.assertEqual(
             move_duplicate.line_ids.partner_id,
             partner_main,

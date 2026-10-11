@@ -16,9 +16,6 @@ class GoogleEvent(ProviderEvents):
         return None
 
     def _meta_odoo_id(self, dbname) -> int | None:
-        """Returns the Odoo id stored in the Google Event metadata.
-        This id might not actually exists in the database.
-        """
         properties = (
             self.extendedProperties
             and (
@@ -32,20 +29,10 @@ class GoogleEvent(ProviderEvents):
         return None
 
     def owner(self, env):
-        # Owner/organizer could be desynchronised between Google and Odoo.
-        # Let userA, userB be two new users (never synced to Google before).
-        # UserA creates an event in Odoo (they are the owner) but userB syncs first.
-        # There is no way to insert the event into userA's calendar since we don't have
-        # any authentication access. The event is therefore inserted into userB's calendar
-        # (they are the organizer in Google). The "real" owner (in Odoo) is stored as an
-        # extended property. There is currently no support to "transfert" ownership when
-        # userA syncs their calendar the first time.
         real_owner_id = self.extendedProperties and self.extendedProperties.get(
             "shared", {}
         ).get("%s_owner_id" % env.cr.dbname)
         try:
-            # If we create an event without user_id, the event properties will be 'false'
-            # and python will interpret this a a NoneType, that's why we have the 'except TypeError'
             real_owner_id = int(real_owner_id)
         except ValueError, TypeError:
             real_owner_id = False
@@ -57,7 +44,6 @@ class GoogleEvent(ProviderEvents):
         elif self.organizer and self.organizer.get("self"):
             return env.user
         elif self.organizer and self.organizer.get("email"):
-            # In Google: 1 email = 1 user; but in Odoo several users might have the same email :/
             org_email = email_normalize(self.organizer.get("email"))
             return env["res.users"].search(
                 [("email_normalized", "=", org_email)], limit=1
@@ -78,24 +64,8 @@ class GoogleEvent(ProviderEvents):
         return bool(not self.originalStartTime or self.originalStartTime == self.start)
 
     def full_recurring_event_id(self) -> str | None:
-        """
-        Give the complete identifier with elements
-        in `id` and `recurringEventId`.
-        :return: concatenation of the id created by the recurrence
-                and the id created by the modification of a specific event
-        :rtype: string if recurrent event and correct ids, `None` otherwise
-        """
-        # Regex expressions to match elements (according to the google support [not documented]):
-        # - ID: [a-zA-Z0-9]+
-        # - RANGE: R[0-9]+T[0-9]+
-        # - TIMESTAMP: [0-9]+T[0-9]+Z
-        # With:
-        # - id: 'ID_TIMESTAMP'
-        # - recurringEventID: 'ID_RANGE'
-        # Find: 'ID_RANGE_TIMESTAMP'
         if not self.is_recurrent():
             return None
-        # Check if ids are the same
         id_value = re.match(r"(\w+_)", self.id)
         recurringEventId_value = re.match(r"(\w+_)", self.recurringEventId)
         if (

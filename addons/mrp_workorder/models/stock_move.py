@@ -59,11 +59,6 @@ class StockMove(models.Model):
 
     def _action_assign(self):
         res = super()._action_assign()
-        # Only refresh the checks tied to the moves this call actually
-        # (re)assigned, not every check in the whole production(s) behind
-        # `self` -- those checks' lot defaults haven't changed.
-        # Reservation runs for whoever confirms the order -- a purchase or sales
-        # user with no quality access -- while the checks belong to the shop floor.
         checks = (
             self.env["quality.check"]
             .sudo()
@@ -106,7 +101,6 @@ class StockMove(models.Model):
                     record.has_tracking != "none"
                     and not record.picking_type_id.prefill_shop_floor_lots
                 ):
-                    # Remove any reserved smls that are hidden
                     record.move_line_ids.filtered(lambda ml: not ml.picked).unlink()
         for check in self.check_id:
             check.action_next()
@@ -153,7 +147,6 @@ class StockMove(models.Model):
                 )
                 .id
             )
-        # Same quants the "Add line" picker lists: on hand in the MO's source.
         return (
             self.env["stock.quant"]
             .search(
@@ -198,7 +191,7 @@ class StockMove(models.Model):
                 ),
                 False,
             )
-            if move_line:  # Quant already has hidden sml -> make visible
+            if move_line:
                 _debug.logic(
                     "quant_added",
                     move=self.id,
@@ -225,14 +218,14 @@ class StockMove(models.Model):
         )
         if (
             move_line
-        ):  # Quant already has visible sml -> increase existing sml's quantity
+        ):
             _debug.logic(
                 "quant_added", move=self.id, by="increased_line", qty=qty_to_take
             )
             move_line.quantity += self.product_id.uom_id._get_quantity_in_unit(
                 qty_to_take, self.product_uom_id
             )
-        else:  # No sml exists for quant -> make new sml
+        else:
             _debug.logic("quant_added", move=self.id, by="new_line", qty=qty_to_take)
             move_line_vals = self._prepare_move_line_vals(
                 quantity=qty_to_take, reserved_quant=quant

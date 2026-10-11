@@ -14,15 +14,8 @@ class AsiaPayController(http.Controller):
 
     @http.route(_return_url, type="http", auth="public", methods=["GET"])
     def asiapay_return_from_checkout(self, **data):
-        """Process the payment data sent by AsiaPay after redirection.
-
-        :param dict data: The payment data.
-        """
-        # Don't process the payment data as they contain no valuable information except for the
-        # reference and AsiaPay doesn't expose an endpoint to fetch the data from the API.
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -33,14 +26,8 @@ class AsiaPayController(http.Controller):
         typed=True,
     )
     def asiapay_webhook(self, **data):
-        """Process the payment data sent by AsiaPay to the webhook.
-
-        :param dict data: The payment data.
-        :return: The 'OK' string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from AsiaPay with data:\n%s", pprint.pformat(data)
         )
         request.admission.subject._process("asiapay", request.admission.extra["data"])
-        return "OK"  # Acknowledge the notification.
+        return "OK"

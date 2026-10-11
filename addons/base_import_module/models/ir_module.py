@@ -41,14 +41,8 @@ from odoo.addons.base.models.ir_asset import is_wildcard_glob
 _logger = logging.getLogger(__name__)
 
 APPS_URL = "https://apps.odoo.com"
-MAX_FILE_SIZE = 100 * 1024 * 1024  # in bytes (100 MB)
-# Cumulative cap across every file actually written to disk while extracting
-# an uploaded module zip. `ZipInfo.file_size` (used for the per-file MAX_FILE_SIZE
-# check above) is declared, attacker-controlled metadata from the zip's central
-# directory — it does not bound the real decompressed size of a hand-crafted
-# deflate stream (classic zip-bomb). This second cap is checked against bytes
-# actually on disk after each extraction (t24068).
-MAX_TOTAL_EXTRACTED_SIZE = 500 * 1024 * 1024  # in bytes (500 MB)
+MAX_FILE_SIZE = 100 * 1024 * 1024
+MAX_TOTAL_EXTRACTED_SIZE = 500 * 1024 * 1024
 
 
 class IrModuleModule(models.Model):
@@ -75,7 +69,6 @@ class IrModuleModule(models.Model):
         )
 
     def _get_domain_modules_to_load(self):
-        # imported modules are not expected to be loaded as regular modules
         return super()._get_domain_modules_to_load() + [("imported", "=", False)]
 
     @api.model
@@ -91,8 +84,7 @@ class IrModuleModule(models.Model):
             for lang in langs:
                 imported = 0
                 for lang_ in get_base_langs(lang):
-                    # Translations for imported data modules only works with imported po files
-                    attachment = IrAttachment.sudo().search(  # noqa: E8507 - one lookup per (module, language) pair
+                    attachment = IrAttachment.sudo().search(
                         [
                             ("name", "=", f"{module}_{lang_}.po"),
                             ("url", "=", f"/{module}/i18n/{lang_}.po"),
@@ -133,7 +125,7 @@ class IrModuleModule(models.Model):
         super()._compute_icon_display()
         IrAttachment = self.env["ir.attachment"]
         for module in self.filtered("imported"):
-            attachment = IrAttachment.sudo().search(  # noqa: E8507 - one lookup per imported module, on its own icon attachment
+            attachment = IrAttachment.sudo().search(
                 [
                     ("url", "=", module.icon),
                     ("type", "=", "binary"),
@@ -146,8 +138,6 @@ class IrModuleModule(models.Model):
 
     @contextmanager
     def _neutralized_website(self):
-        # Do not involve specific website during import by resetting
-        # information used by website's get_current_website.
         force_website_id = None
         if request and request.session.get("force_website_id"):
             force_website_id = request.session.pop("force_website_id")
@@ -166,7 +156,7 @@ class IrModuleModule(models.Model):
             file_path(icon_path, check_exists=True)
             values["icon"] = "/" + icon_path
         except OSError:
-            pass  # keep the default icon
+            pass
         values["db_version"] = terp.version
         if self.env.context.get("data_module"):
             values["module_type"] = "industries"
@@ -193,16 +183,6 @@ class IrModuleModule(models.Model):
                 + "\n - ".join(wrong_dependencies)
             )
         to_install = known_mods.filtered(lambda mod: mod.name in unmet_dependencies)
-        # t27114: button_immediate_install() hard-commits the current
-        # transaction (twice) and reloads the registry — it cannot be
-        # wrapped in a savepoint, because a real COMMIT ends the
-        # transaction a savepoint lives in. So if _import_zipfile's
-        # per-module loop later fails on a *different* module in the
-        # same zip, this dependency install is NOT rolled back with it:
-        # the user-facing "import failed" error does not mean nothing
-        # was applied. This is accepted, not fixed — there is no
-        # transactional way to undo a registry-reloading install once
-        # it has committed.
         to_install.button_immediate_install()
 
     def _upsert_imported_module(self, module, values, terp, known_mods, force) -> tuple:
@@ -272,18 +252,6 @@ class IrModuleModule(models.Model):
             )
 
     def _get_attachments_by_url(self, urls, domain):
-        """Every existing attachment for ``urls``, grouped by url, in one query.
-
-        The lookup used to sit inside the per-file loop, so importing a module
-        issued one ``ir.attachment`` SELECT per static file and per translation
-        it shipped. Grouped rather than flat because the url is not unique by
-        construction, and the callers' write-or-create must keep seeing every
-        row a per-file search would have returned.
-
-        :param urls: the urls to look for
-        :param list domain: the rest of the callers' search domain
-        :rtype: dict[str, odoo.models.Model]
-        """
         urls = list(urls)
         if not urls:
             return {}
@@ -304,7 +272,6 @@ class IrModuleModule(models.Model):
 
         IrAttachment = self.env["ir.attachment"]
         IrModelData = self.env["ir.model.data"]
-        # Do not create a bridge module for this check.
         is_public_aware = "public" in IrAttachment._fields
 
         static_files = [
@@ -333,7 +300,6 @@ class IrModuleModule(models.Model):
                 "datas": data,
             }
             if is_public_aware:
-                # Static data is public and not website-specific.
                 values["public"] = True
 
             attachment = existing.get(url_path)
@@ -365,8 +331,6 @@ class IrModuleModule(models.Model):
                 )
 
     def _import_translation_attachments(self, module, path, mod) -> None:
-        # store translation files as attachments to allow loading translations
-        # for webclient
         path_lang = Path(path) / "i18n"
         if not path_lang.is_dir():
             return
@@ -375,7 +339,6 @@ class IrModuleModule(models.Model):
         entries = [
             entry
             for entry in path_lang.iterdir()
-            # we don't support sub-directories in i18n
             if entry.is_file() and entry.name.endswith(".po")
         ]
         langs = {entry: entry.name.split(".")[0] for entry in entries}
@@ -388,7 +351,6 @@ class IrModuleModule(models.Model):
             lang = langs[entry]
             with file_open(str(entry), "rb") as fp:
                 raw = fp.read()
-            # store as binary ir.attachment
             values = {
                 "name": f"{module}_{lang}.po",
                 "url": f"/{module}/i18n/{lang}.po",
@@ -492,8 +454,6 @@ class IrModuleModule(models.Model):
         article_record.write({"body": body})
 
     def _import_module(self, module, path, force=False, with_demo=False) -> bool:
-        """Import module at path into the database, installing it if needed."""
-        # Do not create a bridge module for these neutralizations.
         self = self.with_context(website_id=None)
         with self._neutralized_website():
             terp = Manifest._from_path(path, env=self.env)
@@ -530,7 +490,6 @@ class IrModuleModule(models.Model):
             return True
 
     def _check_zip_upload(self, module_file) -> None:
-        """Refuse an upload that is not an admin-sent zip archive."""
         if not self.env.is_admin():
             raise AccessError(
                 self.env._("Only administrators can install data modules.")
@@ -543,15 +502,6 @@ class IrModuleModule(models.Model):
     def _read_zip_manifests(
         self, z, extract, module_dir, with_demo
     ) -> tuple[dict, dict]:
-        """Extract each module's manifest and read what it declares.
-
-        :param z: the open archive
-        :param extract: the size-budgeted extractor, see :meth:`_import_zipfile`
-        :param str module_dir: the temporary directory being extracted into
-        :param bool with_demo: whether demo data is wanted too
-        :returns: ``({module: [data file, ...]}, {module: [dependency, ...]})``
-        :rtype: tuple[dict, dict]
-        """
         manifest_files = sorted(
             (file.filename.split("/")[0], file)
             for file in z.infolist()
@@ -581,13 +531,6 @@ class IrModuleModule(models.Model):
         return module_data_files, dependencies
 
     def _sort_zip_modules(self, module_dir, dependencies):
-        """The archive's modules in dependency order.
-
-        Refuses the whole archive if it holds a directory no manifest claimed,
-        rather than importing the rest and leaving that one silently dropped.
-
-        :rtype: list[str]
-        """
         dirs = {d.name for d in Path(module_dir).iterdir() if d.is_dir()}
         sorted_dirs = topological_sort(dependencies)
         if wrong_modules := dirs.difference(sorted_dirs):
@@ -600,11 +543,6 @@ class IrModuleModule(models.Model):
         return sorted_dirs
 
     def _extract_zip_module_files(self, z, extract, module_data_files) -> None:
-        """Extract the data, static and translation files of every module.
-
-        Everything else in the archive stays unextracted, which is what keeps
-        the extraction budget spent on files that will actually be loaded.
-        """
         for file in z.infolist():
             filename = file.filename
             mod_name = filename.split("/")[0]
@@ -617,10 +555,6 @@ class IrModuleModule(models.Model):
                 extract(file)
 
     def _import_zip_modules(self, sorted_dirs, module_dir, force, with_demo):
-        """Import every module of the archive, in dependency order.
-
-        :rtype: list[str]
-        """
         module_names = []
         for mod_name in sorted_dirs:
             module_names.append(mod_name)
@@ -630,16 +564,6 @@ class IrModuleModule(models.Model):
                     mod_name, path, force=force, with_demo=with_demo
                 )
             except Exception as e:
-                # Full traceback (file paths, line numbers) goes to the
-                # server log only; the user-facing UserError carries just
-                # the exception's own message (t24068 — this message was
-                # embedding traceback.format_exc() verbatim, surfaced
-                # as-is in both the wizard's error dialog and the CLI
-                # deploy endpoint's HTTP 500 body). Note this message
-                # does not mean the whole zip's effects were undone: an
-                # earlier module's dependency auto-install
-                # (_import_module's button_immediate_install() call,
-                # t27114) hard-commits before this loop even gets here.
                 _logger.exception("Error while importing module %r from zip", mod_name)
                 raise UserError(
                     self.env._(
@@ -652,7 +576,6 @@ class IrModuleModule(models.Model):
 
     @api.model
     def _import_zipfile(self, module_file, force=False, with_demo=False):
-        """Extract and import every module found in the uploaded zip archive."""
         self._check_zip_upload(module_file)
 
         with zipfile.ZipFile(module_file, "r") as z:
@@ -690,13 +613,6 @@ class IrModuleModule(models.Model):
         return "", module_names
 
     def module_uninstall(self):
-        # Delete an ir_module_module record completely if it was an imported
-        # one. The rationale behind this is that an imported module *cannot* be
-        # reinstalled anyway, as it requires the data files. Any attempt to
-        # install it again will simply fail without trace.
-        # /!\ modules_to_delete must be calculated before calling super().module_uninstall(),
-        # because when uninstalling `base_import_module` the `imported` column will no longer be
-        # in the database but we'll still have an old registry that runs this code.
         modules_to_delete = self.filtered("imported")
         res = super().module_uninstall()
         if modules_to_delete:
@@ -752,11 +668,6 @@ class IrModuleModule(models.Model):
             return super().web_read(specification)
 
     def _decorate_apps_modules(self, modules_list, fields, module_type) -> None:
-        """Fill in the fields apps.odoo.com cannot know, in place.
-
-        Whether the module is installed here, and the URLs that are only
-        meaningful relative to this deployment's series.
-        """
         existing_modules = self.search(
             [
                 ("name", "in", [mod["name"] for mod in modules_list]),
@@ -778,25 +689,12 @@ class IrModuleModule(models.Model):
                 mod["website"] = f"{APPS_URL}/apps/modules/{major_version}/{mod_name}/"
 
     def _filter_apps_modules(self, modules_list, domain) -> list[dict]:
-        """Re-apply ``domain`` to the fields only this side could fill in.
-
-        :rtype: list[dict]
-        """
-        # t27114: `domain` is forwarded to apps.odoo.com by the caller, but
-        # fields computed only locally (e.g. `state`, just set from local
-        # install status) can never be filtered by the remote server.
-        # Re-apply the domain locally against those now-known values.
-        # `category_id` is excluded: it does not exist on these modules and
-        # was already applied server-side (same caveat as upstream).
         domain_without_category = Domain(domain).map_conditions(
             lambda c: Domain.TRUE if c.field_expr == "category_id" else c
         )
         new_records = self.browse()
         for mod in modules_list:
             new_records += self.new({k: v for k, v in mod.items() if k in self._fields})
-        # `.ids` resolves to real/origin ids and is empty for pure
-        # `.new()` records (no origin) — use the raw `._ids` tuple
-        # (NewId objects) to match filtered_domain()'s own result.
         kept_ids = set(new_records.filtered_domain(domain_without_category)._ids)
         return [
             mod
@@ -1015,7 +913,7 @@ class IrModuleModule(models.Model):
 
         translations = {}
         for lang_ in get_base_langs(lang):
-            attachment = IrAttachment.sudo().search(  # noqa: E8507 - one lookup per base language of the requested one
+            attachment = IrAttachment.sudo().search(
                 [
                     ("name", "=", f"{module}_{lang_}.po"),
                     ("url", "=", f"/{module}/i18n/{lang_}.po"),
@@ -1108,7 +1006,6 @@ class IrModuleModule(models.Model):
                     ):
                         lineno, message, comments = extracted[:3]
                         value = translations.get(message, "")
-                        # (module, ttype, name, res_id, source, comments, value)
                         yield (
                             module,
                             "code",
@@ -1135,17 +1032,11 @@ def _domain_asks_for_industries(domain) -> bool:
                 if "industries" in condition.value:
                     return True
             else:
-                raise UserError(f"Unsupported domain condition {condition!r}")  # noqa: E8505  a developer diagnostic for an unsupported domain in module data
+                raise UserError(f"Unsupported domain condition {condition!r}")
     return False
 
 
 def _is_studio_custom(path) -> bool:
-    """Check whether path's records reference Studio.
-
-    :param str path: directory to scan for XML data files
-    :return: whether any record's context carries a ``studio`` key
-    :rtype: bool
-    """
     xml_files = [
         dirpath / fn
         for dirpath, _dirs, files in Path(path).walk()
@@ -1157,22 +1048,12 @@ def _is_studio_custom(path) -> bool:
         try:
             root = lxml.etree.parse(fp).getroot()
         except lxml.etree.XMLSyntaxError, OSError:
-            # t27114: this walk visits every .xml file extracted from the
-            # zip, not just manifest-declared data files (e.g. anything
-            # under static/), so a malformed/non-Odoo XML asset must not
-            # abort the whole module's import — skip it like an
-            # unparseable context below.
             _logger.debug("skipping unparseable XML file %s", fp)
             continue
 
         for record in root:
-            # there might not be a context if it's a non-studio module
             try:
-                # ast.literal_eval is like eval(), but safer
-                # context is a string representing a python dict
                 ctx = ast.literal_eval(record.get("context"))
-                # there are no cases in which studio is false
-                # so just checking for its existence is enough
                 if ctx and ctx.get("studio"):
                     return True
             except SyntaxError, ValueError, TypeError, MemoryError, RecursionError:

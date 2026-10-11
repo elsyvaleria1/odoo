@@ -165,22 +165,6 @@ class ProductTrace(models.Model):
             owner = trace.product_id.company_id
             current = trace.company_id
             if owner and current and current != owner and owner in current.parent_ids:
-                # The branch below reads `self.env.company` and
-                # `self.env.companies`, so it decides by WHO is computing. That
-                # is defensible while the lot is being placed and indefensible
-                # afterwards. Measured: a product owned by a parent company, a
-                # lot created by a user allowed only in the child, gets the
-                # child -- and the same row recomputed by a user allowed in
-                # both silently moves to the parent. `company_id` drives
-                # the company guard's visibility and `check_company` on the lot's
-                # quants and move lines, so that move can hide a lot from the
-                # people who created it.
-                #
-                # A lot sitting strictly BELOW its product's owner is exactly
-                # what that branch produces, so it is kept rather than
-                # re-decided. Every other shape still falls through: no owner
-                # clears the lot as before, an unrelated owner re-derives, and
-                # an unset company is decided for the first time.
                 continue
             if (
                 owner

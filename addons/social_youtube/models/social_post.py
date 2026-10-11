@@ -57,7 +57,6 @@ class SocialPost(models.Model):
 
     @api.constrains("message", "image_ids")
     def _check_has_message_or_image(self) -> None:
-        """When posting only on YouTube, the 'message' and 'image_ids' field can (and should) be empty."""
         youtube_posts_only = self.filtered(
             lambda post: all(media.media_type == "youtube" for media in post.media_ids)
         )
@@ -170,11 +169,6 @@ class SocialPost(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """The names of the UTM sources are generated based on the content of _rec_name.
-
-        But for Youtube, the message field is not required, so we should use the title
-        of the video instead.
-        """
         for values in vals_list:
             if (
                 not values.get("message")

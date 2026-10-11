@@ -19,11 +19,6 @@ class SpreadsheetDashboard(models.Model):
 
     @api.depends("sample_dashboard_file_path")
     def _compute_is_from_data(self) -> None:
-        # we guess that a dashboard is from data if it has a sample file path (only definable in XML)
-        # and if it has an XML ID (so it is not created by a user)
-        # This compute doesn't have the correct dependency on ir.model.data
-        # to be recomputed automatically. But we don't really care as it's very unlikely to change
-        # within the current request.
         xml_ids = (
             self.env["ir.model.data"]
             .search(

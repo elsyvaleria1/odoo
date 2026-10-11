@@ -25,7 +25,6 @@ class UtmCampaign(models.Model):
         compute="_compute_is_mailing_campaign_activated"
     )
 
-    # A/B Testing
     ab_testing_mailings_count = fields.Integer(
         string="A/B Test Mailings #",
         compute="_compute_mailing_mail_count",
@@ -59,7 +58,6 @@ class UtmCampaign(models.Model):
         help="Selection to determine the winner mailing that will be sent.",
     )
 
-    # stat fields
     received_ratio = fields.Float(
         compute="_compute_statistics",
         aggregator="avg",
@@ -104,7 +102,6 @@ class UtmCampaign(models.Model):
             )
 
     def _compute_statistics(self) -> None:
-        """Compute statistics of the mass mailing campaign"""
         default_vals = {
             "received_ratio": 0,
             "opened_ratio": 0,
@@ -174,11 +171,6 @@ class UtmCampaign(models.Model):
         )
 
     def _get_mailing_recipients(self, model=None):
-        """Return the recipients of a mailing campaign. This is based on the statistics
-        build for each mailing."""
-        # Every id is assigned in the loop below, so no seeded default is
-        # needed. It used to be dict.fromkeys(self.ids, {}), which both shared
-        # one dict across all keys and seeded a dict where a set is stored.
         domain = [("campaign_id", "in", self.ids)]
         if model:
             domain += [("model", "=", model)]
@@ -191,10 +183,6 @@ class UtmCampaign(models.Model):
 
     @api.model
     def _cron_process_mass_mailing_ab_testing(self):
-        """Cron that manages A/B testing and sends a winner mailing computed based on
-        the value set on the A/B testing campaign.
-        In case there is no mailing sent for an A/B testing campaign we ignore this campaign
-        """
         ab_testing_campaign = self.search(
             [
                 ("ab_testing_schedule_datetime", "<=", fields.Datetime.now()),

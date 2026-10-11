@@ -99,11 +99,6 @@ class TestOfficeReaders(TransactionCase):
         self.assertIn("139.86", document.text)
 
     def test_the_mimetype_is_recognised_from_the_bytes_alone(self):
-        """`ir.attachment` stores `application/octet-stream` for an upload the
-        browser did not label, and the registry keys on the mimetype. A reader
-        that could only be reached from a correct declaration would be
-        unreachable for exactly the documents the indexer walks every format
-        for."""
         document = Document(_docx(["TOTAL 139.86"]), "application/octet-stream", "x")
 
         self.assertEqual(document.mimetype, DOCX)
@@ -117,9 +112,6 @@ class TestOfficeReaders(TransactionCase):
                 self.assertEqual([r.cost for r in readers], [0] * len(readers))
 
     def test_an_oversized_entry_is_refused_through_the_registry_too(self):
-        """The zip-bomb guard is the reader's, not the indexer's. A document
-        reaching the reader through the registry carries no `_INDEX_MAX_BYTES`
-        to be bounded by, so the bound has to have a default that holds."""
         padding = b"<!-- " + b"a" * (MAX_ENTRY_BYTES + 1) + b" -->"
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as zf:
@@ -155,13 +147,6 @@ class TestOfficeReaders(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestIndexingEdges(TransactionCase):
     def test_an_attachment_with_no_content_is_indexed_rather_than_refused(self):
-        """`Document` refuses empty bytes, and an empty attachment is legal.
-
-        Every `_index_*` returned "" for empty content before the indexer read
-        through the layer, so nothing here ever built a document out of nothing.
-        `_store_content` reaches `_get_index_content` for any create, empty raw
-        included.
-        """
         self.assertFalse(
             self.env["ir.attachment"]._get_index_content(b"", "application/pdf")
         )
@@ -173,10 +158,6 @@ class TestIndexingEdges(TransactionCase):
         self.assertFalse(attachment.index_content)
 
     def test_content_that_is_not_a_document_is_indexed_rather_than_refused(self):
-        """A single NUL is non-empty, so it builds a document, and no reader
-        claims whatever libmagic makes of it. The interesting part is the NUL
-        itself: it must not survive into the column, because `index_content` is
-        a text field and PostgreSQL rejects a NUL in one."""
         for content in (b"\x00", b"\x00\x00\x00", b"\xff\xd8\xff\xe0"):
             with self.subTest(content=content):
                 indexed = self.env["ir.attachment"]._get_index_content(content, "")

@@ -40,9 +40,6 @@ class DocController(http.Controller):
     calls `/json/2`. The playground that renders them is `api_doc`.
     """
 
-    # ------------------------------------------------------------------
-    # Routes
-    # ------------------------------------------------------------------
 
     @http.route("/doc-bearer/index.json", type="json2", auth="bearer", typed=True)
     def doc_bearer_index(self):
@@ -50,28 +47,6 @@ class DocController(http.Controller):
 
     @http.route("/doc/index.json", type="json2", auth="user", typed=True)
     def doc_index(self):
-        """Get a listing of all models, methods and fields, limited to their
-        technical name and translated "human" name.
-
-        :return: an HTTP response whose body is a JSON document with the
-            following structure:
-
-            .. code-block:: python
-
-                {
-                    'models': [
-                        {
-                            'model': str,
-                            'name': str,
-                            'fields': {field_name: {'string': str}},
-                            'methods': list[str],
-                        }
-                        for model in ...
-                    ]
-                }
-        :rtype: werkzeug.wrappers.Response
-        :raises AccessError: the user is not in ``rpc.group_allow_doc``
-        """
         self._check_doc_access()
 
         generation = doc_cache_generation(self.env)
@@ -82,9 +57,6 @@ class DocController(http.Controller):
         ):
             return request.prepare_response("", status=HTTPStatus.NOT_MODIFIED)
 
-        # Server cache: an attachment rather than an ormcache entry, because
-        # the index runs to megabytes once many modules are installed.
-        # TODO: gzip
         filename = index_attachment_name(generation, unique)
         index_attach = (
             self.env["ir.attachment"].sudo().search([("name", "=", filename)], limit=1)
@@ -112,27 +84,6 @@ class DocController(http.Controller):
         "/doc/<model_name>.json", type="json2", auth="user", readonly=True, typed=True
     )
     def doc_model(self, model_name: str):
-        """Get a complete listing of the fields and methods of one model: an
-        enriched ``fields_get()`` plus, for each method, its signature,
-        parameters and htmlified docstring.
-
-        :param str model_name: technical name of the model to reflect
-        :return: an HTTP response whose body is a JSON document with the
-            following structure:
-
-            .. code-block:: python
-
-                {
-                    'model': str,
-                    'name': str,
-                    'doc': str | None,  # htmlified model docstring
-                    'fields': dict[str, dict],  # fields_get indexed by field name
-                    'methods': dict[str, dict],  # describe_method indexed by name
-                }
-        :rtype: werkzeug.wrappers.Response
-        :raises AccessError: the user is not in ``rpc.group_allow_doc``
-        :raises NotFound: ``model_name`` is not in the registry
-        """
         self._check_doc_access()
         if model_name not in self.env:
             raise NotFound
@@ -169,19 +120,12 @@ class DocController(http.Controller):
 
         response = request.prepare_json_response(result)
         response.set_etag(unique)
-        response.headers["Cache-Control"] = "no-cache, private"  # no-cache != no-store
+        response.headers["Cache-Control"] = "no-cache, private"
         response.headers["Content-Language"] = py_to_js_locale(self.env.lang)
         return response
 
-    # ------------------------------------------------------------------
-    # Access, caching
-    # ------------------------------------------------------------------
 
     def _check_doc_access(self):
-        """Every ``/doc`` route is gated on the same group.
-
-        :raises AccessError: the user is not in ``rpc.group_allow_doc``
-        """
         if not self.env.user.has_group("rpc.group_allow_doc"):
             raise AccessError(
                 self.env._(
@@ -191,20 +135,6 @@ class DocController(http.Controller):
             )
 
     def _doc_cache_key(self, route, generation):
-        """The ETag for a ``/doc`` document.
-
-        Everything the document's *content* depends on has to be in here: the
-        database state (``generation``, which covers module installs and access
-        changes alike), the language the labels are translated into, and the
-        groups that decide which models and fields the reader may see.
-
-        :param str route: the route this key is for, so two routes cannot
-            collide on one ETag
-        :param str generation: from
-            :func:`~odoo.addons.rpc.tools.cache.doc_cache_generation`
-        :return: an hmac over the cache inputs
-        :rtype: str
-        """
         return hmac(
             self.env(su=True),
             scope=DOC_ETAG_SCOPE,
@@ -217,27 +147,12 @@ class DocController(http.Controller):
         )
 
     def _client_accepts_cache(self):
-        """Whether the client is willing to be served a cached document."""
         cache_control = parse_cache_control_header(
             request.httprequest.headers.get("Cache-Control")
         )
         return not cache_control.no_cache
 
     def _doc_index_cache(self, filename, generation, refresh):
-        """Return the cached index attachment, generating it if needed.
-
-        Serialised with an advisory lock: the index costs seconds to build on a
-        large registry, and without the lock every concurrent first request
-        builds its own copy and stores a duplicate row that nothing collects.
-
-        :param str filename: the cache key, as an attachment name
-        :param str generation: the current cache generation
-        :param bool refresh: regenerate even when the attachment already exists
-        :return: the attachment holding the index
-        :rtype: odoo.model.ir_attachment
-        """
-        # blake2b rather than hash(): the lock key must be stable across
-        # processes, which PYTHONHASHSEED makes str.__hash__ not.
         digest = hashlib.blake2b(filename.encode(), digest_size=8).digest()
         self.env.cr.execute(
             SQL(
@@ -247,8 +162,6 @@ class DocController(http.Controller):
         )
 
         Attachment = self.env["ir.attachment"].sudo()
-        # Re-read under the lock: whoever held it before us may have been here
-        # for exactly this reason.
         index_attach = Attachment.search([("name", "=", filename)], limit=1)
         if index_attach and not refresh:
             return index_attach
@@ -261,8 +174,6 @@ class DocController(http.Controller):
             default=json_default,
         )
         if index_attach:
-            # The client asked for a fresh document: keep the server-side cache
-            # in sync instead of discarding what we just computed.
             index_attach.raw = payload
             logger.info("refreshed index attachment: %s", filename)
         else:
@@ -281,9 +192,6 @@ class DocController(http.Controller):
             )
             logger.info("new index attachment: %s", filename)
 
-        # Building a new generation makes every older one unservable. The
-        # autovacuum would collect them eventually; doing it here keeps the
-        # table from carrying a day of them, and costs one query.
         superseded = Attachment.search(stale_index_domain(generation))
         if superseded:
             superseded.unlink()
@@ -293,16 +201,6 @@ class DocController(http.Controller):
         return index_attach
 
     def _is_doc_index_committed(self, filename) -> bool:
-        """Whether a request that held the lock before this one committed the
-        index this request cannot see.
-
-        The request's REPEATABLE READ snapshot was taken before it waited on
-        the lock, so it misses what the previous holder committed. A READ
-        COMMITTED read does not, and the retry it triggers serves that row.
-
-        :param str filename: the cache key, as an attachment name
-        :rtype: bool
-        """
         with self.env.registry.cursor() as cr:
             cr.use_read_committed()
             cr.execute(
@@ -311,11 +209,6 @@ class DocController(http.Controller):
             return cr.fetchone() is not None
 
     def _doc_index(self):
-        """The index document's ``models`` entry.
-
-        :return: one dict per readable model, holding names only
-        :rtype: list[dict]
-        """
         return [
             {
                 "model": ir_model.model,
@@ -323,10 +216,6 @@ class DocController(http.Controller):
                 "fields": {
                     field.name: {"string": field.field_description}
                     for field in ir_model.field_id
-                    # Skip stale ir.model.fields rows whose Python field was
-                    # removed without cleaning up the metadata (e.g. a refactor
-                    # without a migration script). Crashing /doc on the first
-                    # orphan would hide the rest of the registry.
                     if (python_field := Model._fields.get(field.name)) is not None
                     and Model._has_field_access(python_field, "read")
                 },

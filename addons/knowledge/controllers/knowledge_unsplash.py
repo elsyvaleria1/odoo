@@ -6,7 +6,6 @@ from odoo.http import request
 
 from odoo.addons.web_unsplash.controllers import main
 
-# ID of the unsplash collection, used as a fallback for knowledge covers when we can't find a suitable image
 UNSPLASH_COLLECTION_ID = 317099
 
 
@@ -17,18 +16,11 @@ class KnowledgeUnsplash(main.Web_Unsplash):
         auth="user",
     )
     def add_random_cover(self, article, **kwargs):
-        """This route will try to fetch a random image from unsplash using the
-        params in kwargs. If successful, the image will be saved as a knowledge
-        cover, and added as cover of the article given in the params.
-        """
         if not article.has_access("write"):
             raise werkzeug.exceptions.Forbidden
 
-        # Fetch a random image
         access_key = self._get_access_key()
         app_id = self.get_unsplash_app_id()
-        # Return errors so that client knows it needs to open the CoverSelector
-        # Associated values could be used in the future to adapt client behaviour wr to the error
         if not access_key or not app_id:
             return {"error": "key_not_found"}
         kwargs["client_id"] = access_key
@@ -60,7 +52,6 @@ class KnowledgeUnsplash(main.Web_Unsplash):
 
         image_info = fetch_random_image_request.json()
 
-        # Save image
         attachment = self.save_unsplash_url(
             {
                 image_info["id"]: {
@@ -73,7 +64,6 @@ class KnowledgeUnsplash(main.Web_Unsplash):
             **kwargs,
         )[0]
 
-        # Create new cover using new attachment
         cover = request.env["knowledge.cover"].create(
             {"attachment_id": attachment["id"]}
         )

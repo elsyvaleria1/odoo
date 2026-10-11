@@ -60,8 +60,6 @@ class TestAccountGroupReadonly(TransactionCase):
             )
 
     def test_acl_rows_grant_read_only(self):
-        # the rows on models: a field class's row (finance.receivable) names
-        # the groups its fields' groups= named, write included
         rows = self.env["ir.access"].search(
             [
                 ("group_id", "=", self.group_readonly.id),

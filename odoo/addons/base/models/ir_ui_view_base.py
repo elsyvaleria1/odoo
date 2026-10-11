@@ -24,8 +24,6 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
-# the context keys the combined arch reads (`ir.ui.view._compute_arch`,
-# `_combine_tree`): each is part of the cache key of a view
 _ARCH_CONTEXT_KEYS = (
     "edit_translations",
     "check_translations",
@@ -34,8 +32,6 @@ _ARCH_CONTEXT_KEYS = (
 )
 
 
-# how a view describes a record's verbs to the client: the value its read
-# answers, {verb: held}, not a field of the model
 VERBS_FIELD_DESCRIPTION = frozendict(
     {
         "name": VERBS_FIELD,
@@ -56,10 +52,6 @@ def _view_capabilities(
 ) -> tuple[
     tuple[str, ...], tuple[tuple[str, str | None], ...], tuple[tuple[str, ...], ...]
 ]:
-    """The user-dependent inputs a cached arch still carries: the group keys
-    on its nodes, the models whose access rights decorate it — for a kanban,
-    with the field its default grouping goes through — and the verbs its
-    buttons run."""
     return (
         tuple(sorted({el.get("__groups_key__") for el in _xpath_groups_key(node)})),
         tuple(
@@ -81,7 +73,6 @@ def _view_capabilities(
 
 
 def _freeze(value: Any) -> Any:
-    """A projected view is shared between requests: nothing in it is mutable."""
     if isinstance(value, dict):
         return frozendict({key: _freeze(item) for key, item in value.items()})
     if isinstance(value, list):
@@ -90,14 +81,6 @@ def _freeze(value: Any) -> Any:
 
 
 def attach_ir(result: dict[str, Any]) -> dict[str, Any]:
-    """Derive ``result["ir"]`` from ``result["arch"]`` again.
-
-    A view payload carries the arch twice — the string and the IR the
-    client reads first. An override that rewrites ``arch`` after
-    ``get_view`` (a js_class added on the fly, a field name substituted)
-    must hand the result through here, or the client renders the tree the
-    override never touched.
-    """
     result["ir"] = from_string(result["arch"]).to_dict()
     return result
 
@@ -498,8 +481,6 @@ class Base(models.AbstractModel):
         view_type: str = "form",
         **options: Any,
     ) -> frozendict:
-        # the key holds no active_test: a caller's archived views must not
-        # become every caller's default view
         self = self.with_context(active_test=True)
         with _debug.perf(
             "view_cache_miss",
@@ -527,10 +508,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def _view_capability_signature(self, capabilities: tuple) -> tuple:
-        """What of the user decides the projection of a cached view: which of
-        the group keys its nodes carry the user matches, what the user may do
-        on each model an x2many or the root points at, and debug mode. Two
-        users with the same signature get the same projected arch."""
         group_keys, model_accesses, verbs = capabilities
         definitions = self.env["res.groups"]._get_group_definitions()
         user_group_ids = self.env.user._get_group_ids()
@@ -586,9 +563,6 @@ class Base(models.AbstractModel):
         signature: tuple,
         **options: Any,
     ) -> frozendict:
-        """The cached view as one capability signature sees it: access
-        rights and debug nodes resolved, the arch serialised and the IR
-        built — once per (view, signature), not once per request."""
         cached = self._get_view_cache(view_id, view_type, **options)
         _debug.perf.count(
             "view_projection_miss",
@@ -601,7 +575,6 @@ class Base(models.AbstractModel):
         node = self.env["ir.ui.view"]._postprocess_access_rights(node)
         node = self.env["ir.ui.view"]._postprocess_debug(node)
         view_models = cached["models"]
-        # a view whose buttons read a record's verbs reads them with the record
         if verb_models := {
             field.attrib.pop("__verbs_model__") for field in _xpath_verbs_field(node)
         }:

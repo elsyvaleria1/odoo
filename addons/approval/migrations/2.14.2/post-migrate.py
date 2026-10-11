@@ -2,9 +2,6 @@ from odoo import SUPERUSER_ID, api
 
 
 def migrate(cr, version):
-    # the hand-over moves reach and the Decider group when a delegation window
-    # opens in the approver's timezone, so a daily run left the delegate locked
-    # out for up to a day; a cron still at its shipped daily cadence becomes hourly
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})

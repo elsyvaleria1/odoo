@@ -46,7 +46,6 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # OAuth fields
     razorpay_account_id = fields.Char(
         string="Razorpay Account ID",
         copy=False,
@@ -74,10 +73,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "razorpay").update(
             {
@@ -88,7 +85,6 @@ class PaymentProvider(models.Model):
         )
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "razorpay":
             supported_currencies = supported_currencies.filtered(
@@ -96,14 +92,9 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CONSTRAINT METHODS === #
 
     @api.constrains("state")
     def _check_razorpay_credentials_are_set_before_enabling(self) -> None:
-        """Check that the Razorpay credentials are valid when the provider is enabled.
-
-        :raise ValidationError: If the Razorpay credentials are not valid.
-        """
         for provider in self.filtered(
             lambda p: p.code == "razorpay" and p.state != "disabled"
         ):
@@ -116,27 +107,15 @@ class PaymentProvider(models.Model):
                         )
                     )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "razorpay":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === ACTIONS METHODS === #
 
     def action_start_onboarding(self, menu_id=None):
-        """Override of `payment` to redirect to the Razorpay OAuth URL.
-
-        Note: `self.check_singleton()`
-
-        :param int menu_id: The menu from which the onboarding is started, as an `ir.ui.menu` id.
-        :return: An URL action to redirect to the Razorpay OAuth URL.
-        :rtype: dict
-        :raise RedirectWarning: If the company's currency is not supported.
-        """
         self.check_singleton()
 
         if self.code != "razorpay":
@@ -157,7 +136,6 @@ class PaymentProvider(models.Model):
                 self.get_base_url(), RazorpayController.OAUTH_RETURN_URL
             ),
             "provider_id": self.id,
-            # The proxy echoes `csrf_token` back verbatim: it carries the state.
             "csrf_token": self._issue_onboarding_state(),
         }
         authorization_url = f"{const.OAUTH_URL}/authorize?{urlencode(params)}"
@@ -168,7 +146,6 @@ class PaymentProvider(models.Model):
         }
 
     def _prepare_credential_reset_vals(self) -> dict:
-        """Override of `payment` to supply the provider-specific credential values to reset."""
         if self.code != "razorpay":
             return super()._prepare_credential_reset_vals()
 
@@ -181,16 +158,9 @@ class PaymentProvider(models.Model):
         }
 
     def action_razorpay_create_webhook(self) -> dict:
-        """Create a webhook and display a toast notification.
-
-        Note: `self.check_singleton()`
-
-        :return: The feedback notification.
-        :rtype: dict
-        """
         self.check_singleton()
 
-        webhook_secret = uuid.uuid4().hex  # Generate a random webhook secret.
+        webhook_secret = uuid.uuid4().hex
         payload = {
             "url": tools.urls.urljoin(self.get_base_url(), "/payment/razorpay/webhook"),
             "alert_email": self.env.user.partner_id.email,
@@ -215,14 +185,8 @@ class PaymentProvider(models.Model):
             },
         }
 
-    # === BUSINESS METHODS - PAYMENT FLOW === #
 
     def _get_validation_amount(self):
-        """Override of `payment` to return the amount for Razorpay validation operations.
-
-        :return: The validation amount.
-        :rtype: float
-        """
         res = super()._get_validation_amount()
         if self.code != "razorpay":
             return res
@@ -230,16 +194,6 @@ class PaymentProvider(models.Model):
         return 1.0
 
     def _get_razorpay_signature(self, data, is_redirect=True):
-        """Compute the signature for the request's data according to the Razorpay documentation.
-
-        See https://razorpay.com/docs/webhooks/validate-test#validate-webhooks.
-
-        :param dict|bytes data: Redirect fields or the raw webhook body to sign.
-        :param bool is_redirect: Whether the data should be treated as redirect data or as coming
-                                 from a webhook notification.
-        :return: The signature, or None when the webhook secret is absent.
-        :rtype: str | None
-        """
         if is_redirect:
             secret = self.razorpay_key_secret
             signing_string = (
@@ -248,7 +202,7 @@ class PaymentProvider(models.Model):
             return hmac.new(
                 secret.encode(), msg=signing_string.encode(), digestmod=hashlib.sha256
             ).hexdigest()
-        else:  # payment data
+        else:
             secret = self.razorpay_webhook_secret
             if not secret:
                 _logger.warning(
@@ -259,15 +213,8 @@ class PaymentProvider(models.Model):
                 secret.encode(), msg=data, digestmod=hashlib.sha256
             ).hexdigest()
 
-    # === BUSINESS METHODS - OAUTH FLOW === #
 
     def _razorpay_refresh_access_token(self) -> None:
-        """Refresh the access token.
-
-        Note: `self.check_singleton()`
-
-        :return: dict
-        """
         self.check_singleton()
         proxy_payload = self._prepare_json_rpc_payload(
             {"refresh_token": self.razorpay_refresh_token}
@@ -292,7 +239,6 @@ class PaymentProvider(models.Model):
                 }
             )
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(
         self, endpoint, *, api_version="v1", is_proxy_request=False, **kwargs
@@ -326,7 +272,6 @@ class PaymentProvider(models.Model):
         return headers
 
     def _prepare_request_auth(self, *, is_proxy_request=False, **kwargs):
-        """Override of `payment` to build the request Auth."""
         if self.code != "razorpay":
             return super()._prepare_request_auth(
                 is_proxy_request=is_proxy_request, **kwargs

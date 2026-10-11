@@ -77,11 +77,11 @@ class MixinAvatar(models.AbstractModel):
         self._update_avatar("avatar_128", "image_128")
 
     def _update_avatar(self, avatar_field: _FieldName, image_field: _FieldName) -> None:
-        fallbacks = 0  # debuglog
+        fallbacks = 0
         for record in self:
             avatar = record[image_field]
             if not avatar:
-                fallbacks += 1  # debuglog
+                fallbacks += 1
                 name = record[record._avatar_name_field]
                 generated = bool(record.id and name and name.strip())
                 _debug.logic(

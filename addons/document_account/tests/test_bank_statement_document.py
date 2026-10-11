@@ -16,7 +16,6 @@ class TestBankStatementDocument(
     def setUpClass(cls):
         super().setUpClass()
         cls.env.user.group_ids += cls.quick_ref("document.group_documents_manager")
-        # shared by every company, as the area folders are
         cls.bank_folder = cls.env["document.document"].create(
             {"name": "Banks", "type": "folder", "company_id": False}
         )

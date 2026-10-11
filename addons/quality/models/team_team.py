@@ -28,8 +28,6 @@ class TeamTeam(models.Model):
         compute="_compute_quality_alert_count",
         groups="quality.group_quality_user",
     )
-    # The reverse sides of `quality.check.team_id` and `quality.alert.team_id`,
-    # so the two `_read_group` counters have a dependency the ORM can follow.
     quality_check_ids = fields.One2many(
         comodel_name="quality.check",
         inverse_name="team_id",

@@ -1,4 +1,3 @@
-# YTI FIXME: This module should be named timesheet_enterprise
 {
     "name": "Timesheet Grid and Validation",
     "version": "1.2",

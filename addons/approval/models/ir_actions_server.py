@@ -7,15 +7,6 @@ class IrActionsServer(models.Model):
     _inherit = "ir.actions.server"
 
     def _gate_run(self, records, run, replayable=True):
-        """Consult approval bindings before running, on the server.
-
-        web_studio gated a server action only in the browser: the client asked for
-        approval before executing, so any RPC caller ran the action unchecked. The
-        gate here holds for every caller -- `run()` and an AI agent's tool call
-        alike -- with the records the action targets as its subject, and the
-        caller's elevation measured on this environment before the action itself
-        switches to sudo.
-        """
         self.check_singleton()
         Binding = self.env["approval.binding"]
         if not Binding._enabled():

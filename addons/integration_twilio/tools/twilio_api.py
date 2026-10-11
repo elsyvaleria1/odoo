@@ -71,8 +71,6 @@ class TwilioClient:
             page = self.call("GET", f"{API_ROOT}{next_page}")
 
     def download(self, url: str, **kwargs):
-        # Twilio redirects a media URL to its storage host; the guarded
-        # session strips the credential on that cross-host hop
         return self._client.request(
             "GET", url, raw=True, raise_for_status=True, **kwargs
         )

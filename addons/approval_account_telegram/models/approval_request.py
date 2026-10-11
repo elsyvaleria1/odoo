@@ -135,10 +135,6 @@ class ApprovalRequest(models.Model):
             if self.partner_id and not st_line.partner_id:
                 st_line.partner_id = self.partner_id
 
-        # The request's partner is who the invoice is made out to; the Telegram
-        # data names the customer the collection is for when it is someone
-        # else. The run is about that customer, and the invoiced party is the
-        # third party that stands in for him.
         customer_id = telegram_data.get("partner_cn_id")
         if customer_id:
             customer = self.env["res.partner"].browse(customer_id).exists()

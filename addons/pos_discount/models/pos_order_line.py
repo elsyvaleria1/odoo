@@ -13,8 +13,6 @@ class PosOrderLine(models.Model):
     )
     def _compute_tax_ids_after_fiscal_position(self) -> None:
         super()._compute_tax_ids_after_fiscal_position()
-        # the till builds a global discount from taxes the fiscal position
-        # already mapped, and does not map them again
         for line in self._filter_global_discounts():
             line.tax_ids_after_fiscal_position = line.tax_ids
 

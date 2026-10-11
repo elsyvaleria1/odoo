@@ -9,8 +9,6 @@ from odoo.tools import format_list
 
 _debug = DebugLog(__name__)
 
-# anyone holding the copied link reads the document and speaks as nobody: it is
-# not the customer's link, which posts as the customer and rides their e-mails
 SHARE_LINK = {"role": "view", "cause": "share"}
 
 
@@ -151,10 +149,6 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
         return record
 
     def _notify_share_invitation(self, partner, share_link, *, record) -> None:
-        """The link is a credential for ``partner`` (signup token, or ``pid``/``hash``
-        posting as them): it travels in a ``user_notification``, readable by author
-        and recipient only, never in a thread message every reader of ``record`` sees.
-        """
         record = record.with_context(lang=partner.lang or self.env.lang)
         body = record.env["mixin.mail.render"]._render_template_qweb_view(
             "portal.portal_share_template",
@@ -192,7 +186,6 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
         if partners is None:
             partners = self.partner_ids
         record = self._get_shared_record()
-        # each recipient opens the record with a link of their own
         tokens = record._portal_tokens(partners) if partners else {}
         for partner in partners:
             share_link = record.get_base_url() + record._get_share_url(

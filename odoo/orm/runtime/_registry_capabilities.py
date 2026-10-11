@@ -58,8 +58,6 @@ _ILIKE_FOLD_CACHE_MAX = 4096
 class _TextTables:
     by_db: dict[str, _TextTransforms] = {}
     unaccented_chars: dict[str, dict[int, str]] = {}
-    # one build per process and database: a cold process whose threads all
-    # meet their first ilike at once must not each scan the code points
     build_lock = threading.Lock()
 
 
@@ -87,11 +85,9 @@ def _reset_text_transforms(
         )
         provider = cr.fetchone()
         assert provider is not None
-        # Other providers can lowercase contextually, so a character table is insufficient.
         context_free = provider[0] == "c"
         unaccent = SQL("unaccent(source)") if unaccent_enabled else SQL("source")
         folded = SQL("lower(%s)", unaccent) if context_free else SQL("source")
-        # PostgreSQL text excludes NUL and Unicode surrogate code points.
         cr.execute(
             SQL(
                 """
@@ -179,8 +175,6 @@ class _RegistryCapabilitiesMixin(_RegistryStubs):
         self.unaccent_status = get_unaccent_status(cr)
         self.has_trigram = has_trigram(cr)
         self.unaccent = _unaccent if self.unaccent_status else _identity
-        # the character tables cost a scan of every code point; a process that
-        # never filters records in memory with ilike never needs them
         cached = _TextTables.by_db.get(db_name)
         self._text_transforms = (
             cached
@@ -224,8 +218,6 @@ class _RegistryCapabilitiesMixin(_RegistryStubs):
         elif self._text_transforms is not None:
             table = self._text_transforms.unaccent
         elif covering.isascii():
-            # unaccent.rules maps no ASCII character, so ASCII text needs no
-            # table, and no statement on the search path
             return _identity
         elif cr is not None:
             table = _unaccent_table_covering(cr, self.db_name, covering)
@@ -233,8 +225,6 @@ class _RegistryCapabilitiesMixin(_RegistryStubs):
             with closing(self.cursor()) as own_cr:
                 table = _unaccent_table_covering(own_cr, self.db_name, covering)
         if len(table) > _UNACCENT_COVERING_MAX:
-            # searches reach this from anonymous pages: past a few thousand
-            # characters the full table, bounded by the rules, replaces them
             _TextTables.unaccented_chars.pop(self.db_name, None)
             table = self._get_text_transforms(cr).unaccent
         return partial(_translate_python, table=table)

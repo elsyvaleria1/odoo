@@ -78,9 +78,6 @@ class ProjectProject(models.Model):
             action["res_id"] = self.ticket_ids.id
         return action
 
-    # ----------------------------
-    #  Project Updates
-    # ----------------------------
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

@@ -22,12 +22,6 @@ class WizardMailMessageSend(models.TransientModel):
     mailing_list_ids = fields.Many2many(comodel_name="mailing.list")
 
     def _get_render_error_label(self):
-        """Name the mailing, not the transient composer that renders for it.
-
-        Lived in `mixin.mail.render` as a `self._name == "wizard.mail.message.send"`
-        branch guarded by `"mass_mailing_id" in self._fields` -- the mixin
-        testing for a field this module adds.
-        """
         if not self.mass_mailing_id:
             return super()._get_render_error_label()
         return self.env._(
@@ -37,8 +31,6 @@ class WizardMailMessageSend(models.TransientModel):
         )
 
     def _action_send_mail(self, auto_commit=False):
-        """Override to generate the mass mailing in case only the name was
-        given. It is used afterwards for traces generation."""
         if (
             self.composition_mode == "mass_mail"
             and self.mass_mailing_name
@@ -52,26 +44,16 @@ class WizardMailMessageSend(models.TransientModel):
         return super()._action_send_mail(auto_commit=auto_commit)
 
     def _invalid_email_state(self):
-        """Always cancel invalid emails for mailings due to likely untractable number of failures."""
         if self.mass_mailing_name or self.mass_mailing_id:
             return "cancel"
         return super()._invalid_email_state()
 
     def _generate_mail_notification_values(self, mails):
-        """Prevent notification creation as traces are generated."""
         if self.mass_mailing_name or self.mass_mailing_id:
             return []
         return super()._generate_mail_notification_values(mails)
 
     def _wrap_bodies_in_mailing_layout(self, mail_values_all) -> None:
-        """Put every recipient's body inside the mailing layout, in one pass.
-
-        Only ``body`` differs between recipients — the stylesheet is the same
-        file for all of them — so this was `ir.qweb._render` once per recipient
-        with a values dict that changed in one key. Measured over a 500-recipient
-        send, that was 78ms of a 1043ms generation, and the whole of it was the
-        preparation `_render` redoes on every call.
-        """
         with file_open(
             "mass_mailing/static/src/scss/mass_mailing_mail.scss", "r"
         ) as fd:
@@ -91,12 +73,10 @@ class WizardMailMessageSend(models.TransientModel):
             raise_if_not_found=False,
         )
         for res_id, body in zip(with_body, bodies, strict=True):
-            # A missing layout renders empty; the body it was given stands.
             if body:
                 mail_values_all[res_id]["body_html"] = body
 
     def _prepare_mail_values(self, res_ids):
-        # When being in mass mailing mode, add 'mailing.trace' values directly in the o2m field of mail.mail.
         mail_values_all = super()._prepare_mail_values(res_ids)
 
         if not self._is_mass_mailing():
@@ -150,7 +130,6 @@ class WizardMailMessageSend(models.TransientModel):
         recipients_info = self._get_recipients_data(mail_values_all)
         for res_id, mail_values in mail_values_all.items():
             emails = recipients_info[res_id]["mail_to_normalized"]
-            # if mail_to is void, keep falsy values to allow searching / debugging traces
             if not emails:
                 emails = recipients_info[res_id]["mail_to"]
             email = emails[0] if emails else ""
@@ -161,7 +140,6 @@ class WizardMailMessageSend(models.TransientModel):
                 "model": self.model,
                 "res_id": res_id,
             }
-            # propagate failed states to trace when still-born
             if mail_values.get("state") == "cancel":
                 trace_vals["trace_status"] = "cancel"
             elif mail_values.get("state") == "exception":
@@ -189,7 +167,6 @@ class WizardMailMessageSend(models.TransientModel):
         }
 
     def _manage_mail_values(self, mail_values_all):
-        # Filter out canceled messages of mass mailing and create traces for canceled ones.
         results = super()._manage_mail_values(mail_values_all)
         if not self._is_mass_mailing():
             return results
@@ -200,7 +177,6 @@ class WizardMailMessageSend(models.TransientModel):
                 if (
                     mail_values.get("state") == "cancel"
                     and (trace_commands := mail_values["mailing_trace_ids"])
-                    # Ensure it is a create command
                     and len(trace_commands) == 1
                     and len(trace_commands[0]) == 3
                     and trace_commands[0][0] == 0
@@ -214,7 +190,6 @@ class WizardMailMessageSend(models.TransientModel):
         }
 
     def _is_mass_mailing(self) -> bool:
-        # allowed models in mass mailing
         return bool(
             self.composition_mode == "mass_mail"
             and self.mass_mailing_id

@@ -18,7 +18,6 @@ class TestAiServerActions(TransactionCase):
         return patch.object(LLMApiService, "_get_api_token", _mock_get_api_token)
 
     def test_ai_server_action_access(self):
-        """A tool is checked like the AI action that offers it, as the same user."""
         user = new_test_user(
             self.env, "internal_user_ai", "base.group_user,base.group_partner_manager"
         )
@@ -81,7 +80,6 @@ class TestAiServerActions(TransactionCase):
         self.assertIsNone(error)
         self.assertEqual(partner.name, "Renamed")
 
-        # But not on the AI action
         action.group_ids = self.env.ref("base.group_system").ids
         llm_calls = 0
 
@@ -99,7 +97,6 @@ class TestAiServerActions(TransactionCase):
         user = new_test_user(self.env, "internal_user_ai", "base.group_user")
         partner = self.env["res.partner"].create({"name": "Partner"})
 
-        # Remove res.partner read access from the user
         self.env["ir.access"].create(
             {
                 "name": "no partner reads",
@@ -112,7 +109,6 @@ class TestAiServerActions(TransactionCase):
             }
         )
 
-        # Prepare the mocked LLM responses, openai format
         mock_request = self._create_mock_request(
             [
                 {
@@ -141,12 +137,10 @@ class TestAiServerActions(TransactionCase):
             ]
         )
 
-        # Fetch the ask_ai_agent record with elevated rights, just like they do in the controller
         ask_ai_agent_sudo = (
             self.env["ai.agent"]._get_potential_ask_ai_agent().with_user(user).sudo()
         )
 
-        # Need to ensure the llm model is openai since the mocked request is for openai
         ask_ai_agent_sudo.write({"llm_model": "gpt-4.1"})
 
         with (
@@ -156,7 +150,6 @@ class TestAiServerActions(TransactionCase):
         ):
             ask_ai_agent_sudo._generate_response("test")
 
-        # Single error log stating the user cannot access the records
         (error_log_record,) = mock_tool_logger.records
         self.assertIn(
             "An error occurred while executing AI: Search: You are not allowed to access 'Contact' (res.partner) records.",
@@ -189,7 +182,6 @@ class TestAiServerActions(TransactionCase):
             self.assertEqual(tools[tool_names[1]][0], ir_action_tools[1].name)
             if llm_calls == 1:
                 self.assertFalse(inputs)
-                # Call "Return Value" and wait the result
                 return self._ai_tool_call(tool_names[0], "call_123456", {})
 
             if llm_calls == 2:
@@ -243,7 +235,6 @@ class TestAiServerActions(TransactionCase):
         self.assertEqual(llm_calls, 2)
         self.assertEqual(partner.name, "new name")
 
-        # Simulate the LLM answering a forbidden action (not in the tools)
         bad_action = self.env["ir.actions.server"].create(
             {
                 "model_id": self.env["ir.model"]._get_id("res.partner"),
@@ -288,8 +279,6 @@ class TestAiServerActions(TransactionCase):
         ):
             action.with_context(active_model=partner._name, active_id=partner.id).run()
 
-        # Check that if we mark a tool as "not used with AI" we don't send it
-        # to the LLM even if the m2m relation still exist
         ir_action_tools[1].use_in_ai = False
         partner.name = "name"
         llm_calls = 0
@@ -310,7 +299,6 @@ class TestAiServerActions(TransactionCase):
             llm_calls += 1
             self.assertEqual(len(tools), 1)
             if llm_calls == 1:
-                # The LLM still try to execute it
                 return self._ai_tool_call(
                     f"action_{ir_action_tools[1].id}",
                     "call_789123",
@@ -330,7 +318,6 @@ class TestAiServerActions(TransactionCase):
 
     @mute_logger("odoo.addons.ai.models.ir_actions_server")
     def test_ai_server_action_ai_interactive_tool(self):
-        """An interactive tool is not executed and the error is logged on the record."""
         llm_calls = 0
 
         def _mocked_request_llm(
@@ -362,7 +349,6 @@ class TestAiServerActions(TransactionCase):
                 "state": "code",
                 "name": "Return Value",
                 "use_in_ai": True,
-                # The action tries to open a window action
                 "code": """action = {
                 "type": "ir.actions.act_window",
                 "res_model": "res.partner",
@@ -393,14 +379,6 @@ class TestAiServerActions(TransactionCase):
         )
 
     def _ai_tool_call(self, name, call_id, arguments):
-        """Build the `_request_llm` return value for an LLM asking to execute a tool.
-
-        :param str name: tool name, as sent to the LLM
-        :param str call_id: identifier correlating the call and its output
-        :param dict arguments: tool arguments
-        :return: the (answers, tool calls, raw outputs) triple
-        :rtype: tuple
-        """
         return (
             ["Done"],
             [(name, call_id, arguments)],
@@ -419,7 +397,6 @@ class TestAiServerActions(TransactionCase):
         return mock_request
 
     def test_ai_create_activity(self):
-        # check that activities can be created from an AI action
         create_activity_action = self.env["ir.actions.server"].create(
             {
                 "model_id": self.env["ir.model"]._get_id("res.partner"),
@@ -486,7 +463,6 @@ class TestAiServerActions(TransactionCase):
         with patch.object(LLMApiService, "_request_llm", _mocked_request_llm):
             ai_action._ai_action_run(self.env.user.partner_id)
 
-        # check that the mail has been created
         self.assertTrue(
             any(
                 msg.subject == "mail sent by AI"

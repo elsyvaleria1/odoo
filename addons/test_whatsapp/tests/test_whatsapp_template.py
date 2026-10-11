@@ -7,7 +7,6 @@ from odoo.addons.test_whatsapp.tests.common import WhatsAppFullCase
 class WhatsAppTemplate(WhatsAppFullCase):
     @users("user_wa_admin")
     def test_template_phone_field_chain(self):
-        """Test "phone_field" being a field chain"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Hello Phone Field Chain",
@@ -20,7 +19,6 @@ class WhatsAppTemplate(WhatsAppFullCase):
             }
         )
 
-        # record with a partner set
         for test_record in (
             self.test_base_record_nopartner + self.test_base_record_partner
         ):

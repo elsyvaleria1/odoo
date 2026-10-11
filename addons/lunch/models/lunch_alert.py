@@ -120,7 +120,6 @@ class LunchAlert(models.Model):
         )
 
     def _sync_cron(self) -> None:
-        """Synchronise the related cron fields to reflect this alert"""
         for alert in self:
             alert = alert.with_context(tz=alert.tz)
 
@@ -184,7 +183,6 @@ class LunchAlert(models.Model):
                     "module": "lunch",
                     "res_id": cron.ir_actions_server_id.id,
                     "model": "ir.actions.server",
-                    # noupdate is set to true to avoid to delete record at module update
                     "noupdate": True,
                 }
                 for cron in crons
@@ -207,7 +205,6 @@ class LunchAlert(models.Model):
         return unlink_records_with_cron_cleanup(self.cron_id.sudo(), super().unlink)
 
     def _notify_chat(self) -> None:
-        # Called daily by cron
         self.check_singleton()
 
         if not self.available_today:
@@ -238,7 +235,7 @@ class LunchAlert(models.Model):
                     if self.recipients == "last_week"
                     else 4
                     if self.recipients == "last_month"
-                    else 52  # if self.recipients == 'last_year'
+                    else 52
                 )
             )
             order_domain &= Domain("date", ">=", weeksago)

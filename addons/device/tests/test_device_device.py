@@ -667,9 +667,6 @@ class TestRemoteDeviceCronCheckHealth(InlineStateRetryMixin, DeviceTransactionCa
             },
         )
 
-        # The cron writes the demotion on a cursor of its own, so this
-        # transaction can still read "connected" here. The message must name the
-        # state the cron decided, never the one the record still shows.
         device._notify_devices_went_quiet("disconnected")
 
         message = self.env["mail.message"].search(
@@ -739,9 +736,6 @@ class TestRemoteDeviceRegisterHook(InlineStateRetryMixin, DeviceTransactionCase)
         )
 
     def _run_register_hook(self, protocols=("https",), streamed=()):
-        # https stands in for a persistent transport. This module ships none,
-        # and what the reset turns on is holding a connection open in this
-        # process, not which protocol holds it.
         model_cls = type(self.device)
         with (
             patch.object(

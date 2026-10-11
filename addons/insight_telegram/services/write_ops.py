@@ -19,8 +19,6 @@ _logger = logging.getLogger(__name__)
 
 MAX_OPERATIONS = 20
 
-# The technical side and the instance's own machinery stay out of reach,
-# whatever menu reaches them.
 BLOCKED_PREFIXES = (
     "ir.",
     "res.users",
@@ -44,16 +42,12 @@ BLOCKED_PREFIXES = (
     "web_editor.",
     "html_editor.",
     "spreadsheet.",
-    # outgoing mail and the instance's mail machinery: a menu reaches them,
-    # but writing them sends data out or rewires the server
     "mail.mail",
     "mail.template",
     "mail.alias",
     "mail.gateway",
     "fetchmail.",
 )
-# a button whose name says it deletes, archives, undoes or makes users is
-# refused even when a screen shows it
 BLOCKED_METHOD_WORDS = (
     "unlink",
     "delete",
@@ -67,17 +61,8 @@ BLOCKED_METHOD_WORDS = (
     "reset_password",
 )
 ALLOWED_METHOD_PREFIXES = ("action_", "button_")
-# the fields only an administrator sees (passwords, keys) stay out of reach,
-# superuser mode or not
 ADMIN_GROUP = "base.group_system"
-# what an x2many command may do: a one2many creates, changes and -- on a
-# draft document -- removes its own lines; a many2many also links and
-# unlinks existing records, which deletes nothing. Replacing a one2many's
-# lines (6) deletes the ones left out, and linking (4) takes lines from
-# another document, so neither is allowed there.
 ONE2MANY_COMMANDS = (0, 1, 2, 3)
-# fields that tie a business record to a user account: changing them moves
-# who logs in as whom, which belongs to the user's own settings
 USER_LINK_FIELDS = {"res.partner": ("main_user_id", "user_ids")}
 MANY2MANY_COMMANDS = (0, 1, 3, 4, 6)
 
@@ -87,14 +72,10 @@ class OperationError(Exception):
 
 
 def is_business_model(model_name) -> bool:
-    """Whether `model_name` is outside the technical side the bot never
-    writes, whatever reaches it."""
     return bool(model_name) and not model_name.startswith(BLOCKED_PREFIXES)
 
 
 def is_writable_model(env, model_name) -> bool:
-    """Whether the bot may create or change records of `model_name`: a stored
-    business model a window action opens, outside the technical side."""
     if not is_business_model(model_name):
         return False
     model = env.get(model_name)
@@ -108,14 +89,6 @@ def is_writable_model(env, model_name) -> bool:
 
 
 def check(env, operation) -> dict:
-    """Validate one proposed operation and return it normalized.
-
-    :param env: an environment to read the models in
-    :param dict operation: ``{"op": "create"|"write"|"action", "model": ...,
-        "values": {...}, "ids": [...], "method": ...}``
-    :return: the operation, with only the keys it uses
-    :rtype: dict
-    """
     op = operation.get("op")
     model_name = (operation.get("model") or "").strip()
     if op not in ("create", "write", "action"):
@@ -174,8 +147,6 @@ def check(env, operation) -> dict:
 
 
 def _is_screen_button(env, model_name, method) -> bool:
-    """Whether a view of `model_name` shows `method` as a button a user can
-    press: a method only code calls is not one."""
     return bool(
         env["ir.ui.view"].search_count(
             [
@@ -192,15 +163,6 @@ ROW_COMMANDS = (1, 2, 3)
 
 
 def _check_values(model, values, ids, path="") -> None:
-    """Refuse a value the screens would not let a user set, here and, the
-    same way, in every line an x2many command creates or changes.
-
-    :param model: the model the values are for
-    :param dict values: field names to values
-    :param list ids: the records written, or nothing on a create
-    :param str path: where the values sit, for the message
-    :raise OperationError: what is refused, and why
-    """
     for name, value in values.items():
         field = model._fields.get(name)
         if field is None:
@@ -213,9 +175,6 @@ def _check_values(model, values, ids, path="") -> None:
                 "the user's own settings."
             )
         if field.readonly and field.compute and not field.inverse:
-            # a computed field without an inverse keeps its computed value: the
-            # figure asked for would be lost silently (price_unit_product_uom
-            # for price_unit)
             raise OperationError(
                 f"{path}{name} is computed and cannot be set; call describe_model "
                 f"on {model._name} and set the editable field it comes from."
@@ -228,7 +187,6 @@ def _check_values(model, values, ids, path="") -> None:
             and ids
             and _partners_with_users(model, ids)
         ):
-            # the address a user's password reset goes to
             raise OperationError(
                 f"{path}the email of a contact who is an Odoo user is changed "
                 "from the user's own settings."
@@ -243,8 +201,6 @@ def _partners_with_users(model, ids) -> bool:
 
 
 def _check_commands(model, field, commands, ids, path) -> None:
-    """Refuse the x2many commands that delete, reach the technical side, or
-    touch lines of another document."""
     name = field.name
     comodel = model.env[field.comodel_name]
     allowed = ONE2MANY_COMMANDS if field.type == "one2many" else MANY2MANY_COMMANDS
@@ -271,8 +227,6 @@ def _check_commands(model, field, commands, ids, path) -> None:
 
 
 def _check_own_line(model, name, command, ids, path) -> None:
-    """A line is changed or removed on an existing record it belongs to, and
-    removed only while that record is in draft."""
     code = command[0]
     if not ids or any(not isinstance(ident, int) for ident in ids):
         raise OperationError(
@@ -294,8 +248,6 @@ def _check_own_line(model, name, command, ids, path) -> None:
 
 
 def _lacks_company(env, operation) -> bool:
-    """Whether `operation` creates a record whose company is required but
-    not given: the person must pick it, never a default."""
     if operation["op"] != "create":
         return False
     company = env[operation["model"]]._fields.get("company_id")
@@ -308,12 +260,10 @@ def _lacks_company(env, operation) -> bool:
 
 
 def needs_company(env, operations) -> bool:
-    """Whether any of `operations` waits for the person to pick a company."""
     return any(_lacks_company(env, operation) for operation in operations)
 
 
 def set_company(env, operations, company_id) -> list:
-    """`operations` with `company_id` given to each one that lacks it."""
     return [
         {**operation, "values": {**operation["values"], "company_id": company_id}}
         if _lacks_company(env, operation)
@@ -323,14 +273,6 @@ def set_company(env, operations, company_id) -> list:
 
 
 def describe(env, operations) -> list:
-    """The proposed operations as the person reads them: each field by its
-    label and each value as the screen shows it, never raw ids.
-
-    :param env: an environment in the person's language
-    :param list operations: operations validated by `check`
-    :return: the lines, Markdown-light
-    :rtype: list
-    """
     lines = []
     for number, operation in enumerate(operations, 1):
         model = env[operation["model"]]
@@ -384,8 +326,6 @@ def describe(env, operations) -> list:
 
 
 def _records_text(model, ids) -> str:
-    """The records `ids` name, by their names; a record proposed before by
-    its number."""
     names = []
     for ident in ids:
         if isinstance(ident, str):
@@ -402,8 +342,6 @@ def _button_text(model, method) -> str:
 
 
 def _currency(model, values):
-    """The currency amounts of `values` are in: theirs, their company's, else
-    the environment's company's."""
     env = model.env
     currency = values.get("currency_id")
     if isinstance(currency, int):
@@ -423,14 +361,10 @@ def _qty(value) -> str:
 
 
 QUANTITY_FIELDS = ("product_qty", "product_uom_qty", "quantity")
-# the fields a priced line shows in its own words; any other one it sets is
-# listed after them, so nothing changes unseen
 ROW_FIELDS = ("product_id", "price_unit", *QUANTITY_FIELDS)
 
 
 def _values_lines(model, values, record=None) -> list:
-    """One line per field of `values`; an x2many's commands as its rows, and a
-    document's priced lines as they will stand once changed."""
     currency = _currency(model, values)
     if record and "currency_id" in record._fields and record.currency_id:
         currency = record.currency_id
@@ -455,12 +389,10 @@ def _values_lines(model, values, record=None) -> list:
 
 
 def _label(model, field) -> str:
-    """A field's label in the language of `model`'s environment."""
     return field._description_string(model.env) or field.name
 
 
 def _value_text(model, field, value, currency) -> str:
-    """`value` as the screen shows it: names, not ids."""
     env = model.env
     if value is False or value is None or value == "":
         return "—"
@@ -485,7 +417,6 @@ def _value_text(model, field, value, currency) -> str:
 
 
 def _relation_names(comodel, commands) -> str:
-    """The records a many2many's link commands leave, by name."""
     ids = []
     for command in commands:
         if isinstance(command, (list, tuple)) and command:
@@ -497,8 +428,6 @@ def _relation_names(comodel, commands) -> str:
 
 
 def _relation_lines(comodel, field, commands, currency) -> list:
-    """An x2many's commands: new lines one per row, with a total where the
-    rows carry a quantity and a unit price."""
     env = comodel.env
     lines = [f"• {_label(comodel, field)}:"]
     total = 0.0
@@ -556,7 +485,6 @@ def _quantity_field(comodel):
 
 
 def _is_priced(comodel) -> bool:
-    """Whether a line model has a product, a quantity and a unit price."""
     return bool(
         "product_id" in comodel._fields
         and "price_unit" in comodel._fields
@@ -565,9 +493,6 @@ def _is_priced(comodel) -> bool:
 
 
 def _resulting_lines(comodel, field, existing, commands, currency) -> list:
-    """The lines of a document as they will stand once `commands` apply to
-    the `existing` ones: every row, marked when it changes, and the total
-    that results, so the person checks the document and not the edit."""
     env = comodel.env
     quantity_name = _quantity_field(comodel)
     rows = {
@@ -633,7 +558,6 @@ def _resulting_lines(comodel, field, existing, commands, currency) -> list:
 
 
 def _row_values(values) -> dict:
-    """The product, quantity and unit price a line's values set."""
     found = {}
     if "product_id" in values:
         found["product_id"] = values["product_id"]
@@ -648,13 +572,10 @@ def _row_values(values) -> dict:
 
 
 def _subtotal(amount, price, discount) -> float:
-    """A line's amount before taxes, its discount (a percentage) applied."""
     return amount * price * (1 - (discount or 0.0) / 100.0)
 
 
 def _extra_text(comodel, values, currency) -> str:
-    """The fields a priced line sets beyond its product, quantity and price,
-    by label: a discount or a tax changes the document as much."""
     return ", ".join(
         f"{_label(comodel, comodel._fields[name])}: "
         f"{_value_text(comodel, comodel._fields[name], value, currency)}"
@@ -664,8 +585,6 @@ def _extra_text(comodel, values, currency) -> str:
 
 
 def _row_text(comodel, values, currency):
-    """One row of a line: product, quantity × price = subtotal and whatever
-    else it sets when it has them, else its fields by label."""
     product = values.get("product_id")
     amount = next((values[name] for name in QUANTITY_FIELDS if name in values), None)
     price = values.get("price_unit")
@@ -698,15 +617,6 @@ def _plain_text(comodel, values, currency) -> str:
 
 
 def apply(env, operations, files, requester):
-    """Run authorized operations, all or none, and say what they did.
-
-    :param env: a read-write environment in superuser mode, as `requester`
-    :param list operations: operations validated by `check`
-    :param list files: ``[(name, bytes, mimetype)]`` to attach where asked
-    :param requester: the user who asked and authorized
-    :return: the records touched, one per operation
-    :rtype: list
-    """
     if needs_company(env, operations):
         raise OperationError("Pick the company first.")
     created = []
@@ -759,7 +669,6 @@ def _resolve(ids, created) -> list:
 
 
 def _note(records, requester) -> None:
-    """Say on each record's history who asked for the change through the bot."""
     if not hasattr(records, "message_post"):
         return
     body = Markup("<p>%s</p>") % escape(
@@ -771,7 +680,6 @@ def _note(records, requester) -> None:
     )
     for record in records:
         try:
-            # a failed note must not abort the transaction the change is in
             with record.env.cr.savepoint():
                 record.message_post(
                     body=body, message_type="comment", subtype_xmlid="mail.mt_note"

@@ -4,11 +4,9 @@ from . import reports
 
 
 def uninstall_hook(env):
-    # remove plannings which are not scheduled
     env.cr.execute(
         "DELETE FROM planning_slot WHERE start_datetime is null OR end_datetime is null"
     )
-    # restore required
     env.cr.execute("""
         ALTER TABLE planning_slot
             ALTER COLUMN start_datetime SET NOT NULL,

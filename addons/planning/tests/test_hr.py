@@ -102,25 +102,6 @@ class TestPlanningHr(TestCommonPlanning):
         )
 
     def test_relation_employee_role_ids_resource_id_role_ids(self):
-        """
-        This test checks that the fields employee.planning_role_ids, employee.default_planning_role_id and employee.resource_id.role_ids
-        are all consistent and properly update on the change of the fields. Here's the expected behavior :
-        Invariant :
-            resource_id.role_ids = planning_role_ids
-            default_planning_role_id in planning_role_ids
-        on planning_role_ids update :
-            resource_id.role_ids is set accordingly.
-            if planning_role_ids is set to False, set default_role_id to False
-            if default_role_id is not in planning_role_ids anymore, set default_role_id to planning_role_ids[0]
-        on resource_id.role_ids update :
-            planning_role_ids is set accordingly.
-            if planning_role_ids is set to False, set default_role_id to False
-            if default_role_id is not in planning_role_ids anymore, set default_role_id to planning_role_ids[0]
-        on default_planning_role_id update:
-            if default_planning_role_id not in planning_role_ids, add default_planning_role_id to planning_role_ids and resource_id.role_ids
-            default_planning_role_id is not removed from planning_role_ids
-            if planning_role_ids is set to False in the same write as the change of default_planning_role_id, both the fields are set to False
-        """
         self.assertFalse(
             self.employee_joseph.default_planning_role_id,
             "Joseph should have no default planning role",
@@ -142,7 +123,6 @@ class TestPlanningHr(TestCommonPlanning):
         roles |= role_a
         roles |= role_b
         roles |= role_c
-        # change on employee.planning_role_ids
         self.employee_joseph.planning_role_ids = roles
         self.assertEqual(
             self.employee_joseph.default_planning_role_id,
@@ -174,7 +154,6 @@ class TestPlanningHr(TestCommonPlanning):
             "Joseph should have no resource_id.role_ids",
         )
 
-        # change on employee.resource_id.role_ids
         self.employee_joseph.resource_id.role_ids = roles
         self.assertEqual(
             self.employee_joseph.resource_id.role_ids,
@@ -206,7 +185,6 @@ class TestPlanningHr(TestCommonPlanning):
             "Joseph should have no resource_id.role_ids",
         )
 
-        # change mixin
         role_d, role_e = self.env["resource.role"].create(
             [
                 {"name": "role d"},
@@ -246,7 +224,6 @@ class TestPlanningHr(TestCommonPlanning):
             }
         ).copy()
         action = self.employee_bert.action_view_planning()
-        # just returns action
         slots = self.env["planning.slot"].search(action["domain"])
         self.assertEqual(action["res_model"], "planning.slot")
         self.assertEqual(len(slots), 2, "Bert has 2 planning slots")
@@ -309,32 +286,27 @@ class TestPlanningHr(TestCommonPlanning):
                     "resource_id": joseph_resource_id.id,
                     "start_datetime": datetime(2015, 11, 8, 8, 0),
                     "end_datetime": datetime(2015, 11, 14, 17, 0),
-                    # allocated_hours will be : 8h (see calendar)
                 },
                 {
                     "resource_id": joseph_resource_id.id,
                     "start_datetime": datetime(2015, 11, 16, 8, 0),
                     "end_datetime": datetime(2015, 11, 16, 17, 0),
-                    # allocated_hours will be : 0h (see calendar)
                 },
                 {
                     "resource_id": joseph_resource_id.id,
                     "start_datetime": datetime(2015, 11, 17, 8, 0),
                     "end_datetime": datetime(2015, 11, 17, 17, 0),
-                    # allocated_hours will be : 0h (see calendar)
                 },
                 {
                     "resource_id": joseph_resource_id.id,
                     "start_datetime": datetime(2015, 11, 18, 8, 0),
                     "end_datetime": datetime(2015, 11, 18, 17, 0),
-                    # allocated_hours will be : 0h (see calendar)
                 },
                 {
                     "resource_id": joseph_resource_id.id,
                     "start_datetime": datetime(2015, 11, 23, 8, 0),
                     "end_datetime": datetime(2015, 11, 27, 17, 0),
                     "allocated_percentage": 50.0,
-                    # allocated_hours will be : 4h (see calendar)
                 },
             ]
         )
@@ -391,17 +363,11 @@ class TestPlanningHr(TestCommonPlanning):
         )
 
     def test_gantt_progress_bar_on_role_and_department(self):
-        """Grouping the gantt by role or department must show a progress bar.
-
-        Only resource rows carried one, so a manager grouping by role or by
-        department saw the rows but no planned-versus-capacity ratio on them.
-        """
         role = self.env["resource.role"].create({"name": "Bartender"})
         department = self.env["hr.department"].create({"name": "Bar"})
         self.employee_joseph.write(
             {"planning_role_ids": role, "department_id": department.id}
         )
-        # Thursday, the only working day of joseph's calendar: 4h + 4h.
         self.env["planning.slot"].create(
             {
                 "resource_id": self.employee_joseph.resource_id.id,

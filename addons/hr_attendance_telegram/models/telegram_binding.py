@@ -8,10 +8,6 @@ class TelegramBinding(models.Model):
 
     @api.model
     def _is_present(self, partner) -> bool:
-        # an employee with no Odoo user still records attendance through the
-        # bot: they are there while an employee of theirs is active
-        # an employee keeps being found through their user once it is
-        # archived: only the employee's own active flag decides
         return super()._is_present(partner) or bool(
             counting_presence(self.env["hr.employee"])
             .with_context(active_test=False)

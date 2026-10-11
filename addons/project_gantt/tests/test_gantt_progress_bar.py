@@ -251,9 +251,8 @@ class TestGanttProgressBar(TransactionCase):
         users = self.project_user | self.project_test_user
 
         with self.assertQueryCount(__system__=9):
-            # Query count should be stable even if the number of tasks or users increase (progress bar query count is O(1))
             progress_bar = self.env["project.task"]._gantt_progress_bar(
                 "user_ids", users.ids, start, end
             )
 
-        self.assertEqual(len(progress_bar), 3)  # 2 users + 1 warning
+        self.assertEqual(len(progress_bar), 3)

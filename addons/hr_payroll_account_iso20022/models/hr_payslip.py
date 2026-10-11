@@ -40,9 +40,6 @@ class HrPayslip(models.Model):
             employee=self.employee_id,
             bank_accounts=len(self.employee_id.salary_bank_account_ids),
             allocated=len(allocations),
-            # the reference is generated ONCE and stored, so a regenerated
-            # file reuses it -- which is the ISO20022 contract and also means
-            # a corrected file is indistinguishable from a duplicate
             uetr_reused=bool(self.iso20022_uetr) and bool(iso20022_uetr),
             pain_version=journal_id.sepa_pain_version,
         )
@@ -68,9 +65,6 @@ class HrPayslip(models.Model):
                 "partner_id": self.employee_id.partner_id.id,
                 "bank_account_id": ba.id,
                 "iso20022_charge_bearer": journal_id.iso20022_charge_bearer,
-                # The "High" priority level is a payment attribute that we should specify for salary payments :
-                # https://www.febelfin.be/sites/default/files/2019-04/standard-credit_transfer-xml-v32-en_0.pdf
-                # section 2.6
                 "iso20022_priority": "HIGH"
                 if journal_id.company_id.tax_config_id.account_fiscal_country_id.code
                 == "BE"
@@ -84,8 +78,6 @@ class HrPayslip(models.Model):
             payslip=self,
             payments=len(payments),
             payment_date=payment_date,
-            # HIGH only for a Belgian company, per Febelfin; every other
-            # country's salary payments go out at NORM
             priority="HIGH"
             if journal_id.company_id.tax_config_id.account_fiscal_country_id.code
             == "BE"

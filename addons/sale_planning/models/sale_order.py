@@ -118,7 +118,6 @@ class SaleOrder(models.Model):
                 )
             )
 
-    # Action methods
 
     def _action_cancel(self):
         result = super()._action_cancel()
@@ -126,7 +125,6 @@ class SaleOrder(models.Model):
         return result
 
     def _action_confirm(self):
-        """On SO confirmation, some lines should generate a planning slot."""
         result = super()._action_confirm()
         _debug.pipeline("planning_generation_on_confirm", orders=self)
         self.line_ids.sudo()._planning_slot_generation()

@@ -14,10 +14,6 @@ from .structs import (
 
 
 def parse_registration_credential_json(json_val: Union[str, dict]) -> RegistrationCredential:
-    """
-    Parse a JSON form of a registration credential, as either a stringified JSON object or a
-    plain dict, into an instance of RegistrationCredential
-    """
     if isinstance(json_val, str):
         try:
             json_val = json_loads(json_val)
@@ -49,8 +45,6 @@ def parse_registration_credential_json(json_val: Union[str, dict]) -> Registrati
 
     cred_type = json_val.get("type")
     try:
-        # Simply try to get the single matching Enum. We'll set the literal value below assuming
-        # the code can get past here (this is basically a mypy optimization)
         PublicKeyCredentialType(cred_type)
     except ValueError as cred_type_exc:
         raise InvalidJSONStructure("Credential had unexpected type") from cred_type_exc

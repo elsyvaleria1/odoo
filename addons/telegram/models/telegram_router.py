@@ -27,10 +27,7 @@ COMPANY_CALLBACK_PREFIX = "tg_co:"
 INTAKE_CALLBACK_PREFIX = "tg_in:"
 _PENDING_INTAKE_KEY = "telegram_pending_intake"
 _PENDING_COMMAND_KEY = "telegram_pending_command"
-# the company a chosen command ran in, for the buttons its handler sent
 _COMMAND_COMPANY_KEY = "telegram_command_company"
-# what a menu ends with, whatever else a person may run: the way out of what
-# they started, then the help
 _MENU_LAST = ("/cancelar", "/ayuda")
 HANDLER_PREFIX = "telegram.handler."
 
@@ -65,7 +62,6 @@ class TelegramRouter(models.AbstractModel):
     _name = "telegram.router"
     _description = "Telegram Update Router"
 
-    # -- handlers -------------------------------------------------------------
 
     @api.model
     def _handler_names(self):
@@ -85,8 +81,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _check_handler_declarations(self) -> tuple:
-        """Refuse two handlers claiming one command or one callback prefix:
-        which one answered would otherwise depend on nothing anybody chose."""
         commands, prefixes = {}, {}
         for handler in self._handlers():
             for command in handler._telegram_commands():
@@ -123,12 +117,9 @@ class TelegramRouter(models.AbstractModel):
         handlers = [h for h in self._handlers() if kind in h._telegram_intakes()]
         return [(h._name, h._description) for h in handlers]
 
-    # -- update ---------------------------------------------------------------
 
     @api.model
     def _handle_update(self, bot, data) -> None:
-        # the webhook hands over a superuser bot: an update runs as the
-        # request's own user, keeping the bot's records by the privilege
         bot = operating(bot.with_env(bot.env(su=False)))
         self = self.with_env(bot.env)
         update_id = data.get("update_id")
@@ -181,8 +172,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _refuse_foreign_sender(self, bot, chat, data) -> None:
-        # an edit or a reaction is dropped unanswered: only what asked for
-        # something is told why nothing happens
         _logger.info(
             "Chat %s: the linked user is no member of bot %s's company, refused",
             chat.id,
@@ -203,13 +192,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _as_sender(self, internal_user, bot, chat, *records):
-        """The router, `bot`, `chat` and `records` as the update's sender: a
-        linked internal user in a private chat acts as themself -- a command,
-        a button, a message alike -- in the companies the bot serves that they
-        belong to, and anyone else as the request's own user. While a flow is
-        open, everything runs in the company it was started in. The bot keeps
-        its records by the privilege either way. A linked internal user of no
-        company the bot serves raises ForeignSender."""
         company = self._flow_company(bot, chat)
         records = (self, bot, chat, *records)
         if not internal_user:
@@ -225,16 +207,12 @@ class TelegramRouter(models.AbstractModel):
                 allowed_company_ids=company.ids, telegram_company_id=company.id
             )
         sender_env = self.env(user=internal_user, context=context)
-        # the sender is who really acts from here on: the guards that ask the
-        # transaction for its real user (x2many links to users and partners)
-        # must see them, not the request's public user
         self.env.transaction.default_env = sender_env
         env = operating(self.with_env(sender_env)).env
         return tuple(record.with_env(env) for record in records)
 
     @staticmethod
     def _flow_company(bot, chat):
-        """The company the chat's open flow runs in, if the bot serves it."""
         companies = bot.env["res.company"]
         if not chat or not chat.flow_owner or not chat._flow_is_open():
             return companies
@@ -243,10 +221,6 @@ class TelegramRouter(models.AbstractModel):
 
     @staticmethod
     def _pin_company(company, *records):
-        """`records` acting in `company` alone: the company of what a command
-        starts and of its flow. A sender who is no member of it -- the public
-        or a portal user of a partner-tier command -- keeps their own
-        companies; in_bot_company reads the pin."""
         pinned = []
         for record in records:
             if not isinstance(record, models.BaseModel):
@@ -260,10 +234,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _acquire_chat_and_identity(self, bot, message_or_callback):
-        """The chat, and who the update may act as: resolved from the sender's
-        Telegram account and its active binding, and only in a private chat --
-        a group has many speakers and whatever runs there answers to all of
-        them, so it is served as unlinked."""
         is_callback = "data" in message_or_callback
         if is_callback:
             chat_data = message_or_callback.get("message", {}).get("chat", {})
@@ -305,8 +275,6 @@ class TelegramRouter(models.AbstractModel):
 
     @staticmethod
     def _addressed_elsewhere(bot, text) -> bool:
-        """Whether a command names another bot (`/start@other_bot`), as a
-        group's members write to pick one of its bots."""
         if not text.startswith("/"):
             return False
         _command, _at, username = text.split(maxsplit=1)[0].partition("@")
@@ -375,13 +343,9 @@ class TelegramRouter(models.AbstractModel):
             ),
         )
 
-    # -- messages -------------------------------------------------------------
 
     @api.model
     def _dispatch_moved(self, bot, data) -> None:
-        """Point whoever writes or presses a button in a private chat of a bot
-        its people moved away from to the bot they moved to; nothing else of
-        theirs runs here any more."""
         query = data.get("callback_query")
         message = data.get("message") or (query or {}).get("message") or {}
         if (message.get("chat") or {}).get("type") != "private":
@@ -430,8 +394,6 @@ class TelegramRouter(models.AbstractModel):
     def _dispatch_free_message(
         self, bot, chat, message, partner, internal_user
     ) -> None:
-        # a flow belongs to the handler that opened it, enabled on this bot or
-        # not: a Mini App can open one on any bot
         owner = self._flow_owner(chat)
         if owner is not None and self._run_message_handler(
             owner, bot, chat, message, partner, internal_user
@@ -457,9 +419,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _idle_handlers(self, bot, chat, message, partner, internal_user) -> list:
-        """The handlers an idle message may go to: the one the bot names for
-        its kind, when it takes it; else every one that takes it from this
-        person -- who is asked when they are several -- in priority order."""
         kind = message_kind(message)
         accepting = [
             h
@@ -475,14 +434,11 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _idle_handler(self, bot, chat, message, partner, internal_user):
-        """The first handler an idle message may go to, or None."""
         idle = self._idle_handlers(bot, chat, message, partner, internal_user)
         return idle[0] if idle else None
 
     @api.model
     def _intake_permitted(self, handler, bot, chat, kind, partner, internal_user):
-        """Whether this person may start here what an idle message of `kind`
-        starts: the command it stands for, if any, as if they had sent it."""
         command = handler._telegram_intake_command(bot, chat, kind)
         spec = handler._telegram_commands().get(command) if command else None
         if spec is None:
@@ -493,9 +449,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _run_intake(self, handler, bot, chat, message, partner, internal_user):
-        """Give an idle message to `handler`, in the company of the command it
-        stands for -- asking which when that command chooses and the person
-        has several."""
         kind = message_kind(message)
         command = handler._telegram_intake_command(bot, chat, kind)
         spec = handler._telegram_commands().get(command) if command else None
@@ -528,7 +481,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _ask_intake(self, bot, chat, message, handlers) -> None:
-        """Ask what to do with a message several features take."""
         kind = message_kind(message)
         chat._set_context(
             _PENDING_INTAKE_KEY,
@@ -561,7 +513,6 @@ class TelegramRouter(models.AbstractModel):
         name = (callback_query.get("data") or "")[len(INTAKE_CALLBACK_PREFIX) :]
         message = pending.get("message") or {}
         handler = self.env[name] if name in (pending.get("handlers") or ()) else None
-        # what the person may do may have changed since the question
         if handler is None or handler not in self._idle_handlers(
             bot, chat, message, partner, internal_user
         ):
@@ -607,8 +558,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_edited_message(self, bot, message) -> None:
-        """A message its sender edited: the ledger row follows, and the handler
-        that acted on it may update what it made of it."""
         if message.get("from", {}).get("is_bot"):
             return
         chat, partner, internal_user = self._acquire_chat_and_identity(bot, message)
@@ -638,8 +587,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_my_chat_member(self, bot, update) -> None:
-        """The bot's own membership changed: blocked or unblocked in a private
-        chat, added to or removed from a group."""
         chat_data = update.get("chat") or {}
         status = (update.get("new_chat_member") or {}).get("status")
         chat = bot.env["telegram.chat"]._acquire_chat(
@@ -652,13 +599,9 @@ class TelegramRouter(models.AbstractModel):
         for handler in self._handlers():
             handler._on_bot_membership(bot, chat, status)
 
-    # -- groups ---------------------------------------------------------------
 
     @api.model
     def _dispatch_service_message(self, bot, message) -> bool:
-        """What Telegram says about a group rather than in it: a migration to
-        a supergroup, a forum topic's life, members coming and going. True
-        when the message is one of those."""
         chat_data = message.get("chat") or {}
         chats = bot.env["telegram.chat"]
         if message.get("migrate_to_chat_id"):
@@ -688,10 +631,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_group_link(self, bot, chat, message, token) -> None:
-        """`/start <token>` in a group: what `?startgroup=<token>` makes
-        Telegram send when someone adds the bot. The token names what Odoo
-        links the group to; the person adding the bot must be the Odoo user
-        who made the link, and an administrator of the group."""
         tr_env = translation_env(bot, chat)
         account = bot.env["telegram.account"]._from_telegram(message.get("from"))
         link = bot.env["telegram.link.token"]._consume(
@@ -724,11 +663,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_channel_post(self, bot, post) -> None:
-        """A post in a Telegram channel the bot administers. The bot publishes
-        there and reads nothing but `/start <token>`, which connects the
-        channel to what the token names: channel posts have no sender, so the
-        token's own user must be an administrator of the channel, from the
-        Telegram account connected to them."""
         text = post.get("text") or ""
         if self._addressed_elsewhere(bot, text):
             return
@@ -745,14 +679,12 @@ class TelegramRouter(models.AbstractModel):
         )
         if not link:
             return
-        # the post showed a token to every subscriber: it goes either way
         bot.env["telegram.message"]._queue(
             bot, chat, "deleteMessage", {"message_id": post.get("message_id")}
         )
         own_chat = bot.env["telegram.chat"]._for_user(link.user_id, bot)[:1]
         account = own_chat.account_id
         if not account or not bot._is_chat_administrator(chat, account.tg_user_id):
-            # a channel's subscribers would read an answer there
             if own_chat:
                 bot.send_message(
                     own_chat.chat_id,
@@ -771,8 +703,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_message_reaction(self, bot, update) -> None:
-        """Someone changed their reactions to a message the ledger holds:
-        what they added and what they took back, as emoji."""
         chat_data = update.get("chat") or {}
         chat = bot.env["telegram.chat"].search(
             [
@@ -816,7 +746,6 @@ class TelegramRouter(models.AbstractModel):
         for handler in self._handlers():
             handler._on_chat_migrated(bot, group, supergroup)
 
-    # -- business accounts ----------------------------------------------------
 
     @api.model
     def _dispatch_business_connection(self, bot, data) -> None:
@@ -851,8 +780,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _dispatch_business_message(self, bot, message, edited=False) -> None:
-        """A message in a chat of a business account the bot manages: from
-        the customer, or from the owner writing on their phone."""
         connection = self._business_connection_of(
             bot, message.get("business_connection_id")
         )
@@ -907,13 +834,9 @@ class TelegramRouter(models.AbstractModel):
             if handler._on_business_deleted(bot, connection, chat, ledgers):
                 return
 
-    # -- commands -------------------------------------------------------------
 
     @api.model
     def _is_command_enabled(self, bot, handler, command, spec) -> bool:
-        """Whether `bot` answers `command`: linked to it, or builtin to a
-        handler the bot runs -- a builtin of a feature the bot does not run
-        is as unknown there as any other command."""
         if command in bot.command_ids.mapped("name"):
             return True
         return bool(spec.builtin and handler._feature_enabled(bot))
@@ -928,8 +851,6 @@ class TelegramRouter(models.AbstractModel):
 
     @staticmethod
     def _grants_allow(spec, internal_user) -> bool:
-        """Whether `internal_user` holds the access `spec` declares, as
-        themself."""
         if spec.access:
             model, operation = spec.access
             return (
@@ -941,8 +862,6 @@ class TelegramRouter(models.AbstractModel):
     def _command_permitted(
         self, bot, chat, handler, command, spec, partner, internal_user
     ) -> bool:
-        """Whether this person may run `command` here: its tier, its grants
-        and its handler's own word."""
         if not self._tier_allows(spec.tier, partner, internal_user):
             return False
         if spec.tier == "internal" and not self._grants_allow(spec, internal_user):
@@ -959,8 +878,6 @@ class TelegramRouter(models.AbstractModel):
     def _companies_for_command(
         self, bot, chat, handler, command, partner, internal_user
     ):
-        """The companies `command` may act in for this person: those its
-        handler offers them, among those the command is available in."""
         companies = handler._command_companies(
             bot, chat, command, partner, internal_user
         )
@@ -973,9 +890,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _available_commands(self, bot, chat, partner, internal_user) -> list:
-        """`[(command, spec)]` this person may run on `bot`, in the order the
-        menu shows them: alphabetical, then /cancelar and /ayuda. None on a bot
-        its people moved away from."""
         available = []
         if bot.moved_to_id:
             return available
@@ -1026,7 +940,6 @@ class TelegramRouter(models.AbstractModel):
             bot, chat, handler, command, spec, partner, internal_user
         ):
             handler._explain_command_refusal(bot, chat, command, partner, internal_user)
-            # the menu still offered it: it was sent before the person lost it
             chat._sync_command_menu()
             return
         if spec.starts_flow:
@@ -1060,8 +973,6 @@ class TelegramRouter(models.AbstractModel):
                     handler, spec.method, bot, chat, args, partner, internal_user
                 )
         except PG_RETRY_EXCEPTIONS:
-            # Not the user's fault and not worth a failure counter: the request
-            # retry loop replays the whole update on a fresh transaction.
             _logger.info(
                 "Command handler '%s' hit a concurrency conflict, letting it retry",
                 command,
@@ -1072,8 +983,6 @@ class TelegramRouter(models.AbstractModel):
             self._recover_from_handler_failure(bot, chat, command, e)
             return
         chat._reset_failed_state()
-        # what a person may run changes in Odoo, not here: whichever command
-        # they send next brings the menu Telegram shows them up to date
         chat._sync_command_menu()
 
     @api.model
@@ -1113,7 +1022,6 @@ class TelegramRouter(models.AbstractModel):
                 ),
             )
 
-    # -- buttons --------------------------------------------------------------
 
     @api.model
     def _dispatch_callback_query(self, bot, callback_query) -> None:
@@ -1166,8 +1074,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _callback_owner(self, bot, data):
-        # a button belongs to the handler that sent it, whatever the bot runs
-        # now: messages already sent keep working
         best, length = None, -1
         for handler in self._handlers():
             for prefix in handler._telegram_callback_prefixes():
@@ -1175,11 +1081,9 @@ class TelegramRouter(models.AbstractModel):
                     best, length = handler, len(prefix)
         return best
 
-    # -- flows ----------------------------------------------------------------
 
     @api.model
     def _flow_owner(self, chat):
-        """The handler whose flow the chat is in, else None."""
         if not chat._flow_is_open():
             return None
         handler = self.env[chat.flow_owner]
@@ -1189,8 +1093,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _cancel_flow(self, bot, chat):
-        """End the chat's flow, whoever owns it, after its owner cleaned up;
-        the owner it had, else None."""
         owner = self._flow_owner(chat)
         if owner is not None:
             owner._on_flow_cancelled(bot, chat)
@@ -1285,13 +1187,9 @@ class TelegramRouter(models.AbstractModel):
             chat.flow_step,
         )
 
-    # -- the company of what a command starts ---------------------------------
 
     @api.model
     def _command_company(self, bot, chat, handler, internal_user):
-        """The company a button of `handler` acts in outside any flow: the one
-        its chosen command last ran in, while the person may still act there.
-        A button of another feature acts in its own record's company."""
         if self.env.context.get("telegram_company_id"):
             return self.env["res.company"]
         remembered = chat._get_context(_COMMAND_COMPANY_KEY) or {}
@@ -1306,9 +1204,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _ask_company(self, bot, chat, command, args, companies, pending=None) -> None:
-        """Ask which company `command` is for; the button runs it there -- or,
-        for an idle message standing for it, gives the `pending` message to
-        its handler there."""
         chat._set_context(
             _PENDING_COMMAND_KEY,
             {"command": command, "args": args, **(pending or {})},
@@ -1342,7 +1237,6 @@ class TelegramRouter(models.AbstractModel):
             else self.env["res.company"]
         )
         if not company:
-            # pressed on an older question, or the person lost that company
             bot.send_message(
                 chat.chat_id,
                 translation_env(bot, chat)._(
@@ -1410,8 +1304,6 @@ class TelegramRouter(models.AbstractModel):
 
     @api.model
     def _flow_guard_blocks(self, bot, chat, data=None) -> bool:
-        """Whether an open flow refuses a button press: the flow's owner may
-        use its own buttons, nothing else runs until it ends."""
         owner = self._flow_owner(chat)
         if owner is None:
             return False
@@ -1421,7 +1313,6 @@ class TelegramRouter(models.AbstractModel):
         self._send_flow_busy_notice(bot, chat, owner)
         return True
 
-    # -- help -----------------------------------------------------------------
 
     @api.model
     def _help_sections(self, bot, partner, internal_user, chat=None):

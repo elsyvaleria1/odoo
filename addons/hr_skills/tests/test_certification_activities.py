@@ -257,9 +257,6 @@ class TestCertificationActivities(TransactionCase):
         self.assertEqual(set(activities.mapped("res_id")), set(self.t_employee_1.ids))
 
     def test_a_dropped_requirement_stops_chasing_the_employee(self):
-        # The cron read job_skill_ids, which keeps every requirement the job has
-        # ever had, so an employee was asked daily to upload a certification the
-        # job stopped asking for.
         dropped = self.env["hr.skill"].create(
             {"name": "Dropped requirement", "skill_type_id": self.t_cert_type.id},
         )
@@ -284,12 +281,6 @@ class TestCertificationActivities(TransactionCase):
         )
 
     def test_scheduling_is_batched_per_group_not_per_activity(self):
-        """One activity_schedule call per (summary, deadline, responsible).
-
-        activity_schedule already creates one activity per record of the
-        recordset it is given, so calling it per employee paid the whole
-        scheduling path once per activity.
-        """
         manager = self.env["res.users"].create(
             {"name": "Batch manager", "login": "batch_manager"},
         )
@@ -323,7 +314,6 @@ class TestCertificationActivities(TransactionCase):
         self.env.flush_all()
         cost = self.env.cr.sql_statement_count - before
 
-        # scoped to this test's own employees: the class fixtures qualify too
         mine = activities.filtered(lambda a: a.res_id in batch.ids)
         self.assertEqual(len(mine), 40)
         self.assertLess(

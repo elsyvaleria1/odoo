@@ -51,20 +51,6 @@ class PaymentTransaction(models.Model):
         references_in_use: set[str] | None = None,
         **kwargs,
     ) -> str:
-        """Override of `payment` to ensure that APS' requirements for references are satisfied.
-
-        APS' requirements for transaction are as follows:
-        - References can only be made of alphanumeric characters and/or '-' and '_'.
-          The prefix is generated with 'tx' as default. This prevents the prefix from being
-          generated based on document names that may contain non-allowed characters
-          (eg: INV/2020/...).
-
-        :param str provider_code: The code of the provider handling the transaction.
-        :param str prefix: The custom prefix used to compute the full reference.
-        :param str separator: The custom separator used to separate the prefix from the suffix.
-        :return: The unique reference for the transaction.
-        :rtype: str
-        """
         if provider_code == "aps":
             prefix = payment_utils.singularize_reference_prefix()
 
@@ -77,14 +63,6 @@ class PaymentTransaction(models.Model):
         )
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return APS-specific processing values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic processing values of the transaction.
-        :return: The dict of provider-specific processing values.
-        :rtype: dict
-        """
         if self.provider_code != "aps":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -104,7 +82,7 @@ class PaymentTransaction(models.Model):
             "customer_email": self.partner_id.email_normalized,
             "return_url": urls.urljoin(base_url, APSController._return_url),
         }
-        if payment_option:  # Not included if the payment method is 'card'.
+        if payment_option:
             rendering_values["payment_option"] = payment_option
         rendering_values.update(
             {
@@ -118,13 +96,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the APS data."""
         if provider_code != "aps":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("merchant_reference")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to extract the amount and currency from the payment data."""
         if self.provider_code != "aps":
             return super()._extract_amount_data(payment_data)
 
@@ -137,21 +113,17 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment' to update the transaction based on the payment data."""
         if self.provider_code != "aps":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         self.provider_reference = payment_data.get("fort_id")
 
-        # Update the payment method.
         payment_option = payment_data.get("payment_option", "")
         payment_method = self.env["payment.method"]._get_from_code(
             payment_option.lower()
         )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         status = payment_data.get("status")
         if not status:
             self._set_error(self.env._("Received data with missing payment state."))
@@ -159,7 +131,7 @@ class PaymentTransaction(models.Model):
             self._set_pending()
         elif status in PAYMENT_STATUS_MAPPING["done"]:
             self._set_done()
-        else:  # Classify unsupported payment state as `error` tx state.
+        else:
             status_description = payment_data.get("response_message")
             _logger.info(
                 "Received data with invalid payment status (%(status)s) and reason '%(reason)s' "

@@ -132,9 +132,6 @@ class TestSkillDefaults(SkillsCase):
     """The defaults read row zero, so the order must be deterministic."""
 
     def test_the_level_default_survives_two_levels_marked_default(self):
-        # Only write() and create() keep one default per type; a row written
-        # around them (an import, an older database) can leave two, and a
-        # Many2one cannot take a recordset of two.
         self.env.cr.execute(
             "UPDATE hr_skill_level SET default_level = TRUE WHERE skill_type_id = %s",
             (self.skill_type.id,),

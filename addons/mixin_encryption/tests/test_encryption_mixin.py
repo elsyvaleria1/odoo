@@ -152,8 +152,6 @@ class TestEncryptionMixin(TransactionCase):
             },
         ):
             self.mixin._invalidate_key_version_cache()
-            # A malformed *current* key says nothing about old keys, so the
-            # fallback loop must still run and succeed.
             self.assertEqual(self.mixin._decrypt_value(token), "rotated-secret")
         self.mixin._invalidate_key_version_cache()
 
@@ -238,9 +236,6 @@ class TestEncryptionMixin(TransactionCase):
             )
 
     def test_reencrypt_with_current_key_stamps_the_version_itself(self):
-        """A consumer that calls only `_reencrypt_with_current_key` (and never
-        remembers the separate stamp call) must not end up with a stale
-        `encryption_key_version` -- the method has to be self-contained."""
 
         class FakeRecord:
             _ENCRYPTED_FIELD_PAIRS = (("content", "content_encrypted", False),)

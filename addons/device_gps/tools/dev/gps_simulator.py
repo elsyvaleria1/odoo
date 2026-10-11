@@ -136,7 +136,7 @@ class GPSSimulator:
             headers["Authorization"] = f"Bearer {self.token}"
 
         try:
-            response = requests.post(  # noqa: E8518  a standalone script run outside the server, with no ir.egress to reach
+            response = requests.post(
                 url,
                 json=self._prepare_webhook_payload(data),
                 headers=headers,

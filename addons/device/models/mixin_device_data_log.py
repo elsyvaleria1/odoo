@@ -14,12 +14,6 @@ class MixinRemoteDataLog(models.AbstractModel):
     _description = "Remote Data Point Mixin"
     _order = "timestamp desc, id desc"
 
-    # A concrete log table may be a postgres_fdw foreign table (the GPS log
-    # lives in its own database). The ORM cannot manage that schema and
-    # Postgres cannot enforce its foreign keys, so _auto_init hands over to
-    # tools.fdw: these two attributes tell it which Many2one columns a trigger
-    # must verify and which (table, column) pairs point back at this log's id
-    # and need the SET NULL behaviour the dropped FK used to give.
     _fdw_checked_references = ("device_id",)
     _fdw_pointer_columns = ()
 
@@ -83,12 +77,6 @@ class MixinRemoteDataLog(models.AbstractModel):
         return None
 
     def _null_pointers_to(self, ids) -> None:
-        """Clear the columns that point at the given log ids.
-
-        Runs before the rows are deleted so that, on a foreign table, the
-        local write lands first and a failure in between leaves a NULL pointer
-        rather than a dangling one (the two databases share no transaction).
-        """
         if not ids:
             return
         for ptr_table, ptr_column in self._fdw_pointer_columns:
@@ -114,10 +102,6 @@ class MixinRemoteDataLog(models.AbstractModel):
 
     _GC_BATCH_SIZE = 5000
 
-    # What the global retention falls back to when nothing is configured. It
-    # used to come from device.data_retention_days_default, a seeded parameter
-    # 19.0.1.10.0 deleted together with its record, so the second half of that
-    # `or` could only ever return this literal.
     _DEFAULT_RETENTION_DAYS = 90
 
     def _gc_old_logs(self, cutoff_date, domain=None):
@@ -166,9 +150,6 @@ class MixinRemoteDataLog(models.AbstractModel):
 
         cutoff = fields.Datetime.now() - timedelta(days=days)
         cleared = 0
-        # Two statements rather than one CTE join: on a foreign table a join
-        # between two scans of the same table is executed locally row by row,
-        # while a bounded UPDATE ships whole to the remote server.
         while True:
             self.env.cr.execute(
                 SQL(

@@ -48,15 +48,6 @@ class TestPhonenumbersPatch(BaseCase):
     def _assert_parsing_phonenumbers(
         self, parse_test_lines: Iterable[PhoneInputOutputLine]
     ):
-        """Iterates over test_lines, performs asserts according to what data each test_line contains.
-            Simple cases:
-            1. test_line contains only the international number -> check if phonenumbers can parse it
-            2. test_line contains national number and country code -> check if phonenumbers can parse it
-            Presence of expected data:
-            In case test line contains some ground-truth this function will compare parsed data against the ground truths.
-
-        :param parse_test_lines: An iterable consisting of PhoneInputOutputLine
-        """
         if not phonenumbers:
             self.skipTest("Cannot test parsing without phonenumbers module installed.")
 
@@ -95,19 +86,15 @@ class TestPhonenumbersPatch(BaseCase):
                     )
 
     def test_region_BR_monkey_patch(self):
-        """Test Brazil phone numbers patch for added 9 in mobile numbers
-        It should not be added for fixed lines numbers"""
         if not phonenumbers:
             self.skipTest("Cannot test without phonenumbers module installed.")
 
-        # Mobile number => 9 should be added
         parsed = phonenumbers.parse("11 6123 4567", region="BR")
         formatted = phonenumbers.format_number(
             parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL
         )
         self.assertEqual(formatted, "+55 11 96123-4567")
 
-        # Fixed line => 9 should not be added
         parsed = phonenumbers.parse("11 2345 6789", region="BR")
         formatted = phonenumbers.format_number(
             parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL
@@ -115,7 +102,6 @@ class TestPhonenumbersPatch(BaseCase):
         self.assertEqual(formatted, "+55 11 2345-6789")
 
     def test_region_CI_monkey_patch(self):
-        """Makes sure that patch for Ivory Coast phone numbers work"""
         parse_test_lines_CI = (
             self.PhoneInputOutputLine("+2250506007995"),
             self.PhoneInputOutputLine(
@@ -135,7 +121,6 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_CI)
 
     def test_region_CO_monkey_patch(self):
-        """Makes sure that patch for Colombian phone numbers work"""
         parse_test_lines_CO = (
             self.PhoneInputOutputLine("3241234567", "CO"),
             self.PhoneInputOutputLine("+57 324 1234567"),
@@ -143,9 +128,6 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_CO)
 
     def test_region_IL_monkey_patch(self):
-        """Makes sure that patch for Israeli phone numbers work
-        Example of wrong phone number: +972 55 731 1234
-        """
         parse_test_lines_IL = (
             self.PhoneInputOutputLine("055 294 1234", "IL"),
             self.PhoneInputOutputLine("+972 55 295 1235"),
@@ -153,7 +135,6 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_IL)
 
     def test_region_MA_monkey_patch(self):
-        """Makes sure that patch for Morocco phone numbers work"""
         parse_test_lines_MA = (
             self.PhoneInputOutputLine("+212 6 23 24 56 28"),
             self.PhoneInputOutputLine("+212603190852"),
@@ -164,9 +145,8 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_MA)
 
     def test_region_MU_monkey_patch(self):
-        """Makes sure that patch for Mauritius phone numbers work"""
-        gt_MU_number = 57654321  # what national number we expect after parsing
-        gt_MU_code = 230  # what country code we expect after parsing
+        gt_MU_number = 57654321
+        gt_MU_code = 230
         parse_test_lines_MU = (
             self.PhoneInputOutputLine(
                 "+23057654321",
@@ -194,18 +174,15 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_MU)
 
     def test_region_MX_monkey_patch(self):
-        """Test Mexican phone numbers patch for removed 1 in mobile numbers"""
         if not phonenumbers:
             self.skipTest("Cannot test without phonenumbers module installed.")
 
-        # Phone numbers starting with 1 should have the 1 removed
         parsed = phonenumbers.parse("15585440749", region="MX")
         formatted = phonenumbers.format_number(
             parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL
         )
         self.assertEqual(formatted, "+52 55 8544 0749")
 
-        # Phone numbers without the 1 should still be parsed
         parsed = phonenumbers.parse("5595440749", region="MX")
         formatted = phonenumbers.format_number(
             parsed, phonenumbers.PhoneNumberFormat.INTERNATIONAL
@@ -213,9 +190,8 @@ class TestPhonenumbersPatch(BaseCase):
         self.assertEqual(formatted, "+52 55 9544 0749")
 
     def test_region_KE_monkey_patch(self):
-        """Makes sure that patch for kenyan phone numbers work"""
-        gt_KE_number = 711123456  # what national number we expect after parsing
-        gt_KE_code = 254  # what country code we expect after parsing
+        gt_KE_number = 711123456
+        gt_KE_code = 254
 
         parse_test_lines_KE = (
             self.PhoneInputOutputLine(
@@ -266,7 +242,6 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_KE)
 
     def test_region_PA_monkey_patch(self):
-        """Makes sure that patch for Panama's phone numbers work"""
         parse_test_lines_PA = (
             self.PhoneInputOutputLine("6198 5462", "PA", gt_country_code=507),
             self.PhoneInputOutputLine("+507 833 8744", gt_national_number=8338744),
@@ -274,7 +249,6 @@ class TestPhonenumbersPatch(BaseCase):
         self._assert_parsing_phonenumbers(parse_test_lines_PA)
 
     def test_region_SN_monkey_patch(self):
-        """Makes sure that patch for Senegalese phone numbers work"""
         parse_test_lines_SN = (
             self.PhoneInputOutputLine("+221750142092"),
             self.PhoneInputOutputLine("+22176 707 0065"),

@@ -8,11 +8,6 @@ class MrpWorkcenterProductivity(models.Model):
     _inherit = "mrp.workcenter.productivity"
 
     def _create_analytic_entry(self, previous_duration=0, old_dist=None) -> None:
-        """
-        Used for updating or creating the employee analytic lines in 2 cases:
-            - Update of the productivity for an employee, in which case old_dist is unused
-            - Update of the project's MO, in which case previous_duration is unused
-        """
         self.check_singleton()
         employee_aal = (
             self.workorder_id.employee_analytic_account_line_ids.sudo().filtered(
@@ -59,8 +54,6 @@ class MrpWorkcenterProductivity(models.Model):
 
     def unlink(self):
         for time in self:
-            # set previous_duration to 2 * time.duration to effectively
-            # create an analytic entry for a length of -time.duration
             time._create_analytic_entry(2 * time.duration)
         return super().unlink()
 
@@ -83,7 +76,6 @@ class MrpWorkcenterProductivity(models.Model):
             productivity: productivity.duration for productivity in self
         }
         res = super().write(vals)
-        # if a value triggers a change of duration we adapt the aals
         if {"date_start", "date_end"} & vals.keys():
             for work_order, productivities in (
                 self.sudo().grouped("workorder_id").items()

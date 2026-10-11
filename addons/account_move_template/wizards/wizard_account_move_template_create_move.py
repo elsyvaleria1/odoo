@@ -66,9 +66,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
 
     @api.onchange("customize_lines", "template_id", "multicompany_id")
     def _onchange_customize_lines(self) -> None:
-        # Lines exist in the wizard only while the user edits them: an
-        # uncustomised run derives them from its header when it creates the
-        # document, so a header changed after loading cannot leave them stale.
         if self.customize_lines and self.template_id:
             self.load_lines()
         else:
@@ -251,9 +248,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
             return self.create_payment()
 
         if self.move_type == "entry" and self.amount:
-            # An entry books the balances the template stores, so
-            # `_prepare_move_line_vals` never reads the distributed
-            # `price_unit`. Refusing is the only way a caller finds out.
             raise UserError(
                 self.env._(
                     "Template '%(template)s' creates a journal entry, which "
@@ -317,8 +311,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
         if not product:
             return 0.0
 
-        # `standard_price` is company-dependent, so the cost has to be read
-        # in the company the run targets rather than the reader's.
         product = product.with_company(self._resolve_company())
         if self.move_type in PURCHASE_MOVE_TYPES:
             return product.standard_price
@@ -342,9 +334,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
         price_unit = known_price or 1.0
         taxes = tmpl_line.tax_ids or self._get_product_taxes(product)
 
-        # The template line's unit only describes the template line's own
-        # product. Once `product` has been drawn it is a different product, so
-        # its own unit is the only one that can be right.
         product_uom = tmpl_line.product_uom_id
         if not product_uom or product != tmpl_line.product_id:
             product_uom = product.uom_id
@@ -368,8 +357,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
             return [
                 {**base_vals, "quantity": tmpl_line.quantity, "price_unit": price_unit}
             ]
-        # Only a real price can say how many units the amount pays for: the
-        # placeholder would split it into as many units of 1.00.
         if tmpl_line.distribution_method == "split" and known_price > 0:
             return self._split_line_vals(base_vals, known_price, amount)
         return [{**base_vals, "quantity": 1, "price_unit": amount}]
@@ -383,9 +370,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
         currency = self._resolve_company().currency_id
         amount = currency.round(amount)
         full_units = math.floor(amount / price_unit)
-        # 69.30 / 23.10 is 2.9999999999999996 in binary floating point: an
-        # amount that is an exact multiple of the price must not lose a unit
-        # to an adjustment line priced at one more unit.
         if currency.is_zero(amount - (full_units + 1) * price_unit):
             full_units += 1
         remainder = currency.round(amount - full_units * price_unit)
@@ -402,9 +386,6 @@ class WizardAccountMoveTemplateCreateMove(models.TransientModel):
 
         vals_list = [{**base_vals, "quantity": full_units, "price_unit": price_unit}]
         if not currency.is_zero(remainder):
-            # The adjustment keeps the units' label: it is printed as the
-            # concept's description on the CFDI, where a suffix only made
-            # accounting reopen every invoice to erase it.
             vals_list.append(
                 {
                     **base_vals,

@@ -16,7 +16,6 @@ class MailingLegacy(http.Controller):
     def mailing_unsubscribe(
         self, mailing_id, email=None, res_id=None, token="", **post
     ):
-        """Old route, using mail/mailing prefix, and outdated parameter names"""
         params = urlencode(
             dict(**post, document_id=res_id, email=email, hash_token=token)
         )

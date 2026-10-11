@@ -1,26 +1,21 @@
-# The SellerCentral application ID of Odoo S.A.
 APP_ID = "amzn1.sp.solution.1cab4d17-1dba-47d1-968f-66b10b614b01"
 
 
-# The URL of the Amazon proxy.
 PROXY_URL = "https://iap-services.odoo.com/"
 
 
-# The endpoints of the Amazon proxy.
 PROXY_ENDPOINTS = {
-    "authorization": "/amazon/v1/forward_authorization_request",  # Exchange LWA tokens
+    "authorization": "/amazon/v1/forward_authorization_request",
 }
 
 
-# Base URLs of the API.
 API_DOMAINS_MAPPING = {
-    "us-east-1": "https://sellingpartnerapi-na.amazon.com",  # SP-API specific to NA marketplaces.
-    "eu-west-1": "https://sellingpartnerapi-eu.amazon.com",  # SP-API specific to EU marketplaces.
-    "us-west-2": "https://sellingpartnerapi-fe.amazon.com",  # SP-API specific to FE marketplaces.
+    "us-east-1": "https://sellingpartnerapi-na.amazon.com",
+    "eu-west-1": "https://sellingpartnerapi-eu.amazon.com",
+    "us-west-2": "https://sellingpartnerapi-fe.amazon.com",
 }
 
 
-# Mapping of API operations to URL paths, restricted resource paths, and restricted data elements.
 API_OPERATIONS_MAPPING = {
     "createFeed": {
         "url_path": "/feeds/2021-06-30/feeds",
@@ -49,7 +44,6 @@ API_OPERATIONS_MAPPING = {
     },
     "getOrder": {
         "url_path": "/orders/v0/orders/{param}",
-        # Amazon requires the path to include the placeholder "{orderID}" to grant the RDT.
         "restricted_resource_path": "/orders/v0/orders/{orderId}",
         "restricted_resource_data_elements": ["buyerInfo", "shippingAddress"],
     },
@@ -60,7 +54,6 @@ API_OPERATIONS_MAPPING = {
     },
     "getOrderItems": {
         "url_path": "/orders/v0/orders/{param}/orderItems",
-        # Amazon requires the path to include the placeholder "{orderID}" to grant the RDT.
         "restricted_resource_path": "/orders/v0/orders/{orderId}/orderItems",
         "restricted_resource_data_elements": ["buyerInfo"],
     },
@@ -71,17 +64,14 @@ API_OPERATIONS_MAPPING = {
 }
 
 
-# Mapping of Amazon fulfillment channels to Amazon status to synchronize.
 STATUS_TO_SYNCHRONIZE = {
     "AFN": ["Shipped"],
     "MFN": ["Unshipped"],
 }
 
 
-# Mapping of Amazon Carrier Names
-# See https://images-na.ssl-images-amazon.com/images/G/01/rainier/help/xsd/release_4_1/amzn-base.xsd
 AMAZON_CARRIER_NAMES_MAPPING = {
-    "selfdelivery": "Self Delivery",  # Specific name recognized by Amazon for "custom tracking ref"
+    "selfdelivery": "Self Delivery",
     "4px": "4PX",
     "a1": "A-1",
     "aaacooper": "AAA Cooper",
@@ -178,7 +168,7 @@ AMAZON_CARRIER_NAMES_MAPPING = {
     "dotzot": "Dotzot",
     "dpb": "DPB",
     "dpd": "DPD",
-    "dpdgb": "DPD",  # Sendcloud separates it, but Amazon doesn't make the difference
+    "dpdgb": "DPD",
     "dpdlocal": "DPD Local",
     "dsv": "DSV",
     "dtdc": "DTDC",
@@ -234,7 +224,7 @@ AMAZON_CARRIER_NAMES_MAPPING = {
     "hermeseinrichtungsservice": "Hermes Einrichtungsservice",
     "hermeslogistikgruppe": "Hermes Logistik Gruppe",
     "hermesuk": "Hermes UK",
-    "hermesgb": "Hermes UK",  # Sendcloud separates it, but Amazon doesn't make the difference
+    "hermesgb": "Hermes UK",
     "hlog": "Hlog",
     "homelogistics": "Home Logistics",
     "honesteye": "honesteye",

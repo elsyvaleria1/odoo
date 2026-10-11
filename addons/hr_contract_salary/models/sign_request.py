@@ -6,8 +6,6 @@ class SignRequest(models.Model):
 
     def cancel(self):
         super().cancel()
-        # sudo(), as not everyone has access to 'hr.contract.salary.offer'
-        # but they should be able to cancel their sign request
         offers_sudo = (
             self.env["hr.contract.salary.offer"]
             .sudo()

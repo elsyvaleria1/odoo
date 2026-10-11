@@ -40,7 +40,6 @@ class PosPreparationState(models.Model):
         return True
 
     def _record_status_change_prep_time(self, pdis_state) -> None:
-        # If first stage & line is done, write the preparation_time
         if (
             not pdis_state.todo
             and pdis_state.stage_id.is_stage_position(0)
@@ -55,7 +54,6 @@ class PosPreparationState(models.Model):
             and pdis_state.prep_line_id.pos_order_line_id.preparation_time != -1
         ):
             pdis_state.prep_line_id.pos_order_line_id.preparation_time = -1
-        # If second last stage & line is done, write the service_time
         if len(pdis_state.stage_id) > 1:
             if (
                 not pdis_state.todo
@@ -106,13 +104,11 @@ class PosPreparationState(models.Model):
     def _record_stage_change_prep_time(
         self, pdis_state, old_last_stage_change, prep_order_completion_time
     ) -> None:
-        # If new stage is the first one & line is not done, it means the order has been reset
         if pdis_state.stage_id.is_stage_position(0):
             if pdis_state.prep_line_id.pos_order_line_id.preparation_time != -1:
                 pdis_state.prep_line_id.pos_order_line_id.preparation_time = -1
             if pdis_state.prep_line_id.pos_order_line_id.service_time != -1:
                 pdis_state.prep_line_id.pos_order_line_id.service_time = -1
-        # If new stage is the second last one, write the preparation_time (if not already set)
         if len(pdis_state.stage_id) > 1:
             if (
                 pdis_state.prep_line_id.pos_order_line_id.preparation_time == -1
@@ -121,7 +117,6 @@ class PosPreparationState(models.Model):
                 pdis_state.prep_line_id.pos_order_line_id.preparation_time = (
                     compute_seconds_since(old_last_stage_change)
                 )
-        # If new stage is the last one, write the service_time (if not already set)
         if (
             pdis_state.prep_line_id.pos_order_line_id.service_time == -1
             and pdis_state.stage_id.is_stage_position(-1)
@@ -130,8 +125,6 @@ class PosPreparationState(models.Model):
                 compute_seconds_since(old_last_stage_change)
             )
 
-        # If the order is done, write the completion_time
-        # Also, if all the quantities are cancelled (don't have pos_order_line_id in that case), no need to update the completion_time
         if (
             pdis_state.stage_id.is_stage_position(-1)
             and pdis_state.prep_line_id.prep_order_id.id

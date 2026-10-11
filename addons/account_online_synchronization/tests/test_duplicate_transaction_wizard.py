@@ -23,17 +23,12 @@ class TestDuplicateTransactionWizard(TransactionCase):
         )
 
     def test_display_name_carries_journal(self):
-        """Check the wizard display name embeds the journal name."""
         wizard = self.env["wizard.account.bank.statement.line.delete.duplicate"].create(
             {"journal_id": self.journal.id, "date": date(2026, 7, 1)}
         )
         self.assertIn("Sync Bank", wizard.display_name)
 
     def test_default_date_uses_oldest_of_last_batch(self):
-        """Check the starting date defaults to the oldest transaction date of
-        the last sync batch."""
-        # all suite data shares the 10-minute create window — make our line
-        # the unambiguous oldest of the batch
         self.env["account.bank.statement.line"].create(
             {
                 "journal_id": self.journal.id,
@@ -48,8 +43,6 @@ class TestDuplicateTransactionWizard(TransactionCase):
         self.assertEqual(wizard.date, date(1999, 1, 1))
 
     def test_duplicate_groups_are_flattened_once(self):
-        """Check that identical transactions group as duplicates while the
-        distinct one stays out."""
         dup_1 = self._line("COFFEE", 10.0, 10)
         dup_2 = self._line("COFFEE", 10.0, 10)
         other = self._line("RENT", 500.0, 11)

@@ -25,9 +25,6 @@ class ResPartner(models.Model):
         return super().write(vals)
 
     def _get_country_name(self):
-        # when sending a letter, thus rendering the report with the snailmail_layout,
-        # we need to override the country name to its english version following the
-        # dictionary imported in country_utils.py
         country_code = self.country_id.code
         if (
             self.env.context.get("snailmail_layout")
@@ -39,9 +36,7 @@ class ResPartner(models.Model):
 
     @api.model
     def _get_address_format(self):
-        # When sending a letter, the fields 'street' and 'street2' should be on a single line to fit in the address area
         if self.env.context.get("snailmail_layout") and self.country_id.code == "DE":
-            # Germany requires specific address formatting for Pingen
             result = "%(street)s"
             if self.street2:
                 result += " // %(street2)s"

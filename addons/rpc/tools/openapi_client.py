@@ -98,7 +98,7 @@ _PRIMITIVES = {
     "null": "null",
 }
 
-PRINT_WIDTH = 88  # .oxfmtrc.jsonc
+PRINT_WIDTH = 88
 
 _IDENTIFIER = re.compile(r"[^0-9a-zA-Z]+")
 _JS_NAME = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*\Z")
@@ -112,7 +112,6 @@ def _camel(name: str) -> str:
 
 
 def _property(name: str) -> str:
-    """Quoted only where it has to be, as the formatter's `quoteProps` is."""
     return name if _JS_NAME.match(name) else json_dumps(name)
 
 
@@ -178,8 +177,6 @@ def _path_expression(path: str, parameters: list[dict[str, Any]]) -> str:
 
 
 def _query_lines(query_params: list[dict[str, Any]]) -> list[str]:
-    """The pairs, given to the client's own encoder, which drops the ones
-    the caller left out."""
     pairs = [f"[{json_dumps(p['name'])}, {_camel(p['name'])}]" for p in query_params]
     one_line = f"        const suffix = this.query([{', '.join(pairs)}]);"
     if len(one_line) <= PRINT_WIDTH:
@@ -206,8 +203,6 @@ def _method(path: str, verb: str, operation: dict[str, Any]) -> str:
         for p in query_params
     ]
     if body is not None:
-        # A body whose every member is optional is itself optional: the
-        # document says nothing must be sent, so the method must not ask.
         optional = "" if body.get("required") else "?"
         signature.append(f"body{optional}: {_type_of(body)}")
     authenticated = any(
@@ -235,8 +230,6 @@ def _method(path: str, verb: str, operation: dict[str, Any]) -> str:
 
 
 def _call(arguments: list[str]) -> list[str]:
-    """One line while it fits the printed width, wrapped the way the
-    formatter would wrap it once it does not."""
     one_line = f"        return this.call({', '.join(arguments)});"
     if len(one_line) <= PRINT_WIDTH:
         return [one_line]
@@ -248,7 +241,6 @@ def _call(arguments: list[str]) -> list[str]:
 
 
 def render_typescript(document: dict[str, Any]) -> str:
-    """The document as a client: one method per operation, in path order."""
     info = document.get("info") or {}
     title = info.get("title", "Odoo")
     version = info.get("version", "")

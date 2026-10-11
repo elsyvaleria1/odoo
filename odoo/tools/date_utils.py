@@ -167,7 +167,7 @@ def parse_date_expression(value: str, env: Environment) -> date | datetime:
             if week_start is None:
                 res_lang: Any = env["res.lang"]
                 week_start = (
-                    int(res_lang._get_data(code=env.user.lang).week_start) - 1  # type: ignore[attr-defined]
+                    int(res_lang._get_data(code=env.user.lang).week_start) - 1
                 )
             dt = _apply_weekday_term(dt, operator, dayname, week_start)
             continue

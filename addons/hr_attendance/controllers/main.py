@@ -16,11 +16,6 @@ _debug = DebugLog(__name__)
 
 
 class HrAttendance(http.Controller):
-    # Every kiosk route answers the same way when it cannot act: a mapping
-    # carrying a status the caller can branch on. Four shapes were in use --
-    # a bare `{}`, a bare `[]`, `{"status": "error"}` and an uncaught
-    # `AccessError` reaching the client as an HTTP 500 -- for one situation,
-    # "the token does not entitle you to this".
     @staticmethod
     def _refuse(message=None):
         return (
@@ -29,12 +24,6 @@ class HrAttendance(http.Controller):
 
     @classmethod
     def _employee_of(cls, token, employee_id):
-        """The employee the kiosk at `token` may act for, or an empty recordset.
-
-        One check in one place: three routes each re-derived "exists, and
-        belongs to this token's company" inline, and the shape of the answer
-        when it did not hold differed between them.
-        """
         company = cls._get_company(token)
         if not company:
             return request.env["hr.employee"].sudo().browse()
@@ -43,23 +32,6 @@ class HrAttendance(http.Controller):
 
     @staticmethod
     def _get_company(token):
-        """The company whose kiosk key is `token`, or an empty recordset.
-
-        A FALSY token is refused before the search, and that is not defensive
-        tidiness. Every kiosk route is `auth="public"` and takes its token from
-        the client, so a caller can send `null`, `false` or `""` -- and an Odoo
-        domain turns all three into `attendance_kiosk_key IS NULL`. Against a
-        configuration whose key was NULL, `/hr_attendance/attendance_employee_data`
-        with `"token": null` returned that company's employee names, avatars
-        and hours to an unauthenticated caller, and the sibling routes would
-        have checked them in, created employees and assigned badges.
-
-        The key is `required` now and unique, so a NULL should be unreachable.
-        This guard is the half that does not depend on that being true of every
-        database the code meets: a restore, a migration that added the column
-        without the back-fill, or a future field change all reintroduce it, and
-        none of them would look like a security change.
-        """
         if not token:
             _debug.logic("kiosk_token_refused", reason="falsy")
             return request.env["res.company"].sudo().browse()
@@ -80,10 +52,6 @@ class HrAttendance(http.Controller):
             .astimezone(timezone(employee._get_schedule_tz()))
             .date()
         )
-        # `manual_duration`, not `duration`: it is what `hr.attendance`'s
-        # `overtime_hours`, the employee's `total_overtime` and the backend list
-        # all sum, so reading the raw `duration` here made the kiosk the one
-        # place where a manager's correction to an overtime line was invisible.
         groups = (
             employee.env["hr.attendance.overtime.line"]
             .sudo()
@@ -127,8 +95,6 @@ class HrAttendance(http.Controller):
 
         if not device_tracking_enabled:
             return response
-        # The IP's coordinates stand in for missing GPS ones, so they have to
-        # be settled before the coordinates are turned into a place name.
         if latitude is False or latitude is None:
             latitude = request.geoip.location.latitude
         if longitude is False or longitude is None:
@@ -178,8 +144,6 @@ class HrAttendance(http.Controller):
                 limit=limit,
             )
         except AccessError:
-            # The route is `auth="public"` and the listing is deliberately NOT
-            # sudo: only the signed-in setup session may see who has no badge.
             return self._refuse(request.env._("You are not allowed to list employees."))
         return {"status": "success", "employees": employee_list}
 
@@ -331,11 +295,6 @@ class HrAttendance(http.Controller):
 
     @http.route("/hr_attendance/employees_infos", type="jsonrpc", auth="public")
     def employees_infos(self, token, limit, offset, domain):
-        # The search runs as superuser, so this list is the whole of the access
-        # control on it. Anything the allowlist does not positively recognise
-        # is refused: skipping what it did not understand let a malformed
-        # condition through to `Domain()`, which raised out of the route as a
-        # server error rather than as this message.
         for condition in domain:
             if condition in ("&", "|", "!"):
                 continue

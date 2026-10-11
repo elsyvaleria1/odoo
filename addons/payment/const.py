@@ -2,10 +2,8 @@ from odoo.tools.translate import LazyTranslate
 
 _lt = LazyTranslate(__name__, default_lang="en_US")
 
-# The keys that are sensitive and should not be logged.
 SENSITIVE_KEYS = set()
 
-# Mapping of ISO 3166-1 country codes in alpha-2 format to the numeric format.
 COUNTRY_NUMERIC_CODES = {
     "AF": "004",
     "AL": "008",
@@ -255,8 +253,6 @@ COUNTRY_NUMERIC_CODES = {
     "ZM": "894",
 }
 
-# Mapping of ISO 4217 currency codes to their number of decimals.
-# See https://en.wikipedia.org/wiki/ISO_4217#Minor_unit_fractions.
 CURRENCY_MINOR_UNITS = {
     "ADF": 2,
     "ADP": 0,

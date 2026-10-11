@@ -31,9 +31,6 @@ class DocumentThumbnail(models.Model):
         required=True,
     )
 
-    # a row with no document is the server's rendering of a content, shared by
-    # every document holding it; a row with one is that document's own,
-    # authored or rendered by a browser, and binds no other
     _content_unique = models.UniqueIndex("(checksum) WHERE document_id IS NULL")
     _document_unique = models.UniqueIndex("(document_id) WHERE document_id IS NOT NULL")
     _keyed = models.Constraint(

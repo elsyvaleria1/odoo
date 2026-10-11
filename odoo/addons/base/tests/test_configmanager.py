@@ -313,8 +313,6 @@ class TestConfigManager(TransactionCase):
                 "limit_request": 100,
             }
         )
-        # /tmp/odoo may exist on a shared machine: then it is skipped as an
-        # invalid addons directory rather than a missing one
         addons_reason = (
             "invalid addons directory"
             if Path("/tmp/odoo").is_dir()

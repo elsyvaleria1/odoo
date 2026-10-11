@@ -50,7 +50,6 @@ class TestTrainingSimulator(TrainingNeutralityCase):
             .get_training_dashboard()["simulators"]
             if c["id"] == self.simulator.id
         )
-        # Practised counts every finished scenario once, passed or not.
         self.assertEqual((card["best"], card["scenario_count"]), (2, 3))
 
     def test_player_sees_only_own_sessions(self):

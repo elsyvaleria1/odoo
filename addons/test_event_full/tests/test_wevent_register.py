@@ -15,7 +15,6 @@ class TestWEventRegister(TestWEventCommon):
         new_registrations = self.event.registration_ids
         visitor = new_registrations.visitor_id
 
-        # check registration content
         self.assertEqual(len(new_registrations), 2)
         self.assertEqual(
             set(new_registrations.mapped("name")),
@@ -30,7 +29,6 @@ class TestWEventRegister(TestWEventCommon):
             {"raoulette@example.com", "michel@example.com"},
         )
 
-        # check visitor stored information
         self.assertEqual(visitor.display_name, "Raoulette Poiluchette")
         self.assertEqual(visitor.event_registration_ids, new_registrations)
         self.assertEqual(visitor.partner_id, self.env["res.partner"])

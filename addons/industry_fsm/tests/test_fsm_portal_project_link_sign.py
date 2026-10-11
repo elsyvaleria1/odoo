@@ -7,7 +7,6 @@ from odoo.tools import mute_logger
 
 from odoo.addons.mail.tests.common import mail_new_test_user
 
-# a 1x1 transparent PNG
 SIGNATURE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
 
@@ -137,7 +136,6 @@ class TestFsmPortalProjectLinkSign(HttpCase):
             {"name": "Subcontractor", "is_company": True}
         )
         self.project._add_collaborators(outsider, access_mode="edit")
-        # the very link the Share dialog's invitation hands out
         token = self.project._portal_tokens(outsider)[outsider.id]
         page = self._page(token)
         self.assertIn(f'data-pid="{outsider.id}"', page, "the outsider comments")

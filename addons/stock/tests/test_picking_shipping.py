@@ -45,7 +45,6 @@ class TestAggregatesDoNotReadTheLines(PickingCase):
         picking.action_confirm()
         picking.move_ids.quantity = 4.0
         self.env.flush_all()
-        # legacy data: a move kept in a unit its product no longer converts to
         self.env.cr.execute(
             "UPDATE stock_move SET product_uom_id = %s WHERE id = ANY(%s)",
             [self.env.ref("base.product_uom_hour").id, picking.move_ids.ids],

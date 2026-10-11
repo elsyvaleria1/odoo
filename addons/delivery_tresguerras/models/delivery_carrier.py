@@ -8,8 +8,6 @@ from odoo.exceptions import UserError
 
 TRACKING_URL = "https://intranet.tresguerras.com.mx/WS/AppMobile/wsTraV2.php"
 TIMEZONE = "America/Mexico_City"
-# the carrier's event code (estadoembarque) mapped to carrier_tracking_state;
-# 05 and 09 are the destination branch holding it, for pickup or home delivery
 STATES = {
     "01": "documented",
     "02": "in_transit",
@@ -30,13 +28,11 @@ DOCUMENT_HOSTS = {"intranet.tresguerras.com.mx", "www.tresguerras.com.mx"}
 class DeliveryCarrier(models.Model):
     _inherit = "delivery.carrier"
 
-    # FIELDS
     tracking_provider = fields.Selection(
         selection_add=[("tresguerras", "Tres Guerras")],
         ondelete={"tresguerras": "set null"},
     )
 
-    # BUSINESS METHODS
     def _tresguerras_fetch_tracking_status(self, reference) -> dict:
         response = self.env["ir.egress"].request(
             "GET",
@@ -92,7 +88,6 @@ class DeliveryCarrier(models.Model):
         evidence = _mapping(answer.get("evidencia"))
         for key, kind in (("acuse", "receipt"), ("evidencia", "evidence")):
             for file_format in ("PDF", "IMG"):
-                # The app's direct URL avoids the legacy download.php redirect.
                 urls = _mapping(_mapping(evidence.get(key)).get(file_format)).get("url")
                 if isinstance(urls, str):
                     urls = [urls]
@@ -135,7 +130,6 @@ class DeliveryCarrier(models.Model):
 
 
 def _text(value):
-    """Read optional text without accepting compound JSON values."""
     if value is None:
         return ""
     if not isinstance(value, str):
@@ -144,7 +138,6 @@ def _text(value):
 
 
 def _mapping(value):
-    """Read an optional object from the carrier's response."""
     if not value:
         return {}
     if not isinstance(value, dict):
@@ -153,7 +146,6 @@ def _mapping(value):
 
 
 def _items(value):
-    """Read the carrier's singleton-or-list collection."""
     if not value:
         return []
     if isinstance(value, dict):
@@ -164,7 +156,6 @@ def _items(value):
 
 
 def _document_url(value):
-    """Return an HTTPS document URL on a known carrier host, or None."""
     if (
         not isinstance(value, str)
         or any(ord(char) < 33 for char in value)
@@ -187,8 +178,6 @@ def _document_url(value):
 
 
 def _parse_local_date(day, hour):
-    """The carrier's local "dd/mm/yyyy" and "hh:mm" as a naive UTC datetime,
-    or None when either is missing or malformed."""
     try:
         local = datetime.strptime(f"{day} {hour}", "%d/%m/%Y %H:%M")
     except TypeError, ValueError:

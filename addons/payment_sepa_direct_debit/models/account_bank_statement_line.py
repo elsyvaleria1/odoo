@@ -17,12 +17,6 @@ class AccountBankStatementLine(models.Model):
         return statement_lines
 
     def _cron_confirm_sepa_transactions(self) -> None:
-        """Confirm pending SEPA payment transactions for which a matching bank statement is found.
-
-        Note: This method is called by the `cron_auto_confirm_paid_sepa_txs` cron.
-
-        :return: None
-        """
         pending_sepa_txs = self.env["payment.transaction"].search(
             [
                 ("provider_id.code", "=", "custom"),

@@ -10,15 +10,6 @@ class TestInstanceValidation(TransactionCase):
     def validate_instance_with_schema(
         self, schema, instance, required_parameters=None, error_message=""
     ):
-        """Validate the LLM values of `instance` against `schema`.
-
-        :param dict schema: parameter definitions
-        :param dict instance: values returned by the LLM
-        :param list required_parameters: required parameter names, all of them by default
-        :param str error_message: expected error; when empty, validation must pass
-        :return: the validated values, or None when an error was expected
-        :rtype: dict
-        """
         if required_parameters is None:
             required_parameters = list(schema.keys())
 
@@ -41,7 +32,6 @@ class TestInstanceValidation(TransactionCase):
         return None
 
     def test_missing_optional_parameter(self):
-        """Optional parameters missing from the LLM response still validate."""
         schema = {
             "user_name": {
                 "type": "string",
@@ -59,11 +49,9 @@ class TestInstanceValidation(TransactionCase):
             schema=schema,
             required_parameters=required_parameters,
         )
-        # non required param should have been added
         self.assertEqual(instance["phone_number"], None)
 
     def test_missing_required_parameter(self):
-        """Required parameters missing from the LLM response fail validation."""
         schema = {
             "user_name": {
                 "type": "string",
@@ -100,9 +88,7 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_wrong_pattern_parameter(self):
-        """A parameter not matching its pattern fails validation."""
         param_name = "meeting_date"
-        # The pattern validates dates of the form YYYY-mm-dd
         param_pattern = r"^20\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
         schema = {
             param_name: {
@@ -135,9 +121,7 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_correct_pattern_array_item(self):
-        """Array items matching the expected pattern validate."""
         param_name = "meeting_date"
-        # The pattern validates dates of the form YYYY-mm-dd
         param_pattern = r"^20\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
         schema = {
             param_name: {
@@ -154,9 +138,7 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_wrong_pattern_array_item(self):
-        """An array item not matching the expected pattern fails validation."""
         param_name = "meeting_date"
-        # The pattern validates dates of the form YYYY-mm-dd
         param_pattern = r"^20\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])"
         schema = {
             param_name: {
@@ -174,7 +156,6 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_missing_optional_object_property(self):
-        """Optional object properties missing from the LLM response still validate."""
         param_name = "object_param"
         schema = {
             param_name: {
@@ -200,7 +181,6 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_missing_required_object_property(self):
-        """Required object properties missing from the LLM response fail validation."""
         param_name = "object_param"
         schema = {
             param_name: {
@@ -251,7 +231,6 @@ class TestInstanceValidation(TransactionCase):
         )
 
     def test_wrong_format_object_property(self):
-        """An object property not matching the expected pattern fails validation."""
         param_name = "object_param"
         property_name = "email"
         property_type = "string"

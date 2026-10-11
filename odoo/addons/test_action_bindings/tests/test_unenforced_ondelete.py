@@ -141,7 +141,6 @@ class TestMergeRepointsReferencesWithoutForeignKeys(TransactionCase):
             "ir.actions.act_window"
         )
         self.assertIn(("tab_action_holder", "action_id"), relations)
-        # a view derives its rows: nothing there to repoint
         self.assertNotIn(("tab_action_view", "action_id"), relations)
 
     def test_merging_repoints_a_reference_the_catalog_does_not_know(self):
@@ -166,7 +165,6 @@ class TestMergeRepointsReferencesWithoutForeignKeys(TransactionCase):
         target = windows.create({"name": "tab-dst2", "res_model": "res.currency"})
         self.env["tab.action.holder"].create({"action_id": source.id})
         self.env.flush_all()
-        # the view names source through res_id; the merge must not write it
         self.env["mixin.merge"]._update_reference_fields_generic(
             "ir.actions.act_window", source, target
         )

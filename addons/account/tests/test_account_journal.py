@@ -343,11 +343,6 @@ class TestAccountJournal(AccountTestInvoicingCommon, HttpCase):
         )
 
     def test_ledger_groups_come_back_in_the_order_they_were_dragged_into(self):
-        """`account_journal_views.xml` puts `widget="handle"` on the ledger-group
-        list, and `_get_filter_journal_groups` already asks for `order="sequence"`
-        by hand -- the model simply never declared it, so every other reader,
-        the settings list included, got id order.
-        """
         Group = self.env["account.journal.group"]
         groups = Group.create(
             [
@@ -364,9 +359,6 @@ class TestAccountJournal(AccountTestInvoicingCommon, HttpCase):
         self.assertEqual(found.mapped("name"), ["First", "Second", "Third"])
 
     def test_ledger_groups_at_the_default_sequence_keep_a_stable_order(self):
-        """Every row in an existing database sits at the default sequence, so the
-        case that matters is the tie: a sort key with no tiebreak would order
-        them however the query plan came out."""
         Group = self.env["account.journal.group"]
         tied = Group.create([{"name": f"Tied {index}"} for index in range(6)])
         self.env.flush_all()
@@ -597,8 +589,6 @@ class TestAccountJournalAllowedAccounts(AccountTestInvoicingCommon):
         self.assertTrue(self.journal._get_usable_account_domain().is_true())
 
     def test_the_usable_domain_and_the_predicate_never_disagree(self):
-        """Suggestions scope with the domain and posting checks the predicate, so
-        the two have to give the same answer for every account."""
         self.journal.default_account_id = self.income
         candidates = self.income | self.receivable | self.outsider
         candidates |= self.journal.suspense_account_id

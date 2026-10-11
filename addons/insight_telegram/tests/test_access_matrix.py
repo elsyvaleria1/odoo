@@ -6,7 +6,6 @@ from odoo.tests import tagged
 
 from odoo.addons.base.tests.access_matrix import AccessMatrixCase, Cell, Persona
 
-# the key the telegram tests seal bot tokens with
 _SEALING_KEY = "7ftr9ALjwK7f4IqWwnpFxWx4Wn8vetsznoGT3Oh46eU="
 
 

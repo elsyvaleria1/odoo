@@ -17,11 +17,6 @@ class TestAppointmentEventNotifications(AppointmentCommon):
     @freeze_time("2023-02-13")
     @users("portal_test")
     def test_appointment_mail_notification_from_portal(self):
-        """Check that appointment create a mail for each attendee in the invitation
-        and the cancellation process. If it's not an appointment the current user is not notified
-        for the invitation. No mail is sent for basic event for the cancellation because it's only
-        sent for appointment when the event is archive (c.f. CalendarEvent._track_template() in appointment module)
-        """
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.mail_force_send_limit", None
         )
@@ -43,7 +38,6 @@ class TestAppointmentEventNotifications(AppointmentCommon):
                 cancel_recipients=cancel_recipients,
                 nb_cancellation=nb_cancellation,
             ):
-                # Invitation
                 with self.mock_mail_gateway():
                     event = (
                         self.env["calendar.event"]
@@ -69,14 +63,11 @@ class TestAppointmentEventNotifications(AppointmentCommon):
                         recipient, "sent", author=self.staff_user_bxls.partner_id
                     )
                 self.assertEqual(len(invitation_mails), nb_invitation)
-                self.flush_tracking()  # Flush possible mail tracking values before cancellation
+                self.flush_tracking()
 
-                # Cancellation
                 with self.mock_mail_gateway():
                     event.action_cancel_meeting(self.user_portal.partner_id.ids)
-                    self.flush_tracking()  # Cancellation notifications are sent through tracking
-                # Assert no unexpected mail was created, so this also fails
-                # when nb_cancellation is 0 and the loop below never runs.
+                    self.flush_tracking()
                 self.assertEqual(len(self._new_mails), nb_cancellation)
                 cancellation_mails = self.env["mail.mail"]
                 for recipient in cancel_recipients:

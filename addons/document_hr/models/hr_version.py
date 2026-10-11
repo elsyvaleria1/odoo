@@ -18,8 +18,6 @@ class HrVersion(models.Model):
         return self.employee_id.partner_id
 
     def _get_document_folder(self):
-        # the employee's contracts, where a signed contract is filed too; the
-        # employee's folder, then the employees root, while those are missing
         employee = self.employee_id
         folder = (
             employee.hr_employee_contract_folder_id

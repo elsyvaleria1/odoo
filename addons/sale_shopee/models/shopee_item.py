@@ -43,19 +43,12 @@ class ShopeeItem(models.Model):
         "Item and Model Identifiers must be unique for a given shop.",
     )
 
-    # === ACTION METHODS === #
 
     def action_sync_inventory(self):
         self._sync_inventory()
 
-    # === BUSINESS METHODS === #
 
     def _sync_inventory(self, auto_commit=True) -> None:
-        """Synchronize the inventory from Odoo to Shopee.
-
-        :param auto_commit: If True, the transaction will be committed after each successful sync
-        :return: None
-        """
         error_messages = []
         valid_items = self.filtered(
             lambda i: (
@@ -75,7 +68,6 @@ class ShopeeItem(models.Model):
                 )
                 items_by_item_id[item.shopee_item_identifier] += item
 
-            # update item by item_id
             for shopee_item_identifier, items in items_by_item_id.items():
                 try:
                     current_datetime = fields.Datetime.now()

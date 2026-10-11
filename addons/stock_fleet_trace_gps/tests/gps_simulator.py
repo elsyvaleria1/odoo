@@ -8,7 +8,6 @@ only without the HTTP admission of a real device.
 import math
 from datetime import timedelta
 
-# Rough consumption of a light delivery truck, to make the fuel level move.
 KM_PER_LITRE = 9.0
 EARTH_RADIUS_M = 6_371_000.0
 
@@ -25,7 +24,6 @@ def _distance_m(lat1, lon1, lat2, lon2):
 
 
 def make_gps_device(env, vehicle, receiver_key, tank_litres=55.0):
-    """Give ``vehicle`` a GPS tracker that reports odometer and fuel percentage."""
     profile = env["device.profile"].search(
         [("name", "=", "Simulated Teltonika")], limit=1
     ) or env["device.profile"].create(
@@ -111,10 +109,6 @@ class RouteSimulator:
         self.logs |= self.env["device.data.log.gps"].sudo().create_gps_log(vals)
 
     def drive_to(self, latitude, longitude, speed=45.0, harsh_at=None, towed=False):
-        """Drive in a straight line; ``harsh_at`` (0-1) marks a harsh braking.
-
-        A ``towed`` vehicle moves with its engine off and burns no fuel.
-        """
         distance = _distance_m(self.latitude, self.longitude, latitude, longitude)
         seconds = distance / (speed / 3.6)
         steps = max(1, math.ceil(seconds / self.step.total_seconds()))
@@ -133,7 +127,6 @@ class RouteSimulator:
             self._report(speed, not towed, event="253" if harsh else "0")
 
     def dwell(self, minutes, ignition=False):
-        """Stand still where the vehicle is."""
         for _ in range(max(1, round(minutes * 60 / self.step.total_seconds()))):
             self.now += self.step
             self._report(0.0, ignition)

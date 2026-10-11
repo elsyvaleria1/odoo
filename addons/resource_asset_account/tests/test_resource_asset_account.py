@@ -87,9 +87,6 @@ class TestResourceAssetAccount(AccountTestInvoicingCommon):
         self.assertFalse(log.exists())
 
     def test_an_employee_reads_the_asset_without_rights_on_its_bills(self):
-        # Every employee may read an asset; its bill lines answer to the same
-        # accounting readers as the bill count and the Bills button. They are
-        # left out of the asset instead of failing the whole read.
         self._bill(self.service).action_post()
         employee = new_test_user(
             self.env, login="bills_employee", groups="base.group_user"

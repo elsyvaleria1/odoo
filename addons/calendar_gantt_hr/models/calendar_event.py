@@ -10,7 +10,6 @@ class CalendarEvent(models.Model):
     def _gantt_unavailability(self, field_name, res_ids, start, stop, scale):
         result = super()._gantt_unavailability(field_name, res_ids, start, stop, scale)
 
-        # skip if not dealing with appointments
         if field_name != "partner_ids":
             return result
 
@@ -41,7 +40,6 @@ class CalendarEvent(models.Model):
             )
             attendee = partner_by_id.get(partner_id, partners.browse())
 
-            # calendar leaves
             unavailabilities = Intervals(
                 [
                     (

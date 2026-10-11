@@ -174,7 +174,7 @@ class SchemaMixin(_ModelStubs):
 
             columns = sql.get_table_columns(cr, self._table)
             fields_to_compute = []
-            new_columns = 0  # debuglog
+            new_columns = 0
 
             for field in sorted(self._fields.values(), key=lambda f: f.column_order):
                 if not field.store:
@@ -183,7 +183,7 @@ class SchemaMixin(_ModelStubs):
                     continue
                 new = field.update_db(self, columns)
                 if _debug.perf.enabled and new:
-                    new_columns += 1  # debuglog
+                    new_columns += 1
                 if new and field.compute:
                     fields_to_compute.append(field)
 
@@ -212,10 +212,6 @@ class SchemaMixin(_ModelStubs):
     def _new_stored_attachment_fields(
         self, update_custom_fields: bool
     ) -> list[Field[typing.Any]]:
-        # update_db reports a computed field new when it creates its column;
-        # an attachment has none, so it is new when the previous load did not
-        # reflect it stored. Reflection runs after _auto_init, so
-        # ir_model_fields still describes that load.
         candidates = [
             field
             for field in self._fields.values()

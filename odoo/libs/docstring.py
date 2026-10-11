@@ -65,8 +65,6 @@ Want to help fix the docstrings? Check out the test_docstring linter!
 """
 {}'''
 
-# a docstring is a fragment: a leading field list is info fields, not a
-# document's bibliography, and a section title is not the document's title
 _FRAGMENT_READER_SETTINGS: typing.Final = {
     "doctitle_xform": False,
     "docinfo_xform": False,
@@ -326,15 +324,15 @@ def parse_signature(
 def _enhance_signature_using_docstring(signature: Signature, docstring: str) -> None:
     doctree = _to_doctree(inspect.cleandoc(docstring))
 
-    fields = 0  # debuglog
-    unmatched = 0  # debuglog
+    fields = 0
+    unmatched = 0
     for field in _iter_info_fields(doctree):
-        fields += 1  # debuglog
+        fields += 1
         if (
             field.kind in ("param", "type")
             and field.name.rpartition(" ")[2].strip() not in signature.parameters
         ):
-            unmatched += 1  # debuglog
+            unmatched += 1
         match (field.kind, field.name):
             case (None, _):
                 _logger.warning(

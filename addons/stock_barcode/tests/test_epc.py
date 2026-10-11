@@ -4,7 +4,6 @@ from odoo.tests import HttpCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestEpcEncoder(HttpCase):
-    # To ensure correctness, validation data are themselves taken from https://www.gs1.org/services/epc-encoderdecoder
     def test_get_epc_sgtin(self):
 
         expected_responses = {
@@ -13,12 +12,12 @@ class TestEpcEncoder(HttpCase):
                 "000000000001": "3036451fd40c0e4000000001",
                 "009876543210": "3036451fd40c0e424cb016ea",
                 "274877906943": "3036451fd40c0e7fffffffff",
-                "274877906944": "An error occurred with field 'serial_integer': An error occurred with method '_encode_integer': Value 274877906944 cannot be represented with 38 bits",  # Invalid tracking number : 2^34 is out of bound
+                "274877906944": "An error occurred with field 'serial_integer': An error occurred with method '_encode_integer': Value 274877906944 cannot be represented with 38 bits",
             },
             (
                 "2349",
                 True,
-            ): {  # Though '2349' is not a valid GTIN length, we assume it to be '00000000002349'
+            ): {
                 "Y00050": "3634000000003aacb060c1ab0000000000000000000000000000",
                 "Z00050": "3634000000003aad3060c1ab0000000000000000000000000000",
                 "!/%&+-*": "3634000000003a90af4a995ad540000000000000000000000000",
@@ -52,7 +51,7 @@ class TestEpcEncoder(HttpCase):
             )
             received_epc = response.json()[
                 "result"
-            ]  # key is tracking number, value is epc
+            ]
             self.assertDictEqual(expected_epc, received_epc)
 
     def test_get_epc_takes_the_filter_value(self):

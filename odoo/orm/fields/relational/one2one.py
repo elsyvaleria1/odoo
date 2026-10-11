@@ -65,11 +65,6 @@ class One2one(One2many):
             )
 
     def join(self, model: ModelLike, alias: str, query: Query) -> tuple[BaseModel, str]:
-        """LEFT JOIN the comodel row whose inverse names this row.
-
-        The inverse's unique index admits at most one such row, so the join
-        never multiplies the query's rows; a row with none reads NULL.
-        """
         comodel = model.env[self.comodel_name]
         inverse = comodel._fields[self.inverse_name]
         if not inverse.store:
@@ -117,9 +112,6 @@ class One2one(One2many):
                 )
             )
         target = targets[0] if targets else None
-        # any command naming a different target releases the seat the record
-        # holds now, a create included: the database checks the unique index
-        # per UPDATE, so the previous holder must be let go first
         replaces = bool(delta.replaced or delta.linked or delta.created)
         return delta, target, replaces
 
@@ -132,8 +124,6 @@ class One2one(One2many):
         if not records_commands_list:
             return
         if not self.store:
-            # a related copy (one a delegating child inherits) has no inverse
-            # of its own: it holds the value its parent's field computed
             super().write_real(records_commands_list, create)
             return
         model, comodel = self._get_writer_models(records_commands_list)
@@ -184,8 +174,6 @@ class One2one(One2many):
                             )
                         )
                     current[inverse] = False
-                    # The seat is released in the database before the next
-                    # holder takes it: the unique index checks each UPDATE.
                     current.flush_recordset([inverse])
                     _debug.lifecycle(
                         "field.one2one.released", field=self.name, released=current

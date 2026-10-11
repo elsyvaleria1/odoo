@@ -123,8 +123,6 @@ class ProjectProject(models.Model):
 
     def flush_model(self, fnames=None):
         if fnames is not None:
-            # force 'allow_billable' and 'allow_material' to be flushed
-            # altogether in order to satisfy the SQL constraint above
             fnames = set(fnames)
             if "allow_billable" in fnames or "allow_material" in fnames:
                 fnames.add("allow_billable")
@@ -133,8 +131,6 @@ class ProjectProject(models.Model):
 
     def flush_recordset(self, fnames=None):
         if fnames is not None:
-            # force 'allow_billable' and 'allow_material' to be flushed
-            # altogether in order to satisfy the SQL constraint above
             fnames = set(fnames)
             if "allow_billable" in fnames or "allow_material" in fnames:
                 fnames.add("allow_billable")
@@ -155,7 +151,6 @@ class ProjectProject(models.Model):
 
     def _search_pricing_type(self, operator, value):
         if operator != "in":
-            # let the parent implementation dispatch the search
             return super()._search_pricing_type(operator, value)
         values = set(value)
         domains = []
@@ -187,7 +182,6 @@ class ProjectProject(models.Model):
 
     @api.depends("is_fsm")
     def _compute_sale_line_id(self) -> None:
-        # We cannot have a SOL in the fsm project
         fsm_projects = self.filtered("is_fsm")
         fsm_projects.update({"sale_line_id": False})
         super(ProjectProject, self - fsm_projects)._compute_sale_line_id()
@@ -252,7 +246,7 @@ class ProjectProject(models.Model):
     def _get_sale_order_items_query(self, domain_per_model=None):
         basic_project_domain = [
             ("is_fsm", "=", False)
-        ]  # when the project is a fsm one, no SOL is linked to that project.
+        ]
         employee_mapping_domain = [("project_id.is_fsm", "=", False)]
         if domain_per_model is None:
             domain_per_model = {

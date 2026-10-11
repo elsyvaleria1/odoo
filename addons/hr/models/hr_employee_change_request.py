@@ -66,16 +66,11 @@ class HrEmployeeChangeRequest(models.Model):
         relation="hr_change_request_emergency_phone_rel",
     )
 
-    # A partial unique index would say this in SQL, but EXCLUDE needs
-    # btree_gist and this template does not carry it.
     @api.constrains("employee_id", "approval_state")
     def _check_one_pending_request_per_employee(self) -> None:
         pending = self.filtered(lambda request: request._is_awaiting_decision())
         if not pending:
             return
-        # One query for the batch, and count the batch itself too: two pending
-        # requests created together for one employee clash with each other and
-        # neither is in the database yet to be found by the other.
         counts = Counter(pending.employee_id.ids)
         already = self.sudo().search(
             [
@@ -107,7 +102,6 @@ class HrEmployeeChangeRequest(models.Model):
         return self.approval_state in self._AWAITING_APPROVAL_STATES
 
     def _proposed_values(self):
-        """The fields this request actually changes, as employee write values."""
         self.check_singleton()
         values = {}
         for fname in self._PROPOSED_FIELDS:
@@ -133,9 +127,6 @@ class HrEmployeeChangeRequest(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         requests = super().create(vals_list)
-        # Asking IS submitting: there is no draft a person would edit twice, so
-        # the record raises and confirms its approval in the same breath the
-        # hand-written workflow used to reach `pending` in.
         for request in requests:
             request.action_create_approval_request()
         return requests
@@ -144,12 +135,9 @@ class HrEmployeeChangeRequest(models.Model):
         return "hr.approval_category_employee_change_request"
 
     def _get_fields_approval_protected(self):
-        """What the reviewer is deciding on. The requester may not change it
-        after asking: an approval would otherwise apply values nobody reviewed."""
         return ["employee_id", *self._PROPOSED_FIELDS]
 
     def _is_approval_acted_on(self) -> bool:
-        # the approval writes the proposed values onto the employee as it lands
         self.check_singleton()
         return self.approval_state == "approved"
 
@@ -175,7 +163,6 @@ class HrEmployeeChangeRequest(models.Model):
 
     @api.model
     def action_open_my_request(self) -> dict:
-        """Open the caller's pending request, seeded from what they hold today."""
         employee = self.env.user.employee_id
         if not employee:
             raise UserError(

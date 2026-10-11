@@ -99,11 +99,6 @@ class StockMoveLine(models.Model):
         )
 
     def _filtered_leaving_warehouse(self) -> Self:
-        """Return the lines that do not just move goods between two internal
-        locations of the same warehouse.
-
-        :rtype: recordset
-        """
         return self.filtered(
             lambda ml: (
                 not (

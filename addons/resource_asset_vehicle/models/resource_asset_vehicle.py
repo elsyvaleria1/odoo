@@ -10,7 +10,6 @@ class ResourceAssetVehicle(models.Model):
     _table = "resource_asset_vehicle"
     _resource_kind_code = "vehicle"
 
-    # the resource reads these through the identifier rows; the vehicle holds them
     license_plate = ResourceIdentifier(
         identifier_code="plate",
         through="resource_id",

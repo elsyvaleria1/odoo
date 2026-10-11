@@ -373,7 +373,7 @@ class TestAcquireCursor(BaseCase):
         ):
             with self.assertRaises(PoolError):
                 with acquire_cursor("testdb"):
-                    pass  # pragma: no cover
+                    pass
 
     def test_no_backoff_sleep_after_final_attempt(self):
         mock_connection = MagicMock()
@@ -385,7 +385,7 @@ class TestAcquireCursor(BaseCase):
         ):
             with self.assertRaises(PoolError):
                 with acquire_cursor("testdb"):
-                    pass  # pragma: no cover
+                    pass
         backoff_sleeps = [
             call for call in mock_sleep.call_args_list if call.args[0] > 0
         ]
@@ -597,7 +597,6 @@ class TestFrameParser(BaseCase):
         return frames
 
     def test_a_64_bit_length_with_its_top_bit_set_is_a_protocol_error(self):
-        # RFC 6455 5.2: not a frame too big, a frame no endpoint may send
         header = struct.pack("!BBQ", 0x82, 0x80 | 127, 1 << 63) + b"\x00\x00\x00\x00"
         with self.assertRaises(ProtocolError):
             FrameParser(2**20).feed(header)
@@ -914,7 +913,6 @@ class TestTrustedOrigin(BaseCase):
         return request
 
     def test_a_page_of_the_own_http_port_is_trusted_on_the_evented_port(self):
-        # prefork without a proxy: pages on http_port, websockets on gevent_port
         with patch(
             "odoo.addons.bus.websocket.config",
             {"http_port": 8069, "gevent_port": 8072, "workers": 2, "proxy_mode": False},
@@ -937,8 +935,6 @@ class TestTrustedOrigin(BaseCase):
             )
 
     def test_the_own_http_port_is_trusted_only_where_pages_use_the_gevent_port(self):
-        # threaded, or behind a proxy: whatever answers on http_port is not
-        # this server's pages
         evented = self._request("http", "app.example:8072")
         for workers, proxy_mode in ((0, False), (2, True)):
             with (

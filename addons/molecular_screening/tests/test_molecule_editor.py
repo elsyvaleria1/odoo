@@ -3,8 +3,6 @@ from odoo.tests import HttpCase, TransactionCase, tagged
 
 from .fixtures import ACETONITRILE, BENZENE, EXPECTED, OVERLOADED
 
-# Draws benzene from the editor's own sample, checks the live panel, relaxes the
-# geometry, keeps it, names the compound and saves.
 SKETCH_FLOW = """
 const waitFor = (selector, test) =>
     new Promise((resolve, reject) => {
@@ -80,8 +78,6 @@ class TestMoleculeEditorServer(TransactionCase):
         )
         second = self.env["molecular.compound"].create_from_molblock(BENZENE)
         self.assertEqual(first, second)
-        # A second drawing of the same molecule is another structure, not
-        # another compound.
         self.assertEqual(len(first.structure_ids), 2)
 
     def test_exceeded_valence_stores_no_mass(self):

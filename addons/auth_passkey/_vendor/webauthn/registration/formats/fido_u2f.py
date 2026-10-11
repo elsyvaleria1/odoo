@@ -35,10 +35,6 @@ def verify_fido_u2f(
     aaguid: bytes,
     pem_root_certs_bytes: List[bytes],
 ) -> bool:
-    """Verify a "fido-u2f" attestation statement
-
-    See https://www.w3.org/TR/webauthn-2/#sctn-fido-u2f-attestation
-    """
     if not attestation_statement.sig:
         raise InvalidRegistrationResponse("Attestation statement was missing signature (FIDO-U2F)")
 
@@ -52,7 +48,6 @@ def verify_fido_u2f(
             "Attestation statement contained too many certificates (FIDO-U2F)"
         )
 
-    # Validate the certificate chain
     try:
         validate_certificate_chain(
             x5c=attestation_statement.x5c,
@@ -61,8 +56,6 @@ def verify_fido_u2f(
     except InvalidCertificateChain as err:
         raise InvalidRegistrationResponse(f"{err} (FIDO-U2F)")
 
-    # FIDO spec requires AAGUID in U2F attestations to be all zeroes
-    # See https://fidoalliance.org/specs/fido-v2.1-rd-20191217/fido-client-to-authenticator-protocol-v2.1-rd-20191217.html#u2f-authenticatorMakeCredential-interoperability
     actual_aaguid = aaguid_to_string(aaguid)
     expected_aaguid = "00000000-0000-0000-0000-000000000000"
     if actual_aaguid != expected_aaguid:
@@ -70,12 +63,10 @@ def verify_fido_u2f(
             f"AAGUID {actual_aaguid} was not expected {expected_aaguid} (FIDO-U2F)"
         )
 
-    # Get the public key from the leaf certificate
     leaf_cert_bytes = attestation_statement.x5c[0]
     leaf_cert = x509.load_der_x509_certificate(leaf_cert_bytes)
     leaf_cert_pub_key = leaf_cert.public_key()
 
-    # We need the cert's x and y points so make sure they exist
     if not isinstance(leaf_cert_pub_key, EllipticCurvePublicKey):
         raise InvalidRegistrationResponse("Leaf cert was not an EC2 certificate (FIDO-U2F)")
 
@@ -86,7 +77,6 @@ def verify_fido_u2f(
     if not isinstance(decoded_public_key, DecodedEC2PublicKey):
         raise InvalidRegistrationResponse("Credential public key was not EC2 (FIDO-U2F)")
 
-    # Convert the public key to "Raw ANSI X9.62 public key format"
     public_key_u2f = b"".join(
         [
             bytes([0x04]),
@@ -95,12 +85,10 @@ def verify_fido_u2f(
         ]
     )
 
-    # Generate a hash of client_data_json
     client_data_hash = hashlib.sha256()
     client_data_hash.update(client_data_json)
     client_data_hash_bytes = client_data_hash.digest()
 
-    # Prepare the signature base (called "verificationData" in the WebAuthn spec)
     verification_data = b"".join(
         [
             bytes([0x00]),
@@ -123,5 +111,4 @@ def verify_fido_u2f(
             "Could not verify attestation statement signature (FIDO-U2F)"
         )
 
-    # If we make it to here we're all good
     return True

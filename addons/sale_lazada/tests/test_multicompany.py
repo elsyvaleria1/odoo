@@ -63,11 +63,6 @@ class TestLazadaMultiCompany(common.TestLazadaCommon):
     @freeze_time("2020-02-01")
     @mute_logger("odoo.addons.sale_lazada.models.lazada_shop")
     def test_tax_application_on_sync_order_for_branch_company(self):
-        """
-        Test the orders synchronization can assign taxes from parent company.
-
-        product_line should have the same tax as the parent tax.
-        """
 
         def find_matching_product_mock(
             _self,
@@ -77,7 +72,6 @@ class TestLazadaMultiCompany(common.TestLazadaCommon):
             default_type_,
             **_kwargs,
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,

@@ -169,8 +169,6 @@ class TestJobSkillIdsMeansCurrentlyRequired(SkillsCase):
         cls.env.flush_all()
 
     def test_a_dropped_requirement_is_not_one_the_job_asks_for(self):
-        # hr_recruitment_integration_skills_monster posts job.skill_ids to an
-        # external board; a dropped requirement must not be advertised.
         self.assertEqual(self.job.skill_ids, self.skill_piano)
 
     def test_searching_jobs_by_skill_skips_dropped_requirements(self):

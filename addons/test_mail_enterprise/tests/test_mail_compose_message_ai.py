@@ -12,7 +12,6 @@ from odoo.addons.test_mail_enterprise.tests.common_ai import MailCommonAI
 class TestMailComposeMessageAI(MailCommonAI):
     def setUp(self):
         super().setUp()
-        # rename test records to A, B, C and their customer_id to Cust A, Cust B, Cust C
         for letter, test_record in zip(
             "ABC", self.test_record | self.test_records, strict=False
         ):
@@ -116,7 +115,6 @@ class TestMailComposeMessageAI(MailCommonAI):
                 response=["Test response"],
                 body_html=f"""<div>{self._wrap_prompt('<t t-out="object.name"/> +++ <t t-out="object.email_from"/>')}</div>""",
             ):
-                # clear the user's groups to simulate no access rights to the models used in the template
                 self.env.user.write({"group_ids": [Command.clear()]})
                 with self.assertRaises(AccessError):
                     composer = Form(
@@ -168,7 +166,6 @@ class TestMailComposeMessageAI(MailCommonAI):
     @mute_logger("odoo.addons.ai.models.mixin_mail_render")
     @users("employee")
     def test_composer_missing_default_agent_should_remove_prompts(self):
-        # Temporarily disable the ondelete constraint for testing
         with patch.object(
             self.env.registry["ai.agent"],
             "_unlink_except_system_agent",

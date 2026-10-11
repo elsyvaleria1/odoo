@@ -11,7 +11,6 @@ class SocialPushNotificationsController(http.Controller):
         website=True,
     )
     def get_push_configuration(self):
-        """Fetches the firebase push configuration for the current website (if any)."""
         current_website = request.website
         if (
             not current_website
@@ -98,11 +97,6 @@ class SocialPushNotificationsController(http.Controller):
         website=True,
     )
     def register(self, token):
-        """Store the firebase token on the website visitor.
-        If the visitor does not exists yet, create one and return the signed website.visitor id
-        to store it in cookie.
-
-        Will also clean the token from other visitors if necessary."""
 
         res = {}
 

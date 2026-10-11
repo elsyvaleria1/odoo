@@ -465,7 +465,6 @@ class TestOperatorTimeline(TransactionCase):
 
     def test_a_change_late_in_the_local_day_counts_as_in_force(self):
         asset = self._asset(self.driver_2024)
-        # 02:00 UTC on the 2nd is 20:00 on the 1st in America/Mexico_City.
         self._change_operator(asset, self.driver_2025, "2025-06-02 02:00:00")
         self.env.user.tz = "America/Mexico_City"
 

@@ -199,7 +199,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
                 xml_tree = etree.fromstring(attachment.raw)
 
                 if ubl_cii_format == "facturx":
-                    # Testing the case where a product on the invoice has a UoM with a different category than the one in the DB
                     wrong_uom_line = xml_tree.findall(
                         "./{*}SupplyChainTradeTransaction/{*}IncludedSupplyChainTradeLineItem"
                     )[1]
@@ -238,23 +237,13 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
                 self.assertRecordValues(new_invoice.invoice_line_ids, line_vals)
 
     def test_import_tax_prediction(self):
-        """We are going to create 2 tax and import the e-invoice twice.
-
-        On the first attempt, as there isn't any data to leverage, the classic 'search' will be called and we expect
-        the first tax created to be the selected one as the retrieval order is `sequence, id`.
-
-        We will set the second tax on the bill and post it which make it the most probable one.
-
-        On the second attempt, we expect that second tax to be retrieved.
-        """
         self.env.ref(
             "base.EUR"
-        ).active = True  # EUR might not be active and is used in the xml testing file
+        ).active = True
         if not hasattr(self.env["account.move.line"], "_predict_specific_tax"):
             self.skipTest(
                 "The predictive bill module isn't install and thus prediction with edi can't be tested."
             )
-        # create 2 new taxes for the test seperatly to ensure the first gets the smaller id
         new_tax_1 = self.env["account.tax"].create(
             {
                 "name": "tax with lower id could be retrieved first",
@@ -283,17 +272,13 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
                 }
             )
 
-        # Import the document for the first time
         bill = self._import_as_attachment_on(attachment=xml_attachment)
 
-        # Ensure the first tax is retrieved as there isn't any prediction that could be leverage
         self.assertEqual(bill.invoice_line_ids.tax_ids, new_tax_1)
 
-        # Set the second tax on the line to make it the most probable one
         bill.invoice_line_ids.tax_ids = new_tax_2
         bill.action_post()
 
-        # Import the bill again and ensure the prediction did his work
         bill = self._import_as_attachment_on(attachment=xml_attachment)
         self.assertEqual(bill.invoice_line_ids.tax_ids, new_tax_2)
 
@@ -356,7 +341,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         )
 
     def test_export_company_registry_in_party_nodes(self):
-        """Check that company_registry is used for PartyIdentification and CompanyID."""
         self.partner_be.company_registry = "1234567890"
         invoice = self.env["account.move"].create(
             {
@@ -382,7 +366,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         )
 
     def test_import_partner_peppol_fields(self):
-        """Check that the peppol fields are used to retrieve the partner when importing a Bis 3 xml."""
         invoice = self.env["account.move"].create(
             {
                 "partner_id": self.partner_be.id,
@@ -398,14 +381,12 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
             }
         )
 
-        # There is a duplicated partner (with the same name and email)
         self.env["res.partner"].create(
             {
                 "name": "My Belgian Partner",
                 "email": "mypartner@email.com",
             }
         )
-        # Change the fields of the partner, keep the peppol fields
         self.partner_be.update(
             {
                 "name": "Turlututu",
@@ -413,14 +394,12 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
                 "vat": False,
             }
         )
-        # The partner should be retrieved based on the peppol fields
         imported_invoice = self._import_as_attachment_on(
             attachment=xml_attachment, journal=self.company_data["default_journal_sale"]
         )
         self.assertEqual(imported_invoice.partner_id, self.partner_be)
 
     def test_import_partner_postal_address(self):
-        "Test importing postal address when creating new partner from UBL xml."
         file_path = "bis3_bill_example.xml"
         file_path = f"{self.test_module}/tests/test_files/{file_path}"
         with file_open(file_path, "rb") as file:
@@ -437,7 +416,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
             "email": "adl@test.com",
             "vat": "LU12977109",
         }
-        # assert there is no matching partner
         partner_match = self.env["res.partner"]._get_matching_partner(**partner_vals)
         self.assertFalse(partner_match)
 
@@ -710,8 +688,6 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         self._generate_invoice_ubl_file(invoice)
         attachment = invoice.ubl_cii_xml_id
         self.assertTrue(attachment)
-        # Tax prediction learns from posted history, and this invoice would teach it the
-        # foreign tax regardless of the fiscal position under test.
         invoice.action_draft()
         invoice.action_cancel()
 
@@ -901,10 +877,9 @@ class TestAccountEdiUblCii(TestUblCiiCommon, HttpCase):
         )
 
     def test_import_partner_fields(self):
-        """We are going to import the e-invoice and check partner is correctly imported."""
         self.env.ref(
             "base.EUR"
-        ).active = True  # EUR might not be active and is used in the xml testing file
+        ).active = True
         file_path = "bis3_bill_example.xml"
         file_path = f"{self.test_module}/tests/test_files/{file_path}"
         with file_open(file_path, "rb") as file:
@@ -1168,7 +1143,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
             + self.prod_tax
             + self.free_export_tax
         )
-        # test tax by tax then with multiple taxes
         tax_list = list(ubl_taxes) + [ubl_taxes]
         for taxes in tax_list:
             invoice = self.env["account.move"].create(
@@ -1231,19 +1205,10 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
         self.assertEqual(scheme_ID.attrib.get("schemeID"), "0190")
 
     def test_facturx_native_pdfa(self):
-        """Factur-X invoices render as native PDF/A-3b with the CII XML embedded.
-
-        Guards the native swap (WeasyPrint pdf_variant + attachments + XMP) that
-        replaced the pypdf convert_to_pdfa post-processing. Asserts the PDF/A
-        structural markers here; full veraPDF conformance is verified out of band
-        (the validator is a Java tool, unavailable in CI).
-        """
         import io
 
         import pypdf
 
-        # A complete company + customer so the CII XML export succeeds (Factur-X
-        # requires VAT, postal addresses, contact details and a bank account).
         company = self.company_data["company"]
         company.write(
             {
@@ -1265,7 +1230,7 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
                 "allow_out_payment": True,
             }
         )
-        partner = self.partner_be  # fully configured: VAT, address, country
+        partner = self.partner_be
         partner.invoice_edi_format = "facturx"
         invoice = self.env["account.move"].create(
             {
@@ -1278,9 +1243,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
         )
         invoice.action_post()
 
-        # force_report_rendering makes the report engine produce a real PDF (not
-        # the test stub), which in turn triggers the native PDF/A path.
-        # sending_methods=[] generates the document without actually sending it.
         wizard = (
             self.env["wizard.account.move.send"]
             .with_context(
@@ -1299,14 +1261,12 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
 
         reader = pypdf.PdfReader(io.BytesIO(raw))
         root = reader.trailer["/Root"]
-        # PDF/A structural markers emitted natively by WeasyPrint's pdf/a-3b:
         self.assertIn("/OutputIntents", root, "PDF/A output intent is present")
         self.assertIn("/AF", root, "associated files array (Factur-X) is present")
         self.assertIn("/Metadata", root, "XMP metadata stream is present")
         xmp = root["/Metadata"].get_data()
         self.assertIn(b"pdfaid", xmp, "PDF/A identification schema in XMP")
         self.assertIn(b"factur-x:pdfa", xmp, "Factur-X XMP extension schema is present")
-        # The CII XML is embedded as an attachment named factur-x.xml.
         self.assertIn(
             "factur-x.xml",
             reader.attachments,
@@ -1314,7 +1274,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
         )
 
     def test_facturx_use_correct_vat(self):
-        """Test that Factur-X uses the foreign VAT when available, else the company VAT."""
         germany = self.env.ref("base.de")
 
         self.company.vat = "931736581"
@@ -1383,7 +1342,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
         invoice_with_fp.action_post()
         local_invoice.action_post()
 
-        # Check XML for foreign VAT
         xml_bytes = self.env["account.edi.xml.cii"]._export_invoice(invoice_with_fp)[0]
         xml_tree = etree.fromstring(xml_bytes)
         node = xml_tree.xpath(
@@ -1397,7 +1355,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
             node[0].text, fiscal_position.foreign_vat, "Foreign Fiscal Position VAT"
         )
 
-        # Check XML for company VAT fallback
         xml_bytes = self.env["account.edi.xml.cii"]._export_invoice(local_invoice)[0]
         xml_tree = etree.fromstring(xml_bytes)
         node = xml_tree.xpath(
@@ -1410,10 +1367,6 @@ comment-->1000.0</TaxExclusiveAmount></xpath>"""
         self.assertEqual(node[0].text, self.company.vat, "Company VAT fallback")
 
     def test_partner_name_in_xml(self):
-        """
-        Test that invoice contacts without specific names use their parent partner's
-        name in the XML output, avoiding the 'Invoice address' suffix from display_name.
-        """
         partner = self.env["res.partner"].create(
             {"parent_id": self.partner_a.id, "type": "invoice"}
         )

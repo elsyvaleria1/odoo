@@ -103,14 +103,6 @@ class ScheduleZoneCase(TransactionCase):
 @tagged("post_install", "-at_install")
 class TestWorkedHoursDeductsTheLunchBreak(ScheduleZoneCase):
     def test_the_break_is_deducted_in_every_zone(self):
-        """A nine-hour presence against a schedule carrying an hour of lunch is
-        eight worked hours, whatever zone the schedule is written in.
-
-        The span was localised in the SCHEDULE's zone and the break in the
-        RESOURCE's, so for any employee whose two zones differ by more than the
-        break is long the break landed outside the span and was deducted from
-        nothing.
-        """
         for tz in ("UTC", "Asia/Tokyo", "Pacific/Honolulu", "America/Mexico_City"):
             with self.subTest(tz=tz):
                 employee = self._employee(self._calendar(tz))
@@ -138,15 +130,12 @@ class TestWorkedHoursDeductsTheLunchBreak(ScheduleZoneCase):
 @tagged("post_install", "-at_install")
 class TestTheDayIsTheVersionsDay(ScheduleZoneCase):
     def test_a_later_schedule_change_does_not_re_date_a_past_attendance(self):
-        """`date` is the day in the employee's work zone, which a later schedule
-        change does not move."""
         tokyo = self._calendar("Asia/Tokyo", with_lunch=False)
         honolulu = self._calendar("Pacific/Honolulu", with_lunch=False)
         employee = self._employee(tokyo)
         attendance = self.env["hr.attendance"].create(
             {
                 "employee_id": employee.id,
-                # 2026-09-08 07:00 in Tokyo, still 2026-09-07 in Honolulu.
                 "check_in": datetime(2026, 9, 7, 22, 0),
                 "check_out": datetime(2026, 9, 8, 6, 0),
             }
@@ -188,16 +177,6 @@ class TestAutoCheckOutIsZoneIndependent(ScheduleZoneCase):
         return attendance
 
     def test_the_same_overrun_is_cut_at_the_same_worked_hour_everywhere(self):
-        """Seven scheduled hours plus an hour of tolerance is eight worked
-        hours, in every zone.
-
-        The cut used to be placed by subtracting the excess from
-        `check_in.replace(hour=23, minute=59, second=59)` -- the end of the
-        check-in's UTC day, not of the employee's -- so the same overrun on the
-        same schedule was cut an hour apart from one zone to the next. The
-        comparison that decided to cut at all counted the employee's lunch as
-        expected work while the placement did not count it as worked.
-        """
         for tz in ("UTC", "Asia/Tokyo", "Pacific/Honolulu", "America/Mexico_City"):
             with self.subTest(tz=tz):
                 attendance = self._close(tz)
@@ -280,9 +259,6 @@ class TestFlexibleResourceKeepsItsHours(ScheduleZoneCase):
         setup(employee)
         self.env.flush_all()
         self.env.invalidate_all()
-        # Assert the fixture before the behaviour: if clearing a calendar stops
-        # making a resource flexible, these tests would read nine hours for
-        # another reason entirely and pass without touching the guard.
         self.assertEqual(
             employee.resource_id._is_flexible(),
             flexible,
@@ -359,7 +335,7 @@ class TestADayIsNotAlwaysTwentyFourHours(ScheduleZoneCase):
     exist -- 0.983h comes back from both.
     """
 
-    LONG_DAY = date(2026, 4, 4)  # America/Santiago: 23:00 happens twice
+    LONG_DAY = date(2026, 4, 4)
     ZONE = "America/Santiago"
 
     def _window_asked_for(self, local_day):
@@ -439,7 +415,6 @@ class TestTheVersionIsChosenByTheLocalDay(ScheduleZoneCase):
         )
 
     def test_an_evening_attendance_east_belongs_to_tomorrows_version(self):
-        # 22:00 UTC on the 7th is 07:00 on the 8th in Tokyo.
         attendance = self._moved(
             "Asia/Tokyo", "Asia/Tokyo", datetime(2026, 9, 7, 22, 0)
         )
@@ -452,7 +427,6 @@ class TestTheVersionIsChosenByTheLocalDay(ScheduleZoneCase):
         )
 
     def test_an_early_attendance_west_belongs_to_yesterdays_version(self):
-        # 02:00 UTC on the 8th is still 16:00 on the 7th in Honolulu.
         attendance = self._moved(
             "Pacific/Honolulu", "Pacific/Honolulu", datetime(2026, 9, 8, 2, 0)
         )
@@ -483,7 +457,6 @@ class TestTheVersionIsChosenByTheLocalDay(ScheduleZoneCase):
                 )
 
     def test_zones_that_straddle_the_change_in_opposite_directions_terminate(self):
-        """No fixed point exists, so the resolution stops rather than loops."""
         attendance = self._moved(
             "Asia/Tokyo", "Pacific/Honolulu", datetime(2026, 9, 7, 22, 0)
         )

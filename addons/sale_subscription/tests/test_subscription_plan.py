@@ -10,7 +10,6 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import (
 class TestSubscriptionPlan(TestSubscriptionCommon):
     def test_check_count_of_subscription_items_on_plan(self):
 
-        # Create a subscription plan
         sub_monthly_plan = self.env["sale.subscription.plan"].create(
             {
                 "name": "Monthly Plan",
@@ -20,7 +19,6 @@ class TestSubscriptionPlan(TestSubscriptionCommon):
             }
         )
 
-        # Create subscriptions
         sub_1, sub_2 = self.env["sale.order"].create(
             [
                 {
@@ -66,21 +64,15 @@ class TestSubscriptionPlan(TestSubscriptionCommon):
             ]
         )
 
-        # Confirm subscriptions
         sub_1.action_confirm()
         sub_2.action_confirm()
 
-        # Verify the count of subscription items
         sub_plan_items = self.env["sale.subscription.plan"].search(
             [("id", "=", sub_monthly_plan.id)]
         )
         self.assertEqual(sub_plan_items.subscription_line_count, 3)
 
     def test_change_recurrence_plan_with_option(self):
-        """
-        A recurring order with a line for a recurring produce and a sale order option for a recurring product yields an
-            exception when changing the recurring plan via Form, preventing the plan from being changed
-        """
         order_1 = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,

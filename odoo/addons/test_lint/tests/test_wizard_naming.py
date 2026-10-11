@@ -7,10 +7,6 @@ from .test_fixture_models import core_module_roots_by_name, module_of
 
 _logger = logging.getLogger(__name__)
 
-# Transient models that are not a dialog performing one operation keep their
-# names (coding guidelines §2.2.3): the settings protocol and its ancestor, the
-# engine the import action drives, a dashboard, two logs, a report engine, and
-# the rows a bank-transaction preview lists.
 NOT_WIZARDS = frozenset(
     {
         "res.config.settings",
@@ -35,7 +31,6 @@ def _is_transient(node: ast.ClassDef) -> bool:
 
 
 def declared_transient_names(source: str):
-    """Yield the ``_name`` a TransientModel class declares, not one it extends."""
     for node in ast.walk(ast.parse(source)):
         if not isinstance(node, ast.ClassDef) or not _is_transient(node):
             continue

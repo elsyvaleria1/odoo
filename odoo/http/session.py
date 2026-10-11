@@ -28,8 +28,6 @@ _SESSION_JSON_PRIMITIVES = (str, int, float, bool, type(None))
 
 
 def _copy_session_data(data: dict[str, Any]) -> dict[str, Any]:
-    # Every value went through _coerce_session_value and is stored as JSON, so
-    # a JSON round trip is the deep copy, at half deepcopy's cost.
     return _loads(_dumps_bytes(data), lone_surrogates=True)
 
 
@@ -139,7 +137,7 @@ class Session(collections.abc.MutableMapping):
         )
         if self.__baseline is None:
             return
-        before = len(self.__data)  # debuglog
+        before = len(self.__data)
         self.__data = _merge_session_data(
             _loads(self.__baseline, lone_surrogates=True), self.__data, dict(current)
         )
@@ -216,10 +214,6 @@ class Session(collections.abc.MutableMapping):
 
     @property
     def csrf_binding(self) -> str:
-        # An anonymous identity is bound under its own domain: the sid it was
-        # issued may be a cookie that names no stored session (a revoked one,
-        # or a deleted predecessor of a live family), and a token minted for
-        # it must never verify against a stored family's prefix.
         if issued := self.get(ISSUED_SID_KEY):
             return f"~{issued}"
         if self.is_new and self.rotation is None:
@@ -278,9 +272,6 @@ class Session(collections.abc.MutableMapping):
         login = self.pop("pre_login")
         uid = self.pop("pre_uid")
 
-        # the companies in the request's context were chosen for whoever it ran
-        # as before this login (a website's public user gets the website's);
-        # they are not this user's, who starts from their own default company
         context = dict(env.context)
         if dropped := context.pop("allowed_company_ids", None):
             _debug.logic(
@@ -294,8 +285,6 @@ class Session(collections.abc.MutableMapping):
 
             self._require_hard_rotation()
             if self.store is not None:
-                # fix now the id this login keeps, so what is recorded against
-                # the session (its device) names the session that survives
                 self.store.stage_rotation(self, env)
             self.update(
                 {
@@ -330,8 +319,6 @@ class Session(collections.abc.MutableMapping):
         self.clear()
         self.update(prepare_default_session(), db=db, debug=debug)
         if issued_sid:
-            # the hard rotation this demands drops it; an anonymous logout
-            # that keeps its sid keeps the tokens its pages carry
             self[ISSUED_SID_KEY] = issued_sid
         context = self.context
         assert context is not None
@@ -358,9 +345,6 @@ class Session(collections.abc.MutableMapping):
         if self.rotation is not None:
             original, soft = self.rotation
             if soft:
-                # Leave the old family as well as its cookie. A stale request's
-                # family cleanup must not be able to delete the logged-in or
-                # logged-out successor of this authentication transition.
                 self.sid = self.store.generate_key()
                 self.pop("gc_previous_sessions", None)
             self.rotation = (original, False)

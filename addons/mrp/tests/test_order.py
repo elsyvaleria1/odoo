@@ -2859,8 +2859,6 @@ class TestMrpOrder(TestMrpCommon):
 
     def test_workcenter_timezone(self):
         workcenter = self.workcenter_1
-        # The work zone is the resource's, not the calendar's: a calendar
-        # states hours, the resource states the zone those hours are read in.
         workcenter.tz = "Asia/Bangkok"
         (
             workcenter.resource_calendar_id.global_leave_ids

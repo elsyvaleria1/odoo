@@ -7,7 +7,6 @@ from odoo.addons.hr_expense_stripe.utils import send_request_stripe_proxy
 class AccountJournal(models.Model):
     _inherit = "account.journal"
 
-    # We put the fields here instead of the company to avoid having concurrency errors when the webhook tries to update it
     stripe_currency_id = fields.Many2one(related="company_id.stripe_currency_id")
     stripe_issuing_balance = fields.Monetary(
         string="Stripe Balance Available",
@@ -30,13 +29,11 @@ class AccountJournal(models.Model):
     )
 
     def _selection_bank_statements_source(self):
-        # EXTEND account to add the "Stripe issuing" source, which only serves to setup the journal dashboard elements
         rslt = super()._selection_bank_statements_source()
         rslt.append(("stripe_issuing", self.env._("Stripe Issuing")))
         return rslt
 
     def _update_bank_cash_dashboard_data(self, dashboard_data) -> None:
-        # EXTEND account to add specific Stripe online balance to the stripe journal
         super()._update_bank_cash_dashboard_data(dashboard_data)
         prefetch_ids = tuple(dashboard_data.keys())
         company_stripe_journal_ids = set(self.env.companies.stripe_journal_id.ids)
@@ -56,7 +53,6 @@ class AccountJournal(models.Model):
         return self.stripe_card_ids._get_records_action()
 
     def action_view_topup_wizard(self) -> dict:
-        """Open the wizard to create payments and show funding instructions"""
         self.check_singleton()
         self.env["wizard.account.journal.topup"].check_access("create")
 

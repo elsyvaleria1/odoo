@@ -161,7 +161,7 @@ def nary_condition_optimization(
                 )
             return result if merged_any else domains
 
-        optimizer._match_operators = frozenset(operators)  # type: ignore[attr-defined]
+        optimizer._match_operators = frozenset(operators)
         nary_optimization(optimizer)
 
         return optimization
@@ -239,8 +239,6 @@ def _optimize_equal_as_in(condition: DomainCondition, _: BaseModel) -> Domain:
 
 
 def _mixes_flags_and_numbers(values: typing.Iterable[typing.Any]) -> bool:
-    # 0 == False and 1 == True: a set keeps one of each pair, though a date
-    # part or a property reads 0 (midnight, Sunday) apart from unset
     unset = true = zero = one = False
     for v in values:
         if v is False or v is None:
@@ -427,9 +425,6 @@ def _names_field(domain: Domain, field_name: str) -> bool:
 def _keep_naming_active(
     field: Field[typing.Any], comodel: BaseModel, written: Domain, optimized: Domain
 ) -> Domain:
-    # the comodel's search adds `active = True` unless the subdomain names the
-    # active field: once `active in [True, False]` optimizes to TRUE it names
-    # nothing, and the archived corecords it asked for would be dropped
     active_name = comodel._active_name
     if (
         not field.is_x2many
@@ -438,8 +433,6 @@ def _keep_naming_active(
         or _names_field(optimized, active_name)
     ):
         return optimized
-    # in the form and order the lower levels leave it, or they rewrite it
-    # back and forth with this one
     kept = optimized & DomainCondition(
         active_name, "in", FrozenOrderedSet((True, False))
     )
@@ -455,9 +448,6 @@ del _level
 
 
 def _like_any_value(condition: DomainCondition, is_set: bool) -> Domain:
-    # a pattern every value matches reads "is set"; its negative form is the
-    # complement of that, which a related field through a one2many does not
-    # spell as `= False` ("some line is not set")
     is_set_condition = DomainCondition(condition.field_expr, "!=", False)
     if is_set:
         return is_set_condition
@@ -688,9 +678,6 @@ def _optimize_boolean_in(condition: DomainCondition, model: BaseModel) -> Domain
 
 
 def _boolean_holds_one_value(field: Field[typing.Any]) -> bool:
-    # a computed boolean's search answers for the record's one value, so
-    # True or False holds for every record; a related one through an x2many
-    # holds only where a line exists
     return not field.related or _searches_one_value(field)
 
 
@@ -859,11 +846,6 @@ def _get_hierarchy_root_ids(
     other_values = [v for v in values if not isinstance(v, int)]
     search_domain: Domain = _FALSE_DOMAIN
     if field.is_many2many:
-        # the roots of a many2many hierarchy pass through the comodel's
-        # search, which keeps the active ones the user may read; as the
-        # superuser that is the active flag alone, answered from the cache
-        # when the rows are known (a multi-company rule asks for the
-        # user's companies on every access check)
         active_roots = _active_roots_without_search(comodel, coids)
         if active_roots is None:
             search_domain |= DomainCondition("id", "in", coids)
@@ -891,8 +873,6 @@ def _active_roots_without_search(
     active_name = comodel._active_name
     if not active_name or not comodel.env.context.get("active_test", True):
         active_name = None
-    # a stored column read proves the rows exist (a missing one raises), and
-    # answers from the cache when the rows are known
     probe = active_name or comodel._rec_name
     if not probe or probe not in comodel._fields or not comodel._fields[probe].store:
         return None
@@ -917,8 +897,6 @@ def _get_domain_child_of(
     else:
         parent_field = comodel._fields[parent]
         if parent_field.is_many2one and parent_field.store:
-            # the closure stays a subquery of the search that asked for it:
-            # one round trip instead of the closure and then the search
             return comodel.env.backend.descendants(
                 comodel,
                 parent,
@@ -926,7 +904,6 @@ def _get_domain_child_of(
                 domain=Domain.TRUE,
                 step_domain=Domain.TRUE,
             )
-        # a many2many or non-stored parent has no column to recurse over
         child_ids: OrderedSet[int] = OrderedSet()
         while comodel:
             child_ids.update(comodel._ids)
@@ -970,7 +947,6 @@ def access_condition_target(
     if field.name == "id":
         comodel_name = model._name
     elif (field.is_many2one or field.is_one2one) and field.comodel_name:
-        # a one2one names one record, as a many2one does from its own side
         comodel_name = field.comodel_name
     else:
         raise condition._prepare_condition_error(
@@ -985,9 +961,6 @@ def access_condition_target(
 
 @operator_optimization(["access"], OptimizationLevel.DYNAMIC_VALUES)
 def _optimize_access(condition: DomainCondition, model: BaseModel) -> Domain:
-    # the condition holds when the principal may perform the operation on the
-    # record the field points to: it reads that model's security domain for
-    # the user, never the superuser the check itself may run as
     comodel_name, operation = access_condition_target(condition, model)
     env = model.sudo(False).env
     domain = env.registry.access_policy.record_domain(env, comodel_name, operation)
@@ -1085,10 +1058,6 @@ def _optimize_merge_set_conditions_mono_value(
     if field.is_x2many or field.is_properties:
         return conditions
     if not _searches_one_value(field):
-        # some value in A or some in B is some value in A | B, and none in A
-        # nor in B is none in A | B; the other combinations need one value.
-        # A negative set holding a null reads "some line lacks one of these"
-        # (search_related), which an AND does not merge either
         operator = "in" if cls is DomainOr else "not in"
         falsy = field.falsy_value
         merge, others = partition(
@@ -1132,10 +1101,6 @@ def _optimize_merge_set_conditions_x2many_not_in(
 
 
 def _decides_archived(condition: DomainCondition, model: BaseModel) -> bool:
-    # an x2many subdomain naming the comodel's active field searches archived
-    # corecords too, one that does not searches the active ones: merged with
-    # another, it would decide for both, and once merged it may optimize to
-    # TRUE (`active = False | active = True`) and name nothing
     field = condition._get_field(model)
     if not field.is_x2many:
         return False

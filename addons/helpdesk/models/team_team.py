@@ -213,7 +213,6 @@ class TeamTeam(models.Model):
         string="Failed SLA Ticket",
         compute="_compute_sla_failed",
     )
-    # auto close ticket
     helpdesk_auto_close_ticket = fields.Boolean(string="Automatic Closing")
     helpdesk_auto_close_day = fields.Integer(
         string="Inactive Period(days)",
@@ -263,7 +262,6 @@ class TeamTeam(models.Model):
         if any(team.use_helpdesk and not team.company_id for team in self):
             raise ValidationError(self.env._("A helpdesk team belongs to a company."))
 
-    # member_ids reaches team.member through its inverse, after constraints run
     def _check_helpdesk_members(self) -> None:
         if any(
             team.use_helpdesk
@@ -567,9 +565,6 @@ class TeamTeam(models.Model):
         if self.use_helpdesk and not self.member_ids:
             self.member_ids = [Command.set(self.env.user.ids)]
 
-    # ------------------------------------------------------------
-    # ORM overrides
-    # ------------------------------------------------------------
 
     @api.depends("company_id")
     @api.depends_context("allowed_company_ids")
@@ -613,7 +608,6 @@ class TeamTeam(models.Model):
         helpdesk_teams.sudo()._check_modules_to_install()
         if helpdesk_teams.filtered("helpdesk_auto_close_ticket"):
             teams._update_cron()
-        # If you plan to add something after this, use a new environment. The one above is no longer valid after the modules install.
         return teams
 
     def write(self, vals):
@@ -658,7 +652,6 @@ class TeamTeam(models.Model):
         helpdesk_teams.sudo()._check_modules_to_install()
         if "helpdesk_auto_close_ticket" in vals:
             self._update_cron()
-        # If you plan to add something after this, use a new environment. The one above is no longer valid after the modules install.
         return result
 
     def get_formview_id(self, access_uid=None):
@@ -669,7 +662,7 @@ class TeamTeam(models.Model):
     def unlink(self):
         stages = self.mapped("helpdesk_stage_ids").filtered(
             lambda stage: stage.team_ids <= self
-        )  # remove stages that only belong to team in self
+        )
         stages.unlink()
         return super().unlink()
 
@@ -692,20 +685,12 @@ class TeamTeam(models.Model):
         if not self.use_helpdesk:
             super().copy_translations(new, excluded=excluded)
             return
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
     def _sync_access_to_privacy_visibility(self, new_visibility) -> None:
-        """
-        Unsubscribe non-internal users from the team and tickets if the team privacy visibility
-        goes from 'portal' to a different value.
-        If the privacy visibility is set to 'portal', subscribe back tickets partners.
-        """
         for team in self:
             if team.helpdesk_privacy_visibility == new_visibility:
                 continue
@@ -741,14 +726,6 @@ class TeamTeam(models.Model):
         return self.env.ref("helpdesk.group_use_rating")
 
     def _is_sla_feature_enabled(self, check_user_has_group=False) -> bool:
-        """Check if the SLA feature is enabled
-
-        Check if the user can see at least one helpdesk team with `helpdesk_use_sla=True`
-        and if the user has the `group_use_sla` group (only done if the `check_user_has_group` parameter is True)
-
-        :param check_user_has_group: If True, then check if the user has the `group_use_sla`
-        :return True if the feature is enabled otherwise False.
-        """
         user_has_group = (
             self.env.user.has_group("helpdesk.group_use_sla")
             if check_user_has_group
@@ -762,14 +739,6 @@ class TeamTeam(models.Model):
         )
 
     def _is_rating_feature_enabled(self, check_user_has_group=False) -> bool:
-        """Check if the Customer Rating feature is enabled
-
-        Check if the user can see at least one helpdesk team with `helpdesk_use_rating=True`
-        and if the user has the `group_use_rating` group (only done if the `check_user_has_group` parameter is True)
-
-        :param check_user_has_group: If True, then check if the user has the `group_use_rating`
-        :return True if the feature is enabled otherwise False.
-        """
         user_has_group = (
             self.env.user.has_group("helpdesk.group_use_rating")
             if check_user_has_group
@@ -886,7 +855,6 @@ class TeamTeam(models.Model):
             )
 
     def _get_field_check_method(self):
-        # mapping of field names to the function that checks if their feature is enabled
         return {
             "helpdesk_use_sla": self._is_sla_feature_enabled,
             "helpdesk_use_rating": self._is_rating_feature_enabled,
@@ -894,7 +862,6 @@ class TeamTeam(models.Model):
 
     @api.model
     def _get_field_modules(self) -> dict:
-        # mapping of field names to module names
         return {
             "use_website_helpdesk_form": "website_helpdesk",
             "use_website_helpdesk_livechat": "website_helpdesk_livechat",
@@ -929,14 +896,6 @@ class TeamTeam(models.Model):
 
     @api.model
     def check_modules_to_install(self, enabled_features) -> bool:
-        """check if a module has to be installed according to the fields given in parameter.
-
-        :param list enabled_features: list of features enabled in the frontend by the user
-                                    to check if a module will be installed when the helpdesk
-                                    team is saved.
-        :return: boolean value, True if at least a module will be installed after saving
-                the changes in helpdesk team, otherwise False.
-        """
         if not enabled_features:
             return False
         module_names = [
@@ -957,7 +916,6 @@ class TeamTeam(models.Model):
         return False
 
     def _check_modules_to_install(self) -> bool:
-        # determine the modules to be installed
         expected = [
             mname
             for fname, mname in self._get_field_modules().items()
@@ -972,12 +930,8 @@ class TeamTeam(models.Model):
         if modules:
             modules.button_immediate_install()
 
-        # just in case we want to do something if we install a module. (like a refresh ...)
         return bool(modules)
 
-    # ------------------------------------------------------------
-    # Mail Alias
-    # ------------------------------------------------------------
 
     def _get_helpdesk_unique_alias_name(self):
         self.check_singleton()
@@ -1006,9 +960,6 @@ class TeamTeam(models.Model):
         )
         return {alias.alias_name for alias in existing_aliases}
 
-    # ------------------------------------------------------------
-    # Business Methods
-    # ------------------------------------------------------------
 
     @api.model
     def get_dashboard(self):
@@ -1140,7 +1091,6 @@ class TeamTeam(models.Model):
 
         if self._is_rating_feature_enabled(check_user_has_group=True):
             result["rating_enable"] = True
-            # rating of today
             domain = [("user_id", "=", self.env.uid)]
             one_week_before = today - relativedelta.relativedelta(weeks=1)
             helpdesk_ratings = self.env["rating.rating"].search(
@@ -1182,11 +1132,6 @@ class TeamTeam(models.Model):
     def _action_view_rating(
         self, period=False, only_closed_tickets=False, user_id=None
     ):
-        """return the action to see the rating about the tickets of the Team on the period wished.
-        :param period: either 'seven_days' or 'today' is defined to add a default filter for the ratings.
-        :param only_my_closed: True will include only the tickets in a closed stage.
-        :param user_id: id of the user to get the ratings only in the tickets belongs to the user.
-        """
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "helpdesk.rating_rating_action_helpdesk"
         )
@@ -1274,11 +1219,6 @@ class TeamTeam(models.Model):
         return action
 
     def _get_action_view_ticket_params(self, is_ticket_closed=False) -> dict:
-        """Get common params for the actions
-
-        :param is_ticket_closed: Boolean if True, then we want to see the tickets closed in last 7 days
-        :returns dict containing the params to update into the action.
-        """
         domain = Domain("team_id", "in", self.ids)
 
         context = {
@@ -1381,13 +1321,11 @@ class TeamTeam(models.Model):
         return action
 
     def action_view_rating_today(self):
-        #  call this method of on click "Customer Rating" button on dashbord for today rating of teams tickets
         return self.search(
             [("use_helpdesk", "=", True), ("member_ids", "in", self.env.uid)]
         )._action_view_rating(period="today", user_id=self.env.uid)
 
     def action_view_rating_7days(self):
-        #  call this method of on click "Customer Rating" button on dashbord for last 7days rating of teams tickets
         return self.search(
             [("use_helpdesk", "=", True), ("member_ids", "in", self.env.uid)]
         )._action_view_rating(period="seven_days", user_id=self.env.uid)
@@ -1395,8 +1333,6 @@ class TeamTeam(models.Model):
     def action_view_team_rating(self):
         self.check_singleton()
         action = self._action_view_rating()
-        # Before this changes if some tickets are archived in the helpdesk team, we count the ratings of them + the active tickets.
-        # Do we really want to count the ratings of the archived tickets?
         ratings = self.env["rating.rating"].search(action["domain"])
         if len(ratings) == 1:
             action.update(
@@ -1442,13 +1378,6 @@ class TeamTeam(models.Model):
         return action
 
     def _get_user_to_assign(self, count_per_team):
-        """
-        Get a dict with the next n user ids (per team) that should be assigned to the newly created tickets according to the team policy
-
-        :param count_per_team: a dict (key=helpdesk.team, value=count) of teams, with the count of users to get to assign to new tickets
-        :returns a mapping of team identifier with the "to assign" users ids.
-        :rtype: dict(int, List[int])
-        """
         team_without_manually = self.env["team.team"].browse(
             {
                 team.id
@@ -1458,7 +1387,6 @@ class TeamTeam(models.Model):
             }
         )
         result = {team.id: [False] * count for team, count in count_per_team.items()}
-        # the roster is read by whoever creates the ticket, often not a member
         team_without_manually = team_without_manually.sudo()
         users_per_working_days = team_without_manually.member_ids.with_env(
             self.env
@@ -1467,10 +1395,9 @@ class TeamTeam(models.Model):
             if not team.member_ids:
                 continue
             count = count_per_team[team]
-            member_ids = team.member_ids.ids  # By default, all members of the team
+            member_ids = team.member_ids.ids
             for user_ids in users_per_working_days:
                 if any(user_id in member_ids for user_id in user_ids):
-                    # filter members in team to get the ones working in the nearest date of today.
                     member_ids = [
                         user_id for user_id in user_ids if user_id in member_ids
                     ]
@@ -1478,7 +1405,7 @@ class TeamTeam(models.Model):
 
             if (
                 team.helpdesk_assign_method == "randomly"
-            ):  # randomly means new tickets get uniformly distributed
+            ):
                 last_assigned_user = (
                     self.env["helpdesk.ticket"]
                     .search(
@@ -1495,7 +1422,6 @@ class TeamTeam(models.Model):
                             offset = (offset + 1) % len(member_ids)
                         if member == last_assigned_user:
                             break
-                # Return the list of the next <count> ids in order, looping around the list of members if necessary
                 result[team.id] = list(
                     itertools.islice(
                         itertools.cycle(member_ids), offset, offset + count
@@ -1503,7 +1429,7 @@ class TeamTeam(models.Model):
                 )
             elif (
                 team.helpdesk_assign_method == "balanced"
-            ):  # find the member with the fewest open tickets
+            ):
                 ticket_count_data = self.env["helpdesk.ticket"]._read_group(
                     [
                         ("stage_id.fold", "=", False),
@@ -1515,13 +1441,11 @@ class TeamTeam(models.Model):
                 )
                 open_ticket_per_user_map = dict.fromkeys(
                     member_ids, 0
-                )  # dict: user_id -> open ticket count
+                )
                 open_ticket_per_user_map.update(
                     (user.id, count) for user, count in ticket_count_data
                 )
                 selected_user_ids = []
-                # Put all members in a priority queue so that we can always get the one with the lowest amount of open
-                # tickets (= the lowest priority)
                 heap = [
                     (open_tickets, user_id)
                     for user_id, open_tickets in open_ticket_per_user_map.items()
@@ -1535,10 +1459,6 @@ class TeamTeam(models.Model):
         return result
 
     def _get_stage(self):
-        """Get a dict with the stage (per team) that should be set as first to a created ticket
-        :returns a mapping of team identifier with the stage (maybe an empty record).
-        :rtype : dict (key=team_id, value=record of helpdesk.stage)
-        """
         result = dict.fromkeys(self.ids, self.env["helpdesk.stage"])
         for team in self:
             result[team.id] = self.env["helpdesk.stage"].search(
@@ -1547,9 +1467,6 @@ class TeamTeam(models.Model):
         return result
 
     def _get_closing_stage(self):
-        """
-        Return the first closing kanban stage or the last stage of the pipe if none
-        """
         closed_stage = self.helpdesk_stage_ids.filtered(lambda stage: stage.fold)
         if not closed_stage:
             closed_stage = self.helpdesk_stage_ids[-1]
@@ -1572,10 +1489,9 @@ class TeamTeam(models.Model):
         )
         teams_dict = defaultdict(
             dict
-        )  # key: team_id, values: the remaining result of the search_group
+        )
         today = fields.Datetime.today()
         for team in teams:
-            # Compute the threshold_date
             team["threshold_date"] = today - relativedelta.relativedelta(
                 days=team["helpdesk_auto_close_day"]
             )
@@ -1597,7 +1513,6 @@ class TeamTeam(models.Model):
 
         inactive_tickets = tickets.filtered(is_inactive_ticket)
         for ticket in inactive_tickets:
-            # helpdesk_to_stage_id is mandatory in the view but not in the model so it is better to test it.
             if teams_dict[ticket.team_id.id]["helpdesk_to_stage_id"]:
                 ticket.write(
                     {
@@ -1608,7 +1523,6 @@ class TeamTeam(models.Model):
                 )
 
     def _local_midnight_as_utc(self):
-        """local 12am expressed in UTC (naive datetime)"""
         now = fields.Datetime.context_timestamp(self, fields.Datetime.now())
         return (
             datetime.datetime.combine(now.date(), datetime.time.min, now.tzinfo)

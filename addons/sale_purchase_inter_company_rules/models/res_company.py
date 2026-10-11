@@ -14,15 +14,6 @@ class ResCompany(models.Model):
     )
 
     def _get_intercompany_uid_or_raise(self):
-        """Return this company's intercompany user id, or raise.
-
-        Shared by sale_order.py/purchase_order.py so both SO->PO and PO->SO
-        generation report the same "no intercompany user configured" error
-        instead of each hand-rolling its own message. Deliberately narrower
-        than account_inter_company_rules's res.company._check_intercompany_config,
-        which also requires a purchase journal — irrelevant to plain SO/PO
-        generation and not something this method should pull in.
-        """
         self.check_singleton()
         if not self.intercompany_user_id:
             _debug.logic("intercompany_user_missing", company=self)

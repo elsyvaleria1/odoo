@@ -13,13 +13,11 @@ class TestUnavailabilityForForecasts(TestCommonForecast):
         cls.setUpEmployees()
         cls.setUpProjects()
         cls.employee_bert.resource_calendar_id.tz = "UTC"
-        # extra employee to test _gantt_unavailability grouped by resource_id
         cls.employee_lionel = cls.env["hr.employee"].create(
             {"name": "lionel", "work_email": "lionel@a.be", "tz": "UTC"}
         )
         cls.resource_lionel = cls.employee_lionel.resource_id
 
-        # employee leaves
         leave_values = {
             "name": "leave 1",
             "date_from": fields.Datetime.to_string(date(2019, 5, 5)),
@@ -30,7 +28,6 @@ class TestUnavailabilityForForecasts(TestCommonForecast):
         cls.bert_leave = cls.env["resource.schedule.exception"].create(leave_values)
 
     def test__gantt_unavailability_correctly_update_gantt_object(self):
-        # create a few forecasts in the opera project
         values = {
             "project_id": self.project_opera.id,
             "allocated_hours": 8,

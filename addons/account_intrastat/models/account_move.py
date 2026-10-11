@@ -20,9 +20,6 @@ class AccountMove(models.Model):
     )
 
     def _get_invoice_intrastat_country_id(self):
-        """Hook allowing to retrieve the intrastat country depending of installed modules.
-        :return: A res.country record's id.
-        """
         self.check_singleton()
         if self.is_sale_document():
             if (
@@ -98,7 +95,6 @@ class AccountMoveLine(models.Model):
                     continue
             line.intrastat_transaction_id = None
 
-    # EXTENDS account
     def _get_fields_lock_date_protected(self):
         protected_fields = super()._get_fields_lock_date_protected()
         protected_fields["fiscal"] += [
@@ -109,7 +105,6 @@ class AccountMoveLine(models.Model):
 
     def copy_data(self, default=None):
         data_list = super().copy_data(default=default)
-        # Needs to be recomputed
         for line, values in zip(self, data_list, strict=True):
             if line.move_id.intrastat_country_id:
                 values.pop("intrastat_transaction_id", None)

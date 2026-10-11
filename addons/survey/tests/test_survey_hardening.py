@@ -521,9 +521,6 @@ class TestAnswerPayloadShapes(common.TestSurveyCommon):
                     )
 
     def test_a_choice_with_a_comment_is_the_forms_own_shape(self):
-        # survey_form.js submits `[answer_id, {"comment": text}]` for a choice
-        # question that allows comments; refusing the dict refused the form
-        # itself, and the feedback tour died on its last page.
         from odoo.addons.survey.controllers.main import Survey
 
         controller = Survey()

@@ -241,8 +241,6 @@ class ResourceScheduleException(models.Model):
         self.check_singleton()
         start = self.date_from.replace(tzinfo=UTC).astimezone(tz)
         stop = self.date_to.replace(tzinfo=UTC).astimezone(tz)
-        # on a schedule without fixed hours, a closure or an absence closes the
-        # days it touches
         start, stop = calendar._handle_flexible_leave_interval(start, stop, self)
         hours_per_day = calendar.hours_per_day or HOURS_PER_DAY
         return [

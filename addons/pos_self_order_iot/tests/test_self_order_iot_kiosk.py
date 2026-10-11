@@ -68,14 +68,6 @@ class TestSelfOrderIoTKiosk(IotCommonTest, SelfOrderCommonTest):
     PRINT_EXCHANGE = ("webrtc_offer", "iot_action", "operation_confirmation")
 
     def _check_ws_print_success(self):
-        """The print is an offer, an action and a confirmation, in that order.
-
-        Asserted as a run within the recorded messages rather than as the whole
-        of them. Any module installed alongside may legitimately put its own
-        traffic on the same channel during the tour -- `pos_blackbox_be` clocks
-        the kiosk user in with an `iot_action` before the print begins -- and a
-        test that counts every message calls that a failure of printing.
-        """
         seen = [next(iter(message.keys())) for message in self.iot_websocket_messages]
         run = list(self.PRINT_EXCHANGE)
         found = any(

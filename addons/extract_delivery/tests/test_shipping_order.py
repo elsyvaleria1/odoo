@@ -6,8 +6,6 @@ from odoo.tests.common import TransactionCase, tagged
 from odoo.addons.extract.tools import CHEAP, run
 from odoo.addons.extract_delivery.tools.shipping_order import find_totals
 
-# What RapidOCR read off a real Tres Guerras "Orden de Servicio Digital" on
-# 2026-10-09, with the people's names, tax ids, address and phone replaced.
 OCR_TEXT = (Path(__file__).parent / "fixtures" / "shipping_order_ocr.txt").read_text()
 
 

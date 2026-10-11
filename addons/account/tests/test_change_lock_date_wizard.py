@@ -286,8 +286,6 @@ class TestChangeLockDateWizard(AccountTestInvoicingCommon):
         )
         wizard.fiscalyear_lock_date = "2019-12-31"
 
-        # assertRaises(AccessError) would clear the cache, and a cold cache makes
-        # the manager's read of the other config fail before any write is tried
         with self.assertRaisesRegex(AccessError, "'write' access"):
             wizard.change_lock_date()
         self.assertFalse(other_company.account_config_id.fiscalyear_lock_date)

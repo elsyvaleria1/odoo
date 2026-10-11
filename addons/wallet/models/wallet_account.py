@@ -12,8 +12,6 @@ WALLET_KINDS = [
     ("other", "Other"),
 ]
 PREPAID_ACCOUNT_TYPES = ("asset_prepayments", "asset_current", "asset_cash")
-# a card read this long before its account's newest reading is behind: the
-# issuer may have stopped reporting it (cancelled, replaced)
 STALE_MARGIN = timedelta(days=1)
 
 
@@ -29,8 +27,6 @@ class WalletAccount(models.Model):
         }
     )
 
-    # FIELDS
-    # Core identification
     name = fields.Char(
         required=True,
         tracking=True,
@@ -63,7 +59,6 @@ class WalletAccount(models.Model):
         "transaction is dated in.",
     )
     note = fields.Text()
-    # Financial block
     company_id = fields.Many2one(
         comodel_name="res.company",
         default=lambda self: self.env.company,
@@ -107,7 +102,6 @@ class WalletAccount(models.Model):
         help="Active cards last read more than a day before the newest reading: "
         "the issuer may no longer report them, and their balance is that old.",
     )
-    # Card block
     card_ids = fields.One2many(
         comodel_name="wallet.card",
         inverse_name="account_id",
@@ -115,13 +109,11 @@ class WalletAccount(models.Model):
     count_card = fields.Count(count_of="card_ids")
     count_card_low = fields.Integer(compute="_compute_count_card_low")
 
-    # CONSTRAINTS
     _name_company_uniq = models.Constraint(
         "UNIQUE(company_id, name)",
         "A wallet account's name must be unique per company.",
     )
 
-    # CRUD METHODS
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -130,7 +122,6 @@ class WalletAccount(models.Model):
                 vals["account_id"] = self._get_default_prepaid_account(company_id).id
         return super().create(vals_list)
 
-    # CONSTRAINT METHODS
     @api.constrains("account_id")
     def _check_account_is_prepaid(self) -> None:
         for account in self.filtered("account_id"):
@@ -148,7 +139,6 @@ class WalletAccount(models.Model):
                     )
                 )
 
-    # COMPUTE METHODS
     @api.depends("card_ids.amount_balance", "card_ids.active")
     def _compute_amount_balance(self) -> None:
         self.check_access("read")
@@ -180,7 +170,6 @@ class WalletAccount(models.Model):
         for account in self:
             account.count_card_low = counts.get(account.id, 0)
 
-    # ACTION METHODS
     def action_view_cards(self):
         self.check_singleton()
         return {
@@ -192,25 +181,10 @@ class WalletAccount(models.Model):
             "context": {"default_account_id": self.id},
         }
 
-    # BUSINESS METHODS
     def _get_balance_summary(self, with_cards=False) -> list[dict]:
-        """Each account's balance as far as its readings support it, for a
-        caller that words it (a bot, a digest).
-
-        :param bool with_cards: also list the active cards, the read ones by
-            balance, highest first, then those never read
-        :return: per account, in the order of ``self``: ``account``,
-            ``amount_balance`` (of the cards read), ``date_balance`` (the newest
-            reading, UTC, None when no card was read), ``count_card``,
-            ``count_card_low``, ``cards_unread`` and ``cards_stale``
-            (wallet.card recordsets) and, with ``with_cards``, ``cards``
-        :rtype: list[dict]
-        """
         summary = []
         for account in self:
             newest, read, unread, stale = account._split_cards_by_reading()
-            # only read cards add up: one never read is counted apart, not as
-            # zero, even when an old import left it an amount with no reading
             row = {
                 "account": account,
                 "amount_balance": account.currency_id.round(
@@ -227,11 +201,7 @@ class WalletAccount(models.Model):
             summary.append(row)
         return summary
 
-    # HELPER METHODS
     def _split_cards_by_reading(self) -> tuple:
-        """The account's active cards by reading: the newest reading (None if
-        none), the cards read, those never read and those read more than
-        ``STALE_MARGIN`` before the newest."""
         self.check_singleton()
         read = self.card_ids.filtered("date_balance")
         newest = max(read.mapped("date_balance"), default=None)

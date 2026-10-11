@@ -80,15 +80,8 @@ class DocumentsDocument(models.Model):
     )
 
     def action_freeze_and_copy(self, spreadsheet_data, excel_files) -> dict:
-        """Render the spreadsheet in JS, and then make a copy to share it.
-
-        :param spreadsheet_data: The spreadsheet data to save
-        :param excel_files: The files to download
-        """
         self.check_singleton()
 
-        # we will copy in SUDO to skip check on frozen spreadsheets
-        # (see @_check_spreadsheet_share)
         self.env["document.document"].check_access("create")
         self.check_access("read")
         if (
@@ -162,8 +155,6 @@ class DocumentsDocument(models.Model):
                 ),
                 "handler": "frozen_spreadsheet",
                 "is_access_via_link_hidden": True,
-                # whoever reaches the spreadsheet, on it or from its folders,
-                # views the frozen copy, which sits behind a boundary
                 "access_ids": [
                     Command.create({"partner_id": partner.id, "role": "view"})
                     for partner in {
@@ -188,7 +179,6 @@ class DocumentsDocument(models.Model):
         }
 
     def _get_domain_access_update(self):
-        """Allow to change the access of the frozen folders / spreadsheets only if we open their share panel."""
         return super()._get_domain_access_update() & (
             Domain("id", "in", self.ids)
             | Domain("handler", "not in", ("frozen_folder", "frozen_spreadsheet"))
@@ -199,8 +189,6 @@ class DocumentsDocument(models.Model):
         vals_list = self._resize_spreadsheet_thumbnails(vals_list)
         for vals in vals_list:
             if vals.get("handler") == "frozen_folder":
-                # what the spreadsheet's folder grants does not reach its frozen
-                # copies: the frozen folder is a boundary
                 vals.setdefault("is_access_restricted", True)
         documents = super().create(vals_list)
         _debug.lifecycle("spreadsheet_create", documents=documents)
@@ -209,8 +197,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _kept_from_share_editors(self):
-        # a spreadsheet is edited by internal users only, whatever grant
-        # reaches an external one from its folder
         return super()._kept_from_share_editors() | Domain(
             "handler", "in", ("spreadsheet", "frozen_spreadsheet")
         )
@@ -317,8 +303,6 @@ class DocumentsDocument(models.Model):
                 model=self._name,
                 res_id=self.id,
                 role="edit" if operation == "write" else "view",
-                # a collaborative session calls this on every revision: its
-                # use is the page that opened it
                 action=None,
             )
             reason = None
@@ -329,8 +313,6 @@ class DocumentsDocument(models.Model):
             and operation == "write"
             and self.sudo().access_via_link != "edit"
         ):
-            # the document's own link setting is what its editors chose, as
-            # the upload route reads it: a link row saying more opens no edit
             reason = "link_setting_view"
         _debug.logic(
             "spreadsheet_share_denied" if reason else "spreadsheet_share_granted",
@@ -343,7 +325,6 @@ class DocumentsDocument(models.Model):
             raise AccessError(self.env._("You don't have access to this document"))
 
     def _compute_file_extension(self) -> None:
-        """Spreadsheet documents do not have file extension."""
         spreadsheet_docs = self.filtered(
             lambda rec: rec.handler in ("spreadsheet", "frozen_spreadsheet")
         )
@@ -405,8 +386,6 @@ class DocumentsDocument(models.Model):
         super()._compute_thumbnail_source_checksum()
 
     def _get_thumbnail_kind(self) -> str | bool:
-        # a spreadsheet's thumbnail is drawn by the spreadsheet, never from
-        # its data, and saved along with it
         if self.handler in ("spreadsheet", "frozen_spreadsheet"):
             return "authored"
         return super()._get_thumbnail_kind()
@@ -449,7 +428,6 @@ class DocumentsDocument(models.Model):
         ]
 
     def _update_spreadsheet_contributors(self) -> None:
-        """Add the current user to the spreadsheet contributors."""
         can_write = self.env["spreadsheet.contributor"].has_access("write")
         can_create = self.env["spreadsheet.contributor"].has_access("create")
         if not can_write or not can_create:
@@ -459,10 +437,6 @@ class DocumentsDocument(models.Model):
                 reason="no_contributor_access",
             )
             return
-        # Reading ``handler`` to classify the document is internal bookkeeping,
-        # not an access decision: the creator of a company-root document may have
-        # no read access to it (user_permission 'none'), which would otherwise
-        # raise here during create().
         for document in self.sudo():
             if document.handler == "spreadsheet":
                 self.env["spreadsheet.contributor"]._update(self.env.user, document)
@@ -487,8 +461,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _get_spreadsheets_to_display(self, domain, offset=0, limit=None):
-        """Get all the spreadsheets, with the spreadsheet the user opened most recently first."""
-        # TODO: improve with _read_group to not fetch all records
         Contrib = self.env["spreadsheet.contributor"]
         visible_docs = self.search(
             Domain.AND(
@@ -503,8 +475,6 @@ class DocumentsDocument(models.Model):
             order="last_update_date DESC, id DESC",
         )
         user_docs = contribs.document_id
-        # Intersection is used to apply the `domain` to `user_doc`, the union is
-        # here to keep only the visible docs, but with the order of contribs.
         docs = (user_docs & visible_docs) | visible_docs
         _debug.pipeline(
             "spreadsheets_to_display_ranked",
@@ -524,12 +494,10 @@ class DocumentsDocument(models.Model):
         return super()._get_fields_shortcuts_copy() | {"handler"}
 
     def _clone_xlsx_into_spreadsheet(self, archive_source=False):
-        """Clone an XLSX document into a new document with its content unzipped, and return the new document id"""
 
         unzipped, attachments = self._unzip_xlsx()
 
         def adjust_role(partner, role):
-            """Ensure non-internal users do not have 'edit' access."""
             user_ids = partner.with_context(active_test=False).user_ids
             return "view" if not user_ids or all(user_ids.mapped("share")) else role
 
@@ -622,10 +590,6 @@ class DocumentsDocument(models.Model):
 
     def _convert_csv_to_spreadsheet_data(self, csv_data):
         def get_column_name(n):
-            """Helper function to get the spreadsheet column
-            name in letters (A -> Z) from the column index.
-            Example: 1 -> A, 2 -> B, 27 -> AA, 28 -> AB, etc.
-            """
             res = []
             while n > 0:
                 n, remainder = divmod(n - 1, 26)
@@ -643,7 +607,6 @@ class DocumentsDocument(models.Model):
         return data
 
     def _get_is_multipage(self):
-        """Override for spreadsheets and xlsx."""
         is_multipage = super()._get_is_multipage()
         if is_multipage is not None:
             return is_multipage
@@ -654,7 +617,6 @@ class DocumentsDocument(models.Model):
                 return None
             with zipfile.ZipFile(file) as archive:
                 if "[Content_Types].xml" not in archive.namelist():
-                    # the xlsx file is invalid
                     _debug.logic(
                         "spreadsheet_multipage_unknown",
                         records=self,
@@ -737,11 +699,10 @@ class DocumentsDocument(models.Model):
                     info.filename.endswith((".xml", ".xml.rels"))
                     or "media/image" in info.filename
                 ) or not info.filename.startswith(SUPPORTED_PATHS):
-                    # Don't extract files others than xmls or unsupported xmls
                     continue
 
                 unzipped_size += info.file_size
-                if unzipped_size > 50 * 1000 * 1000:  # 50MB
+                if unzipped_size > 50 * 1000 * 1000:
                     _debug.logic(
                         "spreadsheet_xlsx_rejected",
                         records=self,
@@ -809,7 +770,6 @@ class DocumentsDocument(models.Model):
         }
 
     def _contains_live_data(self):
-        """Return true if the spreadsheet contains live data, like Odoo pivots, chart, etc."""
         self.check_singleton()
         if self.handler != "spreadsheet":
             return False
@@ -859,13 +819,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def create_xlsx_attachment_from_spreadsheet(self, spreadsheet_files) -> list[dict]:
-        """Creates XLSX attachments from spreadsheet JSON exports
-
-        :param spreadsheet_files: list of dicts with 'name', 'files', 'res_model' and 'res_id'
-
-        :return: list of media info dicts
-        :rtype: list[dict]
-        """
         attachments = []
 
         _debug.pipeline(

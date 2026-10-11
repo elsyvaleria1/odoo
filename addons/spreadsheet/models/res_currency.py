@@ -14,14 +14,6 @@ class ResCurrency(models.Model):
     def get_company_currency_for_spreadsheet(
         self, company_id=None
     ) -> dict | Literal[False]:
-        """
-        Returns the currency structure for the currency of the company.
-        This function is meant to be called by the spreadsheet js lib,
-        hence the formatting of the result.
-
-        :param int company_id: Id of the company
-        :return: dict of the form `{ "code": str, "symbol": str, "decimalPlaces": int, "position":str }`
-        """
         company = (
             self.env["res.company"].browse(company_id)
             if company_id

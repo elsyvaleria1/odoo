@@ -318,19 +318,9 @@ class ApprovalCategory(models.Model):
                 )
 
     def _steps_are_generated(self) -> bool:
-        """Whether another model maintains this category's steps.
-
-        Such a category ships stepless and gains one step per record of that
-        model, so a category without steps is not a misconfiguration there.
-        """
         return False
 
     def _get_financial_verb(self) -> str:
-        """What money the category's approval commits, in words; empty for none.
-
-        A module whose category gates posting, paying or buying names it here,
-        and a category that names one is never approved by a silence.
-        """
         self.check_singleton()
         return ""
 
@@ -597,8 +587,6 @@ class ApprovalCategory(models.Model):
             category.kanban_dashboard = dashboard_data
 
     def _add_approver(self, user, required=False, sequence=10) -> None:
-        """Add `user` as an approver of every request: a member of the category's pool
-        step, the first step counting approvers added by hand."""
         for category in self:
             pool = (
                 category.step_ids.filtered("counts_added_approvers")
@@ -654,9 +642,6 @@ class ApprovalCategory(models.Model):
         return True
 
     def _can_be_met_for(self, document) -> bool:
-        """Whether a request this category raised for `document` could be approved:
-        judged on the request it would raise, so the steps that apply and who may
-        staff them are the ones routing and confirm would find."""
         self.check_singleton()
         request = self.env["approval.request"].new(
             document._prepare_approval_request_values(self)

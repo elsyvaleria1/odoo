@@ -12,17 +12,6 @@ class PaymentToken(models.Model):
     )
 
     def _prepare_display_name(self, *args, max_length=34, should_pad=True, **kwargs):
-        """Override of `payment` to return the full bank account number for SEPA Direct Debit.
-
-        Note: self.check_singleton()
-
-        :param list args: The arguments passed by QWeb when calling this method.
-        :param int max_length: The desired maximum length of the token name.
-        :param bool should_pad: Whether the token should be padded or not.
-        :param dict kwargs: Optional data.
-        :return: The IBAN of the token.
-        :rtype: str
-        """
         payment_details = super()._prepare_display_name(
             *args, max_length=max_length, should_pad=should_pad, **kwargs
         )
@@ -33,5 +22,5 @@ class PaymentToken(models.Model):
             return super()._prepare_display_name(
                 *args, max_length=max_length, should_pad=False, **kwargs
             )
-        else:  # Not enough room for the full IBAN.
+        else:
             return f"{self.payment_details[:2]}*{self.payment_details[-4:]}"

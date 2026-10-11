@@ -158,7 +158,5 @@ class TestHrHomeworkingHrEmployeeLocation(TestHrHomeworkingCommon):
         self.assertEqual(employee.wednesday_location_id, self.work_home)
 
     def test_set_location_action_is_offered_by_no_action_menu(self):
-        # The calendar opens it by XML id; it reads no active_id, so a binding
-        # would offer it on records it then ignores.
         action = self.env.ref("hr_homeworking_calendar.set_location_wizard_action")
         self.assertFalse(action.binding_model_id)

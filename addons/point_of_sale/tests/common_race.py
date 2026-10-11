@@ -60,7 +60,6 @@ class PosRaceCase(TransactionCase):
                     ):
                         continue
                     except psycopg.errors.InsufficientPrivilege:
-                        # an append-only audit log keeps its rows by design
                         pass
                     dropped.add(table)
                 if not dropped:
@@ -86,8 +85,6 @@ class PosRaceCase(TransactionCase):
         return cr.fetchone()[0]
 
     def _race(self, first, second):
-        # second's snapshot predates first's commit, as when two terminals
-        # settle at the same moment; retrying() is what serves their RPCs
         first_worked = threading.Event()
         first_committed = threading.Event()
         attempts = []

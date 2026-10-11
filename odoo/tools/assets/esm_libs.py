@@ -158,7 +158,6 @@ def _prepare_served_libs() -> _ServedLibs:
         if not closures[declared_url]:
             _debug.logic("esm_libs.unresolved", spec=spec, url=declared_url)
             unresolved.append(spec)
-    # before the files are hashed: an edit that lands meanwhile is seen stale
     stamps = {
         path: _stamp(path) for files in closures.values() for path in files.values()
     }
@@ -194,9 +193,6 @@ def _prepare_served_libs() -> _ServedLibs:
 
 
 def _served_libs() -> _ServedLibs:
-    # nothing invalidates this on a static/lib edit (--dev=assets signals
-    # the assets caches only): unchecked, the lib kept its unique and its
-    # content under it until the apps list was updated
     served = _cache[0]
     if served is not None and not _changed_on_disk(served.stamps):
         return served

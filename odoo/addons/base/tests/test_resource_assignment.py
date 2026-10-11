@@ -61,8 +61,6 @@ class TestResourceAssignment(TransactionCase):
             self.env.flush_all()
 
     def test_an_operator_search_finds_what_the_resource_shows(self):
-        # a hand-over nobody accepted leaves both operators live once its date
-        # passes; the latest started is the one shown, and the one searched
         self.truck.operator_id = self.driver
         start = self.now + timedelta(hours=1)
         self.truck.write(

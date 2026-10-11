@@ -194,11 +194,11 @@ class ResCountry(models.Model):
 
     @api.depends("code")
     def _compute_image_url(self) -> None:
-        flagless = 0  # debuglog
+        flagless = 0
         for country in self:
             if not country.code or country.code in NO_FLAG_COUNTRIES:
                 country.image_url = False
-                flagless += 1  # debuglog
+                flagless += 1
             else:
                 code = FLAG_MAPPING.get(country.code, country.code.lower())
                 country.image_url = f"/base/static/img/country_flags/{code}.png"
@@ -312,7 +312,7 @@ class ResCountryState(models.Model):
             _debug.logic("state_name_search", by="terms", terms=len(name), limit=limit)
             for item in name:
                 result.extend(
-                    self.name_search(  # noqa: E8507  one match per term by design
+                    self.name_search(
                         item, domain, operator="=", limit=limit - len(result)
                     )
                 )

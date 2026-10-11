@@ -1,6 +1,6 @@
-from . import mixin_approval_threshold  # isort: skip
-from . import mixin_approval_domain  # isort: skip
-from . import mixin_approval_source  # isort: skip
+from . import mixin_approval_threshold
+from . import mixin_approval_domain
+from . import mixin_approval_source
 
 from . import (
     approval_approver,
@@ -23,7 +23,7 @@ from . import (
     approval_request_prediction,
     approval_request_reach,
     approval_request_routing,
-    approval_decision_log,  # isort: skip -- extends approval.request
+    approval_decision_log,
     approval_observation,
     approval_rule,
     approval_trace,

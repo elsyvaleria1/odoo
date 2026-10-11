@@ -73,17 +73,14 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
         eco = self._get_or_create_eco()
         original_title = self.step_id.title
         super()._update_step(notify_bom=False)
-        # get the step on the new bom related to the one we want to update
         new_step = eco.new_bom_id.operation_ids.quality_point_ids.filtered(
             lambda p: p._get_sync_values() == self.step_id.point_id._get_sync_values()
         )
         body = self._get_update_step_note(original_title)
         if new_step:
             new_step.note = self.step_id.note
-            # Write reason in chatter for record keeping in case of multiple suggestions before approval
             new_step.message_post(body=body)
         else:
-            # TODO: use mixin, as mrp.eco inherits from it (check all other eco cases)
             self.env["mail.activity"].sudo().create(
                 {
                     "res_model_id": self.env.ref("mrp_plm.model_mrp_eco").id,
@@ -104,12 +101,10 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
     def _remove_step(self) -> None:
         eco = self._get_or_create_eco()
         super()._remove_step(notify_bom=False)
-        # get the step on the new bom related to the one we want to delete
         new_step = eco.new_bom_id.operation_ids.quality_point_ids.filtered(
             lambda p: p._get_sync_values() == self.step_id.point_id._get_sync_values()
         )
         new_step.unlink()
-        # Leave a note in the old step's chatter telling why it should be removed.
         old_step = self.step_id.point_id
         if old_step:
             old_step.message_post(body=self._get_remove_step_note())
@@ -117,12 +112,10 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
     def _update_picture(self) -> None:
         eco = self._get_or_create_eco()
         super()._update_picture(notify_bom=False)
-        # get the step on the new bom related to the one we want to update
         new_step = eco.new_bom_id.operation_ids.quality_point_ids.filtered(
             lambda p: p._get_sync_values() == self.step_id.point_id._get_sync_values()
         )
         if new_step:
-            # remove existing images, but keep existing text + append image after text
             existing_text = False
             image = Markup(
                 '<img style="max-width: 75%%" class="img-fluid" src="%s"/>'
@@ -134,7 +127,6 @@ class WizardMrpWorkorderUpdateInstruction(models.TransientModel):
             else:
                 new_step.note = image
             new_step.worksheet_document = False
-            # Write reason in chatter for record keeping in case of multiple suggestions before approval
             new_step.message_post(body=self._get_set_picture_note())
         else:
             self.env["mail.activity"].sudo().create(

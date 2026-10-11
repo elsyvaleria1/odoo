@@ -9,9 +9,6 @@ from odoo.fields import Domain
 
 _logger = logging.getLogger(__name__)
 
-# `automatic` mode acts on every batch as it is queued -- archiving or deleting
-# the target records -- which is far slower than the plain create the `manual`
-# mode does, so the two run on different batch sizes.
 RECYCLE_BATCH_AUTOMATIC = 5000
 RECYCLE_BATCH_MANUAL = 50000
 
@@ -24,7 +21,6 @@ class Data_RecycleModel(models.Model):
 
     _cleaning_mode_field = "recycle_mode"
 
-    # Core identification
     active = fields.Boolean(default=True)
     name = fields.Char(
         compute="_compute_name",
@@ -34,7 +30,6 @@ class Data_RecycleModel(models.Model):
         required=True,
     )
 
-    # Target block
     res_model_id = fields.Many2one(
         comodel_name="ir.model",
         string="Model",
@@ -71,13 +66,6 @@ class Data_RecycleModel(models.Model):
         required=True,
     )
 
-    # Rule block
-    #
-    # Age is expressed in the filter, not in fields of its own. A `date` or
-    # `datetime` condition takes a relative value natively -- `('date', '<=',
-    # 'today -1y')` -- so the `time_field_id` / `time_field_delta` /
-    # `time_field_delta_unit` triple this replaces was a second, weaker spelling
-    # of a domain the widget already writes. Migration: 1.4.
     domain = fields.Char(
         string="Filter",
         compute="_compute_domain",
@@ -89,8 +77,6 @@ class Data_RecycleModel(models.Model):
         "where an already archived record has nothing left to recycle."
     )
 
-    # The notification block -- fields, period arithmetic and delivery -- is
-    # `mixin.data.cleaning.notification`.
 
     @api.constrains("recycle_action", "res_model_id")
     def _check_recycle_action(self) -> None:
@@ -152,31 +138,20 @@ class Data_RecycleModel(models.Model):
             recycle_model.records_to_recycle_count = counts.get(recycle_model.id, 0)
 
     def _get_model_target(self):
-        """The model this rule recycles, or None when it is not in the registry.
-
-        `res_model_id` points at an `ir.model` row, which outlives an uninstalled
-        module: reading `self.env[name]` unguarded turns that into a `KeyError`
-        in the middle of a cron run.
-        """
         self.check_singleton()
         name = self.res_model_name
         return self.env[name] if name and name in self.env else None
 
     def _get_domain_candidates(self):
-        """The domain selecting the records this rule proposes for recycling."""
         self.check_singleton()
         return Domain(ast.literal_eval(self.domain or "[]"))
 
     def _cron_recycle_records(self) -> None:
-        # One misconfigured or failing rule must not cost every other rule its
-        # nightly run, which is what a single unguarded pass over `self` did.
         recycle_models = self.sudo().search([])
         for recycle_model in recycle_models:
             try:
                 recycle_model._recycle_records(batch_commits=True)
             except UserError as error:
-                # `_recycle_records` raises this from its guards only, before it
-                # writes anything: there is nothing to roll back.
                 _logger.warning(
                     "Data recycle: rule %r (id=%s) skipped: %s",
                     recycle_model.name,
@@ -185,8 +160,6 @@ class Data_RecycleModel(models.Model):
                 )
             except Exception:
                 if not modules.module.current_test:
-                    # Drop what this rule left behind; the rules that already
-                    # committed keep theirs.
                     self.env.cr.rollback()
                 _logger.exception(
                     "Data recycle: rule %r (id=%s) failed, the other rules still run",
@@ -196,18 +169,8 @@ class Data_RecycleModel(models.Model):
         recycle_models._notify_pending_records()
 
     def _recycle_records(self, batch_commits=False) -> None:
-        """Make the queue of each rule equal to what the rule currently selects.
-
-        The queue is derived data: a proposal whose record no longer matches the
-        rule -- because the filter was tightened, the model was changed or the
-        record was deleted elsewhere -- is dropped rather than left to be acted
-        on later against a target that no longer qualifies.
-        """
         commit = batch_commits and not modules.module.current_test
         Record = self.env["data_recycle.record"]
-        # One query for every rule's queue, not one per rule. `active_test=False`:
-        # a discarded proposal still counts as queued, or the next run would
-        # propose the record the user just refused again.
         queued_per_model = defaultdict(dict)
         for queued in Record.with_context(active_test=False).search_fetch(
             [("recycle_model_id", "in", self.ids)], ["res_id", "recycle_model_id"]
@@ -226,9 +189,6 @@ class Data_RecycleModel(models.Model):
                 )
             domain = recycle_model._get_domain_candidates()
             if domain.is_true():
-                # An empty filter and an explicit `[(1, '=', 1)]` are the same domain
-                # once parsed, so the message has to name a way through for someone
-                # who really does mean every record.
                 raise UserError(
                     self.env._(
                         "Rule %(rule)s selects every %(model)s record: its filter matches "
@@ -256,9 +216,6 @@ class Data_RecycleModel(models.Model):
             ]
             Record.browse(stale_ids).unlink()
             if commit and stale_ids:
-                # A stale-only pass never enters the batch loop below, so its
-                # drop needs its own commit here or a later rule's crash rolls
-                # it back along with that rule's own, unrelated failure.
                 self.env["ir.cron"]._commit_progress()
 
             new_res_ids = [
@@ -278,8 +235,6 @@ class Data_RecycleModel(models.Model):
                 if is_automatic:
                     records.action_validate()
                 if commit:
-                    # Commit after each batch to avoid a complete rollback on timeout,
-                    # as a run can create a lot of records.
                     self.env["ir.cron"]._commit_progress()
 
     def _get_count_pending(self):
@@ -310,14 +265,8 @@ class Data_RecycleModel(models.Model):
         if "active" in vals and not vals["active"]:
             stale = self
         elif "res_model_id" in vals:
-            # The queue holds ids of the table the rule USED to point at, which
-            # name different records in the new one. `_recycle_records` would
-            # reconcile them away on its next run; this closes the window in
-            # between, when the queue reads as a list of records to act on.
             stale = self.filtered(lambda m: m.res_model_id.id != vals["res_model_id"])
         if stale:
-            # `active_test=False`, or the proposals the user discarded survive the
-            # rule they belong to and come back when it is unarchived.
             self.env["data_recycle.record"].with_context(active_test=False).search(
                 [
                     ("recycle_model_id", "in", stale.ids),

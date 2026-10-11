@@ -17,24 +17,15 @@ WEB_MERCATOR_WIDTH = 40075016.68557849
 TILE_EXTENT = 4096
 TILE_BUFFER = 64
 MAX_TILE_ZOOM = 24
-# Points are counted in cells, so no tile holds more than cells x cells
-# features however many records stack in one place (a depot's GPS fixes).
-# OpenLayers draws a vector tile 512 px wide: below FINE_GRID_MIN_ZOOM a cell
-# is 32 px, the width of its count bubble; from it on, 4 px, so records apart
-# on screen stay apart and only stacked ones are counted.
 FINE_GRID_MIN_ZOOM = 14
 CLUSTER_CELLS = 16
 FINE_CELLS = 128
-# Edges of a Web Mercator tile bend in another CRS; vertices this far apart
-# (a fraction of the tile) keep the envelope's transform from cutting them.
 ENVELOPE_SEGMENTS = 16
 DEFAULT_TILE_TIMEOUT_MS = 4000
 LAYER_NAME = "features"
 FEATURE_ID = "fid"
 CELL_COUNT = "count"
 CELL_KEY = "cell"
-# A heatmap view sums its points into cells this many screen pixels wide,
-# finer than any heatmap radius, and never into more than MAX_HEAT_CELLS.
 HEAT_CELL_PX = 8
 MAX_HEAT_CELLS = 40_000
 
@@ -205,8 +196,6 @@ def tile_timeout_ms(env) -> int:
 
 
 def _property_sql(model: BaseModel, alias: str, field_name: str, query) -> SQL:
-    """A field as a vector tile property: numbers and booleans as such, a
-    many2one as its id (what the map classifies by), anything else as text."""
     field = model._fields[field_name]
     column = model._field_to_sql(alias, field_name, query)
     if field.type in ("integer", "many2one", "boolean"):
@@ -261,10 +250,6 @@ def tile_sql(
             rows,
         )
 
-    # A cell of one record keeps that record's id and values, so an isolated
-    # point stays clickable and classed; a larger cell carries its count. On
-    # the fine grid, where zooming in no longer separates its records, it also
-    # carries its address, from which get_cell_records lists them.
     members = query.select(
         SQL("%s AS fid", SQL.identifier(alias, "id")),
         *(SQL("%s AS %s", sql, SQL.identifier(name)) for name, sql in properties),
@@ -366,11 +351,7 @@ def cell_records_query(model: BaseModel, field: GeoField, domain, cell: Cell):
 
 
 def fetch_within_budget(env, sql: SQL, timeout_ms: int | None = None) -> tuple | None:
-    """The query's single row, or None when it did not finish within
-    ``timeout_ms``, by default ``geoengine.tile_timeout_ms``."""
     timeout = timeout_ms or tile_timeout_ms(env)
-    # Flushed outside the savepoint: a budget overrun rolls the savepoint
-    # back, which would discard writes the cache believes are stored.
     env.flush_query(sql)
     try:
         with mute_logger("odoo.db.cursor"), env.cr.savepoint(flush=False):
@@ -392,7 +373,6 @@ def fetch_within_budget(env, sql: SQL, timeout_ms: int | None = None) -> tuple |
 
 
 def render_tile(env, sql: SQL) -> bytes | None:
-    """The tile's bytes, or None when it did not render within the budget."""
     row = fetch_within_budget(env, sql)
     if row is None:
         return None

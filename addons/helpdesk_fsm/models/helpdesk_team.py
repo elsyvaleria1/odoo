@@ -15,10 +15,6 @@ class HelpdeskTeam(models.Model):
 
     @api.depends("helpdesk_use_fsm", "company_id")
     def _compute_fsm_project_id(self) -> None:
-        """
-        Compute the default fsm project from the same company
-        as the helpdesk team when 'helpdesk_use_fsm' is enabled.
-        """
         fsm_teams_without_project = self.filtered(
             lambda t: t.helpdesk_use_fsm and not t.fsm_project_id
         )
@@ -39,9 +35,6 @@ class HelpdeskTeam(models.Model):
                 )
         (self - fsm_teams_without_project).fsm_project_id = False
 
-    # ---------------------------------------------------
-    # Mail gateway
-    # ---------------------------------------------------
 
     def _mail_get_message_subtypes(self):
         res = super()._mail_get_message_subtypes()

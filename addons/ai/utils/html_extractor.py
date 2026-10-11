@@ -20,7 +20,6 @@ class HTMLExtractor:
 
     def __init__(self, env, internal_domains=None) -> None:
         self.env = env
-        # Define non-content XPaths to exclude
         self.exclude_xpath = [
             "//script",
             "//style",
@@ -30,7 +29,6 @@ class HTMLExtractor:
             "//*[contains(@style, 'display:none') or contains(@style, 'visibility:hidden')]",
         ]
 
-        # semantic layout elements
         self.exclude_xpath += [
             "//nav",
             "//footer",
@@ -40,7 +38,6 @@ class HTMLExtractor:
             "//*[contains(@id, 'footer') or contains(@id, 'header') or @id='top' or @id='bottom']",
         ]
 
-        # layout classes
         layout_keywords = [
             "menu",
             "footer",
@@ -54,7 +51,6 @@ class HTMLExtractor:
         class_filter = " or ".join(f"contains(@class, '{k}')" for k in layout_keywords)
         self.exclude_xpath.append(f"//*[{class_filter}]")
 
-        # odoo-website specific unnecessary elements
         odoo_ui_classes = [
             "o_mega_menu",
             "o_not_editable",
@@ -72,14 +68,6 @@ class HTMLExtractor:
         self.__robots_cache = {}
 
     def scrap(self, url) -> dict:
-        """
-        Scrape a webpage and extract text content.
-        :param url: The URL to scrape
-        :type url: str
-        :return: Dictionary with 'content', 'title' and 'error' keys; 'content' is
-            None and 'error' is set when scraping fails
-        :rtype: dict
-        """
         html_content, error_message = self._get_url(url)
         if not html_content:
             return {"content": None, "title": None, "error": error_message}
@@ -89,13 +77,10 @@ class HTMLExtractor:
         )
         tree = html.fromstring(html_content, parser=parser)
 
-        # Extract metadata
         title = self._get_title(tree)
 
-        # Clean HTML tree
         self._clean_html_tree(tree)
 
-        # Extract content as paragraphs
         content = self._extract_content(tree)
         if not content:
             return {
@@ -107,39 +92,22 @@ class HTMLExtractor:
         return {"content": content, "title": title, "error": None}
 
     def extract_from_html(self, html_content) -> dict:
-        """
-        Extract text content from HTML string (e.g., from a knowledge HTML field body).
-        :param html_content: The HTML content as a string
-        :type html_content: str
-        :return: Dictionary with a 'content' key
-        :rtype: dict
-        """
         if not html_content:
             return {"content": ""}
 
-        # Wrap content in a proper HTML structure to ensure _clean_html_tree works correctly
         wrapped_html = f"<html><body>{html_content}</body></html>"
         parser = html.HTMLParser(
             remove_blank_text=True, remove_comments=True, remove_pis=True
         )
         tree = html.fromstring(wrapped_html, parser=parser)
 
-        # Clean HTML tree
         self._clean_html_tree(tree)
 
-        # Extract content as paragraphs
         content = self._extract_content(tree)
 
         return {"content": content}
 
     def _is_internal_domain(self, url) -> bool:
-        """
-        Check if the URL is of an internal domain.
-        :param url: The URL to check
-        :type url: str
-        :return: True if the URL is of an internal domain, False otherwise
-        :rtype: bool
-        """
         if not self.internal_domains or not url:
             return False
 
@@ -147,7 +115,6 @@ class HTMLExtractor:
         if not url_hostname:
             return False
 
-        # Standardize to punycode (IDNA) for matching international domains
         try:
             url_hostname = url_hostname.encode("idna").decode("ascii").lower()
         except UnicodeError:
@@ -159,20 +126,10 @@ class HTMLExtractor:
         return False
 
     def _allowed_by_robots(self, url, user_agent="Odoobot/1.0"):
-        """
-        Check if URL is allowed via robots.txt with caching and specific error handling.
-        :param url: The URL to check
-        :type url: str
-        :param user_agent: The user agent to use
-        :type user_agent: str
-        :return: True if the URL is allowed, False otherwise
-        :rtype: bool
-        """
         if self._is_internal_domain(url):
             return True
 
         parsed = urlparse(url)
-        # Ensure we only check robots.txt for the root of the domain
         robots_url = urljoin(f"{parsed.scheme}://{parsed.netloc}", "/robots.txt")
 
         if robots_url not in self.__robots_cache:
@@ -200,7 +157,6 @@ class HTMLExtractor:
         return cached_rp.can_fetch(user_agent, url) if cached_rp else True
 
     def _get_url(self, url):
-        """Fetch URL content"""
         try:
             if not self._allowed_by_robots(url):
                 error_msg = self.env._(
@@ -219,7 +175,6 @@ class HTMLExtractor:
             )
             response.raise_for_status()
 
-            # Check content type to ensure we're dealing with HTML
             content_type = response.headers.get("Content-Type", "").lower()
             if (
                 "text/html" not in content_type
@@ -243,22 +198,17 @@ class HTMLExtractor:
             return None, error_msg
 
     def _get_title(self, tree):
-        """Extract page title."""
         titles = tree.xpath("//title/text()")
         if titles:
             return titles[0].strip()
         return ""
 
     def _clean_html_tree(self, tree) -> None:
-        """Clean HTML by removing unwanted elements."""
-        # Identify content containers to avoid deleting them or their ancestors
         content_container_xpath = "//main|//article|//*[@id='wrap']|//*[@id='main']|//*[@id='product_details']|//*[hasclass('o_wblog_post_content_field')]|//div[@role='main']|//div[@id='content']|//div[@class='content']"
         protected_nodes = tree.xpath(content_container_xpath)
 
-        # Remove unwanted elements
         for xpath in self.exclude_xpath:
             for element in tree.xpath(xpath):
-                # Never remove an element that is or contains a protected content container
                 if any(
                     p == element or element in p.iterancestors()
                     for p in protected_nodes
@@ -269,7 +219,6 @@ class HTMLExtractor:
                     element.getparent().remove(element)
 
     def _extract_content(self, tree) -> str:
-        """Extract content as a series of paragraphs."""
         main_content = tree.xpath(
             "//main|//article|//*[@id='wrap']|//*[@id='main']|//*[@id='product_details']|//*[hasclass('o_wblog_post_content_field')]|//div[@role='main']|//div[@id='content']|//div[@class='content']"
         )
@@ -287,9 +236,7 @@ class HTMLExtractor:
         for element in main_content[0].xpath(".//*"):
             tag = element.tag
 
-            # Check if this is a heading element
             if tag in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-                # If we have a previous heading, add it (with or without content)
                 if current_heading:
                     if current_paragraph_parts:
                         paragraph = (
@@ -300,12 +247,10 @@ class HTMLExtractor:
                     paragraphs.append(paragraph)
                     current_paragraph_parts = []
 
-                # Set the new heading
                 heading_text = self._get_element_text(element)
                 if heading_text:
                     current_heading = self._normalize_text(heading_text)
 
-            # Process paragraph content
             elif tag == "p":
                 text = self._get_element_text(element)
                 if text:
@@ -313,12 +258,9 @@ class HTMLExtractor:
                     if current_heading:
                         current_paragraph_parts.append(text)
                     else:
-                        # No heading, add as standalone paragraph
                         paragraphs.append(text)
 
-            # Process unordered lists
             elif tag == "ul":
-                # Skip navigation and menu lists
                 if any(
                     cls in (element.get("class", "") or "").lower()
                     for cls in ["menu", "nav", "navigation"]
@@ -338,7 +280,6 @@ class HTMLExtractor:
                     else:
                         paragraphs.append(list_text)
 
-            # Process ordered lists
             elif tag == "ol":
                 list_items = []
                 for i, li in enumerate(element.xpath("./li")):
@@ -353,9 +294,7 @@ class HTMLExtractor:
                     else:
                         paragraphs.append(list_text)
 
-            # Process tables
             elif tag == "table":
-                # Skip layout tables
                 if element.get("role") == "presentation":
                     continue
 
@@ -366,13 +305,11 @@ class HTMLExtractor:
                     else:
                         paragraphs.append(table_text)
 
-            # Process div and span elements with direct text
             elif (
                 tag in ["div", "span"]
                 and element.xpath(".//text()")
                 and not element.xpath("./p")
             ):
-                # Check if this element directly contains text (not just in its children)
                 direct_text = "".join(
                     t.strip() for t in element.xpath("./text()") if t.strip()
                 )
@@ -394,18 +331,15 @@ class HTMLExtractor:
         return "\n\n".join(p.strip() for p in paragraphs if p.strip())
 
     def _process_table_as_text(self, table) -> str:
-        """Process a table element and return its text content."""
 
         captions = table.xpath("./caption")
         caption_text = self._get_element_text(captions[0]) if captions else ""
 
-        # Process table headers
         headers = []
         for th in table.xpath(".//th"):
             text = self._get_element_text(th)
             headers.append(text or "")
 
-        # Process table rows
         table_rows = []
         for tr in table.xpath(".//tr[td]"):
             row_data = []
@@ -416,7 +350,6 @@ class HTMLExtractor:
             if row_data:
                 table_rows.append(" | ".join(row_data))
 
-        # Combine table content
         table_content = []
         if caption_text:
             table_content.append(caption_text + ":")
@@ -429,36 +362,26 @@ class HTMLExtractor:
         return " ".join(table_content)
 
     def _get_element_text(self, element) -> str:
-        """Get text content from an element, preserving whitespace where appropriate."""
         if element is None:
             return ""
 
-        # Get all text nodes
         texts = []
         for t in element.xpath(".//text()"):
             if t.is_text:
                 parent = t.getparent()
                 if parent is not None and parent.tag in ["pre", "code"]:
-                    # Preserve whitespace in pre/code blocks
                     texts.append(t)
                 else:
-                    # Normalize whitespace in regular text
                     texts.append(t.strip())
 
         return " ".join(t for t in texts if t)
 
     def _normalize_text(self, text):
-        """Normalize text by handling whitespace, unicode, and other issues."""
         if not text:
             return ""
-        # Normalize unicode characters
         text = unicodedata.normalize("NFKC", text)
-        # Replace multiple spaces with a single space
         text = re.sub(r"\s+", " ", text)
-        # Remove excessive newlines
         text = re.sub(r"\n+", " ", text)
-        # Remove control characters and special characters
         text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", text)
-        # Remove bracket and backslash characters
         text = re.sub(r"[<>{}[\]\\]", "", text)
         return text.strip()

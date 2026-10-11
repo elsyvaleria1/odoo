@@ -8,7 +8,6 @@ class IrHttp(models.AbstractModel):
         result = super().session_info()
 
         if result["is_system"]:
-            # necessary keys for Studio
             result["dbuuid"] = self.env.registry.settings.get(
                 self.env, "database.uuid", False
             )

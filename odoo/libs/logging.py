@@ -18,11 +18,6 @@ _LOWERED_TRACEBACK_HEADER = "_Traceback_ (most recent call last):"
 
 
 class mute_logger(logging.Handler):
-    # A logger stays muted while any mute_logger is inside it, whichever thread
-    # entered and in whatever order they leave: its handlers are saved on the
-    # first entry and restored on the last exit. The lock guards only that
-    # bookkeeping, never the with-body, so a server thread muting "odoo.db" is
-    # not held up by a test muting it around a whole browser tour.
     def __init__(self, *loggers: str) -> None:
         super().__init__()
         self.loggers: tuple[str, ...] = loggers

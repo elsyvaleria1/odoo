@@ -11,12 +11,6 @@ class TestResPartner(TransactionCase):
         Partner = self.env["res.partner"].with_user(test_user)
         Event = self.env["calendar.event"].with_user(test_user)
 
-        # Partner hierarchy
-        #     1       5
-        #    /|
-        #   2 3
-        #     |
-        #     4
 
         test_partner_1 = Partner.create({"name": "test_partner_1"})
         test_partner_2 = Partner.create(
@@ -80,7 +74,6 @@ class TestResPartner(TransactionCase):
             }
         )
 
-        # an ir.access row to see if access domains are applied
         calendar_event_model_id = self.env["ir.model"]._get("calendar.event").id
         self.env["ir.access"].create(
             {
@@ -92,7 +85,6 @@ class TestResPartner(TransactionCase):
                 "domain": "[('name', 'not in', ['event_9', 'event_10'])]",
             }
         )
-        # create generally requires read -> prevented by above test rule
         Event.sudo().create(
             {
                 "name": "event_9",

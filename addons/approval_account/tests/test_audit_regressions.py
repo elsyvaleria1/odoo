@@ -22,8 +22,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             name="Amount based",
             move_amount_min=1000.0,
         )
-        # Built once for the whole class: setup_other_company() loads a chart
-        # of accounts, which is far too slow to repeat per test.
         cls.company_2 = cls.setup_other_company(name="regression_company_2")["company"]
 
     @classmethod
@@ -107,8 +105,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_another_partner_is_not_what_was_approved(self):
-        """A bill approved for one vendor does not post for another: the change
-        resets the approval, and posting then asks for it again."""
         move = self._approved_move(price=1000.0)
 
         move.partner_id = self.partner_b
@@ -253,14 +249,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_approved_amount_is_compared_across_currencies(self):
-        """R2-01: a currency swap must not slip past the approved-amount gate.
-
-        The check compared two raw floats with a single currency's rounding, so
-        a bill approved for 1,000 in one currency could be posted as 1,000 in
-        another — a different value in company currency. Here the partner flag
-        keeps the approval requirement on, so the check is reached and it is the
-        comparison itself that has to catch the swap.
-        """
         other_currency = self.setup_other_currency("EUR")
         self.partner_a.invoice_approval_required = True
         move = self._approved_move(price=1000.0)
@@ -279,14 +267,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_approved_move_is_rechecked_after_falling_out_of_range(self):
-        """R2-01: dropping out of every category's range must not free the move.
-
-        A swap to a weaker currency halves the value in company currency, which
-        can push the move below the range that required approval in the first
-        place. `approval_required` then turns False, and the post used to skip
-        the amount check altogether — so the approval granted for the old value
-        silently authorised the new one.
-        """
         other_currency = self.setup_other_currency("EUR")
         move = self._approved_move(price=1000.0)
         self.assertEqual(move.approval_request_id.amount, 1000.0)
@@ -302,7 +282,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.approval_state, "pending", "asked again")
 
     def test_approved_amount_error_labels_each_currency(self):
-        """R2-08: the approved figure must carry the request's own symbol."""
         other_currency = self.setup_other_currency("EUR")
         move = self._approved_move(price=1000.0)
         request_currency = move.approval_request_id.currency_id
@@ -324,11 +303,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertIn(f"Current amount: {other_currency.symbol}", message)
 
     def test_shipped_accounting_categories_are_global(self):
-        """R2-02: pinning them to one company deadlocks every other one.
-
-        The categories used to inherit `approval.category.company_id`'s default
-        (`env.company`), so only the install-time company could ever see them.
-        """
         for xmlid in (
             "approval_account.approval_category_account_move",
             "approval_account.approval_category_accounting_request",
@@ -342,7 +316,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             )
 
     def test_flagged_partner_reaches_the_shipped_category(self):
-        """R2-02: the trigger is company-agnostic, so the category must be too."""
         shipped = self.env.ref("approval_account.approval_category_account_move")
         shipped._add_approver(self.approver, required=True)
         self.partner_a.bill_approval_required = True
@@ -354,7 +327,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.approval_request_id.category_id, shipped)
 
     def test_missing_category_error_names_the_company(self):
-        """R2-02: the deadlock message must say which company has no category."""
         move = self._new_move()
 
         with self.assertRaises(UserError) as capture:
@@ -363,13 +335,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertIn(move.company_id.display_name, str(capture.exception))
 
     def test_approval_subtypes_are_internal(self):
-        """R2-03: external followers must not receive approval chatter.
-
-        With `internal` left False the framework classes both subtypes as
-        EXTERNAL defaults, so any `partner_share` follower — the customer or
-        vendor on the invoice — was auto-subscribed and notified of the
-        approver's name and the approved amount.
-        """
         approved = self.env.ref("approval_account.mt_invoice_approved")
         refused = self.env.ref("approval_account.mt_invoice_refused")
         self.assertTrue(approved.internal)
@@ -383,7 +348,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             self.assertNotIn(subtype, external)
 
     def test_external_follower_is_not_notified_of_an_approval(self):
-        """R2-03: the end-to-end path, not just the flag."""
         move = self._approved_move(price=1000.0)
         customer = self.env["res.partner"].create(
             {"name": "External follower", "email": "external@test.com"},
@@ -418,12 +382,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertNotIn(customer, posted.mapped("notified_partner_ids"))
 
     def test_partner_approval_page_does_not_need_a_rank(self):
-        """R2-04: both ranks are 0 until the partner has been invoiced.
-
-        A partner created from Contacts, inline from an invoice's partner field
-        or by import therefore could not have either flag set — the exact "new
-        vendor" case the fields' help text names.
-        """
         partner_id, _label = self.env["res.partner"].name_create("Brand new vendor")
         partner = self.env["res.partner"].browse(partner_id)
         self.assertFalse(partner.customer_rank)
@@ -441,8 +399,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         ):
             widgets = tree.xpath(f"//field[@name='{name}']")
             self.assertTrue(widgets, f"{name} must be in the arch")
-            # Nothing between the widget and the form may gate it on a rank,
-            # or the flag is unreachable for the very partner that needs it.
             for node in [widgets[0], *widgets[0].iterancestors()]:
                 modifier = node.get("invisible") or ""
                 self.assertNotIn("customer_rank", modifier)
@@ -452,7 +408,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertTrue(partner.bill_approval_required)
 
     def test_accounting_only_category_fields_are_gated(self):
-        """R2-05: has_bsl and has_journal rendered on every approval type."""
         arch = self.env["approval.category"].get_view(
             self.env.ref("approval.view_approval_category_form").id,
             "form",
@@ -474,15 +429,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             )
 
     def test_global_category_range_ignores_the_reader_company(self):
-        """R2-06: applicability must be a function of the document, not the reader.
-
-        `move_amount_currency_id` falls back to `env.company.currency_id`, so
-        converting the thresholds from it made the answer depend on whichever
-        company the reading user happens to have active. The same invoice then
-        required approval for one user and not for another, and
-        `approval_required` caches per company (`depends_context` carries
-        `company`), so the divergence is not a transient.
-        """
         other_currency = self.setup_other_currency("EUR")
         other_company = self.setup_other_company(name="regression_co2")["company"]
         other_company.currency_id = other_currency
@@ -519,7 +465,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             )
 
     def test_bank_statement_line_request_fields_have_distinct_labels(self):
-        """R2-09: the One2many took the delegated Many2one's default label."""
         fields_ = self.env["account.bank.statement.line"]._fields
         self.assertNotEqual(
             fields_["approval_request_id"].string,
@@ -527,7 +472,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_payment_state_has_a_bulk_action_in_both_directions(self):
-        """R2-19: only 'Mark as Paid' could be applied to a whole list."""
         actions = self.env["ir.actions.server"].search(
             [("binding_model_id.model", "=", "approval.request")],
         )
@@ -547,7 +491,6 @@ class TestAuditRegressions(AccountApprovalCommon):
             )
 
     def test_accounting_groups_keep_their_approval_access(self):
-        """R2-10: five ACL rows were deleted as no-ops — prove nothing was lost."""
         billing = self.env["res.users"].create(
             {
                 "name": "ACL billing user",
@@ -591,7 +534,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_settings_button_reuses_the_category_action(self):
-        """R2-11: the button's own domain dropped global and payment categories."""
         menu_action = self.env.ref(
             "approval_account.action_approval_category_accounting",
         )
@@ -623,7 +565,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_count_approval_follows_its_declared_depends(self):
-        """R2-12: the compute searched a different field from the one it depends on."""
         category = self._new_category(name="Count category")
         request = self.env["approval.request"].create(
             {
@@ -649,20 +590,16 @@ class TestAuditRegressions(AccountApprovalCommon):
         line = move.invoice_line_ids[0]
         self.assertEqual(move.count_approval, 0)
 
-        # Only the field the old body searched on. The count must not diverge
-        # from the path it declares as its dependency.
         request.line_ids[0].account_move_line_id = line
         self.assertEqual(
             move.count_approval,
             len(move.line_ids.approval_request_line_id.approval_request_id),
         )
 
-        # Now the declared path itself, which must invalidate the count.
         line.approval_request_line_id = request.line_ids[0]
         self.assertEqual(move.count_approval, 1)
 
     def test_one_approval_stat_button_for_a_single_request(self):
-        """R2-13: a creation-flow move rendered two buttons both reading Approval."""
         category = self._new_category(
             name="Stat button category",
             target_model="account.move",
@@ -708,12 +645,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_request_move_count_follows_a_mixin_link(self):
-        """R2-18: the mixin half of the count had nothing to invalidate it.
-
-        The compute searched `account.move` on `approval_request_id`, a field
-        no `@api.depends` mentioned, so a move linking itself to the request
-        left the stat-button count stale for the rest of the transaction.
-        """
         category = self._new_category(name="Count moves category")
         request = self.env["approval.request"].create(
             {
@@ -736,16 +667,8 @@ class TestAuditRegressions(AccountApprovalCommon):
         )
 
     def test_second_company_invoice_reaches_an_approval_request(self):
-        """R2-07: the suite had no multi-company case at all.
-
-        That gap is what let R2-02 — the accounting categories being pinned to
-        the install-time company — through a whole round.
-        """
         company_2 = self.company_2
         company_2.bill_approval_threshold = 100.0
-        # An approver must have access to the company whose documents they
-        # approve: `approval.approver.user_id` is company-checked, and
-        # res.users answers that check on `company_ids`.
         self.approver.company_ids |= company_2
         shipped = self.env.ref("approval_account.approval_category_account_move")
         shipped._add_approver(self.approver, required=True)
@@ -790,7 +713,6 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.approval_request_id.company_id, company_2)
 
     def test_auto_post_posts_the_move_when_approval_is_granted(self):
-        """R2-07: the only path that posts a move with no user action."""
         self.category_amount.move_auto_post = True
         move = self._new_move(price=1000.0)
         move.action_create_approval_request()
@@ -801,11 +723,9 @@ class TestAuditRegressions(AccountApprovalCommon):
         self.assertEqual(move.state, "posted")
 
     def test_auto_post_failure_becomes_a_chatter_note(self):
-        """R2-07: a failed auto-post must not undo the approval."""
         self.category_amount.move_auto_post = True
         move = self._new_move(price=1000.0)
         move.action_create_approval_request()
-        # Posting now raises: the move's date falls inside a locked period.
         self.env.company.account_config_id.fiscalyear_lock_date = "2026-12-31"
 
         move.approval_request_id.with_user(self.approver).action_approve()

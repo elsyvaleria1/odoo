@@ -25,7 +25,6 @@ class PaymentProvider(models.Model):
         help="Enable the use of QR-codes when paying by wire transfer.",
     )
 
-    # === CRUD METHODS ===#
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -36,19 +35,13 @@ class PaymentProvider(models.Model):
         return providers
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "custom" or self.custom_mode != "wire_transfer":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === ACTION METHODS ===#
 
     def action_recompute_pending_msg(self) -> None:
-        """Recompute the pending message to include the existing bank accounts.
-
-        No-op if `account_payment_provider` is not installed.
-        """
         account_payment_module = self.env["ir.module.module"]._get(
             "account_payment_provider"
         )
@@ -56,7 +49,7 @@ class PaymentProvider(models.Model):
             for provider in self.filtered(lambda p: p.custom_mode == "wire_transfer"):
                 company_id = provider.company_id.id
                 accounts = (
-                    self.env["account.journal"]  # noqa: E8507 - one lookup per provider, on its own company
+                    self.env["account.journal"]
                     .search(
                         [
                             *self.env["account.journal"]._check_company_domain(
@@ -81,7 +74,6 @@ class PaymentProvider(models.Model):
                     f"</div>"
                 )
 
-    # === SETUP METHODS === #
 
     @api.model
     def _get_domain_provider(self, provider_code, *, custom_mode="", **kwargs):
@@ -94,7 +86,6 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _prepare_removal_values(self):
-        """Override of `payment` to nullify the `custom_mode` field."""
         res = super()._prepare_removal_values()
         res["custom_mode"] = None
         return res

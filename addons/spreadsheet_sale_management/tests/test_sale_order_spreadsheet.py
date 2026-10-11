@@ -100,7 +100,6 @@ class SaleOrderSpreadsheet(SpreadsheetTestCase):
 
         so_spreadsheet = sale_order.spreadsheet_ids
 
-        # dispatch a revision to the spreadsheet
         revision = self.new_revision_data(spreadsheet)
         spreadsheet.dispatch_spreadsheet_message(revision)
 
@@ -148,7 +147,6 @@ class SaleOrderSpreadsheet(SpreadsheetTestCase):
         sale_order.action_view_sale_order_spreadsheet()
         spreadsheet = sale_order.spreadsheet_id
 
-        # user access for his own sale order
         self.assertTrue(sale_order.has_access("read"))
         self.assertTrue(sale_order.has_access("write"))
         self.assertFalse(sale_order.has_access("unlink"))
@@ -156,7 +154,6 @@ class SaleOrderSpreadsheet(SpreadsheetTestCase):
         self.assertTrue(spreadsheet.has_access("write"))
         self.assertTrue(spreadsheet.has_access("unlink"))
 
-        # other users don't have access by default
         self.assertFalse(sale_order.with_user(other_salesman).has_access("read"))
         self.assertFalse(sale_order.with_user(other_salesman).has_access("write"))
         self.assertFalse(sale_order.with_user(other_salesman).has_access("unlink"))
@@ -164,7 +161,6 @@ class SaleOrderSpreadsheet(SpreadsheetTestCase):
         self.assertFalse(spreadsheet.with_user(other_salesman).has_access("write"))
         self.assertFalse(spreadsheet.with_user(other_salesman).has_access("unlink"))
 
-        # add access to all orders
         other_salesman.group_ids |= self.env.ref("sale.group_sale_salesman_all_leads")
         self.assertTrue(sale_order.with_user(other_salesman).has_access("read"))
         self.assertTrue(sale_order.with_user(other_salesman).has_access("write"))
@@ -174,11 +170,6 @@ class SaleOrderSpreadsheet(SpreadsheetTestCase):
         self.assertTrue(spreadsheet.with_user(other_salesman).has_access("unlink"))
 
     def test_sale_order_template_change_after_open(self):
-        """
-        Test ensures that spreadsheet template is changed on changing sale order template,
-        once spreadsheet has been opened.
-        """
-        # Ensure user has access to sale order templates
         self.env.user.group_ids += self.env.ref("sale.group_sale_order_template")
         spreadsheet = self.env["sale.order.spreadsheet"].create({"name": "spreadsheet"})
         spreadsheet2 = self.env["sale.order.spreadsheet"].create(

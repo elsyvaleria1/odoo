@@ -79,8 +79,6 @@ def get_writers(
     for writer in _WRITERS[representation]:
         if not writer.applies_to(mimetype):
             continue
-        # availability may ask a vendor router, which a writer of another
-        # mimetype must not pay for
         if options is not None and not is_available(writer, options):
             continue
         (fallback if writer.mimetype == ANY else named).append(writer)
@@ -113,7 +111,7 @@ def _prepare_writer(
     writer.name = name
     writer.mimetype = mimetype
     writer.consumes = consumes
-    writer.write = write  # type: ignore[method-assign]
+    writer.write = write
     return writer
 
 

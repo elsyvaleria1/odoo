@@ -23,19 +23,17 @@ class TestBarcodeNomenclature(common.TransactionCase):
             }
         )
         for pattern in (
-            "......{}..",  # empty braces
-            "......{DN}",  # decimals before the whole part
-            "....{NN}{DD}",  # two numeric groups
-            "*",  # '.*' meant
-            "**>>>{ND}",  # not a regular expression
+            "......{}..",
+            "......{DN}",
+            "....{NN}{DD}",
+            "*",
+            "**>>>{ND}",
         ):
             with self.subTest(pattern=pattern), self.assertRaises(ValidationError):
                 rule.pattern = pattern
         rule.pattern = "..>>>{ND}"
 
     def test_a_sequence_change_reorders_the_next_parse(self):
-        """The rules are matched in sequence order, and a sequence written in
-        the transaction applies to the very next parse."""
         rule_a, _rule_b = self.env["barcode.rule"].create(
             [
                 {

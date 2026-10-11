@@ -33,8 +33,6 @@ _SCORE_COMPARATORS = {
 _WEBHOOK_RESPONSE_MAX_BYTES = 64 * 1024
 
 
-# the link outlives the deadline, so a late respondent is told the survey
-# has closed rather than that the link is wrong
 LINK_OUTLIVES_DEADLINE = timedelta(days=30)
 
 
@@ -106,7 +104,6 @@ class SurveyUser_Input(models.Model):
     survey_time_limit_reached = fields.Boolean(
         compute="_compute_survey_time_limit_reached"
     )
-    # the answer's session, kept sealed by mixin.bearer.token
     access_token = fields.Char(
         string="Identification token",
         default=lambda self: str(uuid.uuid4()),
@@ -246,13 +243,6 @@ class SurveyUser_Input(models.Model):
 
     @api.depends("state", "start_datetime", "end_datetime", "survey_id")
     def _compute_is_speeder(self) -> None:
-        """Derived, not stored: this compares a response against all of its siblings.
-
-        `@api.depends` cannot express "depends on the aggregate of my siblings", so a
-        stored column is right only at the instant it is written and silently wrong
-        from the next completion onwards -- while backing a saved filter and a
-        decorated list column.
-        """
         finished = self.filtered(
             lambda ui: ui.state == "done" and ui.start_datetime and ui.end_datetime
         )
@@ -501,10 +491,6 @@ class SurveyUser_Input(models.Model):
             answer.invitation_token = tokens.get(answer.id, False)
 
     def _issue_invitation_links(self) -> None:
-        """A comment link per answer that has a partner, in that partner's
-        name, until a month after the answer's deadline or for as long as a
-        notification's link lives (decisions SV-A, B1): the URL the invitation
-        mails."""
         invited = self.filtered("partner_id")
         tokens = self.env["access.link"]._issue_each(
             invited,
@@ -521,8 +507,6 @@ class SurveyUser_Input(models.Model):
             )
 
     def _mailed_token(self) -> str:
-        """The token a URL mailed to the respondent carries: an invited
-        partner's link, an anonymous respondent's own answer token."""
         self.check_singleton()
         if not self.partner_id:
             return self.access_token
@@ -643,13 +627,6 @@ class SurveyUser_Input(models.Model):
         return True
 
     def _lock(self) -> None:
-        """Serialise concurrent work on one participation.
-
-        The client's own guard cannot cover this: two requests carrying the same answer
-        token both read state != 'done' and both run to completion, which is a second
-        certification email, a second badge award and a second webhook. Postgres decides
-        the order instead.
-        """
         if not self.ids:
             return
         self.flush_recordset()
@@ -697,12 +674,10 @@ class SurveyUser_Input(models.Model):
             user_input._fire_webhook("survey_completed")
 
         for user_input in self.filtered(lambda ui: not ui.test_entry):
-            # followup_rule_ids already excludes archived rules (active_test).
             for rule in user_input.survey_id.followup_rule_ids:
                 rule._execute(user_input)
 
     def _fire_webhook(self, event: str) -> None:
-        """Every guard lives here, so no call site has to remember them."""
         self.check_singleton()
         survey = self.survey_id
         webhook_url = survey.webhook_url
@@ -867,16 +842,6 @@ class SurveyUser_Input(models.Model):
     _PIPING_RE = re.compile(r"\{\{Q(\d+)\}\}")
 
     def _resolve_piping(self, text: str | Markup) -> str | Markup:
-        """Substitute {{Q<id>}} with this respondent's answer to that question.
-
-        The number is a question **id**, the same reference
-        `survey.question.calculated_expression` documents for its own `Q<id>`
-        syntax. It used to fall back to a 1-based position when no question
-        carried that id, which meant {{Q3}} named the third question in one survey
-        and the question whose id is 3 in another -- and flipped meaning the moment
-        such a question was added. A position also moves when questions are
-        reordered, which a stored reference must not.
-        """
         if not text or "{{Q" not in text:
             return text
         self.check_singleton()
@@ -1450,12 +1415,6 @@ class SurveyUser_Input(models.Model):
 
     @api.model
     def _cron_cleanup_expired_responses(self) -> None:
-        """One domain for every survey, and a bounded unlink.
-
-        The per-survey loop issued one search each, then deleted the whole expired set
-        in a single transaction -- unbounded by construction, since the first run
-        against a survey with a year of history is the largest one.
-        """
         now = fields.Datetime.now()
         surveys = self.env["survey.survey"].search([("data_retention_days", ">", 0)])
         if not surveys:

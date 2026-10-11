@@ -22,28 +22,28 @@ def is_valid_object_name(name: str) -> bool:
 
 def check_object_name(name: str) -> None:
     if not is_valid_object_name(name):
-        raise ValidationError(  # noqa: E8505  diagnostic, no caller shows it
+        raise ValidationError(
             f"The _name attribute {name!r} is not valid."
         )
 
 
 def check_pg_name(name: str) -> None:
     if not regex_pg_name.match(name):
-        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+        raise ValidationError(
             f"Invalid characters in table name {name!r}"
         )
     if len(name) > MAX_PG_NAME_LENGTH:
-        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+        raise ValidationError(
             f"Table name {name!r} is too long"
         )
 
 
 def check_column_name(name: str) -> None:
     if not regex_column_name.match(name):
-        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+        raise ValidationError(
             f"Invalid characters in column name {name!r}"
         )
     if len(name) > MAX_PG_NAME_LENGTH:
-        raise ValidationError(  # noqa: E8505  ir.model.fields translates its own
+        raise ValidationError(
             f"Column name {name!r} is too long"
         )

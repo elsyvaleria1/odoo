@@ -137,10 +137,7 @@ class HrEmployee(models.Model):
 
     @api.model
     def _get_account_holder_employees_data(self):
-        # as acc_type isn't stored we can not use a domain to retrieve the employees
-        # bypass orm for performance, we only care about the employee id anyway
 
-        # return nothing if user has no right to either employee or bank partner
         if not self.browse().has_access("read") or not self.env[
             "res.partner.bank.account"
         ].has_access("read"):
@@ -166,7 +163,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _get_untrusted_bank_account_ids(self) -> list:
-        """Return a list of bank account IDs linked to employees that are not marked for out payment."""
         if not self.browse().has_access("read") or not self.env[
             "res.partner.bank.account"
         ].has_access("read"):

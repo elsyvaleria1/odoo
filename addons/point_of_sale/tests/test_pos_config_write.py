@@ -116,7 +116,6 @@ class TestPosConfigOpenSessionGuard(TestPoSCommon):
             + [Command.update(method.id, {"name": "Must never be written"})]
         }
 
-        # Avoid TransactionCase.assertRaises' savepoint: rollback could hide an early write.
         with unittest.TestCase.assertRaises(self, UserError):
             self.config.with_context(from_settings_view=True).write(values)
 

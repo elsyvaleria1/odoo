@@ -28,13 +28,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def _generate_options(cls, report, date_from, date_to, default_options=None):
-        """Create new options at a certain date.
-        :param report:          The report.
-        :param date_from:       A datetime object, str representation of a date or False.
-        :param date_to:         A datetime object or str representation of a date.
-        :param default_options: Extra options merged into the ones passed to get_options().
-        :return:                The newly created options.
-        """
         if isinstance(date_from, datetime):
             date_from_str = fields.Date.to_string(date_from)
         else:
@@ -73,16 +66,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
         date_to=None,
         period_order=None,
     ):
-        """Modify the existing options to set a new filter_comparison.
-        :param options:         The report options.
-        :param report:          The report.
-        :param comparison_type: One of the following values: ('no_comparison', 'custom', 'previous_period', 'previous_year').
-        :param number_period:   The number of period to compare.
-        :param date_from:       A datetime object for the 'custom' comparison_type.
-        :param date_to:         A datetime object for the 'custom' comparison_type.
-        :param period_order:    The order of the comparison periods; defaults to the current one.
-        :return:                The newly created options.
-        """
         previous_options = {
             **options,
             "comparison": {
@@ -98,12 +81,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
         return report.get_options(previous_options)
 
     def _update_multi_selector_filter(self, options, option_key, selected_ids):
-        """Modify a selector in the options so that only the given ids are selected.
-        :param options:         The report options.
-        :param option_key:      The key to the option.
-        :param selected_ids:    The ids to be selected.
-        :return:                The newly created options.
-        """
         new_options = copy.deepcopy(options)
         for c in new_options[option_key]:
             c["selected"] = c["id"] in selected_ids
@@ -112,14 +89,11 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
     def assertColumnPercentComparisonValues(self, lines, expected_values):
         filtered_lines = self._filter_folded_lines(lines)
 
-        # Check number of lines.
         self.assertEqual(len(filtered_lines), len(expected_values))
 
         for value, expected_value in zip(filtered_lines, expected_values, strict=False):
-            # Check number of columns.
             key = "column_percent_comparison_data"
             self.assertEqual(len(value[key]) + 1, len(expected_value))
-            # Check name, value and class.
             self.assertEqual(
                 (value["name"], value[key]["name"], value[key]["mode"]), expected_value
             )
@@ -127,7 +101,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
     def assertHorizontalGroupTotal(self, lines, expected_values):
         filtered_lines = self._filter_folded_lines(lines)
 
-        # Check number of lines.
         self.assertEqual(len(filtered_lines), len(expected_values))
         for line_dict_list, (_title, *expected_columns) in zip(
             filtered_lines, expected_values, strict=False
@@ -135,7 +108,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
             column_values = [
                 column["no_format"] for column in line_dict_list["columns"]
             ]
-            # Compare the Total column, Total column is there only under certain condition
             if line_dict_list.get("horizontal_group_total_data"):
                 *expected_columns, total = expected_columns
                 self.assertEqual(
@@ -145,37 +117,18 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
             self.assertEqual(column_values, expected_columns)
 
     def assertHeadersValues(self, headers, expected_headers):
-        """Helper to compare the 'column_headers' of the report options with some expected results.
-        A header is a row of columns, so headers is a list of lists of dictionaries.
-        :param headers:             The headers to compare.
-        :param expected_headers:    The expected headers.
-        """
-        # Check number of header lines.
         self.assertEqual(len(headers), len(expected_headers))
 
         for header, expected_header in zip(headers, expected_headers, strict=False):
-            # Check number of columns.
             self.assertEqual(len(header), len(expected_header))
 
             for i, column in enumerate(header):
-                # Check name.
                 self.assertEqual(
                     column["name"],
                     self._convert_str_to_date(column["name"], expected_header[i]),
                 )
 
     def assertIdenticalLines(self, reports):
-        """Helper to compare report lines with the same `code` across multiple reports.
-        The helper checks the lines for similarity on:
-        - number of expressions
-        - expression label
-        - expression engine
-        - expression formula
-        - expression subformula
-        - expression date_scope
-
-        :param reports: (recordset of report.formula) The reports to check
-        """
 
         def expression_to_comparable_values(expr):
             return (
@@ -219,26 +172,13 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
         currency_map=None,
         ignore_folded=True,
     ):
-        """Helper to compare the lines returned by the _get_lines method
-        with some expected results and ensuring the 'id' key of each line holds a unique value.
-        :param lines:               See _get_lines.
-        :param columns:             The columns index.
-        :param expected_values:     A list of iterables.
-        :param options:             The options from the current report.
-        :param currency_map:        A map mapping each column_index to some extra options to test the lines:
-            - currency:             The currency to be applied on the column.
-            - currency_code_index:  The index of the column containing the currency code.
-        :param ignore_folded:       Filters out the children of folded lines when True.
-        """
         if currency_map is None:
             currency_map = {}
 
         filtered_lines = self._filter_folded_lines(lines) if ignore_folded else lines
 
-        # Compare the table length to see if any line is missing
         self.assertEqual(len(filtered_lines), len(expected_values))
 
-        # Compare cell by cell the current value with the expected one.
         to_compare_list = []
         for i, line in enumerate(filtered_lines):
             compared_values = [[], []]
@@ -246,8 +186,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
                 if index == 0:
                     current_value = line["name"]
                 else:
-                    # Some lines may not have columns, like title lines. In such case, no values should be provided for these.
-                    # The function expects a tuple, so the line still needs a comma after the name value.
                     if j > len(expected_values[i]) - 1:
                         break
                     current_value = line["columns"][index - 1].get("name", "")
@@ -319,12 +257,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
             self.fail("\n".join(errors))
 
     def _filter_folded_lines(self, lines):
-        """Returns a copy of the lines list without the children of folded lines.
-        :param lines:   The lines to filter.
-        :return:        The filtered lines.
-        """
-        # Children of folded lines (for example, totals below sections) are not shown anyway, so they must be
-        # ignored when comparing the results in assertLinesValues.
         filtered_lines = []
         folded_lines = set()
         for line in lines:
@@ -352,7 +284,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
         code=None,
         formula=None,
     ):
-        """Creates a tax report line"""
         create_vals = {
             "name": name,
             "code": code,
@@ -393,7 +324,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def _get_tag_ids(cls, expressions, company=False):
-        """Helper function to define tag ids for taxes"""
         return [
             (
                 6,
@@ -425,7 +355,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def _get_basic_line_dict_id_from_report_line(cls, report_line):
-        """Computes a full generic id for the provided report line (hence including the one of its parent as prefix), using no markup."""
         report = report_line.report_id
         if report_line.parent_id:
             parent_line_id = cls._get_basic_line_dict_id_from_report_line(
@@ -439,7 +368,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def _get_basic_line_dict_id_from_report_line_ref(cls, report_line_xmlid):
-        """Same as _get_basic_line_dict_id_from_report_line, but from the line's xmlid, for convenience in the tests."""
         return cls._get_basic_line_dict_id_from_report_line(
             cls.env.ref(report_line_xmlid)
         )
@@ -479,14 +407,6 @@ class TestAccountReportsCommon(AccountTestInvoicingCommon):
         )
 
     def _test_xlsx_file(self, file_content, expected_values):
-        """Takes in the binary content of a xlsx file and a dict of expected values.
-        It will then parse the file in order to compare the values with the expected ones.
-        The expected values dict format is:
-        'row_number': ['cell_1_val', 'cell_2_val', ...]
-
-        :param file_content: The binary content of the xlsx file
-        :param expected_values: The dict of expected values
-        """
         if load_workbook is None:
             raise unittest.SkipTest("openpyxl not available")
 

@@ -109,7 +109,6 @@ class ProjectTask(models.Model):
 
     @api.depends("project_id")
     def _compute_worksheet_template_id(self) -> None:
-        # Change worksheet when the project changes, not project.allow_worksheet
         for task in self:
             if not task.worksheet_template_id and task.allow_worksheets:
                 task.worksheet_template_id = (

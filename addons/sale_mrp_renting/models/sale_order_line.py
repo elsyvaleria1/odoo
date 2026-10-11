@@ -39,7 +39,6 @@ class SaleOrderLine(models.Model):
                     m.location_dest_id != m.company_id.rental_loc_id and m.to_refund
                 ),
             }
-            # `previous_product_qty`/`product_qty` are in the line's UoM.
             order_qty = (
                 previous_product_qty.get(self.id, 0)
                 if previous_product_qty
@@ -90,7 +89,6 @@ class SaleOrderLine(models.Model):
         )
         if not delivered_moves:
             return 0.0
-        # Only outgoing moves are passed, so the kit count comes back negative.
         return -self._get_rental_kits_moved(delivered_moves)
 
     def _compute_qty_transferred(self):

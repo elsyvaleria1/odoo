@@ -33,7 +33,6 @@ class _DependencyCollector:
         if field.store:
             self.fields_by_model[records._name].add(name)
             if records._table_inheritance_root:
-                # every table of the tree reads rows another model of it writes
                 self._collect_inheritance_tree(records, name)
         elif field.related:
             target = records

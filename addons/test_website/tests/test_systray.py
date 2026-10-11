@@ -13,8 +13,6 @@ class TestSystray(HttpCase):
             "website.group_website_restricted_editor"
         )
         cls.group_tester = cls.env.ref("test_website.group_test_website_tester")
-        # Do not rely on HttpCaseWithUserDemo to avoid having different user
-        # definitions with and without demo data.
         cls.user_test = new_test_user(cls.env, login="testtest", website_id=False)
         other_website = cls.env["website"].create(
             {
@@ -34,7 +32,6 @@ class TestSystray(HttpCase):
             """,
             }
         )
-        # Remain on page when switching website
         cls.env["website"].search([]).homepage_url = "/test_model/1"
 
     @mute_logger("odoo.addons.http_routing.models.ir_http", "odoo.http")

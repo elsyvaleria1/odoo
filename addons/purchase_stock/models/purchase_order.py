@@ -386,9 +386,6 @@ class PurchaseOrder(models.Model):
         activity.note += Markup("<p>{}</p>").format(message)
 
     def _create_picking(self) -> bool:
-        # the orders confirmed together get their pickings, moves, confirmation
-        # and reservation in batches per company; the chatter link stays per
-        # picking
         _debug.pipeline("po_picking_create_enter", orders=self)
         StockPicking = self.env["stock.picking"].with_user(SUPERUSER_ID)
         orders = self.filtered(

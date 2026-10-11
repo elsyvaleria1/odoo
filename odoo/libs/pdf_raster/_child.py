@@ -1,6 +1,3 @@
-# Run by odoo.libs.pdf_raster as `python -I _child.py WIDTH HEIGHT CPU MEMORY`,
-# the PDF on stdin; on stdout its page count, a newline, then the first page as
-# a PNG. Exit 2: no page to show; 3: no MuPDF.
 import resource
 import sys
 
@@ -11,8 +8,6 @@ def main() -> int:
         import pymupdf
     except ImportError:
         return 3
-    # capped once the library is in, before a byte of the file is read: a
-    # limit then fails this PDF, never reads as a missing renderer
     resource.setrlimit(resource.RLIMIT_CPU, (cpu_seconds, cpu_seconds + 1))
     resource.setrlimit(resource.RLIMIT_AS, (memory_bytes, memory_bytes))
     resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))

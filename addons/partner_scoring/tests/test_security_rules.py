@@ -50,7 +50,6 @@ class TestSecurityRules(TransactionCase):
         cls.hidden._score_refresh()
 
     def test_the_partner_itself_is_hidden(self):
-        """The premise: without this the rules below prove nothing."""
         as_outsider = self.env["res.partner"].with_user(self.outsider)
         self.assertFalse(as_outsider.search([("id", "=", self.hidden.id)]))
 
@@ -73,7 +72,6 @@ class TestSecurityRules(TransactionCase):
             as_outsider.unlink()
 
     def test_the_rule_domain_outlives_the_request_that_built_it(self):
-        """The domain is cached for the registry's life, so it must hold no Query."""
         for model in ("partner.score.line", "res.partner.attribute.line"):
             domain = self.env[model].with_user(self.outsider)._access_domain("read")
             self.assertFalse(
@@ -83,7 +81,6 @@ class TestSecurityRules(TransactionCase):
             )
 
     def test_an_archived_partner_keeps_its_lines_readable(self):
-        """Archiving is not a permission: whoever read the partner still reads it."""
         insider = self.env["res.users"].create(
             {
                 "name": "Rules Insider",
@@ -122,7 +119,6 @@ class TestSecurityRules(TransactionCase):
         self.assertEqual(visible, mine)
 
     def test_the_overlap_check_still_sees_foreign_bands(self):
-        """The company rule must not weaken the band constraint."""
         self.env["partner.tier"].create(
             {
                 "name": "Rules Band A Wide",

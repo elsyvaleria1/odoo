@@ -45,22 +45,12 @@ class WizardMolecularDockingImport(models.TransientModel):
 
     @api.depends("job_id")
     def _compute_engine(self):
-        # The run that earned the gate is the method the screening should repeat
         for wizard in self:
             run = wizard.job_id.target_id.active_validation_id
             wizard.engine = wizard.job_id.engine or run.engine
             wizard.engine_ver = wizard.job_id.engine_ver or run.engine_ver
 
     def _match_structures(self, names):
-        """Map each pose title to the 3D structure of the campaign that was docked.
-
-        The title of the structure's own molblock is tried first: it is the name
-        the geometry was exported under, which survives when two names turned
-        out to be one compound. The compound name is the fallback.
-
-        :param set[str] names: pose titles found in the file
-        :rtype: dict
-        """
         compounds = self.job_id.campaign_id.role_ids.compound_id
         by_title = defaultdict(list)
         for structure in compounds.structure_ids.filtered(
@@ -93,11 +83,6 @@ class WizardMolecularDockingImport(models.TransientModel):
         return structures
 
     def action_import(self):
-        """Replace the job's poses of every compound in the file and close the job.
-
-        Poses keep the order of the file, which engines write best first, so the
-        first pose of a compound is rank 1.
-        """
         self.check_singleton()
         job = self.job_id
         if job.status == "blocked":
@@ -142,7 +127,6 @@ class WizardMolecularDockingImport(models.TransientModel):
                     "pose_molblock": record["molblock"],
                 }
             )
-        # A re-run replaces its compounds' poses instead of leaving stale ranks
         job.result_ids.filtered(
             lambda result: result.structure_id.id in {s.id for s in structures.values()}
         ).unlink()

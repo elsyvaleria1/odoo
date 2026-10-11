@@ -12,15 +12,11 @@ MODEL = "test_legacy_access.note"
 MODULE = "test_legacy_access"
 OPERATIONS = ("read", "write", "create", "unlink")
 
-# the module's security as stock Odoo 19.0 reads it, spelled out here rather
-# than parsed, so the rows are held to it and not to their own reading of it
 LINES = {
     "base.group_user": {"read"},
     "test_legacy_access.group_note_user": {"read", "write", "create"},
     "test_legacy_access.group_note_manager": {"read", "write", "create", "unlink"},
     "test_legacy_access.group_note_auditor": {"read"},
-    # a line no rule governs: its group reaches every note, and a member of a
-    # group some rule governs is still bound by that rule
     "test_legacy_access.group_note_reader": {"read"},
 }
 GROUP_RULES = [
@@ -70,7 +66,6 @@ class TestStockAccess(TransactionCase):
                     )
 
     def stock(self, user, operation):
-        # the notes stock Odoo's check lets the user perform the operation on
         held = {
             xmlid
             for xmlid in (*LINES, *{g for gs, _o, _d in GROUP_RULES for g in gs})
@@ -108,8 +103,6 @@ class TestStockAccess(TransactionCase):
                     )
 
     def test_a_rule_binds_its_members_whichever_line_opens_the_model(self):
-        # the readers' line opens every note and no rule governs it; a reader
-        # who is also a note user is still bound by the note users' rule
         not_cancelled = self.notes.filtered(lambda n: n.state != "cancel")
         self.assertEqual(self.reached(self.users["manager"], "read"), not_cancelled)
         reached = self.reached(self.users["reading_user"], "read")
@@ -146,8 +139,6 @@ class TestStockAccess(TransactionCase):
         self.assertEqual(own.domain, "[('user_id', '=', user.id)]")
 
     def test_the_drift_report_reads_the_stock_files_as_the_rows_desired_state(self):
-        # the rows a stock module's lines and rules amount to are no orphans,
-        # and an edit against them is a drift, a noupdate one left as edited
         own = self.env.ref(f"{MODULE}.rule_note_own_group_note_user")
         public = self.env.ref(f"{MODULE}.rule_note_public")
         own.domain = "[('name', '=', 'edited')]"

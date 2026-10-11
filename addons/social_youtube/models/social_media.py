@@ -34,12 +34,6 @@ class SocialMedia(models.Model):
             return self._add_youtube_accounts_from_iap()
 
     def _add_youtube_accounts_from_configuration(self, youtube_oauth_client_id) -> dict:
-        """Builds the URL to Youtube with the appropriate page rights request, then redirects the client.
-
-        Redirect is done in 'self' since Youtube will then return back to the app with the 'redirect_uri' param.
-        Redirect URI from Youtube will land on this module controller's 'youtube_account_callback' method.
-
-        Youtube will display an error message if the callback URI is not correctly defined in the Youtube APP settings."""
 
         base_youtube_url = "https://accounts.google.com/o/oauth2/v2/auth?%s"
         params = {
@@ -109,7 +103,6 @@ class SocialMedia(models.Model):
 
     @api.model
     def _format_youtube_comment(self, youtube_comment) -> dict:
-        """Formats a comment returned by the YouTube API to a dict that will be interpreted by our frontend."""
         comment_snippet = youtube_comment["snippet"]
         return {
             "id": youtube_comment.get("id"),

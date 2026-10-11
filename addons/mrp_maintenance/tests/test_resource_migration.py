@@ -6,7 +6,6 @@ from odoo.addons.mrp_maintenance.migration import migrate_equipment_resources
 @tagged("post_install", "-at_install")
 class TestEquipmentResourceMigration(TransactionCase):
     def test_import_preserves_independent_identities_and_is_idempotent(self):
-        # The temporary fixture shadows any archived legacy table in this transaction.
         self.cr.execute(
             "CREATE TEMP TABLE maintenance_equipment (asset_id integer, workcenter_id integer) ON COMMIT DROP"
         )

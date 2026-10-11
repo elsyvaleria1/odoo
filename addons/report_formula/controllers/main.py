@@ -63,9 +63,6 @@ class ReportFormulaController(http.Controller):
                 )
 
             if file_type in ("zip", "xaf") or isinstance(file_content, GeneratorType):
-                # Adding direct_passthrough to the response and giving it a file
-                # as content means that we will stream the content of the file to the user
-                # Which will prevent having the whole file in memory
                 response.direct_passthrough = True
 
             return response

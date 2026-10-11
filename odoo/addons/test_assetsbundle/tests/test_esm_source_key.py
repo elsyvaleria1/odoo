@@ -16,8 +16,6 @@ HELPER = "test_assetsbundle/static/tests/esm_inlined/unlisted/helper.js"
 _INPUT_RE = re.compile(
     r"(?:^|/)(?P<addon>[\w.-]+)/static/(?P<kind>src|lib|tests)/(?P<rest>.+)$"
 )
-# a module reached by a bare specifier resolves through the addon resolution
-# root, `<data_dir>/esbuild-roots/<digest>/@addon` -> `addon/static/src`
 _ROOT_INPUT_RE = re.compile(
     r"/esbuild-roots/[0-9a-f]+/@(?P<addon>[\w.-]+)/(?P<rest>.+)$"
 )

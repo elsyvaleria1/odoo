@@ -147,8 +147,6 @@ class AccountAccount(models.Model):
         comodel_name="account.code.mapping",
         inverse_name="account_id",
     )
-    # Write after company_ids so _check_code_is_unique does not fire before
-    # both fields are set together.
     code_mapping_ids.write_sequence = 19
     tag_ids = fields.Many2many(
         comodel_name="account.account.tag",
@@ -232,9 +230,6 @@ class AccountAccount(models.Model):
                 code_store=SQL.identifier(
                     alias, "code_store", to_flush=self._fields["code_store"]
                 ),
-                # Inlined as a literal, not a bound parameter: two bound
-                # parameters would be distinct nodes to Postgres, breaking
-                # ORDER BY/GROUP BY matching against this expression elsewhere.
                 root_company_id=SQL(f"'{int(self.env.company.root_id.id)}'"),
             )
         if field_expr == "placeholder_code":
@@ -277,8 +272,6 @@ class AccountAccount(models.Model):
                     )
                 """,
                 code_store=SQL.identifier(alias, "code_store"),
-                # Same literal-vs-bound-parameter requirement as the "code"
-                # branch above.
                 active_company_root_id=SQL(f"'{int(self.env.company.root_id.id)}'"),
                 account_first_company_name=SQL.identifier(
                     "account_first_company",
@@ -803,8 +796,6 @@ class AccountAccount(models.Model):
 
             for index, vals in enumerate(vals_list_for_company):
                 self._update_vals_with_code(vals, companies, cache)
-                # the inverse of `code` writes each new account on its own, and
-                # every write searches the move lines of that account
                 if vals.get("code") and not companies[0].parent_id:
                     vals_list_for_company[index] = {
                         **{key: value for key, value in vals.items() if key != "code"},
@@ -860,14 +851,11 @@ class AccountAccount(models.Model):
                     code for code, accs in accounts_by_code.items() if len(accs) > 1
                 ]
 
-            # One query per company, not per record: `code` is company-dependent
-            # and is searched under that company's context, which a single
-            # query over every company cannot express.
             elif duplicates := (
                 self.with_company(company)
                 .sudo()
                 .with_context(active_test=False)
-                .search_fetch(  # noqa: E8507  one search per company, which a single query cannot scope
+                .search_fetch(
                     [
                         ("code", "in", list(accounts_by_code)),
                         ("id", "not in", accounts.ids),
@@ -1052,7 +1040,6 @@ class AccountAccount(models.Model):
             (journal.default_account_id, journal)
             for journal in journals
             if journal.currency_id != journal.company_id.currency_id
-            # an account without a currency matched nothing in SQL: NULL != x is no row
             and journal.default_account_id.currency_id
             and journal.default_account_id.currency_id != journal.currency_id
         ]

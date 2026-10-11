@@ -50,10 +50,6 @@ _debug = DebugLog(__name__)
 
 
 def _carries_a_python_predicate(domain: Domain) -> bool:
-    # `Domain.custom(to_sql=..., predicate=...)` is the supported way to say
-    # "this tier evaluates me in Python", and its contract is that the SQL
-    # half is never called here -- so a domain holding one is not offered to
-    # the compiler at all, and whatever else it holds goes unchecked
     if isinstance(domain, DomainCustom):
         return domain._filtered is not None
     child = getattr(domain, "child", None)
@@ -73,8 +69,6 @@ class _MultiValued(list[typing.Any]):
     __slots__ = ()
 
 
-# date_part() for the number granularities, a double precision as PostgreSQL
-# answers it; its dow runs Sunday 0 .. Saturday 6 and its week is the ISO week
 _DATE_PART = {
     "year_number": lambda d: float(d.year),
     "quarter_number": lambda d: float(get_quarter_number(d)),
@@ -107,13 +101,9 @@ def _truncate(
         return None
     if isinstance(value, datetime):
         if tz is not None:
-            # timezone(tz, timezone('UTC', col)): the stored UTC instant as
-            # the local wall-clock time, without an offset
             try:
                 value = value.replace(tzinfo=UTC).astimezone(tz).replace(tzinfo=None)
             except OverflowError:
-                # a local time before year 1 lies in the week the SQL path
-                # holds to 0001-01-01; any other period of it cannot be read
                 if granularity != "week" or value.year != 1:
                     raise
                 return value.replace(
@@ -129,9 +119,6 @@ def _truncate(
             return 0.0
         return _DATE_PART[granularity](value)
     if granularity == "week":
-        # the language's first week day, 0 Monday .. 6 Sunday, as the SQL
-        # path shifts date_trunc('week') by it, and holds a week beginning in
-        # 1 BC to the calendar's first day
         try:
             return value - _timedelta(days=(value.weekday() - first_week_day) % 7)
         except OverflowError:
@@ -166,9 +153,6 @@ _RELATIONAL_SEARCH_OPERATORS = frozenset(("any", "not any", "any!", "not any!"))
 
 
 def _scope_to_reader(model: ModelLike, domain: Domain) -> Domain:
-    # what the SQL search compiles a user's domain to beyond its letter: each
-    # field it reads is checked, and a condition on a relation searches the
-    # comodel as the user, its read rules applied, unless it bypasses them
     env = model.env
     policy = env.registry.access_policy
 
@@ -188,9 +172,6 @@ def _scope_to_reader(model: ModelLike, domain: Domain) -> Domain:
             comodel.check_access("read")
             rule = policy.record_domain(env, comodel._name, "read")
             if not rule.is_true():
-                # SQL compiles a read rule as the superuser with active_test
-                # off, inside a sub-select as at the top: the rows it admits
-                # are decided so, not under the reader's context
                 readable = comodel.sudo().with_context(active_test=False)
                 scoped &= Domain("id", "in", readable.search(rule).ids)
         return DomainCondition(condition.field_expr, condition.operator, scoped)
@@ -224,8 +205,6 @@ class _InMemoryReadGroup:
     ) -> None:
         self.model = model
         self.storage = storage
-        # the compiled query carries a GROUP BY meant for SQL; the in-memory search
-        # answers the domain itself
         self.records = typing.cast(
             "BaseModel", model.browse(model._search(domain).get_result_ids())
         )
@@ -237,9 +216,6 @@ class _InMemoryReadGroup:
         self.order_aggregates: list[typing.Callable[[ModelLike], typing.Any]] = []
 
     def _stored_is_null(self, table: str, fname: str, record: ModelLike) -> bool:
-        # the cache reads a stored NULL as the type's falsy value (0, 0.0,
-        # ""), which SQL keeps apart from a real zero: only the stored cell
-        # tells them apart
         if self.storage is None:
             return False
         row = self.storage.get_row(table, typing.cast("int", record.id))
@@ -283,7 +259,6 @@ class _InMemoryReadGroup:
             try:
                 tz = zoneinfo.ZoneInfo(tz_name)
             except zoneinfo.ZoneInfoNotFoundError, ValueError:
-                # the SQL path groups in UTC when the server does not know the zone
                 tz = None
 
         reads_null_cell = (
@@ -313,8 +288,6 @@ class _InMemoryReadGroup:
     def _many2many_reader(
         self, model: ModelLike, field: Field[typing.Any], spec: str
     ) -> typing.Callable[[BaseModel], typing.Any]:
-        # the relation rows whose comodel side the user may see under the
-        # field's domain, as the LEFT JOIN's IN (subselect) keeps
         if not field.store:
             raise ValueError(f"Group by non-stored many2many field: {spec!r}")
         comodel = model.env[field.comodel_name].with_context(**field.context)
@@ -355,7 +328,6 @@ class _InMemoryReadGroup:
             try:
                 tz = zoneinfo.ZoneInfo(tz_name)
             except zoneinfo.ZoneInfoNotFoundError, ValueError:
-                # the SQL path groups in UTC when the server does not know the zone
                 tz = None
         return first_week_day, tz
 
@@ -367,8 +339,6 @@ class _InMemoryReadGroup:
         granularity: str | None,
         spec: str,
     ) -> typing.Callable[[BaseModel], typing.Any]:
-        # the SQL path groups by the property's raw json value shaped by its
-        # definition type; a collection property and html stay refused
         if not property_name:
             self._unsupported(f"groupby {spec!r}")
         definition = model.get_property_definition(f"{field.name}.{property_name}")
@@ -393,9 +363,6 @@ class _InMemoryReadGroup:
         )
 
         if property_type in ("tags", "many2many"):
-            # the SQL path LEFT JOINs the json array's elements that the
-            # definition (or the comodel's table) knows: one key per element,
-            # a NULL row when none qualifies
             def read_collection(record: ModelLike) -> typing.Any:
                 values = record[field.name]
                 raw = (values._values or {}).get(property_name)
@@ -450,8 +417,6 @@ class _InMemoryReadGroup:
         granularity: str | None,
         spec: str,
     ) -> typing.Callable[[BaseModel], typing.Any]:
-        # the SQL path LEFT JOINs the comodel under the user's access domain
-        # and groups by the rest of the spec on the joined row
         if not field.is_many2one:
             raise ValueError(
                 f"Only many2one path is accepted for the {spec!r} groupby spec"
@@ -491,8 +456,6 @@ class _InMemoryReadGroup:
             raise ValueError(f"Cannot convert {field} to SQL because it is not stored")
 
         if self.model._aggregates_through_records(field, func or ""):
-            # the SQL path selects each group's ids and the read_group
-            # postprocess computes the field over them
             def group_ids(records: ModelLike) -> typing.Any:
                 return list(records.ids) or None
 
@@ -525,8 +488,6 @@ class _InMemoryReadGroup:
         total: typing.Callable[[list[typing.Any]], typing.Any]
         mean: typing.Callable[[list[typing.Any]], typing.Any]
         if field.column_type and field.column_type[0] == "numeric":
-            # a numeric column holds the decimal the float spells, and SUM
-            # is exact: 0.1 + 0.2 answers 0.3, not the double's 0.30000000000000004
             def total(present_values: list[typing.Any]) -> typing.Any:
                 return float(sum(Decimal(repr(v)) for v in present_values))
 
@@ -542,7 +503,6 @@ class _InMemoryReadGroup:
         def over_present(
             fold: typing.Callable[[list[typing.Any]], typing.Any],
         ) -> typing.Callable[[ModelLike], typing.Any]:
-            # an aggregate of no value is NULL, as SUM/AVG/BOOL_AND answer
             def read(records: ModelLike) -> typing.Any:
                 present_values = present(records)
                 return fold(present_values) if present_values else None
@@ -581,8 +541,6 @@ class _InMemoryReadGroup:
         fname: str,
         raw: typing.Callable[[BaseModel], typing.Any],
     ) -> typing.Callable[[ModelLike], typing.Any]:
-        # the SQL path divides each value by the rate of its currency, 1.0
-        # for a currency without one; the port picks the rate as its subquery does
         if not field.is_monetary:
             raise ValueError(
                 f'Aggregator "sum_currency" only works on currency field for {fname!r}'
@@ -618,8 +576,6 @@ class _InMemoryReadGroup:
         self._select_order_aggregates(order)
         groups: dict[tuple[typing.Any, ...], list[BaseModel]] = {}
         for record in self.records:
-            # a many2many term yields one key per related row, as the
-            # relation LEFT JOIN yields one row per pair (or one NULL row)
             for key in product(
                 *(
                     value if isinstance(value, _MultiValued) else (value,)
@@ -680,8 +636,6 @@ class _InMemoryReadGroup:
     def _having_predicate(
         self, having: list[typing.Any]
     ) -> typing.Callable[[tuple[typing.Any, ...]], typing.Any]:
-        # the SQL path's polish-notation walk, with three-valued comparisons:
-        # a NULL on either side answers None and the row is not kept
         specs = [*self.groupby_specs, *self.aggregate_specs]
         compare = {
             "=": pyoperator.eq,
@@ -775,18 +729,13 @@ class _InMemoryReadGroup:
         return predicate
 
     def _sort(self, rows: list[tuple[typing.Any, ...]], order: str | None) -> None:
-        # one stable pass per term, last term first, so the first term wins;
-        # PostgreSQL puts NULLs last ascending and first descending
         for index, rank, desc, nulls_first in reversed(self._order_terms(rows, order)):
-            # a NULL sorts first when its flag is the largest in the direction
-            # of the pass: None-is-True ascending puts it last, descending first
             null_is_true = nulls_first == desc
             rows.sort(key=_get_sort_key(index, rank, null_is_true), reverse=desc)
 
     def _day_of_week_rank(self, spec: str) -> typing.Any:
         if parse_read_group_spec(spec)[2] != "day_of_week":
             return None
-        # mod(7 - week_start + dow, 7): the language's first day sorts first
         week_start = int(get_lang(self.model.env).week_start)
         return lambda dow: (7 - week_start + dow) % 7
 
@@ -794,8 +743,6 @@ class _InMemoryReadGroup:
         self, rows: list[tuple[typing.Any, ...]], order: str | None
     ) -> list[tuple[int, typing.Callable[[typing.Any], typing.Any] | None, bool, bool]]:
         if not order:
-            # SQL orders by the groupby terms as they are, ascending -- a
-            # day_of_week term through the week-start shift, as its ORDER BY does
             return [
                 (index, self._day_of_week_rank(spec), False, False)
                 for index, spec in enumerate(self.groupby_specs)
@@ -815,7 +762,6 @@ class _InMemoryReadGroup:
                 fname, seq_fnames, _granularity = parse_read_group_spec(term)
                 rank = self._day_of_week_rank(term)
                 field = self.model._fields[fname]
-                # a path spec groups by the comodel's field, which sorts as is
                 if field.is_many2one and not seq_fnames:
                     comodel = self.model.env[field.comodel_name]
                     if comodel._order != "id":
@@ -843,7 +789,6 @@ def _order_within_grouping_set(
     aggregates: typing.Sequence[str],
     all_specs: typing.Sequence[str],
 ) -> str | None:
-    # an order term on a groupby the set lacks sorts a NULL column: nothing
     if not order:
         return None
     kept = []
@@ -889,28 +834,6 @@ class InMemoryBackend(
     def _refuse_what_sql_cannot_compile(
         model: ModelLike, domain: Domain, order: str | None
     ) -> None:
-        """A search this tier can answer and PostgreSQL cannot is a test that
-        passes here and fails there.
-
-        This backend evaluates the domain with `filtered_domain` and sorts
-        with `sorted(key=order)`, both in Python over the records, so it
-        answers a condition or an order on a non-stored computed field that
-        `_field_to_sql` refuses outright with "Cannot convert ... to SQL
-        because it is not stored". The recompute traversal's
-        `search(Domain(field, "in", ids))` is one caller that depends on the
-        difference, which is why the ORM warns at setup that such a field
-        "should be searchable".
-
-        Which fields those are is not a property that can be restated here.
-        A hand-written rule got it wrong in both directions: a non-stored
-        *related* field compiles to a join and searches fine, a field with
-        its own `to_sql` may compile to a bare parameter
-        (`res.partner.properties_base_definition_id` answers `%s::int4`), and
-        reading only the first segment of `parent_id.avatar_1920` or skipping
-        an `any` sub-domain missed the field that actually refuses. So the
-        compiler is asked the same two questions `_prepare_postgres_search_query`
-        asks it, and its SQL is discarded.
-        """
         query = Query(model.env, model._table, model._table_sql)
         if not domain.is_true() and not _carries_a_python_predicate(domain):
             query.add_where(
@@ -942,13 +865,7 @@ class InMemoryBackend(
             else Domain.TRUE
         )
         if not sec_domain.is_true():
-            # the SQL search's WHERE holds the read rules, whose fields it
-            # flushes as it flushes the domain's: a stored compute they read
-            # is settled before the snapshot below, never dropped with it
             flush_search_dependencies(typing.cast("BaseModel", model), sec_domain, None)
-        # a SQL search fills no field cache; the in-memory one evaluates the
-        # domain and the order through the records, so what it loads to do
-        # that is dropped again, and a test sees the cache PostgreSQL leaves
         cached_before = _cache_snapshot(model.env)
         all_ids = self.storage.get_table_ids(model._table)
         all_records = model.browse(all_ids)
@@ -966,16 +883,8 @@ class InMemoryBackend(
         )
 
         if not domain.is_true():
-            # the optimizer has already put this model's own active condition
-            # into the domain; the caller's active_test still decides about
-            # the corecords, as in SQL: an id list reads the relation's rows,
-            # archived corecords included (`res.company` searched on
-            # `user_ids` finds the inactive superuser), while a subdomain
-            # searches the comodel's active records
             evaluated = all_records
             if check_access and not model.env.su:
-                # evaluated as the SQL search is, whatever the cache holds of
-                # the records a path goes through
                 domain = _scope_to_reader(model, domain)
                 evaluated = all_records.sudo()
             matching = model.browse(evaluated.filtered_domain(domain)._ids)
@@ -1000,7 +909,6 @@ class InMemoryBackend(
         _drop_cache_additions(model.env, cached_before)
 
         query = _InMemoryQuery(model, self.storage, matching._ids)
-        # the SQL search's LIMIT and OFFSET, which a caller may set again
         if limit is not None and limit is not False:
             query.limit = 1 if limit is True else limit
         if offset:
@@ -1017,7 +925,6 @@ class InMemoryBackend(
         return query
 
     def as_query(self, model: ModelLike, ordered: bool = True) -> Query:
-        # unordered, the SQL query is `id = ANY(ids)`: each row once
         ids = model._ids if ordered else tuple(unique(model._ids))
         return _InMemoryQuery(model, self.storage, ids)
 
@@ -1051,11 +958,6 @@ class InMemoryBackend(
         aggregates: typing.Sequence[str],
         order: str | None,
     ) -> list[tuple[typing.Any, ...]]:
-        # one row per group of every set, shaped as GROUPING SETS answers: the
-        # GROUPING() mask first (a bit per distinct term, set when the term is
-        # absent from the set), then every groupby column (NULL when absent),
-        # then the aggregates; each set sorted on its own by the order terms it
-        # carries, as the SQL sort leaves the absent columns NULL
         all_specs = list(groupby_terms)
         mask_by_term = {
             term: 1 << index
@@ -1066,10 +968,8 @@ class InMemoryBackend(
         for grouping_set in grouping_sets:
             terms = frozenset(groupby_terms[spec] for spec in grouping_set)
             if terms in seen:
-                # SQL groups a set given twice once; the mixin copies its rows
                 continue
             seen.add(terms)
-            # a spec compiling to a term the set carries groups the same rows
             present = [spec for spec in all_specs if groupby_terms[spec] in terms]
             mask = sum(m for term, m in mask_by_term.items() if term not in terms)
             set_order = _order_within_grouping_set(

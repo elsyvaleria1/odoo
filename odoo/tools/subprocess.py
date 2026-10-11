@@ -1,5 +1,5 @@
 import logging
-import optparse  # noqa: TID251  the argv is optparse's; stripping it must tokenize the same way
+import optparse
 import os
 import shutil
 import sys
@@ -132,8 +132,6 @@ def stripped_sys_argv(*strip_args: str) -> list[str]:
         option.dest for option in options if option is not None and option.dest
     }
 
-    # the parser drops a retired option and its value before it reads the rest;
-    # the argv read here must be the one the parser read
     args = sys.argv[:1] + config._without_retired_cli_options(sys.argv[1:])[0]
     kept = args[:1]
     i = 1

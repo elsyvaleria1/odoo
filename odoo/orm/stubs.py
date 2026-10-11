@@ -111,7 +111,6 @@ def _member_lines(cls: type, reserved: typing.AbstractSet[str]) -> list[str]:
         if not inspect.isfunction(function):
             continue
         try:
-            # a deferred annotation may name a symbol its module never imports
             signature = inspect.signature(
                 function, annotation_format=annotationlib.Format.STRING
             )
@@ -158,8 +157,6 @@ def _member_lines(cls: type, reserved: typing.AbstractSet[str]) -> list[str]:
 
 
 def vars_of_model(cls: type) -> dict[str, typing.Any]:
-    # the methods the model's own definition classes bind, whatever the base
-    # model carries: a registry class is assembled from every module's class
     from .models.base import BaseModel
 
     framework = set(BaseModel.__mro__)
@@ -201,8 +198,6 @@ def render(
                 continue
             line = f"    {attribute}: _F[{_value_type(fields[field_name], classes)}]"
             if attribute in reserved:
-                # a field shadowing a BaseModel method reads as its value at
-                # runtime; the checker is told the base's signature loses
                 line += "  # type: ignore[assignment]"
             out.append(line)
         if classes_by_model is not None and model_name in classes_by_model:

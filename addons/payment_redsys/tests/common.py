@@ -16,12 +16,11 @@ class RedsysCommon(PaymentCommon):
         cls.provider = cls.redsys
         cls.merchant_parameters = {
             "Ds_Order": "Test Transaction",
-            "Ds_Amount": cls.amount * 100,  # In minor units
-            "Ds_Currency": 978,  # EUR
-            "Ds_Card_Brand": "1",  # VISA
-            "Ds_Response": "0000",  # Payment accepted
+            "Ds_Amount": cls.amount * 100,
+            "Ds_Currency": 978,
+            "Ds_Card_Brand": "1",
+            "Ds_Response": "0000",
         }
-        # merchant_parameters as Redsys encoded them: the signature is over this text
         cls.encoded_merchant_parameter = (
             "eyJEc19PcmRlciI6ICJUZXN0IFRyYW5zYWN0aW9uIiwgIkRzX0Ftb3VudCI6IDExMTExMC45"
             "OTk5OTk5OTk5OSwgIkRzX0N1cnJlbmN5IjogOTc4LCAiRHNfQ2FyZF9CcmFuZCI6ICIxIiwg"

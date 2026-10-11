@@ -12,8 +12,6 @@ from odoo.addons.payment_stripe.tests.common import StripeCommon
 class TestRefundFlows(StripeCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_stripe.models.payment_transaction")
     def test_refund_id_is_set_as_provider_reference(self):
-        """Test that the id of the refund object is set as the provider reference of the refund
-        transaction."""
         source_tx = self._create_transaction("redirect", state="done")
         with patch(
             "odoo.addons.payment.models.payment_provider.PaymentProvider._send_api_request",
@@ -30,8 +28,6 @@ class TestRefundFlows(StripeCommon, PaymentHttpCommon):
         "odoo.addons.payment_stripe.models.payment_transaction",
     )
     def test_canceled_refund_webhook_notification_triggers_processing(self):
-        """Test that receiving a webhook notification for a refund cancellation
-        (`charge.refund.updated` event) triggers the processing of the payment data."""
         source_tx = self._create_transaction("redirect", state="done")
         source_tx._create_child_transaction(
             source_tx.amount,

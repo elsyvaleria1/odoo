@@ -4,11 +4,8 @@ from odoo import fields, models
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    # RENTAL company defaults :
 
-    # Extra Costs
 
-    # TODO in master remove the two following fields from the company, they are not used anymore
     extra_hour = fields.Float(
         string="Per Hour",
         default=0.0,

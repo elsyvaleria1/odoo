@@ -40,10 +40,6 @@ class SocialAccount(models.Model):
 
     @api.depends("linkedin_account_urn")
     def _compute_linkedin_account_id(self) -> None:
-        """Depending on the used LinkedIn endpoint, we sometimes need the full URN, sometimes only the ID part.
-
-        e.g.: "urn:li:person:12365" -> "12365"
-        """
         for social_account in self:
             if social_account.linkedin_account_urn:
                 social_account.linkedin_account_id = urn_to_id(
@@ -69,23 +65,18 @@ class SocialAccount(models.Model):
         for account in linkedin_accounts:
             all_stats_dict = account._get_statistics_linkedin()
             month_stats_dict = account._get_statistics_linkedin(last_30d=True)
-            # compute trend
             for stat_name in list(all_stats_dict.keys()):
                 all_stats_dict["%s_trend" % stat_name] = self._compute_trend(
                     all_stats_dict.get(stat_name, 0), month_stats_dict.get(stat_name, 0)
                 )
-            # store statistics
             account.write(all_stats_dict)
 
     def _linkedin_get_followers_count(self):
-        """Fetch number of followers from the LinkedIn API."""
         self.check_singleton()
         endpoint = url_join(
             self.env["social.media"]._LINKEDIN_ENDPOINT,
             "networkSizes/urn:li:organization:%s" % self.linkedin_account_id,
         )
-        # removing X-Restli-Protocol-Version header for this endpoint as it is not required according to LinkedIn Doc.
-        # using this header with an endpoint that doesn't support it will cause the request to fail
         headers = self._linkedin_bearer_headers()
         headers.pop("X-Restli-Protocol-Version", None)
         response = self.env["ir.egress"].request(
@@ -101,18 +92,6 @@ class SocialAccount(models.Model):
         return response.json().get("firstDegreeSize", 0)
 
     def _get_statistics_linkedin(self, last_30d=False) -> dict:
-        """Fetch statistics from the LinkedIn API.
-
-        :param last_30d: If `True`, return the statistics of the last 30 days
-                      Else, return the statistics of all the time.
-
-            If we want statistics for the month, we need to choose the granularity
-            "month". The time range has to be bigger than the granularity and
-            if we have result over 1 month and 1 day (e.g.), the API will return
-            2 results (one for the month and one for the day).
-            To avoid this, we simply move the end date in the future, so we have
-            result  only for this month, in one simple dict.
-        """
         self.check_singleton()
 
         endpoint = url_join(
@@ -125,7 +104,6 @@ class SocialAccount(models.Model):
         }
 
         if last_30d:
-            # The LinkedIn API take timestamp in milliseconds
             end = int((datetime.now() + timedelta(days=2)).timestamp() * 1000)
             start = int((datetime.now() - timedelta(days=30)).timestamp() * 1000)
             endpoint += (
@@ -179,7 +157,6 @@ class SocialAccount(models.Model):
         }
 
     def _get_linkedin_accounts(self, linkedin_access_token):
-        """Make an API call to get all LinkedIn pages linked to the actual access token."""
         response = self._linkedin_request(
             "organizationAcls",
             params={
@@ -316,7 +293,6 @@ class SocialAccount(models.Model):
         self.create(accounts_to_create)
 
     def _create_default_stream_linkedin(self) -> None:
-        """Create a stream for each organization page."""
         page_posts_stream_type = self.env.ref(
             "social_linkedin.stream_type_linkedin_company_post"
         )
@@ -334,9 +310,6 @@ class SocialAccount(models.Model):
         if streams_to_create:
             self.env["social.stream"].create(streams_to_create)
 
-    ################
-    # External API #
-    ################
 
     def _linkedin_request(
         self,
@@ -351,21 +324,6 @@ class SocialAccount(models.Model):
         session=None,
         headers=None,
     ):
-        """Make a request to the LinkedIn API.
-
-        :param endpoint: the endpoint to request
-        :param params: the GET parameters
-        :param linkedin_access_token: the access token to use
-            (if it's not yet saved on the social account)
-        :param object_ids: the LinkedIn objects ids to pass as GET parameters
-        :param complex_object_ids: some LinkedIn objects are more complex (e.g. for likes, etc)
-             >>> "(a:xxxx, b:yyyy)"
-        :param fields: the field to read on the LinkedIn model
-        :param method: the HTTP verb
-        :param json: the JSON to post
-        :param session: the requests session if any
-        :param headers: custom headers to add to the request
-        """
         if not linkedin_access_token:
             self.check_singleton()
 
@@ -374,7 +332,6 @@ class SocialAccount(models.Model):
 
         url = url_join(self.env["social.media"]._LINKEDIN_ENDPOINT, endpoint)
 
-        # need to be added manually, so requests doesn't escape them
         get_params = []
         if object_ids:
             get_params.append("ids=List(%s)" % ",".join(map(quote, object_ids)))
@@ -404,11 +361,6 @@ class SocialAccount(models.Model):
         )
 
     def _linkedin_request_images(self, images_ids, linkedin_access_token=None):
-        """Make an API call to get the downloadable URL of the images.
-
-        :param images_ids: Image ids (li:image or digital asset)
-        :param linkedin_access_token: Access token to use
-        """
         images_urns = [
             id_to_urn(image_id, "li:image") for image_id in images_ids if image_id
         ]
@@ -432,12 +384,7 @@ class SocialAccount(models.Model):
         )
 
     def _linkedin_upload_image(self, image_data):
-        """Upload an image on LinkedIn.
-
-        :param image_data: Raw bytes of the image
-        """
         self.check_singleton()
-        # 1 - Register your image to be uploaded
         data = {
             "initializeUploadRequest": {
                 "owner": self.linkedin_account_urn,
@@ -466,7 +413,6 @@ class SocialAccount(models.Model):
                 )
             )
 
-        # 2 - Upload image binary file
         upload_url = response["value"]["uploadUrl"]
         image_urn = response["value"]["image"]
 

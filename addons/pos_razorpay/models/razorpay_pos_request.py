@@ -28,13 +28,6 @@ class RazorpayPosRequest:
         return "https://www.ezetap.com/api/3.0/p2padapter/"
 
     def _call_razorpay(self, endpoint, payload):
-        """Make a request to Razorpay POS API.
-
-        :param str endpoint: The endpoint to be reached by the request.
-        :param dict payload: The payload of the request.
-        :return The JSON-formatted content of the response.
-        :rtype: dict
-        """
         url = f"{self._razorpay_get_endpoint(endpoint)}{endpoint}"
         try:
             response = (

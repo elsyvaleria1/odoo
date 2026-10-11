@@ -6,9 +6,6 @@ MODEL = "test_ir_access.profile"
 
 
 class TestFieldClassHooks(TransactionCase):
-    # what a model says of its fields: a class that grants reading on its own
-    # (an owner reads their own record), and a class that writing needs (a
-    # restricted group writes some fields only, a sparing group exempt)
 
     @classmethod
     def setUpClass(cls):

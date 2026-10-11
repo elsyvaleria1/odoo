@@ -38,14 +38,13 @@ class CloudStorageStream(Stream):
         return super().prepare_response(as_attachment, *args, **kwargs)
 
     def read(self) -> bytes:
-        # a reader that wants the bytes gets the blob, not "Cannot read an URL"
         return self._attachment._get_content()
 
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
-    _cloud_storage_upload_url_time_to_expiry = 300  # 300 seconds
-    _cloud_storage_download_url_time_to_expiry = 300  # 300 seconds
+    _cloud_storage_upload_url_time_to_expiry = 300
+    _cloud_storage_download_url_time_to_expiry = 300
 
     type = fields.Selection(
         selection_add=[("cloud_storage", "Cloud Storage")],
@@ -88,7 +87,6 @@ class IrAttachment(models.Model):
             download_name=self.name,
         )
         if "time_to_expiry" in info:
-            # cache the redirection until 10 seconds before the expiry
             stream.max_age = max(info["time_to_expiry"] - 10, 0)
         return stream
 
@@ -96,8 +94,6 @@ class IrAttachment(models.Model):
         if ("raw" in vals or "datas" in vals) and "type" not in vals:
             cloud = self.filtered(lambda a: a.type == "cloud_storage")
             if cloud:
-                # new bytes written on a cloud attachment are stored here, so it
-                # stops pointing at the blob that held the old ones
                 super(IrAttachment, cloud).write(
                     {**vals, "type": "binary", "url": False}
                 )
@@ -122,11 +118,6 @@ class IrAttachment(models.Model):
                 )
 
     def _compute_raw(self):
-        # raw and datas are what business code reads; on a blob the provider
-        # holds they used to answer empty bytes, the same as an empty file, so
-        # a reader got nothing and no error. A configured provider is asked for
-        # the blob; an unconfigured one (a neutralized copy) still answers
-        # empty, so restored databases keep working without the bucket.
         cloud = self.filtered(
             lambda a: a.type == "cloud_storage" and not a.store_fname and a.file_size
         )
@@ -140,18 +131,6 @@ class IrAttachment(models.Model):
             attach.raw = attach._get_content() if configured else False
 
     def _get_content(self, size=None):
-        """Download the blob a provider holds, so the bytes exist for a reader.
-
-        `raw` and `_get_content_prefix` answer `b""` for a `cloud_storage`
-        attachment: this database keeps the URL, not the file. Everything that
-        turns bytes into text -- indexation, the document layer, OCR -- reads
-        one of those two and therefore reads a cloud-stored document as an
-        empty one, with no error anywhere. Fetching here puts the blob back in
-        front of every one of them without any of them learning about clouds.
-
-        `size` is served with a Range request, so a caller that only needs a
-        header does not pull a gigabyte across the network.
-        """
         if self.type != "cloud_storage":
             return super()._get_content(size)
         self.check_singleton()
@@ -203,61 +182,18 @@ class IrAttachment(models.Model):
         return True
 
     def _generate_cloud_storage_blob_name(self):
-        """
-        Generate a unique blob name for the attachment
-
-        :return: A unique blob name str
-        """
         return f"{self.id}/{uuid.uuid4()}/{self.name}"
 
-    # Implement the following methods for each cloud storage provider.
     def _generate_cloud_storage_url(self):
-        """
-        Generate a cloud blob url without signature or token for the attachment.
-        This url is only used to identify the cloud blob.
-
-        :return: A cloud blob url str
-        """
         raise NotImplementedError
 
     def _generate_cloud_storage_download_info(self, content_disposition=None):
-        """
-        Generate the download info for the public client to directly download
-        the attachment's blob from the cloud storage.
-
-        :param content_disposition: a ``Content-Disposition`` value the signed
-            url makes the provider answer with, so a browser following it
-            saves the file under its name; ``None`` leaves the provider's.
-        :return: An download_info dictionary containing:
-
-            url
-                cloud storage url with permission to download the file
-            time_to_expiry
-                the time in seconds before the download url expires
-        """
         raise NotImplementedError
 
     def _generate_cloud_storage_upload_info(self):
-        """
-        Generate the upload info for the public client to directly upload a
-        file to the cloud storage.
-
-        :return: An upload_info dictionary containing:
-
-            url
-                cloud storage url with permission to upload the file
-            method
-                the request method used to upload the file
-            response_status
-                the status of the response for a successful upload request
-            [Optionally] headers
-                a dictionary of headers to be added to the upload request
-        """
         raise NotImplementedError
 
     def _get_cloud_storage_unsupported_models(self):
-        # A main attachment is read back by business code (OCR, EDI, previews),
-        # so it must keep its bytes on the server.
         return list(
             self.env.registry.get_descendants(
                 ["mixin.mail.thread.main.attachment"], "_inherit", "_inherits"

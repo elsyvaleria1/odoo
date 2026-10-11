@@ -72,7 +72,6 @@ class PosPaymentMethod(models.Model):
             pos_config = order.session_id.config_id
             random_number = random.randrange(10**9, 10**10 - 1)
 
-            # https://docs.adyen.com/point-of-sale/basic-tapi-integration/make-a-payment/#make-a-payment
             data = {
                 "SaleToPOIRequest": {
                     "MessageHeader": {
@@ -80,25 +79,25 @@ class PosPaymentMethod(models.Model):
                         "MessageClass": "Service",
                         "MessageType": "Request",
                         "MessageCategory": "Payment",
-                        "SaleID": f"{pos_config.display_name} (ID:{pos_config.id})",  # 	Your unique ID for the POS system component to send this request from.
+                        "SaleID": f"{pos_config.display_name} (ID:{pos_config.id})",
                         "ServiceID": str(
                             random_number
-                        ),  # Your unique ID for this request, consisting of 1-10 alphanumeric characters.
-                        "POIID": self.adyen_terminal_identifier,  # 	The unique ID of the terminal to send this request to.
+                        ),
+                        "POIID": self.adyen_terminal_identifier,
                     },
                     "PaymentRequest": {
                         "SaleData": {
                             "SaleTransactionID": {
-                                "TransactionID": order.pos_reference,  # your reference to identify a payment.
+                                "TransactionID": order.pos_reference,
                                 "TimeStamp": datetime.now(tz=UTC).isoformat(
                                     timespec="seconds"
-                                ),  # date and time of the request in UTC format.
+                                ),
                             },
                         },
                         "PaymentTransaction": {
                             "AmountsReq": {
-                                "Currency": order.currency_id.name,  # the transaction currency.
-                                "RequestedAmount": order.amount_total,  # The final transaction amount.
+                                "Currency": order.currency_id.name,
+                                "RequestedAmount": order.amount_total,
                             },
                         },
                     },

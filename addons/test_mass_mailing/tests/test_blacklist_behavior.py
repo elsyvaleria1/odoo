@@ -63,13 +63,10 @@ class TestAutoBlacklist(common.TestMassMailCommon):
         mailing = self.mailing_bl.with_env(self.env)
         target = self.target_rec.with_env(self.env)
 
-        # create bounced history of 4 statistics
         traces = self.env["mailing.trace"]
         for idx in range(4):
             new_mailing = mailing.copy()
             new_dt = datetime.datetime.now() - datetime.timedelta(weeks=idx + 2)
-            # Cursor.now() uses transaction's timestamp and not datetime lib -> freeze_time
-            # is not sufficient
             with (
                 freeze_time(new_dt),
                 patch.object(Cursor, "now", return_value=new_dt),
@@ -81,7 +78,6 @@ class TestAutoBlacklist(common.TestMassMailCommon):
                 )
                 self.gateway_mail_trace_bounce(new_mailing, target, bounce_base_values)
 
-        # mass mail record: ok, not blacklisted yet
         with self.mock_mail_gateway(mail_unlink_sent=False):
             mailing.action_send_mail()
 
@@ -97,10 +93,8 @@ class TestAutoBlacklist(common.TestMassMailCommon):
             check_mail=True,
         )
 
-        # call bounced
         self.gateway_mail_trace_bounce(mailing, target, bounce_base_values)
 
-        # check blacklist
         blacklist_record = (
             self.env["mail.blacklist"]
             .sudo()
@@ -109,7 +103,6 @@ class TestAutoBlacklist(common.TestMassMailCommon):
         self.assertEqual(len(blacklist_record), 1)
         self.assertTrue(target.is_blacklisted)
 
-        # mass mail record: ko, blacklisted
         new_mailing = mailing.copy({"mailing_domain": [("id", "in", target.ids)]})
         with self.mock_mail_gateway(mail_unlink_sent=False):
             new_mailing.action_send_mail()

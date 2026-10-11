@@ -11,7 +11,6 @@ class TestStreetSplit(TransactionCase):
         cls.Partner = cls.env["res.partner"]
 
     def test_street_splits_into_subfields(self):
-        """Setting street populates the name/number sub-fields."""
         partner = self.Partner.create(
             {"name": "Split partner", "street": "Reforma 222"}
         )
@@ -19,7 +18,6 @@ class TestStreetSplit(TransactionCase):
         self.assertEqual(partner.street_number, "222")
 
     def test_subfields_compose_into_street(self):
-        """Writing the sub-fields rebuilds the full street with a door."""
         partner = self.Partner.create({"name": "Compose partner"})
         partner.write(
             {
@@ -31,13 +29,11 @@ class TestStreetSplit(TransactionCase):
         self.assertEqual(partner.street, "Insurgentes 1601 - 4B")
 
     def test_compose_without_door(self):
-        """Without a door number the street has no separator (boundary)."""
         partner = self.Partner.create({"name": "No door partner"})
         partner.write({"street_name": "Juarez", "street_number": "10"})
         self.assertEqual(partner.street, "Juarez 10")
 
     def test_get_street_split_payload(self):
-        """_get_street_split returns the three sub-fields."""
         partner = self.Partner.create(
             {"name": "Payload partner", "street": "Madero 5 - 2"}
         )

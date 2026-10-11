@@ -62,7 +62,7 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
         van = self._plain_asset()
         board = self.create_asset(1200, "yearly", 4)
         action = self.env.ref("account_depreciation.action_account_asset_form")
-        listed = self.env["account.depreciation.board"].search(eval(action.domain))  # noqa: S307  a literal domain from our own data file
+        listed = self.env["account.depreciation.board"].search(eval(action.domain))
         self.assertIn(board, listed)
         self.assertNotIn(van, listed.asset_id)
 
@@ -75,8 +75,6 @@ class TestResourceAssetBoard(TestAccountAssetCommon):
         employee = new_test_user(
             self.env, login="asset_board_employee", groups="base.group_user"
         )
-        # read through the access rules, not through what creating the board
-        # left in the cache
         self.env.invalidate_all()
         asset = board.asset_id.with_user(employee)
         self.assertEqual(asset.name, "nice asset")

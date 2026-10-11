@@ -63,11 +63,7 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
         )
 
     def test_post(self):
-        """Test a full flow of posting social_push_notifications.
-        We trigger the send method of the post and check that it does all the way to the Firebase
-        sending calls."""
 
-        # Create some visitors with or without push_token in different timezone (or no timezone)
         timezones = ["Europe/Brussels", "America/New_York", "Asia/Vladivostok", False]
         Visitor = self.env["website.visitor"]
         visitor_vals = [
@@ -85,8 +81,6 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
         self.visitors = Visitor.create(visitor_vals)
         self.social_post.create_uid.write({"tz": timezones[0]})
 
-        # Since mocking a decorated method doesn't work, we unset the constrains
-        # before creating the post and re-apply them after.
         check_scheduled_date_constrains = SocialPost._check_scheduled_date._constrains
         SocialPost._check_scheduled_date._constrains = ()
 
@@ -104,7 +98,6 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
 
         SocialPost._check_scheduled_date._constrains = check_scheduled_date_constrains
 
-        # when scheduling, a CRON trigger is created to match the scheduled_date
         self.assertEqual(len(captured_triggers.records), 1)
         captured_trigger = captured_triggers.records[0]
         self.assertEqual(captured_trigger.call_at, scheduled_date)
@@ -117,12 +110,10 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
         with self.capture_triggers(
             "social.ir_cron_post_scheduled"
         ) as captured_triggers:
-            self.social_post._action_post()  # begin the post process
+            self.social_post._action_post()
 
-        # as the post_method is 'scheduled', a CRON trigger should not be created, we already have one
         self.assertEqual(len(captured_triggers.records), 0)
 
-        # check that live posts are correctly created
         live_posts = self.env["social.live.post"].search(
             [("post_id", "=", self.social_post.id)]
         )
@@ -134,8 +125,6 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
         def _firebase_send_message_from_configuration(_this, _data, visitors):
             website = visitors.website_id
             push_enabled = website.firebase_enable_push_notifications
-            # Ensure that only visitors from the website with push notifications enabled
-            # and linked to the social account are notified
             self.assertEqual(len(visitors), 1 if push_enabled else 0)
             if visitors:
                 self.assertEqual(visitors.website_id, self.website_2)
@@ -151,7 +140,6 @@ class SocialPushNotificationsCase(SocialCase, CronMixinCase):
         self.assertFalse(all(live_post.state == "posted" for live_post in live_posts))
         self.assertEqual(self.social_post.state, "posting")
 
-        # simulate that everyone can receive the push notif (because their time >= time of the one who created the post)
         self.visitors.write({"timezone": self.env.user.tz})
 
         with patch.object(

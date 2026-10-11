@@ -165,8 +165,6 @@ class ResCurrency(models.Model):
                     )
 
             if use_cta_rates and date_periods:
-                # Historical rows carry no period key: every period reads the same
-                # rate chain, so it is built once, up to the latest period end.
                 latest_date_to = max(
                     (date_to for _key, _from, date_to in date_periods),
                     key=fields.Date.to_date,

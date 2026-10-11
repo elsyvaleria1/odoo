@@ -138,8 +138,6 @@ class Test_Access_RightTicket(models.Model):
 class ResPartner(models.Model):
     _inherit = "res.partner"
 
-    # named for this module: account declares res.partner.currency_id and its
-    # _compute_currency_id too, and the two would merge into one field
     test_access_currency_id = fields.Many2one(
         comodel_name="res.currency",
         compute="_compute_test_access_currency_id",

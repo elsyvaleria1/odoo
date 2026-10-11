@@ -665,7 +665,6 @@ class TestHardReservationIsUnavailableTime(TransactionCase):
                 "tz": "UTC",
             }
         )
-        # Monday 2025-01-06, calendar attends 08:00-12:00 and 13:00-17:00.
         cls.day_start = datetime(2025, 1, 6, 0, 0, tzinfo=UTC)
         cls.day_end = datetime(2025, 1, 7, 0, 0, tzinfo=UTC)
 

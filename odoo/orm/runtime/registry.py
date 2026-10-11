@@ -82,7 +82,7 @@ class Registry(
 
     _replica: ReplicaRouter
 
-    def __new__(cls, db_name: str) -> Registry:  # noqa: PYI034  an interned registry, not always an instance of cls
+    def __new__(cls, db_name: str) -> Registry:
         if not db_name:
             raise ValueError("Missing database name")
         reg = cls.registries.get(db_name)
@@ -158,7 +158,7 @@ class Registry(
             cls.registries.count = lru_size
         registry: Registry = object.__new__(cls)
         registry.init(db_name)
-        registry.new = registry.init = registry.registries = None  # type: ignore[method-assign, assignment]
+        registry.new = registry.init = registry.registries = None
         first_registry = not cls.registries
         _debug.lifecycle(
             "registry.new",
@@ -174,17 +174,6 @@ class Registry(
         cls.remove(db_name)
         cls.registries[db_name] = registry
 
-        # Code translations are cached in a process-global, outside the
-        # registry, and `_load_module_terms` clears them only in the worker
-        # that performs the install or upgrade. Every other worker learns of
-        # the change by rebuilding its registry -- which is here -- and would
-        # otherwise keep serving the `.po` it read before the module changed
-        # on disk. With several workers that means the language a user sees
-        # depends on which one answers.
-        #
-        # Dropping the whole cache is the honest scope: a rebuild means the
-        # addons directory may have moved under us, and the entries are read
-        # back lazily from disk on the next request that needs them.
         code_translations.clear()
 
         try:
@@ -267,8 +256,6 @@ class Registry(
     @classmethod
     @locked
     def remove(cls, db_name: str) -> bool:
-        # a request still running on an evicted registry can recreate its
-        # counters after the eviction released them
         if cls.registries.pop(db_name, None) is None:
             remove_counters(db_name)
             return False
@@ -296,8 +283,6 @@ class Registry(
     @classmethod
     @locked
     def clear_database_state(cls, db_name: str) -> None:
-        # removal thawed every registry's survivors; outside Registry.new no
-        # load re-freezes them, and each full collection would rescan them all
         if cls.remove(db_name):
             gc.freeze_survivors()
         clear_text_transforms(db_name)
@@ -412,7 +397,7 @@ class Registry(
             self.field_depends_context.pop(field, None)
 
             done.add(field)
-            todo.extend(self.field_setup_dependents.pop(field, ()))  # noqa: B909  todo is a worklist: appending newly discovered dependents here is how they get processed later in this same loop
+            todo.extend(self.field_setup_dependents.pop(field, ()))
 
         _debug.logic(
             "registry.setup.reset_named",
@@ -423,8 +408,6 @@ class Registry(
         )
 
     def _models_relating_to_custom_models(self) -> list[str]:
-        # _add_manual_models replaces every custom model on each setup and drops
-        # those whose rows are gone: a field into one is set up again with them
         return [
             model_cls._name
             for model_cls in self.models.values()
@@ -517,7 +500,7 @@ class Registry(
                 self._setup_field_depends(env, models_field_depends_done)
 
                 reset_cached_properties(self)
-                self.model_anchors  # noqa: B018  reading it checks every declared anchor, and a bad one stops the registry
+                self.model_anchors
 
             finally:
                 self.model_graph.end_invalidation()
@@ -678,8 +661,6 @@ class Registry(
             published := self._get_published_successor(db_registry_sequence)
         ) is not None:
             return published
-        # every thread that read the signal gets here; the first to hold the lock
-        # rebuilds, and the others must find its registry rather than build again
         with Registry._lock:
             if (
                 published := self._get_published_successor(db_registry_sequence)

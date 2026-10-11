@@ -10,12 +10,8 @@ from odoo.exceptions import RedirectWarning, UserError
 from odoo.http import SessionExpiredException
 from odoo.modules.module import get_resource_from_path
 
-# Bumped when the identity of an incident changes meaning; occurrences keep
-# the version they were grouped under.
 FINGERPRINT_VERSION = 1
 
-# Errors the code raises on purpose for the user to read: a refused access, a
-# failed validation, an expired session. They are answers, not defects.
 EXPECTED = (UserError, RedirectWarning, SessionExpiredException, HTTPException)
 
 _CORE_ROOT = Path(odoo.__path__[0]).resolve()
@@ -33,7 +29,6 @@ def is_expected(exc: BaseException) -> bool:
 
 
 def exception_type(exc: BaseException) -> str:
-    """The exception's name as a Python traceback prints it."""
     cls = type(exc)
     if cls.__module__ in ("builtins", "__main__"):
         return cls.__qualname__
@@ -52,11 +47,6 @@ def _locate(filename: str) -> tuple[str, str] | None:
 
 
 def origin(exc: BaseException) -> Origin:
-    """The innermost frame of our own code -- an addon or the framework.
-
-    A failure inside a library is caused by whoever called it, so frames
-    outside the tree only count when no frame of ours is on the stack.
-    """
     frames = traceback.extract_tb(exc.__traceback__)
     for frame in reversed(frames):
         located = _locate(frame.filename)
@@ -69,11 +59,6 @@ def origin(exc: BaseException) -> Origin:
 
 
 def fingerprint(kind: str, where: Origin) -> str:
-    """What makes two occurrences one incident.
-
-    No line number: it moves with every unrelated edit to the file, and the
-    same defect would split into a new incident each time.
-    """
     raw = f"v{FINGERPRINT_VERSION}|{kind}|{where.module}|{where.path}|{where.function}"
     return hashlib.sha256(raw.encode()).hexdigest()[:20]
 

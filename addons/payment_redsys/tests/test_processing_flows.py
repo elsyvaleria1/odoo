@@ -13,8 +13,6 @@ from odoo.addons.payment_redsys.tests.common import RedsysCommon
 class TestProcessingFlows(RedsysCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_returning_from_payment_triggers_processing(self):
-        """Test that receiving a valid redirect notification triggers the processing of the
-        payment data."""
         self._create_transaction("redirect")
         url = self._build_url(RedsysController._return_url)
         with (
@@ -30,8 +28,6 @@ class TestProcessingFlows(RedsysCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_webhook_triggers_processing(self):
-        """Test that receiving a valid webhook notification triggers the processing of the payment
-        data."""
         self._create_transaction("redirect")
         url = self._build_url(RedsysController._webhook_url)
         with (
@@ -47,7 +43,6 @@ class TestProcessingFlows(RedsysCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_returning_from_payment_triggers_signature_check(self):
-        """Test that receiving a redirect notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(RedsysController._return_url)
         with (
@@ -63,7 +58,6 @@ class TestProcessingFlows(RedsysCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_webhook_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(RedsysController._webhook_url)
         with (
@@ -78,27 +72,23 @@ class TestProcessingFlows(RedsysCommon, PaymentHttpCommon):
         self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_notification_with_valid_signature(self):
-        """Test the verification of a notification with a valid signature."""
         tx = self._create_transaction("redirect")
         self.assertTrue(tx._is_notification_signature_valid(self.payment_data))
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_reject_notification_with_missing_signature(self):
-        """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         payload = dict(self.payment_data, Ds_Signature=None)
         self.assertFalse(tx._is_notification_signature_valid(payload))
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_reject_notification_with_invalid_signature(self):
-        """Test the verification of a notification with an invalid signature."""
         tx = self._create_transaction("redirect")
         payload = dict(self.payment_data, Ds_Signature="dummy")
         self.assertFalse(tx._is_notification_signature_valid(payload))
 
     @mute_logger("odoo.addons.payment_redsys.models.payment_transaction")
     def test_reject_notification_with_a_non_ascii_signature(self):
-        """Test that a non-ASCII signature is refused, not raised on."""
         tx = self._create_transaction("redirect")
         payload = dict(self.payment_data, Ds_Signature="é" * 44)
         self.assertFalse(tx._is_notification_signature_valid(payload))

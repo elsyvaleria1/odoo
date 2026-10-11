@@ -14,7 +14,6 @@ class TestEventMailFullCommon(TestEventMailCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Social Media / Accounts / Templates
         with mock_void_external_calls():
             cls.social_media = cls.env["social.media"].create(
                 {
@@ -35,7 +34,6 @@ class TestEventMailFullCommon(TestEventMailCommon):
             }
         )
 
-        # WhatsApp Business Accounts
         user_admin = cls.env.ref("base.user_admin")
         cls.whatsapp_account = (
             cls.env["whatsapp.account"]
@@ -72,7 +70,6 @@ class TestEventMailFullCommon(TestEventMailCommon):
             }
         )
 
-        # test reminder whatsapp template
         cls.whatsapp_template_rem = cls.env["whatsapp.template"].create(
             {
                 "body": "{{1}} reminder.",
@@ -97,7 +94,7 @@ class TestEventMailFullCommon(TestEventMailCommon):
                     (
                         0,
                         0,
-                        {  # right at subscription: whatsapp
+                        {
                             "interval_unit": "now",
                             "interval_type": "after_sub",
                             "notification_type": "whatsapp",
@@ -107,7 +104,7 @@ class TestEventMailFullCommon(TestEventMailCommon):
                     (
                         0,
                         0,
-                        {  # 3 days before event: social
+                        {
                             "interval_nbr": 3,
                             "interval_unit": "day",
                             "interval_type": "before_event",
@@ -118,7 +115,7 @@ class TestEventMailFullCommon(TestEventMailCommon):
                     (
                         0,
                         0,
-                        {  # 3 days before event: whatsapp
+                        {
                             "interval_nbr": 3,
                             "interval_unit": "day",
                             "interval_type": "before_event",
@@ -129,7 +126,7 @@ class TestEventMailFullCommon(TestEventMailCommon):
                     (
                         0,
                         0,
-                        {  # 1h after event: social
+                        {
                             "interval_nbr": 1,
                             "interval_unit": "hour",
                             "interval_type": "after_event",
@@ -140,7 +137,7 @@ class TestEventMailFullCommon(TestEventMailCommon):
                     (
                         0,
                         0,
-                        {  # 1h after event: whatsapp
+                        {
                             "interval_nbr": 1,
                             "interval_unit": "hour",
                             "interval_type": "after_event",
@@ -171,11 +168,9 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
 
     @users("user_eventmanager")
     def test_schedule_event_scalability(self):
-        """Test scalability / iterative work on event-based schedulers"""
         test_event = self.env["event.event"].browse(self.test_event.ids)
         self._create_registrations(test_event, 30)
 
-        # check event-based schedulers
         after_social = test_event.event_mail_ids.filtered(
             lambda s: (
                 s.interval_type == "after_event"
@@ -203,14 +198,12 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
             self.assertEqual(scheduler.mail_count_done, 0)
             self.assertFalse(scheduler.mail_done)
 
-        # setup batch and cron limit sizes to check iterative behavior
         batch_size, cron_limit = 5, 20
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", batch_size)
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.render.cron.limit", cron_limit
         )
 
-        # launch before event schedulers -> all communications are sent
         current_now = self.event_date_begin - timedelta(days=1)
         EventMail = type(self.env["event.mail"])
         exec_origin = EventMail._execute_event_based_for_registrations
@@ -227,10 +220,8 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
         self.assertFalse(after_social.mail_done)
         self.assertEqual(after_wa.mail_count_done, 0)
         self.assertFalse(after_wa.mail_done)
-        # social does one-shot
         self.assertEqual(before_social.mail_count_done, 1)
         self.assertTrue(before_social.mail_done)
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(before_wa.mail_count_done, 20)
         self.assertFalse(before_wa.mail_done)
         self.assertEqual(
@@ -238,23 +229,18 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
             12,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler (incl. mail and sms, not social)",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(capture, [current_now] * 3)
 
-        # relaunch to close scheduler
         capture = self.execute_event_cron(freeze_date=current_now)
         self.assertEqual(before_wa.mail_count_done, 30)
         self.assertTrue(before_wa.mail_done)
         self.assertFalse(capture.records)
 
-        # launch after event schedulers -> all communications are sent
         current_now = self.event_date_end + timedelta(hours=1)
         capture = self.execute_event_cron(freeze_date=current_now)
 
-        # social does one-shot
         self.assertEqual(after_social.mail_count_done, 1)
         self.assertTrue(after_social.mail_done)
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(after_wa.mail_count_done, 20)
         self.assertFalse(after_wa.mail_done)
         self.assertEqual(
@@ -262,10 +248,8 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
             12,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler (incl. mail and sms, not social)",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(capture, [current_now] * 3)
 
-        # relaunch to close scheduler
         capture = self.execute_event_cron(freeze_date=current_now)
         self.assertEqual(after_wa.mail_count_done, 30)
         self.assertTrue(after_wa.mail_done)
@@ -273,7 +257,6 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
 
     @users("user_eventmanager")
     def test_schedule_subscription_scalability(self):
-        """Test scalability / iterative work on subscription-based schedulers"""
         test_event = self.env["event.event"].browse(self.test_event.ids)
 
         sub_wa = test_event.event_mail_ids.filtered(
@@ -286,14 +269,12 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
         self.assertEqual(len(sub_wa), 1)
         self.assertEqual(sub_wa.mail_count_done, 0)
 
-        # setup batch and cron limit sizes to check iterative behavior
         batch_size, cron_limit = 5, 20
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", batch_size)
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.render.cron.limit", cron_limit
         )
 
-        # create registrations -> each one receives its on subscribe communication
         EventMailRegistration = type(self.env["event.mail.registration"])
         exec_origin = EventMailRegistration._execute_on_registrations
         with (
@@ -312,19 +293,16 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
         ):
             self._create_registrations(test_event, 30)
 
-        # iterative work on registrations: only 20 (cron limit) are taken into account
         self.assertEqual(sub_wa.mail_count_done, 20)
         self.assertEqual(
             mock_exec.call_count,
             12,
             "Batch of 5 to make 20 registrations: 4 calls / scheduler (incl. mail and sms)",
         )
-        # cron should have been triggered for the remaining registrations
         self.assertSchedulerCronTriggers(
             capture, [self.reference_now + timedelta(hours=1)] * 3
         )
 
-        # iterative work on registrations, force cron to close those
         with patch.object(
             EventMailRegistration,
             "_execute_on_registrations",
@@ -336,7 +314,6 @@ class TestEventMailSchedule(TestEventMailFullCommon, WhatsAppCase):
                 freeze_date=self.reference_now + timedelta(hours=1)
             )
 
-        # finished sending communications
         self.assertEqual(sub_wa.mail_count_done, 30)
         self.assertFalse(capture.records)
         self.assertEqual(

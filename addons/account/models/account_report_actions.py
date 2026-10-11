@@ -148,9 +148,6 @@ class AccountReportActions(models.Model):
 
     @_debug.perf.timed
     def caret_option_open_general_ledger(self, options, params):
-        # When coming from a specific account, the unfold must only be retained
-        # on the specified account. Better performance and more ergonomic
-        # as it opens what client asked. And "Unfold All" is 1 clic away.
         options["unfold_all"] = True
         general_ledger = self.env.ref("account.general_ledger_report")
         account_id_to_search = self._get_res_id_from_line_id(
@@ -219,7 +216,6 @@ class AccountReportActions(models.Model):
 
     @_debug.perf.timed
     def open_journal_items(self, options, params):
-        """Open the journal items view with the proper filters and groups"""
         _debug.lifecycle("open_journal_items", records=self)
         record_model, record_id = self._get_model_info_from_id(params.get("line_id"))
         view_id = (
@@ -326,11 +322,6 @@ class AccountReportActions(models.Model):
 
         if record_model == "account.group":
             if record_id:
-                # NB: the root company id is passed as an *unquoted* text param,
-                # exactly like the sibling branch below. Under psycopg3 a '%(name)s'
-                # inside a SQL string literal is not substituted, so the previous
-                # code_store->>'%(root_company_id)s' silently read the literal jsonb
-                # key '%s' and matched no account (clicking a group showed nothing).
                 query = SQL(
                     """
                     SELECT a.id
@@ -377,7 +368,6 @@ class AccountReportActions(models.Model):
             )
             action_domain += [("account_id", "in", account_ids)]
         elif record_id is None:
-            # Default filters don't support the 'no set' value. For this case, we use a domain on the action instead
             model_fields_map = {
                 "account.account": "account_id",
                 "res.partner": "partner_id",
@@ -495,7 +485,6 @@ class AccountReportActions(models.Model):
 
     @_debug.perf.timed
     def open_unposted_moves(self, options, params=None):
-        """Open the list of draft journal entries that might impact the reporting"""
         _debug.lifecycle("open_unposted_moves", records=self)
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "account.action_move_journal_line"
@@ -505,7 +494,6 @@ class AccountReportActions(models.Model):
             ("state", "=", "draft"),
             ("date", "<=", options["date"]["date_to"]),
         ]
-        # overwrite the context to avoid default filtering on 'misc' journals
         action["context"] = {}
         return action
 
@@ -556,7 +544,6 @@ class AccountReportActions(models.Model):
             fields.Date.from_string(date_to) - relativedelta(months=3)
         )
 
-        # If no return is found for the period and the return type, retry to generate them
         types_with_records = sum(
             (
                 return_type
@@ -640,8 +627,6 @@ class AccountReportActions(models.Model):
                 self.env._("Budget items can only be edited from account lines.")
             )
 
-        # Depending on the expression's formula, the balance of the account could be multiplied by -1
-        # within the report. We need to apply the same multiplier on the budget item we create.
         if (
             target_expression.engine == "domain"
             and target_expression.subformula.startswith("-")
@@ -676,11 +661,6 @@ class AccountReportActions(models.Model):
         )
 
     def _get_domain_generated_deferral_entries(self, options) -> list:
-        """Get the search domain for the generated deferral entries of the current period.
-
-        :param options: the report's `options` dict containing `date_from`, `date_to` and `deferred_report_type`
-        :return: a search domain that can be used to get the deferral entries
-        """
         internal_group = (
             "expense" if options.get("deferred_report_type") == "expense" else "income"
         )
@@ -690,9 +670,7 @@ class AccountReportActions(models.Model):
         )
         return [
             ("company_id", "=", self.env.company.id),
-            # We exclude the reversal entries of the previous period that fall on the first day of this period
             ("date", ">", options["date"]["date_from"]),
-            # We include the reversal entries of the current period that fall on the first day of the next period
             ("date", "<=", date_to_next_reversal),
             ("deferred_original_move_ids", "!=", False),
             ("line_ids.account_id.internal_group", "in", [internal_group]),

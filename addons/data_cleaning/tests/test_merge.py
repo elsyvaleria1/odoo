@@ -59,9 +59,6 @@ class TestMerge(test_common.TestCommon):
         )
 
     def test_mixed_case_fields(self):
-        """
-        Tests mixed case fields query on _update_foreign_keys
-        """
         self.DMTestModel3 = self.env["ir.model"].create(
             {
                 "name": "Test Model 3",
@@ -121,7 +118,6 @@ class TestMerge(test_common.TestCommon):
         self._create_record("x_dm_test_model", x_name="toto")
         self._create_record("x_dm_test_model", x_name="toto")
 
-        # Update the model to notify a user
         user = new_test_user(self.env, login="merge_user", groups="base.group_system")
         self.MyModel.write(
             {
@@ -194,7 +190,6 @@ class TestMerge(test_common.TestCommon):
 @tagged("post_install", "-at_install")
 class TestMergeLog(test_common.TestCommon):
     def test_merge_log_note_project_task(self):
-        """Check that log notes are posted in the chatter of the merged records of a model inheriting from `mixin.mail.thread`."""
         if self.env["ir.module.module"]._get("project").state != "installed":
             self.skipTest("The project module is required to run this test.")
 

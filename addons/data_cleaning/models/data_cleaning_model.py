@@ -3,8 +3,6 @@ from itertools import batched
 from odoo import Command, api, fields, models
 from odoo.tools import SQL
 
-# When cleaning_mode = automatic, _clean_records calls action_validate.
-# This is quite slow so requires smaller batch size.
 DR_CREATE_STEP_AUTO = 5000
 DR_CREATE_STEP_MANUAL = 50000
 
@@ -57,8 +55,6 @@ class Data_CleaningModel(models.Model):
         compute="_compute_records_to_clean",
     )
 
-    # The notification block -- fields, period arithmetic and delivery -- is
-    # `mixin.data.cleaning.notification`.
 
     @api.onchange("res_model_id")
     def _compute_name(self):
@@ -100,7 +96,6 @@ class Data_CleaningModel(models.Model):
         field = kwargs["field_name"]
         records = self.env[self.res_model_name].search([(field, "not in", [False, ""])])
         records = records.with_context(prefetch_fields=False)
-        # Avoids multiple select queries when reading fields in _get_country_id and record[field].
         records.read(
             [fname for fname in ["country_id", "company_id"] if fname in records]
             + [field]
@@ -149,7 +144,7 @@ class Data_CleaningModel(models.Model):
             for field_name, field_action in field_actions.items():
                 action = field_action["action"]
                 operator = field_action["operator"]
-                if operator is False:  # special case for ACTIONS_SQL
+                if operator is False:
                     cleaner = getattr(cleaning_model, "_clean_records_%s" % action)
                     values = cleaner(**field_action)
                     records_to_create += values
@@ -178,9 +173,6 @@ class Data_CleaningModel(models.Model):
                             )
                         ),
                         operator=SQL(operator),
-                        # can be complex sql expression & multiple actions get
-                        # combined through string formatting, so doesn't seem
-                        # to be a smarter solution than whitelisting the entire thing
                         cleaned_field_expr=SQL(action, field)
                         if field_action["composable"]
                         else SQL(action),
@@ -207,8 +199,6 @@ class Data_CleaningModel(models.Model):
                         records_to_create_batch
                     ).action_validate()
                     if batch_commits:
-                        # Commit after each batch iteration to avoid complete rollback on timeout as
-                        # this can create lots of new records.
                         self.env["ir.cron"]._commit_progress()
             else:
                 records_to_clean += records_to_create
@@ -242,22 +232,14 @@ class Data_CleaningModel(models.Model):
     def _get_notification_subject(self):
         return self.env._("Data to Clean")
 
-    # CRUD METHODS
 
     def write(self, vals):
         stale = self.env["data_cleaning.model"]
         if "active" in vals and not vals["active"]:
             stale = self
         elif "res_model_id" in vals:
-            # `res_model_name` is a stored related on the rule, so the queued rows
-            # start claiming the new model while still holding the old table's
-            # `res_id`. They then propose an edit to whichever record happens to
-            # carry that id -- and the records that do need cleaning are not
-            # queued at all, because the scan skips what is already there.
             stale = self.filtered(lambda m: m.res_model_id.id != vals["res_model_id"])
         if stale:
-            # `active_test=False`, or the records the user discarded outlive the
-            # rule they belong to and come back when it is unarchived.
             self.env["data_cleaning.record"].with_context(active_test=False).search(
                 [
                     ("cleaning_model_id", "in", stale.ids),
@@ -265,7 +247,6 @@ class Data_CleaningModel(models.Model):
             ).unlink()
         return super().write(vals)
 
-    # ACTION METHODS
 
     def open_records(self):
         self.check_singleton()

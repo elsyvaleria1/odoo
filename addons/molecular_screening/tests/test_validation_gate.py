@@ -60,7 +60,6 @@ class TestValidationGate(TransactionCase):
         run = self._run(target, 0.75, [(1, -5.83, 0.75), (2, -5.49, 0.61)])
         self.assertTrue(run.passed)
         self.assertEqual(run.best_pose_rank, 2)
-        # The run exists but does not govern until it is activated
         self.assertEqual(target.validation_state, "pending")
         run.action_set_active()
         self.assertEqual(target.validation_state, "pass")
@@ -68,7 +67,6 @@ class TestValidationGate(TransactionCase):
 
     def test_failed_run_stays_on_file_beside_the_retry(self):
         target = self._target("bc1_Qo")
-        # bc1: the right pose exists at rank 7 but the top one is off
         failed = self._run(target, 2.91, [(1, -10.54, 2.91), (7, -8.74, 0.97)])
         failed.action_set_active()
         self.assertEqual(target.validation_state, "fail")
@@ -79,7 +77,6 @@ class TestValidationGate(TransactionCase):
         target.action_activate_latest_run()
         self.assertEqual(target.active_validation_id, retry)
         self.assertEqual(target.validation_state, "pass")
-        # The failed attempt is still readable: nothing overwrote it
         self.assertAlmostEqual(failed.rmsd_top, 2.91)
 
     def test_one_failing_target_does_not_block_the_others(self):

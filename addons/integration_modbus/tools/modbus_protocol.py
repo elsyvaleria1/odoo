@@ -51,7 +51,7 @@ class ModbusProtocol(StreamProtocol):
                 timeout=timeout,
             )
         else:
-            client = ModbusTcpClient(  # noqa: E8518 - the address was checked by ir.egress on the snapshot; Modbus is a bare TCP frame protocol with nothing to pin
+            client = ModbusTcpClient(
                 host=stream.addresses[0] if stream.addresses else url.hostname,
                 port=url.port or 502,
                 timeout=timeout,

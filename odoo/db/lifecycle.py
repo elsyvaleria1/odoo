@@ -67,9 +67,6 @@ def clear_prepared_cache(conn: psycopg.Connection) -> bool:
     return True
 
 
-# psycopg swaps its own loader classes for their C twins, never a subclass: a
-# Python loader cost 2.5x per numeric value. Unlike float(), the C one raises
-# OverflowError on a numeric past the float range instead of returning inf
 def register_adapters(conn: psycopg.Connection) -> None:
     conn.adapters.register_loader("numeric", FloatLoader)
 
@@ -80,12 +77,6 @@ def _mark_idle(conn: psycopg.Connection) -> None:
     setattr(conn, _IDLE_SINCE_ATTR, monotonic())
 
 
-# The two flags psycopg folds into every BEGIN, and autocommit, which decides
-# whether it sends one. A pooled connection serves one pool for its whole
-# life, so they are set once here and only re-set on return when a cursor
-# changed them (enforce_readonly, get_rows_autocommit): the pair of setters
-# cost 2.5 us per cursor cycle when re-issued unconditionally, the comparison
-# 50 ns.
 def _set_transaction_flags(conn: psycopg.Connection, readonly: bool) -> None:
     if conn.autocommit:
         _debug.logic("connection.flag_set", flag="autocommit", was=True)
@@ -118,10 +109,6 @@ def _configure_connection(conn: psycopg.Connection, *, readonly: bool = False) -
     )
 
 
-# libpq's simple-query call: one round trip for the multi-statement string, no
-# BEGIN folded in (so no autocommit toggle around it) and none of the
-# per-statement machinery psycopg's execute() runs -- 14 us against 24 us,
-# on a path taken once per cursor cycle.
 def _run_simple_query(conn: psycopg.Connection, sql: bytes, expected: int) -> None:
     result = conn.pgconn.exec_(sql)
     if result.status != expected:
@@ -132,14 +119,10 @@ def _run_session_reset(conn: psycopg.Connection, sql: str) -> None:
     _run_simple_query(conn, sql.encode(), ExecStatus.COMMAND_OK)
 
 
-# The empty query is what psycopg_pool's own check sends, minus the autocommit
-# toggle it wraps around execute(): 8 us against 12.7. A terminated backend
-# answers FATAL_ERROR once and raises OperationalError after.
 def _probe_liveness(conn: psycopg.Connection) -> None:
     try:
         _run_simple_query(conn, b"", ExecStatus.EMPTY_QUERY)
     except Exception as exc:
-        # psycopg_pool discards the connection and says nothing at our level.
         _debug.lifecycle(
             "connection.liveness_failed",
             backend_pid=get_backend_pid(conn),

@@ -62,7 +62,6 @@ class WizardAccountLoanCreateSchedule(models.TransientModel):
     def _uses_first_payment_date(self) -> bool:
         return self.payment_end_of_month == "at_anniversary"
 
-    # Validation — the constraint is authoritative, the onchange only makes it prompt
     @api.constrains(
         "loan_amount",
         "interest_rate",
@@ -112,7 +111,6 @@ class WizardAccountLoanCreateSchedule(models.TransientModel):
                 wizard.start_date.replace(day=1) + relativedelta(months=1)
             )
 
-    # Compute
     def _get_loan_payment_schedule(self):
         self.check_singleton()
         try:
@@ -157,7 +155,6 @@ class WizardAccountLoanCreateSchedule(models.TransientModel):
                 for payment in wizard._get_loan_payment_schedule()
             ]
 
-    # Actions
     def action_save(self):
         self.check_singleton()
         schedule = self._get_loan_payment_schedule()

@@ -56,13 +56,10 @@ class InboundDelivery:
             raise ValueError("message is not valid base64: %s" % error) from None
         if not message.strip():
             raise ValueError("message is empty")
-        # an MTA names the null sender (Postfix: MAILER-DAEMON) unless told not to
         sender = email_normalize(sender) or ""
         return cls(sender, tuple(dict.fromkeys(normalized)), message)
 
     def stamped(self) -> bytes:
-        # What a final delivery agent writes (RFC 5321 4.4): the envelope the
-        # gateway routes on, since a Bcc recipient appears in no other header.
         trace = [b"Return-Path: <%s>" % self.sender.encode()]
         trace += [b"Delivered-To: %s" % rcpt.encode() for rcpt in self.recipients]
         newline = b"\r\n" if b"\r\n" in self.message[:4096] else b"\n"

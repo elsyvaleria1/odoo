@@ -4,16 +4,11 @@ import re
 from odoo import api, models
 from odoo.tools import clean_context
 
-# An image pasted as HTML (from a word processor, a mail client, a web page)
-# reaches an Html field as a data URI; the same pattern mail.message strips
-# from a body it posts.
 _DATA_URI_IMAGE = re.compile(
     r'(data:image/[a-z]+?);base64,([a-z0-9+/\n]{3,}=*)\n*([\'"])'
     r'(?: data-filename="([^"]*)")?',
     re.IGNORECASE,
 )
-# Models that already move their inline images out, or whose records do not
-# outlive the message they carry: an image linked to them would vanish.
 _DATA_URI_IMAGE_EXEMPT_MODELS = frozenset({"mail.mail", "mail.message"})
 
 
@@ -63,13 +58,6 @@ class Base(models.AbstractModel):
         ]
 
     def _html_extract_data_images(self, field_names) -> None:
-        """Store the data-URI images of these Html fields as attachments.
-
-        A data URI keeps the image inside the column: every read of the
-        record carries it, and every database backup does too. The image
-        becomes an attachment of the record, which follows the record's
-        access, and the HTML points at it the way mail.message does.
-        """
         Attachments = self.env["ir.attachment"].with_context(
             clean_context(self.env.context)
         )
@@ -95,7 +83,6 @@ class Base(models.AbstractModel):
                                 }
                             )
                         except binascii.Error:
-                            # an undecodable image is dropped, as mail does
                             return match.group(3)
                         attachment.generate_access_token()
                         token = attachment.access_token

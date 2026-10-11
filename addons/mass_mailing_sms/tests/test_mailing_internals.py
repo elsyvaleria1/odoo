@@ -22,7 +22,6 @@ class TestMassMailValues(MassSMSCommon):
 
     @users("user_marketing")
     def test_mailing_computed_fields(self):
-        # Create on res.partner, with default values for computed fields
         mailing = self.env["mailing.mailing"].create(
             {
                 "name": "TestMailing",
@@ -40,17 +39,14 @@ class TestMassMailValues(MassSMSCommon):
         self.assertEqual(mailing.mailing_model_name, "res.partner")
         self.assertEqual(mailing.mailing_model_real, "res.partner")
         self.assertEqual(literal_eval(mailing.mailing_domain), [])
-        # update template -> update body
         mailing.write({"sms_template_id": self.sms_template_partner.id})
         self.assertEqual(mailing.body_plaintext, self.sms_template_partner.body)
-        # update domain
         mailing.write({"mailing_domain": [("email", "ilike", "test.example.com")]})
         self.assertEqual(
             literal_eval(mailing.mailing_domain),
             [("email", "ilike", "test.example.com")],
         )
 
-        # reset mailing model -> reset domain; set reply_to -> keep it
         mailing.write(
             {
                 "mailing_model_id": self.env["ir.model"]._get("mailing.list").id,
@@ -59,7 +55,6 @@ class TestMassMailValues(MassSMSCommon):
         )
         self.assertEqual(mailing.mailing_model_name, "mailing.list")
         self.assertEqual(mailing.mailing_model_real, "mailing.contact")
-        # default for mailing list: depends upon contact_list_ids
         self.assertEqual(literal_eval(mailing.mailing_domain), [("list_ids", "in", [])])
         mailing.write(
             {
@@ -76,12 +71,6 @@ class TestMassMailValues(MassSMSCommon):
 
     @users("user_marketing")
     def test_mailing_get_sms_link_replacements_placeholders(self):
-        """Test the extra chars counts for estimating total SMS characters length.
-
-          * links are transformed into "[base_url]/r/[link_tracker_code]/s/[sms_id]".
-          * opt-out link is formatted as "\nSTOP SMS : [base_url]/sms/[mailing_id]/[trace_code]".
-        See `get_sms_link_replacements_placeholders` for safety characters.
-        """
         mailing = self.env["mailing.mailing"].create(
             {
                 "body_plaintext": "Coucou hibou",
@@ -95,12 +84,9 @@ class TestMassMailValues(MassSMSCommon):
 
         link_trackers = bool(
             self.env["link.tracker"].search([], limit=1)
-        )  # depends on demo
+        )
 
         expected = {
-            # Derived, not spelled out: `get_sms_link_replacements_placeholders`
-            # sizes this from LINK_TRACKER_MIN_CODE_LENGTH, so a literal here is a
-            # second copy of that constant that silently drifts from it.
             "link": f"{base_url}/r/{'x' * (LINK_TRACKER_MIN_CODE_LENGTH + (1 if link_trackers else 0))}/s/xxxxx",
             "unsubscribe": f"\nSTOP SMS: {base_url}/sms/{'x' * len(str(mailing.id))}/{'x' * self.env['mailing.trace'].CODE_SIZE}",
         }

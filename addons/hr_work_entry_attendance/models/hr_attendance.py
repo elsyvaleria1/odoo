@@ -12,14 +12,6 @@ class HrAttendance(models.Model):
     _inherit = "hr.attendance"
 
     def _get_employee_calendar(self, version=None):
-        """A contract's own schedule outranks the version's, when there is one.
-
-        `version` is threaded through from `hr.attendance._schedule_version()`
-        so the whole of one attendance resolves against one `hr.version`, and
-        the base is not asked to recompute the fixed point this override was
-        already handed. Dropping the parameter raises `TypeError` -- an
-        override with the old arity shadows the base for every caller.
-        """
         self.check_singleton()
         contracts = (
             self.employee_id.sudo()._get_versions_with_contract_overlap_with_period(
@@ -31,12 +23,8 @@ class HrAttendance(models.Model):
         return super()._get_employee_calendar(version)
 
     def _create_work_entries(self) -> None:
-        # Upon creating or closing an attendance, create the work entry directly if the attendance
-        # was created within an already generated period
-        # This code assumes that attendances are not created/written in big batches
         work_entries_vals_list = []
         for attendance in self:
-            # Work entries need a check-out to compute a duration, skip attendances still open
             if not attendance.check_out:
                 _debug.logic(
                     "work_entry_skipped",
@@ -69,7 +57,6 @@ class HrAttendance(models.Model):
                 entries=new_work_entries,
             )
             if new_work_entries:
-                # Fetch overlapping work entries, grouped by employees
                 start = min(
                     (a.check_in.date() for a in self if a.check_in), default=False
                 )
@@ -93,32 +80,20 @@ class HrAttendance(models.Model):
                     employee.id: records for employee, records in work_entry_groups
                 }
 
-                # Archive work entries included in new work entries
                 included = self.env["hr.work.entry"]
                 overlappping = self.env["hr.work.entry"]
                 for work_entries in work_entries_by_employee.values():
-                    # Work entries for this employee
                     new_employee_work_entries = work_entries & new_work_entries
                     previous_employee_work_entries = work_entries - new_work_entries
-                    # Our work entries are date+duration, so _to_intervals() is
-                    # day-granular and every previous same-day entry would land
-                    # in `included` below and be archived. An entry backed by a
-                    # different attendance records real presence the new vals
-                    # do not cover: keep it. Entries for self's own attendances
-                    # (stale spans being re-closed) and unlinked ones still
-                    # compete as before.
                     previous_employee_work_entries = (
                         previous_employee_work_entries.filtered(
                             lambda w: not w.attendance_id or w.attendance_id in self
                         )
                     )
 
-                    # Convert to intervals so overlapping work entries can be diffed below
                     attendance_intervals = new_employee_work_entries._to_intervals()
                     conflicts_intervals = previous_employee_work_entries._to_intervals()
 
-                    # Compute intervals completely outside any attendance
-                    # Intervals are outside, but associated records are overlapping.
                     outside_intervals = conflicts_intervals - attendance_intervals
 
                     overlappping |= self.env["hr.work.entry"]._from_intervals(
@@ -165,25 +140,11 @@ class HrAttendance(models.Model):
             if new_check_out
             else self.env["hr.attendance"]
         )
-        # Closing every attendance touched by this write for the first time is
-        # already handled directly and correctly by open_attendances._create_work_entries()
-        # below. Running the full regeneration wizard on top of it only duplicates
-        # that work: it creates a work entry that _create_work_entries() then
-        # immediately cancels as an overlap, doubling writes for every clock-out.
         skip_regenerate = bool(open_attendances) and open_attendances == self
-        # Key presence, not value truthiness: clearing check_out (reopening a
-        # closed attendance) must regenerate too, or the work entry of the old
-        # closed span stays active while the attendance is open-ended.
         regenerate = (
             bool({"check_out", "check_in", "employee_id"} & vals.keys())
             and not skip_regenerate
         )
-        # Capture the pre-write (date, employee) pairs: if this write moves an
-        # attendance to a different calendar day, or reassigns it to a
-        # different employee, self.mapped('date')/self.employee_id below only
-        # see the new day/employee once super().write() has run, and the old
-        # day's or old employee's work entry would never be included in the
-        # regeneration.
         old_slots = (
             {(attendance.date, attendance.employee_id.id) for attendance in self}
             if regenerate
@@ -206,16 +167,12 @@ class HrAttendance(models.Model):
             return res
         start = min(
             self.mapped("check_in")
-            + [Datetime.from_string(vals.get("check_in", False)) or datetime.max]  # noqa: DTZ901  naive sentinel compared against naive ORM datetimes
+            + [Datetime.from_string(vals.get("check_in", False)) or datetime.max]
         )
         stop = max(
             self.mapped("check_out")
-            + [Datetime.from_string(vals.get("check_out", False)) or datetime.min]  # noqa: DTZ901  naive sentinel compared against naive ORM datetimes
+            + [Datetime.from_string(vals.get("check_out", False)) or datetime.min]
         )
-        # No `skip=`: the early return above means this line is only reached
-        # when `check_out` is in `vals`, so the flag that used to be computed
-        # here could only ever be False -- which is also the parameter's
-        # default.
         with self.env["hr.work.entry"]._error_checking(
             start=start, stop=stop, employee_ids=self.employee_id.ids
         ):
@@ -244,12 +201,6 @@ class HrAttendance(models.Model):
 
     def unlink(self):
         _debug.lifecycle("attendance_unlink", attendances=self)
-        # Archive linked work entries upon deleting last attendance linked to the work entries.
-        # Build slots from self's own (date, employee_id) pairs rather than searching
-        # hr.work.entry with a Domain(employee_id in ...) AND Domain(date in ...): that
-        # cross-products two independently-collected id/date lists, so a batch spanning
-        # more than one employee and more than one day can match an unrelated employee's
-        # unrelated day and needlessly regenerate it.
         slots = [
             {"date": attendance.date, "employee_id": attendance.employee_id.id}
             for attendance in self

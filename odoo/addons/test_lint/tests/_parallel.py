@@ -44,7 +44,6 @@ def _stop_multiprocessing_helpers() -> None:
 def run_chunks[T, R](
     function: Callable[[list[T]], R], items: Sequence[T], jobs: int
 ) -> list[R]:
-    # Strided chunks spread the large files of one addon over every worker.
     stride = jobs * 4
     chunks = [list(items[index::stride]) for index in range(stride)]
     try:
@@ -79,8 +78,6 @@ def _apply_each[K: Hashable, R](
 def map_items[K: Hashable, R](
     function: Callable[[K], R], items: Sequence[K]
 ) -> dict[K, R]:
-    # A worker is a fresh interpreter: `function` is imported by name there and
-    # sees neither the configured addons path nor the registry.
     parts, jobs = map_chunks(functools.partial(_apply_each, function), items)
     _logger.debug(
         "%s over %s item(s) in %s process(es)",

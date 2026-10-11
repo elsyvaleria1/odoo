@@ -92,11 +92,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _receiver_for_dav(self, **path_args):
-        """The DAV device behind a request, by the device's own bearer token
-        or by its user's Basic login. A client that presents nothing is
-        asking for the challenge, which is answered and not recorded; a
-        Basic login is proven by the gate through the verifier, so a wrong
-        password is a refusal on the device and never a lookup."""
         header = request.httprequest.headers.get("Authorization", "")
         if header.startswith("Bearer "):
             token = header[7:].strip()
@@ -127,9 +122,6 @@ class DeviceDevice(models.Model):
                 return Resolution(self.browse(), claimed=f"basic login {login}")
 
             def is_request_authorized(headers, body) -> bool:
-                # The password of a DAV client is an API key of the `dav`
-                # scope (or one bound to no door), never the login password:
-                # a phone keeps it in clear, and a key opens this door alone.
                 return (
                     self.env["res.users.apikeys"]._check_credentials(
                         scope=DAV_API_KEY_SCOPE, key=secret
@@ -144,9 +136,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _prepare_dav_refusal_response(self, refused):
-        """An unknown login and a wrong password answer alike, with the
-        challenge, so the server names no account; a refusal that is not
-        about identity keeps its status."""
         if refused.status in (401, 404):
             return Response("Unauthorized", status=401, headers=DAV_CHALLENGE)
         return Response(refused.reason, status=refused.status)
@@ -213,8 +202,6 @@ class DeviceDevice(models.Model):
         }
 
     def action_generate_dav_password(self) -> dict:
-        """The DAV password of this device's user: an API key of the `dav`
-        scope, minted by that user for themself, shown once."""
         self.check_singleton()
         device = self.sudo()
         if device.dav_user_id != self.env.user:

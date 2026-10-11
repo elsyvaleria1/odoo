@@ -68,16 +68,12 @@ class TeamAlias(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        # the mail.alias behind is written as superuser once the row itself may
-        # be written, as mixin.mail.alias does for the records that own one
         alias_fields = self.env["mail.alias"]._fields
         alias_vals = {
             fname: vals.pop(fname)
             for fname in list(vals)
             if fname not in ("team_id", "usage", "alias_id") and fname in alias_fields
         }
-        # an empty form sends False for the alias fields it shows, and mail.alias
-        # requires some of them
         alias_vals = {
             fname: value
             for fname, value in alias_vals.items()
@@ -101,7 +97,6 @@ class TeamAlias(models.Model):
         for alias in self:
             values = alias.team_id._prepare_usage_alias_vals(alias.usage)
             if not alias.team_id.company_id.alias_domain_id and alias.alias_domain_id:
-                # a team without a company keeps the domain someone chose for it
                 values["alias_domain_id"] = alias.alias_domain_id.id
             values["alias_defaults"] = str(
                 {

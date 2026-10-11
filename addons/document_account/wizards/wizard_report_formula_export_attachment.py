@@ -34,8 +34,6 @@ class WizardReportFormulaExportAttachment(models.TransientModel):
         self.tag_ids = False
 
     def export_report(self):
-        # When making the export with Documents app installed, we want the resulting action to open the folder of Documents where
-        # the attachments were saved, with the folder/tags pre-selected in the search panel, instead of the regular ir.attachment objects.
         self.check_singleton()
         with _debug.perf(
             "report_export_to_documents", cr=self.env.cr, folder=self.folder_id

@@ -63,14 +63,12 @@ class TestSelfPersonalInformation(TestHrCommon):
         self.assertEqual(values["place_of_birth"], "Culiacan")
 
     def test_every_personal_field_is_self_readable(self):
-        """The list and the fields have to agree, or a field silently 403s."""
         readable = self.env["res.users"].SELF_READABLE_FIELDS
         for field_name in self.PERSONAL_FIELDS:
             with self.subTest(field=field_name):
                 self.assertIn(field_name, readable)
 
     def test_the_employee_cannot_read_somebody_else(self):
-        """Self-readable is about oneself: it must not widen to other people."""
         other = self.env["hr.employee"].create(
             {"name": "Someone Else", "marital": "single"}
         )

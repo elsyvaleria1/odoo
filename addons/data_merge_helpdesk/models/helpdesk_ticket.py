@@ -8,7 +8,6 @@ class HelpdeskTicket(models.Model):
         tickets = destination + source
         status_list = self.env["helpdesk.sla.status"]
 
-        # a status without deadline (stage in "sla_id.exclude_stage_ids") sorts last
         for status in tickets.mapped("sla_status_ids").grouped("sla_id").values():
             status_list += min(status, key=lambda s: (not s.deadline, s.deadline))
 

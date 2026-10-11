@@ -6,9 +6,6 @@ class WizardMrpProductionUpdateQuantity(models.TransientModel):
     _inherit = "wizard.mrp.production.update.quantity"
 
     def change_prod_qty(self):
-        # if there are quality checks, we should create new checks/update the quantities, etc.
-        # if we want to make this feature work, a task should be done to deal with all the possible cases:
-        # types of quality check, quantity processed, etc. In the meantime, we block this feature.
         productions = self.mo_id
         if self.env["quality.check"].search_count(
             [

@@ -39,9 +39,6 @@ class WizardReportFormulaExportAttachment(models.TransientModel):
         for wizard in wizards:
             wizard.doc_name = wizard.report_id.name
 
-            # We create one export format object per available export type of the report,
-            # with the right generation function associated to it.
-            # This is done so to allow selecting them as Many2many tags in the wizard.
             for button_dict in self.env.context.get(
                 "account_report_generation_options", {}
             ).get("buttons", []):
@@ -86,7 +83,6 @@ class WizardReportFormulaExportAttachment(models.TransientModel):
         to_create_attachments = []
         report_options = self.env.context["account_report_generation_options"]
         for format in self.export_format_ids:
-            # format.fun_to_call is a button function, so it has to be public
             report_action = self.report_id.dispatch_report_action(
                 options={**report_options, "report_id": self.report_id.id},
                 action=format.fun_to_call,

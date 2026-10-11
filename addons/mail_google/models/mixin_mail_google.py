@@ -5,9 +5,6 @@ from odoo.addons.mail_oauth2.oauth2_provider import Oauth2MailProvider
 GMAIL = Oauth2MailProvider(
     label="Gmail",
     service="integration_google.service_google",
-    # `https://mail.google.com/` is the scope SMTP and IMAP accept
-    # (https://developers.google.com/workspace/gmail/imap/xoauth2-protocol);
-    # `openid email` has the code exchange name the account that consented
     scope="https://mail.google.com/ openid email",
 )
 

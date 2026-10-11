@@ -12,7 +12,6 @@ from odoo.addons.document.tools import UserFolder, is_mimetype_inline_rendered
 
 _debug = DebugLog(__name__)
 
-# the fields whose compute reads user_permission of the document's folder too
 _PERMISSION_READERS = frozenset({"user_folder_id", "user_can_move"})
 
 
@@ -21,14 +20,9 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _user_is_documents_manager(self) -> bool:
-        # the user's membership whatever the env's elevation: what a reach is
-        # built on, since reaches are also built under sudo for the real user
         return self.env.user.has_group("document.group_documents_manager")
 
     def _is_documents_manager(self) -> bool:
-        # may this call act as a Documents manager: the membership, or sudo.
-        # A Settings administrator outside the Documents groups is not one --
-        # the reach never treated them as one, and this check used to
         return self.env.su or self._user_is_documents_manager()
 
     @api.model
@@ -117,12 +111,9 @@ class DocumentsDocument(models.Model):
             for document in self:
                 document.user_can_move = document.active
             return
-        # a move is a change: another user's lock keeps the document in place
         active_documents = self.filtered("active") - self._locked_by_other()
         (self - active_documents).user_can_move = False
         if self.env.user.has_group("document.group_documents_system"):
-            # what the system reach gives them, which stops at another
-            # person's drive: the rest the move itself would refuse
             movable = active_documents.filtered(lambda d: d.user_permission == "edit")
             _debug.logic("user_can_move", by="system_group", documents=movable)
             movable.user_can_move = True
@@ -177,7 +168,6 @@ class DocumentsDocument(models.Model):
     )
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_user_can_trash(self) -> None:
-        """What action_archive accepts, answered per document beforehand."""
         if self.env.su:
             self.user_can_trash = True
             return
@@ -188,7 +178,6 @@ class DocumentsDocument(models.Model):
                     lambda d: (
                         d.active
                         and d.user_permission == "edit"
-                        # _raise_if_unauthorized_archive: unowned, the folder decides
                         and (
                             d.owner_id == self.env.user
                             or not d.folder_id
@@ -198,7 +187,6 @@ class DocumentsDocument(models.Model):
                 )
                 - self._locked_by_other()
             )
-        # _raise_if_used_folder: a folder another application files into stays
         candidates -= candidates._folders_used_by_companies()
         candidates.user_can_trash = True
         (self - candidates).user_can_trash = False
@@ -230,9 +218,6 @@ class DocumentsDocument(models.Model):
     def _search_user_can_manage(
         self, operator: str = "in", value: typing.Any = (True,)
     ) -> Domain:
-        # who changes a document's grants, audience, boundary and link: whoever
-        # holds manage on it (its owner, an owner above it, a manage grant),
-        # and the Documents managers and administrators wherever they edit
         if operator not in ("in", "not in"):
             return NotImplemented
         user = self.env.user
@@ -250,11 +235,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _documents_system_reach(self) -> Domain:
-        # what the Documents system administrators reach whoever shared it:
-        # every document outside another person's drive, and inside it too
-        # while they hold break-glass (decision I1); nothing for anyone else
-        # read from the rows themselves: the verbs' own required operation is
-        # decided by user_permission, which this term computes
         if self.env.user._is_superuser():
             return Domain.TRUE
         policy = self.env.registry.access_policy
@@ -270,9 +250,6 @@ class DocumentsDocument(models.Model):
     def _access_predicate_outside_others_drives(
         self, bind: typing.Any, args: dict
     ) -> Domain:
-        # a document whose tree is not another person's drive: the top of its
-        # parent_path is not a top-level node someone else owns. The whole
-        # ancestry, not the access scope, which a boundary cuts short
         user_id = bind("user")
 
         def to_sql(model: typing.Any, alias: str, query: typing.Any) -> SQL:
@@ -320,13 +297,8 @@ class DocumentsDocument(models.Model):
             ]
         )
         if system.is_true() and not self.env.user.company_ids - self.env.companies:
-            # every document lies in a company in use, one the user is not in or
-            # an archived one: the grants reach nothing more
             editable = reachable = everything
         else:
-            # the system reach as shipped is a way of reaching like the others,
-            # in the one reach query; anything else binding the user is read
-            # beside it
             folded = (
                 not system.is_false()
                 and not system.is_true()
@@ -337,7 +309,6 @@ class DocumentsDocument(models.Model):
                 "edit", ignore_link, exclude_ownership=exclude_ownership, system=folded
             )
             if self.env.user.share:
-                # what an external user may only view, whatever reaches them
                 editable &= ~self._kept_from_share_editors()
             reachable = self._reach(
                 "view", ignore_link, exclude_ownership=exclude_ownership, system=folded
@@ -351,8 +322,6 @@ class DocumentsDocument(models.Model):
         viewable = reachable & self._access_label_reach("view")
         if searched_roles == {"view"}:
             return viewable & ~(editable & edit_label)
-        # what reaches for edit reaches for view, and no label lets writing
-        # without reading (ir.access.class.can_label): the edit band adds nothing
         return viewable
 
     @api.model
@@ -380,9 +349,6 @@ class DocumentsDocument(models.Model):
         return self.env.ref("base.group_user").id
 
     def _graph_reach(self, role: str, *, exclude_ownership: bool = False) -> Domain:
-        # what the grants reach, live down the folders: the access graph, which
-        # keeps to the companies in use, the internal audience (base.group_user)
-        # being one of the user's groups. Nobody manages through the audience
         exclude = [self._internal_audience_group()] if role == "manage" else []
         return self._access_graph_domain(
             role, exclude_groups=exclude, owner=not exclude_ownership
@@ -396,11 +362,6 @@ class DocumentsDocument(models.Model):
         exclude_ownership: bool = False,
         system: bool = False,
     ) -> Domain:
-        # the documents reached at the role or above: a document's own reach, a
-        # shortcut its target's (its owner edits it while they read the
-        # target), managers' edit through the employees' audience, an edit
-        # link raising whoever reaches the document, and a link-shared
-        # document found through its folder (document_document_reach)
         return self._permission_reach(
             role,
             links=not (exclude_ownership or ignore_link),
@@ -416,7 +377,6 @@ class DocumentsDocument(models.Model):
         "shortcut_document_id.access_internal",
     )
     def _compute_access_internal(self) -> None:
-        # a shortcut's audience is its target's
         targets = self.shortcut_document_id
         nodes = (self - self.filtered("shortcut_document_id")) | targets
         ranks = nodes._access_graph_group_ranks(self._internal_audience_group())
@@ -457,9 +417,6 @@ class DocumentsDocument(models.Model):
     ) -> list:
         self._check_content_read(fnames)
         if _PERMISSION_READERS & set(fnames):
-            # one permission batch for the records and their folders: read in
-            # field order, user_folder_id asked the folders' in a second one,
-            # each a pair of reach queries (half the SQL of a kanban load)
             (self | self.folder_id).mapped("user_permission")
         return super()._read_format(fnames, load=load)
 
@@ -468,11 +425,6 @@ class DocumentsDocument(models.Model):
         return super().export_data(fields_to_export)
 
     def _check_content_read(self, fnames: typing.Iterable[str]) -> None:
-        # read, search_read, web_read and export hand the file's bytes over
-        # RPC as any download route does: the same gate (ir.binary's).
-        # Attribute access -- the business code parsing a CFDI, a PDF -- is
-        # processing, not handing over. No client key (bin_size) exempts a
-        # read: the client decides nothing here, and no view reads these
         if self.env.su or not {"raw", "datas"} & set(fnames):
             return
         Binary = self.env["ir.binary"]
@@ -485,15 +437,7 @@ class DocumentsDocument(models.Model):
         allowed = not target.is_download_blocked or (
             target.user_permission == "edit" or target.access_via_link == "edit"
         )
-        # Log the INPUTS, not only the refusal. Both of these gates used to be
-        # visible in a log only through the caller's `content_refused` event,
-        # so an allowed request said nothing -- and "was this blocked document
-        # served because the block is off, because the caller is an editor, or
-        # because the link is an edit link?" was unanswerable from any log,
-        # which is exactly the question a download-block complaint asks.
         if _debug.logic.enabled:
-            # the arguments are built only when the channel is on:
-            # user_permission alone is two permission searches
             _debug.logic(
                 "download_gate",
                 document=self,
@@ -532,7 +476,6 @@ class DocumentsDocument(models.Model):
     ) -> list | None:
         if len(self.ids) == 0:
             return None
-        # sharing is a change of the document: written elevated, past write
         self._raise_if_locked_by_other("access_update")
         self._check_access_update_allowed(
             (
@@ -585,8 +528,6 @@ class DocumentsDocument(models.Model):
             ),
             None,
         )
-        # leaving, taking one's own grant away, is anyone's; it narrows no one
-        # else's access
         leaving = own_change is not None and own_change[0] is False
         changes_anything = (
             len(partners or {}) > (1 if leaving else 0)
@@ -703,8 +644,6 @@ class DocumentsDocument(models.Model):
                 )
             )
         ):
-            # a boundary keeps out what the folders above grant: only what is
-            # granted here, the owner and the Documents managers reach it
             changed.is_access_restricted = is_access_restricted
             self._invalidate_permission_cache(["is_access_restricted"])
 
@@ -853,9 +792,6 @@ class DocumentsDocument(models.Model):
             for document_id, changes in changes_by_document_dict.items()
             if "access_via_link" in changes
         ]:
-            # the SQL above reached the whole subtree, readable by the writer
-            # or not, once the writer's right on the roots was checked: its
-            # links follow as the link machinery's, named
             self.browse(link_changed).with_privilege(
                 "base.privilege_manage_links",
                 reason="a folder's link setting reached its subtree",
@@ -865,10 +801,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _invalidate_permission_cache(self, fields_written: list[str]) -> None:
-        # a grant reaches every document below its folder, and the SQL above
-        # bypasses `modified()`: every non-stored compute that reads a
-        # permission (user_folder_id, user_can_move, display_name, ...) is
-        # dropped for the whole model
         permissions = [
             self._fields[name]
             for name in (
@@ -905,9 +837,6 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _source_ranks(self, sources: list[dict], key_of: Any) -> dict:
-        # {key: highest rank} over the access graph's sources: the one fold
-        # every "who reaches this, how far" question is; key_of names what is
-        # counted (a partner, a grant key) and None skips a source
         roles = self._access_graph.roles
         ranks: dict = {}
         for source in sources:
@@ -916,8 +845,6 @@ class DocumentsDocument(models.Model):
         return ranks
 
     def _member_roles(self) -> dict:
-        # {partner: role} of every partner a grant or an owner reaches the
-        # document with, on it or on a folder above it
         self.check_singleton()
         roles = self._access_graph.roles
         ranks = self._source_ranks(
@@ -928,14 +855,11 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def _grant_key(self, partner: Any, group: Any, company: Any) -> tuple:
-        # a principal as a grant names it: a partner, or a group within a
-        # company or in all of them
         if partner:
             return ("partner", partner.id, False)
         return ("group", group.id, company.id or False)
 
     def _inherited_ranks(self) -> dict[tuple, int]:
-        # {principal key: rank} of every grant or owner above the document
         self.check_singleton()
         return self._source_ranks(
             self._access_graph_sources(),
@@ -956,8 +880,6 @@ class DocumentsDocument(models.Model):
         }
 
     def _update_access_boundary(self, excluded: set[tuple]) -> None:
-        # the document stops inheriting and keeps, as its own grants, what
-        # reached it from above, except the principals being lowered
         self._keep_as_own(self._inherited_ranks(), excluded)
         self._sharing().is_access_restricted = True
         _debug.lifecycle("access_boundary_made", document=self, excluded=len(excluded))
@@ -991,8 +913,6 @@ class DocumentsDocument(models.Model):
         self._sharing().env["document.access"].create(creates)
 
     def _keep_group_grants_of_folder(self) -> None:
-        # a boundary made at creation keeps, as its own, what its folder's
-        # scope grants to groups: the audience, a module's group
         self.check_singleton()
         ranks = self._source_ranks(
             self.folder_id._access_graph_sources(),
@@ -1007,10 +927,6 @@ class DocumentsDocument(models.Model):
     def _set_principal_access(
         self, key: tuple, role: str | bool, date_to: Any = None
     ) -> list[tuple]:
-        # one principal's own grant on each document: a role at or below what
-        # reaches it from above is inherited, one below it makes the document
-        # a boundary (decision K1); False removes the grant. Answers the
-        # member changes in the shape the access tracking reads
         roles = self._access_graph.roles
         Access = self._sharing().env["document.access"]
         kind, principal_id, company_id = key
@@ -1018,8 +934,6 @@ class DocumentsDocument(models.Model):
         changes = []
         for document in self.filtered(lambda d: not d.shortcut_document_id):
             if kind == "partner" and principal_id == document.owner_id.partner_id.id:
-                # the owner holds the top role on its document whatever it is
-                # granted there: nothing to write, nothing to narrow
                 continue
             inherited = document._inherited_ranks().get(key, 0)
             row = document._own_grants().get(key, Access).with_env(Access.env)
@@ -1065,16 +979,12 @@ class DocumentsDocument(models.Model):
         return changes
 
     def _sharing(self) -> DocumentsDocument:
-        # grants are written by who manages the documents, checked before;
-        # the privilege lets them write the grant rows
         return self.with_privilege(
             "document.privilege_share_documents",
             reason="whoever manages a document changes who can access it",
         )
 
     def _leaving(self, key: tuple) -> bool:
-        # the user taking their own grant away, without managing the document:
-        # the grant goes, what reaches them from above stays
         return (
             key == ("partner", self.env.user.partner_id.id, False)
             and not self.env.su

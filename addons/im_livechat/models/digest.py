@@ -22,11 +22,6 @@ class DigestDigest(models.Model):
     def _compute_kpi_livechat_rating_value(self) -> None:
         start, end, __ = self._get_kpi_compute_parameters()
         Channel = self.env["discuss.channel"]
-        # `_search`, not `search`: the id list this used to build had no bound
-        # other than "every livechat session this database has ever held", and
-        # it was rebuilt and re-sent to Postgres on every read -- six per
-        # recipient. A Query stays a subquery over the indexed `res_id`, and
-        # selects exactly the same ratings.
         livechat_channels = Channel._search([("channel_type", "=", "livechat")])
         ratings = Channel.rating_get_grades(
             [("create_date", ">=", start), ("create_date", "<", end)],

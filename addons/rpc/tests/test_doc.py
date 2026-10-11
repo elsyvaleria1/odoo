@@ -7,7 +7,7 @@ from odoo.fields import Command
 from odoo.models import Model
 from odoo.tests import new_test_user, tagged
 
-from .dummy_methods import DummyMethods
+from .dummy_methods import DOCSTRING_FIXTURES, DummyMethods
 from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 from odoo.addons.rpc.tools.cache import (
     ACCESS_CACHE_SEQUENCES,
@@ -44,8 +44,6 @@ class TestDoc(HttpCaseWithUserDemo):
                     res = self.url_open(path)
                 self.assertEqual(res.status_code, 403)
                 self.assertIn(e, res.text)
-                # dispatch-error logging lives in the odoo.http.application
-                # submodule since the http package split
                 self.assertEqual(capture.output, [f"WARNING:odoo.http.application:{e}"])
 
     def test_doc_web_client(self):
@@ -156,10 +154,6 @@ class TestDoc(HttpCaseWithUserDemo):
             },
         )
 
-        # `search` is pinned for its *shape*, not for the prose of a core
-        # docstring: pinning the rendered docstring of an ORM method makes this
-        # module's suite fail whenever the ORM edits a sentence, which is what
-        # it did until this was rewritten.
         self.assertGreater(set(methods), {"search", "open_commercial_entity"})
         search = methods["search"]
         self.assertEqual(search["model"], "core")
@@ -178,12 +172,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertEqual(search["return"]["annotation"], "list[int]")
 
     def test_doc_model_publishes_no_unreflectable_method(self):
-        """Every documented method reflects: none falls back to the stub.
-
-        The stub exists for a callable nothing can introspect. It used to catch
-        a whole class of ORM methods instead, because their annotations name
-        types imported under ``if TYPE_CHECKING:``.
-        """
         self.authenticate("demo", "demo")
         res = self.url_open("/doc/res.partner.json", allow_redirects=False)
         res.raise_for_status()
@@ -195,7 +183,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertEqual(stubbed, [], "these methods could not be reflected")
 
     def test_doc_model_signatures_keep_their_markers(self):
-        """A published signature is one a reader can copy into a call."""
         self.authenticate("demo", "demo")
         res = self.url_open("/doc/res.partner.json", allow_redirects=False)
         res.raise_for_status()
@@ -212,19 +199,16 @@ class TestDoc(HttpCaseWithUserDemo):
     def test_doc_cache(self):
         self.authenticate("demo", "demo")
 
-        # request the document first
         res = self.url_open("/doc/index.json", allow_redirects=False)
         res.raise_for_status()
         self.assertEqual(res.status_code, 200)
         self.assertTrue(res.content, "We should have downloaded the document")
 
-        # ensure the necessary is there to cache the document
         cache_control = sorted(res.headers.get("Cache-Control", "").split(", "))
         self.assertEqual(cache_control, ["no-cache", "private"])
         etag_demo = res.headers.get("ETag", "")
         self.assertTrue(etag_demo)
 
-        # request the document again, this time using the cache
         res = self.url_open(
             "/doc/index.json",
             headers={"If-None-Match": etag_demo},
@@ -234,7 +218,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertEqual(res.status_code, HTTPStatus.NOT_MODIFIED)
         self.assertFalse(res.content, "We should not have downloaded the document")
 
-        # request the document again, this time as admin
         self.authenticate("admin", "admin")
         res = self.url_open("/doc/index.json", allow_redirects=False)
         res.raise_for_status()
@@ -244,7 +227,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertNotEqual(etag_demo, etag_admin)
 
     def test_doc_model_etag_is_a_quoted_entity_tag(self):
-        """RFC 9110 wants an ETag quoted; a cache in front of us may insist."""
         self.authenticate("demo", "demo")
         res = self.url_open("/doc/res.partner.json", allow_redirects=False)
         res.raise_for_status()
@@ -255,20 +237,12 @@ class TestDoc(HttpCaseWithUserDemo):
         )
 
     def test_doc_index_no_cache_refreshes_stale_attachment(self):
-        """
-        A client sending ``Cache-Control: no-cache`` must always get the
-        freshly computed index, even if a (possibly stale) server-side
-        attachment already exists under the same cache key.
-        """
         self.authenticate("demo", "demo")
 
-        # Prime the server-side attachment cache.
         res = self.url_open("/doc/index.json", allow_redirects=False)
         res.raise_for_status()
         self.assertEqual(res.status_code, 200)
 
-        # Corrupt the cached attachment in place: this must never be served
-        # again once a client asks for a non-cached response.
         index_attach = (
             self.env["ir.attachment"]
             .sudo()
@@ -291,11 +265,6 @@ class TestDoc(HttpCaseWithUserDemo):
         )
 
     def test_doc_index_is_cached_once_per_audience(self):
-        """A second request reuses the attachment instead of storing another.
-
-        Without that, every concurrent first request stores a duplicate row
-        under the same name and nothing ever collects them.
-        """
         Attachment = self.env["ir.attachment"].sudo()
         Attachment.search([("name", "like", "odoo-doc-index-%")]).unlink()
         self.authenticate("demo", "demo")
@@ -306,12 +275,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertEqual(len(names), 1)
 
     def test_an_acl_write_invalidates_a_cache_group_the_key_tracks(self):
-        """First half of the staleness guarantee: the ORM tells us.
-
-        An ``ir.access`` write invalidates a cache group; if that group
-        is not one the key is built from, a reader who has just lost access to
-        a model keeps being served a document that still lists it.
-        """
         self.env.registry.cache_invalidated.clear()
         self.env["ir.access"].sudo().search(
             [("model_id.model", "=", "res.country"), ("kind", "=", "permission")],
@@ -325,12 +288,6 @@ class TestDoc(HttpCaseWithUserDemo):
         )
 
     def test_the_cache_generation_moves_with_the_groups_it_tracks(self):
-        """Second half: a moved sequence is a new generation.
-
-        And `default` deliberately does not move it -- that group is bumped by
-        ordinary ORM cache invalidation, which cannot change a line of the
-        document but would rebuild a multi-megabyte index.
-        """
         registry_sequence, sequences = self.env.registry.get_sequences(self.env.cr)
         baseline = doc_cache_generation(self.env)
 
@@ -369,12 +326,15 @@ class TestDoc(HttpCaseWithUserDemo):
                 continue
             with self.subTest(method=name):
                 self.assertEqual(
-                    clean_doc(reflect_callable(method).as_dict()),
+                    clean_doc(
+                        reflect_callable(
+                            method, docstring=DOCSTRING_FIXTURES.get(name)
+                        ).as_dict()
+                    ),
                     clean_doc(method.expected),
                 )
 
     def test_ghost_model_robustness(self):
-        """/doc/index.json skips ir.model rows that are absent from the registry."""
 
         ghost_model_name = "ir.min.cron.mixin.test.ghost"
         self.env["ir.model"].create(
@@ -417,25 +377,31 @@ class TestDoc(HttpCaseWithUserDemo):
     def test_describing_docstring_borrows_the_nearest_one(self):
         class Base:
             def name_search(self):
-                """Introduced here, documented here."""
+                pass
 
         class Middle(Base):
             def name_search(self):
-                """The most derived prose wins."""
+                pass
 
         class Leaf(Middle):
             def name_search(self):
                 pass
 
         definers = [Leaf, Middle, Base]
-        self.assertEqual(
-            _describing_docstring(definers, "name_search"),
-            "The most derived prose wins.",
-        )
-        self.assertEqual(
-            _describing_docstring([Leaf, Base], "name_search"),
-            "Introduced here, documented here.",
-        )
+        with (
+            patch.object(
+                Base.name_search, "__doc__", "Introduced here, documented here."
+            ),
+            patch.object(Middle.name_search, "__doc__", "The most derived prose wins."),
+        ):
+            self.assertEqual(
+                _describing_docstring(definers, "name_search"),
+                "The most derived prose wins.",
+            )
+            self.assertEqual(
+                _describing_docstring([Leaf, Base], "name_search"),
+                "Introduced here, documented here.",
+            )
         self.assertIsNone(_describing_docstring([Leaf], "name_search"))
 
     def test_describe_method_provenance_is_the_introducing_layer(self):
@@ -443,10 +409,6 @@ class TestDoc(HttpCaseWithUserDemo):
         self.assertEqual(described["module"], "core")
 
     def test_describe_method_keeps_the_introducing_signature(self):
-        """The signature comes from the base, which is the complete one.
-
-        An override narrowed to ``(*args, **kwargs)`` documents nothing useful.
-        """
         described = describe_method(self.env["res.partner"], "search")
         self.assertEqual(
             described["signature"],
@@ -454,12 +416,6 @@ class TestDoc(HttpCaseWithUserDemo):
         )
 
     def test_model_doc_is_the_model_s_own(self):
-        """A mixin's prose is not the model's documentation.
-
-        Every mixin `res.partner` inherits sits in the same MRO with its own
-        docstring; walking it blindly documents Contact with `mixin.mail.thread`'s
-        "allow sending messages related to the current model".
-        """
         from odoo.addons.rpc.tools.registry import describe_model_doc
 
         Partner = self.env["res.partner"]
@@ -472,11 +428,8 @@ class TestDoc(HttpCaseWithUserDemo):
                         self.assertNotIn(mixin_doc.strip()[:40], doc)
 
     def test_model_doc_of_a_documented_model(self):
-        """A class that documents itself has that prose published."""
         from odoo.addons.rpc.tools.registry import describe_model_doc
 
-        # A throwaway model class carrying a docstring: that is the prose the
-        # page must publish.
         FakeCls = type(
             "DocumentedDummy",
             (Model,),

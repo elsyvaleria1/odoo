@@ -194,8 +194,6 @@ class MlRouter:
         provider_code=None,
         preferred=None,
     ):
-        """The model that would serve `operation` for this purpose: the kind
-        and capabilities an operation needs are the router's to know."""
         kinds, capabilities = self._selection_of(operation, images)
         return self.select_model(
             kinds,
@@ -392,8 +390,6 @@ class MlRouter:
             )
             for provider in providers - keyless
         }
-        # One read for every credential; each came from its own search, so reading
-        # the field record by record would issue one query per provider.
         Credential.union(*credential_of.values()).mapped("date_expiration")
         return keyless | self._catalogue("integration.ml.provider").union(
             *(
@@ -433,8 +429,6 @@ class MlRouter:
         return ai_models.sorted(balanced_score, reverse=True)
 
     def _catalogue(self, model_name):
-        # which model, provider and key serve a request is configuration, read
-        # for whoever asks; the policy for the purpose is what decides
         return self.env[model_name].with_privilege(
             "integration_machine_learning.privilege_route_ml",
             reason="route a request to the provider its purpose may reach",

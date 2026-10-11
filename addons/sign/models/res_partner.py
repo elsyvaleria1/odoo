@@ -49,7 +49,6 @@ class ResPartner(models.Model):
     def write(self, vals):
         partners_email_changed = False
         if vals.get("email"):
-            # Email is changed by removing it or changing characters (not casing).
             partners_email_changed = self.filtered(
                 lambda r: not r.email or r.email.lower() != vals["email"].lower()
             )

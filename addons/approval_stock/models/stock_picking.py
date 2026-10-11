@@ -129,8 +129,6 @@ class StockPicking(models.Model):
         scheduled = (
             format_datetime(self.env, self.date_planned)
             if self.date_planned
-            # Same wording the document mixin already translates for an absent
-            # deadline, so the two blocks read alike once both are catalogued.
             else self.env._("Not specified")
         )
         transfer_label = escape(self.env._("Stock Transfer"))
@@ -246,17 +244,10 @@ class StockPicking(models.Model):
         return result
 
     def _check_before_approval_gate(self) -> None:
-        # Validation checks that must fail in the operator's face, not after
-        # approval inside the sudo() side effect, where a UserError only
-        # becomes a chatter note. Modules extend this hook and keep their
-        # button_validate override for the path without approval. This module
-        # sits first in the MRO, so the chain is continued explicitly:
-        # otherwise the overrides declared by later modules never run.
-        # A delivery that must travel in a departed trip is refused here too.
         self._check_dispatch_requirements()
         parent = getattr(super(), "_check_before_approval_gate", None)
         if parent:
-            parent()  # pylint: disable=not-callable  (getattr default is None; the guard above settles it)
+            parent()
 
     def _check_before_approval(self, verb: str) -> None:
         super()._check_before_approval(verb)
@@ -282,10 +273,6 @@ class StockPicking(models.Model):
     def _check_approval_covers(self, operation: str) -> None:
         super()._check_approval_covers(operation)
         approved = dict(self.approval_request_id.operation_snapshot or {})
-        # Sum both sides per product: dict() over the snapshot pairs would keep
-        # only one quantity per product, so a product spread over two
-        # non-merging moves could move more than the grant, each move passing
-        # against the largest pair alone.
         demanded: dict[int, float] = {}
         for product_id, quantity in approved.get("moves") or ():
             demanded[product_id] = demanded.get(product_id, 0.0) + quantity

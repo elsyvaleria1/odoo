@@ -1923,7 +1923,6 @@ class TestSaleToInvoice(TestSaleCommon):
             .create_invoices()
         )
 
-        # the draft invoice claims the whole line and invoices none of it
         self.assertEqual(sol_prod_deliver.qty_invoiced, 0.0)
         self.assertEqual(sol_prod_deliver.qty_invoiced_draft, 5.0)
         self.assertEqual(sol_prod_deliver.amount_taxinc_to_invoice, 0.0)

@@ -1,52 +1,16 @@
 def get_publishable_key(provider_sudo):
-    """Return the publishable key for Stripe.
-
-    Note: This method serves as a hook for modules that would fully implement Stripe Connect.
-
-    :param recordset provider_sudo: The provider on which the key should be read, as a sudoed
-                                    `payment.provider` record.
-    :return: The publishable key
-    :rtype: str
-    """
     return provider_sudo.stripe_publishable_key
 
 
 def get_secret_key(provider_sudo):
-    """Return the secret key for Stripe.
-
-    Note: This method serves as a hook for modules that would fully implement Stripe Connect.
-
-    :param recordset provider_sudo: The provider on which the key should be read, as a sudoed
-                                    `payment.provider` record.
-    :return: The secret key
-    :rtype: str
-    """
     return provider_sudo.stripe_secret_key
 
 
 def get_webhook_secret(provider_sudo):
-    """Return the webhook secret for Stripe.
-
-    Note: This method serves as a hook for modules that would fully implement Stripe Connect.
-
-    :param recordset provider_sudo: The provider on which the key should be read, as a sudoed
-                                    `payment.provider` record.
-    :returns: The webhook secret
-    :rtype: str
-    """
     return provider_sudo.stripe_webhook_secret
 
 
 def include_shipping_address(tx_sudo):
-    """Include the shipping address of the related sales order or invoice to the payload of the API
-    request. If no related sales order or invoice exists, the addres is not included.
-
-    Note: `self.check_singleton()`
-
-    :param payment.transaction tx_sudo: The sudoed transaction of the payment.
-    :return: The subset of the API payload that includes the billing and delivery addresses.
-    :rtype: dict
-    """
     tx_sudo.check_singleton()
 
     if "sale_order_ids" in tx_sudo._fields and tx_sudo.sale_order_ids:
@@ -59,12 +23,6 @@ def include_shipping_address(tx_sudo):
 
 
 def format_shipping_address(shipping_partner):
-    """Format the shipping address to comply with the payload structure of the API request.
-
-    :param res.partner shipping_partner: The shipping partner.
-    :return: The formatted shipping address.
-    :rtype: dict
-    """
     return {
         "shipping[address][city]": shipping_partner.city or "",
         "shipping[address][country]": shipping_partner.country_id.code or "",

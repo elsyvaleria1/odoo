@@ -197,7 +197,6 @@ class TestBankStatementLineRequired(AccountApprovalCommon):
         )
 
     def test_approve_blocked_without_bsl(self):
-        # an amount no transaction fits: the one that fits would be assigned
         request = self._new_request("Blocked", self.category_bsl_required, amount=777.0)
         with self.assertRaises(UserError, msg="Approval must be blocked"):
             request.with_user(self.approver).action_approve()

@@ -42,14 +42,12 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
     def test_template(self):
-        """Test behaviour of on_change_template"""
         Subscription = self.env["sale.order"]
         self.assertEqual(
             self.subscription.notes,
             Markup("<p>original subscription description</p>"),
             "Original subscription note",
         )
-        # on_change_template on cached record (NOT present in the db)
         temp = Subscription.new(
             {"name": "CachedSubscription", "partner_id": self.user_portal.partner_id.id}
         )
@@ -62,14 +60,12 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_template_without_selected_partner(self):
-        """Create a subscription by choosing a template before the customer"""
         with Form(self.env["sale.order"]) as subscription:
             subscription.template_id = self.subscription_tmpl
-            subscription.partner_id = self.partner  # mandatory to have no error
+            subscription.partner_id = self.partner
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
     def test_limited_service_sale_order(self):
-        """Test behaviour of on_change_template"""
         with freeze_time("2021-01-03"):
             sub = self.subscription
             sub.line_ids = [Command.clear()]
@@ -104,12 +100,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertAlmostEqual(inv.amount_untaxed, 84)
 
         with freeze_time("2021-02-03"):
-            # February
             inv = sub._create_recurring_invoice()
             self.assertAlmostEqual(inv.amount_untaxed, 84)
 
         with freeze_time("2021-03-03"):
-            # March
             inv = sub._create_recurring_invoice()
             self.assertAlmostEqual(
                 inv.amount_untaxed,
@@ -119,19 +113,14 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_sale_subscription_set_date(self):
-        """Test case to verify that updating the `start_date` on a copied upsell sale order
-        correctly sets the new date in the subscription."""
         with freeze_time("2024-11-01"):
             self.subscription.action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
 
         with freeze_time("2024-11-11"):
-            # Prepare the upsell order from the subscription
             action = self.subscription.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
-            # Copy the upsell order
             upsell_so_new = upsell_so.copy()
-            # Set a new start date on the copied upsell order
             new_start_date = fields.Date.from_string("2024-11-12")
             upsell_so_new.write({"start_date": new_start_date})
             self.assertEqual(
@@ -165,8 +154,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_recurring_revenue(self):
-        """Test computation of recurring revenue"""
-        # Initial subscription is $100/y
         self.subscription_tmpl.write({"duration_value": 1, "duration_unit": "year"})
         self.subscription.write(
             {
@@ -191,21 +178,18 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             700,
             msg="Half because invoice every two months",
         )
-        # Change periodicity
         self.subscription.line_ids.product_id.subscription_rule_ids = [
             (6, 0, 0)
-        ]  # remove all pricings to fallback on list price
+        ]
         self.subscription.plan_id = self.plan_year
         self.assertAlmostEqual(
             self.subscription.amount_untaxed,
             70,
             msg="Recompute price_unit : 50 (product) + 20 (product2)",
         )
-        # 1200 over 4 year = 25/year + 100 per month
         self.assertAlmostEqual(self.subscription.recurring_monthly, 5.84, msg="70 / 12")
 
     def test_recurring_total(self):
-        """Test rounding of (non-) recurring total"""
         self.company.write(
             {
                 "currency_id": self.env.ref("base.BGN").id,
@@ -266,9 +250,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.subscription.action_confirm()
         self.env["sale.order"]._cron_update_kpi()
 
-        # 16 to 6 weeks: 80
-        # 6 to 2 weeks: 100
-        # 2weeks - today : 120
         date_log = datetime.date.today() - relativedelta(weeks=16)
         self.env["sale.order.log"].sudo().create(
             {
@@ -349,13 +330,11 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         sub_form.template_id = recurring_bound_tmpl
         sub = sub_form.save()
         sub._onchange_template_id()
-        # The end date is set upon confirmation
         sub.action_confirm()
         self.assertEqual(sub.template_id.is_unlimited, False)
         self.assertIsInstance(sub.end_date, datetime.date)
 
     def test_changed_next_invoice_date(self):
-        # Test wizard to change next_invoice_date manually
         with freeze_time("2022-01-01"):
             self.subscription.write({"start_date": False, "next_invoice_date": False})
             self.env["sale.order.line"].create(
@@ -377,18 +356,12 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertEqual(
                 self.subscription.next_invoice_date, datetime.date(2022, 2, 1)
             )
-            # We decide to invoice the monthly subscription on the 5 of february
             self.subscription.next_invoice_date = fields.Date.from_string("2022-02-05")
-            # check the invoice state
             self.assertEqual(self.subscription.invoice_state, "done")
 
         with freeze_time("2022-02-01"):
-            # Nothing should be invoiced
             self.subscription._cron_recurring_create_invoice()
-            # next_invoice_date : 2022-02-05 but the previous invoice deferred_end_date was set on the 2022-02-01
-            # We can't prevent it to be re-invoiced.
             inv = self.subscription.invoice_ids.sorted("date")
-            # Nothing was invoiced
             self.assertEqual(inv.date, datetime.date(2022, 1, 1))
 
         with freeze_time("2022-02-05"):
@@ -398,8 +371,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertEqual(self.subscription.invoice_state, "done")
 
     def test_product_change(self):
-        """Check behaviour of the product onchange (taxes mostly)."""
-        # check default tax
         self.sub_product_tmpl.subscription_rule_ids = [
             Command.clear(),
             Command.create({"plan_id": self.plan_month.id, "fixed_price": 50}),
@@ -422,7 +393,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(
             sub.amount_total, 55.0, "Default tax for product should have been applied."
         )
-        # Change the product
         line_id = sub.line_ids.ids
         sub.write({"line_ids": [(1, line_id[0], {"product_id": self.product4.id})]})
         self.assertEqual(
@@ -438,11 +408,9 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_log_change_pricing(self):
-        """Test subscription log generation when template_id is changed"""
         self.sub_product_tmpl.subscription_rule_ids.fixed_price = (
-            120  # 120 for monthly and yearly
+            120
         )
-        # Create a subscription and add a line, should have logs with MMR 120
         subscription = self.env["sale.order"].create(
             {
                 "name": "TestSubscription",
@@ -477,7 +445,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         subscription.plan_id = self.plan_year
         self.assertEqual(subscription.line_ids.recurring_monthly, 10)
         self.flush_tracking()
-        # Should get one more log with MRR 10 (so change is -110)
         self.assertEqual(
             len(subscription.order_log_ids),
             init_nb_log + 1,
@@ -489,8 +456,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_fiscal_position(self):
-        # Test that the fiscal postion FP is applied on recurring invoice.
-        # FP must mapped an included tax of 21% to an excluded one of 0%
         fp = self.env["account.fiscal.position"].create(
             {
                 "name": "fiscal position",
@@ -622,7 +587,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             }
         )
         with freeze_time("2021-01-03"):
-            # January
             sub.plan_id = self.plan_month.id
             sub.start_date = False
             sub.next_invoice_date = False
@@ -646,7 +610,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             ]
             sub.action_confirm()
             inv = sub._create_recurring_invoice()
-            # We only invoice what we deliver
             self.assertEqual(sub.line_ids.mapped("qty_invoiced"), [0, 1])
             self.assertEqual(sub.line_ids.mapped("qty_to_invoice"), [0, 0])
             self.assertEqual(sub.line_ids.mapped("qty_transferred"), [0, 0])
@@ -654,7 +617,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertEqual(sub.next_invoice_date, datetime.date(2021, 2, 3))
 
         with freeze_time("2021-02-03"):
-            # Deliver some product
             sub.line_ids[0].qty_transferred = 1
             inv = sub._create_recurring_invoice()
             self.assertEqual(
@@ -767,10 +729,8 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(
             optional_lines.price_unit, 15, "The second pricing should be applied"
         )
-        # Note: the pricing_id on the line is not saved on the line, but it is used to calculate the price.
 
     def test_update_subscription_company(self):
-        """Update the taxes of confirmed lines when the subscription company is updated"""
         tax_group_1 = self.env["account.tax.group"].create(
             {
                 "name": "Test tax group",
@@ -896,8 +856,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_archive_partner_invoice_shipping(self):
-        # archived a partner must not remain set on invoicing/shipping address in subscription
-        # here, they are set manually on subscription
         self.subscription.action_confirm()
         self.subscription.write(
             {
@@ -930,8 +888,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.partner_a.child_ids.write({"active": False})
 
     def test_subscription_invoice_shipping_address(self):
-        """Test to check that subscription invoice first try to use partner_shipping_id and partner_id from
-        subscription"""
         partner = self.env["res.partner"].create(
             {
                 "name": "Stevie Nicks",
@@ -982,12 +938,11 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
         invoice_id = (
             subscription._create_invoices()
-        )  # force a new invoice with all lines
+        )
         self.assertEqual(invoice_id.partner_shipping_id.id, partner2.id)
         self.assertEqual(invoice_id.partner_id.id, partner.id)
 
     def test_subscription_starts_in_future(self):
-        """Start a subscription in 2 weeks. The next invoice date should be aligned with start_date"""
         with freeze_time("2022-05-15"):
             subscription = self.env["sale.order"].create(
                 {
@@ -1063,8 +1018,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         ):
             sub2 = self.subscription.copy()
             sub2.action_confirm()
-        # order linked to subscription with recurring product and no recurrence: it was created before the upgrade
-        # of sale.subscription into sale.order
         delivered_product_tmpl = self.ProductTmpl.create(
             {
                 "name": "Delivery product",
@@ -1078,7 +1031,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.product2.recurring_invoice = True
         sub.action_confirm()
 
-        # Simulate the order without recurrence but linked to a subscription
         order = self.env["sale.order"].create(
             {
                 "partner_id": self.user_portal.partner_id.id,
@@ -1101,7 +1053,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 ],
             }
         )
-        # Make sure the _constraint_subscription_recurrence is not triggered
         self.assertFalse(order.subscription_state)
         order.action_confirm()
         order.write(
@@ -1165,9 +1116,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.env["sale.order"]._cron_recurring_create_invoice()
             action = self.subscription.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
-            # Discount is 55.61: 83% for pro rata temporis and 10% coming from the parent order
-            # price_unit must be multiplied by (1-0.831) * 0,9
-            # 100 * [1 - ((1 - 0.831) * 0.9)] = ~84%
             discount = [round(v, 2) for v in upsell_so.line_ids.mapped("discount")]
             self.assertEqual(discount, [84.71, 84.71, 0])
 
@@ -1191,7 +1139,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_subscription_state(self):
-        # test default value for subscription_state
         sub_1 = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,
@@ -1250,7 +1197,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             "Draft subscription quotation without plan_id should lose subscription_state",
         )
         with self.assertRaises(UserError):
-            # an order without lines cannot be confirmed
             sub_2.action_confirm()
         self.assertFalse(
             sub_2.subscription_state,
@@ -1397,7 +1343,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
 
     def test_free_subscription(self):
         with freeze_time("2023-01-01"):
-            # We don't want to create invoice when the sum of recurring line is 0
             nr_product = self.env["product.template"].create(
                 {
                     "name": "Non recurring product",
@@ -1407,12 +1352,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     "invoice_policy": "ordered",
                 }
             )
-            # nr_product.taxes_id = False # we avoid using taxes in this example
             self.sub_product_tmpl.subscription_rule_ids.filtered(
                 lambda rule: rule.plan_id == self.plan_month
             ).fixed_price = 25
             self.product2.list_price = -25.0
-            # total = 0 & recurring amount = 0
             sub_0_0 = self.env["sale.order"].create(
                 {
                     "partner_id": self.partner.id,
@@ -1440,7 +1383,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     ],
                 }
             )
-            # total = 0 & recurring amount > 0
             sub_0_1 = self.env["sale.order"].create(
                 {
                     "partner_id": self.partner.id,
@@ -1466,7 +1408,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     ],
                 }
             )
-            # total > 0 & recurring amount = 0
             sub_1_0 = self.env["sale.order"].create(
                 {
                     "partner_id": self.partner.id,
@@ -1527,7 +1468,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 }
             )
 
-            # negative_nonrecurring_sub
             negative_nonrecurring_sub = self.env["sale.order"].create(
                 {
                     "partner_id": self.partner.id,
@@ -1631,7 +1571,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The recurring line should be invoiced",
             )
 
-            # Negative subscription will be invoiced by cron the next day
             negative_invoice = sub_negative_recurring._create_recurring_invoice()
             self.assertEqual(sub_negative_recurring.amount_total, -80)
             self.assertFalse(
@@ -1663,10 +1602,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_subscription_unlink_flow(self):
-        """
-        Check that the user receives the correct messages when he deletes a subscription.
-        Check that the flow to delete a subscription is confirm => close => cancel
-        """
         subscription_a = self.env["sale.order"].create(
             {
                 "partner_id": self.user_portal.partner_id.id,
@@ -1695,27 +1630,22 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         subscription_b._onchange_template_id()
         subscription_c._onchange_template_id()
         subscription_d._onchange_template_id()
-        # Subscription can be deleted if it is in draft
         subscription_a.unlink()
-        # Subscription cannot be deleted if it was confirmed once before and it is not closed
         subscription_b.action_confirm()
         with self.assertRaisesRegex(
             UserError,
             r"Oops! Before you can delete a confirmed subscription, you'll need to close and cancel it.",
         ):
             subscription_b.unlink()
-        # Subscription cannot be deleted if it is closed
         subscription_c.action_confirm()
         subscription_c.set_close()
         with self.assertRaisesRegex(UserError, r"Cannot delete confirmed"):
             subscription_c.unlink()
-        # Subscription can be deleted if it is cancel
         subscription_d.action_confirm()
         subscription_d._action_cancel()
         subscription_d.unlink()
 
     def test_subscription_change_partner(self):
-        # This test check that action_confirm is only called once on SO when the partner is updated.
         sub = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,
@@ -1784,7 +1714,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             close_reason_id = self.env.ref("sale_subscription.close_reason_1").id
             (sub | sub_mrr_change).set_close(close_reason_id=close_reason_id)
             self.flush_tracking()
-            # We change the quantity after cloing to see what happens to the logs when we reopen
             sub_mrr_change.line_ids.product_qty = 6
             self.flush_tracking()
             (sub | sub_mrr_change).set_close()
@@ -1874,7 +1803,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         sub_progress_no_invoice._action_cancel()
         self.assertEqual(sub_progress_no_invoice.state, "cancel")
         with self.assertRaises(ValidationError):
-            # You cannot cancel a subscription that has been invoiced
             sub_paused._action_cancel()
         sub_paused.subscription_state = "6_churn"
         self.assertEqual(sub_paused.state, "done")
@@ -1898,7 +1826,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(renewal_so.state, "done")
         self.assertTrue(renewal_so.locked)
         with self.assertRaises(ValidationError):
-            # You cannot cancel a subscription that has been invoiced
             renewal_so._action_cancel()
 
     def test_protected_close_reason(self):
@@ -1978,7 +1905,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         sub.line_ids = [
             Command.create(
                 {
-                    "product_id": self.product_a.id,  # non-subscription product
+                    "product_id": self.product_a.id,
                 }
             )
         ]
@@ -2100,10 +2027,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_plan_field_automatic_price_unit_update(self):
-        """
-        Assert that after changing the 'Recurrence' field of a subscription,
-        prices will recompute automatically ONLY for subscription products.
-        """
         self._enable_currency("EUR")
         self.env["product.pricelist.item"].create(
             [
@@ -2148,7 +2071,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
         sub.action_confirm()
         self.flush_tracking()
-        # Assert that order lines were created with correct pricing and currency.
         self.assertEqual(
             sub.line_ids[0].price_unit,
             100.0,
@@ -2160,7 +2082,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             "Simple product's order line must have its default price unit of 50.0 during creation.",
         )
 
-        # Change the 'Recurrence' field and check if price unit updated ONLY in the recurring order line.
         sub.plan_id = self.plan_year.id
         self.assertEqual(
             sub.line_ids[0].price_unit,
@@ -2173,7 +2094,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             "Simple product's order line must not update its price unit, it must be kept as 50.0 during the 'Recurrence' field changes.",
         )
 
-        # Update price of normal product and check if it is updated in recurrence (it should not!)
         sub.line_ids[1].product_id.list_price = 70.0
         self.assertEqual(
             sub.line_ids[1].price_unit,
@@ -2183,7 +2103,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.env["sale.order"]._cron_recurring_create_invoice()
         self.flush_tracking()
 
-        # Change again the 'Recurrence' field and check if the price unit update during renewal was done in the recurring order line.
         action = sub.prepare_renewal_order()
         renewal_so = self.env["sale.order"].browse(action["res_id"])
         renewal_so.plan_id = self.plan_month.id
@@ -2193,7 +2112,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             "Subscription product's order line must have its unit price as 100.0 after 'Recurrence' is changed to 'Monthly'.",
         )
 
-        # Change the 'Recurrence' field to yearly and ensure that price was updated accordingly for the subscription product.
         renewal_so.plan_id = self.plan_year.id
         self.assertEqual(
             renewal_so.line_ids[0].price_unit,
@@ -2202,11 +2120,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_new_plan_id_optional_products_price_update(self):
-        """
-        Assert that after changing the 'Recurrence' field of a subscription, prices will be recomputed
-        for Optional Products with time-based pricing in the subscription template.
-        """
-        # Define a subscription template with a optional product having time-based pricing.
         self.product.product_tmpl_id.subscription_rule_ids = [
             Command.clear(),
             Command.create(
@@ -2254,7 +2167,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 ],
             }
         )
-        # Create the subscription based on the subscription template.
         subscription = self.env["sale.order"].create(
             {
                 "name": "TestSubscription",
@@ -2267,7 +2179,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         subscription._onchange_template_id()
 
         optional_lines = self._get_optional_product_lines(subscription)
-        # Assert that optional product has its price updated after changing the 'recurrence' field.
         self.assertEqual(
             optional_lines.price_unit,
             150,
@@ -2366,10 +2277,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             all_subs.next_invoice_date = datetime.datetime(2023, 2, 1)
             self.flush_tracking()
         with freeze_time("2023-02-01"):
-            sub_negative_recurring.line_ids.product_qty = 6  # update quantity
+            sub_negative_recurring.line_ids.product_qty = 6
             negative_nonrecurring_sub.line_ids[1].product_qty = 4
             self.flush_tracking()
-            all_subs._create_recurring_invoice()  # should not create any invoice because negative
+            all_subs._create_recurring_invoice()
             self.flush_tracking()
 
         with freeze_time("2023-02-15"):
@@ -2455,10 +2366,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_recurring_plan_price_recalc_adding_optional_product(self):
-        """
-        Test that when an optional recurring product is added to a subscription sale order that its price unit is
-        correctly recalculated after subsequent edits to the order's recurring plan
-        """
         self.sub_product_tmpl.write(
             {
                 "subscription_rule_ids": [
@@ -2509,8 +2416,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(sale_order.line_ids[2].price_unit, 200.0)
 
     def test_subscription_lock_settings(self):
-        """The settings to automatically lock SO upon confirmation
-        should never be applied to subscription orders."""
         self.env.user.group_ids += self.env.ref("sale.group_auto_done_setting")
         self.subscription.write({"start_date": False, "next_invoice_date": False})
         self.subscription.action_confirm()
@@ -2542,7 +2447,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(result[1]["subscription_state"], "4_paused")
 
     def test_subscription_confirm_update_salesperson_on_partner(self):
-        """confirming sale order should update the salesperson on related partner."""
         self.assertFalse(self.subscription.partner_id.user_id)
         self.subscription.action_confirm()
         self.assertEqual(
@@ -2552,7 +2456,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_subscription_salesperson_changes_partner_saleperson(self):
-        """changing salesperson on confirmed subscription should change salesperson on related partner."""
         self.subscription.action_confirm()
         self.assertEqual(
             self.subscription.user_id,
@@ -2598,10 +2501,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_recurring_invoice_cron_trigger(self):
-        """
-        Test that the cron job to create recurring invoices is triggered only
-        when count of subscriptions to invoice is greater than batch size.
-        """
         SaleOrder = self.env["sale.order"]
         with freeze_time("2024-05-01"):
             subscriptions = []
@@ -2624,7 +2523,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 )
                 subscriptions[-1].action_confirm()
 
-            # no subscription should be invoiced which means we should not trigger cron job
             all_subscriptions, need_cron_trigger = (
                 SaleOrder._recurring_invoice_get_subscriptions(batch_size=3)
             )
@@ -2632,10 +2530,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertFalse(all_subscriptions)
 
     def test_recurring_invoice_cron_batch(self):
-        """
-        Check all subscriptions are processed by the cron when there are more than batch_size of them and
-        some of them are filtered by _get_subscriptions_to_invoice.
-        """
         SaleOrder = self.env["sale.order"]
         subscriptions_to_invoice = self.env["sale.order"]
 
@@ -2698,7 +2592,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
         with freeze_time("2024-01-01"):
-            # Create a monthly subscription
             sub = self.env["sale.order"].create(
                 {
                     "partner_id": self.partner.id,
@@ -2706,7 +2599,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     "is_subscription": True,
                     "plan_id": self.plan_month.id,
                     "line_ids": [
-                        # Recurring product
                         Command.create(
                             {
                                 "name": self.product.name,
@@ -2715,7 +2607,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                                 "price_unit": 100,
                             }
                         ),
-                        # Non-recurring product
                         Command.create(
                             {
                                 "name": one_shot_product.name,
@@ -2729,7 +2620,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
             sub.action_confirm()
 
-            # Nothing has been invoiced --> total amount is due
             self.assertEqual(sub.amount_taxinc_to_invoice, 220.0)
             posted_invoice_lines = sub.line_ids.invoice_line_ids.filtered(
                 lambda line: line.parent_state == "posted"
@@ -2738,7 +2628,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
 
             sub._create_recurring_invoice()
 
-            # First invoice created, which includes both recurring and non-recurring products
             self.assertEqual(sub.amount_taxinc_to_invoice, 0.0)
             posted_invoice_lines = sub.line_ids.invoice_line_ids.filtered(
                 lambda line: line.parent_state == "posted"
@@ -2746,15 +2635,11 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.assertEqual(sum(posted_invoice_lines.mapped("price_total")), 220.0)
 
         with freeze_time("2024-02-01"):
-            # The un-invoiced balance is stored; a new day does not recompute it
-            # by itself, so ask for the recomputation the way a write would.
-            # It should be equal to the recurring amount, i.e. 110.0
             sub.line_ids._compute_invoice_amounts()
             self.assertEqual(sub.amount_taxinc_to_invoice, 110.0)
 
             sub._create_recurring_invoice()
 
-            # Second invoice created, which only includes the recurring product
             self.assertEqual(sub.amount_taxinc_to_invoice, 0.0)
             posted_invoice_lines = sub.line_ids.invoice_line_ids.filtered(
                 lambda line: line.parent_state == "posted"
@@ -2766,62 +2651,53 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.subscription.require_payment = True
             self.subscription.action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
-            # it should not create a invoice
             self.assertEqual(self.subscription.invoice_count, 0)
 
         with self.mock_mail_gateway():
             with freeze_time("2024-04-17"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer before 14
                 self.assertEqual(len(self._new_mails), 1)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-04-24"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer before 7 days
                 self.assertEqual(len(self._new_mails), 2)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-04-29"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer before 2 days
                 self.assertEqual(len(self._new_mails), 3)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-05-01"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer
                 self.assertEqual(len(self._new_mails), 4)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-05-03"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer
                 self.assertEqual(len(self._new_mails), 5)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-05-08"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer
                 self.assertEqual(len(self._new_mails), 6)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-05-15"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it will send payment reminder mail to customer
                 self.assertEqual(len(self._new_mails), 7)
                 self.assertEqual(
                     self.subscription.last_reminder_date, fields.Date.today()
                 )
             with freeze_time("2024-05-16"):
                 self.env["sale.order"]._cron_recurring_send_payment_reminder()
-                # it should close the subscription
                 self.assertEqual(self.subscription.subscription_state, "6_churn")
 
     def test_cron_recurring_send_payment_reminder_failure(self):
@@ -2837,9 +2713,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 )
                 self.assertEqual(len(self._new_mails), 1)
             with freeze_time("2024-04-25"):
-                # we will set lastcall of cron to 23/4.
-                # if cron run on 24/4 then it should send reminder on that day but we skip 24/4 and run the cron on 25/4
-                # it should send reminder mail on 25/4 as the cron failed to run on 24/4.
                 self.env.ref(
                     "sale_subscription.send_payment_reminder"
                 ).lastcall = datetime.datetime(2024, 4, 23, 0, 0, 0)
@@ -2951,7 +2824,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
             sub_6.action_confirm()
 
-            # filter out subscription for which "_create_recurring_invoice" cron should run
             all_subscriptions, need_cron_trigger = (
                 SaleOrder._recurring_invoice_get_subscriptions()
             )
@@ -2967,7 +2839,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "second subscription should not filtered in this domain",
             )
 
-            # filter out subscription for which "_cron_recurring_send_payment_reminder" cron should run
             parameters = SaleOrder._subscription_reminder_parameters()
             send_reminder_sub = SaleOrder.search(parameters["domain"])
             self.assertEqual(
@@ -2976,7 +2847,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "subscriptions are not filtered correctly.",
             )
 
-            # run both the crons
             with patch(
                 "odoo.addons.sale_subscription.models.sale_order.SaleOrder._do_payment",
                 wraps=self._mock_subscription_do_payment,
@@ -2988,17 +2858,14 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             SaleOrder._cron_recurring_send_payment_reminder()
 
         with freeze_time("2024-05-03"):
-            # Filter out subscription for which "_create_recurring_invoice" cron should run
             all_subscriptions, need_cron_trigger = (
                 SaleOrder._recurring_invoice_get_subscriptions()
             )
             self.assertFalse(need_cron_trigger)
-            # No subscription should be filterd out.
             self.assertFalse(
                 all_subscriptions, "subscriptions are not filtered correctly."
             )
 
-            # Filter out subscription for which "_cron_recurring_send_payment_reminder" cron should run
             parameters = SaleOrder._subscription_reminder_parameters()
             send_reminder_sub = SaleOrder.search(parameters["domain"])
             self.assertEqual(
@@ -3010,12 +2877,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             SaleOrder._cron_recurring_send_payment_reminder()
 
         with freeze_time("2024-06-01"):
-            # filter out subscription for which "_create_recurring_invoice" cron should run
             all_subscriptions, need_cron_trigger = (
                 SaleOrder._recurring_invoice_get_subscriptions()
             )
             self.assertFalse(need_cron_trigger)
-            # sub 5 should be invoiced only for first time after we will send email for payment reminder
             self.assertEqual(
                 [sub_6.id, sub_4.id, sub_3.id, sub_1.id],
                 all_subscriptions.ids,
@@ -3027,7 +2892,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "second subscription should not filtered in this domain",
             )
 
-            # filter out subscription for which "_cron_recurring_send_payment_reminder" cron should run
             parameters = SaleOrder._subscription_reminder_parameters()
             send_reminder_sub = SaleOrder.search(parameters["domain"])
             self.assertEqual(
@@ -3036,7 +2900,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "subscriptions are not filtered correctly.",
             )
 
-            # run both the crons
             with patch(
                 "odoo.addons.sale_subscription.models.sale_order.SaleOrder._do_payment",
                 wraps=self._mock_subscription_do_payment,
@@ -3102,10 +2965,8 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "Last invoiced date is reset to previous value",
             )
             inv.action_cancel()
-            # user update the next invoice date to recreate it
             subscription.next_invoice_date = datetime.date(2024, 10, 1)
 
-            # with freeze_time("2024-11-01"):
             self.assertEqual(
                 subscription.line_ids.last_invoiced_date,
                 datetime.date(2024, 9, 30),
@@ -3126,7 +2987,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "Last invoiced date is updated",
             )
             inv.payment_state = "paid"
-            # We refund the invoice
             refund_wizard = (
                 self.env["wizard.account.move.reverse"]
                 .with_context(active_model="account.move", active_ids=inv.ids)
@@ -3145,7 +3005,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The initial move should be reversed",
             )
             refund_move._post()
-            # user update the next invoice date to recreate it
             subscription.next_invoice_date = datetime.date(2024, 11, 1)
             self.assertEqual(
                 subscription.line_ids.last_invoiced_date,
@@ -3160,7 +3019,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_invoiced_log(self):
-        # make sure that invoiced log are counted but not manual changes
         context_mail = {"tracking_disable": False}
         with freeze_time("2025-01-01"):
             subscription = (
@@ -3208,7 +3066,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
         with freeze_time("2025-01-10"):
-            # update the quantity without upselling. This is a manual change.
             previous_logs = subscription.order_log_ids
             subscription.line_ids.filtered("product_id").product_qty = 3
             self.flush_tracking()
@@ -3232,12 +3089,12 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             self.flush_tracking()
             second_manual_logs = subscription.order_log_ids - previous_logs
             previous_logs = subscription.order_log_ids
-            upsell_so.action_confirm()  # new log should have date_effective only when the upsell is invoiced
+            upsell_so.action_confirm()
             self.flush_tracking()
             upsell_logs = subscription.order_log_ids - previous_logs
             inv = upsell_so._create_invoices()
             inv._post()
-            self.flush_tracking()  # make sure to launch _update_date_effective
+            self.flush_tracking()
             self.assertEqual(upsell_logs.date_effective, datetime.date(2025, 1, 15))
             self.assertFalse(
                 second_manual_logs.date_effective, "last manual update is not invoiced"
@@ -3263,12 +3120,9 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 [datetime.date(2025, 2, 1), datetime.date(2025, 2, 1)],
                 "Transfer logs share the move date",
             )
-            # self.assertEqual(first_manual_logs.date_effective, datetime.date(2025, 2, 1), "Previous manual log is effective at renewal date")
 
     @freeze_time("2024-08-13")
     def test_uninvoiced_upsell_close_log(self):
-        """Test that the behaviour of effective date is correct even if some items are non invoiced (no effective date).
-        Uninvoiced items needs to be kept uninvoiced in case of churn and reopen."""
         self.subscription_tmpl.plan_id = self.plan_year.id
         subscription = self.env["sale.order"].create(
             {
@@ -3302,10 +3156,9 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         log1 = subscription.order_log_ids
         self.assertFalse(log1.date_effective)
         subscription._create_invoices()._post()
-        self.flush_tracking()  # make sure to launch _update_date_effective
+        self.flush_tracking()
         self.assertEqual(log1.date_effective, datetime.date(2025, 1, 1))
 
-        # Test upselling with after a manual change
         order_line = subscription.line_ids
         order_line.product_qty = 2
         self.flush_tracking()
@@ -3322,11 +3175,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(round(log3.amount_signed, 2), 16.66)
         self.assertFalse(log3.date_effective)
         upsell_so._create_invoices()._post()
-        self.flush_tracking()  # make sure to launch _update_date_effective
+        self.flush_tracking()
         self.assertFalse(log2.date_effective)
         self.assertEqual(log3.date_effective, datetime.date(2025, 4, 1))
 
-        # Test churn and reopen
         subscription.set_close()
         self.flush_tracking()
         log4 = subscription.order_log_ids.sorted("id")[-1]
@@ -3341,7 +3193,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(log3.date_effective, datetime.date(2025, 4, 1))
         self.assertEqual(log1.date_effective, datetime.date(2025, 1, 1))
 
-        # Test renewal and cancel
         res = subscription.prepare_renewal_order()
         renewal_order = self.env["sale.order"].browse(res["res_id"])
         self.flush_tracking()
@@ -3360,12 +3211,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(log1.date_effective, datetime.date(2025, 1, 1))
 
     def test_is_closing(self):
-        """
-        Test subscription to ensure is_closing is set correctly based on
-        subscription state, recurring invoices, and user-closing options.
-        """
         with freeze_time("2024-07-30"):
-            # Confirm subscription and generate an recurring invoice
             subscription = self.subscription
             subscription.action_confirm()
             subscription._create_recurring_invoice()
@@ -3382,7 +3228,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             subscription.plan_id.user_closable = True
             subscription.plan_id.user_closable_options = "end_of_period"
             subscription.with_context(allow_future_end_date=True).set_close()
-            # Verify that the subscription is now marked for closure
             self.assertTrue(
                 subscription.is_closing, "Subscription should be marked for closure."
             )
@@ -3390,7 +3235,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         with freeze_time("2024-08-30"):
             self.env["sale.order"]._cron_subscription_expiration()
 
-            # Validate that the subscription is closed and is not marked for closure
             self.assertFalse(
                 subscription.is_closing,
                 "Subscription should not be marked for closure after churn.",
@@ -3490,7 +3334,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 Command.create(
                     {
                         "name": "Non recurring line",
-                        "product_id": self.product5.id,  # non recurring product
+                        "product_id": self.product5.id,
                         "product_qty": 1,
                     }
                 )
@@ -3522,7 +3366,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 Command.create(
                     {
                         "name": "Non recurring line",
-                        "product_id": self.product5.id,  # non recurring product
+                        "product_id": self.product5.id,
                         "product_qty": 2,
                     }
                 )
@@ -3546,10 +3390,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_postpaid_next_invoice_date(self):
-        """ " Ensure the next invoice date is correctly updated for postpaid orders
-        This test fix a bug where a new invoice was created every day if postpaid line were mixed with non recurring lines
-        """
-        # FIXME ARJ, should be an at_install test
         if self.env.ref("base.module_sale_subscription_stock").state == "installed":
             self.skipTest(
                 "`stock` module is installed. The invoice amount depends on the stock.move validation"
@@ -3642,7 +3482,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             }
         )
         product = delivered_product_tmpl.product_variant_id
-        # create a subscription with a custom price_unit
         subscription = self.env["sale.order"].create(
             {
                 "name": "Original subscription",
@@ -3666,7 +3505,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         subscription.action_confirm()
         move = subscription._create_invoices()
         move.action_post()
-        # Create two upsells.
         action = subscription.prepare_upsell_order()
         upsell = self.env["sale.order"].browse(action["res_id"])
         upsell.name = "UPSELL 1"
@@ -3683,7 +3521,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             subscription.line_ids,
             "The parent_line_id should be correctly set",
         )
-        # upsell confirmation
         upsell.action_confirm()
         self.assertEqual(
             upsell.line_ids.price_unit,
@@ -3705,7 +3542,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             subscription.line_ids,
             "The unit price should be the same as the original subscription",
         )
-        # Verify the other one is cancelled
         self.assertEqual(
             upsell2.state,
             "cancel",
@@ -3713,7 +3549,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_not_override_end_date_in_expiration_cron(self):
-        """Ensure the expiration cron does not override an existing past end_date."""
         with freeze_time("2025-05-05"):
             self.subscription.write({"end_date": datetime.date(2025, 6, 4)})
             self.subscription.action_confirm()
@@ -3736,7 +3571,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_null_ordered_quantity(self):
-        """Null recurring line should not appear in the invoice"""
         with freeze_time("2025-06-03"):
             self.assertEqual(
                 self.product3.invoice_policy,
@@ -3814,11 +3648,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_churn_discount_removal(self):
-        """Test the following flow:
-            Sub with first year discount -> Renew -> Discount is removed on original sub -> Cancel the renewal -> Churn the original sub
-        This flow was causing an issue where the churn log amount was set as the full amount instead of the discounted amount which resulted negative MRR.
-        """
-        # create new subscription with discount
         self.product2.list_price = -1
         sub = self.env["sale.order"].create(
             {
@@ -3855,7 +3684,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
         sub._create_recurring_invoice()
 
-        # renew the subscription without discount
         action = sub.prepare_renewal_order()
         renewal_so = self.env["sale.order"].browse(action["res_id"])
         renewal_so.line_ids.filtered(lambda l: l.product_id == self.product2).unlink()
@@ -3863,25 +3691,17 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         renewal_so.action_confirm()
         self.flush_tracking()
 
-        # remove first year discount on original subscription
-        # shoudln't be doable normally but this simulate first year discount removal via cron
         sub.line_ids.filtered(lambda l: l.product_id == self.product2).unlink()
 
-        # cancel renewal
         self.flush_tracking()
         renewal_so._action_cancel()
         self.flush_tracking()
 
-        # churn
         sub.set_close()
         self.flush_tracking()
         self.assertEqual(sum(sub.order_log_ids.mapped("amount_signed")), 0)
 
     def test_subscription_discount_on_non_sub_lines(self):
-        """
-        Check that discounts manually set on non-subscription order lines are preserved after creating
-        the subscription and when closing it.
-        """
         DISCOUNT_10 = 10
         self.product2.recurring_invoice = False
 
@@ -3925,11 +3745,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_proper_date_effective(self):
-        """Make sure that the effective date is correct when the order is confirmed
-        and the first account.move are performed in the same transaction
-        (no flush between confirm and _post).
-        This flow can be done by paying/confirming a SO on the portal.
-        """
         self.subscription_tmpl.plan_id = self.plan_year.id
         subscription = self.env["sale.order"].create(
             {
@@ -3961,14 +3776,10 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.flush_tracking()
         log = subscription.order_log_ids
         self.assertEqual(log.date_effective, datetime.date(2025, 1, 1))
-        # Simulate a new transaction, without flush after précommit
         self.env.invalidate_all(flush=False)
         self.assertEqual(log.date_effective, datetime.date(2025, 1, 1))
 
     def test_product_subscription_pricing_copy(self):
-        """Check that product variants on product pricings after copying
-        a product template.
-        """
         product = self.product_tmpl_2
         product_attributes = self.env["product.attribute"].create(
             [
@@ -4014,7 +3825,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         pricings_2 = product.copy().subscription_rule_ids
         self.assertEqual(
             len(pricings_2),
-            8,  # 2 attributes * 2 values * 2 plans = 8 pricings
+            8,
             "copied product should get 8 pricings",
         )
         self.assertNotEqual(
@@ -4082,11 +3893,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_subscription_product_update_on_parent_line_in_upsell(self):
-        """
-        Check recurring product quantity on subscription after updating product
-        on parent line in upsell and confirm.
-        """
-        # Non-recurring product
         nr_product = self.env["product.product"].create(
             {
                 "name": "Non recurring product",
@@ -4095,7 +3901,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "list_price": 25,
             }
         )
-        # Subscription
         subscription = self.env["sale.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -4118,7 +3923,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(sub_line.product_qty, 2.0)
         self.env["sale.order"]._cron_recurring_create_invoice()
 
-        # Upsell
         action = subscription.prepare_upsell_order()
         upsell_so = self.env["sale.order"].browse(action["res_id"])
         self.assertEqual(
@@ -4133,17 +3937,14 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             upsell_order_line.product_qty, 0.0, "The upsell order has 0 quantity"
         )
 
-        # Update the existing line with non-recurring product and quantity
         upsell_order_line.product_id = nr_product
         upsell_order_line.product_qty = 11.0
 
-        # Confirm upsell
         upsell_so._confirm_upsell()
         upsell_line = upsell_so.line_ids.filtered(lambda line: not line.display_type)
         self.assertEqual(len(upsell_line), 1)
         self.assertFalse(upsell_line.parent_line_id)
         self.assertEqual(upsell_line.product_qty, 11.0)
-        # Check recurring product quantity after upsell
         self.assertEqual(len(subscription.line_ids), 1)
         self.assertEqual(
             subscription.line_ids.product_qty,
@@ -4152,10 +3953,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_partial_refund_reduces_invoiced_quantity_on_subscription(self):
-        """
-        Verify that a partial refund on a subscription invoice
-        correctly updates the invoiced quantity on the order line.
-        """
         with freeze_time("2024-09-01"):
             subscription = self.env["sale.order"].create(
                 {
@@ -4222,9 +4019,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_sale_subscription_optional_product_discount(self):
-        """
-        Check that the discount on an optional product is correctly applied when the option is added to a SO.
-        """
         subscription = self.env["sale.order"].create(
             {
                 "name": "Test subscription",
@@ -4249,7 +4043,7 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                     Command.create(
                         {
                             "product_id": self.product2.id,
-                            "discount": 20,  # 20% discount
+                            "discount": 20,
                         }
                     ),
                 ],
@@ -4259,12 +4053,8 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         self.assertEqual(subscription.line_ids.mapped("discount"), [0, 0, 20])
 
     def test_correct_functioning_of_proration(self):
-        """
-        Check that the behavior of the allow_prorated_price flag is correct
-        """
 
         with freeze_time("2025-08-19"):
-            # Case 1: Service product with default flag (on)
 
             product_tmpl1 = self.ProductTmpl.create(
                 {
@@ -4303,7 +4093,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The product is a default service, therefore it should be prorated.",
             )
 
-            # Case 2: Service product with flag turned off
 
             product_tmpl2 = self.ProductTmpl.create(
                 {
@@ -4341,7 +4130,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The invoiced amount should be 10 because the product is a service with the proration manually turned off.",
             )
 
-            # Case 3: Good product with default flag (off)
 
             product_tmpl3 = self.ProductTmpl.create(
                 {
@@ -4382,7 +4170,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The product is a good, so by default it should not be prorated.",
             )
 
-            # Case 4: Service product invoiced on delivery with default flag (off)
             product_tmpl4 = self.ProductTmpl.create(
                 {
                     "name": "Service Product Invoiced On Delivery",
@@ -4422,7 +4209,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
                 "The product is invoiced based on delivery, therefore it should not be prorated.",
             )
 
-            # Case 5: Non recurring product (flag off by default) + Recurring Service (flag on by default)
             product_tmpl5 = self.ProductTmpl.create(
                 {
                     "name": "Non Recurring Product",
@@ -4471,7 +4257,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
 
     @freeze_time("2025-09-15")
     def test_postpaid_first_day(self):
-        """Ensure the behavior is correct when all lines are postpaid and the contracts are aligned on first day of the month"""
         product_tmpl1 = self.ProductTmpl.create(
             {
                 "name": "Prorated Service Product",
@@ -4514,9 +4299,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         )
 
     def test_invoice_after_deleting_invoiced_line(self):
-        """Test that invoicing works correctly after deleting an already invoiced subscription line.
-        This test covers the fix for _get_max_invoiced_date when sale_line_ids is empty
-        """
         product_a = self.env["product.product"].create(
             {
                 "name": "Car Leasing (SUB)",
@@ -4626,10 +4408,6 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
             )
 
     def test_next_invoice_date_with_invoice_quantities_summing_to_zero(self):
-        """
-        Verify that the next invoice date is correctly updated when having a
-        subscription with several lines whose quantities add up to zero.
-        """
         with freeze_time("2024-09-01"):
             subscription = self.env["sale.order"].create(
                 {

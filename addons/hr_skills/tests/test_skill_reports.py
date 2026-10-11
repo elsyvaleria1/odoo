@@ -180,7 +180,6 @@ class TestCertificationReportAccess(SkillsCase):
         cls.env.flush_all()
 
     def test_the_report_is_scoped_like_its_sibling(self):
-        """The certification report had no access domain at all; its two siblings do."""
         certifications = (
             self.env["hr.employee.certification.report"]
             .with_user(self.onlooker)
@@ -198,14 +197,6 @@ class TestCertificationReportAccess(SkillsCase):
         )
 
     def test_the_rule_scopes_the_report_and_not_the_data(self):
-        """The same certifications stay readable through hr.employee.skill.
-
-        This is deliberate -- `hr_skill_rule_employee` grants base.group_user
-        read with domain [(1, '=', 1)], and hr.employee.certification_ids
-        surfaces the same rows on the profile page. The report rules make the
-        three report models consistent; they are not a confidentiality boundary,
-        and treating them as one would be wrong.
-        """
         rows = (
             self.env["hr.employee.skill"]
             .with_user(self.onlooker)
@@ -273,7 +264,6 @@ class TestCertificationReportAccess(SkillsCase):
         )
 
     def test_the_report_does_not_cross_companies(self):
-        """An HR user in one company must not see another company's rows."""
         other_company = self.env["res.company"].create({"name": "Other company"})
         elsewhere = self.env["hr.employee"].create(
             {"name": "Employee elsewhere", "company_id": other_company.id},

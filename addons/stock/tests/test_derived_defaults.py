@@ -3,26 +3,8 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.stock.tests.common import TestStockCommon
 
-# Stored computed fields whose recompute disagrees with storage, each with the
-# reason it is allowed to. `test_no_stored_derivation_disagrees_with_its_own_
-# compute` reads this, so a new entry is argued for here or not at all -- and
-# the two below are NOT the same kind of thing.
 RECOMPUTE_DRIFT_ALLOWED = {
-    # BY DESIGN. The drift IS the feature: `is_outdated` and the inventory
-    # conflict wizard detect a count taken against an on-hand that has since
-    # moved, by comparing `inventory_quantity - inventory_diff_quantity` with
-    # `quantity`. Adding `quantity` to this field's depends would make every
-    # conflict invisible.
     ("stock.quant", "inventory_diff_quantity"): "conflict detection depends on it",
-    # KNOWN HAZARD, not a feature and not yet decided. The compute is
-    # `self.inventory_quantity_set = True` with no condition, so it is a
-    # mark-on-write hook wearing a compute's clothes: any recompute sets it on
-    # every quant, including those `action_clear_inventory_quantity` has just
-    # cleared. Measured: a never-counted quant of 100 flips to set=True and
-    # `is_outdated` True, which routes `action_apply_inventory` to the conflict
-    # wizard for every quant in the database. `inventory_diff_quantity` does
-    # NOT follow in the same pass -- measured 0.0, so no stock moves -- which
-    # is the only reason this is an annoyance rather than a data defect.
     ("stock.quant", "inventory_quantity_set"): "unconditional compute, upstream shape",
 }
 
@@ -51,7 +33,6 @@ class TestDerivedDefaults(TestStockCommon):
         )
 
     def _force_recompute(self, records, field_name):
-        """Run the field's own compute again over rows that already hold a value."""
         records.invalidate_recordset([field_name])
         records.env.add_to_compute(records._fields[field_name], records)
         records.flush_recordset([field_name])
@@ -62,14 +43,8 @@ class TestDerivedDefaults(TestStockCommon):
         self._force_recompute(record, field_name)
         return record[field_name]
 
-    # -- the compute is a default, not a definition -------------------------
 
     def test_a_no_op_code_write_keeps_a_multi_step_warehouse_intact(self):
-        """The defect: `code` is the only trigger of the derivation, and the
-        derivation used to assign unconditionally. Writing `code` -- even to
-        the value it already holds -- reset Pack from (Packing Zone -> Output)
-        to (Stock -> Stock), and did the same to every other type of the
-        warehouse, silently undoing a multi-step configuration."""
         before = {
             picking_type: (
                 picking_type.default_location_src_id,
@@ -132,12 +107,8 @@ class TestDerivedDefaults(TestStockCommon):
         )
         self.assertEqual(self.pack_type.default_location_src_id, source)
 
-    # -- the depends names every input the compute reads --------------------
 
     def test_a_picking_state_follows_the_usage_of_its_source_location(self):
-        """`_compute_state` asks `location_id.is_reservation_bypass_required()`,
-        which reads `usage`. Declaring only `location_id` left a picking out of
-        a location that had become a bypass one stuck in `confirmed`."""
         source = self.StockLocationObj.create(
             {
                 "name": "Reclassified",
@@ -243,20 +214,6 @@ class TestDerivedDefaults(TestStockCommon):
         self.assertEqual(move.location_dest_id, relocated)
 
     def test_a_scrap_follows_the_locations_of_the_transfer_it_hangs_off(self):
-        """What the scrap's location does follow, and what it does not.
-
-        `_compute_location_id` reads `picking_id.state` to choose between the
-        transfer's source and its destination, and that read is deliberately
-        NOT declared -- declaring it made every write of a picking's state
-        search `stock.scrap` for dependents, which cost 3.67 queries per move
-        in `mrp`'s kit explosion against a guard of 1.0. So a scrap saved
-        against an in-progress transfer keeps the source it was given even
-        after that transfer is validated, and the two location dependencies
-        that are free are the ones declared. If that staleness is ever worth
-        curing, it wants resolving where the scrap is processed rather than a
-        trigger on a hot path -- and `location_id` is user-editable, so such a
-        cure must not clobber a location the user chose.
-        """
         receipt = self.PickingObj.create(
             {
                 "picking_type_id": self.picking_type_in.id,
@@ -289,12 +246,8 @@ class TestDerivedDefaults(TestStockCommon):
             "the scrap did not follow the transfer's source location",
         )
 
-    # -- a copied move still derives coherent locations ---------------------
 
     def test_a_copied_move_without_an_explicit_type_derives_its_locations(self):
-        """`picking_type_id` is precomputed so that the precomputed location
-        fields can declare it. A copy whose vals carry no operation type must
-        still land on the same locations as its original."""
         move = self.MoveObj.create(
             {
                 "product_id": self.product.id,
@@ -315,16 +268,8 @@ class TestDerivedDefaults(TestStockCommon):
         self.assertEqual(copied.location_id, move.location_id)
         self.assertEqual(copied.location_dest_id, move.location_dest_id)
 
-    # -- the general guard --------------------------------------------------
 
     def _build_sweep_fixture(self):
-        """Rows for the models the sweep would otherwise not reach.
-
-        Measured before this existed: on a fresh install `stock.picking`,
-        `stock.move`, `stock.move.line` and `stock.quant` hold **no rows**, so
-        33 of the 44 stored computes in the sweep's models were examined over
-        an empty recordset and the test passed by having nothing to look at.
-        """
         product = self.env["product.product"].create(
             {"name": "Sweep tracked", "is_storable": True, "tracking": "lot"}
         )
@@ -365,12 +310,6 @@ class TestDerivedDefaults(TestStockCommon):
         self.env.flush_all()
 
     def test_no_stored_derivation_disagrees_with_its_own_compute(self):
-        """The guard that would have caught the picking-type clobber.
-
-        A stored compute that, run again over an untouched row, produces a
-        different value is a clobber waiting for its trigger: the value is
-        right today only because nothing has recomputed it yet.
-        """
         self._build_sweep_fixture()
         drifted = []
         coverage = []
@@ -421,11 +360,6 @@ class TestDerivedDefaults(TestStockCommon):
                 "this sweep claims to cover",
             )
         self.assertEqual(drifted, [], "stored values a recompute would overwrite")
-        # A sweep that stops finding rows stops being a check and says so only
-        # by passing faster. Before `_build_sweep_fixture` existed this read
-        # 108 comparisons over 2 of the 8 models; it now reads 270 over all 8.
-        # The floor sits between the two so a collapse back to incidental
-        # install data fails rather than passes.
         self.assertGreater(checks, 200, f"sweep coverage collapsed: {coverage}")
 
 
@@ -558,14 +492,6 @@ class TestCategoryRouteInheritance(TestStockCommon):
         )
 
     def test_a_batch_read_inherits_the_same_routes_as_a_single_one(self):
-        """The regression this pins cost every descendant its ancestors' routes.
-
-        Computing `parent_route_ids` by reading `parent_id.total_route_ids` is
-        right one record at a time and wrong for a recordset: the parent's
-        total is still being computed, the in-progress value is empty, and the
-        descendants come back bare. `mapped()` is how route resolution reads
-        this, so the batch path is the one that matters.
-        """
         chain = self.categ_root | self.categ_child | self.categ_deep
         single = []
         for category in chain:
@@ -589,10 +515,6 @@ class TestCategoryRouteInheritance(TestStockCommon):
             )
 
     def test_the_search_does_not_re_enter_its_own_domain(self):
-        """`filtered_domain` on this leaf routes back through the field's own
-        `search=`. It used to, and every search raised `Domain nesting too deep
-        to optimize` -- reachable from a custom filter on the product form's
-        `route_from_categ_ids`."""
         found = self.env["product.category"].search(
             [("total_route_ids", "in", self.route_sel.ids)]
         )
@@ -626,11 +548,6 @@ class TestCategoryRouteInheritance(TestStockCommon):
                     self.assertEqual(by_search, expected)
 
     def test_a_link_the_fields_domain_hides_stays_hidden(self):
-        """`route_ids` carries `domain=[("product_categ_selectable", "=", True)]`
-        and a relational field's domain is applied on READ, so a row in the
-        relation table pointing at a non-selectable route is invisible to the
-        field. The search bounds its candidates with that table, which
-        over-approximates; the read must still decide."""
         hidden = self.env["stock.route"].create(
             {"name": "Categ hidden", "product_categ_selectable": False}
         )
@@ -809,8 +726,6 @@ class TestEditableDefaultsSurviveANoOpTrigger(TestStockCommon):
         )
 
     def test_a_real_warehouse_change_still_moves_the_rule(self):
-        """The guard keeps a location that is still inside the warehouse. One
-        that is not is exactly what a genuine warehouse change invalidates."""
         other = self.env["stock.warehouse"].create(
             {"name": "Reorder other WH", "code": "ROW"}
         )
@@ -872,8 +787,6 @@ class TestARerateDoesNotRewriteHistory(TestStockCommon):
         self.assertEqual(move.state, "done")
         self.assertEqual(move.product_qty, 20.0, "2 boxes of 10 units")
 
-        # allowed precisely because every move on this unit is done --
-        # `uom.uom.write` refuses a ratio change only while moves are open
         box.relative_factor = 20
         self.env.flush_all()
         self.env.invalidate_all()
@@ -973,8 +886,6 @@ class TestBatchIsCompanyScoped(TransactionCase):
             }
         )
         env.flush_all()
-        # a read that answers from the superuser's cache never reaches a rule,
-        # so the cache is dropped and the check is a search
         env.invalidate_all()
 
         def visible(model, records):
@@ -1052,9 +963,6 @@ class TestGatherPathsAgree(TestStockCommon):
                         for holder in (None, owner):
                             for strict in (False, True):
                                 combinations += 1
-                                # the necessary condition for the cache path;
-                                # without it both sides would search and the
-                                # comparison below would compare nothing
                                 if cache.is_covering(product, location, lot):
                                     covered += 1
                                 self.env.invalidate_all()
@@ -1100,9 +1008,6 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.unit = cls.env.ref("base.product_uom_unit")
-        # one unit is 0.125 of this, exactly representable in binary, so the
-        # gap to the stored value is exactly half an ulp -- the one case
-        # HALF-UP rounding sends away from zero
         cls.eighth = cls.env["uom.uom"].create(
             {
                 "name": "Eighth of a unit",
@@ -1146,8 +1051,6 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
         return move
 
     def test_the_fixture_still_sits_on_the_rounding_boundary(self):
-        """Without this the test below passes for the wrong reason: a fixture
-        whose sum happens to be exact would compare equal either way."""
         move = self._move_of_one_unit_measured_in_eighths()
         unrounded = sum(
             line.product_uom_id._get_quantity_in_unit(
@@ -1179,7 +1082,6 @@ class TestANoOpWriteOfQuantityMovesNoStock(TransactionCase):
         )
 
     def test_a_real_increase_still_reaches_the_move_lines(self):
-        """The rounding must not be bought by making the inverse inert."""
         move = self._move_of_one_unit_measured_in_eighths()
         move.quantity = 1.0
         self.env.flush_all()
@@ -1228,11 +1130,6 @@ class TestApplyingACountLandsOnIt(TransactionCase):
         self.assertEqual(quant.quantity, 11.0)
 
     def test_a_count_that_cannot_land_says_so_on_the_logic_channel(self):
-        """The first assertion records an OPEN DECISION, not a desired outcome:
-        an ordinary receipt of 1 unit of a product stocked in dozens makes a
-        quant of 0.0833..., and no adjustment can count it onto a round figure
-        while moves carry display precision. Until that is decided, the only
-        defensible position is that the drift must not be silent."""
         with self.assertLogs(
             "odoo.debug.logic.stock.stock_quant_inventory", "DEBUG"
         ) as captured:
@@ -1296,7 +1193,6 @@ class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
         return move
 
     def test_a_representable_remainder_conserves_exactly(self):
-        """Six units of a dozen is 0.5, which the move's own unit expresses."""
         move = self._confirmed_dozen_move()
         before = move.product_qty
         new = self.env["stock.move"].create(move._split(6.0))
@@ -1368,9 +1264,6 @@ class TestReservationAgreesWithTheQuant(TransactionCase):
         return sum(lines.mapped("quantity_product_uom"))
 
     def test_the_quant_and_its_lines_never_drift(self):
-        # short stock forces PARTIAL reservations, and thirds and sevenths make
-        # the reserved amounts unrepresentable at the display precision -- a
-        # sweep over round numbers would agree without proving anything
         scenarios = [
             ("plenty", 240.0, (1.0, 2.0, 3.0), None),
             ("short", 10.0, (1.0, 2.0, 3.0), None),

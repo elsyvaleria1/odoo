@@ -22,8 +22,6 @@ _debug = DebugLog(__name__)
 
 
 def _find_xsd_attachment(env: Environment, name: str) -> Any:
-    # a schema is stored beside no record; an attachment of a record that
-    # merely shares its file name is somebody's document, not a schema
     return env["ir.attachment"].search(
         [("name", "=", name), ("res_model", "=", False)], limit=1
     )
@@ -36,8 +34,6 @@ class odoo_resolver(etree.Resolver):
         self.prefix = prefix
 
     def resolve(self, url: str, id: object, context: object) -> object:
-        # A schema is stored under its file name, which is what an absolute
-        # schemaLocation (http://host/path/name.xsd) resolves to.
         for name in dict.fromkeys((url, url.rsplit("/", 1)[-1])):
             attachment_name = f"{self.prefix}.{name}" if self.prefix else name
             attachment = _find_xsd_attachment(self.env, attachment_name)

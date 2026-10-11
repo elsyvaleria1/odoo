@@ -9,7 +9,6 @@ from . import wizards
 
 
 def _account_loans_post_init(env) -> None:
-    # If in demo, import the demo amortization schedule in the loan
     if env.ref("base.module_account_loans").demo:
         _account_loans_import_loan_demo(
             env,
@@ -25,8 +24,6 @@ def _account_loans_post_init(env) -> None:
 
 
 def _account_loans_add_date_column(csv_attachment):
-    # Modify the CSV such that one part of the loan lines are in the past (so their related
-    # generated entries are posted), and the other part in the future (so in draft)
     data = io.StringIO()
     writer = csv.writer(data, delimiter=",")
     reader = csv.reader(
@@ -40,7 +37,7 @@ def _account_loans_add_date_column(csv_attachment):
             row.insert(0, current_date.strftime("%Y-%m-%d"))
             current_date += relativedelta(months=1)
         writer.writerow(row)
-    data.seek(0)  # move offset back to beginning
+    data.seek(0)
     generated_file = data.read()
     data.close()
     csv_attachment.raw = generated_file.encode()

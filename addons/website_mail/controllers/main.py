@@ -96,7 +96,7 @@ class WebsiteMail(http.Controller):
         if partner:
             for model in records:
                 mail_followers_ids = (
-                    request.env["mail.followers"]  # noqa: E8507 - one query per model of the request
+                    request.env["mail.followers"]
                     .sudo()
                     ._read_group(
                         [

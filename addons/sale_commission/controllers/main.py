@@ -28,33 +28,19 @@ class SaleCommissionTargetExportController(Controller):
         )
 
     def _interpolate_target(self, target_rate, sorted_rates, values_by_rate):
-        """Linear interpolation of the target value according to existing targets
-        For two known targets values t1 and t2 having respontively x1 and x2 rate and
-        y1 and y2 commission amounts, an intermediate t3 target  at 'target_rate'
-        position (x) will have the following amount (y)
-        y = a * target_rate + y1 where a is the slope.
-        a = (y2-y1)/(x2-x1)
-        """
         for rate in sorted_rates:
             if rate > target_rate:
                 x2 = rate
-                # all rate have a defined row
                 y2 = values_by_rate[rate][1]
                 break
-            # previous values
             x1 = rate
-            # all rate have a defined row
             y1 = values_by_rate[rate][1]
         if x1 is None or x2 is None or x2 == x1:
             _debug.logic("target_interpolation_skipped", rate=target_rate)
             return 0
-        # y = b + ax
         return y1 + (y2 - y1) / (x2 - x1) * (target_rate - x1)
 
     def _generate_rows(self, target_ids):
-        """Generate a xls file containing a table with a line for every 10% of target completion
-        and the commission amount. Starting at 0% and ending with the last target level
-        """
         if not target_ids:
             return []
         rows = []

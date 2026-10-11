@@ -13,7 +13,6 @@ class TestUserAccess(HttpCase):
     def setUp(self):
         super().setUp()
 
-        # create a planning manager
         self.planning_mgr = new_test_user(
             self.env,
             login="mgr",
@@ -36,7 +35,6 @@ class TestUserAccess(HttpCase):
             self.env, login="portal_plan", groups="base.group_portal"
         )
 
-        # create a planning user
         self.planning_user = new_test_user(
             self.env,
             login="planuser",
@@ -53,7 +51,6 @@ class TestUserAccess(HttpCase):
         )
         self.res_planning_user = self.hr_planning_user.resource_id
 
-        # create an internal user
         self.internal_user = new_test_user(
             self.env,
             login="iuser",
@@ -79,7 +76,6 @@ class TestUserAccess(HttpCase):
             }
         )
 
-        # create several slots for users
         self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2019, 6, 27, 8, 0, 0),
@@ -107,7 +103,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_public_user_access_rights(self):
-        # create
         with self.assertRaises(AccessError):
             self.env["planning.slot"].with_user(self.user_public.id).create(
                 {
@@ -117,18 +112,14 @@ class TestUserAccess(HttpCase):
                     "allocated_hours": 8,
                 }
             )
-        # read
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_public.id).read()
-        # update
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_public.id).write({"allocated_hours": 6})
-        # delete
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_public.id).unlink()
 
     def test_portal_user_access_right(self):
-        # create
         with self.assertRaises(AccessError):
             self.env["planning.slot"].with_user(self.user_portal.id).create(
                 {
@@ -138,20 +129,14 @@ class TestUserAccess(HttpCase):
                     "allocated_hours": 8,
                 }
             )
-        # read
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_portal.id).read()
-        # update
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_portal.id).write({"allocated_hours": 6})
-        # delete
         with self.assertRaises(AccessError):
             self.slot.with_user(self.user_portal.id).unlink()
 
     def test_01_internal_user_read_own_slots(self):
-        """
-        An internal user shall be able to read its own slots.
-        """
         my_slot = (
             self.env["planning.slot"]
             .with_user(self.internal_user)
@@ -180,9 +165,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_02_internal_user_read_other_slots(self):
-        """
-        An internal user shall NOT be able to read other slots.
-        """
         other_slot = (
             self.env["planning.slot"]
             .with_user(self.internal_user)
@@ -232,9 +214,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_03_internal_user_write_own_slots(self):
-        """
-        An internal user shall NOT be able to write its own slots.
-        """
         my_slot = (
             self.env["planning.slot"]
             .with_user(self.internal_user)
@@ -245,9 +224,6 @@ class TestUserAccess(HttpCase):
             my_slot.write({"name": "a new name"})
 
     def test_04_internal_user_create_own_slots(self):
-        """
-        An internal user shall NOT be able to create its own slots.
-        """
         with self.assertRaises(AccessError):
             self.env["planning.slot"].with_user(self.internal_user).create(
                 {
@@ -262,9 +238,6 @@ class TestUserAccess(HttpCase):
             )
 
     def test_internal_user_can_see_own_progress_bar(self):
-        """
-        An internal user shall be able to see its own progress bar.
-        """
         self.env["planning.slot"].with_user(self.internal_user)._gantt_progress_bar(
             "resource_id",
             self.res_internal_user.ids,
@@ -273,9 +246,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_internal_user_can_see_others_progress_bar(self):
-        """
-        An internal user shall be able to see others progress bar.
-        """
         self.env["planning.slot"].with_user(self.internal_user)._gantt_progress_bar(
             "resource_id",
             self.res_internal_user.ids,
@@ -284,9 +254,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_portal_user_cannot_access_progress_bar(self):
-        """
-        A portal user shall not be able to see any progress bar.
-        """
         progress_bar = (
             self.env["planning.slot"]
             .with_user(self.portal_user)
@@ -302,12 +269,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_internal_user_cannot_copy_previous(self):
-        """
-        An internal user shall be able to call a non-void copy previous.
-
-        i.e. If the copy previous doesn't select any slot, through the domain and the access domains, then it will do nothing and
-        won't raise AccessError.
-        """
         self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2019, 6, 25, 8, 0, 0),
@@ -328,7 +289,6 @@ class TestUserAccess(HttpCase):
             )
 
     def test_planning_user_cannot_create_slots(self):
-        """Planning user shall not be able to create slots."""
         my_slot = (
             self.env["planning.slot"]
             .with_user(self.planning_user)
@@ -348,7 +308,6 @@ class TestUserAccess(HttpCase):
             )
 
     def test_planning_user_read_own_and_other_slots(self):
-        """Planning user can read its own and other slots."""
         other_slot = (
             self.env["planning.slot"]
             .with_user(self.planning_user)
@@ -386,7 +345,6 @@ class TestUserAccess(HttpCase):
 
     @freeze_time("2019-05-28 08:00:00")
     def test_planning_user_can_take_unassigned_slots(self):
-        """Planning user can take unassigned slots."""
         test_slot = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2019, 5, 28, 8, 0, 0),
@@ -401,7 +359,6 @@ class TestUserAccess(HttpCase):
 
     @freeze_time("2019-05-28 08:00:00")
     def test_planning_user_can_unassign_slots(self):
-        """Planning user can unassign their own slots."""
         self.env["res.config.settings"].create(
             {
                 "planning_employee_unavailabilities": "unassign",
@@ -424,7 +381,6 @@ class TestUserAccess(HttpCase):
 
     @freeze_time("2019-05-28 08:00:00")
     def test_planning_user_cannot_unassign_slots(self):
-        """Test unassignment when the planning user cannot unassign their own slots."""
         self.env["res.config.settings"].create(
             {
                 "planning_employee_unavailabilities": "switch",
@@ -445,12 +401,6 @@ class TestUserAccess(HttpCase):
             test_slot.with_user(self.planning_user).action_self_unassign()
 
     def test_planning_user_cannot_copy_previous(self):
-        """
-        An internal user shall not be able to call a non-void copy previous.
-
-        i.e. If the copy previous doesn't select any slot, through the domain and the access domains, then it will do nothing and
-        won't raise AccessError.
-        """
         self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2019, 6, 25, 8, 0, 0),
@@ -471,9 +421,6 @@ class TestUserAccess(HttpCase):
             )
 
     def test_planning_mgr_can_copy_previous(self):
-        """
-        An internal user shall be able to call copy previous.
-        """
         test_slot = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2019, 6, 25, 8, 0, 0),
@@ -493,9 +440,6 @@ class TestUserAccess(HttpCase):
         self.assertTrue(test_slot.was_copied, "Test slot should be copied")
 
     def test_portal_user_cannot_access_copy_previous(self):
-        """
-        A public user shall not be able to see any progress bar.
-        """
         with self.assertRaises(AccessError):
             self.env["planning.slot"].with_user(
                 self.portal_user
@@ -508,9 +452,6 @@ class TestUserAccess(HttpCase):
             )
 
     def test_multicompany_access_slots(self):
-        """
-        A user shall NOT be able to access other companies' slots when sending plannings.
-        """
         in_user = self.planning_mgr
         out_user = self.planning_user
         out_user.group_ids = [
@@ -551,7 +492,6 @@ class TestUserAccess(HttpCase):
                 }
             )
         )
-        # Trigger _compute_slots_data
         send.start_datetime = datetime(2019, 7, 25, 8, 0, 0)
 
         self.assertNotIn(
@@ -617,15 +557,6 @@ class TestUserAccess(HttpCase):
             planning_send.action_send()
 
     def test_user_can_archive_another_employee(self):
-        """
-        Test user may archive another employee with no access right to planning.
-            Test Case:
-            =========
-            - Create user with no access planning access
-            - Create employee
-            - Create 2 slots
-            - Archive employee
-        """
         hr_officer = new_test_user(
             self.env,
             login="hr_user",
@@ -696,13 +627,7 @@ class TestUserAccess(HttpCase):
             )
 
     def test_avatar_card_access_non_hr_user(self):
-        """
-        The avatar card for resource should be displayed even if the current user has no hr access.
-        The only information missing in that case should be the default_role_id, but no traceback
-        should be raised, even if the resource has roles assigned to it.
-        """
 
-        # 1. creating a material resource with two roles
         [role_meeting_room, role_fablab_room] = self.env["resource.role"].create(
             [
                 {
@@ -725,7 +650,6 @@ class TestUserAccess(HttpCase):
             }
         )
 
-        # 2. Launching tour as planning user with no additional hr right
         self.start_tour("/", "planning_avatar_card_non_hr_user", login="planuser")
 
     def test_resource_conflicts_with_user(self):
@@ -801,7 +725,6 @@ class TestUserAccess(HttpCase):
             assigned_shift.with_user(self.planning_user).action_self_unassign()
 
     def test_user_cannot_cancel_switch_without_read_access(self):
-        """A user without read access to the shift cannot cancel a switch request on it."""
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.res_planning_user.id,
@@ -818,7 +741,6 @@ class TestUserAccess(HttpCase):
             slot.with_user(self.user_portal).action_cancel_switch()
 
     def test_user_cannot_cancel_switch_of_another_employee(self):
-        """A user can only cancel a switch request made on their own shift."""
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.res_planning_user.id,
@@ -839,7 +761,6 @@ class TestUserAccess(HttpCase):
         )
 
     def test_user_cannot_cancel_switch_shift_in_past(self):
-        """A user cannot cancel a switch request on a shift that is already in the past."""
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.res_planning_user.id,
@@ -857,7 +778,6 @@ class TestUserAccess(HttpCase):
             slot.with_user(self.planning_user).action_cancel_switch()
 
     def test_user_can_cancel_switch(self):
-        """The employee who requested to switch a future shift can cancel that request."""
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.res_planning_user.id,

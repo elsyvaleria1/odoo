@@ -122,14 +122,7 @@ class AmazonAccount(models.Model):
         help="If made inactive, this account will no longer be synchronized with Amazon.",
     )
 
-    # Credentials fields.
     seller_key = fields.Char()
-    # ADR-0081: the long-lived token rests in credential.credential, encrypted,
-    # access-logged and rate-limited. The field keeps its name and becomes a door
-    # onto it, so every reader and the view are unchanged. What cannot follow it
-    # through the door is a domain or an @api.depends -- an unstored compute is
-    # neither searchable nor a dependency -- so both now key on `credential_id`,
-    # whose presence is what "connected" has always meant.
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
         copy=False,
@@ -141,18 +134,10 @@ class AmazonAccount(models.Model):
         string="LWA Refresh Token",
         compute="_compute_refresh_token",
         inverse="_inverse_refresh_token",
-        # Restricted like the credential it fronts, or a door would leak what the
-        # vault restricts. Without this a sale manager -- who has full access to
-        # this model -- reads the plaintext token, and worse, an ordinary read()
-        # of the record raises AccessError from inside the compute instead of
-        # simply omitting a field they may not see.
         classification="secret.credential",
         groups="base.group_system",
         help="The long-lived token that can be exchanged for a new access token.",
     )
-    # The API credentials fields below are not stored because they are all short-lived. Their values
-    # are kept in memory for the duration of the request and they are re-used as long as they are
-    # not expired. If that happens, they are refreshed through an API call.
     access_token = fields.Char(
         string="LWA Access Token",
         store=False,
@@ -174,7 +159,6 @@ class AmazonAccount(models.Model):
         help="The moment at which the Restricted Data Token becomes invalid.",
     )
 
-    # Display fields.
     state = fields.Selection(
         selection=[("disconnected", "Disconnected"), ("connected", "Connected")],
         compute="_compute_state",
@@ -182,7 +166,6 @@ class AmazonAccount(models.Model):
     offer_count = fields.Integer(compute="_compute_offer_count")
     order_count = fields.Integer(compute="_compute_order_count")
 
-    # === COMPUTE METHODS ===#
 
     @api.depends("base_marketplace_id")
     def _compute_name(self):
@@ -207,10 +190,6 @@ class AmazonAccount(models.Model):
 
     @api.depends("credential_id")
     def _compute_state(self):
-        # sudo: whether an account is connected is not privileged -- a sale
-        # manager has full access to this model and their list view shows the
-        # column. Only the credential behind it is restricted, and this reads
-        # nothing out of it but whether one is there.
         for account in self:
             account.state = (
                 "connected" if account.sudo().credential_id else "disconnected"
@@ -232,12 +211,6 @@ class AmazonAccount(models.Model):
             account._amazon_store_refresh_token(account.refresh_token)
 
     def _amazon_store_refresh_token(self, value) -> None:
-        """Write the refresh token into the account's credential.
-
-        Clearing it unlinks the credential rather than blanking it: an account
-        with no credential is a disconnected account, which is what
-        `action_reset_refresh_token` means and what `_compute_state` reads.
-        """
         self.check_singleton()
         credential = self.credential_id.sudo()
         if not value:
@@ -254,15 +227,10 @@ class AmazonAccount(models.Model):
                         "name": self.env._(
                             "Amazon: %s", self.name or self.seller_key or self.id
                         ),
-                        # bearer_token, not oauth2: that category requires an access token or a
-                        # client secret, and a refresh token is neither -- it is a token
-                        # value, which is what this one asks for.
                         "category_id": self.env.ref(
                             "credential.credential_category_bearer_token"
                         ).id,
                         "company_id": self.company_id.id,
-                        # in the same create: the category's constraint runs there, and
-                        # a bearer-token credential with no value does not pass it
                         "credential_value": value,
                     }
                 )
@@ -291,11 +259,9 @@ class AmazonAccount(models.Model):
         for account in self:
             account.order_count = len(orders_per_account.get(account, []))
 
-    # === ONCHANGE METHODS ===#
 
     @api.onchange("last_orders_sync")
     def _onchange_last_orders_sync(self) -> dict | None:
-        """Display a warning about the possible consequences of modifying the last orders sync."""
         self.check_singleton()
         if self._origin.id:
             return {
@@ -313,7 +279,6 @@ class AmazonAccount(models.Model):
             }
         return None
 
-    # === CONSTRAINT METHODS ===#
 
     @api.constrains("active_marketplace_ids")
     def _check_actives_subset_of_availables(self) -> None:
@@ -323,7 +288,6 @@ class AmazonAccount(models.Model):
                     self.env._("Only available marketplaces can be selected")
                 )
 
-    # === CRUD METHODS ===#
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -331,7 +295,6 @@ class AmazonAccount(models.Model):
         amazon_teams_ids = [team.id for team, __ in amazon_accounts_rg]
         amazon_locations_ids = [location.id for __, location in amazon_accounts_rg]
         for vals in vals_list:
-            # Find or create the location of the Amazon warehouse to be associated with this account
             location = self.env["stock.location"].search(
                 [
                     *self.env["stock.location"]._check_company_domain(
@@ -363,7 +326,6 @@ class AmazonAccount(models.Model):
                 )
             vals.update({"location_id": location.id})
 
-            # Find or create the sales team to be associated with this account
             team = self.env["team.team"].search(
                 [
                     *self.env["team.team"]._check_company_domain(
@@ -405,25 +367,14 @@ class AmazonAccount(models.Model):
                 )
             )
 
-    # === ACTION METHODS ===#
 
     def action_archive(self):
-        """Override to disconnect the Amazon account before archiving it."""
         _debug.lifecycle("amazon_account_archived", accounts=self)
         for account in self:
             account.action_reset_refresh_token()
         return super().action_archive()
 
     def action_redirect_to_oauth_url(self) -> dict:
-        """Build the OAuth redirect URL and redirect the user to it.
-
-        See step 1 of https://developer-docs.amazon.com/sp-api/docs/website-authorization-workflow.
-
-        Note: self.check_singleton()
-
-        :return: An action to redirect the user to the OAuth URL.
-        :rtype: ir.actions.act_url action
-        """
         self.check_singleton()
 
         base_seller_central_url = self.base_marketplace_id.seller_central_url
@@ -432,7 +383,7 @@ class AmazonAccount(models.Model):
         metadata = {
             "return_url": urls.urljoin(base_database_url, "amazon/return"),
             "token": issue_oauth_state(self),
-        }  # The metadata included in the redirect URL after authorizing the app on Amazon.
+        }
         oauth_url_params = {
             "application_id": const.APP_ID,
             "state": json_dumps(metadata),
@@ -444,23 +395,11 @@ class AmazonAccount(models.Model):
         }
 
     def action_reset_refresh_token(self) -> None:
-        """Reset the refresh token of the account.
-
-        Note: self.check_singleton()
-
-        :return: None
-        """
         self.check_singleton()
 
-        # sudo: disconnecting is a sale manager's action on their own account.
         self.sudo().refresh_token = False
 
     def action_update_available_marketplaces(self) -> dict:
-        """Update available marketplaces and assign new ones to the account.
-
-        :return: A rainbow-man action to inform the user about the successful update.
-        :rtype: dict
-        """
         for account in self:
             available_marketplaces = account._get_available_marketplaces()
             new_marketplaces = (
@@ -469,7 +408,6 @@ class AmazonAccount(models.Model):
             account.write(
                 {"available_marketplace_ids": [Command.set(available_marketplaces.ids)]}
             )
-            # Remove active marketplace that are no longer available
             account.active_marketplace_ids &= account.available_marketplace_ids
             account.active_marketplace_ids += new_marketplaces
         return {
@@ -531,17 +469,8 @@ class AmazonAccount(models.Model):
             "target": "new",
         }
 
-    # === BUSINESS METHODS ===#
 
     def _get_available_marketplaces(self):
-        """Fetch the API refs of the available marketplaces and return the corresponding recordset.
-
-        Note: self.check_singleton()
-
-        :return: The available marketplaces for the Amazon account.
-        :rtype: recordset of `amazon.marketplace`
-        :raise UserError: If the rate limit is reached.
-        """
         self.check_singleton()
 
         amazon_utils.check_account_is_set_up(self, require_marketplaces=False)
@@ -571,16 +500,6 @@ class AmazonAccount(models.Model):
             )
 
     def _sync_orders(self, auto_commit=True) -> None:
-        """Synchronize the accounts' sales orders that were recently updated on Amazon.
-
-        If called on an empty recordset, the orders of all active accounts are synchronized instead.
-
-        Note: This method is called by the `ir_cron_sync_amazon_orders` cron.
-
-        :param bool auto_commit: Whether the database cursor should be committed as soon as an order
-                                 is successfully synchronized.
-        :return: None
-        """
         accounts = self or self.search([])
         _debug.pipeline(
             "orders_sync_started",
@@ -589,18 +508,14 @@ class AmazonAccount(models.Model):
             auto_commit=auto_commit,
         )
         for account in accounts:
-            account = account[0]  # Avoid pre-fetching after each cache invalidation.
+            account = account[0]
             amazon_utils.check_account_is_set_up(account)
 
-            # The last synchronization date of the account is used as the lower limit on the orders'
-            # last status update date. The upper limit is determined by the API and returned with
-            # the request response, then saved on the account if the synchronization goes through.
             last_updated_after = (
                 account.last_orders_sync
-            )  # Lower limit for pulling orders.
-            status_update_upper_limit = None  # Upper limit of synchronized orders.
+            )
+            status_update_upper_limit = None
 
-            # Pull all recently updated orders and save the progress during synchronization.
             payload = {
                 "LastUpdatedAfter": last_updated_after.isoformat(sep="T"),
                 "MarketplaceIds": ",".join(
@@ -608,11 +523,8 @@ class AmazonAccount(models.Model):
                 ),
             }
             try:
-                # Orders are pulled in batches of up to 100 orders. If more can be synchronized, the
-                # request results are paginated and the next page holds another batch.
                 has_next_page = True
                 while has_next_page:
-                    # Pull the next batch of orders data.
                     orders_batch_data, has_next_page = amazon_utils.pull_batch_data(
                         account, "getOrders", payload
                     )
@@ -629,19 +541,17 @@ class AmazonAccount(models.Model):
                         until=status_update_upper_limit,
                     )
 
-                    # Process the batch one order data at a time.
                     for order_data in orders_data:
                         try:
                             if auto_commit:
                                 with self.env.cr.savepoint():
                                     account._process_order_data(order_data)
-                            else:  # Avoid the savepoint in testing
+                            else:
                                 account._process_order_data(order_data)
                         except amazon_utils.AmazonRateLimitError:
-                            raise  # Don't treat a rate limit error as a business error.
+                            raise
                         except Exception as error:
                             if modules.module.current_test:
-                                # we are executing during testing, do not try to rollback
                                 raise
                             amazon_order_ref = order_data["AmazonOrderId"]
                             if isinstance(error, CONCURRENCY_ERRORS):
@@ -659,9 +569,6 @@ class AmazonAccount(models.Model):
                                     amazon_order_ref,
                                     account.id,
                                 )
-                                # Let the error bubble up so that either the request can be retried
-                                # up to 5 times or the cron job rollbacks the cursor and reschedules
-                                # itself later, depending on which of the two called this method.
                                 raise
                             _logger.warning(
                                 "A business error occurred while processing the order data "
@@ -678,16 +585,12 @@ class AmazonAccount(models.Model):
                                 reason="business_error",
                                 error=type(error).__name__,
                             )
-                            # Dismiss business errors to allow the synchronization to skip the
-                            # problematic orders and require synchronizing them manually.
                             self.env.cr.rollback()
                             account._handle_sync_failure(
                                 flow="order_sync", amazon_order_ref=amazon_order_ref
                             )
-                            continue  # Skip these order data and resume with the next ones.
+                            continue
 
-                        # The synchronization of this order went through, use its last status update
-                        # as a backup and set it to be the last synchronization date of the account.
                         last_order_update = dateutil.parser.parse(
                             order_data["LastUpdateDate"]
                         )
@@ -695,7 +598,6 @@ class AmazonAccount(models.Model):
                             tzinfo=None
                         )
                         if auto_commit:
-                            # Commit to mitigate an eventual cron kill.
                             amazon_utils.commit_preserving_credentials(
                                 account, processed=1
                             )
@@ -712,36 +614,23 @@ class AmazonAccount(models.Model):
                     account.id,
                     error.operation,
                 )
-                continue  # The remaining orders will be pulled later when the cron runs again.
+                continue
 
             _debug.lifecycle(
                 "orders_sync_watermark_set",
                 account=account,
                 last_orders_sync=status_update_upper_limit,
             )
-            # There are no more orders to pull and the synchronization went through. Set the API
-            # upper limit on order status update to be the last synchronization date of the account.
             account.last_orders_sync = status_update_upper_limit.replace(tzinfo=None)
 
     def _sync_order_by_reference(self, amazon_order_ref) -> dict:
-        """Synchronize an order based on its Amazon order reference.
-
-        Note: `self.check_singleton()`
-
-        :param str amazon_order_ref: The amazon reference of the order to re-synchronize.
-        :return: The synchronized Amazon order act window.
-        :rtype: dict
-        :raise UserError: If the order reference is incorrect or the order is not for an active
-                          marketplace.
-        :raise ValidationError: If the order is in a status that prevents its synchronization.
-        """
         self.check_singleton()
         amazon_utils.check_account_is_set_up(self)
 
         order_data = amazon_utils.send_sp_api_request(
             self, "getOrder", path_parameter=amazon_order_ref
         )["payload"]
-        if not order_data:  # Order not found by Amazon
+        if not order_data:
             raise UserError(
                 self.env._("The provided reference does not match any Amazon order.")
             )
@@ -775,23 +664,8 @@ class AmazonAccount(models.Model):
         }
 
     def _process_order_data(self, order_data):
-        """Process the provided order data and return the matching sales order, if any.
-
-        If no matching sales order is found, a new one is created if it is in a 'synchronizable'
-        status: 'Shipped' or 'Unshipped', if it is respectively an FBA or an FBA order. If the
-        matching sales order already exists and the Amazon order was canceled, the sales order is
-        also canceled. If the matching sales order already exists and the order data confirm that a
-        FBM order got shipped, we update the shipping status when it's needed.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data to process.
-        :return: The matching Amazon order, if any, as a `sale.order` record.
-        :rtype: recordset of `sale.order`
-        """
         self.check_singleton()
 
-        # Search for the sales order based on its Amazon order reference.
         amazon_order_ref = order_data["AmazonOrderId"]
         if not isinstance(amazon_order_ref, str):
             raise TypeError(
@@ -802,9 +676,8 @@ class AmazonAccount(models.Model):
         )
         amazon_status = order_data["OrderStatus"]
         fulfillment_channel = order_data["FulfillmentChannel"]
-        if not order:  # No sales order was found with the given Amazon order reference.
+        if not order:
             if amazon_status in const.STATUS_TO_SYNCHRONIZE[fulfillment_channel]:
-                # Create the sales order and generate stock moves depending on the Amazon channel.
                 order = self._create_order_from_data(order_data)
                 if order.amazon_channel == "fba":
                     self._create_stock_moves(order)
@@ -834,12 +707,12 @@ class AmazonAccount(models.Model):
                         "account_id": self.id,
                     },
                 )
-        else:  # The sales order already exists.
+        else:
             unsynced_pickings = order.picking_ids.filtered(
                 lambda picking: (
                     picking.amazon_sync_status != "done" and picking.state != "cancel"
                 )
-            )  # Consider any "unsynced" status so that we synchronize updates made from Amazon.
+            )
             if amazon_status == "Canceled" and order.state != "cancel":
                 _debug.lifecycle("amazon_order_cancelled", order=order)
                 order._action_cancel()
@@ -856,14 +729,6 @@ class AmazonAccount(models.Model):
                 _debug.lifecycle(
                     "picking_sync_forced_done", order=order, pickings=unsynced_pickings
                 )
-                # This can happen in 3 cases:
-                # 1. The processing of the feed of a batch of pickings failed on Amazon side in a
-                # way that we couldn't tell which picking are faulty. In that case, all pickings of
-                # the batch were flagged as in error. The order status update allows correcting the
-                # status of non-faulty pickings while leaving the faulty ones in error.
-                # 2. The shipping was arranged directly from Amazon's backend.
-                # 3. The user uses a delivery method that contacted Amazon to send the picking
-                # information before we did.
                 unsynced_pickings.amazon_sync_status = "done"
                 _logger.info(
                     "Forced the picking synchronization status to 'done' for sales order with"
@@ -885,14 +750,6 @@ class AmazonAccount(models.Model):
         return order
 
     def _create_order_from_data(self, order_data):
-        """Create a new sales order based on the provided order data.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data to create a sales order from.
-        :return: The newly created sales order.
-        :rtype: record of `sale.order`
-        """
         self.check_singleton()
         order_vals = self._prepare_order_values(order_data)
         return (
@@ -903,7 +760,6 @@ class AmazonAccount(models.Model):
         )
 
     def _prepare_order_values(self, order_data):
-        # Prepare the order line values.
         shipping_code = order_data.get("ShipServiceLevel")
         shipping_product = self._get_or_create_matching_product(
             shipping_code, "shipping_product", "Shipping", "service"
@@ -948,8 +804,6 @@ class AmazonAccount(models.Model):
         order_vals = {
             "origin": f"Amazon Order {amazon_order_ref}",
             "state": "done",
-            # The order is first created unlocked and later locked to trigger the creation of a
-            # stock picking if fulfilled by merchant.
             "locked": fulfillment_channel == "AFN",
             "date_order": purchase_date,
             "partner_id": contact_partner.id,
@@ -973,15 +827,6 @@ class AmazonAccount(models.Model):
         return order_vals
 
     def _get_or_create_partners_from_data(self, order_data) -> tuple:
-        """Find or create the contact and delivery partners based on the provided order data.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data to find or create the partners from.
-        :return: The contact and delivery partners, as `res.partner` records. When the contact
-                 partner acts as delivery partner, the records are the same.
-        :rtype: tuple[record of `res.partner`, record of `res.partner`]
-        """
         self.check_singleton()
 
         amazon_order_ref = order_data["AmazonOrderId"]
@@ -1029,13 +874,6 @@ class AmazonAccount(models.Model):
             "email": anonymized_email,
         }
 
-        # The contact partner is searched based on all the personal information and only if the
-        # amazon email is provided. A match thus only occurs if the customer had already made a
-        # previous order and if the personal information provided by the API did not change in the
-        # meantime. If there is no match, a new contact partner is created. This behavior is
-        # preferred over updating the personal information with new values because it allows using
-        # the correct contact details when invoicing the customer for an earlier order, should there
-        # be a change in the personal information.
         contact = (
             self.env["res.partner"].search(
                 [
@@ -1048,7 +886,7 @@ class AmazonAccount(models.Model):
             )
             if anonymized_email
             else None
-        )  # Don't match random partners.
+        )
         if not contact:
             contact_name = buyer_name or f"Amazon Customer # {amazon_order_ref}"
             contact = (
@@ -1065,8 +903,6 @@ class AmazonAccount(models.Model):
             if not contact.state_id and state_code and fulfillment_channel == "MFN":
                 contact._amazon_create_activity_set_state(self.user_id.id, state_code)
 
-        # The contact partner acts as delivery partner if the address is strictly equal to that of
-        # the contact partner. If not, a delivery partner is created.
         delivery = (
             contact
             if (
@@ -1119,33 +955,11 @@ class AmazonAccount(models.Model):
     def _prepare_order_lines_values(
         self, order_data, currency, fiscal_pos, shipping_product
     ):
-        """Prepare the values for the order lines to create based on Amazon data.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data related to the item data.
-        :param record currency: The currency of the sales order, as a `res.currency` record.
-        :param record fiscal_pos: The fiscal position of the sales order, as an
-                                  `account.fiscal.position` record.
-        :param record shipping_product: The shipping product matching the shipping code, as a
-                                        `product.product` record.
-        :return: The order lines values.
-        :rtype: dict
-        """
 
         def pull_items_data(amazon_order_ref_):
-            """Pull all item data for the order to synchronize.
-
-            :param str amazon_order_ref_: The Amazon reference of the order to synchronize.
-            :return: The items data.
-            :rtype: list
-            """
             items_data_ = []
-            # Order items are pulled in batches. If more order items than those returned can be
-            # synchronized, the request results are paginated and the next page holds another batch.
             has_next_page_ = True
             while has_next_page_:
-                # Pull the next batch of order items.
                 items_batch_data_, has_next_page_ = amazon_utils.pull_batch_data(
                     self, "getOrderItems", {}, path_parameter=amazon_order_ref_
                 )
@@ -1167,7 +981,6 @@ class AmazonAccount(models.Model):
 
         order_lines_values = []
         for item_data in items_data:
-            # Prepare the values for the product line.
             sku = item_data["SellerSKU"]
             marketplace = self.active_marketplace_ids.filtered(
                 lambda m: m.api_ref == marketplace_api_ref
@@ -1177,8 +990,6 @@ class AmazonAccount(models.Model):
                 offer.amazon_channel != order_fulfillment_channel
                 and self.last_orders_sync <= order_last_update
             ):
-                # When an offer goes from FBM to FBA, we need to reset the FBM stock to avoid a
-                # known problem of ghost listings on Amazon side.
                 if (
                     offer.amazon_channel == "fbm"
                     and offer.sync_stock
@@ -1190,9 +1001,6 @@ class AmazonAccount(models.Model):
                         " inventory reset for offer: %s.",
                         offer.sku,
                     )
-                # Resetting the offer channel will force the inventory feed to update the channel
-                # using a trustworthy source `searchListingsItems` as even the order cannot be
-                # trusted.
                 offer.amazon_channel = False
             product_taxes = offer.product_id.taxes_id.filtered_domain(
                 [*self.env["account.tax"]._check_company_domain(self.company_id)]
@@ -1252,7 +1060,6 @@ class AmazonAccount(models.Model):
                 )
             )
 
-            # Prepare the values for the gift wrap line.
             if item_data.get("IsGift", "false") == "true":
                 item_gift_info = item_data.get("BuyerInfo", {})
                 gift_wrap_code = item_gift_info.get("GiftWrapLevel")
@@ -1315,7 +1122,6 @@ class AmazonAccount(models.Model):
                         )
                     )
 
-            # Prepare the values for the delivery charges.
             shipping_code = order_data.get("ShipServiceLevel")
             shipping_price = float(
                 item_data.get("ShippingPrice", {}).get("Amount", "0")
@@ -1380,12 +1186,6 @@ class AmazonAccount(models.Model):
         return order_lines_values
 
     def _convert_to_order_line_values(self, **kwargs) -> dict:
-        """Convert and complete a dict of values to comply with fields of `sale.order.line`.
-
-        :param dict kwargs: The values to convert and complete.
-        :return: The completed values.
-        :rtype: dict
-        """
         subtotal = kwargs.get("subtotal", 0)
         quantity = kwargs.get("quantity", 1)
         return {
@@ -1401,16 +1201,6 @@ class AmazonAccount(models.Model):
         }
 
     def _acquire_offer(self, sku: str, marketplace: AmazonMarketplace) -> AmazonOffer:
-        """Find or create the amazon offer based on the SKU and marketplace.
-
-        Note: self.check_singleton()
-
-        :param str sku: The SKU of the product.
-        :param recordset marketplace: The marketplace of the offer, as an `amazon.marketplace`
-               record.
-        :return: The amazon offer.
-        :rtype: record or `amazon.offer`
-        """
         self.check_singleton()
 
         offer = self.offer_ids.filtered(lambda o: o.sku == sku)
@@ -1433,10 +1223,6 @@ class AmazonAccount(models.Model):
                     }
                 )
             )
-        # If the offer has been linked with the default product, search if another product has now
-        # been assigned the current SKU as internal reference and update the offer if so.
-        # This trades off a bit of performance in exchange for a more expected behavior for the
-        # matching of products if one was assigned the right SKU after that the offer was created.
         elif "sale_amazon.default_product" in offer.product_id._get_external_ids().get(
             offer.product_id.id, []
         ):
@@ -1456,14 +1242,6 @@ class AmazonAccount(models.Model):
         return offer
 
     def _get_or_create_pricelist(self, currency):
-        """Find or create the pricelist based on the currency.
-
-        Note: self.check_singleton()
-
-        :param recordset currency: The currency of the pricelist, as a `res.currency` record.
-        :return: The pricelist.
-        :rtype: record or `product.pricelist`
-        """
         self.check_singleton()
         pricelist = (
             self.env["product.pricelist"]
@@ -1508,22 +1286,6 @@ class AmazonAccount(models.Model):
         default_type: str | None,
         fallback: bool = True,
     ) -> ProductProduct:
-        """Find the matching product for a given internal reference.
-
-        If no product is found for the given internal reference, we fall back on the default
-        product. If the default product was deleted, we restore it.
-
-        Note: self.check_singleton()
-
-        :param str internal_reference: The internal reference of the product to be searched.
-        :param str default_xmlid: The xmlid of the default product to use as fallback.
-        :param str default_name: The name of the default product to use as fallback.
-        :param str default_type: The product type of the default product to use as fallback.
-        :param bool fallback: Whether we should fall back to the default product when no product
-                              matching the provided internal reference is found.
-        :return: The matching product.
-        :rtype: record of `product.product`
-        """
         self.check_singleton()
         product = self.env["product.product"].search(
             [
@@ -1532,7 +1294,7 @@ class AmazonAccount(models.Model):
             ],
             limit=1,
         )
-        if not product and fallback:  # Fallback to the default product
+        if not product and fallback:
             product = self.env.ref(
                 "sale_amazon.%s" % default_xmlid, raise_if_not_found=False
             )
@@ -1544,7 +1306,7 @@ class AmazonAccount(models.Model):
                 by="default_xmlid",
                 xmlid=default_xmlid,
             )
-        if not product and fallback:  # Restore the default product if it was deleted
+        if not product and fallback:
             product = self.env["product.product"]._restore_data_product(
                 default_name, default_type, default_xmlid
             )
@@ -1559,18 +1321,10 @@ class AmazonAccount(models.Model):
     def _get_price_from_order_amounts(
         self, subtotal, tax_amount, taxes, currency, _fiscal_pos=None
     ):
-        """Return the order-line price, retaining configured price-included taxes."""
         total = subtotal + tax_amount
         return price_from_tax_included_total(self.env, total, taxes, currency)
 
     def _create_stock_moves(self, order):
-        """Generate a stock move for each product of the provided sales order.
-
-        :param recordset order: The sales order to generate the stock moves for, as a `sale.order`
-                                record.
-        :return: The generated stock moves.
-        :rtype: recordset of `stock.move`
-        """
         customers_location = self.env.ref("stock.stock_location_customers")
         _debug.pipeline(
             "stock_moves_generation_started",
@@ -1595,20 +1349,11 @@ class AmazonAccount(models.Model):
             )
             stock_move._update_quantity_done(order_line.product_qty)
             stock_move.picked = (
-                True  # To also change move lines created in `_update_quantity_done`
+                True
             )
             stock_move._action_done()
 
     def _sync_inventory(self) -> None:
-        """Synchronize the inventory availability of products sold on Amazon.
-
-        If called on an empty recordset, the products of all active accounts with inventory
-        synchronization are synchronized instead.
-
-        Note: This method is called by the `ir_cron_sync_amazon_inventory` cron.
-
-        :return: None
-        """
         self = self or self.search([])
         accounts = self.filtered("synchronize_inventory")
         if not accounts:
@@ -1618,7 +1363,6 @@ class AmazonAccount(models.Model):
         def to_sync(offer_):
             return offer_.sync_stock or offer_.amazon_sync_status == "reset"
 
-        # Cache `qty_free` of all products to avoid recomputing it for each offer.
         accounts.offer_ids.filtered(to_sync).product_id._compute_quantities()
 
         for account in accounts:
@@ -1628,28 +1372,14 @@ class AmazonAccount(models.Model):
                 span.set(offers=len(offers), candidates=len(account.offer_ids))
                 offers._update_inventory_availability(account)
 
-        # As Amazon needs some time to process the feed, we trigger the cron to check the status of
-        # the feed after 10 minutes.
         next_call = fields.Datetime.now() + timedelta(minutes=10)
         self.env["ir.cron"]._trigger_ref(
             "sale_amazon.ir_cron_sync_amazon_feeds", at=next_call
         )
 
     def _sync_feeds(self) -> None:
-        """Synchronize the status of the accounts' feeds that were sent to Amazon.
-
-        If called on an empty recordset, the feeds of all active account are synchronized instead.
-
-        We assume that the combined set of feeds (of all accounts) to be handled will always be too
-        small for the cron to be killed before it finishes synchronizing all feeds.
-
-        Note: This method is called by the `ir_cron_sync_amazon_feeds` cron.
-
-        :return: None
-        """
         self = self or self.search([])
 
-        # Select accounts with offers or pickings requiring synchronization.
         accounts_with_offers = self.filtered(
             lambda a: any(o.amazon_sync_status == "processing" for o in a.offer_ids)
         )
@@ -1663,7 +1393,6 @@ class AmazonAccount(models.Model):
             accounts_with_pickings=len(pickings_by_account),
         )
 
-        # Syn feeds status.
         for account in accounts_with_offers:
             amazon_utils.check_account_is_set_up(account)
             offers = account.offer_ids.filtered(
@@ -1674,7 +1403,6 @@ class AmazonAccount(models.Model):
             amazon_utils.check_account_is_set_up(account)
             account._pull_feeds_status(pickings, "picking_sync")
 
-        # Re-schedule the cron if not all the offers and pickings reached a final status.
         any_processing_feed = any(
             offer.amazon_sync_status == "processing"
             for offer in accounts_with_offers.offer_ids
@@ -1690,16 +1418,6 @@ class AmazonAccount(models.Model):
             )
 
     def _pull_feeds_status(self, records, flow) -> None:
-        """Pull the status of the feeds corresponding to the provided recordset.
-
-        Note: `self.check_singleton()`
-
-        :param recordset records: The records whose feed status should be pulled. Only
-                                  `amazon.offer` and `stock.picking` are supported.
-        :param str flow: The feed name that must be fetched. Supported feeds are 'inventory_sync'
-                         and 'picking_sync'.
-        :return: None
-        """
         self.check_singleton()
 
         if flow == "inventory_sync":
@@ -1739,10 +1457,9 @@ class AmazonAccount(models.Model):
             for result_ in report_.find("Message/ProcessingReport").iter("Result"):
                 if result_.find("ResultCode").text != "Error":
                     continue
-                # We can identify failed pickings.
                 if (order_ := result_.find("AdditionalInfo/AmazonOrderID")) is not None:
                     order_ref_ = order_.text
-                else:  # Amazon doesn't specify which order (and thus picking) failed.
+                else:
                     order_ref_ = None
                 errors_.setdefault(order_ref_, []).append(
                     get_error_message(
@@ -1759,7 +1476,7 @@ class AmazonAccount(models.Model):
 
         errors_by_record = {}
         for feed_ref, feed_records in records_by_feed_ref.items():
-            if not feed_ref:  # flow == 'inventory_sync'
+            if not feed_ref:
                 _debug.logic(
                     "feed_status_skipped",
                     account=self,
@@ -1774,7 +1491,6 @@ class AmazonAccount(models.Model):
                     {"feed_record_ids": feed_records.ids},
                 )
                 continue
-            # Pull the status and result document reference for the current feed.
             feed_data = amazon_utils.send_sp_api_request(
                 self, "getFeed", path_parameter=feed_ref
             )
@@ -1790,12 +1506,11 @@ class AmazonAccount(models.Model):
                 has_report=bool(report_document_ref),
             )
 
-            # Update the records according to their feed status.
-            if feed_status == "DONE":  # The feed was fully processed.
+            if feed_status == "DONE":
                 try:
                     report = amazon_utils.get_feed_document(self, report_document_ref)
                 except amazon_utils.AmazonRateLimitError:
-                    raise  # Don't treat a rate limit error as a business error.
+                    raise
                 except ValidationError:
                     _debug.logic(
                         "feed_report_skipped",
@@ -1837,7 +1552,6 @@ class AmazonAccount(models.Model):
                         )
                         continue
 
-                    # Iterate over the processing results and flag failed records.
                     error_records = feed_records.browse(
                         [
                             record.id
@@ -1856,22 +1570,20 @@ class AmazonAccount(models.Model):
                     )
                     error_records.amazon_sync_status = "error"
                     for record in error_records:
-                        # Using a set to combine duplicates created by Amazon with every retry.
                         errors_by_record.setdefault(record, set()).update(
                             report_errors[message_key(record)]
                         )
                     unprocessed_records = feed_records.filtered(
                         lambda p: p.amazon_sync_status == "processing"
-                    )  # The sync order might have run before, avoid changing back done records.
+                    )
 
-                    # Failed to link some messages, consider unprocessed records as failed
                     if None in report_errors:
                         unprocessed_records.amazon_sync_status = "error"
                         for record in unprocessed_records:
                             errors_by_record.setdefault(record, set()).update(
                                 report_errors[None]
                             )
-                    else:  # All errors were identified, the remaining records succeeded.
+                    else:
                         unprocessed_records.amazon_sync_status = "done"
                     _logger.info(
                         "Found errors while synchronizing feed %(feed_ref)s for Amazon account with"
@@ -1882,7 +1594,7 @@ class AmazonAccount(models.Model):
             elif feed_status in [
                 "IN_QUEUE",
                 "IN_PROGRESS",
-            ]:  # The feed has not yet been processed.
+            ]:
                 _logger.info(
                     "Ignoring in progress feed %(feed_ref)s for Amazon account with id"
                     " %(account_id)s.",
@@ -1891,7 +1603,7 @@ class AmazonAccount(models.Model):
 
             elif (
                 feed_status == "CANCELLED"
-            ):  # The feed has been canceled before being processed.
+            ):
                 feed_records.amazon_sync_status = "pending"
                 if flow == "inventory_sync":
                     _logger.info(
@@ -1906,7 +1618,7 @@ class AmazonAccount(models.Model):
                         {"feed_ref": feed_ref, "account_id": self.id},
                     )
 
-            elif feed_status == "FATAL":  # The feed failed with no further information.
+            elif feed_status == "FATAL":
                 for record in feed_records:
                     errors_by_record.setdefault(record, set()).add(None)
                 feed_records.amazon_sync_status = "error"
@@ -1938,17 +1650,6 @@ class AmazonAccount(models.Model):
     def _handle_sync_failure(
         self, flow, amazon_order_ref=False, error_messages=False
     ) -> None:
-        """Send a mail to the responsible persons to report a synchronization failure.
-
-        :param str flow: The flow for which the failure mail is requested. Supported flows are:
-                        `order_sync`, `inventory_sync`, and `picking_sync`.
-        :param str amazon_order_ref: The amazon reference of the order that failed to synchronize.
-                                     Required for the `order_sync` flow.
-        :param list[dict] error_messages: A list containing the referenced Amazon orders and their
-                                           linked errors in the format [{'order_ref': 'error'}].
-                                           Required for the `picking_sync` flow.
-        :return: None
-        """
         if flow == "order_sync":
             _logger.error(
                 "Failed to synchronize order with amazon reference %(ref)s for amazon.account with "
@@ -1967,7 +1668,7 @@ class AmazonAccount(models.Model):
                 {"account_id": self.id, "seller_id": self.seller_key},
             )
             mail_template_id = "sale_amazon.inventory_sync_failure"
-        else:  # flow == 'picking_sync':
+        else:
             _logger.error(
                 "Failed to synchronize pickings for amazon.account with id %(account_id)s "
                 "(seller id %(seller_id)s).",

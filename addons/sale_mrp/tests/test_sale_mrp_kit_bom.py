@@ -857,7 +857,6 @@ class TestSaleMrpKitBom(BaseCommon):
                 "group_id": self.env.ref("base.group_everyone").id,
                 "kind": "guard",
                 "operation": "crud",
-                # hides every record; a FALSE guard would deny the model instead
                 "domain": "[('id', '<', 0)]",
             }
         )

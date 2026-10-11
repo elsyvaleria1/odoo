@@ -39,8 +39,6 @@ class SurveyUser_Input(models.Model):
         }
 
     def action_view_all_survey_inputs(self) -> dict:
-        # the URL carries one survey and one appraisal, so the recordset has to
-        # agree on both - guarding only the survey left appraisal_id.id raising
         if len(self.appraisal_id) > 1:
             raise ValidationError(
                 self.env._("You can't open the results of multiple appraisals at once.")
@@ -65,8 +63,6 @@ class SurveyUser_Input(models.Model):
     def action_view_appraisal_survey_results(self):
         survey_input_ids = self
         if not survey_input_ids:
-            # an empty active_id would search for answers whose appraisal_id is
-            # False, i.e. answers belonging to no appraisal at all
             appraisal_id = self.env.context.get("active_id")
             if not appraisal_id:
                 raise ValidationError(
@@ -100,8 +96,6 @@ class SurveyUser_Input(models.Model):
                 self.env._("You can't select multiple feedback templates.")
             )
         appraisal_id = self.appraisal_id
-        # a partner with no email would put a falsy value in the set, which
-        # then matches every employee that has no work email either
         set_emails = {email for email in self.partner_id.mapped("email") if email}
         if appraisal_id.employee_feedback_ids:
             employee_ids = appraisal_id.employee_feedback_ids.filtered(

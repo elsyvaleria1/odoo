@@ -6,7 +6,6 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import Form, TransactionCase, tagged
 
-# These errors are due to failures of Fedex test server and are not implementation errors
 ERROR_200 = "200: Rating is temporarily unavailable, please try again later."
 ERROR_200_BIS = "200: An unexpected exception occurred"
 ERROR_200_TER = "200: An unexpected exception occurred, not found"
@@ -80,9 +79,6 @@ class TestDeliveryFedex(TransactionCase):
         self.customer_location = self.env.ref("stock.stock_location_customers")
 
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method.
-        """
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -110,7 +106,6 @@ class TestDeliveryFedex(TransactionCase):
             }
 
             sale_order = SaleOrder.create(so_vals)
-            # I add delivery cost in Sales order
             delivery_wizard = Form(
                 self.env["wizard.sale.order.add.shipping"].with_context(
                     {
@@ -193,7 +188,6 @@ class TestDeliveryFedex(TransactionCase):
             }
 
             sale_order = SaleOrder.create(so_vals)
-            # I add delivery cost in Sales order
             delivery_wizard = Form(
                 self.env["wizard.sale.order.add.shipping"].with_context(
                     {
@@ -282,7 +276,6 @@ class TestDeliveryFedex(TransactionCase):
             }
 
             sale_order = SaleOrder.create(so_vals)
-            # I add delivery cost in Sales order
             delivery_wizard = Form(
                 self.env["wizard.sale.order.add.shipping"].with_context(
                     {
@@ -403,7 +396,6 @@ class TestDeliveryFedex(TransactionCase):
 class TestMockDeliveryFedex(TestDeliveryFedex):
     @contextmanager
     def patch_fedex_requests(self):
-        """Mock context for requests to the fedex API."""
 
         class MockedSession:
             def __init__(self, *args, **kwargs):
@@ -427,7 +419,6 @@ class TestMockDeliveryFedex(TestDeliveryFedex):
                     response.content = b'<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Header/><SOAP-ENV:Body><RateReply xmlns="http://fedex.com/ws/rate/v31"><HighestSeverity>WARNING</HighestSeverity><Notifications><Severity>WARNING</Severity><Source>crs</Source><Code>396</Code><Message>The returned rate types are in the requested preferred currency; preferred rates not returned.</Message><LocalizedMessage>The returned rate types are in the requested preferred currency; preferred rates not returned.</LocalizedMessage></Notifications><TransactionDetail><CustomerTransactionId>S00402</CustomerTransactionId></TransactionDetail><Version><ServiceId>crs</ServiceId><Major>31</Major><Intermediate>0</Intermediate><Minor>0</Minor></Version><RateReplyDetails><ServiceType>PRIORITY_OVERNIGHT</ServiceType><ServiceDescription><ServiceType>PRIORITY_OVERNIGHT</ServiceType><Code>01</Code><Names><Type>long</Type><Encoding>utf-8</Encoding><Value>FedEx Priority Overnight\xc3\x82\xc2\xae</Value></Names><Names><Type>long</Type><Encoding>ascii</Encoding><Value>FedEx Priority Overnight</Value></Names><Names><Type>medium</Type><Encoding>utf-8</Encoding><Value>FedEx Priority Overnight\xc3\x82\xc2\xae</Value></Names><Names><Type>medium</Type><Encoding>ascii</Encoding><Value>FedEx Priority Overnight</Value></Names><Names><Type>short</Type><Encoding>utf-8</Encoding><Value>P-1</Value></Names><Names><Type>short</Type><Encoding>ascii</Encoding><Value>P-1</Value></Names><Names><Type>abbrv</Type><Encoding>ascii</Encoding><Value>PO</Value></Names><Description>Priority Overnight</Description><AstraDescription>P1</AstraDescription></ServiceDescription><PackagingType>FEDEX_BOX</PackagingType><DestinationAirportId>CAE</DestinationAirportId><IneligibleForMoneyBackGuarantee>false</IneligibleForMoneyBackGuarantee><OriginServiceArea>A1</OriginServiceArea><DestinationServiceArea>A1</DestinationServiceArea><SignatureOption>SERVICE_DEFAULT</SignatureOption><ActualRateType>PAYOR_ACCOUNT_PACKAGE</ActualRateType><RatedShipmentDetails><ShipmentRateDetail><RateType>PAYOR_ACCOUNT_PACKAGE</RateType><RateScale>1618</RateScale><RateZone>08</RateZone><PricingCode>PACKAGE</PricingCode><RatedWeightMethod>PACKAGING_MINIMUM</RatedWeightMethod><DimDivisor>0</DimDivisor><FuelSurchargePercent>19.5</FuelSurchargePercent><TotalBillingWeight><Units>LB</Units><Value>2.0</Value></TotalBillingWeight><TotalBaseCharge><Currency>USD</Currency><Amount>101.28</Amount></TotalBaseCharge><TotalFreightDiscounts><Currency>USD</Currency><Amount>0.0</Amount></TotalFreightDiscounts><TotalNetFreight><Currency>USD</Currency><Amount>101.28</Amount></TotalNetFreight><TotalSurcharges><Currency>USD</Currency><Amount>19.75</Amount></TotalSurcharges><TotalNetFedExCharge><Currency>USD</Currency><Amount>121.03</Amount></TotalNetFedExCharge><TotalTaxes><Currency>USD</Currency><Amount>0.0</Amount></TotalTaxes><TotalNetCharge><Currency>USD</Currency><Amount>121.03</Amount></TotalNetCharge><TotalRebates><Currency>USD</Currency><Amount>0.0</Amount></TotalRebates><TotalDutiesAndTaxes><Currency>USD</Currency><Amount>0.0</Amount></TotalDutiesAndTaxes><TotalAncillaryFeesAndTaxes><Currency>USD</Currency><Amount>0.0</Amount></TotalAncillaryFeesAndTaxes><TotalDutiesTaxesAndFees><Currency>USD</Currency><Amount>0.0</Amount></TotalDutiesTaxesAndFees><TotalNetChargeWithDutiesAndTaxes><Currency>USD</Currency><Amount>121.03</Amount></TotalNetChargeWithDutiesAndTaxes><Surcharges><SurchargeType>FUEL</SurchargeType><Description>Fuel</Description><Amount><Currency>USD</Currency><Amount>19.75</Amount></Amount></Surcharges></ShipmentRateDetail><RatedPackages><GroupNumber>0</GroupNumber><PackageRateDetail><RateType>PAYOR_ACCOUNT_PACKAGE</RateType><RatedWeightMethod>PACKAGING_MINIMUM</RatedWeightMethod><BillingWeight><Units>LB</Units><Value>2.0</Value></BillingWeight><BaseCharge><Currency>USD</Currency><Amount>101.28</Amount></BaseCharge><TotalFreightDiscounts><Currency>USD</Currency><Amount>0.0</Amount></TotalFreightDiscounts><NetFreight><Currency>USD</Currency><Amount>101.28</Amount></NetFreight><TotalSurcharges><Currency>USD</Currency><Amount>19.75</Amount></TotalSurcharges><NetFedExCharge><Currency>USD</Currency><Amount>121.03</Amount></NetFedExCharge><TotalTaxes><Currency>USD</Currency><Amount>0.0</Amount></TotalTaxes><NetCharge><Currency>USD</Currency><Amount>121.03</Amount></NetCharge><TotalRebates><Currency>USD</Currency><Amount>0.0</Amount></TotalRebates><Surcharges><SurchargeType>FUEL</SurchargeType><Description>Fuel</Description><Amount><Currency>USD</Currency><Amount>19.75</Amount></Amount></Surcharges></PackageRateDetail></RatedPackages></RatedShipmentDetails></RateReplyDetails></RateReply></SOAP-ENV:Body></SOAP-ENV:Envelope>'
                 return response
 
-        # zeep.Client.transport is using post from requests.Session
         with patch("zeep.transports.requests.Session") as mocked_session:
             mocked_session.side_effect = MockedSession
             yield mocked_session
@@ -450,7 +441,6 @@ class TestMockDeliveryFedex(TestDeliveryFedex):
 
     def test_05_fedex_multistep_delivery_tracking(self):
         with self.patch_fedex_requests():
-            # Set Warehouse as multi steps delivery
             self.env.ref("stock.warehouse0").delivery_steps = "pick_pack_ship"
 
             sale_order = self.env["sale.order"].create(
@@ -470,7 +460,6 @@ class TestMockDeliveryFedex(TestDeliveryFedex):
                     ],
                 }
             )
-            # I add delivery cost in Sales order
             delivery_wizard = Form(
                 self.env["wizard.sale.order.add.shipping"].with_context(
                     {
@@ -485,7 +474,6 @@ class TestMockDeliveryFedex(TestDeliveryFedex):
             choose_delivery_carrier.update_price()
             choose_delivery_carrier.button_confirm()
 
-            # Confirm the picking and send to shipper
             sale_order.action_confirm()
             picking = sale_order.picking_ids[0]
             picking.move_ids.quantity = 1.0

@@ -26,7 +26,6 @@ class WizardAccountMoveLineUpdateTaxTag(models.TransientModel):
         compute="_compute_display_lock_date_warning"
     )
 
-    # ==== Compute methods ====
     @api.depends("company_id")
     def _compute_date_from(self) -> None:
         for wizard in self:
@@ -45,22 +44,7 @@ class WizardAccountMoveLineUpdateTaxTag(models.TransientModel):
                 tax_lock_date and wizard.date_from < tax_lock_date
             )
 
-    # ==== Business methods ====
     def _modify_tag_to_aml_relation(self, company_id, date_from):
-        """Update Journal Items' tax grids to match current taxes' configuration.
-        The next query work in 4 steps.
-        1) Get a duo: (aml_id, tag_id or NULL) for each aml involved with the tax.
-            This first step is achieved in the 3 first table: base line, tax line, fusion.
-            a) As the base line and tax line aren't linked to tax in the same way, we need to gather them separately.
-            The base line get its repartition line by going through the tax.
-            b) The tax lines already have their repartition line linked.
-        2) Delete the previous relation aml - tag for each aml appearing in the previous queries.
-        3) Insert the new relation aml - tag.
-        4) Gather the ids of impacted amls into an array and return it.
-        :param: int company_id id of company
-        :param date_from: date from which journal items are updated
-        :return: list of impacted account.move.line ids
-        """
         self.env.flush_all()
         self.env.cr.execute(
             """

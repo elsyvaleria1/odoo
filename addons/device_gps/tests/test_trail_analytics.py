@@ -62,8 +62,6 @@ class TestTrailAnalytics(DeviceTransactionCase):
         self.assertAlmostEqual(analytics["parked_hours"], 0.0, places=3)
 
     def test_ignition_off_while_moving_stays_folded_into_parked(self):
-        # The daily report calls this state 'coasting'; wizard.device.device.view.trail.result has
-        # no coasting column, so the trail deliberately counts it as parked.
         points = [
             self._point(0, ignition=False, movement=True, speed=40),
             self._point(10, ignition=False, movement=True, speed=40),

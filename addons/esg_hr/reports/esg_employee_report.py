@@ -175,9 +175,6 @@ class EsgEmployeeReport(models.Model):
             _debug.lifecycle(
                 "esg_employee_report_view_rebuilt",
                 table=self._table,
-                # one row per employee per distinct combination of the group-by
-                # columns, so an employee with no `current_version_id` still
-                # contributes a row with every version column NULL
                 group_by_columns=len(self._group_by().split(",")),
             )
         drop_view_if_exists(self.env.cr, self._table)
@@ -193,16 +190,11 @@ class EsgEmployeeReport(models.Model):
     @api.model
     def get_overall_pay_gap(self):
         if _debug.logic.enabled:
-            # `hr.group_hr_manager` is asked for by this site alone, so the
-            # guard keeps an extra group check off the channels-off dashboard
             _debug.logic(
                 "esg_pay_gap_requested",
                 user=self.env.user,
                 companies=self.env.companies,
                 is_hr_user=self.env.user.has_group("hr.group_hr_user"),
-                # the report's own `wage` field is restricted to
-                # `hr.group_hr_manager`, but this aggregate is gated on
-                # `hr.group_hr_user` and reads the wages through `sudo()`
                 is_hr_manager=self.env.user.has_group("hr.group_hr_manager"),
             )
         if not self.env.user.has_group("hr.group_hr_user"):
@@ -217,7 +209,6 @@ class EsgEmployeeReport(models.Model):
         male_employees = emp_by_sex.get("male", self.env["hr.employee"])
         female_employees = emp_by_sex.get("female", self.env["hr.employee"])
 
-        # Normalize wages to a hourly wage
         def get_wages(employees):
             return [
                 wage
@@ -237,9 +228,6 @@ class EsgEmployeeReport(models.Model):
                 reason="no_male_wage" if not male_median else "no_female_wage",
                 male_employees=len(male_employees),
                 female_employees=len(female_employees),
-                # employees whose sex is recorded as neither, or not at all,
-                # are in `emp_by_sex` under another key and count towards
-                # nothing here
                 classified=len(male_employees) + len(female_employees),
                 male_wages=len(male_wages),
                 female_wages=len(female_wages),
@@ -253,9 +241,6 @@ class EsgEmployeeReport(models.Model):
                 female_employees=len(female_employees),
                 male_wages=len(male_wages),
                 female_wages=len(female_wages),
-                # an employee whose version has no normalized wage is dropped
-                # by `get_wages`, so the medians are over the employees that
-                # HAVE a wage, not over the employees counted beside them
                 male_median=male_median,
                 female_median=female_median,
                 gap_percent=round((male_median - female_median) / male_median * 100, 2),

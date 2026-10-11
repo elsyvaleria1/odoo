@@ -56,16 +56,16 @@ class HrVersion(models.Model):
         else:
             bypassing_rc_leave = []
 
-        by = "none"  # debuglog
+        by = "none"
         if bypassing_rc_leave:
             rc_leave = bypassing_rc_leave[0]
-            by = "bypassing"  # debuglog
+            by = "bypassing"
         elif including_global_rcleaves:
             rc_leave = including_global_rcleaves[0]
-            by = "global"  # debuglog
+            by = "global"
         elif including_holiday_rcleaves:
             rc_leave = including_holiday_rcleaves[0]
-            by = "holiday"  # debuglog
+            by = "holiday"
         _debug.logic("leave_work_entry_type", by=by, version=self)
         if rc_leave:
             return self._get_leave_work_entry_type_dates(

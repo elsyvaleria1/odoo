@@ -206,8 +206,6 @@ class WizardResPartnerGrantPortalAccessLine(models.TransientModel):
         return self.wizard_id._action_view_modal()
 
     def _invalidate_user_state(self) -> None:
-        # Transient-model dependencies stop at persistent models. Re-read account
-        # state before authorizing an action and after changing the account.
         self.invalidate_recordset(
             ["user_id", "login_date", "email_state", "is_portal", "is_internal"]
         )

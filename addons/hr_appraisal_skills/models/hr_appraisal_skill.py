@@ -28,7 +28,7 @@ class HrAppraisalSkill(models.Model):
     skill_level_id = fields.Many2one(
         comodel_name="hr.skill.level",
         required=False,
-    )  # To handle Target Job
+    )
     employee_id = fields.Many2one(
         related="appraisal_id.employee_id",
     )
@@ -100,7 +100,7 @@ class HrAppraisalSkill(models.Model):
         for appraisal, appraisal_skills in appraisal_skill_by_appraisal.items():
             target_job_skills_by_skill = (
                 appraisal.target_job_id.current_job_skill_ids.grouped("skill_id")
-            )  # at most one current job skill per skill
+            )
             for app_skill in appraisal_skills:
                 target_job_skill = target_job_skills_by_skill.get(
                     app_skill.skill_id, False

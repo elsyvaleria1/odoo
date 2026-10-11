@@ -50,6 +50,4 @@ class ResCompany(models.Model):
                     "helpdesk_alias_name": alias_name,
                 }
             ]
-        # use sudo as the user could have the right to create a company
-        # but not to create a team for other company.
         return self.env["team.team"].sudo().create(results)

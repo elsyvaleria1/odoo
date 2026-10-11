@@ -136,8 +136,6 @@ class ProductProduct(models.Model):
     }
 
     def _read_group_select(self, aggregate_spec, query):
-        # the purpose of this override is to flag the aggregates above as such:
-        # field._description_aggregator() should simply not fail
         if aggregate_spec in self._SPECIAL_SUM_AGGREGATES:
             field_name = aggregate_spec.split(":")[0]
             self._check_field_access(self._fields[field_name], "read")
@@ -155,9 +153,6 @@ class ProductProduct(models.Model):
         limit=None,
         order=None,
     ):
-        """
-        Inherit _read_group to calculate the sum of the non-stored fields, as it is not automatically done anymore through the XML.
-        """
         if self._SPECIAL_SUM_AGGREGATES.isdisjoint(aggregates):
             return super()._read_group(
                 domain, groupby, aggregates, having, offset, limit, order
@@ -174,13 +169,9 @@ class ProductProduct(models.Model):
             domain, groupby, base_aggregates, having, offset, limit, order
         )
 
-        # Force the compute of all records to bypass the limit compute batching (PREFETCH_MAX)
         all_records = self.browse().union(*(item[-1] for item in base_result))
-        # This line will compute all fields having _compute_product_margin_fields_values
-        # as compute method.
         self._fields["turnover"].compute_value(all_records)
 
-        # base_result = [(a1, b1, records), (a2, b2, records), ...]
         result = []
         for *other, records in base_result:
             for index, spec in enumerate(itertools.chain(groupby, aggregates)):
@@ -206,13 +197,9 @@ class ProductProduct(models.Model):
             domain, grouping_sets, base_aggregates, order
         )
 
-        # Force the compute of all records to bypass the limit compute batching (PREFETCH_MAX)
-        # This line will compute all fields having _compute_product_margin_fields_values
-        # as compute method.
         all_records = self.concat(*(item[-1] for row in base_result for item in row))
         self._fields["turnover"].compute_value(all_records)
 
-        # base_result = [[(a1, b1, records), (a2, b2, records), ...], [(a1, b1, c1, records), (a2, b2, c2, records), ...] ...]
         result = []
         for grouping_spec, grouping in zip(grouping_sets, base_result, strict=False):
             row = []
@@ -283,9 +270,6 @@ class ProductProduct(models.Model):
             ["state", "payment_state", "move_type", "invoice_date", "company_id"]
         )
         self.env["product.template"].flush_model(["list_price"])
-        # sale/purchase sides share the same per-line signed formulas (sign
-        # flips on move_type); FILTER splits one pass over account_move_line
-        # into the two buckets instead of running the identical query twice.
         sale_types = ("out_invoice", "out_refund")
         purchase_types = ("in_invoice", "in_refund")
         query = SQL(

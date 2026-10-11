@@ -716,11 +716,6 @@ class ResCompany(models.Model):
         return res
 
     def _load_chart_template_at_commit(self, template_code, *, guessed) -> None:
-        # creating a company, or giving it a country, queues a chart for the
-        # commit; a chart loaded since, explicitly or by the other queued load,
-        # is the one the company keeps, and loading this one over it would
-        # load a chart twice, or leave the company naming one chart over the
-        # data of another
         self.check_singleton()
         current = self.account_config_id.chart_template
         _debug.logic(
@@ -804,8 +799,8 @@ class ResCompany(models.Model):
         last_move = self.env["account.move"]
         secure_sequence_hash_version = 1
         any_hashed_move = False
-        hashed_rows = 0  # debuglog
-        hashed_batches = 0  # debuglog
+        hashed_rows = 0
+        hashed_batches = 0
         self.env.execute_query(
             SQL("DECLARE hashed_moves CURSOR FOR %s", query.select())
         )
@@ -813,8 +808,8 @@ class ResCompany(models.Model):
             while move_ids := self.env.execute_query(
                 SQL("FETCH %s FROM hashed_moves", SQL(str(INTEGRITY_HASH_BATCH_SIZE)))
             ):
-                hashed_rows += len(move_ids)  # debuglog
-                hashed_batches += 1  # debuglog
+                hashed_rows += len(move_ids)
+                hashed_batches += 1
                 self.env.invalidate_all()
                 moves = self.env["account.move"].browse(
                     move_id[0] for move_id in move_ids

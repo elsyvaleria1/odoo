@@ -50,14 +50,11 @@ class TestHelpdeskFsm(HelpdeskCommon):
         )
 
     def test_fsm_project(self):
-        # Enable field service on the helpdesk team
         self.test_team.helpdesk_use_fsm = True
-        # Find the first fsm project
         fsm_project = self.env["project.project"].search(
             [("is_fsm", "=", True), ("company_id", "=", self.test_team.company_id.id)],
             limit=1,
         )
-        # Default fsm_project should be the first fsm project with the oldest id
         self.assertEqual(
             self.test_team.fsm_project_id,
             fsm_project,
@@ -106,7 +103,7 @@ class TestHelpdeskFsm(HelpdeskCommon):
 
         action = ticket.with_user(
             self.helpdesk_user
-        ).action_generate_fsm_task()  # should not raise AccessError
+        ).action_generate_fsm_task()
         action_context = action["context"]
         self.assertEqual(
             action_context["default_project_id"], ticket.team_id.fsm_project_id.id

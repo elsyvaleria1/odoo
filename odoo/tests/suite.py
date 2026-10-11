@@ -27,7 +27,7 @@ class TestSuite(BaseTestSuite):
     _cleanup: bool
     _removeTestAtIndex: Callable[[int], None]
 
-    def run(  # type: ignore[override]  # this runner requires an OdooTestResult
+    def run(
         self, result: OdooTestResult, debug: bool = False
     ) -> OdooTestResult:
         for index, test in enumerate(self):
@@ -71,7 +71,7 @@ class TestSuite(BaseTestSuite):
         with _debug.perf(
             "test.suite.class_setup", cls=util.strclass(currentClass)
         ) as span:
-            queries_before = db.sql_counter  # debuglog
+            queries_before = db.sql_counter
             try:
                 currentClass.setUpClass()
             except Exception as e:
@@ -144,7 +144,7 @@ class TestSuite(BaseTestSuite):
         with _debug.perf(
             "test.suite.class_teardown", cls=util.strclass(previousClass)
         ) as span:
-            queries_before = db.sql_counter  # debuglog
+            queries_before = db.sql_counter
             try:
                 previousClass.tearDownClass()
             except Exception as e:

@@ -12,7 +12,6 @@ class MailNotification(models.Model):
         string="SMS ID",
         index="btree_not_null",
     )
-    # Used to give links on form view without foreign key. In most cases, you'd want to use sms_id_int or sms_tracker_ids.sms_uuid.
     sms_id = fields.Many2one(
         comodel_name="sms.sms",
         string="SMS",
@@ -37,7 +36,6 @@ class MailNotification(models.Model):
             ("sms_registration_needed", "Country-specific Registration Required"),
             ("sms_server", "Server Error"),
             ("sms_acc", "Unregistered Account"),
-            # delivery report errors
             ("sms_expired", "Expired"),
             ("sms_invalid_destination", "Invalid Destination"),
             ("sms_not_allowed", "Not Allowed"),

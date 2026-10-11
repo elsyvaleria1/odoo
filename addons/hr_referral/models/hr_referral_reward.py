@@ -112,7 +112,6 @@ class HrReferralReward(models.Model):
                 )
             )
 
-        # Use sudo, employee has normaly not the right to create or write on points
         self.env["hr.referral.points"].sudo().create(
             {
                 "ref_user_id": current_user.id,
@@ -122,7 +121,6 @@ class HrReferralReward(models.Model):
             }
         )
         if self.gift_manager_id:
-            # log a next activity for today
             self.sudo().activity_schedule(
                 activity_type_id=self.env.ref("mail.mail_activity_data_todo").id,
                 summary=self.env._("New gift awarded for %s", current_user.name),
@@ -165,7 +163,6 @@ class HrReferralReward(models.Model):
         return rewards
 
     def _grant_reward_responsible(self, users) -> None:
-        # a reward's gift manager hands the rewards out: the group follows it
         self.env["res.users.grant"].with_privilege(
             "hr_referral.privilege_grant_reward_responsible",
             reason="gift manager of a referral reward",

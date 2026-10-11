@@ -64,7 +64,6 @@ REACH_SELECTION = [
     ("all", "All"),
     ("predicate", "Named predicate"),
 ]
-# the anchor a rung reads when the row names none
 REACH_ANCHOR = {
     "own": "owner",
     "team": "team",
@@ -73,7 +72,6 @@ REACH_ANCHOR = {
     "company": "company",
     "partner": "partner",
 }
-# the anchor kinds each rung can read
 REACH_KINDS = {
     "own": frozenset({"owner", "creator", "employee", "partner"}),
     "team": frozenset({"team"}),
@@ -82,9 +80,6 @@ REACH_KINDS = {
     "company": frozenset({"company"}),
     "partner": frozenset({"partner"}),
 }
-# a domain that can hold an 'access' condition: only those are parsed for the
-# cycle check (an unrelated text is not evaluated, which a rule calling back
-# into the decision would turn into a recursion)
 ACCESS_OPERATOR_RE = re.compile(r"""['"]access['"]""")
 NON_STANDARD_MODULES = ("__export__", "__custom__", "studio_customization")
 INVALID_DOMAIN_ERRORS = (
@@ -122,17 +117,14 @@ class AccessInfo(typing.NamedTuple):
     anchor: str = ""
     predicate: tuple[str, str, str, str] = ("", "", "", "")
     predicate_args: tuple[tuple[str, Any], ...] = ()
-    # the groups a guard of a field class spares, and that class
     exempt: frozenset[int] = frozenset()
     class_id: int = 0
 
 
-# the companies of a guard that binds everyone, whatever groups they hold
 EVERYONE = object()
 
 
 def covers(row: AccessInfo, operation: str) -> bool:
-    # a CRUD operation by its letter, a declared verb by its name
     letter = OPERATION_LETTER.get(operation)
     return letter in row.operation if letter else operation in row.verbs
 
@@ -142,8 +134,6 @@ def parse_verbs(text: str | None) -> frozenset[str]:
 
 
 def parse_access_domain(text: str | None) -> Domain | str:
-    # a literal domain is parsed once; one that reads the user or the companies
-    # stays text and is evaluated for each principal
     text = (text or "").strip()
     if not text:
         return Domain.TRUE
@@ -154,8 +144,6 @@ def parse_access_domain(text: str | None) -> Domain | str:
 
 
 def reads_only_refs(text: str | None) -> bool:
-    # a domain whose only names are ref() calls on literal xml ids names fixed
-    # records: it reads nothing of the principal, so it resolves once
     try:
         tree = ast.parse((text or "").strip(), mode="eval")
     except SyntaxError:
@@ -178,9 +166,6 @@ def reads_only_refs(text: str | None) -> bool:
 
 
 def _monotone_group_reads(tree: ast.AST) -> set[int]:
-    # the two readings of the principal's groups that more groups can only
-    # widen: membership in the ids of the user's groups, and an exemption that
-    # drops the domain altogether for the members of a group
     allowed: set[int] = set()
     for node in ast.walk(tree):
         if isinstance(node, (ast.List, ast.Tuple)):
@@ -217,8 +202,6 @@ def _monotone_group_reads(tree: ast.AST) -> set[int]:
 
 
 def _widens(node: ast.IfExp) -> bool:
-    # [] if member else D: the members are exempt; ['|', A] if member else []
-    # put before a domain: the members also reach A
     if isinstance(node.body, ast.List) and not node.body.elts:
         return True
     return (
@@ -232,8 +215,6 @@ def _widens(node: ast.IfExp) -> bool:
 
 
 def domain_group_tests(domain: str) -> list[str]:
-    # a domain that tests the principal's groups can make a group take records
-    # away; the row's group is where membership is stated
     try:
         tree = ast.parse(domain.strip(), mode="eval")
     except SyntaxError:
@@ -306,8 +287,6 @@ def access_edges(model: models.BaseModel, domain: Domain) -> Iterator[tuple[str,
 
 
 def without_access_conditions(domain: Domain) -> Domain:
-    # a domain's own validity, read without resolving what other accesses
-    # allow: those rows are checked on their own
     def skip(condition: DomainCondition) -> Domain:
         if condition.operator == "access":
             return DomainCondition(condition.field_expr, "!=", False)
@@ -325,8 +304,6 @@ def without_access_conditions(domain: Domain) -> Domain:
 
 
 def missing_fields(model: models.BaseModel, text: str) -> Iterator[str]:
-    # read from the text rather than evaluated: every stored path is a
-    # literal, and evaluating each row per load costs ten times the walk
     try:
         tree = ast.parse(text, mode="eval")
     except SyntaxError:
@@ -350,7 +327,6 @@ def _missing_fields(model: models.BaseModel, node: ast.AST) -> Iterator[str]:
                 yield f"{target._name}.{name}"
                 return
             if not field.relational:
-                # what follows names a property or a date part
                 return
             target = model.env[field.comodel_name]
         if operator.value in ANY_OPERATORS:
@@ -374,7 +350,6 @@ PREDICATE_BINDS = frozenset(
 
 
 class _Principal:
-    # the binds a predicate's template reads, fetched only when read
     __slots__ = ("_bind",)
 
     def __init__(self, bind: typing.Callable[..., Any]) -> None:
@@ -387,10 +362,6 @@ class _Principal:
 
 
 def filter_reads_user(registry: Any, model_name: str, text: str | None) -> bool:
-    # a filter naming a field whose value depends on the user (its compute
-    # depends on the uid context, and a method searches it; a related field
-    # depends on it only through access rights, and its search is its path):
-    # such a filter is not fixed, whatever its text says
     if not text or model_name not in registry:
         return False
     try:
@@ -423,9 +394,6 @@ def filter_reads_user(registry: Any, model_name: str, text: str | None) -> bool:
 def predicate_arguments(
     *required: str, optional: Iterable[str] = ()
 ) -> typing.Callable[[typing.Callable[..., Any]], typing.Callable[..., Any]]:
-    # what a method predicate reads from args: a row leaving one of them out,
-    # or passing another, is refused when saved instead of admitting nothing
-    # once evaluated. A template's are read from the template itself
     def declare(method: typing.Callable[..., Any]) -> typing.Callable[..., Any]:
         method._access_arguments = (frozenset(required), frozenset(optional))
         return method
@@ -439,8 +407,6 @@ def compile_predicate(
     args: dict[str, Any],
     bind: typing.Callable[..., Any],
 ) -> Domain:
-    # a named predicate's domain for the principal: its method on the model,
-    # or its template reading P (the binds) and args
     _name, template, method, _description = predicate
     if method:
         return Domain(getattr(model, method)(bind, args))
@@ -499,9 +465,6 @@ class IrAccess(models.Model):
     )
     kind = fields.Selection(
         selection=[("permission", "Permission"), ("guard", "Guard")],
-        # a row that names only its group grants it, as an access line did; one
-        # that names neither kind nor group is refused as a permission for
-        # nobody, never read as a guard
         default="permission",
         required=True,
         help="A permission adds the records of its domain to what its group may "
@@ -584,8 +547,6 @@ class IrAccess(models.Model):
         "An access applies to an operation, a verb, or both.",
     )
 
-    # one compute per flag: ticking one protects only that one, so the inverse
-    # reads the other three from the operation
     @api.depends("operation")
     def _compute_for_read(self) -> None:
         self._compute_for_operation("read")
@@ -637,8 +598,6 @@ class IrAccess(models.Model):
 
     @staticmethod
     def _search_for_letter(letter: str, operator: str, value: Any) -> Domain:
-        # the flags are read from the operation, never stored beside it, so
-        # a migration that rewrites the operation cannot leave them behind
         if operator not in ("in", "not in"):
             return NotImplemented
         values = {bool(item) for item in value}
@@ -757,15 +716,11 @@ class IrAccess(models.Model):
                         error=e,
                     )
                 ) from None
-        # a new cycle goes through a written row's 'access' condition
         if any("access" in (access.domain or "") for access in self):
             self._check_access_graph()
 
     @api.model
     def _unresolved_domains(self) -> list[tuple[Self, str]]:
-        # a stored row keeps its text when a module drops a field it names
-        # (a noupdate row is never reloaded), and then admits nothing for the
-        # users it binds (_access_infos) until its domain is corrected
         accesses = self.with_context(active_test=False).search_fetch(
             Domain("active", "=", True)
             & Domain("domain", "!=", False)
@@ -782,7 +737,6 @@ class IrAccess(models.Model):
                 self.env[access.model_id.model], access.domain
             )
         ]
-        # a row reaching through an anchor its model no longer declares
         for access in self.with_context(active_test=False).search_fetch(
             Domain("active", "=", True)
             & Domain("reach", "in", list(REACH_ANCHOR))
@@ -946,9 +900,6 @@ class IrAccess(models.Model):
                 )
 
     def _row_domains(self) -> typing.Callable[[str, AccessInfo], Domain]:
-        # a row's domain for the principal: its reach through the model's
-        # anchor, or its predicate, and its fixed filter; else its domain
-        # evaluated as it always was
         eval_context: dict[str, Any] | None = None
         binds: dict[tuple, Any] = {}
 
@@ -972,10 +923,6 @@ class IrAccess(models.Model):
                     eval_context = self._eval_context()
                 return Domain(safe_eval(row.domain, eval_context))
             except INVALID_DOMAIN_ERRORS as e:
-                # a row that does not evaluate for this principal admits
-                # nothing -- a permission grants nothing, a guard lets nothing
-                # through -- instead of raising for every principal of the
-                # model; anything else is not a wrong domain and propagates
                 _logger.error(
                     "Access %s (%r) on %s does not evaluate for uid %s (%s: %s); "
                     "it admits nothing until its domain is corrected",
@@ -1028,14 +975,9 @@ class IrAccess(models.Model):
             domain |= Domain(path, "=", False)
         return domain
 
-    # what the rungs compare an anchor with, read once per principal; a module
-    # that brings a kind of anchor brings its bind (hr: employees and units,
-    # team: teams)
     def _access_bind_user(self) -> int:
         return self.env.uid
 
-    # the contact the code acts on behalf of (with_acting_partner) stands for
-    # the user's own; the user stays the user either way
     def _access_bind_partner(self) -> int:
         if acting := self.env.context.get(ACTING_PARTNER_KEY):
             return acting[0]
@@ -1050,7 +992,6 @@ class IrAccess(models.Model):
         return self.env.companies.ids
 
     def _reach_words(self, model_name: str, row: AccessInfo) -> str:
-        # what the row's reach says, for the explanation
         if row.reach == "none":
             return self.env._("nothing")
         if row.reach in ("all", ""):
@@ -1135,8 +1076,6 @@ class IrAccess(models.Model):
                 vals["operation"] = operation
             if not vals.get("group_id"):
                 if vals.get("kind") == "permission":
-                    # a grant names whom it is for; left empty it would reach
-                    # every user, portal and public included
                     raise ValidationError(
                         self.env._(
                             "The permission %(access)s names no group: say whom it "
@@ -1145,8 +1084,6 @@ class IrAccess(models.Model):
                             access=vals.get("name"),
                         )
                     )
-                # a guard with no group binds everyone, as a row with no group
-                # always restricted
                 if everyone is None:
                     everyone = self.env.ref("base.group_everyone")
                 vals["group_id"] = everyone.id
@@ -1160,10 +1097,6 @@ class IrAccess(models.Model):
     def _load_records(
         self, data_list: list[dict[str, Any]], update: bool = False
     ) -> Self:
-        # a module's rows reuse the external ids of the access lines and rules
-        # they were converted from; base's 1.97 migration moves those ids onto
-        # the rows before any module loads, so a database that still maps one
-        # to an old record has not run it
         if old := (
             self.env["ir.model.data"]
             .sudo()
@@ -1182,8 +1115,6 @@ class IrAccess(models.Model):
         return super()._load_records(data_list, update)
 
     def _check_guard_scope_stated(self, data_list: list[dict]) -> None:
-        # a guard on a group defaults to binding every principal, which a file
-        # naming a group almost never means (marin's CSV row did exactly this)
         everyone = self.env.ref("base.group_everyone", raise_if_not_found=False)
         for data in data_list:
             values = data["values"]
@@ -1223,7 +1154,6 @@ class IrAccess(models.Model):
     def _clear_access_caches(self) -> None:
         self.env.flush_all()
         self.env.invalidate_all()
-        # views bake the groups a model is readable by into their cached arch
         self.env.registry.clear_cache("stable", "templates")
 
     def customize(self) -> dict[str, Any]:
@@ -1242,8 +1172,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _eval_context(self) -> dict[str, Any]:
-        # modules extend it (website adds the current website); the user comes
-        # with an empty context, so a domain reads the same in every context
         return {
             "user": self.env.user.with_context({}),
             "company_ids": self.env.companies.ids,
@@ -1254,7 +1182,6 @@ class IrAccess(models.Model):
         }
 
     def _ref_id(self, xmlid: str) -> int:
-        # a row that names one record, typically the group a privilege grants
         return (
             self.env["ir.model.data"]
             .sudo()
@@ -1262,9 +1189,6 @@ class IrAccess(models.Model):
         )
 
     def _get_access_context(self) -> Iterator[Any]:
-        # the context values the evaluation of a domain depends on: the current
-        # company and the set in use, in which the order of the others changes
-        # no domain (a client sending [4, 2] or [2, 4] shares one cache entry)
         company_ids = self.env.context.get("allowed_company_ids")
         if isinstance(company_ids, (list, tuple)):
             yield (
@@ -1287,8 +1211,6 @@ class IrAccess(models.Model):
         )
 
     def _policy_expiry(self) -> datetime.datetime | None:
-        # when the signature next changes by itself: a timed grant of the
-        # user's starting or ending
         return self.env.user._get_group_state().valid_until
 
     def _access_infos(self, accesses: Self) -> dict[str, tuple[AccessInfo, ...]]:
@@ -1301,8 +1223,6 @@ class IrAccess(models.Model):
             text = (access.domain or "").strip()
             domain = parse_access_domain(text)
             if isinstance(domain, str) and reads_only_refs(domain):
-                # an xml id of a module still loading stays text, evaluated per
-                # principal until it resolves
                 with contextlib.suppress(ValueError):
                     domain = Domain(safe_eval(domain, {"ref": self._ref_id}))
             if (
@@ -1310,11 +1230,6 @@ class IrAccess(models.Model):
                 and registry.ready
                 and (missing := next(missing_fields(self.env[model_name], text), None))
             ):
-                # a stored row whose domain names what its model lost admits
-                # nothing, rather than raising on every check of the model
-                # (_log_unresolved_domains names it at each upgrade too); not
-                # while modules load, when a field of an installed module may
-                # not be in the registry yet
                 _logger.error(
                     "Access %s (%r) on %s names %s, which does not exist; it admits "
                     "nothing until its domain is corrected",
@@ -1351,8 +1266,6 @@ class IrAccess(models.Model):
     @api.model
     @tools.ormcache("self._get_unloaded_module_scope()", cache="stable")
     def _get_access_rows(self) -> tuple[dict, frozendict]:
-        # every active row, read once: the rows of models, and those of field
-        # classes (ir_access_class), which the same search returns
         accesses = (
             self.sudo()
             .with_context(active_test=False)
@@ -1372,8 +1285,6 @@ class IrAccess(models.Model):
     @tools.ormcache("self._get_unloaded_module_scope()", cache="stable")
     def _get_all_access(self) -> frozendict:
         infos = dict(self._get_access_rows()[0])
-        # a model with its own table under a table-inheritance root is bound by
-        # the root's rows too, as the rows are read through the root's table
         for model_name in list(self.env.registry.models):
             for other in self._get_models_bound_by(model_name)[1:]:
                 infos[model_name] = infos.get(model_name, ()) + infos.get(other, ())
@@ -1383,8 +1294,6 @@ class IrAccess(models.Model):
         return frozendict(infos)
 
     def _get_models_bound_by(self, model_name: str) -> list[str]:
-        # a model with its own table under a table-inheritance root is bound by
-        # the root's rows too, as its records are read through the root's table
         registry = self.env.registry
         model_cls = registry.get(model_name)
         root = getattr(model_cls, "_table_inheritance_root", "")
@@ -1399,8 +1308,6 @@ class IrAccess(models.Model):
     def _bound_access_rows(
         self, model_name: str, operation: str
     ) -> tuple[list[Domain], list[Domain]]:
-        # the domains of the permissions the principal's groups hold and of the
-        # guards that bind it, for one model and operation
         domain_of = self._row_domains()
 
         def domains(bound: list[tuple[AccessInfo, Any]]) -> list[Domain]:
@@ -1419,8 +1326,6 @@ class IrAccess(models.Model):
     def _bound_access_infos(
         self, model_name: str, operation: str
     ) -> tuple[list[tuple[AccessInfo, Any]], list[tuple[AccessInfo, Any]]]:
-        # the rows themselves, each with the companies its group is held in
-        # (None for all of them), or EVERYONE for a guard binding everyone
         self._check_operation(model_name, operation)
         scopes = self.env.user._get_group_scopes()
         permissions: list[tuple[AccessInfo, Any]] = []
@@ -1438,12 +1343,6 @@ class IrAccess(models.Model):
     def _conditional_reach(
         self, model_name: str, operation: str, family: frozenset[int] = frozenset()
     ) -> Domain:
-        # the OR of the permissions the principal holds on the model that say
-        # whose or which records -- an owner, a team, a partner, a predicate, a
-        # filter -- and of those of the groups in `family` whatever they reach:
-        # what record rules let a user reach beside access lines, and so what a
-        # restricted role bounds (base.conditional_reach); a permission of
-        # another group reaching every record of the companies in use is left out
         self._check_operation(model_name, operation)
         scopes = self.env.user._get_group_scopes()
         domain_of = self._row_domains()
@@ -1471,10 +1370,6 @@ class IrAccess(models.Model):
         domain: Domain,
         companies: frozenset[int] | None,
     ) -> Domain:
-        # a row held through a grant limited to some companies reaches the
-        # records of those companies (and the shared ones); a guard of the
-        # members binds them there only. A model with no company anchor takes
-        # the row whole: the grant holds in it wherever it is in use
         if companies is None:
             return domain
         within = self._company_scope_domain(model_name, companies)
@@ -1483,8 +1378,6 @@ class IrAccess(models.Model):
         return domain & within if row.kind == "permission" else domain | ~within
 
     def _privilege_domain(self, model_name: str, operation: str) -> Domain:
-        # what the environment's privileges alone allow on the model: the OR of
-        # their own permission rows, the user's groups set aside
         self._check_operation(model_name, operation)
         privileges = self.env.privileges
         domain_of = self._row_domains()
@@ -1498,10 +1391,6 @@ class IrAccess(models.Model):
         return Domain.OR(domains) if domains else Domain.FALSE
 
     def _explain(self, model_name: str, operation: str) -> list[str]:
-        # the rows that bind the principal for the operation, in words: each
-        # with the group that carries it and the companies that group is held
-        # in, and a note where the model belongs to no company, so a grant
-        # limited to some companies applies to all its records
         self._check_operation(model_name, operation)
         scopes = self.env.user._get_group_scopes()
         groups = self.env["res.groups"].sudo()
@@ -1569,10 +1458,6 @@ class IrAccess(models.Model):
         return Domain(anchor, "in", company_ids) | Domain(anchor, "=", False)
 
     def _get_groups_with_access(self, model_name: str, operation: str) -> Any:
-        # the groups whose members may perform the operation on some records of
-        # the model: a permission's group or a group implying it, for which the
-        # 'access' conditions of the row, the guards binding it, the model's own
-        # guard and every delegated parent can all hold
         return (
             self.env["res.groups"]
             .sudo()
@@ -1584,7 +1469,6 @@ class IrAccess(models.Model):
         groups = self._group_ids_granting(model_name, operation)
         if verb := self.env.registry.model_verbs.get(model_name, {}).get(operation):
             return groups & self._group_ids_with_access(model_name, verb.requires)
-        # what the model delegates is its class's to say, read with no right
         model = self.env[model_name]
         if model._inherits_rules:
             for parent_model_name, field_name in model._inherits.items():
@@ -1595,9 +1479,6 @@ class IrAccess(models.Model):
 
     @tools.ormcache("model_name", "operation", cache="stable")
     def _group_ids_granting(self, model_name: str, operation: str) -> frozenset[int]:
-        # the groups whose own rows grant the operation, before what it needs
-        # besides (the operation a verb requires, a delegated parent's access):
-        # a user can hold that through another of their groups
         self._check_operation(model_name, operation)
         implying = self._group_ids_implying()
         every_group = frozenset(implying)
@@ -1635,9 +1516,6 @@ class IrAccess(models.Model):
         )
 
     def _row_access_domain(self, row: AccessInfo) -> Domain:
-        # what a group needs of a row is only its 'access' conditions, the rest
-        # can hold for some records whatever the group; a text domain is read
-        # only when it can hold such a condition
         if isinstance(row.domain, Domain):
             return row.domain
         if not ACCESS_OPERATOR_RE.search(row.text):
@@ -1686,8 +1564,6 @@ class IrAccess(models.Model):
         )
 
     def _group_names_with_access(self, model_name: str, operation: str) -> list[str]:
-        # a group implying another group of the list adds nothing to read
-        # a privilege is code's, not a group anyone can be given
         groups = self._get_groups_with_access(model_name, operation).filtered(
             lambda group: not group.is_privilege
         )
@@ -1732,23 +1608,16 @@ class IrAccess(models.Model):
         )
 
     def _explains_in_full(self) -> bool:
-        # the full trace is for the session's debug mode and for the access
-        # administrators; everyone else is told the verdict, the refusing
-        # guards and whom to ask
         if self.env.user._is_internal() and request and request.session.debug:
             return True
         return self._explains_others()
 
     def _explains_others(self) -> bool:
-        # the access administrators, who may be told what another person's
-        # records are called; debug mode alone shows the trace, not the names
         return "wizard.base.explain.access" in self.env and self.env[
             "wizard.base.explain.access"
         ].has_access("explain_others")
 
     def _whom_to_ask(self, model_name: str, operation: str) -> list[str]:
-        # the administrators of a group that would grant the operation; a
-        # person outside the company is told to ask their administrator
         fallback = [self.env._("your administrator")]
         if not self.env.user._is_internal():
             return fallback
@@ -1800,9 +1669,6 @@ class IrAccess(models.Model):
                 display_records, resolution_info
             )
 
-        # a refused record is named only to whom may explain others' access:
-        # anyone else gets its id, or debug mode would read out the names of
-        # records one id at a time
         names = debug and self._explains_others()
 
         def describe(record: Any) -> str:
@@ -1827,8 +1693,6 @@ class IrAccess(models.Model):
                 scope is not None
                 for scope in self.env.user._get_group_scopes().values()
             ):
-                # a principal holding a group in some companies only is told
-                # where each row that binds it holds
                 lines = "\n".join(
                     f"- {line}" for line in self._explain(model_name, operation)
                 )
@@ -1902,15 +1766,9 @@ class IrAccess(models.Model):
         ]
 
     def _access_evaluator(self, model_name: str) -> models.BaseModel:
-        # where the policy evaluates its rows against records, archived ones
-        # included: whether the principal may read a record must not change
-        # which rows admit it
         return self.env[model_name].sudo().with_context(active_test=False)
 
     def _get_failed_accesses(self, records: Any, operation: str) -> list[AccessInfo]:
-        # the rows, the model's own guard and the delegated parents' rows that
-        # refuse some of the records: permissions fail together (they add up),
-        # each guard fails on its own
         self._check_operation(records._name, operation)
         letter = OPERATION_LETTER.get(operation, "")
         user_model = records.browse()
@@ -1926,8 +1784,6 @@ class IrAccess(models.Model):
                 domain = self._scoped(model._name, row, domain, scopes[row.group_id])
             return domain
 
-        # counted in SQL: evaluating in Python would fill the cache of the
-        # records' prefetch batch with values the principal may not read
         ids = list(dict.fromkeys(id_ for id_ in records._ids if id_))
 
         def admitted(target: models.BaseModel, domain: Domain, among: list) -> set:

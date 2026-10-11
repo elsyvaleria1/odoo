@@ -51,9 +51,6 @@ class TestViewPayloadConsistency(TransactionCase):
         self.assertEqual(disagreeing, [])
 
     def test_every_override_answers_without_the_arch(self):
-        # the web client asks get_views for the IR alone (`options["arch"]`
-        # False); an override that reads or rewrites `view["arch"]` after
-        # the base drops it raises here, not in front of a user
         answered = 0
         for name in sorted(set(self._overriding_models())):
             model = self.env[name]

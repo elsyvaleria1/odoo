@@ -12,11 +12,6 @@ class TestSaleAvalara(TestTaxCommonSale, TestAccountAvataxSaleCommon):
     def setUpClass(cls):
         res = super().setUpClass()
 
-        # This tax is deliberately wrong with an amount of 1. This is
-        # used to make sure we use the tax values that Avatax returns
-        # and not the tax values Odoo computes (these values would be
-        # wrong if a user manually changes it or if they're partially
-        # exempt).
         cls.tax_with_diff_amount = cls.env["account.tax"].create(
             {
                 "name": "CA COUNTY TAX [075] (0.2500 %)",
@@ -102,7 +97,6 @@ class TestSaleAvalara(TestTaxCommonSale, TestAccountAvataxSaleCommon):
                         }
                     ],
                 )
-                # no digits= specified on this Float field, so assertRecordValues would do an exact comparison of floats
                 self.assertAlmostEqual(so_line.price_tax, avatax_line["tax"])
         else:
             for line in order.line_ids:
@@ -195,9 +189,6 @@ class TestSaleAvalara(TestTaxCommonSale, TestAccountAvataxSaleCommon):
             self.assertOrder(order)
 
     def test_sale_order_downpayment(self):
-        """Test the expected down payment flow. Down payments are not sent to Avalara. We invoice everything on the final "regular"
-        invoice, as if the down payments never happened.
-        """
         order = self._create_sale_order()
         mocked_response = generate_response(order.line_ids)
         with self._capture_request(return_value=mocked_response):
@@ -293,7 +284,7 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
                 "name": "Shipping Partner",
                 "street": "234 W 18th Ave",
                 "city": "Columbus",
-                "state_id": cls.env.ref("base.state_us_30").id,  # Ohio
+                "state_id": cls.env.ref("base.state_us_30").id,
                 "country_id": cls.env.ref("base.us").id,
                 "zip": "43210",
             }
@@ -324,60 +315,47 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         return res
 
     def test_item_code(self):
-        """Identify customer code (number, ID) to pass to the AvaTax service."""
         line_model, line_id = self.captured_arguments["lines"][0]["number"].split(",")
         self.assertEqual(
             self.sale_order.line_ids, self.env[line_model].browse(int(line_id))
         )
 
     def test_item_description(self):
-        """Identify item/service/charge description to pass to the AvaTax service with a
-        human-readable description or item name.
-        """
         line_description = self.captured_arguments["lines"][0]["description"]
         self.assertEqual(self.sale_order.line_ids.name, line_description)
 
     def test_tax_code_mapping(self):
-        """Association of an item or item group to an AvaTax Tax Code to describe the taxability
-        (e.g. Clothing-Shirts - B-to-C).
-        """
         tax_code = self.captured_arguments["lines"][0]["taxCode"]
         self.assertEqual(self.product.avatax_category_id.code, tax_code)
 
     def test_doc_code(self):
-        """Values that can come across to AvaTax as the DocCode."""
         code = self.captured_arguments["code"]
         sent_so = self.env["sale.order"].search([("avatax_unique_code", "=", code)])
         self.assertEqual(self.sale_order, sent_so)
 
     def test_customer_code(self):
-        """Values that can come across to AvaTax as the Customer Code."""
         customer_code = self.captured_arguments["customerCode"]
         self.assertEqual(self.sale_order.partner_id.avalara_partner_code, customer_code)
 
     def test_doc_date(self):
-        """Value that comes across to AvaTax as the DocDate."""
         doc_date = self.captured_arguments[
             "date"
-        ]  # didn't find anything with "DocDate"
+        ]
         self.assertEqual(
             self.sale_order.date_order.date(), fields.Date.to_date(doc_date)
         )
 
     def test_calculation_date(self):
-        """Value that is used for Tax Calculation Date in AvaTax."""
         tax_date = self.captured_arguments["taxOverride"]["taxDate"]
         self.assertEqual(
             self.sale_order.date_order.date(), fields.Date.to_date(tax_date)
         )
 
     def test_doc_type(self):
-        """DocType used for varying stages of the transaction life cycle."""
         doc_type = self.captured_arguments["type"]
         self.assertEqual("SalesOrder", doc_type)
 
     def test_header_level_destination_address(self):
-        """Value that is sent to AvaTax for Destination Address at the header level."""
         destination_address = self.captured_arguments["addresses"]["shipTo"]
         self.assertEqual(
             destination_address,
@@ -391,7 +369,6 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         )
 
     def test_header_level_origin_address(self):
-        """Value that is sent to AvaTax for Origin Address at the header level."""
         origin_address = self.captured_arguments["addresses"]["shipFrom"]
         self.assertEqual(
             origin_address,
@@ -405,24 +382,20 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         )
 
     def test_quantity(self):
-        """Value that is sent to AvaTax for the Quantity."""
         quantity = self.captured_arguments["lines"][0]["quantity"]
         self.assertEqual(self.sale_order.line_ids.product_uom_qty, quantity)
 
     def test_amount(self):
-        """Value that is sent to AvaTax for the Amount."""
         amount = self.captured_arguments["lines"][0]["amount"]
         self.assertEqual(self.sale_order.line_ids.price_subtotal, amount)
 
     def test_tax_code(self):
-        """Value that is sent to AvaTax for the Tax Code."""
         tax_code = self.captured_arguments["lines"][0]["taxCode"]
         self.assertEqual(
             self.sale_order.line_ids.product_id.avatax_category_id.code, tax_code
         )
 
     def test_sales_order(self):
-        """Ensure that invoices are processed through a logical document lifecycle."""
         self.assertEqual(self.captured_arguments["type"], "SalesOrder")
         with self._capture_request({"lines": [], "summary": []}) as capture:
             self.sale_order.action_send_quotation()
@@ -438,7 +411,6 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         self.assertTrue(capture.val["json"]["createTransactionModel"]["commit"])
 
     def test_commit_tax(self):
-        """Ensure that invoices are committed/posted for reporting appropriately."""
         with self._capture_request({"lines": [], "summary": []}) as capture:
             self.sale_order.action_send_quotation()
             self.sale_order.action_confirm()
@@ -447,9 +419,6 @@ class TestAccountAvalaraSalesTaxItemsIntegration(TestAccountAvataxSaleCommon):
         self.assertTrue(capture.val["json"]["createTransactionModel"]["commit"])
 
     def test_merge_sale_orders(self):
-        """Ensure sale orders with different shipping partner are not merged
-        in the same invoice
-        """
         shipping_partner_b = self.env["res.partner"].create(
             {
                 "name": "Shipping Partner B",

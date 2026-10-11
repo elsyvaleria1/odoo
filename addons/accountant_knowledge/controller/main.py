@@ -43,10 +43,6 @@ def is_html_element_empty(root) -> bool:
 
 
 def xpath_has_class(class_name) -> str:
-    """Return an XPath predicate matching the elements carrying the given class.
-    :param str class_name: class name to look for
-    :return: XPath predicate expression
-    :rtype: str"""
     return f'contains(concat(" ", normalize-space(@class), " "), " {class_name} ")'
 
 
@@ -153,13 +149,6 @@ def get_account_reports_pdfs(root):
 
 
 def flatten_outline(outlines, depth=0):
-    """Traverse the outlines in title order, flattening the nested heading
-    hierarchy PyPDF exposes.
-    :param outlines: nested outline structure, nesting one level per heading
-        level: ``[{"/Title": "h1", ...}, [{"/Title": "h2", ...}]]``
-    :param int depth: depth of ``outlines`` in the hierarchy
-    :return: generator of ``(depth, outline)`` tuples
-    """
     for outline in outlines:
         if isinstance(outline, list):
             yield from flatten_outline(outline, depth + 1)
@@ -168,7 +157,6 @@ def flatten_outline(outlines, depth=0):
 
 
 def get_links_from_pdf(pdf):
-    """Returns a generator that yields all links present in the given PDF."""
     for page_number, page in enumerate(pdf.pages):
         if "/Annots" not in page:
             continue
@@ -180,8 +168,6 @@ def get_links_from_pdf(pdf):
 
 
 def remove_all_annotations(page) -> None:
-    """Delete all annotations from the given page (i.e: the comments, the links,
-    the highlights, the form fields and the markups)."""
     if "/Annots" in page:
         del page["/Annots"]
 
@@ -344,9 +330,6 @@ class KnowledgeAuditReportController(http.Controller):
         self, root_article, include_pdf_files, include_child_articles, **kwargs
     ):
 
-        # Lower `report.print_delay` for the duration of the export: this
-        # endpoint renders many separate PDF documents, so any per-document
-        # delay is paid once per document.
 
         IrConfigParameterSudo = request.env["ir.config_parameter"].sudo()
         print_delay = IrConfigParameterSudo.get_param("report.print_delay")
@@ -376,7 +359,6 @@ class KnowledgeAuditReportController(http.Controller):
                     element.text = element.text.replace(to_replace, "")
                     element.append(node)
 
-            # Replace all the placeholder values:
             for element in root.iter():
                 if element.text:
                     element.text = render_placeholder(element.text, template_variables)
@@ -394,7 +376,6 @@ class KnowledgeAuditReportController(http.Controller):
             article = stack.pop()
             root = html.fragment_fromstring(article.body, create_parent="div")
 
-            # Remove elements with the `d-print-none` class to avoid empty pages:
             for element in root.xpath(f"//*[{xpath_has_class('d-print-none')}]"):
                 parent = element.getparent()
                 if parent is not None:
@@ -411,7 +392,6 @@ class KnowledgeAuditReportController(http.Controller):
                 )
             )
 
-            # Append a title page if the article only contains an h1, h2 or h3
             if article_has_only_one_nonempty_heading:
                 title_page_html = request.env["ir.qweb"]._render(
                     "accountant_knowledge.audit_report_title_page",
@@ -430,7 +410,6 @@ class KnowledgeAuditReportController(http.Controller):
                                 }
                             )
                     except PdfReadError:
-                        # Old pypdf versions cannot read the outline / headers.
                         _logger.warning(
                             "Unable to generate Audit Report heading, please update your PyPDF version."
                         )
@@ -439,7 +418,6 @@ class KnowledgeAuditReportController(http.Controller):
                 body_pdfs.append(title_page_pdf)
                 page_offset_in_body += len(title_page_pdf.pages)
 
-            # Append the account reports present in the article:
             account_report_pdfs = list(get_account_reports_pdfs(root))
             body_pdfs.extend(account_report_pdfs)
             page_offset_in_body += sum(
@@ -447,7 +425,6 @@ class KnowledgeAuditReportController(http.Controller):
                 for account_report_pdf in account_report_pdfs
             )
 
-            # Append the article body if not empty:
             if not article_has_only_one_nonempty_heading and not is_html_element_empty(
                 root
             ):
@@ -469,7 +446,6 @@ class KnowledgeAuditReportController(http.Controller):
                                 }
                             )
                     except PdfReadError:
-                        # Old pypdf versions cannot read the outline / headers.
                         _logger.warning(
                             "Unable to generate Audit Report heading, please update your PyPDF version."
                         )
@@ -478,7 +454,6 @@ class KnowledgeAuditReportController(http.Controller):
                 body_pdfs.append(article_pdf)
                 page_offset_in_body += len(article_pdf.pages)
 
-            # Append the pdf attachments present in the article:
             if include_pdf_files == "true":
                 attached_pdfs = list(get_attached_pdfs(root))
                 body_pdfs.extend(attached_pdfs)
@@ -486,14 +461,12 @@ class KnowledgeAuditReportController(http.Controller):
                     len(attached_pdf.pages) for attached_pdf in attached_pdfs
                 )
 
-            # Append the child articles:
             if include_child_articles == "true":
                 stack.extend(
                     article.child_ids.sorted(lambda child: child.sequence, reverse=True)
                 )
 
         front_cover_pdf = self._render_front_cover_pdf(root_article)
-        # Create the PDF output:
         writer = BrandedFileWriter()
         writer.append_pages_from_reader(front_cover_pdf)
         back_cover_pdf = get_back_cover_pdf()
@@ -501,7 +474,6 @@ class KnowledgeAuditReportController(http.Controller):
         toc_links = []
         if headings:
             toc_pdf = get_toc_pdf(headings)
-            # Regenerate the table of content to update the page numbers:
             toc_pdf = get_toc_pdf(headings, offset=len(toc_pdf.pages))
 
             toc_links = list(get_links_from_pdf(toc_pdf))
@@ -515,7 +487,6 @@ class KnowledgeAuditReportController(http.Controller):
         writer.append_pages_from_reader(back_cover_pdf)
 
         toc_pdf_num_pages = len(toc_pdf.pages) if toc_pdf else 0
-        # Add the links:
         for link, heading in zip(toc_links, headings, strict=False):
             writer.add_annotation(
                 page_number=link["page_number"] + len(front_cover_pdf.pages),
@@ -533,7 +504,6 @@ class KnowledgeAuditReportController(http.Controller):
                 ),
             )
 
-        # Add the outlines:
         writer.set_page_mode("/UseOutlines")
 
         bookmarks_stack = []
@@ -566,10 +536,8 @@ class KnowledgeAuditReportController(http.Controller):
             )
 
             if heading["depth"] >= parent_heading_depth:
-                # Record heading depth to handle skipped levels
                 bookmarks_stack.append((heading["depth"], bookmark))
 
-        # Add the page numbers:
         number_of_pages = (
             len(writer.pages) - len(front_cover_pdf.pages) - len(back_cover_pdf.pages)
         )
@@ -592,7 +560,6 @@ class KnowledgeAuditReportController(http.Controller):
         writer.write(output_stream)
         pdf_bytes = output_stream.getvalue()
 
-        # Restore the print delay:
         if print_delay:
             IrConfigParameterSudo.set_param("report.print_delay", print_delay)
 
@@ -602,7 +569,7 @@ class KnowledgeAuditReportController(http.Controller):
                 (
                     "Content-Disposition",
                     prepare_content_disposition_header(f"{root_article.name}.pdf"),
-                ),  # File name
+                ),
                 ("Content-Type", "application/pdf"),
                 ("Content-Length", len(pdf_bytes)),
             ],

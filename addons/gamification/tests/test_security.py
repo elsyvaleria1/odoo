@@ -12,7 +12,6 @@ class TestSecurityRules(common.TransactionCase):
 
     @classmethod
     def setUpClass(cls):
-        """Set up two standard users and shared test data."""
         super().setUpClass()
         patch_email = patch(
             "odoo.addons.mail.models.mail_template.MailTemplate.send_mail",
@@ -37,7 +36,6 @@ class TestSecurityRules(common.TransactionCase):
             groups="base.group_user",
         )
 
-        # Streak type setup (required for streak records)
         partner_model = cls.env["ir.model"]._get("res.partner")
         date_field = cls.env["ir.model.fields"].search(
             [("model", "=", "res.partner"), ("name", "=", "write_date")],
@@ -54,11 +52,9 @@ class TestSecurityRules(common.TransactionCase):
             }
         )
 
-        # Kudos category
         cls.kudos_category = cls.env.ref("gamification.kudos_category_teamwork")
 
     def test_streak_user_write_rule(self):
-        """Users cannot modify another user's streak record."""
         streak = self.env["gamification.streak"].create(
             {
                 "user_id": self.user_a.id,
@@ -69,7 +65,6 @@ class TestSecurityRules(common.TransactionCase):
             streak.with_user(self.user_b).write({"freeze_remaining": 5})
 
     def test_kudos_user_write_rule(self):
-        """Users cannot modify kudos sent by another user."""
         kudos = (
             self.env["gamification.kudos"]
             .with_user(self.user_a)
@@ -86,8 +81,6 @@ class TestSecurityRules(common.TransactionCase):
             kudos.with_user(self.user_b).write({"message": "Tampered!"})
 
     def test_karma_tracking_system_only(self):
-        """Non-system users cannot read karma tracking records."""
-        # Create a tracking record as superuser
         self.env["gamification.karma.tracking"].create(
             {
                 "user_id": self.user_a.id,
@@ -103,7 +96,6 @@ class TestGroupMigration(common.TransactionCase):
     """Tests for the app's own access tiers and how they are populated."""
 
     def test_group_user_implies_gamification_user(self):
-        """Every internal user reaches the app tier through base.group_user."""
         group_user = self.env.ref("base.group_user")
         app_group = self.env.ref("gamification.group_gamification_user")
         self.assertIn(app_group, group_user.implied_ids)
@@ -118,7 +110,6 @@ class TestGroupMigration(common.TransactionCase):
         self.assertTrue(employee.has_group("gamification.group_gamification_user"))
 
     def test_erp_manager_implies_gamification_manager(self):
-        """The previous administrators keep their reach through the manager tier."""
         erp_manager = self.env.ref("base.group_erp_manager")
         app_manager = self.env.ref("gamification.group_gamification_manager")
         self.assertIn(app_manager, erp_manager.implied_ids)
@@ -131,11 +122,9 @@ class TestGroupMigration(common.TransactionCase):
             groups="base.group_user,base.group_erp_manager",
         )
         self.assertTrue(manager.has_group("gamification.group_gamification_manager"))
-        # The manager tier implies the user tier, not the other way round.
         self.assertTrue(manager.has_group("gamification.group_gamification_user"))
 
     def test_no_implication_cycle(self):
-        """The app tier must not imply back the group that grants it."""
         app_group = self.env.ref("gamification.group_gamification_user")
         group_user = self.env.ref("base.group_user")
         self.assertNotIn(group_user, app_group.implied_ids)
@@ -145,10 +134,6 @@ class TestGroupMigration(common.TransactionCase):
 class TestAclParity(common.TransactionCase):
     """The app tiers must grant exactly what base.group_user/erp_manager did."""
 
-    # model -> (read, write, create, unlink), as this module's own CSV granted
-    # base.group_user before the tiers existed. Hardcoded rather than derived:
-    # once the change is merged the "before" state is no longer queryable, so
-    # the reference has to travel with the test or it asserts nothing.
     USER_GRANTS = {
         "gamification.achievement": (1, 0, 0, 0),
         "gamification.achievement.unlock": (1, 0, 0, 0),
@@ -169,10 +154,6 @@ class TestAclParity(common.TransactionCase):
         "gamification.quest": (1, 0, 0, 0),
         "gamification.quest.enrollment": (1, 1, 1, 0),
         "gamification.quest.step": (1, 0, 0, 0),
-        # Read-only since 1.2.  It was employee-writable with no access domain, so
-        # anyone could INSERT a completion on someone else's enrolment and skip
-        # the prerequisite check that only complete_step performs; that method
-        # sudo()es the create now.
         "gamification.quest.step.completion": (1, 0, 0, 0),
         "gamification.season": (1, 0, 0, 0),
         "gamification.skill.node": (1, 0, 0, 0),
@@ -183,29 +164,13 @@ class TestAclParity(common.TransactionCase):
         "gamification.team": (1, 0, 0, 0),
     }
 
-    # Same, for base.group_erp_manager. gamification.karma.rank is the one
-    # deliberate addition: the old CSV only gave it to base.group_system, which
-    # left the manager tier unable to configure ranks from its own menu.
     MANAGER_GRANTS = {
         model: (1, 1, 1, 1)
         for model in USER_GRANTS
-        if not model.startswith("wizard.")  # transients reached via the user tier
+        if not model.startswith("wizard.")
     } | {"gamification.karma.rank": (1, 1, 1, 1)}
 
     def _module_grants(self, group_xmlid):
-        """Return {model: perms} for this module's permission rows on one group.
-
-        Scoped to rows owned by ``gamification`` so a bridge module granting
-        the same group elsewhere (hr_gamification does) cannot mask a regression.
-        An operation counts whatever the row's domain, as the access line it
-        was converted from granted it whatever the rules then narrowed, and
-        on a model the tier has a row for, the rows of the groups it implies
-        count too: the conversion does not repeat on the manager what the user
-        tier already grants.
-
-        :param str group_xmlid: external id of the group to collect
-        :rtype: dict[str, tuple[int, int, int, int]]
-        """
         xmlids = self.env["ir.model.data"].search(
             [("module", "=", "gamification"), ("model", "=", "ir.access")]
         )
@@ -232,21 +197,18 @@ class TestAclParity(common.TransactionCase):
         }
 
     def test_user_tier_grants_match_the_old_employee_rows(self):
-        """No internal user gained or lost model access in the re-pointing."""
         self.assertEqual(
             self._module_grants("gamification.group_gamification_user"),
             self.USER_GRANTS,
         )
 
     def test_manager_tier_grants_match_the_old_erp_manager_rows(self):
-        """The seven erp_manager holders keep the same CRUD, plus karma ranks."""
         self.assertEqual(
             self._module_grants("gamification.group_gamification_manager"),
             self.MANAGER_GRANTS,
         )
 
     def test_no_row_still_points_at_a_base_tier(self):
-        """The module owns its access tiers; no CSV row names base.* any more."""
         stale = {
             acl.model_id.model
             for acl in self.env["ir.access"].browse(
@@ -269,12 +231,6 @@ class TestAclParity(common.TransactionCase):
         self.assertFalse(stale)
 
     def test_plain_employee_reads_every_model_but_karma_tracking(self):
-        """Behavioural counterpart: the tier actually reaches the employee.
-
-        Only ``read`` is asserted here. Writes stay in the grant maps above,
-        because an installed bridge module may legitimately widen them for a
-        plain employee and that is not this module's regression to catch.
-        """
         employee = mail_new_test_user(
             self.env,
             login="gam_acl_employee",
@@ -291,12 +247,6 @@ class TestAclParity(common.TransactionCase):
         self.assertFalse(tracking.browse().has_access("read"))
 
     def test_manager_can_write_karma_rank_but_not_karma_tracking(self):
-        """The new rank row lands on the tier, and the audit trail stays closed.
-
-        karma.tracking is deliberately left system-only: it is the karma audit
-        trail, not configuration, so a gamification administrator without
-        base.group_system must not reach it.
-        """
         manager = mail_new_test_user(
             self.env,
             login="gam_rank_manager",

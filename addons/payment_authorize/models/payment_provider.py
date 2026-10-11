@@ -51,10 +51,7 @@ class PaymentProvider(models.Model):
         help="The public client key. To generate directly from Odoo or from Authorize.Net backend.",
     )
 
-    # === CONSTRAINT METHODS ===#
 
-    # Authorize.Net supports only one currency: "One gateway account is required for each currency"
-    # See https://community.developer.authorize.net/t5/The-Authorize-Net-Developer-Blog/Authorize-Net-UK-Europe-Update/ba-p/35957
     @api.constrains("available_currency_ids", "state")
     def _check_available_currency_ids(self) -> None:
         super()._check_available_currency_ids()
@@ -62,10 +59,8 @@ class PaymentProvider(models.Model):
             self.env._("Only one currency can be selected by Authorize.Net account.")
         )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "authorize").update(
             {
@@ -75,19 +70,15 @@ class PaymentProvider(models.Model):
             }
         )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "authorize":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === ACTION METHODS ===#
 
     def action_update_merchant_details(self) -> None:
-        """Fetch the merchant details to update the client key and the account currency."""
         self.check_singleton()
 
         if self.state == "disabled":
@@ -99,7 +90,6 @@ class PaymentProvider(models.Model):
 
         authorize_API = AuthorizeAPI(self)
 
-        # Validate the API Login ID and Transaction Key
         res_content = authorize_API.test_authenticate()
         _logger.info(
             "test_authenticate request response:\n%s", pprint.pformat(res_content)
@@ -109,7 +99,6 @@ class PaymentProvider(models.Model):
                 self.env._("Failed to authenticate.\n%s", res_content["err_msg"])
             )
 
-        # Update the merchant details
         res_content = authorize_API.merchant_details()
         _logger.info(
             "merchant_details request response:\n%s", pprint.pformat(res_content)
@@ -127,14 +116,8 @@ class PaymentProvider(models.Model):
         self.available_currency_ids = [Command.set(currency.ids)]
         self.authorize_client_key = res_content.get("publicClientKey")
 
-    # === BUSINESS METHODS ===#
 
     def _get_validation_amount(self):
-        """Override of payment to return the amount for Authorize.Net validation operations.
-
-        :return: The validation amount
-        :rtype: float
-        """
         res = super()._get_validation_amount()
         if self.code != "authorize":
             return res
@@ -142,13 +125,6 @@ class PaymentProvider(models.Model):
         return 0.01
 
     def _authorize_get_inline_form_values(self):
-        """Return a serialized JSON of the required values to render the inline form.
-
-        Note: `self.check_singleton()`
-
-        :return: The JSON serial of the required values to render the inline form.
-        :rtype: str
-        """
         self.check_singleton()
 
         inline_form_values = {

@@ -9,8 +9,6 @@ _debug = DebugLog(__name__)
 class WizardMailMessageSend(models.TransientModel):
     _inherit = "wizard.mail.message.send"
 
-    # Field to annotate the date for account reports.
-    # This is set by passing a default in the context when opening the wizard from a message.
     account_reports_annotation_date = fields.Date(string="Annotated For")
 
     @_debug.perf.timed
@@ -28,7 +26,6 @@ class WizardMailMessageSend(models.TransientModel):
 
     @_debug.perf.timed
     def _action_send_mail_comment(self, res_ids):
-        # Read the date before the super call; it invalidates the ORM cache.
         _debug.lifecycle("_action_send_mail_comment", records=self)
         annotation_date = self.account_reports_annotation_date
         messages = super()._action_send_mail_comment(res_ids)
@@ -37,7 +34,6 @@ class WizardMailMessageSend(models.TransientModel):
 
     @_debug.perf.timed
     def _action_send_mail(self, auto_commit=False):
-        # Read the date before the super call; it invalidates the ORM cache.
         _debug.lifecycle("_action_send_mail", records=self)
         annotation_date = self.account_reports_annotation_date
         mails, messages = super()._action_send_mail(auto_commit=auto_commit)

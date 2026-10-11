@@ -10,12 +10,9 @@ from .test_common import TestPlmCommon
 
 class TestMrpPlm(TestPlmCommon):
     def test_create_eco_from_production_using_uom(self):
-        """Creates an ECO from a Manufacturing Order (using different UoM than its BoM) and checks
-        the modifications done in the MO are in the revised BoM."""
         self.env.user.group_ids += self.env.ref("base.group_uom")
         uom_unit = self.env.ref("base.product_uom_unit")
         uom_dozen = self.env.ref("base.product_uom_dozen")
-        # Creates a BoM.
         common_vals = {"is_storable": True}
         finished_product = self.env["product.product"].create(
             dict(common_vals, name="Clover")
@@ -36,7 +33,6 @@ class TestMrpPlm(TestPlmCommon):
                 ],
             }
         )
-        # Creates a new MO, modifies some fields and confirms it.
         mo_form = Form(self.env["mrp.production"])
         mo_form.bom_id = bom
         mo_form.product_qty = 3
@@ -47,13 +43,11 @@ class TestMrpPlm(TestPlmCommon):
         mo_form = Form(mo)
         mo = mo_form.save()
         mo.action_confirm()
-        # Generates an ECO from the MO and starts the revision.
         action = mo.action_create_eco()
         new_eco_form = Form(self.env["mrp.eco"].with_context(action["context"]))
         new_eco = new_eco_form.save()
         new_eco.will_update_version = False
         new_eco.action_new_revision()
-        # Checks the ECO's revision BoM has the expected changes.
         new_bom = new_eco.new_bom_id
         self.assertEqual(
             new_bom.version,
@@ -76,8 +70,6 @@ class TestMrpPlm(TestPlmCommon):
             ],
         )
 
-        # Does the same test but switches the BoM and MO's UoM, and use an UoM
-        # from another UoM's category for one of the component.
         uom_cm = self.env.ref("base.product_uom_cm")
         comp_cm_vals = {"name": "Clover's stem", "uom_id": uom_cm.id}
         component_1_in_cm = self.env["product.product"].create(
@@ -106,7 +98,6 @@ class TestMrpPlm(TestPlmCommon):
                 ],
             }
         )
-        # Creates a new MO, modifies some fields and confirms it.
         mo_form = Form(self.env["mrp.production"])
         mo_form.bom_id = bom_dozen
         mo_form.product_qty = 3
@@ -121,12 +112,10 @@ class TestMrpPlm(TestPlmCommon):
         mo_form = Form(mo)
         mo = mo_form.save()
         mo.action_confirm()
-        # Generates an ECO from the MO and starts the revision.
         action = mo.action_create_eco()
         new_eco_form = Form(self.env["mrp.eco"].with_context(action["context"]))
         new_eco = new_eco_form.save()
         new_eco.action_new_revision()
-        # Checks the ECO's revision BoM has the expected changes.
         new_bom = new_eco.new_bom_id
         self.assertEqual(
             new_bom.version,
@@ -150,23 +139,18 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_rebase_with_old_bom_change(self):
-        "Test eco rebase with old bom changes."
 
-        # Create eco for bill of material.
         version_num = self.bom_table.version
         self.eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
-        # Start new revision of eco1.
         self.eco1.action_new_revision()
 
-        # Eco should be in progress and new revision of BoM should be created.
         self.assertTrue(
             self.eco1.new_bom_id, "New revision of bill of material should be created."
         )
         self.assertEqual(self.eco1.state, "progress", "Wrong state on eco")
 
-        # Change old bom lines
         old_bom_leg = self.bom_table.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_leg
         )
@@ -174,10 +158,8 @@ class TestMrpPlm(TestPlmCommon):
             lambda x: x.product_id == self.table_leg
         )
 
-        # Update quantity current bill of materials.
         old_bom_leg.product_qty = 8
 
-        # Check status of eco
         self.assertEqual(self.eco1.state, "rebase", "Wrong state on eco.")
         self.assertEqual(
             new_bom_leg.product_qty,
@@ -185,7 +167,6 @@ class TestMrpPlm(TestPlmCommon):
             "Wrong table leg quantity on new revision of BoM.",
         )
 
-        # Rebase eco1 with current BoM changes ( 3 + 5 ( New added product )).
         self.eco1.apply_rebase()
         self.assertEqual(
             self.eco1.new_bom_revision,
@@ -193,14 +174,12 @@ class TestMrpPlm(TestPlmCommon):
             "By default, new bom version should match original bom's + 1",
         )
 
-        # Check quantity of table lag on new revision of BoM.
         self.assertEqual(
             new_bom_leg.product_qty,
             8,
             "Wrong table leg quantity on new revision of bom.",
         )
 
-        # Add new bom line with product bolt in old BoM.
         self.env["mrp.bom.line"].create(
             {
                 "product_id": self.table_bolt.id,
@@ -209,7 +188,6 @@ class TestMrpPlm(TestPlmCommon):
             }
         )
 
-        # Check status of eco and rebase line after adding new product on current BoM.
         self.assertEqual(self.eco1.state, "rebase", "Wrong state on eco.")
         self.assertEqual(len(self.eco1.bom_rebase_ids), 1, "Wrong rebase line on eco.")
         self.assertEqual(
@@ -222,7 +200,6 @@ class TestMrpPlm(TestPlmCommon):
             "Update version was unchecked in eco, so new bom version should equal original bom's",
         )
 
-        # Rebase eco1 with BoM changes.
         self.eco1.apply_rebase()
         self.assertEqual(
             self.eco1.new_bom_revision,
@@ -234,18 +211,15 @@ class TestMrpPlm(TestPlmCommon):
             lambda x: x.product_id == self.table_bolt
         )
 
-        # Check eco status and bom line should be added on new bom revision.
         self.assertTrue(
             new_bom_bolt, "BoM line should be added for bolt on new revision of BoM."
         )
         self.assertEqual(self.eco1.state, "progress", "Wrong state on eco.")
 
-        # Remove line form current BoM
         self.eco1.bom_id.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_bolt
         ).unlink()
 
-        # Check status of eco with rebase lines.
         self.assertEqual(self.eco1.state, "rebase", "Wrong state on eco.")
         self.assertEqual(
             len(self.eco1.bom_rebase_ids), 1, "Wrong BoM rebase line on eco."
@@ -259,7 +233,6 @@ class TestMrpPlm(TestPlmCommon):
             "Wrong quantity on rebase line.",
         )
 
-        # Rebase eco
         self.eco1.apply_rebase()
         self.assertFalse(
             self.eco1.new_bom_id.bom_line_ids.filtered(
@@ -268,7 +241,6 @@ class TestMrpPlm(TestPlmCommon):
             "BoM line should be unlink from new revision of BoM.",
         )
 
-        # Change old BoM leg and new revision BoM leg quantity.
         old_bom_leg.product_qty = 10
         new_bom_leg.product_qty = 12
         self.assertEqual(
@@ -280,20 +252,14 @@ class TestMrpPlm(TestPlmCommon):
             "Wrong quantity on rebase line.",
         )
 
-        # Rebase ecos with changes of old bill of material.
         self.eco1.apply_rebase()
         self.assertEqual(self.eco1.state, "conflict", "Wrong state on eco.")
 
-        # Manually resolve conflict.
         self.eco1.conflict_resolve()
         self.assertEqual(self.eco1.state, "progress", "Wrong state on eco.")
 
     def test_rebase_with_previous_eco_change(self):
-        "Test eco rebase with previous eco changes."
 
-        # --------------------------------
-        # Create ecos for bill of material.
-        # ---------------------------------
 
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
@@ -306,31 +272,21 @@ class TestMrpPlm(TestPlmCommon):
         )
         version_num = self.bom_table.version
 
-        # Start new revision of eco1, eco2, eco3
         eco1.action_new_revision()
         eco2.action_new_revision()
         eco3.action_new_revision()
 
-        # -----------------------------------------
-        # Check eco status after start new revision.
-        # ------------------------------------------
 
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
         self.assertEqual(eco2.state, "progress", "Wrong state on eco2.")
         self.assertEqual(eco3.state, "progress", "Wrong state on eco2.")
 
-        # ---------------------------------------------------------------
-        # ECO 1 : Update Table Leg quantity in new BoM revision.
-        # ---------------------------------------------------------------
 
         eco1_new_table_leg = eco1.new_bom_id.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_leg
         )
         eco1_new_table_leg.product_qty = 6
 
-        # -------------------------------------------------------------------------------
-        # ECO 1 : Check status of ecos after apply changes and activate new bom revision.
-        # -------------------------------------------------------------------------------
 
         eco1.action_apply()
         self.assertEqual(
@@ -342,14 +298,10 @@ class TestMrpPlm(TestPlmCommon):
         self.assertTrue(
             eco1.new_bom_id.active, "New BoM revision of ECO 1 should be activated."
         )
-        # Check eco status after activate new bom revision of eco.
         self.assertEqual(eco1.state, "done", "Wrong state on eco1.")
         self.assertEqual(eco2.state, "rebase", "Wrong state on eco2.")
         self.assertEqual(eco3.state, "rebase", "Wrong state on eco3.")
 
-        # ------------------------------
-        # ECO 2 : Rebase with ECO 1 changes.
-        # ------------------------------
 
         eco2.will_update_version = False
         eco2.apply_rebase()
@@ -365,9 +317,6 @@ class TestMrpPlm(TestPlmCommon):
             "Update version was unchecked in eco, rebasing should leave new bom version as BoM revision of Eco1",
         )
 
-        # ----------------------------------------------------------------------
-        # ECO 2 : Add new product 'Table Bolt'
-        # ----------------------------------------------------------------------
 
         eco2.new_bom_id.bom_line_ids.create(
             {
@@ -378,9 +327,6 @@ class TestMrpPlm(TestPlmCommon):
         )
         self.assertTrue(eco2.bom_change_ids, "Eco 2 should have BoM change lines.")
 
-        # -------------------------------------------------------------------------------
-        # ECO 2 : Check status of after apply changes and activate new bom revision.
-        # -------------------------------------------------------------------------------
 
         eco2.action_apply()
 
@@ -397,25 +343,17 @@ class TestMrpPlm(TestPlmCommon):
             "Update version was unchecked in eco, new bom version should still match BoM revision of Eco1",
         )
 
-        # -----------------------------------------------------
-        # ECO3 : Change same line in eco3 as changes in eco1.
-        # ----------------------------------------------------
 
         eco3_new_table_leg = eco3.new_bom_id.bom_line_ids.filtered(
             lambda x: x.product_id == self.table_leg
         )
         eco3_new_table_leg.product_qty = 4
 
-        # -----------------------------------
-        # Rebase eco3 with eco1 BoM changes.
-        # -----------------------------------
 
         eco3.apply_rebase()
 
-        # Check status of eco3 after rebase.
         self.assertEqual(eco3.state, "conflict", "Wrong state on eco.")
 
-        # Resolve conflict manually.
         self.assertTrue(
             eco3.previous_change_ids.ids, "Wrong previous bom change on bom lines."
         )
@@ -437,34 +375,22 @@ class TestMrpPlm(TestPlmCommon):
         self.assertFalse(eco3.bom_rebase_ids.ids)
 
     def test_operation_change(self):
-        "Test eco with bom operation changes."
-        # --------------------------------
-        # Create ecos for bill of material.
-        # ---------------------------------
 
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
 
-        # Start new revision of eco1
         eco1.action_new_revision()
 
-        # -----------------------------------------
-        # Check eco status after start new revision.
-        # ------------------------------------------
 
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
 
-        # ---------------------------------------------------------------
-        # ECO 1 : Update duration on operation1
-        # ---------------------------------------------------------------
 
         op1 = eco1.new_bom_id.operation_ids.filtered(
             lambda x: x.workcenter_id == self.workcenter_1
         )
         op1.time_cycle_manual = 20
 
-        # Check correctness
         op1_change = eco1.routing_change_ids.filtered(
             lambda x: x.workcenter_id == self.workcenter_1
         )
@@ -475,9 +401,6 @@ class TestMrpPlm(TestPlmCommon):
             op1_change[0].upd_time_cycle_manual, 10.0, "Wrong duration change."
         )
 
-        # ---------------------------------------------------------------
-        # ECO 1 : Remove operation2
-        # ---------------------------------------------------------------
 
         op2 = eco1.new_bom_id.operation_ids.filtered(
             lambda x: x.workcenter_id == self.workcenter_2
@@ -491,9 +414,6 @@ class TestMrpPlm(TestPlmCommon):
             op2_change.change_type, "remove", "Wrong type on operation change line."
         )
 
-        # ---------------------------------------------------------------
-        # ECO 1 : Add operation3
-        # ---------------------------------------------------------------
 
         eco1.new_bom_id.operation_ids.create(
             {
@@ -516,9 +436,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_operation_eco_counting(self):
-        """Test when count ECOs for a bom, all ECOs, including the ones for previous
-        version boms, are counted.
-        """
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
@@ -535,10 +452,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(eco1.new_bom_id.eco_count, 2)
 
     def test_do_not_merge_bom_lines(self):
-        """
-        Test that when applying a mrp.eco on a BoM for which the same product is present twice in the bom lines
-        (same product, multiple operations), the BoM changes are correctly computed
-        """
         workcenter = self.env["mrp.workcenter"].create({"name": "A center"})
         product_a = self.env["product.product"].create({"name": "a_product"})
         product_b = self.env["product.product"].create({"name": "b_product"})
@@ -578,7 +491,7 @@ class TestMrpPlm(TestPlmCommon):
         )
         mrp_eco.action_new_revision()
         self.assertEqual(len(mrp_eco.bom_change_ids), 0)
-        mrp_eco.new_bom_id.bom_line_ids[0].product_qty = 13  # Change from 2 to 13
+        mrp_eco.new_bom_id.bom_line_ids[0].product_qty = 13
         self.assertRecordValues(
             mrp_eco.bom_change_ids,
             [
@@ -587,10 +500,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_bom_changes(self):
-        """
-        Test that when creating a `mrp.eco` for a BOM with operations and components consumed in the operations,
-        the difference lines between the old and the new BOM is done correctly
-        """
         workcenter = self.env["mrp.workcenter"].create({"name": "wc 1"})
         operation_1 = self.env["mrp.routing.workcenter"].create(
             {"name": "op1", "workcenter_id": workcenter.id, "bom_id": self.bom_table.id}
@@ -599,20 +508,14 @@ class TestMrpPlm(TestPlmCommon):
             {"name": "op2", "workcenter_id": workcenter.id, "bom_id": self.bom_table.id}
         )
         self.bom_table.operation_ids = [(6, 0, (operation_1 + operation_2).ids)]
-        # Consume the first component in the first operation
         self.bom_table.bom_line_ids[0].operation_id = self.bom_table.operation_ids[0]
-        # Create eco for bill of material.
         eco1 = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
-        # Start new revision of eco1.
         eco1.action_new_revision()
         self.assertEqual(eco1.state, "progress", "Wrong state on eco1.")
-        # Make sure there is no change between the two BOMs
         self.assertEqual(len(eco1.bom_change_ids), 0)
-        # Modify the new BOM to consume the first component in the second operation
         eco1.new_bom_id.bom_line_ids[0].operation_id = eco1.new_bom_id.operation_ids[1]
-        # A bom changes must be created
         self.assertRecordValues(
             eco1.bom_change_ids,
             [
@@ -622,9 +525,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_product_version(self):
-        """Test product version number increases or doesn't increase after a product ECO is done
-        depending on setting.
-        """
         version_num = self.table.product_tmpl_id.version
         mrp_eco = self.env["mrp.eco"].create(
             {
@@ -665,26 +565,17 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_new_bom_version(self):
-        """Test new bom version number increases or doesn't increase depending on state + setting
-        We force the state values because it's assumed there are other tests checking that the state matches
-        """
-        # updates version = True by default
         version_num = self.bom_table.version
         bom_eco = self._create_eco(
             "bom_eco", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
         bom_eco.action_new_revision()
         self.assertEqual(bom_eco.new_bom_revision, version_num + 1)
-        # unchecking updates version => the new bom version auto-increments down even when not done
         bom_eco.will_update_version = False
         self.assertEqual(bom_eco.new_bom_revision, version_num)
-        # rechecking updates version => the new bom version auto-increments up when not done
         bom_eco.will_update_version = True
         self.assertEqual(bom_eco.new_bom_revision, version_num + 1)
 
-        # check that version updates occur as long as eco != Done
-        # test for rebasing increments version as expected is done in
-        # another test due to conditions needed for rebasing to work
         bom_eco.state = "rebase"
         self.assertEqual(bom_eco.new_bom_revision, version_num + 1)
         bom_eco.will_update_version = False
@@ -712,7 +603,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(bom_eco.state, "done")
         self.assertEqual(bom_eco.new_bom_revision, version_num + 1)
 
-        # in theory the field shouldn't be update-able when eco is done, but let's check anyways
         bom_eco.will_update_version = False
         self.assertEqual(bom_eco.new_bom_revision, version_num + 1)
 
@@ -736,7 +626,6 @@ class TestMrpPlm(TestPlmCommon):
             )
         )
 
-        # Admin creates an ECO
         self.env["mrp.eco"].sudo().create(
             {
                 "name": "a plm",
@@ -744,12 +633,10 @@ class TestMrpPlm(TestPlmCommon):
                 "product_tmpl_id": bom.product_tmpl_id.id,
                 "type_id": self.env["mrp.eco.type"].search([], limit=1).id,
                 "type": "bom",
-                # Status 'progress' or 'rebase' is required to trigger rebase lines
                 "state": "progress",
             }
         )
 
-        # MRP manager should still be able to edit the original object
         bom.bom_line_ids[0].product_qty = 2
 
     def create_eco(self, eco_type):
@@ -837,8 +724,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_duplicate_eco_template_with_same_user_and_stage(self):
-        """Test that two ECO approval templates cannot be created
-        with the same user for the same stage."""
         self.env["mrp.eco.approval.template"].create(
             {
                 "name": "eco approval template",
@@ -858,12 +743,8 @@ class TestMrpPlm(TestPlmCommon):
             )
 
     def test_eco_count(self):
-        """Test that the ECO count is correctly updated for both
-        the product and the BOM when creating a new revision.
-        """
         self.assertEqual(self.table.eco_count, 0)
         self.assertEqual(self.bom_table.eco_count, 0)
-        # Create an ECO for the BOM and verify the count for both the BOM and the product
         eco = self.env["mrp.eco"].create(
             {
                 "name": "eco",
@@ -878,8 +759,6 @@ class TestMrpPlm(TestPlmCommon):
         self.bom_table.invalidate_recordset(["eco_count"])
         self.assertEqual(self.table.eco_count, 0)
         self.assertEqual(self.bom_table.eco_count, 1)
-        # Update the ECO type to "Product" and verify that
-        # the bom_id field is cleared and the count is updated
         eco.type = "product"
         self.assertFalse(eco.bom_id)
         self.table.invalidate_recordset(["eco_count"])
@@ -889,7 +768,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(self.bom_table.eco_count, 0)
 
     def _create_eco_approval_workflow(self):
-        """Create an ECO type with an approval workflow for testing purposes."""
         self.random_approver = new_test_user(
             self.env, "random_approver", "mrp_plm.group_plm_manager"
         )
@@ -941,7 +819,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_dashboard_waiting_for_me(self):
-        """Test that the dashboard computes the ECOs waiting for my approval properly."""
         self._create_eco_approval_workflow()
         eco = self._create_eco(
             "ECO1",
@@ -951,7 +828,6 @@ class TestMrpPlm(TestPlmCommon):
         )
         eco.action_new_revision()
         eco.stage_id = self.approval_first_stage
-        # Just landed on first stage, both users need to approve
         self.approval_eco_type.invalidate_recordset(["nb_approvals_my"])
         self.assertEqual(
             self.approval_eco_type.with_user(self.random_approver).nb_approvals_my,
@@ -964,9 +840,7 @@ class TestMrpPlm(TestPlmCommon):
             1,
             "Admin should have 1 approval waiting",
         )
-        # Admin approves
         eco.with_user(self.mrp_admin).approve()
-        # Check that counter is correct
         self.approval_eco_type.invalidate_recordset(["nb_approvals_my"])
         self.assertEqual(
             self.approval_eco_type.with_user(self.random_approver).nb_approvals_my,
@@ -981,10 +855,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_compute_component_upd_product_qty(self):
-        """Test the correct computation of BoM component quantity changes when
-        using high-precision units of measure. We ensure that the updated
-        quantity respects the UoM decimal digits instead of the default precision.
-        """
         self.env["decimal.precision"].search([("name", "=", "Product Unit")]).digits = 4
         self.bom_table.product_uom_id.rounding = 0.0001
         bom_eco = self._create_eco(
@@ -998,7 +868,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertEqual(bom_eco.bom_change_ids.upd_product_qty, 0.0003)
 
     def test_eco_attachments(self):
-        """Test that applying an ECO updates the origin_attachment_id for document.document"""
         tmpl = self.env["product.template"].create({"name": "Test"})
         eco_form = Form(self.env["mrp.eco"])
         eco_form.name = "ELCT ECO"
@@ -1027,7 +896,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertNotEqual(doc.origin_attachment_id, old_origin_id)
 
     def test_bom_changes_follow_both_boms_lines(self):
-        """The stored BoM diff recomputes when a line it compares changes on either BoM."""
         eco = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
@@ -1060,7 +928,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_routing_changes_follow_operation_key(self):
-        """Renaming an operation shows as add+remove; an ECO switched to product keeps none."""
         eco = self._create_eco(
             "ECO1", self.bom_table, self.eco_type.id, self.eco_stage.id
         )
@@ -1074,7 +941,6 @@ class TestMrpPlm(TestPlmCommon):
         self.assertFalse(eco.routing_change_ids)
 
     def test_eco_attachment_unchanged_content_keeps_origin(self):
-        """An ECO copy whose content is unchanged renames its origin instead of re-uploading."""
         tmpl = self.env["product.template"].create({"name": "Test"})
         origin_doc = self.env["document.document"].create(
             {
@@ -1106,7 +972,6 @@ class TestMrpPlm(TestPlmCommon):
         )
 
     def test_product_variant_eco_action(self):
-        """The variant's ECO button opens its template's product ECOs."""
         action = self.table.mrp_eco_action_product_tmpl()
         self.assertEqual(
             action["domain"],

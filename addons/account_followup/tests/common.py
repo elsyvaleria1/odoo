@@ -4,11 +4,6 @@ from odoo.addons.account_followup.models.followup_request import FollowupRequest
 
 class TestAccountFollowupCommon(AccountTestInvoicingCommon):
     def followup_request(self, partner, **values):
-        """A reminder for `partner` with the post switched off.
-
-        snailmail_account_followup is auto_install, so a test that does not opt
-        out of the letter tries to buy a stamp from IAP.
-        """
         return FollowupRequest.prepare(partner, **values).with_channel(
             "snailmail", False
         )

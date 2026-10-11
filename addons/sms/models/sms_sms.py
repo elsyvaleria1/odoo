@@ -20,7 +20,6 @@ class SmsSms(models.Model):
     IAP_TO_SMS_STATE_SUCCESS = {
         "processing": "process",
         "success": "pending",
-        # These below are not returned in responses from IAP API in _send_with_api but are received via webhook events.
         "sent": "pending",
         "delivered": "sent",
     }
@@ -53,7 +52,7 @@ class SmsSms(models.Model):
             ("outgoing", "In Queue"),
             ("process", "Processing"),
             ("pending", "Sent"),
-            ("sent", "Delivered"),  # As for notifications and traces
+            ("sent", "Delivered"),
             ("error", "Error"),
             ("canceled", "Cancelled"),
         ],
@@ -73,7 +72,6 @@ class SmsSms(models.Model):
             ("sms_credit", "Insufficient Credit"),
             ("sms_server", "Server Error"),
             ("sms_acc", "Unregistered Account"),
-            # mass mode specific codes, generated internally, not returned by IAP.
             ("sms_blacklist", "Blacklisted"),
             ("sms_duplicate", "Duplicate"),
             ("sms_optout", "Opted Out"),
@@ -123,15 +121,6 @@ class SmsSms(models.Model):
         self._update_sms_state_and_trackers("outgoing", failure_type=False)
 
     def send(self, unlink_failed=False, unlink_sent=True, raise_exception=False):
-        """Main API method to send SMS.
-
-        This contacts an external server. If the transaction fails, it may be
-        retried which can result in sending multiple SMS messages!
-
-          :param unlink_failed: unlink failed SMS after IAP feedback;
-          :param unlink_sent: unlink sent SMS after IAP feedback;
-          :param raise_exception: raise if there is an issue contacting IAP;
-        """
         domain = [("state", "=", "outgoing"), ("to_delete", "!=", True)]
         to_send = self.try_lock_for_update().filtered_domain(domain)
 
@@ -144,11 +133,6 @@ class SmsSms(models.Model):
                 )
 
     def _split_by_api(self):
-        # group by company: `SmsApi`'s IAP account is resolved via
-        # `iap.account.acquire_account()`, which is scoped to `self.env.companies` -- a
-        # single ungrouped batch would resolve to whichever company's account
-        # happens to match the calling env, silently used for every company's
-        # SMS in the batch.
         sms_by_company = defaultdict(self.browse)
         for sms in self:
             sms_by_company[sms._get_sms_company()] += sms
@@ -197,7 +181,6 @@ class SmsSms(models.Model):
 
     @api.model
     def _process_queue(self) -> None:
-        """CRON job to send queued SMS messages."""
         domain = [("state", "=", "outgoing"), ("to_delete", "!=", True)]
 
         batch_size = self._get_send_batch_size()
@@ -214,10 +197,6 @@ class SmsSms(models.Model):
         )
 
     def _get_send_batch_size(self):
-        # guarded: this number is handed to an SQL LIMIT in _process_queue and to
-        # itertools.batched in _split_batch, and neither survives a zero, a
-        # negative or a value that is not a number at all -- the bare int() this
-        # replaces raised ValueError straight out of the queue cron
         return self.env["ir.config_parameter"]._get_positive_int_param(
             "sms.session.batch.size", 500
         )
@@ -230,7 +209,6 @@ class SmsSms(models.Model):
         yield from batched(self.ids, batch_size, strict=False)
 
     def _send(self, unlink_failed=False, unlink_sent=True, raise_exception=False):
-        """Resolve the SMS API and delegate sending to it."""
         sms_api = self.env.context.get("sms_api")
         assert sms_api, (
             "sms_api must be set in context: only `send()` calls `_send()`, and it always sets it via `_split_by_api()`."
@@ -246,7 +224,6 @@ class SmsSms(models.Model):
     def _send_with_api(
         self, sms_api, unlink_failed=False, unlink_sent=True, raise_exception=False
     ) -> None:
-        """Send SMS via the given API and process the delivery results."""
         messages = [
             {
                 "content": body,
@@ -319,15 +296,12 @@ class SmsSms(models.Model):
         all_sms_sudo.mail_message_id._notify_message_notification_update()
 
     def _update_sms_state_and_trackers(self, new_state, failure_type=None) -> None:
-        """Update sms state update and related tracking records (notifications, traces)."""
         self.write({"state": new_state, "failure_type": failure_type})
-        # Use sudo on mail.notification to allow writing other users' notifications; rights are already checked by sms write
         self.sms_tracker_id.sudo()._action_update_from_sms_state(
             new_state, failure_type=failure_type
         )
 
     def _handle_call_result_hook(self, results):
-        """Further process SMS sending API results."""
         pass
 
     @api.autovacuum

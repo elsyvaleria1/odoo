@@ -1,9 +1,4 @@
 def object_of(schema):
-    """Build a validator matching a dict against the given per-key schema.
-
-    object_of({'key': True}) matches an object with 'key' corresponding to any value
-    object_of({'key': schema}) matches an object with 'key' that matches the schema
-    """
 
     def object_validator(value):
         if not isinstance(value, dict):
@@ -24,11 +19,6 @@ def object_of(schema):
 
 
 def list_of(schema):
-    """Build a validator matching a list whose items match the given schema.
-
-    list_of(True) matches any list
-    list_of(schema) matches a list of items that match the schema
-    """
 
     def list_validator(value):
         if not isinstance(value, list):

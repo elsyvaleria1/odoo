@@ -4,7 +4,6 @@ from . import wizards
 
 
 def post_init_hook(env) -> None:
-    """Create `account.payment.method` records for the installed payment providers."""
     PaymentProvider = env["payment.provider"]
     installed_providers = PaymentProvider.search(
         [("module_id.state", "=", "installed")]
@@ -14,7 +13,6 @@ def post_init_hook(env) -> None:
 
 
 def uninstall_hook(env):
-    """Delete `account.payment.method` records created for the installed payment providers."""
     installed_providers = env["payment.provider"].search(
         [("module_id.state", "=", "installed")]
     )

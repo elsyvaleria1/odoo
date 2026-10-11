@@ -206,13 +206,6 @@ class TestHrAttendanceOvertime(TransactionCase):
                 )
                 for day in range(4, 9)
             ]
-            # 50 hours against a 40-hour week: the weekly rule covers the last
-            # ten hours of the week, all of Friday; the daily rule covers
-            # 16:00-18:00 on each day. Overlapping rule intervals count once,
-            # so Monday-Thursday contribute 2 hours each and Friday 10.
-            # The figure was 10 while the regeneration window never widened
-            # to the week, so the weekly rule saw one day at a time and never
-            # reached 40 hours.
             self.assertAlmostEqual(
                 self.employee.total_overtime,
                 18,

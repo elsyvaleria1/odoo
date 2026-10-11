@@ -529,7 +529,7 @@ class DiscussChannelMember(models.Model):
 
     def _notify_mute(self) -> None:
         for member in self:
-            if member.mute_until_dt and member.mute_until_dt != datetime.max:  # noqa: DTZ901 - comparison against the 'muted forever' sentinel written by discuss_mute
+            if member.mute_until_dt and member.mute_until_dt != datetime.max:
                 self.env["ir.cron"]._trigger_ref(
                     "mail.ir_cron_discuss_channel_member_unmute", member.mute_until_dt
                 )
@@ -592,9 +592,6 @@ class DiscussChannelMember(models.Model):
         camera: bool = False,
     ) -> None:
         self.check_singleton()
-        # taken before the search, not only when the session is created: a join
-        # from another device that committed since this snapshot then fails
-        # here with a serialization error and retries seeing that session
         self.channel_id._lock_rtc_session_count()
         session_domain = []
         if self.partner_id:

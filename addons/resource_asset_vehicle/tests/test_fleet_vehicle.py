@@ -49,7 +49,6 @@ class TestFleetVehicle(TransactionCase):
                 }
             )
         )
-        # A vehicle's own data lives on its model: read it there.
         return (
             self.env["resource.asset.vehicle"].with_user(self.manager).browse(asset.id)
         )
@@ -274,7 +273,6 @@ class TestVehicleIsItsOwnModel(TransactionCase):
         self.assertFalse(self.env.cr.fetchall())
 
     def test_a_vehicle_created_as_a_resource_gets_its_vehicle_row(self):
-        """No caller has to know: the kind names the model that extends it."""
         asset = self.Asset.create(
             {"name": "Dispatched", "kind_id": self.vehicle_kind.id}
         )

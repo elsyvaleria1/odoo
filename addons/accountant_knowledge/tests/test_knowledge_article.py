@@ -16,8 +16,6 @@ class TestKnowledgeArticleAuditReport(TransactionCase):
         cls.root_article = cls.audit_report.knowledge_article_id
 
     def test_inherited_audit_report_follows_parent_chain(self):
-        """Check that descendant articles inherit the audit report from the
-        closest ancestor holding one."""
         child = self.env["knowledge.article"].create(
             {"name": "Child", "parent_id": self.root_article.id}
         )
@@ -30,15 +28,11 @@ class TestKnowledgeArticleAuditReport(TransactionCase):
         self.assertEqual(grandchild.inherited_audit_report_id, self.audit_report)
 
     def test_inherited_audit_report_without_ancestor_report(self):
-        """Check that an article outside any audit report tree inherits no
-        audit report (boundary case)."""
         orphan = self.env["knowledge.article"].create({"name": "Orphan"})
 
         self.assertFalse(orphan.inherited_audit_report_id)
 
     def test_available_template_domain_excludes_audit_report_templates(self):
-        """Check that audit report templates are hidden from the generic
-        knowledge template picker."""
         audit_template = self.env.ref(
             "accountant_knowledge.accountant_knowledge_article_template_audit_report"
         )
@@ -50,8 +44,6 @@ class TestKnowledgeArticleAuditReport(TransactionCase):
         self.assertNotIn(audit_template, available_templates)
 
     def test_update_embedded_audit_report_options(self):
-        """Check that updating embedded audit report options only rewrites the
-        options of the targeted embed and preserves its other props."""
         article = self.env["knowledge.article"].create(
             {
                 "name": "Report Article",
@@ -84,8 +76,6 @@ class TestKnowledgeArticleAuditReport(TransactionCase):
         self.assertEqual(untouched_props["options"], {"report_id": 2})
 
     def test_update_embedded_options_rejects_multi_article(self):
-        """Check that rewriting embedded audit report options on several
-        articles at once is refused by the singleton guard."""
         articles = self.env["knowledge.article"].create(
             [{"name": "First"}, {"name": "Second"}]
         )
@@ -93,8 +83,6 @@ class TestKnowledgeArticleAuditReport(TransactionCase):
             articles.update_embedded_audit_report_options("abc123", {})
 
     def test_render_template_neutralizes_account_report_options(self):
-        """Check that rendering an audit report template outside of an audit
-        report neutralizes the embedded account report options."""
         template = self.env.ref(
             "accountant_knowledge.accountant_knowledge_article_template_balance_sheet"
         )

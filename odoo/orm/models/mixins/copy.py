@@ -62,8 +62,6 @@ class CopyMixin(_ModelStubs):
             and name not in blacklist
             and self._has_field_access(field, "read")
         }
-        # a link to records of a model the user cannot read would refuse the
-        # whole copy: the duplicate takes the field's default
         unreadable = [
             name
             for name, field in fields_to_copy.items()
@@ -76,9 +74,6 @@ class CopyMixin(_ModelStubs):
             _debug.logic(
                 "copy.unreadable_comodel_withheld", model=self._name, fields=unreadable
             )
-        # create checks what writing a field needs (write_groups, a write
-        # class), so a gated value the user may not set would refuse the whole
-        # copy: the duplicate takes the field's default
         withheld = [
             name
             for name, field in fields_to_copy.items()
@@ -89,8 +84,6 @@ class CopyMixin(_ModelStubs):
         if withheld:
             _debug.logic("copy.write_gated_withheld", model=self._name, fields=withheld)
 
-        # the records a batch may link through its many2many fields, filtered
-        # once per field: each record then keeps the ones it holds
         readable_by_field = {
             name: set(
                 self._filtered_field_access(field)[name]._filtered_access("read")._ids
@@ -98,8 +91,6 @@ class CopyMixin(_ModelStubs):
             for name, field in fields_to_copy.items()
             if field.is_many2many
         }
-        # a field the user may read on some of the records only is copied from
-        # those; the others' duplicates take its default
         masked_by_field = {
             name: masked
             for name, field in fields_to_copy.items()
@@ -152,8 +143,6 @@ class CopyMixin(_ModelStubs):
         return vals_list
 
     def copy_translations(self, new: Self, excluded: Collection[str] = ()) -> None:
-        # Materialised once: callers pass generators, which a membership test per
-        # field would consume, and the trace below takes its length.
         excluded = frozenset(excluded)
         old = self
         if "__copy_translations_seen" not in old.env.context:
@@ -168,8 +157,6 @@ class CopyMixin(_ModelStubs):
             return
         seen_map[old._name].add(old.id)
         valid_langs = {*self.env.registry.locale.installed_langs(self.env), "en_US"}
-        # the copy was created in the only language there is: each translated
-        # field would cost a flush and a read to find nothing to copy
         multilingual = valid_langs != {self.env.lang or "en_US"}
 
         for name, field in old._fields.items():
@@ -184,8 +171,6 @@ class CopyMixin(_ModelStubs):
                 continue
 
             if field.is_one2many and field.name not in excluded:
-                # read as copy_data read them, archived lines included, but
-                # written back in the caller's own context
                 old_lines = (
                     old.with_context(active_test=False)[name]
                     .sorted(key="id")
@@ -238,9 +223,6 @@ class CopyMixin(_ModelStubs):
     def _get_copied_stored_translations(
         self, field: Field[typing.Any]
     ) -> dict[str, str] | None:
-        # the records copied together, or the lines of the records copied
-        # together, are this one's prefetch set: one flush and one read per
-        # field serve all of them instead of one each
         stored_by_field = self.env.context.get(COPY_TRANSLATIONS_STORED)
         record_id = self._ids[0]
         if stored_by_field is None or not isinstance(record_id, int):

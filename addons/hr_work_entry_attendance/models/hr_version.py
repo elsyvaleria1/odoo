@@ -60,7 +60,7 @@ class HrVersion(models.Model):
                 for ots in overtimes.grouped(
                     lambda ot: (ot.time_start, ot.time_stop)
                 ).values():
-                    prev_duration = 0  # to avoid intervals overlapping
+                    prev_duration = 0
                     for ot in ots:
                         datetime_stop = min(
                             datetime.combine(
@@ -83,17 +83,6 @@ class HrVersion(models.Model):
     def _set_real_overtime_intervals(
         self, start_dt, end_dt, attendances, mapped_intervals, overtime_intervals
     ) -> None:
-        """This method split the overtime_intervals to not overlap the expected employee schedule or planning
-        Example: Working schedule : 8h-12h -> 13h-17h, Attendance = 7h-18h, Overtime duration = 2h
-        overtime_intervals will be equal to 16h-18h (because we only want to display one overtime line)
-        but the real overtime intervals is equal to 7h-8h and 17h-18h
-
-        :param start_dt: start of the period to compute
-        :param end_dt: end of the period to compute
-        :param attendances: attendances to consider for the split
-        :param mapped_intervals: dict of resource -> Intervals of the expected working schedule
-        :param overtime_intervals: dict of resource -> Intervals of overtime, mutated in place with the split result
-        """
         attendances_by_resources = attendances.grouped(
             lambda attendance: attendance.employee_id.resource_id.id
         )
@@ -125,9 +114,6 @@ class HrVersion(models.Model):
             outside_schedule_intervals = (
                 relevant_attendance_interval - mapped_intervals[resource]
             )
-            # If there are some overtime line with some duration remaining after going through the outside working hours intervals,
-            # it means that some overtime line have been computed over normal attendance intervals. In that case, place the
-            # remaining overtime on the attendance intervals which are the mapped_intervals
             for intervals in [outside_schedule_intervals, mapped_intervals[resource]]:
                 for start, stop, _model in intervals:
                     interval_duration = (stop - start).total_seconds() / 3600
@@ -165,7 +151,6 @@ class HrVersion(models.Model):
             overtime_intervals[resource] = real_overtime_intervals
 
     def _get_attendance_intervals(self, start_dt, end_dt):
-        # Attendance-based contracts
         start_naive = start_dt.replace(tzinfo=None)
         end_naive = end_dt.replace(tzinfo=None)
         overtime_contracts = self.filtered_domain(
@@ -181,7 +166,7 @@ class HrVersion(models.Model):
                 "check_out",
                 ">=",
                 start_naive,
-            ),  # We ignore attendances which don't have a check_out
+            ),
         ]
         resource_ids = attendance_based_contracts.employee_id.resource_id.ids
         all_attendances = self.env["hr.attendance"].sudo().search(search_domain)
@@ -220,7 +205,7 @@ class HrVersion(models.Model):
             resource = attendance.employee_id.resource_id
             tz = timezone(
                 attendance.employee_id.tz or resource.tz
-            )  # refer to resource's tz if fully flexible resource (calendar is False)
+            )
             check_in_tz = attendance.check_in.astimezone(tz)
             check_out_tz = attendance.check_out.astimezone(tz)
             if attendance.overtime_status == "refused":
@@ -322,7 +307,6 @@ class HrVersion(models.Model):
         for interval in attendance_intervals:
             if interval[2]._name == "hr.attendance":
                 work_entry_type = attendance_work_entry_type
-                # All benefits generated here are using datetimes converted from the employee's timezone
                 vals += [
                     dict(
                         [
@@ -347,21 +331,18 @@ class HrVersion(models.Model):
                 overtime_mode = self.ruleset_id.rate_combination_mode
                 overtime_line_id = interval[2]
                 paid_rules = overtime_line_id.rule_ids.filtered("paid")
-                # Unpaid rules carry no billable work entry type, so there's nothing to generate
                 if not paid_rules:
                     continue
 
                 triggered_rule_work_entry_types = (
                     paid_rules.mapped("work_entry_type_id") or default_overtime_type
                 )
-                # Take into account manually encoded duration
                 date_start = interval[0].astimezone(UTC).replace(tzinfo=None)
                 date_stop = interval[1].astimezone(UTC).replace(tzinfo=None)
                 if overtime_mode == "max" or len(triggered_rule_work_entry_types) == 1:
                     work_entry_type = max(
                         triggered_rule_work_entry_types, key=lambda w: w.amount_rate
                     )
-                    # All benefits generated here are using datetimes converted from the employee's timezone
                     vals += [
                         dict(
                             [
@@ -381,7 +362,6 @@ class HrVersion(models.Model):
                     ]
                 else:
                     for triggered_rule in paid_rules:
-                        # All benefits generated here are using datetimes converted from the employee's timezone
                         vals += [
                             dict(
                                 [

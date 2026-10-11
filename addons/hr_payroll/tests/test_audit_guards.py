@@ -17,8 +17,6 @@ class TestPayrollGuards(TransactionCase):
         )
 
     def test_a_non_payroll_officer_can_write_a_version(self):
-        """The payslip-recompute field lookup reads wage_type, a
-        payroll-groups field: it must not break a plain hr officer's write."""
         officer = mail_new_test_user(
             self.env,
             name="hr officer without payroll",

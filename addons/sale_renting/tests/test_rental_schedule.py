@@ -39,7 +39,6 @@ class TestRentalSchedule(SaleRentingCommon):
         new_return_date = self.rental_order.rental_return_date + relativedelta(days=1)
         self.projector_sol.web_gantt_write({"return_date": new_return_date})
 
-        # Should allow until all items are returned
         self.assertEqual(new_return_date, self.rental_order.rental_return_date)
 
     def test_return_date_fixed_when_returned(self):
@@ -61,7 +60,6 @@ class TestRentalSchedule(SaleRentingCommon):
         ) as mock_action_update_rental_prices:
             self.projector_sol.web_gantt_write(
                 {
-                    # Order is pushed one day later, but the duration stays the same
                     "start_date": self.rental_order.rental_start_date
                     + relativedelta(days=1),
                     "return_date": self.rental_order.rental_return_date
@@ -86,7 +84,7 @@ class TestRentalSchedule(SaleRentingCommon):
             )
 
         mock_action_update_rental_prices.assert_called_once()
-        self.assertTrue(  # Notify the user
+        self.assertTrue(
             any(
                 notif["code"] == "rental_price_update"
                 for notif in result["notifications"]
@@ -94,7 +92,6 @@ class TestRentalSchedule(SaleRentingCommon):
         )
 
     def test_schedule_with_delivery_partner_without_name(self):
-        """Ensure schedule works when delivery partner has no name."""
         delivery_partner = self.env["res.partner"].create(
             {
                 "name": False,

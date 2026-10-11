@@ -3,8 +3,6 @@ import contextlib
 from odoo.tests import TransactionCase
 from odoo.tools import SQL
 
-# Models a simulator must never write: what the business runs on. One a
-# database does not have cannot be written, and is not looked at.
 OPERATIONAL_MODELS = (
     "mail.message",
     "res.partner",
@@ -34,7 +32,6 @@ class TrainingNeutralityCase(TransactionCase):
 
     @contextlib.contextmanager
     def assertNoOperationalWrites(self, models=None):
-        """Fail if any operational model gains, loses or changes a record inside the block."""
         models = models or self.operational_models
         before = self._table_fingerprint(models)
         yield

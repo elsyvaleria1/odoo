@@ -17,13 +17,6 @@ class IrActionsReport(models.Model):
     )
 
     def render_document(self, device_id_list, res_ids, data=None) -> list:
-        """Render a document to be printed by the IoT Box through client
-
-        :param device_id_list: The list of device ids to print the document
-        :param res_ids: The list of record ids to print
-        :param data: The data to pass to the report
-        :return: The list of documents to print with information about the device
-        """
         device_ids = self.env["iot.device"].browse(device_id_list)
         if len(device_id_list) != len(device_ids.exists()):
             raise UserError(
@@ -45,7 +38,7 @@ class IrActionsReport(models.Model):
                 "document": data_base64,
             }
             for device in device_ids
-        ]  # As it is called via JS, we format keys to camelCase
+        ]
 
     def report_action(self, docids, data=None, config=True):
         result = super().report_action(docids, data, config)
@@ -69,7 +62,7 @@ class IrActionsReport(models.Model):
         if selected_device_ids:
             selected_device_ids = [
                 dev for dev in selected_device_ids if dev in self.device_ids.ids
-            ]  # Filter out devices that are deleted/no longer linked to the report
+            ]
         wizard = self.env["wizard.ir.actions.report.print.iot"].create(
             [{"display_device_ids": self.device_ids, "device_ids": selected_device_ids}]
         )
@@ -86,12 +79,6 @@ class IrActionsReport(models.Model):
         }
 
     def _render_qweb_pdf_documents(self, report_ref, *args, **kwargs):
-        """Override to ensure the user is informed when trying to print an empty report
-        without an IoT printer.
-
-        This can happen when trying to print delivery labels, that have empty reports used for assigning
-        IoT printers.
-        """
         try:
             return super()._render_qweb_pdf_documents(report_ref, *args, **kwargs)
         except ParserError:

@@ -52,7 +52,6 @@ class IrAccessDrift(models.Model):
     _order = "state, xmlid, id"
     _rec_name = "xmlid"
     _allow_sudo_commands = False
-    # the rows of every company's policy: its records belong to no company
     _access_anchors = frozendict({"company": ""})
 
     access_id = fields.Many2one(
@@ -120,7 +119,6 @@ class IrAccessDrift(models.Model):
                 )
             else:
                 new.append({**values, "first_seen": self.env.cr.now()})
-        # a drift that is gone leaves the report
         self.browse().union(*standing.values()).unlink()
         created = self.create(new)
         created._log()
@@ -174,8 +172,6 @@ class IrAccessDrift(models.Model):
             with self.env.cr.savepoint():
                 for module in installed:
                     error, legacy = self._replay(module)
-                    # the rows a stock module's lines and rules amount to are
-                    # shipped as much as those of an ir.access file
                     shipped.update(legacy)
                     if error:
                         found[(module, False, "unreadable")] = {
@@ -191,7 +187,6 @@ class IrAccessDrift(models.Model):
         except _Replayed:
             pass
         finally:
-            # the rows and caches go back to what the database holds
             self.env.invalidate_all()
             self.env.registry.clear_cache("stable", "groups", "templates")
 
@@ -245,9 +240,6 @@ class IrAccessDrift(models.Model):
 
     @api.model
     def _replay(self, module: str) -> tuple[str | None, dict[str, bool]]:
-        # load the module's ir.access records as an upgrade would, those of a
-        # noupdate block left out: they are shipped to be edited; and the rows
-        # its stock lines and rules amount to, with their noupdate flags
         path = get_module_path(module, display_warning=False)
         if not path:
             return None, {}
@@ -275,15 +267,12 @@ class IrAccessDrift(models.Model):
                             convert_xml_import(self.env, module, content, mode="init")
                 legacy = self.env["ir.access"]._load_legacy_access(module, "init")
         except Exception as error:
-            # a module whose files no longer load is itself the finding
             _logger.warning("ir.access drift: %s does not replay: %s", module, error)
             return f"{type(error).__name__}: {error}"[:2000], legacy
         return None, legacy
 
     @api.model
     def _installed_in_load_order(self) -> list[str]:
-        # a module's file may override a row of a module it depends on: the
-        # files are replayed in the order an installation loads them
         self.env.cr.execute(
             """
             SELECT m.name, d.name
@@ -329,7 +318,6 @@ class IrAccessDrift(models.Model):
 
 
 def _value(value: Any) -> Any:
-    # a many2one reads (id, name), a many2many a list of ids
     if isinstance(value, tuple):
         return value[0]
     if isinstance(value, list):

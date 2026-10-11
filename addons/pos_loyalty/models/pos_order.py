@@ -12,12 +12,6 @@ class PosOrder(models.Model):
     _inherit = "pos.order"
 
     def check_coupon_programs(self, point_changes, new_codes) -> dict:
-        """
-        This is called upon validating the order in the pos.
-
-        This will check the balance for any pre-existing coupon to make sure that the rewards are in fact all claimable.
-        This will also check that any set code for coupons do not exist in the database.
-        """
         point_changes = {int(k): v for k, v in point_changes.items()}
         coupon_ids_from_pos = set(point_changes.keys())
         coupons = (
@@ -49,7 +43,6 @@ class PosOrder(models.Model):
                         "updated_points": {c.id: c.points for c in coupons},
                     },
                 }
-        # Check existing coupons
         coupons = self.env["loyalty.card"].search([("code", "in", new_codes)])
         if coupons:
             return {
@@ -91,13 +84,6 @@ class PosOrder(models.Model):
         self.env["loyalty.history"].create(history_lines_create_vals)
 
     def confirm_coupon_programs(self, coupon_data) -> dict:
-        """
-        This is called after the order is created.
-
-        This will create all necessary coupons and link them to their line orders etc..
-
-        It will also return the points of all concerned coupons to be updated in the cache.
-        """
 
         def get_partner_id(partner_id):
             return (
@@ -106,7 +92,6 @@ class PosOrder(models.Model):
                 and partner_id
             ) or False
 
-        # Keys are stringified when using rpc
         coupon_data = {int(k): v for k, v in coupon_data.items()}
 
         self._check_existing_loyalty_cards(coupon_data)
@@ -114,10 +99,8 @@ class PosOrder(models.Model):
         self._waive_discounts_without_a_positive_total(coupon_data)
         self._process_existing_gift_cards(coupon_data)
 
-        # Map negative id to newly created ids.
         coupon_new_id_map = {k: k for k in coupon_data if k > 0}
 
-        # Create the coupons that were awarded by the order.
         coupons_to_create = {k: v for k, v in coupon_data.items() if k < 0}
         coupon_create_vals = [
             {
@@ -133,7 +116,6 @@ class PosOrder(models.Model):
             for p in coupons_to_create.values()
         ]
 
-        # Pos users don't have the create permission
         new_coupons = (
             self.env["loyalty.card"]
             .with_context(action_no_send_mail=True)
@@ -141,11 +123,9 @@ class PosOrder(models.Model):
             .create(coupon_create_vals)
         )
 
-        # Map the newly created coupons
         for old_id, new_id in zip(coupons_to_create.keys(), new_coupons, strict=False):
             coupon_new_id_map[new_id.id] = old_id
 
-        # We need a sudo here because this can trigger `_compute_order_count` that require access to `sale.order.line`
         all_coupons = (
             self.env["loyalty.card"].sudo().browse(coupon_new_id_map.keys()).exists()
         )
@@ -156,20 +136,16 @@ class PosOrder(models.Model):
             lines_per_reward_code[line.reward_identifier_code] |= line
         for coupon in all_coupons:
             if coupon.id in coupon_new_id_map:
-                # Coupon existed previously, update amount of points.
                 coupon.points += coupon_data[coupon_new_id_map[coupon.id]]["points"]
             for reward_code in coupon_data[coupon_new_id_map[coupon.id]].get(
                 "line_codes", []
             ):
                 lines_per_reward_code[reward_code].coupon_id = coupon
-        # Send creation email
         new_coupons.with_context(
             action_no_send_mail=False
         )._send_creation_communication()
-        # Reports per program
         report_per_program = {}
         coupon_per_report = defaultdict(list)
-        # Important to include the updated gift cards so that it can be printed. Check coupon_report.
         for coupon in new_coupons:
             if coupon.program_id not in report_per_program:
                 report_per_program[coupon.program_id] = (
@@ -180,7 +156,6 @@ class PosOrder(models.Model):
             for report in report_per_program[coupon.program_id]:
                 coupon_per_report[report.id].append(coupon.id)
 
-        # Adding loyalty history lines
         loyalty_points = [
             {
                 "order_id": self.id,
@@ -228,8 +203,6 @@ class PosOrder(models.Model):
                 for coupon in new_coupons
                 if (
                     coupon.program_id.applies_on == "future"
-                    # Don't send the coupon code for the gift card and ewallet programs.
-                    # It should not be printed in the ticket.
                     and coupon.program_id.sudo().program_type
                     not in ["gift_card", "ewallet"]
                 )
@@ -244,7 +217,7 @@ class PosOrder(models.Model):
             program_id = self.env["loyalty.program"].browse(coupon_vals["program_id"])
             if program_id.program_type == "gift_card":
                 updated = False
-                gift_card = self.env["loyalty.card"].search(  # noqa: E8507 - one probe per coupon of the order
+                gift_card = self.env["loyalty.card"].search(
                     [
                         ("|"),
                         ("code", "=", coupon_vals.get("code", "")),
@@ -294,7 +267,6 @@ class PosOrder(models.Model):
                     )
 
                 if coupon_vals.get("points") != gift_card.points:
-                    # Coupon vals contains negative points
                     updated = True
                     new_value = gift_card.points + coupon_vals["points"]
                     gift_card.points = new_value
@@ -332,7 +304,6 @@ class PosOrder(models.Model):
         )
 
     def _waive_discounts_without_a_positive_total(self, coupon_data) -> None:
-        # the till already applied the discount, so only its point cost can still be withheld
         discount_lines = self._get_discount_lines_without_a_positive_total()
         if not discount_lines:
             return
@@ -360,7 +331,7 @@ class PosOrder(models.Model):
         for coupon_id, coupon_vals in coupon_data.items():
             partner_id = coupon_vals.get("partner_id", False)
             if partner_id:
-                existing_coupon_for_program = self.env["loyalty.card"].search(  # noqa: E8507 - one probe per coupon of the order
+                existing_coupon_for_program = self.env["loyalty.card"].search(
                     [
                         ("partner_id", "=", partner_id),
                         ("program_type", "in", ["loyalty", "ewallet"]),
@@ -376,10 +347,9 @@ class PosOrder(models.Model):
             coupon_data[new_key] = coupon_data.pop(old_key)
 
     def _remove_duplicate_coupon_data(self, coupon_data) -> None:
-        # to prevent duplicates, it is necessary to check if the history line already exists
         items_to_remove = []
         for coupon_id, coupon_vals in coupon_data.items():
-            existing_history = self.env["loyalty.history"].search_count(  # noqa: E8507 - one probe per coupon of the order
+            existing_history = self.env["loyalty.history"].search_count(
                 [
                     ("card_id.program_id", "=", coupon_vals["program_id"]),
                     ("order_model", "=", self._name),

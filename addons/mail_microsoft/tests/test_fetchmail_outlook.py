@@ -9,9 +9,6 @@ from odoo.addons.mail.tests.common import FakedDialCase
 class TestFetchmailOutlook(FakedDialCase, TransactionCase):
     @patch("odoo.addons.mail.tools.incoming_mail.OdooIMAP4_SSL")
     def test_connect(self, mock_imap):
-        """Test that the connect method will use the right
-        authentication method with the right arguments.
-        """
         mock_connection = Mock()
         mock_imap.return_value = mock_connection
 
@@ -75,7 +72,6 @@ class TestFetchmailOutlook(FakedDialCase, TransactionCase):
             )
 
     def test_constraints(self):
-        """Test the constraints related to the Outlook mail server."""
         with self.assertRaises(
             UserError, msg="Should ensure that the password is empty"
         ):

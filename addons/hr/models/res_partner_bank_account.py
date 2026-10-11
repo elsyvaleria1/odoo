@@ -91,7 +91,6 @@ class ResPartnerBankAccount(models.Model):
                     allocation.amount_is_percentage
                 )
                 continue
-            # not allocated: offer what is still unclaimed, as the JSON did
             bank.employee_salary_amount_is_percentage = True
             bank.employee_salary_amount = (
                 bank.employee_id.get_remaining_percentage() if bank.employee_id else 0

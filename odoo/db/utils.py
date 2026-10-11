@@ -50,7 +50,7 @@ _HEALTH_PARAMS: dict[str, str] = {
 def get_connection_info_for_database(
     db_or_uri: str, readonly: bool = False, settings: PoolSettings | None = None
 ) -> tuple[str, dict]:
-    global _ODOO_PGAPPNAME_WARNED  # noqa: PLW0603  warn-once latch for the whole process
+    global _ODOO_PGAPPNAME_WARNED
     settings = resolve(settings)
     app_name = settings.app_name
     if "ODOO_PGAPPNAME" in os.environ:
@@ -129,13 +129,6 @@ _SEED_PLANNER_STATS_SQL = """
 PLANNER_STATS_LOCK_TIMEOUT = 2.0
 
 
-# The seed is an optimisation for the planner, and pg_restore_relation_stats
-# locks every relation it touches: behind another session's ALTER TABLE (or a
-# test cursor's open transaction) the caller waited without bound -- measured,
-# still blocked after 8 s with the lock held. A LockNotAvailable inside the
-# savepoint rolls the timeout back with the statement; the success path puts
-# the previous value back by hand, because a released savepoint keeps its
-# SET LOCAL for the rest of the transaction.
 def update_planner_stats(
     cr: _PlannerStatsCursor,
     *,

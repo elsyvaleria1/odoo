@@ -62,10 +62,6 @@ def merge_sequences[T](*iterables: Iterable[T]) -> list[T]:
 
 
 def strongly_connected_components[T](graph: Mapping[T, Iterable[T]]) -> list[list[T]]:
-    # Tarjan's algorithm, iterative so a deep chain does not recurse. Every
-    # successor must be a key of graph. Components come in completion order (a
-    # component before any that reaches it), each listing its members in the
-    # order the stack pops them, its root last.
     index_of: dict[T, int] = {}
     lowlink: dict[T, int] = {}
     on_stack: set[T] = set()

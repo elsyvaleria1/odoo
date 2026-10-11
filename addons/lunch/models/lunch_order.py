@@ -89,9 +89,9 @@ class LunchOrder(models.Model):
     state = fields.Selection(
         selection=[
             ("new", "To Order"),
-            ("ordered", "Ordered"),  # "Internally" ordered
-            ("sent", "Sent"),  # Order sent to the supplier
-            ("confirmed", "Received"),  # Order received
+            ("ordered", "Ordered"),
+            ("sent", "Sent"),
+            ("confirmed", "Received"),
             ("cancelled", "Cancelled"),
         ],
         string="Status",
@@ -231,9 +231,6 @@ class LunchOrder(models.Model):
         return list(self._fields[field].convert_to_cache(values, self))
 
     def _extract_toppings(self, values):
-        """
-        If called in api.multi then it will pop topping_ids_1,2,3 from values
-        """
         topping_ids = []
 
         for i in range(1, 4):
@@ -241,8 +238,6 @@ class LunchOrder(models.Model):
             topping_values = values.get(topping_field, False)
 
             if self.ids:
-                # TODO This is not taking into account all the toppings for each individual order, this is usually not a problem
-                # since in the interface you usually don't update more than one order at a time but this is a bug nonetheless
                 topping_ids += (
                     self._get_topping_ids(topping_field, values.pop(topping_field))
                     if topping_values
@@ -289,8 +284,6 @@ class LunchOrder(models.Model):
                 }
             )
             if lines:
-                # YTI FIXME This will update multiple lines in the case there are multiple
-                # matching lines which should not happen through the interface
                 lines.update_quantity(1)
                 orders |= lines[:1]
             else:
@@ -313,11 +306,6 @@ class LunchOrder(models.Model):
         if merge_needed:
             lines_to_deactivate = self.env["lunch.order"]
             for line in self:
-                # Only write on topping_ids_1 because they all share the same table
-                # and we don't want to remove all the records
-                # _extract_toppings will pop topping_ids_1, topping_ids_2 and topping_ids_3 from values
-                # This also forces us to invalidate the cache for topping_ids_2 and topping_ids_3 that
-                # could have changed through topping_ids_1 without the cache knowing about it
                 toppings = self._extract_toppings(values)
                 if change_topping:
                     self.invalidate_model(["topping_ids_2", "topping_ids_3"])
@@ -395,18 +383,12 @@ class LunchOrder(models.Model):
     def update_quantity(self, increment) -> None:
         for line in self.filtered(lambda line: line.state not in ["sent", "confirmed"]):
             if line.quantity <= -increment:
-                # TODO: maybe unlink the order?
                 line.active = False
             else:
                 line.quantity += increment
         self._check_wallet()
 
     def add_to_cart(self) -> bool:
-        """
-        This method currently does nothing, we currently need it in order to
-        be able to reuse this model in place of a wizard
-        """
-        # YTI FIXME: Find a way to drop this.
         return True
 
     def _check_wallet(self) -> None:
@@ -469,7 +451,6 @@ class LunchOrder(models.Model):
         if not self:
             return
         notified_users = set()
-        # (company, lang): (subject, body)
         translate_cache = {}
         for order in self:
             user = order.user_id

@@ -157,7 +157,6 @@ class TestSendAndWait(TelegramBotTestCase):
             ]
         )
         self.assertEqual(len(reaction), 1)
-        # recording the answer runs nothing: the sender is not who resumes
         self.assertEqual(self._line(runtime, self.save).state, "waiting")
 
         got = self._deliver()
@@ -255,7 +254,6 @@ class TestSendAndWait(TelegramBotTestCase):
         self.assertEqual(runtime.state, "done")
 
     def _retry_delays(self, before):
-        """The minutes from `before` of the delivery job's triggers since."""
         cron = self.env.ref("automation_telegram.ir_cron_deliver_answers")
         triggers = self.env["ir.cron.trigger"].search(
             [("cron_id", "=", cron.id), ("call_at", ">", before)], order="call_at"
@@ -301,8 +299,6 @@ class TestSendAndWait(TelegramBotTestCase):
         cr = self.env.cr
 
         def poisoned(bot, file_id):
-            # what a step does when it catches a serialization failure and
-            # carries on: the transaction is left aborted
             with suppress(psycopg.errors.DivisionByZero):
                 cr.execute("SELECT 1 / 0")
             return {"content": JPEG, "file_path": "photos/file_7.jpg"}
@@ -332,7 +328,6 @@ class TestSendAndWait(TelegramBotTestCase):
             except psycopg.errors.SerializationFailure:
                 raise ValueError("what the step said instead") from None
         except ValueError as masked:
-            # `from None` hides the cause from tracebacks, not from __context__
             self.assertTrue(_lost_to_concurrency(masked))
         self.assertTrue(
             _lost_to_concurrency(psycopg.errors.InFailedSqlTransaction("aborted"))

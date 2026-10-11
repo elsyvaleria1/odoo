@@ -9,10 +9,6 @@ from odoo.tools import format_list
 
 from odoo.addons.trade.tools import direction_of
 
-# An order line's invoiceable quantity is split three ways and each state names
-# where it stands: "to do" and "partial" still have a part no invoice claims,
-# "draft" has every part claimed but at least one by an invoice that is not
-# posted, "done" has every part on a posted invoice.
 INVOICE_STATE = [
     ("no", "Nothing to invoice"),
     ("to do", "To invoice"),
@@ -27,8 +23,6 @@ _debug = DebugLog(__name__)
 
 class MixinOrderInvoice(models.AbstractModel):
     _name = "mixin.order.invoice"
-    # mixin.lifecycle ends the _action_cancel chain; inheriting it places it
-    # after this mixin, so cancelling an order reaches its draft invoices
     _inherit = ["mixin.order.state.rollup", "mixin.lifecycle"]
     _description = "Order Invoice Integration"
 
@@ -146,10 +140,6 @@ class MixinOrderInvoice(models.AbstractModel):
                 )
 
     def _get_orphan_refunds_by_reversed_id(self, invoice_ids, refund_type):
-        """Map every invoice/refund id reachable from `invoice_ids` through a
-        chain of reversals to the orphan refund ids that reverse it -- an
-        orphan refund can itself be reversed by a further orphan refund, so
-        this resolves the whole chain, not just its first level."""
         orphan_refunds_by_reversed_id = {}
         known_ids = set(invoice_ids)
         frontier = set(invoice_ids)
@@ -270,8 +260,6 @@ class MixinOrderInvoice(models.AbstractModel):
             return "partial"
         if outstanding:
             return self._get_outstanding_invoice_state(states)
-        # nothing is left to raise: a draft invoice still to post keeps the
-        # order from reading as invoiced
         if "draft" in states:
             return "draft"
         if billed:
@@ -441,15 +429,6 @@ class MixinOrderInvoice(models.AbstractModel):
         )
 
     def _switch_negative_moves(self, moves, final) -> None:
-        """Switch every negative-total move to a credit note/refund.
-
-        The base implementation ignores ``final`` and switches
-        unconditionally -- that is the live behavior for any concrete model
-        that does not override this method (e.g. `purchase.order`).
-        `sale.order` overrides it to gate on `final` instead; a future
-        override that wants that gating must implement it itself rather than
-        relying on a `super()` call to apply it.
-        """
         moves_to_switch = moves.sudo().filtered(
             lambda m: m.currency_id.round(m.amount_total) < 0,
         )

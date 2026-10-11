@@ -87,10 +87,6 @@ def _terms_of(content: str) -> list[str]:
 @tagged("post_install", "-at_install")
 class TestTranslationKinds(lint_case.LintCase):
     def test_a_server_string_is_not_translated_as_javascript_only(self):
-        # Translations load by kind: a Python string from an odoo-python entry,
-        # a view's term from an entry naming that view. A string moved from an
-        # interaction into a route or a template keeps an entry that only says
-        # odoo-javascript, and renders untranslated everywhere.
         found = []
         for manifest in Manifest.get_all_addon_manifests():
             root = Path(manifest.path)

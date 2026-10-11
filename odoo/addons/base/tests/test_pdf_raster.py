@@ -9,8 +9,6 @@ PNG = b"\x89PNG\r\n\x1a\n"
 
 
 def make_pdf(pages: int = 1, operators: int = 0) -> bytes:
-    # a well-formed PDF of `pages` blank pages, the first one stroking
-    # `operators` page-wide crossings -- enough work to outlast a limit
     content = b"0.1 w 0 0 m 600 800 l 600 0 l 0 800 l S\n" * operators
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
@@ -91,8 +89,6 @@ class TestPdfRaster(BaseCase):
         self.assertLess(time.monotonic() - started, 3)
 
     def test_the_memory_limit_fails_the_pdf_not_the_renderer(self):
-        # capped after the library is in: running out of memory is this PDF's
-        # failure, never a missing renderer that sends every PDF to the browser
         limits = pdf_raster.Limits(memory_bytes=1)
 
         rendering = pdf_raster.render_first_page(make_pdf(), 400, 280, limits)

@@ -13,7 +13,6 @@ class AccountEdiDocument(models.Model):
     _name = "account.edi.document"
     _description = "Queued transmission of an account.move to a format's recipient"
 
-    # == Stored fields ==
     move_id = fields.Many2one(
         comodel_name="account.move",
         index=True,
@@ -48,7 +47,6 @@ class AccountEdiDocument(models.Model):
         "  * Error: there is an error that blocks the current Electronic Invoicing operation.",
     )
 
-    # == Not stored fields ==
     name = fields.Char(related="attachment_id.name")
     edi_format_name = fields.Char(
         related="edi_format_id.name",
@@ -87,17 +85,6 @@ class AccountEdiDocument(models.Model):
         }
 
     def _prepare_jobs(self):
-        """Creates a list of jobs to be performed by '_process_job' for the documents in self.
-        Each document represent a job, BUT if multiple documents have the same state, edi_format_id,
-        doc_type invoice and company_id AND the edi_format_id supports batching, they are grouped
-        into a single job.
-
-        :returns:  [{
-            'documents': account.edi.document,
-            'method_to_call': str,
-        }]
-        """
-        # Classify jobs by (edi_format, edi_doc.state, doc_type, move.company_id, custom_key)
         to_process = {}
         for state, edi_flow in (("to_send", "post"), ("to_cancel", "cancel")):
             documents = self.filtered_domain(
@@ -158,12 +145,10 @@ class AccountEdiDocument(models.Model):
                     }
                 )
 
-        # Attachments that are not explicitly linked to a business model could be removed because they are not
-        # supposed to have any traceability from the user.
         attachments_to_unlink.sudo().unlink()
 
     def _postprocess_cancel_edi_results(self, edi_result) -> None:
-        move_ids_to_cancel = set()  # Avoid duplicates
+        move_ids_to_cancel = set()
         attachments_to_unlink = self.env["ir.attachment"]
         for document in self:
             move = document.move_id
@@ -184,8 +169,6 @@ class AccountEdiDocument(models.Model):
                     or not doc.edi_format_id._is_web_service_required()
                     for doc in move.edi_document_ids
                 ):
-                    # The user requested a cancellation of the EDI and it has been approved. Then, the invoice
-                    # can be safely cancelled.
                     move_ids_to_cancel.add(move.id)
 
                 if not old_attachment.res_model or not old_attachment.res_id:
@@ -208,19 +191,10 @@ class AccountEdiDocument(models.Model):
             invoices.action_draft()
             invoices.action_cancel()
 
-        # Attachments that are not explicitly linked to a business model could be removed because they are not
-        # supposed to have any traceability from the user.
         attachments_to_unlink.sudo().unlink()
 
     @api.model
     def _process_job(self, job) -> None:
-        """Post or cancel move_id by calling the related methods on edi_format_id.
-
-        :param job:  {
-            'documents': account.edi.document,
-            'method_to_call': str,
-        }
-        """
 
         documents = job["documents"]
         if job["method_to_call"]:
@@ -230,15 +204,15 @@ class AccountEdiDocument(models.Model):
             def method_to_call(moves):
                 return {move: {"success": True} for move in moves}
 
-        documents.edi_format_id.check_singleton()  # All account.edi.document of a job should have the same edi_format_id
-        documents.move_id.company_id.check_singleton()  # All account.edi.document of a job should be from the same company
+        documents.edi_format_id.check_singleton()
+        documents.move_id.company_id.check_singleton()
         if len({doc.state for doc in documents}) != 1:
             raise ValueError(
                 "All account.edi.document of a job should have the same state"
             )
 
         state = documents[0].state
-        documents.move_id.line_ids.flush_recordset()  # manual flush for tax details
+        documents.move_id.line_ids.flush_recordset()
         moves = documents.move_id
         if state == "to_send":
             with moves._send_only_when_ready():
@@ -249,7 +223,6 @@ class AccountEdiDocument(models.Model):
             documents._postprocess_cancel_edi_results(edi_result)
 
     def _process_documents_no_web_services(self) -> None:
-        """Post and cancel all the documents that don't need a web service."""
         jobs = self.filtered(
             lambda d: not d.edi_format_id._is_web_service_required()
         )._prepare_jobs()
@@ -257,12 +230,6 @@ class AccountEdiDocument(models.Model):
             self._process_job(job)
 
     def _process_documents_web_services(self, job_count=None, with_commit=True):
-        """Post and cancel all the documents that need a web service.
-
-        :param job_count:   The maximum number of jobs to process if specified.
-        :param with_commit: Flag indicating a commit should be made between each job.
-        :return:            The number of remaining jobs to process.
-        """
         all_jobs = self.filtered(
             lambda d: d.edi_format_id._is_web_service_required()
         )._prepare_jobs()
@@ -297,10 +264,6 @@ class AccountEdiDocument(models.Model):
 
     @api.model
     def _cron_process_documents_web_services(self, job_count=None) -> None:
-        """Method called by the EDI cron processing all web-services.
-
-        :param job_count: Limit explicitely the number of web service calls. If not provided, process all.
-        """
         edi_documents = self.search(
             [
                 ("state", "in", ("to_send", "to_cancel")),
@@ -312,35 +275,16 @@ class AccountEdiDocument(models.Model):
             job_count=job_count
         )
 
-        # Mark the CRON to be triggered again asap since there is some remaining jobs to process.
         if nb_remaining_jobs > 0:
             self.env["ir.cron"]._trigger_ref("account_edi.ir_cron_edi_network")
 
     def _filter_edi_attachments_for_mailing(self) -> dict:
-        """
-        Will either return the information about the attachment of the edi document for adding the attachment in the
-        mail, or the attachment id to be linked to the 'send & print' wizard.
-        Can be overridden where e.g. a zip-file needs to be sent with the individual files instead of the entire zip
-        IMPORTANT:
-        * If the attachment's id is returned, no new attachment will be created, the existing one on the move is linked
-        to the wizard (see computed attachment_ids field in wizard.mail.message.send).
-        * If the attachment's content is returned, a new one is created and linked to the wizard. Thus, when sending
-        the mail (clicking on 'send & print' in the wizard), a new attachment is added to the move (see
-        _action_send_mail in wizard.mail.message.send).
-        :return: dict {
-            'attachments': tuple with the name and base64 content of the attachment}
-            'attachment_ids': list containing the id of the attachment
-        }
-        """
         self.check_singleton()
         attachment_sudo = self.sudo().attachment_id
         if not attachment_sudo:
             return {}
         if not (attachment_sudo.res_model and attachment_sudo.res_id):
-            # do not return system attachment not linked to a record
             return {}
         if len(self.env.context.get("active_ids", [])) > 1:
-            # In mass mail mode 'attachments_ids' is removed from template values
-            # as they should not be rendered
             return {"attachments": [(attachment_sudo.name, attachment_sudo.datas)]}
         return {"attachment_ids": attachment_sudo.ids}

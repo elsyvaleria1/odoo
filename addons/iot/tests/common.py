@@ -47,14 +47,6 @@ class IotCommonTest(HttpCase):
         super().setUp()
         original_send_message = IotChannel._send_message
 
-        # A box answers an action by calling `/iot/box/send_websocket` back, and
-        # that answer has to name the session, the box and the device it belongs
-        # to. `iot.channel._send_message` constrains no shape, so not every action
-        # carries them: `pos_blackbox_be._send_order_to_blackbox` sends one with
-        # no `session_id` at all. Answering on the device's behalf is only
-        # possible for the ones that do, and the rest are recorded and passed
-        # through -- reading the key unconditionally raised `KeyError` and took
-        # the whole self-order service down with it.
         answerable = {"session_id", "iot_identifiers", "device_identifiers"}
 
         def mock_send_message(
@@ -62,7 +54,6 @@ class IotCommonTest(HttpCase):
         ):
             self.iot_websocket_messages.append({message_type: message})
             if message_type == "iot_action" and answerable <= message.keys():
-                # a box echoes the session id the server routed through it
                 session_id = message["session_id"]
                 if reply_key:
                     session_id = iot_channel_record._wrap_session_id(
@@ -74,9 +65,6 @@ class IotCommonTest(HttpCase):
                     "device_identifier": message["device_identifiers"][0],
                     "status": "success",
                 }
-                # Inside a request the box's answer runs in it: an HTTP call
-                # back to the server would need a second request thread, and
-                # a server sized to one serves it only after this one ends.
                 if odoo.http.request:
                     return IoTController().iot_box_send_websocket(**answer)
                 return self.url_open(

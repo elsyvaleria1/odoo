@@ -44,7 +44,6 @@ def stable_order(order: str | None, tiebreak: str = "id ASC") -> str | None:
     if not order:
         return order
     terms = parse_order(order)
-    # an order that does not parse is the ORM's to refuse, not this helper's
     if terms is None or any(term.field == "id" for term in terms):
         return order
     return f"{order}, {tiebreak}"
@@ -74,8 +73,6 @@ def get_accessible_ids(
     **kwargs,
 ) -> list[int]:
     scan_order = stable_order(order or model._order, tiebreak)
-    # paging past the last id seen costs one index seek per pass, so an
-    # unbounded scan can afford to page; an OFFSET would rescan every page
     seek = _seek_operator(scan_order) if keyset else None
 
     if limit is None or limit is False:
@@ -95,8 +92,8 @@ def get_accessible_ids(
     seen: set[int] = set()
     sql_offset = 0
     scan_domain = domain
-    passes = 0  # debuglog
-    scanned = 0  # debuglog
+    passes = 0
+    scanned = 0
     while True:
         query = base_search(
             scan_domain, offset=sql_offset, limit=chunk, order=scan_order, **kwargs
@@ -110,8 +107,8 @@ def get_accessible_ids(
                 ordered.append(id_)
 
         got = len(rows)
-        scanned += got  # debuglog
-        passes += 1  # debuglog
+        scanned += got
+        passes += 1
         if chunk is None or got < chunk:
             break
         if target is not None and len(ordered) >= target:

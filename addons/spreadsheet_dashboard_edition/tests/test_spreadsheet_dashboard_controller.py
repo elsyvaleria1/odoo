@@ -23,7 +23,6 @@ class TestSpreadsheetDashboard(DashboardTestCommon, SpreadsheetTestCase, HttpCas
                 "dashboard_group_id": dashboard_group.id,
             }
         )
-        # only read access, no one ever joined this dashboard
         response = self.url_open(
             "/spreadsheet/data/spreadsheet.dashboard/%s" % dashboard.id
         )
@@ -132,7 +131,6 @@ class TestSpreadsheetDashboard(DashboardTestCommon, SpreadsheetTestCase, HttpCas
         dashboard.main_data_model_ids = [(4, self.env.ref("base.model_res_bank").id)]
         dashboard.sample_dashboard_file_path = sample_dashboard_path
 
-        # when no records are available for the main data model and no revisions, the sample data is loaded
         self.env["res.bank"].search([]).action_archive()
         self.env["spreadsheet.revision"].search([]).unlink()
         response = self.url_open("/spreadsheet/dashboard/data/%s" % dashboard.id)
@@ -140,14 +138,12 @@ class TestSpreadsheetDashboard(DashboardTestCommon, SpreadsheetTestCase, HttpCas
         self.assertTrue(data["is_sample"])
         self.assertEqual(data["snapshot"], get_sample_data())
 
-        # when there are revisions, the sample data is not loaded
         dashboard.dispatch_spreadsheet_message(self.new_revision_data(dashboard))
         response = self.url_open("/spreadsheet/dashboard/data/%s" % dashboard.id)
         data = response.json()
         self.assertFalse(data.get("is_sample"))
         self.assertNotEqual(data["snapshot"], get_sample_data())
 
-        # when no revisions, but we have records for the main data model, the sample data is not loaded
         self.env["spreadsheet.revision"].search([]).unlink()
         self.env["res.bank"].create({"name": "My bank"})
         response = self.url_open("/spreadsheet/dashboard/data/%s" % dashboard.id)

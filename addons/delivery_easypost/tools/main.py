@@ -12,16 +12,12 @@ def _parse_html_list(root_html, class_to_match, code_carrier_name_map):
     for node in root_html.xpath(
         "//div[starts-with(@class, 'tab-pane " + class_to_match + "')]"
     ):
-        # On easypost website if a tab have a tag <p> it contains the text
-        # 'No predefined packages for x.' and the list containing product packageing is
-        # empty
         object_nodes = node.xpath(".//ul/li")
         if not object_nodes:
             continue
         carrier_name = next(
             name for name in node.get("class").split(" ") if class_to_match in name
         )
-        # Replace carrier code by real name.
         carrier_name = code_carrier_name_map.get(
             carrier_name.replace(class_to_match, "")
         )
@@ -32,12 +28,10 @@ def _parse_html_list(root_html, class_to_match, code_carrier_name_map):
 
 
 def _get_package_type(html, code_carrier_name_map):
-    """return a dictionary {'carrier name': [stock package types]}"""
     return _parse_html_list(html, "predefined-carrier-", code_carrier_name_map)
 
 
 def _get_service_level(html, code_carrier_name_map):
-    """return a dictionary {'carrier name': [service levels]}"""
     return _parse_html_list(html, "carrier-", code_carrier_name_map)
 
 
@@ -51,12 +45,8 @@ def _map_carrier_name(html):
 
 
 def easypost_generate_file() -> None:
-    response = requests.get(EASYPOST_URL, timeout=30)  # noqa: E8518 - a standalone script run outside the server, with no ir.egress to reach
+    response = requests.get(EASYPOST_URL, timeout=30)
     root_html = lxml.html.fromstring(response.text)
-    # Easypost website match code with real carrier name,
-    # example AGSystems is the code for Associated Global Systems.
-    # with the parser we want to return a code with
-    # {carrier name:  service name}
     code_carrier_name_map = _map_carrier_name(root_html)
     package_types_by_carriers = _get_package_type(root_html, code_carrier_name_map)
     services_by_carriers = _get_service_level(root_html, code_carrier_name_map)

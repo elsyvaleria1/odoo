@@ -33,8 +33,6 @@ class TestFsmStockUI(HttpCase):
                 }
             )
         )
-        # We ensure that the products we are creating for the test are displayed first
-        # so that the test is not affected by the paging and the presence of demo data.
         exiting_products = cls.env["product.product"].search(
             [("is_favorite", "!=", False)]
         )
@@ -119,7 +117,6 @@ class TestFsmStockUI(HttpCase):
 
     def test_ui(self):
         self.user_admin.write({"property_warehouse_id": self.warehouse_A.id})
-        # The group and the TZ of the user_admin are set, for in case of a db installed without demo-data, these are not correctly set.
         self.user_admin.group_ids += self.env.ref("stock.group_production_lot")
         if not self.user_admin.tz:
             self.user_admin.tz = "Europe/Brussels"

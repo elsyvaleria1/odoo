@@ -46,7 +46,6 @@ class TestSnailmailAccountFollowup(AccountTestInvoicingCommon):
                     "letter_id": self.id,
                 }
             )
-            # Return a fake filename and pdf to avoid generating a PDF in a test
             with file_open("base/tests/minimal.pdf", "rb") as file:
                 pdf_bytes = file.read()
             return "filename.pdf", pdf_bytes

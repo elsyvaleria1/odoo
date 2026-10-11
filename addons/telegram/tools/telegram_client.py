@@ -31,16 +31,12 @@ class TelegramClient:
         return f"/bot{self.bot_token}/{method}"
 
     def _post(self, method, payload):
-        """The body Telegram answered, a refusal included: every Bot API
-        failure carries `ok: false` and says why."""
         response = self._client.post(
             self._get_endpoint(method), json=payload, raise_for_status=False
         )
         return response["body"]
 
     def call(self, method, payload, files=None):
-        """The `result` of a Bot API call, or the typed error it failed with
-        (tools/errors.py)."""
         try:
             if files:
                 response = self._client.post(
@@ -122,8 +118,6 @@ class TelegramClient:
         )
 
     def download_file(self, file_path):
-        # Relative to the integration service, like every other endpoint, so
-        # the host and the read timeout stay defined in one place.
         endpoint = f"/file/bot{self.bot_token}/{file_path}"
 
         try:

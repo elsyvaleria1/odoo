@@ -32,7 +32,6 @@ class WizardAccountOnlineLinkConnectAccount(models.TransientModel):
             self.env.context.get("swift_code"),
             self.env.context.get("journal_type", "bank"),
         )
-        # Get transactions for that account
         action = self.account_online_link_id._get_transactions(
             accounts=self.selected_account
         )

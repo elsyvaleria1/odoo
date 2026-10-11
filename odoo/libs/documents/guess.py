@@ -19,8 +19,6 @@ _ENCODING_SAMPLE_MAX = 1 << 16
 
 _ENCODING_SAMPLE_LEAD = 1 << 10
 
-# UTF-32 first: its little-endian mark begins with UTF-16's. Each codec
-# reads the mark to learn its byte order and drops it from the text.
 _WIDE_BYTE_ORDER_MARKS = (
     (codecs.BOM_UTF32_LE, "utf-32"),
     (codecs.BOM_UTF32_BE, "utf-32"),
@@ -66,8 +64,6 @@ def _marked_wide(data: bytes) -> str | None:
 
 
 def _wide_without_bom(data: bytes) -> str | None:
-    # text in UTF-16 carries a NUL in every other byte for each Latin character;
-    # text in an 8-bit encoding carries none, and UTF-32 NULs its even bytes too
     sample = data[:_ENCODING_CHUNK]
     if len(sample) < 4:
         return None
@@ -80,14 +76,9 @@ def _wide_without_bom(data: bytes) -> str | None:
 
 
 def _guess(data: bytes, final: bool) -> tuple[str | None, str | None]:
-    # UTF-8 validates itself: a multibyte sequence that decodes strictly is
-    # UTF-8 for any practical purpose, while chardet's probers, fed a short
-    # Spanish sentence, answered johab. The text it decoded is kept.
     if marked := _marked_wide(data):
         return marked, None
     if data.isascii():
-        # 7-bit data is ASCII unless it carries the escapes of ISO-2022 or the
-        # NUL bytes of UTF-16/32 without a BOM
         if b"\x1b" not in data and b"\x00" not in data:
             return "ascii", None
     elif (text := _as_utf8(data, final)) is not None:
@@ -97,9 +88,6 @@ def _guess(data: bytes, final: bool) -> tuple[str | None, str | None]:
     if chardet is None:
         return None, None
     detector = chardet.UniversalDetector()
-    # the probers learn nothing from plain ASCII, so the sample starts just
-    # before the first byte that is not; an all-ASCII buffer (which may still
-    # be ISO-2022 escapes) keeps the head window
     sample_start = max(0, _first_non_ascii(data) - _ENCODING_SAMPLE_LEAD)
     sample_end = min(len(data), sample_start + _ENCODING_SAMPLE_MAX)
     for start in range(sample_start, sample_end, _ENCODING_CHUNK):

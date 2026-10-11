@@ -5,7 +5,6 @@ from odoo.addons.mail_google.models.integration_service import LEGACY_CALLBACK_P
 
 
 class GmailOAuthController(OAuthController):
-    # registered in Google consoles for Gmail before the standard callback
     @http.route(
         LEGACY_CALLBACK_PATH, type="http", auth="user", website=False, csrf=False
     )

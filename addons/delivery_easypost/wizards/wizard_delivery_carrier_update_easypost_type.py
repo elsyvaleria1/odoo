@@ -5,13 +5,11 @@ class WizardDeliveryCarrierUpdateEasypostType(models.TransientModel):
     _name = "wizard.delivery.carrier.update.easypost.type"
     _description = "Carrier Type"
 
-    # This selection field gets its values from a custom widget: CarrierTypeSelection
     carrier_type = fields.Char()
     delivery_carrier_id = fields.Many2one(comodel_name="delivery.carrier")
 
     def action_validate(self):
         if self.delivery_carrier_id.easypost_delivery_type != self.carrier_type:
-            # Update delivery carrier with selected type.
             self.delivery_carrier_id.easypost_delivery_type = self.carrier_type
             self.delivery_carrier_id.easypost_delivery_type_id = self.env.context[
                 "carrier_types"
@@ -21,9 +19,6 @@ class WizardDeliveryCarrierUpdateEasypostType(models.TransientModel):
             self.delivery_carrier_id.easypost_default_package_type_id = False
             self.delivery_carrier_id.easypost_default_service_id = False
 
-        # Contact the proxy in order to get the predefined
-        # package type proposed on the easypost website
-        # https://www.easypost.com/docs/api.html#predefined-packages
         package_types_by_carriers, services_by_carriers = self.env[
             "delivery.carrier"
         ]._easypost_get_services_and_package_types()
@@ -39,9 +34,6 @@ class WizardDeliveryCarrierUpdateEasypostType(models.TransientModel):
                 ],
                 ["name"],
             )
-            # Difference between the package types already
-            # present in the database and the new one fetched
-            # on the easypost documentation page.
             self.env["stock.package.type"].create(
                 [
                     {
@@ -55,8 +47,6 @@ class WizardDeliveryCarrierUpdateEasypostType(models.TransientModel):
                 ]
             )
         if services:
-            # Same as package types but for service
-            # level https://www.easypost.com/docs/api.html#service-levels
             already_existing_services = self.env["easypost.service"].search_read(
                 [
                     ("easypost_carrier", "=", self.carrier_type),
@@ -74,10 +64,6 @@ class WizardDeliveryCarrierUpdateEasypostType(models.TransientModel):
                     ^ {service["name"] for service in already_existing_services}
                 ]
             )
-        # Open the delivery carrier form view in edit mode,
-        # the purpose is to force the user to set a package
-        # type in order to get dimension. Mandatory for
-        # shipment API request.
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "delivery.action_delivery_carrier_form"
         )

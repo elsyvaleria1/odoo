@@ -30,11 +30,6 @@ class AccountBatchPayment(models.Model):
     )
 
     def initiate_payment(self):
-        """
-        This function handles the two currently supported flows for validating batch payments:
-        - Signing the payment online through Odoofin
-        - Using the regular batch validation and exporting an SCT XML file
-        """
         self.check_singleton()
 
         if self.payment_online_status == "unsigned" and self.state == "sent":
@@ -79,7 +74,6 @@ class AccountBatchPayment(models.Model):
             response = account_online_link._get_odoo_fin(
                 "/proxy/v1/initiate_payment", data
             )
-            # In case of token expiration, we receive a special next_data field that we use to redo the request
             if not response.get("next_data"):
                 break
             data["next_data"] = response["next_data"]
@@ -120,7 +114,6 @@ class AccountBatchPayment(models.Model):
                 response = batch.journal_id.account_online_link_id._get_odoo_fin(
                     "/proxy/v1/get_payment_status", data
                 )
-                # In case of token expiration, we receive a special next_data field that we use to redo the request
                 if not response.get("next_data"):
                     break
                 data["next_data"] = response["next_data"]

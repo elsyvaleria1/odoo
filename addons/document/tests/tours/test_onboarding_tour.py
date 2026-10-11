@@ -10,8 +10,6 @@ class TestOnboardingTour(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # the tour's script, built without demo data: the data folders and the
-        # YouTube link ship with the module, the two PDFs and the action do not
         inbox = cls.env.ref("document.document_inbox_folder")
         documents = cls.env["document.document"]
         for name in ("Acme_NDA.pdf", "Mails_inbox.pdf"):
@@ -35,8 +33,6 @@ class TestOnboardingTour(HttpCase):
             }
         )
         documents.action_folder_embed_action(inbox.id, send_to_finance.id)
-        # the demo pins it at install, before a bridge pins its own (expenses,
-        # bills): the tour clicks it among the inline actions, not under More
         inbox_actions = cls.env["ir.embedded.actions"].search(
             [
                 ("parent_res_model", "=", "document.document"),

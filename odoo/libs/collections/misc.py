@@ -13,12 +13,12 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
         super().__init__()
         self.update(mapping, **kwargs)
 
-    def update(self, mapping: Any = (), /, **kwargs: Iterable[T]) -> None:  # type: ignore[override]
+    def update(self, mapping: Any = (), /, **kwargs: Iterable[T]) -> None:
         items = mapping.items() if hasattr(mapping, "items") else mapping
         for key, val in itertools.chain(items, kwargs.items()):
             self[key] = val
 
-    def setdefault(self, key: K, default: Iterable[T] = (), /) -> tuple[T, ...]:  # type: ignore[override]
+    def setdefault(self, key: K, default: Iterable[T] = (), /) -> tuple[T, ...]:
         if key not in self:
             self[key] = default
         return self[key]
@@ -26,7 +26,7 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
     def __getitem__(self, key: K) -> tuple[T, ...]:
         return dict.get(self, key, ())
 
-    @typing.overload  # type: ignore[override]
+    @typing.overload
     def get(self, key: K, /) -> tuple[T, ...]: ...
     @typing.overload
     def get[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...

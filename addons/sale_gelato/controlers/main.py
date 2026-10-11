@@ -12,7 +12,6 @@ _debug = DebugLog(__name__)
 class GelatoController(Controller):
     _webhook_url = "/gelato/webhook"
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @route(
         _webhook_url,
         type="http",
@@ -44,7 +43,7 @@ class GelatoController(Controller):
         elif fulfillment_status == "canceled":
             order_sudo.with_user(SUPERUSER_ID)._action_cancel()
 
-            order_sudo.line_ids.currency_id  # noqa: B018  warms the cache: the flush cannot read it under access rights
+            order_sudo.line_ids.currency_id
 
             log_message = request.env._(
                 "Gelato has canceled order %(reference)s.",

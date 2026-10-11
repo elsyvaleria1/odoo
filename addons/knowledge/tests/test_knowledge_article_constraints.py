@@ -15,15 +15,8 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
 
     @classmethod
     def setUpClass(cls):
-        """Add some hierarchy to have mixed rights tests"""
         super().setUpClass()
 
-        # - Employee Priv.  seq=19    private      none    (employee-w+)
-        # - Playground      seq=20    workspace    w+      (admin-w+)
-        # - Shared          seq=21    shared       none    (admin-w+,employee-r+,manager-r+)
-        # -   Shared Child1 seq=0     "            "       (employee-w+)
-        # - Parent of items  seq=22    worksapce    w+
-        # - Child Item       seq=0     ""           ""
         cls.article_private_employee = cls.env["knowledge.article"].create(
             {
                 "article_member_ids": [
@@ -141,7 +134,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
 
     @users("employee")
     def test_article_acyclic_graph_move_to(self):
-        """Check that the article hierarchy does not contain cycles using the move_to method."""
         article = self.article_workspace.with_env(self.env)
         article_children = self.env["knowledge.article"].create(
             [
@@ -158,7 +150,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             ]
         )
 
-        # move the parent article under one of its children should raise an exception
         with self.assertRaises(
             exceptions.UserError, msg="The article hierarchy contains a cycle"
         ):
@@ -166,7 +157,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
 
     @users("employee")
     def test_article_acyclic_graph_write_parent(self):
-        """Check that the article hierarchy does not contain cycles when writing on parent_id."""
         article = self.article_workspace.with_env(self.env)
         article_children = self.env["knowledge.article"].create(
             [
@@ -183,7 +173,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             ]
         )
 
-        # move the parent article under one of its children should raise an exception
         with self.assertRaises(
             exceptions.UserError, msg="The article hierarchy contains a cycle"
         ):
@@ -194,7 +183,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     )
     @users("employee")
     def test_article_create(self):
-        """Testing the helper to create articles with right values."""
         article = self.article_workspace.with_env(self.env)
         readonly_article = self.article_shared.with_env(self.env)
 
@@ -299,9 +287,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
 
     @users("employee")
     def test_article_move_to_shared_root(self):
-        """Check constraints restricting moving as a shared root.
-        Only articles that are shared with at least 1 other member (not counting
-        internal permission) can be moved as a shared root"""
 
         workspace_article = (
             self.env["knowledge.article"]
@@ -373,14 +358,12 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_parent_constraints_create(self):
-        """Checking various article constraints linked to parents"""
         article = self._create_article_read_by_employee2()
 
         article_as2 = article.with_user(self.user_employee2)
         self.assertFalse(article_as2.user_has_write_access)
         self.assertTrue(article_as2.user_has_access)
 
-        # Member should not be allowed to create an article under an article without "write" permission
         with self.assertRaises(exceptions.AccessError):
             self.env["knowledge.article"].with_user(self.user_employee2).create(
                 {
@@ -390,7 +373,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
                 }
             )
 
-        # Member should not be allowed to create a private article under a non-owned article
         article_private = self._create_private_article("MyPrivate")
         self.assertMembers(article_private, "none", {self.partner_employee: "write"})
         self.assertTrue(article_private.category, "private")
@@ -406,14 +388,12 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_parent_constraints_write(self):
-        """Checking the article parent constraints."""
         article = self._create_article_read_by_employee2()
 
         article_as2 = article.with_user(self.user_employee2)
         self.assertFalse(article_as2.user_has_write_access)
         self.assertTrue(article_as2.user_has_access)
 
-        # Member should not be allowed to move an article under an article without "write" permission
         article_user2 = (
             self.env["knowledge.article"]
             .with_user(self.user_employee2)
@@ -429,9 +409,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         with self.assertRaises(exceptions.AccessError):
             article_user2.move_to(parent_id=article_as2.id)
 
-        # Member should be allowed to move an editable article under its current
-        # parent even if the parent is readonly, and specifying the parent id
-        # should not throw an error even if unnecessary.
         article_child1 = self.env["knowledge.article"].create(
             {
                 "internal_permission": "write",
@@ -459,10 +436,8 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.addons.base.models.ir_access")
     @users("employee")
     def test_article_private_management(self):
-        """Checking the article private management."""
         article_workspace = self.article_workspace.with_env(self.env)
 
-        # Private-like article whose parent is not in private category is under workspace
         article_private_u2 = (
             self.env["knowledge.article"]
             .sudo()
@@ -488,38 +463,31 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         self.assertEqual(article_private_u2.category, "workspace")
         self.assertTrue(article_private_u2.user_has_write_access)
 
-        # Effectively private: other user cannot read it
         article_private_u2_asuser = article_private_u2.with_user(self.env.user)
         with self.assertRaises(exceptions.AccessError):
-            article_private_u2_asuser.body  # should trigger ACLs
+            article_private_u2_asuser.body
 
-        # Private root article
         article_private = self._create_private_article("MyPrivate").with_user(
             self.env.user
         )
         self.assertTrue(article_private.category, "private")
         self.assertTrue(article_private.user_has_write_access)
 
-        # Effectively private: other user cannot read it
         article_private_asu2 = article_private.with_user(self.user_employee2)
         with self.assertRaises(exceptions.AccessError):
-            article_private_asu2.body  # should trigger ACLs
+            article_private_asu2.body
 
-        # Move to workspace, makes it workspace
         article_private.move_to(parent_id=article_workspace.id)
         self.assertEqual(article_private.category, "workspace")
 
-        # Should be accessible by any user of the workspace since its permission is now inherited
         article_private_asu2 = article_private.with_user(self.user_employee2)
-        article_private_asu2.body  # should not trigger ACLs
+        article_private_asu2.body
         self.assertFalse(article_private.internal_permission)
         self.assertEqual(article_private.inherited_permission, "write")
 
     @mute_logger("odoo.db.cursor")
     @users("employee")
     def test_article_root_internal_permission(self):
-        """Check that the root article has internal permission set."""
-        # defaulting to write permission if nothing is given
         article = self.env["knowledge.article"].create(
             {
                 "name": "Article",
@@ -529,7 +497,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         self.assertEqual(article.category, "workspace")
         self.assertEqual(article.internal_permission, "write")
 
-        # ensure a member has write access before trying to remove global access
         article.sudo().write(
             {
                 "article_member_ids": [
@@ -565,7 +532,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
 
     @users("employee")
     def test_article_should_have_at_least_one_writer(self):
-        """Check that an article has at least one writer."""
         with self.assertRaises(
             exceptions.ValidationError, msg="Article should have at least one writer"
         ):
@@ -589,7 +555,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         self.assertMembers(article_private, "none", {self.partner_employee: "write"})
         self.assertEqual(article_private.category, "private")
 
-        # take membership as sudo to really have access to unlink feature
         membership_sudo = article_private.sudo().article_member_ids
         with self.assertRaises(
             exceptions.ValidationError,
@@ -607,7 +572,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             msg="Cannot remove the last writer on an article",
         ):
             article_private._add_members(membership_sudo.partner_id, "none")
-        # cannot remove last writer
         with self.assertRaises(
             exceptions.ValidationError,
             msg="Cannot remove the last writer on an article",
@@ -627,13 +591,10 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             article_private.sudo().write(
                 {"article_member_ids": [(2, membership_sudo.id)]}
             )
-        # Special Case: can leave own private article via remove_member: will archive the article.
         article_private.sudo().remove_member(membership_sudo.id)
         self.assertFalse(article_private.active)
         self.assertMembers(article_private, "none", {self.env.user.partner_id: "write"})
 
-        # moving the article to private will remove the second member
-        # but should not trigger an error since we also add 'employee' as a write member
         article_workspace = self.article_workspace.with_env(self.env)
         article_workspace.move_to(category="private")
         self.assertEqual(article_workspace.category, "private")
@@ -642,7 +603,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.db.cursor")
     @users("employee")
     def test_article_trashed_should_be_archived(self):
-        """Ensure that a trashed article is archived."""
         article = self.env["knowledge.article"].create(
             {
                 "name": "Article",
@@ -681,8 +641,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.db.cursor")
     @users("employee")
     def test_favourite_uniqueness(self):
-        """Check there is at most one 'knowledge.article.favourite' entry per
-        article and user."""
         article = self.env["knowledge.article"].create(
             {"internal_permission": "write", "name": "Article"}
         )
@@ -698,7 +656,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.db.cursor")
     @users("employee")
     def test_member_uniqueness(self):
-        """Check that there are no duplicated members in the member list."""
         article = self.env["knowledge.article"].create(
             {
                 "internal_permission": "write",
@@ -728,7 +685,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             1,
         )
 
-        # adding a duplicate
         with self.assertRaises(
             IntegrityError, msg="Members should be unique (article_id/partner_id)"
         ):
@@ -755,7 +711,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             1,
         )
 
-        # trying with tool method
         article.invite_members(self.env.user.partner_id, "write")
         self.assertEqual(
             len(
@@ -766,7 +721,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             1,
         )
 
-        # creating duplicates
         with self.assertRaises(
             IntegrityError, msg="Members should be unique (article_id/partner_id)"
         ):
@@ -833,11 +787,9 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
                 ]
             )
 
-        # Checking children.
         self.assertEqual(len(self.items_parent.child_ids), 1)
         self.assertTrue(self.items_parent.has_item_children)
 
-        # Can create an article item under a parent of items
         self.env["knowledge.article"].create(
             [
                 {
@@ -851,7 +803,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         self.assertEqual(len(self.items_parent.child_ids), 2)
         self.assertTrue(self.items_parent.has_item_children)
 
-        # Can create a normal article under a parent of items
         self.env["knowledge.article"].create(
             [
                 {
@@ -863,7 +814,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
             ]
         )
 
-        # Can create an article item under parent with no child. A parent item can be an item itself.
         self.assertTrue(len(self.item_child.child_ids) == 0)
         self.env["knowledge.article"].create(
             [
@@ -881,8 +831,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
     @mute_logger("odoo.db.cursor")
     @users("employee")
     def test_article_item_write(self):
-        # Can move an article item under any parent
-        # - Under an item parent: it stays an article item
         items_parent_2 = self.env["knowledge.article"].create(
             [
                 {
@@ -905,16 +853,12 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         self.item_child.move_to(items_parent_2.id)
         self.assertTrue(self.item_child.is_article_item)
 
-        # - Under a parent that is not an item parent and has no children :
-        #     it stays an article item and the parent becomes an item parent
         self.assertTrue(len(self.shared_child.child_ids) == 0)
         self.item_child.move_to(self.shared_child.id)
         self.assertTrue(self.item_child.is_article_item)
         self.assertEqual(len(self.shared_child.child_ids), 1)
         self.assertTrue(self.shared_child.has_item_children)
 
-        # - Under a parent that is not an item parent and already has children :
-        #     it stays an article item - both types can co-exist.
         self.env["knowledge.article"].create(
             [
                 {
@@ -939,7 +883,6 @@ class TestKnowledgeArticleConstraints(KnowledgeCommon):
         ):
             self.item_child.write({"parent_id": False})
 
-        # Can move a normal article under an item parent: the article stays a normal article
         self.item_child.write({"is_article_item": False})
         self.assertFalse(self.item_child.is_article_item)
         self.item_child.move_to(items_parent_2.id)

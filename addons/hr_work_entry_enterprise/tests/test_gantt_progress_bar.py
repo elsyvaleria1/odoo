@@ -27,11 +27,6 @@ class TestWorkEntriesGanttProgressBar(TransactionCase):
         )
 
     def test_progress_bar_ignores_employees_outside_res_ids(self):
-        """The progress bar must only expand the versions of the rows it was asked for.
-
-        The gantt sends the employees of the page being displayed; anything
-        else is expanded into work entry values and then thrown away.
-        """
         values = self.env["hr.work.entry"]._gantt_progress_bar(
             "employee_id",
             self.displayed_employee.ids,

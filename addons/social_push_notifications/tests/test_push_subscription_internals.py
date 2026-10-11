@@ -3,8 +3,6 @@ from odoo.tests import common
 
 class TestPushToken(common.TransactionCase):
     def test_push_token_unique(self):
-        """Ensure the 'push_token' field is unique.
-        When trying to insert an identical push_token, the existing one has to be unlinked first."""
 
         common_push_token = "ABC123"
 
@@ -41,5 +39,4 @@ class TestPushToken(common.TransactionCase):
         self.assertTrue(visitor_1.has_push_notifications)
 
         push_token_2.unlink()
-        # when removing the last push notification, the flag has to be set to False
         self.assertFalse(visitor_1.has_push_notifications)

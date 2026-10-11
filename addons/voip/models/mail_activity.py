@@ -59,15 +59,6 @@ class MailActivity(models.Model):
     @api.model
     @api.readonly
     def get_today_call_activities(self):
-        """Retrieve the list of activities that:
-          * have the type “phonecall”
-          * have a phone number
-          * are overdue
-          * are assigned to the current user
-          * are in the current company or free of document
-
-        The resulting list is intended for display in the “Activities” tab.
-        """
         overdue_call_activities_of_current_user = self.search(
             Domain(
                 [
@@ -85,7 +76,6 @@ class MailActivity(models.Model):
         for model_name, record_ids in record_ids_by_model_name.items():
             if not self.env[model_name].has_access("read"):
                 continue
-            # calling search will filter out records that are irrelevant to the current company / unlinked
             allowed_record_ids_by_model_name[model_name] = (
                 self.env[model_name].search([("id", "in", list(record_ids))]).ids
             )
@@ -100,17 +90,12 @@ class MailActivity(models.Model):
         return store.get_result()
 
     def _action_done(self, feedback=False, attachment_ids=None):
-        """Extends _action_done to notify the user assigned to a phonecall
-        activity that it has been marked as done. This is useful to trigger the
-        refresh of the “Next Activities” tab.
-        """
         self.filtered(
             lambda activity: activity.activity_type_id.category == "phonecall"
         ).user_id._bus_send("refresh_call_activities", {})
         return super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
 
     def _format_call_activities(self, store: Store) -> None:
-        """Serializes call activities for transmission to/use by the client side."""
         call_activities = self.filtered(
             lambda activity: activity.activity_type_id.category == "phonecall"
         )
@@ -120,7 +105,6 @@ class MailActivity(models.Model):
                 partners_by_records = records._mail_get_partners(introspect_fields=True)
             else:
                 partners_by_records = {}
-            # Store all the partner at once to avoid O(n) queries in the loop
             partner_ids = [p[0].id for p in partners_by_records.values() if p]
             store.add(self.env["res.partner"].browse(partner_ids))
             for activity in activities:
@@ -153,10 +137,6 @@ class MailActivity(models.Model):
                 )
 
     def _get_phone_numbers_by_activity(self):
-        """Batch compute the phone numbers associated with the activities.
-
-        :return: phone number for each activity (obtained from the activity itself or from the related partner);
-        """
         phone_numbers_by_activity = {}
         for model, activities, res_ids in self._activities_with_records():
             records = self.env[model].browse(res_ids)
@@ -185,7 +165,6 @@ class MailActivity(models.Model):
                         )
                         if recipient:
                             phone = recipient._phone_get_number().number
-                # cascade-deleted records might make this crash, be defensive
                 except exceptions.MissingError:
                     phone = False
                 phone_numbers_by_activity[activity] = phone

@@ -5,7 +5,5 @@ from odoo.addons.account_batch_payment.models.sepa_mapping import (
 
 
 def init_initiating_party_names(env) -> None:
-    """Sets the company name as the default value for the initiating
-    party name on all existing companies once the module is installed."""
     for company in env["res.company"].search([]):
         company.iso20022_initiating_party_name = normalize_communication(company.name)

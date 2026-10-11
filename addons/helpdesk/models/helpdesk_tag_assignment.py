@@ -15,7 +15,6 @@ class HelpdeskTagAssignment(models.Model):
         string="Ticket Tag",
         required=True,
     )
-    # Used to prevent a tag from appearing in the dropdown in the list view if it already exists in the mapping.
     user_ids = fields.Many2many(
         comodel_name="res.users",
         string="Team Members",

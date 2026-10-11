@@ -291,7 +291,6 @@ class TestMaintenanceResources(TransactionCase):
 
     def test_a_machine_that_is_both_asset_and_resource_reports_one_mtbf(self):
         self.press.expected_mtbf = 30
-        # The fact lives on the resource's one profile, whichever host wrote it.
         self.assertEqual(self.press.maintenance_profile_id.expected_mtbf, 30)
         self._order(maintenance_type="corrective", state="done")
         self.press.invalidate_recordset()

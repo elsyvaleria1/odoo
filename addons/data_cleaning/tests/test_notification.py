@@ -67,7 +67,6 @@ class TestCleaningNotification(TransactionCase):
         self.assertEqual(self._count_notifications(), before + 1)
 
     def test_a_day_period_counts_days(self):
-        """`relativedelta(day=n)` is the n-th of the month, not n days."""
         self.cleaning_model.write(
             {
                 "notify_unit": "day",
@@ -126,11 +125,6 @@ class TestCleaningNotification(TransactionCase):
 @tagged("post_install", "-at_install", "data_cleaning")
 class TestMergeNotification(TransactionCase):
     def test_a_merge_rule_keeps_its_empty_notify_default(self):
-        """The mixin defaults to the current user; deduplication never has.
-
-        Asserted on `default_get`, which is what the form calls. A created record
-        is empty either way, so asserting on one would pass whatever the field says.
-        """
         merge_default = self.env["data_merge.model"].default_get(["notify_user_ids"])
         recycle_default = self.env["data_recycle.model"].default_get(
             ["notify_user_ids"]

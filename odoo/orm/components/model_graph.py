@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
     from ._protocols import FieldLike
 
-    # dependency field -> path to the dependent, nearest step first -> dependents
     type Triggers[F] = defaultdict[F, dict[tuple[F, ...], list[F]]]
 
 
@@ -212,15 +211,12 @@ class _TriggerIndex[F: FieldLike]:
     def get_trees(self, fields: list[F] | None) -> dict[F, TriggerTree[F]]:
         wanted = None if fields is None else [self.field_ids[f] for f in fields]
         if _debug.perf.enabled:
-            return self._get_trees_one_by_one(wanted)  # debuglog
+            return self._get_trees_one_by_one(wanted)
         return {
             self.fields[field_id]: self._wrap(node)
             for field_id, node in _get_trigger_trees(self.payload, self.meta, wanted)
         }
 
-    # One native call builds every tree before returning, so a tree that grows
-    # without bound names no field. With the perf channel on, each tree is
-    # built alone, measured, and logged before the next.
     def _get_trees_one_by_one(
         self, wanted: list[int] | None
     ) -> dict[F, TriggerTree[F]]:
@@ -379,8 +375,6 @@ class ModelGraph[F: FieldLike = Any]:
     def trigger_epoch(self) -> int:
         return self._epoch
 
-    # windows nest (setup_models -> _add_manual_models -> discard_fields): the
-    # barrier stands until the outermost one closes
     def begin_invalidation(self) -> None:
         with self._publish_lock:
             self._epoch += 1
@@ -445,8 +439,6 @@ class ModelGraph[F: FieldLike = Any]:
     ) -> TriggerTree[F]:
         state = self._state
         triggers = state.triggers
-        # a field without triggers adds no tree: a write's other fields, in
-        # whatever order, are the same key
         key = tuple(field for field in fields if field in triggers)
         if not key:
             return TriggerTree()
@@ -460,24 +452,14 @@ class ModelGraph[F: FieldLike = Any]:
                 trees=len(trees),
                 cached=len(state.merged),
             )
-            # keyed on the field SEQUENCE, not the set: `merge` builds its
-            # root in input order, so two orders of the same fields are two
-            # trees and folding them would reorder a recompute. The LRU keeps
-            # the shapes in use instead of dropping every entry at the cap.
             state.merged[key] = structure
         if static is None:
             return structure._filtered(select)
-        # `static` names the nodes `select` keeps whatever the cache holds (a
-        # fact of the registry), so the filtered tree is a function of `select`
-        # on the other nodes alone: walking the tree on every call rebuilt the
-        # same few shapes, 18 of them over 290 calls of an invoice's cycle
         dynamic = state.dynamic_nodes.get(key)
         if dynamic is None:
             dynamic = state.dynamic_nodes[key] = tuple(
                 node for node in structure.nodes() if not static(node)
             )
-        # a dynamic node is not static by construction: `cached` is the half
-        # of `select` left to ask of it
         keep = cached or select
         filtered_key = (key, tuple(keep(node) for node in dynamic))
         filtered = state.filtered.get(filtered_key)
@@ -496,9 +478,6 @@ class ModelGraph[F: FieldLike = Any]:
         if field not in state.triggers:
             return TriggerTree()
 
-        # a registry being loaded is reset before most trees are asked for
-        # (a module install reads ~60 of ~9000), so one tree is built per miss;
-        # `freeze` builds the rest in one native call once the registry is final
         tree = state.trees[field] = state.get_index().get_tree(field)
         return tree
 
@@ -582,9 +561,6 @@ class ModelGraph[F: FieldLike = Any]:
                         return None
                     paths[prefix] = None
                 elif step in dependents:
-                    # the compute reads a value that is itself computed from
-                    # this field on other records: a batch would hand it the
-                    # value being replaced
                     _debug.logic(
                         "model_graph.recursive_paths.dependent_on_path",
                         field=str(field),

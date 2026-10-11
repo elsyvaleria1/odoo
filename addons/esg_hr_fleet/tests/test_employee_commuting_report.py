@@ -149,7 +149,6 @@ class TestEmployeeCommutingReport(TransactionCase):
         )
         log.flush_recordset()
 
-        # Reinitialize the report to reflect the updated data
         self.env["esg.employee.commuting.report"].init()
 
         reports = self.env["esg.employee.commuting.report"].search(

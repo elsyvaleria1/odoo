@@ -37,7 +37,6 @@ class BusinessCardScanner:
         self.env = env
 
     def business_cards_to_leads(self, attachments):
-        """Create opportunities from the details extracted from images of business cards."""
 
         valid_attachments = []
         lead_values_list = []
@@ -53,7 +52,6 @@ class BusinessCardScanner:
             if not extracted_data:
                 continue
 
-            # Normalize to list of dicts
             if isinstance(extracted_data, dict):
                 extracted_data = [extracted_data]
 
@@ -85,9 +83,8 @@ class BusinessCardScanner:
                         contact_name=contact_name or company_name,
                     )
                 else:
-                    continue  # safety net as we told AI to return an empty result in this case
+                    continue
 
-                # extract country
                 country = False
                 if data.get("country_code") and len(data["country_code"]) == 2:
                     country = self.env["res.country"].search(
@@ -96,7 +93,6 @@ class BusinessCardScanner:
                     if country:
                         lead_values["country_id"] = country.id
 
-                # extract state
                 if data.get("state_code"):
                     domain = Domain("code", "=", data["state_code"])
                     if country:
@@ -105,7 +101,6 @@ class BusinessCardScanner:
                     if state:
                         lead_values["state_id"] = state.id
 
-                # format phone
                 if phone := lead_values.pop("phone", False):
                     lead_values["phone_ids"] = [
                         Command.create(
@@ -123,8 +118,6 @@ class BusinessCardScanner:
                 valid_attachments.append(attachment)
 
         if len(attachments) == 1 and not lead_values_list:
-            # special case when a single attachment fails: do not create records
-            # caller is responsible for followup behavior and feedback in that case
             return self.env["crm.lead"]
 
         leads = self.env["crm.lead"].create(lead_values_list)
@@ -136,7 +129,6 @@ class BusinessCardScanner:
                 attachment_ids=[attachment.id],
             )
 
-        # create "empty leads" for failing images to give better user feedback
         invalid_attachments = attachments.filtered(
             lambda attachment: attachment not in valid_attachments
         )

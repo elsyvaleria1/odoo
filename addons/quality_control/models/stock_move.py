@@ -18,9 +18,6 @@ class StockMove(models.Model):
         return moves
 
     def _post_process_created_moves(self):
-        # Quality checks per product and operations are expected to be created during
-        # the action confirm of the related stock move. However, a move can be created
-        # in a non draft state and might never be confirmed in before being done
         _debug.pipeline("quality_moves_post_process", moves=self)
         super()._post_process_created_moves()
         self.filtered(
@@ -28,7 +25,6 @@ class StockMove(models.Model):
         )._create_quality_checks()
 
     def _create_quality_checks(self) -> None:
-        # Groupby move by picking. Use it in order to generate missing quality checks.
         _debug.pipeline("quality_checks_create", moves=self)
         pick_moves = defaultdict(lambda: self.env["stock.move"])
         for move in self:
@@ -36,7 +32,6 @@ class StockMove(models.Model):
                 pick_moves[move.picking_id] |= move
         check_vals_list = self._create_operation_quality_checks(pick_moves)
         for picking, moves in pick_moves.items():
-            # Quality checks by product
             quality_points_domain = self.env[
                 "quality.point"
             ]._get_domain_quality_points(
@@ -100,11 +95,6 @@ class StockMove(models.Model):
         if not pending:
             return res
 
-        # A check survives as long as something is left for it to grade.  The
-        # old test asked one question -- "is every move of this check's product
-        # cancelled?" -- and an operation-level check carries no product, so it
-        # matched the empty product and was dropped as soon as *any* single
-        # move of the transfer was cancelled.
         cancelled_products = defaultdict(set)
         fully_cancelled = set()
         for picking in pickings:

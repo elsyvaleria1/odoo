@@ -9,7 +9,6 @@ from odoo.tests import common, tagged
 @tagged("voip", "post_install", "-at_install")
 class TestVoipMailActivity(common.TransactionCase):
     def test_voip_mail_activity_country_code_mixin(self):
-        """Tests that "country_code_from_phone" is properly computed based on a phone field"""
         some_partner = self.env["res.partner"].create(
             {
                 "name": "Some partner",
@@ -22,10 +21,6 @@ class TestVoipMailActivity(common.TransactionCase):
         self.assertEqual(activity.phone_country_id.code.lower(), "de")
 
     def test_call_queue_uses_the_assignee_own_day(self):
-        """The call queue asks for activities that are already due. "Due" is the
-        assignee's own day -- that is what activity_state reads and what the
-        systray counts -- not the server's. A user far enough east was losing
-        every call the rest of the UI called due today."""
         activity_type = self.env["mail.activity.type"].search(
             [("category", "=", "phonecall")], limit=1
         ) or self.env["mail.activity.type"].create(
@@ -35,7 +30,7 @@ class TestVoipMailActivity(common.TransactionCase):
             {
                 "login": "voip_east",
                 "name": "East",
-                "tz": "Pacific/Kiritimati",  # UTC+14: ahead of the server all day
+                "tz": "Pacific/Kiritimati",
                 "group_ids": [(4, self.env.ref("base.group_user").id)],
             }
         )

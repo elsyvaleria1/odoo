@@ -290,7 +290,6 @@ class TestChannelHttp(EnrollmentFixture, DeviceHttpCase):
 
         def conflict_after_admission(channel):
             if getattr(request, "admission", None) is None:
-                # the verdict asks too, to judge the principal fit
                 return original_principal(channel)
             attempts.append(channel.id)
             if len(attempts) == 1:

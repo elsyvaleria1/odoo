@@ -233,9 +233,6 @@ class QuantsCache:
     def under(
         self, product_id, location_path, trace_id=None, package_id=None, owner_id=None
     ):
-        # the quants a non-strict gather selects: every location under the
-        # path, the lot or none when a lot is asked, any package or owner
-        # unless one is asked
         paths = self._paths_by_location
         result = self._empty
         for key in self._by_product.get(product_id, ()):

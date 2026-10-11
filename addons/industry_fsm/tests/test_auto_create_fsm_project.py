@@ -5,15 +5,6 @@ from odoo.tests.common import TransactionCase, new_test_user
 @tagged("post_install", "-at_install")
 class TestAutoCreateFsmProject(TransactionCase):
     def test_auto_create_fsm_task(self):
-        """Test Field Service automatically created project when a company is created
-
-        Test Case:
-        =========
-        1) Assert first company is created with Field Service project
-        2) Add second company and assert second Field Service project is created
-        3) Create new user with allowed_company_ids = [first_company, second_company]
-        4) Get Field Service Project with the 2 companies and assert project display name has this format "Field Service - {Company Name}"
-        """
         fsm_projects = self.env["project.project"].search([("is_fsm", "=", True)])
         fsm_projects_count = len(fsm_projects)
 

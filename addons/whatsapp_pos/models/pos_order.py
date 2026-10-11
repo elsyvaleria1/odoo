@@ -52,8 +52,6 @@ class PosOrder(models.Model):
                     }
                 )
             )
-            # Receipt is already send so force_send_by_cron is True
-            # so it's not raise error if there is any miss configuration
             whatsapp_composer._send_whatsapp_template(force_send_by_cron=True)
 
     def _get_fields_whatsapp_safe(self) -> set:

@@ -11,8 +11,6 @@ HOME = "/dav/addressbooks/"
 
 
 def dav_key(user):
-    """The DAV password of `user`: an API key of the `dav` scope, minted as
-    the user, as the device form's button does."""
     return user.env(user=user)["res.users.apikeys"]._generate(
         "dav", "DAV probe", datetime.now() + timedelta(days=1)
     )
@@ -118,8 +116,6 @@ class TestDavAuthentication(DeviceHttpCase):
         )
 
     def test_the_login_password_is_never_a_dav_password(self):
-        # A phone keeps its DAV password in clear; the account's password is
-        # not what it should hold, and the door does not take it.
         self._assert_challenged(
             self._propfind(self._basic(self.sync_user.login, PASSWORD))
         )
@@ -177,9 +173,6 @@ class TestDavAuthentication(DeviceHttpCase):
         )
 
     def test_a_refused_password_is_recorded_without_the_password(self):
-        # The verdict is written on a cursor of its own, which a test's
-        # shared transaction rolls back with the refused request; the gate is
-        # asked directly with what the resolver hands it.
         headers = {"Authorization": self._basic(self.sync_user.login, "Guess-7731")}
         mocked = MagicMock()
         mocked.httprequest.headers = headers

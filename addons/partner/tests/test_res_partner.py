@@ -14,7 +14,6 @@ from odoo.tools.safe_eval import safe_eval
 @tagged("post_install", "-at_install")
 class TestResPartner(TransactionCase):
     def test_get_backend_root_menu_ids_includes_partner_menu(self):
-        """res.partner's backend root menu includes partner's own menu."""
         menu_ids = self.env["res.partner"]._get_backend_root_menu_ids()
         self.assertIn(self.env.ref("partner.partner_menu_root").id, menu_ids)
 
@@ -38,7 +37,6 @@ class TestSearchAge(TransactionCase):
             cls.ages[age] = cls.Partner.create(
                 {
                     "name": f"Aged {age}",
-                    # Half a year in, so no test sits on a birthday boundary.
                     "birthdate": today - relativedelta(years=age, months=6),
                 }
             )
@@ -70,12 +68,6 @@ class TestSearchAge(TransactionCase):
         self.assertEqual(self._found("!=", 18), {17, 19, 40})
 
     def test_a_partner_without_a_birthdate_matches_no_comparison(self):
-        """It has no age, so it is absent from a comparison and its negation.
-
-        ``=`` and ``!=`` are not comparisons here and are asserted separately:
-        the ORM folds ``0`` into ``False`` on an Integer field before the
-        search method sees it, so ``age = 0`` is not a question about zero.
-        """
         for operator, value in ((">=", 0), ("<", 200), (">", 1), ("<=", 199)):
             self.assertNotIn(
                 self.undated,
@@ -88,17 +80,6 @@ class TestSearchAge(TransactionCase):
             self.Partner.search([("age", "like", "18")])
 
     def test_equality_against_nothing_asks_whether_an_age_is_set(self):
-        """`= False` is the framework's spelling of "not set", and `= 0` is it.
-
-        The ORM folds ``0`` into ``False`` on an Integer field before a search
-        method is reached, so ``age = 0`` and ``age = False`` are one domain
-        and no implementation can separate "aged zero" from "has no age". The
-        fold decides which of the two the pair must mean, and it is the one
-        every generic tool asks: ``isinstance(False, int)`` is True, so an
-        unguarded numeric path answers "is not set" with the contacts born in
-        the last twelve months. Exactly-zero is still reachable as
-        ``age >= 0`` intersected with ``age < 1``.
-        """
         candidates = [partner.id for partner in self.ages.values()]
         candidates += self.undated.ids + self.newborn.ids
 
@@ -111,28 +92,14 @@ class TestSearchAge(TransactionCase):
         self.assertIn(self.newborn, aged, "a newborn has an age, and it is zero")
 
     def test_an_integral_float_is_still_a_whole_number_of_years(self):
-        """JSON has one number type, so a filter can hand this method 18.0."""
         self.assertEqual(self._found(">=", 18.0), {18, 19, 40})
 
     def test_a_fractional_age_is_a_user_error_not_a_crash(self):
-        """Only NotImplementedError and UserError survive domain optimization.
-
-        Anything else escapes ``_optimize_field_search_method`` and reaches the
-        client as an Internal Server Error.
-        """
         for value in (18.5, -0.25):
             with self.assertRaises(UserError):
                 self.Partner.search([("age", ">", value)])
 
     def test_age_has_no_aggregator_and_folds_through_records_when_asked(self):
-        """`web/static/src/model/relational_model/field_values.js` asks the
-        server for `<field>:<aggregator>` for every aggregatable field a view
-        holds; Integer defaults to `sum`, which is meaningless for ages, and a
-        non-stored compute takes no aggregator it does not declare. Asked for
-        explicitly, an aggregate of this non-stored compute folds through the
-        group's records (odoo 1700ca96ddc1), so a grouped list that wants an
-        average gets one.
-        """
         self.assertFalse(self.Partner._fields["age"].aggregator)
         adults = self.Partner.browse(
             [self.ages[18].id, self.ages[19].id, self.ages[40].id]
@@ -219,7 +186,6 @@ class TestBirthdayFilters(TransactionCase):
         self.assertEqual(len(groups), 2, "two birth months grouped into one bucket")
 
     def test_the_date_parts_are_indexed(self):
-        """A filter every contact list offers must not be a sequential scan."""
         self.env.cr.execute(
             "SELECT indexdef FROM pg_indexes "
             "WHERE tablename = 'res_partner' AND indexdef ILIKE %s",

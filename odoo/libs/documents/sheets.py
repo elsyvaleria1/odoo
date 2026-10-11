@@ -19,14 +19,10 @@ EXCEL_DEFAULT_COLUMN_WIDTH = 8.43
 SHEET_NAME_MAX_LENGTH = 31
 MEASURED_WIDTH_CAP = 75
 MEASURED_WIDTH_PADDING = 4
-# what xlsxwriter's write() stores as a number
 _NUMBERS = (int, float, Decimal, Fraction)
 
 
 class SheetBuilder:
-    # A worksheet recorded as the ordered operations that write it: a column
-    # width set after cells were measured replaces what they measured, so the
-    # order is part of the sheet.
 
     def __init__(self, name: str) -> None:
         self.name = name
@@ -175,8 +171,6 @@ def _grow_column(
     if value is None:
         value = ""
     elif isinstance(value, _NUMBERS) and not isinstance(value, bool):
-        # a float's repr can run to 17 digits the cell never shows; a string,
-        # "00012345" included, is written as text and measured as text
         with contextlib.suppress(ValueError, OverflowError):
             value = float_repr(float(value), decimals)
     text = f"{'  ' * (props.get('indent') or 0)}{value}"

@@ -50,14 +50,6 @@ class TestViewAnchors(TransactionCase):
         self.assertTrue(holders, "the vehicle kanban names its operator")
 
     def test_the_operator_family_shares_one_asset_kind_predicate(self):
-        """One notion of "this asset kind has an operator", not three.
-
-        `operator_id` sits in a group the parent leaves visible for every
-        `kind_id`, so any kind can be given an operator and books an
-        operator-typed log. The stat button used to narrow to three kinds --
-        leaving those logs counted and reachable from nowhere -- and
-        `future_operator_id` narrowed to vehicles alone.
-        """
         arch = self._combined("asset_ledger.resource_asset_view_form_ledger")
         names = (
             "operator_employee_id",

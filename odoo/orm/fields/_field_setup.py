@@ -58,9 +58,6 @@ def _normalize_computed_attrs(attrs: dict[str, typing.Any]) -> None:
             attrs["copy"] = attrs.get("copy", False)
         attrs["readonly"] = attrs.get("readonly", not attrs.get("inverse"))
         if not store and not attrs.get("value_sql"):
-            # a non-stored compute without SQL of its own aggregates by
-            # computing itself on every record of every group: it does so
-            # when it declares how, never by the numeric types' default "sum"
             attrs["aggregator"] = attrs.get("aggregator")
 
 

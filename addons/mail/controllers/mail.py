@@ -282,7 +282,7 @@ class MailController(http.Controller):
         return f"/odoo/{model_in_url}/{res_id}?{urlencode(sorted(url_params.items()))}"
 
     @http.route("/mail/view", type="http", auth="public")
-    def mail_action_view(  # noqa: E8539  redirect: passes the token on to the page or record check that opens it
+    def mail_action_view(
         self,
         model: str | None = None,
         res_id: int | str | None = None,
@@ -313,7 +313,6 @@ class MailController(http.Controller):
             }
         return self._redirect_to_record(model, res_id, access_token, **kwargs)
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/mail/unfollow",
         type="http",
@@ -330,8 +329,6 @@ class MailController(http.Controller):
         record_sudo = request.admission.subject
         model_name = request.env["ir.model"].sudo()._get(model).display_name
         if request.httprequest.method != "POST":
-            # the link in the mail: a scanner or a preview opening it must not
-            # unfollow anyone, so the page asks and its form posts the link
             return request.render(
                 "mail.message_document_unfollow_confirm",
                 {"name": record_sudo.display_name, "model_name": model_name},

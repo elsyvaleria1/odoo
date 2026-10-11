@@ -62,9 +62,6 @@ class TestFsmFlowCommon(TransactionCase):
                 "name": "Individual Workplace",
                 "list_price": 885.0,
                 "type": "service",
-                # A service tracked by timesheet is sold in hours: its delivered
-                # quantity is summed from analytic lines in the company's time unit,
-                # and quantities do not convert across unit categories.
                 "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "invoice_policy": "ordered",
                 "taxes_id": False,
@@ -76,9 +73,6 @@ class TestFsmFlowCommon(TransactionCase):
                 "name": "Acoustic Bloc Screens",
                 "list_price": 2950.0,
                 "type": "service",
-                # A service tracked by timesheet is sold in hours: its delivered
-                # quantity is summed from analytic lines in the company's time unit,
-                # and quantities do not convert across unit categories.
                 "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "invoice_policy": "transferred",
                 "taxes_id": False,
@@ -107,9 +101,6 @@ class TestFsmFlowCommon(TransactionCase):
             {
                 "name": "service timesheet",
                 "type": "service",
-                # Delivered by timesheet, so it is sold in hours: the delivered quantity
-                # is summed from analytic lines in the company's time unit, and a
-                # quantity cannot be converted across unit categories.
                 "uom_id": cls.env.ref("base.product_uom_hour").id,
                 "service_policy": "delivered_timesheet",
             }
@@ -148,5 +139,4 @@ class TestFsmFlowSaleCommon(TestFsmFlowCommon, TestCommonSaleTimesheet):
                 ],
             }
         )
-        # Compute the _compute_price_id, because this one is not trigger because of the _compute_sale_line_id of this same model in this module.
         cls.fsm_project_employee_rate.sale_line_employee_ids._compute_price_unit()

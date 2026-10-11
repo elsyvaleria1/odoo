@@ -65,7 +65,6 @@ class HomeTile(models.AbstractModel):
         model = spec.get("model")
         if model and not (model in self.env and self.env[model].has_access("read")):
             return False
-        # a tile that summarises a screen reaches whoever that screen's menu does
         menu = spec.get("menu")
         return not menu or self._menu_visible(menu)
 

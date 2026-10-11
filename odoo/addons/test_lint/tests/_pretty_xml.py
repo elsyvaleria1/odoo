@@ -105,9 +105,6 @@ def _tag_and_attrs(elem: etree._Element) -> tuple[str, list[str]]:
     return _qname(elem.tag, nsmap), parts
 
 
-# a tag lxml serialized: on one line, its attributes escaping < and >; text
-# escapes < too, except inside a CDATA section, which is left as written (a
-# script's .replace(/>/g, ...) is no tag)
 _SELF_CLOSE_RE = re.compile(r"(<[A-Za-z_][^<>]*?)(?<! )/>")
 _CDATA_RE = re.compile(r"(<!\[CDATA\[.*?\]\]>)", re.DOTALL)
 
@@ -525,16 +522,16 @@ def main(argv: list[str] | None = None) -> None:
         elif result:
             if not args.count:
                 label = "would format" if dry_run else "formatted  "
-                print(f"  {label}  {xml_file}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+                print(f"  {label}  {xml_file}")
             changed += 1
         else:
             unchanged += 1
 
     if args.count:
-        print(changed)  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+        print(changed)
         return
     verb = "would change" if dry_run else "formatted"
-    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")
 
 
 if __name__ == "__main__":

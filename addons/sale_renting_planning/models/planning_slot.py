@@ -93,12 +93,6 @@ class PlanningSlot(models.Model):
         )
         if products := self.role_id.product_ids.filtered("rent_ok"):
             uom_hour = self.env.ref("base.product_uom_hour")
-            # `default_line_ids`, not `default_order_line`: this fork renamed
-            # `sale.order.order_line` to `line_ids`, and a default keyed on a
-            # field that no longer exists is silently ignored -- the rental
-            # order opened with no lines at all. `sale_renting` itself followed
-            # the rename (`_prepare_get_order_line_values` writes
-            # `defaults['line_ids']`); this caller was missed.
             context["default_line_ids"] = [
                 Command.create(
                     {
@@ -135,10 +129,6 @@ class PlanningSlot(models.Model):
             [
                 ("is_rental_order", "=", True),
                 ("user_id", "=", self.env.uid),
-                # `done` is this fork's confirmed state (`sale.const.ORDER_STATE`
-                # is draft/done/cancel). `sale` is not a value any order can hold,
-                # so this search matched nothing and "add to last order" always
-                # reported "No Rental Order is found."
                 ("state", "=", "done"),
             ],
             limit=1,
@@ -222,7 +212,6 @@ class PlanningSlot(models.Model):
         }
 
     def _set_slot_resource(self) -> None:
-        # ensure role id is correctly set
         for slot in self:
             if not slot.role_id and slot.sale_line_id:
                 slot.role_id = slot.sale_line_id.sudo().product_id.planning_role_id

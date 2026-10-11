@@ -151,8 +151,6 @@ class ResPartner(models.Model):
             ["is_read", "mail_message_id", "res_partner_id"]
         )
         self.env["mail.message"].flush_model(["model"])
-        # a channel counts its own mentions: the needaction count is what the
-        # Notifications tab lists, so that the Discuss counters never overlap
         self.env.cr.execute(
             """
             SELECT count(*) as needaction_count
@@ -341,10 +339,6 @@ class ResPartner(models.Model):
         return [Store.Attr("mention_token", lambda p: p._get_mention_token())]
 
     def _prefetch_store_persona(self) -> None:
-        # the members of a store are reached through several relations (the
-        # channel's members, the invited, the naming ones), each read in its
-        # own batch; what their stores compute is computed here once for all
-        # of them, since a fetch computes nothing
         self.fetch()
         self.mapped("im_status")
         self.main_user_id.fetch(["partner_id", "share"])

@@ -10,7 +10,7 @@ class AccountJournal(models.Model):
     def _unlink_cascade_transfer_model(self) -> None:
         if self.env.context.get(
             MODULE_UNINSTALL_FLAG
-        ):  # only cascade when switching CoA
+        ):
             self.env["account.transfer.model"].search(
                 [("journal_id", "in", self.ids)]
             ).unlink()

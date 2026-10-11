@@ -141,7 +141,7 @@ def exp_restore(db_name: str, data: str, copy: bool = False) -> Literal[True]:
     _STRIP_WS = str.maketrans("", "", " \t\n\r\v\f")
     CHUNK = 8192
 
-    data_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115  delete=False: the path outlives this scope
+    data_file = tempfile.NamedTemporaryFile(delete=False)
     try:
         with _debug.perf(
             "database.restore.decoded", db=db_name, chars=len(data)

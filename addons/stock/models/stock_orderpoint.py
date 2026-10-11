@@ -7,8 +7,6 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import DOMAIN_PREDICATES, TransactionMemo, frozendict
 
-# the fields that decide which orderpoints a move's product and warehouses
-# reach; a write to any of them discards the transaction's memo
 ORDERPOINT_SCOPE_FIELDS = ("product_id", "warehouse_id", "active", "company_id")
 ORDERPOINTS_BY_SCOPE = TransactionMemo(
     "stock.warehouse.orderpoint.by_scope",
@@ -362,7 +360,7 @@ class StockWarehouseOrderpoint(models.Model):
                         "child_of",
                         other_warehouse.view_location_id.id,
                     )
-            orderpoints.allowed_location_ids = self.env["stock.location"].search(  # noqa: E8507 - already batched: one query per (company, warehouse), not per orderpoint
+            orderpoints.allowed_location_ids = self.env["stock.location"].search(
                 loc_domain,
             )
 
@@ -458,13 +456,6 @@ class StockWarehouseOrderpoint(models.Model):
                 self.env["stock.warehouse"],
             )
             current = orderpoint.location_id
-            # An editable default, so a stored location that still sits inside
-            # the warehouse is the user's and is kept. Assigning unconditionally
-            # reset a rule pointed at a particular shelf back to the warehouse's
-            # stock location on any write of `warehouse_id` -- including one
-            # that changed nothing, since `modified()` fires on the key and not
-            # on a change. A location outside the warehouse is re-derived,
-            # because that is what a real warehouse change invalidates.
             if (
                 current
                 and warehouse

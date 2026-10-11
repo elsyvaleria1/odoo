@@ -140,7 +140,6 @@ class PlanningSlot(models.Model):
         ]
         sale_line_ids = self.env.context.get("filter_sale_line_ids", False)
         if sale_line_ids:
-            # search method is used rather than browse since the order needs to be handled
             return sale_lines.search([("id", "in", sale_line_ids)])
         elif (
             self.env.context.get("planning_expand_sale_line_id")
@@ -160,7 +159,6 @@ class PlanningSlot(models.Model):
             return sale_lines.search([("id", "in", sale_lines.ids)])
         return sale_lines
 
-    # ORM Override
 
     @api.model
     def default_get(self, fields):
@@ -193,7 +191,6 @@ class PlanningSlot(models.Model):
         return res
 
     def _display_name_fields(self):
-        """List of fields that can be displayed in the display_name"""
         return ["partner_id"] + super()._display_name_fields() + ["sale_line_id"]
 
     @api.model_create_multi
@@ -201,7 +198,7 @@ class PlanningSlot(models.Model):
         res = super().create(vals_list)
         _debug.lifecycle("create", slots=res, rows=len(vals_list))
         if res.sale_line_id:
-            res.sale_line_id.sudo()._compute_planning_hours_planned()  # ensure it is computed before doing postprocess
+            res.sale_line_id.sudo()._compute_planning_hours_planned()
             res.sale_line_id.sudo()._post_process_planning_sale_line(
                 ids_to_exclude=res.ids
             )
@@ -218,21 +215,15 @@ class PlanningSlot(models.Model):
         slots_to_write = PlanningShift
         slots_written = PlanningShift
         if vals.get("start_datetime"):
-            # if the previous start_datetime was False, it means the slot has been selected from the
-            # unscheduled slots. In this case, slots must be generated automatically to fill the gantt period
-            # with the hours remaining to plan of the linked sale order as a limit of hours to allocate.
             slot_vals_list_per_employee = defaultdict(list)
             for slot in self:
                 if slot.sale_line_plannable and not slot.start_datetime:
-                    # This method will generate the planning slots for the given employee and following the numbers of hours still to plan
-                    # for the given slot's sale order line.
                     new_vals, tmp_sale_order_slots_to_plan, resource = (
                         slot._get_sale_order_slots_to_plan(
                             vals, slot_vals_list_per_employee
                         )
                     )
                     if new_vals:
-                        # Call the write method of the parent
                         super(PlanningSlot, slot).write(new_vals[0])
                         slots_written += slot
                         sale_order_slots_to_plan += tmp_sale_order_slots_to_plan
@@ -271,7 +262,6 @@ class PlanningSlot(models.Model):
         slots_to_unlink.unlink()
         return slots_written - slots_to_unlink
 
-    # Actions
 
     def action_view_sale_order(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
@@ -281,7 +271,6 @@ class PlanningSlot(models.Model):
         action["res_id"] = self.sale_order_id.id
         return action
 
-    # Business methods
 
     def _get_domain_template_slots(self):
         domain = super()._get_domain_template_slots()
@@ -303,16 +292,6 @@ class PlanningSlot(models.Model):
         return domain
 
     def _get_sale_order_slots_to_plan(self, vals, slot_vals_list_per_resource) -> tuple:
-        """
-        Returns the vals which will be used to update self, a vals_list of the slots
-        to create for the same related sale_order_line and the resource.
-
-        :param vals: the vals passed to the write orm method.
-        :param slot_vals_list_per_resource: a dict of vals list of slots to be created, sorted per resource
-            This dict is used to be aware of the slots which will be created and are not in the database yet.
-        """
-        # Gets work interval in order to know if the employee can work or not
-        # Gets its slots which are partially allocated (allocated_percentage < 100) in order to avoid planning slots in conflict.
         self.check_singleton()
         to_allocate = (
             self.sale_line_id.planning_hours_to_plan
@@ -338,8 +317,6 @@ class PlanningSlot(models.Model):
                 resource=resource,
             )
             if following_slots_vals_list:
-                # In order to have slots on multiple days, the slots filling the resource's work intervals must be
-                # merged. The consequence is that it will be forecasted slots (regarding `allocation_type`) rather than short planning slots
                 following_slots_vals_list = self._merge_slots_values(
                     following_slots_vals_list, unforecastable_intervals
                 )
@@ -359,41 +336,6 @@ class PlanningSlot(models.Model):
         to_allocate,
         resource,
     ) -> list[ValuesType]:
-        """Return the generated slot values related to self.sale_line_id for the given resource.
-
-        :param vals: the vals sent in the write/reschedule call
-        :param work_intervals: intervals during which the resource works/is available
-        :param partial_interval_slots: intervals during which the resource has slots partially planned (`allocated_percentage` < 100)
-        :param unforecastable_intervals: intervals during which the resource cannot have a slot with `allocation_type` == 'forecast' (see _merge_slots_values for further explanation)
-        :param to_allocate: the number of hours still to allocate for this self.sale_line_id
-        :param resource: the resource recordset the information is given for and who will be assigned to the slots; if None, the company's information is used
-        :return: a vals_list with slots to create (the first item is used to update the current slot)
-
-        Algorithm :
-            - General principle :
-                - For each work interval, a planning slot is assigned to the employee, until there are no more hours to allocate
-            - Details :
-                - If the interval is in conflict with a partial_interval_slots, the algorithm must find each time the sum of allocated_percentage increases/decreases:
-                    - The algorithm retrieve this information by building a dict where the keys are the datetime where the allocated_percentage changes :
-                        - The algorithm adds start and end of the interval in the dict with 0 as value to increase/decrease
-                        - For each slot conflicting with the work_interval:
-                            - allocated_percentage is added with start_datetime as a key,
-                            - allocated_percentage is substracted with end_datetime as a key
-                        - For each datetime where the allocated_percentage changes:
-                            - if there are no allocated percentage change (sum = 0) in the next allocated percentage change:
-                                - It will create a merged slot and not divide it in small parts
-                            - the allocable percentage (default=100) is decreased by the value in the dict for the previous datetime (which will be the start datetime of the slot)
-                            - if there are still time to allocate
-                                - Otherwise, it continues with the next datetime with allocated percentage change.
-                            - if the datetimes are contained in the interval
-                                - Otherwise, it continues with the next datetime with allocated percentage change.
-                            - The slot is build with the previous datetime with allocated percentage change and the actual datetime.
-                - Otherwise,
-                    - Take the start of the interval as the start_datetime of the slot
-                    - Take the min value between the end of the interval and the sum of the interval start and to_allocate hours.
-            - Generate an unplanned slot if there are still hours to allocate.
-
-        """
         self.check_singleton()
         following_slots_vals_list = []
         for interval in work_intervals:
@@ -402,11 +344,6 @@ class PlanningSlot(models.Model):
             start_interval = interval[0].astimezone(UTC).replace(tzinfo=None)
             end_interval = interval[1].astimezone(UTC).replace(tzinfo=None)
             if partial_interval_slots[interval]:
-                # here we'll create slots with partially allocated hours - which is not trivial btw - read above the full explanation
-                # 1. Create a dict with a datetime as `key`, which represent the total *increment* of allocated time, starting from time: `key`
-                #    So for each slot, the increment is increased with allocated percentage at start datetime and decrease it at end datetime
-                # 2. Create a list with all the start and end dates (allocated_dict keys), which will be sorted in order to have all the intervals.
-                # 3. Allocable percentage are tracked by decreasing previous allocable percentage with the *increment* of allocated time.
                 allocated_dict = defaultdict(float)
                 allocated_dict.update(
                     {
@@ -430,7 +367,6 @@ class PlanningSlot(models.Model):
                     if i != len(datetime_list) - 1 and float_is_zero(
                         allocated_dict[datetime_list[i]], precision_digits=2
                     ):
-                        # there is no increment so we will build a single slot with the same allocated_percentage
                         datetime_list[i] = datetime_list[i - 1]
                         continue
                     allocable -= float_round(
@@ -509,17 +445,6 @@ class PlanningSlot(models.Model):
         )
 
     def _get_resource_work_info(self, vals, slot_vals_list_per_resource) -> tuple:
-        """
-        This method returns the resource work intervals and a dict representing
-        the work_intervals which has conflicting partial slots (slot with allocated percentage < 100.0).
-
-        It retrieves the work intervals and removes the intervals where a complete
-        slot exists (allocated_percentage == 100.0).
-        It takes into account the slots already added to the vals list.
-
-        :param vals: the vals dict passed to the write method
-        :param slot_vals_list_per_resource: a dict with the vals list that will be passed to the create method - sorted per key:resource_id
-        """
         self.check_singleton()
         assert self.env.context.get("default_end_datetime")
         start_dt = fields.Datetime.to_datetime(vals["start_datetime"]).replace(
@@ -528,13 +453,11 @@ class PlanningSlot(models.Model):
         end_dt = fields.Datetime.to_datetime(
             self.env.context["default_end_datetime"]
         ).replace(tzinfo=UTC)
-        # retrieve the resource and its calendar validity intervals
         resource_calendar_validity_intervals, resource = (
             self._get_slot_calendar_and_resource(vals, start_dt, end_dt)
         )
         attendance_intervals = Intervals()
         unavailability_intervals = Intervals()
-        # retrieves attendances and unavailabilities of the resource
         for (
             calendar,
             validity_intervals,
@@ -545,13 +468,11 @@ class PlanningSlot(models.Model):
             leaves = calendar._leave_intervals_batch(
                 start_dt, end_dt, resources=resource
             )[resource.id]
-            # The calendar is valid only during its validity interval (see resource_resource:_get_calendars_validity_within_period)
             attendance_intervals |= attendance & validity_intervals
             unavailability_intervals |= leaves & validity_intervals
         partial_slots = {}
         partial_interval_slots = defaultdict(list)
         if resource:
-            # gets slots which exists in the period [start_dt;end_dt]
             slots = self.search_read(
                 [
                     ("resource_id", "=", resource.id),
@@ -560,14 +481,11 @@ class PlanningSlot(models.Model):
                 ],
                 ["start_datetime", "end_datetime", "allocated_percentage"],
             )
-            # add the vals list of the resource (slots that will be created at the end of the write method.)
             slots += slot_vals_list_per_resource[resource]
             planning_slots_intervals = Intervals()
             partial_slots = []
-            # generate partial intervals and complete intervals
             for slot in slots:
                 if not slot["start_datetime"]:
-                    # this slot is a future unscheduled slots coming from the slot_vals_list_per_resource[resource]
                     continue
                 if (
                     float_compare(
@@ -587,13 +505,10 @@ class PlanningSlot(models.Model):
                         ]
                     )
                     planning_slots_intervals |= interval
-            # adds the full planning_slots to the unavailibility intervals
             unavailability_intervals |= planning_slots_intervals
             work_intervals = attendance_intervals - unavailability_intervals
             if partial_slots:
-                # for the partial slots, add it to a list with key = interval, value = list of slots which exists during the interval (at least during a while).
                 for interval in work_intervals:
-                    # for each interval, add partial slots that conflict.
                     for slot in partial_slots:
                         if (
                             slot["start_datetime"].replace(tzinfo=UTC) < interval[1]
@@ -610,9 +525,6 @@ class PlanningSlot(models.Model):
         )
 
     def _get_slot_calendar_and_resource(self, vals, start, end) -> tuple:
-        """
-        This method is meant to access easily to slot's resource and the resource's calendars with their validity
-        """
         self.check_singleton()
         resource = self.resource_id
         if vals.get("resource_id"):
@@ -636,17 +548,12 @@ class PlanningSlot(models.Model):
             "partner": self.partner_id.name,
         }
 
-    # Slots Assignation
 
     @api.model
     def _get_employee_to_assign_priority_list(self) -> list:
         return ["previous_slot", "closest_so_line_slot", "default_role", "roles"]
 
     def _get_employee_per_priority(self, priority, employee_ids_to_exclude, cache):
-        """
-        This method returns the id of an employee filling the priority criterias and
-        not present in the employee_ids_to_exclude.
-        """
         if priority in cache:
             return cache[priority].pop(0) if cache.get(priority) else None
         if priority == "previous_slot":
@@ -705,9 +612,6 @@ class PlanningSlot(models.Model):
     def _get_employee_to_assign(
         self, default_priority, employee_ids_to_exclude, cache, employee_per_sol
     ) -> tuple:
-        """
-        Returns the id of the employee to assign and its corresponding priority
-        """
         self.check_singleton()
         if self.sale_line_id.id in employee_per_sol:
             employee_id = next(
@@ -719,11 +623,9 @@ class PlanningSlot(models.Model):
                 None,
             )
             return employee_id, default_priority
-        # This method is written to be overridden, so as every module can keep the priority ordered as its required.
         priority_list = self._get_employee_to_assign_priority_list()
         for priority in priority_list:
             if not default_priority or priority == default_priority:
-                # if default_priority is given, the search only starts with this priority.
                 default_priority = None
                 employee_id = self._get_employee_per_priority(
                     priority, employee_ids_to_exclude, cache
@@ -734,19 +636,10 @@ class PlanningSlot(models.Model):
 
     @api.model
     def _get_ordered_slots_to_assign(self, domain) -> Self:
-        """
-        Returns an ordered list of slots (linked to sol) to plan while using the action_plan_sale_order.
-
-        This method is meant to be easily overriden.
-        """
         return self.search(domain, order="sale_line_id desc")
 
     @api.model
     def _get_employee_per_sol_within_period(self, slots, start, end) -> dict:
-        """Gets the employees already assigned during this period.
-
-        :returns: a dict with key : SOL id, and values : a list of employee ids
-        """
         assert start and end
         end = fields.Datetime.to_datetime(end)
 
@@ -800,7 +693,6 @@ class PlanningSlot(models.Model):
     def auto_plan_ids(self, view_domain):
         res = super().auto_plan_ids(view_domain)
         if self.env.context.get("planning_slot_id"):
-            # It means we are looking to assign one shift in particular to an available resource, which we do in planning.
             res["sale_line_planned"] = []
             return res
         slots_to_assign = self._get_ordered_slots_to_assign(
@@ -824,24 +716,19 @@ class PlanningSlot(models.Model):
             previous_priority = None
             cache = {}
             while not slot_assigned:
-                # Retrieve an employee_id that may be assigned to this slot, excluding the ones who have no time left.
-                # The previous priority is given in order to get the second employee that respects the previous criterias
                 employee_id, previous_priority = slot._get_employee_to_assign(
                     previous_priority, employee_ids_to_exclude, cache, employee_per_sol
                 )
                 if not employee_id:
                     break
-                # The browse is mandatory to access the resource calendar
                 employee = self.env["hr.employee"].browse(employee_id)
                 vals = {
                     "start_datetime": start_datetime,
                     "end_datetime": start_datetime + timedelta(days=1),
                     "resource_id": employee.resource_id.id,
                 }
-                # With the context keys, the maximal date to assign the slot will be self.env.context.get('default_end_datetime')
                 slot_assigned = slot.update_slot_resource(vals)
                 if not slot_assigned:
-                    # if no slot was generated (it uses the write method), then the employee_id is excluded from the employees assignable on this slot.
                     employee_ids_to_exclude.append(employee_id)
             slots_assigned += slot_assigned
 
@@ -853,20 +740,11 @@ class PlanningSlot(models.Model):
         self.browse(shifts_data["sale_line_planned"]).action_unschedule()
         super().action_rollback_auto_plan_ids(shifts_data)
 
-    # Copy slots
 
     def _init_remaining_hours_to_plan(self, remaining_hours_to_plan):
-        """
-        Fills the remaining_hours_to_plan dict for a given slot and returns wether
-        there are enough remaining hours.
-
-        :return: a bool representing whether or not there are still hours remaining
-        """
         self.check_singleton()
         res = super()._init_remaining_hours_to_plan(remaining_hours_to_plan)
         if self.sale_line_id.product_id.planning_enabled:
-            # if the slot is linked to a sale order line, we only need to allocate the remaining hours to plan
-            # we keep track of those hours in a dict and decrease it each time we create a slot.
             if self.sale_line_id not in remaining_hours_to_plan:
                 self.sale_line_id._compute_planning_hours_planned()
                 remaining_hours_to_plan[self.sale_line_id] = (
@@ -879,22 +757,12 @@ class PlanningSlot(models.Model):
                 )
                 != 1
             ):
-                return False  # nothing left to allocate.
+                return False
         return res
 
     def _update_remaining_hours_to_plan_and_values(
         self, remaining_hours_to_plan, values
     ):
-        """
-        Update the remaining_hours_to_plan with the allocated hours of the slot in `values`
-        and returns wether there are enough remaining hours.
-
-        If remaining_hours is strictly positive, and the allocated hours of the slot in `values` is
-        higher than remaining hours, than update the values in order to consume at most the
-        number of remaining_hours still available.
-
-        :return: a bool representing whether or not there are still hours remaining
-        """
         if self.allocated_percentage and self.sale_line_id.product_id.planning_enabled:
             if (
                 float_compare(
@@ -903,14 +771,9 @@ class PlanningSlot(models.Model):
                 != 1
             ):
                 return False
-            # The allocated hours of the slot can be computed as for a slot with allocation_type == 'planning'
-            # since it is build from an employee work interval, thus will last less than 24hours.
             allocated_hours = (
                 values["end_datetime"] - values["start_datetime"]
             ).total_seconds() / 3600
-            # Allocated_hours is discounted from remaining hours with a maximum of : remaining_hours
-            # So, the difference between the two values must be checked, if remaining_hours is less than the
-            # allocated hours, than update the end_datetime.
             ratio = self.allocated_percentage / 100.00
             remaining_hours = min(
                 remaining_hours_to_plan[self.sale_line_id] / ratio, allocated_hours
@@ -918,7 +781,7 @@ class PlanningSlot(models.Model):
             values["end_datetime"] = values["start_datetime"] + timedelta(
                 hours=remaining_hours
             )
-            values.pop("allocated_hours", None)  # we want that to be computed again.
+            values.pop("allocated_hours", None)
             remaining_hours_to_plan[self.sale_line_id] -= remaining_hours * ratio
         return True
 
@@ -958,7 +821,6 @@ class PlanningSlot(models.Model):
             }
         )
 
-    # Gantt Progress Bar
     def _gantt_progress_bar_sale_line_id(self, res_ids) -> dict:
         if not self.env["sale.order.line"].has_access("read"):
             return {}

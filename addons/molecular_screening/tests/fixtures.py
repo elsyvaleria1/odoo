@@ -36,8 +36,6 @@ ACETONITRILE = """acetonitrile
 M  END
 """
 
-# Nitromethane anion: the M CHG block carries N+ and O-, and one bond record is
-# written with its higher index first so the parser's normalisation is exercised.
 NITROMETHANE_ANION = """nitromethane-anion
   molecular_screening      2D
 
@@ -53,7 +51,6 @@ M  CHG  2   2   1   4  -1
 M  END
 """
 
-# Five bonds on a neutral carbon: no valence fits, so no mass may be published.
 OVERLOADED = """overloaded
   molecular_screening      2D
 
@@ -72,8 +69,6 @@ OVERLOADED = """overloaded
 M  END
 """
 
-# Kekulé pyrrole: the NH lone pair belongs to the π system, so it donates and
-# does not accept, and the nitrogen is sp² although all its bonds are single.
 PYRROLE = """pyrrole
   molecular_screening      2D
 
@@ -91,8 +86,6 @@ PYRROLE = """pyrrole
 M  END
 """
 
-# Pyridine written with aromatic bonds (type 4), which must be kekulized on read
-# or every carbon comes out with one hydrogen too many.
 PYRIDINE_AROMATIC = """pyridine-aromatic
   molecular_screening      2D
 

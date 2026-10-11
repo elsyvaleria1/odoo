@@ -353,8 +353,6 @@ class TestReservationSync(TransactionCase):
             {
                 "name": "user_ids assignment",
                 "project_id": self.project.id,
-                # explicitly nobody: a task created outside a project-scoped context
-                # is otherwise assigned to whoever created it
                 "user_ids": [],
                 **self.scheduled_vals,
             }

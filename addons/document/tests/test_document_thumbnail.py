@@ -147,8 +147,6 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
 
     def setUp(self):
         super().setUp()
-        # no renderer on this server: the browser renders PDFs, and stores
-        # what it rendered through the route
         self.patch(pdf_raster, "available", lambda: False)
 
     def _post_thumbnail(self, payload):
@@ -165,13 +163,6 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
         ).json()
 
     def test_s3_thumbnail_rejects_non_image(self):
-        """Payload validation, driven by a principal allowed to store one.
-
-        This used to authenticate as the VIEWER, which passed only because the
-        route checked read access before a `sudo()` write. Storing a thumbnail
-        is a write on the document, so the audience is an editor; what a viewer
-        gets is pinned by the test below.
-        """
         self.authenticate("audit_mgr", "audit_mgr")
         garbage = base64.b64encode(b"<svg onload=alert(1)>NOTIMAGE").decode()
         body = self._post_thumbnail(garbage)
@@ -188,13 +179,6 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
         self.assertTrue(base64.b64decode(self.pdf.thumbnail).startswith(b"\x89PNG"))
 
     def test_a_viewer_cannot_store_a_thumbnail(self):
-        """A read check guarding a `sudo()` write let any reader set it.
-
-        The thumbnail is stored on the document and shown to everyone, and the
-        write flips `thumbnail_status` away from "client_generated" -- so the
-        first reader to post one decided what every other user saw, and nobody
-        could correct it afterwards.
-        """
         self.authenticate("audit_view", "audit_view")
         buffer = io.BytesIO()
         Image.new("RGB", (48, 48)).save(buffer, format="PNG")
@@ -215,12 +199,6 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
 
 
 def _oversized_png(side):
-    """A small payload that decodes to `side`x`side` pixels.
-
-    A uniform image compresses to a few hundred KB however large its canvas,
-    which is what makes the pixel count, not the byte count, the thing an
-    upload limit fails to bound.
-    """
     buffer = io.BytesIO()
     Image.new("L", (side, side)).save(buffer, "PNG")
     return buffer.getvalue()
@@ -248,9 +226,6 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
         )
 
     def test_a_decompression_bomb_is_an_error_thumbnail_not_a_traceback(self):
-        # 16000x16000 = 256 Mpx, past PIL's 89 Mpx MAX_IMAGE_PIXELS doubled,
-        # so Image.open raises DecompressionBombError -- neither UserError nor
-        # TypeError, the only two the compute used to catch.
         document = self._create_with_content(
             "bomb.png", _oversized_png(16000), "image/png"
         )
@@ -273,7 +248,6 @@ class TestDocumentsThumbnailUndecodable(TransactionCaseDocuments):
         self.assertFalse(document.thumbnail)
 
     def test_a_decodable_image_still_gets_its_thumbnail(self):
-        """The negative control: widening the handler must not swallow success."""
         document = self._create_with_content(
             "fine.png", base64.b64decode(_png((10, 200, 10))), "image/png"
         )
@@ -319,7 +293,6 @@ class TestDocumentsThumbnailPublicUpload(HttpCase):
         self.authenticate(None, None)
         document = self._request_document()
         buffer = io.BytesIO()
-        # 16000x16000 = 256 Mpx, past PIL's MAX_IMAGE_PIXELS doubled.
         Image.new("L", (16000, 16000)).save(buffer, "PNG")
         payload = buffer.getvalue()
         self.assertLess(
@@ -338,7 +311,6 @@ class TestDocumentsThumbnailPublicUpload(HttpCase):
         self.assertEqual(document.thumbnail_status, "error")
 
     def test_the_same_route_with_a_decodable_image(self):
-        """Negative control: a 500 above would otherwise just mean a broken route."""
         self.authenticate(None, None)
         document = self._request_document()
         buffer = io.BytesIO()
@@ -372,13 +344,12 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
         Image.new(mode, (side, side)).save(buffer, "PNG")
         return (
             self.env["ir.attachment"]
-            # the context the upload controller actually uses
             .with_context(no_document=True, image_no_postprocess=True)
             .create({"name": name, "raw": buffer.getvalue(), "mimetype": "image/png"})
         )
 
     def test_an_image_past_the_resolution_bound_is_stored_but_not_previewed(self):
-        attachment = self._upload_shaped_attachment("huge.png", 8000)  # 64 Mpx
+        attachment = self._upload_shaped_attachment("huge.png", 8000)
         self.assertLess(
             len(attachment.raw),
             1024 * 1024,
@@ -399,8 +370,7 @@ class TestDocumentsThumbnailResolutionBound(TransactionCaseDocuments):
         )
 
     def test_an_ordinary_image_on_the_same_path_still_gets_a_thumbnail(self):
-        """Negative control: the bound must not swallow normal photographs."""
-        attachment = self._upload_shaped_attachment("normal.png", 2000)  # 4 Mpx
+        attachment = self._upload_shaped_attachment("normal.png", 2000)
 
         document = self.env["document.document"].create(
             {"name": "normal.png", "type": "binary", "attachment_id": attachment.id}
@@ -549,7 +519,6 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         self.assertEqual(shortcut.thumbnail_unique, document.thumbnail_unique)
 
     def test_filing_a_pdf_a_provider_holds_downloads_nothing(self):
-        # the fixtures' own images are rendered first, from their local bytes
         self.env.cr.flush()
         Attachment = type(self.env["ir.attachment"])
         read = Attachment._get_content
@@ -734,7 +703,6 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     def test_past_the_inline_cap_images_queue(self):
         self.patch(document_document_thumbnail, "INLINE_IMAGES", 2)
-        # the fixtures' own images are rendered first, outside the count
         self.env.cr.flush()
         documents = self.env["document.document"]
         for shade in range(4):
@@ -763,8 +731,6 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         self.assertEqual(document.thumbnail_status, "present")
 
     def test_a_reader_of_the_document_reads_its_thumbnail_whatever_holds_the_file(self):
-        # the file is attached to a record the reader cannot open: the
-        # thumbnail is the document's, read through it
         cron = self.env["ir.cron"].search([], limit=1)
         attachment = self.env["ir.attachment"].create(
             {

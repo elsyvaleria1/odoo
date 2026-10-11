@@ -6,7 +6,7 @@ class ResCountry(models.Model):
 
     has_foreign_fiscal_position = fields.Boolean(
         compute="_compute_has_foreign_fiscal_position"
-    )  # Caching technical field
+    )
 
     @api.depends_context("company")
     def _compute_has_foreign_fiscal_position(self) -> None:

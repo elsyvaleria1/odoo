@@ -142,8 +142,6 @@ class ResUsersEligibility(models.Model):
 
     @api.constrains("user_id", "group_id", "state")
     def _check_not_held_standing(self) -> None:
-        # an eligibility for a group the person holds anyway, directly or
-        # through a group implying it, is standing access by another name
         grants = self.env["res.users.grant"]
         for eligibility in self.filtered(lambda e: e.state == "active"):
             standing = grants.search(

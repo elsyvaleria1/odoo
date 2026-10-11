@@ -69,8 +69,6 @@ def _shape(xml: bytes) -> list[tuple]:
     return sorted(out)
 
 
-# route-untyped (E8533) as the pinned ruff fork reads it, for a controller of an
-# addon outside tests: an empty listing when every machine route is declared.
 def _route_untyped(source: str) -> str:
     controller = (
         Path(__file__).resolve().parents[4]

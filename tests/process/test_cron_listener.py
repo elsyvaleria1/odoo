@@ -58,10 +58,6 @@ def _app_label() -> str:
 
 
 def _listener_pids(label: str) -> set[int]:
-    # After arming, the backend sits idle with query=COMMIT, so LISTEN is not
-    # visible in pg_stat_activity; the NOTIFY-wake assertion is what proves the
-    # subscription. The maintenance-DB connection carrying our label is the
-    # listener (pooled ones are transient, and all belong to this server).
     with _connect_postgres() as conn:
         rows = conn.execute(
             "SELECT pid FROM pg_stat_activity "
@@ -92,8 +88,6 @@ def _mentions(handle, db_name: str) -> int:
 
 
 def _settled_mentions(handle, db_name: str) -> int:
-    # The first pass sweeps every known database immediately, so the name may
-    # already be in the log; wait for that burst to stop moving.
     count = _mentions(handle, db_name)
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:

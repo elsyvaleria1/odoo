@@ -1195,8 +1195,6 @@ class TestDetachedCopyIsolation(TransactionCase):
             copied, _Session()
         )
 
-        # the two are prepared a moment apart, so their Date headers differ
-        # whenever the second ticks between them, as does the MIME boundary
         boundary = re.compile(rb"===============\d+==")
         date = re.compile(rb"Date: [^\r\n]+")
 

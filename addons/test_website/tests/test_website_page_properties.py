@@ -14,8 +14,6 @@ class TestWebsitePageProperties(HttpCase):
         )
 
     def test_website_page_properties_website_page(self):
-        # Create a website page with a different URL to be tested for dependency
-        # tracking
         self.env["website.page"].create(
             {
                 "name": "Base",

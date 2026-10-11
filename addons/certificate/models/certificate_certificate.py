@@ -14,15 +14,6 @@ from .certificate_key import STR_TO_HASH, _get_formatted_bytes
 
 @lru_cache(maxsize=128)
 def _parse_x509_certificate(pem_bytes: bytes) -> x509.Certificate:
-    """Parse PEM-encoded certificate bytes, memoized by content.
-
-    ``_get_der_certificate_bytes``/``_get_fingerprint_bytes``/
-    ``_get_signature_bytes``/``_get_public_key_bytes`` each call
-    ``_get_parsed_certificate`` independently; a single signing flow that needs
-    several of them re-parsed the same certificate from scratch every
-    time. The cache key is the certificate's own bytes, so a changed
-    ``pem_certificate`` never returns a stale parse.
-    """
     return x509.load_pem_x509_certificate(pem_bytes)
 
 
@@ -408,10 +399,6 @@ class CertificateCertificate(models.Model):
         ]
 
     def _get_private_key_by_content(self, pem_key, company):
-        """Return a matching private key in the company, including inactive keys.
-
-        :return: ``certificate.key`` singleton, or an empty recordset
-        """
         candidates = (
             self.env["certificate.key"]
             .with_context(active_test=False)
@@ -424,17 +411,12 @@ class CertificateCertificate(models.Model):
         )[:1]
 
     def _get_parsed_certificate(self) -> x509.Certificate:
-        """Return the parsed X.509 certificate using the byte-keyed parse cache.
-
-        :rtype: x509.Certificate
-        """
         self.check_singleton()
         return _parse_x509_certificate(
             base64.b64decode(self.with_context(bin_size=False).pem_certificate)
         )
 
     def _get_issuer_rfc4514_name(self) -> str:
-        """Return the issuer's distinguished name in RFC 4514 format."""
         return self._get_parsed_certificate().issuer.rfc4514_string()
 
     def _get_der_certificate_bytes(self, formatting="encodebytes"):
@@ -450,7 +432,7 @@ class CertificateCertificate(models.Model):
         self.check_singleton()
         cert = self._get_parsed_certificate()
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(  # noqa: E8505  names the hashing algorithm a developer passed in
+            raise UserError(
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
         return _get_formatted_bytes(

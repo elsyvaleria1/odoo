@@ -93,7 +93,6 @@ class ResConfigSettings(models.TransientModel):
     )
 
     def avatax_sync_company_params(self) -> bool:
-        """Sync all the (supported) parameters that can be configured in Avatax."""
 
         def get_countries(code_list):
             uncached = set(code_list) - set(country_cache)
@@ -112,7 +111,6 @@ class ResConfigSettings(models.TransientModel):
 
         country_cache = {"*": False}
 
-        # Fetch and create the exemption codes
         existing = {
             exempt["code"]
             for exempt in self.env["avatax.exemption"].search_read(
@@ -149,7 +147,6 @@ class ResConfigSettings(models.TransientModel):
         return True
 
     def avatax_ping(self) -> dict:
-        """Test the connexion and the credentials."""
         client = self.env["mixin.account.external.tax"]._get_client(self.company_id)
         query_result = client.ping()
 

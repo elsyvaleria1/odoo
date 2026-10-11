@@ -160,7 +160,7 @@ class WizardHrApplicantSendSignRequest(models.TransientModel):
 
         for applicant in self.applicant_ids:
             for sign_template_id in sign_templates_applicant_ids:
-                sign_values.append(  # noqa: PERF401  nested-loop append reads clearer
+                sign_values.append(
                     (
                         sign_template_id,
                         applicant,
@@ -218,7 +218,7 @@ class WizardHrApplicantSendSignRequest(models.TransientModel):
                         "attachment_ids": [
                             Command.link(attachment.copy().id)
                             for attachment in self.attachment_ids
-                        ],  # Attachments may not be bound to multiple sign requests
+                        ],
                     }
                     for sign_request_values in sign_values
                 ]

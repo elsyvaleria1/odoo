@@ -147,7 +147,7 @@ class CardDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND", "REPORT", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
     def principal(self, username: str | None = None, **kw):
@@ -186,7 +186,7 @@ class CardDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND", "REPORT", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
     def addressbook_home(self, username: str | None = None, **kw):
@@ -259,10 +259,10 @@ class CardDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND", "REPORT", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
-    def addressbook_collection(self, username: str, book_id: int, **kw):  # pylint: disable=too-many-return-statements
+    def addressbook_collection(self, username: str, book_id: int, **kw):
         method = request.httprequest.method
         if method == "OPTIONS":
             return self._options()
@@ -426,10 +426,10 @@ class CardDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["GET", "HEAD", "PUT", "DELETE", "PROPFIND", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
-    def addressbook_resource(self, username: str, book_id: int, card_id: str, **kw):  # pylint: disable=too-many-return-statements
+    def addressbook_resource(self, username: str, book_id: int, card_id: str, **kw):
         method = request.httprequest.method
         if method == "OPTIONS":
             return self._options()
@@ -493,7 +493,7 @@ class CardDAVController(http.Controller):
         self._record_states(env, partner)
         return Response(body, status=200, headers=headers)
 
-    def _put_card(self, env, username, book, card_id):  # pylint: disable=too-many-return-statements
+    def _put_card(self, env, username, book, card_id):
         vcard_data = request.httprequest.data.decode("utf-8", errors="replace")
         if not vcard_data.strip():
             return Response("Bad Request", status=400)

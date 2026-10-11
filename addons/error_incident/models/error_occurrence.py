@@ -20,7 +20,6 @@ class ErrorOccurrence(models.Model):
     _order = "date_occurred desc, id desc"
     _rec_name = "occurrence_ref"
     _log_access = False
-    # Whose an occurrence is: the user who hit it.
     _access_anchors = frozendict({"owner": "user_id"})
 
     incident_id = fields.Many2one(
@@ -85,8 +84,6 @@ class ErrorOccurrence(models.Model):
     )
 
     def _own_incident(self, occurrence_ref: object) -> ErrorIncident:
-        """The incident of the caller's own occurrence ``occurrence_ref``;
-        empty while it is not written yet, or when it is someone else's."""
         if not isinstance(occurrence_ref, str) or not occurrence_ref:
             return self.env["error.incident"]
         own = self.with_privilege(
@@ -101,7 +98,6 @@ class ErrorOccurrence(models.Model):
         return own.incident_id
 
     def _gc_occurrences(self) -> None:
-        """Keep each incident's newest occurrences, and none past retention."""
         settings = self.env.registry.settings
         days = settings.get_int(self.env, RETENTION_DAYS_PARAM, 90)
         kept = settings.get_int(self.env, KEPT_PER_INCIDENT_PARAM, 50)

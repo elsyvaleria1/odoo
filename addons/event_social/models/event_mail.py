@@ -17,7 +17,6 @@ class EventMail(models.Model):
 
     @api.constrains("template_ref", "interval_type")
     def _check_interval_type(self) -> None:
-        """Cannot select "after_sub" if the notification type is "social_post"."""
         for mail in self:
             if (
                 mail.notification_type == "social_post"
@@ -40,8 +39,6 @@ class EventMail(models.Model):
         social_schedulers.notification_type = "social_post"
 
     def _execute_event_based(self, mail_slot=False):
-        # event-based social post: slot or not, just post once, based on first
-        # slot, ignore other slots
         social_schedulers = self.filtered(
             lambda scheduler: scheduler.notification_type == "social_post"
         )
@@ -68,15 +65,12 @@ class EventMail(models.Model):
                             "mail_count_done": len(scheduler.template_ref.account_ids),
                         }
                     )
-        # do not call super for social schedulers as they have their own
-        # computation for mail_done / mail_count_done; also avoid singleton errors
         remaining = self - social_schedulers
         if remaining:
             return super(EventMail, remaining)._execute_event_based(mail_slot=mail_slot)
         return None
 
     def _filter_template_ref(self):
-        """Check for valid template reference: existing, working template"""
         valid = super()._filter_template_ref()
         invalid = valid.filtered(
             lambda scheduler: (

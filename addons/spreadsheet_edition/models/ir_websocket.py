@@ -8,9 +8,6 @@ class IrWebsocket(models.AbstractModel):
     _inherit = "ir.websocket"
 
     def _bus_channels_by_name(self, names):
-        # Listening to "spreadsheet_collaborative_session:{res_model}:{res_id}"
-        # (":{access_token}" for a share) tells the server the spreadsheet is
-        # active; only who can read it gets the record channel it is sent on.
         result = super()._bus_channels_by_name(names)
         if not self.env.uid:
             return result
@@ -42,7 +39,6 @@ class IrWebsocket(models.AbstractModel):
             return None
         model = self.env[model_name]
         if model._abstract or not isinstance(model, self.pool["mixin.spreadsheet"]):
-            # Raising here would fail the whole subscription of the worker.
             _debug.logic(
                 "spreadsheet_channel_refused",
                 reason="not_a_spreadsheet",

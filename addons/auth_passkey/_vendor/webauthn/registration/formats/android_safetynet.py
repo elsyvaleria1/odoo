@@ -57,27 +57,13 @@ def verify_android_safetynet(
     pem_root_certs_bytes: List[bytes],
     verify_timestamp_ms: bool = True,
 ) -> bool:
-    """Verify an "android-safetynet" attestation statement
-
-    See https://www.w3.org/TR/webauthn-2/#sctn-android-safetynet-attestation
-
-    Notes:
-        - `verify_timestamp_ms` is a kind of escape hatch specifically for enabling
-          testing of this method. Without this we can't use static responses in unit
-          tests because they'll always evaluate as expired. This flag can be removed
-          from this method if we ever figure out how to dynamically create
-          safetynet-formatted responses that can be immediately tested.
-    """
 
     if not attestation_statement.ver:
-        # As of this writing, there is only one format of the SafetyNet response and
-        # ver is reserved for future use (so for now just make sure it's present)
         raise InvalidRegistrationResponse("Attestation statement was missing version (SafetyNet)")
 
     if not attestation_statement.response:
         raise InvalidRegistrationResponse("Attestation statement was missing response (SafetyNet)")
 
-    # Begin peeling apart the JWS in the attestation statement response
     jws = attestation_statement.response.decode("ascii")
     jws_parts = jws.split(".")
 
@@ -103,15 +89,10 @@ def verify_android_safetynet(
 
     signature_bytes_str: str = jws_parts[2]
 
-    # Verify that the nonce attribute in the payload of response is identical to the
-    # Base64 encoding of the SHA-256 hash of the concatenation of authenticatorData and
-    # clientDataHash.
 
-    # Extract attStmt bytes from attestation_object
     attestation_dict = parse_cbor(attestation_object)
     authenticator_data_bytes = attestation_dict["authData"]
 
-    # Generate a hash of client_data_json
     client_data_hash = hashlib.sha256()
     client_data_hash.update(client_data_json)
     client_data_hash_bytes = client_data_hash.digest()
@@ -122,20 +103,15 @@ def verify_android_safetynet(
             client_data_hash_bytes,
         ]
     )
-    # Start with a sha256 hash
     nonce_data_hash = hashlib.sha256()
     nonce_data_hash.update(nonce_data)
     nonce_data_hash_bytes = nonce_data_hash.digest()
-    # Encode to base64
     nonce_data_hash_bytes = base64.b64encode(nonce_data_hash_bytes)
-    # Finish by decoding to string
     nonce_data_str = nonce_data_hash_bytes.decode("utf-8")
 
     if payload.nonce != nonce_data_str:
         raise InvalidRegistrationResponse("Payload nonce was not expected value (SafetyNet)")
 
-    # Verify that the SafetyNet response actually came from the SafetyNet service
-    # by following the steps in the SafetyNet online documentation.
     x5c = [base64url_to_bytes(cert) for cert in header.x5c]
 
     if not payload.cts_profile_match:
@@ -147,7 +123,6 @@ def verify_android_safetynet(
         except ValueError as err:
             raise InvalidRegistrationResponse(f"{err} (SafetyNet)")
 
-    # Verify that the leaf certificate was issued to the hostname attest.android.com
     attestation_cert = x509.load_der_x509_certificate(x5c[0])
     cert_common_name = attestation_cert.subject.get_attributes_for_oid(
         NameOID.COMMON_NAME,
@@ -158,10 +133,7 @@ def verify_android_safetynet(
             'Certificate common name was not "attest.android.com" (SafetyNet)'
         )
 
-    # Validate certificate chain
     try:
-        # Include known root certificates for this attestation format with whatever
-        # other certs were provided
         pem_root_certs_bytes.append(globalsign_r2)
         pem_root_certs_bytes.append(globalsign_root_ca)
 
@@ -172,14 +144,12 @@ def verify_android_safetynet(
     except InvalidCertificateChain as err:
         raise InvalidRegistrationResponse(f"{err} (SafetyNet)")
 
-    # Verify signature
     verification_data = f"{jws_parts[0]}.{jws_parts[1]}".encode("utf-8")
     signature_bytes = base64url_to_bytes(signature_bytes_str)
 
     if header.alg != "RS256":
         raise InvalidRegistrationResponse(f"JWS header alg was not RS256: {header.alg} (SafetyNet")
 
-    # Get cert public key bytes
     attestation_cert_pub_key = attestation_cert.public_key()
 
     try:

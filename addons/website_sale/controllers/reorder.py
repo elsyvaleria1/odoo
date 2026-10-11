@@ -48,7 +48,6 @@ class CustomerPortal(sale_portal.CustomerPortal):
         if warnings_to_aggregate:
             order_sudo.shop_warning = "\n".join(warnings_to_aggregate)
 
-        # reported by the cart page this redirects to (@website_sale/interactions/tracking)
         request.session[ADD_TO_CART_TRACKING_KEY] = (
             request.session.get(ADD_TO_CART_TRACKING_KEY, []) + values["tracking_info"]
         )

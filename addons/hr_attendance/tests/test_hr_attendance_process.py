@@ -120,30 +120,22 @@ class TestHrAttendance(TransactionCase):
             attendance_form.save()
 
     def test_group_attendances_by_weekday(self):
-        """Attendances can be grouped by the weekday they were worked on.
-
-        `date` is stored, but nothing derived the weekday from it, so a manager
-        could not separate Saturday work from weekday work without exporting
-        and pivoting by hand.
-        """
-        # `_schedule_tz` reads the version's own `tz` ahead of the calendar's,
-        # so pinning the employee is what fixes which day `date` lands on.
         self.employee_kiosk.tz = "UTC"
         self.env["hr.attendance"].create(
             [
                 {
                     "employee_id": self.employee_kiosk.id,
-                    "check_in": "2025-08-01 08:00:00",  # a Friday
+                    "check_in": "2025-08-01 08:00:00",
                     "check_out": "2025-08-01 17:00:00",
                 },
                 {
                     "employee_id": self.employee_kiosk.id,
-                    "check_in": "2025-08-02 08:00:00",  # a Saturday
+                    "check_in": "2025-08-02 08:00:00",
                     "check_out": "2025-08-02 12:00:00",
                 },
                 {
                     "employee_id": self.employee_kiosk.id,
-                    "check_in": "2025-08-08 08:00:00",  # the next Friday
+                    "check_in": "2025-08-08 08:00:00",
                     "check_out": "2025-08-08 17:00:00",
                 },
             ]
@@ -159,8 +151,6 @@ class TestHrAttendance(TransactionCase):
         self.assertEqual(count_by_weekday, {"4": 2, "5": 1})
 
     def test_attendance_carries_the_working_schedule(self):
-        """The employee's schedule is reachable from the attendance itself, so
-        attendances can be searched and grouped by it."""
         attendance = self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee_kiosk.id,
@@ -186,11 +176,6 @@ class TestHrAttendance(TransactionCase):
         )
 
     def test_extra_hours_analysis_report(self):
-        """The Extra Hours Analysis report compiles and aggregates lines.
-
-        Extra hours were only visible one attendance at a time; there was no
-        action, and no list/pivot/graph, over `hr.attendance.overtime.line`.
-        """
         Line = self.env["hr.attendance.overtime.line"]
         action = self.env.ref("hr_attendance.hr_attendance_overtime_analysis_action")
         self.assertEqual(action.res_model, "hr.attendance.overtime.line")
@@ -228,7 +213,6 @@ class TestHrAttendance(TransactionCase):
         self.assertEqual(totals[self.employee_kiosk], 5)
 
     def test_open_the_attendance_behind_an_extra_hours_line(self):
-        """The report's row button opens the attendance the line came from."""
         attendance = self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee_kiosk.id,

@@ -6,7 +6,6 @@ from odoo import api, fields, models
 class AccountBankStatementLine(models.Model):
     _inherit = "account.bank.statement.line"
 
-    # Ensure transactions can be imported only once (if the import format provides unique transaction ids)
     unique_import_id = fields.Char(
         string="Import ID",
         copy=False,
@@ -33,9 +32,6 @@ class AccountBankStatementLine(models.Model):
         res = super()._action_view_bank_reconciliation_widget(
             extra_domain, default_context, name, kanban_first
         )
-        # Sorted for the same reason the journal's source label sorts it: every
-        # format module appends to super()'s list, so the raw order is install
-        # order, and the two places that show these formats would disagree.
         formats_list = sorted(
             self.env["account.journal"]._get_bank_statements_available_import_formats()
         )

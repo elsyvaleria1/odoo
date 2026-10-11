@@ -137,7 +137,6 @@ class MrpProductionSchedule(models.Model):
         "The combination of warehouse and product must be unique!",
     )
 
-    # TODO: move logic to mixin.stock.replenish
     @api.depends("product_id", "product_id.route_ids")
     def _compute_route_and_supplier(self) -> None:
         for mps in self:
@@ -208,15 +207,6 @@ class MrpProductionSchedule(models.Model):
     def action_view_actual_demand_details(
         self, date_str, date_start_str, date_stop_str
     ) -> dict:
-        """Open the picking list view for the actual demand for the current
-        schedule.
-
-        :param date_str: period name for the forecast sellected
-        :param date_start_str: select incoming moves after this date
-        :param date_stop_str: select incoming moves before this date
-        :return: action values that open the picking list
-        :rtype: dict
-        """
         self.check_singleton()
         date_start = fields.Date.from_string(date_start_str)
         date_stop = fields.Date.from_string(date_stop_str)
@@ -246,14 +236,6 @@ class MrpProductionSchedule(models.Model):
     def action_view_actual_replenishment_details(
         self, date_str, date_start_str, date_stop_str
     ) -> dict:
-        """Open the actual replenishment details.
-
-        :param date_str: period name for the forecast sellected
-        :param date_start_str: select incoming moves and RFQ after this date
-        :param date_stop_str: select incoming moves and RFQ before this date
-        :return: action values that open the forecast details wizard
-        :rtype: dict
-        """
         date_start = fields.Date.from_string(date_start_str)
         date_stop = fields.Date.from_string(date_stop_str)
         domain_moves = self._get_domain_moves(date_start, date_stop, "incoming")
@@ -289,19 +271,6 @@ class MrpProductionSchedule(models.Model):
         }
 
     def action_replenish(self, based_on_lead_time=False):
-        """Run the procurement for production schedule in self. Once the
-        procurements are launched, mark the forecast as launched (only used
-        for state 'to_relaunch')
-
-        :param based_on_lead_time: 2 replenishment options exists in MPS.
-        based_on_lead_time means that the procurement for self will be launched
-        based on lead times.
-        e.g. period are daily and the product have a manufacturing period
-        of 5 days, then it will try to run the procurements for the 5 first
-        period of the schedule.
-        If based_on_lead_time is False then it will run the procurement for the
-        first period that need a replenishment
-        """
         production_schedules_to_replenish = self.filtered(
             lambda p: p.replenish_trigger != "never"
         )
@@ -321,8 +290,6 @@ class MrpProductionSchedule(models.Model):
             production_schedule_state = production_schedule_states[
                 production_schedule.id
             ]
-            # Check for kit. If a kit and its component are both in the MPS we want to skip the
-            # the kit procurement but instead only refill the components not in MPS
             bom = self.env["mrp.bom"]._get_bom_by_product(
                 production_schedule.product_id,
                 company_id=production_schedule.company_id.id,
@@ -352,10 +319,6 @@ class MrpProductionSchedule(models.Model):
                     "mps_kit_expanded", bom=bom.id, procured=len(product_ratio)
                 )
 
-            # Cells with values 'to_replenish' means that they are based on
-            # lead times. There is at maximum one forecast by schedule with
-            # 'forced_replenish', it's the cell that need a modification with
-            #  the smallest start date.
             replenishment_field = (
                 based_on_lead_time and "to_replenish"
             ) or "forced_replenish"
@@ -439,18 +402,6 @@ class MrpProductionSchedule(models.Model):
     def get_mps_view_state(
         self, domain=False, offset=0, limit=False, period_scale=False
     ) -> dict:
-        """Return the global information about MPS and a list of production
-        schedules values with the domain.
-
-        :param domain: domain for mrp.production.schedule
-        :return: values used by the client action in order to render the MPS.
-            - dates: list of period name
-            - production_schedule_ids: list of production schedules values
-            - manufacturing_period: list of periods (days, months or years)
-            - company_id: user current company
-            - groups: company settings that hide/display different rows
-        :rtype: dict
-        """
         productions_schedules = self.env["mrp.production.schedule"].search(
             domain or [], offset=offset, limit=limit
         )
@@ -489,10 +440,8 @@ class MrpProductionSchedule(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """If the BoM is pass at the creation, create MPS for its components"""
         existing_mps = []
         for i, vals in enumerate(vals_list):
-            # Allow to add components of a BoM for MPS already created
             if vals.get("bom_id"):
                 mps = self.search(
                     [
@@ -565,19 +514,6 @@ class MrpProductionSchedule(models.Model):
         return mps
 
     def _update_mps_sequence(self) -> None:
-        """Determine the sequence of the new MPS records as well as any existing record they impact.
-        Will parse the indirect_demand_trees for each record and see at what level the corresponding product is found.
-        The final order will be as follow:
-        - final product 1
-        - final product 2
-        - final product 3
-            - semi-finished product 1
-            - semi-finished product 2
-            - semi-finished product 3
-                - component 1
-                - component 2
-                - component 3
-        """
         schedules_to_compute = self._get_impacted_schedule() | self
         indirect_demand_trees = schedules_to_compute._get_indirect_demand_tree()
 
@@ -601,31 +537,6 @@ class MrpProductionSchedule(models.Model):
     def get_production_schedule_view_state(
         self, period_scale=False, use_all_schedules=False
     ) -> list:
-        """Prepare and returns the fields used by the MPS client action.
-        For each schedule returns the fields on the model. And prepare the cells
-        for each period depending the manufacturing period set on the company.
-        The forecast cells contains the following information:
-        - forecast_qty: Demand forecast set by the user
-        - date_start: First day of the current period
-        - date_stop: Last day of the current period
-        - replenish_qty: The quantity to replenish for the current period. It
-        could be computed or set by the user.
-        - replenish_qty_updated: The quantity to replenish has been set manually
-        by the user.
-        - starting_inventory_qty: During the first period, the quantity
-        available. After, the safety stock from previous period.
-        - qty_incoming: The incoming moves and RFQ for the specified product and
-        warehouse during the current period.
-        - qty_outgoing: The direct outgoing moves quantity (i.e. from SOs).
-        - indirect_outgoing_qty: The indirect outgoing moves quantity (i.e. from MOs and
-        moves going to subcontracting locations).
-        - indirect_demand_qty: On manufacturing a quantity to replenish could
-        require a need for a component in another schedule. e.g. 2 product A in
-        order to create 1 product B. If the replenish quantity for product B is
-        10, it will need 20 product A.
-        - safety_stock_qty:
-        starting_inventory_qty - forecast_qty - indirect_demand_qty + replenish_qty
-        """
         company_id = self.env.company
         _debug.perf.count("mps_view_state", schedules=self)
         date_range = company_id._get_date_range(force_period=period_scale)
@@ -636,25 +547,18 @@ class MrpProductionSchedule(models.Model):
             years=2, force_period=period_scale
         )
 
-        # We need to get the schedule that impact the schedules in self. Since
-        # the state is not saved, it needs to recompute the quantity to
-        # replenish of finished products. It will modify the indirect
-        # demand and replenish_qty of schedules in self.
         schedules_to_compute = (
             self._get_impacted_schedule()
             if use_all_schedules
             else self._get_impacted_parent_schedules()
         ) | self
 
-        # Dependencies between schedules
         indirect_demand_trees = schedules_to_compute._get_indirect_demand_tree()
 
         indirect_ratio_mps = schedules_to_compute._get_indirect_demand_ratio_mps(
             indirect_demand_trees
         )
 
-        # Get the schedules that do not depends from other in first position in
-        # order to compute the schedule state only once.
         indirect_demand_order = schedules_to_compute._get_indirect_demand_order(
             indirect_demand_trees
         )
@@ -687,12 +591,8 @@ class MrpProductionSchedule(models.Model):
             mps["id"]: mps for mps in production_schedule_states
         }
         for production_schedule in indirect_demand_order:
-            # Bypass if the schedule is only used in order to compute indirect
-            # demand.
             rounding = production_schedule.product_id.uom_id.rounding
             lead_time = production_schedule._get_lead_times()
-            # Ignore "Days to Supply Components" when set demand for components since it's normally taken care by the
-            # components themselves
             lead_time_ignore_components = (
                 lead_time - production_schedule.bom_id.days_to_prepare_mo
             )
@@ -785,10 +685,10 @@ class MrpProductionSchedule(models.Model):
                 forecast_values["forecast_qty"] = float_round(
                     sum(existing_forecasts.mapped("forecast_qty")),
                     precision_rounding=rounding,
-                )  # will be 0 if no existing forecast
+                )
                 forecast_values["replenish_qty_updated"] = any(
                     existing_forecasts.mapped("replenish_qty_updated")
-                )  # will be False if no existing forecast
+                )
                 forecast_values["qty_incoming"] = float_round(
                     qty_incoming.get(key, 0.0) + incoming_qty_done.get(key, 0.0),
                     precision_rounding=rounding,
@@ -833,7 +733,6 @@ class MrpProductionSchedule(models.Model):
                 starting_inventory_qty = forecast_values["safety_stock_qty"]
                 if not forecast_values["replenish_qty"]:
                     continue
-                # Set the indirect demand qty for children schedules.
                 for product, ratio in indirect_ratio_mps[
                     (production_schedule.warehouse_id, production_schedule.product_id)
                 ].items():
@@ -900,8 +799,6 @@ class MrpProductionSchedule(models.Model):
                         ) - subproduct_indirect_demand
 
             if production_schedule in self:
-                # The state is computed after all because it needs the final
-                # quantity to replenish.
                 forecasts_state = production_schedule._get_forecasts_state(
                     production_schedule_states_by_id, date_range, procurement_date
                 )
@@ -911,8 +808,6 @@ class MrpProductionSchedule(models.Model):
                         forecast_state
                     )
 
-                # The purpose is to hide indirect demand row if the schedule do not
-                # depends from another.
                 has_indirect_demand = any(
                     forecast["indirect_demand_qty"] != 0
                     for forecast in production_schedule_state["forecast_ids"]
@@ -932,17 +827,10 @@ class MrpProductionSchedule(models.Model):
         ]
 
     def _get_impacted_parent_schedules(self, domain=None):
-        """
-        Return all the parent (supplying) schedules of self, i.e.,
-        all the schedules where the product needs a product of self as (sub-)component.
-        """
         if domain is None:
             domain = []
 
         def _used_in_bom(products, related_products):
-            """Bottom up from bom line to finished products in order to get
-            all the finished products that use 'products' as component.
-            """
             if not products:
                 return related_products
             boms = products.bom_line_ids.mapped("bom_id")
@@ -972,17 +860,10 @@ class MrpProductionSchedule(models.Model):
         )
 
     def _get_impacted_child_schedules(self, domain=None):
-        """
-        Return all the children (supplied) schedules of self, i.e.,
-        all the schedules where the product is (sub-)component of a product of self.
-        """
         if domain is None:
             domain = []
 
         def _use_boms(products, related_products):
-            """Explore bom line from products's BoMs in order to get components
-            used.
-            """
             if not products:
                 return related_products
             components = products.mapped(
@@ -1014,29 +895,9 @@ class MrpProductionSchedule(models.Model):
         )
 
     def get_impacted_schedule(self, domain=False):
-        """
-        Like `_get_impacted_schedule`, but returns a list of ids instead
-        to be used by the web client.
-
-        See `_get_impacted_schedule` for more details.
-
-        :param domain: Filter supplied and supplying schedules with the domain
-        :return: ids of supplied and supplying schedules
-        :rtype: list[int]
-        """
         return self._get_impacted_schedule(domain).ids
 
     def _get_impacted_schedule(self, domain=False):
-        """
-        When the user modify the demand forecast on a schedule. The new
-        replenish quantity is computed from schedules that use the product in
-        self as component (no matter at which BoM level). It will also modify
-        the replenish quantity on self that will impact the schedule that use
-        the product in self as a finished product.
-
-        :param domain: Filter supplied and supplying schedules with the domain
-        :return: Records of supplied and supplying schedules
-        """
         if not domain:
             domain = []
 
@@ -1045,11 +906,6 @@ class MrpProductionSchedule(models.Model):
         return supplying_mps | supplied_mps
 
     def remove_replenish_qty(self, date_index, period_scale=False) -> bool:
-        """Remove the quantity to replenish on the forecast cell.
-
-        param date_index: index of the period used to find start and stop date
-        where the manual replenish quantity should be remove.
-        """
         date_start, date_stop = self.company_id._get_date_range(
             force_period=period_scale
         )[date_index]
@@ -1065,12 +921,6 @@ class MrpProductionSchedule(models.Model):
         return True
 
     def set_forecast_qty(self, date_index, quantity, period_scale=False) -> bool:
-        """Save the forecast quantity:
-
-        params quantity: The new total forecasted quantity
-        params date_index: The manufacturing period
-        """
-        # Get the last date of current period
         self.check_singleton()
         date_start, date_stop = self.company_id._get_date_range(
             force_period=period_scale
@@ -1119,12 +969,6 @@ class MrpProductionSchedule(models.Model):
         return True
 
     def set_replenish_qty(self, date_index, quantity, period_scale=False) -> bool:
-        """Save the replenish quantity and mark the cells as manually updated.
-
-        params quantity: The new quantity to replenish
-        params date_index: The manufacturing period
-        """
-        # Get the last date of current period
         self.check_singleton()
         date_start, date_stop = self.company_id._get_date_range(
             force_period=period_scale
@@ -1180,11 +1024,6 @@ class MrpProductionSchedule(models.Model):
         ]
 
     def _prepare_procurement_extra_vals(self, forecast_values) -> ValuesType:
-        """Extra values that could be added in the vals for procurement.
-
-        return values pass to the procurement run method.
-        rtype dict
-        """
         values = {
             "date_planned": forecast_values["date_start"],
             "warehouse_id": self.warehouse_id,
@@ -1200,29 +1039,6 @@ class MrpProductionSchedule(models.Model):
     def _get_forecasts_state(
         self, production_schedule_states, date_range, procurement_date
     ):
-        """Return the state for each forecast cells.
-        - to_relaunch: A procurement has been launched for the same date range
-        but a replenish modification require a new procurement.
-        - to_correct: The actual replenishment is greater than planned, the MPS
-        should be updated in order to match reality.
-        - launched: Nothing to do. Either the cell is in the lead time range but
-        the forecast match the actual replenishment. Or a forced replenishment
-        happens but the forecast and the actual demand still the same.
-        - to_launch: The actual replenishment is lower than forecasted.
-
-        It also add a tag on cell in order to:
-        - to_replenish: The cell is to launch and it needs to be runned in order
-        to arrive on time due to lead times.
-        - forced_replenish: Cell to_launch or to_relaunch with the smallest
-        period
-
-        param production_schedule_states: schedules with a state to compute
-        param date_range: list of period where a state should be computed
-        param procurement_date: today + lead times for products in self
-        return: the state for each time slot in date_range for each schedule in
-        production_schedule_states
-        rtype: dict
-        """
         forecasts_state = defaultdict(list)
         for production_schedule in self:
             forecast_values = production_schedule_states[production_schedule.id][
@@ -1275,9 +1091,6 @@ class MrpProductionSchedule(models.Model):
         return forecasts_state
 
     def _get_lead_times(self):
-        """Get the lead time for each product in self. The lead times are
-        based on rules lead times + produce delay or supplier info delay.
-        """
         rules = self.product_id._get_rules_from_location(
             self.warehouse_id.lot_stock_id, route_ids=self.route_id
         )
@@ -1285,24 +1098,16 @@ class MrpProductionSchedule(models.Model):
         return delays["total_delay"]
 
     def _get_replenish_qty(self, after_forecast_qty):
-        """Modify the quantity to replenish depending the minimum and targeted
-        quantity for safety stock.
-
-        param after_forecast_qty: The quantity to replenish in order to reach a
-        safety stock of 0.
-        return: quantity to replenish
-        rtype: float
-        """
         optimal_qty = self.forecast_target_qty - after_forecast_qty
 
         if optimal_qty <= 0:
-            by = "target_reached"  # debuglog
+            by = "target_reached"
             replenish_qty = 0
         elif optimal_qty < self.min_to_replenish_qty:
-            by = "minimum_floor"  # debuglog
+            by = "minimum_floor"
             replenish_qty = self.min_to_replenish_qty
         else:
-            by = "optimal"  # debuglog
+            by = "optimal"
             replenish_qty = optimal_qty
 
         _debug.logic(
@@ -1316,17 +1121,10 @@ class MrpProductionSchedule(models.Model):
         return replenish_qty
 
     def _get_incoming_qty(self, date_range) -> tuple:
-        """Get the incoming quantity from RFQ and existing moves.
-
-        param: list of time slots used in order to group incoming quantity.
-        return: a dict with as key a production schedule and as values a list
-        of incoming quantity for each date range.
-        """
         qty_incoming = defaultdict(float)
         incoming_qty_done = defaultdict(float)
         after_date = date_range[0][0]
         before_date = date_range[-1][1]
-        # Get quantity in RFQ
         rfq_domain = self._get_domain_rfq(after_date, before_date)
         rfq_lines_date_planned = self._get_rfq_and_planned_date(
             rfq_domain, order="date_commitment"
@@ -1334,13 +1132,8 @@ class MrpProductionSchedule(models.Model):
         rfq_lines_date_planned = sorted(rfq_lines_date_planned, key=lambda i: i[1])
         index = 0
         for line, date_planned in rfq_lines_date_planned:
-            # There are cases when we want to consider rfq_lines where their date_planned occurs before the after_date
-            # if lead times make their stock arrive at a relevant time. Therefore we need to ignore the lines that have
-            # date_planned + lead time < after_date
             if date_planned < after_date:
                 continue
-            # Skip to the next time range if the planned date is not in the
-            # current time interval.
 
             while not (
                 date_range[index][0] <= date_planned
@@ -1356,9 +1149,6 @@ class MrpProductionSchedule(models.Model):
                 line.order_id.picking_type_id.warehouse_id,
             ] += quantity
 
-        # Get quantity on incoming moves
-        # TODO: issue since it will use one search by move. Should use a
-        # read_group with a group by location.
         domain_moves = self._get_domain_moves(after_date, before_date, "incoming")
         stock_moves_and_date = self._get_moves_and_date(domain_moves)
         stock_moves_and_date = sorted(stock_moves_and_date, key=lambda m: m[1])
@@ -1366,8 +1156,6 @@ class MrpProductionSchedule(models.Model):
         for move, date in stock_moves_and_date:
             if date < after_date or date > before_date:
                 continue
-            # Skip to the next time range if the planned date is not in the
-            # current time interval.
             while not (date_range[index][0] <= date and date_range[index][1] >= date):
                 index += 1
             key = (
@@ -1383,13 +1171,6 @@ class MrpProductionSchedule(models.Model):
         return qty_incoming, incoming_qty_done
 
     def _get_indirect_demand_order(self, indirect_demand_trees):
-        """return a new order for record in self. The order returned ensure
-        that the indirect demand from a record in the set could only be modified
-        by a record before it. The purpose of this function is to define the
-        states of multiple schedules only once by schedule and avoid to
-        recompute a state because its indirect demand was a depend from another
-        schedule.
-        """
         product_ids = self.mapped("product_id")
 
         def _get_pre_order(node):
@@ -1419,9 +1200,6 @@ class MrpProductionSchedule(models.Model):
         return mps_order
 
     def _get_indirect_demand_ratio_mps(self, indirect_demand_trees):
-        """Return {(warehouse, product): {product: ratio}} dict containing the indirect ratio
-        between two products.
-        """
         by_warehouse_mps = defaultdict(lambda: self.env["mrp.production.schedule"])
         for mps in self:
             by_warehouse_mps[mps.warehouse_id] |= mps
@@ -1447,13 +1225,13 @@ class MrpProductionSchedule(models.Model):
                     ][child.product] += ratio * child.ratio
                     if (
                         child.product in subtree_visited
-                    ):  # Don't visit the same subtree twice
+                    ):
                         continue
                     subtree_visited.add(child.product)
                     _dfs_ratio_search(
                         warehouse_id, mps_products, subtree_visited, child, 1.0
                     )
-                else:  # Hidden Bom => continue DFS and set node_indirect
+                else:
                     _dfs_ratio_search(
                         warehouse_id,
                         mps_products,
@@ -1478,18 +1256,6 @@ class MrpProductionSchedule(models.Model):
         return result
 
     def _get_indirect_demand_tree(self):
-        """Get the tree architecture for all the BoM and BoM line that are
-        related to production schedules in self. The purpose of the tree:
-        - Easier traversal than with BoM and BoM lines.
-        - Allow to determine the schedules evaluation order. (compute the
-        schedule without indirect demand first)
-        It also made the link between schedules even if some intermediate BoM
-        levels are hidden. (e.g. B1 -1-> B2 -1-> B3, schedule for B1 and B3
-        are linked even if the schedule for B2 does not exist.)
-        Return a list of namedtuple that represent on top the schedules without
-        indirect demand and on lowest leaves the schedules that are the most
-        influenced by the others.
-        """
         bom_by_product = self.env["mrp.bom"]._get_bom_by_product(self.product_id)
 
         class Node(NamedTuple):
@@ -1534,15 +1300,11 @@ class MrpProductionSchedule(models.Model):
         return list(indirect_demand_trees.values())
 
     def _get_domain_moves(self, date_start, date_stop, type):
-        """Return domain for incoming or outgoing moves"""
         if not self:
             return [("id", "=", False)]
         location = (type == "incoming" and "location_dest_id") or "location_id"
         location_dest = (type == "incoming" and "location_id") or "location_dest_id"
 
-        # In case of delivery in multi-steps, the real outgoing move does not exist
-        # before confirming the previous moves (pick and/or pack), so we must use
-        # that/those move(s) instead but only once.
         warehouse_view_location_ids = self.mapped("warehouse_id.view_location_id").ids
         if type == "outgoing":
             sub_dest_domain = [
@@ -1638,37 +1400,20 @@ class MrpProductionSchedule(models.Model):
         return res_moves
 
     def _get_outgoing_qty(self, date_range) -> tuple:
-        """Get the outgoing quantity from existing moves.
-        return a dict with as key a production schedule and as values a list
-        of outgoing quantity for each date range.
-
-        param: date_range: list of time slots used in order to group outgoing quantity.
-        return:
-            qty_outgoing: {(date_range, product, warehouse): qty} for direct and not done moves
-            outgoing_qty_done: {(date_range, product, warehouse): qty} for direct and done moves
-            indirect_outgoing_qty: {(date_range, product, warehouse): qty} for indirect and not done moves
-            indirect_outgoing_qty_done: {(date_range, product, warehouse): qty} for indirect and done moves
-        """
         qty_outgoing = defaultdict(float)
         outgoing_qty_done = defaultdict(float)
         indirect_outgoing_qty = defaultdict(float)
         indirect_outgoing_qty_done = defaultdict(float)
         after_date = date_range[0][0]
         before_date = date_range[-1][1]
-        # Get quantity on incoming moves
 
         domain_moves = self._get_domain_moves(after_date, before_date, "outgoing")
         stock_moves_by_date = self._get_moves_and_date(domain_moves)
         stock_moves_by_date = sorted(stock_moves_by_date, key=lambda m: m[1])
         index = 0
         for move, date in stock_moves_by_date:
-            # There are cases when we want to consider moves where their (scheduled) date occurs before the after_date
-            # if lead times make their stock delivery at a relevant time. Therefore we need to ignore the lines that have
-            # date + lead time < after_date. Similar logic with before_date
             if date < after_date or date > before_date:
                 continue
-            # Skip to the next time range if the planned date is not in the
-            # current time interval.
             while not (date_range[index][0] <= date and date_range[index][1] >= date):
                 index += 1
             key = (date_range[index], move.product_id, move.location_id.warehouse_id)
@@ -1694,12 +1439,6 @@ class MrpProductionSchedule(models.Model):
         )
 
     def _get_domain_rfq(self, date_start, date_stop):
-        """Return a domain used to compute the incoming quantity for a given
-        product/warehouse/company.
-
-        :param date_start: start date of the forecast domain
-        :param date_stop: end date of the forecast domain
-        """
         if not self:
             return Domain.FALSE
         groupby_delay = defaultdict(list)

@@ -14,25 +14,15 @@ class DPOController(http.Controller):
 
     @http.route(_return_url, type="http", auth="public", methods=["GET"])
     def dpo_return_from_checkout(self, **data):
-        """Process the payment data sent by DPO after redirection.
-
-        :param dict data: The payment data.
-        """
         _logger.info(
             "Handling redirection from DPO with data:\n%s", pprint.pformat(data)
         )
         self._check_and_process(data)
 
-        # Redirect the user to the status page.
         return request.redirect("/payment/status")
 
     @staticmethod
     def _check_and_process(data):
-        """Verify and process the payment data sent by DPO.
-
-        :param dict data: The payment data.
-        :return: None
-        """
         tx_sudo = (
             request.env["payment.transaction"].sudo()._search_by_reference("dpo", data)
         )
@@ -40,7 +30,6 @@ class DPOController(http.Controller):
             return
 
         try:
-            # Verify the payment data.
             payload = (
                 f'<?xml version="1.0" encoding="utf-8"?>'
                 f"<API3G>"

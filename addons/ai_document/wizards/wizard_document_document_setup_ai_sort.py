@@ -22,7 +22,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
                 limit=1,
             )
             if existing_ir_action:
-                # The folder is auto-sorted
                 _debug.logic(
                     "sort_wizard", by="existing_rule", folder=values["folder_id"]
                 )
@@ -36,7 +35,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
                 ]
                 return values
 
-            # By default, add all pinned action that can be used as AI tools
             folder = self.env["document.document"].browse(values["folder_id"])
             tool_actions = self._get_folder_actions(folder)
 
@@ -80,7 +78,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
         compute="_compute_allowed_tools_ids",
     )
 
-    # UI fields
     model = fields.Char(compute="_compute_ui_fields")
     relation = fields.Char(compute="_compute_ui_fields")
     is_ai_sort_prompt_set = fields.Boolean(
@@ -89,8 +86,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
     )
 
     def _compute_ui_fields(self) -> None:
-        # Because the widget is generic for all models / fields
-        # we simply create "UI" field instead of overwriting the widget
         self.model = "document.document"
         self.relation = "document.document"
 
@@ -125,7 +120,6 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
         self.folder_id._ai_setup_sort_actions(self.ai_tool_ids.ids)
 
     def _get_folder_actions(self, folder):
-        """Return the actions that can be turned into AI tools."""
         embedded_server_actions = (
             self.env["document.document"]
             ._get_folder_embedded_actions(folder.ids)
@@ -138,7 +132,5 @@ class WizardDocumentDocumentSetupAiSort(models.TransientModel):
         tool_actions = embedded_server_actions.action_id.filtered(
             lambda a: a.type == "ir.actions.server"
         )
-        # Convert the `ir.actions.actions` to `ir.actions.server`
-        # (those models share the same ids index, see `base/data/base_data.sql`)
         tool_actions = self.env["ir.actions.server"].browse(tool_actions.ids)
         return tool_actions.filtered("ai_tool_is_candidate").filtered("use_in_ai")

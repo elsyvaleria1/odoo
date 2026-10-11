@@ -27,9 +27,6 @@ class ProductTemplate(models.Model):
             loyalty_product_tmpl_ids - already_loaded_product_tmpl_ids
         )
 
-        # through _load_pos_data_read, not a bare read: the rows super() returned
-        # have had their image flagged, their prices converted and their archived
-        # combinations attached, and rows appended after it must match
         missing_product_templates = self.env["product.template"]._load_pos_data_read(
             self.env["product.template"].browse(missing_product_tmpl_ids), config
         )
@@ -38,13 +35,11 @@ class ProductTemplate(models.Model):
         ].browse(already_loaded_product_tmpl_ids)
 
         if self.env.context.get("pos_limited_loading", True):
-            # Filter out products that can be loaded in the PoS but are not loaded yet
             product_ids_to_hide -= product_ids_to_hide.filtered_domain(
                 self._load_pos_data_domain(data, config)
             )
 
         read_data.extend(missing_product_templates)
-        # a partial load without the config has no config row to complete
         if not data.get("pos.config"):
             return read_data
         config_data = data["pos.config"][0]
@@ -52,7 +47,6 @@ class ProductTemplate(models.Model):
             product_ids_to_hide.product_variant_id.ids
         )
 
-        # Identify special loyalty products (e.g., gift cards, e-wallets) to be displayed in the POS
         loyality_products = config.get_record_by_ref(
             [
                 "loyalty.gift_card_product_50",
@@ -60,7 +54,6 @@ class ProductTemplate(models.Model):
             ]
         )
         special_display_products = self.env["product.product"].browse(loyality_products)
-        # Include trigger products from loyalty programs of type 'gift_card' or 'ewallet'
         special_display_products += (
             self.env["loyalty.program"]
             .search(

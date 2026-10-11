@@ -39,7 +39,7 @@ class ResCompany(models.Model):
                                 "code",
                                 "in",
                                 ("TAX", "TRTRN"),
-                            ),  # TRTRN for Backward compatibility
+                            ),
                             ("type", "=", "general"),
                         ],
                         limit=1,
@@ -115,7 +115,7 @@ class ResCompany(models.Model):
         self.check_singleton()
 
         current = self.sudo()
-        same_vat_branch_ids = [current.id]  # Current is always available
+        same_vat_branch_ids = [current.id]
         current_strict_parents = current.parent_ids - current
         if accessible_only:
             candidate_branches = current.root_id._get_accessible_branches()

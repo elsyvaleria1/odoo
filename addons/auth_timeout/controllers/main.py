@@ -12,11 +12,8 @@ class AuthTimeOutController(http.Controller):
         check_identity=False,
     )
     def check_identity(self, redirect=None):
-        """Display the authentication form in a page. Used when an HTTP call raises a `CheckIdentityException`."""
         return request.render("auth_timeout.check_identity", {"redirect": redirect})
 
-    # Cannot be readonly because checking the identity can lead to some data being written
-    # e.g. totp rate limit during a totp by mail
     @http.route(
         "/auth-timeout/session/check-identity",
         type="jsonrpc",
@@ -24,7 +21,6 @@ class AuthTimeOutController(http.Controller):
         check_identity=False,
     )
     def check_identity_session(self, **kwargs):
-        """JSON route used to receive the authentication form sent by the user."""
         return request.env["ir.http"]._check_identity(kwargs)
 
     @http.route(
@@ -34,5 +30,4 @@ class AuthTimeOutController(http.Controller):
         check_identity=False,
     )
     def send_totp_mail_code(self):
-        """JSON route to trigger the sending of the TOTP code by email when requested by the user in the interface."""
         self.env.user._send_totp_mail_code()

@@ -53,7 +53,6 @@ class MarketingActivity(models.Model):
         return super()._get_activity_executors() | {"sms": self._execute_sms}
 
     def _execute_sms(self, traces) -> bool:
-        # we only allow to continue if the user has sufficient rights, as a sudo() follows
         if not self.env.is_superuser() and not self.env.user.has_group(
             "marketing_automation.group_marketing_automation_user"
         ):

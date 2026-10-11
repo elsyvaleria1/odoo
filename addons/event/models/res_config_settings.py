@@ -51,23 +51,18 @@ class ResConfigSettings(models.TransientModel):
 
     @api.depends("use_google_maps_static_api")
     def _compute_google_maps_static_api_key(self) -> None:
-        """Clear API key on disabling google maps."""
         for config in self:
             if not config.use_google_maps_static_api:
                 config.google_maps_static_api_key = ""
 
     @api.depends("use_google_maps_static_api")
     def _compute_google_maps_static_api_secret(self) -> None:
-        """Clear API secret on disabling google maps."""
         for config in self:
             if not config.use_google_maps_static_api:
                 config.google_maps_static_api_secret = ""
 
     @api.onchange("module_website_event_track")
     def _onchange_module_website_event_track(self) -> None:
-        """Reset sub-modules, otherwise you may have track to False but still
-        have track_live or track_quiz to True, meaning track will come back due
-        to dependencies of modules."""
         for config in self:
             if not config.module_website_event_track:
                 config.module_website_event_track_live = False

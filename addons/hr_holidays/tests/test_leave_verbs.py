@@ -5,8 +5,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 from odoo.tools.authority_keys import strip_authority_keys
 
-# row, persona, model, validation type, whose record, state, verb: a cell the
-# row alone grants, so switching the row off takes exactly that move away
 ROW_CELLS = [
     line.split()
     for line in """
@@ -134,8 +132,6 @@ class TestLeaveVerbs(TransactionCase):
             mute_logger("odoo.addons.base.models.ir_access"),
             self.assertRaises(AccessError),
         ):
-            # a time-off approver does not validate what an officer validates,
-            # even by writing the state
             leave.with_user(self.users["manager"]).with_context(
                 leave_fast_create=True
             ).write({"state": "validate"})
@@ -143,8 +139,6 @@ class TestLeaveVerbs(TransactionCase):
             mute_logger("odoo.addons.base.models.ir_access"),
             self.assertRaises(AccessError),
         ):
-            # a context a client can send skips the leave's own check, and no
-            # longer the verb
             leave.with_user(self.users["employee"]).with_context(
                 leave_fast_create=True
             ).write({"state": "validate"})

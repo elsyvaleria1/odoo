@@ -1,8 +1,5 @@
 from odoo.tests import TransactionCase, tagged
 
-# Which lot each demo bill line is about, straight from the demo file. The
-# line's `asset_id` is a resource.resource, so the demo resolves it by searching
-# on the asset's lot — this pins that every line landed on its own lot's asset.
 LINE_TO_LOT = {
     "bill_line_fuel_civic_001": "stock_lot_civic_001",
     "bill_line_fuel_f150_001": "stock_lot_f150_001",

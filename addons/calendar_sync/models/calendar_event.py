@@ -40,8 +40,6 @@ class CalendarEvent(models.Model):
             event.calendar_sync_linked = event.id in linked
 
     def _skip_send_mail_status_update(self):
-        """A provider the event goes out through invites its attendees itself:
-        through its organizer, or the current user when it has none."""
         sender = self.user_id or self.env.user
         if any(
             sender._calendar_sync_active(code)

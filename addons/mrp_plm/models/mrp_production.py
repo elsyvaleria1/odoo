@@ -24,37 +24,31 @@ class MrpProduction(models.Model):
     def _compute_latest_bom_id(self) -> None:
         self.latest_bom_id = False
         mo_ids_without_latest_bom = []
-        # check if the bom has a new version
         for mo in self:
-            if not mo.bom_id or not mo.id:  # Avoid MO who wasn't saved yet.
+            if not mo.bom_id or not mo.id:
                 continue
             if not mo.bom_id.active:
                 mo.latest_bom_id = mo.bom_id._get_active_version()
             if not mo.latest_bom_id:
                 mo_ids_without_latest_bom.append(mo.id)
-        # Checks if the MO has some component move from an outdated BoM (can happen with exploded kit).
         mos_with_component_from_outdated_kit = self.search(
             [
                 ("id", "in", mo_ids_without_latest_bom),
                 ("move_raw_ids.bom_line_id.bom_id.active", "=", False),
             ]
         )
-        # For these MOs, we assign their current BoM as the latest one in the purpose to enable the
-        # "Update BoM" action on these MOs, that way, the raw moves from a kit will be recreated
-        # from the active version of their BoM.
         for mo in mos_with_component_from_outdated_kit:
             mo.latest_bom_id = mo.bom_id
 
     def action_create_eco(self):
         self.check_singleton()
-        if not self.bom_id:  # Can't do anything if no BoM.
+        if not self.bom_id:
             _debug.logic("eco_create_refused", reason="no_bom", production=self.id)
             raise UserError(
                 self.env._(
                     "Cannot create an ECO if the Manufacturing Order doesn't use a Bill of Materials"
                 )
             )
-        # Tries to retrieves "Bill of Materials" ECO type.
         eco_type = self.env.ref("mrp_plm.ecotype_bom_update", raise_if_not_found=False)
         if not eco_type:
             eco_type = self.env["mrp.eco.type"].sudo().search([], limit=1)
@@ -93,7 +87,7 @@ class MrpProduction(models.Model):
             action["domain"] = [("id", "in", self.eco_ids.ids)]
             action["views"].insert(
                 0, action["views"].pop(1)
-            )  # Place list view in first position.
+            )
         return action
 
     def action_update_bom(self) -> None:
@@ -112,16 +106,8 @@ class MrpProduction(models.Model):
         super(MrpProduction, productions_without_latest_bom).action_update_bom()
 
     def _create_revision_bom(self, will_update_version=True):
-        """Compares the MO's components, by-products and workorders with its BoM's lines,
-        by-products and operations to create and return a new BoM that copies the MO's BoM but
-        includes the changes, deletions and additions made in the MO.
-
-        :param bool will_update_version: bump the BoM version on the copy
-        :return: the newly created BoM, or False if the production has no BoM
-        :rtype: mrp.bom | bool
-        """
         self.check_singleton()
-        if not self.bom_id:  # Can't do anything if no BoM.
+        if not self.bom_id:
             return False
         ratio = self._get_ratio_between_mo_and_bom_quantities(self.bom_id)
         revision_bom_lines_vals, revision_byproduct_vals, revision_operations_vals = (

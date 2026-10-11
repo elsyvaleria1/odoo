@@ -91,9 +91,6 @@ class WizardAccountJournalTopup(models.TransientModel):
 
     @api.model
     def _create_from_funding_instructions(self, fi_object) -> Self:
-        """Set up the displayed data according to the `funding_instruction` object sent by Stripe
-        This also creates a partner and banking information for Stripe so it can be reused
-        """
         currency = self.env["res.currency"].search(
             [("name", "ilike", fi_object["currency"])], limit=1
         )
@@ -127,7 +124,6 @@ class WizardAccountJournalTopup(models.TransientModel):
                 )
             )
 
-        # Search or create the partner
         partner_bank = self.env["res.partner.bank.account"].search(
             domain=[("acc_number", "=", financial_address["iban"])],
             limit=1,
@@ -236,7 +232,6 @@ class WizardAccountJournalTopup(models.TransientModel):
                 wizard.qr_code = False
 
     def action_topup(self) -> None:
-        """US only, send the topup request to stripe so we can test payments without going to stripe dashboard"""
         self.check_singleton()
         if self.pull_push_funds == "push" or self.company_id.country_code != "US":
             raise UserError(
@@ -275,4 +270,4 @@ class WizardAccountJournalTopup(models.TransientModel):
                             stripe_error=msg,
                         ),
                     },
-                )  # What if it fails? What if we want to cancel it (US-case TBDL) ?
+                )

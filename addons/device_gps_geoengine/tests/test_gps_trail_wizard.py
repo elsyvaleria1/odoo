@@ -47,19 +47,8 @@ class TestGpsTrailWizardSingleCombined(common.TransactionCase):
         )
 
     def test_single_combined_trail_does_not_require_the_asset_bridge(self):
-        """_generate_single_trail used to hardcode asset_id/operator_id, which
-        only exist on wizard.device.device.view.trail.result once asset_gps_geoengine is
-        installed -- create() raised "Invalid field" without it. It now goes
-        through the same _trail_result_vals() extension point as the other
-        two grouping modes, so the base module's own trail generation stays
-        self-contained.
-        """
         wizard = self.env["wizard.device.device.view.trail"].create(
             {
-                # Named, not defaulted: asset_gps_geoengine is
-                # auto_install and moves the default to "asset", where
-                # device_ids resolves to nothing. The subject here is
-                # _generate_single_trail, not which mode the field defaults to.
                 "selection_mode": "device",
                 "device_ids": [(6, 0, (self.device_a + self.device_b).ids)],
                 "group_by": "single",

@@ -47,9 +47,6 @@ class TestHrAppraisalGoal(HttpCase):
         goal_form = Form(
             self.env["hr.appraisal.goal"]
             .with_user(self.user_without_hr_right)
-            # `uid` is not decoration: odoo.tests.Form evaluates the view's
-            # modifier expressions against the context, and this form uses
-            # `uid`. The web client supplies it from the session; Form does not.
             .with_context({"uid": self.user_without_hr_right.id})
         )
         goal_form.name = "My goal"
@@ -57,10 +54,6 @@ class TestHrAppraisalGoal(HttpCase):
         goal_form.save()
 
     def test_appraisal_goal_autocompletion(self):
-        """
-        See if the employee and manager fields are auto-completed correctly on
-        creation with smart buttons
-        """
         self.start_tour(
             f"/odoo/appraisals/{self.appraisal.id}",
             "appraisals_create_appraisal_goal_from_smart_button",
@@ -107,7 +100,6 @@ class TestHrAppraisalGoal(HttpCase):
                 },
             ]
         )
-        # emp1 -(manager of)-> emp2 -(manager of)-> emp3
         emp1, emp2, emp3 = self.env["hr.employee"].create(
             [
                 {

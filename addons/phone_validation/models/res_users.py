@@ -5,8 +5,7 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     def _deactivate_portal_user(self, **post) -> None:
-        """Blacklist the phone of the user after deleting it."""
-        numbers_to_blacklist = {}  # numbers to blacklist and the related user
+        numbers_to_blacklist = {}
         if post.get("request_blacklist"):
             for user in self:
                 for phone in user._phone_get_numbers():

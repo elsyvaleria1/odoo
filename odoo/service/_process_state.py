@@ -32,7 +32,7 @@ def is_ready() -> bool:
 
 
 def set_server(value: CommonServer | None) -> None:
-    global server  # noqa: PLW0603  the running server IS a process singleton
+    global server
 
     _debug.lifecycle(
         "server.registered",
@@ -54,7 +54,7 @@ def preloading_database(db_name: str) -> Iterator[None]:
 
 
 def set_phoenix(value: bool) -> None:
-    global server_phoenix  # noqa: PLW0603  one re-exec decision per process
+    global server_phoenix
 
     _debug.lifecycle("server.phoenix", value=value, was=server_phoenix)
     server_phoenix = value

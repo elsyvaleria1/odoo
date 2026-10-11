@@ -9,7 +9,6 @@ OAUTH_RETURN_ROUTE = "/payment/mercado_pago/oauth/return"
 WEBHOOK_ROUTE = "/payment/mercado_pago/webhook"
 
 
-# The countries supported by Mercado Pago.
 SUPPORTED_COUNTRIES = {
     "AR",
     "BO",
@@ -31,42 +30,35 @@ SUPPORTED_COUNTRIES = {
     "VE",
 }
 
-# Mapping of country codes to corresponding currency codes.
 CURRENCY_MAPPING = {
-    "AR": "ARS",  # Argentina - Argentine Peso
-    "BO": "BOB",  # Bolivia - Boliviano
-    "BR": "BRL",  # Brazil - Brazilian Real
-    "CL": "CLP",  # Chile - Chilean Peso
-    "CO": "COP",  # Colombia - Colombian Peso
-    "CR": "CRC",  # Costa Rica - Costa Rican Colón
-    "DO": "DOP",  # Dominican Republic - Dominican Peso
-    "EC": "USD",  # Ecuador - United States Dollar
-    "GT": "GTQ",  # Guatemala - Guatemalan Quetzal
-    "HN": "HNL",  # Honduras - Honduran Lempira
-    "MX": "MXN",  # Mexico - Mexican Peso
-    "NI": "NIO",  # Nicaragua - Nicaraguan Córdoba
-    "PA": "PAB",  # Panama - Panamanian Balboa (also uses USD)
-    "PY": "PYG",  # Paraguay - Paraguayan Guaraní
-    "PE": "PEN",  # Peru - Peruvian Sol
-    "SV": "USD",  # El Salvador - United States Dollar
-    "UY": "UYU",  # Uruguay - Uruguayan Peso
-    "VE": "VES",  # Venezuela - Venezuelan Bolívar
+    "AR": "ARS",
+    "BO": "BOB",
+    "BR": "BRL",
+    "CL": "CLP",
+    "CO": "COP",
+    "CR": "CRC",
+    "DO": "DOP",
+    "EC": "USD",
+    "GT": "GTQ",
+    "HN": "HNL",
+    "MX": "MXN",
+    "NI": "NIO",
+    "PA": "PAB",
+    "PY": "PYG",
+    "PE": "PEN",
+    "SV": "USD",
+    "UY": "UYU",
+    "VE": "VES",
 }
 
-# Set of currencies where Mercado Pago's minor units deviates from the ISO 4217 standard.
-# See https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xls
-# vs. https://api.mercadopago.com/currencies. Last seen online: 2024-10-29.
 CURRENCY_DECIMALS = {
     "COP": 0,
     "HNL": 0,
     "NIO": 0,
 }
 
-# The codes of the payment methods to activate when Mercado Pago is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
-    # Brand payment methods.
     "amex",
     "visa",
     "mastercard",
@@ -86,7 +78,6 @@ DEFAULT_PAYMENT_METHOD_CODES = {
     "hipercard",
 }
 
-# Mapping of payment method codes to Mercado Pago codes.
 PAYMENT_METHODS_MAPPING = {
     "card": "debit_card,credit_card,prepaid_card",
     "paypal": "digital_wallet",
@@ -94,8 +85,6 @@ PAYMENT_METHODS_MAPPING = {
     "mercado_pago_wallet": "mercado_pago",
 }
 
-# Mapping of transaction states to Mercado Pago payment statuses.
-# See https://www.mercadopago.com.mx/developers/en/reference/payments/_payments_id/get.
 TRANSACTION_STATUS_MAPPING = {
     "pending": ("pending", "in_process", "in_mediation", "authorized"),
     "done": ("approved",),
@@ -104,8 +93,6 @@ TRANSACTION_STATUS_MAPPING = {
     "error": ("rejected",),
 }
 
-# Mapping of error states to Mercado Pago error messages.
-# See https://www.mercadopago.com.ar/developers/en/docs/checkout-api/response-handling/collection-results
 ERROR_MESSAGE_MAPPING = {
     "accredited": _lt(
         "Your payment has been credited. In your summary you will see the charge as a statement "

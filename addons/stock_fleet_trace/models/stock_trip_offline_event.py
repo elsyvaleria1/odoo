@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from odoo import Command, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
-# What a phone may say about an incident; anything else in the payload is ignored.
 INCIDENT_FIELDS = (
     "incident_type",
     "description",
@@ -22,12 +21,8 @@ APPLIERS = {
     "scan": "_apply_scan",
     "incident": "_apply_incident",
 }
-# What the phone reports: refuelling and relief drivers need figures and people
-# the office records.
 PHONE_INCIDENT_TYPES = ("spill", "damage", "theft", "breakdown", "other")
-# Stop results wait for the departure: before it there is no stop to close.
 AFTER_DEPARTURE = ("deliver", "partial", "not_delivered", "scan")
-# Events that still stand between the trip and its closing.
 BLOCKING_STATES = ("pending", "review")
 
 
@@ -140,9 +135,6 @@ class StockTripOfflineEvent(models.Model):
         for event in self:
             event.payload_display = json.dumps(event.payload or {}, indent=2)
 
-    # ------------------------------------------------------------------
-    # Applying
-    # ------------------------------------------------------------------
     def _write_state(self, vals):
         return self.with_privilege(
             "stock_fleet_trace.privilege_trip_trace_record",
@@ -150,7 +142,6 @@ class StockTripOfflineEvent(models.Model):
         ).write(vals)
 
     def _capture_context(self) -> dict:
-        """Context under which the checkpoints carry the phone's time and place."""
         self.check_singleton()
         return {
             "trip_offline_capture": {
@@ -163,7 +154,6 @@ class StockTripOfflineEvent(models.Model):
         }
 
     def _apply(self):
-        """Apply the event in its own savepoint; a failure sends it to review."""
         self.check_singleton()
         event = self.with_context(**self._capture_context())
         try:
@@ -201,7 +191,6 @@ class StockTripOfflineEvent(models.Model):
         )
 
     def _stop(self):
-        """The delivery the event concerns, which must ride this trip."""
         self.check_singleton()
         if not self.picking_id or self.picking_id.batch_id != self.batch_id:
             raise UserError(
@@ -214,11 +203,6 @@ class StockTripOfflineEvent(models.Model):
         return self.picking_id
 
     def _apply_receiver(self, picking, payload):
-        """Write who received the goods and their signature, when the phone sent them.
-
-        :return: the receiver's name, or ``False``
-        :rtype: str
-        """
         receiver_name = payload.get("receiver_name")
         signature = payload.get("signature")
         vals = {}
@@ -235,8 +219,6 @@ class StockTripOfflineEvent(models.Model):
         self._apply_receiver(picking, self.payload or {})
         picking.action_deliver()
         if picking.state != "done":
-            # The validation asked a question (an expired lot, a backorder) that
-            # only a person in Odoo can answer.
             raise UserError(
                 self.env._(
                     "%s could not be validated from the phone: validate it by hand "
@@ -247,11 +229,6 @@ class StockTripOfflineEvent(models.Model):
         picking.date_done = self.captured_at
 
     def _apply_partial(self) -> None:
-        """Flag the stop for the supervisor: the phone sends no quantities.
-
-        Goods stay on the vehicle; the supervisor captures what the customer
-        really took with the Partial wizard, which clears the flag.
-        """
         picking = self._stop()
         payload = self.payload or {}
         note = payload.get("note")
@@ -302,7 +279,6 @@ class StockTripOfflineEvent(models.Model):
         )
 
     def _apply_incident(self) -> None:
-        """Report the incident; it waits for the supervisor like any other."""
         captured = (self.payload or {}).get("incident") or {}
         vals = {name: captured[name] for name in INCIDENT_FIELDS if name in captured}
         lines = [
@@ -322,21 +298,8 @@ class StockTripOfflineEvent(models.Model):
             }
         )
 
-    # ------------------------------------------------------------------
-    # Phone hash chain
-    # ------------------------------------------------------------------
     @staticmethod
     def _trip_hash_event(event):
-        """The canonical hash of one offline event, as the phone computes it.
-
-        SHA-256 hex over ``json.dumps`` of client_uuid, event_type, picking_id,
-        captured_at (the ISO string as sent), latitude, longitude, payload and
-        prev_hash, sorted keys, compact separators, no ASCII escaping. See the
-        README for the exact form the phone app must reproduce.
-
-        :param dict event: the raw event as sent by the phone
-        :rtype: str
-        """
         canonical = json.dumps(
             {
                 "client_uuid": event.get("client_uuid"),
@@ -356,15 +319,6 @@ class StockTripOfflineEvent(models.Model):
 
     @api.model
     def _trip_get_event_hash_error(self, event, chain_hash) -> tuple[str | bool, bool]:
-        """Check one phone-sent event against its hash and its place in the chain.
-
-        :param dict event: the raw event as sent by the phone
-        :param str chain_hash: the event_hash of the previous event of the trip
-            in chain order, or "" for the trip's first event
-        :return: a review error and whether it breaks the chain (tampering or a
-            gap), or ``(False, False)`` when both check out
-        :rtype: tuple
-        """
         event_hash = event.get("event_hash")
         if not event_hash:
             return (
@@ -390,15 +344,10 @@ class StockTripOfflineEvent(models.Model):
             )
         return False, False
 
-    # ------------------------------------------------------------------
-    # Review
-    # ------------------------------------------------------------------
     def action_dismiss(self):
-        """The supervisor resolved the event by hand: it no longer blocks the trip."""
         for event in self:
             if event.state != "review":
                 raise UserError(self.env._("Only an event to review can be dismissed."))
-            # Whoever may delete offline events (stock managers) may also dismiss.
             if not (
                 self.env.user == event.batch_id.supervisor_id
                 or event.has_access("unlink")
@@ -448,7 +397,6 @@ class StockPickingBatch(models.Model):
             batch.trip_offline_blocking_count = len(batch._trip_offline_blocking())
 
     def _trip_offline_blocking(self):
-        # The event being applied does not block what it does itself.
         applying = self.env.context.get("trip_offline_applying")
         return self.trip_offline_event_ids.filtered(
             lambda e: e.state in BLOCKING_STATES and e.id != applying
@@ -468,7 +416,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _check_trip_partial_review_resolved(self) -> None:
-        """A partial captured offline needs its real quantities before unloading."""
         self.check_singleton()
         pending = self.picking_ids.filtered("trip_partial_review")
         if pending:
@@ -483,10 +430,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _trip_last_event_hash(self):
-        """The event_hash the phone's next event should chain to.
-
-        :rtype: str
-        """
         self.check_singleton()
         last = self.env["stock.trip.offline.event"].search(
             [("batch_id", "=", self.id), ("event_hash", "!=", False)],
@@ -496,7 +439,6 @@ class StockPickingBatch(models.Model):
         return last.event_hash or ""
 
     def _check_trip_offline_phone_head(self) -> None:
-        """Refuse to return while the phone still holds events it has not sent."""
         self.check_singleton()
         head = self.trip_offline_phone_head
         if head and head != self._trip_last_event_hash():
@@ -508,12 +450,10 @@ class StockPickingBatch(models.Model):
             )
 
     def _check_trip_offline_user(self) -> None:
-        """Only the trip's driver, its supervisor or a stock manager syncs it."""
         self.check_singleton()
         self.check_access("read")
         if self.env.user in self.operator_id.user_id | self.supervisor_id:
             return
-        # Whoever may delete offline events (stock managers) may sync any trip.
         if self.env["stock.trip.offline.event"].has_access("unlink"):
             return
         raise AccessError(
@@ -524,18 +464,9 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_offline_package(self, head=None) -> dict:
-        """What the phone needs to work the trip without connection.
-
-        :param str head: the phone's own latest event_hash, if it wants the
-            trip to know it still holds events beyond what it has synced
-        :return: the trip, its stops in order with the goods on board, the
-            catalogues and the server time
-        :rtype: dict
-        """
         self._check_trip_offline_user()
         if head:
             self.trip_offline_phone_head = head
-        # A stop not delivered takes a reason for the whole delivery.
         reasons = self.env["stock.picking.unbatch.reason"].search(
             [
                 ("moment", "in", ("on_route", "any")),
@@ -574,20 +505,8 @@ class StockPickingBatch(models.Model):
         }
 
     def _trip_receive_offline_events(self, events, head=None) -> dict:
-        """Record the events a phone sends and apply them.
-
-        :param list events: dicts with client_uuid, event_type, picking_id,
-            payload, captured_at (ISO 8601, UTC when naive), latitude, longitude,
-            device_uuid, prev_hash and event_hash (the phone's hash chain), in
-            the order the phone captured them
-        :param str head: the phone's own latest event_hash, if it wants the
-            trip to know it still holds events beyond what it is sending
-        :return: per client_uuid, its state and error
-        :rtype: dict
-        """
         self._check_trip_offline_user()
         Event = self.env["stock.trip.offline.event"]
-        # An event without its uuid cannot be told apart from a resend: skipped.
         received = {
             event["client_uuid"]: event
             for event in events
@@ -610,7 +529,6 @@ class StockPickingBatch(models.Model):
         for uuid, event in received.items():
             if uuid in known:
                 continue
-            # A malformed event goes to review; it never fails the whole sync.
             problems = []
             picking_id = event.get("picking_id") or False
             if picking_id and picking_id not in pickings.ids:
@@ -643,9 +561,6 @@ class StockPickingBatch(models.Model):
                 vals.update(state="review", error=error)
                 chain_broken = chain_broken or broken
             if not error or Event._trip_hash_event(event) == event.get("event_hash"):
-                # An intact event is the chain's new head even when it did not
-                # follow the previous one: the gap is flagged once, and what the
-                # phone captured after it still checks out.
                 chain_hash = event.get("event_hash")
             if problems and not error:
                 vals.update(state="review", error="\n".join(problems))
@@ -676,10 +591,6 @@ class StockPickingBatch(models.Model):
         }
 
     def _trip_apply_offline_events(self) -> None:
-        """Apply the trip's pending offline events in the order the phone chained them.
-
-        Stop results captured before the departure wait for it.
-        """
         self.check_singleton()
         for event in self.trip_offline_event_ids.filtered(
             lambda e: (
@@ -694,7 +605,6 @@ class StockPicking(models.Model):
     _inherit = "stock.picking"
 
     def _trip_offline_stop(self) -> dict:
-        """A stop as the phone shows it: customer, place and goods on board."""
         self.check_singleton()
         partner = self.partner_id
         latitude, longitude = self._trip_location() or (0.0, 0.0)
@@ -723,7 +633,6 @@ class StockPicking(models.Model):
 
 
 def _utc(value):
-    """Naive UTC datetime from the phone's ISO 8601 time."""
     moment = datetime.fromisoformat(value)
     if moment.tzinfo:
         moment = moment.astimezone(UTC).replace(tzinfo=None)

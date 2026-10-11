@@ -35,9 +35,6 @@ class AccountMove(models.Model):
         compute="_compute_filename",
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE
-    # -------------------------------------------------------------------------
 
     @api.depends("ubl_cii_xml_file")
     def _compute_ubl_cii_xml_id(self) -> None:
@@ -45,13 +42,9 @@ class AccountMove(models.Model):
 
     @api.depends("ubl_cii_xml_file")
     def _compute_filename(self) -> None:
-        """Compute the filename based on the uploaded file."""
         for record in self:
             record.ubl_cii_xml_filename = record.ubl_cii_xml_id.name
 
-    # -------------------------------------------------------------------------
-    # ACTIONS
-    # -------------------------------------------------------------------------
 
     def action_invoice_download_ubl(self) -> dict:
         return {
@@ -60,18 +53,13 @@ class AccountMove(models.Model):
             "target": "download",
         }
 
-    # -------------------------------------------------------------------------
-    # BUSINESS
-    # -------------------------------------------------------------------------
 
     def _get_fields_to_detach(self):
-        # EXTENDS account
         fields_list = super()._get_fields_to_detach()
         fields_list.append("ubl_cii_xml_file")
         return fields_list
 
     def _get_invoice_legal_documents(self, filetype, allow_fallback=False):
-        # EXTENDS account
         self.check_singleton()
         if filetype == "ubl":
             if ubl_attachment := self.ubl_cii_xml_id:
@@ -118,12 +106,8 @@ class AccountMove(models.Model):
             )
         return print_items
 
-    # -------------------------------------------------------------------------
-    # EDI
-    # -------------------------------------------------------------------------
 
     def _import_file_type_rules(self):
-        # EXTENDS 'account'
         return [
             (
                 "account.edi.xml.ubl.attached_document",
@@ -173,7 +157,6 @@ class AccountMove(models.Model):
         ]
 
     def _unwrap_attachment(self, file_data, recurse=True):
-        """Unwrap UBL AttachedDocument files, which are wrappers around an inner file."""
 
         if file_data["import_file_type"] != "account.edi.xml.ubl.attached_document":
             return super()._unwrap_attachment(file_data, recurse)
@@ -203,15 +186,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _ubl_parse_attached_document(self, tree) -> tuple:
-        """
-        In UBL, an AttachedDocument file is a wrapper around multiple different UBL files.
-        According to the specifications the original document is stored within the top most
-        Attachment node either as an Attachment/EmbeddedDocumentBinaryObject or (in special cases)
-        a CDATA string stored in Attachment/ExternalReference/Description.
-
-        We must parse this before passing the original file to the decoder to figure out how best
-        to handle it.
-        """
         attachment_node = tree.find("{*}Attachment")
         if attachment_node is None:
             return "", None
@@ -236,8 +210,6 @@ class AccountMove(models.Model):
                 with suppress(etree.XMLSyntaxError):
                     return content_2, etree.fromstring(content_2)
 
-        # If neither EmbeddedDocumentBinaryObject nor ExternalReference/Description can be decoded as an XML,
-        # fall back on the contents of EmbeddedDocumentBinaryObject.
         return content_1, None
 
     def _get_edi_decoder(self, file_data, new=False):
@@ -285,14 +257,9 @@ class AccountMove(models.Model):
 
     @api.model
     def _prepare_edi_line_vals(self, lines_vals) -> list:
-        """Get invoice line values list.
-
-        :param list[tuple] lines_vals: List of values ``[(name, qty, price, tax), ...]``.
-        :returns: List of invoice line values.
-        """
         return [
             {
-                "sequence": 0,  # be sure to put these lines above the 'real' invoice lines
+                "sequence": 0,
                 "name": name,
                 "quantity": quantity,
                 "price_unit": price_unit,
@@ -304,7 +271,6 @@ class AccountMove(models.Model):
     def _get_specific_tax(self, name, amount_type, amount, tax_type):
         AccountMoveLine = self.env["account.move.line"]
         if hasattr(AccountMoveLine, "_predict_specific_tax"):
-            # company check is already done in the prediction query
             predicted_tax_id = AccountMoveLine._predict_specific_tax(
                 self,
                 name,

@@ -24,7 +24,6 @@ class CalendarService:
         self.env = env
 
     def _response(self, connection, method, path, **kwargs) -> requests.Response:
-        """The provider's answer as it came, refusals included."""
         return connection._get_api_client().request(
             method, path, raw=True, raise_for_status=False, **kwargs
         )

@@ -260,8 +260,6 @@ class test_res_lang(TransactionCase):
         self.assertEqual(es_ES.url_code, "es_ES")
         es_419 = self.env.ref("base.lang_es_419")
         self.assertFalse(es_419.active)
-        # A Spanish the database runs (marin activates es_MX) took "es" from
-        # es_419: the swaps below start from the data file's holder.
         holder = ResLang.search([("url_code", "=", "es")]) - es_419
         if holder:
             holder.url_code = holder.code

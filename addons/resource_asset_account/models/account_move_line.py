@@ -65,9 +65,6 @@ class AccountMoveLine(models.Model):
         return arguments
 
     def _sync_asset_logs(self) -> None:
-        # Vendor bills and their credit notes both write to the asset ledger:
-        # the log carries the signed balance, so a refund offsets what the bill
-        # booked instead of leaving its gross cost on the asset forever.
         purchase_types = self.env["account.move"].get_purchase_types()
         to_create = self.filtered(
             lambda line: (
@@ -79,8 +76,6 @@ class AccountMoveLine(models.Model):
         )
         if not to_create:
             return
-        # sudo: the biller may hold no right on the serial behind the line, and
-        # the log needs the asset that serial carries.
         self.env["resource.log"].sudo().create(
             [line.sudo()._prepare_asset_log() for line in to_create],
         )
@@ -97,9 +92,6 @@ class AccountMoveLine(models.Model):
         }
 
     def _get_asset_log_type(self) -> str | bool:
-        # sudo: asset_log_type is gated on group_asset_manager, and typing a log
-        # is a side effect of booking a bill — the accountant posting it need not
-        # be an asset manager to have the type derived for them.
         return (
             self.product_id.categ_id.log_type or self.account_id.sudo().asset_log_type
         )

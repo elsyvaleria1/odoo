@@ -119,7 +119,6 @@ def _apply_constraints(schema: dict[str, Any], spec: ParamSpec) -> dict[str, Any
     if constraints.le is not None:
         schema["maximum"] = constraints.le
     if constraints.pattern is not None:
-        # JSON Schema searches; the server's check is re.fullmatch.
         schema["pattern"] = f"^(?:{constraints.pattern})$"
     return schema
 
@@ -132,9 +131,6 @@ def param_spec_to_schema(spec: ParamSpec) -> dict[str, Any]:
         }
         if not spec.allow_none:
             return union
-        # OpenAPI 3.1 dropped the 3.0 `nullable` keyword, and every member of
-        # a discriminated oneOf must carry the tag, which null cannot: null is
-        # the alternative to the whole union, not one of its variants.
         return {"oneOf": [union, {"type": "null"}]}
     if spec.fields is not None:
         schema = _prepare_object_schema(spec.fields)
@@ -163,7 +159,7 @@ def get_response_schema(handler: typing.Callable) -> dict[str, Any] | None:
         return None
     if isinstance(annotation, str):
         try:
-            annotation = eval(annotation, getattr(handler, "__globals__", None))  # noqa: S307  the route author's own return annotation, resolved against their module
+            annotation = eval(annotation, getattr(handler, "__globals__", None))
         except Exception as exc:
             _debug.logic(
                 "http.openapi.return_annotation_unresolved",
@@ -198,11 +194,6 @@ _SECURITY_SCHEMES: dict[str, tuple[str, dict[str, str]]] = {
     "user": ("sessionCookie", {"type": "apiKey", "in": "cookie", "name": "session_id"}),
 }
 
-# An auth this module cannot describe on its own -- a gated door whose proof
-# is a record's, not the route's -- is described by the caller, which has a
-# registry. It answers a list of (name, definition) for one route; an empty
-# list means the door states no credential, and None that it knows nothing
-# and the operation carries no security at all.
 SecurityResolver = Callable[[RouteInfo], list[tuple[str, dict[str, Any]]] | None]
 
 
@@ -245,10 +236,6 @@ def _prepare_http_query_parameters(
     parameters = []
     for name, spec in specs.items():
         if _is_object_shaped(spec):
-            # The http dispatcher hands the handler query/form
-            # strings and object coercion rejects any non-dict, so
-            # an object-shaped query parameter as documented can
-            # never be satisfied; leave it out rather than lie.
             _logger.warning(
                 "OpenAPI: %r declares object-shaped parameter %r on a "
                 "type='http' route; the http dispatcher only delivers "
@@ -267,8 +254,6 @@ def _prepare_json_request(
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     parameters = []
     if route_type == "json2" and method.upper() in ("GET", "HEAD"):
-        # A body on GET is unusual enough that clients send the query
-        # string, which json2 reads too; objects cannot travel there.
         parameters = [
             _prepare_query_parameter(name, spec)
             for name, spec in specs.items()
@@ -312,8 +297,6 @@ def _prepare_typed_request(
 
 
 def _prepare_json_response(route: RouteInfo, route_type: str) -> dict[str, Any]:
-    # A JSON route always answers JSON; without a return annotation the
-    # body is any JSON value, which {} states truthfully.
     result_schema = get_response_schema(route.handler) or {}
     if route_type == "jsonrpc":
         result_schema = {
@@ -379,9 +362,6 @@ def prepare_openapi_operation(
 
     auth = route.routing.get("auth")
     if auth:
-        # What the server checks before the handler runs, stated as the
-        # reader sees it: a scheme below says how to prove it, this says
-        # which door it is.
         operation["x-odoo-auth"] = auth
     security = _prepare_operation_security(
         route, auth, security_schemes, security_resolver
@@ -417,12 +397,12 @@ def prepare_openapi_document(
 
     claimed_by: dict[tuple[str, str], str] = {}
 
-    seen = skipped = 0  # debuglog
+    seen = skipped = 0
     with _debug.perf("http.openapi.document", typed_only=typed_only) as span:
         for route in routes:
-            seen += 1  # debuglog
+            seen += 1
             if typed_only and not route.routing.get("typed"):
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             template, path_params = _prepare_path_template_and_params(route.rule)
 
@@ -490,8 +470,6 @@ def prepare_openapi_document(
 
 
 def _get_documented_handler(endpoint: Any) -> typing.Callable:
-    # A pass-through override (`return super().x(**kw)`) usually drops the
-    # return annotation; the contract is the nearest one that states it.
     handler = getattr(endpoint, "original_endpoint", endpoint)
     bound = getattr(endpoint, "func", None)
     owner = getattr(bound, "__self__", None)

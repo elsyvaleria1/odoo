@@ -13,9 +13,6 @@ from odoo.addons.bus.tools.channel_capability import (
 
 _logger = logging.getLogger(__name__)
 
-# A box hears only what is sent to it, and an answer goes back only to whoever
-# asked: a request leaves with its session id wrapped in a signed route naming
-# the requester's reply channel, the box echoes the id, the server unwraps it.
 BOX_CHANNEL = register_channel_scope(
     "iot.box",
     purpose="the requests sent to one IoT box: print jobs, display content, "
@@ -26,8 +23,6 @@ USER_REPLY_PREFIX = "user."
 
 
 def _holds_reply_channel(env, key) -> bool:
-    # a user's answers are that user's alone; a kiosk's go to the device
-    # holding the kiosk's link
     if not key.startswith(USER_REPLY_PREFIX):
         return True
     return key == f"{USER_REPLY_PREFIX}{env.uid}" and env.user._is_internal()
@@ -45,15 +40,9 @@ REPLY_ROUTE = tools.register_signed_scope(
     lifetime="ROUTE_LIFETIME from the request, the device events it owns included",
 )
 ROUTE_SEPARATOR = "|"
-# An upstream box authenticates none of its answers: a route a box ever echoed
-# could otherwise be replayed through it for good.
 ROUTE_LIFETIME = 24 * 3600
-# What a web client may ask of a box; the rest is the server's to send.
 CLIENT_MESSAGE_TYPES = frozenset({"iot_action", "webrtc_offer", "test_connection"})
-# Each is a verb of iot.box, granted by its ir.access row.
 ADMIN_MESSAGE_TYPES = frozenset({"remote_debug"})
-# Boxes run upstream's iot_drivers, which answers these without echoing the
-# session id: their answer returns to whoever last sent one to that box.
 UNROUTED_ANSWER_TYPES = frozenset({"webrtc_offer", "remote_debug"})
 
 
@@ -108,8 +97,6 @@ class IotChannel(models.AbstractModel):
         return f"{box.id}.{token_revision(box.token or '')}"
 
     def _send_message(self, message, message_type="iot_action", reply_key=None):
-        """Send ``message`` to the boxes it names; an answer to it returns to
-        ``reply_key``'s channel, and to nobody when it is None."""
         identifiers = set(message.get("iot_identifiers") or [])
         if message.get("iot_identifier"):
             identifiers.add(message["iot_identifier"])
@@ -134,9 +121,6 @@ class IotChannel(models.AbstractModel):
             )
 
     def _send_reply(self, message, message_type, box=None, unrouted=None) -> None:
-        """Return a box's answer to whoever asked, and drop one whose route
-        is missing or forged. An answer upstream boxes send without a route
-        to a request of type ``unrouted`` goes to its last sender to ``box``."""
         route = self._unwrap_session_id(
             message.get("session_id"), message.get("iot_box_identifier")
         )

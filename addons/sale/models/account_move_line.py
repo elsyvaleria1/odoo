@@ -140,7 +140,7 @@ class AccountMoveLine(models.Model):
                 slot_by_move_line[move_line.id] = pending_slot_by_key[key]
                 continue
 
-            sale_line = self.env["sale.order.line"].search(  # noqa: E8507 - one probe per distinct (order, product, price); the hit is cached across lines
+            sale_line = self.env["sale.order.line"].search(
                 [
                     ("order_id", "=", sale_order.id),
                     ("price_unit", "=", price),

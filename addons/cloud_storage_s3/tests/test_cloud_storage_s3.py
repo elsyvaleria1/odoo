@@ -466,7 +466,6 @@ class TestCloudStorageS3Move(TestCloudStorageS3Common):
         empty = self._local(name="empty.txt", raw=b"")
         served = self._local(name="sitemap.xml", url="/sitemap-1.xml")
         outcome = (empty | served)._s3_move_to_cloud()
-        # Odoo keeps an empty file inline, never in the filestore
         self.assertEqual(
             outcome, {"not_in_filestore": empty.ids, "served_by_url": served.ids}
         )
@@ -496,7 +495,6 @@ class TestCloudStorageS3Move(TestCloudStorageS3Common):
         self._age(old | field | asset, 60)
         with (
             patch.object(type(self.env["ir.attachment"]), "_mark_for_gc_multi"),
-            # a cron commits each batch; a test transaction cannot
             patch.object(type(self.env["ir.cron"]), "_commit_progress", return_value=1),
         ):
             self.env["ir.attachment"]._cron_s3_move_local_to_cloud()

@@ -31,7 +31,6 @@ _logger = logging.getLogger(__name__)
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    # Stripe account
     stripe_id = fields.Char(
         string="Stripe Account ID",
         copy=False,
@@ -68,7 +67,6 @@ class ResCompany(models.Model):
     stripe_account_issuing_tos_acceptance_date = fields.Date(groups="base.group_system")
     stripe_issuing_iap_webhook_uuid = fields.Char(groups="base.group_system")
 
-    # IAP Security fields
     stripe_issuing_db_private_key_id = fields.Many2one(
         comodel_name="certificate.key",
         copy=False,
@@ -105,14 +103,12 @@ class ResCompany(models.Model):
             company.stripe_currency_id = currency and currency.id
 
     def _stripe_issuing_setup_mcc(self) -> None:
-        """Helper to preset the default data for the mccs on all company as the field is company_dependant"""
-        # Fetch all the MCC data and create a mapping of the references to the respective records
         mcc_data = self.env["ir.model.data"]._read_group(
             [("model", "=", "product.mcc.stripe.tag")],
             groupby=["name"],
             aggregates=[
                 "res_id:array_agg"
-            ],  # Can't use recordset because it's not a Many2one field but a ref
+            ],
         )
         ref_to_mcc = {}
         mcc_prefetch_ids = []
@@ -124,7 +120,6 @@ class ResCompany(models.Model):
                 .with_prefetch(mcc_prefetch_ids)
             )
 
-        # Read the file data to know what referenced products to fetch and create a mapping of mcc references to product references
         products_referenced = set()
         mcc_ref_to_product_ref = {}
         with file_open(
@@ -135,7 +130,6 @@ class ResCompany(models.Model):
                 mcc_ref_to_product_ref[row["id"]] = product_ref_name
                 products_referenced.add(product_ref_name)
 
-        # Fetch the products data and map the references to their respective records
         product_data = self.env["ir.model.data"]._read_group(
             [
                 ("model", "=", "product.product"),
@@ -144,7 +138,7 @@ class ResCompany(models.Model):
             groupby=["name"],
             aggregates=[
                 "res_id:array_agg"
-            ],  # Can't use recordset because it's not a Many2one field but a ref
+            ],
         )
         ref_to_product = {}
         product_prefetch_ids = []
@@ -156,8 +150,7 @@ class ResCompany(models.Model):
                 .with_prefetch(product_prefetch_ids)
             )
 
-        # Now we can iterate over all companies and set the products on the MCCs
-        available_to_all_companies = self.browse()  # Empty value means all companies
+        available_to_all_companies = self.browse()
         for company in self:
             for mcc_ref, product_ref in mcc_ref_to_product_ref.items():
                 mcc = ref_to_mcc.get(mcc_ref).with_company(company)
@@ -171,11 +164,6 @@ class ResCompany(models.Model):
                     mcc.product_id = product.id
 
     def _prepare_account_creation_payload(self) -> dict[str, Any]:
-        """Helper for stripe creation payload, to be able to add extra fields in the demo module
-
-        :return: Stripe Payload; the demo module's override adds non-string values
-        :rtype: dict[str, Any]
-        """
         self.check_singleton()
         country_code = COUNTRY_MAPPING.get(self.country_id.code, self.country_id.code)
         return {
@@ -183,10 +171,6 @@ class ResCompany(models.Model):
         }
 
     def _prepare_account_links_payload(self) -> dict[str, str]:
-        """Helper for stripe onboarding payload, to ensure we go back to the settings
-        :return: Stripe Payload
-        :rtype: dict[str, str]
-        """
         self.check_singleton()
         return_url = f"{self._get_stripe_issuing_base_url()}/odoo/settings#hr_expense"
         return {
@@ -196,12 +180,6 @@ class ResCompany(models.Model):
         }
 
     def _get_stripe_webhook_url(self, uuid=None):
-        """Helper to get the full webhook URL for this database
-
-        :param str|None uuid: Override the database webhook ID part
-        :return: Database webhook URL
-        :rtype: str
-        """
         self.check_singleton()
         return "/".join(
             (
@@ -212,11 +190,6 @@ class ResCompany(models.Model):
         )
 
     def _get_stripe_issuing_base_url(self) -> str:
-        """Switches the base URL to always use https scheme for Stripe Issuing
-
-        :return: Base URL with https scheme
-        :rtype: str
-        """
         base_url = self.get_base_url()
         _scheme, netloc, *_rest = urlparse(base_url)
         return f"https://{netloc}"
@@ -251,9 +224,6 @@ class ResCompany(models.Model):
 
     @api.model
     def _refuse_stripe_issuing(self, refused):
-        """The IAP proxy reads its own statuses: 551 for a webhook nobody
-        owns, 462 for a signature that does not verify; an event already
-        received is acknowledged, as Stripe retries anything else."""
         if refused.error_code == "duplicate_event":
             return Response("", status=200)
         status = {
@@ -279,7 +249,6 @@ class ResCompany(models.Model):
         for key_value_str in signature_header.split(","):
             key, _sep, value = key_value_str.partition("=")
             if key in signature_data_dict:
-                # If the key already exists, it means the signature is malformed
                 return False
             signature_data_dict[key] = value
 
@@ -288,13 +257,13 @@ class ResCompany(models.Model):
 
         signature = base64.b64decode(
             signature_data_dict["v1"] + "=="
-        )  # Ensure padding is correct for base64 decoding
+        )
         timestamp = signature_data_dict["t"]
         try:
             time_since_signed = time.time() - int(timestamp)
         except ValueError:
             return False
-        signature_validity = 60 * 5  # 5 min
+        signature_validity = 60 * 5
         if time_since_signed > signature_validity:
             return False
         signed_message = f"{timestamp}.{payload_str}".encode()
@@ -315,7 +284,6 @@ class ResCompany(models.Model):
         return mode
 
     def _create_stripe_issuing_journal(self) -> None:
-        """Helper function to create the default issuing journal automatically"""
         for company in self:
             ChartTemplate = self.env["account.chart.template"].with_company(company)
             journal = ChartTemplate.ref(
@@ -343,12 +311,10 @@ class ResCompany(models.Model):
                 company.stripe_journal_id = journal
 
     def _cron_refresh_stripe_account(self) -> None:
-        """Cron job to refresh the status of all Stripe accounts"""
         for company in self.env["res.company"].search([("stripe_id", "!=", False)]):
             company.action_refresh_stripe_account()
 
     def action_create_stripe_account(self):
-        """Create a stripe Connect account and redirects to the Stripe Onboarding"""
         self.check_singleton()
         if self.stripe_id:
             return self.action_configure_stripe_account()
@@ -364,7 +330,6 @@ class ResCompany(models.Model):
             )
 
         if not self.stripe_journal_id:
-            # Create the default journal if not already done
             self._create_stripe_issuing_journal()
             self.stripe_journal_id = self.env.ref(
                 f"account.{self.id}_stripe_issuing_journal"
@@ -387,7 +352,6 @@ class ResCompany(models.Model):
         stripe_issuing_iap_webhook_uuid = str(uuid.uuid4())
         payload = {
             **self._prepare_account_creation_payload(),
-            # IAP Data
             "db_webhook_url": self._get_stripe_webhook_url(
                 stripe_issuing_iap_webhook_uuid
             ),
@@ -431,14 +395,9 @@ class ResCompany(models.Model):
             cron.active = True
 
         if not self.env.context.get("skip_stripe_account_creation_commit"):
-            # We need to commit here so that the account is created in database before redirecting to Stripe, if we don't do that
-            # and the onboarding request fails, the company won't have a stripe_id and will create a new account.
-            # The problem is that for the iap proxy and stripe, the account already exists and it will duplicate them.
             self.env["ir.cron"]._commit_progress()
 
     def action_refresh_stripe_account(self):
-        """Refreshes the status of the Stripe account, when pending validation from stripe.
-        It also updates the public key"""
         for company in self.filtered("stripe_id"):
             response = send_request_stripe_proxy(
                 company.sudo(),
@@ -462,7 +421,6 @@ class ResCompany(models.Model):
                 )
 
     def action_configure_stripe_account(self):
-        """Action to go back to an interrupted Stripe Onboarding"""
         self.check_singleton()
 
         if not self.sudo().stripe_id:

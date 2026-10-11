@@ -57,10 +57,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "worldline").update(
             {
@@ -68,39 +66,29 @@ class PaymentProvider(models.Model):
             }
         )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "worldline":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "worldline":
             return super()._prepare_request_url(endpoint, **kwargs)
         api_url = self._worldline_get_api_url()
         return f"{api_url}/v2/{self.worldline_pspid}/{endpoint}"
 
     def _worldline_get_api_url(self) -> str:
-        """Return the URL of the API corresponding to the provider's state.
-
-        :return: The API URL.
-        :rtype: str
-        """
         if self.state == "enabled":
             return "https://payment.direct.worldline-solutions.com"
-        else:  # 'test'
+        else:
             return "https://payment.preprod.direct.worldline-solutions.com"
 
     def _prepare_request_headers(
         self, method, endpoint, *args, idempotency_key=None, **kwargs
     ):
-        """Override of `payment` to build the request headers."""
         if self.code != "worldline":
             return super()._prepare_request_headers(
                 method, endpoint, *args, idempotency_key=idempotency_key, **kwargs
@@ -109,7 +97,7 @@ class PaymentProvider(models.Model):
         content_type = "application/json; charset=utf-8" if method == "POST" else ""
         dt = format_date_time(
             Datetime.now().timestamp()
-        )  # Datetime in locale-independent RFC1123
+        )
         signature = self._get_worldline_signature(
             method, endpoint, content_type, dt, idempotency_key=idempotency_key
         )
@@ -126,19 +114,6 @@ class PaymentProvider(models.Model):
     def _get_worldline_signature(
         self, method, endpoint, content_type, dt_rfc, idempotency_key=None
     ):
-        """Compute the signature for the provided data.
-
-        See https://docs.direct.worldline-solutions.com/en/integration/api-developer-guide/authentication.
-
-        :param str method: The HTTP method of the request
-        :param str endpoint: The endpoint to be reached by the request.
-        :param str content_type: The 'Content-Type' header of the request.
-        :param str dt_rfc: The timestamp of the request, in RFC1123 format.
-        :param str idempotency_key: The idempotency key to pass in the request.
-        :return: The calculated signature.
-        :rtype: str
-        """
-        # specific order required: method, content_type, date, custom headers, endpoint
         values_to_sign = [method, content_type, dt_rfc]
         if idempotency_key:
             values_to_sign.append(f"x-gcs-idempotence-key:{idempotency_key}")
@@ -151,7 +126,6 @@ class PaymentProvider(models.Model):
         return base64.b64encode(signature.digest()).decode("utf-8")
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "worldline":
             return super()._parse_response_error(response)
         return ", ".join(

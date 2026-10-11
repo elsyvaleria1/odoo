@@ -77,9 +77,6 @@ _pregen_log = get_asset_logger("pregen")
 
 _ASSET_CACHE_ENABLED = "xml" not in tools.config["dev_mode"]
 
-# per registry and bundle: the assets cache generation the declines were
-# recorded under, so clearing that cache forgets them without holding an entry
-# in its LRU, which only ormcache results may occupy
 _ESM_READONLY_DECLINES: WeakKeyDictionary[Any, dict[str, tuple[int, set[tuple]]]] = (
     WeakKeyDictionary()
 )
@@ -115,14 +112,6 @@ class IrQweb(models.AbstractModel):
         values: dict[str, Any] | None = None,
         **options: Any,
     ):
-        # The request's page state (whether an import map was written, which
-        # specifiers it maps, which bundles are on the page) describes one HTML
-        # document. A render not nested in another starts a document of its own:
-        # a controller may render two, as Studio's report editor does for the
-        # report and for the iframe that shows it, and the second one must map
-        # the specifiers the first one already mapped in a different document.
-        # `is True`: a request stood in for by a Mock answers any attribute with
-        # another Mock, which is truthy and is not a document this render opened
         document_open = (
             getattr(request.attempt_scratch, "esm_document_open", False)
             if request
@@ -162,9 +151,6 @@ class IrQweb(models.AbstractModel):
     def _merge_page_import_maps(
         self, html: Markup, emitted: int, stamp: str | None
     ) -> Markup:
-        # Only browsers that merge import maps (Chrome 133+, Safari 18.4+)
-        # honour a second one; Firefox drops it. One map per document, at the
-        # first one's place, ahead of every module script.
         maps = list(_PAGE_IMPORT_MAP_RE.finditer(html))
         if not maps or len(maps) != emitted:
             _debug.logic(
@@ -524,8 +510,6 @@ class IrQweb(models.AbstractModel):
     def _get_bundle_specifiers_cached(
         self, bundle: str, assets_params: dict[str, Any]
     ) -> frozenset[str]:
-        # the import map without bridges: a bridge is not a module the bundle
-        # carries, and bridging lexes every module it has
         with _debug.perf("bundle_specifiers_uncached", bundle=bundle) as span:
             specifiers = frozenset(
                 self._get_asset_bundle(
@@ -816,7 +800,6 @@ class IrQweb(models.AbstractModel):
         source_key = self._get_runtime_group_source_key(
             group, entries, templates, parent_specs, stubs
         )
-        # a process that has not compiled yet serves what another one did
         variant = esm_index.variant_key(assets_params)
         reused = self._reuse_esm_group(group, variant, source_key)
         if reused is None:
@@ -939,9 +922,6 @@ class IrQweb(models.AbstractModel):
             state=build.state,
         )
         if build.state != "current" or build.variant != variant:
-            # a superseded build served again must not expire under the pages
-            # that are about to reference it, nor one another variant compiled
-            # when that variant moves on
             self._save_esm_attachment_rows(
                 [],
                 bundle=group,
@@ -965,9 +945,6 @@ class IrQweb(models.AbstractModel):
         variant: str,
         source_key: str,
     ) -> dict[str, str]:
-        # the directory is named by the code it serves: the metafile and the
-        # sourcemaps carry esbuild's temporary paths, and hashing them would give
-        # every compile of identical code a directory of its own
         digest = hashlib.sha256()
         for filename in sorted(files):
             if filename.endswith((".map", ".meta.json")):
@@ -997,7 +974,6 @@ class IrQweb(models.AbstractModel):
             for filename, content in files.items()
             if f"{prefix}{filename}" not in present
         ]
-        # a child whose modules the page already carries compiles to no file
         urls = {
             name: f"{prefix}{name}.esm.js"
             for name in children
@@ -1080,9 +1056,6 @@ class IrQweb(models.AbstractModel):
     def _get_carried_bundle_payload(
         self, bundle: str, asset_bundle: AssetsBundle
     ) -> dict:
-        # the page carries every module of this bundle: the browser imports
-        # the specifiers it already maps, and no per-file import map may
-        # offer it a second copy of them
         log_event(_esm_log, logging.DEBUG, "bundle_carried", bundle=bundle)
         payload = {
             "specifiers": sorted(a.module_path for a in asset_bundle.native_modules),
@@ -1194,8 +1167,6 @@ class IrQweb(models.AbstractModel):
             return cached[1]
         source = src_path.read_text(encoding="utf-8")
         with _debug.perf("loader_shim_minify", source_bytes=len(source)) as span:
-            # Same guard as JavascriptAsset.minify: rjsmin corrupts nested
-            # template literals and keyword-led regexes.
             if rjsmin_misreads(source):
                 minified = minify_js(source, label=str(src_path)) or source
             else:
@@ -1300,9 +1271,6 @@ class IrQweb(models.AbstractModel):
                 _debug.logic(
                     "native_module_nodes_fallback", bundle=bundle, reason="esbuild"
                 )
-                # cached like the read-only branch: the decline opened the
-                # circuit, so until it closes the route asks for this same
-                # esbuild_ok=False entry instead of preparing a compile again
                 pre, post = self._get_native_module_nodes_cached(
                     bundle,
                     assets_params=assets_params,
@@ -1322,8 +1290,6 @@ class IrQweb(models.AbstractModel):
         if not page:
             return pre, post
         self._record_esm_page_bundle(bundle)
-        # the stamp names the page to `/web/bundle?page=`, which compiles a
-        # dynamic child against the page bundle that declares it
         if (
             request
             and not getattr(request.attempt_scratch, "esm_page_stamp", None)
@@ -1350,8 +1316,6 @@ class IrQweb(models.AbstractModel):
                 esbuild_ok=esbuild_ok,
             )
         except _EsmReadonlyDeclined:
-            # the cursor declined the build, not the page scope: the full
-            # variant would be compiled only to be declined as well
             raise
         except _EsmFallbackError:
             if not page_scope:
@@ -1376,10 +1340,6 @@ class IrQweb(models.AbstractModel):
         return bool(self.env.cr.readonly and _module.current_test)
 
     def _can_esm_readonly_test_serve(self, bundle: str) -> bool:
-        # a read-only test cursor serves a compile only by url, through a row
-        # its snapshot already holds: a build to reuse by its sources, or the
-        # content-addressed file the compile would name. Without either, the
-        # compile and its publication can only end in a decline
         if not self._is_esm_readonly_test_cursor():
             return True
         env = self.env(su=True)
@@ -1607,12 +1567,6 @@ class IrQweb(models.AbstractModel):
         variant: str = esm_index.DEFAULT_VARIANT,
     ) -> AssetNode:
         url = None
-        # a failed statement (a serialization failure on a row another
-        # connection touched) aborts the caller's transaction; the savepoint
-        # keeps the inline fallback a fallback. It is released, not rolled
-        # back, on a decline raised before any statement failed: rolling back
-        # would drop the transaction's ORM caches, and with them the memo of
-        # that decline
         savepoint = self.env.cr.savepoint()
         try:
             url = self._save_esm_attachment(
@@ -1651,9 +1605,6 @@ class IrQweb(models.AbstractModel):
         else:
             savepoint.close(rollback=False)
         _debug.logic("esm_script_node", bundle=name, inline=url is None)
-        # A classic script is deferred, so that it keeps its place between the
-        # module scripts around it. Inline it cannot be: it stays a module
-        # there, which the same code is valid as.
         node: dict[str, str] = (
             {"defer": "defer", "fetchpriority": "high"}
             if url and is_classic_script(code)
@@ -1710,9 +1661,6 @@ class IrQweb(models.AbstractModel):
             combined_modules = [
                 module for dyn_ab in dynamic_bundles for module in dyn_ab.native_modules
             ]
-            # a runtime group stubs what its page carries and inlines the rest,
-            # so only the carried specifiers have a provider to bridge to; the
-            # per-file fallback reads the rest from their files
             carried = self._get_children_page_specs(
                 bundle, dynamic_bundles, assets_params, with_test_satellites
             )
@@ -2081,8 +2029,6 @@ class IrQweb(models.AbstractModel):
             native_data["import_map"], external_lib_aliases()
         )
 
-    # the per-file path is not cached as a whole (debug assets render every
-    # time), and the reach walk is most of its cost
     @tools.conditional(
         _ASSET_CACHE_ENABLED,
         tools.ormcache(
@@ -2146,9 +2092,6 @@ class IrQweb(models.AbstractModel):
         if not debug_assets:
             pre_nodes.extend(self._get_esm_preload_links(bundle, native_data))
 
-        # evaluated in the production entry's order (EsbuildCompiler.
-        # _esbuild_entry_lines): the bundle's own modules first, in bundle
-        # order, so the same registry add comes first in both modes
         own_specifiers = list(native_data["import_map"])
         bridge_specifiers = own_specifiers + sorted(
             (self._bridge_external_specifiers(native_data) | set(registered_reach))
@@ -2277,12 +2220,6 @@ class IrQweb(models.AbstractModel):
 
     @staticmethod
     def _lock_esm_publication(cr, lock_timeout: str | None = None) -> None:
-        # These dedicated write transactions must see the preceding writer's
-        # commit after waiting. REPEATABLE READ would retain the snapshot from
-        # the lock statement and let both writers insert the same URLs or
-        # publish two current builds. The isolation level is the transaction's
-        # first statement or PostgreSQL refuses it ("must be called before any
-        # query"), so the lock timeout comes after it
         cr.use_read_committed()
         if lock_timeout:
             cr.execute("SELECT set_config('lock_timeout', %s, true)", (lock_timeout,))
@@ -2349,21 +2286,9 @@ class IrQweb(models.AbstractModel):
     def _save_esm_attachment_rows_in_test(
         self, vals_list: list[dict], build: dict | None
     ) -> None:
-        # the test transaction is rolled back and a read-only test cursor
-        # cannot write at all, so what a test compiled was gone before the
-        # next class ran. The rows and their build go through their own
-        # connection, which outlives the test, the way a request escalates to
-        # a read-write cursor. The test transaction is REPEATABLE READ and
-        # cannot see that commit, so a writable test cursor also keeps its own
-        # copy of the rows for the test to read. It does not publish the build
-        # again: the build committed beside it would make that a unique
-        # violation the snapshot cannot see coming
         persisted = self._save_esm_attachment_rows_autonomously(vals_list, build)
         if self.env.cr.readonly:
             if vals_list:
-                # persisted for the next process, but not for this
-                # transaction, which cannot see the commit: the caller's
-                # read-only fallback stands, as it did before
                 _debug.logic(
                     "esm_rows_declined",
                     by="test",
@@ -2380,9 +2305,6 @@ class IrQweb(models.AbstractModel):
             if vals_list and (
                 distrust := getattr(_module.current_test, "_distrust_test_caches", None)
             ):
-                # the copy is the only one the test's class transaction can
-                # read, and the test's rollback takes it: the nodes cached over
-                # it serve this test, not the next one
                 distrust("assets")
             _debug.lifecycle("esm_rows_saved", by="test", rows=len(vals_list))
         else:
@@ -2390,9 +2312,6 @@ class IrQweb(models.AbstractModel):
 
     def _own_esm_rows(self, rows: int, *, by: str) -> None:
         if rows:
-            # the nodes cached from here on name rows this transaction owns:
-            # invalidating now makes a rollback, of the transaction or of a
-            # savepoint around the render, drop those nodes too
             self.env.registry.clear_cache("assets")
         _debug.lifecycle("esm_rows_saved", by=by, rows=rows)
 
@@ -2407,10 +2326,6 @@ class IrQweb(models.AbstractModel):
             return attachment._get_asset_stream(filename, accept_encodings)
         if not _module.current_test:
             return None
-        # what a test compiles is committed through its own connection; the
-        # copy its transaction keeps goes with a rollback the cached nodes
-        # outlive. Outside a test the next request reads that commit, and the
-        # test snapshot predates it, so the commit is read the way it was made
         from odoo.db import db_connect
 
         with db_connect(self.env.cr.dbname).cursor() as own_cr:
@@ -2429,9 +2344,6 @@ class IrQweb(models.AbstractModel):
         bundle: str = "",
         build: dict | None = None,
     ) -> None:
-        # Compiled public assets are shared across companies. In particular,
-        # autonomous persistence must not take a foreign-key lock on a company
-        # held by the transaction that is waiting for this compilation.
         vals_list = [dict(vals, company_id=False) for vals in vals_list]
         if build is not None and (
             self.env["ir.asset.build"].sudo()._is_current(build)
@@ -2447,8 +2359,6 @@ class IrQweb(models.AbstractModel):
         if not request:
             if self.env.cr.readonly:
                 if not vals_list:
-                    # the rows are served already; publishing the build can
-                    # wait for a writable cursor
                     _debug.logic("esm_build_deferred", bundle=bundle, reason="readonly")
                     return
                 _debug.logic(
@@ -2479,8 +2389,6 @@ class IrQweb(models.AbstractModel):
             )
         except Exception:
             if not vals_list:
-                # the rows are served already; the build stays as it was
-                # until a writable request publishes it
                 log_event(_attach_log, logging.DEBUG, "publish_failed", bundle=bundle)
                 return
             _logger.warning(
@@ -2583,8 +2491,6 @@ class IrQweb(models.AbstractModel):
 
     @api.model
     def _warm_page_bundle(self, bundle: str, page_scope: tuple[str, ...] = ()) -> None:
-        # a page asks for a bundle's styles and its scripts in two calls, each
-        # cached under its own key
         self._get_asset_links(bundle, css=True, js=False)
         self._get_asset_links(bundle, css=False, js=True)
         self._get_native_module_nodes(bundle, page=False, page_scope=page_scope)

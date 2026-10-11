@@ -35,19 +35,18 @@ class TestMessageController(MailControllerThreadCommon):
         record = self.env["mail.test.access.public"].create({"name": "Public Channel"})
         record.with_user(self.user_employee).write(
             {"name": "updated"}
-        )  # can access, update, ...
-        # if this test breaks, it might be due to a change in /web/content, or the default rules for accessing an attachment. This is not an issue but it makes this test irrelevant.
+        )
         self.assertFalse(self.url_open(f"/web/content/{att.id}").ok)
         response = self.url_open(
             url="/mail/message/post",
-            headers={"Content-Type": "application/json"},  # route called as demo
+            headers={"Content-Type": "application/json"},
             data=json_dumps(
                 {
                     "params": {
                         "post_data": {
                             "attachment_ids": [
                                 att.id
-                            ],  # demo does not have access to this attachment id
+                            ],
                             "body": "",
                             "message_type": "comment",
                             "partner_ids": [],
@@ -61,7 +60,7 @@ class TestMessageController(MailControllerThreadCommon):
         )
         self.assertNotIn(
             "arguments_for_firing_marc_demo", response.text
-        )  # demo should not be able to see the name of the document
+        )
 
     def test_thread_partner_from_email_authenticated(self):
         self.authenticate(self.user_employee.login, self.user_employee.login)
@@ -89,7 +88,6 @@ class TestMessageController(MailControllerThreadCommon):
             ),
             "authenticated users can create a partner from an email",
         )
-        # should not create another partner with same email
         res4 = self.url_open(
             url="/mail/partner/from_email",
             data=json_dumps(
@@ -138,7 +136,6 @@ class TestMessageController(MailControllerThreadCommon):
             ),
             "authenticated users can create a partner from an email from message_post",
         )
-        # should not create another partner with same email
         res6 = self.url_open(
             url="/mail/message/post",
             data=json_dumps(
@@ -168,7 +165,6 @@ class TestMessageController(MailControllerThreadCommon):
             {"name": "partner", "active": False}
         )
 
-        # 1. posting a message
         data = self.call_jsonrpc(
             "/mail/message/post",
             {
@@ -187,7 +183,6 @@ class TestMessageController(MailControllerThreadCommon):
         )
         self.assertEqual(["markup", "<p>A great message</p>"], message["body"])
 
-        # 2. attach a file
         response = self.url_open(
             "/mail/attachment/upload",
             {

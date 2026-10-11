@@ -26,7 +26,6 @@ class EventEventTicket(models.Model):
             )
         return res
 
-    # description
     event_type_id = fields.Many2one(
         required=False,
         ondelete="set null",
@@ -41,7 +40,6 @@ class EventEventTicket(models.Model):
         comodel_name="res.company",
         related="event_id.company_id",
     )
-    # sale
     start_sale_datetime = fields.Datetime(string="Registration Start")
     end_sale_datetime = fields.Datetime(string="Registration End")
     is_launched = fields.Boolean(
@@ -60,7 +58,6 @@ class EventEventTicket(models.Model):
         inverse_name="event_ticket_id",
         string="Registrations",
     )
-    # seats
     seats_reserved = fields.Integer(
         string="Reserved Seats",
         compute="_compute_seats",
@@ -92,14 +89,10 @@ class EventEventTicket(models.Model):
         compute="_compute_is_sold_out",
         help="Whether seats are not available for this ticket.",
     )
-    # reports
     color = fields.Char(default="#875A7B")
 
     @api.depends("end_sale_datetime")
     def _compute_is_expired(self) -> None:
-        # both operands are the same instant expressed in the same timezone, so
-        # the comparison does not depend on which one that is: compare the
-        # stored UTC values directly
         now = fields.Datetime.now()
         for ticket in self:
             ticket.is_expired = bool(
@@ -123,7 +116,6 @@ class EventEventTicket(models.Model):
 
     @api.depends("seats_max", "registration_ids.state", "registration_ids.active")
     def _compute_seats(self) -> None:
-        """Determine available, reserved, used and taken seats."""
         base_vals = {"seats_reserved": 0, "seats_used": 0}
         results = self.env["event.registration"]._count_taken_seats_by(
             "event_ticket_id", self.ids
@@ -194,11 +186,6 @@ class EventEventTicket(models.Model):
     @api.depends("seats_max", "seats_available")
     @api.depends_context("name_with_seats_availability")
     def _compute_display_name(self):
-        """Adds ticket seats availability if requested by context.
-        Always display the name without availabilities if the event is multi slots
-        because the availability displayed won't be relative to the possible slot combinations
-        but only relative to the event and this will confuse the user.
-        """
         if not self.env.context.get("name_with_seats_availability"):
             return super()._compute_display_name()
         for ticket in self:
@@ -216,10 +203,6 @@ class EventEventTicket(models.Model):
         return None
 
     def _get_current_limit_per_order(self, event_slot=False, event=False):
-        """Compute the maximum possible number of tickets for an order, taking
-        into account the given event_slot if applicable.
-        If no ticket is created (alone event), event_id argument is used. Then
-        return the dictionary with False as key."""
         if event_slot:
             event_slot.check_singleton()
         if self:
@@ -238,8 +221,6 @@ class EventEventTicket(models.Model):
             }
         availabilities = {}
         for ticket, seats_available in zip(self, slots_seats_available, strict=True):
-            # None is "no limit"; 0 is "sold out" -- `not seats_available` said
-            # both, and handed a sold-out ticket the full per-order allowance
             if seats_available is None:
                 seats_available = (
                     ticket.limit_max_per_order or ticket.event_id.EVENT_MAX_TICKETS
@@ -252,9 +233,6 @@ class EventEventTicket(models.Model):
         return availabilities
 
     def _get_ticket_multiline_description(self):
-        """Compute a multiline description of this ticket. It is used when ticket
-        description are necessary without having to encode it manually, like sales
-        information."""
         return "%s\n%s" % (self.display_name, self.event_id.display_name)
 
     @api.ondelete(at_uninstall=False)

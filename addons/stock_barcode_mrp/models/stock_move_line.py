@@ -29,10 +29,8 @@ class StockMoveLine(models.Model):
         lines_not_in_production = self.env["stock.move.line"]
         _debug.perf.count("barcode_parent_locations", lines=self)
         for line in self:
-            # if component
             if line.production_id:
                 if self.env.context.get("newByProduct", False):
-                    # For byproducts
                     line.parent_location_id = line.production_id.production_location_id
                     line.parent_location_dest_id = line.production_id.location_src_id
                 else:
@@ -40,7 +38,6 @@ class StockMoveLine(models.Model):
                     line.parent_location_dest_id = (
                         line.production_id.production_location_id
                     )
-            # if final product
             elif line.move_id.production_id:
                 line.parent_location_id = (
                     line.move_id.production_id.production_location_id
@@ -61,7 +58,6 @@ class StockMoveLine(models.Model):
         move_line_ids = super().create(vals_list)
         for ml in move_line_ids:
             if not ml.move_id and ml.production_id:
-                # Try to find a move this move line belongs to
                 if self.env.context.get("newByProduct"):
                     mrp_o2m_field = "move_byproduct_ids"
                 else:
@@ -71,7 +67,6 @@ class StockMoveLine(models.Model):
                     [("product_id", "=", ml.product_id.id)]
                 )
                 if not move:
-                    # To avoid setting production_id when creating stock move we clear it from the context
                     move = (
                         self.env["stock.move"]
                         .with_context(default_production_id=None)

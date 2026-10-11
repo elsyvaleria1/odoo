@@ -55,7 +55,6 @@ class SddMandate(models.Model):
         default=False,
     )
 
-    # one-off mandates are fully supported, but hidden to the user for now. Let's see if they need it.
     one_off = fields.Boolean(
         string="One-off Mandate",
         default=False,
@@ -164,9 +163,6 @@ class SddMandate(models.Model):
 
     @api.model
     def _sdd_get_usable_mandate(self, company_id, partner_id, date):
-        """returns the first mandate found that can be used, accordingly to given parameters
-        or none if there is no such mandate.
-        """
         return self.env["sdd.mandate"].search(
             [
                 ("state", "=", "active"),
@@ -182,7 +178,6 @@ class SddMandate(models.Model):
         )
 
     def _compute_from_moves(self) -> None:
-        """Retrieve the invoices reconciled to the payments through the reconciliation (account.partial.reconcile)."""
         stored_mandates = self.filtered("id")
         if not stored_mandates:
             self.paid_invoices_nber = 0
@@ -220,12 +215,6 @@ class SddMandate(models.Model):
             mandate.paid_invoices_nber = len(invoices)
 
     def _update_and_partition_state_by_validity(self) -> dict:
-        """
-        Helper method to check whether a mandate can still be used or not (and if we're nearing its expiration date, to warn users)
-        This also close mandates that are past their validity date
-        :return: tuple containing the mandates recordsets split by their validity (valid, valid but expiring soon, invalid)
-        :rtype: dict
-        """
         today = fields.Date.context_today(self)
         expiry_date_per_mandate = self._get_expiry_date_per_mandate()
         active_mandates = self.filtered(lambda mandate: mandate.state == "active")
@@ -239,7 +228,7 @@ class SddMandate(models.Model):
             expiry_date = expiry_date_per_mandate[mandate]
             if mandate.start_date <= today <= expiry_date:
                 if today + date_utils.relativedelta(days=30) >= expiry_date:
-                    expiring_mandates += mandate  # Used to send warnings
+                    expiring_mandates += mandate
                 else:
                     valid_mandates += mandate
             elif today < mandate.start_date:
@@ -248,7 +237,6 @@ class SddMandate(models.Model):
                 to_close += mandate
                 invalid_mandates += mandate
 
-        # Closing invalid mandates that haven't been closed yet
         to_close.state = "closed"
         return {
             "valid": valid_mandates.with_prefetch(),
@@ -257,10 +245,6 @@ class SddMandate(models.Model):
         }
 
     def _get_expiry_date_per_mandate(self):
-        """
-        "The mandate expires 36 months after the last initiated collection."
-        - SEPA regulation
-        """
         expiry_date_per_mandate = {}
         delay_36_months = date_utils.relativedelta(months=36)
         payments_collected_per_mandate = dict(
@@ -290,7 +274,7 @@ class SddMandate(models.Model):
                 max(payments_collected.mapped("date"), default=mandate.start_date)
                 + delay_36_months
             )
-            expiry_date_per_mandate[mandate] = min(dates)  # Todo use records
+            expiry_date_per_mandate[mandate] = min(dates)
 
         return expiry_date_per_mandate
 
@@ -326,7 +310,6 @@ class SddMandate(models.Model):
         }
 
     def action_validate_mandate(self) -> None:
-        """Called by the 'validate' button of the form view."""
         if not self.env.user.has_group("account.group_validate_bank_account"):
             raise AccessError(
                 self.env._("You don't have the rights to validate SDD mandates.")
@@ -351,16 +334,12 @@ class SddMandate(models.Model):
                 mandate.state = "active"
 
     def action_revoke_mandate(self) -> None:
-        """Called by the 'revoke' button of the form view."""
         self.state = "revoked"
 
     def action_cancel_mandate(self) -> None:
         self.state = "cancelled"
 
     def action_close_mandate(self) -> None:
-        """Called by the 'close' button of the form view.
-        Also automatically triggered by one-off mandate when they are used.
-        """
         for record in self:
             if record.state != "revoked":
                 record.end_date = fields.Date.today()
@@ -399,7 +378,7 @@ class SddMandate(models.Model):
         for record in self:
             if (
                 record.debtor_id_code and len(record.debtor_id_code) > 35
-            ):  # Arbitrary limitation given by SEPA regulation for the <id> element used for this field when generating the XML
+            ):
                 raise UserError(
                     self.env._(
                         "The debtor identifier you specified exceeds the limitation of 35 characters imposed by SEPA regulation"
@@ -411,7 +390,7 @@ class SddMandate(models.Model):
         for mandate in self:
             if (
                 mandate.pre_notification_period < SDD_MIN_PRENOT_PERIOD
-            ):  # Minimum required for collection
+            ):
                 raise UserError(
                     self.env._(
                         "SEPA regulations set the minimum pre-notification period to a minimum of %s days "
@@ -421,7 +400,6 @@ class SddMandate(models.Model):
                 )
 
     def _check_required_data(self) -> None:
-        """Helper to make sure we don't send/validate a mandate missing the required data"""
         for mandate in self:
             if mandate.sdd_scheme == "B2B" and not mandate.partner_id.is_company:
                 raise UserError(
@@ -463,10 +441,9 @@ class SddMandate(models.Model):
         mandates_per_validity[
             "valid"
         ].expiration_warning_already_sent = (
-            False  # Reset the field if a new payment came, resetting the period
+            False
         )
         for mandate in mandates_per_validity["expiring"].filtered(
             lambda sddm: not sddm.expiration_warning_already_sent
         ):
-            # Warning 30 days before expiration
             mandate._send_expiry_reminder()

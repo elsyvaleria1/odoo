@@ -15,7 +15,6 @@ CII_NAMESPACES = {
     "udt": "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100",
 }
 
-# Imcomplete, full list on https://service.unece.org/trade/untdid/d16b/tred/tred4461.htm
 PAYMENT_MEAN_CODES = {"Payment to bank account": 42, "SEPA direct debit": 59}
 
 
@@ -25,7 +24,6 @@ class AccountEdiXmlCii(models.AbstractModel):
     _description = "Factur-x/XRechnung CII 2.2.0"
 
     def _find_value(self, xpath, tree, nsmap=False):
-        # EXTENDS account.edi.common
         return super()._find_value(xpath, tree, CII_NAMESPACES)
 
     def _export_invoice_filename(self, invoice):
@@ -40,8 +38,6 @@ class AccountEdiXmlCii(models.AbstractModel):
     def _export_invoice_constraints(self, invoice, vals):
         constraints = self._invoice_constraints_common(invoice)
         if invoice.move_type == "out_invoice":
-            # [BR-DE-1] An Invoice must contain information on "PAYMENT INSTRUCTIONS" (BG-16)
-            # first check that a bank_account_id exists, then check that there is an account number
             constraints.update(
                 {
                     "seller_payment_instructions_1": self._check_required_fields(
@@ -58,32 +54,22 @@ class AccountEdiXmlCii(models.AbstractModel):
             )
         constraints.update(
             {
-                # [BR-08]-An Invoice shall contain the Seller postal address (BG-5).
-                # [BR-09]-The Seller postal address (BG-5) shall contain a Seller country code (BT-40).
                 "seller_postal_address": self._check_required_fields(
                     vals["record"]["company_id"]["partner_id"]["commercial_partner_id"],
                     "country_id",
                 ),
-                # [BR-CO-26]-In order for the buyer to automatically identify a supplier, the Seller identifier (BT-29),
-                # the Seller legal registration identifier (BT-30) and/or the Seller VAT identifier (BT-31) shall be present.
                 "seller_identifier": self._check_required_fields(
                     vals["record"]["company_id"],
-                    ["vat"],  # 'siret'
+                    ["vat"],
                 ),
-                # [BR-DE-6] The element "Seller contact telephone number" (BT-42) must be transmitted.
                 "seller_phone": self._check_required_fields(
                     vals["record"]["company_id"]["partner_id"]["commercial_partner_id"],
                     ["phone_ids"],
                 ),
-                # [BR-DE-7] The element "Seller contact email address" (BT-43) must be transmitted.
                 "seller_email": self._check_required_fields(
                     vals["record"]["company_id"], "email"
                 ),
-                # [BR-CO-04]-Each Invoice line (BG-25) shall be categorized with an Invoiced item VAT category code (BT-151).
                 "tax_invoice_line": self._check_required_tax(vals),
-                # [BR-IC-02]-An Invoice that contains an Invoice line (BG-25) where the Invoiced item VAT category code (BT-151)
-                # is "Intra-community supply" shall contain the Seller VAT Identifier (BT-31) or the Seller tax representative
-                # VAT identifier (BT-63) and the Buyer VAT identifier (BT-48).
                 "intracom_seller_vat": self._check_required_fields(
                     vals["record"]["company_id"], "vat"
                 )
@@ -94,8 +80,6 @@ class AccountEdiXmlCii(models.AbstractModel):
                 )
                 if vals["intracom_delivery"]
                 else None,
-                # [BR-IG-05]-In an Invoice line (BG-25) where the Invoiced item VAT category code (BT-151) is "IGIC" the
-                # invoiced item VAT rate (BT-152) shall be greater than 0 (zero).
                 "igic_tax_rate": self._check_non_0_rate_tax(vals)
                 if vals["record"]["partner_id"]["country_id"]["code"] == "ES"
                 and vals["record"]["partner_id"]["zip"]
@@ -126,13 +110,9 @@ class AccountEdiXmlCii(models.AbstractModel):
         return None
 
     def _get_scheduled_delivery_time(self, invoice):
-        # don't create a bridge only to get line.sale_line_ids.order_id.picking_ids.date_done
-        # line.sale_line_ids.order_id.picking_ids.scheduled_date or line.sale_line_ids.order_id.commitment_date
         return invoice.delivery_date or invoice.invoice_date
 
     def _get_invoicing_period(self, invoice) -> list:
-        # get the Invoicing period (BG-14): a list of dates covered by the invoice
-        # don't create a bridge to get the date range from the timesheet_ids
         return [invoice.invoice_date]
 
     def _prepare_exchanged_document_data(self, invoice) -> dict:
@@ -150,12 +130,10 @@ class AccountEdiXmlCii(models.AbstractModel):
         supplier = invoice.company_id.partner_id.commercial_partner_id
 
         def format_date(dt):
-            # Format the date in the Factur-x standard.
             dt = dt or datetime.now()
             return dt.strftime(DEFAULT_FACTURX_DATE_FORMAT)
 
         def format_monetary(number, decimal_places=2):
-            # Facturx requires the monetary values to be rounded to 2 decimal values
             return float_repr(number, decimal_places)
 
         def grouping_key_generator(base_line, tax_data):
@@ -170,24 +148,16 @@ class AccountEdiXmlCii(models.AbstractModel):
                 "amount": tax.amount,
                 "amount_type": tax.amount_type,
             }
-            # If the tax is fixed, we want to have one group per tax
-            # s.t. when the invoice is imported, we can try to guess the fixed taxes
             if tax.amount_type == "fixed":
                 grouping_key["tax_name"] = tax.name
             return grouping_key
 
-        # Validate the structure of the taxes
         self._check_taxes(invoice.invoice_line_ids.tax_ids)
 
-        # Create file content.
         tax_details = invoice._prepare_invoice_aggregated_taxes(
             grouping_key_generator=grouping_key_generator
         )
 
-        # Fixed Taxes: filter them on the document level, and adapt the totals
-        # Fixed taxes are not supposed to be taxes in real live. However, this is the way in Odoo to manage recupel
-        # taxes in Belgium. Since only one tax is allowed, the fixed tax is removed from totals of lines but added
-        # as an extra charge/allowance.
         fixed_taxes_keys = [
             k for k in tax_details["tax_details"] if k["amount_type"] == "fixed"
         ]
@@ -216,7 +186,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             "ship_to_trade_party": invoice.partner_shipping_id
             if "partner_shipping_id" in invoice._fields and invoice.partner_shipping_id
             else invoice.commercial_partner_id,
-            # Chorus Pro fields
             "buyer_reference": invoice.buyer_reference
             if "buyer_reference" in invoice._fields and invoice.buyer_reference
             else invoice.commercial_partner_id.ref,
@@ -230,7 +199,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             "document_context_id": "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended",
         }
 
-        # data used for IncludedSupplyChainTradeLineItem / SpecifiedLineTradeSettlement
         for line_vals in template_values["invoice_line_vals_list"]:
             line = line_vals["line"]
             line_vals["unece_uom_code"] = self._get_uom_unece_code(line.product_uom_id)
@@ -241,8 +209,6 @@ class AccountEdiXmlCii(models.AbstractModel):
                 line_vals["billing_start"] = line.deferred_start_date
                 line_vals["billing_end"] = line.deferred_end_date
 
-        # [BR - IC - 11] - In an Invoice with a VAT breakdown (BG-23) where the VAT category code (BT-118) is
-        # "Intra-community supply" the Actual delivery date (BT-72) or the Invoicing period (BG-14) shall not be blank.
         billing_start_dates = [invoice.invoice_date] if invoice.invoice_date else []
         billing_start_dates += [
             line_vals["billing_start"]
@@ -262,10 +228,7 @@ class AccountEdiXmlCii(models.AbstractModel):
         if billing_end_dates:
             template_values["billing_end"] = max(billing_end_dates)
 
-        # data used for ApplicableHeaderTradeSettlement / ApplicableTradeTax (at the end of the xml)
         for tax_detail_vals in template_values["tax_details"]["tax_details"].values():
-            # /!\ -0.0 == 0.0 in python but not in XSLT, so it can raise a fatal error when validating the XML
-            # if 0.0 is expected and -0.0 is given.
             amount_currency = tax_detail_vals["tax_amount_currency"]
             tax_detail_vals["calculated_amount"] = (
                 amount_currency
@@ -276,7 +239,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             if tax_detail_vals.get("tax_category_code") == "K":
                 template_values["intracom_delivery"] = True
 
-        # Fixed taxes: add them as charges on the invoice lines
         for line_vals in template_values["invoice_line_vals_list"]:
             line_vals["allowance_charge_vals_list"] = []
             for grouping_key, tax_detail in tax_details["tax_details_per_record"][
@@ -298,10 +260,8 @@ class AccountEdiXmlCii(models.AbstractModel):
                 line_vals["line"].price_subtotal + sum_fixed_taxes
             )
 
-            # The quantity is the line.quantity since we keep the unece_uom_code!
             line_vals["quantity"] = line_vals["line"].quantity
 
-            # Invert the quantity and the gross_price_total_unit if a line has a negative price total
             if (
                 line_vals["line"].currency_id.compare_amounts(
                     line_vals["gross_price_total_unit"], 0
@@ -312,7 +272,6 @@ class AccountEdiXmlCii(models.AbstractModel):
                 line_vals["gross_price_total_unit"] *= -1
                 line_vals["price_subtotal_unit"] *= -1
 
-        # Fixed taxes: set the total adjusted amounts on the document level
         template_values["tax_basis_total_amount"] = tax_details["base_amount_currency"]
         template_values["tax_total_amount"] = tax_details["tax_amount_currency"]
 
@@ -346,9 +305,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             cleanup_xml_node(xml_content), xml_declaration=True, encoding="UTF-8"
         ), set(errors)
 
-    # -------------------------------------------------------------------------
-    # IMPORT
-    # -------------------------------------------------------------------------
 
     def _prepare_partner_import_params(self, tree, role):
         return {
@@ -403,13 +359,11 @@ class AccountEdiXmlCii(models.AbstractModel):
         partner, partner_logs = self._import_partner(
             invoice.company_id, **self._prepare_partner_import_params(tree, role)
         )
-        # Need to set partner before to compute bank and lines properly
         invoice.partner_id = partner.id
         invoice_values["currency_id"], currency_logs = self._import_currency(
             tree, ".//{*}InvoiceCurrencyCode"
         )
 
-        # ==== bank_account_id ====
         bank_detail_nodes = tree.findall(".//{*}SpecifiedTradeSettlementPaymentMeans")
         bank_details = [
             bank_detail_node.findtext("{*}PayeePartyCreditorFinancialAccount/{*}IBANID")
@@ -427,7 +381,6 @@ class AccountEdiXmlCii(models.AbstractModel):
         if bank_details:
             self._import_partner_bank(invoice, bank_details=bank_details)
 
-        # ==== ref, invoice_origin, narration, payment_reference ====
         invoice_values["ref"] = tree.findtext("./{*}ExchangedDocument/{*}ID")
         invoice_values["invoice_origin"] = tree.findtext(
             ".//{*}BuyerOrderReferencedDocument/{*}IssuerAssignedID"
@@ -443,7 +396,6 @@ class AccountEdiXmlCii(models.AbstractModel):
             "./{*}SupplyChainTradeTransaction/{*}ApplicableHeaderTradeSettlement/{*}PaymentReference"
         )
 
-        # ==== invoice_date, invoice_date_due ====
         issue_date = tree.findtext(
             "./{*}ExchangedDocument/{*}IssueDateTime/{*}DateTimeString"
         )
@@ -459,7 +411,6 @@ class AccountEdiXmlCii(models.AbstractModel):
                 due_date.strip(), DEFAULT_FACTURX_DATE_FORMAT
             )
 
-        # ==== Document level AllowanceCharge, Prepaid Amounts, Invoice Lines ====
         allowance_charges_line_vals, allowance_charges_logs = (
             self._import_document_allowance_charges(
                 tree,
@@ -542,16 +493,8 @@ class AccountEdiXmlCii(models.AbstractModel):
             },
         }
 
-    # -------------------------------------------------------------------------
-    # IMPORT : helpers
-    # -------------------------------------------------------------------------
 
     def _get_import_document_amount_sign(self, tree) -> tuple:
-        """
-        In factur-x, an invoice has code 380 and a credit note has code 381. However, a credit note can be expressed
-        as an invoice with negative amounts. For this case, we need a factor to take the opposite of each quantity
-        in the invoice.
-        """
         move_type_code = tree.find(".//{*}ExchangedDocument/{*}TypeCode")
         if move_type_code is None:
             return None, None

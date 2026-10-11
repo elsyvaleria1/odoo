@@ -59,28 +59,11 @@ class TestProjectSharing(TestProjectSharingCommon):
         ).action_send_mail()
 
     def test_project_sharing_timesheets_visibility(self):
-        """Check if the portal user sees only the validated timesheets when the 'Invoicing Policy' in Timesheets is set to 'approved'
-
-        When the `sale.invoiced_timesheet == 'approved'` it means only validated timesheets are invoiced.
-        So the portal user should only see those timesheets.
-
-        Test Case:
-        =========
-        1) Share a project with `allow_timesheets=True` to a portal user in edit mode.
-        2) Create a task into this project and create some timesheets into that task
-        3) Check if the portal user can see the timesheets into that task
-        4) Change the "Invoicing Policy" in Timesheets app. That is set `sale.invoiced_timesheet` to 'approved'
-        5) Check if the portal user can see no timesheets into the task.
-        6) Validate at least a timesheet related to that task.
-        7) Check if the portal user can see the validated timesheet(s) into that task.
-        """
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.invoiced_timesheet", DEFAULT_INVOICED_TIMESHEET
         )
-        # 1) Share a project with `allow_timesheets=True` to a portal user in edit mode.
         project_shared = self.project_portal
 
-        # 2) Create a task into this project and create some timesheets into that task
         task = (
             self.env["project.task"]
             .with_context(
@@ -118,8 +101,6 @@ class TestProjectSharing(TestProjectSharingCommon):
             )
         )
 
-        # 3) Check if the portal user can see the timesheets into that task
-        # The portal user is added to the followers of the task to enable its read access to it.
         task.message_subscribe(partner_ids=self.user_portal.partner_id.ids)
         task_read_with_portal_user = task.with_user(self.user_portal).read(
             ["timesheet_ids"]
@@ -130,12 +111,10 @@ class TestProjectSharing(TestProjectSharingCommon):
             "The external collaborator should see the both timesheets created in that task.",
         )
 
-        # 4) Change the "Invoicing Policy" in Timesheets app. That is set `sale.invoiced_timesheet` to 'approved'
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.invoiced_timesheet", "approved"
         )
 
-        # 5) Check if the portal user can see no timesheets into the task.
         task_read_with_portal_user = task.with_user(self.user_portal).read(
             ["timesheet_ids"]
         )
@@ -144,12 +123,10 @@ class TestProjectSharing(TestProjectSharingCommon):
             "The external collaborator should see no timesheets into that task since the timesheets are not validated.",
         )
 
-        # 6) Validate at least a timesheet related to that task.
         timesheet1 = timesheets[0]
         timesheet1.action_validate_timesheet()
         self.assertTrue(timesheet1.validated, "The timesheet should be validated")
 
-        # 7) Check if the portal user can see the validated timesheet(s) into that task.
         task_read_with_portal_user = task.with_user(self.user_portal).read(
             ["timesheet_ids"]
         )

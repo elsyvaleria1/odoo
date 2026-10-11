@@ -28,16 +28,10 @@ class SocialPostTemplate(models.Model):
     @api.model
     def default_get(self, fields):
         result = super().default_get(fields)
-        # When entering a text in a reference field, we should take the entered
-        # text  and use it to initialize the message. As the reference widget might
-        # share different models (and so not always write on "message" but sometimes on
-        # "name" or whatever) it will not update the "create_name_field" parameter when
-        # the model changes and we need this piece of code to set correctly the message
         if not result.get("message") and self.env.context.get("default_name"):
             result["message"] = self.env.context.get("default_name")
         return result
 
-    # Content
     message = fields.Text()
     image_ids = fields.Many2many(
         comodel_name="ir.attachment",
@@ -49,14 +43,12 @@ class SocialPostTemplate(models.Model):
         compute="_compute_display_message",
         search="_search_display_message",
     )
-    # JSON array capturing the URLs of the images to make it easy to display them in the kanban view
     image_urls = fields.Text(
         string="Images URLs",
         compute="_compute_image_urls",
     )
     is_split_per_media = fields.Boolean(string="Split Per Network")
     media_count = fields.Integer(compute="_compute_media_count")
-    # Account management
     account_ids = fields.Many2many(
         comodel_name="social.account",
         string="Social Accounts",
@@ -93,7 +85,6 @@ class SocialPostTemplate(models.Model):
 
     @api.depends("message", "is_split_per_media")
     def _compute_message_by_media(self) -> None:
-        """To be used in sub-modules to compute the media-specific message."""
         message_fields = self._message_fields()
         for post in self:
             for field in message_fields.values():
@@ -102,7 +93,6 @@ class SocialPostTemplate(models.Model):
 
     @api.depends("image_ids", "is_split_per_media")
     def _compute_images_by_media(self) -> None:
-        """To be used in sub-modules to compute the media-specific images."""
         images_fields = self._images_fields()
         for post in self:
             for field in images_fields.values():
@@ -141,7 +131,6 @@ class SocialPostTemplate(models.Model):
 
     @api.depends(lambda self: ["image_ids"] + list(self._images_fields().values()))
     def _compute_image_urls(self) -> None:
-        """See field 'help' for more information."""
         image_fields = ["image_ids"] + list(self._images_fields().values())
         for post in self:
             all_image_ids = OrderedSet(
@@ -157,7 +146,6 @@ class SocialPostTemplate(models.Model):
             post.media_count = len(set(post.account_ids.mapped("media_type")))
 
     def _compute_account_ids(self) -> None:
-        """If there are less than 3 social accounts available, select them all by default."""
         all_account_ids = self.env["social.account"].sudo().search([])
 
         for post in self:
@@ -173,8 +161,6 @@ class SocialPostTemplate(models.Model):
             post.has_active_accounts = has_active_accounts
 
     def _prepare_preview_values(self, media):
-        """Generic function called by media specific _compute_*media*_preview methods. This function returns the
-        live_post_link (in the case the compute is used in the context of a social_post) and the published date."""
         self.check_singleton()
         return {
             "published_date": format_datetime(
@@ -183,10 +169,6 @@ class SocialPostTemplate(models.Model):
         }
 
     def _set_attachemnt_res_id(self) -> None:
-        """Set res_id of created attachements, the many2many_binary widget
-        might create them without res_id, and if it's the case,
-        only the current user will be able to read the attachments
-        (other user will get an access error)."""
         for post in self:
             if post.image_ids:
                 attachments = (
@@ -236,7 +218,6 @@ class SocialPostTemplate(models.Model):
         return action
 
     def _prepare_social_post_values(self):
-        """Return the values to generate a social post from the social post template."""
         self.check_singleton()
         return {
             "message": self.message,
@@ -249,10 +230,6 @@ class SocialPostTemplate(models.Model):
 
     @api.model
     def _prepare_post_content(self, message, media_type, **kw):
-        """Prepares the post content and can be customized by underlying social implementations.
-        e.g: YouTube will automatically include a link at the end of the message.
-        kwargs are limited to fields actually used by the underlying implementations
-        (e.g: 'youtube_video_id')."""
 
         if media_type not in [
             key
@@ -266,28 +243,18 @@ class SocialPostTemplate(models.Model):
 
     @api.model
     def _message_fields(self) -> dict:
-        """Return the message field per media."""
         return {}
 
     @api.model
     def _images_fields(self) -> dict:
-        """Return the images field per media."""
         return {}
 
     @api.model
     def _get_fields_post_message_modifying(self):
-        """Returns additional fields required by the '_prepare_post_content' to compute the value
-        of the social.live.post's "message" field. Which is a post-processed version of this model's
-        "message" field (i.e shortened links, UTMized, ...).
-        For example, social_youtube requires the 'youtube_video_id' field to be able to correctly
-        prepare the post content."""
         return []
 
     @api.model
     def _extract_url_from_message(self, message):
-        """Utility method that extracts an URL (ex: https://www.google.com) from a string message.
-        Copied from: https://daringfireball.net/2010/07/improved_regex_for_matching_urls"""
-        # TDE FIXME: use a tool method instead
         if not message:
             return None
         url_regex = re.compile(
@@ -300,6 +267,4 @@ class SocialPostTemplate(models.Model):
         return None
 
     def _get_domain_default_accounts(self):
-        """Can be overridden by underlying social.media implementation to remove default accounts.
-        It's used to filter the default accounts to tick when creating a new social.post."""
         return []

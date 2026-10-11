@@ -4,9 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestTeamDocumentsReadTheRecordsTeam(TransactionCase):
-    # "Team Documents" reaches the orders of the salesman's teams: the order's
-    # own team, whoever sold it, or an order nobody sold (the user's decision,
-    # P4 T2 option B), no longer the orders of whoever shares a team with them
 
     @classmethod
     def setUpClass(cls):

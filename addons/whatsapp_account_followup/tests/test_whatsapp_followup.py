@@ -101,15 +101,6 @@ class TestWhatsAppFollowup(WhatsAppCommon, TestAccountFollowupReports):
 
     @users("admin")
     def test_composer_raise_no_template_error(self):
-        """
-        The expected behavior is as follows:-
-            In the presence of whatsapp templates
-                wizard.whatsapp.message.send should open error-free
-                wizard.res.partner.send.followup should open error-free
-            In the absence of whatsapp templates
-                wizard.whatsapp.message.send should throw an error
-                wizard.res.partner.send.followup should open error-free
-        """
 
         def open_wa_composer():
             self.env["wizard.whatsapp.message.send"].with_context(
@@ -128,7 +119,6 @@ class TestWhatsAppFollowup(WhatsAppCommon, TestAccountFollowupReports):
         open_wa_composer()
         open_followup_manual_reminder()
 
-        # delete all whatsapp templates
         self.env["whatsapp.template"].with_user(self.user_admin).search([]).unlink()
 
         self.assertRaises(RedirectWarning, open_wa_composer)

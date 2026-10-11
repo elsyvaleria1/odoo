@@ -8,7 +8,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
     _description = "Payment Capture Wizard"
 
     transaction_ids = fields.Many2many(
-        # All the source txs related to the capture request
         comodel_name="payment.transaction",
         default=lambda self: self.env.context.get("active_ids"),
         readonly=True,
@@ -44,7 +43,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
     has_draft_children = fields.Boolean(compute="_compute_has_draft_children")
     has_remaining_amount = fields.Boolean(compute="_compute_has_remaining_amount")
 
-    # === COMPUTE METHODS === #
 
     @api.depends("transaction_ids")
     def _compute_authorized_amount(self) -> None:
@@ -56,10 +54,10 @@ class WizardPaymentTransactionCapture(models.TransientModel):
         for wizard in self:
             full_capture_txs = wizard.transaction_ids.filtered(
                 lambda tx: tx.state == "done" and not tx.child_transaction_ids
-            )  # Transactions that have been fully captured in a single capture operation.
+            )
             partial_capture_child_txs = wizard.transaction_ids.child_transaction_ids.filtered(
                 lambda tx: tx.state == "done"
-            )  # Transactions that represent a partial capture of their source transaction.
+            )
             wizard.captured_amount = sum(
                 (full_capture_txs | partial_capture_child_txs).mapped("amount")
             )
@@ -81,7 +79,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
 
     @api.depends("available_amount")
     def _compute_amount_to_capture(self) -> None:
-        """Set the default amount to capture to the amount available for capture."""
         for wizard in self:
             wizard.amount_to_capture = wizard.available_amount
 
@@ -118,7 +115,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
             if not wizard.has_remaining_amount:
                 wizard.void_remaining_amount = False
 
-    # === CONSTRAINT METHODS === #
 
     @api.constrains("amount_to_capture")
     def _check_amount_to_capture_within_boundaries(self) -> None:
@@ -144,7 +140,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
                     )
                 )
 
-    # === ACTION METHODS === #
 
     def action_capture(self):
         self.check_singleton()
@@ -156,7 +151,7 @@ class WizardPaymentTransactionCapture(models.TransientModel):
         ):
             partial_capture_child_txs = self.transaction_ids.child_transaction_ids.filtered_domain(
                 [("source_transaction_id", "=", source_tx.id), ("state", "=", "done")]
-            )  # We can void all the remaining amount only at once => don't check cancel state.
+            )
             source_tx_remaining_amount = source_tx.currency_id.round(
                 source_tx.amount - sum(partial_capture_child_txs.mapped("amount"))
             )
@@ -164,7 +159,6 @@ class WizardPaymentTransactionCapture(models.TransientModel):
                 amount_to_capture = min(
                     source_tx_remaining_amount, remaining_amount_to_capture
                 )
-                # In sudo mode because we need to be able to read on provider fields.
                 processed_txs_sudo |= source_tx.sudo()._capture(
                     amount_to_capture=amount_to_capture
                 )
@@ -172,12 +166,9 @@ class WizardPaymentTransactionCapture(models.TransientModel):
                 source_tx_remaining_amount -= amount_to_capture
 
             if source_tx_remaining_amount and self.void_remaining_amount:
-                # The source tx isn't fully captured and the user wants to void the remaining.
-                # In sudo mode because we need to be able to read on provider fields.
                 processed_txs_sudo |= source_tx.sudo()._void(
                     amount_to_void=source_tx_remaining_amount
                 )
             elif not remaining_amount_to_capture and not self.void_remaining_amount:
-                # The amount to capture has been completely captured.
-                break  # Skip the remaining transactions.
+                break
         return processed_txs_sudo._prepare_action_feedback_notification()

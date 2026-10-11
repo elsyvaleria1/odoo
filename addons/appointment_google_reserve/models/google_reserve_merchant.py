@@ -12,7 +12,6 @@ class GoogleReserveMerchant(models.Model):
     _inherit = ["mixin.mail.thread.phone"]
 
     def _default_website_id(self):
-        # Should technically be in a website bridge.
         default_website_url = False
         if default_website := self.env.ref(
             "website.default_website", raise_if_not_found=False

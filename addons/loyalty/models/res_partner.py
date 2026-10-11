@@ -12,12 +12,6 @@ class ResPartner(models.Model):
     )
 
     def _compute_loyalty_card_count(self) -> None:
-        """Count each partner's usable cards, those of its children included.
-
-        Not declarable with `@api.depends` -- the count is a search. `loyalty.card`
-        invalidates it instead, on create, unlink, and any write touching
-        `_PARTNER_COUNT_FIELDS`.
-        """
         loyalty_groups = self.env["loyalty.card"]._read_group(
             domain=[
                 "|",
@@ -42,7 +36,6 @@ class ResPartner(models.Model):
         self.loyalty_card_count = 0
         counted = {partner.id: partner for partner in self}
         for partner, count in loyalty_groups:
-            # A card of a child company/contact counts for every ancestor asked about.
             while partner:
                 ancestor = counted.get(partner.id)
                 if ancestor is not None:
@@ -50,7 +43,6 @@ class ResPartner(models.Model):
                 partner = partner.parent_id
 
     def action_view_loyalty_cards(self):
-        """Open the cards of these partners and of their children."""
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "loyalty.loyalty_card_action"
         )

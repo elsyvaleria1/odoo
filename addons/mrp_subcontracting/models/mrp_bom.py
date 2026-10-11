@@ -51,8 +51,6 @@ class MrpBom(models.Model):
             tuple(subcontractor.ids),
         )
         if (scope, product.id) not in memo:
-            # one search answers every product fetched alongside this one, as
-            # orderpoints and moves ask for them one at a time
             batch = (
                 product.browse(product._prefetch_ids).filtered(
                     lambda candidate: (scope, candidate.id) not in memo

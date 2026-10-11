@@ -6,11 +6,6 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _post_entries(self):
-        # EXTENDS account
-        # In the case where an expense is reimbursed through an employee's payslip, we need to reconcile the move generated
-        # for the expense and the one generated for the payslip, so the expense can be set to 'paid'
-        # and only one payment shall be made, the payslip one. If the moves have been altered, the automatic reconciliation may not be done,
-        # it will be done manually by an accountant. We will keep the temporary matching data to simplify that case.
         lines_to_reconcile = self.env["account.move.line"]
         if (
             not self.env.context.get("skip_reconcile_expense_with_payslip")
@@ -18,20 +13,19 @@ class AccountMove(models.Model):
         ):
             self = self.with_context(
                 skip_reconcile_expense_with_payslip=True
-            )  # Avoid entering here recursively
+            )
             lines_to_reconcile = (
                 self._hr_payroll_expense_prepare_move_lines_to_reconcile()
             )
 
         res = (
             super()._post_entries()
-        )  # Posting will automatically reconcile same-account-same-matching lines
+        )
 
         lines_to_reconcile = lines_to_reconcile.filtered(
             lambda line: not line.reconciled
         )
         if lines_to_reconcile:
-            # Tries to reconcile move lines automatically (to mark the expense as paid)
             wizard = (
                 self.env["wizard.account.move.line.reconcile"]
                 .with_context(
@@ -42,23 +36,17 @@ class AccountMove(models.Model):
             )
             if not (
                 wizard.is_write_off_required or wizard.force_partials
-            ):  # Only reconcile if there are no issue that requires user-input
+            ):
                 wizard.reconcile()
         return res
 
     def unlink(self):
-        # EXTENDS account
         moves_to_unlink_ids = self.sudo().payslip_ids.expense_ids.account_move_id.ids
         if moves_to_unlink_ids:
             self.browse(moves_to_unlink_ids)._unlink_or_reverse()
         return super().unlink()
 
     def _hr_payroll_expense_prepare_move_lines_to_reconcile(self):
-        """
-        (Create if None &) Post the expense's move and prepare it to be reconciled with the payslip move,
-        as the expense is reimbursed to the employee through the payslip.
-        This ensures the payment state of the expense, its report, and move are set to 'paid'.
-        """
         if not self.env.is_superuser() and not self.env.user.has_group(
             "account.group_account_invoice"
         ):
@@ -71,19 +59,16 @@ class AccountMove(models.Model):
         if not all_payslip_expenses_sudo:
             return self.env[
                 "account.move.line"
-            ]  # No payslip or expenses, no reason to continue
+            ]
 
         expenses_without_moves = all_payslip_expenses_sudo.filtered(
             lambda expense: not expense.account_move_id
         )
         if expenses_without_moves:
-            expenses_without_moves._post_without_wizard()  # Only valid case to bypass the wizard
+            expenses_without_moves._post_without_wizard()
 
-        # Prepare the reconciliation by grouping expense moves per payslip move
         payslip_move_to_expense_move_map = {}
 
-        # Handles the case where an account move linked to an expense is already paid, ignoring the fact that it was flagged to be paid here
-        # (They will get paid twice, but it's the user's responsibility)
         valid_expenses_sudo = all_payslip_expenses_sudo.filtered(
             lambda expense: expense.state == "posted"
         )
@@ -97,7 +82,6 @@ class AccountMove(models.Model):
                 expenses_sudo.sorted().account_move_id
             )
 
-        # Prepare and collect the reconciliation lines
         lines_to_reconcile_sudo = self.env["account.move.line"]
         rule_account_id_per_struct_id = (
             payslips_sudo.struct_id._get_expense_rule_account_id_map(
@@ -107,10 +91,9 @@ class AccountMove(models.Model):
         for idx, (payslip_move_sudo, expense_moves_sudo) in enumerate(
             payslip_move_to_expense_move_map.items()
         ):
-            # Get the payslip move lines generated for the expenses
             payslip_account_id = rule_account_id_per_struct_id[
                 payslip_move_sudo.payslip_ids.struct_id.id
-            ]  # Only one structure per move
+            ]
             lines_to_match_sudo = payslip_move_sudo.line_ids.filtered_domain(
                 [
                     ("account_id", "=", payslip_account_id),
@@ -118,29 +101,24 @@ class AccountMove(models.Model):
                 ]
             )
 
-            # Get the corresponding payable lines for the expenses
             lines_to_match_sudo |= expense_moves_sudo.line_ids.filtered(
                 lambda aml: aml.account_id.account_type == "liability_payable"
             )
 
-            # Use the matching number system to simplify reconciliation, the number itself is just made to be unique
             lines_to_match_sudo.matching_number = (
                 f"{idx:0>10}-{payslip_move_sudo.id}-{min(expense_moves_sudo.ids)}"
             )
             lines_to_reconcile_sudo |= lines_to_match_sudo
 
-        # Post all expense moves that aren't posted already
         expense_moves_to_post_sudo = all_payslip_expenses_sudo.account_move_id.filtered(
             lambda move: move.state == "draft"
         )
         if expense_moves_to_post_sudo:
             expense_moves_to_post_sudo._post(soft=False)
 
-        # If we have more than 2 accounts, we will not be able to reconcile
         if len(lines_to_reconcile_sudo.account_id) > 2:
             return self.env["account.move.line"]
 
-        # Return all the account move lines to be reconciled in the previous sudo state, sorted to facilitate the pairing
         return lines_to_reconcile_sudo.sorted(lambda line: abs(line.balance)).sudo(
             self.env.is_superuser()
         )

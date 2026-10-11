@@ -18,9 +18,6 @@ class MixinAnalyticPlanFields(models.AbstractModel):
         ondelete="restrict",
         check_company=True,
     )
-    # Magic column that represents all the plans at the same time, except for the compute
-    # where it is context dependent, and needs the id of the desired plan.
-    # Used as a syntactic sugar for search views, and magic field for one2many relation
     auto_account_id = fields.Many2one(
         comodel_name="account.analytic.account",
         string="Analytic Account",
@@ -38,7 +35,6 @@ class MixinAnalyticPlanFields(models.AbstractModel):
             line.auto_account_id = bool(plan) and line[plan._column_name()]
 
     def _compute_partner_id(self):
-        # TO OVERRIDE
         pass
 
     def _inverse_auto_account_id(self) -> None:
@@ -143,15 +139,12 @@ class MixinAnalyticPlanFields(models.AbstractModel):
                 "account.analytic.plan"
             ]._get_all_plans()
 
-            # Find main account nodes
             account_node = arch.find('.//field[@name="account_id"]')
             account_filter_node = arch.find('.//filter[@name="account_id"]')
 
-            # Force domain on main account node as the fields_get doesn't do the trick
             if account_node is not None and view_type == "search":
                 account_node.set("domain", repr(self._get_domain_plan(project_plan)))
 
-            # If there is a main node, append the ones for other plans
             if account_node is not None:
                 account_node.set(
                     "context", repr(self._prepare_account_node_context(project_plan))

@@ -61,6 +61,4 @@ def migrate(cr, version):
             config_name,
             config_id,
         )
-    # The index exempted rescue sessions; pos.session.init() rebuilds it over every
-    # open session, and the column drop at the end of the upgrade would cascade to it.
     schema.drop_index(cr, "pos_session_open_per_config_uniq", "pos_session")

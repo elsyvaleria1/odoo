@@ -6,12 +6,7 @@ from odoo.tools import SQL, frozendict
 
 from odoo.addons.resource_asset_hr.models.resource_resource import live_custody_subquery
 
-# Two positions above the warning limit closer than this belong to the same
-# burst; a longer gap -- the vehicle slowed down, or the tracker went quiet --
-# starts a new event.
 EVENT_GAP = timedelta(minutes=3)
-# "Where" is answered with the nearest client parcel within this radius and
-# the state the burst started in. Beyond it, only the coordinates are given.
 NEARBY_CLIENT_M = 3000
 
 
@@ -163,8 +158,6 @@ class DeviceGpsSpeedEvent(models.Model):
             event.place = " · ".join(parts)
 
     def action_view_trail(self):
-        """The burst on the map: the device's trail from a few minutes before
-        it started to a few minutes after it ended."""
         self.check_singleton()
         wizard = self.env["wizard.device.device.view.trail"].create(
             {
@@ -178,17 +171,6 @@ class DeviceGpsSpeedEvent(models.Model):
 
     @api.model
     def _get_recent_events(self, since):
-        """Bursts that started at or after `since`, as new (cache-only) records.
-
-        Searching the view rebuilds every burst from the whole GPS log: a
-        filter on `start` cannot reach the scan of device_data_log_gps, a
-        foreign table, so each search fetches every position across
-        postgres_fdw. This runs the view's query over the positions from
-        `since` - EVENT_GAP on, a bound the foreign scan ships to the GPS
-        database. A burst already running at that bound comes out cut, with a
-        start before `since`, and is dropped; one that started at or after
-        `since` has all its positions and comes out as the view shows it.
-        """
         self.env.cr.execute(
             SQL(
                 "SELECT * FROM (%s) e WHERE e.start >= %s",
@@ -214,7 +196,6 @@ class DeviceGpsSpeedEvent(models.Model):
 
     @api.model
     def _get_events_query(self, positions_since=None):
-        """The view's SELECT; `positions_since` bounds the positions it reads."""
         return SQL(
             """
     WITH fast AS (

@@ -46,7 +46,6 @@ class TestCommercialScore(TransactionCase):
         self.assertEqual(row.source_key, "commercial_score:none")
 
     def test_a_scored_customer_enters_on_the_populations_bands(self):
-        # 45 sits in the fourth quintile band of the production population.
         self.customer._score_refresh()
         self.customer.score_line_ids.sudo().write({"points": 45.0, "max_points": 100.0})
         self.customer.invalidate_recordset(["score"])

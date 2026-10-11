@@ -15,7 +15,6 @@ def prepare_ics_file(
     description: str,
     location: str | None = None,
 ) -> bytes:
-    # The models retain their optional-dependency check before calling us.
     import vobject
 
     calendar = vobject.iCalendar()

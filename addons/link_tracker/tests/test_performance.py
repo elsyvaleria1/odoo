@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.tests import common, tagged
 
@@ -19,8 +18,6 @@ class TestLinkTrackerCost(common.TransactionCase):
             "web.base.url", "https://test.odoo.com"
         )
         self.render = self.env["mixin.mail.render"]
-        # Warm whatever the first call would pay for once (config parameters,
-        # registry lookups), so it is not counted as slope.
         self.render._shorten_links('<a href="https://warm.example.com">w</a>', {})
         self.env.flush_all()
 
@@ -39,13 +36,6 @@ class TestLinkTrackerCost(common.TransactionCase):
         )
 
     def test_shortening_an_html_body_is_not_priced_per_link(self):
-        """100 fresh links must not cost ~100 queries.
-
-        The ORM's own insert strategy changes above a row threshold, so the count
-        is not monotonic in N and a slope assertion would be noise. What is stable
-        is the order of magnitude: this was 109 queries when `_compute_code` ran a
-        search per record.
-        """
         count = self._queries(
             lambda: self.render._shorten_links(self._body(100, "html-many"), {})
         )
@@ -56,11 +46,6 @@ class TestLinkTrackerCost(common.TransactionCase):
         )
 
     def test_reshortening_a_body_costs_the_same_at_any_size(self):
-        """The case a mailing actually pays: every batch after the first.
-
-        `_action_send_mail_mass_mail` invalidates once per batch of recipients, so
-        this is the cold cost each batch repeats. It is flat, and must stay flat.
-        """
         small_body, large_body = (
             self._body(2, "again-small"),
             self._body(100, "again-large"),
@@ -77,7 +62,6 @@ class TestLinkTrackerCost(common.TransactionCase):
         )
 
     def test_shortening_a_text_body_is_not_priced_per_link(self):
-        """`search_or_create` is a batch API; it was called once per URL."""
         text = " ".join(f"https://txt-many-{i}.example.com" for i in range(100))
         count = self._queries(lambda: self.render._shorten_links_text(text, {}))
         self.assertLessEqual(
@@ -87,11 +71,6 @@ class TestLinkTrackerCost(common.TransactionCase):
         )
 
     def test_reading_a_code_does_not_scale_with_the_recordset(self):
-        """`code` feeds `short_url` and therefore `display_name`.
-
-        Two queries per record here is two queries per row of any list showing a
-        link tracker, and of any list showing a click.
-        """
         trackers = self.env["link.tracker"].create(
             [{"url": f"https://code-{i}.example.com"} for i in range(20)]
         )
@@ -114,7 +93,6 @@ class TestLinkTrackerCost(common.TransactionCase):
         )
 
     def test_finding_known_trackers_does_not_scale_with_the_batch(self):
-        """`search_or_create` resolves a whole batch through one indexed lookup."""
 
         def vals(count, tag):
             return [{"url": f"https://soc-{tag}-{i}.example.com"} for i in range(count)]

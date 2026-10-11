@@ -13,14 +13,12 @@ class SaleOrderLine(models.Model):
         super()._compute_qty_transferred()
 
     def _timesheet_create_project_prepare_values(self):
-        """Generate project values"""
         values = super()._timesheet_create_project_prepare_values()
         values["allow_timesheets"] = True
         return values
 
     def _timesheet_compute_delivered_quantity_domain(self):
         domain = super()._timesheet_compute_delivered_quantity_domain()
-        # force to use only the validated timesheet
         param_invoiced_timesheet = self.env.registry.settings.get(
             self.env, "sale.invoiced_timesheet", DEFAULT_INVOICED_TIMESHEET
         )

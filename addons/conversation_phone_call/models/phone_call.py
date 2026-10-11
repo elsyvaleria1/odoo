@@ -15,8 +15,6 @@ class PhoneCall(models.Model):
 
     def _recording_timeline(self):
         self.check_singleton()
-        # whoever files the recording, a phone's receiver or the softphone, may
-        # not open conversations: the call's own is its filing's to make
         call = self._filing_conversation()
         if not call.conversation_id:
             call.conversation_id = call._create_conversation()
@@ -37,8 +35,6 @@ class PhoneCall(models.Model):
         self.check_singleton()
         partner = self.partner_id
         user = self.user_id
-        # the phone's user is its responsible on every call it records: told
-        # so once per recording, a phone's history flooded its inbox
         return (
             self._filing_conversation()
             .env["conversation.conversation"]
@@ -61,9 +57,6 @@ class PhoneCall(models.Model):
         )
 
     def _on_call_details_completed(self) -> None:
-        # the entry may name another company's line and the extension that
-        # answered: the conversation, transcript and analysis follow the call
-        # to the people who took it
         for call in self._filing_conversation().filtered("conversation_id"):
             conversation = call.conversation_id
             vals = {
@@ -80,8 +73,6 @@ class PhoneCall(models.Model):
             if call.user_id and call.user_id != conversation.user_id:
                 vals["user_id"] = call.user_id.id
             conversation.with_context(mail_auto_subscribe_no_notify=True).write(vals)
-            # a recording heard before the call's entry came had no one to
-            # name its voices after
             for attachment in conversation.segment_ids.attachment_id.filtered(
                 lambda recording: recording.transcript_state == "done"
             ):

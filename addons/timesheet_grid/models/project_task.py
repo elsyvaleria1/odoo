@@ -71,7 +71,6 @@ class ProjectTask(models.Model):
 
     @api.onchange("project_id")
     def _onchange_project_id(self):
-        # If task has non-validated timesheets AND new project has not the timesheets feature enabled, raise a warning notification
         if (
             not all(t.validated for t in self.timesheet_ids)
             and not self.project_id.allow_timesheets
@@ -157,7 +156,6 @@ class ProjectTask(models.Model):
             super().action_timer_start()
 
     def action_timer_stop(self):
-        # timer was either running or paused
         if self.display_timesheet_timer and self.user_timer_id:
             timesheet = self._get_record_with_timer_running()
             if timesheet:
@@ -193,7 +191,6 @@ class ProjectTask(models.Model):
         return self.remaining_hours
 
     def _create_record_to_start_timer(self):
-        """Create a timesheet to launch a timer"""
         return self.env["account.analytic.line"].create(
             {
                 "task_id": self.id,
@@ -205,7 +202,4 @@ class ProjectTask(models.Model):
         )
 
     def _action_interrupt_user_timers(self) -> None:
-        """Call action interrupt user timers to launch a new one
-        Stop the existing runnning timer before launching a new one.
-        """
         self.action_timer_stop()

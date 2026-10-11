@@ -23,16 +23,12 @@ def _get_sort_key(
         if value is not None and rank is not None:
             value = rank(value)
         if isinstance(value, list):
-            # PostgreSQL compares arrays element by element, a shorter
-            # prefix first and a NULL element after every value
             value = tuple((item is None, item) for item in value)
         return (value is None if null_is_true else value is not None, value)
 
     return key
 
 
-# the ORDER BY `_order_to_sql` writes for a plain column of the query's own
-# table: a bare column, or a boolean read through COALESCE(col, FALSE)
 _ORDER_TERM = re.compile(
     r'\s*(?:COALESCE\("(?P<balias>[^"]+)"\."(?P<bcolumn>[^"]+)", FALSE\)'
     r'|"(?P<alias>[^"]+)"\."(?P<column>[^"]+)")'
@@ -44,8 +40,6 @@ _ORDER_TERM = re.compile(
 def _parse_column_order(
     model: ModelLike, alias: str, order: SQL
 ) -> list[tuple[str, bool, bool, bool]] | None:
-    # (column, is_boolean, descending, nulls_first) per term, or None when
-    # the order is anything but plain columns of `alias`
     code = order.code
     if order.params:
         return None
@@ -129,7 +123,6 @@ class _InMemoryQuery(Query):
             self._env.flush_query(self._order)
             ids = self._sorted(ids, terms)
         if self._order or self._limit is not None or self._offset:
-            # a query run again reads the table: a pinned id it lacks is gone
             existing = self._storage.get_existing_ids(self._model._table, ids)
             ids = [id_ for id_ in ids if id_ in existing]
         if self._offset:
@@ -150,7 +143,6 @@ class _InMemoryQuery(Query):
                 value = id_ if column == "id" else row.get(column)
                 values.append(False if is_boolean and value is None else value)
             rows.append((id_, *values))
-        # one stable pass per term, last term first, as read_group sorts
         for index, (_column, _is_boolean, descending, nulls_first) in reversed(
             list(enumerate(terms, start=1))
         ):

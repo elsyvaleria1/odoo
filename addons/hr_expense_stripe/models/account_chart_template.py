@@ -16,7 +16,7 @@ class AccountChartTemplate(models.AbstractModel):
                 "type": "bank",
                 "currency_id": self.env.company.stripe_currency_id.id,
                 "bank_statements_source": "stripe_issuing",
-                "sequence": 20,  # Lower priority than the default bank journals
+                "sequence": 20,
             }
         }
 
@@ -29,9 +29,8 @@ class AccountChartTemplate(models.AbstractModel):
         }
 
     def _post_load_data(self, template_code, company, template_data):
-        # EXTEND account to setup mcc default data for the new company and sets the stripe journal (if present) as the default journal
         res = super()._post_load_data(template_code, company, template_data)
-        company._create_stripe_issuing_journal()  # Needed with the generic package
+        company._create_stripe_issuing_journal()
         if company.stripe_currency_id and not company.stripe_journal_id.currency_id:
             company.stripe_journal_id.currency_id = company.stripe_currency_id
         company._stripe_issuing_setup_mcc()

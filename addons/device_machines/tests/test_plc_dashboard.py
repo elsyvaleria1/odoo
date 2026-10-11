@@ -50,8 +50,6 @@ class TestPlcDashboard(DeviceMachinesCommon):
         return moment.astimezone(zone).date()
 
     def _today_at(self, hour):
-        # Two "hours ago" straddle local midnight for part of every day; a
-        # profile test names its hours on one local day.
         zone = ZoneInfo(self.Bucket._dashboard_timezone())
         local = datetime.now(zone).replace(
             hour=hour, minute=30, second=0, microsecond=0

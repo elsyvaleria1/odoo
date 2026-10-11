@@ -38,9 +38,6 @@ class TestScopedGrantFields(TransactionCase):
         return env["test_access_right.some_obj"].browse(self.record_b.id).forbidden2
 
     def test_a_field_group_held_in_one_company_shows_the_field_there_only(self):
-        # a field's groups= held through a grant limited to company A reads on
-        # A's records: on B's it reads as empty, refuses attribute access, and
-        # cannot be searched for
         record_a = self.env["test_access_right.some_obj"].create(
             {"val": 2, "company_id": self.company_a.id, "forbidden2": 5}
         )

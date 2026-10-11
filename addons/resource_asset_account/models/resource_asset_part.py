@@ -9,7 +9,6 @@ _debug = DebugLog(__name__)
 class ResourceAssetPart(models.Model):
     _inherit = "resource.part"
 
-    # FIELDS
     account_move_line_id = fields.Many2one(
         comodel_name="account.move.line",
         string="Bill Line",
@@ -20,7 +19,6 @@ class ResourceAssetPart(models.Model):
         help="The vendor bill line that charges this part. A flagged part holds its bill.",
     )
 
-    # LEDGER METHODS
     def _action_install(self) -> None:
         super()._action_install()
         self._bind_bill_lines()
@@ -28,7 +26,6 @@ class ResourceAssetPart(models.Model):
 
     def _sync_review_holds(self) -> None:
         super()._sync_review_holds()
-        # sudo: holding a bill follows from the part's review, whoever installed it.
         self.sudo().account_move_line_id.move_id._sync_asset_part_hold()
 
     def _bind_bill_lines(self) -> None:
@@ -42,7 +39,6 @@ class ResourceAssetPart(models.Model):
         if not parts:
             return
         _debug.pipeline("parts_bill_lines_lookup", parts=parts)
-        # sudo: the installer may hold no right on the vendor's bills.
         lines = (
             self.env["account.move.line"]
             .sudo()

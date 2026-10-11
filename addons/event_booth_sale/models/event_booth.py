@@ -5,12 +5,10 @@ from odoo.exceptions import UserError
 class EventBooth(models.Model):
     _inherit = "event.booth"
 
-    # registrations
     event_booth_registration_ids = fields.One2many(
         comodel_name="event.booth.registration",
         inverse_name="event_booth_id",
     )
-    # sale information
     sale_order_line_registration_ids = fields.Many2many(
         comodel_name="sale.order.line",
         relation="event_booth_registration",
@@ -29,7 +27,7 @@ class EventBooth(models.Model):
         ondelete="set null",
         groups="sale.group_sale_salesman",
     )
-    sale_order_id = fields.Many2one(  # noqa: E8529  One2many inverse of sale.order.event_booth_ids
+    sale_order_id = fields.Many2one(
         related="sale_order_line_id.order_id",
         store=True,
         index="btree_not_null",

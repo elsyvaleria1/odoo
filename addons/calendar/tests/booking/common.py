@@ -14,7 +14,6 @@ class AppointmentCommon(MailCase, common.HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # ensure admin configuration
         cls.admin_user = cls.env.ref("base.user_admin")
         cls.admin_user.write(
             {
@@ -25,20 +24,18 @@ class AppointmentCommon(MailCase, common.HttpCase):
             }
         )
         cls.company_admin = cls.admin_user.company_id
-        # set country in order to format Belgian numbers
         cls.company_admin.write(
             {
                 "country_id": cls.env.ref("base.be").id,
             }
         )
 
-        # reference dates to have reproducible tests (sunday evening, allowing full week)
         cls.reference_now = datetime(2022, 2, 13, 20, 0, 0)
         cls.reference_monday = datetime(2022, 2, 14, 7, 0, 0)
         cls.reference_now_monthweekstart = date(
             2022, 1, 30
-        )  # starts on a Sunday, first week containing Feb day
-        cls.global_slots_enddate = date(2022, 3, 5)  # last day of last week of February
+        )
+        cls.global_slots_enddate = date(2022, 3, 5)
 
         cls.apt_manager = mail_new_test_user(
             cls.env,
@@ -68,7 +65,7 @@ class AppointmentCommon(MailCase, common.HttpCase):
             name="Employee Brussels",
             notification_type="email",
             login="staff_user_bxls",
-            tz="Europe/Brussels",  # UTC + 1 (at least in February)
+            tz="Europe/Brussels",
         )
         cls.staff_user_aust = mail_new_test_user(
             cls.env,
@@ -78,7 +75,7 @@ class AppointmentCommon(MailCase, common.HttpCase):
             name="Employee Australian",
             notification_type="email",
             login="staff_user_aust",
-            tz="Australia/Perth",  # UTC + 8 (at least in February)
+            tz="Australia/Perth",
         )
         cls.staff_user_nz = mail_new_test_user(
             cls.env,
@@ -88,13 +85,10 @@ class AppointmentCommon(MailCase, common.HttpCase):
             name="Employee New Zealand",
             notification_type="email",
             login="staff_user_nz",
-            tz="Pacific/Auckland",  # UTC + 12
+            tz="Pacific/Auckland",
         )
         cls.staff_users = cls.staff_user_bxls + cls.staff_user_aust + cls.staff_user_nz
 
-        # Default (test) appointment type
-        # Slots are each hours from 8 to 13 (UTC + 1)
-        # -> working hours: 7, 8, 9, 10 and 12 UTC as 11 is lunch time in working hours
         cls.apt_type_bxls_2days = cls.env["appointment.type"].create(
             {
                 "appointment_tz": "Europe/Brussels",
@@ -236,7 +230,6 @@ class AppointmentCommon(MailCase, common.HttpCase):
         )
 
     def _test_url_open(self, url):
-        """Call url_open with nocache parameter"""
         url += (("?" not in url and "?") or "&") + "nocache"
         return self.url_open(url)
 
@@ -291,28 +284,8 @@ class AppointmentCommon(MailCase, common.HttpCase):
         filter_users=False,
         filter_resources=False,
     ):
-        """Flatten computed slots into slot dicts, optionally restricted to some months,
-        weekdays, users or resources.
-
-        :param list slots: slots content computed from _get_appointment_slots()
-        :param list filter_months: months to keep as (month, year) tuples, e.g. [(2, 2022)]
-            for February 2022
-        :param list filter_weekdays: weekdays to keep as integers, 0 = monday and 6 = sunday,
-            e.g. [0, 1, 3] to keep only monday, tuesday and thursday slots
-        :param recordset filter_users: users for which slots are kept when they are available
-        :param recordset filter_resources: resources for which slots are kept when all the
-            slot available resources belong to them
-        :return: matching slots, e.g. [{
-            'datetime': '2022-02-14 08:00:00',
-            'duration': '1.0',
-            'staff_user_id': 21,
-            'hours': '08:00 - 09:00',
-        }, ...]
-        :rtype: list
-        """
         slots_info = []
         for month in slots:
-            # We use the last day of the first week to be sure that we use the correct month
             last_day_first_week = month["weeks"][0][-1]["day"]
             month_tuple = (last_day_first_week.month, last_day_first_week.year)
             if filter_months and month_tuple not in filter_months:
@@ -339,7 +312,6 @@ class AppointmentCommon(MailCase, common.HttpCase):
         return slots_info
 
     def assertSlots(self, slots, exp_months, slots_data):
-        """Check slots content, currently doing only basic checks."""
         self.assertEqual(
             len(slots), len(exp_months), "Slots: wrong number of covered months"
         )
@@ -356,25 +328,21 @@ class AppointmentCommon(MailCase, common.HttpCase):
         for month, expected_month in zip(slots, exp_months, strict=False):
             self.assertEqual(month["month"], expected_month["name_formated"])
             self.assertEqual(len(month["weeks"]), expected_month["weeks_count"])
-            if not slots_data.get("slots_startdate"):  # not all tests are detailed
+            if not slots_data.get("slots_startdate"):
                 continue
 
-            # global slots configuration
             slots_days_leave = slots_data.get("slots_days_leave", [])
             slots_enddate = slots_data.get("slots_enddate")
             slots_startdate = slots_data.get("slots_startdate")
             slots_weekdays_nowork = slots_data.get("slots_weekdays_nowork", [])
 
-            # slots specific
             slots_start_hours = slots_data.get("slots_start_hours", [])
 
             for week in month["weeks"]:
                 for day in week:
                     day_date = day["day"]
-                    # days linked to "next month" or "previous month" are there for filling but have no slots
                     is_void = day_date.month != expected_month["month_date"].month
 
-                    # before reference date: no slots generated (just there to fill up calendar)
                     is_working = day_date >= slots_startdate
                     if is_working and slots_enddate:
                         is_working = day_date <= slots_enddate
@@ -382,9 +350,7 @@ class AppointmentCommon(MailCase, common.HttpCase):
                         is_working = day_date not in slots_days_leave
                     if is_working:
                         is_working = day_date.weekday() not in slots_weekdays_nowork
-                    # after end date: no slots generated (just there to fill up calendar)
 
-                    # standard day: should have slots according to apt type slots hours
                     if not is_void and is_working:
                         if day_date in slots_data.get("slots_day_specific", {}):
                             slot_count = len(slots_data["slots_day_specific"][day_date])
@@ -432,19 +398,6 @@ class AppointmentCommon(MailCase, common.HttpCase):
         expected_available_resource_ids,
         reference_date=None,
     ):
-        """Simulate the check done after selecting a particular time slot.
-
-        :param recordset appointment_type: appointment type tested
-        :param int asked_capacity: asked capacity for the appointment
-        :param str timezone: timezone selected
-        :param datetime start_dt: start datetime of the slot (naive UTC)
-        :param datetime end_dt: end datetime of the slot (naive UTC)
-        :param recordset filter_resources: the resources the appointment was booked for
-        :param list expected_available_resource_ids: resource ids expected to be available
-            for the checked slot
-        :param datetime reference_date: starting datetime to fetch slots (naive UTC),
-            defaults to now
-        """
         slots = appointment_type._slots_generate(
             start_dt.astimezone(UTC),
             end_dt.astimezone(UTC),

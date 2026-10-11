@@ -16,10 +16,6 @@ class TestMassMailingServer(TestMassMailCommon):
         )
 
     def test_mass_mailing_server_archived_usage_protection(self):
-        """Test the protection against using archived server:
-        - servers used cannot be archived
-        - mailing clone of a mailing with an archived server gets the default one instead
-        """
         servers = self.env["ir.mail_server"].create(
             [
                 {
@@ -72,7 +68,7 @@ class TestMassMailingServer(TestMassMailCommon):
         )
         with self.mock_smtplib_connection():
             mailing_clone.action_send_mail()
-        servers.action_archive()  # Servers no more used -> no error
+        servers.action_archive()
         self.assertFalse(servers.filtered("active"), "All servers must be archived")
         self.assertFalse(
             mailing.copy().mail_server_id,
@@ -93,7 +89,7 @@ class TestMassMailingServer(TestMassMailCommon):
             servers.action_archive()
         self.assertTrue(servers[1].active)
         self.env["ir.config_parameter"].set_param("mass_mailing.mail_server_id", False)
-        servers.action_archive()  # Servers no more used -> no error
+        servers.action_archive()
         self.assertFalse(servers.filtered("active"), "All servers must be archived")
 
     @users("user_marketing")
@@ -103,10 +99,6 @@ class TestMassMailingServer(TestMassMailCommon):
         "odoo.addons.mass_mailing.models.mailing",
     )
     def test_mass_mailing_server_find(self):
-        """Test that the right mail server is chosen to send the mailing.
-
-        Test also the envelop and the SMTP headers.
-        """
         mailings = self.env["mailing.mailing"].create(
             [
                 {
@@ -163,13 +155,11 @@ class TestMassMailingServer(TestMassMailCommon):
                 "unknown_name@test.mycompany.com",
                 self.mail_server_domain,
             ),
-            # We do not have a mail server for this address email, so fall back to the "notifications@domain" email.
             (
                 f"{self.default_from}@{self.alias_domain}",
                 f'"Testing" <{self.default_from}@{self.alias_domain}>',
                 self.mail_server_notification,
             ),
-            # forced sever
             (
                 "unknow_email@unknow_domain.com",
                 "unknow_email@unknow_domain.com",

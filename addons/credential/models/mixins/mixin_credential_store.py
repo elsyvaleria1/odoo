@@ -112,9 +112,6 @@ class MixinCredentialStore(models.AbstractModel):
         ("credential_value", "credential_value_encrypted", False),
     )
 
-    # Keys a consumer exposes through a field of its own. The store keeps them
-    # out of credential_data so a secret with a masked field of its own is not
-    # also rendered in clear text there.
     _JSON_ACCESSOR_FIELDS = ()
 
     @api.depends("credential_value_encrypted")
@@ -143,7 +140,6 @@ class MixinCredentialStore(models.AbstractModel):
 
             if decrypted and record.id:
                 try:
-                    # flush=False: this runs inside a compute
                     with record.env.cr.savepoint(flush=False):
                         record._log_access_guarded("read")
                 except psycopg_errors.ReadOnlySqlTransaction:
@@ -180,9 +176,6 @@ class MixinCredentialStore(models.AbstractModel):
     @api.depends("cached_plaintext", "storage_method")
     def _compute_credential_data(self) -> None:
         for record in self:
-            # Only the keys no named accessor claims. A password reaches the
-            # form through its own masked field; putting it here too would
-            # render it in clear text and send it to the browser besides.
             extra = {
                 key: value
                 for key, value in record._parse_plaintext_dict().items()
@@ -250,13 +243,6 @@ class MixinCredentialStore(models.AbstractModel):
     def _inverse_credential_data(self) -> None:
         for record in self:
             if not record.credential_data or record.credential_data == "{}":
-                # This field owns the keys no named accessor claims. Emptying it
-                # must not destroy a username or a bearer token, which have their
-                # own visible field and are written by their own inverse: the
-                # form carries this one empty for every category that hides it,
-                # so a blanket clear here loses whatever the accessors wrote and
-                # the order the fields happen to arrive in decides whether the
-                # secret survives.
                 if record.storage_method == "json":
                     stored = record._read_credential_dict_raw()
                     owned = {
@@ -310,8 +296,6 @@ class MixinCredentialStore(models.AbstractModel):
                     % {"fields": ", ".join(claimed)},
                 )
 
-            # Merge rather than replace: the named accessors own their keys and
-            # are not shown here, so writing this field alone must not drop them.
             owned = {
                 key: value
                 for key, value in record._read_credential_dict_raw().items()
@@ -352,12 +336,6 @@ class MixinCredentialStore(models.AbstractModel):
         return parsed if isinstance(parsed, dict) else {}
 
     def get_credential_dict(self) -> dict[str, Any]:
-        """The whole payload, named accessor keys included.
-
-        Read the decrypted dict rather than `credential_data`, which shows only
-        the keys no named accessor claims so that a password is never rendered
-        in clear text on the form.
-        """
         self.check_singleton()
         return self._parse_plaintext_dict()
 

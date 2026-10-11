@@ -12,11 +12,6 @@ SETTINGS = {
 
 
 def migrate(cr, version):
-    """reCAPTCHA's keys take the captcha module's names. With no provider
-    chosen, the first one with a site key and a secret checks the forms; a
-    reCAPTCHA that was switched off leaves them to Turnstile when Turnstile is
-    configured, under its old names or its new ones whichever migration ran
-    first, and to none otherwise."""
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})

@@ -519,7 +519,6 @@ class TestPosWizards(TestPoSCommon):
         other_config.open_ui()
         other_session = other_config.current_session_id
         selected_ids = (self.pos_session | other_session).ids
-        # An administrator removes one target while the user's dialog stays open.
         other_session.sudo().unlink()
         wizard = (
             self.env["wizard.pos.session.close.unbalanced"]

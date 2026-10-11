@@ -23,20 +23,15 @@ class TestMACommon(
 ):
     @classmethod
     def setUpClass(cls):
-        """Note that MailCommon is multi-company by default"""
         super().setUpClass()
         cls.setUpWhatsapp()
 
-        # ensure company / users data for tests, don't rely on demo
         cls.company_admin.write(
             {
                 "country_id": cls.env.ref("base.be"),
             }
         )
 
-    # ------------------------------------------------------------
-    # ASSERTS
-    # ------------------------------------------------------------
 
     def assertMarketAutoTraces(
         self,
@@ -70,8 +65,8 @@ class TestMACommon(
                     "failure_type": participant_info.get("trace_failure_type", False),
                     "number": participant_info.get(
                         "trace_sms_number", record.phone_sanitized
-                    ),  # TDE FIXME: make it generic
-                    "partner": record.customer_id,  # TDE FIXME: make it generic
+                    ),
+                    "partner": record.customer_id,
                     "record": record,
                     "trace_status": participant_info["trace_status"],
                 }
@@ -94,21 +89,19 @@ class TestMACommon(
         for record in participant_info["records"]:
             phone_number = numbers.get(
                 record.id, record._phone_get_number().number
-            )  # improve me
-            _partner = partners.get(record.id, self.env["res.partner"])  # improve me
+            )
+            _partner = partners.get(record.id, self.env["res.partner"])
 
             fields_values = {
                 "failure_reason": wa_msg_failure_reason,
                 "failure_type": wa_msg_failure_type,
                 "message_type": "outbound",
                 "mobile_number": phone_number,
-                # 'mobile_number_formatted': phone_number,  # strange WA formatting, not sure we need to assert it here
                 "wa_template_id": activity.whatsapp_template_id,
             }
             mail_message_values = {
                 "message_type": "whatsapp_message",
             }
-            # check content aka generated body
             if participant_info.get("trace_content"):
                 fields_values["body"] = participant_info["trace_content"]
                 mail_message_values["body"] = participant_info["trace_content"]
@@ -131,18 +124,9 @@ class TestMACommon(
                     mail_message_values=mail_message_values,
                 )
 
-    # ------------------------------------------------------------
-    # RECORDS TOOLS
-    # ------------------------------------------------------------
 
     @classmethod
     def _create_marketauto_records(cls, model="marketing.test.sms", count=1):
-        """Create records for marketing automation. Each batch consists in
-
-        * 3 records with a valid partner w mobile and email;
-        * 1 record without partner w email and mobile;
-        * 1 record without partner, wo email and mobile
-        """
         record_vals = []
         for idx in range(count):
             for inner_idx in range(5):

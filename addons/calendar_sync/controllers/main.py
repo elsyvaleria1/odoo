@@ -7,9 +7,6 @@ from odoo.http import request
 class CalendarSyncController(http.Controller):
     @http.route("/calendar_sync/<string:code>/sync_data", type="jsonrpc", auth="user")
     def calendar_sync_data(self, code, model, **kw):
-        """Synchronize the user's calendar with `code`'s provider, as the
-        calendar view asks: need_config_from_admin, need_auth (with the URL that
-        authorizes it), sync_stopped / sync_paused, need_refresh, no_new_event."""
         if model != "calendar.event":
             return {"status": "success"}
         Account = request.env["calendar.sync.account"]

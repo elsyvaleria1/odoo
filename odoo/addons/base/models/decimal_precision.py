@@ -66,8 +66,6 @@ class DecimalPrecision(models.Model):
         _debug.lifecycle("write", names=self.mapped("name"), fields=list(vals))
         res = super().write(vals)
         self.env.registry.clear_cache("stable")
-        # uom.uom.rounding computes from a decimal.precision row, with no
-        # @api.depends that could invalidate it
         self.env["uom.uom"].invalidate_model(["rounding"])
         return res
 

@@ -46,18 +46,14 @@ class TestIndexExtraFormats(TransactionCase):
         cls.Attachment = cls.env["ir.attachment"]
 
     def test_index_pptx_extracts_slide_text(self):
-        """A .pptx payload yields its slide text runs."""
         result = self.Attachment._index_pptx(_make_pptx(["Slide title", "Bullet"]))
         self.assertIn("Slide title", result)
         self.assertIn("Bullet", result)
 
     def test_index_pptx_non_zip_is_empty(self):
-        """Non-zip bytes produce no pptx index (boundary)."""
         self.assertEqual(self.Attachment._index_pptx(b"not a zip"), "")
 
     def test_index_pptx_non_contiguous_slides(self):
-        """Slide XML entries not numbered contiguously from 1 must all be
-        indexed, not just the ones before the first gap."""
         slide = (
             '<?xml version="1.0"?>'
             '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
@@ -73,7 +69,6 @@ class TestIndexExtraFormats(TransactionCase):
         self.assertIn("THIRD_SLIDE_TEXT", result)
 
     def test_index_xlsx_extracts_cells(self):
-        """A .xlsx payload yields its sheet name and cell values."""
         try:
             from openpyxl import Workbook
         except ImportError:
@@ -90,9 +85,6 @@ class TestIndexExtraFormats(TransactionCase):
         self.assertIn("Data", result)
 
     def test_index_xlsx_skips_oversized_entry(self):
-        """A sheet XML entry larger than _INDEX_MAX_BYTES must be skipped
-        before load_workbook inflates it (zip-bomb guard, mirrors the docx
-        guard in test_indexation.py)."""
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as zf:
             zf.writestr(
@@ -103,9 +95,6 @@ class TestIndexExtraFormats(TransactionCase):
         self.assertEqual(result, "", "an oversized entry must be skipped, not parsed")
 
     def test_index_xlsx_survives_an_oversized_unrelated_entry(self):
-        """An oversized embedded image alongside small, readable sheet data
-        must not discard the sheet data: only the parts load_workbook
-        actually parses can zip-bomb it, an embedded picture cannot."""
         try:
             from openpyxl import Workbook
         except ImportError:
@@ -132,8 +121,6 @@ class TestIndexExtraFormats(TransactionCase):
         self.assertIn("Data", result)
 
     def test_index_xlsx_still_skips_an_oversized_shared_strings_entry(self):
-        """The narrowed guard must still catch a zip bomb hidden in a part
-        load_workbook does parse, not just the worksheet XML itself."""
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as zf:
             zf.writestr(
@@ -150,14 +137,12 @@ class TestIndexExtraFormats(TransactionCase):
         )
 
     def test_index_odt_extracts_paragraphs(self):
-        """An .odt payload yields its paragraph text."""
         body = f'<text:p xmlns:text="{TEXT_NS}">First para</text:p>'
         data = _make_opendoc("application/vnd.oasis.opendocument.text", body)
         result = self.Attachment._index_opendoc(data)
         self.assertIn("First para", result)
 
     def test_index_ods_extracts_cells(self):
-        """An .ods payload yields its table cells as CSV rows."""
         rows = ""
         for cells in (["Header"], ["Value1"]):
             tcs = "".join(

@@ -7,7 +7,6 @@ from odoo.tests.common import TransactionCase
 
 
 def assign_in_form(task_form, users):
-    # project_hr's task form shows the employees it composes the users from
     if "employee_ids" in task_form._view["fields"]:
         task_form.employee_ids = users.employee_ids
     else:
@@ -163,9 +162,6 @@ class TestProjectCommon(TransactionCase):
 
     @classmethod
     def _employ(cls, users) -> None:
-        # a tree carrying project_hr assigns a project only to an employee, so
-        # the user this fixture makes a manager is one where hr exists; the
-        # project user stays without one, as the tests that employ them expect
         if "hr.employee" not in cls.env:
             return
         cls.env["hr.employee"].create(

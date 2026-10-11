@@ -30,16 +30,10 @@ class HrJob(models.Model):
 
         self.check_singleton()
         if _debug.pipeline.enabled:
-            # the two regexes run a second time here, so this site is guarded:
-            # with the channel off it must not cost the flattening twice
             _debug.pipeline(
                 "website_job_description_flattened",
                 job=self,
                 html_length=len(self.website_description or ""),
-                # `remove_files` strips anything matching `\b\S+\.\w+`, which
-                # is every filename AND every sentence-ending word followed by a
-                # capitalised one, so the text handed to the model is shorter
-                # than the description in ways nobody sees
                 plain_text_length=len(
                     remove_files(
                         remove_uris(html2plaintext(self.website_description))
@@ -109,9 +103,6 @@ Here is the data to generate the job description:
             _debug.logic(
                 "website_job_post_unreachable",
                 job=self,
-                # every local this branch could name is bound inside the `try`,
-                # so naming one would make the site itself raise NameError on
-                # the path where the call failed earliest
                 error=str(e),
             )
             raise AccessError(

@@ -15,8 +15,6 @@ CONFIG_MODELS = (
     "stock.putaway.rule",
 )
 
-# the stored computes the daily "Procurement: run scheduler" rewrites on every
-# reordering rule; tracking one of them would post a message per rule per day
 SCHEDULER_REWRITTEN_FIELDS = (
     "qty_to_order_computed",
     "deadline_date",
@@ -25,7 +23,6 @@ SCHEDULER_REWRITTEN_FIELDS = (
     "lead_time_sample_count",
 )
 
-# the mail.tracking.value column pair each tracked field type is stored in
 TRACKING_COLUMNS = {
     "boolean": "integer",
     "integer": "integer",
@@ -106,9 +103,6 @@ class TestConfigTracking(TransactionCase):
         return record.message_ids - before
 
     def _assert_tracked(self, messages, expected):
-        """Assert one message by the manager whose tracking values are
-        ``expected``, a ``{field: (old, new)}`` map; a relational value is
-        compared by id, an x2many by its names."""
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages.author_id, self.manager.partner_id)
         values = messages.sudo().tracking_value_ids.grouped(
@@ -177,7 +171,6 @@ class TestConfigTracking(TransactionCase):
         cases = (
             (picking_type, {"color": 3}),
             (picking_type, {"active": True}),
-            # a list handle rewrites the sequence of every row it moves past
             (self.route, {"sequence": 1}),
             (self.putaway_rule, {"sequence": 3}),
             (self.orderpoint, {"qty_to_order_manual": 4.0}),
@@ -192,7 +185,6 @@ class TestConfigTracking(TransactionCase):
 
     def test_scheduler_run_on_reordering_rules_logs_nothing(self):
         Orderpoint = self.env["stock.warehouse.orderpoint"]
-        # only auto-triggered rules reach the scheduler's procurement pass
         self.orderpoint.write(
             {
                 "trigger": "auto",
@@ -211,9 +203,6 @@ class TestConfigTracking(TransactionCase):
         )
         demand._action_confirm()
         self._flush_tracking()
-        # a value no computation yields, so its disappearance proves the
-        # scheduler rewrote the column; what it rewrites it to depends on
-        # whether the installed routes can procure, and does not matter here
         self.env.cr.execute(
             "UPDATE stock_warehouse_orderpoint SET qty_to_order_computed = -1.0"
             " WHERE id = %s",
@@ -267,8 +256,6 @@ class TestConfigTracking(TransactionCase):
         self.assertEqual(configured.message_ids.author_id, self.manager.partner_id)
 
     def test_every_thread_is_read(self):
-        # a thread that tracks nothing, or that no form shows, costs a write
-        # snapshot per record and answers nobody
         for model in CONFIG_MODELS:
             with self.subTest(model=model):
                 arch = self.env[model].get_views([(False, "form")])["views"]["form"][
@@ -276,6 +263,4 @@ class TestConfigTracking(TransactionCase):
                 ]
 
                 self.assertTrue(self.env[model]._track_get_fields())
-                # exactly one: a second chatter from an inheriting module is
-                # the defect marin carried until this change
                 self.assertEqual(arch.count("<chatter"), 1)

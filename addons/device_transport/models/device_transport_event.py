@@ -9,7 +9,6 @@ from odoo.tools import SQL, frozendict
 
 _debug = DebugLog(__name__)
 
-# Only typed security metadata belongs here, never names, tokens or payloads.
 ENROLLMENT_SNAPSHOT_FIELDS = (
     "state",
     "company_id",
@@ -122,7 +121,6 @@ class DeviceTransportEvent(models.Model):
 
     @api.model
     def _append(self, event, changes, *, subject_kind="enrollment"):
-        """Append trusted lifecycle snapshots in the caller's transaction."""
         if not changes:
             return self.browse()
         event = self._fields["event"].convert_to_cache(event, self)

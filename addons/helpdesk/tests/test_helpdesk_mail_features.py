@@ -13,12 +13,10 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # set high threshold to be sure to not hit mail limit during tests for a model
         cls.env["ir.config_parameter"].sudo().set_param(
             "mail.gateway.loop.threshold", 50
         )
 
-        # test partners
         cls.partner_1, cls.partner_2, cls.partner_3 = cls.env["res.partner"].create(
             [
                 {
@@ -36,12 +34,10 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
             ]
         )
 
-        # be sure to test emails
         cls.user_employee.notification_type = "email"
         cls.helpdesk_user.notification_type = "email"
         cls.helpdesk_manager.notification_type = "inbox"
 
-        # setup alias configuration for test team
         cls.test_team.write(
             {
                 "helpdesk_alias_contact": "everyone",
@@ -51,7 +47,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
         cls.ticket_alias = cls.test_team.helpdesk_alias_id
 
-        # simple template used in auto acknowledgement
         cls.test_template = cls.env["mail.template"].create(
             {
                 "auto_delete": True,
@@ -66,10 +61,8 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
         cls.stage_new.template_id = cls.test_template.id
 
-        # add some project followers to check followers propagation notably
         cls.test_team.message_subscribe(
             partner_ids=cls.helpdesk_user.partner_id.ids,
-            # follow 'new tickets' to receive notification for incoming emails directly
             subtype_ids=(
                 cls.env.ref("mail.mt_comment")
                 + cls.env.ref("helpdesk.mt_team_ticket_new")
@@ -77,12 +70,10 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
 
     def test_assert_initial_values(self):
-        """Check base values coherency for tests clarity"""
         self.assertEqual(
             self.test_team.message_partner_ids, self.helpdesk_user.partner_id
         )
 
-        # check for partner creation, should not pre-exist
         self.assertFalse(
             self.env["res.partner"].search(
                 [
@@ -183,7 +174,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         self.assertTrue(partner0 in helpdesk_ticket0.message_partner_ids)
         self.assertTrue(partner1 in helpdesk_ticket1.message_partner_ids)
 
-        # Test case: partner already existing in company A sends email to team alias in company B.
         partner_client_a = Partner.search(
             [("email", "in", ["client_a@someprovider.com"])]
         )
@@ -211,7 +201,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
 
     def test_mailgateway_with_template(self):
-        """Portal / internal users receive an email when they create a ticket"""
         internal_followers = self.helpdesk_user.partner_id
         new_partner_email = '"New Author" <new.author@test.agrolait.com>'
 
@@ -257,20 +246,16 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                         author.name, "New Author", "Should parse name/email correctly"
                     )
 
-                # converts Cc into partner due to '_message_get_default_recipients'
-                # that checks for 'email_cc' field
                 new_partner_cc = self.env["res.partner"].search(
                     [("email_normalized", "=", "new.cc@test.agrolait.com")]
                 )
                 self.assertTrue(new_partner_cc)
                 self.assertEqual(new_partner_cc.email, "new.cc@test.agrolait.com")
-                # self.assertEqual(new_partner_cc.name, 'New Cc')
                 self.assertEqual(
                     new_partner_cc.name,
                     "new.cc@test.agrolait.com",
                     "TDE FIXME: name incorrectly parsed",
                 )
-                # do not convert other people in To, simply recognized if they exist
                 new_partner_to = self.env["res.partner"].search(
                     [("email_normalized", "=", "new.customer@test.agrolait.com")]
                 )
@@ -294,7 +279,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                 self.assertEqual(ticket.partner_id, author)
                 self.assertEqual(ticket.stage_id, self.stage_new)
                 self.assertEqual(ticket.team_id, self.test_team)
-                # followers
                 self.assertEqual(
                     ticket.message_partner_ids,
                     internal_followers
@@ -305,11 +289,7 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     + new_partner_to,
                     "Helpdesk subscribes about everyone in the world to tickets",
                 )
-                # check that when a portal user creates a ticket there is two message on the ticket:
-                # - the creation message email
-                # - the mail from the stage mail template
                 self.assertEqual(len(ticket.message_ids), 2)
-                # first message: incoming email: sent to email followers
                 incoming_email = ticket.message_ids[1]
                 self.assertMailNotifications(
                     incoming_email,
@@ -323,19 +303,14 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                             },
                             "message_type": "email",
                             "message_values": {
-                                # ticket creates a partner that if then found by mailgateway
                                 "author_id": author,
                                 "email_from": formataddr(
                                     (author.name, author.email_normalized)
                                 ),
-                                # coming from incoming email
                                 "incoming_email_cc": incoming_cc,
                                 "incoming_email_to": incoming_to_filtered,
                                 "mail_server_id": self.env["ir.mail_server"],
-                                # followers of 'new task' subtype (but not original To as they
-                                # already received the email)
                                 "notified_partner_ids": internal_followers,
-                                # deduced from 'To' and 'Cc' (recognized partners)
                                 "partner_ids": self.partner_1 + self.partner_2,
                                 "parent_id": self.env["mail.message"],
                                 "reply_to": expected_chatter_reply_to,
@@ -352,9 +327,7 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     ],
                 )
 
-                # second message: acknowledgment: sent to email author
                 acknowledgement = ticket.message_ids[0]
-                # task created by odoobot if not incoming user -> odoobot author of ack email
                 acknowledgement_author = (
                     test_user.partner_id if test_user else self.partner_root
                 )
@@ -364,7 +337,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                         {
                             "content": f"Hello {author.name}",
                             "email_values": {
-                                # be sure to check email_from of outgoing email not based on author_id
                                 "email_from": self.test_team.helpdesk_alias_email_from,
                             },
                             "message_type": "auto_comment",
@@ -374,9 +346,7 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                                 "incoming_email_cc": False,
                                 "incoming_email_to": False,
                                 "mail_server_id": self.env["ir.mail_server"],
-                                # default recipients: partner_id, no note followers
                                 "notified_partner_ids": author,
-                                # default recipients: partner_id
                                 "partner_ids": author,
                                 "parent_id": incoming_email,
                                 "reply_to": formataddr(
@@ -386,11 +356,9 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                                     )
                                 ),
                                 "subject": f"Test Acknowledge {ticket.name}",
-                                # subtype from '_track_template'
                                 "subtype_id": self.env.ref("mail.mt_note"),
                             },
                             "notif": [
-                                # specific email for portal customer, due to portal mixin
                                 {
                                     "partner": author,
                                     "type": "email",
@@ -401,18 +369,12 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     ],
                 )
 
-                # uses Chatter: fetches suggested recipients, post a message
-                # - checks all suggested: incoming email to + cc are included
-                # - for all notified people: expected 'email_to' is them
-                # ------------------------------------------------------------
                 suggested_all = ticket.with_user(
                     self.helpdesk_user
                 )._message_get_suggested_recipients(
                     reply_discussion=True,
                     no_create=False,
                 )
-                # ticket creates partners and followers for everyone, hence no suggested people :()
-                # except customer if shared, even if already follower
                 if test_user == self.helpdesk_portal:
                     expected_all = [
                         {
@@ -435,7 +397,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     expected_all = []
                 self.assertEqual(suggested_all, expected_all)
 
-                # finally post the message with recipients
                 with self.mock_mail_gateway():
                     responsible_answer = ticket.with_user(
                         self.helpdesk_user
@@ -465,7 +426,7 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                             "mail_mail_values": {
                                 "mail_server_id": self.env[
                                     "ir.mail_server"
-                                ],  # no specified server
+                                ],
                             },
                             "message_type": "comment",
                             "message_values": {
@@ -474,17 +435,14 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                                 "incoming_email_cc": False,
                                 "incoming_email_to": False,
                                 "mail_server_id": self.env["ir.mail_server"],
-                                # helpdesk_user not notified of its own message, even if follower
                                 "notified_partner_ids": author + external_partners,
                                 "parent_id": incoming_email,
-                                # coming from post
                                 "partner_ids": self.env["res.partner"],
                                 "reply_to": expected_answer_reply_to,
                                 "subject": f"Re: {ticket.name}",
                                 "subtype_id": self.env.ref("mail.mt_comment"),
                             },
                             "notif": [
-                                # original author has a specific email with links and tokens
                                 {
                                     "partner": author,
                                     "type": "email",
@@ -499,12 +457,9 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     ],
                 )
 
-                # SMTP emails really sent (not Inbox guy then)
-                # expected Msg['To'] : Reply-All behavior: actual recipient, then
-                # all "not internal partners" and catchall (to receive answers)
                 for partner in responsible_answer.notified_partner_ids:
                     exp_msg_to_partners = partner | external_partners
-                    if author != self.user_employee.partner_id:  # external only !
+                    if author != self.user_employee.partner_id:
                         exp_msg_to_partners |= author
                     exp_msg_to = exp_msg_to_partners.mapped("email_formatted")
                     with self.subTest(name=partner.name):
@@ -521,8 +476,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                             msg_to_lst=exp_msg_to,
                         )
 
-                # customer replies using "Reply All" + adds new people
-                # ------------------------------------------------------------
                 self.gateway_mail_reply_from_smtp_email(
                     MAIL_TEMPLATE,
                     [author.email_normalized],
@@ -560,17 +513,13 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                             "message_values": {
                                 "author_id": author,
                                 "email_from": author.email_formatted,
-                                # coming from incoming email
                                 "incoming_email_cc": f'"Another Cc" <another.cc@test.agrolait.com>, {self.partner_3.email}',
-                                # To: received email Msg-To - customer who replies, without email Reply-To
                                 "incoming_email_to": ", ".join(
                                     external_partners.mapped("email_formatted")
                                 ),
                                 "mail_server_id": self.env["ir.mail_server"],
-                                # notified: followers - already emailed, aka internal only
                                 "notified_partner_ids": internal_followers,
                                 "parent_id": responsible_answer,
-                                # same reasoning as email_to/cc
                                 "partner_ids": external_partners + self.partner_3,
                                 "subject": f"Re: Re: {ticket.name}",
                                 "subtype_id": self.env.ref("mail.mt_comment"),
@@ -585,11 +534,9 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
                     ],
                 )
 
-                # clear for other loops
                 (new_partner_cc + new_partner_to).unlink()
 
     def test_mailgateway_without_template(self):
-        """A mail sent to the alias without mail template on the stage should also create a partner"""
         self.stage_new.template_id = False
 
         with self.mock_mail_gateway():
@@ -616,7 +563,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
 
     @users("hm")
     def test_suggested_recipients_auto_creation(self):
-        """Check default creates value for auto creation of recipient (customer)."""
         partner_name = "Jérémy Dawson"
         partner_phone = "+33 1990b01010"
         email = "jdawson@example.com"
@@ -640,7 +586,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
 
     def test_ticket_create_ticket_email_cc(self):
-        """Make sure creating a ticket with an email_cc field creates a follower."""
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "partner_name": "Test Name",
@@ -659,15 +604,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         self.assertTrue(follow)
 
     def test_ticket_portal_share_adds_followers(self):
-        """Test that sharing a ticket through the portal share wizard adds recipients as followers.
-
-        Test Cases:
-        ===========
-        1) Create a test ticket.
-        2) Verify that the portal user is not a follower of the ticket.
-        3) Create and execute a portal share wizard to share the ticket with the portal user.
-        4) Verify that the portal user has been added as a follower after sharing.
-        """
 
         ticket = self.env["helpdesk.ticket"].create(
             {
@@ -700,10 +636,6 @@ class TestHelpdeskMailFeatures(HelpdeskCommon, MailCommon):
         )
 
     def test_ticket_creation_removes_email_signatures(self):
-        """
-        Tests that email signature is correctly removed from a ticket
-        description when a ticket is created from an email alias.
-        """
 
         gmail_email_source = f"""From: {self.partner_1.email_formatted}
 To: {self.test_team.helpdesk_alias_id.alias_full_name}
@@ -741,7 +673,6 @@ Content-Type: text/html;
                 custom_values={"team_id": self.test_team.id},
             )
 
-        # 1. Verify Gmail signature removal
         self.assertTrue(
             gmail_ticket_id, "Gmail ticket creation should return a valid ID."
         )
@@ -768,7 +699,6 @@ Content-Type: text/html;
             "The Gmail signature should have been removed.",
         )
 
-        # 2. Verify Outlook signature removal
         self.assertTrue(
             outlook_ticket_id, "Outlook ticket creation should return a valid ID."
         )

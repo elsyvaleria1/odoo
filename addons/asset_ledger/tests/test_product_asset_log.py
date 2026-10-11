@@ -263,8 +263,6 @@ class TestProductAssetLog(TransactionCase):
         self.assertEqual(log.state, "done")
 
     def test_a_log_cannot_be_born_cancelled(self):
-        """`write` has always enforced the transition table; `create` did not,
-        so a row could be seeded in a state whose only exit is back to New."""
         with self.assertRaises(UserError):
             self.ProductAssetLog.create(
                 {
@@ -275,8 +273,6 @@ class TestProductAssetLog(TransactionCase):
             )
 
     def test_a_producer_may_still_book_a_finished_log(self):
-        """A settled vendor bill and a finished maintenance move both create
-        their log directly in `done`; refusing that would break them."""
         for state in ("new", "running", "done"):
             log = self.ProductAssetLog.create(
                 {

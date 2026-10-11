@@ -31,8 +31,6 @@ class TestPayslipLineAccounts(TestHrPayrollAccountCommon):
                 "account_type": "liability_current",
             }
         )
-        # A rule of this test's own, on the structure john's payslip uses, so the
-        # assertions do not depend on how the shared fixtures are wired.
         self.accounted_rule = self.env["hr.salary.rule"].create(
             {
                 "name": "Accounted Allowance",
@@ -48,8 +46,6 @@ class TestPayslipLineAccounts(TestHrPayrollAccountCommon):
         )
         self.hr_payslip_john.compute_sheet()
 
-        # An accountant, not a developer: no `base.group_no_one`, so the salary
-        # rule link on the payslip line list is not offered to them.
         self.accountant = self.env["res.users"].create(
             {
                 "name": "Payroll Accountant",
@@ -74,8 +70,6 @@ class TestPayslipLineAccounts(TestHrPayrollAccountCommon):
         self.assertEqual(line.salary_rule_account_credit, self.credit_account)
 
     def test_the_accounts_follow_the_payslip_company(self):
-        """`account_debit` is company_dependent, so a plain `related=` would read
-        it in whatever company the user happens to be in, not in the payslip's."""
         other_company = self.env["res.company"].create({"name": "Other Payroll Co"})
         self.accounted_rule.with_company(other_company).account_debit = False
 

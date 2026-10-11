@@ -75,9 +75,7 @@ class UtmCampaign(models.Model):
         return action
 
     def _get_domain_social_posts(self):
-        """This method will need to be overriden in social_push_notifications to filter out posts who only are push notifications"""
         return []
 
     def _get_domain_social_media_accounts(self):
-        """This method will need to be overriden in social_push_notifications to filter out push_notifications medium"""
         return []

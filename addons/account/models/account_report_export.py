@@ -31,9 +31,6 @@ class AccountReportExport(models.Model):
     @api.model
     @_debug.perf.timed
     def _cron_account_report_send(self, job_count=10) -> None:
-        """Handle Send & Print async processing.
-        :param job_count: maximum number of jobs to process if specified.
-        """
         _debug.lifecycle("_cron_account_report_send", records=self)
         to_process = self.env["report.formula"].search(
             [("send_and_print_values", "!=", False)],
@@ -100,9 +97,6 @@ class AccountReportExport(models.Model):
 
     @api.model
     def _get_sender_company_for_export(self, options):
-        """Return the sender company when generating an export file from this report.
-        :return: self.env.company if not using a tax unit, else the main company of that unit
-        """
         if options.get("tax_unit", "company_only") != "company_only":
             tax_unit = self.env["account.tax.unit"].browse(options["tax_unit"])
             _debug.logic("sender_company_tax_unit", tax_unit=tax_unit)
@@ -117,7 +111,6 @@ class AccountReportExport(models.Model):
             options.get("tax_unit") is not None
             and options_main_company._get_branches_with_same_vat() == report_companies
         ):
-            # The line with the smallest number of parents in the VAT sub-hierarchy is assumed to be the root
             _debug.logic("sender_company_vat_root", companies=report_companies)
             return report_companies.sorted(lambda x: len(x.parent_ids))[0]
         elif options_main_company._is_every_branch_selected():
@@ -222,11 +215,6 @@ class AccountReportExport(models.Model):
 
     @_debug.perf.timed
     def get_vat_for_export(self, options, raise_warning=True):
-        """Returns the VAT number to use when exporting this report with the provided
-        options. If filter_multi_company is set to 'tax_units', the selected tax unit's VAT
-        will be used; else a foreign_vat fiscal position matching the report's country will
-        be used if one exists; else the current company's will be, raising an error if its empty.
-        """
         self.check_singleton()
 
         if (
@@ -279,12 +267,6 @@ class AccountReportExport(models.Model):
 
     @_debug.perf.timed
     def action_download_xlsx_accounts_coverage_report(self) -> dict:
-        """Generate an XLSX file used to debug the report, issuing the following warnings when applicable:
-
-        - an account exists in the Chart of Accounts but is not mentioned in any line of the report (red)
-        - an account is reported in multiple lines of the report (orange)
-        - an account is reported in a line of the report but does not exist in the Chart of Accounts (yellow)
-        """
         _debug.lifecycle("action_download_xlsx_accounts_coverage_report", records=self)
         self.check_singleton()
         if not self.is_account_coverage_report_available:
@@ -336,17 +318,8 @@ class AccountReportExport(models.Model):
 
     @_debug.perf.timed
     def _generate_accounts_coverage_report_xlsx_lines(self):
-        """Generate the lines of the accounts coverage XLSX file, issuing the following warnings when applicable:
-
-        - an account exists in the Chart of Accounts but is not mentioned in any line of the report (red)
-        - an account is reported in multiple lines of the report (orange)
-        - an account is reported in a line of the report but does not exist in the Chart of Accounts (yellow)
-        """
 
         def get_domain_account(prefix):
-            # Helper function to get the right domain to find the account
-            # This function verifies if we have to look for a tag or if we have
-            # to look for an account code.
             if tag_matching := ACCOUNT_CODES_ENGINE_TAG_ID_PREFIX_REGEX.match(prefix):
                 if tag_matching["ref"]:
                     account_tag_id = self.env["ir.model.data"]._xmlid_to_res_id(
@@ -361,30 +334,29 @@ class AccountReportExport(models.Model):
         self.check_singleton()
 
         AccountAccount = self.env["account.account"].with_context(active_test=False)
-        all_reported_accounts = AccountAccount  # All accounts mentioned in the report (including those reported without using the account code)
-        accounts_by_expressions = {}  # {expression_id: account.account objects}
-        reported_account_codes = []  # [{'prefix': ..., 'balance': ..., 'exclude': ..., 'line': ...}, ...]
+        all_reported_accounts = AccountAccount
+        accounts_by_expressions = {}
+        reported_account_codes = []
         non_existing_codes = defaultdict(
             lambda: self.env["report.formula.line"]
-        )  # {non_existing_account_code: {lines_with_that_code,}}
+        )
         lines_per_non_linked_tag = defaultdict(lambda: self.env["report.formula.line"])
         lines_using_bad_operator_per_tag = defaultdict(
             lambda: self.env["report.formula.line"]
         )
         candidate_duplicate_codes = defaultdict(
             lambda: self.env["report.formula.line"]
-        )  # {candidate_duplicate_account_code: {lines_with_that_code,}}
+        )
         duplicate_codes = defaultdict(
             lambda: self.env["report.formula.line"]
-        )  # {verified duplicate_account_code: {lines_with_that_code,}}
+        )
         duplicate_codes_same_line = defaultdict(
             lambda: self.env["report.formula.line"]
-        )  # {duplicate_account_code: {line_with_that_code_multiple_times,}}
+        )
         common_account_domain = [
             *AccountAccount._check_company_domain(self.env.company),
         ]
 
-        # tag_ids already linked to an account - avoid several search_count to know if the tag is used or not
         tag_ids_linked_to_account = set(
             AccountAccount.search([("tag_ids", "!=", False)]).tag_ids.ids
         )
@@ -397,14 +369,6 @@ class AccountReportExport(models.Model):
             linked_tags=len(tag_ids_linked_to_account),
         )
 
-        # Rewrite the aml domain into an account one by mapping every
-        # leaf in place and letting Domain recombine, so the nesting and
-        # the arity stay correct by construction and a dropped term is a
-        # TRUE substitution rather than list surgery. The hand-rolled
-        # version popped the operator only when the skipped term followed
-        # it directly, so `['&', ('account_id.code', ...), ('date', ...)]`
-        # came out as a dangling operator with one operand, and a domain
-        # opening on a non-account term popped from an empty list.
         def get_condition_rewriter(expr):
             def rewrite_condition(condition):
                 field_expr = condition.field_expr
@@ -415,7 +379,6 @@ class AccountReportExport(models.Model):
                     condition.operator,
                     condition.value,
                 ]
-                # Check that the code exists in the CoA
                 if operand[0] == "code" and not AccountAccount.search_count(
                     [operand], limit=1
                 ):
@@ -461,7 +424,7 @@ class AccountReportExport(models.Model):
             if expr.engine == "domain":
                 domain = literal_eval(expr.formula.strip())
 
-                reported_accounts += AccountAccount.search(  # noqa: E8507 - a coverage audit: one query per expression, each with its own domain
+                reported_accounts += AccountAccount.search(
                     Domain(domain).map_conditions(get_condition_rewriter(expr))
                 )
             elif expr.engine == "account_codes":
@@ -487,7 +450,7 @@ class AccountReportExport(models.Model):
                         get_domain_account(exclude_code)
                         for exclude_code in account_code["exclude"]
                     ]
-                    reported_accounts += AccountAccount.search(  # noqa: E8507 - a coverage audit: one query per account code, each with its own prefix and exclusions
+                    reported_accounts += AccountAccount.search(
                         [
                             *common_account_domain,
                             get_domain_account(account_code["prefix"]),
@@ -500,7 +463,6 @@ class AccountReportExport(models.Model):
                         ]
                     )
 
-                    # Check that the code exists in the CoA or that the tag is linked to an account
                     prefixes_to_check = [
                         account_code["prefix"],
                         *account_code["require"],
@@ -508,14 +470,13 @@ class AccountReportExport(models.Model):
                     ]
                     for prefix_to_check in prefixes_to_check:
                         account_domain = get_domain_account(prefix_to_check)
-                        if not AccountAccount.search_count(  # noqa: E8507 - a coverage audit: one existence probe per prefix
+                        if not AccountAccount.search_count(
                             [
                                 *common_account_domain,
                                 account_domain,
                             ],
                             limit=1,
                         ):
-                            # Identify if we're working with account codes or account tags
                             if account_domain[0] == "code":
                                 non_existing_codes[prefix_to_check] |= account_code[
                                     "line"
@@ -528,7 +489,6 @@ class AccountReportExport(models.Model):
             all_reported_accounts |= reported_accounts
             accounts_by_expressions[expr.id] = reported_accounts
 
-            # Check if an account is reported multiple times in the same line of the report
             if len(reported_accounts) != len(set(reported_accounts)):
                 seen = set()
                 for reported_account in reported_accounts:
@@ -539,7 +499,6 @@ class AccountReportExport(models.Model):
                             expr.report_line_id
                         )
 
-            # Check if the account is reported in multiple lines of the report
             for expr2 in expressions[: i + 1]:
                 reported_accounts2 = accounts_by_expressions[expr2.id]
                 for duplicate_account in reported_accounts & reported_accounts2:
@@ -563,7 +522,6 @@ class AccountReportExport(models.Model):
             non_linked_tags=len(lines_per_non_linked_tag),
             bad_operator_tags=len(lines_using_bad_operator_per_tag),
         )
-        # Check that the duplicates are not false positives because of the balance character
         for (
             candidate_duplicate_code,
             candidate_duplicate_lines,
@@ -590,7 +548,6 @@ class AccountReportExport(models.Model):
             candidates=len(candidate_duplicate_codes),
             verified=len(duplicate_codes),
         )
-        # Check that all codes in CoA are correctly reported
         if self.root_report_id == self.env.ref("account.profit_and_loss"):
             accounts_in_coa = AccountAccount.search(
                 [
@@ -615,7 +572,7 @@ class AccountReportExport(models.Model):
                 scope="profit_and_loss",
                 coa_accounts=len(accounts_in_coa),
             )
-        else:  # Balance Sheet
+        else:
             accounts_in_coa = AccountAccount.search(
                 [
                     *common_account_domain,
@@ -640,17 +597,12 @@ class AccountReportExport(models.Model):
                 coa_accounts=len(accounts_in_coa),
             )
 
-        # Compute codes that exist in the CoA but are not reported in the report.
-        # account.account.code is computed per company and is False for an account
-        # that has none in the active one; keeping those would put a bool in a set
-        # of str and make the sort below raise.
         non_reported_codes = {
             code
             for code in (accounts_in_coa - all_reported_accounts).mapped("code")
             if code
         }
 
-        # Create the lines that will be displayed in the xlsx
         all_reported_codes = sorted(
             {code for code in all_reported_accounts.mapped("code") if code}
             | non_reported_codes
@@ -673,7 +625,7 @@ class AccountReportExport(models.Model):
             **self._get_account_tag_coverage_report_errors_trie(
                 lines_per_non_linked_tag, lines_using_bad_operator_per_tag
             )
-        )  # Add tags that are not linked to an account
+        )
 
         errors_trie = self._regroup_accounts_coverage_report_errors_trie(errors_trie)
         return self._get_accounts_coverage_report_coverage_lines("", errors_trie)
@@ -708,31 +660,6 @@ class AccountReportExport(models.Model):
         duplicate_codes_same_line,
         non_existing_codes,
     ):
-        """Create the trie used to regroup the same errors on the same subcodes, in the form:
-
-        {
-            "children": {
-                "1": {
-                    "children": {
-                        "10": { ... },
-                        "11": { ... },
-                    },
-                    "lines": {
-                        "Line1",
-                        "Line2",
-                    },
-                    "errors": {
-                        "DUPLICATE"
-                    }
-                },
-            "lines": {
-                "",
-            },
-            "errors": {
-                None    # Avoid that all codes are merged into the root with the code "" in case all of the errors are the same
-            },
-        }
-        """
         errors_trie = {"children": {}, "lines": {}, "errors": {None}}
         for reported_code in all_reported_codes:
             current_trie = errors_trie
@@ -769,9 +696,6 @@ class AccountReportExport(models.Model):
     def _get_account_tag_coverage_report_errors_trie(
         self, lines_per_non_linked_tag, lines_per_bad_operator_tag
     ):
-        """As we don't want to make a hierarchy for tags, we use a specific
-        function to handle tags.
-        """
         errors = {
             non_linked_tag: {
                 "children": {},
@@ -793,11 +717,10 @@ class AccountReportExport(models.Model):
         return errors
 
     def _regroup_accounts_coverage_report_errors_trie(self, trie):
-        """Regroup the codes sharing the same error under their common subcode/prefix, in place on the given trie."""
         if trie.get("children"):
             children_errors = set()
             children_lines = self.env["report.formula.line"]
-            if trie.get("errors"):  # Add own error
+            if trie.get("errors"):
                 children_errors |= set(trie.get("errors"))
             for child in trie["children"].values():
                 regroup = self._regroup_accounts_coverage_report_errors_trie(child)
@@ -817,14 +740,6 @@ class AccountReportExport(models.Model):
     def _get_accounts_coverage_report_coverage_lines(
         self, subcode, trie, coverage_lines=None
     ):
-        """Create the coverage lines from the grouped trie. Each line has:
-
-        - the account code
-        - the error message
-        - the lines on which the account code is used
-        - the color of the error message for the xlsx
-        """
-        # Dictionnary of the three possible errors, their message and the corresponding color for the xlsx file
         ERRORS = {
             "NON_REPORTED": {
                 "msg": self.env._(
@@ -891,29 +806,6 @@ class AccountReportExport(models.Model):
     def _generate_file_data_with_error_check(
         self, options, content_generator, generator_params, errors: dict | None = None
     ):
-        """Checks for critical errors (i.e. errors that would cause the rendering to fail) in the generator values.
-        If at least one error is critical, the 'wizard.report.formula.export.error' wizard is opened
-        before rendering the file, so they can be fixed.
-        If there are only non-critical errors, the wizard is opened after the file has been generated,
-        allowing the user to download it anyway.
-
-        :param dict options: The report options.
-        :param def content_generator: The function used to generate the exported content.
-        :param dict generator_params: The parameters passed to the 'content_generator' method (List).
-        :param dict errors: A dict of errors in the following format:
-            {
-                key: {
-                    'message': The error message to be displayed in the wizard (String),
-                    'action_text': The text of the action button (String),
-                    'action': Contains the action values (Dictionary),
-                    'level': One of 'info', 'warning', 'danger'. (String).
-                             Only the 'danger' level represents a blocking error.
-                },
-                key: {...},
-            }
-        :returns: The data that will be used by the file generator.
-        :rtype: dict
-        """
         if errors is None:
             errors = {}
         self.check_singleton()

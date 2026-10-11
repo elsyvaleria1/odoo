@@ -130,8 +130,6 @@ class TestDeliveryProof(TransactionCase):
         self.assertEqual(picking.state, "assigned")
 
     def test_the_dialog_keeps_the_photo_and_validate_is_repeated(self):
-        # Validate may carry quantities, backorders or a context of its own: the
-        # dialog does not replay it with others, it only keeps the photo.
         picking = self._picking()
         with self.assertRaises(RedirectWarning) as refusal:
             picking.with_user(self.office).button_validate()
@@ -155,8 +153,6 @@ class TestDeliveryProof(TransactionCase):
         message, action = refusal.exception.args[:2]
         self.assertIn(first.name, message)
         self.assertIn(second.name, message)
-        # Several transfers: the dialog only keeps the first photo, and the batch
-        # is validated again once every photo is in.
         self.assertFalse(action["context"]["default_resume"])
         self.assertEqual((first | second).mapped("state"), ["assigned", "assigned"])
 
@@ -223,8 +219,6 @@ class TestDeliveryProof(TransactionCase):
         self.assertEqual(len(activity), 1, "Whoever captured it is asked again.")
 
     def test_the_photo_keeps_who_captured_the_signature(self):
-        # The delivery dialog writes the signature, then an empty photo: the
-        # signature is still there, and so is who captured it.
         picking = self._picking()
         picking.with_user(self.clerk).signature = _photo("black")
         picking.with_user(self.office).delivery_proof = False
@@ -234,7 +228,6 @@ class TestDeliveryProof(TransactionCase):
         self.assertFalse(picking.delivery_proof_ok)
 
     def _kept(self, picking):
-        """The evidence a replacement or a clearing left on the chatter."""
         return picking.message_ids.attachment_ids.filtered(
             lambda attachment: attachment.name.startswith(f"{picking.name} - ")
         )
@@ -277,8 +270,6 @@ class TestDeliveryProof(TransactionCase):
         self.assertEqual(self._kept(picking).raw, base64.b64decode(rejected))
 
     def test_a_rejection_lifted_by_new_evidence_is_said(self):
-        # The tick follows the evidence: a reviewer who signs over a rejected
-        # photo lifts the rejection, and the chatter says so.
         picking = self._delivered()
         picking.with_user(self.reviewer).delivery_proof_ok = False
         picking.with_user(self.reviewer).signature = _photo("black")
@@ -348,8 +339,6 @@ class TestDeliveryProof(TransactionCase):
         self.assertEqual(dated.delivery_proof_since, given, "a given date is kept")
 
     def test_the_reviewers_list_starts_when_the_requirement_does(self):
-        # The requirement looks back no further than its own start: what the type
-        # validated before is not missing a signed slip nobody asked for.
         earlier = self._delivered()
         earlier.date_done = fields.Datetime.now() - timedelta(days=2)
         self.out_type.delivery_proof_since = fields.Datetime.now() - timedelta(days=1)

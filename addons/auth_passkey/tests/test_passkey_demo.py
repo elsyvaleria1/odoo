@@ -13,14 +13,11 @@ from odoo.addons.base.tests.common import HttpCaseWithUserDemo
 
 class PasskeyTest(HttpCaseWithUserDemo):
     @classmethod
-    def setUpClass(self):  # noqa: N804 - body uses `self.` throughout to set class attrs; a
-        # partial rename to `cls` would only fix the signature and break every
-        # `self.foo = ...` reference below (~130 lines) - not a safe mechanical fix
+    def setUpClass(self):
         super().setUpClass()
 
         self.admin_user = self.env.ref("base.user_admin")
 
-        # Hard-coded webauthn keys, challenges and responses, used in the below unit tests.
         self.passkeys = {
             "test-yubikey": {
                 "user": self.admin_user,
@@ -92,7 +89,7 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 "credential_identifier": "y6aJVJsvvSSkbwTeGZ1FbQP_jCDho7EBPwZq-3lAjQ0",
                 "public_key": "pQECAyYgASFYICjw-NoCHMkYYbRo8Q4SgJ4tZc8BSEmuEI0XmA6hUqR_IlggjtuBgyhwnr7PqABF2o8vCniMVa7_mTG6_l9Pc4eI4mo=",
                 "host": "https://localhost:8888",
-                "supports_sign_count": False,  # keepassxc doesn't support sign_count
+                "supports_sign_count": False,
                 "auth": {
                     "challenge": "LNpV0dPIMtmpSwGenIH_h1VycQuAgFgQRJ9TPKBoNayScNAErS-rsnaU19n7_AaXzeiYRg3nGI3yuH0ai6UPXA",
                     "response": {
@@ -169,7 +166,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
 
     @contextmanager
     def patch_start_auth(self, challenge):
-        """Force the webauthn challenge for unit tests testing the authentication"""
         origin_start_auth = self.env.registry["auth.passkey.key"]._start_auth
 
         def _start_auth(self):
@@ -184,7 +180,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
 
     @contextmanager
     def patch_start_registration(self, challenge):
-        """Force the webauthn challenge for unit tests testing the registration"""
         origin_start_registration = self.env.registry[
             "auth.passkey.key"
         ]._start_registration
@@ -212,19 +207,14 @@ class PasskeyTest(HttpCaseWithUserDemo):
             "web.base.url", passkey["host"]
         )
         with self.patch_start_registration(webauthn_challenge):
-            # Remove existing user passkeys so the check identity ask for a password authentication by default.
-            # To mimic the behavior when a user has no passkeys set yet.
             self.admin_user.auth_passkey_key_ids.unlink()
 
-            # Authenticate the user, as the goal here is to create a new passkey for an already authenticated user.
             self.authenticate(self.admin_user.login, self.admin_user.login)
 
-            # Click the "Add Passkey" button.
             wizard_id = self.rpc(
                 "res.users", "action_create_passkey", self.admin_user.id
             )["result"]["res_id"]
 
-            # Adding a passkey triggers an identity check. Confirm using the password and run the check.
             action = self.rpc(
                 "wizard.res.users.check.identity",
                 "run_check",
@@ -232,17 +222,14 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 context={"password": self.admin_user.login},
             )["result"]
 
-            # Create the passkey creation wizard and set a name for the key
             wizard_id = self.rpc(
                 action["res_model"], "create", {"name": "test-yubikey"}
             )["result"]
 
-            # Make the key with the webauthn response
             response = self.rpc(
                 action["res_model"], "action_generate_key", wizard_id, webauthn_response
             )
 
-            # Assert the passkey registration is successful
             self.assertTrue(response.get("result"))
             self.assertFalse(response.get("error"))
             self.assertEqual(len(self.admin_user.auth_passkey_key_ids), 1)
@@ -260,25 +247,19 @@ class PasskeyTest(HttpCaseWithUserDemo):
             sign_count = passkey["passkey"].sign_count
 
             with self.patch_start_auth(webauthn_challenge):
-                # Mimic a user login process
 
-                # 1. Open the /web/login page, and get the csrf token which is use to protect the POST request
                 csrf_token = (
                     html.fromstring(self.url_open("/web/login").content)
                     .xpath('//input[@name="csrf_token"]')[0]
                     .get("value")
                 )
 
-                # 2. Call the below route to start the webauthn authentication process
-                # which is done in the web interface when clicking on "Login with a passkey"
-                # It sets the webauthn challenge in the session
                 self.url_open(
                     "/auth/passkey/start-auth",
                     "{}",
                     headers={"Content-Type": "application/json"},
                 )
 
-                # 3. POST the login using the webauthn response
                 response = self.url_open(
                     "/web/login",
                     data={
@@ -289,17 +270,13 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     },
                 )
 
-                # Assert the login is successful
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(response.headers.get("Set-Cookie"))
                 if passkey.get("supports_sign_count", True):
-                    # If the passkey supports sign counts, the sign count increases
                     self.assertGreater(passkey["passkey"].sign_count, sign_count)
                 else:
-                    # Otherwise it doesn't
                     self.assertEqual(passkey["passkey"].sign_count, sign_count)
 
-                # Replay attacks raises an error
                 csrf_token = (
                     html.fromstring(self.url_open("/web/login").content)
                     .xpath('//input[@name="csrf_token"]')[0]
@@ -332,26 +309,19 @@ class PasskeyTest(HttpCaseWithUserDemo):
             sign_count = passkey["passkey"].sign_count
 
             with self.patch_start_auth(webauthn_challenge):
-                # Authenticate the user, as the goal here is to assert the `check_identity`
                 self.authenticate(user.login, user.login)
 
-                # Call a method which triggers an identity check
                 wizard_id = self.rpc(
                     "res.users", "action_open_api_key_wizard", user.id
                 )["result"]["res_id"]
 
-                # Mimic what the Javascript code is doing when clicking on the button "Use a passkey"
 
-                # 1. Call the below route to start the webauthn authentication process
-                # It sets the webauthn challenge in the session
                 self.url_open(
                     "/auth/passkey/start-auth",
                     "{}",
                     headers={"Content-Type": "application/json"},
                 )
 
-                # 2. Call the check method with the webauthn response in the password,
-                # which if successful returns the action to run following the identity check
                 response = self.rpc(
                     "wizard.res.users.check.identity",
                     "run_check",
@@ -359,7 +329,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     context={"password": json_dumps(webauthn_response)},
                 )
 
-                # Assert the identity check is successful
                 self.assertTrue(response.get("result"))
                 self.assertFalse(response.get("error"))
                 if passkey.get("supports_sign_count", True):
@@ -368,7 +337,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 else:
                     self.assertEqual(passkey["passkey"].sign_count, sign_count)
 
-                # 3. Attempt a replay attack, without reseting the challenge
                 with mute_logger("odoo.http"):
                     response = self.rpc(
                         "wizard.res.users.check.identity",
@@ -377,7 +345,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                         context={"password": json_dumps(webauthn_response)},
                     )
 
-                # Assert the authentication failed
                 self.assertFalse(response.get("result"))
                 self.assertTrue(response.get("error"))
                 self.assertEqual(
@@ -387,19 +354,15 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     response["error"]["data"]["message"],
                     "Incorrect Passkey. Please provide a valid passkey or use a different authentication method.",
                 )
-                # The authentication fail, hence the sign count doesn't increase
                 self.assertEqual(passkey["passkey"].sign_count, sign_count)
 
-                # 4. Do a second authentication with the same challenge and same response
 
-                # Reset the challenge, which is forced to the same challenge with a mock patch above
                 self.url_open(
                     "/auth/passkey/start-auth",
                     "{}",
                     headers={"Content-Type": "application/json"},
                 )
 
-                # Write the same webauthn response
                 with mute_logger("odoo.http"):
                     response = self.rpc(
                         "wizard.res.users.check.identity",
@@ -409,19 +372,14 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     )
 
                 if passkey.get("supports_sign_count", True):
-                    # If the passkey supports sign_count, a replay attack with the same challenge must fail
                     self.assertFalse(response.get("result"))
                     self.assertTrue(response.get("error"))
                 else:
-                    # If the passkey doesn't support sign_count, such as keepassxc, then it should success
                     self.assertTrue(response.get("result"))
                     self.assertFalse(response.get("error"))
 
                 self.assertEqual(passkey["passkey"].sign_count, sign_count)
 
-            # 5. Do a third authentication, with another challenge but the same reponse
-            # This block is outside the block `with self.patch_start_auth(webauthn_challenge):`
-            # hence it will generate a random challenge.
             self.url_open(
                 "/auth/passkey/start-auth",
                 "{}",
@@ -439,29 +397,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
             self.assertEqual(passkey["passkey"].sign_count, sign_count)
 
     def test_check_user_verification(self):
-        """Asserts authenticating without user verification (not entering the PIN code of the passkey) is prevented.
-
-        In addition to ask the browser to require the user verification
-        during the preparation of the webauthn authentication options,
-        the fact the user verification actually happened must be verified, server-side.
-
-        In the webauthn protocol, the fact the user verification happened
-        is stored by the browser in the `authenticatorData`,
-        in the 33rd byte "flags", in the 2nd bit "User Verified (UV)".
-        https://www.w3.org/TR/webauthn-1/#sec-authenticator-data
-
-        In the webauthn response provided in the setup class above, the `authenticatorData` provided
-        does not have the user verification flag.
-        This response should therefore not be allowed for authentication,
-        as we want to require the user to enter his PIN code (User Verification, UV)
-        in addition to touching the key (User Presence, UP) to act as a 2 factor authentication:
-        Something you have + Something you know.
-
-        Then, we replay the same authentication, with the same challenge,
-        but this time with an authenticator data with the user verified,
-        and an updated signature with this new authenticator data,
-        and then the authentication can be allowed.
-        """
         passkey = self.passkeys["test-user-verification"]
         webauthn_challenge, webauthn_response = (
             passkey["auth"]["challenge"],
@@ -491,9 +426,7 @@ class PasskeyTest(HttpCaseWithUserDemo):
                     "password": "",
                 },
             )
-            # Login unsuccessful, redirected back to /web/login
             self.assertTrue(response.url.endswith("/web/login"))
-            # with the error message
             error = (
                 html.fromstring(response.content)
                 .xpath('//p[@class="alert alert-danger"]')[0]
@@ -504,37 +437,9 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 "User verification is required but user was not verified during authentication",
             )
 
-            # New authenticator data with the user verification bit turned on (+ counter increased)
-            # Previous authenticator data without user verified:    SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MBAAAADg
-            # New authenticator data with user verified:            SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAFQ
-            # Only the end changes, as:
-            # - An Authenticator Data is 37 bytes long
-            # - The user verified (UV) is on the 33rd byte
-            # - The counter is from the 34th byte to the 37th byte
-            # https://www.w3.org/TR/webauthn-1/#sec-authenticator-data
-            # To see the 33rd byte "flags" change:
-            # ```py
-            # import base64
-            # flags = base64.urlsafe_b64decode(authenticator_data + '==')[32:33]
-            # print(f'{flags[0]:08b}')
-            # ```
-            # Without the User Verified authenticator data, the above code prints `00000001`
-            # With the User Verified authenticator data, the above code prints `00000101`
-            # bit 0 is the least significant bit:
-            # - Bit 0: User Present (UP)
-            # - Bit 2: User Verified (UV)
-            # The counter is from byte 34 to 37. To get the counter:
-            # `int.from_bytes(base64.urlsafe_b64decode(authenticator_data + '==')[33:37])`
-            # In the case of the authenticator data without user verified, the counter is 14
-            # In the case of the authenticator data with user verified, the counter is 21
-            # The response with the invalid authenticator data, without the UV flag
-            # must be played before the response with the valid authenticator data,
-            # as its counter is lower. Otherwise you would have another error in addition to the missing UV flag:
-            # `Response sign count of 14 was not greater than current count of 21`
             webauthn_response["response"]["authenticatorData"] = (
                 "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAFQ"
             )
-            # Signature changes as the authenticator data changed.
             webauthn_response["response"]["signature"] = (
                 "MEQCIAdcWwNtQVrklYo70p5eHjVdSkA4Pgk6hbCCT6O8-V0BAiBBVKgroyNNOqN5xwO6Rr4yJV61J1TGWoOyUsoUftjypw"
             )
@@ -559,7 +464,6 @@ class PasskeyTest(HttpCaseWithUserDemo):
                 },
             )
 
-            # Login successful, redirected to /odoo
             self.assertTrue(response.url.endswith("/odoo"))
 
 
@@ -575,11 +479,10 @@ class PasskeyTestTours(PasskeyTest):
             self.start_tour("/web/login?debug=tests", "passkeys_tour_login")
 
     def test_passkey_backend(self):
-        # All these tests rely on each other but had to be split up to patch different methods.
         self.env["ir.config_parameter"].sudo().set_param(
             "web.base.url", self.passkeys["test-yubikey"]["host"]
         )
-        self.admin_user.tz = "UTC"  # workaround to fix timezone not being set so you are unable to click any buttons on the profile page
+        self.admin_user.tz = "UTC"
         self.admin_user.auth_passkey_key_ids.unlink()
         with self.patch_start_registration(
             self.passkeys["test-yubikey"]["registration"]["challenge"]

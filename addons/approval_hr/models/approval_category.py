@@ -73,9 +73,6 @@ class ApprovalCategory(models.Model):
         }
 
     def _sync_requester_manager_steps(self) -> None:
-        """A category routed by steps asks the requester's manager as its approver
-        list did: optional, the manager joins every pool that counts approvers added
-        to the request; required, a step of its own waits for the manager too."""
         source = self._get_manager_step_source()
         for category in self:
             asking = category.step_ids.filtered(

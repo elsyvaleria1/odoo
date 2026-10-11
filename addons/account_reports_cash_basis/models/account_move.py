@@ -11,14 +11,6 @@ class AccountMove(models.Model):
     )
 
     def _search_impacting_cash_basis(self, operator, value):
-        """Search the moves impacting the cash basis, i.e. matching any of:
-
-        - a cash or bank journal
-        - no receivable nor payable line
-        - a receivable or payable line carrying a partial reconciliation
-
-        Only the ``in`` operator is supported.
-        """
         if operator != "in":
             return NotImplemented
 

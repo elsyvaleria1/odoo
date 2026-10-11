@@ -2167,11 +2167,6 @@ def _with_scaling_records(count):
 @tagged("post_install", "-at_install")
 class TestChartTemplateLoadStatements(TransactionCase):
     def test_a_load_costs_no_statement_per_record(self):
-        # accounts, groups, taxes, their repartition lines, the accounts' tags
-        # and taxes and the taxes' fiscal positions and alternatives: what the
-        # chart adds must not add statements, whatever modules extend the load.
-        # Both sizes keep every batch past the ORM's COPY threshold (50 rows),
-        # whose insert path costs a different, constant, number of statements
         def load(count):
             company = self.env["res.company"].create({"name": f"Scaling {count}"})
             with _with_scaling_records(count):

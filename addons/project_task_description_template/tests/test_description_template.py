@@ -33,11 +33,9 @@ class TestDescriptionTemplate(TransactionCase):
         )
 
     def _onchange_project(self, task_form_values, changed_field):
-        """Drive the onchange RPC the web client calls, and return its result."""
         spec = dict.fromkeys(task_form_values, "1")
         return self.Task.onchange(task_form_values, [changed_field], spec)
 
-    # --- applying a template -------------------------------------------------
 
     def test_onchange_fills_an_empty_description(self):
         form = Form(self.Task)
@@ -67,7 +65,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertEqual(str(task.description), str(self.template.description))
 
     def test_switching_template_replaces_the_previous_template_body(self):
-        """Saving linked to B while showing A's text is what this prevents."""
         other = self.Template.create(
             {"name": "Tpl Second", "description": "<p>SECOND BODY</p>"}
         )
@@ -99,7 +96,6 @@ class TestDescriptionTemplate(TransactionCase):
         form.description_template_id = other
         self.assertIn("MINE", str(form.description))
 
-    # --- when the Apply Template button is offered ---------------------------
 
     def test_button_hidden_while_the_description_matches_the_template(self):
         form = Form(self.Task)
@@ -127,11 +123,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertFalse(task.show_apply_template)
 
     def test_button_shown_when_the_description_is_still_empty(self):
-        """create() does not run the onchange, so the body never got applied.
-
-        Applying really would change the record here, which is exactly when
-        the button has to be reachable.
-        """
         task = self.Task.create(
             {
                 "name": "Task E2",
@@ -171,7 +162,6 @@ class TestDescriptionTemplate(TransactionCase):
         )
         self.assertFalse(task.show_apply_template)
 
-    # --- switching project ---------------------------------------------------
 
     def test_switching_project_warns_and_keeps_the_description(self):
         values = {
@@ -203,12 +193,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertFalse(result.get("warning"))
 
     def test_the_core_project_onchange_is_not_shadowed(self):
-        """Our onchange must not take core's method name away from it.
-
-        `@api.onchange` binds by field, so a method of our own name lets both
-        register. Core's then still moves a project-less subtask under its
-        parent's project, which is the leg easiest to observe from here.
-        """
         parent = self.Task.create({"name": "Task G0", "project_id": self.project.id})
         values = {
             "name": "Task G1",
@@ -222,7 +206,6 @@ class TestDescriptionTemplate(TransactionCase):
             "core's _onchange_project_id no longer runs",
         )
 
-    # --- the constraint ------------------------------------------------------
 
     def test_template_restricted_to_another_project_is_refused(self):
         with self.assertRaises(ValidationError):
@@ -246,7 +229,6 @@ class TestDescriptionTemplate(TransactionCase):
             task.write({"project_id": self.other_project.id})
 
     def test_restricted_template_is_allowed_without_a_project(self):
-        """project_id is not required, so a project-less task must stay valid."""
         task = self.Task.create(
             {"name": "Task K", "description_template_id": self.restricted.id}
         )
@@ -283,11 +265,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertEqual(task.description_template_id, globl)
 
     def test_any_template_is_allowed_on_a_company_less_task(self):
-        """A project may have no company, and then neither has its task.
-
-        Such a project is deliberately shared, so the constraint stays out of
-        the way rather than tying its tasks to one company's templates.
-        """
         shared_project = self.env["project.project"].create(
             {"name": "Tpl Shared Project", "company_id": False}
         )
@@ -308,15 +285,8 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertFalse(task.company_id)
         self.assertEqual(task.description_template_id, foreign)
 
-    # --- the constraint, from the template side ------------------------------
 
     def test_narrowing_the_template_projects_under_a_task_is_refused(self):
-        """The task-side constraint only fires on task writes.
-
-        Without this mirror the narrowing is accepted, and the error then
-        detonates from a later unrelated write naming a template and a
-        project the person never touched.
-        """
         task = self.Task.create(
             {
                 "name": "Task O",
@@ -364,14 +334,8 @@ class TestDescriptionTemplate(TransactionCase):
         )
         self.assertIn(self.project, self.restricted.project_ids)
 
-    # --- where the form injects the field ------------------------------------
 
     def test_the_field_lands_in_the_header_group_not_in_a_subtask_list(self):
-        """//field[@name='tag_ids'] matched three nodes; this one matches one.
-
-        The engine takes the first match silently, so the old expression was
-        right only by luck of core's node order.
-        """
         arch = etree.fromstring(
             self.Task.get_view(self.env.ref("project.view_task_form2").id, "form")[
                 "arch"
@@ -385,10 +349,8 @@ class TestDescriptionTemplate(TransactionCase):
         )
         self.assertIn("group", ancestors)
 
-    # --- the domain the client receives --------------------------------------
 
     def _template_domain_for(self, task):
-        """Evaluate the field domain the web client is handed for a task."""
         source = self.Task._fields["description_template_id"]._description_domain(
             self.env
         )
@@ -398,12 +360,6 @@ class TestDescriptionTemplate(TransactionCase):
         )
 
     def test_the_domain_carries_a_company_predicate(self):
-        """check_company=True is the only company guard the client has.
-
-        _check_company_auto is False on both models, so nothing on the write
-        path replaces it. Deleting the attribute leaves the rest of this
-        suite green, which is how it would be lost.
-        """
         source = self.Task._fields["description_template_id"]._description_domain(
             self.env
         )
@@ -440,7 +396,6 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertEqual(offered, mine | shared)
 
     def test_the_domain_offers_only_shared_templates_to_a_company_less_task(self):
-        """The client half of the asymmetry the field help documents."""
         shared_project = self.env["project.project"].create(
             {"name": "Tpl Domain Shared Project", "company_id": False}
         )
@@ -466,17 +421,10 @@ class TestDescriptionTemplate(TransactionCase):
         self.assertEqual(offered, shared)
 
     def test_the_company_less_asymmetry_is_documented_on_the_field(self):
-        """The dropdown is stricter than the constraint; say so somewhere.
-
-        test_any_template_is_allowed_on_a_company_less_task pins the
-        permissive server half. Nothing pinned the fact that the client half
-        disagrees, so a reader met it only as a missing dropdown entry.
-        """
         field = self.Task._fields["description_template_id"]
         self.assertTrue(field.help, "the asymmetry has to be written down")
         self.assertIn("company", field.help)
 
-    # --- reaching an archived template ---------------------------------------
 
     def test_archived_template_is_hidden_from_a_plain_search(self):
         self.template.active = False

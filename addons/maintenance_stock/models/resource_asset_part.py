@@ -10,7 +10,6 @@ _debug = DebugLog(__name__)
 class ResourceAssetPart(models.Model):
     _inherit = "resource.part"
 
-    # FIELDS
     stock_location_id = fields.Many2one(
         comodel_name="stock.location",
         string="Taken From",
@@ -40,7 +39,6 @@ class ResourceAssetPart(models.Model):
         check_company=True,
     )
 
-    # ACTION METHODS
     def action_receive_removed_part(self) -> None:
         for part in self:
             if part.state not in LEDGER_STATES:
@@ -71,8 +69,6 @@ class ResourceAssetPart(models.Model):
                 location=part.removed_location_id,
                 serial=part.removed_serial,
             )
-            # sudo: receiving the old part follows from the maintenance, whatever
-            # stock rights the technician holds.
             move = part.sudo()._create_part_move(
                 product,
                 product.property_stock_production,
@@ -83,7 +79,6 @@ class ResourceAssetPart(models.Model):
             part.with_context(asset_part_ledger_write=True).removed_move_id = move
             part.removed_returned = True
 
-    # LEDGER METHODS
     def _action_install(self) -> None:
         from_stock = self.filtered(
             lambda part: part.stock_location_id and not part.move_id
@@ -96,7 +91,6 @@ class ResourceAssetPart(models.Model):
                 location=part.stock_location_id,
                 serial=part.serial,
             )
-            # sudo: consuming the installed part follows from closing the work.
             move = part.sudo()._create_part_move(
                 part.product_id,
                 part.stock_location_id,
@@ -105,7 +99,6 @@ class ResourceAssetPart(models.Model):
             )
             part.with_context(asset_part_ledger_write=True).move_id = move
 
-    # HELPER METHODS
     def _create_part_move(
         self, product, location, location_dest, serial, create_lot=False
     ):

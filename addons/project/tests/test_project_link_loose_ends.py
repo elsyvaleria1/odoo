@@ -185,9 +185,6 @@ class TestProjectLinkPrivacy(ProjectLinkHttpCase):
         return project, task
 
     def _issue_links(self, project, task) -> dict[str, str]:
-        # what links issued before the Share dialog refused closed projects
-        # left behind: the customer's (comment), the partnerless view link,
-        # one naming someone else, and the task's own customer link
         Link = self.env["access.link"]
         return {
             "customer": project._portal_get_or_create_token(self.partner_1),

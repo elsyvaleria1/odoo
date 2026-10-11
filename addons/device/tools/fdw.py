@@ -23,9 +23,6 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 _REMOTE_DDL_AFTER_COMMIT = "device.fdw.remote_ddl_after_commit"
-# ADD COLUMN holds its ACCESS EXCLUSIVE lock for a catalog write only, but
-# while it waits for one every GPS insert queues behind it; a holder past this
-# is a long report scan the next run outlasts, or this very transaction.
 REMOTE_COLUMN_LOCK_TIMEOUT = "10s"
 
 
@@ -52,11 +49,6 @@ def foreign_server(cr, table: str) -> str | None:
 
 
 def remote_table(cr, table: str) -> str:
-    """Qualified name of the table the foreign table reads on its server.
-
-    ``postgres_fdw`` defaults both options to the local names, so a foreign
-    table renamed locally keeps pointing at the old remote name.
-    """
     cr.execute(
         SQL(
             """
@@ -97,16 +89,6 @@ def user_mapping_exists(cr, server: str) -> bool:
 def remote_exec(
     cr, server: str, statement: str, *, lock_timeout: str | None = None
 ) -> None:
-    """Run one DDL statement on the foreign server through ``dblink``.
-
-    The foreign server name doubles as the ``dblink`` connection name, so the
-    same user mapping ``postgres_fdw`` uses is reused and no password lives in
-    Python. ``dblink_exec`` commits on a connection of its own: what it runs
-    survives a rollback of ``cr``.
-
-    :param str lock_timeout: how long the statement may wait for a lock on
-                             the remote before it fails, naming itself
-    """
     sent = statement
     if lock_timeout:
         sent = f"SET lock_timeout = '{lock_timeout}'; {statement}"
@@ -135,14 +117,6 @@ def remote_column_names(cr, server: str, target: str) -> set[str]:
 
 
 def holds_remote_lock(cr, server: str, target: str) -> bool:
-    """Whether this transaction's ``postgres_fdw`` connection locks `target`.
-
-    That connection keeps its remote transaction, and the locks its reads and
-    writes took, until the local transaction ends; DDL sent over ``dblink``
-    that needs a conflicting lock would wait on it forever. Needs
-    ``postgres_fdw`` 1.2, whose connection list names the remote backend;
-    an older one reports False.
-    """
     cr.execute(
         "SELECT to_regprocedure('postgres_fdw_get_connections(boolean)') IS NOT NULL"
     )
@@ -171,14 +145,6 @@ def holds_remote_lock(cr, server: str, target: str) -> bool:
 
 
 def remote_exec_after_commit(env, server: str, statement: str) -> None:
-    """Run one DDL statement on the foreign server once ``env.cr`` commits.
-
-    A rolled-back transaction (a failed upgrade, ``schema_diff``'s dry run)
-    then leaves the remote database untouched, and the statement no longer
-    waits on locks and snapshots this transaction's own ``postgres_fdw``
-    connection holds on the remote table, which it would wait on forever.
-    Queued once per statement, in order.
-    """
     postcommit = env.cr.postcommit
     queue = postcommit.data.get(_REMOTE_DDL_AFTER_COMMIT)
     if queue is None:
@@ -210,11 +176,6 @@ def _run_remote_ddl(registry, queue):
 
 
 def remote_index_exists(cr, server: str, target: str, indexname: str) -> bool:
-    """Whether a usable index of that name exists in `target`'s schema.
-
-    A ``CREATE INDEX CONCURRENTLY`` that failed leaves an invalid index behind,
-    which ``IF NOT EXISTS`` would take for the real one: it counts as absent.
-    """
     cr.execute(
         SQL(
             "SELECT * FROM dblink(%s, %s) AS t(n int)",
@@ -239,14 +200,6 @@ def valid_index_query(target: str, indexname: str) -> str:
 def build_remote_index_after_commit(
     env, server: str, target: str, indexname: str, create: str
 ) -> None:
-    """Build a remote index once ``env.cr`` commits, unless a valid one exists.
-
-    An invalid one of that name is dropped first, so `create` builds it again.
-
-    :param str create: the ``CREATE INDEX CONCURRENTLY IF NOT EXISTS``
-                       statement, sent alone: ``dblink_exec`` then runs it
-                       outside a transaction block, as CONCURRENTLY needs
-    """
     if remote_index_exists(env.cr, server, target, indexname):
         return
     schema = target.split(".", 1)[0]
@@ -263,11 +216,6 @@ def build_remote_index_after_commit(
 
 
 def missing_columns(model, existing: dict) -> list[tuple[str, str]]:
-    """Stored columns the model declares that the table does not have.
-
-    :param dict existing: ``sql.get_table_columns`` output for the table
-    :return: ``(column name, SQL type)`` pairs in column order
-    """
     return [
         (field.name, field.column_type[1])
         for field in sorted(model._fields.values(), key=lambda f: f.column_order)
@@ -276,16 +224,9 @@ def missing_columns(model, existing: dict) -> list[tuple[str, str]]:
 
 
 def checked_references(model) -> list[tuple[str, str, bool]]:
-    """Many2one columns whose target the triggers must verify.
-
-    :return: ``(column, referenced table, required)`` for every field named in
-             the model's ``_fdw_checked_references``
-    """
     refs = []
     for name in model._fdw_checked_references:
         field = model._fields[name]
-        # A projected field has no column; checking NEW.<name> would fail
-        # every insert.
         if not field.store:
             continue
         refs.append((name, model.env[field.comodel_name]._table, bool(field.required)))
@@ -297,24 +238,6 @@ def trigger_statements(
     references: list[tuple[str, str, bool]],
     pointers: list[tuple[str, str]],
 ) -> list[str]:
-    """DDL that stands in for the foreign keys a foreign table cannot carry.
-
-    Three guards, all row-level and idempotent to (re)install:
-
-    - ``BEFORE INSERT`` on the log table: every checked reference must exist
-      locally. Insert-only on purpose — an ``UPDATE OF`` trigger would make
-      ``postgres_fdw`` fetch and update row by row instead of shipping the
-      statement (measured 3.5 s vs 0.4 s per 20k rows).
-    - ``AFTER DELETE`` on the log table: pointers held by other tables are set
-      to NULL, like ``ON DELETE SET NULL`` did.
-    - ``BEFORE DELETE`` on each referenced table: a row with history cannot be
-      deleted, like ``ON DELETE RESTRICT`` — archiving is the supported path.
-
-    :param str table: the log table name
-    :param list references: ``checked_references`` output
-    :param list pointers: ``(table, column)`` pairs pointing at the log's id
-    :return: SQL statements, in execution order
-    """
     stmts = []
 
     checks = []
@@ -377,14 +300,6 @@ def trigger_statements(
 
 
 def drop_pointer_foreign_keys(cr, pointers: list[tuple[str, str]]) -> list[str]:
-    """Drop the FK constraints that used to protect the pointer columns.
-
-    After the log table is swapped for a foreign one, a leftover constraint
-    still references the renamed local table by OID, so every new pointer
-    value would fail its check.
-
-    :return: names of the constraints dropped
-    """
     dropped = []
     for ptr_table, ptr_column in pointers:
         cr.execute(
@@ -409,11 +324,6 @@ def drop_pointer_foreign_keys(cr, pointers: list[tuple[str, str]]) -> list[str]:
 
 
 def remote_column_ddl(columns: list[tuple[str, str]], target: str) -> list[str]:
-    """DDL that adds the model's missing columns to the remote table.
-
-    :param list columns: ``missing_columns`` output
-    :param str target: ``remote_table`` output, the table the DDL runs on
-    """
     return [
         f"ALTER TABLE {target} ADD COLUMN IF NOT EXISTS {name} {coltype}"
         for name, coltype in columns
@@ -421,18 +331,6 @@ def remote_column_ddl(columns: list[tuple[str, str]], target: str) -> list[str]:
 
 
 def remote_index_ddl(model, target: str) -> list[tuple[str, str]]:
-    """DDL that creates the model's indexes on the remote table.
-
-    Both kinds the ORM builds on a local table: the model's ``models.Index``
-    objects, and the ``index=`` of its stored fields, which
-    ``Registry.check_indexes`` skips on a foreign table. Built concurrently,
-    so GPS ingest keeps writing during the build; a failed build leaves an
-    invalid index, which ``build_remote_index_after_commit`` drops and builds
-    again.
-
-    :param str target: ``remote_table`` output, the table the DDL runs on
-    :return: ``(index name, CREATE INDEX statement)`` pairs
-    """
     ddl = []
     for obj in model._table_objects.values():
         clause = getattr(obj, "_get_definition_clause", None)
@@ -465,23 +363,6 @@ def remote_index_ddl(model, target: str) -> list[tuple[str, str]]:
 
 
 def sync_foreign_schema(model) -> None:
-    """Bring the remote table and the local guards in line with the model.
-
-    Called from ``_auto_init`` instead of the ORM's own schema pass when the
-    model's table is foreign. Columns are created on the remote server at
-    once, since the rest of this transaction reads and writes them through
-    the foreign table, which then learns them; a rollback leaves them unused
-    on the remote, where ``IF NOT EXISTS`` adopts them on the next run.
-    Indexes nothing in this transaction needs are created once it commits.
-    The triggers are (re)installed locally.
-
-    :raises UserError: when the server has no user mapping (a neutralized
-                       copy), naming how to point it at the copy's own
-                       database; when ``dblink`` is missing, or this
-                       transaction already holds a lock on the remote table
-                       its column DDL would wait on forever, listing the DDL
-                       to apply by hand
-    """
     cr = model.env.cr
     table = model._table
     server = foreign_server(cr, table)
@@ -521,8 +402,6 @@ def sync_foreign_schema(model) -> None:
             )
         )
 
-    # ADD COLUMN IF NOT EXISTS takes its ACCESS EXCLUSIVE lock even when the
-    # column is there, as it is after a rolled-back run or one added by hand
     if columns:
         present = remote_column_names(cr, server, target)
         column_ddl = remote_column_ddl(
@@ -555,7 +434,7 @@ def sync_foreign_schema(model) -> None:
                 "ALTER FOREIGN TABLE %s ADD COLUMN %s %s",
                 SQL.identifier(table),
                 SQL.identifier(name),
-                SQL(coltype),  # noqa: E8501  the ORM's own column_type
+                SQL(coltype),
             )
         )
 
@@ -572,12 +451,8 @@ def sync_foreign_schema(model) -> None:
                 SQL.identifier(on_table),
             )
         )
-    # The statements carry no "%" (messages are built with ||), so SQL() takes
-    # them verbatim without a parameter round-trip.
     for statement in trigger_statements(table, references, pointers):
         if _installs_existing_trigger(cr, statement):
-            # a DROP/CREATE takes a lock on a table live workers read (GPS
-            # ingest), and an upgrade that queues behind one deadlocks
             continue
         cr.execute(SQL(statement))
 
@@ -588,13 +463,6 @@ _TRIGGER_DDL = re.compile(
 
 
 def _installs_existing_trigger(cr, statement: str) -> bool:
-    """Whether `statement` drops or creates a guard trigger that is in place.
-
-    A guard's name spells its table, timing and function, so a trigger of
-    that name on that table is already the one the statement would install;
-    only the function body can change, and CREATE OR REPLACE FUNCTION
-    replaces that without touching the table.
-    """
     match = _TRIGGER_DDL.match(statement)
     if not match:
         return False
@@ -611,15 +479,6 @@ def _installs_existing_trigger(cr, statement: str) -> bool:
 
 
 def stale_guard_triggers(cr, table: str, references) -> list[tuple[str, str]]:
-    """Return the guard triggers the model no longer installs.
-
-    :param str table: the log table name
-    :param list references: ``checked_references`` output
-    :return: ``(trigger, table it is on)`` pairs to drop
-    :rtype: list
-    """
-    # A reference dropped from _fdw_checked_references leaves its
-    # <ref>_fdw_no_delete_<table> trigger behind, still querying the log.
     wanted = {
         f"trg_{ref_table}_fdw_no_delete_{table}" for _c, ref_table, _r in references
     }
@@ -632,10 +491,6 @@ def stale_guard_triggers(cr, table: str, references) -> list[tuple[str, str]]:
         )
     )
     stale = [(name, rel) for name, rel in cr.fetchall() if name not in wanted]
-    # A renamed log table keeps its guards under the old name, and their
-    # bodies still name the old tables: its insert check fails every insert
-    # and its pointer guard every delete. Same for a no-delete guard on a
-    # referenced table whose log table no longer exists.
     cr.execute(
         SQL(
             "SELECT t.tgname, c.relname FROM pg_trigger t"

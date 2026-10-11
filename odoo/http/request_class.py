@@ -99,9 +99,6 @@ class Request(
             self.env.cr.close()
 
     def call_after_release(self, func: Callable[[], object]) -> None:
-        # for a write the attempt's cursor cannot make, being read-only or
-        # about to roll back: it runs once that cursor is back in the pool, on
-        # a cursor of its own, so a request never holds two connections at once
         self._after_release.append(func)
 
     def _run_after_release(self) -> None:
@@ -118,9 +115,6 @@ class Request(
 
     @property
     def fresh_primary_cursor(self) -> BaseCursor | None:
-        # the attempt opened it, so its snapshot is no older than the request:
-        # what a caller needing a fresh read of the primary may use instead of
-        # opening its own
         env = self.env
         if env is None or env.cr.readonly_pool:
             return None
@@ -128,10 +122,6 @@ class Request(
 
     @property
     def session_binding_verdict(self) -> bool | None:
-        # read on the primary before the replica was borrowed, it stands in
-        # for that read only while the request reads the replica: on a primary
-        # cursor -- a write route, a promoted or retried attempt, a replica
-        # given up -- the binding is read again on that cursor's snapshot
         if self.fresh_primary_cursor is not None:
             return None
         found = getattr(self.scratch, "session_binding", None)
@@ -154,9 +144,6 @@ class Request(
         )
 
     def _post_init_db_free(self) -> None:
-        # a route that declares database=False reads no session and opens no
-        # cursor: a throwaway session carries what dispatch reads, and is
-        # never saved
         self.session = self.app.session_store.new()
         self.session.can_save = False
         self.db = None

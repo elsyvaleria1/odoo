@@ -82,16 +82,6 @@ class AIAgentSource(models.Model):
 
     @api.model
     def create_from_attachments(self, attachment_ids, agent_id) -> Self:
-        """
-        Create AI agent sources from existing attachments.
-
-        :param attachment_ids: list of attachment IDs
-        :type attachment_ids: list of int
-        :param agent_id: agent id
-        :type agent_id: int
-        :return: the created ``ai.agent.source`` records
-        :rtype: Self
-        """
         attachments = self.env["ir.attachment"].browse(attachment_ids)
         checksums = attachments.mapped("checksum")
         agent = self.env["ai.agent"].browse(agent_id)
@@ -106,7 +96,6 @@ class AIAgentSource(models.Model):
             )
             .mapped("checksum")
         )
-        # Filter attachments that already have embeddings using their checksum
         matching_attachments = attachments.filtered(
             lambda a: a.checksum in existing_checksums
         )
@@ -129,31 +118,11 @@ class AIAgentSource(models.Model):
 
     @api.model
     def create_from_binary_files(self, files_datas, agent_id):
-        """
-        Create AI agent sources from binary records.
-
-        :param files_datas: list of ir.attachment values, with name and datas
-        :type files_datas: list of dicts
-        :param agent_id: agent id
-        :type agent_id: int
-        :return: list of created AI agent sources
-        :rtype: list of ai.agent.source records
-        """
         attachment_ids = self.env["ir.attachment"].create(files_datas).ids
         return self.create_from_attachments(attachment_ids, agent_id)
 
     @api.model
     def create_from_urls(self, urls, agent_id) -> Self:
-        """
-        Create AI agent sources from URLs.
-
-        :param urls: list of urls
-        :type urls: list of str
-        :param agent_id: agent id
-        :type agent_id: int
-        :return: the created ``ai.agent.source`` records
-        :rtype: Self
-        """
         if not urls:
             return self.browse()
 
@@ -178,15 +147,6 @@ class AIAgentSource(models.Model):
 
     @api.model
     def _get_name_from_url(self, url, session):
-        """
-        Get the name of the source from the URL.
-        :param url: URL to get the name from
-        :type url: str
-        :param session: request session
-        :type session: requests.Session
-        :return: name of the source
-        :rtype: str
-        """
         preview = link_preview.get_link_preview_from_url(url, session)
         if preview and preview.get("og_title"):
             return preview["og_title"]
@@ -194,7 +154,6 @@ class AIAgentSource(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_attachments(self) -> None:
-        """Delete attachments when a source is deleted."""
         for source in self:
             if source.attachment_id:
                 source.attachment_id.unlink()
@@ -202,28 +161,14 @@ class AIAgentSource(models.Model):
     @api.depends_context("uid")
     @api.depends("attachment_id")
     def _compute_user_has_access(self) -> None:
-        """
-        Compute user access by delegating to the underlying source.
-        Overridden in ai_documents_source and ai_knowledge.
-        """
         self.filtered(
             lambda s: s.type == "binary"
         ).user_has_access = self.env.user._is_internal()
         self.filtered(lambda s: s.type == "url").user_has_access = True
 
     def _get_source_embeddings_status(self, embedding_model) -> dict:
-        """
-        Get the current embedding status for a source with the given model.
-
-        :param embedding_model: embedding model
-        :type embedding_model: str
-        :return: ``{'has_chunks': False}`` when the source has no embedding chunks yet,
-            otherwise ``{'has_chunks': True, 'has_failed': bool, 'has_missing': bool}``
-        :rtype: dict
-        """
         self.check_singleton()
 
-        # Get all embeddings for this source
         checksum = self.attachment_id.checksum
         embedding_chunks = self.env["ai.embedding"].search(
             [("checksum", "=", checksum), ("embedding_model", "=", embedding_model)]
@@ -242,19 +187,10 @@ class AIAgentSource(models.Model):
         }
 
     def _update_source_status(self, embedding_model) -> bool:
-        """
-        Update source status based on current embedding state.
-
-        :param embedding_model: embedding model
-        :type embedding_model: str
-        :return: True if source status was updated, False otherwise
-        :rtype: bool
-        """
         self.check_singleton()
         embedding_info = self._get_source_embeddings_status(embedding_model)
 
         if not embedding_info["has_chunks"]:
-            # No chunks exist, it needs to be processed first
             return False
 
         elif embedding_info.get("has_failed"):
@@ -278,7 +214,6 @@ class AIAgentSource(models.Model):
             )
 
         else:
-            # Has chunks and no missing vectors, it's ready to be used
             self.write(
                 {
                     "status": "indexed",
@@ -290,17 +225,9 @@ class AIAgentSource(models.Model):
         return True
 
     def _sync_new_agent_provider(self, embedding_model) -> None:
-        """
-        Sync sources when embedding model changes.
-
-        :param embedding_model: embedding model
-        :type embedding_model: str
-        """
         sources_to_process = self.env[self._name]
         for source in self:
             can_update = source._update_source_status(embedding_model)
-            # If the source can't be updated and it has an attachment, it means it has no chunks,
-            # so we need to process it first
             if not can_update and source.attachment_id:
                 source.write(
                     {
@@ -315,7 +242,6 @@ class AIAgentSource(models.Model):
             self.env["ir.cron"]._trigger_ref("ai.ir_cron_generate_embedding")
 
     def action_retry_failed_source(self) -> None:
-        """Retry a failed source by deleting its chunks and re-triggering the appropriate cron job."""
         self.check_singleton()
         if self.status == "failed":
             source_chunks = self.env["ai.embedding"].search(
@@ -346,7 +272,6 @@ class AIAgentSource(models.Model):
                 self.env.ref(cron)._trigger()
 
     def action_view_sources_dialog(self) -> dict:
-        """Open the add sources dialog."""
         agent_id = self.env.context.get("agent_id")
         return {
             "type": "ir.actions.client",
@@ -357,9 +282,6 @@ class AIAgentSource(models.Model):
         }
 
     def action_access_source(self) -> dict:
-        """
-        Access the source content. Overridden in ai_documents_source and ai_knowledge.
-        """
         self.check_singleton()
         return {
             "type": "ir.actions.act_url",
@@ -368,7 +290,6 @@ class AIAgentSource(models.Model):
         }
 
     def action_reprocess_index(self):
-        """Reprocess the index of every source sharing this source's attachment."""
         self.check_singleton()
         sources_to_reprocess = self.env["ai.agent.source"].search(
             [("attachment_id.checksum", "=", self.attachment_id.checksum)]
@@ -383,10 +304,6 @@ class AIAgentSource(models.Model):
         self.env["ir.cron"]._trigger_ref("ai.ir_cron_process_sources")
 
     def _update_name(self):
-        """
-        Update the name of the source if needed.
-        Overridden in ai_documents_source and ai_knowledge.
-        """
         if not self:
             return
 
@@ -398,23 +315,13 @@ class AIAgentSource(models.Model):
                 self.name = current_name
 
     def _get_internal_domains(self):
-        """
-        To be overridden in ai_website
-        :return: list of internal domains
-        :rtype: list of str
-        """
         return []
 
     def _cron_process_sources(self) -> None:
-        """
-        Scrape all sources that require content retrieval, then create or update
-        the corresponding attachments.
-        """
         sources_to_process = self._get_sources_to_process()
         if not sources_to_process:
             return
 
-        # Group sources by URL to process them
         sources_by_url = defaultdict(lambda: self.env["ai.agent.source"])
         for source in sources_to_process:
             sources_by_url[source.url] |= source
@@ -427,13 +334,6 @@ class AIAgentSource(models.Model):
             self.env["ir.cron"]._trigger_ref("ai.ir_cron_generate_embedding")
 
     def _get_sources_to_process(self):
-        """
-        Get the sources to process. Default for URL sources.
-        Overridden in ai_knowledge.
-
-        :return: sources to process
-        :rtype: ai.agent.source recordset
-        """
         target_urls = (
             self.env["ai.agent.source"]
             .search(
@@ -452,21 +352,9 @@ class AIAgentSource(models.Model):
         )
 
     def _get_content(self, source):
-        """
-        Fetch the content of a url source. Default for URL sources.
-        Overridden in ai_knowledge.
-
-        :param source: source to fetch the content from
-        :type source: ai.agent.source record
-        :return: dictionary with 'content', 'title', and 'error' keys, or None
-        :rtype: dict or None
-        """
         if source.type == "url" and source.url:
             internal_domains = self._get_internal_domains()
 
-            # Add the agent creator's language explicitly to self environment
-            # because it is missing inside cron jobs and thus translations
-            # are not possible.
             lang = source.agent_id.create_uid.lang or "en_US"
             env = self.with_context(lang=lang).env
 
@@ -483,16 +371,6 @@ class AIAgentSource(models.Model):
         return {"error": env._("Failed to fetch the content of the source.")}
 
     def _get_sources_indexing_state(self, sources, updated_checksum) -> tuple:
-        """
-        Determine the sources' embedding and indexing state.
-
-        :param sources: recordset of sources to determine the state
-        :type sources: ai.agent.source recordset
-        :param updated_checksum: checksum of the updated content
-        :type updated_checksum: str
-        :return: tuple of (indexed_sources, sources_to_update_status, trigger_embeddings_cron)
-        :rtype: tuple
-        """
         indexed_embedding_models = self.env[
             "ai.embedding"
         ]._get_indexed_embedding_models_by_checksum(updated_checksum)
@@ -513,15 +391,6 @@ class AIAgentSource(models.Model):
     def _update_sources_status(
         self, indexed_sources, processing_sources, failed_by_error=None
     ) -> None:
-        """
-        Update sources' status based on embedding availability.
-        :param indexed_sources: recordset of indexed sources
-        :type indexed_sources: ai.agent.source recordset
-        :param processing_sources: recordset of processing sources
-        :type processing_sources: ai.agent.source recordset
-        :param failed_by_error: dictionary mapping error messages to sources
-        :type failed_by_error: dict
-        """
         if indexed_sources:
             indexed_sources.write(
                 {
@@ -549,25 +418,11 @@ class AIAgentSource(models.Model):
                 )
 
     def _create_sources_attachments(self, sources, attachments_vals) -> None:
-        """
-        Create attachments for sources.
-        :param sources: recordset of sources to create attachments for
-        :type sources: ai.agent.source recordset
-        :param attachments_vals: list of dictionaries with attachment values
-        :type attachments_vals: list of dicts
-        """
         new_attachments = self.env["ir.attachment"].create(attachments_vals)
         for source, new_attachment in zip(sources, new_attachments, strict=False):
             source.attachment_id = new_attachment.id
 
     def _process_sources_content(self, sources_by_url):
-        """
-        Process source content and create/update their attachments.
-        :param sources_by_url: dictionary mapping URLs to sources recordsets
-        :type sources_by_url: dict
-        :return: True if embeddings need to be generated, False otherwise
-        :rtype: bool
-        """
         trigger_embeddings_cron = False
         indexed_sources = self.env["ai.agent.source"]
         sources_to_update_status = self.env["ai.agent.source"]
@@ -575,7 +430,6 @@ class AIAgentSource(models.Model):
         failed_by_error = defaultdict(lambda: self.env["ai.agent.source"])
 
         for url, url_sources in sources_by_url.items():
-            # Fetch content from a single representative source
             result = self._get_content(url_sources[0])
             if not result or not result["content"]:
                 failed_by_error[result["error"]] |= url_sources
@@ -586,7 +440,6 @@ class AIAgentSource(models.Model):
                 updated_content
             )
 
-            # Check for the new sources to attach
             sources_to_attach = url_sources.filtered(lambda s: not s.attachment_id)
             attachment_vals_list = [
                 {
@@ -605,7 +458,6 @@ class AIAgentSource(models.Model):
                     sources_to_attach, attachment_vals_list
                 )
 
-            # Check for any sources with outdated attachments content or not indexed
             attachments_to_update = url_sources.attachment_id.filtered_domain(
                 [("checksum", "!=", updated_content_checksum)]
             )

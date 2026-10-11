@@ -8,7 +8,6 @@ Aromaticity is perceived by Hückel's rule on small rings; nothing here perceive
 stereochemistry, and nothing here is a substitute for a chemistry toolkit.
 """
 
-# Standard atomic weights (IUPAC 2021) and the mass of the most abundant isotope
 WEIGHTS = {
     "H": 1.008,
     "C": 12.011,
@@ -33,7 +32,6 @@ MONOISOTOPIC = {
     "Br": 78.9183376,
     "I": 126.904473,
 }
-# Single-bond covalent radii, Cordero et al. (2008), in ångström
 RADII = {
     "H": 0.31,
     "C": 0.76,
@@ -74,30 +72,13 @@ METHOD = "valence-table-v1"
 
 
 def effective_valences(element, charge):
-    """Return the valences ``element`` can take carrying ``charge``.
-
-    :param str element: element symbol
-    :param int charge: formal charge
-    :rtype: list[int]
-    """
     if element == "H":
         return [max(0, 1 - abs(charge))]
-    # Up to group 14 either sign costs a bond; from group 15 on a positive
-    # charge buys one (N+ takes four) and a negative charge spends one.
     shift = -abs(charge) if GROUPS.get(element, 14) <= 14 else charge
     return [value + shift for value in VALENCES[element] if value + shift >= 0]
 
 
 def implicit_hydrogens(element, charge, used):
-    """Return how many hydrogens complete an atom's valence.
-
-    :param str element: element symbol
-    :param int charge: formal charge
-    :param int used: sum of the orders of the atom's explicit bonds
-    :return: ``(count, exceeded)``; ``exceeded`` means no valence fits, and then
-        the count is meaningless and must not be published as a number
-    :rtype: tuple[int, bool]
-    """
     options = sorted(effective_valences(element, charge))
     fit = next((value for value in options if value >= used), None)
     if fit is None:
@@ -130,13 +111,6 @@ def _components(atoms, adjacency):
 
 
 def ring_bonds(atoms, bonds):
-    """Return the indices of the bonds that sit in a ring.
-
-    A bond is in a ring exactly when it is not a bridge, so the answer comes
-    from one low-link pass and needs no ring perception.
-
-    :rtype: set[int]
-    """
     adjacency = {atom["idx"]: [] for atom in atoms}
     for position, bond in enumerate(bonds):
         adjacency[bond["atom_a"]].append((bond["atom_b"], position))
@@ -171,13 +145,6 @@ AROMATICITY_METHOD = "huckel-4n2-v1"
 
 
 def small_rings(atoms, bonds, max_size=MAX_RING_SIZE):
-    """Return every simple cycle of at most ``max_size`` atoms.
-
-    Rings are walked only over ring bonds and each is reported once, as the
-    frozenset of its bond positions, starting from its lowest atom index.
-
-    :rtype: list[frozenset[int]]
-    """
     in_ring = ring_bonds(atoms, bonds)
     adjacency = {atom["idx"]: [] for atom in atoms}
     for position in in_ring:
@@ -209,10 +176,6 @@ def small_rings(atoms, bonds, max_size=MAX_RING_SIZE):
 
 
 def _pi_electrons(atom, links, in_ring, by_idx):
-    """Return what ``atom`` gives a ring's π system, or ``None`` if it breaks it.
-
-    :param list links: ``(neighbour idx, order, bond position)`` of the atom
-    """
     element = atom["element"]
     charge = atom.get("formal_charge") or 0
     if element not in AROMATIC_ELEMENTS or any(order == 3 for _n, order, _p in links):
@@ -224,8 +187,6 @@ def _pi_electrons(atom, links, in_ring, by_idx):
         neighbour, position = doubles[0]
         if position in in_ring:
             return 1
-        # An exocyclic C=O, C=N or C=S pulls its electron out of the ring, as in
-        # 2-pyridone; an exocyclic C=C leaves the ring non-aromatic, as in fulvene.
         return 0 if by_idx[neighbour]["element"] in ("N", "O", "S") else None
     if element == "C":
         return {1: 0, -1: 2}.get(charge)
@@ -237,17 +198,6 @@ def _pi_electrons(atom, links, in_ring, by_idx):
 
 
 def aromaticity(atoms, bonds):
-    """Perceive aromatic rings by Hückel's 4n+2 rule.
-
-    Each ring of up to eight atoms is tested alone, and two fused rings that are
-    not aromatic alone are tested as one system, which is what azulene needs.
-    Bond orders are left as drawn: aromaticity is reported beside them.
-
-    :return: ``atoms`` (aromatic atom indices), ``bonds`` (aromatic bond
-        positions), ``rings`` (number of small rings that are aromatic) and
-        ``donors`` (aromatic atoms whose lone pair is part of the π system)
-    :rtype: dict
-    """
     by_idx = {atom["idx"]: atom for atom in atoms}
     in_ring = ring_bonds(atoms, bonds)
     links = {atom["idx"]: [] for atom in atoms}
@@ -285,16 +235,6 @@ def aromaticity(atoms, bonds):
 
 
 def kekulize(atoms, bonds):
-    """Turn bonds a molblock marks aromatic (type 4) into alternating orders.
-
-    Every aromatic carbon needs one double bond; a nitrogen, phosphorus, oxygen
-    or sulphur takes one only if the pattern needs it, which is how pyrrole's NH
-    and pyridine's N are told apart without explicit hydrogens. Bonds are updated
-    in place.
-
-    :raises ValueError: when no alternation fits, i.e. the ring is not aromatic
-        as written
-    """
     marked = [position for position, bond in enumerate(bonds) if bond.get("aromatic")]
     if not marked:
         return
@@ -311,8 +251,6 @@ def kekulize(atoms, bonds):
         if position not in marked and bond["bond_order"] == 2
         for idx in (bond["atom_a"], bond["atom_b"])
     }
-    # A carbon with a formal charge or an exocyclic double bond already has
-    # what it needs, as in the tropylium cation or 2-pyridone.
     needy = sorted(
         idx
         for idx in partners
@@ -331,13 +269,10 @@ def kekulize(atoms, bonds):
             return False
         if atom["element"] == "C":
             return not atom.get("formal_charge")
-        # A heteroatom takes the double bond only within its lowest valence, so
-        # thiophene's sulphur stays divalent instead of becoming S=C.
         options = effective_valences(atom["element"], atom.get("formal_charge") or 0)
         return bool(options) and used[idx] + 1 <= min(options)
 
     for links in partners.values():
-        # carbons first, so a heteroatom is only reached for when a carbon is not
         links.sort(key=lambda link: (by_idx[link[0]]["element"] != "C", link[0]))
     matched = {}
 
@@ -365,13 +300,6 @@ def kekulize(atoms, bonds):
 
 
 def rotatable_bonds(atoms, bonds):
-    """Count single acyclic bonds between two substituted heavy atoms.
-
-    Amide C-N bonds are excluded. Other definitions give another number, which
-    is why the method is recorded next to the value.
-
-    :rtype: int
-    """
     by_idx = {atom["idx"]: atom for atom in atoms}
     adjacency = _neighbours(atoms, bonds)
     in_ring = ring_bonds(atoms, bonds)
@@ -405,11 +333,6 @@ def rotatable_bonds(atoms, bonds):
 
 
 def hill_formula(counts):
-    """Render element counts in Hill notation: carbon, hydrogen, then alphabetical.
-
-    :param dict counts: element symbol -> number of atoms
-    :rtype: str
-    """
     parts = []
     for symbol in ["C", "H"] + sorted(set(counts) - {"C", "H"}):
         total = counts.get(symbol, 0)
@@ -418,7 +341,6 @@ def hill_formula(counts):
     return "".join(parts)
 
 
-# Valence electrons of the neutral atom, for the lone-pair count
 VALENCE_ELECTRONS = {
     "H": 1,
     "C": 4,
@@ -432,9 +354,6 @@ VALENCE_ELECTRONS = {
     "I": 7,
 }
 
-# Gasteiger-Marsili PEOE parameters (a, b, c) of χ = a + b·q + c·q².
-# H, C, N, O, F, S, Cl, Br and I are the original 1980 table; the phosphorus row
-# is a commonly cited extension and is flagged as such wherever it is used.
 PEOE = {
     ("H", None): (7.17, 6.24, -0.56),
     ("C", "sp3"): (7.98, 9.18, 1.88),
@@ -452,24 +371,12 @@ PEOE = {
     ("Br", None): (10.08, 8.47, 1.16),
     ("I", None): (9.90, 7.96, 0.96),
 }
-# Electronegativity of the hydrogen cation, which the scheme fixes by hand
 H_CATION = 20.02
 HYBRIDISATION_ELEMENTS = ("C", "N", "O")
 PEOE_METHOD = "gasteiger-peoe-v1"
 
 
 def hybridisation(element, orders, aromatic=False):
-    """Classify an atom from the bond orders around it.
-
-    A triple bond or two doubles read as sp, one double or a place in an aromatic
-    ring as sp², anything else as sp³. Without the aromatic flag pyrrole's NH and
-    furan's O would read as sp³, which is not how their lone pair behaves.
-
-    :param str element: element symbol
-    :param list[int] orders: orders of the atom's explicit bonds
-    :param bool aromatic: whether the atom sits in an aromatic ring
-    :rtype: str
-    """
     if element not in HYBRIDISATION_ELEMENTS:
         return "sp3"
     if 3 in orders or orders.count(2) >= 2:
@@ -480,29 +387,11 @@ def hybridisation(element, orders, aromatic=False):
 
 
 def lone_pairs(element, charge, used, implicit_h=0):
-    """Count the non-bonding electron pairs left on an atom.
-
-    :param str element: element symbol
-    :param int charge: formal charge
-    :param int used: sum of the orders of the atom's explicit bonds
-    :param int implicit_h: hydrogens completing the valence
-    :rtype: int
-    """
     electrons = VALENCE_ELECTRONS.get(element, 4) - charge - used - implicit_h
     return max(0, electrons // 2)
 
 
 def hbond_profile(atoms, bonds):
-    """Count hydrogen-bond donors and acceptors on nitrogen and oxygen.
-
-    A donor is an N or O carrying at least one hydrogen; an acceptor is an N or O
-    with a lone pair that is not part of an aromatic π system, so pyrrole's NH
-    donates but does not accept while furan's O keeps its second pair. Lipinski's
-    cruder count — every N and O — gives a different number, so the definition
-    travels with the value.
-
-    :rtype: tuple[int, int]
-    """
     adjacency = _neighbours(atoms, bonds)
     by_idx = {atom["idx"]: atom for atom in atoms}
     in_pi = aromaticity(atoms, bonds)["donors"]
@@ -527,24 +416,9 @@ def hbond_profile(atoms, bonds):
 
 
 def gasteiger_charges(atoms, bonds, iterations=6):
-    """Partial charges by partial equalisation of orbital electronegativity.
-
-    This is the empirical scheme docking engines feed on, not a quantum
-    calculation: there is no wavefunction here and no electronic energy. The
-    charges are computed on the graph with its hydrogens made explicit, so an
-    atom's own charge excludes the hydrogens hanging off it.
-
-    :param list[dict] atoms: atoms with ``idx``, ``element``, ``formal_charge``
-    :param list[dict] bonds: bonds with ``atom_a``, ``atom_b``, ``bond_order``
-    :param int iterations: damped cycles; the scheme's own recipe uses six
-    :return: ``{"atoms": {idx: charge}, "hydrogens": {idx: charge}, "total": float}``
-        or ``None`` when an element has no parameters, because a missing row is
-        not a zero
-    :rtype: dict | None
-    """
     adjacency = _neighbours(atoms, bonds)
     aromatic = aromaticity(atoms, bonds)["atoms"]
-    nodes = []  # (element, hybridisation, charge, parent idx or None)
+    nodes = []
     index_of = {}
     for atom in atoms:
         element = atom["element"]
@@ -585,8 +459,6 @@ def gasteiger_charges(atoms, bonds, iterations=6):
         for first, second in links:
             if electronegativity[first] == electronegativity[second]:
                 continue
-            # Charge flows from the less to the more electronegative atom, scaled
-            # by the donor's cation electronegativity.
             if electronegativity[first] > electronegativity[second]:
                 donor, acceptor = second, first
             else:
@@ -613,15 +485,6 @@ def gasteiger_charges(atoms, bonds, iterations=6):
 
 
 def analyse(atoms, bonds):
-    """Derive every published figure from a connection table.
-
-    :param list[dict] atoms: atoms with ``idx``, ``element`` and ``formal_charge``
-    :param list[dict] bonds: bonds with ``atom_a``, ``atom_b`` and ``bond_order``
-    :return: formula, masses, charge, ring, aromatic-ring and π counts, rotatable
-        bonds, and the atoms whose valence is exceeded — for which the masses are
-        ``None`` rather than a number the table cannot support
-    :rtype: dict
-    """
     adjacency = _neighbours(atoms, bonds)
     counts, weight, monoisotopic, charge, exceeded = {}, 0.0, 0.0, 0, []
     implicit_total = 0

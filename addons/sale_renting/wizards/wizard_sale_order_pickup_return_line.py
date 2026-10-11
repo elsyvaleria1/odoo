@@ -68,11 +68,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                 )
 
     def _apply(self):
-        """Apply the wizard modifications to the SaleOrderLine.
-
-        :return: message to log on the Sales Order.
-        :rtype: str
-        """
         msg = self._generate_log_message()
         for wizard_line in self:
             order_line = wizard_line.order_line_id
@@ -96,7 +91,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                     late=wizard_line.rental_order_wizard_id.is_late,
                 )
                 if wizard_line.rental_order_wizard_id.is_late:
-                    # Delays facturation
                     order_line._create_delay_line(wizard_line.qty_returned)
 
                 order_line.update(
@@ -105,11 +99,6 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
         return msg
 
     def _get_diff(self) -> tuple:
-        """Return the quantity changes due to the wizard line.
-
-        :return: (diff, old_qty, new_qty) floats
-        :rtype: tuple(float, float, float)
-        """
         self.check_singleton()
         order_line = self.order_line_id
         if self.status == "pickup":
@@ -130,7 +119,7 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
         for line in self:
             order_line = line.order_line_id
             diff, old_qty, new_qty = line._get_diff()
-            if diff:  # i.e. diff>0
+            if diff:
                 msg += Markup("<li> %s") % (order_line.product_id.display_name)
 
                 if old_qty > 0:
@@ -144,6 +133,4 @@ class WizardSaleOrderPickupReturnLine(models.TransientModel):
                         new_qty,
                         order_line.product_uom_id.name,
                     )
-                # If qty = 1, product has been picked up, no need to specify quantity
-                # But if ordered_qty > 1.0: we need to still specify pickedup/returned qty
         return msg

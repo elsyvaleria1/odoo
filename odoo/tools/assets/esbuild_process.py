@@ -33,27 +33,17 @@ _SELF = "chunk-SELF0000.esm.js"
 
 
 def _is_code(name: str) -> bool:
-    # a sourcemap names its chunk by the name esbuild chose; only code files
-    # say something about which chunk is which
     return not name.endswith(".map")
 
 
 def _name_chunk_cycles(
     members: list[str], files: dict[str, str], named: dict[str, str]
 ) -> dict[str, str]:
-    # A chunk in an import cycle cannot be named after its dependencies' final
-    # names, so its name is a colour refined over the cycle: its own text with
-    # the cycle's references masked, then, member by member, the colours of the
-    # chunks it references and of the files that reference it (an entry by its
-    # own, stable name). Members left with one colour are indistinguishable by
-    # everything the build says about them, and are ordered by it alone.
     cyclic = set(members)
     references = {
         name: [dep for dep in _CHUNK_NAME.findall(files[name]) if dep in cyclic]
         for name in members
     }
-    # who references a member, and where in its text: an entry that imports two
-    # members of identical text still imports one of them first
     referrers: dict[str, list[tuple[str, int]]] = {name: [] for name in members}
     for source, content in files.items():
         if not _is_code(source):
@@ -103,8 +93,6 @@ def _name_chunk_cycles(
 
 
 def _chunk_referrers(files: dict[str, str], chunks: set[str]) -> dict[str, list[str]]:
-    # who imports a chunk, and where, told apart without esbuild's names: an
-    # entry by its own name, a chunk by its text with every chunk name masked
     referrers: dict[str, list[str]] = {name: [] for name in chunks}
     for source, content in files.items():
         if not _is_code(source):
@@ -138,12 +126,8 @@ def canonicalize_chunk_names(files: dict[str, str]) -> dict[str, str]:
         key=lambda name: (referrers[name], name),
     ):
         for name in ready:
-            # the chunk's own name (in its sourceMappingURL) is esbuild's
-            # choice, so it is masked out of what names it
             own = _rewrite_chunk_references(files[name], {**renamed, name: _SELF})
             digest = cache_hash(own.encode("utf-8"))
-            # two chunks of one text are still two module instances: the one
-            # its importers sort after gets the next name, never the same file
             while (fresh := _chunk_name(digest)) in taken:
                 digest = cache_hash(digest.encode("utf-8"))
             taken.add(fresh)
@@ -193,12 +177,12 @@ def log_invoke(
 
 def remove_stale_fail_dumps(name: str) -> None:
     pattern = "esbuild_fail_" + glob.escape(name) + "_*.js"
-    removed = 0  # debuglog
+    removed = 0
     with contextlib.suppress(OSError):
         for stale in Path(tempfile.gettempdir()).glob(pattern):
             with contextlib.suppress(OSError):
                 stale.unlink()
-                removed += 1  # debuglog
+                removed += 1
     _debug.lifecycle("esbuild.fail_dumps_removed", bundle=name, removed=removed)
 
 

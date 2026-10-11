@@ -52,7 +52,7 @@ class Savepoint:
         self._cr = cr
         self.closed: bool = False
         self._hook_marks: tuple[tuple[Callbacks, HookMark], ...] = ()
-        cr.execute(f'SAVEPOINT "{self.name}"')  # noqa: E8501  the name is the counter-made "sp<n>", never data
+        cr.execute(f'SAVEPOINT "{self.name}"')
         if (opened := getattr(cr, "_savepoint_opened", None)) is not None:
             opened()
         self._hook_marks = mark_commit_hooks(cr)
@@ -89,14 +89,14 @@ class Savepoint:
             name=self.name,
             depth=getattr(self._cr, "_savepoint_depth", None),
         )
-        self._cr.execute(f'ROLLBACK TO SAVEPOINT "{self.name}"')  # noqa: E8501  the name is the counter-made "sp<n>", never data
+        self._cr.execute(f'ROLLBACK TO SAVEPOINT "{self.name}"')
         rollback_commit_hooks(self._hook_marks)
 
     def _close(self, rollback: bool) -> None:
         try:
             if rollback:
                 self.rollback()
-            self._cr.execute(f'RELEASE SAVEPOINT "{self.name}"')  # noqa: E8501  the name is the counter-made "sp<n>", never data
+            self._cr.execute(f'RELEASE SAVEPOINT "{self.name}"')
         finally:
             self.closed = True
             release_commit_hooks(self._hook_marks)
@@ -191,9 +191,6 @@ def claim_row(
         with cr.savepoint(flush=flush):
             insert()
     except psycopg.errors.UniqueViolation:
-        # PostgreSQL raises only once the conflicting inserter has committed
-        # (it waits on one still in flight, and a rollback lets this insert
-        # through), so the loss is final at any isolation level.
         _debug.logic("savepoint.claim.lost", conflict=conflict)
         return False
     _debug.logic("savepoint.claim.won", conflict=conflict)

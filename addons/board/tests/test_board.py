@@ -11,12 +11,10 @@ class TestBoardArchPreprocessing(TransactionCase):
         return self.env["board.board"]._arch_preprocessing(arch)
 
     def test_sets_board_js_class(self):
-        """The root node of the processed arch gets ``js_class='board'``."""
         root = etree.fromstring(self._process("<form><board/></form>"))
         self.assertEqual(root.get("js_class"), "board")
 
     def test_arch_without_actions_preserved(self):
-        """Boundary: arch with no ``<action>`` keeps its structure, only js_class added."""
         root = etree.fromstring(self._process("<form><board><column/></board></form>"))
         self.assertEqual(root.get("js_class"), "board")
         self.assertEqual(len(root.findall(".//column")), 1)
@@ -28,7 +26,6 @@ class TestBoardGetView(TransactionCase):
     """Tests for ``board.board.get_view``'s custom-view merge."""
 
     def test_get_view_without_custom_view(self):
-        """No saved ``ir.ui.view.custom``: the base dashboard arch is returned as-is."""
         board_view = self.env.ref("board.board_my_dash_view")
         res = self.env["board.board"].get_view(board_view.id, "form")
         self.assertNotIn("custom_view_id", res)
@@ -36,7 +33,6 @@ class TestBoardGetView(TransactionCase):
         self.assertEqual(root.get("js_class"), "board")
 
     def test_get_view_merges_custom_view(self):
-        """A saved layout for the current user overrides the base arch and is reported."""
         custom_arch = "<form><board><column><action name='1' string='Kept'/></column></board></form>"
         board_view = self.env.ref("board.board_my_dash_view")
         custom_view = self.env["ir.ui.view.custom"].create(
@@ -55,7 +51,6 @@ class TestBoardGetView(TransactionCase):
         self.assertEqual([a.get("name") for a in root.findall(".//action")], ["1"])
 
     def test_get_view_ignores_other_users_custom_view(self):
-        """A layout saved by another user is not picked up for the current user."""
         board_view = self.env.ref("board.board_my_dash_view")
         other_user = self.env["res.users"].create(
             {
@@ -81,7 +76,6 @@ class TestBoardAddToDashboard(HttpCase):
     """End-to-end tests for the ``/board/add_to_dashboard`` controller route."""
 
     def test_add_to_dashboard(self):
-        """A valid call adds an action to the current user's dashboard layout and returns True."""
         self.authenticate("admin", "admin")
         board_view = self.env.ref("board.board_my_dash_view")
 
@@ -109,11 +103,9 @@ class TestBoardAddToDashboard(HttpCase):
         self.assertIsNotNone(action)
         self.assertEqual(action.get("name"), str(board_view.id))
         self.assertEqual(action.get("string"), "Test Dashboard Item")
-        # allowed_company_ids must not be persisted in the saved context
         self.assertNotIn("allowed_company_ids", action.get("context"))
 
     def test_add_to_dashboard_without_action_id_returns_false(self):
-        """A falsy action_id short-circuits the route: nothing is saved, result is False."""
         self.authenticate("admin", "admin")
 
         result = self.call_jsonrpc(

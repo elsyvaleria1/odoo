@@ -27,13 +27,11 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
         self.asset = self.vehicle.asset_id
         self.asset.gps_device_id = False
         self.env.flush_all()
-        # An old deployment has no attachment timeline yet.
         self.cr.execute(
             "DELETE FROM resource_gps_binding WHERE device_id = %s",
             [self.device.id],
         )
         self.env["resource.gps.binding"].invalidate_model()
-        # what resource_asset 2.0 holds of an old tree for this migration
         self.cr.execute(
             "CREATE TABLE resource_asset_legacy AS SELECT %s::int4 AS id, %s::int4 AS gps_device_id",
             [self.asset.id, self.device.id],
@@ -59,7 +57,6 @@ class TestResourceAttachmentMigration(StockLotGpsTestBase):
         self.assertFalse(
             schema.column_exists(self.cr, "resource_asset_legacy", "gps_device_id")
         )
-        # Safe to retry after the old columns have gone.
         self._migrate()
         self.assertEqual(self.asset.gps_device_id, self.device)
 

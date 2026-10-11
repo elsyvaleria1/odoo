@@ -225,7 +225,6 @@ class TestSalaryPackageItems(HttpCase):
 
     @mute_logger("odoo.http")
     def test_submit_salary_package(self):
-        # Create an offer for an applicant
         contract = self.env["hr.version"].create(
             {
                 "name": "Test Contract",
@@ -307,7 +306,6 @@ class TestSalaryPackageItems(HttpCase):
 
     @mute_logger("odoo.http")
     def test_submit_salary_package_employee(self):
-        # Create an offer for an employee
         contract = self.employee.version_id
         salary_offer = self.env["hr.contract.salary.offer"].create(
             [
@@ -425,34 +423,28 @@ class TestSalaryPackageItems(HttpCase):
         }
 
         self.template.user_id = hradmin
-        # HR Manager only
         item = HRSignItem.create(
             {"name": "sign_template_signatories_ids.signatory", **values}
         )
         self.assertEqual(item.name, "sign_template_signatories_ids.signatory")
 
-        # Field with a group
         item = HRSignItem.create({"name": "contracts_count", **values})
         self.assertEqual(item.name, "contracts_count")
 
         self.template.user_id = hruser
-        # But regular users don't
         item = UserSignItem.create(
             {"name": "sign_template_signatories_ids.signatory", **values}
         )
         self.assertEqual(item.name, "")
 
-        # Accessible fields through an unaccessible model should not work
         item = UserSignItem.create(
             {"name": "sign_template_signatories_ids.partner_id.name", **values}
         )
         self.assertEqual(item.name, "")
 
-        # But access to normal fields should work
         item = UserSignItem.create({"name": "name", **values})
         self.assertEqual(item.name, "name")
 
-        # Non-field should remain as-is
         item = UserSignItem.create({"name": "Signature", **values})
         self.assertEqual(item.name, "Signature")
 

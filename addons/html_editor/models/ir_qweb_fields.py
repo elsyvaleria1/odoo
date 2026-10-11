@@ -145,7 +145,6 @@ class IrQweb(models.AbstractModel):
     def _render_install_placeholder(
         self, key, name, thumbnail, image_preview, group, label
     ):
-        """Emit the "install this module" placeholder, deciding at render time."""
         if not self.env.user.has_group("base.group_system"):
             return
         module = self.env["ir.module.module"].search([("name", "=", key)])

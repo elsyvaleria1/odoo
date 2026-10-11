@@ -280,12 +280,12 @@ class Obfuscate(DatabaseCommand):
         with _debug.perf(
             "cli.obfuscate.width_check", cr=self.cr, fields=len(fields)
         ) as span:
-            bounded = 0  # debuglog
+            bounded = 0
             for field in fields:
                 width = (self._field_widths or {}).get(field)
                 if width is None:
                     continue
-                bounded += 1  # debuglog
+                bounded += 1
                 table, column = field
                 sql_field = SQL.identifier(column)
                 self.cr.execute(

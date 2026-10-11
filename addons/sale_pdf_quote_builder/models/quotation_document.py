@@ -115,11 +115,6 @@ class QuotationDocument(models.Model):
             "target": "current",
         }
 
-    # an order's form recomputes what headers and footers it may use at every
-    # onchange; with none the reader may see that is a search per order for
-    # nothing. Only "none" has to be exact (a stale "some" just searches), so
-    # the answer is dropped only where a header can appear: a creation, an
-    # unarchived one, one moved to another company
     @api.model
     @ormcache("self.env.access_signature")
     def _is_any_defined(self) -> bool:

@@ -18,17 +18,12 @@ _logger = logging.getLogger(__name__)
 
 
 class SocialFacebookController(SocialController):
-    # ========================================================
-    # ACCOUNTS MANAGEMENT
-    # ========================================================
 
     @http.route(["/social_facebook/callback"], type="http", auth="user")
     @fragment_to_query_string
-    def social_facebook_account_callback(  # noqa: E8539  inbound: a token an outside service hands over, not one of ours
+    def social_facebook_account_callback(
         self, access_token=None, is_extended_token=False, **kw
     ):
-        """Facebook returns to the callback URL with all its own arguments as hash parameters.
-        We use this very handy 'fragment_to_query_string' decorator to convert them to server readable parameters."""
         if not request.env.user.has_group("social.group_social_manager"):
             return request.render(
                 "social.social_http_error_view",
@@ -70,9 +65,6 @@ class SocialFacebookController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     @http.route("/social_facebook/comment", type="http", auth="user", methods=["POST"])
     def social_facebook_add_comment(
@@ -149,9 +141,6 @@ class SocialFacebookController(SocialController):
         stream_post = self._get_social_stream_post(stream_post_id, "facebook")
         stream_post._facebook_like(stream_post.facebook_post_id, like)
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     @http.route(
         ["/social_facebook/deletion_callback"],
@@ -160,17 +149,10 @@ class SocialFacebookController(SocialController):
         receiver="social.media:_receiver_for_facebook_deletion",
         receiver_event="facebook_deletion",
         methods=["POST"],
-        # auth="receiver": the IAP-shared deletion secret, compared in constant time
         csrf=False,
         typed=True,
     )
     def social_facebook_deletion_callback(self, **post):
-        """Callback that IAP will hit, when a user asked to remove his data from Facebook.
-
-        That request is initiated from the user's Facebook page settings.
-
-        > https://developers.facebook.com/docs/development/create-an-app/app-dashboard/data-deletion-callback
-        """
         facebook_page_identifiers = request.admission.extra["facebook_page_identifiers"]
         if not facebook_page_identifiers:
             raise Forbidden
@@ -204,11 +186,6 @@ class SocialFacebookController(SocialController):
     def social_facebook_redirect_to_profile(
         self, account_id, facebook_user_id, name=""
     ):
-        """
-        All profiles are not available through a direct link so we need to
-        - Try to get a direct link to their profile
-        - If we can't, we perform a search on Facebook with their name
-        """
         account = request.env["social.account"].browse(account_id)
 
         json_response = (
@@ -240,12 +217,6 @@ class SocialFacebookController(SocialController):
         return request.redirect(redirect_url, local=False)
 
     def _facebook_create_accounts(self, access_token, media, is_extended_token):
-        """Steps to create the facebook social.accounts:
-        1. Fetch an extended access token (see '_facebook_get_extended_access_token' for more info)
-        2. Query the accounts api with that token
-        3. Extract the 'pages' contained in the json result
-        4. Create a social.account with its associated token (each page has its own access token)
-        4a. If the social.account was already created before, we refresh its access_token"""
 
         extended_access_token = (
             access_token
@@ -297,8 +268,6 @@ class SocialFacebookController(SocialController):
             access_token = account.get("access_token")
             social_account_handle = account.get("username")
             if existing_accounts.get(account_id):
-                # update access token
-                # TODO awa: maybe check for name/picture update?
                 existing_accounts.get(account_id).write(
                     {
                         "active": True,
@@ -324,15 +293,6 @@ class SocialFacebookController(SocialController):
             request.env["social.account"].create(accounts_to_create)
 
     def _facebook_get_extended_access_token(self, access_token, media):
-        """The way that it works is Facebook sends you a token that is valid for 2 hours
-        that you can automatically 'extend' to a 60 days token using the oauth/access_token endpoint.
-
-        After those 60 days, there is absolutely no way to renew the token automatically, we have to ask
-        the user's permissions again manually.
-        However, using this extended token with the 'manage_pages' permission allows receiving 'Page Access Tokens'
-        that are valid forever.
-
-        More details on this mechanic: https://www.devils-heaven.com/facebook-access-tokens/"""
 
         facebook_app_id = request.env.registry.settings.get(
             request.env, "social.facebook_app_id", False
@@ -369,8 +329,6 @@ class SocialFacebookController(SocialController):
         )
 
     def _facebook_get_existing_accounts(self, media_id, json_response):
-        """Returns the social.accounts already created as:
-        { facebook_account_id: social.account }"""
 
         facebook_accounts_ids = [
             account["id"] for account in json_response.get("data", [])

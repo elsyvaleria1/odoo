@@ -42,14 +42,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
         )
 
     def test_option_enabled_and_operation_id_and_quality_point(self):
-        """
-        Auto-consume is enabled
-        There's a BoM.operation_id and a quality_point on the 'serial' component
-        -> Consumption step already exist
-        -> No auto-consumption of the 'serial' component
-        -> Auto-consumption of other components
-        """
-        # Create manufacturing order
         mo_serial = self.create_mo(self.mo_serial_tmpl, 1)
         mo_serial.action_confirm()
 
@@ -65,7 +57,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
         quant |= self.create_quant(self.raw_serial, 1)
         quant.action_apply_inventory()
 
-        # Quantities are fully reserved (stock.move state is available)
         mo_serial.action_assign()
         for mov in mo_serial.move_raw_ids:
             self.assertEqual(
@@ -83,17 +74,9 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
             )
 
     def test_option_enabled_and_operation_id(self):
-        """
-        Auto-consume is enabled
-        There's a BoM.operation_id on the 'serial' component
-        -> Consumption step is created
-        -> No auto-consumption of the 'serial' component
-        -> Auto-consumption of other components
-        """
 
         self.quality_point.active = False
 
-        # Create manufacturing order
         mo_serial = self.create_mo(self.mo_serial_tmpl, 1)
         mo_serial.action_confirm()
 
@@ -109,7 +92,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
         quant |= self.create_quant(self.raw_serial, 1)
         quant.action_apply_inventory()
 
-        # Quantities are fully reserved (stock.move state is available)
         mo_serial.action_assign()
         for mov in mo_serial.move_raw_ids:
             self.assertEqual(
@@ -127,18 +109,10 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
             )
 
     def test_option_enabled_and_quality_point(self):
-        """
-        Auto-consume is enabled
-        There's a quality_point on the 'serial' component
-        -> Consumption step already exist
-        -> No auto-consumption of the 'serial' component
-        -> Auto-consumption of other components
-        """
 
         self.quality_point.active = True
         self.bom_serial_line_serial.operation_id = self.env["mrp.routing.workcenter"]
 
-        # Create manufacturing order
         mo_serial = self.create_mo(self.mo_serial_tmpl, 1)
         mo_serial.action_confirm()
 
@@ -154,7 +128,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
         quant |= self.create_quant(self.raw_serial, 1)
         quant.action_apply_inventory()
 
-        # Quantities are fully reserved (stock.move state is available)
         mo_serial.action_assign()
         for mov in mo_serial.move_raw_ids:
             self.assertEqual(
@@ -172,17 +145,10 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
             )
 
     def test_option_enabled_only(self):
-        """
-        Auto-consume is enabled
-        There's neither a BoM.operation_id nor a quality_point on the 'serial' component
-        -> No Consumption step
-        -> Auto-consumption of all components
-        """
 
         self.quality_point.active = False
         self.bom_serial_line_serial.operation_id = self.env["mrp.routing.workcenter"]
 
-        # Create manufacturing order
         mo_serial = self.create_mo(self.mo_serial_tmpl, 1)
         mo_serial.action_confirm()
 
@@ -198,7 +164,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
         quant |= self.create_quant(self.raw_serial, 1)
         quant.action_apply_inventory()
 
-        # Quantities are fully reserved (stock.move state is available)
         mo_serial.action_assign()
         for mov in mo_serial.move_raw_ids:
             self.assertEqual(
@@ -216,11 +181,6 @@ class TestConsumeTrackedComponent(TestConsumeComponentCommon):
             )
 
     def test_update_consumed_component_for_tracked_final_product(self):
-        """
-        Suppose that you create an MO for multiple units of a product tracked by SN.
-        Due to its tracking, the MO will only be able to produce a single unit of the product at a time.
-        This test checks that the consumed quantity of components will be adapted accrodingly.
-        """
         bom = self.bom_serial
         bom.product_id = self.produced_serial
         components = self.bom_serial.bom_line_ids.mapped("product_id")

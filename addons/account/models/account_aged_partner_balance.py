@@ -55,7 +55,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         )
         options["aging_interval"] = previous_options.get("aging_interval") or 30
 
-        # Set aging column names
         interval = options["aging_interval"]
         for column in options["columns"]:
             if column["expression_label"].startswith("period"):
@@ -91,7 +90,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
     def _custom_line_postprocessor(self, report, options, lines):
         partner_lines_map = {}
 
-        # Sort line dicts by partner
         for line in lines:
             model, model_id = report._get_model_info_from_id(line["id"])
             if model == "res.partner":
@@ -184,11 +182,9 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         date_to = fields.Date.from_string(options["date"]["date_to"])
         interval = options["aging_interval"]
         periods = [(False, fields.Date.to_string(date_to))]
-        # Since we added the first period in the list we have to do one less iteration
         nb_periods = self._get_aging_period_count(options) - 1
         for i in range(nb_periods):
             start_date = minus_days(date_to, (interval * i) + 1)
-            # The last element of the list will have False for the end date
             end_date = (
                 minus_days(date_to, interval * (i + 1)) if i < nb_periods - 1 else False
             )
@@ -215,7 +211,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             if current_groupby == "id":
                 query_res = query_res_lines[
                     0
-                ]  # We're grouping by id, so there is only 1 element in query_res_lines anyway
+                ]
                 currency = (
                     self.env["res.currency"].browse(query_res["currency_id"][0])
                     if len(query_res["currency_id"]) == 1
@@ -239,7 +235,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                         else None,
                         "total": None,
                         "has_sublines": True,
-                        # Needed by the custom_unfold_all_batch_data_generator, to speed-up unfold_all
                         "partner_id": query_res["partner_id"][0]
                         if query_res["partner_id"]
                         else None,
@@ -261,7 +256,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
 
             return rslt
 
-        # Build period table
         period_table_format = "(VALUES %s)" % ",".join(
             "(%s, %s, %s)" for period in periods
         )
@@ -273,7 +267,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         )
         period_table = SQL(period_table_format, *params)
 
-        # Build query
         query = report._get_report_query(
             options,
             "strict_range",
@@ -472,7 +465,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
     def _common_custom_unfold_all_batch_data_generator(
         self, internal_type, report, options, lines_to_expand_by_function
     ):
-        rslt = {}  # In the form {full_sub_groupby_key: all_column_group_expression_totals for this groupby computation}
+        rslt = {}
         report_periods = self._get_aging_period_count(options)
 
         for (
@@ -481,7 +474,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         ) in lines_to_expand_by_function.items():
             for (
                 line_to_expand
-            ) in lines_to_expand:  # In standard, this loop will execute only once
+            ) in lines_to_expand:
                 if (
                     expand_function_name
                     == "_report_expand_unfoldable_line_with_groupby"
@@ -511,7 +504,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                         column_group_key,
                         column_group_options,
                     ) in report._split_options_per_column_group(options).items():
-                        # Get all aml results by partner
                         aml_data_by_partner = {}
                         for (
                             aml_id,
@@ -524,7 +516,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                                 aml_result["partner_id"], []
                             ).append(aml_result)
 
-                        # Iterate on results by partner to generate the content of the column group
                         partner_expression_totals = rslt.setdefault(
                             f"[{report_line_id}]=>partner_id", {}
                         ).setdefault(
@@ -539,7 +530,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
                             for i in range(report_periods):
                                 partner_values[f"period{i}"] = 0
 
-                            # Build expression totals under the right key
                             partner_aml_expression_totals = rslt.setdefault(
                                 f"[{report_line_id}]partner_id:{partner_id}=>id", {}
                             ).setdefault(
@@ -612,14 +602,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
         }
 
     def aged_partner_balance_audit(self, options, params, journal_type, internal_type):
-        """Open a list of invoices/bills for the clicked cell
-
-        :param dict options: the report's `options`
-        :param dict params:  a dict containing:
-
-             * ``calling_line_dict_id``: line id containing the optional account of the cell
-             * ``expression_label``: the expression label of the cell
-        """
         report = self.env["report.formula"].browse(options["report_id"])
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "account.action_amounts_to_settle"
@@ -689,10 +671,10 @@ class AccountAgedSideReportHandler(models.AbstractModel):
     _inherit = ["account.aged.partner.balance.report.handler"]
     _description = "Aged Partner Balance Side Custom Handler"
 
-    _aged_account_type = None  # account_type option id, e.g. "trade_payable"
-    _aged_internal_type = None  # account.account.account_type to batch on
-    _aged_line_xmlid = None  # the report line whose groupby drives the batching
-    _aged_audit_journal_type = None  # journal type the audit action opens
+    _aged_account_type = None
+    _aged_internal_type = None
+    _aged_line_xmlid = None
+    _aged_audit_journal_type = None
 
     def _get_aged_account_type_option(self):
         raise NotImplementedError
@@ -708,7 +690,6 @@ class AccountAgedSideReportHandler(models.AbstractModel):
     def _custom_unfold_all_batch_data_generator(
         self, report, options, lines_to_expand_by_function
     ):
-        # We only optimize the unfold all if the groupby value of the report has not been customized. Else, we'll just run the full computation
         aged_line = self.env.ref(self._aged_line_xmlid)
         if (aged_line._get_groupby(options) or "").replace(" ", "") == (
             aged_line.groupby or ""

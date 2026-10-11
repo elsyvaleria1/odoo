@@ -33,8 +33,6 @@ class HrLeaveAllocation(models.Model):
     _order = "create_date desc"
     _inherit = ["mixin.hr.leave.approval", "mixin.mail.thread", "mixin.mail.activity"]
     _mail_post_access = "read"
-    # who may make each move is its verb's rows (security/ir_access.xml); a
-    # create or import that lands in a state is not the move (decision S1)
     _access_verbs = {
         "reset": models.Verb(
             requires="read", transition=("state", "*", "confirm"), at_create=False
@@ -305,14 +303,6 @@ class HrLeaveAllocation(models.Model):
         )
 
     def _mark_custom_names(self) -> None:
-        """Record which allocations carry a description nobody generated.
-
-        Called after the values are in, so ``_get_title()`` is the title the
-        record would have had; anything else is somebody's own wording and
-        ``_compute_name`` must leave it alone from here on. The flag is stored
-        because the alternative -- deciding it again at each write -- cannot
-        tell a rename from a leave type that changed under an unchanged name.
-        """
         for allocation in self:
             is_custom = bool(allocation.name) and allocation.name != (
                 allocation._get_title()
@@ -691,11 +681,6 @@ class HrLeaveAllocation(models.Model):
         return added_value * period_prorata
 
     def _update_initial_accrual_schedule(self, level_ids, date_to, log) -> bool:
-        """Place the first accrual call of an allocation that has never run.
-
-        Returns False when the plan has not started by `date_to`, which is the
-        caller's signal that there is nothing to accrue yet.
-        """
         self.check_singleton()
         first_level = level_ids[0]
         first_level_start_date = self.date_from + get_timedelta(
@@ -724,12 +709,6 @@ class HrLeaveAllocation(models.Model):
     def _accrual_step_bounds(
         self, current_level, current_level_idx, level_ids
     ) -> tuple:
-        """Where the step the allocation is standing on begins and ends.
-
-        `nextcall` is where the cursor moves to, and is pulled back to the next
-        level's start date when the plan changes level the moment it is due
-        rather than at the end of the period.
-        """
         self.check_singleton()
         nextcall = current_level._get_next_anchor(self.nextcall)
         period_start = current_level._get_previous_anchor(self.lastcall)
@@ -748,11 +727,6 @@ class HrLeaveAllocation(models.Model):
         return nextcall, period_start, period_end, current_level_last_date
 
     def _expire_carried_over_days(self, current_level, carryover_date, nextcall):
-        """Drop the carried-over days whose validity has run out, and stop the
-        cursor on the expiry date if it falls inside the step.
-
-        Returns the step's end, which the expiry may have brought forward.
-        """
         self.check_singleton()
         expiration_date = self.carried_over_days_expiration_date
         if (
@@ -778,13 +752,6 @@ class HrLeaveAllocation(models.Model):
     def _run_accrual_steps(
         self, level_ids, date_to, force_period, leaves_taken
     ) -> tuple:
-        """Walk the plan forward one accrual period at a time, up to `date_to`.
-
-        Returns the level it stopped on, that level's cap in days and what is
-        left of `force_period` -- which the caller threads through its whole
-        recordset, because the first allocation to consume it spends it for all
-        of them.
-        """
         self.check_singleton()
         (current_level, current_level_idx) = (False, 0)
         current_level_maximum_leave = 0.0
@@ -812,9 +779,6 @@ class HrLeaveAllocation(models.Model):
                 period_end,
                 current_level_last_date,
             )
-            # A last-day period is credited on its last day, a day before its
-            # boundary, so the credit precedes whatever else happens at the
-            # boundary: a carryover, an expiry, the next level.
             if (
                 self.accrual_plan_id.accrued_gain_time == "end"
                 and self.nextcall == period_end
@@ -916,11 +880,6 @@ class HrLeaveAllocation(models.Model):
     def _accrue_trailing_period(
         self, current_level, current_level_maximum_leave, leaves_taken
     ) -> None:
-        """Credit the period the allocation has just entered.
-
-        A plan that accrues at the start of a period owes the period it is in,
-        which the step loop has not reached the end of.
-        """
         self.check_singleton()
         level_start = {
             level._get_level_transition_date(self.date_from): level
@@ -1086,7 +1045,6 @@ class HrLeaveAllocation(models.Model):
         return res
 
     def _get_next_states_by_state(self):
-        # every move of an allocation is a verb (security/ir_access.xml)
         self.check_singleton()
         return {
             "confirm": set(),
@@ -1190,10 +1148,6 @@ class HrLeaveAllocation(models.Model):
                 allocation.action_approve()
         return allocations
 
-    # Anything in here can leave already-taken leaves uncovered, so a write
-    # touching one of them goes through the excess check below. `date_to`
-    # included: pulling the end date in front of an approved leave strands it
-    # just as surely as cutting the duration does.
     _COVERAGE_FIELDS = frozenset(
         {"number_of_days_display", "number_of_hours_display", "state", "date_to"}
     )
@@ -1218,7 +1172,6 @@ class HrLeaveAllocation(models.Model):
         return result
 
     def _excess_days_by_allocation(self) -> dict:
-        """Leave days each allocation's holder has taken beyond what it grants."""
         _consumed, extra_data = self.employee_id._get_consumed_leaves(
             leave_types=self.holiday_status_id
         )
@@ -1357,9 +1310,6 @@ class HrLeaveAllocation(models.Model):
                 )
             )
 
-        # `approver_id` holds whoever validated the allocation, so a refusal
-        # leaves it alone rather than overwriting the real approver of one that
-        # had been approved. The refusal itself is tracked on `state`.
         self.write({"state": "refuse"})
         self.activity_update()
         return True
@@ -1418,7 +1368,6 @@ class HrLeaveAllocation(models.Model):
         }
 
     def _get_approval_outcome_value(self, kind):
-        # an allocation has no cancelled state: a cancelled request refuses it
         if kind == "cancelled":
             return "refuse"
         return super()._get_approval_outcome_value(kind)

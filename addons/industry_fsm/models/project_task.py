@@ -57,9 +57,6 @@ class ProjectTask(models.Model):
         copy=False,
         readonly=False,
     )
-    # Use to count conditions between : time, worksheet and materials
-    # If 2 over 3 are enabled for the project, the required count = 2
-    # If 1 over 3 is met (enabled + encoded), the satisfied count = 2
     display_enabled_conditions_count = fields.Integer(
         export_string_translation=False,
         compute="_compute_display_conditions_count",
@@ -100,7 +97,6 @@ class ProjectTask(models.Model):
         compute="_compute_is_task_phone_update",
     )
 
-    # FSM Report fields
     display_sign_report_primary = fields.Boolean(
         export_string_translation=False,
         compute="_compute_display_sign_report_buttons",
@@ -139,17 +135,6 @@ class ProjectTask(models.Model):
 
     @api.depends("date_start", "date_end", "user_ids")
     def _compute_planning_overlap(self):
-        """Computes overlap warnings for fsm tasks.
-
-        Unlike other tasks, fsm tasks overlap in two scenarios:
-        1. When the combined allocated hours of an fsm task and a normal task exceed the user's workable hours.
-        2. When two fsm tasks have overlapping planned dates.
-
-        Example:
-        - ProjectTask A (normal) conflicts with ProjectTask B (fsm) if their combined hours > user's workable hours. Both have 1 conflict.
-        - Introduce ProjectTask C (fsm) with no allocated hours (no conflict with ProjectTask A) but same time period as ProjectTask B.
-        Result: ProjectTask A has 1 conflict, ProjectTask B has 2 conflicts, ProjectTask C has 1 conflict.
-        """
         fsm_tasks = self.filtered("is_fsm")
         overlap_mapping = super()._compute_planning_overlap()
         for row in self._get_planning_overlap_rows([("is_fsm", "=", True)]):
@@ -413,10 +398,6 @@ class ProjectTask(models.Model):
         return action
 
     def action_fsm_validate(self, stop_running_timers=False):
-        """Moves Task to done state.
-        If allow billable on task, timesheet product set on project and user has privileges :
-        Create SO confirmed with time and material.
-        """
         Timer = self.env["timer.timer"]
         running_timers = Timer.search(
             [
@@ -560,9 +541,6 @@ class ProjectTask(models.Model):
             ),
         }
 
-    # ---------------------------------------------------------
-    # FSM Report
-    # ---------------------------------------------------------
 
     def _compute_display_send_report_buttons(self) -> None:
         self.display_send_report_primary = False
@@ -643,9 +621,6 @@ class ProjectTask(models.Model):
             self.fsm_is_sent = True
         return super()._message_post_after_hook(message, msg_vals)
 
-    # ---------------------------------------------------------
-    # Business Methods
-    # ---------------------------------------------------------
 
     def _get_domain_projects_to_make_billable(self, additional_domain=None):
         return Domain.AND(
@@ -666,11 +641,8 @@ class ProjectTask(models.Model):
             start, stop
         )
         for task in fsm_tasks:
-            # if the task goes over the gantt period, compute the duration only within
-            # the gantt period
             max_start = max(start, task.date_start.replace(tzinfo=UTC))
             min_end = min(stop, task.date_end.replace(tzinfo=UTC))
-            # for forecast tasks, use the conjunction between work intervals and task.
             interval = Intervals(
                 [(max_start, min_end, self.env["resource.calendar.attendance"])]
             )

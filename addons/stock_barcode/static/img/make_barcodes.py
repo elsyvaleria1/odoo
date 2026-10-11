@@ -1,6 +1,3 @@
-# Note to run this script (specifically for datamatrix generation) you will need the following installed:
-#  - reportlab version 3.4 or higher (available on pip3)
-#  - pypdf (available on pip3)
 
 
 import pathlib
@@ -33,7 +30,6 @@ def create_page(barcodes, font_size_and_texts):
         d = createBarcodeDrawing("ECC200DataMatrix", value=barcode[2], **kwargs)
         renderPDF.draw(d, can, barcode[0], barcode[1])
 
-    # add text
     for font_size, texts in font_size_and_texts:
         can.setFont(FONT, font_size)
         for text in texts:
@@ -43,7 +39,6 @@ def create_page(barcodes, font_size_and_texts):
     return PdfReader(packet)
 
 
-# same on all GS1 pages
 footer = [
     (
         45,
@@ -63,9 +58,6 @@ footer = [
     (45, 15, 'For GS1 barcodes, remove all "("s and ")"s'),
 ]
 
-# page 1
-# format is (x, y, "barcode")
-# barcodes to generate
 barcodes = [
     (75, 640, "WHIN"),
     (260, 640, "0106016478556677300000000510Lot0001"),
@@ -81,7 +73,6 @@ barcodes = [
 header = [
     (45, 785, "GS1 Barcodes (set Barcode Nomenclature to Default GS1 Nomenclature)")
 ]
-# text to describe barcode flow
 flow_labels = [
     (45, 752, "Receive products tracked by lot (activate Lots & Serial Numbers) "),
     (
@@ -91,7 +82,6 @@ flow_labels = [
     ),
 ]
 
-# text to describe (above) each barcode
 barcode_titles = [
     (55, 733, "YourCompany Receipts"),
     (215, 733, "Cable Management Box x5 Lot0001"),
@@ -104,7 +94,6 @@ barcode_titles = [
     (93, 315, "Validate"),
 ]
 
-# text of barcode code (below), but made to look pretty (not literal barcode)
 barcode_code = [
     (85, 631, "WHIN"),
     (220, 631, "(01)06016478556677(30)00000005(10)Lot0001"),
@@ -128,9 +117,6 @@ font_size_and_texts = [
 
 page1 = create_page(barcodes, font_size_and_texts)
 
-# page 2
-# format is (x, y, "barcode")
-# barcodes to generate
 barcodes = [
     (75, 640, "WHIN"),
     (260, 640, "0106016478556332305"),
@@ -139,10 +125,8 @@ barcodes = [
 ]
 
 header = []
-# text to describe barcode flow
 flow_labels = [(45, 752, "Put in Pack (activate Packages)")]
 
-# text to describe (above) each barcode
 barcode_titles = [
     (55, 733, "YourCompany Receipts"),
     (233, 733, "Individual Workplace x10"),
@@ -150,7 +134,6 @@ barcode_titles = [
     (93, 600, "Validate"),
 ]
 
-# text of barcode code (below), but made to look pretty (not literal barcode)
 barcode_code = [
     (85, 631, "WHIN"),
     (245, 631, "(01)06016478556332(30)10"),
@@ -169,7 +152,6 @@ font_size_and_texts = [
 page2 = create_page(barcodes, font_size_and_texts)
 
 
-# merge with other demo barcodes
 merger = PdfWriter()
 with pathlib.Path(OTHER_DEMO_FILENAME).open("rb") as other_demo_file:
     merger.append(PdfReader(other_demo_file))

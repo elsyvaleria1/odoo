@@ -8,7 +8,6 @@ from odoo.tests import HttpCase, tagged
 @tagged("post_install", "-at_install")
 class TestUi(HttpCase):
     def test_event_configurator(self):
-        # self.env["account.chart.template"].try_loading('generic_coa', self.env.company)
 
         self.env["account.tax.group"].create(
             {

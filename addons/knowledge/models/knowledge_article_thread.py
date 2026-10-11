@@ -12,7 +12,7 @@ class KnowledgeArticleThread(models.Model):
     _description = "Article Discussion Thread"
     _inherit = ["mixin.mail.thread"]
     _mail_post_access = (
-        "read"  # if you can read, you can post a message on an article thread
+        "read"
     )
     _order = "write_date desc, id desc"
     _rec_name = "display_name"
@@ -39,9 +39,6 @@ class KnowledgeArticleThread(models.Model):
         for record in self:
             record.display_name = record.article_id.display_name
 
-    # ===========================================================================
-    #                             CRUD METHODS
-    # ===========================================================================
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -70,9 +67,6 @@ class KnowledgeArticleThread(models.Model):
             )
         return super().write(vals)
 
-    # ==========================================================================
-    #                              THREAD OVERRIDES
-    # ==========================================================================
 
     _PORTAL_POST_KEYS = frozenset(
         {"attachment_ids", "author_id", "body", "partner_ids"}
@@ -80,8 +74,6 @@ class KnowledgeArticleThread(models.Model):
 
     def _message_post_prepare_values(self, post_values) -> None:
         super()._message_post_prepare_values(post_values)
-        # A portal user reaches this thread through the article, not through its
-        # own rights: whatever it may set beyond the content is filtered out.
         if self.env.user._is_portal() and self.article_id.user_has_access:
             refused = post_values.keys() - self._PORTAL_POST_KEYS
             _debug.logic("portal_post_filtered", threads=self, refused=sorted(refused))
@@ -111,8 +103,6 @@ class KnowledgeArticleThread(models.Model):
     def _notify_thread_by_email(
         self, message, recipients_data, *, msg_vals=False, **kwargs
     ):
-        # Use knowledge specific template which is a simple template comprised of the
-        # # comment sent and the person that tagged the notified user.
         msg_vals = msg_vals or {}
         msg_vals["email_layout_xmlid"] = "knowledge.knowledge_mail_notification_layout"
         return super()._notify_thread_by_email(

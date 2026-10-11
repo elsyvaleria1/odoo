@@ -10,7 +10,6 @@ class DocumentsAccess(models.Model):
 
     @api.constrains("document_id", "partner_id", "role")
     def _check_spreadsheet(self) -> None:
-        """Check that only internal user can edit a spreadsheet."""
         for access in self:
             user_ids = access.partner_id.with_context(active_test=False).user_ids
             if (

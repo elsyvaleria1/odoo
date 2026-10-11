@@ -15,7 +15,7 @@ class AccountMove(models.Model):
             (
                 "skipped",
                 "Skipped",
-            ),  # TODO remove this state in master, we now put a regular error.
+            ),
             ("processing", "Pending Reception"),
             ("done", "Done"),
             ("error", "Error"),
@@ -34,8 +34,6 @@ class AccountMove(models.Model):
         return super().action_send_and_print()
 
     def action_cancel_peppol_documents(self) -> None:
-        # if the peppol_move_state is processing/done
-        # then it means it has been already sent to peppol proxy and we can't cancel
         if any(move.peppol_move_state in {"processing", "done"} for move in self):
             raise UserError(
                 self.env._(
@@ -46,7 +44,6 @@ class AccountMove(models.Model):
         self._as_sending_queue().sending_data = False
 
     def _compute_show_send_button(self) -> None:
-        # EXTENDS 'account'
         super()._compute_show_send_button()
         for move in self:
             if move._is_exportable_as_self_invoice():

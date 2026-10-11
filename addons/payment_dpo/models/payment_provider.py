@@ -32,31 +32,25 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "dpo":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "dpo":
             return super()._prepare_request_url(endpoint, **kwargs)
         return "https://secure.3gdirectpay.com/API/v6/"
 
     def _prepare_request_headers(self, *args, **kwargs):
-        """Override of `payment` to build the request headers."""
         if self.code != "dpo":
             return super()._prepare_request_headers(*args, **kwargs)
         return {"Content-Type": "application/xml; charset=utf-8"}
 
     def _parse_response_content(self, response, **kwargs):
-        """Override of `payment` to parse the response content."""
         if self.code != "dpo":
             return super()._parse_response_content(response, **kwargs)
 

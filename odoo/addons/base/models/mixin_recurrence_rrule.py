@@ -188,7 +188,6 @@ class MixinRecurrenceRrule(models.AbstractModel):
         )
         weekdays = self._get_week_days()
         weekdays = [str(w) for w in weekdays]
-        # We need to get the day full name from its three first letters.
         week_map = {v: k for k, v in RRULE_WEEKDAYS.items()}
         weekday_short = [week_map[w] for w in weekdays]
         day_strings = [weekday_selection[day] for day in weekday_short]
@@ -452,28 +451,18 @@ class MixinRecurrenceRrule(models.AbstractModel):
             if line.startswith("RRULE:"):
                 return line[len("RRULE:") :]
         _debug.logic("recurrence.rrule_value_bare", lines=len(lines))
-        # No RRULE line: a bare ``FREQ=...`` is already the payload; a lone
-        # DTSTART is not a rule at all.
         return next((line for line in lines if not line.startswith("DTSTART:")), "")
 
     @api.model
     def _rrule_parse(self, rule_str, date_start, tz=None):
-        # LUL TODO clean this mess
         data = {}
         day_list = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-        # Skip X-named RRULE extensions
-        # TODO Remove patch when dateutils contains the fix
-        # HACK https://github.com/dateutil/dateutil/pull/1374
-        # Optional parameters starts with X- and they can be placed anywhere in the RRULE string.
-        # RRULE:FREQ=MONTHLY;INTERVAL=3;X-RELATIVE=1
-        # RRULE;X-EVOLUTION-ENDDATE=20200120:FREQ=WEEKLY;COUNT=3;BYDAY=MO
-        # X-EVOLUTION-ENDDATE=20200120:FREQ=WEEKLY;COUNT=3;BYDAY=MO
-        stripped = len(rule_str)  # debuglog
+        stripped = len(rule_str)
         rule_str = (
             re.sub(r";?X-[-\w]+=[^;:]*", "", rule_str).replace(":;", ":").lstrip(":;")
         )
-        stripped -= len(rule_str)  # debuglog
+        stripped -= len(rule_str)
 
         local_start = date_start
         if tz and isinstance(date_start, datetime) and not date_start.tzinfo:
@@ -518,8 +507,6 @@ class MixinRecurrenceRrule(models.AbstractModel):
             nweekdays = ((weekdays[0], rule._bysetpos[0]),)
             weekdays = None
             _debug.logic("recurrence.setpos_as_nth_weekday", nth=rule._bysetpos[0])
-        # A yearly rule repeats on its start date, or on the nth weekday of its
-        # start month; any other by-part names a date this model cannot hold.
         if rule._freq == rrule.YEARLY:
             data["month_by"] = "date"
             start_month = local_start and local_start.month
@@ -549,16 +536,14 @@ class MixinRecurrenceRrule(models.AbstractModel):
                 )
             weekdays = nweekdays = None
 
-        # Repeat weekly
         if weekdays:
             for weekday in day_list:
-                data[weekday] = False  # reset
+                data[weekday] = False
             for weekday_index in weekdays:
                 weekday = rrule.weekday(weekday_index)
                 data[weekday_to_field(weekday.weekday)] = True
                 data["repeat_unit"] = "week"
 
-        # Repeat monthly by nweekday ((weekday, weeknumber), )
         if nweekdays:
             data["weekday"] = day_list[next(iter(nweekdays))[0]].upper()
             data["byday"] = str(next(iter(nweekdays))[1])
@@ -602,8 +587,8 @@ class MixinRecurrenceRrule(models.AbstractModel):
 
     def _get_lang_week_start(self):
         lang = get_lang(self.env, self.env.user.lang)
-        week_start = int(lang.week_start)  # lang.week_start ranges from '1' to '7'
-        return rrule.weekday(week_start - 1)  # rrule expects an int from 0 to 6
+        week_start = int(lang.week_start)
+        return rrule.weekday(week_start - 1)
 
     def _get_start_of_period(self, dt):
         if self.repeat_unit == "week":
@@ -643,7 +628,7 @@ class MixinRecurrenceRrule(models.AbstractModel):
         original_count = self.repeat_type == "count" and self.repeat_number
         if original_count and len(ranges) < original_count:
             inflated_count = (2 * original_count) - len(ranges)
-            past = len(ranges)  # debuglog
+            past = len(ranges)
             ranges = only_future(
                 self._get_ranges(start, duration, count=inflated_count)
             )
@@ -698,9 +683,6 @@ class MixinRecurrenceRrule(models.AbstractModel):
         return (wall_to_utc(occurrence, tz) for occurrence in occurences)
 
     def _get_week_days(self):
-        """
-        :return: tuple of rrule weekdays for this recurrence.
-        """
         return tuple(
             rrule.weekday(weekday_index)
             for weekday_index, weekday in {
@@ -725,11 +707,11 @@ class MixinRecurrenceRrule(models.AbstractModel):
             "dtstart": dtstart,
             "interval": self.repeat_interval,
         }
-        if freq == "month" and self.month_by == "date":  # e.g. every 15th of the month
+        if freq == "month" and self.month_by == "date":
             rrule_params["bymonthday"] = self.day
         elif (
             freq == "month" and self.month_by == "day"
-        ):  # e.g. every 2nd Monday in the month
+        ):
             rrule_params["byweekday"] = self._get_nth_weekday()
         elif freq == "year" and self.month_by == "day":
             if dtstart:
@@ -755,7 +737,7 @@ class MixinRecurrenceRrule(models.AbstractModel):
             rrule_params["byweekday"] = weekdays
             rrule_params["wkst"] = self._get_lang_week_start()
 
-        if self.repeat_type == "count":  # e.g. stop after X occurence
+        if self.repeat_type == "count":
             effective_count = self.repeat_number if count is None else count
             rrule_params["count"] = (
                 min(effective_count, MAX_RECURRENT_OCCURRENCES)
@@ -764,7 +746,7 @@ class MixinRecurrenceRrule(models.AbstractModel):
             )
         elif self.repeat_type == "forever" and bounded:
             rrule_params["count"] = MAX_RECURRENT_OCCURRENCES
-        elif self.repeat_type == "until":  # e.g. stop after 12/10/2020
+        elif self.repeat_type == "until":
             rrule_params["until"] = datetime.combine(self.repeat_until, time.max)
         _debug.logic(
             "recurrence.rrule_built",

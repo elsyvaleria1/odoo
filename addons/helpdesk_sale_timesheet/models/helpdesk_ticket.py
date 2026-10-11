@@ -87,8 +87,6 @@ class HelpdeskTicket(models.Model):
 
     @api.depends("sale_line_id", "timesheet_ids", "timesheet_ids.unit_amount")
     def _compute_remaining_hours_so(self) -> None:
-        # TODO This is not yet perfectly working as timesheet.so_line stick to its old value although changed
-        #      in the task From View.
         timesheets = self.timesheet_ids.filtered(
             lambda t: (
                 t.helpdesk_ticket_id.sale_line_id in (t.so_line, t._origin.so_line)
@@ -118,9 +116,6 @@ class HelpdeskTicket(models.Model):
         _debug.pipeline(
             "ticket_remaining_hours_so",
             tickets=self,
-            # the method carries a TODO saying it is not yet right: a
-            # timesheet's `so_line` keeps its old value when changed from the
-            # ticket form, which is what the `_origin` pairs below work around
             adjusting_timesheets=timesheets,
         )
         for ticket in self:
@@ -149,7 +144,6 @@ class HelpdeskTicket(models.Model):
         for ticket in billable_tickets:
             if ticket.project_id and ticket.project_id.pricing_type != "task_rate":
                 ticket.sale_line_id = ticket.project_id.sale_line_id
-            # Check sale_line_id and customer are coherent
             if (
                 ticket.sale_line_id.sudo().partner_id.commercial_partner_id
                 != ticket.commercial_partner_id
@@ -157,9 +151,6 @@ class HelpdeskTicket(models.Model):
                 _debug.logic(
                     "ticket_sale_line_dropped_for_partner_mismatch",
                     ticket=ticket,
-                    # the project may have just supplied this line two lines
-                    # above, so a project-wide SOL is silently discarded for
-                    # any ticket whose customer differs from the order's
                     sale_line=ticket.sale_line_id,
                     ticket_partner=ticket.commercial_partner_id,
                 )
@@ -187,7 +178,6 @@ class HelpdeskTicket(models.Model):
             )
 
     def _get_domain_last_sol_of_customer(self):
-        # Get the domain of the last SOL made for the customer in the current task where we need to compute
         self.check_singleton()
         if (
             not self.commercial_partner_id
@@ -239,22 +229,17 @@ class HelpdeskTicket(models.Model):
             "ticket_confirms_quotations",
             tickets=self,
             sale_line_ids=sol_ids,
-            # linking a ticket to a DRAFT order line confirms the whole
-            # quotation, as a side effect of creating or writing the ticket
             quotations=quotations,
         )
         if quotations:
             quotations.action_confirm()
 
     def write(self, vals):
-        # an empty recordset, not None: the branch that seeds this one is
-        # not the branch that unions into it below, so the two can disagree
         recompute_so_lines = self.env["sale.order.line"]
         other_timesheets = None
         if "timesheet_ids" in vals and isinstance(
             vals.get("timesheet_ids"), (tuple, list)
         ):
-            # Then, we check if the list contains tuples/lists like "(code=1, timesheet_id, vals)" and we extract timesheet_id if it is an update and 'so_line' in vals
             timesheet_ids = [
                 command[1]
                 for command in vals.get("timesheet_ids")
@@ -269,9 +254,6 @@ class HelpdeskTicket(models.Model):
             _debug.logic(
                 "ticket_write_timesheet_commands",
                 ticket=self,
-                # `recompute_so_lines` is seeded only when a command is a
-                # type-1 update carrying `so_line`, and the `other_timesheets`
-                # branch below is NOT nested under that -- so the two disagree
                 updated_timesheets=timesheet_ids,
                 writes_a_sale_line=bool(vals.get("sale_line_id")),
                 is_approver=self.env.user.has_group(
@@ -281,7 +263,6 @@ class HelpdeskTicket(models.Model):
             if not self.env.user.has_group(
                 "hr_timesheet.group_hr_timesheet_approver"
             ) and vals.get("sale_line_id", None):
-                # We need to search the timesheets of other employee to update the so_line
                 other_timesheets = (
                     self.env["account.analytic.line"]
                     .sudo()
@@ -297,20 +278,15 @@ class HelpdeskTicket(models.Model):
         if sol_id := vals.get("sale_line_id"):
             self._confirm_linked_sale_orders([sol_id])
         if other_timesheets:
-            # Then we update the so_line if needed
             compute_timesheets = defaultdict(
                 list, [(timesheet, timesheet.so_line) for timesheet in other_timesheets]
-            )  # key = timesheet and value = so_line of the timesheet before the _compute_so_line
+            )
             other_timesheets._compute_so_line()
             if _debug.logic.enabled:
                 _debug.logic(
                     "ticket_other_timesheets_so_line_snapshot",
                     ticket=self,
                     timesheets=other_timesheets,
-                    # the "before" snapshot is read AFTER super().write(),
-                    # which has already recomputed `so_line` from the new sale
-                    # line -- so `before` and `after` are the same value and
-                    # the union below is unreachable
                     changed=sum(
                         1
                         for timesheet, sol in compute_timesheets.items()

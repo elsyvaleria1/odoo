@@ -41,22 +41,6 @@ class KnowledgeArticleMember(models.Model):
 
     @api.constrains("article_permission", "permission")
     def _check_is_writable(self, on_unlink=False) -> None:
-        """Articles must always have at least one writer. This constraint is done
-        on member level, in coordination to the constraint on article model (see
-        ``_check_is_writable`` on ``knowledge.article``).
-
-        Since this constraint only triggers if we have at least one member another
-        validation is done on article model. The article_permission related field
-        has been added and stored to force triggering this constraint when
-        article.permission is modified.
-
-        Note: computation is done in Py instead of using optimized SQL queries
-        because value are not yet in DB at this point.
-
-        :param bool on_unlink: when called on unlink we must remove the members
-          in self (the ones that will be deleted) to check if one of the remaining
-          members has write access.
-        """
         if self.env.context.get("knowledge_member_skip_writable_check"):
             return
 
@@ -77,7 +61,6 @@ class KnowledgeArticleMember(models.Model):
                 deleted_members_by_article[member.article_id.id] |= member
 
         for article in articles_to_check:
-            # Check on permission on members
             members_to_check = article.article_member_ids
             if on_unlink:
                 members_to_check -= deleted_members_by_article[article.id]
@@ -114,7 +97,6 @@ class KnowledgeArticleMember(models.Model):
         return members
 
     def write(self, vals):
-        """Whatever rights, avoid any attempt at privilege escalation."""
         if (
             "article_id" in vals or "partner_id" in vals or "group_id" in vals
         ) and not self.env.is_admin():
@@ -132,13 +114,9 @@ class KnowledgeArticleMember(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_no_writer(self) -> None:
-        """When removing a member, the constraint is not triggered.
-        We need to check manually on article with no write permission that we do not remove the last write member"""
         self._check_is_writable(on_unlink=True)
 
     def _get_invitation_token(self) -> str:
-        """The token of the invitation link sent to the member, in their name,
-        for as long as a share made by hand lives (decision B1)."""
         self.check_singleton()
         __, token = (
             self.env["access.link"]

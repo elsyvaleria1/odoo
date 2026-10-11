@@ -27,15 +27,12 @@ class TestLoyaltyReward(TransactionCase):
         return program.reward_ids
 
     def test_order_discount_is_global(self):
-        """An order-wide percentage discount is a global discount."""
         self.assertTrue(self._reward("order").is_global_discount)
 
     def test_cheapest_discount_is_not_global(self):
-        """A cheapest-product discount is not a global discount (boundary)."""
         self.assertFalse(self._reward("cheapest").is_global_discount)
 
     def test_reward_product_combo_raises(self):
-        """A free-product reward can't target a combo product."""
         combo_item_product = self.env["product.product"].create({"name": "Combo Item"})
         combo = self.env["product.combo"].create(
             {

@@ -241,8 +241,6 @@ class TestRenameModel(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestRenameModelOverAForerunner(TransactionCase):
-    # another module's upgrade loaded the new code before this rename ran, so
-    # the registry already reflects probe.widget: its row, fields and table
 
     @classmethod
     def setUpClass(cls):
@@ -472,8 +470,6 @@ class TestRenameModelOverlongRelation(TransactionCase):
         self.assertTrue(sequence.endswith("_id_seq") and len(sequence) <= 63, sequence)
 
     def test_a_shortened_name_never_takes_the_name_another_one_fits_in(self):
-        # new_table + "_automation_id_not_null" does not fit, and shortened it
-        # spells new_table + "_id_not_null", the name the id constraint fits in
         cr = self.env.cr
         cr.execute("""
             CREATE TABLE probe_col (

@@ -16,7 +16,6 @@ WORKSHEET_SOURCES = frozenset({"fsm", "project"})
 
 class CustomerPortal(portal.CustomerPortal):
     def _prepare_worksheet_context(self, task_sudo):
-        # TO BE OVERRIDDEN
         return {}
 
     def _task_get_page_view_values(self, task, access_token, /, **kwargs):
@@ -26,10 +25,6 @@ class CustomerPortal(portal.CustomerPortal):
         return values
 
     def _get_worksheet_sign_url(self, task, values):
-        # the credential the page holds signs when the sign route takes it: the
-        # session's own access, or a comment link of the task or its project
-        # naming someone of the task customer's company; a view link signs
-        # nothing
         url = f"{task.access_url}/worksheet/sign/{values['source']}"
         token = values.get("task_token")
         if not token:
@@ -57,8 +52,6 @@ class CustomerPortal(portal.CustomerPortal):
 
     @staticmethod
     def _signs_for_customer(task_sudo, partner):
-        # the signature is the customer's sign-off: a link signs for the
-        # partner it names only within the task customer's commercial entity
         partner = task_sudo.env["res.partner"].browse(partner.id if partner else [])
         customer = task_sudo.partner_id.commercial_partner_id
         signs = bool(customer and partner) and (
@@ -102,7 +95,6 @@ class CustomerPortal(portal.CustomerPortal):
     def portal_worksheet_sign(
         self, task_id, access_token=None, source=False, name=None, signature=None
     ):
-        # get from query string if not on json param
         query = request.httprequest.args
         access_token = access_token or query.get("access_token")
         by_project_link = False
@@ -121,7 +113,6 @@ class CustomerPortal(portal.CustomerPortal):
             by_project_link = True
             signer = task_sudo.env["res.partner"].browse(int(query["pid"]))
         else:
-            # the session signs with its own access; a link for its partner
             signer = (
                 None
                 if task_sudo.with_user(request.env.user).has_access("read")
@@ -171,8 +162,6 @@ class CustomerPortal(portal.CustomerPortal):
             "worksheet_signed", task=task_sudo.id, by_project_link=by_project_link
         )
         if by_project_link:
-            # back on the page the project's link opened, never on the task's
-            # own customer link
             redirect_url = get_url_with_params(
                 f"{task_sudo.project_id.access_url}/task/{task_sudo.id}",
                 {"access_token": access_token, "source": source},

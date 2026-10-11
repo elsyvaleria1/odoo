@@ -33,15 +33,6 @@ class SerialProtocol(NamedTuple):
 
 @contextmanager
 def serial_connection(path, protocol, is_probing=False):
-    """Opens a serial connection to a device and closes it automatically after use.
-
-    :param path: path to the device
-    :type path: string
-    :param protocol: an object containing the serial protocol to connect to a device
-    :type protocol: namedtuple
-    :param is_probing: a flag thet if set to `True` makes the timeouts longer, defaults to False
-    :type is_probing: bool, optional
-    """
 
     PROBING_TIMEOUT = 1
     port_config = {
@@ -51,10 +42,10 @@ def serial_connection(path, protocol, is_probing=False):
         "parity": protocol.parity,
         "timeout": PROBING_TIMEOUT
         if is_probing
-        else protocol.timeout,  # longer timeouts for probing
+        else protocol.timeout,
         "writeTimeout": PROBING_TIMEOUT
         if is_probing
-        else protocol.writeTimeout,  # longer timeouts for probing
+        else protocol.writeTimeout,
     }
     connection = serial.Serial(path, **port_config)
     try:
@@ -75,11 +66,6 @@ class SerialDriver(Driver):
     STATUS_DISCONNECTED = "disconnected"
 
     def __init__(self, identifier, device) -> None:
-        """Attributes initialization method for `SerialDriver`.
-
-        :param device: path to the device
-        :type device: str
-        """
 
         super().__init__(identifier, device)
         self._actions.update(
@@ -101,12 +87,10 @@ class SerialDriver(Driver):
         pass
 
     def _push_status(self) -> None:
-        """Updates the current status and pushes it to the frontend."""
 
         self.data["status"] = self._status
 
     def _set_name(self):
-        """Tries to build the device's name based on its type and protocol name but falls back on a default name if that doesn't work."""
 
         try:
             name = ("%s serial %s" % (self._protocol.name, self.device_type)).title()
@@ -118,11 +102,6 @@ class SerialDriver(Driver):
         pass
 
     def _do_action(self, data) -> None:
-        """Helper function that calls a specific action method on the device.
-
-        :param data: the `_actions` key mapped to the action method we want to call
-        :type data: string
-        """
 
         with self._device_lock:
             try:
@@ -144,11 +123,6 @@ class SerialDriver(Driver):
             self._push_status()
 
     def action(self, data) -> None:
-        """Establish a connection with the device if needed and have it perform a specific action.
-
-        :param data: the `_actions` key mapped to the action method we want to call
-        :type data: string
-        """
         self.data["owner"] = data.get("session_id")
         self.data["action_args"] = {**data}
 
@@ -162,10 +136,9 @@ class SerialDriver(Driver):
                 self._do_action(data)
         event_manager.device_changed(
             self, data
-        )  # Make response available to /event route or websocket
+        )
 
     def run(self):
-        """Continuously gets new measures from the device."""
 
         try:
             with serial_connection(

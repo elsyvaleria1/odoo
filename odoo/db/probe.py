@@ -36,10 +36,6 @@ def get_libpq_connect_timeout(deadline: float | None, cap: int) -> int:
     remaining = deadline - monotonic()
     if remaining <= 0:
         return 0
-    # libpq counts whole seconds: round up, so a budget with 0.9s left still
-    # tries once (at worst libpq's 2s floor) instead of refusing a connect
-    # that usually takes milliseconds -- which made any budget under 1s
-    # refuse every direct connection, startup's included.
     return min(cap, math.ceil(remaining))
 
 
@@ -64,9 +60,6 @@ class ReachabilityProbe:
             return key in self._proven
 
     def mark_proven(self, key: frozenset) -> None:
-        # Lock-free first look: set membership is one atomic read, and this runs
-        # on every borrow (157 ns with the lock, 27 ns without); a stale miss
-        # only takes the lock it would have taken anyway.
         if key in self._proven:
             return
         with self._lock:
@@ -135,9 +128,6 @@ class ReachabilityProbe:
             key, probe, leader, conninfo, kwargs, deadline
         )
 
-    # True unless a connect was attempted and failed transiently; a permanent
-    # failure raises. A follower that gave up waiting answers True: it knows
-    # nothing, and the borrow's own deadline decides.
     def _probe_or_await_leader(
         self,
         key: frozenset,
@@ -175,8 +165,6 @@ class ReachabilityProbe:
                 done=done,
                 failed=probe.exc is not None,
             )
-            # A copy per follower: raising the leader's own exception object
-            # replaced the traceback the leader was still holding.
             if done and probe.exc is not None:
                 raise copy.copy(probe.exc) from probe.exc
             return probe.connected if done else True
@@ -243,10 +231,6 @@ class ReachabilityProbe:
             conn.close()
         return True
 
-    # What the `postgres` database says about the one that refused us:
-    # "absent" or "present" from pg_database, "auth_failed" when the
-    # maintenance connect itself was turned away at the password stage,
-    # "unknown" for anything else (including a deadline already spent).
     def ask_maintenance_db(
         self, conninfo: str, kwargs: dict, deadline: float | None = None
     ) -> str:
@@ -304,12 +288,6 @@ class ReachabilityProbe:
             return "unknown"
 
 
-# libpq's own account of where a connect died, which no lc_messages
-# translates: the server asked for a password we could not give, or it took
-# ours and turned us away. A refused port or a dead host never reaches the
-# password stage; a missing database is refused *after* it, which is why the
-# maintenance database is asked first and only a second refusal at the same
-# stage counts.
 def _failed_at_password_stage(exc: psycopg.OperationalError) -> bool:
     pgconn = getattr(exc, "pgconn", None)
     if pgconn is None:

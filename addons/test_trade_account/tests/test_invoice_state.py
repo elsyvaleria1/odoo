@@ -29,7 +29,6 @@ class TestInvoiceState(TestTradeOrderCase):
             **kw,
         )
 
-    # ─── line level ───────────────────────────────────────────────
 
     def test_nothing_invoiced_is_to_do(self):
         self.assertEqual(self._line(invoiced=0.0).invoice_state, "to do")
@@ -90,7 +89,6 @@ class TestInvoiceState(TestTradeOrderCase):
 
         self.assertEqual(line.invoice_state, "to do")
 
-    # ─── order level ──────────────────────────────────────────────
 
     def test_a_draft_order_reports_nothing_to_invoice(self):
         order = self._make_order()

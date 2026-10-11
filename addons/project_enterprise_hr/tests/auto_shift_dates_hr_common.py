@@ -153,7 +153,7 @@ class AutoShiftDatesHRCommon(ProjectGanttRescheduleCommon):
         cls.contract_1 = cls.armande_employee.version_id
         cls.armande_departure_date = cls.task_1_date_deadline.date() + relativedelta(
             day=29
-        )  # 2021 06 25
+        )
         cls.armande_employee.write(
             {
                 "departure_date": cls.armande_departure_date,

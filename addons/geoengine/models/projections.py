@@ -28,10 +28,6 @@ def _area_of_use_extent(srid: int) -> tuple[float, float, float, float] | None:
 
 
 def projection_definition(env, srid: int) -> dict | None:
-    """What OpenLayers needs to draw in ``EPSG:<srid>`` when it cannot resolve
-    the code itself: PostGIS's proj4 text and the CRS's area of use, as the
-    projection's extent. None for a CRS OpenLayers resolves, or one PostGIS
-    cannot describe."""
     if is_client_renderable_srid(srid):
         return None
     [row] = env.execute_query(

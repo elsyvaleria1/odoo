@@ -42,8 +42,6 @@ class TestSyncOdoo2GoogleMail(TestSyncGoogle, MailCommon):
         partner = self.env["res.partner"].create(
             {"name": "Jean-Luc", "email": "jean-luc@opoo.com"}
         )
-        # an event goes to Google through its organizer, or through its
-        # creator when it has none; otherwise its attendees are mailed
         for create_user, organizer, expect_mail, is_public in [
             (user_root, organizer1, False, True),
             (user_root, None, True, True),

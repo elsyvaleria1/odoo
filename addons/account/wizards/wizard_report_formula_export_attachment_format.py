@@ -38,7 +38,6 @@ class WizardReportFormulaExportAttachmentFormat(models.TransientModel):
             action_type=report_action.get("type"),
         )
         if report_action["type"] == "ir_actions_account_report_download":
-            # file_generator functions are always public for ir_actions_account_report_download
             report_options = json_loads(report_action["data"]["options"])
             file_generator = report_action["data"]["file_generator"]
             report = self.export_wizard_id.report_id
@@ -47,14 +46,11 @@ class WizardReportFormulaExportAttachmentFormat(models.TransientModel):
                 report_options, file_generator
             )
 
-            # We use the options from the action, as the action may have added or modified
-            # stuff into them (see l10n_es_reports, with BOE wizard)
             file_content = (
                 base64.encodebytes(export_result["file_content"])
                 if isinstance(export_result["file_content"], bytes)
                 else export_result["file_content"]
             )
-            # We need to unpack the content in case of a generator
             if isinstance(file_content, types.GeneratorType):
                 file_content = base64.encodebytes(b"".join(file_content))
             file_name = f"{self.export_wizard_id.doc_name or self.export_wizard_id.report_id.name}.{export_result['file_type']}"

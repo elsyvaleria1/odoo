@@ -182,7 +182,7 @@ class WizardAccountConfigUpdateLockDate(models.TransientModel):
     @_debug.perf.timed
     def _compute_lock_date_exceptions(self) -> None:
         for wizard in self:
-            exceptions = self.env["account.lock_exception"].search(  # noqa: E8507 - a transient wizard opened on one company
+            exceptions = self.env["account.lock_exception"].search(
                 self.env["account.lock_exception"]._get_domain_active_exceptions(
                     wizard.company_id, SOFT_LOCK_DATE_FIELDS
                 )
@@ -273,7 +273,7 @@ class WizardAccountConfigUpdateLockDate(models.TransientModel):
     )
     def _compute_show_draft_entries_warning(self) -> None:
         for wizard in self:
-            draft_entries = self.env["account.move"].search(  # noqa: E8507 - a transient wizard opened on one company
+            draft_entries = self.env["account.move"].search(
                 wizard._get_domain_draft_moves_in_locked_period(), limit=1
             )
             wizard.show_draft_entries_warning = bool(draft_entries)
@@ -296,7 +296,7 @@ class WizardAccountConfigUpdateLockDate(models.TransientModel):
         for wizard in self:
             wizard.show_posted_tax_closing_warning = bool(
                 wizard.tax_lock_date
-                and self.env["account.move"].search(  # noqa: E8507 - a transient wizard opened on one company
+                and self.env["account.move"].search(
                     wizard._get_domain_posted_tax_closings_in_locked_period(), limit=1
                 )
             )

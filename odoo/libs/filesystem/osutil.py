@@ -33,8 +33,6 @@ def clean_filename(name: str, replacement: str = "") -> str:
     stripped = cleaned.lstrip(".-")
     if not stripped:
         return "Untitled"
-    # callers append the extension to a label that may be empty: a name that
-    # is only its extension lacks a stem, it is not a hidden file
     if "." in cleaned[: len(cleaned) - len(stripped)] and "." not in stripped:
         return f"Untitled.{stripped}"
     if WINDOWS_RESERVED.match(stripped):
@@ -44,7 +42,7 @@ def clean_filename(name: str, replacement: str = "") -> str:
 
 if os.name != "nt":
 
-    def is_running_as_nt_service(service_name: str) -> bool:  # noqa: ARG001  POSIX stub; keeps the NT signature
+    def is_running_as_nt_service(service_name: str) -> bool:
         return False
 else:
     from contextlib import contextmanager

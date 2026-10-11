@@ -130,7 +130,6 @@ class EsgMetric(models.Model):
         readonly=False,
     )
 
-    # Score fields
     impact_severity_score = fields.Selection(
         selection=lambda self: self._get_score_selection(),
         string="Impact Severity",
@@ -215,7 +214,6 @@ class EsgMetric(models.Model):
         export_string_translation=False
     )
 
-    # Survey fields
     survey_ids = fields.Many2many(
         comodel_name="survey.survey",
         help="Sent out Surveys",
@@ -228,11 +226,11 @@ class EsgMetric(models.Model):
     @api.depends("state_color")
     def _compute_state_color(self) -> None:
         state_color = {
-            "draft": 4,  # light blue
-            "under_review": 2,  # orange
-            "done": 10,  # green / success
-            False: 0,  # default grey -- for studio
-            "in_progress": 0,  # grey
+            "draft": 4,
+            "under_review": 2,
+            "done": 10,
+            False: 0,
+            "in_progress": 0,
         }
         for metric in self:
             metric.state_color = state_color[metric.state]
@@ -285,11 +283,11 @@ class EsgMetric(models.Model):
     @api.depends("materiality_type")
     def _compute_materiality_type_color(self) -> None:
         materiality_type_color = {
-            "impact": 2,  # orange
-            "financial": 2,  # orange
-            "double": 1,  # red / danger
+            "impact": 2,
+            "financial": 2,
+            "double": 1,
             "non_material": 0,
-            False: 0,  # default grey -- for studio
+            False: 0,
         }
         for metric in self:
             metric.materiality_type_color = materiality_type_color[
@@ -319,7 +317,7 @@ class EsgMetric(models.Model):
             )
             message_attachment_ids = metric.mapped(
                 "message_ids.attachment_ids"
-            ).ids  # from mail_thread
+            ).ids
             metric.attachment_ids = [
                 Command.set(list(set(attachment_ids) - set(message_attachment_ids)))
             ]

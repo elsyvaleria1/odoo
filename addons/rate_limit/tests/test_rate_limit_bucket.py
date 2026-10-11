@@ -276,7 +276,6 @@ class TestRateLimitBucketContention(TransactionCase):
 
     @mute_logger("odoo.addons.rate_limit.models.rate_limit_bucket")
     def test_a_lock_timeout_is_reraised_not_denied(self):
-        # The strict path sets `lock_timeout`, so this is the error IT produces.
         self._raise_on_lock(psycopg.errors.LockNotAvailable("55P03"))
 
         with self.assertRaises(psycopg.errors.LockNotAvailable):
@@ -291,8 +290,6 @@ class TestRateLimitBucketContention(TransactionCase):
 
     @mute_logger("odoo.addons.rate_limit.models.rate_limit_bucket")
     def test_a_real_error_still_denies_in_strict_mode(self):
-        # The re-raise must not swallow the fail-closed behaviour it sits above:
-        # an error that is NOT a row conflict still denies under strict.
         self._raise_on_lock(ValueError("something actually wrong"))
 
         self.assertFalse(self.bucket.consume_token(strict=True))

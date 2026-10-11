@@ -49,7 +49,6 @@ class Data_MergeRecord(models.Model):
     is_deleted = fields.Boolean(compute="_compute_fields")
     is_discarded = fields.Boolean(default=False)
 
-    # Original Record
     name = fields.Char(compute="_compute_fields")
     res_id = fields.Many2oneReference(
         model_field="res_model_name",
@@ -92,22 +91,12 @@ class Data_MergeRecord(models.Model):
         help="List of other models referencing this record",
     )
 
-    # SEARCH METHODS
 
     def _search_company_id(self, operator, value):
-        """Build a subquery to be used in the domain returned by this search method.
-
-        There can be two types of res_model_names regarding the company_id field.
-        Either the corresponding env[res_model_name] records have a company_id field or they don't.
-        In the first case we add a where condition for each distinct res_model_name.
-        In the second case we either return all the records or no records, depending
-        on the (operator, value) pair.
-        """
         if operator not in ("in", "ilike", "like", "any"):
             raise NotImplementedError
 
         cr = self.env.cr
-        # flush in case record was just created but not yet in database
         self.env["data_merge.model"].flush_model()
         self.env["data_merge.group"].flush_model(["model_id"])
         restrict_model_ids = self.env.context.get("data_merge_model_ids")
@@ -123,8 +112,6 @@ class Data_MergeRecord(models.Model):
                 [list(restrict_model_ids)],
             )
         else:
-            # SELECT DISTINCT res_model_name FROM data_merge_record
-            # is 7 times slower for 5 million data.merge.record
             cr.execute(
                 """
                 SELECT im.model,
@@ -134,16 +121,13 @@ class Data_MergeRecord(models.Model):
                  WHERE m.id IN (SELECT g.model_id FROM data_merge_group g)
                 """
             )
-        # Remove duplicated value and preserve order
         models_info = list(unique(r for r in cr.fetchall() if r[0] in self.env))
         if not models_info:
-            # Initial select id query to apply access domains and build Query object.
             query = (
                 self.env["data_merge.record"]
                 .with_context(active_test=False)
                 ._search([])
             )
-            # no models => return all records
             return Domain("id", "in", query)
 
         models_with_company, models_no_company = tools_partition(
@@ -151,12 +135,10 @@ class Data_MergeRecord(models.Model):
             models_info,
         )
 
-        # Whether a domain leaf (False, operator, value) should be considered as True
         false_company_domain_is_true = (
             operator in ("ilike", "like") and not value
         ) or (isinstance(value, Iterable) and (operator == "in" and False in value))
 
-        # Build a query to filter by company_id
         join_queries = []
         where_queries = []
         if models_no_company and false_company_domain_is_true:
@@ -168,7 +150,6 @@ class Data_MergeRecord(models.Model):
             )
         for model_name, model_id in models_with_company:
             Model = self.env[model_name]
-            # let the model's own _search translate the company_id leaf into SQL
             query = Model.with_context(active_test=False)._search(
                 [("company_id", operator, value)]
             )
@@ -200,8 +181,6 @@ class Data_MergeRecord(models.Model):
                 )
             )
         if not where_queries:
-            # there was a nonempty models_info but no subqueries
-            # it means that nothing satisfies the domain
             return Domain.FALSE
         sql = SQL(
             """(
@@ -217,7 +196,6 @@ class Data_MergeRecord(models.Model):
         )
         return Domain("id", "in", sql)
 
-    # COMPUTE METHODS
 
     def _render_values(self, to_read) -> dict:
         self.check_singleton()
@@ -237,7 +215,6 @@ class Data_MergeRecord(models.Model):
         def field_description(key):
             return ir_field(key)["field_description"]
 
-        # Hide magic columns, group-restricted, untranslatable and binary fields
         model_fields = self.env[self.res_model_name]._fields
 
         def hidden_field(key):
@@ -293,16 +270,7 @@ class Data_MergeRecord(models.Model):
                 record.differences = ""
 
     def _get_references(self):
-        """Count all the references for the records.
-
-        :return: a dict keyed by data_merge.record id, each value a list of
-            ``(count, model name)`` tuples
-
-            - `count`: number of referencing records
-            - `model name`: "human" name of the referencing model (Contact)
-        """
         res_models = list(set(self.mapped("res_model_name")))
-        # Get the relevant fields for each model
         model_fields = dict.fromkeys(res_models, self.env["ir.model.fields"])
         all_fields = (
             self.env["ir.model.fields"]
@@ -325,19 +293,15 @@ class Data_MergeRecord(models.Model):
                 continue
             model_fields[field.relation] |= field
 
-        # Map the models with their business names
         model_name = {field.model: field.model_id.name for field in all_fields}
 
-        # Compute the references per record
         references = {record.id: [] for record in self}
-        # usually a single model in the business flow, but who knows
         records_by_model = self.grouped("res_model_name")
         for res_model_name in res_models:
             records = records_by_model[res_model_name]
             records_mapped = {record.res_id: record.id for record in records}
             reference_fields = model_fields[res_model_name]
 
-            # Group the fields per model
             group_model_fields = {field.model: [] for field in reference_fields}
             for field in reference_fields:
                 group_model_fields[field.model].append(field.name)
@@ -427,23 +391,12 @@ class Data_MergeRecord(models.Model):
         )
 
     def _record_snapshot(self):
-        """Snapshot of the original record, to be logged in the chatter when merged"""
         self.check_singleton()
         return self._render_values([])
 
-    # HELPER METHODS
 
     @api.model
     def _get_model_references(self, table):
-        """Get all the foreign key referring to `table`.
-
-        e.g. _get_model_references('res_company') -> {'res_partner': ['company_id']}
-
-        :param str table: name of the table
-        :return: a dict with the referencing table names as keys and the list of
-            referencing columns as values
-        :rtype: dict
-        """
         self.env.flush_all()
         return dict(
             self.env.execute_query(
@@ -471,13 +424,6 @@ class Data_MergeRecord(models.Model):
 
     @api.model
     def _update_foreign_keys(self, destination, source) -> None:
-        """Update all the foreign keys referring to `source` records with `destination` as new referencee.
-
-        The parameters are the real records and not data_merge.record.
-
-        :param destination: destination record of the foreign keys
-        :param source: recordset of the records being merged away
-        """
         references = self._get_model_references(destination._table)
 
         source_ids = source.ids
@@ -490,7 +436,6 @@ class Data_MergeRecord(models.Model):
                     "column": column,
                 }
 
-                # Query to check the number of columns in the referencing table
                 query = SQL(
                     """
                     SELECT COUNT("column_name")
@@ -502,9 +447,7 @@ class Data_MergeRecord(models.Model):
                 )
                 [[column_count]] = self.env.execute_query(query)
 
-                ## Relation table for M2M
                 if column_count == 2:
-                    # Retrieve the "other" column
                     query = SQL(
                         """
                         SELECT "column_name"
@@ -521,9 +464,6 @@ class Data_MergeRecord(models.Model):
                     query_dict.update({"othercol": othercol})
 
                     for rec_id in source_ids:
-                        # This query will filter out existing records
-                        # e.g. if the record to merge has tags A, B, C and the master record has tags C, D, E
-                        #      we only need to add tags A, B
                         query = SQL(
                             """
                             UPDATE %(table)s o
@@ -581,7 +521,6 @@ class Data_MergeRecord(models.Model):
         self.env.flush_all()
         self.env.invalidate_all()
 
-    # manual merge of the models that reference a record by (res_model, res_id)
     @api.model
     def _merge_additional_models(self, destination, source_ids) -> None:
         if hasattr(destination, "message_follower_ids"):
@@ -635,13 +574,11 @@ class Data_MergeRecord(models.Model):
                 except psycopg.Error as error:
                     raise ValidationError(self.env._("Query Failed.")) from error
 
-        # Company-dependent fields
         with self.env.cr.savepoint():
             for fname, field in destination._fields.items():
                 if field.company_dependent:
                     self.env.cr.execute(
                         SQL(
-                            # TODO check if orderby is needed to get deterministic result
                             """
                         UPDATE %(table)s
                         SET %(col)s = NULLIF(
@@ -662,15 +599,10 @@ class Data_MergeRecord(models.Model):
                     )
 
     def _merge_mail_followers(self, destination, source) -> None:
-        """Using the default merge method risks duplicating the SQL key for mail_followers (res_model, res_id, partner_id).
-        Adding a partner as follower to a record twice nullifies the transaction, preventing the merge of followers.
-        This function ensures we don't try unsafe subscriptions.
-        """
         dest_followers = destination.message_follower_ids.partner_id
         new_followers = source.message_follower_ids.partner_id - dest_followers
         destination.message_subscribe(new_followers.ids)
 
-    # CRUD METHODS
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -695,7 +627,6 @@ class Data_MergeRecord(models.Model):
 
         return super().write(vals)
 
-    # ACTION METHODS
 
     def open_record(self) -> dict:
         return {
@@ -707,17 +638,6 @@ class Data_MergeRecord(models.Model):
         }
 
     def action_deduplicates(self, records):
-        """This action is called when hitting the contextual merge action
-        and redirects the user to the 'Deduplication' view of the data_merge
-        module, using the selected contextual data.
-        In order to be able to merge the selected records via the existing
-        deduplication flow, all the necessary data_merge.record,
-        data_merge.group and data_merge.model are created (or reused if
-        already existing).
-
-        :param records: contextual active (or selected) records.
-        :return: ir.actions.act_window that redirects to the deduplicate view.
-        """
         MergeRecord = self.env["data_merge.record"]
         MergeModel = self.env["data_merge.model"]
         MergeGroup = self.env["data_merge.group"]
@@ -738,7 +658,6 @@ class Data_MergeRecord(models.Model):
         if active_model not in self.env:
             raise ValidationError(self.env._("The target model does not exists."))
 
-        # prepare action to return
         view = self.env.ref("data_cleaning.data_merge_record_view_search_merge_action")
         action = {
             "name": self.env._("Deduplicate"),
@@ -755,7 +674,6 @@ class Data_MergeRecord(models.Model):
             % self.env._("No duplicates found"),
         }
 
-        # ensure merge action specific record is created in data_merge.model
         merge_model = MergeModel.with_context(active_test=False).search(
             [
                 ("res_model_name", "=", active_model),
@@ -778,10 +696,8 @@ class Data_MergeRecord(models.Model):
                 }
             )
 
-        # creates a new group to put every selected records inside it.
         merge_group = MergeGroup.create({"model_id": merge_model.id})
 
-        # get records from data_merge.records model related to active records
         results = MergeRecord.search_read(
             [("res_id", "in", active_ids), ("res_model_name", "=", active_model)],
             fields=["res_id"],

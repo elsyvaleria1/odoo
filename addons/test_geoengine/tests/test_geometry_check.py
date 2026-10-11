@@ -50,8 +50,6 @@ class TestGeometryCheck(TransactionCase):
         self.assertEqual(len(parcel.zones.geoms), 2, "saved as two triangles")
 
     def test_the_place_is_given_in_the_map_s_coordinates(self):
-        # the field stores 4326, the map draws 3857: the crossing is
-        # reported in the map's metres, where the marker goes
         metres = [[[x * 1000, y * 1000] for x, y in BOW_TIE[0]]]
         problem = self.Parcel.get_geometry_problem(
             "area_wgs84", drawn("Polygon", metres)
@@ -100,8 +98,6 @@ class TestGeometryCheck(TransactionCase):
             )
 
     def test_the_map_view_names_the_geometry_it_draws(self):
-        # the Draw tool picks the view's geometry field and its shape type
-        # from these keys; without them it had no field to draw
         view = self.env["ir.ui.view"].create(
             {
                 "name": "parcels",
@@ -121,8 +117,6 @@ class TestGeometryCheck(TransactionCase):
         )
 
     def test_a_created_geometry_is_validated_once(self):
-        # create converted each geometry for the INSERT and again for the
-        # cache, parsing and validating it twice
         from unittest.mock import patch
 
         from odoo.addons.geoengine.models.fields import GeoField

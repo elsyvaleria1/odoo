@@ -19,7 +19,6 @@ class TestSMSPost(TestMassMailCommon):
                 }
             )
 
-        # tracking info
         cls.utm_c = cls.env["utm.campaign"].create(
             {
                 "name": "UTM C",
@@ -73,7 +72,6 @@ class TestSMSPost(TestMassMailCommon):
         )
         link = self.env["link.tracker"].search([("url", "=", link)])
         self.assertIn(link.short_url, new_body)
-        # Bugfix: ensure void content convert does not crash
         new_body = self.env["mixin.mail.render"]._shorten_links_text(
             False, self.tracker_values
         )

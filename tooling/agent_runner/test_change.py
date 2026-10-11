@@ -74,8 +74,6 @@ def test_the_agent_reaches_its_clone_alone(world):
     world.behave(verdict={"verdict": "declined"})
     change.change(_lease(), StubReporter())
     argv = world.calls()[0]["argv"]
-    # every tool rule names a path under the clone: a bare tool name would
-    # reach the whole machine as the runner's user
     rules = argv[argv.index("--allowedTools") + 1].split(",")
     assert rules and all(rule.endswith("(./**)") for rule in rules)
     assert argv[argv.index("--permission-mode") + 1] == "dontAsk"
@@ -165,7 +163,6 @@ def test_a_chatty_agent_does_not_block_on_its_pipes(world):
 
 
 def _on_github(monkeypatch):
-    # the local origin stands for GitHub: a pull request is then opened
     monkeypatch.setattr(change, "GITHUB", "file://")
     return {"github": {"token": "ghs_run"}, "anthropic": {"api_key": "sk-run"}}
 
@@ -239,8 +236,6 @@ def test_a_run_stopped_once_its_agent_answered_commits_nothing_and_counts_it(
 
 
 def test_an_agent_that_left_its_session_does_not_hold_the_run(world):
-    # a process the agent started in a session of its own keeps its output
-    # open: the deadline still holds
     world.behave(linger="detach", verdict={"verdict": "changed"})
     started = time.monotonic()
     with pytest.raises(agent.Permanent, match="timed out"):
@@ -319,7 +314,7 @@ def test_the_runners_home_keeps_no_project_of_a_run(world, monkeypatch, tmp_path
     monkeypatch.setattr(change, "run_in_session", leaving_a_project)
     world.behave(verdict={"verdict": "declined"})
     lease = _lease()
-    lease["credentials"] = {}  # the runner's own login, in its own home
+    lease["credentials"] = {}
     change.change(lease, StubReporter())
     assert seen and not seen[0].exists()
 
@@ -337,7 +332,6 @@ def test_a_branch_merged_into_its_base_is_still_this_runs(world):
 
 
 def test_a_verbose_agent_is_read_by_its_result_message(world):
-    # `verbose` in the settings of the agent's home prints the whole session
     world.behave(verbose=True, edit={"x.py": "fixed\n"}, verdict={"verdict": "changed"})
     outcome = change.change(_lease(), StubReporter())
     assert outcome.result["pushed"]
@@ -349,7 +343,6 @@ def _alive(pid):
         stat = Path(f"/proc/{pid}/stat").read_text(encoding="ascii")
     except FileNotFoundError:
         return False
-    # a zombie is dead: only its parent has yet to reap it
     return stat.rsplit(")", 1)[-1].split()[0] != "Z"
 
 
@@ -360,8 +353,6 @@ def test_nothing_the_agent_started_outlives_it(world, linger):
         with pytest.raises(agent.Permanent, match="timed out"):
             change.change(_lease(timeout=2), StubReporter())
     else:
-        # the agent answered, and its child holds the output open: the run
-        # goes on at once instead of waiting for it to the deadline
         started = time.monotonic()
         change.change(_lease(timeout=30), StubReporter())
         assert time.monotonic() - started < 10

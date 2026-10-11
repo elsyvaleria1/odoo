@@ -23,13 +23,6 @@ _debug = DebugLog(__name__)
 
 
 def _orders_descending_by(read_group_order: str | None, groupby: str) -> bool:
-    """Whether `read_group_order` sorts by `groupby`, descending.
-
-    Its first term decides, and it is parsed rather than spelled out: an
-    order is written `stage_id DESC`, `stage_id desc, id` or
-    `stage_id desc nulls last` as readily as `stage_id desc`, and a string
-    comparison sends the expanded groups up while the real ones come down.
-    """
     if not read_group_order:
         return False
     first = read_group_order.split(",", 1)[0]
@@ -166,8 +159,6 @@ class _ReadGroupFillMixin(_ReadGroupEmptyMixin):
     def _read_group_period_starts(
         self, start: typing.Any, end: typing.Any, granularity: str, interval: typing.Any
     ) -> typing.Iterator[typing.Any]:
-        # a week held to 0001-01-01 is shorter than seven days: the weeks after
-        # it begin on the language's first week day, not seven days on
         if granularity == "week" and (start.year, start.month, start.day) == (1, 1, 1):
             first_week_day = int(get_lang(self.env).week_start) - 1
             if start.weekday() != first_week_day:

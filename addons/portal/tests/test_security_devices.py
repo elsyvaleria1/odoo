@@ -15,7 +15,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 class TestPortalDevices(HttpCaseWithUserPortal):
     def setUp(self):
         super().setUp()
-        # a real login, where `authenticate` would skip the device bookkeeping
         anonymous = self.authenticate(None, None)
         del anonymous["_trace_disable"]
         odoo.http.root.session_store.save(anonymous)

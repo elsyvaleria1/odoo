@@ -21,12 +21,6 @@ class WizardHrApplicantAddTalentPool(models.TransientModel):
     )
 
     def _add_applicants_to_pool(self):
-        """Return the talent record of every applicant, creating it when needed.
-
-        An applicant is either a talent already, or points at one, or needs one
-        copied from it. The first two only need the pools and tags linked, so
-        they are written as one batch rather than one write each.
-        """
         pool_vals = {
             "talent_pool_ids": [
                 Command.link(pool_id) for pool_id in self.talent_pool_ids.ids
@@ -60,11 +54,6 @@ class WizardHrApplicantAddTalentPool(models.TransientModel):
         return talents
 
     def action_add_applicants_to_pool(self) -> dict:
-        # Not `sudo()`: the applicants reach this wizard through the user's own
-        # rights, but an applicant's `pool_applicant_id` can point at a talent
-        # in a company the user cannot see, and running the whole operation as
-        # superuser wrote to that talent -- adding a record the user cannot read
-        # to a pool of their own company.
         talents = self._add_applicants_to_pool()
         if len(talents) == 1:
             return {

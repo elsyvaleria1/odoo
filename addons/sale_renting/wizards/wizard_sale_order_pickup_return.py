@@ -34,7 +34,6 @@ class WizardSaleOrderPickupReturn(models.TransientModel):
         "order_id.company_id.min_extra_hour",
     )
     def _compute_is_late(self) -> None:
-        """Include the minimum time buffer allowed before an extra cost is added to the order."""
         now = fields.Datetime.now()
         for wizard in self:
             min_extra_hours = relativedelta(
@@ -47,12 +46,9 @@ class WizardSaleOrderPickupReturn(models.TransientModel):
 
     @api.onchange("order_id")
     def _update_wizard_lines(self) -> None:
-        """Use Wizard lines to set by default the pickup/return value
-        to the total pickup/return value expected"""
         rental_lines_ids = self.env.context.get("order_line_ids", [])
         rental_lines_to_process = self.env["sale.order.line"].browse(rental_lines_ids)
 
-        # generate line values
         if rental_lines_to_process:
             lines_values = [
                 self.env[
@@ -66,10 +62,6 @@ class WizardSaleOrderPickupReturn(models.TransientModel):
             ]
 
     def apply(self):
-        """Apply the wizard modifications to the SaleOrderLine(s).
-
-        And logs the rental infos in the SaleOrder chatter
-        """
         for wizard in self:
             msg = wizard.rental_wizard_line_ids._apply()
             if msg:

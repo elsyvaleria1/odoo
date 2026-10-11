@@ -6,7 +6,6 @@ class ResUsers(models.Model):
 
     @property
     def SELF_READABLE_FIELDS(self):
-        # The employee user can see their own cards
         return super().SELF_READABLE_FIELDS + ["stripe_card_ids"]
 
     stripe_card_ids = fields.One2many(

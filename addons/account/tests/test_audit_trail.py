@@ -194,9 +194,6 @@ class TestAuditTrail(AccountTestInvoicingCommon):
         )
         self.assertTrail(self.get_trail(self.move), messages)
 
-        # the configuration's earlier history (its creation log, written or
-        # not depending on the context that first asked for it) is not the
-        # trail of this change
         config = self.env.company.account_config_id
         before = self.get_trail(config)
         config.restrictive_audit_trail = True
@@ -423,8 +420,6 @@ class TestAuditTrailAttachment(AccountTestInvoicingHttpCommon):
             )
 
     def test_a_large_xml_document_is_part_of_the_audit_trail(self):
-        # past the 2 KB a head-only sniff reads, an XML once typed as text and
-        # slipped out of the trail
         self.env.company.account_config_id.restrictive_audit_trail = True
         invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
         lines = "".join(f'<Line n="{n}">{"x" * 40}</Line>' for n in range(80))

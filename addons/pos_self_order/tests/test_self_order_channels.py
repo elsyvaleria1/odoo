@@ -170,8 +170,6 @@ class TestSelfOrderChannels(SelfOrderCommonTest):
 
 @tagged("post_install", "-at_install")
 class TestSelfOrderLive(SelfOrderCommonTest):
-    # Apart from TestSelfOrderChannels: a _sendone patched on the registry class
-    # shadows the one browser_js wraps to commit and notify every send.
     def setUp(self):
         super().setUp()
         self.pos_config.write(

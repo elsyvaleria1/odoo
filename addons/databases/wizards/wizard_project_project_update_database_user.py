@@ -89,7 +89,6 @@ class WizardProjectProjectUpdateDatabaseUser(models.TransientModel):
             if not rec.database_ids:
                 rec.everywhere_user_ids = None
                 continue
-            # Compute the intersection of local_user_ids in each database
             dbit = iter(rec.database_ids)
             everywhere_user_ids = next(dbit).database_user_ids.local_user_id
             for db in dbit:

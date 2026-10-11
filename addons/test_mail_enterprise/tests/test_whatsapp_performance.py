@@ -83,7 +83,6 @@ class TestWAPerformance(
                 "status": "approved",
                 "variable_ids": [
                     (5, 0, 0),
-                    # body
                     (
                         0,
                         0,
@@ -125,7 +124,6 @@ class TestWAPerformance(
                             "demo_value": "BodyText",
                         },
                     ),
-                    # header
                     (
                         0,
                         0,
@@ -146,7 +144,6 @@ class TestWAPerformance(
         test_wa_record = self.test_wa_records[0].with_user(self.env.user)
         wa_template = self.wa_template.with_user(self.env.user)
 
-        # +2: posting reads the company's mail.config
         with self.mockWhatsappGateway(), self.assertQueryCount(employee=30):
             composer = (
                 self.env["wizard.whatsapp.message.send"]

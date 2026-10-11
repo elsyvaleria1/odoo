@@ -34,21 +34,15 @@ class TestSchedulingCalendarResolution(TransactionCase):
         return record
 
     def test_the_record_keeps_its_own_hours_when_no_resource_is_given(self):
-        """Asked on its own, the record answers with its calendar."""
         record = self._record(self.record_calendar)
         self.assertEqual(record._scheduling_resolve_calendar(), self.record_calendar)
 
     def test_a_record_without_hours_falls_back_to_its_company(self):
-        """Nothing set on the record means the company's working hours."""
         record = self._record()
         self.assertFalse(record.resource_calendar_id)
         self.assertEqual(record._scheduling_resolve_calendar(), self.company_calendar)
 
     def test_the_fallback_never_answers_with_nothing(self):
-        """The chain always ends on a calendar, never on an empty one.
-
-        A record with no hours anywhere would silently schedule nothing.
-        """
         record = self._record()
         self.assertTrue(record._scheduling_resolve_calendar())
 

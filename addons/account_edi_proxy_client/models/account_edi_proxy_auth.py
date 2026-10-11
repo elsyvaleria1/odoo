@@ -28,7 +28,6 @@ class OdooEdiProxyAuth(requests.auth.AuthBase):
         self.private_key = (user and user.sudo().private_key_id) or False
 
     def __get_payload(self, request, msg_timestamp) -> str:
-        # craft the message (timestamp|url path|id_client|query params|body content)
         parsed_url = urlsplit(request.path_url)
 
         body = request.body
@@ -36,18 +35,17 @@ class OdooEdiProxyAuth(requests.auth.AuthBase):
             body = body.decode()
         body = json_loads(body)
 
-        # parse_qs returns lists for values; flatten to match werkzeug's url_decode behavior
         query_dict = {
             k: v[0] if len(v) == 1 else v for k, v in parse_qs(parsed_url.query).items()
         }
 
         return "%s|%s|%s|%s|%s" % (
-            msg_timestamp,  # timestamp
-            parsed_url.path,  # url path
+            msg_timestamp,
+            parsed_url.path,
             self.id_client,
-            json.dumps(query_dict, sort_keys=True),  # url query params sorted by key
+            json.dumps(query_dict, sort_keys=True),
             json.dumps(body, sort_keys=True),
-        )  # http request body
+        )
 
     def __sign_request_with_token(self, message):
         h = hmac.new(
@@ -59,8 +57,6 @@ class OdooEdiProxyAuth(requests.auth.AuthBase):
         return h.hexdigest()
 
     def __sign_with_private_key(self, message):
-        # this is a fallback to resync the token in case of of multiple database desynchronization problem
-        # this happens when a database is restored from a backup or when it is copied without neutralization
         return self.private_key._sign(message.encode(), formatting="base64").decode()
 
     def __call__(self, request):

@@ -37,11 +37,6 @@ class TestWorksheet(TestFsmFlowSaleCommon):
         )
 
     def test_service_worksheet_template_propagation(self):
-        """
-        1) Add new service with worksheet template != its project worksheet template
-        2) Add new Sale order with this service
-        3) Assert task added with the good worksheet template and project
-        """
         task = self.env["project.task"].create(
             {
                 "name": "Fsm task",
@@ -94,12 +89,6 @@ class TestWorksheet(TestFsmFlowSaleCommon):
         )
 
     def test_product_form_view(self):
-        """Ensure that the worksheet is associated with the project that the user has selected.
-        Step for the product template and product:
-           1. Create product template
-           2. Set the create order on by Task and set FSM project
-           3. Check worksheet template
-        """
         with Form(self.env["product.template"]) as product_template:
             product_template.name = "product template"
             product_template.type = "service"

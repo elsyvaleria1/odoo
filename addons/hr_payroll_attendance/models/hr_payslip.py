@@ -13,16 +13,6 @@ class HrPayslip(models.Model):
     attendance_count = fields.Integer(compute="_compute_attendance_count")
 
     def _get_attendance_by_payslip(self):
-        """
-        Find all attendances linked to payslips.
-
-        Note: An attendance is linked to a payslip if it has
-        the same employee and the time periods correspond.
-
-        :return: dict with:
-                    - key = payslip record
-                    - value = attendances recordset linked to payslip
-        """
         attendance_by_payslip = defaultdict(lambda: self.env["hr.attendance"])
         slip_by_employee = defaultdict(lambda: self.env["hr.payslip"])
         attendance_domains = []
@@ -50,10 +40,6 @@ class HrPayslip(models.Model):
         )
         for employee, check_in, check_out, attendance in attendance_group:
             for slip in slip_by_employee[employee.id]:
-                # Overlap test on both ends, mirroring the domain above: an
-                # attendance whose check_in is before the period but whose
-                # check_out still falls inside it (e.g. an overnight shift
-                # starting the day before) must not be dropped.
                 if (
                     slip.date_from <= check_out.date()
                     and check_in.date() <= slip.date_to

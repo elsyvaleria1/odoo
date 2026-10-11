@@ -125,8 +125,6 @@ class _RegistrySchemaMixin(_RegistryStubs):
         )
 
     def rebuild_not_null_fields(self, *, warn: bool = False) -> None:
-        # the set holds Field objects, which setup_models recreates; rebuild it from
-        # the reflected columns so a re-setup never leaves it pointing at dead fields
         self.not_null_fields.clear()
         for Model in self.models.values():
             if Model._auto and not Model._abstract:
@@ -219,8 +217,6 @@ class _RegistrySchemaMixin(_RegistryStubs):
         ]
         if not expected:
             return
-        # a foreign table (a postgres_fdw log living in another database)
-        # cannot be indexed here: its indexes are the remote table's
         cr.execute(
             """
             SELECT c.relname
@@ -413,8 +409,6 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     env[name]._auto_init()
                     env[name].init()
                 self._queue_foreign_keys_into(env, missing_tables)
-                # the window's own checks may already have run: a table made
-                # now has its indexes and foreign keys only if checked again
                 self.init_phase.drain_post_init()
                 self.check_indexes(cr, missing)
                 self.check_foreign_keys(cr)
@@ -426,7 +420,6 @@ class _RegistrySchemaMixin(_RegistryStubs):
                 _logger.error("Model %s has no table.", table2model[table])
 
     def _queue_foreign_keys_into(self, env: Environment, tables: set[str]) -> None:
-        # DROP TABLE ... CASCADE took the other tables' constraints with it
         phase = self.init_phase
         queued = 0
         for name, model in self.models.items():

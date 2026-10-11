@@ -93,8 +93,6 @@ def check_params_llm_values_with_schema(instance, schema, required_parameters, e
 
         max_length = schema[name]["type"] == "string" and schema[name].get("maxLength")
         if isinstance(value, str) and max_length and len(value) > max_length:
-            # As of July 31, Gemini does not respect the `maxLength` JSON schema
-            # (while OpenAI does), so we manually truncate the arguments if needed
             instance[name] = value[:max_length] + "..."
 
         if schema[name]["type"] == "object":

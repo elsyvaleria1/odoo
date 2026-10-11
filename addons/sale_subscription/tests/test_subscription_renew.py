@@ -23,9 +23,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
 
     @mute_logger("odoo.models.unlink")
     def test_renewal(self):
-        """Test subscription renewal"""
         with freeze_time("2021-11-18"):
-            # We reset the renew alert to make sure it will run with freezetime
             self.subscription.write(
                 {
                     "start_date": False,
@@ -34,10 +32,10 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                     "partner_shipping_id": self.partner_a_shipping.id,
                     "internal_note": "internal note",
                 }
-            )  # add an so line with a different uom
+            )
             uom_dozen = self.env.ref("base.product_uom_dozen").id
             self.subscription_tmpl.duration_value = (
-                2  # end after 2 months to adapt to the following line
+                2
             )
             self.subscription_tmpl.duration_unit = "month"
             self.env["sale.order.line"].create(
@@ -82,7 +80,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             renewal_so = self.env["sale.order"].browse(action["res_id"])
             self.assertEqual(renewal_so.partner_invoice_id, self.partner_a_invoice)
             self.assertEqual(renewal_so.partner_shipping_id, self.partner_a_shipping)
-            # check produt_uom_qty
             self.assertEqual(
                 renewal_so.template_id.id,
                 self.subscription.template_id.id,
@@ -91,7 +88,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
 
             renewal_start_date = renewal_so.start_date
             with self.assertRaises(ValidationError):
-                # try to start the renewal before the parent next invoice date
                 renewal_so.start_date = (
                     self.subscription.next_invoice_date - relativedelta(days=1)
                 )
@@ -149,7 +145,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 "Internal Note should be updated",
             )
         with freeze_time("2024-11-19"):
-            self.subscription._create_recurring_invoice()  # it will close self.subscription
+            self.subscription._create_recurring_invoice()
             renew_close_reason_id = self.env.ref(
                 "sale_subscription.close_reason_renew"
             ).id
@@ -164,20 +160,14 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertEqual(renewal_so.invoice_count, 2)
 
     def test_renew_kpi_mrr(self):
-        # Test that renew with MRR transfer give correct result
-        # First, whe create a sub with MRR = 21
-        # Then we renew it with a MRR of 42
-        # After a few months the MRR of the renewal is 63
-        # We also create and renew a free subscription
 
         with (
             freeze_time("2021-01-01"),
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
             self.subscription.plan_id.auto_close_limit = (
-                5000  # don't close automatically contract if unpaid invoices
+                5000
             )
-            # so creation with mail tracking
             context_mail = {"tracking_disable": False}
             sub = (
                 self.env["sale.order"]
@@ -248,7 +238,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertFalse(free_sub.amount_total)
             self.flush_tracking()
             sub._onchange_template_id()
-            # Same product for both lines
             sub.line_ids.product_qty = 1
             (free_sub | sub).end_date = datetime.date(2022, 1, 1)
             (free_sub | sub | future_sub).action_confirm()
@@ -267,7 +256,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 tracking_disable=False
             )._cron_recurring_create_invoice()
         with freeze_time("2021-04-01"):
-            # We create a renewal order in april for the new year
             self.env["sale.order"]._cron_recurring_create_invoice()
             action = sub.with_context(tracking_disable=False).prepare_renewal_order()
             renewal_so = self.env["sale.order"].browse(action["res_id"])
@@ -285,7 +273,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertEqual(renewal_so.subscription_state, "2_renewal")
             (
                 sub | free_sub
-            ).pause_subscription()  # we pause the contracts to make sure no parasite log are created
+            ).pause_subscription()
             self.flush_tracking()
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.flush_tracking()
@@ -295,14 +283,11 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertEqual(renewal_so.subscription_state, "3_progress")
             (
                 sub | free_sub
-            ).resume_subscription()  # we resume the contracts to make sure no parasite log are created
+            ).resume_subscription()
             self.flush_tracking()
-            # Most of the time, the renewal invoice is created by the salesman
-            # before the renewal start date
             renewal_invoices = (free_renewal_so | renewal_so)._create_invoices()
             renewal_invoices._post()
             self.flush_tracking()
-            # "upsell" of the simple sub that did not start yet
             future_sub.line_ids.product_qty = 4
             self.flush_tracking()
             self.assertEqual(sub.recurring_monthly, 21, "MRR should still be non null")
@@ -313,7 +298,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 "MRR of renewal should not be computed before start_date of the lines",
             )
             self.flush_tracking()
-            # renew is still not ongoing;  Total MRR is 21 coming from the original sub
             self.env["sale.order"].sudo()._cron_subscription_expiration()
             self.assertEqual(sub.recurring_monthly, 21)
             self.assertEqual(renewal_so.recurring_monthly, 63)
@@ -327,15 +311,13 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertEqual(sub.subscription_state, "5_renewed")
 
         with freeze_time("2021-04-20"):
-            # We upsell the renewal after it's confirmation but before its start_date The event date must be "today"
             self.flush_tracking()
             renewal_so.line_ids[1].product_qty += 1
             self.flush_tracking()
 
         with freeze_time(
             "2021-05-05"
-        ):  # We switch the cron the X of may to make sure the day of the cron does not affect the numbers
-            # Renewal period is from 2021-05 to 2021-06
+        ):
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.assertEqual(sub.recurring_monthly, 21)
             self.assertEqual(sub.subscription_state, "5_renewed")
@@ -359,11 +341,9 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             freeze_time("2021-07-01"),
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
-            # Total MRR is 42 coming from renew
             self.subscription._cron_update_kpi()
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.env["sale.order"]._cron_subscription_expiration()
-            # we trigger the compute because it depends on today value.
             self.assertEqual(sub.recurring_monthly, 21)
             self.assertEqual(renewal_so.recurring_monthly, 83)
             self.flush_tracking()
@@ -372,10 +352,8 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             freeze_time("2021-08-03"),
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
-            # We switch the cron the X of august to make sure the day of the cron does not affect the numbers
             renewal_so.end_date = datetime.date(2032, 1, 1)
             self.flush_tracking()
-            # Total MRR is 80 coming from renewed sub
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.env["sale.order"].sudo()._cron_subscription_expiration()
             self.assertEqual(sub.recurring_monthly, 21)
@@ -387,11 +365,9 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
             renewal_so.line_ids.product_qty = 5
-            # We update the MRR of the renewed
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.env["sale.order"]._cron_subscription_expiration()
             self.assertEqual(renewal_so.recurring_monthly, 105)
-            # free subscription is not free anymore
             free_renewal_so.line_ids.price_unit = 10
             self.flush_tracking()
             self.subscription._cron_update_kpi()
@@ -492,7 +468,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
 
         future_data = future_sub.order_log_ids.sorted(
             key=lambda log: (log.event_date, log.id)
-        )  # several events aggregated on the same date
+        )
         simple_data = [
             (
                 log.event_type,
@@ -517,7 +493,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
         )
 
     def test_multiple_renew(self):
-        """Prevent to confirm several renewal quotation for the same subscription"""
         self.subscription.write({"start_date": False, "next_invoice_date": False})
         self.subscription.action_confirm()
         self.subscription._cron_recurring_create_invoice()
@@ -634,7 +609,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 }
             )
             sub.pricelist_id = default_pricelist.id
-            sub._onchange_template_id()  # recompute the pricings
+            sub._onchange_template_id()
             self.flush_tracking()
             sub.action_confirm()
             self.assertEqual(sub.recurring_monthly, 10)
@@ -723,16 +698,11 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             )
 
     def test_renewal_churn(self):
-        # Test what we expect when we
-        # 1) create a renewal quote
-        # 2) close the parent
-        # 3) confirm the renewal
 
         with (
             freeze_time("2021-01-01"),
             patch.object(SaleOrder, "_get_unpaid_subscriptions", lambda x: []),
         ):
-            # so creation with mail tracking
             context_mail = {"tracking_disable": False}
             sub = (
                 self.env["sale.order"]
@@ -748,7 +718,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 )
             )
             sub._onchange_template_id()
-            # Same product for both lines
             sub.line_ids.product_qty = 1
             self.flush_tracking()
             sub.action_confirm()
@@ -803,7 +772,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             )
 
     def test_churn_log_renew(self):
-        """Test the behavior of the logs when we confirm a renewal quote after the parent has been closed."""
         self.flush_tracking()
         with freeze_time("2024-01-22 08:00:00"):
             today = datetime.date.today()
@@ -822,7 +790,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 )
             )
             sub._onchange_template_id()
-            # Same product for both lines
             sub.line_ids.product_qty = 1
             self.flush_tracking()
             sub.action_confirm()
@@ -844,8 +811,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.flush_tracking()
             renewal_so.action_confirm()
             self.flush_tracking()
-            # Most of the time, the renewal invoice is created by the salesman
-            # before the renewal start date
             renewal_invoices = renewal_so._create_invoices()
             renewal_invoices._post()
             order_log_ids = sub.order_log_ids.sorted("id")
@@ -888,11 +853,7 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             )
 
     def test_renewal_different_period(self):
-        """When a renewal quote is negotiated for more than a month, we need to update the start date of the
-        renewal quote if the parent is prolonged.
-        """
         with freeze_time("2023-01-01"):
-            # We reset the renew alert to make sure it will run with freezetime
             self.subscription.write({"start_date": False, "next_invoice_date": False})
             self.subscription._onchange_template_id()
             self.assertEqual(self.subscription.plan_id, self.plan_month)
@@ -912,7 +873,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             self.assertEqual(renewal_so.start_date, datetime.date(2023, 2, 1))
             self.assertEqual(renewal_so.next_invoice_date, datetime.date(2023, 2, 1))
         with freeze_time("2023-02-01"):
-            # the new invoice is created and validated by the customer
             self.subscription._create_recurring_invoice()
             self.assertEqual(
                 self.subscription.next_invoice_date, datetime.date(2023, 3, 1)
@@ -956,10 +916,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
         self.assertEqual(renew_so.amount_total, 420)
 
     def test_renew_pricelist_currency_update(self):
-        """
-        Assert that after renewing a subscription, changing the pricelist
-        to another one will recompute the order lines pricings.
-        """
         with freeze_time("2023-04-04"):
             default_pricelist = self.pricelist
             other_currency = self._enable_currency("EUR")
@@ -1016,7 +972,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             sub.action_confirm()
             self.flush_tracking()
 
-            # Assert that order line was created with correct pricing and currency.
             self.assertEqual(
                 sub.line_ids[0].price_unit,
                 100.0,
@@ -1039,7 +994,6 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             action = sub.prepare_renewal_order()
             renewal_so = self.env["sale.order"].browse(action["res_id"])
 
-            # Assert that parent_line_id is saved in renewed subscription.
             self.assertEqual(
                 renewal_so.line_ids[0].parent_line_id.id,
                 sub.line_ids[0].id,
@@ -1047,11 +1001,9 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
             )
             renewal_so.pricelist_id = other_pricelist.id
 
-            # Computes the updated price unit through 'Update Prices' button.
             renewal_so.action_update_prices()
             renewal_so.invalidate_recordset()
 
-            # Assert that updated pricing has the correct currency, price_unit and pricelist.
             self.assertEqual(
                 renewal_so.pricelist_id.id,
                 other_pricelist.id,
@@ -1068,16 +1020,12 @@ class TestSubscriptionRenew(TestSubscriptionCommon):
                 "Order line's price unit must update to 200.0 according to the new pricelist pricing (in EUR).",
             )
 
-            # Update prices button removes the parent_line_id of order lines to recalculate pricings.
             self.assertFalse(
                 renewal_so.line_ids[0].parent_line_id,
                 "Parent order line should not exist anymore after updating prices, it was intentionally deleted for forcing price recalculation.",
             )
 
     def test_reopen_parent_child_canceled(self):
-        """Renew a contract a few time, invoice it, check the computed amount of invoices
-        Then cancel a non invoiced renewal and see if it restart the parent
-        """
         with freeze_time("2023-11-03"):
             self.flush_tracking()
             self.subscription.write(

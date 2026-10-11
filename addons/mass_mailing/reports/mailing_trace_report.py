@@ -28,7 +28,6 @@ class MailingTraceReport(models.Model):
     )
     _description = "Mass Mailing Statistics"
 
-    # mailing
     name = fields.Char(
         string="Mass Mail",
         readonly=True,
@@ -53,12 +52,11 @@ class MailingTraceReport(models.Model):
         string="From",
         readonly=True,
     )
-    # traces
     scheduled = fields.Integer(readonly=True)
     processing = fields.Integer(readonly=True)
     pending = fields.Integer(
         readonly=True
-    )  # Used with SMS before a delivery report is received
+    )
     sent = fields.Integer(readonly=True)
     delivered = fields.Integer(readonly=True)
     error = fields.Integer(readonly=True)
@@ -69,9 +67,6 @@ class MailingTraceReport(models.Model):
     clicked = fields.Integer(readonly=True)
 
     def init(self) -> None:
-        """Mass Mail Statistical Report: based on mailing.trace that models the various
-        statistics collected for each mailing, and mailing.mailing model that models the
-        various mailing performed."""
         drop_view_if_exists(self.env.cr, "mailing_trace_report")
         self.env.cr.execute(self._report_get_request())
 

@@ -32,13 +32,6 @@ class IrWebsocket(models.AbstractModel):
         ).date()
         if employee.hr_presence_ip_date == today:
             return
-        # Written in the request's own transaction, which `retrying` commits.
-        # A cursor of its own would outlive a rollback, but it also cost a
-        # database connection per employee per day, raised MissingError when the
-        # employee was not visible to it, and put this whole branch beyond the
-        # reach of a TransactionCase -- which is why it had no tests. Losing a
-        # stamp to a rollback costs nothing: the guard above is the date itself,
-        # so the next heartbeat records it again.
         employee.hr_presence_ip_date = today
         employee.hr_presence_state_display = employee.hr_presence_state
         _debug.lifecycle("presence_ip_recorded", employee=employee, day=today)

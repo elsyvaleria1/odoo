@@ -137,7 +137,6 @@ class WizardStockPickingReturn(models.TransientModel):
     def _prepare_picking_default_values(self):
         _debug.logic("helpdesk_return_defaults", wizards=self)
         if not self.picking_id and self.ticket_id:
-            # Take return picking type of outgoing type if found, else take the incoming type
             picking_type = (
                 self.env["stock.picking.type"]
                 .search(

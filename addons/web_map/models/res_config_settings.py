@@ -21,11 +21,6 @@ class ResConfigSettings(models.TransientModel):
     )
 
     def _check_map_box_token(self, url, headers, params):
-        """Probe `url` with the given headers/params, returning an HTTP status code.
-
-        Extracted so tests can patch this single method instead of hitting the
-        real MapBox API.
-        """
         try:
             result = self.env["ir.egress"].request(
                 "HEAD", url, purpose="mapbox", headers=headers, params=params, timeout=5
@@ -35,13 +30,6 @@ class ResConfigSettings(models.TransientModel):
             return 500
 
     def _get_map_box_referer(self):
-        """The Referer to probe with, or None outside an HTTP request.
-
-        MapBox tokens can be restricted to a referer, so the probe has to be
-        made under the same one the browser will send. `requests` drops a
-        None-valued header rather than raising, which would validate the token
-        against no referer at all and report a restricted token as valid.
-        """
         if not request:
             return None
         return request.httprequest.headers.environ.get("HTTP_REFERER")
@@ -53,7 +41,7 @@ class ResConfigSettings(models.TransientModel):
         stored_token = self.env["ir.config_parameter"].get_param(
             "web_map.token_map_box"
         )
-        if consteq(self.map_box_token, stored_token):  # noqa: E8537  outbound: a key we present to an outside service
+        if consteq(self.map_box_token, stored_token):
             return None
 
         referer = self._get_map_box_referer()

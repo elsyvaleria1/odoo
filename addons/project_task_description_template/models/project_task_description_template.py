@@ -57,9 +57,6 @@ class ProjectTaskDescriptionTemplate(models.Model):
 
     @api.constrains("project_ids", "company_id")
     def _check_tasks_still_allowed(self) -> None:
-        # sudo and active_test: a task the editor cannot read, or an archived
-        # one, is left just as broken as any other, and the task-side
-        # constraint does not care about either.
         tasks = (
             self.env["project.task"]
             .sudo()

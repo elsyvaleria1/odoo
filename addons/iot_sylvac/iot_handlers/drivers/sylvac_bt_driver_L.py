@@ -26,7 +26,6 @@ class SylvacBtDriver(Driver):
         self._actions["read_once"] = self._action_read_once
 
     def _action_read_once(self, _data) -> None:
-        """Make value available to the longpolling event route"""
         event_manager.device_changed(self)
 
     @classmethod

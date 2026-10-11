@@ -8,7 +8,6 @@ class MixinMaintenanceTarget(models.AbstractModel):
     _name = "mixin.maintenance.target"
     _description = "Maintained Resource"
 
-    # The host's slot; every host is a mixin.resource, which declares it fully.
     resource_id = fields.Many2one(comodel_name="resource.resource")
     maintenance_profile_id = fields.One2one(
         related="resource_id.maintenance_profile_id"

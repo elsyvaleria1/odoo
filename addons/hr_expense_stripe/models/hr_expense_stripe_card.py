@@ -13,7 +13,6 @@ from odoo.addons.hr_expense_stripe.utils import (
 
 _logger = logging.getLogger(__name__)
 
-# So it can be translated in the database, and sent to Transifex. And manually updated in IAP
 _lt("The code to access your Odoo Expense Card is: %(code)s")
 _lt(
     "The phone number associated with your Odoo Expense card(s) has been updated. "
@@ -21,7 +20,6 @@ _lt(
 )
 
 
-# Maybe better to have the direct URLs that Stripe gives us, but in test mode we don't have any tracking URL
 CARRIER_URLS = {
     "dhl": r"https://www.dhl.com/",
     "fedex": r"https://www.fedex.com/",
@@ -30,7 +28,6 @@ CARRIER_URLS = {
 }
 
 
-# https://docs.stripe.com/api/issuing/cards
 class HrExpenseStripeCard(models.Model):
     _name = "hr.expense.stripe.card"
     _inherit = ["mixin.mail.thread"]
@@ -121,7 +118,6 @@ class HrExpenseStripeCard(models.Model):
             ("active", "Active"),
             ("canceled", "Blocked"),
         ],
-        # Stripe states
         string="Status",
         default="draft",
         copy=False,
@@ -133,13 +129,11 @@ class HrExpenseStripeCard(models.Model):
             ("physical", "Physical"),
             ("virtual", "Virtual"),
         ],
-        # Stripe types
         string="Type",
         default="virtual",
         required=True,
     )
 
-    # Post Creation Card Data
     last_4 = fields.Char(
         string="Last 4 digits",
         size=4,
@@ -162,7 +156,6 @@ class HrExpenseStripeCard(models.Model):
         compute="_compute_card_number",
     )
 
-    # Post Creation Physical Card Data
     shipping_status = fields.Selection(
         selection=[
             ("canceled", "Canceled"),
@@ -204,22 +197,20 @@ class HrExpenseStripeCard(models.Model):
         tracking=True,
     )
 
-    # Block card flow
     cancellation_reason = fields.Selection(
         selection=[
-            ("design_rejected", "Design Rejected"),  # Because it exists on stripe
+            ("design_rejected", "Design Rejected"),
             ("lost", "Lost"),
             ("stolen", "Stolen"),
             (
                 "none",
                 "Other",
-            ),  # 'none' is a Stripe value, but we use it to mean "other" in Odoo
+            ),
         ],
         readonly=True,
         tracking=True,
     )
 
-    # Spending Policy
     spending_policy_category_tag_ids = fields.Many2many(
         comodel_name="product.mcc.stripe.tag",
         string="Merchant Category Codes",
@@ -285,7 +276,6 @@ class HrExpenseStripeCard(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _prevent_unlink_cards(self) -> None:
-        """Cards should never be deleted, unless the module is removed"""
         for card in self:
             if card.stripe_id and not self.env.su:
                 raise ValidationError(
@@ -391,8 +381,6 @@ class HrExpenseStripeCard(models.Model):
         "spending_policy_interval",
     )
     def _compute_has_limit_higher_than_stripe_warning(self) -> None:
-        # Never change this value unless changing it also on IAP,
-        # it bumps the default value set by Stripe. Currency-agnostic, but it's ok for now
         stripe_limit = 50000 * STRIPE_CURRENCY_MINOR_UNITS.get(self.currency_id.name, 2)
         interval_multiplier_map = {
             "daily": 1,
@@ -400,7 +388,7 @@ class HrExpenseStripeCard(models.Model):
             "monthly": 30,
             "yearly": 365,
             "all_time": 1,
-        }  # All time will be ignored
+        }
         for card in self:
             interval = card.spending_policy_interval
             interval_amount = (
@@ -460,10 +448,9 @@ class HrExpenseStripeCard(models.Model):
                 }
             )
         if not (state == "canceled" and self.state == "canceled"):
-            # When canceled by Stripe, we don't need to send anything
             payload = {
                 key: value for key, value in payload.items() if value is not False
-            }  # Else Stripe consider it a value
+            }
             response = send_request_stripe_proxy(
                 self.company_id.sudo(), route, route_params, payload, method="POST"
             )
@@ -506,9 +493,6 @@ class HrExpenseStripeCard(models.Model):
             )
 
     def _update_from_stripe(self, stripe_object) -> None:
-        """
-        Updates a card from a Stripe card object See: https://docs.stripe.com/api/issuing/cards/object
-        """
         self.check_singleton()
         if self.stripe_id and self.stripe_id != stripe_object["id"]:
             raise UserError(
@@ -521,7 +505,6 @@ class HrExpenseStripeCard(models.Model):
         if not self.stripe_id:
             new_vals["stripe_id"] = stripe_object["id"]
         if self.state != stripe_object["status"]:
-            # When a physical card is ordered and hasn't been delivered we want to set the state to pending.
             if (
                 not self.is_delivered
                 and self.card_type == "physical"
@@ -530,8 +513,6 @@ class HrExpenseStripeCard(models.Model):
             ):
                 new_vals["state"] = "pending"
                 emails_to_send.append("ordered")
-            # If the card is virtual or if the card is updated to another state than from inactive, we want to exit the pending state.
-            # It's possible through the stripe dashboard but shouldn't happen through Odoo.
             elif (
                 self.card_type == "virtual"
                 or self.state != "pending"
@@ -539,7 +520,6 @@ class HrExpenseStripeCard(models.Model):
             ):
                 new_vals["state"] = stripe_object["status"]
                 if self.state == "draft":
-                    # Only possible for virtual cards as physical cards are set to pending when draft
                     emails_to_send.append("assigned")
         if not self.cancellation_reason:
             new_vals["cancellation_reason"] = stripe_object["cancellation_reason"]
@@ -551,8 +531,6 @@ class HrExpenseStripeCard(models.Model):
             new_vals["expiration"] = f"{exp_month:02}/{exp_year:02}"
         if self.card_type == "physical":
             if stripe_object["shipping"]["status"] != self.shipping_status:
-                # Since it's not possible to go back in shipping status, we only update it if it's a progression.
-                # In case the webhooks are received out of order.
                 states = {
                     False: 0,
                     "submitted": 1,
@@ -596,10 +574,6 @@ class HrExpenseStripeCard(models.Model):
             self._send_delivery_emails(email_type=email_type)
 
     def _send_delivery_emails(self, email_type="ordered") -> None:
-        """
-        Send the mails to the cardholder('s manager) of a physical card to notify them of the card status
-        :param str email_type: ordered | shipped, type of the mail to send
-        """
         self.check_singleton()
         if email_type not in {"canceled", "ordered", "assigned", "shipped"}:
             raise UserError(
@@ -628,7 +602,6 @@ class HrExpenseStripeCard(models.Model):
                 or delivery_address.company_name
             )
         ):
-            # If we're delivering to a company building
             email_to = self.ordered_by.email_formatted
             email_cc = None
             template_context["recipient_name"] = self.ordered_by.name
@@ -649,17 +622,8 @@ class HrExpenseStripeCard(models.Model):
             )
 
     def _get_payment_authorization(self, amount, mcc, country) -> tuple[bool, str]:
-        """Check if the card employee is still valid, and apply spending policy rules
-
-        :param float amount: The amount of the payment to check
-        :param :class:`~hr_expense_stripe.models.product_mcc_stripe_tag.ProductMCCSTripeTag` mcc: The MCC of the merchant
-        :param :class:`~odoo.addons.base.models.res_country.ResCountry` country: The country of the merchant
-        :return: (can_pay, refusal_reason)
-        :rtype: tuple[bool, str]
-        """
 
         def process_existing_expenses_data(data_raw):
-            """Process the existing expenses data to get the amount spent in the different intervals and MCCs"""
             today = fields.Date.context_today(self)
             limit_interval_start_date = {
                 "daily": today,
@@ -676,11 +640,9 @@ class HrExpenseStripeCard(models.Model):
             return data
 
         card = self.check_singleton().with_company(self.company_id)
-        # Validate employee
         if not card.employee_id.active:
             return False, self.env._("Invalid Employee")
 
-        # Validate transaction maximum
         if (
             not card.currency_id.is_zero(card.spending_policy_transaction_amount)
             and card.currency_id.compare_amounts(
@@ -690,14 +652,12 @@ class HrExpenseStripeCard(models.Model):
         ):
             return False, self.env._("Transaction amount exceeds the maximum allowed")
 
-        # Validate Country
         card_country_ids = set(card.spending_policy_country_tag_ids.ids)
         if not country:
             return False, self.env._("No country found")
         if card_country_ids and country.id not in card_country_ids:
             return False, self.env._("Country not allowed")
 
-        # Validate MCC
         if not mcc:
             return False, self.env._("No MCC found")
 
@@ -709,10 +669,9 @@ class HrExpenseStripeCard(models.Model):
 
         if mcc not in (
             card.spending_policy_category_tag_ids or valid_mcc
-        ):  # If no MCC is set, we allow all valid MCCs
+        ):
             return False, self.env._("MCC not allowed")
 
-        # Validate Limits
         existing_expenses_data = process_existing_expenses_data(
             card.env["hr.expense"]._read_group(
                 domain=[("card_id", "=", card.id), ("state", "!=", "refused")],
@@ -744,13 +703,11 @@ class HrExpenseStripeCard(models.Model):
         )
 
     def action_activate_card(self):
-        """Activates the ability to pay with the card on Stripe and on the record"""
         self.check_singleton()
 
         if not self.has_access("write") and (
             self.state != "pending" or self.employee_id.sudo().user_id != self.env.user
         ):
-            # The employee can activate their own card when they receive it
             raise AccessError(
                 self.env._("Operation only allowed for expense administrators.")
             )
@@ -823,7 +780,6 @@ class HrExpenseStripeCard(models.Model):
         return self._create_or_update_card(state=state)
 
     def action_block_card(self):
-        """Hard block the card on Stripe and on the record, this is not reversible !!"""
         self.check_singleton()
 
         return (
@@ -836,7 +792,6 @@ class HrExpenseStripeCard(models.Model):
         )
 
     def action_pause_card(self) -> None:
-        """Sets the card state on "inactive on Stripe and on the record, disallowing the ability to use it unless reactivated"""
         for card in self.filtered(lambda c: c.state == "active"):
             is_own_card = card.employee_id.user_id == self.env.user
             card.sudo(is_own_card or self.env.su)._create_or_update_card(
@@ -844,7 +799,6 @@ class HrExpenseStripeCard(models.Model):
             )
 
     def action_view_cardholder_wizard(self):
-        """Open the Wizard to create/update the cardholder on stripe for the related employee"""
         self.check_singleton()
         employee_id = self.env.context.get("selected_employee_id", self.employee_id.id)
         if not employee_id:
@@ -865,7 +819,6 @@ class HrExpenseStripeCard(models.Model):
         )
 
     def action_pause_card_warning_view(self) -> dict:
-        """Warns the user to prevent it from pausing the card unexpectedly while messing around and find out they can't activate it again"""
         self.check_singleton()
 
         if self.employee_id.user_id != self.env.user and not self.env.user.has_group(
@@ -888,7 +841,6 @@ class HrExpenseStripeCard(models.Model):
         }
 
     def action_view_card_private_view(self) -> dict:
-        """Open the view containing the Stripe IFrames showing the sensitive data"""
         self.check_singleton()
 
         if self.employee_id.user_id != self.env.user:
@@ -908,14 +860,11 @@ class HrExpenseStripeCard(models.Model):
         }
 
     def action_send_iap_2fa_code(self):
-        """Request SMS 2FA when creating the card"""
         self.check_singleton()
 
         if self.employee_id.user_id != self.env.user:
             raise UserError(self.env._("Request only allowed for the cardholder."))
 
-        # The text is translated in the database, so it can be sent to Transifex and translated there, but it is manually updated in IAP
-        # to ensure no "Attack by translation" is possible.
         payload = {
             "account": self.company_id.sudo().stripe_id,
             "card_id": self.stripe_id,
@@ -929,7 +878,6 @@ class HrExpenseStripeCard(models.Model):
         )
 
     def action_request_ephemeral_key(self, nonce, one_time_code, session):
-        """Request the client key for the direct connection to Stripe, in order to retrieve the sensitive information"""
         if self.employee_id.user_id != self.env.user:
             raise UserError(self.env._("Request only allowed for the cardholder."))
 

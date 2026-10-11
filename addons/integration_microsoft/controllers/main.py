@@ -7,7 +7,6 @@ from odoo.addons.integration_microsoft.models.integration_service import (
 
 
 class MicrosoftOAuthController(OAuthController):
-    # registered in Microsoft Entra before the standard callback existed
     @http.route(
         LEGACY_CALLBACK_PATH, type="http", auth="user", website=False, csrf=False
     )

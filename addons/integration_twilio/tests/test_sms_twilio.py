@@ -31,7 +31,6 @@ class TestSmsTwilio(MockSmsTwilio):
             expected_to_delete,
         ) in [
             (self.twilio_valid_phone_number, False, "pending", False, True),
-            # check some error code support
             (
                 self.twilio_valid_phone_number,
                 "twilio_callback",
@@ -87,7 +86,6 @@ class TestSmsTwilio(MockSmsTwilio):
             exp_to_delete,
         ) in [
             (self.valid_partner, False, "pending", False, False, True),
-            # twilio specific issues
             (
                 self.invalid_partner,
                 "twilio_acc_unverified",
@@ -104,7 +102,6 @@ class TestSmsTwilio(MockSmsTwilio):
                 "Twilio StatusCallback URL is incorrect",
                 False,
             ),
-            # check some error code support
             (
                 self.invalid_partner,
                 "wrong_number_format",
@@ -158,8 +155,6 @@ class TestSmsTwilio(MockSmsTwilio):
 
     @users("employee")
     def test_send_with_multi_company(self):
-        """Test that in a multi company environment where each company decides
-        how it should send SMS that we respect this choice."""
         company_twilio = self.env.company
         company_twilio.sudo().write(
             {
@@ -291,15 +286,9 @@ class TestSmsTwilio(MockSmsTwilio):
             )
             composer_twilio._action_send_sms()
 
-            # twilio 4 times (4 partners, one number at a time) and IAP once
-            # per company: `sms._split_by_api` groups by company so that each
-            # one's SMS resolve against its own scoped IAP account
             self.assertEqual(self._sms_twilio_send_mock.call_count, 4)
             self.assertEqual(self._sms_api_contact_iap_mock.call_count, 2)
 
-            # check SMS statuses
-            # TDE FIXME: in mass mode without mailing, no sms_tracker are created hence
-            # twilio_message_sid is not stored ... meh
             for partner in partners_twilio:
                 self.assertSMS(
                     partner,

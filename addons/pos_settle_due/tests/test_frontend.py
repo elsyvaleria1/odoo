@@ -8,14 +8,12 @@ from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCom
 @odoo.tests.tagged("post_install", "-at_install")
 class TestPoSSettleDueHttpCommon(TestPointOfSaleHttpCommon, TestPoSCommon):
     def test_pos_reconcile(self):
-        # create customer account payment method
         self.customer_account_payment_method = self.env["pos.payment.method"].create(
             {
                 "name": "Customer Account",
                 "split_transactions": True,
             }
         )
-        # add customer account payment method to pos config
         self.main_pos_config.write(
             {
                 "payment_method_ids": [(4, self.customer_account_payment_method.id, 0)],
@@ -71,7 +69,6 @@ class TestPoSSettleDueHttpCommon(TestPointOfSaleHttpCommon, TestPoSCommon):
         self.assertEqual(self.partner_test_1.total_due, 0)
 
     def test_settle_open_invoice(self):
-        """Test to settle an open invoice from PoS"""
         self.user.group_ids = [Command.unlink(self.env.ref("base.group_system").id)]
         self.partner_c = self.env["res.partner"].create({"name": "C Partner"})
         invoice = self.env["account.move"].create(
@@ -110,7 +107,6 @@ class TestPoSSettleDueHttpCommon(TestPointOfSaleHttpCommon, TestPoSCommon):
         self.assertEqual(self.partner_c.total_due, 195)
 
     def test_settle_open_invoice_with_credit_note(self):
-        """Ensure POS settles net amount of invoice minus credit note via 'Settle invoices'."""
         self.partner_c = self.env["res.partner"].create({"name": "C Partner"})
 
         invoice = self.env["account.move"].create(

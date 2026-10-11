@@ -152,8 +152,6 @@ class TestHrAttendanceGantt(TransactionCase):
             }
         )
 
-        # First Interval in January
-        # should have 8 hours
 
         interval_1 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -164,8 +162,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_1[contract_emp.id]["max_value"], 8)
 
-        # Second Interval in January
-        # should have 10 hours
 
         interval_1 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -176,8 +172,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_1[contract_emp.id]["max_value"], 10)
 
-        # Third Interval in March
-        # should have 12 hours
 
         interval_2 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -188,8 +182,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_2[contract_emp.id]["max_value"], 12)
 
-        # First Interval in January
-        # should have 8 hours
 
         interval_1 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -200,8 +192,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_1[contract_emp1.id]["max_value"], 8)
 
-        # Second Interval in January ending and February starting
-        # should have 8 hours
 
         interval_2 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -212,8 +202,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_1[contract_emp1.id]["max_value"], 8)
 
-        # Third Interval in March
-        # should have 10 hours
 
         interval_3 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -224,8 +212,6 @@ class TestHrAttendanceGantt(TransactionCase):
 
         self.assertEqual(interval_3[contract_emp1.id]["max_value"], 10)
 
-        # Fourth Interval in April
-        # should have 12 hours
 
         interval_4 = self.env["hr.attendance"]._gantt_progress_bar(
             "employee_id",
@@ -299,7 +285,7 @@ class TestHrAttendanceGantt(TransactionCase):
         self.assertTrue(emp1.resource_id._is_flexible())
         self.assertFalse(emp2.resource_id._is_flexible())
         calendar.schedule_type = (
-            "flexible"  # emp2 should now have a flexible hours as well
+            "flexible"
         )
 
         interval = self.env["hr.attendance"]._gantt_progress_bar(

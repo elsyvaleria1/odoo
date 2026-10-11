@@ -33,8 +33,6 @@ def _requestable_document(access_token):
     if not document_sudo:
         _debug.logic("not_requestable", reason="missing", document=document_id)
         return Document
-    # a colleague asks for a document by its address, as in any drive; anyone
-    # else asks only through a link that opens it
     if not request.env.user._is_internal():
         try:
             request.env["access.link"]._resolve(

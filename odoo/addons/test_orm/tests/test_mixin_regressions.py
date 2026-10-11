@@ -18,7 +18,6 @@ class TestLoadBatches(TransactionCase):
         def poisoned(self, data_list, update=False):
             records = original(self, data_list, update)
             if len(data_list) > 1:
-                # deferred to the flush that releases the batch's savepoint
                 records[0].color = -1
             return records
 

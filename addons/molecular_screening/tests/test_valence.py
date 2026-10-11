@@ -20,8 +20,6 @@ class TestValence(BaseCase):
         return valence.analyse(atoms, bonds)
 
     def test_fixtures_match_expected(self):
-        # The same table drives the editor's live panel; both read this fixture
-        # set, so a change in one that the other misses fails here.
         for name, molblock in (
             ("benzene", BENZENE),
             ("acetonitrile", ACETONITRILE),
@@ -45,7 +43,6 @@ class TestValence(BaseCase):
                 self.assertEqual(report["aromatic_rings"], expected["aromatic_rings"])
 
     def test_charge_moves_the_valence(self):
-        # N+ takes a fourth bond, O- gives one up, and carbon loses one either way
         self.assertEqual(valence.implicit_hydrogens("N", 1, 4), (0, False))
         self.assertEqual(valence.implicit_hydrogens("N", 0, 4), (1, False))
         self.assertEqual(valence.implicit_hydrogens("O", -1, 1), (0, False))
@@ -77,7 +74,6 @@ class TestValence(BaseCase):
             orders = [
                 b["bond_order"] for b in bonds if idx in (b["atom_a"], b["atom_b"])
             ]
-            # every carbon and the nitrogen carry exactly one of the three doubles
             self.assertEqual(orders.count(2), 1, by_idx[idx]["element"])
 
     def test_pyrrole_nitrogen_gives_its_pair_to_the_ring(self):
@@ -106,17 +102,17 @@ class TestValence(BaseCase):
             ] + [{"atom_a": a, "atom_b": b, "bond_order": o} for a, b, o in extra]
             return valence.aromaticity(atoms, bonds)["rings"]
 
-        self.assertEqual(ring("CCCCC", [2, 1, 2, 1, 1]), 0)  # cyclopentadiene
+        self.assertEqual(ring("CCCCC", [2, 1, 2, 1, 1]), 0)
         self.assertEqual(
             ring("CCCCC", [2, 1, 2, 1, 1], charges={5: -1}), 1
-        )  # its anion
-        self.assertEqual(ring("CCCCCCCC", [2, 1] * 4), 0)  # cyclooctatetraene, 8 π
+        )
+        self.assertEqual(ring("CCCCCCCC", [2, 1] * 4), 0)
         self.assertEqual(
             ring("CCCCCCOO", [1, 2, 1, 1, 2, 1], [(1, 7, 2), (4, 8, 2)]), 0
         )
         self.assertEqual(
             ring("NCCCCCO", [1, 1, 2, 1, 2, 1], [(2, 7, 2)]), 1
-        )  # 2-pyridone
+        )
 
     def test_hill_order(self):
         self.assertEqual(

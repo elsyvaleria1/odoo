@@ -6,8 +6,6 @@ from odoo.http import request
 
 from odoo.addons.sign.controllers.main import Sign
 
-# codes one signer is sent, and one visitor's address asks for: at once, then
-# refilled over the seconds
 SIGNER_BUDGET = (3, 1800)
 VISITOR_BUDGET = (10, 3600)
 
@@ -32,7 +30,6 @@ class SignProof(Sign):
             or (sign_request.validity and sign_request.validity < fields.Date.today())
         ):
             return {"error": request.env._("This signature does not ask for a code.")}
-        # a public page: a signer, and a visitor's address, get so many codes
         if not request_item._consume_send_budget(
             "proof_code", *SIGNER_BUDGET
         ) or not self._consume_visitor_budget(request_item):

@@ -172,18 +172,6 @@ class IrActionsServer(models.Model):
         raise NotImplementedError(create_model)
 
     def _run_action_multi(self, eval_context=None):
-        """Override to ensure correct behaviour of the docs sync mechanism.
-
-        This is a stable-proof temporary solution to ensure a synced doc will end up
-        in the correct synced accounting journal folder. The issue is that there is
-        an unnecessary move action to a intermediate folder in some accounting multi-actions.
-
-        The solution is to ensure the move action happens *before* the record creation action.
-        This is done by modifying the order in which the multi-actions run.
-
-        Since the action is not naturally available on this intermediate folder, we
-        temporarily embed (pin) it there during execution to bypass permission checks.
-        """
         account_actions = self._get_documents_account_actions_map()
         if self.id not in account_actions:
             return super()._run_action_multi(eval_context=eval_context)
@@ -196,12 +184,10 @@ class IrActionsServer(models.Model):
 
         res = False
         try:
-            # Order as viewed in action's form view, simplest contained change for stable.
             for act in self.child_ids.sorted("sequence,id"):
                 res = act.run() or res
         finally:
             for folder in new_embedding_folders:
-                # Restore embedding state, whether or not a child action raised
                 folder.action_folder_embed_action(folder.id, self.id)
 
         return res
@@ -209,14 +195,6 @@ class IrActionsServer(models.Model):
     @ormcache()
     @api.model
     def _get_documents_account_actions_map(self) -> dict:
-        """Map actions that need custom handling to ensure correct syncing behaviour.
-
-        This configuration defines which actions require a custom execution order
-        and temporary pinning in specific folders during execution.
-
-        It is cached because the mapping relies on global data (XML IDs) and is
-        independent of the current user.
-        """
         taxes_folder = self.env.ref(
             "document.document_finance_taxes_folder", raise_if_not_found=False
         )

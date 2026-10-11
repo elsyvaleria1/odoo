@@ -32,8 +32,6 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-# the models whose `_table` is not their name with dots for underscores, for a
-# migration that runs before the registry holds them (a pre-migration of base)
 _MODEL_TABLES: Mapping[str, str] = {
     "esg.metric.to.survey.question": "esg_metric_to_survey_question_rel",
     "ir.actions.actions": "ir_actions",
@@ -117,11 +115,6 @@ def rename_field(
     *,
     values: Mapping[str, str] | None = None,
 ) -> None:
-    # A stored field renamed in place, not dropped and re-added: the column keeps
-    # its data, and the `ir.model.fields` row keeps its id -- which is what every
-    # `mail.tracking.value`, export template and access record points at, so a
-    # drop-and-add would delete that history with the old row. Its external id
-    # and, for a Selection, the value rows and their external ids follow.
     table = _table_of(model, cr)
     old_exists, new_exists = (
         column_exists(cr, table, old),
@@ -140,9 +133,6 @@ def rename_field(
         rename_column(cr, table, old, new)
         _map_column_values(cr, table, new, values)
     elif old_exists:
-        # the new field's column is already there, made by a module installed
-        # before this rename ran (one the model moved into): what it holds is
-        # its default, the old column holds the records' values
         cr.execute(
             SQL(
                 "UPDATE %s SET %s = %s",
@@ -154,12 +144,8 @@ def rename_field(
         _map_column_values(cr, table, new, values)
         drop_columns(cr, table, [old])
     elif new_exists:
-        # a table inheriting another in PostgreSQL takes the parent's column
-        # rename, but not the index and constraints named after its own column
         rename_objects_named_after_column(cr, table, old, new)
     if column_exists(cr, table, new):
-        # the foreign key followed the column; its reflection row follows too,
-        # or uninstalling the field's module drops a name that no longer exists
         cr.execute(
             SQL(
                 "UPDATE ir_model_constraint SET name = %s WHERE name = %s AND type = 'f'",
@@ -191,10 +177,6 @@ def rename_field(
     )
     target = cr.fetchone()
     if target:
-        # reflected already, by the module that made the new column: what
-        # pointed at the old row -- tracking history above all -- follows to
-        # it, and the old row goes rather than be dropped later with that
-        # history as an orphan field
         _repoint_references(cr, "ir_model_fields", {field_id: target[0]})
         cr.execute(
             SQL(
@@ -230,8 +212,6 @@ def rename_field(
                 old_value,
             )
         )
-    # a value's xml id is named after it as reflection slugs it, which a
-    # renamed field or value no longer matches
     cr.execute(
         SQL(
             "SELECT d.id, s.value FROM ir_model_data d "
@@ -280,8 +260,6 @@ _MODEL_EXPRESSION_COLUMNS = (
 
 
 def rename_model(cr: BaseCursor, old: str, new: str) -> dict[str, str]:
-    # Exact names only, never LIKE '%old%': `crm_team` is a prefix of
-    # `crm_team_member`, and a substring rewrite renames both.
     old_table, new_table = old.replace(".", "_"), new.replace(".", "_")
     _absorb_forerunner(cr, old, new, old_table, new_table)
     relations = _rename_model_relations(cr, old, old_table, new_table)
@@ -304,14 +282,6 @@ def rename_model(cr: BaseCursor, old: str, new: str) -> dict[str, str]:
 
 
 def merge_model(cr: BaseCursor, old: str, into: str) -> None:
-    """`old` becomes part of `into`, a model that exists already: its records
-    are `into`'s under the same ids (moved by the caller first), its fields
-    join `into`'s, and every stored reference to its name follows. Its table
-    is the caller's to drop.
-
-    The registry rows `old` owned lose their xmlids instead of moving them:
-    an xmlid the loading module does not reload is deleted at the end of the
-    upgrade with the row it names, and here that row is `into`'s."""
     cr.execute(SQL("SELECT model, id FROM ir_model WHERE model = ANY(%s)", [old, into]))
     ids = dict(cr.fetchall())
     if old not in ids or into not in ids:
@@ -344,8 +314,6 @@ def merge_model(cr: BaseCursor, old: str, into: str) -> None:
     cr.execute(
         SQL("UPDATE ir_model_relation SET model = %s WHERE model = %s", into_id, old_id)
     )
-    # a field `into` has already takes the old one's references; any other
-    # moves, keeping its id, so the history tracked under it stays readable
     cr.execute(
         SQL(
             "SELECT o.id, n.id FROM ir_model_fields o LEFT JOIN ir_model_fields n "
@@ -414,10 +382,6 @@ def merge_model(cr: BaseCursor, old: str, into: str) -> None:
 def clear_dangling_references(
     cr: BaseCursor, models: Collection[str], table: str
 ) -> None:
-    """A stored many2one or many2many to one of `models` that names no row of
-    `table` loses the value its foreign key will refuse: the row goes where
-    the field cascades, the value goes otherwise, and a required field that
-    does not cascade stops the upgrade instead."""
     cr.execute(
         SQL(
             "SELECT model, name, ttype, on_delete, required, relation_table, column2 "
@@ -494,11 +458,6 @@ def clear_dangling_references(
 def _absorb_forerunner(
     cr: BaseCursor, old: str, new: str, old_table: str, new_table: str
 ) -> None:
-    # A registry load of the new code before the migration ran (another module
-    # upgraded first) reflects the new model: its ir_model row, fields,
-    # selections, inherits, constraints and an empty table. The old model's rows
-    # carry the ids data references, so each forerunner row folds into its old
-    # counterpart, or moves onto the old model when it has none.
     cr.execute(SQL("SELECT model, id FROM ir_model WHERE model = ANY(%s)", [old, new]))
     ids = dict(cr.fetchall())
     if old not in ids or new not in ids:
@@ -628,12 +587,6 @@ def _absorb_forerunner(
 def _fold(
     cr: BaseCursor, xmlid_model: str, table: str, rows: Mapping[int, int | None]
 ) -> None:
-    """Fold each row of ``rows`` into its counterpart, or keep it when it has none.
-
-    A row with a counterpart hands its references and its xmlids over and is
-    deleted; an xmlid of a module the counterpart already has one in is
-    dropped instead, since the rename gives the counterpart's the same name.
-    """
     pairs = {doomed: kept for doomed, kept in rows.items() if kept}
     if not pairs:
         return
@@ -704,13 +657,8 @@ def _repoint_references(
             continue
         except errors.UniqueViolation:
             pass
-        # some rows collide with one the kept record already has: only those
-        # are redundant, every other row still moves
         cr.execute(
             SQL(
-                # as text: psycopg has no tid loader, so a bare ctid comes back
-                # as str or bytes depending on the fetch protocol, and bytes
-                # bind back as bytea, which no cast turns into a tid
                 "SELECT ctid::text FROM %s WHERE %s = ANY(%s)",
                 SQL.identifier(table),
                 SQL.identifier(column),
@@ -738,10 +686,6 @@ def _repoint_references(
                 cr.execute(SQL("DELETE FROM %s WHERE %s", SQL.identifier(table), row))
 
 
-# record ids kept beside a model name in an Integer column that no field
-# declares a Many2oneReference, so ir_model_fields cannot pair them; the model
-# column holds a name or an ir_model id, on the row or, written
-# "link->table.column", on the row its link points at
 UNDECLARED_REFERENCES: tuple[tuple[str, str, str], ...] = (
     ("approval_observation", "res_id", "model_name"),
     ("integration_exchange", "origin_record_id", "origin_model"),
@@ -762,12 +706,6 @@ UNDECLARED_REFERENCES: tuple[tuple[str, str, str], ...] = (
 def rekey_records(
     cr: BaseCursor, models: Collection[str], table: str, moves: Mapping[int, int]
 ) -> None:
-    # A row keyed anew carries every stored reference to it along. A
-    # table-inheritance tree has no foreign key to follow, so the references
-    # are the ones reflected in ir_model_fields: Many2one and Many2many columns,
-    # (model, res_id) pairs, reference values, and tracked Many2one values.
-    # `models` names every model whose records are rows of `table`, which a
-    # table inheriting it in PostgreSQL holds too.
     moves = {old: new for old, new in moves.items() if old != new}
     if not moves:
         return
@@ -776,9 +714,6 @@ def rekey_records(
     _debug.lifecycle(
         "module_data.rekey_records", models=models, table=table, moves=len(moves)
     )
-    # a foreign key into the rows refuses their new ids before the columns
-    # holding it follow, which the fields below rekey; it is restored as it
-    # was, so a reference no field explains fails here rather than dangle
     foreign_keys = _foreign_keys_into_tree(cr, table)
     for referencing, name, __ in foreign_keys:
         cr.execute(
@@ -893,10 +828,6 @@ def rekey_records(
 def rekey_property_values(
     env: Any, models: Collection[str], moves: Mapping[int, int]
 ) -> None:
-    # A Properties value keeps a relational property's ids in its jsonb, by
-    # the names its container's definition gives them; only the registry knows
-    # which container defines which field, so this runs once it is loaded (an
-    # end- migration), after rekey_records moved the rows.
     moves = {old: new for old, new in moves.items() if old != new}
     if not moves:
         return
@@ -928,8 +859,6 @@ def rekey_property_values(
             values_by_id = dict(cr.fetchall())
             if not values_by_id:
                 continue
-            # the container may be a related or computed field: read it as the
-            # registry would, and each container's definition once
             records = (
                 env[model_name]
                 .sudo()
@@ -937,7 +866,7 @@ def rekey_property_values(
                 .browse(list(values_by_id))
             )
             names_by_container: dict[int, set[str]] = {}
-            relational = 0  # debuglog
+            relational = 0
             for record in records:
                 container = record[container_name]
                 if container.id not in names_by_container:
@@ -982,9 +911,6 @@ def rehome_references(
     *,
     keep: Collection[str] = ("ir.model.data",),
 ) -> None:
-    # A record that became its parent's row extended (`_inherits_shared_id`)
-    # files its messages, followers, activities and attachments under its
-    # parent's model, with the same id. An external id still names the record.
     models = list(models)
     cr.execute(
         "SELECT model, name FROM ir_model_fields "
@@ -1035,13 +961,6 @@ def lift_columns(
     *,
     keep_target: Collection[str] = (),
 ) -> list[str]:
-    # Columns of `source` (and of every table inheriting it in PostgreSQL)
-    # become `target`'s, row by row on the same id: copied, checked, then
-    # dropped. A column in `keep_target` keeps the target's own value where it
-    # has one. A row that held a value the target did not receive raises
-    # before anything is dropped, so a short copy fails the upgrade instead of
-    # losing what it missed. A (source column, target column) pair renames the
-    # column on the way. Returns the source columns lifted.
     pairs = [
         (column, column) if isinstance(column, str) else column for column in columns
     ]
@@ -1111,8 +1030,6 @@ def lift_columns(
     )
     lifted = [column for column, __ in pairs]
     tables = [table for (table,) in cr.fetchall()]
-    # a view reading the column, on any table of the tree, is its module's to
-    # rebuild at init; the root's drop cascades to the children's columns
     for table in tables:
         for column in lifted:
             drop_views_depending_on_table(cr, table, column)
@@ -1129,8 +1046,6 @@ def lift_columns(
 
 
 def _views(cr: BaseCursor) -> set[str]:
-    # a view's rows are the ones it reads, which move under it; one whose
-    # GROUP BY makes it read-only would refuse the UPDATE
     cr.execute(
         "SELECT relname FROM pg_class WHERE relkind IN ('v', 'm') "
         "AND relnamespace = current_schema::regnamespace"
@@ -1159,9 +1074,6 @@ def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, 
 def _model_column_of(
     cr: BaseCursor, table: str, res_column: str
 ) -> tuple[str, bool] | None:
-    # a Many2oneReference names its model beside it, by name in a char column
-    # (res_id <-> res_model or model, cause_res_id <-> cause_model) or as an
-    # ir_model id (calendar_event.res_model_id): the column, and whether it is an id
     prefix = res_column.removesuffix("res_id")
     columns = get_table_columns(cr, table)
     for base in (f"{prefix}res_model", f"{prefix}model"):
@@ -1200,8 +1112,6 @@ def _rekey_column(
     where: SQL | None = None,
 ) -> None:
     where = where or SQL()
-    # through negative ids: a row may take an id another holds until that one
-    # moves too, and a unique key on the column would refuse the overlap
     cr.execute(
         SQL(
             "UPDATE %s t SET %s = -m.new FROM unnest(%s::int[], %s::int[]) m(old, new) "
@@ -1253,13 +1163,6 @@ def _rekey_reference_values(
 
 
 def _moved_identifier(cr: BaseCursor, table: str, suffix: str) -> str:
-    """Name a constraint or index of ``table`` that ended in ``suffix``.
-
-    :return: ``table + suffix`` when it fits and is free; otherwise the table
-        part is shortened and the column and label kept, as PostgreSQL names
-        what it creates, and a counter settles a collision
-    :rtype: str
-    """
     counter = 0
     while True:
         tag = str(counter) if counter else ""
@@ -1298,7 +1201,6 @@ def _rename_table_with_dependents(cr: BaseCursor, old: str, new: str) -> bool:
             old.replace("_", "\\_") + "\\_%",
         )
     )
-    # the names that fit go first, so a shortened one never takes their place
     for (name,) in sorted(
         cr.fetchall(),
         key=lambda row: len(new + row[0][len(old) :]) > MAX_PG_NAME_LENGTH,
@@ -1330,9 +1232,6 @@ def _rename_table_with_dependents(cr: BaseCursor, old: str, new: str) -> bool:
                 SQL.identifier(_moved_identifier(cr, new, name[len(old) :])),
             )
         )
-    # the sequences the table owns (a join table owns none): guessing
-    # `old_id_seq` compares a name that may outgrow the limit, which
-    # PostgreSQL refuses as an identifier
     cr.execute(
         SQL(
             "SELECT seq.relname FROM pg_depend dep "
@@ -1374,9 +1273,6 @@ def _rename_model_relations(
         if relation_table == "_".join(sorted(tables)) + "_rel":
             moved = [new_table if t == old_table else t for t in tables]
             target = "_".join(sorted(moved)) + "_rel"
-            # PostgreSQL would truncate the moved name and the ORM refuses it: a
-            # field whose automatic name outgrows the limit declares relation= with
-            # the name its table already has, so the table stays where it is.
             if len(target) > MAX_PG_NAME_LENGTH:
                 target = relation_table
         if target != relation_table and table_exists(cr, relation_table):
@@ -1538,8 +1434,6 @@ def rewrite_quoted_model_names(cr: BaseCursor, old: str, new: str) -> None:
             for quote in ("'", '"'):
                 needle, replacement = f"{quote}{old}{quote}", f"{quote}{new}{quote}"
                 if types[column]["udt_name"] == "jsonb":
-                    # jsonb::text escapes a double quote, so each value is
-                    # rewritten as the text it is, not as the document's text
                     cr.execute(
                         SQL(
                             """
@@ -1585,10 +1479,6 @@ def retire_empty_module(cr: BaseCursor, module: str) -> None:
         )
     )
     retired = cr.rowcount > 0
-    # Also for a row already uninstalled: the module is gone from disk, and a
-    # leftover auto_install makes the loader mark it `to install` the day its
-    # dependencies happen to be installed, which ends the upgrade in an
-    # inconsistent state naming a module nobody can supply.
     cr.execute(
         SQL(
             "UPDATE ir_module_module SET auto_install = FALSE "
@@ -1653,8 +1543,6 @@ def rename_module(cr: BaseCursor, old: str, new: str) -> bool:
 
 
 def _rename_stored_module_names(cr: BaseCursor, rename: _ModuleRename) -> None:
-    # what stored data spells with the module's name, outside ir_model_data:
-    # its config keys, the xml ids expressions name, view keys and asset paths
     old, new = rename.old, rename.new
     cr.execute(
         SQL(
@@ -1712,12 +1600,6 @@ def _rename_stored_module_names(cr: BaseCursor, rename: _ModuleRename) -> None:
 
 
 def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
-    """Merge module ``folded`` into ``into``: a rename when ``into`` is not
-    installed, otherwise ``folded``'s external ids, dependencies, constraints,
-    many2many tables and module row move onto ``into``, and stored data naming
-    its external ids names ``into``'s. Records both modules declare under the
-    same name must be the same record; a name each module gives a different
-    record raises."""
     cr.execute(
         SQL(
             "SELECT name, state FROM ir_module_module WHERE name = ANY(%s)",
@@ -1730,7 +1612,6 @@ def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
     if states.get(into, "uninstalled") == "uninstalled":
         rename_module(cr, folded, into)
         return
-    # read before the shared names below lose their folded copy
     rename = _ModuleRename(folded, into, *_module_names(cr, folded))
     cr.execute(
         SQL(
@@ -1785,8 +1666,6 @@ def fold_module(cr: BaseCursor, folded: str, into: str) -> None:
                 folded,
             )
         )
-    # the constraints and many2many tables the folded module created are the
-    # surviving module's to drop on its uninstall
     for table in ("ir_model_constraint", "ir_model_relation"):
         cr.execute(
             SQL(
@@ -1865,8 +1744,6 @@ def _rename_module_xmlids(cr: BaseCursor, old: str, new: str) -> int:
 
 
 def _module_names(cr: BaseCursor, module: str) -> tuple[set[str], set[str]]:
-    # what `module.` opens as stored data knows it: the module's xml ids and its
-    # config-parameter keys, and the model names it opens, which it must not touch
     prefix = f"{module}."
     cr.execute(SQL("SELECT name FROM ir_model_data WHERE module = %s", module))
     names = {name for (name,) in cr.fetchall()}
@@ -1896,10 +1773,6 @@ _XMLID_ATTRIBUTES = frozenset({"t-call", "t-call-assets", "t-snippet"})
 
 
 class _ModuleRename:
-    # A module's name as it stands in stored data: the prefix of an xml id in
-    # the positions that hold one, and of a quoted name the module owns (an xml
-    # id, a config-parameter key), never of a model name, since `iot.` also opens
-    # model names (`env['iot.box']`) that no module rename touches.
     def __init__(
         self,
         old: str,
@@ -1929,7 +1802,6 @@ class _ModuleRename:
 
     def _quoted(self, match: re.Match[str]) -> str:
         lead, name = match["lead"], match["name"]
-        # a quoted name must close where it ends; a URL's `action-` need not
         if (lead in ("'", '"') and match["end"] != lead) or name not in self.names:
             return match[0]
         return f"{lead}{self.new}.{name}"
@@ -1948,8 +1820,6 @@ class _ModuleRename:
             and self.action.fullmatch(value)
         ):
             return f"{self.new}{value[len(self.old) :]}"
-        # an attribute whose whole value is an xml id of the module (a kanban's
-        # on_create, a widget's action)
         if (whole := self.whole.fullmatch(value)) and whole["name"] in self.names:
             return value.replace(f"{self.old}.", f"{self.new}.", 1)
         return self.in_text(value)
@@ -2002,7 +1872,6 @@ def _rename_module_references(cr: BaseCursor, rename: _ModuleRename) -> int:
 def _rewrite_expressions(
     cr: BaseCursor, needle: str, rewrite: Callable[[str], str]
 ) -> int:
-    # the stored expressions holding ``needle``, rewritten value by value
     rewritten = 0
     tables = set(
         get_tables_existing(cr, [source.table for source in _EXPRESSION_SOURCES])
@@ -2058,7 +1927,6 @@ class _Source(NamedTuple):
     columns: tuple[str, ...]
 
 
-# where stored data spells a module's xml ids as text
 _EXPRESSION_SOURCES = (
     _Source(
         "mail_template",
@@ -2113,8 +1981,6 @@ def _rewrite_view_arches(
 
 
 def move_xmlids(cr: BaseCursor, names: Iterable[str], module: str, into: str) -> None:
-    """Hand the external ids ``module.<name>`` to ``into``; the stored
-    expressions and view arches naming one of them name it under ``into``."""
     names = sorted(set(names))
     cr.execute(
         SQL(
@@ -2148,11 +2014,6 @@ def move_xmlids(cr: BaseCursor, names: Iterable[str], module: str, into: str) ->
 
 
 def drop_views(cr: BaseCursor, module: str, names: Iterable[str]) -> int:
-    """Delete the views ``module`` shipped under ``names``, with every view
-    inheriting them: a view naming a field its module no longer defines fails
-    validation the moment its model's views load, long before the end of the
-    upgrade would have removed it. A descendant another module still ships is
-    recreated when that module loads."""
     cr.execute(
         SQL(
             """

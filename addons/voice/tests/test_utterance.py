@@ -86,8 +86,6 @@ class TestTranscribeUtterance(CommandEngineMixin, TransactionCase):
 
     def test_an_engine_not_allowed_for_commands_is_not_asked(self):
         engine = self._engine(serves=("speech.transcription",))
-        # whatever else this machine can hear with (its own models, say) is not
-        # the subject: only the engine that may not hear commands is offered
         with (
             patch.dict(readers._READERS, {CUES: [engine]}),
             self.assertRaisesRegex(UserError, "No speech engine may hear"),

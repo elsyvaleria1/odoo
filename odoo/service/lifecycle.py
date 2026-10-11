@@ -62,7 +62,7 @@ def _load_server_wide_modules() -> None:
 
 def _reexec_server() -> None:
     if osutil.is_running_as_nt_service(nt_service_name):
-        rc = subprocess.call(  # noqa: S602  fixed literal, no user input
+        rc = subprocess.call(
             f"net stop {nt_service_name} && net start {nt_service_name}",
             shell=True,
         )
@@ -80,7 +80,7 @@ def _reexec_server() -> None:
     if not args or args[0] not in (sys.executable, exe):
         args.insert(0, sys.executable)
     _debug.lifecycle("service.reexec", pid=os.getpid(), argv=len(args))
-    os.execve(sys.executable, args, os.environ)  # noqa: S606  re-exec of ourselves IS the restart
+    os.execve(sys.executable, args, os.environ)
 
 
 def _find_assertion_report(dbname: str) -> OdooTestResult | None:
@@ -141,7 +141,7 @@ def _run_post_install_tests(registry: Registry, update_module: bool) -> int:
         with _debug.perf("service.post_install_tests.assets_pregenerated"):
             with registry.cursor() as cr:
                 env = api.Environment(cr, api.SUPERUSER_ID, {})
-                env["ir.qweb"]._pregenerate_assets_bundles()  # type: ignore[attr-defined]
+                env["ir.qweb"]._pregenerate_assets_bundles()
 
     result = loader.run_suite(
         post_install_suite,
@@ -210,7 +210,7 @@ def _limit_resident_registries(dbnames: list[str]) -> None:
     registries_size = get_env_int(
         "ODOO_REGISTRY_LRU_SIZE", 0, minimum=0, logger=_logger
     )
-    source = "env"  # debuglog
+    source = "env"
     if not registries_size:
         if IS_POSIX:
             avgsz = 15 * 1024 * 1024
@@ -221,10 +221,10 @@ def _limit_resident_registries(dbnames: list[str]) -> None:
                 else (2048 * 1024 * 1024)
             )
             registries_size = (limit_memory_soft // avgsz) or 1
-            source = "memory_soft"  # debuglog
+            source = "memory_soft"
         if len(dbnames) > max(registries_size, Registry.registries.count):
             registries_size = len(dbnames)
-            source = "preload_count"  # debuglog
+            source = "preload_count"
     if registries_size:
         Registry.registries.count = registries_size
         _debug.logic("service.registry_lru_sized", size=registries_size, source=source)
@@ -264,12 +264,6 @@ def _get_preload_profiler(dbname: str) -> contextlib.AbstractContextManager:
 
 
 def _warm_web_assets() -> None:
-    # The page bundles' module registry and the map of the external libraries
-    # they import are process-wide caches built on first use, the libraries'
-    # map by reading, scanning and hashing every file of every library (~2.7 s
-    # for 35 libraries). Built here, every worker forks with them, instead of
-    # building both on its first request, recycled workers included. Best
-    # effort, as the translations below.
     t0 = time.monotonic()
     try:
         esm_registry()
@@ -285,21 +279,15 @@ def _warm_web_assets() -> None:
 
 
 def _warm_web_translations(registry: Registry) -> None:
-    # Every worker forks from this process. Web translations are parsed from the
-    # installed modules' .po files on first use, ~13 CPU-s for es_MX over ~600
-    # modules: read here, they are parsed once and inherited, instead of once per
-    # worker -- all of them at the same moment after a restart, and again in each
-    # worker recycled at the memory limit. Best effort: a failure costs only the
-    # warm-up.
     t0 = time.monotonic()
     try:
         with registry.cursor() as cr:
             env = api.Environment(cr, api.SUPERUSER_ID, {})
             IrHttp = env["ir.http"]
             langs = [code for code, _name in env["res.lang"].get_installed()]
-            for modules in IrHttp._get_webclient_translation_modules():  # type: ignore[attr-defined]
+            for modules in IrHttp._get_webclient_translation_modules():
                 for lang in langs:
-                    IrHttp._get_web_translations_hash(modules, lang)  # type: ignore[attr-defined]
+                    IrHttp._get_web_translations_hash(modules, lang)
     except Exception:
         _logger.warning(
             "Web translations of %s were not preloaded; each worker will load "
@@ -317,15 +305,11 @@ def _warm_web_translations(registry: Registry) -> None:
 
 
 def _warm_web_pages(registry: Registry) -> None:
-    # A page's asset nodes are computed on its first render, ~2 s for the web
-    # client and ~1.7 s for a website page, by walking the module graph of
-    # every bundle: once in each new worker, recycled ones included, instead
-    # of once here. Best effort, as the translations above.
     t0 = time.monotonic()
     try:
         with registry.cursor() as cr:
             env = api.Environment(cr, api.SUPERUSER_ID, {})
-            env["ir.qweb"]._warm_page_assets()  # type: ignore[attr-defined]
+            env["ir.qweb"]._warm_page_assets()
     except Exception:
         _logger.warning(
             "Page assets of %s were not preloaded; each worker will compute them "
@@ -361,8 +345,6 @@ def preload_registries(dbnames: list[str] | None) -> int:
                     init=len(settings.init),
                     update=len(settings.update),
                 ):
-                    # Under --test-enable the server exists to serve the test
-                    # client mid-load, so the load does not gate readiness.
                     marking = (
                         contextlib.nullcontext()
                         if settings.test_enable
@@ -391,8 +373,6 @@ def preload_registries(dbnames: list[str] | None) -> int:
             _logger.critical(
                 "Failed to initialize database `%s`.", dbname, exc_info=True
             )
-            # odoo.tests needs the dev requirements: outside a test run, importing it
-            # would replace this failure with a ModuleNotFoundError.
             if (
                 settings.test_enable
                 and (report := _find_assertion_report(dbname)) is not None
@@ -528,13 +508,6 @@ pipes, the listening and wake sockets, the inotify instance, the terminal."""
 
 
 def _get_descriptor_budget_demand() -> int:
-    # The largest single process this configuration runs.  Threaded: every
-    # HTTP slot and every parked idle connection is a socket, each cron and
-    # job thread holds a listener session, the pool holds db_maxconn, and
-    # every websocket up to its cap holds its own descriptors.  Prefork: a
-    # worker holds db_maxconn and one client; the evented child is the
-    # threaded shape on its own port.  Workers inherit the limit, so the
-    # per-process maximum is what has to fit.
     from ._limits import WEBSOCKET_DESCRIPTORS, get_websocket_max_connections
     from ._transport import TransportLimits
     from .httpd import compute_http_thread_limit, count_listener_permits
@@ -571,8 +544,6 @@ def _update_descriptor_budget() -> None:
     if soft == resource.RLIM_INFINITY or soft >= demand:
         return
     if hard == resource.RLIM_INFINITY or hard >= demand:
-        # The hard limit is the operator's ceiling; the soft one is ours to
-        # spend, as nginx and PostgreSQL raise theirs.
         try:
             resource.setrlimit(resource.RLIMIT_NOFILE, (hard, hard))
         except ValueError, OSError:

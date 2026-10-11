@@ -22,7 +22,6 @@ class TestActivityIcon(TransactionCase):
         )
 
     def test_partner_activity_uses_contacts_icon(self):
-        """The res.partner activity group is re-iconed with the contacts icon."""
         contacts_icon = modules.module.Manifest.for_addon("partner").icon
         groups = self.env["res.users"]._get_activity_groups()
         partner_groups = [g for g in groups if g.get("model") == "res.partner"]
@@ -31,7 +30,6 @@ class TestActivityIcon(TransactionCase):
             self.assertEqual(group["icon"], contacts_icon)
 
     def test_other_models_keep_their_icon(self):
-        """Non-partner activity groups are left untouched (boundary)."""
         contacts_icon = modules.module.Manifest.for_addon("partner").icon
         groups = self.env["res.users"]._get_activity_groups()
         for group in groups:

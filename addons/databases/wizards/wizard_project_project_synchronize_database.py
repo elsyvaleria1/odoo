@@ -47,10 +47,6 @@ class DatabasesSynchronization(models.TransientModel):
             )
 
     def _open(self):
-        # The wizard was used to select which property fields were to be added.
-        # As they are now added inconditionally, is is bypassed and we just reload the client view.
-        # We only show the error messages if any.
-        # The wizard will be cleaned in saas~19.2, but we keep it in 19.0 and saas~19.1 to avoid changing the model in a stable version.
         action = {
             "type": "ir.actions.client",
             "tag": "soft_reload",
@@ -78,16 +74,8 @@ class DatabasesSynchronization(models.TransientModel):
         )
 
     def _do_update_from_odoocom(self) -> None:
-        """
-        - Get db info from odoo.com
-        - Create missing dbs
-        - Switch unconfigured on premise/paas to saas
-        - Update saas dbs
-        - Report configured on premise/paas dbs detected in saas as not updated
-        """
         self.check_access("write")
 
-        # Get db info from Odoo
         ICP = self.env["ir.config_parameter"].sudo()
         apihost = ICP.get_param("databases.odoocom_apihost", "https://www.odoo.com")
         apidb = ICP.get_param("databases.odoocom_apidb", "openerp")
@@ -113,11 +101,10 @@ class DatabasesSynchronization(models.TransientModel):
             )
             return
 
-        # Create missing db
         Project = self.env["project.project"]
         databases_by_url = {
             db["url"]: db for db in databases
-        }  # TODO: handle duplicate urls correctly
+        }
         existing_databases = Project.with_context(active_test=False).search(
             [
                 ("database_hosting", "!=", False),
@@ -142,12 +129,10 @@ class DatabasesSynchronization(models.TransientModel):
                 else:
                     self.created_database_ids |= Project.create(values)
 
-        # Update saas dbs
         saas_domain = [
             ("database_hosting", "=", "saas"),
             ("database_url", "in", list(databases_by_url)),
         ]
-        # Switch unconfigured hosted db to saas
         hosting_should_be_saas = [
             ("database_hosting", "in", ("paas", "premise", "other")),
             ("database_url", "in", list(databases_by_url)),
@@ -164,7 +149,7 @@ class DatabasesSynchronization(models.TransientModel):
         )
         for (
             db
-        ) in dbs_to_update.try_lock_for_update():  # don't wait for db already updating
+        ) in dbs_to_update.try_lock_for_update():
             db_info = databases_by_url[db.database_url]
             vals = {
                 "database_hosting": "saas",
@@ -202,7 +187,6 @@ class DatabasesSynchronization(models.TransientModel):
         dbs_to_process = self.database_ids[:immediate_sync_limit]
         dbs_to_postpone = self.database_ids[immediate_sync_limit:]
 
-        # property.base.definition objects are readable only by role Settings
         database_kpi_base_definition_id = (
             self.database_ids.sudo().database_kpi_base_definition_id
         )
@@ -226,7 +210,6 @@ class DatabasesSynchronization(models.TransientModel):
                 continue
             db_apis.append(OdooDatabaseApi(*args))
 
-        # avoid flooding a server with tons of parallel requests in case several dbs are hosted on the same server.
         db_apis_per_ip = self._group_by_ips(db_apis)
 
         with ThreadPoolExecutor(max_workers=8) as executor:
@@ -241,7 +224,6 @@ class DatabasesSynchronization(models.TransientModel):
                 try:
                     results, errors = future.result()
                 except Exception as e:
-                    # meaningful errors should already be in `errors`, but an unexpected error from a thread should not stop the loop
                     _logger.warning("_do_sync failed", exc_info=True)
                     db_apis, ip = db_apis_by_future[future]
                     host_names = ", ".join(db_api.host for db_api in db_apis)
@@ -339,7 +321,6 @@ class DatabasesSynchronization(models.TransientModel):
             ):
                 continue
 
-            # property names must match odoo.orm.utils.regex_alphanumeric
             kpi_id = re.sub(r"[^a-z0-9]", "_", kpi["id"].lower())
             if kpi_id not in property_definition:
                 property_definition[kpi_id] = {
@@ -370,7 +351,6 @@ class DatabasesSynchronization(models.TransientModel):
 
             kpi_properties[kpi_id] = kpi["value"]
 
-        # property.base.definition objects are readable only by role Settings
         database_kpi_base_definition_id = (
             self.database_ids.sudo().database_kpi_base_definition_id
         )
@@ -399,7 +379,6 @@ class DatabasesSynchronization(models.TransientModel):
             return None
         self.database_ids.check_access("write")
 
-        # property.base.definition objects are readable only by role Settings
         database_kpi_base_definition_id = (
             self.database_ids.sudo().database_kpi_base_definition_id
         )
@@ -413,12 +392,10 @@ class DatabasesSynchronization(models.TransientModel):
             if x["name"] in existing_keys or self.new_properties[x["name"]]["checked"]
         ]
 
-        # sort the properties definition on the prefix of the name first, then on the string
         prefix_order = ("account_journal_type", "account_move_type", "account_return")
         properties_definition = sorted(
             properties_definition,
             key=lambda x: (
-                # index of the first matching prefix, defaulting to the end
                 next(
                     (
                         i
@@ -427,7 +404,6 @@ class DatabasesSynchronization(models.TransientModel):
                     ),
                     len(prefix_order),
                 ),
-                # then the displayed name
                 x["string"],
             ),
         )
@@ -441,7 +417,7 @@ class DatabasesSynchronization(models.TransientModel):
         for db in self.database_ids:
             if fetched_values := (self.fetched_values or {}).get(
                 str(db.id)
-            ):  # JSON keys are strings
+            ):
                 db.sudo().write(
                     {
                         "database_kpi_properties": fetched_values,
@@ -474,7 +450,7 @@ class DatabasesSynchronization(models.TransientModel):
 
             _family, _type, _proto, _canonname, (ip, _port, *_) = min(
                 addrinfo
-            )  # sort IPv4 before IPv6
+            )
             groups[ip].append(db_api)
         return groups
 

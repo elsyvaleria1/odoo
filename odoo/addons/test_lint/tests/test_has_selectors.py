@@ -10,8 +10,6 @@ COMBINATORS = " >+~"
 FUNCTIONAL_PSEUDO_RE = re.compile(r"::?[a-zA-Z-]+\(")
 PSEUDO_RE = re.compile(r"::?[a-zA-Z-]+")
 OWN_FEATURE_RE = re.compile(r"[.#][A-Za-z_-]")
-# an attribute the component owns narrows like a class does; `class` and `style`
-# are on most elements, so a selector on them narrows nothing
 OWN_ATTRIBUTE_RE = re.compile(r"\[\s*(?!class\b|style\b)[A-Za-z_-]+")
 
 
@@ -49,12 +47,6 @@ def _without_functional_pseudos(compound: str) -> str:
 
 
 def ancestor_has_subject(selector: str) -> str | None:
-    """The subject compound of a selector that asks `:has()` of an ancestor.
-
-    `.screen:has(.marker) .btn` asks it of `.screen` and styles `.btn`: the
-    subject. A selector whose only `:has()` sits on the element it styles
-    (`.btn:has(.icon)`) has no such subject, and costs nothing to speak of.
-    """
     compounds = _compounds(selector)
     asked = [index for index, compound in enumerate(compounds) if ":has(" in compound]
     if not asked or asked[0] == len(compounds) - 1:
@@ -63,14 +55,6 @@ def ancestor_has_subject(selector: str) -> str | None:
 
 
 def is_broad_subject(subject: str) -> bool:
-    """Whether a subject names no class, id or attribute of its own.
-
-    The browser answers a DOM change under an ancestor `:has()` by restyling
-    every element that could be the subject. A class of the component keeps that
-    to the component; a bare tag, `*`, a pseudo-class or a selector on the
-    `class` attribute makes it most of the page, on every screen that loads the
-    stylesheet.
-    """
     plain = PSEUDO_RE.sub("", _without_functional_pseudos(subject))
     if OWN_ATTRIBUTE_RE.search(plain):
         return False

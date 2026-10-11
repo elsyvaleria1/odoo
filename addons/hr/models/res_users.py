@@ -55,11 +55,6 @@ class ResUsers(models.Model):
     _inherit = "res.users"
 
     def action_request_information_change(self):
-        """Open this person's pending change request, seeded from what they hold.
-
-        Without the seeding an empty request would read as "clear every one of
-        these fields" when an HR user approved it.
-        """
         return self.env["hr.employee.change.request"].action_open_my_request()
 
     @property
@@ -108,11 +103,6 @@ class ResUsers(models.Model):
     )
     work_location_name = fields.Char(related="employee_id.work_location_name")
     work_location_type = fields.Selection(related="employee_id.work_location_type")
-    # Personal information the employee is recorded as having. Read-only on
-    # purpose: `test_hr_grants_no_self_write_at_all` records the decision of
-    # 2026-09-07 that an internal user does not edit their own HR data -- those
-    # changes go through `hr.employee.change.request` with an HR approval. These
-    # are here so the employee can at least SEE what is on file about them.
     marital = fields.Selection(
         related="employee_id.marital",
         related_sudo=False,
@@ -470,8 +460,6 @@ class ResUsers(models.Model):
     @api.depends("employee_ids")
     @api.depends_context("company")
     def _compute_employee_id(self) -> None:
-        # a form's new user searches by its stored user: its own id is in no
-        # table, and an empty employee here empties every field related to it
         employee_per_user = {
             employee.user_id: employee
             for employee in self.env["hr.employee"].search(

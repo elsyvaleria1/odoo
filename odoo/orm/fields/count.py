@@ -46,8 +46,6 @@ class Count(Integer):
                 f"Field {model_class._name}.{name}: a Count cannot be related; "
                 f"count_of names a field on this model."
             )
-        # an extension refining the field names no count_of: it comes from the
-        # declaration the registry merges in, so its absence is judged at setup
         if count_of := attrs.get("count_of") or self.count_of:
             attrs.setdefault("_depends", (count_of,))
         return attrs
@@ -234,8 +232,6 @@ class Count(Integer):
             bypass_access=bypass_access,
         ):
             query = comodel._search(domain, bypass_access=bypass_access)
-            # the pairs a pending write would add or drop, as the statement's
-            # to_flush did before the count went through the port
             records.flush_recordset([counted.name])
             relation, column1, column2 = counted._get_relation_triple()
             result.update(

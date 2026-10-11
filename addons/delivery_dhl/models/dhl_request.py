@@ -42,7 +42,7 @@ class DHLProvider:
         service_header.MessageTime = datetime.now()
         service_header.MessageReference = (
             "ref:" + datetime.now().isoformat()
-        )  # CHANGEME
+        )
         service_header.SiteID = site_id
         service_header.Password = password
         request.ServiceHeader = service_header
@@ -264,10 +264,6 @@ class DHLProvider:
         response_element_xml = fromstring(response.content)
         Response = self.client.get_element(response_element_xml.tag)
         response_zeep = Response.type.parse_xmlelement(response_element_xml)
-        # This condition handle both 'ShipmentValidateErrorResponse' and
-        # 'ErrorResponse', we could handle them differently if needed as
-        # the 'ShipmentValidateErrorResponse' is something you cannot do,
-        # and 'ErrorResponse' are bad values given in the request.
         if hasattr(response_zeep.Response, "Status"):
             condition = response_zeep.Response.Status.Condition[0]
             error_msg = "%s: %s" % (condition.ConditionCode, condition.ConditionData)
@@ -287,10 +283,6 @@ class DHLProvider:
             self.debug_logger(request_to_send, "dhl_rating_request")
             self.debug_logger(response.content, "dhl_rating_response")
         response_element_xml = fromstring(response.content)
-        # This condition handle both 'ShipmentValidateErrorResponse' and
-        # 'ErrorResponse', we could handle them differently if needed as
-        # the 'ShipmentValidateErrorResponse' is something you cannot do,
-        # and 'ErrorResponse' are bad values given in the request.
         if response_element_xml.find("GetQuoteResponse") is not None:
             return response_element_xml
         else:
@@ -319,8 +311,6 @@ class DHLProvider:
                 "DHL account number is missing, please modify your delivery method settings."
             )
 
-        # The street isn't required if we compute the rate with a partial delivery address in the
-        # express checkout flow.
         if (
             not recipient.street
             and not recipient.street2
@@ -384,7 +374,7 @@ class DHLProvider:
             item = self.factory.ExportLineItem()
             item.LineNumber = sequence
             item.Quantity = int(rounded_qty)
-            item.QuantityUnit = "PCS"  # Pieces - very generic
+            item.QuantityUnit = "PCS"
             if len(line.product_id.name) > 75:
                 raise UserError(
                     picking.env._(

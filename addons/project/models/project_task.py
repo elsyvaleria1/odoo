@@ -129,7 +129,6 @@ class ProjectTask(models.Model):
     _description = "Task"
     _access_residual_class = "project.task_portal_hidden"
     _date_name = "date_assign"
-    # upstream's fields: project.task.type is project.workflow.step
     _legacy_field_names = frozendict(
         {"stage_id": "step_id", "date_deadline": "date_end"}
     )
@@ -1035,9 +1034,6 @@ class ProjectTask(models.Model):
                     state = "blocked"
                 elif state == "blocked":
                     state = "in_progress"
-            # a stored task entering a step gets its state from write(), which
-            # also runs the closing side effects; new and onchange records get
-            # here the same answer write() will give
             entered_step = task.step_id != task._origin.step_id
             if entered_step:
                 state = task._resolve_entered_step_state(state) or state
@@ -1063,9 +1059,6 @@ class ProjectTask(models.Model):
         return bool(self.allow_dependencies and self.is_blocked_by_predecessors())
 
     def _resolve_entered_step_state(self, state: str | None) -> str | None:
-        # a step mapped to a closed state closes even a waiting task, as the
-        # state widget offers it; an open predecessor finishing first is
-        # checked on the move into done, not here
         self.check_singleton()
         step_state = self.step_id.task_state
         if step_state in CLOSED_STATES:
@@ -1087,10 +1080,6 @@ class ProjectTask(models.Model):
     def _compute_date_first_assign(self) -> None:
         for task in self:
             if task.user_ids and not task.date_first_assign:
-                # date_assign can land after this runs (none for a default
-                # assignee at create, a later write under project_hr): the
-                # assignment is this transaction's, which create_date would date
-                # back and which at create is create_date itself
                 task.date_first_assign = task.date_assign or self.env.cr.now()
                 _debug.logic(
                     "first_assign_stamped",
@@ -1148,8 +1137,6 @@ class ProjectTask(models.Model):
         )
 
     def _get_predecessor_dependencies(self):
-        # one row per linked predecessor; a link made in a form and not saved
-        # yet has no row, and reads as the finish-to-start default
         self.check_singleton()
         Dependency = self.env["project.task.dependency"]
         rows = {dep.depends_on_id._origin: dep for dep in self.dependency_ids}
@@ -1162,10 +1149,6 @@ class ProjectTask(models.Model):
         )
 
     def _check_finish_dependencies(self) -> None:
-        # called on a privileged recordset entering a delivered state, never on a
-        # recompute: a predecessor reopened after its successor was done leaves
-        # the successor done. Every predecessor binds; only those the acting user
-        # may read are named
         for task in self:
             if task.state not in DELIVERED_STATES or not task.allow_dependencies:
                 continue
@@ -1427,8 +1410,6 @@ class ProjectTask(models.Model):
             raise ValidationError(self.env._("Two tasks cannot depend on each other."))
 
     def _check_no_self_dependency(self, vals: dict[str, Any]) -> None:
-        # the many2many writes the dependency table directly, whose CHECK would
-        # surface as a database error before any constraint runs
         linked_ids = set()
         for fname in ("predecessor_ids", "successor_ids"):
             for command in vals.get(fname) or ():
@@ -1443,15 +1424,12 @@ class ProjectTask(models.Model):
             raise ValidationError(self.env._("A task cannot depend on itself."))
 
     def _invalidate_dependency_links(self, predecessors: Self) -> None:
-        # project.task.dependency is the table both many2many read: a row
-        # written through the model leaves their cache behind
         self.invalidate_recordset(["predecessor_ids"])
         predecessors.invalidate_recordset(["successor_ids"])
         self.modified(["predecessor_ids"])
         predecessors.modified(["successor_ids"])
 
     def _invalidate_dependency_rows(self) -> None:
-        # and a link written through either many2many leaves the rows' cache
         self.env["project.task.dependency"].invalidate_model()
         self.invalidate_model(["dependency_ids", "dependent_on_me_ids"])
 
@@ -1759,9 +1737,6 @@ class ProjectTask(models.Model):
                     )
 
     def _scheduling_resolve_calendar(self):
-        # never the company of whoever triggers the recompute: a task with no
-        # company of its own reads its assignees' one company, else its
-        # creator's; a company without a calendar counts elapsed hours
         self.check_singleton()
         company = self.company_id or self.project_id.company_id
         if not company:
@@ -1781,9 +1756,6 @@ class ProjectTask(models.Model):
     def _split_scheduling_windows(
         self, max_gap=timedelta(days=7), max_span=timedelta(days=366)
     ) -> list[Self]:
-        # one interval fetch per cluster of nearby tasks: a fetch costs what its
-        # span costs, so one stray date years away would make a single fetch
-        # over the whole batch slower than a fetch per task
         windows = []
         window = self.browse()
         start = end = None
@@ -1958,8 +1930,6 @@ class ProjectTask(models.Model):
     @api.depends("user_ids")
     @api.depends_context("lang")
     def _compute_portal_user_names(self) -> None:
-        # the assignees' names, read whole even when the viewer cannot read
-        # every assignee; a record being edited keeps its unsaved assignees
         if saved := self.filtered(lambda task: isinstance(task.id, int)):
             saved.invalidate_recordset(fnames=["user_ids"])
             saved.fetch(["user_ids"])
@@ -2048,7 +2018,7 @@ class ProjectTask(models.Model):
         users_to_keep = []
         user_ids = []
         for user in users:
-            matched_users = self.env["res.users"].name_search(  # noqa: E8507 - one lookup per @mention in the title
+            matched_users = self.env["res.users"].name_search(
                 user, domain=[("share", "=", False)]
             )
             if len(matched_users) == 1:
@@ -2237,15 +2207,10 @@ class ProjectTask(models.Model):
         self, copied_tasks: Self
     ) -> tuple[dict, dict]:
         task_mapping, task_dependencies = {}, {}
-        # copies are created in the copied recordset's order, so their ids
-        # ascend along self; children were copied by id (copy_data)
         copied_tasks = copied_tasks.sorted("id")
         for original_task, copied_task in zip(self, copied_tasks, strict=True):
             task_mapping[original_task.id] = copied_task
             if original_task.allow_dependencies:
-                # archived neighbours too: a link between two copied tasks is
-                # copied whatever their active state; the many2many read still
-                # leaves out the tasks the user may not read
                 linked = original_task.with_context(active_test=False)
                 if linked.predecessor_ids or linked.successor_ids:
                     task_dependencies[original_task.id] = [
@@ -2269,7 +2234,6 @@ class ProjectTask(models.Model):
         return not project or project._admits_link_partner(partner, task=self)
 
     def _is_opened_by_project_link(self, token: str | None, role: str) -> bool:
-        # a project's link reaches the tasks its page lists
         project = self.project_id
         if not (project and token and self.active) or self.has_template_ancestor:
             return False
@@ -2278,9 +2242,6 @@ class ProjectTask(models.Model):
     def _portal_verify_parent_hash(
         self, signature: str, pid: int, token: str | None = None
     ) -> bool:
-        # only the hash signed over the very link that may comment speaks for
-        # `pid`: a bare hash would be judged against whichever link the
-        # project's customer holds, at no role at all
         return self._is_opened_by_project_link(
             token, "comment"
         ) and self.project_id._verify_sign_token(signature, pid, token=token)
@@ -2522,9 +2483,6 @@ class ProjectTask(models.Model):
 
     @api.model
     def _access_field_class(self, field: Any) -> str | None:
-        # portal users read the fields listed readable and write those listed
-        # writable; every other field is project.task_portal_hidden, the
-        # automatic columns included (the whitelist names those portal reads)
         if field.name in self.TASK_PORTAL_WRITABLE_FIELDS:
             return None
         if field.name in self.TASK_PORTAL_READABLE_FIELDS:
@@ -2643,8 +2601,6 @@ class ProjectTask(models.Model):
 
         self_ctx.browse().check_access("create")
         if self.env.su or not self.env.user._is_portal():
-            # a project derived from the parent goes in the row itself, so the
-            # batch is one create; a portal user may not write project_id
             for vals, derived_project_id in zip(
                 vals_list, default_project_ids, strict=True
             ):
@@ -2743,8 +2699,6 @@ class ProjectTask(models.Model):
     def _update_create_vals_derived_project(
         self, vals: dict[str, Any], project_id: int
     ) -> None:
-        # what default_get gives a row whose project it knows: the parent's or
-        # project's customer, and no assignee forced on a task that is not private
         project = self.env["project.project"].browse(project_id)
         vals["project_id"] = project_id
         if "partner_id" not in vals and "default_partner_id" not in self.env.context:
@@ -2787,8 +2741,6 @@ class ProjectTask(models.Model):
     @_debug.perf.timed
     def _subscribe_followers(self, tasks: Self, current_partner: Any) -> None:
         tasks_sudo = tasks.sudo()
-        # the creator first: a creator who also follows the parent then gets the
-        # parent's subtypes, which replace the ones derived from the project
         tasks_sudo.message_subscribe(current_partner.ids)
         tasks_sudo._subscribe_parent_followers()
         emails_per_task = {
@@ -2962,8 +2914,6 @@ class ProjectTask(models.Model):
         if "state" not in vals and ("step_id" in vals or "project_id" in vals):
             step_tracked = self
             if "project_id" in vals:
-                # subtasks that follow their parent change project, and so step,
-                # through the recompute rather than through a write of their own
                 step_tracked |= self._get_all_subtasks().filtered(
                     lambda task: not task.display_in_project
                 )
@@ -3011,10 +2961,6 @@ class ProjectTask(models.Model):
         project_id = vals.get("project_id", default_project_id)
 
         assignees = self._get_assigned_users(vals)
-        # A task with no project is private to its assignees, so a creator who
-        # is not one of them could not read back what they just created; given
-        # no assignee at all, the creator is the one (default_get does the same
-        # when the vals name none).
         if (
             not (vals.get("parent_id") or project_id)
             and not self._get_fields_assignment().isdisjoint(vals)
@@ -3322,15 +3268,6 @@ class ProjectTask(models.Model):
         return partner_ids, project_link_per_task_id
 
     def _copy_data_assignment(self, vals, default, has_default_users) -> None:
-        """Who the copy is for.
-
-        A caller naming `user_ids` names the assignees outright, so the fields a
-        layer composes it from are dropped rather than left to contradict it.
-        Otherwise the copy carries this task's assignees, minus whoever can no
-        longer work on it -- an archived assignee used to disappear only because
-        reading the composed fields hid them, which is a read's business, not a
-        copy's.
-        """
         self.check_singleton()
         composed = self._get_fields_assignment() - {"user_ids"}
         if has_default_users:
@@ -3344,16 +3281,12 @@ class ProjectTask(models.Model):
 
     @api.model
     def _prepare_assignment_vals(self, users) -> dict[str, Any]:
-        """The vals that assign `users`, through the fields this layer carries
-        assignment on: writing `user_ids` is not enough where it is composed."""
         return {"user_ids": [Command.set(users.ids)]}
 
     @api.model
     def _prepare_assignment_vals_keeping(
         self, vals: dict[str, Any], users
     ) -> dict[str, Any]:
-        # the assignment is rebuilt from users, so a given assignee that stands
-        # for no user (project_hr's employee without one) is carried over
         assignment = self._prepare_assignment_vals(users)
         for fname, value in assignment.items():
             if fname not in vals:
@@ -3378,13 +3311,6 @@ class ProjectTask(models.Model):
         return assignees.filtered("active")
 
     def _get_fields_assignment(self) -> set[str]:
-        """The fields a write changes the assignees through.
-
-        `user_ids` is the assignment everything downstream reads, but it is not
-        always what a write carries: project_hr composes it from employees and from
-        users without one, and a layer that does that must name its own fields here
-        or every hook keyed on an assignment change stops firing.
-        """
         return {"user_ids"}
 
     def _write_apply_assignment(
@@ -3916,12 +3842,6 @@ class ProjectTask(models.Model):
                 )
 
     def _get_assigned_users(self, values: dict[str, Any]):
-        """The users an assignment reaches, whatever field carried it.
-
-        A layer that composes `user_ids` from fields of its own answers for the
-        users behind them: values are read before the write, so the composed field
-        cannot be read back from the record yet.
-        """
         if "user_ids" not in values:
             return self.env["res.users"]
         return self.env["res.users"].browse(
@@ -4063,7 +3983,6 @@ class ProjectTask(models.Model):
             if group_name in ("customer", "user"):
                 group_data["has_button_access"] = False
             elif group_name == "portal_customer":
-                # the button carries the customer's link: offered where it opens
                 group_data["has_button_access"] = (
                     portal_privacy
                     and self._admits_link_partner(self._portal_customer())
@@ -4729,8 +4648,6 @@ class ProjectTask(models.Model):
                 "target": "self",
             }
         if user and user.share and self.with_user(user).has_access("read"):
-            # the session opens the task; a share URL would carry the customer's
-            # token to whoever reads it
             _debug.logic("access_action_portal_session", tasks=self, user=user.id)
             return {
                 "type": "ir.actions.act_url",
@@ -4899,8 +4816,6 @@ class ProjectTask(models.Model):
             if not shared or task_sudo.project_id != project:
                 return self.browse()
             return task_sudo
-        # the project's link reads its tasks' chatter; speaking takes the hash
-        # signed for the link's partner, as a bare token would post as nobody
         granted = (
             message_operation == "read"
             and bool(task_sudo)
@@ -4966,9 +4881,6 @@ class ProjectTask(models.Model):
 
     @_debug.perf.timed
     def _get_planning_overlap_rows(self, additional_domain=None):
-        # each task is compared with its values in memory, so that a form shows
-        # the overlap of the dates being edited; the tasks it overlaps are read
-        # from the database
         domain = Domain(
             [
                 ("active", "=", True),
@@ -5266,7 +5178,6 @@ class ProjectTask(models.Model):
             if not task.allow_dependencies:
                 task.dependency_warning = False
                 continue
-            # the same predecessors the search counts, named only when readable
             late = task.browse().union(
                 *(
                     dependency.depends_on_id
@@ -5468,8 +5379,8 @@ class ProjectTask(models.Model):
 
         first_possible_date_per_task = {
             key: max(
-                first_possible_date_per_task.get(key, datetime.min),  # noqa: DTZ901  sentinel, not an instant
-                start_bounds.get(key, datetime.min),  # noqa: DTZ901  sentinel, not an instant
+                first_possible_date_per_task.get(key, datetime.min),
+                start_bounds.get(key, datetime.min),
             ).astimezone(timezone(tz_info))
             for key in first_possible_date_per_task.keys() | start_bounds.keys()
         }
@@ -5596,7 +5507,7 @@ class ProjectTask(models.Model):
 
                     used_intervals.append((start_date, end_date, task))
 
-                    if hours_to_plan == 0.0:  # noqa: RUF069  exact by construction
+                    if hours_to_plan == 0.0:
                         compute_date_end = end_date
                         break
 
@@ -5625,8 +5536,6 @@ class ProjectTask(models.Model):
                         True,
                         valid_intervals_per_user,
                     )
-                    # the budgets already consumed stay; the extension only adds
-                    # the days and weeks the earlier window did not cover
                     for budget, extra in (
                         (flex_user_work_hours_per_day, extra_hours_per_day),
                         (flex_user_work_hours_per_week, extra_hours_per_week),
@@ -5717,14 +5626,10 @@ class ProjectTask(models.Model):
         return [warnings, old_vals_per_task_id]
 
     def _get_hours_to_plan(self):
-        # What the task books, read through its assignees' own schedules; a
-        # task not booked yet plans its estimate.
         return self.allocated_hours or self.planned_hours
 
     @_debug.perf.timed
     def _get_dependency_rows(self) -> list[dict]:
-        # every dependency of these tasks on an active predecessor, with the
-        # predecessor date it reads already shifted by the lag
         if not self.ids:
             return []
         self.flush_model(["active", "date_start", "date_end"])
@@ -5809,7 +5714,7 @@ class ProjectTask(models.Model):
         start_date,
         end_date,
         users,
-        candidates_ids=[],  # noqa: B006  read-only, passed straight through
+        candidates_ids=[],
         remove_intervals_with_planned_tasks=True,
         valid_intervals_per_user=None,
     ) -> tuple:
@@ -5911,10 +5816,6 @@ class ProjectTask(models.Model):
                         task.date_end - task.date_start
                     ).total_seconds() / 3600
                     rate = interval_duration / task_total_duration
-                    # the load a placed task spreads over its window is its
-                    # effort: the estimate first, the booking only when there
-                    # is none, since a flexible resource's booking is the
-                    # capacity the window holds, not the work
                     effort_hours = task.planned_hours or task.allocated_hours
                     interval_allocated_hours = (
                         rate * effort_hours if effort_hours else interval_duration

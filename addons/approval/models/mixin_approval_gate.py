@@ -14,12 +14,7 @@ class MixinApprovalGate(models.AbstractModel):
     _description = "Operation Gated by Approval"
 
     def _check_before_approval(self, verb):
-        """Refuse, before anything is asked, a call the verb could not run anyway.
-
-        Runs at the verb's door ahead of the approval, so a document that is not
-        in a state to go through fails in the caller's face instead of after the
-        approval, inside a side effect where a refusal is only a chatter note.
-        """
+        pass
 
     def _run_through_approval(self, operation, run):
         ready, need_approval = self._split_for_approval(operation)
@@ -56,16 +51,7 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _submit_drafted_approval(self, operation):
-        """Ask again with the document's own request, back in draft: reset by a
-        manager, by a change to what it protects, or because it no longer covered
-        the document. Submitting it takes the document's figures as they are now.
-
-        The operation used to refuse it as pending, though nobody was deciding,
-        and asking anew said a request already exists.
-        """
         self.check_singleton()
-        # asking again is the operation's, as raising is: whoever may run it need
-        # not be able to read the request its first asker raised
         request = self._get_own_approval_request()
         if not self._submits_approval_request_on_raise():
             trace.MIXIN.note(
@@ -103,25 +89,6 @@ class MixinApprovalGate(models.AbstractModel):
         return asked, blocked
 
     def _ask_approval_each(self) -> tuple:
-        """Raise the batch's requests together, and keep the batch when a company
-        staffs none.
-
-        A batch is one transaction, so a refusal here rolls back every record that
-        already ran -- including the ones that needed no approval at all and were
-        done before the first request was raised. A document's own refusal earns
-        that: something about that document is wrong, and the person asked for it by
-        acting on it. A step whose approvers all work in another company does not.
-        That configuration is nobody-in-this-batch's doing and nobody in it can fix
-        it, so the record is reported and the rest stand: the batch is then raised
-        again one record at a time to find which.
-
-        Returns the records whose request was raised, and a list of
-        ``(record, error)`` for the ones it could not be raised for.
-        """
-        # Flush before the first savepoint. A savepoint flushes on entry, and that
-        # flush checks each record's constraints in the environment that produced
-        # them, so a later iteration is otherwise handed a failure belonging to work
-        # done before this loop began.
         self.env.flush_all()
         try:
             with self.env.cr.savepoint():
@@ -149,13 +116,6 @@ class MixinApprovalGate(models.AbstractModel):
         return asked, blocked
 
     def _get_approval_asked_headline(self, ready, need_approval, blocked=()) -> str:
-        """The first line of the batch's notification, in this document's words.
-
-        A model that says it in its own vocabulary overrides this rather than
-        `_get_approval_asked_notification`, so the lines naming what could not be
-        asked at all are still appended after it -- and a reason added later
-        appears without that model having to know about it.
-        """
         if blocked:
             return self.env._(
                 "%(sent)s sent for approval; %(ran)s went through; "
@@ -171,7 +131,6 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _get_approval_unstaffed_note(self, error) -> str:
-        """One line for a record nobody could be asked for, naming what to configure."""
         self.check_singleton()
         step = error.step
         company = error.company
@@ -214,8 +173,6 @@ class MixinApprovalGate(models.AbstractModel):
         }
 
     def _split_for_approval(self, operation) -> tuple:
-        # approval_required is computed without dependencies; a value cached
-        # before the document changed in this transaction must not decide a gate.
         self.invalidate_recordset(["approval_required"])
         ready = need_approval = self.browse()
         for record in self:
@@ -241,10 +198,6 @@ class MixinApprovalGate(models.AbstractModel):
                 if record.id in self.env.transaction.admitted_ids(
                     record._name, GRANT_RUN_ADMISSION
                 ):
-                    # the grant running its own operation: what it does not cover
-                    # is refused into its failure note, and the request is left
-                    # as decided -- resetting it here would undo the approval
-                    # inside its own cascade
                     record._check_approval_covers(operation)
                     ready |= record
                 elif record._is_approval_covering(operation):
@@ -275,8 +228,6 @@ class MixinApprovalGate(models.AbstractModel):
         return ready, need_approval
 
     def _get_own_approval_request(self):
-        """The linked request, elevated, when it was raised about this document;
-        empty when it is the request that produced the document."""
         self.check_singleton()
         request = self.approval_request_id.sudo()
         if not request:
@@ -284,13 +235,6 @@ class MixinApprovalGate(models.AbstractModel):
         return request if request.get_source_document() == self else request.browse()
 
     def _release_approval_of_other_operation(self, operation) -> None:
-        """Let go of a settled request raised for another operation, so `operation`
-        is asked for in its own request; the old one keeps its history.
-
-        A document holds one request at a time. Refusing every later operation
-        because an earlier one was asked about left a document approved for one
-        thing unable to ask for the next.
-        """
         self.check_singleton()
         request = self._get_own_approval_request()
         if request.state in ("new", "pending"):
@@ -345,18 +289,10 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _is_approval_reasked_after_refusal(self, operation) -> bool:
-        """Whether a refused request is dropped and asked again, rather than refusing
-        the operation until someone resets the document."""
         self.check_singleton()
         return False
 
     def _approval_request_gates(self, operation) -> bool:
-        """Whether the linked request is the one that decides `operation` here.
-
-        A request that *produced* this document decides whether the document may
-        exist, not whether it may go through; gating on it would leave a
-        transfer created from an approved request unable to move.
-        """
         request = self._get_own_approval_request()
         if not request:
             return False
@@ -364,8 +300,6 @@ class MixinApprovalGate(models.AbstractModel):
         return not asked_for or asked_for in self._get_operation_names(operation)
 
     def _get_operation_names(self, operation):
-        """`operation` and its doors: a request raised before its method was a
-        verb's door names the method."""
         verb = self.env["approval.binding"]._get_declared_verb(self, operation)
         return (operation, *verb.methods) if verb else (operation,)
 
@@ -374,22 +308,14 @@ class MixinApprovalGate(models.AbstractModel):
         return verb.methods[0] if verb and verb.methods else operation
 
     def _get_approval_snapshot(self, operation):
-        """What the approver is being shown, as far as the grant covers it.
-
-        Empty means the grant covers the document whatever it becomes, which is
-        what a document says by not describing itself.
-        """
         self.check_singleton()
         return {}
 
     def _check_approval_covers(self, operation) -> None:
-        """Raise when the grant no longer covers what the operation would do."""
         self.check_singleton()
         approved = self.approval_request_id.operation_snapshot
         if not approved:
             return
-        # Only what the grant recorded is compared: a key a later version of the
-        # document's snapshot adds was not shown to the approver of an older grant.
         current = self._get_approval_snapshot(operation)
         if any(current.get(key) != value for key, value in approved.items()):
             trace.REFUSAL.event(
@@ -418,9 +344,6 @@ class MixinApprovalGate(models.AbstractModel):
         return True
 
     def _reset_approval_not_covering(self, operation) -> None:
-        """Send a grant the document outgrew back to draft, as a change to what it
-        protects does: the operation then asks again with it. Refusing told the
-        caller to ask again, which only an approval manager could do."""
         self.check_singleton()
         request = self._get_own_approval_request()
         request._check_reset_allowed()
@@ -454,11 +377,7 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _get_approval_held(self, operation):
-        """The records `operation`'s obligation would stop on a path that cannot
-        ask: neither admitted nor granted, and requiring approval or waiting for
-        one. A grant that no longer covers its document is the caller's to judge."""
         admitted = self._get_admitted_ids(operation)
-        # approval_required is computed without dependencies
         self.invalidate_recordset(["approval_required"])
         return self.filtered(
             lambda record: (
@@ -475,13 +394,6 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _check_approval_admits(self, operation, enforced=True, binding=None) -> None:
-        """Hold `operation`'s obligation on a path that did not come through it.
-
-        A checkpoint can raise no request, so a record the obligation would send
-        for approval is refused here -- or, while it only watches, recorded. A
-        grant that no longer covers its document is refused either way: that is
-        the approval speaking, not the path.
-        """
         admitted = self._get_admitted_ids(operation)
         for record in self.filtered(
             lambda r: r.id not in admitted and r._is_approval_granted_for(operation)
@@ -521,8 +433,6 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _stamp_operation_run(self, operation) -> None:
-        """Record that the operation an approval was granted for has now run: run by
-        hand after the grant, it is the run the grant allowed."""
         granted = self.filtered(
             lambda record: (
                 record.approval_state == "approved"
@@ -531,7 +441,6 @@ class MixinApprovalGate(models.AbstractModel):
         )
         if not granted:
             return
-        # each one elevated: the union keeps the environment of its first
         own = [record._get_own_approval_request() for record in granted]
         requests = (
             own[0]
@@ -574,8 +483,6 @@ class MixinApprovalGate(models.AbstractModel):
             self._approval_side_effect(self._get_operation_failure_note(operation)),
             self.env.transaction.admitting(self._name, GRANT_RUN_ADMISSION, self.ids),
         ):
-            # Stamped first, so the door it opens does not run it again, and inside
-            # the savepoint, so an operation that fails is not counted as run.
             request.date_operation_run = fields.Datetime.now()
             getattr(document, self._get_operation_door(operation))()
 
@@ -586,7 +493,6 @@ class MixinApprovalGate(models.AbstractModel):
         )
 
     def _get_gated_operation(self):
-        """The verb the document's own obligation holds, for a request that names none."""
         self.check_singleton()
         return self.env["approval.binding"]._get_own_verb(self) or False
 

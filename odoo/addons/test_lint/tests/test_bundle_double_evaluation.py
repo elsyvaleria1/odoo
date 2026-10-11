@@ -95,8 +95,6 @@ class TestBundleDoubleEvaluation(lint_case.LintCase):
             qweb = env["ir.qweb"]
             params = ir_asset._prepare_assets_params()
             ext = external_libs()
-            # served module by module through the page's import map, so an
-            # import resolves to whatever the map names and nothing is inlined
             by_import_map = esm_registry().import_map_included_bundles
 
             for bundle, removed_paths in sorted(removed_by_bundle.items()):
@@ -122,9 +120,6 @@ class TestBundleDoubleEvaluation(lint_case.LintCase):
                         f"{bundle}: {spec} (removed, still inlined)"
                     )
 
-        # keyed by the addon the module lives in, so each floor is graded
-        # wherever that addon is installed and no install can lend another
-        # addon's debt as slack
         owners = set(findings) | {
             name
             for name in installed
@@ -152,13 +147,6 @@ class TestBundleDoubleEvaluation(lint_case.LintCase):
         )
 
     def test_a_secondary_child_reaches_a_split_parent_s_removed_half(self):
-        # A bundle that removes files from the one it includes (web.assets_
-        # frontend_lazy is web.assets_frontend minus web.assets_frontend_minimal)
-        # is rendered beside the bundle holding those files. A secondary child
-        # of it that imports one of them must also name that bundle as a
-        # parent; naming the full bundle does not count, because it is never on
-        # the page beside the split one. Unnamed, the child inlines its own
-        # copy and the page runs two (a "singleton split" on the loader).
         findings = []
         with self.superuser_env() as env:
             installed = (
@@ -191,8 +179,6 @@ class TestBundleDoubleEvaluation(lint_case.LintCase):
                     closure = seeds | set(
                         discover_transitive_import_specifiers(seeds, seeds, ext, child)
                     )
-                    # the halves it was cut from: what it includes, minus the
-                    # bundle it includes whole (which also holds its own files)
                     parent_specs = specs_of(parent)
                     halves = {
                         half

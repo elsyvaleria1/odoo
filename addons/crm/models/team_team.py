@@ -93,10 +93,6 @@ class TeamTeam(models.Model):
     )
     lead_properties_definition = fields.PropertiesDefinition(string="Lead Properties")
 
-    # `team_member_ids` is active-filtered and archiving a team archives its
-    # members, so the set itself changes on a write nothing here declared: a
-    # team archived with one member kept `lead_assignment_max` at that member's value
-    # while the database read 0.
     @api.depends("team_member_ids.lead_assignment_max", "team_member_ids.active")
     def _compute_assignment_max(self) -> None:
         for team in self:
@@ -171,7 +167,7 @@ class TeamTeam(models.Model):
             try:
                 domain = literal_eval(team.lead_assignment_domain or "[]")
                 if domain:
-                    self.env["crm.lead"].search(domain, limit=1)  # noqa: E8507 - validates each team's own domain
+                    self.env["crm.lead"].search(domain, limit=1)
             except SyntaxError, TypeError, ValueError:
                 raise exceptions.ValidationError(
                     self.env._(
@@ -190,8 +186,6 @@ class TeamTeam(models.Model):
         return result
 
     def unlink(self):
-        # scoring frequencies are bookkeeping: deleting a team of another usage
-        # must not need crm access
         frequencies = (
             self.env["crm.lead.scoring.frequency"]
             .sudo()
@@ -464,7 +458,7 @@ class TeamTeam(models.Model):
                     self.env.cr.now() - datetime.timedelta(days=creation_delta_days),
                 )
 
-            leads = self.env["crm.lead"].search(lead_domain)  # noqa: E8507 - one query per team, on the team's own assignment domain
+            leads = self.env["crm.lead"].search(lead_domain)
             missing = leads.filtered(lambda lead: lead not in duplicates_lead_cache)
             if missing:
                 duplicates_lead_cache.update(
@@ -531,12 +525,6 @@ class TeamTeam(models.Model):
         return [leads[start : start + size] for start in range(0, len(leads), size)]
 
     def _allocate_leads_draw(self, population, weights, teams_data, duplicates_cache):
-        """Draw the assignment order in memory and return the leads each team takes.
-
-        The weighted draw is the assignment policy, so it stays per lead; only
-        the persistence is batched per team afterwards, which is what makes the
-        cost of an allocation proportional to the teams rather than the leads.
-        """
         population, weights = list(population), list(weights)
         cached = self.env["crm.lead"].union(*duplicates_cache.values())
         existing_ids = set(cached.exists().ids)

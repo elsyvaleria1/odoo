@@ -4,7 +4,6 @@ from odoo.addons.calendar_google.utils.calendar_google import CALENDAR_SCOPE
 def authorize_google_calendar(
     user, access_token="an-access", refresh_token="a-refresh"
 ):
-    """What the OAuth callback leaves behind for `user`'s calendar."""
     env = user.env
     connection = env["integration.connection"]._personal(
         env.ref("integration_google.service_google"), user, scope=CALENDAR_SCOPE

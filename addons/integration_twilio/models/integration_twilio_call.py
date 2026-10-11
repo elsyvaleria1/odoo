@@ -18,8 +18,6 @@ FINAL_STATUSES = {"completed", "busy", "failed", "no-answer", "canceled"}
 MATCH_WINDOW = timedelta(seconds=120)
 REPORT_GRACE = timedelta(hours=2)
 SYNC_OVERLAP = timedelta(days=1)
-# Twilio names a withheld caller "anonymous", formerly ANONYMOUS spelled in
-# keypad digits; the phone system reports such a call with no number
 WITHHELD_CALLERS = {"+266696687"}
 
 
@@ -34,8 +32,6 @@ def _is_withheld(number: str) -> bool:
 
 
 def _sip_user(value: str) -> str:
-    # an origination URI reaches the PBX as sip:+52722...@host:5061, whose
-    # host and port are digits too
     value = (value or "").removeprefix("sips:").removeprefix("sip:")
     return value.split("@", 1)[0]
 
@@ -135,9 +131,6 @@ class IntegrationTwilioCall(models.Model):
 
     @api.model
     def _cron_sync_trunk_calls(self) -> None:
-        # the ledger is written by this cron alone, and a report is looked
-        # for in every company whatever companies the cron's user belongs to:
-        # one it could not see would read as never made
         calls = self.sudo()
         configs = calls.env["integration.twilio.config"].search(
             [("credential_id", "!=", False)]
@@ -165,8 +158,6 @@ class IntegrationTwilioCall(models.Model):
             for entry in client.iterate(
                 "Calls", "calls", params={"StartTime>": since.date().isoformat()}
             )
-            # only Elastic SIP Trunking calls take these directions; trunk_sid
-            # may still be empty on a call Twilio has not finalized
             if entry.get("direction") in TRUNK_DIRECTIONS
             and entry.get("status") in FINAL_STATUSES
         ]
@@ -217,8 +208,6 @@ class IntegrationTwilioCall(models.Model):
         }
 
     def _reconcile_with_reports(self) -> None:
-        # a phone-system report is the same call when it is that company's,
-        # that way round, with that number, and began within two minutes
         claimed = set(self.search([("phone_call_id", "!=", False)]).phone_call_id.ids)
         now = fields.Datetime.now()
         for record in self.sorted("start_date"):
@@ -232,9 +221,6 @@ class IntegrationTwilioCall(models.Model):
                 )
 
     def _is_report_expected(self) -> bool:
-        # an incoming call the phone system never answered, because it was
-        # down or unreachable, is the call Odoo most needs to know of; an
-        # outgoing one the other party did not take need not have been logged
         self.check_singleton()
         return self.direction == "incoming" or self.twilio_status == "completed"
 
@@ -251,8 +237,6 @@ class IntegrationTwilioCall(models.Model):
             & Domain("start_date", "<=", self.start_date + MATCH_WINDOW)
             & Domain("id", "not in", list(claimed))
         )
-        # a withheld caller is matched on time alone, among the reports that
-        # name no number either
         candidates = candidates.filtered(
             lambda call: number_key(call.phone_number) == key
         )

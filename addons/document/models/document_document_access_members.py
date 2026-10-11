@@ -11,15 +11,10 @@ _debug = DebugLog(__name__)
 class DocumentsDocument(models.Model):
     _inherit = "document.document"
 
-    # The member (partner role) side of access: propagation targets, the
-    # shortcut union every UPDATE joins on, and the company sync that rides
-    # the same SQL shape.
 
     def _action_update_members(
         self, partners: dict, no_propagation: bool = False
     ) -> tuple:
-        # a member is a grant on the document itself: what it grants reaches
-        # the folder's content live, so nothing is copied down
         self.env["document.access"].flush_model()
         created_or_updated_access = []
         removed_access = []

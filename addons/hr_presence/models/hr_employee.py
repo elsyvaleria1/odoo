@@ -36,23 +36,6 @@ class HrEmployee(models.Model):
         groups="hr.group_hr_user",
     )
 
-    # Stored mirror of hr_presence_state, which is computed and therefore
-    # neither searchable nor groupable. It carries every value
-    # hr_presence_state can take, 'archive' included, so that mirroring never
-    # has to drop one.
-    #
-    # A plain stored field refreshed at named points, NOT a stored computed one,
-    # and the reason is `user_id.im_status`: hr_presence_state depends on it,
-    # and mail.presence writes and commits a status on every websocket
-    # heartbeat. A computed mirror would therefore write an hr_employee row per
-    # user per heartbeat -- far worse than one sweep an hour.
-    #
-    # So whoever changes the evidence refreshes it: create, for an employee who
-    # would otherwise carry this default until the next sweep; the websocket as
-    # it stamps a connection; the sweep for the emails it counted; an action for
-    # a manager's override. The cron catches what is left, which is a state
-    # nobody wrote -- the transitions time itself makes, and a field the state
-    # reads changing under it.
     hr_presence_state_display = fields.Selection(
         selection=[
             ("out_of_working_hour", "Off-Hours"),
@@ -67,10 +50,6 @@ class HrEmployee(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         employees = super().create(vals_list)
-        # Without this a new employee carries the field default until the next
-        # sweep -- reading Absent in the icon of their own row while the Absent
-        # filter, which reads the mirror, cannot see them. Six queries whatever
-        # the batch size, and the same population the sweep covers.
         controlled = employees.filtered(
             lambda employee: (
                 employee.company_id.hr_config_id.hr_presence_control_email
@@ -81,13 +60,7 @@ class HrEmployee(models.Model):
             self._hr_presence_refresh_display(controlled)
         return employees
 
-    # ------------------------------------------------------------------ dates
     def _hr_presence_today(self):
-        """Today in each employee's own timezone, keyed by employee id.
-
-        A UTC day boundary puts an employee in UTC-6 at 18:00 of the previous
-        local day, so evening activity counts towards the wrong date.
-        """
         today_by_employee = {}
         for employee in self:
             today_by_employee[employee.id] = fields.Datetime.context_timestamp(
@@ -97,14 +70,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _hr_presence_day_bounds_utc(self, tz_name, day) -> tuple:
-        """The employee's own day, half-open, as naive UTC bounds.
-
-        The end is the NEXT day's first instant, not this one's last. Built from
-        `time.max` the two disagree by an hour on a day whose local midnight is
-        ambiguous -- `fold=0` picks the earlier 23:59:59, so the day ends an
-        hour early and that hour falls in no window at all (America/Santiago
-        2026-04-04, Asia/Beirut 2026-10-25). Half-open tiles by construction.
-        """
         zone = timezone(tz_name or "UTC")
         to_utc = to_timezone(None)
 
@@ -113,15 +78,8 @@ class HrEmployee(models.Model):
 
         return first_instant(day), first_instant(day + timedelta(days=1))
 
-    # -------------------------------------------------------------- the cron
     @api.model
     def _check_presence(self) -> None:
-        """Refresh every company's presence evidence and its stored mirror.
-
-        Runs for every company that switched a control on, not only the one the
-        cron user happens to sit in: a company left out is not merely uncomputed,
-        its employees keep yesterday's evidence.
-        """
         with _debug.perf("check_presence", cr=self.env.cr) as span:
             companies = (
                 self.env["hr.config"]
@@ -150,16 +108,6 @@ class HrEmployee(models.Model):
 
     @api.model
     def _hr_presence_mark_email_evidence(self, employees) -> None:
-        """Stamp today on employees who sent enough emails in their own day.
-
-        Only a message the employee wrote and that left the chatter counts:
-        'notification' and 'auto_comment' are written by the system in their
-        name, and an internal log note is not an email.
-
-        One query covers every timezone -- the messages are read once over the
-        union of the local days and bucketed here -- because a query per
-        distinct timezone is a query in a loop however few timezones there are.
-        """
         by_email_control = employees.filtered(
             lambda e: e.company_id.hr_config_id.hr_presence_control_email
         )
@@ -202,9 +150,6 @@ class HrEmployee(models.Model):
         for message in messages:
             sent_by_partner[message["author_id"]].append(message["date"])
 
-        # Over the employees, not over the authors: a company that turned the
-        # control on without setting an amount asks for a threshold of zero,
-        # and an employee who wrote nothing has to be able to meet it.
         reached_by_day = defaultdict(lambda: self.env["hr.employee"])
         for partner_id, candidates in employees_by_partner.items():
             dates = sent_by_partner.get(partner_id, ())
@@ -243,7 +188,6 @@ class HrEmployee(models.Model):
             states=",".join(sorted(by_state)),
         )
 
-    # ----------------------------------------------------------------- guard
     def _check_hr_manager(self) -> None:
         if not self.env.user.has_group("hr.group_hr_manager"):
             _debug.logic("presence_action_refused", user=self.env.uid)
@@ -253,7 +197,6 @@ class HrEmployee(models.Model):
                 )
             )
 
-    # --------------------------------------------------------------- actions
     def _action_set_manual_presence(self, state) -> None:
         self._check_hr_manager()
         today_by_employee = self._hr_presence_today()
@@ -368,7 +311,6 @@ class HrEmployee(models.Model):
             )
         _debug.lifecycle("presence_logged", employees=self)
 
-    # --------------------------------------------------------------- compute
     @api.depends(
         "active",
         "company_id.hr_config_id.hr_presence_control_email",
@@ -404,16 +346,10 @@ class HrEmployee(models.Model):
             )
         )
         automatic = controlled - manual
-        # Narrowing twice, and neither narrowing is the guard: an override and a
-        # flexible schedule both make the answer known without asking, and
-        # _hr_presence_verdict is what enforces that. Removing this line changes
-        # no verdict -- it only stops _work_intervals_batch being run for a
-        # calendar whose answer is discarded.
         scheduled = automatic.filtered(
             lambda e: not e.resource_id.sudo()._is_flexible()
         )
         working_now = frozenset(scheduled._get_employee_ids_working_now())
-        # What the chain below concluded, read before anything is overwritten.
         observed = {employee.id: employee.hr_presence_state for employee in controlled}
         for employee in controlled:
             employee.hr_presence_state = employee._hr_presence_verdict(
@@ -433,26 +369,6 @@ class HrEmployee(models.Model):
         )
 
     def _hr_presence_verdict(self, today, working_now, observed=None):
-        """This module's own answer for one employee, whatever a later override
-        makes of it.
-
-        The branches are ordered by what they are made of, because that is what
-        decides which may overwrite which. In the order the code runs them:
-
-        1. a manager's override -- an explicit human decision, over everything;
-        2. this module's own evidence, a company-IP connection or emails sent;
-        3. `observed`, whatever the chain below concluded before this ran: a
-           kiosk check-in, an online session. This module may INFER, but it may
-           not overwrite an observation with a conclusion drawn from that
-           observation's absence -- an employee standing at the kiosk read
-           Absent because the IP they did not connect from proved nothing;
-        4. abstention, where neither instrument can reach the employee at all;
-        5. this module's inferences, which is everything left.
-
-        An approved time off does not make an employee absent -- it excuses
-        them. Requiring it was what put the verdict on everyone who was
-        excused and on nobody who was not.
-        """
         self.check_singleton()
         if self.hr_presence_manual_state and self.hr_presence_manual_date == today:
             return self.hr_presence_manual_state
@@ -461,19 +377,9 @@ class HrEmployee(models.Model):
         if observed == "present":
             return "present"
         if not self.user_id:
-            # Neither instrument this module has can reach an employee with no
-            # login: the websocket finds employees by user_id, and the message
-            # count needs their partner. Concluding an absence from evidence
-            # that could never have been produced is not a verdict, it is the
-            # instrument having been pointed somewhere else. Abstain, leaving
-            # whatever the rest of the chain made of them.
             return observed or "out_of_working_hour"
         if self.id not in working_now or self.is_absent:
             return "out_of_working_hour"
         if self.resource_id.sudo()._is_flexible():
-            # A flexible calendar with no attendance line answers every window
-            # with an interval, so _get_employee_ids_working_now reports such an
-            # employee as working at three in the morning. Whoever chooses their
-            # own hours cannot be absent from them.
             return "out_of_working_hour"
         return "absent"

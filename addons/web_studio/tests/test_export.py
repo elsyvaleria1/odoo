@@ -118,9 +118,6 @@ class TestExport(HttpCase):
         self.assertEqual(
             monetary_field.find("./field[@name='name']").text, "x_test_monetary"
         )
-        # This assertion is correct technically: the python monetary field will fallback
-        # on one of the hardcoded currency field names.
-        # For this test though, on res.partner, the actual field will crash
         self.assertEqual(monetary_field.find("./field[@name='currency_field']"), None)
 
     def test_export_automation(self):
@@ -253,7 +250,6 @@ class TestExport(HttpCase):
 
 class TestExportedAccessRows(TransactionCase):
     def test_every_field_deciding_what_a_row_grants_is_exported(self):
-        """A row exported without its reach comes back granting the whole model."""
         Access = self.env["ir.access"]
         deciding = {
             name
@@ -277,7 +273,6 @@ class TestExportedAccessRows(TransactionCase):
 class TestExportTours(HttpCase):
     def test_can_export_new_module(self):
         self.start_tour("/odoo?debug=tests", "can_export_new_module", login="admin")
-        # check the export result made by the tour
         wizard = self.env["wizard.ir.module.module.export.customization"].search(
             [], limit=1, order="id desc"
         )

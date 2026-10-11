@@ -17,7 +17,6 @@ class TestKnowledgeEditorCommands(HttpCaseWithUserDemo):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.ref("base.user_admin").email = "admin@yourcompany.example.com"
-        # remove existing articles to ease tour management
         cls.env["knowledge.article"].search([]).unlink()
 
         [cls.article, cls.linked_article] = cls.env["knowledge.article"].create(
@@ -96,11 +95,8 @@ class TestKnowledgeEditorCommands(HttpCaseWithUserDemo):
         )
 
     def test_knowledge_article_commands_tour(self):
-        """Test the various commands in the editor as admin user.
-        Then access created embed views in readonly mode for extra checks."""
         self.start_tour("/odoo", "knowledge_article_commands_tour", login="admin")
 
-        # Check that the icon selected from the kanban card has been saved
         quik_create_article = self.env["knowledge.article"].search(
             [("name", "=", "New Quick Create Item")]
         )
@@ -111,5 +107,4 @@ class TestKnowledgeEditorCommands(HttpCaseWithUserDemo):
         )
 
     def test_knowledge_calendar_command_tour(self):
-        """Test the /calendar command in the editor"""
         self.start_tour("/odoo", "knowledge_calendar_command_tour", login="admin")

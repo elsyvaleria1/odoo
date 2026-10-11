@@ -22,7 +22,7 @@ class HelpdeskTicket(models.Model):
     team_id = fields.Many2one(
         domain="[('use_helpdesk', '=', True), ('use_helpdesk_timesheet', '=', True)] if context.get('default_project_id') else [('use_helpdesk', '=', True)]"
     )
-    project_id = fields.Many2one(  # noqa: E8529  One2many inverse of project.project.ticket_ids
+    project_id = fields.Many2one(
         comodel_name="project.project",
         related="team_id.project_id",
         store=True,
@@ -129,9 +129,6 @@ class HelpdeskTicket(models.Model):
         _debug.pipeline(
             "ticket_total_hours_from_read_group",
             tickets=self,
-            # the branch above sums `timesheet_ids` in memory for unsaved
-            # tickets; this one aggregates in SQL, and the two answer
-            # differently for a ticket holding unflushed lines
             by="read_group",
         )
         timesheet_read_group = self.env["account.analytic.line"]._read_group(
@@ -148,7 +145,6 @@ class HelpdeskTicket(models.Model):
 
     @api.onchange("team_id")
     def _onchange_team_id(self) -> dict | None:
-        # If the new helpdesk team has no timesheet feature AND ticket has non-validated timesheets, show a warning message
         if (
             self.timesheet_ids
             and not self.team_id.use_helpdesk_timesheet
@@ -177,8 +173,6 @@ class HelpdeskTicket(models.Model):
                     _debug.logic(
                         "ticket_team_from_project",
                         project=project,
-                        # a project serving more than one helpdesk team hands
-                        # the ticket to whichever comes first in `_order`
                         teams=project.helpdesk_team,
                         chosen=project.helpdesk_team[0],
                     )
@@ -247,7 +241,6 @@ class HelpdeskTicket(models.Model):
             super().action_timer_start()
 
     def action_timer_stop(self):
-        # timer was either running or paused
         if self.display_timesheet_timer and self.user_timer_id:
             timesheet = self._get_record_with_timer_running()
             if timesheet:
@@ -274,7 +267,6 @@ class HelpdeskTicket(models.Model):
         return False
 
     def _create_record_to_start_timer(self):
-        """Create a timesheet to launch a timer"""
         return self.env["account.analytic.line"].create(
             {
                 "helpdesk_ticket_id": self.id,
@@ -286,7 +278,4 @@ class HelpdeskTicket(models.Model):
         )
 
     def _action_interrupt_user_timers(self) -> None:
-        """Call action interrupt user timers to launch a new one
-        Stop the existing runnning timer before launching a new one.
-        """
         self.action_timer_stop()

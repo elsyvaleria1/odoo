@@ -4,9 +4,6 @@ from odoo.tests.common import HttpCase, tagged
 @tagged("post_install", "-at_install", "knowledge_article_stage")
 class TestKnowledgeArticleStage(HttpCase):
     def test_compute_stage_id(self):
-        """When creating an article item, it should automatically be assigned
-        to the stage with the lowest sequence number that is associated with
-        the parent article."""
         article = self.env["knowledge.article"].create(
             {
                 "name": "Parent Article",
@@ -41,6 +38,5 @@ class TestKnowledgeArticleStage(HttpCase):
                 },
             ]
         )
-        # Check that the article items are assigned to the stage with the lowest sequence.
         self.assertEqual(article_items[0].stage_id, stages[1])
         self.assertEqual(article_items[1].stage_id, stages[1])

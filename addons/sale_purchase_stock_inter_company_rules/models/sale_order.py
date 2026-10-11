@@ -10,7 +10,6 @@ class SaleOrder(models.Model):
 
     def _prepare_purchase_order_data(self, company, company_partner):
         res = super()._prepare_purchase_order_data(company, company_partner)
-        # find location and warehouse, pick warehouse from company object
         warehouse = (
             company.intercompany_warehouse_id
             if company.intercompany_warehouse_id.company_id.id == company.id
@@ -23,10 +22,6 @@ class SaleOrder(models.Model):
             warehouse=warehouse or None,
         )
         if not warehouse:
-            # intercompany_warehouse_id's compute only auto-fills while the
-            # field is falsy and only re-runs on the generate-orders flags,
-            # so it can stay stuck empty if a warehouse is created for the
-            # company after the flags were already turned on.
             warehouse = self.env["stock.warehouse"].search(
                 [("company_id", "=", company.id)], limit=1
             )
@@ -92,6 +87,5 @@ class SaleOrderLine(models.Model):
                 partner_company=partner_company,
                 location=self.order_id.partner_id.property_stock_customer,
             )
-            # Means that's we're in inter-company transaction -> Must sent to inter-company transit.
             return self.order_id.partner_id.property_stock_customer
         return super()._get_location_final()

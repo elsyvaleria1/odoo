@@ -53,7 +53,6 @@ class TestDuplicateOrders(TestTradeOrderCase):
         self.assertFalse(second.duplicated_order_ids)
 
     def test_a_rename_made_in_this_transaction_is_seen(self):
-        """The query reads `duplicate_order.name`, so it must be flushed."""
         first = self._make_order()
         second = self._make_order(origin="RENAMED-LATER")
         first.name = "RENAMED-LATER"

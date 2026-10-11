@@ -111,8 +111,6 @@ class MixinScoreLine(models.AbstractModel):
             by_key.setdefault(key, []).append(row)
 
         to_create = []
-        # Ids, not a recordset union: |= reallocates the whole id tuple on every
-        # row, which is quadratic in the number of audit rows in the batch.
         matched_ids = set()
         for vals in rows:
             key = tuple(vals[name] for name in self._SCORE_ROW_KEY)

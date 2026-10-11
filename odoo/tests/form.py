@@ -91,7 +91,7 @@ class Form:
         with _debug.perf(
             "test.form.get_views", cr=record.env.cr, model=record._name
         ) as span:
-            views = record.get_views(  # type: ignore[attr-defined]  # base adds it to every model
+            views = record.get_views(
                 [(view_id, "form")]
             )
             span.set(models=len(views["models"]))
@@ -153,7 +153,7 @@ class Form:
         daterange_field_names = {}
         field_infos = self._models_info.get(model._name, {}).get("fields", {})
 
-        o2m = downgraded = 0  # debuglog
+        o2m = downgraded = 0
         for node in tree.xpath(f".//field[count(ancestor::field) = {flevel}]"):
             field_name = node.get("name")
 
@@ -194,7 +194,7 @@ class Form:
 
             if field_info["type"] == "one2many":
                 if level:
-                    o2m += 1  # debuglog
+                    o2m += 1
                     field_info["invisible"] = field_modifiers.get("invisible")
                     edition_view = self._get_one2many_edition_view(
                         field_info, node, level
@@ -202,7 +202,7 @@ class Form:
                     field_info["edition_view"] = edition_view
                     field_spec["fields"] = edition_view["fields_spec"]
                 else:
-                    downgraded += 1  # debuglog
+                    downgraded += 1
                     _debug.logic(
                         "test.form.o2m_downgraded",
                         model=model._name,
@@ -241,7 +241,7 @@ class Form:
             "fields_spec": fields_spec,
             "modifiers": modifiers,
             "contexts": contexts,
-            "onchange": model._get_onchange_spec(  # type: ignore[attr-defined]  # base adds it to every model
+            "onchange": model._get_onchange_spec(
                 {"arch": etree.tostring(tree)}
             ),
         }
@@ -252,8 +252,8 @@ class Form:
         submodel = self._env[field_info["relation"]]
 
         views = {view.tag: view for view in node.xpath("./*[descendant::field]")}
-        inline = sorted(views)  # debuglog
-        fetched = []  # debuglog
+        inline = sorted(views)
+        fetched = []
         for view_type in ["list", "form"]:
             if view_type in views:
                 continue
@@ -269,7 +269,7 @@ class Form:
                 refs=sorted(refs),
             ):
                 subviews = submodel.with_context(**refs).get_views([(None, view_type)])
-            fetched.append(view_type)  # debuglog
+            fetched.append(view_type)
             subnode = etree.fromstring(subviews["views"][view_type]["arch"])
             views[view_type] = subnode
             node.append(subnode)
@@ -312,7 +312,7 @@ class Form:
             record=self._record.id,
             fields=len(self._view["fields_spec"]),
         ):
-            [record_values] = self._record.web_read(  # type: ignore[attr-defined]  # base adds it to every model
+            [record_values] = self._record.web_read(
                 self._view["fields_spec"]
             )
         self._env.flush_all()
@@ -480,7 +480,7 @@ class Form:
                 record=self._record.id or None,
                 fields=sorted(values),
             ) as span:
-                [record_values] = self._record.web_save(  # type: ignore[attr-defined]  # base adds it to every model
+                [record_values] = self._record.web_save(
                     values, self._view["fields_spec"]
                 )
                 self._env.flush_all()
@@ -548,7 +548,7 @@ class Form:
         modifiers_values = modifiers_values or values
 
         result = {}
-        readonly_skipped = 0  # debuglog
+        readonly_skipped = 0
         for field_name, field_info in view["fields"].items():
             if field_name == "id" or field_name not in values:
                 continue
@@ -594,7 +594,7 @@ class Form:
                     if node.get("name") == field_name
                 )
                 if not field_node.get("force_save"):
-                    readonly_skipped += 1  # debuglog
+                    readonly_skipped += 1
                     _debug.logic(
                         "test.form.readonly_skipped", field=field_name, mode=mode
                     )
@@ -873,7 +873,7 @@ class UpdateDict(dict):
 class X2MValue(collections.abc.Sequence):
     _virtual_seq = itertools.count()
 
-    __hash__ = None  # type: ignore[assignment]  # unhashable by design
+    __hash__ = None
 
     def __init__(self, iterable_of_vals: Any = ()) -> None:
         self._data: dict[Any, UpdateDict] = {
@@ -1053,7 +1053,7 @@ class O2MProxy(X2MProxy):
 
 
 class M2MProxy(X2MProxy, collections.abc.Sequence):
-    def __getitem__(self, index: Any) -> BaseModel:  # type: ignore[override]  # a slice browses to a recordset, which is not a Sequence
+    def __getitem__(self, index: Any) -> BaseModel:
         comodel_name = self._field_info["relation"]
         return self._form._env[comodel_name].browse(self._field_value[index])
 

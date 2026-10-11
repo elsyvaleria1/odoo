@@ -106,13 +106,6 @@ class TestEcoApprovalEngine(TestPlmCommon):
         self.assertFalse(step.exists())
 
     def test_deleting_several_roles_at_once_takes_every_step_with_them(self):
-        """The steps are collected before the templates go and unlinked after.
-
-        A relational read's prefetch set is lazy over the records it was read
-        from, so a set captured here is worth capturing as a set: `exists()`
-        answers for the whole of it in one query, where a per-record `exists()`
-        inside a `filtered` asks once per step.
-        """
         steps = (self.mandatory | self.comment).step_id
         self.assertEqual(len(steps), 2)
 

@@ -1163,8 +1163,6 @@ class TestMostSpecificPagesScan(common.TransactionCase):
             )
             pages.append(
                 {
-                    # Distinct names on purpose: a fixture whose rows sort the
-                    # same ascending and descending cannot witness an order bug.
                     "name": f"Scan probe {index:02d}",
                     "url": f"/scan-probe-{index}",
                     "view_id": view.id,
@@ -1176,7 +1174,6 @@ class TestMostSpecificPagesScan(common.TransactionCase):
         cls.env.flush_all()
 
     def _fetched_keys(self, records):
-        """How many rows the key-count query brings back for `records`."""
         seen = []
         original = type(self.env["website.page"]).search_fetch
 
@@ -1252,9 +1249,6 @@ class TestMostSpecificPagesScan(common.TransactionCase):
         self.assertFalse(kept)
 
     def test_the_caller_s_order_survives_the_dedup(self):
-        """The url sort inside the dedup decides which page wins, not the output
-        order. Returning `browse(ids)` handed every caller its pages in url
-        order instead, so site search ignored the requested sort."""
         candidates = self.pages.with_context(website_id=self.website.id)
         for order in ("name asc", "name desc"):
             with self.subTest(order=order):
@@ -1518,7 +1512,6 @@ class TestPageRenameRedirects(common.TransactionCase):
         self.assertTrue(other.active, "only redirects off the new url are retired")
 
     def test_a_generic_redirect_is_not_retired_by_one_website(self):
-        """Deliberately scoped: a generic rewrite serves every website."""
         generic = self.env["website.rewrite"].create(
             {
                 "name": "generic",

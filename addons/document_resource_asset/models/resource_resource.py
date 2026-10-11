@@ -19,7 +19,6 @@ class ResourceResource(models.Model):
 
     @api.depends("kind_id", "company_id")
     def _compute_document_centralized(self) -> None:
-        # one search for the page, not one per asset
         settings = self._document_settings_by_kind()
         for resource in self:
             resource.document_centralized = settings.get(
@@ -31,8 +30,6 @@ class ResourceResource(models.Model):
         return self.company_id or self.env.company
 
     def _get_document_setting(self):
-        """The row naming where this kind of thing files its documents, in its
-        company. Kinds with no row file nothing."""
         self.check_singleton()
         return self._document_settings_by_kind().get(
             (self.kind_id.id, self._documents_company().id),
@@ -40,7 +37,6 @@ class ResourceResource(models.Model):
         )
 
     def _document_settings_by_kind(self) -> dict:
-        """The settings rows of these things, by (kind id, company id)."""
         things = self.filtered("kind_id")
         if not things:
             return {}

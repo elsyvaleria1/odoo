@@ -76,8 +76,6 @@ class TestResBank(TransactionCase):
         self.assertEqual(bank.bic, "MNGDBANK")
 
     def test_a_bank_rewrites_no_partner_its_writer_may_not_write(self):
-        # a bank writes its partner's identity as the server: pointed at a
-        # partner its writer may not write, it would rewrite that partner
         guarded = self.env["res.partner"].create({"name": "Guarded Supplier"})
         self.env["ir.access"].create(
             {

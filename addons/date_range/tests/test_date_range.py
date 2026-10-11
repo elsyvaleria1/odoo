@@ -34,7 +34,6 @@ class DateRangeTest(TransactionCase):
             }
         )
         self.assertTrue(dr.company_id)
-        # you can specify company_id to False
         dr = self.date_range.create(
             {
                 "name": "FS2016_NO_COMPANY",
@@ -93,7 +92,6 @@ class DateRangeTest(TransactionCase):
             )
         message = str(cm.exception.args[0])
         self.assertEqual(message, "FS2016 overlaps FS2015")
-        # check it's possible to overlap if it's allowed by the date range type
         self.type.allow_overlap = True
         dr = self.date_range.create(
             {
@@ -106,12 +104,6 @@ class DateRangeTest(TransactionCase):
         self.assertEqual(dr.name, "FS2016")
 
     def test_overlap_without_intervening_flush(self):
-        """Two overlapping ranges written before any flush are still caught.
-
-        ``active`` is written during the flush that follows the constraint, so
-        a check reading the table sees NULL for a sibling created moments
-        earlier. This used to switch the whole guard off.
-        """
         with self.assertRaises(ValidationError), self.env.cr.savepoint():
             self.date_range.create(
                 {
@@ -132,7 +124,6 @@ class DateRangeTest(TransactionCase):
             self.env.flush_all()
 
     def test_overlap_in_a_single_batch(self):
-        """The same two ranges created in one call are caught too."""
         with self.assertRaises(ValidationError), self.env.cr.savepoint():
             self.date_range.create(
                 [
@@ -153,12 +144,6 @@ class DateRangeTest(TransactionCase):
             self.env.flush_all()
 
     def test_overlap_without_company(self):
-        """Company-less ranges are checked like any other.
-
-        ``company_id = NULL`` is never true in SQL, so comparing with ``=``
-        exempted every company-less range — which is all of them in the shipped
-        data files.
-        """
         self.date_range.create(
             {
                 "name": "NC1",
@@ -182,7 +167,6 @@ class DateRangeTest(TransactionCase):
             self.env.flush_all()
 
     def test_sub_range_may_span_its_parent(self):
-        """Overlap is checked between siblings, not against the parent."""
         parent = self.date_range.create(
             {
                 "name": "P",
@@ -212,7 +196,6 @@ class DateRangeTest(TransactionCase):
         self.env.flush_all()
         self.assertEqual(children.parent_id, parent)
         self.assertTrue(all(children.mapped("is_sub_range")))
-        # siblings still may not overlap each other
         with self.assertRaises(ValidationError), self.env.cr.savepoint():
             self.date_range.create(
                 {
@@ -226,11 +209,6 @@ class DateRangeTest(TransactionCase):
             self.env.flush_all()
 
     def test_parent_cycle_is_rejected(self):
-        """Two ranges cannot become each other's parent.
-
-        ``parent_id`` carries no ``_parent_store``, so Odoo's automatic cycle
-        guard never runs for this model on its own.
-        """
         overlap_type = self.env["date.range.type"].create(
             {"name": "Cycle test type", "company_id": False, "allow_overlap": True}
         )
@@ -278,7 +256,6 @@ class DateRangeTest(TransactionCase):
             parent.split_by("fortnight")
 
     def test_unique_name_survives_translation(self):
-        """A translated name does not create a second identity."""
         self.env["res.lang"]._activate_lang("es_MX")
         first = self.date_range.create(
             {
@@ -302,7 +279,6 @@ class DateRangeTest(TransactionCase):
             self.env.flush_all()
 
     def test_archive_survives_type_restore(self):
-        """Archiving a type archives its ranges; restoring it does not undo that."""
         dr_type = self.env["date.range.type"].create(
             {"name": "Archivable", "allow_overlap": True}
         )
@@ -333,7 +309,6 @@ class DateRangeTest(TransactionCase):
         self.assertFalse(archived.active)
 
     def test_duration_and_business_days(self):
-        # 2044-01-04 is a Monday; through Sunday 2044-01-17 is exactly two weeks
         dr = self.date_range.create(
             {
                 "name": "Two weeks",
@@ -345,7 +320,6 @@ class DateRangeTest(TransactionCase):
         self.assertEqual(dr.duration_days, 14)
         self.assertEqual(dr.business_days, 10)
         self.assertEqual(dr.weekend_days, 4)
-        # a single Saturday
         dr = self.date_range.create(
             {
                 "name": "One Saturday",
@@ -368,8 +342,6 @@ class DateRangeTest(TransactionCase):
             }
         )
         domain = dr.get_domain_for_field("my_field")
-        # Bounds are inclusive and in the natural order — the one core's
-        # `in range` operator recognises, so the editor offers the period back.
         self.assertEqual(
             domain,
             [

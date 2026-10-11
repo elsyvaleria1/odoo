@@ -18,9 +18,8 @@ class ReportSignGreen_Savings_Report(models.AbstractModel):
             for sign_request in sent_or_signed_sign_requests
         )
 
-        # reference https://c.environmentalpaper.org/
         total_kilos_paper = 0.005 * sheets_sum
-        total_kilos_paper *= 0.9  # consider 10% recycled paper
+        total_kilos_paper *= 0.9
 
         water = total_kilos_paper * 88.578
         showers = water / 65
@@ -57,11 +56,9 @@ class ReportSignGreen_Savings_Report(models.AbstractModel):
     def _sheets_from_sign_request(self, sign_request):
         signers = sign_request.request_item_ids.partner_id
         if sign_request.state == "sent":
-            # if sign request is sent, followers didn't receive the request yet. So we only account for signers
             return sum(
                 doc.num_pages for doc in sign_request.template_id.document_ids
             ) * len(signers)
-        # else we count cc_partners and signers
         return sum(doc.num_pages for doc in sign_request.template_id.document_ids) * (
             len(sign_request.cc_partner_ids) + len(signers)
         )

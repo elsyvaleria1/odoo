@@ -53,7 +53,6 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
             [{"name": "Resource %s" % idx, "type": "material"} for idx in range(20)]
         )
 
-        # User resources and employees
         cls.staff_users_resources = cls.env["resource.resource"].create(
             [
                 {
@@ -77,7 +76,6 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
             ]
         )
 
-        # Events and leaves
         cls.test_events = (
             cls.env["calendar.event"]
             .with_context(cls._test_context)
@@ -116,7 +114,7 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
                         "name": "Leave for %s" % user.name,
                         "resource_id": user.resource_ids[0].id,
                     }
-                    for week_idx in range(5)  # one leave every 2 weeks
+                    for week_idx in range(5)
                     for user_idx, user in enumerate(cls.staff_users)
                 ]
             )
@@ -130,7 +128,7 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
                 "appointment_duration": 1,
                 "category": "recurring",
                 "is_auto_assign": True,
-                "is_published": True,  # To give read access without having to be in the staff users
+                "is_published": True,
                 "max_schedule_days": 60,
                 "min_cancellation_hours": 1,
                 "min_schedule_hours": 1,
@@ -159,16 +157,12 @@ class AppointmenHrPerformanceCase(AppointmentHrCommon, AppointmentPerformanceCas
 
 
 @tagged("appointment_performance", "post_install", "-at_install")
-# Query budgets include one batched resource-ledger read. The controlled old
-# read path also exceeded its stale budgets after repairing employee identity.
 class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
     def setUp(self):
         super().setUp()
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
     def test_appointment_initial_values(self):
-        """Check initial values to ease understanding and reproducing tests."""
         self.assertEqual(len(self.test_apt_type.slot_ids), 40)
         self.assertTrue(
             all(employee.resource_id for employee in self.staff_users_employees)
@@ -185,18 +179,17 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
 
     @users("staff_user_bxls")
     def test_get_appointment_slots_anytime(self):
-        """Any time type: mono user, involved work hours check."""
         self.apt_type_bxls_2days.write(
             {
                 "category": "anytime",
                 "max_schedule_days": 90,
                 "slot_ids": [(5, 0)]
-                + [  # while loop in _slots_generate generates the actual slots
+                + [
                     (
                         0,
                         0,
                         {
-                            "end_hour": 0,  # 0 hour of next day
+                            "end_hour": 0,
                             "start_hour": hour * 0.5,
                             "weekday": str(day + 1),
                         },
@@ -211,7 +204,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
         self.env.flush_all()
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
 
-        # with self.profile(collectors=['sql']) as profile:
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=38):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -230,19 +222,18 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 1
 
-        global_slots_enddate = date(2022, 6, 4)  # last day of last week of May
+        global_slots_enddate = date(2022, 6, 4)
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
-                    "weeks_count": 5,  # 27/02 -> 27/03 (02/04)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "April 2022",
@@ -261,18 +252,17 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
 
     @users("staff_user_bxls")
     def test_get_appointment_slots_anytime_short(self):
-        """Any time type: mono user, involved work hours check, short schedule window."""
         self.apt_type_bxls_2days.write(
             {
                 "category": "anytime",
                 "max_schedule_days": 10,
                 "slot_ids": [(5, 0)]
-                + [  # while loop in _slots_generate generates the actual slots
+                + [
                     (
                         0,
                         0,
                         {
-                            "end_hour": 0,  # 0 hour of next day
+                            "end_hour": 0,
                             "start_hour": hour * 0.5,
                             "weekday": str(day + 1),
                         },
@@ -287,7 +277,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
         self.env.flush_all()
         apt_type = self.apt_type_bxls_2days.with_user(self.env.user)
 
-        # with self.profile(collectors=['sql']) as profile:
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=38):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -306,14 +295,13 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 1
 
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
             ],
             {
@@ -325,7 +313,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
     @warmup
     @users("staff_user_bxls")
     def test_get_appointment_slots_custom(self):
-        """Custom type: mono user, unique slots, without work hours."""
         apt_type_custom_bxls = (
             self.env["appointment.type"]
             .sudo()
@@ -350,7 +337,7 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
                                 "start_datetime": self.reference_monday
                                 + timedelta(days=day, hours=hour),
                                 "slot_type": "unique",
-                                "weekday": "1",  # not used actually
+                                "weekday": "1",
                             },
                         )
                         for day in range(30)
@@ -364,7 +351,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
         self.flush_tracking()
         apt_type_custom_bxls = apt_type_custom_bxls.with_user(self.env.user)
 
-        # with self.profile(collectors=['sql']) as profile:
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=7):
             t0 = time.time()
             res = apt_type_custom_bxls._get_appointment_slots(
@@ -383,19 +369,18 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 0
 
-        global_slots_enddate = date(2022, 4, 2)  # last day of last week of March
+        global_slots_enddate = date(2022, 4, 2)
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
-                    "weeks_count": 5,  # 27/02 -> 27/03 (02/04)
+                    "weeks_count": 5,
                 },
             ],
             {
@@ -407,7 +392,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
     @warmup
     @users("staff_user_bxls")
     def test_get_appointment_slots_custom_whours(self):
-        """Custom type: mono user, unique slots, work hours check."""
         apt_type_custom_bxls = (
             self.env["appointment.type"]
             .sudo()
@@ -432,7 +416,7 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
                                 "start_datetime": self.reference_monday
                                 + timedelta(days=day, hours=hour),
                                 "slot_type": "unique",
-                                "weekday": "1",  # not used actually
+                                "weekday": "1",
                             },
                         )
                         for day in range(30)
@@ -446,7 +430,6 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
         self.flush_tracking()
         apt_type_custom_bxls = apt_type_custom_bxls.with_user(self.env.user)
 
-        # with self.profile(collectors=['sql']) as profile:
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=7):
             t0 = time.time()
             res = apt_type_custom_bxls._get_appointment_slots(
@@ -465,19 +448,18 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 0
 
-        global_slots_enddate = date(2022, 4, 2)  # last day of last week of March
+        global_slots_enddate = date(2022, 4, 2)
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
-                    "weeks_count": 5,  # 27/02 -> 27/03 (02/04)
+                    "weeks_count": 5,
                 },
             ],
             {
@@ -488,18 +470,10 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
 
     @users("staff_user_bxls")
     def test_get_appointment_slots_website(self):
-        """Website type: multi users (choose first available), without working
-        hours."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         self.test_apt_type.write({"work_hours_activated": False})
         apt_type = self.test_apt_type.with_user(self.env.user)
 
-        # +1 compared to standard runbot for single app
-        # fork: measures 46 on a full-module run where upstream expects
-        # 45 (isolated runs measure less — cache-state dependent). The +1
-        # is a pending fork regression on the website slots path (tracked
-        # under task t24777), guarded at the measured value so any FURTHER
-        # drift still fails. Restore 45 once the regression is fixed.
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=48):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -518,23 +492,22 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 0
 
-        global_slots_enddate = date(2022, 4, 30)  # last day of last week of April
+        global_slots_enddate = date(2022, 4, 30)
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
-                    "weeks_count": 5,  # 27/02 -> 27/03 (02/04)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "April 2022",
-                    "weeks_count": 5,  # 27/03 -> 24/04 (30/04)
+                    "weeks_count": 5,
                 },
             ],
             {
@@ -548,12 +521,9 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
 
     @users("staff_user_bxls")
     def test_get_appointment_slots_website_whours(self):
-        """Website type: multi users (choose first available), with working hours
-        involved."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         apt_type = self.test_apt_type.with_user(self.env.user)
 
-        # with self.profile(collectors=['sql']) as profile:
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=61):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -572,23 +542,22 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 1
 
-        global_slots_enddate = date(2022, 4, 30)  # last day of last week of April
+        global_slots_enddate = date(2022, 4, 30)
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "March 2022",
-                    "weeks_count": 5,  # 27/02 -> 27/03 (02/04)
+                    "weeks_count": 5,
                 },
                 {
                     "name_formated": "April 2022",
-                    "weeks_count": 5,  # 27/03 -> 24/04 (30/04)
+                    "weeks_count": 5,
                 },
             ],
             {
@@ -602,20 +571,11 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
 
     @users("staff_user_bxls")
     def test_get_appointment_slots_website_whours_short(self):
-        """Website type: multi users (choose first available), with working hours
-        involved, short schedule window."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         self.test_apt_type.write({"max_schedule_days": 10})
         self.env.flush_all()
         apt_type = self.test_apt_type.with_user(self.env.user)
 
-        # +1 compared to standard runbot for single app
-        # fork: measures 57 on a clean install where upstream expects 54.
-        # The +3 reproduces deterministically (2026-08-05, base
-        # 19.0-marin-dev); it is a pending fork regression on the website
-        # slots path (tracked under task t24777), guarded here at the
-        # measured value so any FURTHER drift still fails. Restore 54
-        # once the regression is fixed.
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=59):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -634,14 +594,13 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 1
 
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -653,14 +612,11 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
     @warmup
     @users("staff_user_bxls")
     def test_get_appointment_slots_website_whours_short_warmup(self):
-        """Website type: multi users (choose first available), with working hours
-        involved, short schedule window, warmed-up caches."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         self.test_apt_type.write({"max_schedule_days": 10})
         self.env.flush_all()
         apt_type = self.test_apt_type.with_user(self.env.user)
 
-        # +1 compared to standard runbot for single app
         with self.mockAppointmentCalls(), self.assertQueryCount(staff_user_bxls=32):
             t0 = time.time()
             res = apt_type._get_appointment_slots(
@@ -679,14 +635,13 @@ class AppointmentPerformanceTest(AppointmenHrPerformanceCase):
             self._mock_partner_calendar_check.call_count,
             self._mock_cal_work_intervals.call_count,
         )
-        # Reference method counts: 1 - 0 - 0 - 1
 
         self.assertSlots(
             res,
             [
                 {
                     "name_formated": "February 2022",
-                    "weeks_count": 5,  # 30/01 -> 27/02 (05/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -703,33 +658,26 @@ class OnlineAppointmentPerformance(
     def setUp(self):
         super().setUp()
 
-        # When website_sale is installed, rendering the web page
-        # fetches the user's current sales order leading to a loading
-        # of available pricelists for that user.
-        # A fallback mechanism is in place in pricelists (see `_get_partner_pricelist_multi`)
-        # causing the queryCount to go up when a first pricelist is not found.
         if "product.pricelist" in self.env:
             self.env["product.pricelist"].search([]).write({"active": False})
 
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
     @warmup
     def test_appointment_type_page_anytime(self):
-        """Any time type: mono user, involved any time check."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
 
         self.test_apt_type.write(
             {
                 "category": "anytime",
                 "max_schedule_days": 90,
                 "slot_ids": [(5, 0)]
-                + [  # while loop in _slots_generate generates the actual slots
+                + [
                     (
                         0,
                         0,
                         {
-                            "end_hour": 0,  # 0 hour of next day
+                            "end_hour": 0,
                             "start_hour": hour * 0.5,
                             "weekday": str(day + 1),
                         },
@@ -745,7 +693,7 @@ class OnlineAppointmentPerformance(
         t0 = time.time()
         with freeze_time(self.reference_now):
             self.authenticate("staff_user_bxls", "staff_user_bxls")
-            with self.assertQueryCount(default=55):  # apt_hr 42/ +1 for no-demo
+            with self.assertQueryCount(default=55):
                 self._test_url_open("/appointment/%i" % self.test_apt_type.id)
         t1 = time.time()
 
@@ -755,14 +703,12 @@ class OnlineAppointmentPerformance(
 
     @warmup
     def test_appointment_type_page_website_whours_user(self):
-        """Website type: multi users (choose first available), with working hours
-        involved."""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
 
         t0 = time.time()
         with freeze_time(self.reference_now):
             self.authenticate("staff_user_bxls", "staff_user_bxls")
-            with self.assertQueryCount(default=53):  # apt_hr 40 / +1 for no-demo
+            with self.assertQueryCount(default=53):
                 self._test_url_open("/appointment/%i" % self.test_apt_type.id)
         t1 = time.time()
 

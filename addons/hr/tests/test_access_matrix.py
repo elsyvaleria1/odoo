@@ -321,8 +321,6 @@ class TestHrAccessMatrix(AccessMatrixCase):
             {"name": "matrix calendar", "company_id": a.id}
         )
         if not a.country_id:
-            # the main company has no country until account sets one, and a
-            # reason defaulting to that empty country would be every company's
             a.country_id = env.ref("base.us")
         return {
             "nationality_other": env["resource.nationality"].create(

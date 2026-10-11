@@ -15,8 +15,6 @@ from odoo.addons.voice.tools.utterance import (
 
 MAX_COMMANDS_PER_MINUTE = 30
 
-# per process: a burst from one user holds HTTP threads, and one worker's
-# count is enough to stop that burst
 _recent_commands: defaultdict[int, deque[float]] = defaultdict(deque)
 
 

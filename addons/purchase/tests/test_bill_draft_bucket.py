@@ -80,8 +80,6 @@ class TestBillDraftBucket(TestPurchaseToInvoiceCommon):
         self.assertEqual(self.order.invoice_state, "done")
 
     def test_a_second_bill_carries_nothing_of_a_line_a_draft_claims(self):
-        # a purchase order always yields a bill to fill in by hand; what the
-        # draft claims is what keeps the second one empty
         self._bill()
 
         second = self.order.create_invoice()

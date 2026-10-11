@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 from google.protobuf.message import DecodeError
 
 import odoo
-from odoo.libs._vendor.embedded_sass_pb2 import (  # type: ignore[attr-defined]
+from odoo.libs._vendor.embedded_sass_pb2 import (
     COMPRESSED,
     CSS,
     EXPANDED,
@@ -119,9 +119,7 @@ _sass_binary: SassBinary | None = None
 
 
 def _get_sass_binary() -> SassBinary | None:
-    # each call probes every candidate with a subprocess (~240 ms); an absent
-    # binary is not memoised, so an `npm install` is picked up without a restart
-    global _sass_binary  # noqa: PLW0603  process-wide memo of a filesystem probe
+    global _sass_binary
     if _sass_binary is None:
         _sass_binary = _find_sass_binary()
     return _sass_binary
@@ -174,7 +172,6 @@ class SassEmbeddedCompiler:
                 "run `npm install` in the Odoo root (declared in package.json) "
                 "or install a `sass` binary on PATH."
             )
-        # a pure-JS sass would be spawned only to refuse, ~0.25 s per compile
         if not binary.embedded:
             raise SassProtocolError(f"{binary.path} has no embedded mode")
         sass_path = binary.path
@@ -486,8 +483,6 @@ class SassEmbeddedCompiler:
             try:
                 outbound.ParseFromString(recv_bytes)
             except DecodeError as exc:
-                # a framed packet that is not a protobuf message is the
-                # transport lying, not the stylesheet; name it as such
                 raise SassProtocolError(
                     f"sass --embedded sent an undecodable packet: {exc}"
                 ) from exc
@@ -576,10 +571,6 @@ class OdooSassImporter(SassImporter):
         from odoo.tools.files import file_path
 
         if url.startswith("file:"):
-            # a relative load: sass has already resolved it against the
-            # stylesheet that asked, and it must be found there or nowhere --
-            # answering None sends sass on to the bare name, which the load
-            # paths then find in Bootstrap first
             return _first_stylesheet(_file_url_to_path(url))
 
         *parent_parts, filename = unquote(url).replace("\\", "/").split("/")
@@ -615,7 +606,7 @@ _sass_lock = threading.Lock()
 
 
 def get_sass_compiler() -> SassEmbeddedCompiler:
-    global _sass_compiler  # noqa: PLW0603  the dart-sass subprocess is a process singleton
+    global _sass_compiler
     if _sass_compiler is None:
         with _sass_lock:
             if _sass_compiler is None:
@@ -626,11 +617,9 @@ def get_sass_compiler() -> SassEmbeddedCompiler:
 
 
 def close_sass_compiler() -> None:
-    global _sass_compiler  # noqa: PLW0603  the dart-sass subprocess is a process singleton
+    global _sass_compiler
     with _sass_lock:
         if _sass_compiler is not None:
-            # a compile running on another thread owns the process until it
-            # returns; closing under it would abort that thread's stylesheet
             with _sass_compiler._lock:
                 _sass_compiler.close()
             _sass_compiler = None
@@ -638,7 +627,7 @@ def close_sass_compiler() -> None:
 
 
 def _reset_after_fork() -> None:
-    global _sass_compiler, _sass_lock  # noqa: PLW0603  a forked child must not drive the parent's dart-sass
+    global _sass_compiler, _sass_lock
     compiler, _sass_compiler = _sass_compiler, None
     _sass_lock = threading.Lock()
     if compiler is not None:

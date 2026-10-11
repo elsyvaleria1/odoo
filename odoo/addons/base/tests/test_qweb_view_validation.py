@@ -46,8 +46,6 @@ class TestQwebViewCompiles(common.TransactionCase):
         self.assertIn("* 2", view.arch)
 
     def test_a_source_write_from_a_translation_aware_context_compiles(self):
-        # website.new_page stores a copied page's source with lang=None from a
-        # request whose context says edit_translations=False
         view = self._create_template(
             "base.qweb_validation_source", '<t t-name="x"><p>before</p></t>'
         ).with_context(edit_translations=False)

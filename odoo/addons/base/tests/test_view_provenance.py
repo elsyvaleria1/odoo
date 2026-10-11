@@ -60,7 +60,6 @@ class TestViewProvenance(TransactionCase):
                 self.assertEqual(provenance[node_id]["view_id"], view_id, node_id)
         self.assertEqual(provenance["field:website"]["kind"], "field")
         self.assertNotIn(self.editor.id, {p["view_id"] for p in provenance.values()})
-        # the edit itself landed
         self.assertIn(
             'readonly="1"',
             self.primary.with_context(
@@ -80,8 +79,6 @@ class TestViewProvenance(TransactionCase):
         )
 
     def test_provenance_survives_a_spec_the_ids_cannot_name(self):
-        # `$0` in running text is the XML combine's to apply; the nodes the
-        # earlier overlay put in are still its afterwards
         View = self.env["ir.ui.view"]
         wrapper = View.create(
             {

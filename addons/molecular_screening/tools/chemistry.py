@@ -20,15 +20,7 @@ SMILES_HASH_METHOD = "smiles-hash-v1"
 
 
 def _structural_hash(atoms, bonds):
-    """Hash the connectivity of a structure, ignoring coordinates and order.
-
-    :param list[dict] atoms: atoms as returned by ``parse_molblock``
-    :param list[dict] bonds: bonds as returned by ``parse_molblock``
-    :rtype: str
-    """
     labels = {atom["idx"]: (atom["element"], atom["formal_charge"]) for atom in atoms}
-    # Sorting by chemical label instead of by index keeps the hash stable when
-    # the same molecule is written with its atoms in another order.
     atom_part = sorted(f"{element}{charge:+d}" for element, charge in labels.values())
     bond_part = sorted(
         "{}-{}:{}".format(
@@ -47,15 +39,6 @@ def _structural_hash(atoms, bonds):
 
 
 def compute_identity(molblock=None, smiles=None, atoms=None, bonds=None):
-    """Derive the identity of a compound from whatever representation is at hand.
-
-    :param str molblock: V2000 connection table, preferred input
-    :param str smiles: SMILES string, used when no molblock is available
-    :param list[dict] atoms: parsed atoms, to avoid parsing the molblock twice
-    :param list[dict] bonds: parsed bonds
-    :return: ``inchikey``, ``smiles_canon``, ``identity_key`` and ``method``
-    :rtype: dict
-    """
     if Chem is not None:
         mol = None
         if molblock:
@@ -64,10 +47,6 @@ def compute_identity(molblock=None, smiles=None, atoms=None, bonds=None):
             mol = Chem.MolFromSmiles(smiles)
         if mol is not None:
             inchikey = Chem.MolToInchiKey(mol) or None
-            # The first block of an InChIKey is the skeleton: it ignores the
-            # stereo layer, so one molecule drawn with and without its double
-            # bond geometry lands on a single compound, the way the structural
-            # hash does. The full key stays on the record for exactness.
             identity_key = inchikey[:14] if inchikey else None
             return {
                 "inchikey": inchikey,
@@ -87,8 +66,6 @@ def compute_identity(molblock=None, smiles=None, atoms=None, bonds=None):
         }
     if not smiles:
         raise ValueError("A molblock or a SMILES string is required.")
-    # No connection table and no toolkit: the SMILES text is all there is, so
-    # two spellings of one molecule will not collapse into a single compound.
     digest = hashlib.sha1(smiles.encode()).hexdigest()
     return {
         "inchikey": None,

@@ -21,7 +21,6 @@ from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.const import REPORT_REASONS_MAPPING, SENSITIVE_KEYS
 from odoo.addons.payment.logging import get_payment_logger
 
-# Pass the possibly empty set of sensitive keys to the logger in case a provider module extends it.
 _logger = get_payment_logger(__name__, sensitive_keys=SENSITIVE_KEYS)
 _debug = DebugLog(__name__)
 
@@ -52,7 +51,6 @@ class PaymentProvider(models.Model):
             field, name
         )
 
-    # Configuration fields
     name = fields.Char(
         translate=True,
         required=True,
@@ -91,7 +89,6 @@ class PaymentProvider(models.Model):
         "are only visible on manage forms.",
     )
     company_id = fields.Many2one(
-        # Indexed to speed-up ORM searches (from ir.access or others)
         comodel_name="res.company",
         default=lambda self: self.env.company.id,
         index=True,
@@ -151,7 +148,6 @@ class PaymentProvider(models.Model):
         help="The template rendering the express payment methods' form.",
     )
 
-    # Availability fields
     available_country_ids = fields.Many2many(
         comodel_name="res.country",
         relation="payment_country_rel",
@@ -180,7 +176,6 @@ class PaymentProvider(models.Model):
         "to make it available for any payment amount.",
     )
 
-    # Message fields
     pre_msg = fields.Html(
         string="Help Message",
         translate=True,
@@ -213,7 +208,6 @@ class PaymentProvider(models.Model):
         help="The message displayed if the order is cancelled during the payment process",
     )
 
-    # Feature support fields
     support_tokenization = fields.Boolean(
         string="Tokenization",
         compute="_compute_feature_support_fields",
@@ -238,7 +232,6 @@ class PaymentProvider(models.Model):
         help="Refund is a feature allowing to refund customers directly from the payment in Odoo.",
     )
 
-    # Kanban view fields
     image_128 = fields.Image(
         string="Image",
         max_width=128,
@@ -250,7 +243,6 @@ class PaymentProvider(models.Model):
         help="The color of the card in kanban view",
     )
 
-    # Module-related fields
     module_id = fields.Many2one(
         comodel_name="ir.module.module",
         string="Corresponding Module",
@@ -264,16 +256,9 @@ class PaymentProvider(models.Model):
         string="Odoo Enterprise Module",
     )
 
-    # === COMPUTE METHODS === #
 
     @api.depends("code")
     def _compute_available_currency_ids(self) -> None:
-        """Compute the available currencies based on their support by the providers.
-
-        If the provider does not filter out any currency, the field is left empty for UX reasons.
-
-        :return: None
-        """
         all_currencies = (
             self.env["res.currency"].with_context(active_test=False).search([])
         )
@@ -281,64 +266,29 @@ class PaymentProvider(models.Model):
             supported_currencies = provider._get_supported_currencies()
             if (
                 supported_currencies < all_currencies
-            ):  # Some currencies have been filtered out.
+            ):
                 provider.available_currency_ids = supported_currencies
             else:
                 provider.available_currency_ids = None
 
     def _get_supported_currencies(self):
-        """Return the supported currencies for the payment provider.
-
-        By default, all currencies are considered supported, including the inactive ones. For a
-        provider to filter out specific currencies, it must override this method and return the
-        subset of supported currencies.
-
-        Note: `self.check_singleton()`
-
-        :return: The supported currencies.
-        :rtype: res.currency
-        """
         self.check_singleton()
         return self.env["res.currency"].with_context(active_test=False).search([])
 
     @api.depends("state", "module_state")
     def _compute_color(self) -> None:
-        """Update the color of the kanban card based on the state of the provider.
-
-        :return: None
-        """
         for provider in self:
             if provider.module_id and provider.module_state != "installed":
-                provider.color = 4  # blue
+                provider.color = 4
             elif provider.state == "disabled":
-                provider.color = 3  # yellow
+                provider.color = 3
             elif provider.state == "test":
-                provider.color = 2  # orange
+                provider.color = 2
             elif provider.state == "enabled":
-                provider.color = 7  # green
+                provider.color = 7
 
     @api.depends("code")
     def _compute_feature_support_fields(self) -> None:
-        """Compute the feature support fields based on the provider.
-
-        Feature support fields are used to specify which additional features are supported by a
-        given provider. These fields are as follows:
-
-        - `support_express_checkout`: Whether the "express checkout" feature is supported. `False`
-          by default.
-        - `support_manual_capture`: Which type of the "manual capture" feature is supported:
-          `None`, `'full_only'`, or `'partial'`. `None` by default.
-        - `support_refund`: Which type of the "refunds" feature is supported: `'none'`,
-          `'full_only'`, or `'partial'`. `'none'` by default.
-        - `support_tokenization`: Whether the "tokenization feature" is supported. `False` by
-          default.
-
-        For a provider to specify that it supports additional features, it must override this method
-        and set the related feature support fields to the desired value on the appropriate
-        `payment.provider` records.
-
-        :return: None
-        """
         self.update(
             {
                 "support_express_checkout": None,
@@ -348,26 +298,13 @@ class PaymentProvider(models.Model):
             }
         )
 
-    # === ONCHANGE METHODS === #
 
     @api.onchange("state")
     def _onchange_state_switch_is_published(self) -> None:
-        """Automatically publish or unpublish the provider depending on its state.
-
-        :return: None
-        """
         self.is_published = self.state == "enabled"
 
     @api.onchange("state")
     def _onchange_state_warn_before_disabling_tokens(self) -> dict | None:
-        """Display a warning about the consequences of disabling a provider.
-
-        Let the user know that tokens related to a provider get archived if it is disabled or if its
-        state is changed from 'test' to 'enabled', and vice versa.
-
-        :return: A client action with the warning message, if any.
-        :rtype: dict | None
-        """
         if (
             self._origin.state in ("test", "enabled")
             and self._origin.state != self.state
@@ -390,11 +327,6 @@ class PaymentProvider(models.Model):
 
     @api.onchange("company_id")
     def _onchange_company_block_if_existing_transactions(self) -> None:
-        """Raise a user error when the company is changed and linked transactions exist.
-
-        :return: None
-        :raise UserError: If transactions are linked to the provider.
-        """
         if self._origin.company_id != self.company_id and self.env[
             "payment.transaction"
         ].search_count([("provider_id", "=", self._origin.id)], limit=1):
@@ -404,7 +336,6 @@ class PaymentProvider(models.Model):
                 )
             )
 
-    # === CONSTRAINT METHODS === #
 
     def _check_available_currency_ids(self) -> None:
         pass
@@ -432,7 +363,6 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-    # === CRUD METHODS === #
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -443,17 +373,16 @@ class PaymentProvider(models.Model):
         return providers
 
     def write(self, vals):
-        # Handle provider state changes.
         deactivated_providers = self.env["payment.provider"]
         activated_providers = self.env["payment.provider"]
         if "state" in vals:
             state_changed_providers = self.filtered(
                 lambda p: p.state not in ("disabled", vals["state"])
-            )  # Don't handle providers being enabled or whose state is not updated.
+            )
             state_changed_providers._archive_linked_tokens()
             if vals["state"] == "disabled":
                 deactivated_providers = state_changed_providers
-            else:  # 'enabled' or 'test'
+            else:
                 activated_providers = self.filtered(lambda p: p.state == "disabled")
 
         result = super().write(vals)
@@ -467,17 +396,6 @@ class PaymentProvider(models.Model):
         return result
 
     def _check_required_if_provider(self) -> None:
-        """Check that provider-specific required fields have been filled.
-
-        The fields that have the `required_if_provider='<provider_code>'` attribute are made
-        required for all `payment.provider` records with the `code` field equal to `<provider_code>`
-        and with the `state` field equal to `'enabled'` or `'test'`.
-
-        Provider-specific views should make the form fields required under the same conditions.
-
-        :return: None
-        :raise ValidationError: If a provider-specific required field is empty.
-        """
         field_names = []
         enabled_providers = self.filtered(lambda p: p.state in ["enabled", "test"])
         for field_name, field in self._fields.items():
@@ -498,12 +416,6 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _toggle_post_processing_cron(self) -> None:
-        """Enable the post-processing cron if some providers are enabled; disable it otherwise.
-
-        This allows for saving resources on the cron's wake-up overhead when it has nothing to do.
-
-        :return: None
-        """
         post_processing_cron = self.env.ref(
             "payment.cron_post_process_payment_tx", raise_if_not_found=False
         )
@@ -514,30 +426,17 @@ class PaymentProvider(models.Model):
             post_processing_cron.active = any_active_provider
 
     def _archive_linked_tokens(self) -> None:
-        """Archive all the payment tokens linked to the providers.
-
-        :return: None
-        """
         self.env["payment.token"].search([("provider_id", "in", self.ids)]).write(
             {"active": False}
         )
 
     def _deactivate_unsupported_payment_methods(self) -> None:
-        """Deactivate payment methods linked to only disabled providers.
-
-        :return: None
-        """
         unsupported_pms = self.payment_method_ids.filtered(
             lambda pm: all(p.state == "disabled" for p in pm.provider_ids)
         )
         (unsupported_pms + unsupported_pms.brand_ids).active = False
 
     def _activate_default_pms(self) -> None:
-        """Activate the default payment methods of the provider.
-
-        :return: None
-        """
-        # Filter out pms that are not compatible with manual capture if any provider requires it.
         manual_capture_providers = self.env["payment.provider"].search(
             [("state", "in", ["enabled", "test"]), ("capture_manually", "=", True)]
         )
@@ -549,7 +448,6 @@ class PaymentProvider(models.Model):
                 or pm.support_manual_capture != "none"
             )
         )
-        # Activate the compatible PMs and brands that are listed as default methods.
         default_pm_codes = {
             code for p in self for code in p._get_default_payment_method_codes()
         }
@@ -559,19 +457,11 @@ class PaymentProvider(models.Model):
         pms_to_activate.active = True
 
     def _get_default_payment_method_codes(self):
-        """Return the default payment methods for this provider.
-
-        Note: `self.check_singleton()`
-
-        :return: The default payment method codes.
-        :rtype: set
-        """
         self.check_singleton()
         return set()
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_master_data(self) -> None:
-        """Prevent the deletion of the payment provider if it has an xmlid."""
         external_ids = self.get_external_id()
         for provider in self:
             external_id = external_ids[provider.id]
@@ -584,16 +474,8 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-    # === ACTION METHODS === #
 
     def button_immediate_install(self):
-        """Install the module and reload the page.
-
-        Note: `self.check_singleton()`
-
-        :return: The action to reload the page.
-        :rtype: dict
-        """
         if self.module_id and self.module_state != "installed":
             self.module_id.button_immediate_install()
             return {
@@ -603,15 +485,6 @@ class PaymentProvider(models.Model):
         return None
 
     def action_start_onboarding(self, menu_id=None):
-        """Start the provider-specific onboarding.
-
-        Providers implementing a specific onboarding must override this method and return the action
-        to run the onboarding.
-
-        :param int menu_id: The menu from which the onboarding is started, as an `ir.ui.menu` id.
-        :return: The onboarding action.
-        :rtype: dict
-        """
         return {}
 
     def _issue_onboarding_state(self) -> str:
@@ -627,10 +500,6 @@ class PaymentProvider(models.Model):
 
     @api.model
     def _consume_onboarding_state(self, code, state, query_provider_id=None):
-        """The `code` provider, under the caller's own rights, that the session
-        started the onboarding of ``state`` for; AccessError otherwise. A
-        provider id the proxy echoes in the query is no authority: it only
-        has to agree with the state's."""
         claims = consume_session_state(
             self.env, ONBOARDING_STATE_SCOPE, request.session, state
         )
@@ -665,13 +534,6 @@ class PaymentProvider(models.Model):
         return provider
 
     def action_reset_credentials(self):
-        """Reset the credentials of the provider, disable it, and unpublish it.
-
-        Note: self.check_singleton()
-
-        :return: The result of the write operation.
-        :rtype: bool
-        """
         self.check_singleton()
 
         return self.write(
@@ -683,23 +545,9 @@ class PaymentProvider(models.Model):
         )
 
     def _prepare_credential_reset_vals(self) -> dict:
-        """Return the values to reset the credentials of the provider.
-
-        Providers can override this to supply their own credential fields to reset.
-
-        Note: self.check_singleton() from :meth: `action_reset_credentials`
-
-        :return: The values to reset the credentials of the provider.
-        :rtype: dict
-        """
         return {}
 
     def action_toggle_is_published(self) -> None:
-        """Toggle the field `is_published`.
-
-        :return: None
-        :raise UserError: If the provider is disabled and not published yet.
-        """
         if self.state == "disabled" and not self.is_published:
             raise UserError(self.env._("You cannot publish a disabled provider."))
         self.is_published = not self.is_published
@@ -721,7 +569,6 @@ class PaymentProvider(models.Model):
             "context": {"active_test": False, "create": False},
         }
 
-    # === BUSINESS METHODS === #
 
     @api.model
     def _get_compatible_providers(
@@ -736,27 +583,6 @@ class PaymentProvider(models.Model):
         report=None,
         **kwargs,
     ):
-        """Search and return the providers matching the compatibility criteria.
-
-        The compatibility criteria are that providers must: not be disabled; be in the company that
-        is provided; support the country of the partner if it exists; be compatible with the
-        currency if provided. If provided, the optional keyword arguments further refine the
-        criteria.
-
-        :param int company_id: The company to which providers must belong, as a `res.company` id.
-        :param int partner_id: The partner making the payment, as a `res.partner` id.
-        :param float amount: The amount to pay. `0` for validation transactions.
-        :param int currency_id: The payment currency, if known beforehand, as a `res.currency` id.
-        :param bool force_tokenization: Whether only providers allowing tokenization can be matched.
-        :param bool is_express_checkout: Whether the payment is made through express checkout.
-        :param bool is_validation: Whether the operation is a validation.
-        :param dict report: The report in which each provider's availability status and reason must
-                            be logged.
-        :param dict kwargs: Optional data. This parameter is not used here.
-        :return: The compatible providers.
-        :rtype: payment.provider
-        """
-        # Search compatible providers with the base domain.
         providers = self.env["payment.provider"].search(
             [
                 *self.env["payment.provider"]._check_company_domain(company_id),
@@ -765,15 +591,13 @@ class PaymentProvider(models.Model):
         )
         payment_utils.add_to_report(report, providers)
 
-        # Filter by `is_published` state.
         if not self.env.user._is_internal():
             providers = providers.filtered("is_published")
 
-        # Handle the partner country; allow all countries if the list is empty.
         partner = self.env["res.partner"].browse(partner_id)
         if (
             partner.country_id
-        ):  # The partner country must either not be set or be supported.
+        ):
             unfiltered_providers = providers
             providers = providers.filtered(
                 lambda p: (
@@ -788,11 +612,10 @@ class PaymentProvider(models.Model):
                 reason=REPORT_REASONS_MAPPING["incompatible_country"],
             )
 
-        # Handle the maximum amount.
         currency = self.env["res.currency"].browse(currency_id).exists()
         if (
             not is_validation and currency
-        ):  # The currency is required to convert the amount.
+        ):
             company = self.env["res.company"].browse(company_id).exists()
             date = fields.Date.context_today(self)
             converted_amount = currency._convert(
@@ -813,7 +636,6 @@ class PaymentProvider(models.Model):
                 reason=REPORT_REASONS_MAPPING["exceed_max_amount"],
             )
 
-        # Handle the available currencies; allow all currencies if the list is empty.
         if currency:
             unfiltered_providers = providers
             providers = providers.filtered(
@@ -829,7 +651,6 @@ class PaymentProvider(models.Model):
                 reason=REPORT_REASONS_MAPPING["incompatible_currency"],
             )
 
-        # Handle tokenization support requirements.
         if force_tokenization or self._is_tokenization_required(**kwargs):
             unfiltered_providers = providers
             providers = providers.filtered("allow_tokenization")
@@ -840,7 +661,6 @@ class PaymentProvider(models.Model):
                 reason=REPORT_REASONS_MAPPING["tokenization_not_supported"],
             )
 
-        # Handle express checkout.
         if is_express_checkout:
             unfiltered_providers = providers
             providers = providers.filtered("allow_express_checkout")
@@ -854,63 +674,18 @@ class PaymentProvider(models.Model):
         return providers
 
     def _is_tokenization_required(self, **kwargs) -> bool:
-        """Return whether tokenizing the transaction is required given its context.
-
-        For a module to make the tokenization required based on the payment context, it must
-        override this method and return whether it is required.
-
-        :param dict kwargs: The payment context. This parameter is not used here.
-        :return: Whether tokenizing the transaction is required.
-        :rtype: bool
-        """
         return False
 
     def _is_inline_form_required(self, is_validation=False) -> bool:
-        """Return whether the inline payment form should be instantiated.
-
-        For a provider to handle both direct payments and payments with redirection, it must
-        override this method and return whether the inline payment form should be instantiated (i.e.
-        if the payment should be direct) based on the operation (online payment or validation).
-
-        :param bool is_validation: Whether the operation is a validation.
-        :return: Whether the inline form should be instantiated.
-        :rtype: bool
-        """
         return True
 
     def _get_validation_amount(self):
-        """Return the amount to use for validation operations.
-
-        For a provider to support tokenization, it must override this method and return the
-        validation amount. If it is `0`, it is not necessary to create the override.
-
-        Note: `self.check_singleton()`
-
-        :return: The validation amount.
-        :rtype: float
-        """
         self.check_singleton()
         return 0.0
 
     def _get_validation_currency(self):
-        """Return the currency to use for validation operations.
-
-        The validation currency must be supported by both the provider and the payment method. If
-        the payment method is not passed, only the provider's supported currencies are considered.
-        If no suitable currency is found, the provider's company's currency is returned instead.
-
-        For a provider to support tokenization and specify a different validation currency, it must
-        override this method and return the appropriate validation currency.
-
-        Note: `self.check_singleton()`
-
-        :return: The validation currency.
-        :rtype: recordset of `res.currency`
-        """
         self.check_singleton()
 
-        # Find the validation currency at the intersection of the provider's and payment method's
-        # supported currencies. An empty recordset means that all currencies are supported.
         provider_currencies = self.available_currency_ids
         pm = self.env.context.get("validation_pm")
         pm_currencies = (
@@ -925,26 +700,14 @@ class PaymentProvider(models.Model):
             validation_currency = pm_currencies[:1]
         if (
             not validation_currency
-        ):  # All currencies are supported, or no suitable one was found.
+        ):
             validation_currency = self.company_id.currency_id
         return validation_currency
 
     def _get_redirect_form_view(self, is_validation=False):
-        """Return the view of the template used to render the redirect form.
-
-        For a provider to return a different view depending on whether the operation is a
-        validation, it must override this method and return the appropriate view.
-
-        Note: `self.check_singleton()`
-
-        :param bool is_validation: Whether the operation is a validation.
-        :return: The view of the redirect form template.
-        :rtype: record of `ir.ui.view`
-        """
         self.check_singleton()
         return self.redirect_form_view_id
 
-    # === REQUEST HELPERS === #
 
     def _integration_connection_service(self) -> tuple[str, str, str]:
         self.check_singleton()
@@ -954,8 +717,6 @@ class PaymentProvider(models.Model):
         return f"payment_{self.code}", self.env._("Payments: %s", label), "payment"
 
     def _is_inbound_request_authentic(self, headers, body) -> bool:
-        """Whether the notification that resolved this provider is its own --
-        each provider decides how."""
         self.check_singleton()
         return False
 
@@ -971,32 +732,9 @@ class PaymentProvider(models.Model):
         timeout=10,
         **kwargs,
     ):
-        """Send a request to the API.
-
-        Whenever possible, calls to this method should be wrapped in a try-except block to prevent
-        the `ValidationError` that is raised when the request fails from bubbling up. Exceptions to
-        this rule include calls from a controller that must return the error message to the client.
-
-        Note: `self.check_singleton()`
-
-        :param str method: The HTTP method of the request.
-        :param str endpoint: The endpoint of the API to reach with the request.
-        :param dict params: The query string parameters of the request.
-        :param dict|str data: The body of the request.
-        :param dict json: The JSON-formatted body of the request.
-        :param str reference: The reference of the transaction, if any.
-        :param float timeout: The maximum time to wait for the request to complete, in seconds.
-        :param dict kwargs: Provider-specific data forwarded to the specialized helper methods.
-        :return: The formatted content of the response.
-        :rtype: dict|str
-        :raise ValidationError: If an HTTP error occurs.
-        """
         self.check_singleton()
 
-        # Build the request.
         url = self._prepare_request_url(endpoint, **kwargs)
-        # One serialization is both signed and sent: a provider signing the
-        # body signs the bytes on the wire, not a second rendering of the dict.
         body = json_dumps_bytes(json) if json is not None else data
         headers = self._prepare_request_headers(
             method, endpoint, params or body, **kwargs
@@ -1005,10 +743,8 @@ class PaymentProvider(models.Model):
             headers = {"Content-Type": "application/json", **headers}
         auth = self._prepare_request_auth(**kwargs)
 
-        # Log the request.
         self._log_request(method, url, params or data or json, reference=reference)
 
-        # Send the request.
         try:
             response = self._get_integration_connection()._egress_request(
                 method,
@@ -1033,16 +769,14 @@ class PaymentProvider(models.Model):
                 )
             ) from None
 
-        # Log the response.
         self._log_response(response, reference=reference)
 
-        # Parse the response.
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
             try:
                 error_msg = self._parse_response_error(response)
-            except JSONDecodeError:  # The provider failed to parse plain text.
+            except JSONDecodeError:
                 error_msg = response.text
             raise ValidationError(
                 self.env._("The payment provider rejected the request.\n%s", error_msg)
@@ -1050,55 +784,15 @@ class PaymentProvider(models.Model):
         return self._parse_response_content(response, **kwargs)
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Build the URL of the request.
-
-        This method serves as a hook to allow providers to build the request URL.
-
-        :param str endpoint: The endpoint of the API to reach with the request.
-        :param dict kwargs: Provider-specific data.
-        :return: The request URL.
-        :rtype: str
-        """
         return ""
 
     def _prepare_request_headers(self, method, endpoint, payload, **kwargs):
-        """Build the headers of the request.
-
-        This method serves as a hook to allow providers to build the request headers.
-
-        :param str method: The HTTP method of the request.
-        :param str endpoint: The endpoint of the API to reach with the request.
-        :param dict|bytes|str payload: The query parameters, or the body exactly as
-            it is sent (a JSON body serialized).
-        :param dict kwargs: Provider-specific data.
-        :return: The request headers.
-        :rtype: dict
-        """
         return {}
 
     def _prepare_request_auth(self, **kwargs):
-        """Return the basic HTTP Auth of the request
-
-        This method serves as a hook to allow providers to build the request's basic HTTP Auth.
-
-        :param dict kwargs: Provider-specific data.
-        :return: The basic HTTP Auth, if any.
-        :rtype: tuple
-        """
         return ()
 
     def _log_request(self, method, url, payload, *, reference=None) -> None:
-        """Log the request.
-
-        The transaction reference is included in the log when possible to contextualize the request.
-        When the request is not linked to a transaction, the provider's id is used instead.
-
-        :param str method: The HTTP method of the request.
-        :param str url: The URL of the request.
-        :param str payload: The payload of the request.
-        :param str reference: The reference of the transaction, if any.
-        :rtype: None
-        """
         if reference:
             log_msg = (
                 "Sending %(method)s API request to %(url)s for transaction %(ref)s."
@@ -1108,7 +802,6 @@ class PaymentProvider(models.Model):
             log_msg = "Sending %(method)s API request to %(url)s for provider %(p_id)s."
             log_values = {"method": method, "url": url, "p_id": self.id}
 
-        # Add the payload to the log if any.
         if payload:
             log_msg += " Payload:\n%(payload)s"
             log_values["payload"] = pformat(payload)
@@ -1116,16 +809,6 @@ class PaymentProvider(models.Model):
         _logger.info(log_msg, log_values)
 
     def _log_response(self, response, *, reference=None) -> None:
-        """Log the response.
-
-        The transaction reference is included in the log when possible to contextualize the
-        response. When the response is not linked to a transaction, the provider's id is used
-        instead.
-
-        :param requests.Response response: The response to log.
-        :param str reference: The reference of the transaction, if any.
-        :rtype: None
-        """
         if reference:
             log_msg = (
                 "Received HTTP %(code)s %(status)s API response from %(url)s for transaction"
@@ -1150,35 +833,12 @@ class PaymentProvider(models.Model):
             _logger.error(log_msg, log_values)
 
     def _parse_response_content(self, response, **kwargs):
-        """Retrieve the JSON-formatted content of the response.
-
-        This method serves as a hook to allow providers to parse the response content.
-
-        :param requests.Response response: The response to parse.
-        :param dict kwargs: Provider-specific data.
-        :return: The response content.
-        :rtype: dict
-        """
         return response.json()
 
     def _parse_response_error(self, response):
-        """Retrieve the error message from the response.
-
-        This method serves as a hook to allow providers to parse the response's error message.
-
-        :param requests.Response response: The response to parse.
-        :return: The error message.
-        :rtype: str
-        """
         return response.text
 
     def _prepare_json_rpc_payload(self, data):
-        """Prepare a JSON-RPC 2.0 formatted payload for proxy requests.
-
-        :param dict data: The data to include in the JSON-RPC request.
-        :return: The JSON-RPC 2.0 formatted proxy payload.
-        :rtype: dict
-        """
         return {
             "jsonrpc": "2.0",
             "id": uuid.uuid4().hex,
@@ -1187,16 +847,8 @@ class PaymentProvider(models.Model):
         }
 
     def _parse_proxy_response(self, response):
-        """Retrieve JSON-RPC 2.0 formatted response content of a proxy request.
-
-        Note: Proxies always respond with HTTP 200 as they implement JSON-RPC 2.0.
-
-        :param requests.Response response: The JSON-RPC 2.0 formatted proxy response.
-        :return: The response content.
-        :rtype: dict
-        """
         response_content = response.json()
-        if response_content.get("error"):  # An exception was raised on the proxy.
+        if response_content.get("error"):
             error_data = response_content["error"]["data"]
             raise ValidationError(
                 self.env._(
@@ -1206,18 +858,9 @@ class PaymentProvider(models.Model):
             )
         return response_content["result"]
 
-    # === SETUP METHODS === #
 
     @api.model
     def _setup_provider(self, provider_code, **kwargs) -> None:
-        """Perform module-specific and multi-company setup steps for the provider.
-
-        This method is called after the module of a provider is installed, with its code passed as
-        `provider_code`.
-
-        :param str provider_code: The code of the provider to setup.
-        :return: None
-        """
         existing_providers = self.search(
             self._get_domain_provider(provider_code, **kwargs)
         )
@@ -1230,39 +873,18 @@ class PaymentProvider(models.Model):
             ]
         )
         for company in companies_needing_provider:
-            # Create a copy of the provider for each company.
             main_provider.copy({"company_id": company.id})
 
     @api.model
     def _remove_provider(self, provider_code, **kwargs) -> None:
-        """Remove the module-specific data of the given provider.
-
-        :param str provider_code: The code of the provider whose data to remove.
-        :return: None
-        """
         providers = self.search(self._get_domain_provider(provider_code, **kwargs))
         providers.write(self._prepare_removal_values())
 
     @api.model
     def _get_domain_provider(self, provider_code, **kwargs):
-        """Return the payment provider domain.
-
-        :param str provider_code: The code of the provider to search for.
-        :param dict kwargs: Additional keyword arguments.
-        :return: The domain to search for the provider.
-        :rtype: list[tuple]
-        """
         return [("code", "=", provider_code)]
 
     def _prepare_removal_values(self):
-        """Return the values to update a provider with when its module is uninstalled.
-
-        For a module to specify additional removal values, it must override this method and complete
-        the generic values with its specific values.
-
-        :return: The removal values to update the removed provider with.
-        :rtype: dict
-        """
         return {
             "code": "none",
             "state": "disabled",
@@ -1274,13 +896,6 @@ class PaymentProvider(models.Model):
         }
 
     def _get_code(self):
-        """Return the code of the provider.
-
-        Note: `self.check_singleton()`
-
-        :return: The code of the provider.
-        :rtype: str
-        """
         self.check_singleton()
         return self.code
 

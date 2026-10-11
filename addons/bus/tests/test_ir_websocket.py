@@ -50,7 +50,6 @@ class TestIrWebsocket(WebsocketCase):
         )
 
     def test_a_client_that_does_not_ask_is_not_told_of_a_reset(self):
-        # An IoT box reads every frame as a list of notifications.
         newest = self.env["bus.bus"]._bus_last_id()
         ws = self.websocket_connect()
         ws.send(
@@ -104,7 +103,6 @@ class TestBuildBusChannelList(TransactionCase):
         keys = channel_keys(
             self.env, self.env["ir.websocket"]._get_bus_channels(["custom"])
         )
-        # a made-up name opens nothing: anyone can say it
         self.assertNotIn(channel_key(self.env, "custom"), keys)
         self.assertIn(channel_key(self.env, "broadcast"), keys)
 

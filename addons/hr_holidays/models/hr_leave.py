@@ -54,8 +54,6 @@ class HrLeave(models.Model):
         "mixin.mail.activity",
     ]
     _mail_post_access = "read"
-    # who may make each move is its verb's rows (security/ir_access.xml); a
-    # create or import that lands in a state is not the move (decision S1)
     _access_verbs = {
         "reset": models.Verb(
             requires="read", transition=("state", "*", "confirm"), at_create=False
@@ -288,9 +286,6 @@ class HrLeave(models.Model):
         string="All day",
         compute="_compute_last_several_days",
     )
-    # Deliberately not stored: the compute builds a translated string, so a
-    # stored value would freeze whichever language last recomputed it -- and the
-    # trigger is not always the employee's own (see models/resource.py).
     duration_display = fields.Char(
         string="Requested",
         compute="_compute_duration_display",
@@ -484,8 +479,6 @@ class HrLeave(models.Model):
             )
 
     def _overlap_warning(self, state_labels):
-        """Say who else is off over this period, naming them only when it is not
-        all the reader themselves."""
         mine_only = all(leave.employee_id.user_id.id == self.env.uid for leave in self)
         lines = []
         for leave in self:
@@ -588,7 +581,6 @@ class HrLeave(models.Model):
             )
 
     def _get_local_days(self) -> tuple:
-        # the days a leave covers are its own: its zone's, not UTC's
         self.check_singleton()
         tz = timezone(self.tz)
         start = self.date_from.replace(tzinfo=UTC).astimezone(tz)
@@ -662,9 +654,6 @@ Versions:
         undated = self.filtered(
             lambda leave: not (leave.request_date_from and leave.request_date_to)
         )
-        # A request with only one of its two dates has no period at all, so both
-        # ends go: leaving the other behind is what let a leave keep a start it
-        # no longer has an end for.
         undated.date_from = undated.date_to = False
         hours_cache = {}
         for holiday in self - undated:
@@ -934,14 +923,6 @@ Versions:
         return result
 
     def _answers_its_own_duration(self) -> bool:
-        """Whether the request's own shape is the whole answer.
-
-        A resource with no timetable has no working schedule to intersect the
-        request with, so what was asked for is what it costs. The exception is
-        an hourly request spanning days: the hours between its two clock times
-        are a schedule question again, and that one keeps going through the
-        calendar.
-        """
         self.check_singleton()
         if self.employee_id.sudo().resource_calendar_id.schedule_type == "fully_fixed":
             return False
@@ -951,12 +932,6 @@ Versions:
         )
 
     def _flexible_day_fractions(self):
-        """How much of each covered day the request asks for.
-
-        A whole day each, less a half at an end the requester halved -- which
-        is what a multi-day half-day request means, and what reading only the
-        first day of it loses.
-        """
         self.check_singleton()
         fractions = {}
         day = self.request_date_from
@@ -974,13 +949,6 @@ Versions:
         return fractions
 
     def _daily_windows(self, tz):
-        """Each day a part-day request covers: its window in `tz`, and what it
-        costs that day.
-
-        A request that runs into the next day occupies part of every day it
-        touches. Reading only the day it starts on leaves the rest of it
-        available, and charges the whole request to that first day.
-        """
         self.check_singleton()
         if self.request_unit_hours:
             start = self.date_from.replace(tzinfo=UTC).astimezone(tz)
@@ -1026,7 +994,7 @@ Versions:
     def _flexible_duration(self, calendar) -> tuple:
         self.check_singleton()
         leaves = self.env["resource.schedule.exception"]
-        public_holidays = leaves.search(  # noqa: E8507 - one lookup per flexible leave, on its own calendar and dates
+        public_holidays = leaves.search(
             leaves._get_domain_public_holidays(
                 self.date_from,
                 self.date_to,
@@ -1050,8 +1018,6 @@ Versions:
                 hours=hours,
             )
             return days, hours
-        # one day: an hourly request costs the hours it spans, any other its
-        # share of a day's hours; a day's hours turn hours into days
         hours_per_day = calendar.hours_per_day or HOURS_PER_DAY
         span = (self.date_to - self.date_from).total_seconds() / 3600
         worked = span
@@ -1226,25 +1192,10 @@ Versions:
         raise ValidationError(self._missing_allocation_message())
 
     def _check_validity(self):
-        """Check every leave against the allocations that have to cover it.
-
-        A single request wants the first failure to abort the write, and that
-        is what every caller gets by default. A batch does not: one employee
-        short of days would cost all their colleagues their time off. So when
-        `multi_leave_request` is in the context, the employees no allocation
-        can cover are collected and returned instead, and the caller decides
-        what to do with them.
-
-        The batch says so through the context and not through an argument
-        because this method has three callers -- `create` and `write` here,
-        and `models/resource.py:125` -- and none of them wants to know that
-        batches exist.
-        """
         collecting = self.env.context.get("multi_leave_request", False)
         uncovered = self.env["hr.employee"]
 
         def reject(employee, message):
-            """Abort on the first failure, or note the employee for a batch."""
             nonlocal uncovered
             if not collecting:
                 raise ValidationError(message)
@@ -1442,8 +1393,6 @@ Versions:
         )
         uncovered = holidays._check_validity()
         if uncovered:
-            # Only ever non-empty for a batch: every other caller got a
-            # ValidationError out of _check_validity instead of a recordset.
             uncovered_leaves = holidays.filtered(
                 lambda leave: leave.employee_id in uncovered
             )
@@ -1485,7 +1434,6 @@ Versions:
 
     def write(self, vals):
         if {"date_from", "date_to"} & vals.keys():
-            # the request's days are read in each leave's zone
             by_zone = self.grouped("tz")
             if len(by_zone) > 1:
                 return all(leaves.write(vals) for leaves in by_zone.values())
@@ -1946,12 +1894,6 @@ Versions:
 
         _debug.lifecycle("refuse", leaves=self, meetings=self.mapped("meeting_id"))
         self._notify_manager()
-        # Refusing is not approving. Both approver fields say in their own help
-        # text that they hold whoever validated the request, so a refusal
-        # leaves them alone: writing one made a leave nobody had approved show
-        # a Second Approval, and overwrote the real first approver of one that
-        # had been. Who refused is on the tracked state change and in the
-        # chatter message posted below.
         self.write({"state": "refuse"})
         self.mapped("meeting_id").write({"active": False})
         for holiday in self:
@@ -2075,9 +2017,6 @@ Versions:
         }
 
     def _get_next_states_by_state(self):
-        # cancelling asks whether the leave has begun in the user's own day,
-        # which no ir.access row can state; approving, validating, refusing and
-        # resetting are the verbs' (security/ir_access.xml)
         self.check_singleton()
         state_result = {
             "confirm": set(),
@@ -2221,12 +2160,6 @@ is approved, validated or refused."
                 )
 
     def _notify_time_off_officers(self) -> None:
-        """Notify every time off officer of the employee's company.
-
-        The recipients come from the officer group rather than from a list
-        kept on the leave type, so appointing an officer is enough for them
-        to start receiving these: nothing has to be edited type by type.
-        """
         officers = self.env.ref("hr_holidays.group_hr_holidays_user").all_user_ids
         for leave in self:
             recipients = officers.filtered_domain(
@@ -2271,7 +2204,6 @@ is approved, validated or refused."
         return super()._track_subtype(init_values)
 
     def message_subscribe(self, partner_ids=None, subtype_ids=None):
-        # the access domain does not allow adding a follower or mention on a validated leave, so subscribe through sudo
         if any(holiday.state in ["validate", "validate1"] for holiday in self):
             self.check_access("read")
             return super(HrLeave, self.sudo()).message_subscribe(
@@ -2298,13 +2230,6 @@ is approved, validated or refused."
     def _get_hour_from_to(
         self, request_date_from, request_date_to, day_period=None, hours_cache=None
     ) -> tuple:
-        """The calendar's working hours on the two dates a request spans.
-
-        `hours_cache` is shared across a compute so that a batch of requests on
-        one calendar and one date asks the attendances once instead of once per
-        request: the answer is a property of the calendar and the day, and
-        nothing in the loop can change either.
-        """
         calendar = self.resource_calendar_id
         calendar.check_singleton()
         if hours_cache is None:

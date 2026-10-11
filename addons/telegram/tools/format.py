@@ -15,7 +15,6 @@ from markupsafe import Markup
 MESSAGE_LIMIT = 4096
 CAPTION_LIMIT = 1024
 
-# The tags Telegram's HTML parse mode accepts, and what an Odoo tag becomes.
 _KEPT = {"b", "i", "u", "s", "a", "code", "pre", "blockquote", "tg-spoiler"}
 _RENAMED = {
     "strong": "b",
@@ -31,7 +30,6 @@ _TAG = re.compile(r"<[^>]+>")
 
 
 def escape(value):
-    """`value` as literal text inside Telegram HTML."""
     return html.escape("" if value is None else str(value), quote=False)
 
 
@@ -52,14 +50,10 @@ def link(label, url):
 
 
 def plain(text):
-    """Telegram HTML as the text a reader sees: the fallback when a message
-    would not parse."""
     return html.unescape(_TAG.sub("", text or ""))
 
 
 def from_odoo_html(markup, base_url=""):
-    """Odoo HTML (a mail body) as Telegram HTML: supported tags kept, others
-    unwrapped, block elements as line breaks, links absolute."""
     if not markup:
         return ""
     source = str(markup) if isinstance(markup, Markup) else markup
@@ -109,8 +103,6 @@ def _render(node, parts, base_url):
 
 
 def truncate(text, limit=MESSAGE_LIMIT, ellipsis="…"):
-    """`text` cut to `limit` characters of what Telegram counts, never inside a
-    tag or an entity, with every tag it leaves open closed."""
     if len(plain(text)) <= limit:
         return text
     out, visible, open_tags, i = [], 0, [], 0

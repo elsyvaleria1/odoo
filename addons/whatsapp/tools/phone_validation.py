@@ -9,27 +9,7 @@ def wa_phone_format(
     force_format="INTERNATIONAL",
     raise_exception=True,
 ):
-    """Format and return number. This number can be found using a field
-    (in which case self should be a singleton recordet), or directly given
-    if the formatting itself is what matter.
-
-    :param <Model> record: linked record on which number formatting is
-      performed, used to find number and/or country;
-    :param str fname: if number is not given, fname indicates the field to
-      use to find the number;
-    :param str number: number to format (in which case fields-based computation
-      is skipped);
-    :param <res.country> country: country used for formatting number; otherwise
-      it is fetched based on record or company;
-    :param str force_format: stringified version of format globals; should be
-      one of 'E164', 'INTERNATIONAL', 'NATIONAL' or 'RFC3966';
-
-    :return str: formatted number. Return False is no nmber. If formatting
-      fails an exception is raised;
-    """
     if not number and record and fname:
-        # if no number is given, having a singleton recordset is mandatory to
-        # always have a number as input
         record.check_singleton()
         number = record[fname]
         if record._fields[fname].type == "many2many":
@@ -40,15 +20,11 @@ def wa_phone_format(
     if not number:
         return False
 
-    # fetch country info only if record is a singleton recordset allowing to
-    # effectively try to find a country
     if not country and record:
         country = record._phone_get_country().get(record.id)
     if not country:
         country = record.env.company.country_id
 
-    # as 'phone_format' returns original number if parsing fails, we have to
-    # let it raise and handle the exception manually to deal with non formatted
     try:
         formatted = phone_validation.phone_format(
             number,
@@ -70,7 +46,6 @@ def wa_phone_format(
                 raise
             return False
         zeros = ""
-        # Not only for italian numbers, but for all numbers with leading zeros
         if parsed.italian_leading_zero:
             zeros = "0"
             if parsed.number_of_leading_zeros:
@@ -80,18 +55,11 @@ def wa_phone_format(
 
 
 def wa_phone_format_for_blacklist(number):
-    """Convert a WhatsApp number to a format compatible with the phone blacklist.
-
-    :param str number: WhatsApp formatted number
-    :return str: blacklist compatible number
-    """
 
     if not number:
         return False
 
-    # If already starts with '+', it's already E164-ish (or at least explicitly international)
     if str(number).startswith("+"):
         return number
 
-    # WhatsApp numbers are CountryCode + NationalNumber, prepending '+' makes it E164
     return f"+{number}"

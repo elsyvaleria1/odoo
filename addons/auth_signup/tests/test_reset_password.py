@@ -22,10 +22,7 @@ class TestResetPassword(HttpCase):
         )
 
     def test_reset_password(self):
-        """Signup URL carries 'signup_email' in its query; a password-reset URL does not."""
 
-        # 'signup_email' lets the web controller (web_auth_reset_password) tell a
-        # first-time signup from a later password reset.
         self.assertEqual(
             self.test_user.email,
             parse_qs(
@@ -38,7 +35,6 @@ class TestResetPassword(HttpCase):
             "query must contain 'signup_email'",
         )
 
-        # Invalidate signup_url to skip signup process
         self.env.invalidate_all()
         self.test_user.action_reset_password()
 
@@ -49,8 +45,6 @@ class TestResetPassword(HttpCase):
         )
 
     def test_reset_password_unknown_login_raises_usererror(self):
-        """`reset_password` must raise UserError (an expected business error),
-        not a bare Exception, for an unknown/ambiguous login (ruff TRY002)."""
         with self.assertRaises(UserError):
             self.env["res.users"].reset_password("no-such-login-at-all")
 
@@ -68,10 +62,6 @@ class TestResetPassword(HttpCase):
             yield
 
     def test_reset_password_no_account_enumeration(self):
-        """A reset-password POST for a login that doesn't exist must show the
-        exact same generic message as one for a login that does - a
-        distinguishable error message here is a classic account/email
-        enumeration oracle on the password-recovery flow."""
         self.env["ir.config_parameter"].sudo().set_param(
             "auth_signup.reset_password", "True"
         )
@@ -102,7 +92,6 @@ class TestResetPassword(HttpCase):
 
     @patch("odoo.addons.mail.models.mail_mail.MailMail.send")
     def test_reset_password_mail_server_error(self, mock_send):
-        """action_reset_password() wraps a mail delivery failure in a UserError; _action_reset_password() lets the MailDeliveryError propagate."""
 
         mock_send.side_effect = MailDeliveryError(
             "Unable to connect to SMTP Server",
@@ -128,6 +117,5 @@ class TestResetPassword(HttpCase):
             "There was an error when trying to deliver your Email, please check your configuration",
         )
 
-        # To check private method _action_reset_password() raises MailDeliveryError when there is no valid smtp server
         with self.assertRaises(MailDeliveryError):
             self.test_user._action_reset_password()

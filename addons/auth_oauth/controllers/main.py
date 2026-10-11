@@ -29,9 +29,6 @@ LOGIN_STATE_SCOPE = register_signed_scope(
 )
 
 
-# ----------------------------------------------------------
-# Controller
-# ----------------------------------------------------------
 class OAuthLogin(Home):
     def list_providers(self):
         try:
@@ -100,7 +97,6 @@ class OAuthLogin(Home):
             and request.session.uid
             and request.params.get("redirect")
         ):
-            # Redirect if already logged in and redirect param is present
             return request.redirect(request.params.get("redirect"))
         providers = self.list_providers()
 
@@ -165,8 +161,6 @@ class OAuthController(http.Controller):
     ):
         request.update_context(**clean_context(context or {}))
         try:
-            # auth_oauth may create a new user, the commit makes it
-            # visible to authenticate()'s own transaction below
             _, login, key = (
                 request.env["res.users"]
                 .with_user(SUPERUSER_ID)
@@ -181,29 +175,24 @@ class OAuthController(http.Controller):
             )
             resp.autocorrect_location_header = False
 
-            # Since /web is hardcoded, verify user has right to land on it
             if (
                 urlsplit(resp.location).path == "/web"
                 and not request.env.user._is_internal()
             ):
                 resp.location = "/"
             return resp
-        except AttributeError:  # TODO juc master: useless since select_db()
-            # auth_signup is not installed
+        except AttributeError:
             _logger.error(
                 "auth_signup not installed on database %s: oauth sign up cancelled.",
                 dbname,
             )
             url = "/web/login?oauth_error=1"
         except AccessDenied:
-            # oauth credentials not valid, user could be on a temporary session
             _logger.info(
                 "OAuth2: access denied, redirect to main page in case a valid session exists, without setting cookies"
             )
             url = "/web/login?oauth_error=3"
         except Exception:
-            # signup error; a database error has aborted the transaction the
-            # redirect's post-dispatch and commit still run on
             _logger.exception("Exception during request handling")
             request.env.cr.rollback()
             url = "/web/login?oauth_error=2"
@@ -214,7 +203,6 @@ class OAuthController(http.Controller):
 
     @http.route("/auth_oauth/oea", type="http", auth="none", readonly=False)
     def oea(self, **kw):
-        """login user via Odoo Account provider"""
         dbname = kw.pop("db", None)
         if not dbname:
             dbname = request.db

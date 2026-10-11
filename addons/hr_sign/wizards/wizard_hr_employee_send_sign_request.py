@@ -22,9 +22,6 @@ class WizardHrEmployeeSendSignRequest(models.TransientModel):
             )
             if distinct_responsible_count in {2, 1}:
                 list_template |= template
-        # Enumeration runs as sudo so the template_warning default never
-        # crashes, but only templates the caller may actually link on the
-        # sign_template_ids m2m (relation ACL checks read) are offered back.
         return list_template.with_env(self.env)._filtered_access("read")
 
     def _default_get_template_warning(self):
@@ -233,9 +230,6 @@ class WizardHrEmployeeSendSignRequest(models.TransientModel):
             sign_request = sign_request.sudo()
 
         sign_values = []
-        # The wizard mediates on behalf of callers that may not read the
-        # templates themselves (the permission limits sign.template to
-        # authored/authorized ones): its own bookkeeping reads run as sudo.
         sign_templates = self.sudo().sign_template_ids
         sign_templates_employee_ids = sign_templates.filtered(
             lambda t: len(t.sign_item_ids.mapped("responsible_id")) == 1
@@ -302,7 +296,7 @@ class WizardHrEmployeeSendSignRequest(models.TransientModel):
                     "attachment_ids": [
                         Command.link(attachment.copy().id)
                         for attachment in self.attachment_ids
-                    ],  # Attachments may not be bound to multiple sign requests
+                    ],
                 }
                 for sign_request_values in sign_values
             ]
@@ -318,8 +312,6 @@ class WizardHrEmployeeSendSignRequest(models.TransientModel):
             if self.version_id.employee_id == employee:
                 self.version_id.sudo().sign_request_ids += sign_request
             else:
-                # sign_request_ids carries groups="hr.group_hr_user"; the
-                # field descriptor rejects even the read behind += without it.
                 employee.sudo().sign_request_ids += sign_request
 
         for employee in self.employee_ids:

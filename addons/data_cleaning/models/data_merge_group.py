@@ -78,14 +78,12 @@ class Data_MergeGroup(models.Model):
             records = (
                 self.env[group.res_model_name].browse(record_ids).read(read_fields)
             )
-            # values are compared as stored: a rule with match_mode 'accent' matches
-            # through unaccent(lower(...)), so the similarity computed here is stricter
             data = set(records[0].items())
             data = data.intersection(*[set(record.items()) for record in records[1:]])
 
             diff_fields = set(read_fields) - {
                 k for k, v in data
-            }  # compared char fields minus the identical ones
+            }
             group.divergent_fields = ",".join(diff_fields)
             group.similarity = min(1, len(data) / len(read_fields))
 
@@ -101,14 +99,8 @@ class Data_MergeGroup(models.Model):
             self.active = False
         self._elect_master_record()
 
-    # MASTER RECORD METHODS
 
     def _elect_master_record(self) -> None:
-        """Elect the "master" record.
-
-        This method will look for a `_elect_method()` on the model.
-        If it exists, this method is responsible to return the master record, otherwise, a generic method is used.
-        """
         for group in self:
             if hasattr(self.env[group.res_model_name], "_elect_method"):
                 elect_master = self.env[group.res_model_name]._elect_method
@@ -126,15 +118,7 @@ class Data_MergeGroup(models.Model):
                 )
                 master_record.is_master = True
 
-    # generic master election, used when the model defines no _elect_method
     def _elect_method(self, records):
-        """Generic master election method.
-
-        :param records: all the records of the duplicate group
-        :return: the oldest record as master
-        """
-        # Records created in one transaction share their create_date, so the id
-        # decides which was created first rather than the order they came in.
         records_sorted = records.sorted(lambda record: (record.create_date, record.id))
         _debug.logic(
             "master_elected",
@@ -144,7 +128,6 @@ class Data_MergeGroup(models.Model):
         )
         return records_sorted[0] if records_sorted else None
 
-    # MERGE METHODS
 
     @api.model
     def merge_multiple_records(self, group_records) -> None:
@@ -154,13 +137,6 @@ class Data_MergeGroup(models.Model):
             group.merge_records(group_records[str(group.id)])
 
     def merge_records(self, records=None) -> dict | None:
-        """Merge the selected records.
-
-        This method will look for a `_merge_method()` on the model.
-        If it exists, this method is responsible to merge the records, otherwise, the generic method is used.
-
-        :param records: Group records to be merged, or None if all records should be merged
-        """
         self.check_singleton()
         if records is None:
             records = []
@@ -197,7 +173,6 @@ class Data_MergeGroup(models.Model):
         else:
             merge = self._merge_method
 
-        # Create a dict with chatter data, in case the merged records are deleted during the merge procedure
         chatter_data = {
             rec.res_id: {
                 "res_id": rec.res_id,
@@ -220,14 +195,10 @@ class Data_MergeGroup(models.Model):
             "records_merged": res["records_merged"]
             if res.get("records_merged")
             else to_merge_count,
-            # Used to get back to the functional model if deduplicate was
-            # called from contextual action menu - instead of staying on
-            # the deduplicate view.
             "back_to_model": is_merge_action,
         }
 
     def _log_merge(self, master_record, merged_records, chatter_data) -> None:
-        """Post a snapshot of each merged record on the master record."""
         if not isinstance(
             self.env[self.res_model_name], self.env.registry["mixin.mail.thread"]
         ):
@@ -256,35 +227,25 @@ class Data_MergeGroup(models.Model):
                 "data_cleaning.data_merge_main", render_values=master_values
             )
 
-    # generic merge, used when the model defines no _merge_method
     def _merge_method(self, master, records) -> dict:
-        """Generic merge method, will "only" update the foreign keys from the source records to the master record
-
-        :param master: original record considered as the destination
-        :param records: source records to be merged with the master
-        :rtype: dict
-        """
         self.env["data_merge.record"]._update_foreign_keys(
             destination=master, source=records
         )
 
         return {
-            "post_merge": True,  # Perform post merge activities
-            "log_chatter": True,  # Log merge notes in the chatter
+            "post_merge": True,
+            "log_chatter": True,
         }
 
     def _post_merge(self, master, records) -> None:
-        """Perform the post merge activities such as archiving or deleting the original record."""
         origins = records._original_records()
         if self.model_id.removal_mode == "delete" or not origins._active_name:
             origins.unlink()
         else:
             origins.write({origins._active_name: False})
 
-    # CRON METHODS
 
     def _cron_cleanup(self, auto_commit=True) -> None:
-        """Perform cleanup activities for each data_merge.group."""
         groups = self.with_context(active_test=False).env["data_merge.group"].search([])
 
         for batched_groups in (
@@ -297,29 +258,18 @@ class Data_MergeGroup(models.Model):
                 self.env["ir.cron"]._commit_progress(processed=len(batched_groups))
 
     def _cleanup(self) -> None:
-        """Do the cleanup, it will delete:
-
-        - data_merge.record whose original record no longer exists (e.g. merged)
-        - data_merge.record with an archived original record
-        - data_merge.group whose original records are all gone, or that keeps at
-          most one non-discarded record
-        - the last non-discarded record of a group that also has discarded ones
-        """
         records_to_delete = self.env["data_merge.record"]
         groups_to_delete = self.env["data_merge.group"]
 
         for group in self:
-            # Count the records kept per group and if there are discarded records
             records_discarded = False
             records_kept = 0
 
-            # Delete records no longer existing
             original_records = (
                 {r.id: r for r in group.record_ids._original_records()}
                 if group.record_ids
                 else {}
             )
-            # Delete group if all original records in a group have been deleted
             if not original_records:
                 groups_to_delete += group
                 continue
@@ -342,11 +292,9 @@ class Data_MergeGroup(models.Model):
                 if not rec.is_discarded:
                     records_kept += 1
 
-            # Delete groups with at most 1 record and no discarded records
             if not records_discarded and records_kept <= 1:
                 groups_to_delete += group
 
-            # Delete single non-discarded record in groups with discarded record(s)
             if records_discarded and records_kept == 1:
                 records_to_delete += group.record_ids.filtered(
                     lambda r: not r.is_discarded

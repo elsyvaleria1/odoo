@@ -81,8 +81,6 @@ class DocumentDocument(models.Model):
         moved = self.filtered(lambda doc: doc.date_expiration != new_date)
         result = super().write(vals)
         if moved:
-            # the alerts sent were about the old date: a document given a
-            # new one is warned about it from the start
             _debug.lifecycle("notifications_rearmed", documents=moved)
             super(DocumentDocument, moved).write(
                 {"notification_last_days": 0, "notification_sent_expired": False}
@@ -117,7 +115,6 @@ class DocumentDocument(models.Model):
         widest = self.env["document.type"]._get_widest_notification_days()
         _debug.pipeline("notification_cron_start", widest_days=widest)
         windows = list(self._iter_expiration_windows())
-        # a renewed document is superseded: its renewal carries the alerts
         has_expiration = Domain("document_type_id.has_expiration", "=", True) & Domain(
             "renewal_state", "!=", "renewed"
         )
@@ -131,9 +128,6 @@ class DocumentDocument(models.Model):
                     for today, company_domain in windows
                 )
             )
-            # Collected and written per threshold rather than per record:
-            # the cron has no limit, so a per-record write is one UPDATE per
-            # due document for the whole tenant in one transaction.
             notified_by_threshold = defaultdict(self.browse)
             for today, docs in expiring._group_by_expiration_today():
                 for doc in docs:

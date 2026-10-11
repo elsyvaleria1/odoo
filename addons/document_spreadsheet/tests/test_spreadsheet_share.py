@@ -27,7 +27,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
                 "role": "edit",
             }
         )
-        # a visit is not a grant, and is not copied
         self.env["document.access.log"]._log(document, bob.partner_id, "view")
         shared_spreadsheet_action = document.action_freeze_and_copy({}, b"")
         shared_spreadsheet = document.browse(shared_spreadsheet_action["id"])
@@ -40,7 +39,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
             "user can access the name.",
         )
 
-        # whoever reached the spreadsheet views the frozen copy
         roles = {
             access.partner_id: access.role
             for access in shared_spreadsheet.access_ids.filtered("partner_id")
@@ -51,8 +49,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_a_link_saying_more_than_the_document_opens_no_edit(self):
-        # the document's link setting is what its editors chose; a link row
-        # saying edit while the setting says view opens it for reading only
         document = self.create_spreadsheet()
         document.access_via_link = "view"
         document.access_internal = "none"
@@ -99,15 +95,12 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
 
         revision = self.new_revision_data(document)
 
-        # dispatch revision without access
         with self.assertRaises(AccessError):
             document.dispatch_spreadsheet_message(revision)
 
-        # dispatch revision with wrong token
         with self.assertRaises(AccessError):
             document.dispatch_spreadsheet_message(revision, "a wrong token")
 
-        # snapshot without token
         snapshot_revision = {
             "type": "SNAPSHOT",
             "serverRevisionId": document.sudo().current_revision_uuid,
@@ -117,7 +110,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
         with self.assertRaises(AccessError):
             document.dispatch_spreadsheet_message(snapshot_revision)
 
-        # snapshot with wrong token
         snapshot_revision = {
             "type": "SNAPSHOT",
             "serverRevisionId": document.sudo().current_revision_uuid,
@@ -127,7 +119,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
         with self.assertRaises(AccessError):
             document.dispatch_spreadsheet_message(snapshot_revision, "a wrong token")
 
-        # now, the user can access the spreadsheet
         document = document.with_user(raoul)
         self.assertEqual(document.user_permission, "edit")
         self.assertTrue(
@@ -138,11 +129,9 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
 
         revision = self.new_revision_data(document)
 
-        # dispatch revision with access
         accepted = document.dispatch_spreadsheet_message(revision, access_token)
         self.assertEqual(accepted, True)
 
-        # snapshot with access
         snapshot_revision = {
             "type": "SNAPSHOT",
             "serverRevisionId": document.sudo().current_revision_uuid,
@@ -156,7 +145,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_collaborative_readonly_dispatch_spreadsheet_with_token(self):
-        """Readonly access"""
         document = self.create_spreadsheet()
 
         document.access_via_link = "view"
@@ -170,19 +158,15 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
         document = document.with_user(user)
         with self.with_user("raoul"):
             revision = self.new_revision_data(document)
-            # dispatch revision without token
             with self.assertRaises(AccessError):
                 document.dispatch_spreadsheet_message(revision)
 
-            # dispatch revision with wrong token
             with self.assertRaises(AccessError):
                 document.dispatch_spreadsheet_message(revision, "a wrong token")
 
-            # raise because of readonly access
             with self.assertRaises(AccessError):
                 document.dispatch_spreadsheet_message(revision, access_token)
 
-            # snapshot without token
             snapshot_revision = {
                 "type": "SNAPSHOT",
                 "serverRevisionId": document.sudo().current_revision_uuid,
@@ -192,7 +176,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
             with self.assertRaises(AccessError):
                 document.dispatch_spreadsheet_message(snapshot_revision)
 
-            # snapshot with token
             snapshot_revision = {
                 "type": "SNAPSHOT",
                 "serverRevisionId": document.sudo().current_revision_uuid,
@@ -255,7 +238,6 @@ class SpreadsheetSharing(SpreadsheetTestCommon):
             frozen.access_via_link = "edit"
             frozen.flush_recordset()
 
-        # the audience is a grant, which the grant's own check refuses
         with self.assertRaises(ValidationError):
             frozen_action = spreadsheet.action_freeze_and_copy({}, b"")
             frozen = spreadsheet.browse(frozen_action["id"])

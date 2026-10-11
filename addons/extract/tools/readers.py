@@ -81,12 +81,6 @@ class _PdfText(BaseReader):
                 exc_info=True,
             )
             pages = []
-        # A handful of characters off a whole PDF is a header, not a text layer,
-        # and reporting them would end the search before a reader that renders
-        # the pages ever ran. Answering nothing is what lets one run. Counted
-        # without the page breaks: a two-page scan has no text at all, yet
-        # joined by one break it spells "--PAGE--", exactly OCR_MIN_CHARS long,
-        # and that alone used to keep its pages from ever being read.
         if len("".join(pages).strip()) < OCR_MIN_CHARS:
             return ""
         return PAGE_BREAK.join(pages).strip()

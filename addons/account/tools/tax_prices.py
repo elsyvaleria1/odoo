@@ -10,7 +10,6 @@ if TYPE_CHECKING:
 def price_from_tax_included_total(
     env: Environment, total: float, taxes: AccountTax, currency: ResCurrency
 ) -> float:
-    """Remove excluded taxes from a gross total, retaining price-included taxes."""
     taxes_res = taxes.with_context(force_price_include=True).compute_all(
         total, currency=currency
     )

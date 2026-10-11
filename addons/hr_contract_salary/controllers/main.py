@@ -51,7 +51,6 @@ class SignContract(Sign):
                     )
                 )
             request_template_id = request_item.sign_request_id.template_id.id
-            # Only if the signed document is the document to sign from the salary package
             version_documents = [
                 version.sign_template_id.id,
                 version.contract_update_template_id.id,
@@ -69,7 +68,6 @@ class SignContract(Sign):
             "signature_applied", version=version, offer=offer, item=request_item
         )
         wage_to_apply = version._get_wage_to_apply()
-        # Only the applicant/employee has signed
         if request_item.sign_request_id.nb_closed == 1:
             version.hash_token = False
             if version.applicant_id:
@@ -91,11 +89,9 @@ class SignContract(Sign):
                 self._create_activity_benefit(version, ("running"))
                 offer.state = "half_signed"
 
-        # All signers have signed
         if request_item.sign_request_id.nb_wait == 0:
             current_employee_version = version.employee_id.version_id
             must_archive_current_version = version.applicant_id or False
-            # If you are an employee with an existing version already, close the existing version
             if (
                 not version.applicant_id
                 and current_employee_version.contract_date_start
@@ -104,8 +100,6 @@ class SignContract(Sign):
                     version.contract_date_start - timedelta(days=1)
                 )
             if current_employee_version.date_version >= version.date_version:
-                # then remplace the current version with the new one signed. We must 'fake' the date_version in order
-                # to be able to unarchive the new version without triggering the constraint if the two dates are equal
                 current_employee_version.date_version = (
                     version.date_version - timedelta(days=1)
                 )
@@ -171,7 +165,6 @@ class SignContract(Sign):
             )
         )
 
-        # ask the contract responsible to create sign requests
         SignRequestSudo = (
             request.env["sign.request"].with_user(version.hr_responsible_id).sudo()
         )
@@ -257,7 +250,6 @@ class HrContractSalary(http.Controller):
         values.update(
             {
                 "redirect_to_job": False,
-                # probably dead (applicant_id/employee_version_id already on the offer) — verify before removing
                 "applicant_id": offer.applicant_id.id,
                 "employee_version_id": offer.employee_version_id.id,
                 "employee_job_id": offer.employee_job_id.id,
@@ -288,13 +280,6 @@ class HrContractSalary(http.Controller):
         return not values["redirect_to_job"]
 
     def check_access_to_salary_configurator(self, request_token, offer, version):
-        """
-        Methods of access:
-        1 - User access (inside 'group_hr_manager')
-        2 - User access (the user of the offered employee, if exists)
-        3 - Token
-        4 - Any user granted read access to the version via ir.access
-        """
         if not offer.exists() or offer.state in ["expired", "refused"]:
             _debug.logic(
                 "configurator_denied", reason="offer_gone_or_closed", offer=offer
@@ -335,9 +320,6 @@ class HrContractSalary(http.Controller):
                 version.with_user(request_user.id).with_context(
                     allowed_company_ids=request_user.company_ids.ids
                 ).check_access("read")
-                # Logged after the check: check_access raises on denial, so a
-                # line emitted before it would record a refused request as
-                # granted.
                 _debug.logic(
                     "configurator_granted",
                     by="record_rule",
@@ -486,12 +468,11 @@ class HrContractSalary(http.Controller):
                 active_test=False
             ).employee_id.version_ids.sorted("create_date", reverse=True)[
                 0
-            ],  # force prefill from the employee's last created version to get last up-to-date info
+            ],
             "employee": version.employee_id,
             "bank_account": version.employee_id.primary_bank_account_id,
         }
 
-        # PERSONAL INFOS
         personal_infos = (
             request.env["hr.contract.salary.personal.info"]
             .sudo()
@@ -548,7 +529,6 @@ class HrContractSalary(http.Controller):
                 )
 
             if personal_info.display_type == "dropdown":
-                # Set record id instead of browse record as value
                 if isinstance(initial_values[personal_info.field], models.BaseModel):
                     initial_values[personal_info.field] = initial_values[
                         personal_info.field
@@ -595,7 +575,6 @@ class HrContractSalary(http.Controller):
         dropdown_options = {}
         dropdown_group_options = {}
 
-        # benefits
         benefits = self._get_benefits(version._get_values_dict(), offer)
         mapped_benefits = defaultdict(lambda: request.env["hr.contract.salary.benefit"])
         for benefit in benefits:
@@ -658,11 +637,6 @@ class HrContractSalary(http.Controller):
         )
         mapped_dependent_benefits = defaultdict(lambda: "")
         mapped_mandatory_benefits = defaultdict(lambda: "")
-        # When the dependent benefit is disabled, on hover over we display the information
-        # regarding which (mandatory) benefits need to be selected, in order to be able to select
-        # the (dependent) benefit in question. For this purpose, here we build the string for each dependent benefit.
-        # The string starts with the display name of the dependent benefit and is followed by the display names
-        # of the mandatory benefits, separated by semicolon.
         mapped_mandatory_benefits_names = defaultdict(lambda: "")
         for dependent_benefit in benefits:
             if not dependent_benefit.field:
@@ -924,12 +898,10 @@ class HrContractSalary(http.Controller):
         work_contact_vals["name"] = employee_vals.get("name", "")
         work_contact_vals["email"] = employee_vals.get("private_email", "")
 
-        # Update personal info on the private address
         if employee.partner_id:
             if no_name_write or employee.user_id.name:
                 del work_contact_vals["name"]
             partner = employee.partner_id
-            # We shouldn't modify the partner email like this
             if employee.partner_id.email:
                 work_contact_vals.pop("email", None)
             partner.write(work_contact_vals)
@@ -942,7 +914,6 @@ class HrContractSalary(http.Controller):
                 .create(work_contact_vals)
             )
 
-        # Update personal info on the employee
         if bank_account_vals:
             bank_account_vals["partner_id"] = partner.id
             existing_bank_account = (
@@ -984,7 +955,6 @@ class HrContractSalary(http.Controller):
     def create_new_version(
         self, version_vals, offer_id, benefits, no_write=False, **kw
     ):
-        # Generate a new version with the current modifications
         version_diff = []
         benefits_values = benefits["version"]
         personal_infos = {
@@ -1044,10 +1014,9 @@ class HrContractSalary(http.Controller):
                 .create(employee_vals)
             )
 
-        # get differences for personnal information
         if no_write:
             employee_fields = request.env["hr.employee"]._fields
-            for section in personal_infos:  # noqa: PLC0206  iterated with explicit indexing by design
+            for section in personal_infos:
                 for field in personal_infos[section]:
                     if field in employee_fields:
                         current_value = employee[field]
@@ -1098,8 +1067,6 @@ class HrContractSalary(http.Controller):
             version_vals, benefits_values, offer
         )
         if employee_values:
-            # Written before the version exists: its stored computes read these
-            # employee fields when they run, and nothing re-triggers them after.
             employee.with_context(tracking_disable=True).write(employee_values)
         new_version = (
             request.env["hr.version"]
@@ -1121,7 +1088,6 @@ class HrContractSalary(http.Controller):
             no_name_write=bool(kw.get("employee")),
         )
 
-        # get differences for version information
         if no_write:
             version_fields = request.env["hr.version"]._fields
             for field in version_fields:
@@ -1153,11 +1119,6 @@ class HrContractSalary(http.Controller):
         return new_version, version_diff
 
     def _update_salary(self, offer, version, benefits=None, **kw):
-        """
-        Internal implementation of `update_salary`.
-
-        Override this method instead of `update_salary` to avoid multiple calls to `_acquire_version`
-        """
         result = {}
         version_vals = version._get_values_dict()
         new_version = self.create_new_version(
@@ -1205,8 +1166,6 @@ class HrContractSalary(http.Controller):
 
         result = {}
         result["wage_with_holidays"] = round(wage_to_apply, 2)
-        # Allowed company ids might not be filled or request.env.user.company_ids might be wrong
-        # since we are in route context, force the company to make sure we load everything
         resume_lines = (
             request.env["hr.contract.salary.resume"]
             .sudo()
@@ -1250,7 +1209,7 @@ class HrContractSalary(http.Controller):
                 value = resume_line.fixed_value
             if resume_line.value_type == "version":
                 value = (
-                    new_version[resume_line.code]  # noqa: SIM401  a record: `in` asks for a field and it has no get()
+                    new_version[resume_line.code]
                     if resume_line.code in new_version
                     else 0
                 )
@@ -1281,7 +1240,6 @@ class HrContractSalary(http.Controller):
                     if resume_line.category_id.periodicity == "yearly"
                     else value
                 )
-            # a resume line value that is not a number stays as it is
             with contextlib.suppress(ValueError, TypeError):
                 value = round(float(value), 2)
             result["resume_lines_mapped"][resume_line.category_id.name][
@@ -1336,13 +1294,6 @@ class HrContractSalary(http.Controller):
 
     @http.route(["/salary_package/onchange_benefit"], type="jsonrpc", auth="public")
     def onchange_benefit(self, benefit_field, new_value, offer_id, benefits, **kw):
-        # Return a dictionary describing the new benefit configuration:
-        # - new_value: The benefit new_value (same by default)
-        # - description: The dynamic description corresponding to the benefit new value
-        # - extra_values: A list of tuple (input name, input value) change another input due
-        #                to the benefit new_value
-        # Override this controllers to add customize
-        # the returned value for a specific benefit
         result = {}
         with hr_version_context(request):
             offer = request.env["hr.contract.salary.offer"].sudo().browse(offer_id)
@@ -1374,7 +1325,6 @@ class HrContractSalary(http.Controller):
             if not has_access:
                 raise AccessError(error_message)
 
-            # sudo as public users can't access ir.model.fields
             info = (
                 request.env["hr.contract.salary.personal.info"]
                 .sudo()
@@ -1415,7 +1365,6 @@ class HrContractSalary(http.Controller):
                 ],
             }
         }
-        # Contract Information
         version_benefits = (
             request.env["hr.contract.salary.benefit"]
             .sudo()
@@ -1455,13 +1404,11 @@ class HrContractSalary(http.Controller):
                 field_name,
             )
 
-        # Add wage information
         version_info[request.env._("Wage")] = [
             (request.env._("Monthly Gross Salary"), wage_to_apply),
             (request.env._("Annual Employer Cost"), version.final_yearly_costs),
         ]
         result[request.env._("Contract Information:")] = version_info
-        # Personal Information
         infos = (
             request.env["hr.contract.salary.personal.info"]
             .sudo()
@@ -1563,7 +1510,6 @@ class HrContractSalary(http.Controller):
 
         new_version, version_diff = new_version
 
-        # write on new version differences with current one
         current_version = new_version.employee_id.version_id
         if current_version:
             self.send_diff_email(offer, version_diff, new_version.id, **kw)
@@ -1576,7 +1522,7 @@ class HrContractSalary(http.Controller):
                 kw.get("token").encode("utf-8")
             ).hexdigest()
             existing_version = (
-                request.env["hr.version"]  # noqa: E8537  idempotency: names what an earlier request of the same sender made
+                request.env["hr.version"]
                 .sudo()
                 .search(
                     [
@@ -1601,7 +1547,7 @@ class HrContractSalary(http.Controller):
                 kw.get("original_link").encode("utf-8")
             ).hexdigest()
             existing_version = (
-                request.env["hr.version"]  # noqa: E8537  idempotency: names what an earlier request of the same sender made
+                request.env["hr.version"]
                 .sudo()
                 .search(
                     [
@@ -1617,7 +1563,6 @@ class HrContractSalary(http.Controller):
             existing_version.unlink()
             new_version.hash_token = hash_token_access
 
-        # TODO: revisit whether this write belongs here
         new_version.write(
             {
                 "name": "New version - " + new_version.employee_id.name,
@@ -1645,7 +1590,6 @@ class HrContractSalary(http.Controller):
                 ),
             }
 
-        # ask the contract responsible to create a sign request
         SignRequestSudo = (
             request.env["sign.request"].with_user(new_version.hr_responsible_id).sudo()
         )
@@ -1679,7 +1623,6 @@ class HrContractSalary(http.Controller):
         )
         sign_request_sudo.action_toggle_user_favorite()
 
-        # Prefill the sign boxes
         sign_items = (
             request.env["sign.item"]
             .sudo()
@@ -1696,18 +1639,11 @@ class HrContractSalary(http.Controller):
                         new_value = new_version.car_id.product_id.name
                     elif new_version.new_car and new_version.new_car_model_id:
                         new_value = new_version.new_car_model_id.name
-                # FIXME: clean up this per-item value branch
                 elif item.name == "l10n_be_group_insurance_rate":
                     new_value = 1 if new_version[item.name] else 0
                 elif item.name == "ip_wage_rate":
-                    # `new_value` is None at this point - the branches above
-                    # are mutually exclusive elifs and none of them assigns it
-                    # - so this read the rate from nowhere and left the sign
-                    # item empty whenever the IP regime was on.
                     new_value = new_version.ip_wage_rate if new_version.ip else 0
                 else:
-                    # personal attributes live on the employee, employment terms on
-                    # the version, so a sign item may name a field of either
                     source = (
                         new_version
                         if item.name.split(".")[0] in new_version._fields

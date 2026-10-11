@@ -23,7 +23,6 @@ class TelegramHandlerAutomation(models.AbstractModel):
     _description = "Telegram: Workflow Questions"
 
     def _feature_enabled(self, bot):
-        # a question names its own chat, on whichever bot it was asked
         return True
 
     def _claims_message(self, bot, chat, message, partner, internal_user) -> bool:
@@ -66,9 +65,6 @@ class TelegramHandlerAutomation(models.AbstractModel):
             "automation_telegram.privilege_answer_question",
             reason="a message in a chat answers the workflow question asked there",
         )
-        # the router asks before any handler runs, outside the savepoint a
-        # handler gets: a question whose run the sender may not see must leave
-        # the message to the bot, not fail its delivery
         try:
             return waits._find_for_message(chat, message, message_kind(message))
         except AccessError as error:

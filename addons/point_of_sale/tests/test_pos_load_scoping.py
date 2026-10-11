@@ -282,7 +282,6 @@ class TestPosPartnerPayload(PosLazySessionCommon):
                     partner_row["pos_contact_address"],
                     partner._display_address(without_company=True),
                 )
-                # Keep the next arm independent of this reference's newer timestamp.
                 self._stamp(record, cutoff - timedelta(seconds=1))
 
     def test_a_new_partner_brings_its_country_into_the_delta_and_the_full_reload(self):

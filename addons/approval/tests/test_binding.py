@@ -42,7 +42,6 @@ class TestApprovalBinding(common.TransactionCase):
     def tearDown(self):
         for wrapper, real in reversed(getattr(self, "_swapped_origins", [])):
             wrapper.approval_binding_origin = real
-        # the wrappers live on the registry, not in the transaction
         self.Binding._unregister_hook()
         super().tearDown()
 
@@ -63,7 +62,6 @@ class TestApprovalBinding(common.TransactionCase):
         vals.update(kwargs)
         return self.env["res.partner"].create(vals)
 
-    # -- the wrapping itself ----------------------------------------------
 
     def test_registering_wraps_the_method_and_unregistering_restores_it(self):
         Partner = self.env.registry["res.partner"]
@@ -76,8 +74,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertFalse(hasattr(Partner.action_archive, "approval_binding_origin"))
 
     def test_two_bindings_on_one_method_share_a_single_wrapper(self):
-        """Composition, not stacking: a second patch would make removal
-        order-dependent, which is how `automation` loses other people's."""
         self._bind(subject_domain="[('is_company', '=', True)]")
         self._bind(subject_domain="[('is_company', '=', False)]")
         Partner = self.env.registry["res.partner"]
@@ -88,7 +84,6 @@ class TestApprovalBinding(common.TransactionCase):
             "the wrapper wrapped another wrapper",
         )
 
-    # -- observe mode ------------------------------------------------------
 
     def test_observe_mode_lets_the_call_through_and_records_it(self):
         binding = self._bind(mode="advise")
@@ -101,7 +96,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertTrue(observation.would_block)
 
     def test_observe_mode_separates_superuser_from_sudo_elevation(self):
-        """The count that decides whether switching to Block is cheap."""
         binding = self._bind(mode="advise")
         self._partner().action_archive()
         self._partner().with_user(self.approver).sudo().action_archive()
@@ -124,24 +118,12 @@ class TestApprovalBinding(common.TransactionCase):
         )
 
     def test_an_ordinary_caller_is_recorded_as_not_elevated(self):
-        """Elevation is the caller's, not the binding's.
-
-        The binding is read through `sudo()`. Measured on its own env, every
-        caller looked elevated, so this row read `self_elevated` for a user who
-        never called `sudo()` at all.
-        """
         binding = self._bind(mode="advise")
         self._partner().with_user(self._plain_user()).action_archive()
         self.assertEqual(binding.observation_ids.elevation, "none")
         self.assertEqual(binding.self_elevated_count, 0)
 
     def test_the_bypass_policy_does_not_wave_an_ordinary_caller_through(self):
-        """The defect that made the elevation bug a security bug.
-
-        "Any elevated caller passes" is meant for callers that ARE elevated.
-        With elevation measured on the sudo()ed binding, an ordinary user
-        counted as elevated and passed a Block gate untouched.
-        """
         self._bind(mode="block", category_id=self.category.id, sudo_policy="bypass")
         partner = self._partner()
         with self.assertRaises(UserError):
@@ -164,7 +146,6 @@ class TestApprovalBinding(common.TransactionCase):
         self._partner(is_company=True).action_archive()
         self.assertEqual(binding.observation_count, 1)
 
-    # -- block mode --------------------------------------------------------
 
     def test_block_mode_refuses_an_unapproved_record(self):
         self._bind(mode="block", category_id=self.category.id, sudo_policy="enforce")
@@ -180,7 +161,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertFalse(partner.active)
 
     def test_block_mode_does_not_let_an_ordinary_user_self_elevate(self):
-        """`sudo()` keeps `uid`, so this is exactly what web_studio lets past."""
         self._bind(mode="block", category_id=self.category.id)
         partner = self._partner()
         with self.assertRaises(UserError):
@@ -214,10 +194,8 @@ class TestApprovalBinding(common.TransactionCase):
         partner.action_archive()
         self.assertFalse(partner.active)
 
-    # -- configuration-time validation -------------------------------------
 
     def test_a_binding_on_a_method_automation_claims_is_refused(self):
-        """`automation._unregister_hook` delattrs these registry-wide."""
         for method in ("create", "write", "unlink", "message_post"):
             with self.assertRaises(ValidationError):
                 self.Binding.create(
@@ -231,7 +209,6 @@ class TestApprovalBinding(common.TransactionCase):
             )
 
     def test_a_binding_on_a_python_protocol_name_is_refused(self):
-        """An Observe binding on `__setattr__` once broke building any partner."""
         for method in ("__setattr__", "__init__", "__getitem__"):
             with self.subTest(method=method), self.assertRaises(ValidationError):
                 self.Binding.create(
@@ -239,7 +216,6 @@ class TestApprovalBinding(common.TransactionCase):
                 )
 
     def test_a_binding_on_the_orm_api_is_refused(self):
-        """The gate calls these itself, so wrapping one recurses or breaks the model."""
         for method in (
             "search",
             "browse",
@@ -274,7 +250,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertEqual(binding.subject_domain, "[('active', '=', True)]")
 
     def test_a_stored_binding_on_the_orm_api_is_not_applied(self):
-        """A row written before the refusal existed must not wrap the method at load."""
         binding = self._bind()
         self.env.cr.execute(
             "UPDATE approval_binding SET method = 'with_context' WHERE id = %s",
@@ -302,12 +277,6 @@ class TestApprovalBinding(common.TransactionCase):
             )
 
     def test_request_mode_refuses_a_method_it_could_not_replay(self):
-        """Storing arbitrary call arguments to replay later is where this
-        design would start guessing, so the limit is enforced up front.
-
-        `activity_feedback` also annotates with a name its module never imports,
-        so reading its signature the default way raises NameError on 3.14.
-        """
         with self.assertRaises(ValidationError):
             self.Binding.create(
                 {
@@ -337,7 +306,6 @@ class TestApprovalBinding(common.TransactionCase):
                 }
             )
 
-    # -- request mode ------------------------------------------------------
 
     def _user(self, login, *groups):
         return self.env["res.users"].create(
@@ -439,11 +407,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertEqual(request.date_binding_replayed, replayed)
 
     def test_an_approval_does_not_lend_the_approver_their_rights(self):
-        """The requester could not archive; the approver could.
-
-        Replaying as the approver would archive the partner with rights the
-        requester never had. It must not run, and the decision must stand.
-        """
         binding = self._request_binding()
         requester = self._user("binding_req_e")
         partner = self._partner()
@@ -523,9 +486,7 @@ class TestApprovalBinding(common.TransactionCase):
         partner.action_archive()
         self.assertFalse(partner.active)
 
-    # -- approve on invoke, run on approval ----------------------------------
 
-    # -- a refusal stands ----------------------------------------------------
 
     def test_a_refusal_stands_and_the_next_call_raises_no_new_request(self):
         binding = self._request_binding()
@@ -540,7 +501,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertEqual(action["res_id"], request.id, "the refusal is what is shown")
 
     def test_the_refuser_does_not_pass_by_invoking_again(self):
-        """Studio's test_04: a manager cannot proceed past their own rejection."""
         binding = self._request_binding(approve_on_invoke=True, run_on_approval=False)
         requester = self._user("binding_ref_b", "base.group_partner_manager")
         partner = self._partner()
@@ -589,12 +549,10 @@ class TestApprovalBinding(common.TransactionCase):
         request.with_user(later).action_reset_to_draft()
         self.assertEqual(request.state, "new")
 
-    # -- withdrawing across steps -------------------------------------------
 
     def test_a_later_step_member_may_withdraw_an_earlier_approval_and_a_peer_may_not(
         self,
     ):
-        """Studio's test_can_revoke_approval_with_inferior_order."""
         peer = self._user("binding_wd_peer", "base.group_partner_manager")
         later = self._user("binding_wd_later", "base.group_partner_manager")
         binding = self._two_step_binding(peer, later)
@@ -622,12 +580,6 @@ class TestApprovalBinding(common.TransactionCase):
         self.assertEqual(row.state, "pending")
 
     def _count_runs(self):
-        """Record every time the gated method's body actually runs.
-
-        Archiving twice looks exactly like archiving once, so a double run is
-        invisible to the record. The wrapper reads its origin at call time, so
-        swapping that reference counts executions without touching the method.
-        """
         wrapper = self.env.registry["res.partner"].action_archive
         real = wrapper.approval_binding_origin
         runs = []
@@ -644,7 +596,6 @@ class TestApprovalBinding(common.TransactionCase):
         return runs
 
     def test_an_invoking_approver_runs_the_operation_exactly_once(self):
-        """Their click approves AND runs; the replay must not run it a second time."""
         binding = self._request_binding(approve_on_invoke=True)
         runs = self._count_runs()
         partner = self._partner()
@@ -721,7 +672,6 @@ class TestApprovalBinding(common.TransactionCase):
             )
 
     def test_without_run_on_approval_a_method_with_arguments_may_be_gated(self):
-        """The zero-argument limit exists only because a replay has no arguments."""
         binding = self.Binding.create(
             {
                 "model_id": self.partner_model.id,

@@ -1606,8 +1606,6 @@ class MixinMailGateway(models.AbstractModel):
                 thread = ModelCtx.message_new(route_message_dict, custom_values)
                 span.set(thread=thread.id)
         except Exception as error:
-            # a concurrency failure is retried, by the request or the next poll:
-            # neither the sender nor the alias is at fault, and the retry delivers
             if alias and not _is_retried_failure(error):
                 self._routing_bounce_failed_creation(alias, message, message_dict)
             raise
@@ -1619,8 +1617,6 @@ class MixinMailGateway(models.AbstractModel):
     def _routing_bounce_failed_creation(
         self, alias: MailAlias, message: EmailMessage, message_dict: dict
     ) -> None:
-        # its own transaction: the caller's is aborted or about to be rolled
-        # back, and the bounce must outlive it
         with self.pool.cursor() as new_cr:
             bounce_env = self.env(cr=new_cr)
             bounce_alias = bounce_env["mail.alias"].browse(alias.id)

@@ -123,7 +123,6 @@ class MrpReport(models.Model):
         help="Ratio of quantity produced over quantity demanded",
     )
 
-    # note that unit costs include subtraction of byproduct cost share
     unit_cost = fields.Monetary(
         string="Cost / Unit",
         readonly=True,
@@ -183,7 +182,6 @@ class MrpReport(models.Model):
 
     @property
     def _table_query(self):
-        """Report needs to be dynamic to take into account multi-company selected + multi-currency rates"""
         _debug.perf.count("mrp_report_view_built", companies=len(self.env.companies))
         return "%s %s %s %s" % (
             self._select(),
@@ -244,16 +242,6 @@ class MrpReport(models.Model):
             """
 
     def _from(self):
-        """MO costs are quite complicated so the table is built with the following subqueries (per MO):
-            1. total component cost (note we cover no components use case)
-            2. total operations cost (note we cover no operations use case)
-            3. total byproducts cost share
-            4. total qty produced based on the product's UoM
-            5. expected component cost per unit (standard price x BoM quantities)
-        Note subqueries 3 and 4 exist because 3 subqueries use the stock_move table and combining them would result in duplicated SVL values and
-        subquery 2 (i.e. the nested subquery) exists to prevent duplication of operation costs (i.e. 2+ comp lines and 2+ operations at diff wc in
-        the same MO results in op cost duplication if op cost isn't aggregated first).
-        """
         currency_table = self.env["res.currency"]._get_simple_currency_table(
             self.env.companies
         )
@@ -408,7 +396,6 @@ class MrpReport(models.Model):
             "unit_operation_cost:avg",
             "unit_duration:avg",
         ):
-            # Make a weighted average instead of simple average for these fields
             fname, *__ = models.parse_read_group_spec(aggregate_spec)
             sql_field = self._field_to_sql(self._table, fname, query)
             sql_qty_produced = self._field_to_sql(self._table, "qty_produced", query)

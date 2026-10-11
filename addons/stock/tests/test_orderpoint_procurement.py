@@ -53,8 +53,6 @@ class TestOrderpointProcurement(TransactionCase):
         return move
 
     def _supply_route(self, warehouse=None, **values):
-        # the reception route cannot stand in: purchase_stock and mrp strip its
-        # vendor pull, leaving a one-step reception route without active rules
         warehouse = warehouse or self.warehouse
         route = self.env["stock.route"].create(
             {

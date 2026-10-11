@@ -310,8 +310,6 @@ class PurchaseOrderLine(models.Model):
             if line.date_is_manual:
                 continue
 
-            # a confirmed order has promised its dates: the seller's lead time
-            # only leads the lines of a request for quotation
             if line.order_id.state != "draft":
                 continue
 
@@ -365,8 +363,6 @@ class PurchaseOrderLine(models.Model):
         self._compute_to_invoice_amounts(posted_lines | draft_lines, invoiced, drafted)
 
     def _compute_to_invoice_amounts(self, invoice_lines, invoiced, drafted) -> None:
-        # a draft bill claims what it carries exactly as a posted one does, so
-        # posting it moves a figure between buckets and nothing else
         qty_to_consider = self._get_qty_to_consider_for_billing()
         price_subtotal = self._get_billable_subtotal(qty_to_consider)
 
@@ -638,8 +634,6 @@ class PurchaseOrderLine(models.Model):
         )
         name = product_lang.display_name
         if seller:
-            # the seller-free name above filled the cache for the caller's whole
-            # prefetch set; a per-seller context computed across it is quadratic
             seller_lang = product_lang.with_prefetch().with_context(seller_id=seller.id)
             name = seller_lang.display_name
         if product_lang.description_purchase:

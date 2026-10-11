@@ -36,22 +36,11 @@ class EventEvent(models.Model):
 
     @api.depends("event_type_id")
     def _compute_event_booth_ids(self) -> None:
-        """Update event configuration from its event type. Depends are set only
-        on event_type_id itself, not its sub fields. Purpose is to emulate an
-        onchange: if event type is changed, update event configuration. Changing
-        event type content itself should not trigger this method.
-
-        When synchronizing booths:
-
-          * lines that are available are removed;
-          * template lines are added;
-        """
         for event in self:
             if not event.event_type_id and not event.event_booth_ids:
                 event.event_booth_ids = False
                 continue
 
-            # booths to keep: those that are not available
             booths_to_remove = event.event_booth_ids.filtered(
                 lambda booth: booth.is_available
             )
@@ -92,7 +81,7 @@ class EventEvent(models.Model):
     def _compute_event_booth_count(self) -> None:
         if self.ids and all(
             bool(event.id) for event in self
-        ):  # no new/onchange mode -> optimized
+        ):
             booths_available_count, booths_total_count = self._get_booth_stat_count()
             for event in self:
                 event.event_booth_count_available = booths_available_count.get(

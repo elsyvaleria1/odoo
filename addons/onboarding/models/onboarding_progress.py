@@ -35,7 +35,6 @@ class OnboardingProgress(models.Model):
         string="Progress Steps Trackers",
     )
 
-    # Not a models.Constraint because COALESCE is not supported in a PostgreSQL UNIQUE constraint.
     _onboarding_company_uniq = models.UniqueIndex(
         "(onboarding_id, COALESCE(company_id, 0))"
     )
@@ -59,7 +58,6 @@ class OnboardingProgress(models.Model):
             )
 
     def _recompute_progress_step_ids(self) -> None:
-        """Update progress steps when a step (with existing progress) is added to or removed from an onboarding."""
         for progress in self:
             progress.progress_step_ids = (
                 progress.onboarding_id.step_ids.current_progress_step_id
@@ -73,19 +71,10 @@ class OnboardingProgress(models.Model):
             progress.is_onboarding_closed = not progress.is_onboarding_closed
 
     def _get_and_update_onboarding_state(self):
-        """Fetch the progress of an onboarding for rendering its panel.
-
-        This method is expected to only be called when rendering an onboarding panel
-        (see :meth:`onboarding.onboarding._prepare_rendering_values`).
-        It also has the responsibility of updating the 'just_done' state into
-        'done' so that the 'just_done' states are only rendered once.
-        """
         self.check_singleton()
         onboarding_states_values = {}
         progress_steps_to_consolidate = self.env["onboarding.progress.step"]
 
-        # Iterate over onboarding step_ids and not self.progress_step_ids because 'not_done' steps
-        # may not have a progress_step record.
         for step in self.onboarding_id.step_ids:
             step_state = step.current_step_state
             if step_state == "just_done":

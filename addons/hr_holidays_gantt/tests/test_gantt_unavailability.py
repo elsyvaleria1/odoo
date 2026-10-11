@@ -49,8 +49,6 @@ class TestGanttUnavailability(TransactionCase):
         )
 
     def test_unavailability_for_contracted_employee(self):
-        """Check that a contracted Monday-only employee gets notable
-        unavailability intervals covering the rest of the week."""
         result = self.env["hr.leave"]._gantt_unavailability(
             "employee_id",
             [self.contracted.id],
@@ -69,8 +67,6 @@ class TestGanttUnavailability(TransactionCase):
             )
 
     def test_unavailability_for_employee_without_contract(self):
-        """Check that employees without contract data fall back to the
-        resource-calendar path and still report intervals."""
         result = self.env["hr.leave"]._gantt_unavailability(
             "employee_id",
             [self.uncontracted.id],
@@ -83,10 +79,6 @@ class TestGanttUnavailability(TransactionCase):
         self.assertTrue(result[self.uncontracted.id])
 
     def test_unavailability_skips_stale_contract_version(self):
-        """F9 regression: a stale `hr.version` sibling sharing the same
-        contract dates (e.g. an earlier salary-raise amendment under one
-        continuous contract) must be skipped rather than computed and then
-        silently discarded via an inverted interval."""
         stale_start = date(2020, 1, 1)
         current_start = date(2024, 1, 1)
         employee = self.env["hr.employee"].create(
@@ -98,11 +90,6 @@ class TestGanttUnavailability(TransactionCase):
                 "wage": 10,
             }
         )
-        # A later amendment (e.g. a raise) under the SAME continuous
-        # contract: shares `contract_date_start` with the first version
-        # (per `hr.version._compute_dates`), so both match
-        # `_gantt_unavailability`'s search, but only this one's own sliced
-        # window covers the query below.
         self.env["hr.version"].create(
             {
                 "employee_id": employee.id,
@@ -149,8 +136,6 @@ class TestGanttUnavailability(TransactionCase):
             self.assertLess(interval["start"], interval["stop"])
 
     def test_unavailability_other_field_delegates(self):
-        """Check that non-employee groupings delegate to the generic gantt
-        implementation."""
         result = self.env["hr.leave"]._gantt_unavailability(
             "department_id",
             [],

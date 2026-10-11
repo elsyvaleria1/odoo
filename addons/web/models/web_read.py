@@ -222,12 +222,6 @@ class Base(models.AbstractModel):
     )
 
     def _check_concurrency_access(self) -> None:
-        # the check reads the stored values below the ORM and answers
-        # differently when a client's guess is right, so it runs only on
-        # records the principal may read and compares only the fields it may
-        # read (_get_fields_concurrency_checkable); whether it may write them
-        # is write()'s to say, with the model's own exemptions (a user's
-        # preferences on their own res.users record)
         self.check_access("read")
 
     def _get_fields_concurrency_checkable(self, vals) -> list:
@@ -257,8 +251,7 @@ class Base(models.AbstractModel):
             baseline = self._coerce_concurrency_value(field, baseline_raw)
             new = self._coerce_concurrency_value(field, new_raw)
             return current not in (baseline, new)
-        # fmt: skip below: ruff format (target-version=py314) rewrites the
-        except (TypeError, ValueError):  # fmt: skip
+        except (TypeError, ValueError):
             return False
 
     def _check_concurrent_field_changes(self, vals, known_values) -> None:
@@ -477,8 +470,6 @@ class Base(models.AbstractModel):
         return values_list
 
     def _verbs_held(self) -> dict[int, dict[str, bool]]:
-        # which of the model's verbs a button may offer on each record: the
-        # decision the verb's doors take, one query per verb for the batch
         verbs = sorted(self.env.registry.model_verbs.get(self._name, ()))
         records = self.browse([id_ for id_ in self._ids if isinstance(id_, int)])
         allowed = {verb: set(records._filtered_access(verb)._ids) for verb in verbs}
@@ -518,11 +509,6 @@ class Base(models.AbstractModel):
     def _web_read_targets(
         self, co_records: models.BaseModel, sub_fields: dict
     ) -> tuple[dict, set]:
-        # the records a relation points to, as the current user may read them:
-        # those they read with sub_fields, the others by id only, and the
-        # display name of each wherever they may see it. One access decision
-        # for the batch: an unreadable target never sends the readable ones
-        # one by one. co_records must exist.
         def cleanup(vals: dict) -> dict:
             if not vals["id"]:
                 vals["id"] = vals["id"].origin or False
@@ -663,7 +649,6 @@ class Base(models.AbstractModel):
                 CoModel = CoModel.with_context(
                     **strip_authority_keys(field_spec["context"], door="web_read")
                 )
-            # a reference has no foreign key: its target may be gone
             existing = CoModel.browse(
                 list(dict.fromkeys(co_id for _, co_id in pairs))
             ).exists()
@@ -674,8 +659,6 @@ class Base(models.AbstractModel):
                 try:
                     co_data, withheld = self._web_read_targets(existing, sub_fields)
                 except AccessError:
-                    # a sub-field some target refuses fails the batch: each
-                    # target is read alone, and those that refuse are withheld
                     co_data, withheld = {}, set()
                     for target in existing:
                         try:
@@ -684,7 +667,6 @@ class Base(models.AbstractModel):
                             data, refused = {target.id: {"id": target.id}}, {target.id}
                         co_data.update(data)
                         withheld |= refused
-                # what an id-only read never asked for, it is never told
                 if any(fname != "id" for fname in sub_fields):
                     for co_id in withheld:
                         co_data[co_id].setdefault(

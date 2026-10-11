@@ -27,7 +27,6 @@ class IrAttachment(models.Model):
     TABULAR_FILE_TYPES = [mimetype_for(ext) for ext in ("xlsx", "xls", "ods", "csv")]
 
     def _get_attachment_content(self):
-        """Get the indexing-processed content of the attachment."""
         self.check_singleton()
         attachment_content = ""
         if self.mimetype in self.TABULAR_FILE_TYPES:
@@ -44,7 +43,6 @@ class IrAttachment(models.Model):
         if not attachment_content:
             return None
 
-        # Check for reasonable content length and word variety
         if len(attachment_content.strip()) <= 10:
             return None
 
@@ -56,7 +54,6 @@ class IrAttachment(models.Model):
 
     def _setup_attachment_chunks(self, embedding_model, content=None) -> None:
         self.check_singleton()
-        # If the attachment is a tabular file, return each row as a separate chunk
         if self.mimetype in self.TABULAR_FILE_TYPES:
             chunks = content.split("\n")
         else:
@@ -78,17 +75,11 @@ class IrAttachment(models.Model):
 
     @staticmethod
     def _process_csv_text(csv_text):
-        """
-        Process CSV text into a list of dictionaries with headers as keys.
-        :return: List of row dictionaries or None if invalid
-        :rtype: list[dict] or None
-        """
 
         lines = csv_text.strip().split("\n")
         if not lines:
             return None
 
-        # Detect delimiter and header
         sample = "\n".join(lines[: min(10, len(lines))])
 
         delimiter = ","
@@ -100,7 +91,6 @@ class IrAttachment(models.Model):
         except csv.Error:
             pass
 
-        # Generate headers from first row or create generic ones
         if has_header:
             first_row = next(csv.reader(io.StringIO(lines[0]), delimiter=delimiter))
             headers = [
@@ -110,13 +100,12 @@ class IrAttachment(models.Model):
             first_row = next(csv.reader(io.StringIO(lines[0]), delimiter=delimiter))
             headers = [f"Column_{i}" for i in range(len(first_row))]
 
-        # Parse CSV with safety nets for ragged rows
         reader = csv.DictReader(
             io.StringIO(csv_text),
             delimiter=delimiter,
             fieldnames=headers,
-            restkey="_extra_fields",  # Extra columns to be added as extra fields key
-            restval=None,  # Missing columns will be added as None
+            restkey="_extra_fields",
+            restval=None,
         )
 
         if has_header:
@@ -126,18 +115,9 @@ class IrAttachment(models.Model):
 
     @staticmethod
     def _clean_text(text):
-        """
-        Clean up the text content while preserving meaningful structure.
-
-        :param str text: Raw text content to clean
-        :return: Cleaned text content
-        :rtype: str
-        """
-        # Remove NUL characters that can cause PostgreSQL insertion errors
         text = text.replace("\x00", "")
         text = text.replace("\r\n", "\n")
 
-        # Split into lines and process
         lines = text.split("\n")
         result = []
         current_paragraph = []
@@ -165,10 +145,8 @@ class IrAttachment(models.Model):
         if current_paragraph:
             result.append(" ".join(current_paragraph))
 
-        # Join with single newlines between paragraphs
         text = "\n".join(result)
 
-        # Clean up extra whitespace
         text = re.sub(r"\s+", " ", text)
         text = re.sub(r"\s+([.,!?;:])", r"\1", text)
         return text.strip()
@@ -177,18 +155,6 @@ class IrAttachment(models.Model):
     def _chunk_text(
         text, chunk_size=1500, margin=200, min_chunk_size=1000, max_chunk_size=5000
     ):
-        """
-        Split text into chunks based on character count with a hard maximum limit.
-
-        :param str text: The input text to chunk.
-        :param int chunk_size: Target chunk size in characters.
-        :param int margin: Allow flexibility in chunk sizes within chunk_size ± margin.
-        :param int min_chunk_size: Minimum size a chunk should have before finalizing.
-        :param int max_chunk_size: Hard maximum size limit that cannot be exceeded; kept
-            high enough that large chunks still carry enough context for the LLM.
-        :return: List of text chunks
-        :rtype: list[str]
-        """
         cleaned_text = IrAttachment._clean_text(text)
         chunks = []
         paragraphs = cleaned_text.split("\n")
@@ -197,11 +163,9 @@ class IrAttachment(models.Model):
         current_length = 0
 
         def _add_chunk_enforcing_max_size(chunk_content):
-            """Add a chunk, splitting it if it exceeds max_chunk_size."""
             if len(chunk_content) <= max_chunk_size:
                 chunks.append(chunk_content)
             else:
-                # Force split oversized chunks by words
                 words = chunk_content.split()
                 temp_chunk = []
                 temp_length = 0
@@ -221,11 +185,10 @@ class IrAttachment(models.Model):
         for para in paragraphs:
             para = para.strip()
             if not para:
-                continue  # Skip empty lines
+                continue
 
             para_length = len(para)
 
-            # If current chunk is too small, try to merge with the next one
             if current_chunk and (
                 current_length + para_length + 1 <= chunk_size + margin
             ):
@@ -233,19 +196,15 @@ class IrAttachment(models.Model):
                 current_length += para_length + 1
                 continue
 
-            # If the current chunk is large enough, store it
             if current_length >= chunk_size - margin:
                 _add_chunk_enforcing_max_size(" ".join(current_chunk))
-                current_chunk = [para]  # Start a new chunk
+                current_chunk = [para]
                 current_length = para_length
-            # If chunk is too small but para itself is too big, split it
             elif para_length > chunk_size:
-                # First, store current chunk if it exists
                 if current_chunk:
                     _add_chunk_enforcing_max_size(" ".join(current_chunk))
                     current_chunk = []
                     current_length = 0
-                # Split the large paragraph by sentences
                 sentences = re.split(r"(?<=[.!?])\s+", para)
                 temp_chunk = []
                 temp_length = 0
@@ -268,15 +227,12 @@ class IrAttachment(models.Model):
                 current_chunk.append(para)
                 current_length += para_length + 1
 
-        # Handle the last chunk
         if current_chunk:
             last_chunk_content = " ".join(current_chunk)
             if chunks and len(last_chunk_content) < min_chunk_size:
-                # Try to merge with the previous chunk, but respect max_chunk_size
                 if len(chunks[-1]) + len(last_chunk_content) + 1 <= max_chunk_size:
                     chunks[-1] += " " + last_chunk_content
                 else:
-                    # Can't merge, add as separate chunk
                     _add_chunk_enforcing_max_size(last_chunk_content)
             else:
                 _add_chunk_enforcing_max_size(last_chunk_content)
@@ -284,9 +240,6 @@ class IrAttachment(models.Model):
         return chunks
 
     def _ai_read(self, fnames, files_dict) -> tuple:
-        """Send the files (or their indexed content) to the LLM when attachments are
-        inserted in a prompt.
-        """
         if fnames:
             return super()._ai_read(fnames, files_dict)
         vals = []
@@ -302,7 +255,6 @@ class IrAttachment(models.Model):
             file_ref = f"<file_#{len(files_dict) + 1}>"
             extension = attachment.mimetype.split("/")[-1]
             if extension == "pdf" and not attachment.url:
-                # Keep only the first and last pages, AI_MAX_PDF_PAGES in total
                 reader = None
                 with contextlib.suppress(PdfReadError):
                     reader = OdooPdfFileReader(to_pdf_stream(attachment), strict=False)

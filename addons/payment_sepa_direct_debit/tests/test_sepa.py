@@ -8,7 +8,6 @@ from odoo.addons.payment_sepa_direct_debit.tests.common import SepaDirectDebitCo
 
 @tagged("post_install", "-at_install")
 class TestSepaDirectDebit(SepaDirectDebitCommon):
-    # TODO: Should only test that processing the tx confirms it.
     def test_transactions_are_confirmed_as_soon_as_mandate_is_valid(self):
         token = self._create_token(
             provider_ref=self.mandate.name, sdd_mandate_id=self.mandate.id
@@ -21,7 +20,6 @@ class TestSepaDirectDebit(SepaDirectDebitCommon):
         )
 
     def test_send_payment_request_refreshes_mandate_validity(self):
-        """Test that sending a payment request refreshes the mandate's state."""
         token = self._create_token(
             provider_ref=self.mandate.name, sdd_mandate_id=self.mandate.id
         )
@@ -35,7 +33,6 @@ class TestSepaDirectDebit(SepaDirectDebitCommon):
         self.assertEqual(refresh_mandate_state_mock.call_count, 1)
 
     def test_send_payment_request_succeeds_for_active_mandates(self):
-        """Test that token payment requests are accepted for txs with an active mandate."""
         token = self._create_token(
             provider_ref=self.mandate.name, sdd_mandate_id=self.mandate.id
         )
@@ -45,7 +42,6 @@ class TestSepaDirectDebit(SepaDirectDebitCommon):
         self.assertNotEqual(tx.state, "error")
 
     def test_send_payment_request_fails_for_inactive_mandates(self):
-        """Test that token payment requests are rejected for txs with an inactive mandate."""
         self.mandate.state = "revoked"
         token = self._create_token(
             provider_ref=self.mandate.name, sdd_mandate_id=self.mandate.id
@@ -56,8 +52,6 @@ class TestSepaDirectDebit(SepaDirectDebitCommon):
         self.assertEqual(tx.state, "error")
 
     def _run_confirmation_cron(self):
-        # as the cron runs it, under its own user: a bookkeeper reads only
-        # their own payment tokens and cannot create the mandate's one
         cron = self.env.ref("payment_sepa_direct_debit.cron_auto_confirm_paid_sepa_txs")
         self.env["account.bank.statement.line"].with_user(
             cron.user_id
@@ -127,7 +121,6 @@ class TestSepaDirectDebit(SepaDirectDebitCommon):
         self.assertFalse(token.active)
 
     def test_creating_batch_payment_generates_export_file(self):
-        """Test the XML generation when validating a batch payment."""
         sdd_provider_method_line = self.company_data[
             "default_journal_bank"
         ].inbound_payment_channel_ids.filtered(lambda l: l.code == "sepa_direct_debit")

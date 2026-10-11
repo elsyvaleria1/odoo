@@ -31,12 +31,10 @@ from odoo.addons.base.tests.common import TransactionCaseWithUserDemo
 
 
 def _saved_unvalidated(test):
-    # the render-time error of a template saved before save-time validation
-    # existed, or edited under it by SQL: saving one today is refused
     return patch.object(IrUiView, "_check_qweb_compiles", lambda self: None)(test)
 
 
-unsafe_eval = eval  # noqa: S307  runs QWeb compiler output (_compile_expr, _compile_format)
+unsafe_eval = eval
 
 
 @tagged("post_install", "-at_install")
@@ -845,8 +843,6 @@ class TestQWebNS(TransactionCase):
         self.assertEqual(etree.fromstring(rendering), etree.fromstring(expected_result))
 
     def test_default_namespace_t_is_still_the_t_element(self):
-        # Under a default namespace <t> is "{ns}t" to lxml; the whitespace
-        # rules of t-call, t-set and t-foreach see the <t> element all the same.
         self.env["ir.ui.view"].create(
             {
                 "key": "base.ws_callee",
@@ -892,8 +888,6 @@ class TestQWebNS(TransactionCase):
         self.assertIn("t-field can not be used on a t element", str(cm.exception))
 
     def test_attribute_prefix_survives_a_later_default_declaration(self):
-        # lxml lists the default namespace after the prefix that shares its
-        # URI; the reverse map must never pick the None prefix for an attribute.
         view = self.env["ir.ui.view"].create(
             {
                 "name": "dual_ns",
@@ -3770,8 +3764,6 @@ class TestQWebRenderStandalone(TransactionCase):
         self.assertEqual(str(render("m", {}, self._load(templates))), "[]7")
 
     def test_render_standalone_t_set_body_renders_inside_a_server_thread(self):
-        # The thread carries the test database's name and the standalone
-        # cursor carries none; a QwebContent must still render here.
         templates = {"m": '<t><t t-set="s">S</t>[<t t-out="s"/>]</t>'}
         self.assertTrue(getattr(threading.current_thread(), "dbname", None))
         self.assertEqual(str(render("m", {}, self._load(templates))), "[S]")
@@ -4018,8 +4010,6 @@ class TestQWebDirectiveContracts(TransactionCase):
         )
 
     def test_a_branch_with_nothing_to_render_still_compiles(self):
-        # an element compiles to a comment line: a branch holding only
-        # whitespace was left with no statement, and Python refused it
         self._view(
             "empty_branches",
             """<t><td>
@@ -4226,7 +4216,7 @@ class TestQWebStandaloneBodyContent(TransactionCase):
             QwebCallParameters({}, "r", None, None, False, "t-set", None),
         )
         with self.assertRaises(AttributeError):
-            getattr(content, "__deepcopy__")  # noqa: B009 - the constant name is the subject: a dunder arriving by name must not render
+            getattr(content, "__deepcopy__")
         self.assertIsNone(content.html, "the snippet was rendered by a dunder probe")
 
     def test_non_template_argument_is_rejected(self):
@@ -4827,14 +4817,11 @@ class TestQWebCompileErrorLocation(TransactionCase):
 
     @mute_logger("odoo.db.cursor")
     def test_a_recoverable_database_error_is_not_wrapped(self):
-        # Raised by psycopg under odoo/db/cursor.py, the frame walk of
-        # _is_error_raised_in_qweb reaches the template's own frame; a helper
-        # defined here would sit on the addons path and never be wrapped.
         from psycopg.errors import LockNotAvailable
 
         partner = self.env.ref(
             "base.main_partner"
-        )  # committed, visible to a second cursor
+        )
         arch = etree.fromstring('<t><p t-out="env.cr.execute(q)"/></t>')
         query = f"SELECT id FROM res_partner WHERE id = {partner.id} FOR UPDATE NOWAIT"
         with db_connect(self.env.cr.dbname).cursor() as other:

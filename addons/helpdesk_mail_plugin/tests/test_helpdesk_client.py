@@ -8,15 +8,6 @@ from odoo.addons.mail_plugin.tests.common import (
 class TestHelpdeskClient(TestMailPluginControllerCommon, MailCase):
     @as_outlook_user("employee")
     def test_ticket_creation_notification(self):
-        """Test the ticket creation using the mail plugin endpoint.
-
-        Test that the ticket is created, with the
-        - name set with the email subject
-        - description set with the email body
-        - user set with the current logged user
-
-        Check also that the acknowledgement email has been sent.
-        """
         self.user_test.group_ids |= self.env.ref("helpdesk.group_helpdesk_user")
         customer = self.env["res.partner"].create(
             {"name": "Customer", "email": "customer@example.com"}
@@ -68,7 +59,6 @@ class TestHelpdeskClient(TestMailPluginControllerCommon, MailCase):
 
     @as_outlook_user("admin")
     def test_ticket_filter_folded_for_contact_data(self):
-        """Ensure open tickets are sent in priority to the outlook client."""
         partner = self.env["res.partner"].create(
             [
                 {"name": "Partner 1"},

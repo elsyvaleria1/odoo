@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal, NoReturn, overload
 
 import odoo.cli
-import odoo.init  # noqa: F401  imported for the bootstrap side effect (gc, monkeypatches)
+import odoo.init
 from odoo.db import is_maintenance_db
 from odoo.libs.debug_log import DebugLog
 from odoo.modules import initialize_sys_path, load_script
@@ -318,13 +318,13 @@ class DatabaseCommand(Command, register=False):
 def load_internal_commands() -> None:
     before = len(commands)
     with _debug.perf("cli.commands.internal_load") as span:
-        imported = 0  # debuglog
+        imported = 0
         for path in odoo.cli.__path__:
             for module in Path(path).iterdir():
                 if module.suffix != ".py" or module.stem.startswith("_"):
                     continue
                 __import__(f"odoo.cli.{module.stem}")
-                imported += 1  # debuglog
+                imported += 1
         span.set(imported=imported)
     _debug.pipeline(
         "cli.commands.internal_loaded",
@@ -356,8 +356,6 @@ def load_addons_commands(command: str | None = None) -> None:
                 continue
             fq_name = f"odoo.cli.{found_command}"
             if fq_name in mapping:
-                # addons_path order is priority, as for modules: the first
-                # path that defines the command keeps it.
                 _debug.logic(
                     "cli.commands.addon_shadowed",
                     command=found_command,

@@ -26,10 +26,6 @@ class WizardMailActivitySchedule(models.TransientModel):
                     self.plan_on_demand_user_id, employee
                 )["responsible"]
 
-                # The templates come from the admin-configured plan, not from
-                # user input: create as sudo so the sign_template_ids relation
-                # ACL does not require the scheduler to read the template, then
-                # confirm as the real user to keep the chatter attribution.
                 self.env["wizard.hr.employee.send.sign.request"].sudo().create(
                     {
                         "version_id": employee.version_id.id,

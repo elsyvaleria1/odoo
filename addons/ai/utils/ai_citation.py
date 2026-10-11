@@ -1,6 +1,5 @@
 import re
 
-# Matches AI citation tokens such as [SOURCE:210] or [SOURCE:210, 211]
 CITATION_REGEX = re.compile(
     r"""
     \[SOURCE:
@@ -14,11 +13,6 @@ CITATION_REGEX = re.compile(
 
 
 def get_attachment_ids_from_text(text):
-    """Return unique attachment ids from inline AI citation tags in the provided text.
-
-    :return: list of attachment ids
-    :rtype: list[int]
-    """
     if not text:
         return []
     sources = CITATION_REGEX.findall(text)
@@ -29,14 +23,6 @@ def get_attachment_ids_from_text(text):
 def apply_numeric_citations(
     text, attachment_data, link_attrs='target="_blank" rel="noreferrer noopener"'
 ):
-    """Replace inline citations with numbered, clickable citations [1][2]...
-
-    :param text: The input text containing citation placeholders (e.g. [SOURCE:ID1, ID2, ...])
-    :param attachment_data: Map of attachment_id -> {'url', 'source_name'}
-    :param link_attrs: HTML attributes for the citation link
-    :return: the text with the citation placeholders replaced by links
-    :rtype: str
-    """
     if not text:
         return ""
 

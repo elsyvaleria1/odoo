@@ -40,7 +40,6 @@ class ProjectTriage(models.Model):
             order="user_id,sequence DESC",
         )
         remaining_by_user: dict = defaultdict(list)
-        # grouped by "id", _read_group answers the id itself, not a record
         for user, sequence, bucket_id in remaining_all:
             remaining_by_user[user].append({"id": bucket_id, "seq": sequence})
 

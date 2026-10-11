@@ -43,7 +43,6 @@ class MailTestTicket(models.Model):
         )
 
     def _notify_get_recipients_groups(self, message, model_description, msg_vals=False):
-        # Activate more groups to test query counters notably (and be backward compatible for tests)
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals
         )
@@ -97,7 +96,6 @@ class MailTestTicket(models.Model):
 
         for ticket in self:
             email_key = email_normalize(ticket.email_from) or ticket.email_from
-            # do not fill Falsy with random data, unless monorecord (= always correct)
             if not email_key and len(self) > 1:
                 continue
             values = email_keys_to_values.setdefault(email_key, {})
@@ -157,7 +155,6 @@ class MailTestTicketMc(models.Model):
 
         for ticket in self:
             email_key = email_normalize(ticket.email_from) or ticket.email_from
-            # do not fill Falsy with random data, unless monorecord (= always correct)
             if not email_key and len(self) > 1:
                 continue
             values = email_keys_to_values.setdefault(email_key, {})
@@ -170,7 +167,6 @@ class MailTestTicketMc(models.Model):
         return self.container_id.alias_id
 
     def _notify_get_reply_to_addresses(self):
-        # Override to use alias of the parent container
         addresses = self.sudo().mapped("container_id")._notify_get_reply_to_addresses()
         res = {
             ticket.id: addresses[ticket.container_id.id]
@@ -206,7 +202,6 @@ class MailTestTicketPartner(models.Model):
     ]
     _primary_email = "email_from"
 
-    # fields to mimic stage-based tracing
     state = fields.Selection(
         selection=[
             ("new", "New"),
@@ -220,9 +215,6 @@ class MailTestTicketPartner(models.Model):
 
     def _message_post_after_hook(self, message, msg_vals):
         if self.email_from and not self.customer_id:
-            # we consider that posting a message with a specified recipient (not a follower, a specific one)
-            # on a document without customer means that it was created through the chatter using
-            # suggested recipients. This heuristic allows to avoid ugly hacks in JS.
             new_partner = message.partner_ids.filtered(
                 lambda partner: (
                     partner.email == self.email_from
@@ -257,7 +249,6 @@ class MailTestTicketPartner(models.Model):
     def _track_template(self, changes):
         res = super()._track_template(changes)
         record = self[0]
-        # acknowledgement-like email, like in project/helpdesk
         if "state" in changes and record.state == "new" and record.state_template_id:
             res["state"] = (
                 record.state_template_id,
@@ -290,7 +281,6 @@ class MailTestContainer(models.Model):
     )
 
     def _notify_get_recipients_groups(self, message, model_description, msg_vals=False):
-        # Activate more groups to test query counters notably (and be backward compatible for tests)
         groups = super()._notify_get_recipients_groups(
             message, model_description, msg_vals=msg_vals
         )

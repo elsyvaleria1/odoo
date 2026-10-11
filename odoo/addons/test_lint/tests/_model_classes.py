@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 try:
     from . import _ast_index
 except ImportError:
-    import _ast_index  # run as a script, from this directory
+    import _ast_index
 
 MODEL_BASES = frozenset({"Model", "AbstractModel", "TransientModel", "BaseModel"})
 
@@ -51,7 +51,6 @@ def looks_like_model_class(node: ast.ClassDef) -> bool:
 
 
 def class_attributes(node: ast.ClassDef) -> Iterator[tuple[str, ast.expr, ast.stmt]]:
-    # `name = value` and `name: annotation = value`, in declaration order
     for statement in node.body:
         match statement:
             case ast.Assign(targets=[ast.Name(id=name)], value=value):
@@ -85,7 +84,6 @@ class Constraint:
 class ModelClass:
     model: str
     parents: tuple[str, ...] = ()
-    # field name -> the keywords its declaration sets to a literal True
     fields: dict[str, frozenset[str]] = field(default_factory=dict)
     constraints: list[Constraint] = field(default_factory=list)
 
@@ -136,8 +134,6 @@ def collect(tree: ast.Module) -> list[ModelClass]:
 
 
 def fold(classes: Iterable[ModelClass], keyword: str) -> dict[str, dict[str, bool]]:
-    """{model: {field: whether any declaration sets `keyword=True`}}, over every
-    declaration of the model and every model it inherits from."""
     own: dict[str, dict[str, bool]] = {}
     parents: dict[str, set[str]] = {}
     for model_class in classes:

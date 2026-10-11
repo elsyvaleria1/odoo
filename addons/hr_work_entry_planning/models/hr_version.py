@@ -21,13 +21,7 @@ class HrVersion(models.Model):
     def _get_more_vals_attendance_interval(self, interval):
         result = super()._get_more_vals_attendance_interval(interval)
         if interval[2]._name == "planning.slot":
-            # Due to how Intervals work we might lose the right start and end time for our work entry
-            # i.e. [(1, 5, slot_1), (3, 10, slot_2)] will result in (1, 10, {slot_1, slot_2})
-            # `_prepare_version_work_entries_values` already takes care of unsplitting our invervals into two for that case
-            # But the date needs to be correct after the fact, which we do here.
-            # We still take the interval's date in case it was pushed by start_dt/end_dt.
             slot = interval[2]
-            # Avoid timezone conversions
             subresult = [("planning_slot_id", slot.id)]
             if interval[0] < slot.start_datetime.replace(tzinfo=UTC):
                 subresult.append(("date_start", slot.start_datetime))
@@ -84,7 +78,7 @@ class HrVersion(models.Model):
     @api.model
     def _generate_work_entries_postprocess(self, vals_list):
         new_vals_list = []
-        slot_backed = 0  # debuglog
+        slot_backed = 0
         for vals in vals_list:
             if (
                 not vals.get("planning_slot_id")
@@ -100,7 +94,7 @@ class HrVersion(models.Model):
             slot = self.env["planning.slot"].browse(vals["planning_slot_id"])
             number_of_days = (date_stop - date_start).days + 1
             allocated_hours = slot._get_planning_duration(dt_start, dt_stop)
-            slot_backed += 1  # debuglog
+            slot_backed += 1
             if _debug.logic.enabled and number_of_days > 1:
                 _debug.logic(
                     "planning_work_entry_spans_days",

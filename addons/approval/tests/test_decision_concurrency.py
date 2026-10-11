@@ -81,7 +81,6 @@ class TestConcurrentDecisions(TransactionCase):
                                 request_id,
                             )
                         )
-                    # decision logs are append-only through the ORM
                     cr.execute(
                         "DELETE FROM approval_decision_log WHERE request_id = %s",
                         [request_id],

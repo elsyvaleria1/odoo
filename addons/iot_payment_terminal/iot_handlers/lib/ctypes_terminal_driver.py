@@ -13,23 +13,13 @@ from odoo.addons.iot_drivers.tools.system import IS_WINDOWS
 
 _logger = logging.getLogger(__name__)
 
-# Buffer size big enough to hold every string incoming from ctypes libraries
-# The biggest strings stored in this buffer are the receipts
 CTYPES_BUFFER_SIZE = 10000
 
-# Define pointers and argument types for ctypes function calls
 ulong_pointer = ctypes.POINTER(ctypes.c_ulong)
 double_pointer = ctypes.POINTER(ctypes.c_double)
 
 
 def import_ctypes_library(lib_subfolder, lib_name):
-    """
-    Import a library using ctypes, independently of the OS.
-    :param lib_subfolder: The subfolder where the library is located under "iot_drivers/iot_handlers/lib"
-    :param lib_name: The name of the library file. Must respect the OS extension (.so/.dll), otherwise ValueError will be raised
-    Example: if the library is located under "iot_drivers/iot_handlers/lib/ctep/libeasyctep.so", then
-    lib_subfolder = "ctep" and lib_name = "libeasyctep.so"
-    """
     if IS_WINDOWS:
         supported_lib_extensions = ".dll"
         import_library_method = ctypes.WinDLL
@@ -56,9 +46,6 @@ def import_ctypes_library(lib_subfolder, lib_name):
 
 
 def create_ctypes_string_buffer():
-    """
-    Create a ctypes buffer of CTYPES_BUFFER_SIZE size
-    """
     return ctypes.create_string_buffer(CTYPES_BUFFER_SIZE)
 
 
@@ -68,7 +55,7 @@ class CtypesTerminalDriver(Driver):
     Worldline and Six drivers are inheriting from this class.
     """
 
-    DELAY_TIME_BETWEEN_TRANSACTIONS = 5  # seconds
+    DELAY_TIME_BETWEEN_TRANSACTIONS = 5
 
     def __init__(self, identifier, device) -> None:
         super().__init__(identifier, device)
@@ -84,7 +71,6 @@ class CtypesTerminalDriver(Driver):
 
     @classmethod
     def supported(cls, device):
-        # Currently all devices detected through TimInterface or CTEPInterface are supported
         return True
 
     def _action_default(self, data):
@@ -106,7 +92,6 @@ class CtypesTerminalDriver(Driver):
 
     def run(self):
         while True:
-            # If the queue is empty, the call of "get" will block and wait for it to get an item
             action = self.queue_actions.get()
             action_type = action.get("messageType")
             _logger.debug(
@@ -115,18 +100,15 @@ class CtypesTerminalDriver(Driver):
             if action_type == "Transaction":
                 self.processTransaction(action)
             elif action_type == "Balance":
-                self.six_terminal_balance(action)  # Only for Worldline "Six" (TIM)
+                self.six_terminal_balance(action)
             self.terminal_busy = False
 
     def _check_transaction_delay(self) -> None:
-        # After a payment has been processed, the display on the terminal still shows some
-        # information for about 4-5 seconds. No request can be processed during this period.
         delay_diff = (
             self.next_transaction_min_dt - datetime.datetime.now()
         ).total_seconds()
         if delay_diff > 0:
             if delay_diff > self.DELAY_TIME_BETWEEN_TRANSACTIONS:
-                # Theoretically not possible, but to avoid sleeping for ages, we cap the value
                 _logger.warning(
                     "%s: Transaction delay difference is too high %.2f force set as default",
                     self.device_name,
@@ -154,7 +136,7 @@ class CtypesTerminalDriver(Driver):
         disconnected=False,
         request_data=False,
     ) -> None:
-        self.data["status"] = "success"  # always success: let service handle errors
+        self.data["status"] = "success"
         self.data["result"] = {
             "value": value,
             "Stage": stage,
@@ -168,27 +150,18 @@ class CtypesTerminalDriver(Driver):
             "Disconnected": disconnected,
             "cid": request_data.get("cid"),
         }
-        # TODO: add `stacklevel=2` in image with python version > 3.8
         _logger.debug(
             "%s: send_status data: %s", self.device_name, self.data, stack_info=True
         )
         event_manager.device_changed(self)
 
-    # The following methods need to be implemented by the children classes
     @abstractmethod
     def processTransaction(self, transaction):
-        """
-        Method implementing the transaction processing
-        """
+        pass
 
     @abstractmethod
     def cancelTransaction(self, transaction):
-        """
-        Method implementing the ongoing transaction request cancellation
-        """
+        pass
 
     def six_terminal_balance(self, transaction):
-        """
-        Method implementing the terminal balance request (only for Worldline "Six")
-        Not an abstract method as it remains undefined for Worldline
-        """
+        pass

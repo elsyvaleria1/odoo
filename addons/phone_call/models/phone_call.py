@@ -2,8 +2,6 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.tools import frozendict
 
-# a national Mexican number has ten digits: its last ten identify it whatever
-# prefix (+52, 52 1, 01, a trunk's own) the line reported in front of them
 NUMBER_KEY_DIGITS = 10
 NUMBER_KEY_MIN_DIGITS = 7
 
@@ -106,9 +104,6 @@ class PhoneCall(models.Model):
 
     @api.depends("user_id")
     def _compute_company_id(self) -> None:
-        # the company the user is working in when it is one of theirs: their
-        # default company would file a call they make for their other company
-        # where they cannot see it
         active = self.env.company
         for call in self:
             if call.company_id:
@@ -122,8 +117,6 @@ class PhoneCall(models.Model):
     @api.depends("partner_id", "phone_number")
     @api.depends_context("uid", "allowed_company_ids")
     def _compute_call_count(self) -> None:
-        # the calls the reader may see: a count over every user's and company's
-        # calls told them how often others spoke to the number
         numbers = {number for number in self.mapped("phone_number") if number}
         partners = self.partner_id
         if not numbers and not partners:
@@ -196,18 +189,14 @@ class PhoneCall(models.Model):
                 call.duration = 0
 
     def _recording_timeline(self):
-        """The timeline a recording of this call is filed on: the call itself,
-        unless a business layer files the talk on the record that owns it."""
         self.check_singleton()
         return self
 
     def _on_call_details_completed(self) -> None:
-        """The line told who and when this call was after its recording came
-        in: what waited for those details may go on."""
+        pass
 
     def _on_merged_into(self, call) -> None:
-        """This call turned out to be ``call``, which took its recordings:
-        what else it held moves there or goes with it."""
+        pass
 
     def _file_recording(self, attachment, start_ms=None, end_ms=None, *, eta=None):
         self.check_singleton()
@@ -217,8 +206,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _match_partners(self, numbers, company) -> dict:
-        """The contact each number belongs to, by its last ten digits, among the
-        contacts ``company`` sees: ``{number_key: partner_id}``."""
         keys = {key for key in map(number_key, numbers) if key}
         if not keys:
             return {}

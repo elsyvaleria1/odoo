@@ -5,9 +5,6 @@ REPORT = "test_ir_access.reached_report"
 
 
 class TestScopedGrantOnAReport(TransactionCase):
-    # a report read from a query belongs to companies like any model, so a
-    # grant held in some companies reaches only their rows of it (and the
-    # company-less ones), wherever else the user may work
 
     @classmethod
     def setUpClass(cls):

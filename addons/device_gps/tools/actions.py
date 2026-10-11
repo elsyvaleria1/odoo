@@ -25,7 +25,6 @@ class GpsDeviceAction(TypedDict):
 
 
 def prepare_gps_device_action(owner: GpsDeviceOwner) -> GpsDeviceAction:
-    """Build device navigation from a carrier; legacy name-only carriers work."""
     owner.check_singleton()
     if not owner.gps_device_id:
         raise ValidationError(owner.env._("No GPS device assigned to this resource"))

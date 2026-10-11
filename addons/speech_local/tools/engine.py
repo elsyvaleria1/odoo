@@ -21,11 +21,6 @@ RELEASE_VAD = "silero_vad.onnx"
 
 MAX_UTTERANCE_S = 20.0
 MIN_SILENCE_S = 0.5
-# Whisper was trained on 30 s windows (3000 feature frames). Padded less, the
-# large-v3 family loops on a short utterance ("Nuevo. Nuevo. Nue" for "nuevo"):
-# on the 180 LMMG clips turbo went from 13.5 % to 4.7 % WER with the full
-# window, at three times the time, while small lost accuracy and doubled its
-# time -- so only the large family is padded, and commands keep small's speed
 WHISPER_TAIL_PADDINGS = 3000
 FULL_WINDOW_SIZES = ("turbo", "large")
 CLUSTER_THRESHOLD = 0.5
@@ -39,8 +34,6 @@ def whisper_language(language: str | None) -> str:
     return (language or "").replace("-", "_").split("_")[0].lower()
 
 
-# two releases side by side are refused rather than guessed between, and an
-# int8 pair wins only when both of its halves are there
 def model_files(model_dir: Path) -> tuple[dict[str, Path], list[str]]:
     found: dict[str, Path] = {
         name: model_dir / name for name in REQUIRED if (model_dir / name).is_file()
@@ -166,8 +159,6 @@ class LocalEngine:
         return {}
 
 
-# Which voice speaks when, apart from what is said: it runs behind this
-# server's own transcription and behind a vendor's that heard one voice
 class LocalDiarizer:
     def __init__(self, model_dir: Path) -> None:
         self.model_dir = model_dir

@@ -17,7 +17,6 @@ __all__ = [
 
 _STAMP = r"(?:(\d+):)?([0-5]?\d):([0-5]\d)[.,](\d{1,3})"
 _ARROW = re.compile(rf"^\s*{_STAMP}\s*-->\s*{_STAMP}\s*(?:\s.*)?$")
-# possessive: a whitespace run given back char by char rescanned what follows it
 _VOICE = re.compile(r"^<v(?:\.[^\s.>]+)*\s++([^>]*+)>(.*)$", re.DOTALL)
 _TAG = re.compile(r"</?[a-zA-Z][^>]*>")
 _NOTE = re.compile(r"^(?:NOTE|STYLE|REGION)\b")
@@ -96,7 +95,6 @@ def _decode_references(text: str) -> str:
 
 
 def _strip_tags(text: str, references: bool) -> str:
-    # a tag ends at a ">": tried past the last one, every "<x" rescanned the tail
     end = text.rfind(">") + 1
     stripped = (_TAG.sub("", text[:end]) + text[end:]).strip()
     return _decode_references(stripped) if references else stripped

@@ -7,9 +7,6 @@ class AccountAccount(models.Model):
 
     @api.model
     def load(self, fields, data):
-        """Overridden to add an id to a row to update an account if it already exists
-        instead of trying to create it.
-        """
         if "import_file" in self.env.context:
             if (
                 len(
@@ -25,7 +22,6 @@ class AccountAccount(models.Model):
                     )
                 )
 
-            # If the accounts are referenced by their code, retrieve database IDs for them.
             if not {"id", ".id"} & set(fields) and "code" in fields:
                 accounts = self.search_fetch(
                     domain=self._check_company_domain(self.env.company),

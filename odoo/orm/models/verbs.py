@@ -34,8 +34,6 @@ class Verb:
     at_create: bool = True
 
     def moves(self, before: typing.Any, after: typing.Any) -> bool:
-        # a field's cache holds its unset value as None where a declaration
-        # names it False
         before, after = _unset(before), _unset(after)
         if self.transition is None or before == after:
             return False
@@ -108,8 +106,6 @@ VERB_ORIGIN = "access_verb_origin"
 def _defined(
     model_cls: type[BaseModel], method: str
 ) -> typing.Callable[..., typing.Any]:
-    # resolved per call, not captured at install: a door must not freeze the
-    # method, or a patch of the class that defines it would never be reached
     defined: typing.Callable[..., typing.Any] = getattr(
         super(model_cls, model_cls), method
     )
@@ -146,8 +142,6 @@ def _checkpoint(
         checked = records._verb_checkpoint(verb_name)
         if not checked:
             return defined(records, *args, **kwargs)
-        # what passed the checkpoint is admitted for the rest of its call, so the
-        # state the call then writes is not asked again
         with records.env.transaction.admitting(records._name, verb_name, checked):
             return defined(records, *args, **kwargs)
 
@@ -155,8 +149,6 @@ def _checkpoint(
 
 
 def uninstall_verb_doors(model_cls: type[BaseModel]) -> None:
-    # a registry class outlives the loads that change its bases, so a door set
-    # on it before a module added an override would keep calling the old method
     for name, value in list(vars(model_cls).items()):
         if getattr(value, VERB_ORIGIN, None) is not None:
             delattr(model_cls, name)

@@ -9,7 +9,6 @@ class AccountFiscalPosition(models.Model):
 
     @_debug.perf.timed
     def action_create_foreign_taxes(self) -> None:
-        # EXTENDS account
         _debug.lifecycle("action_create_foreign_taxes", records=self)
         super().action_create_foreign_taxes()
         self.env["account.return.type"]._sync_all_returns(self.company_id.root_id)

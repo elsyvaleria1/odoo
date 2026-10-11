@@ -84,7 +84,6 @@ def _get_choices_spec(
 
 @functools.cache
 def _compile_pattern(pattern: str) -> re.Pattern[str]:
-    # Keyed by the patterns route annotations declare, never by request data.
     return re.compile(pattern)
 
 
@@ -323,7 +322,7 @@ def get_param_specs(
         annotation = param.annotation
         if isinstance(annotation, str):
             try:
-                annotation = eval(annotation, getattr(endpoint, "__globals__", None))  # noqa: S307  resolves a stringified forward-ref annotation against the endpoint's own module globals; only ever fed types the addon author wrote on their own route signature, never request-supplied data
+                annotation = eval(annotation, getattr(endpoint, "__globals__", None))
             except Exception:
                 _logger.debug(
                     "%s: cannot resolve annotation %r for %r; parameter left uncoerced",
@@ -510,7 +509,6 @@ def _coerce_union(name: str, value: Any, spec: ParamSpec) -> Any:
 
 def _coerce_value(name: str, value: Any, spec: ParamSpec) -> Any:
     if value == "" and spec.allow_none and _is_blankable(spec):
-        # An empty form input: "no value", not a malformed number.
         return None
     if value is None:
         if spec.allow_none:

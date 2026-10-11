@@ -20,7 +20,6 @@ class PurchaseOrder(models.Model):
                     line.date_commitment and line.date_commitment < min_date
                 ):
                     min_date = line.date_commitment
-            # since we only care about the date, remove time part so that when search based on a date we can also match it
             if min_date:
                 order.date_planned_mps = min_date.date()
             else:

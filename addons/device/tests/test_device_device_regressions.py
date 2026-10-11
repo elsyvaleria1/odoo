@@ -60,10 +60,6 @@ class TestDeviceConnectionFeedback(_DeviceFixture):
 
 
 class TestManagerCanUseAuthenticatedDevices(InlineStateRetryMixin, _DeviceFixture):
-    # device.profile.auth_password and auth_token are groups="base.group_system".
-    # http_read_data used to read them on the acting user's env, so a member of
-    # this module's own manager group who is not a system admin could not use a
-    # basic-auth or a token-auth device at all.
 
     @classmethod
     def setUpClass(cls):

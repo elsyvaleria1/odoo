@@ -28,8 +28,6 @@ class TestProjectConfig(TestProjectCommon):
         )
 
     def test_project_stage_actions_need_stages_group(self) -> None:
-        # Their views group by phase_id, a field only the stages group reads:
-        # loading one without that group would fail on the first read_group.
         actions = self.env.ref("project.open_view_project_all_group_stage") | (
             self.env.ref("project.open_view_project_all_config_group_stage")
         )

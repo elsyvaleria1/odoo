@@ -28,9 +28,6 @@ class EsgHrDashboard(EsgDashboard):
                 companies=request.env.companies,
                 buckets=len(employee_count_per_sex),
                 employees=sum(employee_count_per_sex.values()),
-                # with nothing to show the pie is filled with three of each
-                # and greyed out; `is_sample` is the ONLY thing separating that
-                # from a real workforce that happens to be evenly split
                 is_sample=not employee_count_per_sex,
             )
         if not employee_count_per_sex:
@@ -43,7 +40,6 @@ class EsgHrDashboard(EsgDashboard):
         }
 
     def _get_graph_config(self, data, is_sample=False):
-        # Pie chart showing sex distribution
         config = {
             "type": "pie",
             "data": {

@@ -141,7 +141,6 @@ class TestTwilioInboundSms(MockSmsTwilio, HttpCase):
             if request.url.endswith("/Messages.json")
         ]
         self.assertEqual(len(sent), 1)
-        # a US recipient, but the conversation's Belgian number answers
         self.assertEqual(sent[0]["From"], ["+32455998877"])
         self.assertEqual(sent[0]["To"], ["+15055550104"])
         self.assertEqual(sent[0]["Body"], ["We do, come by tomorrow"])

@@ -70,7 +70,6 @@ class DeviceDeviceModbus(models.Model):
     def _modbus_url(self) -> str:
         self.check_singleton()
         if self.comm_protocol == "modbus_rtu":
-            # For a serial line the endpoint is the port and `port` the baud rate.
             return f"modbus+rtu://{self.endpoint}?baudrate={self.port or 9600}"
         return f"modbus://{self.endpoint}:{self.port or self._MODBUS_DEFAULT_PORT}"
 
@@ -122,8 +121,6 @@ class DeviceDeviceModbus(models.Model):
         return self._stream_disconnect()
 
     def _modbus_read_data(self):
-        # The stream reads on its heartbeat; a read asks for it to be open
-        # and answers the last reading stored.
         self.check_singleton()
         self._stream_connect()
         point = self.env["device.data.log"].search(
@@ -150,7 +147,6 @@ class DeviceDeviceModbus(models.Model):
         return self._modbus_read_data()
 
     def modbus_write(self, address, value, register_type="holding", **meta):
-        """Queue a register or coil write on the device's stream."""
         self.check_singleton()
         config = self.config_id
         frame = {

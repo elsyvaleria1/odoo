@@ -5,7 +5,6 @@ from odoo.addons.esg.tests.esg_common import TestEsgCommon
 
 class TestAccountAccount(TestEsgCommon):
     def test_cannot_create_non_expense_account_from_esg(self):
-        """Test that we cannot create an account from ESG that is not an expense account."""
         with self.assertRaises(
             UserError, msg="You can only create expense accounts from ESG."
         ):
@@ -20,7 +19,6 @@ class TestAccountAccount(TestEsgCommon):
             )
 
     def test_cannot_link_non_expense_account_to_assignation_lines(self):
-        """Test that we cannot link a non-expense account to ESG assignation lines."""
         non_expense_account = self.env["account.account"].create(
             {
                 "name": "Non Expense Account",
@@ -40,11 +38,9 @@ class TestAccountAccount(TestEsgCommon):
             )
 
     def test_remove_linked_esg_lines_on_changing_account_type(self):
-        """Test that ESG assignation lines and emission factors of journal entries are removed when changing the account type to a non-expense type."""
         for account, esg_usable in self.accounts_to_esg_usable.items():
             if not esg_usable:
                 continue
-            # Test with all usable account types
             with self.subTest(account=account, esg_usable=esg_usable):
                 bill_line = self.env["account.move.line"].create(
                     {
@@ -75,7 +71,7 @@ class TestAccountAccount(TestEsgCommon):
                     1,
                     "There should be one journal entry line linked to the emission factor.",
                 )
-                account.account_type = "asset_current"  # Change to a non-expense type
+                account.account_type = "asset_current"
                 self.assertFalse(
                     self.emission_factor_foreign_electricity_consumption.assignation_line_ids,
                     "There should be no more assignation line linked to the emission factor after changing the account type to a non-expense type.",

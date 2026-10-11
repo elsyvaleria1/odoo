@@ -50,8 +50,6 @@ class SocialYouTubeCase(common.TransactionCase):
             old_post_id = old_post.id
             SocialStreamPost._gc_youtube_data()
 
-            # 'old_post' should be automatically deleted as of YouTube ToS
-            # see 'social.stream.post#_gc_youtube_data()' for more information
             self.assertEqual(
                 new_post,
                 SocialStreamPost.search([("id", "in", [new_post_id, old_post_id])]),

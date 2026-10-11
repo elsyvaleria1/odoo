@@ -74,17 +74,10 @@ def _get_base_connection_options(conninfo: str, kwargs: dict) -> str:
 
 
 _GUC_NAME_RE = re.compile(r"-c\s*([A-Za-z_][A-Za-z0-9_.]*)\s*=")
-# A comma starts the next entry only when a `name=` follows it, so a list-valued
-# GUC (`search_path=public,pg_catalog`) stays one entry.
 _GUC_SEPARATOR_RE = re.compile(r",(?=\s*[A-Za-z_][A-Za-z0-9_.]*\s*=)")
 
 _FAKETIME_GUCS: tuple[str, ...] = ("search_path=public,pg_catalog",)
 
-# The ORM stores naive UTC in `timestamp` columns, and `now()`, `CURRENT_DATE`
-# and every timestamp <-> timestamptz cast resolve through the session zone, so
-# a session in the cluster's zone shifts them by its offset. Last on the line so
-# it beats an operator's PGOPTIONS; a startup GUC is what RESET/DISCARD ALL
-# return to, where a SET on configure would be undone at the first give-back.
 _SESSION_ZONE_GUC = "TimeZone=UTC"
 
 
@@ -252,9 +245,6 @@ class ConnectionPool:
         pool = self._pools.get(key)
         if pool is not None and not pool.closed:
             if fail_fast and self._is_pool_unproven_and_empty(key, pool):
-                # A surviving pool with nothing idle and its proof revoked is
-                # psycopg_pool still counting the connections it cannot open:
-                # getconn would wait the deadline out. Ask the probe first.
                 conninfo, kwargs = self._prepare_connect_args(key, connection_info)
                 self._check_connectable_or_fail_fast(
                     key, conninfo, kwargs, deadline, fail_fast=True
@@ -478,7 +468,7 @@ class ConnectionPool:
             self._warn_about_leaks()
             self.stats.record_borrow(started)
             if _debug.perf.enabled:
-                pool_stats = pool.get_stats()  # debuglog
+                pool_stats = pool.get_stats()
                 _debug.perf.count(
                     "pool.borrow",
                     db=dbname,
@@ -801,12 +791,6 @@ class ConnectionPool:
         if trimmed:
             self.stats.record_connections_trimmed(trimmed)
 
-    # The session reset runs here, on the returning thread, not in psycopg_pool's
-    # worker: with `reset=` set, putconn hands every return to the pool's one
-    # worker, the next getconn finds nothing idle and grows the pool instead of
-    # waiting -- measured, 8 request threads held 63 backends -- and every
-    # return for a database queues behind that one thread. Reset first, and
-    # putconn files an idle connection synchronously.
     def _reset_returned_connection(self, connection: psycopg.Connection) -> bool:
         try:
             self._reset_connection(connection)
@@ -839,19 +823,12 @@ class ConnectionPool:
             _debug.logic("pool.drain_failed", error=type(exc).__name__)
             _logger.debug("Failed to drain pool", exc_info=True)
 
-    # libpq's PQcancel from the client side: no borrow (a saturated pool is
-    # when this is needed), no pg_signal_backend privilege, and it reaches a
-    # replica connection too. A cancel that fails is a connection that is
-    # already gone or a backend that already finished; either way nothing to do.
     _CANCEL_TIMEOUT = 2.0
 
     def cancel_queries_of(self, thread_name: str) -> int:
         cancelled = 0
         for conn in self._checkouts.get_connections_of(thread_name):
-            pid = get_backend_pid(conn)  # debuglog
-            # A cancel reaches whoever runs on the backend now: the previous
-            # cancel may have waited up to _CANCEL_TIMEOUT, in which time this
-            # connection can have been returned and borrowed by another thread.
+            pid = get_backend_pid(conn)
             if not self._checkouts.is_held_by(conn, thread_name):
                 _debug.logic("pool.cancel_skipped", backend_pid=pid, reason="rehomed")
                 continue

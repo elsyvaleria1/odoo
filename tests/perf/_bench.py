@@ -25,17 +25,12 @@ class StatementCounter:
         self._probe_seconds = 0.0
 
     def _thread_wait(self) -> float:
-        # the probe's own time is booked as SQL time, so the residual a floor
-        # judges reads as it did without it: two reads per statement are
-        # ~0.9 us, a millisecond over a thousand statements
         start = time.perf_counter()
         wait = int(os.pread(self._schedstat, 64, 0).split()[1]) / 1e9
         self._probe_seconds += time.perf_counter() - start
         return wait
 
     def _mark_statement(self) -> None:
-        # the last statement queued before the driver waits opens the wait:
-        # the time between two pipelined statements is the flow's own
         self._wait_mark = self._thread_wait()
 
     def _record(self, cursor, query, params, start, delay):
@@ -145,14 +140,10 @@ _MISSING = object()
 
 
 _SCHEDSTAT = Path("/proc/thread-self/schedstat")
-# a round counts when, outside its statements, it waited for a CPU less than
-# this share of its residual, a fifth of the tolerance a floor is judged with
 CLEAN_WAIT_SHARE = 0.05
 
 
 def run_delay() -> float:
-    # seconds the calling thread has spent runnable but waiting for a CPU
-    # (Linux schedstat); elsewhere no wait is known and every round counts
     try:
         return int(_SCHEDSTAT.read_text(encoding="ascii").split()[1]) / 1e9
     except OSError:
@@ -197,18 +188,9 @@ def measure(
                 "non_sql_ms": (wall - counter.seconds) / repeat * 1000,
             }
         )
-        # the wake-up after each statement is SQL time, not the residual's
         outside_sql = waited() - wait_start - getattr(counter, "sql_wait", 0.0)
         if outside_sql <= CLEAN_WAIT_SHARE * (wall - counter.seconds):
             clean.append(samples[-1])
-    # the fastest round is the floor's reading: another process's burst lands
-    # in some rounds and not others, and measured 2026-09-22 under eight busy
-    # neighbours the fastest round of a sale cycle rose 22 % where the median
-    # rose 54 %; the median is kept beside it for the record. Only a round
-    # that barely waited for a CPU is read: a write batch's 2.4 ms residual
-    # beside its 360 ms of SQL read 4.3-4.4 ms in rounds that waited 3.6-13.8 ms
-    # on the run queue, with 20 of 22 cores busy, against 0-0.006 ms idle
-    # (2026-10-08)
     read = clean or samples
     return {
         **{key: round(min(row[key] for row in read), 3) for key in samples[0]},
@@ -248,8 +230,6 @@ def _calibration_workload() -> int:
 
 
 def calibration_ms(runs: int = 15) -> float:
-    # how fast this machine runs interpreter-bound code right now: the fastest
-    # of several runs, so a preempted run does not count
     best = float("inf")
     for _ in range(runs):
         start = time.perf_counter()

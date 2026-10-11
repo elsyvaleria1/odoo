@@ -27,7 +27,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
     def check_release_to_pay_scenario(
         self, ordered_qty, scenario, invoicing_policy="transferred", order_price=500.0
     ):
-        """Run one release-to-pay scenario and assert the status after each step."""
         self.product.bill_policy = invoicing_policy
 
         purchase_order = self.env["purchase.order"].create(
@@ -58,8 +57,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         )
         for action, params in scenario:
             if action == "invoice":
-                # purchase_id is invisible on the bill form, so the order has to
-                # be seeded through the context rather than set on the Form.
                 move_form = Form(
                     AccountMove.with_context(default_purchase_id=purchase_order.id)
                 )
@@ -92,7 +89,7 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
             elif action == "receive":
                 purchase_line.write(
                     {"qty_transferred": params["qty"]}
-                )  # a service has no picking, so the received quantity is set by hand
+                )
 
                 if "rslt" in params:
                     for invoice_index, status in params["rslt"]:
@@ -163,7 +160,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
             ],
         )
 
-        # A price change between order and bill always puts the bill in exception
         self.check_release_to_pay_scenario(
             10,
             [
@@ -181,7 +177,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         )
 
     def _confirmed_order(self, ordered_qty=10, price=500.0, policy="ordered"):
-        """One confirmed order line, the shape most of these tests need."""
         self.product.bill_policy = policy
         order = self.env["purchase.order"].create(
             {
@@ -222,7 +217,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         )
 
     def _confirmed_order_lines(self, quantities, price=500.0, policy="ordered"):
-        """A confirmed order carrying one line per entry in `quantities`."""
         self.product.bill_policy = policy
         order = self.env["purchase.order"].create(
             {
@@ -246,30 +240,23 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         return order
 
     def test_bill_line_spanning_two_order_lines_is_counted_once(self):
-        """A bill line linked to N order lines is billed once, not N times."""
         order = self._confirmed_order_lines([6, 4])
         bill = self._bill_for(order.line_ids, 10)
 
-        # 10 billed against 10 ordered: nothing is over-billed.
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "yes")
         self.assertEqual(bill.release_to_pay, "yes")
 
     def test_over_billing_is_seen_across_units_of_measure(self):
-        """Quantities are compared in the order's unit, not the bill's."""
         dozen = self.env.ref("base.product_uom_dozen")
         order = self._confirmed_order_lines([13], price=1.0)
 
-        # 12.00 per dozen is 1.00 per unit: the same money the order agreed to,
-        # so the price check has no opinion and the quantities decide.
         first = self._bill_for(order.line_ids, 1, price=12.0, uom=dozen)
         self.assertEqual(first.invoice_line_ids.can_be_paid, "yes")
 
-        # 24 units billed against 13 ordered, in dozens.
         second = self._bill_for(order.line_ids, 1, price=12.0, uom=dozen)
         self.assertEqual(second.invoice_line_ids.can_be_paid, "exception")
 
     def test_same_money_in_another_unit_is_not_a_price_change(self):
-        """12.00 per dozen and 1.00 per unit are the same price."""
         dozen = self.env.ref("base.product_uom_dozen")
         order = self._confirmed_order_lines([12], price=1.0)
 
@@ -278,10 +265,8 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "yes")
 
     def test_a_discount_is_a_price_change(self):
-        """The bill's discount is part of what it asks to be paid."""
         order = self._confirmed_order_lines([10], price=500.0)
 
-        # Same unit price as the order, half the money.
         bill = self._bill_for(order.line_ids, 10)
         bill.invoice_line_ids.discount = 50.0
 
@@ -289,12 +274,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.release_to_pay, "exception")
 
     def test_a_price_raised_on_the_order_reopens_the_bill(self):
-        """Editing the order after the bill exists must re-judge the bill.
-
-        The verdict is read back from storage rather than from the cache, so a
-        missing dependency shows up as the bill staying payable at the old
-        price instead of merely as a stale cache entry.
-        """
         order = self._confirmed_order_lines([10], price=500.0)
         bill = self._bill_for(order.line_ids, 10)
         self.assertEqual(bill.release_to_pay, "yes")
@@ -308,7 +287,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.release_to_pay, "exception")
 
     def test_a_discount_given_on_the_order_reopens_the_bill(self):
-        """The order line's discount is half of what the price check compares."""
         order = self._confirmed_order_lines([10], price=500.0)
         bill = self._bill_for(order.line_ids, 10)
         self.assertEqual(bill.release_to_pay, "yes")
@@ -321,10 +299,8 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "exception")
 
     def test_a_changed_billing_policy_reopens_the_bill(self):
-        """The policy decides which quantities are compared, so it is a trigger."""
         order = self._confirmed_order_lines([10], policy="transferred")
         bill = self._bill_for(order.line_ids, 5)
-        # Nothing received yet, and 5 stays within the 10 ordered.
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "no")
 
         self.product.bill_policy = "ordered"
@@ -335,12 +311,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "yes")
 
     def test_a_purchase_receipt_counts_against_what_was_ordered(self):
-        """A judged document has to count towards the billed quantity.
-
-        The module judges purchase receipts, but the quantity source used to
-        count only ('in_invoice', 'in_refund'), so a receipt contributed
-        nothing and could bill any quantity at all against an order.
-        """
         order = self._confirmed_order_lines([10], price=500.0)
         receipt = self._bill_for(order.line_ids, 100)
         receipt.move_type = "in_receipt"
@@ -351,7 +321,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(receipt.release_to_pay, "exception")
 
     def test_mixed_product_order_lines_are_an_exception(self):
-        """Two products on one bill line is not something this control can judge."""
         other = self.env["product.product"].create(
             {
                 "name": "Other product",
@@ -382,18 +351,12 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         )
         order.action_confirm()
 
-        # Same price on both lines, so the price check lets this through; only
-        # the mixed-product guard catches it.
         bill = self._bill_for(order.line_ids, 10)
 
         self.assertEqual(bill.invoice_line_ids.can_be_paid, "exception")
         self.assertEqual(bill.release_to_pay, "exception")
 
     def test_duplicate_does_not_carry_the_forced_status(self):
-        """Copying a released bill must not copy the override that released it."""
-        # `purchase_line_ids` is copy=False in core, so the duplicate has no order
-        # to match against; if the forced verdict came along it would report
-        # payable with nothing backing it.
         order = self._confirmed_order()
         bill = self._bill_for(order.line_ids, 10)
         bill.write({"force_release_to_pay": True, "release_to_pay_manual": "yes"})
@@ -406,11 +369,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(duplicate.release_to_pay, "exception")
 
     def test_forced_status_follows_a_changed_manual_verdict(self):
-        """Editing the manual status on a forced bill must move release_to_pay."""
-        # release_to_pay is what the dashboard gate and all three search filters
-        # read. It used not to list release_to_pay_manual in its depends while
-        # reading it, so on a forced bill the stored value kept the previous
-        # verdict until some unrelated write happened to retrigger the compute.
         order = self._confirmed_order()
         bill = self._bill_for(order.line_ids, 10)
         bill.write({"force_release_to_pay": True, "release_to_pay_manual": "yes"})
@@ -422,11 +380,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.release_to_pay, "no")
 
     def test_forced_bill_without_a_manual_verdict_is_an_exception(self):
-        """A forced bill with no manual status must not fall out of every view."""
-        # A NULL release_to_pay matches neither the dashboard gate
-        # (release_to_pay IN ('yes', 'exception')) nor the 'bills_to_pay' or
-        # 'exception' filters, so the bill would be neither payable, nor
-        # blocked, nor flagged -- simply unmonitored.
         order = self._confirmed_order()
         bill = self._bill_for(order.line_ids, 10)
         bill.write({"force_release_to_pay": True, "release_to_pay_manual": "yes"})
@@ -437,12 +390,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(bill.release_to_pay, "exception")
 
     def test_a_customer_invoice_carries_no_release_to_pay_verdict(self):
-        """This module judges vendor bills; it must not answer for sales."""
-        # release_to_pay and can_be_paid used to land on 'exception' for every
-        # customer invoice and every one of its lines -- a verdict on a question
-        # nobody asked. 'exception' also happens to be inside the dashboard's
-        # gate, so the sale side of the dashboard passed by collision rather
-        # than by rule; _get_to_pay_select now exempts it explicitly.
         invoice = self.init_invoice(
             "out_invoice", partner=self.partner, amounts=[100.0], post=False
         )
@@ -451,9 +398,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertFalse(any(invoice.invoice_line_ids.mapped("can_be_paid")))
 
     def test_amount_currency_edit(self):
-        """Editing a journal item's `amount_currency` on an invoice must not raise."""
-        # Guards a regression from the Binary-field / web_save handling of the
-        # 'bin_size' context key, which used to traceback in this flow.
         move_form = Form(
             self.env["account.move"].with_context(default_move_type="out_invoice")
         )
@@ -470,24 +414,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(move_form.line_ids.edit(0).amount_currency, -30)
 
     def test_an_unconvertible_unit_is_an_exception_not_a_traceback(self):
-        """can_be_paid is stored, so a raise here aborts an unrelated flush.
-
-        uom.uom._get_price_in_unit and _get_quantity_in_unit are strict: two
-        units
-        with no common reference unit raise UserError. Reached from a stored
-        compute -- which the ORM replays over every row when the column is
-        created or a dependency changes -- one such row takes the whole flush
-        down, and `-u account_3way_match` with it.
-
-        The row is written past the ORM on purpose. A user cannot pick that
-        unit on the form: core's own _compute_price_unit refuses it first
-        (account/models/account_move_line.py). What this guards is the
-        row that is already stored -- a legacy bill, an import, a unit whose
-        reference tree changed later -- meeting a recompute. That is the
-        failure the fork describes above uom.uom._get_quantity_reconcile,
-        and core's qty_invoiced, the quantity this module reproduces,
-        degrades there instead of raising.
-        """
         order = self._confirmed_order_lines([10], price=100.0)
         bill = self._bill_for(order.line_ids, 10, price=100.0)
         line = bill.invoice_line_ids.filtered(lambda l: l.purchase_line_ids)
@@ -501,20 +427,12 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         )
         line.invalidate_recordset()
 
-        # Exactly how a store recompute reaches the row.
         self.env.add_to_compute(line._fields["can_be_paid"], line)
         self.env["account.move.line"].flush_model()
 
         self.assertEqual(line.can_be_paid, "exception")
 
     def test_a_bill_line_is_judged_against_its_own_product(self):
-        """A link to an order line for another article is not a match.
-
-        The mixed-product guard only made the order lines agree among
-        themselves; nothing compared them with the line being judged. A bill
-        for a product that was never ordered read 'yes' off another article's
-        quantities and price.
-        """
         order = self._confirmed_order_lines([10], price=500.0)
         order.line_ids.qty_transferred = 10.0
         bill = self._bill_for(order.line_ids, 5, price=500.0)
@@ -538,13 +456,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(line.can_be_paid, "exception")
 
     def test_a_rounding_artefact_is_not_a_received_quantity(self):
-        """`received_qty == 0` is exact equality on a sum of converted floats.
-
-        Three order lines received 0.1, 0.2 and -0.3 have received nothing at
-        any precision this module works in, but their sum is 2.8e-17, which is
-        not zero to `==`. Billed within the ordered quantity, the line is 'no';
-        the exact comparison made it 'exception'.
-        """
         order = self._confirmed_order_lines([10, 10, 10], policy="transferred")
         order.line_ids[0].qty_transferred = 0.1
         order.line_ids[1].qty_transferred = 0.2
@@ -562,15 +473,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(line.can_be_paid, "no")
 
     def test_a_sub_cent_price_change_is_still_a_price_change(self):
-        """A unit price is not an amount, and must not be compared like one.
-
-        price_unit is stored at the 'Product Price' precision, which a company
-        may set finer than the two decimals its currency rounds to. Comparing
-        through currency.compare_amounts rounded both sides to the currency
-        first, so every drift smaller than a cent per unit compared equal --
-        on a bill of ten thousand units that is real money, and it is exactly
-        the price change this check exists to catch.
-        """
         self.env["decimal.precision"].search(
             [("name", "=", "Product Price")]
         ).digits = 4
@@ -582,7 +484,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         bill = self._bill_for(order.line_ids, 10, price=100.1249)
         line = bill.invoice_line_ids.filtered(lambda l: l.purchase_line_ids)
 
-        # Both prices round to the same cent, which is why this used to pass.
         self.assertEqual(
             order.currency_id.compare_amounts(
                 order.line_ids.price_unit, line.price_unit
@@ -592,11 +493,6 @@ class TestReleaseToPayInvoice(AccountTestInvoicingCommon):
         self.assertEqual(line.can_be_paid, "exception")
 
     def test_the_same_price_in_another_currency_is_not_a_price_change(self):
-        """The finer comparison must not flag an honest conversion.
-
-        The guard for the test above: converting a bill written in another
-        currency back into the order's must still compare equal.
-        """
         order = self._confirmed_order_lines([10], price=500.0)
         bill = self._bill_for(order.line_ids, 10, price=500.0)
         line = bill.invoice_line_ids.filtered(lambda l: l.purchase_line_ids)

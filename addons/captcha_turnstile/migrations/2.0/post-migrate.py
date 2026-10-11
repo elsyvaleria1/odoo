@@ -7,9 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
-    """Turnstile's keys take the captcha module's names. One provider checks
-    the forms now, where both used to run: with none chosen, reCAPTCHA when it
-    is configured too."""
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
@@ -21,8 +18,6 @@ def migrate(cr, version):
     if secret := Credential._get_system_secret("cf.turnstile_secret_key"):
         Credential._set_system_secret("captcha_turnstile.secret_key", secret)
         Credential._set_system_secret("cf.turnstile_secret_key", False)
-    # reCAPTCHA's keys under their old names or their new ones, whichever
-    # migration ran first
     recaptcha = (
         (
             ICP.get_param("recaptcha_public_key")

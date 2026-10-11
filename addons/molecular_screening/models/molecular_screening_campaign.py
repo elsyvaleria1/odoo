@@ -75,20 +75,10 @@ class MolecularScreeningCampaign(models.Model):
             campaign.job_count = len(campaign.job_ids)
 
     def _get_compounds(self, role):
-        """Return the compounds playing ``role`` in this campaign.
-
-        :param str role: value of ``molecular.compound.role.role``
-        :rtype: odoo.models.Model
-        """
         self.check_singleton()
         return self.role_ids.filtered(lambda r: r.role == role).compound_id
 
     def action_prepare_docking_jobs(self):
-        """Open one docking job per target that has none yet.
-
-        Each job starts blocked or pending depending on the target's own
-        validation gate, so one failing target never holds back the others.
-        """
         Job = self.env["molecular.docking.job"]
         for campaign in self:
             for target in campaign.target_ids - campaign.job_ids.target_id:

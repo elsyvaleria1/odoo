@@ -5,7 +5,6 @@ class SocialLivePost(models.Model):
     _inherit = "social.live.post"
 
     def _refresh_statistics(self):
-        """Overridden to bypass third-party API calls."""
         return
 
     def _post_facebook(self, facebook_target_id) -> None:
@@ -13,7 +12,6 @@ class SocialLivePost(models.Model):
             "social_demo.social_stream_facebook_page", raise_if_not_found=False
         )
         if facebook_stream:
-            # make facebook_post_id of live_post & stream_post match
             self.write({"facebook_post_id": self.id})
             self._post_demo(facebook_stream.id, {"facebook_post_id": self.id})
 
@@ -22,12 +20,10 @@ class SocialLivePost(models.Model):
             "social_demo.social_stream_instagram_account", raise_if_not_found=False
         )
         if instagram_stream:
-            # make instagram_post_id of live_post & stream_post match
             self.write({"instagram_post_id": self.id})
             self._post_demo(instagram_stream.id, {"instagram_post_id": self.id})
 
     def _post_twitter(self) -> None:
-        """In addition to '_post_demo', we also create stream.posts in the "keyword stream" if the message contains the keyword."""
 
         twitter_stream_search = self.env.ref(
             "social_demo.social_stream_twitter_search", raise_if_not_found=False
@@ -53,7 +49,6 @@ class SocialLivePost(models.Model):
             "social_demo.social_stream_twitter_account", raise_if_not_found=False
         )
         if twitter_stream_account:
-            # make twitter_tweet_id of live_post & stream_post match
             self.write({"twitter_tweet_id": self.id})
             self._post_demo(twitter_stream_account.id, {"twitter_tweet_id": self.id})
 
@@ -62,7 +57,6 @@ class SocialLivePost(models.Model):
             "social_demo.social_stream_linkedin_page", raise_if_not_found=False
         )
         if linkedin_stream_page:
-            # make linkedin_post_id of live_post & linkedin_post_urn of stream_post match
             self.write({"linkedin_post_id": self.id})
             self._post_demo(
                 linkedin_stream_page.id,
@@ -70,7 +64,6 @@ class SocialLivePost(models.Model):
             )
 
     def _post_demo(self, stream_id, additional_vals=None) -> None:
-        """Directly creates stream_post instances in the related streams."""
 
         stream_posts_to_create = [
             dict(

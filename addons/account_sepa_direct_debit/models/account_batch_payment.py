@@ -62,11 +62,6 @@ class AccountBatchPayment(models.Model):
 
     @api.depends("payment_ids")
     def _compute_sdd_required_collection_date(self) -> None:
-        """
-        The regulation requires that the payer's bank must receive the request for a first direct debit collection
-        the latest 5 business days prior to the due date. For subsequent direct debit collections,
-        the payer's bank must receive such a request the latest 2 business days prior to the due date.
-        """
         sepa_codes = set(
             self.env["account.payment.method"]._get_sdd_payment_method_code()
         )
@@ -75,7 +70,7 @@ class AccountBatchPayment(models.Model):
         ):
             if (
                 batch.sdd_required_collection_date
-            ):  # Do not override when there is a time
+            ):
                 batch.sdd_required_collection_date = batch.sdd_required_collection_date
                 continue
 
@@ -83,8 +78,6 @@ class AccountBatchPayment(models.Model):
             mandates = batch.payment_ids.sdd_mandate_id
             all_used_mandates = batch._get_all_used_mandates()
             if all(all_used_mandates.get(mandate, 0) > 0 for mandate in mandates):
-                # The minimum delay is 5 days in all cases, except when all the mandates involved were already used once
-                # before, then it can be 2 days.
                 minimum_offset = SDD_MIN_PRENOT_PERIOD
 
             batch.sdd_required_collection_date = fields.Date.context_today(
@@ -95,7 +88,6 @@ class AccountBatchPayment(models.Model):
 
     @api.depends("payment_ids")
     def _compute_sdd_min_required_collection_date(self) -> None:
-        """Compute the minimum required collection date according to SEPA if there are unused mandates."""
         sepa_codes = set(
             self.env["account.payment.method"]._get_sdd_payment_method_code()
         )
@@ -107,8 +99,6 @@ class AccountBatchPayment(models.Model):
             mandates = batch.payment_ids.sdd_mandate_id
             all_used_mandates = batch._get_all_used_mandates()
             if all(all_used_mandates.get(mandate, 0) > 0 for mandate in mandates):
-                # The minimum delay is 5 days in all cases, except when all the mandates involved were already used once
-                # before, then it can be 2 days.
                 batch.sdd_min_required_collection_date = False
             else:
                 batch.sdd_min_required_collection_date = fields.Date.context_today(
@@ -117,7 +107,6 @@ class AccountBatchPayment(models.Model):
 
     @api.depends("payment_ids")
     def _compute_sdd_first_time_payment_ids(self) -> None:
-        """Compute the payments in the batch having mandates that were never used before."""
         sepa_codes = set(
             self.env["account.payment.method"]._get_sdd_payment_method_code()
         )
@@ -147,11 +136,6 @@ class AccountBatchPayment(models.Model):
                 ) or "CORE"
 
     def _get_all_used_mandates(self):
-        """Retrieve a dict, mapping all used mandates in this batch payment to the number of uses.
-
-        :return: Used mandates mapped to the number of uses.
-        :rtype: dict[:class:`odoo.addons.account_sepa_direct_debit.models.SDDMandate`, int]
-        """
         self.check_singleton()
         mandates = self.payment_ids.sdd_mandate_id
         return dict(
@@ -282,7 +266,6 @@ class AccountBatchPayment(models.Model):
                     button_text=self.env._("Go to mandates"),
                 )
 
-            # Check that the pre-notification delay is good
             collection_date = self.sdd_required_collection_date
             min_collection_date = today + timedelta(days=SDD_MIN_PRENOT_PERIOD)
             if collection_date < min_collection_date:
@@ -349,8 +332,6 @@ class AccountBatchPayment(models.Model):
             self.payment_method_code
             in self.payment_method_id._get_sdd_payment_method_code()
         ):
-            # Constrains on models ensure all the payments can generate SDD data before
-            # calling this method, so we make no further check of their content here
             company = self.env.company
             return {
                 "filename": "PAIN008"
@@ -368,22 +349,6 @@ class AccountBatchPayment(models.Model):
         return super()._generate_export_file()
 
     def _send_after_validation(self):
-        """Notify the customer that a debit has been made from his account.
-
-        This is required as per the SEPA Direct Debit rulebook.
-        The notice must include:
-            - the last 4 digits of the debtor's bank account
-            - the mandate reference
-            - the amount to be debited
-            - your SEPA creditor identifier
-            - your contact information
-        Notifications should be sent at least 14 calendar days before the payment is created unless
-        specified otherwise (We changed that default in Odoo by always specifying the period and defaulting it to 2).
-
-        :param recordset token: The token linked to the mandate from which the debit has been made,
-                                as a `payment.token` record
-        :return: None
-        """
         res = super()._send_after_validation()
         if self.env.registry.settings.get(
             self.env, "account_sepa_direct_debit.disable_sdd_pre_notification", False

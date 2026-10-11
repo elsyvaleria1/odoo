@@ -22,7 +22,7 @@ class MrpBomLine(models.Model):
         comodel_name="product.product",
         string="Component",
     )
-    product_tmpl_id = fields.Many2one(  # noqa: E8529  One2many inverse of product.template.bom_line_ids
+    product_tmpl_id = fields.Many2one(
         comodel_name="product.template",
         related="product_id.product_tmpl_id",
         string="Product Template",
@@ -107,7 +107,7 @@ class MrpBomLine(models.Model):
                 continue
             counts.update(
                 dict(
-                    self.env["document.document"]._read_group(  # noqa: E8507 - one query per attachment model (product, template)
+                    self.env["document.document"]._read_group(
                         [
                             ("attached_on_mrp", "=", "bom"),
                             ("active", "=", True),

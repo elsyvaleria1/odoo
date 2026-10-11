@@ -489,8 +489,6 @@ class TestSubqueries(TransactionCase):
         nodes = Node.create([{"parent_id": parent_node.id} for _ in range(3)])
         Head.create({"node_id": parent_node.id})
 
-        # the closure is one recursive statement on the port, and it stays a
-        # subquery of the search that asked for it
         with self.assertQueries(
             [
                 """

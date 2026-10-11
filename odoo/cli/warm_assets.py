@@ -13,9 +13,6 @@ _debug = DebugLog(__name__)
 class WarmAssets(DatabaseCommand):
     """Build a database's asset bundles before it takes traffic."""
 
-    # run after a deploy, before the workers receive requests: every bundle and
-    # lazy group, per website, compiles once here instead of in each cold
-    # worker of each instance, and the classic bundles' SCSS with them
     name = "warm_assets"
     description = "Build the asset bundles of a database before it takes traffic"
 
@@ -38,16 +35,10 @@ class WarmAssets(DatabaseCommand):
 
 
 def warm_asset_bundles(env: Any) -> list[str]:
-    """Pregenerate every bundle once without a website, then once per website.
-
-    :return: the asset urls built
-    """
     qweb = env["ir.qweb"]
     links = list(qweb._pregenerate_assets_bundles())
     websites = env["website"].search([]) if "website" in env else ()
     for website in websites:
-        # the frontend variants are keyed by website_id, which website's
-        # _prepare_assets_params reads from the context outside a request
         links.extend(
             qweb.with_context(website_id=website.id)._pregenerate_assets_bundles()
         )

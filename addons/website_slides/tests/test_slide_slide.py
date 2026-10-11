@@ -250,7 +250,6 @@ class TestVideoFromURL(slides_common.SlidesCase):
 
 
 class TestSlideFormContent(slides_common.SlidesCase):
-    # 1x1 transparent PNG
     PNG = (
         b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2O"
         b"UAAAAABJRU5ErkJggg=="
@@ -264,10 +263,6 @@ class TestSlideFormContent(slides_common.SlidesCase):
         return base64.b64encode(buffer.getvalue())
 
     def test_the_file_of_the_chosen_content_type_is_the_one_saved(self):
-        # Both binary fields are related to binary_content. The one the content
-        # type hides holds what the category onchange cleared, and it must stay
-        # out of the save: when it was sent, its False came after the PDF and
-        # the slide was saved without a file.
         pdf = self._one_page_pdf()
         form = Form(self.env["slide.slide"])
         form.name = "Switched"

@@ -70,7 +70,6 @@ class IntegrationGithubWebhook(models.Model):
             hook.url = f"{hook.get_base_url()}{WEBHOOK_ROUTE}{hook.hook_uuid}"
 
     def action_issue_secret(self) -> dict[str, Any]:
-        """A new signing secret, shown once; the one before stops verifying."""
         self.check_singleton().check_access("write")
         Credential = self.env["credential.credential"]
         if not Credential._is_encryption_key_configured():
@@ -123,7 +122,6 @@ class IntegrationGithubWebhook(models.Model):
         ) or super()._inbound_event_id(admission, event_type)
 
     def _dispatch(self, event: str, payload: dict[str, Any]) -> str:
-        """Act on one delivery; the answer names what was done."""
         self.check_singleton()
         handler = (
             getattr(self, f"_github_{event}", None) if event.isidentifier() else None
@@ -138,8 +136,6 @@ class IntegrationGithubWebhook(models.Model):
         _debug.logic("webhook.dispatched", event=event, outcome=outcome)
         return outcome
 
-    # One method per event GitHub sends: `_github_<X-GitHub-Event>(repository,
-    # payload)`. A module that follows another event adds its method.
 
     def _github_ping(self, repository: str | None, payload: dict[str, Any]) -> str:
         return "pong"

@@ -50,7 +50,7 @@ class StockQuant(models.Model):
         ondelete="restrict",
         bypass_search_access=True,
     )
-    company_id = fields.Many2one(  # noqa: E8529  index (product_id, location_id, trace_id, package_id, owner_id, company_id)
+    company_id = fields.Many2one(
         related="location_id.company_id",
         string="Company",
         store=True,
@@ -120,9 +120,6 @@ class StockQuant(models.Model):
         check_company=True,
         help="This is the owner of the quant",
     )
-    # No `digits`: these hold a quantity normalised into the product's unit,
-    # which nobody chose, so "Product Unit" precision would re-grid it and
-    # store a 2 g receipt of a kilogram product as 0.00 (c348d72fecfe).
     quantity = fields.Float(
         min_display_digits="Product Unit",
         default=0.0,
@@ -375,8 +372,6 @@ class StockQuant(models.Model):
 
     @api.model
     def _with_quant_upkeep(self):
-        # whoever validates a move keeps its quants, a stock user or not: the
-        # privilege adds create and read on quants, the company guard binds
         return self.with_privilege(
             "stock.privilege_maintain_quants",
             reason="the quants a validated move brings stock into or out of",
@@ -440,8 +435,6 @@ class StockQuant(models.Model):
         if plain_vals:
             plain_records = super().create([vals for _index, vals in plain_vals])
             _debug.lifecycle("created", quants=plain_records)
-            # a row this transaction inserted is invisible to every other one
-            # until commit: it is held already, and needs no lock query
             self.env.cr.cache.setdefault(LOCKED_QUANTS_CACHE_KEY, set()).update(
                 plain_records.ids
             )
@@ -608,7 +601,6 @@ class StockQuant(models.Model):
             "available_quantity",
             "inventory_quantity_auto_apply",
         ):
-            # _read_group_select returns SQL scalars for these computed fields.
             return False
         return super()._aggregates_through_records(field, func)
 

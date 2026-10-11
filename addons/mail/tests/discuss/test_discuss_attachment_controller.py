@@ -125,7 +125,7 @@ class TestDiscussAttachmentController(MailControllerAttachmentCommon):
         self.assertEqual(sent[0][3], {"id": attachment.id})
 
     def test_zip_download_streams_one_member_per_attachment(self):
-        big = b"x" * (2 * 256 * 1024 + 17)  # filestore-backed, crosses two read chunks
+        big = b"x" * (2 * 256 * 1024 + 17)
         attachments = self.env["ir.attachment"].create(
             [
                 {"name": "big.bin", "raw": big, "mimetype": "application/octet-stream"},

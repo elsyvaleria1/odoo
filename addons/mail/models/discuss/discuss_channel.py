@@ -508,8 +508,6 @@ class DiscussChannel(models.Model):
             ]
 
             partner_ids_to_add = partner_ids
-            # a channel opened on someone else's behalf -- a live chat session
-            # a service user opens for a bridged visitor -- names its members
             if (
                 not self.env.context.get("install_mode")
                 and not self.env.user._is_public()
@@ -824,8 +822,6 @@ class DiscussChannel(models.Model):
         "parent_channel_id.default_display_mode",
     )
     def _compute_meeting_dt(self) -> None:
-        # an ad-hoc meeting ("Start Now") starts with its channel and lasts as
-        # long as its last call; a thread takes place along with its meeting
         calls_by_meeting = (self | self.parent_channel_id).call_history_ids.grouped(
             "channel_id"
         )
@@ -2153,7 +2149,6 @@ class DiscussChannel(models.Model):
 
     @api.model
     def _get_meeting_today_domain(self) -> Domain:
-        # an ad-hoc meeting ("Start Now") takes place the day it is started
         start_of_day, end_of_day = self._get_today_bounds()
         return (
             Domain("default_display_mode", "=", "video_full_screen")
@@ -2163,8 +2158,6 @@ class DiscussChannel(models.Model):
 
     @api.model
     def _get_meeting_not_over_domain(self) -> Domain:
-        # an ad-hoc meeting lasts as long as the call it was started for; a
-        # thread follows its meeting. Whether a call runs is not private.
         call_running = Domain("call_history_ids", "any!", Domain("end_dt", "=", False))
         videocall = Domain("default_display_mode", "=", "video_full_screen")
         return (videocall & call_running) | Domain(
@@ -2228,10 +2221,6 @@ class DiscussChannel(models.Model):
 
     def _lock_rtc_session_count(self) -> None:
         self.lock_for_update(wait=True)
-        # a lock that is released without a write leaves the row version as it
-        # was, so a concurrent REPEATABLE READ join or leave queued on it would
-        # still count sessions on its own stale snapshot; a new row version
-        # makes that transaction's lock fail with a serialization error and retry
         self.env.cr.execute(
             SQL("UPDATE discuss_channel SET id = id WHERE id = ANY(%s)", list(self.ids))
         )
@@ -2462,9 +2451,6 @@ class DiscussChannel(models.Model):
         self, partners: ResPartner, now: datetime, last_interest_dt: datetime
     ) -> Self:
         chat_member_set = self._get_chat_member_set(partners)
-        # a channel holding this member set but not these members is visible
-        # here, since _get_chat just missed it: a stale set (a self-chat later
-        # joined, a member removed) must not refuse the chat for good
         self.env.cr.execute(
             SQL(
                 "UPDATE discuss_channel SET chat_member_set = NULL"
@@ -2559,8 +2545,6 @@ class DiscussChannel(models.Model):
             | channels_with_all_members.channel_member_ids
             | self.channel_name_member_ids
         )
-        # every column at once: a store reads more of them than any list here
-        # would name, and a later read of one left out fetches the rest again
         all_members.fetch()
         partners = all_members.partner_id.sudo()
         partners._prefetch_store_persona()
@@ -2751,8 +2735,6 @@ class DiscussChannel(models.Model):
                 return False
 
     def _get_push_notification_title(self, author, record_name: str) -> str:
-        # a message with no author partner (an e-mail or SMS sender Odoo has
-        # no contact for) is titled by its conversation alone, not "- False"
         self.check_singleton()
         name = author.name
         match self._channel_type_policy().push_title:
@@ -2832,10 +2814,6 @@ class DiscussChannel(models.Model):
 
     @classmethod
     def _channel_type_policy_map(cls) -> Mapping[str, ChannelTypePolicy]:
-        # the policies are constants of the class chain the registry builds,
-        # read several times per channel a store serializes; a module loaded
-        # later extends the same registry class with new bases, so the memo is
-        # kept only for the bases it was built from
         memo = cls.__dict__.get("_channel_type_policies_memo")
         if memo is None or memo[0] is not cls.__bases__:
             memo = (cls.__bases__, MappingProxyType(cls._channel_type_policies()))

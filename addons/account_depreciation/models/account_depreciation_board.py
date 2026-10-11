@@ -458,7 +458,6 @@ class AccountDepreciationBoard(models.Model):
         for board, vals in zip(boards, vals_list, strict=True):
             requested = vals.get("value_original")
             if requested is None:
-                # the resource computed its value before this board existed
                 if board.original_move_line_ids:
                     board.value_original = board._get_value_original_from_lines()
             elif board.currency_id.compare_amounts(board.value_original, requested):
@@ -466,8 +465,6 @@ class AccountDepreciationBoard(models.Model):
         return boards
 
     def copy_data(self, default=None):
-        # The asset copies itself (its resource, its identifiers); the board
-        # copies its own fields and points at that copy.
         default = dict(default or {})
         asset_default = {
             name: default.pop(name)
@@ -566,7 +563,7 @@ class AccountDepreciationBoard(models.Model):
         )
         default_per_company = {}
         for company in needs_default.company_id:
-            default_per_company[company] = AccountJournal.search(  # noqa: E8507  one search per distinct company, not per asset
+            default_per_company[company] = AccountJournal.search(
                 [
                     *AccountJournal._check_company_domain(company),
                     ("type", "=", "general"),
@@ -1130,9 +1127,6 @@ class AccountDepreciationBoard(models.Model):
 
     @api.model
     def _create_from_plans(self, plans):
-        # A plan's board lands on the asset the bill line names, on a component of
-        # it, or on a new asset; every further board of the same line is a
-        # component of the one that landed first.
         Board = self.with_context(clean_context(self.env.context))
         landed = {}
         boards = self.browse()
@@ -1358,8 +1352,6 @@ class AccountDepreciationBoard(models.Model):
         full_asset._message_log_batch(
             bodies={asset.id: asset_body for asset in full_asset}
         )
-        # The asset's lifecycle is written on the asset, in one write, so its
-        # disposal constraint sees the date beside the state.
         full_asset.asset_id.with_context(board_lifecycle=True).write(
             {"state": "disposed", "active": False, "date_disposal": date_disposal}
         )

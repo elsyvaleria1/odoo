@@ -76,12 +76,9 @@ def _translated_trigram_patterns(
             if not unaccented or part not in _READ_RAW:
                 segments.append((escape,))
             elif previous.isalnum() and 2 ** (alternated + 1) <= _MAX_ALTERNATIVES:
-                # both readings keep the word before the character bounded, so
-                # its padded trigrams stay in the index condition
                 alternated += 1
                 segments.append((escape, _like_escape(part)))
             else:
-                # both readings end with the character itself
                 wildcard = "%" if previous else ""
                 segments.append((f"{wildcard}{_like_escape(part)}",))
             previous = part

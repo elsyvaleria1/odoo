@@ -36,31 +36,31 @@ class TestDeferredFleet(TestAccountReportsCommon):
                 1000,
                 "2023-01-01",
                 "2023-04-30",
-            ],  # 4 full months (=250/month)
+            ],
             [
                 cls.expense_accounts[0],
                 1050,
                 "2023-01-16",
                 "2023-04-30",
-            ],  # 3 full months + 15 days (=300/month)
+            ],
             [
                 cls.expense_accounts[1],
                 1225,
                 "2023-01-01",
                 "2023-04-15",
-            ],  # 3 full months + 15 days (=350/month)
+            ],
             [
                 cls.expense_accounts[2],
                 1680,
                 "2023-01-21",
                 "2023-04-14",
-            ],  # 2 full months + 10 days + 14 days (=600/month)
+            ],
             [
                 cls.expense_accounts[2],
                 225,
                 "2023-04-01",
                 "2023-04-15",
-            ],  # 15 days (=450/month)
+            ],
         ]
 
         cls.batmobile, cls.batpod = cls.env["resource.resource"].create(
@@ -114,11 +114,6 @@ class TestDeferredFleet(TestAccountReportsCommon):
         )
 
     def test_deferred_fleet_manually_and_grouped_mode(self):
-        """
-        Test that the vehicle is correctly exported to the deferred move lines in the manually & grouped mode
-        We cannot have multiple vehicles on the same move line (on one account), therefore, we'll have as many
-        deferral lines as we have unique combinations of (account_id, vehicle_id).
-        """
         self.company.account_config_id.generate_deferred_expense_entries_method = (
             "manual"
         )
@@ -163,10 +158,6 @@ class TestDeferredFleet(TestAccountReportsCommon):
         deferral_entries = self.env[
             "account.deferred.expense.report.handler"
         ]._generate_deferral_entry(options)
-        # account 0, vehicle 0: 1000
-        # account 0, vehicle 1: 2000
-        # account 1, vehicle 1: 15000
-        # account 1, no vehicle: 20000
         expected_values = [
             {
                 "account_id": self.expense_accounts[0].id,

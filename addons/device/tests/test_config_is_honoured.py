@@ -128,10 +128,6 @@ class TestPerProfileRetention(DeviceTransactionCase):
 
 
 class TestGlobalRetentionFallback(DeviceTransactionCase):
-    # With no device.data_retention_days configured the module falls back to its
-    # own default. That default used to be read from a second parameter,
-    # device.data_retention_days_default, which 19.0.1.10.0 deleted -- so the
-    # read was dead and the literal beside it was the only reachable value.
 
     @classmethod
     def setUpClass(cls):
@@ -148,9 +144,6 @@ class TestGlobalRetentionFallback(DeviceTransactionCase):
                 )
             ],
         ).unlink()
-        # data_retention_days defaults to 90 on the profile, and a profile with
-        # its own period is swept by the per-profile branch and excluded from
-        # the global one. 0 is what puts this device on the global path.
         cls.profile = cls._create_device_profile(
             name="Fallback Retention", data_retention_days=0
         )

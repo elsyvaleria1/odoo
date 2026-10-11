@@ -14,22 +14,6 @@ class MassMailController(http.Controller):
     def _check_mailing_email_token(
         self, mailing_id, document_id, email, hash_token, required_mailing_id=False
     ):
-        """Return the mailing based on given credentials, sudo-ed. Raises if
-        there is an issue fetching it.
-
-        Specific use case
-          * hash_token is always required for public users, no generic page is
-            available for them;
-          * hash_token is not required for generic page for logged user, aka
-            if no mailing_id is given;
-          * hash_token is not required for mailing specific page if the user
-            is a mailing user;
-          * hash_token is not required for generic page for logged user, aka
-            if no mailing_id is given and if mailing_id is not required;
-          * hash_token always requires the triplet mailing_id, email and
-            document_id, as it indicates it comes from a mailing email and
-            is used when comparing hashes;
-        """
         if not hash_token:
             if request.env.user._is_public():
                 raise BadRequest
@@ -80,9 +64,6 @@ class MassMailController(http.Controller):
             return email, hash_token
         return request.env.user.email_normalized, None
 
-    # ------------------------------------------------------------
-    # SUBSCRIPTION MANAGEMENT
-    # ------------------------------------------------------------
 
     @http.route("/mailing/my", type="http", website=True, auth="user")
     def mailing_my(self):
@@ -96,7 +77,6 @@ class MassMailController(http.Controller):
         render_values.update(feedback_enabled=False)
         return request.render("mass_mailing.page_mailing_unsubscribe", render_values)
 
-    # csrf=False: a mail client posts the one-click unsubscribe; auth="receiver" admits it
     @http.route(
         ["/mailing/<int:mailing_id>/unsubscribe_oneclick"],
         type="http",
@@ -135,7 +115,6 @@ class MassMailController(http.Controller):
         self, mailing_id, document_id=None, email=None, hash_token=None
     ):
         mailing = request.env["mailing.mailing"].sudo().browse(mailing_id)
-        # check that mailing exists/has access
         email_found, hash_token_found = self._get_user_information(email, hash_token)
         try:
             self._check_mailing_email_token(
@@ -145,7 +124,7 @@ class MassMailController(http.Controller):
                 hash_token_found,
                 required_mailing_id=True,
             )
-        except NotFound as e:  # avoid leaking ID existence
+        except NotFound as e:
             raise Unauthorized from e
 
         return self._render_mailing_confirm_unsubscribe(
@@ -156,7 +135,6 @@ class MassMailController(http.Controller):
         self, mailing, document_id, email, hash_token, form_action=None
     ):
         unsubscribed_lists = ""
-        # Display list name if list is public
         if mailing.mailing_model_real == "mailing.contact":
             unsubscribed_lists = ", ".join(
                 mailing_list.name
@@ -176,8 +154,6 @@ class MassMailController(http.Controller):
             },
         )
 
-    # POST method
-    # kept for backwards compatibility, must eventually be merged with mailing/<mailing_id>/unsubscribe
     @http.route(
         "/mailing/confirm_unsubscribe",
         type="http",
@@ -188,7 +164,6 @@ class MassMailController(http.Controller):
     def mailing_confirm_unsubscribe_post(
         self, mailing_id, document_id=None, email=None, hash_token=None
     ):
-        # Unsubscribe user
         email_found, hash_token_found = self._get_user_information(email, hash_token)
         try:
             mailing_sudo = self._check_mailing_email_token(
@@ -198,7 +173,7 @@ class MassMailController(http.Controller):
                 hash_token_found,
                 required_mailing_id=True,
             )
-        except NotFound as e:  # fails if mailing doesn't exist or token is wrong
+        except NotFound as e:
             raise Unauthorized from e
 
         if mailing_sudo.mailing_on_mailing_list:
@@ -224,7 +199,6 @@ class MassMailController(http.Controller):
             },
         )
 
-    # todo: merge this route with /mail/mailing/confirm_unsubscribe on next minor version
     @http.route(
         ["/mailing/<int:mailing_id>/unsubscribe"],
         type="http",
@@ -244,11 +218,9 @@ class MassMailController(http.Controller):
                 hash_token_found,
                 required_mailing_id=True,
             )
-        except NotFound as e:  # avoid leaking ID existence
+        except NotFound as e:
             raise Unauthorized from e
         if request.httprequest.method != "POST":
-            # opened from a mail: a scanner or a preview must not unsubscribe
-            # anyone, so the page asks and its form posts back here
             return self._render_mailing_confirm_unsubscribe(
                 mailing_sudo,
                 document_id,
@@ -266,10 +238,8 @@ class MassMailController(http.Controller):
         )
 
     def _mailing_unsubscribe_from_list(self, mailing, document_id, email, hash_token):
-        # Unsubscribe directly + Let the user choose their subscriptions
 
         mailing.contact_list_ids._update_subscription_from_email(email, opt_out=True)
-        # compute name of unsubscribed list: hide non public lists
         if all(not mlist.is_public for mlist in mailing.contact_list_ids):
             lists_unsubscribed_name = request.env._(
                 "You are no longer part of our mailing list(s)."
@@ -335,16 +305,11 @@ class MassMailController(http.Controller):
     def _prepare_mailing_subscription_values(
         self, mailing, document_id, email, hash_token
     ):
-        """Prepare common values used in various subscription management or
-        blocklist flows done in portal."""
         mail_blocklist = self._get_blocklist_record(email)
         email_normalized = tools.email_normalize(email)
 
-        # fetch optout/blacklist reasons
         opt_out_reasons = self._get_subscription_optouts()
 
-        # as there may be several contacts / email -> consider any opt-in overrides
-        # opt-out
         contacts = self._get_contacts(email)
         lists_optin = contacts.subscription_ids.filtered(
             lambda sub: not sub.opt_out
@@ -366,24 +331,20 @@ class MassMailController(http.Controller):
         )
 
         return {
-            # customer
             "document_id": document_id,
             "email": email,
             "email_valid": bool(email_normalized),
             "hash_token": hash_token,
             "mailing_id": mailing.id,
             "res_id": document_id,
-            # feedback
             "feedback_enabled": True,
             "feedback_readonly": False,
             "opt_out_reasons": opt_out_reasons,
-            # blocklist
             "blocklist_enabled": request.env.registry.settings.get_bool(
                 request.env, "mass_mailing.show_blacklist_buttons", True
             ),
             "blocklist_possible": mail_blocklist is not None,
             "is_blocklisted": mail_blocklist.active if mail_blocklist else False,
-            # mailing lists
             "contacts": contacts,
             "lists_contacts": contacts.subscription_ids.list_id.filtered("active"),
             "lists_optin": lists_optin,
@@ -391,7 +352,6 @@ class MassMailController(http.Controller):
             "lists_public": lists_public,
         }
 
-    # what a subscription action leaves the page saying (last_action)
     _SUBSCRIPTION_ACTIONS = frozenset(
         {
             "subscription_updated",
@@ -487,12 +447,9 @@ class MassMailController(http.Controller):
             )
             .exists()
         )
-        # opt-out all not chosen lists
         lists_to_optout = contacts.subscription_ids.filtered(
             lambda sub: not sub.opt_out and sub.list_id not in lists_optin
         ).list_id
-        # opt-in in either already member, either public (to avoid trying to opt-in
-        # in private lists)
         lists_to_optin = lists_optin.filtered(
             lambda mlist: mlist.is_public or mlist in contacts.list_ids
         )
@@ -523,14 +480,6 @@ class MassMailController(http.Controller):
         feedback=None,
         **post,
     ):
-        """Feedback can be given after some actions, notably after opt-outing
-        from mailing lists or adding an email in the blocklist.
-
-        This controller tries to write the customer feedback in the most relevant
-        record. Feedback consists in two parts, the opt-out reason (based on data
-        in 'mailing.subscription.optout' model) and the feedback itself (which
-        is triggered by the optout reason 'is_feedback' fields).
-        """
         mailing_sudo, email_found, _hash = self._subscription_request(
             mailing_id, document_id, email, hash_token
         )
@@ -550,7 +499,6 @@ class MassMailController(http.Controller):
                 feedback,
             )
 
-        # blocklist addition: opt-out and feedback linked to the mail.blacklist records
         if last_action == "blocklist_add":
             mail_blocklist = self._get_blocklist_record(email)
             if mail_blocklist:
@@ -558,9 +506,6 @@ class MassMailController(http.Controller):
                     mail_blocklist._track_set_log_message(message)
                 mail_blocklist.opt_out_reason_id = opt_out_reason_id
 
-        # opt-outed from mailing lists (either from a mailing or directly from 'my')
-        # -> in that case, update recently-updated subscription records and log on
-        # contacts
         documents_for_post = []
         if last_action in {"subscription_updated", "subscription_updated_optout"} or (
             not last_action
@@ -576,7 +521,6 @@ class MassMailController(http.Controller):
             ).opt_out_reason_id = opt_out_reason_id
             if message:
                 documents_for_post = contacts
-        # feedback coming from a mailing, without additional context information: log
         elif mailing_sudo and message:
             documents_for_post = (
                 request.env[mailing_sudo.mailing_model_real]
@@ -600,23 +544,17 @@ class MassMailController(http.Controller):
         sitemap=False,
     )
     def mailing_unsubscribe_placeholder_link(self, **post):
-        """Dummy route so placeholder is not prefixed by language, MUST have multilang=False"""
         return request.redirect("/mailing/my", code=301, local=True)
 
     @http.route("/view", type="http", auth="user", website=True, sitemap=False)
     def mailing_view_in_browser_placeholder_link(self):
-        """Route used to give an example of what would be when the user follows the placeholder links in the mailing editor."""
         return request.render("mass_mailing.mailing_view_generic")
 
-    # ------------------------------------------------------------
-    # TRACKING
-    # ------------------------------------------------------------
 
     @http.route(
         "/mail/track/<int:mail_id>/<string:token>/blank.gif", type="http", auth="public"
     )
     def track_mail_open(self, mail_id, token, **post):
-        """Email tracking."""
         if not request.env["mail.mail"]._is_mail_recipient_token(mail_id, token):
             raise Unauthorized
 
@@ -633,10 +571,6 @@ class MassMailController(http.Controller):
 
     @http.route("/r/<string:code>/m/<int:mailing_trace_id>", type="http", auth="public")
     def full_url_redirect(self, code, mailing_trace_id, **post):
-        # `mail_mail._prepare_outgoing_body` rewrites every shortened link of an
-        # outgoing mailing into this route, so it is the busiest one there is --
-        # and it was the one that never checked `is_a_bot`, which is why link
-        # previewers counted as clicks on the statistics this module exists for.
         redirect_url = request.env["link.tracker"]._resolve_and_track(
             code,
             ip=request.httprequest.remote_addr,
@@ -647,9 +581,6 @@ class MassMailController(http.Controller):
             raise NotFound
         return request.redirect(redirect_url, code=301, local=False)
 
-    # ------------------------------------------------------------
-    # MAILING MANAGEMENT
-    # ------------------------------------------------------------
 
     @http.route(
         "/mailing/report/unsubscribe",
@@ -671,8 +602,6 @@ class MassMailController(http.Controller):
         ):
             raise Unauthorized
         if request.httprequest.method != "POST":
-            # the link in the report mail: a scanner or a preview opening it
-            # must not turn the reports off, so the page asks and posts it
             return request.render("mass_mailing.mailing_report_deactivate_confirm")
 
         request.env["ir.config_parameter"].sudo().set_param(
@@ -693,7 +622,6 @@ class MassMailController(http.Controller):
     def mailing_view_in_browser(
         self, mailing_id, email=None, document_id=None, hash_token=None, **kwargs
     ):
-        # backward compatibility: temporary for mailings sent before migation to 17
         document_id = document_id or kwargs.get("res_id")
         hash_token = hash_token or kwargs.get("token")
         try:
@@ -707,7 +635,6 @@ class MassMailController(http.Controller):
         except NotFound as e:
             raise Unauthorized from e
 
-        # do not force lang, will simply use user context
         document_id = int(document_id) if document_id and document_id.isdecimal() else 0
         html_markupsafe = mailing_sudo._render_field(
             "body_html",
@@ -715,13 +642,12 @@ class MassMailController(http.Controller):
             compute_lang=False,
             options={"post_process": False},
         )[document_id]
-        # Update generic URLs (without parameters) to final ones
         if document_id:
             html_markupsafe = html_markupsafe.replace(
                 "/unsubscribe_from_list",
                 mailing_sudo._get_unsubscribe_url(email, document_id),
             )
-        else:  # when manually trying a /view on a mailing, not through email link
+        else:
             html_markupsafe = html_markupsafe.replace(
                 "/unsubscribe_from_list",
                 tools.urls.urljoin(
@@ -737,9 +663,6 @@ class MassMailController(http.Controller):
             },
         )
 
-    # ------------------------------------------------------------
-    # BLACKLIST
-    # ------------------------------------------------------------
 
     @http.route(
         "/mailing/blocklist/add",
@@ -818,9 +741,6 @@ class MassMailController(http.Controller):
             else "",
         }
 
-    # ------------------------------------------------------------
-    # PREVIEW
-    # ------------------------------------------------------------
 
     @http.route(
         "/mailing/mobile/preview",

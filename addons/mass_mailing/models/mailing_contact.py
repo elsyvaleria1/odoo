@@ -17,9 +17,6 @@ class MailingContact(models.Model):
 
     @api.model
     def default_get(self, fields):
-        """When coming from a mailing list we may have a default_list_ids context
-        key. We should use it to create subscription_ids default value that
-        are displayed to the user as list_ids is not displayed on form view."""
         res = super().default_get(fields)
         if "subscription_ids" in fields and not res.get("subscription_ids"):
             list_ids = self.env.context.get("default_list_ids")
@@ -69,7 +66,6 @@ class MailingContact(models.Model):
 
     @api.model
     def fields_get(self, allfields=None, attributes=None):
-        """Hide first and last name field if the split name feature is not enabled."""
         res = super().fields_get(allfields, attributes)
         if not self._is_name_split_activated():
             if "first_name" in res:
@@ -128,17 +124,6 @@ class MailingContact(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Synchronize default_list_ids (currently used notably for computed
-        fields) default key with subscription_ids given by user when creating
-        contacts.
-
-        Those two values have the same purpose, adding a list to to the contact
-        either through a direct write on m2m, either through a write on middle
-        model subscription.
-
-        This is a bit hackish but is due to default_list_ids key being
-        used to compute oupt_out field. This should be cleaned in master but here
-        we simply try to limit issues while keeping current behavior."""
         default_list_ids = self.env.context.get("default_list_ids")
         default_list_ids = (
             default_list_ids if isinstance(default_list_ids, (list, tuple)) else []
@@ -170,9 +155,6 @@ class MailingContact(models.Model):
             MailingContact, self.with_context(default_list_ids=False)
         ).create(vals_list)
 
-        # We need to invalidate list_ids or subscription_ids because list_ids is a many2many
-        # using a real model as table ('mailing.subscription') and the ORM doesn't automatically
-        # update/invalidate the `list_ids`/`subscription_ids` cache correctly.
         for record in records:
             if record.list_ids:
                 record.invalidate_recordset(["subscription_ids"])
@@ -181,9 +163,6 @@ class MailingContact(models.Model):
         return records
 
     def copy(self, default=None):
-        """Cleans the default_list_ids while duplicating mailing contact in context of
-        a mailing list because we already have subscription lists copied over for newly
-        created contact, no need to add the ones from default_list_ids again"""
         if self.env.context.get("default_list_ids"):
             self = self.with_context(default_list_ids=False)
         return super().copy(default)
@@ -241,7 +220,6 @@ class MailingContact(models.Model):
 
     @api.model
     def _is_name_split_activated(self) -> bool:
-        """Return whether the contact names are populated as first and last name or as a single field (name)."""
         view = self.env.ref(
             "mass_mailing.mailing_contact_view_tree_split_name",
             raise_if_not_found=False,

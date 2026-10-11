@@ -278,9 +278,6 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         self.env.flush_all()
         self.env.invalidate_all()
         as_demo = partners.with_user(self.user_demo)
-        # the first write pays for the user, its groups, the rows and the
-        # batch's rows: every later write checks the guard on its one record,
-        # which keeps the batch's prefetch ids, so no row is fetched alone
         as_demo[0].write({"comment": "note 0"})
         with self.assertQueryCount(8):
             for index, partner in enumerate(as_demo[1:], start=1):
@@ -308,8 +305,6 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         )
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
 
-        # a permission only ever adds records: one that admits nothing takes
-        # nothing away from the others
         row2.domain = "[('id','=',False),('name','=',False)]"
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
 
@@ -483,8 +478,6 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         )
 
     def test_a_permission_widens_what_another_permission_denied(self):
-        # permissions are OR-ed: one admitting nothing, and the user's own
-        # see-all rows switched off, deny; another admitting everything allows
         group_user = self.env.ref("base.group_user")
         partner = self.env["res.partner"].create({"name": "composition partner"})
         self._partner_rows(kind="permission").active = False
@@ -527,8 +520,6 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         partner.with_user(self.user_demo).check_access("read")
 
     def test_a_row_on_a_table_inheritance_root_binds_its_subtypes(self):
-        # an action is read through the root table: a guard on the root binds
-        # a window action as it binds the root
         window = self.env["ir.actions.act_window"].search([], limit=1)
         demo_window = window.with_user(self.env.ref("base.user_admin"))
         self.assertTrue(demo_window.has_access("read"))
@@ -631,7 +622,6 @@ class TestIrAccess(TransactionCaseWithUserDemo):
         )
 
     def test_an_omitted_group_refuses_a_permission_and_binds_a_guard_to_everyone(self):
-        # a grant with no group would reach every user, portal and public too
         with self.assertRaises(ValidationError):
             self.env["ir.access"].create(
                 {
@@ -781,8 +771,6 @@ class TestAccessWhileLoading(TransactionCaseWithUserDemo):
 
 
 class TestAccessCacheInvalidation(TransactionCaseWithUserDemo):
-    # res.partner.tag: its permissions carry no domain, whereas res.partner also
-    # holds permissions a write to one row cannot revoke
     def _granting_rows(self, model_name, user, mode="write"):
         group_ids = set(user._get_group_ids())
         return (

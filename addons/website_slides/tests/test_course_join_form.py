@@ -204,8 +204,6 @@ class TestCourseJoinForm(HttpCase):
         self.assertFalse(page.xpath("//form//form"))
 
     def test_a_preview_lesson_opens_beside_a_locked_one_with_resources(self):
-        # QWeb evaluates t-foreach before t-if: a guard on the loop's own node
-        # read the locked lesson's resources as the visitor, and the page 403d
         preview = self.channel.slide_ids
         preview.is_preview = True
         self.env["slide.slide"].create(

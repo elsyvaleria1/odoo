@@ -85,7 +85,6 @@ class CrmLead(models.Model):
             "name": vals["name"],
             "description": vals["description"],
             "medium_id": self.env.ref("utm.utm_medium_website").id,
-            # sudo because ai_agent_id has group no_access
             "source_id": self.env.context["discuss_channel"]
             .sudo()
             .ai_agent_id.source_id.id
@@ -98,13 +97,11 @@ class CrmLead(models.Model):
         }
         if self.env.user._is_public():
             values.update({k: v for k, v in vals["partner_info"].items() if v})
-            # on lead, partner's email field is named 'email_from'
             if "email" in values:
                 values["email_from"] = values.pop("email")
         else:
             partner = self.env.user.partner_id
             values["partner_id"] = partner.id
-            # update partner's values if not set
             address_fields = set(partner._address_fields())
             partner_fields = set(partner._fields)
             has_address = any(partner[fname] for fname in address_fields)

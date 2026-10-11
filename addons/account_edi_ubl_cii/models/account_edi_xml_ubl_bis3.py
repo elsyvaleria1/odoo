@@ -64,20 +64,14 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             == CHORUS_PRO_PEPPOL_ID
         )
 
-    # -------------------------------------------------------------------------
-    # EXPORT
-    # -------------------------------------------------------------------------
 
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_ubl_bis3.xml"
 
     def _add_document_currency_vals(self, vals):
         super()._add_document_currency_vals(vals)
-        vals["currency_dp"] = 2  # In BIS 3, always use 2 decimal places
+        vals["currency_dp"] = 2
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Templates for invoice header nodes
-    # -------------------------------------------------------------------------
 
     def _add_invoice_config_vals(self, vals):
         super()._add_invoice_config_vals(vals)
@@ -100,12 +94,10 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             return "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:selfbilling:3.0"
 
     def _add_invoice_header_nodes(self, document_node, vals):
-        # Call the parent method from UBL 2.1
         super()._add_invoice_header_nodes(document_node, vals)
         invoice = vals["invoice"]
         ubl_values = vals["_ubl_values"]
 
-        # Override specific BIS3 values
         document_node.update(
             {
                 "cbc:UBLVersionID": None,
@@ -118,7 +110,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 "cbc:TaxCurrencyCode": {"_text": vals["tax_currency_code"]},
             }
         )
-        # For B2G transactions in Germany: set the buyer_reference to the Leitweg-ID (code 0204)
         if invoice.commercial_partner_id.peppol_eas == "0204":
             document_node.update(
                 {
@@ -142,8 +133,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 note = f"{note} {narration_note}"
             document_node["cbc:Note"]["_text"] = note
 
-        # [NL-R-001] For suppliers in the Netherlands, if the document is a creditnote, the document MUST
-        # contain an invoice reference (cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID)
         if vals["supplier"].country_id.code == "NL" and "refund" in invoice.move_type:
             document_node["cac:BillingReference"] = {
                 "cac:InvoiceDocumentReference": {
@@ -152,13 +141,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             }
 
     def _add_invoice_delivery_nodes(self, document_node, vals):
-        """[BR-IC-12]-In an Invoice with a VAT breakdown (BG-23) where the VAT category code (BT-118) is
-        "Intra-community supply" the Deliver to country code (BT-80) shall not be blank.
-
-        [BR-IC-11]-In an Invoice with a VAT breakdown (BG-23) where the VAT category code (BT-118) is
-        "Intra-community supply" the Actual delivery date (BT-72) or the Invoicing period (BG-14)
-        shall not be blank.
-        """
         super()._add_invoice_delivery_nodes(document_node, vals)
 
         invoice = vals["invoice"]
@@ -190,7 +172,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 "cac:Address": self._get_address_node({"partner": shipping_partner})
             },
         }
-        # TODO master: clean that code a bit hacky, when the module account_add_gln is merged with account
         if (
             gln := "global_location_number" in shipping_partner._fields
             and shipping_partner.global_location_number
@@ -207,8 +188,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         document_node["cac:PaymentMeans"]["cbc:InstructionID"] = None
 
     def _get_address_node(self, vals):
-        # schematron/openpeppol/3.13.0/xslt/CEN-EN16931-UBL.xslt
-        # [UBL-CR-225]-A UBL invoice should not include the AccountingCustomerParty Party PostalAddress CountrySubentityCode
         address_node = super()._get_address_node(vals)
         address_node["cbc:CountrySubentityCode"] = None
         address_node["cac:Country"]["cbc:Name"] = None
@@ -229,7 +208,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             commercial_partner.country_code == "NL"
             and commercial_partner.peppol_endpoint
         ):
-            # [UBL-SR-16] Buyer identifier shall occur maximum once
             if role == "customer":
                 party_node["cac:PartyIdentification"] = [
                     {"cbc:ID": {"_text": commercial_partner.peppol_endpoint}}
@@ -255,11 +233,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                     else commercial_partner.peppol_endpoint
                 },
                 "cac:TaxScheme": {
-                    # [BR-CO-09] if the PartyTaxScheme/TaxScheme/ID == 'VAT', CompanyID must start with a country code prefix.
-                    # In some countries however, the CompanyID can be with or without country code prefix and still be perfectly
-                    # valid (RO, HU, non-EU countries).
-                    # We have to handle their cases by changing the TaxScheme/ID to 'something other than VAT',
-                    # preventing the trigger of the rule.
                     "cbc:ID": {
                         "_text": (
                             "NOT_EU_VAT"
@@ -284,9 +257,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             )
 
         if commercial_partner.country_code == "NL":
-            # For NL, VAT can be used as a Peppol endpoint, but KVK/OIN has to be used as PartyLegalEntity/CompanyID
-            # To implement a workaround on stable, company_registry field is used without recording whether
-            # the number is a KVK or OIN, and the length of the number (8 = KVK, 9 = OIN) is used to determine the type
             nl_id = (
                 commercial_partner.company_registry
                 if commercial_partner.peppol_eas not in ("0106", "0190")
@@ -324,8 +294,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         else:
             party_node["cac:PartyLegalEntity"]["cbc:CompanyID"] = {
                 "_text": commercial_partner.vat or commercial_partner.peppol_endpoint,
-                # DK-R-014: For Danish Suppliers it is mandatory to specify schemeID as "0184" (DK CVR-number) when
-                # PartyLegalEntity/CompanyID is used for AccountingSupplierParty
                 "schemeID": "0184"
                 if commercial_partner.country_id.code == "DK"
                 else None,
@@ -337,9 +305,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         return party_node
 
     def _get_financial_account_node(self, vals):
-        # schematron/openpeppol/3.13.0/xslt/CEN-EN16931-UBL.xslt
-        # [UBL-CR-664]-A UBL invoice should not include the FinancialInstitutionBranch FinancialInstitution
-        # xpath test: not(//cac:FinancialInstitution)
         financial_account_node = super()._get_financial_account_node(vals)
 
         if financial_account_node["cac:FinancialInstitutionBranch"]:
@@ -354,19 +319,13 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
         return financial_account_node
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Gathering data
-    # -------------------------------------------------------------------------
 
     def _setup_base_lines(self, vals):
-        # OVERRIDE
         AccountTax = self.env["account.tax"]
         company = vals["company"]
 
-        # Avoid negative unit price.
         self._ubl_turn_base_lines_price_unit_as_always_positive(vals)
 
-        # Manage taxes for emptying.
         vals["base_lines"] = self._ubl_turn_emptying_taxes_as_new_base_lines(
             vals["base_lines"], company, vals
         )
@@ -375,7 +334,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         for base_line in vals["base_lines"]:
             base_line["_ubl_values"] = {}
 
-        # Global rounding of tax_details using 6 digits.
         AccountTax._round_raw_total_excluded(vals["base_lines"], company)
         AccountTax._round_raw_total_excluded(
             vals["base_lines"], company, in_foreign_currency=False
@@ -393,47 +351,29 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             vals["base_lines"], company, in_foreign_currency=False
         )
 
-        # Add 'price_amount' being the original price unit without tax.
         self._ubl_add_base_line_ubl_values_price(vals)
 
-        # Add 'tax_currency_code'.
         self._ubl_add_values_tax_currency_code(vals)
 
-        # Add 'payable_rounding_amount' to manage cash rounding.
         self._ubl_add_values_payable_rounding_amount(vals)
 
-        # Extract cash rounding lines.
         vals["base_lines"] = [
             base_line
             for base_line in vals["base_lines"]
             if base_line not in vals["_ubl_values"]["payable_rounding_base_lines"]
         ]
 
-        # Add 'payable_amount' to manage withholding taxes.
         self._ubl_add_values_payable_amount_tax_withholding(vals)
 
-        # Add 'allowance_charge_early_payment' to manage the early payment discount.
         self._ubl_add_values_allowance_charge_early_payment(vals)
 
     def _add_invoice_line_vals(self, vals):
-        # OVERRIDE
-        # Those temporary values are wrongly computed and the similar data are added to the base lines in
-        # 'setup_base_lines' because we need to compute them on all lines at once instead of on each line
-        # separately.
         pass
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Build Nodes
-    # -------------------------------------------------------------------------
 
     def _ubl_default_tax_category_grouping_key(
         self, base_line, tax_data, vals, currency
     ):
-        # EXTENDS
-        # Recycling contribution taxes / excises should not appear anywhere as taxes but as allowances/charges.
-        # Cash rounding lines should not appear as lines but in PayableRoundingAmount.
-        # Since this method produces a default 0% tax automatically when no tax is set on the line by default,
-        # we have to do something here to avoid it.
         if (
             self._ubl_is_cash_rounding_base_line(base_line)
             or self._ubl_is_recycling_contribution_tax(tax_data)
@@ -448,7 +388,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         self._update_line_allowance_charge_nodes(line_node, vals)
 
     def _update_line_allowance_charge_nodes(self, line_node, vals) -> None:
-        """Update a line with discounts, recycling contributions and excise charges."""
         sub_vals = {
             **vals,
             "line_node": line_node,
@@ -458,19 +397,15 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         }
         self._ubl_add_line_allowance_charge_nodes(sub_vals)
 
-        # Discount.
         self._ubl_add_line_allowance_charge_nodes_for_discount(sub_vals)
 
-        # Recycling contribution taxes.
         self._ubl_add_line_allowance_charge_nodes_for_recycling_contribution_taxes(
             sub_vals
         )
 
-        # Excise taxes.
         self._ubl_add_line_allowance_charge_nodes_for_excise_taxes(sub_vals)
 
     def _add_invoice_line_amount_nodes(self, line_node, vals):
-        # OVERRIDE
         sub_vals = {
             **vals,
             "line_node": line_node,
@@ -489,7 +424,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         self._ubl_add_line_extension_amount_node(sub_vals)
 
     def _add_invoice_line_item_nodes(self, line_node, vals):
-        # OVERRIDE
         sub_vals = {
             **vals,
             "line_node": line_node,
@@ -500,18 +434,15 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         self._ubl_add_line_item_node(sub_vals)
 
     def _add_invoice_line_tax_category_nodes(self, line_node, vals):
-        # OVERRIDE
         pass
 
     def _add_invoice_line_tax_total_nodes(self, line_node, vals):
-        # OVERRIDE
         pass
 
     def _add_invoice_line_price_nodes(self, line_node, vals):
         update_ubl_line_price_node(line_node, vals)
 
     def _add_invoice_allowance_charge_nodes(self, document_node, vals):
-        # OVERRIDE
         ubl_values = vals["_ubl_values"]
         document_node["cac:AllowanceCharge"] = [
             self._ubl_get_allowance_charge_early_payment(vals, early_payment_values)
@@ -521,12 +452,8 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         ]
 
     def _ubl_get_tax_subtotal_node(self, vals, tax_subtotal):
-        # EXTENDS account.edi.xml.ubl
         node = super()._ubl_get_tax_subtotal_node(vals, tax_subtotal)
 
-        # [BR-S-08] cac:TaxSubtotal -> cbc:TaxableAmount should be computed based on the
-        # cbc:LineExtensionAmount of each line linked to the tax when cac:TaxCategory -> cbc:ID is S
-        # (Standard Rate).
         currency = tax_subtotal["currency"]
         corresponding_line_node_amounts = (
             [
@@ -596,21 +523,16 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         return node
 
     def _ubl_tax_totals_node_grouping_key(self, base_line, tax_data, vals, currency):
-        # EXTENDS account.edi.xml.ubl
         tax_total_keys = super()._ubl_tax_totals_node_grouping_key(
             base_line, tax_data, vals, currency
         )
 
-        # WithholdingTaxTotal is not allowed.
-        # Instead, withholding tax amounts are reported as a PrepaidAmount.
         if (
             tax_total_keys["tax_total_key"]
             and tax_total_keys["tax_total_key"]["is_withholding"]
         ):
             tax_total_keys["tax_total_key"] = None
 
-        # In case of multi-currencies, there will be 2 TaxTotals but the one expressed in
-        # foreign currency must not have any TaxSubtotal.
         company_currency = vals["company"].currency_id
         if (
             tax_total_keys["tax_subtotal_key"]
@@ -624,7 +546,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
     def _update_tax_total_keys_without_company_currency(
         self, tax_total_keys: TaxTotalKeys, vals: TaxTotalCurrencyValues
     ) -> None:
-        """Suppress the company-currency total when the document uses another currency."""
         company_currency = vals["company"].currency_id
         if (
             tax_total_keys["tax_total_key"]
@@ -634,7 +555,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             tax_total_keys["tax_total_key"] = None
 
     def _add_invoice_tax_total_nodes(self, document_node, vals):
-        # OVERRIDE
         sub_vals = {
             **vals,
             "document_node": document_node,
@@ -643,7 +563,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         self._ubl_add_tax_totals_nodes(sub_vals)
 
     def _add_invoice_monetary_total_vals(self, vals):
-        # OVERRIDE
         pass
 
     def _add_invoice_monetary_total_nodes(self, document_node, vals):
@@ -724,12 +643,8 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             },
         }
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Constraints
-    # -------------------------------------------------------------------------
 
     def _export_invoice_constraints(self, invoice, vals):
-        # EXTENDS account.edi.xml.ubl_21
         constraints = super()._export_invoice_constraints(invoice, vals)
 
         constraints.update(self._invoice_constraints_peppol_en16931_ubl(invoice, vals))
@@ -738,11 +653,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         return constraints
 
     def _invoice_constraints_cen_en16931_ubl(self, invoice, vals):
-        """
-        corresponds to the errors raised by ' schematron/openpeppol/3.13.0/xslt/CEN-EN16931-UBL.xslt' for invoices.
-        This xslt was obtained by transforming the corresponding sch
-        https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch.
-        """
         eu_countries = self.env.ref("base.europe").country_ids
         intracom_delivery = (
             vals["customer"].country_id in eu_countries
@@ -753,10 +663,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         nsmap = self._get_document_nsmap(vals)
 
         constraints = {
-            # [BR-61]-If the Payment means type code (BT-81) means SEPA credit transfer, Local credit transfer or
-            # Non-SEPA international credit transfer, the Payment account identifier (BT-84) shall be present.
-            # note: Payment account identifier is <cac:PayeeFinancialAccount>
-            # note: no need to check account_number, because it's a required field for a partner_bank
             "cen_en16931_payment_account_identifier": self._check_required_fields(
                 invoice, "bank_account_id"
             )
@@ -765,8 +671,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             ]
             in (30, 58)
             else None,
-            # [BR-IC-12]-In an Invoice with a VAT breakdown (BG-23) where the VAT category code (BT-118) is
-            # "Intra-community supply" the Deliver to country code (BT-80) shall not be blank.
             "cen_en16931_delivery_country_code": (
                 self.env._(
                     "For intracommunity supply, the delivery address should be included."
@@ -780,9 +684,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             )
             is None
             else None,
-            # [BR-IC-11]-In an Invoice with a VAT breakdown (BG-23) where the VAT category code (BT-118) is
-            # "Intra-community supply" the Actual delivery date (BT-72) or the Invoicing period (BG-14)
-            # shall not be blank.
             "cen_en16931_delivery_date_invoicing_period": (
                 self.env._(
                     "For intracommunity supply, the actual delivery date or the invoicing period should be included."
@@ -811,7 +712,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
         for line_node in line_nodes:
             if not (line_node["cac:Item"]["cbc:Name"] or {}).get("_text"):
-                # [BR-25]-Each Invoice line (BG-25) shall contain the Item name (BT-153).
                 constraints.update(
                     {
                         "cen_en16931_item_name": self.env._(
@@ -822,8 +722,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 break
 
             if len(line_node["cac:Item"]["cac:ClassifiedTaxCategory"]) != 1:
-                # [UBL-SR-48]-Invoice lines shall have one and only one classified tax category.
-                # /!\ exception: possible to have any number of ecotaxes (fixed tax) with a regular percentage tax
                 constraints["cen_en16931_tax_line"] = self.env._(
                     "Each invoice line shall have one and only one tax."
                 )
@@ -852,9 +750,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 and (tax_scheme_node[0]["cac:TaxScheme"]["cbc:ID"]["_text"] == "VAT")
                 and not (tax_scheme_node[0]["cbc:CompanyID"]["_text"][:2].isalpha())
             ):
-                # [BR-CO-09]-The Seller VAT identifier (BT-31), the Seller tax representative VAT identifier (BT-63)
-                # and the Buyer VAT identifier (BT-48) shall have a prefix in accordance with ISO code ISO 3166-1
-                # alpha-2 by which the country of issue may be identified. Nevertheless, Greece may use the prefix 'EL'.
                 constraints.update(
                     {
                         f"cen_en16931_{role}_vat_country_code": self.env._(
@@ -865,24 +760,14 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 )
 
         if invoice.partner_shipping_id:
-            # [BR-57]-Each Deliver to address (BG-15) shall contain a Deliver to country code (BT-80).
             constraints["cen_en16931_delivery_address"] = self._check_required_fields(
                 invoice.partner_shipping_id, "country_id"
             )
         return constraints
 
     def _invoice_constraints_peppol_en16931_ubl(self, invoice, vals):
-        """
-        corresponds to the errors raised by 'schematron/openpeppol/3.13.0/xslt/PEPPOL-EN16931-UBL.xslt' for
-        invoices in ecosio. This xslt was obtained by transforming the corresponding sch
-        https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch.
-
-        The national rules (https://docs.peppol.eu/poacc/billing/3.0/bis/#national_rules) are included in this file.
-        They always refer to the supplier's country.
-        """
         nsmap = self._get_document_nsmap(vals)
         constraints = {
-            # PEPPOL-EN16931-R003: A buyer reference or purchase order reference MUST be provided.
             "peppol_en16931_ubl_buyer_ref_po_ref": "A buyer reference or purchase order reference must be provided."
             if (
                 dict_to_xml(
@@ -904,13 +789,9 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         if vals["supplier"].country_id.code == "NL":
             constraints.update(
                 {
-                    # [NL-R-001] For suppliers in the Netherlands, if the document is a creditnote, the document MUST contain
-                    # an invoice reference (cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID)
                     "nl_r_001": self._check_required_fields(invoice, "ref")
                     if "refund" in invoice.move_type
                     else "",
-                    # [NL-R-002] For suppliers in the Netherlands the supplier's address (cac:AccountingSupplierParty/cac:Party
-                    # /cac:PostalAddress) MUST contain street name (cbc:StreetName), city (cbc:CityName) and post code (cbc:PostalZone)
                     "nl_r_002_street": self._check_required_fields(
                         vals["supplier"], "street"
                     ),
@@ -920,8 +801,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                     "nl_r_002_city": self._check_required_fields(
                         vals["supplier"], "city"
                     ),
-                    # [NL-R-003] For suppliers in the Netherlands, the legal entity identifier MUST be either a
-                    # KVK or OIN number (schemeID 0106 or 0190)
                     "nl_r_003": self.env._(
                         "%s should have a KVK or OIN number set in Company ID field or as Peppol e-address (EAS code 0106 or 0190).",
                         vals["supplier"].display_name,
@@ -934,8 +813,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                         )
                     )
                     else "",
-                    # [NL-R-007] For suppliers in the Netherlands, the supplier MUST provide a means of payment
-                    # (cac:PaymentMeans) if the payment is from customer to supplier
                     "nl_r_007": self._check_required_fields(invoice, "bank_account_id"),
                 }
             )
@@ -943,9 +820,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             if vals["customer"].country_id.code == "NL":
                 constraints.update(
                     {
-                        # [NL-R-004] For suppliers in the Netherlands, if the customer is in the Netherlands, the customer
-                        # address (cac:AccountingCustomerParty/cac:Party/cac:PostalAddress) MUST contain the street name
-                        # (cbc:StreetName), the city (cbc:CityName) and post code (cbc:PostalZone)
                         "nl_r_004_street": self._check_required_fields(
                             vals["customer"], "street"
                         ),
@@ -955,8 +829,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                         "nl_r_004_zip": self._check_required_fields(
                             vals["customer"], "zip"
                         ),
-                        # [NL-R-005] For suppliers in the Netherlands, if the customer is in the Netherlands,
-                        # the customer's legal entity identifier MUST be either a KVK or OIN number (schemeID 0106 or 0190)
                         "nl_r_005": self.env._(
                             "%s should have a KVK or OIN number set in Company ID field or as Peppol e-address (EAS code 0106 or 0190).",
                             vals["customer"].display_name,
@@ -984,9 +856,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             vat = vals["supplier"].vat
             constraints.update(
                 {
-                    # NO-R-001: For Norwegian suppliers, a VAT number MUST be the country code prefix NO followed by a
-                    # valid Norwegian organization number (nine numbers) followed by the letters MVA.
-                    # Note: mva.is_valid("179728982MVA") is True while it lacks the NO prefix
                     "no_r_001": self.env._(
                         "The VAT number of the supplier does not seem to be valid. It should be of the form: NO179728982MVA."
                     )
@@ -1000,12 +869,8 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
         return constraints
 
-    # -------------------------------------------------------------------------
-    # IMPORT
-    # -------------------------------------------------------------------------
 
     def _prepare_partner_import_params(self, tree, role):
-        # EXTENDS account.edi.xml.ubl_20
         partner_vals = super()._prepare_partner_import_params(tree, role)
         endpoint_node = tree.find(
             f".//cac:{role}Party/cac:Party/cbc:EndpointID", UBL_NAMESPACES
@@ -1014,7 +879,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             peppol_eas = endpoint_node.attrib.get("schemeID")
             peppol_endpoint = endpoint_node.text
             if peppol_eas and peppol_endpoint:
-                # include the EAS and endpoint in the search domain when retrieving the partner
                 partner_vals.update(
                     {
                         "peppol_eas": peppol_eas,
@@ -1023,12 +887,8 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
                 )
         return partner_vals
 
-    # -------------------------------------------------------------------------
-    # Sale/Purchase Order: Import
-    # -------------------------------------------------------------------------
 
     def _import_order_payment_terms_id(self, company_id, tree, xpath):
-        """Return payment term name from given tree and try to find a match."""
         payment_term_name = self._find_value(xpath, tree)
         if not payment_term_name:
             return False
@@ -1058,15 +918,8 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
         return order_vals, logs
 
     def _import_order_ubl(self, order, file_data, new):
-        """Common importing method to extract order data from file_data.
-        :param order: Order to fill details from file_data.
-        :param file_data: File data to extract order related data from.
-        :return: True if there's no exception while extraction.
-        :rtype: Boolean
-        """
         tree = file_data["xml_tree"]
 
-        # Update the order.
         order_vals, logs = self._prepare_order_vals(order, tree)
         if order:
             order.write(order_vals)

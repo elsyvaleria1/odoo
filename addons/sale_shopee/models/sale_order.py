@@ -19,7 +19,7 @@ class SaleOrder(models.Model):
         selection=[
             ("fbm", "Fulfillment by Merchant"),
             ("fbs", "Fulfillment by Shopee"),
-            ("hybrid", "Fulfillment by Cross Border Seller"),  # FBM sent through Shopee
+            ("hybrid", "Fulfillment by Cross Border Seller"),
         ]
     )
     shopee_delivery_status = fields.Selection(

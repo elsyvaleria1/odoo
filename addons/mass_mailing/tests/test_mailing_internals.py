@@ -18,11 +18,6 @@ from odoo.addons.base.tests.test_ir_cron import CronMixinCase
 from odoo.addons.base_import.models.base_import import ImportValidationError
 from odoo.addons.mass_mailing.tests.common import MassMailCommon
 
-# A real 1x1 PNG, 92 characters and padded. Tests that want several distinct
-# images prefix a four-digit counter rather than appending one: appending runs
-# past the "=" padding, and anything longer than a single digit there is not
-# decodable base64 at all -- which is how images 10 to 17 below came to be
-# undecodable, and `mailing.mailing.create` to raise on this test's own fixture.
 BASE_64_STRING = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
 
 
@@ -35,13 +30,6 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_body_cropped_vml_image(self):
-        """Testing mail mailing responsive bg-image cropping for Outlook.
-
-        Outlook needs background images to be converted to VML but there is no
-        way to emulate `background-size: cover` that works for Windows Mail as
-        well. We therefore need to crop the image in the VML version to mimick
-        the style of other email clients.
-        """
         attachment = {}
 
         def patched_get_image(self, url, session):
@@ -101,8 +89,6 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_body_crops_a_vml_image_larger_than_its_box(self):
-        """The box is read out of the style as floats: a photo larger than it
-        used to raise TypeError out of create, losing the whole mailing."""
         stream = io.BytesIO()
         Image.new("RGB", (640, 480), "red").save(stream, "JPEG")
         photo = stream.getvalue()
@@ -241,12 +227,6 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_body_keeps_an_undecodable_inline_image(self):
-        """A body is pasted from arbitrary sources, so a mangled data: URI is an
-        ordinary thing to receive. It used to raise binascii.Error out of
-        `create`, so one truncated image lost the whole mailing.
-        """
-        # two characters past the "=" padding: b64decode refuses this outright,
-        # where a single one is silently tolerated
         broken = BASE_64_STRING + "10"
         mailing = self.env["mailing.mailing"].create(
             {
@@ -269,11 +249,6 @@ class TestMassMailValues(MassMailCommon):
         )
 
     def test_mailing_body_inline_image(self):
-        """Testing mail mailing base64 image conversion to attachment.
-
-        This test ensures that the base64 images are correctly converted to
-        attachments, even when they appear in MSO conditional comments.
-        """
         attachments = []
         original_images_to_urls = self.env[
             "mailing.mailing"
@@ -363,13 +338,6 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_body_responsive(self):
-        """Testing mail mailing responsive mail body
-
-        Reference: https://litmus.com/community/learning/24-how-to-code-a-responsive-email-from-scratch
-        https://www.campaignmonitor.com/css/link-element/link-in-head/
-
-        This template is meant to put inline CSS into an email's head
-        """
         recipient = self.env["res.partner"].create(
             {
                 "name": "Mass Mail Partner",
@@ -410,13 +378,11 @@ class TestMassMailValues(MassMailCommon):
         self.assertIn("<!DOCTYPE html>", body_html)
         self.assertIn("<head>", body_html)
         self.assertIn("viewport", body_html)
-        # This is important: we need inline css, and not <link/>
         self.assertIn("@media", body_html)
         self.assertIn("I am Responsive body", body_html)
 
     @users("user_marketing")
     def test_mailing_computed_fields(self):
-        # Create on res.partner, with default values for computed fields
         mailing = self.env["mailing.mailing"].create(
             {
                 "name": "TestMailing",
@@ -433,14 +399,12 @@ class TestMassMailValues(MassMailCommon):
         self.assertEqual(mailing.reply_to_mode, "new")
         self.assertEqual(mailing.reply_to, self.user_marketing.email_formatted)
         self.assertEqual(literal_eval(mailing.mailing_domain), [])
-        # update domain
         mailing.write({"mailing_domain": [("email", "ilike", "test.example.com")]})
         self.assertEqual(
             literal_eval(mailing.mailing_domain),
             [("email", "ilike", "test.example.com")],
         )
 
-        # reset mailing model -> reset domain; set reply_to -> keep it
         mailing.write(
             {
                 "mailing_model_id": self.env["ir.model"]._get("mailing.list").id,
@@ -451,7 +415,6 @@ class TestMassMailValues(MassMailCommon):
         self.assertEqual(mailing.mailing_model_real, "mailing.contact")
         self.assertEqual(mailing.reply_to_mode, "new")
         self.assertEqual(mailing.reply_to, self.email_reply_to)
-        # default for mailing list: depends upon contact_list_ids
         self.assertEqual(literal_eval(mailing.mailing_domain), [("list_ids", "in", [])])
         mailing.write(
             {
@@ -466,7 +429,6 @@ class TestMassMailValues(MassMailCommon):
             [("list_ids", "in", (self.mailing_list_1 | self.mailing_list_2).ids)],
         )
 
-        # reset mailing model -> reset domain and reply to mode
         mailing.write(
             {
                 "mailing_model_id": self.env["ir.model"]._get("discuss.channel").id,
@@ -479,8 +441,6 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_computed_fields_domain_w_filter(self):
-        """Test domain update, involving mailing.filters added in 15.1."""
-        # Create on res.partner, with default values for computed fields
         mailing = self.env["mailing.mailing"].create(
             {
                 "name": "TestMailing",
@@ -492,7 +452,6 @@ class TestMassMailValues(MassMailCommon):
         )
         self.assertEqual(literal_eval(mailing.mailing_domain), [])
 
-        # prepare initial data
         filter_1, filter_2, filter_3 = self.env["mailing.filter"].create(
             [
                 {
@@ -513,27 +472,22 @@ class TestMassMailValues(MassMailCommon):
             ]
         )
 
-        # check that adding mailing_filter_id updates domain correctly
         mailing.mailing_filter_id = filter_2
         self.assertEqual(
             literal_eval(mailing.mailing_domain), literal_eval(filter_2.mailing_domain)
         )
 
-        # cannot set a filter linked to another model
         with self.assertRaises(ValidationError):
             mailing.mailing_filter_id = filter_1
 
-        # resetting model should reset domain, even if filter was chosen previously
         mailing.mailing_model_id = self.env["ir.model"]._get("discuss.channel").id
         self.assertEqual(literal_eval(mailing.mailing_domain), [])
 
-        # changing the filter should update the mailing domain correctly
         mailing.mailing_filter_id = filter_1
         self.assertEqual(
             literal_eval(mailing.mailing_domain), literal_eval(filter_1.mailing_domain)
         )
 
-        # changing the domain should not empty the mailing_filter_id
         mailing.mailing_domain = "[('email', 'ilike', 'info_be@odoo.com')]"
         self.assertEqual(
             mailing.mailing_filter_id,
@@ -541,14 +495,13 @@ class TestMassMailValues(MassMailCommon):
             "Filter should not be unset even if domain is changed",
         )
 
-        # deleting the filter record should not delete the domain on mailing
         mailing.mailing_model_id = self.env["ir.model"]._get("res.partner").id
         mailing.mailing_filter_id = filter_3
         filter_3_domain = filter_3.mailing_domain
         self.assertEqual(
             literal_eval(mailing.mailing_domain), literal_eval(filter_3_domain)
         )
-        filter_3.unlink()  # delete the filter record
+        filter_3.unlink()
         self.assertFalse(
             mailing.mailing_filter_id, "Should unset filter if it is deleted"
         )
@@ -582,27 +535,18 @@ class TestMassMailValues(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_computed_fields_default_email_from(self):
-        # Testing if the email_from is correctly computed when an
-        # alias domain for the company is set
 
-        # Setup mail outgoing server for use cases
 
         from_filter_match, from_filter_missmatch = (
             self.env["ir.mail_server"]
             .sudo()
             .create(
                 [
-                    # Case where alias domain is set and there is a default outgoing email server
-                    # for mass mailing. from_filter matches domain of company alias domain
-                    # before record creation
                     {
                         "name": "mass_mailing_test_match_from_filter",
                         "from_filter": self.alias_domain,
                         "smtp_host": "not_real@smtp.com",
                     },
-                    # Case where alias domain is set and there is a default outgoing email server
-                    # for mass mailing. from_filter DOES NOT match domain of company alias domain
-                    # before record creation
                     {
                         "name": "mass_mailing_test_from_missmatch",
                         "from_filter": "test.com",
@@ -612,7 +556,6 @@ class TestMassMailValues(MassMailCommon):
             )
         )
 
-        # Expected combos of server vs FROM values
 
         servers = [
             self.env["ir.mail_server"],
@@ -620,15 +563,13 @@ class TestMassMailValues(MassMailCommon):
             from_filter_missmatch,
         ]
         expected_from_all = [
-            self.env.user.email_formatted,  # default when no server
-            self.env.user.company_id.alias_domain_id.default_from_email,  # matches company alias domain
-            self.env.user.email_formatted,  # not matching from filter -> back to user from
+            self.env.user.email_formatted,
+            self.env.user.company_id.alias_domain_id.default_from_email,
+            self.env.user.email_formatted,
         ]
 
         for mail_server, expected_from in zip(servers, expected_from_all, strict=True):
             with self.subTest(server_name=mail_server.name):
-                # When a mail server is set, we update the mass mailing
-                # settings to designate a dedicated outgoing email server
                 if mail_server:
                     self.env["res.config.settings"].sudo().create(
                         {
@@ -637,7 +578,6 @@ class TestMassMailValues(MassMailCommon):
                         }
                     ).execute()
 
-                # Create mailing
                 mailing = self.env["mailing.mailing"].create(
                     {
                         "name": f"TestMailing {mail_server.name}",
@@ -645,11 +585,8 @@ class TestMassMailValues(MassMailCommon):
                     }
                 )
 
-                # Check email_from
                 self.assertEqual(mailing.email_from, expected_from)
 
-                # If configured, check if dedicated email outgoing server is
-                # on mailing record
                 self.assertEqual(mailing.mail_server_id, mail_server)
 
     @users("user_marketing")
@@ -698,10 +635,6 @@ class TestMassMailValues(MassMailCommon):
         self.assertFalse(composer.mass_mailing_id, "No mailing should've been created")
 
         with self.mock_mail_gateway():
-            # _action_send_mail takes no res_ids -- it reads them off the composer.
-            # Passing them positionally landed a truthy list in `auto_commit`, and
-            # only the `is True` test in mail.mail._send kept that from committing
-            # mid-test.
             composer._action_send_mail()
 
         self.assertEqual(
@@ -725,7 +658,6 @@ class TestMassMailValues(MassMailCommon):
     def test_mailing_trace_values(self):
         recipient = self.partner_employee
 
-        # both void and 0 are invalid, document should have an id != 0
         with self.assertRaises(IntegrityError):
             self.env["mailing.trace"].create(
                 {
@@ -774,7 +706,6 @@ class TestMassMailValues(MassMailCommon):
         )
         blob_b64 = base64.b64encode(b"blob1")
 
-        # Created when uploading an image
         original_svg_attachment = self.env["ir.attachment"].create(
             {
                 "name": "test SVG",
@@ -786,7 +717,6 @@ class TestMassMailValues(MassMailCommon):
             }
         )
 
-        # Created when saving the mass_mailing
         png_duplicate_of_svg_attachment = self.env["ir.attachment"].create(
             {
                 "name": "test SVG duplicate",
@@ -799,7 +729,6 @@ class TestMassMailValues(MassMailCommon):
             }
         )
 
-        # Created by uploading new image
         original_png_attachment = self.env["ir.attachment"].create(
             {
                 "name": "test PNG",
@@ -811,7 +740,6 @@ class TestMassMailValues(MassMailCommon):
             }
         )
 
-        # Created by modify_image in editor controller
         self.env["ir.attachment"].create(
             {
                 "name": "test PNG duplicate",
@@ -835,7 +763,6 @@ class TestMassMailValues(MassMailCommon):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_process_mailing_queue_without_html_body(self):
-        """Test mailing with past schedule date and without any html body"""
         mailing = self.env["mailing.mailing"].create(
             {
                 "name": "mailing",
@@ -865,11 +792,6 @@ class TestMassMailUTM(MassMailCommon):
     @patch.object(Cursor, "now", lambda *args, **kwargs: datetime(2022, 1, 2))
     @users("user_marketing")
     def test_mailing_unique_name(self):
-        """Test that the names are generated and unique for each mailing.
-
-        If the name is missing, it's generated from the subject. Then we should ensure
-        that this generated name is unique.
-        """
         mailing_0 = self.env["mailing.mailing"].create({"subject": "First subject"})
         self.assertEqual(
             mailing_0.name, "First subject (Mass Mailing created on 2022-01-02)"
@@ -921,7 +843,6 @@ class TestMassMailUTM(MassMailCommon):
             mailing_6.name, "Second subject (Mass Mailing created on 2022-01-02)"
         )
 
-        # should generate same name (coming from same subject)
         mailing_0.subject = "First subject"
         self.assertEqual(
             mailing_0.name,
@@ -929,7 +850,6 @@ class TestMassMailUTM(MassMailCommon):
             msg="The name should not be updated",
         )
 
-        # take a (long) existing name -> should increment
         mailing_0.name = "Second subject (Mass Mailing created on 2022-01-02)"
         self.assertEqual(
             mailing_0.name,
@@ -937,7 +857,6 @@ class TestMassMailUTM(MassMailCommon):
             msg="The name must be unique, it was already taken",
         )
 
-        # back to first subject: not linked to any record so should take it back
         mailing_0.subject = "First subject"
         self.assertEqual(
             mailing_0.name,
@@ -946,7 +865,6 @@ class TestMassMailUTM(MassMailCommon):
         )
 
     def test_mailing_create_with_context(self):
-        """Test that the default_name provided via context is ignored to prevent constraint violations."""
         mailing_1, mailing_2 = self.env["mailing.mailing"].create(
             [
                 {
@@ -979,8 +897,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mailing_cron_trigger(self):
-        """Technical test to ensure the cron is triggered at the correct
-        time"""
 
         cron_id = self.env.ref("mass_mailing.ir_cron_mass_mailing_queue").id
         partner = self.env["res.partner"].create(
@@ -1018,8 +934,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mailing_deletion(self):
-        """Test deletion in various use case, depending on reply-to"""
-        # 1- Keep archives and reply-to set to 'answer = new thread'
         mailing = self.env["mailing.mailing"].create(
             {
                 "name": "TestSource",
@@ -1043,7 +957,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
         self.assertEqual(len(self._new_mails.exists()), 3)
         self.assertEqual(len(self.mailing_list_1.contact_ids.message_ids), 3)
 
-        # 2- Keep archives and reply-to set to 'answer = update thread'
         self.mailing_list_1.contact_ids.message_ids.unlink()
         mailing = mailing.copy()
         mailing.write(
@@ -1062,7 +975,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
         self.assertEqual(len(self._new_mails.exists()), 3)
         self.assertEqual(len(self.mailing_list_1.contact_ids.message_ids), 3)
 
-        # 3- Remove archives and reply-to set to 'answer = new thread'
         self.mailing_list_1.contact_ids.message_ids.unlink()
         mailing = mailing.copy()
         mailing.write(
@@ -1085,8 +997,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
             self.mailing_list_1.contact_ids.message_ids, self.env["mail.message"]
         )
 
-        # 4- Remove archives and reply-to set to 'answer = update thread'
-        # Imply keeping mail.message for gateway reply)
         self.mailing_list_1.contact_ids.message_ids.unlink()
         mailing = mailing.copy()
         mailing.write(
@@ -1109,8 +1019,6 @@ class TestMassMailFeatures(MassMailCommon, CronMixinCase):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mailing_on_res_partner(self):
-        """Test mailing on res.partner model: ensure default recipients are
-        correctly computed"""
         partner_a = self.env["res.partner"].create(
             {
                 "name": "test email 1",
@@ -1226,7 +1134,6 @@ Email: <a id="url5" href="mailto:test@odoo.com">test@odoo.com</a></div>""",
                 ("url4", "https://www.example.com/foo/bar?baz=qux", True),
                 ("url5", "mailto:test@odoo.com", False),
             ]:
-                # TDE FIXME: why going to mail message id ? mail.body_html seems to fail, check
                 link_params = {"utm_medium": "Email", "utm_source": mailing.name}
                 if link_info[0] == "url4":
                     link_params["baz"] = "qux"
@@ -1266,8 +1173,6 @@ class TestMailingHeaders(MassMailCommon, HttpCase):
 
     @users("user_marketing")
     def test_mailing_unsubscribe_headers(self):
-        """Check unsubscribe headers are present in outgoing emails and work
-        as one-click"""
         test_mailing = self.test_mailing.with_env(self.env)
         test_mailing.action_put_in_queue()
 
@@ -1276,12 +1181,9 @@ class TestMailingHeaders(MassMailCommon, HttpCase):
 
         for contact in self.mailing_list_1.contact_ids:
             new_mail = self._find_mail_mail_wrecord(contact)
-            # check mail.mail still have default links
             self.assertIn("/unsubscribe_from_list", new_mail.body)
             self.assertIn("/view", new_mail.body)
 
-            # check outgoing email headers (those are put into outgoing email
-            # not in the mail.mail record)
             email = self._find_sent_email_wemail(contact.email)
             headers = email.get("headers")
             unsubscribe_oneclick_url = test_mailing._get_unsubscribe_oneclick_url(
@@ -1298,14 +1200,11 @@ class TestMailingHeaders(MassMailCommon, HttpCase):
             )
             self.assertEqual(headers.get("Precedence"), "list")
 
-            # check outgoing email has real links
             self.assertNotIn("/unsubscribe_from_list", email["body"])
 
-            # unsubscribe in one-click
             unsubscribe_oneclick_url = headers["List-Unsubscribe"].strip("<>")
             self.url_open(unsubscribe_oneclick_url, method="POST")
 
-            # should be unsubscribed
             self.assertTrue(contact.subscription_ids.opt_out)
 
 
@@ -1316,19 +1215,16 @@ class TestMailingScheduleDateWizard(MassMailCommon):
         mailing = self.env["mailing.mailing"].create(
             {"name": "mailing", "subject": "some subject"}
         )
-        # create a schedule date wizard
         wizard_form = Form(
             self.env["wizard.mailing.mailing.schedule"].with_context(
                 default_mass_mailing_id=mailing.id
             )
         )
 
-        # set a schedule date
         wizard_form.schedule_date = datetime(2021, 4, 30, 9, 0)
         wizard = wizard_form.save()
         wizard.action_schedule_date()
 
-        # assert that the schedule_date and schedule_type fields are correct and that the mailing is put in queue
         self.assertEqual(mailing.schedule_date, datetime(2021, 4, 30, 9, 0))
         self.assertEqual(mailing.schedule_type, "scheduled")
         self.assertEqual(mailing.state, "in_queue")
@@ -1339,7 +1235,6 @@ class TestMassMailingActions(MassMailCommon):
         mass_mailings = self.env["mailing.mailing"].create(
             [{"subject": "First subject"}, {"subject": "Second subject"}]
         )
-        # Create two traces: one linked to the created mass.mailing and one not (action should open only the first)
         self.env["mailing.trace"].create(
             [
                 {

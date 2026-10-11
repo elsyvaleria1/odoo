@@ -6,7 +6,6 @@ from odoo import Command, api, fields, models
 from odoo.fields import Domain
 from odoo.tools import frozendict
 
-# how long an invitation to a course stays pending, and its link with it
 INVITATION_VALIDITY_MONTHS = 3
 
 
@@ -111,10 +110,6 @@ class SlideChannelPartner(models.Model):
             )
 
     def _issue_invitation_links(self) -> None:
-        """The link each member's invitation mail carries: while an invitation
-        is pending, three months from the last one sent (as the invitation
-        itself); a member enrolled directly is notified for a notification's
-        time (decision B1)."""
         Link = self.env["access.link"].with_privilege(
             "base.privilege_manage_links", reason="invite to a course"
         )
@@ -251,10 +246,6 @@ class SlideChannelPartner(models.Model):
             self.filtered(
                 lambda membership: membership.member_status == "completed"
             )._post_completion_update_hook(completed=False)
-            # One clause per (channel, partners) pair rather than per record,
-            # and the channel side expressed as a relation instead of an
-            # inlined list of slide ids: unlinking 1000 members of a 500-slide
-            # course used to build a domain with half a million terms in it.
             removed_slide_partner_domain = Domain.OR(
                 Domain("channel_id", "=", channel.id)
                 & Domain("partner_id", "in", channel_partners.partner_id.ids)

@@ -70,9 +70,6 @@ class BaseModel(
     __slots__ = ["_ids", "_prefetch_ids", "env"]
 
     if typing.TYPE_CHECKING:
-        # the mixins keep `env: Any` for their own shortcuts; a model class an
-        # addon writes sees the environment, and through the registry stubs'
-        # plugin the model each `env["<name>"]` answers
         env: Environment
 
     _register: bool = False

@@ -11,7 +11,6 @@ class TestEventSlotsCommon(EventCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Mock dates to have reproducible computed fields based on time
         cls.reference_now = datetime(2025, 4, 15, 10, 0, 0)
         cls.reference_beg = datetime(2025, 4, 21, 6, 30, 0)
         cls.reference_end = datetime(2025, 8, 21, 17, 45, 0)
@@ -91,7 +90,6 @@ class TestEventSlotsCommon(EventCase):
                 lambda t: t.name == "Better"
             )
 
-            # already existing registrations
             cls.test_reg_slot_1 = cls._create_registrations_for_slot_and_ticket(
                 cls.test_event, first_slot, first_ticket, 3
             )
@@ -121,10 +119,6 @@ class TestEventSlotRegistration(TestEventSlotsCommon):
         )
 
     def test_search_event_begin_date(self):
-        """Searching on the registration 'event_begin_date' field should correctly search
-        on the slot start datetime if the registration is linked to a slot
-        else on the event start date.
-        """
         for search_from_date, expected in [
             (
                 self.reference_beg,
@@ -151,10 +145,6 @@ class TestEventSlotRegistration(TestEventSlotsCommon):
             )
 
     def test_search_event_end_date(self):
-        """Searching on the registration 'event_end_date' field should correctly search
-        on the slot end datetime if the registration is linked to a slot,
-        else on the event end date.
-        """
         for search_to_date, expected in [
             (
                 self.reference_end,
@@ -195,7 +185,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
             lambda s: s.start_hour == 13
         )
 
-        # already existing registrations: 3 on first slot (1 archived), 1 on second slot (2 archived)
         with cls.mock_datetime_and_now(cls, cls.reference_now):
             cls._create_registrations_for_slot_and_ticket(
                 cls.test_event_slot_noticket, first_slot, False, 1, state="open"
@@ -220,7 +209,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
             )
 
     def test_assert_initial_values(self):
-        """Check initial values, ensure test conditions"""
         test_event = self.test_event.with_user(self.user_eventregistrationdesk)
         first_slot = test_event.event_slot_ids.filtered(lambda s: s.start_hour == 9)
         second_slot = test_event.event_slot_ids.filtered(lambda s: s.start_hour == 13)
@@ -246,8 +234,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
         self.assertEqual(second_slot.seats_reserved, 1)
 
     def test_seats_slots_notickets(self):
-        """Test: slots, no tickets -> limits come from event itself"""
-        # self.test_event_slot_noticket.with_user(self.user_eventuser).write({'event_ticket_ids': [(5, 0)]})
         test_event = self.test_event_slot_noticket.with_user(
             self.user_eventregistrationdesk
         )
@@ -258,19 +244,14 @@ class TestEventSlotSeats(TestEventSlotsCommon):
             self.user_eventregistrationdesk
         )
 
-        # check ``_get_seats_availability`` tool, giving availabilities for slot / ticket combinations
         res = test_event._get_seats_availability(
             [(first_slot, False), (second_slot, False)]
         )
         self.assertEqual(res, [first_slot.seats_available, second_slot.seats_available])
 
-        # check constraints at registration creation
         for create_input, should_crash in [
-            # ok for event max seats for both slots
             (((first_slot, 2), (second_slot, 2)), False),
-            # not enough seats on first slot
             (((first_slot, 3),), True),
-            # not enough seats on second slot
             (((second_slot, 5),), True),
         ]:
             with self.subTest(create_input=create_input, should_crash=should_crash):
@@ -295,13 +276,9 @@ class TestEventSlotSeats(TestEventSlotsCommon):
                     )
                     new.with_user(self.user_eventmanager).unlink()
 
-        # check ``_check_seats_availability`` itself
         for check_input, should_crash in [
-            # ok for event max seats for both slots
             (((first_slot, False, 2), (second_slot, False, 4)), False),
-            # not enough seats on first slot
             (((first_slot, False, 3),), True),
-            # not enough seats on second slot
             (((second_slot, False, 5),), True),
         ]:
             with self.subTest(check_input=check_input, should_crash=should_crash):
@@ -311,7 +288,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
                 else:
                     test_event._check_seats_availability(check_input)
 
-        # check constraint at write (active change) -> ok, check count
         all_slot2 = test_event.with_context(
             active_test=False
         ).registration_ids.filtered(lambda r: r.event_slot_id == second_slot)
@@ -320,12 +296,10 @@ class TestEventSlotSeats(TestEventSlotsCommon):
         self.assertEqual(second_slot.seats_available, 2)
         self.assertEqual(second_slot.seats_reserved, 3)
 
-        # move them on first slot -> crash as it would be out of limits
         with self.assertRaises(exceptions.ValidationError):
             all_slot2.event_slot_id = first_slot.id
 
     def test_seats_slots_tickets(self):
-        """Test: slots and tickets -> limits come from event (global) and tickets"""
         test_event = self.test_event.with_user(self.user_eventregistrationdesk)
         first_slot = test_event.event_slot_ids.filtered(lambda s: s.start_hour == 9)
         second_slot = test_event.event_slot_ids.filtered(lambda s: s.start_hour == 13)
@@ -341,7 +315,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
             self.user_eventregistrationdesk
         )
 
-        # check ``_get_seats_availability`` tool, giving availabilities for slot / ticket combinations
         res = test_event._get_seats_availability(
             [
                 (first_slot, first_ticket),
@@ -352,16 +325,11 @@ class TestEventSlotSeats(TestEventSlotsCommon):
                 (second_slot, third_ticket),
             ]
         )
-        # first slot: 2 seats available, and VIP ticket has 1 seat anyway
-        # second slot: 4 seats available, Better has 3 max and 1 taken and VIP 1 max
         self.assertEqual(res, [2, 2, 1, 4, 2, 1])
 
-        # check constraints at registration creation
         for create_input, should_crash in [
             (((first_slot, second_ticket, 2),), False),
-            # not enough seats for first slot
             (((first_slot, first_ticket, 5),), True),
-            # not enough seats on VIP ticket
             (((second_slot, third_ticket, 2),), True),
         ]:
             with self.subTest(create_input=create_input, should_crash=should_crash):
@@ -387,7 +355,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
                     )
                     new.with_user(self.user_eventmanager).unlink()
 
-        # check create constraint through embed 2many: 2 VIPs is not possible
         with self.assertRaises(exceptions.ValidationError):
             test_event.with_user(self.user_eventmanager).write(
                 {
@@ -411,7 +378,6 @@ class TestEventSlotSeats(TestEventSlotsCommon):
                     ],
                 }
             )
-        # one of them is archived, ok for limit
         test_event.with_user(self.user_eventmanager).write(
             {
                 "registration_ids": [
@@ -445,6 +411,5 @@ class TestEventSlotSeats(TestEventSlotsCommon):
             )
         )
         self.assertTrue(archived_vip)
-        # writing on active triggers constraint on VIP
         with self.assertRaises(exceptions.ValidationError):
             archived_vip.active = True

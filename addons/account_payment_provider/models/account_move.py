@@ -11,11 +11,6 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _lock_for_payment(self) -> None:
-        """Serialize payment initiation and cancellation, including stale snapshots.
-
-        A row lock alone cannot make a repeatable-read snapshot observe a newly
-        linked transaction. Updating the owner row forces that contender to retry.
-        """
         if not self:
             return
         self.flush_recordset()
@@ -66,7 +61,6 @@ class AccountMove(models.Model):
 
     @api.depends("transaction_ids")
     def _compute_amount_paid(self) -> None:
-        """Sum the amounts of the transactions in state 'authorized' or 'done'."""
         for invoice in self:
             invoice.amount_paid = sum(
                 invoice.transaction_ids.filtered(
@@ -75,16 +69,6 @@ class AccountMove(models.Model):
             )
 
     def _prepare_online_payment_context(self) -> tuple:
-        """Return the transactions and config relevant to online payment eligibility checks.
-
-        Shared by :meth:`_has_to_be_paid` and :meth:`_get_online_payment_error` to avoid
-        recomputing the same transaction filtering and config-parameter lookup twice.
-
-        :return: The ``payment.transaction`` records in a pending/settled state, the subset of
-                 those still pending on a real provider, and whether the online-payment feature
-                 is enabled, as a ``(recordset, recordset, bool)`` triple.
-        :rtype: tuple
-        """
         self.check_singleton()
         transactions = self.with_privilege(
             "account_payment_provider.privilege_read_own_invoice_transactions",
@@ -122,9 +106,6 @@ class AccountMove(models.Model):
         )
 
     def _get_online_payment_error(self) -> str:
-        """
-        Returns the appropriate error message to be displayed if _has_to_be_paid() method returns False.
-        """
         transactions, pending_transactions, enabled_feature = (
             self._prepare_online_payment_context()
         )
@@ -151,19 +132,15 @@ class AccountMove(models.Model):
         return self.with_context(active_test=False).sudo().transaction_ids._get_last()
 
     def payment_action_capture(self):
-        """Capture all transactions linked to this invoice."""
         self.check_singleton()
         payment_utils.check_rights_on_recordset(self)
 
-        # In sudo mode to bypass the checks on the rights on the transactions.
         return self.sudo().transaction_ids.action_capture()
 
     def payment_action_void(self) -> None:
-        """Void all transactions linked to this invoice."""
         self.check_singleton()
         payment_utils.check_rights_on_recordset(self)
 
-        # In sudo mode to bypass the checks on the rights on the transactions.
         self.sudo().authorized_transaction_ids.action_void()
 
     def action_view_payment_transactions(self):
@@ -201,7 +178,7 @@ class AccountMove(models.Model):
                 open_installments.append(data)
 
         elif installment_state == "epd":
-            amount_max = next_amount_to_pay  # with epd, next_amount_to_pay is the invoice amount residual
+            amount_max = next_amount_to_pay
             additional_info.update(
                 {
                     "has_eligible_epd": True,

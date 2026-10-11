@@ -28,16 +28,13 @@ class TestQualitySpreadsheet(TestQualityCommon, SpreadsheetTestCase):
             revisions = spreadsheet.with_context(
                 active_test=False
             ).spreadsheet_revision_ids
-            # write_date is not mocked when archiving, so we need to set it manually
             revisions.write_date = "2018-01-01"
 
-            # the same day, the history is still there
             self.env["quality.check.spreadsheet"]._gc_spreadsheet_history()
             self.assertTrue(
                 spreadsheet.with_context(active_test=False).spreadsheet_revision_ids
             )
 
-        # past the inactivity window, the history is gc'd
         with freeze_time("2018-01-02"):
             self.env["quality.check.spreadsheet"]._gc_spreadsheet_history()
             self.assertFalse(

@@ -470,7 +470,6 @@ class TestLoaderShimMinify(TransactionCase):
 
     def test_shim_is_a_parsable_classic_script(self):
         shim = self._fresh_shim()
-        # a minifier may rename the class, never the API pages call
         self.assertIn("registerNativeModules", shim)
         self.assertFalse(_MODULE_SYNTAX_RE.search(shim))
 

@@ -4,8 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestTeamAccessBind(TransactionCase):
-    # a team rung compares the record's team with the principal's teams; the
-    # bind reads them as res.users' team_ids and <usage>_team_ids do
 
     def test_the_teams_are_those_the_user_fields_read(self):
         for usage in ("alpha", "beta"):

@@ -68,9 +68,6 @@ class ResBank(models.Model):
         return vals
 
     def _check_partner_writable(self, partner_ids: list[int]) -> None:
-        # a bank writes its partner's name, address and archive flag as the
-        # server (_inherits_sudo_fields): pointing one at an existing partner
-        # needs the right to write that partner, or it rewrites someone else's
         if self.env.su or not partner_ids:
             return
         self.env["res.partner"].browse(partner_ids).check_access("write")

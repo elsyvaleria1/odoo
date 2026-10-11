@@ -8,7 +8,6 @@ class SaleOrder(models.Model):
 
     def _can_generate_service(self) -> bool:
         self.check_singleton()
-        # Only normal SO, new subscription or renewal can generate services
         return (
             not self.subscription_state
             or self.subscription_state in SUBSCRIPTION_PROGRESS_STATE

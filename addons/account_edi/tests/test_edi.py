@@ -210,7 +210,6 @@ class TestAccountEdi(AccountEdiTestCommon, CronMixinCase):
             capt.records.check_singleton()
 
     def test_cron_self_trigger(self):
-        # Process single job by CRON call (and thus, disable the auto-commit).
         edi_cron = self.env.ref("account_edi.ir_cron_edi_network")
         edi_cron.code = "model._cron_process_documents_web_services(job_count=1)"
 
@@ -230,12 +229,6 @@ class TestAccountEdi(AccountEdiTestCommon, CronMixinCase):
             ),
             self.sync_env_with_side_cursors(),
         ):
-            # One capture per action, never one spanning both. 'method_direct_trigger'
-            # processes the job exactly the way a worker does, and a worker consumes
-            # the triggers that woke it: '_remove_triggers_due' deletes every pending
-            # trigger of the cron BEFORE running the callback. A capture spanning both
-            # actions would therefore see the posting trigger deleted under it and
-            # count only the re-trigger.
             with self.capture_triggers("account_edi.ir_cron_edi_network") as capt_post:
                 (invoice1 + invoice2).action_post()
             capt_post.records.check_singleton()

@@ -93,7 +93,6 @@ class CalendarAlarm(models.Model):
 
     def _search_duration_minutes(self, operator, value):
         if operator == "in":
-            # recursive call with operator '='
             return Domain.OR(self._search_duration_minutes("=", v) for v in value)
         elif operator == "=":
             if not value:
@@ -116,16 +115,6 @@ class CalendarAlarm(models.Model):
 
     @api.model
     def _get_responsible_aware_alarm_types(self):
-        """Alarm types for which "Notify Responsible" is meaningful.
-
-        Empty in the base module: an email or an in-app notification reaches the
-        organizer through their attendee record like everybody else. The channels
-        that added the flag own the answer -- `calendar_sms` and
-        `whatsapp_calendar` extend `alarm_type` and read `notify_responsible` in
-        their own senders -- so they extend this instead of the base module
-        hardcoding a list of its own two types and negating it, which silently
-        stopped meaning what it says the moment a third type was added.
-        """
         return set()
 
     @api.onchange("duration", "interval", "alarm_type", "notify_responsible")

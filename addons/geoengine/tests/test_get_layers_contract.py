@@ -21,9 +21,6 @@ _LAYER_READER = "static/src/geoengine"
 
 
 def _reader_pattern(key: str) -> str:
-    # `.key`, `["key"]`, `{key}`/`{key,` destructuring or `key:` in a literal:
-    # a plain word boundary matched `name`, `id`, `model` and `url` in any
-    # file, which made "has a reader" vacuous for exactly those keys.
     escaped = re.escape(key)
     return rf"(\.{escaped}\b|[\"']{escaped}[\"']|[{{,]\s*{escaped}\s*[,}}:])"
 

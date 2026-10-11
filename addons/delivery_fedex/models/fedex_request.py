@@ -11,14 +11,10 @@ from odoo.tools import float_repr, remove_accents
 from odoo.tools.misc import file_path
 
 _logger = logging.getLogger(__name__)
-# uncomment to enable logging of Zeep requests and responses
-# logging.getLogger('zeep.transports').setLevel(logging.DEBUG)
 
 
 STATECODE_REQUIRED_COUNTRIES = ["US", "CA", "PR ", "IN"]
 
-# Why using standardized ISO codes? It's way more fun to use made up codes...
-# https://www.fedex.com/us/developer/WebHelp/ws/2014/dvg/WS_DVG_WebHelp/Appendix_F_Currency_Codes.htm
 FEDEX_CURR_MATCH = {
     "UYU": "UYP",
     "XCD": "ECD",
@@ -80,7 +76,6 @@ class FedexRequest:
             wsdl_path = f"delivery_fedex/api/{wsdl_folder}/RateService_v31.wsdl"
             self.start_rating_transaction(wsdl_path)
 
-    # Authentification stuff
 
     def web_authentication_detail(self, key, password) -> None:
         WebAuthenticationCredential = self.factory.WebAuthenticationCredential()
@@ -98,7 +93,6 @@ class FedexRequest:
         self.ClientDetail.AccountNumber = account_number
         self.ClientDetail.MeterNumber = meter_number
 
-    # Common stuff
 
     def set_shipper(self, company_partner, warehouse_partner) -> None:
         Contact = self.factory.Contact()
@@ -112,7 +106,6 @@ class FedexRequest:
         )
         Contact.PhoneNumber = warehouse_partner.phone_ids._primary().number or ""
         Contact.EMailAddress = warehouse_partner.email or ""
-        # TODO fedex documentation asks for TIN number, but it seems to work without
 
         Address = self.factory.Address()
         Address.StreetLines = [
@@ -177,7 +170,6 @@ class FedexRequest:
         self.RequestedShipment.DropoffType = dropoff_type
         self.RequestedShipment.ServiceType = service_type
         self.RequestedShipment.PackagingType = packaging_type
-        # Resuest estimation of duties and taxes for international shipping
         if service_type in ["INTERNATIONAL_ECONOMY", "INTERNATIONAL_PRIORITY"]:
             self.RequestedShipment.EdtRequestType = "ALL"
         else:
@@ -199,10 +191,8 @@ class FedexRequest:
                 )
 
     def set_currency(self, currency) -> None:
-        # set perferred currency as GBP instead of UKL
         currency = "GBP" if currency == "UKL" else currency
         self.RequestedShipment.PreferredCurrency = currency
-        # ask Fedex to include our preferred currency in the response
         self.RequestedShipment.RateRequestTypes = "PREFERRED"
 
     def set_master_package(
@@ -215,7 +205,6 @@ class FedexRequest:
             self.RequestedShipment.MasterTrackingId.TrackingIdType = "FEDEX"
             self.RequestedShipment.MasterTrackingId.TrackingNumber = master_tracking_id
 
-    # weight_value, package_code=False, package_height=0, package_width=0, package_length=0,
     def add_package(
         self,
         carrier,
@@ -240,7 +229,6 @@ class FedexRequest:
             package.Dimensions.Height = int(delivery_package.dimension["height"])
             package.Dimensions.Width = int(delivery_package.dimension["width"])
             package.Dimensions.Length = int(delivery_package.dimension["length"])
-            # TODO in master, add unit in product packaging and perform unit conversion
             package.Dimensions.Units = (
                 "IN" if self.RequestedShipment.TotalWeight.Units == "LB" else "CM"
             )
@@ -266,7 +254,6 @@ class FedexRequest:
                 delivery_package.total_cost * carrier.shipping_insurance / 100
             )
             pkg_order = delivery_package.order_id or delivery_package.picking_id.sale_id
-            # Get the currency from the sale order if it exists, so that it matches that of customs_value
             if pkg_order:
                 package.InsuredValue.Currency = _convert_curr_iso_fdx(
                     pkg_order.currency_id.name
@@ -295,7 +282,6 @@ class FedexRequest:
         else:
             self.RequestedShipment.RequestedPackageLineItems = package
 
-    # Rating stuff
 
     def start_rating_transaction(self, wsdl_path) -> None:
         settings = Settings(strict=False)
@@ -382,7 +368,6 @@ class FedexRequest:
 
         return formatted_response
 
-    # Shipping stuff
 
     def start_shipping_transaction(self, wsdl_path) -> None:
         self.client = Client(
@@ -485,7 +470,6 @@ class FedexRequest:
             self.RequestedShipment.CustomsClearanceDetail.CommercialInvoice.Purpose = (
                 "SOLD"
             )
-        # Old keys not requested anymore but still in WSDL; not removing them causes crash
         del self.RequestedShipment.CustomsClearanceDetail["ClearanceBrokerage"]
         del self.RequestedShipment.CustomsClearanceDetail["FreightOnValue"]
 
@@ -667,7 +651,6 @@ class FedexRequest:
         else:
             return False
 
-    # Deletion stuff
 
     def set_deletion_details(self, tracking_number) -> None:
         self.TrackingId = self.factory.TrackingId()
@@ -679,7 +662,6 @@ class FedexRequest:
     def remove_shipment(self, request):
         formatted_response = {"delete_success": False}
         try:
-            # Here, we send the Order 66
             self.response = self.client.service.deleteShipment(
                 WebAuthenticationDetail=request["WebAuthenticationDetail"],
                 ClientDetail=request["ClientDetail"],

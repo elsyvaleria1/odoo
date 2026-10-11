@@ -12,7 +12,6 @@ class LoyaltyRule(models.Model):
 
     @api.model
     def default_get(self, fields):
-        # Copy the rule defaults of the program type given in the context, if any
         result = super().default_get(fields)
         program_type = self.env.context.get("program_type")
         if program_type:
@@ -23,8 +22,6 @@ class LoyaltyRule(models.Model):
         return result
 
     def _selection_reward_point_modes(self) -> list:
-        # The value is provided in the loyalty program's view since we may not have a program_id yet
-        #  and makes sure to display the currency related to the program instead of the company's.
         symbol = self.env.context.get(
             "currency_symbol", self.env.company.currency_id.symbol
         )
@@ -42,13 +39,11 @@ class LoyaltyRule(models.Model):
         ondelete="cascade",
     )
     program_type = fields.Selection(related="program_id.program_type")
-    # Stored for security rules
     company_id = fields.Many2one(
         related="program_id.company_id",
     )
     currency_id = fields.Many2one(related="program_id.currency_id")
 
-    # Only for dev mode
     user_has_debug = fields.Boolean(compute="_compute_user_has_debug")
     product_domain = fields.Char(default="[]")
 
@@ -66,7 +61,6 @@ class LoyaltyRule(models.Model):
         string="Reward",
         default=1,
     )
-    # Only used for program_id.applies_on == 'future'
     reward_point_split = fields.Boolean(
         string="Split per unit",
         default=False,
@@ -120,7 +114,6 @@ class LoyaltyRule(models.Model):
 
     @api.constrains("reward_point_split")
     def _check_reward_point_split(self) -> None:
-        # Splitting per unit makes no sense when points accumulate on a nominative card
         for rule in self:
             if rule.reward_point_split and (
                 rule.program_id.applies_on == "both"
@@ -135,7 +128,6 @@ class LoyaltyRule(models.Model):
     @api.constrains("code", "active")
     def _check_code(self) -> None:
         mapped_codes = self.filtered(lambda r: r.code and r.active).mapped("code")
-        # Program code must be unique
         if len(mapped_codes) != len(set(mapped_codes)) or self.env[
             "loyalty.rule"
         ].search_count(
@@ -148,7 +140,6 @@ class LoyaltyRule(models.Model):
             limit=1,
         ):
             raise ValidationError(self.env._("The promo code must be unique."))
-        # Prevent coupons and programs from sharing a code
         if self.env["loyalty.card"].search_count(
             [("code", "in", mapped_codes), ("active", "=", True)], limit=1
         ):
@@ -156,31 +147,14 @@ class LoyaltyRule(models.Model):
 
     @api.model
     def _generate_code(self):
-        """Return a fresh promo code, unique enough not to hit `_check_code`.
-
-        Generated per rule and not baked into `loyalty.program`'s per-type defaults:
-        those are one dict written to every program of the type being changed, so a
-        code held there was the *same* code for each of them.
-        """
         return f"PROMO_CODE_{uuid4().hex[:8].upper()}"
 
     @api.depends("mode")
     def _compute_code(self) -> None:
         for rule in self:
             if rule.mode == "auto":
-                # Reset code when mode is set to auto
                 rule.code = False
             elif rule.mode == "with_code" and not rule.code:
-                # A trigger rule is reached by its code, so it needs one, and the
-                # code has to be unique -- which a per-program-type default cannot
-                # be. Generated here, once per rule.
-                #
-                # The `mode == 'with_code'` test is not redundant with the branch
-                # above: `mode` is itself computed from `code`, so the pair can be
-                # evaluated in either order and this one runs first on a new rule,
-                # while `mode` is still unset. Treating "not auto" as "with code"
-                # there gave every automatic rule a code -- and `_compute_mode`
-                # then read that code back and called the rule coded.
                 rule.code = rule._generate_code()
 
     @api.depends("code")
@@ -193,8 +167,6 @@ class LoyaltyRule(models.Model):
 
     @api.depends_context("uid")
     def _compute_user_has_debug(self) -> None:
-        # No field dependency: the answer is about the reader, not the record. It
-        # used to name one at random, which only widened invalidation.
         self.user_has_debug = self.env.user.has_group("base.group_no_one")
 
     def _get_domain_valid_product(self):

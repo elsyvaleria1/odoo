@@ -49,12 +49,6 @@ class StockMovePicking(models.Model):
         return True
 
     def _attach_to_new_pickings(self, groups):
-        # a group joins a picking an earlier group of this call created when
-        # `_get_domain_picking_for_assignation` and `_pick_picking_for_assignation`
-        # accept it, exactly as they would once that picking is in the table;
-        # the pickings are created together until a group might join one that
-        # is still pending: same operation type and intersecting references
-        # are required by every override of the domain
         Picking = self.env["stock.picking"]
         created = Picking
         attached = self.env["stock.move"]

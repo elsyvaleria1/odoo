@@ -35,7 +35,6 @@ class ResUsers(models.Model):
     def write(self, vals):
         result = super().write(vals)
         if "active" in vals and not vals["active"]:
-            # someone who left keeps no Telegram account acting as them
             self.env["telegram.binding"]._revoke_for_departed(self.partner_id)
         if vals.keys() & {"group_ids", "company_ids", "active", "lang"}:
             self._sync_telegram_command_menus()
@@ -47,14 +46,11 @@ class ResUsers(models.Model):
             [("bot_username", "!=", False), ("moved_to_id", "=", False)]
         )
         for user in self:
-            # a bot of another company refuses whatever its user writes
             user.telegram_connect_bot_ids = bots.filtered(
                 lambda bot, user=user: bot._admits_user(user)
             )
 
     def _get_telegram_connect_bot(self):
-        """The bot Connect Telegram opens: one an extension needs the person
-        to talk to comes first."""
         self.check_singleton()
         return self.telegram_connect_bot_ids[:1]
 
@@ -82,8 +78,6 @@ class ResUsers(models.Model):
         )._revoke("user")
 
     def _sync_telegram_command_menus(self) -> None:
-        """Bring the command menu of these users' private chats up to date with
-        what their groups and companies let them run now."""
         operating(self.env["telegram.chat"]).search(
             [
                 ("chat_type", "=", "private"),

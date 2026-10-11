@@ -82,13 +82,11 @@ while read -r cited; do
 done < <(grep -hoP '\bTest[A-Z]\w+' "${DOCS[@]}" | sort -u)
 
 # ------------------------------------------------------- ladder cases exist --
-# The docs describe cases /2../9. Each is anchored on its own branch of
-# `_reroute_for_lang`. They were in `_match`'s docstring until 869409d761a
-# stripped docstrings "keeping the directives" and took all eight with them --
-# which is why they are branch comments now and not a docstring again.
-for case_no in 2 3 4 5 6 7 8 9; do
-    if grep -q "See /$case_no," "$MOD/models/ir_http.py"; then ok
-    else bad "ladder case /$case_no is no longer marked in models/ir_http.py"; fi
+# Each documented ladder case emits its branch name in the reroute log.
+for branch in default_lang bot no_lang_no_redirect missing_lang \
+        default_lang_in_url lang_alias trailing_slash valid_lang_rerouted; do
+    if grep -q "by=\"$branch\"" "$MOD/models/ir_http.py"; then ok
+    else bad "ladder branch $branch is missing from models/ir_http.py"; fi
 done
 
 # ------------------------------------------- claims that must stay verified --

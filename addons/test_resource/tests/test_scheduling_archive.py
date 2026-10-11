@@ -48,7 +48,6 @@ class TestSchedulingMixinArchive(TransactionCase):
         )
 
     def test_archive_then_edit_creates_no_active_reservation(self):
-        """The confirmed bug: editing a trigger field while archived."""
         rec = self._make()
         self.assertEqual(len(self._res(rec)), 1)
 
@@ -61,11 +60,9 @@ class TestSchedulingMixinArchive(TransactionCase):
             0,
             "editing an archived record must not create an active reservation",
         )
-        # The (single) reservation still exists, archived.
         self.assertEqual(len(self._res(rec, active_test=False)), 1)
 
     def test_unarchive_and_edit_does_not_duplicate(self):
-        """Reactivating + editing in one write must reconcile, not duplicate."""
         rec = self._make()
         rec.active = False
         rec.write({"active": True, "date_start": datetime(2025, 1, 6, 10, 0)})
@@ -73,11 +70,9 @@ class TestSchedulingMixinArchive(TransactionCase):
         active = self._res(rec)
         self.assertEqual(len(active), 1, "must reuse the reservation, not duplicate")
         self.assertEqual(active.date_start, datetime(2025, 1, 6, 10, 0))
-        # No archived leftovers either.
         self.assertEqual(len(self._res(rec, active_test=False)), 1)
 
     def test_archive_then_unlink_leaves_no_reservation_rows(self):
-        """Archive → delete (the common cleanup flow) must not orphan rows."""
         rec = self._make()
         rec.active = False
         self.assertEqual(len(self._res(rec, active_test=False)), 1)
@@ -92,7 +87,6 @@ class TestSchedulingMixinArchive(TransactionCase):
         self.assertFalse(leftovers, "unlink must also purge archived reservations")
 
     def test_create_archived_record_plants_no_claim(self):
-        """A record created already archived must not create reservations."""
         rec = self.Model.create(
             {
                 "name": "Born archived",
@@ -105,12 +99,6 @@ class TestSchedulingMixinArchive(TransactionCase):
         self.assertFalse(self._res(rec, active_test=False))
 
     def test_sync_reconciles_manually_archived_reservation(self):
-        """A hand-archived mirror row is reconciled, not duplicated.
-
-        If the sync were blind to archived rows, editing the consumer would
-        create an active duplicate next to the archived twin — and the next
-        unarchive cycle would turn both into live claims on the resource.
-        """
         rec = self._make()
         self._res(rec).action_archive()
 
@@ -121,10 +109,8 @@ class TestSchedulingMixinArchive(TransactionCase):
         self.assertEqual(rows.date_start, datetime(2025, 1, 6, 10, 0))
 
     def test_sync_skips_noop_writes(self):
-        """Re-syncing unchanged data must not rewrite the reservation."""
         rec = self._make()
         reservation = self._res(rec)
-        # Backdate write_date so an (unwanted) write would be detectable.
         self.env.cr.execute(
             "UPDATE resource_reservation SET write_date = write_date"
             " - interval '1 hour' WHERE id = %s",
@@ -133,7 +119,7 @@ class TestSchedulingMixinArchive(TransactionCase):
         reservation.invalidate_recordset(["write_date"])
         before = reservation.write_date
 
-        rec._sync_reservations()  # same vals — reconcile must be a no-op
+        rec._sync_reservations()
         reservation.invalidate_recordset(["write_date"])
         self.assertEqual(
             reservation.write_date,
@@ -142,11 +128,6 @@ class TestSchedulingMixinArchive(TransactionCase):
         )
 
     def test_aggregates_follow_archive_state(self):
-        """Archiving flips reservations inactive → aggregates must follow.
-
-        ``reservation_ids`` drops archived rows on read, but without an
-        ``active`` dependency the stored sums kept their pre-archive values.
-        """
         rec = self._make()
         self.assertGreater(rec.allocated_hours, 0.0)
 
@@ -163,11 +144,10 @@ class TestSchedulingMixinArchive(TransactionCase):
         )
 
     def test_unarchive_refreshes_edits_made_while_archived(self):
-        """Edit while archived, then unarchive alone → reservation reflects the edit."""
         rec = self._make()
         rec.active = False
-        rec.date_start = datetime(2025, 1, 6, 11, 0)  # edited while archived
-        rec.active = True  # plain reactivation
+        rec.date_start = datetime(2025, 1, 6, 11, 0)
+        rec.active = True
 
         active = self._res(rec)
         self.assertEqual(len(active), 1)

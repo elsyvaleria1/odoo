@@ -17,7 +17,6 @@ class StockPickingBatch(models.Model):
         return action
 
     def action_view_batch_from_gantt_view(self) -> dict:
-        """Method to open the batch form view of the current record from the Gantt view."""
         _debug.lifecycle("batch_gantt_view_open", batches=self)
         self.check_singleton()
         view_id = self.env.ref(

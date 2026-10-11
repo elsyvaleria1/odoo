@@ -41,10 +41,9 @@ class WizardEsgMetricSendReviewSurvey(models.TransientModel):
         metric_ids = self.env.context.get("default_metric_ids", [])
         self.metric_ids = self.env["esg.metric"].browse(metric_ids)
 
-    # Overrides of mixin.mail.composer
     @api.depends(
         "survey_template_id"
-    )  # fake trigger otherwise not computed in new mode
+    )
     def _compute_render_model(self) -> None:
         self.render_model = "survey.user_input"
 
@@ -277,7 +276,6 @@ class WizardEsgMetricSendReviewSurvey(models.TransientModel):
         return answers
 
     def _send_mail(self, answer):
-        """Create mail specific for recipient containing notably its access token"""
         ctx = {
             "logged_user": self.env.user.name,
             "company_name": self.env.company.name,

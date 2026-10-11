@@ -436,7 +436,7 @@ class IrQwebFieldHtml(models.AbstractModel):
         )[0]
         att_names = qweb._get_post_processing_att_names()
         nonce = qweb._script_nonce() if options.get("trusted_scripts") else None
-        rewritten = 0  # debuglog
+        rewritten = 0
         for element in body.iter():
             if nonce and element.tag == "script":
                 element.set("nonce", nonce)
@@ -451,7 +451,7 @@ class IrQwebFieldHtml(models.AbstractModel):
             ):
                 attrib.clear()
                 attrib.update(processed)
-                rewritten += 1  # debuglog
+                rewritten += 1
         _debug.perf.count("html_post_processed", chars=len(value), rewritten=rewritten)
         body = self._post_process_html_body(body, options)
         serialized = etree.tostring(body, encoding="unicode", method="html")
@@ -470,8 +470,6 @@ class IrQwebFieldImage(models.AbstractModel):
             msg = "Invalid image content"
             raise ValueError(msg)
 
-        # strictly: a lenient decode drops stray bytes that the data URI,
-        # built from the text, would still carry
         try:
             source = value.encode("ascii") if isinstance(value, str) else bytes(value)
             source = re.sub(rb"\s+", b"", source)
@@ -866,8 +864,6 @@ class IrQwebFieldContact(models.AbstractModel):
             separator = Markup("<br/>")
 
         value = value.sudo().with_context(show_address=True)
-        # a record delegating to a partner (a user) renders that partner's
-        # numbers; only res.partner carries them
         contact = value
         if value._name != "res.partner":
             for parent_model, parent_field in value._inherits.items():

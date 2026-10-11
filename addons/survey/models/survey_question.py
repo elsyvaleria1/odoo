@@ -826,10 +826,6 @@ class SurveyQuestion(models.Model):
         self.validation_min_float_value = 0
         self.validation_max_float_value = 0
 
-    # What shape of payload each question type can be handed. /survey/submit is a
-    # public jsonrpc route, so the value is whatever JSON the caller sent: without this
-    # a crafted shape reached a validator that assumed otherwise and raised TypeError or
-    # AttributeError out of the request -- an unauthenticated 500 per combination.
     _SCALAR_ANSWER_TYPES = (
         "char_box",
         "text_box",
@@ -905,8 +901,6 @@ class SurveyQuestion(models.Model):
         if self.question_type in self._MAPPING_ANSWER_TYPES:
             return isinstance(answer, dict)
         if self.question_type in ("simple_choice", "dropdown", "multiple_choice"):
-            # The form submits a comment as one `{"comment": text}` item among
-            # the chosen answer ids; the controller lifts it out afterwards.
             candidates = answer if isinstance(answer, list) else [answer]
             return all(
                 (isinstance(item, str | int) and not isinstance(item, bool))

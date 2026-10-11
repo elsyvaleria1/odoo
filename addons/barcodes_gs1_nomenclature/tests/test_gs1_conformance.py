@@ -71,8 +71,6 @@ class TestGs1Conformance(common.TransactionCase):
                 )
 
     def test_the_shipped_rule_set_is_the_installed_default(self):
-        """The vectors' "shipped" rules are what the module installs, so the
-        browser half reads the same nomenclature a database does."""
         installed = [
             {
                 "sequence": rule.sequence,

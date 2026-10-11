@@ -21,8 +21,6 @@ URL = "https://api.example.com/v1/charge"
 
 @contextlib.contextmanager
 def _trickling_server(pieces=10, pause=0.3):
-    # every byte arrives well inside the read timeout, the whole answer long
-    # after any deadline the call is given
     whole = b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\nConnection: close\r\n\r\n"
     whole += b"0123456789"
     size = -(-len(whole) // pieces)
@@ -46,8 +44,6 @@ def _trickling_server(pieces=10, pause=0.3):
 
     threading.Thread(target=serve, daemon=True).start()
     try:
-        # the test case raises every timeout to 10 s, which a call budget
-        # follows: the trickle would have to outlast 30 s
         with patch(
             "odoo.tests.transaction_case._raise_test_timeout", side_effect=lambda t: t
         ):

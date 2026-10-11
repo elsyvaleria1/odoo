@@ -5,8 +5,6 @@ from odoo.addons.helpdesk.tests.common import HelpdeskCommon
 
 class TestRepair(HelpdeskCommon):
     def test_lot_id(self):
-        """This test purpose is to ensure that, if present, the context key default_trace_id is not
-        propagated to the action_repair_done()."""
         self.env.ref("base.group_user").implied_ids = [
             (4, self.env.ref("stock.group_production_lot").id)
         ]
@@ -74,9 +72,6 @@ class TestRepair(HelpdeskCommon):
         )
 
     def test_helpdesk_return_and_repair(self):
-        """
-        Check that the moves linked to a repair are not mimicked on the return.
-        """
         self.test_team.helpdesk_use_product_returns = True
         self.test_team.helpdesk_use_product_repairs = True
 

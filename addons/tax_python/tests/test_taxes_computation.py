@@ -124,16 +124,16 @@ class TestTaxesComputation(TestTaxCommonTaxPython):
 
     def test_invalid_formula(self):
         invalid_formulas = [
-            "product.product_tmpl_id",  # no relational fields
-            "product.sudo()",  # You don't have access to any record.
-            "tuple(1, 2, 3)",  # only min/max functions, no other callables
+            "product.product_tmpl_id",
+            "product.sudo()",
+            "tuple(1, 2, 3)",
             "set(1, 2, 3)",
             "[1, 2, 3]",
             "1,",
             "{1, 2}",
             "{1: 2}",
             "(i for _ in product)",
-            '"test"',  # strings are only allowed in subscripts of product
+            '"test"',
             'product[min("volume", "price")]',
             "product()",
             "product[0]",
@@ -152,9 +152,6 @@ class TestTaxesComputation(TestTaxCommonTaxPython):
                     self.python_tax(formula=formula)
 
     def test_ast_transformer_normalizes(self):
-        # this test simply checks that the AST transformer does not raise any error when
-        # collecting attributes and rewriting the formula, and also to list a couple of edge cases.
-        # of course all these weird edge cases must be filtered out by the validator later on
         valid_cases = [
             (
                 "((10_000 / product.__dunders__) * (product['shall'] - product[\"n0t\"] + ((product._pass)))) -.01",
@@ -183,14 +180,10 @@ class TestTaxesComputation(TestTaxCommonTaxPython):
 
     def test_ast_validator(self):
         to_fail = [
-            # no attributes
-            # transformer pass before validation rewrote attrs to subscripts,
-            # so we don't allow attributes in validation step
             "product.field",
             "isinstance",
             "product.env",
             "(None for _ in ()).gi_frame.f_builtins['__import__']",
-            # only whitelisted nodes (no tuples, sets, dicts, lists, etc)
             "1,",
             "product,",
             "min(1, 2),",
@@ -201,17 +194,14 @@ class TestTaxesComputation(TestTaxCommonTaxPython):
             "{1, 2}",
             "[product]",
             "(None for _ in product)",
-            # only string subscripts of product are allowed
             "product[None]",
             "product[1]",
             "product[:]",
             "not_product['field']",
-            # no arbitrary function calls
             "product['a_callable']()",
             "product()",
             "(min or max)(1, 2)",
             "isinstance(1, ())",
-            # no arbitrary name load
             "a",
             "__builtins__",
             "isinstance",

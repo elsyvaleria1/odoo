@@ -5,7 +5,6 @@ class AccountEdiCommon(models.AbstractModel):
     _inherit = "account.edi.common"
 
     def _add_logs_import_invoice_ubl_cii(self, invoice, invoice_logs=None):
-        # EXTENDS 'account_edi_ubl_cii'
         logs = super()._add_logs_import_invoice_ubl_cii(
             invoice, invoice_logs=invoice_logs
         )
@@ -16,7 +15,6 @@ class AccountEdiCommon(models.AbstractModel):
     def _log_import_invoice_ubl_cii(
         self, invoice, title_logs=None, invoice_logs=None, attachments=None
     ) -> None:
-        # EXTENDS 'account_edi_ubl_cii'
         if invoice.peppol_message_uuid:
             title_logs = self.env._("Peppol invoice received")
         super()._log_import_invoice_ubl_cii(

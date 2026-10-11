@@ -52,8 +52,6 @@ class _PostgresHierarchyMixin:
                 SELECT id, parent_id FROM ancestry
                 """,
                 table=SQL.identifier(model._table),
-                # the closure reads the column: a pending write has to reach it,
-                # unless the caller lets the cache override the rows it reads
                 parent=SQL.identifier(
                     parent_field,
                     to_flush=model._fields[parent_field] if flush else None,
@@ -126,7 +124,6 @@ class _PostgresHierarchyMixin:
             table=table,
             roots=list(root_ids),
             base_where=SQL(" AND (%s)", base_where) if base_where else SQL(),
-            # the closure reads the column: a pending write has to reach it
             parent=SQL.identifier(
                 model._table, parent_field, to_flush=model._fields[parent_field]
             ),
@@ -221,10 +218,6 @@ class _PostgresHierarchyMixin:
     def move_parent_paths(
         self, model: ModelLike, ids: typing.Sequence[int], prefix: str
     ) -> dict[int, str]:
-        # A descendant under several moved nodes (an ancestor moved along with
-        # it) belongs to the deepest one. A node whose own path or whose parent's
-        # path is missing cannot be located by prefix: its subtree is rebuilt
-        # from the parent column instead.
         rows = model.env.execute_query(
             SQL(
                 """ WITH node AS (

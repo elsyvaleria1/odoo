@@ -29,21 +29,13 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_multi_users_tasks(self):
-        """
-        user_projectuser     [task_project_pigs_with_planned_hours_user] [task_project_goats_with_planned_hours_user]                                               [task_project_pigs_no_planned_hours_user]
-                                                                        |                                                                                                ^
-                                                                        |                                                                                                |
-                                                                        |                                                                                                |
-        user_projectmanager                                             ------------------------------------------------>[task_project_pigs_with_planned_hours_manager]-
-        and user_projectuser
-        """
         self.task_project_pigs_with_planned_hours_manager.write(
             {
                 "user_ids": [self.user_projectmanager.id, self.user_projectuser.id],
                 "predecessor_ids": [self.task_project_pigs_with_planned_hours_user.id],
                 "successor_ids": [self.task_project_pigs_no_planned_hours_user.id],
                 "date_end": datetime(2023, 2, 2),
-                "planned_hours": 10.0,  # allocated hours should be equal remaining hours when timesheet_grid installed to have some hours to plan ( for testing simplicity )
+                "planned_hours": 10.0,
             }
         )
 
@@ -102,7 +94,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
 
         self.assertEqual(
@@ -114,9 +105,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             datetime(2023, 1, 2, 16),
         )
 
-        # user_projectuser is off till 6
-        # user_projectmanager is off till 10
-        # the first possible time for both of them is starting from 11
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start,
             datetime(2023, 1, 11, 7),
@@ -127,9 +115,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             "10 hours to do / 2 users = 5 hours per user from 7h to 11h + 12h to 13h",
         )
 
-        # even that task_project_pigs_with_planned_hours_manager was planned first as it has a deadline
-        # smart scheduling is optimizing resources so
-        # the gap in days 09 and 10 was filled to plan task_project_goats_with_planned_hours_user
         self.assertEqual(
             self.task_project_goats_with_planned_hours_user.date_start,
             datetime(2023, 1, 9, 7),
@@ -139,8 +124,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             datetime(2023, 1, 10, 9),
         )
 
-        # should not be planned after the old deadline of its parent, as its parent will be planned again
-        # if the new deadline is before the old one, no need to block the task and plan it ASAP
         self.assertEqual(
             self.task_project_pigs_no_planned_hours_user.date_start,
             datetime(2023, 1, 11, 13),
@@ -152,11 +135,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_auto_schedule_flex_resource(self):
-        """
-        user_projectuser(flex)    [task_project_pigs_with_planned_hours_user] ----> [task_project_goats_with_planned_hours_user]                                                   [task_project_pigs_no_planned_hours_no_user]
-                                                                                                          |                                                                              ^
-        both users (flex and regular)                                                                     |----------------------------> [task_project_pigs_no_planned_hours_user]------
-        """
         self.env.user.sudo().tz = "UTC"
         self.user_projectuser.company_id.resource_calendar_id.tz = "UTC"
 
@@ -233,14 +211,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             datetime(2023, 1, 5, 4),
             "4 hours to work from 04:00 to 08:00",
         )
-        # Weekly budgets are bucketed by the company's week, Monday by default
-        # (resource.resource._get_week_of). Sun 1 Jan 2023 closes the week of
-        # Mon 26 Dec, so it carries its own 8h and the next week runs
-        # Mon 2 -> Sun 8 Jan.  The 36h task takes 8h of Sunday plus 8+8+4
-        # of Mon-Thu, this one takes 4h more on Thu 5th: 32h of week 1 spent,
-        # leaving exactly 8h, which it uses on Fri 6th.  The old Sun 8th
-        # expectation came from Sunday-anchored weeks, where Sun 1st and Sun
-        # 8th each opened a fresh 40h budget.
         self.assertEqual(
             self.task_project_goats_with_planned_hours_user.date_end,
             datetime(2023, 1, 6, 8),
@@ -269,42 +239,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_flexible_user_no_day_no_week_overload(self):
-        """
-        task1:
-            - total duration   56 hours
-            - allocated hours  24 hours
-
-            Repartition:
-                * day 28:
-                    16 / 56 hours with a rate ~ 28.5%
-                    2 employees work 24(allocated_hours) * rate = 6.85 hours - an employee works 3.42 hours
-
-                * day 29:
-                    24 / 56 hours with a rate ~ 43%
-                    2 employees work 24(allocated_hours) * 10.28 hours - an employee works 5.14 hours
-
-                * day 30:
-                    16 / 56 hours with a rate ~ 28.5%
-                    2 employees work 24(allocated_hours) * 6.85 hours - an employee works 3.42 hours
-
-        task 2
-            - total duration   12 hours ctd bx
-            - allocated hours   6 hours
-
-            Repartition:
-                * day 28:
-                    2 / 12 hours  with a rate ~ 16%
-                    an employee works ~ 1 hour
-
-                * day 29:
-                    10 / 12 hours with a rate ~ 83%
-                    an employee works ~ 5 hours
-
-        user_projectuser works:
-            - day 28: ~ 4.42 hours
-            - day 29: ~ 10.14 hours (overloaded)
-            - day 30: ~ 3.42
-        """
         self.env.user.sudo().tz = "UTC"
         self.user_projectuser.company_id.resource_calendar_id.tz = "UTC"
 
@@ -405,7 +339,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             "only users with flexible resources",
         )
 
-        # auto plan tasks in a period with already planned tasks
         self.task_project_pigs_no_planned_hours_no_user.write(
             {"user_ids": [self.user_projectuser.id], "planned_hours": 12}
         )
@@ -475,8 +408,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             """,
         )
 
-        # an overlap is a matter of bookings: a task booked for no hours at
-        # all no longer competes for the user's days
         self.task_project_pigs_with_planned_hours_user.planned_hours = 0
         self.assertFalse(
             self.task_project_pigs_with_planned_hours_user.planning_overlap,
@@ -484,11 +415,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_auto_schedule_fully_flex_resource(self):
-        """
-        user_projectuser(flex)    [task_project_pigs_with_planned_hours_user] ----> [task_project_goats_with_planned_hours_user]                                                   [task_project_pigs_no_planned_hours_no_user]
-                                                                                                          |                                                                              ^
-        both users (flex and regular)                                                                     |----------------------------> [task_project_pigs_no_planned_hours_user]------
-        """
         self.env.user.sudo().tz = "UTC"
         self.user_projectuser.company_id.resource_calendar_id.tz = "UTC"
 

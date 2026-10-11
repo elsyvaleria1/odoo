@@ -499,7 +499,6 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         token = secrets.token_urlsafe(32)
         receiver = self._get_inbound_receiver()
         bearer = self.env.ref("credential.credential_category_bearer_token")
-        # a bearer token is rotated in place; any other credential is replaced
         if receiver.credential_id.category_id == bearer:
             receiver.credential_id.credential_value = token
         else:
@@ -533,8 +532,6 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
 
     def _deliver_inbound_message(self, delivery: InboundDelivery) -> int | None:
         self.check_singleton()
-        # processed exactly as a polled message is: by the gateway cron's user,
-        # without the superuser flag and without the HTTP request's context
         gateway_env = self.env(
             user=self.env.ref("mail.ir_cron_mail_gateway_action").user_id,
             su=False,

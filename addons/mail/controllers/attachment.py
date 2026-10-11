@@ -226,7 +226,7 @@ class AttachmentController(ThreadController):
         "/mail/attachment/delete", methods=["POST"], type="jsonrpc", auth="public"
     )
     @add_guest_to_context
-    def mail_attachment_delete(  # noqa: E8539  content: an attachment's own token or ownership token
+    def mail_attachment_delete(
         self, attachment_id: int, access_token: str | None = None
     ) -> None:
         attachment_id = to_record_id(attachment_id)
@@ -273,7 +273,7 @@ class AttachmentController(ThreadController):
         type="http",
     )
     @add_guest_to_context
-    def mail_attachment_pdf_first_page(  # noqa: E8539  content: an attachment's own token or ownership token
+    def mail_attachment_pdf_first_page(
         self, attachment_id: int, access_token: str | None = None
     ) -> Response:
         attachment = request.env["ir.attachment"].browse(attachment_id).exists()
@@ -291,7 +291,7 @@ class AttachmentController(ThreadController):
         type="jsonrpc",
     )
     @add_guest_to_context
-    def mail_attachment_update_thumbnail(  # noqa: E8539  content: an attachment's own token or ownership token
+    def mail_attachment_update_thumbnail(
         self,
         attachment_id: int,
         thumbnail: str | None = None,

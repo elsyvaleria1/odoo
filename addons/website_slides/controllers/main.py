@@ -54,7 +54,7 @@ class WebsiteSlides(WebsiteProfile):
         "date": "create_date desc",
     }
 
-    def sitemap_slide(env, rule, qs):  # noqa: N805 -- sitemap callback, first arg is the env
+    def sitemap_slide(env, rule, qs):
         Channel = env["slide.channel"]
         dom = sitemap_qs2dom(qs=qs, route="/slides/", field=Channel._rec_name)
         dom &= env["website"].get_current_website().website_domain()
@@ -932,8 +932,6 @@ class WebsiteSlides(WebsiteProfile):
             < fields.Datetime.now()
         ):
             return {"invite_error": "expired"}
-        # the invitation's link, live: a signup token handed out below lasts
-        # no longer than the invitation it came with
         try:
             request.env["access.link"]._resolve(
                 invite_hash,
@@ -1134,8 +1132,6 @@ class WebsiteSlides(WebsiteProfile):
         back = redirect or f"/slides/{channel_id}"
         if request.website.is_public_user():
             return request.redirect("/web/login?" + urlencode({"redirect": back}))
-        # a member already, or a course the user may not join: the page they
-        # come back to shows which
         self._join_channel(channel_id)
         return request.redirect(back)
 
@@ -1630,9 +1626,6 @@ class WebsiteSlides(WebsiteProfile):
             )
 
         if not existing_sudo:
-            # a new question takes the place of the page's placeholder, which the
-            # page names (questions deleted since its rendering do not renumber
-            # it), and leaves the placeholder for the next one
             prefix = f"website_slides.quiz_question_new.{slide.id}."
             number = (placeholder or "").removeprefix(prefix)
             if not (placeholder or "").startswith(prefix) or not number.isdecimal():
@@ -1641,8 +1634,6 @@ class WebsiteSlides(WebsiteProfile):
         self._get_own_slide_progress_sudo(slide).write({"completed": False})
 
         if existing_sudo:
-            # edited in place, so the question keeps its id and its region:
-            # its old answers go, and with them the attendees' answer lines
             existing_sudo.write(
                 {
                     "title": question,
@@ -1979,7 +1970,6 @@ class WebsiteSlides(WebsiteProfile):
         category = False
 
         try:
-            # the category and the slide land together or not at all
             with request.env.cr.savepoint():
                 if post.get("category_id"):
                     category_id = post["category_id"][0]

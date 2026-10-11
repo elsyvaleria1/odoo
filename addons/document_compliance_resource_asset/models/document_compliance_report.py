@@ -28,14 +28,10 @@ class DocumentComplianceReport(models.Model):
 
     @api.model
     def _get_entity_conditions(self) -> dict[str, str]:
-        # the resources that are things: a person's documents are the
-        # employee's to require
         return {
             **super()._get_entity_conditions(),
             "resource.resource": "t.kind_id IS NOT NULL",
         }
 
     def _get_type_scope_conditions(self) -> list[str]:
-        # A type naming no kind keeps applying to every asset, so this narrows
-        # only the types that asked to be narrowed.
         return [*super()._get_type_scope_conditions(), KIND_SCOPE]

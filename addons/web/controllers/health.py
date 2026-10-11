@@ -71,8 +71,6 @@ class Health(http.Controller):
             _debug.logic("readyz_data_dir_not_writable", data_dir=config["data_dir"])
             checks["data_dir"] = "fail"
             status = 503
-        # A request for a database still being preloaded waits on the
-        # registry lock until the load ends; a balancer should not send one.
         if service_server.is_ready():
             checks["registries"] = "pass"
         else:
@@ -95,7 +93,7 @@ class Health(http.Controller):
             raise request.prepare_not_found_error()
         presented = request.httprequest.headers.get("Authorization", "")
         scheme, _, offered = presented.partition(" ")
-        if scheme.lower() != "bearer" or not consteq(offered.strip(), token):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+        if scheme.lower() != "bearer" or not consteq(offered.strip(), token):
             _debug.logic(
                 "metrics_rejected", scheme=scheme, token_presented=bool(offered)
             )

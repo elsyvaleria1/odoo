@@ -3,11 +3,6 @@ from odoo import api, fields, models
 from .gamification_utils import start_end_date_for_period
 
 
-# Teams aggregate individual member performance into a team score.
-# They can be manually composed or auto-populated from an HR department.
-# Team-vs-team competition increases engagement for all participants --
-# collaboration within a team offsets the demotivation that individual
-# leaderboards cause for the bottom 80% of performers.
 class GamificationTeam(models.Model):
     """Team for collaborative gamification challenges."""
 
@@ -44,15 +39,6 @@ class GamificationTeam(models.Model):
         string="# Members",
     )
 
-    # Display aggregates, deliberately NOT stored.
-    #
-    # Stored, they depended on `member_ids.karma`, which made every karma event
-    # anywhere in the system search for the teams the earner belongs to and then
-    # re-run a per-team `search_count` -- measured at +0.8 queries per extra team
-    # on the earner, paid by every kudos, badge, streak day and forum upvote.
-    # Nothing searches, groups or orders by either field: they are read on the
-    # team list, the kanban card and the form, where computing them costs the two
-    # aggregate queries below for the whole recordset at once.
     team_karma = fields.Integer(
         compute="_compute_team_stats",
         help="Sum of all members' karma.",
@@ -70,10 +56,6 @@ class GamificationTeam(models.Model):
 
     @api.depends("member_ids.karma", "member_ids.badge_ids")
     def _compute_team_stats(self) -> None:
-        """Aggregate karma and badge counts over every team in the recordset.
-
-        Two queries for the whole set, not a ``search_count`` per team.
-        """
         for team in self:
             team.team_karma = 0
             team.team_badges = 0
@@ -96,14 +78,6 @@ class GamificationTeam(models.Model):
             team.team_badges = sum(badges_by_user.get(uid, 0) for uid in member_ids)
 
     def get_team_challenge_score(self, challenge) -> float:
-        """Compute this team's score for a given challenge.
-
-        The score is the average completeness across all members' goals
-        for the **current period** of the challenge, normalized to 0-100%.
-
-        :param challenge: ``gamification.challenge`` record.
-        :return: float, average completeness percentage.
-        """
         self.check_singleton()
         if not self.member_ids:
             return 0.0

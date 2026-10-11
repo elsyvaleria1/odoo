@@ -27,10 +27,6 @@ class KpiProvider(models.AbstractModel):
 def _tax_return_grouping_key(external_ids, return_info):
     external_id = ""
 
-    # Determine the external identifier used to categorize the tax returns:
-    # - use the identifier of the root report if any,
-    # - otherwise use the identifier of the report,
-    # - otherwise use the identifier of the return type.
     external_id = external_ids.get(("report.formula", return_info["root_report_id"]))
     if not external_id:
         external_id = external_ids.get(("report.formula", return_info["report_id"]))
@@ -41,11 +37,9 @@ def _tax_return_grouping_key(external_ids, return_info):
     if not external_id:
         external_id = return_info["tax_return_name"]
 
-    # Special case for l10n_eu_oss_reports.* that are all merged together.
     if external_id.startswith("l10n_eu_oss_reports."):
         external_id = "l10n_eu_oss_reports"
 
-    # property names must match odoo.orm.utils.regex_alphanumeric
     return re.sub(r"[^a-z0-9_]", "_", external_id.lower())
 
 
@@ -64,15 +58,6 @@ def _tax_returns_get_value(tax_returns) -> str:
 
 
 def get_kpi_summary(cr, uid):
-    """Retrieve the status of pending tax returns grouped by report or return type.
-
-    :param cr: database cursor
-    :param int uid: user the deadlines are evaluated for (timezone and language)
-    :return: list of ``{'id', 'name', 'type', 'value'}`` dicts, one per return group
-    :rtype: list
-    """
-    # Deliberately bypasses the ORM: KPI summaries can then be served without
-    # loading a registry, which is faster on multi-database servers.
     expected_columns = {
         "account_return.date_deadline",
         "account_return.is_completed",
@@ -98,7 +83,6 @@ def get_kpi_summary(cr, uid):
             missing=sorted(expected_columns - existing_columns),
         )
     if expected_columns - existing_columns:
-        # Needed columns are not present -> module is not installed
         return []
 
     cr.execute(
@@ -114,19 +98,6 @@ def get_kpi_summary(cr, uid):
     }
     _debug.perf.count("tax_return_external_ids_fetched", rows=len(external_ids))
 
-    # The user's own "today", resolved in Python. Reading the timezone costs one
-    # indexed lookup and settles three things the SQL could not:
-    #  * ``AT TIME ZONE`` only accepts the timezone names *PostgreSQL* knows,
-    #    and Odoo's tz dropdown offers a wider set (every zoneinfo name, legacy
-    #    aliases included). A user whose profile said 'Asia/Calcutta' got
-    #    InvalidParameterValue instead of a KPI;
-    #  * the conversion ran backwards. ``now`` is naive, so
-    #    ``now AT TIME ZONE tz`` read it as wall-clock time *in* the user's zone
-    #    and produced an instant, which ``::date`` then rendered in the
-    #    *session's* timezone -- at 20:00 UTC that answered 2026-08-15 for a
-    #    Tokyo user whose date was already the 16th;
-    #  * ``::date`` on a timestamptz depends on the session's TimeZone, which
-    #    Odoo never sets, so the same query answered differently on two servers.
     cr.execute(
         SQL(
             """
@@ -139,7 +110,6 @@ def get_kpi_summary(cr, uid):
         )
     )
     row = cr.fetchone()
-    # Using python-generated dates to respect what freezegun has frozen in tests
     today = datetime.now(UTC).astimezone(timezone((row and row[0]) or "UTC")).date()
     _debug.logic(
         "tax_return_kpi_today",

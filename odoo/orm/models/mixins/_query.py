@@ -193,9 +193,6 @@ class _QueryMixin(_ModelStubs):
     def _order_value_to_sql(
         self, sql_value: SQL, direction: SQL, nulls: SQL, query: Query
     ) -> SQL:
-        """The ORDER BY term for a value: under a grouped query the value is
-        aggregated, which an `order_by_sql` hook composing its own value must
-        do the same way."""
         if query._any_value_orderby:
             sql_value = SQL("ANY_VALUE(%s)", sql_value)
         return SQL("%s %s %s", sql_value, direction, nulls)
@@ -316,9 +313,6 @@ class _QueryMixin(_ModelStubs):
     def _field_access_mask_sql(
         self, field: Field[typing.Any], alias: str, query: Query | None
     ) -> SQL | None:
-        # the condition under which the principal may see the field's value
-        # in a WHERE, an ORDER BY or a GROUP BY: elsewhere the value is NULL,
-        # so a search, a sort or a group cannot probe it
         domain = self._field_access_domain(field, "read")
         if domain is None or values_unmasked():
             return None
@@ -330,8 +324,6 @@ class _QueryMixin(_ModelStubs):
         mask = domain._to_sql(model, alias, scratch)
         if not (scratch._joins or scratch._once or scratch._once_sets):
             return mask
-        # the joins the mask hung on a query nobody runs would be missing
-        # from the caller's FROM clause: the mask stands whole as a subquery
         sub_alias = Query.get_table_alias(alias, "field_access")
         sub = Query(model.env, sub_alias, model._table_sql)
         sub.add_where(domain._to_sql(model, sub_alias, sub))
@@ -365,8 +357,6 @@ class _QueryMixin(_ModelStubs):
         self._check_field_access(field, "read")
 
         if field.value_sql:
-            # the field names the method that composes its SQL: an expression
-            # over other columns, a join it hangs on the query, a constant
             if property_name:
                 raise ValueError(
                     f"{field_expr!r}: a property of a field that composes its own SQL"
@@ -375,8 +365,6 @@ class _QueryMixin(_ModelStubs):
             return value_sql
 
         if field.is_one2one:
-            # no column on this side: the value is the id of the one comodel
-            # row whose unique inverse names this row
             if property_name or query is None:
                 raise ValueError(
                     f"{field_expr!r}: a One2one converts to SQL only as itself, with a query"
@@ -385,9 +373,6 @@ class _QueryMixin(_ModelStubs):
             return SQL.identifier(coalias, "id")
 
         if not property_name and alias == self._table:
-            # proven by the first fetch of the column to be exactly this
-            # identifier (see _fetch_term); spelled once, reused by every
-            # WHERE and ORDER BY on the model's own table
             term = field._column_term
             if term is not None:
                 return term
@@ -408,8 +393,6 @@ class _QueryMixin(_ModelStubs):
 
     @api.private
     def _survivors_since(self, mark: int) -> Self:
-        # the records work since the mark left standing: that work unlinked no
-        # record of this model, so every one of them is, and no query asks
         if self.env.core.unlink_count(self._name) == mark:
             return self
         return self.exists()
@@ -427,7 +410,6 @@ class _QueryMixin(_ModelStubs):
                 records=len(self._ids),
                 missing=len(self._ids) - len(valid_ids),
             )
-        # one record of a batch stays one record of the batch
         return self._spawn(
             self.env, tuple(i for i in self._ids if i in valid_ids), self._prefetch_ids
         )

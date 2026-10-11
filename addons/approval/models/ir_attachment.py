@@ -24,7 +24,6 @@ _APPROVAL_LOCKED_FIELDS = frozenset(
 )
 
 
-# where the bytes of an attachment live, not what they are
 _STORAGE_LOCATION_FIELDS = frozenset({"type", "url"})
 
 
@@ -65,9 +64,6 @@ class IrAttachment(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         if self.env.su and self.env.context.get("attachment_storage_relocation"):
-            # bytes the request already holds, moved out of one of its own
-            # columns (an inline image of its HTML) into an attachment: the
-            # document is unchanged, and only the system may do it
             return super().create(vals_list)
         candidate_ids = {
             vals.get("res_id")
@@ -101,9 +97,6 @@ class IrAttachment(models.Model):
             and self.env.context.get("attachment_storage_relocation")
             and vals.keys() <= _STORAGE_LOCATION_FIELDS
         ):
-            # moving the bytes to another store (filestore <-> bucket) leaves
-            # the document a decided request holds unchanged; only the system
-            # may do it, a user call cannot become superuser
             return super().write(vals)
         targeted = self._approval_attachments_in_self()
         blocked_ids = set(targeted.mapped("res_id"))

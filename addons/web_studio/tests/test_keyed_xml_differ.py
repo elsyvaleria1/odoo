@@ -37,9 +37,6 @@ class TestXmlDiffer(BaseCase):
         self.assertEqual(longest_increasing_subsequence([1, 2, 3, 4]), [4, 3, 2, 1])
         self.assertEqual(longest_increasing_subsequence([4, 2, 6, 3, 5]), [5, 3, 2])
 
-        # longest_increasing_subsequence compares items on their value
-        # in the case items are string: "11" < "2" == True
-        # transforming an item to its value if necessary should be done before hand
         self.assertEqual(
             longest_increasing_subsequence(["11", "2", "3"]), ["3", "2", "11"]
         )

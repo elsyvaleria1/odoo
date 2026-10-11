@@ -45,12 +45,6 @@ class ResConfigSettings(models.TransientModel):
         }
 
     def action_view_invoice_approval_categories(self) -> dict[str, Any]:
-        # The window action behind Accounting -> Configuration -> Approval
-        # Types, rather than a second one: a hand-rolled domain here answered
-        # "which categories are the accounting ones" differently from the menu
-        # and from the runtime lookup, dropping global categories and the
-        # payment type, and its default_company_id made every category created
-        # from this button company-specific.
         return self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "approval_account.action_approval_category_accounting",
         )

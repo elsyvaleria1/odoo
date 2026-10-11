@@ -204,8 +204,6 @@ class TestWebPerfRegression(TransactionCase):
 
     @classmethod
     def _only_web_and_its_dependencies_installed(cls) -> bool:
-        # `-i base` brings base and every auto-installed module; anything else was
-        # asked for by name and may extend res.partner
         return not (
             cls.env["ir.module.module"]
             .sudo()

@@ -22,32 +22,25 @@ class TestMassMailing(TestMailFullCommon):
             model="mailing.test.optout", count=10
         )
 
-        # optout records 1 and 2
         (recipients[1] | recipients[2]).write({"opt_out": True})
         recipients[1].email_from = f'"Format Me" <{recipients[1].email_normalized}>'
-        # blacklist records 3 and 4
         self.env["mail.blacklist"].create({"email": recipients[3].email_normalized})
         self.env["mail.blacklist"].create({"email": recipients[4].email_normalized})
         recipients[3].email_from = f'"Format Me" <{recipients[3].email_normalized}>'
-        # have a duplicate email for 9
         recipients[9].email_from = f'"Format Me" <{recipients[9].email_normalized}>'
         recipient_dup_1 = recipients[9].copy()
         recipient_dup_1.email_from = f'"Format Me" <{recipient_dup_1.email_normalized}>'
-        # have another duplicate for 9, but with multi emails already done
         recipient_dup_2 = recipients[9].copy()
         recipient_dup_2.email_from += f'; "TestDupe" <{recipients[8].email_normalized}>'
-        # have another duplicate for 9, but with multi emails, one is different
         recipient_dup_3 = recipients[
             9
-        ].copy()  # this one will passthrough (best-effort)
+        ].copy()
         recipient_dup_3.email_from += '; "TestMulti" <test.multi@test.example.com>'
-        recipient_dup_4 = recipient_dup_2.copy()  # this one will be discarded (youpi)
+        recipient_dup_4 = recipient_dup_2.copy()
 
-        # have a void mail
         recipient_void_1 = self.env["mailing.test.optout"].create(
             {"name": "TestRecord_void_1"}
         )
-        # have a falsy mail
         recipient_falsy_1 = self.env["mailing.test.optout"].create(
             {"name": "TestRecord_falsy_1", "email_from": "falsymail"}
         )
@@ -77,7 +70,6 @@ class TestMassMailing(TestMailFullCommon):
                         "subject": f"Subject {recipient.name}",
                     },
                 }
-                # ; transformed into comma
                 if recipient == recipient_dup_2:
                     recipient_info["email_to_mail"] = (
                         '"Format Me" <test.record.09@test.example.com>,"TestDupe" <test.record.08@test.example.com>'
@@ -86,7 +78,6 @@ class TestMassMailing(TestMailFullCommon):
                     recipient_info["email_to_mail"] = (
                         '"Format Me" <test.record.09@test.example.com>,"TestMulti" <test.multi@test.example.com>'
                     )
-                    # multi email -> outgoing email contains all emails
                     recipient_info["email_to_recipients"] = [
                         [
                             '"Format Me" <test.record.09@test.example.com>',
@@ -98,37 +89,30 @@ class TestMassMailing(TestMailFullCommon):
                         '"Format Me" <test.record.09@test.example.com>,"TestDupe" <test.record.08@test.example.com>'
                     )
 
-                # opt-out: cancel (cancel mail)
                 if recipient in recipients[1] | recipients[2]:
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_optout"
-                # blacklisted: cancel (cancel mail)
                 elif recipient in recipients[3] | recipients[4]:
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_bl"
-                # duplicates: cancel (cancel mail)
                 elif recipient in (recipient_dup_1, recipient_dup_2, recipient_dup_4):
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_dup"
-                # void: cancel (cancel mail)
                 elif recipient == recipient_void_1:
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_email_missing"
-                # falsy: cancel (cancel mail)
                 elif recipient == recipient_falsy_1:
                     recipient_info["trace_status"] = "cancel"
                     recipient_info["failure_type"] = "mail_email_invalid"
                     recipient_info["email"] = (
                         recipient.email_from
-                    )  # normalized is False but email should be falsymail
+                    )
                 else:
                     email = self._find_sent_email(
                         self.user_marketing.email_formatted,
                         recipient_info["email_to_recipients"][0],
                     )
-                    # preview correctly integrated rendered qweb
                     self.assertIn("Hi %s :)" % recipient.name, email["body"])
-                    # rendered unsubscribe
                     self.assertIn(
                         "%s/mailing/%s/confirm_unsubscribe"
                         % (mailing.get_base_url(), mailing.id),
@@ -152,7 +136,6 @@ class TestMassMailing(TestMailFullCommon):
                         ),
                         unsubscribe_params["hash_token"],
                     )
-                    # rendered view
                     self.assertIn(
                         "%s/mailing/%s/view" % (mailing.get_base_url(), mailing.id),
                         email["body"],
@@ -196,10 +179,8 @@ class TestMassMailing(TestMailFullCommon):
                             True,
                             {},
                         ),
-                        # view is not shortened and parsed at sending
                         ("url6", "%s/view" % mailing.get_base_url(), False, {}),
                         ("url7", "mailto:test@odoo.com", False, {}),
-                        # unsubscribe is not shortened and parsed at sending
                         (
                             "url8",
                             "%s/unsubscribe_from_list" % mailing.get_base_url(),
@@ -211,8 +192,6 @@ class TestMassMailing(TestMailFullCommon):
                 check_mail=True,
             )
 
-        # sent: 15, 2 bl, 3 opt-out, 3 invalid -> 7 remaining
-        # ignored: 2 bl + 3 optout + 2 invalid + 1 duplicate; failed: 0
         self.assertMailingStatistics(
             mailing, expected=16, delivered=7, sent=7, canceled=9, failed=0
         )

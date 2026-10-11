@@ -101,7 +101,6 @@ class TestStudioApprovalsCommon(TransactionCase):
         )[0]
 
     def _decided(self, record, method):
-        """Step name -> logins whose approval counts toward it, as the button draws it."""
         users = self.env["res.users"]
         return {
             step["name"]: set(

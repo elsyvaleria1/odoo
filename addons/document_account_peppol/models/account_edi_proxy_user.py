@@ -11,8 +11,6 @@ class Account_Edi_Proxy_ClientUser(models.Model):
     def _peppol_import_invoice(
         self, attachment, peppol_state, uuid, journal=None
     ) -> dict:
-        # EXTENDS account_peppol
-        """Save new documents in the Documents app, when a folder has been set on the company."""
         if self.company_id.peppol_reception_mode == "documents":
             _debug.pipeline("peppol_received", by="documents", company=self.company_id)
             document = self.env["document.document"].create(

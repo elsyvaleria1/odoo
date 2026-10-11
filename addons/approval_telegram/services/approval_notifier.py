@@ -53,9 +53,6 @@ class TelegramApprovalNotifier(models.AbstractModel):
 
     @api.model
     def _target_chat(self, user, company):
-        """The chat that tells `user` about a record of `company`: one of a
-        bot that serves that company, whose buttons and Mini App then act in
-        it."""
         if not user:
             return self.env["telegram.chat"].browse()
         bots = operating(self.env["telegram.bot"]).search(
@@ -169,8 +166,6 @@ class TelegramApprovalNotifier(models.AbstractModel):
 
     @api.model
     def _summary_review_lines(self, request, env):
-        """Lines a bridge adds to the approver's summary, after the request's
-        own data: a review the approver reads before deciding. None here."""
         return []
 
     @api.model

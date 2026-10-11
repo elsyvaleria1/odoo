@@ -40,8 +40,6 @@ class TestDiscussChannel(HttpCase, AICommon):
 
     @users("user")
     def test_close_ai_chat_deletes_channel(self):
-        # Sudo => creating an agent requires creating a 'res.partner' to be used for chat channels.
-        # This is only allowed for admins
         agent = self.env["ai.agent"].sudo().create({"name": "Odoo AI"})
         channel = agent._get_or_create_ai_chat()
 
@@ -54,8 +52,6 @@ class TestDiscussChannel(HttpCase, AICommon):
 
     @users("user")
     def test_close_ai_chat_only_deletes_channel_with_proper_types(self):
-        # Sudo => creating an agent requires creating a 'res.partner' to be used for chat channels.
-        # This is only allowed for admins
         agent = self.env["ai.agent"].sudo().create({"name": "Odoo AI"})
         ai_chat_channel = agent._get_or_create_ai_chat()
         regular_channel = self.env["discuss.channel"].create(

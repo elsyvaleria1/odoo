@@ -104,16 +104,16 @@ def _get_static_files(
     result: set[tuple[str, float]] = set()
     if symlink_memo is None:
         symlink_memo = {}
-    skipped_ext = 0  # debuglog
-    skipped_stat = 0  # debuglog
+    skipped_ext = 0
+    skipped_stat = 0
     for file in glob(pattern, recursive=True):
         if file.rsplit(".", 1)[-1] not in ASSET_EXTENSIONS:
-            skipped_ext += 1  # debuglog
+            skipped_ext += 1
             continue
         try:
             status = os.lstat(file)
         except OSError:
-            skipped_stat += 1  # debuglog
+            skipped_stat += 1
             continue
         directory = file.rpartition(os.sep)[0]
         if S_ISLNK(status.st_mode) or not _is_reachable_without_symlink(
@@ -133,7 +133,7 @@ def _get_static_files(
             try:
                 status = os.lstat(real)
             except OSError:
-                skipped_stat += 1  # debuglog
+                skipped_stat += 1
                 continue
             _debug.logic("symlink_followed", file=file, real=real)
             file = real
@@ -303,9 +303,9 @@ class BundleWalk:
         self.walked.add(bundle)
 
         frame = BundleFrame(bundle, self.paths.add_anchor(), seen)
-        directives = 0  # debuglog
+        directives = 0
         for directive in self.prepare_directives(bundle):
-            directives += 1  # debuglog
+            directives += 1
             self.apply_directive(frame, directive)
         self.paths.remove_anchor(frame.anchor)
         _debug.pipeline(
@@ -437,8 +437,6 @@ class BundleWalk:
         pivot: int,
         offset: int,
     ) -> None:
-        # a source already on the side of the pivot the directive asks for
-        # is not stranded: the ordering it states already holds
         present = {
             path
             for path, _full_path, _last_modified in paths

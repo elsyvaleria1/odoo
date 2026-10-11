@@ -139,30 +139,6 @@ class RateLimitBucket(models.Model):
         company_id: int | None = None,
         cost: float = 1.0,
     ) -> bool:
-        """Consume a token for a subject that is not an endpoint record.
-
-        ``consume_for`` needs something with ``_name``, ``id`` and
-        ``rate_limit_requests``, which is right when the thing being limited is
-        a configured endpoint. It is not the only thing worth limiting: a user
-        id, a peer address and a chat are all rate-limit subjects that no record
-        represents, and both callers that had one built a ``SimpleNamespace``
-        carrying exactly those three attributes to get past the signature. Two
-        independent fakes of one record is the signature asking for this method.
-
-        ``subject_model``/``subject_id`` are what lands in the row's
-        ``endpoint_model``/``endpoint_id`` columns, which are required and are
-        how ``cron_gc_old_buckets`` and the views group buckets. Name a subject
-        namespace there (``mcp_server.ip``), not a model that must resolve --
-        nothing browses it, because ``capacity`` and ``refill_rate`` are passed
-        explicitly and so ``_get_endpoint_config`` never runs.
-
-        :param bucket_key: the bucket's identity, unique across all subjects
-        :param capacity: bucket size, in tokens
-        :param refill_rate: tokens per second; defaults to filling ``capacity``
-            once per ``window_seconds``
-        :param strict: refuse rather than allow when the bucket cannot be read
-        :param cost: tokens taken at once, all or none
-        """
         if refill_rate is None:
             refill_rate = capacity / window_seconds if window_seconds else 0.0
         bucket = self.sudo()._get_or_create_by_key(
@@ -206,17 +182,6 @@ class RateLimitBucket(models.Model):
         company_id: int | None,
         capacity: float,
     ) -> Any:
-        """The one creation path, racing safely against a concurrent caller.
-
-        Through ``odoo.db.get_or_create_row``, which is the framework's own
-        spelling of this: insert inside a *flushing* savepoint, and on
-        ``UniqueViolation`` return the row the winner created. The hand-rolled
-        version here opened a bare ``SAVEPOINT`` and let the ORM defer the
-        INSERT, so the violation escaped the guard and surfaced somewhere else
-        entirely -- and its recovery ran ``search()`` after a rollback the ORM
-        cache knew nothing about. A flushing savepoint restores that cache; a
-        bare one cannot.
-        """
         bucket = self.search([("bucket_key", "=", bucket_key)], limit=1)
         if bucket:
             return bucket
@@ -369,25 +334,6 @@ class RateLimitBucket(models.Model):
             return False
 
         except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
-            # Two requests contended for this bucket's row. That is a fact about
-            # the database, not about the caller's quota, and it must not become
-            # a verdict on the request.
-            #
-            # Every cursor here is REPEATABLE READ, and the strict path takes
-            # `FOR UPDATE` on one hot row under a `lock_timeout`. Under
-            # concurrency that yields SerializationFailure, LockNotAvailable or
-            # DeadlockDetected -- the three the framework names retryable, and
-            # which the request layer already retries with a fresh snapshot.
-            # Swallowing one into `return False` denied a caller who had quota,
-            # and made the STRICTER setting fail harder the more load it saw:
-            # measured over HTTP at 3000 tokens/min with a single user, one
-            # client passed 160 of 160 while sixteen clients were refused 101 of
-            # 160, with 2881 tokens still in the bucket.
-            #
-            # Re-raised, so the retry happens where it can work. A savepoint
-            # rollback would not help: the snapshot is fixed for the
-            # transaction, so retrying the same read inside it fails the same
-            # way.
             raise
 
         except Exception:

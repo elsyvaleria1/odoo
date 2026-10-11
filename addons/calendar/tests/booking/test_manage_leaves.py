@@ -12,7 +12,6 @@ from odoo.addons.calendar.tests.booking.common import AppointmentCommon
 class AppointmentManageLeaveTest(AppointmentCommon):
     @users("apt_manager")
     def test_manage_leaves(self):
-        """Check the resource leaves wizard works"""
         start_monday = datetime(2022, 2, 14, 0, 0, 0)
         start_leave = datetime(2022, 2, 14, 14, 0, 0)
         stop_leave = datetime(2022, 2, 14, 15, 0, 0)
@@ -42,7 +41,6 @@ class AppointmentManageLeaveTest(AppointmentCommon):
                 }
             )
         )
-        # Set user to be the same date so HR override on resource leaves doesn't modify dates
         self.env.user.sudo().tz = "UTC"
         resources = self.env["resource.resource"].create(
             [
@@ -68,7 +66,7 @@ class AppointmentManageLeaveTest(AppointmentCommon):
                             0,
                             0,
                             {
-                                "weekday": "1",  # Monday
+                                "weekday": "1",
                                 "start_hour": 9,
                                 "end_hour": 17,
                             },
@@ -94,7 +92,7 @@ class AppointmentManageLeaveTest(AppointmentCommon):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
@@ -131,15 +129,15 @@ class AppointmentManageLeaveTest(AppointmentCommon):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
                 "enddate": global_slots_enddate,
                 "startdate": global_slots_startdate,
                 "slots_start_hours": list(range(9, 17)),
-                "slots_startdate": start_monday.date(),  # first Monday after reference_now
-                "slots_enddate": start_monday.date(),  # only test that day
+                "slots_startdate": start_monday.date(),
+                "slots_enddate": start_monday.date(),
             },
         )
         available_resources_14h = [
@@ -168,7 +166,6 @@ class AppointmentManageLeaveTest(AppointmentCommon):
         )
         self.assertEqual(set(available_resources_16h), set(resources.ids))
 
-        # Global calendar leave
         self.env["resource.schedule.exception"].sudo().create(
             {
                 "calendar_id": calendar.id,
@@ -186,24 +183,21 @@ class AppointmentManageLeaveTest(AppointmentCommon):
                 {
                     "name_formated": "February 2022",
                     "month_date": datetime(2022, 2, 1),
-                    "weeks_count": 5,  # 31/01 -> 28/02 (06/03)
+                    "weeks_count": 5,
                 }
             ],
             {
                 "enddate": global_slots_enddate,
                 "startdate": global_slots_startdate,
                 "slots_start_hours": list(range(9, 15)) + list(range(16, 17)),
-                "slots_startdate": start_monday.date(),  # first Monday after reference_now
-                "slots_enddate": start_monday.date(),  # only test that day
+                "slots_startdate": start_monday.date(),
+                "slots_enddate": start_monday.date(),
             },
         )
 
-        # From here: Test last day availability.
-        # BXL TZ: Work hours 9h -> 19h / Appt slots 9h -> 21h / Leave on resources' calendar 15h -> 16h
         start_sunday = datetime(2022, 2, 13, 7, 0, 0)
         appt_type.slot_ids.end_hour = 21
 
-        # 9 Available slots: 9h -> 15h and 16h -> 19h
         with freeze_time(start_sunday):
             slots = appt_type._get_appointment_slots("Europe/Brussels")
         self.assertEqual(
@@ -212,9 +206,6 @@ class AppointmentManageLeaveTest(AppointmentCommon):
             "Leaves, bookings and work hours should be taken into account on last day",
         )
 
-        # Test with NOW in different days: 22h SAT UTC / 11h SUN NZ
-        # Work hours: 4h -> 7h UTC / 17h -> 20h NZ
-        # Appt slots: 4h -> 8h UTC / 17h -> 21h NZ
         start_saturday_UTC = datetime(2022, 2, 12, 22, 0, 0)
         calendar.attendance_ids.write({"hour_from": 4, "hour_to": 7})
         appt_type.appointment_tz = "Pacific/Auckland"
@@ -249,7 +240,6 @@ class AppointmentManageLeaveTest(AppointmentCommon):
             }
         ).action_create_leave()
 
-        # 1 Available appt slot: 6h -> 7h UTC. Other ones are booked / on leave / outside work hours.
         with freeze_time(start_saturday_UTC):
             slots = appt_type._get_appointment_slots("UTC")
         self.assertEqual(

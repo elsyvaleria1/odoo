@@ -28,17 +28,12 @@ class PaymentTransaction(models.Model):
     def _receiver_for_mercado_pago_return(self, **path_args) -> tuple:
         data = request.get_http_params()
         if data.get("payment_id") == "null":
-            # The customer cancelled the payment by clicking on the return
-            # button; there is no payment to look up.
             raise Acknowledged.redirect("/payment/status")
         return self.sudo()._search_by_reference("mercado_pago", data), {"data": data}
 
     @api.model
     def _receiver_for_mercado_pago_webhook(self, reference=None, **path_args) -> tuple:
         notification = request_json_object()
-        # Mercado Pago sends two types of asynchronous notifications: webhook
-        # notifications and IPNs, which carry no 'action'; only the former are
-        # processed, the rest acknowledged.
         if notification.get("action") not in ("payment.created", "payment.updated"):
             raise Acknowledged
         data = {
@@ -53,23 +48,12 @@ class PaymentTransaction(models.Model):
     def _is_inbound_request_authentic(self, headers, body) -> bool:
         if self.provider_code != "mercado_pago":
             return super()._is_inbound_request_authentic(headers, body)
-        # Nothing in the notification is trusted: the handler fetches the
-        # payment from Mercado Pago's API and processes that answer.
         return True
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of `payment` to return Mercado Pago-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`.
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific processing values.
-        :rtype: dict
-        """
         if self.provider_code != "mercado_pago":
             return super()._prepare_redirect_form_values(processing_values)
 
-        # Initiate the payment and retrieve the payment link data.
         payload = self._mercado_pago_prepare_preference_request_payload()
         try:
             response_content = self._send_api_request(
@@ -85,20 +69,14 @@ class PaymentTransaction(models.Model):
             else "sandbox_init_point"
         ]
 
-        # Extract the payment link URL and params and embed them in the redirect form.
         parsed_url = url_parse(api_url)
         url_params = dict(parse_qsl(parsed_url.query))
         return {
             "api_url": api_url,
-            "url_params": url_params,  # Encore the params as inputs to preserve them.
+            "url_params": url_params,
         }
 
     def _mercado_pago_prepare_preference_request_payload(self):
-        """Create the payload for the preference request based on the transaction values.
-
-        :return: The preference request payload.
-        :rtype: dict
-        """
         payload = self._mercado_pago_prepare_base_request_payload()
 
         base_url = self.provider_id.get_base_url()
@@ -135,11 +113,6 @@ class PaymentTransaction(models.Model):
         return payload
 
     def _mercado_pago_prepare_payment_request_payload(self):
-        """Create the payload for the direct payment request based on the transaction values.
-
-        :return: The payment request payload.
-        :rtype: dict
-        """
         payload = self._mercado_pago_prepare_base_request_payload()
         first_name, last_name = payment_utils.split_partner_name(self.partner_name)
         payload.update(
@@ -163,14 +136,8 @@ class PaymentTransaction(models.Model):
         return payload
 
     def _mercado_pago_prepare_base_request_payload(self) -> dict:
-        """Create the base payload for requests based on the transaction values.
-
-        :return: The base request payload.
-        :rtype: dict
-        """
         base_url = self.provider_id.get_base_url()
         sanitized_reference = url_quote(self.reference)
-        # Append the reference to identify the transaction from the webhook payment data.
         webhook_url = urljoin(base_url, f"{const.WEBHOOK_ROUTE}/{sanitized_reference}")
         return {
             "external_reference": self.reference,
@@ -178,22 +145,14 @@ class PaymentTransaction(models.Model):
         }
 
     def _send_payment_request(self):
-        """Override of `payment` to send a payment request to Mercado Pago.
-
-        Note: `self.check_singleton()` from :meth:`_charge_with_token`
-
-        :rtype: None
-        """
         if self.provider_code != "mercado_pago":
             super()._send_payment_request()
             return
 
-        # A new token has to be generated based on 'card_id' for every payment.
         response_content = self._send_api_request(
             "POST", "/v1/card_tokens", data={"card_id": self.token_id.provider_ref}
         )
 
-        # Send the payment request to Mercado Pago.
         data = {
             "transaction_amount": self._mercado_pago_convert_amount(),
             "token": response_content["id"],
@@ -214,15 +173,6 @@ class PaymentTransaction(models.Model):
         self._process("mercado_pago", response_content)
 
     def _mercado_pago_convert_amount(self):
-        """Convert the transaction amount according to Mercado Pago's currency requirements.
-
-        Mercado Pago requires certain currencies (COP, HNL, NIO) to be expressed as integers rather
-        than following the standard ISO 4217 decimal places. This method rounds down the amount to
-        the appropriate decimal places to ensure API compatibility.
-
-        :return: The transaction amount rounded to Mercado Pago's required decimal precision.
-        :rtype: float
-        """
         unit_price = self.amount
         decimal_places = const.CURRENCY_DECIMALS.get(
             self.currency_id.name, CURRENCY_MINOR_UNITS.get(self.currency_id.name)
@@ -233,13 +183,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "mercado_pago":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("external_reference")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of payment to extract the amount and currency from the payment data."""
         if self.provider_code != "mercado_pago":
             return super()._extract_amount_data(payment_data)
 
@@ -249,7 +197,7 @@ class PaymentTransaction(models.Model):
                 .get("items", [{}])[0]
                 .get("unit_price")
             )
-        else:  # 'online_direct', 'online_token', 'offline': the amount charged.
+        else:
             amount = payment_data.get("transaction_amount")
         currency_code = payment_data.get("currency_id")
         return {
@@ -259,11 +207,9 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "mercado_pago":
             return super()._apply_updates(payment_data)
 
-        # Update the provider reference.
         payment_id = payment_data.get("id")
         if not payment_id:
             self._set_error(self.env._("Received data with missing payment id."))
@@ -274,8 +220,6 @@ class PaymentTransaction(models.Model):
             and str(payment_id) != self.provider_reference
             and payment_status not in const.TRANSACTION_STATUS_MAPPING["done"]
         ):
-            # Another attempt at the same transaction: only its approval may
-            # take over, so a late or replayed earlier attempt moves nothing.
             _logger.info(
                 "Ignored payment %s (%s) of transaction %s, whose payment is %s.",
                 payment_id,
@@ -286,7 +230,6 @@ class PaymentTransaction(models.Model):
             return None
         self.provider_reference = payment_id
 
-        # Update the payment method.
         payment_method_type = payment_data.get("payment_type_id", "")
         for odoo_code, mp_codes in const.PAYMENT_METHODS_MAPPING.items():
             if any(payment_method_type == mp_code for mp_code in mp_codes.split(",")):
@@ -299,15 +242,12 @@ class PaymentTransaction(models.Model):
         payment_method = self.env["payment.method"]._get_from_code(
             payment_method_code, mapping=const.PAYMENT_METHODS_MAPPING
         )
-        # Fall back to "unknown" if the payment method is not found (and if "unknown" is found), as
-        # the user might have picked a different payment method than on Odoo's payment form.
         if not payment_method:
             payment_method = self.env["payment.method"].search(
                 [("code", "=", "unknown")], limit=1
             )
         self.payment_method_id = payment_method or self.payment_method_id
 
-        # Update the payment state.
         if not payment_status:
             self._set_error(self.env._("Received data with missing status."))
             return None
@@ -319,8 +259,6 @@ class PaymentTransaction(models.Model):
         elif payment_status in const.TRANSACTION_STATUS_MAPPING["canceled"]:
             self._set_canceled()
         elif payment_status in const.TRANSACTION_STATUS_MAPPING["refunded"]:
-            # The refund of a confirmed payment leaves its transaction done;
-            # a payment refunded before it was confirmed paid nothing.
             if self.state != "done":
                 self._set_canceled(
                     state_message=self.env._("The payment was refunded.")
@@ -335,7 +273,7 @@ class PaymentTransaction(models.Model):
             )
             error_message = self._mercado_pago_get_error_msg(status_detail)
             self._set_error(error_message)
-        else:  # Classify unsupported payment status as the `error` tx state.
+        else:
             _logger.warning(
                 "Received data for transaction %s with invalid payment status: %s.",
                 self.reference,
@@ -347,25 +285,21 @@ class PaymentTransaction(models.Model):
         return None
 
     def _extract_token_values(self, payment_data) -> dict:
-        """Override of `payment` to return token data based on payment data."""
         if self.provider_code != "mercado_pago":
             return super()._extract_token_values(payment_data)
 
-        # Fetch the customer id or create a new one.
         email_data = {"email": payment_data["payer"]["email"]}
         response_content = self._send_api_request(
             "GET", "/v1/customers/search", params=email_data
         )
         if customers_data := response_content["results"]:
             customer_id = customers_data[0]["id"]
-        else:  # No customer found.
-            # Create a new customer.
+        else:
             response_content = self._send_api_request(
                 "POST", "/v1/customers", json=email_data
             )
             customer_id = response_content["id"]
 
-        # Fetch the card data.
         payload = {
             "token": payment_data["token"],
             "issuer_id": int(payment_data["issuer_id"]),
@@ -385,12 +319,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _mercado_pago_get_error_msg(self, status_detail):
-        """Return the error message corresponding to the payment status.
-
-        :param str status_detail: The status details sent by the provider.
-        :return: The error message.
-        :rtype: str
-        """
         return const.ERROR_MESSAGE_MAPPING.get(
             status_detail, const.ERROR_MESSAGE_MAPPING["cc_rejected_other_reason"]
         )

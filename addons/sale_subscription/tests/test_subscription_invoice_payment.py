@@ -67,6 +67,5 @@ class TestSubscriptionInvoicePayment(TestSubscriptionCommon, HttpCase):
             subscription.transaction_ids.payment_id,
         )
 
-    # Helper
     def _build_url(self, route):
         return url_join(self.base_url(), route)

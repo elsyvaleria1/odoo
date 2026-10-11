@@ -57,7 +57,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         )
 
     def test_import_zip(self):
-        """Assert the behaviors expected by the module import feature using a ZIP archive"""
         files = [
             (
                 "foo/__manifest__.py",
@@ -140,7 +139,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             self.env.ref("bar.foo").with_context(lang="fr_FR").name, "dumb"
         )
 
-        # Check that activating a non-loaded language does not crash the code
         self.env["res.lang"]._activate_lang("es_419")
         self.assertEqual(
             self.env.ref("bar.foo").with_context(lang="es_419").name, "foo"
@@ -161,7 +159,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             {"messages": ({"id": "baz", "string": "qux"},)},
         )
 
-        # test importing modules first then activating a language
         self.env["res.lang"]._activate_lang("nl_NL")
         self.assertEqual(
             self.env["ir.http"]._get_translations_for_webclient(["bar"], "nl_NL")[0][
@@ -287,7 +284,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         )
 
     def test_import_zip_invalid_manifest(self):
-        """Assert the expected behavior when import a ZIP module with an invalid manifest"""
         files = [("foo/__manifest__.py", b"foo")]
         error_message = "Error while importing module 'foo'"
         with (
@@ -297,7 +293,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             self.import_zipfile(files)
 
     def test_import_zip_wildcard_assets(self):
-        """Assert the expected behavior when import a ZIP module with assets using glob wildcard"""
         files = [
             (
                 "foo/__manifest__.py",
@@ -317,12 +312,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             self.import_zipfile(files)
 
     def test_import_zip_malformed_xml_asset_does_not_abort_import(self):
-        """t27114 audit: `_is_studio_custom` walks every `.xml` file
-        extracted from the zip (not just manifest-declared data files),
-        including anything under static/ — before this fix, a malformed
-        or non-Odoo XML asset there raised `lxml.etree.XMLSyntaxError`
-        uncaught, aborting the whole module's import even though the
-        module itself was otherwise valid."""
         files = [
             ("foo/__manifest__.py", self.manifest_content()),
             ("foo/static/src/xml/broken.xml", b"<not><valid</not>"),
@@ -332,7 +321,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         self.assertEqual(module.state, "installed")
 
     def test_import_zip_invalid_data(self):
-        """Assert no data remains in the db if module import fails"""
         files = [
             ("foo/__manifest__.py", self.manifest_content(data=["foo.xml", "bar.xml"])),
             (
@@ -345,7 +333,6 @@ class TestImportModule(odoo.tests.TransactionCase):
                 </data>
             """,
             ),
-            # typo in model to throw an error
             (
                 "foo/bar.xml",
                 b"""
@@ -365,7 +352,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         self.assertFalse(self.env.ref("foo.foo", raise_if_not_found=False))
 
     def test_import_zip_data_not_in_manifest(self):
-        """Assert a data file not mentioned in the manifest is not imported"""
         files = [
             ("foo/__manifest__.py", self.manifest_content(data=["foo.xml"])),
             (
@@ -394,7 +380,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         self.assertFalse(self.env.ref("foo.bar", raise_if_not_found=False))
 
     def test_import_zip_ignore_unexpected_data_extension(self):
-        """Assert data files using an unexpected extensions are correctly ignored"""
         files = [
             ("foo/__manifest__.py", self.manifest_content(data=["res.partner.xls"])),
             ("foo/res.partner.xls", b'"id","name"\nfoo,foo'),
@@ -414,7 +399,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             self.assertFalse(self.env.ref("foo.foo", raise_if_not_found=False))
 
     def test_import_zip_extract_only_useful(self):
-        """Assert only the data and static files are extracted of the ZIP archive during the module import"""
         files = [
             (
                 "foo/__manifest__.py",
@@ -482,12 +466,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         )
 
     def test_import_zip_cumulative_size_cap(self):
-        """t24068: `ZipInfo.file_size` (checked against MAX_FILE_SIZE per-file)
-        is declared, attacker-controlled metadata — it does not bound the real
-        decompressed size of a hand-crafted deflate stream (zip-bomb). The real
-        guard checks bytes actually written to disk, cumulatively, against
-        MAX_TOTAL_EXTRACTED_SIZE. Patched down to a tiny cap here so a normal
-        small fixture file trips it without fabricating an actual large file."""
         files = [
             ("foo/__manifest__.py", self.manifest_content(data=["data.xml"])),
             (
@@ -509,13 +487,6 @@ class TestImportModule(odoo.tests.TransactionCase):
                 self.import_zipfile(files)
 
     def test_import_zip_per_file_size_cap(self):
-        """t27114 audit: MAX_FILE_SIZE (the per-entry cap, checked against
-        each zip entry's own declared `ZipInfo.file_size` before any
-        extraction happens) had no test of its own — the only test patching
-        a size constant covered MAX_TOTAL_EXTRACTED_SIZE instead, leaving
-        this guard's own effect undemonstrated. Patched down to a tiny cap
-        here so a normal small fixture file trips it without fabricating an
-        actual large file."""
         files = [("foo/__manifest__.py", self.manifest_content(data=["data.xml"]))]
         with patch(
             "odoo.addons.base_import_module.models.ir_module.MAX_FILE_SIZE",
@@ -525,15 +496,6 @@ class TestImportModule(odoo.tests.TransactionCase):
                 self.import_zipfile(files)
 
     def test_import_zip_static_asset_path_confined(self):
-        """t27114 audit: a static-asset entry is only gated by
-        `is_static = filename.startswith(f"{mod_name}/static")`
-        (models/ir_module.py) — the addon adds no explicit path-confinement
-        of its own for the `z.extract(zip_info, module_dir)` call; it relies
-        entirely on stdlib zipfile.ZipFile.extract()'s own arcname
-        sanitization. That was never pinned by a regression test for this
-        call site. A crafted static-asset entry name containing `../`
-        components must still land under the temporary module directory,
-        never above it."""
         extracted_paths = []
         original_extract = ZipFile.extract
 
@@ -559,9 +521,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             )
 
     def test_get_modules_from_apps_reapplies_local_domain(self):
-        """t27114: `state` is computed locally (from local install status),
-        so apps.odoo.com cannot filter on it — a domain condition on `state`
-        must still be honored locally rather than silently dropped."""
         self.env["ir.module.module"].create(
             {"name": "module_a", "state": "installed", "imported": True}
         )
@@ -588,13 +547,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         )
 
     def test_button_immediate_upgrade_hidden_for_imported_module(self):
-        """t30855 r2 f1: upstream hides `button_immediate_upgrade` for
-        imported modules in both the Apps kanban and form views (an
-        `imported` clause in the `invisible` condition), since an imported
-        module has no addon path on disk and cannot be meaningfully
-        re-upgraded from the registry loader. This fork's views had dropped
-        that clause, so the button would show for a normal (module_type
-        'official') installed imported module."""
         import lxml.etree
 
         IrModuleModule = self.env["ir.module.module"]
@@ -622,10 +574,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         )
 
     def test_decorate_apps_modules_batches_search(self):
-        """t30855 r2 f2: `_decorate_apps_modules` ran one `self.search(...)`
-        per module returned by the apps.odoo.com catalog response, an N+1
-        query pattern scaling with the full catalog size. It must issue a
-        single batched search regardless of how many modules are decorated."""
         self.env["ir.module.module"].create(
             {"name": "module_a", "state": "installed", "imported": True}
         )
@@ -660,7 +608,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             archive.writestr("test_module/__manifest__.py", manifest_content)
             archive.writestr("test_module/static/src/js/test.js", "console.log('AAA');")
 
-        # Import test module
         self.env["ir.module.module"]._import_zipfile(stream)
 
         attachment = self.env["ir.attachment"].search([("url", "=", path)])
@@ -686,7 +633,6 @@ class TestImportModule(odoo.tests.TransactionCase):
         self.assertEqual(module.dependencies_id.mapped("name"), ["base"])
         self.assertEqual(module.category_id.name, "Test Category")
 
-        # Uninstall test module
         self.env["ir.module.module"].search(
             [("name", "=", "test_module")]
         ).module_uninstall()
@@ -726,7 +672,6 @@ class TestImportModule(odoo.tests.TransactionCase):
             archive.writestr("test_module/__manifest__.py", manifest_content)
             archive.writestr(path, "console.log('AAA');")
 
-        # Import test module
         self.env["ir.module.module"].with_user(self.test_user)._import_zipfile(stream)
 
         attachment = self.env["ir.attachment"].search([("url", "=", f"/{path}")])
@@ -751,13 +696,11 @@ class TestImportModule(odoo.tests.TransactionCase):
         module = self.env["ir.module.module"].search([("name", "=", "test_module")])
         self.assertEqual(module.db_version, f"{release.series}.1.0")
 
-        # Update test module
         stream = BytesIO()
         with ZipFile(stream, "w") as archive:
             archive.writestr("test_module/__manifest__.py", manifest_content)
             archive.writestr(path, "console.log('BBB');")
 
-        # Import test module
         self.env["ir.module.module"].with_user(self.test_user)._import_zipfile(stream)
 
         attachment = self.env["ir.attachment"].search([("url", "=", f"/{path}")])
@@ -907,8 +850,6 @@ class TestImportModuleHttp(TestImportModule, odoo.tests.HttpCase):
         self.assertIn("Access Denied", response.text)
 
     def test_import_module_icon(self):
-        """Assert import a module with an icon result in the module displaying the icon in the apps menu,
-        and with the base module icon if module without icon"""
         files = [
             ("foo/__manifest__.py", self.manifest_content(name="foo")),
             ("foo/static/description/icon.png", b"foo_icon"),
@@ -916,9 +857,7 @@ class TestImportModuleHttp(TestImportModule, odoo.tests.HttpCase):
         ]
         self.import_zipfile(files)
         foo_icon_path, foo_icon_data = files[1]
-        # Assert icon of module foo, which must be the icon provided in the zip
         self.assertEqual(self.url_open("/" + foo_icon_path).content, foo_icon_data)
-        # Assert icon of module bar, which must be the icon of the base module as none was provided
         self.assertEqual(
             self.env.ref("base.module_bar").icon_image,
             self.env.ref("base.module_base").icon_image,

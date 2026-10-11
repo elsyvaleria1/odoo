@@ -22,9 +22,6 @@ _ENVELOPED_SIGNATURE_ALGORITHM = f"{_DS_NS}enveloped-signature"
 _WSU_NS = (
     "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
 )
-# no DTD or schema declares which attribute is an ID, so the names every
-# e-invoicing format in use spells it with are taken, as signxml does, and
-# WS-Security's wsu:Id, which a SOAP header (DIAN's) is referenced by
 _ID_XPATH = (
     "//*[@Id=$id or @ID=$id or @id=$id"
     " or @*[namespace-uri()='http://www.w3.org/XML/1998/namespace'"
@@ -69,9 +66,6 @@ def _canonicalize(
 
 
 def _inherited_xml_attributes(node: etree._Element) -> dict[str, str]:
-    # inclusive C14N 1.0 carries the nearest xml:lang, xml:space, xml:base...
-    # of the ancestors a subset leaves out onto its apex; lxml canonicalizes
-    # the subtree as if it were a whole document and drops them
     inherited: dict[str, str] = {}
     for ancestor in node.iterancestors():
         for name, value in ancestor.attrib.items():
@@ -87,8 +81,6 @@ def _inherited_xml_attributes(node: etree._Element) -> dict[str, str]:
 def _with_attributes(
     node: etree._Element, attributes: dict[str, str]
 ) -> etree._Element:
-    # the whole document is copied, as for stripping, to keep the namespaces
-    # in scope that a copied subtree would drop
     copied = _follow(deepcopy(node.getroottree().getroot()), _child_indexes(node))
     copied.attrib.update(attributes)
     return copied
@@ -146,9 +138,6 @@ def _strip_signatures(
     signatures = _get_enveloping_signatures(reference, node)
     if not signatures:
         return node
-    # the whole document is copied, not the node: a copied subtree keeps
-    # only the namespaces its names use, and inclusive c14n must still
-    # declare those an attribute value such as xsi:type="cbc:Amount" needs
     copied_root = deepcopy(node.getroottree().getroot())
     copied_node = _follow(copied_root, _child_indexes(node))
     copies = [_follow(copied_root, _child_indexes(sig)) for sig in signatures]

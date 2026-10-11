@@ -99,5 +99,4 @@ class SocialPost(models.Model):
         return action
 
     def _get_domain_sale_utm(self) -> list:
-        """We want all records that match the UTMs"""
         return [("source_id", "=", self.source_id.id)]

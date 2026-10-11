@@ -1,4 +1,3 @@
-# INEGI state keys (CVE_ENT, SEPOMEX's c_estado) to res.country.state codes
 INEGI_STATE_CODES = {
     "01": "AGU",
     "02": "BCN",

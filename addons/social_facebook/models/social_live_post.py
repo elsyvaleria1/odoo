@@ -99,17 +99,14 @@ class SocialLivePost(models.Model):
         }
 
         if self.image_ids and len(self.image_ids) == 1:
-            # if you have only 1 image, you have to use another endpoint with different parameters...
             image = self.image_ids[0]
             if image.mimetype == "image/gif":
-                # gifs are posted on the '/videos' endpoint, with a different base url
                 endpoint_url = url_join(
                     "https://graph-video.facebook.com",
                     f"/v17.0/{facebook_target_id}/videos",
                 )
                 params["description"] = params["message"]
             else:
-                # a single regular image is posted on the '/photos' endpoint
                 endpoint_url = url_join(
                     self.env["social.media"]._FACEBOOK_ENDPOINT_VERSIONED,
                     f"{facebook_target_id}/photos",
@@ -165,7 +162,6 @@ class SocialLivePost(models.Model):
                     )
 
             link_url = self.env["social.post"]._extract_url_from_message(self.message)
-            # can't combine with images
             if link_url and not self.image_ids:
                 params.update({"link": link_url})
 
@@ -179,8 +175,6 @@ class SocialLivePost(models.Model):
 
         if result.status_code == 200:
             result_json = result.json()
-            # when posting an image, the id of the related post is in 'post_id'
-            # otherwise, we use the 'id' key that matches the post id we retrieve in stream.posts
             self.facebook_post_id = result_json.get(
                 "post_id", result_json.get("id", False)
             )

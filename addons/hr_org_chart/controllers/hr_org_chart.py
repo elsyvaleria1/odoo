@@ -97,13 +97,6 @@ class HrOrgChartController(http.Controller):
 
     @http.route("/hr/get_subordinates", type="jsonrpc", auth="user")
     def get_subordinates(self, employee_id, subordinates_type=None, **kw):
-        """
-        Get employee subordinates.
-        Possible values for 'subordinates_type':
-            - 'indirect'
-            - 'direct'
-            - None (default): all subordinates
-        """
         employee = self._get_employee(employee_id, **kw)
         if not employee:
             return {}

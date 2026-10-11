@@ -10,16 +10,9 @@ from odoo.tools import frozendict
 
 _logger = logging.getLogger(__name__)
 
-# 1: the creation entry hashes the text of the first document's base64 only.
-# 2: the creation entry hashes every document, and a completion entry hashes the
-#    signed PDFs delivered; each keeps the per-file digests it was computed from.
-# 3: an entry also hashes the browser it came from and, for a signature, the
-#    evidence an authentication method kept of the signer's identity.
 HASH_VERSION = 3
 CHAINED_ACTIONS = ("create", "sign", "complete")
 
-# version 2 binds who acted by the user and the signer row, which merging
-# duplicate contacts leaves alone, not by the contact it rewrites
 HASHED_FIELDS = [
     "log_date",
     "action",
@@ -54,7 +47,6 @@ class SignLog(models.Model):
         }
     )
 
-    # Accessed on ?
     log_date = fields.Datetime(
         default=fields.Datetime.now,
         required=True,
@@ -66,7 +58,6 @@ class SignLog(models.Model):
         ondelete="cascade",
     )
     sign_request_item_id = fields.Many2one(comodel_name="sign.request.item")
-    # Accessed as ?
     user_id = fields.Many2one(
         comodel_name="res.users",
         groups="sign.group_sign_manager",
@@ -76,9 +67,6 @@ class SignLog(models.Model):
         index="btree_not_null",
     )
 
-    # Accessed from ?
-    # If defined on request item when signing: take from it
-    # Else : taken from geoip
     latitude = fields.Float(
         digits=(10, 7),
         groups="sign.group_sign_manager",
@@ -133,7 +121,6 @@ class SignLog(models.Model):
         "request; not verified.",
     )
 
-    # Accessed for ?
     action = fields.Selection(
         selection=[
             ("create", "Creation"),
@@ -179,10 +166,6 @@ class SignLog(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """
-        1/ if action=='create': get initial shasign from template (checksum pdf)
-        2/ if action == 'sign': search for logs with hash for the same request and use that to compute new hash
-        """
         vals_list = [
             {**self.default_get(["sign_request_item_id"]), **vals} for vals in vals_list
         ]
@@ -230,9 +213,6 @@ class SignLog(models.Model):
         return super().create(vals_list)
 
     def _get_file_digests(self, vals) -> list[str]:
-        """SHA-256 of the files a creation (the template's documents) or a
-        completion entry (the signed PDFs delivered) covers, in document order."""
-        # the form view reads under bin_size, which turns binaries into sizes
         sign_request = (
             self.env["sign.request"]
             .with_context(bin_size=False, bin_size_raw=False, bin_size_file=False)
@@ -253,8 +233,6 @@ class SignLog(models.Model):
         ]
 
     def _get_or_check_hash(self, vals):
-        """The chained hash of an entry: its previous chained entry's hash, then
-        what the entry vouches for, as of the entry's hash version."""
         if vals["action"] not in CHAINED_ACTIONS:
             return False
         domain = [
@@ -273,14 +251,8 @@ class SignLog(models.Model):
         ).hexdigest()
 
     def _get_payload_to_hash(self, vals) -> str:
-        """Versions 2 and 3: what an entry vouches for -- its own facts (when, by
-        which user for which signer, from where, in which state; from version 3
-        the browser and the evidence of the signer's identity), then the values
-        the signer filled for a signature, or the file digests for a creation or
-        a completion."""
         hashed = HASHED_FIELDS_V3 if vals.get("hash_version", 1) >= 3 else HASHED_FIELDS
         payload = {field: str(vals.get(field) or False) for field in hashed}
-        # as stored: coordinates keep 7 decimals
         for field in ("latitude", "longitude"):
             payload[field] = f"{float(vals[field] or 0.0):.7f}"
         if vals["action"] == "sign":
@@ -295,8 +267,6 @@ class SignLog(models.Model):
         return dumps(payload, sort_keys=True, ensure_ascii=True, indent=None)
 
     def _get_legacy_hash(self, vals, prev_activity):
-        """Version 1, kept so the entries written under it still verify."""
-        # Multiple signers lead to multiple creation actions but for them, the hash of the PDF must be calculated.
         previous_hash = ""
         sign_request = not prev_activity and self.env["sign.request"].browse(
             vals["sign_request_id"]
@@ -308,22 +278,14 @@ class SignLog(models.Model):
                 .attachment_id.datas
             )
         else:
-            # ``prev_activity`` can be an empty recordset here (no previous
-            # activity, and no document to hash either): reading a Char field
-            # off an empty recordset returns ``False``, not "".
             previous_hash = prev_activity.log_hash or ""
             body = self._get_string_to_hash(vals)
         return sha256((previous_hash + str(body)).encode("utf-8")).hexdigest()
 
     def _get_string_to_hash(self, vals):
-        """Version 1's payload of a signature entry, kept for the entries written
-        under it."""
         values = {}
         for field in LOG_FIELDS:
             values[field] = str(vals[field])
-        # Values are filtered by the signing item itself. Keying this on the item's
-        # id (stable) rather than its access_token (which _cancel rotates) keeps the
-        # hash reproducible after another signer refuses or the request is cancelled.
         item_values = self.env["sign.request.item.value"].search(
             [
                 ("sign_request_id", "=", vals["sign_request_id"]),
@@ -335,7 +297,6 @@ class SignLog(models.Model):
         return dumps(values, sort_keys=True, ensure_ascii=True, indent=None)
 
     def _get_hash_vals(self) -> dict:
-        """The entry's stored values as its hash was computed from them."""
         self.check_singleton()
         return {
             key: value[0] if isinstance(value, tuple) else value
@@ -343,9 +304,6 @@ class SignLog(models.Model):
         } | {"digests": self.digests or []}
 
     def _get_integrity_error(self) -> str | None:
-        """Why these entries no longer vouch for their request, or None: the
-        first file that changed since an entry fingerprinted it, else the first
-        entry whose chained hash no longer matches."""
         action_labels = dict(self._fields["action"]._description_selection(self.env))
         for log in self.filtered(lambda log: log.action in CHAINED_ACTIONS).sorted(
             "id"
@@ -381,9 +339,6 @@ class SignLog(models.Model):
 
     def _prepare_vals_from_item(self, request_item) -> dict:
         sign_request = request_item.sign_request_id
-        # NOTE: We update request_item.latitude/longitude when the request_item is opened and not 'completed'/'refused'
-        # And If the signer accepted the browser geolocation request, the coordinates will be more precise.
-        # We should forcely use the GeoIP ones only if the request_item is 'completed'/'refused'
         latitude = 0.0
         longitude = 0.0
         if request:

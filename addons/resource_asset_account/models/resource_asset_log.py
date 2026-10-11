@@ -143,9 +143,6 @@ class ResourceAssetLog(models.Model):
             line = log.account_move_line_id
             if not line:
                 continue
-            # Same rule the parent applies to the category: re-derive while the
-            # bill line is the source of truth, but never un-type a log that the
-            # line no longer types.
             log.log_type = line._get_asset_log_type() or log.log_type
 
     @api.depends("account_move_line_id.balance")

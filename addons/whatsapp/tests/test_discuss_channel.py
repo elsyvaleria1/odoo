@@ -62,7 +62,7 @@ We're always happy to assist!""",
         for test_record, delay_days, mark_read in (
             (self.test_channel_wa, 2, True),
             (self.test_channel_wa2, 6, False),
-        ):  # 2 days - 6 days
+        ):
             with self.subTest(test_record=test_record), self.mockWhatsappGateway():
                 test_record.channel_pin(pinned=True)
                 member_of_operator = self.env["discuss.channel.member"].search(
@@ -179,8 +179,6 @@ We're always happy to assist!""",
 
     @users("user_wa_admin")
     def test_post_with_outbound(self):
-        """Test automatic whatsapp message creation when posting on a whatsapp
-        channel: should create an outbound wa message"""
         test_channel_wa = self.test_channel_wa.with_env(self.env)
         with self.mockWhatsappGateway():
             new_msg = test_channel_wa.message_post(
@@ -204,7 +202,6 @@ We're always happy to assist!""",
         self.assertEqual(wa_message.state, "sent")
         self.assertEqual(wa_message.wa_account_id, self.test_channel_wa.wa_account_id)
 
-        # should not be supported on other channels / models
         for test_record in (self.whatsapp_customer, self.test_channel_std):
             with self.subTest(test_record=test_record), self.mockWhatsappGateway():
                 new_msg = test_record.message_post(
@@ -217,9 +214,6 @@ We're always happy to assist!""",
 
     @users("user_wa_admin")
     def test_post_reviver_template(self):
-        """Test usage of reviver template - composer creates message on a channel
-        and we should not have twice the same message due to _send_message creating
-        messages"""
         template = self.channel_template.with_env(self.env)
         channel = self.test_channel_wa.with_env(self.env)
         composer = self._instanciate_wa_composer_from_records(
@@ -236,11 +230,9 @@ We're always happy to assist!""",
             mail_message_values={
                 "subtype_id": self.env.ref(
                     "mail.mt_comment"
-                ),  # should be linked to channel post directly
+                ),
             },
         )
-        # created mail.message: one due to post, and no additional log, we don't need
-        # two messages on the same document
         self.assertEqual(len(self._new_msgs), 1)
         self.assertEqual(self._new_msgs.model, "discuss.channel")
         self.assertEqual(self._new_msgs.res_id, channel.id)
@@ -294,7 +286,6 @@ We're always happy to assist!""",
         self.assertEqual([member["id"] for member in seen_members], customer_member.ids)
 
     def test_post_with_url_body_cleanup_for_duplicated_urls(self):
-        """Test that the we won't send the same URL twice in the body of a message to whatsapp."""
         test_channel = self.test_channel_wa.with_env(self.env)
 
         input_body = Markup(
@@ -320,8 +311,6 @@ We're always happy to assist!""",
 
     @users("user_wa_admin")
     def test_post_with_whatsapp_inbound_msg_uid(self):
-        """Test automatic whatsapp message creation when posting from whatsapp
-        specific controller"""
         test_channel_wa = self.test_channel_wa.with_env(self.env)
         new_msg = test_channel_wa.message_post(
             author_id=test_channel_wa.whatsapp_partner_id.id,
@@ -340,7 +329,6 @@ We're always happy to assist!""",
         self.assertEqual(wa_message.state, "received")
         self.assertEqual(wa_message.wa_account_id, self.test_channel_wa.wa_account_id)
 
-        # should not be supported on other channels / models
         for test_record in (self.whatsapp_customer, self.test_channel_std):
             with self.subTest(test_record=test_record):
                 with self.assertRaises(ValueError):

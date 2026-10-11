@@ -59,7 +59,6 @@ class EventType(models.Model):
     )
     note = fields.Html()
     sequence = fields.Integer(default=10)
-    # tickets
     event_type_ticket_ids = fields.One2many(
         comodel_name="event.type.ticket",
         inverse_name="event_type_id",
@@ -69,7 +68,6 @@ class EventType(models.Model):
         comodel_name="event.tag",
         string="Tags",
     )
-    # registration
     has_seats_limitation = fields.Boolean(string="Limited Seats")
     seats_max = fields.Integer(
         string="Maximum Registrations",
@@ -83,14 +81,12 @@ class EventType(models.Model):
         string="Timezone",
         default=lambda self: self.env.user.tz or "UTC",
     )
-    # communication
     event_type_mail_ids = fields.One2many(
         comodel_name="event.type.mail",
         inverse_name="event_type_id",
         string="Mail Schedule",
         default=lambda self: self._default_event_type_mail_ids(),
     )
-    # ticket reports
     ticket_instructions = fields.Html(
         translate=True,
         help="This information will be printed on your tickets.",

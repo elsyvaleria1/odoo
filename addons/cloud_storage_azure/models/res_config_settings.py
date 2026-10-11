@@ -27,7 +27,6 @@ class ResConfigSettings(models.TransientModel):
         "should promise the current application registration has the "
         "permission to access all old containers.",
     )
-    # Application Registry Info
     cloud_storage_azure_tenant_id = fields.Char(
         string="Azure Tenant ID",
         config_parameter="cloud_storage_azure_tenant_id",
@@ -68,12 +67,9 @@ class ResConfigSettings(models.TransientModel):
         blob_info = {
             "account_name": ICP.get_param("cloud_storage_azure_account_name"),
             "container_name": ICP.get_param("cloud_storage_azure_container_name"),
-            # use different blob names in case the credentials are allowed to
-            # overwrite an existing blob created by previous tests
             "blob_name": f"0/{datetime.now(UTC)}.txt",
         }
 
-        # check blob create permission
         upload_expiry = datetime.now(UTC) + timedelta(
             seconds=self.env["ir.attachment"]._cloud_storage_upload_url_time_to_expiry
         )
@@ -96,7 +92,6 @@ class ResConfigSettings(models.TransientModel):
                 )
             )
 
-        # check blob read permission
         download_expiry = datetime.now(UTC) + timedelta(
             seconds=self.env["ir.attachment"]._cloud_storage_download_url_time_to_expiry
         )

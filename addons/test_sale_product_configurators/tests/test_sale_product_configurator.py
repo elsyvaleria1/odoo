@@ -14,7 +14,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         super().setUpClass()
         cls.env.company.country_id = cls.env.ref("base.us")
 
-        # Adding sale users to test the access rights
         cls.salesman = mail_new_test_user(
             cls.env,
             name="Salesman",
@@ -24,7 +23,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
         cls.salesman.group_ids += cls.env.ref("product.group_product_manager")
 
-        # Setup partner since user salesman don't have the right to create it on the fly
         cls.env["res.partner"].create({"name": "Tajine Saucisse"})
 
     def test_01_product_configurator(self):
@@ -38,7 +36,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         self.start_tour("/odoo", "sale_product_configurator_tour", login="salesman")
 
     def test_02_product_configurator_advanced(self):
-        # group_delivery_invoice_address: show the shipping address (needed for a trigger)
         self.salesman.write(
             {
                 "group_ids": [
@@ -47,8 +44,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
             }
         )
 
-        # Prepare relevant test data
-        # This is not included in demo data to avoid useless noise
         product_attributes = self.env["product.attribute"].create(
             [
                 {"name": "PA1", "display_type": "radio", "create_variant": "dynamic"},
@@ -127,7 +122,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
             "/odoo", "sale_product_configurator_advanced_tour", login="salesman"
         )
 
-        # Ensures dynamic create variants have been created by the configurator
         self.assertEqual(len(product_template.product_variant_ids), 1)
         self.assertEqual(
             len(
@@ -137,7 +131,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_03_product_configurator_edition(self):
-        # Required to see `pricelist_id` in the view
         self.env.ref("base.group_user").write(
             {"implied_ids": [(4, self.env.ref("product.group_product_pricelist").id)]}
         )
@@ -166,8 +159,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_04_product_configurator_single_custom_value(self):
-        # Prepare relevant test data
-        # This is not included in demo data to avoid useless noise
         product_attributes = self.env["product.attribute"].create(
             [
                 {
@@ -207,12 +198,7 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_05_product_configurator_pricelist(self):
-        """The goal of this test is to make sure pricelist rules are correctly applied on the
-        backend product configurator.
-        Also testing B2C setting: no impact on the backend configurator.
-        """
 
-        # Required to see `pricelist_id` in the view
         self.env.ref("base.group_user").write(
             {"implied_ids": [(4, self.env.ref("product.group_product_pricelist").id)]}
         )
@@ -245,11 +231,9 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
                 "city": "Fremont",
             }
         )
-        # Add a 15% tax on desk
         tax = self.env["account.tax"].create({"name": "Test tax", "amount": 15})
         self.product_product_custo_desk.taxes_id = tax
 
-        # Remove tax from Conference Chair and Chair floor protection
         self.product_product_conf_chair.taxes_id = None
         self.product_product_conf_chair_floor_protect.taxes_id = None
         self.start_tour(
@@ -257,10 +241,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_06_product_configurator_optional_products(self):
-        """The goal of this test is to check that the product configurator window opens correctly
-        and lets you select optional products even if the main product does not have variants.
-        """
-        # add an optional product to the office chair and the custo desk for testing purposes
         office_chair = self.env["product.product"].create(
             {
                 "name": "Office Chair Black",
@@ -302,10 +282,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_07_product_configurator_recursive_optional_products(self):
-        """The goal of this test is to check that the product configurator works correctly with
-        recursive optional products.
-        """
-        # create products with recursive optional products
         self.product_product_conf_chair_floor_protect.update(
             {"optional_product_ids": [(6, 0, [self.product_product_conf_chair.id])]}
         )
@@ -340,10 +316,6 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         )
 
     def test_product_attribute_multi_type(self):
-        """The goal of this test is to verify that the product configurator dialog box opens
-        correctly when the product attribute display type is set to "multi" and only a
-        single value can be chosen.
-        """
 
         attribute_topping = self.env["product.attribute"].create(
             {
@@ -414,9 +386,7 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
         self.env.ref("base.group_user").write(
             {
                 "implied_ids": [
-                    # Required to set pricelist
                     Command.link(self.env.ref("product.group_product_pricelist").id),
-                    # Required to set uom in configurator
                     Command.link(self.group_uom.id),
                 ],
             }
@@ -429,11 +399,9 @@ class TestProductConfiguratorUi(TestProductConfiguratorCommon):
 
         self.assertIn(self.uom_dozen, self.product_product_custo_desk.uom_ids)
 
-        # Add a 15% tax on desk
         tax = self.env["account.tax"].create({"name": "Test tax", "amount": 15})
         self.product_product_custo_desk.taxes_id = tax
 
-        # Remove tax from Conference Chair and Chair floor protection
         self.product_product_conf_chair.taxes_id = None
         self.product_product_conf_chair_floor_protect.taxes_id = None
         self.assertTrue(self.salesman._has_group("product.group_product_pricelist"))

@@ -6,7 +6,6 @@ class IrActionsServer(models.Model):
 
     _inherit = "ir.actions.server"
 
-    # force insert before followers option
     state = fields.Selection(
         selection_add=[
             ("whatsapp", "Send WhatsApp"),
@@ -14,7 +13,6 @@ class IrActionsServer(models.Model):
         ],
         ondelete={"whatsapp": "cascade"},
     )
-    # WhatsApp
     wa_template_id = fields.Many2one(
         comodel_name="whatsapp.template",
         string="WhatsApp Template",

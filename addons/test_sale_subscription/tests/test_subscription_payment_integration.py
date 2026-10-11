@@ -13,8 +13,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         if cls.env["ir.module.module"]._get("payment_demo").state == "installed":
             cls.demo_provider = cls._prepare_provider(code="demo")
 
-        # having the post process patcher enabled makes the confirmation
-        # window close too fast for the tour trigger
         cls.enable_post_process_patcher = False
 
         cls.sub_propuct_tmpl = cls.env["product.template"].create(
@@ -74,11 +72,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         )
 
     def test_subscription_invoice_payment(self):
-        """
-        Flow:
-          - Share the portal link;
-          - pay without logging in.
-        """
         if self.env["ir.module.module"]._get("payment_demo").state != "installed":
             self.skipTest("payment_demo not found")
 
@@ -90,11 +83,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         )
 
     def test_subscription_invoice_tokenize(self):
-        """
-        Flow:
-          - Share the portal link;
-          - save payment method without logging in.
-        """
         if self.env["ir.module.module"]._get("payment_demo").state != "installed":
             self.skipTest("payment_demo not found")
 
@@ -110,11 +98,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         )
 
     def test_subscription_invoice_automate(self):
-        """
-        Flow:
-          - Share the portal link;
-          - automate payment without logging in.
-        """
         if self.env["ir.module.module"]._get("payment_demo").state != "installed":
             self.skipTest("payment_demo not found")
 
@@ -126,11 +109,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         )
 
     def test_subscription_invoice_tokenized_payment(self):
-        """
-        Flow:
-          - Share the portal link;
-          - pay with saved token without logging in.
-        """
         if self.env["ir.module.module"]._get("payment_demo").state != "installed":
             self.skipTest("payment_demo not found")
 
@@ -145,11 +123,6 @@ class TestSubscriptionPaymentIntegration(PaymentHttpCommon):
         )
 
     def test_subscription_invoice_tokenized_automate(self):
-        """
-        Flow:
-          - Share the portal link;
-          - automate payment with saved token without logging in.
-        """
         if self.env["ir.module.module"]._get("payment_demo").state != "installed":
             self.skipTest("payment_demo not found")
 

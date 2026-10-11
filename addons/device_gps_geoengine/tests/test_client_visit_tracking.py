@@ -189,14 +189,11 @@ class TestClientVisitTracking(common.TransactionCase):
         self.assertEqual(self.device.current_client_partner_id, self.client)
         self.assertEqual(self.device.current_client_distance_m, 0)
 
-        # 0.0003 deg of latitude north of the edge is ~33 true metres:
-        # within the tolerance, beside the parcel.
         self._place(19.4103, -99.10)
         self.device.invalidate_recordset()
         self.assertEqual(self.device.current_client_partner_id, self.client)
         self.assertAlmostEqual(self.device.current_client_distance_m, 33, delta=2)
 
-        # 0.001 deg (~110 m): out of tolerance, no parcel at all.
         self._place(19.411, -99.10)
         self.device.invalidate_recordset()
         self.assertFalse(self.device.current_client_geofence_id)
@@ -204,9 +201,9 @@ class TestClientVisitTracking(common.TransactionCase):
 
     def test_arrival_and_departure_come_from_the_gps_timestamps(self):
         t0 = datetime(2026, 9, 7, 14, 0)
-        self._place(19.60, -99.60, t0)  # on the road
-        self._place(19.40, -99.10, t0 + timedelta(minutes=10))  # entered
-        self._place(19.40, -99.10, t0 + timedelta(minutes=40))  # still there
+        self._place(19.60, -99.60, t0)
+        self._place(19.40, -99.10, t0 + timedelta(minutes=10))
+        self._place(19.40, -99.10, t0 + timedelta(minutes=40))
         self.env["device.device"]._cron_track_client_visits()
 
         self.assertEqual(
@@ -215,7 +212,7 @@ class TestClientVisitTracking(common.TransactionCase):
             "arrival is the first position on the parcel, not the cron's clock",
         )
 
-        self._place(19.60, -99.60, t0 + timedelta(minutes=55))  # left
+        self._place(19.60, -99.60, t0 + timedelta(minutes=55))
         self.env["device.device"]._cron_track_client_visits()
 
         visit = self.device.client_visit_log_id
@@ -229,7 +226,6 @@ class TestClientVisitTracking(common.TransactionCase):
         self.env["device.device"]._cron_track_client_visits()
         self.assertFalse(self.device.client_visit_departure)
 
-        # Nothing received for 8 hours: the tracker slept, the stay is over.
         self.env["device.device"]._cron_track_client_visits()
 
         self.assertEqual(self.device.client_visit_departure, t0 + timedelta(hours=1))
@@ -242,10 +238,6 @@ class TestClientVisitTracking(common.TransactionCase):
         self._place(19.40, -99.10, t0)
         self._place(19.40, -99.10, t0 + timedelta(hours=1))
 
-        # Six runs of the cron with the tracker still asleep on the parcel.
-        # The first closes the visit; every run after it must find nothing to
-        # do. The parcel is still current, so a run that only asks whether the
-        # open visit matches it opens a fresh duplicate on every other tick.
         for _run in range(6):
             self.env["device.device"]._cron_track_client_visits()
 
@@ -263,8 +255,6 @@ class TestClientVisitTracking(common.TransactionCase):
         self.env["device.device"]._cron_track_client_visits()
         self.assertTrue(self.device.client_visit_departure, "closed by the silence")
 
-        # The tracker wakes up on the same parcel: that is a new stay, and the
-        # guard against reopening must not swallow it.
         now = datetime.now().replace(microsecond=0)
         self._place(19.40, -99.10, now)
         self.device.invalidate_recordset()
@@ -276,10 +266,6 @@ class TestClientVisitTracking(common.TransactionCase):
         self.assertFalse(visits[1].departure)
 
     def test_speed_today_averages_moving_readings_only(self):
-        # Anchored to the start of the local day rather than counted back from
-        # now. "now - 30 minutes" is yesterday for the first half hour of every
-        # local day, and the whole fixture then falls outside the window the
-        # compute reads, so the test failed once a day for thirty minutes.
         tz = self.env.tz
         day_start = (
             datetime.combine(datetime.now(tz).date(), time.min, tzinfo=tz)
@@ -297,7 +283,6 @@ class TestClientVisitTracking(common.TransactionCase):
                     "timestamp": day_start + timedelta(minutes=minutes),
                 }
             )
-        # Yesterday's burst must not count.
         logs.create(
             {
                 "device_id": self.device.id,

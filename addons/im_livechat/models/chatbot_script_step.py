@@ -275,7 +275,6 @@ class ChatbotScriptStep(models.Model):
         return self.env["chatbot.script.step"]
 
     def _expects_answer(self) -> bool:
-        """Whether the visitor must answer before the script goes on."""
         self.check_singleton()
         return self.step_type in (
             "question_selection",

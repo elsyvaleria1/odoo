@@ -6,14 +6,6 @@ from odoo.tests.common import TransactionCase
 
 class TestWorkEntriesGanttData(TransactionCase):
     def test_employee_with_contract_and_no_work_entries_gets_a_row(self):
-        """get_gantt_data must add a row for an employee who has an active
-        contract version in the period but no work entries yet.
-
-        `employees_in_contract_ids` used to always come back empty because it
-        was computed on a bare `self.env["hr.employee"]` recordset -- always
-        empty -- instead of a real, searched population, so this "phantom
-        employee" branch never added a single row regardless of the data.
-        """
         calendar = self.env.company.resource_calendar_id
         ghost_employee = self.env["hr.employee"].create(
             {
@@ -45,9 +37,6 @@ class TestWorkEntriesGanttData(TransactionCase):
         )
 
     def test_archived_employee_gets_no_phantom_row(self):
-        """An archived (terminated) employee must not be expanded into a
-        phantom gantt row, even when an old contract version overlaps the
-        requested period."""
         calendar = self.env.company.resource_calendar_id
         archived_employee = self.env["hr.employee"].create(
             {
@@ -79,9 +68,6 @@ class TestWorkEntriesGanttData(TransactionCase):
         )
 
     def test_unavailability_covers_window_before_calendar_change(self):
-        """A mid-window calendar change must not truncate the unavailability
-        window: the batch's start/stop must stay the query's own, for every
-        employee in the batch, whatever their calendar-period count."""
         calendar_a = self.env.company.resource_calendar_id
         calendar_b = calendar_a.copy({"name": "Calendar B"})
         changed = self.env["hr.employee"].create(
@@ -111,8 +97,6 @@ class TestWorkEntriesGanttData(TransactionCase):
         start = datetime(2025, 9, 1, tzinfo=UTC)
         stop = datetime(2025, 10, 1, tzinfo=UTC)
         change = datetime(2025, 9, 15, tzinfo=UTC)
-        # the multi-period employee last: this is the order that used to leave
-        # the clobbered loop variables pointing at their second period
         result = self.env["hr.work.entry"]._gantt_unavailability(
             "employee_id", [control.id, changed.id], start, stop, "month"
         )

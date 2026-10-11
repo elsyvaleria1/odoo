@@ -309,7 +309,7 @@ class EquityTransaction(models.Model):
     def _compute_security_price(self) -> None:
         for transaction in self.filtered(
             lambda t: not bool(self._origin.id)
-        ):  # only set security price for newly created records
+        ):
             transaction.security_price = self.search(
                 [
                     ("partner_id", "=", transaction.partner_id.id),

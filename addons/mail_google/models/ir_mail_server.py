@@ -35,8 +35,6 @@ class IrMail_Server(models.Model):
         super(IrMail_Server, self - gmail_servers)._compute_smtp_authentication_info()
 
     def _compute_smtp_port(self) -> None:
-        """Do not change the SMTP configuration if it's a Gmail server
-        (e.g. the port which is already set)"""
         super(
             IrMail_Server, self.filtered(lambda s: s.smtp_authentication != "gmail")
         )._compute_smtp_port()
@@ -50,7 +48,6 @@ class IrMail_Server(models.Model):
 
     @api.onchange("smtp_user", "smtp_authentication")
     def _on_change_smtp_user_gmail(self) -> None:
-        """The Gmail mail servers can only be used for the user personal email address."""
         if self.smtp_authentication == "gmail":
             self.from_filter = self.smtp_user
 

@@ -10,7 +10,6 @@ from odoo.addons.mail.tests.common_activity import ActivityScheduleCase
 @tagged("mail_activity_mixin", "mail_activity", "post_install", "-at_install")
 class TestCalendarActivity(ActivityScheduleCase):
     def test_event_activity(self):
-        # ensure meeting activity type exists
         meeting_act_type = self.env["mail.activity.type"].search(
             [("category", "=", "meeting")], limit=1
         )
@@ -22,7 +21,6 @@ class TestCalendarActivity(ActivityScheduleCase):
                 }
             )
 
-        # have a test model inheriting from activities
         test_record = self.env["res.partner"].create(
             {
                 "name": "Test",
@@ -30,7 +28,6 @@ class TestCalendarActivity(ActivityScheduleCase):
         )
         now = datetime.now()
 
-        # test with escaping
         test_name, test_description, test_description2 = (
             "Test-Meeting",
             "Test-Description",
@@ -41,7 +38,6 @@ class TestCalendarActivity(ActivityScheduleCase):
             "<p>Test &amp; <br> Description</p>",
         )
 
-        # create using default_* keys
         test_event = (
             self.env["calendar.event"]
             .with_user(self.user_employee)
@@ -69,7 +65,6 @@ class TestCalendarActivity(ActivityScheduleCase):
             test_record.activity_ids.date_deadline, (now + timedelta(days=-1)).date()
         )
 
-        # updating event should update activity
         test_event.write(
             {
                 "name": "%s2" % test_name,
@@ -85,14 +80,12 @@ class TestCalendarActivity(ActivityScheduleCase):
         self.assertEqual(activity.user_id, self.user_employee)
         self.assertEqual(activity.date_deadline, (now + timedelta(days=-2)).date())
 
-        # deleting meeting should delete its activity
         test_record.activity_ids.unlink()
         self.assertEqual(
             self.env["calendar.event"],
             self.env["calendar.event"].search([("name", "=", test_name)]),
         )
 
-        # create using active_model keys
         test_event = (
             self.env["calendar.event"]
             .with_user(self.user_employee)
@@ -115,11 +108,8 @@ class TestCalendarActivity(ActivityScheduleCase):
         self.assertEqual(len(test_record.activity_ids), 1)
 
     def test_activity_event_multiple_meetings(self):
-        # Creating multiple meetings from an activity creates additional activities
-        # ensure meeting activity type exists
         meeting_act_type = self.env.ref("mail.mail_activity_data_meeting")
 
-        # have a test model inheriting from activities
         test_record = self.env["res.partner"].create(
             {
                 "name": "Test",
@@ -135,7 +125,6 @@ class TestCalendarActivity(ActivityScheduleCase):
             }
         )
 
-        # default usage in successive create
         event_1_1 = (
             self.env["calendar.event"]
             .with_context(default_activity_ids=[(6, 0, activity_1.ids)])
@@ -178,7 +167,6 @@ class TestCalendarActivity(ActivityScheduleCase):
         )
         existing_activities = self.env["mail.activity"].search([])
 
-        # specific action that creates activities instead of replacing
         calendar_action = activity_2.with_context(
             default_res_model="res.partner", default_res_id=test_record.id
         ).action_create_calendar_event()
@@ -243,7 +231,6 @@ class TestCalendarActivity(ActivityScheduleCase):
         )
 
     def test_event_activity_user_sync(self):
-        # ensure phonecall activity type exists
         activty_type = self.env["mail.activity.type"].create(
             {"name": "Call", "category": "phonecall"}
         )
@@ -268,8 +255,6 @@ class TestCalendarActivity(ActivityScheduleCase):
                 }
             )
         )
-        # Check that assignation of the activity hasn't changed, and event is having
-        # correct values set in attendee and organizer related fields
         self.assertEqual(activity.user_id, self.user_employee)
         self.assertEqual(event_from_activity.partner_ids, activity.user_id.partner_id)
         self.assertEqual(
@@ -301,11 +286,8 @@ class TestCalendarActivity(ActivityScheduleCase):
                     "stop": datetime(2025, 6, 22, 0, 0, 0),
                 }
             )
-        # Check output in UTC
         self.assertEqual(activity.date_deadline, date(2025, 6, 21))
 
-        # Check output in the user's tz
-        # write on the event to trigger sync of activities
         calendar_event.with_context({"tz": "Australia/Brisbane"}).write(
             {
                 "start": datetime(2025, 6, 27, 21, 0, 0),
@@ -315,8 +297,6 @@ class TestCalendarActivity(ActivityScheduleCase):
             activity.date_deadline, date(2025, 6, 28), "Next day due to timezone"
         )
 
-        # now change from activity, timezone should be taken into account when
-        # converting into UTC for event
         activity.with_context({"tz": "Australia/Brisbane"}).date_deadline = date(
             2025, 6, 30
         )
@@ -327,8 +307,6 @@ class TestCalendarActivity(ActivityScheduleCase):
         )
 
     def test_synchronize_activity_timezone_allday(self):
-        # Covers use case of commit eef4c3b48bcb4feac028bf640b545006dd0c9b91
-        # Also, read the comment in the code at calendar.event._inverse_dates
         activity_type = self.activity_type_todo.with_user(self.env.user)
 
         with freeze_time(datetime(2025, 6, 19, 12, 44, 00)):
@@ -354,11 +332,8 @@ class TestCalendarActivity(ActivityScheduleCase):
                     "stop_date": date(2025, 6, 23),
                 }
             )
-        # Check output in UTC
         self.assertEqual(activity.date_deadline, date(2025, 6, 21))
 
-        # Check output in the user's tz
-        # write on the event to trigger sync of activities
         calendar_event.with_context({"tz": "Pacific/Honolulu"}).write(
             {
                 "start": datetime(2025, 6, 22, 0, 0, 0),
@@ -376,8 +351,6 @@ class TestCalendarActivity(ActivityScheduleCase):
             "Same day, as taking all day, do not care about timezone",
         )
 
-        # now change from activity, timezone should not be taken into account
-        # and just update the starting day
         activity.with_context({"tz": "Australia/Brisbane"}).date_deadline = date(
             2025, 6, 30
         )

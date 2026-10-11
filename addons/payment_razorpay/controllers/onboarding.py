@@ -15,16 +15,6 @@ class RazorpayController(Controller):
 
     @route(OAUTH_RETURN_URL, type="http", auth="user", methods=["GET"], website=True)
     def razorpay_return_from_authorization(self, **data):
-        """Exchange the authorization code for an access token and redirect to the provider form.
-
-        :param dict data: The authorization code received from Razorpay, in addition to the
-                          provider id and the state (as `csrf_token`, the field the proxy
-                          echoes) the onboarding was started with, sent back by the proxy.
-        :raise AccessError: If the state was not issued to this session, has expired or was
-                            already used, names another provider than the echoed id, or if
-                            the user may not configure its provider.
-        :return: Redirect to the payment provider form.
-        """
         _logger.info(
             "Returning from authorization with data:\n%s", pprint.pformat(data)
         )
@@ -34,13 +24,11 @@ class RazorpayController(Controller):
         )
         authorization_code = data.get("authorization_code")
 
-        # Request and set the OAuth tokens on the provider.
         action = request.env.ref("payment.action_payment_provider")
         redirect_url = f"/odoo/action-{action.id}/{provider.id}"
-        if not authorization_code:  # The user cancelled the authorization.
+        if not authorization_code:
             return request.redirect(redirect_url)
 
-        # Fetch an access token using the authorization token.
         proxy_payload = provider._prepare_json_rpc_payload(
             {"authorization_code": authorization_code}
         )
@@ -58,17 +46,14 @@ class RazorpayController(Controller):
         )
         provider.write(
             {
-                # Reset the classical API key fields.
                 "razorpay_key_id": None,
                 "razorpay_key_secret": None,
                 "razorpay_webhook_secret": None,
-                # Save the OAuth credentials.
                 "razorpay_account_id": response_content["razorpay_account_id"],
                 "razorpay_public_token": response_content["public_token"],
                 "razorpay_refresh_token": response_content["refresh_token"],
                 "razorpay_access_token": response_content["access_token"],
                 "razorpay_access_token_expiry": expires_in,
-                # Enable the provider.
                 "state": "enabled",
                 "is_published": True,
             }

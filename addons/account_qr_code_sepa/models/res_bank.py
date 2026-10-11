@@ -31,22 +31,22 @@ class ResPartnerBankAccount(models.Model):
                 comment = free_communication or ""
 
             return [
-                "BCD",  # Service Tag
-                "002",  # Version
-                "1",  # Character Set
-                "SCT",  # Identification Code
-                self.bank_bic or "",  # BIC of the Beneficiary Bank
+                "BCD",
+                "002",
+                "1",
+                "SCT",
+                self.bank_bic or "",
                 (self.acc_holder_name or self.partner_id.name)[
                     :71
-                ],  # Name of the Beneficiary
-                self.sanitized_acc_number,  # Account Number of the Beneficiary
-                currency.name + str(amount),  # Currency + Amount of the Transfer in EUR
-                "",  # Purpose of the Transfer
-                structured_communication,  # Remittance Information (Structured)
+                ],
+                self.sanitized_acc_number,
+                currency.name + str(amount),
+                "",
+                structured_communication,
                 comment[
                     :141
-                ],  # Remittance Information (Unstructured) (can't be set if there is a structured one)
-                "",  # Beneficiary to Originator Information
+                ],
+                "",
             ]
         return super()._prepare_qr_payload(
             qr_method,
@@ -95,8 +95,6 @@ class ResPartnerBankAccount(models.Model):
 
     def _get_error_messages_for_qr(self, qr_method, debtor_partner, currency):
         if qr_method == "sct_qr":
-            # Some countries share the same IBAN country code
-            # (e.g. Åland Islands and Finland IBANs are 'FI', but Åland Islands' code is 'AX').
             sepa_country_codes = self.env.ref("base.sepa_zone").country_ids.mapped(
                 "code"
             )

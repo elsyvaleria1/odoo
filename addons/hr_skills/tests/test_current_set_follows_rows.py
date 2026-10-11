@@ -74,9 +74,6 @@ class TestCurrentSetFollowsTheRows(SkillsCase):
         self.assertEqual(self.employee.certification_ids, row)
 
     def test_a_job_never_keeps_a_lapsed_certification_as_current(self):
-        """The employee side shows the latest lapsed certification so its holder
-        sees what expired; a job cannot set validity periods, so for it a lapsed
-        requirement is simply gone. Both go through one helper now."""
         self.env["hr.job.skill"].create(
             {
                 "job_id": self.job.id,

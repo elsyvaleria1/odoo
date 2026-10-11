@@ -65,7 +65,7 @@ class PortalEquity(CustomerPortal):
         def get_sign(holder_id, transaction):
             sign = -1 if transaction.transaction_type == "cancellation" else 1
             if transaction.seller_id.sudo().id == holder_id:
-                sign = -1  # seller always loses shares
+                sign = -1
             return sign
 
         EquityTransaction = request.env["equity.transaction"].sudo()
@@ -355,10 +355,6 @@ class PortalEquity(CustomerPortal):
 
     @route("/my/ubo/submit/data", type="jsonrpc", auth="public")
     def submit_ubo_form_data(self, access_token, data):
-        """
-        :param data: list of new or existing (if has an id) equity.ubo dicts with a holder_id sub-record dict.
-            Each record may have `attachment` which holds a file that should be uploaded to the record chatter.
-        """
         partner_id = self._get_user_partner_id(
             access_token, default_to_request_partner=False, role="comment"
         )

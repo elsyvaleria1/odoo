@@ -9,10 +9,6 @@ from odoo.tools.translate import LazyGettext
 _logger = logging.getLogger(__name__)
 
 TIERS = ("unlinked", "partner", "internal")
-# "any": the command runs in every company the person acts in through the bot
-# (what a button acts on is in its record's company); "choose": what it
-# starts belongs to one company, which the person picks when they may act in
-# more than one, and its flow stays in it
 COMPANY_MODES = ("any", "choose")
 
 
@@ -57,7 +53,6 @@ def translation_env(bot, chat=None):
 
 
 def message_kind(message) -> str:
-    """What a non-command message carries, as the router routes it."""
     if message.get("voice") or message.get("audio"):
         return "voice"
     if message.get("photo"):
@@ -80,9 +75,6 @@ def log_command_execution(func):
         try:
             result = func(self, bot, chat, args, partner, internal_user)
         except PG_RETRY_EXCEPTIONS:
-            # Retryable conflict, not a failure: the request retry loop replays
-            # the command on a fresh transaction. A traceback here reports as
-            # broken a command that ends up succeeding.
             _logger.info(
                 "Command '%s' hit a concurrency conflict after %.2fs, letting it retry",
                 command_name,

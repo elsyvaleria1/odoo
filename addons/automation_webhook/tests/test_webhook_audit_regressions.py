@@ -221,8 +221,6 @@ class TestWebhookOverHttp(HttpCase):
         )
 
     def test_a_concurrency_failure_is_run_again_not_answered_500(self):
-        """A run that lost to a concurrent transaction did not fail: the
-        request owns the transaction and runs it again from scratch."""
         rule = self._rule("lost-a-race", auth_type="none")
         Rule = type(rule)
         dispatch = Rule._dispatch_webhook

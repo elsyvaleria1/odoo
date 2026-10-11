@@ -76,7 +76,6 @@ class AppointmentBookingLine(models.Model):
 
     @api.constrains("resource_id", "appointment_type_id", "appointment_user_id")
     def _check_user_or_resource_match_appointment_type(self) -> None:
-        """Check appointment user/resource linked to the lines is indeed usable through the appointment type."""
         for appointment_type, lines in self.grouped("appointment_type_id").items():
             if appointment_type.schedule_based_on == "users":
                 non_compatible_users_and_resource = self.env["res.users"]

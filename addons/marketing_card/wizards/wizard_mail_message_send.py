@@ -21,7 +21,6 @@ class WizardMailMessageSend(models.TransientModel):
     _inherit = "wizard.mail.message.send"
 
     def _prepare_mail_values_dynamic(self, res_ids):
-        """Replace generic card urls with the specific res_id url."""
         mail_values_all = super()._prepare_mail_values_dynamic(res_ids)
 
         if campaign := self.mass_mailing_id.card_campaign_id:
@@ -44,14 +43,12 @@ class WizardMailMessageSend(models.TransientModel):
                 mail_values_all.values(), processed_bodies, strict=True
             ):
                 if body is not None:
-                    # in a mailing these are the same
                     mail_values["body"] = body
                     mail_values["body_html"] = body
 
         return mail_values_all
 
     def _get_done_emails(self, mail_values_dict):
-        """Consider every target gets a different card, hence we don't want unique message per email address."""
         if self.mass_mailing_id.card_campaign_id:
             return []
         return super()._get_done_emails(mail_values_dict)
@@ -60,12 +57,6 @@ class WizardMailMessageSend(models.TransientModel):
     def _process_generic_card_url_body(
         self, card_body_pairs: list[tuple[models.Model, str]]
     ) -> list[str]:
-        """Update the bodies with the specific card url for that res_id and create a card.
-
-        example: (1, "/cards/9/preview") -> (1, "/cards/9/1/abchashtoken/preview") + new card as side-effect
-
-        :return: processed bodies in the order they were received
-        """
         bodies = []
         for card, body in card_body_pairs:
             if body:

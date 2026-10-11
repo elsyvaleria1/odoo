@@ -29,26 +29,17 @@ class WizardAccountMoveImportSaft(models.TransientModel):
     )
     import_opening_balance = fields.Boolean(string="Import account opening balances")
 
-    # ------------------------------------
-    # Utility
-    # ------------------------------------
 
     def _get_account_types(self) -> dict:
-        """Returns a mapping between the account types accepted for the SAF-T and the types in Odoo"""
-        # To be overriden
         return {}
 
     def _prepare_xml_id(self, prefix, key) -> str:
-        # To be overriden
         if "_" in prefix:
             raise ValueError("`prefix` cannot contain an underscore")
         key = key.replace(" ", "_")
         return f"l10n_{self.company_id.country_code.lower()}_saft_import.{self.company_id.id}_{prefix}_{key}"
 
     def _get_cleaned_namespace(self, saft):
-        """Helper that returns the cleaned version of tha namespace. As-is, aft.nsmap cannot be used as there is
-        a None key that raises an error (lxml is XPATH 1.0 only)
-        """
         nsmap = dict(saft.nsmap)
         nsmap_key = None
         for key, ns in nsmap.items():
@@ -59,9 +50,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         del nsmap[nsmap_key]
         return nsmap
 
-    # ------------------------------------
-    # Reading
-    # ------------------------------------
 
     def _get_account_tag_mapping(self) -> dict[str, str]:
         return {}
@@ -81,12 +69,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         return tree
 
     def _prepare_account_data(self, tree) -> tuple:
-        """Extracts the data on accounts to create missing ones and give the mappings used for transactions
-
-        :param tree: tree of the xml file
-        :returns: accounts_to_create: values for the accounts to create
-        :returns: account_mapping_ids: mapping between ids coming from the SAF-T with the ones from Odoo and the balance
-        """
         nsmap = self._get_cleaned_namespace(tree)
         template_data = (
             self.env["account.chart.template"]
@@ -152,12 +134,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         return accounts_to_create, account_mapping_ids
 
     def _prepare_opening_balance_move(self, tree, map_accounts) -> dict | None:
-        """Create a move if there is inconsistency between opening balance for each account and amls in Odoo
-
-        :param tree: tree of the xml file
-        :param map_accounts: dict containing balance and id values for each code
-        :returns: dict values for the creation of the opening balance move
-        """
         nsmap = self._get_cleaned_namespace(tree)
         selection_start_node = tree.find(".//saft:SelectionStartDate", namespaces=nsmap)
         if selection_start_node is not None:
@@ -251,12 +227,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         return None
 
     def _prepare_partner_data(self, tree) -> tuple:
-        """Extracts the data on partners to create them. Those with the same name and saft_id won't be re-imported
-
-        :param tree: tree of the xml file
-        :returns: partners_to_create: values for the partners to create
-        :returns: partner_mapping_ids: mapping between ids coming from the SAF-T with the ones from Odoo
-        """
         nsmap = self._get_cleaned_namespace(tree)
         partners_to_create = {}
         existing_partners = self.env["res.partner"].search_fetch(
@@ -389,19 +359,11 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         )
 
     def _prepare_tax_data(self, tree) -> tuple:
-        """Extracts the data on taxes to create them.
-        Those with the same name, amount_type and amount won't be imported
-
-        :param tree: tree of the xml file
-        :returns: taxes_to_create: values for the taxes to create
-        :returns: tax_mapping_ids: mapping between ids coming from the SAF-T with the ones used in Odoo
-        """
         nsmap = self._get_cleaned_namespace(tree)
         existing_taxes = self.env["account.tax"].search_fetch(
             self.env["account.tax"]._check_company_domain(self.company_id),
             field_names=["name", "amount_type", "amount", "id"],
         )
-        # map between name+amount_type+amount and id of a tax that corresponds
         existing_taxes_mapping = {
             (tax.name, tax.amount_type, tax.amount): tax.id for tax in existing_taxes
         }
@@ -453,19 +415,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         map_currencies,
         map_partners,
     ) -> tuple:
-        """Extracts the data on journals to create those missing (based on the code).
-            Then, for each journal, extract the moves associated
-
-        :param tree: tree of the xml file
-        :param default_currency: base currency defined in the SAF-T file
-        :param map_accounts: mapping between saft and odoo ids (and balance) for accounts
-        :param map_taxes: mapping between saft and odoo ids for taxes
-        :param map_currencies: mapping between saft and odoo ids for taxes
-        :param map_partners: mapping between saft and odoo ids for partners
-
-        :returns: journals_to_create: values for the journals to create
-        :returns: moves_to_create: values for the moves to create
-        """
 
         nsmap = self._get_cleaned_namespace(tree)
         journals_to_create = {}
@@ -533,19 +482,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         map_currencies,
         map_partners,
     ):
-        """Extracts the data on moves to be created. Those with the same name and journal won't be re-imported.
-
-        :param journal_tree: tree of the xml hierarchy for the journal concerned
-        :param default_currency: base currency defined in the SAF-T file
-        :param saft_journal_code: saft code of the journal
-        :param journal_id: odoo id of the journal
-        :param map_accounts: mapping between saft and odoo ids (and balance) for accounts
-        :param map_taxes: mapping between saft and odoo ids for taxes
-        :param map_currencies: mapping between saft and odoo ids for taxes
-        :param map_partners: mapping between saft and odoo ids for partners
-
-        :returns: moves_to_create: values for the moves to create
-        """
         nsmap = self._get_cleaned_namespace(journal_tree)
         moves_to_create = {}
         already_imported_move_xmlids = (
@@ -643,7 +579,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         return moves_to_create
 
     def _get_data(self):
-        """Returns the data that is stored inside the XML SAF-T attachment, for each model, to be loaded."""
         import_data = base64.b64decode(self.attachment_id)
         tree = self._prepare_import_tree(import_data)
         data = {}
@@ -660,7 +595,7 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         partner_data, map_partners = self._prepare_partner_data(tree)
         data["res.partner"] = partner_data
 
-        data["account.journal"] = {}  # so journals are loaded before moves
+        data["account.journal"] = {}
         if self.import_opening_balance:
             data["account.move"] = self._prepare_opening_balance_move(
                 tree, map_accounts
@@ -707,14 +642,9 @@ class WizardAccountMoveImportSaft(models.TransientModel):
 
         return data
 
-    # -----------------------------------
-    # Main method
-    # -----------------------------------
 
     def action_import(self):
-        """Start the import by gathering generators and templates and applying them to attached files."""
 
-        # Basic checks to start
         if not self.company_id.account_config_id.chart_template:
             action = self.env.ref("account.action_account_config")
             raise RedirectWarning(
@@ -723,11 +653,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
                 self.env._("Accounting Settings"),
             )
 
-        # In Odoo, move names follow sequences based on the year, so the checks complain
-        # if the year present in the move's name doesn't match with the move's date.
-        # This is unimportant here since we are importing existing moves from external data.
-        # The workaround is to set the sequence.mixin.constraint_start_date parameter
-        # to the date of the oldest move (defaulting to today if there is no move at all).
         domain = self.env["account.move"]._check_company_domain(self.company_id)
         start_date = (
             self.env["account.move"].search(domain, limit=1, order="date asc").date
@@ -739,7 +664,6 @@ class WizardAccountMoveImportSaft(models.TransientModel):
 
         data = self._get_data()
 
-        # skip_invoice_sync to avoid creating twice the tax lines
         created_vals = (
             self.env["account.chart.template"]
             .with_context(skip_invoice_sync=True)

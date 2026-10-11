@@ -62,22 +62,11 @@ def make_field(
 
 
 def sorted_fields(fields):
-    """recursively sort field lists to ease comparison"""
     recursed = [dict(field, fields=sorted_fields(field["fields"])) for field in fields]
     return sorted(recursed, key=lambda field: field["id"])
 
 
 def generate_xls(data):
-    """
-    Generates an XLS (actually XLSX) file from the given data dictionary.
-    Each key in the `data` dictionary represents a column header,
-    and its corresponding values are written as rows under that column.
-
-    Date and datetime objects in the values will automatically set the format of the cell.
-
-    :param dict data: keys are column headers, values are rows.
-    :return bytes: the xlsx file as bytes.
-    """
 
     output = io.BytesIO()
     with xlsxwriter.Workbook(output, {"in_memory": True}) as wb:
@@ -100,15 +89,6 @@ def generate_xls(data):
 
 
 def generate_xlsx(data):
-    """
-    Generates an XLSX file from the given data dictionary. Each key in the `data` dictionary represents a column header,
-    and its corresponding values are written as rows under that column.
-
-    Date and datetime objects in the values will automatically set the style of the cell to a date/datetime.
-
-    :param dict data: keys are column headers, values are rows.
-    :return bytes: the xls file as bytes.
-    """
     import openpyxl
 
     wb = openpyxl.Workbook()
@@ -150,14 +130,12 @@ class TestBasicFields(BaseImportCase):
         return self.env["base_import.import"].get_fields_tree(f"import.{field}")
 
     def test_base(self):
-        """A basic field is not required"""
         self.assertEqualFields(
             self.get_fields("char"),
             make_field(field_type="char", model_name="import.char"),
         )
 
     def test_required(self):
-        """Required fields should be flagged (so they can be fill-required)"""
         self.assertEqualFields(
             self.get_fields("char.required"),
             make_field(
@@ -166,29 +144,22 @@ class TestBasicFields(BaseImportCase):
         )
 
     def test_readonly(self):
-        """Readonly fields should be filtered out"""
         self.assertEqualFields(
             self.get_fields("char.readonly"), [get_id_field("import.char.readonly")]
         )
 
     def test_readonly_states_noreadonly(self):
-        """Readonly fields with states having nothing to do with
-        readonly should still be filtered out"""
         self.assertEqualFields(
             self.get_fields("char.noreadonly"), [get_id_field("import.char.noreadonly")]
         )
 
     def test_readonly_states_stillreadonly(self):
-        """Readonly fields with readonly states leaving them readonly
-        always... filtered out"""
         self.assertEqualFields(
             self.get_fields("char.stillreadonly"),
             [get_id_field("import.char.stillreadonly")],
         )
 
     def test_m2o(self):
-        """M2O fields should allow import of themselves (display_name),
-        their id and their xid"""
         self.assertEqualFields(
             self.get_fields("m2o"),
             make_field(
@@ -219,10 +190,6 @@ class TestBasicFields(BaseImportCase):
         )
 
     def test_m2o_required(self):
-        """If an m2o field is required, its three sub-fields are
-        required as well (the client has to handle that: requiredness
-        is id-based)
-        """
         self.assertEqualFields(
             self.get_fields("m2o.required"),
             make_field(
@@ -474,7 +441,7 @@ class TestMatchHeadersSingle(TransactionCase):
         )
         string_field_dist = Import._get_distance(header.lower(), field_string.lower())
         self.assertEqual(string_field_dist, 0.36363636363636365)
-        self.assertEqual(match, {})  # if distance >= 0.2, no match returned
+        self.assertEqual(match, {})
 
     def test_recursive_match(self):
         f = {
@@ -501,7 +468,6 @@ class TestMatchHeadersSingle(TransactionCase):
         self.assertEqual(match, {"field_path": [f["name"], f["fields"][1]["name"]]})
 
     def test_recursive_nomatch(self):
-        """Match first level, fail to match second level"""
         f = {
             "name": "f0",
             "string": "My Field",
@@ -614,13 +580,6 @@ class TestColumnMapping(TransactionCase):
         fields = self.env["base_import.mapping"].search_read(
             [("res_model", "=", "import.preview")], ["column_name", "field_name"]
         )
-        # Column names are stored normalised (stripped + lower-cased) through
-        # the same helper the *lookup* uses. They previously went in verbatim
-        # while `_get_mapping_suggestion` looked them up lower-cased, so a
-        # header with the surrounding whitespace that spreadsheet exports
-        # routinely carry never matched the mapping the user had just taught
-        # the system. The web client happened to trim and lower-case before
-        # sending, which is what kept the round trip working at all.
         self.assertItemsEqual(
             [f["column_name"] for f in fields], ["name", "some value", "value"]
         )
@@ -641,7 +600,7 @@ class TestColumnMapping(TransactionCase):
         ]
 
         Import = self.env["base_import.import"]
-        max_distance = 0.2  # see FUZZY_MATCH_DISTANCE. We don't use it here to avoid making test work after modifying this constant.
+        max_distance = 0.2
         for value in values_to_test:
             distance = Import._get_distance(value[0].lower(), value[1].lower())
             model_fields_info = [
@@ -720,7 +679,6 @@ class TestPreview(TransactionCase):
         self.assertIsNone(result.get("error"))
         self.assertEqual(result["matches"], {0: ["name"], 1: ["somevalue"]})
         self.assertEqual(result["headers"], ["name", "Some Value", "Counter"])
-        # Order depends on iteration order of fields_get
         self.assertItemsEqual(
             result["fields"][:4],
             [
@@ -920,7 +878,6 @@ class test_convert_import_data(TransactionCase):
             },
         )
 
-        # if results empty, no errors
         self.assertItemsEqual(results["messages"], [])
 
     def test_date_fields_no_options(self):
@@ -955,13 +912,9 @@ class test_convert_import_data(TransactionCase):
             {**opts},
         )
 
-        # if results empty, no errors
         self.assertItemsEqual(results["messages"], [])
 
     def test_parse_relational_fields(self):
-        """Ensure that relational fields float and date are correctly
-        parsed during the import call.
-        """
         import_wizard = self.env["base_import.import"].create(
             {
                 "res_model": "import.complex",
@@ -982,12 +935,10 @@ class test_convert_import_data(TransactionCase):
             ["name", "parent_id/.id", "parent_id/d", "parent_id/f"], options
         )
         result = import_wizard._parse_import_data(data, import_fields, options)
-        # Check if the data 5,69 as been correctly parsed.
         self.assertEqual(float(result[0][-1]), 5.69)
         self.assertEqual(str(result[0][-2]), "2017-10-12")
 
     def test_parse_scientific_notation(self):
-        """Ensure that scientific notation is correctly converted to decimal"""
         import_wizard = self.env["base_import.import"]
 
         test_options = {}
@@ -1008,9 +959,6 @@ class test_convert_import_data(TransactionCase):
         self.assertEqual(test_data, expected_result)
 
     def test_filtered(self):
-        """If ``False`` is provided as field mapping for a column,
-        that column should be removed from importable data
-        """
         import_wizard = self.env["base_import.import"].create(
             {
                 "res_model": "import.preview",
@@ -1034,9 +982,6 @@ class test_convert_import_data(TransactionCase):
         )
 
     def test_norow(self):
-        """If a row is composed only of empty values (due to having
-        filtered out non-empty values from it), it should be removed
-        """
         import_wizard = self.env["base_import.import"].create(
             {
                 "res_model": "import.preview",
@@ -1112,9 +1057,6 @@ class test_convert_import_data(TransactionCase):
         )
 
     def test_newline_import(self):
-        """
-        Ensure importing keep newlines
-        """
         output = io.StringIO()
         writer = csv.writer(output, quoting=1)
 
@@ -1190,7 +1132,6 @@ foo2,US,invoices\n""",
             False,
             "foo2 partner's type should be False",
         )
-        # if results empty, no errors
         self.assertItemsEqual(results["messages"], [])
 
     def test_skip_record_import(self):
@@ -1223,14 +1164,9 @@ foo3,US,0,invoices\n""",
             "should have imported the first record in full, got %s" % results["ids"],
         )
         self.assertEqual(partners_now.name, "foo", "New partner's name should be foo")
-        # if results empty, no errors
         self.assertItemsEqual(results["messages"], [])
 
     def test_multi_mapping(self):
-        """Test meant specifically for the '_handle_multi_mapping' that allows mapping multiple
-        columns to the same field and merging the values together.
-
-        It makes sure that values of type Char and Many2many are correctly merged."""
 
         tag1, tag2, tag3 = self.env["res.partner.tag"].create(
             [
@@ -1275,7 +1211,6 @@ foo3,US,0,invoices\n""",
                 },
             )
 
-        # if result is empty, no import error
         self.assertItemsEqual(results["messages"], [])
 
         partners = capture.records
@@ -1307,7 +1242,7 @@ foo3,US,0,invoices\n""",
                 "has_headers": True,
             },
         )
-        self.assertItemsEqual(results["messages"], [])  # No error
+        self.assertItemsEqual(results["messages"], [])
 
         last_record = self.env["import.complex"].search([], order="id DESC", limit=1)
         self.assertItemsEqual(last_record.html, "<p>foo</p><br><p>bar</p>")
@@ -1318,31 +1253,6 @@ foo3,US,0,invoices\n""",
         "xlsxwriter/openpyxl not available",
     )
     def test_xls_datetime_values(self):
-        """Test the support of having dates set as strings with the user format and date/datetime objects
-        in the same xls(x) file.
-
-        xls(x) allows to set a date/datetime format on a cell.
-        e.g.
-        foo,06/30/2025
-        bar,datetime.date(2025, 7, 1)
-
-        In particular, Google Spreadsheet tends to automatically convert cells to date/datetime when it detects
-        their value is a date.
-        e.g. create a new google spreadsheet
-        in the first cell, enter `foo`
-        in the second cell, enter `01/07/2025`.
-        Notice that the date has been aligned to the right of the cell, while foo remained on the left.
-        It's because the cell holding the date has been automatically converted into a date format.
-        In a third cell, enter `30/07/2025`. It's possible it stays aligned to the left,
-        because it wasn't converted automatically into the date format.
-        It's because the day is higher than 12, and Google spreadsheet didn't detect it was a date
-        because it was expecting the Americam date format `%d/%m/%Y`.
-
-        In such a case, you have a file with dates visually looking using the same format in the user interface,
-        but in reality some are stored as simple strings, some are stored as date objects within the xls(x) file.
-
-        Given how easy this is to land in such a situation using Google Spreadhseet, Odoo should support it.
-        """
         for data, expected_preview in [
             (
                 {
@@ -1355,7 +1265,6 @@ foo3,US,0,invoices\n""",
                 },
                 [
                     ["1", "2"],
-                    # /!\ American format, July 1st is 07/01
                     ["06/30/2025", "07/01/2025"],
                     ["06/30/2025 13:37:42", "07/01/2025 09:08:07"],
                 ],
@@ -1414,7 +1323,6 @@ foo3,US,0,invoices\n""",
 
     @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
     def test_xlsx_datetime_values_assigned_to_char_field(self):
-        """Test that importing datetime values to char field is converted"""
 
         file_content = generate_xlsx(
             {
@@ -1423,7 +1331,7 @@ foo3,US,0,invoices\n""",
                     "foo",
                     datetime.datetime(2020, 1, 6, 8, 10),
                     datetime.date(2025, 7, 1),
-                ],  # Invalid Date like object in a char field
+                ],
             }
         )
 
@@ -1451,15 +1359,10 @@ foo3,US,0,invoices\n""",
             },
         )
         self.assertFalse(response.get("messages"))
-        # One entry per imported row. This used to assert three extra trailing
-        # '' -- one per data row -- because execute_import padded the tail with
-        # `[''] * (len(data) - (import_limit or 0))`, which with no `limit`
-        # option padded by the whole data length instead of by nothing.
         self.assertEqual(response["name"], ["foo", "08:10:00 06/01/2020", "01/07/2025"])
 
     @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
     def test_xlsx_datetime_values_assigned_to_related_char_field(self):
-        """Test that importing datetime values to a related char field is converted"""
         file_content = generate_xlsx(
             {
                 "Child/Name": [
@@ -1497,7 +1400,6 @@ foo3,US,0,invoices\n""",
 
     @unittest.skipUnless(can_import("openpyxl"), "openpyxl not available")
     def test_xlsx_datetime_values_assigned_to_property_char_field(self):
-        """Test that importing datetime values to a property char field is converted"""
         def_record = self.env["import.properties.definition"].create(
             [
                 {
@@ -1597,20 +1499,6 @@ class TestBatching(TransactionCase):
         self.assertIs(result["batch"], True)
 
     def test_limit_on_lines(self):
-        """The limit option should be a limit on the number of *lines*
-        imported at at time, not the number of *records*. This is relevant
-        when it comes to embedded o2m.
-
-        A big question is whether we want to round up or down (if the limit
-        brings us inside a record). Rounding up (aka finishing up the record
-        we're currently parsing) seems like a better idea:
-
-        * if the first record has so many sub-lines it hits the limit we still
-          want to import it (it's probably extremely rare but it can happen)
-        * if we have one line per record, we probably want to import <limit>
-          records not <limit-1>, but if we stop in the middle of the "current
-          record" we'd always ignore the last record (I think)
-        """
         f = io.StringIO()
         writer = csv.writer(f, quoting=1)
         writer.writerow(["name", "value/value"])
@@ -1680,7 +1568,6 @@ g,g@example.com
         )
         self.assertFalse(results["messages"])
         self.assertEqual(len(results["ids"]), 1)
-        # titlerow is ignored by lastrow's counter
         self.assertEqual(results["nextrow"], 1)
         partners_1 = self.env["res.partner"].search([]) - partners_before
         self.assertEqual(partners_1.name, "a")
@@ -1690,7 +1577,6 @@ g,g@example.com
         )
         self.assertFalse(results["messages"])
         self.assertEqual(len(results["ids"]), 2)
-        # empty row should also be ignored
         self.assertEqual(results["nextrow"], 3)
         partners_2 = self.env["res.partner"].search([]) - (partners_before | partners_1)
         self.assertEqual(partners_2.mapped("name"), ["b", "c"])
@@ -1709,10 +1595,6 @@ g,g@example.com
 
 class test_failures(TransactionCase):
     def test_big_attachments(self):
-        """
-        Ensure big fields (e.g. b64-encoded image data) can be imported and
-        we're not hitting limits of the default CSV parser config
-        """
         im = Image.new("RGB", (1920, 1080))
         fout = io.StringIO()
 

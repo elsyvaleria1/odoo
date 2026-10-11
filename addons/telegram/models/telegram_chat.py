@@ -166,8 +166,6 @@ class TelegramChat(models.Model):
     @api.depends("account_id.name", "account_id.phone", "title", "bot_id.bot_username")
     @api.depends_context("telegram_show_phone")
     def _compute_display_name(self) -> None:
-        # the number tells apart two accounts of one person, where that person
-        # chooses between them; anywhere else a name stays a name
         show_phone = self.env.context.get("telegram_show_phone")
         for chat in self:
             who = chat.title or chat.account_id.name or chat.chat_id
@@ -189,12 +187,6 @@ class TelegramChat(models.Model):
     def _acquire_chat(
         self, chat_id, bot_id, chat_type=None, account=None, business_connection=None
     ):
-        """The chat `chat_id` of the bot, created on first sight.
-
-        Only a private chat records its person: Telegram gives it the id of
-        the one user on the other end, so the account of that chat's sender
-        is the chat's, and stays so.
-        """
         chat_id_str = str(chat_id)
         is_private = chat_type == "private"
         connection_id = business_connection.id if business_connection else False
@@ -222,16 +214,12 @@ class TelegramChat(models.Model):
             chat.chat_type = chat_type
         if chat.bot_blocked and account:
             chat.bot_blocked = False
-        # A chat first seen by an outbound message records no person yet.
         if account and is_private and not chat.account_id:
             chat.account_id = account.id
         return chat
 
     @api.model
     def _for_partner(self, partner, bot=None):
-        """The private chats reaching `partner` through a bound account --
-        their own with the bot, never a business chat they are the customer
-        of, nor one with a bot its people moved away from."""
         domain = [
             ("chat_type", "=", "private"),
             ("business_connection_id", "=", False),
@@ -244,7 +232,6 @@ class TelegramChat(models.Model):
 
     @api.model
     def _for_user(self, user, bot=None):
-        """The private chats of the Telegram person who may act as `user`."""
         chats = self._for_partner(user.partner_id, bot)
         return chats.filtered(
             lambda chat: chat.account_id._acting_user("portal") == user
@@ -253,8 +240,6 @@ class TelegramChat(models.Model):
     def _side_block(self) -> None:
         self.flush_recordset()
         with self.env.registry.cursor() as cr:
-            # one row, raced by any job refused in this chat: wait for the
-            # other and write over it, rather than fail serialising
             cr.use_read_committed()
             cr.execute(
                 "UPDATE telegram_chat SET bot_blocked = TRUE WHERE id = %s", (self.id,)
@@ -262,13 +247,9 @@ class TelegramChat(models.Model):
         self.invalidate_recordset(["bot_blocked"])
 
     def _side_update_delivery_failure(self, error) -> bool:
-        """Record on a side cursor that a message failed here; True when the
-        chat was delivering until now."""
         self.check_singleton()
         self.flush_recordset()
         with self.env.registry.cursor() as cr:
-            # read committed: a concurrent failure or success in this chat is
-            # waited for and then seen, so exactly one failure starts it
             cr.use_read_committed()
             cr.execute(
                 "UPDATE telegram_chat AS chat SET delivery_error = %s, "
@@ -283,9 +264,6 @@ class TelegramChat(models.Model):
         return started
 
     def _side_remove_delivery_failure(self) -> None:
-        """A message went through: the chat delivers again. Asked of the
-        table, not of this transaction's snapshot, which may predate a
-        failure another job recorded."""
         self.check_singleton()
         self.flush_recordset()
         with self.env.registry.cursor() as cr:
@@ -299,8 +277,6 @@ class TelegramChat(models.Model):
         self.invalidate_recordset(["delivery_error", "delivery_failed_at"])
 
     def _migrate_to(self, new_chat_id):
-        """The supergroup this group became, recorded once: the group keeps
-        its history, what follows happens in the supergroup's own chat."""
         self.check_singleton()
         if not new_chat_id:
             return self.browse()
@@ -421,11 +397,8 @@ class TelegramChat(models.Model):
         context[key] = value
         self._with_flow_privilege().write({"context_data": context})
 
-    # -- command menu ---------------------------------------------------------
 
     def _sync_command_menu(self) -> None:
-        """Send Telegram the command menu of each private chat whose person may
-        now run other commands than its menu shows."""
         for chat in operating(self):
             if chat.chat_type != "private" or not chat.account_id or chat.bot_blocked:
                 continue
@@ -444,8 +417,6 @@ class TelegramChat(models.Model):
             )
 
     def _get_command_menu(self) -> list:
-        """`[{"command", "description"}]` this private chat's person may run, as
-        the router would let them, in the chat's language."""
         self.check_singleton()
         account = self.account_id
         partner = account._acting_partner()
@@ -453,7 +424,6 @@ class TelegramChat(models.Model):
         chat = self
         if user:
             if not self.bot_id._admits_user(user):
-                # the router refuses every update of theirs on this bot
                 return []
             sender_env = self.env(
                 user=user,
@@ -477,7 +447,6 @@ class TelegramChat(models.Model):
             if spec.description
         ]
 
-    # -- flows ----------------------------------------------------------------
 
     def _flow_is_open(self) -> bool:
         self.check_singleton()
@@ -506,8 +475,6 @@ class TelegramChat(models.Model):
         )
 
     def _flow_advance(self, step=None, data=None) -> None:
-        """Move the open flow to `step` (the same one when None), replacing its
-        data when given."""
         self.check_singleton()
         if not self.flow_owner:
             raise ValidationError(self.env._("The chat has no flow to move."))

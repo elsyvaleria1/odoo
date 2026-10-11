@@ -14,8 +14,6 @@ class TestUi(odoo.tests.HttpCase, SignRequestCommon):
         cls.env.ref("base.user_admin").email = "admin@yourcompany.example.com"
 
     def test_ui(self):
-        # If not enabled (like in demo data), landing on res.config will try
-        # to disable module_sale_quotation_builder and raise an issue
         group_order_template = self.env.ref(
             "sale.group_sale_order_template", raise_if_not_found=False
         )
@@ -24,7 +22,6 @@ class TestUi(odoo.tests.HttpCase, SignRequestCommon):
                 {"implied_ids": [(4, group_order_template.id)]}
             )
 
-        # make sure that we only have the required template.
         self.env["sign.template"].search([("name", "!=", "template_1_role")]).write(
             {"active": False}
         )
@@ -169,14 +166,11 @@ class TestUi(odoo.tests.HttpCase, SignRequestCommon):
 
     def test_sign_tour(self):
         sign_requests = self.env["sign.request"].search([])
-        # Step 2 of the `sign_tour` onboarding tour assumes that there's no sign.request record in the database.
         sign_requests.active = False
         self.start_tour("/odoo", "sign_tour", login="admin")
 
     def test_sign_tour_without_sign(self):
-        # The tour has a step for the Signature dialoge, which is relevant only if the user has no saved signature.
         self.env.ref("base.user_admin").sign_signature = False
         sign_requests = self.env["sign.request"].search([])
-        # Step 2 of the `sign_tour` onboarding tour assumes that there's no sign.request record in the database.
         sign_requests.active = False
         self.start_tour("/odoo", "sign_tour", login="admin")

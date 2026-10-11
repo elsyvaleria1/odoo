@@ -602,8 +602,6 @@ class PropertiesCase(TestPropertiesMixin):
         ]
 
         self.env.invalidate_all()
-        # the first read above verified the partner: the cursor remembers the
-        # pair, so the existence statement does not run again
         exists_query = expected_queries[3]
         with (
             self.assertQueryCount(4),
@@ -642,7 +640,6 @@ class PropertiesCase(TestPropertiesMixin):
 
         partners[:20].unlink()
         self.env.invalidate_all()
-        # the unlink discards the verified pairs of its model: verified again
         with self.assertQueryCount(5):
             values = messages.read(["attributes"])
         self.assertEqual(
@@ -675,8 +672,6 @@ class PropertiesCase(TestPropertiesMixin):
             ]
         )
         self.env.invalidate_all()
-        # the column, the messages, the discussion, one existence check over
-        # the prefetch set, the partners' names: not one statement per record
         with self.assertQueryCount(5):
             sizes = [message.attributes["size"] for message in messages]
             peers = [message.attributes["partner_id"] for message in messages]
@@ -2695,8 +2690,6 @@ class PropertiesSearchCase(TransactionExpressionCase, TestPropertiesMixin):
         self.assertEqual(messages, self.message_1)
 
     def test_properties_field_search_unset_values(self):
-        # an unset property is stored as json false; ->> renders it as the
-        # text 'false' and jsonb orders a boolean above every number
         self.messages.discussion = self.discussion_1
         self.message_1.attributes = [
             {
@@ -3896,8 +3889,6 @@ class PropertiesGroupByCase(TestPropertiesMixin):
     def test_properties_field_read_group_datetime_dst_folds(self):
         self._properties_field_read_group_date_prepare("datetime")
         (self.message_5 | self.message_6 | self.message_7).unlink()
-        # Europe/London falls back at 01:00 UTC, Australia/Lord_Howe by half
-        # an hour at 15:00 UTC, America/Sao_Paulo at local midnight
         instants = [
             datetime.datetime(2024, 10, 27, 1),
             datetime.datetime(2024, 4, 6, 15),
@@ -4912,7 +4903,6 @@ class PropertiesTemporalIsoFormCase(TestPropertiesMixin):
             ([("attributes.at", "<", "2024-03-05 11:00:00")], self.records),
             ([("attributes.at", ">", "2024-03-05 10:00:00")], Message),
             ([("attributes.at", ">", "2024-03-05 09:59:59")], self.records),
-            # a bound holds the stored precision, as a Datetime field's does
             ([("attributes.at", ">=", "2024-03-05 10:00:00.5")], self.records),
             ([("attributes.at", "<=", datetime.date(2024, 3, 5))], Message),
             ([("attributes.at", ">=", datetime.date(2024, 3, 5))], self.records),
@@ -5033,7 +5023,6 @@ class PropertiesTemporalCanonicalCase(TestPropertiesMixin):
                             continue
                         self.assertEqual(stored[name], value)
                         self.assertEqual(cached[name], value)
-                    # a char property stores what it is given
                     self.assertEqual(stored["label"], "2024-03-05T10:00")
 
     def test_an_invalid_temporal_value_is_refused(self):
@@ -5125,15 +5114,12 @@ class PropertiesTemporalCanonicalCase(TestPropertiesMixin):
         )
         self.assertEqual(counts, {False: 2, datetime.date(2024, 3, 1): 1})
 
-        # a record carries the old value through a write of another property,
-        # in either form, and through a move to another container
         foreign = messages[0]
         foreign.attributes = {**foreign.attributes._values, "label": "kept"}
         foreign.attributes = foreign.read(["attributes"])[0]["attributes"]
         foreign.discussion = self.discussion
         foreign.discussion = discussion
         self.assertEqual(self._stored(foreign)[0]["when"], "hello")
-        # a value a parseable old text becomes is canonical once written
         messages[1].attributes = {**messages[1].attributes._values, "label": "moved"}
         self.assertEqual(self._stored(messages[1])[0]["when"], "2024-03-05")
 

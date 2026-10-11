@@ -52,7 +52,6 @@ class StripeCardCase(TestExpenseCommon):
 @tagged("post_install", "-at_install")
 class TestAuthorizationEvents(StripeCardCase):
     def _ingest(self, auth_object, refusal_reason=None):
-        # as the webhook runs it: elevated, in the company whose webhook it is
         expenses = self.env["hr.expense"].with_env(
             self.env(su=True, context={"allowed_company_ids": self.env.company.ids})
         )

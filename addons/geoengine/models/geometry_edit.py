@@ -55,10 +55,6 @@ def edit_shape(
     edit: str,
     record: BaseModel,
 ) -> str:
-    """The GeoJSON of ``value`` after ``edit`` with ``sketch``, in ``value``'s
-    own projection. ``add_area`` joins the drawn area to the shape,
-    ``cut_area`` takes it out (a hole when it lies inside), ``remove_part``
-    drops the part nearest to the clicked point."""
     if edit not in SHAPE_EDITS:
         raise ValueError(f"{edit!r} is not one of {SHAPE_EDITS}")
     shape = field.entry_to_shape(value, record=record)
@@ -100,8 +96,6 @@ def split_shape(
     line: GeometryValue,
     record: BaseModel,
 ) -> tuple[BaseGeometry, list[BaseGeometry]]:
-    """``shape`` cut by the drawn ``line``: what the record keeps (the parts the
-    line does not cross and the largest piece) and the other pieces."""
     if "Polygon" not in field.geo_type:
         raise UserError(record.env._("Only an area can be split."))
     cut = field.entry_to_shape(line, record=record)

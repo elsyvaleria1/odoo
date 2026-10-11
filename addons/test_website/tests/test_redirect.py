@@ -43,7 +43,6 @@ class TestRedirect(HttpCase):
         url = "/test_website/country/" + self.env["ir.http"]._slug(country_ad)
         redirect_url = url.replace("test_website", "redirected")
 
-        # [Public User] Open the original url and check redirect OK
         r = self.url_open(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.url.endswith(redirect_url), "Ensure URL got redirected")
@@ -56,7 +55,6 @@ class TestRedirect(HttpCase):
             "Ensure the url_for has replaced the href URL in the DOM",
         )
 
-        # [Logged In User] Open the original url and check redirect OK
         self.authenticate("portal_user", "portal_user")
         r = self.url_open(url)
         self.assertEqual(r.status_code, 200)
@@ -90,7 +88,6 @@ class TestRedirect(HttpCase):
             </t>
         """
 
-        # [Public User] Open the /test_view url and ensure urls are rewritten
         r = self.url_open("/test_view")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(
@@ -98,7 +95,7 @@ class TestRedirect(HttpCase):
             b'<a href="/get_new"></a><a href="/post_new"></a><a href="/get_post_new"></a>',
         )
 
-    @mute_logger("odoo.http")  # mute 403 warning
+    @mute_logger("odoo.http")
     def test_02_redirect_308_RequestUID(self):
         self.env["website.rewrite"].create(
             {
@@ -119,22 +116,8 @@ class TestRedirect(HttpCase):
         def _get_error_html(env, code, values):
             return code, f"CUSTOM {code}"
 
-        # Patch the *registry* class, not `website.models.ir_http.IrHttp`: each
-        # module declares a standalone AbstractModel and the inheritance chain
-        # is assembled by the registry, so the module class only carries the
-        # methods that module itself defines. `_get_error_html` lives in
-        # http_routing, and patching it here also keeps the stub in place
-        # whatever module ends up owning it.
-        #
-        # The stub returns `code` verbatim: it is an HTTP status now, where it
-        # used to double as a template token ("page_404"), hence the former
-        # `str(code).split('_')[-1]`. Template selection moved to
-        # `ir.http._get_error_template`.
         with patch.object(self.registry["ir.http"], "_get_error_html", _get_error_html):
-            # Patch will avoid to display real 404 page and regenerate assets each time and unlink old one.
-            # And it allow to be sur that exception id handled by handle_exception and return a "managed error" page.
 
-            # published
             resp = self.url_open(
                 f"/test_website/200/name-{rec_published.id}", allow_redirects=False
             )
@@ -172,7 +155,6 @@ class TestRedirect(HttpCase):
             self.assertEqual(resp.status_code, 200)
             self.assertURLEqual(resp.url, f"/test_website/308/name-{rec_published.id}")
 
-            # unexisting
             resp = self.url_open("/test_website/200/name-100", allow_redirects=False)
             self.assertEqual(resp.status_code, 308)
             self.assertURLEqual(
@@ -193,7 +175,6 @@ class TestRedirect(HttpCase):
             self.assertEqual(resp.status_code, 404)
             self.assertEqual(resp.text, "CUSTOM 404")
 
-            # unpublish
             resp = self.url_open(
                 f"/test_website/200/name-{rec_unpublished.id}", allow_redirects=False
             )
@@ -224,7 +205,6 @@ class TestRedirect(HttpCase):
             self.assertEqual(resp.status_code, 404)
             self.assertEqual(resp.text, "CUSTOM 404")
 
-            # with seo_name as slug
             rec_published.seo_name = "seo_name"
             rec_unpublished.seo_name = "seo_name"
 
@@ -284,9 +264,8 @@ class TestRedirect(HttpCase):
             "Redirection should have been applied, and query string should not have been duplicated.",
         )
 
-    @mute_logger("odoo.http")  # mute 403 warning
+    @mute_logger("odoo.http")
     def test_04_redirect_301_route_unpublished_record(self):
-        # 1. Accessing published record: Normal case, expecting 200
         rec1 = self.env["test.model"].create(
             {
                 "name": "301 test record",
@@ -297,12 +276,10 @@ class TestRedirect(HttpCase):
         r = self.url_open(url_rec1)
         self.assertEqual(r.status_code, 200)
 
-        # 2. Accessing unpublished record: expecting 404 for public users
         rec1.is_published = False
         r = self.url_open(url_rec1)
         self.assertEqual(r.status_code, 404)
 
-        # 3. Accessing unpublished record with redirect to a 404: expecting 404
         redirect = self.env["website.rewrite"].create(
             {
                 "name": "Test 301 Redirect route unpublished record",
@@ -314,8 +291,6 @@ class TestRedirect(HttpCase):
         r = self.url_open(url_rec1)
         self.assertEqual(r.status_code, 404)
 
-        # 4. Accessing unpublished record with redirect to another published
-        # record: expecting redirect to that record
         rec2 = rec1.copy({"is_published": True})
         url_rec2 = "/test_website/200/" + self.env["ir.http"]._slug(rec2)
         redirect.url_to = url_rec2
@@ -328,12 +303,10 @@ class TestRedirect(HttpCase):
 
     @mute_logger("odoo.http")
     def test_05_redirect_404_notfound_record(self):
-        # 1. Accessing unexisting record: raise 404
         url_rec1 = "/test_website/200/unexisting-100000"
         r = self.url_open(url_rec1)
         self.assertEqual(r.status_code, 404)
 
-        # 2. Accessing unpublished record with redirect to a 404: expecting 404
         redirect = self.env["website.rewrite"].create(
             {
                 "name": "Test 301 Redirect route unexisting record",
@@ -403,17 +376,14 @@ class TestRedirect(HttpCase):
             }
         )
 
-        # should match qs first
         resp = self.url_open("/foo?bar=1", allow_redirects=False)
         self.assertEqual(resp.status_code, 301)
         self.assertURLEqual(resp.headers.get("Location"), "/new-page-01?bar=1")
 
-        # should match qs first
         resp = self.url_open("/foo?bar=2", allow_redirects=False)
         self.assertEqual(resp.status_code, 301)
         self.assertURLEqual(resp.headers.get("Location"), "/new-page-10?qux=2&bar=2")
 
-        # should match no qs
         resp = self.url_open("/foo?bar=3", allow_redirects=False)
         self.assertEqual(resp.status_code, 301)
         self.assertURLEqual(resp.headers.get("Location"), "/new-page-11?bar=3")
@@ -422,8 +392,6 @@ class TestRedirect(HttpCase):
         self.assertEqual(resp.status_code, 301)
         self.assertURLEqual(resp.headers.get("Location"), "/new-page-11")
 
-        # we dont support wrong get order
-        # purpose is to support simple case like content.asp?id=xx
         resp = self.url_open("/foo?oups=1&bar=2", allow_redirects=False)
         self.assertEqual(resp.status_code, 301)
         self.assertURLEqual(resp.headers.get("Location"), "/new-page-11?oups=1&bar=2")

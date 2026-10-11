@@ -27,17 +27,11 @@ class ProjectGanttTestUi(HttpCase):
             name="Gilbert ProjectManager",
             tz="Europe/Brussels",
         )
-        # The test checks that the 'danger' state appears when an employee is
-        # overworked. This ensures that creating a task in the gantt view
-        # during the tour, triggers that warning.
         project = cls.env["project.project"].create(
             {
                 "name": "Test Project",
             }
         )
-        # allocated_hours sums the task's reservations, and a user without a
-        # resource has none, so the hours are stated: 1000 over three months is
-        # far past one month of any calendar, which is what "danger" means
         first_day_in_current_month = fields.Datetime.now() + relativedelta(
             day=1, hour=0, minute=0, second=0
         )

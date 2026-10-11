@@ -20,8 +20,6 @@ class TestRefuseOfferWizard(TransactionCase):
         )
 
     def test_refuse_without_selection_is_rejected(self):
-        """Check that refusing with no offer selected raises (boundary
-        case)."""
         wizard = self.env["wizard.hr.contract.salary.offer.refuse"].create(
             {"refusal_reason": self.reason.id}
         )
@@ -29,8 +27,6 @@ class TestRefuseOfferWizard(TransactionCase):
             wizard.action_refuse()
 
     def test_refuse_single_offer_opens_its_form(self):
-        """Check that a single offer is refused with reason and date, and the
-        action targets its form."""
         offer = self.env["hr.contract.salary.offer"].create({})
         action = self._wizard(offer).action_refuse()
 
@@ -41,8 +37,6 @@ class TestRefuseOfferWizard(TransactionCase):
         self.assertEqual(action["view_mode"], "form")
 
     def test_refuse_multiple_offers_lists_them(self):
-        """Check that refusing a batch refuses every offer and scopes the
-        action domain to the batch."""
         offers = self.env["hr.contract.salary.offer"].create([{}, {}])
         action = self._wizard(offers).action_refuse()
 
@@ -60,8 +54,6 @@ class TestUnlinkArchivedVersions(TransactionCase):
         live_version = employee.version_id
         self.assertTrue(live_version.active)
 
-        # The draft version the salary configurator leaves behind: archived,
-        # tied to the applicant, on an employee who already works here.
         archived = self.env["hr.version"].create(
             {
                 "employee_id": employee.id,
@@ -81,12 +73,6 @@ class TestUnlinkArchivedVersions(TransactionCase):
         self.assertFalse(archived.exists(), "the archived version still goes")
 
     def test_draft_hire_is_still_removed(self):
-        """The cleanup must still do the job it was written for.
-
-        The configurator creates the candidate's employee archived and only
-        activates it once every signature is in, so a never-activated
-        employee is a draft hire and goes with the refused offer.
-        """
         applicant = self.env["hr.applicant"].create({"partner_name": "Candidate"})
         employee = self.env["hr.employee"].create(
             {"name": "Draft Hire", "active": False}

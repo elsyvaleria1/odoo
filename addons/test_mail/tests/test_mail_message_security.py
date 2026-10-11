@@ -91,7 +91,6 @@ class MessageAccessCommon(MailCommon, HttpCase):
 class TestMailMessageAccess(MessageAccessCommon):
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_assert_initial_values(self):
-        """Just ensure tests data"""
         for record in (
             self.record_public
             + self.record_portal
@@ -123,7 +122,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 self.assertFalse(msg.partner_ids)
                 self.assertEqual(msg.subtype_id, subtype_id)
 
-        # public user access check
         for allowed in self.record_public:
             allowed.with_user(self.user_public).read(["name"])
         for forbidden in (
@@ -148,7 +146,6 @@ class TestMailMessageAccess(MessageAccessCommon):
             with self.assertRaises(AccessError):
                 forbidden.with_user(self.user_public).write({"name": "Update"})
 
-        # portal user access check
         for allowed in self.record_public + self.record_portal + self.record_portal_ro:
             allowed.with_user(self.user_portal).read(["name"])
         for forbidden in (
@@ -172,7 +169,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         self.record_followers.with_user(self.user_portal).read(["name"])
         self.record_followers.with_user(self.user_portal).write({"name": "Update"})
 
-        # internal user access check
         for allowed in (
             self.record_public
             + self.record_portal
@@ -197,7 +193,6 @@ class TestMailMessageAccess(MessageAccessCommon):
             with self.assertRaises(AccessError):
                 forbidden.with_user(self.user_employee).write({"name": "Update"})
 
-        # elevated user access check
         for allowed in (
             self.record_public
             + self.record_portal
@@ -209,24 +204,12 @@ class TestMailMessageAccess(MessageAccessCommon):
         ):
             allowed.with_user(self.user_admin).read(["name"])
 
-    # ------------------------------------------------------------
-    # CREATE
-    # - Criterions
-    #  - "private message" (no model, no res_id) -> deprecated
-    #  - follower of document
-    #  - document-based (write or create, using '_mail_get_operation_for_mail_message_operation'
-    #    hence '_mail_post_access' by default)
-    #  - notified of parent message
-    # ------------------------------------------------------------
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_create(self):
-        """Test 'group_user' creation rules"""
-        # prepare 'notified of parent' condition
         admin_msg = self.record_admin.message_ids[-1]
         admin_msg.write({"partner_ids": [(4, self.user_employee.partner_id.id)]})
 
-        # prepare 'followers' condition
         record_admin_fol = self.env["mail.test.access"].create(
             {
                 "access": "admin",
@@ -236,9 +219,7 @@ class TestMailMessageAccess(MessageAccessCommon):
         record_admin_fol.message_subscribe(self.user_employee.partner_id.ids)
 
         for record, msg_vals, should_crash, reason in [
-            # private-like
             (self.env["mail.test.access"], {}, False, "Private message like is ok"),
-            # document based
             (self.record_internal, {}, False, "W Access on record"),
             (
                 self.record_internal,
@@ -256,15 +237,14 @@ class TestMailMessageAccess(MessageAccessCommon):
             (
                 record_admin_fol,
                 {
-                    "reply_to": "avoid.catchall@my.test.com",  # otherwise crashes
+                    "reply_to": "avoid.catchall@my.test.com",
                 },
                 False,
                 "Followers > no access on record",
             ),
-            # parent based
             (
                 self.record_admin,
-                {  # note: force reply_to normally computed by message_post avoiding ACLs issues
+                {
                     "parent_id": admin_msg.id,
                 },
                 False,
@@ -307,10 +287,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                         )
                     )
                     if record:
-                        # TDE note: due to parent_id flattening, doing message_post
-                        # with parent_id which should allow posting crashes, as
-                        # parent_id is changed to an older message the employee cannot
-                        # access. Won't fix that in stable.
                         if record == self.record_admin and "parent_id" in msg_vals:
                             continue
                         record.with_user(self.user_employee).message_post(
@@ -318,7 +294,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                         )
 
     def test_access_create_customized(self):
-        """Test '_mail_get_operation_for_mail_message_operation' support"""
         record = (
             self.env["mail.test.access.custo"]
             .with_user(self.user_employee)
@@ -327,15 +302,13 @@ class TestMailMessageAccess(MessageAccessCommon):
         for user in self.user_employee + self.user_portal:
             with self.subTest(user_name=user.name):
                 _message = record.with_user(user).message_post(
-                    # attachments=[('Attachment', b'My attachment')],  # FIXME
                     body="A message",
                     subtype_id=self.env.ref("mail.mt_comment").id,
                 )
-        # lock -> see '_mail_get_operation_for_mail_message_operation'
         record.write({"is_locked": True})
         record.message_unsubscribe(
             partner_ids=self.partner_employee.ids
-        )  # avoid acl conflict with those follower-based
+        )
         record.invalidate_model()
         for user in self.user_employee + self.user_portal:
             with self.subTest(user_name=user.name):
@@ -344,21 +317,16 @@ class TestMailMessageAccess(MessageAccessCommon):
                         body="Another portal message",
                         subtype_id=self.env.ref("mail.mt_comment").id,
                     )
-        # readonly -> "read" access sufficient on unlocked records, see '_mail_get_operation_for_mail_message_operation'
         record.sudo().write({"is_locked": False, "is_readonly": True})
         record.invalidate_model()
         for user in self.user_employee + self.user_portal:
             with self.subTest(user_name=user.name):
-                # cannot write
                 with self.assertRaises(AccessError):
                     record.with_user(user).write({"name": "Can Update"})
-                # can post
                 _message = record.with_user(user).message_post(
-                    # attachments=[('Attachment', b'My attachment')],  # FIXME
                     body="Another portal message",
                     subtype_id=self.env.ref("mail.mt_comment").id,
                 )
-                # controller check
                 self.authenticate(user.login, user.login)
                 res = self.call_jsonrpc(
                     route="/mail/message/post",
@@ -373,8 +341,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 self.assertEqual(len(res["mail.message"]), 1)
 
     def test_access_create_mail_post_access(self):
-        """Test 'mail_post_access' support that allows creating a message with
-        other rights than 'write' access on document"""
         for post_value, should_crash in [
             ("read", False),
             ("write", True),
@@ -403,12 +369,9 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_create_portal(self):
-        """Test group_portal creation rules"""
-        # prepare 'notified of parent' condition
         admin_msg = self.record_admin.message_ids[-1]
         admin_msg.write({"partner_ids": [(4, self.user_portal.partner_id.id)]})
 
-        # prepare 'followers' condition
         record_admin_fol = self.env["mail.test.access"].create(
             {
                 "access": "admin",
@@ -418,21 +381,18 @@ class TestMailMessageAccess(MessageAccessCommon):
         record_admin_fol.message_subscribe(self.user_portal.partner_id.ids)
 
         for record, msg_vals, should_crash, reason in [
-            # private-like
             (self.env["mail.test.access"], {}, False, "Private message like is ok"),
-            # document based
             (self.record_portal, {}, False, "W Access on record"),
             (self.record_portal_ro, {}, True, "No W Access on record"),
             (self.record_internal, {}, True, "No R/W Access on record"),
             (
                 record_admin_fol,
                 {
-                    "reply_to": "avoid.catchall@my.test.com",  # otherwise crashes
+                    "reply_to": "avoid.catchall@my.test.com",
                 },
                 False,
                 "Followers > no access on record",
             ),
-            # parent based
             (
                 self.record_admin,
                 {
@@ -441,7 +401,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "No access on record but reply to notified parent",
             ),
-            # internal = forbidden (internal users only)
             (
                 self.record_portal,
                 {"is_internal": True},
@@ -511,7 +470,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                         )
                     )
 
-        # check '_mail_post_access', reducing W to R
         with patch.object(MailTestAccess, "_mail_post_access", "read"):
             _message = (
                 self.env["mail.message"]
@@ -528,14 +486,12 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_access_create_public(self):
-        """Public can never create messages"""
         for record in [
-            self.env["mail.test.access"],  # old private message: no document
-            self.record_public,  # read access
-            self.record_portal,  # read access
+            self.env["mail.test.access"],
+            self.record_public,
+            self.record_portal,
         ]:
             with self.subTest(record=record):
-                # can never create message, simple
                 with self.assertRaises(AccessError):
                     self.env["mail.message"].with_user(self.user_public).create(
                         {
@@ -547,9 +503,6 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.tests")
     def test_access_create_wo_parent_access(self):
-        """Purpose is to test posting a message on a record whose first message / parent
-        is not accessible by current user. This cause issues notably when computing
-        references, checking ancestors message_ids."""
         test_record = (
             self.env["mail.test.simple"]
             .with_context(self._test_context)
@@ -574,7 +527,6 @@ class TestMailMessageAccess(MessageAccessCommon):
             subject="Subject",
             subtype_xmlid="mail.mt_note",
         )
-        # portal user have no rights to read the message
         with self.assertRaises(AccessError):
             message.with_user(self.user_portal).read(["subject", "body"])
 
@@ -582,8 +534,6 @@ class TestMailMessageAccess(MessageAccessCommon):
             with self.assertRaises(AccessError):
                 message.with_user(self.user_portal).read(["subject", "body"])
 
-            # parent message is accessible to references notification mail values
-            # for _notify method and portal user have no rights to send the message for this model
             with self.mock_mail_gateway():
                 new_msg = test_record.with_user(self.user_portal).message_post(
                     body="<p>This is Second Message</p>",
@@ -612,24 +562,12 @@ class TestMailMessageAccess(MessageAccessCommon):
         self.assertTrue(new_mail)
         self.assertEqual(new_msg.parent_id, message)
 
-    # ------------------------------------------------------------
-    # READ
-    # - Criterions
-    #  - author
-    #  - creator (might post on behalf of someone else)
-    #  - recipients / notified
-    #  - document-based: read, using '_mail_get_operation_for_mail_message_operation'
-    # - share users: limited to 'not internal' (flag or subtype)
-    # ------------------------------------------------------------
 
     def test_access_read(self):
-        """Read access check for internal users."""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (self.record_internal.message_ids[0], {}, False, "R Access on record"),
             (self.record_internal_ro.message_ids[0], {}, False, "R Access on record"),
             (self.record_admin.message_ids[0], {}, True, "No access on record"),
-            # author
             (
                 self.record_admin.message_ids[0],
                 {
@@ -646,7 +584,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Creator > no access on record",
             ),
-            # notified
             (
                 self.record_admin.message_ids[0],
                 {
@@ -694,7 +631,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                     msg.write(original_vals)
 
     def test_access_read_customized(self):
-        """Test '_mail_get_operation_for_mail_message_operation' support"""
         records = (
             self.env["mail.test.access.custo"]
             .with_user(self.user_admin)
@@ -712,35 +648,30 @@ class TestMailMessageAccess(MessageAccessCommon):
                 body=f"AnchorForTest / A message from {self.user_admin.name} on {record.name}",
                 subtype_id=self.env.ref("mail.mt_comment").id,
             )
-        # lock -> see '_mail_get_operation_for_mail_message_operation', cannot read locked message
-        # without write access, with is not granted for employees
         with self.assertRaises(
             AccessError
-        ):  # write access not granted on locked -> cannot read message
+        ):
             messages_all[2].with_user(self.user_employee).read(["subject"])
         with self.assertRaises(
             AccessError
-        ):  # also working in case of batch ok / not ok
+        ):
             messages_all.with_user(self.user_employee).read(["subject"])
         messages_all[0].with_user(self.user_employee).read(["subject"])
         messages_all[1].with_user(self.user_employee).read(
             ["subject"]
-        )  # can read message of readonly
+        )
 
-        with self.assertRaises(AccessError):  # fetch should be symmetric to read
+        with self.assertRaises(AccessError):
             _message = messages_all[2].with_user(self.user_employee).copy_data()
 
-        with self.assertRaises(AccessError):  # no write access at all
+        with self.assertRaises(AccessError):
             messages_all.with_user(self.user_portal).read(["subject"])
         messages_all.with_user(self.user_admin).read(["subject"])
 
     def test_access_read_portal(self):
-        """Read access check for portal users"""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (self.record_portal.message_ids[0], {}, False, "Access on record"),
             (self.record_internal.message_ids[0], {}, True, "No access on record"),
-            # author
             (
                 self.record_internal.message_ids[0],
                 {
@@ -749,7 +680,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Author > no access on record",
             ),
-            # notified
             (
                 self.record_admin.message_ids[0],
                 {
@@ -766,7 +696,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Notified > no access on record",
             ),
-            # forbidden: internal (subtype / message)
             (
                 self.record_portal.message_ids[0],
                 {
@@ -817,7 +746,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Internal message (notification) can be read by portal users",
             ),
-            # forbidden: other
             (
                 self.record_portal.message_ids[0],
                 {
@@ -850,23 +778,17 @@ class TestMailMessageAccess(MessageAccessCommon):
                     self.env.invalidate_all()
 
     def test_access_read_public(self):
-        """Read access check for public users"""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (self.record_public.message_ids[0], {}, False, "Access on record"),
             (self.record_portal.message_ids[0], {}, True, "No access on record"),
-            # author
             (
                 self.record_internal.message_ids[0],
                 {
                     "author_id": self.user_public.partner_id.id,
                 },
                 True,
-                # every anonymous post is authored by the public partner: owning
-                # them would show each visitor what any other visitor posted
                 "Author > no access on record: public authorship is shared",
             ),
-            # notified
             (
                 self.record_admin.message_ids[0],
                 {
@@ -883,7 +805,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Notified > no access on record",
             ),
-            # forbidden
             (
                 self.record_public.message_ids[0],
                 {
@@ -924,8 +845,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                     self.env.invalidate_all()
 
     def test_access_search_public_author(self):
-        """A message posted as the public partner on a record the public user
-        cannot read is neither searchable nor writable by the public user."""
         msg = self.record_internal.message_ids[0]
         msg.write({"author_id": self.user_public.partner_id.id})
         self.env.invalidate_all()
@@ -937,18 +856,11 @@ class TestMailMessageAccess(MessageAccessCommon):
         public_msg.write({"author_id": self.user_public.partner_id.id})
         self.assertIn(public_msg, public_messages.search([("id", "=", public_msg.id)]))
 
-    # ------------------------------------------------------------
-    # UNLINK
-    # - Criterion: document-based (write or create), using '_mail_get_operation_for_mail_message_operation'
-    # ------------------------------------------------------------
 
     def test_access_unlink(self):
-        """Unlink access check for internal users"""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (self.record_portal.message_ids[0], {}, False, "W Access on record"),
             (self.record_internal_ro.message_ids[0], {}, True, "R Access on record"),
-            # notified
             (
                 self.record_admin.message_ids[0],
                 {
@@ -976,9 +888,7 @@ class TestMailMessageAccess(MessageAccessCommon):
                     msg.with_user(self.user_portal).unlink()
 
     def test_access_unlink_portal(self):
-        """Unlink access check for portal users."""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (
                 self.record_portal.message_ids[0],
                 {},
@@ -986,7 +896,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 "W Access on record but unlink limited",
             ),
             (self.record_portal_ro.message_ids[0], {}, True, "R Access on record"),
-            # notified
             (
                 self.record_admin.message_ids[0],
                 {
@@ -1013,22 +922,12 @@ class TestMailMessageAccess(MessageAccessCommon):
                 else:
                     msg.with_user(self.user_portal).unlink()
 
-    # ------------------------------------------------------------
-    # WRITE
-    # - Criterions
-    #   - author
-    #   - recipients / notified
-    #   - document-based (write or create), using '_mail_get_operation_for_mail_message_operation'
-    # ------------------------------------------------------------
 
     def test_access_write(self):
-        """Test updating message content as internal user"""
         for msg, msg_vals, should_crash, reason in [
-            # document based
             (self.record_internal.message_ids[0], {}, False, "W Access on record"),
             (self.record_internal_ro.message_ids[0], {}, True, "No W Access on record"),
             (self.record_admin.message_ids[0], {}, True, "No access on record"),
-            # author
             (
                 self.record_admin.message_ids[0],
                 {
@@ -1037,9 +936,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 False,
                 "Author > no access on record",
             ),
-            # notified: being a recipient / having a notification grants read
-            # visibility only, NOT the right to alter another author's message on
-            # a document one cannot access (see mail.message._check_access).
             (
                 self.record_admin.message_ids[0],
                 {
@@ -1075,16 +971,13 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_write_envelope(self):
-        """Test updating message envelope require some privileges"""
         message = self.record_internal.with_user(self.user_employee).message_ids[0]
         message.write({"body": "Update Me"})
         with self.assertRaises(AccessError):
             message.write({"model": "res.partner"})
-        # To change in 18+
         message.write({"partner_ids": [(4, self.user_portal_2.partner_id.id)]})
         with self.assertRaises(AccessError):
             message.write({"res_id": self.record_public.id})
-        # To change in 18+
         message.write(
             {
                 "notification_ids": [
@@ -1095,7 +988,6 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_write_portal_notification(self):
-        """Test updating message notification content as portal user"""
         self.record_followers.message_subscribe(self.user_portal.partner_id.ids)
         test_record = self.record_followers.with_user(self.user_portal)
         test_record.read(["name"])
@@ -1108,7 +1000,6 @@ class TestMailMessageAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_access_write_portal_envelope(self):
-        """A portal author edits the content of its message, never its envelope"""
         message = self.record_portal.with_user(self.user_portal).message_post(
             body="Portal Comment",
             message_type="comment",
@@ -1132,13 +1023,8 @@ class TestMailMessageAccess(MessageAccessCommon):
         self.assertEqual(message_su.read(list(envelope))[0], before)
         self.assertEqual(message_su.author_id, self.user_portal.partner_id)
 
-    # ------------------------------------------------------------
-    # SEARCH
-    # ------------------------------------------------------------
 
     def test_search(self):
-        """Test custom 'search' implemented on 'mail.message' that replicates
-        custom rules defined on 'read' override"""
         base_msg_vals = {
             "message_type": "comment",
             "model": self.record_internal._name,
@@ -1242,11 +1128,8 @@ class TestMailMessageAccess(MessageAccessCommon):
                 (self.user_admin, []),
             ],
             [
-                # public: record with access
                 msg_record_public,
-                # portal: mentionned + record with access, if published
                 msgs[0] + msgs[3] + msg_record_portal + msg_record_public,
-                # employee
                 msgs[1:6]
                 + msg_record_portal
                 + msg_record_portal_internal
@@ -1271,7 +1154,6 @@ class TestMailMessageAccess(MessageAccessCommon):
                 )
 
     def test_search_customized(self):
-        """Test '_mail_get_operation_for_mail_message_operation' support in search"""
         records = (
             self.env["mail.test.access.custo"]
             .with_user(self.user_admin)
@@ -1281,7 +1163,7 @@ class TestMailMessageAccess(MessageAccessCommon):
                     {
                         "name": "Open RO",
                         "is_readonly": True,
-                    },  # internal can read thus search
+                    },
                     {"name": "Soonish Locked"},
                 ]
             )
@@ -1308,8 +1190,6 @@ class TestMailMessageAccess(MessageAccessCommon):
         )
         self.assertEqual(found_por, messages_all)
 
-        # lock -> locked records need 'write' access, as defined in '_mail_get_operation_for_mail_message_operation'
-        # hence messages are out of search, symmetrical to reading therm
         records[2].write({"is_locked": True, "name": "Locked !"})
         records[2].flush_recordset()
         found_emp = (
@@ -1348,20 +1228,16 @@ class TestMessageSubModelAccess(MessageAccessCommon):
                 "res_id": message.id,
             }
         )
-        # attach the attachment to the message
         message.write({"attachment_ids": [(4, attachment.id)]})
         message.write({"partner_ids": [(4, self.user_employee.partner_id.id)]})
         message.with_user(self.user_employee).read()
-        # Test: Employee has access to attachment, ok because they can read message
         attachment.with_user(self.user_employee).read(["name", "datas"])
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_mail_follower(self):
-        """Read access check on sub entities of mail.message"""
         internal_record = self.record_internal.with_user(self.user_employee)
         internal_record.message_subscribe(partner_ids=self.user_portal.partner_id.ids)
 
-        # employee can access
         follower = internal_record.message_follower_ids.filtered(
             lambda f: f.partner_id == self.user_portal.partner_id
         )
@@ -1369,7 +1245,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
         with self.assertRaises(AccessError):
             follower.with_user(self.user_portal).read(["partner_id"])
 
-        # employee cannot update
         with self.assertRaises(AccessError):
             follower.write({"partner_id": self.user_admin.partner_id.id})
         follower.with_user(self.user_admin).write(
@@ -1378,7 +1253,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_mail_notification(self):
-        """Limit update of notifications for internal users"""
         internal_record = self.record_internal.with_user(self.user_admin)
         message = internal_record.message_post(
             body="Hello People",
@@ -1402,8 +1276,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
             lambda n: n.res_partner_id == self.user_employee.partner_id
         )
         notif_own.write({"is_read": True})
-        # with self.assertRaises(AccessError):
-        #     notif_own.write({'author_id': self.user_portal.partner_id.id})
         with self.assertRaises(AccessError):
             notif_own.write({"mail_message_id": self.record_internal.message_ids[0]})
         with self.assertRaises(AccessError):
@@ -1411,7 +1283,6 @@ class TestMessageSubModelAccess(MessageAccessCommon):
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_mail_notification_portal(self):
-        """In any case, portal should not modify notifications"""
         with self.assertRaises(AccessError):
             self.assertFalse(
                 self.env["mail.notification"]

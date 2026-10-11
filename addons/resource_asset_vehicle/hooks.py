@@ -61,8 +61,6 @@ def pre_init_hook(env: api.Environment) -> None:
 
 
 def post_init_hook(env: api.Environment) -> None:
-    """A vehicle-kind resource registered before this module gets the vehicle
-    row that extends it."""
     Vehicle = env["resource.asset.vehicle"].with_context(active_test=False)
     resources = (
         env["resource.resource"]

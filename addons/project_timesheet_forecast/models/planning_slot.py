@@ -72,9 +72,6 @@ class PlanningSlot(models.Model):
                 forecast.percentage_hours = 0
 
     def _get_domain_timesheet(self):
-        """
-        Returns the domain used to fetch the timesheets, None is returned in case there would be no match
-        """
         self.check_singleton()
         if not self.project_id:
             return None
@@ -120,9 +117,6 @@ class PlanningSlot(models.Model):
         )
         if not datable:
             return
-        # One search for the whole recordset, bucketed by the pair
-        # `_get_domain_timesheet` matches on; searching per slot is a query per
-        # slot, and every timesheet written to the project recomputes all of them.
         employee_ids = datable.employee_id.ids
         if not all(forecast.employee_id for forecast in datable):
             employee_ids = [*employee_ids, False]
@@ -162,9 +156,6 @@ class PlanningSlot(models.Model):
     @api.depends_context("uid")
     @api.depends("user_id", "timesheet_ids")
     def _compute_can_open_timesheet(self) -> None:
-        # A timesheet approver will be able to open any slot's timesheets, however
-        # a regular employee will need to be a timesheet user AND be assigned to this slot
-        # to be able to open them.
         is_approver = self.env.user.has_group(
             "hr_timesheet.group_hr_timesheet_approver"
         )
@@ -223,7 +214,6 @@ class PlanningSlot(models.Model):
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "hr_timesheet.timesheet_action_all"
         )
-        # Remove all references to the original action, to avoid studio and be able to change the action name
         action.pop("id", None)
         action.pop("xml_id", None)
         action.pop("display_name", None)

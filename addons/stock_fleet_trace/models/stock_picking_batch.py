@@ -10,7 +10,6 @@ from odoo.addons.stock_fleet.models.stock_picking_trip import (
     UNBATCH_UNDELIVERED,
 )
 
-# lets a delivery leave a loaded trip, or join one: never a caller's to pass
 declare_authority_keys("stock_fleet_trace", "trip_handover")
 
 
@@ -141,7 +140,6 @@ class StockPickingBatch(models.Model):
                 batch.trip_state = "returned"
 
     def _trip_closes_at_last_stop(self) -> bool:
-        # goods refused on a traced trip ride back to be unloaded and counted
         return super()._trip_closes_at_last_stop() and not self.has_trip_trace
 
     @api.depends("trip_location_ids")
@@ -185,7 +183,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _check_trip_vehicle_empty(self):
-        """A vehicle loads a trip only once the goods of its last trip are off."""
         self.check_singleton()
         leftover = self.env["stock.quant"].search(
             [
@@ -207,7 +204,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _check_trip_loaded_keeps_its_pickings(self, removed):
-        """A delivery whose goods are on the vehicle leaves only once unloaded."""
         self.check_singleton()
         on_board = removed.move_ids.move_line_ids.filtered(
             lambda line: (
@@ -226,7 +222,6 @@ class StockPickingBatch(models.Model):
             )
 
     def action_cancel(self):
-        # Read from the vehicle now, not from a weight computed before the unload.
         loaded = self.filtered(
             lambda b: (
                 b.date_loaded
@@ -244,22 +239,11 @@ class StockPickingBatch(models.Model):
             )
         return super().action_cancel()
 
-    # ------------------------------------------------------------------
-    # Checkpoints
-    # ------------------------------------------------------------------
     def _trip_checkpoint(self, event_type, **vals):
-        """Record an event on the trip's log.
-
-        :param str event_type: a checkpoint type
-        :return: the checkpoint
-        :rtype: recordset
-        """
         self.check_singleton()
         method = self.env.context.get("trip_checkpoint_method")
         if method:
             vals.setdefault("method", method)
-        # An event captured on the phone keeps its own time and place, and is
-        # someone's word however it was captured.
         offline = self.env.context.get("trip_offline_capture")
         if offline:
             note = self.env._("Captured offline %s", offline["client_uuid"])
@@ -288,7 +272,6 @@ class StockPickingBatch(models.Model):
         )
 
     def action_trip_verify_log(self) -> dict:
-        """Check that no checkpoint was altered since it was sealed."""
         self.check_singleton()
         broken = self.trip_checkpoint_ids._check_chain()
         if broken:
@@ -312,19 +295,12 @@ class StockPickingBatch(models.Model):
             },
         }
 
-    # ------------------------------------------------------------------
-    # What is on the vehicle
-    # ------------------------------------------------------------------
     def _trip_quants(self):
         self.check_singleton()
         return self._trip_quants_in(self.trip_location_ids)
 
     @api.model
     def _trip_quants_in(self, locations):
-        """The goods in ``locations``, as stock quants with a quantity.
-
-        :rtype: recordset
-        """
         if not locations:
             return self.env["stock.quant"]
         return self.env["stock.quant"].search(
@@ -338,7 +314,6 @@ class StockPickingBatch(models.Model):
         return self._trip_weight_on_board_of(self.trip_location_ids)
 
     def _trip_location_holding(self, product, lot):
-        """Return the vehicle location of this trip holding ``product``/``lot``."""
         self.check_singleton()
         quants = self._trip_quants().filtered(
             lambda q: q.product_id == product and (not lot or q.trace_id == lot)
@@ -348,11 +323,6 @@ class StockPickingBatch(models.Model):
     def _trip_free_reservation(
         self, location, product, lot, quantity, picking=None
     ) -> None:
-        """Release ``quantity`` of the deliveries' reservation in ``location``.
-
-        Goods lost on the route can no longer be delivered; the deliveries that
-        counted on them stop holding them, the named one first.
-        """
         self.check_singleton()
         lines = self.env["stock.move.line"].search(
             [
@@ -365,8 +335,6 @@ class StockPickingBatch(models.Model):
             lines = lines.filtered(lambda ml: ml.trace_id == lot)
         if picking:
             lines = lines.sorted(lambda ml: ml.picking_id != picking)
-        # Goods nobody reserved (a rejection) are lost first: no customer's
-        # delivery shrinks while free goods of the same product are on board.
         quants = self.env["stock.quant"].search(
             [("location_id", "=", location.id), ("product_id", "=", product.id)]
             + ([("trace_id", "=", lot.id)] if lot else [])
@@ -385,9 +353,6 @@ class StockPickingBatch(models.Model):
             )
             remaining -= taken
 
-    # ------------------------------------------------------------------
-    # Moving goods onto, between and off vehicles
-    # ------------------------------------------------------------------
     def _trip_support_picking(self, source, destination, kind):
         self.check_singleton()
         warehouse = self.picking_type_id.warehouse_id
@@ -404,20 +369,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_reroute(self, moves, destination, kind, picking, target=None):
-        """Put a leg in front of pending deliveries, carrying what they reserved.
-
-        Each delivery keeps its goods: its reservation is released, a move takes
-        the same lots from where they are to ``destination``, and that move becomes
-        the one the delivery draws from, so the chain SHIP -> leg -> OUT holds.
-
-        :param recordset moves: pending outgoing moves with reserved lines
-        :param recordset destination: where the leg leaves the goods
-        :param str kind: the trip movement kind of the leg
-        :param recordset picking: the internal transfer the legs belong to
-        :param recordset target: on a handover, the trip receiving the goods
-        :return: the legs created
-        :rtype: recordset
-        """
         self.check_singleton()
         Move = self.env["stock.move"]
         legs = Move
@@ -460,7 +411,6 @@ class StockPickingBatch(models.Model):
         if not legs:
             return legs
         legs._action_confirm(merge=False)
-        # Confirming may reserve on its own; the legs carry exactly what was held.
         legs._unreserve()
         for leg, reserved in plans:
             self.env["stock.move.line"].create(
@@ -483,7 +433,6 @@ class StockPickingBatch(models.Model):
         return legs
 
     def _trip_move_free_goods(self, location, destination, kind, picking, target=None):
-        """Move what nobody reserved in ``location`` (rejections, surplus)."""
         self.check_singleton()
         Move = self.env["stock.move"]
         free = defaultdict(list)
@@ -539,12 +488,8 @@ class StockPickingBatch(models.Model):
     @staticmethod
     def _trip_validate_support(picking) -> None:
         picking.move_ids.picked = True
-        # Whether an expired lot may travel was decided on the deliveries (the
-        # expired-lot guard); moving it between our own locations asks nothing.
         picking.with_context(skip_expired=True).button_validate(skip_backorder=True)
         if picking.state != "done":
-            # A wizard left unanswered would leave the goods off the vehicle while
-            # the trip reads loaded.
             raise UserError(
                 picking.env._(
                     "Transfer %s of the trip could not be validated: validate it "
@@ -554,7 +499,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _trip_pending_delivery_moves(self, locations):
-        """Outgoing moves still holding goods in ``locations``."""
         return (
             self.env["stock.move.line"]
             .search(
@@ -567,9 +511,6 @@ class StockPickingBatch(models.Model):
             .move_id
         )
 
-    # ------------------------------------------------------------------
-    # Loading, departure, return, unloading
-    # ------------------------------------------------------------------
     def _trip_departure_missing(self):
         missing = super()._trip_departure_missing()
         if self.has_trip_trace and not self.fuel_departure:
@@ -577,7 +518,6 @@ class StockPickingBatch(models.Model):
         return missing
 
     def action_trip_load(self) -> None:
-        """Move the goods of every delivery onto the vehicle."""
         self.check_singleton()
         if self.date_loaded:
             raise UserError(self.env._("Trip %s is already loaded.", self.name))
@@ -603,8 +543,6 @@ class StockPickingBatch(models.Model):
                     pickings=", ".join(not_ready.mapped("name")),
                 )
             )
-        # Without it no delivery requires a trip, and every one would be
-        # blamed below on a carrier it does not have.
         if not self.picking_type_id.dispatch_batch_required:
             raise UserError(
                 self.env._(
@@ -615,8 +553,6 @@ class StockPickingBatch(models.Model):
                     type=self.picking_type_id.display_name,
                 )
             )
-        # Goods that leave with a third-party carrier or the customer never
-        # board our vehicle; stock_fleet_delivery tells them apart.
         off_fleet = self.picking_ids.filtered(lambda p: not p._requires_trip())
         if off_fleet:
             raise UserError(
@@ -628,16 +564,10 @@ class StockPickingBatch(models.Model):
                     pickings=", ".join(off_fleet.mapped("name")),
                 )
             )
-        # Expired product does not leave the warehouse without an approver's
-        # signature: where the delivery still draws from inside it (one-step
-        # warehouses), the check happens here, before the goods board.
         for picking in self.picking_ids:
             if hasattr(picking, "_check_no_expired_lots"):
                 picking._check_no_expired_lots()
         self._check_trip_vehicle_empty()
-        # "Deliver all at once" is met here: every delivery is fully reserved.
-        # From now on what travels is what is on board, and a loss or a handover
-        # must not hold the rest of the delivery back.
         self.picking_ids.filtered(lambda p: p.move_type == "one").write(
             {"move_type": "direct"}
         )
@@ -690,10 +620,6 @@ class StockPickingBatch(models.Model):
         }
 
     def _trip_load_free_stock(self, quantities) -> None:
-        """Board ``quantities`` no delivery asks for, to be sold from the vehicle.
-
-        :param list quantities: (product, quantity) pairs in the product's unit
-        """
         self.check_singleton()
         if self.date_departure:
             raise UserError(
@@ -810,7 +736,6 @@ class StockPickingBatch(models.Model):
         return res
 
     def action_trip_unload(self):
-        """Take the goods off a loaded trip that will not leave."""
         self.check_singleton()
         if not self.date_loaded or self.date_departure:
             raise UserError(
@@ -823,12 +748,6 @@ class StockPickingBatch(models.Model):
         return self.action_trip_open_unload()
 
     def _trip_create_unload(self):
-        """Prepare the unloading of what is left on the vehicle.
-
-        Goods a delivery still holds go back to where deliveries leave from, still
-        reserved to it; everything else goes to the warehouse stock. The warehouse
-        confirms the quantities it counts.
-        """
         self.check_singleton()
         warehouse = self.picking_type_id.warehouse_id
         pickings = self.env["stock.picking"]
@@ -891,7 +810,6 @@ class StockPickingBatch(models.Model):
         return action
 
     def _trip_after_unload(self) -> None:
-        """The warehouse confirmed an unloading: rebind deliveries, reconcile."""
         self.check_singleton()
         self._check_trip_offline_events_resolved()
         self._check_trip_partial_review_resolved()
@@ -905,11 +823,7 @@ class StockPickingBatch(models.Model):
             self._trip_checkpoint("unload", method="system")
             self._trip_compute_balance()
 
-    # ------------------------------------------------------------------
-    # Balance
-    # ------------------------------------------------------------------
     def _trip_compute_balance(self):
-        """Rebuild the balance from the trip's done movements."""
         self.check_singleton()
         Line = self.env["stock.move.line"]
         rows = defaultdict(lambda: defaultdict(float))
@@ -1025,14 +939,7 @@ class StockPickingBatch(models.Model):
         for batch in self:
             batch._trip_compute_balance()
 
-    # ------------------------------------------------------------------
-    # Handover after a breakdown
-    # ------------------------------------------------------------------
     def _trip_handover(self, target) -> None:
-        """Move this trip's pending deliveries and load onto ``target``'s vehicle.
-
-        :param recordset target: a trip that has not departed, on another vehicle
-        """
         self.check_singleton()
         pending = self.picking_ids.filtered(lambda p: p.state not in ("done", "cancel"))
         locations = self.env["stock.location"]
@@ -1087,10 +994,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_weight_on_board_of(self, locations):
-        """What the goods in ``locations`` weigh, without pallets or packaging.
-
-        :rtype: float
-        """
         return sum(
             q.product_id._trip_weight(q.quantity)
             for q in self._trip_quants_in(locations)
@@ -1120,9 +1023,6 @@ class StockPickingBatch(models.Model):
             "context": {"default_batch_id": self.id},
         }
 
-    # ------------------------------------------------------------------
-    # Scanning
-    # ------------------------------------------------------------------
     def action_trip_open_scan(self) -> dict:
         self.check_singleton()
         return {
@@ -1136,17 +1036,6 @@ class StockPickingBatch(models.Model):
         }
 
     def _trip_process_scan(self, code, quantity=None, picking=None) -> tuple:
-        """Act on a scanned code: the trip sheet, a delivery slip or a lot label.
-
-        One scan counts in full: a slip registers every unit of its delivery,
-        a lot label every unit of that lot still unscanned at the stop.
-
-        :param str code: what the scanner read
-        :param float quantity: units one lot scan counts; empty for all of them
-        :param recordset picking: the stop whose slip was scanned last
-        :return: a message for the person scanning, and the current stop
-        :rtype: tuple
-        """
         self.check_singleton()
         code = (code or "").strip()
         picking = picking or self.env["stock.picking"]
@@ -1230,7 +1119,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_scan_sheet(self) -> str:
-        """The trip sheet read at the warehouse: departure or return."""
         self.env["stock.trip.scan"].create(
             {"batch_id": self.id, "code": self.name, "kind": "trip_sheet"}
         )
@@ -1265,8 +1153,6 @@ class StockPickingBatch(models.Model):
         return self.env._("Trip %s is already closed.", self.name)
 
     def _trip_scan_stop(self, stop) -> str:
-        """A delivery slip read at the customer: the arrival, if not yet known,
-        and every unit of the delivery registered in one scan."""
         if not self.date_departure:
             raise UserError(self.env._("Trip %s has not departed yet.", self.name))
         Scan = self.env["stock.trip.scan"]

@@ -36,17 +36,9 @@ class SocialAccount(models.Model):
     )
 
     def _default_company_id(self):
-        """When the user is redirected to the callback URL of the different media,
-        the company in the environment is always the company of the current user and not
-        necessarily the selected company.
-
-        So, before the authentication process, we store the selected company in the
-        user session (see <social.media>::action_add_account) to be able to retrieve it
-        here.
-        """
         if request and "social_company_id" in request.session:
             company_id = request.session["social_company_id"]
-            if not company_id:  # All companies
+            if not company_id:
                 return False
             if company_id in self.env.companies.ids:
                 return company_id
@@ -132,33 +124,21 @@ class SocialAccount(models.Model):
     )
 
     def _update_statistics(self):
-        """Every social module should override this method if it 'has_account_stats'.
-        As the values depend on third party data, it's compute triggered manually that stores the data on the
-        various stats fields (audience, engagement, stories) as well as related trends fields (if 'has_trends')."""
         pass
 
     def _compute_stats_link(self) -> None:
-        """Every social module should override this method.
-        The 'stats_link' is an external link to the actual social.media statistics for this account.
-        Ex: https://www.facebook.com/Odoo-Social-557894618055440/insights"""
         for account in self:
             account.stats_link = False
 
     @api.depends("media_id")
     def _compute_display_name(self):
-        """ex: [Facebook] Odoo Social, [Twitter] Mitchell Admin, ..."""
         for account in self:
             account.display_name = f"[{account.media_id.name}] {account.name or ''}"
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Every account has a unique corresponding utm.medium for statistics
-        computation purposes. This way, it will be possible to see every leads
-        or quotations generated through a particular account."""
 
         if all(vals.get("media_id") and vals.get("name") for vals in vals_list):
-            # as 'media_id' and 'name' are required fields, we will let the 'create' handle the error
-            # if they are not present
             media_all = self.env["social.media"].search(
                 [("id", "in", [vals.get("media_id") for vals in vals_list])]
             )
@@ -187,7 +167,6 @@ class SocialAccount(models.Model):
         return res
 
     def write(self, vals):
-        """If name is updated, reflect the change on medium_id (see #create method)."""
         if vals.get("name"):
             for social_account in self.filtered(
                 lambda social_account: social_account.utm_medium_id
@@ -206,13 +185,9 @@ class SocialAccount(models.Model):
 
     @api.model
     def refresh_statistics(self) -> list | None:
-        """Will re-compute the statistics of all active accounts."""
         all_accounts = (
             self.env["social.account"].search([("has_account_stats", "=", True)]).sudo()
         )
-        # As computing the statistics is a recurring task, we ignore occasional "read timeouts"
-        # from the third-party services, as it would most likely mean a temporary slow connection
-        # and/or a slow response from their side.
         try:
             all_accounts._update_statistics()
         except requests.exceptions.ConnectionError, requests.exceptions.Timeout:
@@ -247,7 +222,6 @@ class SocialAccount(models.Model):
         return self.filtered(lambda account: account.media_type in media_types)
 
     def _get_multi_company_error_message(self) -> str | None:
-        """Return an error message if the social accounts information can not be updated by the current user."""
         if not self.env.user.has_group("base.group_multi_company"):
             return None
 

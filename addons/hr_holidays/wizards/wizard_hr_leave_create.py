@@ -28,7 +28,6 @@ class WizardHrLeaveCreate(models.TransientModel):
     leave_type_request_unit = fields.Selection(
         related="holiday_status_id.request_unit",
     )
-    # only meaningful when the type is taken in hours
     hour_from = fields.Float(
         string="Hour from",
         compute="_compute_hour_from_to",
@@ -41,7 +40,6 @@ class WizardHrLeaveCreate(models.TransientModel):
         store=True,
         readonly=False,
     )
-    # only meaningful when the type is taken in half days
     date_from_period = fields.Selection(
         selection=[("am", "Morning"), ("pm", "Afternoon")],
         string="Date Period Start",
@@ -55,13 +53,6 @@ class WizardHrLeaveCreate(models.TransientModel):
 
     @api.depends("employee_ids", "date_from", "date_to", "leave_type_request_unit")
     def _compute_hour_from_to(self) -> None:
-        """Propose the working hours of the days being asked for.
-
-        One shared calendar for the whole batch is the best that can be
-        proposed: the hours land on every generated request, so they cannot
-        follow each employee. Fall back to the company calendar as soon as
-        the selection does not agree on one.
-        """
         company_calendar = self.env.company.resource_calendar_id
         for record in self:
             calendars = record.employee_ids.resource_calendar_id
@@ -108,9 +99,6 @@ class WizardHrLeaveCreate(models.TransientModel):
                 employee_values["request_date_from_period"] = self.date_from_period
                 employee_values["request_date_to_period"] = self.date_to_period
             else:
-                # a full day spans the whole window, which is already known
-                # here; letting _compute_date_from_to redo it would recompute
-                # number_of_days for every leave of the batch at once
                 employee_values.update(
                     {
                         "date_from": date_from_tz,
@@ -179,8 +167,6 @@ class WizardHrLeaveCreate(models.TransientModel):
             one_day_leaves = conflicting_leaves.filtered(
                 lambda leave: leave.request_date_from == leave.request_date_to
             )
-            # the batch takes the period over: the leaves it replaces are refused
-            # by the batch, not by what its author may refuse one by one
             with self.env.transaction.admitting(
                 "hr.leave", "refuse", one_day_leaves.ids
             ):
@@ -204,17 +190,8 @@ class WizardHrLeaveCreate(models.TransientModel):
             )
             .create(vals_list)
         )
-        # Only what is actually approved reserves the calendar. A request still
-        # waiting for an officer would otherwise book the employee's working
-        # time and put a meeting in their calendar before anyone said yes --
-        # and its approval would then reserve the same period a second time,
-        # because `_action_validate` applies it again.
         leaves.filtered(lambda leave: leave.state == "validate")._apply_leave_request()
 
-        # create() drops the leaves of employees no allocation can cover; the
-        # wizard is the only side that knows the request was a batch, so it is
-        # the one that reports them. Employees who simply do not work those
-        # days never made it into vals_list and are not "left out".
         requested = self.env["hr.employee"].browse(
             [vals["employee_id"] for vals in vals_list]
         )

@@ -28,7 +28,6 @@ class TestSchedulingMixin(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Standard 40h/week calendar (Mon-Fri 8-12 + 13-17, UTC)
         cls.calendar = cls.env["resource.calendar"].create(
             {
                 "name": "Test 40h Calendar",
@@ -36,7 +35,6 @@ class TestSchedulingMixin(TransactionCase):
             }
         )
 
-        # Regular resource using the standard calendar
         cls.resource = cls.env["resource.resource"].create(
             {
                 "name": "Test Resource",
@@ -45,7 +43,6 @@ class TestSchedulingMixin(TransactionCase):
             }
         )
 
-        # Flexible resource (calendar with a flexible schedule_type)
         cls.flex_calendar = cls.env["resource.calendar"].create(
             {
                 "name": "Flexible 35h Calendar",
@@ -63,7 +60,6 @@ class TestSchedulingMixin(TransactionCase):
             }
         )
 
-        # Fully flexible resource (no calendar at all)
         cls.fully_flex_resource = cls.env["resource.resource"].create(
             {
                 "name": "Fully Flex Resource",
@@ -74,99 +70,81 @@ class TestSchedulingMixin(TransactionCase):
 
         cls.Model = cls.env[cls.MODEL_NAME]
 
-    # ------------------------------------------------------------------
-    # Allocated hours — calendar-aware computation
-    # ------------------------------------------------------------------
 
     def test_allocated_hours_with_calendar(self):
-        """Mon 8:00 → Mon 17:00 with standard calendar = 8h (excludes lunch)."""
         record = self.Model.create(
             {
                 "name": "Single day",
-                "date_start": datetime(2025, 1, 6, 8, 0),  # Mon 8:00
-                "date_end": datetime(2025, 1, 6, 17, 0),  # Mon 17:00
+                "date_start": datetime(2025, 1, 6, 8, 0),
+                "date_end": datetime(2025, 1, 6, 17, 0),
                 "resource_id": self.resource.id,
             }
         )
         self.assertEqual(record.allocated_hours, 8.0)
 
     def test_allocated_hours_cross_day(self):
-        """Mon 8:00 → Tue 17:00 = 16h (two full work days)."""
         record = self.Model.create(
             {
                 "name": "Cross day",
-                "date_start": datetime(2025, 1, 6, 8, 0),  # Mon 8:00
-                "date_end": datetime(2025, 1, 7, 17, 0),  # Tue 17:00
+                "date_start": datetime(2025, 1, 6, 8, 0),
+                "date_end": datetime(2025, 1, 7, 17, 0),
                 "resource_id": self.resource.id,
             }
         )
         self.assertEqual(record.allocated_hours, 16.0)
 
     def test_allocated_hours_cross_weekend(self):
-        """Fri 8:00 → Mon 17:00 = 16h (skips Sat + Sun)."""
         record = self.Model.create(
             {
                 "name": "Cross weekend",
-                "date_start": datetime(2025, 1, 10, 8, 0),  # Fri 8:00
-                "date_end": datetime(2025, 1, 13, 17, 0),  # Mon 17:00
+                "date_start": datetime(2025, 1, 10, 8, 0),
+                "date_end": datetime(2025, 1, 13, 17, 0),
                 "resource_id": self.resource.id,
             }
         )
         self.assertEqual(record.allocated_hours, 16.0)
 
     def test_allocated_hours_no_resource(self):
-        """No resource → uses the company calendar (not a raw timedelta)."""
         record = self.Model.create(
             {
                 "name": "No resource",
-                "date_start": datetime(2025, 1, 6, 8, 0),  # Mon 8:00
-                "date_end": datetime(2025, 1, 6, 17, 0),  # Mon 17:00
+                "date_start": datetime(2025, 1, 6, 8, 0),
+                "date_end": datetime(2025, 1, 6, 17, 0),
             }
         )
         self.assertFalse(record.resource_id)
-        # The reservation falls back to the company calendar; assert against
-        # its actual output rather than a hard-coded number so the test does
-        # not depend on which default calendar the database ships with.
         expected = self.env.company.resource_calendar_id.get_work_hours_count(
             datetime(2025, 1, 6, 8, 0),
             datetime(2025, 1, 6, 17, 0),
         )
-        # Calendar-aware (lunch excluded) → strictly less than the 9h raw span.
         self.assertLess(record.allocated_hours, 9.0)
         self.assertAlmostEqual(record.allocated_hours, expected, places=2)
 
     def test_allocated_hours_flexible_resource(self):
-        """Flexible resource: work hours capped by flex calendar constraints."""
         record = self.Model.create(
             {
                 "name": "Flexible",
-                "date_start": datetime(2025, 1, 6, 0, 0),  # Mon 00:00
-                "date_end": datetime(2025, 1, 10, 23, 59),  # Fri 23:59
+                "date_start": datetime(2025, 1, 6, 0, 0),
+                "date_end": datetime(2025, 1, 10, 23, 59),
                 "resource_id": self.flex_resource.id,
             }
         )
-        # 35h/week flex calendar across a full work week
         self.assertAlmostEqual(record.allocated_hours, 35.0, places=0)
 
     def test_allocated_percentage(self):
-        """50% allocation of an 8h slot = 4h."""
         record = self.Model.create(
             {
                 "name": "50% allocation",
-                "date_start": datetime(2025, 1, 6, 8, 0),  # Mon 8:00
-                "date_end": datetime(2025, 1, 6, 17, 0),  # Mon 17:00
+                "date_start": datetime(2025, 1, 6, 8, 0),
+                "date_end": datetime(2025, 1, 6, 17, 0),
                 "resource_id": self.resource.id,
                 "allocated_percentage": 50.0,
             }
         )
         self.assertEqual(record.allocated_hours, 4.0)
 
-    # ------------------------------------------------------------------
-    # Overlap detection
-    # ------------------------------------------------------------------
 
     def test_overlap_detection(self):
-        """Two 100% slots on same resource at same time → conflict."""
         rec1 = self.Model.create(
             {
                 "name": "Slot A",
@@ -185,14 +163,11 @@ class TestSchedulingMixin(TransactionCase):
                 "allocated_percentage": 100.0,
             }
         )
-        # Overlap counts are cross-record (a new reservation cannot invalidate
-        # a sibling's cached count), so flush the whole env before reading.
         self.env.invalidate_all()
         self.assertGreater(rec1.schedule_overlap_count, 0)
         self.assertGreater(rec2.schedule_overlap_count, 0)
 
     def test_overlap_percentage(self):
-        """Two 50% slots → no conflict; two 60% slots → conflict."""
         rec1 = self.Model.create(
             {
                 "name": "Slot 50A",
@@ -212,12 +187,9 @@ class TestSchedulingMixin(TransactionCase):
             }
         )
         self.env.invalidate_all()
-        # 50 + 50 = 100 → not > 100 → no conflict
         self.assertEqual(rec1.schedule_overlap_count, 0)
         self.assertEqual(rec2.schedule_overlap_count, 0)
 
-        # Now bump to 60% each → 120% > 100 → conflict. The allocation change
-        # re-syncs each reservation (see _get_fields_sync_trigger override).
         rec1.allocated_percentage = 60.0
         rec2.allocated_percentage = 60.0
         self.env.invalidate_all()
@@ -225,7 +197,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertGreater(rec2.schedule_overlap_count, 0)
 
     def test_no_overlap_different_resource(self):
-        """Same time, different resources → no conflict."""
         resource2 = self.env["resource.resource"].create(
             {
                 "name": "Other Resource",
@@ -255,9 +226,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(rec1.schedule_overlap_count, 0)
         self.assertEqual(rec2.schedule_overlap_count, 0)
 
-    # ------------------------------------------------------------------
-    # Manual projection (_reservation_sync_manual)
-    # ------------------------------------------------------------------
 
     def _manual_vals(self, **overrides):
         vals = {
@@ -270,7 +238,6 @@ class TestSchedulingMixin(TransactionCase):
         return vals
 
     def test_manual_sync_skips_the_create_hook(self):
-        """A manual-sync consumer books nothing until it says so."""
         Manual = self.env["resource.scheduling.manual.test"]
         record = Manual.create(self._manual_vals())
         self.assertFalse(
@@ -283,7 +250,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(record.reservation_ids.date_start, datetime(2025, 1, 6, 8, 0))
 
     def test_manual_sync_skips_the_write_hook(self):
-        """Writing a trigger field does not project either; the call does."""
         Manual = self.env["resource.scheduling.manual.test"]
         record = Manual.create(self._manual_vals())
         record._sync_reservations()
@@ -299,7 +265,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(record.reservation_ids.date_end, datetime(2025, 1, 6, 12, 0))
 
     def test_automatic_sync_remains_the_default(self):
-        """The flag is opt-in: an ordinary consumer still projects on create."""
         record = self.Model.create(self._manual_vals())
         self.assertEqual(
             len(record.reservation_ids),
@@ -308,7 +273,6 @@ class TestSchedulingMixin(TransactionCase):
         )
 
     def test_manual_sync_unlink_still_cleans_the_ledger(self):
-        """Only projection is deferred -- orphan cleanup is not negotiable."""
         Manual = self.env["resource.scheduling.manual.test"]
         record = Manual.create(self._manual_vals())
         record._sync_reservations()
@@ -321,12 +285,8 @@ class TestSchedulingMixin(TransactionCase):
             "a deleted consumer must never leave a claim behind, however it syncs",
         )
 
-    # ------------------------------------------------------------------
-    # Conflicts on unsaved records
-    # ------------------------------------------------------------------
 
     def _booked_day(self, percentage=100.0, name="Booked"):
-        """Store one reservation covering Mon 2025-01-06, 08:00-17:00."""
         return self.Model.create(
             {
                 "name": name,
@@ -338,7 +298,6 @@ class TestSchedulingMixin(TransactionCase):
         )
 
     def test_unsaved_record_sees_conflict(self):
-        """An unsaved record reports the clash it would create on save."""
         self._booked_day()
         self.env.invalidate_all()
         draft = self.Model.new(
@@ -357,13 +316,11 @@ class TestSchedulingMixin(TransactionCase):
         )
 
     def test_unsaved_record_free_window_is_clean(self):
-        """An unsaved record outside every booking reports no conflict."""
         self._booked_day()
         self.env.invalidate_all()
         draft = self.Model.new(
             {
                 "name": "Draft",
-                # Tuesday: the stored booking is Monday.
                 "date_start": datetime(2025, 1, 7, 9, 0),
                 "date_end": datetime(2025, 1, 7, 11, 0),
                 "resource_id": self.resource.id,
@@ -373,14 +330,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(draft.schedule_overlap_count, 0)
 
     def test_unsaved_record_conflict_is_cumulative(self):
-        """The unsaved path sweeps cumulatively, exactly like the stored one.
-
-        Two stored 50% bookings plus an unsaved 50% is 150% on one resource,
-        yet no *pair* exceeds 100%. A pairwise check -- the obvious way to
-        answer this for a record with no id -- reports nothing here, and would
-        have disagreed with what the same record is told the moment it is
-        saved.
-        """
         self._booked_day(percentage=50.0, name="Half A")
         self._booked_day(percentage=50.0, name="Half B")
         self.env.invalidate_all()
@@ -396,7 +345,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertGreater(draft.schedule_overlap_count, 0)
 
     def test_unsaved_record_without_resource_is_clean(self):
-        """No resource means no claim on capacity, so nothing to conflict with."""
         self._booked_day()
         self.env.invalidate_all()
         draft = self.Model.new(
@@ -410,7 +358,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(draft.schedule_overlap_count, 0)
 
     def test_saved_record_conflicts_exclude_its_own_bookings(self):
-        """A record's conflicts name the peers, never the record itself."""
         first = self._booked_day(name="First")
         second = self._booked_day(name="Second")
         self.env.invalidate_all()
@@ -425,7 +372,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(conflicts.ids, second.reservation_ids.ids)
 
     def test_unsaved_record_conflicts_match_once_saved(self):
-        """The prospective answer is the one the record gets after saving."""
         self._booked_day()
         self.env.invalidate_all()
         values = {
@@ -440,30 +386,25 @@ class TestSchedulingMixin(TransactionCase):
         self.env.invalidate_all()
         self.assertEqual(before, saved.schedule_overlap_count)
 
-    # ------------------------------------------------------------------
-    # Calendar change recomputation
-    # ------------------------------------------------------------------
 
     def test_calendar_change(self):
-        """Changing the resource triggers calendar + hours recomputation."""
         record = self.Model.create(
             {
                 "name": "Calendar change",
-                "date_start": datetime(2025, 1, 6, 8, 0),  # Mon 8:00
-                "date_end": datetime(2025, 1, 6, 17, 0),  # Mon 17:00
+                "date_start": datetime(2025, 1, 6, 8, 0),
+                "date_end": datetime(2025, 1, 6, 17, 0),
                 "resource_id": self.resource.id,
             }
         )
         self.assertEqual(record.allocated_hours, 8.0)
         self.assertEqual(record.resource_calendar_id, self.calendar)
 
-        # Create a resource with a half-day calendar (8:00-12:00 only)
         half_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Half Day Calendar",
                 "tz": "UTC",
                 "attendance_ids": [
-                    (5, 0, 0),  # clear defaults
+                    (5, 0, 0),
                     (
                         0,
                         0,
@@ -529,7 +470,6 @@ class TestSchedulingMixin(TransactionCase):
                 "tz": "UTC",
             }
         )
-        # Reassign to a different resource → triggers calendar recompute → hours recompute
         record.resource_id = half_resource
         self.assertEqual(record.resource_calendar_id, half_calendar)
         self.assertEqual(record.allocated_hours, 4.0)
@@ -569,8 +509,6 @@ class TestSchedulingMixin(TransactionCase):
         self.assertEqual(record.allocated_hours, 0.0)
 
     def test_a_record_due_no_reservation_books_no_hours(self):
-        # A consumer whose resource provider is not installed is due no
-        # reservation however well dated it is -- project.task without hr.
         with patch.object(
             type(self.Model),
             "_prepare_reservation_vals_list",
@@ -719,7 +657,6 @@ class TestSchedulingMixinSurplusRelease(TransactionCase):
                 }
             )
         )
-        # The old resource's row is now surplus and has to be released.
         record.resource_id = self.resource_b
 
         reservations = (

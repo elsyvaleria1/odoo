@@ -23,7 +23,6 @@ class MollieTest(MollieCommon, PaymentHttpCommon):
         "odoo.addons.payment_mollie.models.payment_transaction",
     )
     def test_webhook_notification_confirms_transaction(self):
-        """Test the processing of a webhook notification."""
         tx = self._create_transaction("redirect")
         url = self._build_url(MollieController._webhook_url)
         with patch(

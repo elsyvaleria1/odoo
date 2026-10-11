@@ -59,7 +59,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         return invoice
 
     def test_followup_responsible(self):
-        """The followup responsible is resolved from partner, invoice user, and followup config."""
         self.first_followup_line = self.create_followup(delay=-10)
 
         user1 = self.env["res.users"].create(
@@ -78,10 +77,8 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 "group_ids": [(6, 0, [self.env.ref("account.group_account_user").id])],
             }
         )
-        # 1- no info, use current user
         self.assertEqual(self.partner_a._get_followup_responsible(), self.env.user)
 
-        # 2- set invoice user
         invoice1 = self.init_invoice(
             "out_invoice",
             partner=self.partner_a,
@@ -97,20 +94,16 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         invoice1.invoice_user_id = user1
         invoice2.invoice_user_id = user2
         (invoice1 + invoice2).action_post()
-        # Should pick invoice_user_id of the most delayed move, with highest residual amount in case of tie (invoice1)
         self.assertEqual(self.partner_a._get_followup_responsible(), user1)
-        # If user1 is archived, it shouldn't be selected as responsible
         user1.active = False
         self.assertEqual(self.partner_a._get_followup_responsible(), self.env.user)
         user1.active = True
 
         self.partner_a.followup_line_id = self.first_followup_line
 
-        # 3- A followup responsible user has been set on the partner
         self.partner_a.followup_responsible_id = user2
         self.assertEqual(self.partner_a._get_followup_responsible(), user2)
 
-        # 4- Modify the default responsible on followup level
         self.partner_a.followup_line_id.activity_default_responsible_type = (
             "salesperson"
         )
@@ -178,19 +171,15 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.create_invoice("2022-01-02")
 
         with freeze_time("2021-12-20"):
-            # Today < due date + delay first followup level (negative delay -> reminder before due date)
             self.assertPartnerFollowup(
                 self.partner_a, "no_action_needed", self.first_followup_line
             )
 
         with freeze_time("2021-12-24"):
-            # Today = due date + delay first followup level
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.first_followup_line
             )
 
-            # followup_next_action_date not exceeded but no invoice is overdue,
-            # we should not be in status 'with_overdue_invoices' but 'no action needed'
             self.partner_a.followup_next_action_date = fields.Date.from_string(
                 "2021-12-25"
             )
@@ -199,14 +188,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
         with freeze_time("2022-01-13"):
-            # Today > due date + delay second followup level but first followup level not processed yet
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.first_followup_line
             )
 
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
-            # Due date exceeded but first followup level processed
-            # followup_next_action_date set in 20 days (delay 2nd level - delay 1st level = 10 - (-10) = 20)
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", self.second_followup_line
             )
@@ -216,11 +202,9 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
         with freeze_time("2022-02-03"):
-            # followup_next_action_date exceeded and invoice not reconciled yet
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.second_followup_line
             )
-            # execute second followup
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", self.third_followup_line
@@ -231,11 +215,9 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
         with freeze_time("2022-02-09"):
-            # followup_next_action_date exceeded and invoice not reconciled yet
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.third_followup_line
             )
-            # execute third followup
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", self.third_followup_line
@@ -246,17 +228,14 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
         with freeze_time("2022-02-15"):
-            # followup_next_action_date exceeded and invoice not reconciled yet
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", self.third_followup_line
             )
-            # executing the third followup again should do nothing as all the aml are linked to it
             followup_executed = self.partner_a._execute_followup(
                 self.followup_request(self.partner_a)
             )
             self.assertFalse(followup_executed)
 
-            # create a new overdue invoice
             self.create_invoice("2022-01-03")
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.third_followup_line
@@ -264,14 +243,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
 
             aml_ids = self.partner_a.unreconciled_aml_ids
 
-            # Exclude every unreconciled invoice line.
             aml_ids.no_followup = True
-            # Every unreconciled invoice line is excluded, so the result should be `no_action_needed`.
             self.assertPartnerFollowup(
                 self.partner_a, "no_action_needed", self.third_followup_line
             )
 
-            # It resets if we don't exclude them anymore.
             aml_ids.no_followup = False
             self.assertPartnerFollowup(
                 self.partner_a, "in_need_of_action", self.third_followup_line
@@ -292,13 +268,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.create_invoice("2022-01-01")
         self.create_invoice("2022-01-02")
 
-        # 9 days are not passed yet for the first followup level, current delay is 10-0=10
         with freeze_time("2022-01-10"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # 10 days passed, current delay is 10-0=10, need to take action
         with freeze_time("2022-01-11"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_10)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -306,13 +280,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 self.partner_a, "with_overdue_invoices", followup_15
             )
 
-        # action taken 4 days ago, current delay is 15-10=5, nothing needed
         with freeze_time("2022-01-15"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_15
             )
 
-        # action taken 5 days ago, current delay is 15-10=5, need to take action
         with freeze_time("2022-01-16"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_15)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -320,13 +292,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 self.partner_a, "with_overdue_invoices", followup_30
             )
 
-        # action taken 14 days ago, current delay is 30-15=15, nothing needed
         with freeze_time("2022-01-30"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_30
             )
 
-        # action taken 15 days ago, current delay is 30-15=15, need to take action
         with freeze_time("2022-01-31"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_30)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -334,13 +304,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 self.partner_a, "with_overdue_invoices", followup_30
             )
 
-        # action taken 13 days ago, current delay is 15 (same on repeat), nothing needed
         with freeze_time("2022-02-14"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_30
             )
 
-        # action taken 14 days ago, current delay is 15 (same on repeat), need to take action
         with freeze_time("2022-02-15"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_30)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -349,23 +317,19 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_followup_multiple_invoices_with_first_payment(self):
-        # Test the behavior of multiple invoices when the first one is paid
         followup_10 = self.create_followup(delay=10)
         followup_15 = self.create_followup(delay=15)
 
         invoice_01 = self.create_invoice("2022-01-01")
         self.create_invoice("2022-01-02")
 
-        # 9 days are not passed yet for the first followup level, current delay is 10-0=10
         with freeze_time("2022-01-10"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # 10 days passed, current delay is 10-0=10, need to take action
         with freeze_time("2022-01-11"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_10)
-            # followup level for the second invoice shouldn't change since it's only 9 days overdue
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_15
@@ -379,18 +343,15 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 }
             )._create_payments()
 
-            # partner followup level goes back to 10 days after paying the first invoice
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # action taken 4 days ago, current delay is 15-10=5, nothing needed
         with freeze_time("2022-01-15"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # action taken 5 days ago, current delay is 15-10=5, need to take action
         with freeze_time("2022-01-16"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_10)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -399,9 +360,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_followup_multiple_invoices_with_last_payment(self):
-        # Test the behavior of multiple invoices when the last one is paid
-        # Should behave exactly like test_followup_multiple_invoices_with_first_payment
-        # because the followup is done at the same time.
         followup_10 = self.create_followup(delay=10)
         followup_15 = self.create_followup(delay=15)
         followup_30 = self.create_followup(delay=30)
@@ -409,13 +367,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.create_invoice("2022-01-01")
         invoice_02 = self.create_invoice("2022-01-02")
 
-        # 9 days are not passed yet for the first followup level, current delay is 10-0=10
         with freeze_time("2022-01-10"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # 10 days passed, current delay is 10-0=10, need to take action
         with freeze_time("2022-01-11"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_10)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -435,13 +391,11 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 self.partner_a, "with_overdue_invoices", followup_15
             )
 
-        # action taken 4 days ago, current delay is 15-10=5, nothing needed
         with freeze_time("2022-01-15"):
             self.assertPartnerFollowup(
                 self.partner_a, "with_overdue_invoices", followup_15
             )
 
-        # action taken 5 days ago, current delay is 15-10=5, need to take action
         with freeze_time("2022-01-16"):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", followup_15)
             self.partner_a._execute_followup(self.followup_request(self.partner_a))
@@ -450,9 +404,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_followup_status_entry_lines(self):
-        """
-        Creating an entry should not affect the followups as there is no concept of due date with this flow.
-        """
         self.followup_line = self.create_followup(delay=10)
 
         with freeze_time("2022-01-02"):
@@ -493,11 +444,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_followup_status_residual(self):
-        """
-        Payments for partially paid invoices should contribute their residual to the due amount.
-        This is required because the paid invoice's receivable line is reconciled, and thus is
-        not considered in the query calculating followup_status.
-        """
 
         self.followup_line = self.create_followup(delay=10)
 
@@ -552,7 +498,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertEqual(self.partner_a._get_followup_contact(), billing_contact)
 
     def test_followup_contact_is_singular(self):
-        """`address_get` answers one id per type, so several billing children collapse."""
         for name in ("Billing One", "Billing Two"):
             self.env["res.partner"].create(
                 {"name": name, "parent_id": self.partner_a.id, "type": "invoice"}
@@ -566,7 +511,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
 
         self.create_invoice("2022-01-01")
 
-        # Check that no followup is automatically done if there is no action needed
         with (
             freeze_time("2022-01-10"),
             patch.object(self.env.registry["res.partner"], "_send_followup") as patched,
@@ -581,7 +525,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 self.partner_a, "with_overdue_invoices", followup_10
             )
 
-        # Check that the action is taken one and only one time when there is an action needed
         with (
             freeze_time("2022-01-11"),
             patch.object(self.env.registry["res.partner"], "_send_followup") as patched,
@@ -595,7 +538,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_onchange_residual_amount(self):
-        """The SQL-computed residual amount on account move lines is correct after a partial payment."""
         invoice = self.create_invoice("2016-01-01")
         self.create_invoice("2016-01-02")
 
@@ -666,7 +608,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_send_followup_no_due_date(self):
-        """Send a followup report with an empty due date field."""
         self.create_followup(delay=0)
         self.create_invoice("2022-01-01")
         self.partner_a.unreconciled_aml_ids.write(
@@ -680,18 +621,15 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_followup_copy_data(self):
-        """Duplicate a followup line, both a single record and several at once, with no defaults."""
         followup_50 = self.create_followup(delay=50)
         followup_60 = self.create_followup(delay=60)
 
-        # Duplicate single record with no default values
         followup_50_duplicate = followup_50.copy()
         self.assertTrue(followup_50_duplicate)
         self.assertEqual(
             followup_50_duplicate.name, f"75 days (copy of {followup_50.name})"
         )
 
-        # Duplicate multiple records at the same time with no default values
         multiple_followup_records = followup_50 + followup_60
         multiple_followup_records_duplicate = multiple_followup_records.copy()
         self.assertTrue(multiple_followup_records_duplicate)
@@ -705,10 +643,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_manual_reminder_get_template_mail_addresses(self):
-        """
-        When opening wizard.res.partner.send.followup, the partner should always be in `email_recipient_ids`
-        When adding a template, the template's partner_to, email_cc and email_to should be added to `email_recipient_ids` as well
-        """
         mail_partner = self.env["res.partner"].create(
             {
                 "name": "Mai Lang",
@@ -757,12 +691,7 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_overdue_invoices_action_domain_includes_children_partners(self):
-        """
-        When checking overdue invoices for a company (partner), the action [action_view_overdue_entries] domain should also include
-        the overdue invoices of its children partners.
-        """
 
-        # Step 1: Create contacts
         parent_contact = self.env["res.partner"].create(
             {
                 "name": "Parent Contact",
@@ -776,23 +705,16 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             }
         )
 
-        # Step 2: Create an invoice for the child contact
         invoice_date = fields.Date.today() - relativedelta(months=1)
         invoice = self.create_invoice(invoice_date, child_contact)
         invoice.invoice_date_due = invoice_date
 
-        # Step 3: Verify follow-up status and overdue invoices of the parent contact
         action = parent_contact.action_view_overdue_entries()
         overdue_invoices = self.env["account.move"].search(action["domain"])
         self.assertIn(invoice.id, overdue_invoices.ids)
         self.assertEqual(parent_contact.followup_status, "with_overdue_invoices")
 
     def test_journal_items_action_domain_filters_partner_posted_entries(self):
-        """
-        The action [action_view_partner_followup_journal_items] should return journal items
-        belonging to the selected partner, only from posted moves, and limited
-        to payable/receivable accounts marked as trade (non_trade = False).
-        """
         test_partner = self.env["res.partner"].create(
             {
                 "name": "Journal Items with Partner",
@@ -802,35 +724,25 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
         invoice_date = fields.Date.today() - relativedelta(months=1)
 
-        # Create invoices
         normal_invoice = self.create_invoice(fields.Date.today(), test_partner)
         overdue_invoice = self.create_invoice(invoice_date, test_partner)
 
         action = test_partner.action_view_partner_followup_journal_items()
 
-        # Validate context
         ctx = action["context"]
         self.assertEqual(ctx.get("search_default_partner_id"), [test_partner.id])
         self.assertEqual(ctx.get("search_default_posted"), 1)
 
-        # Either receivable or payable should be set to 1
         self.assertEqual(ctx.get("search_default_trade_receivable"), 1)
-        # Non-trade filters should be disabled
         self.assertEqual(ctx.get("search_default_non_trade_receivable"), 0)
         self.assertEqual(ctx.get("search_default_non_trade_payable", 0), 0)
 
-        # Validate domain and results
         aml = self.env["account.move.line"].search(action["domain"])
         self.assertEqual(
             aml.ids, normal_invoice.line_ids.ids + overdue_invoice.line_ids.ids
         )
 
     def test_followup_template_recipients_with_cron(self):
-        """
-        A mail_cc defined on a template is honoured even when the followup is sent via
-        `res.partner._send_followup_email` (the path used by the cron).
-        Completes `test_manual_reminder_get_template_mail_addresses`.
-        """
         self.partner_a.email = "test@test.com"
         mail_cc = self.env["res.partner"].create(
             {
@@ -857,13 +769,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertMailMail(mail_cc, "sent", author=self.env.user.partner_id)
 
     def test_followup_attachments_template_without_attachment(self):
-        """A mail template with no static attachment still yields a followup payload.
-
-        `mail.template._prepare_attachment_vals` only seeds "attachment_ids" when the
-        template actually carries one, so indexing it unconditionally raised KeyError
-        for every template shipped in data/ -- the manual wizard, the "Process
-        Follow-ups" action and the cron all died on it.
-        """
         followup_10 = self.create_followup(delay=10)
         followup_10.mail_template_id = self.env["mail.template"].create(
             {
@@ -887,7 +792,7 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             {"name": name, "parent_id": self.env.company.id}
         )
         self.env.user.company_ids |= branch
-        self.cr.precommit.run()  # load the branch's chart of accounts
+        self.cr.precommit.run()
         return branch
 
     def _create_branch_invoice(self, branch, date, price_unit=500):
@@ -908,14 +813,8 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         return invoice
 
     def test_followup_levels_are_inherited_by_branches(self):
-        """A branch is followed up with the levels its parent company defines.
-
-        The Python lookups resolved levels `parent_of` the active company while the
-        SQL joined them with `=`, so a branch saw its overdue amount but no level and
-        never left 'with_overdue_invoices'.
-        """
         branch = self._make_branch()
-        followup_10 = self.create_followup(delay=10)  # on the parent company
+        followup_10 = self.create_followup(delay=10)
         self._create_branch_invoice(branch, "2016-01-01")
 
         with freeze_time("2016-01-20"):
@@ -926,7 +825,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             self.assertEqual(partner.followup_line_id, followup_10)
 
     def test_followup_next_date_uses_inherited_levels(self):
-        """The gap to the next reminder is read from the levels the company inherits."""
         branch = self._make_branch()
         self.create_followup(delay=15)
         self.create_followup(delay=60)
@@ -944,12 +842,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_followup_failed_send_keeps_the_partner_due(self):
-        """A send that raises must not advance the next-reminder date.
-
-        The cron catches UserError per partner and carries on; advancing the date
-        first pushed a customer that could not be reached past its own due date, so
-        it silently dropped out of every following run.
-        """
         self.create_followup(delay=10).write({"auto_execute": True, "send_email": True})
         self.partner_a.email = False
         self.partner_a.child_ids.email = False
@@ -966,12 +858,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", level)
 
     def test_followup_status_is_not_cached_across_a_payment(self):
-        """The follow-up status follows the data inside one transaction.
-
-        A cursor-level cache used to answer 'in_need_of_action' for a partner whose
-        invoice had just been paid in full, and both the cron and the test helper had
-        to pop it by hand.
-        """
         followup_10 = self.create_followup(delay=10)
         invoice = self.create_invoice("2016-01-01")
 
@@ -990,7 +876,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertTrue(followup_10)
 
     def test_unpaid_invoices_count_follows_new_invoices(self):
-        """The unpaid-invoice count and has_moves invalidate when invoices change."""
         self.create_invoice("2016-01-01")
         self.assertEqual(self.partner_a.unpaid_invoices_count, 1)
         self.assertTrue(self.partner_a.has_moves)
@@ -999,11 +884,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertEqual(self.partner_a.unpaid_invoices_count, 2)
 
     def test_followup_responsible_skips_archived_users(self):
-        """An archived salesperson must not ride along on an active one.
-
-        `activity_schedule` accepts an inactive user without complaining, so the
-        activity lands where nobody will ever see it.
-        """
         level = self.create_followup(delay=0)
         level.write(
             {
@@ -1050,12 +930,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertEqual(activities.user_id, active)
 
     def test_followup_responsible_account_manager_skips_archived_user(self):
-        """An archived account manager must not be handed back unfiltered.
-
-        The `account_manager` branch used to return `self.user_id` before the
-        active-user filter the rest of the method enforces, so an archived
-        salesperson kept coming back as the followup responsible.
-        """
         self.first_followup_line = self.create_followup(delay=-10)
         self.partner_a.followup_line_id = self.first_followup_line
         self.partner_a.followup_line_id.activity_default_responsible_type = (
@@ -1076,11 +950,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_statusbar_level_change_moves_the_reminder_date(self):
-        """Clicking the statusbar must not publish the next level as due now.
-
-        The status query gates on the level the lines already carry; only
-        followup_next_action_date holds the next one back.
-        """
         first = self.create_followup(delay=15)
         second = self.create_followup(delay=30)
         self.create_invoice("2020-01-01")
@@ -1104,11 +973,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             self.assertPartnerFollowup(self.partner_a, "in_need_of_action", second)
 
     def test_followup_level_tie_between_a_branch_and_its_parent(self):
-        """`unique(company_id, delay)` is per company, so a chain can tie on delay.
-
-        The branch's own level wins, and the SQL and `_search_applicable` must say so
-        together -- they used to answer with different records.
-        """
         branch = self._make_branch("Tie Branch")
         parent_level = self.create_followup(delay=15)
         branch_level = self.env["account_followup.followup.line"].create(
@@ -1145,12 +1009,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertNotEqual(parent_level, branch_level)
 
     def test_search_by_followup_line_can_ask_for_no_level(self):
-        """`= False` asks about the absence of a level; it used to match nothing.
-
-        A partner sitting in the follow-up data with a NULL level is an ordinary
-        parent+branch state: the branch's own level is out of scope once you act
-        for the parent, so the LATERAL that picks it finds nothing.
-        """
         branch = self._make_branch("Levelless Branch")
         parent_level = self.create_followup(delay=0)
         branch_level = self.env["account_followup.followup.line"].create(
@@ -1185,7 +1043,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             Partner.search([("followup_line_id", "!=", False)]),
             "'!= False' asks for the partners that do carry a level",
         )
-        # And the level-valued half still answers as before.
         self.assertNotIn(
             levelless, Partner.search([("followup_line_id", "=", parent_level.id)])
         )
@@ -1194,13 +1051,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_missing_info_judges_the_level_the_send_will_use(self):
-        """The pre-check and the send must resolve the same level.
-
-        When the customer carries none of its own -- an ordinary parent+branch
-        state -- `FollowupRequest.prepare` falls back to the first level while the
-        pre-check read an empty recordset, found nothing missing, and handed the
-        customer to a send that then raised.
-        """
         branch = self._make_branch("Precheck Branch")
         first = self.create_followup(delay=0)
         first.write({"send_email": True})
@@ -1236,7 +1086,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_manual_reminder_wizard_without_a_customer_says_so(self):
-        """The action is reachable without an active record; say what is wrong."""
         Wizard = self.env["wizard.res.partner.send.followup"]
         with self.assertRaises(UserError):
             Wizard.default_get(["partner_id"])
@@ -1246,14 +1095,12 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 active_model="res.partner",
                 active_ids=(self.partner_a + other).ids,
             ).default_get(["partner_id"])
-        # and the way the partner form opens it still works
         defaults = Wizard.with_context(
             active_model="res.partner", active_ids=self.partner_a.ids
         ).default_get(["partner_id"])
         self.assertEqual(defaults["partner_id"], self.partner_a.id)
 
     def test_no_statement_is_rendered_when_nothing_is_sent(self):
-        """A level that goes out on no channel must not pay for a report export."""
         level = self.create_followup(delay=0)
         level.write({"send_email": False, "send_sms": False, "auto_execute": True})
         self.create_invoice("2020-01-01")
@@ -1273,7 +1120,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_request_alone_does_not_bypass_the_due_check(self):
-        """Forcing a channel must not also force a send that is not due."""
         self.create_followup(delay=30)
         self.create_invoice("2020-01-01")
 
@@ -1292,7 +1138,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             )
 
     def test_search_followup_line_matches_partners_without_a_level(self):
-        """A partner carrying no level satisfies a negative operator."""
         other_company = self.env["res.company"].create({"name": "Unrelated Co"})
         foreign_level = self.env["account_followup.followup.line"].create(
             {
@@ -1315,7 +1160,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_missing_information_wizard_carries_its_partners(self):
-        """The wizard holds the partners in a field, not in a bare context key."""
         level = self.create_followup(delay=0)
         level.send_email = True
         self.partner_a.email = False
@@ -1338,11 +1182,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_has_moves_scopes_like_the_total_it_gates(self):
-        """The stat button must not appear reading nothing.
-
-        `has_moves` shows it and `total_net_due` fills it; counting them over
-        different company sets rendered an empty button.
-        """
         other = self.env["res.company"].create({"name": "Other Co"})
         self.env["account.chart.template"].try_loading(
             "generic_coa", company=other, install_demo=False
@@ -1383,7 +1222,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertEqual(seen_from_other.total_net_due, 500.0)
 
     def test_followup_searches_compose_with_the_rest_of_the_domain(self):
-        """The search returns a subquery, so a narrower domain still narrows it."""
         level = self.create_followup(delay=0)
         self.create_invoice("2020-01-01")
         other_partner = self.env["res.partner"].create({"name": "Untouched"})
@@ -1391,8 +1229,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.partner_a.invalidate_recordset()
 
         Partner = self.env["res.partner"]
-        # The property that makes it composable: a subquery PostgreSQL can push the
-        # rest of the domain into, not one id per matching partner in the database.
         for domain in (
             Partner._search_status("in", ["in_need_of_action"]),
             Partner._search_followup_line("in", [level.id]),
@@ -1420,7 +1256,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_sms_reaches_the_billing_contact(self):
-        """Logged on the customer, addressed to the contact -- as the email path does."""
         level = self.create_followup(delay=0)
         level.write({"send_email": False, "send_sms": True})
         self.partner_a.write(
@@ -1455,7 +1290,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertEqual(sms.partner_id, billing, "and the contact is the recipient")
 
     def test_cron_logs_and_retriggers_when_it_truncates(self):
-        """The overflow must not wait a day in silence."""
         level = self.create_followup(delay=0)
         level.write({"send_email": False, "send_sms": False, "auto_execute": True})
         partners = self.env["res.partner"].create(
@@ -1471,7 +1305,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         with self.assertLogs(
             "odoo.addons.account_followup.models.res_partner", "INFO"
         ) as capture:
-            # as the cron itself runs: it sweeps every company in the database
             self.env["res.partner"].sudo()._cron_execute_followup()
         self.assertTrue(
             any("sending 2 this pass" in line for line in capture.output),
@@ -1484,7 +1317,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_computes_agree_on_a_record_held_as_new(self):
-        """A dirty form holds the customer as a NewId; the figures must not zero."""
         self.create_followup(delay=0)
         self.create_invoice("2020-01-01")
         saved = self.partner_a
@@ -1510,8 +1342,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
             "the saved record is the premise; the assertion below is the point",
         )
 
-        # Exactly how the web client holds a record whose form is open:
-        # web/models/web_onchange.py builds `self.new(cache_values, origin=self)`.
         dirty = self.env["res.partner"].new(origin=saved)
         self.assertEqual(
             {
@@ -1527,7 +1357,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_cron_skips_a_company_it_may_not_act_for(self):
-        """One company the scheduler user cannot enter must not cost the rest."""
         foreign = self.env["res.company"].create({"name": "Foreign Co"})
         scheduler = self.env["res.users"].create(
             {
@@ -1546,8 +1375,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
                 ],
             }
         )
-        # The premise, not an assumption: an ERP manager reads every company row
-        # while belonging to one. That is the gap the cron used to fall into.
         self.assertIn(foreign, self.env["res.company"].with_user(scheduler).search([]))
         self.assertNotIn(foreign, scheduler.company_ids)
 
@@ -1561,7 +1388,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_cron_as_superuser_still_sweeps_every_company(self):
-        """The su path is what runs today; narrowing it would be a silent change."""
         self.env["res.company"].create({"name": "Foreign Co"})
         every = self.env["res.company"].sudo().search([])
         entered = []
@@ -1581,7 +1407,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_cron_runs_the_status_query_once_per_pass(self):
-        """The cron already holds every answer `_execute_followup` would re-query."""
         level = self.create_followup(delay=0)
         level.auto_execute = True
         due = self.partner_a | self.partner_b
@@ -1613,7 +1438,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_primed_status_matches_what_the_compute_would_answer(self):
-        """Priming the cache must not become a second opinion."""
         level = self.create_followup(delay=0)
         self.create_invoice("2020-01-01")
         partner = self.partner_a
@@ -1630,7 +1454,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
         self.assertEqual(computed, ("in_need_of_action", level))
 
-        # A dependency changing must still win over what was primed.
         partner.followup_next_action_date = fields.Date.today() + relativedelta(days=7)
         self.assertEqual(
             partner.followup_status,
@@ -1639,7 +1462,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_missing_info_agrees_with_who_the_send_would_reach(self):
-        """A template that names an address is an address; the customer is not skipped."""
         self.partner_a.write({"email": False, "child_ids": [Command.clear()]})
         known = self.env["res.partner"].create(
             {"name": "Known Billing", "email": "known@x.com"}
@@ -1689,7 +1511,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         self.assertTrue(self.partner_a._has_missing_followup_info())
 
     def test_unreconciled_aml_ids_is_not_writable(self):
-        """It is computed with no inverse; a write used to be silently discarded."""
         self.create_followup(delay=0)
         self.create_invoice("2020-01-01")
         self.partner_a.invalidate_recordset()
@@ -1700,9 +1521,6 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
 
     def test_unreconciled_aml_ids_readable_without_journal_access(self):
-        """A user who may read a partner but not its journal items sees no dues,
-        not an AccessError. unreconciled_aml_ids carries no group (unlike the
-        total_* fields), so its read still reaches _compute_total_due."""
         self.create_followup(delay=0)
         self.create_invoice("2020-01-01")
         plain_user = self.env["res.users"].create(
@@ -1717,11 +1535,9 @@ class TestAccountFollowupReports(TestAccountFollowupCommon, MailCommon):
         )
         partner = self.partner_a.with_user(plain_user)
         partner.invalidate_recordset()
-        # Must not raise; the statistic is empty for a user who cannot see the moves.
         self.assertFalse(partner.unreconciled_aml_ids)
 
     def test_followup_line_copy_to_another_company(self):
-        """Copying a level accepts an explicit target company, and copies in batch."""
         other = self.env["res.company"].create({"name": "Other"})
         followup_10 = self.create_followup(delay=10)
         followup_40 = self.create_followup(delay=40)

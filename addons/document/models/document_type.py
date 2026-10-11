@@ -125,8 +125,6 @@ class DocumentType(models.Model):
         if expiration_filter:
             domain.append(("expiration_state", "=", expiration_filter))
 
-        # the Documents app itself, filtered: a plain "list,form" opened the
-        # lowest-priority document form, which is the add-a-URL dialog
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "document.document_action"
         )

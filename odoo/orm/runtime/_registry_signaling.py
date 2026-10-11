@@ -28,8 +28,6 @@ SIGNALING_TABLES = tuple(
     get_signaling_table_name(cache_name) for cache_name in ["registry", *CACHES_BY_KEY]
 )
 
-# every request reads each table's watermark; the serial's last value answers in
-# one sequence read each, where max(id) planned one subselect per table per call
 _SEQUENCES_QUERY = SQL(
     "SELECT %s",
     SQL(", ").join(
@@ -38,9 +36,6 @@ _SEQUENCES_QUERY = SQL(
     ),
 )
 
-# a hot standby replays a serial at the value its primary WAL-logged ahead (up to
-# 32 past the last id handed out), so on a replica the serial reads signals that
-# do not exist yet; only committed rows say how far the primary has signalled
 _COMMITTED_SIGNALS_QUERY = SQL(
     "SELECT %s",
     SQL(", ").join(
@@ -108,8 +103,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
     @registry_invalidated.setter
     def registry_invalidated(self, value: bool) -> None:
         self._invalidation_flags.registry = value
-        # a caller flipping the flag by hand says nothing about which models it
-        # changed, so the scope is the whole registry until the flag is cleared
         self._invalidation_flags.models = None if value else set()
         if _debug.logic.enabled and value:
             _debug.logic(
@@ -140,9 +133,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
 
     @property
     def cache_invalidation_generation(self) -> dict[str, int]:
-        # process-wide, unlike the flags above: a test cursor spans the test's
-        # thread and its HTTP threads, and a savepoint rolled back in one must
-        # see the groups the others invalidated inside its span
         return self._cache_generation
 
     @property
@@ -151,7 +141,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
 
     def _clear_cache_group(self, cache_name: str) -> None:
         self._caches.clear_group(cache_name)
-        # every thread's transactions drop what they derived from the caches
         self.cache_epoch += 1
 
     def _clear_local_caches(self) -> None:
@@ -195,9 +184,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
             generation[cache_name] = generation.get(cache_name, 0) + 1
 
     def _release_cache_groups(self) -> None:
-        # empties every group of this process only: a memory release, not a change
-        # of data, so nothing is recorded for signal_changes() to broadcast -- other
-        # processes' caches are still right
         generation = self.cache_invalidation_generation
         for cache_name in CACHES_BY_KEY:
             self._clear_cache_group(cache_name)
@@ -315,7 +301,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
 
     @staticmethod
     def _get_signalled_id(cr: BaseCursor) -> int:
-        # INSERT ... RETURNING always answers one row
         row = cr.fetchone()
         assert row is not None
         signalled_id: int = row[0]
@@ -348,9 +333,6 @@ class _RegistrySignalingMixin(_RegistryStubs):
 
     @staticmethod
     def _is_next_signal(table: str, previous: int, signalled: int) -> bool:
-        # a gap is a signal this process has not applied (another one's, or a
-        # rolled-back insert): keeping the old watermark makes the next check
-        # apply it, where adopting ours would skip it
         is_next = signalled == previous + 1
         _debug.lifecycle(
             "registry.signaling.signalled",

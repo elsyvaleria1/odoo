@@ -41,13 +41,11 @@ class TestSmsTemplate(SMSCommon, TestSMSRecipients):
         self.env["res.lang"]._activate_lang("fr_FR")
         self.user_admin.write({"lang": "en_US"})
         self.sms_template.update_field_translations("body", {"fr_FR": self.body_fr})
-        # set template to try to use customer lang
         self.sms_template.write(
             {
                 "lang": "{{ object.customer_id.lang }}",
             }
         )
-        # create a second record linked to a customer in another language
         self.partner_2.write(
             {
                 "lang": "fr_FR",
@@ -72,7 +70,6 @@ class TestSmsTemplate(SMSCommon, TestSMSRecipients):
             set(rid_to_lang.keys()), set((self.test_record | test_record_2).ids)
         )
         for rid, lang in rid_to_lang.items():
-            # TDE FIXME: False or en_US ?
             if rid == self.test_record.id:
                 self.assertEqual(lang, "en_US")
             elif rid == test_record_2.id:
@@ -84,7 +81,6 @@ class TestSmsTemplate(SMSCommon, TestSMSRecipients):
             (self.test_record | test_record_2).ids
         )
         for lang, (_tpl, rids) in tpl_to_rids.items():
-            # TDE FIXME: False or en_US ?
             if lang == "en_US":
                 self.assertEqual(rids, self.test_record.ids)
             elif lang == "fr_FR":

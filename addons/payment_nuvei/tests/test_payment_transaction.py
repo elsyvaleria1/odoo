@@ -11,7 +11,6 @@ from odoo.addons.payment_nuvei.tests.common import NuveiCommon
 @tagged("post_install", "-at_install")
 class TestPaymentTransaction(NuveiCommon):
     def test_no_item_missing_from_rendering_values(self):
-        """Test that the rendering values match what we expect."""
 
         def make_uuid():
             return "0000-0000-0000-0000"
@@ -82,7 +81,6 @@ class TestPaymentTransaction(NuveiCommon):
 
     @mute_logger("odoo.addons.payment.models.payment_transaction")
     def test_no_input_missing_from_redirect_form(self):
-        """Test that no key is omitted from the rendering values."""
         tx = self._create_transaction(flow="redirect")
         expected_input_keys = [
             "checksum",
@@ -136,39 +134,29 @@ class TestPaymentTransaction(NuveiCommon):
         self.assertListEqual(input_keys, expected_input_keys)
 
     def test_apply_updates_confirms_transaction(self):
-        """Test that the transaction state is set to 'done' when the payment data indicates a
-        successful payment."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates(self.payment_data)
         self.assertEqual(tx.state, "done")
 
     def test_apply_updates_sets_transaction_in_error(self):
-        """Test that the transaction state is set to 'error' when the payment data indicates
-        that something went wrong."""
         tx = self._create_transaction(flow="redirect")
         payload = dict(self.payment_data, Status="ERROR", Reason="Invalid Card")
         tx._apply_updates(payload)
         self.assertEqual(tx.state, "error")
 
     def test_apply_updates_sets_unknown_transaction_in_error(self):
-        """Test that the transaction state is set to 'error' when the payment data returns
-        something with an unknown state."""
         tx = self._create_transaction(flow="redirect")
         payload = dict(self.payment_data, Status="???", Reason="Invalid Card")
         tx._apply_updates(payload)
         self.assertEqual(tx.state, "error")
 
     def test_processing_payment_data_sets_transaction_to_cancel(self):
-        """Test that the transaction state is set to 'cancel' when the payment data is
-        missing."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates({})
         self.assertEqual(tx.state_message, "The customer left the payment page.")
         self.assertEqual(tx.state, "cancel")
 
     def test_processing_values_contain_rounded_amount_usd_webpay(self):
-        """Ensure that for USD currency with Webpay payment method, processing_values should
-        contain a value which is the amount rounded down to the nearest 0."""
         currency_usd = self.env.ref("base.USD")
         webpay_id = self.env.ref("payment.payment_method_webpay")
         tx = self._create_transaction(

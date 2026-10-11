@@ -80,7 +80,6 @@ class ImporterCase(common.TransactionCase):
             return d["name"]
 
         name = record.display_name
-        # fix dotted display_name results, otherwise xid lookups blow up
         name = name.replace(".", "-")
         ModelData.create(
             {
@@ -126,7 +125,7 @@ class test_ids_stuff(ImporterCase):
         self.assertEqual(len(result["ids"]), 1)
         self.assertFalse(result["messages"])
         self.assertEqual(
-            [42],  # updated value to imported
+            [42],
             values(self.read()),
         )
 
@@ -168,11 +167,11 @@ class test_boolean_field(ImporterCase):
             ["false"],
             ["FALSE"],
             [""],
-            ["faux"],  # false, fr
-            ["falsch"],  # false, de
-            ["ложь"],  # no, ru
-            ["onwaar"],  # false, nl
-            ["ne"],  # false, lt,
+            ["faux"],
+            ["falsch"],
+            ["ложь"],
+            ["onwaar"],
+            ["ne"],
         ]
 
         result = self.import_(["value"], falses)
@@ -181,14 +180,12 @@ class test_boolean_field(ImporterCase):
         self.assertEqual([False] * len(falses), values(self.read()))
 
     def test_trues(self):
-        # Since importing wrong boolean values is now returning error, import should not return any ids if an error is raised.
         trues = [
             ["None"],
             ["nil"],
             ["()"],
             ["f"],
             ["#f"],
-            # Problem: OpenOffice (and probably excel) output localized booleans
             ["VRAI"],
             ["ok"],
             ["true"],
@@ -215,7 +212,6 @@ class test_boolean_field(ImporterCase):
             ],
         )
 
-        # Only correct boolean values are accepted.
         result = self.import_(["value"], [["1"], ["yes"], ["true"]])
         self.assertEqual(len(result["ids"]), 3)
         self.assertEqual([True] * 3, values(self.read()))
@@ -342,29 +338,15 @@ class test_integer_field(ImporterCase):
         )
 
     def test_load_per_record_savepoint_isolates_failures(self):
-        """Record-by-record retry must give each record its own savepoint.
-
-        When a batch falls back to row-by-row and one record raises a
-        psycopg.Warning (recorded as a 'warning', so ``ids`` is NOT reset to
-        False), every id returned must reference a record that still exists.
-        The previous code rolled back the single load-wide savepoint on each
-        failure, undoing already-succeeded rows while their ids stayed in the
-        result.
-        """
         import psycopg
 
         Model = type(self.model)
         real_load = Model._load_records
 
         def fake_load(model_self, data_list, update=False):
-            # Force the row-by-row fallback by failing the batch call (len > 1).
-            # A generic Exception routes to the fallback; psycopg.InternalError
-            # would instead bail the whole load.
             if len(data_list) != 1:
                 raise Exception("forced batch failure")
             recs = real_load(model_self, data_list, update)
-            # Emit a warning for the middle record AFTER it was written, so its
-            # own savepoint rolls it back without recording an 'error'.
             if any(d["values"].get("value") == 2 for d in data_list):
                 raise psycopg.Warning("forced warning")
             return recs
@@ -375,7 +357,6 @@ class test_integer_field(ImporterCase):
         ):
             result = self.import_(["value"], [["1"], ["2"], ["3"]])
 
-        # A warning (not an error) leaves ``ids`` populated; each must be real.
         self.assertTrue(
             all(m["type"] != "error" for m in result["messages"]), result["messages"]
         )
@@ -385,7 +366,6 @@ class test_integer_field(ImporterCase):
                 self.model.browse(rid).exists(),
                 f"load() returned id {rid} of a rolled-back record",
             )
-        # the warned record (value == 2) was rolled back; 1 and 3 persisted.
         self.assertEqual(
             sorted(self.model.browse(result["ids"]).mapped("value")), [1, 3]
         )
@@ -528,7 +508,6 @@ class test_unbound_string_field(ImporterCase):
             ["value"],
             [
                 ["í dag viðrar vel til loftárása"],
-                # ackbar.jpg
                 ["If they ask you about fun, you tell them – fun is a filthy parasite"],
             ],
         )
@@ -636,7 +615,6 @@ class test_selection(ImporterCase):
 
     def test_imported_translated(self):
         self.env["res.lang"]._activate_lang("fr_FR")
-        # add translations for selection
         selections = self.env["ir.model.fields.selection"].search(
             [("name", "in", list(self.translations_fr))]
         )
@@ -697,7 +675,6 @@ class test_selection_with_default(ImporterCase):
     model_name = "export.selection.withdefault"
 
     def test_empty(self):
-        """Empty cells should set corresponding field to False"""
         result = self.import_(["value"], [[""]])
         self.assertFalse(result["messages"])
         self.assertEqual(len(result["ids"]), 1)
@@ -705,7 +682,6 @@ class test_selection_with_default(ImporterCase):
         self.assertEqual(values(self.read()), [False])
 
     def test_default(self):
-        """Non-provided cells should set corresponding field to default"""
         result = self.import_(["const"], [["42"]])
         self.assertFalse(result["messages"])
         self.assertEqual(len(result["ids"]), 1)
@@ -723,11 +699,6 @@ class test_selection_function(ImporterCase):
     }
 
     def test_imported(self):
-        """import uses fields_get, so translates import label (may or may not
-        be good news) *and* serializes the selection function to reverse it:
-        import does not actually know that the selection field uses a function
-        """
-        # NOTE: conflict between a value and a label => pick first
         result = self.import_(
             ["value"],
             [
@@ -740,9 +711,7 @@ class test_selection_function(ImporterCase):
         self.assertEqual(values(self.read()), ["3", "1"])
 
     def test_translated(self):
-        """Expects output of selection function returns translated labels"""
         self.env["res.lang"]._activate_lang("fr_FR")
-        # hack into code translations
         code_translations.python_translations[("test_import_export", "fr_FR")] = (
             self.translations_fr
         )
@@ -771,11 +740,9 @@ class test_m2o(ImporterCase):
     model_name = "export.many2one"
 
     def test_by_name(self):
-        # create integer objects
         record1 = self.env["export.integer"].create({"value": 42})
         record2 = self.env["export.integer"].create({"value": 36})
 
-        # preheat the oven
         for _ in range(5):
             with contextlib.closing(self.env.cr.savepoint(flush=False)):
                 self.import_(
@@ -787,19 +754,10 @@ class test_m2o(ImporterCase):
                     ],
                 )
 
-        # 1 x SAVEPOINT load
-        # 3 x name_search
-        # 1 x SAVEPOINT _load_records
-        # 1 x select on list of existing modules
-        # 1 x insert
-        # 1 x RELEASE SAVEPOINT _load_records
-        # 1 x RELEASE SAVEPOINT load
-        # => 9
         with self.assertQueryCount(9):
             result = self.import_(
                 ["value"],
                 [
-                    # import by display_name
                     [record1.display_name],
                     [record1.display_name],
                     [record2.display_name],
@@ -808,7 +766,6 @@ class test_m2o(ImporterCase):
 
         self.assertFalse(result["messages"])
         self.assertEqual(len(result["ids"]), 3)
-        # correct ids assigned to corresponding records
         self.assertEqual(
             [
                 (record1.id, record1.display_name),
@@ -839,7 +796,6 @@ class test_m2o(ImporterCase):
     def test_by_names(self):
         record1 = self.env["export.integer"].create({"value": 42})
         record2 = self.env["export.integer"].create({"value": 42})
-        # names should be the same
         self.assertEqual(record1.display_name, record2.display_name)
 
         result = self.import_(["value"], [[record2.display_name]])
@@ -861,16 +817,12 @@ class test_m2o(ImporterCase):
         )
 
     def test_fail_by_implicit_id(self):
-        """Can't implicitly import records by id"""
-        # create integer objects
         record1 = self.env["export.integer"].create({"value": 42})
         record2 = self.env["export.integer"].create({"value": 36})
 
-        # Because name_search all the things. Fallback schmallback
         result = self.import_(
             ["value"],
             [
-                # import by id, without specifying it
                 [record1.id],
                 [record2.id],
                 [record1.id],
@@ -913,9 +865,6 @@ class test_m2o(ImporterCase):
         self.assertIs(result["ids"], False)
 
     def test_sub_field(self):
-        """Does not implicitly create the record, does not warn that you can't
-        import m2o subfields (at all)...
-        """
         result = self.import_(["value/value"], [["42"]])
         self.assertEqual(
             result["messages"],
@@ -1064,9 +1013,6 @@ class TestInvalidStrings(ImporterCase):
 class test_m2m(ImporterCase):
     model_name = "export.many2many"
 
-    # apparently, one and only thing which works is a
-    # csv_internal_sep-separated list of ids, xids, or names (depending if
-    # m2m/.id, m2m/id or m2m[/anythingelse]
     def test_ids(self):
         id1 = (
             self.env["export.many2many.other"].create({"value": 3, "str": "record0"}).id
@@ -1255,7 +1201,6 @@ class test_m2m(ImporterCase):
 
         b = self.browse()
         self.assertEqual(len(b), 1)
-        # TODO: replacement of existing m2m values is correct?
         self.assertEqual(values(b[0].value), [84, 9])
 
 
@@ -1364,7 +1309,6 @@ class test_o2m(ImporterCase):
         self.assertIs(result["ids"], False)
 
     def test_link_inline(self):
-        """m2m-style specification for o2ms"""
         id1 = self.env["export.one2many.child"].create({"str": "Bf", "value": 109}).id
         id2 = self.env["export.one2many.child"].create({"str": "Me", "value": 262}).id
 
@@ -1379,12 +1323,10 @@ class test_o2m(ImporterCase):
 
         [b] = self.browse()
         self.assertEqual(b.const, 42)
-        # automatically forces link between core record and o2ms
         self.assertEqual(set(values(b.value)), {109, 262})
         self.assertEqual(values(b.value, field="parent_id"), [b, b])
 
     def test_link(self):
-        """O2M relating to an existing record (update) force a LINK_TO as well"""
         id1 = self.env["export.one2many.child"].create({"str": "Bf", "value": 109}).id
         id2 = self.env["export.one2many.child"].create({"str": "Me", "value": 262}).id
 
@@ -1400,7 +1342,6 @@ class test_o2m(ImporterCase):
 
         [b] = self.browse()
         self.assertEqual(b.const, 42)
-        # automatically forces link between core record and o2ms
         self.assertCountEqual(values(b.value), [109, 262])
         self.assertEqual(values(b.value, field="parent_id"), [b, b])
 
@@ -1424,10 +1365,6 @@ class test_o2m(ImporterCase):
         self.assertEqual(values(b.value, field="parent_id"), [b, b])
 
     def test_o2m_repeated_with_xids(self):
-        # concern: formerly this would link existing records, and fault if
-        # the records did not exist. This is more in line with other XID uses,
-        # however it does make thing work where they'd previously fail for
-        # well-defined reasons.
         result = self.import_(
             ["id", "const", "value/id", "value/value"],
             [
@@ -1597,9 +1534,6 @@ class test_realworld(SavepointCaseWithUserDemo):
         self.assertEqual(len(result["ids"]), len(data))
 
     def test_recursive_o2m(self):
-        """The content of the o2m field's dict needs to go through conversion
-        as it may be composed of convertables or other relational fields
-        """
         self.env.registry.clear_cache()
         Model = self.env["export.one2many.recursive"]
         result = Model.load(
@@ -1650,7 +1584,6 @@ class test_realworld(SavepointCaseWithUserDemo):
         self.assertIs(result["ids"], False)
 
     def test_no_install_mode(self):
-        """Test that the data is imported without the `install_mode` context key"""
         self.env.registry.clear_cache()
         Model = self.env["export.with.non.demo.constraint"]
         result = Model.with_context(import_file=True).load(
@@ -1722,14 +1655,8 @@ class test_datetime(ImporterCase):
         self.assertIs(result["ids"], False)
 
     def test_checktz1(self):
-        """Imported date should be interpreted as being in the tz provided by
-        the context
-        """
-        # write dummy tz in user (Asia/Hovd UTC+0700), should be superseded by
-        # context
         self.env.user.write({"tz": "Asia/Hovd"})
 
-        # UTC+1400
         result = self.import_(
             ["value"], [["2012-02-03 11:11:11"]], {"tz": "Pacific/Kiritimati"}
         )
@@ -1742,7 +1669,6 @@ class test_datetime(ImporterCase):
             ["2012-02-02 21:11:11"],
         )
 
-        # UTC-0930
         result = self.import_(
             ["value"], [["2012-02-03 11:11:11"]], {"tz": "Pacific/Marquesas"}
         )
@@ -1756,10 +1682,6 @@ class test_datetime(ImporterCase):
         )
 
     def test_usertz(self):
-        """If the context does not hold a timezone, the importing user's tz
-        should be used
-        """
-        # UTC +1000
         self.env.user.write({"tz": "Asia/Yakutsk"})
 
         result = self.import_(["value"], [["2012-02-03 11:11:11"]])
@@ -1773,9 +1695,6 @@ class test_datetime(ImporterCase):
         )
 
     def test_notz(self):
-        """If there is no tz either in the context or on the user, falls back
-        to UTC
-        """
         self.env.user.write({"tz": False})
 
         result = self.import_(["value"], [["2012-02-03 11:11:11"]])
@@ -2067,31 +1986,12 @@ class test_inherits(ImporterCase):
 class CheckSavepoint(ImporterCase):
     model_name = "export.unique"
 
-    # ``load()`` savepoint strategy (see ``LoadMixin.load``):
-    #   * one load-wide savepoint (atomic rollback of the whole load on error);
-    #   * one savepoint around each batch's fast-path bulk create;
-    #   * on bulk-create failure ONLY, a savepoint per record in the row-by-row
-    #     recovery, so each record is evaluated against the true prior state
-    #     (correct error detection) and a failed record is rolled back alone
-    #     (valid ids on the warning path -- see
-    #     ``test_load_per_record_savepoint_isolates_failures``).
-    #
-    # The former ``test_max_savepoint`` asserted "== 2 savepoints" even on the
-    # failing row-by-row path. That count is only reachable by rolling the single
-    # load-wide savepoint back on every failure, which also undoes every
-    # already-succeeded row while leaving its id in the result -- the very bug
-    # the isolation test guards against. Per-record isolation is incompatible
-    # with a constant savepoint count, so it is replaced by the two contract
-    # tests below.
 
     @mute_logger("odoo.db")
     def test_clean_batch_import_uses_constant_savepoints(self):
-        """The happy path must NOT open a savepoint per record: a conflict-free
-        batch is created in bulk under a single savepoint (plus the load-wide
-        one), independent of batch size."""
         from odoo.db import Cursor
 
-        data = [[str(i)] for i in range(120)]  # all unique -> bulk create succeeds
+        data = [[str(i)] for i in range(120)]
         with patch.object(
             Cursor, "savepoint", autospec=True, side_effect=Cursor.savepoint
         ) as sp_mock:
@@ -2107,14 +2007,8 @@ class CheckSavepoint(ImporterCase):
 
     @mute_logger("odoo.db", "odoo.models")
     def test_row_by_row_recovery_isolates_each_record(self):
-        """When the bulk create fails and load() falls back to row-by-row, each
-        record runs in its OWN savepoint (isolation) and is flushed individually
-        so its error binds to the right row. Every conflicting row is reported;
-        the load stays atomic (any error -> no ids)."""
         from odoo.db import Cursor
 
-        # 10 unique then 5 duplicates -> bulk create fails, row-by-row detects
-        # each duplicate against the (correctly persisted) earlier rows.
         data = [[str(i)] for i in range(10)] + [[str(i)] for i in range(5)]
         with (
             patch.object(
@@ -2128,7 +2022,6 @@ class CheckSavepoint(ImporterCase):
         errors = [m for m in result["messages"] if m["type"] == "error"]
         self.assertEqual(len(errors), 5, "every duplicate row must be reported")
         self.assertFalse(result["ids"], "an errored load is atomic: no ids")
-        # one savepoint per record (isolation) + load-wide + bulk-create attempt
         self.assertEqual(
             sp_mock.call_count,
             len(data) + 2,

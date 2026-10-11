@@ -71,11 +71,6 @@ class HrContractSalary(main.HrContractSalary):
             if category_id == request.env.ref(
                 "hr_contract_salary.hr_contract_salary_resume_category_monthly_salary"
             ):
-                # The configurator assumes a monthly pay schedule. Since the schedule_pay
-                # labels were shortened ("monthly" -> "month"), the mapping would render
-                # "month Salary" instead of "Monthly Salary", so hardcode the monthly label
-                # here. Other schedule_pay values still use schedule_pay_label until the
-                # configurator supports non-monthly schedules.
                 if version.schedule_pay == "monthly":
                     return "Monthly Salary"
                 period_name = schedule_pay_label.get(version.schedule_pay, "Monthly")
@@ -84,7 +79,6 @@ class HrContractSalary(main.HrContractSalary):
 
         result = super()._get_compute_results(new_version)
 
-        # generate a payslip corresponding to only this version
         payslip = new_version._generate_salary_simulation_payslip()
         _debug.lifecycle("configurator_payslip", version=new_version, payslip=payslip)
 
@@ -101,8 +95,6 @@ class HrContractSalary(main.HrContractSalary):
             )
             for line in payslip.line_ids.filtered(lambda l: l.appears_on_payslip)
         ]
-        # Allowed company ids might not be filled or request.env.user.company_ids might be wrong
-        # since we are in route context, force the company to make sure we load everything
         resume_lines = (
             request.env["hr.contract.salary.resume"]
             .sudo()
@@ -121,8 +113,6 @@ class HrContractSalary(main.HrContractSalary):
             lambda l: l.value_type == "monthly_total"
         )
 
-        # new categories could be introduced at this step
-        # recreate resume_categories
         resume_categories = (
             request.env["hr.contract.salary.resume"]
             .sudo()

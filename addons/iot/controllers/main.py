@@ -50,9 +50,6 @@ class IoTBoxLookup:
         )
 
     def _calling_box(self, identifier):
-        """The box a call names itself as. A token, when sent, must be that
-        box's, and an unknown box sending one is refused as a wrong token is;
-        a call with none is heard, as an upstream box sends none."""
         box = self._search_box(identifier) if identifier else request.env["iot.box"]
         headers = request.httprequest.headers
         if "Authorization" in headers:
@@ -84,7 +81,6 @@ class IoTController(IoTBoxLookup, http.Controller):
 
         return sorted(modules | {"iot_drivers"})
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/iot/get_handlers",
         type="http",
@@ -101,7 +97,6 @@ class IoTController(IoTBoxLookup, http.Controller):
             raise Unauthorized(
                 description="Auto update is disabled on the box '%s'." % identifier
             )
-        # '_L.py' files for Linux and '_W.py' for Windows
         incompatible_filename = "_L.py" if box.version[0] == "W" else "_W.py"
         modules = self._get_handler_modules(box)
 
@@ -118,10 +113,9 @@ class IoTController(IoTBoxLookup, http.Controller):
                             continue
                         zf.write(
                             handler, handler.relative_to(iot_handlers)
-                        )  # In order to remove the absolute path
+                        )
 
         etag = hashlib.sha256(fobj.getvalue()).hexdigest()
-        # If the file has not been modified since the last request, return a 304 (Not Modified)
         if etag == request.httprequest.headers.get("If-None-Match"):
             return request.prepare_response("", headers=[("ETag", etag)], status=304)
 
@@ -135,7 +129,7 @@ class IoTController(IoTBoxLookup, http.Controller):
         ).prepare_response()
 
     @http.route("/iot/keyboard_layouts", type="http", auth="public", csrf=False)
-    def load_keyboard_layouts(self, available_layouts):  # noqa: E8528 - an IoT box seeds the layout table once, before any box is paired
+    def load_keyboard_layouts(self, available_layouts):
         if not request.env["iot.keyboard.layout"].sudo().search_count([], limit=1):
             request.env["iot.keyboard.layout"].sudo().create(
                 json_loads(available_layouts)
@@ -174,7 +168,7 @@ class IoTController(IoTBoxLookup, http.Controller):
                 [("identifier", "=", device_identifier), ("iot_id", "=", box.id)],
                 limit=1,
             )
-            and device_identifier != box.identifier  # target the box itself
+            and device_identifier != box.identifier
         ):
             _logger.warning(
                 "No IoT device found with identifier '%s' (iot_box_identifier: %s). Request ignored",
@@ -197,7 +191,6 @@ class IoTController(IoTBoxLookup, http.Controller):
             },
             "operation_confirmation",
             box=box,
-            # upstream's box reports its remote debug status as session 0
             unrouted="remote_debug"
             if not session_id and not device_identifier
             else None,
@@ -226,15 +219,6 @@ class IoTController(IoTBoxLookup, http.Controller):
 
     @http.route("/iot/setup", type="jsonrpc", auth="public")
     def update_box(self, iot_box, devices):
-        """This function receives a dict from the iot box with information from it
-        as well as devices connected and supported by this box.
-        This function create the box and the devices and set the status (connected / disconnected)
-         of devices linked with this box
-
-        :param dict iot_box: IoT Box information
-        :param dict devices: IoT devices information
-        :return: IoT websocket channel
-        """
         box = self._upsert_box(iot_box)
         if not box:
             return None
@@ -244,34 +228,26 @@ class IoTController(IoTBoxLookup, http.Controller):
         return request.env["iot.channel"].sudo()._box_channel(box)
 
     def _upsert_box(self, iot_box):
-        """Create or update the ``iot.box`` record this payload describes.
-
-        Returns an empty recordset when the payload does not carry the token
-        of the box it names -- the box's own when it is known, one the database
-        handed out when it is not -- which is what stops a stranger enrolling
-        itself or rewriting a box it found the identifier of.
-        """
         iot_identifier = iot_box["identifier"]
         new_iot_ip = iot_box["ip"]
         new_iot_version = iot_box["version"]
         box = self._search_box(iot_identifier) or self._search_box(iot_box.get("mac"))
         create_update_value = {
-            "identifier": iot_identifier,  # Ensure upgrade from MAC to serial number
+            "identifier": iot_identifier,
             "ip": new_iot_ip,
             "version": new_iot_version,
         }
         if box:
             offered = iot_box.get("token") or ""
-            if not (box.token and consteq(offered, box.token)):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            if not (box.token and consteq(offered, box.token)):
                 pairing_token = request.env["iot.box"]._get_pairing_token()
-                if not (pairing_token and consteq(offered, pairing_token)):  # noqa: E8537  device: a device's or a service's credential, presented by a program
+                if not (pairing_token and consteq(offered, pairing_token)):
                     _logger.warning(
                         "IoT %s offered neither the token it was paired with nor "
                         "one this database handed out in the last 15 minutes",
                         iot_identifier,
                     )
                     return request.env["iot.box"]
-                # paired again: the box now holds the token it was just handed
                 _logger.info("IoT %s paired again", iot_identifier)
                 create_update_value["token"] = offered
                 request.env["iot.box"]._spend_pairing_token()
@@ -305,18 +281,6 @@ class IoTController(IoTBoxLookup, http.Controller):
         return box
 
     def _find_moved_device(self, known, device_identifier, data_device):
-        """A device already on record whose identifier has changed underneath it.
-
-        A serial device is identified by the port it answers on, so replugging
-        it into another port reads as a brand new device and the old record is
-        left behind marked disconnected. Returning the old record here re-points
-        it instead. A driver module overrides this when it can recognise its own
-        hardware across such a move.
-
-        The Belgian fiscal data module is the one case the base app carries,
-        rather than ``iot_blackbox_be``, because the heuristic has to hold on
-        databases that never install that module.
-        """
         if (
             data_device["type"] == "fiscal_data_module"
             and "BODO001" in data_device["name"]
@@ -330,7 +294,6 @@ class IoTController(IoTBoxLookup, http.Controller):
         return known.browse()
 
     def _upsert_devices(self, box, devices):
-        """Record the devices a box reports, and disconnect the ones it did not."""
         Device = request.env["iot.device"].sudo()
         known = Device.search([("iot_id", "=", box.id)])
         by_identifier = {device.identifier: device for device in known}
@@ -380,17 +343,11 @@ class IoTController(IoTBoxLookup, http.Controller):
                 )
             connected |= device
 
-        # Mark the received devices as connected, disconnect the others.
         connected.write({"connection_state": "connected"})
         (previously_connected - connected).write({"connection_state": "disconnected"})
 
     @http.route("/iot/box/update_certificate_status", type="jsonrpc", auth="public")
     def update_certificate_status(self, identifier, ssl_certificate_end_date):
-        """Update the SSL certificate end date for the IoT Box.
-
-        :param str identifier: IoT Box identifier
-        :param str ssl_certificate_end_date: SSL certificate end date
-        """
         box = self._calling_box(identifier)
         if not box:
             _logger.warning(
@@ -411,7 +368,6 @@ class IoTLogController(IoTBoxLookup, http.Controller):
             )
         )
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/iot/log",
         type="http",
@@ -441,7 +397,6 @@ class IoTLogController(IoTBoxLookup, http.Controller):
             )
 
         def finish_request():
-            # as an unknown box is acknowledged, so the two read the same
             return Response(status=200, content_type="text/plain")
 
         if not self._is_iot_log_enabled():

@@ -45,8 +45,6 @@ class TestMultiCompany(HrPresenceCase):
         )
 
     def test_evidence_of_another_company_is_not_left_standing(self):
-        """Four booleans were reset by whichever sweep reached them; a company
-        the sweep never reached kept yesterday's answer indefinitely."""
         self.there.hr_presence_ip_date = self._today_for(self.there) - timedelta(days=1)
         self.env["hr.employee"].with_company(self.company)._check_presence()
         self.assertEqual(self.there.hr_presence_state, "absent")
@@ -74,8 +72,6 @@ class TestMultiCompany(HrPresenceCase):
             second,
             "reading order used to decide the answer for everyone in the transaction",
         )
-        # Equality alone would hold just as well if both readers were wrong, so
-        # say which answer they have to agree on.
         self.assertEqual(first, "present")
 
     def test_each_company_keeps_its_own_valid_ip_list(self):

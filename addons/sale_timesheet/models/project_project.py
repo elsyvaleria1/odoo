@@ -202,7 +202,7 @@ class ProjectProject(models.Model):
             )
         ):
             SaleOrderLine = self.env["sale.order.line"]
-            sol = SaleOrderLine.search(  # noqa: E8507 - one lookup per project, on its own partner
+            sol = SaleOrderLine.search(
                 Domain.AND(
                     [
                         SaleOrderLine._domain_sale_line_service(),

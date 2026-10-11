@@ -46,7 +46,7 @@ class PrivacyLog(models.Model):
                 "gmail.com",
                 "hotmail.com",
                 "yahoo.com",
-            ]:  # More than half of addresses domains
+            ]:
                 return label
             split_domain = label.split(".")
             return ".".join(

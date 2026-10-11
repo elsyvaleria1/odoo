@@ -33,8 +33,6 @@ class MixinTenderInvite(models.AbstractModel):
 
     def action_invite(self):
         self.check_singleton()
-        # the origin form's defaults (its agreement, its partner) are not the
-        # invited counterparties' own
         context = clean_context(self.env.context)
         if self.origin_order_id:
             context["tender_origin_id"] = self.origin_order_id.id

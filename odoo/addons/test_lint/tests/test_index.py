@@ -39,8 +39,6 @@ _UNIQUE_CONSTRAINT_RE = re.compile(
 )
 
 
-# A UNIQUE constraint is backed by a btree index over its columns, so it serves
-# the same lookups a declared Index does.
 def _btree_clauses(model):
     for table_object in getattr(model, "_table_objects", {}).values():
         if not isinstance(table_object, (models.Index, models.Constraint)):
@@ -138,12 +136,7 @@ BTREE_INDEX_IGNORE_FIELDS = {
     "project.collaborator.project_id",
 }
 
-# Models whose rows the system deletes in bulk. Deleting a row runs the
-# foreign-key check of every column that references it, and PostgreSQL does not
-# index a referencing column by itself: unindexed, each deleted row scans each
-# referencing table in full.
 BULK_DELETED_COMODELS = {
-    # garbage-collected blobs, replaced asset bundles, reissued CFDIs
     "ir.attachment",
 }
 REFERENCE_INDEX_IGNORE_FIELDS: set[str] = set()
@@ -207,7 +200,6 @@ class TestIndex(common.TransactionCase):
         missing = []
         for model_name in self.env.registry:
             model = self.env[model_name]
-            # a transient table is emptied within the hour, so it stays small
             if model._abstract or model._transient or not model._auto:
                 continue
             indexed = None

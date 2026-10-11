@@ -11,7 +11,6 @@ from odoo.addons.social.tests.tools import mock_void_external_calls
 class TestAccess(common.SocialCase):
     @classmethod
     def setUpClass(cls):
-        """Create some more dummy data for security tests."""
         super().setUpClass()
 
         with mock_void_external_calls():
@@ -50,7 +49,6 @@ class TestAccess(common.SocialCase):
     @users("user_emp")
     @mock_void_external_calls()
     def test_access_social_employee(self):
-        # Create: not allowed
         with self.assertRaises(AccessError):
             self.env["social.post"].create({"message": "A Post"})
         with self.assertRaises(AccessError):
@@ -74,7 +72,6 @@ class TestAccess(common.SocialCase):
         with self.assertRaises(AccessError):
             self.env["social.stream.post.image"].create({"image_url": "dummy.png"})
 
-        # Read: not allowed
         with self.assertRaises(AccessError):
             self.social_post.with_user(self.env.user).read(["message"])
         with self.assertRaises(AccessError):
@@ -94,7 +91,6 @@ class TestAccess(common.SocialCase):
                 ["stream_post_id"]
             )
 
-        # Write: not allowed
         with self.assertRaises(AccessError):
             self.social_post.with_user(self.env.user).write({"message": "New Message"})
         with self.assertRaises(AccessError):
@@ -122,7 +118,6 @@ class TestAccess(common.SocialCase):
                 {"stream_post_id": self.social_stream_post.id}
             )
 
-        # Unlink: not allowed
         with self.assertRaises(AccessError):
             self.social_post.with_user(self.env.user).unlink()
         with self.assertRaises(AccessError):
@@ -144,7 +139,6 @@ class TestAccess(common.SocialCase):
     @users("social_user")
     @mock_void_external_calls()
     def test_access_social_social_user(self):
-        # Create: not allowed except for posts, live posts (as able to post a post) and streams
         new_post = self.env["social.post"].create({"message": "A Post"})
         new_stream = self.env["social.stream"].create(
             {
@@ -153,7 +147,6 @@ class TestAccess(common.SocialCase):
                 "account_id": self.social_account.id,
             }
         )
-        # can access all the posts. -> can post all posts
         self.env["social.live.post"].create(
             {"post_id": self.social_post.id, "account_id": self.social_account.id}
         )
@@ -174,10 +167,8 @@ class TestAccess(common.SocialCase):
         with self.assertRaises(AccessError):
             self.env["social.stream.post.image"].create({"image_url": "dummy.png"})
 
-        # Can post
         new_post.action_post()
 
-        # Read: allowed. They can read all posts
         new_post.with_user(self.env.user).read(["message"])
         self.social_post.with_user(self.env.user).read(["message"])
 
@@ -192,11 +183,9 @@ class TestAccess(common.SocialCase):
         self.social_stream_post.with_user(self.env.user).read(["message"])
         self.social_stream_post_image.with_user(self.env.user).read(["stream_post_id"])
 
-        # Write: allowed
         new_post.with_user(self.env.user).write({"message": "New Message"})
         new_stream.with_user(self.env.user).write({"name": "New Name"})
         self.social_post.with_user(self.env.user).write({"message": "New Message"})
-        # can now write on the 'state' field
         new_post.with_user(self.env.user).write({"state": "scheduled"})
         new_live_post.with_user(self.env.user).write({"post_id": self.social_post.id})
         with self.assertRaises(AccessError):
@@ -225,7 +214,6 @@ class TestAccess(common.SocialCase):
                 {"stream_post_id": self.social_stream_post.id}
             )
 
-        # Unlink: not allowed except for their own posts/streams/live posts
         new_post.with_user(self.env.user).unlink()
         new_stream.with_user(self.env.user).unlink()
         new_live_post.with_user(self.env.user).unlink()
@@ -250,7 +238,6 @@ class TestAccess(common.SocialCase):
     @users("social_manager")
     @mock_void_external_calls()
     def test_access_social_social_manager(self):
-        # Create: allowed except for media and stream types
         new_post = self.env["social.post"].create(
             {"message": "A Post", "account_ids": [(4, self.social_account.id)]}
         )
@@ -277,10 +264,8 @@ class TestAccess(common.SocialCase):
         with self.assertRaises(AccessError):
             self.env["social.stream.type"].create({"name": "A stream type"})
 
-        # Can post
         new_post.action_post()
 
-        # Read: allowed
         self.social_post.with_user(self.env.user).read(["message"])
         self.social_live_post.with_user(self.env.user).read(["post_id"])
         self.social_account.with_user(self.env.user).read(["name"])
@@ -290,7 +275,6 @@ class TestAccess(common.SocialCase):
         self.social_stream_post.with_user(self.env.user).read(["message"])
         self.social_stream_post_image.with_user(self.env.user).read(["stream_post_id"])
 
-        # Write: allowed except for stream types
         self.social_media.with_user(self.env.user).write({"name": "New Name"})
         self.social_post.with_user(self.env.user).write(
             {"message": "New Message", "state": "scheduled"}
@@ -314,7 +298,6 @@ class TestAccess(common.SocialCase):
                 {"media_id": self.social_media.id}
             )
 
-        # Unlink: allowed except for media and stream types
         self.social_live_post.with_user(self.env.user).unlink()
         self.social_post.with_user(self.env.user).unlink()
         self.social_stream_post_image.with_user(self.env.user).unlink()

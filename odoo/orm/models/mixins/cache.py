@@ -120,7 +120,6 @@ class CacheMixin(_ModelStubs):
             self._check_no_pending_write(fields, ids)
         self._access_inputs_forgotten(fnames)
         if origin_reads := env.transaction.origin_reads:
-            # the rows may differ from what a draft of them read
             origin_reads.evict(
                 env.core,
                 self._name,
@@ -131,12 +130,12 @@ class CacheMixin(_ModelStubs):
             )
 
         field_inverses = self.pool.field_inverses
-        inverses_invalidated = 0  # debuglog
+        inverses_invalidated = 0
         for field in fields:
             field._invalidate_cache(env, ids)
             if inverses := field_inverses.get(field):
                 for invf in inverses:
-                    inverses_invalidated += 1  # debuglog
+                    inverses_invalidated += 1
                     if flush:
                         env[invf.model_name].flush_model([invf.name])
                     invf._invalidate_cache(env, keep_dirty=True)
@@ -164,11 +163,6 @@ class CacheMixin(_ModelStubs):
     def _access_inputs_written(
         self, fnames: Collection[str] | None, *, created: bool = False
     ) -> None:
-        # `fnames` of these rows changed (None: every field, the rows were
-        # deleted): a user's read verdicts and x2many slots over this model,
-        # or over any model whose read rule reads through it, may no longer be
-        # what the user's search would return. A created row is in no slot
-        # and no verdict of its own model yet
         env = self.env
         if not created:
             self._evict_x2many_scopes_reading_through(fnames)
@@ -179,9 +173,6 @@ class CacheMixin(_ModelStubs):
                 field._evict_user_scopes_reading_through(env, fnames, self._name)
 
     def _access_inputs_forgotten(self, fnames: Collection[str] | None) -> None:
-        # the rows may differ from what was read (an invalidation, a value
-        # replaced behind write()): the verdicts judged on them go, and so do
-        # the user x2many slots a rule reading them filled, as after a write
         env = self.env
         env.transaction.access_memo.forget(env.registry, self._name, fnames)
         self._access_inputs_written(fnames)

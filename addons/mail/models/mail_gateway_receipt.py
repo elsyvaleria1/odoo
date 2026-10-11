@@ -50,8 +50,6 @@ class MailGatewayReceipt(models.Model):
 
     @api.model
     def _release_message_id_unless_posted(self, message_id: str) -> None:
-        # a message that left nothing behind (a bounce) is processed again when
-        # it is delivered again, as it was before receipts existed
         self.env["mail.message"].flush_model(["message_id"])
         self.env.cr.execute(
             SQL(

@@ -1164,12 +1164,6 @@ class SlideSlide(models.Model):
             embed_entry._increment_fields_skiplock("count_views")
             embed_entry.invalidate_recordset(["count_views"])
         else:
-            # The search above can race: two concurrent embeds of a URL with
-            # no existing row can both miss it and both try to create one.
-            # The (slide_id, url) unique constraint on slide.embed turns the
-            # loser's create() into an IntegrityError instead of a silent
-            # duplicate row; fall back to incrementing the row the winner
-            # created.
             try:
                 with self.env.cr.savepoint():
                     embed_entry = self.env["slide.embed"].create(

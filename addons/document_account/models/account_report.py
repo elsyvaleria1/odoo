@@ -8,7 +8,6 @@ class AccountReport(models.Model):
     _inherit = "report.formula"
 
     def _init_options_buttons(self, options, previous_options) -> None:
-        # OVERRIDE
         super()._init_options_buttons(options, previous_options)
         options["buttons"].append(
             {
@@ -19,11 +18,6 @@ class AccountReport(models.Model):
         )
 
     def open_report_export_wizard(self, options):
-        """Creates a new export wizard for this report and returns an act_window
-        opening it. A new account_report_generation_options key is also added to
-        the context, containing the current options selected on this report
-        (which must hence be taken into account when exporting it to a file).
-        """
         self.check_singleton()
         new_context = {
             **self.env.context,
@@ -32,8 +26,6 @@ class AccountReport(models.Model):
         }
         view_id = self.env.ref("account.view_report_export_wizard").id
 
-        # We have to create it before returning the action (and not just use a record in 'new' state), so that we can create
-        # the transient records used in the m2m for the different export formats.
         new_wizard = (
             self.with_context(new_context)
             .env["wizard.report.formula.export.attachment"]

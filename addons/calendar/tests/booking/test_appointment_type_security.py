@@ -14,36 +14,18 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
     @users("apt_manager")
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_appointment_type_access_apt_manager(self):
-        """Test security access to appointment.type for the group_appointment_manager.
-        Can read / write / create / unlink any appointment type.
-        """
         self._prepare_types_with_user()
-        # Can read, write, unlink any appointment type
         for appointment_type in self.all_apt_types:
             with self.subTest(appointment_type=appointment_type):
                 appointment_type.read(["name"])
                 appointment_type.write({"is_published": True})
                 appointment_type.unlink()
-        # Can create an appointment type
         self.env["appointment.type"].create({"name": "Test Create"})
 
     @users("apt_user")
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_appointment_type_access_apt_user(self):
-        """Test security access to appointment.type for the group_appointment_user.
-        Can create an appointment type.
-        Can read every published appointment type.
-        Can read an appointment type that:
-            - is created by the user.
-            - has the user in its staff OR doesn't have any staff
-            - is resource-based.
-        Can write an appointment type that:
-            - is created by the user.
-        Can unlink an appointment type that:
-            - is created by the user.
-        """
         self._prepare_types_with_user()
-        # Can't read appointment type for which he is not part of staff users
         with self.assertRaises(AccessError):
             self.apt_type_apt_manager.read(["name"])
         with self.assertRaises(AccessError):
@@ -51,7 +33,6 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
         (self.apt_type_apt_user + self.apt_type_resource + self.apt_type_no_staff).read(
             ["name"]
         )
-        # Can read now that's published
         for appointment_type in self.apt_type_apt_manager + self.apt_type_internal_user:
             with self.subTest(appointment_type=appointment_type):
                 appointment_type.with_user(self.apt_manager).write(
@@ -59,14 +40,12 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
                 )
                 appointment_type.read(["name"])
 
-        # Can create an appointment type
         created_apt = self.env["appointment.type"].create(
             {
                 "name": "Test Create",
             }
         )
 
-        # Can't write or unlink appointment type created by some one else
         for appointment_type in self.all_apt_types:
             with (
                 self.subTest(appointment_type=appointment_type),
@@ -79,22 +58,13 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
             ):
                 appointment_type.unlink()
 
-        # Can only write or unlink appointment types created by himself
         created_apt.write({"name": "test"})
         created_apt.unlink()
 
     @users("internal_user")
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_appointment_type_access_internal_user(self):
-        """Test security access to appointment.type for the base.group_user.
-        Can read an appointment type that:
-            - is published.
-            - has the user in its staff OR doesn't have any staff
-            - is resource-based.
-        Can't write / create / unlink any appointment type.
-        """
         self._prepare_types_with_user()
-        # Can't read appointment type for which he is not part of staff users
         with self.assertRaises(AccessError):
             self.apt_type_apt_manager.read(["name"])
         with self.assertRaises(AccessError):
@@ -104,17 +74,14 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
             + self.apt_type_resource
             + self.apt_type_no_staff
         ).read(["name"])
-        # Can read now that's published
         for appointment_type in self.apt_type_apt_manager + self.apt_type_apt_user:
             with self.subTest(appointment_type=appointment_type):
                 appointment_type.with_user(self.apt_manager).write(
                     {"is_published": True}
                 )
                 appointment_type.read(["name"])
-        # Can't create an appointment type
         with self.assertRaises(AccessError):
             self.env["appointment.type"].create({"name": "Test Create"})
-        # Can't write or unlink any appointment type
         for appointment_type in self.all_apt_types:
             with self.subTest(appointment_type=appointment_type):
                 with self.assertRaises(AccessError):
@@ -125,11 +92,7 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
     @users("public_user")
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_appointment_type_access_public_user(self):
-        """Test security access to appointment.type for the base.group_public.
-        Can't read / write / create / unlink any appointment type.
-        """
         self._prepare_types_with_user()
-        # Can't read / write / unlink any appointment type
         for appointment_type in self.all_apt_types:
             with self.subTest(appointment_type=appointment_type):
                 with self.assertRaises(AccessError):
@@ -138,20 +101,15 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
                     appointment_type.write({"is_published": True})
                 with self.assertRaises(AccessError):
                     appointment_type.unlink()
-        # Can't create an appointment type
         with self.assertRaises(AccessError):
             self.env["appointment.type"].create({"name": "Test Create"})
 
     @users("staff_user_aust")
     def test_appointment_type_customer_description_access(self):
-        """
-        Ensure a user who is only an attendee (i.e., not in staff_user_ids)
-        does NOT receive an AccessError when calling _get_customer_description.
-        """
         appointment_type = self.apt_type_bxls_2days
         appointment_type.sudo().staff_user_ids = [
             self.apt_manager.id
-        ]  # ensure staff is set
+        ]
         appointment_type.sudo().message_confirmation = "Test confirmation message"
 
         test_event = self.env["calendar.event"].create(
@@ -160,7 +118,7 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
                 "start": datetime.now(),
                 "stop": datetime.now() + timedelta(hours=1),
                 "appointment_type_id": appointment_type.id,
-                "user_id": self.apt_manager.id,  # The staff/host user
+                "user_id": self.apt_manager.id,
                 "partner_ids": [
                     (
                         6,
@@ -179,9 +137,6 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
     @users("public_user")
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.addons.base.models.ir_access")
     def test_appointment_type_image_access_public_user(self):
-        """Test that base.group_public users can access every appointment type image
-        even though they don't have read access on the appointment.type model.
-        """
         self._prepare_types_with_user()
 
         placeholder_image = file_open(
@@ -209,15 +164,6 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
                 self.assertEqual(res.content, expected_image)
 
     def test_portal_attendee_can_search_appointment_events(self):
-        """A portal attendee searches calendar events without reading appointment types.
-
-        Any search on a non-public field makes `calendar.event._search` inject
-        the privacy domain, and the booking override of that domain names
-        resource-based appointment types. A portal user has no read right on
-        `appointment.type`, so the term must not be evaluated under theirs --
-        otherwise `/my/counters` and `/my/appointments` fail for every portal
-        user as soon as the appointment half of `calendar` is present.
-        """
         portal_user = mail_new_test_user(
             self.env, login="portal_attendee", groups="base.group_portal"
         )
@@ -252,7 +198,6 @@ class TestAppointmentTypeSecurity(AppointmentSecurityCommon):
         self.assertEqual(found, events)
 
     def _prepare_types_with_user(self):
-        """Prepare the appointment types by applying the user to be the one from the environment."""
         self.apt_type_apt_manager = self.apt_type_apt_manager.with_user(self.env.user)
         self.apt_type_apt_user = self.apt_type_apt_user.with_user(self.env.user)
         self.apt_type_internal_user = self.apt_type_internal_user.with_user(

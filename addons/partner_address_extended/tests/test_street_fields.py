@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase
 
 class TestStreetFields(TransactionCase):
     def test_partner_create(self):
-        """Will test the compute and inverse methods of street fields when creating partner records."""
         mx_id = self.env.ref("base.mx").id
         partner = self.env["res.partner"].create(
             {"name": "Test Address", "country_id": mx_id}
@@ -32,7 +31,6 @@ class TestStreetFields(TransactionCase):
         ]
 
         for street, name, number, number2 in values:
-            # test street -> street values (compute)
             partner.street = street
             self.assertEqual(
                 partner.street_name,
@@ -65,7 +63,6 @@ class TestStreetFields(TransactionCase):
             )
 
     def test_inverse_street_data_without_leading_parts(self):
-        """A door number alone must not leave a stray leading " - "."""
         mx_id = self.env.ref("base.mx").id
         partner = self.env["res.partner"].create(
             {"name": "Test Address", "country_id": mx_id}
@@ -75,7 +72,6 @@ class TestStreetFields(TransactionCase):
         self.assertEqual(partner.street, "4B")
 
     def test_child_sync(self):
-        """Test that city_id is propagated to (contact-type) children contacts."""
         usa = self.env.ref("base.us")
         new_york_city = self.env["res.city"].create(
             {

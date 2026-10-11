@@ -497,13 +497,6 @@ class HrSalaryAttachment(models.Model):
             )
 
     def record_payment(self, total_amount) -> None:
-        """Record a new payment for this attachment, if the total has been reached the attachment will be closed.
-
-        :param total_amount: amount to register for this payment
-            computed using the payslip_amount and the total if not given
-
-        paid_amount is capped at total_amount.
-        """
 
         def _record_payment(attachment, amount):
             _debug.lifecycle(
@@ -538,10 +531,8 @@ class HrSalaryAttachment(models.Model):
             )
 
         remaining = total_amount
-        # It is necessary to sort attachments to pay monthly payments (child_support) first
         attachments_sorted = self.sorted(key=lambda a: a.has_total_amount)
         _debug.pipeline("attachment_payment", attachments=self, total=total_amount)
-        # For all types of attachments, we must pay the payslip_amount without exceeding the total amount
         for attachment in attachments_sorted:
             amount = min(
                 attachment.monthly_amount, attachment.remaining_amount, remaining
@@ -550,8 +541,6 @@ class HrSalaryAttachment(models.Model):
                 continue
             remaining -= amount
             _record_payment(attachment, amount)
-        # If we still have remaining, balance the attachments (running) that have a total amount
-        # in the chronology of estimated end dates.
         if remaining:
             fixed_total_attachments = self.filtered(
                 lambda a: a.state == "open" and a.has_total_amount

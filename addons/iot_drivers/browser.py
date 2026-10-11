@@ -11,11 +11,11 @@ CHROMIUM_ARGS = [
     "--disable-infobars",
     "--noerrdialogs",
     "--no-first-run",
-    "--bwsi",  # Use chromium without signing in
-    "--disable-extensions",  # Disable extensions as they fill up /tmp
-    "--disk-cache-dir=/dev/null",  # Disable disk cache
-    "--disk-cache-size=1",  # Set disk cache size to 1 byte
-    "--log-level=3",  # Reduce amount of logs
+    "--bwsi",
+    "--disable-extensions",
+    "--disk-cache-dir=/dev/null",
+    "--disk-cache-size=1",
+    "--log-level=3",
 ]
 
 
@@ -31,11 +31,6 @@ class Browser:
     """Methods to interact with a browser"""
 
     def __init__(self, url, _x_screen, env) -> None:
-        """
-        :param url: URL to open in the browser
-        :param _x_screen: X screen number
-        :param env: Environment variables (e.g. os.environ.copy())
-        """
         self.url = url
         self.browser = "chromium"
         self.state = BrowserState.NORMAL
@@ -44,10 +39,6 @@ class Browser:
         self.open_browser()
 
     def _set_environment(self, env) -> None:
-        """
-        Set the environment variables for the browser
-        :param env: Environment variables (os.environ.copy())
-        """
         self.env = env
         self.env["DISPLAY"] = f":0.{self._x_screen}"
         self.env["XAUTHORITY"] = "/run/lightdm/pi/xauthority"
@@ -55,15 +46,9 @@ class Browser:
             self.env[key] = "/tmp/" + self._x_screen
 
     def open_browser(self, url=None, state=BrowserState.FULLSCREEN) -> None:
-        """
-        open the browser with the given URL, or reopen it if it is already open
-        :param url: URL to open in the browser
-        :param state: State of the browser (normal, kiosk, fullscreen)
-        """
         self.url = url or self.url
         self.state = state
 
-        # Reopen to take new url or additional args into account
         self.close_browser()
 
         browser_args = list(CHROMIUM_ARGS)
@@ -85,16 +70,9 @@ class Browser:
         helpers.save_browser_state(url=self.url)
 
     def close_browser(self) -> None:
-        """close the browser"""
-        # Kill browser instance (can't `instance.pkill()` as we can't keep the instance after Odoo service restarts)
-        # We need to terminate it because Odoo will create a new instance each time it is restarted.
         subprocess.run(["pkill", self.browser], check=False)
 
     def xdotool_keystroke(self, keystroke) -> None:
-        """
-        Execute a keystroke using xdotool
-        :param keystroke: Keystroke to execute
-        """
         subprocess.run(
             [
                 "xdotool",
@@ -112,10 +90,6 @@ class Browser:
         )
 
     def xdotool_type(self, text) -> None:
-        """
-        Type text using xdotool
-        :param text: Text to type
-        """
         subprocess.run(
             [
                 "xdotool",
@@ -133,10 +107,8 @@ class Browser:
         )
 
     def refresh(self):
-        """Refresh the current tab"""
         self.xdotool_keystroke("ctrl+r")
 
     def disable_kiosk_mode(self) -> None:
-        """Removes arguments to chromium-browser cli to open it without kiosk mode"""
         if self.state == BrowserState.KIOSK:
             self.open_browser(state=BrowserState.FULLSCREEN)

@@ -59,10 +59,6 @@ class HrEmployee(models.Model):
         groups="hr.group_hr_user",
         help="This is the exceptional, non-weekly, location set for today.",
     )
-    # The marker a view spells where it means "the location this employee works
-    # at today". `get_views` rewrites it to the current weekday's field, which is
-    # stored and so can be grouped by and edited inline. It carries no column of
-    # its own; an unrewritten read still answers, through work_location_name.
     today_location_name = fields.Char(
         related="work_location_name",
         string="Today's Work Location",
@@ -77,22 +73,9 @@ class HrEmployee(models.Model):
 
     @api.model
     def _get_current_day_location_field(self):
-        """The weekday field for the READER's today.
-
-        What a view column headed "Work Location" means to the person looking at
-        it. Per-employee resolution uses `_today_by_employee` instead, because an
-        employee's own day is the one their work location is keyed to.
-        """
         return DAYS[fields.Date.context_today(self).weekday()]
 
     def _today_by_employee(self):
-        """Each employee's own date, in their own timezone.
-
-        `resource.resource.tz` is required and defaulted, so every employee has
-        one. The server's date is nobody's: at 20:36 UTC on a Monday it is still
-        Monday in Mexico City and already Tuesday in Tokyo, and the weekday work
-        location of a Tokyo employee is keyed to theirs, not to the host's.
-        """
         now = datetime.now(UTC)
         by_zone = {}
         today = {}
@@ -148,10 +131,6 @@ class HrEmployee(models.Model):
             for employee in self
         }
 
-    # `location_ids` is declared for its dependency edge alone: the ORM invalidates
-    # this field when an exception row is created, moved or deleted. The compute
-    # still searches, so the cost stays one query for the whole prefetch set
-    # instead of loading every exception an employee has ever had.
     @api.depends("tz", "location_ids.date", "location_ids.work_location_id")
     def _compute_exceptional_location_id(self) -> None:
         today = self._today_by_employee()
@@ -183,10 +162,6 @@ class HrEmployee(models.Model):
             if not location or not employee.active:
                 continue
             employee.hr_icon_display = f"presence_{location.location_type}"
-            # Wider than base's `bool(user_id)` on purpose: a work location is
-            # roster data, not a presence signal, so it is known for an employee
-            # with no login. The colour still comes from hr_presence_state, which
-            # is `out_of_working_hour` for such an employee, so it reads muted.
             employee.show_hr_icon_display = True
 
     @api.depends(*DAYS, "tz", "exceptional_location_id")

@@ -10,7 +10,7 @@ from odoo.exceptions import UserError
 from odoo.tools import frozendict
 
 STR_TO_HASH = {
-    "sha1": hashes.SHA1(),  # noqa: S303 - kept for interoperability: signing/verification against legacy consumers still requiring SHA1 (e.g. government e-invoicing endpoints); this is a caller-selected option, not a hardcoded default
+    "sha1": hashes.SHA1(),
     "sha256": hashes.SHA256(),
 }
 
@@ -20,7 +20,6 @@ STR_TO_CURVE = {
 
 
 def _get_formatted_bytes(data, formatting="encodebytes"):
-    """Return wrapped Base64, compact Base64, or unchanged bytes for other modes."""
     if formatting == "encodebytes":
         return base64.encodebytes(data)
     elif formatting == "base64":
@@ -206,13 +205,6 @@ class CertificateKey(models.Model):
     def _execute_signature_verification(
         self, signed_message, signature, hashing_algorithm="sha256"
     ):
-        """Verify with this public-key record, returning false for a bad signature.
-
-        Invalid key configuration raises UserError; a signature mismatch does
-        not. The signature argument contains raw signature bytes.
-
-        :rtype: bool
-        """
         self.check_singleton()
 
         if not self.public:
@@ -293,14 +285,6 @@ class CertificateKey(models.Model):
 
     @api.model
     def _get_pem_key_and_metadata(self, content, password=None) -> tuple:
-        """Normalize encoded DER/PEM content and report its public/private kind.
-
-        :returns: Base64-encoded PEM bytes, public-key flag and error text;
-            missing or unloadable content returns None for the first two
-
-        Preserve private-key password protection in the normalized PEM. An
-        empty input has empty error text; rejected key formats have a message.
-        """
         if not content:
             return None, None, ""
 
@@ -369,7 +353,7 @@ class CertificateKey(models.Model):
         if self.public:
             raise UserError(self.env._("A private key is required to decrypt data."))
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(  # noqa: E8505  names the hashing algorithm a developer passed in
+            raise UserError(
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
 
@@ -414,7 +398,7 @@ class CertificateKey(models.Model):
             pwd = pwd.encode("utf-8")
 
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(  # noqa: E8505  names the hashing algorithm a developer passed in
+            raise UserError(
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
 
@@ -450,17 +434,10 @@ class CertificateKey(models.Model):
     def _execute_signature_verification_with_key(
         self, signed_message, signature, pem_key, signature_algorithm="sha256"
     ) -> bool:
-        """Verify raw signature bytes using a Base64-encoded public PEM key.
-
-        Return false for a signature mismatch. Unusable keys or unsupported
-        algorithms raise UserError. Ed25519 uses its own hash operation.
-
-        :rtype: bool
-        """
 
         def check_valid_signature_algorithm():
             if signature_algorithm not in STR_TO_HASH:
-                raise UserError(  # noqa: E8505  names the signature algorithm a developer passed in
+                raise UserError(
                     f"Unsupported signature algorithm '{signature_algorithm}'. Currently supported: sha1 and sha256."
                 )
 
@@ -520,13 +497,6 @@ class CertificateKey(models.Model):
     def _get_public_key_numbers_bytes_with_key(
         self, pem_key, formatting="encodebytes"
     ) -> tuple[bytes, bytes]:
-        """Return RSA (exponent, modulus) or EC (x, y) as formatted byte strings.
-
-        ``pem_key`` is Base64-encoded public PEM. Unsupported key types raise
-        UserError; the selected formatting applies to each number separately.
-
-        :rtype: tuple[bytes, bytes]
-        """
         if not isinstance(pem_key, bytes):
             pem_key = pem_key.encode("utf-8")
 
@@ -536,8 +506,6 @@ class CertificateKey(models.Model):
             raise UserError(self.env._("The public key could not be loaded.")) from exc
 
         if isinstance(public_key, ec.EllipticCurvePublicKey):
-            # EC keys have no modulus/exponent; this carries the curve
-            # point coordinates (x, y) in the same two-value shape.
             first = public_key.public_numbers().x
             second = public_key.public_numbers().y
         elif isinstance(public_key, rsa.RSAPublicKey):
@@ -561,7 +529,7 @@ class CertificateKey(models.Model):
         self, company, name="id_ec", curve="SECP256R1", password=None
     ):
         if curve not in STR_TO_CURVE:
-            raise UserError(  # noqa: E8505  names the curve a developer passed in
+            raise UserError(
                 f"Unsupported curve algorithm '{curve}'. Currently supported: SECP256R1."
             )
 

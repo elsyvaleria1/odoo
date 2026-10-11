@@ -69,12 +69,6 @@ def _tree_column(field: Field[typing.Any]) -> bool:
 
 
 class _TreeEdges:
-    # One trigger walk's view of the self-referencing many2ones it crosses. A
-    # recursive field re-enters the walk once per level of its tree, and each
-    # level looked its neighbours up again: a search for the children, a fetch
-    # of the parent. Once a re-entry crosses a column a second time, the rest
-    # of the tree is read in one statement; a walk that does not recurse keeps
-    # its one lookup per crossing.
     __slots__ = ("_children", "_crossed", "_parents")
 
     def __init__(self) -> None:
@@ -107,7 +101,6 @@ class _TreeEdges:
             self._crossed.add(key)
             return None
         if downward and _one2many_cached(records, column, ids):
-            # the walk's own lookup reads the cache: no statement to save
             return None
         if downward:
             return records.browse(self._read_descendants(records, column, ids))
@@ -116,8 +109,6 @@ class _TreeEdges:
     def remember(
         self, records: BaseModel, field: Field[typing.Any], found: BaseModel
     ) -> None:
-        # a lookup of one record's children answers the re-entry of the
-        # recursive field from that same record
         if len(records._ids) != 1 or not field.is_many2one:
             return
         (id_,) = records._ids
@@ -137,7 +128,6 @@ class _TreeEdges:
         if not memo:
             return None
         if records.env.core.get_dirty(column):
-            # the rows no longer hold the tree the cache does
             _debug.logic(
                 "recompute.tree_edges_dropped",
                 model=records._name,
@@ -183,10 +173,6 @@ class _TreeEdges:
         memo: dict[int, list[int]],
         fresh: set[int],
     ) -> None:
-        # the level reads left the one2many cached, and what reads it next
-        # (the recompute, the caller, the next walk) found it there. The
-        # column was flushed before the tree was read, so a record without
-        # children holds none; the others are read once, in their order.
         cache = inverse._get_cache(records.env)
         empty = [id_ for id_ in fresh if not memo[id_] and id_ not in cache]
         if empty:
@@ -208,7 +194,6 @@ class _TreeEdges:
         cache = column._get_cache(records.env)
         memo = self._parents.setdefault(column, {})
         missing = [id_ for id_ in ids if id_ not in cache and id_ not in memo]
-        # read without flushing the column: the cached values override the rows
         rows = records.env.backend.ancestors(records, column.name, missing, flush=False)
         for id_, parent in rows:
             memo.setdefault(id_, parent)
@@ -229,7 +214,6 @@ def _parents_from(
     memo: dict[int, int | None],
     ids: Sequence[int],
 ) -> list[int] | None:
-    # a cached value wins over the row, as it does in a fetch
     parents: OrderedSet[int] = OrderedSet()
     for id_ in ids:
         parent = cache.get(id_, SENTINEL)
@@ -245,9 +229,6 @@ def _parents_from(
 def _company_dependent_referrers(
     model: BaseModel, field: Field[typing.Any], ids: list[int]
 ) -> list[int]:
-    # a company-dependent value is one per company: the records naming these
-    # in any company depend on them, not only those naming them in the
-    # writer's, whose search alone would leave the others' dependents stale
     referrers: OrderedSet[int] = OrderedSet()
     company_ids = get_all_company_ids(model.env)
     for company_id in company_ids:
@@ -298,9 +279,6 @@ class RecomputeMixin(_ModelStubs):
         if origin_reads := self.env.transaction.origin_reads:
             self._modified_origin_reads(origin_reads, fnames, before)
 
-        # a created row is in no sibling's cache yet, and the before phase of
-        # a write is followed by its after phase, which drops what the
-        # siblings cached once the new values are in place
         if not (create or before):
             self._invalidate_inheritance_tree(fnames)
 
@@ -354,12 +332,6 @@ class RecomputeMixin(_ModelStubs):
     def _modified_origin_reads(
         self, origin_reads: OriginReads, fnames: Collection[str], before: bool
     ) -> None:
-        # a draft's own assignment is no longer what it read from its origin;
-        # a saved record's change drops what its drafts read of it, and what
-        # the drafts of the records a many2one names, before the write and
-        # after it, read of their x2many; then the drafts' dependents are told.
-        # Before the write the records a many2one names are only noted: a
-        # draft's dependents told then would read its origin as it still is
         ids = self._ids
         real = [id_ for id_ in ids if id_]
         if len(real) < len(ids):
@@ -382,9 +354,6 @@ class RecomputeMixin(_ModelStubs):
             inverses = [f for f in self.pool.field_inverses[field] if f.is_x2many]
             if not inverses:
                 continue
-            # the value it names is read when not cached: before the write it
-            # is the record losing these, whose drafts must read again. A row
-            # already deleted holds only what the cache has of it
             rows = self.browse(real).sudo().with_context(active_test=False)
             try:
                 named = rows[fname]._ids
@@ -424,8 +393,6 @@ class RecomputeMixin(_ModelStubs):
             other = self.env[model_name]
             names = [name for name in fnames if name in other._fields]
             if names:
-                # only the sibling's own dirty values: flushing the tree from
-                # here would write the very values being modified
                 sibling = other.browse(self._ids)
                 sibling._flush_recordset_own(get_fields_by_name(sibling, names))
                 sibling._invalidate_cache(names, sibling._ids)
@@ -489,9 +456,6 @@ class RecomputeMixin(_ModelStubs):
         self._modified_trigger_walk(fnames, create, scheduler, to_validate)
         if create:
             return
-        # a created root row is no subtype's row, but an existing one may be:
-        # the subtype reads the root's column through its own field, which
-        # holds the triggers of the subtype's dependents
         for members, names in self._modified_tree_members(fnames):
             members._modified_trigger_walk(names, False, scheduler, to_validate)
 
@@ -617,8 +581,6 @@ class RecomputeMixin(_ModelStubs):
         edges: _TreeEdges,
         recursive: bool = False,
     ) -> Iterable[tuple[Field[typing.Any], BaseModel, bool]]:
-        # this model's records for its own fields, and a dependent model's
-        # where the trigger walks into one
 
         tree = self._select_trigger_tree(fields)
         if not tree:
@@ -662,8 +624,6 @@ class RecomputeMixin(_ModelStubs):
         create: bool = False,
         recursive: bool = False,
     ) -> Iterable[tuple[Field[typing.Any], BaseModel, bool]]:
-        # the walk descends into the dependent models, so what comes out of it
-        # is this model's records only for the fields of the tree's own root
         if not self:
             return
 
@@ -691,7 +651,6 @@ class RecomputeMixin(_ModelStubs):
                         model_field = invf.model_field
                         assert model_field is not None
                         rec_ids: OrderedSet[int] = OrderedSet()
-                        # a row is referenced under its model's reference name
                         reference = model._get_reference_model_name()
                         for rec in self:
                             try:
@@ -766,7 +725,6 @@ class RecomputeMixin(_ModelStubs):
     def _modified_cache_only(
         self, field: Field[typing.Any], subtree: TriggerTree[Field[typing.Any]]
     ) -> Iterable[tuple[Field[typing.Any], BaseModel, bool]]:
-        # the records yielded are the *dependent* field's, not this model's
         env = self.env
         model = env[field.model_name]
         self_ids = set(self._ids)
@@ -776,7 +734,6 @@ class RecomputeMixin(_ModelStubs):
             def points_back(value: typing.Any) -> bool:
                 return value in self_ids
         else:
-            # a paired x2many caches a tuple of ids, never a bare id
             def points_back(value: typing.Any) -> bool:
                 return not self_ids.isdisjoint(value)
 
@@ -892,8 +849,7 @@ class RecomputeMixin(_ModelStubs):
         self, field: Field[typing.Any], ids: Sequence[IdType] | None = None
     ) -> None:
         ids_to_compute = self.env.core.get_pending_ids(field)
-        scoped = ids is not None  # debuglog
-        # not rebound: the pending set is passed through rather than copied
+        scoped = ids is not None
         selected: Collection[IdType] = (
             ids_to_compute
             if ids is None
@@ -904,11 +860,6 @@ class RecomputeMixin(_ModelStubs):
 
         prof = _OrmProfile(_orm_compute)
 
-        # NewIds included: a new record's stored compute is scheduled like
-        # any other, and dropping it here leaves it pending forever -- so a
-        # write to one field of a compute group survives until something
-        # reads a sibling, which recomputes the group over the write.
-        # `_expand_ids` already batches new and real ids apart.
         records = self.browse(tuple(selected))
         if _debug.pipeline.enabled:
             _debug.pipeline(
@@ -975,8 +926,6 @@ class RecomputeMixin(_ModelStubs):
             if ids is None:
                 sibling._flush_model_own(shared)
             else:
-                # a fetch of these rows: the sibling's dirty values of the read
-                # columns must reach the table, its pending computes stay pending
                 sibling._flush_if_dirty([sibling._fields[fname] for fname in shared])
 
     @api.private
@@ -987,8 +936,6 @@ class RecomputeMixin(_ModelStubs):
         self._flush_recordset_own(named_fields)
         if not self._table_inheritance_root:
             return
-        # the rows are the siblings' rows too: what one of them holds dirty on
-        # them is what a raw query after this flush would miss
         for name in self.env._table_inheritance_tree(self._name):
             sibling = self.env[name].browse(self._ids)
             if named_fields is None:
@@ -1040,8 +987,6 @@ class RecomputeMixin(_ModelStubs):
             self._flush()
 
     def _flush_if_dirty(self, fields: Collection[Field[typing.Any]]) -> None:
-        # a SELECT about to read these columns: a dirty value among them must
-        # reach the table first, and nothing is recomputed on the way
         core = self.env.core
         if any(core.get_dirty(field) for field in fields):
             self._flush()

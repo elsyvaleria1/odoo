@@ -55,7 +55,6 @@ class SaleOrder(models.Model):
                         )
                         comm_by_rule[rule] += commission
 
-                # cap by rule
                 for r, amount in comm_by_rule.items():
                     if r.is_capped:
                         amount = min(amount, r.max_commission)

@@ -34,9 +34,6 @@ class TestElectronicStructure(BaseCase):
         return valence.gasteiger_charges(atoms, bonds)
 
     def test_charge_is_conserved(self):
-        # The scheme moves charge between atoms; it may not create any, so the
-        # sum over the whole molecule — hydrogens included — stays at the total
-        # formal charge.
         for molblock in (BENZENE, ACETONITRILE, NITROMETHANE_ANION, PHOSPHONATE):
             with self.subTest(molblock=molblock.splitlines()[0]):
                 self.assertAlmostEqual(self._charges(molblock)["total"], 0.0, places=3)
@@ -44,7 +41,6 @@ class TestElectronicStructure(BaseCase):
     def test_benzene_carbons_are_equivalent(self):
         charges = self._charges(BENZENE)["atoms"]
         self.assertEqual(len({round(value, 4) for value in charges.values()}), 1)
-        # Carbon pulls from its hydrogen, so the ring carbons come out negative
         self.assertLess(list(charges.values())[0], 0)
 
     def test_nitrile_nitrogen_is_the_most_negative(self):
@@ -68,7 +64,6 @@ class TestElectronicStructure(BaseCase):
         self.assertEqual(valence.hybridisation("C", [1, 1, 2]), "sp2")
         self.assertEqual(valence.hybridisation("C", [1, 1, 1, 1]), "sp3")
         self.assertEqual(valence.hybridisation("C", [2, 2]), "sp")
-        # Water keeps two pairs, ammonia one, and the nitrile nitrogen one
         self.assertEqual(valence.lone_pairs("O", 0, 0, 2), 2)
         self.assertEqual(valence.lone_pairs("N", 0, 0, 3), 1)
         self.assertEqual(valence.lone_pairs("N", 0, 3, 0), 1)
@@ -96,7 +91,6 @@ class TestStructureElectronicFields(TransactionCase):
         self.assertEqual(structure.formula, "C6H6")
         self.assertEqual(structure.charge_method, "gasteiger-peoe-v1")
         for atom in structure.atom_ids:
-            # implicit_h used to stay at zero for every atom ever stored
             self.assertEqual(atom.implicit_h, 1)
             self.assertEqual(atom.hybridisation, "sp2")
             self.assertEqual(atom.lone_pairs, 0)
@@ -135,7 +129,6 @@ class TestStructureElectronicFields(TransactionCase):
     def test_search_by_element(self):
         acetonitrile, _structure = self._structure(ACETONITRILE)
         benzene, _structure = self._structure(BENZENE)
-        # the database may already hold the pilot set, so search only what this test made
         nitrogenous = self.env["molecular.compound"].search(
             [
                 ("id", "in", (acetonitrile | benzene).ids),

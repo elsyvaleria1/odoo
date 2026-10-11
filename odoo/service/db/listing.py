@@ -62,9 +62,6 @@ def invalidate_catalog_caches() -> None:
 
 
 def check_db_exposed(db_name: str) -> None:
-    # `list_dbs` answers from the catalogue whenever a dbfilter is set, so on
-    # its own it would let a management operation reach a database neither
-    # RPC nor cron serves: the process-level predicate has the last word.
     _debug.pipeline("database.exposure_checked", db=db_name)
     if db_name not in list_dbs(True) or not is_db_exposed(db_name):
         _logger.warning(
@@ -123,10 +120,6 @@ CATALOG_CACHE_TTL_S = 2.0
 _catalog_lock = threading.Lock()
 _catalog_cache: tuple[float, list[str]] | None = None
 
-# One scan at a time. The scan borrows a maintenance connection while the
-# caller usually already holds its request cursor, so an expiry that sent every
-# in-flight request to PostgreSQL at once could exhaust the connection budget
-# and park them all for the full borrow timeout.
 _catalog_refresh_lock = threading.Lock()
 
 _catalog_generation = 0
@@ -151,7 +144,7 @@ def _get_catalog_ttl() -> float:
 
 
 def _invalidate_catalog_cache() -> None:
-    global _catalog_cache, _catalog_generation  # noqa: PLW0603  one catalogue per process
+    global _catalog_cache, _catalog_generation
 
     with _catalog_lock:
         _catalog_cache = None
@@ -178,10 +171,6 @@ def _query_catalog(cr: Any) -> tuple[bool, list[str]]:
 
 
 def _get_catalog_on_cursor(cr: Any) -> list[str] | None:
-    # The caller already holds a connection: pg_database is a shared catalog,
-    # so scanning through it avoids borrowing a second one, which is what let
-    # requests exhaust db_maxconn waiting on each other. A standby may lag a
-    # database this process just created, so its answer is not used.
     if cr is None or getattr(cr, "closed", True):
         return None
     try:
@@ -241,7 +230,7 @@ def _get_catalog_cached(cr: Any = None) -> list[str]:
 
 
 def _refresh_catalog(ttl: float, cr: Any = None) -> list[str]:
-    global _catalog_cache  # noqa: PLW0603  one catalogue per process
+    global _catalog_cache
 
     now = time.monotonic()
     with _catalog_lock:
@@ -331,11 +320,11 @@ def list_db_incompatible(databases: list[str]) -> list[str]:
             )
             _debug.logic("database.incompatible", db=database_name, reason="error")
             incompatible_databases.append(database_name)
-    closed = 0  # debuglog
+    closed = 0
     for database_name in databases:
         if database_name in incompatible_databases or database_name not in preexisting:
             odoo.db.close_db(database_name)
-            closed += 1  # debuglog
+            closed += 1
     _debug.pipeline(
         "database.compatibility_checked",
         databases=len(databases),
@@ -364,7 +353,7 @@ def exp_list_lang() -> list:
 @functools.cache
 def _read_countries() -> tuple[tuple[str, str], ...]:
     with _debug.perf("database.countries_read") as span:
-        root = ET.parse(  # noqa: S314  parses Odoo's own res_country_data.xml from root_path
+        root = ET.parse(
             Path(odoo.tools.config.root_path, "addons/base/data/res_country_data.xml")
         ).getroot()
         countries: list[tuple[str, str]] = []

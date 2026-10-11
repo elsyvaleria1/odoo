@@ -30,8 +30,6 @@ class TestMailingSMSABTesting(MassSMSCommon, TestMailingABTestingCommon):
         )
 
     def test_mailing_sms_ab_testing_compare(self):
-        # compare version feature should returns all mailings of the same
-        # campaign having a/b testing enabled and of mailing_type 'sms'.
         compare_version = self.ab_testing_mailing_sms_1.action_compare_versions()
         self.assertEqual(
             self.env["mailing.mailing"].search(compare_version.get("domain")),

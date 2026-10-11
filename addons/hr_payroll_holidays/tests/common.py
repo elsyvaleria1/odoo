@@ -22,7 +22,6 @@ class TestPayrollHolidaysBase(TransactionCase):
             }
         )
 
-        # Create employee
         cls.vlad = new_test_user(cls.env, login="vlad", groups="base.group_user")
         cls.emp = cls.env["hr.employee"].create(
             {
@@ -55,7 +54,6 @@ class TestPayrollHolidaysBase(TransactionCase):
             }
         )
 
-        # Create a salary structure, necessary to compute sheet
         cls.developer_pay_structure = cls.env["hr.payroll.structure"].create(
             {
                 "name": "Salary Structure for Software Developer",
@@ -67,7 +65,6 @@ class TestPayrollHolidaysBase(TransactionCase):
         )
         cls.structure_type.default_struct_id = cls.developer_pay_structure
 
-        # Create a leave type for our leaves
         cls.leave_type = cls.env["hr.leave.type"].create(
             {
                 "name": "Unpaid leave",

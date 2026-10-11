@@ -253,8 +253,6 @@ class TestHttpRerouteUpload(TestHttpBase):
         self.assertEqual(res.text, "Chevron seven")
 
         (ufile,) = test_http.controllers.reroute_upload_files
-        # the request is closed after its response is written: the client can
-        # read the response before the server thread reaches the close
         deadline = time.monotonic() + 5
         while not ufile.stream.closed and time.monotonic() < deadline:
             time.sleep(0.01)

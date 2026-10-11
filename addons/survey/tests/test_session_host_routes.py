@@ -255,7 +255,6 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
                 ],
             }
         )
-        # a question saving the nickname is what turns the leaderboard on
         self.env["survey.question"].create(
             {
                 "title": "Last question",

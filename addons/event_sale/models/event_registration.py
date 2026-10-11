@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class EventRegistration(models.Model):
     _inherit = "event.registration"
 
-    # TDE FIXME: maybe add an onchange on sale_order_id
     sale_order_id = fields.Many2one(
         comodel_name="sale.order",
         string="Sales Order",
@@ -84,7 +83,6 @@ class EventRegistration(models.Model):
                 ).state = "draft"
         super()._compute_registration_status()
 
-        # set default value to free and open if none was set yet
         for registration in self:
             if not registration.sale_status:
                 registration.sale_status = "free"
@@ -168,7 +166,6 @@ class EventRegistration(models.Model):
     def _prepare_so_line_values(self, so_line) -> dict:
         if so_line:
             return {
-                # Avoid registering public users but respect the portal workflows
                 "partner_id": False
                 if self.env.user._is_public()
                 and self.env.user.partner_id == so_line.order_id.partner_id
@@ -194,11 +191,6 @@ class EventRegistration(models.Model):
             if new_record_field == "event_ticket_id"
             else self.env._("Slot")
         )
-        # One activity per (order, event), not per registration: moving a batch
-        # of attendees to another ticket used to bury a single order under one
-        # identical warning each. Grouping on the event as well keeps the
-        # responsible user exactly what the per-registration expression picked,
-        # since it reads event_id.user_id first.
         for (sale_order, event), registrations in self.grouped(
             lambda registration: (registration.sale_order_id, registration.event_id)
         ).items():

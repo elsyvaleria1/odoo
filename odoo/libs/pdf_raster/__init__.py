@@ -23,14 +23,9 @@ _PNG = b"\x89PNG\r\n\x1a\n"
 
 class Outcome(enum.StrEnum):
     RENDERED = "rendered"
-    # the PDF holds no page to show: encrypted, or empty
     REFUSED = "refused"
-    # the renderer itself is missing: says nothing about this PDF
     UNAVAILABLE = "unavailable"
-    # malformed, or past a limit of its own: CPU, memory, output
     FAILED = "failed"
-    # past the wall limit, which a loaded machine reaches with any PDF: says
-    # nothing about this one
     TIMED_OUT = "timed_out"
 
 
@@ -49,23 +44,17 @@ DEFAULT_LIMITS = Limits()
 class Rendering:
     outcome: Outcome
     png: bytes = b""
-    # the PDF's page count, known once it rendered
     pages: int | None = None
 
 
 @functools.cache
 def available() -> bool:
-    # asked without importing: MuPDF is AGPL-or-commercial, offered and not
-    # imposed, and never loaded into the process that asks
     return importlib.util.find_spec("pymupdf") is not None
 
 
 def render_first_page(
     content: bytes, width: int, height: int, limits: Limits = DEFAULT_LIMITS
 ) -> Rendering:
-    # an untrusted PDF is parsed in a child of its own: no database, no
-    # credentials, no network handle, its own CPU and memory caps, and a crash
-    # or a hang that costs that child alone
     if not available():
         return Rendering(Outcome.UNAVAILABLE)
     try:

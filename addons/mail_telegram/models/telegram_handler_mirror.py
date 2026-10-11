@@ -40,8 +40,6 @@ class TelegramHandlerMirror(models.AbstractModel):
         )
 
     def _mirror_of(self, chat, message):
-        """The mirror a group message belongs to: its topic's, opened now if
-        the topic is new to Odoo, else the group's."""
         mirrors = self.env["telegram.mirror"]
         group = mirrors._of_chat(chat)
         thread_uid = self._thread_uid(message)
@@ -71,7 +69,6 @@ class TelegramHandlerMirror(models.AbstractModel):
             }
         )
 
-    # -- Telegram -> Odoo -----------------------------------------------------
 
     def _on_message(self, bot, chat, message, partner, internal_user):
         mirror = self._mirror_of(chat, message)
@@ -158,10 +155,8 @@ class TelegramHandlerMirror(models.AbstractModel):
             .mail_message_id
         )
 
-    # -- the group's life -----------------------------------------------------
 
     def _linked_record(self, link):
-        # a group or channel link speaks with the rights of whoever made it
         return (
             self.env[link.res_model]
             .with_user(link.user_id)
@@ -196,7 +191,6 @@ class TelegramHandlerMirror(models.AbstractModel):
                 "user_id": link.user_id.id,
             }
         )
-        # a group's many messages are not commands to throttle
         chat.rate_limit_enabled = False
         lines = [
             tr._("Connected: this group is %(name)s in Odoo.")

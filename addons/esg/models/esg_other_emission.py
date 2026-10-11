@@ -59,7 +59,7 @@ class EsgOtherEmission(models.Model):
         export_string_translation=False,
         compute="_compute_esg_emission_multiplicator",
         store=True,
-    )  # Technical field, storing the multiplicator to apply to the gas volumes (important for the report)
+    )
 
     @api.depends(
         "quantity",

@@ -17,7 +17,6 @@ class CalendarAttendee(models.Model):
         return super().do_decline()
 
     def _microsoft_check_answer(self) -> None:
-        """Outlook takes an answer to a series from Outlook alone."""
         user = self.env.user
         for event in self.event_id._microsoft_held():
             if (

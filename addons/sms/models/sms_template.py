@@ -9,9 +9,6 @@ class SmsTemplate(models.Model):
     _description = "SMS Templates"
 
     _unrestricted_rendering = True
-    # Declared, not inferred: the type-based guess also named `model` (a
-    # related model name), `template_fs` (a filesystem path) and `name`,
-    # none of which any engine renders.
     _dynamic_field_names = frozenset({"body", "lang"})
 
     @api.model
@@ -39,7 +36,6 @@ class SmsTemplate(models.Model):
         translate=True,
         required=True,
     )
-    # Use to create contextual action (same as for email template)
     sidebar_action_id = fields.Many2one(
         comodel_name="ir.actions.act_window",
         string="Sidebar action",
@@ -49,28 +45,20 @@ class SmsTemplate(models.Model):
         "of the related document model",
     )
 
-    # Overrides of mixin.mail.render
     @api.depends("model")
     def _compute_render_model(self) -> None:
         for template in self:
             template.render_model = template.model
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)
-        # copy_data returns one vals dict per record (ORM contract), so self and vals_list align
         return [
             dict(vals, name=self.env._("%s (copy)", template.name))
             for template, vals in zip(self, vals_list, strict=True)
         ]
 
     def copy_translations(self, new, excluded=()) -> None:
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
@@ -94,7 +82,6 @@ class SmsTemplate(models.Model):
                     "name": button_name,
                     "type": "ir.actions.act_window",
                     "res_model": "wizard.sms.sms.send",
-                    # Set sms_composition_mode to 'guess' so the composer picks mass or comment mode
                     "context": "{'default_template_id' : %d, 'sms_composition_mode': 'guess', 'default_res_ids': active_ids, 'default_res_id': active_id}"
                     % (template.id),
                     "view_mode": "form",

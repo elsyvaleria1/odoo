@@ -65,7 +65,6 @@ class TestSubjectConditions(common.TransactionCase):
         vals.update(kwargs)
         return add_rule_step(self.category, self.extra_approver, **vals)
 
-    # -- domain conditions -------------------------------------------------
 
     def test_domain_condition_matching_document_adds_the_approver(self):
         self._domain_rule("[('is_company', '=', True)]")
@@ -89,7 +88,6 @@ class TestSubjectConditions(common.TransactionCase):
         self.assertNotIn(self.extra_approver, request.approver_ids.mapped("user_id"))
 
     def test_domain_condition_ignores_a_source_document_of_another_model(self):
-        """A rule scoped to res.partner must not fire on a res.users request."""
         self._domain_rule("[('is_company', '=', True)]")
         request = self._create_request(
             res_model="res.users", res_id=self.approver_user.id
@@ -112,7 +110,6 @@ class TestSubjectConditions(common.TransactionCase):
         )
         self.assertIn(self.extra_approver, request.approver_ids.mapped("user_id"))
 
-    # -- field_selection conditions ---------------------------------------
 
     def test_field_selection_condition_matches_on_the_stored_key(self):
         add_rule_step(
@@ -161,7 +158,6 @@ class TestSubjectConditions(common.TransactionCase):
         )
         self.assertIn(self.extra_approver, request.approver_ids.mapped("user_id"))
 
-    # -- configuration-time validation ------------------------------------
 
     def test_a_domain_rule_without_a_source_model_is_refused(self):
         with self.assertRaises(ValidationError):
@@ -179,7 +175,6 @@ class TestSubjectConditions(common.TransactionCase):
             self._domain_rule("[('is_company', '=', ")
 
     def test_a_domain_naming_an_unknown_field_is_refused(self):
-        """A typo would otherwise read as 'approval was not required'."""
         with self.assertRaises(ValidationError):
             self._domain_rule("[('is_compayn', '=', True)]")
 

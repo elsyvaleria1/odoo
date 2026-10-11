@@ -76,7 +76,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         )
 
     def test_upsell_via_so(self):
-        # Test the upsell flow using an intermediary upsell quote.
         self.sub_product_tmpl.subscription_rule_ids = [(5, 0, 0)]
         self.subscription_tmpl.write(
             {
@@ -174,8 +173,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 upsell_so.line_ids.product_id, self.subscription.line_ids.product_id
             )
             upsell_so.line_ids.filtered(lambda l: not l.display_type).product_qty = 1
-            # When the upsell order is created, all quantities are equal to 0
-            # add line to quote manually, it must be taken into account in the subscription after validation
             upsell_so.line_ids = [
                 (
                     0,
@@ -278,9 +275,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         self.assertEqual(len(self.subscription.line_ids), 4)
 
     def test_upsell_prorata(self):
-        """Test the prorated values obtained when creating an upsell. complementary to the previous one where new
-        lines had no existing default values.
-        """
         self.env["product.pricelist.item"].create(
             {
                 "plan_id": self.plan_2_month.id,
@@ -328,7 +322,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         with freeze_time("2021-01-20"):
             action = self.subscription.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
-            # Create new lines that should be aligned with existing ones
             so_line_vals = [
                 {
                     "name": "Upsell added: 1 month",
@@ -349,7 +342,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 round(v)
                 for v in upsell_so.line_ids.sorted("discount").mapped("discount")
             ]
-            # discounts for: 40/59 days
             self.assertEqual(
                 discounts, [0, 32, 32, 32, 32], "Prorated prices should be applied"
             )
@@ -358,7 +350,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 upsell_so.line_ids.parent_line_id.ids,
                 "The parent line id should correspond to the first two lines",
             )
-            # discounts for: 12d/31d; 40d/59d; 21d/31d (shifted); 31d/41d; 59d/78d;
             self.assertEqual(
                 discounts, [0, 32, 32, 32, 32], "Prorated prices should be applied"
             )
@@ -375,7 +366,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             )
 
     def test_upsell_date_check(self):
-        """Test what happens when the upsell invoice is not generated before the next invoice cron call"""
         self.sub_product_tmpl.subscription_rule_ids = [
             Command.create({"plan_id": self.plan_year.id, "fixed_price": 100}),
         ]
@@ -467,7 +457,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 datetime.date(2023, 1, 1),
                 "the first year should be invoiced",
             )
-            # We trigger the invoice cron before the generation of the upsell invoice
             self.env["sale.order"]._cron_recurring_create_invoice()
             inv = sub.invoice_ids.sorted("date")[-1]
             self.assertEqual(
@@ -509,7 +498,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 upsell_invoice.amount_untaxed,
                 267.1,
                 "The upsell amount should be equal to 267.1",
-            )  # (1-0.4658)*(200+300)
+            )
 
         with freeze_time("2023-01-01"):
             (upsell_so | sub)._cron_recurring_create_invoice()
@@ -562,14 +551,13 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         with freeze_time("2022-01-20"):
             action = self.subscription.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
-            # Create new lines that should be aligned with existing ones
             parent_line_id = upsell_so.line_ids.parent_line_id
             self.assertEqual(
                 self.subscription.line_ids,
                 parent_line_id,
                 "The parent line is the one from the subscription",
             )
-            first_line_id = upsell_so.line_ids[0]  # line 0 is the upsell line
+            first_line_id = upsell_so.line_ids[0]
             first_line_id.product_id = self.product2
             self.assertFalse(
                 first_line_id.parent_line_id,
@@ -580,12 +568,12 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 first_line_id.parent_line_id,
                 "The new line should not have a parent line even without currency_id",
             )
-            self.subscription._compute_pricelist_id()  # reset the currency_id
+            self.subscription._compute_pricelist_id()
             upsell_so._compute_pricelist_id()
             first_line_id.product_id = self.product
             upsell_so.line_ids[0].price_unit = (
                 parent_line_id.price_unit + 0.004
-            )  # making sure that rounding issue will not affect computed result
+            )
             self.assertEqual(
                 upsell_so.line_ids[0].parent_line_id,
                 parent_line_id,
@@ -596,7 +584,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 parent_line_id,
                 "The parent line is still the one from the subscription",
             )
-            # reset the product to another one to lose the link
             first_line_id.product_id = self.product2
             so_line_vals = [
                 {
@@ -613,7 +600,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             )
             new_line.product_id = self.product3
             new_line.product_id = self.product
-            new_line.price_unit = parent_line_id.price_unit  # it should recreate a link
+            new_line.price_unit = parent_line_id.price_unit
             upsell_so.line_ids[0].product_qty = 2
             self.assertEqual(
                 upsell_so.line_ids.parent_line_id,
@@ -646,7 +633,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 "The lines should not have parent lines anymore",
             )
 
-        # test the general behavior of so when the compute_price_unit is called
         self.product_tmpl_4.recurring_invoice = False
         order = self.env["sale.order"].create(
             {
@@ -668,7 +654,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                         0,
                         0,
                         {
-                            "name": self.product5.name,  # non recurring product
+                            "name": self.product5.name,
                             "product_id": self.product5.id,
                             "product_qty": 1.0,
                             "price_unit": 12,
@@ -686,9 +672,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         )
 
     def test_upsell_renewal(self):
-        """Upselling a invoiced renewed order before it started should create a negative discount to invoice the previous
-        period. If the renewal has not been invoiced yet, we should only invoice for the previous period.
-        """
         with freeze_time("2022-01-01"):
             self.subscription.start_date = False
             self.subscription.next_invoice_date = False
@@ -713,7 +696,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             action = subscription_2.prepare_renewal_order()
             renewal_so_2 = self.env["sale.order"].browse(action["res_id"])
             renewal_so_2.action_confirm()
-            # We don't invoice renewal_so_2 yet to see what happens.
             self.assertEqual(renewal_so_2.start_date, datetime.date(2023, 1, 1))
             self.assertEqual(renewal_so_2.next_invoice_date, datetime.date(2023, 1, 1))
         with freeze_time("2022-10-02"):
@@ -723,7 +705,7 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             upsell_so.line_ids.filtered(lambda l: not l.display_type).product_qty = 1
             renewal_so_2.next_invoice_date += relativedelta(
                 days=1
-            )  # prevent validation error
+            )
             action = renewal_so_2.prepare_upsell_order()
             upsell_so_2 = self.env["sale.order"].browse(action["res_id"])
             upsell_so_2.line_ids.filtered(lambda l: not l.display_type).product_qty = 1
@@ -743,7 +725,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             self.assertEqual(upsell_so.start_date, datetime.date(2022, 10, 2))
             self.assertEqual(upsell_so.next_invoice_date, datetime.date(2024, 1, 1))
             self.assertEqual(upsell_so_2.amount_untaxed, 30.25)
-            # upsell_so_2.line_ids.flush()
             line = upsell_so_2.line_ids.filtered("display_type")
             self.assertEqual(line.display_type, "subscription_discount")
             self.assertFalse(line.product_qty)
@@ -779,10 +760,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             upsell_so.pricelist_id = pricelist_eur.id
 
     def test_modify_discount_on_upsell(self):
-        """
-        Makes sure that you can edit the discount on an upsell, save it, and then confirm it,
-        and it doesn't change/reset to default
-        """
         with freeze_time("2022-10-31"):
             self.subscription.action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
@@ -819,7 +796,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         for line in upsell_so.line_ids.filtered(lambda l: not l.display_type):
             self.assertEqual(line.upsell_total, 3)
         invoice = upsell_so._create_invoices()
-        # simulate wrong historical data
         invoice.invoice_line_ids.filtered("deferred_end_date").deferred_end_date = (
             next_invoice_date + relativedelta(days=5)
         )
@@ -869,7 +845,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
         self.assertFalse(nr_product in self.subscription.line_ids.product_template_id)
 
     def test_upsell_descriptions(self):
-        """On invoicing upsells, only subscription-based items should display a duration."""
         with freeze_time("2022-10-31"):
             self.subscription.action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
@@ -893,11 +868,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                     )
 
     def test_upsell_line_note_update(self):
-        """ "
-        Test that the line note is handled correctly in upsell orders:
-        For positive discount upsell orders, the line note remains unchanged.
-        For negative discount upsell orders, the line note is updated to reflect the surcharged prorated period.
-        """
         with freeze_time("2022-01-01"):
             self.subscription.write(
                 {
@@ -906,8 +876,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                     "name": "First order",
                 }
             )
-            # Test the positive discount (line note remains unchanged)
-            # Create a second sale order (for positive discount scenario)
             sale_order_2 = self.subscription.copy({"name": "Second order"})
             (self.subscription | sale_order_2).action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
@@ -935,8 +903,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             ).name
             self.assertEqual(expected_line_name, upsell_order_line_note)
 
-            # Test for negative discount (line note should be updated)
-            # Prepare and confirm the renewal order (for negative discount scenario)
             action = self.subscription.prepare_renewal_order()
             renewal_so = self.env["sale.order"].browse(action["res_id"])
             renewal_so.name = "Renewal SO"
@@ -955,7 +921,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             upsell_so.line_ids.filtered(lambda l: not l.display_type).product_qty = 1
             upsell_so.action_confirm()
 
-            # Assert that the discounts are negative and the line note is updated accordingly
             self.assertEqual(upsell_so.line_ids.mapped("discount"), [-24.93, -24.93, 0])
             expected_line_name = (
                 "(*) These recurring products are surcharged according to the prorated period from %s to %s"
@@ -972,9 +937,6 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
             self.assertEqual(expected_line_name, upsell_order_line_note)
 
     def test_copy_follower_on_upsell_or_renew_order_from_parent(self):
-        """
-        Test that followers from parent sale order are getting copied to the renew or upsell order.
-        """
         with freeze_time("2024-11-01"):
             self.subscription.action_confirm()
             self.subscription.message_subscribe(
@@ -993,10 +955,8 @@ class TestSubscriptionUpsell(TestSubscriptionCommon):
                 renewal_so.message_follower_ids.partner_id.ids,
                 "Parent order's followers should be copied into renew order.",
             )
-            # add a new follower in the renew order
             renewal_so.message_subscribe(self.partner.ids)
 
-            # create a upsell order from renewal order
             action = renewal_so.prepare_upsell_order()
             upsell_so = self.env["sale.order"].browse(action["res_id"])
             self.assertEqual(

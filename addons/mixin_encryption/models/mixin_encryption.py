@@ -30,19 +30,9 @@ TEST_RUN_KEY = sealing.TEST_RUN_KEY
 
 
 def provide_test_run_key() -> bool:
-    """Give a test run that configured no key a fixed, publicly known one.
-
-    Only a process started with tests enabled gets it. A server started without
-    the variable keeps refusing to encrypt, because a key made up there would be
-    lost at restart along with everything it sealed. The key is fixed rather
-    than random so that a database installed by one test run still decrypts in
-    the next.
-    """
     if not config["test_enable"] or os.environ.get("ODOO_API_ENCRYPTION_KEY"):
         return False
-    os.environ["ODOO_API_ENCRYPTION_KEY"] = TEST_RUN_KEY  # noqa: E8519 - a public test-run key, set only with tests enabled
-    # Information, not a warning: it fires on every keyless test run, which is
-    # what it exists for, and never on a server that holds a key.
+    os.environ["ODOO_API_ENCRYPTION_KEY"] = TEST_RUN_KEY
     _logger.info(
         "Tests are enabled and ODOO_API_ENCRYPTION_KEY is not set: encrypting with "
         "the fixed test-run key, which protects nothing"
@@ -70,14 +60,6 @@ class MixinEncryption(models.AbstractModel):
     )
 
     def _is_encryption_available(self) -> bool:
-        """Whether this deployment has opted into encryption at rest.
-
-        Absence of ``ODOO_API_ENCRYPTION_KEY`` is a deliberate opt-out and the
-        only thing that makes a consumer fall back to cleartext storage. A key
-        that is *present but malformed* is not an opt-out: ``_get_encryption_key``
-        raises on it, so a typo cannot silently downgrade a deployment that
-        believes it is encrypting.
-        """
         return bool(os.environ.get("ODOO_API_ENCRYPTION_KEY"))
 
     def _compute_optional_encrypted_field(
@@ -87,12 +69,6 @@ class MixinEncryption(models.AbstractModel):
         target_field: str,
         binary: bool,
     ) -> None:
-        """Expose whichever backing column holds this field's value.
-
-        Ciphertext wins when present, so a row keeps decrypting after the
-        deployment provisions a key, and a row written before it does keeps
-        reading from its cleartext column until a rotation promotes it.
-        """
         for record in self:
             encrypted_value = getattr(record, encrypted_field)
             if not encrypted_value:
@@ -130,11 +106,6 @@ class MixinEncryption(models.AbstractModel):
         cleartext_field: str,
         binary: bool,
     ) -> None:
-        """Route a written value to the ciphertext column, or to the clear one.
-
-        Exactly one of the two backing columns ever holds a value, so a row
-        never carries the same secret in both forms.
-        """
         encrypt = self._is_encryption_available()
         for record in self:
             value = getattr(record, source_field)
@@ -221,12 +192,8 @@ class MixinEncryption(models.AbstractModel):
             return decode(cipher.decrypt(encrypted_bytes))
         except ValidationError:
             if not os.environ.get("ODOO_API_ENCRYPTION_KEY"):
-                # Genuinely absent: the deliberate opt-out, not a broken config.
                 self._warn_encryption_key_missing(binary=binary)
                 return False
-            # Present but malformed: distinct from "not configured", and it says
-            # nothing about whether an old key still works, so fall through to
-            # the same old-key fallback path used for a wrong-but-valid key.
             _logger.error(
                 "Current encryption key is malformed for %s record %s, "
                 "trying old key versions",
@@ -388,8 +355,6 @@ class MixinEncryption(models.AbstractModel):
 
     def _log_encryption_failure(self, error: Exception, binary: bool) -> None:
         if not self._is_encryption_available():
-            # The deliberate opt-out: the ValidationError raised next is the
-            # contract, and the caller decides what an unsealable value means.
             _debug.logic(
                 "encrypt_refused", reason="no_key", model=self._name, binary=binary
             )
@@ -508,13 +473,6 @@ class MixinEncryption(models.AbstractModel):
         encrypted_field: str,
         is_binary: bool,
     ) -> bool:
-        """Encrypt a value still held in the clear, once a key exists.
-
-        This is what closes the loop for a deployment that installs without
-        ``ODOO_API_ENCRYPTION_KEY`` and provisions one later: the rotation
-        driver sweeps the cleartext columns into ciphertext instead of leaving
-        them readable forever.
-        """
         cleartext_field = self._ENCRYPTED_FALLBACK_FIELDS.get(plain_field)
         if not cleartext_field or not self._is_encryption_available():
             return False

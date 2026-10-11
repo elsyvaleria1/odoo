@@ -52,7 +52,6 @@ class TestOnboardingConcurrency(BaseCase):
                 onboarding = env["onboarding.onboarding"].search(
                     [("id", "=", self.onboarding_id)]
                 )
-                # There is no progress record
                 self.assertFalse(
                     env["onboarding.progress"].search(
                         [("onboarding_id", "=", self.onboarding_id)]

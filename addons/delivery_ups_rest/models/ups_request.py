@@ -112,7 +112,6 @@ class UPSRequest:
     def _save_label(self, image64, label_file_type="GIF"):
         img_decoded = base64.decodebytes(image64.encode("utf-8"))
         if label_file_type == "GIF":
-            # Label format is GIF, so need to rotate and convert as PDF
             image_string = io.BytesIO(img_decoded)
             im = Image.open(image_string)
             label_result = io.BytesIO()
@@ -140,7 +139,6 @@ class UPSRequest:
             ship_from = picking.picking_type_id.warehouse_id.partner_id
             ship_to = picking.partner_id
         required_field = {"city": "City", "country_id": "Country", "phone_ids": "Phone"}
-        # Check required field for shipper
         res = [required_field[field] for field in required_field if not shipper[field]]
         if shipper.country_id.code in ("US", "CA", "IE") and not shipper.state_id.code:
             res.append("State")
@@ -157,7 +155,6 @@ class UPSRequest:
             return self.env._(
                 "Shipper Phone must be at least 10 alphanumeric characters."
             )
-        # Check required field for warehouse address
         res = [
             required_field[field] for field in required_field if not ship_from[field]
         ]
@@ -181,7 +178,6 @@ class UPSRequest:
                     "Warehouse Phone must be at least 10 alphanumeric characters."
                 ),
             )
-        # Check required field for recipient address
         res = [
             required_field[field]
             for field in required_field
@@ -255,11 +251,9 @@ class UPSRequest:
         ship=False,
         is_return=False,
     ):
-        # Package Type key in ship request and rate request are different
         package_type_key = "Packaging" if ship else "PackagingType"
         res_packages = []
         for p in packages:
-            # merchandise description: product names (len: [1-35]), strip non-alphanumeric chars
             desc = ",".join(
                 [
                     "%s" % re.sub(r"[\W_]+", " ", c.product_id.name)
@@ -317,8 +311,6 @@ class UPSRequest:
             if package_service_options:
                 package["PackageServiceOptions"] = package_service_options
 
-            # Package and shipment reference text is only allowed for shipments within
-            # the USA and within Puerto Rico. This is a UPS limitation.
             if (
                 p.name
                 and " " not in p.name
@@ -403,7 +395,6 @@ class UPSRequest:
         rate = res["RateResponse"]["RatedShipment"]
         charge = rate["TotalCharges"]
 
-        # Some users are qualified to receive negotiated rates
         if (
             "NegotiatedRateCharges" in rate
             and rate["NegotiatedRateCharges"]["TotalCharge"]["MonetaryValue"]
@@ -419,7 +410,6 @@ class UPSRequest:
     def _set_invoice(self, shipment_info, commodities, ship_to, is_return) -> dict:
         invoice_products = []
         for commodity in commodities:
-            # split the name of the product to maximum 3 substrings of length 35
             name = commodity.product_id.name
             product = {
                 "Description": [
@@ -487,7 +477,6 @@ class UPSRequest:
         is_return=False,
     ):
         url = f"/api/shipments/{API_VERSION}/ship"
-        # Payment Info
         shipment_charge = {
             "Type": "01",
         }
@@ -576,7 +565,6 @@ class UPSRequest:
             },
         }
 
-        # Include ReferenceNumber only if the shipment is not US/US or PR/PR
         if not (
             (ship_from.country_id.code == "US" and ship_to.country_id.code == "US")
             or (ship_from.country_id.code == "PR" and ship_to.country_id.code == "PR")
@@ -585,7 +573,6 @@ class UPSRequest:
                 "Value": shipment_info.get("reference_number")
             }
 
-        # Shipments from US to CA or PR require extra info
         if ship_from.country_id.code == "US" and ship_to.country_id.code in [
             "CA",
             "PR",
@@ -611,7 +598,6 @@ class UPSRequest:
         result = {}
         shipment_result = res_body["ShipmentResponse"]["ShipmentResults"]
         packs = shipment_result.get("PackageResults", [])
-        # get package labels
         if not isinstance(packs, list):
             packs = [packs]
         result["tracking_ref"] = shipment_result["ShipmentIdentificationNumber"]
@@ -626,13 +612,11 @@ class UPSRequest:
             for pack in packs
         ]
         result["label_binary_data"] = labels_binary
-        # save international form if in response
         international_form = shipment_result.get("Form", False)
         if international_form:
             result["invoice_binary_data"] = self._save_label(
                 international_form["Image"]["GraphicImage"], label_file_type="pdf"
             )
-        # Some users are qualified to receive negotiated rates
         if shipment_result.get("NegotiatedRateCharges"):
             charge = shipment_result["NegotiatedRateCharges"]["TotalCharge"]
         else:

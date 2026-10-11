@@ -88,7 +88,6 @@ class TestDocumentMatch(TestTradeOrderCase):
         self.assertFalse(self._rows(moves=move))
 
     def test_an_order_already_fully_invoiced_leaves_the_list(self):
-        """The view is for what still owes an invoice."""
         order = self._make_order()
         self._make_line(
             order=order,
@@ -139,7 +138,6 @@ class TestDocumentMatch(TestTradeOrderCase):
         self.assertIn("250", row.display_name)
 
     def test_an_order_with_nothing_to_invoice_shows_a_zero_amount(self):
-        """`invoice_state == 'no'` means the amount on the row is not owed."""
         order = self._make_order()
         self._make_line(order=order, product_qty=0.0, price_unit=100.0)
         order.action_confirm()

@@ -47,11 +47,6 @@ class ResUsers(models.Model):
         return res
 
     def authenticate(self, credential, user_agent_env):
-        """Send an alert on new connection.
-
-        - 2FA enabled -> only for new device
-        - Not enabled -> no alert
-        """
         auth_info = super().authenticate(credential, user_agent_env)
         self._notify_security_new_connection(auth_info)
         return auth_info
@@ -60,15 +55,11 @@ class ResUsers(models.Model):
         user = self.env(user=auth_info["uid"]).user
 
         if request and user.email and user._get_mfa_type():
-            # Check the `request` object to ensure that we will be able to get the
-            # user information (like IP, user-agent, etc) and the cookie `td_id`.
-            # (Can be unbounded if executed from a server action or a unit test.)
 
             key = request.cookies.get("td_id")
             if not key or not request.env["auth.totp.trust"]._resolve_trust_id(
                 key=key, uid=user.id
             ):
-                # 2FA enabled but not a trusted device
                 user._notify_security_setting_update(
                     subject=self.env._("New Connection to your Account"),
                     content=self.env._(
@@ -84,10 +75,6 @@ class ResUsers(models.Model):
     def _notify_security_setting_update_prepare_values(
         self, content, *, suggest_2fa=True, **kwargs
     ):
-        """Prepare rendering values for the 'mail.account_security_alert' qweb template.
-
-        :param bool suggest_2fa: whether to suggest enabling 2FA in the email sent
-        """
 
         values = super()._notify_security_setting_update_prepare_values(
             content, **kwargs
@@ -122,7 +109,6 @@ class ResUsers(models.Model):
                 email_layout_xmlid="mail.mail_notification_light",
             )
 
-        # Display a confirmation toaster
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",

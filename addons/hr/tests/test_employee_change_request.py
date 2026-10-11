@@ -33,9 +33,6 @@ class TestEmployeeChangeRequest(TransactionCase):
         )
 
     def _decide(self, request, decision, user=None):
-        """Decide as the engine's own tests do: on the approver row, with the
-        refusal wizard skipped. `action_refuse` on the request opens the wizard
-        that demands a structured reason, and returns without deciding."""
         user = user or self.officer
         row = request.approval_request_id.approver_ids.filtered(
             lambda approver: approver.user_id == user

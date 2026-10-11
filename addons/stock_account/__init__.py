@@ -64,7 +64,7 @@ def _configure_journals(env) -> None:
         }
 
         template_data = data.pop("template_data")
-        journal = env["account.journal"].search(  # noqa: E8507 - one per company, beside the whole chart this iteration loads
+        journal = env["account.journal"].search(
             [
                 ("code", "=", "STJ"),
                 ("company_id", "=", company.id),

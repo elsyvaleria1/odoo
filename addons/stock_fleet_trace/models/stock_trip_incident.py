@@ -1,7 +1,6 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-# Incidents that take goods off the vehicle for good, once approved.
 LOSS_TYPES = ("spill", "damage", "theft")
 
 
@@ -140,9 +139,7 @@ class StockTripIncident(models.Model):
             )
 
     def _check_reviewer(self) -> None:
-        """Only the trip's supervisor or a stock manager reviews an incident."""
         self.check_singleton()
-        # Whoever may delete incidents (stock managers) may also review them.
         if self.env.user == self.batch_id.supervisor_id or self.has_access("unlink"):
             return
         raise UserError(
@@ -154,7 +151,6 @@ class StockTripIncident(models.Model):
         )
 
     def action_approve(self):
-        """Approve the incident; a loss writes its goods off the vehicle."""
         for incident in self:
             if incident.state != "reported":
                 raise UserError(
@@ -194,7 +190,6 @@ class StockTripIncident(models.Model):
             )
 
     def _write_off_goods(self):
-        """Scrap each lost line from the vehicle, freeing its reservation first."""
         self.check_singleton()
         batch = self.batch_id
         scraps = self.env["stock.scrap"]
@@ -272,10 +267,6 @@ class StockTripIncidentLine(models.Model):
     )
 
     def _trip_goods_weight(self):
-        """What the goods these lines took off the vehicle weigh.
-
-        :rtype: float
-        """
         return sum(line.product_id._trip_weight(line.quantity) for line in self)
 
 

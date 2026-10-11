@@ -26,7 +26,7 @@ class DeviceGpsController(http.Controller):
         receiver_event="gps_fix",
         receiver_refusal="device.device:_prepare_tracker_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the tracker
+        csrf=False,
         save_session=False,
         typed=True,
     )
@@ -46,7 +46,6 @@ class DeviceGpsController(http.Controller):
         typed=True,
     )
     def channel_gps_webhook(self, enrollment_key: str, channel_key: str) -> Response:
-        # CSRF exemption: enrollment credentials authenticate this machine route.
         return self._process_webhook()
 
     def _process_webhook(self) -> Response:
@@ -140,8 +139,6 @@ class DeviceGpsController(http.Controller):
         vals: dict | None = None,
         is_success: bool = True,
     ):
-        # Every tracker push reaches this, and the line it feeds is DEBUG,
-        # which is off by default: build nothing until somebody is listening.
         if not _logger.isEnabledFor(logging.DEBUG):
             return
 

@@ -37,7 +37,6 @@ class TestMailThreadInternalsCommon(TestMailFullCommon, TestSMSRecipients):
 class TestMailThreadInternals(TestMailThreadInternalsCommon):
     @users("employee")
     def test_notify_get_recipients_groups(self):
-        """Test redirection of portal-enabled records"""
         test_records = [
             self.test_portal_records[0].with_env(self.env),
             self.test_portal_nop_records[0].with_env(self.env),
@@ -67,11 +66,9 @@ class TestMailThreadInternals(TestMailThreadInternalsCommon):
                 )
 
                 if is_portal and has_customer:
-                    # should have generated the access token, required for portal links
                     self.assertTrue(
                         test_record.access_token, "Portal should generate access token"
                     )
-                    # check portal_customer content and link
                     self.assertTrue(
                         portal_customer_group,
                         "Portal Mixin should add portal customer notification group",

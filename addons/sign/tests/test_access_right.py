@@ -18,9 +18,7 @@ class TestAccessRight(SignRequestCommon):
             for sign_request_item in sign_request_3_roles.request_item_ids
         }
         sign_request_item_signer_1 = role2sign_request_item[self.role_signer_1]
-        # We update the item partner with a non-privileged sign user.
         sign_request_item_signer_1.with_user(self.user_1).partner_id = self.partner_5
-        # reassign
         self.assertEqual(
             sign_request_item_signer_1.signer_email,
             "char.aznable.a@example.com",
@@ -28,7 +26,6 @@ class TestAccessRight(SignRequestCommon):
         )
 
     def test_user_can_edit_only_own_templates_and_documents(self):
-        """Ensure basic sign users can only edit their own templates and documents."""
         res = (
             self.env["sign.template"]
             .with_user(self.user_1)
@@ -49,7 +46,6 @@ class TestAccessRight(SignRequestCommon):
             user_1_document.with_user(self.user_2).write({"name": "My New Name!"})
 
     def test_user_validation_sign_request(self):
-        """Ensure that user cannot link a sign request item with an existing sign request."""
         user_A = new_test_user(self.env, login="user_A", groups="sign.group_sign_user")
         partner_A = user_A.partner_id
         sign_request_A = self.create_sign_request_1_role(partner_A, partner_A)
@@ -65,12 +61,7 @@ class TestAccessRight(SignRequestCommon):
             self.env["sign.request"].with_user(user_B).search([]), sign_request_B
         )
 
-        # If we "try to move" a ``sign.request.item`` on an existing ``sign.request`` a validation
-        # error must be triggered because we must have the same number of ``sign.request.item`` on the
-        # ``sign.request`` and on the ``sign.template`` linked to the ``sign.request``.
-        # Thanks to the constraint ``_check_signers_validity``.
 
-        # Test create validation
         with self.assertRaises(ValidationError):
             self.env["sign.request.item"].with_user(user_B).create(
                 {
@@ -80,7 +71,6 @@ class TestAccessRight(SignRequestCommon):
                 }
             )
 
-        # Test write validation
         with self.assertRaises(ValidationError):
             sign_request_B.request_item_ids.with_user(
                 user_B

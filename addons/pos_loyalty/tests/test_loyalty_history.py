@@ -54,7 +54,6 @@ class TestPOSLoyaltyHistory(TestPointOfSaleHttpCommon):
         )
 
     def test_duplicate_coupon_confirm(self):
-        """Test that duplicate coupon confirm calls do not affect the coupon."""
         test_partner = self.env["res.partner"].create({"name": "Test Partner"})
         ewallet_program = self.env["loyalty.program"].create(
             {
@@ -127,7 +126,6 @@ class TestPOSLoyaltyHistory(TestPointOfSaleHttpCommon):
             )
 
         check_coupon(50, 1)
-        # Confirm the coupon again
         pos_order.confirm_coupon_programs(coupon_data)
         check_coupon(50, 1)
 
@@ -160,9 +158,7 @@ class TestPOSLoyaltyHistory(TestPointOfSaleHttpCommon):
         }
 
         new_pos_order.confirm_coupon_programs(coupon_data)
-        # Check that the coupon points are reduced correctly
         check_coupon(40, 2)
-        # Confirm the coupon again
         new_pos_order.confirm_coupon_programs(coupon_data)
         check_coupon(40, 2)
 
@@ -177,7 +173,6 @@ class TestPOSLoyaltyHistory(TestPointOfSaleHttpCommon):
         self.assertNotIn(eur_loyalty, loaded_programs)
 
     def test_gift_card_partner(self):
-        """Test that the gift card's partner is correctly set as the customer who bought it."""
         test_partner = self.env["res.partner"].create({"name": "Test Partner"})
         LoyaltyProgram = self.env["loyalty.program"]
         self.env.ref("loyalty.gift_card_product_50").write({"active": True})

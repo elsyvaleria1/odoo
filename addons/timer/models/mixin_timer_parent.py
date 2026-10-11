@@ -37,11 +37,6 @@ class MixinTimerParent(models.AbstractModel):
 
     @api.depends_context("uid")
     def _compute_user_timer_id(self) -> None:
-        """Get the timers according these conditions
-        :user_id is is the current user
-        :res_id is the current record
-        :res_model is the current model
-        """
         timer_read_group = self.env["timer.timer"]._read_group(
             [
                 ("user_id", "=", self.env.user.id),
@@ -58,11 +53,6 @@ class MixinTimerParent(models.AbstractModel):
             record.user_timer_id = timer_by_model.get(record.id, False)
 
     def action_timer_stop(self):
-        """Stop the timer of the current record
-        Unlink the timer, it's useless to keep the stopped timer.
-        A new timer can be create if needed
-        Return the amount of minutes spent
-        """
         self.check_singleton()
         record = self._get_record_with_timer_running()
         if record:
@@ -70,7 +60,6 @@ class MixinTimerParent(models.AbstractModel):
         return super().action_timer_stop()
 
     def _create_record_to_start_timer(self):
-        """Create record to start a timer on this record."""
         return False
 
     def _prepare_timer_vals(self):
@@ -96,7 +85,6 @@ class MixinTimerParent(models.AbstractModel):
 
     @api.model
     def _get_user_timers(self):
-        # Return user's timers. Can have multiple timers if some are in pause
         return self.env["timer.timer"]._get_timers()
 
     def _get_timers_from_other_users(self):

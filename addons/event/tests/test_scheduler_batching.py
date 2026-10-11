@@ -33,7 +33,6 @@ class TestSchedulerBatching(EventCase):
         )
 
     def _count_sends(self):
-        """Return {registration_id: number of times it was handed to _send_mail}."""
         sent = {}
 
         def _record(scheduler, registrations):
@@ -43,7 +42,6 @@ class TestSchedulerBatching(EventCase):
         return sent, patch.object(EventMail, "_send_mail", _record)
 
     def test_attendee_scheduler_mails_each_attendee_once_past_the_chunk_size(self):
-        """Above the 500-row generation chunk, every attendee is still mailed once."""
         event = self.env["event.event"].create(
             {
                 "date_begin": self.now + timedelta(days=10),
@@ -63,7 +61,7 @@ class TestSchedulerBatching(EventCase):
             }
         )
         scheduler = event.event_mail_ids
-        count = 600  # > the 500 rows _create_missing_mail_registrations chunks on
+        count = 600
         self.env["event.registration"].with_context(install_mode=True).create(
             [
                 {
@@ -103,11 +101,6 @@ class TestSchedulerBatching(EventCase):
         self.assertEqual(sum(sent.values()), count)
 
     def test_slot_scheduler_mails_every_attendee_across_cron_runs(self):
-        """A slot larger than the cron limit still reaches all of its attendees.
-
-        Checked against the single-slot-less event, which is the same scheduler
-        code with mail_slot unset: the two must not diverge.
-        """
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", "2")
         self.env["ir.config_parameter"].sudo().set_param("mail.render.cron.limit", "2")
         begin = self.now - timedelta(days=3)
@@ -156,7 +149,7 @@ class TestSchedulerBatching(EventCase):
                             "event_slot_id": slot.id if multi else False,
                             "name": f"S{idx}",
                         }
-                        for idx in range(6)  # 3x the cron limit
+                        for idx in range(6)
                     ]
                 )
             )

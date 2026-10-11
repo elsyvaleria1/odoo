@@ -16,13 +16,11 @@ class SignDocument(models.Model):
 
             if attachment:
                 if attachment.res_model and attachment.res_model != "document.document":
-                    # Attachment is linked to something else, then make a copy
                     _debug.logic(
                         "sign_attachment", by="copied", res_model=attachment.res_model
                     )
                     vals["attachment_id"] = attachment.copy().id
                 else:
-                    # Unlink from document.document or leave it unlinked
                     _debug.logic("sign_attachment", by="detached")
                     attachment.write({"res_model": False, "res_id": 0})
 

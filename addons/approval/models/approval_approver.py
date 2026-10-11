@@ -273,7 +273,6 @@ class ApprovalApprover(models.Model):
                     )
 
     def _may_delegate_to(self, delegate) -> bool:
-        """Whether `delegate` may cover this row: what _check_delegate_identity refuses."""
         self.check_singleton()
         request = self.request_id
         others = request.approver_ids - self
@@ -344,8 +343,6 @@ class ApprovalApprover(models.Model):
 
     @api.constrains("delegate_id")
     def _check_delegation_keeps_quorum(self) -> None:
-        """One person standing in for several principals gives one approval, so a
-        delegation may not leave a quorum fewer people than it asks for."""
         for request in self.filtered("delegate_id").request_id:
             short = request._get_quorum_short_of_people()
             if short is None:
@@ -391,14 +388,6 @@ class ApprovalApprover(models.Model):
     def _hand_activities_to_effective_approver(
         self, previous_delegates: dict | None = None
     ) -> None:
-        """A pending row's approval activity belongs to whoever may decide it now.
-
-        Who that is changes without the delegation wizard: a delegation written on
-        the row itself (the request form edits it), and the clock, since
-        `is_delegated` is computed from today against the window. Left alone, the
-        delegate may decide with nothing asking them to, and the principal holds a
-        to-do they are refused on -- or the other way round once the window ends.
-        """
         previous_delegates = previous_delegates or {}
         rows = self.filtered(
             lambda row: (
@@ -444,8 +433,6 @@ class ApprovalApprover(models.Model):
 
     @api.model
     def cron_hand_delegated_activities_over(self) -> None:
-        """Move what a delegation gives when its window opens or closes today: the
-        activity, the reach into the document and the Decider group."""
         rows = self.search(
             [
                 ("state", "in", ("pending", "waiting")),
@@ -676,24 +663,18 @@ class ApprovalApprover(models.Model):
             self.env["mail.activity"].create(create_vals_list)
 
     def _prepare_source_activity_vals(self, target) -> dict:
-        """What the source record adds to an activity asked on it; nothing when the
-        activity lives on the request, which is no approval source."""
         self.check_singleton()
         if not isinstance(target, self.env.registry["mixin.approval.source"]):
             return {}
         return target.sudo()._prepare_approval_activity_vals(self)
 
     def _get_decider_key(self) -> tuple[str, int]:
-        """Who this row's approval counts as: the person who gave it, so one
-        person deciding several rows is one approval toward a quorum. A row
-        nobody decided -- consent, an automatic rule -- counts on its own."""
         self.check_singleton()
         if self.decided_by_user_id:
             return ("user", self.decided_by_user_id.id)
         return ("row", self.id)
 
     def _is_advisory_only(self) -> bool:
-        """Whether every step this row counts toward is advisory."""
         self.check_singleton()
         request = self.request_id
         advisory_only = bool(self.step_ids) and all(
@@ -708,7 +689,6 @@ class ApprovalApprover(models.Model):
         return advisory_only
 
     def _get_activity_target(self):
-        """The record this row's approver is asked on: the request, or its document."""
         self.check_singleton()
         request = self.request_id
         if request.category_id.activity_target == "document":
@@ -722,8 +702,6 @@ class ApprovalApprover(models.Model):
         return request
 
     def _get_activity_type(self):
-        """The activity type of the first of this row's steps that names one, as the
-        request's document chooses it."""
         self.check_singleton()
         step_type = (
             self.request_id._sort_routed_steps(self.step_ids)
@@ -754,14 +732,6 @@ class ApprovalApprover(models.Model):
         return step_type
 
     def _filtered_notifiable(self):
-        """The rows whose approver should be asked now.
-
-        Every activity is created through `_create_activity`, so this one filter
-        orders the asking for all of its callers. A row that counts toward no step
-        is asked as it always was. On a category that requests its steps in order,
-        a row is asked only once one of its steps is among the lowest steps still
-        unmet -- the decision is open from the start, the asking is not.
-        """
         notifiable = self.filtered(lambda approver: approver._is_notifiable())
         trace.ACTIVITY.event(
             "notifiable_rows",
@@ -772,12 +742,6 @@ class ApprovalApprover(models.Model):
         return notifiable
 
     def _is_notifiable(self) -> bool:
-        """A step's group lets its members decide; only its listed members are asked.
-
-        They are asked while a step they are listed for is still short of its quorum
-        -- in order, once it opens -- and not for a step they may decide only through
-        its group.
-        """
         self.check_singleton()
         if not self.step_ids:
             return True
@@ -856,7 +820,6 @@ class ApprovalApprover(models.Model):
             )
 
     def _approve_for_every_step(self, note: str | None = None) -> None:
-        """Approve rows nobody decided -- consent, an automatic rule -- for all their steps."""
         trace.DECISION.note("approve_every_step", rows=self.ids)
         for request, rows in self.grouped("request_id").items():
             for approver in rows:

@@ -117,19 +117,14 @@ class CustomerPortal(portal.CustomerPortal):
             "state": {"input": "state", "label": request.env._("Status")},
         }
 
-        # Clamp to the declared vocabularies: both come straight off the query
-        # string, and indexing them unchecked answered an unknown value with a
-        # KeyError (HTTP 500).
         sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "state")
         sort_order = searchbar_sortings[sortby]["order"]
         filterby = self._resolve_searchbar_option(searchbar_filters, filterby, "all")
-        # get the search  bar filters and remove the cancelled requests
         domain = Domain.AND([searchbar_filters[filterby]["domain"]])
         if date_begin and date_end:
             domain &= Domain("signing_date", ">", date_begin) & Domain(
                 "signing_date", "<=", date_end
             )
-        # search only the document name
         if search and search_in:
             domain &= Domain("reference", "ilike", search)
         pager = portal_pager(
@@ -148,11 +143,9 @@ class CustomerPortal(portal.CustomerPortal):
             step=self._items_per_page,
         )
 
-        # content according to pager and archive selected
         if groupby == "state":
             sort_order = "%s, %s" % (searchbar_sortings["state"]["order"], sort_order)
 
-        # search the count to display, according to the pager data
         sign_requests_items = SignRequestItem.search(
             domain, order=sort_order, limit=self._items_per_page, offset=pager["offset"]
         )
@@ -204,7 +197,6 @@ class CustomerPortal(portal.CustomerPortal):
                 partner_id
             ),
         }
-        # exclude access_token from kwargs to prevent redundant passing
         kwargs.pop("access_token", None)
         values = self._get_page_view_values(
             sign_item_sudo,

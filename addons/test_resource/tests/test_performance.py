@@ -12,7 +12,6 @@ _logger = logging.getLogger(__name__)
 class TestResourcePerformance(TransactionCase):
     @warmup
     def test_performance_attendance_intervals_batch(self):
-        # Tests the performance of _attendance_intervals_batch with a batch of 100 resources
         calendar = self.env["resource.calendar"].create(
             {
                 "name": "Calendar",
@@ -28,7 +27,6 @@ class TestResourcePerformance(TransactionCase):
             ]
         )
         with self.assertQueryCount(__system__=1):
-            # Generate attendances for a whole year
             start = (datetime.now() + relativedelta(month=1, day=1)).replace(tzinfo=UTC)
             stop = (datetime.now() + relativedelta(month=12, day=31)).replace(
                 tzinfo=UTC
@@ -41,14 +39,6 @@ class TestResourcePerformance(TransactionCase):
                 "Attendance Intervals Batch (100): --- %s seconds ---",
                 time.time() - start_time,
             )
-            # Before
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 2.0667169094085693 seconds ---
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 2.0868310928344727 seconds ---
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 1.9209258556365967 seconds ---
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 1.9474620819091797 seconds ---
-            # After
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 0.4092371463775635 seconds ---
-            # INFO master test_performance: Attendance Intervals Batch (100): --- 0.3598649501800537 seconds ---
 
     def test_attendance_lines_prefetch_after_invalidation(self):
         calendar = self.env.company.resource_calendar_id

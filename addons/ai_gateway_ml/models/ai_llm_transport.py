@@ -110,8 +110,5 @@ class AiLlmTransport(models.AbstractModel):
         if not service:
             return service
 
-        # The same "is this service usable here" question the credential model
-        # answers; only the return differs, since the caller wants the service
-        # and not the key.
         credential = self.env["credential.credential"]._get_for_endpoint(service)
         return service if credential else service.browse()

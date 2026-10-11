@@ -4,7 +4,7 @@ EARTH_RADIUS_KM = 6371.0
 
 
 def has_fix(latitude, longitude) -> bool:
-    return latitude != 0.0 or longitude != 0.0  # noqa: RUF069  0,0 is sent exactly, never computed
+    return latitude != 0.0 or longitude != 0.0
 
 
 def haversine_km(lat1, lon1, lat2, lon2):

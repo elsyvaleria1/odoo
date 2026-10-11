@@ -11,7 +11,6 @@ from odoo.addons.test_event_full.tests.common import TestEventFullCommon
 class TestEventEvent(TestEventFullCommon):
     @users("event_user")
     def test_event_create_wtype(self):
-        """Test a single event creation with a type defining all sub records."""
         event_type = self.env["event.type"].browse(self.test_event_type.ids)
 
         event_values = dict(
@@ -40,7 +39,6 @@ class TestEventEvent(TestEventFullCommon):
             }
         )
 
-        # check result
         self.assertEqual(event.address_id, self.env.user.company_id.partner_id)
         self.assertEqual(event.country_id, self.env.user.company_id.country_id)
         self.assertEqual(event.date_tz, "Europe/Paris")
@@ -58,13 +56,11 @@ class TestEventEvent(TestEventFullCommon):
         self.assertEqual(event.tag_ids, self.tags)
         self.assertTrue(event.website_menu)
 
-        # check time dependent computation: before event
         with freeze_time(self.reference_now):
             self.assertFalse(event.is_finished)
             self.assertFalse(event.is_ongoing)
             self.assertFalse(event.event_registrations_started)
 
-        # check time dependent computation: registrations started
         with freeze_time(self.reference_now + timedelta(hours=1)):
             event.invalidate_model(
                 ["is_finished", "is_ongoing", "event_registrations_started"]
@@ -73,7 +69,6 @@ class TestEventEvent(TestEventFullCommon):
             self.assertFalse(event.is_ongoing)
             self.assertTrue(event.event_registrations_started)
 
-        # check time dependent computation: during event
         with freeze_time(self.reference_now + timedelta(days=1, hours=1)):
             event.invalidate_model(
                 ["is_finished", "is_ongoing", "event_registrations_started"]
@@ -83,15 +78,14 @@ class TestEventEvent(TestEventFullCommon):
             self.assertTrue(event.event_registrations_started)
 
     def test_event_kanban_state_on_stage_change(self):
-        """Test that kanban_state updates correctly when stage is changed."""
         test_event_1 = self.env["event.event"].browse(self.test_event.ids)
         test_event_2 = test_event_1.copy()
 
         test_event_1.kanban_state = "done"
-        test_event_2.kanban_state = "cancel"  # Event Cancelled
+        test_event_2.kanban_state = "cancel"
 
         new_stage = self.env["event.stage"].create({"name": "New Stage", "sequence": 1})
-        (test_event_1 | test_event_2).stage_id = new_stage.id  # Change event stage
+        (test_event_1 | test_event_2).stage_id = new_stage.id
 
         self.assertEqual(
             test_event_1.kanban_state,
@@ -115,7 +109,6 @@ class TestEventEvent(TestEventFullCommon):
             lambda ticket: ticket.name == "Ticket2"
         )
 
-        # check initial data
         self.assertTrue(test_event.event_registrations_started)
         self.assertEqual(test_event.seats_available, 30)
         self.assertEqual(ticket_1.seats_available, 10)
@@ -123,7 +116,6 @@ class TestEventEvent(TestEventFullCommon):
         self.assertEqual(ticket_2.seats_available, 0)
         self.assertFalse(ticket_2.sale_available)
 
-        # make 9 registrations (let 1 on ticket)
         with self.mock_datetime_and_now(self.reference_now), self.mock_mail_gateway():
             self.env["event.registration"].create(
                 [
@@ -141,15 +133,12 @@ class TestEventEvent(TestEventFullCommon):
                     for x in range(9)
                 ]
             )
-        # generated emails from scheduler
         self.assertEqual(len(self._new_mails), 9)
-        # event and ticket seats update
         self.assertEqual(len(test_event.registration_ids), 9)
         self.assertEqual(test_event.seats_available, 21)
         self.assertEqual(ticket_1.seats_available, 1)
         self.assertEqual(ticket_2.seats_available, 0)
 
-        # prevent registration due to ticket limit
         with (
             self.mock_datetime_and_now(self.reference_now),
             self.assertRaises(exceptions.ValidationError),
@@ -171,7 +160,6 @@ class TestEventEvent(TestEventFullCommon):
                 ]
             )
 
-        # make 20 registrations (on free ticket)
         with self.mock_datetime_and_now(self.reference_now), self.mock_mail_gateway():
             self.env["event.registration"].create(
                 [
@@ -189,13 +177,11 @@ class TestEventEvent(TestEventFullCommon):
                     for x in range(20)
                 ]
             )
-        # event and ticket seats update
         self.assertEqual(len(test_event.registration_ids), 29)
         self.assertEqual(test_event.seats_available, 1)
         self.assertEqual(ticket_1.seats_available, 1)
         self.assertEqual(ticket_2.seats_available, 0)
 
-        # prevent registration due to event limit
         with (
             self.mock_datetime_and_now(self.reference_now),
             self.assertRaises(exceptions.ValidationError),

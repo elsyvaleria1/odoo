@@ -81,8 +81,6 @@ class WizardIntegrationTwilioConfigUpdate(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # the SID and the token are one credential: written apart, the vault
-        # would hold a username without its password and refuse it
         accounts = [self._pop_account_vals(vals) for vals in vals_list]
         wizards = super().create(vals_list)
         for wizard, account in zip(wizards, accounts, strict=True):

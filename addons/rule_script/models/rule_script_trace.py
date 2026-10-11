@@ -66,8 +66,6 @@ class RuleScriptTrace(models.Model):
         return super().write(vals)
 
     def _record(self, record, purpose, code, on_date, inputs, value, trace) -> None:
-        """Keep the evaluation behind a figure of `record`: the version in force,
-        what it read and returned, and every nested call."""
         record.check_singleton()
         version_ids = [step["version_id"] for step in trace]
         self.with_privilege(

@@ -7,9 +7,6 @@ from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.numbers import float_compare
 
-# How far a deferred time off may travel looking for a month that can still be
-# edited. A hard bound: an employee with no contract end date would otherwise
-# walk forward forever.
 MAX_DEFERRAL_MONTHS = 12
 
 LEAVE_TO_DEFER_ACTIVITY_XMLID = (
@@ -56,19 +53,11 @@ class HrLeave(models.Model):
         )
 
     def _action_validate(self, check_state=True):
-        # Get employees payslips, bounded to the period these leaves can
-        # possibly touch. Without the two date leaves this loaded every payslip
-        # the employee ever had -- 144 of them for a twelve-year history -- and
-        # ran the non-stored `is_regular` compute on each, to decide about a
-        # single day. `_leaves_covered_by_validated_payslip` below already
-        # bounds the
-        # same query this way.
         all_payslips = self._overlapping_payslips([("state", "!=", "cancel")])
         done_payslips = all_payslips.filtered(
             lambda p: p.state in ["validated", "paid"]
         )
         waiting_payslips = all_payslips - done_payslips
-        # Mark Leaves to Defer
         for leave in self:
             if any(
                 self._payslip_covers_leave(payslip, leave) for payslip in done_payslips
@@ -111,12 +100,6 @@ class HrLeave(models.Model):
         return res
 
     def _overlapping_payslips(self, extra_domain):
-        """Regular payslips of these employees whose period can touch a leave.
-
-        The date bounds matter: the callers narrow the result again with
-        `_payslip_covers_leave`, so without them the database hands over the
-        employee's whole payslip history for python to throw away.
-        """
         if not self:
             return self.env["hr.payslip"]
         return (
@@ -134,7 +117,6 @@ class HrLeave(models.Model):
         )
 
     def _recompute_payslips(self) -> None:
-        # Recompute draft/waiting payslips
         all_payslips = self._overlapping_payslips([("state", "=", "draft")])
         draft_payslips = self.env["hr.payslip"]
         waiting_payslips = self.env["hr.payslip"]
@@ -194,15 +176,6 @@ class HrLeave(models.Model):
         )
 
     def _get_deferral_work_entries(self):
-        """Return the work entries that can still take this deferred time off.
-
-        The month right after the time off is the usual answer, but it may be
-        closed already: validating a payslip moves that month's work entries to
-        'validated' and they can no longer be retyped. The time off then has to
-        travel further out, and a month that far ahead may hold nothing at all
-        -- the "Generate Missing Work Entries" cron only reaches the end of next
-        month -- so the entries are generated on the way.
-        """
         self.check_singleton()
         contract_end = self.employee_id.contract_date_end
         month = (self.date_from + relativedelta(months=1, day=1)).date()
@@ -213,20 +186,12 @@ class HrLeave(models.Model):
             work_entries = self.env["hr.work.entry"].search(
                 [
                     ("employee_id", "=", self.employee_id.id),
-                    # The employee's company, not the reader's: a payroll
-                    # officer looking at this from another active company
-                    # matched nothing and fell into the forced regeneration
-                    # below, which then created entries that same search would
-                    # never see -- on every invocation.
                     ("company_id", "=", self.employee_id.company_id.id),
                     ("date", ">=", month),
                     ("date", "<=", month_end),
                 ]
             )
             if not work_entries:
-                # force=True: the version may already consider this range
-                # generated while holding nothing for it, and without it that
-                # month would be skipped for good.
                 work_entries = self.employee_id.generate_work_entries(
                     month, month_end, force=True
                 )
@@ -261,7 +226,6 @@ class HrLeave(models.Model):
                     ("company_id", "=", leave.employee_id.company_id.id),
                     ("date", ">=", leave.date_from),
                     ("date", "<=", leave.date_to),
-                    # We are deferring workentry that have been reported as 'Attendance' but shouldn't have
                     ("work_entry_type_id.is_leave", "=", False),
                 ]
             )
@@ -298,8 +262,6 @@ class HrLeave(models.Model):
                             )
                             == 1
                         ):
-                            # This is required for half-day or hourly leaves.
-                            # The work entry must be split according to the exact leave duration.
                             next_work_entry.action_split(
                                 {
                                     "duration": current_leave_hours_to_defer,
@@ -321,16 +283,9 @@ class HrLeave(models.Model):
                             leave.display_name,
                         )
                     )
-        # Should change payslip_state to 'done' at the same time
         self.activity_feedback([LEAVE_TO_DEFER_ACTIVITY_XMLID])
 
     def _leaves_covered_by_validated_payslip(self) -> Self:
-        """The leaves of this recordset already inside a validated payslip.
-
-        One query and one predicate, where there used to be two copies of
-        both: the compute wanted the negated answer as a lookup and the guard
-        wanted to raise, and each carried its own search to get there.
-        """
         if not self:
             return self
         payslips = (

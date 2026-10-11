@@ -263,11 +263,6 @@ class IrActionsAct_Window(models.Model):
     def _remove_view_modes_without_views(
         self, candidates: set[tuple[str, str]]
     ) -> None:
-        """Take a view type out of every window action of a model that has no
-        view of that type any more. Left in, ``_get_view`` raises
-        ``No default view of type '<type>' could be found!`` the next time the
-        action opens.
-        """
         if not candidates:
             return
         covered = set(

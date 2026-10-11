@@ -26,7 +26,6 @@ def action_options() -> frozenset[str]:
 
 
 def _balanced(code: str, start: int) -> int:
-    # index of the bracket closing the one at `start`, strings skipped
     depth, quote, i = 0, None, start
     while i < len(code):
         char = code[i]

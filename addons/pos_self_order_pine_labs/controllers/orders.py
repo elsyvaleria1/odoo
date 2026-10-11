@@ -32,7 +32,7 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
     @http.route(
         "/pos-self-order/pine-labs-fetch-payment-status/", auth="public", type="jsonrpc"
     )
-    def pine_labs_fetch_payment_status(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pine_labs_fetch_payment_status(
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_pine_labs_kiosk_order(
@@ -48,12 +48,6 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
         )
 
     def _settle_pine_labs(self, order, payment_method, response, final=False) -> str:
-        # "approved"; "pending" or "unknown": the kiosk keeps polling;
-        # "unverified": staff check the terminal. A status Pine Labs answers
-        # with an error may be a decline or a lost request, so it is never
-        # read as a failure: only the terminal accepting the cancellation is
-        # one, and an outcome still unknown when the kiosk gives up (final)
-        # holds the order instead of offering to pay again
         if response.get("status") == "TXN APPROVED":
             return self._pay_pine_labs(order, payment_method, response)
         if final:
@@ -85,7 +79,6 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
                     },
                 )
         except UserError as error:
-            # the terminal took a card, but not for this order as asked
             response["error"] = error.args[0]
             order._hold_kiosk_payment_to_verify(
                 payment_method,
@@ -94,7 +87,6 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
             )
             return "unverified"
         if order.kiosk_payment_to_verify_method_id:
-            # the terminal settled what staff were asked to check
             order._clear_kiosk_payment_to_verify()
         if paid:
             order._send_payment_result("Success")
@@ -119,7 +111,7 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
     @http.route(
         "/pos-self-order/pine-labs-cancel-transaction/", auth="public", type="jsonrpc"
     )
-    def pine_labs_cancel_transaction(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pine_labs_cancel_transaction(
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_pine_labs_kiosk_order(
@@ -135,7 +127,6 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
             order._send_payment_result("fail")
             response["outcome"] = "failed"
             return response
-        # the terminal would not cancel: it may have taken the card
         status = self._fetch_pine_labs_status(order, payment_method)
         response["outcome"] = self._settle_pine_labs(
             order, payment_method, status, final=True

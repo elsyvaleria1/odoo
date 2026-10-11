@@ -15,7 +15,6 @@ class TestSocialBasic(SocialTestFullCase):
         )
         post = self.env["social.post"].create(
             {
-                # Facebook - Twitter - Push Notification
                 "account_ids": (self.accounts[1:3] + self.accounts[4]).ids,
                 "image_ids": images[0].ids,
                 "message": "test",

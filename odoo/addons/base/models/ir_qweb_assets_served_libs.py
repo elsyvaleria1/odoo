@@ -59,8 +59,6 @@ class IrQweb(models.AbstractModel):
         )
         missing = {url: entry for url, entry in files.items() if url not in present}
         if missing and self._is_esm_readonly_test_cursor():
-            # what a read-only test cursor saves its snapshot cannot read
-            # back, so minifying the missing libraries only feeds a decline
             self._decline_served_libs(len(missing), len(present))
         vals_list = []
         for served_url, (_lib, declared_url) in missing.items():

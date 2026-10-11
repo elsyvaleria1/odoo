@@ -95,7 +95,6 @@ class SaleCommissionPlanUser(models.Model):
                 if pu.user_id not in plan.user_ids.user_id:
                     continue
                 if plan.date_to < pu_date_from or plan.date_from > pu_date_to:
-                    # no overlap
                     continue
                 other_plans_ids.append(plan.id)
             pu.other_plans = (

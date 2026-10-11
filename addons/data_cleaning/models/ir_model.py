@@ -10,7 +10,6 @@ class IrModel(models.Model):
         help="""If the model already has a custom merge method, the class attribute `_merge_disabled` is set to true on
              that model and the generic data merge action should not be available on that model.""",
     )
-    # contextual merge records server action
     ref_merge_ir_act_server_id = fields.Many2one(
         comodel_name="ir.actions.server",
         string="Merge Server Action",
@@ -25,10 +24,6 @@ class IrModel(models.Model):
     )
 
     def _compute_hide_merge_action(self) -> None:
-        """This method is meant to be overridden to add display conditions for "enable/disable merge action" button
-        in the model's form view.
-        Typically, models like res.partner or crm.lead already have a custom merge action and we do not want to
-        enable generic merge action on those models."""
         for model in self:
             model.hide_merge_action = getattr(
                 self.env.get(model.model), "_disable_data_merge", False
@@ -39,9 +34,6 @@ class IrModel(models.Model):
         for model in self:
             model.is_merge_enabled = bool(model.ref_merge_ir_act_server_id)
 
-    # ---------------
-    # ACTION METHODS
-    # ---------------
 
     def action_merge(self):
         if self.is_merge_enabled:
@@ -56,15 +48,13 @@ class IrModel(models.Model):
             "code": "action = env['data_merge.record'].action_deduplicates(records)",
             "group_ids": [
                 Command.link(self.env.ref("base.group_system").id)
-            ],  # only the system admins have the rights on data_merge models.
+            ],
         }
 
         for model in self:
-            # Do nothing if current model has a custom merge method.
             if getattr(self.env[model.model], "_disable_data_merge", False):
                 return
 
-            # Check that a merge server action does not exist already for that model
             if model.ref_merge_ir_act_server_id:
                 return
 
@@ -86,14 +76,12 @@ class IrModel(models.Model):
             if imd:
                 imd.res_id = server_action.id
             else:
-                # Create xml_id for the server action so it doesn't count as customization in cloc
                 IrModelData.create(
                     {
                         "name": xid,
                         "module": module,
                         "res_id": server_action.id,
                         "model": "ir.actions.server",
-                        # noupdate is set to true to avoid deleting the record at module update
                         "noupdate": True,
                     }
                 )

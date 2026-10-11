@@ -9,8 +9,6 @@ from . import lint_case
 _RETIRED_ACCESS_NAMES = re.compile(
     r"\bir_rule\b|\bir_model_access\b|\brule_group_rel\b"
     r"|\bir\.rule\b|\bir\.model\.access\b"
-    # the retired models' fields: env.ref() of a converted rule answers an
-    # ir.access row, which has none of them
     r"|\bdomain_force\b|\bperm_(?:read|write|create|unlink)\b|\brule_groups\b"
 )
 
@@ -21,8 +19,6 @@ def _is_migration(path) -> bool:
 
 
 def migration_findings(paths):
-    # every module migrates after base 1.97 has converted both tables, so
-    # a script still aimed at them edits rows nothing reads any more
     findings = []
     for path in paths:
         if not _is_migration(path):

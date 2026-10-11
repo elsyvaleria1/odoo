@@ -112,8 +112,6 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
             self.assertEqual(record.display_name, self._nested_name(record))
 
     def test_a_chain_deeper_than_the_stack_recomputes(self):
-        # computed record by record, each record's compute recursed into its
-        # neighbour's: a few hundred levels exhausted the interpreter's stack
         chain = self._make_chain("test_orm.recursive", "parent", 300)
         tree = self._make_chain("test_orm.recursive.tree", "parent_id", 300)
         self.env.flush_all()
@@ -213,8 +211,6 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
         Tree = self.env["test_orm.recursive.tree"]
         chain = self._make_chain("test_orm.recursive.tree", "parent_id", 6)
         other = self._make_chain("test_orm.recursive.tree", "parent_id", 4)
-        # the move stays in the cache while the leaf's rename walks up through
-        # it: the ancestors past it are the other chain's, not the rows'
         Tree.browse(chain[3].id).parent_id = other[-1]
         Tree.browse(chain[-1].id).name = "moved"
         self.env.flush_all()

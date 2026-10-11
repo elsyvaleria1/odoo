@@ -72,7 +72,6 @@ class WizardSaleOrderAddShipping(models.TransientModel):
 
     @api.onchange("order_id")
     def _onchange_order_id(self) -> dict | None:
-        # fixed and base_on_rule delivery price will computed on each carrier change so no need to recompute here
         if (
             self.carrier_id
             and self.order_id.delivery_set
@@ -98,7 +97,7 @@ class WizardSaleOrderAddShipping(models.TransientModel):
     @api.depends("partner_id")
     def _compute_available_carrier_ids(self) -> None:
         for rec in self:
-            carriers = self.env["delivery.carrier"].search(  # noqa: E8507 - a transient wizard: one record
+            carriers = self.env["delivery.carrier"].search(
                 self.env["delivery.carrier"]._check_company_domain(
                     rec.order_id.company_id
                 )

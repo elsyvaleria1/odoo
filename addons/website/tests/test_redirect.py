@@ -579,13 +579,6 @@ class TestWebsiteRewriteOrdering(TransactionCase):
         )
 
     def test_rewrites_come_back_in_the_order_they_were_dragged_into(self):
-        """`website_rewrite.xml` puts `widget="handle"` on the redirect list, so
-        the drag writes `sequence`; without `_order` naming it the list
-        re-rendered in id order and the reordering did nothing.
-
-        Routing is unaffected either way: `ir_http._get_rewrites` passes its own
-        `order="website_id DESC, id"`.
-        """
         rewrites = (
             self._rewrite("third", sequence=30)
             | self._rewrite("second", sequence=20)

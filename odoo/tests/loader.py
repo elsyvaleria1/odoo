@@ -37,13 +37,13 @@ def get_module_test_cases(module: Any) -> Iterator[_StdTestCase]:
         else:
             test_cases = sorted(test_case_class.__dict__.items())
 
-        yielded = 0  # debuglog
+        yielded = 0
         for method_name, method in test_cases:
             if not callable(method):
                 continue
             if not method_name.startswith("test"):
                 continue
-            yielded += 1  # debuglog
+            yielded += 1
             yield test_case_class(method_name)
         _debug.perf.count(
             "test.loader.cases_collected",
@@ -56,7 +56,7 @@ def get_module_test_cases(module: Any) -> Iterator[_StdTestCase]:
 def get_test_modules(module: str) -> list[Any]:
     with _debug.perf("test.loader.import_tests", module=module) as span:
         results = _get_tests_modules(f"odoo.addons.{module}")
-        upgrade = list(_get_upgrade_test_modules(module))  # debuglog
+        upgrade = list(_get_upgrade_test_modules(module))
         results += upgrade
         span.set(modules=len(results), upgrade=len(upgrade))
 
@@ -125,12 +125,12 @@ def prepare_suite(module_names: list[str], position: str = "at_install") -> Odoo
         "test.suite.collect", position=position, modules=len(module_names)
     ) as span:
         for module_name in module_names:
-            collected = selected = 0  # debuglog
+            collected = selected = 0
             for m in get_test_modules(module_name):
                 for t in get_module_test_cases(m):
-                    collected += 1  # debuglog
+                    collected += 1
                     if position_tag.selects(t) and config_tags.select_test(t):
-                        selected += 1  # debuglog
+                        selected += 1
                         tests.append(t)
             _debug.logic(
                 "test.suite.module_selected",

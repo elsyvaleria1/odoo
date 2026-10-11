@@ -17,7 +17,6 @@ class TestSecretValues(TransactionCase):
         )
 
     def _entries(self, credential=None):
-        # a Json field reads an empty list back as False
         entries = (credential or self.credential).secret_values or []
         return {entry["code"]: entry for entry in entries}
 

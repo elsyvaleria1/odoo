@@ -22,8 +22,6 @@ PROD_QUERY_URL = "https://queries.envia.com/"
 PROD_LABEL_URL = "https://envia.com/"
 GEOLOCATE_URL = "https://geocodes.envia.com/"
 
-# Envia uses custom state codes for certain states different then odoo expects.
-# Store a map of (country_code, state_code) to envia code.
 STATE_CODE_MAP_ENVIA = {
     ("AR", "A"): "SA",
     ("AR", "B"): "BA",
@@ -130,7 +128,6 @@ class Envia:
         data=None,
         params=None,
     ):
-        """Make an api call, return response for multiple api requests of Envia"""
         headers = {
             "Content-Type": "application/json; charset=utf-8",
             "Accept": "application/json",
@@ -143,18 +140,12 @@ class Envia:
         elif geolocate:
             access_url = GEOLOCATE_URL + endpoint
         try:
-            # Envia does not handle UTF-8 Strings according to the JSON Spec properly.
-            # Requests sent with escaped unicode (\\u) characters will fail on Envia's side and not
-            # be able to be properly parsed. We need to encode the data with ensure_ascii set to
-            # false to send the data with (\x) instead.
             if data:
                 data = json.dumps(data, ensure_ascii=False).encode("utf8")
 
-            # Log the request details for debugging purposes
             self.debug_logger(
                 "%s\n%s\n%s" % (access_url, method, data), "envia_request_%s" % endpoint
             )
-            # Make the API request
             response = self.session.request(
                 method=method,
                 url=access_url,
@@ -163,9 +154,7 @@ class Envia:
                 params=params,
                 timeout=30,
             )
-            # Parse the response as JSON
             response_json = response.json()
-            # Log the response details for debugging purposes
             self.debug_logger(
                 "%s\n%s\n%s" % (response.url, response.status_code, response.text),
                 "envia_response_%s" % endpoint,
@@ -199,9 +188,6 @@ class Envia:
             return {"error": {"description": "Exception", "message": str(error)}}
 
     def _envia_parse_error(self, json_data):
-        """Return error message(s) from Envia requests formated.
-        If not in debug mode, show only a smaller message.
-        """
         error_msgs = []
         if message := json_data.get("message"):
             description = json_data.get("description", "")
@@ -259,9 +245,6 @@ class Envia:
         return services
 
     def _get_rate(self, shipper, recipient, packages_data, order):
-        """Fetch rate from Envia API based on the parameters.
-        url: ship/rate
-        """
         packages = []
         package_type = self.carrier.envia_default_package_type_id.envia_mail_type
         for package in packages_data:
@@ -301,7 +284,6 @@ class Envia:
             isinstance(rate_json, dict)
             and rate_json.get("meta") not in ["rate", "rateLtl"]
         ):
-            # Error message found
             return {"error_found": self._envia_parse_error(rate_json)}
 
         services = rate_json.get("data")
@@ -315,9 +297,6 @@ class Envia:
         }
 
     def _rate_request(self, recipient, shipper, order, order_weight=False):
-        """Returns the dictionary of shipment rate from Envia
-        url: ship/rate
-        """
         if not order:
             raise UserError(order.env._("Sale Order is required to get rate."))
         products = order.line_ids.product_id
@@ -343,14 +322,12 @@ class Envia:
             else:
                 weight = package.weight
             weight_in_kg = self.carrier._get_weight_in_kg(weight)
-            # Resize dimensions to CM
             dimensions = {
                 "length": self.carrier._envia_convert_size(package.dimension["length"]),
                 "width": self.carrier._envia_convert_size(package.dimension["width"]),
                 "height": self.carrier._envia_convert_size(package.dimension["height"]),
             }
 
-            # Compute cost of package
             value = sum(comm.monetary_value * comm.qty for comm in package.commodities)
             declared_value = self._convert_currency(
                 value, order=order, from_envia=False
@@ -369,9 +346,6 @@ class Envia:
         return self._get_rate(shipper, recipient, packages_data, order)
 
     def _get_envia_carriers(self) -> dict:
-        """Import all available carriers from Envia for specific country
-        query_url: available-service/{country_code}/{international}/{shipment_type}
-        """
         country_code = quote(self.carrier.country_id.code)
         ship_type = (
             2
@@ -402,12 +376,6 @@ class Envia:
         return {"carriers": carriers}
 
     def _convert_currency(self, amount, picking=False, order=False, from_envia=False):
-        """Convert the currency of an amount either to or from the envia currency
-        specified on the carrier.
-
-        Envia expects all shippings to be within the currency specified in the front end
-        and as such we need to translate the picking currency one way or another.
-        """
         if not (order or picking):
             raise UserError(
                 self.carrier.env._(
@@ -436,16 +404,12 @@ class Envia:
         return amount
 
     def _get_shipping_lines(self, package):
-        """Returns the shipping products from the specific
-        picking to create the order.
-        """
         line_by_product = []
         original_prices = []
         picking = package.picking_id
 
         for commodity in package.commodities:
             unit_price = round(commodity.monetary_value, 2)
-            # Price of the item must be in the currency you created your Envia account with
             unit_price_in_currency = self._convert_currency(
                 unit_price, picking=picking, from_envia=False
             )
@@ -459,24 +423,17 @@ class Envia:
                 "price": unit_price_in_currency,
             }
             if commodity.product_id.hs_code:
-                # Pass international information if it's necessary
                 item |= {
                     "productCode": commodity.product_id.hs_code.replace(".", "") or "",
                     "countryOfManufacture": commodity.country_of_origin or "",
                 }
             line_by_product.append(item)
-            # Store the original currency price so we don't lose rounding precision for declaredValue
             original_prices.append(unit_price * commodity.qty)
 
         return line_by_product, original_prices
 
     def _prepare_parcel(self, package, origin):
-        """Prepare parcel for picking shipment based on the package.
-        Use the origin partner to see if we need to add Mexico specific
-        code.
-        """
         dimensions = package.dimension
-        # Resize dimensions to CM
         for dim, size in dimensions.items():
             dimensions[dim] = self.carrier._envia_convert_size(size)
 
@@ -490,13 +447,11 @@ class Envia:
             commodity.product_id.name for commodity in package.commodities
         )
 
-        # Envia limits to 35 characters, if it's too long use categories instead.
         if len(contents) > ENVIA_CONTENT_LENGTH_LIMIT:
             categories = [comm.product_id.categ_id.name for comm in package.commodities]
             contents = shorten(
                 ", ".join(categories), ENVIA_CONTENT_LENGTH_LIMIT, placeholder="..."
             )
-        # Store the total price of all items in this package as a insurance value
         sum_price = sum(original_prices)
         declared_value = self._convert_currency(
             sum_price, picking=picking, from_envia=False
@@ -527,9 +482,6 @@ class Envia:
 
         if package_type == "pallet":
             if origin.country_id == origin.env.ref("base.mx"):
-                # Envia requires an extra field to be set for mexico when sending parcels/ltl shipments.
-                # It requires the unspsc_code which is in product_unspsc module, however this is only for
-                # orders shipped from mexico which requires the localization installed which depends on unspsc.
                 complementData = []
                 product_unspsc = origin.env["ir.module.module"].search(
                     [("name", "=", "product_unspsc")]
@@ -566,7 +518,6 @@ class Envia:
         return parcel
 
     def _get_shipping_params(self, picking):
-        """Returns the shipping data from picking for create a Envia Order."""
         envia_carrier = self.carrier.envia_carrier_code
         envia_service = self.carrier.envia_service_code
 
@@ -596,8 +547,6 @@ class Envia:
             package_type != default_package.envia_mail_type
             for package_type in package_types
         ):
-            # The carrier/service selected on the delivery carrier model only works. If the package
-            # is of the same type as the default_packages' type. They need to use the right type.
             raise ValidationError(
                 picking.env._(
                     "Envia Error: The Envia Mail Type (%(package_types)s) set on the package(s) does "
@@ -632,12 +581,6 @@ class Envia:
         return picking_data
 
     def _send_shipping(self, picking):
-        """Returns a dictionary containing:
-            - Price of the shipment
-            - All tracking numbers for each package
-            - Envia Order Ids for cancelation.
-        url(s): ship/generate
-        """
         res = {
             "exact_price": 0.00,
             "tracking_number": "",
@@ -651,7 +594,6 @@ class Envia:
             isinstance(ship_response, dict)
             and ship_response.get("meta") not in ["generate", "generateLtl"]
         ):
-            # Error message found
             raise UserError(self._envia_parse_error(ship_response))
 
         data_list = ship_response.get("data")
@@ -673,7 +615,6 @@ class Envia:
             formatted_tracking,
         )
 
-        # pickings where we should leave a lognote
         lognote_pickings = picking.sale_id.picking_ids if picking.sale_id else picking
 
         logmessage = Markup(
@@ -751,11 +692,6 @@ class Envia:
         return res
 
     def _cancel_picking(self, picking):
-        """Cancel the individual order
-        Can end up failing still even if we check that it can be canceled.
-        Returns a list of any tracking that failed to cancel.
-        url: ship/cancel/
-        """
         carrier = self.carrier.envia_carrier_code
         tracking_numbers = picking.carrier_tracking_ref
 
@@ -774,23 +710,12 @@ class Envia:
         return invalid_trackings
 
     def _get_envia_state_code(self, partner):
-        """Envia requires the state code to be sent for the partner,
-        however, the codes they use are slightly different then
-        the ISO codes we store in Odoo. If we don't have a special
-        code we fall back on the default state code.
-        """
         envia_state_code = STATE_CODE_MAP_ENVIA.get(
             (partner.country_id.code, partner.state_id.code)
         )
         return envia_state_code or partner.state_id.code
 
     def _get_envia_vat(self, partner):
-        """Envia requires the vat of the partner.
-        If the partner is a delivery address then the vat is on the parent_id
-
-        In colombia, Envia doesn't expect any periods or - in the vat even
-        though we store it so we must strip it.
-        """
         vat = partner.parent_id.vat if partner.type != "contact" else partner.vat
         if vat and partner.country_id == partner.env.ref("base.co"):
             vat = vat.split("-", 1)[0]
@@ -804,12 +729,6 @@ class Envia:
         return partner.street_name or partner.street
 
     def _get_envia_district(self, partner):
-        """Envia requires the city to be sent twice for chile.
-        Skip district code and do that instead.
-
-        For Mexico envia requires the colony field if it's set and
-        l10n_mx_edi_extended is installed.
-        """
         if partner.country_id == partner.env.ref("base.cl"):
             return self._get_envia_city(partner)
 
@@ -822,14 +741,6 @@ class Envia:
         return partner.street2
 
     def _geolocate_zip(self, partner):
-        """In some countries the idea of a zipcode/pincode is not something
-        that is required in envia's front-end. However, they expect specific codes
-        that may be not filled in the partner form or slightly different.
-        If it's not set on the partner we try and geo-locate it before throwing
-        an error.
-
-        url: locate/{country_code}/{state_code}/{city_name}
-        """
         if not (
             partner.country_id
             and (partner.city_id or partner.city)
@@ -854,9 +765,6 @@ class Envia:
         return zip_data[0].get("zip_code")
 
     def _get_envia_zip(self, partner):
-        # l10n_co_edi module stores the state code for colombia
-        # If that module is installed on the db we can shortcut the api call
-        # and return the value immediately.
         l10n_co = partner.env["ir.module.module"].search([("name", "=", "l10n_co_edi")])
 
         if l10n_co.state == "installed" and partner.city_id.l10n_co_edi_code:
@@ -875,9 +783,6 @@ class Envia:
         return partner.zip or partner.city_id.zipcode
 
     def _get_envia_phone(self, partner):
-        """Envia requires all phone numbers to be in national format
-        (Even for international shipments)
-        """
         phone: str = (
             partner._phone_format(
                 number=partner.phone_ids._primary().number, force_format="NATIONAL"
@@ -885,7 +790,6 @@ class Envia:
             or partner.phone_ids._primary().number
         )
         if phone:
-            # Clean phonenumber of non numeric digits.
             phone = re.sub(r"[^+0-9]", "", phone)[:20]
 
         if not phone:
@@ -897,16 +801,6 @@ class Envia:
         return phone
 
     def _prepare_address_values(self, partner, is_cust=False):
-        """Try and prepare the address dictionary required for origin/destination.
-        Throw Validation error if it fails.
-        Each country has a different set of required fields, we pull the information
-        from Envia and then use a mapping of their field names to ours. Some of their
-        requirements are more specific than one field on the model so we need functions
-        to perform the data validation/computation.
-
-        url: generic-form?country_code={country_code}&form=address_info
-
-        """
         c_code = partner.country_id.code
         params = {"country_code": c_code, "form": "address_info"}
         country_requirements = self._send_api_request(
@@ -917,7 +811,6 @@ class Envia:
         ):
             raise ValidationError(self._envia_parse_error(country_requirements))
 
-        # Map Envia address keys to functions that take in the partner and return the correct data.
         field_map = {
             "district": self._get_envia_district,
             "state": self._get_envia_state_code,
@@ -947,7 +840,6 @@ class Envia:
             required = rules.get("required", False)
 
             key = envia_name if envia_name in field_map else envia_label
-            # Skip pre-populated fields
             if address_dict.get(key) or key not in field_map:
                 continue
 
@@ -956,7 +848,6 @@ class Envia:
             if value:
                 address_dict[key] = value
             elif required:
-                # Only complain if it's a required field.
                 missing_fields.append(
                     partner.env._(
                         "%(field_name)s must be set on Partner: %(partner_name)s.",
@@ -970,7 +861,6 @@ class Envia:
             raise ValidationError(partner.env._("Missing Fields:\n%s", msg))
 
         if partner.country_id == partner.env.ref("base.co"):
-            # Colombia requires their city field to be the postal code not the city name.
             zipcode = address_dict["postalCode"].rjust(5, "0").ljust(8, "0")
             address_dict["city"] = address_dict["postalCode"] = zipcode
 

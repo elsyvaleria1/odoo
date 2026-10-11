@@ -9,12 +9,10 @@ from odoo.addons.sale_timesheet.tests.common import TestCommonSaleTimesheet
 @tagged("-at_install", "post_install")
 class TestInvoiceTimesheet(TestCommonSaleTimesheet):
     def test_timesheet_transfer_sol(self):
-        """Test transfer of timesheet between sale order line + Test cancel invoice"""
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.invoiced_timesheet", "approved"
         )
 
-        # create SO
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -29,7 +27,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             }
         )
 
-        # confirm SO
         sale_order.action_confirm()
 
         task_id = self.env["project.task"].search(
@@ -59,7 +56,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             }
         )
 
-        # let's log some timesheets
         timesheet_1 = self.env["account.analytic.line"].create(
             {
                 "date": fields.Date.today() - timedelta(days=1),
@@ -81,7 +77,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             }
         )
 
-        # Validate first timesheet
         timesheet_1.action_validate_timesheet()
         self.assertEqual(
             so_line_product_1.qty_transferred,
@@ -89,7 +84,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             "Timesheet 1 is validated, so 2 hours must be delivered",
         )
 
-        # Create an invoice, cancel it
         invoice_1 = sale_order._create_invoices()
         invoice_1.action_cancel()
 
@@ -103,7 +97,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             timesheet_2.timesheet_invoice_id, "Timesheet 2 is not linked to invoice"
         )
 
-        # Create a second invoice for the first timesheet
         invoice_2 = sale_order._create_invoices()
 
         self.assertEqual(
@@ -145,7 +138,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             "No hours delivered (as no timsheet linked to this so_line)",
         )
 
-        # Change the SO line on the task
         task_id.sale_line_id = so_line_product_3
         self.assertEqual(
             timesheet_2.so_line,
@@ -153,10 +145,8 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             "SO line must remain same for validated Timesheet",
         )
 
-        # Make validated Timesheet to Draft to change SO line
         timesheet_2.action_invalidate_timesheet()
 
-        # Change the SO line on the task
         task_id.sale_line_id = so_line_product_2
         self.assertEqual(
             timesheet_2.so_line,
@@ -182,7 +172,6 @@ class TestInvoiceTimesheet(TestCommonSaleTimesheet):
             "Timesheet 2 is linked to this new so_line (3 hours delivered)",
         )
 
-        # Create a third invoice for the remaining
         invoice_3 = sale_order._create_invoices()
         self.assertEqual(
             so_line_product_1.qty_invoiced_draft,

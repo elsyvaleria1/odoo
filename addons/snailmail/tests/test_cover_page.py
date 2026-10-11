@@ -9,7 +9,6 @@ from odoo.tools.pdf import PdfReader
 
 
 def _pdf_of(page_labels):
-    """A PDF carrying one page per label, each stamping its label as text."""
     buf = io.BytesIO()
     canvas = Canvas(buf, pagesize=A4)
     for label in page_labels:

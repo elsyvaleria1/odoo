@@ -83,10 +83,7 @@ class MolecularTarget(models.Model):
                 )
 
     def action_activate_latest_run(self):
-        """Let the most recent validation run govern the target."""
         for target in self:
-            # Two runs recorded in the same second tie on create_date, so the id
-            # breaks the tie and "latest" stays unambiguous.
             runs = target.validation_run_ids.sorted(
                 lambda run: (run.create_date, run.id), reverse=True
             )

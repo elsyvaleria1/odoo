@@ -60,8 +60,6 @@ class AccountFullReconcile(models.Model):
             owners = self.env["res.company"].browse(
                 {companies[partial_id] for partial_id in ids} - {None}
             )
-            # a company and its branches keep one set of books, so their
-            # entries reconcile together; the reconciliation is then the root's
             if len(owners.root_id) > 1:
                 raise ValidationError(
                     self.env._(

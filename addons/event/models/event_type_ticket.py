@@ -7,7 +7,6 @@ class EventTypeTicket(models.Model):
     _order = "sequence, name, id"
 
     sequence = fields.Integer(default=10)
-    # description
     name = fields.Char(
         translate=True,
         default=lambda self: self.env._("Registration"),
@@ -23,7 +22,6 @@ class EventTypeTicket(models.Model):
         required=True,
         ondelete="cascade",
     )
-    # seats
     seats_limited = fields.Boolean(
         string="Limit Attendees",
         compute="_compute_seats_limited",
@@ -43,6 +41,4 @@ class EventTypeTicket(models.Model):
 
     @api.model
     def _get_event_ticket_fields_whitelist(self):
-        """Whitelist of fields that are copied from event_type_ticket_ids to event_ticket_ids when
-        changing the event_type_id field of event.event"""
         return ["sequence", "name", "description", "seats_max"]

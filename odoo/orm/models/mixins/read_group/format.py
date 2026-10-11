@@ -40,8 +40,6 @@ if typing.TYPE_CHECKING:
 _debug = DebugLog(__name__)
 _logger = logging.getLogger("odoo.models")
 
-# an aggregate over a non-stored field computes the field on every record of
-# every group, collapsed or not; past this many it is worth storing the field
 _THROUGH_RECORDS_WARNING = 5000
 
 _FOLD_COUNTS: dict[str, typing.Callable[[list[typing.Any]], int]] = {
@@ -182,7 +180,6 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
             if field.is_boolean:
                 return value
             if field.is_many2one:
-                # the SQL tier aggregates the column, which holds the id
                 return value.id or None
             return None if value is False else value
 
@@ -255,15 +252,9 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
     ) -> tuple[
         str, str, list[tuple[str | typing.Literal[False], str | typing.Literal[False]]]
     ]:
-        # the label, the group's own start, and the spans its domain covers:
-        # a span may be open at either end of the calendar
         opens_before_calendar = False
         try:
             if granularity == "week":
-                # to the next week's first day: a week held to 0001-01-01 is
-                # shorter than seven days, and the calendar's first week is no
-                # bound below -- whatever reads before year 1 (a local time
-                # west of UTC, -infinity) is held into it too
                 first_week_day = int(get_lang(self.env).week_start) - 1
                 opens_before_calendar = (value.year, value.month, value.day) == (
                     1,
@@ -276,7 +267,6 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
             else:
                 end = value + interval
         except OverflowError, ValueError:
-            # the last period of year 9999 ends past the calendar: open
             end = None
         spans: Sequence[tuple[datetime.date, datetime.date | None]] = [(value, end)]
         if is_datetime:
@@ -286,7 +276,6 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
                     value, end, get_timezone(self.env.context["tz"])
                 )
         if granularity == "week":
-            # babel's own week-year reads past year 9999 at the calendar's end
             year, week = weeknumber(babel.Locale.parse(locale), value)
             label = f"W{week} {year:04}"
         elif is_datetime:
@@ -315,9 +304,6 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
 
     @staticmethod
     def _read_group_property_date_domain(fullname: str, has_date: bool) -> Domain:
-        # a value no date reads ('hello', '2024-02-30' written under another
-        # definition) is counted in the empty group: "= False" would not find
-        # it again, and a date group's text range could
         return Domain(f"{fullname}.year_number", "!=" if has_date else "=", False)
 
     @staticmethod
@@ -352,10 +338,6 @@ class _ReadGroupFormatMixin(_ReadGroupEmptyMixin):
                 self._read_group_format_result_properties(rows_dict, group)
                 continue
 
-            # a group names only the records the reader may see named, as
-            # read() and web_read_group do; the id stays, the group's domain
-            # needs it. Expanded groups arrive sudo, so the check takes the
-            # reader's env, not a row's
             values = [
                 row[group]
                 for row in rows_dict

@@ -10,7 +10,6 @@ class ErrorIncidentRule(models.Model):
     _name = "error.incident.rule"
     _description = "Error Incident Rule"
     _order = "sequence, id"
-    # Rules apply to every company's errors alike.
     _access_anchors = frozendict({"company": ""})
 
     name = fields.Char(
@@ -42,7 +41,6 @@ class ErrorIncidentRule(models.Model):
     )
 
     def _match(self, payload: dict[str, Any]) -> ErrorIncidentRule:
-        """The first active rule that sets a new incident aside, if any."""
         for rule in self.search([]):
             if rule.source and rule.source != payload["source"]:
                 continue

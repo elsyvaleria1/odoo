@@ -25,8 +25,6 @@ class TestDhlCredentials(TestDeliveryDHLCommon):
         self.assertEqual(self.carrier.dhl_api_secret, "a-secret")
 
     def test_writing_one_secret_leaves_the_other_alone(self):
-        # Each field has its own inverse, so they arrive one at a time. A store
-        # that rewrote the whole credential would clear the sibling.
         self.carrier.write({"dhl_api_key": "first-key", "dhl_api_secret": "keep-me"})
 
         self.carrier.write({"dhl_api_key": "second-key"})
@@ -36,8 +34,6 @@ class TestDhlCredentials(TestDeliveryDHLCommon):
         self.assertEqual(self.carrier.dhl_api_secret, "keep-me")
 
     def test_a_secret_written_before_the_key_does_not_invent_one(self):
-        # The first write can be either field. Satisfying the category
-        # constraint with a placeholder would leave it readable as the key.
         carrier = self.env["delivery.carrier"].create(
             {
                 "name": "Secret First",

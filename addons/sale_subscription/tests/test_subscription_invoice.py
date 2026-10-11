@@ -136,9 +136,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(inv.invoice_line_ids[0].date, datetime.date(2021, 3, 3))
 
     def test_invoicing_with_section(self):
-        """Test invoicing when order has section/note."""
 
-        # create specific test products
         sub_product1_tmpl = (
             self.env["product.template"]
             .with_context(self.context_no_mail)
@@ -258,11 +256,9 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             sub.action_confirm()
             sub._create_invoices()
 
-        # first invoice, it should include one-time discount
         self.assertEqual(len(sub.invoice_ids), 1)
         preview_so = sub.action_preview_sale_order()
         url = preview_so.get("url")
-        # Ensure sale order preview does not crash when collapse_prices is accessed
         self.assertEqual(self.url_open(url).status_code, 200)
         sub.invoice_ids._post()
         invoice = sub.invoice_ids[-1]
@@ -303,7 +299,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             invoice = sub._create_invoices()
             invoice._post()
 
-        # second invoice, should NOT include one-time discount
         self.assertEqual(len(sub.invoice_ids), 2)
         self.assertEqual(invoice.amount_untaxed, 168.0)
         self.assertEqual(len(invoice.invoice_line_ids), 4)
@@ -334,9 +329,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         )
 
     def test_add_aml_to_invoice(self):
-        """Test that it is possible to manually add a line with a start and end
-        date to an invoice generated from a subscription sale order.
-        """
         sub_product1, sub_product2 = self.env["product.product"].create(
             [
                 {
@@ -380,12 +372,11 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 ],
             }
         )
-        invoice._post()  # should not throw an error
+        invoice._post()
         self.assertEqual(invoice.line_ids.product_id, sub_product1 | sub_product2)
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
     def test_unlimited_sale_order(self):
-        """Test behaviour of on_change_template"""
         with freeze_time("2021-01-03"):
             sub = self.subscription
             sub.line_ids = [Command.clear()]
@@ -424,7 +415,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual("2021-01-03", sub.next_invoice_date.strftime("%Y-%m-%d"))
 
             sub._create_recurring_invoice()
-            # Next invoice date should not be bumped up because it is the first period
             self.assertEqual("2021-02-03", sub.next_invoice_date.strftime("%Y-%m-%d"))
 
             invoice_periods = sub.invoice_ids.invoice_line_ids.name.split("\n")[2]
@@ -433,7 +423,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 sub.invoice_ids.invoice_line_ids.date, datetime.date(2021, 1, 3)
             )
         with freeze_time("2021-02-03"):
-            # February
             sub._create_recurring_invoice()
             self.assertEqual("2021-02-03", sub.last_invoice_date.strftime("%Y-%m-%d"))
             self.assertEqual("2021-03-03", sub.next_invoice_date.strftime("%Y-%m-%d"))
@@ -442,7 +431,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(invoice_periods, "1 Month 02/03/2021 to 03/02/2021")
             self.assertEqual(inv.invoice_line_ids.date, datetime.date(2021, 2, 3))
         with freeze_time("2021-03-03"):
-            # March
             sub._create_recurring_invoice()
             self.assertEqual("2021-03-03", sub.last_invoice_date.strftime("%Y-%m-%d"))
             self.assertEqual("2021-04-03", sub.next_invoice_date.strftime("%Y-%m-%d"))
@@ -453,7 +441,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
 
     @mute_logger("odoo.addons.base.models.ir_model", "odoo.models")
     def test_invoice_on_period_start_service_sale_order(self):
-        """Test behaviour of on_change_template"""
         with freeze_time("2021-01-15"):
             sub = self.subscription
             sub.line_ids = [Command.clear()]
@@ -494,12 +481,10 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
         with freeze_time("2021-02-01"):
-            # February
             inv = sub._create_recurring_invoice()
             self.assertAlmostEqual(inv.amount_untaxed, 84)
 
         with freeze_time("2021-03-01"):
-            # March
             inv = sub._create_recurring_invoice()
             self.assertAlmostEqual(
                 inv.amount_untaxed,
@@ -509,8 +494,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
     def test_quantity_on_product_invoice_ordered_qty(self):
-        # This test checks that the invoiced qty and to_invoice qty have the right behavior
-        # Service product
         self.product.write({"type": "service"})
         with freeze_time("2021-01-01"):
             self.subscription.line_ids = False
@@ -665,7 +648,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         )
 
         with freeze_time("2021-01-03"):
-            # January
             sub.plan_id = self.plan_month
             sub.start_date = False
             sub.next_invoice_date = False
@@ -682,7 +664,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             sub.action_confirm()
             sub._create_recurring_invoice()
             self.assertFalse(sub.line_ids.qty_transferred)
-            # We only invoice what we deliver
             self.assertFalse(sub.line_ids.qty_to_invoice)
             self.assertFalse(
                 sub.invoice_count, "We don't invoice if we don't deliver the product"
@@ -694,7 +675,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
         with freeze_time("2021-02-03"):
-            # Deliver some product
             sub.line_ids.qty_transferred = 1
             self.assertEqual(sub.line_ids.qty_to_invoice, 1)
             inv = sub._create_recurring_invoice()
@@ -709,12 +689,10 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
 
         with freeze_time("2021-03-03"):
             inv = sub._create_recurring_invoice()
-            # The quantity to invoice and delivered are reset after the creation of the invoice
             self.assertTrue(sub.line_ids.qty_transferred)
             self.assertEqual(inv.invoice_line_ids.quantity, 1)
 
         with freeze_time("2021-04-03"):
-            # February
             sub.line_ids.qty_transferred = 1
             sub._create_recurring_invoice()
             self.assertEqual(sub.line_ids.qty_transferred, 1)
@@ -722,7 +700,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(inv.invoice_line_ids.quantity, 1)
 
         with freeze_time("2021-05-03"):
-            # March
             sub.line_ids.qty_transferred = 2
             sub._create_recurring_invoice()
             inv = sub.invoice_ids.sorted("date")[-1]
@@ -730,7 +707,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(sub.line_ids.product_qty, 1)
 
         with freeze_time("2021-04-03"):
-            # February
             sub.line_ids.qty_transferred = 1
             sub._create_recurring_invoice()
             self.assertEqual(sub.line_ids.qty_transferred, 1)
@@ -738,7 +714,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(inv.invoice_line_ids.quantity, 2)
 
         with freeze_time("2021-05-03"):
-            # March
             sub.line_ids.qty_transferred = 2
             sub._create_recurring_invoice()
             inv = sub.invoice_ids.sorted("date")[-1]
@@ -746,7 +721,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(sub.line_ids.product_qty, 1)
 
     def test_recurring_invoices_from_interface(self):
-        # From the interface, all the subscription lines are invoiced
         sub = self.subscription
         sub.end_date = datetime.date(2029, 4, 1)
         with freeze_time("2021-01-01"):
@@ -758,7 +732,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 }
             )
             sub.action_confirm()
-            # first invoice: automatic or not, it's the same behavior. All line are invoiced
             sub._create_invoices()
             sub.line_ids.invoice_line_ids.move_id._post()
             self.assertEqual("2021-02-01", sub.next_invoice_date.strftime("%Y-%m-%d"))
@@ -817,7 +790,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
         with freeze_time("2021-04-01"):
-            # Automatic invoicing, only one line generated
             inv = sub._create_recurring_invoice()
             invoice_start_periods = inv.invoice_line_ids.mapped("deferred_start_date")
             invoice_end_periods = inv.invoice_line_ids.mapped("deferred_end_date")
@@ -834,7 +806,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(inv.date, datetime.date(2021, 4, 1))
 
         with freeze_time("2021-05-01"):
-            # Automatic invoicing, only one line generated
             sub._create_recurring_invoice()
             inv = sub.invoice_ids.sorted("date")[-1]
             invoice_start_periods = inv.invoice_line_ids.mapped("deferred_start_date")
@@ -852,9 +823,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(inv.date, datetime.date(2021, 5, 1))
 
         with freeze_time("2022-02-02"):
-            # We prevent the subscription to be automatically closed because the next invoice date is passed for too long
             sub.plan_id.auto_close_limit = 999
-            # With non-automatic, we invoice all line prior to today once
             inv = sub._create_invoices()
             inv._post()
             self.assertEqual(
@@ -952,7 +921,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 "Postpaid subscription first invoice should be end of period",
             )
 
-            # Nothing delivered, nothing invoiced
             self.assertEqual(
                 subscription_future.line_ids.invoice_state,
                 "no",
@@ -970,7 +938,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 "The line qty should be blue.",
             )
 
-            # Status after delivery
             subscriptions.line_ids.qty_transferred = 1
             self.assertEqual(
                 subscription_future.line_ids.invoice_state,
@@ -1048,7 +1015,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             subscription._compute_invoices()
             inv = subscription.invoice_ids
             inv.payment_state = "paid"
-            # We refund the invoice
             refund_wizard = (
                 self.env["wizard.account.move.reverse"]
                 .with_context(active_model="account.move", active_ids=inv.ids)
@@ -1109,7 +1075,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         )
 
     def test_invoice_done_order(self):
-        # Prevent to invoice order in subscription_state != 3_progress
         with freeze_time("2021-01-03"):
             self.subscription.action_confirm()
             self.env["sale.order"]._cron_recurring_create_invoice()
@@ -1131,9 +1096,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
     def test_downpayment_automatic_invoice(self):
-        """Test invoice with a way of downpayment and check downpayment's SO line is created
-        and also check a total amount of invoice is equal to a respective sale order's total amount
-        """
 
         context = {
             "active_model": "sale.order",
@@ -1173,7 +1135,7 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             self.assertEqual(
                 self.subscription.next_invoice_date, datetime.date(2021, 1, 3)
             )
-            invoice = self.subscription._create_invoices(final=True)  # manual
+            invoice = self.subscription._create_invoices(final=True)
             self.assertAlmostEqual(
                 invoice.amount_total,
                 total - 10,
@@ -1195,9 +1157,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
     def test_downpayment_manual_invoice(self):
-        """Test invoice with a way of downpayment and check downpayment's SO line is created
-        and also check a total amount of invoice is equal to a respective sale order's total amount
-        """
 
         context = {
             "active_model": "sale.order",
@@ -1255,7 +1214,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             )
 
     def test_sale_subscription_post_invoice(self):
-        """Test that the post invoice hook is correctly called"""
 
         def patched_reset(self):
             self.name = "Called"
@@ -1290,9 +1248,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         )
 
     def test_qty_invoiced_after_revert(self):
-        """Test invoice quantity is correctly updated after a revert
-        with modify move creation
-        """
         self.subscription.write(
             {
                 "line_ids": [
@@ -1346,7 +1301,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         self.assertEqual(sub.invoice_ids, inv | new_invoice)
 
     def test_invoicing_access_rights(self):
-        """Ensure a salesman can get amount invoiced for subscriptions with others' invoices."""
         sales_user = self.company_data["default_user_salesman"]
         self.product_a.write(
             {
@@ -1374,11 +1328,9 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             msg="All lines should still need to be invoiced",
         )
 
-        # assign a different user to the invoice
         invoice = self.subscription._create_recurring_invoice()
         invoice.user_id = self.env.ref("base.user_admin")
 
-        # ensure salesman doesn't have access to just any invoice
         invoice.invalidate_recordset(["name"])
         with self.assertRaises(AccessError):
             invoice.with_user(sales_user).user_id = sales_user
@@ -1391,9 +1343,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
 
     @freeze_time("2025-04-14")
     def test_failing_sub_invoice_flag(self):
-        """Make sure that when the cron is crashing, we don't end up with successful subscription with an error flag.
-        Processed subscriptions are
-        """
         self.subscription.write(
             {
                 "partner_id": self.partner.id,
@@ -1410,8 +1359,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
         subs = self.env["sale.order"]
         for _i in range(3):
             subs |= self.subscription.copy()
-        # last sub of the batch will make the cron crash.
-        # _create_recurring_invoice revert the order of subscriptions and we want to crash on the last one
         self.crashing_sub_id = subs[0].id
         subs.action_confirm()
         self.assertEqual(
@@ -1422,7 +1369,6 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
                 datetime.date(2025, 4, 14),
             ],
         )
-        # Create invoices, the third should crash but only the last one will keep is_invoice_cron value
         try:
             with (
                 patch(
@@ -1439,17 +1385,14 @@ class TestSubscriptionInvoice(TestSubscriptionCommon, HttpCase):
             [("invoice_line_ids.subscription_id", "in", subs.ids)]
         )
         self.assertEqual(invs.mapped("state"), ["posted", "posted", "posted"])
-        # Make sure next time it's running it reset all is_invoice_cron
         self.env["sale.order"]._create_recurring_invoice()
         self.assertEqual(subs.mapped("is_invoice_cron"), [False, False, False])
 
     def test_invoice_delivery_free(self):
-        # Ensure free subscription are not processed endlessly by cron
         with freeze_time("2025-11-11"):
             sub = self.subscription
             sub.line_ids[0].unlink()
             sub.line_ids.product_id.invoice_policy = "transferred"
-            # ensure at confirmation the next invoice date will be today
             sub.start_date = datetime.date.today() - datetime.timedelta(days=31)
             sub.action_confirm()
             self.assertEqual(sub.next_invoice_date, datetime.date(2025, 11, 11))

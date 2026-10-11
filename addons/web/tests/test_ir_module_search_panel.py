@@ -78,8 +78,6 @@ class IrModuleSearchPanelCase(TransactionCase):
                 }
             )
 
-        # the creates cleared the groups and stable caches; warm them back up, as
-        # the first measure did, so the delta is the counter's own cost
         self._measure()
         many_queries, many = self._measure()
 

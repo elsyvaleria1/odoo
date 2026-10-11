@@ -49,7 +49,7 @@ class LoyaltyRule(models.Model):
 
     @api.depends(
         "product_ids", "product_category_id", "product_tag_id", "product_domain"
-    )  # TODO later: product tags
+    )
     def _compute_valid_products(self) -> None:
         for key, rules in self.grouped(
             lambda rule: (
@@ -68,7 +68,7 @@ class LoyaltyRule(models.Model):
                         rules[:1]._get_domain_valid_product(),
                     ]
                 )
-                rules.valid_product_ids = self.env["product.product"].search(  # noqa: E8507 - one query per distinct product domain; rules sharing one were merged above
+                rules.valid_product_ids = self.env["product.product"].search(
                     domain, order="id"
                 )
                 rules.any_product = False

@@ -7,7 +7,6 @@ from odoo.addons.repair.tests.test_repair import TestRepairCommon
 @tagged("post_install", "-at_install")
 class TestQualityRepair(TestRepairCommon):
     def test_repair_w_lot_and_quality_check(self):
-        """Test quality check creation and flow on repair order"""
 
         self.env["quality.point"].create(
             {
@@ -29,25 +28,15 @@ class TestQualityRepair(TestRepairCommon):
         repair.trace_id = quant.trace_id
         repair.action_validate()
         self.assertEqual(repair.state, "confirmed")
-        # Quality check should be created at repair confirmation
         qc = repair.quality_check_ids
         lot_1 = repair.trace_id
         self.assertEqual(len(qc), 1)
         self.assertEqual(lot_1.ids, qc.trace_ids.ids)
-        # The form links a check to one business document and hides the rest.
-        # This assertion lives here rather than in `quality_mrp`, which cannot
-        # see `hide_repair_id` at all.
         self.assertFalse(qc.hide_repair_id)
         self.assertTrue(qc.hide_picking_id)
-        # quality_repair does not depend on quality_mrp, which declares
-        # hide_production_id.
         if "hide_production_id" in qc._fields:
             self.assertTrue(qc.hide_production_id)
 
-        # An operation-level check grades the transfer, not a lot, and the
-        # creation path never gives it one.  A later `trace_id` write used to,
-        # so a check carried a lot only if the lot changed after confirmation
-        # -- and `stock.lot.quality_check_qty` counts by `trace_ids`.
         operation_point = self.env["quality.point"].create(
             {
                 "name": "QP-op",
@@ -78,7 +67,6 @@ class TestQualityRepair(TestRepairCommon):
             "an operation check must not pick up the repair's lot",
         )
 
-        # Reset repair lot
         repair.trace_id = False
         self.assertFalse(qc.trace_ids)
         repair.action_repair_start()
@@ -87,14 +75,12 @@ class TestQualityRepair(TestRepairCommon):
         self.assertNotEqual(lot_1, lot_2)
         self.assertEqual(lot_2.ids, qc.trace_ids.ids)
 
-        # 'Pass' Quality Checks of repair order.
         qc.do_pass()
         self.assertEqual(qc.quality_state, "pass")
         repair.action_repair_end()
         self.assertEqual(repair.state, "done")
 
     def test_repair_multi_record_create_write(self):
-        """Test that creating and writing multiple repair orders works as expected."""
         repairs = self.env["repair.order"].create(
             [
                 {

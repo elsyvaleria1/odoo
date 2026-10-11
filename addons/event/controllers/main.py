@@ -13,9 +13,6 @@ class EventController(Controller):
         if request.env.user._is_public():
             lang = request.cookies.get("frontend_lang")
         event = event.with_context(lang=lang)
-        # only a slot of this very event may drive the schedule: the id comes
-        # from the query string, so an arbitrary one would otherwise render
-        # this event with another event's times
         slot = event.event_slot_ids.sudo().filtered(
             lambda slot: str(slot.id) == kwargs.get("slot_id")
         )
@@ -44,22 +41,10 @@ class EventController(Controller):
         badge_mode=False,
         responsive_html=False,
     ):
-        """Returns a pdf response, containing all tickets for attendees in registration_ids for event_id.
-
-        Throw Forbidden if no registration is valid / hash is invalid / parameters are missing.
-        This route is used in links in emails to attendees, as well as in registration confirmation screens.
-
-        :param event_id: the id of prompted event. Only its attendees will be considered.
-        :param registration_ids: ids of event.registrations of which tickets are generated
-        :param tickets_hash: string hash used to access the tickets.
-        :param badge_mode: boolean, True to use template of foldable badge instead of full page ticket.
-        :param responsive_html: boolean, True if we want to see the a responsive html ticket.
-        """
         registration_ids = json_loads(registration_ids or "[]")
         if not event_id or not tickets_hash or not registration_ids:
             raise NotFound
 
-        # We sudo the event in case of invitations sent before publishing it.
         event_sudo = request.env["event.event"].browse(event_id).exists().sudo()
         hash_truth = event_sudo and event_sudo._get_tickets_access_hash(
             registration_ids
@@ -71,7 +56,6 @@ class EventController(Controller):
             lambda reg: reg.id in registration_ids
         )
         if not event_registrations_sudo:
-            # the hash covered these ids, but the registrations are gone since
             raise NotFound
         report_name_prefix = (
             request.env._("Ticket")
@@ -90,7 +74,6 @@ class EventController(Controller):
         if len(event_registrations_sudo) == 1:
             report_name += f" - {event_registrations_sudo[0].name}"
 
-        # sudo is necessary for accesses in templates.
         if responsive_html:
             html = (
                 request.env["ir.actions.report"]

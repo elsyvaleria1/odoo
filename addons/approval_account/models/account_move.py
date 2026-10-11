@@ -32,10 +32,6 @@ class AccountMove(models.Model):
 
     @api.depends("line_ids.approval_request_line_id.approval_request_id")
     def _compute_count_approval(self) -> None:
-        # Read straight down the declared depends path. Searching
-        # approval.request.line on account_move_id instead read a DIFFERENT
-        # field from the one that invalidates this compute, so the count could
-        # cache stale and never recover.
         for move in self:
             if not move._origin.id:
                 move.count_approval = 0
@@ -126,10 +122,6 @@ class AccountMove(models.Model):
         ]
 
     def _is_approval_invalidated_by_changes(self, fields_changed) -> bool:
-        """Amount-bearing changes keep the approval: `_check_posting_integrity`
-        compares the move's total with the approved amount at posting, even once
-        the change has taken the move out of every category's range. Anything
-        else -- another partner, another journal -- is not what was approved."""
         return bool(
             set(fields_changed) - {"currency_id", "line_ids", "invoice_line_ids"}
         )
@@ -366,7 +358,6 @@ class AccountMove(models.Model):
         }
 
     def _check_approval_covers(self, operation: str) -> None:
-        # the amount first: when it moved, saying so is the more useful refusal
         if self.approval_request_id.target_model != "account.move":
             self._check_approved_amount()
         super()._check_approval_covers(operation)

@@ -372,7 +372,6 @@ class TestPosPicking(PosLazySessionCommon):
             )
             ._action_confirm()
         )
-        # Match the order procurement caller: replace the automatic reservation.
         reserved_moves.move_line_ids.unlink()
         reserved_moves._add_move_lines_from_pos_order_lines(
             order.lines, are_quantities_done=False

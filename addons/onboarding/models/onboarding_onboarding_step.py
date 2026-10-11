@@ -76,7 +76,6 @@ class OnboardingOnboardingStep(models.Model):
     @api.depends_context("company")
     @api.depends("progress_ids", "progress_ids.step_state")
     def _compute_current_progress(self) -> None:
-        # When `is_per_company` is changed, `progress_ids` is updated (see `write`) which triggers this `_compute`.
         existing_progress_steps = self.progress_ids.filtered_domain(
             [
                 ("step_id", "in", self.ids),
@@ -119,7 +118,6 @@ class OnboardingOnboardingStep(models.Model):
 
         res = super().write(vals)
 
-        # Progress is reset (to be done per-company or, for steps, to have a single record)
         if steps_changing_is_per_company:
             steps_changing_is_per_company.progress_ids.unlink()
         self.onboarding_ids.action_refresh_progress_ids()
@@ -135,7 +133,6 @@ class OnboardingOnboardingStep(models.Model):
         return res
 
     def action_set_just_done(self):
-        # Make sure progress records exist for the current context (company)
         steps_without_progress = self.filtered(
             lambda step: not step.current_progress_step_id
         )
@@ -156,11 +153,6 @@ class OnboardingOnboardingStep(models.Model):
         return super()._get_placeholder_filename(field)
 
     def _create_progress_steps(self):
-        """Create progress step records as necessary to validate steps.
-
-        Only considers existing `onboarding.progress` records for the current
-        company or without company (depending on `is_per_company`).
-        """
         onboarding_progress_records = self.env["onboarding.progress"].search(
             [
                 ("onboarding_id", "in", self.onboarding_ids.ids),

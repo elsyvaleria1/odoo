@@ -426,7 +426,6 @@ class ProjectCustomerPortal(CustomerPortal):
             token=bool(access_token),
             report_type=report_type,
         )
-        # the report the page prints, read through the link that opened it
         if report_type in ("pdf", "html", "text"):
             return self._show_task_report(
                 task_sudo, report_type, download=kw.get("download")
@@ -441,9 +440,6 @@ class ProjectCustomerPortal(CustomerPortal):
     def _project_link_chatter_values(
         self, project_sudo: Any, access_token: str
     ) -> dict[str, Any]:
-        # a task has no link of its own here: the project's link reads its
-        # chatter, and speaks in it signed for the link's partner as the
-        # project's mails are
         link = request.access_link
         partner = link.partner_id
         commenting = ROLE_RANK[link.role] >= ROLE_RANK["comment"]
@@ -465,11 +461,8 @@ class ProjectCustomerPortal(CustomerPortal):
     def _open_task_by_project_link(
         self, task_id: int, access_token: str | None, pid: Any, signature: Any
     ) -> Any:
-        # a project's link speaking for the partner it names, signed as the
-        # task page signs it, acts on the task as the task's own comment link
         Task = request.env["project.task"]
         try:
-            # the bearer acts on the record as the server (decision I1)
             project_sudo = (
                 request.env["access.link"]
                 ._resolve(
@@ -704,8 +697,6 @@ class ProjectCustomerPortal(CustomerPortal):
             "preview_object": task,
         }
 
-        # the neighbours are linked bare: a token presented for this record
-        # opens no other, and asking each neighbour for its own would issue one
         values = self._get_page_view_values(
             task, None, values, history, False, **kwargs
         )
@@ -713,8 +704,6 @@ class ProjectCustomerPortal(CustomerPortal):
             values.update(access_token=access_token, token=access_token)
         if project and access_token and not values["task_token"]:
             values.update(self._project_link_chatter_values(project, access_token))
-        # the page's own route prints it: a project's link opens the task
-        # under its project only
         values["task_report_url"] = get_url_with_params(
             f"{project.access_url}/task/{task.id}" if project else task.access_url,
             {"report_type": "pdf"}

@@ -19,7 +19,6 @@ class SignItsme(SignController):
     def _prepare_document_rendering_data(self, sign_request_id, token, **post):
         res = super()._prepare_document_rendering_data(sign_request_id, token, **post)
         if res.get("rendering_context"):
-            # show_thank_you_dialog and error_message come from IAP sign_itsme redirect
             res["rendering_context"]["show_thank_you_dialog"] = bool(
                 res["rendering_context"]["show_thank_you_dialog"]
             ) or bool(post.get("show_thank_you_dialog"))

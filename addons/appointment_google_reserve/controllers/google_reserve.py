@@ -25,26 +25,10 @@ class GoogleReserveController(Controller):
     def google_reserve_batch_availability_lookup(
         self, appointment_id: int, appointment_token: str
     ):
-        """Route accessed by IAP to check the availabilities.
-
-        The request data contains a list of slots to get availabilities from.
-        Each of those slots are formatted as follows:
-        {
-            'start_sec': 1754466026  # UTC timestamp,
-            'duration_sec': 3600  # Slot duration in seconds,
-            'resources': {
-                'party_size': 4  # The requested party-size, what we usually call 'capacity' in Odoo
-            }
-        }
-
-        It has to return a list with each given slot along with a boolean flag "available".
-
-        See full documentation for details:
-        https://developers.google.com/actions-center/verticals/reservations/e2e/reference/booking-server-api-rest/e2e-methods/batchavailabilitylookup-method?hl=en"""
 
         slot_time = (
             request.get_json_data()
-        )  # not compatible with JSON-RPC, manually fetch params
+        )
         if not slot_time:
             raise BadRequest("Invalid JSON payload")
 
@@ -94,73 +78,16 @@ class GoogleReserveController(Controller):
         receiver="appointment.type:_receiver_for_google_reserve",
         receiver_event="google_reserve",
         methods=["POST"],
-        # auth="receiver": the appointment type's google_reserve_access_token in the path
-        # auth="receiver": the appointment type's google_reserve_access_token in the path
         csrf=False,
         typed=True,
     )
     def google_reserve_booking_create(
         self, appointment_id: int, appointment_token: str
     ):
-        """Route accessed by Google (through IAP) when a booking needs to be created.
-
-        Format of Google provided information:
-        {
-            'idempotency_token': 'token1',
-            'slot': {
-                'confirmation_mode': 'CONFIRMATION_MODE_SYNCHRONOUS',
-                'duration_sec': '3600',
-                'merchant_id': 1,
-                'resources': {
-                    'party_size': '4',
-                },
-                'service_id': 1,
-                'start_sec': 1644850800,
-            },
-            'user_information': {
-                'email': 'john.doe@test.com',
-                'family_name': 'Doe',
-                'given_name': 'John',
-                'telephone': '+32476112233',
-                'user_id': '1234567890',
-            }
-        }
-
-        Global flow:
-
-        1. Generate slots
-
-        Generate slots based on desired slot time and capacity (party_size).
-        This only generates a single slot as the duration we receive from Google matches the
-        appointment duration.
-        (Note: 'party_size' param is only provided for resources-based appointments)
-
-        2. Fill slots availability
-
-        Fill our single slot with availabilities for users or resources.
-        This will re-use the existing appointment logic and account for time-off, pick the best
-        resource to accommodate the desired party size, etc.
-
-        3. Create the booking
-
-        Based on information extracted from the generated slot and the booker information provided
-        by Google, we create the calendar.event record.
-
-        We re-use '_prepare_calendar_event_values' here as the flow is very similar to what we do
-        when booking from the Odoo front-end.
-
-        4. Return the response with Google's format.
-
-        See: https://developers.google.com/actions-center/verticals/reservations/e2e/reference/booking-server-api-rest/e2e-methods/createbooking-method
-
-        Technical note:
-
-        Store the provider idempotency identity independently from conference and
-        booking access credentials, so rotating either credential cannot duplicate a booking."""
 
         route_params = (
             request.get_json_data()
-        )  # not compatible with JSON-RPC, manually fetch params
+        )
 
         if not all(
             bool(route_params.get(key))
@@ -178,12 +105,11 @@ class GoogleReserveController(Controller):
             (appointment_type_su.id, route_params["idempotency_token"]),
         )[:36]
         calendar_event = (
-            request.env["calendar.event"]  # noqa: E8537  idempotency: names what an earlier request of the same sender made
+            request.env["calendar.event"]
             .sudo()
             .search([("google_reserve_idempotency_token", "=", token)])
         )
         if calendar_event:
-            # booking already created, shortcut the method
             return request.prepare_json_response(
                 {
                     "booking": {
@@ -341,76 +267,16 @@ class GoogleReserveController(Controller):
         receiver="appointment.type:_receiver_for_google_reserve",
         receiver_event="google_reserve",
         methods=["POST"],
-        # auth="receiver": the appointment type's google_reserve_access_token in the path
         csrf=False,
         typed=True,
     )
     def google_reserve_booking_update(
         self, appointment_id: int, appointment_token: str, calendar_event_id: int
     ):
-        """Route accessed by Google (through IAP) when a booking needs to be updated.
-
-        Format of Google provided information:
-        {
-            'booking': {
-                'booking_id': '42',  # matches calendar.event record ID
-                'slot': {
-                    'resources': {
-                        'duration_sec': '3600',
-                        'start_sec': 1644850800,
-                        'party_size': 11,
-                    },
-                },
-            }
-        }
-
-        RESOURCES BOOKINGS -> 3 cases
-
-        1. Modify date and party_size
-
-        We generate the slot to find suitable resources, similarly to what is done in
-        'google_reserve_booking_create'.
-
-        If we have available resources, we then modify the values of 'resource_ids' and
-        'total_capacity_reserved' and let the inverse method fix the booking lines, see
-        'calendar.event#_inverse_resource_ids_or_capacity'.
-
-        2. Modify the party_size only
-
-        We fetch the booking lines related to our calendar.event.
-        If there is only 1 booking line and the resource can accommodate the capacity, we only alter
-        the 'total_capacity_reserved' and keep the same resources.
-
-        Otherwise, meaning we ask more capacity than the resource can accommodate or we already have
-        multiple booking lines (typically for shared resources), the code fallbacks to use case 1 to
-        try to find another suitable slot.
-
-        3. Modify dates only
-
-        We try to keep the same resource as the initial booking and verify its availability using
-        '_check_appointment_is_valid_slot'.
-        If it's available -> great, otherwise fallback to use case 1 to try to find another suitable
-        slot.
-
-        STAFF BOOKINGS -> 1 case
-
-        It is much simpler for staff bookings as only the date can be modified.
-        We check if it's available using '_check_appointment_is_valid_slot' and if not we simply
-        return to Google with an availability error, we do not try to find another staff user as it
-        would be rather complex: have to cancel the initial meeting or adapt the attendees, what
-        about notifications, etc.
-
-        We may consider adding support for this in the future but resources bookings (restaurants)
-        are our main target currently.
-
-        Once the calendar.event has been modified (or if we don't have availabilities), we return
-        a response with Google's format.
-
-        See: https://developers.google.com/actions-center/verticals/reservations/e2e/reference/booking-server-api-rest/e2e-methods/updatebooking-method"""
 
         route_params = (
             request.get_json_data()
-        )  # not compatible with JSON-RPC, manually fetch params
+        )
 
         if not route_params.get("booking"):
             raise BadRequest("Invalid JSON payload")
@@ -464,7 +330,6 @@ class GoogleReserveController(Controller):
             )
 
             if modifying_dates:
-                # try to simply move the date while keeping the same resources / staff user
                 calendar_event_vals.update(
                     {
                         "start": datetime.fromtimestamp(
@@ -488,8 +353,6 @@ class GoogleReserveController(Controller):
                     allday=calendar_event.allday,
                 ):
                     if resources_booking and not modifying_party_size:
-                        # the same resources are not available with the new dates
-                        # -> force re-computing party size to try with new resources
                         booking_info["slot"].update(
                             {
                                 "resources": {
@@ -499,9 +362,6 @@ class GoogleReserveController(Controller):
                         )
                         modifying_party_size = True
                     elif not resources_booking:
-                        # staff user is not available -> we currently do not support trying to find
-                        # someone else instead as it would require cancelling meetings which would
-                        # in turn notify Google, it would also be confusing for meeting organization
                         failure_status = "SLOT_UNAVAILABLE"
 
             if resources_booking and modifying_party_size:
@@ -519,10 +379,8 @@ class GoogleReserveController(Controller):
                         )
                     )
                 ):
-                    # when a single booking line and capacity allows -> just adapt capacity
                     calendar_event_vals["total_capacity_reserved"] = new_party_size
                 else:
-                    # otherwise re-generate the slot to find available resources to accommodate it
                     start_dt_utc = calendar_event_vals["start"].astimezone(UTC)
                     stop_dt_utc = start_dt_utc + timedelta(
                         hours=calendar_event_vals["duration"]
@@ -594,7 +452,6 @@ class GoogleReserveController(Controller):
         receiver="appointment.type:_receiver_for_google_reserve_feed",
         receiver_event="google_reserve_feed",
         methods=["POST"],
-        # auth="receiver": every posted (appointment, access token) pair must verify
         csrf=False,
         typed=True,
     )
@@ -603,9 +460,6 @@ class GoogleReserveController(Controller):
             "appointment_google_reserve.ir_cron_iap_google_reserve_availabilities"
         )._trigger()
 
-    # --------------------------------------
-    # UTILS
-    # --------------------------------------
 
     def _get_appointment(self, appointment_id, appointment_token):
         return request.admission.subject

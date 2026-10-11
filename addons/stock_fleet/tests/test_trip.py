@@ -110,8 +110,6 @@ class TestTrip(TransactionCase):
         )
 
     def test_the_operator_is_chosen_per_trip_not_taken_from_the_vehicle(self):
-        # The vehicle's holder (self.driver) takes it home; who drives a trip is
-        # chosen for that trip.
         trip = self._trip(self._picking(), operator_id=False)
         self.assertFalse(trip.operator_id)
         self.assertFalse(trip.driver_id)
@@ -139,7 +137,7 @@ class TestTrip(TransactionCase):
             trip.write({"operator_id": self.other_driver.id})
         with self.assertRaises(UserError):
             trip.write({"odometer_departure": 1500.0})
-        trip.write({"odometer_departure": 1000.0})  # same value: not a change
+        trip.write({"odometer_departure": 1000.0})
 
     def test_departure_lists_what_is_missing(self):
         trip = self._trip(self._picking(), supervisor_id=False, odometer_departure=0.0)
@@ -242,8 +240,6 @@ class TestTrip(TransactionCase):
             trip.odometer_return = 1300.0
 
     def test_the_batch_is_done_when_the_trip_returns_not_at_its_last_stop(self):
-        # As BATCH/OUT/26/10/0002 (CDG, 2026-10-08): both stops delivered at
-        # 14:18 showed the batch done while the truck drove back until 16:00.
         first, second = self._picking(), self._picking()
         trip = self._trip(first | second)
         trip.action_depart()
@@ -289,8 +285,6 @@ class TestTrip(TransactionCase):
         self.assertFalse(batch.trip_state)
 
     def test_a_batch_with_its_vehicle_is_validated_only_once_departed(self):
-        # Even where trips are optional, transfers put on a vehicle are delivered
-        # from its trip.
         self.out_type.dispatch_batch_required = False
         picking = self._picking()
         trip = self._trip(picking)
@@ -525,7 +519,6 @@ class TestTrip(TransactionCase):
 
     def test_the_route_offers_only_the_reasons_given_on_the_route(self):
         reasons = self.env["stock.picking.unbatch.reason"]
-        # The catalogue this module ships; other modules may add their own.
         shipped = self.env["ir.model.data"].search(
             [("module", "=", "stock_fleet"), ("model", "=", reasons._name)]
         )
@@ -575,8 +568,6 @@ class TestTrip(TransactionCase):
         self.assertEqual(log.odometer, 1180.0)
 
     def test_the_trip_sheet_prints_in_spanish(self):
-        # The sheet's inheritance must not depend on the words of the language
-        # it renders in: its headers are translated before it applies.
         self.env["res.lang"]._activate_lang("es_MX")
         self.env["ir.module.module"]._load_module_terms(
             ["stock_picking_batch", "stock_fleet"], ["es_MX"], overwrite=True
@@ -589,9 +580,6 @@ class TestTrip(TransactionCase):
         )
         self.assertIn(trip.name, html.decode())
 
-    # ------------------------------------------------------------------
-    # Taking a transfer off a departed trip as a correction
-    # ------------------------------------------------------------------
     def _correction(self, trip, reason="unbatch_reason_added_by_mistake", user=None):
         return (
             self.env["wizard.stock.picking.unbatch.correction"]
@@ -643,8 +631,6 @@ class TestTrip(TransactionCase):
         self.assertEqual(trip.trip_state, "in_transit")
 
     def test_a_closed_trip_gives_up_the_transfers_left_pending(self):
-        # Trips closed before they waited for their transfers kept the pending
-        # ones trapped on them: the way out was a delivery failure.
         self.out_type.dispatch_batch_required = False
         pending = self._picking()
         trip = self._trip(pending)
@@ -756,8 +742,6 @@ class TestTrip(TransactionCase):
         )
 
     def test_a_rescue_vehicle_leaves_with_the_crew_of_a_trip_on_the_road(self):
-        # In a breakdown the operator moves on to another vehicle: only the vehicle
-        # is held to one trip at a time.
         broken = self._trip(self._picking())
         broken.action_depart()
         rescue_vehicle = self.env["resource.resource"].create(

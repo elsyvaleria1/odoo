@@ -30,14 +30,9 @@ _debug = DebugLog(__name__)
 
 PRECOMPILED_TEMPLATES_URL_PREFIX = "/web/assets/owl/"
 
-# a compile that failed fails again until the code changes, which changes
-# the checksum and so the url: a failing url is not retried for a while
 _FAILED_RETRY_S = 600.0
 _failed_at: dict[tuple[str, str], float] = {}
 
-# an artifact is a function of its url, and a url whose attachment went away
-# with its transaction (a test's, or a worker's that lost a race) would
-# otherwise run node again
 _RECENT_SCRIPTS = 8
 
 _PREGENERATE_WORKERS = 8
@@ -76,9 +71,6 @@ class IrQweb(models.AbstractModel):
 
     @staticmethod
     def _with_owl_compiler(bundle: str, nodes: list[AssetNode]) -> list[AssetNode]:
-        # @odoo/owl is the runtime build: a bundle that may compile a template
-        # in the browser brings the compiler module, imported right after the
-        # import map so that it runs before the bundle does
         maps = [index for index, node in enumerate(nodes) if is_import_map_node(node)]
         if not maps:
             return nodes
@@ -87,9 +79,6 @@ class IrQweb(models.AbstractModel):
 
     @api.model
     def _get_eval_free_script_bundles(self) -> set[str]:
-        # the public client: every OWL template these bundles render, the
-        # inline `xml` ones included, arrives compiled from the server, and
-        # nothing else in them evaluates a string
         return {
             "web.assets_frontend_lazy",
             "web.assets_frontend_minimal",
@@ -111,9 +100,6 @@ class IrQweb(models.AbstractModel):
 
     @api.model
     def _get_awaited_template_bundles(self, assets_params: dict[str, Any]) -> list[str]:
-        # an eval-free page awaits the artifact of every bundle it renders and
-        # of every runtime child it loads: one left to its first request is
-        # compiled while that page waits, a test's step budget included
         registry = esm_registry()
         installed = self.env["ir.asset"]._get_addons_installed()
         bundles = dict.fromkeys(sorted(self._get_eval_free_script_bundles()))
@@ -164,7 +150,6 @@ class IrQweb(models.AbstractModel):
                         if job is not None:
                             jobs[key] = job
         if jobs:
-            # node compiles one bundle per process: the jobs run side by side
             workers = min(len(jobs), os.cpu_count() or 1, _PREGENERATE_WORKERS)
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 results = dict(
@@ -211,8 +196,6 @@ class IrQweb(models.AbstractModel):
         asset_bundle = self._get_asset_bundle(
             bundle, css=False, js=True, assets_params=assets_params
         )
-        # with params, the page asks for the artifact under a query string it
-        # serializes itself
         if asset_bundle.js_rebuild_params:
             return None
         return asset_bundle._xml.precompile_checksum()
@@ -221,9 +204,6 @@ class IrQweb(models.AbstractModel):
     def _get_page_templates_url(
         self, bundle: str, lang: str | None, debug: str = ""
     ) -> str | None:
-        # the page asks for this once its bundle has run and its translations
-        # are in: named in the document, it is fetched beside the bundle. A
-        # page in debug or under test compiles its templates itself.
         if not lang or debug or config["test_enable"] or not precompiler_available():
             return None
         checksum = self._get_page_templates_checksum(
@@ -262,8 +242,6 @@ class IrQweb(models.AbstractModel):
 
     @api.model
     def _is_loaded_bundle_eval_needed(self, bundle: str, debug: str) -> bool:
-        # a bundle loaded into a page at run time compiles nothing when it is
-        # one an eval-free page awaits: its templates arrive compiled
         assets_params = self.env["ir.asset"]._prepare_assets_params()
         return bundle not in self._get_awaited_template_bundles(assets_params) or (
             self._is_browser_compilation_forced(debug)
@@ -271,8 +249,6 @@ class IrQweb(models.AbstractModel):
 
     @api.model
     def _is_browser_compilation_forced(self, debug: str) -> bool:
-        # debug assets and --dev=xml announce no precompiled templates, and
-        # without node none can be built: OWL then compiles with new Function
         return (
             self._is_debug_assets(debug)
             or "xml" in config["dev_mode"]
@@ -311,11 +287,6 @@ class IrQweb(models.AbstractModel):
         build: bool = True,
         assets_params: dict[str, Any] | None = None,
     ) -> IrAttachment:
-        """Reuse or create the compiled attachment, removing obsolete variants.
-
-        With ``build=False``, only look up the existing attachment; callers on
-        a readonly cursor use this before acquiring a write cursor and lock.
-        """
         url = self._get_precompiled_templates_url(
             bundle, checksum, lang, translations_hash, dev=dev
         )
@@ -324,12 +295,9 @@ class IrQweb(models.AbstractModel):
         if attachment or not build:
             return attachment
         if not precompiler_available():
-            # assembling the bundle to hand it to a compiler that cannot run
-            # cost a worker 1-5 s per request, for a 404
             return attachment
         if assets_params is None:
             assets_params = self.env["ir.asset"]._prepare_assets_params()
-        # a request with other params may still reproduce the checksum
         failed_key = (url, json.dumps(assets_params, sort_keys=True))
         failed_at = _failed_at.get(failed_key)
         if failed_at is not None and time.monotonic() - failed_at < _FAILED_RETRY_S:
@@ -376,9 +344,6 @@ class IrQweb(models.AbstractModel):
                 url=url,
             )
         )
-        # the backend and the frontend translate with module lists of their
-        # own, so a bundle both load has an artifact per list: the other
-        # list's is not stale, only an older build under either one is
         others = self._get_translations_hashes(lang) - {translations_hash}
         stale = (
             IrAttachment._search_generated_assets(
@@ -433,8 +398,6 @@ class IrQweb(models.AbstractModel):
         web_static = web_static_path()
         if web_static is None:
             return None
-        # the checksum is of the templates, not of the params: a bundle rebuilt
-        # with other params that yields it compiles to the same artifact
         pipeline = self._get_asset_bundle(
             bundle, css=False, js=True, assets_params=assets_params
         )._xml

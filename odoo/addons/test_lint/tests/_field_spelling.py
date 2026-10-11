@@ -5,7 +5,7 @@ from dataclasses import dataclass
 try:
     from ._model_classes import is_field_call
 except ImportError:
-    from _model_classes import is_field_call  # run as a script, from this directory
+    from _model_classes import is_field_call
 
 __all__ = [
     "FIELD_ATTRIBUTE_ORDER",
@@ -17,9 +17,6 @@ __all__ = [
 ]
 
 
-# The positional parameters of each field class's __init__, in order; every
-# other class takes the label first. A positional argument is spelled as the
-# keyword this table names.
 POSITIONAL_PARAMETERS: dict[str, tuple[str, ...]] = {
     "Many2one": ("comodel_name", "string"),
     "One2many": ("comodel_name", "inverse_name", "string"),
@@ -36,11 +33,6 @@ POSITIONAL_PARAMETERS: dict[str, tuple[str, ...]] = {
 _DEFAULT_POSITIONAL = ("string",)
 
 
-# The order a declaration's keywords are read in: what the field is, what it
-# says, its shape, how its value is produced, how it is stored and read, what
-# it points at and under which conditions, who tracks it -- then, last of
-# all, who may see it and the help text. An attribute the table does not know
-# sorts alphabetically before that tail.
 FIELD_ATTRIBUTE_ORDER: tuple[str, ...] = (
     "comodel_name",
     "inverse_name",

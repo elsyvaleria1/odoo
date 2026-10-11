@@ -62,10 +62,6 @@ class IrAttachment(models.Model):
         )
 
     def _s3_queue_mirror(self) -> None:
-        # Only flag the rows: the upload is left to
-        # ``_cron_mirror_pending_to_s3``. Uploading from a postcommit callback
-        # runs it in the request thread, which keeps the main transaction
-        # idle-in-transaction for as long as S3 takes to answer.
         to_mirror = self._filtered_s3_mirrorable()
         if to_mirror:
             to_mirror.s3_mirror_pending = True
@@ -128,7 +124,6 @@ class IrAttachment(models.Model):
                         exc_info=True,
                     )
 
-        # the blob goes only once the row that stopped using it is committed
         self.env.cr.postcommit.add(delete)
 
     def _post_add_create(self, **kwargs):
@@ -296,8 +291,6 @@ class IrAttachment(models.Model):
         if self.type != "binary":
             return "not_binary"
         if self.url:
-            # served at its own URL (a generated asset, a shape, a sitemap):
-            # the bucket's URL would replace the path it is answered at
             return "served_by_url"
         if not self.store_fname or "://" in self.store_fname:
             return "not_in_filestore"
@@ -306,11 +299,6 @@ class IrAttachment(models.Model):
         return None
 
     def _s3_move_to_cloud(self) -> dict[str, list[int]]:
-        """Upload each filestore attachment to the bucket and serve it from there.
-
-        :return: attachment ids by outcome, ``moved`` or the reason for a skip
-        :rtype: dict
-        """
         settings = self.env.registry.settings
         bucket = settings.get(self.env, s3.PARAM_BUCKET, False)
         region = settings.get(self.env, s3.PARAM_REGION, False)
@@ -332,12 +320,6 @@ class IrAttachment(models.Model):
             if reason:
                 outcome[reason].append(attach.id)
                 continue
-            # The local file stays referenced, so writing ``type`` back to
-            # ``binary`` undoes the move until _s3_release_local_files runs.
-            # Only type and url are written: content values would recompute
-            # file_size, checksum and index_content from empty bytes. The
-            # context names it a relocation, which a lock on the document's
-            # content (a decided approval) lets through.
             try:
                 with self.env.cr.savepoint():
                     attach.with_context(attachment_storage_relocation=True).write(
@@ -358,11 +340,6 @@ class IrAttachment(models.Model):
         return dict(outcome)
 
     def _s3_upload_verified(self, client, bucket) -> tuple[str | None, str | None]:
-        """Upload the filestore file and check the stored object against it.
-
-        :return: the object key and ``None``, or ``None`` and the refusal
-        :rtype: tuple
-        """
         self.check_singleton()
         path = Path(self._get_full_path(self.store_fname))
         digest = hashlib.md5(usedforsecurity=False)
@@ -381,7 +358,6 @@ class IrAttachment(models.Model):
                 Body=f,
                 ContentLength=size,
                 ContentType=self.mimetype or "application/octet-stream",
-                # the store rejects a body whose MD5 differs from this one
                 ContentMD5=base64.b64encode(digest.digest()).decode(),
             )
         head = client.head_object(Bucket=bucket, Key=key)
@@ -393,11 +369,6 @@ class IrAttachment(models.Model):
         return key, None
 
     def _s3_release_local_files(self) -> dict[str, list[int]]:
-        """Drop the filestore copy of attachments the bucket already holds.
-
-        :return: attachment ids by outcome, ``released`` or the reason for a skip
-        :rtype: dict
-        """
         client = s3.get_client(self.env)
         outcome = defaultdict(list)
         fnames = []
@@ -425,8 +396,6 @@ class IrAttachment(models.Model):
             fnames.append(attach.store_fname)
         released = self.browse(outcome.get("released", []))
         if released:
-            # write() drops store_fname from its values, so the column is set
-            # here; the garbage collector keeps files other rows still use
             self.flush_model(["store_fname"])
             self.env.cr.execute(
                 "UPDATE ir_attachment SET store_fname = NULL WHERE id = ANY(%s)",
@@ -438,14 +407,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _cron_s3_move_local_to_cloud(self, batch_size=200, min_age_minutes=30):
-        """Move what Odoo stored locally since the last run to the bucket.
-
-        In cloud-only mode a server-side write (a report PDF, a thumbnail, an
-        image field, a rewritten blob) still lands in the filestore; left
-        there, the filestore and every backup grow back. A row waits until it
-        is ``min_age_minutes`` old, so the content a transaction is still
-        rewriting is not uploaded twice.
-        """
         if not self._is_s3_provider() or not self._s3_is_enabled():
             return
         if self._is_s3_hybrid():
@@ -484,8 +445,6 @@ class IrAttachment(models.Model):
             _logger.info("S3 move of local attachments: %s", dict(totals))
 
     def _s3_still_referenced(self, column: str, values) -> set[str]:
-        # whoever deletes, an object another attachment still points at stays:
-        # the user's reach on ir.attachment would hide the ones they cannot read
         self.flush_model([column])
         rows = self.env.execute_query(
             SQL(
@@ -512,7 +471,6 @@ class IrAttachment(models.Model):
         cloud_urls = {attach.url for attach in self if attach.type == "cloud_storage"}
         res = super().unlink()
         if cloud_urls:
-            # a copied document shares its source's url, and so its blob
             endpoint = s3.get_endpoint(self.env)
             shared_keys = set()
             for url in self._s3_still_referenced("url", cloud_urls):

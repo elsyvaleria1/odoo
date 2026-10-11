@@ -78,9 +78,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         )
 
     def test_partner_balance_no_account_codes(self):
-        """Tests that when no account codes are provided, we are returned the residual
-        amount for the receivable and payable accounts.
-        """
         (self.move_22 + self.move_23).action_post()
         partner_balance = self.env["account.account"].spreadsheet_fetch_partner_balance(
             [
@@ -109,7 +106,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         self.assertEqual(partner_balance, [{"balance": 1500 - 2500}, {"balance": 1500}])
 
     def test_partner_balance_yearly(self):
-        """Test that only moves in the given year are returned when performing a yearly filtering."""
         partner_balance = self.env["account.account"].spreadsheet_fetch_partner_balance(
             [
                 {
@@ -127,7 +123,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         self.assertEqual(partner_balance, [{"balance": 1500}])
 
     def test_partner_balance_quarterly(self):
-        """Test that only moves in the given quarter are returned when performing a quarterly filtering."""
         partner_balance = self.env["account.account"].spreadsheet_fetch_partner_balance(
             [
                 {
@@ -157,7 +152,6 @@ class SpreadsheetAccountingFunctionsTest(AccountTestInvoicingCommon):
         self.assertEqual(partner_balance, [{"balance": 1500}, {"balance": 1500 - 2500}])
 
     def test_partner_balance_daily(self):
-        """Test that only moves in the given day are returned when performing a daily filtering."""
         partner_balance = self.env["account.account"].spreadsheet_fetch_partner_balance(
             [
                 {

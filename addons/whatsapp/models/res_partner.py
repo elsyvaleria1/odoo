@@ -33,7 +33,6 @@ class ResPartner(models.Model):
             partner.wa_channel_count = partner_channel_counts[partner.id]
 
     def _get_or_create_from_number(self, number, name=False):
-        """Number should come currently from whatsapp and contain country info."""
         search_number = number if number.startswith("+") else f"+{number}"
         try:
             formatted_number = phone_validation_wa.wa_phone_format(
@@ -51,7 +50,6 @@ class ResPartner(models.Model):
         if not number or not formatted_number:
             return self.env["res.partner"]
 
-        # find country / local number based on formatted number to ease future searches
         region_data = phone_validation.phone_get_region_data_for_number(
             formatted_number
         )
@@ -59,7 +57,6 @@ class ResPartner(models.Model):
         number_national_number = str(region_data["national_number"])
         number_phone_code = int(region_data["phone_code"])
 
-        # search partner on INTL number, then fallback on national number
         partners = self.search([("phone_mobile_search", "=", formatted_number)])
         if not partners:
             partners = self.search(
@@ -67,7 +64,6 @@ class ResPartner(models.Model):
             )
 
         if not partners:
-            # do not set a country if country code is not unique as we cannot guess
             country = self.env["res.country"].search(
                 [("phone_code", "=", number_phone_code)]
             )

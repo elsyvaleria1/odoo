@@ -37,7 +37,6 @@ class TestHrReferral(TestHrReferralBase):
         )
 
     def test_referral_change_referrer(self):
-        # Create an applicant
         job_applicant = self.env["hr.applicant"].create(
             {
                 "partner_name": "Technical worker",
@@ -59,7 +58,6 @@ class TestHrReferral(TestHrReferralBase):
             sum(points_richard.mapped("points")),
             "Right amount of referral points are created.",
         )
-        # We change the referrer on the job applicant, Richard will lose all his points and Steve will get points
         job_applicant.ref_user_id = self.steve_user.id
         self.assertEqual(
             job_applicant.ref_user_id,
@@ -98,7 +96,6 @@ class TestHrReferral(TestHrReferralBase):
             "Richard received points corresponding to the first stage.",
         )
         stages = self.env["hr.recruitment.stage"].search([("job_ids", "=", False)])
-        # We jump some stages of process, multiple points must be given
         job_applicant.stage_id = stages[-2]
         self.assertEqual(
             job_applicant.earned_points,
@@ -159,7 +156,6 @@ class TestHrReferral(TestHrReferralBase):
                 ("company_id", "=", self.company_2.id),
             ]
         )
-        # All points are created for employee of company 1 as it's a job offer from company 1. No point in company 2.
         self.assertEqual(
             job_applicant.stage_id.points,
             sum(points_richard_c1.mapped("points")),
@@ -171,7 +167,6 @@ class TestHrReferral(TestHrReferralBase):
             "Right amount of referral points are created.",
         )
 
-        # This user has no point in company 2 so if he miss as much points as the price of this object (this object is in company 2).
         self.assertEqual(
             self.red_mug_shop.points_missing,
             self.red_mug_shop.cost,
@@ -179,24 +174,6 @@ class TestHrReferral(TestHrReferralBase):
         )
 
     def test_referral_no_hired_stage(self):
-        """
-        Test Case: Referral Program - Applicant passing through 'not hired' stages
-
-        This test ensures that:
-        - Points from referral stages are only awarded for stages marked `use_in_referral=True`.
-        - Stages with `use_in_referral=False` (e.g., parking or draft stages) do not award points.
-        - Points are not duplicated when moving back to already scored stages.
-        - Dashboard reflects progress accurately.
-        - Final stage marks the applicant as 'hired' even if later stages exist but are not marked for referral.
-
-        Scenario Flow:
-        1. Create custom stages that are excluded from referral (`use_in_referral=False`).
-        2. Move applicant across various stages and verify:
-            - Earned points are correct.
-            - Number of referral lines is correct.
-            - Dashboard reflects correct progression.
-        3. Ensure jumping over or into 'not hired' stages does not affect point tally incorrectly.
-        """
         self.env.ref("hr_recruitment.stage_job0").use_in_referral = False
         self.env.ref("hr_recruitment.stage_job3").use_in_referral = False
         stage_parking_1 = self.env["hr.recruitment.stage"].create(
@@ -205,7 +182,7 @@ class TestHrReferral(TestHrReferralBase):
                 "use_in_referral": False,
                 "job_ids": [(6, 0, self.job_dev.ids)],
                 "sequence": 15,
-                "points": 500,  # points must be ignored for 'not hired stage'
+                "points": 500,
             }
         )
         stage_parking_2 = self.env["hr.recruitment.stage"].create(
@@ -214,7 +191,7 @@ class TestHrReferral(TestHrReferralBase):
                 "use_in_referral": False,
                 "job_ids": [(6, 0, self.job_dev.ids)],
                 "sequence": 16,
-                "points": 1000,  # points must be ignored for 'not hired stage'
+                "points": 1000,
             }
         )
         job_applicant = self.env["hr.applicant"].create(
@@ -252,7 +229,6 @@ class TestHrReferral(TestHrReferralBase):
             "In dashboard, we have only not 'not hired stage' and state are correct.",
         )
 
-        # Move to stage 3 (not hired) → should add points for skipped stage 2
         job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job3")
         total_points = (
             self.env.ref("hr_recruitment.stage_job1").points
@@ -275,7 +251,6 @@ class TestHrReferral(TestHrReferralBase):
             "In dashboard, we have only not 'not hired stage' and state are correct.",
         )
 
-        # Move back to stage 1 → new line add in received points as points removed for stage 2
         job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job1")
         self.assertEqual(
             job_applicant.earned_points,
@@ -294,7 +269,6 @@ class TestHrReferral(TestHrReferralBase):
             "In dashboard, we have only not 'not hired stage' and state are correct.",
         )
 
-        # Move to stage 3 again → stage 2 points should be added again
         job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job3")
         total_points = (
             self.env.ref("hr_recruitment.stage_job1").points
@@ -311,7 +285,6 @@ class TestHrReferral(TestHrReferralBase):
             "Richard received points corresponding to the second stage again.",
         )
 
-        # We jump from not hired stage to another stage. All points between last valuable stage (stage 1) and new stage (stage 4) must be added
         job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job4")
         self.assertEqual(
             job_applicant.earned_points,
@@ -330,20 +303,19 @@ class TestHrReferral(TestHrReferralBase):
             "In dashboard, we have only not 'not hired stage' and state are correct.",
         )
 
-        # We jump between differents 'not hired stage' = > Nothing change
-        job_applicant.stage_id = stage_parking_1  # points get for stage 5
+        job_applicant.stage_id = stage_parking_1
         job_applicant.stage_id = (
-            stage_parking_2  # no points get for this 'not hired stage'
+            stage_parking_2
         )
         job_applicant.stage_id = (
-            stage_parking_1  # no points get for this 'not hired stage'
+            stage_parking_1
         )
         job_applicant.stage_id = self.env.ref(
             "hr_recruitment.stage_job3"
-        )  # remove points for 4 and 5 stage
+        )
         job_applicant.stage_id = self.env.ref(
             "hr_recruitment.stage_job4"
-        )  # We come back to previous not 'not hired stage'
+        )
         self.assertEqual(
             job_applicant.earned_points,
             35,
@@ -355,7 +327,6 @@ class TestHrReferral(TestHrReferralBase):
             "Total line added in received points.",
         )
 
-        # The applicant reach last not 'not hired stage'
         job_applicant.stage_id = self.env.ref("hr_recruitment.stage_job5")
         self.assertEqual(job_applicant.earned_points, 85, "He received all points.")
         self.assertEqual(
@@ -370,9 +341,7 @@ class TestHrReferral(TestHrReferralBase):
         )
 
     def test_referral_no_point_done_stage(self):
-        """Make sure stages use in referral with points = 0 are properly mark as done"""
         final_stage = self.env.ref("hr_recruitment.stage_job5")
-        # Change final sequence since we want new stage to be in between
         final_stage.sequence = 20
         stage_parking_1 = self.env["hr.recruitment.stage"].create(
             {
@@ -423,8 +392,6 @@ class TestHrReferral(TestHrReferralBase):
         )
 
     def test_referral_reset_applicant(self):
-        """Test that reset_applicant correctly resets the referral state to 'progress'"""
-        # Create an applicant in 'progress' state
         applicant = self.env["hr.applicant"].create(
             {
                 "partner_name": "Test Applicant",
@@ -434,31 +401,25 @@ class TestHrReferral(TestHrReferralBase):
                 "referral_state": "progress",
             }
         )
-        # Change state to 'hired'
         applicant.write({"referral_state": "hired"})
         self.assertEqual(
             applicant.referral_state,
             "hired",
             "Applicant referral state should be 'hired'",
         )
-        # Reset the applicant
         applicant.reset_applicant()
-        # Check if the referral state is reset to 'progress'
         self.assertEqual(
             applicant.referral_state,
             "progress",
             "After reset_applicant, referral state should be 'progress'",
         )
-        # Test resetting from 'closed' state
         applicant.write({"referral_state": "closed"})
         self.assertEqual(
             applicant.referral_state,
             "closed",
             "Applicant referral state should be 'closed'",
         )
-        # Reset the applicant again
         applicant.reset_applicant()
-        # Check if the referral state is reset to 'progress'
         self.assertEqual(
             applicant.referral_state,
             "progress",
@@ -466,8 +427,6 @@ class TestHrReferral(TestHrReferralBase):
         )
 
     def test_referral_reset_applicant_batch(self):
-        """Test that reset_applicant correctly works when called on multiple records"""
-        # Create applicants with different referral states
         applicants = self.env["hr.applicant"].create(
             [
                 {
@@ -493,13 +452,10 @@ class TestHrReferral(TestHrReferralBase):
                 },
             ]
         )
-        # Test initial states
         self.assertEqual(applicants[0].referral_state, "hired")
         self.assertEqual(applicants[1].referral_state, "closed")
         self.assertEqual(applicants[2].referral_state, "progress")
-        # Reset all applicants at once
         applicants.reset_applicant()
-        # Verify all records have been reset to 'progress'
         for applicant in applicants:
             self.assertEqual(
                 applicant.referral_state,

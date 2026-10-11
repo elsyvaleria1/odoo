@@ -21,8 +21,8 @@ class PosPrepDisplay(models.Model):
             return {"done": [], "notDone": []}
         last_stage = self.stage_ids[
             -1
-        ]  # last stage always means that the order is done.
-        second_last_stage = self.stage_ids[-2]  # order will be displated as ready.
+        ]
+        second_last_stage = self.stage_ids[-2]
 
         orders_completed = set()
         orders_not_completed = set()

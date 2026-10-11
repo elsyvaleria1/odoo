@@ -28,11 +28,11 @@ def _bootstrap():
 
 _bootstrap()
 
-from odoo import tools  # noqa: E402  the path is fixed above
-from odoo.modules.registry import Registry  # noqa: E402  the path is fixed above
-from odoo.orm.models.metaclass import MetaModel  # noqa: E402  the path is fixed above
+from odoo import tools
+from odoo.modules.registry import Registry
+from odoo.orm.models.metaclass import MetaModel
 
-from odoo.addons.test_lint.tests._field_spelling import (  # noqa: E402  the path is fixed above
+from odoo.addons.test_lint.tests._field_spelling import (
     bound_names,
     positional_names,
 )
@@ -80,12 +80,9 @@ def _string_node(call: ast.Call):
     for keyword in call.keywords:
         if keyword.arg == "string":
             return keyword
-    # A field class called by name has a signature of its own: which positional
-    # is the label only `fields.<X>` answers.
     if not isinstance(call.func, ast.Attribute):
         return None
     position = positional_names(call).index("string")
-    # Dropping a positional label shifts every later positional into its slot.
     if len(call.args) != position + 1 or isinstance(call.args[position], ast.Starred):
         return None
     return call.args[position]
@@ -191,7 +188,7 @@ def main() -> int:
             json.dumps({p: sorted(map(list, w)) for p, w in by_file.items()}, indent=1),
             encoding="utf-8",
         )
-    print(  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(
         f"{total} label(s) in {len(by_file)} file(s){' (dry run)' if args.dry_run else ''}"
     )
     return 0

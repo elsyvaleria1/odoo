@@ -103,7 +103,6 @@ class TestAttendeePrivacy(CalendarPrivacyCommon, TransactionCase):
         )
 
     def test_access_token_is_never_readable_by_a_plain_employee(self):
-        """The token is the credential of the `calendar` auth method."""
         event = self._make_event("public")
         self.env.flush_all()
         attendee_ids = event.sudo().attendee_ids.ids
@@ -235,7 +234,6 @@ class TestInvitationTokenRoutes(CalendarPrivacyCommon, HttpCase):
         )
 
     def test_empty_token_on_the_event_routes(self):
-        """Events legitimately have a NULL token whenever they have no videocall."""
         event = self._make_event("public")
         self.env.flush_all()
         self.assertFalse(event.sudo().access_token)
@@ -255,9 +253,6 @@ class TestPrivacyDomainFallback(CalendarPrivacyCommon, TransactionCase):
     """The domain and the predicate must agree about a user with no settings row."""
 
     def test_owner_without_settings_row_is_not_treated_as_private(self):
-        # `_check_private_event_conditions` falls back to the config parameter
-        # for such an owner; `_get_domain_default_privacy` used not to, so the
-        # event was public to the predicate and invisible to every search.
         owner = new_test_user(self.env, "no_settings_owner", groups="base.group_user")
         owner.sudo().res_users_settings_id.unlink()
         self.env.invalidate_all()

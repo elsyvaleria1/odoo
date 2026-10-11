@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 
 @cache
 def _get_engine() -> RapidOCR:
-    """Built once and kept: construction loads the PP-OCR weights off disk."""
     return RapidOCR()
 
 

@@ -115,10 +115,6 @@ from . import res_partner
 from . import res_partner_identifier
 from . import res_partner_identifier_type
 
-# After res_partner: mixin.recurrence.rrule takes its timezone selection
-# from _selection_timezones, so importing it earlier evaluates res_partner
-# before the mixins it inherits are registered. The other recurrence mixins
-# are imported before ir_cron, which inherits the interval one.
 from . import mixin_recurrence_rrule
 
 

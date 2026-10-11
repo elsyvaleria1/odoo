@@ -87,15 +87,11 @@ class LivechatController(http.Controller):
 
     @http.route("/im_livechat/emoji_bundle", type="http", auth="public", cors="*")
     def get_emoji_bundle(self):
-        # The embed runs on another origin and loads this as one classic script,
-        # so it gets the same standalone build as the embed bundle itself.
         return self._assets_embed_js_response("web.assets_emoji")
 
     @http.route("/im_livechat/support/<int:channel_id>", type="http", auth="public")
     def support_page(self, channel_id, **kwargs):
         channel = request.env["im_livechat.channel"].sudo().browse(channel_id)
-        # the page loads its script from assets_embed.js on the base url, not
-        # through t-call-assets; from another origin that is the cors bundle
         base_url = urlsplit(channel.get_base_url())
         same_origin = (base_url.scheme, base_url.netloc) == (
             request.httprequest.scheme,

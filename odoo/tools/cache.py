@@ -23,7 +23,7 @@ if typing.TYPE_CHECKING:
     from odoo.libs.lru import LRU
     from odoo.models import BaseModel
 
-unsafe_eval = eval  # noqa: S307  ormcache key expressions built from code, not user input
+unsafe_eval = eval
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -43,7 +43,6 @@ class TransactionMemo:
     _by_model: typing.ClassVar[
         defaultdict[str, list[tuple[TransactionMemo, frozenset[str] | None]]]
     ] = defaultdict(list)
-    # by id(): a registry need not be hashable; the reference drops the entry
     _reach_by_registry: typing.ClassVar[
         dict[int, tuple[weakref.ref[Any], int, _MemoReach]]
     ] = {}
@@ -85,9 +84,6 @@ class TransactionMemo:
 
     @classmethod
     def _reach(cls, registry: Any) -> _MemoReach:
-        # write() reports the fields in vals, not the computed fields it makes
-        # the ORM recompute: a memo on a computed field is discarded by a write
-        # of anything that field depends on, on its own model or another
         key, epoch = id(registry), registry.cache_epoch
         cached = cls._reach_by_registry.get(key)
         if cached is not None and cached[0]() is registry and cached[1] == epoch:
@@ -217,12 +213,10 @@ _COUNTERS: defaultdict[tuple[str, Callable], ormcache_counter] = defaultdict(
 
 
 def remove_counters(db_name: str) -> None:
-    removed = 0  # debuglog
-    # request threads of other databases insert lock-free; list() snapshots
-    # the keys in one atomic call where iterating the dict itself would raise
+    removed = 0
     for cache_key in [k for k in list(_COUNTERS) if k[0] == db_name]:
         del _COUNTERS[cache_key]
-        removed += 1  # debuglog
+        removed += 1
     _debug.lifecycle("cache.counters_removed", db=db_name, counters=removed)
 
 
@@ -370,7 +364,7 @@ class ormcache:
                 )
             return value
 
-        get_cached_result.__cache__ = self  # type: ignore[attr-defined]
+        get_cached_result.__cache__ = self
         return typing.cast("C", get_cached_result)
 
     def add_value(
@@ -463,7 +457,6 @@ def _get_ormcache_stats(show_size: bool) -> tuple[_CacheStats, _CacheUsage] | No
             cache_total_size = 0
             for cache_key, cache_value in cache.snapshot.items():
                 method = cache_key[1]
-                # a value stored in an LRU directly rather than by an ormcache
                 if not callable(method):
                     continue
                 stats = db_cache_stats.get(method)
@@ -583,7 +576,7 @@ def _format_ormcache_stats(
 
 
 def _log_ormcache_stats(show_size: bool) -> None:
-    global _logger_state  # noqa: PLW0603  process-wide cache-stats logging state
+    global _logger_state
     try:
         collected = _get_ormcache_stats(show_size)
         if collected is None:
@@ -608,7 +601,7 @@ def log_ormcache_stats(
     if sig not in (None, signal.SIGUSR1, signal.SIGUSR2):
         return
 
-    global _logger_state  # noqa: PLW0603  process-wide cache-stats logging state
+    global _logger_state
     with _logger_lock:
         if _logger_state != "wait":
             _logger_state = "abort"

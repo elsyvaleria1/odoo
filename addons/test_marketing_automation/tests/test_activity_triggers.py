@@ -13,14 +13,6 @@ class ActivityTriggersCase(TestMACommon):
         super().setUpClass()
         cls.date_reference = Datetime.from_string("2023-11-08 09:00:00")
 
-        # --------------------------------------------------
-        # TEST RECORDS, using marketing.test.sms (customers)
-        #
-        # 2 times
-        # - 3 records with partners
-        # - 1 records wo partner, but email/mobile
-        # - 1 record wo partner/email/mobile
-        # --------------------------------------------------
         cls.test_records_base = cls._create_marketauto_records(
             model="marketing.test.sms", count=2
         )
@@ -64,7 +56,6 @@ for record in records:
                     "state": "code",
                 }
                 for description in [
-                    # mail
                     "mail_open",
                     "mail_not_open",
                     "mail_reply",
@@ -72,11 +63,9 @@ for record in records:
                     "mail_click",
                     "mail_not_click",
                     "mail_bounce",
-                    # sms
                     "sms_click",
                     "sms_not_click",
                     "sms_bounce",
-                    # whatsapp
                     "whatsapp_click",
                     "whatsapp_not_click",
                     "whatsapp_read",
@@ -84,13 +73,11 @@ for record in records:
                     "whatsapp_replied",
                     "whatsapp_not_replied",
                     "whatsapp_bounced",
-                    # other
                     "action",
                 ]
             ]
         )
         (
-            # mail
             cls.test_sa_descr_mail_open,
             cls.test_sa_descr_mail_not_open,
             cls.test_sa_descr_mail_reply,
@@ -98,11 +85,9 @@ for record in records:
             cls.test_sa_descr_mail_click,
             cls.test_sa_descr_mail_not_click,
             cls.test_sa_descr_mail_bounce,
-            # sms
             cls.test_sa_descr_sms_click,
             cls.test_sa_descr_sms_not_click,
             cls.test_sa_descr_sms_bounce,
-            # whatsapp
             cls.test_sa_descr_wa_click,
             cls.test_sa_descr_wa_not_click,
             cls.test_sa_descr_wa_read,
@@ -110,7 +95,6 @@ for record in records:
             cls.test_sa_descr_wa_replied,
             cls.test_sa_descr_wa_not_replied,
             cls.test_sa_descr_wa_bounced,
-            # other
             cls.test_sa_descr_action,
         ) = cls.test_sa_descr
         cls.test_sa_unlink = cls.env["ir.actions.server"].create(
@@ -130,7 +114,6 @@ class TestActivityTriggers(ActivityTriggersCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # begin activities: MAIL, SMS and WHATSAPP
         cls.activity_begin_mail = cls._create_activity(
             cls.campaign,
             create_date=cls.date_reference,
@@ -165,7 +148,6 @@ class TestActivityTriggers(ActivityTriggersCase):
         )
 
         (
-            # sub activities mail triggers
             cls.activity_sa_mail_not_open,
             cls.activity_sa_mail_open,
             cls.activity_sa_mail_not_reply,
@@ -173,11 +155,9 @@ class TestActivityTriggers(ActivityTriggersCase):
             cls.activity_sa_mail_not_click,
             cls.activity_sa_mail_click,
             cls.activity_sa_mail_bounce,
-            # sub activities for sms triggers
             cls.activity_sa_sms_not_click,
             cls.activity_sa_sms_click,
             cls.activity_sa_sms_bounce,
-            # sub activities for whatsapp triggers
             cls.activity_sa_wa_not_read,
             cls.activity_sa_wa_read,
             cls.activity_sa_wa_not_replied,
@@ -195,7 +175,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 trigger_type=trigger_type,
             )
             for trigger_type, server_action, parent, itv in (
-                # mail
                 (
                     "mail_not_open",
                     cls.test_sa_descr_mail_not_open,
@@ -233,7 +212,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                     cls.activity_begin_mail,
                     1,
                 ),
-                # sms
                 (
                     "sms_not_click",
                     cls.test_sa_descr_sms_not_click,
@@ -242,7 +220,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 ),
                 ("sms_click", cls.test_sa_descr_sms_click, cls.activity_begin_sms, 1),
                 ("sms_bounce", cls.test_sa_descr_sms_bounce, cls.activity_begin_sms, 1),
-                # whatsapp
                 (
                     "whatsapp_not_read",
                     cls.test_sa_descr_wa_not_read,
@@ -282,7 +259,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 ),
             )
         )
-        # sub activities other
         cls.activity_mail_activity = cls._create_activity(
             cls.campaign,
             action=cls.test_sa_descr_action,
@@ -309,7 +285,6 @@ class TestActivityTriggers(ActivityTriggersCase):
         )
 
     def test_assert_initial_values(self):
-        """Check initial state, notably partners"""
         self.assertEqual(len(self.test_records), 10)
         self.assertEqual(len(self.test_customers), 6)
 
@@ -336,8 +311,6 @@ class TestActivityTriggers(ActivityTriggersCase):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("user_marketing_automation")
     def test_reaction_triggers(self):
-        """Test triggers (open / not_open, read / not read, ...) for mail, sms
-        and whatsapp."""
         campaign = self.campaign.with_env(self.env)
         test_records = self.test_records.with_env(self.env)
         test_records_ok = self.test_records_ok.with_env(self.env)
@@ -367,12 +340,11 @@ class TestActivityTriggers(ActivityTriggersCase):
             + self.activity_wa_activity
         )
 
-        # First traces are processed, email, SMSes and WA msgs are sent (or failed)
-        date_send = self.date_reference + timedelta(hours=1)  # ok for send mailing
-        date_opened = date_send + timedelta(hours=2)  # simulating opened
+        date_send = self.date_reference + timedelta(hours=1)
+        date_opened = date_send + timedelta(hours=2)
         date_not_action = date_send + timedelta(
             days=5
-        )  # 5 days delay before triggering 'did not reply' or similar
+        )
         with (
             self.mock_datetime_and_now(date_send),
             self.mockWhatsappGateway(),
@@ -416,7 +388,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                     "fields_values": {
                         "schedule_date": self.date_reference + timedelta(hours=1),
                     },
-                    "trace_status": "outgoing",  # not forced send
+                    "trace_status": "outgoing",
                 }
             ]
             + [
@@ -477,30 +449,26 @@ class TestActivityTriggers(ActivityTriggersCase):
         )
 
         for sub_activity, schedule_date in [
-            # mail
-            (self.activity_sa_mail_open, False),  # mail open: no date, as user input
+            (self.activity_sa_mail_open, False),
             (self.activity_sa_mail_not_open, date_not_action),
-            (self.activity_sa_mail_reply, False),  # mail reply: no date, as user input
+            (self.activity_sa_mail_reply, False),
             (self.activity_sa_mail_not_reply, date_not_action),
-            (self.activity_sa_mail_click, False),  # mail click: no date, as user input
+            (self.activity_sa_mail_click, False),
             (self.activity_sa_mail_not_click, date_not_action),
             (
                 self.activity_sa_mail_bounce,
                 False,
-            ),  # mail bounce: no date, as user input
-            # sms
-            (self.activity_sa_sms_click, False),  # sms click: no date, as user input
+            ),
+            (self.activity_sa_sms_click, False),
             (self.activity_sa_sms_not_click, date_not_action),
-            (self.activity_sa_sms_bounce, False),  # sms bounce: no date, as user input
-            # whatsapp
-            (self.activity_sa_wa_read, False),  # wa read: no date, as user input
+            (self.activity_sa_sms_bounce, False),
+            (self.activity_sa_wa_read, False),
             (self.activity_sa_wa_not_read, date_not_action),
-            (self.activity_sa_wa_replied, False),  # wa replied: no date, as user input
+            (self.activity_sa_wa_replied, False),
             (self.activity_sa_wa_not_replied, date_not_action),
-            (self.activity_sa_wa_click, False),  # wa click: no date, as user input
+            (self.activity_sa_wa_click, False),
             (self.activity_sa_wa_not_click, date_not_action),
-            (self.activity_sa_wa_bounced, False),  # wa bounce: no date, as user input
-            # other
+            (self.activity_sa_wa_bounced, False),
             (self.activity_mail_activity, date_send + timedelta(hours=2)),
             (self.activity_sms_activity, date_send + timedelta(hours=2)),
             (self.activity_wa_activity, date_send + timedelta(hours=2)),
@@ -518,11 +486,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                 sub_activity,
             )
 
-        # Simulate open / reply / click
-        # - active traces should be processed, schedule date updated
-        # - opposite traces should be canceled
         for action, action_sa, opposite_sa in (
-            # mail
             ("mail_open", self.activity_sa_mail_open, self.activity_sa_mail_not_open),
             (
                 "mail_reply",
@@ -534,9 +498,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                 self.activity_sa_mail_click,
                 self.activity_sa_mail_not_click,
             ),
-            # sms
             ("sms_click", self.activity_sa_sms_click, self.activity_sa_sms_not_click),
-            # whatsapp
             ("whatsapp_read", self.activity_sa_wa_read, self.activity_sa_wa_not_read),
             (
                 "whatsapp_replied",
@@ -583,7 +545,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                     elif action == "whatsapp_click":
                         self.whatsapp_msg_click_with_records(record, button_index=0)
                         state_msg = "Parent Whatsapp message was clicked"
-            # sub action scheduled
             self.assertMarketAutoTraces(
                 [
                     {
@@ -604,7 +565,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 ],
                 action_sa,
             )
-            # opposition action is canceled
             self.assertMarketAutoTraces(
                 [
                     {
@@ -629,18 +589,14 @@ class TestActivityTriggers(ActivityTriggersCase):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("user_marketing_automation")
     def test_reaction_triggers_bounce(self):
-        """Test specific 'bounce' triggers, that should cancel a lot of things
-        as if means contact is failing."""
         campaign = self.campaign.with_env(self.env)
         test_records = self.test_records.with_env(self.env)
         test_records_ok = self.test_records_ok.with_env(self.env)
 
         self._launch_campaign(campaign, date_reference=self.date_reference)
 
-        # First traces are processed, email, SMSes and WA msgs are sent (or failed)
-        # see 'test_reaction_triggers' that has the same beginning, with more asserts
-        date_send = self.date_reference + timedelta(hours=1)  # ok for send mailing
-        date_opened = date_send + timedelta(hours=2)  # simulating opened
+        date_send = self.date_reference + timedelta(hours=1)
+        date_opened = date_send + timedelta(hours=2)
         with (
             self.mock_datetime_and_now(date_send),
             self.mockWhatsappGateway(),
@@ -650,13 +606,9 @@ class TestActivityTriggers(ActivityTriggersCase):
         ):
             campaign.execute_activities()
 
-        # Simulate bounce: should cancel all brother traces
         for action, action_sa in (
-            # mail
             ("mail_bounce", self.activity_sa_mail_bounce),
-            # sms
             ("sms_bounce", self.activity_sa_sms_bounce),
-            # whatsapp
             ("whatsapp_bounced", self.activity_sa_wa_bounced),
         ):
             todo = test_records_ok[:5]
@@ -716,8 +668,6 @@ class TestActivityTriggers(ActivityTriggersCase):
 
     @users("user_marketing_automation")
     def test_reaction_triggers_multiple(self):
-        """Test multiple triggers (e.g. several replies) do not trigger
-        child traces several times."""
         campaign = self.campaign.with_env(self.env)
         test_records = self.test_records.with_env(self.env)
         test_records_ok = self.test_records_ok.with_env(self.env)
@@ -726,11 +676,9 @@ class TestActivityTriggers(ActivityTriggersCase):
 
         date_opened = (
             self.date_reference + timedelta(hours=1) + timedelta(hours=2)
-        )  # see previous test
+        )
         date_subaction = date_opened + timedelta(days=1)
 
-        # now that some records have been opened / replied / clicked, we can process
-        # sub activities linked to those triggers
         with (
             self.mock_datetime_and_now(date_subaction),
             self.mockWhatsappGateway(),
@@ -742,13 +690,10 @@ class TestActivityTriggers(ActivityTriggersCase):
 
         todo = test_records_ok[:5]
         for subaction in (
-            # mail
             self.activity_sa_mail_open,
             self.activity_sa_mail_reply,
             self.activity_sa_mail_click,
-            # sms
             self.activity_sa_sms_click,
-            # whatsapp
             self.activity_sa_wa_read,
             self.activity_sa_wa_replied,
             self.activity_sa_wa_click,
@@ -776,26 +721,13 @@ class TestActivityTriggers(ActivityTriggersCase):
                     subaction,
                 )
 
-        # receive replies again, check traces are still processed and not set
-        # back to schedule
-        # Simulate open / reply / click
-        # - active traces should be processed, schedule date updated
-        # - opposite traces should be canceled
         for action, action_sa, opposite_sa in (
-            # mail
             ("mail_open", self.activity_sa_mail_open, self.activity_sa_mail_not_open),
             (
                 "mail_reply",
                 self.activity_sa_mail_reply,
                 self.activity_sa_mail_not_reply,
             ),
-            # ("mail_click", self.activity_sa_mail_click, self.activity_sa_mail_not_click),  # tool not supporting it
-            # sms
-            # ("sms_click", self.activity_sa_sms_click, self.activity_sa_sms_not_click),  # tool not supporting it
-            # whatsapp
-            # ("whatsapp_read", self.activity_sa_wa_read, self.activity_sa_wa_not_read),  # tool not supporting it
-            # ("whatsapp_replied", self.activity_sa_wa_replied, self.activity_sa_wa_not_replied),  # tool not supporting it
-            # ("whatsapp_click", self.activity_sa_wa_click, self.activity_sa_wa_not_click),  # tool not supporting it
         ):
             todo = test_records_ok[:5]
             with self.subTest(action=action):
@@ -829,7 +761,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                     [
                         {
                             "records": todo,
-                            "status": "processed",  # should not be back to scheduled
+                            "status": "processed",
                             "fields_values": {
                                 "schedule_date": date_subaction,
                             },
@@ -860,14 +792,12 @@ class TestActivityTriggers(ActivityTriggersCase):
 
     @users("user_marketing_automation")
     def test_schedule_date_based_on_triggers_new(self):
-        """Test triggers when adding a new activity"""
         self._launch_campaign(self.campaign)
         date_send = self.date_reference + timedelta(hours=1)
 
         with self.mock_datetime_and_now(date_send), self.mock_mail_gateway():
             self.campaign.execute_activities()
 
-        # add a new begin activity
         new_activity = self._create_activity_mail(
             self.campaign,
             self.env.user,
@@ -878,8 +808,6 @@ class TestActivityTriggers(ActivityTriggersCase):
             },
         )
 
-        # add new participants that should have traces for the begin activities
-        # so that we also check they are not duplicated at rescheduling
         new_test_records = self._create_marketauto_records(
             model="marketing.test.sms", count=1
         )
@@ -914,7 +842,7 @@ class TestActivityTriggers(ActivityTriggersCase):
                         "status": "scheduled",
                         "fields_values": {
                             "schedule_date": self.date_reference
-                            + timedelta(hours=4),  # sync date + activity timedelta
+                            + timedelta(hours=4),
                         },
                     }
                 ],
@@ -925,7 +853,6 @@ class TestActivityTriggers(ActivityTriggersCase):
     @mute_logger("odoo.addons.mail.models.mail_mail")
     @users("user_marketing_automation")
     def test_schedule_date_based_on_triggers_update(self):
-        """Test triggers when updating activities"""
         self._launch_campaign(self.campaign, date_reference=self.date_reference)
         date_send = self.date_reference + timedelta(hours=1)
         date_subaction = date_send + timedelta(days=5)
@@ -933,8 +860,6 @@ class TestActivityTriggers(ActivityTriggersCase):
         with self.mock_datetime_and_now(date_send), self.mock_mail_gateway():
             self.campaign.execute_activities()
 
-        # changing already-done activities: should not impact anything as child
-        # traces are based upon parent traces, already done
         with self.mock_datetime_and_now(self.date_reference + timedelta(hours=2)):
             (
                 self.activity_begin_mail
@@ -950,30 +875,26 @@ class TestActivityTriggers(ActivityTriggersCase):
             self.campaign.action_update_participants()
 
         for sub_activity, expected_schedule_date in [
-            # mail
             (self.activity_sa_mail_not_open, date_subaction),
-            (self.activity_sa_mail_open, False),  # mail open: no date, as user input
+            (self.activity_sa_mail_open, False),
             (self.activity_sa_mail_not_reply, date_subaction),
-            (self.activity_sa_mail_reply, False),  # mail reply: no date, as user input
+            (self.activity_sa_mail_reply, False),
             (self.activity_sa_mail_not_click, date_subaction),
-            (self.activity_sa_mail_click, False),  # mail click: no date, as user input
+            (self.activity_sa_mail_click, False),
             (
                 self.activity_sa_mail_bounce,
                 False,
-            ),  # mail bounce: no date, as user input
-            # sms
+            ),
             (self.activity_sa_sms_not_click, date_subaction),
-            (self.activity_sa_sms_click, False),  # sms click: no date, as user input
-            (self.activity_sa_sms_bounce, False),  # sms bounce: no date, as user input
-            # whatsapp
+            (self.activity_sa_sms_click, False),
+            (self.activity_sa_sms_bounce, False),
             (self.activity_sa_wa_not_read, date_subaction),
-            (self.activity_sa_wa_read, False),  # wa read: no date, as user input
+            (self.activity_sa_wa_read, False),
             (self.activity_sa_wa_not_replied, date_subaction),
-            (self.activity_sa_wa_replied, False),  # wa replied: no date, as user input
+            (self.activity_sa_wa_replied, False),
             (self.activity_sa_wa_not_click, date_subaction),
-            (self.activity_sa_wa_click, False),  # wa click: no date, as user input
-            (self.activity_sa_wa_bounced, False),  # wa bounce: no date, as user input
-            # other
+            (self.activity_sa_wa_click, False),
+            (self.activity_sa_wa_bounced, False),
             (self.activity_mail_activity, date_send + timedelta(hours=2)),
             (self.activity_sms_activity, date_send + timedelta(hours=2)),
             (self.activity_wa_activity, date_send + timedelta(hours=2)),
@@ -991,11 +912,8 @@ class TestActivityTriggers(ActivityTriggersCase):
                 sub_activity,
             )
 
-        # change scheduled activities: should not impact "no deadline" activities
-        # such as mail_open, mail_click as they depend on user action
         with self.mock_datetime_and_now(self.date_reference + timedelta(hours=3)):
             (
-                # mail
                 self.activity_sa_mail_not_open
                 + self.activity_sa_mail_open
                 + self.activity_sa_mail_not_reply
@@ -1004,12 +922,10 @@ class TestActivityTriggers(ActivityTriggersCase):
                 + self.activity_sa_mail_click
                 + self.activity_sa_mail_bounce
                 +
-                # sms
                 self.activity_sa_sms_not_click
                 + self.activity_sa_sms_click
                 + self.activity_sa_sms_bounce
                 +
-                # whatsapp
                 self.activity_sa_wa_not_read
                 + self.activity_sa_wa_read
                 + self.activity_sa_wa_not_replied
@@ -1018,7 +934,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 + self.activity_sa_wa_click
                 + self.activity_sa_wa_bounced
                 +
-                # other
                 self.activity_mail_activity
                 + self.activity_sms_activity
                 + self.activity_wa_activity
@@ -1032,30 +947,24 @@ class TestActivityTriggers(ActivityTriggersCase):
         date_subaction = date_send + timedelta(days=2)
 
         for sub_activity, expected_schedule_date in [
-            # mail
             (self.activity_sa_mail_not_open, date_subaction),
-            (self.activity_sa_mail_open, False),  # mail open: no date, as user input
+            (self.activity_sa_mail_open, False),
             (self.activity_sa_mail_not_reply, date_subaction),
-            (self.activity_sa_mail_reply, False),  # mail reply: no date, as user input
+            (self.activity_sa_mail_reply, False),
             (self.activity_sa_mail_not_click, date_subaction),
-            (self.activity_sa_mail_click, False),  # mail click: no date, as user input
+            (self.activity_sa_mail_click, False),
             (
                 self.activity_sa_mail_bounce,
                 False,
-            ),  # mail bounce: no date, as user input
-            # sms
+            ),
             (self.activity_sa_sms_not_click, date_subaction),
-            (self.activity_sa_sms_click, False),  # sms click: no date, as user input
-            (self.activity_sa_sms_bounce, False),  # sms bounce: no date, as user input
-            # whatsapp
+            (self.activity_sa_sms_click, False),
+            (self.activity_sa_sms_bounce, False),
             (self.activity_sa_wa_not_read, date_subaction),
-            # (self.activity_sa_wa_read, False),  # wa read: no date, as user input
             (self.activity_sa_wa_not_replied, date_subaction),
-            # (self.activity_sa_wa_replied, False),  # wa reply: no date, as user input
             (self.activity_sa_wa_not_click, date_subaction),
-            (self.activity_sa_wa_click, False),  # wa click: no date, as user input
-            (self.activity_sa_wa_bounced, False),  # wa bounce: no date, as user input
-            # other
+            (self.activity_sa_wa_click, False),
+            (self.activity_sa_wa_bounced, False),
             (self.activity_mail_activity, date_subaction),
             (self.activity_sms_activity, date_subaction),
             (self.activity_wa_activity, date_subaction),
@@ -1073,7 +982,6 @@ class TestActivityTriggers(ActivityTriggersCase):
                 sub_activity,
             )
 
-        # update write_date on some traces by triggering trace update
         new_now = self.date_reference + timedelta(hours=5)
         date_subaction_new = new_now + timedelta(days=2)
         with self.mock_datetime_and_now(new_now):
@@ -1088,7 +996,6 @@ class TestActivityTriggers(ActivityTriggersCase):
             )
 
         for record, sub_activity, exp_status, exp_schedule_date in [
-            # mail
             (self.test_records[0], self.activity_sa_mail_not_open, "canceled", new_now),
             (
                 self.test_records[0],
@@ -1111,10 +1018,8 @@ class TestActivityTriggers(ActivityTriggersCase):
                 strict=False,
             )
 
-        # update sub actions, updated date should be based on trace date
         with self.mock_datetime_and_now(self.date_reference + timedelta(hours=3)):
             (
-                # mail
                 self.activity_sa_mail_not_open
                 + self.activity_sa_mail_open
                 + self.activity_sa_mail_not_reply
@@ -1123,12 +1028,10 @@ class TestActivityTriggers(ActivityTriggersCase):
                 + self.activity_sa_mail_click
                 + self.activity_sa_mail_bounce
                 +
-                # sms
                 self.activity_sa_sms_not_click
                 + self.activity_sa_sms_click
                 + self.activity_sa_sms_bounce
                 +
-                # whatsapp
                 self.activity_sa_wa_not_read
                 + self.activity_sa_wa_read
                 + self.activity_sa_wa_not_replied
@@ -1146,19 +1049,12 @@ class TestActivityTriggers(ActivityTriggersCase):
         date_subaction_upd = new_now + timedelta(days=5)
 
         for record, sub_activity, exp_status, exp_schedule_date in [
-            # opened mail
-            # (self.test_records[0], self.activity_sa_notopen, "canceled", new_now),
             (
                 self.test_records[0],
                 self.activity_sa_mail_open,
                 "scheduled",
                 date_subaction_upd,
             ),
-            # replied mail
-            # (self.test_records[1], self.activity_sa_notopen, "scheduled", date_subaction),
-            # (self.test_records[1], self.activity_sa_open, "scheduled", False),  # mail open: no date, as user input
-            # (self.test_records[1], self.activity_sa_notreply, "canceled", new_now),
-            # (self.test_records[1], self.activity_sa_reply, "scheduled", date_subaction_new),
         ]:
             self.assertMarketAutoTraces(
                 [

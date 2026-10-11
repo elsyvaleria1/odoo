@@ -68,8 +68,6 @@ class TestDocumentSource(BaseCase):
         self.assertTrue(source.provides("images"))
 
     def test_a_two_page_scan_provides_no_text_either(self):
-        # Two empty pages joined by one break spell "--PAGE--", eight
-        # characters: counted as text, they kept OCR off every two-page scan.
         source = Document(_scan_pdf(pages=2), "application/pdf")
 
         self.assertEqual(source.text, "")
@@ -218,12 +216,6 @@ class TestReadingPagesCostsMore(BaseCase):
         self.assertEqual(self.pages_read, [])
 
     def test_the_ceiling_can_be_raised_on_a_document_already_read(self):
-        """Escalation reaches a document that has already answered emptily.
-
-        The cascade runs a free pass before it decides a document is worth
-        paying for, so by the time anything raises the ceiling the text has
-        been asked for and cached. A ceiling that only counted before the
-        first read would be a ceiling nothing could ever raise."""
         self._install(self.Engine())
         source = Document(_scan_pdf(), "application/pdf")
 

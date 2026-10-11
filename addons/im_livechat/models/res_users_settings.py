@@ -23,5 +23,4 @@ class ResUsersSettings(models.Model):
         blacklist = super()._get_fields_blacklist()
         if self.env.user._is_internal():
             return blacklist
-        # only an internal user takes live chats, and only they read expertise
         return [*blacklist, "livechat_expertise_ids"]

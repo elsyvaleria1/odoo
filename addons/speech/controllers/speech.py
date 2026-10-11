@@ -40,7 +40,7 @@ class SpeechController(http.Controller):
         auth="public",
         readonly=True,
     )
-    def subtitles(  # noqa: E8539  content: an attachment's own token or ownership token
+    def subtitles(
         self, attachment_id: int, access_token: str | None = None
     ) -> Response:
         attachment = self._speech_attachment(attachment_id, access_token)
@@ -55,7 +55,7 @@ class SpeechController(http.Controller):
         auth="public",
         readonly=True,
     )
-    def transcript(  # noqa: E8539  content: an attachment's own token or ownership token
+    def transcript(
         self, attachment_id: int, access_token: str | None = None
     ) -> Response:
         attachment = self._speech_attachment(attachment_id, access_token)

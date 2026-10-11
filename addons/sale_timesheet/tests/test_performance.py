@@ -22,8 +22,6 @@ class TestPerformanceTimesheet(TestSaleTimesheet):
             }
         )
         self.assertFalse(project.task_ids.sale_line_id)
-        # the absolute count moves with every module that extends a project or a
-        # task, so what is held is the cost of doubling the tasks
         fifty = self._statements_of(project)
         self.assertTrue(project.task_ids.sale_line_id)
 

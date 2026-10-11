@@ -168,12 +168,6 @@ class TestPurchaseApprovalFlows(TransactionCase):
         )
 
     def test_mixin_flow_stat_button_opens_the_source_order(self):
-        """The button counts the source order, so it must be able to open it.
-
-        A mixin-flow request has no ``target_model``, so the target-only helper
-        resolves to an empty model and hands the client an act_window it cannot
-        execute.
-        """
         po = self.env["purchase.order"].create(
             {
                 "partner_id": self.vendor.id,
@@ -234,9 +228,6 @@ class TestPurchaseApprovalFlows(TransactionCase):
         self.assertIn(created, self.env["purchase.order"].search(action["domain"]))
 
     def test_the_count_follows_an_order_that_links_itself(self):
-        """An order created from a purchase request counts toward it the moment it
-        links itself. The request must produce orders (`target_model`): an order's
-        own approval request is about that order and cannot cover a second one."""
         approval = self.env["approval.request"].create(
             {
                 "name": "Count Source",
@@ -552,7 +543,6 @@ class TestPurchaseApprovalFlows(TransactionCase):
         po.action_confirm()
         approval = po.approval_request_id
         approval.with_user(self.approver_user).action_approve()
-        # what a request raised while the order totalled zero carries
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE approval_request SET amount = 0 WHERE id = %s", [approval.id]
@@ -854,12 +844,6 @@ class TestPurchaseApprovalFlows(TransactionCase):
         self.assertNotIn("more lines", under_cap)
 
     def test_section_and_note_lines_do_not_hide_the_products(self):
-        """The cap must count products, not every line.
-
-        An order with two products and four text lines is under the product cap
-        and must still render both products, with a count that describes
-        products rather than text lines.
-        """
         order = self.env["purchase.order"].create(
             {
                 "partner_id": self.vendor.id,

@@ -10,7 +10,6 @@ class TestDataCampaign(TestMACommon):
     @users("user_marketing_automation")
     @mute_logger("odoo.addons.base.ir.ir_model", "odoo.models")
     def test_get_campaign_from_template(self):
-        # test that campaigns get created when user_marketing_automation
         self.assertTrue(
             bool(
                 self.env[
@@ -33,14 +32,12 @@ class TestDataCampaign(TestMACommon):
             )
         )
 
-        # test that the child activities of a campaign get created
         campaign_action = self.env[
             "marketing.campaign"
         ].get_action_marketing_campaign_from_template("commercial_prospection")
         self.assertTrue(bool(campaign_action["res_id"]))
         campaign = self.env["marketing.campaign"].browse(campaign_action["res_id"])
         self.assertTrue(len(campaign.marketing_activity_ids) == 3)
-        # test that activities have their own children objects (depending on their activity type)
         for activity in campaign.marketing_activity_ids:
             if activity.activity_type == "email":
                 self.assertTrue(bool(activity.mass_mailing_id))

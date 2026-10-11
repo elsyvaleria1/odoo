@@ -87,7 +87,6 @@ class AuditReport(models.Model):
             root_article.apply_template(root_template.id)
             root_article.write({"name": audit_report.title})
 
-            # Invite the responsible users:
             for user in audit_report.responsible_user_ids:
                 root_article.invite_members(user.mapped("partner_id"), "write")
         return audit_reports

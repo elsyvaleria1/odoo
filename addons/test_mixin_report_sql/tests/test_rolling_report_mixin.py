@@ -46,7 +46,6 @@ class RollingCase(TransactionCase):
 
 class TestStorageKind(RollingCase):
     def test_the_report_is_a_table_not_a_materialized_view(self):
-        """The window refresh DELETEs and INSERTs, which REFRESH cannot express."""
         self.assertEqual(self.report._relation_kind, "r")
         self.assertEqual(self.report._relkind(self.table), "r")
 
@@ -72,15 +71,6 @@ class TestStorageKind(RollingCase):
         )
 
     def test_a_report_without_the_registry_is_refused_at_create_time(self):
-        """mixin.sql.report is required and cannot be declared as a parent.
-
-        Consumers write `_inherit = ["mixin.sql.report", "mixin.rolling.report"]`
-        -- naming it a parent here makes that order impossible and the registry
-        refuses the model. So the requirement is checked instead, and checked
-        early: the column list is only reached by a *window* refresh, so a
-        mis-composed report used to install cleanly, tick once against an empty
-        table, and fail on the second tick.
-        """
         with patch.object(type(self.report), "_get_fields_select", None):
             with self.assertRaises(NotImplementedError) as cm:
                 self.report._rolling_columns()
@@ -110,9 +100,6 @@ class TestWindowRefresh(RollingCase):
     def test_periods_before_the_window_are_left_alone(self):
         self._seed(10, value=5.0)
         self.report.refresh(force_rebuild=True)
-        # A late-arriving row outside the window must NOT appear: the window
-        # refresh never revisits settled periods. That is the contract, and
-        # _rolling_mark_stale is how a caller asks for the exception.
         self._seed(10, value=7.0)
         self.assertTrue(self.report.refresh())
         by_date = {row[0]: row[2] for row in self._rows()}
@@ -132,8 +119,6 @@ class TestWindowRefresh(RollingCase):
         self.assertEqual(self.env.cr.fetchone()[0], cutoff)
 
     def test_an_empty_source_is_not_a_reason_to_rebuild(self):
-        """The parent rebuilds an empty relation; a table that is empty because
-        the source is empty is simply correct."""
         self.assertFalse(self.report._relation_rebuild_when_empty)
         self.assertFalse(self.report._is_populated(self.table))
         self.assertFalse(self.report._is_relation_rebuild_needed())
@@ -161,12 +146,6 @@ class TestSelfHealing(RollingCase):
             self.assertEqual(self._rows(), [])
 
     def test_a_failing_window_refresh_leaves_the_cursor_usable(self):
-        """Without the parent's SAVEPOINT the cron's own bookkeeping write dies.
-
-        ir.cron runs _resolve_attempt() and commits on the same cursor in its
-        `finally`, so an aborted transaction loses the record of the failure
-        along with the refresh.
-        """
         self._seed(0, value=1.0)
         self.report.refresh(force_rebuild=True)
         self.env.cr.execute(

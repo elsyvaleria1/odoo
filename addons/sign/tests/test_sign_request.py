@@ -198,13 +198,11 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             )
 
     def test_sign_request_no_item_create_sign_cancel_copy(self):
-        # create
         sign_request_no_item = self.create_sign_request_no_item(
             signer=self.partner_1, cc_partners=self.partner_4
         )
         sign_request_item = sign_request_no_item.request_item_ids[0]
 
-        # sign
         with self.assertRaises(
             UserError, msg="A sign.request.item can only sign its sign.items"
         ):
@@ -248,13 +246,11 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         with self.assertRaises(UserError, msg="A document cannot be signed twice"):
             sign_request_item.sign(self.signature_fake)
 
-        # unlink
         with self.assertRaises(
             UserError, msg="A signed sign request cannot be unlinked"
         ):
             sign_request_no_item.unlink()
 
-        # cancel
         sign_request_item_token = sign_request_item.access_token
         sign_request_no_item_token = sign_request_no_item.access_token
         sign_request_no_item.cancel()
@@ -288,7 +284,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             'A log with action="cancel" should be created',
         )
 
-        # copy
         new_sign_request_no_item = sign_request_no_item.copy()
         self.assertTrue(
             new_sign_request_no_item.exists(),
@@ -335,7 +330,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_sign_request_3_roles_create_sign_cancel(self):
-        # create
         sign_request_3_roles = self.create_sign_request_3_roles(
             signer_1=self.partner_1,
             signer_2=self.partner_2,
@@ -350,7 +344,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         sign_request_item_signer_2 = role2sign_request_item[self.role_signer_2]
         sign_request_item_signer_3 = role2sign_request_item[self.role_signer_3]
 
-        # sign
         with self.assertRaises(
             UserError, msg="A sign.request.item can only sign its sign.items"
         ):
@@ -419,7 +412,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         with self.assertRaises(UserError, msg="A document cannot be signed twice"):
             sign_request_item_signer_1.sign(self.signer_1_sign_values)
 
-        # cancel
         sign_request_item_signer_1_token = sign_request_item_signer_1.access_token
         sign_request_item_signer_2_token = sign_request_item_signer_2.access_token
         sign_request_item_signer_3_token = sign_request_item_signer_3.access_token
@@ -496,7 +488,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_sign_request_3_roles_create_sign_refuse_cancel(self):
-        # create
         sign_request_3_roles = self.create_sign_request_3_roles(
             signer_1=self.partner_1,
             signer_2=self.partner_2,
@@ -511,10 +502,8 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         sign_request_item_signer_2 = role2sign_request_item[self.role_signer_2]
         sign_request_item_signer_3 = role2sign_request_item[self.role_signer_3]
 
-        # sign (test has been done in test_sign_request_3_roles_create_sign_cancel)
         sign_request_item_signer_1.sign(self.signer_1_sign_values)
 
-        # refuse
         with self.assertRaises(
             UserError, msg="A signed sign.request.item cannot be refused"
         ):
@@ -606,7 +595,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         ):
             sign_request_item_signer_3.sign(self.signer_3_sign_values)
 
-        # cancel
         sign_request_3_roles.cancel()
         self.assertEqual(
             sign_request_item_signer_1.state,
@@ -648,7 +636,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             sign_request_3_roles_token,
             "The access token should be changed",
         )
-        # now the cancel method is also called from refuse method so the log count is become 2
         self.assertEqual(
             len(
                 sign_request_3_roles.sign_log_ids.filtered(
@@ -660,15 +647,12 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_sign_request_refuse_shared(self):
-        """Ensure that shared sign requests can be refused by public users."""
-        # Get the shared request from a template with one role.
         wizard_id = self.template_1_role.open_shared_sign_request()["res_id"]
         wizard = self.env["wizard.sign.template.share"].browse(wizard_id)
         shared_request = wizard.sign_request_id
         sign_request_item = shared_request.request_item_ids[0]
 
         with self.assertRaises(UserError):
-            # Ensure an user error is raised by not specifying the refusal email.
             sign_request_item.with_user(self.public_user).sudo()._refuse(
                 request_state="shared", refusal_reason="Reason", refusal_name="Marc"
             )
@@ -705,7 +689,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_sign_request_item_auto_resend(self):
-        # create
         sign_request = self.create_sign_request_no_item(
             signer=self.partner_1, cc_partners=self.partner_4
         )
@@ -719,7 +702,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
         self.assertEqual(request_item.is_mail_sent, True, "email should be sent")
 
-        # resend the document
         request_item.send_signature_accesses()
         self.assertEqual(
             request_item.access_token,
@@ -727,13 +709,11 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "sign request item's access token should not be changed",
         )
 
-        # change the email address of the signer (laurie.poiret.b)
         with self.assertRaises(
             ValidationError, msg="All signers must have valid email addresses"
         ):
             self.partner_1.write({"email": "laurie.poiret.b"})
 
-        # change the email address to upper case (LAURIE.POIRET.A@example.com)
         self.partner_1.write({"email": "LAURIE.POIRET.A@example.com"})
         self.assertEqual(
             request_item.signer_email,
@@ -750,7 +730,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             'No log with action="update_mail" should be created after changing the email to upper case',
         )
 
-        # change the email address of the signer (laurie.poiret.b@example.com)
         self.partner_1.write({"email": "laurie.poiret.b@example.com"})
         token_b = request_item.access_token
         self.assertEqual(
@@ -784,7 +763,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "The number of activities should still be 1",
         )
 
-        # sign the document
         request_item.sign(self.signature_fake)
         self.assertEqual(
             request_item.signer_email,
@@ -792,7 +770,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "email address should be laurie.poiret.b@example.com",
         )
 
-        # change the email address of the signer (laurie.poiret.c@example.com)
         self.partner_1.write({"email": "laurie.poiret.c@example.com"})
         token_c = request_item.access_token
         self.assertEqual(
@@ -819,7 +796,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_sign_request_item_reassign_sign_reassign_refuse_reassign(self):
-        # create
         sign_request_3_roles = self.create_sign_request_3_roles(
             signer_1=self.partner_1,
             signer_2=self.partner_2,
@@ -834,7 +810,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         sign_request_item_signer_2 = role2sign_request_item[self.role_signer_2]
         sign_request_item_signer_3 = role2sign_request_item[self.role_signer_3]
 
-        # reassign
         self.assertEqual(
             sign_request_item_signer_1.signer_email,
             "laurie.poiret.a@example.com",
@@ -899,10 +874,8 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "No activity should be created for user without permission to access Sign",
         )
 
-        # sign
         sign_request_item_signer_1.sign(self.signer_1_sign_values)
 
-        # reassign
         token_signer_2 = sign_request_item_signer_1.access_token
         with self.assertRaises(
             UserError, msg="A signed sign request item cannot be reassigned"
@@ -955,12 +928,10 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "An activity for the new signer should be created",
         )
 
-        # refuse
         sign_request_item_signer_2._refuse(
             request_state="sent", refusal_reason="bad request"
         )
 
-        # reassign
         with self.assertRaises(
             UserError, msg="A refused sign request item cannot be reassigned"
         ):
@@ -1050,7 +1021,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "No email should be sent for the third signer",
         )
 
-        # sign
         sign_request_item_signer_1.sign(self.signer_1_sign_values)
         self.assertEqual(
             len(
@@ -1081,7 +1051,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             "An email should be sent for the third signer",
         )
 
-        # sign and sign
         sign_request_item_signer_2.sign(self.signer_2_sign_values)
         sign_request_item_signer_3.sign(self.signer_3_sign_values)
         self.assertEqual(
@@ -1136,8 +1105,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
     def test_archived_requests_dont_send_reminders(self):
-        """Create a request with a validity period and archive it, jump to the future
-        where it's not valid anymore, trigger cron reminder and ensure no reminder was created."""
 
         with self.mock_datetime_and_now("2024-05-01"):
             validity_date = fields.Date.from_string("2024-05-05")
@@ -1146,10 +1113,8 @@ class TestSignRequest(SignRequestCommon, MockEmail):
                 cc_partners=self.partner_4,
                 validity=validity_date,
             )
-            # This action should set the state to canceled.
             archived_request.action_archive()
 
-            # Jump to the future and run the cron
             with self.mock_datetime_and_now("2024-05-06"):
                 self.env["sign.request"]._cron_reminder()
                 self.assertTrue(archived_request.state == "canceled")
@@ -1172,7 +1137,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             }
         )
 
-        # No default template is set for activity type
         action = (
             self.env["sign.template"]
             .with_context(default_activity_id=activity.id)
@@ -1183,10 +1147,8 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
         self.assertFalse(wizard.template_id)
 
-        # Default template is set for activity type
         activity_type.write({"default_sign_template_id": self.template_1_role.id})
 
-        # Login user is not set as responsible(Template is not accessible)
         env = self.env(user=self.user_1)
         action = (
             env["sign.template"]
@@ -1198,7 +1160,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
         self.assertFalse(wizard.template_id)
 
-        # Login user is set as responsible(Template is accessible)
         self.template_1_role.write({"user_id": self.user_1.id})
         action = (
             self.env["sign.template"]
@@ -1212,10 +1173,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
 
     @users("admin")
     def test_sign_request_notification(self):
-        """
-        Test the sign request notification by creating a user with notification settings
-        and checking if the notification type is set to 'inbox' in the created sign request.
-        """
         self.env.user.write(
             {
                 "name": "Mitchell Admin",
@@ -1225,7 +1182,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         )
 
         with self.mock_mail_gateway():
-            # Create a sign request
             sign_request = self.env["sign.request"].create(
                 {
                     "template_id": self.template_1_role.id,
@@ -1244,20 +1200,17 @@ class TestSignRequest(SignRequestCommon, MockEmail):
                 }
             )
 
-            # Map the sign request items by role
             sign_request_items_by_role = {
                 item.role_id: item for item in sign_request.request_item_ids
             }
             sign_request_item_signer_1 = sign_request_items_by_role[self.role_signer_1]
 
-            # Ensure the sign request is created with the correct state
             self.assertEqual(
                 sign_request.state,
                 "sent",
                 'The sign request should be in "sent" state initially',
             )
 
-            # Verify that an email was sent to the signer
             mail = self.env["mail.mail"].search(
                 [
                     (
@@ -1279,7 +1232,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
                 "An email should be marked as sent for the signer_1",
             )
 
-            # Simulate signing the document
             sign_request_item_signer_1.sudo().sign(self.single_signer_sign_values)
             self.assertEqual(
                 sign_request.state, "signed", "The sign request should be signed"
@@ -1321,31 +1273,24 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             )
 
     def test_check_state_for_download(self):
-        """Test downloading a completed document for signed requests and validation for unsigned requests."""
 
-        # Create sign request with 3 roles (signer_1, signer_2, signer_3, cc partners)
         sign_request_3_roles = self.create_sign_request_3_roles(
             signer_1=self.partner_1,
             signer_2=self.partner_2,
             signer_3=self.partner_3,
             cc_partners=self.partner_4,
         )
-        # Map role to corresponding sign request item using a dictionary comprehension
         role2sign_request_item = {
             sign_request_item.role_id: sign_request_item
             for sign_request_item in sign_request_3_roles.request_item_ids
         }
-        # Retrieve individual sign request items for signer 1, 2, and 3
         sign_request_item_signer_1 = role2sign_request_item[self.role_signer_1]
         sign_request_item_signer_2 = role2sign_request_item[self.role_signer_2]
         sign_request_item_signer_3 = role2sign_request_item[self.role_signer_3]
-        # Get template and sign item IDs
         template = sign_request_3_roles.template_id
         sign_item_ids = template.sign_item_ids.ids
-        # Sign the customer sign request item
         sign_request_item_signer_1.sign(self.signer_1_sign_values)
 
-        # Assertions after signing the signer_1 sign request item
         self.assertEqual(
             sign_request_item_signer_1.state,
             "completed",
@@ -1371,14 +1316,12 @@ class TestSignRequest(SignRequestCommon, MockEmail):
             1,
             'A log with action="sign" should be created',
         )
-        # Sign the employee sign request item
         sign_request_item_signer_2.sign(
             self.create_sign_values(
                 sign_request_3_roles.template_id.sign_item_ids,
                 sign_request_item_signer_2.role_id.id,
             )
         )
-        # Assertions after signing the employee sign request item
         self.assertEqual(
             sign_request_item_signer_1.state,
             "completed",
@@ -1409,7 +1352,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
         self.assertEqual(sign_request.state, "sent")
 
     def test_expired_shared_sign_requests_are_cleaned_up(self):
-        """Tests that the expired sign requests are cleaned when the autovacuum job is called"""
 
         with freeze_time("2025-05-16"):
             shared_request = self.env["sign.request"].create(
@@ -1438,7 +1380,6 @@ class TestSignRequest(SignRequestCommon, MockEmail):
                     )
 
     def test_sign_request_item_value_cannot_be_changed_after_create(self):
-        """Tests that a constant sign item can be created but its value cannot be not modified"""
         constant_sign_request = self.create_sign_request_with_constant_field(
             customer=self.partner_1, cc_partners=self.partner_4
         )

@@ -14,8 +14,6 @@ class TestInboundTokenAction(DeviceTransactionCase):
         )
 
     def _generate(self, device):
-        # the password prompt needs an HTTP request: the action it guards is
-        # what is tested here
         action = type(device).action_generate_inbound_token.__wrapped__
         return action(device.with_user(self.manager))
 

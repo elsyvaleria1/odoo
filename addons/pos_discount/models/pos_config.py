@@ -28,7 +28,6 @@ class PosConfig(models.Model):
             .search([("state", "!=", "closed")])
             .mapped("config_id")
         )
-        # Do not modify configs where an opened session exists.
         product = self.env.ref(
             "pos_discount.product_product_consumable", raise_if_not_found=False
         )

@@ -62,7 +62,7 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         with freeze_time("2024-06-20"):
             cls.env.cr._now = (
                 datetime.datetime.now()
-            )  # used to force create_date, as sql is not wrapped by freeze gun
+            )
             date = datetime.datetime.strptime("2024-06-20", "%Y-%m-%d").date()
             message = cls.env["mail.message"].create(
                 {
@@ -98,8 +98,6 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         report_data = self.report.export_to_xlsx(options)
         export_content = self.read_xlsx_data(report_data["file_content"])
 
-        # When there is no comparison, there are two columns for the accounts (number, name), one column for the data and
-        # finally one column for the annotations. Hence the index 3 for the annotation column.
         self.assertEqual(export_content[0][3], "Annotations")
         self.assertEqual(export_content[7][3], "1 - Papa a vu le fifi de lolo")
 
@@ -132,9 +130,6 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         report_data = self.report.export_to_xlsx(options)
         export_content = self.read_xlsx_data(report_data["file_content"])
 
-        # When comparing with the same period last year, there are two columns for the accounts (number, name), two columns for the
-        # date (one per period), one column for the growth comparison percentage and finally one column for the annotations.
-        # Hence the index 5 for the annotation column.
         self.assertEqual(export_content[0][5], "Annotations")
         self.assertEqual(export_content[7][5], "1 - Papa a vu le fifi de lolo")
 
@@ -174,8 +169,6 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         report_data = self.report.export_to_xlsx(options)
         export_content = self.read_xlsx_data(report_data["file_content"])
 
-        # When comparing with the two last periods, there are two columns for the accounts (number, name), three columns for the
-        # data (one per period) and finally one column for the annotations. Hence the index 5 for the annotation column.
         self.assertEqual(export_content[0][5], "Annotations")
         self.assertEqual(export_content[7][5], "1 - Papa a vu le fifi de lolo")
 
@@ -189,7 +182,7 @@ class TestAccountReportAnnotationsExport(TestAccountReportsCommon):
         with freeze_time("2024-06-21"):
             self.env.cr._now = (
                 datetime.datetime.now()
-            )  # used to force create_date, as sql is not wrapped by freeze gun
+            )
             date = datetime.datetime.strptime("2024-06-21", "%Y-%m-%d").date()
             message = self.env["mail.message"].create(
                 {

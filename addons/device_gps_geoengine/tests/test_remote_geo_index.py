@@ -26,7 +26,6 @@ class TestRemoteGeoIndex(TransactionCase):
         return remote_exec
 
     def test_a_foreign_log_gets_its_spatial_index_built_concurrently_remotely(self):
-        # an invalid index left by a failed concurrent build goes first
         remote_exec = self._create()
         self.assertEqual(
             remote_exec.call_args_list,

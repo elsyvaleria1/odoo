@@ -80,12 +80,6 @@ class TestSocialMultiCompany(common.SocialCase):
     @users("social_manager")
     @mock_void_external_calls()
     def test_allowed_company_ids(self):
-        """If no company is set on the post, we should see the social accounts based on
-        the ACLs (so the social manager should be able to see all social accounts).
-
-        If a company is set, we should be able to see only account in this company or
-        without a company.
-        """
         post_1 = self.env["social.post"].create(
             {
                 "message": "test",
@@ -114,13 +108,11 @@ class TestSocialMultiCompany(common.SocialCase):
     @users("social_user")
     @mock_void_external_calls()
     def test_social_account_acls(self):
-        """Test the company based ACLs of the <social.account>."""
         self.assertEqual(self.account_1.company_id, self.company_1)
         self.assertEqual(self.account_2.company_id, self.company_2)
 
         result = self.env["social.account"].search([])
 
-        # The social user is in the company 1 but not in the company 2
         own_accounts = self.account_1 | self.account_2 | self.account_3
         self.assertEqual(self.account_1 | self.account_3, result & own_accounts)
 
@@ -140,8 +132,6 @@ class TestSocialMultiCompany(common.SocialCase):
     @users("social_manager")
     @mock_void_external_calls()
     def test_social_post_acls(self):
-        # Create a social post with a message on 2 different accounts
-        # In 2 different companies
         post = self.env["social.post"].create(
             {
                 "message": "Test message",
@@ -175,8 +165,6 @@ class TestSocialMultiCompany(common.SocialCase):
     @users("social_manager")
     @mock_void_external_calls()
     def test_social_post_click_count(self):
-        # An UTM medium is created for each social account
-        # That's how we can compute the click based on the current company
         self.assertTrue(self.account_1.utm_medium_id)
         self.assertTrue(self.account_2.utm_medium_id)
         self.assertNotEqual(self.account_1.utm_medium_id, self.account_2.utm_medium_id)
@@ -226,11 +214,9 @@ class TestSocialMultiCompany(common.SocialCase):
         self.assertEqual(len(link_tracker_1), 1)
         self.assertEqual(len(link_tracker_2), 1)
 
-        # 13 clicks on the first account, in the first company
         self.env["link.tracker.click"].sudo().create(
             [{"link_id": link_tracker_1.id} for _ in range(13)]
         )
-        # 7 clicks on the first account, in the first company
         self.env["link.tracker.click"].sudo().create(
             [{"link_id": link_tracker_2.id} for _ in range(7)]
         )

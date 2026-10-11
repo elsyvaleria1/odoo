@@ -116,8 +116,6 @@ def _get_rows(db: str, query: str) -> set[str]:
 
 
 def _prepare_user_files() -> dict[str, str]:
-    # the second view resolves the action from the first one's idref,
-    # which is the resolution a skip must know about too
     return {
         "menu.xml": MENU.format(owner=OWNER),
         "view.xml": VIEW.format(owner=OWNER, view="view_one"),
@@ -173,7 +171,6 @@ def probe(tmp_path_factory):
         _write(extra, USER, [OWNER], _prepare_user_files())
         _write(extra, OVERRIDER, [USER], {"override.xml": OVERRIDE.format(user=USER)})
         run("-i", ",".join(["base", OWNER, USER, *more]))
-        # the first update stamps the data-file checksums the skips compare against
         run("-u", OWNER)
 
     run.db = db

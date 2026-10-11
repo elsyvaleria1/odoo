@@ -53,7 +53,6 @@ class MailTestPortalPublicAccessAction(models.Model):
             record.access_url = f"/test_portal/public_type/{record.id}"
 
     def _get_access_action(self, access_uid=None, force_website=False):
-        # Test 'public' target type for portal / public people
         if self.env.user.share or force_website:
             return {
                 "type": "ir.actions.act_url",
@@ -121,9 +120,6 @@ class MailTestRating(models.Model):
 
     @api.depends("name", "subject")
     def _compute_display_name(self):
-        # a display_name built from more than _rec_name, the shape product.template
-        # has (@api.depends("name", "default_code")) and the one the mixins
-        # denormalising it have to follow
         for record in self:
             record.display_name = (
                 " - ".join(part for part in (record.name, record.subject) if part)

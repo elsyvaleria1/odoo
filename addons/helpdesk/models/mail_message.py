@@ -7,21 +7,7 @@ class MailMessage(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         messages = super().create(vals_list)
-        # We measure the time between the customer's message
-        # or ticket's create date, and the helpdesk response of subtype comment (not note).
-        # If several messages are sent before any response,
-        # in both directions, we take the first one.
 
-        # EVENT  | CUSTOMER  | HELPDESK  | MEASURED
-        # create |     x     |           |     ↑
-        # msg    |     x     |           |     |
-        # note   |           |     x     |     |
-        # msg    |           |     x     |     ↓
-        # msg    |           |     x     |
-        # note   |     x     |           |
-        # msg    |     x     |           |     ↑
-        # msg    |           |     x     |     ↓
-        # ...
         if not any(values.get("model") == "helpdesk.ticket" for values in vals_list):
             return messages
 
@@ -56,11 +42,9 @@ class MailMessage(models.Model):
             is_helpdesk_msg = any(not user.share for user in message.author_id.user_ids)
 
             if not oldest_unanswered_customer_message_date and not is_helpdesk_msg:
-                # customer initiated an exchange
                 ticket.oldest_unanswered_customer_message_date = message.date
 
             elif oldest_unanswered_customer_message_date and is_helpdesk_msg:
-                # internal user responded to the customer
                 ticket.oldest_unanswered_customer_message_date = False
                 calendar = (
                     ticket.team_id.resource_calendar_id
@@ -83,7 +67,6 @@ class MailMessage(models.Model):
                     ticket.total_response_hours / ticket.answered_customer_message_count
                 )
             else:
-                # a new message is received, `write_date` should be updated
                 ticket.write({})
 
         return messages

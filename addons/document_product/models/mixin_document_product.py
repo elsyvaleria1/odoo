@@ -9,8 +9,6 @@ class MixinDocumentsProduct(models.AbstractModel):
     _inherit = "mixin.documents"
     _description = "Product documents creation mixin"
 
-    # The domain resolves per concrete model, so one declaration serves both
-    # product.template and product.product.
     product_document_ids = fields.One2many(
         comodel_name="document.document",
         inverse_name="res_id",
@@ -39,10 +37,6 @@ class MixinDocumentsProduct(models.AbstractModel):
         return company.document_product_config_id.product_tag_ids
 
     def _get_document_folder(self):
-        # `documents_product_settings` chooses a dedicated folder; it does not
-        # decide whether the document exists. A company that never enabled it
-        # files product documents in the seeded folder instead, so turning the
-        # setting off cannot make product documents stop being created.
         company = self.company_id or self.env.company
         if _debug.logic.enabled:
             _debug.logic(

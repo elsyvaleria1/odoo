@@ -17,7 +17,6 @@ class TestFollowupReport(TestAccountReportsCommon):
         with freeze_time("2025-10-08"):
             cls.today = fields.Date.today()
         invoices_data = [
-            # Partner A invoices
             {"partner": cls.partner_a, "amount": 100.0, "due_date": "2025-01-01"},
             {"partner": cls.partner_a, "amount": 100.0, "due_date": cls.today},
             {
@@ -26,7 +25,6 @@ class TestFollowupReport(TestAccountReportsCommon):
                 "due_date": "2025-01-01",
                 "move_type": "out_refund",
             },
-            # Partner B invoices
             {"partner": cls.partner_b, "amount": 100.0, "due_date": "2025-01-01"},
             {"partner": cls.partner_b, "amount": 100.0, "due_date": cls.today},
             {
@@ -81,7 +79,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
     @freeze_time("2025-10-08")
     def test_followup_report_unfold(self):
-        """Test unfolding a line when rendering the whole report, with overdue and due sections."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2025-01-01"),
@@ -89,7 +86,6 @@ class TestFollowupReport(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                  Amount          Balance
             [0, 3, 5],
             [
                 ("partner_a", 100.0, 100.0),
@@ -104,7 +100,6 @@ class TestFollowupReport(TestAccountReportsCommon):
         ]
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Due Date        Amount        Balance
             [0, 2, 3, 5],
             [
                 ("partner_a", "", 100.0, 100.0),
@@ -122,7 +117,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
     @freeze_time("2025-10-08")
     def test_followup_report_load_more(self):
-        """Test loading more lines when reaching the load_more_limit."""
         self.report.load_more_limit = 2
 
         invoices_data = [
@@ -152,7 +146,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report_lines,
-            #   Name                                    Due Date        Amount       Balance
             [0, 2, 3, 5],
             [
                 ("partner_a", "", 300.0, 300.0),
@@ -183,7 +176,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_1,
-            #   Name                                    Due Date        Amount          Balance
             [0, 2, 3, 5],
             [
                 ("RINV/2025/00001", "01/01/2025", -100.0, 100.0),
@@ -211,7 +203,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_2,
-            #   Name                                    Due Date        Amount          Balance
             [0, 2, 3, 5],
             [
                 ("INV/2025/00006", self.formatted_today, 100.0, 300.0),
@@ -221,8 +212,6 @@ class TestFollowupReport(TestAccountReportsCommon):
 
     @freeze_time("2025-12-01")
     def test_followup_report_single_foreign_currency(self):
-        """Test that the total amount in currency is displayed only when all the
-        invoices of a partner share the same foreign currency."""
         partner_c = self.env["res.partner"].create(
             {
                 "name": "partner_c",
@@ -247,7 +236,6 @@ class TestFollowupReport(TestAccountReportsCommon):
             ],
         }
 
-        # Two unpaid invoices in foreign currency.
         self.env["account.move"].create(
             {**invoice_vals, "currency_id": self.other_currency.id}
         ).action_post()
@@ -255,10 +243,8 @@ class TestFollowupReport(TestAccountReportsCommon):
             {**invoice_vals, "currency_id": self.other_currency.id}
         ).action_post()
 
-        # The amount currency total should be displayed.
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                              Amount        Amount Currency
             [0, 3, 4],
             [
                 ("partner_a", 100.0, ""),
@@ -270,15 +256,12 @@ class TestFollowupReport(TestAccountReportsCommon):
             currency_map={4: {"currency": self.other_currency}},
         )
 
-        # Third unpaid invoice using the company currency.
         self.env["account.move"].create(
             {**invoice_vals, "invoice_date": "2025-12-31"}
         ).action_post()
 
-        # The amount currency total should no longer be displayed.
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                               Amount      Amount Currency
             [0, 3, 4],
             [
                 ("partner_a", 100.0, ""),

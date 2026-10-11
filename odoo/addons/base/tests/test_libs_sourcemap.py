@@ -4,8 +4,6 @@ from odoo.tests.common import BaseCase
 
 
 def _mappings(lines):
-    """Encode absolute segments `(column, source, line, column[, name])` per
-    generated line the way a v3 map stores them: as running deltas."""
     previous = [0, 0, 0, 0]
     out = []
     for segments in lines:

@@ -6,7 +6,6 @@ from odoo.addons.integration_twilio.tools.twilio_signature import (
     url_variants,
 )
 
-# twilio-python's own request-validator vector
 TOKEN = "12345"
 URL = "https://mycompany.com/myapp.php?foo=1&bar=2"
 PARAMS = {

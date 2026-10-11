@@ -12,7 +12,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
 
     @api.depends("payment_date", "partner_id", "company_id", "line_ids.partner_id")
     def _compute_no_sdd_mandate_partner_ids(self) -> None:
-        """returns the partners that don't have a valid SDD mandate for this payment."""
         for wizard in self:
             partners_with_valid_mandates = wizard._get_partner_ids_with_valid_mandates()
             wizard.no_sdd_mandate_partner_ids = wizard.line_ids.partner_id - self.env[
@@ -20,11 +19,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
             ].browse(partners_with_valid_mandates)
 
     def _get_partner_ids_with_valid_mandates(self) -> set:
-        """
-        Helper to search all partners that have at least one valid mandates
-        :return: set of partner_ids
-        :rtype: set
-        """
         self.check_singleton()
         moves_to_pay = self.line_ids.move_id
         valid_mandate_ids_per_partner_id = self.env["sdd.mandate"]._read_group(
@@ -42,8 +36,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
         return {partner.id for (partner,) in valid_mandate_ids_per_partner_id}
 
     def action_create_payments(self):
-        """Exclude the payments using SEPA direct debit from being generated if there is no valid mandate for their customer"""
-        # EXTENDS account
         sdd_codes = set(
             self.env["account.payment.method"]._get_sdd_payment_method_code()
         )
@@ -60,7 +52,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
                                 ).ids
                             )
                         ],
-                        # Avoid re-computation of these fields that depend on line_ids or sub compute triggered by line_ids
                         "payment_channel_id": wizard.payment_channel_id.id,
                         "group_payment": wizard.group_payment,
                     }

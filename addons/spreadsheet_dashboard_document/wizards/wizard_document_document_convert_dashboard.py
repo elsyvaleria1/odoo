@@ -51,7 +51,6 @@ class WizardDocumentDocumentConvertDashboard(models.TransientModel):
                 "spreadsheet_data": self.document_id._get_spreadsheet_serialized_snapshot(),
             }
         )
-        # transfer the comments to the dashboard
         threads = (
             self.env["spreadsheet.cell.thread"]
             .sudo()
@@ -67,7 +66,6 @@ class WizardDocumentDocumentConvertDashboard(models.TransientModel):
         )
         self.document_id._remove_comments_from_data()
 
-        # move the document to the archive
         self.document_id.action_archive()
         return {
             "type": "ir.actions.client",

@@ -9,16 +9,6 @@ from odoo.addons.payment.controllers import portal as payment_portal
 class PaymentPortal(payment_portal.PaymentPortal):
     @route("/invoice/transaction/<int:invoice_id>", type="jsonrpc", auth="public")
     def invoice_transaction(self, invoice_id, access_token, **kwargs):
-        """Create a draft transaction and return its processing values.
-
-        :param int invoice_id: The invoice to pay, as an `account.move` id
-        :param str access_token: The access token used to authenticate the request
-        :param dict kwargs: Locally unused data passed to `_create_transaction`
-        :return: The mandatory values for the processing of the transaction
-        :rtype: dict
-        :raise ValidationError: If the invoice id or the access token is invalid.
-        """
-        # Check the invoice id and the access token
         try:
             invoice_sudo = request.env["access.link"]._open_record(
                 "account.move", invoice_id, access_token
@@ -43,15 +33,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
 
     @route("/invoice/transaction/overdue", type="jsonrpc", auth="public")
     def overdue_invoices_transaction(self, payment_reference, **kwargs):
-        """Create a draft transaction for overdue invoices and return its processing values.
-
-        :param str payment_reference: The reference to the current payment
-        :param dict kwargs: Locally unused data passed to `_create_transaction`
-        :return: The mandatory values for the processing of the transaction
-        :rtype: dict
-        :raise ValidationError: If the user is not logged in, or if the overdue invoices don't all
-                               share the same currency.
-        """
         logged_in = not request.env.user._is_public()
         if not logged_in:
             raise ValidationError(
@@ -86,7 +67,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 "partner_id": partner_id,
                 "reference_prefix": payment_reference,
             }
-        )  # Inject the create values taken from the invoice into the kwargs.
+        )
         tx_sudo = self._create_transaction(
             custom_create_values={
                 "invoice_ids": [Command.set(invoice_ids)],
@@ -96,22 +77,11 @@ class PaymentPortal(payment_portal.PaymentPortal):
 
         return tx_sudo._prepare_processing_values()
 
-    # Payment overrides
 
     @route()
     def payment_pay(
         self, *args, amount=None, invoice_id=None, access_token=None, **kwargs
     ):
-        """Override of `payment` to replace the missing transaction values by that of the invoice.
-
-        :param str amount: The (possibly partial) amount to pay used to check the access token.
-        :param str invoice_id: The invoice for which a payment is made, as an `account.move` id.
-        :param str access_token: The access token used to authenticate the partner.
-        :return: The result of the parent method.
-        :rtype: str
-        :raise ValidationError: If the invoice id is invalid.
-        """
-        # Cast numeric parameters as int or float and void them if their str value is malformed.
         amount = self._cast_as_float(amount)
         invoice_id = self._cast_as_int(invoice_id)
         if invoice_id:
@@ -123,8 +93,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
                     request.env._("The provided parameters are invalid.")
                 )
 
-            # Check the access token against the invoice values. Done after fetching the invoice
-            # as we need the invoice fields to check the access token.
             if not payment_utils.is_access_token_valid(
                 access_token,
                 invoice_sudo.partner_id.id,
@@ -137,11 +105,8 @@ class PaymentPortal(payment_portal.PaymentPortal):
 
             kwargs.update(
                 {
-                    # To display on the payment form; will be later overwritten when creating the tx.
                     "reference": invoice_sudo.name,
-                    # To fix the currency if incorrect and avoid mismatches when creating the tx.
                     "currency_id": invoice_sudo.currency_id.id,
-                    # To fix the partner if incorrect and avoid mismatches when creating the tx.
                     "partner_id": invoice_sudo.partner_id.id,
                     "company_id": invoice_sudo.company_id.id,
                     "invoice_id": invoice_id,
@@ -154,27 +119,19 @@ class PaymentPortal(payment_portal.PaymentPortal):
     def _prepare_extra_payment_form_context(
         self, invoice_id=None, access_token=None, **kwargs
     ):
-        """Override of `payment` to reroute the payment flow to the portal view of the invoice.
-
-        :param str invoice_id: The invoice for which a payment is made, as an `account.move` id.
-        :param str access_token: The portal or payment access token, respectively if we are in a
-                                 portal or payment link flow.
-        :return: The extended rendering context values.
-        :rtype: dict
-        """
         form_values = super()._prepare_extra_payment_form_context(
             invoice_id=invoice_id, access_token=access_token, **kwargs
         )
         if invoice_id:
             invoice_id = self._cast_as_int(invoice_id)
 
-            try:  # Check document access against what could be a portal access token.
+            try:
                 invoice_sudo = request.env["access.link"]._open_record(
                     "account.move", invoice_id, access_token
                 )
             except (
                 AccessError
-            ):  # It is a payment access token computed on the payment context.
+            ):
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),
@@ -190,11 +147,9 @@ class PaymentPortal(payment_portal.PaymentPortal):
                         request.env._("The provided parameters are invalid.")
                     ) from None
 
-            # Interrupt the payment flow if the invoice has been canceled.
             if invoice_sudo.state == "cancel":
                 form_values["amount"] = 0.0
 
-            # Reroute the next steps of the payment flow to the portal view of the invoice.
             token = invoice_sudo._portal_get_or_create_token()
             form_values.update(
                 {

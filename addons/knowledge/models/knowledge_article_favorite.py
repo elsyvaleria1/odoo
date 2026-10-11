@@ -39,16 +39,6 @@ class KnowledgeArticleFavorite(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """At creation, we need to set the max sequence, if not given, for each favorite to create, in order to keep
-        a correct ordering as much as possible. Some sequence could be given in create values, that could lead to
-        duplicated sequence per user_id. That is not an issue as they will be resequenced the next time the user reorder
-        their favorites."""
-        # The sequence orders ONE user's sidebar, so it has to come from the
-        # list it will live in -- `vals["user_id"]` -- and not from whoever
-        # happens to be creating the row. Taking it from `env.uid` put a
-        # favourite created for someone else at a position derived from a
-        # stranger's list: with a short list acting on a long one, the new
-        # entry landed in the middle of the recipient's sidebar.
         next_sequence_by_user = {}
         for vals in vals_list:
             if vals.get("sequence"):
@@ -66,7 +56,6 @@ class KnowledgeArticleFavorite(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Whatever rights, avoid any attempt at privilege escalation."""
         if ("article_id" in vals or "user_id" in vals) and not self.env.is_admin():
             raise exceptions.AccessError(
                 self.env._("Can not update the article or user of a favorite.")
@@ -74,20 +63,12 @@ class KnowledgeArticleFavorite(models.Model):
         return super().write(vals)
 
     def resequence_favorites(self, article_ids) -> None:
-        # Some article may not be accessible by the user anymore. Therefore,
-        # to prevent an access error, one will only resequence the favorites
-        # related to the articles accessible by the user -- the search below
-        # still runs as the user, so a favourite they can no longer read
-        # simply does not come back.
         favorite_by_article = {
             favorite.article_id.id: favorite
             for favorite in self.search(
                 [("article_id", "in", article_ids), ("user_id", "=", self.env.uid)]
             )
         }
-        # Keep the same order as in article_ids. `enumerate` is exact here:
-        # the previous loop advanced its counter on every article whether or
-        # not a favourite was found, so the numbers are the ones it produced.
         for sequence, article_id in enumerate(article_ids):
             favorite = favorite_by_article.get(article_id)
             if favorite:

@@ -31,7 +31,7 @@ class TestSubscriptionPaymentFlows(
             {
                 "group_ids": [(6, 0, [cls.env.ref("base.group_portal").id])],
                 "login": "user_a_pouet",
-                "password": "user_a_pouet",  # may the min password length burn in hell
+                "password": "user_a_pouet",
                 "name": "User A",
             }
         )
@@ -43,7 +43,6 @@ class TestSubscriptionPaymentFlows(
                 "name": "User B",
             }
         )
-        # Portal access rule currently relies on customer of the order -> put in same company
         cls.user_with_so_access.partner_id.parent_id = cls.partner.id
 
         cls.inbound_payment_channel.payment_provider_id = cls.provider
@@ -55,7 +54,6 @@ class TestSubscriptionPaymentFlows(
             return self.call_jsonrpc(url, params=values)
 
     def test_assign_token_route_with_so_access(self):
-        """Test Assign Token Route with a user allowed to access the SO."""
         self.authenticate(
             self.user_with_so_access.login, self.user_with_so_access.login
         )
@@ -70,13 +68,11 @@ class TestSubscriptionPaymentFlows(
         )
 
     def test_assign_token_without_so_access(self):
-        """Test Assign Token Route with a user without access to the SO."""
         self.authenticate(
             self.user_without_so_access.login,
             self.user_without_so_access.login,
         )
 
-        # 1) with access token
         own_token = self._create_token(
             partner_id=self.user_without_so_access.partner_id.id
         )
@@ -91,11 +87,9 @@ class TestSubscriptionPaymentFlows(
             " even with the right access token.",
         )
 
-        # 2) Without access token
         with self._assertNotFound():
             self._my_sub_assign_token(token_id=own_token.id)
 
-        # 3) With wrong access token
         with self._assertNotFound():
             self._my_sub_assign_token(
                 token_id=own_token.id,
@@ -107,7 +101,6 @@ class TestSubscriptionPaymentFlows(
             self.user_with_so_access.login, self.user_with_so_access.login
         )
 
-        # correct token
         dumb_token_so_user = self._create_token(
             payment_details=f"token {self.user_with_so_access.name}",
             partner_id=self.user_with_so_access.partner_id.id,
@@ -119,20 +112,16 @@ class TestSubscriptionPaymentFlows(
             "Logged Customer wasn't able to assign their token to their subscription.",
         )
 
-        # token of other user --> forbidden
         other_user_token = self._create_token(
             payment_details=f"token {self.user_without_so_access.name}",
             partner_id=self.user_without_so_access.partner_id.id,
         )
         with self.assertRaises(AccessError):
-            # Make sure the test correctly tests what it should be testing
-            # i.e. assigning a token not belonging to the user of the request
             other_user_token.with_user(self.user_with_so_access).read()
 
         with self._assertNotFound():
             self._my_sub_assign_token(token_id=other_user_token.id)
 
-        # archived token --> forbidden
         archived_token = self._create_token(
             payment_details=f"archived token {self.user_with_so_access.name}",
             partner_id=self.user_with_so_access.partner_id.id,
@@ -186,7 +175,7 @@ class TestSubscriptionPaymentFlows(
         url = self._build_url(f"/my/subscriptions/{self.order.id}/transaction")
         route_kwargs = {
             "access_token": self.order._portal_get_or_create_token(),
-            "partner_id": self.partner.id,  # This should be rejected.
+            "partner_id": self.partner.id,
         }
         with (
             mute_logger("odoo.http"),
@@ -209,9 +198,6 @@ class TestSubscriptionPaymentFlows(
         self.subscription.action_confirm()
         invoice = self.subscription._create_invoices()
         invoice._post()
-        # A "send email" action triggered on invoice, sends an email with the invoice access token
-        # but the subscription transaction url expects the order access_token.
-        # Make sure that if the wrong access_token is sent throw validation error.
         route_kwargs = {
             "access_token": invoice._portal_get_or_create_token(),
         }
@@ -233,7 +219,6 @@ class TestSubscriptionPaymentFlows(
             ):
                 self.env["sale.order"]._cron_recurring_create_invoice()
                 self.subscription.transaction_ids._get_last()._post_process()
-            # it should create an invoice
             self.assertEqual(self.subscription.invoice_count, 1)
         with freeze_time("2024-06-01"):
             with patch(
@@ -242,7 +227,6 @@ class TestSubscriptionPaymentFlows(
             ):
                 self.env["sale.order"]._cron_recurring_create_invoice()
                 self.subscription.transaction_ids._get_last()._post_process()
-            # it should create an invoice
             self.assertEqual(self.subscription.invoice_count, 2)
         with freeze_time("2024-07-01"):
             with patch(
@@ -251,7 +235,6 @@ class TestSubscriptionPaymentFlows(
             ):
                 self.env["sale.order"]._cron_recurring_create_invoice()
                 self.subscription.transaction_ids._get_last()._post_process()
-            # it should create an invoice
             self.assertEqual(self.subscription.invoice_count, 3)
         with freeze_time("2024-08-01"):
             with patch(
@@ -259,14 +242,9 @@ class TestSubscriptionPaymentFlows(
                 wraps=self._mock_subscription_do_payment,
             ):
                 self.env["sale.order"]._cron_recurring_create_invoice()
-            # subscription should be closed on end date
             self.assertEqual(self.subscription.subscription_state, "6_churn")
 
     def test_portal_pay_subscription(self):
-        # When portal pays a subscription, a success mail is sent.
-        # This calls AccountMove.amount_by_group, which triggers _compute_invoice_taxes_by_group().
-        # As this method writes on this field and also reads tax_ids, which portal has no rights to,
-        # it might cause some access rights issues. This test checks that no error is raised.
         portal_partner = self.user_portal.partner_id
         portal_partner.country_id = self.env["res.country"].search(
             [("code", "=", "US")]
@@ -321,8 +299,6 @@ class TestSubscriptionPaymentFlows(
             "active_model": "sale.order",
             "active_id": self.subscription.id,
         }
-        # wizard.payment.transaction.view.link needs to access request.env when it generates the acces_token.
-        # This pirouette is needed to avoid a
         with MockRequest(self.subscription.env):
             wiz = (
                 self.env["wizard.payment.transaction.view.link"]
@@ -372,7 +348,6 @@ class TestSubscriptionPaymentFlows(
 
     @mute_logger("odoo.http")
     def test_invoice_document_generation(self):
-        """Check that invoice documents get generated when posting subscription invoices."""
         self.env["ir.config_parameter"].set_param(
             "sale.automatic_invoice",
             self.env.context.get("automatic_invoice", False),
@@ -412,18 +387,10 @@ class TestSubscriptionPaymentFlows(
             )
 
     def test_invoice_document_generation_auto_invoice(self):
-        """Check that invoice documents get generated only once with automatic invoice enabled."""
         self.env = self.env["base"].with_context(automatic_invoice=True).env
         self.test_invoice_document_generation()
 
     def test_downpayment_upsell_automatic_invoice(self):
-        """Confirm the original subscription and trigger recurring invoices.
-        Prepare an upsell order from the subscription and get its sale order.
-        Set the quantity of actual product lines in the upsell order to 1 (for downpayment).
-        Confirm the upsell order and configure it to require payment with a 20% prepayment.
-        Calculate the downpayment amount and enable automatic invoice creation.
-        Create a direct payment transaction for the downpayment and reconcile it.
-        Verify that exactly one invoice is created for the downpayment and its amount matches the paid amount."""
 
         self.subscription.action_confirm()
         self.env["sale.order"]._cron_recurring_create_invoice()

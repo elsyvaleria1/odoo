@@ -17,15 +17,12 @@ ACTIONS_PYTHON = {
 }
 
 ACTIONS_SQL = {
-    # {action_technical: (operator, action, composable)}
     "trim_all": ("<>", "REPLACE(%s, ' ', '')", True),
     "trim_superfluous": ("<>", r"TRIM(REGEXP_REPLACE(%s, '\s+', ' ', 'g'))", True),
     "case_first": ("<>", "INITCAP(%s)", True),
     "case_upper": ("<>", "UPPER(%s)", True),
     "case_lower": ("<>", "LOWER(%s)", True),
     "html": ("~", "'<[a-z]+.*>'", False),
-    # special cases (operator is False): treated in Python by data_cleaning.model's
-    # '_clean_records_%s' method, named after the action of the tuple below
     "phone": (False, "format_phone", False),
 }
 
@@ -155,7 +152,7 @@ class Data_CleaningRule(models.Model):
     def _onchange_action(self) -> None:
         if self.action == "phone":
             try:
-                import phonenumbers  # noqa: F401  imported only to probe availability
+                import phonenumbers
             except ModuleNotFoundError as err:
                 raise ValidationError(
                     self.env._(

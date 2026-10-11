@@ -52,11 +52,6 @@ class DocumentsDocument(models.Model):
         assert field_name in ("product_template_id", "product_id")
         Model = self.env[self._fields[field_name].comodel_name]
         if operator == "in":
-            # `True` and `False` are sentinels for "any" and "no" related product.
-            # Test them by identity, never by equality or membership: Python has
-            # `True == 1` and `False == 0` with equal hashes, so `True in value`
-            # also fires on the real product id 1 and `value - {True}` then drops
-            # that id, widening the search to every product-linked document.
             if any(v is True for v in value):
                 _debug.logic("product_search", by="any_product", field=field_name)
                 return Domain(field_name, "not in", [False]) | Domain(
@@ -92,18 +87,11 @@ class DocumentsDocument(models.Model):
         ) & Domain("res_model", "=", Model._name)
 
     def create_product_template(self) -> dict:
-        # Creates a single product.template for the whole recordset and links every
-        # document to it; the product image is taken from the first image document.
         if not self:
             _debug.logic("product_create_refused", reason="no_documents")
             raise UserError(
                 self.env._("Select at least one document to create a product from.")
             )
-        # clean_context: the caller is the Documents client, whose context carries
-        # its own `default_*` keys. They must not reach product.template.create -
-        # `default_type='folder'` is a valid document.document type but not a
-        # valid product one, and `default_active=False` would create the product
-        # archived and invisible.
         product = (
             self.env["product.template"]
             .with_context(clean_context(self.env.context))

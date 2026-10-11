@@ -72,9 +72,6 @@ def run(
 
 @contextmanager
 def _engine_attempt(env):
-    # an engine that fails is rolled back with what it wrote, so the next
-    # strategy and the caller keep a working transaction; a database error is
-    # not the engine's verdict and goes on, a concurrency loss to be retried
     if env is None:
         yield
         return
@@ -85,8 +82,6 @@ def _engine_attempt(env):
         savepoint.close(rollback=True)
         raise
     if env.cr.in_failed_transaction():
-        # an engine that caught its own database error and carried on: its
-        # savepoint is rolled back and the error goes on all the same
         savepoint.close(rollback=True)
         raise psycopg.errors.InFailedSqlTransaction(
             "an extraction strategy caught a database error and carried on"

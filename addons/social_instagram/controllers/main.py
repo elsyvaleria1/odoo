@@ -15,7 +15,7 @@ from odoo.addons.social.controllers.main import (
 class SocialInstagramController(SocialController):
     @http.route("/social_instagram/callback", type="http", auth="user")
     @fragment_to_query_string
-    def social_instagram_callback(  # noqa: E8539  inbound: a token an outside service hands over, not one of ours
+    def social_instagram_callback(
         self, access_token=None, extended_access_token=None, **kw
     ):
         if not request.env.user.has_group("social.group_social_manager"):
@@ -56,16 +56,11 @@ class SocialInstagramController(SocialController):
 
         return request.redirect("/odoo/action-social.action_social_stream_post")
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     @http.route("/social_instagram/comment", type="http", auth="user", methods=["POST"])
     def social_instagram_comment(
         self, stream_post_id=None, message=None, comment_id=None, **kwargs
     ):
-        """Route used to add comments on an Instagram post or reply to a comment.
-        If 'comment_id' is passed, then it's a reply, otherwise it's a standard comment on the post."""
 
         stream_post = self._get_social_stream_post(stream_post_id, "instagram")
         if comment_id:
@@ -93,9 +88,6 @@ class SocialInstagramController(SocialController):
             next_records_token, count=comments_count
         )
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     @http.route(
         ["/social_instagram/<string:instagram_access_token>/get_image/<int:image_id>"],
@@ -104,7 +96,7 @@ class SocialInstagramController(SocialController):
     )
     def social_post_instagram_image(self, instagram_access_token, image_id):
         social_post = (
-            request.env["social.post"]  # noqa: E8537  content: an outside service fetches the content by its own token
+            request.env["social.post"]
             .sudo()
             .search([("instagram_access_token", "=", instagram_access_token)])
         )
@@ -112,7 +104,6 @@ class SocialInstagramController(SocialController):
         if not social_post or image_id not in social_post.instagram_image_ids.ids:
             raise Forbidden
 
-        # called manually to throw a ValidationError if not valid instagram image
         social_post._check_post_access()
 
         return (
@@ -127,9 +118,6 @@ class SocialInstagramController(SocialController):
         )
 
     def _instagram_create_accounts(self, access_token, extended_access_token):
-        """1. Retrieve all Facebook pages data from '/me/accounts'
-        2. For each page, fetch detailed information
-        3. If a 'instagram_business_account' is returned, create a matching social.account."""
 
         media = request.env.ref("social_instagram.social_media_instagram")
         accounts_url = url_join(
@@ -237,7 +225,6 @@ class SocialInstagramController(SocialController):
             )
 
     def _instagram_get_extended_access_token(self, access_token, media):
-        """Same mechanism as social_facebook/controllers/main.py#_get_extended_access_token"""
 
         instagram_app_id = request.env.registry.settings.get(
             request.env, "social.instagram_app_id", False

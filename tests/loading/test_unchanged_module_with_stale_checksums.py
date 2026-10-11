@@ -31,8 +31,6 @@ def _get_menu_action(db: str) -> set[str]:
 
 
 def _set_checksums_as_version_3_left_them(db: str) -> None:
-    # version 3 recorded no reference a <menuitem action=> resolves, which is
-    # why version 4 discards its entries
     [stored] = _get_rows(
         db, f"SELECT data_file_checksums FROM ir_module_module WHERE name = '{USER}'"
     )

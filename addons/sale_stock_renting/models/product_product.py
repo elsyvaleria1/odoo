@@ -13,7 +13,6 @@ class ProductProduct(models.Model):
     @api.depends("type", "rent_ok", "qty_available", "qty_in_rent")
     @api.depends_context("in_rental_schedule", "allowed_company_ids")
     def _compute_display_name(self):
-        """Override to include the quantity in stock in the rental schedule view."""
         super()._compute_display_name()
         if self.env.context.get("in_rental_schedule"):
             storable_rental_products = self.filtered(
@@ -22,18 +21,14 @@ class ProductProduct(models.Model):
             if not storable_rental_products:
                 return
 
-            # Rental/Stock qties only have to be computed on the current date to know the current
-            # total qty (in stock + in rental)
             ctxt = {
                 "from_date": self.env.cr.now(),
                 "to_date": self.env.cr.now(),
             }
 
-            # Generate new display_name results
             for product in storable_rental_products.with_context(**ctxt):
                 total_qty = product.qty_available + product.qty_in_rent
                 if int(total_qty) == total_qty:
-                    # Display as integer if float has no decimal value
                     total_qty = int(total_qty)
                 if total_qty in (0, 1):
                     product.display_name = self.env._(
@@ -49,7 +44,6 @@ class ProductProduct(models.Model):
                     )
 
     def _get_domain_qty_in_rent(self):
-        """Allow precising the warehouse_id to get qty currently in rent."""
         warehouse_id = self.env.context.get("warehouse_id", False)
         if warehouse_id:
             return super()._get_domain_qty_in_rent() + [
@@ -59,14 +53,6 @@ class ProductProduct(models.Model):
             return super()._get_domain_qty_in_rent()
 
     def _get_unavailable_qty(self, from_date, to_date=None, **kwargs):
-        """Return the max quantity of self (unique) unavailable between from_date and to_date.
-
-        Early pickups and returns are taken into account.
-        :param datetime from_date:
-        :param datetime to_date:
-        :param dict kwargs: search domain restrictions (ignored_soline_id, warehouse_id)
-        """
-        # If to_date isn't provided, the interval should be a single instant (i.e. from_date).
         to_date = to_date or from_date
         rented_quantities, key_dates = self._get_active_rental_lines(
             from_date, to_date, **kwargs
@@ -130,13 +116,6 @@ class ProductProduct(models.Model):
         return self.env["sale.order.line"].search(domain)
 
     def _get_virtual_unavailable_qty_in_rent(self, pivot_date, **kwargs):
-        """
-        Return the quantity taken into account by the virtual available quantity
-        prior to the pivot date but that will still be in rent past that date.
-
-        :param datetime pivot_date:
-        :param dict kwargs: search domain restrictions (ignored_soline_id, warehouse_id):
-        """
         kwargs["rental_pivot_date"] = True
         active_lines = self._get_active_rental_lines(
             from_date=pivot_date, to_date=pivot_date, **kwargs
@@ -171,9 +150,6 @@ class ProductProduct(models.Model):
         )
 
     def action_view_rentals(self):
-        """Override of `sale_renting` to change the default groupby of the
-        `sale_renting.action_rental_order_schedule` action when openning it for a product tracked by
-        SN."""
         result = super().action_view_rentals()
         any_tracked_by_sn = any(t == "serial" for t in self.mapped("tracking"))
         result["context"].update(

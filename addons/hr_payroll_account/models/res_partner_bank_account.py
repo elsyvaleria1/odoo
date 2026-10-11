@@ -24,9 +24,6 @@ class ResPartnerBankAccount(models.Model):
         return res
 
     def write(self, vals):
-        # Read the owners BEFORE the write: afterwards `partner_id` is the new
-        # one and there is no way left to find the employees who must stop
-        # listing this account as theirs.
         previous_partners = (
             {bank: bank.partner_id for bank in self}
             if self.env.context.get("from_employee_bank_account")
@@ -46,11 +43,6 @@ class ResPartnerBankAccount(models.Model):
             )
 
     def _unset_bank_account(self, partners_by_bank) -> None:
-        """Drop each account from the salary accounts of its FORMER owner.
-
-        Only employees who no longer own the account are touched: an employee
-        reachable from both the old and the new partner keeps it.
-        """
         for partner_bank in self:
             previous_partner = partners_by_bank.get(partner_bank)
             if not previous_partner or previous_partner == partner_bank.partner_id:

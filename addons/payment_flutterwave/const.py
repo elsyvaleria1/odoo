@@ -1,7 +1,3 @@
-# The currencies supported by Flutterwave, in ISO 4217 format.
-# See https://flutterwave.com/us/support/general/what-are-the-currencies-accepted-on-flutterwave.
-# Last website update: June 2022.
-# Last seen online: 24 November 2022.
 SUPPORTED_CURRENCIES = [
     "GBP",
     "CAD",
@@ -27,7 +23,6 @@ SUPPORTED_CURRENCIES = [
     "ZMW",
 ]
 
-# Mapping of transaction states to Flutterwave payment statuses.
 PAYMENT_STATUS_MAPPING = {
     "pending": ["pending", "pending auth"],
     "done": ["successful"],
@@ -35,12 +30,9 @@ PAYMENT_STATUS_MAPPING = {
     "error": ["failed"],
 }
 
-# The codes of the payment methods to activate when Flutterwave is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
     "mpesa",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",

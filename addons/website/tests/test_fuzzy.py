@@ -317,8 +317,6 @@ class TestFuzzyWordSource(TransactionCase):
         )
 
     def test_a_correction_the_search_can_honour(self):
-        # The banner promises "Results are displayed for X"; X has to be a term
-        # the very next search can find, which a class name never is.
         options = {
             "displayDescription": True,
             "displayDetail": False,
@@ -327,8 +325,6 @@ class TestFuzzyWordSource(TransactionCase):
             "displayImage": False,
             "allowFuzzy": True,
         }
-        # A dropped letter, not a truncation: `search in word` would otherwise
-        # answer before the candidate list is even scored.
         count, _results, fuzzy = self.website._search_with_fuzzy(
             "pages", "zzmarkupclss", 5, "name asc", options
         )
@@ -339,8 +335,6 @@ class TestFuzzyWordSource(TransactionCase):
         self.assertEqual(count, 0)
 
     def test_a_detail_without_a_mapping_declares_no_html_field(self):
-        # `_trigram_words` above builds a bare detail; the html declaration is
-        # optional and its absence must not raise.
         self.assertEqual(
             self.env["website"]._search_get_html_fields(
                 {"model": "website.page", "search_fields": ["name"], "base_domain": []}

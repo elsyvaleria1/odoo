@@ -34,8 +34,6 @@ class TestRegisteredSpreadsheetReaders(TransactionCase):
         self.assertEqual(document.rows, [["ref", "total"], ["INV/1", "139.86"]])
 
     def test_the_sheet_names_reach_the_caller(self):
-        # They were discarded until the reader was handed the document's own
-        # options: a consumer got the first sheet and no way to learn of others.
         document = Document(_workbook(), name="book.xlsx")
 
         document.rows
@@ -52,8 +50,6 @@ class TestRegisteredSpreadsheetReaders(TransactionCase):
         self.assertEqual(Document(_workbook(), name="b.xlsx").rows[0], ["ref", "total"])
 
     def test_the_reader_declines_when_its_optional_module_is_absent(self):
-        # `provides` is what keeps a missing xlrd from being an exception rather
-        # than an answer, and nothing else asserts it.
         (reader,) = [r for r in get_readers(XLSX, ROWS) if r.name == "xlsx"]
 
         self.assertTrue(reader.provides(Document(_workbook(), name="b.xlsx")))

@@ -167,7 +167,6 @@ class StockMoveReservation(models.Model):
             len(ledger.move_line_vals),
             ledger.get_total_pending(),
         )
-        # what reservation proposes is never picked, whatever the move is
         self.env["stock.move.line"].with_context(
             quants_cache=quants_cache,
             preserve_state=True,
@@ -745,9 +744,6 @@ class StockMoveReservation(models.Model):
         self._apply_quantity_done_vals({self: self._prepare_quantity_done_vals(qty)})
 
     def _apply_quantity_done_vals(self, commands_by_move) -> None:
-        # the updates and deletions go through each move's lines; the new
-        # lines of every move are created together, so reservation, linking
-        # and the state recomputation run once over the batch
         new_line_vals = []
         for move, commands in commands_by_move.items():
             if not move.id:

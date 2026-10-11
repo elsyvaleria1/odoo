@@ -89,8 +89,6 @@ class TestWebsocketWorkerBundle(HttpCaseWithUserDemo):
         self.assertEqual(response.content, own.content)
 
     def test_the_bundle_of_the_page_origin_answers_no_other_origin(self):
-        # a worker shared by the tabs is started from the page's own origin;
-        # another site reads the anonymous bundle
         for origin in (
             self.base_url(),
             "http://127.0.0.1:8072",

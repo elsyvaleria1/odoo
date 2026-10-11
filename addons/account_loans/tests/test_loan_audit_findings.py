@@ -65,9 +65,7 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             }
         )
 
-    # ------------------------------------------------------------------ C1
     def test_short_term_window_is_twelve_months_not_twelve_lines(self):
-        """The LT/ST split must be 'due within 12 months', not 'the next 12 rows'."""
         loan = self._loan("Quarterly", "2020-01-31", 20, 1000.0, 100.0, step_months=3)
         first = loan.line_ids[0]
         horizon = first.date + relativedelta(years=1)
@@ -102,7 +100,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             moved, 4000.0, "reclassified amount must be the next 12 months of principal"
         )
 
-    # ------------------------------------------------------------------ C2
     def test_outstanding_balance_of_a_repaid_loan_is_zero(self):
         loan = self._loan("Repaid", "2020-01-01", 12, 1000.0, 100.0)
         loan.action_confirm()
@@ -114,7 +111,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             "a fully repaid loan owes nothing; the list view sums this field",
         )
 
-    # ------------------------------------------------------------------ C3
     def test_confirming_a_running_loan_is_refused(self):
         loan = self._loan(
             "Reconfirm",
@@ -132,9 +128,7 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             loan.action_confirm()
         self.assertEqual(len(loan.line_ids.generated_move_ids), before)
 
-    # ------------------------------------------------------------------ C4
     def test_deleting_a_loan_with_posted_entries_is_refused(self):
-        """account_depreciation refuses this via _unlink_if_model_or_draft; account_loans must too."""
         loan = self._loan("Deletable", "2020-01-01", 6, 1000.0, 100.0)
         loan.action_confirm()
         posted = loan.line_ids.generated_move_ids.filtered(
@@ -158,16 +152,14 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
         try:
             loan.unlink()
         except UserError:
-            return  # refusing the delete is an acceptable fix
+            return
         self.assertEqual(
             len(self.env["account.move"].browse(move_ids).exists()),
             len(move_ids),
             "the FK cascade must not destroy audit-trail-protected entries",
         )
 
-    # ------------------------------------------------------------------ C5
     def test_computed_schedule_is_always_confirmable(self):
-        """The wizard must not produce a loan its own validation rejects."""
         cases = [
             (10000.0, 0.0, 1),
             (1000.0, 1.0, 15),
@@ -195,7 +187,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
                     f"principals sum to {sum(loan.line_ids.mapped('principal'))}, not {amount}",
                 )
 
-    # ------------------------------------------------------------------ C6
     def test_recomputing_a_schedule_replaces_it(self):
         loan = self.env["account.loan"].create({"name": "Twice", **self._accounts()})
         for _ in range(2):
@@ -212,7 +203,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
         self.assertEqual(len(loan.line_ids), 12, "recomputing must replace, not append")
         self.assertEqual(loan.duration, 12)
 
-    # ------------------------------------------------------------------ C7
     def test_zero_header_interest_still_checked_against_lines(self):
         loan = self._loan("NoHeaderInterest", "2020-01-01", 12, 1000.0, 100.0)
         loan.interest = 0.0
@@ -221,7 +211,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
         ):
             loan.action_confirm()
 
-    # ------------------------------------------------------------------ C8
     def test_is_wrong_date_tracks_line_dates(self):
         loan = self._loan("DateDrift", "2024-06-01", 1, 100.0, 0.0)
         loan.line_ids[0].date = fields.Date.to_date("2024-07-01")
@@ -232,7 +221,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             "moving a line before the loan date must invalidate is_wrong_date",
         )
 
-    # ------------------------------------------------------------------ C9
     def test_preview_computes_over_a_recordset(self):
         loan = self.env["account.loan"].create({"name": "Multi", **self._accounts()})
         wizards = self.env["wizard.account.loan.create.schedule"].create(
@@ -261,7 +249,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             previews[0], previews[1], "each wizard must preview its own schedule"
         )
 
-    # ------------------------------------------------------------------ C14
     def test_new_loan_inherits_the_most_recent_configuration(self):
         self.env["account.loan"].search([]).unlink()
         other_expense = self.env["account.account"].search(
@@ -282,7 +269,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             "defaults must come from the most recent loan, not the oldest",
         )
 
-    # ------------------------------------------------------------------ C15
     def test_sequence_is_unique_and_one_based(self):
         loan = self.env["account.loan"].create(
             {
@@ -309,7 +295,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             sorted(sequences), [1, 2, 3], "row numbers must be unique and start at 1"
         )
 
-    # ------------------------------------------------------------------ C17
     def test_interest_rate_precision_is_not_silently_truncated(self):
         loan = self.env["account.loan"].create({"name": "Rate", **self._accounts()})
 
@@ -326,7 +311,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             )
             return sum(float(p.interest) for p in wizard._get_loan_payment_schedule())
 
-        # positive control: a rate the library can represent must move the total
         self.assertNotEqual(total_interest(4.5), total_interest(4.57))
         self.assertNotEqual(
             total_interest(4.567),
@@ -334,7 +318,6 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             "4.567% is silently quantized into 4.57%",
         )
 
-    # ------------------------------------------------------------------ C18
     def test_preview_dates_match_the_saved_schedule(self):
         loan = self.env["account.loan"].create({"name": "Tz", **self._accounts()})
         wizard = (
@@ -360,13 +343,7 @@ class TestLoanAuditFindings(AccountTestInvoicingCommon):
             f"preview shows {previewed} but {stored} is what gets saved",
         )
 
-    # ------------------------------------------------------------------ C19
     def test_buttons_are_offered_only_to_groups_that_can_use_them(self):
-        """A header button shown to a group that cannot write is a dead end.
-
-        The Bookkeeper role implies group_account_invoice, so the Confirm
-        button used to be offered to a user whose click raised AccessError.
-        """
         form = self.env.ref("account_loans.account_loan_form_view")
         arch = etree.fromstring(form.arch)
         buttons = arch.xpath("//header//button[@name and @groups]")

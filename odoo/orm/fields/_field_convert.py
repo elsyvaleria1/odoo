@@ -203,8 +203,6 @@ class _FieldConvertMixin[T](_FieldStubs):
     def get_export_converter(
         self, env: Environment
     ) -> Callable[[typing.Any, ModelLike], typing.Any]:
-        # what an export calls per cell; a field whose conversion reads
-        # something per env (selection labels) reads it once here
         return self.convert_to_export
 
     def convert_to_display_name(

@@ -25,10 +25,8 @@ class AccountJournal(models.Model):
 
     def _is_ofx(self, raw_file) -> bool:
         if (raw_file or b"").startswith(b"OFXHEADER"):
-            # v1 OFX
             return True
         try:
-            # v2 OFX
             return b"<ofx>" in (raw_file or b"").lower()
         except ET.ParseError:
             return False
@@ -65,7 +63,6 @@ class AccountJournal(models.Model):
         try:
             ofx = OfxParser.parse(io.BytesIO(raw_file))
         except UnicodeDecodeError:
-            # Replacing utf-8 chars with ascii equivalent
             encoding = re.findall(rb'encoding="(.*?)"', raw_file)
             encoding = encoding[0].decode("ascii") if encoding else "utf-8"
             try:
@@ -82,8 +79,6 @@ class AccountJournal(models.Model):
         vals_bank_statement = []
         account_lst = set()
         currency_lst = set()
-        # Since ofxparse doesn't provide account numbers, we'll have to find res.partner and res.partner.bank.account here
-        # (normal behaviour is to provide 'account_number', which the generic module uses to find partner/bank)
         transaction_payees = [
             transaction.payee
             for account in ofx.accounts
@@ -113,8 +108,6 @@ class AccountJournal(models.Model):
             vals_bank_statement.append(
                 {
                     "transactions": transactions,
-                    # WARNING: the provided ledger balance is not necessarily the ending balance of the statement
-                    # see https://github.com/odoo/odoo/issues/3003
                     "balance_start": float(account.statement.balance) - total_amt,
                     "balance_end_real": account.statement.balance,
                 }

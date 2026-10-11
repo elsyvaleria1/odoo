@@ -59,8 +59,6 @@ class TelegramBusinessConnection(models.Model):
             connection.user_id = account._acting_user("internal") if account else False
 
     def _usable(self) -> bool:
-        """Enabled, allowed to reply, and its owner acting as an internal user
-        now -- a binding's grace period ends without a write."""
         self.check_singleton()
         return bool(
             self.is_enabled
@@ -71,7 +69,6 @@ class TelegramBusinessConnection(models.Model):
 
     @api.model
     def _from_update(self, bot, data):
-        """Record what a `business_connection` update says, and return it."""
         account = self.env["telegram.account"]._from_telegram(data.get("user"))
         rights = data.get("rights") or {}
         vals = {

@@ -25,7 +25,6 @@ class ProductTemplate(models.Model):
             ):
                 template.worksheet_template_id = False
             else:
-                # Keep the old template if `keep_template` is true, this only applies if the template would have been non 0
                 old_template = (
                     template.worksheet_template_id if keep_template else False
                 )

@@ -50,7 +50,6 @@ class HrExpenseStripeCard(models.Model):
         }
 
     def _update_from_stripe(self, stripe_object) -> None:
-        # Stripe doesn't provide tracking info in test mode, so we fake it here.
         if (
             stripe_object.get("shipping")
             and stripe_object["shipping"]["status"] == "shipped"

@@ -23,8 +23,6 @@ class DocumentsDocument(models.Model):
                 "version_delete_refused", document=self, attachment=attachment_id
             )
             raise UserError(self.env._("You cannot delete this attachment."))
-        # an old version is history, not the content `write` guards: without
-        # this, someone else could erase a locked document's history
         self._raise_if_locked_by_other("version_delete")
 
         deleted_name = attachment.name
@@ -108,7 +106,4 @@ class DocumentsDocument(models.Model):
                     dropped=len(versions) - max_versions,
                 )
                 excess |= versions[max_versions:]
-        # One unlink for every document being trimmed: `unlink` is a delete
-        # plus its filestore work, and calling it per document made trimming N
-        # documents cost N round-trips.
         excess.sudo().unlink()

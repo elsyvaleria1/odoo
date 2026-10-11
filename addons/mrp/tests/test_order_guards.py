@@ -680,10 +680,6 @@ class TestOrderGuards(TestMrpCommon):
             )
 
 
-# The flush writes a model's rows in one statement per set of changed columns.
-# Marking done stamps `date` with the current second: a second that turns
-# mid-measurement leaves some rows' date unchanged and splits that statement.
-# Frozen time measures the code, not the clock.
 @freeze_time("2026-10-08 10:00:00")
 @tagged("post_install", "-at_install")
 class TestProductionStatementGuards(TransactionCase):
@@ -698,8 +694,6 @@ class TestProductionStatementGuards(TransactionCase):
         cls.workcenter = cls.env["mrp.workcenter"].create({"name": "Guarded"})
 
     def _bom(self, operations=0):
-        # Every measurement gets its own products and stock, so what an earlier
-        # size left reserved does not change what a later one costs.
         finished, *components = self.env["product.product"].create(
             [{"name": "Guarded %s" % index, "is_storable": True} for index in range(3)]
         )
@@ -821,9 +815,6 @@ class TestProductionStatementGuards(TransactionCase):
             )
 
         marked(1)
-        # Each order makes its own product, so each needs its own quants and
-        # consume links: both are written in one batch for every order. One
-        # order at a time cost three statements more each.
         self.assertEqual(marked(6), marked(2))
 
     def test_backorder_split_grows_by_its_line_writes_only(self):
@@ -840,7 +831,4 @@ class TestProductionStatementGuards(TransactionCase):
             )
 
         split(1)
-        # Two statements per order remain: the reservation line moved onto the
-        # backorder, whose write flushes and re-sums the move quantity. The
-        # per-order split this guards against cost thirteen.
         self.assertEqual(split(6) - split(2), 4 * 2)

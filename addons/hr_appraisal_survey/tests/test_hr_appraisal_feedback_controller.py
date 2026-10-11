@@ -93,7 +93,6 @@ class TestHrAppraisalFeedbackController(HttpCase):
             )
             url = answer.get_start_url()
 
-            # link should be accessible before the deadline
             self.authenticate(self.user.login, self.user.login)
             res = self.url_open(url)
             self.assertTrue(
@@ -101,7 +100,6 @@ class TestHrAppraisalFeedbackController(HttpCase):
                 "The link should not be expired before the deadline",
             )
 
-            # link should be expired after the deadline
             with freeze_time(datetime.date(2024, 9, 21)):
                 res = self.url_open(url)
                 self.assertTrue(
@@ -162,8 +160,6 @@ class TestHrAppraisalFeedbackController(HttpCase):
                 )
 
     def test_appraisal_results_page_access(self):
-        """Check the appraised employee is refused with a real HTTP status and
-        that a manager of the appraisal is not."""
         answer = self.env["survey.user_input"].create(
             {
                 "survey_id": self.appraisal_survey.id,
@@ -193,8 +189,6 @@ class TestHrAppraisalFeedbackController(HttpCase):
         )
 
     def test_appraisal_results_page_rejects_a_broken_filter(self):
-        """Check a non-numeric appraisal_id is ignored instead of reaching
-        int() and answering 500."""
         self.authenticate(
             self.user_appraisal_officer.login, self.user_appraisal_officer.login
         )
@@ -206,13 +200,6 @@ class TestHrAppraisalFeedbackController(HttpCase):
         )
 
     def test_appraisal_results_page_hides_peer_answer_tokens(self):
-        """A colleague asked for feedback must not receive a peer's token.
-
-        The results page renders every answer's `access_token` as a
-        /survey/print link, so handing an unfiltered answer set to the
-        template gives a rater a working capability URL to each peer's
-        complete submission.
-        """
         peer_user = mail_new_test_user(
             self.env,
             name="Peer Rater",
@@ -266,20 +253,12 @@ class TestHrAppraisalFeedbackController(HttpCase):
             "a rater must still reach their own answer",
         )
 
-        # The manager sees everyone, exactly as before.
         self.authenticate(self.user_manager.login, self.user_manager.login)
         page = self.url_open(url).text
         for token in (peer_answer.access_token, rater_answer.access_token):
             self.assertIn(token, page, "a manager still sees every rater")
 
     def test_appraisal_results_page_admits_a_system_administrator(self):
-        """The page and its filter helper must agree on who is privileged.
-
-        `base.group_system` was listed by the page and not by
-        `_get_domain_results_page_user_input`, so a system administrator who
-        was neither an appraisal officer nor a manager was granted every
-        answer by one gate and refused by the other.
-        """
         sysadmin = mail_new_test_user(
             self.env,
             name="Sys Admin",

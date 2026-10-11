@@ -20,7 +20,6 @@ class UtmCampaign(models.Model):
         groups="mass_mailing.group_mass_mailing_user",
     )
 
-    # A/B Testing
     ab_testing_mailings_sms_count = fields.Integer(
         string="A/B Test Mailings SMS #",
         compute="_compute_mailing_sms_count",

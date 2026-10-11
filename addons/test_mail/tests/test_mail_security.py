@@ -5,11 +5,6 @@ from odoo.addons.mail.tests.common import MailCommon, mail_new_test_user
 
 class TestSubtypeAccess(MailCommon):
     def test_subtype_access(self):
-        """
-        The function aims to formally verify the access restrictions on mail.message.subtype for
-        normal and admin users. It ensures that normal users are unable to modify it,
-        while admin users possess the necessary privileges to modify it successfully.
-        """
 
         test_subtype = self.env["mail.message.subtype"].create(
             {

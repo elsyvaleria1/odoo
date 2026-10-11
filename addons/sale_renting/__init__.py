@@ -6,10 +6,6 @@ from odoo.db.schema import column_exists
 
 
 def _pre_init_rental(env) -> None:
-    """Allow installing sale_renting in databases with large sale.order / sale.order.line tables.
-    The different rental fields are all NULL (falsy) for existing sale orders,
-    the computation is way more efficient in SQL than in Python.
-    """
     if not column_exists(env.cr, "sale_order", "rental_status"):
         env.cr.execute("""
             ALTER TABLE "sale_order"

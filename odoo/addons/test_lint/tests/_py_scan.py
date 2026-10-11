@@ -36,7 +36,6 @@ _NOT_OURS = ("/_vendor/", "/upgrades/", "/migrations/")
 
 @functools.cache
 def corpus() -> tuple[Source, ...]:
-    # every repository on the addons path, each graded against its own floors
     seen: set[str] = set()
     sources: list[Source] = []
     for root, repo in lint_case.module_roots_by_repository():
@@ -74,9 +73,6 @@ def findings_by_repository(rule: str) -> dict[str, list[Finding]]:
 type Row = tuple[str, str, int, int, str]
 
 
-# What the Python scan still reads per file: whether it parses and tokenises at
-# all, and the model classes the two cross-unit rules fold. The per-file rules
-# are the ruff fork's.
 @functools.cache
 def scan_one(path: str) -> tuple[list[Row], list[_model_classes.ModelClass]]:
     try:
@@ -115,8 +111,6 @@ def _scan() -> tuple[list[Row], list, int]:
 
 
 def cross_unit_violations(units: list, repo_of) -> list:
-    # a repository's models are judged against the declarations it builds on,
-    # so an extension in a later repository never settles an earlier one's key
     found = []
     for repo in sorted({repo_of(path) for path, _classes in units}):
         layer = set(lint_case.visible(repo))
@@ -160,7 +154,6 @@ def findings() -> dict[str, list[Finding]]:
 
 
 def model_class_scale() -> tuple[int, int]:
-    # how many model classes and constraints the unique-constraint checkers read
     _rows, units, _jobs = _scan()
     return (
         sum(len(classes) for _path, classes in units),

@@ -23,11 +23,6 @@ class TestAccrualLevelExport(HttpCase):
     def test_user_editable_accrual_level_fields_are_exportable(self):
         field_names = self._import_compatible_field_names("hr.leave.accrual.level")
 
-        # These three carry the same shape -- a compute that only forces a value
-        # in one situation, and a form widget the user drives the rest of the
-        # time -- so they have to travel together through an export/import round
-        # trip.  Losing only one of them reimports a plan that silently disagrees
-        # with the one it came from.
         self.assertIn("action_with_unused_accruals", field_names)
         self.assertIn("carryover_options", field_names)
         self.assertIn("accrual_validity", field_names)

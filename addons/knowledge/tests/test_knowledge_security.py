@@ -14,7 +14,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
 
     @classmethod
     def setUpClass(cls):
-        """Add some test users for security / groups check"""
         super().setUpClass()
 
         cls.user_erp_manager = mail_new_test_user(
@@ -33,25 +32,21 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
     )
     @users("user_public")
     def test_models_as_public(self):
-        # ARTICLE
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: No article access to public"
         ):
             self.env["knowledge.article"].search([])
 
-        # FAVORITES
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: No favorite access to public"
         ):
             self.env["knowledge.article.favorite"].search([])
 
-        # MEMBERS
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: No member access to public"
         ):
             self.env["knowledge.article.member"].search([])
 
-        # COVERS
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: no cover access to public"
         ):
@@ -64,18 +59,17 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
     def test_models_as_portal(self):
         article_root = self.article_roots[0].with_env(self.env)
 
-        # ARTICLES
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: No access given to portal"
         ):
-            article_root.body  # access body should trigger acls
+            article_root.body
 
         article_shared = self.article_roots[2].with_env(self.env)
         with self.assertRaises(
             exceptions.AccessError,
             msg="ACLs: Internal permission 'none', not for portal",
         ):
-            article_shared.body  # access body should trigger acls
+            article_shared.body
 
         article_accessible = self.article_write_contents[2].with_env(self.env)
         self.assertEqual(
@@ -114,7 +108,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
                 }
             )
 
-        # FAVORITES
         favs = self.env["knowledge.article.favorite"].search([])
         self.assertEqual(len(favs), 1)
         self.assertEqual(favs.article_id, article_accessible)
@@ -123,9 +116,8 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: Breaking rule for portal"
         ):
-            sudo_favorites.mapped("user_id")  # access user_id should trigger acls
+            sudo_favorites.mapped("user_id")
 
-        # MEMBERS
         my_members = self.env["knowledge.article.member"].search(
             [("partner_id", "!=", False)]
         )
@@ -142,9 +134,8 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         )
         sudo_members = self.article_roots.article_member_ids.with_env(self.env)
         with self.assertRaises(exceptions.AccessError, msg="Breaking rule for portal"):
-            sudo_members.mapped("partner_id")  # access partner_id should trigger acls
+            sudo_members.mapped("partner_id")
 
-        # COVERS
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: No cover access to portal"
         ):
@@ -157,15 +148,14 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         self.assertFalse(self.env.user.has_group("base.group_system"))
 
         article_writable = self.article_roots[0].with_env(self.env)
-        article_writable.body  # access body should trigger acls
+        article_writable.body
         article_readable = self.article_roots[1].with_env(self.env)
-        article_readable.body  # access body should trigger acls
+        article_readable.body
         self.assertTrue(article_readable.user_has_access)
         self.assertTrue(article_readable.user_can_read)
         self.assertFalse(article_readable.user_has_write_access)
         self.assertFalse(article_readable.user_can_write)
 
-        # ARTICLE: CREATE: cannot create a private article for another user
         with self.assertRaises(
             exceptions.AccessError, msg="Erp Managers behave like internal users"
         ):
@@ -192,18 +182,16 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         self.assertTrue(self.env.user.has_group("base.group_system"))
 
         article_roots = self.article_roots.with_env(self.env)
-        article_roots.mapped("body")  # access body should trigger acls
+        article_roots.mapped("body")
         article_hidden = self.article_read_contents[3].with_env(self.env)
-        article_hidden.body  # access body should trigger acls
+        article_hidden.body
         article_readable = self.article_roots[1].with_env(self.env)
-        article_readable.body  # access body should trigger acls
+        article_readable.body
         self.assertTrue(article_readable.user_has_access)
         self.assertTrue(article_readable.user_can_read)
         self.assertFalse(article_readable.user_has_write_access)
         self.assertTrue(article_readable.user_can_write)
 
-        # ARTICLE: CREATE/READ
-        # create a private article for another user
         other_private = self.env["knowledge.article"].create(
             {
                 "article_member_ids": [
@@ -232,7 +220,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         )
         other_private.write({"name": "Admin can do everything"})
 
-        # create a child to it
         other_private_child = self.env["knowledge.article"].create(
             {
                 "name": "Child of Private for Employee",
@@ -253,11 +240,9 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
             "Can write based on permission is False but can perform write due to ACLs",
         )
 
-        # ARTICLE: WRITE
         other_private.write({"name": "Can Update"})
         other_private_child.write({"name": "Can Also Update"})
 
-        # FAVORITES: CREATE/READ/UNLINK
         other_private_child.action_toggle_user_favorite()
         self.assertTrue(other_private_child.is_user_favorite)
         favorite_rec = self.env["knowledge.article.favorite"].search(
@@ -266,7 +251,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         favorite_rec.unlink()
         self.assertFalse(other_private_child.is_user_favorite)
 
-        # MEMBERS: CREATE/READ/UNLINK
         members = other_private.article_member_ids
         self.assertEqual(members.partner_id, self.partner_employee)
         new_member = self.env["knowledge.article.member"].create(
@@ -286,7 +270,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         self.assertEqual(members, new_member)
         self.assertEqual(members.partner_id, self.partner_employee2)
 
-        # COVERS
         cover = self._create_cover()
         cover.write({"attachment_url": "/"})
         self.assertEqual(cover.attachment_url, "/")
@@ -301,8 +284,7 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
     def test_models_as_user(self):
         article_roots = self.article_roots.with_env(self.env)
 
-        # ARTICLES
-        article_roots.mapped("body")  # access body should trigger acls
+        article_roots.mapped("body")
         article_roots[0].write({"name": "Hacked (or not)"})
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: 'read' internal permission"
@@ -317,7 +299,7 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: 'none' internal permission"
         ):
-            article_hidden.body  # access body should trigger acls
+            article_hidden.body
 
         new_article = self.env["knowledge.article"].create(
             {
@@ -346,7 +328,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
                 }
             )
 
-        # FAVORITES
         my_favs = self.env["knowledge.article.favorite"].search([])
         self.assertEqual(
             my_favs,
@@ -355,7 +336,7 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
             ),
             "Favorites: employee should see its own favorites",
         )
-        my_favs.mapped("user_id")  # access user_id should trigger acls
+        my_favs.mapped("user_id")
         my_favs.write({"sequence": 0})
         with self.assertRaises(
             exceptions.AccessError,
@@ -368,7 +349,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         ):
             my_favs[0].write({"user_id": self.user_portal.id})
 
-        # MEMBERS
         my_members = self.env["knowledge.article.member"].search(
             [("article_id", "in", self.article_roots.ids), ("partner_id", "!=", False)]
         )
@@ -378,7 +358,6 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
             self.article_roots.article_member_ids,
             "Members: employee should memberships of visible ",
         )
-        # remove employee from Shared root, check they cannot read those members
         self.article_roots[2].article_member_ids.filtered(
             lambda m: m.partner_id == self.partner_employee
         ).unlink()
@@ -391,13 +370,12 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
             (self.article_roots[1] + self.article_roots[3]).article_member_ids,
             "Members: employee should see its own memberships",
         )
-        my_members.mapped("partner_id")  # access partner_id should trigger acls
+        my_members.mapped("partner_id")
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: no ACLs for write for user"
         ):
             my_members.write({"permission": "write"})
 
-        # COVERS
         cover = self._create_cover()
         cover.write({"attachment_url": "/"})
         self.assertEqual(cover.attachment_url, "/")
@@ -412,7 +390,7 @@ class TestKnowledgeSecurity(KnowledgeArticlePermissionsCase):
         with self.assertRaises(
             exceptions.AccessError, msg="ACLs: 'none' internal permission"
         ):
-            article_hidden.body  # access body should trigger acls
+            article_hidden.body
 
         with self.assertRaises(
             exceptions.AccessError,

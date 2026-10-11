@@ -1,7 +1,6 @@
 PAYMENT_RETURN_ROUTE = "/payment/iyzico/return"
 WEBHOOK_ROUTE = "/payment/iyzico/webhook"
 
-# The currencies supported by Iyzico, in ISO 4217 format.
 SUPPORTED_CURRENCIES = [
     "CHF",
     "EUR",
@@ -13,25 +12,19 @@ SUPPORTED_CURRENCIES = [
     "USD",
 ]
 
-# The codes of the payment methods to activate when Iyzico is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods
     "card",
-    # Brand payment methods
     "mastercard",
     "visa",
     "amex",
     "troy",
 }
 
-# Mapping of payment method codes to Iyzico codes.
 PAYMENT_METHODS_MAPPING = {
     "amex": "american_express",
     "mastercard": "master_card",
 }
 
-# Mapping of transaction states to Iyzico payment statuses.
-# See https://docs.iyzico.com/en/advanced/webhook#hpp-format.
 PAYMENT_STATUS_MAPPING = {
     "pending": (
         "INIT_THREEDS",

@@ -5,10 +5,6 @@ from . import wizards
 
 
 def _pre_init_sale_subscription(env) -> None:
-    """Allow installing sale_subscription in databases with large sale.order / sale.order.line tables.
-    The different sale_subscription fields are all NULL (falsy) for existing sale orders,
-    the computation is way more efficient in SQL than in Python.
-    """
     env.cr.execute("""
         ALTER TABLE "sale_order_line"
         ADD COLUMN "parent_line_id" int4

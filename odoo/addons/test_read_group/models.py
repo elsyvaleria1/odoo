@@ -286,9 +286,6 @@ class Test_Read_GroupTask(models.Model):
             task.band = "high" if task.integer > BAND_THRESHOLD else "low"
 
     def _band_group_sql(self, field, alias, query):
-        # carries a parameter on purpose: the same SQL object reaches SELECT,
-        # GROUPING(), GROUP BY and ORDER BY, and psycopg binds server-side, so
-        # an uninlined placeholder is a different $n in each of them
         return SQL(
             "CASE WHEN %s > %s THEN 'high' ELSE 'low' END",
             self._field_to_sql(alias, "integer", query),

@@ -38,8 +38,6 @@ class TestAnInternalUserReadsBoxes(TransactionCase):
             self.other_device.with_user(self.user).read(["name"])
 
     def test_the_token_a_box_proves_itself_with_is_the_system_s_to_read(self):
-        """The paired token is the credential a box's calls are checked
-        against; a user who can read it can speak as the box."""
         with self.assertRaises(AccessError):
             self.box.with_user(self.user).read(["token"])
         admin = new_test_user(

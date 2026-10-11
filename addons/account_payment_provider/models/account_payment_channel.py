@@ -45,7 +45,6 @@ class AccountPaymentChannel(models.Model):
                     line.code, set()
                 )
 
-                # Exclude the providers of the 'electronic' methods already set on the journal.
                 protected_provider_ids = set()
                 for payment_type in ("inbound", "outbound"):
                     lines = journal[f"{payment_type}_payment_channel_ids"]
@@ -64,14 +63,10 @@ class AccountPaymentChannel(models.Model):
 
                 candidates_provider_ids = provider_ids - protected_provider_ids
                 if candidates_provider_ids:
-                    # Deterministic tie-break (lowest id) when several
-                    # providers share the same code for this company,
-                    # instead of relying on Python set iteration order.
                     line.payment_provider_id = min(candidates_provider_ids)
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_active_provider(self) -> None:
-        """Prevent deleting a payment method line linked to an enabled or test provider."""
         active_provider = self.payment_provider_id.filtered(
             lambda provider: provider.state in ["enabled", "test"]
         )

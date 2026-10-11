@@ -9,7 +9,6 @@ class CustomerPortalLoyalty(CustomerPortal):
     def _prepare_home_portal_values(self, counters):
         values = super()._prepare_home_portal_values(counters)
         if not counters:
-            # we want those data to be added to the /my/home page only, and always computed
             values["cards_per_programs"] = dict(
                 request.env["loyalty.card"]
                 .sudo()
@@ -30,11 +29,6 @@ class CustomerPortalLoyalty(CustomerPortal):
         return values
 
     def _get_own_loyalty_card(self, card_id):
-        """Return the visitor's own card `card_id`, or an empty recordset.
-
-        Both loyalty routes are `auth='user'` and read through `sudo()`; this is the
-        single place that turns a URL id back into a card the visitor may see.
-        """
         return (
             request.env["loyalty.card"]
             .sudo()
@@ -73,13 +67,8 @@ class CustomerPortalLoyalty(CustomerPortal):
 
         LoyaltyHistorySudo = request.env["loyalty.history"].sudo()
         searchbar_sortings = self._get_loyalty_searchbar_sortings()
-        # The route signature's `sortby='date'` only covers an *absent* param;
-        # a supplied unknown key reached this indexing as a KeyError (HTTP 500).
         sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "date")
         order = searchbar_sortings[sortby]["order"]
-        # The card is already the visitor's own, so ownership is not restated here:
-        # a second condition that the count above does not carry would page over one
-        # set and count another.
         history_domain = [("card_id", "=", card_sudo.id)]
         pager = portal_pager(
             url="/my/loyalty_card/<int:card_id>/history",
@@ -106,13 +95,6 @@ class CustomerPortalLoyalty(CustomerPortal):
 
     @route("/my/loyalty_card/<int:card_id>/values", type="jsonrpc", auth="user")
     def portal_get_card_history_values(self, card_id):
-        """Retrieve card history values for portal card dialog.
-
-        :param int card_id: The ID of the loyalty card.
-        :return: The card, its program, its latest history, its reachable
-                 rewards and its program type image path.
-        :rtype: dict
-        """
         card_sudo = self._get_own_loyalty_card(card_id)
         if not card_sudo:
             return {}
@@ -163,8 +145,6 @@ class CustomerPortalLoyalty(CustomerPortal):
                 }
                 for reward in rewards
             ],
-            # Only 'loyalty' and 'ewallet' ship art under static/src/img/;
-            # other program types' art lives under static/img/ (no 'src/').
             "img_path": (
                 f"/loyalty/static/src/img/{program_type}.svg"
                 if program_type in ("loyalty", "ewallet")

@@ -35,16 +35,10 @@ from odoo.addons.approval.models import approval_trace as trace
 RAISE = re.compile(r"^\s*raise (UserError|ValidationError|AccessError)\(")
 REFUSAL_EVENT = re.compile(r"trace\.REFUSAL\.event\(")
 
-# A raise reached by several callers for several reasons reports at each CALLER
-# instead, so one event cannot collapse four causes into one census row.
 REPORTED_BY_ITS_CALLERS = frozenset({"_raise_not_assigned_approver"})
 
-# A `refusal` line whose own method raises nothing. The census's oracle survives it
-# only because the flow it reports on refuses somewhere else.
 REFUSAL_WITHOUT_A_RAISE = frozenset()
 
-# An extension point left empty by OMISSION, not by design: there the campaign line IS
-# the report that nobody implemented it, so it may be the whole body.
 EMPTY_BY_OMISSION = frozenset(
     {
         "_raise_approval_category_not_configured",
@@ -62,10 +56,6 @@ def _source_files():
 
 class TestCampaignRefusalCensus(ApprovalCommon):
     def test_a_green_flow_logs_no_refusal(self):
-        """The null control: nothing the engine turns away happens here, so the
-        refusal target must stay silent. It did not, once: a guard answering a
-        question through a refusing form filed a refusal for every caller that
-        merely asked."""
         category = self._make_category(
             name="Census Green",
             approvers=[self.approver_1, self.approver_2],
@@ -99,9 +89,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
         )
 
     def test_every_raise_reports_a_refusal(self):
-        """Completeness, so the ranked census is not a sample of what was easy to
-        instrument. A new guard either reports its own kind or is named in
-        REPORTED_BY_ITS_CALLERS with the callers that report for it."""
         unreported = []
         for path in _source_files():
             lines = path.read_text().split("\n")
@@ -124,25 +111,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
         self.assertEqual(unreported, [], "\n".join(unreported))
 
     def test_no_call_site_reads_the_model_name_attribute(self):
-        """A campaign line may not reach the model's own name attribute through
-        `self`, and this is a ratchet because the rule was written down and then
-        broken twice.
-
-        `tooling/architecture/mixin_coupling_check.py` greps that exact token over
-        `odoo/addons` and `addons` for the metadata fan-in census, which is stated in a
-        docstring in CORE -- so a campaign call site that reads it moves a figure that
-        would have to move back when the campaign is removed. It also cost a peer
-        session an afternoon: the resulting 461-against-445 went into CLAUDE.md §4 as an
-        ORM defect that did not exist.
-
-        THE TOKEN IS BUILT RATHER THAN WRITTEN HERE, and that is not cuteness: the
-        census scans `tests/` too, so a guard that spells out what it counts adds to
-        the count. Writing it out three times in this file moved the figure by three
-        and cost a second misattribution, this time of my own work to somebody else.
-
-        The renderer prints a recordset, so `record=self` says more and costs nothing.
-        Seven reads predate the campaign; that is the ceiling.
-        """
         needle = "self." + "_name"
         reads = {path.name: path.read_text().count(needle) for path in _source_files()}
         total = sum(reads.values())
@@ -155,23 +123,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
         )
 
     def test_the_refusal_target_carries_only_refusals(self):
-        """`refusal` is the one target with an oracle -- a green flow logs zero -- and
-        that only holds while every line on it precedes a `raise`.
-
-        A method that raises through a `_raise_*` helper counts as raising: three sites
-        do that on purpose, so several callers can each report their own kind while one
-        helper holds the message.
-
-        This was broken while the test was being written: a `_compute_usage_count` on
-        `approval.refusal.reason` reported its `_read_group` on `REFUSAL` because the
-        MODEL is about refusal reasons. The target is about refusals, and a compute that
-        runs on any form view would have put a line on the one target whose value is
-        that it stays empty. It also found an older one: `_parse_domain_or_warn`
-        reported an unparseable domain as a refusal, where nothing is refused -- the
-        domain is treated as matching nothing and the flow carries on. That is the
-        `degraded` class, `_parse_domain` already says so on that target, and the line
-        was deleted rather than moved.
-        """
         misplaced = []
         for path in _source_files():
             tree = ast.parse(path.read_text())
@@ -209,16 +160,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
         )
 
     def test_no_campaign_line_is_the_only_statement_of_a_body(self):
-        """A campaign line is DELETED at the end of the campaign, so a body that holds
-        nothing else becomes a syntax error the moment it is.
-
-        `mixin.approval.state.sync._check_approval_sync_policy` is the shape:
-        `def ...: return`, an adopter's veto point that vetoes nothing by default.
-        Instrument the CALL SITE, which survives the deletion. A hook that is empty by
-        OMISSION rather than by design (`_raise_approval_category_not_configured`) is
-        the exception -- there the line is the report that nobody implemented it, and
-        it is named below.
-        """
         traps = []
         for path in _source_files():
             tree = ast.parse(path.read_text())
@@ -255,7 +196,6 @@ class TestCampaignRefusalCensus(ApprovalCommon):
         )
 
     def test_the_reported_kinds_are_distinct(self):
-        """Two sites sharing a kind are one census row, which hides one of them."""
         kinds = []
         for path in _source_files():
             tree = ast.parse(path.read_text())
@@ -288,7 +228,6 @@ class TestCampaignSwallowedFailures(ApprovalCommon):
     cannot find. So they are enumerated rather than measured.
     """
 
-    #: handler line -> why saying nothing is right there
     ALLOWED_TO_STAY_SILENT = {
         "approval_trace.py": "the renderer degrades to <unrenderable>, which IS the report",
     }
@@ -331,28 +270,12 @@ class TestCampaignMeasurement(ApprovalCommon):
         self.addCleanup(trace.forget_perf_ledger)
 
     def _shut_printing(self, target):
-        """Pin one target's level to WARNING for this test, whatever the run asked for.
-
-        Two of these tests are about what happens while nothing is printing, and the
-        suite is MEANT to be runnable under `--log-handler odoo.approval:DEBUG` --
-        that is how the formatting of every call site gets exercised. A test whose
-        premise is a log level has to set that level itself, or it fails on the
-        operator's flag rather than on the code.
-        """
         logger = logging.getLogger(f"{trace.LOG_ROOT}.{target.name}")
         before = logger.level
         logger.setLevel(logging.WARNING)
         self.addCleanup(logger.setLevel, before)
 
     def test_a_span_is_timed_while_every_target_is_silent(self):
-        """NOT written with `assertNoLogs`, and that is the point.
-
-        `assertNoLogs("odoo.approval", "DEBUG")` sets that logger to DEBUG for the
-        duration, which is the very switch under test: it makes the span print and
-        then fails on the line it caused. A test that asserts silence on the logger
-        whose level controls the behaviour has changed the behaviour. The printing
-        switch is `Target.on()`, so ask it.
-        """
         self._shut_printing(trace.LIFECYCLE)
         self.assertFalse(trace.LIFECYCLE.on(), "the printing switch starts shut")
         with patch.object(trace, "_WATCH_NPLUSONE", True):
@@ -365,9 +288,6 @@ class TestCampaignMeasurement(ApprovalCommon):
         self.assertEqual(ledger["measured_but_not_printed"].sql, 1)
 
     def test_nothing_is_timed_when_neither_switch_is_open(self):
-        # `accounting()` has THREE inputs -- the two variables and `perf` at DEBUG --
-        # and a run under `--log-handler odoo.approval:DEBUG` opens the third by
-        # inheritance. All three have to be shut to test the closed case.
         self._shut_printing(trace.LIFECYCLE)
         self._shut_printing(trace.PERF)
         with (
@@ -412,8 +332,6 @@ class TestCampaignMeasurement(ApprovalCommon):
                     span["sql"] = 0
 
     def test_annotate_reports_the_work_the_batch_size_hides(self):
-        """`_sync_approvers` is called with one request and writes forty rows; the
-        query count has to be read against the forty."""
         with patch.object(trace, "_WATCH_NPLUSONE", True):
             with self.assertLogs("odoo.approval.perf", level="INFO") as captured:
                 with trace.ROUTING.span("one_request_many_rows", n=1) as span:
@@ -441,7 +359,6 @@ class TestCampaignMeasurement(ApprovalCommon):
         self.assertLessEqual(row.worst_ms, row.total_ms)
 
     def test_a_wrapped_entry_point_is_timed_with_the_targets_quiet(self):
-        """The wrapper short-circuits on `target.on()`; the switch has to reopen it."""
         category = self._make_category(
             name="Measured Confirm", approvers=[self.approver_1]
         )
@@ -465,8 +382,6 @@ class TestCampaignCallTraces(ApprovalCommon):
         self.assertEqual(missing, [], "\n".join(missing))
 
     def test_every_wrapped_model_is_concrete(self):
-        """An abstract model's registry class is inherited by nobody, so wrapping it
-        instruments nothing: the mixins are instrumented by hand instead."""
         abstract = [
             model_name
             for model_name in trace.CALL_TRACES

@@ -21,17 +21,12 @@ class PaymobController(http.Controller):
         typed=True,
     )
     def paymob_return_from_checkout(self, **data):
-        """Process the payment data sent by Paymob after redirection from checkout.
-
-        :param dict data: The payment data.
-        """
         _logger.info(
             "Handling redirection from Paymob with data:\n%s", pprint.pformat(data)
         )
         request.admission.subject._process("paymob", request.admission.extra["data"])
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -42,15 +37,9 @@ class PaymobController(http.Controller):
         typed=True,
     )
     def paymob_webhook(self, **data):
-        """Process the payment data sent by Paymob to the webhook.
-
-        :param dict data: The payment data.
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from Paymob with data:\n%s",
             pprint.pformat(request.get_json_data().get("obj")),
         )
         request.admission.subject._process("paymob", request.admission.extra["data"])
-        return ""  # Acknowledge the notification
+        return ""

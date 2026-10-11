@@ -10,29 +10,13 @@ from odoo.libs.datetime import timezone as get_timezone
 from odoo.tools.misc import get_lang
 from odoo.tools.urls import keep_query
 
-# Guests a single public submission may add at once.
 GUEST_LIMIT = 10
 
 
 class CalendarController(http.Controller):
-    # ------------------------------------------------------------
-    # TOKEN LOOKUP
-    # ------------------------------------------------------------
-    #
-    # Every route below identifies its record by an invitation token taken
-    # straight from the query string. `('access_token', '=', token)` with an
-    # empty token matches every row whose column is NULL, so an unguarded lookup
-    # turns "no token" into "any tokenless record": on `calendar.attendee` that
-    # authenticated an anonymous visitor and let them answer the invitation, and
-    # on `calendar.event` -- where a NULL token is the norm, every event without
-    # a videocall link has one -- it matched them all at once and crashed
-    # `action_join_meeting`'s `check_singleton()`. Both lookups go through these two
-    # helpers so the rule is stated once.
 
     @staticmethod
     def _attendee_from_token(token, extra_domain=None):
-        """The attendee whose live invitation link `token` is and who matches
-        `extra_domain`, or an empty recordset."""
         attendee = request.env["calendar.attendee"]._from_invitation_token(token)
         if attendee and extra_domain:
             return attendee.filtered_domain(extra_domain)
@@ -40,20 +24,16 @@ class CalendarController(http.Controller):
 
     @staticmethod
     def _event_from_token(token):
-        """Event bearing `token`, or an empty recordset for a falsy token."""
         if not token:
             return request.env["calendar.event"]
         return (
-            request.env["calendar.event"]  # noqa: E8537  public: an identifier that is not meant to be secret
+            request.env["calendar.event"]
             .sudo()
             .search([("access_token", "=", token)], limit=1)
         )
 
     @staticmethod
     def _confirm_answer(token, event_id, answer, *, recurrence=False):
-        """The page asking the invitee to confirm `answer`, for a GET: a link
-        opened by a mail scanner or a preview must not answer the invitation.
-        None for the POST that page sends, which answers it."""
         if request.httprequest.method == "POST":
             return None
         attendee = CalendarController._attendee_from_token(
@@ -72,11 +52,7 @@ class CalendarController(http.Controller):
             },
         )
 
-    # ------------------------------------------------------------
-    # ROUTES
-    # ------------------------------------------------------------
 
-    # YTI Note: Keep id and kwargs only for retrocompatibility purpose
     @http.route(
         "/calendar/meeting/accept",
         type="http",
@@ -194,27 +170,22 @@ class CalendarController(http.Controller):
             "/calendar/meeting/view?token=%s&id=%s" % (attendee.access_token, event.id)
         )
 
-    # RPC polled by the web client to fetch the event reminders currently due; the
-    # client reschedules its next call for when the last returned notification fires.
     @http.route("/calendar/notify", type="jsonrpc", auth="user")
     def notify(self):
         return request.env["calendar.alarm_manager"].get_next_notif()
 
     @http.route("/calendar/notify_ack", type="jsonrpc", auth="user")
     def notify_ack(self):
-        # sudo: a portal user has no write access to res.partner, and the method
-        # only ever stamps the caller's own partner.
         return request.env["res.partner"].sudo()._set_calendar_last_notif_ack()
 
     @http.route(
         "/calendar/join_videocall/<string:access_token>", type="http", auth="public"
     )
-    def calendar_join_videocall(self, access_token):  # noqa: E8539  public: a meeting room every attendee shares
+    def calendar_join_videocall(self, access_token):
         event = self._event_from_token(access_token)
         if not event:
             raise request.prepare_not_found_error()
 
-        # if channel doesn't exist
         if not event.videocall_channel_id:
             event._create_videocall_channel()
 
@@ -222,7 +193,6 @@ class CalendarController(http.Controller):
 
     @http.route("/calendar/check_credentials", type="jsonrpc", auth="user")
     def check_calendar_credentials(self):
-        # method should be overwritten by sync providers
         return request.env["res.users"].check_calendar_credentials()
 
     @route(
@@ -232,22 +202,11 @@ class CalendarController(http.Controller):
         website=True,
     )
     def appointment_view(self, access_token, partner_id=False, state=False, **kwargs):
-        """
-        Render the validation of an appointment and display a summary of it
-
-        :param access_token: the access_token of the event linked to the appointment
-        :param partner_id: id of the partner who booked the appointment
-        :param state: allow to display an info message, possible values:
-            - 'new': Info message displayed when the appointment has been correctly created
-            - other values: see _get_prevent_cancel_status
-        """
         event, partner_id, can_manage = self._meeting_access(
             access_token, archived=True
         )
         if not event:
             raise request.prepare_not_found_error()
-        # The invitation redirect starts a new request. Recover the language
-        # from the authenticated attendee/booker, not the anonymous session.
         partner = event.env["res.partner"].browse(partner_id)
         if partner.lang:
             request.update_context(lang=partner.lang)
@@ -281,8 +240,6 @@ class CalendarController(http.Controller):
             url_date_start = fields.Date.from_string(event.start_date).strftime(
                 "%Y%m%d"
             )
-            # Calendar stores an inclusive last civil day; calendar exports use
-            # the following midnight as their exclusive end.
             url_date_stop = (
                 fields.Date.from_string(event.stop_date) + timedelta(days=1)
             ).strftime("%Y%m%d")
@@ -333,12 +290,6 @@ class CalendarController(http.Controller):
         website=True,
     )
     def appointment_add_attendee(self, access_token, emails_str):
-        """
-        Add the attendee at the time of the validation of an appointment page
-
-        :param access_token: access_token of the event linked to the appointment
-        :param emails_str: guest emails in the block of text
-        """
         event_sudo, _, _ = self._meeting_access(access_token, management=True)
         if not event_sudo:
             raise request.prepare_not_found_error()
@@ -364,9 +315,6 @@ class CalendarController(http.Controller):
         website=True,
     )
     def appointment_cancel(self, access_token, partner_id=False, **kwargs):
-        """
-        Route to cancel an appointment event, this route is linked to a button in the validation page
-        """
         event, partner_id, _ = self._meeting_access(access_token, management=True)
         appointment_type = event.appointment_type_id
         appointment_invite = event.appointment_invite_id
@@ -396,10 +344,6 @@ class CalendarController(http.Controller):
         return request.redirect(redirect_url)
 
     def _get_prevent_cancel_status(self, event):
-        """
-        This method returns status corresponding to any reason preventing event cancelling.
-        It can be overriden to add other cancelling condition checks and return their status value.
-        """
         if fields.Datetime.from_string(
             (event.allday and event.start_date) or event.start
         ) < datetime.now() + timedelta(
@@ -415,9 +359,6 @@ class CalendarController(http.Controller):
         website=True,
     )
     def appointment_get_ics_file(self, access_token, **kwargs):
-        """
-        Route to add the appointment event in a iCal/Outlook calendar
-        """
         event, _, _ = self._meeting_access(access_token)
         if not event or not event.attendee_ids:
             raise request.prepare_not_found_error()
@@ -438,11 +379,11 @@ class CalendarController(http.Controller):
         )
 
     @route("/calendar/videocall/<string:access_token>", type="http", auth="public")
-    def calendar_videocall(self, access_token):  # noqa: E8539  public: a meeting room every attendee shares
+    def calendar_videocall(self, access_token):
         if not access_token:
             raise Forbidden
         event = (
-            request.env["calendar.event"]  # noqa: E8537  public: an identifier that is not meant to be secret
+            request.env["calendar.event"]
             .sudo()
             .search([("access_token", "=", access_token)], limit=1)
         )
@@ -451,12 +392,10 @@ class CalendarController(http.Controller):
 
         if event.videocall_source == "discuss":
             return self.calendar_join_videocall(access_token)
-        # custom / google_meet
         return request.redirect(event.videocall_location, local=False)
 
     @classmethod
     def _meeting_access(cls, token, *, management=False, archived=False):
-        """Resolve an attendee or booking credential, never a conference token."""
         empty = request.env["calendar.event"]
         if not token:
             return empty, False, False

@@ -28,7 +28,6 @@ class TestAvataxCommon(TransactionCase):
         cls.env.company.avalara_environment = "sandbox"
         cls.env.company.avalara_commit = True
 
-        # Update address of company
         company = cls.env.user.company_id
         company.write(
             {
@@ -50,7 +49,6 @@ class TestAvataxCommon(TransactionCase):
             }
         )
 
-        # Create partner with correct US address
         cls.partner = cls.env["res.partner"].create(
             {
                 "name": "Sale Partner",
@@ -158,9 +156,6 @@ class TestAccountAvataxCommon(TestAvataxCommon, TestTaxCommon):
             }
         )
 
-        # This tax is deliberately wrong with an amount of 1. This is used
-        # to make sure we use the tax values that Avatax returns and not the tax values
-        # Odoo computes (these values would be wrong if a user manually changes it for example).
         cls.example_tax = cls.env["account.tax"].create(
             {
                 "name": "CA STATE 6%",

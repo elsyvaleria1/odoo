@@ -45,7 +45,6 @@ class SaleOrder(models.Model):
 
     @api.depends("picking_ids.lazada_package_status")
     def _compute_lazada_order_status(self) -> None:
-        """Compute delivery status from Lazada order item statuses."""
         for order in self:
             package_statuses = order.picking_ids.mapped("lazada_package_status")
             order.lazada_order_status = utils.get_lazada_aggregated_status(

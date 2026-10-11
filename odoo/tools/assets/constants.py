@@ -20,9 +20,6 @@ STYLE_EXTENSIONS = ("css", "scss", "sass")
 TEMPLATE_EXTENSIONS = ("xml",)
 ASSET_EXTENSIONS = SCRIPT_EXTENSIONS + STYLE_EXTENSIONS + TEMPLATE_EXTENSIONS
 
-# @odoo/owl is owl's runtime build; the compiler is a module of its own that a
-# page imports only when one of its bundles may compile a template in the
-# browser. A bundle that inlines owl (a standalone one) inlines the full build.
 OWL_COMPILER_SPECIFIER = "@odoo/owl/compiler"
 OWL_FULL_BUILD_URL = "/web/static/lib/owl/owl.es.js"
 

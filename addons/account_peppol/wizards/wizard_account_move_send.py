@@ -5,14 +5,8 @@ from odoo.exceptions import AccessError, UserError
 class WizardAccountMoveSend(models.TransientModel):
     _inherit = "wizard.account.move.send"
 
-    # -------------------------------------------------------------------------
-    # DEFAULTS
-    # -------------------------------------------------------------------------
 
     def _compute_sending_method_checkboxes(self) -> None:
-        """EXTENDS 'account'
-        If Customer is not valid on Peppol, we disable the checkbox. Also add the proxy mode if not in prod.
-        """
         super()._compute_sending_method_checkboxes()
         for wizard in self:
             if peppol_checkbox := wizard.sending_method_checkboxes.get("peppol"):
@@ -56,7 +50,6 @@ class WizardAccountMoveSend(models.TransientModel):
                     }
 
     def action_send_and_print(self, allow_fallback_pdf=False):
-        # EXTENDS 'account'
         self.check_singleton()
         if self.sending_methods and "peppol" in self.sending_methods:
             if (
@@ -72,7 +65,7 @@ class WizardAccountMoveSend(models.TransientModel):
                         "You are not allowed to send invoice on behalf of %s.",
                         self.move_id.company_id.account_peppol_config_id.peppol_parent_company_id.sudo().name,
                     )
-                )  # sudo needed because the current user does not have access
+                )
             if registration_action := self._do_peppol_pre_send(self.move_id):
                 return registration_action
         return super().action_send_and_print(allow_fallback_pdf=allow_fallback_pdf)

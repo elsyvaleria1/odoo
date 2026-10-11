@@ -25,7 +25,6 @@ class TestActivitySchedule(ActivityScheduleCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # add some triggered and suggested next activitities
         cls.test_type_1, cls.test_type_2, cls.test_type_3 = cls.env[
             "mail.activity.type"
         ].create(
@@ -65,7 +64,6 @@ class TestActivitySchedule(ActivityScheduleCase):
             }
         )
 
-        # prepare plans
         cls.plan_party = cls.env["mail.activity.plan"].create(
             {
                 "name": "Test Plan A Party",
@@ -138,7 +136,6 @@ class TestActivitySchedule(ActivityScheduleCase):
             }
         )
 
-        # test records
         cls.reference_now = fields.Datetime.from_string("2023-09-30 14:00:00")
         cls.test_records = cls.env["mail.test.activity"].create(
             [
@@ -151,22 +148,17 @@ class TestActivitySchedule(ActivityScheduleCase):
             ]
         )
 
-        # some big dict comparisons
         cls.maxDiff = None
 
     @users("employee")
     def test_activity_schedule(self):
-        """Test schedule of an activity on a single or multiple records."""
         test_records_all = [self.test_records[0], self.test_records[:3]]
-        # sanity check: new activity created without specifying activiy type
-        # will have default type of the available activity type with the lowest sequence, then lowest id
         self.assertTrue(
             self.activity_type_todo.sequence < self.activity_type_call.sequence
         )
         for test_idx, test_case in enumerate(["mono", "multi"]):
             test_records = test_records_all[test_idx].with_env(self.env)
             with self.subTest(test_case=test_case, test_records=test_records):
-                # 1. SCHEDULE ACTIVITIES
                 with freeze_time(self.reference_now):
                     form = self._instantiate_activity_schedule_wizard(test_records)
                     form.summary = "Write specification"
@@ -182,14 +174,13 @@ class TestActivitySchedule(ActivityScheduleCase):
                             "activity_type_id": self.activity_type_todo,
                             "automated": False,
                             "date_deadline": self.reference_now.date()
-                            + timedelta(days=4),  # activity type delay
+                            + timedelta(days=4),
                             "note": "<p>Useful link ...</p>",
                             "summary": "Write specification",
                             "user_id": self.user_admin,
                         },
                     )
 
-                # 2. LOG DONE ACTIVITIES
                 with freeze_time(self.reference_now):
                     form = self._instantiate_activity_schedule_wizard(test_records)
                     form.activity_type_id = self.activity_type_call
@@ -202,8 +193,6 @@ class TestActivitySchedule(ActivityScheduleCase):
                 for record in test_records:
                     self.assertActivityDoneOnRecord(record, self.activity_type_call)
 
-                # 3. CONTINUE WITH SCHEDULE ACTIVITIES
-                # implies deadline addition on top of previous activities
                 with freeze_time(self.reference_now):
                     form = self._instantiate_activity_schedule_wizard(test_records)
                     form.activity_type_id = self.activity_type_call
@@ -220,14 +209,13 @@ class TestActivitySchedule(ActivityScheduleCase):
                             "activity_type_id": self.activity_type_call,
                             "automated": False,
                             "date_deadline": self.reference_now.date()
-                            + timedelta(days=1),  # activity call delay
+                            + timedelta(days=1),
                             "note": False,
                             "summary": "TodoSumCallSummary",
                             "user_id": self.user_admin,
                         },
                     )
 
-        # global activity creation from tests
         self.assertEqual(len(self.test_records[0].activity_ids), 4)
         self.assertEqual(len(self.test_records[1].activity_ids), 2)
         self.assertEqual(len(self.test_records[2].activity_ids), 2)
@@ -253,8 +241,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("admin")
     def test_activity_schedule_rights_upload_without_the_form(self):
-        """The onchange is UX. A wizard built by RPC never runs it, so the
-        action itself has to refuse an assignee who cannot upload."""
         user = mail_new_test_user(
             self.env,
             groups="base.group_public",
@@ -287,7 +273,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("employee")
     def test_activity_schedule_norecord(self):
-        """Test scheduling free activities, supported if assigned user."""
         scheduler = self._instantiate_activity_schedule_wizard(None)
         self.assertEqual(scheduler.activity_type_id, self.activity_type_todo)
         with self._mock_activities():
@@ -302,17 +287,12 @@ class TestActivitySchedule(ActivityScheduleCase):
             },
         )
 
-        # cannot scheduler unassigned personal activities
         scheduler = self._instantiate_activity_schedule_wizard(None)
         scheduler = scheduler.save()
         with self.assertRaises(ValidationError):
             scheduler.activity_user_id = False
 
     def test_compute_error_plan_without_res_model(self):
-        """Regression: computing 'error' on a plan scheduler that has no
-        res_model yet (wizard opened without an active model) must not raise
-        UnboundLocalError -- 'applied_on' used to be bound only in the res_model
-        branch but read in the plan branch."""
         scheduler = (
             self.env["wizard.mail.activity.schedule"]
             .with_context(
@@ -321,11 +301,9 @@ class TestActivitySchedule(ActivityScheduleCase):
             )
             .new({"plan_id": self.plan_party.id, "res_model": False})
         )
-        # must compute cleanly and surface the intended guidance, not crash
         self.assertIn("without a record", scheduler.error or "")
 
     def test_plan_copy(self):
-        """Test plan copy"""
         copied_plan = self.plan_onboarding.copy()
         self.assertEqual(copied_plan.name, f"{self.plan_onboarding.name} (copy)")
         self.assertEqual(
@@ -334,7 +312,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("employee")
     def test_plan_mode(self):
-        """Test the plan_mode that allows to preselect a compatible plan."""
         test_record = self.test_records[0].with_env(self.env)
         context = {
             "active_id": test_record.id,
@@ -351,7 +328,6 @@ class TestActivitySchedule(ActivityScheduleCase):
             self.env["wizard.mail.activity.schedule"].with_context(plan_mode_context)
         ) as form:
             self.assertEqual(form.plan_id, self.plan_party)
-        # should select only model-plans
         self.plan_party.res_model = "res.partner"
         with Form(
             self.env["wizard.mail.activity.schedule"].with_context(plan_mode_context)
@@ -360,7 +336,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("admin")
     def test_plan_next_activities(self):
-        """Test that next activities are displayed correctly."""
         test_plan = self.env["mail.activity.plan"].create(
             {
                 "name": "Test Plan",
@@ -372,13 +347,11 @@ class TestActivitySchedule(ActivityScheduleCase):
                 ],
             }
         )
-        # Assert expected next activities
         expected_next_activities = [["TestAct2"], ["TestAct1", "TestAct3"], []]
         for template, expected_names in zip(
             test_plan.template_ids, expected_next_activities, strict=True
         ):
             self.assertEqual(template.next_activity_ids.mapped("name"), expected_names)
-        # Test the plan summary
         with (
             self.subTest(test_case="Check plan summary"),
             freeze_time(self.reference_now),
@@ -402,7 +375,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("employee")
     def test_plan_schedule(self):
-        """Test schedule of a plan on a single or multiple records."""
         test_records_all = [self.test_records[0], self.test_records[:3]]
         for test_idx, test_case in enumerate(["mono", "multi"]):
             test_records = test_records_all[test_idx].with_env(self.env)
@@ -410,7 +382,6 @@ class TestActivitySchedule(ActivityScheduleCase):
                 self.subTest(test_case=test_case, test_records=test_records),
                 freeze_time(self.reference_now),
             ):
-                # No plan_date specified (-> self.reference_now is used), No responsible specified
                 form = self._instantiate_activity_schedule_wizard(test_records)
                 self.assertFalse(form.plan_schedule_line_ids)
                 form.plan_id = self.plan_onboarding
@@ -463,7 +434,6 @@ class TestActivitySchedule(ActivityScheduleCase):
                     ],
                 )
 
-                # plan_date specified, responsible specified
                 plan_date = self.reference_now.date() + relativedelta(days=14)
                 responsible_id = self.user_admin
                 form = self._instantiate_activity_schedule_wizard(test_records)
@@ -503,14 +473,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("admin")
     def test_plan_setup_model_consistency(self):
-        """Test the model consistency of a plan.
-
-        Model consistency between activity_type - activity_template - plan:
-        - a plan is restricted to a model
-        - a plan contains activity plan templates which can be limited to some model
-        through activity type
-        """
-        # Setup independent activities type to avoid interference with existing data
         activity_type_1, activity_type_2, activity_type_3 = self.env[
             "mail.activity.type"
         ].create(
@@ -531,7 +493,6 @@ class TestActivitySchedule(ActivityScheduleCase):
             }
         )
 
-        # ok, all activities generic
         test_plan.res_model = "res.partner"
         test_plan.res_model = "mail.test.activity"
 
@@ -561,7 +522,6 @@ class TestActivitySchedule(ActivityScheduleCase):
 
     @users("admin")
     def test_plan_setup_validation(self):
-        """Test plan consistency."""
         plan = self.env["mail.activity.plan"].create(
             {
                 "name": "test",
@@ -633,7 +593,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
         )
 
     def test_launching_a_plan_groups_its_creates(self):
-        """Records sharing a template and a responsible are scheduled together."""
         wizard = self._wizard()
         creates = []
         Activity = type(self.env["mail.activity"])
@@ -663,8 +622,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
         )
 
     def test_the_responsible_is_resolved_once_per_template_and_record(self):
-        """`_get_responsible_and_complaints` feeds both errors and warnings, so it is
-        asked once for both -- hr walks a management chain inside it."""
         wizard = self._wizard()
         Template = type(self.env["mail.activity.plan.template"])
         with patch.object(
@@ -686,9 +643,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
         )
 
     def test_the_preview_asks_the_template_who_is_responsible(self):
-        """Even when the template names one outright: hr and hr_fleet answer
-        through `_get_responsible_and_complaints`, and the preview read `responsible_id`
-        past them."""
         wizard = self._wizard(self.records[:1])
         Template = type(self.env["mail.activity.plan.template"])
         with patch.object(
@@ -707,9 +661,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
         self.assertEqual(lines.responsible_user_id, self.user_employee)
 
     def test_a_batch_preview_shows_only_what_needs_no_record(self):
-        """With several records the preview has no record to ask about, so a
-        rule that needs one -- and says so with an error -- shows nobody, while
-        a fixed responsible still shows."""
         wizard = self._wizard()
         self.assertGreater(len(self.records), 1)
         self.assertEqual(
@@ -745,8 +696,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
         self.assertEqual(evaluate.call_count, 1)
 
     def test_launching_asks_the_template_for_an_on_demand_responsible_too(self):
-        """`action_schedule_plan` short-circuited on_demand templates to the
-        wizard's user; an override answering for them was never consulted."""
         self.plan.template_ids.write(
             {"responsible_type": "on_demand", "responsible_id": False}
         )
@@ -782,11 +731,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
 
     @users("employee")
     def test_model_options_exclude_what_the_user_cannot_read(self):
-        """The access question is about the described model, not the ir.model row.
-
-        The row is read through sudo(), so asking *it* answers True for
-        everyone, and every activity-capable model was offered to every user.
-        """
         options = self.env["wizard.mail.activity.schedule"].get_model_options()
         self.assertTrue(options)
         unreadable = [
@@ -798,7 +742,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
 
     @users("employee")
     def test_model_options_exclude_abstract_models(self):
-        """An abstract model can hold no record, so it can hold no activity."""
         options = self.env["wizard.mail.activity.schedule"].get_model_options()
         abstract = [model for model in options if self.env[model]._abstract]
         self.assertFalse(abstract, f"offered abstract models: {abstract}")
@@ -806,7 +749,6 @@ class TestPlanScheduleShape(ActivityScheduleCase):
 
 @tagged("mail_activity", "mail_activity_plan")
 class TestActivityPlanDeadlines(ActivityScheduleCase):
-    # 01:00 UTC on the 17th: the 16th in Mexico City, the 17th in Madrid
     FROZEN = "2026-08-17 01:00:00"
 
     @classmethod

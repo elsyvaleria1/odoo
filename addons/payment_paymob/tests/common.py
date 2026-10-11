@@ -18,7 +18,6 @@ class PaymobCommon(PaymentCommon):
             },
         )
 
-        # Override default values
         cls.provider = cls.paymob
         cls.currency = cls._enable_currency("EGP")
         cls.hmac_signature = "51860052ecc6d9f08ac30a549359019e2eee837913b5673094c242c817ddf57c055ba5e3e9c0894b1171e62c2d37cd55ff98a46a0e28e1ccf2e4a907e6683aa5"

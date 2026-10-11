@@ -169,8 +169,6 @@ class ResourceAssignment(models.Model):
                 record.state = "active"
 
     def _end(self, at=None):
-        # A planned assignment is cancelled by giving it no length: it ends
-        # where it starts.
         at = at or fields.Datetime.now()
         records = self.with_context(**{CUSTODY_SYNC: True})
         started = records.filtered(lambda a: a.date_start <= at)
@@ -194,8 +192,6 @@ class ResourceAssignment(models.Model):
 
     @api.model
     def _get_holding_custody_roles(self) -> tuple[str, ...]:
-        # Who has the resource, in order: whoever operates it, else whoever
-        # keeps it. Managing or repairing it is not having it.
         return HOLDING_CUSTODY_ROLES
 
     @api.model
@@ -212,11 +208,6 @@ class ResourceAssignment(models.Model):
 
     @api.model
     def _get_sql_custody_winners(self, roles, when="live", at=None) -> SQL:
-        """The assignment that answers each resource's custody among `roles`,
-        as (resource_id, assignee_id, date_start): live, the first of `roles`
-        held, then the latest started; planned, the earliest to start. The
-        computes and the searches of the custody fields both read this, so
-        what a resource shows is what finds it."""
         at = at or fields.Datetime.now()
         if when == "live":
             period = SQL(
@@ -289,7 +280,6 @@ class ResourceAssignment(models.Model):
 
     @api.model
     def _get_sql_effective_custody(self, ids=None):
-        """Resolve overlapping roles using the same latest-started winner as custody."""
         return SQL(
             """
             SELECT ra.id, ra.resource_id, ra.assignee_id, ra.custody_role,
@@ -362,7 +352,6 @@ class ResourceAssignment(models.Model):
         )
         if not started:
             return
-        # one batch may hold rivals too: the latest started of each holds
         winners = {}
         for assignment in started.sorted(lambda a: (a.date_start, a.id)):
             winners[assignment.resource_id.id, assignment.custody_role] = assignment

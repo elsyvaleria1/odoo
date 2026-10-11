@@ -16,16 +16,6 @@ class TestMarketingAutomationSms(TestMACommon):
         cls.env["res.lang"]._activate_lang("fr_FR")
         cls._setup_sms_twilio(cls.user_marketing_automation.company_id)
 
-        # --------------------------------------------------
-        # TEST RECORDS, using marketing.test.sms (customers)
-        #
-        # 2 times
-        # - 3 records with partners
-        # - 1 records wo partner, but email/mobile
-        # - 1 record wo partner/email/mobile
-        # 1 wrong email
-        # 1 duplicate
-        # --------------------------------------------------
         cls.test_records_base = cls._create_marketauto_records(
             model="marketing.test.sms", count=2
         )
@@ -41,9 +31,6 @@ class TestMarketingAutomationSms(TestMACommon):
                 {
                     "email_from": cls.test_records_base[1].email_from,
                     "phone_ids": [Command.set(cls.test_records_base[1].phone_ids.ids)],
-                    # compared to < 17, we need the name to be the same, as duplicate
-                    # comparison is now done on sent content + recipient, not just
-                    # the recipient itself
                     "name": cls.test_records_base[1].name,
                 },
             ]
@@ -53,12 +40,6 @@ class TestMarketingAutomationSms(TestMACommon):
         )
         cls.test_records = cls.test_records_base + cls.test_records_failure
 
-        # --------------------------------------------------
-        # CAMPAIGN, based on marketing.test.sms (customers)
-        #
-        # ACT1           SMS mailing
-        #   ACT1.1       -> bounce -> archive record
-        # --------------------------------------------------
 
         cls.campaign = (
             cls.env["marketing.campaign"]
@@ -70,7 +51,6 @@ class TestMarketingAutomationSms(TestMACommon):
                 }
             )
         )
-        # first activity: send a SMS mailing
         cls.act1_sms_mailing = cls._create_mailing(
             "marketing.test.sms",
             mailing_type="sms",
@@ -84,7 +64,6 @@ class TestMarketingAutomationSms(TestMACommon):
             interval_number=1,
             interval_type="hour",
         ).with_user(cls.user_marketing_automation)
-        # server action: archive record
         cls.act1_1_sact = cls.env["ir.actions.server"].create(
             {
                 "code": "records.action_archive()",
@@ -104,39 +83,29 @@ class TestMarketingAutomationSms(TestMACommon):
         cls.env.flush_all()
 
     def test_assert_initial_values(self):
-        """Test initial values to have a common ground for other tests"""
-        # ensure initial data
         self.assertEqual(len(self.test_records), 12)
         self.assertEqual(self.campaign.state, "draft")
 
     @users("user_marketing_automation")
     def test_marketing_automation_flow(self):
-        """Test a marketing automation flow involving several steps."""
-        # init test variables to ease code reading
         data_reference_start = self.date_reference + relativedelta(hours=1)
         test_records = self.test_records.with_user(self.env.user)
 
-        # update campaign
         act1 = self.act1.with_user(self.env.user)
         _act1_1 = self.act1_1.with_user(self.env.user)
         campaign = self.campaign.with_user(self.env.user)
 
-        # CAMPAIGN START
-        # ------------------------------------------------------------
 
-        # User starts and syncs its campaign
         with self.mock_datetime_and_now(self.date_reference):
             campaign.action_start_campaign()
             campaign.sync_participants()
 
-        # All records not containing Test_00 should be added as participants
         self.assertEqual(campaign.running_participant_count, len(test_records))
         self.assertEqual(
             set(campaign.participant_ids.mapped("res_id")), set(test_records.ids)
         )
         self.assertEqual(set(campaign.participant_ids.mapped("state")), {"running"})
 
-        # Beginning activity should contain a scheduled trace for each participant
         self.assertMarketAutoTraces(
             [
                 {
@@ -151,8 +120,6 @@ class TestMarketingAutomationSms(TestMACommon):
             act1,
         )
 
-        # ACT1: LAUNCH SMS MAILING
-        # ------------------------------------------------------------
         test_records_1_ko = (
             test_records.filtered(
                 lambda r: not r.phone_ids or r._phone_get_number().number == "87645"
@@ -172,10 +139,8 @@ class TestMarketingAutomationSms(TestMACommon):
                 self.env(cr=cr)["sms.sms"].sudo()._process_queue()
             self.env.invalidate_all()
 
-        # SMS are sent one call at a time
         self.assertEqual(self._sms_twilio_send_mock.call_count, 8)
 
-        # simulate ack reception from twilio
         sms_batch = self._new_sms.filtered(
             lambda sms: sms.mailing_trace_ids.res_id in test_records_1_ok.ids,
         )
@@ -195,7 +160,6 @@ class TestMarketingAutomationSms(TestMACommon):
                     "trace_status": "sent",
                 },
                 {
-                    # wrong phone -> trace set as ignored
                     "fields_values": {
                         "schedule_date": data_reference_start,
                         "state_msg": "SMS cancelled",
@@ -207,7 +171,6 @@ class TestMarketingAutomationSms(TestMACommon):
                     "trace_status": "cancel",
                 },
                 {
-                    # wrong phone -> trace set as ignored
                     "fields_values": {
                         "schedule_date": data_reference_start,
                         "state_msg": "SMS cancelled",
@@ -218,8 +181,7 @@ class TestMarketingAutomationSms(TestMACommon):
                     "trace_status": "cancel",
                 },
                 {
-                    # no phone -> trace set as ignored
-                    "check_sms": False,  # cannot differentiate 2 void sms -> no need to check anyway
+                    "check_sms": False,
                     "fields_values": {
                         "schedule_date": data_reference_start,
                         "state_msg": "SMS cancelled",
@@ -230,7 +192,6 @@ class TestMarketingAutomationSms(TestMACommon):
                         - self.test_records_failure_dupe
                     ),
                     "status": "canceled",
-                    # TDE checkme
                     "trace_failure_type": "mail_email_missing",
                     "trace_status": "cancel",
                 },

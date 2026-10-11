@@ -11,13 +11,11 @@ class CalendarEvent(models.Model):
         fields_to_read = self._load_pos_data_fields(0)
 
         for event in events:
-            # Don't include the event if it's not for today
             if event.start.date() != today:
                 continue
 
             event_dict = event.read(fields_to_read, load=False)[0]
             event_appointment_type_id = event_dict.get("appointment_type_id")
-            # tables that are booked for this event
             event_table_ids = event.booking_line_ids.resource_id.sudo().pos_table_ids
             for table in event_table_ids:
                 for config in table.floor_id.pos_config_ids:

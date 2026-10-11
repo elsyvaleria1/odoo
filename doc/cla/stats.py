@@ -1,7 +1,4 @@
 #!/usr/bin/python
-#
-# Runme From the repo toplevel directory
-#
 import pathlib
 import re
 import subprocess
@@ -22,7 +19,7 @@ def blamestat(ext: str = "py") -> None:
     okl: list[str] = []
     ko = 0
     kol: list[str] = []
-    p = subprocess.Popen(  # noqa: S602  a fixed pipeline; ext is this script's own literal
+    p = subprocess.Popen(
         "git ls-tree -r -z --name-only HEAD | grep -z '.%s$' | xargs -0 -n1 git blame --line-porcelain HEAD |grep  '^author-mail ' |sort |uniq -c|sort -nr"
         % ext,
         shell=True,

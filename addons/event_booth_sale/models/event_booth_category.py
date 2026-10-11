@@ -79,8 +79,6 @@ class EventBoothCategory(models.Model):
 
     @api.depends("product_id")
     def _compute_price(self) -> None:
-        """By default price comes from category but can be changed by event
-        people as product may be shared across various categories."""
         for category in self:
             if category.product_id and category.product_id.list_price:
                 category.price = (
@@ -123,21 +121,14 @@ class EventBoothCategory(models.Model):
             category.price_reduce_taxinc = taxes["total_included"] or 0
 
     def _init_column(self, column_name, *, new_column=False):
-        """Initialize product_id for existing columns when installing sale
-        bridge, to ensure required attribute is fulfilled."""
         if column_name != "product_id":
             return super()._init_column(column_name, new_column=new_column)
 
-        # fetch void columns
         self.env.cr.execute("SELECT id FROM %s WHERE product_id IS NULL" % self._table)
-        # fetchall() yields row tuples [(1,), (2,), ...]; flatten to plain ints
-        # so ANY(%s) below adapts to a Postgres integer[] under psycopg3 (a
-        # tuple would adapt to a composite "(1)" and fail the integer cast).
         booth_category_ids = [row[0] for row in self.env.cr.fetchall()]
         if not booth_category_ids:
             return None
 
-        # update existing columns
         _logger.debug(
             "Table '%s': setting default value of new column %s to unique values for each row",
             self._table,

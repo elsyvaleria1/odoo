@@ -316,7 +316,6 @@ class TestEquity(TestEquityCommon):
             ],
         )
 
-        # Looking in the past, it should still display the old value
         self.assertRecordValues(
             self.env["equity.cap.table"]
             .with_context(current_date="2010-01-01")

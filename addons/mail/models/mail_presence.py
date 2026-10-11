@@ -127,7 +127,6 @@ class MailPresence(models.Model):
             - timedelta(milliseconds=inactivity_period),
             "status": "away" if inactivity_period > AWAY_TIMER * 1000 else "online",
         }
-        # a guest is no principal: nothing but the kernel writes its presence
         is_guest = user_or_guest._name == "mail.guest"
         presences = self.sudo() if is_guest else self
         owner_field = "guest_id" if is_guest else "user_id"

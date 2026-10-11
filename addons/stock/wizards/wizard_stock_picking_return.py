@@ -199,8 +199,6 @@ class WizardStockPickingReturn(models.TransientModel):
             for returned in stock_move.returned_move_ids:
                 if returned.state == "cancel":
                     continue
-                # an open return holds its demand whether or not anything
-                # is reserved for it yet
                 returned_qty = (
                     returned.quantity
                     if returned.state == "done"

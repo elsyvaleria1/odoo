@@ -12,10 +12,8 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
             report, options, previous_options=previous_options
         )
 
-        # Initialize vehicle_split filter by default
         options["vehicle_split"] = previous_options.get("vehicle_split", True)
 
-        # Check if there are multiple rates
         period_domain = [
             ("date_from", ">=", options["date"]["date_from"]),
             ("date_from", "<=", options["date"]["date_to"]),
@@ -61,12 +59,10 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
     def _get_query(
         self, options, line_dict_id=None
     ) -> tuple[SQL, SQL, SQL, SQL, SQL, SQL]:
-        # EXTENDS account_fiscal_categories.
         select, from_, where, group_by, order_by, order_by_rate = super()._get_query(
             options, line_dict_id
         )
         current = self._parse_line_id(options, line_dict_id)
-        # assert lang in params
 
         select = SQL(
             """
@@ -125,15 +121,7 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         group_by = SQL("GROUP BY category.id")
 
         if len(current) == 1 and current.get("category_id"):
-            # Expanding a category
             if options.get("vehicle_split"):
-                # In the case of a split by `vehicle_id`, we want one report line per `vehicle_id`.
-                # For those without a `vehicle_id`, we want one report line per `account_id`.
-                # Thus, we first group based on the `vehicle_id` and then group by `account_id`
-                # for those without a vehicle (which means grouping again by `vehicle_id` for those having one).
-                # NOTE: We can't directly `GROUP BY COALESCE(aml.vehicle_id, aml.account_id)` because it could
-                # group rows having a `vehicle_id` with lines having an `account_id` if they share the same number as id.
-                # See `test_fiscal_account_id_and_vehicle_id_confusion_regression_test`.
                 group_by = SQL(
                     "%s, vehicle.id, COALESCE(vehicle.id, aml.account_id)",
                     group_by,
@@ -145,11 +133,9 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
                 group_by = SQL("%s, account.id", group_by)
                 order_by = SQL("ORDER BY account.id")
         elif current.get("vehicle_id") and not current.get("account_id"):
-            # Expanding a vehicle
             group_by = SQL("%s, vehicle.id, account.id", group_by)
             order_by = SQL("ORDER BY vehicle.id, account.id")
         elif current.get("account_id") and options.get("multi_rate_in_period"):
-            # Expanding an account
             if options.get("vehicle_split"):
                 group_by = SQL("%s, vehicle.id, rate.rate, fleet_rate.rate", group_by)
                 order_by = SQL("ORDER BY vehicle.id, rate.rate, fleet_rate.rate")
@@ -160,7 +146,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         return select, from_, where, group_by, order_by, order_by_rate
 
     def _parse_line_id(self, options, line_id):
-        # OVERRIDES account_fiscal_categories.
 
         current = {"category_id": None}
 
@@ -185,7 +170,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         return current
 
     def _prepare_line_id(self, options, current, level, parent=False, markup=None):
-        # OVERRIDES account_fiscal_categories.
 
         report = self.env["report.formula"].browse(options["report_id"])
         parent_line_id = None
@@ -202,8 +186,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
             line_id = report._get_generic_line_id(
                 "account.account", current["account_id"], parent_line_id=line_id
             )
-            # This handles the case of child account lines without any rate or having 0% rate.
-            # We replicate the account_id in the line id in order to differentiate the child's line id from its parent.
             if len(current) != level and not (
                 current.get("account_rate") or current.get("fleet_rate")
             ):
@@ -239,7 +221,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         offset,
         unfold_all_batch_data=None,
     ) -> dict:
-        # OVERRIDES account_fiscal_categories.
 
         primary_fields = ["category_id", "vehicle_id"]
         secondary_fields = ["category_id", "account_id"]
@@ -251,8 +232,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         else:
             results = self._get_query_results(options, line_dict_id, secondary_fields)
 
-        # We want to display non-unfoldable lines before unfoldable ones.
-        # So we need 2 lists to store them separately.
         lines = []
         unfoldable_lines = []
 
@@ -283,7 +262,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         offset,
         unfold_all_batch_data=None,
     ) -> dict:
-        # OVERRIDES account_fiscal_categories.
 
         primary_fields = ["category_id", "vehicle_id", "account_id", "fleet_rate"]
         secondary_fields = ["category_id", "account_id", "account_rate", "fleet_rate"]
@@ -359,7 +337,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         }
 
     def _get_current_rate(self, values):
-        # OVERRIDES account_fiscal_categories.
         fleet_rate = self._get_single_value(values, "fleet_rate")
         account_rate = self._get_single_value(values, "account_rate")
 
@@ -376,7 +353,6 @@ class AccountFiscalCategoriesFleetReportHandler(models.AbstractModel):
         return current_rate
 
     def _get_current_deductible_amount(self, values):
-        # EXTENDS account_fiscal_categories.
         res = super()._get_current_deductible_amount(values)
         return values["fleet_deductible_amount"] if any(values["vehicle_id"]) else res
 

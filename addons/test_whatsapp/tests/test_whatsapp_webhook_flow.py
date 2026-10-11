@@ -34,7 +34,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_blocklist_message(self):
-        """Test the automatic blocklist mechanism when receiving 'stop'."""
         MailThreadController = ThreadController()
         test_record = self.test_base_record_nopartner.with_env(self.env)
         whatsapp_template = self.whatsapp_template.with_env(self.env)
@@ -71,7 +70,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(self.whatsapp_account, "Stop", "32499123456")
-        # at this point, we should have 3 mail.messages and whatsapp.messages
         discuss_channel = self.assertWhatsAppDiscussChannel(
             "32499123456",
             wa_account=self.whatsapp_account,
@@ -82,7 +80,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             },
         )
 
-        # make sure we have a matching entry in the blacklist table
         blacklist_record = (
             self.env["phone.blacklist"]
             .sudo()
@@ -96,7 +93,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
         )
         self.assertTrue(bool(blacklist_record))
 
-        # post a regular message: should not send through WhatsApp
         with self.mockWhatsappGateway(), MockRequest(self.env):
             data = MailThreadController.mail_message_post(
                 "discuss.channel",
@@ -115,7 +111,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             },
         )
 
-        # attempt to send a template: should not send through WhatsApp
         composer = self._instanciate_wa_composer_from_records(
             whatsapp_template, test_record
         )
@@ -129,13 +124,11 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             },
         )
 
-        # remove from blacklist, make sure we can send WhatsApp messages again
         self._receive_whatsapp_message(
             self.whatsapp_account,
             "Hello, I would like to receive messages again.",
             "32499123456",
         )
-        # should be unblacklisted
         blacklist_record = (
             self.env["phone.blacklist"]
             .sudo()
@@ -170,7 +163,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_conversation_name(self):
-        """Test conversation name with or without sender name given to the process."""
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(
                 self.whatsapp_account, "Hello! I have no name.", "32476012987"
@@ -199,11 +191,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_conversation_match(self):
-        """Test a conversation with multiple channels and messages. Received
-        messages should all be linked to the document if there is a suitable
-        message sent within the 15 days time frame (see '_find_active_channel').
-        If we send a message in reply to a specific one, we should find the
-        discuss message of that channel and use that channel instead."""
         test_record = self.test_base_record_nopartner.with_env(self.env)
         whatsapp_template = self.whatsapp_template.with_env(self.env)
 
@@ -228,8 +215,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             },
         )
 
-        # send using template -> replies will be associated to existing active
-        # channel of customer, not linked to a new channel as before 17.4
         composer = self._instanciate_wa_composer_from_records(
             whatsapp_template, test_record
         )
@@ -242,7 +227,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
                 "32499123456",
             )
 
-        # message should be correctly associated to existing discuss conversation
         document_discuss_channel = self.assertWhatsAppDiscussChannel(
             "32499123456",
             channel_domain=[("id", "=", no_document_discuss_channel.id)],
@@ -259,17 +243,13 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("admin")
     def test_conversation_match_multi_user(self):
-        """Test a conversation with multiple users and models. All the templates
-        related conversations initiated by a user should be associated to a
-        single channel. If another user starts a new conversation using template
-        it should be associated to a new channel."""
         test_record_1 = self.test_base_record_nopartner.with_env(self.env)
         test_record_2 = self.env["whatsapp.test.nothread"].create(
             {
                 "name": "Test Record 2",
                 "phone_ids": [
                     Command.create({"number": "+32 499 12 34 56", "type": "mobile"})
-                ],  # same number as test_record_1 but formatted differently
+                ],
             }
         )
         whatsapp_template_1 = self.whatsapp_template.with_env(self.env)
@@ -282,7 +262,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             }
         )
 
-        # send first template + answer
         discuss_channel = self.simulate_conversation(
             whatsapp_template_1,
             test_record_1,
@@ -292,8 +271,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
         )
         template_1_wa_msg = self._new_wa_msg
 
-        # sending template of different model with first user should be linked
-        # to same channel
         self.simulate_conversation(
             whatsapp_template_2,
             test_record_2,
@@ -303,8 +280,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             exp_wa_msg_count=2,
         )
 
-        # receive a message as a reply to whatsapp_template_1 message should be
-        # properly linked in same channel
         self.simulate_conversation(
             False,
             test_record_1,
@@ -315,7 +290,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             receive_message_values={"context": {"id": template_1_wa_msg.msg_uid}},
         )
 
-        # another user sends template -> new channel
         new_discuss_channel = self.simulate_conversation(
             whatsapp_template_1,
             test_record_1,
@@ -326,9 +300,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             exp_wa_msg_count=1,
         )
 
-        # receive a message as a reply to whatsapp_template_1 message should be
-        # properly linked in first channel even if another channel exists with
-        # the customer
         self.simulate_conversation(
             False,
             test_record_1,
@@ -339,7 +310,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             receive_message_values={"context": {"id": template_1_wa_msg.msg_uid}},
         )
 
-        # sending template with first user should be associated to new channel
         new_discuss_channel = self.simulate_conversation(
             whatsapp_template_1,
             test_record_1,
@@ -353,13 +323,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_conversation_match_multi_account(self):
-        """When there are 2 business accounts configured with different numbers
-
-        * if account 1 receives a message from a number then it should create
-          a channel with the 1st account;
-        * if account 2 receives a message from the same number then it should
-          create a new, not reuse the one from first account;
-        """
         test_record = self.test_base_record_nopartner.with_env(self.env)
         whatsapp_template = self.whatsapp_template.with_env(self.env)
 
@@ -381,7 +344,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             msg_count=2,
         )
 
-        # Receive a message from the same number but for the 2nd account
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(
                 self.whatsapp_account_2,
@@ -397,9 +359,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
         self.assertEqual(len(channel_1.message_ids), 2)
 
     def test_receive_no_document(self):
-        """Receive a message that is not linked to any document. It should
-        create a 'standalone' channel with the whatsapp account notified people
-        and create a new customer."""
         existing_partners = self.env["res.partner"].search([])
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(
@@ -423,8 +382,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
         self.assertEqual(new_partner._phone_get_number().sanitized, "+32499123456")
 
     def test_responsible_with_template(self):
-        """Test various use cases of receiving a message that is linked to a
-        template. Main idea is to check who is added to notified people."""
         test_template = self.whatsapp_template.copy()
         test_template.write(
             {
@@ -463,10 +420,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
 
         expected_responsible = self.user_wa_admin
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by superuser (e.g: automated process)
-            # record was created/written on by superuser
-            # there is no method to get a responsible
-            # -> should be the last fallback: 'account.notify_user_ids'
             self._test_responsible_with_template(
                 test_record_no_responsible,
                 "+32497111111",
@@ -475,37 +428,29 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
+        ).unlink()
 
         expected_responsible = self.user_wa_admin
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by superuser (e.g: automated process)
-            # record was created/written on by superuser
-            # -> should be the last fallback: 'account.notify_user_ids'
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
+        ).unlink()
 
         test_record.with_user(self.user_salesperson).write({"name": "Edited name"})
         expected_responsible = self.user_salesperson
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by superuser (e.g: automated process)
-            # record was written on by user_salesperson
-            # -> should be the write_uid fallback: 'user_salesperson'
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
+        ).unlink()
 
         expected_responsible = self.user_salesperson_2
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by user_salesperson_2
-            # -> should be the author fallback: 'user_salesperson_2'
             self._test_responsible_with_template(
                 test_record,
                 "+32497999999",
@@ -515,27 +460,21 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
+        ).unlink()
 
         expected_responsible = self.user_salesperson_3
         test_record.write({"user_id": self.user_salesperson_3.id})
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by superuser (e.g: automated process)
-            # record is owned by user_salesperson_3
-            # -> should be the owner (user_id) fallback: 'user_salesperson_3'
             self._test_responsible_with_template(
                 test_record, "+32497999999", expected_responsible, test_template
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
+        ).unlink()
 
         expected_responsible = self.user_salesperson_2 | self.user_salesperson_3
         test_record.write({"user_id": self.user_salesperson_3.id})
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by user_salesperson_2
-            # record is owned by user_salesperson_3
-            # -> should be the owner (user_id) + sender: 'user_salesperson_2' + 'user_salesperson_3'
             self._test_responsible_with_template(
                 test_record,
                 "+32497999999",
@@ -545,8 +484,8 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             )
         self.env["discuss.channel"].search(
             [("channel_type", "=", "whatsapp")]
-        ).unlink()  # reset channels
-        test_record.user_id = False  # reset responsible user
+        ).unlink()
+        test_record.user_id = False
 
         expected_responsible = (
             self.user_salesperson | self.user_salesperson_2 | self.user_salesperson_3
@@ -555,10 +494,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
             {"user_ids": (self.user_salesperson | self.user_salesperson_3).ids}
         )
         with self.subTest(expected_responsible=expected_responsible):
-            # template is sent by user_salesperson_2
-            # record is owned by user_salesperson AND user_salesperson_3
-            # -> should be the owners (user_ids) + sender:
-            # 'user_salesperson' + 'user_salesperson_2' + 'user_salesperson_3'
             self._test_responsible_with_template(
                 test_record,
                 "+32497999999",
@@ -575,10 +510,6 @@ class WhatsAppWebhookCase(WhatsAppFullCase, MockIncomingWhatsApp):
         template_id,
         context_user=False,
     ):
-        """Receive a message that is linked to a template sent on test_record.
-        Should create a channel linked to that document, using the 'expected_responsible'
-        as members."""
-        # assumes valid phone numbers with country code
         customer_phone_number = (
             test_record._phone_get_number().number.lstrip("+").replace(" ", "")
         )

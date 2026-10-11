@@ -48,8 +48,6 @@ class TestSaleFlow(TestSaleCommon):
         user.company_id = cls.company
 
     def test_qty_transferred(self):
-        # pins the sale-alone behavior: a written transferred quantity of a
-        # stock_move line survives confirmation while no module provides it
         if self.env["ir.module.module"]._get("sale_stock").state == "installed":
             self.skipTest("sale_stock computes the transferred quantity from moves")
         sale_order = (

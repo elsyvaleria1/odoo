@@ -11,11 +11,7 @@ class LoyaltyProgram(models.Model):
     _order = "sequence"
     _rec_name = "name"
 
-    # The program types whose value is carried by the card itself rather than by a
-    # discount rule: they pay for an order, so their rewards and their trigger
-    # products are configured from a dedicated, simplified form.
     _PAYMENT_PROGRAM_TYPES = ("gift_card", "ewallet")
-    # The children a program type contributes, in `_program_type_default_values`.
     _TYPE_DEFAULT_CHILDREN = ("rule_ids", "reward_ids", "communication_plan_ids")
 
     @api.model
@@ -86,7 +82,6 @@ class LoyaltyProgram(models.Model):
         readonly=False,
     )
 
-    # These fields are used for the simplified view of gift_card and ewallet
     mail_template_id = fields.Many2one(
         comodel_name="mail.template",
         string="Email template",
@@ -138,10 +133,6 @@ class LoyaltyProgram(models.Model):
     )
     limit_usage = fields.Boolean()
     max_usage = fields.Integer()
-    # Dictates when the points can be used:
-    # current: if the order gives enough points on that order, the reward may directly be claimed, points lost otherwise
-    # future: if the order gives enough points on that order, a coupon is generated for a next order
-    # both: points are accumulated on the coupon to claim rewards, the reward may directly be claimed
     applies_on = fields.Selection(
         selection=[
             ("current", "Current order"),
@@ -193,7 +184,6 @@ class LoyaltyProgram(models.Model):
         help="Product used in the sales order to apply the discount.",
     )
 
-    # Technical field used for a label
     available_on = fields.Boolean(
         store=False,
         help="Manage where your program should be available for use.",
@@ -236,19 +226,12 @@ class LoyaltyProgram(models.Model):
             )
 
     def _compute_total_order_count(self) -> None:
-        """Count the orders this program has been used on. Zero without a channel.
-
-        `sale_loyalty` and `pos_loyalty` each add their own count to it. Both do so
-        with a `_read_group`, which is a search and so has no `@api.depends` to
-        declare: the count is stale within a transaction that also places an order.
-        """
         self.total_order_count = 0
 
     @api.depends("program_type")
     def _compute_coupon_count_label(self) -> None:
         program_items_name = self._program_items_name()
         for program in self:
-            # `.get`: a program being created has no type yet, and indexing raised.
             program.coupon_count_label = (
                 program_items_name.get(program.program_type) or ""
             )
@@ -291,9 +274,6 @@ class LoyaltyProgram(models.Model):
 
     @api.depends("company_id")
     def _compute_currency_id(self) -> None:
-        # `company_id` is optional -- the form offers "Visible to all" -- while
-        # `currency_id` is required, so an empty company falls back to the active
-        # company's currency rather than leaving the column null.
         for program in self:
             program.currency_id = (
                 program.company_id.currency_id
@@ -312,12 +292,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _get_domain_nominative(self):
-        """Return the domain of programs whose points are held by a customer.
-
-        One statement, so that reading `is_nominative`, searching on it and any
-        caller that needs the set cannot drift apart. `base.partner.merge` used to
-        restate it as a hand-written domain.
-        """
         return Domain("applies_on", "=", "both") | (
             Domain("program_type", "in", ("ewallet", "loyalty"))
             & Domain("applies_on", "=", "future")
@@ -330,8 +304,6 @@ class LoyaltyProgram(models.Model):
             program.is_nominative = program.id in nominative_ids
 
     def _search_is_nominative(self, operator, value):
-        # The ORM normalises `=` / `!=` on a boolean into `in` / `not in` over one
-        # value; anything else is handed back rather than guessed at.
         if operator not in ("in", "not in") or set(value) not in ({True}, {False}):
             return NotImplemented
         domain = self._get_domain_nominative()
@@ -369,18 +341,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _program_type_default_values(self):
-        """Return the values each program type sets when it is chosen.
-
-        Read by `_compute_from_program_type` when the type changes, by `create`
-        and `default_get` for a new program, and by `_get_child_default_values`
-        for `loyalty.rule` and `loyalty.reward`'s own defaults.
-
-        NOTE: fields written here MUST appear in the sub-view used by the program
-        form (kanban for `rule_ids`/`reward_ids`, list for
-        `communication_plan_ids`) -- nothing checks that.
-
-        :rtype: dict[str, dict]
-        """
         first_sale_product = self.env["product.product"].search(
             [
                 ("company_id", "in", [False, self.env.company.id]),
@@ -403,7 +363,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _coupons_default_values(self, first_sale_product) -> dict:
-        """Codes generated and shared by hand, each carrying its own value."""
         return {
             "applies_on": "current",
             "trigger": "with_code",
@@ -438,7 +397,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _promotion_default_values(self, first_sale_product) -> dict:
-        """A condition on the order that unlocks a reward automatically."""
         return {
             "applies_on": "current",
             "trigger": "auto",
@@ -469,7 +427,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _gift_card_default_values(self, first_sale_product) -> dict:
-        """A card bought as a product, then spent like money on an order."""
         return {
             "applies_on": "future",
             "trigger": "auto",
@@ -521,7 +478,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _loyalty_default_values(self, first_sale_product) -> dict:
-        """Points that accumulate on a customer's card across orders."""
         return {
             "applies_on": "both",
             "trigger": "auto",
@@ -549,7 +505,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _ewallet_default_values(self, first_sale_product) -> dict:
-        """A balance topped up as a product, then spent on future orders."""
         return {
             "trigger": "auto",
             "applies_on": "future",
@@ -586,13 +541,11 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _promo_code_default_values(self, first_sale_product) -> dict:
-        """A single shared code giving a discount on specific products."""
         return {
             "applies_on": "current",
             "trigger": "with_code",
             "portal_visible": False,
             "portal_point_name": self.env._("Discount point(s)"),
-            # No `code`: it is per program, so `loyalty.rule` generates it.
             "rule_ids": [
                 Command.clear(),
                 Command.create({"mode": "with_code", "minimum_qty": 0}),
@@ -613,7 +566,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _buy_x_get_y_default_values(self, first_sale_product) -> dict:
-        """Credits earned per unit bought, exchanged for free products."""
         return {
             "applies_on": "current",
             "trigger": "auto",
@@ -644,7 +596,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _next_order_coupons_default_values(self, first_sale_product) -> dict:
-        """A coupon mailed after an order, valid on the next one."""
         return {
             "applies_on": "future",
             "trigger": "auto",
@@ -689,16 +640,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _get_child_default_values(self, program_type, field_name):
-        """Return the values a new `field_name` line takes under `program_type`.
-
-        `_program_type_default_values` states them as x2many commands; this reads
-        back the single `Command.CREATE` the program types use, so that
-        `loyalty.rule` and `loyalty.reward` do not each re-index into that structure
-        to answer their own `default_get`.
-
-        :return: the create values, or an empty dict when the type contributes none.
-        :rtype: dict
-        """
         creates = self._get_children_default_values(program_type, field_name)
         return creates[0] if len(creates) == 1 else {}
 
@@ -731,10 +672,6 @@ class LoyaltyProgram(models.Model):
             program.portal_point_name = program.currency_id.symbol or ""
 
     def _get_valid_products(self, products):
-        """Return a dict mapping the program rules to the products they match.
-
-        A gift card rule with no product constraint is left out.
-        """
         rule_products = {}
         for rule in self.rule_ids:
             domain = rule._get_domain_valid_product()
@@ -747,7 +684,6 @@ class LoyaltyProgram(models.Model):
         return rule_products
 
     def action_view_loyalty_cards(self):
-        """Open this program's cards, named after what the program issues."""
         self.check_singleton()
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "loyalty.loyalty_card_action"
@@ -759,7 +695,6 @@ class LoyaltyProgram(models.Model):
             "program_type": self.program_type,
             "program_item_name": items_name,
             "default_program_id": self.id,
-            # For the wizard
             "default_mode": "selected"
             if self.program_type == "ewallet"
             else "anonymous",
@@ -775,23 +710,11 @@ class LoyaltyProgram(models.Model):
 
     @staticmethod
     def _commands_leave_a_reward(commands) -> bool:
-        """Whether these ``reward_ids`` commands certainly leave the program a reward.
-
-        Answered from the commands alone. `convert_to_cache` answers the same question
-        but requires a singleton -- which breaks any batched write, `_compute_from_program_type`
-        included -- and gets there by side effect: it instantiates every `Command.CREATE`
-        as a `new()` record, running `loyalty.reward.default_get`, and applies every
-        `Command.UPDATE` to the cache.
-
-        Unknown counts answer False, so an unrecognised command shape only means the
-        constraint runs, never that an empty program slips past it.
-        """
         if not isinstance(commands, (list, tuple)):
             return bool(commands)
-        count = None  # the rewards the program already has, unknown here
+        count = None
         for command in commands:
             if not isinstance(command, (list, tuple)):
-                # A bare id or a bare dict of values, both of which add one reward.
                 count = (count or 0) + 1
                 continue
             match command[0]:
@@ -803,15 +726,12 @@ class LoyaltyProgram(models.Model):
                     count = len(command[2])
                 case Command.DELETE | Command.UNLINK:
                     count = None if count is None else max(count - 1, 0)
-                case _:  # Command.UPDATE, which changes no reward's existence
+                case _:
                     pass
         return bool(count)
 
     def write(self, vals):
         if "trigger_product_ids" in vals:
-            # Related to `rule_ids.product_ids`: only the gift card and eWallet forms
-            # expose it, and writing it anywhere else silently replaces the products of
-            # every rule of the program. `create` drops it for the same reason.
             target_type = vals.get("program_type")
             accepts = self.filtered(
                 lambda program: (
@@ -825,19 +745,13 @@ class LoyaltyProgram(models.Model):
                 result = accepts.write(vals) if accepts else True
                 return (self - accepts).write(rest_vals) and result
 
-        # Changing the program type clears the rewards before recreating them, so the
-        # ORM checks the constraint in between; skip it if reward_ids ends up non-empty.
         if "reward_ids" in vals and self._commands_leave_a_reward(vals["reward_ids"]):
             self = self.with_context(loyalty_skip_reward_check=True)
-            # Put the program type in the context, else `loyalty.reward.default_get`
-            # falls back on the default reward type ('discount').
             if "program_type" in vals:
                 res = super(
                     LoyaltyProgram, self.with_context(program_type=vals["program_type"])
                 ).write(vals)
             else:
-                # One write per type rather than per record: the context is the only
-                # thing that varies, and programs of one type share it.
                 res = True
                 for program_type, programs in self.grouped("program_type").items():
                     programs = programs.with_context(program_type=program_type)
@@ -848,10 +762,6 @@ class LoyaltyProgram(models.Model):
         if "active" in vals:
             for program in self.with_context(active_test=False):
                 program.rule_ids.active = program.active
-                # `loyalty.reward.write()` already cascades this to
-                # `discount_line_product_id` (its own `active` handler calls
-                # `action_archive`/`action_unarchive` on it), so no separate
-                # cascade line is needed here.
                 program.reward_ids.active = program.active
                 program.communication_plan_ids.active = program.active
 
@@ -859,7 +769,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def get_program_templates(self):
-        """Return the program templates offered by the current menu."""
         ctx_menu_type = self.env.context.get("menu_type")
         if ctx_menu_type == "gift_ewallet":
             return {
@@ -930,10 +839,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def create_from_template(self, template_id):
-        """Create a program from the template id defined in `get_program_templates`.
-
-        :return: an action opening the new program, or False for an unknown template.
-        """
         template_values = self._prepare_program_template_vals()
         if template_id not in template_values:
             return False
@@ -956,9 +861,7 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _prepare_program_template_vals(self):
-        """Return the creation values of each `get_program_templates` key."""
         program_type_defaults = self._program_type_default_values()
-        # For programs that require a product get the first sellable.
         product = self.env["product.product"].search([("sale_ok", "=", True)], limit=1)
         return {
             "gift_card": {
@@ -1030,7 +933,6 @@ class LoyaltyProgram(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # The caller's dicts are left alone -- `create` is not entitled to edit them.
         vals_list = [
             self._with_point_name(self._with_program_type_values(vals))
             for vals in vals_list
@@ -1050,34 +952,8 @@ class LoyaltyProgram(models.Model):
 
     @api.model
     def _with_program_type_values(self, vals):
-        """Return `vals` completed with what its `program_type` implies.
-
-        `default_get` supplies the rules, rewards and communication plans of a type,
-        and that is how the form gets them -- but it is only *asked* for
-        `program_type` when the caller left it out, so `create` with an explicit type
-        used to produce a program with none of the three. The "at least one reward"
-        constraint did not catch it either, because `reward_ids` was never in the
-        values. Both entry points now fill the children from the same source,
-        `_get_children_default_values`.
-
-        `trigger_product_ids` is dropped for the types whose form never shows it: it
-        is related to `rule_ids.product_ids` and would replace the products of every
-        rule of the program.
-
-        **Only the children**, not the type's scalars. Filling `applies_on` too
-        looked more consistent -- it is what `default_get` does -- and it silently
-        turned every `loyalty` program built in code into a nominative one, which in
-        the Point of Sale means the order earns nothing until a customer is picked
-        (`pos_loyalty`'s `PosLoyaltySpecificDiscountTour` stops offering its reward).
-        A program with `applies_on` left at 'current' is a choice someone may have
-        made; a program with no reward is a state its own constraint forbids, and
-        that is the one `create` had been producing.
-
-        :rtype: dict
-        """
         program_type = vals.get("program_type")
         if not program_type:
-            # `default_get` was asked for the type, so it supplied the children too.
             return vals
         completed = dict(vals)
         if program_type not in self._PAYMENT_PROGRAM_TYPES:

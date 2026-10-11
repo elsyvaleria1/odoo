@@ -43,10 +43,6 @@ class HrContractSignatory(models.Model):
 
     @api.model
     def create_empty_signatories(self, sign_template):
-        # A dict, not a set: `sign_item_ids` is ordered by page and position,
-        # and a set of ids iterates by hash, so the generated signatory rows
-        # came out in id order rather than in the order they appear on the
-        # document. The values are unchanged - only the row order is.
         roles = list(dict.fromkeys(sign_template.sign_item_ids.responsible_id.ids))
 
         role_dict = {

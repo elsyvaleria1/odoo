@@ -28,7 +28,7 @@ class EsgEmissionFactorLine(models.Model):
         default=1.0,
         required=True,
         tracking=True,
-    )  # Fixing the digits for a correct display in tracking values.
+    )
     esg_emissions_value = fields.Float(
         string="Emissions (kgCO₂e)",
         compute="_compute_esg_emissions_value",
@@ -53,14 +53,11 @@ class EsgEmissionFactorLine(models.Model):
             )
 
     def write(self, vals):
-        """Track field changes and log them to the linked emission factor."""
-        # Get all tracked fields to be updated.
         tracked_field_names = {
             fname for fname in self._track_get_fields() if fname in vals
         }
         tracked_fields = self.fields_get(tracked_field_names)
 
-        # Get initial values for each gas line.
         gas_line_initial_values = defaultdict(dict)
         for gas_line in self:
             for fname in tracked_field_names:
@@ -72,10 +69,8 @@ class EsgEmissionFactorLine(models.Model):
                 }
             )
 
-        # Write the new values to trigger the tracking values to be created.
         res = super().write(vals)
 
-        # Log changes to gas lines on the emission factor.
         for gas_line, initial_values in gas_line_initial_values.items():
             tracking_value_ids = gas_line._mail_track(tracked_fields, initial_values)[1]
             if tracking_value_ids:

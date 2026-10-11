@@ -145,14 +145,10 @@ class TelegramBinding(models.Model):
         )
         active._journal("revoked", reason=reason)
         if reason != "superseded":
-            # a superseded binding's account is bound again at once, and the
-            # new binding sends the menu its person has now
             operating(active.account_id.chat_ids)._sync_command_menu()
 
     @api.model
     def _revoke_for_departed(self, partners) -> None:
-        """Revoke the active bindings of those `partners` who left: whom
-        nothing still makes someone the bots act for (_is_present)."""
         departed = partners.filtered(lambda partner: not self._is_present(partner))
         if departed:
             operating(self).search(
@@ -161,8 +157,6 @@ class TelegramBinding(models.Model):
 
     @api.model
     def _is_present(self, partner) -> bool:
-        """Whether `partner` is still someone the bots act for: an active user
-        of theirs remains. An extension counts more (an active employee)."""
         return bool(
             counting_presence(self.env["res.users"]).search_count(
                 [("partner_id", "=", partner.id), ("active", "=", True)]

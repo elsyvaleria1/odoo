@@ -6,10 +6,6 @@ from odoo.tests.common import new_test_user
 @tagged("-at_install", "post_install")
 class TestVoipCrmAccessRights(common.TransactionCase):
     def test_team_leader_access_on_subordinates_calls(self):
-        """
-        Sales team leaders can read phone.call records of users on their team.
-        They can't create, write, or delete them.
-        """
         team_leader = new_test_user(
             self.env, login="team_leader", groups="sale.group_sale_salesman"
         )
@@ -37,9 +33,6 @@ class TestVoipCrmAccessRights(common.TransactionCase):
             call_made_by_team_member.with_user(team_leader).unlink()
 
     def test_team_leader_access_on_non_subordinate_calls(self):
-        """
-        Sales team leaders do not have any access to phone.call records for users who are not on their team.
-        """
         team_leader = new_test_user(
             self.env, login="team_leader", groups="sale.group_sale_salesman"
         )

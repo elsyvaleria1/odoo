@@ -19,10 +19,6 @@ _precompile_log = get_asset_logger("owl_precompile")
 
 _SCRIPT = Path(__file__).parent / "js" / "owl_precompile.mjs"
 
-# what the compiled code is a function of besides the templates and the
-# translations: OWL's compiler and the runtime that runs its output, the registry that resolves inheritance and
-# signs what it read, the inheritance engine, the app configuration the
-# compiler takes its options from, and the DOM the node side runs on
 _WEB_COMPILER_FILES = (
     "lib/owl/owl.es.js",
     "lib/owl/owl.runtime.es.js",
@@ -65,12 +61,6 @@ def web_static_path() -> Path | None:
 
 @functools.cache
 def precompiler_missing() -> tuple[str, ...]:
-    """What the template precompiler lacks on this host; empty when it can run.
-
-    Answered once per process: it changes with an ``npm ci`` and a restart. A
-    host that lacks something is told so here, once, with the fix -- left
-    unsaid, every page asked for an artifact the server then failed to build.
-    """
     node_modules = _odoo_root() / "node_modules"
     missing = [] if shutil.which("node") else ["node"]
     if not web_static_path():
@@ -210,8 +200,5 @@ def precompile_templates(
         elapsed=f"{time.monotonic() - started:.3f}",
     )
     for name, reason in precompiled.failures.items():
-        # the template keeps the runtime path; a failure here is usually a
-        # template the browser would refuse too, or a directive only a lazily
-        # loaded bundle defines
         _precompile_log.info("template %s left to the browser: %s", name, reason)
     return precompiled

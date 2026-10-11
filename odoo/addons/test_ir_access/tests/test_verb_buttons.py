@@ -126,8 +126,6 @@ class TestVerbButtons(TransactionCase):
         self.assertIn("__verbs", fields)
 
     def test_a_group_s_button_asks_the_record_the_group_stands_for(self):
-        # a list's <groupby> is a view of the many2one's comodel: its buttons
-        # read the verbs of the group's record, not of the list's own records
         result = (
             self.env[LINE_MODEL]
             .with_user(self.poster)
@@ -144,12 +142,9 @@ class TestVerbButtons(TransactionCase):
         self.assertEqual(verbs.get("invisible"), "1")
         self.assertIsNone(verbs.get("__verbs_model__"))
         self.assertEqual(result["models"][MODEL]["fields"]["__verbs"]["type"], "json")
-        # every field the arch names on a model is one the client is told of
         self.assertNotIn("__verbs", result["models"][LINE_MODEL]["fields"])
 
     def test_each_user_gets_the_arch_of_their_own_reach(self):
-        # the projected arch is cached per capability signature: a verb's
-        # reach is part of it, or one user's buttons would be another's
         self.views(self.admin, self.form)
         clerk_arch, _fields = self.views(self.clerk, self.form)
         admin_arch, _fields = self.views(self.admin, self.form)
@@ -169,7 +164,6 @@ class TestVerbButtons(TransactionCase):
                 self.theirs.id: {"clear": False, "post": False, "retire": False},
             },
         )
-        # the same decision the door takes
         for document in documents:
             self.assertEqual(read[document.id]["post"], document.has_access("post"))
 
@@ -190,8 +184,6 @@ class TestVerbButtons(TransactionCase):
         self.assertNotIn("__verbs", result["value"])
 
     def test_a_client_sending_back_what_it_read_is_answered(self):
-        # a client, or odoo.tests.Form, sends a record's values back to the
-        # onchange as it read them, the verbs included: they are no field
         result = (
             self.env[MODEL]
             .with_user(self.poster)
@@ -207,8 +199,6 @@ class TestVerbButtons(TransactionCase):
         self.assertEqual(self.mine.name, "mine again")
 
     def test_the_verbs_leave_a_parent_s_values_and_a_line_s_too(self):
-        # a line's form sends its parent as a many2one's dict, and a record's
-        # lines as x2many commands: the verbs they carry go as well
         values = {
             "name": "line",
             "__verbs": {"post": True},

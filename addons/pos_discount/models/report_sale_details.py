@@ -6,7 +6,5 @@ class ReportPoint_Of_SaleReport_Saledetails(models.AbstractModel):
 
     def _is_refund_line(self, line) -> bool:
         if line.product_id == line.order_id.config_id.discount_product_id:
-            # A global discount carries the opposite sign of what it discounts: a
-            # refund's discount line keeps a positive quantity and a positive price.
             return line.qty * line.price_unit > 0
         return super()._is_refund_line(line)

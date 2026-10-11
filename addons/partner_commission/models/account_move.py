@@ -23,11 +23,9 @@ class AccountMove(models.Model):
     def _get_sales_representative(self):
         self.check_singleton()
 
-        # The subscription's Salesperson should be the Purchase Representative.
         sub = self.invoice_line_ids.mapped("subscription_id")[:1]
         sales_rep = (sub and sub.user_id) or False
 
-        # No subscription: check the sale order's Salesperson.
         if not sales_rep:
             so = self.invoice_line_ids.mapped("sale_line_ids.order_id")[:1]
             sales_rep = (so and so.user_id) or False
@@ -110,7 +108,6 @@ class AccountMove(models.Model):
                     )
                     comm_by_rule[rule] += commission
 
-            # regulate commissions
             for r, amount in comm_by_rule.items():
                 if r.is_capped:
                     amount = min(amount, r.max_commission)
@@ -120,7 +117,6 @@ class AccountMove(models.Model):
             if not total:
                 continue
 
-            # build description lines
             desc = self.env._(
                 "Commission on %(invoice)s, %(partner)s, %(amount)s",
                 invoice=move.name,
@@ -131,13 +127,11 @@ class AccountMove(models.Model):
             )
             if order:
                 desc += f"\n{order.name}, {desc_lines}"
-                # extend the description to show the number of months to defer the expense over
                 end_date_list = move.invoice_line_ids.mapped("deferred_end_date")
                 start_date_list = move.invoice_line_ids.mapped("deferred_start_date")
                 if any(start_date_list) and any(end_date_list):
                     date_to = max(ed for ed in end_date_list if ed)
                     date_from = min(sd for sd in start_date_list if sd)
-                    # we calculate the delta according to the whole range to avoid 11 month and 29 days= 11 months
                     delta = relativedelta(date_to + relativedelta(days=1), date_from)
                     n_months = delta.years * 12 + delta.months + delta.days // 30
                     if n_months:
@@ -168,7 +162,6 @@ class AccountMove(models.Model):
             )
 
             if move.move_type in ["out_invoice", "in_invoice"]:
-                # link the purchase order line to the invoice
                 move.commission_po_line_id = line
                 msg_body = self.env._(
                     "New commission. Invoice: %(link)s. Amount: %(amount)s.",
@@ -203,7 +196,6 @@ class AccountMove(models.Model):
     def _invoice_paid_hook(self):
         res = super()._invoice_paid_hook()
         self.filtered(lambda move: move.move_type == "out_invoice")._create_commission()
-        # Only create commission reversal for credit notes if original invoice had commission
         self.filtered(
             lambda m: (
                 m.move_type == "out_refund"
@@ -239,7 +231,6 @@ class AccountMoveLine(models.Model):
         sale_order = self.subscription_id or self.sale_line_ids.order_id
         if len(sale_order) == 1:
             template = sale_order.template_id
-        # check whether the product is part of the subscription template
         template_products = template.line_ids.product_id.mapped("product_tmpl_id")
         template_id = (
             template.id
@@ -251,10 +242,6 @@ class AccountMoveLine(models.Model):
             sub_pricelist and sub_pricelist.id
         ) or self.sale_line_ids.mapped("order_id.pricelist_id")[:1].id
 
-        # In order of precedence, the commission plan can be one of:
-        # 1. the commission plan set on the subscription
-        # 2. the commission plan set on the sale order
-        # 3. the referrer's commission plan
         plan = (
             self.sale_line_ids.order_id.commission_plan_id
             or self.move_id.referrer_id.commission_plan_id

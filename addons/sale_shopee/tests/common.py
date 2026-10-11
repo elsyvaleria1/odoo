@@ -47,13 +47,12 @@ PACKAGE_ITEM_MOCK = {
     "shipping_carrier": "Fake Ship",
 }
 
-# Mock data for an order
 ORDER_MOCK = {
     "actual_shipping_fee_confirmed": True,
     "buyer_user_id": 444444,
     "buyer_username": "Gederic Frilson",
-    "update_time": 1579050000,  # 2020-01-15
-    "create_time": 1579050000,  # 2020-01-15
+    "update_time": 1579050000,
+    "create_time": 1579050000,
     "currency": "VND",
     "actual_shipping_fee": 10,
     "estimated_shipping_fee": 10,
@@ -68,7 +67,6 @@ ORDER_MOCK = {
     "total_amount": 170,
 }
 
-# Mock data for the response of the getOrders API
 GET_ACCESS_TOKEN_RESPONSE_MOCK = {
     "error": "",
     "message": "",
@@ -109,7 +107,6 @@ GET_SHOP_INFO_RESPONSE_MOCK = {
     "expire_time": 1682179199,
 }
 
-# Map of API operations to their corresponding response data
 OPERATIONS_RESPONSES_MAP = {
     "refresh_token": REFRESH_TOKEN_RESPONSE_MOCK,
     "get_token": GET_ACCESS_TOKEN_RESPONSE_MOCK,
@@ -124,11 +121,9 @@ OPERATIONS_RESPONSES_MAP = {
 }
 
 
-# Test class for common Shopee-related functionality
 class TestShopeeCommon(TransactionCase):
     def setUp(self):
         super().setUp()
-        # Create a Shopee account
         self.initial_sync_date = datetime(2020, 1, 1)
         self.account = self.env["shopee.account"].create(
             {
@@ -140,7 +135,6 @@ class TestShopeeCommon(TransactionCase):
             }
         )
 
-        # Create a shop
         self.shop = self.env["shopee.shop"].create(
             {
                 "name": GET_SHOP_INFO_RESPONSE_MOCK["shop_name"],
@@ -152,7 +146,6 @@ class TestShopeeCommon(TransactionCase):
             }
         )
 
-        # Create a product
         self.product = self.env["product.product"].create(
             {
                 "name": "This is a storable product",
@@ -163,7 +156,6 @@ class TestShopeeCommon(TransactionCase):
             }
         )
 
-        # Create a Shopee item linked to the product
         self.item = self.env["shopee.item"].create(
             {
                 "product_id": self.product.id,

@@ -100,7 +100,6 @@ class StockPickingType(models.Model):
     )
     def _compute_show_barcode_validation(self) -> None:
         for picking_type in self:
-            # reflect all fields invisible conditions
             hide_full = picking_type.restrict_scan_product
             hide_all_product_packed = (
                 not self.env.user.has_group("stock.group_tracking_lot")
@@ -112,7 +111,6 @@ class StockPickingType(models.Model):
                 picking_type.code == "outgoing"
                 or picking_type.restrict_scan_dest_location != "optional"
             )
-            # show if not all hidden
             picking_type.show_barcode_validation = not (
                 hide_full and hide_all_product_packed and hide_dest_location
             )
@@ -150,7 +148,6 @@ class StockPickingType(models.Model):
     def _get_barcode_config(self):
         _debug.logic("barcode_config_read", picking_types=self)
         self.check_singleton()
-        # Defines if all lines need to be packed to be able to validate a transfer.
         locations_enable = self.env.user.has_group("stock.group_stock_multi_locations")
         lines_need_to_be_packed = self.env.user.has_group(
             "stock.group_tracking_lot"
@@ -169,25 +166,21 @@ class StockPickingType(models.Model):
             )
         )
         return {
-            # Boolean fields.
             "barcode_allow_extra_product": self.barcode_allow_extra_product,
             "barcode_validation_after_dest_location": self.barcode_validation_after_dest_location,
             "barcode_validation_all_product_packed": self.barcode_validation_all_product_packed,
             "barcode_validation_full": not self.restrict_scan_product
-            and self.barcode_validation_full,  # Forced to be False when scanning a product is mandatory.
+            and self.barcode_validation_full,
             "create_backorder": self.create_backorder,
             "restrict_scan_product": self.restrict_scan_product,
-            # Selection fields converted into boolean.
             "restrict_scan_tracking_number": self.restrict_scan_tracking_number
             == "mandatory",
             "restrict_scan_source_location": locations_enable
             and self.restrict_scan_source_location == "mandatory",
-            # Selection fields.
             "restrict_put_in_pack": self.restrict_put_in_pack,
             "restrict_scan_dest_location": self.restrict_scan_dest_location
             if locations_enable
             else "no",
-            # Additional parameters.
             "lines_need_to_be_packed": lines_need_to_be_packed,
             "lines_need_destination_location": lines_need_destination_location,
         }

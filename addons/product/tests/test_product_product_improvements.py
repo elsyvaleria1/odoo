@@ -42,15 +42,6 @@ class TestProductProductImprovements(ProductCommon):
         )
 
     def test_name_search_unlimited_reaches_every_branch(self):
-        """Every branch is reachable, not just the first one that matches.
-
-        This used to pass `limit=0` and call it "unlimited", because the method
-        normalised a zero limit away. It no longer does: `limit=0` asks for no
-        rows here exactly as it does on `product.template`, `product.category`
-        and `_search`. `None` is the sentinel for unlimited, so that is what the
-        branch coverage is expressed with, and a zero limit is asserted to
-        return nothing from each branch instead.
-        """
         template = self.env["product.template"].create(
             {
                 "name": "EveryBranchProbe",

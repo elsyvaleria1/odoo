@@ -1,7 +1,3 @@
-# The rules test_lint still runs over Python: the two that read every model of a
-# repository at once, and the scan's own failure to read a file. The per-file
-# AST rules are the ruff fork's (`E85`, Agro-Marin/ruff), held to the same
-# floors by lint_ruff_gates.py.
 from dataclasses import dataclass
 
 

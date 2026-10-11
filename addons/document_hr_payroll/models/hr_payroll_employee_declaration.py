@@ -25,8 +25,6 @@ class HrPayrollEmployeeDeclaration(models.Model):
         super()._compute_state()
         for declaration in self:
             if declaration.pdf_to_generate:
-                # Work the cron still owes outranks the terminal state: super()
-                # already set 'pdf_to_generate' and it must survive.
                 continue
             if declaration.pdf_to_post:
                 declaration.state = "pdf_to_post"
@@ -34,11 +32,6 @@ class HrPayrollEmployeeDeclaration(models.Model):
                 declaration.state = "pdf_posted"
 
     def _post_pdf(self):
-        """Post the PDF of every line that has one and is not posted yet.
-
-        Returns the lines that actually got a document, so the caller can tell
-        what was done instead of assuming the whole batch succeeded.
-        """
         create_vals = []
         templates = {}
         lines_to_post = self.env["hr.payroll.employee.declaration"]
@@ -88,8 +81,7 @@ class HrPayrollEmployeeDeclaration(models.Model):
                     "datas": line.pdf_file,
                     "name": line.pdf_filename,
                     "folder_id": folder.id,
-                    "res_model": "hr.payslip",  # Security Restriction to payroll managers
-                    # allow anyone with the link (to retrieve declaration documents after employee's departure)
+                    "res_model": "hr.payslip",
                     "access_via_link": "view",
                     "access_internal": "none",
                     "is_access_via_link_hidden": True,
@@ -130,8 +122,6 @@ class HrPayrollEmployeeDeclaration(models.Model):
         return res
 
     def action_post_in_documents(self) -> dict:
-        # Mirror hr_payroll's action_generate_pdf: an empty selection means
-        # "every declaration that is ready", not "nothing".
         declarations = self or self.search([("state", "=", "pdf_generated")])
         if not declarations:
             return {
@@ -142,8 +132,6 @@ class HrPayrollEmployeeDeclaration(models.Model):
                     "message": self.env._("There is no generated PDF to post."),
                 },
             }
-        # write() already triggers the cron for pdf_to_post, so do not trigger
-        # a second time: one click used to queue two cron runs.
         declarations.write({"pdf_to_post": True})
         return {
             "type": "ir.actions.client",

@@ -11,17 +11,6 @@ class AutomationRuntimeLine(models.Model):
     def _telegram_send_and_wait(
         self, chat, text, event_code, accept=("text",), *, html=False, reply_markup=None
     ):
-        """Ask `text` in the private Telegram `chat` and wait for the answer.
-
-        Called by a code step on its own `runtime_line`. The step settles as
-        usual; the answer arrives later as `event_code`, so the step needs an
-        On Event edge for it, and may have a Without Event edge as the
-        reminder or the timeout. `accept` names the kinds of message that
-        answer (text, photo, document, voice, contact, location). Once
-        answered, `steps.<this step>.output["answer"]` holds `kind`, `text`,
-        `attachment_ids` (the files, kept on the run), `chat_id` and, for those
-        kinds, `contact` or `location`.
-        """
         self.check_singleton()
         chat.check_singleton()
         if self.state != "in_progress":

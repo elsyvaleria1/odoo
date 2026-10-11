@@ -14,8 +14,6 @@ STALL_REPEATS = 16
 
 SNAPSHOT_AFTER = 3
 
-# distinct snapshots remembered per convergence loop: a cycle longer than
-# this is reported by the iteration cap, not by the detector
 STALL_MEMORY = 64
 
 _debug = DebugLog(__name__)
@@ -120,9 +118,6 @@ class UnitOfWork[F: FieldKey = FieldKey]:
                 result.stalled_fields = []
                 break
 
-            # the live order rebuilds every field trigger of the registry when
-            # its caches were just reset (each module install does that), so
-            # an empty flush must not ask for it
             if callable(order):
                 order = order()
 

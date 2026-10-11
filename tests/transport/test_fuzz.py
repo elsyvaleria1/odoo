@@ -349,8 +349,6 @@ def _ours_stricter(
 
 def _comparable(request: tuple) -> tuple:
     method, target, headers, body = request
-    # h11 folds the transfer coding to lower case and collapses a repeated
-    # Content-Length; the body is what the framing decided either way
     fields = tuple(
         (name, value.lower() if name == "transfer-encoding" else value)
         for name, value in headers

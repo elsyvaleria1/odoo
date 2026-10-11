@@ -60,7 +60,6 @@ class TelegramCommand(models.Model):
             self.env.registry.clear_cache()
         result = super().write(vals)
         if "company_ids" in vals:
-            # who is offered the command changed: every connected menu may
             operating(self.env["telegram.chat"]).search(
                 [("chat_type", "=", "private"), ("account_id", "!=", False)]
             )._sync_command_menu()
@@ -73,10 +72,6 @@ class TelegramCommand(models.Model):
     @api.model
     @tools.ormcache()
     def _get_company_availability(self) -> dict:
-        """{"/command": frozenset(company ids)} of the commands restricted to
-        some companies; a command left out acts for every company. Every
-        update asks it, so it is read once, past the readers' rights: which
-        companies a command acts for is the bots' configuration."""
         commands = keeping(self).search([("company_ids", "!=", False)])
         return {
             command.name: frozenset(command.company_ids.ids) for command in commands

@@ -17,5 +17,4 @@ class TestPOSBarcodelookup(TestPointOfSaleHttpCommon, TestBarcodelookup):
         )
         self.assertEqual(product.name, "Odoo Scale up")
         self.assertEqual(product.list_price, 100)
-        #  Product created from pos should be available_in_pos by default
         self.assertTrue(product.available_in_pos)

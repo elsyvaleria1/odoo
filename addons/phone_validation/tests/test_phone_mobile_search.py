@@ -22,8 +22,6 @@ class TestPhoneMobileSearch(TransactionCase):
             }
         )
         self.assertEqual(partner.phone_sanitized, "+3212345678")
-        # _search_phone_mobile_search runs raw SQL against the stored
-        # columns, bypassing the ORM cache; flush so it sees this write.
         self.env.flush_all()
 
         found = self.env["res.partner"].search(
@@ -32,8 +30,6 @@ class TestPhoneMobileSearch(TransactionCase):
         self.assertIn(partner, found)
 
     def test_a_list_of_terms_is_one_statement(self):
-        # a display_name search with a list -- the import's parent lookup for
-        # a batch of rows -- reaches the phone table once, not once per term
         be = self.env.ref("base.be").id
         partners = self.env["res.partner"].create(
             [
@@ -47,7 +43,7 @@ class TestPhoneMobileSearch(TransactionCase):
         )
         self.env.flush_all()
         Partner = self.env["res.partner"]
-        with self.assertQueryCount(2):  # the phone lookup, then the partner search
+        with self.assertQueryCount(2):
             found = Partner.search(
                 [("phone_mobile_search", "in", ["+3212345670", "+3212345672"])]
             )

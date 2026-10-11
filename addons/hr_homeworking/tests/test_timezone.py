@@ -37,7 +37,6 @@ class TestTodayIsTheEmployeesOwn(HomeworkingCase):
 
     @freeze_time("2026-09-14 20:36:00")
     def test_two_employees_in_one_batch_get_their_own_weekday(self):
-        # Monday 14:36 in Mexico City, Tuesday 05:36 in Tokyo.
         self.assertEqual(self.mexico.work_location_name, "Home")
         self.assertEqual(self.tokyo.work_location_name, "Office 1")
 
@@ -48,7 +47,6 @@ class TestTodayIsTheEmployeesOwn(HomeworkingCase):
 
     @freeze_time("2026-09-14 05:00:00")
     def test_before_the_split_both_are_on_the_same_weekday(self):
-        # Monday 05:00 UTC: Sunday 23:00 in Mexico City, Monday 14:00 in Tokyo.
         self.assertEqual(self.tokyo.work_location_name, "Home")
         self.assertFalse(self.mexico.work_location_name)
 
@@ -56,7 +54,6 @@ class TestTodayIsTheEmployeesOwn(HomeworkingCase):
     def test_an_exception_is_matched_against_the_employees_own_date(self):
         self.set_exception("2026-09-15", self.work_office_2, employee=self.tokyo)
         self.set_exception("2026-09-15", self.work_office_2, employee=self.mexico)
-        # The 15th is today in Tokyo and tomorrow in Mexico City.
         self.assertEqual(self.tokyo.work_location_name, "Office 2")
         self.assertEqual(self.mexico.work_location_name, "Home")
 

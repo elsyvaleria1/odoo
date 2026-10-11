@@ -10,15 +10,12 @@ class IrActionsReport(models.Model):
     _inherit = "ir.actions.report"
 
     def _prepare_rendering_context(self, report, docids, data):
-        # OVERRIDE: the UI's Print action renders this report with no data at all,
-        # so the template would reference an undefined name.
         if report.report_name == "account_followup.report_followup_print_all":
             data = dict(data or {})
             data.setdefault("followup_request", None)
         return super()._prepare_rendering_context(report, docids, data)
 
     def _render_qweb_pdf_prepare_streams(self, report_ref, data, res_ids=None):
-        # OVERRIDE
         res = super()._render_qweb_pdf_prepare_streams(report_ref, data, res_ids)
         report = self._get_report(report_ref)
         if (
@@ -46,11 +43,10 @@ class IrActionsReport(models.Model):
                 invoices = partner._get_invoices_to_print(partner_request)
                 attachments = (
                     invoices.message_main_attachment_id
-                )  # existence guaranteed by _get_invoices_to_print
+                )
 
             writer = OdooPdfFileWriter()
 
-            # Fill writer with the followup report followed by the invoices
             followup_stream = res[partner_id]["stream"]
             input_streams = [followup_stream] + [
                 to_pdf_stream(attachment)
@@ -61,7 +57,6 @@ class IrActionsReport(models.Model):
                 reader = OdooPdfFileReader(stream, strict=False)
                 writer.append_pages_from_reader(reader)
 
-            # Generate the output stream from writer and close the input streams
             output_stream = io.BytesIO()
             writer.write(output_stream)
             res[partner_id]["stream"] = output_stream

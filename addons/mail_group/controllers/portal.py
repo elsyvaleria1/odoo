@@ -263,8 +263,6 @@ class PortalMailGroup(http.Controller):
         message_sudo = message.sudo()
         self._generate_attachments_access_token(message_sudo | replies_sudo)
 
-        # the page answers the row that asked for it: its replies, and the row
-        # for the page after, under a key of its own
         key = f"mail_group.replies.{message.id}.{last_displayed_id}"
         return request.prepare_json_response(
             render_fragments(
@@ -284,7 +282,6 @@ class PortalMailGroup(http.Controller):
             )
         )
 
-    # csrf=False: a mail client posts the one-click unsubscribe; auth="receiver" admits it
     @http.route(
         "/group/<int:group_id>/unsubscribe_oneclick",
         website=True,
@@ -473,8 +470,6 @@ class PortalMailGroup(http.Controller):
         )
 
     def _render_subscription_confirm_request(self, group, email, subscribing):
-        # the link in the mail: a scanner or a preview opening it must not
-        # join or leave anyone, so the page asks and its form posts the link
         return request.render(
             "mail_group.confirmation_subscription_request",
             {"group": group, "email": email, "subscribing": subscribing},

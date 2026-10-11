@@ -7,9 +7,4 @@ class PaymentDemoController(http.Controller):
 
     @http.route(_simulation_url, type="jsonrpc", auth="public")
     def demo_simulate_payment(self, **data):
-        """Simulate the response of a payment request.
-
-        :param dict data: The simulated payment data.
-        :return: None
-        """
         request.env["payment.transaction"].sudo()._process("demo", data)

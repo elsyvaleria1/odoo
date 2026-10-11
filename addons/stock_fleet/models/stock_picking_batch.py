@@ -144,9 +144,6 @@ class StockPickingBatch(models.Model):
         self.used_weight_percentage = False
         self.used_volume_percentage = False
         for batch in self:
-            # What is reserved, each package once with its tare (a pallet shared
-            # by two deliveries weighs once), plus the demand of the deliveries
-            # nothing is reserved for yet.
             batch.trip_shipping_weight = batch.estimated_shipping_weight + sum(
                 picking.move_ids.filtered(
                     lambda move: move.state != "cancel"
@@ -197,7 +194,6 @@ class StockPickingBatch(models.Model):
                 batch._load_moves_from_dock()
 
     def _load_moves_from_dock(self) -> None:
-        """Make the dock the source of the outgoing moves that can be loaded there."""
         self.check_singleton()
         dock = self.dock_id
         moves = self.picking_ids.move_ids.filtered(
@@ -205,9 +201,6 @@ class StockPickingBatch(models.Model):
                 move.state not in ("done", "cancel") and move.location_id != dock
             )
         )
-        # A move fed by earlier moves takes its goods where they leave them, e.g. a
-        # delivery after a leg into a shipping transit. Re-sourcing it at the dock
-        # throws away a reservation that nothing can restore.
         fed_elsewhere = moves.filtered(
             lambda move: any(
                 not origin.location_dest_id._is_child_of(dock)
@@ -227,15 +220,12 @@ class StockPickingBatch(models.Model):
             loaded.write({"location_id": dock.id})
 
     def action_merge(self):
-        # Merging moves the transfers of the other batches into the first on purpose.
         return super(
             StockPickingBatch, self.with_context(**{MERGE_TRIPS: True})
         ).action_merge()
 
     def _get_domain_allowed_picking(self):
         domain = super()._get_domain_allowed_picking()
-        # A trip offers only transfers that ride no other batch: one on another trip
-        # has to be taken off it first. Its own transfers stay allowed.
         if self.picking_type_id.dispatch_batch_required:
             domain &= Domain("batch_id", "=", False) | Domain(
                 "batch_id", "in", self._origin.ids

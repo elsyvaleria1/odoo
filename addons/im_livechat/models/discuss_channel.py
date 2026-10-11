@@ -542,8 +542,6 @@ class DiscussChannel(models.Model):
             fields.extend(
                 [
                     Store.Attr("description", predicate=is_livechat_channel),
-                    # a session's opening announces it to the live chat users
-                    # without reading notes, which a new session has none of
                     Store.Attr(
                         "livechat_note",
                         predicate=lambda channel: (
@@ -613,10 +611,6 @@ class DiscussChannel(models.Model):
 
     @api.autovacuum
     def _gc_empty_livechat_sessions(self) -> None:
-        # psycopg 3 binds server-side, so the placeholder reaches PostgreSQL as
-        # $1 and `interval $1` is a syntax error: this swept nothing and raised
-        # on every autovacuum run. A timedelta is adapted to an interval, which
-        # needs no string spliced into the statement at all.
         self.env.cr.execute(
             """
             SELECT id as id
@@ -673,9 +667,6 @@ class DiscussChannel(models.Model):
             )
 
     def _livechat_rate(self, rate, *, reason=None, partner=None):
-        """Record the visitor's rating of the session -- from the page's
-        feedback form or any other channel the visitor answered on -- and say
-        so in the session."""
         self.check_singleton()
         channel = self.sudo()
         values = {
@@ -707,7 +698,6 @@ class DiscussChannel(models.Model):
             "rating_url": rating.rating_image_url,
             "reason": nl2br("\n" + reason) if reason else "",
         }
-        # the rater authors it: mail links a rating to a message of its author
         author = {"author_id": partner.id} if partner else {}
         channel.message_post(
             body=body,
@@ -982,16 +972,6 @@ class DiscussChannel(models.Model):
         )
 
     def _chatbot_advance(self, chatbot_script=None) -> tuple:
-        """Move the session's chatbot one step, as the visitor's client asks
-        with /chatbot/step/trigger: take the visitor's last message as the
-        answer to the current step, or start `chatbot_script` when there is
-        none, then post the next step.
-
-        Returns `(status, step, message)`: "posted" with the step and its
-        message; "operator" when the current step forwarded to a human who is
-        now answering; "ended" when the script finished -- or there is none to
-        run -- which closes the session.
-        """
         self.check_singleton()
         channel = self.sudo()
         current_step = channel.chatbot_current_step_id
@@ -1025,7 +1005,6 @@ class DiscussChannel(models.Model):
         return "posted", next_step, next_step._process_step(self)
 
     def _chatbot_answered(self) -> bool:
-        """Whether the visitor wrote after the step now waiting for them."""
         channel = self.sudo()
         step = channel.chatbot_current_step_id
         if not step or not step._expects_answer():
@@ -1047,9 +1026,6 @@ class DiscussChannel(models.Model):
         )
 
     def _chatbot_run(self, chatbot_script=None):
-        """Drive the chatbot where no client does -- a messaging bridge: step
-        until a step waits for the visitor or for an operator. Returns the
-        messages posted."""
         self.check_singleton()
         posted = self.env["mail.message"]
         if not chatbot_script and not self._chatbot_answered():

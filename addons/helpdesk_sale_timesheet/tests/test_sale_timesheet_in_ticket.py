@@ -26,14 +26,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         )
 
     def test_compute_sale_line_id_in_ticket(self):
-        """Test to check if the _compute_sale_line_id method correctly works
-
-        Test Case:
-        =========
-        1) Create ticket in the team,
-        2) Check if the SOL defined in ticket is the one containing the prepaid service product
-        """
-        # 1) Create ticket in the team
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -42,7 +34,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             }
         )
 
-        # 2) Check if the SOL defined in ticket is the one containing the prepaid service product
         self.assertEqual(
             ticket.sale_line_id,
             self.so.line_ids[-1],
@@ -50,16 +41,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         )
 
     def test_compute_so_line_in_timesheet(self):
-        """Test to check if the SOL computed for the timesheets in the ticket is the expected one.
-
-        Test Case:
-        =========
-        1) Create ticket in the team,
-        2) Check if the SOL defined in the ticket is the one containing the prepaid service product,
-        3) Create timesheet and check if the SOL in the timesheet is the one in the SOL,
-        4) Change the SOL in the ticket and check if the SOL in the timesheet also changes.
-        """
-        # 1) Create ticket in the team
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -68,14 +49,12 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             }
         )
 
-        # 2) Check if the SOL defined in ticket is the one containing the prepaid service product
         self.assertEqual(
             ticket.sale_line_id,
             self.so.line_ids[-1],
             "The SOL in the ticket should be the one containing the prepaid service product.",
         )
 
-        # 3) Create timesheet and check if the SOL in the timesheet is the one in the SOL
         timesheet = self.env["account.analytic.line"].create(
             {
                 "name": "Test Timesheet",
@@ -91,7 +70,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             "The SOL in the timesheet should be the one in the ticket.",
         )
 
-        # 4) Change the SOL in the ticket and check if the SOL in the timesheet also changes.
         ticket.write({"sale_line_id": self.so.line_ids[0].id})
         self.assertEqual(
             ticket.sale_line_id,
@@ -105,16 +83,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         )
 
     def test_change_customer_and_SOL_after_invoiced_timesheet(self):
-        """Test to check if the partner computed for an invoiced timesheet in the ticket is the expected one.
-
-        Test Case:
-        =========
-        1) Create ticket with a partner set,
-        2) Create timesheet and check if the partner in the timesheet is the one in the ticket,
-        3) Invoice and post the SOL linked to the timesheet,
-        4) Create a new timesheet entry in the ticket,
-        5) Change the ticket's partner and check if the first timesheet's partner stayed the same but the second one changed.
-        """
         helpdesk_ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -189,18 +157,7 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         )
 
     def test_add_timesheet_line_and_get_remaining_so_hours(self):
-        """Test that ticket remaining time is correctly computed, using the timesheet "uom" rather than the "sol" one.
-        Test Case:
-        =========
-        - Create a custom Unit of Measure (eg.: 50hours)
-        - Create a service product
-        - Create a sale order on that product
-        - Get the ticket associated
-        - Add a line in the timesheet lines (3 hours worked)
-        - Ensure we got the good remaining time when we change from the view form (47 hours)
-        """
 
-        # We create a unit of measure of 50 hours
         uom = self.env["uom.uom"].create(
             {
                 "name": "50(hours)",
@@ -250,8 +207,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             }
         )
 
-        # We edit the form of the helpdesk ticket and after add a 3 hours timesheet line
-        # we must have a remaining hours of 47
         with Form(ticket) as f:
             with f.timesheet_ids.new() as line:
                 line.employee_id = self.employee_user
@@ -260,10 +215,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             self.assertEqual(f.remaining_hours_so, 47)
 
     def test_sale_order_helpdesk_team_in_context(self):
-        """
-        Check that we have the helpdesk team id in the context
-        when we want to see the tickets linked to a sale order.
-        """
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -283,10 +234,6 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         self.assertEqual(action["context"]["default_team_id"], ticket.team_id.id)
 
     def test_compute_commercial_partner_id(self):
-        """
-        The purpose is to test if the timesheet commecial partner is
-        the commercial partner of the partner linked to the helkpdesk ticket.
-        """
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "Test Ticket",
@@ -329,9 +276,7 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
         )
 
     def test_allowing_service_product_type_sol_in_helpdesk(self):
-        """Test to validate allowing service product type in ticket"""
 
-        # Create a sale order
         sale_order = (
             self.env["sale.order"]
             .with_context(mail_notrack=True, mail_create_nolog=True)
@@ -342,21 +287,18 @@ class TestSaleTimesheetInTicket(TestCommonSaleTimesheet):
             )
         )
 
-        # Create a sale order line with a consumable product
         sale_order_line = self.env[
             "sale.order.line"
         ].create(
             {
-                "order_id": sale_order.id,  # Corrected reference to the created sale order
+                "order_id": sale_order.id,
                 "product_id": self.product_consumable.id,
                 "product_qty": 10,
             }
         )
 
-        # Confirm the sale order
         sale_order.action_confirm()
 
-        # Test that creating a helpdesk ticket with a non-service product raises a ValidationError
         with self.assertRaises(
             ValidationError,
             msg="Creating a helpdesk ticket with a non-service product should raise a ValidationError",

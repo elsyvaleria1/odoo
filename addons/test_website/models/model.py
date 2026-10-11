@@ -80,10 +80,6 @@ class TestModelMultiWebsite(models.Model):
     _description = "Multi Website Model Test"
 
     name = fields.Char(required=True)
-    # `cascade` is needed as there is demo data for this model which are bound
-    # to website 2 (demo website). But some tests are unlinking the website 2,
-    # which would fail if the `cascade` is not set. Note that the website 2 is
-    # never set on any records in all other modules.
     website_id = fields.Many2one(
         comodel_name="website",
         string="Website",

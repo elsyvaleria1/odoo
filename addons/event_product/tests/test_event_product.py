@@ -25,8 +25,6 @@ class TestEventProduct(TestEventProductCommon):
                 product_form.type = "consu"
 
     def test_ensure_event_type_ticket_service_tracking(self):
-        """A product with a mismatched service_tracking must be rejected on
-        the event.type.ticket side too, not only via product.product."""
         other_product = self.env["product.product"].create(
             {
                 "name": "Not An Event Product",
@@ -40,11 +38,7 @@ class TestEventProduct(TestEventProductCommon):
             ticket_type.product_id = other_product.id
 
     def test_price_reduce_taxinc_recomputes_on_dependency_change(self):
-        """Regression test: price_reduce_taxinc must stay in sync with its
-        declared dependencies (price_reduce, product_id, product_id.taxes_id)."""
         ticket = self.test_event.event_ticket_ids[0]
-        # Clear any tax the product picked up from company defaults on
-        # creation, so the "no tax" baseline below is actually tax-free.
         ticket.product_id.taxes_id = [(6, 0, [])]
         self.assertEqual(ticket.price_reduce_taxinc, ticket.price_reduce)
 
@@ -65,8 +59,6 @@ class TestEventProduct(TestEventProductCommon):
         )
 
     def test_registration_status_defaults_without_order(self):
-        """event.registration._compute_registration_status must default
-        sale_status to 'free' and state to 'open' when _has_order() is False."""
         registration = self.env["event.registration"].create(
             {
                 "event_id": self.test_event.id,
@@ -76,8 +68,6 @@ class TestEventProduct(TestEventProductCommon):
         self.assertEqual(registration.state, "open")
 
     def test_price_incl_follows_the_event_company_currency(self):
-        """price_incl applies the product's taxes and rounds in the event
-        company's currency -- the tax jurisdiction's -- not the product's."""
         ticket = self.test_event.event_ticket_ids[0]
         ticket.product_id.taxes_id = [(6, 0, [])]
         ticket.price = 100.0
@@ -101,15 +91,6 @@ class TestEventProduct(TestEventProductCommon):
         )
 
     def test_tax_computes_share_the_event_company_currency(self):
-        """Both tax computes must round in the event company's currency, not the
-        product's. The two diverge as soon as a product is shared across
-        companies: product.currency_id falls back to the MAIN company's.
-
-        Detected without a tax, by giving the event company a currency that
-        rounds to whole units: a price of 100.4 comes back as 100.0 when the
-        company's currency is the rounding base, and as 100.4 when the
-        product's two-decimal currency is used instead.
-        """
         chunky = self.env["res.currency"].create(
             {"name": "CHK", "symbol": "C", "rounding": 1.0, "decimal_places": 0}
         )
@@ -156,9 +137,6 @@ class TestEventProduct(TestEventProductCommon):
         )
 
     def test_price_reduce_taxinc_is_keyed_on_the_pricelist(self):
-        """Regression for the cache key: price_reduce is pricelist-dependent, so
-        reading the tax-inclusive figure under two pricelists in one transaction
-        must give two answers, not whichever was computed first."""
         ticket = self.test_event.event_ticket_ids[0]
         tax = self.env["account.tax"].create(
             {
@@ -204,8 +182,6 @@ class TestEventProduct(TestEventProductCommon):
         )
 
     def test_compute_price_keeps_a_set_price_over_a_free_product(self):
-        """_compute_price is asymmetric on purpose: a product with a nonzero
-        lst_price drives price, a product with a falsy one leaves it alone."""
         ticket_type = self.event_type_tickets.event_type_ticket_ids[0]
         free_product = self.env["product.product"].create(
             {
@@ -231,7 +207,6 @@ class TestEventProduct(TestEventProductCommon):
         self.assertEqual(ticket_type.price, 70.0, "a priced product must drive it")
 
     def test_sale_available_is_false_for_an_archived_product(self):
-        """The inactive-product branch of the _compute_sale_available override."""
         ticket = self.test_event.event_ticket_ids[0]
         ticket.product_id.active = True
         self.env.invalidate_all()
@@ -242,8 +217,6 @@ class TestEventProduct(TestEventProductCommon):
         self.assertFalse(ticket.sale_available, "an archived product cannot be sold")
 
     def test_ticket_fields_whitelist_copies_product_and_price(self):
-        """_get_event_ticket_fields_whitelist must actually carry product_id and
-        price from the event.type.ticket onto the event.event.ticket."""
         whitelist = self.env["event.type.ticket"]._get_event_ticket_fields_whitelist()
         self.assertIn("product_id", whitelist)
         self.assertIn("price", whitelist)
@@ -253,8 +226,5 @@ class TestEventProduct(TestEventProductCommon):
         self.assertEqual(ticket.product_id, template.product_id)
 
     def test_event_type_ticket_product_cannot_lose_event_tracking(self):
-        """A product still referenced by a template ticket must not be able to
-        leave service_tracking='event'; otherwise creating an event from that
-        template fails later, far from the edit that caused it."""
         with self.assertRaises(ValidationError):
             self.event_product.service_tracking = "no"

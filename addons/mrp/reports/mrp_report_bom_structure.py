@@ -19,9 +19,6 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
     _description = "BOM Overview Report"
 
     def _with_warehouse(self, warehouse) -> Self:
-        # The product quantity API takes its warehouse from the context: the
-        # report sets it from its warehouse argument, so stock, forecasts and
-        # routes are read in one warehouse.
         if self.env.context.get("warehouse_id") == warehouse.id:
             return self
         return self.with_context(warehouse_id=warehouse.id)
@@ -818,7 +815,6 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 ).product_variant_ids[:1]
             )
 
-        # The printed structure shows quantities and costs, never stock.
         data = self._get_bom_data(
             bom, warehouse, product=product, line_qty=qty, level=0, ignore_stock=True
         )
@@ -1054,7 +1050,6 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
         if product and not product.is_storable:
             return ("available", 0)
         if closest_forecasted:
-            # _get_components_closest_forecasted already counted this consumption
             return ("expected", (closest_forecasted - date_today).days)
 
         unit = uom or product.uom_id

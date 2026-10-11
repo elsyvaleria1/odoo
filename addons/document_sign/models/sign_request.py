@@ -59,19 +59,11 @@ class SignRequest(models.Model):
             return super()._get_linked_record_action(default_action=default_action)
 
     def _create_completed_documents(self) -> None:
-        """Ensure documents are created by the super method, which only creates the related attachment."""
         super(
             SignRequest, self.with_context(no_document=False)
         )._create_completed_documents()
 
     def _send_completed_documents(self) -> None:
-        """Ensure no documents are created when sending the completed document.
-
-        The super method call _create_completed_documents which create the completed document then the attachments
-        of the completed documents are sent by mail, and we want to avoid to turn those attachments again into
-        document by forcing no_document=True (otherwise the system will attempt to create a document on attachment
-        already referenced by a document leading to a duplicate key constraint violation).
-        """
         super(
             SignRequest, self.with_context(no_document=True)
         )._send_completed_documents()
@@ -87,10 +79,6 @@ class SignRequestItem(models.Model):
     _inherit = "sign.request.item"
 
     def _sign(self, signature, **kwargs):
-        """Give view access to the signer on the completed documents.
-
-        Note that this function is always called in sudo (see super method).
-        """
         super()._sign(signature, **kwargs)
         completed_documents_sudo = self.env["document.document"].search(
             [
@@ -101,8 +89,6 @@ class SignRequestItem(models.Model):
                 )
             ]
         )
-        # the signer and the requester view the signed documents, unless a
-        # grant or an ownership already reaches them there
         partners = self.partner_id | self.create_uid.partner_id
         existing_editors = self.env.ref(
             "base.user_root"

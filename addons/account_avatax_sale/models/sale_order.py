@@ -20,7 +20,6 @@ class SaleOrder(models.Model):
         return res
 
     def _prepare_avatax_service_params(self, commit=False):
-        # EXTENDS 'mixin.account.external.tax'
         res = super()._prepare_avatax_service_params(commit=commit)
         res.update(
             {

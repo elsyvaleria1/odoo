@@ -93,14 +93,10 @@ class TestSessionInfo(common.HttpCase):
             "allowed_companies": expected_allowed_companies,
             "disallowed_ancestor_companies": expected_disallowed_ancestor_companies,
         }
-        # session_info()["groups"] is an extension point: an addon's ir.http adds
-        # the groups its client reads at boot. web owns one key of it.
         self.assertEqual(
             result["groups"]["base.group_allow_export"],
             self.user.has_group("base.group_allow_export"),
         )
-        # user_companies is an extension point too (hr_timesheet adds two keys per
-        # company); web owns the keys declared above, not the whole dict
         user_companies = result["user_companies"]
         self.assertEqual(
             user_companies["current_company"],

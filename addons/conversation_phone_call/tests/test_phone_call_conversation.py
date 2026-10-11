@@ -313,7 +313,6 @@ class TestCallConversationIsQuiet(TransactionCase):
         conversation = call._recording_timeline()
         call.user_id = self.other
         call._on_call_details_completed()
-        # a write's subscriptions and their notices wait for the commit
         self.env.cr.precommit.run()
         self.assertEqual(conversation.user_id, self.other)
         self.assertFalse(self._assignments(self.other))

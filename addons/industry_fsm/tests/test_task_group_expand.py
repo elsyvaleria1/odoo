@@ -9,7 +9,6 @@ from .common import TestIndustryFsmCommon
 @tagged("-at_install", "post_install")
 class TestTaskGroupExpand(TestIndustryFsmCommon):
     def test_task_user_ids_group_expand(self):
-        # Simulate Gantt view like we do in the project version of this test
         gantt_domain = [
             ("date_start", ">=", datetime.today()),
             ("date_end", "<=", datetime.today() + timedelta(days=7)),
@@ -23,7 +22,6 @@ class TestTaskGroupExpand(TestIndustryFsmCommon):
             }
         )
 
-        # Create two tasks for two users: one is planned (has date_start and date_end fields) and the other is not
         Task.create(
             [
                 {
@@ -67,13 +65,6 @@ class TestTaskGroupExpand(TestIndustryFsmCommon):
         )
 
     def test_project_ids_group_expand(self):
-        """
-        Validate that projects containing tasks scheduled within the last or current
-        period are accurately displayed in the Gantt view. Specifically, it checks:
-        1. The inclusion of FSM projects with tasks scheduled within the specified date range.
-        2. The exclusion of standard projects that do not meet the scheduling criteria.
-        3. The correct display of FSM projects when filtered by project name.
-        """
         Task = self.env["project.task"]
         project, unscheduled_fsm_project = self.env["project.project"].create(
             [

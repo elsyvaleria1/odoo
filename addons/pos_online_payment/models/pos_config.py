@@ -7,7 +7,6 @@ class PosConfig(models.Model):
 
     @api.constrains("payment_method_ids")
     def _check_online_payment_methods(self) -> None:
-        """Checks the journal currency with _get_online_payment_providers(..., error_if_invalid=True)"""
         for config in self:
             opm_amount = 0
             for pm in config.payment_method_ids:

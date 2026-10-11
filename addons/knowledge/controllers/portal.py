@@ -13,5 +13,4 @@ class KnowledgePortal(portal.CustomerPortal):
         return values
 
     def _get_domain_knowledge_article(self):
-        """Generate the domain for the portal's articles"""
         return []

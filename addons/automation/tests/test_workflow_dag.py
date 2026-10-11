@@ -834,7 +834,6 @@ class TestWorkflowGraphPayload(TransactionCase):
 
         graph = self.automation.get_workflow_graph()
 
-        # the canvas is also the DAG editor; a settled run must not colour it
         self.assertIsNone(graph["runtime_id"])
         self.assertTrue(all(node["runtime_state"] is None for node in graph["nodes"]))
 

@@ -8,10 +8,6 @@ from odoo.exceptions import UserError
 
 
 def pre_init_knowledge(env) -> None:
-    """Some lxml arm64 versions cannot decode icons and cause the installation to crash.
-    This will test to decode an emoji before the installation of the app, and show
-    a helper message if it crashed.
-    """
     try:
         etree.fromstring("<p>😀</p>")
     except etree.XMLSyntaxError:

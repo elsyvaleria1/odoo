@@ -302,8 +302,6 @@ class TestFilteredDomainAsksTheSearchLast(TransactionCase):
         self.assertFalse(result)
 
     def test_an_or_decided_by_a_column_never_fetches_a_relation(self):
-        # the optimizer sorts an OR's children by field name, so the relation
-        # comes first in the domain and must still be read last
         category = self.env["test_orm.category"].create({"name": "fetched last"})
         discussions = self.env["test_orm.discussion"].create(
             [{"name": "decided"}, {"name": "decided"}]
@@ -489,7 +487,6 @@ class TestCycleCheckOnParentStoreCreate(TransactionCase):
         self.assertEqual(child.parent_path, f"{root.id}/{child.id}/")
         self.assertEqual(leaf.parent_path, f"{root.id}/{child.id}/{leaf.id}/")
         self.assertFalse((root | child | leaf)._has_cycle())
-        # the parent_path update refuses it, in the model's own words
         with self.assertRaisesRegex(UserError, "recursive menus"):
             root.parent_id = leaf
 
@@ -509,6 +506,4 @@ class TestCycleCheckOnParentStoreCreate(TransactionCase):
         transaction = type(self.env.transaction)
         with patch.object(transaction, "is_checking_inserted", return_value=False):
             unchecked = create_child()
-        # a new row has no descendants: no cycle query, whether or not the
-        # transaction would check the rows it inserted
         self.assertEqual(unchecked, checked)

@@ -5,8 +5,6 @@ from odoo.fields import Domain
 class WizardDocumentDocumentShare(models.TransientModel):
     _inherit = "wizard.document.document.share"
 
-    # The help texts and warnings the sharing dialog derives from what the
-    # user is about to apply; the actions stay in document_sharing.py.
 
     @api.depends("access_internal", "document_ids")
     def _compute_access_internal_help(self) -> None:
@@ -33,7 +31,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
                 record.access_internal_help = self.env._(
                     "Keep the values as is (multiple values)"
                 )
-            else:  # None
+            else:
                 record.access_internal_help = self.env._(
                     "Only people with access can open with the link"
                 )
@@ -63,7 +61,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
                 record.access_via_link_help = self.env._(
                     "Keep the values as is (multiple values)"
                 )
-            else:  # None
+            else:
                 record.access_via_link_help = self.env._(
                     "No one on the internet can access"
                 )
@@ -112,18 +110,9 @@ class WizardDocumentDocumentShare(models.TransientModel):
         "document_ids",
     )
     def _compute_has_warning_self_access_loss(self) -> None:
-        """Warn when the pending rights would strip the current user's own access.
-
-        Editing sharing so that you keep neither a membership, internal access,
-        nor link access (and are not an owner or a system administrator) means
-        you can no longer open the document afterwards. This is advisory: the
-        rights are still applied if confirmed.
-        """
         me = self.env.user.partner_id
         Documents = self.env["document.document"]
         system_reach = Documents._documents_system_reach()
-        # the documents the system reach covers, asked once for every wizard;
-        # the user opened them, so reads them: no elevation needed
         system_reached = (
             set(
                 Documents.search(
@@ -137,15 +126,10 @@ class WizardDocumentDocumentShare(models.TransientModel):
             keeps_via_owner = record.document_ids and all(
                 document.owner_id == self.env.user for document in record.document_ids
             )
-            # a Documents system administrator keeps what the system reach
-            # gives, which stops at another person's drive (break-glass aside):
-            # asked of the documents, not of the group
             keeps_via_system = (
                 bool(record.document_ids)
                 and set(record.document_ids.ids) <= system_reached
             )
-            # Only while editing rights (not inviting) and only for actors who
-            # can actually lose access this way.
             if record.invite_partner_ids or keeps_via_system or keeps_via_owner:
                 record.has_warning_self_access_loss = False
                 continue

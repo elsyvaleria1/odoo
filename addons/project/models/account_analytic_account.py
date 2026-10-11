@@ -47,8 +47,6 @@ class AccountAnalyticAccount(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_existing_tasks(self) -> None:
-        # a deletion guard binds whoever deletes: the tasks they cannot read
-        # and the archived ones keep the account as much as the others
         self.env["project.project"].flush_model(["account_id"])
         self.env["project.task"].flush_model(["project_id"])
         self.env.cr.execute(

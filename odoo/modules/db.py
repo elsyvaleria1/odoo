@@ -83,9 +83,9 @@ def _insert_modules(cr: SqlReader, rows: list[tuple]) -> dict[str, int]:
     columns = ", ".join(_MODULE_COLUMNS)
     ids: dict[str, int] = {}
     with _debug.perf("modules.db.insert_modules", cr=cr, rows=len(rows)) as span:
-        chunks = 0  # debuglog
+        chunks = 0
         for chunk in batched(rows, _MODULE_INSERT_CHUNK, strict=False):
-            chunks += 1  # debuglog
+            chunks += 1
             cr.execute(
                 f"INSERT INTO ir_module_module ({columns}) VALUES "
                 + ", ".join([placeholder] * len(chunk))
@@ -152,14 +152,14 @@ def _copy_module_metadata(
 
 
 def _mark_auto_install_modules(cr: Cursor) -> None:
-    iteration = 0  # debuglog
-    marked = 0  # debuglog
+    iteration = 0
+    marked = 0
     with _debug.perf("modules.db.mark_auto_install", cr=cr) as span:
         while True:
-            iteration += 1  # debuglog
+            iteration += 1
             cr.execute(_AUTO_INSTALL_CANDIDATES_QUERY)
             to_auto_install = [x[0] for x in cr.fetchall()]
-            candidates = len(to_auto_install)  # debuglog
+            candidates = len(to_auto_install)
             cr.execute(_AUTO_INSTALL_CLOSURE_QUERY, [to_auto_install, to_auto_install])
             to_auto_install.extend(x[0] for x in cr.fetchall())
             _debug.logic(
@@ -171,7 +171,7 @@ def _mark_auto_install_modules(cr: Cursor) -> None:
 
             if not to_auto_install:
                 break
-            marked += len(to_auto_install)  # debuglog
+            marked += len(to_auto_install)
             cr.execute(
                 """UPDATE ir_module_module SET state='to install' WHERE name = ANY(%s)""",
                 (list(to_auto_install),),

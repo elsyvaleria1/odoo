@@ -171,7 +171,6 @@ class EventSaleReport(models.Model):
         )
 
     def _with_clause(self, *with_):
-        # Extra clauses formatted as `cte1 AS (SELECT ...)`, `cte2 AS (SELECT ...)`...
         return (
             """
 WITH
@@ -182,7 +181,6 @@ WITH
         )
 
     def _select_clause(self, *select):
-        # Extra clauses formatted as `cte1.column1 AS new_column1`, `table1.column2 AS new_column2`...
         return """
 SELECT
     -- One row per registration and no aggregation below, so the registration's
@@ -235,7 +233,6 @@ SELECT
         )
 
     def _from_clause(self, *join_):
-        # Extra clauses formatted as `column1`, `column2`...
         return """
 FROM event_registration
 LEFT JOIN event_event ON event_event.id = event_registration.event_id
@@ -245,7 +242,6 @@ LEFT JOIN sale_order_line ON sale_order_line.id = event_registration.sale_order_
 """ + ("\n".join(join_) + "\n" if join_ else "")
 
     def _group_by_clause(self, *group_by):
-        # Extra clauses formatted like `column1`, `column2`...
         return (
             """
 GROUP BY

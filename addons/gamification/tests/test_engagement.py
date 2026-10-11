@@ -38,7 +38,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         )
 
     def test_record_snapshot_creates_record(self):
-        """_record_snapshot creates an engagement snapshot for the company."""
         Snapshot = self.env["gamification.engagement.snapshot"]
         snapshot = Snapshot._record_snapshot(self.company)
 
@@ -47,7 +46,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertGreater(snapshot.total_users, 0)
 
     def test_record_snapshot_idempotent(self):
-        """Recording a snapshot twice on the same day returns the existing one."""
         Snapshot = self.env["gamification.engagement.snapshot"]
         snap1 = Snapshot._record_snapshot(self.company)
         snap2 = Snapshot._record_snapshot(self.company)
@@ -55,17 +53,13 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertEqual(snap1.id, snap2.id, "Should return existing snapshot")
 
     def test_snapshot_captures_karma_users(self):
-        """Snapshot correctly counts users with karma > 0."""
         self.env.flush_all()
         Snapshot = self.env["gamification.engagement.snapshot"]
         snapshot = Snapshot._record_snapshot(self.company)
 
-        # At least our 2 test users have karma
         self.assertGreaterEqual(snapshot.users_with_karma, 2)
 
     def test_snapshot_captures_kudos(self):
-        """Snapshot counts kudos sent."""
-        # Send a kudos first
         category = self.env.ref("gamification.kudos_category_teamwork")
         self.env["gamification.kudos"].create(
             {
@@ -84,7 +78,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertGreaterEqual(snapshot.kudos_7d, 1)
 
     def test_snapshot_captures_badges(self):
-        """Snapshot counts badge grants."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Analytics Test Badge",
@@ -107,7 +100,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertGreaterEqual(snapshot.badges_granted_7d, 1)
 
     def test_cron_creates_snapshot_per_company(self):
-        """Cron creates snapshots for all companies with meaningful data."""
         Snapshot = self.env["gamification.engagement.snapshot"]
         Snapshot._cron_record_snapshot()
 
@@ -119,7 +111,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertTrue(snapshot, "Cron should create at least one snapshot")
         self.assertEqual(snapshot.company_id, self.company)
         self.assertTrue(snapshot.snapshot_date, "Snapshot should have a date")
-        # At minimum, active_users should reflect our test users
         self.assertGreaterEqual(
             snapshot.users_with_karma,
             0,
@@ -127,7 +118,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         )
 
     def test_get_analytics_summary_empty(self):
-        """get_analytics_summary returns empty dict when no snapshots exist."""
         Snapshot = self.env["gamification.engagement.snapshot"]
         result = Snapshot.get_analytics_summary()
 
@@ -135,7 +125,6 @@ class TestEngagementSnapshot(common.TransactionCase):
         self.assertIn("trends", result)
 
     def test_get_analytics_summary_with_data(self):
-        """get_analytics_summary returns current data and trends."""
         Snapshot = self.env["gamification.engagement.snapshot"]
         Snapshot._record_snapshot(self.company)
 
@@ -177,17 +166,14 @@ class TestDashboardEnhancements(common.TransactionCase):
         )
 
     def test_leaderboard_returns_sorted(self):
-        """Leaderboard returns users sorted by karma descending."""
         Users = self.env["res.users"]
         result = Users._get_karma_leaderboard(limit=10)
 
         self.assertIsInstance(result, list)
-        # Verify sorted descending
         karmas = [entry["karma"] for entry in result]
         self.assertEqual(karmas, sorted(karmas, reverse=True))
 
     def test_leaderboard_marks_current_user(self):
-        """Leaderboard marks the current user."""
         Users = self.env["res.users"].with_user(self.user_1)
         result = Users._get_karma_leaderboard(limit=50)
 
@@ -196,14 +182,12 @@ class TestDashboardEnhancements(common.TransactionCase):
         self.assertEqual(current_entries[0]["user_id"], self.user_1.id)
 
     def test_leaderboard_respects_limit(self):
-        """Leaderboard respects the limit parameter."""
         Users = self.env["res.users"]
         result = Users._get_karma_leaderboard(limit=1)
 
         self.assertLessEqual(len(result), 1)
 
     def test_send_kudos_from_dashboard(self):
-        """send_kudos_from_dashboard creates a kudos record."""
         category = self.env.ref("gamification.kudos_category_teamwork")
         Users = self.env["res.users"].with_user(self.user_1)
 
@@ -219,7 +203,6 @@ class TestDashboardEnhancements(common.TransactionCase):
         self.assertGreater(result["karma_granted"], 0)
 
     def test_send_kudos_from_dashboard_self_prevention(self):
-        """send_kudos_from_dashboard prevents self-kudos."""
         from odoo.exceptions import UserError
 
         category = self.env.ref("gamification.kudos_category_teamwork")
@@ -233,7 +216,6 @@ class TestDashboardEnhancements(common.TransactionCase):
             )
 
     def test_dashboard_data_includes_leaderboard(self):
-        """get_gamification_dashboard_data includes leaderboard data."""
         Users = self.env["res.users"].with_user(self.user_1)
         data = Users.get_gamification_dashboard_data()
 
@@ -241,7 +223,6 @@ class TestDashboardEnhancements(common.TransactionCase):
         self.assertIsInstance(data["leaderboard"], list)
 
     def test_dashboard_data_includes_featured_badges(self):
-        """Dashboard profile includes featured_badges list."""
         Users = self.env["res.users"].with_user(self.user_1)
         data = Users.get_gamification_dashboard_data()
 
@@ -271,20 +252,16 @@ class TestProfileEnhancements(common.TransactionCase):
         )
 
     def test_default_visibility_public(self):
-        """Default gamification visibility is 'public'."""
         self.assertEqual(self.user.gamification_visibility, "public")
 
     def test_set_visibility(self):
-        """User can change their gamification visibility."""
         self.user.gamification_visibility = "private"
         self.assertEqual(self.user.gamification_visibility, "private")
 
     def test_featured_badges_empty_by_default(self):
-        """Featured badges are empty by default."""
         self.assertFalse(self.user.featured_badge_ids)
 
     def test_featured_badges_can_be_set(self):
-        """User can set featured badges from their earned badges."""
         badge = self.env["gamification.badge"].create(
             {
                 "name": "Featured Test Badge",

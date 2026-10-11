@@ -31,25 +31,21 @@ class TestPriceRuleName(TransactionCase):
         return self.env["delivery.price.rule"].create(base)
 
     def test_name_fixed_price_only(self):
-        """A base price without a per-unit price reads as a fixed price."""
         rule = self._rule(list_base_price=5.0, list_price=0.0)
         self.assertIn("fixed price", rule.name)
         self.assertNotIn("plus", rule.name)
 
     def test_name_variable_only(self):
-        """A per-unit price without a base reads as 'times <factor>'."""
         rule = self._rule(list_base_price=0.0, list_price=2.0)
         self.assertIn("times weight", rule.name)
         self.assertNotIn("fixed price", rule.name)
 
     def test_name_base_plus_variable(self):
-        """Both prices read as a fixed price plus a per-unit term."""
         rule = self._rule(list_base_price=5.0, list_price=2.0)
         self.assertIn("fixed price", rule.name)
         self.assertIn("plus", rule.name)
         self.assertIn("times weight", rule.name)
 
     def test_name_carries_condition(self):
-        """The label starts with the rule's if-condition."""
         rule = self._rule(list_base_price=5.0, operator=">=", max_value=3.0)
         self.assertIn("if weight >= 3.00 then", rule.name)

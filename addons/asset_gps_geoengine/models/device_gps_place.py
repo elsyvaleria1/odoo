@@ -6,17 +6,10 @@ from odoo.tools import SQL, LazyTranslate
 _lt = LazyTranslate(__name__)
 _logger = logging.getLogger(__name__)
 
-# A stop this close to a place already looked up is at that place: vehicles
-# park at the same fonda every day, and each lookup costs a second.
 PLACE_REUSE_M = 50
 
-# OpenStreetMap categories of a business or a service: a place worth naming
-# by what it is. Anything else -- a road, a neighbourhood, farmland -- is
-# described by its address alone.
 POI_CATEGORIES = {"amenity", "shop", "tourism", "craft", "office", "healthcare"}
 
-# What OpenStreetMap calls a place (its "type"), as the report names it.
-# A fonda or a cocina is mapped as a restaurant; its own name says which.
 PLACE_TYPE_LABELS = {
     "restaurant": _lt("Restaurant"),
     "fast_food": _lt("Food Stand"),
@@ -106,8 +99,6 @@ class DeviceGpsPlace(models.Model):
                     else place.name or kind
                 )
             elif place.name and place.name not in (place.address or ""):
-                # A named area the address does not already say: a ranch,
-                # a plaza, a sports club.
                 what = place.name
             place.label = " · ".join(filter(None, [what, place.address]))
 
@@ -137,13 +128,6 @@ class DeviceGpsPlace(models.Model):
 
     @api.model
     def _look_up(self, latitude, longitude):
-        """The place at these coordinates, from the cache or from
-        OpenStreetMap through the geocoding module's own reverse lookup --
-        the one the database already uses for partners.
-
-        :raises UserError: OpenStreetMap could not be reached or answered
-            with an error; the caller stops asking for this run.
-        """
         place = self._find_near(latitude, longitude)
         if place:
             return place
@@ -167,7 +151,6 @@ class DeviceGpsPlace(models.Model):
                 "longitude": longitude,
                 "the_point": f"POINT({longitude} {latitude})",
                 "name": result.get("name") or False,
-                # format=json says "class", jsonv2 "category".
                 "osm_category": result.get("class") or result.get("category") or False,
                 "osm_type": result.get("type") or False,
                 "address": ", ".join(filter(None, [address.get("road"), locality]))

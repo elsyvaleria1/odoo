@@ -1,9 +1,5 @@
 from . import models
 
-# Planning shows every published shift to every planning user: the schedule is
-# shared. A visit is not the schedule but the business of its employee, so this
-# module replaces that row with one that leaves the visits out (see
-# security/ir.access.csv) and hands it back when uninstalled.
 PUBLISHED_SHIFTS_ROW = "planning.planning_rule_user_is_published"
 
 

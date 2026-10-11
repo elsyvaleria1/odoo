@@ -133,9 +133,7 @@ def _get_jinja_env() -> Environment:
             "odoo-bin scaffold needs Jinja2, which is not installed.\n"
             "    pip install Jinja2      (or: pip install 'odoo[scaffold]')"
         )
-    # autoescape stays off: the templates render Python, XML and CSV source
-    # for a module skeleton, never HTML served to a browser.
-    env = jinja2.Environment()  # noqa: S701  see the two lines above
+    env = jinja2.Environment()
     env.filters["snake"] = _str_to_snake_case
     env.filters["pascal"] = _str_to_pascal_case
     _debug.lifecycle("cli.scaffold.jinja_env_built", filters=2)
@@ -228,11 +226,11 @@ class Template:
         self, modname: str, directory: Path, params: dict[str, str] | None = None
     ) -> None:
         env = _get_jinja_env()
-        files = 0  # debuglog
-        templated = 0  # debuglog
-        copied_bytes = 0  # debuglog
+        files = 0
+        templated = 0
+        copied_bytes = 0
         for path, content in self._read_files():
-            copied_bytes += len(content)  # debuglog
+            copied_bytes += len(content)
             rendered = Path(env.from_string(str(path)).render(params))
             local = rendered.relative_to(self.path)
             ext = rendered.suffix
@@ -240,7 +238,7 @@ class Template:
                 local = local.with_suffix("")
             dest = Path(directory) / modname / local
             dest.parent.mkdir(parents=True, exist_ok=True)
-            files += 1  # debuglog
+            files += 1
 
             with dest.open("wb") as f:
                 if ext not in (
@@ -258,7 +256,7 @@ class Template:
                         f, encoding="utf-8"
                     )
                     f.write(b"\n")
-                    templated += 1  # debuglog
+                    templated += 1
         _debug.pipeline(
             "cli.scaffold.rendered",
             module=modname,

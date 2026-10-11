@@ -39,7 +39,6 @@ class PreparationTimeReport(models.Model):
     qty = fields.Float(string="Quantity")
 
     def _select(self):
-        """Returns the full SQL statement to create or replace the view."""
         user_tz = self.env.user.tz or "UTC"
         return SQL(
             """
@@ -81,5 +80,4 @@ class PreparationTimeReport(models.Model):
         )
 
     def init(self) -> None:
-        """Initialize the SQL View for the report."""
         self.env.cr.execute(self._select())

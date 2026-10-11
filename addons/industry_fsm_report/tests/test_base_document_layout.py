@@ -11,7 +11,6 @@ class TestBaseDocumentLayout(TestIndustryFsmCommon):
         )
         document_layout = DocumentLayout.new()
         styles = document_layout._get_asset_style()
-        # make sure no worksheet template is set to the task.
         self.task.worksheet_template_id = False
         render_information = document_layout._get_render_information(styles)
         self.assertEqual(render_information["doc"], self.task)

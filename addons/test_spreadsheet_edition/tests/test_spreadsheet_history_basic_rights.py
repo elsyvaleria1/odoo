@@ -23,7 +23,6 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Shadow the current environment/cursor with the newly created user.
         cls.env = cls.env(
             user=new_test_user(
                 cls.env,
@@ -37,7 +36,7 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
         spreadsheet.dispatch_spreadsheet_message(self.new_revision_data(spreadsheet))
         copy = spreadsheet.copy()
         self.assertEqual(
-            copy.sudo().spreadsheet_revision_ids.commands,  # by default the current user is not allowed to see revisions
+            copy.sudo().spreadsheet_revision_ids.commands,
             spreadsheet.sudo().spreadsheet_revision_ids.commands,
         )
 
@@ -98,18 +97,18 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
 
         copy = spreadsheet.copy().with_context(
             active_test=False
-        )  # get all the archived revisions
+        )
 
         copied_data = json_loads(copy.spreadsheet_data)
         copied_snapshot = json_loads(
             copy._get_spreadsheet_serialized_snapshot()
-        )  # snapshot
+        )
         copied_revision_before = json_loads(
             copy.sudo().spreadsheet_revision_ids[0].commands
-        )  # revision before snapshot
+        )
         copied_revision_after = json_loads(
             copy.sudo().spreadsheet_revision_ids[2].commands
-        )  # revision after snapshot
+        )
 
         self.assertEqual(copied_data["sheets"][0]["comments"], {})
         self.assertEqual(copied_snapshot["sheets"][0]["comments"], {})
@@ -147,18 +146,18 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
         fork_id = action["params"]["spreadsheet_id"]
         fork = (
             self.env["spreadsheet.test"].browse(fork_id).with_context(active_test=False)
-        )  # get all the archived revisions
+        )
 
         copied_data = json_loads(fork.spreadsheet_data)
         copied_snapshot = json_loads(
             fork._get_spreadsheet_serialized_snapshot()
-        )  # snapshot
+        )
         copied_revision_before = json_loads(
             fork.sudo().spreadsheet_revision_ids[0].commands
-        )  # revision before snapshot
+        )
         copied_revision_after = json_loads(
             fork.sudo().spreadsheet_revision_ids[2].commands
-        )  # revision after snapshot
+        )
 
         self.assertEqual(copied_data["sheets"][0]["comments"], {})
         self.assertEqual(copied_snapshot["sheets"][0]["comments"], {})
@@ -167,7 +166,6 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
 
     def test_reset_spreadsheet_data(self):
         spreadsheet = self.env["spreadsheet.test"].create({})
-        # one revision before the snapshot (it's archived by the snapshot)
         spreadsheet.dispatch_spreadsheet_message(self.new_revision_data(spreadsheet))
         self.snapshot(
             spreadsheet,
@@ -175,7 +173,6 @@ class SpreadsheetMixinHistoryTest(SpreadsheetTestCase):
             "snapshot-revision-id",
             {"sheets": [], "revisionId": "snapshot-revision-id"},
         )
-        # one revision after the snapshot
         spreadsheet.dispatch_spreadsheet_message(self.new_revision_data(spreadsheet))
         spreadsheet.spreadsheet_data = r"{}"
         self.assertFalse(spreadsheet.spreadsheet_snapshot)

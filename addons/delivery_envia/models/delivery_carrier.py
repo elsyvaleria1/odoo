@@ -44,10 +44,6 @@ class DeliverCarrier(models.Model):
         },
     )
 
-    # Doors onto `carrier_credential_id` (ADR-0081). Like Easypost and unlike
-    # DHL, these are the SAME token for two environments -- `prod_environment`
-    # picks between them -- so both live in `credential_data` under their own
-    # names rather than in the vault's native api_key / api_secret.
     _CREDENTIAL_FIELDS = {
         "envia_production_api_key": "envia_production_api_key",
         "envia_sandbox_api_key": "envia_sandbox_api_key",
@@ -176,11 +172,6 @@ class DeliverCarrier(models.Model):
         "prod_environment",
     )
     def _compute_services(self):
-        """Each country has different carriers or services
-        In addition, depending on the mail type different carriers
-        will have different services.
-        Swapping to prod also has different supported services and carriers.
-        """
         for carrier in self:
             if carrier.delivery_type == "envia":
                 carrier.envia_carrier_code = ""
@@ -194,7 +185,6 @@ class DeliverCarrier(models.Model):
                 carrier.supports_shipping_insurance = True
 
     def _envia_convert_size(self, size):
-        """Returns the size in CM for a Envia order."""
         self.check_singleton()
         size_uom_id = self.env["product.template"]._get_uom_from_setting("length")
         return size_uom_id._get_quantity_in_unit(
@@ -202,9 +192,6 @@ class DeliverCarrier(models.Model):
         )
 
     def action_view_envia_wizard(self) -> dict:
-        """Fetch carriers and channels from Envia account.
-        create record(s) of carriers(s) in odoo.
-        """
         self.check_singleton()
         if self.delivery_type != "envia":
             raise ValidationError(
@@ -237,7 +224,6 @@ class DeliverCarrier(models.Model):
         }
 
     def envia_rate_shipment(self, order) -> dict:
-        """Returns shipping rate for the order and chosen shipping method."""
         _debug.pipeline(
             "carrier_rate_request", provider="envia", carrier=self.id, order=order.id
         )
@@ -278,9 +264,6 @@ class DeliverCarrier(models.Model):
         }
 
     def envia_send_shipping(self, pickings):
-        """Send shipment to Envia for validation.
-        Add shipment to cart, checkout, and generate label.
-        """
         _debug.pipeline(
             "carrier_ship_request", provider="envia", carrier=self.id, pickings=pickings
         )
@@ -305,7 +288,6 @@ class DeliverCarrier(models.Model):
         return res
 
     def envia_get_tracking_link(self, picking):
-        """Returns the tracking link for a picking."""
         _debug.logic(
             "carrier_tracking_link",
             provider="envia",
@@ -321,10 +303,6 @@ class DeliverCarrier(models.Model):
         return f"{root_url}/tracking?{urlencode(params)}"
 
     def envia_cancel_shipment(self, pickings):
-        """Attempts to cancel shipment from within Envias
-        backend. May run into issues if the shipment has already
-        shipped or label been picked up by carrier.
-        """
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="envia",

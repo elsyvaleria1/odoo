@@ -52,14 +52,6 @@ class CalendarEvent(models.Model):
         events = super().create(vals_list)
         if not self.env["hr.applicant"].has_access("read"):
             return events
-        # Keyed on the event's own applicant, not on a context key: a meeting
-        # created from the Calendar app with an applicant on it used to get no
-        # CV while the same meeting created from the applicant's own button did.
-        # Occurrences are excluded -- `_apply_recurrence` copies the base event's
-        # values, applicant included, so keying on the record alone would put a
-        # copy of every CV on every occurrence. `recurrence_id` alone does not
-        # tell them apart: the base event carries it too by the time `create`
-        # returns, so the base is the one the recurrence points back at.
         scheduled = events.filtered(
             lambda event: (
                 event.applicant_id

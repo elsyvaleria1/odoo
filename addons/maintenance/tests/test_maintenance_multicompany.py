@@ -4,9 +4,7 @@ from odoo.tests.common import TransactionCase
 
 class TestMaintenanceMulticompany(TransactionCase):
     def test_00_maintenance_multicompany_user(self):
-        """Test Check maintenance with maintenance manager and user in multi company environment"""
 
-        # Use full models
         Asset = self.env["resource.resource"]
         MaintenanceOrder = self.env["maintenance.order"]
         Kind = self.env["resource.kind"]
@@ -14,11 +12,9 @@ class TestMaintenanceMulticompany(TransactionCase):
         ResCompany = self.env["res.company"]
         MaintenanceTeam = self.env["team.team"]
 
-        # Use full reference.
         group_user = self.env.ref("base.group_user")
         group_manager = self.env.ref("maintenance.group_equipment_manager")
 
-        # Company A
         company_a = ResCompany.create(
             {
                 "name": "Company A",
@@ -26,7 +22,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # Create one child company having parent company is 'Your company'
         company_b = ResCompany.create(
             {
                 "name": "Company B",
@@ -34,7 +29,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # Create equipment manager.
         cids = [company_a.id, company_b.id]
         equipment_manager = ResUsers.create(
             {
@@ -47,7 +41,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # Create equipment user
         user = ResUsers.create(
             {
                 "name": "Normal User/Employee",
@@ -59,7 +52,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # create a maintenance team for company A user
         MaintenanceTeam.with_user(equipment_manager).create(
             {
                 "use_maintenance": True,
@@ -67,7 +59,6 @@ class TestMaintenanceMulticompany(TransactionCase):
                 "company_id": company_a.id,
             }
         )
-        # create a maintenance team for company B user
         (
             MaintenanceTeam.with_user(equipment_manager)
             .with_context(allowed_company_ids=cids)
@@ -113,7 +104,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             Asset.with_user(user).search([("kind_id", "=", kind.id)]), laptop
         )
 
-        # create an equipment team BY user
         with self.assertRaises(AccessError):
             MaintenanceTeam.with_user(user).create(
                 {
@@ -123,7 +113,6 @@ class TestMaintenanceMulticompany(TransactionCase):
                 }
             )
 
-        # Create an maintenance order for ( User Follower ).
         MaintenanceOrder.with_user(user).create(
             {
                 "name": "Some keys are not working",
@@ -132,7 +121,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # Create an maintenance order for equipment_manager (Admin Follower)
         MaintenanceOrder.with_user(equipment_manager).create(
             {
                 "name": "Battery drains fast",
@@ -141,7 +129,6 @@ class TestMaintenanceMulticompany(TransactionCase):
             }
         )
 
-        # Now here is total 1 maintenance order can be view by Normal User
         self.assertEqual(
             MaintenanceOrder.with_user(equipment_manager)
             .with_context(allowed_company_ids=cids)

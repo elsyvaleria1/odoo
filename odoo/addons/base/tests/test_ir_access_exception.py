@@ -94,8 +94,6 @@ class TestIrAccessException(TransactionCase):
         )
 
     def test_a_revocation_is_final(self):
-        # written back to life, a revoked exception would let its person
-        # through again with no trace
         exception = self._create(env_user=self.admin_a)
         exception.with_user(self.admin_a).action_revoke("done")
 

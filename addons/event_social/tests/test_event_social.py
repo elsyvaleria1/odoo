@@ -51,7 +51,7 @@ class EventSocialCase(EventCase, MockEmail):
                         (
                             0,
                             0,
-                            {  # 1 days before event
+                            {
                                 "interval_nbr": 1,
                                 "interval_unit": "day",
                                 "interval_type": "before_event",
@@ -65,7 +65,6 @@ class EventSocialCase(EventCase, MockEmail):
 
     @users("user_eventmanager")
     def test_social_schedule_after_sub(self):
-        """Check that we can not set "after each registration" with social event mail."""
         social_template = self.env["social.post.template"].create(
             {
                 "account_ids": [(4, self.social_account.id)],
@@ -101,7 +100,6 @@ class EventSocialCase(EventCase, MockEmail):
 
     @users("user_eventmanager")
     def test_social_schedule_before_event(self):
-        """Check that the social template is automatically set, when changing the category of the event."""
         social_template = self.env["social.post.template"].create(
             {
                 "account_ids": [(4, self.social_account.id)],
@@ -140,10 +138,7 @@ class EventSocialCase(EventCase, MockEmail):
         )
         self.assertEqual(event.event_mail_ids.template_ref, social_template)
 
-        # send scheduler on event
         with self.mock_datetime_and_now(datetime(2020, 2, 2, 10, 0, 0)):
-            # use sudo as schedulers are meant to be run by crons, hence limiting
-            # ACLs for event users
             event.event_mail_ids.sudo().execute()
 
         self.assertEqual(
@@ -154,8 +149,6 @@ class EventSocialCase(EventCase, MockEmail):
     @mute_logger("odoo.addons.event.models.event_mail")
     @users("user_eventmanager")
     def test_social_schedule_fail_global_composer(self):
-        """Simulate a fail during composer usage e.g. invalid field path, template
-        / model change, ... to check defensive behavior"""
         cron = self.env.ref("event.event_mail_scheduler").sudo()
         before_scheduler = self.test_event.event_mail_ids
 
@@ -174,8 +167,6 @@ class EventSocialCase(EventCase, MockEmail):
 
     @users("user_eventmanager")
     def test_social_schedule_fail_global_template_removed(self):
-        """Test flow where scheduler fails due to template ref being removed
-        when sending global event communication (i.e. only through cron)."""
         self.test_social_template.sudo().unlink()
         test_event = self.env["event.event"].browse(self.test_event.ids)
         before_scheduler = test_event.event_mail_ids

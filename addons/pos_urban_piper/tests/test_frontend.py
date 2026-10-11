@@ -139,8 +139,6 @@ class TestFrontend(TestPosUrbanPiperCommon):
         PosOrder = self.env.registry.models["pos.order"]
 
         def mark_urbanpiper_prep_order_as_printed_patch(self):
-            # Catch the intentionally raised ValueError from the mathod
-            # and return 'False' instead of propagating the exception
             try:
                 return super(PosOrder, self).mark_urbanpiper_prep_order_as_printed()
             except ValueError:
@@ -245,7 +243,6 @@ class TestFrontend(TestPosUrbanPiperCommon):
         self.assertEqual(500, order_1.payment_ids[0].amount)
 
     def test_prepare_option_data_returns_valid_options(self):
-        """Test that _prepare_option_data returns correctly formatted active options."""
         self.env["res.lang"]._activate_lang("fr_FR")
         self.value_small.with_context(lang="fr_FR").name = "Petit"
         self.value_large.with_context(lang="fr_FR").name = "Grand"

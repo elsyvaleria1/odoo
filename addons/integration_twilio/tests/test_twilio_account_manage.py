@@ -73,7 +73,7 @@ class TestSmsTwilio(MockSmsTwilio, TransactionCase):
         for test_number, exp_from in [
             ("+32455001122", "+32455998877 (Belgium)"),
             ("+15056528788", "+15056998877 (United States)"),
-            ("+917891273899", "+32455998877 (Belgium)"),  # no match, takes first one
+            ("+917891273899", "+32455998877 (Belgium)"),
         ]:
             with self.subTest(test_number=test_number):
                 wizard = self.env["wizard.integration.twilio.config.update"].create(
@@ -86,7 +86,6 @@ class TestSmsTwilio(MockSmsTwilio, TransactionCase):
                 message = notif["params"]["message"]
                 self.assertEqual(message, f"The SMS has been sent from {exp_from}")
 
-        # in case there is no twilio number
         self.env.company.write({"twilio_number_ids": [(5, 0)]})
         wizard = self.env["wizard.integration.twilio.config.update"].create(
             {
@@ -96,7 +95,6 @@ class TestSmsTwilio(MockSmsTwilio, TransactionCase):
         with self.mock_sms_twilio_send():
             notif = wizard.action_send_test()
         message = notif["params"]["message"]
-        # no sender: refused before Twilio, as Twilio would refuse no From
         self.assertEqual(
             message,
             "Missing From Number: A 'From' number is required to send a message",

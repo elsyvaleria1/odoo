@@ -27,8 +27,6 @@ class TestProjectForecast(TransactionCase):
         )
 
     def test_total_forecast_time_sums_slots(self):
-        """Check that the project forecast total aggregates its slot hours and
-        that slot-less projects report zero."""
         self._slot(3)
         self._slot(5, start_offset_days=2)
         self.assertEqual(self.project.total_forecast_time, 8)
@@ -37,15 +35,12 @@ class TestProjectForecast(TransactionCase):
         self.assertEqual(empty.total_forecast_time, 0)
 
     def test_company_change_blocked_by_foreign_slots(self):
-        """Check that moving a project to another company is rejected while
-        its shifts live in the original company."""
         self._slot(2)
         other_company = self.env["res.company"].create({"name": "Sucursal B"})
         with self.assertRaises(UserError):
             self.project.company_id = other_company
 
     def test_slot_template_display_name_carries_project(self):
-        """Check that shift templates append the truncated project name."""
         template = self.env["planning.slot.template"].create(
             {
                 "start_time": 8.0,
@@ -56,8 +51,6 @@ class TestProjectForecast(TransactionCase):
         self.assertIn("[Forecast Project]", template.display_name)
 
     def test_forecast_action_context_targets_project(self):
-        """Check the gantt action context pins the project and starts on the
-        earliest future slot."""
         later = self._slot(4, start_offset_days=5)
         earliest = self._slot(4, start_offset_days=3)
         action = self.project.action_project_forecast_from_project()

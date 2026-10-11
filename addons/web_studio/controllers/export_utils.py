@@ -12,7 +12,6 @@ from odoo import models
 from odoo.fields import Domain
 from odoo.tools import topological_sort
 
-# The fields whose value is some XML content
 XML_FIELDS = [("ir.ui.view", "arch")]
 
 
@@ -21,13 +20,11 @@ class ModelDataGetter:
         self.reset_cache(data)
 
     def reset_cache(self, data=None):
-        # {(model_name, record_id): ir_model_data_record(s)}
         self._cache = data.grouped(lambda d: (d.model, d.res_id)) if data else {}
 
     def __call__(self, record):
         key = (record._name, record.id)
         if key not in self._cache or not self._cache[key]:
-            # prefetch when possible
             for data in (
                 record.env["ir.model.data"]
                 .sudo()
@@ -40,7 +37,7 @@ class ModelDataGetter:
                 )
             ):
                 key_data = (data.model, data.res_id)
-                if key_data not in self._cache:  # Only one record in the cache
+                if key_data not in self._cache:
                     self._cache[key_data] = data
 
         if key not in self._cache:
@@ -75,7 +72,7 @@ class StudioExportSerializer:
     def serialize(self):
         depends = set(
             self.module.mapped("dependencies_id.name")
-        )  # start with module's dependencies
+        )
         self.utils.path_counter.clear()
         self.warnings = []
 
@@ -91,7 +88,6 @@ class StudioExportSerializer:
                 f"{circ_lines}\n"
             )
 
-        # Generate xml files for the data to export
         has_skipped_fields_warnings = False
         for model, records, fields, no_update, path_info in self.to_export:
             (files, new_deps, skipped_relations) = self._serialize_model(
@@ -135,7 +131,6 @@ class StudioExportSerializer:
         )
         default_get_data = records_to_export[0].browse().default_get(fields)
 
-        # create the XML containing the generated record nodes
         nodes = self._get_pre_nodes(model, records_to_export)
         skipped_fields = []
         for record in records_to_export:
@@ -161,18 +156,10 @@ class StudioExportSerializer:
         return [(filepath, content)] + binary_files, new_deps, skipped_fields
 
     def _serialize_record(self, record, fields, default_get_data):
-        """Return an etree Element for the given record, together with a list of
-        skipped field values (field value references a record without external id).
-
-        :return: A tuple containing the '<record/>' etree Element (or None if no fields are exported)
-            and a list of skipped field values.
-        :rtype: tuple
-        """
         record_data = self.utils.get_model_data(record)
         exportid = self.utils.get_xmlid(record)
         skipped_relations = []
 
-        # Create the record node
         context = {}
         if record_data.studio:
             context.update({"studio": True})
@@ -196,7 +183,6 @@ class StudioExportSerializer:
             try:
                 field_element = self._serialize_field(record, field, default_get_data)
             except MissingXMLID:
-                # the field value contains a record without an xml_id; skip it
                 skipped_relations.append((exportid, field, record[name]))
 
             if field_element is not None:
@@ -207,11 +193,6 @@ class StudioExportSerializer:
         ) if fields_nodes else None, skipped_relations
 
     def _serialize_field(self, record, field, default_get_data):
-        """Serialize the value of ``field`` on ``record`` as an etree Element.
-
-        :return: The serialized field value, or None if the field value is empty or equal to the default value.
-        :rtype: etree.Element
-        """
         default_value = default_get_data.get(field.name)
         value = record[field.name]
         if (not value and not default_value) or field.convert_to_cache(
@@ -219,7 +200,6 @@ class StudioExportSerializer:
         ) == field.convert_to_cache(default_value, record):
             return None
 
-        # SPECIFIC: make a unique key for ir.ui.view.key in case of website_id
         if (
             self.has_website
             and field.name == "key"
@@ -251,7 +231,6 @@ class StudioExportSerializer:
         if not value:
             return E.field(name=field.name, eval="False")
         elif (field.model_name, field.name) in XML_FIELDS:
-            # Use an xml parser to remove new lines and indentations in value
             parser = etree.XMLParser(remove_blank_text=True, resolve_entities=False)
             return E.field(etree.XML(value, parser), name=field.name, type="xml")
         elif field.type == "binary":
@@ -267,7 +246,6 @@ class StudioExportSerializer:
             xmlid = self.utils.get_xmlid(value)
             return E.field(name=field.name, ref=xmlid)
         elif field.type in ("html", "text"):
-            # Wrap value in <![CDATA[]] to preserve it to be interpreted as XML markup, if any
             node = E.field(name=field.name)
             node.text = etree.CDATA(str(value))
             return node
@@ -275,7 +253,6 @@ class StudioExportSerializer:
             return E.field(str(value), name=field.name)
 
     def _update_pending_files(self, group, model, depends):
-        # SPECIFIC: Confirm demo sale orders
         if model == "sale.order" and group == "demo":
             demo_so = self.data.filtered_domain(
                 [("model", "=", model), ("is_demo_data", "=", True)]
@@ -285,12 +262,10 @@ class StudioExportSerializer:
                 [("state", "not in", ("cancel", "draft"))]
             )
 
-        # SPECIFIC: Apply website theme if needed
         themes = [d for d in depends if d and d.startswith("theme_")]
         self.website_themes.extend(themes)
 
     def _get_last_files(self, depends):
-        # SPECIFIC: Confirm demo sale orders
         if self.demo_sale_orders:
             filepath = self.utils.get_next_file_path("demo", "sale.order", "_confirm")
             self.filepaths.append(filepath)
@@ -311,7 +286,6 @@ class StudioExportSerializer:
             )
             yield (filepath, content)
 
-        # SPECIFIC: Apply website theme if needed
         if self.website_themes:
             filepath = self.utils.get_next_file_path("demo", "website_theme", "_apply")
             fns = [
@@ -330,7 +304,6 @@ class StudioExportSerializer:
                 )
                 for theme in self.website_themes
             ]
-            # comment all but the first theme
             comments = [
                 etree.Comment(etree.tostring(fn, pretty_print=True, encoding="UTF-8"))
                 for fn in fns[1:]
@@ -341,29 +314,24 @@ class StudioExportSerializer:
                 root, pretty_print=True, encoding="UTF-8", xml_declaration=True
             )
             try:
-                # this demo file should be before 'demo/ir_ui_view.xml' if it exists.
                 index = self.filepaths.index("demo/ir_ui_view.xml")
                 self.filepaths.insert(index, filepath)
             except ValueError:
                 self.filepaths.append(filepath)
             yield (filepath, content)
 
-        # yield a warning file to notify circular dependencies and that some data haven't been exported
         if self.warnings:
             yield ("warnings.txt", "".join(self.warnings))
 
-        # yield files '__manifest__.py' and '__init__.py'
         manifest = self.utils.create_manifest(depends, self.filepaths)
         yield ("__manifest__.py", manifest)
         yield ("__init__.py", b"")
 
     def _get_pre_nodes(self, model, records):
         nodes = []
-        # SPECIFIC: unlink the default main menu from the website if needed
         if model == "website.menu" and any(
             r["url"] == "/default-main-menu" for r in records
         ):
-            # unlink the default menu from the website, in order to add our own
             nodes.append(
                 E.function(
                     E.value(
@@ -378,7 +346,6 @@ class StudioExportSerializer:
 
     def _get_post_nodes(self, model, records):
         nodes = []
-        # SPECIFIC: replace website pages arch if needed
         if model == "ir.ui.view" and self.has_website:
             website_views = filter(
                 lambda r: (
@@ -416,24 +383,14 @@ class StudioExportUtils:
         self.path_counter = Counter()
 
     def clean_dependencies(self, input_deps):
-        """
-        :return: the minimal set of modules that ``input_deps`` depends on.
-        :rtype: set
-        """
         input_deps -= {False, self.module.name, "__export__"}
         all_deps = self.env["ir.module.module.dependency"].all_dependencies(input_deps)
         deep_deps = {}
 
         @functools.cache
         def get_deep_depends(module_name):
-            """
-            :return: a set of all modules that ``module_name`` will install.
-            :rtype: set
-            """
-            # initial case
             deep_deps[module_name] = set()
 
-            # recursive case
             for dep in all_deps.get(module_name, []):
                 deep_deps[module_name] |= {dep, *get_deep_depends(dep)}
 
@@ -442,7 +399,6 @@ class StudioExportUtils:
         for name in all_deps:
             get_deep_depends(name)
 
-        # mods_deps = {item for sublist in zip(*all_deps.values()) for item in sublist}
         output_deps = set(input_deps)
         for mod, deps in deep_deps.items():
             if mod in input_deps:
@@ -482,7 +438,6 @@ class StudioExportUtils:
     def get_module_name(self, record):
         xmlid = self.get_xmlid(record)
         if xmlid.startswith("base.module_"):
-            # len('base.module_') == 12
             return xmlid[12:]
         if "." not in xmlid:
             return "studio_customization"
@@ -500,9 +455,6 @@ class StudioExportUtils:
         )
 
     def get_relations(self, record, field):
-        """
-        :return: either a recordset that ``record`` depends on for ``field``, or None.
-        """
         if not record[field.name]:
             return None
 
@@ -516,10 +468,7 @@ class StudioExportUtils:
             return record.env[related_model].browse(record[field.name])
 
         if field.model_name == "ir.model.fields":
-            # Some fields (depends, related, relation_field) are of type char, but
-            # refer to other fields that must be defined beforehand
             if field.name in ("depends", "related"):
-                # determine the fields that record depends on
                 dep_fields = set()
                 for dep_names in record[field.name].split(","):
                     dep_model = record.env[record.model]
@@ -529,7 +478,6 @@ class StudioExportUtils:
                             dep_fields.add(dep_field)
                         if dep_field.relational:
                             dep_model = record.env[dep_field.comodel_name]
-                # determine the 'ir.model.fields' corresponding to 'dep_fields'
                 if dep_fields:
                     return record.search(
                         Domain.OR(
@@ -542,8 +490,6 @@ class StudioExportUtils:
                         )
                     )
             elif field.name == "relation_field":
-                # The field 'relation_field' on 'ir.model.fields' is of type char,
-                # but it refers to another field that must be defined beforehand
                 return record.search(
                     [
                         ("model", "=", record.relation),
@@ -551,10 +497,6 @@ class StudioExportUtils:
                     ]
                 )
 
-        # Fields 'res_model' and 'binding_model' on 'ir.actions.act_window' and 'model'
-        # on 'ir.actions.report' are of type char but refer to models that may
-        # be defined in other modules and those modules need to be listed as
-        # dependencies of the exported module
         if field.model_name == "ir.actions.act_window" and field.name in (
             "res_model",
             "binding_model",
@@ -568,12 +510,6 @@ class StudioExportUtils:
         return self.get_model_data(record)._xmlid_for_export()
 
     def prepare_records_to_export(self, model, records, fields_to_export):
-        """
-        :return: a sorted list of records that satisfies inter-record
-            dependencies, a list of additional binary files, and the set of
-            module names the exported records depend on
-        :rtype: tuple
-        """
         binary_files = []
         fields = [records._fields[name] for name in fields_to_export]
         record_deps = OrderedDict.fromkeys(records, records.browse())
@@ -581,18 +517,16 @@ class StudioExportUtils:
         for record in records:
             module_name = self.get_module_name(record)
 
-            # data depends on a record from another module
             module_deps.add(
                 record._original_module
-            )  # module that first created the record's model
+            )
             module_deps.add(
                 record._module
-            )  # module that last extended the record's model
-            module_deps.add(module_name)  # module from which the record was defined
+            )
+            module_deps.add(module_name)
 
             for field in fields:
                 module_deps.update(field._modules)
-                # create files for binary fields
                 if field.type == "binary" and record[field.name]:
                     value = record[field.name]
                     try:
@@ -607,7 +541,6 @@ class StudioExportUtils:
                         (self.get_binary_field_file_name(field, record), binary_data)
                     )
 
-                # handle relational fields
                 rel_records = self.get_relations(record, field)
                 if not rel_records:
                     continue
@@ -616,17 +549,12 @@ class StudioExportUtils:
                     try:
                         module_deps.add(self.get_module_name(rel_record))
                     except MissingXMLID:
-                        # skip records that don't have an xmlid,
-                        # as they won't be exported and will
-                        # end up in the warning.txt file anyway
                         continue
 
                 if rel_records._name == model:
-                    # fill in inter-record dependencies
                     record_deps[record] |= rel_records
 
             if record._name == "ir.model.fields" and record.ttype == "monetary":
-                # add a dependency on the currency field
                 rel_record = record._get(record.model, "currency_id") or record._get(
                     record.model, "x_currency_id"
                 )
@@ -634,7 +562,6 @@ class StudioExportUtils:
                     module_deps.add(self.get_module_name(rel_record))
                     record_deps[record] |= rel_record
 
-        # sort records to satisfy inter-record dependencies
         records = topological_sort(record_deps)
 
         return records, binary_files, module_deps

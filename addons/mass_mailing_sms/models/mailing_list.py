@@ -52,10 +52,6 @@ class MailingList(models.Model):
         return action
 
     def _get_fields_contact_statistics(self):
-        """See super method docstring for more info.
-        Adds:
-        - contact_count_sms:           all valid sms
-        - contact_count_blacklisted:   override the dict entry to add SMS blacklist condition"""
 
         values = super()._get_fields_contact_statistics()
         values.update(
@@ -82,13 +78,6 @@ class MailingList(models.Model):
         )
 
     def _mailing_get_opt_out_list_sms(self, mailing):
-        """Check subscription on all involved mailing lists. If user is opt_out
-        on one list but not on another, one opted in and the other one opted out,
-        send mailing anyway.
-
-        :return: opt-outed record IDs
-        :rtype: list
-        """
         subscriptions = (
             self.subscription_ids if self else mailing.contact_list_ids.subscription_ids
         )

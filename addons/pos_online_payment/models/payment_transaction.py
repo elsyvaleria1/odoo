@@ -14,11 +14,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _get_reference_prefix(self, separator, **values):
-        """Override of payment to compute the reference prefix based on POS-specific values.
-
-        :return: The computed reference prefix if POS order id is found, the one of `super` otherwise
-        :rtype: str
-        """
         pos_order_id = values.get("pos_order_id")
         if pos_order_id:
             pos_order = self.env["pos.order"].sudo().browse(pos_order_id).exists()
@@ -27,7 +22,6 @@ class PaymentTransaction(models.Model):
         return super()._get_reference_prefix(separator, **values)
 
     def _post_process(self):
-        """Override of payment to process POS online payments automatically."""
         super()._post_process()
         self._process_pos_online_payment()
 
@@ -39,10 +33,6 @@ class PaymentTransaction(models.Model):
                 and not tx.payment_id.pos_order_id
             )
         )
-        # the provider's webhook and the customer's confirmation page both get
-        # here. The order is the row the first one writes, so the second waits
-        # on it, then fails to serialize and is retried on a fresh snapshot,
-        # instead of dying on account_payment_transaction_id_uniq
         pending.pos_order_id.lock_for_update(allow_referencing=True, wait=True)
         for tx in pending:
             pos_order = tx.pos_order_id
@@ -53,7 +43,6 @@ class PaymentTransaction(models.Model):
                     )
                 )
 
-            # the payment could already have been created by account_payment module
             if not tx.payment_id:
                 tx._create_payment()
             if not tx.payment_id:
@@ -100,16 +89,11 @@ class PaymentTransaction(models.Model):
             )
             if pos_order.state == "draft" and pos_order._is_payment_amount_valid():
                 pos_order._process_saved_order(False)
-            # The bus communication is only protected by the name of the channel.
-            # Therefore, no sensitive information is sent through it, only a
-            # notification to invite the local browser to do a safe RPC to
-            # the server to check the new state of the order.
             pos_order.config_id._notify(
                 "ONLINE_PAYMENTS_NOTIFICATION", {"id": pos_order.id}
             )
 
     def action_view_pos_order(self):
-        """Return the action for the view of the pos order linked to the transaction."""
         self.check_singleton()
 
         return {

@@ -6,9 +6,6 @@ from odoo.tests import tagged
 
 from odoo.addons.hr_holidays.tests.common import TestHrHolidaysCommon
 
-# 01:00 UTC on Tuesday the 15th is 19:00 on Monday the 14th in Mexico: the same
-# instant, two different calendar days. Everything a user reads as "a date"
-# has to land on the 14th.
 UTC_NIGHT = "2026-09-15 01:00:00"
 LOCAL_DAY = date(2026, 9, 14)
 
@@ -70,8 +67,6 @@ class TestUserLocalDates(TestHrHolidaysCommon):
             "19:00 local, even though the server clock already says tomorrow",
         )
 
-        # And the cancel has to actually go through: write() asks the same
-        # "has it begun?" question a second time, on its own.
         leave._action_user_cancel("changed my mind")
         self.assertEqual(leave.state, "cancel")
 

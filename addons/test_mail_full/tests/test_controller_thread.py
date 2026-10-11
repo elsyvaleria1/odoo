@@ -9,7 +9,6 @@ from odoo.addons.mail.tests.common_controllers import (
 @tagged("-at_install", "post_install", "mail_controller")
 class TestPortalThreadController(MailControllerThreadCommon):
     def test_message_post_portal_no_partner(self):
-        """Test access of message post for portal without partner."""
         record = self.env["mail.test.portal.no.partner"].create({"name": "Test"})
         token, bad_token, sign, bad_sign, partner = self._get_sign_token_params(record)
 
@@ -80,7 +79,6 @@ class TestPortalThreadController(MailControllerThreadCommon):
         self.assertEqual(message.subtype_id, self.env.ref("mail.mt_comment"))
 
     def test_message_post_portal_with_partner(self):
-        """Test access of message post for portal with partner."""
         rec_partner = self.env["res.partner"].create({"name": "Record Partner"})
         record = self.env["mail.test.portal"].create(
             {"name": "Test", "partner_id": rec_partner.id}
@@ -102,7 +100,6 @@ class TestPortalThreadController(MailControllerThreadCommon):
                     self.user_public, True, route_kw=token, exp_author=rec_partner
                 ),
                 test_access(self.user_public, True, route_kw=sign, exp_author=partner),
-                # sign has priority over token when both are provided
                 test_access(
                     self.user_public, True, route_kw=token | sign, exp_author=partner
                 ),
@@ -128,8 +125,6 @@ class TestPortalThreadController(MailControllerThreadCommon):
         )
 
     def test_message_post_partner_ids_mention_token(self):
-        """Test partner_ids of message_post for portal record without partner.
-        All users are allowed to mention with specific message_mention token."""
         record = self.env["mail.test.portal.no.partner"].create({"name": "Test"})
         token, bad_token, sign, bad_sign, partner = self._get_sign_token_params(record)
         all_partners = (
@@ -191,8 +186,6 @@ class TestPortalThreadController(MailControllerThreadCommon):
         )
 
     def test_message_post_partner_ids_portal(self):
-        """Test partner_ids of message_post for portal record without partner.
-        Only internal users are allowed to mention without specific message_mention token."""
         record = self.env["mail.test.portal.no.partner"].create({"name": "Test"})
         token, bad_token, sign, bad_sign, partner = self._get_sign_token_params(record)
         all_partners = (

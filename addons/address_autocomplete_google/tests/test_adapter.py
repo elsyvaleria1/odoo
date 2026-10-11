@@ -44,9 +44,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         with self._answering(payload):
             return self.adapter._details(text, "place", key="key", session=None)
 
-    # ------------------------------------------------------------------
-    # the provider
-    # ------------------------------------------------------------------
     def test_google_is_offered_as_a_provider(self):
         self.assertEqual(
             self.env["ir.http"]._address_autocomplete_providers()["google"], GOOGLE
@@ -93,11 +90,7 @@ class TestGooglePlacesAdapter(TransactionCase):
             },
         )
 
-    # ------------------------------------------------------------------
-    # _translate_google_to_standard
-    # ------------------------------------------------------------------
     def test_translate_resolves_country_and_state(self):
-        """Country resolves by code and the state binds to that country."""
         if not self.us_state:
             self.skipTest("no US states in this database")
         data = self.adapter._translate_google_to_standard(
@@ -114,7 +107,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         self.assertEqual(data["state"], [self.us_state.id, self.us_state.name])
 
     def test_translate_state_before_country_is_skipped(self):
-        """A state field arriving before any country cannot be resolved."""
         data = self.adapter._translate_google_to_standard(
             [
                 {
@@ -125,11 +117,9 @@ class TestGooglePlacesAdapter(TransactionCase):
             ]
         )
         self.assertNotIn("state", data)
-        # The same google field also feeds 'city' as fallback.
         self.assertEqual(data["city"], "Somewhere")
 
     def test_translate_first_assignment_wins(self):
-        """Once a standard field has a value, later google fields keep out."""
         data = self.adapter._translate_google_to_standard(
             [
                 {"type": "locality", "short_name": "R", "long_name": "Ramillies"},
@@ -143,12 +133,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         self.assertEqual(data["city"], "Ramillies")
 
     def test_translate_omits_country_when_the_code_is_unknown(self):
-        """An unknown country code must not produce a phantom many2one.
-
-        ``[False, False]`` looks like a real pair to the widget, which builds
-        ``{id: false, display_name: false}`` and writes it; omitting the key
-        lets the client short-circuit to a clean ``false`` instead.
-        """
         unknown = "ZZ"
         self.assertFalse(
             self.env["res.country"].search([("code", "=", unknown)], limit=1),
@@ -159,22 +143,14 @@ class TestGooglePlacesAdapter(TransactionCase):
         )
         self.assertNotIn("country", res)
 
-    # ------------------------------------------------------------------
-    # _guess_number_from_input
-    # ------------------------------------------------------------------
     def test_guess_number_strips_known_address_parts(self):
-        """The house number is recovered from the raw input."""
         guessed = self.adapter._guess_number_from_input(
             "9 rue de Bourlottes, 1367 Ramillies",
             {"street": "rue de Bourlottes", "city": "Ramillies", "zip": "1367"},
         )
         self.assertEqual(guessed, "9")
 
-    # ------------------------------------------------------------------
-    # _suggest
-    # ------------------------------------------------------------------
     def test_suggestions_map_predictions(self):
-        """Google predictions map to label/ref pairs."""
         payload = {
             "predictions": [
                 {"description": "Paris, France", "place_id": "PARIS"},
@@ -194,8 +170,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         )
 
     def test_suggestions_degrade_when_google_times_out(self):
-        """Raises the real ``requests`` timeout, not the builtin ``TimeoutError``:
-        the two are unrelated hierarchies."""
         with self._raising(requests.exceptions.ConnectTimeout("google is down")):
             self.assertEqual(
                 self.adapter._suggest("Paris, somewhere", key="key", session="sess"),
@@ -203,7 +177,6 @@ class TestGooglePlacesAdapter(TransactionCase):
             )
 
     def test_suggestions_degrade_on_a_real_requests_timeout(self):
-        """Through the service's session itself, not a mocked call."""
         with patch.object(
             GuardedSession,
             "request",
@@ -215,8 +188,6 @@ class TestGooglePlacesAdapter(TransactionCase):
             )
 
     def test_a_failed_suggestion_does_not_log_the_api_key(self):
-        """A connection-level ``requests`` exception stringifies to the whole
-        outgoing URL, and ours carries ``key=<api key>`` in the query string."""
         secret = "AIza_TEST_KEY_DO_NOT_LOG"
         realistic = requests.exceptions.ConnectionError(
             "HTTPSConnectionPool(host='maps.googleapis.com', port=443): "
@@ -235,9 +206,6 @@ class TestGooglePlacesAdapter(TransactionCase):
             self.assertNotIn(secret, line, "the API key leaked into the log")
         self.assertIn("ConnectionError", "".join(captured.output))
 
-    # ------------------------------------------------------------------
-    # _details
-    # ------------------------------------------------------------------
     def test_a_failed_detail_does_not_log_the_api_key(self):
         secret = "AIza_TEST_KEY_DO_NOT_LOG"
         realistic = requests.exceptions.ConnectionError(
@@ -257,7 +225,6 @@ class TestGooglePlacesAdapter(TransactionCase):
             self.assertNotIn(secret, line, "the API key leaked into the log")
 
     def test_details_of_a_full_payload(self):
-        """A full details payload lands in the standard address fields."""
         address = self._details(
             {
                 "result": {
@@ -298,7 +265,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         self.assertEqual(address["formatted_street_number"], "9 rue de Bourlottes")
 
     def test_details_resolve_country_and_state(self):
-        """Google's payload for 48 Pirrama Road, in unordered types."""
         nsw = self.env["res.country.state"].search(
             [("code", "=", "NSW"), ("country_id.code", "=", "AU")]
         )
@@ -349,7 +315,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         )
 
     def test_details_without_a_number_guess_it(self):
-        """Without a street_number component the number comes from the input."""
         address = self._details(
             {
                 "result": {
@@ -407,8 +372,6 @@ class TestGooglePlacesAdapter(TransactionCase):
         self.assertIsNone(self._details({"status": "OK"}))
 
     def test_details_skip_components_without_types(self):
-        """A component missing ``types`` raised ``KeyError`` and one with an
-        empty list ``IndexError``, escaping the route as a 500."""
         for label, component in (
             ("missing key", {"long_name": "1", "short_name": "1"}),
             ("empty list", {"long_name": "1", "short_name": "1", "types": []}),
@@ -425,7 +388,6 @@ class TestGooglePlacesAdapter(TransactionCase):
                 self.assertIsInstance(address, dict, "must not raise")
 
     def test_details_keep_well_formed_components(self):
-        """The skip must not swallow usable components alongside a broken one."""
         address = self._details(
             {
                 "result": {

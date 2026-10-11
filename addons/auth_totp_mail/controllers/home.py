@@ -17,13 +17,10 @@ class Home(odoo.addons.auth_totp.controllers.home.Home):
             response.status_code != 200
             or response.qcontext["user"]._get_mfa_type() != "totp_mail"
         ):
-            # In case the response from the super is a redirection
-            # or the user has another TOTP method, we return the response from the call to super.
             return response
         if not request.session.get("pre_uid") or request.session.uid:
-            raise AccessDenied("The user must still be in the pre-authentication phase")  # noqa: E8505  a developer diagnostic for a broken login flow
+            raise AccessDenied("The user must still be in the pre-authentication phase")
 
-        # Send the email containing the code to the user inbox
         try:
             user = response.qcontext["user"]
             with user.env.cr.savepoint():

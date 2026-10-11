@@ -50,8 +50,6 @@ class DeviceDataLogGps(models.Model):
 
     @api.model
     def _remove_already_stored(self, device, prepared):
-        # The key holds the stamp exactly, so only rows at the batch's own
-        # stamps can match: a backlog spanning days read every row in between.
         stamps = sorted({vals["timestamp"] for vals in prepared})
         existing = self.search_read(
             [("device_id", "=", device.id), ("timestamp", "in", stamps)],

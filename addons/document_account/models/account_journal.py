@@ -17,18 +17,6 @@ class AccountJournal(models.Model):
         return journals
 
     def _documents_configure_sync(self) -> None:
-        """Configure the synchronization of accounting with documents.
-
-        * Create synchronization settings for the journals (skip if missing data).
-        * Embed relevant server actions on the specific journal folder.
-        * Embed relevant server actions on the company's parent 'Finance' folder.
-
-        The setting carries a folder only. ``tag_ids`` stays available for
-        whoever wants to tag a journal's documents by hand, but nothing here
-        invents a tag: the journal of a document is already readable from the
-        move it is linked to, so a tag repeating the journal name classifies
-        nothing.
-        """
         FolderSetting = self.env["document.account.folder.setting"]
         Journal = self.env["account.journal"]
         sync_journals = self.filtered(
@@ -88,7 +76,6 @@ class AccountJournal(models.Model):
 
     @api.model
     def _documents_get_embed_on_sync_actions(self) -> dict:
-        """Return a dictionary mapping journal types to action XML IDs to embed."""
         return {
             "purchase": [
                 "document_account.ir_actions_server_create_vendor_bill",
@@ -107,22 +94,10 @@ class AccountJournal(models.Model):
         }
 
     def _documents_ensure_journal_folder_created(self, type_labels) -> dict:
-        """Return the sync folder of every (company, journal type) of ``self``.
-
-        A folder exists to be an access boundary or an entry point, never to
-        classify, so a new journal reuses the folder the journals of its own
-        type already use in its company instead of getting one of its own. Only
-        when that company has no journal of the type configured yet does this
-        fall back to adopting, and then to creating, the folder named after the
-        journal type under the company's accounting folder.
-        """
         FolderSetting = self.env["document.account.folder.setting"]
         Documents = self.env["document.document"]
         required_refs = set(self.mapped(lambda j: (j.company_id, j.type)))
 
-        # The company that matters is the journal's own: a setting created by
-        # hand defaults company_id to the active company, which may not be the
-        # one of its journal, and such a setting must still be reused.
         existing_settings = FolderSetting.search(
             Domain.OR(
                 [
@@ -185,7 +160,6 @@ class AccountJournal(models.Model):
             ]
         )
 
-        # Update translation of the created folders
         selection_options = (
             self.env["ir.model.fields.selection"]
             .sudo()
@@ -205,10 +179,6 @@ class AccountJournal(models.Model):
     def _documents_sync_translations(
         self, source_records, source_field, target_records, target_field
     ) -> None:
-        """Copy the translation from source_records to target_records.
-
-        Field values of the source_records must be aligned with those of the target_records for the main language.
-        """
         sources = {
             r[source_field]: r for r in source_records.with_context(prefetch_langs=True)
         }
@@ -223,11 +193,6 @@ class AccountJournal(models.Model):
             )
 
     def create_document_from_attachment(self, attachment_ids=None):
-        """When running an action on several documents, this method is called
-        in a loop (because of the "multi" server action). When it is the
-        case, we try to redirect to a list of all created records (journal
-        entries or bank statements) instead of just the last one, using the
-        context."""
 
         with _debug.perf("document_from_attachment", cr=self.env.cr, journals=self):
             action = super().create_document_from_attachment(attachment_ids)

@@ -202,12 +202,6 @@ class TestWebhookMessageDispatch(WebhookRouteCase):
 
 class TestWebhookErrorHandling(WebhookRouteCase):
     def test_an_infrastructure_failure_propagates_for_redelivery(self):
-        """Telegram only redelivers on a non-2xx answer.
-
-        A transient failure used to be swallowed into a 200 with the update
-        claim committed, which lost the update forever. It must propagate,
-        rolling the claim back, so the redelivery is processed.
-        """
         self.test_bot._update_webhook_secret("test_secret_123")
         message = self.mock_telegram_message(text="/start")
         self.env.flush_all()
@@ -226,10 +220,6 @@ class TestWebhookErrorHandling(WebhookRouteCase):
             )
 
         self.assertEqual(response.status_code, 500)
-        # The failed row is written on a cursor of its own after the rollback,
-        # which a test's shared transaction cannot keep; integration's
-        # TestInboundExchangeRecording pins that. Here: the claim on the
-        # update_id went with the rollback, so the redelivery is handled.
         with patch.object(
             type(self.env["telegram.router"]), "_handle_update"
         ) as handled:

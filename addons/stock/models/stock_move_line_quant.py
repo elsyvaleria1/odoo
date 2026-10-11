@@ -290,8 +290,6 @@ class StockMoveLineQuant(models.Model):
         notes = self._prepare_consumed_pick_notes(consumed_picks)
         move_line_to_unlink.unlink()
         moves_to_sever.filtered("picked").picked = False
-        # A picked move keeps its operator's lines; the gap a consumed pick
-        # left is reserved beside them, unpicked, for the operator to confirm.
         refill = (move_to_reassign - moves_to_sever).filtered("picked")
         move_to_reassign[::-1].with_context(
             reserve_picked_move_ids=refill.ids
@@ -347,8 +345,6 @@ class StockMoveLineQuant(models.Model):
                 -candidate.id,
             )
 
-        # A serial is in one place: once it has left, a picked line still
-        # claiming it would consume it a second time.
         domain = self._get_domain_outstanding_reservation(
             include_picked=bool(self.trace_id) and self.product_id.tracking == "serial"
         )
@@ -518,11 +514,6 @@ class StockMoveLineQuant(models.Model):
         )
 
     def _resolve_serial_sources(self) -> None:
-        # A serial is in one place. A line taking it from where it is not (a
-        # parent of its shelf, no owner for an owned one) would leave -1 there
-        # and +1 where it is, for a later line to consume again; when exactly
-        # one quant under the line's location holds it, the line takes it
-        # from that quant, as reservation would have.
         lines = self.filtered(
             lambda ml: (
                 ml.trace_id
@@ -595,9 +586,6 @@ class StockMoveLineQuant(models.Model):
         self._post_consumed_pick_notes(notes)
 
     def _create_missing_quants(self, quants_cache) -> None:
-        # The quants a batch moves stock into or out of, created in one batch:
-        # created one by one inside the loop, each was a statement of its own.
-        # They start empty, so the loop finds and updates them as it does any.
         if quants_cache is None:
             return
         keys = OrderedSet()
@@ -638,8 +626,6 @@ class StockMoveLineQuant(models.Model):
 
     @_debug.perf.timed
     def _update_quants_done(self) -> None:
-        # Lines done together never free one another: a line freed mid-loop
-        # would be unlinked before its turn.
         ml_ids_to_ignore = OrderedSet(self.ids)
         notes = defaultdict(list)
         quants_cache = self._get_quants_cache()

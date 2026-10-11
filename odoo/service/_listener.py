@@ -28,20 +28,6 @@ def acquire_listener(
     announce: bool = True,
     logger: logging.Logger = _logger,
 ) -> tuple[socket.socket, bool]:
-    """The one way a server comes by a listening socket.
-
-    Three sources, in the order a deployment offers them: the socket the
-    server this one replaces handed over, the one a service manager
-    activated, and a fresh bind.  Returns the socket and whether it already
-    survives an execve -- the first two do, a fresh bind not until
-    `bequeath_socket` marks it inheritable.
-
-    Both flavours and both ports walk this, because they had walked it
-    separately and had stopped agreeing: only the threaded server answered a
-    taken port with a message instead of a traceback, only it made an
-    inherited socket non-blocking where it was acquired, and only the prefork
-    master kept an activated socket from leaking into its children.
-    """
     if (inherited := take_inherited_socket(inherited_fd)) is not None:
         inherited.setblocking(False)
         if announce:
@@ -58,9 +44,6 @@ def acquire_listener(
 
     if activated:
         sock = adopt_activated_socket(activated_fd)
-        # The children get the listener they are meant to have, by fork or by
-        # an explicit pass_fds; an activated one inherited by accident would
-        # keep the port bound past the death of whoever was serving it.
         os.set_inheritable(sock.fileno(), False)
         sock.setblocking(False)
         if announce:

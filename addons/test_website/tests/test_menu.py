@@ -22,7 +22,6 @@ class TestWebsiteMenu(HttpCase):
         controller_url = "/test_website/model_item/"
         website = self.env["website"].browse(1)
 
-        # First render to fill the cache.
         self.url_open(f"{controller_url}{records[0].id}")
 
         self.env["website.menu"].create(

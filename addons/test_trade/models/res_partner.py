@@ -25,12 +25,10 @@ class ResPartner(models.Model):
         )
 
     def _get_test_trade_order_domain_count(self):
-        """Extension point mirroring sale's/purchase's own domain hooks."""
         return []
 
     @api.model
     def _get_order_activity_sources(self):
-        """Registers the test order type the way sale registers sale.order."""
         return super()._get_order_activity_sources() + [
             ("test_trade.order", [("state", "=", "done")]),
         ]

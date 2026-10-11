@@ -11,8 +11,6 @@ class ResCountry(models.Model):
 
     @api.depends("code")
     def _compute_provider_support(self) -> None:
-        # Lazy-import provider constants only when the module is actually installed.
-        # Avoids importing uninstalled addons at startup (they are on disk but not loaded).
         init_modules = self.env.registry.loaded_modules
         mp_countries = set()
         stripe_countries = set()

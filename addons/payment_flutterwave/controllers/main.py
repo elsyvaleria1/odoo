@@ -17,28 +17,19 @@ class FlutterwaveController(http.Controller):
 
     @http.route(_return_url, type="http", methods=["GET"], auth="public")
     def flutterwave_return_from_checkout(self, **data):
-        """Process the payment data sent by Flutterwave after redirection from checkout.
-
-        :param dict data: The payment data.
-        """
         _logger.info(
             "Handling redirection from Flutterwave with data:\n%s", pprint.pformat(data)
         )
 
         if data.get("status") != "cancelled":
             self._check_and_process(data)
-        else:  # The customer cancelled the payment by clicking on the close button.
-            pass  # Don't try to process this case because the transaction id was not provided.
+        else:
+            pass
 
-        # Redirect the user to the status page.
         return request.redirect("/payment/status")
 
     @http.route(_auth_return_url, type="http", methods=["GET"], auth="public")
     def flutterwave_return_from_authorization(self, response=None):
-        """Process the response sent by Flutterwave after authorization.
-
-        :param str response: The stringified JSON response.
-        """
         try:
             data = json_loads(response) if response else {}
         except ValueError:
@@ -50,7 +41,6 @@ class FlutterwaveController(http.Controller):
             data = {}
         return self.flutterwave_return_from_checkout(**data)
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -61,11 +51,6 @@ class FlutterwaveController(http.Controller):
         typed=True,
     )
     def flutterwave_webhook(self):
-        """Process the payment data sent by Flutterwave to the webhook.
-
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         _logger.info(
             "Notification received from Flutterwave with data:\n%s",
             pprint.pformat(request.get_json_data()),
@@ -77,11 +62,6 @@ class FlutterwaveController(http.Controller):
 
     @staticmethod
     def _check_and_process(data):
-        """Verify and process the payment data sent by Flutterwave.
-
-        :param dict data: The payment data.
-        :return: None
-        """
         tx_sudo = (
             request.env["payment.transaction"]
             .sudo()

@@ -60,12 +60,10 @@ class TestCalendarPrivacyLeaks(TransactionCase):
         return self.env["calendar.event"].with_user(self.snoop)
 
     def test_private_name_is_masked_on_read(self):
-        """Baseline: the masking the module already implements."""
         self.env.invalidate_all()
         self.assertEqual(self._as_snoop().browse(self.event.id).name, "Busy")
 
     def test_private_name_not_searchable(self):
-        """A masked field must not be usable as a search oracle."""
         self.assertFalse(
             self._as_snoop().search(
                 [("id", "=", self.event.id), ("name", "ilike", "NewCo")]
@@ -74,7 +72,6 @@ class TestCalendarPrivacyLeaks(TransactionCase):
         )
 
     def test_private_name_not_recoverable_char_by_char(self):
-        """`search_count` alone must not spell out a masked field."""
         recovered = ""
         alphabet = "ACINQTZabcdefghilmnoqrstuvw "
         for _position in range(len(self.event.name)):
@@ -260,7 +257,6 @@ class TestCalendarNotificationAttachments(TransactionCase):
         cls.user = new_test_user(cls.env, login="notify_user", groups="base.group_user")
 
     def test_no_orphan_attachment_copies(self):
-        # four partners can be mailed, four cannot (no email address)
         partners = self.env["res.partner"].create(
             [
                 {
@@ -331,9 +327,6 @@ class TestCalendarRangeCalculation(TransactionCase):
         cls.user = new_test_user(cls.env, login="range_user", groups="base.group_user")
 
     def test_count_preserved_and_future_occurrences_complete(self):
-        # 2026-11-04 is a Wednesday; the weekly rule also fires on Monday, whose
-        # week-start is before the base event, so the naive generation drops the
-        # pre-start occurrence and the inflation path runs.
         event = (
             self.env["calendar.event"]
             .with_user(self.user)
@@ -519,8 +512,6 @@ class TestCalendarAttendeeCounts(TransactionCase):
         )
 
     def test_awaiting_never_goes_negative(self):
-        # An attendee row with no partner link: the state the subtraction could
-        # not survive.
         extra = new_test_user(self.env, "count_extra", groups="base.group_user")
         self.env["calendar.attendee"].sudo().create(
             {
@@ -536,17 +527,6 @@ class TestCalendarAttendeeCounts(TransactionCase):
         self._assert_counts_add_up()
 
     def test_an_archived_contact_is_still_a_guest(self):
-        """Archiving a contact does not take them off the invitation.
-
-        A many2many read drops archived records by default and the attendee row
-        survives, so counting the guests from `partner_ids` and the answers from
-        `attendee_ids` disagreed the moment anybody deactivated a contact: the
-        event read "1 guest, 2 answers". `partner_ids` now carries
-        `active_test: False`, so the two halves of the invitation agree again
-        and this asserts that rather than the discrepancy.
-        """
-        # A plain contact, not a user's partner: a partner backing an active
-        # user refuses to be archived at all.
         contact = self.env["res.partner"].create({"name": "Deactivated Guest"})
         self.event.write({"partner_ids": [(4, contact.id)]})
         self.env.flush_all()
@@ -578,10 +558,6 @@ class TestAlarmNotifyResponsible(TransactionCase):
     """
 
     def test_the_base_channels_never_offer_it(self):
-        # Asserted as an exclusion, not as an empty set: which channels opt in
-        # depends on which of calendar_sms / whatsapp_calendar is installed, and
-        # a test that pinned the whole set would fail on a fuller database
-        # rather than on a regression.
         responsible_aware = self.env[
             "calendar.alarm"
         ]._get_responsible_aware_alarm_types()
@@ -670,7 +646,6 @@ class TestCalendarOrganizerAnswerReset(TransactionCase):
         self.assertEqual(self._organizer_attendee(event_b).state, "needsAction")
 
     def test_the_mover_s_own_answer_survives(self):
-        """The reset is for events moved *by somebody else*."""
         event = self._event_for(self.org_a)
         event.with_user(self.org_a).with_context(no_mail_to_attendees=True).write(
             {"start": "2030-03-02 10:00:00", "stop": "2030-03-02 11:00:00"}
@@ -724,9 +699,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
             )
         )
         self.env.flush_all()
-        # Drop `no_mail_to_attendees`: it rides the recordset the create
-        # returned, and every write below would otherwise silently mail nobody
-        # for that reason rather than for the one under test.
         return event.with_context(no_mail_to_attendees=False)
 
     def _mails_sent_by(self, action):
@@ -736,7 +708,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
         return self.env["mail.mail"].search([]) - before
 
     def test_moving_a_single_occurrence_notifies(self):
-        """Baseline: the path that already worked."""
         event = self._series()
         mails = self._mails_sent_by(
             lambda: event.with_user(self.organizer).write(
@@ -763,7 +734,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
         self.assertTrue(mails, "a moved series must be announced")
 
     def test_the_series_is_announced_once_per_attendee(self):
-        """Not once per occurrence: the template describes the recurrence."""
         event = self._series()
         mails = self._mails_sent_by(
             lambda: event.with_user(self.organizer).write(
@@ -774,17 +744,9 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
                 }
             )
         )
-        # The organizer is the one writing, so `_is_attendee_notification_required`
-        # excludes them; the guest is the single recipient.
         self.assertEqual(len(mails), 1)
 
     def test_the_announcement_describes_the_recurrence(self):
-        """Not just "the date moved": the whole point of the branch.
-
-        `_write_notify_attendees` unsets `calendar_template_ignore_recurrence`
-        when the write rewrote the series, and the template renders the
-        repetition rule from it.
-        """
         event = self._series()
         mails = self._mails_sent_by(
             lambda: event.with_user(self.organizer).write(
@@ -801,14 +763,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
         self.assertIn("Every", mails.body_html, "the recurrence must be described")
 
     def test_this_and_following_announces_once_not_twice(self):
-        """`_update_future_events` writes on `self` again, carrying the new start.
-
-        That nested `write` announces the move on its own. Letting the outer
-        `write` announce it too sent every attendee the same mail twice --
-        which is what happened the moment the outer branch was made reachable,
-        and is why the inner write skips notification the way
-        `_rewrite_recurrence`'s already did.
-        """
         event = self._series()
         occurrences = event.recurrence_id.calendar_event_ids.sorted("start")
         middle = occurrences[2].with_context(no_mail_to_attendees=False)
@@ -825,11 +779,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
         self.assertEqual(mails.recipient_ids, self.guest.partner_id)
 
     def test_a_new_attendee_is_invited_and_the_old_one_told_the_date(self):
-        """One write that both moves the series and adds somebody.
-
-        The two templates are chosen per attendee, and neither must reach the
-        other's recipient.
-        """
         event = self._series()
         newcomer = new_test_user(
             self.env, login="notif_newcomer", groups="base.group_user"
@@ -860,7 +809,6 @@ class TestCalendarRecurrenceDateChangeNotification(TransactionCase):
         self.assertIn("Date updated", by_recipient[self.guest.partner_id])
 
     def test_moving_a_series_into_the_past_notifies_nobody(self):
-        """The future-only guard still holds on the recurrence path."""
         event = self._series(start="2020-01-06 10:00:00", stop="2020-01-06 11:00:00")
         mails = self._mails_sent_by(
             lambda: event.with_user(self.organizer).write(
@@ -934,11 +882,6 @@ class TestCalendarMassDeletionTrimsTheRule(TransactionCase):
         )
 
     def test_an_archived_occurrence_is_deleted_with_the_rest(self):
-        """`_get_events_from` filtered `active` twice -- once reading the
-        one2many, once in the search -- so an archived occurrence after the cut
-        point was neither detached nor deleted. It survived pointing at a
-        recurrence whose trimmed rule now ended before it started.
-        """
         event = self._series()
         recurrence = event.recurrence_id
         occurrences = recurrence.calendar_event_ids.sorted("start")
@@ -993,7 +936,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
     def _ics_lines(self, event):
         content = event._get_ics_file().get(event.id)
         self.assertTrue(content, "vobject is required for this test")
-        # Unfold: iCalendar wraps long lines with a leading space.
         return content.decode().replace("\r\n ", "").replace("\n ", "").splitlines()
 
     def test_a_recurring_event_exports_exactly_one_rrule(self):
@@ -1052,9 +994,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
         return [line for line in self._ics_lines(event) if line.startswith("RRULE:")]
 
     def test_only_the_base_event_declares_the_series(self):
-        """Every occurrence is already its own row; an RRULE asks the client to
-        generate the siblings again. Three daily occurrences each declaring
-        ``COUNT=3`` is nine events in the reader's calendar."""
         occurrences = self._series().recurrence_id.calendar_event_ids.sorted("start")
         self.assertEqual(len(occurrences), 3)
         self.assertEqual(len(self._rrule_lines(occurrences[0])), 1)
@@ -1065,9 +1004,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
             )
 
     def test_a_reminder_does_not_declare_the_series(self):
-        """`calendar_template_ignore_recurrence` is the module's own way of
-        saying "this mail is about this occurrence" -- `_send_reminder` sets it
-        for every reminder. The .ics must agree with the body."""
         base = self._series().recurrence_id.base_event_id
         self.assertTrue(self._rrule_lines(base))
         self.assertFalse(
@@ -1077,11 +1013,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
         )
 
     def test_a_reminder_triggers_before_the_event_not_after(self):
-        """`TRIGGER;RELATED=START` with a positive duration means *after* the
-        start (RFC 5545 3.8.6.3). Every reminder was exported with a positive
-        one, so "remind me an hour before" reached the reader's calendar as
-        `PT1H` -- an hour *late*, every time.
-        """
         alarm = self.env["calendar.alarm"].create(
             {
                 "name": "1h before",
@@ -1116,10 +1047,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
         )
 
     def test_an_all_day_event_exports_dates_not_times(self):
-        """`start`/`stop` hold 08:00 and 18:00 by this module's convention, and
-        handing those naive datetimes to vobject emitted a *floating* datetime
-        the reader shifts into its own zone. DTEND is exclusive for a DATE, so a
-        24th-to-26th event ends on the 27th."""
         event = (
             self.env["calendar.event"]
             .with_user(self.user)
@@ -1141,7 +1068,6 @@ class TestCalendarIcsRecurrence(TransactionCase):
         self.assertIn("DTEND;VALUE=DATE:20301227", lines)
 
     def test_until_is_stamped_utc(self):
-        """RFC 5545: with a UTC DTSTART, UNTIL must be UTC too."""
         value = self.env["calendar.event"]._get_ics_rrule(
             "DTSTART:20260828T195601\nRRULE:FREQ=WEEKLY;UNTIL=20300617T235959;BYDAY=MO"
         )
@@ -1197,15 +1123,6 @@ class TestCalendarUnavailableAttendees(TransactionCase):
         )
 
     def _searches_to_compute(self, events):
-        """How many times the compute goes to the database for busy events.
-
-        Counted as calls rather than as `sql_log_count`, which measures the
-        whole registry: `appointment` reads its own fields per event through
-        the `_is_partner_unavailable` hook, so a raw query count grows with the
-        recordset on a database that has it installed even when this compute
-        does not. The invariant under test is one search whatever the number of
-        clusters, and that is what is asserted.
-        """
         self.env.flush_all()
         self.env.invalidate_all()
         partner_model = type(self.env["res.partner"])
@@ -1224,9 +1141,6 @@ class TestCalendarUnavailableAttendees(TransactionCase):
     def test_the_cost_does_not_grow_with_the_number_of_events(self):
         few = self._searches_to_compute(self._events_on_distinct_days(2, 2031))
         many = self._searches_to_compute(self._events_on_distinct_days(20, 2032))
-        # Twenty events on twenty different days are twenty clusters, and used
-        # to be twenty searches. Measured at N=2 against N=20 rather than as an
-        # absolute count so a cache-warm run cannot make the assertion vacuous.
         self.assertEqual(few, 1)
         self.assertEqual(
             many,
@@ -1236,7 +1150,6 @@ class TestCalendarUnavailableAttendees(TransactionCase):
         )
 
     def test_an_overlapping_attendee_is_still_reported_unavailable(self):
-        """The batching must not change the answer."""
         partners = (self.organizer.partner_id + self.guest.partner_id).ids
         events = (
             self.env["calendar.event"]

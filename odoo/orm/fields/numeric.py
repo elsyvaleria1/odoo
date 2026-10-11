@@ -45,7 +45,7 @@ class Integer(Field[int]):
         __get__ = _prepare_inline_get(0)
 
     @property
-    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+    def _column_type(self) -> tuple[str, str]:
         return ("int8", "int8") if self.bigint else ("int4", "int4")
 
     _related_bigint = property(attrgetter("bigint"))
@@ -158,7 +158,7 @@ class Float(Field[float]):
         )
 
     @property
-    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
+    def _column_type(self) -> tuple[str, str]:
         return (
             ("numeric", "numeric")
             if self._digits is not None
@@ -253,7 +253,7 @@ class Float(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:  # noqa: RUF069  0.0 exactly, to tell a real zero from an empty value
+        if value or value == 0.0:
             return value
         return ""
 
@@ -403,7 +403,6 @@ class Monetary(Field[float]):
     ) -> typing.Any:
         value = float(value or 0.0)
         if not value:
-            # zero rounds to zero in every currency: nothing to resolve
             return value
         currency_field_name = self._get_currency_field_name(record)
         currency_field = record._fields[currency_field_name]
@@ -418,7 +417,7 @@ class Monetary(Field[float]):
             else:
                 dummy = record.new({currency_field_name: currency_id})
                 currency = dummy[currency_field_name]
-            currency_from = "values"  # debuglog
+            currency_from = "values"
         elif (
             values
             and currency_field.related
@@ -427,9 +426,6 @@ class Monetary(Field[float]):
             path = currency_field.related.split(".")
             root_id = values[path[0]]
             if isinstance(root_id, int):
-                # the stored row carries the root's id: browse it and walk the
-                # path, so every row of one parent reads its currency once
-                # instead of computing the related on a throwaway new record
                 root_env = (
                     record.env._derive(su=True)
                     if currency_field.compute_sudo
@@ -444,11 +440,11 @@ class Monetary(Field[float]):
             else:
                 dummy = record.new({path[0]: root_id})
                 currency = dummy[currency_field_name]
-            currency_from = "related_values"  # debuglog
+            currency_from = "related_values"
         else:
             resolved = self._resolve_currency_record(record)
             currency = resolved.with_env(record.env) if resolved is not None else None
-            currency_from = "record"  # debuglog
+            currency_from = "record"
 
         if _debug.logic.enabled:
             _debug.logic(
@@ -518,7 +514,7 @@ class Monetary(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:  # noqa: RUF069  0.0 exactly, to tell a real zero from an empty value
+        if value or value == 0.0:
             return value
         return ""
 

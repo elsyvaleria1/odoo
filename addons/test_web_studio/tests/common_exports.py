@@ -24,13 +24,11 @@ def nodes_equal(n1, n2):
     if len(n1) != len(n2):
         return False
     if n1.tag == "field":
-        # compare a tostring version, to check if CDATA sections are preserved
         n1_str = ET.tostring(n1)
         n2_str = ET.tostring(n2)
         if n1_str != n2_str:
             return False
     if n1.tag == "record":
-        # n1 and n2 children order doesn't matter, sort them by tagname, attrib['name']
         n1 = sorted(n1, key=lambda n: (n.tag, n.attrib.get("name")))
         n2 = sorted(n2, key=lambda n: (n.tag, n.attrib.get("name")))
     return all(map(nodes_equal, n1, n2, strict=False))
@@ -78,7 +76,6 @@ class StudioExportCase(TransactionCase):
                 "Studio export already in progress: maybe make another test?"
             )
 
-        # Prepare the export wizard
         domain = Domain.OR(
             Domain("model", "=", custo._name) & Domain("res_id", "=", custo.id)
             for custo in self._customizations
@@ -102,7 +99,6 @@ class StudioExportCase(TransactionCase):
         )
         export_info = wizard.get_export_info()
 
-        # Start the export
         studio_module = self.env["ir.module.module"].get_or_create_studio_module()
         self.exporter = StudioExportSerializer(self.env, studio_module, export_info)
         self._export_cache = {}
@@ -133,7 +129,6 @@ class StudioExportCase(TransactionCase):
         self.assertEqual(file, content)
 
     def assertFileList(self, *filenames):
-        """You can omit __init__.py and __manifest__.py"""
         filenames += ("__init__.py", "__manifest__.py")
         exported = self._get_exported()
         self.assertEqual(set(exported.keys()), set(filenames))

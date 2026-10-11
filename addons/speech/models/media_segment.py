@@ -19,8 +19,6 @@ class MediaSegment(models.Model):
         help="A chunk sent during a live capture, transcribed as soon as it arrives.",
     )
 
-    # a cue keeps the label the transcriber gave it; the person put on that
-    # voice is shown instead wherever one has been
     @api.depends("attachment_id.speaker_ids.label", "attachment_id.speaker_ids.name")
     def _compute_transcript_speakers(self) -> None:
         for segment in self:

@@ -17,7 +17,6 @@ class CalendarBooking(models.Model):
     )
 
     def _cancel_pending_booking(self):
-        """Cart bookings must be removed with their order line through the cart."""
         self.check_singleton()
         if self.order_line_id:
             _debug.logic(

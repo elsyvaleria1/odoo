@@ -85,20 +85,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
 
     @classmethod
     def _create_test_campaign(cls, campaign_domain=None):
-        # --------------------------------------------------
-        # CAMPAIGN, based on marketing.test.performance
-        #
-        # ACT1           MAIL: begin, +1 hour
-        #   ACT1_1       -> opened -> send an SMS after 1h with a promotional link
-        #   ACT1_2       -> not_opened within 1 day-> update description through server action
-        # ACT2           SMS: begin, +2 hour
-        #   ACT2_1       -> clicked -> send an SMS after 1h with a promotional link
-        #   ACT2_2       -> not_clicked within 1 day-> update description through server action
-        # ACT3           WA: begin, +3 hour
-        #   ACT3_1       -> replied -> send an SMS after 1h with a promotional link
-        #   ACT3_2       -> not_replied within 1 day-> update description through server action
-        # ACT4           SA: begin, +4 hour
-        # --------------------------------------------------
         campaign_domain = campaign_domain or [("name", "!=", "Invalid")]
         test_campaign = (
             cls.env["marketing.campaign"]
@@ -113,7 +99,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 }
             )
         )
-        # ACT1: send a mailing
         act1_begin_mailing = cls._create_activity_mail(
             test_campaign,
             mailing_values={
@@ -126,7 +111,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "begin",
             },
         )
-        # ACT1_1: send an SMS 1 hour after 'open' event
         _act1_1_sms = cls._create_activity_mail(
             test_campaign,
             mailing_values={
@@ -141,8 +125,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "mail_open",
             },
         )
-        # ACT_1_2: update description if not opened after 1 day
-        # created by admin, should probably not give rights to marketing
         _act1_2_sa = cls._create_activity_sa(
             test_campaign,
             "records.write({'selection_field': 'key1'})",
@@ -155,7 +137,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
             },
         )
 
-        # ACT2: send a SMS mailing
         act2_begin_sms = cls._create_activity_mail(
             test_campaign,
             mailing_values={
@@ -169,7 +150,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "begin",
             },
         )
-        # ACT2_1: send an SMS 1 hour after a 'click' event
         _act2_1_sms = cls._create_activity_mail(
             test_campaign,
             mailing_values={
@@ -184,7 +164,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "sms_click",
             },
         )
-        # ACT2_2: update description if not opened after 1 day
         _act2_2_sa = cls._create_activity_sa(
             test_campaign,
             "records.write({'selection_field': 'key2'})",
@@ -197,7 +176,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
             },
         )
 
-        # ACT2: send a whatsapp
         act3_begin_wa = cls._create_activity_wa(
             test_campaign,
             template_values={
@@ -209,7 +187,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "begin",
             },
         )
-        # ACT3_1: send an SMS 1 hour after a 'replied' event
         _act3_1_sms = cls._create_activity_mail(
             test_campaign,
             mailing_values={
@@ -224,7 +201,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
                 "trigger_type": "whatsapp_replied",
             },
         )
-        # ACT3_2: update description if not replied after 1 day
         _act3_2_sa = cls._create_activity_sa(
             test_campaign,
             "records.write({'selection_field': 'key3'})",
@@ -237,7 +213,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
             },
         )
 
-        # ACT4: run a SA
         _act4 = cls._create_activity_sa(
             test_campaign,
             "records.write({'selection_field': 'key1'})",
@@ -252,15 +227,6 @@ class MAPerformanceCommon(BaseMailPerformance, TestMACommon):
 
     @classmethod
     def _create_test_records(cls, count=200):
-        # --------------------------------------------------
-        # TEST RECORDS, using marketing.test.performance
-        #
-        # 200 times (or 'count')
-        # - 3 records with partners
-        # - 1 records wo partner, but email/mobile
-        # - 1 record wo partner/email/mobile
-        # AKA 1000 records
-        # --------------------------------------------------
         return cls._create_marketauto_records(
             model="marketing.test.performance",
             count=count,
@@ -283,7 +249,6 @@ class TestMAPerformance(MAPerformanceCommon):
         self._launch_campaign(self.test_campaign, date_reference=self.date_reference)
 
     def test_assert_initial_values(self):
-        """Check initial values for tests"""
         self.assertEqual(len(self.test_records), 1000)
 
         self.assertFalse(self.test_campaign.require_sync)
@@ -301,16 +266,10 @@ class TestMAPerformance(MAPerformanceCommon):
 
     @warmup
     def test_campaign_sync_participants_launch(self):
-        """Test 'sync_participants' at campaign beginning. It is called by a
-        cron regularly, or manually on campaign form view to start the campaign
-        directly. It creates participants and their starting trace."""
         with self.mock_datetime_and_now(self.date_reference):
             campaign = self._create_test_campaign()
         self.assertEqual(len(self.test_records), 1000)
 
-        # 1000 participants, their workflow runs, the 10 steps and 6 edges of every
-        # run and the 4 'begin' traces are all bulk inserts, one statement per
-        # batch of 100 participants per table
         with (
             self.assertQueryCount(563),
             self.mock_datetime_and_now(self.date_reference),
@@ -318,9 +277,7 @@ class TestMAPerformance(MAPerformanceCommon):
         ):
             campaign.sync_participants()
 
-        # sanity check
         self.assertEqual(len(campaign.participant_ids), len(self.test_records))
-        # performance check
         self.assertEqual(
             self._mock_part_create.call_count,
             10,
@@ -346,15 +303,8 @@ class TestMAPerformance(MAPerformanceCommon):
     )
     @warmup
     def test_execute_activities_then_sync_participants(self):
-        """Test 'execute_activities' on all activity types. Then test
-        'sync_participants' on a running campaign, aka updating participants
-        based on DB state."""
         campaign = self.test_campaign
 
-        # the dispatcher hands each activity its 500-trace batches, so the channels
-        # send in bulk and child traces are created per batch; one savepoint per
-        # server-action trace (1000)
-        # hours+4 -> is going to trigger all 4 begin activities
         with (
             self.assertQueryCount(12943),
             self.mock_datetime_and_now(self.date_reference + timedelta(hours=4)),
@@ -366,7 +316,6 @@ class TestMAPerformance(MAPerformanceCommon):
         ):
             campaign.execute_activities()
 
-        # produced side records check
         self.assertEqual(
             len(self._new_mails),
             len(self.test_records) - 200,
@@ -389,7 +338,6 @@ class TestMAPerformance(MAPerformanceCommon):
             len(self.test_records) * 10,
             "Should have: 4 begin activity + 6 sub activities / record, aka 10 * 1000",
         )
-        # performance check
         self.assertEqual(
             self._mock_act_execute_lines.call_count,
             8,
@@ -409,7 +357,6 @@ class TestMAPerformance(MAPerformanceCommon):
             1000,
             "One write per WhatsApp trace, linking it to its message",
         )
-        # side records performance check
         self.assertEqual(
             self.mail_mail_create_mocked.call_count,
             20,
@@ -426,13 +373,10 @@ class TestMAPerformance(MAPerformanceCommon):
             "Done by activity execution batch (500 currently)",
         )
 
-        # now create 10*5 records, unlink other 50 records, observe performance
         self.test_records_new = self._create_test_records(count=10)
         self.assertEqual(len(self.test_records_new), 50)
         self.test_records[:50].unlink()
 
-        # 50 new participants get their runs, steps, edges and root traces in one
-        # bulk insert per table; the 50 removed ones are cancelled together
         with (
             self.assertQueryCount(69),
             self.mock_datetime_and_now(self.date_reference + timedelta(hours=24)),
@@ -440,13 +384,11 @@ class TestMAPerformance(MAPerformanceCommon):
         ):
             campaign.sync_participants()
 
-        # sanity check
         self.assertEqual(
             len(campaign.participant_ids),
             1050,
             "Removed records still have their participant, set as unlinked",
         )
-        # performance check
         self.assertEqual(self._mock_part_create.call_count, 1)
         self.assertEqual(self._mock_part_search.call_count, 1)
         self.assertEqual(self._mock_part_write.call_count, 1)
@@ -457,11 +399,8 @@ class TestMAPerformance(MAPerformanceCommon):
     @users("user_marketing_automation")
     @warmup
     def test_update_participants(self):
-        """'action_update_participants' can be called manually when the
-        workflow has been modified on an ongoing marketing campaign."""
         campaign = self.test_campaign.with_env(self.env)
 
-        # update activities, should update scheduled dates
         activity_mail = campaign.marketing_activity_ids.filtered(
             lambda a: a.trigger_type == "begin" and a.activity_type == "email"
         )
@@ -472,7 +411,6 @@ class TestMAPerformance(MAPerformanceCommon):
             }
         )
 
-        # create new activities that are about to trigger the "require sync" flag !
         new_activity_begin = self._create_activity_mail(
             campaign,
             user=self.env.user,
@@ -495,8 +433,6 @@ class TestMAPerformance(MAPerformanceCommon):
             },
         )
 
-        # every run gets the two new steps and their edge in bulk, and the new
-        # root's traces in one batch
         with (
             self.assertQueryCount(130),
             self.mockMACalls(),

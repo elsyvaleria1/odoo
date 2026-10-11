@@ -17,7 +17,6 @@ class SocialTestFullCase(common.TransactionCase):
         ]
 
         with mock_void_external_calls():
-            # create one account for every media type
             cls.accounts = cls.env["social.account"].create(
                 [
                     {"media_id": cls.env.ref(media_ref).id, "name": "Account"}

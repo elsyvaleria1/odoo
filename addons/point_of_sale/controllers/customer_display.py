@@ -12,7 +12,7 @@ class PosCustomerDisplay(http.Controller):
         type="http",
         website=True,
     )
-    def pos_customer_display(self, id_, device_uuid, access_token=None, **kw):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pos_customer_display(self, id_, device_uuid, access_token=None, **kw):
         try:
             config_id = int(id_)
         except TypeError, ValueError:

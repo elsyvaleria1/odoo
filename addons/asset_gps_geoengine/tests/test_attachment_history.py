@@ -27,7 +27,6 @@ class TestAttachmentGeography(TransactionCase):
                 }
             )
             self.second = self.first.copy({"name": "Later equipment"})
-        # The transaction's creation clock is independent of fields.Datetime.now.
         self.env.cr.execute(
             "UPDATE device_device SET create_date = %s WHERE id = %s",
             [datetime(2026, 9, 1), self.device.id],
@@ -153,7 +152,7 @@ class TestAttachmentGeography(TransactionCase):
                 ),
             }
         )
-        self._log("2026-09-02 10:00:00", speed=130)  # previous local day
+        self._log("2026-09-02 10:00:00", speed=130)
         self._log("2026-09-02 16:00:00", speed=80)
         self._log("2026-09-03 02:00:00", speed=20)
         Visit = self.env["device.client.visit"]

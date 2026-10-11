@@ -81,7 +81,6 @@ class TestSubscriptionCommon(TestSaleCommon):
             {"group_product_pricelist": True}
         ).execute()
 
-        # disable most emails for speed
         cls.context_no_mail = {
             "no_reset_password": True,
             "mail_create_nosubscribe": True,
@@ -96,7 +95,6 @@ class TestSubscriptionCommon(TestSaleCommon):
         cls.ProductTmpl = cls.env["product.template"].with_context(cls.context_no_mail)
         cls.country_belgium = cls.env.ref("base.be")
 
-        # Minimal CoA & taxes setup
         cls.account_payable = cls.company_data["default_account_payable"]
         cls.account_receivable = cls.company_data["default_account_receivable"]
         cls.account_income = cls.company_data["default_account_revenue"]
@@ -137,7 +135,6 @@ class TestSubscriptionCommon(TestSaleCommon):
         )
         cls.journal = cls.company_data["default_journal_sale"]
 
-        # Test products
         (
             cls.plan_week,
             cls.plan_month,
@@ -322,7 +319,6 @@ class TestSubscriptionCommon(TestSaleCommon):
         cls.templ_60_days = cls.templ_5_days.copy()
         cls.templ_60_days.plan_id = cls.plan_year.copy(default={"auto_close_limit": 60})
 
-        # Test user
         TestUsersEnv = cls.env["res.users"].with_context({"no_reset_password": True})
         group_portal_id = cls.env.ref("base.group_portal").id
         group_sale_salesman = cls.env.ref("sale.group_sale_salesman")
@@ -372,7 +368,6 @@ class TestSubscriptionCommon(TestSaleCommon):
             }
         )
 
-        # Test analytic account
         cls.plan_1 = AnalyticPlan.create(
             {
                 "name": "Test Plan 1",
@@ -393,7 +388,6 @@ class TestSubscriptionCommon(TestSaleCommon):
             }
         )
 
-        # Test Subscription
         cls.subscription = cls.SaleOrder.create(
             {
                 "name": "TestSubscription",
@@ -406,8 +400,8 @@ class TestSubscriptionCommon(TestSaleCommon):
             }
         )
         cls.subscription._onchange_template_id()
-        cls.subscription.start_date = False  # the confirmation will set the start_date
-        cls.subscription.end_date = False  # reset the end_date too
+        cls.subscription.start_date = False
+        cls.subscription.end_date = False
         cls.company = cls.env.company
         cls.company.country_id = cls.env.ref("base.us")
         cls.account_receivable = cls.env["account.account"].create(
@@ -487,19 +481,15 @@ class TestSubscriptionCommon(TestSaleCommon):
 
     @staticmethod
     def _get_optional_product_lines(order):
-        """Returns the order lines that are optional products."""
         return order.line_ids.filtered(
             lambda line: not line.display_type and line._is_line_optional(),
         )
 
     @classmethod
     def get_default_groups(cls):
-        # Needed for tests without demo data
         groups = super().get_default_groups()
         return groups | cls.env.ref("sale.group_sale_manager")
 
-    # Mocking for 'test_auto_payment_with_token'
-    # Necessary to have a valid and done transaction when the cron on subscription passes through
     def _mock_subscription_do_payment(self, payment_token, invoice, auto_commit=False):
         tx_obj = self.env["payment.transaction"]
         refs = invoice.invoice_line_ids.sale_line_ids.order_id.mapped(
@@ -540,7 +530,7 @@ class TestSubscriptionCommon(TestSaleCommon):
         tx.state = "pending"
         tx._set_error("Payment declined")
         tx._post_process()
-        tx.env.cr.flush()  # simulate commit after sucessfull `_do_payment()`
+        tx.env.cr.flush()
         return tx
 
     def _mock_subscription_do_payment_pending(
@@ -548,11 +538,9 @@ class TestSubscriptionCommon(TestSaleCommon):
     ):
         tx = self._mock_subscription_do_payment(payment_method, invoice)
         tx.state = "pending"
-        tx.env.cr.flush()  # simulate commit after sucessfull `_do_payment()`
+        tx.env.cr.flush()
         return tx
 
-    # Mocking for 'test_auto_payment_with_token'
-    # Avoid account_id is False when creating the invoice
     def _mock_prepare_invoice_data(self):
         invoice = self.original_prepare_invoice()
         invoice["bank_account_id"] = False
@@ -564,7 +552,6 @@ class TestSubscriptionCommon(TestSaleCommon):
             raise UncatchableException("I want to break free")
 
     def flush_tracking(self):
-        """Force the creation of tracking values."""
         self.env.flush_all()
         self.cr.flush()
 

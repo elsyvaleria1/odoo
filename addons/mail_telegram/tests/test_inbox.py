@@ -96,7 +96,6 @@ class TestInbox(InboxCase):
             self._inbox()._thread("discuss.channel", private.id)
 
     def test_posting_needs_what_odoo_asks_of_the_user(self):
-        # only what every internal user has: reading contacts, not writing them
         reader = self.env["res.users"].create(
             {
                 "name": "Lector",
@@ -180,8 +179,6 @@ class TestInboxRoutes(InboxRouteCase):
         self.assertIn("notifications", body["result"])
 
     def test_a_webview_in_a_language_odoo_lacks_still_gets_its_inbox(self):
-        # Telegram's WebView sends its own language, es-ES, where the database
-        # may have only es_MX: that is no reason to refuse the caller
         self.assertFalse(
             self.env["res.lang"]
             .with_context(active_test=True)

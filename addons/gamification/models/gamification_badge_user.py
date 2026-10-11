@@ -53,18 +53,10 @@ class GamificationBadgeUser(models.Model):
     )
 
     def _send_badge(self) -> bool:
-        """Send a notification to each user for receiving a badge.
-
-        Does not verify constraints on badge granting — the caller
-        (typically ``create``) is responsible for that.
-        """
         template = self.env.ref(
             "gamification.email_template_badge_received", raise_if_not_found=False
         )
         if not template:
-            # A missing template is a broken mail setup, not a reason to fail the
-            # grant: the badge, its bus notification and its feed entry all still
-            # happen.  `_rank_changed` already guarded the same ref this way.
             _logger.warning(
                 "gamification.email_template_badge_received is missing; "
                 "granting %s badge(s) without the notification email.",
@@ -85,7 +77,6 @@ class GamificationBadgeUser(models.Model):
                 subtype_xmlid="mail.mt_comment",
                 email_layout_xmlid="mail.mail_notification_layout",
             )
-            # Real-time bus notification
             badge_user.user_id._send_gamification_notification(
                 "badge",
                 {
@@ -93,7 +84,6 @@ class GamificationBadgeUser(models.Model):
                     "message": badge_user.badge_name,
                 },
             )
-            # Log to unified activity feed
             self.env["gamification.activity"]._log_badge(
                 badge_user.user_id,
                 badge_user.badge_id,
@@ -117,8 +107,6 @@ class GamificationBadgeUser(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         Badge = self.env["gamification.badge"]
-        # System grants (challenge rewards, achievement/rank badges) run under
-        # sudo and are exempt from the peer-granting guards below.
         if not self.env.su:
             uid = self.env.uid
             grants_per_badge: dict[int, int] = {}
@@ -130,9 +118,6 @@ class GamificationBadgeUser(models.Model):
                 grants_per_badge[vals["badge_id"]] = (
                     grants_per_badge.get(vals["badge_id"], 0) + 1
                 )
-            # Enforce the monthly cap over the whole batch: check_granting()
-            # only sees the pre-batch count, so N grants of a limited badge in
-            # a single create would otherwise slip past a per-record limit.
             if not self.env.is_admin():
                 for badge_id, count in grants_per_badge.items():
                     badge = Badge.browse(badge_id)
@@ -147,7 +132,6 @@ class GamificationBadgeUser(models.Model):
                                 " this month."
                             )
                         )
-        # Per-badge granting rules (auth list, required badges, current limit)
         checked_badge_ids: set[int] = set()
         for vals in vals_list:
             badge_id = vals["badge_id"]

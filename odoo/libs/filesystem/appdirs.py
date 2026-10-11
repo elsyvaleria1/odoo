@@ -9,8 +9,6 @@ from pathlib import Path
 
 
 def _xdg_data_home() -> str:
-    # the XDG base-directory spec: an unset or empty variable takes the
-    # default, and a relative value is invalid and ignored
     value = os.getenv("XDG_DATA_HOME") or ""
     if Path(value).is_absolute():
         return value.rstrip(os.sep) or os.sep
@@ -70,7 +68,7 @@ def _get_win_folder_with_ctypes(csidl_name: str) -> str:
     }[csidl_name]
 
     buf = ctypes.create_unicode_buffer(1024)
-    ctypes.windll.shell32.SHGetFolderPathW(None, csidl_const, None, 0, buf)  # type: ignore[attr-defined]
+    ctypes.windll.shell32.SHGetFolderPathW(None, csidl_const, None, 0, buf)
 
     has_high_char = False
     for c in buf:
@@ -79,7 +77,7 @@ def _get_win_folder_with_ctypes(csidl_name: str) -> str:
             break
     if has_high_char:
         buf2 = ctypes.create_unicode_buffer(1024)
-        if ctypes.windll.kernel32.GetShortPathNameW(buf.value, buf2, 1024):  # type: ignore[attr-defined]
+        if ctypes.windll.kernel32.GetShortPathNameW(buf.value, buf2, 1024):
             buf = buf2
 
     return buf.value
@@ -87,7 +85,7 @@ def _get_win_folder_with_ctypes(csidl_name: str) -> str:
 
 if sys.platform == "win32":
     try:
-        import win32com.shell  # noqa: F401  availability probe: the ImportError picks the fallback
+        import win32com.shell
 
         _get_win_folder = _get_win_folder_with_pywin32
     except ImportError:

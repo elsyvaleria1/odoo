@@ -14,8 +14,6 @@ class TestPartyConvergence(TransactionCase):
 
     @classmethod
     def _diverge(cls, employee, contact):
-        """Legacy data: two partner rows for one person. The constraint forbids
-        writing it, so it is planted the way an old database holds it."""
         cls.env.flush_all()
         cls.env.cr.execute(
             "UPDATE hr_employee SET partner_id = %s WHERE id = %s",
@@ -79,7 +77,6 @@ class TestPartyConvergence(TransactionCase):
         self.assertGreaterEqual(report["no_user"], 1)
 
     def test_the_report_writes_nothing(self):
-        """It is a dry run: reading it must not change the data it describes."""
         before = {
             e.id: (e.partner_id.id, e.user_id.partner_id.id)
             for e in self.Emp.search([])

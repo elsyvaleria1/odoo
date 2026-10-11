@@ -418,15 +418,12 @@ class TestMrpCommon(TestStockCommon):
         )
 
     def _without_vendor_pull(self, warehouse):
-        # Buy (purchase_stock) takes the vendor pull off the reception route;
-        # without purchase it is there, and a vendor would supply these.
         suppliers = self.env.ref("stock.stock_location_suppliers")
         warehouse.reception_route_id.rule_ids.filtered(
             lambda rule: rule.location_src_id == suppliers
         ).active = False
 
     def full_availability(self):
-        # a schedule without fixed hours is open around the clock already
         calendar = self.env["resource.calendar"].search(
             [("schedule_type", "=", "fully_fixed")]
         )

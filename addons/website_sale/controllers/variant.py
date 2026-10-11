@@ -66,8 +66,6 @@ class WebsiteSaleVariantController(Controller):
         ):
             product_or_template = product or product_template
             combination_info["display_image"] = bool(product_or_template.image_128)
-            # outer: the carousel carries a live Bootstrap instance a morph
-            # would leave pointing at replaced indicators
             fragments.append(
                 Fragment(
                     "website_sale.shop_product_images",

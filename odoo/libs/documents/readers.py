@@ -43,7 +43,6 @@ class BaseReader:
     defers: bool = False
     module: str = ""
     async_only: bool = False
-    # the answer is stored in the file (captions, a text layer), not inferred
     carried: bool = False
 
     def available(self, options: Mapping[str, Any]) -> bool:
@@ -124,8 +123,6 @@ def get_readers(
     for reader in _READERS[representation]:
         if not reader.applies_to(mimetype):
             continue
-        # cost first: availability may ask a vendor router, which a read that
-        # could never reach this reader must not pay for
         if up_to is not None and reader.cost > up_to:
             continue
         if options is not None and not is_available(reader, options):
@@ -175,7 +172,7 @@ def _prepare_reader(
     reader.yields = yields
     reader.cost = cost
     reader.carried = carried
-    reader.read = read  # type: ignore[method-assign]
+    reader.read = read
     return reader
 
 

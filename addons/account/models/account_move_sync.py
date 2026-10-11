@@ -48,7 +48,7 @@ EMPTY_TAX_SYNC_SNAPSHOT = frozendict(move={}, base_lines={}, tax_lines={})
 @contextmanager
 def sync_boundary(prepare, commit):
     state = prepare()
-    yield  # noqa: RUF075 - deliberate, and the reason every sync step in this module relies on it: an exception inside the `with` aborts the transaction, so a reconciliation skipped here changes nothing that would otherwise have been persisted
+    yield
     commit(state)
 
 
@@ -1406,6 +1406,6 @@ class AccountMove(models.Model):
 
                 line_container = {"records": container["records"].line_ids}
                 with container["records"].line_ids._sync_invoice(line_container):
-                    yield  # noqa: RUF075 - deliberate, same reason as sync_boundary: an exception here aborts the transaction, so the skipped refresh changes nothing that would otherwise persist
+                    yield
                     line_container["records"] = container["records"].line_ids
                 update_containers()

@@ -41,7 +41,6 @@ class PaymentTransaction(models.Model):
     def _is_inbound_request_authentic(self, headers, body) -> bool:
         if self.provider_code != "paypal":
             return super()._is_inbound_request_authentic(headers, body)
-        # See https://developer.paypal.com/docs/api/webhooks/v1/#verify-webhook-signature_post.
         data = {
             "transmission_id": headers.get("PAYPAL-TRANSMISSION-ID"),
             "transmission_time": headers.get("PAYPAL-TRANSMISSION-TIME"),
@@ -65,7 +64,6 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _normalize_paypal_data(self, data, from_webhook=False):
-        """One shape for the payment request's response and the webhook's resource."""
         purchase_unit = data["purchase_units"][0]
         result = {
             "payment_source": data["payment_source"].keys(),
@@ -86,20 +84,9 @@ class PaymentTransaction(models.Model):
             _logger.warning(self.env._("Invalid response format, can't normalize."))
         return result
 
-    # See https://developer.paypal.com/docs/api-basics/notifications/ipn/IPNandPDTVariables/
-    # this field has no use in Odoo except for debugging
     paypal_type = fields.Char(string="PayPal Transaction Type")
 
     def _prepare_provider_processing_values(self, processing_values):
-        """Override of `payment` to return the Paypal-specific processing values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the
-                                       transaction.
-        :return: The dict of provider-specific processing values
-        :rtype: dict
-        """
         if self.provider_code != "paypal":
             return super()._prepare_provider_processing_values(processing_values)
 
@@ -122,11 +109,6 @@ class PaymentTransaction(models.Model):
         return {"order_id": order_data["id"]}
 
     def _paypal_prepare_order_payload(self):
-        """Prepare the payload for the Paypal create order request.
-
-        :return: The requested payload to create a Paypal order.
-        :rtype: dict
-        """
         partner_first_name, partner_last_name = payment_utils.split_partner_name(
             self.partner_name
         )
@@ -142,7 +124,6 @@ class PaymentTransaction(models.Model):
             "SET_PROVIDED_ADDRESS" if shipping_address_vals else "NO_SHIPPING"
         )
 
-        # See https://developer.paypal.com/docs/api/orders/v2/#orders_create!ct=application/json
         payload = {
             "intent": "CAPTURE",
             "purchase_units": [
@@ -175,8 +156,6 @@ class PaymentTransaction(models.Model):
                 },
             },
         }
-        # PayPal does not accept None set to fields and to avoid users getting errors when email
-        # is not set on company we will add it conditionally since its not a required field.
         if company_email := self.provider_id.company_id.email:
             payload["purchase_units"][0]["payee"]["display_data"]["business_email"] = (
                 company_email
@@ -186,13 +165,11 @@ class PaymentTransaction(models.Model):
 
     @api.model
     def _extract_reference(self, provider_code, payment_data):
-        """Override of `payment` to extract the reference from the payment data."""
         if provider_code != "paypal":
             return super()._extract_reference(provider_code, payment_data)
         return payment_data.get("reference_id")
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of payment to extract the amount and currency from the payment data."""
         if self.provider_code != "paypal":
             return super()._extract_amount_data(payment_data)
 
@@ -205,7 +182,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "paypal":
             return super()._apply_updates(payment_data)
 
@@ -215,7 +191,6 @@ class PaymentTransaction(models.Model):
             )
             return None
 
-        # Update the provider reference.
         txn_id = payment_data.get("id")
         txn_type = payment_data.get("txn_type")
         if not all((txn_id, txn_type)):
@@ -230,13 +205,11 @@ class PaymentTransaction(models.Model):
         self.provider_reference = txn_id
         self.paypal_type = txn_type
 
-        # Force PayPal as the payment method if it exists.
         self.payment_method_id = (
             self.env["payment.method"].search([("code", "=", "paypal")], limit=1)
             or self.payment_method_id
         )
 
-        # Update the payment state.
         payment_status = payment_data.get("status")
 
         if payment_status in PAYMENT_STATUS_MAPPING["pending"]:

@@ -16,7 +16,7 @@ class WalletCard(models.Model):
         check_company=True,
         help="The asset that carries the card.",
     )
-    trace_id = fields.Many2one(  # noqa: E8529  One2many inverse of stock.lot.highway_tag_ids
+    trace_id = fields.Many2one(
         related="asset_id.trace_id",
         store=True,
     )
@@ -67,7 +67,6 @@ class WalletCard(models.Model):
     )
     def _compute_amount_balance(self) -> None:
         super()._compute_amount_balance()
-        # No snapshot yet: the asset's ledger is what the card has spent.
         unreported = self.filtered(lambda card: not card.date_balance)
         _debug.logic("balance_from_ledger", cards=self, unreported=len(unreported))
         spend = unreported._get_ledger_spend()

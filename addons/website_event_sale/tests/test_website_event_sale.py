@@ -156,7 +156,6 @@ class TestRegistrationSaleBranches(HttpCaseWithUserPortal, TestWebsiteEventSaleC
         self.assertEqual(order.state, "done")
 
     def test_registration_confirm_parses_the_form_once(self):
-        """The POST must be parsed once, not once by the parent and once here."""
         self.authenticate(None, None)
         calls = []
         original = WebsiteEventController._process_attendees_form
@@ -182,7 +181,6 @@ class TestRegistrationSaleBranches(HttpCaseWithUserPortal, TestWebsiteEventSaleC
         )
 
     def test_registration_confirm_keeps_the_parent_error_redirect(self):
-        """A POST the parent rejects still answers with the parent's redirect."""
         self.authenticate(None, None)
         res = self.url_open(
             f"/event/{self.event.id}/registration/confirm",

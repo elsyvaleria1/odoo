@@ -22,8 +22,6 @@ _SPEC_FIELDS = ("source_key", "has_metafile", "has_sourcemap", "members")
 
 
 def get_build_directory(url: str) -> str:
-    # /web/assets/esm/<unique>/<file> and /web/assets/lib/<unique>/<path>: the
-    # unique segment names the build that wrote the file
     return "/".join(url.split("/")[:5]) + "/"
 
 
@@ -82,9 +80,6 @@ class IrAssetBuild(models.Model):
 
     @api.model
     def _is_current(self, spec: dict[str, Any]) -> bool:
-        # the same rows published under another source key (a compiler bump,
-        # an input the key did not cover before) are not current: the index
-        # would keep missing the key every render now computes
         current = self.search_fetch(
             self._key_domain(spec["kind"], spec["bundle"], spec["variant"])
             & Domain("fingerprint", "=", get_build_fingerprint(spec["directories"]))
@@ -110,10 +105,6 @@ class IrAssetBuild(models.Model):
 
     @api.model
     def _publish(self, spec: dict[str, Any]) -> IrAssetBuild:
-        # another connection may publish this variant between our read and our
-        # write: on a READ COMMITTED cursor the retry sees its commit and settles
-        # against it; on a REPEATABLE READ one it cannot, and the build is left to
-        # the next render to publish -- its rows are saved either way
         for attempt in (1, 2):
             try:
                 with self.env.cr.savepoint():
@@ -143,10 +134,6 @@ class IrAssetBuild(models.Model):
             _debug.logic("asset_build.unchanged", bundle=spec["bundle"], id=same.id)
             return same
         if same and current and same != current:
-            # a worker still serving an older build reuses it: that keeps its
-            # rows alive, it does not make it current again. Re-currenting it
-            # superseded the fresher build, and two instances on different
-            # code flipped the current build back and forth
             same.write({"superseded_at": fields.Datetime.now(), **values})
             _debug.logic(
                 "asset_build.grace_extended", bundle=spec["bundle"], id=same.id
@@ -157,10 +144,6 @@ class IrAssetBuild(models.Model):
             replaced.write(
                 {"state": "superseded", "superseded_at": fields.Datetime.now()}
             )
-            # the partial unique index must see the old build superseded before
-            # the new one becomes current. No cache flush here: the superseded
-            # urls stay served through the grace, and _sweep's unlink of their
-            # rows flushes the assets caches when they actually go
             replaced.flush_recordset(["state", "superseded_at"])
         if same:
             same.write({"state": "current", "superseded_at": False, **values})
@@ -194,11 +177,6 @@ class IrAssetBuild(models.Model):
     def _find_reusable(
         self, kind: str, bundle: str, variant: str, source_key: str
     ) -> IrAssetBuild:
-        # a superseded build still inside its grace is as good as a current
-        # one: its rows are served, and reusing it re-currents it on publish.
-        # The source key is everything the compiler was given, so a build of
-        # another variant with the same key holds the bytes this variant would
-        # compile: a website with no assets of its own shares another's
         same_sources = (
             Domain("kind", "=", kind)
             & Domain("bundle", "=", bundle)

@@ -173,8 +173,6 @@ class MailMessage(models.Model):
 
     @api.depends("model", "res_id")
     def _compute_account_audit_log_company_id(self) -> None:
-        # a company's configuration tracks on its own chatter; its messages
-        # are the company's in the audit trail
         self._compute_audit_log_related_record_id(
             "res.company", "account_audit_log_company_id"
         )
@@ -228,9 +226,6 @@ class MailMessage(models.Model):
         if operator not in ("in", "not in"):
             return NotImplemented
 
-        # whether a trail is restricted is the ledger's fact, not the reader's:
-        # an author without accounting rights still edits a message no
-        # restricted trail holds
         return Domain("message_type", "=", "notification") & Domain.OR(
             [
                 ("model", "=", model),
@@ -295,8 +290,6 @@ class MailMessage(models.Model):
         if self.env.context.get("bypass_audit") is bypass_token:
             _debug.logic("audit_unlink_bypassed", records=self)
             return
-        # A move that is gone went first, with its chatter judged while it
-        # existed (_check_unlink_before_their_records).
         moves = self.account_audit_log_move_id
         gone = moves - moves.exists()
         for message in self:

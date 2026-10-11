@@ -1,5 +1,3 @@
-# The comparable basis every competitor price is kept and compared in: per
-# the product's reference unit, in the company's currency.
 
 
 def to_comparable(price, *, unit, product, currency, company, date):

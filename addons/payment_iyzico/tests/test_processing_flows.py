@@ -13,8 +13,6 @@ from odoo.addons.payment_iyzico.tests.common import IyzicoCommon
 class TestProcessingFlows(IyzicoCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_iyzico.controllers.main")
     def test_redirect_notification_triggers_processing(self):
-        """Test that receiving a valid redirect notification triggers the processing of the
-        payment data."""
         tx = self._create_transaction("redirect")
         url = self._build_url(
             f"{const.PAYMENT_RETURN_ROUTE}?{url_encode({'tx_ref': tx.reference})}"
@@ -33,8 +31,6 @@ class TestProcessingFlows(IyzicoCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_iyzico.controllers.main")
     def test_webhook_notification_triggers_processing(self):
-        """Test that receiving a valid webhook notification triggers the processing of the
-        payment data."""
         self._create_transaction("redirect")
         url = self._build_url(const.WEBHOOK_ROUTE)
         with (

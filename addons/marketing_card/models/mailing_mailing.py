@@ -60,17 +60,15 @@ class MailingMailing(models.Model):
 
     @api.depends("card_campaign_id")
     def _compute_card_requires_sync_count(self) -> None:
-        """Check if there's any missing or outdated card."""
         self.card_requires_sync_count = 0
-        # no point in updating sent mailings
         card_mailings = self.filtered(
             lambda mailing: mailing.card_campaign_id and mailing.state == "draft"
         )
         for mailing in card_mailings:
-            recipients = self.env[mailing.mailing_model_real].search(  # noqa: E8507 - one query per mailing, on the mailing's own model and domain
+            recipients = self.env[mailing.mailing_model_real].search(
                 self._parse_mailing_domain()
             )
-            out_of_date_count = self.env["card.card"].search_count(  # noqa: E8507 - one query per mailing, on the mailing's own model and domain
+            out_of_date_count = self.env["card.card"].search_count(
                 [
                     ("campaign_id", "=", mailing.card_campaign_id.id),
                     ("res_id", "in", recipients.ids),
@@ -80,7 +78,6 @@ class MailingMailing(models.Model):
             mailing.card_requires_sync_count = len(recipients) - out_of_date_count
 
     def action_put_in_queue(self) -> None:
-        """Detect mismatches before scheduling."""
         for mailing in self.filtered("card_campaign_id"):
             if mailing.card_requires_sync_count:
                 raise exceptions.UserError(
@@ -103,7 +100,6 @@ class MailingMailing(models.Model):
         return super().action_send_mail(res_ids)
 
     def action_update_cards(self) -> dict:
-        """Update the cards in batches, commiting after each batch."""
         for campaign in self.filtered(
             lambda mailing: mailing.state == "draft"
         ).card_campaign_id:
@@ -117,7 +113,6 @@ class MailingMailing(models.Model):
         }
 
     def _get_domain_recipients(self):
-        """Domain with an additional condition that the card must exist for the records."""
         domain = Domain(super()._get_domain_recipients())
         if self.card_campaign_id:
             res_ids = (

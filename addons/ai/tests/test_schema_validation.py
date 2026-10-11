@@ -34,14 +34,6 @@ class TestParamSchemaValidation(TransactionCase):
     def create_param(
         self, param_name="param", param_attributes=None, excluded_attributes=None
     ):
-        """Build a single-parameter schema, defaulting missing attributes to ``DUMMY_ATTRIBUTES``.
-
-        :param str param_name: name of the parameter to build
-        :param dict param_attributes: attributes overriding the dummy defaults
-        :param list excluded_attributes: attributes to drop from the result
-        :return: the parameter name mapped to its schema
-        :rtype: dict
-        """
         if param_attributes is None:
             param_attributes = {}
         if excluded_attributes is None:
@@ -84,12 +76,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def check_schema(self, schema, error_type=ValueError, error_message=""):
-        """Validate `schema` as the properties of a tool schema, all of them required.
-
-        :param dict schema: parameter definitions to validate
-        :param error_type: exception expected when `error_message` is given
-        :param str error_message: expected error; when empty, validation must pass
-        """
         full_schema = {
             "type": "object",
             "properties": schema,
@@ -149,7 +135,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_missing_required_attribute(self):
-        # type attribute is missing
         schema = self.create_param(excluded_attributes=["type"])
         self.check_schema(
             schema=schema,
@@ -183,7 +168,6 @@ class TestParamSchemaValidation(TransactionCase):
         self.check_schema(schema=schema)
 
     def test_array_parameter_without_item_types(self):
-        # items attribute is missing.
         schema = self.create_array_param(excluded_attributes={"items"})
         self.check_schema(
             schema=schema,
@@ -191,7 +175,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_array_parameter_incorrect_item_types_definition_1(self):
-        # items attribute must be a dict
         schema = self.create_array_param(
             param_attributes={"items": ["number", "string"]}
         )
@@ -200,7 +183,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_array_parameter_incorrect_item_types_definition_2(self):
-        # The dict can only have one key, either type or anyOf
         schema = self.create_array_param(
             param_attributes={
                 "items": {"anyOf": [{"type": "string"}], "type": "string"}
@@ -211,7 +193,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_array_parameter_incorrect_item_types_definition_3(self):
-        # The value of anyOf must be a list
         schema = self.create_array_param(
             param_attributes={"items": {"anyOf": {"type": "string"}}}
         )
@@ -220,14 +201,12 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_array_parameter_incorrect_item_types_definition_4(self):
-        # No keys other than type or anyOf are allowed
         schema = self.create_array_param(param_attributes={"items": {"item": "string"}})
         self.check_schema(
             schema=schema, error_message=self.wrong_array_item_type_error_message
         )
 
     def test_array_parameter_incorrect_item_types_definition_5(self):
-        # The values inside the list of anyOf must be dicts
         schema = self.create_array_param(
             param_attributes={"items": {"anyOf": ["string"]}}
         )
@@ -236,7 +215,6 @@ class TestParamSchemaValidation(TransactionCase):
         )
 
     def test_array_parameter_incorrect_item_types_definition_6(self):
-        # The types of array items can be one of ['string', 'number', 'boolean']
         schema = self.create_array_param(
             param_attributes={
                 "items": {"anyOf": [{"type": "string"}, {"type": "array"}]}

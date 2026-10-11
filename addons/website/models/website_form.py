@@ -169,7 +169,7 @@ class IrModel(models.Model):
                                         Domain(property_definition["domain"])
                                     )
                                 except ValueError, TypeError:
-                                    continue  # a malformed property domain is skipped, not fatal
+                                    continue
                             fields_get[property_definition.get("name")] = (
                                 property_definition
                             )
@@ -211,7 +211,7 @@ class IrModelFields(models.Model):
                 for model in set(self.mapped("model"))
             )
             records = (
-                self.env[model_name].with_context(active_test=False).search(domain)  # noqa: E8507  one query per (model, html field) pair, over every field at once
+                self.env[model_name].with_context(active_test=False).search(domain)
             )
             for record in records:
                 content = record[field_name]

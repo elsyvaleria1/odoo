@@ -17,11 +17,6 @@ class SignRequestItem(models.Model):
     )
 
     def _get_fields_sudo_access(self) -> list:
-        """Returns a list of fields that require `sudo` access.
-
-        :return: A list of strings, where each string is the name of a field that requires `sudo` access
-        :rtype: list
-        """
         return [
             "sign_link",
             "document_link",
@@ -31,9 +26,6 @@ class SignRequestItem(models.Model):
 
     @api.constrains("partner_id")
     def _check_partner_id(self) -> None:
-        """
-        Checks if the partner of a `sign.request.item` has a valid phone number, which is necessary for sending messages via WhatsApp.
-        """
         for sri in self:
             if (
                 sri.sign_request_id.send_channel == "whatsapp"
@@ -49,11 +41,6 @@ class SignRequestItem(models.Model):
 
     @api.depends("sign_request_id.access_token")
     def _compute_attachments_download_link(self) -> None:
-        """Computes the download link for sign request attachments.
-
-        If no attachment download link is available, the field will be set to "-",
-        which will be concatenated as a hyphen in the WhatsApp message.
-        """
         for sri in self:
             if (
                 sri.sign_request_id.attachment_ids
@@ -72,18 +59,12 @@ class SignRequestItem(models.Model):
 
     @api.depends("access_token", "sign_request_id.access_token")
     def _compute_document_link(self) -> None:
-        """
-        Generates a URL for viewing the signature document(s) associated with the sign request.
-        """
         for sri in self:
             access_token = sri.access_token or sri.sign_request_id.access_token
             sub_route = "sign/document/%s/%s" % (sri.sign_request_id.id, access_token)
             sri.document_link = f"{sri.sign_request_id.get_base_url()}/{sub_route}"
 
     def _check_whatsapp_template_exists(self, check_if_approved=False) -> bool:
-        """
-        Checks if all required WhatsApp templates are configured.
-        """
         ICP_sudo = self.env["ir.config_parameter"].sudo()
         whatsapp_template_ids = [
             ICP_sudo.get_param("whatsapp_sign.whatsapp_template_id"),
@@ -122,13 +103,6 @@ class SignRequestItem(models.Model):
         }
 
     def _send_signature_access_message(self):
-        """Sends a message to the signer(s) to grant them access to a document.
-        This method first checks if the preferred communication channel is WhatsApp and if a valid template exists.
-        If not, it defaults to using the parent method to send an email.
-        For each `sign.request.item` in the current recordset, it generates a unique signing link, writes it to the item's `sign_link` field, and then creates and sends a WhatsApp message using the pre-configured template.
-
-        :return: The result of the parent method if the message is sent via email, otherwise None
-        """
         is_whatsapp = self.sign_request_id.send_channel == "whatsapp"
         misconfiguration = is_whatsapp and not self._check_whatsapp_template_exists()
         if misconfiguration:
@@ -141,10 +115,9 @@ class SignRequestItem(models.Model):
         )
         whatsapp_template = self.env["whatsapp.template"].browse(int(template_id))
         for sign_request_item in self:
-            # The sign link is calculated and assigned here to ensure the expiration time reflects the exact moment the sign request was sent
             sign_link, _ = self._get_sign_and_cancel_links(sign_request_item)
             sign_request_item.sudo().sign_link = (
-                sign_link  # sudo write to avoid ACL restrictions on sign_link
+                sign_link
             )
             whatsapp_composer = (
                 self.env["wizard.whatsapp.message.send"]

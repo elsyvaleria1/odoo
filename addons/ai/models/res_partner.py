@@ -13,9 +13,6 @@ class ResPartner(models.Model):
         agent_partners = self.with_context(active_test=False).filtered(
             lambda record: record.agent_ids
         )
-        # `offline_since` is computed by this same method, so agent partners --
-        # excluded from super() below -- must be assigned here too, or reading
-        # it raises "Compute method failed to assign".
         agent_partners.im_status = "agent"
         agent_partners.offline_since = False
         super(ResPartner, self - agent_partners)._compute_presence()

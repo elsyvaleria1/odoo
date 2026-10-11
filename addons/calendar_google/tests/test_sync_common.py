@@ -39,9 +39,6 @@ class TestSyncGoogle(HttpCase):
         self.attendee_user = mail_new_test_user(self.env, login="attendee_user")
 
     def apply_google(self, model_name, gevents, user=None, default_reminders=()):
-        """What a synchronization reads of `gevents`, applied as `user` (the
-        current user) receives them; the records of `model_name` it changed,
-        or all of them without one."""
         user = (user or self.env.user)._calendar_sync_as_owner()
         account = user._calendar_sync_account("google")._as_engine()
         changes = self.env["calendar.sync.adapter.google"]._changes(
@@ -58,22 +55,11 @@ class TestSyncGoogle(HttpCase):
 
     @contextmanager
     def mock_datetime_and_now(self, mock_dt):
-        """
-        Used when synchronization date (using env.cr.now()) is important
-        in addition to standard datetime mocks. Used mainly to detect sync
-        issues.
-        """
-        # cr.now() is contractually a datetime; coerce a string so consumers
-        # doing datetime arithmetic on it (e.g. ir.cron._now) don't break.
         now_dt = (
             fields.Datetime.to_datetime(mock_dt)
             if isinstance(mock_dt, str)
             else mock_dt
         )
-        # cr.now() is naive UTC in production; normalize a tz-aware freeze
-        # point so it (and freeze_time) stay on that convention, else
-        # naive/aware comparisons (e.g. ir.cron._now) crash. Mirrors mail
-        # freeze_all_time.
         if now_dt.tzinfo is not None:
             now_dt = now_dt.astimezone(UTC).replace(tzinfo=None)
         with freeze_time(now_dt), patch.object(self.env.cr, "now", lambda: now_dt):
@@ -81,9 +67,6 @@ class TestSyncGoogle(HttpCase):
 
     @contextmanager
     def mock_google_sync(self):
-        """Record what is sent to Google instead of sending it: (values, the
-        timeout when it is not the default) per insert, per patch by id, and
-        the deleted ids."""
         self._gsync_deleted_ids = []
         self._gsync_insert_values = []
         self._gsync_patch_values = defaultdict(list)
@@ -115,7 +98,6 @@ class TestSyncGoogle(HttpCase):
             yield
 
     def push_google(self):
-        """What a commit does next: flush, then send what waits for it."""
         self.env.flush_all()
         funcs = self.env.cr.postcommit._funcs
         while funcs:
@@ -123,8 +105,6 @@ class TestSyncGoogle(HttpCase):
         self.env.invalidate_all()
 
     def send_google(self, records):
-        """What a run sends of `records`, each through the account Google takes
-        its changes from; a linked record is sent whatever its state."""
         self.set_google_pending(records)
         Account = self.env["calendar.sync.account"]
         running = (
@@ -146,11 +126,9 @@ class TestSyncGoogle(HttpCase):
         self.env.invalidate_all()
 
     def google_id(self, record):
-        """`record`'s id in Google; its links must agree on one."""
         return record._google_id()
 
     def find_google(self, model, value, operator="="):
-        """The records of `model` Google holds under ids matching `value`."""
         field = self.env["calendar.sync.link"]._field_of(model)
         links = (
             self.env["calendar.sync.link"]
@@ -166,9 +144,6 @@ class TestSyncGoogle(HttpCase):
         return model.search([("id", "in", links[field].ids)])
 
     def link_google(self, records, google_ids, user=None):
-        """Link `records` to `google_ids`, one for all or one per record (a
-        falsy one unlinks), in `user`'s calendar, the current user's by
-        default; `records`."""
         if not isinstance(google_ids, list):
             google_ids = [google_ids] * len(records)
         account = self.env["calendar.sync.account"]._for(
@@ -183,8 +158,6 @@ class TestSyncGoogle(HttpCase):
         return records
 
     def google_pending(self, record):
-        """Whether Google has yet to hear of `record`: a link of it waits to be
-        sent, or it has none and is active."""
         links = self.env["calendar.sync.link"]._of(record, "google")
         return bool(links.filtered("pending")) or (not links and record.active)
 

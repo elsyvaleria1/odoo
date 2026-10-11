@@ -6,8 +6,6 @@ class ProjectTask(models.Model):
     _name = "project.task"
     _inherit = "project.task"
 
-    # Shown in the map view's pin list, where the assignee column has no room
-    # for a many2many widget.
     user_names = fields.Char(
         export_string_translation=False,
         compute="_compute_user_names",
@@ -27,10 +25,6 @@ class ProjectTask(models.Model):
                 for view_id, view_type in action["views"]
                 if view_type != "map"
             ]
-            # Behind gantt, never in front of it: a conflict is a question about
-            # time, and the map is the second opinion. Placed relative to gantt
-            # rather than at the front so the result does not depend on which of
-            # the two bridges sits lower in the MRO -- both orders converge here.
             after_gantt = next(
                 (i for i, (_id, kind) in enumerate(views) if kind == "gantt"), -1
             )

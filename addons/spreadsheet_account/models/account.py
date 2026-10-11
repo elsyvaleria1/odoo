@@ -72,7 +72,6 @@ class AccountAccount(models.Model):
         )
         period_domain = balance_domain | pnl_domain
 
-        # Determine account domain based on tags or codes
         if "account_tag_ids" in formula_params:
             tag_ids = [int(tag_id) for tag_id in formula_params["account_tag_ids"]]
             _debug.logic(
@@ -97,7 +96,6 @@ class AccountAccount(models.Model):
                     "account_type", "in", ["liability_payable", "asset_receivable"]
                 )
 
-            # It is more optimized to (like) search for code directly in account.account than in account_move_line
             code_domain = Domain.OR(
                 Domain("code", "=like", f"{code}%") for code in codes
             )
@@ -163,25 +161,12 @@ class AccountAccount(models.Model):
     @api.model
     @_debug.perf.timed
     def spreadsheet_fetch_debit_credit(self, args_list):
-        """Fetch data for ODOO.CREDIT, ODOO.DEBIT and ODOO.BALANCE formulas
-        The input list looks like this::
-
-            [{
-                date_range: {
-                    range_type: "year"
-                    year: int
-                },
-                company_id: int
-                codes: str[]
-                include_unposted: bool
-            }]
-        """
         results = []
         for args in args_list:
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(debit, credit)] = MoveLines._read_group(  # noqa: E8507 - one aggregate per spreadsheet formula call
+            [(debit, credit)] = MoveLines._read_group(
                 domain, aggregates=["debit:sum", "credit:sum"]
             )
             results.append({"debit": debit or 0, "credit": credit or 0})
@@ -193,25 +178,12 @@ class AccountAccount(models.Model):
     @api.model
     @_debug.perf.timed
     def spreadsheet_fetch_residual_amount(self, args_list):
-        """Fetch data for ODOO.RESUDUAL formulas
-        The input list looks like this::
-
-            [{
-                date_range: {
-                    range_type: "year"
-                    year: int
-                },
-                company_id: int
-                codes: str[]
-                include_unposted: bool
-            }]
-        """
         results = []
         for args in args_list:
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args, default_accounts=True)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(amount_residual,)] = MoveLines._read_group(  # noqa: E8507 - one aggregate per spreadsheet formula call
+            [(amount_residual,)] = MoveLines._read_group(
                 domain, aggregates=["amount_residual:sum"]
             )
             results.append({"amount_residual": amount_residual or 0})
@@ -222,20 +194,6 @@ class AccountAccount(models.Model):
     @api.model
     @_debug.perf.timed
     def spreadsheet_fetch_partner_balance(self, args_list):
-        """Fetch data for ODOO.PARTNER.BALANCE formulas
-        The input list looks like this::
-
-            [{
-                date_range: {
-                    range_type: "year"
-                    year: int
-                },
-                company_id: int
-                codes: str[]
-                include_unposted: bool
-                partner_ids: int[]
-            }]
-        """
         results = []
         for args in args_list:
             partner_ids = [
@@ -248,7 +206,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args, default_accounts=True)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])  # noqa: E8507 - one aggregate per spreadsheet formula call
+            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])
             results.append({"balance": balance or 0})
 
         _debug.pipeline(
@@ -276,19 +234,6 @@ class AccountAccount(models.Model):
     @api.model
     @_debug.perf.timed
     def spreadsheet_fetch_balance_tag(self, args_list):
-        """Fetch data for ODOO.BALANCE.TAG formulas
-        The input list looks like this::
-
-            [{
-                account_tag_ids: str[]
-                date_range: {
-                    range_type: "year"
-                    year: int
-                },
-                company_id: int
-                include_unposted: bool
-            }]
-        """
         results = []
         for args in args_list:
             account_tag_ids = [
@@ -301,7 +246,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])  # noqa: E8507 - one aggregate per spreadsheet formula call
+            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])
             results.append({"balance": balance or 0.0})
 
         _debug.pipeline(

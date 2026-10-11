@@ -1,5 +1,3 @@
-# Mapping of account's country codes to corresponding currency codes.
-# Only 5 countries are supported and for each country the matching currency is required.
 CURRENCY_MAPPING = {
     "AE": "AED",
     "EG": "EGP",
@@ -8,7 +6,6 @@ CURRENCY_MAPPING = {
     "SA": "SAR",
 }
 
-# Mapping of account's country codes to API URL prefixes.
 API_MAPPING = {
     "AE": "uae",
     "EG": "accept",
@@ -17,7 +14,6 @@ API_MAPPING = {
     "SA": "ksa",
 }
 
-# Mapping of Paymob's gateway types to Odoo payment method codes.
 PAYMENT_METHODS_MAPPING = {
     "VPC": "card",
     "MIGS": "card",
@@ -39,13 +35,10 @@ PAYMENT_METHODS_MAPPING = {
     "JAZZCASH": "jazzcash",
 }
 
-# The codes of the payment methods to activate when Paymob is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
 }
 
-# The fields to read from the response and order alphabetically to compute the signature.
 SIGNATURE_FIELDS = [
     "amount_cents",
     "created_at",

@@ -22,7 +22,6 @@ class TestAvatarCardTour(MailCommon, HttpCase):
             groups="hr.group_hr_user",
         )
 
-        # hr setup for multi-company
         department = (
             cls.env["hr.department"]
             .with_company(cls.company_2)
@@ -75,7 +74,6 @@ class TestAvatarCardTour(MailCommon, HttpCase):
             ],
         )
 
-        # hr_holidays setup for multi-company
         leave_type = (
             cls.env["hr.leave.type"]
             .with_company(cls.company_2)
@@ -135,7 +133,6 @@ class TestAvatarCardTour(MailCommon, HttpCase):
 
     @users("admin", "hr_user")
     def test_avatar_card_tour_multi_company(self):
-        # Clear existing activities to avoid interference with the test
         self.env["mail.activity"].with_user(self.env.user).search([]).unlink()
         self._setup_channel(self.env.user)
         self.start_tour(

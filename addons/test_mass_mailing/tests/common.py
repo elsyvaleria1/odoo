@@ -17,8 +17,6 @@ class TestMassMailCommon(MassSMSCommon):
             }
         )
 
-        # enforce last update by user_marketing to match _process_mass_mailing_queue
-        # taking last writer as user running a batch
         cls.mailing_bl = (
             cls.env["mailing.mailing"]
             .with_user(cls.user_marketing)
@@ -26,7 +24,6 @@ class TestMassMailCommon(MassSMSCommon):
                 {
                     "name": "SourceName",
                     "subject": "MailingSubject",
-                    # `+ ""` is for insuring that _prepend_preview rule out that case
                     "preview": 'Hi {{ object.name + "" }} :)',
                     "body_html": """<div><p>Hello <t t-out="object.name"/></p>,
 <t t-set="url" t-value="'www.odoo.com'"/>
@@ -69,14 +66,12 @@ class TestMassMailCommon(MassSMSCommon):
 
     @classmethod
     def _create_test_blacklist_records(cls, model="mailing.test.blacklist", count=1):
-        """Deprecated, remove in 14.4"""
         return cls.__create_mailing_test_records(model=model, count=count)
 
     @classmethod
     def _create_mailing_sms_test_records(
         cls, model="mail.test.sms", partners=None, count=1
     ):
-        """Helper to create data. Currently simple, to be improved."""
         Model = cls.env[model]
         phone_field = "phone_nbr_ids" if "phone_nbr_ids" in Model else "phone_ids"
         partner_field = "customer_id" if "customer_id" in Model else "partner_id"
@@ -100,7 +95,6 @@ class TestMassMailCommon(MassSMSCommon):
     def _create_mailing_test_records(
         cls, model="mailing.test.blacklist", partners=None, count=1
     ):
-        """Helper to create data. Currently simple, to be improved."""
         Model = cls.env[model]
         email_field = "email" if "email" in Model else "email_from"
         partner_field = "customer_id" if "customer_id" in Model else "partner_id"
@@ -188,7 +182,6 @@ class TestMassSMSCommon(TestMassMailCommon):
 
     @classmethod
     def _get_sms_test_records(cls, mobile_numbers):
-        """Helper to create data. Currently simple, to be improved."""
         country_be_id = cls.env.ref("base.be").id
         partners = (
             cls.env["res.partner"]

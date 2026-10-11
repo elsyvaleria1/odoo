@@ -24,9 +24,6 @@ class IntegrationGithubPull(models.Model):
                 pull._attach_run(run)
 
     def _runs_of_branches(self) -> dict[tuple[str, str], models.BaseModel]:
-        """The latest run that pushed each unlinked pull request's branch, by
-        repository whatever its case. A pull request from a fork is no run's,
-        whatever its branch is called."""
         unlinked = self.filtered(
             lambda pull: (
                 not pull.agent_run_id and pull.head_ref and pull._from_its_repository()
@@ -52,5 +49,4 @@ class IntegrationGithubPull(models.Model):
         self._run_attached(run)
 
     def _run_attached(self, run: models.BaseModel) -> None:
-        """The run that pushed this pull request's branch is known now. A hook
-        for the modules that hand out runs."""
+        pass

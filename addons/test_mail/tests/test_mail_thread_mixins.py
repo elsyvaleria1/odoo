@@ -56,14 +56,12 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
         )
 
     def test_resource_rotting(self):
-        # create dates for the test
         jan1 = datetime(2025, 1, 1)
         jan5 = datetime(2025, 1, 5)
         jan7 = datetime(2025, 1, 7)
         jan12 = datetime(2025, 1, 12)
         jan28 = datetime(2025, 1, 28)
 
-        # create resources for the test, created on jan 1
         with self.mock_datetime_and_now(jan1):
             items = [item1, item2, item3, item_done, item_won] = self.env[
                 "mail.test.rotting.resource"
@@ -94,10 +92,9 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             )
             items.flush_recordset(
                 ["date_last_stage_update"]
-            )  # precalculate stage update()
+            )
 
         with self.mock_datetime_and_now(jan5):
-            # need to invalidate on date change to ensure rotting computations
             items.invalidate_recordset(["is_rotting"])
             for item in [item1, item3]:
                 self.assertTrue(
@@ -185,7 +182,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
 
         with self.mock_datetime_and_now(jan28):
             items.invalidate_recordset(["rotting_days", "is_rotting"])
-            # After a significant amount of time has passed:
             self.assertTrue(
                 item1.is_rotting,
                 "Items that are not done or won are rotting",
@@ -197,13 +193,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
                 )
 
     def test_resource_rotting_window_applies_to_compute_and_search(self):
-        """Search and compute must agree on the rotting window.
-
-        Regression: `_search_is_rotting` excluded records untouched for longer
-        than `_get_rotting_window_months`, `_compute_rotting` did not, so a record
-        idle for thirteen months showed the rotting badge while every "Rotting"
-        filter left it out.
-        """
         Resource = self.env["mail.test.rotting.resource"]
         record = Resource.create({"name": "forgotten", "stage_id": self.stage_new.id})
         record.flush_recordset(["date_last_stage_update"])
@@ -229,13 +218,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             self.assertIn(record, Resource.search([("is_rotting", "=", False)]))
 
     def test_resource_rotting_negative_threshold_never_rots(self):
-        """A negative ``rotting_threshold_days`` disables rotting, like 0 does.
-
-        Regression: the domain excluded ``!= 0`` only, so a negative threshold
-        put ``last_update + threshold`` in the past and every record in the
-        stage read as rotting from the instant it was created -- including
-        unsaved ones, where ``rotting_days`` then divided a ``False`` date.
-        """
         stage = self.env["mail.test.rotting.stage"].create(
             {"name": "negative", "rotting_threshold_days": -1}
         )
@@ -257,13 +239,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
         self.assertFalse(unsaved.is_rotting, "an unsaved record cannot be rotting")
 
     def test_resource_rotting_search_matches_compute_without_last_update(self):
-        """Search and compute must agree when the last-update date is unset.
-
-        Regression: ``_compute_rotting`` falls back to ``create_date`` when the
-        tracked last-update field is NULL, but the search compared the bare
-        column, so such records showed the rotting badge and were missing from
-        every "Rotting" filter.
-        """
         record = self.env["mail.test.rotting.resource"].create(
             {"name": "no last update", "stage_id": self.stage_new.id}
         )
@@ -292,14 +267,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             )
 
     def test_resource_rotting_search_unsupported_model_names_the_cause(self):
-        """A model without the feature must say so, not blame the operator.
-
-        Regression: the operator guard ran first and raised ``ValueError``,
-        which the domain optimiser does not catch. It retried the condition as
-        ``('is_rotting', '=', True)``, hit that same guard, and surfaced 'use
-        "=" operators' to a caller who had written exactly that -- the
-        configuration ``UserError`` was unreachable.
-        """
         model = self.env["mail.test.track.duration.mixin"]
         self.assertFalse(model._is_rotting_feature_enabled())
         with self.assertRaisesRegex(
@@ -308,12 +275,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             model.search([("is_rotting", "=", True)])
 
     def test_resource_rotting_search_survives_an_unconditional_domain(self):
-        """``_get_domain_rotting_records`` may be widened to match everything.
-
-        Regression: the search interpolated ``Query.where_clause`` into a
-        hand-written statement, so a domain that produced no WHERE terms left a
-        dangling ``AND`` and PostgreSQL rejected the whole query.
-        """
         model = self.env["mail.test.rotting.resource"]
         with patch.object(
             type(model), "_get_domain_rotting_records", lambda records: Domain.TRUE
@@ -321,13 +282,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             model.search([("is_rotting", "=", True)])
 
     def test_resource_rotting_search_agrees_with_compute(self):
-        """Inside the window, the search must return exactly what rots.
-
-        The two implementations are independent -- one in Python over the
-        recordset, one in SQL -- and every rotting defect found so far was a
-        disagreement between them rather than an error in either alone. This
-        sweeps a grid of ages against every stage and pins them together.
-        """
         model = self.env["mail.test.rotting.resource"]
         stages = self.stage_new + self.stage_qualification + self.stage_finished
         base = datetime(2025, 6, 1)
@@ -370,31 +324,18 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             )
 
     def test_resource_rotting_search_max_months_window(self):
-        """``_search_is_rotting`` must honor the configured max-months window.
-
-        Regression: the ``INTERVAL '%(max_rotting_months)s months'`` placeholder
-        sat inside a SQL string literal, so under psycopg3's server-side binding
-        the bound value was ignored and the window silently collapsed to the
-        placeholder's positional ordinal (~2 months) -- hiding the *most* rotten
-        records (those last touched long ago) from every 'Rotting' filter while
-        the kanban badge still showed them rotting.
-        """
         base = datetime(2025, 1, 1)
         with self.mock_datetime_and_now(base):
             rec = self.env["mail.test.rotting.resource"].create(
                 {
                     "name": "old_rotting",
-                    "stage_id": self.stage_new.id,  # rotting_threshold_days = 3
+                    "stage_id": self.stage_new.id,
                 }
             )
             rec.flush_recordset(["date_last_stage_update"])
 
-        # Configure an explicit, non-default window so the test proves the *value*
-        # is bound (the old bug ignored it entirely, whatever it was set to).
         self.env["ir.config_parameter"].sudo().set_param("crm.lead.rot.max.months", 6)
 
-        # 4 months later: last stage move was 4 months ago (>> 3d threshold) so the
-        # record is rotting, and 4 < 6 => it must be returned by the search.
         with self.mock_datetime_and_now(base + relativedelta(months=4)):
             rec.invalidate_recordset(["is_rotting"])
             self.assertTrue(rec.is_rotting)
@@ -407,8 +348,6 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
                 "a 4-month-old rotting record is inside the 6-month window and must be found",
             )
 
-        # 8 months later: 8 > 6 => outside the window, for the compute as for
-        # the search (confirms the cutoff is a real, honored bound, not a no-op).
         with self.mock_datetime_and_now(base + relativedelta(months=8)):
             rec.invalidate_recordset(["is_rotting"])
             self.assertFalse(
@@ -425,20 +364,13 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
             )
 
     def test_resource_rotting_search_window_param_is_mail_owned(self):
-        """The window is configured under a mail key, with the crm one honored.
-
-        ``mixin.mail.tracking.duration`` is generic -- project, helpdesk,
-        hr_recruitment and crm all inherit it -- so its window must not be
-        spelled ``crm.lead.rot.max.months``. The legacy key keeps working so
-        databases that already tuned it are not silently reset to the default.
-        """
         icp = self.env["ir.config_parameter"].sudo()
         base = datetime(2025, 1, 1)
         with self.mock_datetime_and_now(base):
             rec = self.env["mail.test.rotting.resource"].create(
                 {
                     "name": "window_param",
-                    "stage_id": self.stage_new.id,  # rotting_threshold_days = 3
+                    "stage_id": self.stage_new.id,
                 }
             )
             rec.flush_recordset(["date_last_stage_update"])
@@ -448,23 +380,19 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
                 [("is_rotting", "=", True)]
             )
 
-        # 4 months on, the record is rotting by compute in every case below.
         with self.mock_datetime_and_now(base + relativedelta(months=4)):
             rec.invalidate_recordset(["is_rotting"])
             self.assertTrue(rec.is_rotting)
 
-            # legacy key alone still drives the window (backward compatibility)
             icp.set_param("crm.lead.rot.max.months", 2)
             self.assertFalse(rotting_found(), "legacy crm key must still be honored")
 
-            # the mail-owned key takes precedence over the legacy one
             icp.set_param("mail.rotting.max.months", 6)
             self.assertTrue(
                 rotting_found(),
                 "mail.rotting.max.months must win over crm.lead.rot.max.months",
             )
 
-            # and it is a real bound in its own right, not just an override
             icp.set_param("mail.rotting.max.months", 2)
             self.assertFalse(rotting_found())
 
@@ -473,11 +401,8 @@ class TestMailThreadRottingMixin(MailTrackingDurationMixinCase):
 class TestMailThread(MailCommon, TestRecipients):
     @mute_logger("odoo.models.unlink")
     def test_blacklist_mixin_email_normalized(self):
-        """Test email_normalized and is_blacklisted fields behavior, notably
-        when dealing with encapsulated email fields and multi-email input."""
         base_email = "test.email@test.example.com"
 
-        # test data: source email, expected email normalized
         valid_pairs = [
             (base_email, base_email),
             (tools.formataddr(("Another Name", base_email)), base_email),
@@ -490,11 +415,11 @@ class TestMailThread(MailCommon, TestRecipients):
             (
                 f"{base_email}, other.email@test.example.com",
                 base_email,
-            ),  # multi supports first found
+            ),
             (
                 f"{tools.formataddr(('Another Name', base_email))}, other.email@test.example.com",
                 base_email,
-            ),  # multi supports first found
+            ),
         ]
         for email_from, exp_email_normalized in valid_pairs + void_pairs + multi_pairs:
             with self.subTest(
@@ -509,13 +434,11 @@ class TestMailThread(MailCommon, TestRecipients):
                 self.assertEqual(new_record.email_normalized, exp_email_normalized)
                 self.assertFalse(new_record.is_blacklisted)
 
-                # blacklist email should fail as void
                 if email_from in [pair[0] for pair in void_pairs] or email_from in [
                     pair[0] for pair in multi_pairs
                 ]:
                     with self.assertRaises(exceptions.UserError):
                         bl_record = self.env["mail.blacklist"]._add(email_from)
-                # blacklist email ok
                 else:
                     bl_record = self.env["mail.blacklist"]._add(email_from)
                     self.assertEqual(bl_record.email, exp_email_normalized)
@@ -530,8 +453,6 @@ class TestMailThreadCC(MailCommon):
     @users("employee")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_suggested_recipients_mail_cc(self):
-        """MailThreadCC mixin adds its own suggested recipients management
-        coming from CC (carbon copy) management."""
         record = self.env["mail.test.cc"].create(
             {
                 "email_cc": "cc1@example.com, cc2@example.com, cc3 <cc3@example.com>",

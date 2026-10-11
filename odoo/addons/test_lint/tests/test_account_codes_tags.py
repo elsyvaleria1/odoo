@@ -21,8 +21,6 @@ XML_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 
 @functools.cache
 def report_engines():
-    # loaded by path: importing the package would import every account model
-    # into a process that installs only base
     manifest = Manifest.for_addon("account", display_warning=False)
     spec = importlib.util.spec_from_file_location(
         "_test_lint_account_report_engines",
@@ -108,8 +106,6 @@ def shipped_data() -> ShippedData:
 
 
 def raw_tag_references() -> int:
-    # counted on the bare text, apart from the parser, so a scanner that stops
-    # reaching the formulas cannot also lower the figure it is checked against
     total = 0
     for path in lint_case.iter_module_files("*.xml"):
         try:

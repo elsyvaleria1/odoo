@@ -113,12 +113,6 @@ class TestPerfSessionInfo(common.HttpCase):
         return parent
 
     def test_visible_menu_ids(self):
-        # the cold cost is one fetch per action kind plus the access decision
-        # per target model, so its absolute value is the installed set's; what
-        # this method owns is that it does not grow with menus or actions.
-        # The baseline already holds one probe window under a reachable root,
-        # so the growth step adds no action kind and no target model.
-        # The first cold call also settles state clear_all_caches leaves alone.
         parent = self._add_menus_over_visible_action_kinds(1)
         self._cold_visible_menu_statements()
         baseline = self._cold_visible_menu_statements()

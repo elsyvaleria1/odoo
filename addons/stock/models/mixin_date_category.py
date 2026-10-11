@@ -65,7 +65,7 @@ class MixinDateCategory(models.AbstractModel):
     @api.model
     def _selection_date_category(self) -> list:
         return [
-            (key, self.env._(label))  # noqa: E8502  resolves an _lt() table entry in this env's language
+            (key, self.env._(label))
             for key, _upper, label, _kind in self.DATE_CATEGORIES
         ]
 

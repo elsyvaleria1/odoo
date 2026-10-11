@@ -21,9 +21,6 @@ UPC_EAN_CONVERSIONS = [
     ("always", "Always"),
 ]
 
-# EPC URI schemes: what each decodes to, and the one URI type it is written
-# under -- `urn:epc:<type>:<scheme>`. A `tag` encoding prefixes the data with
-# a filter value.
 URI_SCHEMES = {
     "lgtin": ("gtin", "class"),
     "sgtin": ("gtin", "id"),
@@ -32,17 +29,11 @@ URI_SCHEMES = {
     "sscc": ("sscc", "id"),
     "sscc-96": ("sscc", "tag"),
 }
-# The company prefix and the reference that follows it together fill every
-# digit of a GTIN-14 or an SSCC but the check digit.
 URI_DATA_FIELDS = {"gtin": 3, "sscc": 2}
 URI_KEY_DIGITS = {"gtin": 13, "sscc": 17}
 
 _ASCII_DIGITS = re.compile(r"\A[0-9]+\Z")
 
-# `_match_pattern` runs a user-authored regex on every scan. Patterns are
-# validated against catastrophic backtracking on write (`barcode.rule.
-# _check_pattern`), but the subject is capped as well so that a pattern which
-# slips through cannot turn one scan into unbounded CPU.
 MAX_BARCODE_LENGTH = 256
 
 
@@ -70,33 +61,13 @@ class BarcodeNomenclature(models.Model):
     )
 
     def _normalize_ean(self, ean):
-        """Returns a valid zero padded EAN-13 from an EAN prefix.
-
-        :type ean: str
-        """
         ean = ean[0:13].zfill(13)
         return ean[0:-1] + str(get_barcode_check_digit(ean))
 
     def _normalize_upc(self, upc):
-        """Returns a valid zero padded UPC-A from a UPC-A prefix.
-
-        :type upc: str
-        """
         return self._normalize_ean("0" + upc)[1:]
 
     def _match_pattern(self, barcode, pattern):
-        """Checks barcode matches the pattern and retrieves the optional numeric value in barcode.
-
-        :param barcode:
-        :type barcode: str
-        :param pattern:
-        :type pattern: str
-        :return: an object containing:
-            - value: the numerical value encoded in the barcode (0 if no value encoded)
-            - base_code: the barcode in which numerical content is replaced by 0's
-            - match: boolean
-        :rtype: dict
-        """
         match = {
             "value": 0,
             "base_code": barcode,
@@ -109,7 +80,6 @@ class BarcodeNomenclature(models.Model):
         if not found:
             return match
         match["match"] = True
-        # an optional or alternated value group can match without taking part
         digits = found.group("value") if whole_size is not None else None
         if digits is None:
             return match
@@ -120,14 +90,6 @@ class BarcodeNomenclature(models.Model):
         return match
 
     def parse_barcode(self, barcode):
-        """Parse a scanned barcode against this nomenclature.
-
-        :param barcode:
-        :type barcode: str
-        :return: for an EPC URI, the list of data dicts it decodes to;
-            otherwise a single dict, see :meth:`parse_nomenclature_barcode`.
-        :rtype: dict | list[dict]
-        """
         if len(self) > 1:
             raise ValueError(
                 f"parse_barcode expects a single nomenclature, got {len(self)}"
@@ -137,24 +99,6 @@ class BarcodeNomenclature(models.Model):
         return self.parse_nomenclature_barcode(barcode)
 
     def parse_nomenclature_barcode(self, barcode):
-        """Attempts to interpret and parse a barcode.
-
-        :param barcode:
-        :type barcode: str
-        :return: A object containing various information about the barcode, like as:
-
-            - code: the barcode
-            - type: the barcode's type
-            - value: if the id encodes a numerical value, it will be put there
-            - base_code: the barcode code with all the encoding parts set to
-              zero; the one put on the product in the backend
-
-        :rtype: dict
-        """
-        # An `alias` rule restates the scan as another barcode, which must then
-        # be parsed from the first rule again -- resuming at the next rule would
-        # make the outcome depend on the alias rule's own sequence. `seen`
-        # stops a cycle of aliases from looping forever.
         seen = set()
         while True:
             parsed_result = self._match_rules(barcode)
@@ -172,12 +116,6 @@ class BarcodeNomenclature(models.Model):
                 return parsed_result
 
     def _match_rules(self, barcode):
-        """Match `barcode` against this nomenclature's rules, once.
-
-        Returns the same dict as :meth:`parse_nomenclature_barcode`, except that
-        a matched ``alias`` rule yields ``type == "alias"`` with ``code`` set to
-        the aliased barcode, for the caller to resolve.
-        """
         parsed_result = {
             "encoding": "",
             "type": "error",
@@ -186,10 +124,6 @@ class BarcodeNomenclature(models.Model):
             "value": 0,
         }
 
-        # A UPC-A restated as EAN-13 always gains a leading zero, and
-        # `is_barcode_encoding_valid` reads a leading zero as "this is really a
-        # UPC-A". So the converted code can never validate as EAN-13: the
-        # conversion has to stand in for the encoding check, not precede it.
         as_ean13 = (
             "0" + barcode
             if self.upc_ean_conv in ("upc2ean", "always")
@@ -236,22 +170,9 @@ class BarcodeNomenclature(models.Model):
 
         return parsed_result
 
-    # RFID/URI stuff.
     @api.model
     def _parse_uri(self, barcode):
-        """Convert supported URI format (lgtin, sgtin, sgtin-96, sgtin-198,
-        sscc and sscc-96) into a GS1 barcode.
-
-        Every branch returns a list of data dicts -- callers rely on that shape
-        (``len()``, ``[0]["type"]``, ...). A URI this method cannot decode is a
-        failed parse, reported as an empty list rather than a raised exception:
-        the argument is scanned input, so a malformed one is expected traffic.
-
-        :param str barcode: the URI as a string.
-        :rtype: list[dict]
-        """
         parts = [part.strip() for part in barcode.split(":")]
-        # urn:<namespace>:<type>:<identifier>:<data>
         if len(parts) != 5:
             _logger.info(
                 "Malformed EPC URI %r: expected 5 ':'-separated parts.", barcode
@@ -278,8 +199,6 @@ class BarcodeNomenclature(models.Model):
             return []
         if filtered:
             data = data[1:]
-        # Only the two leading fields feed the check-digit computation; an
-        # SGTIN-198 serial is legitimately alphanumeric and is passed through.
         company_prefix, reference = data[:2]
         if not (
             _ASCII_DIGITS.match(company_prefix)
@@ -353,15 +272,6 @@ class BarcodeNomenclature(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_used_by_company(self) -> None:
-        """Refuse to delete a nomenclature a company is still scanning with.
-
-        `res.company.barcodes_config_id.nomenclature_id` is a plain Many2one, so the default
-        `ondelete="set null"` used to empty it silently. Nothing raised, and
-        nothing pointed at the deletion: every subsequent scan simply parsed
-        against no rules and came back `type: "error"`.
-        """
-        # Through the configuration rows, not `res.company`: an archived
-        # company is still configured, and would lose its nomenclature.
         configs = (
             self.env["barcodes.config"]
             .sudo()

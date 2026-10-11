@@ -43,9 +43,6 @@ class MailFollowers(models.Model):
             _debug.logic("search_refused", uid=self.env.uid, reason="not_internal")
             return self.browse()._as_query()
 
-        # what the record-level read check admits (_get_readable_follower_ids):
-        # the user's own subscription, or one on a document whose messages
-        # they read
         own = Domain("partner_id", "=", self.env.user.partner_id.id)
 
         def reached(only: Collection[str] | None, bounded: bool) -> Domain:

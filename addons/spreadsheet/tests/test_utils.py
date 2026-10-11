@@ -48,7 +48,7 @@ class TestSpreadsheetUtils(TransactionCase):
         self.assertEqual(date_to_spreadsheet_date_number(d), 45200)
 
     def test_datetime_to_spreadsheet_date_number(self):
-        test_tz_offset = 8 / 24  # Etc/GMT-8 is UTC+8
+        test_tz_offset = 8 / 24
         dt = datetime.datetime(1899, 12, 30, 0, 0, 0)
         self.assertEqual(datetime_to_spreadsheet_date_number(dt, "UTC"), 0)
 

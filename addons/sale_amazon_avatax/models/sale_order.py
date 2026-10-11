@@ -8,9 +8,6 @@ class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     def _prepare_invoice_vals(self):
-        # Override to prevent adding the avatax localisation for orders made through Amazon.
-        # If there's no fiscal position on the order, the fiscal position of the partner is normally
-        # used instead if any.
         values = super()._prepare_invoice_vals()
         values_fp = self.env["account.fiscal.position"].browse(
             values["fiscal_position_id"]

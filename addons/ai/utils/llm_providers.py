@@ -18,7 +18,6 @@ PROVIDERS = [
         "OpenAI",
         "text-embedding-3-small",
         {
-            # https://platform.openai.com/docs/api-reference/embeddings/create
             "max_batch_size": 2048,
             "max_tokens_per_request": 200000,
         },
@@ -37,7 +36,6 @@ PROVIDERS = [
         "Google",
         "gemini-embedding-001",
         {
-            # https://googleapis.dev/python/generativelanguage/latest/_modules/google/ai/generativelanguage_v1alpha/types/text_service.html#BatchEmbedTextRequest
             "max_batch_size": 100,
             "max_tokens_per_request": 10000,
         },

@@ -27,9 +27,6 @@ class Rating(http.Controller):
                 f"{RATING_NEUTRAL_VALUE} or {RATING_HAPPY_VALUE} (received {rate})"
             )
 
-        # This route used to allow sending a rating with a GET, the
-        # feature proved incompatible with various email provider URL crawlers and
-        # has been removed.
         rating, record_sudo = self._get_rating_and_record(token)
 
         if not self._has_rating_partner_access(rating):
@@ -70,9 +67,6 @@ class Rating(http.Controller):
         if not self._has_rating_partner_access(rating):
             return self._render_invalid_partner_page(rating, record_sudo)
 
-        # a rating given more than RATING_CHANGE_WINDOW ago is the customer's
-        # last word: its link, forwarded or left in a mailbox, no longer
-        # rewrites it in their name
         if request.httprequest.method == "POST" and rating._is_open_through_link():
             rate = int(rate)
             if rate not in (
@@ -88,7 +82,7 @@ class Rating(http.Controller):
                 rate,
                 rating=rating,
                 feedback=kwargs.get("feedback"),
-                subtype_xmlid=None,  # force default subtype choice
+                subtype_xmlid=None,
             )
         return self._render_rating_page(rating)
 

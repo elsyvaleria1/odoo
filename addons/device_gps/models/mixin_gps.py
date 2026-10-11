@@ -167,23 +167,8 @@ class MixinGps(models.AbstractModel):
         before: timedelta | None = None,
         after: timedelta = timedelta(0),
     ) -> OdometerReading | None:
-        """The valid GPS odometer reading closest to ``moment``, the earlier on a tie.
-
-        The one reader of a resource's GPS odometer. It reads under its own
-        privilege and hands back values, so a caller neither elevates nor
-        receives an elevated record.
-
-        :param datetime | None moment: when the odometer is wanted; the latest
-            reading when empty
-        :param timedelta | None before: how long before ``moment`` (now, when empty) a
-            reading may stand; any age when empty
-        :param timedelta after: how long after ``moment`` a reading may stand
-        :return: the reading, or None without a GPS or a reading in the window
-        :rtype: OdometerReading | None
-        """
         self.check_singleton()
         self.check_access("read")
-        # whoever asks a resource for its odometer does not otherwise read its logs
         Log = self.env["device.data.log.gps"].with_privilege(
             "device_gps.privilege_read_resource_odometer",
             reason="a resource reads its own GPS odometer",
@@ -207,7 +192,6 @@ class MixinGps(models.AbstractModel):
             )
         if not readings:
             return None
-        # min() keeps the first of equals, and the earlier reading comes first
         log = (
             min(readings, key=lambda log: abs(log.timestamp - moment))
             if moment
@@ -216,10 +200,6 @@ class MixinGps(models.AbstractModel):
         return OdometerReading(value=log.real_odometer, timestamp=log.timestamp)
 
     def _get_current_gps_odometer(self) -> float:
-        # The latest valid reading, however old. The device refuses a reading
-        # below the last valid one, so the latest is also the highest; the
-        # highest of a window used to let one accepted spike outlive the
-        # readings after it.
         reading = self._gps_odometer_reading()
         _debug.logic(
             "gps_odometer_read",
@@ -230,14 +210,6 @@ class MixinGps(models.AbstractModel):
         return reading.value if reading else 0.0
 
     def _gps_odometer_at(self, moment, max_gap=GPS_ODOMETER_MAX_GAP) -> float:
-        """The odometer at ``moment``, from the valid reading closest to it on
-        either side.
-
-        :param datetime moment: when the odometer is wanted
-        :param timedelta max_gap: how far from ``moment`` a reading may stand
-        :return: the reading, or 0.0 without a GPS or a reading close enough
-        :rtype: float
-        """
         self.check_singleton()
         if not moment:
             return 0.0
@@ -245,15 +217,6 @@ class MixinGps(models.AbstractModel):
         return reading.value if reading else 0.0
 
     def _gps_position(self, moment=None, max_age=None):
-        """The last reading with a position at ``moment``, now by default.
-
-        Reads positions with the caller's rights; odometers return detached values.
-
-        :param datetime moment: when the position is wanted
-        :param timedelta max_age: how old the reading may be; any age when empty
-        :return: the reading, empty without a GPS or a reading recent enough
-        :rtype: recordset
-        """
         self.check_singleton()
         self.check_access("read")
         Log = self.env["device.data.log.gps"]

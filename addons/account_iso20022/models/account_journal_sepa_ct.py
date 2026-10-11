@@ -74,7 +74,6 @@ class AccountJournal(models.Model):
             FinInstnId = CdtrAgt.find(".//FinInstnId")
             partner_lei = bank_account.partner_id.iso20022_lei
             if partner_lei:
-                # LEI needs to be inserted after BIC
                 LEI = etree.SubElement(FinInstnId, "LEI")
                 LEI.text = partner_lei
             return CdtrAgt
@@ -171,25 +170,9 @@ class AccountJournal(models.Model):
     def _prepare_remittance_element(
         self, payment_method_code, payment
     ) -> etree._Element | None:
-        # normalize_communication() automatically removes leading slash
-        # characters in payment references, due to the requirements of
-        # European Payment Council, available here:
-        # https://www.europeanpaymentscouncil.eu/document-library/implementation-guidelines/sepa-credit-transfer-customer-psp-implementation
-        # (cfr Section 1.4 Character Set)
 
-        # However, the /A/  four-character prefix is a requirement of belgian law.
-        # The existence of such legal prefixes may be a reason why the leading slash
-        # is forbidden in normal SEPA payment references, to avoid conflicts.
 
-        # Legal references for Belgian salaries:
-        # https://www.ejustice.just.fgov.be/eli/loi/1967/10/10/1967101056/justel#Art.1411bis
-        # Article 1411bis of Belgian Judicial Code mandating the use of special codes
-        # for identifying payments of protected amounts, and the related penalties
-        # for payment originators, in case of misuse.
 
-        # https://www.ejustice.just.fgov.be/eli/arrete/2006/07/04/2006009525/moniteur
-        # Royal Decree defining "/A/ " as the code for salaries, in the context of
-        # Article 1411bis
         if self.env.context.get("l10n_be_hr_payroll_sepa_salary_payment"):
             RmtInf = super()._prepare_remittance_element(payment_method_code, payment)
             if RmtInf is None:

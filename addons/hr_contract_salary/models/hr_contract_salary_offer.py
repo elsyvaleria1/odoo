@@ -200,7 +200,6 @@ class HrContractSalaryOffer(models.Model):
     def _acquire_version(self) -> HrVersion:
         self.check_singleton()
 
-        # Offer for an employee
         if self.employee_id:
             contract_template = self.contract_template_id
             if contract_template:
@@ -229,7 +228,6 @@ class HrContractSalaryOffer(models.Model):
                 )
                 return self.employee_version_id
 
-        # Offer for an applicant, create an employee
         employee = (
             self.env["hr.employee"]
             .with_user(SUPERUSER_ID)
@@ -248,7 +246,7 @@ class HrContractSalaryOffer(models.Model):
                     "active": False,
                     "nationality_country_id": self.company_id.country_id.id,
                     "private_country_id": self.company_id.country_id.id,
-                    "certificate": False,  # To force encoding it
+                    "certificate": False,
                     "company_id": self.company_id.id,
                 }
             )
@@ -291,7 +289,6 @@ class HrContractSalaryOffer(models.Model):
             contract_template_signatories_copy = (
                 self.contract_template_id.sign_template_signatories_ids.copy()
             )
-        # Must unlink the signatory from the contract template, will be linked to the offer with the SET command
         contract_template_signatories_copy.contract_template_id = False
         contract_template_signatories_copy.update_contract_template_id = False
         return [Command.clear()] + [Command.set(contract_template_signatories_copy.ids)]
@@ -354,10 +351,6 @@ class HrContractSalaryOffer(models.Model):
         )
 
     def _issue_offer_links(self) -> None:
-        """A comment link per offer whose person does not sign in to it, in the
-        applicant's or the employee's name, until the offer's expiration or for
-        a notification's lifetime (decision B1): the configurator, the
-        submission and the refusal."""
         Link = self.env["access.link"]
         for offer in self.filtered(lambda offer: not offer.employee_id.user_id):
             __, token = Link._issue(
@@ -383,7 +376,6 @@ class HrContractSalaryOffer(models.Model):
             )
 
     def _offer_token_opens(self, token: str | None) -> bool:
-        """Whether ``token`` is a live link to this offer."""
         self.check_singleton()
         try:
             self.env["access.link"]._resolve(
@@ -450,7 +442,6 @@ class HrContractSalaryOffer(models.Model):
                     offer.employee_version_id = versions[0]
                     continue
 
-                # Filter active versions based on offer's creation date
                 active_versions = versions.filtered_domain(
                     [
                         ("date_start", "<=", offer.offer_create_date),
@@ -463,7 +454,6 @@ class HrContractSalaryOffer(models.Model):
                 if active_versions:
                     offer.employee_version_id = active_versions[0]
                 else:
-                    # No active or running version, so pick the first created version
                     offer.employee_version_id = versions[0]
 
     @api.depends("employee_version_id")
@@ -671,7 +661,6 @@ class HrContractSalaryOffer(models.Model):
         }
 
     def _mail_get_primary_email(self):
-        # Override as there is no "_primary_email" defined here, it is a related
         return {
             record.id: record.applicant_id.email_from or record.employee_id.work_email
             for record in self

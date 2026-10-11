@@ -5,8 +5,6 @@ from odoo.tools import frozendict
 
 from ..tools import create_once, repository_domain
 
-# What a check concludes, as GitHub spells it across check runs, workflow runs and
-# commit statuses.
 PASSING = frozenset({"success", "neutral", "skipped"})
 _STATUS_RANK = {"queued": 0, "in_progress": 1, "completed": 2}
 FAILING = frozenset(
@@ -81,8 +79,6 @@ class IntegrationGithubCheck(models.Model):
     def _record(
         self, repository: str, external_ref: str, vals: dict[str, Any]
     ) -> IntegrationGithubCheck:
-        """Create the check, or move it on: GitHub redelivers and reorders, and a
-        re-run reuses a check run's id."""
         vals = {**vals, "date_updated": fields.Datetime.now()}
         domain = [
             *repository_domain("repository", repository),
@@ -101,7 +97,6 @@ class IntegrationGithubCheck(models.Model):
             and check.date_github
             and (
                 stamp < check.date_github
-                # GitHub stamps whole seconds: within one, a status never goes back
                 or (
                     stamp == check.date_github
                     and _STATUS_RANK.get(vals.get("check_status"), 0)
@@ -114,8 +109,6 @@ class IntegrationGithubCheck(models.Model):
         return check
 
     def _aggregate_state(self) -> str:
-        """``none``, ``pending``, ``failure`` or ``success`` for these checks of
-        one commit: any failure fails it, anything unfinished keeps it pending."""
         if not self:
             return "none"
         if any(check.conclusion in FAILING for check in self):

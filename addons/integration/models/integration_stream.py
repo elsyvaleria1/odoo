@@ -155,7 +155,6 @@ class IntegrationStream(models.Model):
         for stream in self:
             stream.outbox_pending_count = pending.get(stream, 0)
 
-    # -- what changes a stream wakes the worker ------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -174,7 +173,6 @@ class IntegrationStream(models.Model):
         self._notify_after_commit()
         return result
 
-    # The worker's own writes never wake the worker.
     _WORKER_FIELDS = frozenset(
         {
             "state",
@@ -199,7 +197,6 @@ class IntegrationStream(models.Model):
         notify_channel(STREAM_CHANNEL, db_name)
 
     def send(self, payload, **meta):
-        """Queue a frame for the worker to send; the row is the record of it."""
         self.check_singleton()
         outbox = self.env["integration.stream.outbox"].create(
             {
@@ -219,7 +216,6 @@ class IntegrationStream(models.Model):
     def action_start(self):
         self.write({"active": True, "date_next_attempt": False, "attempts": 0})
 
-    # -- the sweep -----------------------------------------------------------
 
     @staticmethod
     def _worker_identity() -> str:
@@ -227,14 +223,9 @@ class IntegrationStream(models.Model):
 
     @staticmethod
     def _reconcile(db_name, runtime) -> None:
-        """One pass for the database this process leads: open what should
-        be open, close what should not, redial what dropped, send what is
-        queued. Called by the stream worker under the lease."""
         registry = Registry(db_name)
         with registry.cursor() as cr:
             env = api.Environment(cr, SUPERUSER_ID, {})
-            # the wire's threads write the rows the sweep holds: a conflict is
-            # replayed, and a stream already dialled is found held, not redialled
             retrying(
                 lambda: env["integration.stream"]._reconcile_with(db_name, runtime),
                 env,
@@ -319,7 +310,6 @@ class IntegrationStream(models.Model):
         ).decode()
 
     def _resolve_addresses(self):
-        # A serial line (modbus+rtu:///dev/ttyUSB0) names no host to check.
         if not urlsplit(self.url).hostname:
             return ()
         destination = self.env["ir.egress"].check_url(self.url, policy="private")
@@ -378,10 +368,6 @@ class IntegrationStream(models.Model):
                 **vals,
             }
         )
-        # the stream's own row is written here, before the subject's
-        # savepoint: a concurrent writer's conflict must reach the caller's
-        # retry, not pass for the subject refusing and leave the transaction
-        # aborted
         stream.flush_recordset()
         subject = self._subject()
         told = getattr(subject, "_on_stream_state", None) if subject else None
@@ -437,7 +423,6 @@ class IntegrationStream(models.Model):
         if sent:
             self.sudo().write({"frames_out": self.frames_out + sent})
 
-    # -- what the wire reports, on its own thread -----------------------------
 
     @staticmethod
     def _record_frame(db_name, stream_id, payload, meta) -> None:
@@ -449,9 +434,6 @@ class IntegrationStream(models.Model):
 
     @staticmethod
     def _on_wire(db_name, stream_id, act) -> None:
-        # The wire's thread writes beside the sweep's own transaction, which
-        # may still hold the row it just dialled: a serialization failure is
-        # retried, as a request's would be.
         registry = Registry(db_name)
         with registry.cursor() as cr:
             env = api.Environment(cr, SUPERUSER_ID, {})
@@ -475,8 +457,6 @@ class IntegrationStream(models.Model):
         stream.write(
             {"frames_in": self.frames_in + 1, "date_last_frame": fields.Datetime.now()}
         )
-        # as in _set_state: the stream's row is written before the subject's
-        # savepoint, so a conflict on it is retried and not charged to the frame
         stream.flush_recordset()
         subject = self._subject()
         handler = getattr(subject, "_on_stream_frame", None) if subject else None

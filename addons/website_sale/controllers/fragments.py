@@ -6,9 +6,6 @@ from odoo.addons.web.controllers.utils import Fragment
 def get_order_total_fragment(
     order_sudo, *, hide_promotions=False, redirect=None, code_not_available=False
 ) -> Fragment:
-    # inner: every total on the page keeps the classes its own t-call gave it;
-    # show_shorter_cart_summary: nothing renders beside the total's root;
-    # redirect: the page's own, which the coupon form posts back to
     values = {
         "website_sale_order": order_sudo,
         "show_shorter_cart_summary": True,
@@ -44,8 +41,6 @@ def get_cart_lines_fragment(order_sudo) -> Fragment:
 
 
 def get_coupon_fragments(order_sudo, redirect, code_not_available=False) -> list:
-    # the cart page shows lines and a total, a checkout page a summary and both
-    # totals; a page swaps those of these it has
     return [
         get_cart_lines_fragment(order_sudo),
         get_cart_summary_fragment(order_sudo),

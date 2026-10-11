@@ -54,12 +54,6 @@ class TestHandlerShipping(HttpCase):
         self.assertIn("interfaces/serial_interface.py", names)
 
     def test_a_driver_that_must_always_be_present_installs_itself(self):
-        """The box has to report a fiscal data module before anyone installs the
-        app that acts on one, and the database has to be able to READ what it
-        reports. Shipping the driver without installing its module gives the
-        first and not the second: the error codes and the device subtype are
-        named only by that module. ``iot_blackbox_be`` is ``auto_install`` on
-        ``iot`` so both hold."""
         self.assertEqual(
             self.env["ir.module.module"]
             .sudo()
@@ -76,8 +70,6 @@ class TestHandlerShipping(HttpCase):
         self.assertNotIn("drivers/adam_scale_driver.py", self._names(self._fetch()))
 
     def test_a_dated_image_is_not_sent_what_it_already_carries(self):
-        """A dated box builds its handlers from git. Re-sending them would
-        overwrite the git copy with the database's."""
         self._box(version="2025.09.01")
         names = self._names(self._fetch())
         self.assertNotIn("drivers/serial_blackbox_driver.py", names)
@@ -107,8 +99,6 @@ class TestHandlerShipping(HttpCase):
         self.assertEqual(self._fetch(identifier="no-such-box").status_code, 404)
 
     def test_a_box_that_sends_no_token_is_served_in_audit(self):
-        """A box runs upstream's iot_drivers, which names itself on this route
-        and sends no token: the call is served, and recorded as unverified."""
         self._box()
         names = self._names(self._fetch(token=""))
         self.assertIn("drivers/printer_driver_base.py", names)
@@ -201,16 +191,6 @@ class TestBoxLog(HttpCase):
 @tagged("post_install", "-at_install")
 class TestHandlerNamespace(HttpCase):
     def test_no_two_modules_claim_the_same_handler_path(self):
-        """Handlers land flat on the box, so the path inside the zip is the
-        whole namespace.
-
-        Before the driver split one module owned the payment terminals and a
-        clash was local to it. Nine modules contribute now, ``zipfile`` accepts
-        a duplicate name without complaint, and extraction keeps whichever was
-        written last -- so a collision would be decided by module ordering and
-        report nothing. This is the model-name-ownership question one layer
-        down.
-        """
         owners = collections.defaultdict(list)
         for manifest in Manifest.get_all_addon_manifests():
             handlers = pathlib.Path(manifest.path) / "iot_handlers"
@@ -244,7 +224,6 @@ class TestHandlerDependencies(HttpCase):
     _IMPORT = re.compile(r"odoo\.addons\.iot_drivers\.iot_handlers\.(\w+)\.(\w+)")
 
     def _shippers(self):
-        """handler path -> the module that ships it, and each module's manifest."""
         ships, manifests = {}, {}
         for manifest in Manifest.get_all_addon_manifests():
             handlers = pathlib.Path(manifest.path) / "iot_handlers"
@@ -258,7 +237,6 @@ class TestHandlerDependencies(HttpCase):
         return ships, manifests
 
     def _edges(self, ships):
-        """(importer, provider, handler) for every cross-module handler import."""
         edges = set()
         for manifest in Manifest.get_all_addon_manifests():
             handlers = pathlib.Path(manifest.path) / "iot_handlers"
@@ -288,7 +266,7 @@ class TestHandlerDependencies(HttpCase):
         broken = []
         for importer, provider, handler in sorted(edges):
             if provider == "iot_drivers":
-                continue  # shipped unconditionally by the controller
+                continue
             if provider not in self._closure(importer):
                 broken.append(f"{importer} imports {handler} from {provider}")
         self.assertFalse(
@@ -299,9 +277,6 @@ class TestHandlerDependencies(HttpCase):
         )
 
     def test_a_dated_image_never_drops_a_provider_and_keeps_its_importer(self):
-        """``iot_handlers_in_image`` withholds a module's handlers from a dated
-        box. Withholding a provider while still sending its importer would ship
-        an import of a file that is not there."""
         ships, manifests = self._shippers()
         broken = []
         for importer, provider, handler in sorted(self._edges(ships)):
@@ -322,15 +297,6 @@ class TestHandlerDependencies(HttpCase):
 @tagged("post_install", "-at_install")
 class TestDeviceTypesAreReadable(HttpCase):
     def test_every_device_type_the_box_can_report_can_also_be_read(self):
-        """A driver that ships must also be installed, or the server sees a
-        device it cannot interpret.
-
-        The registry entry that names a device's error codes lives in the same
-        module as its driver. When the driver shipped to the box without its
-        module being installed, a fiscal data module reporting a failure inside
-        its response body was read as a success, because the `normalize` hook
-        that rewrites such an event was not loaded.
-        """
         backend = [
             asset.path
             for asset in self.env["ir.asset"]._get_asset_paths("web.assets_backend", {})

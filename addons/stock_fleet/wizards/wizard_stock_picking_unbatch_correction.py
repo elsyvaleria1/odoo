@@ -2,8 +2,6 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
-# Not a delivery failure: when the goods travelled and came back, the transfer is
-# registered as not delivered instead.
 class WizardStockPickingUnbatchCorrection(models.TransientModel):
     """Take pending transfers off a departed trip they should not have travelled on."""
 
@@ -41,7 +39,6 @@ class WizardStockPickingUnbatchCorrection(models.TransientModel):
             )
 
     def action_confirm(self):
-        # Who may run it is the access of this wizard: the trip corrections group.
         self.check_singleton()
         trip = self.batch_id
         if not trip.date_departure:
@@ -61,7 +58,6 @@ class WizardStockPickingUnbatchCorrection(models.TransientModel):
             )
         if not self.picking_ids:
             raise UserError(self.env._("Choose the transfers to take off the trip."))
-        # A delivered transfer is what the vehicle carried; it stays on the trip.
         stuck = self.picking_ids.filtered(
             lambda picking: (
                 picking.batch_id != trip or picking.state in ("done", "cancel")

@@ -327,9 +327,6 @@ class TestChannelInternals(MailCommon, HttpCase):
         self.assertEqual(chat.last_interest_dt, post_time)
 
     def test_a_channel_broadcast_carries_the_schedule_it_was_posted_with(self):
-        """The broadcast's store is built from the post's values rather than a
-        search of mail.message.schedule, so the scheduled date must still reach
-        the payload for a message posted with one."""
         chat = (
             self.env["discuss.channel"]
             .with_user(self.user_admin)

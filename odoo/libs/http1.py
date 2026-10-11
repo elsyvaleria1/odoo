@@ -98,9 +98,6 @@ class RequestHead:
 def find_head(
     buffer: bytes | bytearray, limits: HeadLimits, scanned: int = 0
 ) -> tuple[int, int] | None:
-    # RFC 9112 2.2 asks only that a stray CRLF before the request line be ignored.
-    # Skipping them without bound let one connection stream blank lines that never
-    # counted against the head limit and were rescanned on every read.
     start = 0
     size = len(buffer)
     while (
@@ -109,8 +106,6 @@ def find_head(
         start += 1
     if start > _MAX_LEADING_EMPTY_BYTES:
         raise _bad("too many empty lines before the request line")
-    # A blank line is at most four bytes, so one completed by new data starts at
-    # most three bytes before what the previous call had already scanned.
     match = _HEAD_END.search(buffer, max(start, scanned - 3))
     if match is None:
         if size - start > limits.max_head_bytes:
@@ -179,8 +174,6 @@ def _values(fields: list[tuple[str, str]], name: str) -> list[str]:
 
 
 def _list_items(values: list[str]) -> list[str]:
-    # OWS is space and tab only: str.strip() also eats \xa0 and \x85, so a
-    # proxy reading "\xa0chunked" as unknown and this parser as chunked desync
     return [token.strip(" \t") for value in values for token in value.split(",")]
 
 
@@ -241,10 +234,6 @@ def _decode_path(path: bytes) -> str:
     decoded = unquote_to_bytes(path)
     if b"\x00" in decoded:
         raise _bad("NUL in request path")
-    # a browser reads a leading "\" as "/", and a URL parser drops a tab or
-    # newline anywhere, so "/\evil.example" and "/%09/evil.example" echoed into
-    # a Location header are protocol-relative too; further in, either is a
-    # filename character (/web/content/<id>/<filename>) and stays
     head = decoded.translate(None, b"\t\r\n")
     if head[1:2] in (b"/", b"\\"):
         decoded = b"/" + head.lstrip(b"/\\")
@@ -346,9 +335,6 @@ class BufferedSource:
 class BodyLimits:
     max_chunk_line: int = 4096
     max_trailer_bytes: int = 16384
-    # mod_reqtimeout's model: a fixed allowance plus credit for every byte
-    # received at the minimum rate, so a large upload on a fair link passes
-    # and a client dripping bytes does not
     timeout: float = 20.0
     min_rate: float = 500.0
 
@@ -421,7 +407,7 @@ class _BodyReader(io.RawIOBase):
             self.error = exc
             raise
 
-    def readinto(self, buffer: memoryview | bytearray) -> int:  # type: ignore[override]
+    def readinto(self, buffer: memoryview | bytearray) -> int:
         view = memoryview(buffer).cast("B")
         data = self.read(len(view))
         view[: len(data)] = data
@@ -606,10 +592,7 @@ def prepare_response_head(
     code = int(match.group(1))
     upgrade = code == 101
     if code < 200 and not upgrade:
-        # WSGI has no interim responses: a 1xx here would be the final one
         raise ValueError(f"a WSGI response cannot be an interim {status!r}")
-    # RFC 9110 8.6: no Content-Length on a 204; a 304's describes the
-    # representation, not a body, and may stay
     bodiless = code == 204
     lines = [f"HTTP/1.1 {status}"]
     content_length: int | None = None

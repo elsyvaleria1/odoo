@@ -8,8 +8,6 @@ class CashOnDeliveryCommon(PaymentCustomCommon, DeliveryCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Confirming an order without lines is refused, and the transaction's
-        # post-processing confirms this one.
         cls.cod_product = cls.env["product.product"].create(
             {
                 "name": "Cash on delivery product",

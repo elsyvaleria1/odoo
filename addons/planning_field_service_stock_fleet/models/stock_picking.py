@@ -15,8 +15,6 @@ class StockPicking(models.Model):
     )
 
     def _register_delivery_failure(self, reason):
-        # Goods that came back leave the visit, so that the visit on which they
-        # are handed over later ties them; this one keeps the reason.
         visit = self.planning_slot_id
         super()._register_delivery_failure(reason)
         if visit:
@@ -30,8 +28,6 @@ class StockPicking(models.Model):
             )
 
     def _take_off_trip_as_correction(self, reason):
-        # A transfer that should not have travelled was not handed over on the
-        # visit either: it leaves the visit, as goods that came back do.
         tied = self.filtered("planning_slot_id")
         visits = {picking: picking.planning_slot_id for picking in tied}
         super()._take_off_trip_as_correction(reason)

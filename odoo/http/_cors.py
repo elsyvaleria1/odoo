@@ -64,11 +64,7 @@ def _get_cors_methods(
     if methods is None:
         methods = routing.get("methods")
     if methods is None:
-        # A route with no methods= accepts every verb at runtime; advertise
-        # the same unrestricted set the Allow header uses, not a guess.
         return DEFAULT_ALLOWED_METHODS
-    # An explicitly empty list means OPTIONS-only at runtime; an empty
-    # Allow-Methods header would be malformed per the Fetch spec.
     return methods or ("OPTIONS",)
 
 

@@ -197,7 +197,6 @@ class NameManager:
                 raise view._prepare_view_error(message)
 
     def _check_required_actions(self, view: Any) -> None:
-        # resolve every reference first, then one existence query for all
         resolved: dict[str, tuple[int, etree._Element]] = {}
         for name, node in self.required_actions.items():
             try:
@@ -285,7 +284,6 @@ class NameManager:
                     use=self._describe_use(use),
                 )
                 raise view._prepare_view_error(msg, node)
-            # a used name the view has no field for is _check_group_consistency's
             if name in ("false", "true") and name not in self.available_fields:
                 _debug.logic("used_field.js_literal", view=view.id, name=name)
                 _logger.warning(

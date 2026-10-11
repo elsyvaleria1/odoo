@@ -18,8 +18,6 @@ class TestCopyTranslationsBatch(TransactionCase):
 
     @contextmanager
     def _column_reads(self, sources):
-        # the copies' own values are read back by update_field_translations,
-        # one per copy: only the reads of what is copied from are counted
         reads = Counter()
         store = type(self.env.backend.columns)
         original = store.read

@@ -29,7 +29,6 @@ class AccountFollowupCustomHandler(models.AbstractModel):
             options["unreconciled"] = True
 
         if options["export_mode"] == "print":
-            # When printing the report, we don't want to include `no_followup` lines.
             options["forced_domain"] = options.get("forced_domain", []) + [
                 ("no_followup", "=", False)
             ]
@@ -105,7 +104,6 @@ class AccountFollowupCustomHandler(models.AbstractModel):
                 if self._is_report_limit_reached(
                     report, options, treated_results_count
                 ):
-                    # We loaded one more than the limit on purpose: this way we know we need a "load more" line
                     has_more = True
                     break
 

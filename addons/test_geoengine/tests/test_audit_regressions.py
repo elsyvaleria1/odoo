@@ -57,8 +57,6 @@ class TestCountryExtents(TransactionCase):
 class TestSpatialIndexOnWrongColumn(TransactionCase):
     @mute_logger("odoo.db.cursor")
     def test_gist_on_a_non_geometry_column_raises(self):
-        # jsonb, not varchar: btree_gist (installed by other modules) gives
-        # varchar a GIST operator class, and this must fail in every database.
         with self.assertRaises(UndefinedObject), self.env.cr.savepoint():
             create_geo_index(self.env.cr, "ir_ui_view", "arch_db")
 

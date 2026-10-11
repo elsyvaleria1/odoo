@@ -33,14 +33,12 @@ def _mocked_cancel_success(edi_format, invoices):
 
 
 class AccountEdiTestCommon(AccountTestInvoicingCommon):
-    # To override by the helper method setup_edi_format to set up an edi format
     edi_format_ref = False
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
-        # ==== EDI ====
         if cls.edi_format_ref:
             cls.edi_format = cls.env.ref(cls.edi_format_ref)
         else:
@@ -73,9 +71,6 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
 
         return _decorator
 
-    ####################################################
-    # EDI helpers
-    ####################################################
 
     def _create_fake_edi_attachment(self):
         return self.env["ir.attachment"].create(
@@ -131,7 +126,7 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
         invoice.action_post()
         invoice.edi_document_ids._process_documents_web_services(
             with_commit=False
-        )  # synchronous are called in post, but there's no CRON in tests for asynchronous
+        )
         attachment = invoice._get_edi_attachment(self.edi_format)
         if not attachment:
             raise ValueError("No attachment was generated after posting EDI")
@@ -143,13 +138,6 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
         self.assertXmlTreeEqual(current_etree, expected_etree)
 
     def create_edi_document(self, edi_format, state, move=None, move_type=None):
-        """Creates a document based on an existing invoice or creates one, too.
-
-        :param edi_format:  The edi_format of the document.
-        :param state:       The state of the document.
-        :param move:        The move of the document or None to create a new one.
-        :param move_type:   If move is None, the type of the invoice to create, defaults to 'out_invoice'.
-        """
         move = move or self.init_invoice(
             move_type or "out_invoice", products=self.product_a
         )
@@ -158,11 +146,6 @@ class AccountEdiTestCommon(AccountTestInvoicingCommon):
         )
 
     def _process_documents_web_services(self, moves, formats_to_return=None):
-        """Generates and returns EDI files for the specified moves.
-        formats_to_return is an optional parameter used to pass a set of codes from
-        the formats we want to return the files for (in case we want to test specific formats).
-        Other formats will still generate documents, they simply won't be returned.
-        """
         moves.edi_document_ids._process_documents_web_services(with_commit=False)
 
         documents_to_return = moves.edi_document_ids

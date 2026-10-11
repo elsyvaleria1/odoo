@@ -100,8 +100,6 @@ def _fold_into_specification(cr, line_ids):
         "UPDATE product_template_attribute_line SET active = false WHERE id = ANY(%s)",
         [folded],
     )
-    # A specification is no variant dimension: its values leave every variant
-    # and are archived, not deleted, since documents may still name them.
     cr.execute(
         """
         UPDATE product_template_attribute_value

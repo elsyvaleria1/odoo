@@ -106,7 +106,6 @@ class ResourceRelation(models.Model):
 
     @api.model
     def _set_containment_parent(self, member, parent, at=None):
-        """Change current containment, preserving past and planned membership."""
         member.check_singleton()
         if parent:
             parent.check_singleton()
@@ -124,7 +123,6 @@ class ResourceRelation(models.Model):
         if current.parent_id == parent:
             return
         current.parent_id.check_access("write")
-        # A same-instant correction has no occupied interval to preserve.
         instant = current.filtered(lambda relation: relation.date_start == at)
         instant.unlink()
         (current - instant).write({"date_end": at})
@@ -151,12 +149,6 @@ class ResourceRelation(models.Model):
 
     @api.model
     def _lock_graph(self, resource_ids):
-        """Serialize edits through the existing weakly connected components.
-
-        Include hidden and archived edges for integrity, without exposing them.
-        Tuple touches force repeatable-read callers to retry after a competing
-        edit, including edits that connect previously separate components.
-        """
         if not resource_ids:
             return
         self.flush_model(["parent_id", "member_id"])

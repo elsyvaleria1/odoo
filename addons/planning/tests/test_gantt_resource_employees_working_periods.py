@@ -61,10 +61,6 @@ class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon
         )
 
     def test_with_future_contract(self):
-        """Check the working period is only inside the contract created for the resource
-
-        Create a contract in draft but ready in a certain period.
-        """
         working_periods = self.gantt_resource_employees_working_periods(
             self.context_dates_inside_contracts, self.resource_joseph
         )
@@ -97,10 +93,6 @@ class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon
         )
 
     def test_with_running_contract(self):
-        """Check the working period is only inside the contract running of the resource
-
-        Create a running contract
-        """
         working_periods = self.gantt_resource_employees_working_periods(
             self.context_dates_inside_contracts, self.resource_joseph
         )
@@ -134,9 +126,7 @@ class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon
         )
 
     def test_new_employee_with_no_contract(self):
-        """Test the working period of a new employee with no contract"""
 
-        # Create a new employee with no contract
         employee_hope = self.env["hr.employee"].create({"name": "Hope"})
         self.assertTrue(
             employee_hope.version_id,
@@ -147,7 +137,6 @@ class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon
             "The default version should not yet have a contract start date.",
         )
 
-        # The employee should be considered available for the entire Gantt period.
         context_period = self.context_dates_inside_contracts
         gantt_rows_default = self.gantt_resource_employees_working_periods(
             context_period, employee_hope.resource_id
@@ -162,7 +151,6 @@ class TestPlanningGanttResourceEmployeeWorkingPeriods(TestPlanningContractCommon
             "A new employee should be considered available for the full default period.",
         )
 
-        # After setting a contract start date, the working period should adjust accordingly.
         employee_hope.version_id.write(
             {"contract_date_start": fields.Date.to_date(self.contract_start_date)}
         )

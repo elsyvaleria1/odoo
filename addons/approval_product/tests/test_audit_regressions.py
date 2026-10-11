@@ -368,14 +368,6 @@ class TestAuditRegressions(ApprovalCommon):
         self.assertIn("<li>2.0 x ", body)
 
     def test_product_category_forcing_follows_the_hierarchy(self):
-        """A flag on a parent category has to reach products filed below it.
-
-        The mirror of test_product_category_match_follows_the_hierarchy: the
-        matcher reads the tree with child_of, and the master-data flag that
-        forces approval outright has to scope the same way. It used to read
-        the product's own category and nothing above it, so flagging a parent
-        protected none of its branch.
-        """
         parent = self.env["product.category"].create({"name": "Forced Parent"})
         child = self.env["product.category"].create(
             {"name": "Forced Child", "parent_id": parent.id},
@@ -427,7 +419,6 @@ class TestAuditRegressions(ApprovalCommon):
         category = self._creation_category(f"{prefix} category")
         requests = self.env["approval.request"]
         for index in range(count):
-            # _approved_creation_request already creates the target documents.
             requests |= self._approved_creation_request(category, quantity=1.0 + index)
         return requests
 
@@ -446,11 +437,6 @@ class TestAuditRegressions(ApprovalCommon):
             )
 
     def test_documents_by_request_costs_the_same_whatever_the_selection(self):
-        """The batched form exists to stop the cost growing per request.
-
-        _get_documents_of_model is check_singleton() and searches once per
-        record; consumers holding many requests paid that per record.
-        """
         small = self._requests_with_orders(2, "Batch small")
         large = self._requests_with_orders(6, "Batch large")
         args = ("sale.order", "sale_order_line_id", "order_id")
@@ -473,7 +459,6 @@ class TestAuditRegressions(ApprovalCommon):
         )
 
     def test_documents_by_request_is_empty_without_documents(self):
-        # Never approved, so nothing was ever created from it.
         request = self.env["approval.request"].create(
             {
                 "name": "Batch empty",

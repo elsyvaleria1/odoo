@@ -5,7 +5,6 @@ from odoo.tests import TransactionCase
 
 ORDER_ID_MOCK = 123456789
 
-# Mock data for buyer address
 
 BUYER_ADDRESS_MOCK = {
     "first_name": "Gederic",
@@ -13,7 +12,7 @@ BUYER_ADDRESS_MOCK = {
     "phone": "+1 234-567-8910",
     "address1": "123 RainBowMan Street",
     "address2": "Apartment 4B",
-    "address3": "",  # Used as state/region
+    "address3": "",
     "city": "New Duck City",
     "post_code": "12345",
     "country": "VN",
@@ -63,8 +62,8 @@ AUTH_RESPONSE_MOCK = {
     "request_id": "0001",
     "access_token": "ACCESS_TOKEN_123",
     "refresh_token": "REFRESH_TOKEN_123",
-    "expires_in": 14400,  # 4 days
-    "refresh_expires_in": 30 * 24 * 3600,  # 30 days
+    "expires_in": 14400,
+    "refresh_expires_in": 30 * 24 * 3600,
 }
 
 REFRESH_TOKEN_RESPONSE_MOCK = {**AUTH_RESPONSE_MOCK}
@@ -165,7 +164,6 @@ PACKAGE_PACK_RESPONSE_MOCK = {
     },
 }
 
-# Map of API operations to their corresponding response data
 OPERATIONS_RESPONSES_MAP = {
     "RefreshAccessToken": REFRESH_TOKEN_RESPONSE_MOCK,
     "GetSeller": GET_SELLER_RESPONSE_MOCK,
@@ -181,7 +179,6 @@ OPERATIONS_RESPONSES_MAP = {
 }
 
 
-# Test class for common Lazada-related functionality
 class TestLazadaCommon(TransactionCase):
     def setUp(self):
         super().setUp()

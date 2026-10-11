@@ -19,12 +19,9 @@ class AmazonOffer(models.Model):
     def default_get(self, fields):
         result = super().default_get(fields)
 
-        # Default account_id.
         if not result.get("account_id"):
             accounts = self.env["amazon.account"].search(
                 [
-                    # the credential is what 'connected' means (ADR-0081); the
-                    # token itself is a door onto it and cannot be searched
                     ("credential_id", "!=", False),
                     *self.env["amazon.account"]._check_company_domain(self.env.company),
                 ],
@@ -33,7 +30,6 @@ class AmazonOffer(models.Model):
             if len(accounts) == 1:
                 result["account_id"] = accounts.id
 
-        # Default marketplace_id.
         if (account_id := result.get("account_id")) and not result.get(
             "marketplace_id"
         ):
@@ -49,7 +45,7 @@ class AmazonOffer(models.Model):
         required=True,
         ondelete="cascade",
         help="The seller account used to manage this product.",
-    )  # The default account provided in the context of the list view.
+    )
     company_id = fields.Many2one(
         related="account_id.company_id",
         readonly=True,
@@ -128,7 +124,6 @@ class AmazonOffer(models.Model):
 
     @api.onchange("product_id")
     def _onchange_product_id(self):
-        """Set the SKU to the internal reference of the product if it exists."""
         for offer in self:
             offer.sku = offer.product_id.default_code
 
@@ -150,11 +145,6 @@ class AmazonOffer(models.Model):
         }
 
     def _get_feed_data(self):
-        """Load the necessary data for the inventory feed, and fetch the missing ones when possible.
-
-        :return: A dictionary per offer in `self` containing at least the Amazon product type.
-        :rtype: dict[amazon.offer, dict['productType: str, ...]]
-        """
         feed_data_by_offer = {}
         for offer in self:
             try:
@@ -162,11 +152,11 @@ class AmazonOffer(models.Model):
             except (
                 json.JSONDecodeError,
                 TypeError,
-            ):  # Field is either incorrect JSON, or False
+            ):
                 feed_data = None
             if isinstance(
                 feed_data, dict
-            ):  # In case old `amazon_feed_ref` are still stored
+            ):
                 feed_data_by_offer[offer] = feed_data
 
         feed_data_by_offer.update(
@@ -178,28 +168,18 @@ class AmazonOffer(models.Model):
                         and o.amazon_channel
                     )
                 )
-            )._sync_feed_data()  # Fetch missing data
+            )._sync_feed_data()
         )
 
         return feed_data_by_offer
 
     def _sync_feed_data(self):
-        """Fetch data necessary for the inventory feed to work and save it in the record.
-
-        Necessary data are:
-            - productType: Amazon product type
-            - amazon_channel: fulfillment channel
-
-        :return: A mapping of offer to feed data
-        :rtype: dict['amazon.offer', dict]
-        """
         feed_data_by_offer = {}
         to_fetch = self.sorted(
             lambda o: (
                 o.amazon_sync_status in ("reset", "error")
-            )  # Fetch priority offers first
+            )
         ).grouped(lambda o: (o.account_id, o.marketplace_id))
-        # `searchListingsItems` only supports up to 20 SKUs
         to_fetch = (
             (group, batch)
             for group, offers in to_fetch.items()
@@ -228,15 +208,12 @@ class AmazonOffer(models.Model):
                 _logger.warning(
                     "Could not fetch every offers infos due to rate limit from Amazon."
                 )
-                # Mark failed offers, to be prioritized on next try
                 offers.filtered(
                     lambda o: o.amazon_sync_status != "reset"
                 ).amazon_sync_status = "error"
                 continue
 
-            # Parse product data
             offer_by_sku = offers.grouped("sku")
-            # Default to FBA to not fetch the info everytime when the offer isn't found by Amazon
             offers.amazon_channel = "fba"
             feed_data_by_offer.update(
                 {offer: {"productType": False} for offer in offers}
@@ -249,33 +226,21 @@ class AmazonOffer(models.Model):
                 is_fbm = "merchant_shipping_group" in item["attributes"]
                 offer.amazon_channel = "fbm" if is_fbm else "fba"
                 if is_fbm and offer.amazon_sync_status == "reset":
-                    offer.amazon_sync_status = False  # Reset only applies to FBA offers
+                    offer.amazon_sync_status = False
 
-        # Save data to reduce api calls
         AmazonOffer._save_feed_data(feed_data_by_offer)
 
         return feed_data_by_offer
 
     @classmethod
     def _save_feed_data(cls, feed_data_by_offer) -> None:
-        """Save inventory feed data.
-
-        :param dict['amazon.offer', dict] feed_data_by_offer: A mapping from offer to data necessary
-            for the inventory feed.
-        """
         for offer, feed_info in feed_data_by_offer.items():
             offer.amazon_feed_ref = json.dumps(feed_info, separators=(",", ":"))
 
     def _update_inventory_availability(self, account) -> None:
-        """Update the stock quantity of Amazon products to Amazon.
-
-        :param amazon.account account: The Amazon account to which the stock update should apply.
-        """
         feed_data_by_offer = self._get_feed_data()
-        # `_get_feed_data` can fail for some offers (rate limit)
         offers_to_sync = self.filtered(lambda o: o in feed_data_by_offer)
 
-        # Inventory feed can only apply to one marketplace
         for marketplace_id, offers in offers_to_sync.grouped("marketplace_id").items():
             offers._send_inventory_feed(
                 account,
@@ -284,21 +249,10 @@ class AmazonOffer(models.Model):
             )
 
     def _send_inventory_feed(self, account, feed_data_by_offer, marketplace_id) -> None:
-        """Send the inventory feed for the given marketplace.
-
-        Note: A feed of type `JSON_LISTINGS_FEED` can be applied to only one marketplace.
-
-        :param 'amazon.account' account: The Amazon account on behalf of which the feed should be
-            built and submitted.
-        :param dict['amazon.offer', dict] feed_data_by_offer: A mapping of offer to their feed data,
-            i.e. at least the 'productType' of the offer.
-        :param 'amazon.marketplace' marketplace_id: The marketplace to which the feed should apply.
-        """
-        if not self:  # Don't send empty feed
+        if not self:
             return
 
         for i, feed_info in enumerate(feed_data_by_offer.values(), start=1):
-            # Assign and save the message id to later match error message(s)
             feed_info["messageId"] = i
         messages = self._prepare_feed_messages(feed_data_by_offer)
         json_feed = amazon_utils.get_json_feed(account, messages)
@@ -325,19 +279,11 @@ class AmazonOffer(models.Model):
                 ", ".join(self.mapped("sku")),
             )
             self.amazon_sync_status = "processing"
-            # Save feed reference to later sync any error that might have occurred
             for feed_info in feed_data_by_offer.values():
                 feed_info["amazon_feed_ref"] = feed_ref
-            # Save message IDs
             self._save_feed_data(feed_data_by_offer)
 
     def _prepare_feed_messages(self, feed_data_by_offer) -> list:
-        """Constructs the inventory feed messages.
-
-        :param dict['amazon.offer', dict] feed_data_by_offer: A dict mapping offer with the
-            necessary feed data, i.e. productType and messageId.
-        :rtype: list[dict]
-        """
         return [
             {
                 "messageId": feed_data["messageId"],
@@ -361,12 +307,5 @@ class AmazonOffer(models.Model):
         ]
 
     def _get_available_product_qty(self):
-        """Retrieve the current available and free product quantity.
-
-        This hook can be overridden to set a finer quantity.
-
-        :return: The free quantity.
-        :rtype: float
-        """
         self.check_singleton()
         return self.product_id.qty_free

@@ -32,11 +32,6 @@ class TestResConfigSettings(TransactionCase):
         )
 
     def test_action_shows_the_global_categories_the_matcher_uses(self):
-        """A company-less category matches orders, so it must be listed.
-
-        The matcher looks for ``company_id in (company, False)``; a shortcut
-        that filters on equality hides working configuration.
-        """
         global_category = self.env["approval.category"].create(
             {
                 "name": "Global Purchase Category",
@@ -95,12 +90,6 @@ class TestResConfigSettings(TransactionCase):
         self.assertEqual(self.env.company.po_rate_limit_count, 7)
 
     def test_a_zero_rate_limit_is_refused_instead_of_being_substituted(self):
-        """Zero must not be read as the permissive default.
-
-        The consumer reads these as ``... or 24`` / ``... or 5`` / ``... or
-        fallback``, so a zero silently restored the default the administrator
-        was trying to tighten.
-        """
         company = self.env.company
         company.po_rate_limit_enabled = True
 
@@ -133,7 +122,6 @@ class TestResConfigSettings(TransactionCase):
         self.assertEqual(company.po_rate_limit_count, 0)
 
     def test_enabling_the_limiter_over_stored_zeros_is_refused(self):
-        """The toggle is a trigger too, not only the three values."""
         company = self.env.company
         company.write(
             {
@@ -146,7 +134,6 @@ class TestResConfigSettings(TransactionCase):
             company.po_rate_limit_enabled = True
 
     def test_the_configured_limits_reach_the_rate_limiter_unchanged(self):
-        """What the administrator types is what the engine must run."""
         company = self.env.company
         company.write(
             {

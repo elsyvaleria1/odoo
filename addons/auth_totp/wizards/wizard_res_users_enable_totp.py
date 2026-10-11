@@ -54,7 +54,6 @@ class WizardResUsersEnableTotp(models.TransientModel):
 
     @api.depends("user_id.login", "user_id.company_id.display_name", "secret")
     def _compute_qrcode(self) -> None:
-        # TODO: make "issuer" configurable through config parameter?
         global_issuer = request and request.httprequest.host.split(":", 1)[0]
         for w in self:
             issuer = global_issuer or w.user_id.company_id.display_name
@@ -67,8 +66,6 @@ class WizardResUsersEnableTotp(models.TransientModel):
                         {
                             "secret": compress(w.secret),
                             "issuer": issuer,
-                            # apparently a lowercase hash name is anathema to google
-                            # authenticator (error) and passlib (no token)
                             "algorithm": ALGORITHM.upper(),
                             "digits": DIGITS,
                             "period": TIMESTEP,
@@ -93,7 +90,7 @@ class WizardResUsersEnableTotp(models.TransientModel):
                 self.env._("The verification code should only contain numbers")
             ) from None
         if self.user_id._totp_try_setting(self.secret, c):
-            self.secret = ""  # empty it, because why keep it until GC?
+            self.secret = ""
             return {
                 "type": "ir.actions.client",
                 "tag": "display_notification",

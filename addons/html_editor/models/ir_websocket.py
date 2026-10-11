@@ -23,9 +23,6 @@ class IrWebsocket(models.AbstractModel):
         return result
 
     def _collaboration_channel(self, name):
-        # A name this subscriber may not hear is refused alone: raising would
-        # fail the whole subscription of the worker, every tab of the browser
-        # left hearing nothing.
         if not (match := COLLABORATION_CHANNEL.match(name)):
             return None
         model_name, field_name, res_id = match[1], match[2], int(match[3])

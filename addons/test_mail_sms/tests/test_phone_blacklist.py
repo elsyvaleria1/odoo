@@ -33,7 +33,6 @@ class TestPhoneBlacklist(SMSCommon, TestSMSRecipients):
         cls.test_record = cls._reset_mail_context(cls.test_record)
 
     def test_phone_blacklist_create_unblacklisted(self):
-        """Ensure that the API allows creating unblacklisted records."""
         phone_number = self.test_numbers[0]
         unblacklisted_record = (
             self.env["phone.blacklist"]
@@ -45,7 +44,6 @@ class TestPhoneBlacklist(SMSCommon, TestSMSRecipients):
             "Creating an unblacklisted record resulted in a blacklisted one",
         )
 
-        # Make sure that an attempt to re-create unblacklisted number will leave the number as it was (unblacklisted)
         still_unblacklisted_record = (
             self.env["phone.blacklist"]
             .sudo()
@@ -99,12 +97,6 @@ class TestPhoneBlacklist(SMSCommon, TestSMSRecipients):
             self.assertEqual(rec, self.env["mail.test.sms.bl"])
 
     def test_phone_blacklist_unblacklisted(self):
-        """This test check for scenario where user:
-            1. Blacklists a number  -> creating new active record)
-            2. Unblacklists it      -> making record unactive (archived)
-            3. Blacklists it again (by attempting to create new record)
-        Last step should just make existing record active again, and this test checks it.
-        """
         phone_number = self.test_numbers[0]
         bl_record = (
             self.env["phone.blacklist"]
@@ -117,7 +109,6 @@ class TestPhoneBlacklist(SMSCommon, TestSMSRecipients):
 
         bl_record.action_archive()
 
-        # Attempt to blacklist unblacklisted
         self.env["phone.blacklist"].sudo().create([{"number": phone_number}])
 
         self.assertTrue(

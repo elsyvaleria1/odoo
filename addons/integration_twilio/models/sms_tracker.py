@@ -1,14 +1,13 @@
 from odoo import fields, models
 
-# https://www.twilio.com/docs/messaging/guides/debugging-tools#error-codes
 TWILIO_CODE_TO_FAILURE_TYPE = {
-    "30002": "expired",  # Account suspended
-    "30003": "not_delivered",  # Handset temporarily unreachable
-    "30004": "rejected",  # Message blocked
-    "30005": "invalid_destination",  # Unknown destination handset
-    "30006": "not_allowed",  # Landline or unreachable carrier
-    "30007": "rejected",  # Message filtered
-    "30008": "not_delivered",  # Unknown error
+    "30002": "expired",
+    "30003": "not_delivered",
+    "30004": "rejected",
+    "30005": "invalid_destination",
+    "30006": "not_allowed",
+    "30007": "rejected",
+    "30008": "not_delivered",
 }
 
 

@@ -109,9 +109,6 @@ class TestCronRecordGpsOdometer(CronGpsOdometerBase):
         self.assertEqual(log.write_date, written)
 
     def test_a_reading_at_or_below_the_current_odometer_books_nothing(self):
-        # A manual reading the GPS has not caught up with yet. Deleting a booked
-        # log would not do: the asset's odometer is computed from that ledger, so
-        # removing the row takes the odometer down with it.
         self.Log.create(
             {
                 "asset_id": self.vehicle.asset_id.id,
@@ -158,8 +155,6 @@ class TestCronRecordGpsOdometer(CronGpsOdometerBase):
         self.assertEqual(self._gps_logs(third).odometer, 9000)
 
     def test_the_snapshot_day_uses_the_resources_zone_over_the_crons(self):
-        """The nightly run fires at 03:10 UTC, which is 21:10 the previous day
-        for a UTC-6 fleet. The reading belongs to the operator's day."""
         self.company.partner_id.tz = "America/Mexico_City"
         self.vehicle.asset_id.tz = "America/Mexico_City"
 
@@ -186,8 +181,6 @@ class TestCronRecordGpsOdometer(CronGpsOdometerBase):
         self.assertEqual(self._gps_logs(second).date, date(2026, 9, 7))
 
     def test_the_snapshot_day_falls_back_to_utc(self):
-        """A company whose partner carries no timezone keeps the old behaviour
-        rather than raising on an empty timezone name."""
         self.company.partner_id.tz = False
 
         with freeze_time("2026-09-07 03:10:56"):
@@ -216,7 +209,6 @@ class TestCronRecordGpsOdometerAcrossCompanies(CronGpsOdometerBase):
         cls.fleet_company = cls.env["res.company"].create({"name": "Fleet Owner"})
         cls.fleet_company.partner_id.tz = "America/Mexico_City"
         cls.env.user.company_ids = [Command.link(cls.fleet_company.id)]
-        # The acting company stays the placeholder, timezone and all.
         cls.company.partner_id.tz = False
         cls.vehicle.gps_device_id = False
         with freeze_time("2026-01-01"):
@@ -259,7 +251,6 @@ class TestCronRecordGpsOdometerAcrossCompanies(CronGpsOdometerBase):
         )
 
     def test_a_second_run_the_same_day_still_books_one_row(self):
-        """The dedupe keys on the asset's day, not one day for the run."""
         with freeze_time("2026-09-07 03:10:56"):
             self._reading(self.device, 12000)
             self.env["product.trace"]._cron_record_gps_odometer()

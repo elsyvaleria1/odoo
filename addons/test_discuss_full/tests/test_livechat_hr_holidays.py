@@ -29,7 +29,6 @@ class TestLivechatHrHolidays(HttpCase, MailCommon):
         )
 
     def test_operator_available_on_leave(self):
-        """Test operator is available on leave when they are online."""
         livechat_channel = self.env["im_livechat.channel"].create(
             {"name": "support", "user_ids": [Command.link(self.user_employee.id)]}
         )
@@ -37,7 +36,6 @@ class TestLivechatHrHolidays(HttpCase, MailCommon):
         self.assertEqual(livechat_channel.available_operator_ids, self.user_employee)
 
     def test_operator_limit_on_leave(self):
-        """Test livechat limit is correctly applied when operator is on leave and online."""
         livechat_channel = self.env["im_livechat.channel"].create(
             {
                 "max_sessions_mode": "limited",

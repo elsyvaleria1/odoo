@@ -7,7 +7,6 @@ class UtmMedium(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_linked_mailings(self) -> None:
-        """Already handled by ondelete='restrict', but let's show a nice error message"""
         linked_mailings = (
             self.env["mailing.mailing"].sudo().search([("medium_id", "in", self.ids)])
         )

@@ -164,8 +164,6 @@ _collectors: list[Callable[[MetricAdder], None]] = []
 
 
 def register_collector(collect: Callable[[MetricAdder], None]) -> None:
-    # An addon's own families; it is handed `add(name, value, *, kind, help,
-    # labels)` per scrape, since core imports no addon to ask it.
     if collect not in _collectors:
         _collectors.append(collect)
 

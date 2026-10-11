@@ -95,10 +95,6 @@ class HrAttendanceOvertimeLine(models.Model):
 
     @api.depends("employee_id")
     def _compute_is_manager(self) -> None:
-        # The same verdict `hr.attendance.is_manager` gives: "manage all
-        # attendances" approves anyone's, an officer approves their own
-        # employees'. The two used to disagree, and the line's approve button
-        # hid from a user whose attendance-level button was shown.
         has_all_right = self.env.user.has_group(
             "hr_attendance.group_hr_attendance_user"
         )
@@ -112,13 +108,6 @@ class HrAttendanceOvertimeLine(models.Model):
             )
 
     def _regeneration_key(self) -> tuple:
-        """Identity of an overtime line across a regeneration.
-
-        Two lines with the same key describe the same overtime: the same
-        attendance, day, set of rules and computed amount. A manager's
-        decision on one carries to the other; a change to any part of the key
-        makes it a different line that starts from its default status.
-        """
         self.check_singleton()
         return (
             self.attendance_id.id,
@@ -146,7 +135,6 @@ class HrAttendanceOvertimeLine(models.Model):
         return self.attendance_id
 
     def action_open_linked_attendance(self) -> dict:
-        """Open the attendance this overtime line was computed from."""
         self.check_singleton()
         return {
             "name": self.env._("Linked Attendance"),

@@ -13,8 +13,6 @@ class IrUiMenu(models.Model):
     @api.model
     def _get_best_backend_root_menu_id_for_model(self, res_model: str) -> int | None:
         if not self.has_access("read"):
-            # a portal or public user reads no menu; asking raised an AccessError
-            # whose message named the groups that would allow, for nothing
             _debug.logic("root_menu", model=res_model, menu=None, by="no_menu_access")
             return None
         with contextlib.suppress(AccessError):

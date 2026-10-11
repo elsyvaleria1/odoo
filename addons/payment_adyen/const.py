@@ -1,23 +1,15 @@
-# Endpoints of the API.
-# See https://docs.adyen.com/api-explorer/#/CheckoutService/v70/overview for Checkout API
-# See https://docs.adyen.com/api-explorer/#/Recurring/v68/overview for Recurring API
 API_ENDPOINT_VERSIONS = {
-    "/disable": 68,  # Recurring API; unused - to remove
-    "/paymentMethods": 71,  # Checkout API
-    "/payments": 71,  # Checkout API
-    "/payments/details": 71,  # Checkout API
-    "/payments/{}/cancels": 71,  # Checkout API
-    "/payments/{}/captures": 71,  # Checkout API
-    "/payments/{}/refunds": 71,  # Checkout API
+    "/disable": 68,
+    "/paymentMethods": 71,
+    "/payments": 71,
+    "/payments/details": 71,
+    "/payments/{}/cancels": 71,
+    "/payments/{}/captures": 71,
+    "/payments/{}/refunds": 71,
 }
 
-# The event codes of the notifications that capture or void a source transaction, in full or in
-# part; every other event code but AUTHORISATION is handled as a refund.
 CHILD_OPERATION_EVENT_CODES = ("CANCELLATION", "CAPTURE", "CAPTURE_FAILED")
 
-# Adyen-specific mapping of currency codes in ISO 4217 format to the number of decimals.
-# Only currencies for which Adyen does not follow the ISO 4217 norm are listed here.
-# See https://docs.adyen.com/development-resources/currency-codes
 CURRENCY_DECIMALS = {
     "CLP": 2,
     "CVE": 0,
@@ -25,18 +17,14 @@ CURRENCY_DECIMALS = {
     "ISK": 2,
 }
 
-# The codes of the payment methods to activate when Adyen is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",
     "discover",
 }
 
-# Mapping of payment method codes to Adyen codes.
 PAYMENT_METHODS_MAPPING = {
     "ach_direct_debit": "ach",
     "apple_pay": "applepay",
@@ -67,8 +55,6 @@ PAYMENT_METHODS_MAPPING = {
     "wechat_pay": "wechatpayQR",
 }
 
-# Mapping of transaction states to Adyen result codes.
-# See https://docs.adyen.com/checkout/payment-result-codes for the exhaustive list of result codes.
 RESULT_CODES_MAPPING = {
     "pending": (
         "ChallengeShopper",

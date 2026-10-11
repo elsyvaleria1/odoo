@@ -65,12 +65,8 @@ class SocialStreamPost(models.Model):
                 post.linkedin_author_urn == post.account_id.linkedin_account_urn
             )
 
-    # ========================================================
-    # POST EDITION
-    # ========================================================
 
     def _linkedin_edit_post(self, new_message) -> None:
-        """Make a API call to update the post message."""
         self.check_singleton()
         self.check_access("write")
 
@@ -87,7 +83,6 @@ class SocialStreamPost(models.Model):
         self.message = new_message
 
     def _linkedin_remove_post(self) -> None:
-        """Make a API call to delete the post."""
         self.check_singleton()
         self.check_access("unlink")
 
@@ -102,12 +97,8 @@ class SocialStreamPost(models.Model):
 
         self.unlink()
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
     def _linkedin_like_comment(self, comment_urn, like) -> None:
-        """Like or remove the like on the given comment."""
         self.check_singleton()
         if like:
             response = self.account_id._linkedin_request(
@@ -138,11 +129,9 @@ class SocialStreamPost(models.Model):
         }
 
         if comment_urn:
-            # we reply yo an existing comment
             data["parentComment"] = comment_urn
 
         if attachment:
-            # we upload an image with our comment
             image_urn = self.account_id._linkedin_upload_image(attachment)
             data["content"] = [{"entity": {"image": image_urn}}]
 
@@ -161,7 +150,7 @@ class SocialStreamPost(models.Model):
             )
 
         result = response.json()
-        result["from"] = {  # fill with our own information to save an API call
+        result["from"] = {
             "id": self.account_id.linkedin_account_urn,
             "name": self.account_id.name,
             "authorUrn": self.account_id.linkedin_account_urn,
@@ -200,13 +189,6 @@ class SocialStreamPost(models.Model):
         return {"message": response.get("message", {}).get("text", "")}
 
     def _linkedin_get_comments(self, comment_urn=None, offset=0, count=20) -> dict:
-        """Retrieve comments on a LinkedIn element.
-
-        :param comment_urn: URN of the element (UGC Post or Comment) on which we want to retrieve comments
-            If no specified, retrieve comments on the current post
-        :param offset: Used to scroll over the comments, position of the first retrieved comment
-        :param count: Number of comments returned
-        """
         element_urn = comment_urn or self.linkedin_post_urn
 
         response = self.account_id._linkedin_request(
@@ -247,7 +229,6 @@ class SocialStreamPost(models.Model):
 
         formatted_authors = {}
 
-        # get the author information if it's an organization
         if organizations_ids:
             response_json = self.account_id._linkedin_request(
                 "organizations",
@@ -275,10 +256,7 @@ class SocialStreamPost(models.Model):
                     "isOrganization": True,
                 }
 
-        # get the author information if it's normal user
         if persons:
-            # On the 3 December 2023, /people is still not in the rest API...
-            # As the LinkedIn support suggested, we need to use the old endpoint...
             response_json = (
                 self.env["ir.egress"]
                 .request(
@@ -313,7 +291,6 @@ class SocialStreamPost(models.Model):
                 author["picture"] = image_ids_to_url.get(author["picture"])
 
             for comment in comments:
-                # add the URL in the comment if the API didn't return it
                 for content in comment.get("content", []):
                     if content.get("type") == "IMAGE" and not content.get("url"):
                         content["url"] = image_ids_to_url.get(
@@ -328,7 +305,6 @@ class SocialStreamPost(models.Model):
 
         comments = [self._linkedin_format_comment(comment) for comment in comments]
         if "comment" in element_urn:
-            # replies on comments should be sorted chronologically
             comments = comments[::-1]
 
         liked_per_comment_urn = self._linkedin_comments_user_liked(comments)
@@ -347,18 +323,10 @@ class SocialStreamPost(models.Model):
         }
 
     def _linkedin_comments_user_liked(self, comments) -> dict:
-        """Determine for each comment, if the current company page liked it or not.
-
-        The key "likedByCurrentUser" is already returned when we fetch all comments,
-        but it's true if the current user liked the comment, not if the
-        current *page* liked it, so we can not use this field.
-        """
         self.check_singleton()
         if not comments:
             return {}
 
-        # comment URN passed in URL is in different format
-        # than the comment URN returned by the API...
         comment_urns = [
             comment["id"].replace("urn:li:activity", "activity") for comment in comments
         ]
@@ -378,18 +346,12 @@ class SocialStreamPost(models.Model):
         response = response.json()
 
         return {
-            # (actor:urn:li:organization:123,entity:urn:li:comment:(activity:456,789))
-            # -> urn:li:comment:(activity:456,789)
             unquote(like_urn).split("entity:")[-1][:-1]: True
             for like_urn in response.get("results", {})
         }
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _linkedin_format_comment(self, json_data):
-        """Formats a comment returned by the LinkedIn API to a dict that will be interpreted by our frontend."""
         created_time = json_data.get("created", {}).get("time", 0)
         data = {
             "id": json_data.get("commentUrn"),
@@ -425,8 +387,6 @@ class SocialStreamPost(models.Model):
             None,
         )
         if image_content:
-            # Sometimes we can't access the image (e.g. if it's still being process)
-            # so we have a placeholder image if the download URL is not yet available
             data["attachment"] = {
                 "type": "photo",
                 "media": {

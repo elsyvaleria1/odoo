@@ -28,8 +28,6 @@ METHODS = [
     ("barcode", "Barcode"),
     ("gps", "GPS"),
 ]
-# The fields whose values the hash seals, in a fixed order. A later reading of the
-# chain recomputes the digest from these and from the previous checkpoint's.
 HASHED_FIELDS = (
     "batch_id",
     "sequence",
@@ -139,11 +137,6 @@ class StockTripCheckpoint(models.Model):
             checkpoint.verified = checkpoint.method in ("system", "barcode", "gps")
 
     def _hash_payload(self, previous_hash):
-        """Serialize the sealed fields with the previous digest.
-
-        :param str previous_hash: digest of the checkpoint before this one
-        :rtype: str
-        """
         self.check_singleton()
         values = {}
         for name in HASHED_FIELDS:
@@ -169,16 +162,14 @@ class StockTripCheckpoint(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         checkpoints = self.browse()
-        # One at a time: each seals the one created just before it on its trip.
         for vals in vals_list:
             batch = self.env["stock.picking.batch"].browse(vals["batch_id"])
             batch.lock_for_update(wait=True)
-            last = self.search(  # noqa: E8507 - each checkpoint seals the one before it, under the trip lock
+            last = self.search(
                 [("batch_id", "=", batch.id)], order="sequence desc", limit=1
             )
             checkpoint = super().create([{**vals, "sequence": last.sequence + 1}])
             digest = checkpoint._compute_hash(last.hash)
-            # Written below the ORM write guard: nobody else may set these.
             super(StockTripCheckpoint, checkpoint).write(
                 {"previous_hash": last.hash or "", "hash": digest}
             )
@@ -203,11 +194,6 @@ class StockTripCheckpoint(models.Model):
         )
 
     def _check_chain(self):
-        """Return the checkpoints whose digest no longer matches their content.
-
-        :return: checkpoints edited behind the ORM, or whose predecessor was
-        :rtype: recordset
-        """
         broken = self.browse()
         previous = ""
         for checkpoint in self.sorted("sequence"):

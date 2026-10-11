@@ -13,7 +13,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         cls.vanilla_company1 = cls.env["res.company"].create({"name": "Vanilla1"})
         cls.vanilla_company2 = cls.env["res.company"].create({"name": "Vanilla2"})
 
-        # Force the test user to only access the vanilla companies
         cls.env.user.write(
             {
                 "company_ids": [
@@ -259,7 +258,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g2.
         options["__journal_group_action"] = {"action": "add", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -283,7 +281,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         options = self.report.get_options(previous_options=options)
         self.assertEqual(options["name_journal_group"], "g2")
 
-        # Uncheck g2.
         options["__journal_group_action"] = {"action": "remove", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -333,7 +330,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g2.
         options["__journal_group_action"] = {"action": "add", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -354,7 +350,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Uncheck g2.
         options["__journal_group_action"] = {"action": "remove", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -399,7 +394,7 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        self._press_journal_filter(options, j3)  # check j3
+        self._press_journal_filter(options, j3)
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
             options,
@@ -416,7 +411,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g1.
         options["__journal_group_action"] = {"action": "add", "id": g1.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -434,7 +428,7 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        self._press_journal_filter(options, j3)  # Check j3
+        self._press_journal_filter(options, j3)
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
             options,
@@ -451,7 +445,7 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        self._press_journal_filter(options, j3)  # Uncheck j3
+        self._press_journal_filter(options, j3)
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
             options,
@@ -469,10 +463,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         )
 
     def test_journal_filter_with_groups_cash_flow_statement(self):
-        """
-        Test the journal filter with groups on a report that does not accept every journal type
-        (the cash flow statement rejects sale and purchase journals)
-        """
         bnk = self._quick_create_journal("BNK", self.vanilla_company1, "bank")
         csh = self._quick_create_journal("CSH", self.vanilla_company1, "cash")
         misc = self._quick_create_journal("MISC", self.vanilla_company1, "general")
@@ -481,10 +471,10 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         caba = self._quick_create_journal("CABA", self.vanilla_company1, "general")
         inv = self._quick_create_journal(
             "INV", self.vanilla_company1, "sale"
-        )  # Not accepted by the report
+        )
         bill = self._quick_create_journal(
             "BILL", self.vanilla_company1, "purchase"
-        )  # Not accepted by the report
+        )
 
         g1 = self._quick_create_journal_group("g1", self.vanilla_company1, inv + bill)
         g2 = self._quick_create_journal_group("g2", self.vanilla_company1, misc + bill)
@@ -500,7 +490,7 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
                 (
                     g2,
                     False,
-                ),  # g2 should be displayed because it has journals that are allowed in the report
+                ),
                 {"id": "divider"},
                 (bnk, False),
                 (caba, False),
@@ -511,7 +501,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g2, all journals from g2 that are allowed in report should be selected
         options["__journal_group_action"] = {"action": "add", "id": g2.id}
         options = report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -531,7 +520,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Uncheck g2.
         options["__journal_group_action"] = {"action": "remove", "id": g2.id}
         options = report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -552,11 +540,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         )
 
     def test_journal_filter_branch_company(self):
-        """
-        Test the journal filter with sub companies: each journal appears once even when shared
-        between a company and its children, and parent company journals stay in the filter when
-        only the child company is selected
-        """
         self.vanilla_company1.write(
             {"child_ids": [Command.create({"name": "Vanilla3"})]}
         )
@@ -587,7 +570,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         j9 = self._quick_create_journal("j9", vanilla_company3)
         j10 = self._quick_create_journal("j10", vanilla_company3)
 
-        # With all companies selected, all journals should be displayed
         options = self.report.get_options({"is_opening_report": True})
         self._assert_filter_journal(
             options,
@@ -631,7 +613,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Select only the child company
         self.env.user.write(
             {
                 "company_ids": [Command.set((vanilla_company3).ids)],
@@ -639,7 +620,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             }
         )
 
-        # Parent company journals should be displayed too
         options = self.report.get_options({"is_opening_report": True})
         self._assert_filter_journal(
             options,
@@ -673,7 +653,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Select only the parent company
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.vanilla_company1).ids)],
@@ -681,7 +660,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             }
         )
 
-        # Only parent company journals should be displayed
         options = self.report.get_options({"is_opening_report": True})
         self._assert_filter_journal(
             options,
@@ -708,21 +686,16 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         )
 
     def test_journal_filter_with_groups_no_company_multi_company(self):
-        """Test the journals filter with a group where no company is set, therefore implying that all companies can
-        visualize the filter in their accounting reports"""
         j1 = self._quick_create_journal("j1", self.vanilla_company1)
         j2 = self._quick_create_journal("j2", self.vanilla_company1)
         j3 = self._quick_create_journal("j3", self.vanilla_company1)
         j4 = self._quick_create_journal("j4", self.vanilla_company2)
         j5 = self._quick_create_journal("j5", self.vanilla_company2)
 
-        # g1 has journals of company1 only as it's visible only for company 1
         g1 = self._quick_create_journal_group("g1", self.vanilla_company1, j1)
 
-        # g2 has no company set, therefore implying that this multi-ledger is visible for all companies
         g2 = self._quick_create_journal_group("g2", False, j2 + j5)
 
-        # only select company 2
         self.env.user.write(
             {
                 "company_ids": [Command.set(self.vanilla_company2.ids)],
@@ -752,7 +725,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             }
         )
 
-        # Check g1
         options["__journal_group_action"] = {"action": "add", "id": g1.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -772,7 +744,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g2
         options["__journal_group_action"] = {"action": "add", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -792,7 +763,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # only select company 1
         self.env.user.write(
             {
                 "company_ids": [Command.set(self.vanilla_company1.ids)],
@@ -815,7 +785,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check g2
         options["__journal_group_action"] = {"action": "add", "id": g2.id}
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal(
@@ -832,7 +801,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check that changing the sequence of journal groups changes the order in the filter
         g2.sequence = g1.sequence - 1
         options = self.report.get_options({"is_opening_report": True})
         self._assert_filter_journal(
@@ -850,7 +818,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
         )
 
     def test_filter_journal_visible_items(self):
-        """Test the unfolded and visible attributes of the dropdown items of the journals filter"""
         j1 = self._quick_create_journal("j1", self.vanilla_company1)
         j2 = self._quick_create_journal("j5", self.vanilla_company2)
         g1 = self._quick_create_journal_group("g1", False, j1)
@@ -869,7 +836,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             ],
         )
 
-        # visible, unfolded (None means there is no value because of irrelevance)
         expected_values_at_opening = [
             (None, None),
             (None, None),
@@ -878,12 +844,10 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             (None, False),
             (False, None),
         ]
-        # Ensure that when opening the report for the first time, all companies are folded
         self._assert_filter_journal_visible_unfolded(
             options, expected_values_at_opening
         )
 
-        # simulate unfold of 1st company
         options["journals"][2]["unfolded"] = True
         options["journals"][3]["visible"] = True
 
@@ -901,7 +865,6 @@ class TestAccountReportsJournalFilter(AccountTestInvoicingCommon):
             options, expected_values_after_unfolding
         )
 
-        # simulate the refresh of the page, should fold back the 1st company
         options["is_opening_report"] = True
         options = self.report.get_options(previous_options=options)
         self._assert_filter_journal_visible_unfolded(

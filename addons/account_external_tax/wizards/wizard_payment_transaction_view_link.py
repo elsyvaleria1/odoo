@@ -9,8 +9,6 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
         res_id = self.env.context.get("active_id")
         res_model = self.env.context.get("active_model")
 
-        # This ensures that taxes are up-to-date and the required information is set so the customer clicking
-        # the payment link won't see an error.
         if res_id and res_model:
             self.env[res_model].browse(
                 res_id

@@ -97,9 +97,6 @@ class WhatsappTemplateButton(models.Model):
         }
 
     def _filter_dynamic_buttons(self):
-        """
-        Retrieve buttons filtered by 'dynamic' URL type.
-        """
         return self.filtered(
             lambda button: button.button_type == "url" and button.url_type == "dynamic"
         )

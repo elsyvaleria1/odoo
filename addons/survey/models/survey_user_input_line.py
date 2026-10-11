@@ -219,9 +219,6 @@ class SurveyUser_InputLine(models.Model):
         detached = self.filtered(lambda line: not line.user_input_id.survey_id)
         questions = detached.question_id
         choices = detached.suggested_answer_id | detached.matrix_row_id
-        # A row lock alone leaves a REPEATABLE READ deleter's snapshot stale.
-        # Version the parents without changing their business fields so a racing
-        # move/delete retries instead of cascading away a newly recorded answer.
         for parents in (detached.user_input_id, questions, choices):
             if parents:
                 self.env.cr.execute(

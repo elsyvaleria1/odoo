@@ -36,7 +36,6 @@ class TestFrontEnd(TestUiCommon):
                 "role_id": cls.front_end_actor_role.id,
             }
         )
-        # Create a new planning
         cls.front_end_planning = cls.env["planning.planning"].create(
             {
                 "start_datetime": datetime(2024, 5, 15, 8, 0, 0)
@@ -44,13 +43,11 @@ class TestFrontEnd(TestUiCommon):
                 "end_datetime": datetime(2024, 5, 15, 8, 0, 0) + relativedelta(days=2),
             }
         )
-        # delete all open slots - required for the tours below
         open_shifts = cls.env["planning.slot"].search([("resource_id", "=", False)])
         open_shifts.unlink()
 
     @freeze_time("2024-05-15 08:00:00")
     def test_front_end_ui(self):
-        # Change the unavailable setting to "switch"
         self.env["res.config.settings"].create(
             {
                 "planning_employee_unavailabilities": "switch",
@@ -81,7 +78,6 @@ class TestFrontEnd(TestUiCommon):
 
     @freeze_time("2024-05-15 08:00:00")
     def test_front_end_allow_unassign_ui(self):
-        # Change the unavailable setting to "unassign"
         self.env["res.config.settings"].create(
             {
                 "planning_employee_unavailabilities": "unassign",
@@ -104,14 +100,12 @@ class TestFrontEnd(TestUiCommon):
 
     @freeze_time("2024-05-15 08:00:00")
     def test_front_end_email_buttons(self):
-        # Change the unavailable setting to "unassign"
         self.env["res.config.settings"].create(
             {
                 "planning_employee_unavailabilities": "unassign",
                 "planning_self_unassign_days_before": 0,
             }
         ).execute()
-        # Add an open shift to the planning
         self.front_end_open_slot = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2024, 5, 16, 10, 0, 0),
@@ -121,14 +115,11 @@ class TestFrontEnd(TestUiCommon):
             }
         )
 
-        # --- Self Assign Button ---
-        # Share the open slot with Thibault
         self.front_end_open_slot._send_slot(
             self.employee_thibault.resource_id,
             self.front_end_open_slot.start_datetime,
             self.front_end_open_slot.end_datetime,
         )
-        # Create a URL to immitate the "Assign me this shift" button click from the email received by Thibault
         front_end_thibault_assign_url = "planning/%s/%s/assign/%s?message=1" % (
             self.front_end_planning._page_token(self.employee_thibault.resource_id),
             self.employee_thibault.resource_id.sudo().planning_token,
@@ -143,14 +134,11 @@ class TestFrontEnd(TestUiCommon):
             "Thibault should now be assigned to the open shift",
         )
 
-        # --- Unavailable Button ---
-        # Share Thibault's slot with Thibault
         self.front_end_slot._send_slot(
             self.employee_thibault.resource_id,
             self.front_end_slot.start_datetime,
             self.front_end_slot.end_datetime,
         )
-        # Create a URL to immitate the "I am Unavailable" button click from the email received by Thibault
         front_end_thibault_unassign_url = "planning/%s/%s/unassign/%s?message=1" % (
             self.front_end_planning._page_token(self.employee_thibault.resource_id),
             self.employee_thibault.resource_id.sudo().planning_token,

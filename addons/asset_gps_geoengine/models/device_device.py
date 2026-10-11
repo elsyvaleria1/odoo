@@ -5,11 +5,6 @@ class DeviceDevice(models.Model):
     _inherit = "device.device"
 
     asset_name = fields.Char(
-        # display_name, not name: asset_ledger composes a vehicle's as
-        # manufacturer / model / plate, while name is typed by hand and on
-        # this fleet holds VINs, bare plates, and model years and colours
-        # that have their own fields. The canonical reading is the one the
-        # map shows and the one every other screen already shows.
         related="asset_id.display_name",
         string="Vehicle",
     )
@@ -42,10 +37,6 @@ class DeviceDevice(models.Model):
         for device in self.filtered("asset_id"):
             vehicle = device.asset_name or device.name
             plate = device.asset_license_plate
-            # A vehicle's display_name already ends in its plate, so appending
-            # it would say it twice. The model takes equipment and property
-            # too, and theirs does not, so the plate is added only when the
-            # label is not already carrying it.
             if plate and plate.casefold() not in vehicle.casefold():
                 vehicle = f"{vehicle} ({plate})"
             if device.operator_name:
@@ -56,12 +47,6 @@ class DeviceDevice(models.Model):
                 device.map_subtitle = False
 
     def _compute_stay(self):
-        """Where the vehicle is now and for how long, from the stops table
-        rather than the position log: the live map reads this on every
-        refresh, and the log is a foreign table in production.
-
-        The place it left is not carried over: that belongs to the client
-        visits report, and a moving vehicle is just moving."""
         stops = self.env["device.gps.stop"].search(
             [("device_id", "in", self.ids), ("kind", "=", "stop")],
             order="arrival desc",

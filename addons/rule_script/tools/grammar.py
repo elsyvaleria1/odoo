@@ -141,9 +141,6 @@ class RuleHeader:
 
 
 def parse_rule(source: str) -> tuple[RuleHeader, ast.Module]:
-    """The header of a rule script and its module, validated against the rule
-    grammar and with every attribute read rewritten through the guarded
-    accessor. Raises RuleSyntaxError on the first violation."""
     try:
         module = ast.parse(source, mode="exec")
     except SyntaxError as error:
@@ -335,7 +332,6 @@ class _BodyValidator(ast.NodeVisitor):
                         f"{function.id}() takes no keyword {keyword.arg!r}",
                         node.lineno,
                     )
-                # key= is called on every element: only a builtin, by name
                 if keyword.arg == "key" and not (
                     isinstance(keyword.value, ast.Name)
                     and keyword.value.id in SAFE_BUILTIN_NAMES
@@ -405,7 +401,6 @@ class _RuntimeGuard(ast.NodeTransformer):
         return self._guarded(guard, node.left, node.right, node)
 
     def visit_AugAssign(self, node):
-        # x *= y and x **= y run through the same guards as x * y and x ** y
         guard = self.GUARDED_OPERATORS.get(type(node.op))
         if not guard:
             return self.generic_visit(node)

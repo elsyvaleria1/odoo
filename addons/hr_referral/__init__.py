@@ -17,9 +17,6 @@ from . import wizards
 
 
 def _pre_init_referral(env) -> None:
-    # When installing hr_referral, ref_user_id will always be equal to False.
-    # We create this column now instead of ORM. If this column is already created, the ORM will not create it again and the compute function will not be called.
-    # In case of huge database, the function _compute_ref_user_id can be time consumming and always return False.
     env.cr.execute(
         "ALTER TABLE hr_applicant ADD COLUMN ref_user_id int4 REFERENCES res_users(id)"
     )

@@ -255,7 +255,6 @@ class TestWebsiteSaleReorderFromPortal(HttpCaseWithUserPortal):
 
         self.assertEqual(response.status_code, 303)
         self.assertTrue(response.headers["Location"].endswith("/shop/cart"))
-        # another tab refreshing its cart in place does not take the report
         self.assertNotIn("data-add-to-cart-tracking", refreshed.text)
         reported = html.fromstring(visited.content).xpath(
             "//*[@data-add-to-cart-tracking]/@data-add-to-cart-tracking"

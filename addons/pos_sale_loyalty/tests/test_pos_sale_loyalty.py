@@ -11,7 +11,6 @@ class TestPoSSaleLoyalty(TestPointOfSaleHttpCommon):
         return groups | cls.quick_ref("sale.group_sale_manager")
 
     def test_pos_sale_loyalty_1(self):
-        """Test that only one loyalty card is created when settling an unconfirmed order."""
         self.env["loyalty.program"].search([]).write({"active": False})
         self.env["loyalty.program"].create(
             {
@@ -72,7 +71,6 @@ class TestPoSSaleLoyalty(TestPointOfSaleHttpCommon):
         )
 
     def test_pos_sale_loyalty_ignored_in_pos(self):
-        """Test that the loyalty program already applied in sales are not applied again in PoS"""
         self.env["loyalty.program"].search([]).write({"active": False})
         self.env["loyalty.program"].create(
             {
@@ -144,7 +142,6 @@ class TestPoSSaleLoyalty(TestPointOfSaleHttpCommon):
         )
 
     def test_sale_order_loyalty_card_can_be_used_in_pos(self):
-        """Create loyalty program & card → Confirm sale order → Verify loyalty card usable in POS"""
         self.env["loyalty.program"].search([]).write({"active": False})
         self.env["loyalty.program"].create(
             {

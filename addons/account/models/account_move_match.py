@@ -72,7 +72,6 @@ class MixinAccountDocumentMatch(models.AbstractModel):
 
     @api.model
     def _get_document_columns(self):
-        """Ordered SQL schema; providers override values, extensions add columns."""
         return {
             "id": SQL("NULL::BIGINT"),
             "name": SQL("NULL::VARCHAR"),
@@ -133,7 +132,6 @@ class MixinAccountDocumentMatch(models.AbstractModel):
 
     @api.model
     def _where_moves(self):
-        # A projection must never grant access to a source the user cannot read.
         Move = self.env["account.move"]
         if not Move.has_access("read"):
             return SQL("FALSE")

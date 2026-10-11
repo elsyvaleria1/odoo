@@ -93,7 +93,6 @@ class ApprovalDecisionLog(models.Model):
 
     @api.model
     def _access_guard(self, operation: str) -> Domain:
-        # a decision is readable exactly where its request is
         if operation == "read":
             return Domain("request_id", "access", "read")
         return super()._access_guard(operation)
@@ -137,8 +136,6 @@ class ApprovalRequest(models.Model):
     )
 
     def _compute_decision_log_ids(self) -> None:
-        # Read through the request: whoever may read the request may read what
-        # was decided about it, without the log needing rules of its own.
         logs = self.env["approval.decision.log"].search(
             [("request_id", "in", self.ids)]
         )
@@ -161,11 +158,6 @@ class ApprovalRequest(models.Model):
         note=None,
         date=None,
     ):
-        """Record one fact per row it concerns, or one for the request itself.
-
-        Called by every funnel that changes what is decided, BEFORE a funnel that
-        erases the rows' decision fields runs, and after one that sets them.
-        """
         self.check_singleton()
         acting = actor or self.env.user
         elevation = self._decision_elevation()
@@ -207,8 +199,6 @@ class ApprovalRequest(models.Model):
         return logs
 
     def _stamp_state_after(self, logs) -> None:
-        """What the request became, stamped again by a funnel that logs before it
-        erases the rows' decisions."""
         self.check_singleton()
         self.env.cr.execute(
             SQL(

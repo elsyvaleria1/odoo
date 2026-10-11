@@ -611,8 +611,6 @@ def apply_repair(cr: BaseCursor, plan: RepairPlan) -> bool:
                     update_sql(col.table, col.column, plan.zone, plan.until_local)
                 )
                 column_plan.repaired = cr.rowcount
-        # Every failing column is reported in one run; the caller then rolls
-        # the whole transaction back.
         except Exception as exc:
             column_plan.error = f"{type(exc).__name__}: {exc}"
             _debug.logic(

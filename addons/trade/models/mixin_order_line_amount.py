@@ -139,9 +139,6 @@ class MixinOrderLineAmount(models.AbstractModel):
             if line.display_type:
                 line.product_qty = False
                 continue
-            # A line with no product (an imported charge, a product the import
-            # could not match) has no default to fall back on, so a recompute
-            # triggered by its order keeps the quantity it was given.
             if not line.product_id:
                 continue
             if not line.product_qty or line._is_product_qty_reset_triggered():
@@ -444,8 +441,6 @@ class MixinOrderLineAmount(models.AbstractModel):
         tax_field = direction_of(self).product_taxes_field
         for line in self.filtered(lambda l: not l.display_type):
             if not line.product_id:
-                # Nothing to map from: keep the taxes a productless line was given,
-                # unless it just lost the product they came from.
                 if line._origin.product_id:
                     line._apply_auto_taxes(self.env["account.tax"])
                 continue
@@ -482,7 +477,6 @@ class MixinOrderLineAmount(models.AbstractModel):
                 line._apply_auto_taxes(result)
 
     def _auto_taxes(self):
-        """The taxes the product and fiscal position give this line, or none."""
         self.check_singleton()
         empty = self.env["account.tax"]
         if self.display_type or not self.product_id:
@@ -501,18 +495,11 @@ class MixinOrderLineAmount(models.AbstractModel):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
-        # a line whose taxes arrived in `vals` never went through the compute,
-        # so it has no baseline -- and without one the next fiscal-position
-        # change would read it as automatic and overwrite the caller's choice
         for line, vals in zip(lines, vals_list, strict=False):
             if "tax_ids" in vals and not line.tax_ids_auto_key:
                 line.tax_ids_auto_key = line._tax_key(line._auto_taxes())
         return lines
 
-    # a Char that was never written and one holding "" both read as False, so the
-    # empty tax set needs a spelling of its own -- otherwise "the automatic answer
-    # was no taxes" is indistinguishable from "no automatic answer recorded yet",
-    # and a line whose taxes were set by hand over an untaxed product loses them
     _NO_TAXES_KEY = "-"
 
     @classmethod
@@ -522,20 +509,6 @@ class MixinOrderLineAmount(models.AbstractModel):
         )
 
     def _apply_auto_taxes(self, auto_taxes) -> None:
-        """Overwrite the line's taxes only while they still match the last
-        automatic answer, and record that answer either way.
-
-        `tax_ids` is a stored `readonly=False` compute, so without this an
-        explicit choice survives only until one of its dependencies moves -- and
-        `order_id.fiscal_position_id` is one of them, so any code that sets a
-        fiscal position silently re-taxes every line. Same shape and same remedy
-        as `price_unit` against `price_unit_auto`.
-
-        The shadow is a sorted key and NOT a computed field. Making it one would
-        drag this compute into cases it never ran in before -- a create whose
-        vals already carry `tax_ids` -- and it would then overwrite the caller's
-        own choice at the moment they made it.
-        """
         self.check_singleton()
         old_key = self.tax_ids_auto_key
         auto_key = self._tax_key(auto_taxes)

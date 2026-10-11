@@ -59,7 +59,6 @@ class TestHrAuditFixes(TestHrCommon):
         total = sum(allocations.filtered("amount_is_percentage").mapped("amount"))
         self.assertAlmostEqual(total, 100.0, places=4)
 
-        # the percentages-total-100 rule is a constraint on the allocation now
         with self.assertRaises(ValidationError):
             allocations.filtered(lambda a: a.bank_account_id == ba1).amount = 60.0
 
@@ -71,7 +70,6 @@ class TestHrAuditFixes(TestHrCommon):
 
         primary = emp.primary_bank_account_id
         self.assertIn(primary, ba1 | ba2)
-        # `_order = "sequence, id"`, so the first allocation is the primary
         self.assertEqual(primary, emp.salary_allocation_ids[0].bank_account_id)
 
         self.assertFalse(emp.is_trusted_bank_account)

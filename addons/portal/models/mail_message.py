@@ -184,7 +184,6 @@ class MailMessage(models.Model):
 
     def _portal_message_format_attachments(self, attachment_values):
         self.check_singleton()
-        # The bulk read is shared across messages; ownership belongs to this message.
         attachment_values = dict(attachment_values)
         safari = (
             request

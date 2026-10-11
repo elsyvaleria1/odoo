@@ -51,21 +51,6 @@ class ApprovalBinding(models.Model):
         return result
 
     def _sync_reset_automation(self) -> None:
-        """Keep one managed automation rule per binding that has a Reset When.
-
-        The rule fires on a record's transition INTO the condition: its
-        pre-update filter is the condition inverted. Without that, an approval
-        given while the record already matches -- a sale order approved in draft,
-        then edited before confirming -- would be wiped by the next unrelated
-        write.
-
-        After creation only the name, the two filters and the trigger fields are
-        written. Never `trigger`: `_compute_filter_pre_domain` clears the pre-update
-        filter for every trigger but one whenever it moves. And never `model_id`:
-        writing it, even unchanged, recomputes `trigger` to nothing and the row
-        fails its NOT NULL constraint -- so a binding whose model changed gets a new
-        rule rather than an edited one.
-        """
         for binding in self.sudo():
             automation = binding.reset_automation_id
             if not binding.reset_domain or not binding.active:

@@ -63,7 +63,6 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
     @freeze_time("2017-01-01")
     @users("apt_manager")
     def test_archive_message(self):
-        """Check that we send cancelation notifications when archiving an appointment."""
         meeting = self.appointment_meeting_id
         self.assertGreater(
             meeting.start,
@@ -92,9 +91,8 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
 
         self.assertEqual(
             len(self._new_msgs), 4, "Expected a tracking message and confirmation mails"
-        )  # 1 track message + 3 mails(1 apt_manager + 2 customers)
+        )
         self.assertTracking(self._new_msgs[3], [("active", "boolean", False, True)])
-        #  Check all mails are sent after confirming the booking
         for attendee in meeting.partner_ids:
             self.assertSentEmail(
                 self.apt_manager.partner_id,
@@ -104,7 +102,6 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
 
     @freeze_time("2017-01-01")
     def test_cancel_meeting_message(self):
-        """Make sure appointments send a custom message on archival/cancellation"""
         meeting1 = self.appointment_meeting_id
         meeting2 = meeting1.copy()
         self.flush_tracking()
@@ -140,7 +137,6 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
             },
         )
 
-        # check with no partner
         with self.mock_mail_gateway(), self.mock_mail_app():
             meeting2.with_user(self.apt_manager).action_cancel_meeting([])
             self.flush_tracking()
@@ -156,7 +152,6 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
 
     @freeze_time("2017-01-01")
     def test_request_meeting_message_for_manual_confirmation(self):
-        """Make sure appointments send a custom mail on request to all relevant contacts"""
         apt_type = self.apt_type_bxls_2days
         apt_type.auto_confirm = False
         apt_type.schedule_based_on = "users"
@@ -175,7 +170,7 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
                 "datetime_str": slot_str,
                 "duration_str": "1.0",
                 "email": "someattendee@test.lan",
-                "filter_appointment_type_ids": apt_type.ids,  # required for invites
+                "filter_appointment_type_ids": apt_type.ids,
                 "invite_token": self.invite_apt_type_bxls_2days.access_token,
                 "name": "Test Online Meeting",
                 f"question_{phone_question.id}": "12345",
@@ -196,9 +191,7 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
         attendee = calendar_event.partner_ids - calendar_event.partner_id
         self.assertEqual(attendee.email_normalized, "someattendee@test.lan")
 
-        # Request mails
         self.assertEqual(len(self._new_mails), 3)
-        # find the message and ensure each one has 1 recipient, assertMailMail gets a bit confused here
         booked_follower_mail = self.assertMailMail(
             self.apt_type_follower,
             "sent",
@@ -231,11 +224,9 @@ class AppointmentTestTracking(AppointmentCommon, MailCase):
         )
 
         with self.mock_mail_gateway(), self.mock_mail_app():
-            # Confirm the appointment manually
             with Form(calendar_event.with_user(self.apt_manager)) as form:
                 form.appointment_status = "booked"
 
-        # Confirmation mails
         self.assertEqual(len(self._new_mails), 2)
         attendee_mail = self.assertMailMail(
             attendee,

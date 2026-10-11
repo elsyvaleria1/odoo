@@ -20,11 +20,6 @@ _logger = logging.getLogger(__name__)
 
 
 def call_pine_labs(payment_method: object, endpoint: str, payload: dict) -> dict:
-    """
-    Make a request to Pine Labs POS API.
-
-    :return The content of the response parsed from json
-    """
     if endpoint not in ALLOWED_ENDPOINTS:
         raise ValueError(
             f"Invalid endpoint: '{endpoint}'. Allowed endpoints are: {ALLOWED_ENDPOINTS}"
@@ -55,12 +50,6 @@ def call_pine_labs(payment_method: object, endpoint: str, payload: dict) -> dict
 
 
 def pine_labs_request_body(payment_mode: bool, payment_method: object) -> dict:
-    """
-    :param payment_mode: If set, includes allowed payment mode and auto-cancel duration in
-                        the request body for `UploadBilledTransaction` endpoint.
-
-    rtype: dict
-    """
     request_parameters = {
         "MerchantID": payment_method.pine_labs_merchant,
         "StoreID": payment_method.pine_labs_store,
@@ -71,7 +60,6 @@ def pine_labs_request_body(payment_mode: bool, payment_method: object) -> dict:
         ).pine_labs_security_token,
     }
     if payment_mode:
-        # Added AutoCancelDurationInMinutes set to 10 minutes for automatically cancelling transactions on the Pine Labs side in case of lost transaction request data from the PoS system.
         pine_labs_auto_cancel_duration = payment_method.env.registry.settings.get(
             payment_method.env,
             "pos_pine_labs.payment_auto_cancel_duration",

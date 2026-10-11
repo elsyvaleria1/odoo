@@ -65,8 +65,6 @@ class TestEsmBuildLifecycle(TransactionCase):
         self.assertTrue(row.exists(), "a page rendered a minute ago still asks for it")
 
     def test_reusing_an_older_build_extends_its_grace_without_recurrenting_it(self):
-        # a worker still on the older sources serves the older build: its rows
-        # stay alive, and the fresher build stays current
         first = self._publish("/web/assets/esm/aaaa/")
         second = self._publish("/web/assets/esm/bbbb/")
         self._age(first, 3)
@@ -149,7 +147,6 @@ class TestEsmBuildLifecycle(TransactionCase):
         )
 
     def test_another_variant_built_from_the_same_sources_is_reused(self):
-        # a second website with no assets of its own compiles nothing
         first = self._publish(
             "/web/assets/esm/aaaa/", variant="website_id=1", source_key="k1"
         )
@@ -215,7 +212,6 @@ class TestEsmBuildLifecycle(TransactionCase):
 class TestEsmBuildVariantsAreServedSideBySide(TransactionCase):
     def test_two_variants_of_one_bundle_both_stay_served(self):
         qweb = self.env["ir.qweb"]
-        # the production branch writes rows and the build on this cursor
         with patch.object(ir_qweb_assets._module, "current_test", None):
             plain = qweb._save_esm_attachment("test.builds.side", "export const a=1;")
             paged = qweb._save_esm_attachment(
@@ -246,8 +242,6 @@ class TestEsmBuildVariantsAreServedSideBySide(TransactionCase):
 @tagged("post_install", "-at_install", "assets_bundle")
 class TestEsmBuildRobustness(TransactionCase):
     def test_the_publication_lock_works_on_a_cursor_already_in_a_transaction(self):
-        # a test cursor serving an HTTP test shares the test's transaction; the
-        # lock must not ask it to change its isolation
         self.env.cr.execute("SELECT 1")
         self.env["ir.qweb"]._lock_esm_publication(self.env.cr)
 
@@ -303,9 +297,6 @@ class TestEsmBuildRobustness(TransactionCase):
             )
 
     def test_a_supersession_flushes_no_worker_s_assets_cache(self):
-        # publishing is frequent (every cold compile of every variant); the
-        # superseded urls stay served through the grace, so nothing needs to
-        # re-resolve until the sweep deletes their rows
         Build = self.env["ir.asset.build"].sudo()
         spec = {"kind": "bundle", "bundle": "test.builds.inval", "variant": "default"}
         Build._publish({**spec, "directories": ["/web/assets/esm/tttt/"]})
@@ -325,8 +316,6 @@ class TestEsbuildLockSerializesCompiles(TransactionCase):
         self.variant = esm_index.variant_key({})
         self.compiles = []
         self.qweb = self.env["ir.qweb"]
-        # a decline opens the process-wide circuit; one test's decline must not
-        # keep the next test off the compile path
         circuit = self.qweb._esbuild_circuit
         self.addCleanup(circuit.restore, circuit.snapshot())
         circuit.clear()
@@ -383,8 +372,6 @@ class TestEsbuildLockSerializesCompiles(TransactionCase):
             patch.object(Qweb, "_get_exported_specs", lambda *_a, **_k: frozenset()),
             patch.object(Qweb, "_esm_source_key", lambda *_a, **_k: self.key),
             patch.object(AssetsBundle, "esbuild_native_bundle", compile_bundle),
-            # outside a test the build is published through its own cursor,
-            # the way a request escalates, and read back through the lock's
             patch.object(ir_qweb_assets._module, "current_test", None),
             patch.object(ir_qweb_assets, "request", object()),
         ):
@@ -436,14 +423,11 @@ class TestEsbuildLockSerializesCompiles(TransactionCase):
         ):
             result, _children = self._compile()
         self.assertEqual(locked, [], "a published build needs no lock")
-        # found through its own readonly cursor, not the request's snapshot
         self.assertIn(True, opened)
         self.assertEqual(self.compiles, [])
         self.assertIn("'other'", result.code)
 
     def test_two_cold_requests_for_one_bundle_compile_it_once(self):
-        # each request starts from its own snapshot, taken before the other
-        # committed; the second sees the first's build through a fresh read
         first, _children = self._compile()
         second, _children = self._compile()
         self.assertEqual(len(self.compiles), 1)
@@ -506,9 +490,6 @@ class TestEsmRowsWrittenOnTheCallersTransaction(TransactionCase):
         self.assertEqual(len(computed), 2, "what was cached over the rows is dropped")
 
     def test_a_test_keeps_its_copy_of_committed_rows_to_itself(self):
-        # in a test the rows are committed through their own connection, which
-        # the class transaction cannot see, and copied into that transaction:
-        # the nodes cached over the copy serve this test, and its end clears them
         qweb = self.env["ir.qweb"]
         IrAttachment = self.env["ir.attachment"]
         vals = IrAttachment._prepare_generated_asset_vals(
@@ -517,8 +498,6 @@ class TestEsmRowsWrittenOnTheCallersTransaction(TransactionCase):
             raw=b"export {};",
             url=f"/web/assets/esm/{uuid.uuid4().hex[:16]}/test.builds.test_copy.esm.js",
         )
-        # a scope of its own: the patch below is itself watched, and would
-        # distrust the assets caches of the test's scope on its own
         scope = transaction_case._TestCacheScope(self.registry)
         self.assertIn("assets", scope.trusted)
         with (

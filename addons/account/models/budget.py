@@ -53,14 +53,6 @@ class AccountReportBudget(models.Model):
     def _create_or_update_budget_items(
         self, value_to_set, account_id, rounding, date_from, date_to
     ) -> None:
-        """Create or update one budget item per month between date_from and date_to, both included.
-
-        :param value_to_set: The value written by the user in the report cell.
-        :param account_id: The related account id.
-        :param rounding: The rounding for the decimal precision.
-        :param date_from: The start date for the budget item creation.
-        :param date_to: The end date for the budget item creation.
-        """
         self.check_singleton()
 
         date_from, date_to = (
@@ -100,8 +92,6 @@ class AccountReportBudget(models.Model):
             delta=value_to_compute,
         )
         if float_is_zero(value_to_compute, precision_digits=rounding):
-            # In case the computed amount equals 0, we do an early return as
-            # it's not necessary to create new budget item
             return
 
         start_month_dates = [
@@ -109,7 +99,6 @@ class AccountReportBudget(models.Model):
             for date in date_utils.date_range(date_from, date_to)
         ]
 
-        # Fill a list with the same amounts for each month
         amounts = [
             float_round(
                 value_to_compute / len(start_month_dates),
@@ -117,7 +106,6 @@ class AccountReportBudget(models.Model):
                 rounding_method="DOWN",
             )
         ] * len(start_month_dates)
-        # Add the remainder in the last amount
         amounts[-1] += float_round(
             value_to_compute - sum(amounts), precision_digits=rounding
         )
@@ -154,7 +142,6 @@ class AccountReportBudget(models.Model):
         )
         if budget_items_commands:
             self.item_ids = budget_items_commands
-            # Make sure that the model is flushed before continuing the code and fetching these new items
             self.env["account.report.budget.item"].flush_model()
 
     @_debug.perf.timed

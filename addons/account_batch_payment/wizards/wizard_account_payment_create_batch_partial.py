@@ -15,8 +15,6 @@ class WizardAccountPaymentCreateBatchPartial(models.TransientModel):
 
     def _compute_error_message(self) -> None:
         for wizard in self:
-            # In accounting, we can only add in process payments to a batch
-            # While in enterprise invoicing, we can add in process and paid payments
             is_accounting_installed = (
                 self.env["account.move"]._get_invoice_in_payment_state() == "in_payment"
             )

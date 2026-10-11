@@ -13,7 +13,7 @@ class PosPayment(models.Model):
         comodel_name="account.payment",
         string="Online accounting payment",
         readonly=True,
-    )  # One2one
+    )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -90,7 +90,6 @@ class PosPayment(models.Model):
             payment.payment_method_id != payment.pos_order_id.online_payment_method_id
             for payment in bypass_check_payments
         ):
-            # An online payment must always be saved for the POS, even if the online payment method is no longer configured/allowed in the pos.config, because in any case it is saved by account_payment and payment modules.
             _logger.warning(
                 "Allow to save a POS online payment with an unexpected online payment method"
             )

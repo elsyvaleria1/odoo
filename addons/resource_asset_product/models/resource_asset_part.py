@@ -46,7 +46,6 @@ class ResourceAssetPart(models.Model):
     _order = "date_installed desc, id desc"
     _check_company_auto = True
 
-    # FIELDS
     company_id = fields.Many2one(
         related="asset_id.company_id",
     )
@@ -191,7 +190,6 @@ class ResourceAssetPart(models.Model):
         tracking=True,
     )
 
-    # CONSTRAINT METHODS
     @api.constrains("asset_id", "position_id")
     def _check_position_belongs_to_kind(self) -> None:
         for part in self:
@@ -222,7 +220,6 @@ class ResourceAssetPart(models.Model):
                     )
                 )
 
-    # CRUD METHODS
     @api.model_create_multi
     def create(self, vals_list):
         born_installed = []
@@ -267,7 +264,6 @@ class ResourceAssetPart(models.Model):
                 )
             )
 
-    # COMPUTE METHODS
     @api.depends("flag_ids.state")
     def _compute_review_state(self) -> None:
         for part in self:
@@ -291,7 +287,6 @@ class ResourceAssetPart(models.Model):
                 if name
             ) or self.env._("New Part")
 
-    # ACTION METHODS
     def action_install(self) -> None:
         self._action_install()
 
@@ -336,7 +331,6 @@ class ResourceAssetPart(models.Model):
             "context": {"create": False},
         }
 
-    # LEDGER METHODS
     def _action_install(self) -> None:
         _debug.lifecycle("part_install", parts=self)
         if self.filtered(lambda part: part.state != "draft"):
@@ -345,7 +339,7 @@ class ResourceAssetPart(models.Model):
         Part = self.with_context(asset_part_ledger_write=True)
         for part in self.sorted(lambda part: (part.date_installed or now, part.id)):
             moment = part.date_installed or now
-            previous = self.search(  # noqa: E8507 - one query per installation, in date order: the part installed just before may be the previous one of the next
+            previous = self.search(
                 [
                     ("asset_id", "=", part.asset_id.id),
                     ("position_id", "=", part.position_id.id),
@@ -508,8 +502,6 @@ class ResourceAssetPart(models.Model):
             _debug.logic("part_flag_already_open", part=self, reason=reason)
             return
         _debug.lifecycle("part_flagged", part=self, asset=self.asset_id, reason=reason)
-        # sudo: a flag is raised by the ledger on whoever installs the part, and
-        # nobody holds a right to write one by hand.
         self.env["resource.part.flag"].sudo().create(
             {"part_id": self.id, "reason": reason, "note": note}
         )
@@ -517,7 +509,6 @@ class ResourceAssetPart(models.Model):
             dict(FLAG_REASONS)[reason],
             note,
         )
-        # sudo: the flag is the ledger's statement, posted whatever the installer may write.
         self.sudo().message_post(body=body)
         self.asset_id.sudo().message_post(body=body)
 
@@ -529,7 +520,6 @@ class ResourceAssetPart(models.Model):
             _debug.lifecycle(
                 "part_flags_resolved", parts=self, reason=reason, flags=flags
             )
-            # sudo: the condition behind the flag no longer holds, whoever made it so.
             flags.sudo().write(
                 {"state": "resolved", "date_closed": fields.Datetime.now()}
             )
@@ -544,7 +534,6 @@ class ResourceAssetPart(models.Model):
         _debug.lifecycle(
             "part_flags_cleared", parts=self, flags=flags, uid=self.env.uid
         )
-        # sudo: flags are written by the ledger alone; the group check above is the gate.
         flags.sudo().write(
             {
                 "state": "cleared",
@@ -561,7 +550,6 @@ class ResourceAssetPart(models.Model):
     def _sync_review_holds(self) -> None:
         return
 
-    # HELPER METHODS
     def _get_domain_same_work(self):
         return None
 
@@ -640,7 +628,6 @@ class ResourceAssetPartFlag(models.Model):
     _description = "Asset Part Flag"
     _order = "create_date desc, id desc"
 
-    # FIELDS
     part_id = fields.Many2one(
         comodel_name="resource.part",
         index=True,

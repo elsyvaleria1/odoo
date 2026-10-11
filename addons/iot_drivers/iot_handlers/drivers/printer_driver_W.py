@@ -183,7 +183,7 @@ class PrinterDriver(PrinterDriverBase):
                     )
                     stdout_log_level = (
                         logging.ERROR
-                    )  # some stdout value might contains relevant error information
+                    )
                     self.send_status(status="error", message="ERROR_FAILED")
                     raise
                 finally:
@@ -211,10 +211,6 @@ class PrinterDriver(PrinterDriverBase):
         return {"print_id": data["print_id"]} if "print_id" in data else {}
 
     def print_status(self, _data=None):
-        """Prints the status ticket of the IoT Box on the current printer.
-
-        :param _data: dict provided by the action route
-        """
         if self.device_subtype == "receipt_printer":
             commands = self.RECEIPT_PRINTER_COMMANDS[self.receipt_protocol]
             self.print_raw(
@@ -247,16 +243,11 @@ class PrinterDriver(PrinterDriverBase):
                 self.job_ids.remove(job_id)
                 self.job_action_ids.pop(job_id, None)
                 self.send_status(status="success")
-            # Print timeout, e.g. network printer is disconnected
             if elapsed_time.seconds > self.job_timeout_seconds:
                 self._cancel_job_with_error(job_id, "ERROR_TIMEOUT")
-            # Generic error, e.g. USB printer is not connected
             elif job["Status"] & win32print.JOB_STATUS_ERROR:
                 self._cancel_job_with_error(job_id, "ERROR_UNKNOWN")
         except pywintypes.error as error:
-            # GetJob returns error 87 (incorrect parameter) if the print job doesn't exist.
-            # Windows deletes print jobs on completion, so this actually means the print
-            # was succcessful.
             if error.winerror == 87:
                 self.send_status(status="success")
             else:

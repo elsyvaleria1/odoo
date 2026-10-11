@@ -87,12 +87,6 @@ class SwedishBlackBoxDriver(SerialDriver):
 
     @classmethod
     def supported(cls, device) -> bool | None:
-        """Checks whether the device at path `device` is supported by the driver.
-        :param device: path to the device
-        :type device: str
-        :return: whether the device is supported by the driver
-        :rtype: bool
-        """
 
         try:
             protocol = cls._protocol
@@ -122,10 +116,6 @@ class SwedishBlackBoxDriver(SerialDriver):
 
     @classmethod
     def _get_identity(cls, connection):
-        """ "Get Identity of Swedish Black box
-        :return: dictionary containing unit_id, protocol_version, firmware_version
-        :rtype: dict
-        """
         try:
             response = cls._request_action("IQ", connection)
             if response[3] == "IR":
@@ -142,12 +132,6 @@ class SwedishBlackBoxDriver(SerialDriver):
 
     @staticmethod
     def _lrc(msg):
-        """ "Compute a message's longitudinal redundancy check value.
-        :param msg: the message the LRC is computed for
-        :type msg: byte
-        :return: the message LRC
-        :rtype: int
-        """
 
         lrc = ord(msg[0])
 
@@ -182,8 +166,6 @@ class SwedishBlackBoxDriver(SerialDriver):
         event_manager.device_changed(self)
 
     def _register_receipt_v2(self, data) -> None:
-        """The register receipt message registers a receipt (CCSP v2 only).
-        CleanCash® responds with Register Receipt Response if OK or Negative Acknowledge if error"""
 
         self.serial_number += 1
         message = {"message_type": "RR", "serial_number": str(self.serial_number)}
@@ -199,8 +181,6 @@ class SwedishBlackBoxDriver(SerialDriver):
         self.data["status"] = "ok"
 
     def _register_receipt_v1(self, data) -> None:
-        """CCSP v1 requires three commands to register a receipt:
-        ST (start receipt), RH (receipt header), SQ (signature request)"""
 
         response = self._request_action("ST", self._connection)
         if not self._check_error("ST", response):
@@ -229,16 +209,6 @@ class SwedishBlackBoxDriver(SerialDriver):
 
     @classmethod
     def _send_to_blackbox(cls, packet, connection, retry=1):
-        """Sends a message to and wait for a response from the blackbox.
-        :param packet: the message to be sent to the blackbox
-        :type packet: bytearray
-        :param response_size: number of bytes of the expected response
-        :type response_size: int
-        :param connection: serial connection to the blackbox
-        :type connection: serial.Serial
-        :return: the response to the sent message
-        :rtype: bytearray
-        """
         connection.reset_input_buffer()
         connection.reset_output_buffer()
 
@@ -265,7 +235,6 @@ class SwedishBlackBoxDriver(SerialDriver):
         return response
 
     def _set_actions(self) -> None:
-        """Initializes `self._actions`, a map of action keys sent by the frontend to backend action methods."""
 
         self._actions.update(
             {
@@ -275,12 +244,6 @@ class SwedishBlackBoxDriver(SerialDriver):
 
     @classmethod
     def _wrap_message(cls, high_level_message):
-        """Builds a low level message to be sent the blackbox.
-        :param high_level_message: The message to be transmitted to the blackbox
-        :type high_level_message: str
-        :return: The modified message as it is transmitted to the blackbox
-        :rtype: bytearray
-        """
 
         length = 11 + len(high_level_message)
         length = f"{int(length):03X}"

@@ -59,7 +59,7 @@ def get_locales(lang: str) -> Iterator[str]:
 
     seen = set()
     for enc in encodings:
-        ln = locale._build_localename((lang, enc))  # type: ignore[attr-defined]
+        ln = locale._build_localename((lang, enc))
         for name in (ln, locale.normalize(ln)):
             if name not in seen:
                 seen.add(name)
@@ -91,7 +91,6 @@ def _company_lang(env: Environment) -> str | None:
     try:
         return env.user.with_context(lang="en_US").company_id.partner_id.lang
     except AttributeError:
-        # a DB-free registry whose user or company stub carries no partner
         return None
 
 
@@ -99,16 +98,16 @@ def get_lang(env: Environment, lang_code: str | None = None) -> LangData:
     locale = env.registry.locale
     langs = locale.installed_langs(env)
     lang = "en_US" if "en_US" in langs else langs[0]
-    source = "default"  # debuglog
+    source = "default"
     if lang_code and lang_code in langs:
         lang = lang_code
-        source = "argument"  # debuglog
+        source = "argument"
     elif (context_lang := env.context.get("lang")) in langs:
         lang = context_lang
-        source = "context"  # debuglog
+        source = "context"
     elif (company_lang := _company_lang(env)) in langs:
         lang = company_lang
-        source = "company"  # debuglog
+        source = "company"
     _debug.logic(
         "locale.lang_chosen",
         lang=lang,
@@ -126,8 +125,6 @@ _CODESET_RE = re.compile(r"\.[^@]*")
 def babel_locale_parse(lang_code: str | None) -> babel.Locale:
     if lang_code:
         try:
-            # a POSIX code set (`fr_FR.UTF-8`, `sr_RS.UTF-8@latin`) says how
-            # text is encoded, not which locale formats it
             code = _CODESET_RE.sub("", lang_code)
             return babel.Locale.parse(py_to_js_locale(code), sep="-")
         except (ValueError, TypeError, babel.UnknownLocaleError) as exc:

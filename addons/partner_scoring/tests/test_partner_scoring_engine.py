@@ -50,8 +50,6 @@ class TestPartnerScoringEngine(TransactionCase):
         cls.own_ceiling = 30.0
         cls.denominator = cls.Partner._get_score_max_points()
 
-        # Shared bands: these tests are about the scoring engine, not about
-        # company scoping, and the partner below carries no company.
         cls.profile_low = cls.Profile.create(
             {
                 "name": "Engine Low",
@@ -229,11 +227,8 @@ class TestPartnerScoringEngine(TransactionCase):
         )
 
     def test_the_percentage_is_capped_when_the_ceiling_lags(self):
-        """A denominator behind the catalog must cap, not overshoot the scale."""
         self._set(self.multi, self.multi_a | self.multi_b)
         self.assertGreater(self.partner.score_points, 1.0)
-        # A weight raised in the catalog reaches the rows only when the queued
-        # refresh lands; until then the stored rows carry yesterday's ceiling.
         self.partner.score_line_ids.sudo().write({"max_points": 1.0})
         self.assertEqual(self.partner.score, 100.0)
 
@@ -301,7 +296,6 @@ class TestPartnerScoringEngine(TransactionCase):
             self.env.flush_all()
 
     def test_the_row_count_tracks_the_breakdown(self):
-        """The form asks the count, so it must not lag behind the rows."""
         self._set(self.multi, self.multi_a | self.multi_b)
         self.assertEqual(
             self.partner.score_line_count, len(self.partner.score_line_ids)

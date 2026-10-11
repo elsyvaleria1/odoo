@@ -1,9 +1,5 @@
 from odoo import api, models
 
-# A product answers only to the types that name products: "all" types were
-# written for partners, employees and assets, and would otherwise hold every
-# product of the catalog to them. Within product types, one naming categories
-# applies to products filed under any of them or their subcategories.
 PRODUCT_SCOPE = """
     e.entity_type != 'product.template'
     OR (
@@ -38,7 +34,6 @@ class DocumentComplianceReport(models.Model):
         }
 
     def _get_entity_name_column(self, model: str) -> str:
-        # The product name is translated; en_US always holds the source value.
         if model == "product.template":
             return "name->>'en_US'"
         return super()._get_entity_name_column(model)

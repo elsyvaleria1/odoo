@@ -7,8 +7,6 @@ from odoo.addons.web.controllers.utils import is_user_internal
 class KnowledgeHome(Home):
     @route()
     def web_client(self, s_action=None, **kw):
-        """Redirects non-internal users attempting to access the Knowledge
-        backend view to the Knowledge public or portal view"""
         if kw.get("subpath") is not None and (
             not request.session.uid or not is_user_internal(request.session.uid)
         ):

@@ -19,8 +19,6 @@ class ResConfigSettings(models.TransientModel):
 
     @api.model
     def _oauth_client_settings(self) -> dict[str, str]:
-        """{field prefix: service xmlid} of each vendor's OAuth client, shown as
-        `<prefix>_client_id` and the write-only `<prefix>_client_secret`."""
         return {}
 
     @api.model

@@ -2,23 +2,12 @@ from odoo import api, models
 
 
 def resolve_field(model, field_path):
-    """Resolves a field path from a model and return intermediary fields.
-
-    For example, providing the model 'hr.employee' with the field path 'user_id.name' will return
-    the fields:
-     - `hr.employee.user_id`
-     - `res.users.name`
-
-    :param models.Model model: The model on which we begin resolving the path
-    :param str field_path: The path of fields
-    :return list[odoo.fields.Field] | None: the resolved fields or None if the path is invalid.
-    """
     resolved_fields = []
     *field_names, last_field_name = field_path.split(".")
     for field_name in field_names:
         field = model._fields.get(field_name)
         if not field or not getattr(field, "comodel_name", None):
-            return None  # field path is invalid
+            return None
 
         resolved_fields.append(field)
         model = model.env[field.comodel_name]

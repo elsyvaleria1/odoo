@@ -76,14 +76,6 @@ class TestDashboard(TestHrHolidaysCommon):
         )
 
     def test_special_days_answer_for_the_employee_company(self):
-        """The side panel must answer for the employee, like the day grid does.
-
-        `hr.employee._get_unusual_days` already hands the employee's company
-        down to the calendar, so the grid greys out that company's days and no
-        other. The side panel was reading every company the user had switched
-        on, so the two halves of the same screen disagreed about the same day
-        and a holiday of a sister company showed up on someone else's calendar.
-        """
         other_company = self.external_company
         self.env["hr.leave.mandatory.day"].create(
             [
@@ -101,10 +93,6 @@ class TestDashboard(TestHrHolidaysCommon):
                 },
             ]
         )
-        # `resource.schedule.exception.company_id` is a stored compute that
-        # falls back to the active company, so a public holiday belongs to
-        # whoever was working in it -- which is how each company's holidays get
-        # created in the first place.
         self.env["resource.schedule.exception"].with_company(self.company).create(
             {
                 "name": "Public holiday here",

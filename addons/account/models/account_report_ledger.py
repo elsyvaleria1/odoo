@@ -235,15 +235,12 @@ class AccountReport(models.Model):
         string="Return Types",
     )
 
-    # Account Coverage Report
     is_account_coverage_report_available = fields.Boolean(
         compute="_compute_is_account_coverage_report_available"
     )
 
-    # Fields used for send reports by cron
     send_and_print_values = fields.Json(copy=False)
 
-    # Account Audit Status
     allow_account_audit_status_on_lines = fields.Boolean(
         compute="_compute_allow_account_audit_status_on_lines",
         precompute=True,
@@ -339,16 +336,12 @@ class AccountReport(models.Model):
             )
 
             if asr_section_reports:
-                # When the report needs to be added to the annual statement, the computation of some of its filters
-                # might be skipped (because it's linked to a single composite report). Make sure we compute those
-                # filters once before setting the link to the composite report.
                 for name, field in asr_section_reports._fields.items():
                     if (
                         field._depends
                         and "section_main_report_ids" in field._depends
                         and field.store
                     ):
-                        # We then need to recompute the fields on the reports not setting it in the create (all the filters are also editable)
                         reports_to_recompute = reports - reports_by_impacted_field.get(
                             name, self.env["report.formula"]
                         )
@@ -365,14 +358,13 @@ class AccountReport(models.Model):
         return reports
 
     def _get_domain_asr_sections(self, root_annual_statements) -> list:
-        """Return the domain filtering which reports may be a section of an annual statements report."""
         return [
             ("root_report_id", "in", root_annual_statements.section_report_ids.ids),
             (
                 "availability_condition",
                 "!=",
                 "always",
-            ),  # the report has to be localized
+            ),
         ]
 
     @_debug.perf.timed
@@ -437,8 +429,6 @@ class AccountReport(models.Model):
     def _init_options_journals(
         self, options, previous_options, additional_journals_domain=None
     ) -> None:
-        # additional_journals_domain allows calling this with an extra restriction on journals,
-        # to regenerate the journal options accordingly.
         def option_value(value, selected=False, group_journals=None):
             result = {
                 "id": value.id,
@@ -488,7 +478,6 @@ class AccountReport(models.Model):
 
         is_opening_report = previous_options.get("is_opening_report")
 
-        # 1. Handle journal group selection
         for group in all_journal_groups:
             group_journals = all_journals - group.excluded_journal_ids
             if group.company_id:
@@ -507,12 +496,10 @@ class AccountReport(models.Model):
             )
             options_journal_groups.append(group_option)
 
-            # Select all the group journals
             if selected:
                 options["selected_journal_groups"] = group_option
                 groups_journals_selected |= set(group_journals.ids)
 
-        # 2. Handle journals selection
         previous_selected_journals_ids = {
             journal["id"]
             for journal in previous_journals
@@ -542,7 +529,6 @@ class AccountReport(models.Model):
                 option_value(journal, selected=journal.id in journals_selected)
             )
 
-        # 3. Recompute selected groups in case the set of selected journals is equal to a group's accepted journals
         if journals_selected and not options["selected_journal_groups"]:
             for group in options_journal_groups:
                 if journals_selected == set(group["journals"]):
@@ -550,7 +536,6 @@ class AccountReport(models.Model):
                     options["selected_journal_groups"] = group
                     break
 
-        # 4. Unselect all journals if all are selected and no group is specifically selected
         if (
             journals_selected == set(all_journals.ids)
             and not options["selected_journal_groups"]
@@ -559,7 +544,6 @@ class AccountReport(models.Model):
                 for journal in journals:
                     journal["selected"] = False
 
-        # 5. Build group options
         if all_journal_groups:
             options["journals"] = [
                 {
@@ -588,13 +572,10 @@ class AccountReport(models.Model):
             report=self,
             per_company=len(company_journals_map) > 1 or bool(all_journal_groups),
         )
-        # 6. Build journals options
         if len(company_journals_map) > 1 or all_journal_groups:
             for company, journals in company_journals_map.items():
-                # users may not have full access to the parent company in case they are in a branch, yet they have to see the company name
                 company_name = company.sudo().display_name
 
-                # if not is_opening_report, then gets the unfolded attribute of the company from the previous options
                 unfolded = (
                     False
                     if is_opening_report
@@ -661,7 +642,6 @@ class AccountReport(models.Model):
             if journal["model"] == "account.journal"
         ]
         journals_selected = [j for j in all_journals if j.get("selected")]
-        # 1. Compute the name to display on the widget
         if options.get("selected_journal_groups"):
             names_to_display = [options["selected_journal_groups"]["name"]]
         elif len(all_journals) == len(journals_selected) or not journals_selected:
@@ -672,7 +652,6 @@ class AccountReport(models.Model):
                 if journal.get("model") == "account.journal" and journal["selected"]:
                     names_to_display += [journal["name"]]
 
-        # 2. Abbreviate the name
         max_nb_journals_displayed = 5
         nb_remaining = len(names_to_display) - max_nb_journals_displayed
         _debug.logic(
@@ -705,9 +684,6 @@ class AccountReport(models.Model):
             if journal["model"] == "account.journal" and journal["selected"]
         ]
         if not selected_journals:
-            # If no journal is specifically selected, we actually want to select them all.
-            # This is needed, because some reports will not use ALL available journals and filter by type.
-            # Without getting them from the options, we will use them all, which is wrong.
             selected_journals = [
                 journal
                 for journal in options.get("journals", [])
@@ -717,7 +693,6 @@ class AccountReport(models.Model):
 
     @api.model
     def _get_domain_options_journals(self, options):
-        # Make sure to return an empty array when nothing selected to handle archived journals.
         selected_journals = self._get_options_journals(options)
         return (
             Domain("journal_id", "in", [j["id"] for j in selected_journals])
@@ -725,9 +700,6 @@ class AccountReport(models.Model):
             else Domain.TRUE
         )
 
-    # ####################################################
-    # OPTIONS: USER DEFINED FILTERS ON AML
-    ####################################################
     def _init_options_aml_ir_filters(self, options, previous_options) -> None:
         options["aml_ir_filters"] = []
         if not self.filter_aml_ir_filters:
@@ -869,7 +841,6 @@ class AccountReport(models.Model):
         options["partner_categories"] = previous_options.get("partner_categories") or []
 
         selected_partner_ids = [int(partner) for partner in previous_partner_ids]
-        # search instead of browse so that the access domain applies and filters out the ones the user does not have access to
         selected_partners = (
             selected_partner_ids
             and self.env["res.partner"]
@@ -910,9 +881,6 @@ class AccountReport(models.Model):
         else:
             return Domain("parent_state", "!=", "cancel")
 
-    ####################################################
-    # OPTIONS: not reconciled entries
-    ####################################################
     def _init_options_reconciled(self, options, previous_options) -> None:
         if self.filter_unreconciled:
             options["unreconciled"] = previous_options.get("unreconciled", False)
@@ -929,10 +897,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _init_options_account_type(self, options, previous_options) -> None:
-        """Initialize a filter based on the account_type of the line (trade/non trade, payable/receivable).
-
-        The group display name is derived from the display names of the selected options.
-        """
         if self.filter_account_type in ("disabled", False):
             _debug.logic("account_type_skipped", report=self, reason="filter_disabled")
             return
@@ -984,8 +948,6 @@ class AccountReport(models.Model):
         for opt in options.get("account_type") or []:
             account_type_filter = self.ACCOUNT_TYPE_FILTER_DOMAINS.get(opt["id"])
             if not account_type_filter:
-                # options reach this method straight from the client, so an unknown id is
-                # reachable input rather than a programming error.
                 continue
             non_trade, account_type = account_type_filter
             domain = [
@@ -1022,16 +984,13 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _multi_company_tax_units_init_options(self, options, previous_options):
-        """Initializes the companies option for reports configured to compute it from tax units."""
         available_tax_units = self.env.company._get_available_tax_units(self)
 
-        # Filter available units to only consider the ones whose companies are all accessible to the user
         available_tax_units = available_tax_units.filtered(
             lambda x: all(
                 unit_company in self.env.user.company_ids
                 for unit_company in x.sudo().company_ids
             )
-            # sudo() to avoid bypassing companies the current user does not have access to
         )
 
         options["available_tax_units"] = [
@@ -1043,9 +1002,6 @@ class AccountReport(models.Model):
             for tax_unit in available_tax_units
         ]
 
-        # Available tax_unit option values that are currently allowed by the company selector
-        # A js hack ensures the page is reloaded and the selected companies modified
-        # when clicking on a tax unit option in the UI, so we don't need to worry about that here.
         companies_authorized_tax_unit_opt = {
             *(
                 available_tax_units.filtered(
@@ -1058,10 +1014,6 @@ class AccountReport(models.Model):
         if previous_options.get("tax_unit") in companies_authorized_tax_unit_opt:
             options["tax_unit"] = previous_options["tax_unit"]
 
-        # No tax_unit gotten from previous options; initialize it
-        # A tax_unit will be set by default if only one tax unit is available for the report
-        # (which should always be true for non-generic reports, which have a country), and the companies of
-        # the unit are the only ones currently selected.
         elif companies_authorized_tax_unit_opt == {"company_only"}:
             options["tax_unit"] = "company_only"
         elif (
@@ -1080,7 +1032,6 @@ class AccountReport(models.Model):
             available=len(available_tax_units),
             authorized=len(companies_authorized_tax_unit_opt),
         )
-        # Finally initialize multi_company filter
         if options["tax_unit"] == "company_only":
             companies = self.env.company._get_branches_with_same_vat(
                 accessible_only=True
@@ -1094,9 +1045,6 @@ class AccountReport(models.Model):
         _debug.pipeline("tax_unit_companies", report=self, companies=companies)
         return companies
 
-    ####################################################
-    # OPTIONS: CURRENCY TABLE
-    ####################################################
     @_debug.perf.timed
     def _init_options_currency_table(self, options, previous_options) -> None:
         companies = self.env["res.company"].browse(self.get_report_company_ids(options))
@@ -1109,9 +1057,6 @@ class AccountReport(models.Model):
         periods = {}
         for col_group in options["column_groups"].values():
             if col_group["forced_options"].get("no_impact_on_currency_table"):
-                # This key is used to ignore the colum group in the creation of the periods list for
-                # the currency table. This way, its dates won't influence. It's useful for groups corresponding
-                # to an initial balance of some sorts, like on the Trial Balance.
                 continue
 
             col_group_date = col_group["forced_options"].get("date", options["date"])
@@ -1126,9 +1071,6 @@ class AccountReport(models.Model):
 
             already_present_period = periods.get(period_key)
             if already_present_period:
-                # This can happen for custom reports, needing to enforce the same rates on multiple column groups with
-                # different dates (e.g. Trial Balance). In that case, the date_from and date_to of the currency table period must respectively
-                # be the lowest and highest among those groups.
                 if (
                     col_group_date_from
                     and already_present_period["from"] > col_group_date_from
@@ -1154,18 +1096,12 @@ class AccountReport(models.Model):
             periods=len(periods),
         )
 
-    # ####################################################
-    # OPTIONS: ALL ENTRIES
-    ####################################################
     def _init_options_all_entries(self, options, previous_options) -> None:
         if self.filter_show_draft:
             options["all_entries"] = previous_options.get("all_entries", False)
         else:
             options["all_entries"] = False
 
-    ####################################################
-    # OPTIONS: BUDGETS
-    ####################################################
     def _init_options_budgets(self, options, previous_options) -> None:
         if self.filter_budgets:
             previous_selection = {
@@ -1181,10 +1117,6 @@ class AccountReport(models.Model):
                     "selected": budget.id in previous_selection,
                     "company_id": budget.company_id.id,
                 }
-                # Every company the report itself has selected, not just the
-                # active one: the entries carry a company_id precisely because
-                # several companies' budgets can coexist here, and the record
-                # rule already narrows the result to what the user may see.
                 for budget in self.env["account.report.budget"].search(
                     [("company_id", "in", self.env.companies.ids)]
                 )
@@ -1193,15 +1125,9 @@ class AccountReport(models.Model):
                 previous_options.get("show_all_accounts") or False
             )
 
-    ####################################################
-    # OPTIONS: READONLY QUERY
-    ####################################################
     def _init_options_readonly_query(self, options, previous_options) -> None:
         options["readonly_query"] = options["currency_table"]["type"] == "monocurrency"
 
-    ####################################################
-    # OPTIONS: USER GROUPS
-    ####################################################
     def _init_options_user_groups(self, options, previous_options) -> None:
         options["user_groups"] = {
             "analytic_accounting": self.env.user.has_group(
@@ -1240,14 +1166,12 @@ class AccountReport(models.Model):
             foreign_vat=self.allow_foreign_vat,
         )
 
-        # Handle foreign VAT
         if self.allow_foreign_vat:
             if (
                 self.country_id
                 == self.env.company.tax_config_id.account_fiscal_country_id
             ):
                 _debug.logic("foreign_vat_scope", report=self, scope="domestic")
-                # It's a domestic report
                 domains.append(
                     [
                         "|",
@@ -1258,12 +1182,11 @@ class AccountReport(models.Model):
                             "tax_tag_ids.country_id",
                             "=",
                             self.country_id.id,
-                        ),  # To allow setting loca tags on an operation made nor another country (sometimes legally necessary)
+                        ),
                     ]
                 )
             elif self.country_id:
                 _debug.logic("foreign_vat_scope", report=self, scope="foreign")
-                # It's a foreign report
                 domains.append(
                     [
                         "|",
@@ -1271,7 +1194,7 @@ class AccountReport(models.Model):
                             "tax_tag_ids.country_id",
                             "=",
                             self.country_id.id,
-                        ),  # To allow setting loca tags on an operation made nor another country (sometimes legally necessary)
+                        ),
                         "&",
                         (
                             "move_id.fiscal_position_id.country_id",
@@ -1281,7 +1204,6 @@ class AccountReport(models.Model):
                         ("move_id.fiscal_position_id.foreign_vat", "!=", False),
                     ]
                 )
-            # else: don't filter anything; the report has no county and should have access to all the data
 
         return domains
 
@@ -1317,9 +1239,6 @@ class AccountReport(models.Model):
         options_companies = self.env["res.company"].browse(
             self.get_report_company_ids(options)
         )
-        # Set export buttons to 'branch_allowed' if the currently selected company branches all share the same VAT
-        # number and no unselected sub-branch of the active company has the same VAT number. Companies with an empty VAT
-        # field will be considered as having the same VAT number as their closest parent with a non-empty VAT.
         if options.get("enable_export_buttons_for_common_vat_in_branches"):
             report_accepted_company_ids = set(options_companies.ids)
             same_vat_branch_ids = set(
@@ -1331,7 +1250,6 @@ class AccountReport(models.Model):
                     for button in options["buttons"]
                 ]
 
-        # Disable buttons without branch_allowed = True if not all branches are selected
         if not options_companies._is_every_branch_selected():
             for button in filter(
                 lambda x: not x.get("branch_allowed"), options["buttons"]
@@ -1351,13 +1269,12 @@ class AccountReport(models.Model):
         options["filters"]["show_unreconciled"] = self.filter_unreconciled
 
     def _normalize_date_filter(self, options, options_filter, period_date_to):
-        # In case if the return_period is asked but not return type exist for this report
         if "return_period" in options_filter and not options.get("return_periodicity"):
             _debug.logic("return_period_fallback", report=self, filter=options_filter)
             options_filter = "this_month"
         elif (
             "return_period" in options_filter
-        ):  # In case if the return_period is asked but it is not shown as it is a similar period than those from the default filters, we fallback
+        ):
             months_per_period = options["return_periodicity"]["months_per_period"]
             start_day = options["return_periodicity"]["start_day"]
             start_month = options["return_periodicity"]["start_month"]
@@ -1421,8 +1338,6 @@ class AccountReport(models.Model):
     def _convert_custom_period_filter(
         self, options, options_filter, date, period_date_to, date_to
     ):
-        # When the return period matches a standard date filter, fallback to the standard. This way, we can avoid displaying the return period
-        # filter in the UI, and only rely on the standard ones. This condition ensures the conversion from one filter to the other.
         if options_filter in {"custom_month", "custom_quarter", "custom_year"}:
             options_date = fields.Date.from_string(period_date_to)
             diff_years = options_date.year - date_to.year
@@ -1453,7 +1368,6 @@ class AccountReport(models.Model):
 
     def _finalize_custom_period_options(self, options, options_filter) -> None:
         if "custom_return_period" in options_filter:
-            # In case we use a custom period we still use the return_period filter. In that case we still need the shift so we need to compute it manually.
             return_type = self.env["account.return.type"].browse(
                 options["return_periodicity"]["return_type_id"]
             )
@@ -1511,7 +1425,7 @@ class AccountReport(models.Model):
             return super()._get_custom_date_scope_bounds(
                 options, date_scope, date_from, date_to
             )
-        return_types = self.return_type_ids  # Might be empty ; if so, we'll call the functions on an empty recordset and fallback to company periodicity
+        return_types = self.return_type_ids
 
         _debug.logic(
             "previous_return_period_scope",
@@ -1601,10 +1515,6 @@ class AccountReport(models.Model):
             .env["account.account.tag"]
             ._field_to_sql("acc_tag", "name")
         )
-        # Ordinals, not the alias and not the expression: the joins can carry
-        # a `formula` column (account_tax has one) and PostgreSQL resolves a
-        # GROUP BY name to an input column first, while the expression holds
-        # a bound parameter, so a second spelling of it is a second parameter.
         sql = SQL(
             """
             SELECT
@@ -1658,9 +1568,9 @@ class AccountReport(models.Model):
             else {"result": 0, "has_sublines": False}
             for formula_str, formula_expr in formulas_dict.items()
         }
-        tag_rows = 0  # debuglog
+        tag_rows = 0
         for tax_tag, balance, aml_count, grouping_key in self.env.execute_query(sql):
-            tag_rows += 1  # debuglog
+            tag_rows += 1
             for sign, formula_str in signed_formulas_by_tag[tax_tag]:
                 rslt_key = (tax_tag, formulas_dict[formula_str])
                 rslt_dict = {"result": sign * balance, "has_sublines": aml_count > 0}
@@ -1729,8 +1639,6 @@ class AccountReport(models.Model):
                     balance_character == "C" and account_sign >= 0
                 ):
                     continue
-                # One row per (account, key): a key spanning several accounts is
-                # aggregated into a single group.
                 group = groups_by_formula[formula].setdefault(
                     grouping_key, {"result": 0, "has_sublines": True}
                 )
@@ -1783,7 +1691,7 @@ class AccountReport(models.Model):
 
         resolve_tag = functools.cache(self._resolve_account_codes_tag)
         account_ids_by_prefix_key = {}
-        prefix_details_by_formula = {}  # in the form {formula: [(1, prefix_key, balance_character), ...]}
+        prefix_details_by_formula = {}
         for formula in formulas:
             prefix_details_by_formula[formula] = []
             try:
@@ -1797,8 +1705,6 @@ class AccountReport(models.Model):
                     )
                 ) from None
             for term in terms:
-                # Two terms can include the same prefix but filter it differently
-                # (104\(1041) and 104\(1042)), so the filters are part of the key.
                 prefix_key = term.key
                 prefix_details_by_formula[formula].append(
                     (term.sign, prefix_key, term.balance_character)
@@ -1869,8 +1775,6 @@ class AccountReport(models.Model):
             if current_groupby
             else SQL("CAST(NULL AS INTEGER)")
         )
-        # The balance character tests the account's balance over every grouping
-        # key, so the sign is a window over the whole scope, taken before paging.
         contributing_rows = SQL(
             """
             SELECT account_id, account_sign, grouping_key, balance
@@ -2074,7 +1978,6 @@ class AccountReport(models.Model):
             companies = self.env["res.company"].browse(
                 self.get_report_company_ids(options)
             )
-            # No CTA rates here by construction: this branch is the monocurrency one.
             return self.env["res.currency"]._get_monocurrency_currency_table_sql(
                 companies, use_cta_rates=False
             )
@@ -2173,7 +2076,6 @@ class AccountReport(models.Model):
             )
         info_popup_data = {}
 
-        # Check carryover
         carryover_expr_label = "_carryover_%s" % column_expr_label
         carryover_value = target_line_res_dict.get(carryover_expr_label, {}).get(
             "value", 0
@@ -2190,7 +2092,6 @@ class AccountReport(models.Model):
                         options
                     ).report_line_name
                 )
-            # If it's not set, it means the carryover needs to target the same expression
 
         applied_carryover_value = target_line_res_dict.get(
             "_applied_carryover_%s" % column_expr_label, {}
@@ -2213,13 +2114,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def get_annotations(self, options, lines):
-        """Return the annotations to display on the report, based on its dates and their display mode.
-
-        :param dict options: options used to generate the report.
-        :param list lines: report lines, used to build the domain for the annotations.
-        :return: for each annotated line_id, the list of annotations linked to it.
-        :rtype: dict
-        """
         if not self._reads_ledger():
             return super().get_annotations(options, lines)
         self.check_singleton()
@@ -2288,8 +2182,6 @@ class AccountReport(models.Model):
         return annotations_by_line
 
     def _get_engines_without_next_groupby(self):
-        # These engines always receive None as their next_groupby, which lets
-        # their expressions be batched together.
         return super()._get_engines_without_next_groupby() | LEDGER_ENGINES
 
     def _reads_ledger(self) -> bool:
@@ -2317,9 +2209,6 @@ class AccountReport(models.Model):
         return config.fiscalyear_last_day, int(config.fiscalyear_last_month)
 
     def _init_currency_table(self, options) -> None:
-        """Creates the currency table temporary table if necessary, using the provided options to compute its periods.
-        This function should always be called before any query invovlving the currency table is run.
-        """
         if not self._reads_ledger():
             return
         if options["currency_table"]["type"] != "monocurrency":
@@ -2429,7 +2318,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _add_common_warnings(self, options, warnings) -> None:
-        # Display a warning if we're displaying only the data of the current company, but it's also part of a tax unit
         if not self._reads_ledger():
             super()._add_common_warnings(options, warnings)
             return
@@ -2446,10 +2334,6 @@ class AccountReport(models.Model):
             }
 
         report_company_ids = self.get_report_company_ids(options)
-        # The _get_accessible_branches function will return the accessible branches from the ones that are already selected,
-        # and get_report_company_ids will return the current company and its branches (that are selected) with the same VAT
-        # or tax unit. Therefore, we will display the warning only when the selected companies do not have the same VAT
-        # and in the context of branches.
         if self.filter_multi_company == "tax_units" and any(
             accessible_branch.id not in report_company_ids
             for accessible_branch in self.env.company._get_accessible_branches()
@@ -2458,7 +2342,6 @@ class AccountReport(models.Model):
                 "alert_type": "warning"
             }
 
-        # Check whether there are unposted entries for the selected period and partner or not (if the report allows it)
         if options.get("date") and options.get("all_entries") is not None:
             domain = (
                 Domain(
@@ -2527,9 +2410,6 @@ class AccountReport(models.Model):
         return lines
 
     def _update_line_names_for_consolidation(self, lines) -> None:
-        """When grouping by account_code, in order to make the consolidation clearer, we add the account name in the context
-        of the current company next to the account_code.
-        """
         if not self._reads_ledger():
             super()._update_line_names_for_consolidation(lines)
             return
@@ -2570,31 +2450,18 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _create_carryover_external_values(self, options) -> None:
-        """Generates the report.formula.external.value objects corresponding to this report's carryover under the provided options.
-
-        In case of multicompany setup, we need to split the carryover per company, for ease of audit, and so that the carryover isn't broken when
-        a company leaves a tax unit.
-
-        We first generate the carryover for the wholy-aggregated report, so that we can see what final result we want.
-        Indeed due to if_between, if_above and if_below conditions, each carryover might be different from the sum of the individidual companies'
-        carryover values. To handle this case, we generate each company's carryover values separately, then do a carryover adjustment on the
-        main company (main for tax units, first one selected else) in order to bring their total to the result we computed for the whole unit.
-        """
         self.check_singleton()
 
         if len(options["column_groups"]) > 1:
-            # The options must be forged in order to generate carryover values. Entering this conditions means this hasn't been done in the right way.
             raise UserError(
                 self.env._("Carryover can only be generated for a single column group.")
             )
 
-        # Get the expressions to evaluate from the report
         carryover_expressions = self.line_ids.expression_ids.filtered(
             lambda x: x.label.startswith("_carryover_")
         )
         expressions_to_evaluate = carryover_expressions._expand_aggregations()
 
-        # Expression totals for all selected companies
         expression_totals_per_col_group = (
             self._compute_expression_totals_for_each_column_group(
                 expressions_to_evaluate, options
@@ -2653,7 +2520,6 @@ class AccountReport(models.Model):
                 for carryover_expr, carryover_val in company_carryover_values.items():
                     multi_company_carryover_values_sum[carryover_expr] += carryover_val
 
-            # Adjust multicompany amounts on main company
             main_company = self._get_sender_company_for_export(options)
             _debug.logic(
                 "carryover_adjusted_on_main",
@@ -2677,16 +2543,7 @@ class AccountReport(models.Model):
     def _create_default_external_values(
         self, date_from, date_to, is_tax_report=False, company=None
     ) -> None:
-        """Generates the report.formula.external.value objects for the given dates.
-        If is_tax_report, the values are only created for tax reports, else for all other reports.
-
-        :param company: the company to seed the values for. The caller knows it -- the
-            lock date wizard is opened on one company and may be opened on a company that
-            is not the active one -- and `self.env.company` cannot; it is the default only
-            so existing callers keep their behaviour.
-        """
         if date_from >= date_to:
-            # This can happen when setting the lock date back in the past
             _debug.logic(
                 "default_values_skipped",
                 reason="empty_period",
@@ -2706,12 +2563,9 @@ class AccountReport(models.Model):
             }
         }
 
-        # Get all the default expressions from all reports
         default_expressions = self.env["report.formula.expression"].search(
             [("label", "=like", "_default_%")]
         )
-        # Options depend on the report, also we need to filter out tax report/other reports depending on is_tax_report
-        # Hence we need to group the default expressions by report
         for expr in default_expressions:
             report = expr.report_line_id.report_id
             if is_tax_report == (
@@ -2745,18 +2599,15 @@ class AccountReport(models.Model):
 
             target_by_default_expression = {}
             for default_expression in report_default_expressions:
-                # The default expression needs to have the same label as the target external expression, e.g. '_default_balance'
                 target_label = default_expression.label[len("_default_") :]
                 target_by_default_expression[default_expression] = (
                     default_expression.report_line_id.expression_ids.filtered_domain(
                         [("label", "=", target_label)]
                     )
                 )
-            # If the value has been created before/modified manually, we shouldn't create anything
-            # and we won't recompute expression totals for them
             targets_with_value = {
                 value.target_report_expression_id.id
-                for value in self.env["report.formula.external.value"].search(  # noqa: E8507 - one query per report, over every default expression at once
+                for value in self.env["report.formula.external.value"].search(
                     [
                         ("company_id", "=", company.id),
                         ("date", ">=", date_from),
@@ -2785,8 +2636,6 @@ class AccountReport(models.Model):
                 - len(expressions_to_compute),
             )
 
-            # Evaluate the expressions for the report to fetch the value of the default expression
-            # These have to be computed for each fiscal position
             expression_totals_per_col_group = report.with_company(
                 company
             )._compute_expression_totals_for_each_column_group(
@@ -2850,12 +2699,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _filtered_available_for(self, options: dict[str, Any]) -> Self:
-        """Called on report variants to know whether they are available for the provided options or not, computed for their root report,
-        computing their availability_condition field.
-
-        Only the options initialized by init_options with a more prioritary sequence than _init_options_variants are guaranteed to
-        be in the provided options' dict (since this function is called by _init_options_variants, while resolving a call to get_options()).
-        """
         if not self._reads_ledger():
             return super()._filtered_available_for(options)
         companies = self.env["res.company"].browse(self.get_report_company_ids(options))
@@ -2893,7 +2736,6 @@ class AccountReport(models.Model):
 
         reports_by_coa = self.filtered(lambda r: r.availability_condition == "coa")
         if reports_by_coa:
-            # When restricting to 'coa', the report is only available if all the companies have the same CoA as the report
             chart_templates = set(companies.account_config_id.mapped("chart_template"))
             reports += reports_by_coa.filtered(
                 lambda r: r.chart_template in chart_templates
@@ -3082,8 +2924,6 @@ class AccountReport(models.Model):
             column_group_key,
             column_group_options,
         ) in self._split_options_per_column_group(options).items():
-            # When groupby = id, the forced_domain is used to prevent displaying move lines that do not belong
-            # to the period that is selected. In the unallocated earning lines, this is not needed.
             data = get_column_group_result(
                 column_group_options
                 | {
@@ -3170,7 +3010,6 @@ class AccountReport(models.Model):
     def _get_partner_and_general_ledger_initial_balance_line(
         self, options, parent_line_id, eval_dict, account_currency=None, level_shift=0
     ) -> dict | None:
-        """Helper to generate dynamic 'initial balance' lines, used by general ledger and partner ledger."""
         line_columns = []
         for column in options["columns"]:
             col_value = eval_dict[column["column_group_key"]].get(
@@ -3194,7 +3033,6 @@ class AccountReport(models.Model):
                     )
                 )
 
-        # Display unfold & initial balance even when debit/credit column is hidden and the balance == 0
         if not any(
             isinstance(column.get("no_format"), (int, float))
             and column.get("expression_label") != "balance"
@@ -3214,7 +3052,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _set_budget_column_comparisons(self, options, line) -> None:
-        """Set the percentage values in the budget columns."""
         if not self._reads_ledger():
             super()._set_budget_column_comparisons(options, line)
             return
@@ -3267,8 +3104,6 @@ class AccountReport(models.Model):
                 )
                 line["columns"][col_index] = comparison_column
 
-    # ============ Accounts Coverage Debugging Tool - START ================
-    # ============ Accounts Coverage Debugging Tool - END ================
 
     def show_error_branch_allowed(self, *args, **kwargs) -> None:
         raise UserError(
@@ -3281,11 +3116,6 @@ class AccountReport(models.Model):
     def _prepare_editable_cell_data(
         self, options, col_group_key, groupby_model, column_expression, column_value
     ) -> dict | None:
-        """Return the edit-popup payload for a cell the ledger allows editing in place, or None.
-
-        The chassis knows a cell may be editable; which cells those are is a ledger question.
-        Here it is a budget column grouped by account, for a user who may manage accounting.
-        """
         if not self._reads_ledger():
             return super()._prepare_editable_cell_data(
                 options, col_group_key, groupby_model, column_expression, column_value
@@ -3310,14 +3140,6 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _create_hierarchy(self, lines, options):
-        """Compute the hierarchy based on account groups when the option is activated.
-
-        The option is available only when there are account.group for the company.
-        It should be called when before returning the lines to the client/templater.
-        The lines are the result of _get_lines(). If there is a hierarchy, it is left
-        untouched, only the lines related to an account.account are put in a hierarchy
-        according to the account.group's and their prefixes.
-        """
         if not self._reads_ledger():
             return super()._create_hierarchy(lines, options)
         if not lines:
@@ -3325,7 +3147,6 @@ class AccountReport(models.Model):
             return lines
 
         def get_account_group_hierarchy(account):
-            # Create codes path in the hierarchy based on account.
             groups = self.env["account.group"]
             if account.group_id:
                 group = account.group_id
@@ -3386,7 +3207,6 @@ class AccountReport(models.Model):
                     total += column["no_format"]
                 elif isinstance(total, tuple):
                     if total == (None, None):
-                        # Entering here only on first aggregation
                         amount = 0.0
                         currency = column.get("currency")
                     else:
@@ -3501,7 +3321,6 @@ class AccountReport(models.Model):
                 }
             )
 
-        # Precompute the account groups of the accounts in the report
         account_ids = []
         for line in lines:
             markup, res_model, model_id = self._parse_line_id(line["id"])[-1]
@@ -3514,11 +3333,10 @@ class AccountReport(models.Model):
             lines=len(lines),
             account_lines=len(account_ids),
         )
-        hierarchy_segments = 1  # debuglog
+        hierarchy_segments = 1
 
         new_lines, total_lines = [], []
 
-        # root_line_id is the id of the parent line of the lines we want to render
         root_line_id = (
             self._prepare_parent_line_id(self._parse_line_id(lines[0]["id"])) or None
         )
@@ -3532,7 +3350,6 @@ class AccountReport(models.Model):
         for line in lines:
             markup, res_model, model_id = self._parse_line_id(line["id"])[-1]
 
-            # Account lines are used as the basis for the computation of the hierarchy.
             if res_model == "account.account":
                 last_account_line_id = line["id"]
                 current_level = line["level"]
@@ -3562,19 +3379,14 @@ class AccountReport(models.Model):
                             line, group=group
                         )
 
-            # This is not an account line, so we check to see if it is a descendant of the last account line.
-            # If so, it is added to the mapping of the lines that are related to this account.
             elif last_account_line_id and line.get("parent_id", "").startswith(
                 last_account_line_id
             ):
                 account_line_children_map[account_id].append(line)
 
-            # This is a total line that is not linked to an account. It is saved in order to be added at the end.
             elif markup == "total":
                 total_lines.append(line)
 
-            # This line ends the scope of the current hierarchy and is (possibly) the root of a new hierarchy.
-            # We render the current hierarchy and set up to build a new hierarchy
             else:
                 render_lines(
                     root_account_groups,
@@ -3585,7 +3397,6 @@ class AccountReport(models.Model):
 
                 new_lines.append(line)
 
-                # Reset the hierarchy-related variables for a new hierarchy
                 root_line_id = line["id"]
                 last_account_line_id = account_id = None
                 current_level = 0
@@ -3593,7 +3404,7 @@ class AccountReport(models.Model):
                 root_account_groups = self.env["account.group"]
                 account_groups = self.env["account.group"]
                 hierarchy = create_hierarchy_dict()
-                hierarchy_segments += 1  # debuglog
+                hierarchy_segments += 1
 
         render_lines(
             root_account_groups, current_level, root_line_id, skip_no_group=False
@@ -3662,9 +3473,6 @@ class AccountReport(models.Model):
 
     @api.model
     def _postprocess_chatter_for_annotations(self, lines) -> None:
-        """Add the chatter information on lines that can be annotated, so that it's then possible to open the right
-        chatter for that line.
-        """
         if not self._reads_ledger():
             super()._postprocess_chatter_for_annotations(lines)
             return
@@ -3682,9 +3490,6 @@ class AccountReport(models.Model):
                     "id": record_id,
                 }
 
-        # load=False keeps move_id a bare id instead of an (id, display_name)
-        # pair: the chatter only needs the number, and resolving a display
-        # name for every annotated line's move is pure waste.
         aml_id_to_account_move_id = {
             line["id"]: line["move_id"]
             for line in self.env["account.move.line"]
@@ -4178,13 +3983,9 @@ class AccountReportExternalValue(models.Model):
 
     @_debug.perf.timed
     def write(self, vals):
-        # We need to build vals_to_check before the super() call because of the 'target_report_expression_id' field :
-        # if the user tries to modify this specific field, it'll potentially change the linked report id, and so he can
-        # bypass the lock dates from the original report (if it was a tax report for example)
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         vals_to_check = set(self._prepare_vals_to_check_for_lock_date(self))
         res = super().write(vals)
-        # Then we add the modified records
         vals_to_check.update(self._prepare_vals_to_check_for_lock_date(self))
         self._check_lock_date_violation(vals_to_check)
         return res
@@ -4197,15 +3998,7 @@ class AccountReportExternalValue(models.Model):
 
     @api.model
     def _prepare_vals_to_check_for_lock_date(self, records):
-        """Yield one (is_tax, date, company) tuple per record, where:
-
-        - is_tax (bool): whether the external value is linked to a tax report
-        - date (date): the date to check the lock dates for
-        - company (res.company): the company to check the lock dates for
-        """
         generic_tax_report = self.env.ref("account.generic_tax_report")
-        # The sentinel cannot travel over RPC, unlike a boolean context key: only server
-        # code booking a carryover into the period its own return just locked holds it.
         bypass_tax_lock = (
             self.env.context.get("bypass_tax_lock_check") is BYPASS_LOCK_CHECK
         )
@@ -4218,17 +4011,13 @@ class AccountReportExternalValue(models.Model):
                     report
                     + report.root_report_id
                     + report.section_main_report_ids.root_report_id
-                ),  # is tax
-                external_value.date,  # date to check
-                external_value.company_id,  # company
+                ),
+                external_value.date,
+                external_value.company_id,
             )
 
     @_debug.perf.timed
     def _check_lock_date_violation(self, vals_to_check) -> None:
-        """Raise if a company has a lock date after the date we want to create/write the values for.
-
-        :param vals_to_check: a set of tuples like: `{(is_tax, date, company_id)}`
-        """
         for is_tax, date, company_id in vals_to_check:
             violated_lock_dates = company_id._get_violated_lock_dates(
                 date, is_tax, self.env["account.journal"]

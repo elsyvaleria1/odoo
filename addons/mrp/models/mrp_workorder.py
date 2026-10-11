@@ -127,8 +127,6 @@ class MrpWorkorder(models.Model):
         string="Original Production Quantity",
         readonly=True,
     )
-    # unrounded: a kit operation learns its cycle from it, and 40 tables of a
-    # kit sold by the dozen are 3.333... dozens, not 3.33
     operation_demand_qty = fields.Float(
         string="Operation Quantity Done",
         copy=False,
@@ -610,8 +608,6 @@ class MrpWorkorder(models.Model):
 
     def _prepare_reservation_vals_list(self):
         self.check_singleton()
-        # A completed execution keeps the identity recorded by its reservation,
-        # even if its work center subsequently represents another resource.
         resource = (
             self.reservation_ids[:1].resource_id
             if self.state == "done" and self.reservation_ids
@@ -1577,8 +1573,6 @@ class MrpWorkorder(models.Model):
 
     def _prepare_operation_demand_vals(self, quantity) -> dict:
         self.check_singleton()
-        # Only a demand found in the order's explosion is frozen: a fallback to
-        # the finished product would fix a wrong history for good.
         demand = self._find_operation_demand(quantity)
         if demand is None:
             _debug.logic("operation_demand_unfound", workorder=self.id)
@@ -1696,16 +1690,6 @@ class MrpWorkorder(models.Model):
     def _get_occupied_minutes(
         self, until=None, closed_by=None, working_intervals_by_workcenter=None
     ):
-        """How long the work order occupied its work centers, in minutes.
-
-        Timers of one work center merge, so two operators or a blockage during
-        work count once. Productive and performance time counts as it
-        happened; blocked and quality time counts only inside the work
-        center's working calendar, so a blockage left open overnight costs
-        nothing. `until` closes off a running timer (with no bound it counts
-        for nothing: the stored `duration` is a function of the timer rows
-        alone); `closed_by` keeps only timers closed by then.
-        """
         self.check_singleton()
         minutes = 0.0
         for workcenter, timers in self.time_ids.grouped("workcenter_id").items():
@@ -1736,13 +1720,6 @@ class MrpWorkorder(models.Model):
         return minutes
 
     def _get_duration(self, until=None, working_intervals_by_workcenter=None):
-        """The stored `duration` is the occupied time of `_get_occupied_minutes`.
-
-        `duration_live` passes the wall clock -- the same clock `button_start`
-        stamped `date_start` with. Never the cursor's clock: `cr.now()` is
-        PostgreSQL's `now()`, the transaction's start, so a timer opened a
-        second into the transaction spans backwards and `Intervals` drops it.
-        """
         self.check_singleton()
         return round(
             self._get_occupied_minutes(

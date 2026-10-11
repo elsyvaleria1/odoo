@@ -63,15 +63,10 @@ class TestHrAppraisalFeedback(TransactionCase):
         )
         self.assertEqual(feedback["deadline"], survey_input["deadline"].date())
 
-        # by the way, check that completed_survey_count is computed correctly
         survey_input._mark_done()
         self.assertEqual(self.appraisal.completed_survey_count, 1)
 
     def test_appraisal_feedback_survives_a_stale_work_contact(self):
-        """An employee whose partner_id still points at a different, emailless
-        partner (a legacy row hr's converge_party_rows reports and leaves, and
-        that the ORM no longer accepts, hence the SQL) must still get a
-        reachable answer/mail, using their user's partner instead."""
         stale = self.env["res.partner"].create({"name": "Stale Work Contact"})
         self.env.cr.execute(
             "UPDATE hr_employee SET partner_id = %s WHERE id = %s",

@@ -61,8 +61,6 @@ class HrWorkEntryReport(models.Model):
         ],
         readonly=True,
     )
-    # Some of those might not be enabled (requiring respective work_entry modules) but adding them separately would require
-    # a module just for that
     work_entry_source = fields.Selection(
         selection=[
             ("calendar", "Working Schedule"),

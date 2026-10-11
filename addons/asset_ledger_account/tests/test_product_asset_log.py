@@ -40,10 +40,6 @@ class TestProductAssetLog(AccountTestInvoicingCommon):
         cls.AccountMoveLine = cls.env["account.move.line"]
         cls.ProductTrace = cls.env["product.trace"]
         cls.ProductAssetLog = cls.env["resource.log"]
-        # sudo: these are fixtures. marin gates product.template.standard_price
-        # with write_groups, so building them as the suite's deliberately
-        # under-privileged accounting user dies in setUpClass wherever it is
-        # installed. Access is exercised by the tests, not by the setup.
         cls.ProductProduct = cls.env["product.product"].sudo()
         cls.Partner = cls.env["res.partner"]
 
@@ -275,8 +271,6 @@ class TestProductAssetLog(AccountTestInvoicingCommon):
                 line_form.price_unit = price
                 line_form.tax_ids.clear()
         move = move_form.save()
-        # A negative *total* cannot be posted at all, so the reachable shape of a
-        # credit is a rebate line inside a bill that is still positive overall.
         move.action_post()
 
         logs = move.invoice_line_ids.asset_log_ids

@@ -84,7 +84,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(request.state, "approved")
         return request
 
-    # -- coverage is the binding's own ---------------------------------------
 
     def test_an_approval_the_binding_did_not_raise_does_not_cover_the_record(self):
         self._bind(mode="block")
@@ -110,7 +109,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         partner.with_user(self.caller).action_archive()
         self.assertFalse(partner.active)
 
-    # -- the condition reads what the caller cannot ------------------------
 
     def test_a_condition_through_a_record_the_caller_cannot_read_still_selects(self):
         hidden_company = self.env["res.company"].create({"name": "Integrity Hidden"})
@@ -128,7 +126,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
             as_caller.action_archive()
         self.assertTrue(child.active)
 
-    # -- what may be bound, and by whom --------------------------------------
 
     def test_no_approval_engine_model_can_be_bound_even_by_the_superuser(self):
         for model in ("approval.category", "approval.request"):
@@ -237,7 +234,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         )
         self.assertEqual(enforced.sudo_policy, "enforce")
 
-    # -- the replay acts in the owner's companies ----------------------------
 
     def test_the_replay_runs_in_the_owners_companies_not_the_approvers_session(self):
         home = self.env.company
@@ -270,7 +266,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertFalse(partner.active)
         self.assertEqual(partner.write_uid, owner)
 
-    # -- a call the replay could not repeat ----------------------------------
 
     def _subscribe_binding(self, run_on_approval):
         return self._bind(
@@ -300,7 +295,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(action["res_id"], request.id)
         self.assertNotIn(follower, partner.message_partner_ids)
 
-    # -- the kill switch reaches the button ------------------------------------
 
     def test_the_kill_switch_lets_the_button_through_without_a_request(self):
         binding = self._bind(mode="request", run_on_approval=False)
@@ -318,7 +312,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertFalse(spec["gated"])
         self.assertTrue(spec["approved"])
 
-    # -- a check is not a run -----------------------------------------------
 
     def test_approving_from_the_button_check_does_not_count_as_the_run(self):
         category = self.env["approval.category"].create(
@@ -383,7 +376,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(request.state, "approved")
         self.assertTrue(partner.active, "re-approval does not run it a second time")
 
-    # -- a method with no records --------------------------------------------
 
     def test_a_method_that_runs_on_the_model_cannot_be_bound(self):
         with self.assertRaises(ValidationError):
@@ -410,7 +402,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertTrue(getattr(wrapper, "_api_model", False))
         self.assertEqual(wrapper.__name__, "get_or_create")
 
-    # -- the editor adopts the button's own binding ----------------------------
 
     def _assert_adopted_by_the_editor(self, binding):
         step = self.env["approval.category.step"].browse(
@@ -441,7 +432,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         binding.active = False
         self._assert_adopted_by_the_editor(binding)
 
-    # -- the editor and the reset --------------------------------------------
 
     def test_the_editor_sees_the_steps_while_bindings_are_switched_off(self):
         self.Binding.create_step_for_button("res.partner", "action_archive", False)
@@ -463,7 +453,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(unrelated.state, "approved")
         self.assertNotEqual(own.state, "approved")
 
-    # -- Block asks from its button ------------------------------------------
 
     def test_a_block_button_asks_for_the_caller_and_runs_once_approved(self):
         binding = self._bind(mode="block")
@@ -541,7 +530,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(request.request_owner_id, self.caller)
         self.assertEqual(request.state, "approved")
 
-    # -- one approval, one run -------------------------------------------------
 
     def test_an_approval_that_ran_its_operation_does_not_cover_the_next_call(self):
         binding = self._bind(mode="request", run_on_approval=True)
@@ -560,7 +548,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
             ["approved", "pending"],
         )
 
-    # -- one request per record ------------------------------------------------
 
     def test_a_caller_who_cannot_read_the_pending_request_raises_no_second_one(self):
         binding = self._bind(mode="request", run_on_approval=False)
@@ -576,7 +563,6 @@ class TestApprovalBindingIntegrity(ApprovalCommon):
         self.assertEqual(result["type"], "ir.actions.client")
         self.assertTrue(partner.active)
 
-    # -- approve on invoke before refusing a call it could not replay ---------
 
     def test_a_call_with_arguments_runs_when_its_caller_approves_it_on_invoke(self):
         category = self.env["approval.category"].create(

@@ -51,11 +51,6 @@ class TestCustodyAssignment(TransactionCase):
         )
 
     def _rows(self, role, resource=None):
-        """The full shape of every row for `role`, archived ones included.
-
-        Asserting on the open row alone hides a leaked sibling: a search for
-        `date_end = False` cannot tell one open row from two.
-        """
         return [
             (row.assignee_id.name, row.custody_role, bool(row.date_end), row.active)
             for row in self.env["resource.assignment"]
@@ -146,8 +141,6 @@ class TestCustodyAssignment(TransactionCase):
             "now",
             return_value=fields.Datetime.now() + timedelta(days=31),
         ):
-            # Custody is read off the resource; a clock that moved needs
-            # both records forgotten.
             self.asset.invalidate_recordset()
             self.asset.invalidate_recordset()
             self.assertEqual(self.asset.operator_employee_id, self.other)
@@ -168,12 +161,6 @@ class TestCustodyAssignment(TransactionCase):
         self.assertEqual(self._open("operator"), before)
 
     def test_losing_the_asset_ends_custody(self):
-        """The mirror has to record the way out, not only the way in.
-
-        `write` re-syncs `self.filtered("asset_id")` after the write, so a lot
-        that just lost its asset filters itself out and its row stayed open
-        forever -- `_get_holder` kept naming the ex-operator.
-        """
         self.lot.asset_id = False
 
         self.assertFalse(self._live("operator"))
@@ -182,11 +169,6 @@ class TestCustodyAssignment(TransactionCase):
         self.assertEqual(self._rows("operator"), [("Ana", "operator", True, True)])
 
     def test_unlinking_the_lot_ends_custody(self):
-        """An open row also blocks deleting the resource for good.
-
-        `resource.assignment.resource_id` is `ondelete="restrict"`, so a row
-        left open by a deleted lot pins its `resource.resource` permanently.
-        """
         resource = self.asset
 
         self.lot.unlink()
@@ -200,10 +182,6 @@ class TestCustodyAssignment(TransactionCase):
         )
 
     def test_a_second_live_row_supersedes_the_first(self):
-        """Nothing in the model forbids two live rows per role. A rival opened
-        by hand used to survive beside the first; now the lot follows the
-        newest row and its write ends the other, from whichever side the row
-        came."""
         first = self._open("operator")
         rival = self.env["resource.assignment"].create(
             {
@@ -223,12 +201,6 @@ class TestCustodyAssignment(TransactionCase):
         self.assertEqual(self._live("operator"), [("Cy", "operator", False, True)])
 
     def test_a_future_dated_end_is_superseded_too(self):
-        """A row ending in the future is still `state = "active"`.
-
-        The old search matched `date_end = False` only, so this row was never
-        closed and `_get_holder` had two candidates to pick from -- both with
-        the same `date_start`, which made the winner a tie.
-        """
         current = self._open("operator")
         current.date_end = fields.Datetime.now() + timedelta(days=30)
         self.assertEqual(current.state, "active")
@@ -248,10 +220,6 @@ class TestCustodyAssignment(TransactionCase):
         )
 
     def test_an_archived_row_is_superseded_too(self):
-        """An archived row is invisible to a default search and still open.
-
-        Unarchiving it would bring back a second current operator.
-        """
         self._open("operator").active = False
 
         self.lot.operator_id = self.other
@@ -267,11 +235,6 @@ class TestCustodyAssignment(TransactionCase):
         )
 
     def test_a_batched_write_syncs_in_one_search_and_one_create(self):
-        """One search and one create for the whole recordset.
-
-        The 1.4.0 migration hands `_sync_custody` every asset in the database in
-        one call, and a list multi-edit hands it the selection.
-        """
         lots = self.env["product.trace"].browse()
         for index in range(5):
             lots |= self._new_lot(f"BATCH-{index}")

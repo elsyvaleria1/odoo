@@ -15,9 +15,6 @@ class TestPosRestaurantDataContract(TestFrontendCommon):
     """
 
     def test_the_order_declares_every_field_this_module_adds_to_it(self):
-        # ir.model.data is the ORM's own record of which module created a field,
-        # so this follows the module rather than a hand-kept list that would
-        # go stale the next time pos_restaurant extends pos.order.
         owned = self.env["ir.model.data"].search(
             [("module", "=", "pos_restaurant"), ("model", "=", "ir.model.fields")]
         )

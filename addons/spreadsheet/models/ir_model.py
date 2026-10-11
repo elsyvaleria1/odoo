@@ -18,8 +18,6 @@ class IrModel(models.Model):
             if model is None or not model.has_access("read"):
                 result[model_name] = False
             else:
-                # we consider only stored parent relationships were meant to
-                # be searched
                 result[model_name] = (
                     model._parent_store and model._parent_name in model._fields
                 )

@@ -68,11 +68,6 @@ class WebsiteProfile(http.Controller):
 
     @staticmethod
     def _validation_email_state():
-        """Whether a validation email was sent and whether it was validated,
-        read once per request. A page showing the validation's success shows
-        it once: the state is cleared then, unless the page is fetched for an
-        in-place navigation or a preload, which may not be shown."""
-        # vars(): an attribute that was never set is absent, on any request
         state = vars(request).get("_validation_email_state")
         if state is None:
             session = request.session

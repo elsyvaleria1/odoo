@@ -20,7 +20,6 @@ class testSoProjectCreation(TestSaleProjectCommon):
         )
 
     def test_folder_from_project(self):
-        """Creating a service product linked to a project template (which drives the documents folder)."""
         self.env["product.template"].create(
             {
                 "name": "Test product",

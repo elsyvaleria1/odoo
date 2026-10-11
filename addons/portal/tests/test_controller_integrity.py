@@ -84,7 +84,6 @@ class TestPortalPhoneIntegrity(TransactionCase):
         self.assertNotIn(primary, self.partner.phone_ids)
         self.assertEqual(primary.number, "+32000111001")
         self.assertEqual(other.phone_ids, primary)
-        # The next page reads the relation in the phone model's persisted order.
         self.partner.invalidate_recordset(["phone_ids"])
         _logger.debug(
             "Phone replacement: primary=%s", self.partner._phone_get_number().id
@@ -145,7 +144,6 @@ class TestPortalPhoneIntegrity(TransactionCase):
             owner._phone_get_number().id,
         )
         self.assertEqual(self.partner._phone_get_number(), target)
-        # This is the original bug's counterexample: global ordering picks another number.
         self.assertNotEqual(self.partner.phone_ids._primary(), target)
         self.assertEqual(owner._phone_get_number(), owner_primary)
         self.assertEqual(

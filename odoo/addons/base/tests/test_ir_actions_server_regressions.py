@@ -31,8 +31,6 @@ class ServerActionCase(TransactionCase):
         )
 
     def _ungated_partner_field(self):
-        # a webhook payload refuses fields under an access class, and an
-        # installed module may put the partner's name under one
         Partner = self.env["res.partner"]
         name = min(
             name

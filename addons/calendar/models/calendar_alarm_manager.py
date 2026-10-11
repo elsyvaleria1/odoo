@@ -12,7 +12,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
     _description = "Event Alarm Manager"
 
     def _get_alarm_delta_sql(self, alarm_type):
-        """Per event, the widest and narrowest reminder lead time, in minutes."""
         return SQL(
             """
             SELECT rel.calendar_event_id,
@@ -27,10 +26,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         )
 
     def _get_alarm_events_sql(self, partners):
-        """Active events with a reminder, and the window in which one fires.
-
-        `partners`, when given, restricts to the events they attend.
-        """
         partner_join = SQL("")
         if partners:
             partner_join = SQL(
@@ -57,17 +52,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         )
 
     def _get_alarm_horizon_sql(self, seconds, partners=None):
-        """Upper bound on the `first_alarm` of the events to return.
-
-        Without `seconds`: the next future alarm plus three minutes if there is
-        one, otherwise now -- so a caller asking "what is due?" gets the events
-        around the next reminder rather than every event that has one.
-
-        `partners`, when given, scopes the MIN() to their own events, matching
-        `_get_alarm_events_sql` -- otherwise every open browser tab's poll for
-        its own next alarm scans every alarmed event in the database to compute
-        this bound, not just the polling user's own.
-        """
         if seconds is not None:
             return SQL("now() at time zone 'utc' + %s * interval '1' second", seconds)
         partner_join = SQL("")
@@ -94,19 +78,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
     def _get_next_potential_limit_alarm(
         self, alarm_type, seconds=None, partners=None
     ) -> dict[int, dict]:
-        """Events whose reminder window is open, keyed by event id.
-
-        Composed from SQL() fragments that each carry their own parameters,
-        rather than %-formatting three strings together with one flat tuple:
-        there the parameter order was positional *across* fragments and a
-        str.replace spliced in the partner filter, so reordering a fragment
-        silently misbound the parameters. Its sibling
-        `_get_events_by_alarm_to_notify` already uses SQL() -- the fork has the
-        right tool.
-
-        :rtype: dict[int, dict]
-        """
-        # flush models before making queries
         for model_name in ("calendar.alarm", "calendar.event", "calendar.recurrence"):
             self.env[model_name].flush_model()
 
@@ -147,7 +118,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
             ) in self.env.cr.fetchall()
         }
 
-        # determine accessible events
         events = self.env["calendar.event"].browse(result)
         return {key: result[key] for key in events._filtered_access("read").ids}
 
@@ -159,20 +129,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         alarm_type,
         after=False,
     ):
-        """Alarms of `event` that fire within the next `in_the_next_X_seconds`.
-
-        :param one_date: start of the occurrence to check (not the event's own
-            start when it is recurrent)
-        :param event: <calendar.event> record
-        :param in_the_next_X_seconds: how far into the future to look
-        :param after: only return alarms firing strictly after this datetime --
-            the user's last acknowledgement
-        :return: list of {alarm_id, event_id, notify_at}
-        """
-        # `event_maxdelta` and `missing` used to be parameters here. No caller
-        # ever passed `missing`, so `missing * duration` was always zero and
-        # `event_maxdelta` only fed a bound that the loop overwrote on its first
-        # iteration -- the code said as much ("TODO: remove event_maxdelta").
         result = []
         future = fields.Datetime.now() + timedelta(seconds=in_the_next_X_seconds)
         acknowledged_until = fields.Datetime.from_string(after) if after else None
@@ -182,11 +138,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
             notify_at = one_date - timedelta(minutes=alarm.duration_minutes)
             if future <= notify_at:
                 continue
-            # Compare the acknowledgement against the moment the reminder fires,
-            # not against the event's start. Comparing against the start meant an
-            # acknowledgement only counted once the event had already begun: the
-            # web client hides a dismissed reminder for the rest of the session,
-            # but every reload asked the server again and got it back.
             if acknowledged_until is not None and notify_at <= acknowledged_until:
                 continue
             result.append(
@@ -200,29 +151,11 @@ class CalendarAlarm_Manager(models.AbstractModel):
 
     @api.model
     def _get_notify_alert_extra_conditions(self):
-        """
-        To be overriden on inherited modules
-        adding extra conditions to extract only the unsynced events
-        """
         return SQL("")
 
     def _get_events_by_alarm_to_notify(self, alarm_type):
-        """
-        Get the events with an alarm of the given type between the cron
-        last call and now.
-
-        New reminders created since the cron's last call, with an alarm
-        before that last call, are skipped by design. The attendees
-        receive an invitation for any new event already.
-        """
         extra_conditions = self._get_notify_alert_extra_conditions()
         now = fields.Datetime.now()
-        # Window is [lastcall, now). The one-week fallback (when the cron has no
-        # recorded previous run) is a deliberate catch-up: it lets a run that is
-        # several days late still pick up missed reminders and, for recurrences,
-        # schedule the next occurrence's trigger. Keep the week, but express the
-        # bound as a datetime rather than fields.Date.today(), which is a date and
-        # gets widened to midnight when compared against the `start` timestamp.
         lastcall = self.env.context.get("lastcall") or (now - timedelta(weeks=1))
         self.env.cr.execute(
             SQL(
@@ -257,12 +190,10 @@ class CalendarAlarm_Manager(models.AbstractModel):
 
     @api.model
     def _send_reminder(self):
-        # Executed via cron
         events_by_alarm = self._get_events_by_alarm_to_notify("email")
         if not events_by_alarm:
             return
 
-        # force_send limit should apply to the total nb of attendees, not per alarm
         force_send_limit = int(
             self.env.registry.settings.get(self.env, "mail.mail_force_send_limit", 100)
         )
@@ -279,9 +210,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         attendees = events.filtered(lambda e: e.stop > now).attendee_ids.filtered(
             lambda a: a.state != "declined"
         )
-        # Group once by event id instead of re-scanning the whole `attendees`
-        # recordset with `.filtered()` inside the alarm loop below -- that made
-        # this O(alarms x total_attendees) instead of one grouping pass.
         attendees_by_event = {}
         for attendee in attendees:
             attendees_by_event.setdefault(attendee.event_id.id, []).append(attendee.id)
@@ -312,12 +240,8 @@ class CalendarAlarm_Manager(models.AbstractModel):
         all_meetings = self._get_next_potential_limit_alarm(
             "notification", partners=partner
         )
-        # One browse for the whole set, not one per notification: this route is
-        # polled by every open tab, and `display_time` below is a compute, so a
-        # per-event browse made the query count scale with the user's alarms
-        # (measured ~5 queries per pending notification).
         meetings = self.env["calendar.event"].browse(all_meetings)
-        time_limit = 3600 * 24  # return alarms of the next 24 hours
+        time_limit = 3600 * 24
         all_notif = []
         for meeting in meetings:
             alerts = self.do_check_alarm_for_one_date(
@@ -335,12 +259,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         meeting = self.env["calendar.event"].browse(alert["event_id"])
 
         if alarm.alarm_type == "notification":
-            # Markup, and one paragraph: `plaintext2html` already wraps its
-            # result in <p>, so wrapping it again emitted `<p><p>body</p></p>`,
-            # and building the whole thing as a plain str meant the web client
-            # -- which renders it with `t-out` -- escaped the tags and showed
-            # them to the user verbatim. The client marks this value up on
-            # arrival (see calendar_notification_service.js).
             message = Markup("%s") % meeting.display_time
             if alarm.body:
                 message += plaintext2html(alarm.body)
@@ -359,7 +277,6 @@ class CalendarAlarm_Manager(models.AbstractModel):
         return None
 
     def _notify_next_alarm(self, partner_ids) -> None:
-        """Sends through the bus the next alarm of given partners"""
         users = self.env["res.users"].search(
             [
                 ("partner_id", "in", tuple(partner_ids)),

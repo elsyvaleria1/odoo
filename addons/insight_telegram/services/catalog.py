@@ -45,10 +45,8 @@ class Ask:
     today: date
     params: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
-    # what a report learns that the chat needs next, e.g. whose statement
     extras: dict = field(default_factory=dict)
 
-    # -- parameters ------------------------------------------------------------
 
     @property
     def group(self):
@@ -63,7 +61,6 @@ class Ask:
         return max(1, min(top, MAX_TOP))
 
     def period(self):
-        """The asked period as inclusive dates, the current month by default."""
         start = _parse_date(self.params.get("date_from"))
         end = _parse_date(self.params.get("date_to"))
         if not start and not end:
@@ -75,8 +72,6 @@ class Ask:
         return start, end
 
     def datetime_range(self, field_name):
-        """A domain bounding a datetime field by the period, in the owner's
-        timezone: the database keeps UTC."""
         start, end = self.period()
         zone = pytz.timezone(self.tz)
         begin = zone.localize(datetime.combine(start, time.min)).astimezone(pytz.UTC)
@@ -103,8 +98,6 @@ class Ask:
         return format_date(self.env, value, date_format="MMMM yyyy")
 
     def matches(self, model, value, fields_=("name",), extra=None):
-        """The records of `model` whose name matches `value`, noted in the
-        answer when the name is ambiguous."""
         found = find(self.env, model, value, fields_, extra)
         if not found:
             raise NotFound(self.env._("I could not find «%(value)s».", value=value))
@@ -122,8 +115,6 @@ class Ask:
         return found
 
     def filter_domain(self, mapping):
-        """The domain of the filters the question names, by the field each
-        filter reads on this query's model."""
         domain = []
         for name, (path, model, fields_, extra) in mapping.items():
             value = (self.params.get(name) or "").strip()
@@ -138,12 +129,6 @@ _WORD = re.compile(r"\w{2,}")
 
 
 def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
-    """The records of `model` a person means by `value`, as said or dictated.
-
-    The whole phrase first; else every word of it, in any order and with
-    anything between them ("Victor Juárez" is "Victor Hugo Juarez
-    Hernandez"), accents ignored. Contacts that trade the most come first.
-    """
     Model = env[model]
     base = list(extra or [])
     order = (
@@ -166,8 +151,6 @@ def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
         )
         for word in words
     )
-    # the ORM's ilike already ignores accents on both sides wherever the
-    # database has unaccent, so dictated "Juarez" finds "Juárez"
     return Model.search(Domain(base) & by_word, limit=limit, order=order)
 
 
@@ -176,14 +159,9 @@ class NotFound(Exception):
     answer."""
 
 
-# -- formatting -----------------------------------------------------------------
 
 
 def money(amount, currency) -> str:
-    """`amount` with thousands separators and its currency, symbol where the
-    currency puts it: ``$1,234.50 MXN``, ``1,234.50 € EUR``. The figure is
-    Odoo's own (the currency's decimal places and rounding, the language's
-    separators); the layout stays plain text for a chat."""
     _pre, text, _post = format_amount_parts(currency.env, amount, currency)
     text = text.replace(NEGATIVE_SIGN_JOINER, "-").replace(NON_BREAKING_SPACE, " ")
     symbol = currency.symbol or ""
@@ -193,7 +171,6 @@ def money(amount, currency) -> str:
 
 
 def quantity(amount) -> str:
-    """A quantity with thousands separators and no trailing zeros."""
     return f"{amount:,.2f}".rstrip("0").rstrip(".")
 
 
@@ -207,7 +184,6 @@ def _parse_date(value):
 
 
 def _label(ask, value):
-    """A grouping value as the answer names it."""
     if isinstance(value, date):
         return ask.format_month(value)
     if hasattr(value, "display_name"):
@@ -216,7 +192,6 @@ def _label(ask, value):
 
 
 def money_report(ask, title, model, domain, amount, currency_path, groups):
-    """Total an amount by currency, and by the asked grouping."""
     group_path = None if ask.params.get("summary_only") else groups.get(ask.group)
     by = [currency_path] + ([group_path] if group_path else [])
     rows = ask.env[model]._read_group(domain, by, [f"{amount}:sum", "__count"])
@@ -248,8 +223,6 @@ def money_report(ask, title, model, domain, amount, currency_path, groups):
 
 
 def _ranked(ask, items, show, by_date=False):
-    """`• label: value (count)` lines, largest first -- or in order for a
-    time series -- cut to the asked top."""
     if not by_date:
         items = sorted(items, key=lambda item: item[1], reverse=True)
     shown = items if by_date else items[: ask.top]
@@ -259,11 +232,9 @@ def _ranked(ask, items, show, by_date=False):
     return lines
 
 
-# -- the queries ------------------------------------------------------------------
 
 
 def run_sales(ask):
-    """Confirmed sales orders of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
             "company": ("company_id", "res.company", ("code", "name"), None),
@@ -316,7 +287,6 @@ def run_sales(ask):
 
 
 def run_pos_sales(ask):
-    """Counter (point of sale) sales of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
             "company": ("company_id", "res.company", ("code", "name"), None),
@@ -375,7 +345,6 @@ def run_pos_sales(ask):
 
 
 def run_invoicing(ask):
-    """Customer invoicing of the period, net of credit notes."""
     domain = [
         ("move_type", "in", ("out_invoice", "out_refund")),
         ("state", "=", "posted"),
@@ -405,7 +374,6 @@ def run_invoicing(ask):
 
 
 def _balance_report(ask, title, move_types, sign):
-    """Open balances of `move_types`, overdue part included, by the asked grouping."""
     domain = [
         ("move_type", "in", move_types),
         ("state", "=", "posted"),
@@ -469,7 +437,6 @@ def _balance_report(ask, title, move_types, sign):
 
 
 def run_receivables(ask):
-    """What customers owe now, and how much of it is overdue."""
     return _balance_report(
         ask,
         ask.env._("Accounts receivable from customers"),
@@ -479,7 +446,6 @@ def run_receivables(ask):
 
 
 def run_payables(ask):
-    """What is owed to suppliers now, and how much of it is overdue."""
     return _balance_report(
         ask,
         ask.env._("Accounts payable to suppliers"),
@@ -489,7 +455,6 @@ def run_payables(ask):
 
 
 def run_purchases(ask):
-    """Confirmed purchase orders of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
             "company": ("company_id", "res.company", ("code", "name"), None),
@@ -547,7 +512,6 @@ def run_purchases(ask):
 
 
 def run_stock(ask):
-    """Stock on hand per product, in internal locations; never added up across units."""
     domain = [("location_id.usage", "=", "internal")]
     domain += ask.filter_domain(
         {
@@ -584,8 +548,6 @@ def run_stock(ask):
     if not rows:
         lines.append(ask.env._("No stock found."))
         return lines
-    # quantities of different products are in different units: they are
-    # listed per product, never added up
     items = []
     for row in rows:
         product = row[0]
@@ -611,7 +573,6 @@ def run_stock(ask):
 
 
 def run_cash(ask):
-    """Bank and cash balances, per journal."""
     company_domain = ask.filter_domain(
         {"company": ("company_id", "res.company", ("code", "name"), None)}
     )
@@ -628,8 +589,6 @@ def run_cash(ask):
         return lines
     totals = defaultdict(float)
     for journal in journals.sorted(lambda j: (j.company_id.id, j.name)):
-        # the journal's own balance, as its dashboard computes it, posted
-        # entries only
         amount, _count = journal._get_journal_bank_account_balance(
             domain=[("parent_state", "=", "posted")]
         )
@@ -649,7 +608,6 @@ def run_cash(ask):
 
 
 def run_deliveries(ask):
-    """Outgoing deliveries not done yet (neither draft nor cancelled)."""
     domain = [
         ("picking_type_id.code", "=", "outgoing"),
         ("state", "not in", ("draft", "done", "cancel")),
@@ -697,7 +655,6 @@ def run_deliveries(ask):
 
 
 def run_production(ask):
-    """What manufacturing produced in the period: finished moves of done orders."""
     domain = [("production_id", "!=", False), ("state", "=", "done")]
     domain += ask.filter_domain(
         {
@@ -743,7 +700,6 @@ def run_production(ask):
 
 
 def run_headcount(ask):
-    """Active employees, by department or company."""
     domain = ask.filter_domain(
         {"company": ("company_id", "res.company", ("code", "name"), None)}
     )
@@ -768,7 +724,6 @@ def run_headcount(ask):
 
 
 def run_salaries(ask):
-    """What employees earn by their current contract: one, or totals."""
     domain = ask.filter_domain(
         {
             "company": ("company_id", "res.company", ("code", "name"), None),
@@ -838,8 +793,6 @@ def run_salaries(ask):
 
 
 def run_payments(ask):
-    """Payments received from customers or made to suppliers in a period:
-    who paid, and how much."""
     domain = [("state", "in", ("in_process", "paid"))]
     domain += ask.filter_domain(
         {
@@ -905,9 +858,6 @@ CREDIT_DOCUMENTS = 25
 
 
 def run_credit(ask):
-    """A customer's credit file across every company: profile, credit lines,
-    the guarantees, promissory notes and guarantor documents on file, what
-    the grade still requires, and any guarantee release."""
     name = (ask.params.get("partner") or "").strip()
     if not name:
         return [
@@ -1019,8 +969,6 @@ STATEMENT_DAYS = 90
 
 
 def run_statement(ask):
-    """A customer's or supplier's account statement over every company: the
-    balance and what is overdue first; the breakdown by age when asked."""
     env = ask.env
     if ask.params.get("partner_id"):
         partners = env["res.partner"].browse(int(ask.params["partner_id"])).exists()
@@ -1151,7 +1099,6 @@ BUCKET_DOCUMENTS = 10
 
 
 def _aging(ask, moves, sign, currency) -> list:
-    """The open documents grouped by how late they are, oldest first."""
     env = ask.env
     names = {
         91: env._("More than 90 days late"),
@@ -1199,23 +1146,15 @@ def _aging(ask, moves, sign, currency) -> list:
 
 
 LOCATIONS = 10
-# addresses looked up live per answer: each is a remote call of up to ten
-# seconds, made while the read-only transaction is open
 LIVE_ADDRESSES = 2
-# a reading older than this is said to be old: the unit may be off or out
-# of coverage, and where it was is not where it is
 STALE_READING = timedelta(hours=2)
 
 
 def _tracked_devices(env):
-    """``{device: employee}``: the GPS units with a position, and who they
-    track -- the driver of the vehicle they are in, or the employee they
-    are bound to."""
     devices = env["device.device"].search(
         [("is_gps_device", "=", True), ("log_gps_last_id", "!=", False)]
     )
     if "hr.employee" not in env:
-        # without employees a unit tracks no one: it is found by its name
         return dict.fromkeys(devices, None)
     owners = {}
     if "asset_operator_id" in devices._fields:
@@ -1230,8 +1169,6 @@ def _tracked_devices(env):
 
 
 def _whose(ask, tracked, value):
-    """The units `value` names: by the person they track, as said or
-    dictated, else by the unit or its plate."""
     found = None
     if "hr.employee" in ask.env:
         found = _tracked_people(ask, tracked, value)
@@ -1249,14 +1186,11 @@ def _whose(ask, tracked, value):
 
 
 def _tracked_people(ask, tracked, value):
-    """The tracked people `value` names, as said or dictated."""
     people = ask.env["hr.employee"].browse(
         sorted({employee.id for employee in tracked.values() if employee})
     )
     found = find(ask.env, "hr.employee", value, ("name",), [("id", "in", people.ids)])
     if not found:
-        # a dictated surname is often misheard ("Carreira" for "Ferreyra"):
-        # any word that begins one of a tracked person's names
         words = [
             remove_accents(word).lower()
             for word in _WORD.findall(value)
@@ -1282,9 +1216,6 @@ def _tracked_people(ask, tracked, value):
 
 
 def _place_text(device, live):
-    """Where a unit is, in words: the customer's land it is on, and the
-    address of its last position -- looked up now when `live`, else only
-    the one cached for that very position."""
     parts = []
     partner = getattr(device, "current_client_partner_id", None)
     if partner:
@@ -1305,7 +1236,6 @@ def _place_text(device, live):
             try:
                 address = device._reverse_geocode(latitude, longitude)
             except Exception:
-                # the geocoder is a remote service: no address, still an answer
                 _logger.info("No address for %s", device, exc_info=True)
                 address = False
     if address:
@@ -1314,7 +1244,6 @@ def _place_text(device, live):
 
 
 def run_location(ask):
-    """Where tracked people and vehicles are now, by their GPS units."""
     tracked = _tracked_devices(ask.env)
     value = (ask.params.get("employee") or "").strip()
     devices = _whose(ask, tracked, value) if value else list(tracked)
@@ -1544,7 +1473,6 @@ QUERIES = {
 
 
 def available_queries(env) -> dict:
-    """The queries whose models are installed."""
     return {
         key: query
         for key, query in QUERIES.items()
@@ -1553,16 +1481,6 @@ def available_queries(env) -> dict:
 
 
 def answer(env, query, params, *, tz, today, extras=None) -> str:
-    """The answer to `query` with the classifier's `params`, read from `env`.
-
-    :param env: a read-only environment
-    :param Query query: the catalogued question
-    :param dict params: the parameters the classifier extracted
-    :param str tz: the owner's timezone
-    :param date today: the owner's current date
-    :return: the answer text, Markdown-light
-    :rtype: str
-    """
     ask = Ask(env, tz, today, dict(params or {}))
     if ask.group and ask.group not in query.group_by:
         ask.params["group_by"] = None

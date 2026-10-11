@@ -16,23 +16,11 @@ except ImportError:
     service_account = None
 
 DEFAULT_ENDPOINT = "https://storage.googleapis.com"
-SEVEN_DAYS = 7 * 24 * 60 * 60  # max age for V4 signed URLs.
+SEVEN_DAYS = 7 * 24 * 60 * 60
 _EXPIRATION_TYPES = (int, datetime.datetime, datetime.timedelta)
 
 
 def get_expiration_seconds_v4(expiration):
-    """Convert 'expiration' to a number of seconds offset from the current time.
-
-    :type expiration: Union[Integer, datetime.datetime, datetime.timedelta]
-    :param expiration: Point in time when the signed URL should expire. If
-                       a ``datetime`` instance is passed without an explicit
-                       ``tzinfo`` set,  it will be assumed to be ``UTC``.
-
-    :raises: :exc:`TypeError` when expiration is not a valid type.
-    :raises: :exc:`ValueError` when expiration is too large.
-    :rtype: Integer
-    :returns: seconds in the future when the signed URL will expire
-    """
     if not isinstance(expiration, _EXPIRATION_TYPES):
         raise TypeError(
             "Expected an integer timestamp, datetime, or "
@@ -60,11 +48,6 @@ def get_expiration_seconds_v4(expiration):
 
 
 def get_v4_now_dtstamps() -> tuple:
-    """Get current timestamp and datestamp in V4 valid format.
-
-    :rtype: str, str
-    :returns: Current timestamp, datestamp.
-    """
     now = datetime.datetime.now(datetime.UTC)
     timestamp = now.strftime("%Y%m%dT%H%M%SZ")
     datestamp = now.date().strftime("%Y%m%d")
@@ -72,22 +55,6 @@ def get_v4_now_dtstamps() -> tuple:
 
 
 def get_canonical_headers(headers) -> tuple:
-    """Canonicalize headers for signing.
-
-    See:
-    https://cloud.google.com/storage/docs/access-control/signed-urls#about-canonical-extension-headers
-
-    :type headers: Union[dict|List(Tuple(str,str))]
-    :param headers:
-        (Optional) Additional HTTP headers to be included as part of the
-        signed URLs.  See:
-        https://cloud.google.com/storage/docs/xml-api/reference-headers
-        Requests using the signed URL *must* pass the specified header
-        (name and value) with each request for the URL.
-
-    :rtype: List[str], List[Tuple[str, str]]
-    :returns: A tuple of the canonical header lines and the ordered (key, value) pairs.
-    """
     if headers is None:
         headers = []
     elif isinstance(headers, dict):
@@ -122,86 +89,6 @@ def generate_signed_url_v4(
     headers=None,
     query_parameters=None,
 ) -> str:
-    """Generate a V4 signed URL to provide query-string auth'n to a resource.
-
-    This function is a simplified version of the google.cloud.storage._signing.generate_signed_url_v4
-    without supporting parameters: service_account_email, access_token and _request_timestamp
-
-    See headers [reference](https://cloud.google.com/storage/docs/reference-headers)
-    for more details on optional arguments.
-
-    :type credentials: :class:`google.auth.credentials.Signing`
-    :param credentials: Credentials object with an associated private key to
-                        sign text. That credentials must provide signer_email
-                        only if service_account_email and access_token are not
-                        passed.
-
-    :type resource: str
-    :param resource: A pointer to a specific resource
-                     (typically, ``/bucket-name/path/to/blob.txt``).
-                     Caller should have already URL-encoded the value.
-
-    :type expiration: Union[Integer, datetime.datetime, datetime.timedelta]
-    :param expiration: Point in time when the signed URL should expire. If
-                       a ``datetime`` instance is passed without an explicit
-                       ``tzinfo`` set,  it will be assumed to be ``UTC``.
-
-    :type api_access_endpoint: str
-    :param api_access_endpoint: (Optional) URI base. Defaults to
-                                "https://storage.googleapis.com/"
-
-    :type method: str
-    :param method: The HTTP verb that will be used when requesting the URL.
-                   Defaults to ``'GET'``. If method is ``'RESUMABLE'`` then the
-                   signature will additionally contain the `x-goog-resumable`
-                   header, and the method changed to POST. See the signed URL
-                   docs regarding this flow:
-                   https://cloud.google.com/storage/docs/access-control/signed-urls
-
-
-    :type content_md5: str
-    :param content_md5: (Optional) The MD5 hash of the object referenced by
-                        ``resource``.
-
-    :type content_type: str
-    :param content_type: (Optional) The content type of the object referenced
-                         by ``resource``.
-
-    :type response_type: str
-    :param response_type: (Optional) Content type of responses to requests for
-                          the signed URL. Ignored if content_type is set on
-                          object/blob metadata.
-
-    :type response_disposition: str
-    :param response_disposition: (Optional) Content disposition of responses to
-                                 requests for the signed URL.
-
-    :type generation: str
-    :param generation: (Optional) A value that indicates which generation of
-                       the resource to fetch.
-
-    :type headers: dict
-    :param headers:
-        (Optional) Additional HTTP headers to be included as part of the
-        signed URLs.  See:
-        https://cloud.google.com/storage/docs/xml-api/reference-headers
-        Requests using the signed URL *must* pass the specified header
-        (name and value) with each request for the URL.
-
-    :type query_parameters: dict
-    :param query_parameters:
-        (Optional) Additional query parameters to be included as part of the
-        signed URLs.  See:
-        https://cloud.google.com/storage/docs/xml-api/reference-headers#query
-
-    :raises: :exc:`TypeError` when expiration is not a valid type.
-    :raises: :exc:`AttributeError` if credentials is not an instance
-            of :class:`google.auth.credentials.Signing`.
-
-    :rtype: str
-    :returns: A signed URL you can use to access the resource
-              until expiration.
-    """
     expiration_seconds = get_expiration_seconds_v4(expiration)
 
     request_timestamp, datestamp = get_v4_now_dtstamps()
@@ -231,7 +118,7 @@ def generate_signed_url_v4(
     canonical_headers, ordered_headers = get_canonical_headers(headers)
     canonical_header_string = (
         "\n".join(canonical_headers) + "\n"
-    )  # Yes, Virginia, the extra newline is part of the spec.
+    )
     signed_headers = ";".join([key for key, _ in ordered_headers])
 
     if query_parameters is None:

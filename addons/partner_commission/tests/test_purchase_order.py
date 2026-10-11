@@ -15,37 +15,29 @@ from odoo.addons.partner_commission.tests.setup import Line, Spec, TestCommissio
 @tagged("commission_purchase", "post_install", "-at_install")
 class TestPurchaseOrder(TestCommissionsSetup):
     def test_automatic_confirm(self):
-        """Only purchase orders within the frequency date range and
-        where the amount_total is greater than the limit configure on the company should be confirmed.
-        Standard purchase orders should be untouched."""
-        # Setup.
         self.company.commission_automatic_po_frequency = "weekly"
         self.referrer.grade_id = self.learning
         self.referrer._onchange_grade_id()
 
         send_mail_count = 0
 
-        # Helper.
         def make_po(days_offset=0, qty=1):
             inv = self.purchase(Spec(self.gold, [Line(self.crm, qty)]))
             po = inv.commission_po_line_id.order_id
             po.date_order = fields.Date.add(fields.Date.today(), days=days_offset)
             return po
 
-        # Stub today's date.
         today_date = fields.Date.to_date("2020-01-06")
 
         def _patched_send_mail(*args, **kwargs):
             nonlocal send_mail_count
             send_mail_count += 1
 
-        # Case: OK.
         with freeze_time(today_date), self.sync_env_with_side_cursors():
             with patch(
                 "odoo.addons.mail.models.mail_template.MailTemplate.send_mail",
                 _patched_send_mail,
             ):
-                # We test the non recurring flow: recurring_invoice is False on the product
                 self.crm.recurring_invoice = False
                 po = make_po(days_offset=-1)
                 self.env.ref(
@@ -54,8 +46,6 @@ class TestPurchaseOrder(TestCommissionsSetup):
                 self.assertEqual(po.state, "done")
                 self.assertEqual(send_mail_count, 1)
 
-        # Case: NOK: standard purchase order.
-        # Should not be confirmed because it's not a commission purchase: commission_po_line_id is not set on the account.move.
         with freeze_time(today_date), self.sync_env_with_side_cursors():
             po = self.env["purchase.order"].create(
                 {
@@ -70,9 +60,7 @@ class TestPurchaseOrder(TestCommissionsSetup):
             ).method_direct_trigger()
             self.assertEqual(po.state, "draft")
 
-        # Set a minimum amount_total to auto confirm the PO
         self.company.commission_po_minimum = 50
-        # Case: OK. amount_total = 80 > 50
         with freeze_time(today_date), self.sync_env_with_side_cursors():
             po = make_po(days_offset=-1, qty=20)
             self.env.ref(
@@ -80,7 +68,6 @@ class TestPurchaseOrder(TestCommissionsSetup):
             ).method_direct_trigger()
             self.assertEqual(po.state, "done")
 
-        # Case: NOK: amount_total = 8 < 50
         with freeze_time(today_date), self.sync_env_with_side_cursors():
             po = make_po(days_offset=-1, qty=2)
             self.env.ref(
@@ -89,12 +76,6 @@ class TestPurchaseOrder(TestCommissionsSetup):
             self.assertEqual(po.state, "draft")
 
     def test_vendor_bill_description_multi_line_format(self):
-        """Description text on vendor bill should have the following format:
-
-        Commission on {{move.name}}, {{move.partner_id.name}}, {{move.amount_untaxed}} €
-        {{subscription.code}}, from {{date_from}} to {{subscription.recurring_next_date}} ({{number of months}})
-        """
-        # Required for `partner_invoice_id`, `partner_shipping_id` to be visible in the view
         self.salesman.group_ids += self.env.ref(
             "account.group_delivery_invoice_address"
         )
@@ -111,18 +92,13 @@ class TestPurchaseOrder(TestCommissionsSetup):
         form.partner_invoice_id = self.customer
         form.partner_shipping_id = self.customer
         form.referrer_id = self.referrer
-        # form.commission_plan_frozen = False
         form.plan_id = self.plan_year
 
-        # Testing same rules, with cap reached, are grouped together.
         with form.line_ids.new() as line:
             line.name = self.worker.name
             line.product_id = self.worker
             line.product_qty = 20
 
-        # add extra note that will be copied to the invoice
-        # (ensure those lines without subscription start/end dates
-        # do not crash the commission generation)
         with form.line_ids.new() as line:
             line.display_type = "line_note"
             line.name = "Extra order note for the customer"
@@ -307,18 +283,13 @@ class TestPurchaseOrder(TestCommissionsSetup):
             for usr in users:
                 Form(po.with_user(usr))
 
-        # commission_user should grant membership of group_sale_salesman
         self.assertTrue(commission_user_1.has_group("sale.group_sale_salesman"))
 
-        # commission_manager should grant membership of group_commission_user:
         self.assertTrue(
             commission_manager.has_group("partner_commission.group_commission_user")
         )
 
-        # group_purchase_user_all: can access procurement; an own-documents
-        # purchase user does not own this one.
         assert_access_allowed([purchase_user])
-        # other groups cannot.
         assert_access_denied(
             [
                 salesman_own_docs,
@@ -329,19 +300,13 @@ class TestPurchaseOrder(TestCommissionsSetup):
             ]
         )
 
-        # change PO from procurement to commission.
         po.purchase_type = "commission"
 
-        # group_purchase_user: can access commission.
         assert_access_allowed([purchase_user])
 
-        # group_commission_user: cannot access someone else's commission.
         assert_access_denied([commission_user_2])
 
-        # group_commission_user: can access commissions for which he/she is the purchase representative.
-        # group_commission_manager: can access all commissions.
         assert_access_allowed([commission_user_1, commission_manager])
 
-        # group_commission_user: can access commissions they are following
         po.message_subscribe(partner_ids=commission_user_2.partner_id.ids)
         assert_access_allowed([commission_user_2])

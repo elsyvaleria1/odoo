@@ -20,8 +20,6 @@ class SignItemOption(models.Model):
 
     @api.model
     def get_or_create_option_ids(self, options: Iterable[str]) -> list[int]:
-        """The ids of the options with these values, in the order given and
-        without repeats, creating the values no option holds yet."""
         options = list(dict.fromkeys(options))
         existing = {
             option.value: option.id

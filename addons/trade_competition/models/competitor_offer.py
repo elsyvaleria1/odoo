@@ -10,7 +10,6 @@ _debug = DebugLog(__name__)
 
 DIRECTIONS = {"sale": SALE, "purchase": PURCHASE}
 
-# an offer with no end date is still read as the market for this long
 MARKET_MEMORY_DAYS = 90
 
 
@@ -314,10 +313,6 @@ class CompetitorOfferLine(models.Model):
 
     @api.model
     def _get_market_prices(self, keys, direction, date, company):
-        """Market price per (product, partner) key: the best comparable price a
-        competitor offers, the counterparty's own offers first, then those to
-        counterparties of its primary industry, then the whole market. Returns
-        {key: (price, scope, line)}."""
         products = self.env["product.product"].union(*(key[0] for key in keys))
         if not products:
             return {}

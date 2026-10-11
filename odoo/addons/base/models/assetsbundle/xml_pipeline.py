@@ -23,12 +23,8 @@ from .common import XMLAssetError
 
 _debug = DebugLog(__name__)
 
-# a superset of OWL's `xml` tag: the node side parses what matches and keeps
-# only the tagged templates
 _INLINE_TEMPLATE_RE = re.compile(r"\bxml\s*`")
 
-# keyed by the template files alone: every dynamic child renders its page's
-# bundle again, and so does every website and assets variant
 _RENDERED_XML_CACHE: LRU[tuple[str, ...], str] = LRU(64)
 
 
@@ -110,7 +106,6 @@ class XmlTemplatePipeline:
                 with _debug.perf("xml_render", bundle=self._bundle.name) as span:
                     rendered, failed = self._render_xml_bundle()
                     span.set(bytes=len(rendered))
-                # an inlined error is translated and logged per request
                 if not failed:
                     _RENDERED_XML_CACHE[key] = rendered
             self._rendered_bundle = rendered
@@ -185,8 +180,6 @@ class XmlTemplatePipeline:
 
     def precompile_checksum(self) -> str | None:
         bundle = self._bundle
-        # debug assets and --dev=xml iterate on a template faster than the
-        # whole bundle compiles: their pages keep compiling in the browser
         if bundle.is_debug_assets or "xml" in config["dev_mode"]:
             return None
         templates = self.generate_xml_bundle()
@@ -202,11 +195,6 @@ class XmlTemplatePipeline:
         return cache_hash(f"{fingerprint}\n{pages}{templates}{inline}".encode())[:16]
 
     def page_registrations(self) -> list[str]:
-        # a bundle loaded into a page (a dynamic child) resolves its templates
-        # after the page's own bundle registered theirs: a template both
-        # extend resolves there to a chain neither compiles alone. It is
-        # compiled once after each parent's registrations, since a page
-        # carries one of them
         if self._page_registrations is None:
             bundle = self._bundle
             IrQweb = bundle.env["ir.qweb"]
@@ -228,9 +216,6 @@ class XmlTemplatePipeline:
                 InlineSource(asset.url or asset.name, asset.content)
                 for asset in (*bundle.javascripts, *bundle.native_modules)
             ]
-            # a module the bundle imports but does not list is built into it
-            # when the page lacks it, and defines its templates there; one
-            # imported with a literal import() is built in just the same
             members = [module.module_path for module in bundle.native_modules]
             if members:
                 reachable = reachable_module_sources(
@@ -263,12 +248,9 @@ class XmlTemplatePipeline:
         if checksum is None:
             return templates
         args = [json.dumps(self._bundle.name), json.dumps(checksum)]
-        # what the artifact route needs to rebuild this very bundle (a
-        # website's assets): it would 404 a checksum it cannot reproduce
         params = self._bundle.js_rebuild_params
         if params or templates:
             args.append(json.dumps(params or {}))
-        # the registry makes the registrations once it holds their artifact
         if templates:
             args.append(f"() => {{\n{templates}\n}}")
         return f"registerTemplateBundle({', '.join(args)});\n"
@@ -281,8 +263,6 @@ class XmlTemplatePipeline:
 
     def generate_esm_template_bundle(self, use_import=True) -> str:
         bundle = self._bundle
-        # a bundle without xml files still announces the inline templates
-        # of its code, which the server compiles too
         templates = self.generate_xml_bundle() if bundle.templates else ""
         announced = self._announced(templates)
         if not announced:

@@ -16,7 +16,7 @@ class TelegramController(http.Controller):
         receiver_event="update",
         receiver_refusal="telegram.bot:_prepare_webhook_refusal_response",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the bot's webhook gate checks Telegram's secret token
+        csrf=False,
         save_session=False,
         typed=True,
     )

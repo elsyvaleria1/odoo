@@ -25,10 +25,6 @@ class TestShopee(common.TestShopeeCommon):
         cls.startClassPatcher(freeze_time("2020-02-01"))
 
     def test_shop_status_banned(self):
-        """Test the shop status when the shop is banned.
-
-        No synchronization should be performed when the shop is banned.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
             if operation_ == "get_shop_info":
@@ -53,13 +49,8 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(shop.last_orders_sync_date, self.initial_sync_date)
             self.assertEqual(self.item.last_inventory_sync_date, self.initial_sync_date)
 
-    # --- Sync Orders --- #
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_full(self):
-        """Test the orders synchronization with on-the-fly creation of all required records.
-
-        1 order with 3 order lines is created: a product line and an adjustment line.
-        """
         with patch(
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=lambda _shop, operation, *_args: common.OPERATIONS_RESPONSES_MAP[
@@ -84,7 +75,7 @@ class TestShopee(common.TestShopeeCommon):
                 " successful run",
             )
             self.assertEqual(len(order), 1)
-            self.assertEqual(len(order_lines), 1)  # product line only
+            self.assertEqual(len(order_lines), 1)
             self.assertRecordValues(
                 order,
                 [
@@ -116,20 +107,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_partial(self):
-        """Test the orders synchronization interruption with API throttling.
-
-        Note: last_orders_sync_date is committed to DB after each successful period of
-        synchronization.
-              e.g. each synchronizing period is 10 days (check ShopeeShop._get_order_list)
-                   After synchronizing 10 days of orders, last_orders_sync_date is updated in DB.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mocked response without making an actual call to the Shopee API.
-
-            Raise a ShopeeRateLimitError when the second order is synchronized, to simulate a
-            throttling issue.
-            """
             response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "get_order_list":
                 response_["order_list"].append({"order_sn": "2404098R48UXYZ"})
@@ -154,15 +133,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_fail(self):
-        """Test the orders synchronization cancellation with API throttling.
-
-        The last order synchronization date should not be updated if the rate limit of one operation
-        was reached.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mocked response or raise a ShopeeRateLimitError without making an actual
-            call to the Shopee API."""
             if operation_ == "get_order_list":
                 raise shopee_utils.ShopeeRateLimitError(operation_)
             return common.OPERATIONS_RESPONSES_MAP[operation_]
@@ -179,11 +151,6 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_no_active_shop(self):
-        """Test the orders synchronization cancellation with no active shop.
-
-        No order synchronization should be performed as there is no active shop selected for the
-        account.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
             return common.OPERATIONS_RESPONSES_MAP[operation_]
@@ -203,13 +170,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_fbs(self):
-        """Test the orders synchronization with fulfillment type 'Fulfillment By Shopee'
-
-        FBS order should generate a stock move for each product that is not a service and no picking
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mocked response without making an actual call to the Shopee API."""
             if operation_ == "get_order_detail":
                 return {
                     "order_list": [
@@ -227,7 +189,7 @@ class TestShopee(common.TestShopeeCommon):
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=get_shopee_api_response_mock,
         ):
-            self.shop._sync_orders(auto_commit=False)  # no order created
+            self.shop._sync_orders(auto_commit=False)
             order = self.env["sale.order"].search(
                 [("shopee_order_ref", "=", "O123456789")]
             )
@@ -243,13 +205,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_cancel(self):
-        """Test the orders synchronization to cancel a created order from Shopee.
-
-        Status of the order should be updated to 'cancel' when the order is cancelled on Shopee.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mocked response without making an actual call to the Shopee API."""
             order_status_ = "CANCELLED" if self.order_created else "READY_TO_SHIP"
             if operation_ == "get_order_detail":
                 return {
@@ -262,18 +219,15 @@ class TestShopee(common.TestShopeeCommon):
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=get_shopee_api_response_mock,
         ):
-            # Sync an order created on Shopee.
             order_count = self.env["sale.order"].search_count([])
             self.order_created = False
             self.shop._sync_orders(auto_commit=False)
             self.assertEqual(self.env["sale.order"].search_count([]), order_count + 1)
 
-            # Rewind last_orders_sync_date to simulate the order was created before the current time
             self.shop.last_orders_sync_date = datetime.fromtimestamp(
                 1579050000
-            )  # 2020-01-15
+            )
 
-            # Sync an order cancelled from Shopee.
             self.order_created = True
             self.shop._sync_orders(auto_commit=False)
             order = self.env["sale.order"].search(
@@ -283,14 +237,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_orders_cancel_abort(self):
-        """Test when pickings fetched the shipping label from shopee and then the related order is
-        cancelled on Shopee.
-
-        The picking should be cancelled when the order is cancelled on Shopee.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mock response without making an actual call to the Selling Partner API."""
             response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             order_status_ = "CANCELLED" if self.order_cancelled else "PROCESSED"
             if operation_ == "get_order_detail":
@@ -303,16 +251,13 @@ class TestShopee(common.TestShopeeCommon):
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=get_shopee_api_response_mock,
         ):
-            # Sync an order created on Shopee.
             self.order_cancelled = False
             self.shop._sync_orders(auto_commit=False)
 
-            # Rewind last_orders_sync_date to simulate the order was created before the current time
             self.shop.last_orders_sync_date = datetime.fromtimestamp(
                 1579050000
-            )  # 2020-01-15
+            )
 
-            # Check the order state and validate the picking.
             order = self.env["sale.order"].search(
                 [("shopee_order_ref", "=", common.ORDER_SN_MOCK)]
             )
@@ -320,25 +265,18 @@ class TestShopee(common.TestShopeeCommon):
             picking = self.env["stock.picking"].search([("sale_id", "=", order.id)])
             self.order_cancelled = True
 
-            self.shop._sync_orders(auto_commit=False)  # DEBUG sale != cancel
+            self.shop._sync_orders(auto_commit=False)
 
             self.assertEqual(order.state, "cancel")
             self.assertEqual(picking.state, "cancel")
 
-    # --- Sync Inventory --- #
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_inventory(self):
-        """Test the inventory synchronization sends the correct inventory information to Shopee
-
-        The inventory of the product on Shopee is updated as the free quantity of the product and
-        the last_inventory_sync_date is updated.
-        """
 
         def get_shopee_api_response_mock(
             _shop, operation_, _params="", body="", _files="", method="GET"
         ):
-            """Return a mocked response without making an actual call to the Shopee API."""
             if operation_ == "update_stock":
                 self.body = body
                 return common.OPERATIONS_RESPONSES_MAP[operation_]
@@ -354,7 +292,6 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(self.item.product_id.qty_free, 0)
             self.assertEqual(self.item.last_inventory_sync_date, self.initial_sync_date)
 
-            # setup inventory level of the product to 10
             warehouse_id = self.env["stock.warehouse"].search(
                 [("company_id", "=", self.shop.company_id.id)], limit=1
             )
@@ -375,13 +312,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_inventory_is_skipped_when_disabled(self):
-        """Test skipping the inventory synchronization when the shop disabled the feature.
-
-        No inventory synchronization should be performed when the shop is disabled.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args):
-            """Return a mocked response without making an actual call to the Shopee API."""
             if operation_ == "update_stock":
                 raise AssertionError("the inventory must not be sent to Shopee")
             return common.OPERATIONS_RESPONSES_MAP[operation_]
@@ -393,21 +325,15 @@ class TestShopee(common.TestShopeeCommon):
             self.shop.synchronize_inventory = False
             self.assertEqual(self.shop.shopee_item_ids, self.item)
 
-            # No error means get_shopee_api_response_mock is not called
             self.shop._sync_inventory(auto_commit=False)
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_inventory_error(self):
-        """Test the inventory synchronization error handling.
-
-        An exception should be raised when the inventory synchronization fails.
-        """
 
         class SyncFailureReportedError(Exception):
             pass
 
         def get_shopee_api_response_mock(_shop, operation_, *_args, **_kwargs):
-            """Return a mocked response without making an actual call to the Shopee API."""
             if operation_ == "update_stock":
                 raise UserError("update_stock rejected")
             return common.OPERATIONS_RESPONSES_MAP[operation_]
@@ -431,21 +357,15 @@ class TestShopee(common.TestShopeeCommon):
             with self.assertRaises(SyncFailureReportedError):
                 self.shop._sync_inventory(auto_commit=False)
 
-    # --- Sync Pickings --- #
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_pickings(self):
-        """Test the pickings synchronization.
-
-        A tracking number and shipping label should be created for the FBM order.
-        """
         with patch(
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=lambda _shop, operation_, *_args, **_kwargs: (
                 common.OPERATIONS_RESPONSES_MAP[operation_]
             ),
         ):
-            # Synchronize the order and generate picking
             self.shop._sync_orders(auto_commit=False)
             order = self.env["sale.order"].search(
                 [("shopee_order_ref", "=", "O123456789")]
@@ -457,7 +377,6 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(picking.shopee_label_status, "not available")
             self.assertEqual(len(picking.message_ids.attachment_ids), 0)
 
-            # Synchronize the picking
             picking._action_done()
             self.env["stock.picking"]._sync_shopee_pickings(
                 tuple(self.shop.ids), auto_commit=False
@@ -469,13 +388,8 @@ class TestShopee(common.TestShopeeCommon):
 
     @mute_logger("odoo.addons.sale_shopee.models.shopee_shop")
     def test_sync_pickings_processing(self):
-        """Test the pickings synchronization with a temporary processing status.
-
-        The tracking number and shipping label should be created for the FBM order.
-        """
 
         def get_shopee_api_response_mock(_shop, operation_, *_args, **_kwargs):
-            """Return a mocked response without making an actual call to the Shopee API."""
             if operation_ == "get_shipping_document_result" and not label_processed:
                 return {
                     "result_list": [
@@ -518,13 +432,8 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(picking.shopee_label_status, "stored")
             self.assertEqual(len(picking.message_ids.attachment_ids), 1)
 
-    # --- Find Matching Product --- #
 
     def test_get_or_create_matching_product_search(self):
-        """Test the product search based on the internal reference.
-
-        A product should be found with the internal reference.
-        """
         product = self.shop._get_or_create_matching_product(
             common.ORDER_ITEM_MOCK["model_sku"], None, None, None
         )
@@ -532,10 +441,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(product.default_code, common.ORDER_ITEM_MOCK["model_sku"])
 
     def test_get_or_create_matching_product_use_fallback(self):
-        """Test the product search failure with use of the fallback.
-
-        A fallback product should be returned when the product is not found.
-        """
         default_product = self.env["product.product"].create(
             {"name": "Default Name", "type": "consu"}
         )
@@ -555,10 +460,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_get_or_create_matching_product_regen_fallback(self):
-        """Test the product search failure with regeneration of the fallback.
-
-        A restored fallback product should be returned when the product is not found.
-        """
         self.env["ir.model.data"].create(
             {
                 "module": "sale_shopee",
@@ -584,11 +485,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_get_or_create_matching_product_no_fallback(self):
-        """Test the product search failure without regeneration of the fallback.
-
-        No product should be returned when product is not found based on internal reference and
-        fallback is disabled.
-        """
         self.assertFalse(
             self.shop._get_or_create_matching_product(
                 "INCORRECT_CODE", "test_xmlid", "Default Name", "consu", fallback=False
@@ -599,11 +495,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_get_or_create_matching_product_get_default_shipping(self):
-        """Test the product search and get the default shipping product
-
-        No new item should be created when the default code is updated when
-        an existing shopee item with the same item_identifier is found
-        """
         item_count = self.env["shopee.item"].search_count([])
         product = self.shop._get_or_create_matching_product(
             "non_existing_sku", "shipping_product", "Shopee Shipping", "service"
@@ -614,13 +505,8 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(product.type, "service")
         self.assertNotEqual(product.default_code, "non_existing_sku")
 
-    # --- Get Pricelist --- #
 
     def test_get_pricelist_search(self):
-        """Test the pricelist search.
-
-        A pricelist should be found with the created currency.
-        """
         currency = self.env["res.currency"].create({"name": "TEST", "symbol": "T"})
         self.env["product.pricelist"].create(
             {
@@ -644,10 +530,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_get_pricelist_creation(self):
-        """Test the pricelist creation.
-
-        A pricelist should be created when the given currency has no pricelist.
-        """
         currency = self.env["res.currency"].create({"name": "TEST", "symbol": "T"})
         pricelists_count = (
             self.env["product.pricelist"]
@@ -666,13 +548,8 @@ class TestShopee(common.TestShopeeCommon):
         self.assertFalse(pricelist.active)
         self.assertEqual(pricelist.currency_id.id, currency.id)
 
-    # --- Get Partner --- #
 
     def test_get_partners_no_creation_same_partners(self):
-        """Test the partners search with contact as delivery.
-
-        No contact should be created.
-        """
         with patch(
             "odoo.addons.sale_shopee.utils.send_shopee_api_request",
             new=lambda _shop, operation_, **_kwargs: common.OPERATIONS_RESPONSES_MAP[
@@ -725,7 +602,6 @@ class TestShopee(common.TestShopeeCommon):
             self.assertEqual(contact._phone_get_number().number, "9876543210")
 
     def test_get_partners_no_creation_different_partners(self):
-        """Test the partners search with different partners for contact and delivery."""
         country_id = self.env["res.country"].search([("code", "=", "VN")], limit=1).id
         new_partner_vals = {
             "is_company": True,
@@ -772,11 +648,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertNotEqual(contact.id, delivery.id)
 
     def test_get_partners_creation_delivery(self):
-        """Test the partners search with creation of the delivery.
-
-        A delivery partner should be created when a field of the address is not strictly the
-        same as that of the contact.
-        """
         self.env["res.partner"].create(
             {
                 "name": "Gederic Frilson",
@@ -807,10 +678,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_get_partners_creation_contact(self):
-        """Test the partners search with creation of the contact.
-
-        A contact partner should be created when the contact is not found.
-        """
         partners_count = self.env["res.partner"].search_count([])
 
         contact, delivery = self.shop._get_or_create_partners_from_data(
@@ -852,19 +719,9 @@ class TestShopee(common.TestShopeeCommon):
                 }
             ],
         )
-        # Not in the dict above: `assertRecordValues` compares READ values, and
-        # a x2many reads back as a list of ids, never as the command list that
-        # wrote it. Asserting the ids would be asserting them against
-        # themselves, so the number is what gets checked -- as the sibling test
-        # two methods down already does.
         self.assertEqual(contact._phone_get_number().number, "9876543210")
 
     def test_get_partners_creation_contact_delivery(self):
-        """Test the partners search with creation of the contact and delivery.
-
-        A contact partner and a delivery partner should be created when the delivery receipt name
-        is not the same as the buyer name.
-        """
         partners_count = self.env["res.partner"].search_count([])
         order_data = dict(
             common.ORDER_MOCK,
@@ -896,12 +753,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(delivery.parent_id.id, contact.id)
 
     def test_get_partners_missing_buyer_name(self):
-        """Test the partners search with missing buyer name.
-
-        A contact partner should be created when the buyer name is different from the
-        contact, even they have the same shopee buyer identifier. The delivery partner
-        should be created if the buyer name is different from the shipping address name.
-        """
         self.env["res.partner"].create(
             {
                 "name": "Gederic Frilson",
@@ -929,13 +780,8 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(delivery.type, "delivery")
         self.assertEqual(delivery.parent_id.id, contact.id)
 
-    # --- Find or Create Shopee Item --- #
 
     def test_find_or_create_item_exist(self):
-        """Test the item search of _acquire_item()
-
-        An existing item will be found without creating a new one.
-        """
         item_count = self.env["shopee.item"].search_count([])
         item = self.shop._acquire_item("", common.ORDER_ITEM_MOCK["item_id"], "")
 
@@ -944,10 +790,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(item.sync_to_shopee, True)
 
     def test_find_or_create_item_new_item_product(self):
-        """Test the item creation and product restoration of _acquire_item()
-
-        A new item will be created and the default product will be linked.
-        """
         item_count = self.env["shopee.item"].search_count([])
         item = self.shop._acquire_item(
             "a_new_sku", "any_item_identifier", "any_model_identifier"
@@ -960,10 +802,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertEqual(item.shopee_model_identifier, "any_model_identifier")
 
     def test_find_or_create_item_new_item(self):
-        """Test the item creation with no product restoration of _acquire_item()
-
-        A new item will be created and linked to an existing product with the same default code.
-        """
         item_count = self.env["shopee.item"].search_count([])
         item = self.shop._acquire_item(
             common.ORDER_ITEM_MOCK["model_sku"], "any_item_identifier", "", "fbs"
@@ -987,10 +825,6 @@ class TestShopee(common.TestShopeeCommon):
         )
 
     def test_find_or_create_item_change_item_product(self):
-        """Test shopee item search and update its linked product of _acquire_item()
-
-        An existing item will be found and its linked product will be changed.
-        """
         item_count = self.env["shopee.item"].search_count([])
         default_product = self.env.ref("sale_shopee.default_sale_product")
         self.item.update({"product_id": default_product})
@@ -1013,7 +847,6 @@ class TestShopee(common.TestShopeeCommon):
         self.assertNotEqual(item.product_id, default_product, msg)
 
     def test_sync_shopee_pickings_with_non_shopee_picking(self):
-        """Test calling the shipment label generation on a non Shopee picking doesn't do anything."""
         picking = self.env["stock.picking"].create(
             {
                 "picking_type_id": self.env.ref("stock.picking_type_out").id,

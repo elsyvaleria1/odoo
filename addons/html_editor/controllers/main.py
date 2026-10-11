@@ -75,7 +75,7 @@ def get_existing_attachment(IrAttachment, vals):
 
 class HTML_Editor(http.Controller):
     def _get_shape_svg(self, module, *segments):
-        shape_path = opj(module, "static", *segments)  # noqa: PTH118 - path contained by file_open()'s is_relative_to check
+        shape_path = opj(module, "static", *segments)
         try:
             with file_open(shape_path, "r", filter_ext=(".svg",)) as file:
                 return file.read()
@@ -199,18 +199,13 @@ class HTML_Editor(http.Controller):
     def remove(self, ids, **kwargs):
         self._clean_context()
         Attachment = attachments_to_remove = request.env["ir.attachment"]
-        # sudo(): the existence-check must see every referencing view, not
-        # just the ones visible under the caller's own access
-        # (e.g. a restricted-visibility website page) -- otherwise a
-        # lower-privileged caller could delete an attachment still in use
-        # by a page they can't see.
         Views = request.env["ir.ui.view"].sudo()
 
         removal_blocked_by = {}
 
         for attachment in Attachment.browse(ids):
             url = tools.html_escape(attachment.local_url)
-            views = Views.search(  # noqa: E8507 - one probe per attachment, on its own url
+            views = Views.search(
                 ["|", ("arch_db", "like", f'"{url}"'), ("arch_db", "like", f"'{url}'")]
             )
 
@@ -703,7 +698,6 @@ class HTML_Editor(http.Controller):
         image = stream.read()
         size = None
         if record.mimetype == "image/webp":
-            # a stored mimetype can be wrong: the pixels still answer for it
             with contextlib.suppress(UserError):
                 size = get_webp_size(image)
         if size is None:

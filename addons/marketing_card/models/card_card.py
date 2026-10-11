@@ -55,7 +55,6 @@ class CardCard(models.Model):
 
     @api.autovacuum
     def _gc_card(self) -> None:
-        """Remove cards. Social networks are expected to cache the images on their side."""
         timedelta_days = self.env["ir.config_parameter"].get_param(
             "marketing_card.card_image_cleanup_interval_days", 60
         )

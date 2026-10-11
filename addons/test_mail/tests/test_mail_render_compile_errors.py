@@ -28,7 +28,6 @@ from odoo.tests import tagged, users
 
 from odoo.addons.mail.tests import common
 
-#: Parses as an element carrying `t-out` plus an attribute named `a&#34;b`.
 UNCOMPILABLE = '<p t-out="object.name" a&#34;b="1"/>'
 
 
@@ -51,7 +50,6 @@ class TestUncompilableTemplate(common.MailCommon):
         )
 
     def test_the_predicate_answers_unsafe_rather_than_raising(self):
-        """Cannot compile is cannot establish safe, so the answer is "unsafe"."""
         self.assertTrue(
             self.env["mixin.mail.render"]._has_unsafe_expression_template_qweb(
                 UNCOMPILABLE, self.model
@@ -59,7 +57,6 @@ class TestUncompilableTemplate(common.MailCommon):
         )
 
     def test_rendering_one_reports_it_as_a_render_failure(self):
-        """The bare `ValueError` used to reach the caller from here."""
         with self.assertRaises(UserError):
             self.env["mixin.mail.render"]._render_template(
                 UNCOMPILABLE, self.model, [self.record.id], engine="qweb"
@@ -77,15 +74,6 @@ class TestUncompilableTemplate(common.MailCommon):
 
     @users("render_compile_plain")
     def test_a_non_editor_may_not_save_one_either(self):
-        """Same input, same refusal shape -- a domain error, not a traceback.
-
-        The two users still get *different* domain errors, because they are
-        refused by different guards: the editor by `mail.template._check_rendering`,
-        which knows the body will not compile, and the non-editor by
-        `_check_access_right_dynamic_template`, which only knows the placeholders
-        were never established as safe. Both refuse the save, which is what
-        fail-closed means here.
-        """
         with self.assertRaises((AccessError, ValidationError)):
             self.env["mail.template"].create(
                 {

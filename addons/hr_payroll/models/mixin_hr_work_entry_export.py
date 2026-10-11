@@ -118,8 +118,6 @@ class MixinHrWorkEntryExport(models.AbstractModel):
             )
 
     def _unlink_empty_eligible_employee_lines(self) -> None:
-        """Prune lines left without a work entry or a version — e.g. because
-        one got deleted elsewhere between two action_populate() calls."""
         self.eligible_employee_line_ids.filtered(
             lambda line: not line.work_entry_ids or not line.version_ids
         ).unlink()

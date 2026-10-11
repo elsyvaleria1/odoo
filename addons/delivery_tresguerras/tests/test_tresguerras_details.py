@@ -13,7 +13,6 @@ DOCUMENT_URL = "https://intranet.tresguerras.com.mx/test/receipt.pdf"
 
 
 def _response(reference=REFERENCE_A, code="03", text="Shipment in transit"):
-    """Build a synthetic carrier response without shipment or customer data."""
     event = {
         "estadoembarque": code,
         "estado": text,
@@ -87,7 +86,6 @@ class TestTresGuerrasDetails(TransactionCase):
         )
 
     def test_history_is_chronological_with_utc_dates_and_shipment_details(self):
-        """All movements survive normalization in chronological order."""
         response = _response(code="07")
         movements = response["Respuesta"]["estados"]["item"]
         movements.append(
@@ -123,7 +121,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertNotEqual(picking.state, "done")
 
     def test_singleton_history_and_list_details_need_no_documents(self):
-        """The carrier's collection variants render without evidence links."""
         response = _response()
         answer = response["Respuesta"]
         answer["estados"]["item"] = answer["estados"]["item"][0]
@@ -139,7 +136,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertIn("Shipment in transit", rendered.text_content())
 
     def test_only_official_document_urls_survive_and_http_is_upgraded(self):
-        """Unsafe schemes, credentials and lookalike hosts never become links."""
         response = _response()
         response["Respuesta"]["evidencia"] = {
             "acuse": {
@@ -170,7 +166,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertFalse(rendered.xpath(".//img | .//iframe"))
 
     def test_remote_text_is_escaped_and_stored_document_links_are_rechecked(self):
-        """Neither provider text nor an unsafe stored URL injects active HTML."""
         payload = '<script>alert("test")</script><img src=x onerror="alert(1)">'
         response = _response(text=payload)
         response["Respuesta"]["detalle"]["item"]["ORIGEN"] = payload
@@ -188,7 +183,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertIn(payload, rendered.text_content())
 
     def test_history_display_follows_the_viewers_timezone(self):
-        """Reading the same snapshot in another zone recomputes its display."""
         picking = self._picking()
         with self._answering(_response()):
             picking.action_fetch_carrier_tracking()
@@ -206,7 +200,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertEqual(mexico.carrier_tracking_details, utc.carrier_tracking_details)
 
     def test_multiple_references_share_requests_without_early_delivery(self):
-        """Every distinct reference is read once across all selected transfers."""
         picking = self._picking(f"{REFERENCE_A}, {REFERENCE_B}, {REFERENCE_A}")
         second = self._picking(REFERENCE_B)
         with self._answering(_response(code="07"), _response(REFERENCE_B)) as request:
@@ -225,7 +218,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertFalse(picking.activity_ids | second.activity_ids)
 
     def test_all_references_must_be_delivered_before_notification(self):
-        """A multi-guide delivery produces one activity after its last delivery."""
         picking = self._picking(f"{REFERENCE_A},{REFERENCE_B}")
         with self._answering(_response(code="07"), _response(REFERENCE_B)):
             picking.action_fetch_carrier_tracking()
@@ -237,7 +229,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertNotEqual(picking.state, "done")
 
     def test_missing_reference_prevents_delivery_and_keeps_successful_snapshot(self):
-        """A failed second guide cannot turn the whole shipment into delivered."""
         picking = self._picking(f"{REFERENCE_A},{REFERENCE_B}")
         with self._answering(_response(code="07"), FakeResponse({}, status_code=500)):
             picking.action_fetch_carrier_tracking()
@@ -247,7 +238,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertIn(REFERENCE_B, picking.carrier_tracking_error)
 
     def test_a_failed_refresh_preserves_the_previous_history_and_documents(self):
-        """An unavailable carrier leaves the last successful snapshot readable."""
         response = _response()
         response["Respuesta"]["evidencia"] = {
             "evidencia": {"IMG": {"url": DOCUMENT_URL}},
@@ -263,7 +253,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertIn("HTTP 503", picking.carrier_tracking_error)
 
     def test_malformed_document_collection_preserves_the_last_successful_snapshot(self):
-        """An invalid document container records an error without losing good data."""
         response = _response()
         response["Respuesta"]["evidencia"] = {
             "acuse": {"PDF": {"url": DOCUMENT_URL}},
@@ -289,7 +278,6 @@ class TestTresGuerrasDetails(TransactionCase):
     def test_unchanged_carrier_and_reference_preserve_details_but_new_guide_clears(
         self,
     ):
-        """Saving the existing identity retains data; replacing its guide resets it."""
         picking = self._picking()
         with self._answering(_response()):
             picking.action_fetch_carrier_tracking()
@@ -306,7 +294,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertFalse(picking.date_carrier_tracking_sync)
 
     def test_switching_carrier_clears_the_previous_providers_snapshot(self):
-        """A carrier change must not display the previous carrier's documents."""
         picking = self._picking()
         with self._answering(_response()):
             picking.action_fetch_carrier_tracking()
@@ -318,7 +305,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertNotIn("Shipment in transit", picking.carrier_tracking_details_html)
 
     def test_a_transfer_copy_does_not_inherit_the_shipment_snapshot(self):
-        """Duplicating a transfer cannot attach another shipment's history."""
         picking = self._picking()
         with self._answering(_response()):
             picking.action_fetch_carrier_tracking()
@@ -330,7 +316,6 @@ class TestTresGuerrasDetails(TransactionCase):
         self.assertFalse(duplicate.carrier_tracking_state)
 
     def test_a_user_without_stock_write_cannot_trigger_the_external_request(self):
-        """The public action rejects access before contacting the carrier."""
         user = new_test_user(
             self.env,
             login="tresguerras_without_stock",

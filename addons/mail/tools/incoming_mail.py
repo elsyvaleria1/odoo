@@ -166,8 +166,6 @@ class OdooPOP3(POP3):
         self.dele(num)
 
     def quarantine_message(self, num: int) -> None:
-        # POP has no flags: the message stays in the mailbox and is skipped
-        # by fingerprint on every later poll
         _debug.logic("pop_message_left_in_place", num=num)
 
     def disconnect(self) -> None:

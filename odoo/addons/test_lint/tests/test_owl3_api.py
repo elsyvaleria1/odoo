@@ -123,8 +123,6 @@ _OWL_EXPORT_BLOCK = re.compile(r"^export\s*\{([^}]*)\}", re.MULTILINE)
 
 @functools.cache
 def owl_exports() -> frozenset[str]:
-    # what the vendored OWL exports, read from the file itself: a name OWL 3
-    # dropped fails the import, which fails every module the bundle links
     owl = Path(Manifest.for_addon("web").path) / "static" / "lib" / "owl" / "owl.es.js"
     blocks = _OWL_EXPORT_BLOCK.findall(owl.read_text(encoding="utf-8"))
     return frozenset(
@@ -160,15 +158,12 @@ _GUARD = re.compile(r"^(?:\(\?<!\[[^\]]*\]\)|\\b)+")
 
 
 def required_literal(pattern: re.Pattern) -> str:
-    # the text every match starts with, read off the pattern after its
-    # lookbehind or word boundary: a lookbehind keeps the regex engine from
-    # scanning for its own prefix, so `literal in code` decides first
     text = _GUARD.sub("", pattern.pattern)
     depth = 0
     for char in text.replace("\\(", "").replace("\\)", "").replace("\\|", ""):
         depth += {"(": 1, ")": -1}.get(char, 0)
         if char == "|" and not depth:
-            return ""  # a top-level alternative: no text every match shares
+            return ""
     literal = []
     index = 0
     while index < len(text):
@@ -391,8 +386,6 @@ def _repo_by_addon() -> dict[str, str]:
 
 @functools.cache
 def _gate_findings() -> dict[str, dict[str, tuple[str, ...]]]:
-    # every pattern gate in one pass: a file is read and stripped once, not
-    # once per gate
     gates = {**REMOVED_IN_OWL3, **ENV_KEYS}
     literals = {gate: required_literal(pattern) for gate, pattern in gates.items()}
     repo_by_addon = _repo_by_addon()

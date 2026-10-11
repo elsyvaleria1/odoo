@@ -99,8 +99,6 @@ class ResPartner(models.Model):
                 continue
             normalized_name = expand_ligatures(unaccent(partner.name)).casefold()
             partner.t9_name = "".join(encode(letter) for letter in normalized_name)
-            # Add a space at the beginning so you can search for matches at the
-            # beginning of each word using a pattern like '% 234%'.
             partner.t9_name = " " + partner.t9_name
 
     @api.model

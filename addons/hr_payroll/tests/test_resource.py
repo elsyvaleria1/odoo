@@ -3,7 +3,6 @@ from odoo.tests.common import TransactionCase
 
 class TestResource(TransactionCase):
     def test_compute_work_time_rate_with_credit_time_in_calendar(self):
-        """Test Case: check if the computation of the work rate time is correct event if the user add some credit time as attendances."""
         credit_time = self.env["hr.work.entry.type"].create(
             {"name": "Credit Time", "code": "Leave", "is_leave": True}
         )
@@ -20,7 +19,6 @@ class TestResource(TransactionCase):
             }
         )
 
-        # Define a mid time
         attendances = self.env["resource.calendar.attendance"].create(
             [
                 {
@@ -152,7 +150,6 @@ class TestResource(TransactionCase):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 50, 2)
 
-        # Define a 4/5
         attendances_to_update = attendances.filtered(
             lambda attendance: (
                 (attendance.dayofweek == "2" and attendance.day_period == "afternoon")
@@ -178,7 +175,6 @@ class TestResource(TransactionCase):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 80, 2)
 
-        # Define a 9/10
         attendances_to_update = attendances.filtered(
             lambda attendance: (
                 attendance.dayofweek == "4" and attendance.day_period == "morning"
@@ -203,7 +199,6 @@ class TestResource(TransactionCase):
         )
         self.assertAlmostEqual(resource_calendar.work_time_rate, 90, 2)
 
-        # Define a Full-Time
         attendances_to_update = attendances.filtered(
             lambda attendance: (
                 attendance.dayofweek == "4" and attendance.day_period == "afternoon"

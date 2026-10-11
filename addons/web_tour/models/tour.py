@@ -63,9 +63,6 @@ class Web_TourTour(models.Model):
         )
         if not tour:
             return None
-        # what the tour service starts it with; a non-custom tour's steps and
-        # url come from its JS registry. This rides in the session info of
-        # every page, so the steps are not read for it.
         return {"name": tour.name, "rainbowManMessage": tour.rainbow_man_message}
 
     @api.model

@@ -73,10 +73,6 @@ class ProductTemplate(models.Model):
             vals.get("tracking") not in (None, "none")
             and "use_expiration_date" not in vals
         ):
-            # `tracking` isn't itself a dependency of `_compute_use_expiration_date`
-            # (it gets recomputed by `stock` on every `is_storable` write, which
-            # would otherwise clobber a manual override on an unrelated write) —
-            # force a recompute only on an actual none -> tracked transition.
             reactivated = self.filtered(lambda p: p.tracking == "none")
         else:
             reactivated = self.browse()

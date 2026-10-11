@@ -102,8 +102,6 @@ class TestWebsocketCaryall(WebsocketCase):
         )
 
     def test_what_the_server_sends_does_not_postpone_its_ping(self):
-        # a peer gone without a reset reads nothing; only a ping it fails to
-        # answer finds that out
         clock = ManualClock()
         timeout_manager = TimeoutManager(clock=clock)
         clock.tick(TimeoutManager.INACTIVITY_TIMEOUT * 0.8)
@@ -422,14 +420,6 @@ class TestWebsocketCaryall(WebsocketCase):
 
     @patch.dict(os.environ, {"ODOO_BUS_PUBLIC_SAMESITE_WS": "True"})
     def test_legacy_samesite_env_var_is_accepted_and_ignored(self):
-        # ODOO_BUS_PUBLIC_SAMESITE_WS is a legacy opt-in flag for the
-        # downgrade-on-origin-mismatch behaviour above: that downgrade is now
-        # the default, and the variable is only kept so old deployments that
-        # still set it don't break. Nothing under addons/bus reads it
-        # (only ODOO_BUS_TRUSTED_ORIGINS is), so this asserts the no-op
-        # contract — same outcome as
-        # test_mismatched_origin_downgrades_to_public_session, var or not —
-        # rather than a behaviour the flag causes.
         new_test_user(self.env, login="test_user", password="Password!1")
         user_session = self.authenticate("test_user", "Password!1")
         with mute_logger("odoo.addons.bus.websocket"):

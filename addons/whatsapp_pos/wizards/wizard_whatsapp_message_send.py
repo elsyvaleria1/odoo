@@ -16,7 +16,7 @@ class WizardWhatsappMessageSend(models.TransientModel):
                     "type": "success",
                     "next": {
                         "type": "ir.actions.act_window_close"
-                    },  # force a form reload
+                    },
                 },
             }
         return res

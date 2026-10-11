@@ -39,8 +39,6 @@ class IrAccessSodFunction(models.Model):
         }
 
     def _get_holder_ids(self, users) -> set[int]:
-        """A delegate holds the duty of the rows they stand in for, from the day the
-        delegation is given: one that starts later is judged on what it gives."""
         holders = super()._get_holder_ids(users)
         categories = self._get_duty_spec().get("approver_category_ids")
         if not categories:

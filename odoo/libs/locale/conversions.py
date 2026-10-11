@@ -94,8 +94,6 @@ def posix_to_ldml(fmt: str, locale: babel.Locale) -> str:
                 raise ValueError(
                     f"Unsupported strftime directive '%{directive}' in {fmt!r}"
                 )
-            # LDML has no separator between two fields: "MM" then "MMM"
-            # would read as one "MMMMM", a narrow month
             if buf and buf[-1][-1:] == field[:1]:
                 raise ValueError(
                     f"'%{directive}' in {fmt!r} directly follows a directive of "

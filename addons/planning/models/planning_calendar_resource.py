@@ -44,7 +44,6 @@ class PlanningCalendarResource(models.Model):
     def get_or_create_calendar_filters(
         self, user_id: int, field_names: list[str]
     ) -> list[dict[str, Any]]:
-        """Return the user's filters, creating the open-shift filter if missing."""
         field_names = [*field_names, "resource_type"]
         if not self.env["planning.calendar.resource"].search_count(
             [("user_id", "=", user_id), ("resource_id", "=", False)], limit=1

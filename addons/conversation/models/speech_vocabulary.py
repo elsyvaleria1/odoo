@@ -20,7 +20,6 @@ class SpeechVocabulary(models.Model):
             for name in self.with_context(active_test=False).search([]).mapped("name")
         }
         vals = []
-        # A term is as shared as the catalog row it comes from.
         for product in self.env["product.template"].search([("sale_ok", "=", True)]):
             brand = _brand_of(product.name)
             if brand and brand.lower() not in known:
@@ -52,7 +51,6 @@ class SpeechVocabulary(models.Model):
 
 
 def _brand_of(product_name):
-    """'Proxity XM 350 EC 1L' -> 'Proxity XM': the words before the first one with a digit."""
     words = []
     for token in (product_name or "").split():
         if any(ch.isdigit() for ch in token):

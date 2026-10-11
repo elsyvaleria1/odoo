@@ -10,7 +10,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Add task model with context in variable to facilitate the task creation in this project
         cls.Task = cls.env["project.task"].with_context(
             {
                 "mail_create_nolog": True,
@@ -20,17 +19,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
 
     def test_fsm_employee_rate(self):
-        """Test the employee rate as pricing type in fsm project
-
-        Test Case:
-        =========
-        1) Create task with timesheets containing some employees in employee mappings.
-        2) Validate the task and check if the SOL in each timesheet is correct with the correct product.
-        3) Create task with a timesheet containing no employee in employee mappings.
-        4) Validate the task and check if the SOL in each timesheet is the one in the task with the default product defined in the project.
-        5) Create task with timesheets with only the employees defined in the mapping.
-        6) Validate the task and check if the SOL in the task contains the product in the first mapping found based on the timesheets.
-        """
         self.assertTrue(
             self.fsm_project_employee_rate.is_fsm,
             "The project should be a fsm project.",
@@ -46,7 +34,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
             "The number of employee mappings in this fsm project should be equal to 3 mappings.",
         )
 
-        # 1) Create task with timesheets containing some employees in employee mappings.
         task = self.Task.create(
             {
                 "name": "Fsm Task",
@@ -124,7 +111,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
         self.assertEqual(len(task.timesheet_ids), 4)
 
-        # 2) Validate the task and check if the SOL in each timesheet is correct with the correct product.
         task.action_fsm_validate()
         self.assertEqual(
             len(task.timesheet_ids.so_line),
@@ -142,7 +128,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
             "The SOL linked to the task should have the default service product of the product.",
         )
 
-        # 3) Create task with a timesheet containing no employee in employee mappings.
         task = self.Task.create(
             {
                 "name": "Fsm Task",
@@ -163,7 +148,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
         self.assertFalse(task.sale_line_id, "The task should have no SOL.")
 
-        # 4) Validate the task and check if the SOL in each timesheet is the one in the task with the default product defined in the project.
         task.action_fsm_validate()
         self.assertEqual(
             task.sale_line_id,
@@ -176,7 +160,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
             "The product in the SOL should be the default service product defined in the project.",
         )
 
-        # 5) Create task with timesheets with only the employees defined in the mapping.
         task = self.Task.create(
             {
                 "name": "Fsm Task",
@@ -205,10 +188,8 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
         self.assertFalse(task.sale_line_id, "The task should have no SOL.")
 
-        # 6) Validate the task and check if the SOL in the task contains the product in the first mapping found based on the timesheets.
         task.action_fsm_validate()
 
-        # Search the first mapping based on the timesheets in the task
         first_employee_mapping = (
             self.fsm_project_employee_rate.sale_line_employee_ids.filtered(
                 lambda mapping: mapping.employee_id in task.timesheet_ids.employee_id
@@ -236,14 +217,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
 
     def test_fsm_employee_rate_with_same_product_in_two_mappings(self):
-        """Test when a same service product is in 2 employee mappings for fsm project.
-
-        Test Case:
-        =========
-        1) Update the employee mappings in the fsm project to have 2 mappings for the same service product.
-        2) Create task with timesheets containing the mappings with the same product
-        3) Validate the task and check if the SO generated contains 2 SOLs for the same product but with a different price unit.
-        """
         self.fsm_project_employee_rate.sale_line_employee_ids.unlink()
         ProjectSaleLineEmployeeMap = self.env[
             "project.sale.line.employee.map"
@@ -280,7 +253,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
             "The price unit of both mappings with the same service product should be different.",
         )
 
-        # 2) Create task with timesheets containing the mappings with the same product
         task = self.Task.create(
             {
                 "name": "Fsm Task",
@@ -308,7 +280,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
             len(task.timesheet_ids), 2, "The task should have 2 timesheets."
         )
 
-        # 3) Validate the task and check if the SO generated contains 2 SOLs for the same product but with a different price unit.
         task.action_fsm_validate()
         so = task.sale_order_id
         self.assertEqual(len(so.line_ids), 2, "The generated SO should have 2 SOLs.")
@@ -324,7 +295,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         )
 
     def test_fsm_employee_rate_fpos(self):
-        """Test fiscal position applied correctly on employee mappings unit price"""
 
         fpos_incl_excl = self.env["account.fiscal.position"].create(
             {
@@ -391,7 +361,6 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
         self.assertAlmostEqual(so.line_ids.price_unit, 18.18, 2)
 
     def test_fsm_employee_with_duplicate_sol_same_product_same_price(self):
-        """Test when sale order has duplicate lines with same product and same price."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner_1.id,
@@ -429,12 +398,9 @@ class TestIndustryFsmEmployeeRate(TestFsmFlowSaleCommon):
                 ],
             }
         )
-        # Validate task
         task.action_fsm_validate()
         self.assertTrue(
             task.timesheet_ids.so_line,
             "Timesheet should be linked to a sale order line",
         )
-        # the first SOL of the matching product and employee is linked as it was set on the so_line on the timesheet.
-        # which we have to take on priority
         self.assertEqual(task.timesheet_ids.so_line, sale_order.line_ids[0])

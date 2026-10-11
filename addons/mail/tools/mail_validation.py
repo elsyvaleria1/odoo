@@ -19,7 +19,7 @@ try:
 except ImportError:
 
     def is_valid_email(email: str) -> bool:
-        global _flanker_lib_warning  # noqa: PLW0603 - one-shot latch so the missing-flanker warning is logged once per process
+        global _flanker_lib_warning
         if not _flanker_lib_warning:
             _flanker_lib_warning = True
             _debug.logic("email_validation_fallback", by="email_normalize")

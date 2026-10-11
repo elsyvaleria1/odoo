@@ -19,13 +19,12 @@ class ResConfigSettings(models.TransientModel):
         compute="_compute_onboarding_payment_module",
     )
 
-    # === COMPUTE METHODS === #
 
     @api.depends("company_id")
     def _compute_active_provider_id(self):
         for config in self:
             active_providers_domain = config._get_domain_active_providers()
-            if active_providers := self.env["payment.provider"].search(  # noqa: E8507 - a transient settings wizard: one record
+            if active_providers := self.env["payment.provider"].search(
                 active_providers_domain, limit=1
             ):
                 config.active_provider_id = active_providers[0]
@@ -39,16 +38,10 @@ class ResConfigSettings(models.TransientModel):
                 enabled_only=True
             )
             config.has_enabled_provider = bool(
-                self.env["payment.provider"].search(enabled_providers_domain, limit=1)  # noqa: E8507 - a transient settings wizard: one record
+                self.env["payment.provider"].search(enabled_providers_domain, limit=1)
             )
 
     def _get_domain_active_providers(self, enabled_only=False):
-        """Return the domain to search for active providers.
-
-        :param bool enabled_only: Whether only enabled providers should be considered active.
-        :return: The active providers domain.
-        :rtype: Domain
-        """
         return Domain.AND(
             [
                 [
@@ -74,7 +67,6 @@ class ResConfigSettings(models.TransientModel):
             else:
                 config.onboarding_payment_module = None
 
-    # === ACTION METHODS === #
 
     def action_view_active_provider(self) -> dict:
         provider = self.active_provider_id.check_singleton()
@@ -87,25 +79,16 @@ class ResConfigSettings(models.TransientModel):
         }
 
     def _start_payment_onboarding(self, menu_id=None):
-        """Install the onboarding module, configure the provider and run the onboarding action.
-
-        :param int menu_id: The menu from which the onboarding is started, as an `ir.ui.menu` id.
-        :return: The action returned by `action_start_onboarding`.
-        :rtype: dict|bool
-        """
         self.check_singleton()
         if not self.onboarding_payment_module:
             return False
 
-        # Install the onboarding module if needed.
         onboarding_module = self.env["ir.module.module"].search(
             [("name", "=", f"payment_{self.onboarding_payment_module}")]
         )
         self._install_modules(onboarding_module)
-        # Create a new env including the freshly installed module.
         new_env = api.Environment(self.env.cr, self.env.uid, self.env.context)
 
-        # Configure the provider.
         provider_code = self.onboarding_payment_module
         provider = new_env["payment.provider"].search(
             [

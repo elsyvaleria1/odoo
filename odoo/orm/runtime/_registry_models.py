@@ -100,9 +100,6 @@ class _RegistryModelsMixin(_RegistryStubs):
         }
 
     def bind_field_access_classes(self, env: Environment) -> None:
-        # every field learns, once its attributes are final, which classes a
-        # principal must hold to read and write it; what each model says of
-        # its fields is asked once, so a later rebind needs no environment
         bound = 0
         defaults = {name: vars(AccessMixin)[name] for name in FIELD_CLASS_HOOKS}
         for name, model_cls in self.models.items():
@@ -116,14 +113,9 @@ class _RegistryModelsMixin(_RegistryStubs):
 
     @functools.cached_property
     def model_anchors(self) -> dict[str, dict[str, Anchor]]:
-        # where each model's records meet a principal, checked against the
-        # loaded models: a rung compiles against these paths
         result: dict[str, dict[str, Anchor]] = {}
         errors = []
         for name, model_cls in self.models.items():
-            # an abstract model can have records all the same (a report read
-            # from a query, or by its own search), so its anchors are
-            # collected; one a mixin's fields cannot follow is left to its heirs
             anchors = collect_anchors(model_cls)
             for key, anchor in list(anchors.items()):
                 if error := anchor_path_error(model_cls, key, anchor, self.models):
@@ -141,11 +133,6 @@ class _RegistryModelsMixin(_RegistryStubs):
 
     @functools.cached_property
     def moving_anchor_fields(self) -> dict[str, dict[str, frozenset[str]]]:
-        # the fields a write moves a record to another owner, team, unit or
-        # company through: the first hop of every anchor path, but the
-        # creator's, which only the kernel stamps. Each maps to the fields
-        # whose write moves it: itself, and when it is a related or computed
-        # field, the first hop of each of its dependencies
         result: dict[str, dict[str, frozenset[str]]] = {}
         for name, anchors in self.model_anchors.items():
             fields = self.models[name]._fields
@@ -276,8 +263,6 @@ class _RegistryModelsMixin(_RegistryStubs):
             return fields
 
     def _get_fields_memos(self) -> dict[Hashable, typing.Any]:
-        # what is derived from the fields lives as long as fields_by_comodel:
-        # a setup, or a field discarded, rebuilds that index and drops these
         by_comodel = self.fields_by_comodel
         memo = vars(self).get("_fields_memos")
         if memo is None or memo[0] is not by_comodel:

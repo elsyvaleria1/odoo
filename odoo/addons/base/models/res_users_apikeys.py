@@ -98,7 +98,6 @@ class ResUsersApikeys(models.Model):
             _debug.logic("apikeys_remove_noop", uid=self.env.uid)
             return {"type": "ir.actions.act_window_close"}
         if self.env.is_system() or self.mapped("user_id") == self.env.user:
-            # a portal owner may remove its keys but not read their scopes
             keys = self.sudo()
             ip = request.httprequest.remote_addr if request else "n/a"
             _logger.info(
@@ -131,13 +130,6 @@ class ResUsersApikeys(models.Model):
     def _match_key(
         self, scope: str | None, key: str, *, include_expired: bool
     ) -> tuple[int, datetime.datetime | None, int | None, int] | None:
-        """``(user_id, expiration, scope_id, key_id)`` of the key, or None.
-
-        A key bound to no scope opens every door; one bound to a scope opens
-        that door alone, whatever the door's own scope lets through. With no
-        door named (``scope=None``) any key matches and answers the scope it is
-        bound to: the universal door, XML-RPC, applies the key's own rules.
-        """
         self.env["res.users.apikeys.scope"].flush_model(["active", "key"])
         self.env.cr.execute(
             SQL(
@@ -187,9 +179,6 @@ class ResUsersApikeys(models.Model):
         return match[0] if match else None
 
     def _check_credentials_any_scope(self, key: str) -> tuple[int, int | None] | None:
-        """``(user_id, scope_id)`` for a key at the universal door, whatever
-        door the key is bound to; the scope is the key's own, None for a key
-        bound to none."""
         if not key:
             return None
         match = self._match_key(None, key, include_expired=False)

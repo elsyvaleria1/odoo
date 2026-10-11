@@ -22,8 +22,6 @@ class HrJobPost(models.Model):
             "website_job_post_apply_vector",
             posts=self,
             redirect=redirect_records,
-            # rebinding `self` narrows what zero-argument `super()` binds to,
-            # which is the point: the parent computes only the non-redirect ones
             delegated=self - redirect_records,
         )
         self -= redirect_records

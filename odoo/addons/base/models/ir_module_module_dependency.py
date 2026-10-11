@@ -27,9 +27,9 @@ class IrModuleModuleDependency(models.Model):
         searched: set[str] = set()
         to_search = set(module_names)
         res: dict[str, list[str]] = {}
-        rounds = 0  # debuglog
+        rounds = 0
         while to_search:
-            rounds += 1  # debuglog
+            rounds += 1
             searched |= to_search
             groups = self._read_group(
                 [("module_id.name", "in", list(to_search))],

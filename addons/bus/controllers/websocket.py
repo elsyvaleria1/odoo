@@ -29,12 +29,9 @@ class WebsocketController(Controller):
         return request.prepare_response(data, headers, status=200 if healthy else 503)
 
     @route("/bus/websocket_worker_bundle", type="http", auth="public")
-    def get_websocket_worker_bundle(self, v=None):  # pylint: disable=unused-argument
+    def get_websocket_worker_bundle(self, v=None):
         return self._websocket_worker_bundle_response()
 
-    # A page of another site -- a live chat embedded there -- cannot start a
-    # worker from this server's origin: it reads the same public code here,
-    # without credentials, and starts it from a blob.
     @route(
         "/bus/websocket_worker_bundle/anonymous",
         type="http",
@@ -42,7 +39,7 @@ class WebsocketController(Controller):
         cors="*",
         save_session=False,
     )
-    def get_anonymous_websocket_worker_bundle(self, v=None):  # pylint: disable=unused-argument
+    def get_anonymous_websocket_worker_bundle(self, v=None):
         return self._websocket_worker_bundle_response()
 
     def _websocket_worker_bundle_response(self):
@@ -64,11 +61,6 @@ class WebsocketController(Controller):
         response.make_conditional(request.httprequest)
         return response
 
-    # Without a standalone build the worker runs the bundle's source files,
-    # all of them in bundle order as the build would. No import map resolves
-    # a specifier in a worker, nor a relative path in one started from a blob,
-    # which is how another site starts it: every import names this route,
-    # absolute.
     @route(
         WORKER_SOURCE_ROUTE,
         type="http",

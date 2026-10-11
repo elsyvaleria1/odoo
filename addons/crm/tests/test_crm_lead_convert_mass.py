@@ -35,7 +35,7 @@ class TestLeadConvertMass(crm_common.TestLeadConvertMassCommon):
                 user_ids=user_ids, team_id=False
             ),
             user_sales_manager=55,
-            optional_queries={"website": 1},  # notification origin
+            optional_queries={"website": 1},
         )
 
         self.assertEqual(
@@ -60,7 +60,7 @@ class TestLeadConvertMass(crm_common.TestLeadConvertMassCommon):
                 user_ids=user_ids, team_id=team_id
             ),
             user_sales_manager=53,
-            optional_queries={"website": 1},  # notification origin
+            optional_queries={"website": 1},
         )
 
         self.assertEqual(test_leads.team_id, self.sales_team_convert)
@@ -223,8 +223,6 @@ class TestLeadConvertMass(crm_common.TestLeadConvertMassCommon):
         self.assertQueryCountWarm(
             mass_convert,
             user_sales_manager=918,
-            # Notification origin, partner address/configuration reads, and the
-            # client area the geofence integration computes for the new partners.
             optional_queries={
                 "website": 1,
                 "barcodes.config": 1,

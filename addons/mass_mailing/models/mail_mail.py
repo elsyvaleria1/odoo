@@ -42,10 +42,7 @@ class MailMail(models.Model):
         return tools.is_hmac_valid(self.env, OPEN_SCOPE, mail_id, token)
 
     def _prepare_outgoing_body(self):
-        """Override to add the tracking URL to the body and to add trace ID in
-        shortened urls"""
         self.check_singleton()
-        # super() already cleans pseudo-void content from editor
         body = super()._prepare_outgoing_body()
 
         if body and self.mailing_id and self.mailing_trace_ids:
@@ -62,7 +59,6 @@ class MailMail(models.Model):
                     )
                     body = body.replace(Wrapper(href), Wrapper(new_href))
 
-            # generate tracking URL
             tracking_url = self._get_tracking_url()
             body = tools.mail.add_html_content(
                 body,
@@ -78,13 +74,6 @@ class MailMail(models.Model):
         smtp_session=None,
         already_sent_pids=None,
     ):
-        """Update mailing specific links to replace generic unsubscribe and
-        view links by email-specific links. Also add headers to allow
-        unsubscribe from email managers.
-
-        Each entry owns its ``headers`` dict, so the per-recipient values written
-        below reach only the recipient they were computed for.
-        """
         email_list = super()._prepare_outgoing_list(
             mail_server=mail_server,
             doc_to_followers=doc_to_followers,
@@ -99,7 +88,6 @@ class MailMail(models.Model):
             if not email_values["email_to"]:
                 continue
 
-            # prepare links with normalize email
             email_normalized = tools.email_normalize(
                 email_values["email_to"][0], strict=False
             )
@@ -113,10 +101,7 @@ class MailMail(models.Model):
             )
             view_url = self.mailing_id._get_view_url(email_to, self.res_id)
 
-            # replace links in body
             if not tools.is_html_empty(email_values["body"]):
-                # replace generic link by recipient-specific one, except if we know
-                # by advance it won't work (i.e. testing mailing scenario)
                 if f"{base_url}/unsubscribe_from_list" in email_values[
                     "body"
                 ] and not self.env.context.get("mailing_test_mail"):
@@ -130,13 +115,12 @@ class MailMail(models.Model):
                         view_url,
                     )
 
-            # add headers
             email_values["headers"].update(
                 {
                     "List-Unsubscribe": f"<{unsubscribe_oneclick_url}>",
                     "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
                     "Precedence": "list",
-                    "X-Auto-Response-Suppress": "OOF",  # avoid out-of-office replies from MS Exchange
+                    "X-Auto-Response-Suppress": "OOF",
                 }
             )
         return email_list
@@ -149,7 +133,7 @@ class MailMail(models.Model):
         failure_type=None,
         **kwargs,
     ) -> None:
-        if failure_type:  # we consider that a recipient error is a failure with mass mailing and show them as failed
+        if failure_type:
             self.filtered("mailing_id").mailing_trace_ids.set_failed(
                 failure_type=failure_type
             )
@@ -167,11 +151,6 @@ class MailMail(models.Model):
 
     @api.autovacuum
     def _gc_canceled_mail_mail(self) -> tuple:
-        """Garbage collects old canceled mail.mail records as we consider
-        nobody is going to look at them anymore, becoming noise."""
-        # get_int, not get: the latter answers with the stored *string*
-        # as soon as the parameter is set, and '6' <= 0 raises TypeError -- taking the
-        # whole autovacuum down with it.
         months_limit = self.env.registry.settings.get_int(
             self.env, "mass_mailing.cancelled_mails_months_limit", 6
         )
@@ -179,7 +158,7 @@ class MailMail(models.Model):
             return 0, False
         history_deadline = datetime.now(UTC) - relativedelta(
             months=months_limit
-        )  # 6 months history will be kept
+        )
         canceled_mails = self.with_context(active_test=False).search(
             [("state", "=", "cancel"), ("write_date", "<=", history_deadline)],
             order="id asc",

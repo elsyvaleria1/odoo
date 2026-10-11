@@ -7,8 +7,6 @@ from odoo.addons.test_mass_mailing.tests import common
 class TestUTM(common.TestMassMailCommon):
     @users("employee")
     def test_utm_source_mixin_name(self):
-        """Test name management with source mixin, as name should be unique
-        and automatically incremented"""
         sources = self.env["utm.test.source.mixin"].create(
             [
                 {
@@ -25,7 +23,6 @@ class TestUTM(common.TestMassMailCommon):
 
     @users("employee")
     def test_utm_source_mixin_name_brackets(self):
-        """Test with brackets"""
         false_dupes = self.env["utm.test.source.mixin"].create(
             [
                 {
@@ -59,9 +56,6 @@ class TestUTM(common.TestMassMailCommon):
 
     @users("employee")
     def test_utm_source_mixin_name_cross_model(self):
-        """Uniqueness of source should be ensured cross models. For this purpose
-        we use two models using the mixin.utm.source, allowing to check conflict
-        management between models."""
         source_1 = self.env["utm.test.source.mixin"].create(
             {
                 "name": "Test",

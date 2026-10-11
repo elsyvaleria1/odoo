@@ -69,8 +69,6 @@ class AccountCollectionRemittance(models.Model):
 
     def _run_through_approval(self, operation: str, run: Any) -> Any:
         if operation == "validate":
-            # whoever asks to validate a cash hand-in is the one receiving it,
-            # and the request asks them by this field
             self.filtered(
                 lambda r: r._get_approval_trigger() and not r.approval_request_id
             ).receiver_id = self.env.user

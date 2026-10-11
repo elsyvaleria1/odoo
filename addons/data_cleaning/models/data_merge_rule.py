@@ -39,7 +39,6 @@ class Data_MergeRule(models.Model):
 
     def _available_match_modes(self):
         modes = [("exact", self.env._("Exact Match"))]
-        # can't conditionally set demo data...
         if self.env.context.get("install_mode") or self.env.registry.unaccent_status:
             modes.append(("accent", self.env._("Case/Accent Insensitive Match")))
         return modes

@@ -62,12 +62,10 @@ class OAuthMailServerCase(HttpCase):
         )
 
     def _authorize_url(self, server, user=None):
-        # as `res.users` opens a personal server's: elevated, for its user
         server = server.with_user(user or self.env.user).sudo()
         return getattr(server, self.authorize_method)()["url"]
 
     def _consent(self, server, login="admin"):
-        """Open the server's authorization as `login`: the provider's state."""
         self.authenticate(login, login)
         user = self.env["res.users"].search([("login", "=", login)])
         response = self.url_open(

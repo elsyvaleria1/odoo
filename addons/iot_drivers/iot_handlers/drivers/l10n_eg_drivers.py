@@ -21,11 +21,9 @@ class EtaUsbController(http.Controller):
     def _is_access_token_valid(self, access_token) -> bool:
         stored_hash = config.get("proxy_access_token")
         if not stored_hash:
-            # empty password/hash => authentication forbidden
             return False
         return bool(crypt_context.is_password_valid(access_token, stored_hash))
 
-    # csrf=False: an IoT box has no session; the proxy access token is verified in the body
     @route.iot_route(
         "/hw_l10n_eg_eta/certificate",
         type="http",
@@ -34,13 +32,6 @@ class EtaUsbController(http.Controller):
         methods=["POST"],
     )
     def eta_certificate(self, pin, access_token):
-        """Gets the certificate from the token and returns it to the main odoo instance so that we can prepare the
-        cades-bes object on the main odoo instance rather than this middleware
-
-        :param pin: pin of the token
-        :param access_token: token shared with the main odoo instance
-        :return: json object with the certificate
-        """
         if not self._is_access_token_valid(access_token):
             return self._get_error_template("unauthorized")
         session, error = self._get_session(pin)
@@ -60,18 +51,10 @@ class EtaUsbController(http.Controller):
             session.logout()
             session.closeSession()
 
-    # csrf=False: an IoT box has no session; the proxy access token is verified in the body
     @route.iot_route(
         "/hw_l10n_eg_eta/sign", type="http", cors="*", csrf=False, methods=["POST"]
     )
     def eta_sign(self, pin, access_token, invoices):
-        """Check if the access_token is valid and sign the invoices accessing the usb key with the pin.
-
-        :param pin: pin of the token
-        :param access_token: token shared with the main odoo instance
-        :param invoices: dictionary of invoices. Keys are invoices ids, value are the base64 encoded binaries to sign
-        :return: json object with the signed invoices
-        """
         if not self._is_access_token_valid(access_token):
             return self._get_error_template("unauthorized")
         session, error = self._get_session(pin)

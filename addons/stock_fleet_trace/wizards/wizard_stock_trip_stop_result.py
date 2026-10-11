@@ -32,8 +32,6 @@ class WizardStockTripStopResult(models.TransientModel):
         res = super().default_get(fields_list)
         picking = self.env["stock.picking"].browse(res.get("picking_id"))
         if picking and "line_ids" in fields_list:
-            # Once lots were scanned at the stop, what was scanned is what was
-            # handed over; without scans everything on board is proposed.
             scanned = picking._trip_scanned_by_lot() if picking.trip_scan_ids else None
             lines = []
             for line in picking.move_ids.move_line_ids:
@@ -95,8 +93,6 @@ class WizardStockTripStopResult(models.TransientModel):
         self._check_ready()
         picking = self.picking_id
         batch = picking.batch_id
-        # Whatever the phone captured offline without quantities is now confirmed
-        # by hand: the review it asked for is resolved either way.
         picking.trip_partial_review = False
         if not self._delivers_something():
             if not self.reason_id:
@@ -126,14 +122,11 @@ class WizardStockTripStopResult(models.TransientModel):
                 if line.move_line_id.move_id == move
                 and not line.reason_id.creates_backorder
             )
-            # What the customer refuses for good is no longer asked of this
-            # delivery; what they still expect stays pending in a backorder.
             if dropped:
                 move.product_uom_qty = max(move.product_uom_qty - dropped, 0.0)
             if move.product_uom_qty > move.quantity:
                 wants_backorder = True
         result = "complete" if not rejected and not wants_backorder else "partial"
-        # Validation records the outcome on the trip's log, whatever path it took.
         picking.with_context(trip_delivery_result=result).button_validate(
             skip_backorder=True,
             cancel_backorder_ids=() if wants_backorder else picking.ids,
@@ -155,12 +148,6 @@ class WizardStockTripStopResult(models.TransientModel):
         return {"type": "ir.actions.act_window_close"}
 
     def _release_backorders(self) -> None:
-        """Keep a backorder from taking back the goods its customer refused.
-
-        The backorder drew from the loading leg, whose goods are on the vehicle;
-        pointing it at the leg's own origins leaves it waiting for goods the
-        warehouse stages again, and the refused units come back as free stock.
-        """
         picking = self.picking_id
         backorders = picking.backorder_ids.filtered(
             lambda p: p.state not in ("done", "cancel")
@@ -187,12 +174,6 @@ class WizardStockTripStopResult(models.TransientModel):
             )
 
     def _notify_sales(self, rejected) -> None:
-        """Tell the salesperson when a customer refused goods already invoiced.
-
-        The driver records the stop without sales or accounting rights: the order
-        is read through the trip's privilege and the activity lands on the
-        delivery, which the driver may write.
-        """
         picking = self.picking_id
         order = picking.with_privilege(
             "stock_fleet_trace.privilege_trip_trace_record",

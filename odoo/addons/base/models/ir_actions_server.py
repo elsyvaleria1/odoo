@@ -87,7 +87,6 @@ class IrActionsServer(models.Model):
     _inherit = ["ir.actions.actions"]
     _order = "sequence,name,id"
 
-    # FIELDS
     name = fields.Char(
         compute="_compute_names",
         store=True,
@@ -344,7 +343,6 @@ class IrActionsServer(models.Model):
 
     _WEBHOOK_TIMEOUT_CEILING = 60
 
-    # CONSTRAINT METHODS
 
     @api.constrains("webhook_timeout", "state")
     def _check_webhook_timeout(self) -> None:
@@ -428,7 +426,6 @@ class IrActionsServer(models.Model):
                 )
             )
 
-    # CRUD METHODS
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
@@ -519,7 +516,6 @@ class IrActionsServer(models.Model):
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
-    # COMPUTE METHODS
 
     @api.depends("state", "code")
     def _compute_show_code_history(self) -> None:
@@ -631,7 +627,7 @@ class IrActionsServer(models.Model):
         samples = {}
         for model_name in set(webhooks.model_id.mapped("model")):
             samples[model_name] = (
-                self.env[model_name].with_context(active_test=False).search([], limit=1)  # noqa: E8507  loop variable is the model -- a different table each time
+                self.env[model_name].with_context(active_test=False).search([], limit=1)
             )
         _debug.perf.count("webhook_samples", actions=len(webhooks), models=len(samples))
         for model_name, actions in webhooks.grouped("model_name").items():
@@ -681,7 +677,6 @@ class IrActionsServer(models.Model):
             else:
                 action.value_field_to_show = "value"
 
-    # INVERSE METHODS
 
     @api.onchange("crud_model_id")
     def _inverse_crud_model_id(self) -> None:
@@ -721,7 +716,6 @@ class IrActionsServer(models.Model):
             if action.selection_value:
                 action.value = action.selection_value.value
 
-    # ONCHANGE METHODS
 
     @api.onchange("name")
     def _onchange_name(self) -> None:
@@ -732,7 +726,6 @@ class IrActionsServer(models.Model):
             self.automated_name = self._prepare_automated_name()
             self.name = self.automated_name
 
-    # ACTION METHODS
 
     def action_view_code_history(self) -> dict[str, Any]:
         self.check_singleton()
@@ -770,7 +763,6 @@ class IrActionsServer(models.Model):
             "res_id": self.ir_cron_ids[:1].id,
         }
 
-    # RUN METHODS
 
     def _is_batchable(self) -> bool:
         self.check_singleton()
@@ -1313,8 +1305,6 @@ class IrActionsServer(models.Model):
             res = runner(run_self, eval_context=eval_context)
         return res or False
 
-    # what the action is configured to do: whoever may run it is told, even
-    # when the caller may not read server actions
     def _get_run_config(self) -> Self:
         return self.sudo()
 
@@ -1396,7 +1386,6 @@ class IrActionsServer(models.Model):
         if config.link_field_id:
             records.check_access("write")
 
-    # WEBHOOK METHODS
 
     def _prepare_server_action_webhook_payload(
         self, record: models.Model
@@ -1438,7 +1427,6 @@ class IrActionsServer(models.Model):
             target,
         )
 
-    # HELPER METHODS
 
     @api.model
     def _default_update_path(self) -> str:

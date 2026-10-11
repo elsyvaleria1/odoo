@@ -30,7 +30,6 @@ class WalletBalance(models.Model):
     _description = "Electronic Wallet Balance Snapshot"
     _order = "date desc, card_id, id desc"
 
-    # FIELDS
     card_id = fields.Many2one(
         comodel_name="wallet.card",
         index=True,
@@ -61,16 +60,13 @@ class WalletBalance(models.Model):
         help="What the issuer reported about the card at that instant."
     )
 
-    # CONSTRAINTS
     _card_date_uniq = models.Constraint(
         "UNIQUE(card_id, date)",
         "A card holds one balance snapshot per instant.",
     )
 
-    # HELPER METHODS
     @api.model
     def _get_latest_by_card(self, cards) -> dict:
-        """{card id: latest snapshot} for the cards that have one."""
         if not cards.ids:
             return {}
         self.flush_model(["card_id", "date", "amount_balance"])

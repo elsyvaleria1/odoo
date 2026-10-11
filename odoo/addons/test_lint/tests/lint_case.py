@@ -18,20 +18,16 @@ from . import _parallel
 
 _T_CALL_ASSETS_RE = re.compile(r"""t-call-assets=\\?["']([\w.]+)\\?["']""")
 
-# static files a browser fetches by URL, outside every asset bundle
 URL_FETCHED = frozenset(
     {
         "mail/static/src/discuss/voice_message/worklets/processor.js",
         "mail/static/src/service_worker.js",
         "mail/static/src/worklets/audio_processor.js",
-        # the Telegram mini app pages, rendered by their controllers outside the web client
         "mail_telegram/static/src/mini_app/inbox.css",
         "mail_telegram/static/src/mini_app/inbox.js",
         "project_telegram/static/src/mini_app/task_app.css",
-        # injected as a <link> into the PDF.js viewer iframe (sign_request/utils.js)
         "sign/static/src/css/pdfjs_overrides.css",
         "speech/static/src/worklets/pcm_capture.js",
-        # the driver screen's offline shell, linked by its own page template
         "stock_fleet_trace/static/driver/driver.css",
         "web/static/src/module_loader.js",
         "web/static/src/public/database_manager.js",
@@ -56,8 +52,6 @@ def is_core_path(path: str) -> bool:
 
 @functools.cache
 def repo_of(module_root: str) -> str:
-    # the checkout a module lives in: an addons directory nested in one
-    # (odoo-rust-orm/addons) is not a repository of its own
     if is_core_path(module_root):
         return "odoo"
     path = Path(module_root)
@@ -74,8 +68,6 @@ def repositories() -> tuple[str, ...]:
     )
 
 
-# what a repository builds on: its models extend those of the repositories
-# before it, never the reverse, so a repository is judged against these alone
 _LAYERS = {
     "odoo": ("odoo",),
     "enterprise": ("odoo", "enterprise"),
@@ -295,9 +287,6 @@ class LintCase(BaseCase):
     def assert_ratchet_per_repository(
         self, found: Mapping[str, Iterable], gate: str, what: str, fix: str
     ) -> None:
-        # Every repository on the addons path is graded, not only those with a
-        # finding: a floor whose last finding went away must fail until it is
-        # lowered, as any exact ratchet does. `<repo>` in `what` names it.
         for repo in repositories():
             with self.subTest(repo=repo):
                 self.assert_ratchet(
@@ -360,12 +349,6 @@ def _compute_served_bundle_names(installed: frozenset[str], env) -> tuple[str, .
         for (arch,) in env.cr.fetchall()
         for name in _T_CALL_ASSETS_RE.findall(arch)
     }
-    # Subtracting every included bundle assumes an included one is only ever
-    # reached through its host. A bundle named under `esm.bundles` or
-    # `esm.standalone_bundles` is also built on its own, so a host-relative
-    # directive inside it fails there and nowhere else -- which is how
-    # `im_livechat.assets_embed_core` carried a `remove` of a file only its
-    # hosts supply, and assembled for neither the gate nor anyone reading it.
     served = (names - included) | (names & linked) | (names & built)
     return tuple(sorted(name for name in served if "." in name))
 

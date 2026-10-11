@@ -136,7 +136,7 @@ First differing element 0:
     @mute_logger("odoo.db")
     def test_assertRaises_clear_recovery(self):
 
-        def clear(call_count=itertools.count()):  # noqa: B008  see comment above
+        def clear(call_count=itertools.count()):
             if next(call_count) == 0:
                 self.env.cr.execute("select nonsense")
 

@@ -169,7 +169,7 @@ class TestFieldGroupsInPredicates(TransactionCase):
     def test_a_pattern_predicate_on_a_restricted_field_is_denied_on_a_warm_cache(
         self,
     ):
-        self.records.mapped("d")  # the superuser read fills the shared slot
+        self.records.mapped("d")
         as_user = self.records.with_user(self.probe_user)
         for domain in (
             [("d", "like", "1")],

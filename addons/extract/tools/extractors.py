@@ -50,10 +50,6 @@ def register_extractor(extractor: BaseExtractor) -> BaseExtractor:
     if not extractor.doc_types:
         raise ValueError(f"Extractor {extractor.name!r} declares no document types")
     for need in extractor.needs:
-        # Asked of the layer that owns the list rather than restated here. The
-        # restatement had gone stale: it predates `rows`, so a strategy reading
-        # a spreadsheet could not declare what it needed, on a document that
-        # has been able to supply it since base_import registered its readers.
         if need not in REPRESENTATIONS:
             raise ValueError(
                 f"Extractor {extractor.name!r} needs unknown representation "

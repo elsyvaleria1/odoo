@@ -64,11 +64,6 @@ class TestMrpOrderpointBatch(TransactionCase):
         )
 
     def statements(self, orderpoints, reader):
-        # The transaction holds derived environments weakly, so whether their
-        # cached `company`/`companies` survive to the next measurement is the
-        # garbage collector's call: one collection between the two sizes made
-        # it 14 against 13. Both start cold, ormcaches included, so both pay
-        # the same misses.
         self.env.flush_all()
         self.env.invalidate_all()
         self.env.registry.clear_all_caches()

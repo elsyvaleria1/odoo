@@ -58,8 +58,6 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def _load_pos_data_till_secret_fields(self, config) -> list[str]:
-        # Tyro's iClient runs in the browser and authenticates to the terminal
-        # with the integration key itself: the till cannot work without it
         return [
             *super()._load_pos_data_till_secret_fields(config),
             "tyro_integration_key",

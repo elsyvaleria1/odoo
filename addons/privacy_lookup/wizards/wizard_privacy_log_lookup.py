@@ -96,7 +96,6 @@ class WizardPrivacyLogLookup(models.TransientModel):
             self.env["ir.model.data"]._xmlid_to_res_id("mail.model_mail_message"),
         )
 
-        # Step 3: Retrieve info on other models
         blacklisted_models = self._get_query_models_blacklist()
         for model_name in self.env:
             if model_name in blacklisted_models:
@@ -109,7 +108,6 @@ class WizardPrivacyLogLookup(models.TransientModel):
             table_name = model._table
 
             conditions = []
-            # 3.1 Search Basic Personal Data Records (aka email/name usage)
             for field_name in [
                 "email_normalized",
                 "email",
@@ -128,7 +126,7 @@ class WizardPrivacyLogLookup(models.TransientModel):
                             SQL.identifier(field_name),
                             SQL("=")
                             if is_normalized
-                            else SQL("ilike"),  # Manage Foo Bar <foo@bar.com>
+                            else SQL("ilike"),
                             email_normalized if is_normalized else email,
                         )
                     )
@@ -148,7 +146,6 @@ class WizardPrivacyLogLookup(models.TransientModel):
                     if is_normalized:
                         break
 
-            # 3.2 Search Indirect Personal Data References (aka partner_id)
             conditions.extend(
                 SQL(
                     "%s in (SELECT id FROM indirect_references)",
@@ -174,7 +171,7 @@ class WizardPrivacyLogLookup(models.TransientModel):
                     WHERE %s
                     """,
                     query,
-                    self.env["ir.model"].search([("model", "=", model_name)]).id,  # noqa: E8507 - one lookup per model of the lookup
+                    self.env["ir.model"].search([("model", "=", model_name)]).id,
                     SQL.identifier("active") if _has_active_column(model) else True,
                     SQL.identifier(table_name),
                     SQL(" OR ").join(conditions),

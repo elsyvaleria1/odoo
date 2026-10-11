@@ -20,9 +20,6 @@ class DiscussChannel(models.Model):
 
     @classmethod
     def _channel_type_policies(cls):
-        # a Telegram group is read as a channel: its people speak in it
-        # without being Odoo users, joins are Telegram's own business, and
-        # only who asks for it is notified of every message
         return {
             **super()._channel_type_policies(),
             "telegram": ChannelTypePolicy(
@@ -48,10 +45,6 @@ class DiscussChannel(models.Model):
         }
 
     def _telegram_notification_kind(self, recipient):
-        """A direct or group chat's members get `chats`; a channel's get
-        `mention` when mentioned, `channel` otherwise. Other channel types
-        (live chat, WhatsApp, Telegram groups, which are in Telegram already)
-        are their bridges' to decide."""
         notif = recipient.get("notif")
         if notif not in ("inbox", "web_push"):
             return None
@@ -68,7 +61,6 @@ class DiscussChannel(models.Model):
             return f"#{self.name}"
         return self.name or ""
 
-    # -- forum topics ---------------------------------------------------------
 
     def _create_sub_channel(self, from_message_id=None, name=None):
         sub_channel = super()._create_sub_channel(
@@ -81,10 +73,6 @@ class DiscussChannel(models.Model):
         return sub_channel
 
     def _telegram_open_topic(self, sub_channel) -> None:
-        """A thread opened in Odoo on a group that is a forum becomes one of
-        its topics. Telegram names the topic, so it is created now, not
-        through the outbox; a group that is no forum keeps the thread in Odoo
-        only."""
         group = (
             self.env["telegram.mirror"]
             ._of_thread(self)
@@ -137,7 +125,6 @@ class DiscussChannel(models.Model):
                     },
                 )
 
-    # -- connecting -----------------------------------------------------------
 
     def action_telegram_connect_group(self):
         action = super().action_telegram_connect_group()

@@ -16,5 +16,4 @@ def post_init(env) -> None:
 
 
 def uninstall_hook(env):
-    """TODO: remove me in master"""
     pass

@@ -35,9 +35,6 @@ class TestRapidReader(BaseCase):
         self.assertEqual(rapid_reader.OcrText.cost, METERED)
 
     def test_the_engine_is_built_once_and_kept(self):
-        """Constructing it loads the PP-OCR weights, so a page must not pay for
-        that again. The library is a hard requirement, so the only question left
-        about the engine is how often it is built."""
         built = []
 
         class _Counted:

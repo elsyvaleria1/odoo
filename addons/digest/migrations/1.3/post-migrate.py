@@ -4,8 +4,6 @@ from odoo.db.schema import column_exists
 def migrate(cr, version):
     if not version or not column_exists(cr, "resource_config", "resource_calendar_id"):
         return
-    # the digest read a company's zone from its working calendar; it reads its
-    # partner's now, so a partner without one takes the calendar's
     cr.execute(
         """
         UPDATE res_partner partner

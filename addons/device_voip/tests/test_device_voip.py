@@ -235,7 +235,6 @@ class TestDeviceVoip(DeviceHttpCase):
 
 @tagged("post_install", "-at_install")
 class TestDeviceVoipThroughTheRoute(TestDeviceVoip):
-    # every report the phone system makes reaches its receiver's route
     allow_inherited_tests_method = True
 
     def _report(self, **call):

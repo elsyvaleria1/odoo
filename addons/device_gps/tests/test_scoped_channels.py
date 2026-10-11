@@ -98,8 +98,6 @@ class TestScopedGpsChannels(DeviceHttpCase):
 
     def test_command_channel_does_not_accept_telemetry(self):
         _device, enrollment, channel = self._source("commands")
-        # An unused channel of a draft enrollment may be replaced; active
-        # identities stay immutable. A separate commands channel has its own key.
         command = self.env["device.channel"].create(
             {
                 "name": "Commands",

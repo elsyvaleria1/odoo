@@ -5,7 +5,6 @@ from odoo import models
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
-    # As this model has its own data merge, the generic data_merge is not enabled on it.
     _disable_data_merge = True
 
     def _merge_method(self, destination, source) -> dict:

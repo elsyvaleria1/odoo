@@ -79,9 +79,6 @@ class HelpdeskTicket(models.Model):
             },
         }
 
-    # ---------------------------------------------------
-    # Mail gateway
-    # ---------------------------------------------------
 
     def _mail_get_message_subtypes(self):
         res = super()._mail_get_message_subtypes()

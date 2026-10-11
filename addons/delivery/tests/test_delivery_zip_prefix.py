@@ -9,8 +9,6 @@ from odoo.addons.delivery.usps import prepare_usps_phone_number, split_zip_plus_
 @tagged("post_install", "-at_install")
 class TestDeliveryZipPrefix(TransactionCase):
     def test_create_without_name_raises_cleanly(self):
-        """A missing `name` must fail on the `required` constraint, not with
-        a raw `KeyError` from `create()`'s own upper-casing logic."""
         with self.assertRaises(IntegrityError), mute_logger("odoo.db.cursor"):
             self.env["delivery.zip.prefix"].create({})
 

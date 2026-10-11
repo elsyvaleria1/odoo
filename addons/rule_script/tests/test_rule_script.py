@@ -238,7 +238,6 @@ class TestRuleScript(TransactionCase):
             }
         )
 
-        # the middle rule is unchanged: the top reaches the new base through it
         self._load(
             {
                 "rules/base.py": chain_rule("test.base", "1 + 0 * 2", 1),

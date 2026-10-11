@@ -263,8 +263,6 @@ def _final_recipient(block: EmailMessage) -> str | None:
 
 
 def read_delivery_status(dsn_part: EmailMessage | None) -> DeliveryStatus:
-    # RFC 3464: the first block describes the message, every later block one
-    # recipient; only an "Action: failed" recipient bounced
     recipient_blocks = _children(dsn_part)[1:] if dsn_part is not None else []
     if not recipient_blocks:
         _debug.logic("delivery_status", blocks=0, failed=None)

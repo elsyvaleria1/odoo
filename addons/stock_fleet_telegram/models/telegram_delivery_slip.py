@@ -126,23 +126,8 @@ class TelegramDeliverySlip(models.Model):
             limit=1,
         )
 
-    # -- identifying ----------------------------------------------------------
 
     def _identify(self, content, pending):
-        """The delivery order ``content`` names, or the ones to choose from.
-
-        Cheapest source first: a code printed on the slip, read exactly; then
-        the number together with its customer, printed on the text layer or
-        read by the local OCR. Unidentified, the sender chooses among
-        ``pending``, their own deliveries waiting for the slip.
-
-        :param bytes content: the file as sent
-        :param callable pending: returns the ``stock.picking`` the sender may
-            choose from, asked only when the slip identifies none
-        :return: ``(picking, found_by, candidates)``; one of the first and the
-            last is empty
-        :rtype: tuple
-        """
         self.check_singleton()
         Picking = self.env["stock.picking"]
         document = Document(content, name=self.file_name or "slip")
@@ -163,8 +148,6 @@ class TelegramDeliverySlip(models.Model):
         named = found.filtered(lambda picking: picking._customer_in_text(text))
         if len(named) == 1:
             return named, "text", Picking
-        # A number whose customer is not on the paper designates nothing: only
-        # the sender's own deliveries are offered then.
         return Picking, "", named or pending()
 
     def _read(self, document, representation, empty):
@@ -182,23 +165,8 @@ class TelegramDeliverySlip(models.Model):
     def _offer(self, candidates) -> None:
         self.write({"candidate_ids": [fields.Command.set(candidates.ids)]})
 
-    # -- recording ------------------------------------------------------------
 
     def _record(self, picking, found_by, content) -> str:
-        """File ``content`` as the signed slip of ``picking`` and, when the
-        sender drives its departed trip, mark it delivered.
-
-        The slip is kept whatever the validation says: it is what the delivery
-        order lacked, and whoever validates it later no longer does. Only the
-        validation is undone when it does not go through.
-
-        :param recordset picking: the ``stock.picking`` the slip names
-        :param str found_by: how it was found
-        :param bytes content: the file as sent
-        :return: the message for the chat
-        :rtype: str
-        :raises SlipRefused: when the delivery order takes no slip
-        """
         self.check_singleton()
         self.write({"picking_id": picking.id, "found_by": found_by})
         blocker = (
@@ -210,7 +178,6 @@ class TelegramDeliverySlip(models.Model):
         filed = not (picking.delivery_proof and picking.delivery_proof_ok)
         if filed:
             self._file_proof(picking, content)
-        # The chatter speaks the company's language, not the sender's.
         company_lang = picking.company_id.partner_id.lang
         picking.with_context(lang=company_lang).message_post(
             body=picking.with_context(lang=company_lang).env._(
@@ -236,8 +203,6 @@ class TelegramDeliverySlip(models.Model):
         try:
             picking.delivery_proof = base64.b64encode(self._proof_image(content))
         except UserError as error:
-            # fields.Image refuses what it cannot decode (HEIC, a PDF that
-            # renders no page): a refusal for the chat, not a failure.
             _logger.info("Undecodable delivery slip %s: %s", self.file_name, error)
             raise SlipRefused(
                 self.env._(
@@ -247,12 +212,6 @@ class TelegramDeliverySlip(models.Model):
             ) from error
 
     def _check_takes_slip(self, picking, blocker) -> None:
-        """Refuse a delivery order that takes no slip from this sender.
-
-        :param recordset picking: the ``stock.picking`` the slip names
-        :param str blocker: why the sender may not mark it delivered, if so
-        :raises SlipRefused: with the reason, for the chat
-        """
         if picking.picking_type_code != "outgoing":
             raise SlipRefused(
                 self.env._("%(picking)s is not a delivery.", picking=picking.name)
@@ -273,8 +232,6 @@ class TelegramDeliverySlip(models.Model):
                     picking=picking.name,
                 )
             )
-        # Valid evidence is replaced by a reviewer only; a second photo is
-        # taken only to mark delivered what its driver could not yet.
         if picking.delivery_proof_ok and (picking.state == "done" or blocker):
             values = {
                 "picking": picking.name,
@@ -300,10 +257,6 @@ class TelegramDeliverySlip(models.Model):
             raise SlipRefused(message)
 
     def _deliver(self, picking) -> str:
-        """Validate ``picking`` as the trip's Delivered button does; why not,
-        or an empty string when it is delivered. A refusal, or a dialog the
-        button opens instead of validating (an approval, a question only Odoo
-        asks), undoes the validation alone: the savepoint restores the ORM."""
         try:
             with self.env.cr.savepoint():
                 picking.action_deliver()
@@ -314,8 +267,6 @@ class TelegramDeliverySlip(models.Model):
                         )
                     )
         except (UserError, RedirectWarning, ValidationError, AccessError) as error:
-            # Every one carries its message first; the action a RedirectWarning
-            # carries has no place in a chat.
             return str(error.args[0] if error.args else error)
         return ""
 
@@ -353,16 +304,6 @@ class TelegramDeliverySlip(models.Model):
         return text
 
     def _done(self, picking, outcome):
-        """The slip is recorded: its paper joins the chat's open batch, for
-        administration to receive.
-
-        Its paper is awaited once. Another chat's slip of the same delivery
-        still in a batch not handed in gives way to this one, whose sender holds
-        the paper now; one already handed in keeps it.
-
-        :return: the ``stock.delivery.slip.receipt`` handed in that already
-            awaits this paper, else an empty recordset
-        """
         Receipt = self.env["stock.delivery.slip.receipt"]
         earlier = self.search(
             [
@@ -394,7 +335,6 @@ class TelegramDeliverySlip(models.Model):
 
     @staticmethod
     def _proof_image(content) -> bytes:
-        """The slip as an image: a PDF's first page, rendered."""
         if content[:5] != b"%PDF-":
             return content
         images = Document(content, name="slip.pdf").images
@@ -410,7 +350,6 @@ class TelegramDeliverySlip(models.Model):
         )
 
     def _checksum_seen(self, content) -> TelegramDeliverySlip:
-        """The slip of this chat already recorded with these same bytes."""
         self.checksum = hashlib.sha1(content).hexdigest()
         return self.search(
             [
@@ -433,7 +372,6 @@ class TelegramDeliverySlip(models.Model):
         }
 
     def action_remove_from_receipt(self) -> None:
-        """Its paper did not arrive: off the batch, still pending to receive."""
         self.filtered(
             lambda slip: slip.receipt_id.state in ("draft", "submitted")
         ).receipt_id = False

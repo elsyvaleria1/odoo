@@ -12,7 +12,6 @@ from .common import HrWorkEntryAttendanceCommon
 @tagged("-at_install", "post_install", "work_entry_attendance")
 class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
     def test_basic_generation(self):
-        # Create an attendance for each afternoon of september
         attendance_vals_list = []
         for i in range(1, 31):
             new_date = datetime(2021, 9, i, 13, 0, 0)
@@ -29,7 +28,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         work_entries = self.env["hr.work.entry"].search(
             [("employee_id", "=", self.employee.id)]
         )
-        # Should not have generated a work entry since no period has been generated yet
         self.assertFalse(work_entries)
         self.contract.generate_work_entries(date(2021, 9, 1), date(2021, 9, 30))
         work_entries = self.env["hr.work.entry"].search(
@@ -39,7 +37,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertTrue(all(hwe.attendance_id for hwe in work_entries))
 
     def test_lunch_time_case(self):
-        # only consider lunch time for non-flexible attendance based contracts
         week_day = datetime(2022, 9, 19, 8, 0, 0)
         weekend = datetime(2022, 9, 18, 8, 0, 0)
         attendances = self.env["hr.attendance"].create(
@@ -57,9 +54,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
             ]
         )
         attendances.action_approve_overtime()
-        # We should have here 3 work entries in total
-        # Sunday -> 08:00 -> 20:00
-        # Monday -> 08:00 -> 12:00 and 13:00 -> 20:00
         self.contract.generate_work_entries(date(2022, 9, 18), date(2022, 9, 19))
         sunday = self.env["hr.work.entry"].search(
             [("employee_id", "=", self.employee.id), ("date", "<", week_day)]
@@ -87,7 +81,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertEqual(monday_attendance_work_entry.date, date(2022, 9, 19))
         self.assertEqual(monday_attendance_work_entry.duration, 8)
 
-        # set flexible hours on the employee contract
         self.contract.resource_calendar_id.schedule_type = "flexible"
         flex_day = datetime(2022, 9, 20, 8, 0, 0)
         attendance = self.env["hr.attendance"].create(
@@ -100,8 +93,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
             ]
         )
         attendance.action_approve_overtime()
-        # We should have here 2 work entries: 8h attendance + 4h overtime
-        # Tuesday -> 08:00 -> 20:00
         self.contract.generate_work_entries(date(2022, 9, 20), date(2022, 9, 21))
         tuesday = self.env["hr.work.entry"].search(
             [("employee_id", "=", self.employee.id), ("date", ">=", flex_day)]
@@ -119,20 +110,16 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertEqual(tuesday_overtime_work_entry.duration, 4)
 
     def test_timezones(self):
-        """Basic check that timezones do not cause weird behaviors:
-        * check that the date range of ``generate_work_entries`` accounts for timezones.
-        * check that times are all stored in utc and are not improperly converted
-        """
         self.employee.version_id.resource_calendar_id.tz = "Asia/Tokyo"
         self.employee.tz = "Asia/Tokyo"
         monday_morning_tokyo = datetime(
             2024, 10, 20, 22, 0, 0
-        )  # 22:00 sunday utc = 7:00 monday tokyo
+        )
         self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,
                 "check_in": monday_morning_tokyo,
-                "check_out": monday_morning_tokyo.replace(day=21, hour=7),  # 16:00
+                "check_out": monday_morning_tokyo.replace(day=21, hour=7),
             }
         )
         self.contract.generate_work_entries(date(2024, 10, 21), date(2024, 10, 21))
@@ -149,7 +136,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertEqual(we.duration, 8)
 
     def test_attendance_within_period(self):
-        # Tests that an attendance created within an already generated period generates a work entry
         boundaries_attendances = self.env["hr.attendance"].create(
             [
                 {
@@ -186,13 +172,8 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
             len(work_entries), len(boundaries_attendances) + len(inner_attendance)
         )
 
-    @freeze_time("2021-09-01")  # to have the timezone in summer time
+    @freeze_time("2021-09-01")
     def test_attendance_spanning_days(self):
-        # Tests that attendances that cross midnight generate work entries
-        # that never cross midnight (entries are date+duration, one per
-        # attendance and day) and that no attended hour is lost: 22:00-06:00
-        # splits into 2h + 6h, and Sep 11 carries one entry per attendance
-        # touching it (6h from the first night, 2h from the second).
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -235,8 +216,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
     def test_unlink(self):
-        # Tests that the work entry is archived when unlinking an attendance
-        # Makes the attendance create a work entry directly
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -257,9 +236,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertFalse(work_entries.active)
 
     def test_reopen_attendance_archives_work_entry(self):
-        # Tests that clearing check_out on a closed attendance (reopening it)
-        # regenerates the day, so the work entry of the old closed span does
-        # not stay active while the attendance is open-ended
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -281,10 +257,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertFalse(work_entries.filtered("active"))
 
     def test_second_attendance_same_day_keeps_first_work_entry(self):
-        # Kiosk flow: morning attendance closed, afternoon attendance created
-        # open and closed later. The afternoon close must not archive the
-        # morning attendance's work entry — the day's active entries must
-        # cover all attended hours.
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -337,7 +309,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
     def test_fully_flexible_working_schedule_work_entries(self):
-        """Test employee with fully flexible working schedule with attendance as work entry source"""
         employee = self.env["hr.employee"].create(
             {
                 "name": "Test",
@@ -379,11 +350,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertEqual(len(result_entries), 3, "Two work entry should be generated")
 
     def test_gto_flexible_calendar(self):
-        """
-        Test when having a public time off and a flexible user has two
-        separate attendances in this day what will be the duration of the
-        holiday work entries.
-        """
         start = datetime(2018, 1, 1, 6, 0, 0)
         end = datetime(2018, 1, 1, 18, 0, 0)
         self.env["resource.schedule.exception"].create(
@@ -431,8 +397,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         time_off_entries = work_entries.filtered(
             lambda entry: entry.code == "LEAVETEST100"
         )
-        # Since we are now merging similar work entries on the same day
-        # we are going to have only one leave entry
         self.assertEqual(len(time_off_entries), 1)
         self.assertEqual(time_off_entries.duration, 8)
         self.assertEqual((work_entries - time_off_entries).duration, 4)
@@ -469,9 +433,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
         self.assertNotEqual(work_entries1, work_entries2)
-        # The first attendance's entry keeps recording its real presence: the
-        # day's active entries must cover all attended hours, not only the
-        # newest attendance's span.
         self.assertTrue(work_entries1.active)
         self.assertEqual(sorted(work_entries2.mapped("duration")), [3.0, 4.0])
 
@@ -506,8 +467,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         self.assertEqual(work_entries2.duration, 8)
 
     def test_writing_attendance_employee_regenerate_work_entry(self):
-        """Reassigning an attendance to a different employee must archive the
-        old employee's work entry and create one for the new employee."""
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -583,16 +542,11 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
         self.assertNotEqual(work_entries1, work_entries2)
-        # Both pre-unlink entries (one per attendance) are archived by the
-        # regeneration, which rebuilds the day from the surviving attendance.
         self.assertFalse(any(work_entries1.mapped("active")))
         self.assertTrue(work_entries2.active)
         self.assertEqual(work_entries2.duration, 3)
 
     def test_fully_flexible_employee_overlapping_leaves(self):
-        """
-        Test Fully Flexible employee with overlapping leaves doesn't cause singleton errors.
-        """
         fully_flexible_emp = self.env["hr.employee"].create(
             {
                 "name": "Flexible Employee",
@@ -627,7 +581,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
             ]
         )
 
-        # This should NOT raise singleton errors
         fully_flexible_emp.generate_work_entries(
             datetime(2025, 6, 25).date(), datetime(2025, 6, 29).date()
         )
@@ -670,15 +623,10 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
             attendance2.linked_overtime_ids,
             "There should be at least one linked overtime line created",
         )
-        # No error should be raised here
         attendance2.linked_overtime_ids[0].with_user(user).action_approve()
         attendance2.linked_overtime_ids[0].with_user(user).action_refuse()
 
     def test_no_overtime_work_entry_when_no_paid_rules(self):
-        """
-        If all rules in the ruleset have paid=False,
-        OVERTIME work entries must NOT be created.
-        """
         ruleset = self.env["hr.attendance.overtime.ruleset"].create(
             {
                 "name": "Unpaid Ruleset",
@@ -717,10 +665,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
     def test_overtime_work_entry_created_when_paid_rule_present(self):
-        """
-        If a ruleset contains a paid rule,
-        OVERTIME work entries SHOULD be generated.
-        """
         ruleset = self.env["hr.attendance.overtime.ruleset"].create(
             {
                 "name": "Paid Ruleset",
@@ -753,7 +697,7 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
         self.assertTrue(overtime, "Overtime line SHOULD be created with paid rule")
         expected_hours = self.employee.resource_calendar_id.hours_per_day
-        expected_overtime = 12 - expected_hours - 1  # lunch hour
+        expected_overtime = 12 - expected_hours - 1
         self.assertEqual(
             overtime.duration,
             expected_overtime,
@@ -776,11 +720,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
     def test_ruleset_excludes_attendance_with_validated_work_entry(self):
-        """
-        hr.attendance.overtime.ruleset._attendances_to_regenerate_for() must
-        exclude attendances whose work entry is already validated, so
-        "Regenerate Overtimes" doesn't touch payslip-locked data.
-        """
         self.contract.write(
             {
                 "date_generated_from": datetime(2021, 9, 1, 0, 0, 0),
@@ -814,13 +753,6 @@ class TestWorkentryAttendance(HrWorkEntryAttendanceCommon):
         )
 
     def test_multiple_overtime_lines_distribution_multiday_attendance(self):
-        """
-        Test that multiple overtime lines are correctly distributed when an attendance
-        spans multiple days, creating multiple overtime lines that need to be distributed
-        across multiple outside-schedule intervals.
-
-        This test should fail when generating work entries if overtime lines overlapped
-        """
 
         ruleset = self.env["hr.attendance.overtime.ruleset"].create(
             {

@@ -32,7 +32,6 @@ class ProductTemplate(models.Model):
         inverse="_inverse_intrastat_origin_country_id",
         readonly=False,
     )
-    # remove in master
     valid_intrastat_code_ids = fields.Many2many(
         comodel_name="account.intrastat.code",
         string="Intrastat Code IDs",
@@ -45,7 +44,6 @@ class ProductTemplate(models.Model):
 
     @api.depends("type")
     def _compute_intrastat_code_domain(self) -> None:
-        """Dynamically compute the domain for intrastat_code_id."""
         country_id = self.env.company.tax_config_id.account_fiscal_country_id.id
         service_codes_available = self.env["account.intrastat.code"].search_count(
             [
@@ -82,7 +80,6 @@ class ProductTemplate(models.Model):
                 variant.intrastat_origin_country_id
             )
 
-    # remove in master
     @api.depends("type")
     def _compute_valid_intrastat_code_ids(self) -> None:
         valid_intrastat_code = dict(
@@ -141,11 +138,9 @@ class ProductProduct(models.Model):
     _inherit = "product.product"
 
     intrastat_code_id = fields.Many2one(comodel_name="account.intrastat.code")
-    # The supplementary unit of the current commodity code
     intrastat_supplementary_unit = fields.Selection(
         related="intrastat_code_id.supplementary_unit"
     )
-    # The ratio of product to the number of supplementary units
     intrastat_supplementary_unit_amount = fields.Float(
         string="Supplementary Units",
         help="The number of supplementary units per product quantity.",
@@ -157,7 +152,6 @@ class ProductProduct(models.Model):
 
     @api.depends("intrastat_supplementary_unit")
     def _compute_intrastat_supplementary_unit_amount(self) -> None:
-        """In the case when the product has no supplementary unit (i.e. we are using weight) the supplementary unit amount is set to 0"""
         for product in self:
             if not product.intrastat_supplementary_unit:
                 product.intrastat_supplementary_unit_amount = 0

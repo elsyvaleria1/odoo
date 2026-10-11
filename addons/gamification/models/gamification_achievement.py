@@ -7,10 +7,6 @@ from odoo.tools.safe_eval import safe_eval
 _logger = logging.getLogger(__name__)
 
 
-# Unlike challenges (which are explicitly assigned), achievements are
-# *discovered* when the user's activity matches a trigger condition.
-# Hidden achievements add a layer of surprise and delight -- Octalysis
-# core drive #7 (Unpredictability & Curiosity).
 class GamificationAchievement(models.Model):
     """Hidden/discovery achievement that users unlock through normal work."""
 
@@ -38,7 +34,6 @@ class GamificationAchievement(models.Model):
         max_height=128,
     )
 
-    # Trigger configuration
     model_id = fields.Many2one(
         comodel_name="ir.model",
         string="Trigger Model",
@@ -68,7 +63,6 @@ class GamificationAchievement(models.Model):
         "Use 1 for simple presence checks, higher for cumulative achievements.",
     )
 
-    # Rewards
     badge_id = fields.Many2one(
         comodel_name="gamification.badge",
         string="Reward Badge",
@@ -95,7 +89,6 @@ class GamificationAchievement(models.Model):
         "until unlocked. Only the hint (if any) is visible.",
     )
 
-    # Tracking
     unlock_ids = fields.One2many(
         comodel_name="gamification.achievement.unlock",
         inverse_name="achievement_id",
@@ -110,12 +103,6 @@ class GamificationAchievement(models.Model):
         self,
         users: models.Model | None = None,
     ) -> models.Model:
-        """Evaluate this achievement's trigger for a set of users.
-
-        :param users: ``res.users`` recordset to check.  If ``None``,
-            checks all active internal users.
-        :return: recordset of newly unlocked ``gamification.achievement.unlock``.
-        """
         self.check_singleton()
         if users is None:
             users = self.env["res.users"].search(
@@ -126,7 +113,6 @@ class GamificationAchievement(models.Model):
             )
 
         Unlock = self.env["gamification.achievement.unlock"]
-        # Find users who already have this achievement
         already_unlocked = Unlock.search(
             [
                 ("achievement_id", "=", self.id),
@@ -138,18 +124,7 @@ class GamificationAchievement(models.Model):
             return Unlock.browse()
 
         Obj = self.env[self.model_id.model].sudo()
-        # safe_eval references 'user' per candidate so each domain is unique —
-        # it cannot be collapsed into a single query.  But the per-user count
-        # only needs to know whether the threshold is *reached*, so it is
-        # capped at ``trigger_count``: for the default ``trigger_count = 1`` the
-        # database stops at the first matching row instead of scanning every
-        # row the user owns (a full COUNT(*) over e.g. account.move.line).  The
-        # unlock creation is batched into one INSERT.
         trigger_count = max(self.trigger_count, 1)
-        # Users whose evaluated domain is identical share one query.  A trigger
-        # that does not mention `user`, or keys on something coarse like the
-        # company, collapses to a single search_count for the whole population
-        # instead of one per candidate.
         by_domain: dict[str, tuple[list, list]] = {}
         for user in candidates:
             domain = safe_eval(self.trigger_domain, {"user": user})
@@ -157,7 +132,7 @@ class GamificationAchievement(models.Model):
 
         unlock_vals = []
         for domain, domain_users in by_domain.values():
-            if Obj.search_count(domain, limit=trigger_count) < trigger_count:  # noqa: E8507 - one query per distinct domain; users sharing one were merged above
+            if Obj.search_count(domain, limit=trigger_count) < trigger_count:
                 continue
             for user in domain_users:
                 unlock_vals.append(
@@ -176,24 +151,11 @@ class GamificationAchievement(models.Model):
 
     @api.model
     def _cron_check_achievements(self) -> None:
-        """Daily cron: evaluate all active achievements for all users.
-
-        Processes each achievement and grants rewards for new unlocks.
-        """
         achievements = self.search([("active", "=", True)])
-        # One user search for the whole run.  `_check_achievement_for_users`
-        # defaults to searching them itself, which put a full res.users scan
-        # inside the per-achievement loop.
         users = self.env["res.users"].search(
             [("active", "=", True), ("share", "=", False)]
         )
         for achievement in achievements:
-            # Isolate each achievement in a savepoint.  A single malformed
-            # ``trigger_domain`` (bad syntax, or a field dropped by a module
-            # upgrade) otherwise raised out of the cron, rolling back every
-            # achievement already processed in this run.  Because ``_order`` is
-            # stable, the same poison record blocked the same achievements on
-            # every subsequent night, silently and indefinitely.
             try:
                 with self.env.cr.savepoint():
                     new_unlocks = achievement._check_achievement_for_users(users)
@@ -239,7 +201,6 @@ class GamificationAchievementUnlock(models.Model):
         readonly=True,
     )
 
-    # Denormalized for display
     rarity = fields.Selection(
         related="achievement_id.rarity",
         readonly=True,
@@ -256,24 +217,10 @@ class GamificationAchievementUnlock(models.Model):
     )
 
     def _grant_rewards(self) -> None:
-        """Grant badge and karma rewards for a batch of unlocks.
-
-        Karma is granted through ``_add_karma_batch`` and badges through a
-        single ``create`` per achievement, instead of one INSERT +
-        ``_compute_karma`` + ``_recompute_rank`` cycle per unlock.  With the
-        daily cron unlocking many users at once this is the difference between
-        O(unlocks) and O(distinct achievements) write cycles.
-        """
         Users = self.env["res.users"].sudo()
         BadgeUser = self.env["gamification.badge.user"].sudo()
         Activity = self.env["gamification.activity"]
 
-        # Group by achievement: karma source/reason and the badge differ per
-        # achievement, and within one achievement the (user, achievement)
-        # unique index guarantees users are distinct, so a per-user dict cannot
-        # collide.  Karma and badges are batched (one write cycle per
-        # achievement instead of per unlock); the bus notification and activity
-        # log stay per user because each targets that user's own feed.
         badge_vals = []
         for achievement, unlocks in self.grouped("achievement_id").items():
             if achievement.karma_reward:

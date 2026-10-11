@@ -47,7 +47,6 @@ class TestAiFieldsAccess(TransactionCase):
         return patch.object(LLMApiService, "_get_api_token", _mock_get_api_token)
 
     def test_ai_field_access_properties(self):
-        """Test that only the template editor can use expressions that are not in the allowed expressions list."""
 
         def _mocked_llm_api_request(self, method, endpoint, headers, body):
             return {
@@ -59,7 +58,6 @@ class TestAiFieldsAccess(TransactionCase):
                 ]
             }
 
-        # allowed field
         self.record.with_user(self.internal).write(
             {
                 "properties": [
@@ -96,7 +94,6 @@ class TestAiFieldsAccess(TransactionCase):
                 1337,
             )
 
-        # not allowed field
         with self.assertRaises(AccessError):
             self.record.with_user(self.internal).write(
                 {
@@ -140,7 +137,6 @@ class TestAiFieldsAccess(TransactionCase):
             )
 
         with self.assertRaises(AccessError):
-            # Try to write forbidden expression on ai = False properties
             self.parent.with_user(self.internal).write(
                 {
                     "properties_definition": [
@@ -180,7 +176,6 @@ class TestAiFieldsAccess(TransactionCase):
             }
         )
 
-        # Should allow `test_ai_fields` because it's whitelisted
         self.env["test.ai.fields.definition"].with_user(self.internal).create(
             {
                 "properties_definition": [
@@ -194,7 +189,6 @@ class TestAiFieldsAccess(TransactionCase):
             }
         )
 
-        # not allowed record
         no_access_record = self.env["test.ai.fields.model"].create({})
         rule = self.env["ir.access"].create(
             {
@@ -222,7 +216,6 @@ class TestAiFieldsAccess(TransactionCase):
                 }
             )
 
-        # allowed record
         rule.unlink()
         self.record.with_user(self.internal).write(
             {
@@ -254,7 +247,6 @@ class TestAiFieldsAccess(TransactionCase):
             [{"name": f"partner {i}"} for i in range(4)]
         )
 
-        # Simulate that we removed the record we inserted in the prompt
         id_removed = self.env["res.partner"].search([], order="id DESC", limit=1).id + 1
         description = [
             '<span data-ai-record-id="%s">Description</span>' % r
@@ -282,7 +274,6 @@ class TestAiFieldsAccess(TransactionCase):
         )
         self.env.flush_all()
 
-        # Ensure that we don't parse the rendered prompt
         self.record.name = (
             '<span data-ai-record-id="%s">Description</span>' % records[3].id
         )
@@ -297,7 +288,6 @@ class TestAiFieldsAccess(TransactionCase):
                 {"id": records[0].id, "display_name": records[0].display_name},
             )
 
-        # The record doesn't exist but is in the prompt
         response = id_removed
         with (
             patch.object(LLMApiService, "_request", _mocked_llm_api_request),
@@ -307,7 +297,6 @@ class TestAiFieldsAccess(TransactionCase):
                 self.record.get_ai_property_value("properties.many2one", None)
             )
 
-        # The record exists but is not in the prompt
         response = records[3].id
         with (
             patch.object(LLMApiService, "_request", _mocked_llm_api_request),
@@ -317,14 +306,12 @@ class TestAiFieldsAccess(TransactionCase):
                 self.record.get_ai_property_value("properties.many2one", None)
             )
 
-        # Test missing model
         self.record.write(
             {
                 "properties": [
                     {
                         "type": "many2one",
                         "name": "many2one",
-                        # comodel is missing
                         "definition_changed": True,
                         "ai": True,
                         "system_prompt": system_prompt,
@@ -356,12 +343,10 @@ class TestAiFieldsAccess(TransactionCase):
             [{"name": f"partner {i}"} for i in range(5)]
         )
 
-        # Ensure that we don't parse the rendered prompt
         self.record.name = (
             '<span data-ai-record-id="%s">Description</span>' % records[3].id
         )
 
-        # Simulate that we removed the record we inserted in the prompt
         id_removed = self.env["res.partner"].search([], order="id DESC", limit=1).id + 1
         description = [
             '<span data-ai-record-id="%s">Description</span>' % r
@@ -389,7 +374,6 @@ class TestAiFieldsAccess(TransactionCase):
         )
         self.env.flush_all()
 
-        # Ensure that we don't parse the rendered prompt
         self.record.name = (
             '<span data-ai-record-id="%s">Description</span>' % records[3].id
         )
@@ -407,14 +391,12 @@ class TestAiFieldsAccess(TransactionCase):
                 ],
             )
 
-        # Test missing model
         self.record.write(
             {
                 "properties": [
                     {
                         "type": "many2many",
                         "name": "many2many",
-                        # comodel is missing
                         "definition_changed": True,
                         "ai": True,
                         "system_prompt": system_prompt,
@@ -475,14 +457,12 @@ class TestAiFieldsAccess(TransactionCase):
                 ["a", "b", "c"],
             )
 
-        # Test missing tags
         self.record.write(
             {
                 "properties": [
                     {
                         "type": "tags",
                         "name": "tags",
-                        # tags is missing
                         "definition_changed": True,
                         "ai": True,
                         "system_prompt": "Good prompt",
@@ -502,7 +482,6 @@ class TestAiFieldsAccess(TransactionCase):
         )
 
     def test_get_ai_property_value_new_record(self):
-        """Test `get_ai_property_value` when the record does not exist."""
 
         def _mocked_llm_api_request(self, method, endpoint, headers, body):
             return {
@@ -537,16 +516,13 @@ class TestAiFieldsAccess(TransactionCase):
             patch.object(LLMApiService, "_request", _mocked_llm_api_request),
             self._mock_llm_api_get_token(),
         ):
-            # we just make sure no error is raised, as `get_ai_property_values` creates a new record (we don't have its id)
             self.env["test.ai.fields.model"].new().get_ai_property_value(
                 "properties.char", values
             )
 
     def test_ai_field_many2one_insert_first_records(self):
-        """Test that we take the most used records."""
         valid_value_1, valid_value_2, invalid_value = self.env["res.partner"].create(
             [
-                # check if the name is added in the prompt
                 {"name": 'valid <span data-ai-field="name">name</span>'},
                 {"name": "valid"},
                 {"name": "invalid"},
@@ -564,7 +540,7 @@ class TestAiFieldsAccess(TransactionCase):
                 "domain": [["id", "!=", invalid_value.id]],
             }
         )
-        self.record.name = "name added"  # should not be added in prompt
+        self.record.name = "name added"
 
         result = self.record.ai_find_default_records(
             "res.partner", [["id", "!=", invalid_value.id]], "x_ai_many2one"
@@ -573,7 +549,6 @@ class TestAiFieldsAccess(TransactionCase):
         self.assertIn(valid_value_1, result)
         self.assertIn(valid_value_2, result)
 
-        # Check that the most used records are inserted
         self.env["ir.config_parameter"].sudo().set_param(
             "ai_field.insert_x_first_records", "3"
         )
@@ -615,7 +590,6 @@ class TestAiFieldsAccess(TransactionCase):
         for record in most_used_records:
             self.assertIn(record, result)
 
-        # Now we increased the limit, it should take unused records
         self.env["ir.config_parameter"].sudo().set_param(
             "ai_field.insert_x_first_records", "3000"
         )
@@ -627,7 +601,6 @@ class TestAiFieldsAccess(TransactionCase):
             self.assertIn(record, result)
 
     def test_ai_field_many2one_properties_insert_first_records(self):
-        """Test that we take the most used records."""
         self.env["ir.config_parameter"].sudo().set_param(
             "ai_field.insert_x_first_records", "3000"
         )
@@ -720,7 +693,6 @@ class TestAiFieldsAccess(TransactionCase):
         for record in most_used_records:
             self.assertIn(record, result)
 
-        # If we increase the limit, use all records
         self.env["ir.config_parameter"].sudo().set_param(
             "ai_field.insert_x_first_records", "3000"
         )

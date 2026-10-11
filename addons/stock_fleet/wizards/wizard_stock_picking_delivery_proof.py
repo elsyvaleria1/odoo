@@ -29,9 +29,6 @@ class WizardStockPickingDeliveryProof(models.TransientModel):
         self.check_singleton()
         picking = self.picking_id
         picking.delivery_proof = self.delivery_proof
-        # Only the Delivered button is resumed: it delivers the whole transfer.
-        # Any other validation carried quantities or a context of its own, lost
-        # with the refusal, and is repeated by whoever asked for it.
         result = picking.action_deliver() if self.resume == "deliver" else None
         if isinstance(result, dict):
             return result

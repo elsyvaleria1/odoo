@@ -16,32 +16,18 @@ class PaymentToken(models.Model):
     stripe_mandate = fields.Char(readonly=True)
 
     def _stripe_sca_migrate_customer(self) -> None:
-        """Migrate a token from the old implementation of Stripe to the SCA-compliant one.
-
-        In the old implementation, it was possible to create a Charge by giving only the customer id
-        and let Stripe use the default source (= default payment method). Stripe now requires to
-        specify the payment method for each new PaymentIntent. To do so, we fetch the payment method
-        associated to a customer and save its id on the token.
-        This migration happens once per token created with the old implementation.
-
-        Note: self.check_singleton()
-
-        :return: None
-        """
         self.check_singleton()
 
-        # Fetch the available payment method of type 'card' for the given customer
         response_content = self.provider_id._send_api_request(
             "GET",
             "payment_methods",
             data={
                 "customer": self.provider_ref,
                 "type": "card",
-                "limit": 1,  # A new customer is created for each new token. Never > 1 card.
+                "limit": 1,
             },
         )
 
-        # Store the payment method ID on the token
         payment_methods = response_content.get("data", [])
         payment_method_id = payment_methods and payment_methods[0].get("id")
         if not payment_method_id:

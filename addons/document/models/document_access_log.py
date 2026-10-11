@@ -79,8 +79,6 @@ class DocumentsAccessLog(models.Model):
             rows=self.env.cr.rowcount,
             window=window,
         )
-        # the rows were written in SQL: what the documents cached of their
-        # visits is stale
         documents.invalidate_recordset(["access_log_ids"])
 
     @api.model
@@ -95,8 +93,6 @@ class DocumentsAccessLog(models.Model):
         if retention_days <= 0:
             return 0, False
         limit = 10000
-        # a log with no dependents and no hooks, written in SQL by _log: its
-        # rows go the same way, a batch in one statement
         self.env.cr.execute(
             SQL(
                 """DELETE FROM document_access_log

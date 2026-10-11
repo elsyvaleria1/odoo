@@ -158,9 +158,6 @@ class TestRoomFrontend(RoomCommon, HttpCase):
         self.assertEqual(booking.appointment_type_id, self.room_type)
 
     def test_the_booking_bundle_does_not_inline_web_core_again(self):
-        # room.assets_room_booking is a secondary of the frontend family: the
-        # session module the minimal and lazy halves carry is stubbed to their
-        # loader, not compiled into the booking bundle a second time
         self.authenticate(None, None)
         html = self.url_open(f"/room/{self.resources[0].short_code}/book").text
         scripts = [

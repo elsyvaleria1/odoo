@@ -39,7 +39,7 @@ class MixinResource(models.AbstractModel):
         readonly=False,
         help="The time zone where this resource works. Its working schedule is read in this zone: an 08:00-17:00 schedule means 08:00-17:00 here, whatever zone the schedule names. For an employee deployed away from the corporate office, set the zone of the place of work.",
     )
-    company_id = fields.Many2one(  # noqa: E8529  multi-company key of hr.employee: UNIQUE (user_id, company_id) and two more on hr_employee, and the raw SQL that joins it
+    company_id = fields.Many2one(
         comodel_name="res.company",
         related="resource_id.company_id",
         string="Company",
@@ -62,8 +62,6 @@ class MixinResource(models.AbstractModel):
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         vals_list = [self._normalize_calendar_vals(vals) for vals in vals_list]
-        # The slot is created and written as the system: whoever may create
-        # the owner may give it its resource.
         self._check_resource_ownership(
             [vals["resource_id"] for vals in vals_list if vals.get("resource_id")]
         )
@@ -72,8 +70,6 @@ class MixinResource(models.AbstractModel):
         for vals in vals_list:
             if not vals.get("resource_id"):
                 prepared = self._prepare_resource_values(vals, vals.pop("tz", False))
-                # what the host decides wins over the rest of what it is handed,
-                # and a host's resource is always of the host's type
                 resource_vals = self._pop_delegated_resource_vals(vals) | prepared
                 resource_vals["type"] = self._resource_type
                 resources_vals_list.append(resource_vals)
@@ -143,7 +139,6 @@ class MixinResource(models.AbstractModel):
             else self.env["resource.resource"]
         )
         result = super().unlink()
-        # a table-inheritance root runs this once more for each subtype
         owned.exists().unlink()
         return result
 
@@ -156,12 +151,6 @@ class MixinResource(models.AbstractModel):
         super()._unlink_inherits_shared_parents(parents)
 
     def _pop_delegated_resource_vals(self, vals: ValuesType) -> ValuesType:
-        """The resource fields a host that delegates to its resource is given.
-
-        A host that delegates to its resource is handed the resource's fields
-        by name; the resource it is born with takes those the host does not
-        decide itself, and never a type other than the host's.
-        """
         if self._inherits.get("resource.resource") != "resource_id":
             return {}
         delegated = {
@@ -181,10 +170,6 @@ class MixinResource(models.AbstractModel):
         )
 
     def _check_resource_ownership(self, resource_ids, *, exclude_ids=()):
-        """One owning host per resource, including inherited and archived rows.
-
-        Referencing hosts deliberately share the identity and claim no owner.
-        """
         if not resource_ids:
             return
         if self._resource_owns and len(resource_ids) != len(set(resource_ids)):
@@ -219,7 +204,7 @@ class MixinResource(models.AbstractModel):
         namespace = self._get_root_model_name()
         for owner_model in self._resource_owner_models():
             owners = self.env[owner_model].sudo().with_context(active_test=False)
-            if owners.search_count(  # noqa: E8507  one query per owner model, not per resource
+            if owners.search_count(
                 [
                     ("resource_id", "in", resource_ids),
                     ("id", "not in", exclude_ids if owner_model == namespace else ()),
@@ -247,8 +232,6 @@ class MixinResource(models.AbstractModel):
             for vals in vals_list:
                 vals.pop("resource_id", None)
             return vals_list
-        # copied as the system, as create makes it: whoever may copy the owner
-        # may give the copy its resource
         resources_to_copy = self._get_resource_model_as_system().concat(
             *(record.resource_id for record in self)
         )
@@ -298,7 +281,7 @@ class MixinResource(models.AbstractModel):
                 record.resource_id
             )
 
-        for calendar, calendar_resources in mapped_resources.items():  # noqa: PLR1704  the parameter's value is consumed above; the loop reuses the name on purpose
+        for calendar, calendar_resources in mapped_resources.items():
             attendances = calendar._attendance_intervals_batch(
                 from_datetime, to_datetime, calendar_resources
             )
@@ -335,7 +318,7 @@ class MixinResource(models.AbstractModel):
             for record in self:
                 mapped_resources[calendar_by_resource[record.id]] |= record.resource_id
 
-        for calendar, calendar_resources in mapped_resources.items():  # noqa: PLR1704  the parameter's value is consumed above; the loop reuses the name on purpose
+        for calendar, calendar_resources in mapped_resources.items():
             if compute_leaves:
                 intervals = calendar._work_intervals_batch(
                     from_datetime, to_datetime, calendar_resources, domain
@@ -368,7 +351,7 @@ class MixinResource(models.AbstractModel):
         for record in self:
             records_by_calendar[calendar or calendar_by_record[record.id]] += record
 
-        for calendar, records in records_by_calendar.items():  # noqa: PLR1704  the parameter's value is consumed above; the loop reuses the name on purpose
+        for calendar, records in records_by_calendar.items():
             resources = records.resource_id
             all_intervals = calendar._work_intervals_batch(
                 from_datetime,

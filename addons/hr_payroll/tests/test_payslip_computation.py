@@ -22,7 +22,7 @@ class TestPayslipComputation(TestPayslipContractBase):
             {
                 "name": "Payslip of Richard",
                 "employee_id": cls.richard_emp.id,
-                "version_id": cls.contract_cdi.id,  # wage = 5000 => average/day (over 3months/13weeks): 230.77
+                "version_id": cls.contract_cdi.id,
                 "struct_id": cls.developer_pay_structure.id,
                 "date_from": date(2016, 1, 1),
                 "date_to": date(2016, 1, 31),
@@ -40,8 +40,6 @@ class TestPayslipComputation(TestPayslipContractBase):
                 "date_to": date(2016, 3, 31),
             }
         )
-        # To avoid having is_paid = False in some tests, as all the records are created on the
-        # same transaction which is quite unlikely supposed to happen in real conditions
         worked_days = (
             cls.richard_payslip + cls.richard_payslip_quarter
         ).worked_days_line_ids
@@ -49,7 +47,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         worked_days.flush_model(["is_paid"])
 
     def _reset_work_entries(self, contract):
-        # Use hr.leave to automatically regenerate work entries for absences
         self.env["hr.work.entry"].search(
             [("employee_id", "=", contract.employee_id.id)]
         ).unlink()
@@ -89,8 +86,6 @@ class TestPayslipComputation(TestPayslipContractBase):
             date(2016, 1, 1), date(2016, 2, 1)
         )
         self.richard_payslip._compute_worked_days_line_ids()
-        # TBE: In master the Monetary field were not rounded because the currency_id wasn't computed yet.
-        # The test was incorrect using the value 238.09, with 238.11 it is ok
         self.assertAlmostEqual(
             self.richard_payslip._get_unpaid_amount(),
             238.11,
@@ -179,7 +174,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.contract_cdi.resource_calendar_id = self.calendar_38h
         self.richard_emp.resource_calendar_id = self.calendar_38h
 
-        # Create 2 hours upaid leave every day during 2 weeks
         for day in rrule(
             freq=DAILY,
             byweekday=[0, 1, 2, 3, 4],
@@ -224,7 +218,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.contract_cdi.resource_calendar_id = self.calendar_16h
         self.richard_emp.resource_calendar_id = self.calendar_16h
 
-        # Create 2 hours upaid leave every Thursday Evening during 5 weeks
         for day in rrule(
             freq=DAILY, byweekday=3, count=5, dtstart=datetime(2016, 2, 4)
         ):
@@ -266,7 +259,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.contract_cdi.resource_calendar_id = self.calendar_38h_friday_light
         self.richard_emp.resource_calendar_id = self.calendar_38h_friday_light
 
-        # Create 4 hours (all work day) upaid leave every Friday during 5 weeks
         for day in rrule(
             freq=DAILY, byweekday=4, count=5, dtstart=datetime(2016, 2, 4)
         ):
@@ -325,7 +317,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
     def test_payslip_generation_with_extra_work(self):
-        # /!\ this is in the weekend (Sunday) => no calendar attendance at this time
         start = datetime(2015, 11, 1, 10, 0, 0)
         end = datetime(2015, 11, 1, 17, 0, 0)
         work_entries = self.contract_cdd.generate_work_entries(
@@ -364,7 +355,7 @@ class TestPayslipComputation(TestPayslipContractBase):
                 l.work_entry_type_id
                 == self.env.ref("hr_work_entry.work_entry_type_attendance")
             )
-        )  # From default calendar.attendance
+        )
         extra_work_line = payslip.worked_days_line_ids.filtered(
             lambda l: l.work_entry_type_id == self.work_entry_type
         )
@@ -375,13 +366,12 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
         self.assertEqual(
             work_line.number_of_hours, 8.0, "It should have 8 hours of work"
-        )  # Monday
+        )
         self.assertEqual(
             extra_work_line.number_of_hours, 7.0, "It should have 7 hours of extra work"
-        )  # Sunday
+        )
 
     def test_payslip_generation_with_overtime_work_rate(self):
-        """Test the computation of overtime amount in the payslip as per rate."""
         self.env["hr.work.entry"].create(
             self.env["hr.version"]._generate_work_entries_postprocess(
                 [
@@ -422,19 +412,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
     def test_work_data_with_exceeding_interval(self):
-        # The start and stop dates for these entries are stored in UTC.
-        # Note that the contract for these entries is for a Europe/Brussels
-        # timezone calendar.
-        # Also, note that since these entries are being made for December
-        # dates, the offset will only be +1 between UTC and Europe/Brussels,
-        # instead of +2, normally.
-        #
-        # Finally, we must test the boundaries of the payslip one at a time
-        # to ensure that the datetimes are converted correctly to their
-        # local timezones when computing the durations within the bounds
-        # of the payslip. If we tested both on the payslip at the same time,
-        # the timezone difference would shift them both by an equal amount,
-        # effectively keeping the valid durations the same.
         entry_exceeding_lower_bound = self.env["hr.work.entry"].create(
             self.env["hr.version"]._generate_work_entries_postprocess(
                 [
@@ -445,8 +422,8 @@ class TestPayslipComputation(TestPayslipContractBase):
                         "work_entry_type_id": self.env.ref(
                             "hr_work_entry.work_entry_type_attendance"
                         ).id,
-                        "date_start": datetime(2015, 12, 12, 18, 0),  # 19:00 local time
-                        "date_stop": datetime(2015, 12, 13, 2, 0),  # 03:00 local time
+                        "date_start": datetime(2015, 12, 12, 18, 0),
+                        "date_stop": datetime(2015, 12, 13, 2, 0),
                     }
                 ]
             )
@@ -459,7 +436,6 @@ class TestPayslipComputation(TestPayslipContractBase):
             for k, v in hours.items()
             if k in self.env.ref("hr_work_entry.work_entry_type_attendance").ids
         )
-        # 3 hours after the lower bound
         self.assertAlmostEqual(
             sum_hours, 3, delta=0.01, msg="It should count 3 attendance hours"
         )
@@ -473,8 +449,8 @@ class TestPayslipComputation(TestPayslipContractBase):
                         "work_entry_type_id": self.env.ref(
                             "hr_work_entry.work_entry_type_attendance"
                         ).id,
-                        "date_start": datetime(2015, 12, 14, 18, 0),  # 19:00 local time
-                        "date_stop": datetime(2015, 12, 15, 2, 0),  # 03:00 local time
+                        "date_start": datetime(2015, 12, 14, 18, 0),
+                        "date_stop": datetime(2015, 12, 15, 2, 0),
                     }
                 ]
             )
@@ -487,7 +463,6 @@ class TestPayslipComputation(TestPayslipContractBase):
             for k, v in hours.items()
             if k in self.env.ref("hr_work_entry.work_entry_type_attendance").ids
         )
-        # 5 hours before the upper bound
         self.assertAlmostEqual(
             sum_hours, 5, delta=0.01, msg="It should count 5 attendance hours"
         )
@@ -511,7 +486,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.assertEqual(payslip.net_wage, 0, "It should have a default wage of 0")
 
     def test_payslip_with_salary_attachment(self):
-        # Create multiple salary attachments, some running, some closed
         self.env["hr.salary.attachment"].create(
             [
                 {
@@ -799,7 +773,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         with Form(payslip) as payslip_form:
             payslip_form.input_line_ids.remove(
                 0
-            )  # remove merged input of attachments and use 2 inputs instead
+            )
             with payslip_form.input_line_ids.new() as line:
                 line.input_type_id = self.env.ref("hr_payroll.input_assignment_salary")
                 line.amount = 100
@@ -816,8 +790,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
     def test_defaultdict_get(self):
-        # defaultdict.get(key) returns None if the key doesn't exist instead of default factory value
-        # which could lead to a traceback
         self.developer_pay_structure.rule_ids.filtered(
             lambda r: r.code == "NET"
         ).amount_python_compute = "result = categories['BASIC'] + categories['ALW'] + categories['DED'] + categories.get('TEST')"
@@ -846,7 +818,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         payslip_form = Form(payslip)
         payslip_form.date_from = date(
             2016, 1, 16
-        )  # setting any other date reset the end date
+        )
         self.assertFalse(payslip_form.issues)
 
     def test_payslip_state_effect_on_work_entries(self):
@@ -860,7 +832,6 @@ class TestPayslipComputation(TestPayslipContractBase):
                 "duration": 1,
             }
         )
-        # Validated work entries linked to a payslip can be edited
         self.assertEqual(richard_work_entry.state, "draft")
         self.assertFalse(richard_work_entry.has_payslip, False)
         self.richard_payslip.action_payslip_done()
@@ -919,7 +890,7 @@ class TestPayslipComputation(TestPayslipContractBase):
         payslips = self.env["hr.payslip"].create(
             [
                 {
-                    "name": "February",  # Before contract
+                    "name": "February",
                     "employee_id": self.richard_emp.id,
                     "version_id": self.contract_cdi.id,
                     "struct_id": self.developer_pay_structure.id,
@@ -927,7 +898,7 @@ class TestPayslipComputation(TestPayslipContractBase):
                     "date_to": date(2025, 2, 28),
                 },
                 {
-                    "name": "June",  # Partial overlap
+                    "name": "June",
                     "employee_id": self.richard_emp.id,
                     "version_id": self.contract_cdi.id,
                     "struct_id": self.developer_pay_structure.id,
@@ -935,7 +906,7 @@ class TestPayslipComputation(TestPayslipContractBase):
                     "date_to": date(2025, 6, 30),
                 },
                 {
-                    "name": "November",  # After contract
+                    "name": "November",
                     "employee_id": self.richard_emp.id,
                     "version_id": self.contract_cdi.id,
                     "struct_id": self.developer_pay_structure.id,
@@ -1003,9 +974,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.assertAlmostEqual(out_line.number_of_hours, 56.0, places=2)
 
     def test_worked_days_name_with_detached_lines(self):
-        # Onchange scenario: the payslip is a new record, so resetting its
-        # worked days lines detaches the previous ones instead of dropping
-        # them, and the name of both sets is recomputed in a single batch.
         payslip = self.env["hr.payslip"].new(
             {
                 "employee_id": self.richard_emp.id,
@@ -1026,8 +994,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
         self.assertFalse(detached.payslip_id, "The previous lines should be detached")
 
-        # Reading the name used to raise "Expected singleton: hr.payslip()":
-        # the detached lines share the recompute batch with the new ones.
         self.assertTrue(all(lines.mapped("name")))
         self.assertEqual(
             detached.mapped("name"),
@@ -1036,7 +1002,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         )
 
     def test_rule_without_category(self):
-        """A purely intermediate rule needs no category to be computed."""
         bonus_rule = self.env["hr.salary.rule"].create(
             {
                 "name": "Special Bonus",
@@ -1067,9 +1032,6 @@ class TestPayslipComputation(TestPayslipContractBase):
         self.assertFalse(bonus_line.category_id)
 
     def test_rule_without_category_with_several_inputs_of_one_type(self):
-        """The multi-input branch sums categories too, and upstream left that
-        call unguarded: an uncategorised rule driven by two input lines of the
-        same type would raise `Expected singleton` there."""
         input_type = self.env["hr.payslip.input.type"].create(
             {"name": "Uncategorised Bonus", "code": "UNCAT"}
         )

@@ -13,12 +13,10 @@ def _auto_install_apps(env) -> None:
                 "name",
                 "in",
                 [
-                    # Community
                     "hr",
                     "mass_mailing",
                     "project",
                     "survey",
-                    # Enterprise
                     "appointment",
                     "knowledge",
                     "planning",

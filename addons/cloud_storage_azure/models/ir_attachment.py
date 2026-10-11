@@ -12,26 +12,12 @@ from ..utils.cloud_storage_azure_utils import (
     generate_blob_sas,
 )
 
-CloudStorageAzureUserDelegationKeys = {}  # {db_name: (config, user_delegation_key or exception)}
+CloudStorageAzureUserDelegationKeys = {}
 
 
 def acquire_cloud_storage_azure_user_delegation_key(
     env: api.Environment,
 ) -> UserDelegationKey:
-    """
-    Generate a UserDelegationKey used for generating SAS tokens.
-
-    The cached UserDelegationKey is refreshed every 6 days. If the account
-    information expires, a ClientAuthenticationError will also be cached to
-    prevent the server from repeatedly sending requests to the cloud
-    storage provider to get the user delegation key. The cached
-    values are not invalidated when the ORM cache is invalidated. To
-    invalidate these cached values, you must update the cloud storage
-    configuration or the cloud_storage_azure_user_delegation_key_sequence.
-
-    :return: A valid and unexpired UserDelegationKey which is compatible
-            with azure.storage.blob.UserDelegationKey
-    """
     cached_config, cached_user_delegation_key = CloudStorageAzureUserDelegationKeys.get(
         env.registry.db_name, (None, None)
     )
@@ -74,7 +60,6 @@ def acquire_cloud_storage_azure_user_delegation_key(
 
 class IrAttachment(models.Model):
     _inherit = "ir.attachment"
-    # https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules#microsoftstorage
     _cloud_storage_azure_url_pattern = re.compile(
         r"^https://(?P<account_name>[a-z\d]{3,24})\.blob\.core\.windows\.net/(?P<container_name>[a-z\d][a-z\d-]{2,62})/(?P<blob_name>[^?]+)$",
     )
@@ -106,7 +91,6 @@ class IrAttachment(models.Model):
         )
         return f"{self._generate_cloud_storage_azure_url(kwargs['blob_name'])}?{token}"
 
-    # OVERRIDES
     def _generate_cloud_storage_url(self):
         if (
             self.env.registry.settings.get(self.env, "cloud_storage_provider", False)

@@ -11,9 +11,6 @@ from .credit_utils import CreditRefused
 
 _debug = DebugLog(__name__)
 
-# Conditions whose `approve` verdict is answered by an approval request of
-# approval_sale; the excess over the credit limit stays with the credit
-# manager's authorization wizard.
 APPROVAL_ROUTE_CONDITIONS = frozenset(
     {
         "state_is",
@@ -232,8 +229,6 @@ class SaleOrder(models.Model):
         )
 
     def _check_before_approval(self, verb):
-        # the credit check refuses before the order's approval is asked, as it
-        # did when this override sat above approval_sale's
         if verb == "confirm":
             self._check_credit_before_confirm()
         super()._check_before_approval(verb)

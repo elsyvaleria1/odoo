@@ -123,14 +123,7 @@ class HrEmployee(models.Model):
     @api.depends_context("uid")
     def _compute_can_request_appraisal(self) -> None:
         children_ids = self.env.user.get_employee_autocomplete_ids().ids
-        # Assign on `self`, not on `self.sudo()`. The cache key of a
-        # `depends_context('uid')` field without `compute_sudo` is `(uid, su)`
-        # (`core/odoo/orm/runtime/environment.py:486-493`), so assigning inside
-        # a sudo env fills a slot the caller never reads. Nothing here needs
-        # sudo: the loop only reads `id`.
         for employee in self:
-            # Since this function is used in both private and public employees, to check if an employee is in the list
-            # we need to check by their id, which is the same in corresponding private and public employees.
             employee.can_request_appraisal = employee.id in children_ids
 
     @api.constrains("next_appraisal_date")
@@ -255,7 +248,6 @@ class HrEmployee(models.Model):
                 starting_date = employee.last_appraisal_id.date_close
 
             if starting_date:
-                # In case proposed next_appraisal_date is in the past, start counting from now
                 starting_date = (
                     starting_date.date()
                     if isinstance(starting_date, datetime.datetime)
@@ -288,9 +280,6 @@ class HrEmployee(models.Model):
 
     def action_view_employee_appraisals(self):
         self.check_singleton()
-        # Branch on what this reader can actually see. `appraisal_count` is a
-        # stored compute, so it is rule-blind and can disagree with the
-        # access-filtered One2many.
         if len(self.appraisal_ids) == 1:
             return {
                 "res_model": "hr.appraisal",
@@ -299,7 +288,6 @@ class HrEmployee(models.Model):
                 "target": "current",
                 "res_id": self.appraisal_ids[0].id,
             }
-        # Reuse the action in hr.appraisal to open the employee's previous appraisals
         return self.appraisal_ids[:1].action_view_employee_appraisals()
 
     @api.ondelete(at_uninstall=False)
@@ -314,14 +302,6 @@ class HrEmployee(models.Model):
                 )
             )
 
-    # The next appraisal date is HR data that a manager may also see, for
-    # their own reports and nobody else's: a per-record access domain, which field
-    # groups alone cannot express. The raw field stays behind hr.group_hr_user
-    # and this accessible twin serves everyone else — real value inside the
-    # manager's subtree, False outside it, searches confined to the subtree.
-    # Two fields, two cache slots: a privileged read can never leak the raw
-    # value through a cache the restricted reader shares, nor the mask poison
-    # the value a privileged reader sees.
     def _appraisal_manager_scope(self):
         if self.env.su or self.env.user.has_group("hr.group_hr_user"):
             return None

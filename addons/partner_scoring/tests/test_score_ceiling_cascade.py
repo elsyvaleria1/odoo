@@ -125,8 +125,6 @@ class TestScoreCeilingCascade(TransactionCase):
         self.assertIn(f"partner_attr:{other.id}:none", keys)
 
     def test_the_ceiling_ignores_the_callers_active_test(self):
-        """An archived-partners list recomputing one partner must not widen
-        everybody's denominator: the ceiling is the catalog's, not the caller's."""
         spare = self.Value.create(
             {
                 "name": "Archived Spare",
@@ -136,9 +134,6 @@ class TestScoreCeilingCascade(TransactionCase):
         )
         spare.action_archive()
         as_default = self.Partner._get_score_max_points()
-        # Nothing may be remembered between the two readings: a cached ceiling
-        # would hand the second caller the first one's answer and hide the
-        # very context leak this test exists to catch.
         self.env.registry.clear_cache()
         as_archived_list = self.Partner.with_context(
             active_test=False
@@ -155,7 +150,6 @@ class TestScoreCeilingCascade(TransactionCase):
         self.assertEqual(self.Partner._get_score_max_points(), as_default)
 
     def test_a_bare_attribute_create_queues_nothing(self):
-        """An attribute with no values moves no ceiling and rewrites no row."""
         partner_class = type(self.Partner)
         with patch.object(partner_class, "_score_notify_scorecard_changed") as notified:
             self.Attribute.create({"name": "Cascade Bare", "value_type": "single"})
@@ -171,7 +165,6 @@ class TestScoreCeilingCascade(TransactionCase):
             self.assertTrue(notified.called)
 
     def test_the_requeue_reaches_partners_the_editor_cannot_see(self):
-        """A shared weight makes every partner stale, not just the visible ones."""
         company = self.env["res.company"].create({"name": "Cascade Other Co"})
         editor = self.env["res.users"].create(
             {
@@ -213,7 +206,6 @@ class TestScoreCeilingCascade(TransactionCase):
         self.assertIn(archived, requeued)
 
     def test_a_second_wave_collapses_onto_the_queued_job(self):
-        """Ten weight edits in one sitting must not queue ten full rescores."""
         job_model = self.env["ir.job"]
         queued = [("identity_key", "=like", "scoring.refresh:res.partner:%")]
         before = job_model.search_count(queued)

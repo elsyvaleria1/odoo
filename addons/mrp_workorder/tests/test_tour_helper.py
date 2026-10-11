@@ -30,8 +30,6 @@ class TestTourHelperIsReachable(TransactionCase):
         )
 
     def test_the_helper_is_named_in_no_bundle(self):
-        # the tours glob of web.assets_tests carries it; naming it in a second
-        # bundle (it used to be in the lazy web_tour.automatic) evaluates it twice
         assets = Manifest.for_addon("mrp_workorder")["assets"]
         declaring = sorted(
             bundle

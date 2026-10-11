@@ -53,7 +53,6 @@ class ShopeeShop(models.Model):
         string="Shopee Items",
     )
 
-    # Credentials fields.
     shop_identifier = fields.Integer(
         string="Shopee Shop ID",
         readonly=True,
@@ -91,7 +90,6 @@ class ShopeeShop(models.Model):
         " connection on Shopee Account view.",
     )
 
-    # Follow-up fields.
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Default Salesperson",
@@ -156,7 +154,6 @@ class ShopeeShop(models.Model):
         " with Shopee. Only products available in FBM or hybrid will be synchronized.",
     )
 
-    # Display fields.
     order_count = fields.Integer(compute="_compute_order_count")
     shopee_item_count = fields.Count(count_of="shopee_item_ids")
     authorization_remaining_days = fields.Integer(
@@ -166,7 +163,6 @@ class ShopeeShop(models.Model):
         "that the authorization will expire soon.",
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_order_count(self) -> None:
         for shop in self:
@@ -185,17 +181,11 @@ class ShopeeShop(models.Model):
             else:
                 shop.authorization_remaining_days = -1
 
-    # === CRUD METHODS === #
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Associate a shop with a location and a sales team.
-
-        By default, each shop has its own location, while all shops share the same sales team.
-        """
         for vals in vals_list:
             company_id = vals.get("company_id") or self.env.company.id
-            # Find or create the shopee warehouse to be associated with this account
             parent_warehouse = self.env["stock.warehouse"].search_read(
                 self.env["stock.warehouse"]._check_company_domain(company_id),
                 ["view_location_id"],
@@ -231,14 +221,12 @@ class ShopeeShop(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Override to block the change of the company of a Shopee shop."""
         if "company_id" in vals:
             raise UserError(
                 self.env._("Changing the company of a Shopee shop is not allowed.")
             )
         return super().write(vals)
 
-    # === ACTION METHODS === #
 
     def action_sync_orders(self) -> dict | None:
         self._sync_orders()
@@ -278,35 +266,25 @@ class ShopeeShop(models.Model):
         }
 
     def action_archive(self):
-        """Override to disconnect the Shopee shops before archiving it."""
         for shop in self:
             shop._reset_tokens()
         return super().action_archive()
 
-    # === BUSINESS METHODS === #
 
     def create_or_update_shop(self, company_id, account_id, shop_id, shop_vals):
-        """Create or update a shop with the provided shop_id and account_id.
-
-        :param int company_id: The company identifier.
-        :param int account_id: The Shopee account identifier.
-        :param int shop_id: The Shopee shop identifier.
-        :param dict shop_vals: The values to update the shop with.
-        :return: shopee.shop
-        """
         shop = self.search(
             [("shop_identifier", "=", shop_id), ("account_id", "=", account_id)],
             limit=1,
         )
 
-        if not shop:  # When call during the onboarding of an account (and not a shop)
+        if not shop:
             shop = self.create(
                 {
                     "name": self.env._("Shopee Shop #%(shop_id)s", shop_id=shop_id),
                     "shop_identifier": shop_id,
                     "account_id": account_id,
                     "company_id": company_id,
-                    **shop_vals,  # Contains the tokens from the account
+                    **shop_vals,
                 }
             )
         else:
@@ -318,10 +296,6 @@ class ShopeeShop(models.Model):
         return shop
 
     def _update_shop_information(self, force_update=False):
-        """Update the shop information from Shopee.
-
-        See https://open.shopee.com/documents/v2/v2.shop.get_shop_info?module=92&type=1
-        """
         self.check_singleton()
 
         task_begin_datetime = fields.Datetime.now()
@@ -346,16 +320,6 @@ class ShopeeShop(models.Model):
         return self
 
     def _sync_orders(self, auto_commit=True) -> None:
-        """Synchronize the shops' sales orders that were recently updated on Shopee.
-
-        If called on an empty recordset, the orders of all active shops are synchronized instead.
-
-        Note: This method is called by the `ir_cron_sync_shopee_orders` cron.
-
-        :param bool auto_commit: Whether the database cursor should be committed as soon as an order
-                                 is successfully synchronized.
-        :return: None
-        """
         shops = self or self.search([])
         _debug.pipeline("orders_sync_started", shops=shops, auto_commit=auto_commit)
         for shop in shops:
@@ -367,9 +331,6 @@ class ShopeeShop(models.Model):
             start_sync_dt = fields.Datetime.now()
 
             try:
-                # Orders are pulled in batches of up to ORDER_LIST_SIZE_LIMIT orders. If more can be
-                # synchronized, the request results are paginated and the next page holds another
-                # batch.
                 while shop.last_orders_sync_date < start_sync_dt:
                     status_update_lower_limit = shop.last_orders_sync_date
                     status_update_upper_limit = min(
@@ -387,10 +348,6 @@ class ShopeeShop(models.Model):
                         continue
 
                     orders_detail = shop._get_orders_detail(order_list)
-                    # As we fetched these orders based on their id, not their updated time, orders
-                    # might have been updated later than the set upper limit. We discard them for
-                    # now to avoid skipping the intermediary orders by setting a wrong last updated
-                    # time as they'll be sync later anyway.
                     upper_limit_timestamp = int(status_update_upper_limit.timestamp())
                     valid_orders_detail = [
                         od
@@ -411,7 +368,7 @@ class ShopeeShop(models.Model):
                             if auto_commit:
                                 with self.env.cr.savepoint():
                                     shop._process_order_data(order_data)
-                            else:  # Avoid the savepoint in testing
+                            else:
                                 shop._process_order_data(order_data)
                         except utils.ShopeeRateLimitError:
                             raise
@@ -423,9 +380,6 @@ class ShopeeShop(models.Model):
                                 " Discarding the error to trigger the retry mechanism.",
                                 {"order_ref": shopee_order_ref, "id": shop.id},
                             )
-                            # Let the error bubble up so that either the request can be retried
-                            # up to 5 times or the cron job rollbacks the cursor and reschedules
-                            # itself later, depending on which of the two called this method.
                             raise
                         except Exception:
                             shopee_order_ref = order_data["order_sn"]
@@ -441,8 +395,6 @@ class ShopeeShop(models.Model):
                                 ref=shopee_order_ref,
                                 reason="business_error",
                             )
-                            # Dismiss business errors to allow the synchronization to skip the
-                            # problematic orders.
                             self.env.cr.rollback()
                             shop._handle_sync_failure(
                                 flow="order_sync", shopee_order_ref=shopee_order_ref
@@ -452,7 +404,6 @@ class ShopeeShop(models.Model):
                         if auto_commit:
                             self.env["ir.cron"]._commit_progress(processed=1)
 
-                    # The sync of this orders batch went through, save the last status update time
                     valid_update_times = [
                         order["update_time"] for order in valid_orders_detail
                     ]
@@ -473,16 +424,9 @@ class ShopeeShop(models.Model):
                     " id %(account)d. Operation: %(error_operation)s",
                     {"account": shop.account_id.id, "error_operation": error.operation},
                 )
-                continue  # The remaining orders will be pulled in the next cron run.
+                continue
 
     def _get_order_list(self, time_from, time_to) -> dict | list:
-        """Fetch the order list from Shopee.
-
-        :param datetime time_from: Lower limit for pulling orders.
-        :param datetime time_to: Upper limit for pulling orders.
-        :return: A list composed of Shopee's orders' unique identifiers.
-        :rtype: list
-        """
         response = utils.send_shopee_api_request(
             self,
             "get_order_list",
@@ -497,13 +441,6 @@ class ShopeeShop(models.Model):
         return [order["order_sn"] for order in response["order_list"] or []]
 
     def _get_orders_detail(self, order_sn_list):
-        """Fetches the order details from Shopee.
-
-        :param list order_sn_list: A list composed of Shopee's orders' unique identifiers.
-        :return: The orders detail.
-        :rtype: list
-        """
-        # Slicing the order list in multiple batches of fewer orders than ORDER_DETAIL_SIZE_LIMIT
         batches = [
             order_sn_list[i : i + const.ORDER_DETAIL_SIZE_LIMIT]
             for i in range(0, len(order_sn_list), const.ORDER_DETAIL_SIZE_LIMIT)
@@ -537,21 +474,6 @@ class ShopeeShop(models.Model):
         return orders_detail
 
     def _process_order_data(self, order_data):
-        """Process the provided order details and return the matching sales order, if any.
-
-        - If the order doesn't exist in Odoo and order status in const.ORDER_STATUSES_TO_SYNC, an
-        order will be created with the data from Shopee.
-        - If the order exists in Odoo, depending on the status:
-            -> Status = "CANCELLED" -> we cancel the order in Odoo if it's not already cancelled.
-            -> Status = "SHIPPED"/"COMPLETED" -> we update the status of the order in Odoo and
-                                                 validate the picking.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data to process.
-        :return: The matching Shopee order, if any, as a `sale.order` record.
-        :rtype: recordset of `sale.order`
-        """
         self.check_singleton()
 
         shopee_order_ref = order_data["order_sn"]
@@ -595,9 +517,6 @@ class ShopeeShop(models.Model):
                 {"ref": shopee_order_ref, "id": self.id},
             )
         elif shopee_status in ("SHIPPED", "COMPLETED") and fulfillment_type != "fbs":
-            # If the order is shipped or completed in Shopee, it means Shopee identifies the
-            # package as picked up by the carrier. We then mark the picking as done in Odoo.
-            # This avoids fetching the shipping label again in stock picking.
             valid_picks = order.picking_ids.filtered(
                 lambda pick: pick.state != "cancel"
             )
@@ -621,19 +540,12 @@ class ShopeeShop(models.Model):
             )
 
         _debug.lifecycle("delivery_status_set", order=order, status=shopee_status)
-        # Update the delivery status to keep it in sync with Shopee
         order.shopee_delivery_status = const.DELIVERY_STATUS_MAPPING.get(
             shopee_status, "error"
         )
         return order
 
     def _create_order_from_data(self, order_data):
-        """Create the order from data.
-
-        :param dict order_data: A dict of order data.
-        :return: The created order.
-        :rtype: sale.order
-        """
         shipping_code = order_data["shipping_carrier"]
         shipping_product = self._get_or_create_matching_product(
             shipping_code, "default_shipping_product", "Shopee Shipping", "service"
@@ -671,8 +583,6 @@ class ShopeeShop(models.Model):
         order_vals = {
             "origin": origin,
             "state": "done",
-            # The order is first created unlocked and later locked to trigger the creation of a
-            # stock picking if fulfilled by merchant.
             "locked": fulfillment_type == "fulfilled_by_shopee",
             "date_order": datetime.fromtimestamp(order_data["create_time"]),
             "partner_id": contact_partner.id,
@@ -704,7 +614,7 @@ class ShopeeShop(models.Model):
 
         if (
             order.picking_ids and shipping_code
-        ):  # The buyer chose a specific delivery method
+        ):
             delivery_method = self._get_or_create_delivery_carrier(
                 shipping_code, shipping_product
             )
@@ -732,15 +642,8 @@ class ShopeeShop(models.Model):
         )
 
     def _get_or_create_partners_from_data(self, order_data) -> tuple:
-        """Find or create the partners from data
-
-        :param dict order_data: A dict of order data.
-        :return: The contact partner and the delivery partner.
-        :rtype: tuple(res.partner, res.partner)
-        """
 
         def get_streets_from_full_address(address_):
-            """Town, district and street will be stored in street and street2."""
             blocks_ = address_.get("full_address").split(", ")
             for key, value in address_.items():
                 if key in ["city", "state", "region", "zipcode"] and value in blocks_:
@@ -771,7 +674,7 @@ class ShopeeShop(models.Model):
                         "name",
                         "=ilike",
                         state_name,
-                    ),  # shopee can return a state name in capital letters
+                    ),
                     ("country_id", "=", country.id),
                 ],
                 limit=1,
@@ -791,13 +694,6 @@ class ShopeeShop(models.Model):
             "shopee_buyer_identifier": shopee_buyer_identifier,
         }
 
-        # The contact partner is searched based on all the personal information and only if the
-        # user id of the buyer is provided. A match thus only occurs if the customer had already
-        # made a previous order and if the personal information provided by the API did not change
-        # in the meantime. If there is no match, a new contact partner is created. This behavior is
-        # preferred over updating the personal information with new values because it allows using
-        # the correct contact details when invoicing the customer for an earlier order, should there
-        # be a change in the personal information.
         contact = (
             self.env["res.partner"].search(
                 [
@@ -812,7 +708,7 @@ class ShopeeShop(models.Model):
             )
             if shopee_buyer_identifier
             else None
-        )  # Don't match random partners.
+        )
         if not contact:
             contact_name = buyer_name or self.env._(
                 "Shopee Customer #%(order_no)s", order_no=shopee_order_ref
@@ -828,8 +724,6 @@ class ShopeeShop(models.Model):
                 )
             )
 
-        # The contact partner acts as delivery partner if the address is strictly equal to that of
-        # the contact partner. If not, a delivery partner is created.
         delivery = (
             contact
             if (
@@ -878,19 +772,6 @@ class ShopeeShop(models.Model):
     def _prepare_order_lines_values(
         self, order_data, currency, fiscal_pos, shipping_product
     ):
-        """Prepare the values for the order lines to create based on Shopee data.
-
-        Note: self.check_singleton()
-
-        :param dict order_data: The order data related to the item data.
-        :param record currency: The currency of the sales order, as a `res.currency` record.
-        :param record fiscal_pos: The fiscal position of the sales order, as an
-                                  `account.fiscal.position` record.
-        :param record shipping_product: The shipping product matching the shipping code, as a
-                                        `product.product` record.
-        :return: The order lines values.
-        :rtype: dict
-        """
         self.check_singleton()
 
         order_lines_values = []
@@ -905,7 +786,6 @@ class ShopeeShop(models.Model):
             product_taxes = shopee_item.product_id.taxes_id._filter_taxes_by_company(
                 self.company_id
             )
-            # add promotion information to the description
             promotion_type = self._get_promotion_type(item_data.get("promotion_type"))
             promotion_id = item_data.get("promotion_id")
             if not promotion_id:
@@ -952,17 +832,6 @@ class ShopeeShop(models.Model):
         model_identifier: str | int,
         fulfillment_type: str = "fbm",
     ) -> ShopeeItem:
-        """Find or create the shopee item based on the SKU and shop.
-
-        Note: self.check_singleton()
-
-        :param str sku: The SKU of the product.
-        :param str item_identifier: The Shopee item identifier.
-        :param str model_identifier: The Shopee model identifier.
-        :param str fulfillment_type: The fulfillment type of the item.
-        :return: The found or created shopee item
-        :rtype: shopee.item
-        """
         self.check_singleton()
         sync_to_shopee = fulfillment_type in ["fbm", "hybrid"]
         shopee_item = self.shopee_item_ids.filtered(
@@ -988,10 +857,6 @@ class ShopeeShop(models.Model):
                     }
                 )
             )
-        # If the item has been linked with the default product, search if another product has now
-        # been assigned the current SKU as internal reference and update the item if so.
-        # This trades off a bit of performance in exchange for a more expected behavior for the
-        # matching of products if one was assigned the right SKU after that the item was created.
         elif (
             "sale_shopee.default_sale_product"
             in shopee_item.product_id._get_external_ids().get(
@@ -1007,12 +872,6 @@ class ShopeeShop(models.Model):
         return shopee_item
 
     def _get_promotion_type(self, promotion_type):
-        """Get the promotion type from the promotion type mapping.
-
-        :param str promotion_type: The promotion type.
-        :return: The promotion type.
-        :rtype: str
-        """
         promotion_type_mapping = {
             "product_promotion": self.env._("Product Promotion"),
             "flash_sale": self.env._("Flash Sale"),
@@ -1025,16 +884,9 @@ class ShopeeShop(models.Model):
         )
 
     def _get_price_from_tax_included_total(self, total, taxes, currency):
-        """Return the order-line price, retaining configured price-included taxes."""
         return price_from_tax_included_total(self.env, total, taxes, currency)
 
     def _convert_to_order_line_values(self, **kwargs) -> dict:
-        """Convert and complete a dict of values to comply with fields of `sale.order.line`.
-
-        :param dict kwargs: The values to convert and complete.
-        :return: The completed values.
-        :rtype: dict
-        """
         subtotal = kwargs.get("subtotal", 0)
         quantity = kwargs.get("quantity", 1)
         original_subtotal = kwargs.get("original_subtotal", 0) or subtotal
@@ -1050,11 +902,6 @@ class ShopeeShop(models.Model):
         }
 
     def _get_or_create_pricelist(self, currency):
-        """Find or create the pricelist.
-
-        :param res.currency currency: The currency of the pricelist
-        :rtype: product.pricelist
-        """
         self.check_singleton()
         pricelist = (
             self.env["product.pricelist"]
@@ -1087,14 +934,6 @@ class ShopeeShop(models.Model):
         return pricelist
 
     def _get_or_create_delivery_carrier(self, shipping_code, shipping_product):
-        """Find or create a delivery carrier based on the shipping code.
-
-        :param str shipping_code: The shipping code.
-        :param record shipping_product: The shipping product matching the shipping code, as a
-                                        `product.product` record.
-        :return: The delivery carrier.
-        :rtype: delivery.carrier
-        """
         delivery_method = self.env["delivery.carrier"].search(
             [("name", "=", shipping_code)],
             limit=1,
@@ -1106,12 +945,6 @@ class ShopeeShop(models.Model):
         return delivery_method
 
     def _create_stock_moves(self, order):
-        """Generate a stock move for each product of the provided sales order.
-
-        :param sale.order order: The sales order to generate stock moves.
-        :return: The generated stock moves.
-        :rtype: stock.move
-        """
         customers_location = self.env.ref("stock.stock_location_customers")
         for order_line in order.line_ids.filtered(
             lambda l: l.product_id.type == "consu"
@@ -1130,23 +963,13 @@ class ShopeeShop(models.Model):
             )
             stock_move._update_quantity_done(order_line.product_qty)
             stock_move.picked = (
-                True  # To also change move lines created in `_update_quantity_done`
+                True
             )
             stock_move._action_done()
 
     def _handle_sync_failure(
         self, flow="", shopee_order_ref=False, error_messages=False
     ) -> None:
-        """Send a mail to the responsible persons to report a synchronization failure.
-
-        :param str flow: The flow for which the failure mail is requested. Supported flows are:
-                        `order_sync`, `inventory_sync`, and `picking_sync`.
-        :param str shopee_order_ref: The shopee references of the orders that failed to synchronize.
-        :param list[dict] error_messages: A list containing the referenced Shopee orders and their
-                                          linked errors in the format [{"order_ref": "error"}].
-                                          Required for the `picking_sync` flow.
-        :return: None
-        """
         if flow == "order_sync":
             _logger.error(
                 "Failed to synchronize order with shopee reference %(ref)s for shopee.shop with "
@@ -1162,7 +985,7 @@ class ShopeeShop(models.Model):
                 {"shop_id": self.id, "shop_name": self.name},
             )
             mail_template_id = "sale_shopee.inventory_sync_failure"
-        else:  # flow == 'picking_sync':
+        else:
             _logger.error(
                 "Failed to synchronize pickings for shopee.shop with id "
                 "%(shop_id)s (Shope Name: %(shop_name)s).",
@@ -1199,15 +1022,6 @@ class ShopeeShop(models.Model):
             )
 
     def _sync_inventory(self, auto_commit=True) -> None:
-        """Synchronize the inventory level of products sold on Shopee.
-
-        If called on an empty recordset, the products of all active shops with inventory
-        synchronization are synchronized instead.
-
-        :param bool auto_commit: Whether the database cursor should be committed as soon as an item
-                                 is successfully synchronized.
-        :return: None
-        """
         shops = self or self.search([])
         for shop in shops:
             shop._update_shop_information()

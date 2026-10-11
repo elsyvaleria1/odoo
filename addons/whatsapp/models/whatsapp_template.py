@@ -54,8 +54,6 @@ class WhatsappTemplate(models.Model):
 
     @api.model
     def _get_all_models(self) -> list:
-        """Available models are all models, as even transient models could have
-        templates associated (e.g. wizard.payment.transaction.view.link)"""
         return [
             (model.model, model.name)
             for model in self.env["ir.model"].sudo().search([])
@@ -189,7 +187,7 @@ class WhatsappTemplate(models.Model):
         string="Template Static Header",
         copy=False,
         bypass_search_access=True,
-    )  # keep False to avoid linking attachments; we have to copy them instead
+    )
     footer_text = fields.Char(string="Footer Message")
     report_id = fields.Many2one(
         comodel_name="ir.actions.report",
@@ -208,13 +206,13 @@ class WhatsappTemplate(models.Model):
         store=True,
         copy=False,
         readonly=False,
-    )  # done with custom code due to buttons variables
+    )
     button_ids = fields.One2many(
         comodel_name="whatsapp.template.button",
         inverse_name="wa_template_id",
         string="Buttons",
         copy=True,
-    )  # will copy their variables
+    )
     warning_message = fields.Text(compute="_compute_warning_message")
 
     messages_count = fields.Integer(compute="_compute_messages_count")
@@ -426,9 +424,6 @@ class WhatsappTemplate(models.Model):
                     )
                 )
 
-    # =====================================================
-    #                 Compute Methods
-    # =====================================================
 
     @api.depends("model")
     def _compute_phone_field(self) -> None:
@@ -457,14 +452,12 @@ class WhatsappTemplate(models.Model):
 
     @api.depends("model")
     def _compute_report_id(self) -> None:
-        """Reset if model changes to avoid ill defined reports"""
         to_reset = self.filtered(lambda tpl: tpl.report_id.model != tpl.model)
         if to_reset:
             to_reset.report_id = False
 
     @api.depends("header_type", "header_text", "body")
     def _compute_variable_ids(self) -> None:
-        """compute template variable according to header text, body and buttons"""
         for tmpl in self:
             to_delete = self.env["whatsapp.template.variable"]
             to_keep = self.env["whatsapp.template.variable"]
@@ -475,7 +468,6 @@ class WhatsappTemplate(models.Model):
             )
             body_variables = set(re.findall(r"{{[1-9][0-9]*}}", tmpl.body or ""))
 
-            # if there is header text
             existing_header_text_variable = tmpl.variable_ids.filtered(
                 lambda line: line.line_type == "header"
             )
@@ -492,7 +484,6 @@ class WhatsappTemplate(models.Model):
             elif existing_header_text_variable:
                 to_keep += existing_header_text_variable
 
-            # if the header is a location
             existing_header_location_variables = tmpl.variable_ids.filtered(
                 lambda line: line.line_type == "location"
             )
@@ -527,7 +518,6 @@ class WhatsappTemplate(models.Model):
             elif existing_header_location_variables:
                 to_keep += existing_header_location_variables
 
-            # body
             existing_body_variables = tmpl.variable_ids.filtered(
                 lambda line: line.line_type == "body"
             )
@@ -547,8 +537,6 @@ class WhatsappTemplate(models.Model):
             to_delete += deleted_body_variables
             to_keep += existing_body_variables - deleted_body_variables
 
-            # if to_delete:
-            #     to_delete.unlink()
             tmpl.variable_ids = [(3, to_remove.id) for to_remove in to_delete] + [
                 Command.create(vals) for vals in to_create_values
             ]
@@ -571,7 +559,6 @@ class WhatsappTemplate(models.Model):
                 )
 
     def _compute_wa_account_id(self) -> None:
-        """Set default account unless the template name is already used."""
         default_account_id = self._get_default_wa_account_id()
         account_less_templates = self.filtered(
             lambda template: not template.wa_account_id
@@ -656,27 +643,20 @@ class WhatsappTemplate(models.Model):
 
     @api.onchange("wa_account_id")
     def _onchange_wa_account_id(self) -> None:
-        """Avoid carrying remote sync data when changing account."""
         self.status = "draft"
         self.quality = "none"
         self.wa_template_uid = False
 
-    # ===================================================================
-    #                 CRUD
-    # ===================================================================
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            # stable backward compatible change  for model fields
             if vals.get("model_id"):
                 vals["model"] = (
                     self.env["ir.model"].sudo().browse(vals[("model_id")]).model
                 )
         records = super().create(vals_list)
-        # the model of the variable might have been changed with x2many commands
         records.variable_ids._check_field_name()
-        # update the attachment res_id for new records
         records._onchange_header_attachment_ids()
         return records
 
@@ -684,8 +664,6 @@ class WhatsappTemplate(models.Model):
         if vals.get("model_id"):
             vals["model"] = self.env["ir.model"].sudo().browse(vals["model_id"]).model
         res = super().write(vals)
-        # Model change: explicitly check for field access. Other changes at variable
-        # level are checked by '_check_field_name' constraint.
         if "model_id" in vals:
             self.variable_ids._check_field_name()
         return res
@@ -728,12 +706,8 @@ class WhatsappTemplate(models.Model):
                     values["variable_ids"] = variable_commands
         return values_list
 
-    # ===================================================================
-    #                 Register template to whatsapp
-    # ===================================================================
 
     def _prepare_template_header_component(self, file_handle) -> dict[str, Any] | None:
-        """Return header component according to header type for template registration to whatsapp"""
         if self.header_type == "none":
             return None
         head_component = {"type": "HEADER", "format": self.header_type.upper()}
@@ -751,7 +725,6 @@ class WhatsappTemplate(models.Model):
         return head_component
 
     def _prepare_template_body_component(self) -> dict[str, Any] | None:
-        """Return body component for template registration to whatsapp"""
         if not self.body:
             return None
         body_component = {"type": "BODY", "text": self.body}
@@ -765,7 +738,6 @@ class WhatsappTemplate(models.Model):
         return body_component
 
     def _acquire_template_button_component(self) -> dict | None:
-        """Return button component for template registration to whatsapp"""
         if not self.button_ids:
             return None
         buttons = []
@@ -798,7 +770,6 @@ class WhatsappTemplate(models.Model):
         return self.env[self.model].search([], limit=1)
 
     def button_submit_template(self) -> None:
-        """Register template to WhatsApp Business Account"""
         self.check_singleton()
         if not self.template_type:
             raise ValidationError(self.env._("Template category is missing"))
@@ -859,12 +830,8 @@ class WhatsappTemplate(models.Model):
         except WhatsAppError as we:
             raise UserError(str(we)) from we
 
-    # ===================================================================
-    #                 Sync template from whatsapp
-    # ===================================================================
 
     def button_sync_template(self) -> dict:
-        """Sync template from WhatsApp Business Account"""
         self.check_singleton()
         wa_api = WhatsAppApi(self.wa_account_id)
         try:
@@ -919,7 +886,6 @@ class WhatsappTemplate(models.Model):
         )
         update_vals = {field: template_vals[field] for field in update_fields}
 
-        # variables should be preserved instead of overwritten to keep odoo-specific data like fields
         existing_template_variables = {
             (variable_id.name, variable_id.line_type): variable_id.id
             for variable_id in self.variable_ids
@@ -964,10 +930,6 @@ class WhatsappTemplate(models.Model):
         self.write(update_vals)
 
     def _get_template_vals_from_response(self, remote_template_vals, wa_account):
-        """Get dictionary of field: values from whatsapp template response json.
-
-        Relational fields will use arrays instead of commands.
-        """
         quality_score = remote_template_vals["quality_score"]["score"].lower()
         template_vals = {
             "body": False,
@@ -1080,14 +1042,10 @@ class WhatsappTemplate(models.Model):
                         template_vals["button_ids"].append(button_vals)
         return template_vals
 
-    # ========================================================================
-    #         Send WhatsApp message using template
-    # ========================================================================
 
     def _get_header_component(
         self, free_text_json, template_variables_value, attachment
     ):
-        """Prepare header component for sending WhatsApp template message"""
         header = []
         header_type = self.header_type
         if header_type == "text" and template_variables_value.get("header-{{1}}"):
@@ -1114,7 +1072,6 @@ class WhatsappTemplate(models.Model):
         return header
 
     def _prepare_location_vals(self, template_variables_value) -> dict:
-        """Prepare location values for sending WhatsApp template message having header type location"""
         self._check_location_latitude_longitude(
             template_variables_value.get("location-latitude"),
             template_variables_value.get("location-longitude"),
@@ -1132,7 +1089,6 @@ class WhatsappTemplate(models.Model):
     def _get_body_component(
         self, free_text_json, template_variables_value
     ) -> dict | None:
-        """Prepare body component for sending WhatsApp template message"""
         if not self.variable_ids:
             return None
         parameters = []
@@ -1159,7 +1115,6 @@ class WhatsappTemplate(models.Model):
         return {"type": "body", "parameters": parameters}
 
     def _get_button_components(self, free_text_json, template_variables_value):
-        """Prepare button component for sending WhatsApp template message"""
         components = []
         if not self.variable_ids:
             return components
@@ -1177,7 +1132,7 @@ class WhatsappTemplate(models.Model):
                 free_text_index += 1
             else:
                 value = template_variables_value.get(f"button-{button.name}") or " "
-            value = value.replace(dynamic_url, "").lstrip("/")  # / is implicit
+            value = value.replace(dynamic_url, "").lstrip("/")
             components.append(
                 {
                     "type": "button",
@@ -1189,7 +1144,6 @@ class WhatsappTemplate(models.Model):
         return components
 
     def _prepare_send_template_data(self, record, whatsapp_message) -> tuple:
-        """Prepare JSON dictionary for sending WhatsApp template message"""
         self.check_singleton()
         free_text_json = whatsapp_message.free_text_json
         attachment = whatsapp_message.mail_message_id.attachment_ids
@@ -1197,13 +1151,11 @@ class WhatsappTemplate(models.Model):
         components = []
         template_variables_value = self.variable_ids._get_variables_value(record)
 
-        # generate attachment
         if not attachment and self.report_id:
             attachment = self._generate_attachment_from_report(record)
         if not attachment and self.header_attachment_ids:
             attachment = self.header_attachment_ids[0]
 
-        # generate content
         header = self._get_header_component(
             free_text_json=free_text_json,
             attachment=attachment,
@@ -1247,7 +1199,6 @@ class WhatsappTemplate(models.Model):
         }
 
     def button_create_action(self):
-        """Create action for sending WhatsApp template message in model defined in template. It will be used in bulk sending"""
         self.check_access("write")
         actions = (
             self.env["ir.actions.act_window"]
@@ -1287,7 +1238,6 @@ class WhatsappTemplate(models.Model):
         ).unlink()
 
     def _generate_attachment_from_report(self, record=False):
-        """Create attachment from report if relevant"""
         if record and self.header_type == "document" and self.report_id:
             report_content, report_format = self.report_id._render_qweb_pdf(
                 self.report_id, record.id
@@ -1321,29 +1271,16 @@ class WhatsappTemplate(models.Model):
 
     @api.model
     def _format_markup_to_html(self, body_html):
-        """
-        Convert WhatsApp format text to HTML format text
-        *bold* -> <b>bold</b>
-        _italic_ -> <i>italic</i>
-        ~strikethrough~ -> <s>strikethrough</s>
-        ```monospace``` -> <code>monospace</code>
-        """
-        formatted_body = str(plaintext2html(body_html))  # stringify for regex
+        formatted_body = str(plaintext2html(body_html))
         formatted_body = re.sub(r"\*(.*?)\*", r"<b>\1</b>", formatted_body)
         formatted_body = re.sub(
             r"\b_([^_\s][^_]*?[^_\s])_\b", r"<i>\1</i>", formatted_body
-        )  # apply italic when whitespace surrounded for not breaking urls
+        )
         formatted_body = re.sub(r"~(.*?)~", r"<s>\1</s>", formatted_body)
         formatted_body = re.sub(r"```(.*?)```", r"<code>\1</code>", formatted_body)
         return Markup(formatted_body)
 
     def _get_formatted_body(self, demo_fallback=False, variable_values=None):
-        """Get formatted body and header with specified values.
-
-        :param bool demo_fallback: if true, fallback on demo values instead of blanks
-        :param dict variable_values: values to use instead of demo values {'header-{{1}}': 'Hello'}
-        :returns: Markup
-        """
         self.check_singleton()
         variable_values = variable_values or {}
         header = ""
@@ -1368,9 +1305,6 @@ class WhatsappTemplate(models.Model):
             )
         return self._format_markup_to_html(f"*{header}*\n\n{body}" if header else body)
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     @api.model
     def _can_use_whatsapp(self, model_name) -> bool:

@@ -28,29 +28,24 @@ class TestMfaPolicy(TransactionCase):
         self.icp.set_param("auth_totp.policy", value)
 
     def test_no_policy_means_no_mail_mfa(self):
-        """Without an enforcement policy, users have no forced mail 2FA."""
         self._set_policy(False)
         self.assertFalse(self.internal_user._get_mfa_type())
 
     def test_all_required_policy_covers_everyone(self):
-        """The all_required policy enforces mail 2FA on any user."""
         self._set_policy("all_required")
         self.assertEqual(self.internal_user._get_mfa_type(), "totp_mail")
         self.assertEqual(self.portal_user._get_mfa_type(), "totp_mail")
 
     def test_employee_policy_covers_internal_users_only(self):
-        """The employee_required policy skips portal users (boundary)."""
         self._set_policy("employee_required")
         self.assertEqual(self.internal_user._get_mfa_type(), "totp_mail")
         self.assertFalse(self.portal_user._get_mfa_type())
 
     def test_mfa_url_points_to_totp_login(self):
-        """Users under mail 2FA are redirected to the totp login page."""
         self._set_policy("all_required")
         self.assertEqual(self.internal_user._get_mfa_url(), "/web/login/totp")
 
     def test_rpc_requires_api_keys_under_policy(self):
-        """Password RPC is blocked (api-keys only) when mail 2FA applies."""
         self._set_policy("all_required")
         self.assertTrue(self.internal_user._is_rpc_api_key_only())
         self._set_policy(False)

@@ -27,8 +27,6 @@ class TestCanonicalSlugRedirect(HttpCase):
         return self.url_open(self.EP + encoded_segment, allow_redirects=False)
 
     def test_percent_escape_lookalike_segments_do_not_loop(self):
-        # The value really contains "%20" / "%2B" as characters, hence the
-        # double encoding in the request line.
         for encoded, expected in [
             ("a%2520b", "a%20b"),
             ("a%252Bb", "a%2Bb"),
@@ -47,7 +45,7 @@ class TestCanonicalSlugRedirect(HttpCase):
     def test_ordinary_segments_are_still_served(self):
         for encoded, expected in [
             ("plain", "plain"),
-            ("a%2Bb", "a+b"),  # "+" is a literal plus in a path, never a space
+            ("a%2Bb", "a+b"),
             ("a%20b", "a b"),
             ("caf%C3%A9", "café"),
         ]:
@@ -57,8 +55,6 @@ class TestCanonicalSlugRedirect(HttpCase):
                 self.assertEqual(json_loads(response.content)["a"], expected)
 
     def test_bare_id_is_still_canonicalised(self):
-        # The guard must not cost us the redirect it exists for: a bare-id URL
-        # still 301s to the slug.
         country = self.env["res.country"].search([("code", "=", "AD")], limit=1)
         self.assertTrue(country, "res.country AD is a base data record")
         response = self.url_open(

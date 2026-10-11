@@ -85,23 +85,6 @@ class WizardWebsitePageUpdateProperties(models.TransientModel):
         if not moved:
             return write_result
 
-        # One search and one create for the whole batch. Both used to run per
-        # record inside the loop, so renaming N pages cost N searches plus N
-        # inserts -- and `website.rewrite` is exactly the table a bulk rename
-        # touches most.
-        #
-        # `dfd50c87d614` fixed the search half of this independently and landed
-        # in the same branch; this batches the archives and the creates as
-        # well. Only the search half is gated -- `lint_n_plus_one_query_odoo` reads
-        # six query methods and no write, so the inserts here were invisible to
-        # it: the rule (n-plus-one-query, E8507) sees no write, and this method
-        # is the loop of writes it cannot see.
-        #
-        # The search carries both clauses. An earlier version of this dropped
-        # the `website_id` one and filtered on the key afterwards, to avoid
-        # putting a `False` into an `in` list; `dfd50c87d614` shipped exactly
-        # that and it resolves to IS NULL as it should, so the reason for the
-        # wider fetch was never a real one.
         Rewrite = self.env["website.rewrite"]
         website_by_record = {
             record: (vals.get("website_id") or record.website_id.id or False)

@@ -9,8 +9,6 @@ from odoo.tools import float_repr, remove_accents
 TEST_BASE_URL = "https://apis-sandbox.fedex.com"
 PROD_BASE_URL = "https://apis.fedex.com"
 
-# Why using standardized ISO codes? It's way more fun to use made up codes...
-# https://developer.fedex.com/api/en-us/guides/api-reference.html#currencycodes
 FEDEX_CURR_MATCH = {
     "XCD": "ECD",
     "MXN": "NMP",
@@ -27,10 +25,7 @@ FEDEX_CURR_MATCH = {
     "TWD": "NTD",
     "ARS": "ARN",
     "VES": "VEF",
-    # 'LVL': 'EUR',
-    # 'UYU': 'UYP',
     "GBP": "UKL",
-    # 'IDR': 'RPA',
 }
 
 FEDEX_MX_STATE_MATCH = {
@@ -224,10 +219,8 @@ class FedexRequest:
 
     def _parse_state_code(self, state_code, country_code):
         if country_code == "CH":
-            # For Switzerland, keep the part before the hyphen
             return state_code.split("-")[0]
         else:
-            # For other countries, keep the part after the hyphen
             split_code = state_code.split("-")
             if split_code[0] == country_code and len(split_code) > 1:
                 return split_code[1]
@@ -244,7 +237,6 @@ class FedexRequest:
             state_code = self._parse_state_code(
                 partner.state_id.code, partner.country_id.code
             )
-            # need to adhere to two character length state code
             if partner.country_id.code == "MX":
                 state_code = FEDEX_MX_STATE_MATCH[state_code]
             if partner.country_id.code == "AE":
@@ -273,7 +265,7 @@ class FedexRequest:
         )
         return (
             result["resolvedAddresses"][0]["classification"] != "BUSINESS"
-        )  # We assume residential until proven otherwise
+        )
 
     def _get_address_from_partner(self, partner, check_residential=False):
         res = self._get_location_from_partner(partner, check_residential)
@@ -285,10 +277,8 @@ class FedexRequest:
     def _get_contact_from_partner(self, partner, company_partner=False):
         res = {"phoneNumber": partner.phone_ids._primary().number}
         if company_partner and not res["phoneNumber"]:
-            # Fallback to phone on the company if none on the WH
             res["phoneNumber"] = company_partner.phone_ids._primary().number
         if company_partner:
-            # Always put the name of the company, if the partner is a WH
             res["companyName"] = partner.name[:35]
             res["personName"] = partner.name[:70]
         elif partner.is_company:
@@ -316,8 +306,6 @@ class FedexRequest:
             or int(package.dimension["width"])
             or int(package.dimension["height"])
         ):
-            # FedEx will raise a warning when mixing imperial and metric units (MIXED.MEASURING.UNITS.INCLUDED).
-            # So we force the dimension unit based on the selected weight unit on the delivery method.
             res["dimensions"] = {
                 "units": "IN" if self.weight_units == "LB" else "CM",
                 "length": int(package.dimension["length"]),
@@ -410,7 +398,7 @@ class FedexRequest:
                     "freightOnValue": "CARRIER_RISK"
                     if self.insurance == 100
                     else "OWN_RISK",
-                    "dutiesPayment": {"paymentType": "SENDER"},  # Only allowed value...
+                    "dutiesPayment": {"paymentType": "SENDER"},
                 },
             },
         }
@@ -501,7 +489,7 @@ class FedexRequest:
                         "comments": [
                             "",
                             picking_no,
-                        ],  # First one is special instructions
+                        ],
                     },
                 },
             },
@@ -594,7 +582,6 @@ class FedexRequest:
             shipment = res["transactionShipments"][0]
             details = shipment["completedShipmentDetail"]
             pieces = shipment["pieceResponses"]
-            # Sometimes the shipment might be created but no pricing calculated, we just set to 0.
             price = (
                 self._decode_pricing(details["shipmentRating"], fedex_currency)
                 if "shipmentRating" in details
@@ -698,7 +685,7 @@ class FedexRequest:
                 "customsClearanceDetail": {
                     "dutiesPayment": {
                         "paymentType": "SENDER"
-                    },  # Only allowed value for returns
+                    },
                     "commodities": [
                         self._get_commodities_info(c, fedex_currency)
                         for pkg in packages
@@ -796,7 +783,7 @@ class FedexRequest:
             "/ship/v1/shipments/cancel",
             {
                 "accountNumber": {"value": self.account_number},
-                "deletionControl": "DELETE_ALL_PACKAGES",  # Cancel the entire shipment, not only the individual package.
+                "deletionControl": "DELETE_ALL_PACKAGES",
                 "trackingNumber": tracking_nr,
             },
             "PUT",
@@ -814,10 +801,6 @@ class FedexRequest:
         }
 
     def _add_extra_data_to_request(self, request, request_type) -> None:
-        """Adds the extra data to the request.
-        When there are multiple items in a list, they will all be affected by
-        the change.
-        """
         extra_data_input = {
             "rate": self.carrier.fedex_rest_extra_data_rate_request,
             "ship": self.carrier.fedex_rest_extra_data_ship_request,
@@ -831,7 +814,6 @@ class FedexRequest:
             ) from None
 
         def extra_data_to_request(request, extra_data):
-            """recursive function that adds extra data to the current request."""
             for key, new_value in extra_data.items():
                 request[key] = current_value = request.get(key)
                 if isinstance(current_value, list):

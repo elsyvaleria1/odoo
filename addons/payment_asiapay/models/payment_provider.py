@@ -51,7 +51,6 @@ class PaymentProvider(models.Model):
         help="The secure hash function associated to your AsiaPay account.",
     )
 
-    # ==== CONSTRAINT METHODS ===#
 
     @api.constrains("available_currency_ids", "state")
     def _check_available_currency_ids(self) -> None:
@@ -75,23 +74,15 @@ class PaymentProvider(models.Model):
                     )
                 )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "asiapay":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS ===#
 
     def _asiapay_get_api_url(self):
-        """Return the URL of the API corresponding to the provider's state.
-
-        :return: The API URL.
-        :rtype: str
-        """
         self.check_singleton()
 
         environment = "production" if self.state == "enabled" else "test"
@@ -99,14 +90,6 @@ class PaymentProvider(models.Model):
         return api_urls.get(self.asiapay_brand, api_urls["paydollar"])
 
     def _get_asiapay_signature(self, data, incoming=True):
-        """Compute the signature for the provided data according to the AsiaPay documentation.
-
-        :param dict data: The data to sign.
-        :param bool incoming: Whether the signature must be generated for an incoming (AsiaPay to
-                              Odoo) or outgoing (Odoo to AsiaPay) communication.
-        :return: The calculated signature.
-        :rtype: str
-        """
         signature_keys = const.SIGNATURE_KEYS["incoming" if incoming else "outgoing"]
         data_to_sign = [str(data[k]) for k in signature_keys] + [
             self.asiapay_secure_hash_secret

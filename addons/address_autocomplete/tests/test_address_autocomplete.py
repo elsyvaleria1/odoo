@@ -155,8 +155,6 @@ class TestAddressAutocomplete(HttpCase):
         self.assertEqual(self.calls, [])
 
     def test_with_no_choice_the_first_installed_provider_completes(self):
-        """Installing a provider is enough, as it was before the generic
-        module: an unset choice is the first installed provider by code."""
         self._choose_fake()
         self.env["ir.config_parameter"].sudo().set_param(
             "address_autocomplete.provider", ""

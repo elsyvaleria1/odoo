@@ -45,10 +45,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         if invoice_date_due:
             move.invoice_date_due = invoice_date_due
         if release_to_pay:
-            # Force the status the way the application does. Writing
-            # release_to_pay directly reaches past its compute -- it is not a
-            # gesture any user can make, and the value does not survive the
-            # next recompute of the bill.
             move.write(
                 {
                     "force_release_to_pay": True,
@@ -60,14 +56,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         return move
 
     def test_sale_purchase_journal_for_purchase(self):
-        """
-        Test different purchase journal setups with or without multicurrency:
-            1) Journal with no currency, bills in foreign currency -> dashboard data should be displayed in company currency
-            2) Journal in foreign currency, bills in foreign currency -> dashboard data should be displayed in foreign currency
-            3) Journal in foreign currency, bills in company currency -> dashboard data should be displayed in foreign currency
-            4) Journal in company currency, bills in company currency -> dashboard data should be displayed in company currency
-            5) Journal in company currency, bills in foreign currency -> dashboard data should be displayed in company currency
-        """
         foreign_currency = self.other_currency
         company_currency = self.company_data["currency"]
 
@@ -120,7 +108,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         ]
 
         expected_vals_list = [
-            # number_draft, sum_draft, number_waiting, sum_waiting, number_late, sum_late, currency
             [1, 100, 1, 55, 1, 55, company_currency],
             [1, 200, 1, 110, 1, 110, foreign_currency],
             [1, 400, 1, 220, 1, 220, foreign_currency],
@@ -144,10 +131,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
                     currency=bill_currency,
                     journal=purchase_journal,
                 )
-                # A draft bill counts on the dashboard once it is late, so its
-                # due date is stated: through the form, the due date is derived
-                # before any line exists and the onchange round-trip keeps
-                # today's, which the ORM then saves as given.
                 _draft_bill = self.init_invoice(
                     "in_invoice",
                     invoice_date="2017-01-01",
@@ -181,8 +164,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self._create_test_vendor_bills(journal)
 
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
-        # Expected behavior is to have three moves waiting for payment for a total amount of 4440$ one of which would be late
-        # for a total amount of 40$ (second move has one of three lines late but that's not enough to make the move late)
         self.assertEqual(3, dashboard_data["number_waiting"])
         self.assertEqual(
             format_amount(self.env, 4440, company_currency),
@@ -243,7 +224,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
             }
         )
 
-        # Check Draft
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
 
         self.assertEqual(dashboard_data["number_draft"], 2)
@@ -252,7 +232,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertEqual(dashboard_data["number_waiting"], 0)
         self.assertIn("0.00", dashboard_data["sum_waiting"])
 
-        # Check Both
         invoice.action_post()
 
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
@@ -264,7 +243,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertEqual(dashboard_data["number_waiting"], 1)
         self.assertIn("81.72", dashboard_data["sum_waiting"])
 
-        # Check partial on invoice
         partial_payment = self.env["account.payment"].create(
             {
                 "amount": 13.3,
@@ -286,7 +264,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertEqual(dashboard_data["number_waiting"], 1)
         self.assertIn("68.42", dashboard_data["sum_waiting"])
 
-        # Check waiting payment
         refund.action_post()
 
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
@@ -296,7 +273,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertEqual(dashboard_data["number_waiting"], 2)
         self.assertIn("55.12", dashboard_data["sum_waiting"])
 
-        # Check partial on refund
         payment = self.env["account.payment"].create(
             {
                 "amount": 10.0,
@@ -390,8 +366,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
             )
 
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
-        # Four of the six draft bills reach the dashboard: the three already due
-        # plus the future-dated one forced to release_to_pay 'yes' — 4 x 4000$.
         self.assertEqual(4, dashboard_data["number_draft"])
         self.assertEqual(
             format_amount(self.env, 16000, company_currency),
@@ -400,11 +374,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
 
     @freeze_time("2023-03-15")
     def test_draft_purchase_receipts_reach_the_dashboard(self):
-        """A draft purchase receipt counts as a draft, as it does without us."""
-        # Core counts receipts on both legs, via get_invoice_types(include_receipts=True).
-        # This module replaced that query and asked the purchase leg for
-        # get_purchase_types(include_receipts=False), so installing it made draft
-        # purchase receipts disappear from the dashboard count and sum.
         journal = self.company_data["default_journal_purchase"]
 
         self.init_invoice(
@@ -420,13 +389,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
 
     @freeze_time("2023-03-15")
     def test_bills_to_pay_tile_and_its_list_agree(self):
-        """The tile's number and the list it opens must be one rule, not two.
-
-        The SQL gate exempts credit notes on purpose -- a credit note is not
-        paid, it offsets -- so it counts every posted unpaid refund. The search
-        filter the tile links to carried no such exemption and dropped any
-        refund whose verdict was 'no', so the number and the list disagreed.
-        """
         journal = self.company_data["default_journal_purchase"]
 
         self.init_invoice(
@@ -446,8 +408,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
 
         dashboard_data = journal._get_journal_dashboard_data_batched()[journal.id]
 
-        # Read the filter the tile actually opens rather than restating it, so
-        # this test fails if the view and the SQL gate drift apart again.
         view = self.env.ref(
             "account_3way_match.account_invoice_filter_inherit_account_3way_match"
         )
@@ -466,12 +426,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertIn(refund, opened)
 
     def test_the_bill_action_still_carries_the_module_search_view(self):
-        """open_action was deleted; the XML binding is what supplies the view.
-
-        The override restated a search_view_id that account_invoice_view.xml
-        already writes onto the same action record, so removing it must leave
-        the binding untouched.
-        """
         journal = self.company_data["default_journal_purchase"]
         action = journal.open_action()
         expected = self.env.ref(
@@ -480,17 +434,10 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
         self.assertEqual(action["search_view_id"][0], expected.id)
 
     def test_uninstall_gives_core_actions_their_search_view_back(self):
-        """search_view_id declares no ondelete, so it defaults to `set null`.
-
-        Uninstalling would drop this module's search view and leave both core
-        actions with no search view at all, rather than reverting them to the
-        one core shipped.
-        """
         bill_filter = self.env.ref("account.view_account_bill_filter")
         actions = self.env.ref("account.action_move_in_invoice_type") | self.env.ref(
             "account.action_move_in_refund_type"
         )
-        # The module's XML has pointed them at its own search view.
         self.assertNotIn(bill_filter, actions.search_view_id)
 
         uninstall_hook(self.env)
@@ -499,14 +446,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
             self.assertEqual(action.search_view_id, bill_filter)
 
     def test_the_dashboard_gate_asks_the_refund_helper(self):
-        """One definition of "which judged documents are refunds", not two.
-
-        _release_to_pay_refund_types() exists so the quantity source, the
-        line's own sign and this gate cannot drift. The gate kept its own copy
-        of the literal, so widening the judged set would have left it behind --
-        the exact drift the helper's docstring warns about. Patching the helper
-        must move the gate.
-        """
         journal = self.company_data["default_journal_purchase"]
         before = journal._get_to_pay_select()
         self.assertIn("in_invoice", before.params[0])
@@ -524,13 +463,6 @@ class AccountJournalDashboard3WayWatchTest(TestAccountJournalDashboardCommon):
 
     @freeze_time("2023-03-15")
     def test_to_validate_tile_and_its_list_agree(self):
-        """The other tile, and the same rule: one count, one list.
-
-        _get_draft_sales_purchases_query gates on payment_state; the filter the
-        tile opens did not. A draft bill whose payment is blocked -- and
-        action_toggle_block_payment works on a draft -- was shown by the list
-        and not counted by the tile.
-        """
         journal = self.company_data["default_journal_purchase"]
 
         self.init_invoice(

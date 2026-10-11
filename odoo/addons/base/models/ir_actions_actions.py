@@ -192,12 +192,6 @@ class IrActionsActions(models.Model):
             table = self.env[model_name]._table
             if table == self._table or not sql.table_exists(cr, table):
                 continue
-            # A root row whose id already names a row of the concrete table is a
-            # shadow, not a stray: the action itself is complete in the subtype
-            # table and the root copy carries only the root's own columns.
-            # Moving it would insert a second row under the same id with every
-            # subtype column null, which the subtype's own NOT NULLs reject --
-            # `ir_act_server.model_id` first. Drop the shadow instead.
             cr.execute(
                 SQL(
                     "DELETE FROM ONLY %(root)s root WHERE root.type = %(type)s"
@@ -334,7 +328,6 @@ class IrActionsActions(models.Model):
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
         for vals in vals_list:
-            # the table refuses the row before _check_type can name the reason
             if vals.get("type", self._name) != self._name:
                 raise ValidationError(self._get_type_mismatch_message(vals["type"]))
         vals_list = [
@@ -364,8 +357,6 @@ class IrActionsActions(models.Model):
 
     @staticmethod
     def _normalize_path_vals(vals: ValuesType) -> ValuesType:
-        # an empty path is no path: stored as '', it holds no reservation and
-        # reads as a path to every query that tests for NULL
         if "path" in vals and not vals["path"]:
             return {**vals, "path": False}
         return vals
@@ -457,18 +448,12 @@ class IrActionsActions(models.Model):
         return frozenset(view_modes)
 
     def _get_field_target_model(self) -> str:
-        """The field naming the model this kind of action opens, for the kinds
-        that open one. Empty where the action opens nothing."""
         return ""
 
     def _get_field_groups(self) -> str:
-        """The field holding the groups this kind of action is restricted to.
-        Empty where the kind admits every user."""
         return ""
 
     def _get_fields_binding_extra(self) -> tuple[str, ...]:
-        """What a binding of this kind of action ships to the client beyond
-        `_BINDING_READ_FIELDS`."""
         return ()
 
     @api.model
@@ -708,8 +693,6 @@ class IrActionsActions(models.Model):
     def _prepare_expression_names(self, names: dict[str, Any]) -> dict[str, Any]:
         root = self.env["ir.actions.actions"]
         prepared = {**root._prepare_eval_context(root), **self.env.context, **names}
-        # `context` names the evaluation context itself, as the web client's
-        # interpreter resolves it, unless the caller binds the name
         prepared.setdefault("context", dict(prepared))
         return prepared
 
@@ -770,18 +753,18 @@ class IrActionsActions(models.Model):
             for reservation in Reservation.search([("action_id", "in", self.ids)])
         }
         to_create = []
-        released = renamed = 0  # debuglog
+        released = renamed = 0
         for action in self:
             reservation = reserved.get(action.id)
             if not action.path:
                 if reservation:
                     reservation.unlink()
-                    released += 1  # debuglog
+                    released += 1
             elif not reservation:
                 to_create.append({"path": action.path, "action_id": action.id})
             elif reservation.path != action.path:
                 reservation.path = action.path
-                renamed += 1  # debuglog
+                renamed += 1
         _debug.lifecycle(
             "path_reservations_synced",
             actions=len(self),

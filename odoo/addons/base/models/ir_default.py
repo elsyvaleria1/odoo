@@ -319,7 +319,7 @@ class IrDefault(models.Model):
         return json_loads(default.json_value) if default else None
 
     @api.model
-    @tools.ormcache("self.env.uid", "self.env.company.id", "model_name", "condition")  # noqa: E8540  ir.default rows bind a user or a company, never a group
+    @tools.ormcache("self.env.uid", "self.env.company.id", "model_name", "condition")
     def _get_model_defaults(
         self, model_name: str, condition: str | bool = False
     ) -> dict[str, Any]:
@@ -340,7 +340,6 @@ class IrDefault(models.Model):
             & Domain("condition", "=", condition or False),
             ["field_id", "user_id", "company_id", "json_value"],
         )
-        # the most specific default wins: user-bound before company-bound before global
         defaults = defaults.sorted(
             key=lambda d: (not d.user_id, not d.company_id, d.id)
         )

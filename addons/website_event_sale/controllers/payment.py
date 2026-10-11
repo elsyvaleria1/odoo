@@ -10,14 +10,7 @@ _debug = DebugLog(__name__)
 
 class PaymentPortalOnsite(PaymentPortal):
     def _check_transaction_for_order(self, transaction, sale_order):
-        """
-        Throws a ValidationError if the user tries to pay for a ticket which isn't available
-        """
         super()._check_transaction_for_order(transaction, sale_order)
-        # Only the registrations still waiting for a seat are checked. The
-        # `open` and `done` ones are already counted as taken by
-        # `_get_seats_availability`, so counting them here too would demand
-        # seats the order itself already holds and reject the payment.
         registration_domain = [
             ("sale_order_id", "=", sale_order.id),
             ("event_ticket_id", "!=", False),

@@ -12,8 +12,6 @@ from odoo.addons.knowledge.tests.test_knowledge_article_business import (
 class TestKnowledgeArticleTours(HttpCaseWithUserDemo):
     @classmethod
     def setUpClass(cls):
-        """The test article body contains custom selectors to ease the test steps as well as a
-        pre-existing comment on the second paragraph."""
 
         super().setUpClass()
 
@@ -59,7 +57,6 @@ class TestKnowledgeArticleTours(HttpCaseWithUserDemo):
     def test_knowledge_article_comments(self):
         self.start_tour("/odoo", "knowledge_article_comments", login="demo")
 
-        # assert messages and resolved status
         self.assertTrue(self.test_article_thread.is_resolved)
         expected_messages = [
             "Marc, can you check this?",

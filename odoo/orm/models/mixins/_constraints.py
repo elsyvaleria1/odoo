@@ -112,7 +112,6 @@ class _ConstraintsMixin(_ModelStubs):
 
     @property
     def _required_attachment_names(self) -> frozenset[str]:
-        # an attachment-backed field has no column, so no NOT NULL holds it
         cls = self.env.registry[self._name]
         return get_or_create_class_memo(
             cls,

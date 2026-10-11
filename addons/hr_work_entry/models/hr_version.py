@@ -418,7 +418,6 @@ class HrVersion(models.Model):
         return self.work_entry_source == "calendar"
 
     def generate_work_entries(self, date_start, date_stop, force=False):
-        # the window is [first day's midnight, the midnight after the last day)
         date_start = datetime.combine(fields.Date.to_date(date_start), time.min)
         date_stop = datetime.combine(
             fields.Date.to_date(date_stop) + timedelta(days=1), time.min
@@ -731,9 +730,6 @@ class HrVersion(models.Model):
             all_we_to_unlink = self.env["hr.work.entry"].search(Domain.OR(domains))
         entries_by_version = all_we_to_unlink.grouped("version_id")
         for version, date_start in before_start.items():
-            # `hr.work.entry.date` is a Date and the bounds here are Datetimes,
-            # so both comparisons are made against the version's own Date fields
-            # -- the same values the domains above selected on.
             if any(
                 entry.date < version.date_start
                 for entry in entries_by_version.get(version, ())

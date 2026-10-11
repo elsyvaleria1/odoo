@@ -6,10 +6,6 @@ from odoo import api, fields, models
 _logger = logging.getLogger(__name__)
 
 
-# Seasons create urgency and novelty (Octalysis drive 6: Scarcity).
-# Each season has its own leaderboard that resets, solving the
-# "permanent bottom-half" problem of global leaderboards.
-# Exclusive badges and challenges are only available during the season.
 class GamificationSeason(models.Model):
     """Time-limited themed gamification event with exclusive rewards."""
 
@@ -57,7 +53,6 @@ class GamificationSeason(models.Model):
         tracking=True,
     )
 
-    # Exclusive content
     challenge_ids = fields.One2many(
         comodel_name="gamification.challenge",
         inverse_name="season_id",
@@ -75,7 +70,6 @@ class GamificationSeason(models.Model):
         string="Season Quests",
     )
 
-    # Stats
     challenge_count = fields.Count(
         count_of="challenge_ids",
         string="# Challenges",
@@ -92,7 +86,6 @@ class GamificationSeason(models.Model):
             season.participant_count = len(all_users)
 
     def action_view_challenges(self) -> dict[str, Any]:
-        """Navigate to challenges linked to this season."""
         self.check_singleton()
         return {
             "name": self.env._("Season Challenges"),
@@ -109,22 +102,13 @@ class GamificationSeason(models.Model):
     )
 
     def action_activate(self):
-        """Start the season."""
         self.filtered(lambda s: s.state == "draft").write({"state": "active"})
 
     def action_end(self) -> None:
-        """End the season and archive its challenges."""
         self.filtered(lambda s: s.state == "active").write({"state": "ended"})
 
     @api.model
     def _cron_update_seasons(self) -> None:
-        """Open and close seasons on their own dates.
-
-        ``start_date`` and ``end_date`` are required on every season and were
-        read by nothing: the state only ever moved when someone pressed a
-        button, so a season configured months in advance sat in ``draft`` past
-        its own start and an expired one kept awarding its exclusive badges.
-        """
         today = fields.Date.today()
         starting = self.search([("state", "=", "draft"), ("start_date", "<=", today)])
         if starting:
@@ -136,18 +120,9 @@ class GamificationSeason(models.Model):
             _logger.info("Season(s) ended: %s", ", ".join(ending.mapped("name")))
 
     def action_archive(self):
-        """Archive a completed season."""
         self.filtered(lambda s: s.state == "ended").write({"state": "archived"})
 
     def get_season_leaderboard(self, limit=10) -> list:
-        """Return karma earned during this season's time window.
-
-        Unlike the global leaderboard, this only counts karma gained
-        between start_date and end_date — giving everyone a fresh start.
-
-        :param int limit: max entries.
-        :return: list of dicts.
-        """
         self.check_singleton()
         if not self.start_date or not self.end_date:
             return []

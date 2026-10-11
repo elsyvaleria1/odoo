@@ -48,7 +48,6 @@ class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
         }
 
     def _forward(self, dependency_type, lag_hours=0.0):
-        """P Mon 8-10 is moved to Tue 13-15; S Tue 8-11 lasts 3 working hours."""
         predecessor = self._create_task(
             "P", self.user1, datetime(2021, 6, 7, 8), datetime(2021, 6, 7, 10)
         )
@@ -64,7 +63,6 @@ class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
         return predecessor, successor
 
     def _backward(self, dependency_type, lag_hours=0.0):
-        """S Wed 8-10 is moved to Mon 9-11; P Mon 13-16 lasts 3 working hours."""
         predecessor = self._create_task(
             "P", self.user1, datetime(2021, 6, 7, 13), datetime(2021, 6, 7, 16)
         )
@@ -328,9 +326,6 @@ class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
         )
 
     def _forward_through_a_task_left_in_place(self, dependency_type):
-        """A Mon 8-10 -> B Tue 8-10 -[type]-> C Wed 8-10 -> D Wed 9-11, C and D
-        overlapping before A is dragged to Mon 13-15: B stays where it is, C
-        is in conflict with D and is placed again, bounded by B."""
         moved = self._create_task(
             "A", self.user1, datetime(2021, 6, 7, 8), datetime(2021, 6, 7, 10)
         )
@@ -394,9 +389,6 @@ class TestGanttRescheduleDependencyTypes(ProjectGanttRescheduleCommon):
         )
 
     def _backward_through_a_task_left_in_place(self, dependency_type):
-        """W Wed 14-16 -> X Wed 15-17 -[type]-> Y Thu 15-17 -> Z Fri 15-17, W
-        and X overlapping before Z is dragged to Fri 10-12: Y stays where it
-        is, X is in conflict with W and is placed again, bounded by Y."""
         overlapped = self._create_task(
             "W", self.user2, datetime(2021, 6, 9, 14), datetime(2021, 6, 9, 16)
         )

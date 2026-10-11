@@ -13,7 +13,6 @@ OAUTH_STATE_SCOPE = register_signed_scope(
     f"{OAUTH_STATE_MAX_AGE_SECONDS} seconds, or one already consumed",
 )
 
-# a flow whose provider or IAP proxy cannot carry a state back keeps it here
 UNCARRIED_STATE_SESSION_KEY = "social_oauth_uncarried_state"
 
 
@@ -80,21 +79,12 @@ class SocialMedia(models.Model):
 
 
     def action_add_account(self, company_id=None):
-        # Set the company of the futures new accounts (see <social.account>::_default_company_id)
         if company_id is None:
             company_id = self.env.company.id
         request.session["social_company_id"] = company_id
         return self._action_add_account()
 
     def _issue_oauth_state(self, carried=True, **claims):
-        """The signed state an account authorization of this media carries.
-
-        :param bool carried: Whether the provider brings the state back to the callback;
-                             when it cannot, the session keeps it for the callback instead.
-        :param claims: What else the callback must find bound to the state.
-        :return: The state, which the session that asked for it consumes once.
-        :rtype: str
-        """
         self.check_singleton()
         state = issue_session_state(
             self.env,
@@ -110,6 +100,4 @@ class SocialMedia(models.Model):
         return state
 
     def _action_add_account(self):
-        """Every social module should override this method.
-        Usually redirects to the social media links that allows accounts to be read by our app."""
         pass

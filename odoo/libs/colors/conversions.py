@@ -87,7 +87,6 @@ def get_hsl_from_seed(seed: str) -> str:
 
 
 def lighten_hex(color: str, factor: float) -> str:
-    """Blend an RGB hex color toward white, clamping the factor to [0, 1]."""
     factor = max(0.0, min(factor, 1.0))
     return rgb_to_hex(
         tuple(

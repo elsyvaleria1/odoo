@@ -31,12 +31,6 @@ class MixinCredentialHolder(models.AbstractModel):
     _CREDENTIAL_FIELDS: dict[str, str] = {}
 
     def _credential_field_map(self) -> dict[str, str]:
-        """Every inheriting module's doors, merged in load order.
-
-        `_CREDENTIAL_FIELDS` is a plain class attribute, so reading it returns
-        only the last-loaded module's mapping. The merge is cached per MRO: the
-        registry keeps a model's class and swaps its bases as modules load.
-        """
         model_class = type(self)
         mro = model_class.__mro__
         cached = vars(model_class).get("_credential_field_map_merged")
@@ -48,7 +42,6 @@ class MixinCredentialHolder(models.AbstractModel):
         return cached[1]
 
     def _credential_holder_name(self) -> str:
-        """Unique per record: credentials are unique on (company_id, name)."""
         self.check_singleton()
         return f"{self.display_name or self._description} [#{self.id}]"
 
@@ -112,7 +105,7 @@ class MixinCredentialHolder(models.AbstractModel):
                 record[door] = secrets.get(key) or False
 
     def _inverse_credential_doors(self):
-        """Doors are routed in `create` and `write`; see the class docstring."""
+        pass
 
     def _get_held_secrets(self) -> dict:
         self.check_singleton()
@@ -125,20 +118,12 @@ class MixinCredentialHolder(models.AbstractModel):
         return self._get_held_secrets().get(key) or False
 
     def _get_held_main_secret(self, prefer: str):
-        """The held credential's one secret, wherever its form stored it:
-        under `prefer` in a JSON payload, else the single value of a simple
-        one -- as `credential.credential._use_secret` reads it."""
         secrets = self._get_held_secrets()
         return secrets.get(prefer) or secrets.get("credential_value") or False
 
     def _post_held_oauth2_refresh_grant(
         self, token_url, refresh_key, client_auth, *, purpose, **options
     ):
-        """Spend the refresh token held under `refresh_key`, the row locked first.
-
-        Returns the token endpoint's response, or None when no refresh token is
-        held. Storing what it returns is the caller's, inside this transaction.
-        """
         self.check_singleton()
         credential = self.sudo()[self._credential_holder_field]
         if not credential:
@@ -174,11 +159,6 @@ class MixinCredentialHolder(models.AbstractModel):
         )
 
     def _set_held_secrets(self, secrets: dict) -> None:
-        """Write some of this record's secrets, keeping the others.
-
-        A false value removes that secret. A credential left holding nothing is
-        unlinked, and a record holding no secret holds no credential.
-        """
         self.check_singleton()
         credential = self.sudo()[self._credential_holder_field]
         if not credential:

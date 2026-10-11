@@ -37,8 +37,6 @@ class TestPartnerRelation(PartnerRelationCommon):
         self.assertEqual(of_juan.type_id, of_maria.type_id)
 
     def test_a_record_being_composed_has_no_wording_yet(self):
-        # The form computes both labels on its first onchange, before the user
-        # has reached the required Relationship field.
         relation = self.relations.new({"partner_id": self.juan.id})
 
         self.assertFalse(relation.label)

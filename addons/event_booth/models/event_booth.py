@@ -6,7 +6,6 @@ class EventBooth(models.Model):
     _description = "Event Booth"
     _inherit = ["event.type.booth", "mixin.mail.thread", "mixin.mail.activity"]
 
-    # owner
     event_type_id = fields.Many2one(
         required=False,
         ondelete="set null",
@@ -17,7 +16,6 @@ class EventBooth(models.Model):
         required=True,
         ondelete="cascade",
     )
-    # customer
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Renter",
@@ -49,7 +47,6 @@ class EventBooth(models.Model):
         copy=False,
         readonly=False,
     )
-    # state
     state = fields.Selection(
         selection=[("available", "Available"), ("unavailable", "Unavailable")],
         string="Status",

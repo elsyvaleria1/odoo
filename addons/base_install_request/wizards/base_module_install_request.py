@@ -53,8 +53,6 @@ class BaseModuleInstallRequest(models.Model):
         }
 
     def _send_request(self):
-        """Tell the administrators. `approval_base_install_request` replaces this
-        with an approval request wherever the approval engine is installed."""
         mail_template = self.env.ref(
             "base_install_request.mail_template_base_install_request"
         )

@@ -22,10 +22,7 @@ class RemoteEvent:
     cancelled: bool = False
     updated: datetime | None = None
     etag: str | None = None
-    # the Odoo record the provider says the item was made from
     odoo_hint: int | None = None
-    # the id Odoo's insert of the item sent, when the provider keeps it beside
-    # the item's own
     insert_id: str | None = None
     payload: Mapping[str, Any] = dataclasses.field(default_factory=dict)
 
@@ -49,7 +46,6 @@ class ErrorKind(enum.StrEnum):
     AUTH = "auth"
 
 
-# the provider refused the record itself: sending it again changes nothing
 PERMANENT = frozenset({ErrorKind.FORBIDDEN, ErrorKind.INVALID})
 
 

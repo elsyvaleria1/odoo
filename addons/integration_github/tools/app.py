@@ -9,8 +9,6 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from odoo.addons.integration.tools.api_client import get_api_client
 
 APP_CATEGORY = "github_app"
-# GitHub refuses an app JWT that lives longer than ten minutes, and one issued in
-# its future: it is dated a minute back for clock drift and expires in nine.
 _JWT_BACKDATE = 60
 _JWT_LIFETIME = 540
 
@@ -28,7 +26,6 @@ def _b64(data: bytes) -> str:
 def app_jwt(
     app_id: str | int, private_key_pem: str, *, now: float | None = None
 ) -> str:
-    """The RS256 JWT that authenticates a GitHub App as itself."""
     key = serialization.load_pem_private_key(private_key_pem.encode(), password=None)
     if not isinstance(key, rsa.RSAPrivateKey):
         raise ValueError("a GitHub App key is an RSA private key")
@@ -53,14 +50,6 @@ def mint_installation_token(
     repositories: list[str] | None,
     permissions: dict[str, str] | None,
 ) -> InstallationToken:
-    """An installation token of the App ``credential``: limited to
-    ``repositories`` (names within the installation's account) and
-    ``permissions`` when given, the whole installation otherwise. GitHub lets it
-    live an hour.
-
-    The call is signed with the App's own JWT, and not logged: the answer is the
-    token.
-    """
     secrets = credential._use_secret_payload("integration_github:app_token")
     missing = {"app_id", "private_key", "installation_id"} - secrets.keys()
     if missing:

@@ -26,12 +26,6 @@ class MixinOrderLineInvoice(models.AbstractModel):
         copy=False,
     )
 
-    # The invoiceable quantity of a line stands in exactly one of three places,
-    # and so does its amount: on a posted invoice (`*_invoiced`), on an invoice
-    # still in draft (`*_invoiced_draft`), or on no invoice at all
-    # (`*_to_invoice`). A draft claims its quantity, so the line cannot be
-    # invoiced twice, without counting as invoiced, which it is not until it
-    # is posted.
     qty_invoiced = fields.Float(
         string="Invoiced Quantity",
         digits="Product Unit",
@@ -245,8 +239,6 @@ class MixinOrderLineInvoice(models.AbstractModel):
                     line.invoice_state = "no"
                     continue
                 if in_draft:
-                    # every part is claimed, at least one by an invoice that
-                    # is not posted
                     line.invoice_state = "draft"
                     continue
                 compare = float_compare(

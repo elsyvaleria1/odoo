@@ -124,7 +124,7 @@ class IntrastatExpiryReportTest(TestAccountReportsCommon):
             }
         )
         moves.action_post()
-        cls.env.flush_all()  # must flush else SQL request in report is not accurate
+        cls.env.flush_all()
         return moves
 
     @freeze_time("2022-01-31")
@@ -140,9 +140,7 @@ class IntrastatExpiryReportTest(TestAccountReportsCommon):
         report_information = report.get_report_information(options)
         lines, warnings = report_information["lines"], report_information["warnings"]
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            #    country code,  transaction code,  origin country
             [2, 3, 6],
             [
                 ("", "", ""),
@@ -182,9 +180,7 @@ class IntrastatExpiryReportTest(TestAccountReportsCommon):
         report_information = report.get_report_information(options)
         lines, warnings = report_information["lines"], report_information["warnings"]
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            #    country code,  transaction code,  commodity code,  origin country
             [2, 3, 5, 6],
             [
                 ("", "", "", ""),

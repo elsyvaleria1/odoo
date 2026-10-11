@@ -29,13 +29,6 @@ class SocialMedia(models.Model):
     media_type = fields.Selection(selection_add=[("twitter", "X")])
 
     def _action_add_account(self):
-        """Builds the URL to Twitter in order to allow account access, then redirects the client.
-        Redirect is done in 'self' since Twitter will then return back to the app with the 'oauth_callback' param.
-
-        Redirect URI from Twitter will land on this module controller's 'twitter_account_callback' method.
-
-        We raise an error message if request_token endpoint is not successfull.
-        (Most likely reason for that to happen: the callback URI is not correctly defined in the Twitter APP settings)"""
 
         self.check_singleton()
 
@@ -140,11 +133,6 @@ class SocialMedia(models.Model):
         }
 
     def _extract_error_message(self, response):
-        """This method tries to extract the error code of the response.
-        Code '415' simply means that the user has not correctly configured their Twitter account
-        so we help them by displaying a nice error message with what they need to do.
-
-        If we can't parse the document or if the code is different, we return the raw response text value."""
         parser = etree.XMLParser(resolve_entities=False, no_network=True)
         with contextlib.suppress(etree.XMLSyntaxError):
             document_root = etree.fromstring(response.content, parser)
@@ -157,8 +145,6 @@ class SocialMedia(models.Model):
         return response.text
 
     def _get_twitter_oauth_header(self, url, headers=None, params=None, method="POST"):
-        """Twitter needs parameters to contain a 'oauth_signature'.
-        This signature requires that all the headers and params are encoded inside it."""
 
         twitter_consumer_key = self.env.registry.settings.get(
             self.env, "social.twitter_consumer_key", False
@@ -189,8 +175,6 @@ class SocialMedia(models.Model):
         return {"Authorization": header_oauth}
 
     def _get_twitter_oauth_signature(self, method, url, params, oauth_token_secret=""):
-        """Special signature handling as requested by Twitter.
-        For more info: https://developer.twitter.com/en/docs/basics/authentication/guides/creating-a-signature.html"""
 
         self.check_singleton()
 
@@ -261,7 +245,6 @@ class SocialMedia(models.Model):
 
     @api.model
     def _format_tweet(self, tweet):
-        """Formats a tweet returned by the Twitter API to a dict that will be interpreted by our frontend."""
         if "created_at" in tweet:
             created_date = fields.Datetime.from_string(
                 dateutil.parser.parse(tweet.get("created_at")).strftime(

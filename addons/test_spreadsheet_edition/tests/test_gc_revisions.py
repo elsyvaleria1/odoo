@@ -31,10 +31,8 @@ class SpreadsheetRevisionTest(SpreadsheetTestCase):
             revisions = spreadsheet.with_context(
                 active_test=False
             ).spreadsheet_revision_ids
-            # write_date is not mocked when archiving, so we need to set it manually
             revisions.write_date = "2018-01-01"
 
-        # 364 days later, the history is still there
         with freeze_time("2018-12-31"):
             self.env["spreadsheet.revision"]._gc_revisions()
             self.assertEqual(
@@ -44,7 +42,6 @@ class SpreadsheetRevisionTest(SpreadsheetTestCase):
                 2,
             )
 
-        # 365 days later, the history is gone
         with freeze_time("2019-01-01"):
             self.env["spreadsheet.revision"]._gc_revisions()
             self.assertFalse(
@@ -65,14 +62,12 @@ class SpreadsheetRevisionTest(SpreadsheetTestCase):
                 "next-revision",
                 snapshot,
             )
-            # revision after the snapshot
             spreadsheet.dispatch_spreadsheet_message(
                 self.new_revision_data(spreadsheet)
             )
             revisions = spreadsheet.with_context(
                 active_test=False
             ).spreadsheet_revision_ids
-            # write_date is not mocked when archiving, so we need to set it manually
             revisions.write_date = "2018-01-01"
 
         with freeze_time("2019-01-01"):
@@ -102,7 +97,6 @@ class SpreadsheetRevisionTest(SpreadsheetTestCase):
             revisions = spreadsheet.with_context(
                 active_test=False
             ).spreadsheet_revision_ids
-            # write_date is not mocked when archiving, so we need to set it manually
             revisions.write_date = "2018-01-01"
 
         with freeze_time("2018-08-01"):

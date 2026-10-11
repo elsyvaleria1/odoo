@@ -54,8 +54,6 @@ class SaleOrderLine(models.Model):
                     "timesheet_invoice_id.state", "=", "posted"
                 ) & Domain("timesheet_invoice_id", "in", refund_account_moves.ids)
                 timesheet_domain |= credited_timesheet_domain
-            # Shortcut to allow computing the domain for a bunch of lines without using _get_deferred_date that does not work in batch.
-            # Side effect: It won't work for the first period if the invoice cron never run. (the next invoice date has never been incremented)
             domain = Domain.AND(
                 [
                     domain,
@@ -103,8 +101,6 @@ class SaleOrderLine(models.Model):
                     "timesheet_invoice_id.state", "=", "posted"
                 ) & Domain("timesheet_invoice_id", "in", refund_account_moves.ids)
                 timesheet_domain |= credited_timesheet_domain
-            # Shortcut to allow computing the domain for a bunch of lines without using _get_deferred_date that does not work in batch.
-            # Side effect: It won't work for the first period if the invoice cron never run. (the next invoice date has never been incremented)
             domain = Domain.AND(
                 [
                     domain,

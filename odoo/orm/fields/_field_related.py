@@ -53,7 +53,6 @@ def setup_related(field: Field[typing.Any], model: BaseModel) -> None:
     field._related_field_seq = tuple(field_seq)
     related_field = field_seq[-1]
 
-    # A one2one reads as one record, so a many2one may end on it.
     reads_one = field.is_many2one and related_field.is_one2one
     if _debug.logic.enabled and reads_one:
         _debug.logic(
@@ -68,13 +67,8 @@ def setup_related(field: Field[typing.Any], model: BaseModel) -> None:
         )
 
     field.related_field = related_field
-    # the join reads the parent's column under the child row's access, which
-    # binds the parent's rules unless the model opts out: a sudo field there
-    # would refuse what it is declared to read
     field.joins_delegation = field.inherited and not model._inherits_rules
     if field.inherited and field.fetched_with_row and not field.manual:
-        # decided before the target was known: a delegated column travels
-        # with the row like a stored one
         field.prefetch = True
 
     model.pool.field_setup_dependents.add(related_field, field)
@@ -157,12 +151,9 @@ def compute_related(field: Field[typing.Any], records: BaseModel) -> None:
                     document_model=records._name,
                 )
             ) from e
-    # one assignment per distinct value; a monetary rounds per record's
-    # currency and an x2many assigns commands, so only their empty value is
-    # shared
     groupable = not (field.is_monetary or field.is_x2many)
     groups: dict[tuple[type[object], typing.Any], tuple[typing.Any, list[IdType]]] = {}
-    ungrouped = 0  # debuglog
+    ungrouped = 0
     related_name = field.related_field.name
     for record, value in zip(records, values, strict=True):
         processed = field._process_related(value[related_name], record.env)
@@ -174,7 +165,7 @@ def compute_related(field: Field[typing.Any], records: BaseModel) -> None:
             else:
                 group[1].append(record.id)
                 continue
-        ungrouped += 1  # debuglog
+        ungrouped += 1
         record[field.name] = processed
     for processed, ids in groups.values():
         records.browse(ids)[field.name] = processed
@@ -244,8 +235,6 @@ def inverse_related(field: Field[typing.Any], records: BaseModel) -> None:
 def _holds_on_missing_step(
     field: Field[typing.Any], records: BaseModel, operator: str, value: typing.Any
 ) -> bool:
-    # a record whose path stops at an empty many2one or one2one reads the
-    # field's falsy value, and a column holding that value answers as here
     positive = Domain.NEGATIVE_OPERATORS.get(operator, operator)
     falsy_value = field.falsy_value
     if pyop := PYTHON_INEQUALITY_OPERATOR.get(positive):
@@ -269,8 +258,6 @@ def search_related(
 ) -> DomainType | NotImplementedType:
     can_be_null = _holds_on_missing_step(field, records, operator, value)
     if operator in Domain.NEGATIVE_OPERATORS and can_be_null:
-        # answered as the complement of the positive condition, which holds
-        # where a step is empty exactly when this one does not
         _debug.logic(
             "field.related.search_unsupported",
             model=field.model_name,
@@ -282,14 +269,14 @@ def search_related(
 
     field_seq = field._related_field_seq
     domain = Domain(field_seq[-1].name, operator, value)
-    null_steps = 0  # debuglog
+    null_steps = 0
     for step in reversed(field_seq[:-1]):
         domain = Domain(step.name, "any!" if field.compute_sudo else "any", domain)
         if can_be_null and (
             (step.is_many2one and not step.required) or step.is_one2one
         ):
             domain |= Domain(step.name, "=", False)
-            null_steps += 1  # debuglog
+            null_steps += 1
     _debug.logic(
         "field.related.search_domain",
         model=field.model_name,

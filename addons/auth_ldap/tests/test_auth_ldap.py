@@ -17,7 +17,7 @@ class TestAuthLDAP(BaseCase):
 
     def setUp(self):
         super().setUp()
-        self.patch(Registry, "_lock", DummyRLock())  # prevent deadlock (see #161438)
+        self.patch(Registry, "_lock", DummyRLock())
         self.opener = requests.Session()
 
         def remove_ldap_user():

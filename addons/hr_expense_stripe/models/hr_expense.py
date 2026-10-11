@@ -44,7 +44,6 @@ class HrExpense(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _prevent_unlinking_card_expense(self) -> None:
-        """If deleted, it may be created again by a stripe event anyway, this ensures the data is accepted"""
         card_expenses = self.filtered("is_card_expense")
         if card_expenses and not self.env.su:
             _debug.logic("card_expense_unlink_refused", expenses=card_expenses)
@@ -56,9 +55,6 @@ class HrExpense(models.Model):
 
     @api.depends("card_id")
     def _compute_is_card_expense(self) -> None:
-        """Because the `card_id` field is locked behind access rights, we need to have a safe way to know
-        if an expense is created from a card payment or not
-        """
         for expense in self:
             expense.is_card_expense = bool(expense.card_id)
 
@@ -75,7 +71,6 @@ class HrExpense(models.Model):
         return super().copy_data(default=default)
 
     def _get_default_responsible_for_approval(self):
-        # EXTEND hr_expense to bypass approval for expenses created from a stripe authorization
         self.check_singleton()
         if self.sudo().card_id:
             return self.env["res.users"]
@@ -83,11 +78,9 @@ class HrExpense(models.Model):
             return super()._get_default_responsible_for_approval()
 
     def _can_be_autovalidated(self) -> bool:
-        # EXTEND hr_expense to bypass approval for expenses created from a stripe authorization
         return bool(super()._can_be_autovalidated() or bool(self.sudo().card_id))
 
     def _do_approve(self, check=True) -> None:
-        # EXTEND hr_expense to bypass approval for expenses created from a stripe authorization
         expenses_from_stripe = self.filtered(
             lambda exp: exp.sudo().card_id and exp.state in {"submitted", "draft"}
         )
@@ -109,12 +102,10 @@ class HrExpense(models.Model):
         super(HrExpense, self - expenses_from_stripe)._do_approve(check)
 
     def _get_or_create_partner_from_stripe(self, merchant_data) -> bool:
-        """DEPRECATED"""
         return False
 
     @api.model
     def _create_from_stripe_authorization(self, auth_object, refusal_reason=None):
-        """Create an expense from a stripe `authorization.request` event, refused if refusal_reason is specified."""
         _debug.pipeline(
             "stripe_authorization",
             refused=bool(refusal_reason),
@@ -123,7 +114,7 @@ class HrExpense(models.Model):
         merchant_data = auth_object["merchant_data"]
         amount_object = (
             auth_object["pending_request"] or auth_object
-        )  # The key is always present, but the value may be empty
+        )
         card = self.env["hr.expense.stripe.card"].search(
             [
                 ("stripe_id", "=", auth_object["card"]["id"]),
@@ -145,8 +136,6 @@ class HrExpense(models.Model):
             ]
         )
         if existing:
-            # a closed authorization is a declined one whose refused expense
-            # already exists: its amount is 0 and must not overwrite it
             if auth_object["status"] == "pending":
                 existing._update_from_stripe_authorization(auth_object)
             return existing
@@ -219,11 +208,6 @@ class HrExpense(models.Model):
         return new_expense
 
     def _update_from_stripe_authorization(self, auth_object) -> None:
-        """
-        Update the expense when the event `issuing_authorization.updated` is received,
-        (rare, it means the vendor updated the authorization)
-        or when `issuing_authorization.created` is received, following an approved `issuing_authorization.request`
-        """
         if not self:
             return
 
@@ -307,9 +291,6 @@ class HrExpense(models.Model):
 
     @api.model
     def _create_from_stripe_transaction(self, tr_object, split_id=False) -> None:
-        """Create an expense from the event `issuing_transaction.created` (when it is a direct capture),
-        which may happen in rare cases (when you buy something on a plane, there can be no authorization due to a lack of connection)
-        """
         merchant_data = tr_object["merchant_data"]
         card = self.env["hr.expense.stripe.card"].search(
             [
@@ -385,9 +366,6 @@ class HrExpense(models.Model):
         new_expense._stripe_create_user_activity()
 
     def _update_from_stripe_transaction(self, tr_object) -> None:
-        """When the event `issuing_transaction.updated` is received, which shouldn't be common
-        or `issuing_transaction.created` (payment is captured)
-        """
         self.check_singleton()
         update_vals = {}
         card = self.card_id
@@ -443,7 +421,6 @@ class HrExpense(models.Model):
 
     @api.model
     def _stripe_cancel_expense_or_reverse_move(self, tr_object) -> None:
-        """This handles the case where an expense is updated but already had a move"""
         if not self:
             raise ValidationError(
                 self.env._("Stripe Credit transfers are not implemented")
@@ -475,7 +452,6 @@ class HrExpense(models.Model):
             )
 
     def _stripe_create_user_activity(self) -> None:
-        """Creates an activity to remind the employee they have to upload the payment receipt"""
         for expense in self.filtered(
             lambda exp: exp.card_id and exp.state != "refused"
         ):
@@ -487,7 +463,6 @@ class HrExpense(models.Model):
             )
 
     def _reconcile_stripe_payments(self, existing_statement_lines=False) -> None:
-        """When an expense paid by the company is posted, its payment could be reconciled with the bank statement line if it already exists"""
         expenses_per_stripe_transaction_id = self.grouped("stripe_transaction_id")
         if not existing_statement_lines:
             existing_statement_lines = dict(
@@ -511,7 +486,6 @@ class HrExpense(models.Model):
             if any(statement_line.mapped("is_reconciled")) or any(
                 expense.state != "paid" for expense in expenses_for_transaction
             ):
-                # Skipping automation of tricky corner cases
                 continue
             moves_to_reconcile = expenses_for_transaction.account_move_id
             statement_line.set_line_bank_statement_line(
@@ -552,7 +526,6 @@ class HrExpense(models.Model):
         return action
 
     def action_submit(self):
-        # EXTEND hr_expense
         if any(
             expense
             for expense in self
@@ -568,7 +541,6 @@ class HrExpense(models.Model):
         return super().action_submit()
 
     def action_split_wizard(self) -> dict:
-        # EXTEND hr_expense
         self.check_singleton()
         if (
             self.state == "draft"

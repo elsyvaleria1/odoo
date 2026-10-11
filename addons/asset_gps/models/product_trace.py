@@ -16,8 +16,6 @@ class ProductTrace(models.Model):
 
     @api.model
     def _asset_ledger_field_map(self):
-        # The relay reads the map, and the names hook derives from it: a module
-        # that extends the names alone relays nothing.
         return {**super()._asset_ledger_field_map(), "gps_device_id": "gps_device_id"}
 
     @api.model

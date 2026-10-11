@@ -17,7 +17,6 @@ class TestDuplicateProducts(common.TransactionCase):
                 "time_efficiency": 80,
             }
         )
-        # Products and lots
         cls.painted_boat = cls.env["product.product"].create(
             {"name": "Painted boat", "is_storable": True, "tracking": "serial"}
         )
@@ -37,7 +36,6 @@ class TestDuplicateProducts(common.TransactionCase):
             {"product_id": cls.painting.id, "name": "p1"}
         )
 
-        # Bill of material
         cls.bom_boat = cls.env["mrp.bom"].create(
             {"product_tmpl_id": cls.painted_boat.product_tmpl_id.id, "product_qty": 1.0}
         )
@@ -57,7 +55,6 @@ class TestDuplicateProducts(common.TransactionCase):
                 "bom_id": cls.bom_boat.id,
             }
         )
-        # first painting layer
         cls.env["mrp.bom.line"].create(
             {
                 "product_id": cls.painting.id,
@@ -65,7 +62,6 @@ class TestDuplicateProducts(common.TransactionCase):
                 "bom_id": cls.bom_boat.id,
             }
         )
-        # second painting layer
         cls.env["mrp.bom.line"].create(
             {
                 "product_id": cls.painting.id,
@@ -76,7 +72,6 @@ class TestDuplicateProducts(common.TransactionCase):
 
         cls.bom_boat.bom_line_ids.operation_id = cls.bom_boat.operation_ids
 
-        # Update quantities
         cls.location_1 = cls.env.ref("stock.stock_location_stock")
         Quant = cls.env["stock.quant"]
         Quant._update_available_quantity(
@@ -87,7 +82,6 @@ class TestDuplicateProducts(common.TransactionCase):
         )
 
     def test_duplicate_without_point(self):
-        """Bom with the same tracked product in 2 bom lines"""
         mrp_order_form = Form(self.env["mrp.production"])
         mrp_order_form.product_id = self.painted_boat
         mrp_order_form.product_qty = 1
@@ -112,8 +106,6 @@ class TestDuplicateProducts(common.TransactionCase):
         )
 
     def test_duplicate_with_points(self):
-        """Bom with the same non tracked product in 2 bom lines and a quality point
-        on this component"""
         self.painting.tracking = "none"
         self.blank_boat.tracking = "none"
         self.env["quality.point"].create(
@@ -178,8 +170,6 @@ class TestDuplicateProducts(common.TransactionCase):
         )
 
     def test_assignation_1(self):
-        """Bom with the same tracked product in 2 bom lines
-        Plan the workorder before reservign quantities"""
         mrp_order_form = Form(self.env["mrp.production"])
         mrp_order_form.product_id = self.painted_boat
         mrp_order_form.product_qty = 1
@@ -216,8 +206,6 @@ class TestDuplicateProducts(common.TransactionCase):
         )
 
     def test_byproduct_1(self):
-        """Use the same product as component and as byproduct"""
-        # Required for `byproduct_ids` to be visible in the view
         self.env.user.group_ids += self.env.ref("mrp.group_mrp_byproducts")
         bom_form = Form(self.bom_boat)
         with bom_form.byproduct_ids.new() as bp:
@@ -238,17 +226,13 @@ class TestDuplicateProducts(common.TransactionCase):
 
         wo = production.workorder_ids[0]
         wo.button_start()
-        # Components
         wo.finished_trace_ids = self.pb1
         wo.move_raw_ids[0].move_line_ids[0].trace_id = self.bb1
         wo.move_raw_ids[0].move_line_ids[0].quantity = 1
-        # First layer
         wo.move_raw_ids[1].move_line_ids[0].trace_id = self.p1
         wo.move_raw_ids[1].move_line_ids[0].quantity = 1
-        # Second layer
         wo.move_raw_ids[2].move_line_ids[0].trace_id = self.p1
         wo.move_raw_ids[2].move_line_ids[0].quantity = 1
-        # Byproduct
         production.move_finished_ids[1].move_line_ids[0].trace_id = self.p2
         production.move_finished_ids[1].move_line_ids[0].quantity = 1
         wo.move_raw_ids.picked = True

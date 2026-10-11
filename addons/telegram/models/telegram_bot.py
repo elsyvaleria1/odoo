@@ -160,8 +160,6 @@ class TelegramBot(models.Model):
         return bots
 
     def write(self, vals):
-        # a bot serving its owner alone moves with it: a new owner is the one
-        # company it serves, as it was before a bot could serve several
         moving = (
             keeping(self).filtered(lambda bot: bot.company_ids == bot.company_id)
             if "company_id" in vals and "company_ids" not in vals
@@ -187,8 +185,6 @@ class TelegramBot(models.Model):
 
     @api.model
     def _command_menu_fields(self) -> set:
-        """The bot's fields that change what its people may run: a feature
-        reading one to enable itself adds it."""
         return {
             "command_ids",
             "company_id",
@@ -220,17 +216,6 @@ class TelegramBot(models.Model):
         return self.search([("token_hash", "=", self._hash_token(token))], limit=1)
 
     def _read_token(self):
-        """Return the token, False when there is no token to read, or
-        _TOKEN_UNREADABLE when a credential exists but could not be decrypted.
-
-        The caller has to tell those last two apart: "no token" means the hash
-        should go, "could not read it" must never be allowed to.
-
-        An archived credential counts as no token: telegram.bot has no active
-        field of its own and credential_id is required with ondelete=restrict,
-        so archiving the
-        credential is the only non-destructive way to take a bot off the air.
-        """
         self.check_singleton()
         if not self.credential_id or not keeping(self).credential_id.active:
             return False
@@ -245,11 +230,6 @@ class TelegramBot(models.Model):
             return _TOKEN_UNREADABLE
 
     def _stored_token_hashes(self) -> dict:
-        """Read token_hash straight from the table.
-
-        Inside its own compute the field is flagged for recomputation, so
-        reading it through the ORM would recurse.
-        """
         ids = [record.id for record in self if isinstance(record.id, int)]
         if not ids:
             return {}
@@ -268,11 +248,6 @@ class TelegramBot(models.Model):
                 record.token_hash = self._hash_token(token) if token else False
                 continue
 
-            # A transient decrypt failure -- a rate limit, a key not in the
-            # environment yet -- used to be flattened to False and stored, and
-            # find_by_token stopped resolving. The webhook answers 200 to
-            # everything, so Telegram never retries and the bot went silently
-            # mute until someone wrote to the credential again.
             if stored is None:
                 stored = self._stored_token_hashes()
             record.token_hash = stored.get(record.id, False)
@@ -301,16 +276,11 @@ class TelegramBot(models.Model):
                 record.token_masked = "********"
 
     def action_register_webhook(self) -> dict:
-        # Telegram is told the new secret before the bot row is written; a
-        # reader refused only at that write would already have replaced it.
         self.check_access("write")
         for bot in self:
             bot._update_webhook_secret_if_inactive()
-            # refuses a bot whose credential is archived or holds no token
             token = bot._get_bot_token()
             if bot.token_hash != self._hash_token(token):
-                # the URL names the token's hash: one stored before the token
-                # was readable would send Telegram's updates to no bot
                 self.env.add_to_compute(self._fields["token_hash"], bot)
                 bot.flush_recordset(["token_hash"])
             bot._get_telegram_client().set_webhook(
@@ -332,7 +302,6 @@ class TelegramBot(models.Model):
         }
 
     def _read_identity(self) -> None:
-        """Store what Telegram says the bot is (getMe)."""
         self.check_singleton()
         response = self._get_telegram_client().get_me()
         me = (
@@ -354,8 +323,6 @@ class TelegramBot(models.Model):
         )
 
     def _publish_default_command_menu(self) -> None:
-        """Tell Telegram the menu of a private chat whose person is not
-        connected yet; a connected person's chat gets their own."""
         self.check_singleton()
         chat = self.env["telegram.chat"]
         lang = self.lang or "en_US"
@@ -375,7 +342,6 @@ class TelegramBot(models.Model):
             _logger.warning("setMyCommands failed for bot %s: %s", self.id, error)
 
     def _is_chat_administrator(self, chat, tg_user_id) -> bool:
-        """Whether Telegram says the user administers the group."""
         self.check_singleton()
         try:
             member = self._get_telegram_client().call(
@@ -387,16 +353,10 @@ class TelegramBot(models.Model):
         return (member or {}).get("status") in ("creator", "administrator")
 
     def _admits_user(self, user) -> bool:
-        """Whether `user` may act through this bot: an internal user only as a
-        member of a company the bot serves, a portal or public user always, on
-        their own contact's data."""
         self.check_singleton()
         return bool(user.share or self._served_companies(user))
 
     def _served_companies(self, user):
-        """The companies `user` acts in through this bot: those it serves that
-        an internal user belongs to, their current company first; every one it
-        serves for a portal or public user, who acts on their own data."""
         self.check_singleton()
         served = keeping(self).company_ids.with_env(self.env)
         if user.share:
@@ -406,9 +366,6 @@ class TelegramBot(models.Model):
         return (served & user.company_id) | served
 
     def _acting_company(self):
-        """The company what runs now acts in: the one the router pinned for
-        this command or its flow, else the current one when the bot serves
-        it, else the bot's own."""
         self.check_singleton()
         served = keeping(self).company_ids
         pinned = self.env.context.get("telegram_company_id")
@@ -420,8 +377,6 @@ class TelegramBot(models.Model):
 
     @api.model
     def _serving(self, handler_name) -> Self:
-        """The bots that run a feature: those its handler is enabled on, but
-        a bot its people moved away from."""
         handler = self.env[handler_name]
         return (
             operating(self)
@@ -447,8 +402,6 @@ class TelegramBot(models.Model):
         return f"https://t.me/{self.bot_username}?{'startgroup' if group else 'start'}={token}"
 
     def _mini_app_url(self, path) -> str | None:
-        """The absolute URL of a Mini App page, or None off https: Telegram
-        refuses a web_app button on http, and the whole message with it."""
         self.check_singleton()
         base_url = self.get_base_url() or ""
         if not base_url.startswith("https://"):
@@ -459,7 +412,6 @@ class TelegramBot(models.Model):
         return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
 
     def _telegram_id(self) -> str:
-        # the token's public half: who the bot is on Telegram, never its secret
         try:
             return self._get_bot_token().partition(":")[0]
         except ValueError:
@@ -513,17 +465,6 @@ class TelegramBot(models.Model):
     ) -> Any:
         self.check_singleton()
 
-        # Sending knows the chat id and nothing else -- not the chat's type,
-        # not who is on the other end -- so a chat first seen here records no
-        # identity, and cannot later prove one: `speaks_for_partner` stays
-        # False for it forever and `_can_auto_link` never fires. That is the
-        # shape every bot-first notification creates.
-        #
-        # It is deliberate, not an oversight, and the readers are built for
-        # it: the webhook serves such a chat as unlinked, and
-        # `_mini_app_user` refuses it for the same reason. Anything new that
-        # reads an identity off a chat has to keep that bar -- linking a
-        # `partner_id` here by hand does not clear it.
         chat = operating(self.env["telegram.chat"])._acquire_chat(chat_id, self.id)
 
         vals = {
@@ -554,10 +495,6 @@ class TelegramBot(models.Model):
         try:
             response = replay.remember(api_method, (str(chat_id), tracking), call)
         except psycopg.Error:
-            # The call reaches Telegram through the ORM, so it also touches the
-            # rate limit bucket and the credential usage counters. A database
-            # error there is never a delivery failure, and the transaction it
-            # aborted cannot carry the write below: let it reach the retry loop.
             _logger.warning(
                 "Database error while running %s for chat %s, not recording it "
                 "as a delivery failure",
@@ -621,8 +558,6 @@ class TelegramBot(models.Model):
         html=True,
         **vals,
     ):
-        """Queue Telegram HTML (or, `html=False`, plain text) for `chat` through
-        the outbox; the ledger row it returns records what becomes of it."""
         self.check_singleton()
         payload = {
             "text": tools_format.truncate(text)
@@ -649,8 +584,6 @@ class TelegramBot(models.Model):
         )
 
     def _queue_reaction(self, chat, message_id, emoji="👍"):
-        """React to a message of the chat: an acknowledgement that says less
-        than a reply."""
         self.check_singleton()
         return self.env["telegram.message"]._queue(
             self,
@@ -663,8 +596,6 @@ class TelegramBot(models.Model):
         )
 
     def _queue_phone_request(self, chat, text):
-        """Ask the person of a private chat to share their own number: `text`
-        says why, the keyboard's one button shares it."""
         self.check_singleton()
         button = translation_env(self, chat)._("📱 Share my phone number")
         return self._queue_text(
@@ -682,8 +613,6 @@ class TelegramBot(models.Model):
         eta=None,
         **vals,
     ):
-        """Queue an attachment: an image as a photo, anything else as a
-        document."""
         self.check_singleton()
         is_photo = (attachment.mimetype or "").startswith(
             "image/"
@@ -749,11 +678,6 @@ class TelegramBot(models.Model):
         )
 
     def get_lang(self, chat=None) -> str:
-        """Language to answer ``chat`` in: the bot's when it always answers in
-        its own; else the one the person's Telegram app uses, if Odoo has it
-        active -- someone may run Odoo in one language and Telegram in
-        another --; else the linked contact's; else the bot's; else the
-        current environment's."""
         self.check_singleton()
         if self.answer_in_bot_lang and self.lang:
             return self.lang
@@ -764,12 +688,6 @@ class TelegramBot(models.Model):
 
     @api.private
     def get_file(self, file_id: str) -> dict[str, Any] | bool:
-        """``{"content": bytes, "file_path": str}`` for a Telegram file id.
-
-        ``file_path`` is the name Telegram gives the stored file
-        (``photos/file_12.jpg``); a message sent as a document carries its
-        original name in the message itself, not here.
-        """
         self.check_singleton()
 
         def _download():
@@ -796,18 +714,6 @@ class TelegramBot(models.Model):
 
     @api.private
     def get_file_content(self, file_id: str) -> bytes | bool:
-        """The bytes of a Telegram file, or False.
-
-        `get_file` already does exactly this and hands back the stored name
-        as well; this is that answer without the name. Written the other way
-        round, the two downloaded the same file through the same two Telegram
-        calls twice over, and recorded the result under the same replay key
-        with two different shapes.
-
-        `if result else False` carries the failure contract: `get_file`
-        answers False, and subscripting that would raise where this used to
-        return False.
-        """
         self.check_singleton()
         result = self.get_file(file_id)
         return result["content"] if result else False
@@ -840,9 +746,6 @@ class TelegramBot(models.Model):
 
     @api.private
     def send_chat_action(self, chat, action="typing", thread_uid=None):
-        """Show `action` in the chat (or one forum topic of it) while the bot
-        works; ephemeral, so sent now and never queued or ledgered, and a
-        failure only logged."""
         self.check_singleton()
         payload = {"chat_id": chat.chat_id, "action": action}
         if thread_uid:

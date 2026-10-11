@@ -21,14 +21,12 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertEqual(len(wizard.line_ids), 1)
         self.assertEqual(wizard.line_ids.res_id, self.partner.id)
         self.assertEqual(wizard.line_ids.res_model, self.partner._name)
         self.assertFalse(wizard.log_id)
 
-        # Archive
         wizard.line_ids.is_active = False
         wizard.line_ids._onchange_is_active()
         self.assertFalse(self.partner.active)
@@ -45,7 +43,6 @@ class TestPrivacyWizard(TransactionCase):
             wizard.log_id.records_description, "Contact (1): #%s" % (self.partner.id)
         )
 
-        # Delete
         wizard.line_ids.action_unlink()
         self.assertEqual(
             wizard.execution_details, "Deleted Contact #%s" % (self.partner.id)
@@ -55,7 +52,6 @@ class TestPrivacyWizard(TransactionCase):
         )
 
     def test_wizard_multi_company(self):
-        # Check that the record is spotted, even if not available on the Reference field
         self.env["ir.access"].create(
             {
                 "name": "Multi-Company Rule",
@@ -86,7 +82,6 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertEqual(len(wizard.line_ids), 2)
         partner_line = wizard.line_ids.filtered(
@@ -109,7 +104,6 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertEqual(
             [(line.res_model, line.res_id) for line in wizard.line_ids],
@@ -133,7 +127,6 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertTrue(
             wizard.line_ids.filtered(
@@ -149,7 +142,6 @@ class TestPrivacyWizard(TransactionCase):
         )
 
     def test_wizard_indirect_reference_cascade(self):
-        # Don't retrieve ondelete cascade records
         self.env["res.partner.bank.account"].create(
             {
                 "acc_number": "0123-%s" % self.partner.id,
@@ -167,14 +159,12 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertEqual(len(wizard.line_ids), 1)
         self.assertEqual(wizard.line_ids[0].res_id, self.partner.id)
         self.assertEqual(wizard.line_ids[0].res_model, self.partner._name)
 
     def test_wizard_unique_log(self):
-        # Check that the log remains unique
         self.env["res.partner"].create(
             {"name": "Rintin Tin", "email": "rintin.tin@gmail.com"}
         )
@@ -188,7 +178,6 @@ class TestPrivacyWizard(TransactionCase):
             .create({})
         )
 
-        # Lookup
         wizard.action_lookup()
         self.assertEqual(len(wizard.line_ids), 2)
 
@@ -213,7 +202,6 @@ class TestPrivacyWizard(TransactionCase):
         )
 
     def test_wizard_lookup_with_invalid_email(self):
-        # lookup with an invalid email should raise UserError
         wizard = self.env["wizard.privacy.log.lookup"].create(
             {
                 "email": "demo",

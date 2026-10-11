@@ -193,9 +193,6 @@ class AccountGroup(models.Model):
         if not company_ids:
             return
 
-        # a group's parent is the group with the longest code prefix that still
-        # encloses its own, within the same company; a company's groups number in
-        # the hundreds, so the match is made in Python rather than a self-join
         updated = 0
         relinked_ids = []
         Group = self.env["account.group"].sudo().with_context(active_test=False)
@@ -230,8 +227,6 @@ class AccountGroup(models.Model):
                 )
                 if child.parent_id.id != parent_id:
                     child_ids_by_parent_id[parent_id].append(child.id)
-            # every relink would flush and run its own cycle check: they run
-            # once, over all of them, when the relinking is done
             relinking = Group.with_context(account_group_parents_relinking=True)
             for parent_id, child_ids in child_ids_by_parent_id.items():
                 relinking.browse(child_ids).parent_id = parent_id

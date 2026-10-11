@@ -75,9 +75,6 @@ VOID_ELEMENTS = frozenset(
 
 html_escape = markupsafe.escape
 
-# escape() answers a Markup, which a renderer joining millions of strings pays
-# for twice (the wrapper, then the instance); the C routine under it answers
-# the escaped str
 try:
     from markupsafe import _escape_inner as escape_str
 except ImportError:
@@ -524,16 +521,11 @@ def _fromstring(
 
 
 def _is_synthetic(doc: etree._Element, root: _Root) -> bool:
-    # lxml's Cleaner cannot drop the root it was handed, so it renames a
-    # dropped <html> to a bare <div>; a wrapper given attributes by quote
-    # tagging carries them and is kept
     if doc.attrib:
         return False
     return root == "fragment" or (root == "document" and doc.tag == "div")
 
 
-# what the parser drops before the first node of a body, so a second parse
-# of the output starts where the first did
 _HTML_WHITESPACE = " \t\n\r\f"
 
 
@@ -543,7 +535,6 @@ def _escape_text(text: str | None, method: str) -> str:
 
 
 def _serialize_content(doc: etree._Element, method: str) -> str:
-    # comments with no content around them read as empty on a second parse
     if not (doc.text or "").strip(_HTML_WHITESPACE) and not any(
         isinstance(child.tag, str) or (child.tail or "").strip(_HTML_WHITESPACE)
         for child in doc
@@ -556,7 +547,6 @@ def _serialize_content(doc: etree._Element, method: str) -> str:
     return f"{_escape_text(text, method)}{children}{_escape_text(doc.tail, method)}"
 
 
-# lxml refuses a str that opens on an XML declaration naming an encoding
 _XML_DECLARATION_RE = re.compile(r"\A(\s*)<\?xml\b[^<>]*>?")
 
 
@@ -588,8 +578,6 @@ def html_normalize(
         doc = filter_callback(doc)
 
     if _is_synthetic(doc, root):
-        # the cleaner can leave text at the wrapper's top level (a dropped tag
-        # keeps its text); a second parse would wrap it, so this one does
         _wrap_loose_body_text(doc)
         src = _serialize_content(doc, output_method)
     else:
@@ -598,7 +586,6 @@ def html_normalize(
     return html_nbsp_to_entity(src)
 
 
-# "<script-card>" is a custom element, not raw text: the name ends where a tag's may
 _TAG_NAME_END = r"(?=[\s/>]|$)"
 _RAW_TEXT_OR_COMMENT_RE = re.compile(
     rf"<!--|<(script|style){_TAG_NAME_END}", re.IGNORECASE
@@ -606,8 +593,6 @@ _RAW_TEXT_OR_COMMENT_RE = re.compile(
 
 
 def html_nbsp_to_entity(html: str) -> str:
-    # "&nbsp;" is literal text inside <script>/<style>: only text and
-    # attributes get the entity; comments do too, as conditional comments hold HTML
     if "\xa0" not in html:
         return html
     parts: list[str] = []
@@ -736,8 +721,6 @@ def html_sanitize(
             exc_info=True,
         )
         sanitized = "<p>ParserError when sanitizing</p>"
-    # lxml's Cleaner asserts on a detached element (drop_tree) and raises
-    # ValueError on a comment where it expects an element
     except etree.LxmlError, ValueError, AssertionError:
         if not silent:
             raise
@@ -776,7 +759,6 @@ _RUNS_OF_SPACE_OR_TAB_RE = re.compile(r" {2,}|\t")
 _CLOSING_BODY_RE = re.compile(r"</body\s*>", re.IGNORECASE)
 _CLOSING_HTML_RE = re.compile(r"</html\s*>", re.IGNORECASE)
 
-# an attribute as HTML writes it: bare, or valued with either quote or none
 _ATTRIBUTE = (
     r"""(?:\s+[A-Za-z_:-][\w:.-]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)"""
 )
@@ -835,9 +817,6 @@ def _comment_end(src: str, start: int) -> int:
 
 
 def _visible_markup(src: str) -> Iterator[tuple[bool, int, int]]:
-    # Every step moves past what it scanned, and a scan that finds no end
-    # (no ">", no closing comment or raw-text tag) ends the walk: rescanning
-    # to the end of the input from each later "<" made a regex over it quadratic.
     pos, size = 0, len(src)
     while pos < size:
         lt = src.find("<", pos)
@@ -880,9 +859,6 @@ _URL_SCHEME_RE = re.compile(r"(?:ftp|https?)://")
 
 
 def _iter_links(text: str) -> Iterator[re.Match[str]]:
-    # A link's host takes the rest of its run of non-space characters, so the
-    # trailing lookahead of _LINK_TAGS_RE decides once for the whole run:
-    # asked of every scheme in a run, it made "http://" * n quadratic.
     for run in _URL_RUN_RE.finditer(text):
         end = run.end()
         if text[end : end + 1] in ("'", '"') or text.startswith("</a>", end):
@@ -893,8 +869,6 @@ def _iter_links(text: str) -> Iterator[re.Match[str]]:
                 break
 
 
-# prose around a link is not part of it: sentence punctuation, emphasis, a
-# closing quote, and a bracket closing one opened before the link
 _TRAILING_PROSE = frozenset(".,:;!?*'\u2019\u201d\u00bb\u3002\uff0c\u3001\u2026")
 _CLOSERS = {")": "(", "]": "["}
 
@@ -919,9 +893,6 @@ def _link_end(url: str) -> int:
     return end
 
 
-# a scheme starts where its run of scheme characters does ("链接http://" and
-# "_http://" link, "xhttp://" does not), and plain text holds no markup, so a
-# double quote or an angle bracket ends a link rather than opening an attribute
 _PLAINTEXT_URL_RE = re.compile(r"""(?<![A-Za-z0-9+.-])(?:ftp|https?)://[^\s<>"]++""")
 
 
@@ -1134,7 +1105,6 @@ def plaintext2html(
 ) -> markupsafe.Markup:
     assert isinstance(text, str)
     if isinstance(text, Markup):
-        # already HTML: links inside attributes stay as they are
         text = html_keep_url(Markup(re.sub(r"\r\n|\r|\n", "<br/>", text)))
     else:
         linked = _linked(text, plaintext_link_spans(text))
@@ -1183,8 +1153,6 @@ def add_html_content(
 
 
 def _tag_end(start_re: re.Pattern[str], text: str) -> int | None:
-    # the first opening's ">" ends the leftmost match; without one no later
-    # opening has a ">" either, so "<body[^>]*>" would rescan from each
     if (start := start_re.search(text)) is None:
         return None
     end = text.find(">", start.end())

@@ -81,10 +81,6 @@ class TestEventMenus(OnlineEventCase, HttpCase):
 
     @users("admin")
     def test_new_page_section_outside_wrap(self):
-        """new_page() must not crash when the event's base layout template
-        contains a <section> outside the #wrap container (WEM-02): the
-        section-relocation logic must only look at sections that are direct
-        children of #wrap, not any <section> anywhere in the document."""
         event = self._create_default_event(name="TestEvent", website_menu=True)
         new_page_url = f"{event.website_url}/newpage-section"
         website_menu = self.env["website.menu"].create(
@@ -114,12 +110,6 @@ class TestEventMenus(OnlineEventCase, HttpCase):
 
     @users("admin")
     def test_create_menu_skip_when_nothing_changed(self):
-        """Round-1 fix WEM-05: when a website.menu parent group has no
-        new (string-id) menu among its children, WebsiteMenu.save() must
-        skip straight to the next group instead of still querying
-        website.event.menu for it - materializing new_menus to a list so
-        the `if not new_menus` check actually short-circuits (a `filter`
-        object is always truthy and never would)."""
         event = self._create_default_event(name="TestEvent", website_menu=True)
         home_menu = event.introduction_menu_ids.menu_id
         data = {
@@ -132,9 +122,6 @@ class TestEventMenus(OnlineEventCase, HttpCase):
                     "sequence": home_menu.sequence,
                     "parent_id": home_menu.parent_id.id,
                 },
-                # An unrelated, genuinely new top-level menu so save()'s
-                # outer has_new_menus gate is True - home_menu's own group
-                # (the one under test) has no new menu of its own.
                 {
                     "id": "new-1",
                     "name": "Unrelated New Menu",
@@ -184,7 +171,6 @@ class TestEventMenus(OnlineEventCase, HttpCase):
         event.community_menu = True
         self._assert_website_menus(event, ["Home", "Rooms", "Practical"])
 
-        # test create without any requested menus
         event = self._create_default_event(name="TestEvent", website_menu=False)
         self.assertFalse(event.website_menu)
         self.assertFalse(event.introduction_menu)

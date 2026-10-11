@@ -10,14 +10,6 @@ class PaymentProvider(models.Model):
     def _get_compatible_providers(
         self, *args, sale_order_id=None, report=None, **kwargs
     ):
-        """Override of payment to allow only COD providers if allow_cash_on_delivery is enabled for
-        selected ups delivery method.
-
-        :param int sale_order_id: The sales order to be paid, if any, as a `sale.order` id.
-        :param dict report: The availability report.
-        :return: The compatible providers.
-        :rtype: payment.provider
-        """
         compatible_providers = super()._get_compatible_providers(
             *args, sale_order_id=sale_order_id, report=report, **kwargs
         )

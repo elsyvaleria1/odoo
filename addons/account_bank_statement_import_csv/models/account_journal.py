@@ -16,7 +16,6 @@ class AccountJournal(models.Model):
         )
 
     def _import_bank_statement(self, attachments):
-        # In case of CSV files, only one file can be imported at a time.
         if len(attachments) > 1:
             csv = [self._is_spreadsheet_file(att.name) for att in attachments]
             if True in csv and False in csv:

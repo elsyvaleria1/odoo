@@ -65,7 +65,6 @@ class AppointmentPortal(portal.CustomerPortal):
         **kwargs,
     ):
         values = self._prepare_portal_layout_values()
-        # Sudo to access the appointment name and responsible for the groupby
         Event = request.env["calendar.event"].sudo()
 
         domain = self._get_domain_portal_default()
@@ -108,10 +107,6 @@ class AppointmentPortal(portal.CustomerPortal):
             "all": {"label": request.env._("All"), "domain": []},
         }
 
-        # Clamp to the declared vocabulary: `sortby` comes straight off the query
-        # string, and indexing it unchecked answered `?sortby=anything-else` with
-        # a KeyError (HTTP 500). `groupby` below already degrades via
-        # `groupby_mapping.get(groupby, None)`.
         sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "date")
         sort_order = searchbar_sortings[sortby]["order"]
         groupby_mapping = self._appointment_get_groupby_mapping()
@@ -153,8 +148,6 @@ class AppointmentPortal(portal.CustomerPortal):
         )
 
         grouped_appointments = False
-        # If not False, this will contain a list of tuples (record of groupby, recordset of events):
-        # [(res.users(2), calendar.event(1, 2)), (...), ...]
         if groupby_field:
             grouped_appointments = [
                 (g, Event.concat(*events))

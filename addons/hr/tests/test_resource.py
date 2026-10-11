@@ -531,7 +531,6 @@ class TestResource(TestHrCommon):
             self.employee.version_id.resource_calendar_id,
             self.employee.resource_id.calendar_id,
         )
-        # The version is the schedule's only writer; the resource follows it.
         self.employee.version_id.resource_calendar_id = self.calendar_40h
         self.assertEqual(self.employee.resource_id.calendar_id, self.calendar_40h)
         self.assertEqual(self.employee.resource_calendar_id, self.calendar_40h)

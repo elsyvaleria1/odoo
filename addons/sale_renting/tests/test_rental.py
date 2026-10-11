@@ -47,7 +47,6 @@ class TestRentalCommon(TransactionCase):
         cls.recurrence_daily = cls.env["sale.temporal.recurrence"].create(
             {"duration": 1.0, "unit": "day"}
         )
-        # blank the demo pricings
 
         PRICINGS = [
             {
@@ -80,7 +79,6 @@ class TestRentalCommon(TransactionCase):
         )
 
     def test_pricing(self):
-        # check pricing returned = expected
         now = fields.Datetime.now()
         self.assertEqual(
             self.product_id._get_best_pricing_rule(
@@ -118,7 +116,6 @@ class TestRentalCommon(TransactionCase):
         )
 
     def test_pricing_advanced(self):
-        # with pricings applied only to some variants ...
         return
 
     def test_pricelists(self):
@@ -192,7 +189,6 @@ class TestRentalCommon(TransactionCase):
         )
 
     def test_delay_pricing(self):
-        # Return Products late and verify duration is correct.
         self.product_id.extra_hourly = 2.5
         self.product_id.extra_daily = 15.0
 
@@ -288,7 +284,6 @@ class TestRentalCommon(TransactionCase):
             sol.discount, 0, "Discount should always been 0 on pricelist change"
         )
 
-    # TODO availability testing with sale_rental functions? (no stock)
 
     def test_no_pickup_nor_return(self):
         partner = self.env["res.partner"].create({"name": "A partner"})
@@ -466,9 +461,6 @@ class TestRentalCommon(TransactionCase):
         )
 
     def test_return_quantity_always_compliant(self):
-        """
-        Try to return more products than what has been picked up.
-        """
         now = fields.Date.today()
         one_day_later = now + relativedelta(days=1)
 
@@ -491,7 +483,6 @@ class TestRentalCommon(TransactionCase):
         )
         sol.update({"is_rental": True})
 
-        # Pickup
         sale_order.action_confirm()
         action_dict = sale_order.action_view_pickup()
         pickup_wizard = (
@@ -502,7 +493,6 @@ class TestRentalCommon(TransactionCase):
         pickup_wizard._update_wizard_lines()
         pickup_wizard.apply()
 
-        # Return
         action_dict = sale_order.action_view_return()
         return_wizard = (
             self.env["wizard.sale.order.pickup.return"]
@@ -514,7 +504,6 @@ class TestRentalCommon(TransactionCase):
         return_wizard.apply()
 
         with self.assertRaises(ValidationError):
-            # Try to return more than picked-up (4 + 4 > 5)
             action_dict = sale_order.action_view_return()
             return_wizard = (
                 self.env["wizard.sale.order.pickup.return"]
@@ -591,7 +580,7 @@ class TestRentalCommon(TransactionCase):
             }
         )
         sol.update({"is_rental": True})
-        sale_order._rental_set_dates()  # not triggered automatically here
+        sale_order._rental_set_dates()
         sale_order._recompute_prices()
 
         self.assertEqual(
@@ -633,7 +622,7 @@ class TestRentalCommon(TransactionCase):
             }
         )
         sol.update({"is_rental": True})
-        sale_order._rental_set_dates()  # not triggered automatically here
+        sale_order._rental_set_dates()
         sale_order._recompute_prices()
 
         self.assertEqual(
@@ -779,10 +768,8 @@ class TestRentalCommon(TransactionCase):
 
         non_rental_order_line.name = "My Water Bottle"
 
-        # Trigger order line name recompute by changing rental field.
         order.rental_start_date = now + timedelta(days=1)
 
-        # Non-rental order line names aren't recomputed.
         self.assertEqual(non_rental_order_line.name, "My Water Bottle")
 
     def test_rental_line_change_description_onchange_duration(self):
@@ -824,9 +811,6 @@ class TestRentalCommon(TransactionCase):
         )
 
     def test_copy_product_variant_pricings(self):
-        """Check that product variants on product pricings after copying
-        a product template.
-        """
         product = self.product_template_id.with_context(create_product_product=True)
         product.product_pricing_ids.unlink()
         product_attributes = self.env["product.attribute"].create(
@@ -876,7 +860,7 @@ class TestRentalCommon(TransactionCase):
         pricings_2 = product.copy().product_pricing_ids.sorted()
         self.assertEqual(
             len(pricings_2),
-            8,  # 2 attributes * 2 values * 2 plans = 8 pricings
+            8,
             "copied product should get 8 pricings",
         )
         self.assertNotEqual(
@@ -890,7 +874,6 @@ class TestRentalCommon(TransactionCase):
             self.assertEqual(pricing_2.pricelist_id, pricing_1.pricelist_id)
 
     def test_copy_rental_status(self):
-        """Check that the rental status is duplicated from list view"""
         partner = self.env["res.partner"].create({"name": "A partner"})
         now = self.env.cr.now()
         pickup_date = now + relativedelta(days=1)
@@ -956,8 +939,6 @@ class TestRentalCommon(TransactionCase):
         self.assertEqual(sale_order.rental_status, "pickup")
 
     def test_product_display_price(self):
-        # There was a bug in the ORM when currency is given along display_price
-        # in the first onchange. Fixed in https://github.com/odoo/odoo/pull/209587
         product = self.env["product.template"].with_context(default_rent_ok=True)
         changes = product.onchange(
             {},
@@ -979,20 +960,10 @@ class TestUi(HttpCase):
             }
         )
 
-        # somehow, the name_create and onchange of the partner_id
-        # in a quotation trigger a re-rendering that loses
-        # the focus of some fields, preventing the tour to
-        # run successfully if a partner is created during the flow
-        # create it in advance here instead
         self.env["res.partner"].name_create("Agrolait")
         self.start_tour("/odoo", "rental_tour", login="admin")
 
     def test_product_displayed_on_rental_only(self):
-        """
-        This test will check that product are diplayed in the correct app.
-        In the rental app: rent_ok product and no not rent_ok product.
-        In the sale app: sale_ok product and no not sale_ok product
-        """
 
         self.env["product.product"].create(
             [

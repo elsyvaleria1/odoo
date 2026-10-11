@@ -157,7 +157,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
             }
         )
 
-        # Create the XML ids:
         cls.env["ir.model.data"].create(
             {
                 "module": "knowledge",
@@ -176,7 +175,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         )
 
     def test_apply_template(self):
-        """Check that that a given template is properly applied to a given article."""
         dummy_article = self.env["knowledge.article"].create(
             {"name": "NoBody", "body": False}
         )
@@ -186,11 +184,7 @@ class TestKnowledgeArticleTemplate(HttpCase):
 
         self.article.apply_template(self.template.id, skip_body_update=False)
 
-        # After applying the template on the article, the values of the article
-        # should have been updated and new child articles should have been created
-        # for the article.
 
-        # First level:
         self.assertEqual(self.article.body, Markup("<p>Lorem ipsum dolor sit amet</p>"))
         self.assertEqual(self.article.icon, self.template.icon)
         self.assertEqual(len(self.article.child_ids), 2)
@@ -198,7 +192,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertFalse(self.article.is_template)
         self.assertFalse(self.article.stage_id)
 
-        # Second level:
         [child_article_1, child_article_2] = self.article.child_ids.sorted("name")
         self.assertEqual(
             child_article_1.article_properties_definition,
@@ -212,8 +205,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
             ],
         )
 
-        # Check that the ids stored in the embedded view have properly been updated
-        # to refer to the parent article.
 
         fragment = html.fragment_fromstring(child_article_1.body, create_parent="div")
         embedded_views = list(fragment.xpath("//*[@data-embedded='view']"))
@@ -247,7 +238,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertFalse(child_article_2.is_template)
         self.assertFalse(child_article_2.stage_id)
 
-        # Third level:
         [child_article_1_1, child_article_1_2, child_article_1_3, child_article_1_4] = (
             child_article_1.child_ids.sorted("name")
         )
@@ -297,13 +287,9 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertEqual(child_article_1_4.stage_id, child_article_1_stage_ongoing)
 
     def test_get_suggested_templates(self):
-        """Check that `get_suggested_templates` only returns sub-templates that
-        are missing under the article."""
         article = self.env["knowledge.article"].create({"name": "My Article"})
         self.assertFalse(article.origin_template_id)
 
-        # Initially, `get_suggested_templates` should not suggest any templates
-        # for the article, as no templates have been loaded on it.
 
         suggested_templates = article.get_suggested_templates()
         self.assertFalse(suggested_templates)
@@ -311,8 +297,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         article.apply_template(self.template.id)
         self.assertEqual(article.origin_template_id, self.template)
 
-        # After applying a template, `get_suggested_templates` should suggest
-        # the missing sub-templates.
 
         suggested_templates = article.get_suggested_templates()
         self.assertEqual(
@@ -332,7 +316,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
             ],
         )
 
-        # Delete an article to check if its origin template is suggested again:
         self.env["knowledge.article"].search(
             [("origin_template_id", "=", self.child_template_1_2.id)]
         ).unlink()
@@ -367,15 +350,12 @@ class TestKnowledgeArticleTemplate(HttpCase):
         )
 
     def test_load_suggested_templates(self):
-        """Check that `load_suggested_templates` loads the additional template,
-        links it correctly, and resolves its references."""
         article = self.env["knowledge.article"].create({"name": "My Article"})
         article.apply_template(self.template.id)
 
         suggested_templates = article.get_suggested_templates()
         self.assertEqual(len(suggested_templates), 1)
 
-        # Load the suggested template:
         article_created_from_template = article.load_suggested_template(
             suggested_templates[0].get("id")
         )
@@ -390,7 +370,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         )
         self.assertEqual(article_created_from_template.parent_id, parent_article)
 
-        # Check that the references in the article body are resolved and point to the right article:
         fragment = html.fragment_fromstring(
             article_created_from_template.body, create_parent="div"
         )
@@ -401,15 +380,11 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertEqual(links[0].get("data-res_id"), str(parent_article.id))
 
     def test_template_category_inheritance(self):
-        """Check that the category of the child templates remain always
-        consistent with the root template."""
 
         new_category = self.env["knowledge.article.template.category"].create(
             {"name": "New Category"}
         )
 
-        # When the user updates the category of a template having a parent,
-        # the category of the template should be reset.
 
         self.child_template_1.write({"template_category_id": new_category.id})
         self.assertEqual(self.template.template_category_id, self.personal_category)
@@ -432,8 +407,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
             self.child_template_2.template_category_id, self.personal_category
         )
 
-        # When the user updates the category of the root template, the category
-        # of all child templates should be updated.
 
         self.template.write({"template_category_id": new_category.id})
         self.assertEqual(self.template.template_category_id, new_category)
@@ -445,9 +418,7 @@ class TestKnowledgeArticleTemplate(HttpCase):
         self.assertEqual(self.child_template_2.template_category_id, new_category)
 
     def test_template_hierarchy(self):
-        """Check that the templates are properly linked to each other."""
         self.assertFalse(self.article.child_ids)
-        # Check 'child_ids' field:
         self.assertEqual(
             self.template.child_ids, self.child_template_1 + self.child_template_2
         )
@@ -460,7 +431,6 @@ class TestKnowledgeArticleTemplate(HttpCase):
         )
         self.assertEqual(self.child_template_2.child_ids, self.child_template_2_1)
         self.assertFalse(self.child_template_2_1.child_ids)
-        # Check 'parent_id' field:
         self.assertFalse(self.template.parent_id)
         self.assertEqual(self.child_template_1.parent_id, self.template)
         self.assertEqual(self.child_template_1_1.parent_id, self.child_template_1)

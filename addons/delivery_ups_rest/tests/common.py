@@ -25,6 +25,6 @@ class DeliveryUPSCommon(DeliveryCommon):
                 "ups_label_file_type": "ZPL",
                 "ups_default_packaging_id": cls.env.ref(
                     "delivery_ups_rest.ups_packaging_25"
-                ).id,  # 10 kg box
+                ).id,
             }
         )

@@ -26,10 +26,6 @@ class ProjectTask(models.Model):
     @api.depends("description_template_id", "description")
     def _compute_show_apply_template(self) -> None:
         for task in self:
-            # Only worth offering when applying the template would actually
-            # change the description. An empty description is one of those
-            # cases: create() does not run the onchange, so a task can hold a
-            # template and show none of its body.
             template = task.description_template_id
             task.show_apply_template = bool(
                 template
@@ -43,8 +39,6 @@ class ProjectTask(models.Model):
     @api.constrains("description_template_id", "project_id", "company_id")
     def _check_description_template_id(self) -> None:
         for task in self:
-            # sudo: the template may belong to a company the writer cannot read,
-            # which is precisely one of the cases this constraint rejects.
             template = task.description_template_id.sudo()
             if not template:
                 continue
@@ -56,10 +50,6 @@ class ProjectTask(models.Model):
     def _onchange_description_template_id(self) -> None:
         if not self.description_template_id:
             return
-        # An untouched body still belongs to the template the record was
-        # loaded with, so replacing it loses nothing the user wrote. This
-        # cannot see a body applied earlier in the same unsaved form, which
-        # is what the Apply Template button is left to cover.
         previous = self._origin.description_template_id.description
         untouched = previous and str(self.description or "") == str(previous)
         if is_html_empty(self.description) or untouched:
@@ -76,7 +66,6 @@ class ProjectTask(models.Model):
         ):
             dropped = self.description_template_id
             self.description_template_id = False
-            # The description is left as it is: the user may have edited it.
             return {
                 "warning": {
                     "title": self.env._("Template removed"),

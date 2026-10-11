@@ -11,9 +11,6 @@ from ..tools.runtime import compile_rule
 
 _logger = logging.getLogger(__name__)
 
-# digest -> (header, function); a version's source never changes once it can
-# run, so its digest names one compiled function for the life of the process.
-# Bounded: authors running the tests of many drafts must not grow it forever.
 _COMPILED = OrderedDict()
 COMPILED_CACHE_SIZE = 512
 
@@ -132,9 +129,6 @@ class RuleScriptVersion(models.Model):
         help="Why this version exists: the reform, ruling or error it answers.",
     )
 
-    # The last word on overlap belongs to PostgreSQL: two activations can each
-    # pass _find_overlapping_versions and commit overlapping versions together.
-    # Deferred, so the Python check names the colliding versions first.
     _no_overlap = models.Constraint(
         "EXCLUDE USING gist ("
         "script_id WITH =,"
@@ -284,9 +278,6 @@ class RuleScriptVersion(models.Model):
         )
 
     def _activate(self) -> None:
-        """Make a draft version the one in force over its dates: its calls must
-        name rules that exist, form no cycle, and every test of its dates must
-        pass."""
         self.check_singleton()
         if self.version_state != "draft":
             raise UserError(self.env._("Only a draft version can be activated."))
@@ -351,16 +342,10 @@ class RuleScriptVersion(models.Model):
             values.update(
                 date_activated=fields.Datetime.now(), activated_by_id=self.env.uid
             )
-        # past the immutability guard of write(): this is the one sanctioned
-        # transition, and the cache of versions in force must follow it
         super().write(values)
         self.env.registry.clear_cache()
 
     def _sorted_callees_first(self):
-        """These versions ordered so that a version comes after the versions
-        of this set whose rules it calls, directly or through rules outside
-        the set; a cycle keeps its members in place, for activation to
-        refuse."""
         calls = {
             version.code: set(version.dependency_codes or [])
             for version in self.search([("version_state", "=", "active")])
@@ -417,9 +402,6 @@ class RuleScriptVersion(models.Model):
         )
 
     def _auto_init(self) -> None:
-        """Provide the btree_gist extension the exclusion constraint needs; a
-        role that may not create it leaves _find_overlapping_versions the only
-        guard (see date_range)."""
         try:
             with self.env.cr.savepoint(flush=False):
                 self.env.cr.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")

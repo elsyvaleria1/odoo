@@ -103,8 +103,6 @@ class IrModuleModule(models.Model):
 
             templates_by_module[module] = templates
 
-        # one lookup for every template's country instead of an env.ref and a
-        # record fetch per template (three queries each, ~120 templates)
         countries = self._get_template_countries(
             {
                 _template_country_code(code, vals.get("country", ""))

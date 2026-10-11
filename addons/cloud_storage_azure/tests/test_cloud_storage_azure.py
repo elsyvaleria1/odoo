@@ -134,7 +134,7 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             request_num += 1
             response = Response()
             if url.startswith("https://login.microsoftonline.com"):
-                response.status_code = 400  # bad request because of missing tenant_id and client_id are wrong
+                response.status_code = 400
             if "blob.core.windows.net" in url:
                 response.status_code = 200
                 response._content = self.DUMMY_USER_DELEGATION_KEY_XML
@@ -170,7 +170,7 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             request_num += 1
             response = Response()
             if url.startswith("https://login.microsoftonline.com"):
-                response.status_code = 401  # forbidden because the secret is wrong
+                response.status_code = 401
             if "blob.core.windows.net" in url:
                 response.status_code = 200
                 response._content = self.DUMMY_USER_DELEGATION_KEY_XML
@@ -203,7 +203,7 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
                 response.status_code = 200
                 response._content = bytes(json_dumps({"access_token": "xxx"}), "utf-8")
             if "blob.core.windows.net" in url:
-                raise requests.exceptions.ConnectionError  # account_name wrong: domain https://accountname.blob.core.windows.net doesn't exist
+                raise requests.exceptions.ConnectionError
             return response
 
         with (
@@ -217,8 +217,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             "odoo.addons.cloud_storage_azure.models.ir_attachment.acquire_cloud_storage_azure_user_delegation_key",
             return_value=self.DUMMY_USER_DELEGATION_KEY,
         ):
-            # create test cloud attachment like route "/mail/attachment/upload"
-            # with dummy binary
             attachment = self.env["ir.attachment"].create(
                 [
                     {
@@ -271,7 +269,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             },
         )
 
-        # Invalid account names
         with self.assertRaises(ValidationError):
             attachment.url = mk_url(account_name="LOWERCASEONLY")
             attachment._get_cloud_storage_azure_info()
@@ -282,7 +279,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             attachment.url = mk_url(account_name="no_underscores")
             attachment._get_cloud_storage_azure_info()
 
-        # Invalid container names
         with self.assertRaises(ValidationError):
             attachment.url = mk_url(container_name="LOWERCASEONLY")
             attachment._get_cloud_storage_azure_info()
@@ -294,7 +290,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             attachment._get_cloud_storage_azure_info()
 
     def test_cloud_storage_attachments(self):
-        """Cloud attachments should be converted to links in outgoing emails."""
 
         thread_model = self.env["res.partner"].create(
             {"name": "Cloud Test Partner", "email": "cloud@test.com"}
@@ -310,7 +305,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
             }
         )
 
-        # A cloud attachment sent to a multiple partners -> attachment should be included as link in each
         partners = self.env["res.partner"].create(
             [
                 {"name": "Partner A", "email": "a@test.com"},
@@ -345,7 +339,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
                 "Sending mail with cloud_storage attachment should rendered it as a link in the outgoing email.",
             )
 
-        # A cloud attachment and small txt attachment sent -> 1st should become a link, 2nd should be sent with the message
         small_attachment = self.env["ir.attachment"].create(
             {
                 "name": "Small attachment that should be attached normally.txt",
@@ -398,7 +391,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
                 "Sending mail with cloud_storage attachment should rendered it as a link in the outgoing email.",
             )
 
-        # A large txt attachment and 2 cloud attachments sent -> All 3 shall became links
         cloud_attachment2 = self.env["ir.attachment"].create(
             {
                 "name": "cloud2 attachment also should be attached as a link",
@@ -482,7 +474,6 @@ class TestCloudStorageAzure(TestCloudStorageAzureCommon, MockEmail):
 
     def test_uninstall_success(self):
         uninstall_hook(self.env)
-        # make sure all sensitive data are removed
         self.assertFalse(
             self.env["ir.config_parameter"].get_param("cloud_storage_provider")
         )

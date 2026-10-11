@@ -15,7 +15,7 @@ class DeliveryCarrier(models.Model):
     mondialrelay_packagetype = fields.Char(
         default="24R",
         groups="base.group_system",
-    )  # Advanced
+    )
 
     @api.depends("product_id.default_code")
     def _compute_is_mondialrelay(self) -> None:

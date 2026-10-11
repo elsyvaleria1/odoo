@@ -426,11 +426,6 @@ class TestCaseDocuments(TransactionCaseDocuments):
         )
         folders.flush_recordset()
         folders.invalidate_recordset()
-        # 10 fixed + 2 per document: `name` and `thumbnail` are recursive
-        # stored computes (a shortcut takes its target's), and the ORM
-        # evaluates a recursive field one record at a time. Was 8 + 3 per
-        # document until the parent-folder check, the res_model constraint
-        # and the thumbnail write stopped running once per record.
         with self.assertQueryCount(110):
             self.env["document.document"].create(
                 [
@@ -1481,7 +1476,6 @@ class TestCaseDocuments(TransactionCaseDocuments):
 
     def test_document_toggle_lock(self):
 
-        # out of what its folder's owner grants, the employees only view it
         self.document_txt.write(
             {"owner_id": self.document_manager.id, "is_access_restricted": True}
         )
@@ -1489,7 +1483,6 @@ class TestCaseDocuments(TransactionCaseDocuments):
         self.document_txt.access_internal = "view"
 
         self.document_txt.with_user(self.document_manager).toggle_lock()
-        # refused by the lock before the access check: a UserError either way
         with self.assertRaises(UserError):
             self.document_txt.with_user(self.doc_user).toggle_lock()
         self.assertEqual(
@@ -1498,8 +1491,6 @@ class TestCaseDocuments(TransactionCaseDocuments):
             "viewer should not have unlocked",
         )
 
-        # an editor may not lift a manager's lock either: unlocked, the
-        # document would be theirs to change
         self.document_txt.access_internal = "edit"
         with self.assertRaises(UserError):
             self.document_txt.with_user(self.doc_user).toggle_lock()
@@ -1961,7 +1952,7 @@ class TestDocumentsCreateBatching(TransactionCaseDocuments):
         )
 
     def test_the_cost_of_creating_documents_does_not_follow_their_number(self):
-        self._create_with_content(1, "warmup")  # fill the caches the first call fills
+        self._create_with_content(1, "warmup")
         self.env.flush_all()
 
         before = self.env.cr.sql_statement_count
@@ -1988,7 +1979,6 @@ class TestDocumentsCreateBatching(TransactionCaseDocuments):
         )
 
     def test_a_batch_mixing_content_and_ready_attachments_keeps_them_paired(self):
-        """The batch create must not shift an attachment onto the wrong vals."""
         existing = (
             self.env["ir.attachment"]
             .with_context(no_document=True)
@@ -2082,7 +2072,6 @@ class TestDocumentsResModelConstraint(TransactionCaseDocuments):
             )
 
     def test_a_document_linked_to_another_model_is_fine(self):
-        """Negative control: the constraint targets one model, not all links."""
         partner = self.env["res.partner"].create({"name": "Linkable"})
         document = self.env["document.document"].create(
             {"name": "ok.txt", "type": "binary", "raw": b"s"}

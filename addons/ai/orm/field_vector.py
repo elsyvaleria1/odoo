@@ -30,11 +30,6 @@ class Vector(fields.Field):
         return str(value)
 
     def convert_to_column(self, value, record, values=None, validate=True):
-        # create() converts the raw vals, not the cache value, so a list reaches
-        # this untouched and the base implementation -- which accepts only str,
-        # bytes and numbers -- rejected it with "Invalid column value". pgvector
-        # parses the bracketed form that str() already produces for a list, so
-        # this is the same normalisation convert_to_cache does.
         if isinstance(value, (list, tuple)):
             return str(list(value))
         return super().convert_to_column(value, record, values, validate)

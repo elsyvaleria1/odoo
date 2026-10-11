@@ -48,10 +48,6 @@ class AccountJournal(models.Model):
         if not self._is_qif(raw_file):
             return super()._parse_bank_statement_file(raw_file)
 
-        # Guessed once, over the whole file: a single field is far too little
-        # for a detector, and these three sites used to call bare
-        # `bytes.decode()`, which raised UnicodeDecodeError on any QIF whose
-        # payee or memo carried an accent -- i.e. most non-English exports.
         encoding = guess_encoding(raw_file) or "utf-8"
         data_list = [line.rstrip(b"\r\n") for line in io.BytesIO(raw_file.strip())]
         try:
@@ -62,9 +58,6 @@ class AccountJournal(models.Model):
         transactions = []
         vals_line = {"payment_ref": []}
         total = 0.0
-        # Identified header types of the QIF format that we support.
-        # Other types might need to be added. Here are the possible values
-        # according to the QIF spec: Cash, Bank, CCard, Invst, Oth A, Oth L, Invoice.
         if header in [b"Bank", b"Cash", b"CCard"]:
             vals_bank_statement = {}
             for line in data_list:
@@ -91,8 +84,6 @@ class AccountJournal(models.Model):
                 elif line[:1] == PAYEE:
                     name = data.decode(encoding)
                     vals_line["payment_ref"].append(name)
-                    # Since QIF doesn't provide account numbers, we'll have to find res.partner and res.partner.bank.account here
-                    # (normal behavious is to provide 'account_number', which the generic module uses to find partner/bank)
                     partner_bank = self.env["res.partner.bank.account"].search(
                         [("partner_id.name", "=", name)], limit=1
                     )

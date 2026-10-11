@@ -24,7 +24,7 @@ class Driver(Thread):
         self.device_connection = ""
         self.device_type = ""
         self.device_manufacturer = ""
-        self.data = {"value": "", "result": ""}  # TODO: deprecate "value"?
+        self.data = {"value": "", "result": ""}
         self._actions = {}
         self._stopped = Event()
         self._recent_action_ids = LRU(256)
@@ -36,19 +36,10 @@ class Driver(Thread):
 
     @classmethod
     def supported(cls, device):
-        """
-        On specific driver override this method to check if device is supported or not
-        return True or False
-        """
         return False
 
     @toggleable
     def action(self, data) -> None:
-        """Helper function that calls a specific action method on the device.
-
-        :param dict data: the action method name and the parameters to be passed to it
-        :return: the result of the action method
-        """
         action = data.get("action", "")
         action_unique_id = data.get("action_unique_id")
         if action_unique_id:
@@ -78,8 +69,6 @@ class Driver(Thread):
             )
             response = {"status": "error", "result": str(e), **base_response}
 
-        # Make response available to /event route or websocket
-        # printers and payment terminals handle their own events (low on paper, waiting for card, etc.)
         if self.device_type not in ["printer", "payment"]:
             event_manager.device_changed(self, response)
 

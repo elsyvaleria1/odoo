@@ -21,13 +21,13 @@ class IdentificationFieldsNoFoldPolicy(_EmailPolicyBase):
     _max_fold_policy: Any
 
     @override
-    def _fold(self, name: str, value: str, *args, **kwargs) -> str:  # type: ignore[misc]
+    def _fold(self, name: str, value: str, *args, **kwargs) -> str:
         lname = name.lower()
         if lname in RFC5322_IDENTIFICATION_HEADERS:
             return self._no_fold_policy._fold(name, value, *args, **kwargs)
         if lname in USER_DEFINED_HEADERS:
             return self._max_fold_policy._fold(name, value, *args, **kwargs)
-        return super()._fold(name, value, *args, **kwargs)  # type: ignore[misc]
+        return super()._fold(name, value, *args, **kwargs)
 
 
 def patch_module() -> None:

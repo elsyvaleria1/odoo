@@ -40,7 +40,6 @@ class JourneyCase(TransactionCase):
         )
 
     def _sent(self):
-        """What this transaction will publish on the bus, by recipient user."""
         users = {
             user.partner_id.id: user
             for user in (self.employee, self.colleague, self.portal)

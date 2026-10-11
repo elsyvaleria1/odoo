@@ -9,10 +9,6 @@ class DocumentDocument(models.Model):
     _inherit = "document.document"
 
     def action_link_to_record(self, model: str | bool = False) -> dict:
-        """Open the `link_to_record_wizard` to choose a record to link to the current documents.
-
-        This method can be used inside server actions.
-        """
         context = {
             "default_document_ids": self.ids,
             "default_resource_ref": False,

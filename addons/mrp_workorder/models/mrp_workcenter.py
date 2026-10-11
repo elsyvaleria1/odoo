@@ -98,10 +98,10 @@ class MrpWorkcenterProductivity(models.Model):
 
             if time.employee_id and not float_is_zero(time.employee_id.hourly_cost, 2):
                 time.employee_cost = time.employee_id.hourly_cost
-                by = "employee_hourly_cost"  # debuglog
+                by = "employee_hourly_cost"
             else:
                 time.employee_cost = time.workcenter_id.employee_costs_hour
-                by = "workcenter_rate"  # debuglog
+                by = "workcenter_rate"
             _debug.logic(
                 "employee_cost_resolved",
                 productivity=time.id,

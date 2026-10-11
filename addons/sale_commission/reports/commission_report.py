@@ -98,10 +98,6 @@ class SaleCommissionReport(models.Model):
         readonly=True,
     )
 
-    ################################################################################
-    # Readonly Cursor hacks
-    # These methods use a readonly cursor everywhere else in odoo but here we need a RW cursor because
-    # we are creating a view (necessary even if the view is not materialized).
 
     @api.model
     def web_search_read(
@@ -116,7 +112,6 @@ class SaleCommissionReport(models.Model):
             count_limit=count_limit,
         )
 
-    # Make sure the method is never readonly in this model
     web_search_read._readonly = False
 
     @api.model
@@ -140,7 +135,6 @@ class SaleCommissionReport(models.Model):
     def formatted_read_grouping_sets(
         self, domain, grouping_sets, aggregates=(), *, order=None
     ) -> list:
-        # In the pivot view, we don't want the hierarchical naming of department_id (hr.department)
         return super().formatted_read_grouping_sets(
             domain,
             grouping_sets,
@@ -150,15 +144,9 @@ class SaleCommissionReport(models.Model):
 
     formatted_read_grouping_sets._readonly = False
 
-    ################################################################################
 
     @api.model
     def _search(self, domain, *args, **kwargs):
-        """Extract the currency conversion date form the date_to field.
-        It is used to be able to get fixed results not depending on the currency daily rates.
-        The date is converted to a string to allow updating the date value in view customizations.
-        """
-        # take date_to but not plan_id.date_to
         model = self
         domain = Domain(domain)
         date_to_domain = filter_domain_leaf(
@@ -181,7 +169,6 @@ class SaleCommissionReport(models.Model):
             ("plan_id", "=", self.plan_id.id),
             ("user_id", "=", self.user_id.id),
         ]
-        # As we group commission by payment_date, we need to get all target_id shaing the same date
         target_ids = self.plan_id.target_ids.filtered(
             lambda t: t.payment_date == self.target_id.payment_date
         )
@@ -224,7 +211,6 @@ class SaleCommissionReport(models.Model):
         }
 
     def write(self, vals):
-        # /!\ Do not call super as the table doesn't exist
         if "forecast" in vals or "notes" in vals:
             forecast = vals.get("forecast")
             notes = vals.get("notes")
@@ -248,7 +234,6 @@ class SaleCommissionReport(models.Model):
                             }
                         )
                     )
-            # Update the field's cache otherwise the field reset to the original value on the field
             if forecast:
                 self._fields["forecast"]._get_cache(self.env).update(
                     dict.fromkeys(self.ids, forecast)
@@ -261,7 +246,6 @@ class SaleCommissionReport(models.Model):
 
     @property
     def _table_query(self):
-        # Deactivate the jit for this transaction
         query = self._query()
         return SQL(query)
 
@@ -280,7 +264,6 @@ class SaleCommissionReport(models.Model):
             and achievement_view
         ):
             self.env.cr.execute(achievement_view)
-        # First, convert the achievement to allow sum them by period
         return f"""
 WITH {self.env["sale.commission.achievement.report"]._get_currency_rate()},
 commission_lines AS (

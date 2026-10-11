@@ -21,7 +21,6 @@ _NOT_XML_UTF8_RE = re.compile(
     + rb"|\xed[\xa0-\xbf][\x80-\xbf]"
     + rb"|[\xf5-\xff]"
 )
-# UTF-32 first: its little-endian mark begins with UTF-16's
 _BYTE_ORDER_MARKS = (
     (codecs.BOM_UTF32_LE, "utf-32-le"),
     (codecs.BOM_UTF32_BE, "utf-32-be"),
@@ -55,7 +54,6 @@ def _sniff_encoding(data: bytes) -> tuple[bytes, str | None]:
         codec = codecs.lookup(match[1].decode("ascii")).name
     except LookupError:
         return b"", None
-    # an 8-bit document declaring a wide encoding is read as UTF-8 by libxml2
     if codec.startswith(("utf-16", "utf-32")):
         return b"", "utf-8"
     return b"", codec

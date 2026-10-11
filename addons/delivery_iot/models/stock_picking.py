@@ -50,6 +50,5 @@ class StockPicking(models.Model):
         return report_actions + super()._prepare_actions_autoprint()
 
     def print_attachment(self, attachments) -> None:
-        """Unused method, kept to avoid breaking the API."""
         _debug.pipeline("iot_print_attachment", pickings=self)
         pass

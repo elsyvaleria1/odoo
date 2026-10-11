@@ -31,14 +31,6 @@ class PaymentTransaction(models.Model):
         return True
 
     def _prepare_redirect_form_values(self, processing_values):
-        """Override of payment to return custom-specific rendering values.
-
-        Note: self.check_singleton() from `_prepare_processing_values`
-
-        :param dict processing_values: The generic and specific processing values of the transaction
-        :return: The dict of provider-specific processing values
-        :rtype: dict
-        """
         if self.provider_code != "custom":
             return super()._prepare_redirect_form_values(processing_values)
 
@@ -51,15 +43,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _get_communication(self):
-        """Return the communication the user should use for their transaction.
-
-        This communication might change according to the settings and the accounting localization.
-
-        Note: self.check_singleton()
-
-        :return: The selected communication.
-        :rtype: str
-        """
         self.check_singleton()
         communication = ""
         if hasattr(self, "invoice_ids") and self.invoice_ids:
@@ -69,15 +52,6 @@ class PaymentTransaction(models.Model):
         return communication or self.reference
 
     def _get_custom_qr_code(self):
-        """Return the QR code image for a pending wire transfer, if enabled and available.
-
-        No-op (returns None) if QR codes are disabled on the provider, no bank account is
-        configured on the company, or `account` isn't installed (it provides the bank's
-        QR-code builder; `payment_custom` only depends on `payment`).
-
-        :return: The base64-encoded QR code image, or None.
-        :rtype: str | None
-        """
         self.check_singleton()
         if not self.provider_id.sudo().qr_code:
             return None
@@ -93,13 +67,11 @@ class PaymentTransaction(models.Model):
         )
 
     def _extract_amount_data(self, payment_data) -> dict | None:
-        """Override of `payment` to skip the amount validation for custom flows."""
         if self.provider_code != "custom":
             return super()._extract_amount_data(payment_data)
         return None
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_code != "custom":
             return super()._apply_updates(payment_data)
 
@@ -111,19 +83,10 @@ class PaymentTransaction(models.Model):
         return None
 
     def _log_received_message(self) -> None:
-        """Override of `payment` to remove custom providers from the recordset.
-
-        :return: None
-        """
         other_provider_txs = self.filtered(lambda t: t.provider_code != "custom")
         super(PaymentTransaction, other_provider_txs)._log_received_message()
 
     def _get_sent_message(self):
-        """Override of payment to return a different message.
-
-        :return: The 'transaction sent' message
-        :rtype: str
-        """
         message = super()._get_sent_message()
         if self.provider_code == "custom":
             message = self.env._(

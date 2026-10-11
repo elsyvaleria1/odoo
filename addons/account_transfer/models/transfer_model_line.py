@@ -32,7 +32,6 @@ class AccountTransferModelLine(models.Model):
 
     @api.constrains("account_id")
     def _check_account_id(self) -> None:
-        """Check that there is a destination account set on each transfer model line and that it is unique."""
         for record in self:
             if not record.account_id:
                 raise ValidationError(

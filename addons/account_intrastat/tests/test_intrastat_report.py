@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from freezegun import freeze_time
 
 from odoo import Command, fields
@@ -12,7 +11,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Create a fictional intrastat country
         country = cls.env["res.country"].create(
             {
                 "name": "Squamuglia",
@@ -30,7 +28,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
             {"name": "Yoyodyne BE", "country_id": cls.env.ref("base.be").id}
         )
 
-        # A product that has no supplementary unit
         cls.product_no_supplementary_unit = cls.env["product.product"].create(
             {
                 "name": "stamp collection",
@@ -40,7 +37,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "intrastat_supplementary_unit_amount": None,
             }
         )
-        # A product that has a supplementary unit of the type "p/st"
         cls.product_unit_supplementary_unit = cls.env["product.product"].create(
             {
                 "name": "rocket",
@@ -50,7 +46,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "intrastat_supplementary_unit_amount": 1,
             }
         )
-        # A product that has a supplementary unit of the type "100 p/st"
         cls.product_100_unit_supplementary_unit = cls.env["product.product"].create(
             {
                 "name": "Imipolex G Tooth",
@@ -60,7 +55,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "intrastat_supplementary_unit_amount": 0.01,
             }
         )
-        # A product that has a supplementary unit of the type "m"
         cls.product_metre_supplementary_unit = cls.env["product.product"].create(
             {
                 "name": "Proper Gander Film",
@@ -71,7 +65,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "uom_id": cls.env.ref("base.product_uom_meter").id,
             }
         )
-        # A product with the product origin country set to spain
         cls.spanish_rioja = cls.env["product.product"].create(
             {
                 "name": "rioja",
@@ -87,9 +80,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
             for type in ("commodity", "transaction", "region")
         ]
         cls.intrastat_codes = {}
-        # 100 - commodity
-        # 101 - transaction
-        # 102 - region
         create_vals_list = []
         for i, vals in enumerate(code_vals, 100):
             vals["code"] = str(i)
@@ -250,14 +240,10 @@ class TestIntrastatReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2022-01-01", "2022-01-31")
         lines = self.report._get_lines(options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # 1/system, 2/country code, 3/transaction code, 4/region code,
-            # 5/commodity code, 6/origin country, 10/weight, 12/value
             [1, 2, 3, 4, 5, 6, 10, 12],
             [
                 ("", "", "", "", "", "", "", 1270.0),
-                # account.move (bill) 2
                 (
                     "29 (Arrival)",
                     "Netherlands",
@@ -268,7 +254,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     "0.5",
                     950.0,
                 ),
-                # account.move (invoice) 1
                 (
                     "19 (Dispatch)",
                     "Netherlands",
@@ -282,20 +267,16 @@ class TestIntrastatReport(TestAccountReportsCommon):
             ],
             options,
         )
-        # Setting the intrastat type to Arrival or Dispatch should result in a 'Total' line at the end
         options["intrastat_type"][1]["selected"] = True
         options = self._generate_options(
             self.report, "2022-01-01", "2022-01-31", options
         )
         lines = self.report._get_lines(options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # 0/name, 1/system, 12/value
             [0, 1, 12],
             [
                 ("Intrastat", "", 320.0),
-                # account.move (invoice) 1
                 ("Dispatch - QV999999999999 - 100 - NL", "19 (Dispatch)", 320.0),
             ],
             options,
@@ -407,13 +388,10 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
         lines = self.report._get_lines(options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # 0/name, 1/system, 2/country, 3/transaction code, 4/region code, 5/commodity code, 6/origin country, 12/value
             [0, 1, 2, 3, 4, 5, 6, 12],
             [
                 ("Intrastat", "", "", "", "", "", "", 210.0),
-                # BE Partner with VAT
                 (
                     "Dispatch - BE0477472701 - 22042176 - BE",
                     "19 (Dispatch)",
@@ -444,7 +422,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     "ES",
                     80.0,
                 ),
-                # FR Partner without VAT
                 (
                     "Dispatch - QV999999999999 - 100 - FR",
                     "19 (Dispatch)",
@@ -470,10 +447,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_unfold_with_product_origin_country_united_kingdom(self):
-        """The aim of this test is verifying that we can unfold
-        grouped lines for product that have an origin country
-        set to United Kingdom
-        """
         move = self.env["account.move"].create(
             [
                 {
@@ -539,9 +512,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
             default_options={"unfold_all": True},
         )
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 0/name,                                     2/country, 6/origin country, 12/value
             [0, 2, 6, 12],
             [
                 ("Intrastat", "", "", 100.0),
@@ -553,12 +524,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_unfold_dispatch_arrival_intrastrat_report_lines(self):
-        """This test checks that intrastat_report lines only
-        contain what they have to contain.
-        It means, that we should only have inbound move types
-        in "Dispatch" report lines and outbound move types
-        in "Arrival" report lines.
-        """
         self._create_invoices("transaction")
         options = self._generate_options(
             self.report,
@@ -568,13 +533,10 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 0/name, 1/system, 2/country code, 3/transaction code, 4/region code, 5/commodity code, 6/origin country, 10/weight, 12/value
             [0, 1, 2, 3, 4, 5, 6, 10, 12],
             [
                 ("Intrastat", "", "", "", "", "", "", "", 1270.0),
-                # account.move (bill)
                 (
                     "Arrival - QV999999999999 - 100 - NL",
                     "29 (Arrival)",
@@ -597,7 +559,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     "0.5",
                     950.0,
                 ),
-                # account.move (invoice)
                 (
                     "Dispatch - QV999999999999 - 100 - NL",
                     "19 (Dispatch)",
@@ -636,13 +597,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_intrastat_report_lines_with_unique_id(self):
-        """This test checks that even if we have similar lines,
-        each discriminant line value is used to generate
-        the generic report line id.
-        We unfold the whole report to make sure that sublines
-        generic ids are unique as well. It verifies that
-        we use all discriminants values to fetch lines.
-        """
 
         def move_vals(move_values=None, invoice_line_values=None):
             move_values = move_values or {}
@@ -702,16 +656,13 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
         moves = self.env["account.move"].create(
             [
-                # Move without any specificity
                 move_vals(),
-                # Move with Incoterm
                 move_vals(
                     move_values={
                         "invoice_incoterm_id": self.env.ref("incoterm.incoterm_CFR").id
                     },
                     invoice_line_values={"price_unit": 21.0},
                 ),
-                # Move with a transaction code
                 move_vals(
                     invoice_line_values={
                         "intrastat_transaction_id": self.intrastat_codes[
@@ -720,7 +671,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                         "price_unit": 22.0,
                     }
                 ),
-                # Move with a transport mode
                 move_vals(
                     move_values={
                         "intrastat_transport_mode_id": self.env.ref(
@@ -729,31 +679,26 @@ class TestIntrastatReport(TestAccountReportsCommon):
                     },
                     invoice_line_values={"price_unit": 23.0},
                 ),
-                # Move with commodity code
                 move_vals(
                     invoice_line_values={
                         "product_id": product_with_commodity_code.id,
                         "price_unit": 24.0,
                     }
                 ),
-                # Move with an origin country id
                 move_vals(
                     invoice_line_values={
                         "product_id": product_with_origin_country_id.id,
                         "price_unit": 25.0,
                     }
                 ),
-                # Move with a specified intrastat_country_id
                 move_vals(
                     move_values={"intrastat_country_id": self.env.ref("base.es").id},
                     invoice_line_values={"price_unit": 26.0},
                 ),
-                # Move with partner_vat
                 move_vals(
                     move_values={"partner_id": partner_vat_be.id},
                     invoice_line_values={"price_unit": 27.0},
                 ),
-                # Move with a foreign currency
                 move_vals(
                     move_values={"currency_id": self.env.ref("base.SEK").id},
                     invoice_line_values={"price_unit": 28.0},
@@ -779,37 +724,26 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             lines,
-            # 0/name,                                            12/value
             [0, 12],
             [
                 ("Intrastat", 216.0),
-                # Move with transaction code
                 ("Dispatch - QV999999999999 - None - BE", 22.0),
                 ("INV/2022/00003", 22.0),
-                # Move with transport mode
                 ("Dispatch - QV999999999999 - None - BE", 23.0),
                 ("INV/2022/00004", 23.0),
-                # Move with commodity code
                 ("Dispatch - QV999999999999 - 11 - BE", 24.0),
                 ("INV/2022/00005", 24.0),
-                # Move with partner vat
                 ("Dispatch - BE0477472701 - None - BE", 27.0),
                 ("INV/2022/00008", 27.0),
-                # Move with incoterm
                 ("Dispatch - QV999999999999 - None - BE", 21.0),
                 ("INV/2022/00002", 21.0),
-                # Move with product origin country id
                 ("Dispatch - QV999999999999 - None - BE", 25.0),
                 ("INV/2022/00006", 25.0),
-                # Move with nothing
                 ("Dispatch - QV999999999999 - None - BE", 20.0),
                 ("INV/2022/00001", 20.0),
-                # Move with a different currency id
                 ("Dispatch - QV999999999999 - None - BE", 28.0),
                 ("INV/2022/00009", 28.0),
-                # Move with specified intrastat_country_id
                 ("Dispatch - QV999999999999 - None - ES", 26.0),
                 ("INV/2022/00007", 26.0),
             ],
@@ -817,11 +751,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_intrastat_multi_currency(self):
-        """This test checks that moves in foreign currency are correctly
-        present in the intrastat report (with correct values)
-        All values should be in company currency even if moves have a
-        foreign currency set on them.
-        """
         moves = self.env["account.move"].create(
             [
                 {
@@ -901,34 +830,20 @@ class TestIntrastatReport(TestAccountReportsCommon):
             default_options={"unfold_all": True},
         )
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 0/name,                                           12/value
             [0, 12],
             [
                 ("Intrastat", 106.67),
-                # Credit note
                 ("Arrival - QV999999999999 - 22042176 - BE", 40.00),
-                # 80 divided by 2 (rate 2017 = 2.0)
                 ("RINV/2017/00001", 40.00),
-                # Invoices
                 ("Dispatch - QV999999999999 - 22042176 - BE", 66.67),
-                # 80 divided by 2 (rate 2017 = 2.0)
                 ("INV/2017/00001", 40.00),
-                # 80 divided by 3 (rate 2016 = 3.0)
                 ("INV/2016/00001", 26.67),
             ],
             options,
         )
 
     def test_intrastat_report_only_one_line_even_with_different_warnings(self):
-        """This test checks that we only have one grouped line
-        even if its sublines have different warnings.
-        We check in this test the expired_trans value, to do it
-        we have 2 moves, one before the expiry date and one after the
-        expiry date. This situation should have 2 lines that are grouped together
-        even if we have a warning of one of the two lines.
-        """
         transaction_code = self.intrastat_codes["transaction"]
         transaction_code.expiry_date = fields.Date.from_string("2022-01-14")
         moves = self.env["account.move"].create(
@@ -980,9 +895,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
             default_options={"unfold_all": True},
         )
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 0/name,                                            12/value
             [0, 12],
             [
                 ("Intrastat", 41.0),
@@ -994,11 +907,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_intrastat_invoice_having_minus_quantity(self):
-        """This test checks that a move with for example
-        a line having a quantity set to 10 and a line with a
-        quantity set to -1 (like one item free) is correctly
-        handled by the intrastat report.
-        """
         move = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1040,9 +948,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
             default_options={"unfold_all": True},
         )
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 0/name,                                           12/value
             [0, 12],
             [
                 ("Intrastat", 720.0),
@@ -1054,7 +960,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_no_supplementary_units(self):
-        """Test a report from an invoice with no units"""
         no_supplementary_units_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1085,8 +990,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                   CommodityFlow       Country     CommodityCode  SupplementaryUnits
-            #
             [0, 1, 2, 5, 11],
             [
                 ("Intrastat", "", "", "", ""),
@@ -1102,9 +1005,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_unitary_supplementary_units(self):
-        """Test a report from an invoice with lines with units of 'unit' or 'dozens', and commodity codes with supplementary units
-        that require a mapping to 'p/st' or '100 p/st' (per unit / 100 units)
-        """
         unitary_supplementary_units_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1114,7 +1014,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "company_id": self.company_data["company"].id,
                 "intrastat_country_id": self.env.ref("base.be").id,
                 "invoice_line_ids": [
-                    # 123 (units) -> 123 (p/st)
                     Command.create(
                         {
                             "product_id": self.product_unit_supplementary_unit.id,
@@ -1124,7 +1023,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             "tax_ids": [],
                         }
                     ),
-                    # 20 (dozen) -> 240 (units) -> 240 (p/st)
                     Command.create(
                         {
                             "product_id": self.product_unit_supplementary_unit.id,
@@ -1134,7 +1032,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             "tax_ids": [],
                         }
                     ),
-                    # 123 (units) -> 1.23 (100 p/st)
                     Command.create(
                         {
                             "product_id": self.product_100_unit_supplementary_unit.id,
@@ -1144,7 +1041,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                             "tax_ids": [],
                         }
                     ),
-                    # 20 (dozen) -> 240 (units) -> 2.4 (100 p/st)
                     Command.create(
                         {
                             "product_id": self.product_100_unit_supplementary_unit.id,
@@ -1166,8 +1062,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                      CommodityFlow    Country    CommodityCode  SupplementaryUnits
-            #
             [0, 1, 2, 5, 11],
             [
                 ("Intrastat", "", "", "", ""),
@@ -1190,9 +1084,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_metres_supplementary_units(self):
-        """Test a report from an invoice with a line with units of kilometers, and a commodity code with supplementary units that
-        requires a mapping to metres.
-        """
         metre_supplementary_units_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1202,7 +1093,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
                 "company_id": self.company_data["company"].id,
                 "intrastat_country_id": self.env.ref("base.be").id,
                 "invoice_line_ids": [
-                    # 1.23 (km) -> 1.230(m)
                     Command.create(
                         {
                             "product_id": self.product_metre_supplementary_unit.id,
@@ -1224,8 +1114,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                      CommodityFlow    Country      CommodityCode  SupplementaryUnits
-            #
             [0, 1, 2, 5, 11],
             [
                 ("Intrastat", "", "", "", ""),
@@ -1241,15 +1129,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_xlsx_output(self):
-        """XSLX output should be slightly different to the values in the UI. The UI should be readable, and the XLSX should be closer to the declaration format.
-        Rather than patching the print_xlsx function, this test compares the results of the report when the options contain the keys that signify the content
-        is exported with codes rather than full names.
-        In XSLX:
-            The 2-digit ISO country codes should be used instead of the full name of the country.
-            Only the 'system' number should be used, instead of the 'system' and 'type' (e.g. '7' instead of 7 (Dispatch)' as it appears in the UI).
-        """
-        # To test the range of differences, we create one invoice with an intrastat country being Belgium, and one bill with an intrastat country being the Netherlands.
-        # the product we use should have a product origin country of Spain, which should have the country code in the report too.
         belgian_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1301,7 +1180,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                                  CommodityFlow  Country CommodityCode   OriginCountry
             [0, 1, 2, 5, 6],
             [
                 ("Intrastat", "", "", "", ""),
@@ -1324,7 +1202,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_xi_invoice_with_xu_product(self):
-        """Test a report from an invoice made for Northern Ireland with a product from United Kingdom."""
         self.product_no_supplementary_unit.product_tmpl_id.intrastat_origin_country_id = self.env.ref(
             "base.uk"
         ).id
@@ -1358,8 +1235,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                               CommodityFlow   Country  OriginCountry
-            #
             [0, 1, 2, 6],
             [
                 ("Intrastat", "", "", ""),
@@ -1374,14 +1249,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_intrastat_custom_engine_aggregate(self):
-        """
-        Test the report to see if the lines are correctly aggregated (the top foldable lines).
-        Each line is an aggregation based on the country, currency and commodity code,
-        which form the name of the line (in that order).
-        The lines should contain the name in the correct format, the country code and the commodity code.
-        Format of the name : 'Country Code - Currency - Commodity Code'
-        The  country code is a 2-digit ISO code and the currency a 3-digit ISO currency one.
-        """
         belgian_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1433,8 +1300,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                   Country  CommodityCode
-            #
             [0, 2, 5],
             [
                 ("Intrastat", "", ""),
@@ -1445,13 +1310,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_dynamic_line_generator_aggregate_intrastat_type(self):
-        """
-        Test the report to see if the aggregated lines are correctly displayed when only one type of move
-        is selected ('Arrival' or 'Dispatch').
-        When one of them is selected, the system column, as well as the value one should be populated.
-        The 'system' should contain the string of the selected type and 'value' should contain the sum of all
-        aggregated moves for the specific country, currency and commodity code.
-        """
         belgian_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1494,7 +1352,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
         belgian_invoice.action_post()
         dutch_bill.action_post()
-        # We only select 'Dispatch'
         default_type = [
             {"name": ("Arrival"), "selected": False, "id": "arrival"},
             {"name": ("Dispatch"), "selected": True, "id": "dispatch"},
@@ -1510,8 +1367,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                                      System Country CommodityCode Value
-            #
             [0, 1, 2, 5, 12],
             [
                 ("Intrastat", "", "", "", 20),
@@ -1527,12 +1382,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         )
 
     def test_intrastat_comparison_period(self):
-        """Test comparison filter with the intrastat report
-        The following use cases are tested:
-            - one customer only in month 1
-            - one customer only in month 2
-            - one customer in both months 1 and 2
-        """
 
         def create_invoice_comparison(partner, date):
             return (
@@ -1598,7 +1447,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            [0, 12, 25],  # Name, Value July 2024, Value June 2024
+            [0, 12, 25],
             [
                 ("Intrastat", 40.0, 40.0),
                 ("Dispatch - BE0475646428 - 22042176 - BE", 0, 20.00),
@@ -1669,7 +1518,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report_lines,
-            [0, 12],  # Name, Value
+            [0, 12],
             [
                 ("Intrastat", 300),
                 ("INV/2022/00001", 300),
@@ -1785,7 +1634,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            # 0/name,                                            12/value
             [0, 12],
             [
                 ("Intrastat", 210.0),
@@ -1801,7 +1649,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            # 0/name,                                            12/value
             [0, 12],
             [
                 ("Intrastat", 210.0),
@@ -1824,7 +1671,6 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_1,
-            # 0/name,                                            12/value
             [0, 12],
             [("INV/2022/00002", 80.0), ("Load more...", "")],
             options,
@@ -1842,17 +1688,12 @@ class TestIntrastatReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_2,
-            # 0/name,                                            12/value
             [0, 12],
             [("INV/2022/00001", 80.0)],
             options,
         )
 
     def test_reverse_move_default_intrastat_code(self):
-        """
-        Test that if default values are set for "Default invoice transaction code" and "Default refund transaction code"
-        When a move is reversed, the code is correctly set
-        """
         self.env.company.intrastat_default_invoice_transaction_code_id = (
             self.intrastat_codes["commodity"]
         )
@@ -1917,9 +1758,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
             self.report, "2022-01-01", "2022-01-31", {"intrastat_grouped": True}
         )
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            # 10/weight
             [10],
             [
                 ("",),
@@ -1932,9 +1771,7 @@ class TestIntrastatReport(TestAccountReportsCommon):
         self.env.user.lang = "fr_BE"
         report_fr = self.report.with_context(lang="fr_BE")
         self.assertLinesValues(
-            # pylint: disable=C0326
             report_fr._get_lines(options),
-            # 10/weight
             [10],
             [
                 ("",),

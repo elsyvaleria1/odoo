@@ -11,12 +11,6 @@ class TestRuleSection(TestPayslipBase):
         super().setUpClass()
 
     def test_unlink_section_constraints(self):
-        """
-        Test deletion constraints for Salary Rule Sections:
-        1. Linked to an Input Rule -> Blocked
-        2. Linked to an unused Rule -> Allowed
-        3. Not linked to anything -> Allowed
-        """
         active_input_section, unused_rule_section, unused_section = self.env[
             "hr.salary.rule.section"
         ].create(

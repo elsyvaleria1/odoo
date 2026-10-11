@@ -32,8 +32,6 @@ class TestGlobalDiscount(BaseTaxCommon):
         self.assertAlmostEqual(totals["tax_amount"], 28.35, places=2)
 
     def test_percent_discount_over_100_does_not_crash(self):
-        """Edge case: a discount larger than the discountable base must not
-        raise — it should simply overshoot into negative totals."""
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
         base_lines = [self._base_line(tax, 100.0)]
@@ -80,8 +78,6 @@ class TestDownPayment(BaseTaxCommon):
         self.assertAlmostEqual(totals["tax_amount"], 18.9, places=2)
 
     def test_fixed_down_payment_exceeding_order_total(self):
-        """Edge case: a fixed down payment larger than the order's own total
-        must not raise — `amount` ("fixed") targets the tax-included total."""
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
         base_lines = [self._base_line(tax, 100.0)]
@@ -123,9 +119,6 @@ class TestReturnOfMerchandise(BaseTaxCommon):
         new_base_lines = Tax._dispatch_return_of_merchandise_lines(
             [positive, negative], self.company
         )
-        # The negative line was fully matched and dispatched into the
-        # positive line's `return_of_merchandise_base_lines`, so it is
-        # excluded from the result — only the positive line's copy remains.
         self.assertEqual(len(new_base_lines), 1)
         self.assertTrue(new_base_lines[0]["return_of_merchandise_base_lines"])
 
@@ -133,9 +126,6 @@ class TestReturnOfMerchandise(BaseTaxCommon):
         self.assertAlmostEqual(new_base_lines[0]["quantity"], 3.0)
 
     def test_over_return_creates_a_standalone_line(self):
-        """Edge case: a return quantity exceeding all available positive
-        quantity must not be silently dropped — the unmatched remainder
-        becomes its own new base line (`plus_base_line: None` branch)."""
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
         product = self._product("BT over-return test product")
@@ -148,8 +138,6 @@ class TestReturnOfMerchandise(BaseTaxCommon):
         new_base_lines = Tax._dispatch_return_of_merchandise_lines(
             [positive, negative], self.company
         )
-        # positive line's copy (absorbed 3 units) + a new standalone line for
-        # the 2 units of return that exceeded all available positive stock.
         self.assertEqual(len(new_base_lines), 2)
         standalone = [
             bl for bl in new_base_lines if not bl["return_of_merchandise_base_lines"]
@@ -174,8 +162,6 @@ class TestGrossTotalTolerance(BaseTaxCommon):
         expected_total = sum(
             bl["tax_details"]["raw_total_excluded_currency"] for bl in base_lines
         )
-        # Perturb one line's raw total by a sub-cent amount, as float drift
-        # from an earlier computation step would.
         base_lines[0]["tax_details"]["raw_total_excluded_currency"] += 0.0004
 
         Tax._round_raw_total_excluded(
@@ -190,8 +176,6 @@ class TestGrossTotalTolerance(BaseTaxCommon):
         self.assertAlmostEqual(rounded_sum, round(expected_total, 2), places=2)
 
     def test_strict_tolerance_with_a_single_line_is_a_no_op(self):
-        """Edge case: nothing to redistribute across when there is only one
-        line in the group — must not raise."""
         tax = self._tax(21.0)
         Tax = self.env["account.tax"]
         base_lines = [self._base_line(tax, 10.005)]

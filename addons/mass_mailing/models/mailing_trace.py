@@ -63,7 +63,6 @@ class MailingTrace(models.Model):
         required=True,
     )
     is_test_trace = fields.Boolean(string="Generated for testing")
-    # mail data
     mail_mail_id = fields.Many2one(
         comodel_name="mail.mail",
         string="Mail",
@@ -77,10 +76,9 @@ class MailingTrace(models.Model):
         "However the ID is needed for several action and controllers.",
     )
     email = fields.Char(help="Normalized email address")
-    message_id = fields.Char(string="Message-ID")  # email Message-ID (RFC 2392)
+    message_id = fields.Char(string="Message-ID")
     medium_id = fields.Many2one(related="mass_mailing_id.medium_id")
     source_id = fields.Many2one(related="mass_mailing_id.source_id")
-    # document
     model = fields.Char(
         string="Document model",
         required=True,
@@ -89,7 +87,6 @@ class MailingTrace(models.Model):
         model_field="model",
         string="Document ID",
     )
-    # campaign data
     mass_mailing_id = fields.Many2one(
         comodel_name="mailing.mailing",
         string="Mailing",
@@ -101,7 +98,6 @@ class MailingTrace(models.Model):
         string="Campaign",
         readonly=True,
     )
-    # Status
     sent_datetime = fields.Datetime(string="Sent On")
     open_datetime = fields.Datetime(string="Opened On")
     reply_datetime = fields.Datetime(string="Replied On")
@@ -129,7 +125,6 @@ class MailingTrace(models.Model):
         copy=False,
         readonly=True,
     )
-    # Link tracking
     links_click_ids = fields.One2many(
         comodel_name="link.tracker.click",
         inverse_name="mailing_trace_id",
@@ -181,9 +176,6 @@ class MailingTrace(models.Model):
         return traces
 
     def set_opened(self, domain=None):
-        """Reply / Open are a bit shared in various processes: reply implies
-        open, click implies open. Let us avoid status override by skipping traces
-        that are not already opened or replied."""
         traces = self + (self.search(domain) if domain else self.env["mailing.trace"])
         traces.filtered(lambda t: t.trace_status not in ("open", "reply")).write(
             {"trace_status": "open", "open_datetime": fields.Datetime.now()}

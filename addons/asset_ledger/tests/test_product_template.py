@@ -170,9 +170,6 @@ class TestProductTemplate(TransactionCase):
         self.assertEqual(vehicle.fuel_efficiency_uom_name, expected_mpg)
 
     def test_promoting_a_template_gives_its_lots_an_asset(self):
-        """Core creates the `resource.resource` from `stock.lot.create` alone, so
-        a unit received before the promotion had none and stayed invisible to
-        every `resource.resource` consumer."""
         template = self._create_product(
             {
                 "name": "Promotable crate",
@@ -196,8 +193,6 @@ class TestProductTemplate(TransactionCase):
         self.assertEqual(lot.asset_id.trace_id, lot)
 
     def test_retyping_an_asset_template_creates_nothing_new(self):
-        """Only the empty-to-set edge backfills. A template that was already an
-        asset kind has its lots' assets; PA2-05's sync retypes them."""
         template = self._create_product(
             {
                 "name": "Already typed truck",

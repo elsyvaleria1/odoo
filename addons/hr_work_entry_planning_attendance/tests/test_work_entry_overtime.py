@@ -50,7 +50,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
                 "ruleset_id": cls.ruleset.id,
             }
         )
-        # Generates a slot for the morning/afternoon every day of december 2022
         planning_slot_vals = []
         for i in range(1, 31):
             for hour_start in [7, 12]:
@@ -500,8 +499,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
         )
 
     def test_attendance_creation_with_partially_allocated_planning_slot(self):
-        """Test attendance creation when the work entry source is a planning slot
-        with less than 100% allocation."""
         self.slots[0].allocated_percentage = 50
         self.env["hr.attendance"].create(
             {

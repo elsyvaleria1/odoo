@@ -11,8 +11,6 @@ class SendcloudShippingProduct(models.Model):
         readonly=True,
         required=True,
     )
-    # sendcloud_code can be used as an id to guarantee the uniqueness of the record
-    # howewer SendCloud doesn't allow it's use as a search parameter
     sendcloud_code = fields.Char(
         string="Sendcloud Product Identifier",
         readonly=True,
@@ -33,7 +31,7 @@ class SendcloudShippingProduct(models.Model):
     functionalities = fields.Json(
         string="Available Functionalities",
         readonly=True,
-    )  # dict with keys 'bool_func', 'detail_func', 'customizable'. customizable hold technical names, other ones humanized names
+    )
     can_customize_functionalities = fields.Boolean(
         compute="_compute_can_customize_functionalities",
         store=True,

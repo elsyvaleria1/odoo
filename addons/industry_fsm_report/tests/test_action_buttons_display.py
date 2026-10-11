@@ -65,16 +65,9 @@ class TestActionButtons(TransactionCase):
         )
 
     def test_send_sign_report_buttons_visibility_conditions(self):
-        # Sign/Send not visible if Time = 0 AND Worksheet = 0
-        # Visible in non primary if Time > 0 OR Worksheet > 0
-        # Visible in primary if Time > 0 AND Worksheet > 0
-        # Send should be visible in primary if T,W > 0 and report not sent yet
-        # Send should be visible in secondary if T || W > 0 or report already sent
 
-        # Check Enabled Counter
         self.assertEqual(self.task.display_enabled_conditions_count, 2)
 
-        # Sign/send only visible if 'worksheets' is enabled on the project
         self.project.allow_worksheets = False
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
@@ -83,7 +76,7 @@ class TestActionButtons(TransactionCase):
         self.assertEqual(self.task.display_enabled_conditions_count, 1)
 
         self.project.allow_timesheets = False
-        self.timesheet.task_id = False  # Unlink the task from the timesheet
+        self.timesheet.task_id = False
         self.assertEqual(self.task.display_enabled_conditions_count, 0)
         self.project.write(
             {
@@ -93,23 +86,20 @@ class TestActionButtons(TransactionCase):
         )
         self.assertEqual(self.task.display_enabled_conditions_count, 2)
 
-        # Not visible
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(self.task.display_send_report_secondary)
 
-        # Secondary if time > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
-        self.timesheet.task_id = self.task  # Link the task to the timesheet
+        self.timesheet.task_id = self.task
         self.assertEqual(self.task.display_satisfied_conditions_count, 1)
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
-        self.timesheet.task_id = False  # Unlink the task from the timesheet
+        self.assertTrue(self.task.display_send_report_secondary)
+        self.timesheet.task_id = False
 
-        # Secondary if worksheet > 0 only
         self.assertEqual(self.task.display_satisfied_conditions_count, 0)
         worksheet_vals = {
             "x_name": "This is a name",
@@ -124,11 +114,10 @@ class TestActionButtons(TransactionCase):
         self.assertFalse(self.task.display_sign_report_primary)
         self.assertTrue(self.task.display_sign_report_secondary)
         self.assertFalse(self.task.display_send_report_primary)
-        self.assertTrue(self.task.display_send_report_secondary)  # Not signed yet
+        self.assertTrue(self.task.display_send_report_secondary)
         worksheet.unlink()
 
-        # Primary of all conditions met
-        self.timesheet.task_id = self.task  # Link the task to the timesheet
+        self.timesheet.task_id = self.task
         worksheet = self.env[self.task.worksheet_template_id.model_id.model].create(
             worksheet_vals
         )
@@ -137,12 +126,11 @@ class TestActionButtons(TransactionCase):
         self.assertFalse(self.task.display_sign_report_secondary)
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is not signed yet
+        )
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is not signed yet
+        )
 
-        # Send visible in primary if report is signed and not sent yet
         f = io.BytesIO()
         Image.new("RGB", (50, 50)).save(f, "PNG")
         f.seek(0)
@@ -150,10 +138,10 @@ class TestActionButtons(TransactionCase):
         self.task.worksheet_signature = image
         self.assertTrue(
             self.task.display_send_report_primary
-        )  # Report is signed, not sent yet
+        )
         self.assertFalse(self.task.display_send_report_secondary)
         self.task.fsm_is_sent = True
         self.assertFalse(self.task.display_send_report_primary)
         self.assertFalse(
             self.task.display_send_report_secondary
-        )  # Report is sent then do not display button
+        )

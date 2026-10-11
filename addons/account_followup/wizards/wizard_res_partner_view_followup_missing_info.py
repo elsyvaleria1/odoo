@@ -11,7 +11,6 @@ class WizardResPartnerViewFollowupMissingInfo(models.TransientModel):
     )
 
     def view_partners_action(self) -> dict:
-        """Return a list view of the partners with missing information, editable in place."""
         self.check_singleton()
         return {
             "name": self.env._("Missing information"),

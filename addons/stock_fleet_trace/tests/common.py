@@ -70,7 +70,6 @@ class TripFixtureMixin:
         cls.absent = cls.env.ref("stock_fleet.unbatch_reason_customer_absent")
 
     def _delivery(self, quantity):
-        """A delivery fed through the shipping transit, as CDG runs SHIP -> OUT."""
         delivery = self.env["stock.picking"].create(
             {
                 "picking_type_id": self.out_type.id,
@@ -133,7 +132,6 @@ class OfflineEventsMixin:
     """What the driver's phone sends: events chained as it chains them."""
 
     def _chain(self, trip, events):
-        """Set prev_hash/event_hash on ``events`` as the phone would, in order."""
         Event = self.env["stock.trip.offline.event"]
         chain_hash = trip._trip_last_event_hash()
         for event in events:
@@ -143,7 +141,6 @@ class OfflineEventsMixin:
         return events
 
     def _send(self, trip, *events, user=None, chain=True, head=None):
-        """Send events as the driver's phone does, one dict per event."""
         events = list(events)
         if chain:
             self._chain(trip, events)

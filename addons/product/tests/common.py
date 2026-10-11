@@ -45,13 +45,6 @@ class ProductCommon(UomCommon):
 
     @classmethod
     def get_default_groups(cls):
-        # Every product this fixture builds carries a list_price and a
-        # standard_price, and both fields are gated by write_groups. That check
-        # fires on create as well as on write, so a fixture user allowed to
-        # create a product but not to price it cannot build the fixture at all,
-        # and the whole class errors in setUpClass before a single test runs.
-        # Grant the two privileges here, where the fields are written, rather
-        # than widening either group for real users.
         groups = super().get_default_groups()
         return (
             groups
@@ -79,11 +72,6 @@ class ProductCommon(UomCommon):
 
     @classmethod
     def _create_product(cls, **create_vals):
-        # sudo: this builds a fixture, it does not exercise access. Suites that
-        # deliberately run as an under-privileged user (AccountTestInvoicingCommon
-        # among them) would otherwise be hostage to any field-level write_groups a
-        # fork puts on a product field -- marin gates standard_price that way, and
-        # every such suite died in setUpClass on a database where it is installed.
         return (
             cls.env["product.product"]
             .sudo()

@@ -5,13 +5,13 @@ from odoo.http import NotFound, request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import file_open
 
-from odoo.addons.mail.tools.discuss import (  # noqa: F401 - re-exports, read by every controller
+from odoo.addons.mail.tools.discuss import (
     Store,
     to_record_id,
     to_record_ids,
 )
 from odoo.addons.mail.tools.paging import (
-    clamp_limit,  # noqa: F401 - re-export, read by discuss/search.py
+    clamp_limit,
 )
 
 _debug = DebugLog(__name__)

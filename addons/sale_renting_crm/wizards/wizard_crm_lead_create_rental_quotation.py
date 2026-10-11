@@ -63,9 +63,6 @@ class WizardCrmLeadCreateRentalQuotation(models.TransientModel):
     )
 
     def action_new_rental(self):
-        """Handles the partner assignment based on selected action and
-        creates a new rental quotation.
-        """
         self.check_singleton()
         _debug.lifecycle(
             "rental_from_lead",

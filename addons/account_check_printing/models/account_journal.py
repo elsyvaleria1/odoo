@@ -38,7 +38,6 @@ class AccountJournal(models.Model):
     )
 
     def _selection_check_printing_layouts(self) -> list:
-        """Returns available check printing layouts for the company, excluding disabled options"""
         selection = (
             self.env["account.config"]
             ._fields["account_check_printing_layout"]
@@ -96,7 +95,6 @@ class AccountJournal(models.Model):
         return journals
 
     def _create_check_sequence(self) -> None:
-        """Create a check sequence for the journal"""
         for journal in self:
             journal.check_sequence_id = (
                 self.env["ir.sequence"]

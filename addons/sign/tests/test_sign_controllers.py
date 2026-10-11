@@ -14,13 +14,11 @@ from odoo.addons.http_routing.tests.common import MockRequest
 
 @tagged("post_install", "-at_install")
 class TestSignController(TestSignControllerCommon):
-    # test float auto_field display
     def test_sign_controller_float(self):
         sign_request = self.create_sign_request_no_item(
             signer=self.partner_1, cc_partners=self.partner_4
         )
         text_type = self.env["sign.item.type"].search([("name", "=", "Text")])
-        # the partner_latitude expects 7 zeros of decimal precision
         text_type.auto_field = "partner_latitude"
         text_type.model_id = self.env["ir.model"]._get("res.partner").id
         token_a = (
@@ -41,22 +39,18 @@ class TestSignController(TestSignControllerCommon):
             latitude = sign_type["auto_value"]
             self.assertEqual(latitude, 0)
 
-    # test auto_field with wrong partner field
     def test_sign_controller_dummy_fields(self):
         text_type = self.env["sign.item.type"].search([("name", "=", "Text")])
-        # we set a dummy field that raises an error
         text_type.model_id = self.env["ir.model"]._get("res.partner").id
         with self.assertRaises(ValidationError):
             text_type.auto_field = "this_is_not_a_partner_field"
 
-        # we set a field the demo user does not have access and must not be able to set as auto_field
         self.patch(
             type(self.env["res.partner"]).function, "groups", "base.group_system"
         )
         with self.assertRaises(AccessError):
             text_type.with_user(self.user_demo).auto_field = "function"
 
-    # test auto_field with multiple sub steps
     def test_sign_controller_multi_step_auto_field(self):
         self.partner_1.company_id = self.env.ref("base.main_company")
         self.partner_1.company_id.country_id = self.env.ref("base.be").id
@@ -280,9 +274,6 @@ class TestSignController(TestSignControllerCommon):
             self.start_tour(url, "sign_resend_expired_link_tour", login="demo")
 
     def test_cancel_request_as_public_user(self):
-        """
-        Test that a public user can cancel a sign request and that a cancellation log is recorded on the partner_id.
-        """
         sign_request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
         )
@@ -299,10 +290,8 @@ class TestSignController(TestSignControllerCommon):
             "token": sign_request_item.access_token,
         }
 
-        # Set the environment user as the public user
         self.uid = self.public_user
 
-        # Send a request to cancel the sign request item
         self.authenticate(None, None)
         response = self.url_open(url, data=dumps(data), headers=headers)
         self.assertEqual(response.status_code, 200)
@@ -341,11 +330,6 @@ class TestSignController(TestSignControllerCommon):
         )
 
     def test_make_public_user_with_duplicate_contact(self):
-        """
-        Test create_public_user behavior with duplicate contacts.
-        Ensures that when a user has a duplicate contact with the same email and name,
-        the sign request associates the correct partner ID which contains user_ids.
-        """
         user = self.env["res.users"].create(
             {
                 "name": "Test User",
@@ -355,13 +339,11 @@ class TestSignController(TestSignControllerCommon):
         )
         contact = user.partner_id
 
-        # Duplicate contact and set the user's partner ID to the duplicate contact
         duplicate_contact = contact.copy()
         user.partner_id = duplicate_contact
         self.assertEqual(user.partner_id, duplicate_contact)
         self.assertEqual(contact.email, duplicate_contact.email)
 
-        # Create a sign request and linked to the user's(Test User) contact
         sign_request = (
             self.env["sign.request"]
             .with_context(no_sign_mail=False)
@@ -423,8 +405,6 @@ class TestSignController(TestSignControllerCommon):
         )
 
     def test_get_sign_request_items_with_public_user(self):
-        """Test the RPC call to get sign request items as a public user."""
-        # Create two sign requests. The second one will be returned as 'the next' to be signed.
         self.sign_request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]
         )
@@ -434,7 +414,7 @@ class TestSignController(TestSignControllerCommon):
 
         self.authenticate(
             None, None
-        )  # Ensure the current user for the request is public
+        )
         sign_item = self.sign_request.request_item_ids[0]
         response = self._json_url_open(
             "/sign/sign_request_items",
@@ -447,7 +427,7 @@ class TestSignController(TestSignControllerCommon):
         self.assertEqual(
             response.status_code, 200, f"Expected 200 OK, got {response.status_code}"
         )
-        response_json = response.json()  # Get the JSON content of the response
+        response_json = response.json()
         self.assertEqual(
             response_json["jsonrpc"], "2.0", "Expected JSON-RPC 2.0 response"
         )
@@ -463,7 +443,6 @@ class TestSignController(TestSignControllerCommon):
             len(result), 1, "Should find at least one sign request item"
         )
 
-        # Verify that the found item is the one associated with the test partner's email
         found_item_ids = [item["id"] for item in result]
         self.assertIn(
             self.next_sign_request.request_item_ids[0].id,
@@ -472,9 +451,6 @@ class TestSignController(TestSignControllerCommon):
         )
 
     def test_sign_request_local(self):
-        # Make sure the stored signature of an user can't be used by another user locally
-        # make sure the log user_id is correct
-        # user_1 is linked to partner1
         self.user_1.sign_signature = b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC"
         sign_request = self.create_sign_request_1_role(
             self.partner_1, self.env["res.partner"]

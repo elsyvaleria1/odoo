@@ -17,8 +17,6 @@ class TestTierScale(TransactionCase):
         cls.company_b = cls.env["res.company"].create({"name": "Scale Company B"})
 
     def _scored(self, vals):
-        # A tier means a measurement was taken: a partner nobody scored carries
-        # none, so the fixtures score theirs (zero rows against the catalog).
         partner = self.Partner.create(vals)
         partner._score_refresh()
         return partner
@@ -81,7 +79,6 @@ class TestTierScale(TransactionCase):
         self.assertTrue(top._is_covering(100.0))
 
     def test_a_company_less_partner_ignores_every_company_band(self):
-        """The stored classification must not follow the acting user."""
         self._band("A all", 0.0, 0.0, self.company_a, sequence=1)
         partner = self._scored(
             {"name": "Scale Probe Nobody", "is_company": True, "company_id": False}
@@ -96,7 +93,6 @@ class TestTierScale(TransactionCase):
         self.assertEqual(partner.tier_id, shared)
 
     def test_the_scale_of_a_company_less_partner_is_stable(self):
-        """Same partner, two acting companies, one answer."""
         self._band("A all", 0.0, 0.0, self.company_a, sequence=1)
         self._band("B all", 0.0, 0.0, self.company_b, sequence=2)
         partner = self._scored(
@@ -107,12 +103,10 @@ class TestTierScale(TransactionCase):
         self.assertEqual(partner.tier_id, as_a)
 
     def test_a_band_starting_above_100_is_rejected(self):
-        """A band no percentage can reach is a dead row, not a valid scale."""
         with self.assertRaises(ValidationError):
             self._band("Unreachable", 150.0, 0.0, self.company_a)
 
     def test_a_scale_edit_queues_a_reclassification(self):
-        """Nothing depends on partner.tier, so the band must push."""
         band = self._band("Notify band", 0.0, 0.0, self.company_a)
         partner_class = type(self.Partner)
         with patch.object(partner_class, "_score_notify_scale_changed") as notified:
@@ -128,12 +122,6 @@ class TestTierScale(TransactionCase):
             self.assertTrue(notified.called)
 
     def test_a_new_band_reaches_every_partner_and_classifies_the_scored_ones(self):
-        """The wave reaches everyone; a partner nobody scored still gets no band.
-
-        A tier means a measurement was taken (decided 2026-09-21): a band
-        covering 0 picks up the partner scored at zero, not the one with no
-        rows at all.
-        """
         unscored = self.Partner.create(
             {"name": "Scale Probe Orphan", "is_company": True, "company_id": False}
         )
@@ -177,14 +165,12 @@ class TestTierScale(TransactionCase):
         self.assertFalse(partner.tier_id)
 
     def test_the_display_name_placeholder_survives_an_unsaved_record(self):
-        """_rec_name is the ORM default; the compute is not, so it stays."""
         self.assertEqual(self.Profile._rec_name, "name")
         saved = self._band("Named band", 0.0, 0.0, self.company_a)
         self.assertEqual(saved.display_name, "Named band")
         self.assertEqual(self.Profile.new({}).display_name, "New Tier")
 
     def test_a_foreign_company_profile_cannot_be_stored(self):
-        """The classification is computed; a hand-written band does not stick."""
         band_b = self._band("Guard B", 0.0, 0.0, self.company_b)
         partner = self._scored(
             {

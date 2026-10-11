@@ -18,7 +18,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         cls.account_3 = cls.copy_account(cls.account_1)
         cls.account_4 = cls.copy_account(cls.account_1)
 
-        # Create a test report
         cls.report = cls.env["report.formula"].create(
             {
                 "name": "Budget Test",
@@ -71,7 +70,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             }
         )
 
-        # Create budgets
         cls.budget_1 = cls._create_budget(
             {
                 cls.account_1.id: 1000,
@@ -193,7 +191,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_reports_multiple_budgets(self):
-        """Check the report renders 2 columns per selected budget: the budget amount and its comparison percentage."""
         self._create_moves(
             {
                 self.account_1.id: 100,
@@ -298,7 +295,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         self.assertLinesValues(
             self.report._get_lines(options),
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            #                        [ Period 2024 + Budget 2024 + % + Budget 2023 + %] [ Period 2023 + Budget 2024 + % + Budget 2023 + %]
             [
                 (
                     "line_domain",
@@ -357,13 +353,11 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_report_budget_items_with_different_date_filters(self):
-        """Check the budget items reported match the selected date range."""
         budget_2024 = self._create_budget(
             {self.account_1.id: 300}, "2024-01-01", "2024-12-31"
         )
         self._create_moves({self.account_1.id: 200}, "2024-01-01", "2024-12-31")
 
-        # Case when we display a whole year in the report
         options = self._generate_options(
             self.report,
             "2024-01-01",
@@ -382,7 +376,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             options,
         )
 
-        # Case when we display a whole quarter
         options = self._generate_options(
             self.report,
             "2024-01-01",
@@ -401,7 +394,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             options,
         )
 
-        # Case when we display a whole month
         options = self._generate_options(
             self.report,
             "2024-03-01",
@@ -421,11 +413,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_report_budget_edit_items(self):
-        """Check how a budget item edition is spread over the months of the selected period.
-
-        The difference between the old and the new value is split evenly over those months, the
-        rounding remainder being added to the last one.
-        """
 
         def set_budget_item(value, account_id):
             budget_2024._create_or_update_budget_items(
@@ -445,7 +432,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             "2024-12-31",
             default_options={"budgets": [{"id": budget_2024.id, "selected": True}]},
         )
-        # Rounded value (1200) on a whole year: 100 per month
         set_budget_item(1200, self.account_1.id)
         expected_items = [
             {"amount": 100.0, "date": fields.Date.to_date("2024-01-01")},
@@ -473,13 +459,11 @@ class TestBudgetReport(TestAccountReportsCommon):
             default_options={"budgets": [{"id": budget_2024.id, "selected": True}]},
         )
         set_budget_item(300, self.account_1.id)
-        # Nothing should be added as we don't change anything
         self.assertRecordValues(
             budget_2024.item_ids,
             expected_items,
         )
 
-        # 900 over the same 3 months: +200 spread on each, bringing them to 300
         set_budget_item(900, self.account_1.id)
         expected_items = [
             {"amount": 300.0, "date": fields.Date.to_date("2024-01-01")},
@@ -518,7 +502,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             options,
         )
 
-        # Reduce the whole year to a non-rounded value: the remainder lands on the last month
         set_budget_item(1000, self.account_1.id)
         expected_items = [
             {"amount": 300.0 - 66.66, "date": fields.Date.to_date("2024-01-01")},
@@ -540,10 +523,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_report_budget_show_all_accounts_filter(self):
-        """Check the 'show all accounts' filter returns every income account, budgeted or not.
-
-        The expected universe is the income accounts because the test report only targets those.
-        """
         self.env.companies = self.env.company
 
         budget_2024 = self._create_budget(
@@ -600,21 +579,19 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_financial_budget_with_analytic_groupby(self):
-        """Ensure that when budgets and analytics groupby filters are both active, then their headers are
-        displayed on the same level, and values in the report are properly computed"""
 
         budget_a = self.env["account.report.budget"].create([{"name": "Budget A"}])
         budget_b = self.env["account.report.budget"].create([{"name": "Budget B"}])
 
         budget_a._create_or_update_budget_items(
-            value_to_set=2400,  # 100 each month
+            value_to_set=2400,
             account_id=self.account_1.id,
             rounding=self.env.company.currency_id.decimal_places,
             date_from="2024-01-01",
             date_to="2025-12-31",
         )
         budget_b._create_or_update_budget_items(
-            value_to_set=3000,  # 125 each month
+            value_to_set=3000,
             account_id=self.account_1.id,
             rounding=self.env.company.currency_id.decimal_places,
             date_from="2024-01-01",
@@ -685,8 +662,6 @@ class TestBudgetReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                   [                             2025                          ]    [                          2024                             ]
-            #                                   [ A1 ] [ A2 ] [ Total ] [ Budget A ] [ % ] [ Budget B ] [ % ]    [ A1 ] [ A2 ] [ Total ] [ Budget A ] [ % ] [ Budget B ] [ % ]
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
             [
                 (
@@ -762,8 +737,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_financial_budget_with_several_columns(self):
-        """Ensure that financial budget feature works properly on reports with several columns,
-        and that the budget percentage column is hidden when multiple monetary columns exist"""
         self.report.write(
             {
                 "column_ids": [
@@ -797,7 +770,6 @@ class TestBudgetReport(TestAccountReportsCommon):
             },
         )
 
-        # Ensure level header colspan is 3 for top header, 2 for the columns + 1 selected budget
         self.assertEqual(
             self.report._prepare_column_headers_render_data(options),
             {
@@ -809,8 +781,6 @@ class TestBudgetReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                   [          2020                ]  [            2019              ]
-            #                                   [ col 1 ] [ col 2 ] [ budget 1 ]  [ col 1 ] [ col 2 ] [ budget 1 ]
             [0, 1, 2, 3, 4, 5, 6],
             [
                 ("line_domain", 600, "", 1110, 0, "", 0),
@@ -828,12 +798,11 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_financial_budget_with_horizontal_and_analytic_groupbys(self):
-        """Ensure that financial budgets are properly computed when combined with horizontal groupby filters and analytic filters"""
 
         budget = self.env["account.report.budget"].create([{"name": "Budget test"}])
 
         budget._create_or_update_budget_items(
-            value_to_set=1200,  # 100 each month
+            value_to_set=1200,
             account_id=self.account_1.id,
             rounding=self.env.company.currency_id.decimal_places,
             date_from="2025-01-01",
@@ -929,9 +898,6 @@ class TestBudgetReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                   [                                                2025                                           ]
-            #                                   [           Partner A           ] [         Partner B         ] [ Period Total ] [ Budget ] [ % ]
-            #                                   [   A1   ] [   A2   ] [  Total  ] [  A1  ] [  A2  ] [  Total  ] [              ] [        ] [   ]
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("line_domain", 900, 450, 1800, 0, 0, 300, 2100, 1200, "175.0%"),
@@ -965,7 +931,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_hierarchy_with_budget(self):
-        """Check that the report lines are correct with a budget and the option "Hierarchy and subtotals" is ticked"""
         self.env["account.group"].create(
             {
                 "name": "Sales",
@@ -1021,10 +986,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         )
 
     def test_budget_report_edit_items_with_date(self):
-        """
-        Ensure budget items are created or updated correctly
-        when editing across varying date ranges
-        """
 
         def set_budget_item(value, account_id, date_from, date_to):
             budget._create_or_update_budget_items(
@@ -1053,7 +1014,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         ]
         self.assertRecordValues(budget.item_ids, expected_items)
 
-        # Update the second and third months to total of 900 (450 per month)
         set_budget_item(900, self.account_1.id, "2025-01-10", "2025-3-10")
 
         set_budget_item(1000, self.account_1.id, "2025-01-01", "2025-12-01")
@@ -1074,10 +1034,6 @@ class TestBudgetReport(TestAccountReportsCommon):
         self.assertRecordValues(budget.item_ids, expected_items)
 
     def test_budget_filter_with_percentage_figure_type(self):
-        """
-        Test that budget filters don't crash when a report has lines with percentage
-        figure type that cannot be matched for budget comparison.
-        """
         report_with_percentage = self.env["report.formula"].create(
             {
                 "name": "Report with Percentage Line",

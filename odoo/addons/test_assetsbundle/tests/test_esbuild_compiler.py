@@ -113,8 +113,6 @@ class TestEsbuildFailurePath(TransactionCase):
         asset_bundle = self.env["ir.qweb"]._get_asset_bundle(
             NATIVE_BUNDLE, css=False, assets_params={}
         )
-        # a by-source row another test saved through its own connection
-        # would answer the compile before the broken compiler is asked
         with (
             patch.object(
                 type(asset_bundle),

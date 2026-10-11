@@ -6,8 +6,6 @@ from ..tools import valence
 from ..tools.chemistry import compute_identity
 from ..tools.molfile import parse_molblock
 
-# Properties promoted to stored fields because the list and kanban views sort
-# and filter on them. Each one keeps its provenance in molecular.compound.property.
 PROMOTED_PROPERTIES = {
     "mw": "molecular_weight",
     "monoisotopic_mass": "monoisotopic_mass",
@@ -23,7 +21,6 @@ PROMOTED_PROPERTIES = {
 
 class MolecularCompoundTag(models.Model):
     _name = "molecular.compound.tag"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Molecular Compound Class"
 
@@ -35,7 +32,6 @@ class MolecularCompoundTag(models.Model):
 
 class MolecularCompound(models.Model):
     _name = "molecular.compound"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Molecular Compound"
     _order = "name, identity_key"
@@ -101,9 +97,6 @@ class MolecularCompound(models.Model):
         inverse_name="compound_id",
         string="Structures",
     )
-    # Stored so that a change to a structure can find its way back to the
-    # compound: an unstored computed link is not searchable, and the related
-    # fields below would then go stale when a structure is edited.
     structure_2d_id = fields.Many2one(
         comodel_name="molecular.structure",
         compute="_compute_preferred_structures",
@@ -215,13 +208,6 @@ class MolecularCompound(models.Model):
                 compound[field_name] = compound._get_property(key).value_num or 0.0
 
     def _get_property(self, key):
-        """Return the property record of ``key`` that governs the stored field.
-
-        Several methods may have computed the same key; the most recent one wins.
-
-        :param str key: property key, e.g. ``mw``
-        :rtype: odoo.models.Model
-        """
         self.check_singleton()
         candidates = self.property_ids.filtered(lambda p: p.key == key)
         return candidates.sorted(
@@ -232,18 +218,6 @@ class MolecularCompound(models.Model):
     def create_from_molblock(
         self, molblock, vals=None, kind="2d_drawing", generator=None
     ):
-        """Create or complete a compound from a drawn connection table.
-
-        The structure is stored as given and the derived figures are recomputed
-        here rather than trusted from the client, so what the database holds is
-        always what tools/valence.py says about the molblock it holds.
-
-        :param str molblock: V2000 connection table
-        :param dict vals: extra compound values, e.g. name or origin
-        :param str kind: structure kind to store the geometry under
-        :param str generator: what drew it, recorded on the structure
-        :rtype: odoo.models.Model
-        """
         try:
             atoms, bonds = parse_molblock(molblock)
         except ValueError as err:
@@ -300,7 +274,6 @@ class MolecularCompound(models.Model):
         return compound
 
     def _store_valence_properties(self, report):
-        """Record the figures the valence table can defend, and only those."""
         self.check_singleton()
         numeric = {
             "mw": report["weight"],
@@ -314,13 +287,10 @@ class MolecularCompound(models.Model):
             "hba": report["hba"],
         }
         for key, value in numeric.items():
-            # A molecule whose valence is exceeded has no defensible mass, so
-            # that row is left out instead of carrying a zero.
             if value is not None:
                 self.set_property(key, valence.METHOD, value_num=value)
 
     def action_open_sketch(self):
-        """Open the drawing editor on this compound's 2D structure."""
         self.check_singleton()
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
             "molecular_screening.molecular_sketch_action"
@@ -334,7 +304,6 @@ class MolecularCompound(models.Model):
         return action
 
     def action_recompute_properties(self):
-        """Recompute the valence-derived properties from the stored structure."""
         for compound in self:
             structure = compound.structure_2d_id or compound.structure_3d_id
             if not structure:
@@ -351,14 +320,6 @@ class MolecularCompound(models.Model):
             compound._store_valence_properties(report)
 
     def set_property(self, key, method, value_num=None, value_bool=None):
-        """Record a property value together with the method that produced it.
-
-        :param str key: property key
-        :param str method: provenance, e.g. ``rdkit-2026.03.6`` or ``deterministic``
-        :param float value_num: numeric value, when the property is numeric
-        :param bool value_bool: boolean value, when the property is a flag
-        :rtype: odoo.models.Model
-        """
         self.check_singleton()
         vals = {"value_num": value_num, "value_bool": value_bool}
         existing = self.property_ids.filtered(
@@ -408,7 +369,6 @@ class MolecularCompoundRole(models.Model):
 
 class MolecularCompoundProperty(models.Model):
     _name = "molecular.compound.property"
-    # Chemical identity and its geometries are shared across companies.
     _access_anchors = frozendict({"company": ""})
     _description = "Compound Property with Provenance"
     _order = "compound_id, key, computed_at desc"
@@ -420,8 +380,6 @@ class MolecularCompoundProperty(models.Model):
         ondelete="cascade",
     )
     key = fields.Char(required=True)
-    # Six decimals because a monoisotopic mass needs five and this column is the
-    # only carrier: rounding here silently truncated the promoted field.
     value_num = fields.Float(digits=(16, 6))
     value_bool = fields.Boolean()
     method = fields.Char(

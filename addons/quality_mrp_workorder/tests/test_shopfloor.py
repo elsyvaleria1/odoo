@@ -8,7 +8,6 @@ from odoo.addons.quality_control.tests.test_common import TestQualityCommon
 @tagged("post_install", "-at_install")
 class TestShopFloorQuality(TestShopFloor, TestQualityCommon):
     def test_shop_floor_spreadsheet(self):
-        """Ensure we can use spreadsheet from Shop Floor to handle quality check."""
         snow_leopard, leg = self.env["product.product"].create(
             [
                 {
@@ -93,8 +92,6 @@ class TestShopFloorQuality(TestShopFloor, TestQualityCommon):
         )
 
     def test_register_sn_production_quality_check(self):
-        """Generate a QC to register the production of a tracked by SN product
-        and process that in Shop Floor."""
         self._enable_settings("tracking")
         final_product, component = self.env["product.product"].create(
             [
@@ -162,8 +159,6 @@ class TestShopFloorQuality(TestShopFloor, TestQualityCommon):
         self.assertRecordValues(mo.trace_producing_ids, [{"name": "SN0012"}])
 
     def test_display_quality_fail_message(self):
-        """Ensure the failure message is displayed correctly on the shop floor
-        when a quality check fails."""
         finished_product, component_product = self.env["product.product"].create(
             [
                 {

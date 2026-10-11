@@ -35,12 +35,8 @@ _UPDATE_ENV_VAR = "ODOO_BUNDLE_SIZE_UPDATE_BASELINE"
     "web_bundle_size",
 )
 class TestWebBundleSize(TransactionCase):
-    # budgets describe the bundles of exactly this install, on the narrow
-    # addons path: these roots plus what the loader installs with them
     CALIBRATION_ROOTS = frozenset({"hr_attendance", "test_lint"})
 
-    # About a tenth above what the install measured; a budget twice the bundle
-    # holds nothing back.
     BUDGETS = {
         "web.assets_web": 5_012_000,
         "web.assets_frontend": 1_700_000,
@@ -91,9 +87,6 @@ class TestWebBundleSize(TransactionCase):
         for root in cls.CALIBRATION_ROOTS:
             add(root)
         grow()
-        # ai_auto_install's post-init hook installs ai wherever this role has
-        # pgvector, installed or creatable: a module the loader adds that no
-        # manifest names.
         if "ai_auto_install" in closure and "ai" in modules and cls._pgvector_offered():
             add("ai")
             grow()

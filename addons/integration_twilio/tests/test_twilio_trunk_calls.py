@@ -46,7 +46,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
     @freeze_time("2026-10-06 14:00:00")
     def test_trunk_calls_are_matched_to_the_phone_system_reports(self):
         calls = [
-            # reported: same number (other prefix), within two minutes
             _call(
                 "CA1",
                 "trunking-originating",
@@ -55,7 +54,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
                 "Tue, 06 Oct 2026 09:00:00 +0000",
                 "Tue, 06 Oct 2026 09:01:22 +0000",
             ),
-            # completed and never reported
             _call(
                 "CA2",
                 "trunking-terminating",
@@ -64,7 +62,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
                 "Tue, 06 Oct 2026 10:00:00 +0000",
                 "Tue, 06 Oct 2026 10:03:00 +0000",
             ),
-            # busy and never reported: not a lost report
             _call(
                 "CA3",
                 "trunking-terminating",
@@ -74,7 +71,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
                 "Tue, 06 Oct 2026 10:30:05 +0000",
                 status="busy",
             ),
-            # ended an hour ago: the phone system has time yet
             _call(
                 "CA4",
                 "trunking-originating",
@@ -83,7 +79,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
                 "Tue, 06 Oct 2026 12:58:00 +0000",
                 "Tue, 06 Oct 2026 13:00:00 +0000",
             ),
-            # not a trunk call, and a call still ringing
             _call(
                 "CA5",
                 "outbound-api",
@@ -136,7 +131,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
         self.assertEqual((records[0].amount_price, records[0].duration), (0.013, 42))
         self.assertEqual(records[0].start_date, datetime(2026, 10, 6, 9, 0, 0))
 
-        # synced again: one record per call, and the report that came in late matches
         late = self.env["phone.call"].create(
             {
                 "channel": "pbx",
@@ -183,7 +177,6 @@ class TestTwilioTrunkCalls(MockSmsTwilio):
                 "Tue, 06 Oct 2026 08:30:00 +0000",
                 "Tue, 06 Oct 2026 08:31:00 +0000",
             ),
-            # the phone system was down: Twilio could not deliver the call
             _call(
                 "CA9",
                 "trunking-originating",

@@ -25,10 +25,10 @@ class TestWriteValidation(TestTradeOrderCase):
 
     def test_illegal_state_transition_blocked(self):
         order = self._make_order()
-        order.write({"state": "done"})  # draft -> done is legal
+        order.write({"state": "done"})
 
         with self.assertRaises(UserError):
-            order.write({"state": "draft"})  # done -> draft is illegal
+            order.write({"state": "draft"})
 
     def test_legal_state_transition_allowed(self):
         order = self._make_order()
@@ -38,14 +38,6 @@ class TestWriteValidation(TestTradeOrderCase):
         self.assertEqual(order.state, "done")
 
     def test_writing_an_unchanged_value_on_a_locked_order_is_allowed(self):
-        """A guard that refuses a no-op write is refusing the wrong thing.
-
-        Over JSON-RPC and through `load()` a datetime cannot survive as
-        anything but a string, so the guard has to compare through the field
-        rather than across the ORM/vals type boundary. It used to compare raw,
-        which made every re-import and every external write-back of an
-        untouched date fail with "this order is locked".
-        """
         order = self._make_order()
         order.write({"state": "done", "locked": True})
         unchanged = order.date_order
@@ -88,7 +80,6 @@ class TestWriteValidation(TestTradeOrderCase):
             order.write({"line_ids": [Command.clear()]})
 
     def test_a_misspelled_write_guard_raises_rather_than_being_skipped(self):
-        """The registry is the only record that a guard was meant to run."""
         order = self._make_order()
         model = type(self.env["test_trade.order"])
         original = model._get_check_write_guards

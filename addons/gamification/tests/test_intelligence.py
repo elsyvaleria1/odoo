@@ -35,7 +35,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         )
 
     def test_no_adjustment_for_once_period(self):
-        """Non-recurring challenges should not be adjusted."""
         challenge = self.env["gamification.challenge"].create(
             {
                 "name": "Once Challenge",
@@ -54,7 +53,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         self.assertEqual(result, {})
 
     def test_no_adjustment_without_history(self):
-        """No adjustment when user has less than 2 completed periods."""
         challenge = self.env["gamification.challenge"].create(
             {
                 "name": "Monthly Challenge",
@@ -70,7 +68,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
             }
         )
 
-        # Create only 1 past goal (need 2+)
         self.env["gamification.goal"].create(
             {
                 "definition_id": self.goal_def.id,
@@ -87,7 +84,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         self.assertEqual(result, {})
 
     def test_increase_on_consistent_overperformance(self):
-        """Target increases when the user consistently meets or beats it."""
         challenge = self.env["gamification.challenge"].create(
             {
                 "name": "Monthly Challenge",
@@ -103,7 +99,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
             }
         )
 
-        # Create 3 past goals the user actually reached
         for i in range(3):
             self.env["gamification.goal"].create(
                 {
@@ -124,11 +119,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         self.assertGreater(result[key], 100, "Target should increase")
 
     def test_no_increase_when_consistently_missing_target(self):
-        """A user who keeps falling just short must not get a harder target.
-
-        Averaging 91% of target means failing every period.  Ramping the
-        target for those users compounds the failure instead of helping.
-        """
         challenge = self.env["gamification.challenge"].create(
             {
                 "name": "Monthly Challenge",
@@ -165,7 +155,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         )
 
     def test_decrease_on_consistent_underperformance(self):
-        """Target decreases when user consistently below 50%."""
         challenge = self.env["gamification.challenge"].create(
             {
                 "name": "Monthly Challenge",
@@ -201,14 +190,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
         self.assertLess(result[key], 100, "Target should decrease")
 
     def test_lower_goal_near_zero_made_harder_not_floored_at_one(self):
-        """A 'lower' goal's adjusted target must not be floored at 1.
-
-        For a 'lower' goal (smaller is better), making it harder means a
-        *smaller* target. With a base_target near 0 (e.g. 0.5) and a 15%
-        harder factor (0.85), the correct adjusted target is 0.425 -- still
-        smaller than the base. Flooring at the literal 1 instead forces the
-        adjusted target *above* the base, the opposite direction.
-        """
         lower_goal_def = self.env["gamification.goal.definition"].create(
             {
                 "name": "Adaptive Lower Test Def",
@@ -231,8 +212,6 @@ class TestAdaptiveDifficulty(common.TransactionCase):
             }
         )
 
-        # 3 past goals, consistently beating the 0.5 target (current well
-        # below it) -> avg_rate >= 1.0 -> "make it harder" branch.
         for i in range(3):
             self.env["gamification.goal"].create(
                 {
@@ -280,18 +259,14 @@ class TestEngagementNudges(common.TransactionCase):
         )
 
     def test_nudge_cron_runs_without_error(self):
-        """The nudge cron runs without crashing even with no data."""
         with patch.object(
             type(self.user),
             "_send_gamification_notification",
         ) as mock_notif:
             self.env["res.users"]._cron_engagement_nudges()
-        # Smoke test: should complete without exceptions.
-        # With no qualifying data, no notifications should fire.
         mock_notif.assert_not_called()
 
     def test_nudge_close_to_rank(self):
-        """Users close to next rank get notified."""
         rank = self.env["gamification.karma.rank"].create(
             {
                 "name": "Close Rank",
@@ -306,11 +281,9 @@ class TestEngagementNudges(common.TransactionCase):
         ) as mock_notif:
             self.env["res.users"]._nudge_close_to_rank()
 
-        # User has 100 karma, rank requires 105 → 5 away (within 10%)
         mock_notif.assert_called()
 
     def test_nudge_goals_almost_done(self):
-        """Users with >80% complete goals get notified."""
         goal_def = self.env["gamification.goal.definition"].create(
             {
                 "name": "Nudge Goal Def",
@@ -336,7 +309,6 @@ class TestEngagementNudges(common.TransactionCase):
         mock_notif.assert_called()
 
     def test_nudge_streak_warning(self):
-        """Users with active streaks and 0 freeze days get warned."""
         streak_type = self.env["gamification.streak.type"].create(
             {
                 "name": "Nudge Streak Type",
@@ -356,7 +328,6 @@ class TestEngagementNudges(common.TransactionCase):
                 "freeze_remaining": 0,
             }
         )
-        # Force current_count >= 3 via SQL (readonly field)
         streak.env.cr.execute(
             "UPDATE gamification_streak SET current_count = 5 WHERE id = %s",
             [streak.id],
@@ -372,10 +343,8 @@ class TestEngagementNudges(common.TransactionCase):
         mock_notif.assert_called()
 
     def test_nudge_inactive_users(self):
-        """Users inactive for 7+ days but active before get re-engaged."""
         from datetime import timedelta
 
-        # Create a separate user with no recent karma to avoid interference
         inactive_user = mail_new_test_user(
             self.env,
             login="inactive_nudge",
@@ -384,8 +353,6 @@ class TestEngagementNudges(common.TransactionCase):
             karma=0,
             groups="base.group_user",
         )
-        # Move all existing tracking records to the past (outside 7-day window
-        # but inside 30-day window)
         self.env["gamification.karma.tracking"].sudo().create(
             {
                 "user_id": inactive_user.id,
@@ -437,7 +404,6 @@ class TestVisibilityControls(common.TransactionCase):
         cls.private_user.gamification_visibility = "private"
 
     def test_leaderboard_excludes_private_users(self):
-        """Private users do not appear in the karma leaderboard."""
         Users = self.env["res.users"]
         leaderboard = Users._get_karma_leaderboard(limit=50)
 
@@ -449,7 +415,6 @@ class TestVisibilityControls(common.TransactionCase):
         )
 
     def test_activity_feed_excludes_private_users(self):
-        """Activities from private users are hidden in the feed."""
         Activity = self.env["gamification.activity"]
         rank = self.env["gamification.karma.rank"].create(
             {
@@ -475,7 +440,6 @@ class TestVisibilityControls(common.TransactionCase):
         )
 
     def test_public_user_visible_everywhere(self):
-        """Public users appear in both leaderboard and feed."""
         Users = self.env["res.users"]
         leaderboard = Users._get_karma_leaderboard(limit=50)
         user_ids = [e["user_id"] for e in leaderboard]
@@ -486,7 +450,6 @@ class TestGoalFieldIndexes(common.TransactionCase):
     """Verify that frequently-filtered goal fields have database indexes."""
 
     def test_goal_state_is_indexed(self):
-        """Goal state field must be indexed for cron and dashboard queries."""
         field = self.env["gamification.goal"]._fields["state"]
         self.assertTrue(
             field.index,
@@ -495,7 +458,6 @@ class TestGoalFieldIndexes(common.TransactionCase):
         )
 
     def test_goal_closed_is_indexed(self):
-        """Goal closed field must be indexed for cron and nudge queries."""
         field = self.env["gamification.goal"]._fields["closed"]
         self.assertTrue(
             field.index,

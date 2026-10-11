@@ -87,8 +87,6 @@ class TestHrPayslipPaymentReport(TestPayslipBase):
         )
 
     def test_payment_report_includes_company_contribution_partners(self):
-        """A rule with a partner withholds money owed to a third party. The
-        payment report can now carry the row that pays them."""
         union = self.env["res.partner"].create({"name": "Union"})
         self.env["res.partner.bank.account"].create(
             {
@@ -315,7 +313,6 @@ class TestHrPayrunPaymentReport(TestHrPayslipPaymentReport):
         reader = csv.reader(io.StringIO(content), delimiter=",")
 
         expected_values = [
-            # Header row
             [
                 "Sequence",
                 "Payment Date",
@@ -326,7 +323,6 @@ class TestHrPayrunPaymentReport(TestHrPayslipPaymentReport):
                 "BIC",
                 "Amount to pay",
             ],
-            # First data row
             [
                 "1",
                 format_date(wizard.env, wizard.date_effective),

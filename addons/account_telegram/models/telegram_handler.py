@@ -24,8 +24,6 @@ _lt = LazyTranslate(__name__)
 
 DEFAULT_TZ = "America/Mexico_City"
 
-# A statement is what the customer owes -- the partner's Due -- so it reads
-# receivable accounts only, trade and non-trade alike, and no payables.
 RECEIVABLE_ACCOUNT_TYPES = [
     {"id": "trade_receivable", "selected": True},
     {"id": "non_trade_receivable", "selected": True},
@@ -34,8 +32,6 @@ RECEIVABLE_ACCOUNT_TYPES = [
 CMD_PERIOD_STATEMENT = "/estadocuentaperiodo"
 CMD_CUSTOMER_STATEMENT = "/edocliente"
 
-# The flow and callback names keep /edocliente's former name, /ecmanager: chats
-# waiting in a flow and inline buttons already sent carry them.
 CALLBACK_PREFIX = "fin_period_"
 CALLBACK_CUSTOM = "fin_custom"
 CALLBACK_ECMANAGER = "ecm_partner_"
@@ -129,9 +125,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         )
 
     def _period_keyboard(self, tr_env, prefix, custom) -> dict:
-        """The periods a statement is asked for, the requester's own and a
-        customer's alike: the current year first, the year a statement covers
-        when nothing else is said."""
 
         def button(text, period):
             return {"text": text, "callback_data": f"{prefix}{period}"}
@@ -152,9 +145,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         }
 
     def _answer_hint(self, bot, chat):
-        """A line appended to every prompt that waits for the requester's
-        answer: none here, where only typed answers and buttons are read; a
-        module that reads other answers (a voice note) says so in it."""
         return ""
 
     def _on_callback(self, bot, chat, callback_query, partner, internal_user):
@@ -230,10 +220,6 @@ class TelegramHandlerAccount(models.AbstractModel):
                 )
 
     def _requester_today(self, chat):
-        """Today on the requester's clock. The host runs on UTC and the webhook
-        as a user with no timezone, so date.today() is already tomorrow from
-        18:00 in Mexico City, and "this year" or "last month" slides with it
-        on the last evening of a year or a month."""
         company = chat.bot_id._acting_company().with_env(
             self._statement_bot(chat.bot_id).env
         )
@@ -397,8 +383,6 @@ class TelegramHandlerAccount(models.AbstractModel):
             return
 
     def _ask_end_date(self, bot, chat, date_from) -> None:
-        """Keep ``date_from`` (YYYY-MM-DD) as the custom period's start and ask
-        for its end."""
         chat._flow_update({"date_from": date_from, "step": "date_to"})
         bot.send_message(
             chat.chat_id,
@@ -412,8 +396,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         )
 
     def _is_date_format_valid(self, date_str) -> bool:
-        # Exactly YYYY-MM-DD: strptime alone takes "2024-1-5", which then
-        # compares as later than "2024-01-31" in the range check.
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_str):
             return False
         try:
@@ -423,16 +405,10 @@ class TelegramHandlerAccount(models.AbstractModel):
             return False
 
     def _is_manager(self, chat) -> bool:
-        """Whether the internal user behind the chat's partner is an accounting
-        manager: the role a request is logged under, not a gate."""
         user = self._chat_internal_user(chat)
         return bool(bool(user) and user.has_group("account.group_account_manager"))
 
     def _reads_any_customer(self, chat) -> bool:
-        """A chat reads any customer's statement when the internal user behind
-        it may print one in Odoo: whoever reads the partner ledger there. A
-        linked customer, or an employee without that right, reads only their
-        own."""
         user = self._chat_internal_user(chat)
         return bool(user) and (
             chat.env["res.partner"].with_user(user).has_access("print_statement")
@@ -452,9 +428,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         return True
 
     def _statement_bot(self, bot):
-        """`bot` holding what printing a statement reads, in the company the
-        bot acts in and no other: whoever may print any customer's prints with
-        their own rights, as in Odoo; anyone else their own contact's only."""
         company = bot._acting_company()
         in_company = bot.with_context(allowed_company_ids=company.ids)
         if bot.env["res.partner"].has_access("print_statement"):
@@ -464,22 +437,9 @@ class TelegramHandlerAccount(models.AbstractModel):
                 "account_telegram.privilege_print_own_statement",
                 reason="a Telegram contact prints their own account statement",
             )
-        # the public or a portal user of another company than that one: the
-        # company guards of the journal items admit no privilege, so only the
-        # partner and company filters below keep the statement to their own
         return in_bot_company(bot, bot)
 
     def _partners_with_statement_lines(self, bot, partner_domain):
-        """Partners matching ``partner_domain`` that hold posted receivable
-        lines in the company the bot acts in: what the statement and the partner's
-        Due are made of.
-
-        The line condition is part of the same query as the name: searching
-        ten partners by name first and dropping those without lines afterwards
-        lost every customer whose name sorted after the cut. Individuals count
-        as much as companies -- most customers with lines are people -- and
-        lines of another company are left out, because they would print an
-        empty statement."""
         lines = self._statement_bot(bot).env["account.move.line"]
         groups = lines._read_group(
             self._statement_lines_domain(bot, partner_domain), groupby=["partner_id"]
@@ -498,9 +458,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         )
 
     def _first_statement_date(self, bot, partner, date_to):
-        """The date of the partner's first statement line up to ``date_to``,
-        or None: where a statement asked "a la fecha" starts, so it carries
-        the customer's whole history instead of the current year only."""
         domain = self._statement_lines_domain(bot, [("id", "=", partner.id)])
         domain &= Domain("date", "<=", date_to)
         [(first,)] = (
@@ -533,8 +490,6 @@ class TelegramHandlerAccount(models.AbstractModel):
     def _offer_customers(
         self, bot, chat, search_term, partners_with_transactions
     ) -> None:
-        """Answer a /edocliente search for ``search_term`` with a button per
-        customer found, the first eight, or say none was."""
         tr_env = translation_env(bot, chat)
 
         if not partners_with_transactions:
@@ -708,8 +663,6 @@ class TelegramHandlerAccount(models.AbstractModel):
             )
             return False
 
-        # The same test the customer searches apply, the bot's company included:
-        # lines in another company only would print an empty PDF.
         if not self._partners_with_statement_lines(bot, [("id", "=", partner.id)]):
             if target_name:
                 msg = tr_env._(
@@ -740,8 +693,6 @@ class TelegramHandlerAccount(models.AbstractModel):
         )
 
         try:
-            # a database error in the report is rolled back here, before the
-            # failure log and the callers' replies run on the transaction
             with bot.env.cr.savepoint():
                 company = bot._acting_company()
                 report = self._statement_bot(bot).env.ref(

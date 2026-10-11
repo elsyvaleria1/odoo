@@ -6,8 +6,6 @@ def migrate(cr, version):
         cr, "pos_order_line", "combo_qty_per_parent"
     ):
         return
-    # Filled here in one statement instead of by the ORM's per-record compute
-    # over every order line; a child of a combo now at zero keeps no share.
     schema.create_column(cr, "pos_order_line", "combo_qty_per_parent", "float8")
     cr.execute(
         """

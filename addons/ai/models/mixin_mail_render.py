@@ -40,7 +40,6 @@ class MixinMailRenderAI(models.AbstractModel):
         if not (options or {}).get("eval_ai_prompts"):
             return result
 
-        # check if there are html with AI prompts to evaluate, short-circuit if not
         has_ai_prompts = False
         for rendered in result.values():
             if rendered and lxml.html.fromstring(rendered).xpath(
@@ -76,9 +75,7 @@ class MixinMailRenderAI(models.AbstractModel):
             if ai_composer:
                 ai_context += ai_composer.default_prompt or ""
                 ai_context += "\n\nUse the following information when necessary to generate the response:\n\n"
-                # TODO: How about the recipients list?
                 ai_context += f"\nSender: {author.name}"
-                # `lang` is already set in the context by _render_field which calls this method.
                 ai_context += (
                     f"\nRecipient language: {self.env.context.get('lang', 'en_US')}"
                 )
@@ -95,15 +92,12 @@ class MixinMailRenderAI(models.AbstractModel):
         field,
         res_ids,
         engine="inline_template",
-        # lang options
         compute_lang=False,
         res_ids_lang=False,
         set_lang=False,
-        # rendering context and options
         add_context=None,
         options=None,
     ):
-        # Use the field's eval_ai_prompts attr if no 'eval_ai_prompts' option is provided
         if getattr(
             self._fields.get(field), "eval_ai_prompts", False
         ) and "eval_ai_prompts" not in (options or {}):

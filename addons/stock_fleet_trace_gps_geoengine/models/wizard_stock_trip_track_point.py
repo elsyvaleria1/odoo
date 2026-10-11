@@ -1,6 +1,5 @@
 from odoo import fields, models
 
-# Marker colour per kind, the legend the README gives.
 TRACK_POINT_COLORS = {
     "stop": "#6c757d",
     "departure": "#0d6efd",

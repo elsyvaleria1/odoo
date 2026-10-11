@@ -14,9 +14,6 @@ class TestVoipAccessRights(common.TransactionCase):
         )
 
     def test_officer_crud_access_to_company_calls(self):
-        """
-        Officers have full CRUD access to calls where call.user_id.company_id is their company.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         officer_user = self._create_user_in_company(
             company_a, "Officer", "officer", groups="voip.group_voip_officer"
@@ -36,9 +33,6 @@ class TestVoipAccessRights(common.TransactionCase):
         self.assertTrue(company_call.with_user(officer_user).has_access("create"))
 
     def test_officer_restricted_access_to_other_company_calls(self):
-        """
-        Officers cannot perform CRUD on calls where user_id.company_id is not their company.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         company_b = self.env["res.company"].create({"name": "Company B"})
         officer_user = self._create_user_in_company(
@@ -61,9 +55,6 @@ class TestVoipAccessRights(common.TransactionCase):
         )
 
     def test_admin_full_access_to_own_company_calls(self):
-        """
-        Admins have full CRUD access to calls where user_id.company_id is their company.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         admin_user = self._create_user_in_company(
             company_a, "Admin", "voip_admin", groups="voip.group_voip_admin"
@@ -81,9 +72,6 @@ class TestVoipAccessRights(common.TransactionCase):
         self.assertTrue(company_call.with_user(admin_user).has_access("unlink"))
 
     def test_admin_no_access_to_other_company_calls(self):
-        """
-        Admins do not have any access to calls where call.user_id.company_id is not their company.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         company_b = self.env["res.company"].create({"name": "Company B"})
         admin_user = self._create_user_in_company(
@@ -102,9 +90,6 @@ class TestVoipAccessRights(common.TransactionCase):
         self.assertFalse(other_company_call.with_user(admin_user).has_access("unlink"))
 
     def test_regular_user_crud_on_their_own_calls(self):
-        """
-        Regular users can only perform read on their own call records.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         regular_user = self._create_user_in_company(company_a, "Regular", "regular")
         call_made_by_self = self.env["phone.call"].create(
@@ -117,9 +102,6 @@ class TestVoipAccessRights(common.TransactionCase):
         self.assertFalse(call_made_by_self.with_user(regular_user).has_access("unlink"))
 
     def test_regular_user_no_crud_on_others_calls(self):
-        """
-        Regular users cannot perform CRUD on other users' call records.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         regular_user = self._create_user_in_company(company_a, "Regular", "regular")
         other_user = self._create_user_in_company(
@@ -139,9 +121,6 @@ class TestVoipAccessRights(common.TransactionCase):
         )
 
     def test_regular_user_access_to_providers(self):
-        """
-        Regular users can only read provider records of their companies, not create, write, or unlink.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         company_b = self.env["res.company"].create({"name": "Company B"})
         regular_user = self._create_user_in_company(company_a, "Regular", "regular")
@@ -162,9 +141,6 @@ class TestVoipAccessRights(common.TransactionCase):
         self.assertFalse(provider_b.with_user(regular_user).has_access("unlink"))
 
     def test_admin_access_to_providers(self):
-        """
-        Admins have full CRUD access to providers of their companies, but no access to other companies' providers.
-        """
         company_a = self.env["res.company"].create({"name": "Company A"})
         company_b = self.env["res.company"].create({"name": "Company B"})
         admin_user = self._create_user_in_company(

@@ -41,7 +41,7 @@ class AccountLoanLine(models.Model):
     interest = fields.Monetary()
     payment = fields.Monetary(
         compute="_compute_payment",
-        store=True,  # stored for pivot view
+        store=True,
     )
     outstanding_balance = fields.Monetary(
         compute="_compute_schedule_position",
@@ -79,11 +79,6 @@ class AccountLoanLine(models.Model):
         "loan_id.amount_borrowed", "loan_id.line_ids.date", "loan_id.line_ids.principal"
     )
     def _compute_schedule_position(self) -> None:
-        """Number every line and split its remaining principal by due date.
-
-        One ordered pass per loan: the short-term horizon only moves forward as
-        the walk advances, so the window boundary never needs to be rescanned.
-        """
         self.period_number = 0
         self.outstanding_balance = 0.0
         self.long_term_theoretical_balance = 0.0
@@ -94,7 +89,6 @@ class AccountLoanLine(models.Model):
             principals = [line.principal for line in schedule]
             count = len(schedule)
 
-            # suffix_totals[k] is the principal of schedule[k:]
             suffix_totals = [0.0] * (count + 1)
             for index in range(count - 1, -1, -1):
                 suffix_totals[index] = suffix_totals[index + 1] + principals[index]
@@ -121,8 +115,6 @@ class AccountLoanLine(models.Model):
     def _compute_is_payment_move_posted(self) -> None:
         for line in self:
             payment_moves = line.generated_move_ids.filtered("is_loan_payment_move")
-            # With the audit trail on, re-confirming a loan leaves the superseded
-            # entries in place; the live one is the one nothing reverses.
             if len(payment_moves) > 1 and any(
                 move.reversal_move_ids for move in payment_moves
             ):

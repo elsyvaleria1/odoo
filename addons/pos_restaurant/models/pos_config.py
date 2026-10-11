@@ -224,7 +224,6 @@ class PosConfig(models.Model):
             ]
         )
         if bool(presets):
-            # Ensure the "Presets" menu is visible when installing the restaurant scenario
             self.env.ref(
                 "point_of_sale.group_pos_preset"
             ).implied_by_ids |= self.env.ref("base.group_user")

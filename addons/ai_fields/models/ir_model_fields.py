@@ -47,7 +47,6 @@ class IrModelFields(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Trigger the AI field cron when creating an AI field with a prompt."""
         ir_model_fields = super().create(vals_list)
         if any(f.ai and f.system_prompt for f in ir_model_fields):
             self.env["ir.cron"]._trigger_ref("ai_fields.ir_cron_fill_ai_fields")
@@ -55,7 +54,6 @@ class IrModelFields(models.Model):
         return ir_model_fields
 
     def write(self, vals):
-        """Trigger the AI field cron when making a field ai or when adding/changing its prompt."""
         res = super().write(vals)
         if vals.get("system_prompt") or vals.get("ai"):
             self.env["ir.cron"]._trigger_ref("ai_fields.ir_cron_fill_ai_fields")
@@ -72,13 +70,11 @@ class IrModelFields(models.Model):
         ai = getattr(field, "ai", None)
         field_params["ai"] = isinstance(
             ai, str
-        )  # can be empty string on field creation
+        )
         field_params["system_prompt"] = ai
         return field_params
 
     def _cron_update_ai_fields(self, batch_size=10) -> None:
-        # only openAI is supported as gemini's openAI_support does not support the responses API
-        # yet, which is required to use web grounding only when needed
         llm_api_service = LLMApiService(self.env, "openai", purpose="ai.fields")
         try:
             llm_api_service._get_api_token()
@@ -102,8 +98,8 @@ class IrModelFields(models.Model):
         )
         remaining_fields = len(fields)
 
-        total_done = 0  # number of records processed
-        total_remaining = 0  # number of records remaining for the fields processed
+        total_done = 0
+        total_remaining = 0
         for field in fields:
             done, remaining, has_time_left = (
                 self._update_ai_records_with_empty_property(
@@ -121,12 +117,8 @@ class IrModelFields(models.Model):
             if not has_time_left:
                 break
         if not remaining_fields:
-            # make sure the cron is not rescheduled
             self.env["ir.cron"]._commit_progress(remaining=0)
         elif not total_done:
-            # all records were locked, reschedule the cron soon hoping they will be unlocked.
-            # not done when only part of the records were locked because in that case the cron will
-            # be considered as partially done and rescheduled asap.
             self.env["ir.cron"]._commit_progress(remaining=0)
             _logger.info(
                 "AI Fields cron rescheduled soon because all records were locked"
@@ -175,8 +167,6 @@ class IrModelFields(models.Model):
         field.check_singleton()
         to_process = []
         definition_orm_field = self.env[field.model]._fields[field.name]
-        # Update the properties with a parent
-        # Need to split definition query from record query because of the domain in the definition
         self.env.cr.execute(
             SQL(
                 """
@@ -196,11 +186,10 @@ class IrModelFields(models.Model):
                 definition_table=SQL.identifier(self.env[field.model]._table),
             )
         )
-        for values in self.env.cr.dictfetchall():  # for all AI definitions
+        for values in self.env.cr.dictfetchall():
             definition = values["definition"]
             parent_id = values["parent_id"]
 
-            # A definition can technically be linked to many properties fields
             for properties_orm_field in definition_orm_field.properties_fields:
                 model = self.env[properties_orm_field.model_name]
                 ai_domain = Domain.AND(
@@ -209,7 +198,6 @@ class IrModelFields(models.Model):
                         [[properties_orm_field.definition_record, "=", parent_id]],
                     ]
                 )
-                # Can not use the ORM because we need IS NULL (VS False, empty string, etc...)
                 query = model._search(ai_domain, order="id DESC")
                 query.add_where(
                     SQL(

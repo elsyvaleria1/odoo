@@ -6,7 +6,7 @@ __all__ = ["scan_byte_patterns", "scan_regex_patterns"]
 
 try:
     import odoo_lint
-except ImportError as exc:  # pragma: no cover - exercised by not installing it
+except ImportError as exc:
     raise ImportError(
         "The 'odoo_lint' native extension is not importable. It carries the "
         "parallel source scanner behind the test_lint gates and is a separate "

@@ -135,12 +135,12 @@ def main(argv: list[str] | None = None) -> None:
             skipped += 1
         elif result:
             label = "would rename" if args.dry_run else "renamed     "
-            print(f"  {label}  {xml_file}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+            print(f"  {label}  {xml_file}")
             changed += 1
         else:
             unchanged += 1
     verb = "would change" if args.dry_run else "renamed"
-    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"\nDone: {changed} {verb}, {unchanged} unchanged, {skipped} skipped")
 
 
 if __name__ == "__main__":

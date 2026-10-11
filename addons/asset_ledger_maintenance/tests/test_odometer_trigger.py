@@ -25,9 +25,6 @@ class TestOdometerTrigger(TransactionCase):
         cls.asset = cls.env["product.trace"].create(
             {"name": "ODO-TRIGGER-1", "product_id": cls.product.id}
         )
-        # Sending an order out routes the asset through the warehouse
-        # its quant sits in, so the plan is only generable once the asset is
-        # actually located somewhere that allows maintenance.
         cls.warehouse = cls.env["stock.warehouse"].search(
             [("company_id", "=", cls.env.company.id)], limit=1
         )
@@ -125,8 +122,6 @@ class TestOdometerTrigger(TransactionCase):
         self.assertAlmostEqual(self.plan.current_odometer, 15000.5, places=2)
 
     def test_a_telemetry_reading_on_the_meter_makes_the_plan_due(self):
-        # No ledger row: the reading lands on the asset's meter alone, as a
-        # GPS feed would. The plan reads the master object, not the lot.
         self._read_odometer(6000)
         self.plan.invalidate_recordset()
         self.assertEqual(self.plan.current_odometer, 6000)

@@ -54,15 +54,6 @@ class TestWebPushPayloadBudget(TransactionCase):
         return out, len(json_dumps_bytes(out))
 
     def test_a_payload_oversized_by_its_title_still_fits(self):
-        """The overflow must come out of whatever is long, not always the body.
-
-        `record_name` is a record's `display_name`, which nothing bounds, and the
-        title is `"<author>: <record_name>"`. A payload made oversized by that
-        title used to have the *whole* overflow taken out of the body -- so the
-        body came back empty and the payload was **still over budget**, which the
-        endpoint then rejected. Both halves of that were wrong: the content was
-        destroyed and the notification did not arrive either way.
-        """
         budget = self.env[
             "mixin.mail.thread"
         ]._truncate_payload_get_max_payload_length()
@@ -76,9 +67,6 @@ class TestWebPushPayloadBudget(TransactionCase):
         self.assertTrue(payload["title"], "and the title is trimmed, not dropped")
 
     def test_a_payload_oversized_by_its_body_still_trims_the_body(self):
-        """The case that already worked, pinned so the rule above cannot silently
-        invert it: a long body against a short title still gives up the body, and
-        the title survives whole."""
         budget = self.env[
             "mixin.mail.thread"
         ]._truncate_payload_get_max_payload_length()
@@ -89,17 +77,6 @@ class TestWebPushPayloadBudget(TransactionCase):
         self.assertTrue(payload["options"]["body"], "trimmed, not emptied")
 
     def test_a_cut_inside_a_character_leaves_no_partial_character(self):
-        """The budget counts the payload's UTF-8 bytes; a non-BMP char is FOUR.
-
-        Trimming a string to a byte budget can land inside a character, inside
-        an escape such as ``\\"``, or between the halves of an escaped surrogate
-        pair. What survives must be whole characters only: a partial one either
-        fails to encode or reaches the browser as U+FFFD.
-
-        Asserted on `_web_push_truncate_json_string` rather than on a whole
-        payload because where a payload-level cut lands depends on every other
-        field's length.
-        """
         thread = self.env["mixin.mail.thread"]
         emoji = "\N{GRINNING FACE}"
         self.assertEqual(len(json_dumps_bytes(emoji)) - 2, 4, "one char, four bytes")
@@ -110,7 +87,6 @@ class TestWebPushPayloadBudget(TransactionCase):
         self.assertEqual(thread._web_push_truncate_json_string('a"b', 2), "a")
 
     def test_truncating_on_a_character_boundary_keeps_whole_characters(self):
-        """The complement: a cut that lands cleanly must not lose the character."""
         thread = self.env["mixin.mail.thread"]
         emoji = "\N{GRINNING FACE}"
         self.assertEqual(thread._web_push_truncate_json_string(emoji * 3, 4), emoji)
@@ -173,7 +149,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
         return user
 
     def _bodies_pushed_by(self, post):
-        """Run `post`, return {login: push body actually delivered to that device}."""
         delivered = {}
 
         def _capture(*args, **kwargs):
@@ -203,7 +178,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
         )
 
     def test_attachment_fallback_reaches_each_device_in_its_own_language(self):
-        """The user-visible symptom: a French device received the English join."""
         bodies = self._bodies_pushed_by(self._post_with_attachments)
         self.assertEqual(set(bodies), {"push_en", "push_fr"}, "both devices pushed")
         self.assertNotEqual(
@@ -217,7 +191,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
             self.assertIn("beta.txt", body, f"{login} still names the attachments")
 
     def test_a_plain_comment_is_not_translated_and_must_not_change(self):
-        """Scope guard: the author's own HTML is not the mixin's to translate."""
         bodies = self._bodies_pushed_by(
             lambda: self.record.message_post(
                 body=Markup("<p>Hello</p>"),
@@ -234,7 +207,6 @@ class TestWebPushRecipientLanguage(TransactionCase):
         )
 
     def test_one_payload_is_built_per_language_not_per_device(self):
-        """Per-language must not silently become per-device."""
         other_en = self._push_user("push_en2", "en_US")
         self.record.message_subscribe(other_en.partner_id.ids)
         rendered_langs = []
@@ -334,7 +306,6 @@ class TestWebPushAuthorSuppression(TransactionCase):
         )
 
     def test_the_acting_author_is_still_not_pushed(self):
-        """Removing the second filter must not start notifying the actor."""
         message, pushed = self._post_on_behalf()
         notified = self.env["mail.notification"].search(
             [("mail_message_id", "=", message.id)]
@@ -387,10 +358,6 @@ class TestWebPushMessageTypes(TransactionCase):
             self.assertEqual(self._recipients("email_outgoing"), {11, 12})
 
 
-# `SMSCommon.tearDown` calls `self.env["sms.sms"]`, and `sms` is `auto_install` on
-# top of `mail` -- so at_install, where these would otherwise run, is before `sms`
-# is in the registry and every test dies in teardown with KeyError: 'sms.sms'
-# having already passed its body.
 @tagged("-at_install", "post_install", "mail_push")
 class TestWebPushNotification(SMSCommon):
     @classmethod
@@ -429,7 +396,6 @@ class TestWebPushNotification(SMSCommon):
             }
         )
 
-        # generate keys and devices
         cls.vapid_public_key = cls.env[
             "mail.push.device"
         ].get_or_create_web_push_vapid_public_key()
@@ -459,23 +425,17 @@ class TestWebPushNotification(SMSCommon):
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_notify_by_push(self, push_to_end_point):
-        """When posting a comment, notify both inbox and people outside of Odoo
-        aka email"""
         self.record_simple.with_user(self.user_admin).message_post(
             body=Markup("<p>Hello</p>"),
             message_type="comment",
             partner_ids=(self.user_email + self.user_inbox).partner_id.ids,
             subtype_xmlid="mail.mt_comment",
         )
-        # not using cron, as max 1 push notif -> direct send
         self._assert_notification_count_for_cron(0)
-        # two recipients, comment notifies both inbox and email people
         self.assertEqual(push_to_end_point.call_count, 2)
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_notify_by_push_channel(self, push_to_end_point):
-        """Test various use case with discuss.channel. Chat and group channels
-        sends push notifications, channel not."""
         chat_channel, channel_channel, group_channel = (
             self.env["discuss.channel"]
             .with_user(self.user_email)
@@ -510,7 +470,6 @@ class TestWebPushNotification(SMSCommon):
                     ).with_context(guest=sender)
                 else:
                     channel_as_sender = channel.with_user(self.user_email)
-                # sudo: discuss.channel - guest can post as sudo in a test (simulating RPC without using network)
                 channel_as_sender.sudo().message_post(
                     body="Test Push",
                     message_type="comment",
@@ -551,7 +510,6 @@ class TestWebPushNotification(SMSCommon):
                     )
                 push_to_end_point.reset_mock()
 
-        # Test Direct Message with channel muted -> should skip push notif
         now = datetime.now()
         self.env["discuss.channel.member"].search(
             [
@@ -594,7 +552,6 @@ class TestWebPushNotification(SMSCommon):
             }
         )
 
-        # Test Channel Message
         group_channel.with_user(self.user_email).message_post(
             body="Test",
             partner_ids=self.user_inbox.partner_id.ids,
@@ -605,20 +562,6 @@ class TestWebPushNotification(SMSCommon):
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_notify_by_push_channel_with_incoming_envelope(self, push_to_end_point):
-        """A channel post that carries an incoming envelope must still push.
-
-        `_notify_get_recipients_for_extra_notifications` -- the method that
-        turns a recipients-data list into push targets -- compares every active
-        recipient's `email_normalized` against the envelope, and only builds
-        that envelope when `incoming_email_to`/`incoming_email_cc` is set. The
-        channel members `DiscussChannel._notify_get_recipients` appends carried
-        neither `email_normalized` nor `name`, so the comparison raised
-        `KeyError: 'email_normalized'` and the whole `message_post` blew up --
-        every other push test posts without an envelope and so never reached
-        the read. The payload a recipients-data entry must carry is defined
-        once, by `mail.followers._get_recipient_data`; a hand-built entry that
-        omits a key of it is not a lighter entry, it is a broken one.
-        """
         group_channel = (
             self.env["discuss.channel"]
             .with_user(self.user_email)
@@ -633,9 +576,6 @@ class TestWebPushNotification(SMSCommon):
                 }
             )
         )
-        # The post comes first on purpose: it is the regression. Asserting the
-        # payload shape first would make this test fail on the assertion and
-        # never execute the call that actually raised.
         message = group_channel.with_user(self.user_email).message_post(
             body="Test Push",
             incoming_email_to="an.outsider@test.example.com",
@@ -668,8 +608,6 @@ class TestWebPushNotification(SMSCommon):
                 },
                 "a recipients-data entry carries the whole payload, not a subset",
             )
-        # the envelope address is not a member, so nobody is filtered out of the
-        # push by it -- the read that used to raise is nonetheless performed
         self.assertEqual(
             [r["id"] for r in recipients_data],
             [self.user_inbox.partner_id.id],
@@ -679,7 +617,6 @@ class TestWebPushNotification(SMSCommon):
     def test_notify_by_push_channel_with_channel_notifications_settings(
         self, push_to_end_point
     ):
-        """Test various use case with the channel notification settings."""
         all_test_user = mail_new_test_user(
             self.env,
             login="all",
@@ -709,7 +646,6 @@ class TestWebPushNotification(SMSCommon):
             {"channel_notifications": "no_notif"}
         )
 
-        # generate devices
         self.env["mail.push.device"].sudo().create(
             [
                 {
@@ -747,21 +683,18 @@ class TestWebPushNotification(SMSCommon):
                 ]
             )
         )
-        # normal messages in channel
         channel_channel.with_user(self.user_email).message_post(
             body="Test Push",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
         )
         push_to_end_point.assert_called_once()
-        # all_test_user should be notified
         self.assertEqual(
             push_to_end_point.call_args.kwargs["device"]["endpoint"],
             "https://test.odoo.com/webpush/user20",
         )
         push_to_end_point.reset_mock()
 
-        # mention messages in channel
         channel_channel.with_user(self.user_email).message_post(
             body="Test Push @mentions",
             message_type="comment",
@@ -771,7 +704,6 @@ class TestWebPushNotification(SMSCommon):
             subtype_xmlid="mail.mt_comment",
         )
         self.assertEqual(push_to_end_point.call_count, 2)
-        # all_test_user and mentions_test_user should be notified
         self.assertEqual(
             push_to_end_point.call_args_list[0].kwargs["device"]["endpoint"],
             "https://test.odoo.com/webpush/user20",
@@ -782,7 +714,6 @@ class TestWebPushNotification(SMSCommon):
         )
         push_to_end_point.reset_mock()
 
-        # muted channel
         now = datetime.now()
         self.env["discuss.channel.member"].search(
             [
@@ -801,14 +732,12 @@ class TestWebPushNotification(SMSCommon):
                 "mute_until_dt": now + timedelta(days=5),
             }
         )
-        # normal messages in channel
         channel_channel.with_user(self.user_email).message_post(
             body="Test Push",
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
         )
         push_to_end_point.assert_not_called()
-        # mention messages in channel
         channel_channel.with_user(self.user_email).message_post(
             body="Test Push",
             message_type="comment",
@@ -821,7 +750,6 @@ class TestWebPushNotification(SMSCommon):
         "odoo.addons.mail.models.mixin_mail_gateway",
     )
     def test_notify_by_push_mail_gateway(self):
-        """Check mail gateway push notifications"""
         with self.mock_mail_gateway():
             test_record = self.format_and_process(
                 MAIL_TEMPLATE,
@@ -847,7 +775,6 @@ class TestWebPushNotification(SMSCommon):
                     extra=f"In-Reply-To:\r\n\t{test_record.message_ids[-1].message_id}\n",
                 )
             if has_notif:
-                # user_inbox is notified by Odoo, hence receives a push notification
                 self.assertPushNotification(
                     mail_push_count=0,
                     title_content=self.user_email.name,
@@ -857,7 +784,6 @@ class TestWebPushNotification(SMSCommon):
                 self.assertNoPushNotification()
 
     def test_notify_by_push_message_notify(self):
-        """In case of notification, only inbox users are notified"""
         for recipient, has_notification in [
             (self.user_email, False),
             (self.user_inbox, True),
@@ -869,7 +795,6 @@ class TestWebPushNotification(SMSCommon):
                         partner_ids=recipient.partner_id.ids,
                         subject="Test Push Notification",
                     )
-                # not using cron, as max 1 push notif -> direct send
                 self._assert_notification_count_for_cron(0)
                 if has_notification:
                     self.assertPushNotification(
@@ -941,7 +866,6 @@ class TestWebPushNotification(SMSCommon):
 
     @patch.object(odoo.addons.mail.models.mixin_mail_thread, "push_to_end_point")
     def test_notify_by_push_tracking(self, push_to_end_point):
-        """Test tracking message included in push notifications"""
         container_update_subtype = self.env.ref(
             "test_mail.st_mail_test_ticket_container_upd"
         )
@@ -994,11 +918,6 @@ class TestWebPushNotification(SMSCommon):
         )
 
     def test_tracking_message_non_char_field(self):
-        """Regression: a push tracking message must render float / monetary /
-        date changes with their real value. They live in *_value_float /
-        *_value_datetime, so reading only *_value_char / *_value_integer used to
-        render every such change as '0' (e.g. a 10.5 -> 20.0 price -> 'Revenue: 0').
-        """
         record = self.env["mail.test.track.monetary"].create({})
         field = self.env["ir.model.fields"]._get("mail.test.track.monetary", "revenue")
         message = self.env["mail.message"].create(
@@ -1024,7 +943,6 @@ class TestWebPushNotification(SMSCommon):
 
     @patch.object(odoo.addons.mail.models.mail_push, "push_to_end_point")
     def test_push_notifications_cron(self, push_to_end_point):
-        # Add 4 more devices to force sending via cron queue
         for index in range(10, 14):
             self.env["mail.push.device"].sudo().create(
                 [
@@ -1049,7 +967,6 @@ class TestWebPushNotification(SMSCommon):
         )
 
         self._assert_notification_count_for_cron(5)
-        # Force the execution of the cron
         self._trigger_cron_job()
         self.assertEqual(push_to_end_point.call_count, 5)
 
@@ -1092,7 +1009,6 @@ class TestWebPushNotification(SMSCommon):
 
         self._assert_notification_count_for_cron(0)
         post.assert_called_once()
-        # Test that the unreachable device is deleted from the DB
         notification_count = self.env["mail.push.device"].search_count(
             [("endpoint", "=", "https://test.odoo.com/webpush/user2")]
         )
@@ -1104,8 +1020,6 @@ class TestWebPushNotification(SMSCommon):
         return_value=SimpleNamespace(status_code=201, text="Ok"),
     )
     def test_push_notifications_error_encryption_simple(self, post):
-        """Test to see if all parameters sent to the endpoint are present.
-        This test doesn't test if the cryptographic values are correct."""
         self.record_simple.with_user(self.user_email).message_notify(
             partner_ids=self.user_inbox.partner_id.ids,
             body="Test message send via Web Push",
@@ -1161,7 +1075,6 @@ class TestWebPushNotification(SMSCommon):
 
         self._assert_notification_count_for_cron(0)
         post.assert_called_once()
-        # Test that the device with the invalid TLD is deleted from the DB
         device_count = self.env["mail.push.device"].search_count(
             [("endpoint", "=", "https://test.odoo.invalid/webpush/user")]
         )
@@ -1212,13 +1125,6 @@ class TestWebPushNotification(SMSCommon):
         self._assert_notification_count_for_cron(0)
 
     def test_push_notifications_network_failures_are_retried(self):
-        """A timeout or a refused connection is transient, like a 503.
-
-        Both are `requests` exceptions that `push_to_end_point` did not classify,
-        so they reached `except Exception`: the notification was deleted and only
-        the message of the error was logged -- while a 429 or a 5xx from the same
-        endpoint was kept and retried for days.
-        """
         self._add_devices_forcing_the_cron_queue()
         for error in (
             requests.Timeout("read timed out"),
@@ -1329,11 +1235,6 @@ class TestWebPushNotification(SMSCommon):
         self.assertTrue(self.env["mail.push.device"].sudo().search_count([]))
 
     def test_register_devices_endpoint_rotation(self):
-        """A push subscription endpoint rotation must update the existing
-        device row in place rather than orphan it and create a duplicate. The
-        web client signals the rotation via a snake_case ``previous_endpoint``
-        kwarg (the service worker uses camelCase ``previousEndpoint``); both
-        must be honored."""
         Device = self.env["mail.push.device"]
         keys = {
             "p256dh": "BGbhnoP_91U7oR59BaaSx0JnDv2oEooYnJRV2AbY5TBeKGCRCf0HcIJ9bOKchUCDH4cHYWo9SYDz3U-8vSxPL_A",
@@ -1354,7 +1255,6 @@ class TestWebPushNotification(SMSCommon):
                 )
                 original = Device.sudo().search([("endpoint", "=", old_endpoint)])
                 self.assertEqual(len(original), 1)
-                # rotation: same subscription, new endpoint, old one passed as hint
                 Device.with_user(self.user_email).register_devices(
                     endpoint=new_endpoint,
                     expirationTime=None,
@@ -1549,8 +1449,6 @@ class TestWebPushNotification(SMSCommon):
         return device
 
     def test_web_push_transient_failure_keeps_device(self):
-        """A resolution failure is transient and keeps the device; an endpoint
-        resolving to a non-public address is a bogus subscription and is deleted."""
         device = self._push_resolving({"side_effect": socket.gaierror})
         self.assertTrue(
             device.exists(), "transient resolution failure must keep the device"
@@ -1575,20 +1473,6 @@ class TestWebPushNotification(SMSCommon):
     def test_push_notifications_truncate_payload(
         self, thread_push_mock, session_post_mock
     ):
-        """Ensure that when we send large bodies with various character types,
-        the final encrypted data (post-encryption) never exceeds 4096 bytes.
-
-        This test checks the behavior for the current size limits and encryption overhead.
-        See below test for a more illustrative example.
-        See MixinMailThread._truncate_payload for a more thorough explanation.
-
-        Test scenarios include:
-        - ASCII characters (X)
-        - UTF-8 characters (Ø), at various offsets
-        """
-        # compute the size of an empty notification with these parameters
-        # this could change based on the id of record_simple for example
-        # but is otherwise constant for any notification sent with the same parameters
         self.record_simple.with_user(self.user_email).message_notify(
             partner_ids=self.user_inbox.partner_id.ids,
             body="",
@@ -1598,7 +1482,6 @@ class TestWebPushNotification(SMSCommon):
         effective_payload_size_limit = self.env[
             "mixin.mail.thread"
         ]._truncate_payload_get_max_payload_length()
-        # this is just a sanity check that the value makes sense, feel free to update as needed
         self.assertEqual(
             effective_payload_size_limit, 3993, "Payload limit should come out to 3990."
         )
@@ -1607,7 +1490,6 @@ class TestWebPushNotification(SMSCommon):
 
         test_cases = (
             [
-                # (description, body)
                 ("empty string", "", 0, 0),
                 (
                     "1-byte ASCII characters (below limit)",
@@ -1634,7 +1516,7 @@ class TestWebPushNotification(SMSCommon):
                     body_size_limit,
                 ),
             ]
-            + [  # Ø is two bytes on the wire: a one-byte offset moves the cut onto each of them
+            + [
                 (
                     f"2-bytes UTF-8 characters (near limit + {offset}-byte offset)",
                     ("+" * offset) + ("Ø" * (body_size_limit // 2)),
@@ -1688,13 +1570,6 @@ class TestWebPushNotification(SMSCommon):
     def test_push_notifications_truncate_payload_mocked_size_limit(
         self, web_push_encrypt_payload_mock, thread_push_mock, session_post_mock
     ):
-        """Illustrative test for text contents truncation.
-
-        We want to ensure we truncate utf-8 values properly based on maximum payload size.
-        Here max payload size is mocked, so that we can test on the same body each time to ease reading.
-
-        See MixinMailThread._truncate_payload for a more thorough explanation.
-        """
         self.record_simple.with_user(self.user_email).message_notify(
             partner_ids=self.user_inbox.partner_id.ids,
             body="",
@@ -1704,12 +1579,6 @@ class TestWebPushNotification(SMSCommon):
         base_payload_size = len(base_payload)
         encryption_overhead = ENCRYPTION_HEADER_SIZE + ENCRYPTION_BLOCK_OVERHEAD
 
-        # The overflow is taken out of the LONGEST field, so the body has to be
-        # the longest one for this to exercise UTF-8 truncation at all. A
-        # realistic title ("<author>: <record name>") escapes to more characters
-        # than "BØDY" alone, and would be the field trimmed instead -- which is
-        # correct behaviour (see TestWebPushPayloadBudget) but says nothing
-        # about multi-byte boundaries. The padding buys that, and nothing else.
         pad = "X" * 40
         body = pad + "BØDY"
         body_json_size = len(json_dumps(body)[1:-1].encode())
@@ -1719,7 +1588,7 @@ class TestWebPushNotification(SMSCommon):
                 (base_payload_size + body_json_size - 1, pad + "BØD"),
                 (base_payload_size + body_json_size - 2, pad + "BØ"),
             ]
-            + [  # a cut inside Ø's two bytes backs off to the whole character before it (B)
+            + [
                 (base_payload_size + body_json_size - n, pad + "B") for n in range(3, 5)
             ]
             + [
@@ -1727,7 +1596,7 @@ class TestWebPushNotification(SMSCommon):
                 (
                     base_payload_size + body_json_size - 6,
                     pad[:-1],
-                ),  # the body keeps giving once the multi-byte tail is gone
+                ),
             ]
         ):
             with (

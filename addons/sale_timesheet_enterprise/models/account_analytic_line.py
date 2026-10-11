@@ -35,7 +35,6 @@ class AccountAnalyticLine(models.Model):
         return bool(super()._is_updatable_timesheet() and not self.validated)
 
     def _get_domain_last_timesheet(self):
-        """Do not update the timesheet which are already linked with invoice"""
         domain = super()._get_domain_last_timesheet()
         return Domain.AND(
             [
@@ -66,7 +65,6 @@ class AccountAnalyticLine(models.Model):
         return domain
 
     def _compute_can_validate(self):
-        # Prevent `user_can_validate` from being true if the line is validated and the SO aswell
         billed_lines = self.filtered(lambda l: l.validated and not l._is_not_billed())
         _debug.logic("validate_blocked_by_invoice", lines=billed_lines)
         for line in billed_lines:
@@ -82,7 +80,6 @@ class AccountAnalyticLine(models.Model):
             billed=invoice_validated_timesheets,
         )
         self -= invoice_validated_timesheets
-        # Errors are handled in the parent if there are no lines left
         return super().action_invalidate_timesheet()
 
     def _get_timesheets_to_merge(self):

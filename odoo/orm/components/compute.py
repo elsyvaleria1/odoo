@@ -59,10 +59,6 @@ class ComputeEngine[F: FieldKey = FieldKey]:
 
     @staticmethod
     def _keys(field: F) -> tuple[F, ...]:
-        # a value done or protected is a fact of the row, which every model
-        # of a table-inheritance tree reads through its own field; a pending
-        # one is scheduled on the model the trigger names, which owns the rows
-        # it will compute
         return (field, *getattr(field, "tree_siblings", ()))
 
     def schedule(self, field: F, ids: Iterable[Any]) -> None:

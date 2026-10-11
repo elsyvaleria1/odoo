@@ -70,9 +70,6 @@ class ResPartnerAgeRange(models.Model):
 
     @api.depends("name", "min_value", "max_value")
     def _compute_display_name(self) -> None:
-        # The bounds are half-open years and TRAPS.md exists mostly because
-        # that is easy to get backwards. Naming the years a cohort actually
-        # contains puts the answer on the record that raises the question.
         for band in self:
             first, last = int(band.min_value), int(band.max_value) - 1
             if band.max_value and band.min_value:
@@ -144,8 +141,6 @@ class ResPartnerAgeRange(models.Model):
         domain = Domain.OR(starmap(self._span_domain, spans))
         if self.ids:
             domain |= Domain("age_range_id", "in", self.ids)
-        # sudo() carries privileges, not active_test: without it an archived
-        # partner is skipped by every sweep and keeps a cohort no bound supports.
         partners = (
             self.env["res.partner"]
             .sudo()
@@ -154,21 +149,9 @@ class ResPartnerAgeRange(models.Model):
         )
         if partners:
             self.env.add_to_compute(partners._fields["age_range_id"], partners)
-        # gap_before reads the whole scale and partner_count reads the whole
-        # address book, so neither can be expressed as a dependency on the
-        # record's own fields. This is the one chokepoint every create, write
-        # and unlink passes through, so it is where their cache is dropped --
-        # without it a band still reports a gap the band below it just closed.
         self.invalidate_model(["gap_before", "partner_count"])
 
     def _default_min_value(self):
-        # Where the scale currently ends. The newest cohort is the one meant to
-        # stay open-ended, and its max_value of 0 means "no upper limit" -- but
-        # 0 as a LOWER bound means "no lower limit", the opposite reading, so
-        # chaining onto it proposed an open-below cohort on exactly the scales
-        # that were built correctly. Chain onto the highest closed bound
-        # instead: appending past an open cohort has to close it first, and the
-        # overlap error says so by name.
         newest_closed = self.search(
             [("max_value", "!=", 0)], order="max_value desc", limit=1
         )

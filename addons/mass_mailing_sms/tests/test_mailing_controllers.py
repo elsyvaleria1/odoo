@@ -10,8 +10,6 @@ from odoo.addons.mass_mailing_sms.tests.common import MassSMSCommon
 class TestMailingListSms(MassSMSCommon):
     @users("user_marketing")
     def test_controller_unsubscribe(self):
-        """Test unsubscribe controller from a phone number, including phone
-        formatting and validation"""
         partner = self.env["res.partner"].create(
             {
                 "name": "Test Partner",

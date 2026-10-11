@@ -7,5 +7,4 @@ class IrUiView(models.Model):
 
     @api.model
     def _get_domain_shipping_modules(self):
-        # a view an imported module carries is a custom view
         return super()._get_domain_shipping_modules() & Domain("imported", "=", False)

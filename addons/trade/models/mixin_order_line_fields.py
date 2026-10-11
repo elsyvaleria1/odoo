@@ -15,8 +15,6 @@ _debug = DebugLog(__name__)
 
 class MixinOrderLineFields(models.AbstractModel):
     _name = "mixin.order.line.fields"
-    # the transferred-quantity chain ends in its own parent, which a stock
-    # bridge also inherits, so C3 places the bridge's override before the end
     _inherit = ["mixin.order.line.transfer"]
     _description = "Common Order Line Fields"
     _direction: TradeDirection | None = None
@@ -43,7 +41,7 @@ class MixinOrderLineFields(models.AbstractModel):
         string="Currency",
         depends=["order_id.currency_id"],
     )
-    partner_id = fields.Many2one(  # noqa: E8529  One2many inverse of res.partner's order line lists
+    partner_id = fields.Many2one(
         comodel_name="res.partner",
         related="order_id.partner_id",
         string="Partner",
@@ -84,12 +82,6 @@ class MixinOrderLineFields(models.AbstractModel):
         depends=["product_id"],
     )
 
-    # A model that re-declares `parent_id` to narrow `comodel_name` (see
-    # e.g. `purchase.order.line`) keeps this `compute=` only because Odoo's
-    # field-merge rules carry over a base field's kwargs when the redeclared
-    # type still matches. Redeclaring with a *different* field type would
-    # silently clear `compute` instead of raising -- keep any such override
-    # a `fields.Many2one` too.
     parent_id = fields.Many2one(
         comodel_name="mixin.order.line.fields",
         string="Parent Section Line",
@@ -153,11 +145,6 @@ class MixinOrderLineFields(models.AbstractModel):
         help="Is true if the order line comes from an expense or a vendor bill",
     )
 
-    # Both constraints below also reference `price_unit`/`product_qty`/
-    # `product_uom_qty`, which this mixin does not declare -- they come from
-    # `mixin.order.line.amount`. A model inheriting `mixin.order.line.fields`
-    # without also inheriting `mixin.order.line.amount` would fail table
-    # creation on these columns being missing.
     _accountable_required_fields = models.Constraint(
         """CHECK(
             display_type IS NOT NULL
@@ -212,8 +199,6 @@ class MixinOrderLineFields(models.AbstractModel):
     def create(self, vals_list):
         nullify_vals = self._prepare_display_type_reset_vals()
         for vals in vals_list:
-            # Guard the caller's own values: nullifying a section line writes the
-            # derived quantity itself, which the guard would otherwise refuse.
             self._check_write_derived_quantity(vals)
             if vals.get("display_type") or self.default_get(["display_type"]).get(
                 "display_type",

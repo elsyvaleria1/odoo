@@ -143,8 +143,6 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
             self.assertIn(f"{json_dumps(name)}: [", script, name)
 
     def test_every_template_of_the_bundle_compiles(self):
-        # a template OWL refuses is a template that throws on the page that
-        # first renders it: every installed module's is compiled here
         result = precompile_templates(
             self._pipeline().generate_xml_bundle(),
             {},
@@ -154,8 +152,6 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
         self.assertEqual(result.failures, {})
 
     def test_every_inline_template_of_the_bundles_compiles(self):
-        # an inline `xml` template the server leaves out is compiled with
-        # new Function on the page, which a public page's policy refuses
         for bundle in (BUNDLE, FRONTEND_BUNDLE):
             with self.subTest(bundle=bundle):
                 pipeline = self._pipeline(bundle)
@@ -195,7 +191,6 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
         self.assertEqual(result.failures, {})
         self.assertGreater(owl_only.inline, 0, "OWL's own ErrorBoundary and Suspense")
         self.assertEqual(result.inline, owl_only.inline + 2)
-        # inlineTemplateKey: the length, then cyrb53 of the text
         self.assertIn('\n"8-', result.script)
         self.assertTrue(result.script.rstrip().endswith("}, { dev: false });"))
 
@@ -224,8 +219,6 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
             page_registrations=pages,
         )
         self.assertEqual(result.failures, {})
-        # one version of pc.Shared per page, each in a call of its own, and
-        # nothing the child neither registers nor extends
         self.assertEqual(result.compiled, 2)
         self.assertEqual(result.script.count(".registerCompiledTemplates({"), 2)
         self.assertIn('<span class="from_page"/><b class="from_child"/>', result.script)
@@ -240,12 +233,9 @@ class TestPrecompiledTemplates(PrecompiledTemplatesMixin, TransactionCase):
         self.assertEqual(self._pipeline().page_registrations(), [])
 
     def test_pregeneration_compiles_what_an_eval_free_page_awaits(self):
-        # an artifact left to the page's first request is compiled while the
-        # page waits on it, inside a tour step's budget
         IrQweb = self.env["ir.qweb"]
         IrQweb._pregenerate_assets_bundles()
         translations_hash = self._translations_hash("en_US")
-        # web_tour's runtime child is awaited only where web_tour is installed
         bundles = [FRONTEND_BUNDLE]
         if self.env["ir.module.module"]._get("web_tour").state == "installed":
             bundles.append("web_tour.automatic")
@@ -455,7 +445,6 @@ class TestPrecompiledTemplatesInTheBrowser(PrecompiledTemplatesMixin, HttpCase):
     """
 
     def test_a_public_page_has_every_template_compiled_by_the_server(self):
-        # the page runs OWL in dev mode (test mode), so both artifacts load
         self.browser_js(
             "/web/login",
             self.PUBLIC_PAGE_JS,
@@ -493,7 +482,6 @@ class TestPrecompiledTemplatesInTheBrowser(PrecompiledTemplatesMixin, HttpCase):
         original = IrQweb._get_or_create_precompiled_template_attachment
 
         def cold_then_built(qweb, *args, build=True, **kwargs):
-            # the unlocked lookup misses, as it does for the first requests
             if not build:
                 return qweb.env["ir.attachment"]
             return original(qweb, *args, build=build, **kwargs)
@@ -521,8 +509,6 @@ class TestPrecompiledTemplatesInTheBrowser(PrecompiledTemplatesMixin, HttpCase):
         self.assertEqual(order[:2], ["read_committed", "lock"])
 
     def test_every_precompiled_template_is_what_the_browser_compiles(self):
-        # the whole backend bundle: resolved by the page's registry and
-        # compiled by the page's OWL, then compared with what node shipped
         self._compare_in_the_browser("en_US")
 
     def test_a_translated_page_gets_the_code_its_browser_compiles(self):

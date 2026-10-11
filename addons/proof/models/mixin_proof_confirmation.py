@@ -63,8 +63,6 @@ class MixinProofConfirmation(models.AbstractModel):
     )
 
     def _auto_init(self):
-        # an existing table gets the columns empty, every row as never asked:
-        # computing them at install would read the challenges of every row
         if table_exists(self.env.cr, self._table):
             for name, column_type in (
                 ("confirmation_state", "varchar"),
@@ -96,15 +94,12 @@ class MixinProofConfirmation(models.AbstractModel):
         if challenge.state == "redeemed":
             return challenge.verdict or "confirmed"
         if challenge.state == "expired":
-            # an unreachable contact did not fail to answer
             return "expired" if challenge._has_reached_contact() else "unreachable"
         if any(delivery.state == "sent" for delivery in challenge.delivery_ids):
             return "pending"
         return "unreachable"
 
     def _get_confirmation_challenges(self) -> dict[int, models.BaseModel]:
-        """The challenge that decides each record's confirmation: its latest one
-        still standing, a code at the counter counting once it was given."""
         ids = [id_ for id_ in self.ids if isinstance(id_, int)]
         if not ids:
             return {}
@@ -129,7 +124,6 @@ class MixinProofConfirmation(models.AbstractModel):
         return deciding
 
     def _get_confirmation_channels(self) -> list[str]:
-        """Where the question waiting for the contact went, masked."""
         self.check_singleton()
         challenge = self._get_confirmation_challenges().get(self.id)
         if not challenge or challenge.state != "issued":
@@ -141,7 +135,6 @@ class MixinProofConfirmation(models.AbstractModel):
         ]
 
     def _can_confirm_with_code(self) -> bool:
-        """Whether a code reaches the contact, for them to confirm at hand."""
         self.check_singleton()
         partner = self._get_confirmation_partner()
         return bool(partner) and any(
@@ -150,29 +143,22 @@ class MixinProofConfirmation(models.AbstractModel):
         )
 
     def _is_confirmation_askable(self) -> bool:
-        """Whether the record, as it stands, is one its contact confirms: a
-        cancelled or draft one is not."""
         self.check_singleton()
         return True
 
     def _get_confirmation_partner(self) -> models.BaseModel:
-        """The contact who confirms the record; none, and nobody is asked."""
         return self.env["res.partner"]
 
     def _get_confirmation_purpose(self) -> str:
         return f"{self._name}.confirmation"
 
     def _get_confirmation_facts(self) -> dict[str, Any]:
-        """Every figure the contact confirms, JSON-serialisable."""
         raise NotImplementedError
 
     def _get_confirmation_summary(self) -> list[list[str]]:
-        """What the contact is shown, as label/value pairs, in their language."""
         raise NotImplementedError
 
     def _get_confirmation_links(self) -> list[tuple[str, str]]:
-        """Links sent along with what the contact confirms, as label/URL pairs
-        in their language: their receipt, for instance."""
         return []
 
     def _get_confirmation_lifetime(self) -> timedelta:
@@ -182,10 +168,6 @@ class MixinProofConfirmation(models.AbstractModel):
         return REMINDER_DELAY
 
     def _ask_confirmation(self) -> None:
-        """Ask each record's contact to confirm it, taking back what they were
-        asked before."""
-        # a contact who already confirmed the record as it stands is not asked
-        # again: a code given before posting, a re-post of the same figures
         records = self.filtered(
             lambda record: (
                 record._is_confirmation_askable()
@@ -223,7 +205,6 @@ class MixinProofConfirmation(models.AbstractModel):
         )._withdraw()
 
     def _is_confirmation_current(self) -> bool:
-        """Whether the contact confirmed the record as it stands now."""
         self.check_singleton()
         challenge = self._get_confirmation_challenges().get(self.id)
         return bool(
@@ -237,11 +218,8 @@ class MixinProofConfirmation(models.AbstractModel):
         )
 
     def action_issue_confirmation_code(self) -> dict[str, Any]:
-        """With the contact at the counter: send them a code, and return what the
-        dialog needs to take it."""
         self.check_singleton()
         partner = self._get_confirmation_partner()
-        # a dispute is reviewed, not overridden by a code at the counter
         if (
             not partner
             or not self._is_confirmation_askable()
@@ -279,15 +257,13 @@ class MixinProofConfirmation(models.AbstractModel):
         self._on_confirmation_answered(evidence)
 
     def _on_confirmation_asked(self, challenge: models.BaseModel) -> None:
-        """The contact was just asked: ``self._get_confirmation_channels()``
-        says where, empty when no channel reached them."""
+        pass
 
     def _on_confirmation_answered(self, evidence: models.BaseModel) -> None:
-        """The contact answered: ``evidence.verdict`` says how."""
+        pass
 
     def _on_confirmation_expired(self) -> None:
-        """The contact did not answer in time."""
+        pass
 
     def _on_confirmation_comment(self, evidence: models.BaseModel, text: str) -> None:
-        """The contact who answered ``evidence`` added ``text``, on a channel
-        that takes their words after their answer."""
+        pass

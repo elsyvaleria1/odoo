@@ -16,7 +16,6 @@ class TestAccessDrift(TransactionCase):
         return self.Drift.search([("state", "=", state)])
 
     def set_operation(self, access, operation):
-        # as a person or a script would, without the loader
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE ir_access SET operation = %s WHERE id = %s", [operation, access.id]
@@ -38,7 +37,6 @@ class TestAccessDrift(TransactionCase):
         self.assertEqual(drift.xmlid, "base.access_phone_number_group_user")
         self.assertEqual(drift.changed, "operation")
         self.assertIn(f"'crud' -> {original!r}", drift.detail)
-        # the scan changes nothing: the row keeps what the database holds
         self.assertEqual(self.shipped.operation, "crud")
         self.assertIn(
             self.env.ref("base.group_user"),

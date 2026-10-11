@@ -210,14 +210,6 @@ class TestSaleProjectServices(TestSaleProjectCommon):
         self.assertTrue(update.exists())
 
     def test_sale_line_picker_spans_the_commercial_entity(self):
-        """The project's Sales Order Item picker must span the commercial entity.
-
-        ``project.task._domain_sale_line_id`` has offered the whole commercial
-        entity for a while (``models/project_task.py``); the project's own
-        picker still restricted to the exact partner, so a project billed to a
-        parent company never offered the items of its contacts' orders -- and
-        the other way round.
-        """
         contact = self.env["res.partner"].create(
             {"name": "Contact of the customer", "parent_id": self.partner_a.id}
         )
@@ -241,14 +233,12 @@ class TestSaleProjectServices(TestSaleProjectCommon):
         (customer_order | contact_order | stranger_order).action_confirm()
 
         def offered_to(partner):
-            """Evaluate the field's own domain the way the web client does."""
             domain = safe_eval(
                 str(self.project_global._domain_sale_line_id()),
                 {"partner_id": partner.id},
             )
             return self.env["sale.order.line"].search(domain)
 
-        # Anchor: the customer's own item is offered before and after.
         self.assertIn(customer_order.line_ids, offered_to(self.partner_a))
 
         self.assertIn(
@@ -268,14 +258,6 @@ class TestSaleProjectServices(TestSaleProjectCommon):
         )
 
     def test_sales_order_items_sits_in_the_project_top_bar(self):
-        """The top bar must offer Sales Order Items beside Sales Orders.
-
-        The bar already cross-navigates a project's Sales Orders, Invoices and
-        Vendor Bills from both the task view and the dashboard; the sales order
-        items were reachable only from the project form's stat button
-        (``models/project_project.py``), so reaching them meant leaving
-        whichever list the user was already in.
-        """
         salesman = new_test_user(
             self.env,
             login="sale_project_salesman",
@@ -303,8 +285,6 @@ class TestSaleProjectServices(TestSaleProjectCommon):
 
         for parent_action in parent_actions:
             methods = visible_methods(salesman, self.project_global, parent_action)
-            # Anchor: the neighbour entries are visible, so a miss below means
-            # the new entry is absent -- not that the whole bar is hidden.
             self.assertIn("action_view_sos", methods)
             self.assertIn(
                 "action_view_sols",
@@ -312,8 +292,6 @@ class TestSaleProjectServices(TestSaleProjectCommon):
                 "Sales Order Items must be in the bar of %s." % parent_action,
             )
 
-        # The entry is gated, like its neighbours: not on a non-billable
-        # project, and not for a user outside the sales group.
         non_billable = self.env["project.project"].create(
             {"name": "Not billable", "allow_billable": False}
         )

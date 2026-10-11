@@ -16,7 +16,6 @@ class IrUiMenu(models.Model):
     )
 
     def write(self, vals):
-        """When renaming a menu will rename the windows action."""
         for menu in self:
             if menu.env.context.get("studio") and "name" in vals and menu.action:
                 menu.action.name = vals["name"]
@@ -35,17 +34,6 @@ class IrUiMenu(models.Model):
 
     @api.model
     def customize(self, to_move, to_delete):
-        """Apply customizations on menus. The deleted elements will no longer be active.
-        When moving a menu, we needed to resequence it. This customization will
-        not be kept when upgrading the module (we don't put the ir.model.data in noupdate)
-
-        :param to_move: a dict of modifications with menu ids as keys,
-            example::
-
-                {10: {"parent_menu_id": 1, "sequence": 0}, 11: {"sequence": 1}}
-
-        :param to_delete: a list of ids
-        """
 
         for menu in to_move:
             menu_id = self.browse(int(menu))
@@ -59,23 +47,12 @@ class IrUiMenu(models.Model):
         return True
 
     def _get_or_create_studio_configuration_menu(self):
-        """
-        Get (or create) a configuration menu that will hold some Studio models.
-
-        Creating a model through Studio can create secondary models, such as tags
-        or stages. These models need their own menu+action, which should be stored
-        under a config menu (child of the app root menu). If this is a Studio app,
-        find or create the Configuration menu; if the app is not a Studio app, find or
-        create the 'Custom Configuration' menu, to avoid confusion with a potential
-        'Configuration' menu which could already be present.
-        """
         self.check_singleton()
         root_id = self._get_root().id
         root_xmlids = self.env["ir.model.data"].search_read(
             domain=[("model", "=", "ir.ui.menu"), ("res_id", "=", root_id)],
             fields=["module", "name", "studio"],
         )
-        # look for a studio config menu in the submenus
         parent_path = "%s/" % root_id
         config_menu = self.with_context(self.env.context).search(
             [

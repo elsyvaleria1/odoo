@@ -10,10 +10,6 @@ from odoo.addons.base.tests.common import HttpCaseWithUserPortal
 class AppointmentCRMTest(TestAppointmentCrmCommon):
     @users("user_employee")
     def test_create_opportunity(self):
-        """Test the creation of a lead based on the creation of an event
-        with appointment type configured to create lead
-        """
-        # add current user to staff users so they can read the appointment during create
         self.appointment_type_create.sudo().staff_user_ids += self.env.user
         future_date = datetime.now() + timedelta(days=1)
         event = self._create_meetings_from_appointment_type(
@@ -53,10 +49,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
 
     @users("user_employee")
     def test_create_opportunity_multi(self):
-        """Test the creation of a lead based on the creation of an event
-        with appointment type configured to create lead
-        """
-        # add current user to staff users so they can read the appointment during create
         (
             self.appointment_type_create + self.appointment_type_nocreate
         ).sudo().staff_user_ids += self.env.user
@@ -97,9 +89,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
 
     @users("user_employee")
     def test_create_opportunity_multi_company(self):
-        """Test the creation of a lead when the assignee of the event is in a
-        different company than the event creator
-        """
         self._activate_multi_company()
         self.user_employee.write(
             {
@@ -108,7 +97,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
             }
         )
 
-        # add current user to staff users so they can read the appointment during create
         self.appointment_type_create.sudo().staff_user_ids += self.env.user
         event = self.env["calendar.event"].create(
             self._prepare_event_value(
@@ -118,26 +106,21 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
             )
         )
 
-        # Sanity checks
-        # event organizer -> company_main, event creator -> company_2
         self.assertEqual(event.user_id.company_id, self.company_main)
         self.assertEqual(self.user_employee.company_id, self.company_2)
 
-        # Check if lead is created in company_main
         self.assertTrue(event.opportunity_id)
         lead = event.opportunity_id
         self.assertEqual(lead.user_id, event.user_id)
         self.assertEqual(lead.company_id, self.company_main)
 
     def test_no_create_lead(self):
-        """Make sure no lead is created for appointment type with create_lead=False"""
         event = self._create_meetings_from_appointment_type(
             self.appointment_type_nocreate, self.user_sales_leads, self.contact_1
         )
         self.assertFalse(event.opportunity_id)
 
     def test_no_partner(self):
-        """Make sure no lead is created if there is no external partner attempting the appointment"""
         event = self._create_meetings_from_appointment_type(
             self.appointment_type_create,
             self.user_sales_leads,
@@ -146,7 +129,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
         self.assertFalse(event.opportunity_id)
 
     def test_two_partner(self):
-        """Make sure lead is created if there is two external partner attempting the appointment"""
         event_values = self._prepare_event_value(
             self.appointment_type_create,
             self.user_sales_leads,
@@ -157,7 +139,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
         self.assertTrue(event.opportunity_id)
 
     def test_no_type(self):
-        """Make sure no lead is created, if the appointment type is empty"""
         event = self._create_meetings_from_appointment_type(
             self.env["appointment.type"], self.user_sales_leads, self.contact_1
         )
@@ -168,9 +149,6 @@ class AppointmentCRMTest(TestAppointmentCrmCommon):
 class AppointmentCRMHttpTest(TestAppointmentCrmCommon, HttpCaseWithUserPortal):
     @users("portal")
     def test_appointment_forced_staff_user_tour(self):
-        """Check that the lead of the last appointment is used to force the staff
-        user of the next appointment and that it is linked to this one when it is
-        created."""
         self.start_tour(
             "/appointment", "appointment_crm_forced_staff_user_tour", login="portal"
         )
@@ -185,11 +163,9 @@ class AppointmentCRMHttpTest(TestAppointmentCrmCommon, HttpCaseWithUserPortal):
                 ]
             )
         )
-        # Check the reuse of the lead of the first appointment by the second one.
         self.assertEqual(len(created_lead), 1)
         self.assertEqual(len(created_lead.calendar_event_ids), 2)
 
-        # Check the reassignment of the staff user to each event.
         self.assertTrue(
             all(
                 staff_user == self.user_sales_leads

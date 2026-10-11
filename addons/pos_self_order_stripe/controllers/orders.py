@@ -13,8 +13,7 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def get_stripe_creditentials(self, access_token, payment_method_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
-        # stripe_connection_token
+    def get_stripe_creditentials(self, access_token, payment_method_id):
         pos_config, _ = self._get_pos_config_and_table(access_token, "", {})
         payment_method = pos_config.payment_method_ids.filtered(
             lambda p: p.id == payment_method_id
@@ -27,11 +26,11 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def stripe_capture_payment(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def stripe_capture_payment(
         self, access_token, order_access_token, payment_intent_id, payment_method_id
     ):
         pos_config, _ = self._get_pos_config_and_table(access_token, "", {})
-        order = pos_config.env["pos.order"].search(  # noqa: E8537  device: a device's or a service's credential, presented by a program
+        order = pos_config.env["pos.order"].search(
             [
                 ("access_token", "=", order_access_token),
                 ("config_id", "=", pos_config.id),
@@ -40,8 +39,6 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         payment_method = pos_config.payment_method_ids.filtered(
             lambda p: p.id == payment_method_id and p.use_payment_terminal == "stripe"
         )
-        # the intent the server created for this order, never one the kiosk
-        # names: capturing someone else's would book it here
         if (
             not order
             or not payment_method

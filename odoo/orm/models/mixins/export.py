@@ -15,8 +15,6 @@ from ._model_stubs import _ModelStubs
 
 _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)
-# the cell converters of one export, per field and env, beside the property
-# caches it already keeps per field
 _EXPORT_CONVERTERS = "__export_converters__"
 
 
@@ -88,9 +86,6 @@ class ExportMixin(_ModelStubs):
         ],
     ) -> typing.Any:
         if field.is_properties and field_type == "datetime" and value:
-            # a property is stored as the client stores it, in UTC; export it
-            # in the user's timezone exactly like a datetime column, so the
-            # sheet reads the same and re-imports through the same converter
             utc = typing.cast("datetime", Datetime.to_datetime(value))
             localized = Datetime.context_timestamp(record, utc)
             return Datetime.to_datetime(Datetime.to_string(localized))
@@ -131,8 +126,6 @@ class ExportMixin(_ModelStubs):
             return self._export_rows_cached(
                 fields, self.env.cr.cache["export_properties_cache"]
             )
-        # the cache outlives no export: a field memoising into it (selection
-        # labels) would otherwise answer the next caller on this cursor
         cache_properties = self.env.cr.cache["export_properties_cache"] = defaultdict(
             dict
         )

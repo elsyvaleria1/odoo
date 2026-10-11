@@ -27,7 +27,6 @@ PERM_OF_OPERATION = {
     "d": "perm_unlink",
 }
 TRUE = ""
-# a line that grants nothing keeps its place, and its model keeps a row
 NOTHING = "[(0, '=', 1)]"
 _TRUE_DOMAIN_RE = re.compile(
     r"""^\s*(\[\s*\]|\[\s*\(\s*1\s*,\s*(["'])=\2\s*,\s*1\s*\)\s*\])\s*$"""
@@ -116,8 +115,6 @@ def normalize_domain(domain: str | None) -> str:
 
 
 def _without_comments(domain: str) -> str:
-    # a rule's domain is Python source and may carry `#` comments; a CSV cell
-    # keeps it on one line, where the first comment would swallow the rest
     if "#" not in domain:
         return domain
     try:
@@ -202,8 +199,6 @@ class _Converter:
         self.report.unmapped.append({"source": key, "reason": reason})
 
     def _module(self, line: Mapping[str, Any]) -> str | None:
-        # a source belongs to a module only when that module is known to be
-        # loaded: an exported or hand-made record is always present
         module = line.get("module") or _module_of(line.get("xmlid"))
         if self.module_deps is not None and module not in self.module_deps:
             return None
@@ -257,9 +252,6 @@ class _Converter:
             self.report.group_test_domains.append(key)
         groups = tuple(sorted(set(rule.get("groups") or ())))
         if not groups and rule.get("global") is False:
-            # a rule whose groups were all deleted keeps global False, and a
-            # rule was selected by global OR one of the user's groups: it bound
-            # nobody
             self.report.bound_nobody.append(key)
             self._unmapped(key, "rule with no group that is not global binds nobody")
             return []
@@ -280,7 +272,6 @@ class _Converter:
         return [_Rule(group=group, **common) for group in groups]
 
     def _loaded_with(self, module: str | None, other: str | None) -> bool:
-        # whether `other`'s records are loaded whenever `module`'s are
         if self.module_deps is None or module is None or other is None:
             return True
         return other in self.module_deps.get(module, ())
@@ -344,10 +335,6 @@ class _Converter:
                 continue
             closure = self.closure[acl.group]
             restricting = [rule for rule in grants if rule.group in closure]
-            # an operation is restricted where a rule of the group's closure
-            # governs it; a rule of a module the line's module does not load
-            # restricts it only where that module is installed, so the line
-            # keeps that operation in a row the rule's module deactivates
             always: set[str] = set()
             modules_of: dict[str, set[str | None]] = defaultdict(set)
             for rule in restricting:
@@ -489,8 +476,6 @@ class _Converter:
                 s for s in row["sources"] if s not in kept["sources"]
             )
         rows = list(merged.values())
-        # a row deactivated where another module is installed neither absorbs
-        # nor is absorbed: it is not there in every install the other row is
         see_all = [
             (index, row, frozenset(row["ops"]))
             for index, row in enumerate(rows)
@@ -526,9 +511,6 @@ class _Converter:
         return see_all["module"] in self.module_deps.get(row["module"] or "", ())
 
     def _name_rows(self, rows: list[dict[str, Any]]) -> None:
-        # a row's external id depends on its own sources only, never on which
-        # other rows exist: the database's conversion and the data files'
-        # name the same row alike
         for row in rows:
             base = row["base_xmlid"]
             if base is None:
@@ -754,10 +736,6 @@ def _qualify_ref(module: str, ref: str | None) -> str:
 
 
 def shipped_access_records(module: str) -> Iterator[tuple[str, dict[str, str], bool]]:
-    # every ir.access record the data files of a module's manifest declare,
-    # as read from disk: its external id, its kind, group, operation and
-    # model, and whether its file loads it noupdate; a record naming another
-    # module's id (an override) comes qualified with that module
     path = get_module_path(module, display_warning=False)
     if not path:
         return

@@ -21,7 +21,6 @@ class WizardHrExpenseStripeCardActivate(models.TransientModel):
     )
     card_last_4 = fields.Char(related="card_id.last_4")
 
-    # not required to not block the user when opening the terms wizard
     last_4_challenge = fields.Char(
         string="Card Last 4 digits",
         size=4,
@@ -76,7 +75,6 @@ class WizardHrExpenseStripeCardActivate(models.TransientModel):
         create_vals = []
         if subtype:
             common_vals["subtype_id"] = subtype.id
-        # Get the cardholder cards that belong to the same company
         cardholder_user_su = self.sudo().card_id.employee_id.user_id
         cards_su = cardholder_user_su.stripe_card_ids.filtered(
             lambda card: card.company_id == self.card_id.company_id
@@ -109,7 +107,6 @@ class WizardHrExpenseStripeCardActivate(models.TransientModel):
                 )
 
             if wizard.phone_number != wizard.original_phone_number:
-                # Update the phone number on Stripe if the user gave a different one
                 billing_country = self.env["res.country"].search(
                     domain=[("code", "ilike", self.billing_country_code)],
                     limit=1,

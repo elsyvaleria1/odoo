@@ -29,7 +29,7 @@ class _ModelMetadataMixin(_ModelStubs):
     _transient: bool = False
     _is_registry_metadata: bool = False
 
-    _name: str = None  # type: ignore[assignment]
+    _name: str = None
     _description: str | None = None
     _module: str | None = None
     _custom: bool = False
@@ -60,15 +60,11 @@ class _ModelMetadataMixin(_ModelStubs):
     _display_name_search_default: bool = False
     _display_name_search_exact: tuple[str, ...] = ()
     _inherits_sudo_fields: tuple[str, ...] = ()
-    # the `_inherits` field whose value is the record's own id: the row
-    # extends its parent's and is keyed by it (class-table inheritance)
     _inherits_shared_id: str = ""
     _inherits_rules: bool = True
     _access_anchors: frozendict[str, str | Anchor] = frozendict()
     _access_audit: bool = False
     _access_residual_class: str | None = None
-    # a many2one to ir.access.class on the record: its sensitivity label,
-    # which only the principals the class grants reach
     _access_label_field: str | None = None
     _fold_name: str = "fold"
 
@@ -79,8 +75,6 @@ class _ModelMetadataMixin(_ModelStubs):
     _allow_sudo_commands: bool = True
 
     _depends: frozendict[str, Iterable[str]] = frozendict()
-    # {"upstream name": "name here"} of fields this fork renamed: an invalid
-    # field error names the field a caller written for upstream Odoo meant
     _legacy_field_names: frozendict[str, str] = frozendict()
     _access_verbs: typing.ClassVar[dict[str, typing.Any]] = {}
 
@@ -129,8 +123,6 @@ class _ModelMetadataMixin(_ModelStubs):
         return bool(self._table) and self._table == self._table_inheritance_root
 
     def _get_root_model_name(self) -> str:
-        """The model owning the root table. Not a cache key: `self._name` is
-        already one, and resolving this walks the tree."""
         root_table = self._table_inheritance_root
         for name in self.pool.model_names_by_inheritance_root.get(root_table, ()):
             if self.pool[name]._table == root_table:
@@ -138,12 +130,6 @@ class _ModelMetadataMixin(_ModelStubs):
         return self._name
 
     def _get_reference_model_name(self) -> str:
-        """The name a polymorphic reference (`res_model`, `mail.message.model`)
-        records for this model's rows. A model is its own reference; a member
-        of a table-inheritance tree overrides this with its root, because a
-        message, a follower or an attachment belongs to the row, whichever
-        model the row was read through. A model sharing its parent's id is its
-        parent's row extended, so it references through its parent."""
         if parent := self._get_inherits_shared_parent():
             return self.env[parent]._get_reference_model_name()
         return self._name

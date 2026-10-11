@@ -88,7 +88,6 @@ class HelpdeskTeam(models.Model):
     def write(self, vals):
         if "use_helpdesk_timesheet" in vals and not vals["use_helpdesk_timesheet"]:
             vals["project_id"] = False
-            # to unlink timer when use_helpdesk_timesheet is false
             self.env["timer.timer"].search(
                 [
                     ("res_model", "=", "helpdesk.ticket"),

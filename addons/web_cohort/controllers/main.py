@@ -26,7 +26,6 @@ class WebCohort(http.Controller):
             row = 0
 
             def write_data(row, col):
-                # Headers
                 columns_length = len(result["report"]["rows"][0]["columns"])
                 if result["timeline"] == "backward":
                     header_sign = ""
@@ -58,7 +57,6 @@ class WebCohort(http.Controller):
                     )
                     col += 1
 
-                # Rows
                 row += 1
                 for res in result["report"]["rows"]:
                     col = 0
@@ -77,7 +75,6 @@ class WebCohort(http.Controller):
                         col += 1
                     row += 1
 
-                # Total
                 col = 0
                 worksheet.write(row, col, request.env._("Average"), style_highlight)
                 col += 1

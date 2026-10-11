@@ -166,7 +166,6 @@ class TestPointOfSale(TransactionCase):
         )
 
         products_to_display = [product3.id, product4.id]
-        # an open session refuses to lose a listed product
         (product3 | product4).available_in_pos = False
         product3.unlink()
         product4.unlink()

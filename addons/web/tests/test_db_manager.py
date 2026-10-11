@@ -100,8 +100,6 @@ class TestDatabaseOperations(BaseCase):
         self.assertEqual(len(config["db_name"]), 1)
         self.db_name = config["db_name"][0]
 
-        # -d exposes that database alone and a dbfilter only narrows it, so the
-        # databases these tests create are reachable only once db_name is lifted
         self.enterContext(config.patch(db_name=[], dbfilter=self.db_name + ".*"))
 
         self.base_databases = self.list_dbs_filtered()
@@ -166,8 +164,6 @@ class TestDatabaseOperations(BaseCase):
         self.assertIn("/odoo", res.headers["Location"])
         self.assertDbs([test_db_name])
 
-        # the session now points at the new database: the drop request holds
-        # a cursor on the very database it terminates
         with self.assertNoLogs("odoo.db.cursor", logging.ERROR):
             res = self.url_open_drop(test_db_name)
         self.assertEqual(res.status_code, 303)
@@ -333,7 +329,6 @@ class TestDatabaseOperations(BaseCase):
 
         session_store = odoo.http.root.session_store
 
-        # an evicted session is revoked for good, so each probe needs its own
         def _stored_session():
             session = session_store.new()
             session.update(odoo.http.prepare_default_session(), db=test_db_name)
@@ -347,7 +342,6 @@ class TestDatabaseOperations(BaseCase):
         self.addCleanup(patcher.stop)
 
         def _assert_degrades_gracefully(session, capture, *, evicts_stored_session):
-            # gone: the selector is served without it; out of reach: retry later
             self.assertEqual(res.status_code, 200 if evicts_stored_session else 503)
             self.assertTrue(
                 [r for r in capture.records if test_db_name in r.getMessage()]

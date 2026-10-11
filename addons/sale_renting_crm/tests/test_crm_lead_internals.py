@@ -6,8 +6,6 @@ from odoo.addons.crm.tests import common as crm_common
 class TestLead(crm_common.TestCrmCommon):
     @users("user_sales_leads")
     def test_propagation_lead_user_to_rental_order(self):
-        """Priority for default salesperson on rental order from a lead should be
-        1) The one on the lead 2) The one on the partner 3) The current user"""
         SaleOrder = self.env["sale.order"]
         lead = self.env["crm.lead"].browse(self.lead_1.ids)
         partner = self.contact_1
@@ -114,8 +112,6 @@ class TestLead(crm_common.TestCrmCommon):
         self.assertEqual(lead.rental_order_count, 2)
         self.assertEqual(lead.rental_amount_total, 2 * 2 * 100)
 
-        # Check that sale_order_count and, quotation_count and sale_amount_total
-        # fields on the lead does not include rental quotations / orders
         del base_order_vals["is_rental_order"]
         orders = self.env["sale.order"].create(
             [
@@ -160,7 +156,6 @@ class TestLead(crm_common.TestCrmCommon):
             "should give total for the regular(non rental) sale order(s) only",
         )
 
-        # Check that all the rental related computations are not affected
         self.assertEqual(lead.rental_quotation_count, 1)
         self.assertEqual(lead.rental_order_count, 2)
         self.assertEqual(lead.rental_amount_total, 2 * 2 * 100)

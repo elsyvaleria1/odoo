@@ -68,7 +68,6 @@ class MixinScored(models.AbstractModel):
         help="The active scorecard for the subject's company, or the shared one.",
     )
 
-    # ------------------------------------------------------------------ hooks
 
     @api.model
     def _score_trigger_fields(self):
@@ -81,7 +80,6 @@ class MixinScored(models.AbstractModel):
         return self.env.company
 
     def _score_classification_fields(self) -> list:
-        """Stored computes the host derives from ``score`` through a scale."""
         return []
 
     @api.model
@@ -103,7 +101,6 @@ class MixinScored(models.AbstractModel):
             return self.env._("No data captured.")
         return ""
 
-    # --------------------------------------------------------------- computes
 
     @api.depends(
         "score_line_ids.points",
@@ -114,7 +111,6 @@ class MixinScored(models.AbstractModel):
     )
     def _compute_score(self) -> None:
         for subject in self:
-            # A row without its dimension is mid-migration: it is not a fact yet.
             rows = subject.score_line_ids.filtered(
                 lambda row: row.applicable and row.dimension_id
             )
@@ -123,9 +119,6 @@ class MixinScored(models.AbstractModel):
             }
             subject.score_points = sum(rows.filtered("applied").mapped("points"))
             subject.score_max_points = sum(groups.values())
-            # Clamped: a stored row can outlive the weight that produced it
-            # until the queued rescore lands, so a stale numerator degrades to
-            # a capped score rather than a band above the scale.
             subject.score = (
                 min(subject.score_points / subject.score_max_points * 100.0, 100.0)
                 if subject.score_max_points
@@ -142,11 +135,9 @@ class MixinScored(models.AbstractModel):
 
     @api.model
     def _get_score_max_points(self, company=None):
-        """The scorecard's ceiling for a company: what a full score is worth."""
         scorecard = self.env["scorecard"]._for(self._name, company or self.env.company)
         return scorecard.max_points if scorecard else 0.0
 
-    # ---------------------------------------------------------------- triggers
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -170,12 +161,6 @@ class MixinScored(models.AbstractModel):
         return result
 
     def action_score_refresh(self) -> dict | None:
-        """Score inline for one subject, in the background for a selection.
-
-        The action is bound to the host's list, where a user can select a whole
-        page and run this in the request. Anything past a single record goes to
-        the queue the engine owns for exactly this work.
-        """
         if len(self) <= 1:
             self._score_refresh()
             return None
@@ -194,7 +179,6 @@ class MixinScored(models.AbstractModel):
             },
         }
 
-    # ----------------------------------------------------------------- refresh
 
     @api.job(channel="scoring.refresh")
     def _score_refresh(self) -> None:
@@ -219,12 +203,6 @@ class MixinScored(models.AbstractModel):
         ):
             self.env.add_to_compute(self._fields[field_name], self)
         self.flush_recordset()
-        # Raw SQL, deliberately: this is a bookkeeping stamp, not an edit of the
-        # subject. Going through write() would move write_date on every catalog
-        # refresh, so "when did this record last change" would answer with a
-        # background job instead of with the last real edit, and it would also
-        # re-enter the host's write. The ORM cache is kept coherent by hand on
-        # the line below.
         env.cr.execute(
             f'UPDATE "{self._table}" SET score_date = %s WHERE id = ANY(%s)',
             (fields.Datetime.now(), self.ids),
@@ -233,9 +211,6 @@ class MixinScored(models.AbstractModel):
 
     @api.model
     def _score_ceiling(self, dimension):
-        # Superuser and a fixed active_test, whatever the caller carries: the
-        # ceiling is a property of the catalog, not of who asks. An archived
-        # value is not reachable, so it is not in the ceiling.
         host = self.env(su=True)[self._name].with_context(active_test=True)
         custom = getattr(host, f"_score_ceiling_{dimension.code}", None)
         if custom is not None:
@@ -294,9 +269,6 @@ class MixinScored(models.AbstractModel):
         self.check_singleton()
         code = dimension.code
         attribute_model = self.env[ceiling["model"]]
-        # Keyed by id and browsed in one go: the mapping depends only on the
-        # ceiling argument, which is identical for every subject in the batch,
-        # and browsing per attribute per subject defeats the prefetch.
         ceilings = dict(ceiling["attributes"])
         values_by_attribute = {}
         for line in lines:
@@ -358,18 +330,8 @@ class MixinScored(models.AbstractModel):
             "applicable": applicable,
         }
 
-    # ------------------------------------------------------------------- queue
 
     def _score_job_identity_key(self, kind) -> str:
-        """Deterministic key for a queued wave over exactly these subjects.
-
-        ir.job deduplicates queued jobs on identity_key, so a second wave over
-        the same batch collapses onto the pending one instead of stacking. An
-        admin tuning ten weights in one sitting otherwise queues ten complete
-        refreshes of the whole subject base. Hashed over the ids rather than
-        keyed on the batch bounds, so two different sets that happen to share
-        their first and last subject do not collapse into one.
-        """
         digest = hashlib.sha256(
             ",".join(str(record_id) for record_id in self.ids).encode()
         ).hexdigest()
@@ -384,19 +346,12 @@ class MixinScored(models.AbstractModel):
 
     @api.job(channel="scoring.refresh")
     def _score_reclassify(self) -> None:
-        """Re-run the classification only, leaving the audit rows alone."""
         for field_name in self._score_classification_fields():
             self.env.add_to_compute(self._fields[field_name], self)
         self.flush_recordset()
 
     @api.model
     def _score_notify_scorecard_changed(self) -> None:
-        """Queue a refresh of every subject carrying rows.
-
-        As superuser and without active_test: a catalog weight or a dimension
-        is shared, so every subject carrying audit rows is stale, including the
-        archived ones and the ones the editing user's company rule hides.
-        """
         if not self.env.registry.ready:
             return
         self.env(su=True)[self._name].with_context(active_test=False).search(
@@ -405,13 +360,6 @@ class MixinScored(models.AbstractModel):
 
     @api.model
     def _score_notify_scale_changed(self) -> None:
-        """Queue a reclassification after a change to a scale of bands.
-
-        Cheaper than a refresh: the audit rows and the score do not move, only
-        the band the score falls into. Every subject, not only the scored or
-        classified ones: a subject with no rows and no band is exactly the one
-        a new band covering zero is meant to pick up.
-        """
         if not self.env.registry.ready or not self._score_classification_fields():
             return
         subjects = (

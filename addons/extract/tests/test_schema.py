@@ -98,9 +98,6 @@ class TestSchema(BaseCase):
                     spec.coerce(value)
 
     def test_a_list_that_declares_no_rows_says_nothing_about_them(self):
-        # The state every shipped list was in: `isinstance(value, list)` is the
-        # whole contract, so a row of any shape passes and every consumer has to
-        # guess the keys separately.
         spec = FieldSpec("list")
 
         self.assertIsNone(spec.items)
@@ -129,9 +126,6 @@ class TestSchema(BaseCase):
         )
 
     def test_a_row_inherits_the_refusal_to_guess_an_ambiguous_date(self):
-        # `to_date` will not read a bare 12/03/2026, because it is March in one
-        # country and December in another. A row does not get to guess either:
-        # the key is dropped and the rest of the row survives.
         spec = FieldSpec(
             "list",
             items={
@@ -145,8 +139,6 @@ class TestSchema(BaseCase):
         self.assertEqual(rows, [{"description": "Deposit"}])
 
     def test_a_row_missing_a_required_key_is_dropped_and_the_rest_kept(self):
-        # One unreadable row must not discard the list. Raising would send the
-        # cascade back to a more expensive strategy for a list it had read.
         spec = FieldSpec(
             "list",
             items={
@@ -194,17 +186,11 @@ class TestSchema(BaseCase):
         self.assertEqual(rows, [{"description": "Kept"}])
 
     def test_a_list_whose_every_row_was_unreadable_reads_as_nothing(self):
-        # Not []. `Schema.missing` asks `is None`, so an empty list satisfies a
-        # requirement while carrying nothing -- a statement whose every
-        # transaction was a misread would report itself fully read.
         spec = FieldSpec("list", items={"amount": FieldSpec("float", required=True)})
 
         self.assertIsNone(spec.coerce([{"amount": "not a number"}, "not a row"]))
 
     def test_a_required_list_of_unreadable_rows_reports_itself_missing(self):
-        # End to end, because this is the chain that matters: a strategy hands
-        # `add` a list of rows, every one of them is unreadable, and the result
-        # must say the field was not read rather than that it was read empty.
         schema = Schema(
             name="test_rows_required",
             fields={
@@ -224,8 +210,6 @@ class TestSchema(BaseCase):
         self.assertFalse(result.satisfied)
 
     def test_a_bare_value_becomes_the_one_key_a_row_requires(self):
-        # A CV's skills are "Python" as readily as {"name": "Python"}, and the
-        # prompt invited the bare form for as long as a list showed as ["..."].
         spec = FieldSpec(
             "list",
             items={"name": FieldSpec("str", required=True), "level": FieldSpec("str")},
@@ -237,8 +221,6 @@ class TestSchema(BaseCase):
         )
 
     def test_a_bare_value_is_dropped_when_a_row_requires_two_keys(self):
-        # There is no place to put it, and choosing one would be exactly the
-        # unwritten contract this declaration exists to end.
         spec = FieldSpec(
             "list",
             items={
@@ -266,9 +248,6 @@ class TestSchema(BaseCase):
             )
 
     def test_every_shipped_list_declares_its_rows(self):
-        # The gap this closes: six list fields across five schemas, none of which
-        # said what a row looked like, while two consumers read two different
-        # undeclared sets of keys.
         for name in known_schemas():
             schema = get_schema(name)
             for field_name, spec in schema.fields.items():

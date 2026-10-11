@@ -98,9 +98,6 @@ class TestWebsocketRateLimiting(WebsocketCase):
         self.assert_alive(ws)
 
     def _flood(self, ws, opcode, count, payload=b""):
-        # one write, read in one go: the bucket refills while frames trickle
-        # in, so a flood sent frame by frame on a busy machine can stay under
-        # the limit; the exact burst is pinned against a fake clock above
         ws.sock.sendall(b"".join(_client_frame(opcode, payload) for _ in range(count)))
 
     def test_rate_limiting_base_ko(self):

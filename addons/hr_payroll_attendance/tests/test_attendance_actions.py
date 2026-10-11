@@ -28,8 +28,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
         )
 
     def test_attendance_count_and_action(self):
-        """Check the attendance counter and the smart-button action listing
-        the attendances of the payslip period."""
         attendances = self.env["hr.attendance"].create(
             [
                 {
@@ -44,12 +42,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
                 },
             ]
         )
-        # NOTE: the invalidation below papers over a model limitation —
-        # _compute_attendance_count depends on date_from/date_to/version_id
-        # but its value comes from a search over hr.attendance, a relation
-        # no @api.depends can express, so the smart button goes stale when
-        # attendances change while the form is open (tracked under task
-        # t24779).
         self.payslip.invalidate_recordset(["attendance_count"])
         self.assertEqual(self.payslip.attendance_count, 2)
 
@@ -58,7 +50,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
         self.assertEqual(set(action["domain"][0][2]), set(attendances.ids))
 
     def test_attendance_count_non_attendance_source(self):
-        """Check that payslips of non-attendance employees count zero."""
         employee = self.env["hr.employee"].create(
             {"name": "Calendar Employee", "wage": 10}
         )
@@ -71,8 +62,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
                 "date_to": "2024-01-30",
             }
         )
-        # An attendance inside the period: the zero below must come from the
-        # work_entry_source guard, not from an empty attendance table.
         self.env["hr.attendance"].create(
             {
                 "employee_id": employee.id,
@@ -85,8 +74,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
         self.assertEqual(payslip.attendance_count, 0)
 
     def test_attendance_count_updates_on_work_entry_source_toggle(self):
-        """Check that attendance_count recomputes when an employee's
-        version.work_entry_source is toggled, with no manual invalidation."""
         self.env["hr.attendance"].create(
             {
                 "employee_id": self.employee.id,
@@ -103,8 +90,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
         self.assertEqual(self.payslip.attendance_count, 1)
 
     def test_open_attendances_rejects_multi_payslip(self):
-        """Check that the attendance smart button is refused on a
-        multi-payslip recordset by the singleton guard."""
         other = self.env["hr.payslip"].create(
             {
                 "name": "Other Payslip",
@@ -118,8 +103,6 @@ class TestAttendanceActions(HrWorkEntryAttendanceCommon):
             (self.payslip | other).action_view_attendances()
 
     def test_overtime_worked_days_never_half_day(self):
-        """Check that overtime worked-day lines are never flagged half-day
-        while regular short lines still are."""
         overtime_type = self.env.ref("hr_work_entry.work_entry_type_overtime")
         regular_type = self.env.ref("hr_work_entry.work_entry_type_attendance")
         overtime_wd, regular_wd = self.env["hr.payslip.worked_days"].create(

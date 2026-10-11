@@ -15,7 +15,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def process_order(self, order, access_token, table_identifier, device_type):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def process_order(self, order, access_token, table_identifier, device_type):
         pos_config, table = self._get_pos_config_and_table(
             access_token, table_identifier, order
         )
@@ -27,7 +27,6 @@ class PosSelfOrderController(http.Controller):
         if not preset_id and pos_config.use_presets:
             raise BadRequest("Invalid preset")
 
-        # Create the order
         if "picking_type_id" in order:
             del order["picking_type_id"]
 
@@ -47,9 +46,6 @@ class PosSelfOrderController(http.Controller):
         elif not order.get("floating_order_name"):
             floating_order_name = f"Self-Order {tracking_number}"
 
-        # The goal of this is to reduce collisions with other pos.order tracking numbers
-        # when several kiosks are used with different pos.configurations.
-        # This is a little hack in stable, in master the prefix will be chosen differently.
         prefix = f"K{pos_config.id}-" if device_type == "kiosk" else "S"
         order["pos_reference"] = pos_reference
         order["source"] = "kiosk" if device_type == "kiosk" else "mobile"
@@ -151,12 +147,6 @@ class PosSelfOrderController(http.Controller):
             self._update_combo_price(line, pricelist, fiscal_pos)
 
     def _update_combo_price(self, parent_line, pricelist, fiscal_position):
-        """
-        This method is a python version of odoo/addons/point_of_sale/static/src/app/models/utils/compute_combo_items.js
-        It is used to compute the price of combo items on the server side when an order is received from
-        the POS frontend. In an accounting perspective, isn't correct but we still waiting the combo
-        computation from accounting side.
-        """
         child_lines = parent_line.combo_line_ids
         currency = parent_line.order_id.currency_id
         taxes = fiscal_position.map_tax(parent_line.product_id.taxes_id)
@@ -223,13 +213,13 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/validate-partner", auth="public", type="jsonrpc", website=True
     )
-    def save_partner(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def save_partner(
         self,
         access_token,
         name,
         phone,
         street,
-        zip,  # noqa: A002 - the JSON-RPC key preset_info_popup.js posts; the parameter name is the route's wire contract
+        zip,
         city,
         country_id,
         state_id=None,
@@ -237,12 +227,6 @@ class PosSelfOrderController(http.Controller):
         email=None,
     ):
         pos_config = self._get_pos_config(access_token)
-        # partner_id comes from the caller, so *record* access must be decided
-        # with the service user's rights. Looking the partner up under sudo()
-        # returned partners of other companies to anyone holding the kiosk
-        # access_token, which is public. search() makes the access check part of
-        # the lookup: an unreachable id yields an empty set and falls through to
-        # the create branch, rather than raising out of a public endpoint.
         existing_partner = (
             pos_config.env["res.partner"].search([("id", "=", int(partner_id))])
             if partner_id
@@ -250,11 +234,6 @@ class PosSelfOrderController(http.Controller):
         )
 
         if existing_partner:
-            # sudo: *field* access only, on a record whose record-level access
-            # was just established above. _load_pos_data_fields is extensible
-            # and includes accounting fields (pos_settle_due adds credit_limit)
-            # that a POS service user cannot read. Do not widen this back into a
-            # sudo() lookup -- that is what disclosed other companies' partners.
             return self._partner_self_data(existing_partner.sudo(), pos_config)
 
         state_id = (
@@ -298,12 +277,10 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/remove-order", auth="public", type="jsonrpc", website=True
     )
-    def remove_order(self, access_token, order_id, order_access_token):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def remove_order(self, access_token, order_id, order_access_token):
         pos_config = self._get_pos_config(access_token)
         pos_order = pos_config.env["pos.order"].browse(order_id)
 
-        # the order's token is kept as its hash: it opens the order even when
-        # the server can no longer show it
         if not pos_order.exists() or not pos_order._access_token_opens(
             order_access_token
         ):
@@ -321,7 +298,7 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/get-user-data", auth="public", type="jsonrpc", website=True
     )
-    def get_orders_by_access_token(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_orders_by_access_token(
         self, access_token, order_access_tokens, table_identifier=None
     ):
         pos_config = self._get_pos_config(access_token)
@@ -346,10 +323,6 @@ class PosSelfOrderController(http.Controller):
             ]
 
         for data in order_access_tokens:
-            # The device's write_date is serialized to the second while the
-            # stored one keeps its microseconds, so "changed since" means
-            # written in a LATER second: an exact ">" would return every
-            # order on every poll.
             known_until = fields.Datetime.to_datetime(
                 data.get("write_date") or "1970-01-01 00:00:00"
             )
@@ -368,14 +341,12 @@ class PosSelfOrderController(http.Controller):
         orders = pos_config.env["pos.order"].search(domain)
 
         access_tokens = set({o.get("access_token") for o in order_access_tokens})
-        # Do not use session.order_ids, it may fail if there is shared sessions
         existing_order_tokens = (
-            pos_config.env["pos.order"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            pos_config.env["pos.order"]
             .search([("access_token", "in", access_tokens)])
             .mapped("access_token")
         )
         if deleted_order_tokens := list(access_tokens - set(existing_order_tokens)):
-            # Remove orders that no longer exist on the server but are still shown in the self-order UI
             pos_config._notify_self_order(
                 "REMOVE_ORDERS", {"deleted_order_tokens": deleted_order_tokens}
             )
@@ -387,7 +358,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def pos_self_order_kiosk_payment(  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pos_self_order_kiosk_payment(
         self, pos_config_id, order, payment_method_id, access_token, device_type
     ):
         pos_config = self._get_pos_config(access_token)
@@ -396,7 +367,6 @@ class PosSelfOrderController(http.Controller):
         if not results["pos.order"][0].get("id"):
             raise BadRequest("Something went wrong")
 
-        # access_token verified in process_new_order
         order_sudo = pos_config.env["pos.order"].browse(results["pos.order"][0]["id"])
         payment_method_sudo = pos_config.env["pos.payment.method"].browse(
             payment_method_id
@@ -433,12 +403,10 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def pos_kiosk_increment_nb_print(self, access_token, order_id, order_access_token):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pos_kiosk_increment_nb_print(self, access_token, order_id, order_access_token):
         pos_config = self._get_pos_config(access_token)
         pos_order = pos_config.env["pos.order"].browse(order_id)
 
-        # the order's token is kept as its hash: it opens the order even when
-        # the server can no longer show it
         if not pos_order.exists() or not pos_order._access_token_opens(
             order_access_token
         ):
@@ -458,7 +426,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def change_printer_status(self, access_token, has_paper):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def change_printer_status(self, access_token, has_paper):
         pos_config = self._get_pos_config(access_token)
         if has_paper != pos_config.has_paper:
             pos_config.write({"has_paper": has_paper})
@@ -466,7 +434,7 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/get-slots", auth="public", type="jsonrpc", website=True
     )
-    def get_slots(self, access_token, preset_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_slots(self, access_token, preset_id):
         pos_config = self._get_pos_config(access_token)
         preset = pos_config.env["pos.preset"].browse(preset_id)
         return preset.get_available_slots()
@@ -477,12 +445,8 @@ class PosSelfOrderController(http.Controller):
         return amount_total, amount_untaxed
 
     def _get_pos_config(self, access_token, check_active_session=True):
-        """
-        Finds the pos.config with the given access_token and returns a record with reduced privileges.
-        The record is has no sudo access and is in the context of the record's company and current pos.session's user.
-        """
         pos_config_sudo = (
-            request.env["pos.config"]  # noqa: E8537  device: a device's or a service's credential, presented by a program
+            request.env["pos.config"]
             .sudo()
             .search([("self_ordering_access_token", "=", access_token)], limit=1)
         )
@@ -505,10 +469,6 @@ class PosSelfOrderController(http.Controller):
         )
 
     def _get_pos_config_and_table(self, access_token, table_identifier, order):
-        """
-        Similar to _get_pos_config but also looks for the restaurant.table of the given identifier.
-        The restaurant.table record is also returned with reduced privileges.
-        """
         pos_config = self._get_pos_config(access_token)
         table_sudo = (
             request.env["restaurant.table"]
@@ -538,6 +498,6 @@ class PosSelfOrderController(http.Controller):
         return pos_config, table
 
     @http.route(["/pos-self/ping"], type="jsonrpc", auth="public")
-    def pos_ping(self, access_token):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def pos_ping(self, access_token):
         self._get_pos_config(access_token, check_active_session=False)
         return {"response": "pong"}

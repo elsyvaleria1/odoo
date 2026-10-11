@@ -5,12 +5,8 @@ from odoo.tools import convert
 class MarketingCampaign(models.Model):
     _inherit = "marketing.campaign"
 
-    # --------------------------------------
-    # Prepare actions data
-    # --------------------------------------
 
     def _prepare_ir_actions_server_crm_schedule_call_data(self) -> dict:
-        # If lead has customer, that has salesperson, this function creates an activity phone call for that salesperson, on a lead.
         return {
             "xml_id": "marketing_automation_crm.ir_actions_server_crm_schedule_call",
             "values": {
@@ -26,7 +22,6 @@ class MarketingCampaign(models.Model):
         }
 
     def _prepare_ir_actions_server_crm_priority_three_data(self) -> dict:
-        # If lead replies mail, give it priority number 3.
         return {
             "xml_id": "marketing_automation_crm.ir_actions_server_crm_priority_three",
             "values": {
@@ -45,7 +40,6 @@ class MarketingCampaign(models.Model):
         }
 
     def _prepare_ir_actions_server_crm_priority_zero_data(self) -> dict:
-        # If lead doesn't reply mail, give it priority 0.
         return {
             "xml_id": "marketing_automation_crm.ir_actions_server_crm_priority_zero",
             "values": {
@@ -63,9 +57,6 @@ class MarketingCampaign(models.Model):
             },
         }
 
-    # --------------------------------------
-    # Sample Templates Creation
-    # --------------------------------------
 
     @api.model
     def get_campaign_templates_info(self):
@@ -98,10 +89,6 @@ class MarketingCampaign(models.Model):
         return campaign_templates_info
 
     def _create_campaign_from_template_scheduled_calls(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         campaign = self.env["marketing.campaign"].create(
             {
                 "name": self.env._("Schedule Calls"),
@@ -135,10 +122,6 @@ class MarketingCampaign(models.Model):
         return campaign
 
     def _create_campaign_from_template_prioritize_hot_leads(self):
-        """Create a campaign and its template-specific supporting records.
-
-        :return: newly created ``marketing.campaign`` singleton
-        """
         convert.convert_file(
             self.sudo().env,
             "marketing_automation",
@@ -212,7 +195,7 @@ class MarketingCampaign(models.Model):
                                 "interval_number": 3,
                                 "name": self.env._("If replied, assign 3 stars"),
                                 "parent_id": None,
-                                "campaign_id": campaign.id,  # use the campaign_id here too,
+                                "campaign_id": campaign.id,
                                 "server_action_id": self.env.ref(
                                     "marketing_automation_crm.ir_actions_server_crm_priority_three"
                                 ).id,
@@ -229,7 +212,7 @@ class MarketingCampaign(models.Model):
                                 "interval_number": 6,
                                 "name": self.env._("If not opened, priority = 0"),
                                 "parent_id": None,
-                                "campaign_id": campaign.id,  # use the campaign_id here too,
+                                "campaign_id": campaign.id,
                                 "server_action_id": self.env.ref(
                                     "marketing_automation_crm.ir_actions_server_crm_priority_zero"
                                 ).id,

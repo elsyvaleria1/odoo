@@ -10,8 +10,6 @@ _debug = DebugLog(__name__)
 
 
 def add_trust_foreign_key(cr) -> None:
-    # Trust owns a hand-made table and expires rows in SQL; its links need a
-    # database cascade even though the ORM skips foreign keys to _auto=False.
     if not (
         table_exists(cr, "auth_totp_trust")
         and table_exists(cr, "auth_user_client_totp_trust_rel")
@@ -74,7 +72,6 @@ class AuthUserClient(models.Model):
 
     def _link_totp_trust(self, trust_id: int, uid: int) -> None:
         self.check_singleton()
-        # The client lock comes before the trust lock, as in client revocation.
         self.env.cr.execute(
             SQL(
                 "SELECT c.id FROM auth_user_client c "

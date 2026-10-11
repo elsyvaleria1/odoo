@@ -53,8 +53,6 @@ class ConversationConversation(models.Model):
         return super().action_start_live()
 
     def _recording_meeting(self):
-        # the coach's notices are its own: whoever restarts the session or
-        # runs the coach keeps them, no user writes them
         return self.with_privilege(
             "conversation_meeting.privilege_record_meeting",
             reason="a meeting's coach keeps its notices",

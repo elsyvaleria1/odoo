@@ -12,8 +12,6 @@ from odoo.addons.web_gantt.models.models import Base
 @freeze_time(datetime(2021, 1, 1))
 class TestWebGanttReschedule(TestWebGantt):
     def test_reschedule_cascading_forward(self):
-        """This test purpose is to ensure that the forward rescheduling is properly working."""
-        # 1- consume buffer
         res = self.gantt_reschedule_consume_buffer(
             self.pill_1,
             {
@@ -43,7 +41,6 @@ class TestWebGanttReschedule(TestWebGantt):
         moved_pills.action_rollback_scheduling(res["old_vals_per_pill_id"])
         self.assert_not_replanned(moved_pills, self.initial_dates)
 
-        # 2- maintain buffer
         res = self.gantt_reschedule_maintain_buffer(
             self.pill_1,
             {
@@ -71,8 +68,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_reschedule_cascading_backward(self):
-        """This test purpose is to ensure that the backward rescheduling is properly working."""
-        # 1- consume buffer
         res = self.gantt_reschedule_consume_buffer(
             self.pill_4,
             {
@@ -102,7 +97,6 @@ class TestWebGanttReschedule(TestWebGantt):
         moved_pills.action_rollback_scheduling(res["old_vals_per_pill_id"])
         self.assert_not_replanned(moved_pills, self.initial_dates)
 
-        # 2- maintain buffer
         res = self.gantt_reschedule_maintain_buffer(
             self.pill_4,
             {
@@ -130,10 +124,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_not_in_past(self):
-        """This test purpose is to ensure that:
-        * Records are not rescheduled in the past.
-        * A notification is returned when trying to reschedule a record in the past.
-        """
         res = self.gantt_reschedule_consume_buffer(
             self.pill_4,
             {
@@ -150,22 +140,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_conflicting_cascade_forward(self):
-        """
-        ┌────────────────────────┐                                       ┌──────────────────────────────────┐
-        │pill_2_slave_in_conflict|<---------- -------------------------->|  pill_2_slave_not_in_conflict    |
-        └────────────────────────┘          | |                          └──────────────────────────────────┘
-        ┌────────────────────────┐      ┌─────────┐     ┌─────────┐      ┌──────────────────────────────────┐
-        │ Pill 1                 │ ---> │ Pill 2  │-->  │ Pill 3  │ -->  │ Pill 4                           │
-        └────────────────────────┘      └─────────┘     └─────────┘      └──────────────────────────────────┘
-        ┌────────────────────────┐                           | |         ┌──────────────────────────────────┐
-        │pill_3_slave_in_conflict│<--------------------------- --------->│ pill_3_slave_not_in_conflict     │
-        └────────────────────────┘                                       └──────────────────────────────────┘
-
-        When moving forward without conflicts, we only move records in conflict.
-        When advancing pill 3 without creating conflicts with pill_3_slave_not_in_conflict and pill 4, they both should not move.
-        we only move pill_3_slave_in_conflict to fix the conflict
-        ancestors should not be impacted
-        """
         self.pill_2_slave_in_conflict = self.create_pill(
             "Pill in conflict with Pill 2",
             self.pill_1_start_date,
@@ -235,24 +209,6 @@ class TestWebGanttReschedule(TestWebGantt):
         self.assert_not_replanned(moved_pills, initial_dates_deep_copy)
 
     def test_conflicting_cascade_backward(self):
-        """
-        ┌──────────────────────────────┐                                       ┌──────────────────────────────────┐
-        |pill_2_master_not_in_conflict |----------- ---------------------------|  pill_2_master_in_conflict       |
-        └──────────────────────────────┘          | |                          └──────────────────────────────────┘
-                                                  v v
-        ┌──────────────────────────────┐      ┌─────────┐     ┌─────────┐      ┌──────────────────────────────────┐
-        │       Pill 1                 │ ---> │ Pill 2  │-->  │ Pill 3  │ -->  │ Pill 4                           │
-        └──────────────────────────────┘      └─────────┘     └─────────┘      └──────────────────────────────────┘
-                                                                   ^ ^
-        ┌──────────────────────────────┐                           | |         ┌──────────────────────────────────┐
-        | pill_3_master_not_in_conflict|---------------------------- ----------| pill_3_master_in_conflict        │
-        └──────────────────────────────┘                                       └──────────────────────────────────┘
-
-            When moving backward without conflicts, we only move records in conflict.
-            When moving pill 2 to the end of pill 1 and pill_2_master_not_in_conflict without creating conflicts, they both should not move.
-            we only move pill_2_master_in_conflict to fix the conflict
-            children should not be impacted
-        """
         self.pill_3_master_in_conflict = self.create_pill(
             "Pill in conflict with Pill 3",
             self.pill_4_start_date,
@@ -310,12 +266,6 @@ class TestWebGanttReschedule(TestWebGantt):
         self.assert_not_replanned(moved_pills, initial_dates_deep_copy)
 
     def test_pills2_reschedule_cascading_forward(self):
-        """
-        This test concerns pills2, when pill 0 is move ahead of task 8.
-        As pills 1, 2, 3 are children of 0, they should be done after it,
-        they should also be moved forward
-        All the other pills should not move.
-        """
         self.gantt_reschedule_consume_buffer(
             self.pills2_0,
             {
@@ -356,12 +306,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_pills2_reschedule_cascading_backward(self):
-        """
-        This test concerns pills2, when the left arrow is clicked. pill 8 should be moved behind pill 0
-        As pills 4, 6, 5, 7 are ancestors for 8 and should be done before it, they should be moved backward.
-        9 and 10 should not be impacted as they are not ancestors of 8.
-        All the other pills should not move.
-        """
         self.gantt_reschedule_consume_buffer(
             self.pills2_8,
             {
@@ -405,16 +349,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_dont_move_not_in_conflict(self):
-        """
-                                  ->[4]
-                                  |
-                                  ---------<-------
-        [1]---------------------------->[2]->[3]--|
-
-        When moving 3 before 4, 2 should also move to avoid creating conflicts, but 1
-        should not be moved because with the new dates of 2 and 3, there is no
-        conflict created.
-        """
         self.pill_4.write(
             {
                 self.date_start_field_name: datetime(2021, 4, 27, 8, 0),
@@ -488,13 +422,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_reschedule_reports_the_cycle_it_detected(self):
-        """A dependency cycle names itself instead of raising a blank warning.
-
-        ``_web_gantt_get_reschedule_message`` iterates the value under
-        "errors", so a bare string is walked character by character and every
-        character maps to no message: the user got a warning toast with an
-        empty body.
-        """
         self.pill_1.write({self.dependency_field_name: [Command.link(self.pill_4.id)]})
 
         res = self.gantt_reschedule_maintain_buffer(
@@ -514,13 +441,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_reschedule_cascades_over_date_fields(self):
-        """A gantt built on ``date`` fields reschedules its dependants too.
-
-        The cascade converted every bound with ``astimezone``, which a
-        ``datetime.date`` does not carry, so the first dependant raised
-        TypeError. ``test_reschedule_dates`` did not catch it: a pill with no
-        dependency never reaches the cascade.
-        """
         Pill2 = self.env["test.web.gantt.pill2"]
         master = Pill2.create(
             {
@@ -610,9 +530,6 @@ class TestWebGanttReschedule(TestWebGantt):
     def test_consume_buffer_backward_skips_a_candidate_and_still_reaches_its_predecessor(
         self,
     ):
-        # Pill 1 already overlaps pill 2 (pre-existing conflict); pill 3 is not
-        # in conflict once pill 4 moves back, so it is skipped and never pushes
-        # pill 2, which then indexes the bound dict without a key.
         self.pill_1[self.date_stop_field_name] = self.pill_2_start_date + timedelta(
             hours=4
         )
@@ -713,9 +630,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_a_past_error_mid_cascade_rolls_every_write_back(self):
-        # Pill 4 moves to the first day of 2021 (today): pill 3 fits before it
-        # and is written, pill 2 would have to end before 04:00 and lands in
-        # 2020 -- refused, and the savepoint must undo pill 3 and pill 4 both.
         res = self.gantt_reschedule_consume_buffer(
             self.pill_4,
             {
@@ -733,8 +647,6 @@ class TestWebGanttReschedule(TestWebGantt):
         self.assert_not_replanned(self.pills_topo_order, self.initial_dates)
 
     def test_a_start_a_few_seconds_in_the_past_is_still_accepted(self):
-        # The 30s epsilon: the first valid interval can be "now" and drift
-        # below now() by the time the comparison runs.
         now = datetime(2021, 1, 1)
         self.assertTrue(
             self.pill_1._web_gantt_reschedule_write_new_dates(
@@ -754,7 +666,6 @@ class TestWebGanttReschedule(TestWebGantt):
         )
 
     def test_rollback_takes_the_payload_as_the_client_sends_it(self):
-        # JSON round-trips the ids to strings and the datetimes to strings.
         moved = self.pill_1 | self.pill_2
         payload = {
             str(self.pill_1.id): {

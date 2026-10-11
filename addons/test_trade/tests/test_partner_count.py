@@ -27,7 +27,6 @@ class TestPartnerOrderCount(TransactionCase):
         )
 
     def test_count_rolls_up_through_the_partner_tree(self):
-        """An order on a child counts for the child and every ancestor."""
         self._make_orders(self.child, 3)
         self._make_orders(self.parent, 2)
         self._make_orders(self.grandparent, 1)
@@ -41,7 +40,6 @@ class TestPartnerOrderCount(TransactionCase):
         )
 
     def test_archived_children_still_count(self):
-        """The child lookup runs with ``active_test=False`` on purpose."""
         self._make_orders(self.archived_child, 4)
 
         self.assertEqual(self.archived_child.test_trade_order_count, 4)
@@ -49,7 +47,6 @@ class TestPartnerOrderCount(TransactionCase):
         self.assertEqual(self.grandparent.test_trade_order_count, 4)
 
     def test_count_is_zero_without_the_group(self):
-        """Users outside the group get 0, not a filtered count."""
         self._make_orders(self.child, 2)
         portal = self.env["res.users"].create(
             {
@@ -64,7 +61,6 @@ class TestPartnerOrderCount(TransactionCase):
         self.assertEqual(count, 0)
 
     def test_extra_domain_restricts_what_is_counted(self):
-        """The ``domain`` argument narrows the counted set."""
         self._make_orders(self.child, 3)
         cancelled = self._make_orders(self.child, 2)
         cancelled.state = "cancel"
@@ -78,7 +74,6 @@ class TestPartnerOrderCount(TransactionCase):
         self.assertEqual(self.child.test_trade_order_count, 3)
 
     def test_statistics_tile_is_added_only_when_non_zero(self):
-        """``_add_order_statistics`` skips partners with no orders."""
         self._make_orders(self.child, 2)
         partners = self.child | self.parent | self.grandparent
         data_list = {partner.id: [] for partner in partners}
@@ -103,6 +98,5 @@ class TestPartnerOrderCount(TransactionCase):
                 },
             ],
         )
-        # ancestors inherit the count, so they get a tile too
         self.assertEqual(len(data_list[self.parent.id]), 1)
         self.assertEqual(data_list[self.parent.id][0]["value"], 2)

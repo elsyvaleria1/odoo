@@ -93,10 +93,6 @@ class TestWindowedLogCounts(DeviceTransactionCase):
 
 
 class TestRelationCounts(DeviceTransactionCase):
-    # device.profile.device_count and device.kind.device_count were
-    # hand-rolled _read_group computes. They had already drifted: the profile
-    # declared @api.depends("device_ids"), the category declared nothing, and
-    # neither of them noticed a device being archived.
 
     @classmethod
     def setUpClass(cls):

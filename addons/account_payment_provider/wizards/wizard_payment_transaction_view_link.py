@@ -79,13 +79,11 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
 
     @api.depends("open_installments")
     def _compute_display_open_installments(self) -> None:
-        """Show the installments section only when there are several installments."""
         for wizard in self:
             installments = wizard.open_installments or []
             wizard.display_open_installments = len(installments) > 1
 
     def _prepare_url(self, base_url, related_document):
-        """Override of `payment` to use the portal page URL."""
         res = super()._prepare_url(base_url, related_document)
         if self.res_model != "account.move":
             return res
@@ -93,7 +91,6 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
         return f"{base_url}/{related_document.get_portal_url()}"
 
     def _prepare_query_params(self, related_document):
-        """Override of `payment` to define custom query params for invoice payment."""
         res = super()._prepare_query_params(related_document)
         if self.res_model != "account.move":
             return res
@@ -105,15 +102,6 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
         }
 
     def _prepare_access_token(self):
-        """Override of `payment` to generate the access token from the invoice and the amount.
-
-        NOTE: this `(res_id, amount)` shape is narrower than the base `payment` module's
-        `(partner_id, amount, currency_id)` shape checked by `/payment/pay`. It stays
-        consistent only because `_prepare_url`'s `account.move` branch always routes this
-        token to the invoice-portal page's own narrower check
-        (`controllers/portal.py::portal_my_invoice_detail`), never to `/payment/pay`. Keep
-        both branches in sync if either is touched.
-        """
         res = super()._prepare_access_token()
         if self.res_model != "account.move":
             return res
@@ -123,7 +111,6 @@ class WizardPaymentTransactionViewLink(models.TransientModel):
         )
 
     def _prepare_anchor(self):
-        """Override of `payment` to set the 'portal_pay' anchor."""
         res = super()._prepare_anchor()
         if self.res_model != "account.move":
             return res

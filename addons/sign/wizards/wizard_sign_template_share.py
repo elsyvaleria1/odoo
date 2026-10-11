@@ -16,7 +16,7 @@ class WizardSignTemplateShare(models.TransientModel):
 
     is_shared = fields.Boolean(
         required=True
-    )  # Default sharing status for the sign request
+    )
     share_link = fields.Char(related="sign_request_id.share_link")
     validity = fields.Date(
         related="sign_request_id.validity",
@@ -38,8 +38,6 @@ class WizardSignTemplateShare(models.TransientModel):
                             )
                         )
 
-                    # Creating the sign request on `create` is required in order to be able to generate
-                    # a `share_link` when the sign request doesn't already exist
                     vals["sign_request_id"] = (
                         self.env["sign.request"]
                         .create(
@@ -90,9 +88,6 @@ class WizardSignTemplateShare(models.TransientModel):
     def action_close_request(self) -> dict:
         self.check_singleton()
         if not self.is_shared and self.sign_request_id:
-            # Cleaning up is needed when the wizard is closed and the sign request didn't exist
-            # beforehand. This is linked to the behaviour of `create` where we create the sign
-            # request if it doesn't exist already.
             self.sign_request_id.unlink()
         return {"type": "ir.actions.act_window_close"}
 

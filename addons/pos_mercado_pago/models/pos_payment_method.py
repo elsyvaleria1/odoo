@@ -41,8 +41,6 @@ class PosPaymentMethod(models.Model):
         if not data or not isinstance(data, dict):
             _logger.warning("POST message received with no data")
             raise Refused(400, "no JSON object body", "bad_request")
-        # A payment intent's `external_reference` is `<session>_<method>_<order uuid>`
-        # (see payment_mercado_pago.js).
         external_reference = json_get(data, "additional_info", "external_reference")
         match = isinstance(
             external_reference, str
@@ -58,7 +56,6 @@ class PosPaymentMethod(models.Model):
         pos_session = self.env["pos.session"].sudo().browse(int(session_id))
         if not pos_session.exists() or pos_session.state != "opened":
             _logger.error("Invalid session id: %s", session_id)
-            # Not Mercado Pago's mistake: acknowledge its message.
             raise Acknowledged("OK")
         method = pos_session.config_id.payment_method_ids.filtered(
             lambda p: p.id == int(payment_method_id)
@@ -146,10 +143,6 @@ class PosPaymentMethod(models.Model):
             )
 
     def force_pdv(self) -> None:
-        """
-        Triggered in debug mode when the user wants to force the "PDV" mode.
-        It calls the Mercado Pago API to set the terminal mode to "PDV".
-        """
         self._check_special_access()
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
@@ -166,13 +159,9 @@ class PosPaymentMethod(models.Model):
         _logger.debug("Successfully set the terminal mode to 'PDV'.")
 
     def mp_payment_intent_create(self, infos):
-        """
-        Called from frontend for creating a payment intent in Mercado Pago
-        """
         self._check_special_access()
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
-        # Call Mercado Pago for payment intend creation
         resp = mercado_pago.call_mercado_pago(
             "post",
             f"/point/integration-api/devices/{self.mp_id_point_smart_complet}/payment-intents",
@@ -205,16 +194,9 @@ class PosPaymentMethod(models.Model):
         return resp
 
     def mp_payment_intent_get(self, payment_intent_id):
-        """
-        Called from frontend to get the last payment intend from Mercado Pago
-        """
         return self._mp_payment_intent_of_this_terminal(payment_intent_id)
 
     def mp_get_payment_status(self, payment_intent_id):
-        """
-        Called from frontend to get the status of the payment of a payment
-        intent this terminal received
-        """
         payment_intent = self._mp_payment_intent_of_this_terminal(payment_intent_id)
         payment_id = (payment_intent.get("payment") or {}).get("id")
         if (
@@ -230,14 +212,10 @@ class PosPaymentMethod(models.Model):
         return resp
 
     def mp_payment_intent_cancel(self, payment_intent_id):
-        """
-        Called from frontend to cancel a payment intent in Mercado Pago
-        """
         self._check_special_access()
         self._mp_check_payment_intent_id(payment_intent_id)
 
         mercado_pago = MercadoPagoPosRequest(self, self.sudo().mp_bearer_token)
-        # Call Mercado Pago for payment intend cancelation
         resp = mercado_pago.call_mercado_pago(
             "delete",
             f"/point/integration-api/devices/{self.mp_id_point_smart_complet}/payment-intents/{payment_intent_id}",
@@ -254,7 +232,6 @@ class PosPaymentMethod(models.Model):
             "get", "/point/integration-api/devices", {}
         )
         if "devices" in data:
-            # Search for a device id that contains the serial number entered by the user
             found_device = next(
                 (device for device in data["devices"] if point_smart in device["id"]),
                 None,

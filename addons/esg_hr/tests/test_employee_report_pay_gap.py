@@ -34,11 +34,11 @@ class TestEmployeeReportPayGap(TransactionCase):
 
         self.create_emp("John A", "male", self.company_a, 3000)
         self.create_emp("John AA", "male", self.company_a, 6000)
-        self.create_emp("John AAA", "male", self.company_a, 10000)  # Median = 6000
+        self.create_emp("John AAA", "male", self.company_a, 10000)
 
         self.create_emp("Jane A", "female", self.company_a, 2800)
         self.create_emp("Jane AA", "female", self.company_a, 4800)
-        self.create_emp("Jane AAA", "female", self.company_a, 8800)  # Median = 4800
+        self.create_emp("Jane AAA", "female", self.company_a, 8800)
 
         self.create_emp("John B", "male", self.company_b, 5000)
         self.create_emp("Jane B", "female", self.company_b, 4000)
@@ -66,8 +66,6 @@ class TestEmployeeReportPayGap(TransactionCase):
         gap_combined = report.with_context(
             allowed_company_ids=[self.company_a.id, self.company_b.id],
         ).get_overall_pay_gap()
-        # Combined males: [3000, 5000, 6000, 10000] → median = (5000+6000)/2 = 5500
-        # Combined females: [2800, 4000, 4800, 8800] → median = (4000+4800)/2 = 4400
         expected_combined = round((5500 - 4400) / 5500 * 100, 2)
         self.assertEqual(
             gap_combined,
@@ -137,8 +135,5 @@ class TestEmployeeReportPayGap(TransactionCase):
             .get_overall_pay_gap()
         )
 
-        # Medians:
-        #   Male: [3000, 4000] → 3500
-        #   Female: [5000, 6000] → 5500
-        expected = round((3500 - 5500) / 3500 * 100, 2)  # → -57.14%
+        expected = round((3500 - 5500) / 3500 * 100, 2)
         self.assertEqual(gap, expected, "The pay gap should be able to go negative.")

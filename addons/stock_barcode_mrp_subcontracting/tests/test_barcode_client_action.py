@@ -140,10 +140,6 @@ class TestSubcontractingBarcodeClientAction(TestBarcodeClientAction):
         self.assertEqual(receipt_picking.move_ids.quantity, 5)
 
     def test_receipt_subcontract_bom_product_manual_add_src_location(self):
-        """Having a receipt for some product which has a subcontract bom: if the transfer is
-        opened in barcode and the form is used to add another move line (for the same product), the
-        src location of the new move line should also be the subcontract location.
-        """
         receipt = self.env["stock.picking"].create(
             {
                 "name": "TRSBPMASL picking",
@@ -201,7 +197,6 @@ class TestSubcontractingBarcodeClientAction(TestBarcodeClientAction):
         )
         receipt.action_confirm()
 
-        # Ensure user has a mail setup
         user_login = "admin"
         user_partner = (
             self.env["res.users"].search([("login", "=", user_login)]).partner_id

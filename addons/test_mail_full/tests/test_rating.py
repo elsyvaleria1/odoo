@@ -51,10 +51,8 @@ class TestRatingFlow(TestRatingCommon):
             with self.subTest(desc):
                 record_rating = record_rating.with_env(self.env)
 
-                # prepare rating token
                 access_token = record_rating._rating_get_access_token()
 
-                # check rating creation
                 rating = record_rating.rating_ids
                 self.assertEqual(rating.access_token, access_token)
                 self.assertFalse(rating.consumed)
@@ -80,10 +78,8 @@ class TestRatingFlow(TestRatingCommon):
                 record_rating = record_rating.with_env(self.env)
                 record_messages = record_rating.message_ids
 
-                # prepare rating token
                 access_token = record_rating._rating_get_access_token()
 
-                # simulate an email click: notification should be delayed
                 with (
                     self.mock_mail_gateway(mail_unlink_sent=False),
                     self.mock_mail_app(),
@@ -97,7 +93,6 @@ class TestRatingFlow(TestRatingCommon):
                 message = record_rating.message_ids[0]
                 rating = record_rating.rating_ids
 
-                # check posted message
                 self.assertEqual(record_rating.message_ids, record_messages + message)
                 self.assertIn("Top Feedback", message.body)
                 self.assertIn("/rating/static/src/img/rating_5.png", message.body)
@@ -106,7 +101,6 @@ class TestRatingFlow(TestRatingCommon):
                 self.assertFalse(message.notified_partner_ids)
                 self.assertEqual(message.subtype_id, expected_subtype)
 
-                # check rating update
                 self.assertTrue(rating.consumed)
                 self.assertEqual(rating.feedback, "Top Feedback")
                 self.assertEqual(rating.message_id, message)
@@ -114,7 +108,6 @@ class TestRatingFlow(TestRatingCommon):
                 if is_rating_mixin_test:
                     self.assertEqual(record_rating.rating_last_value, 5)
 
-                # give a feedback: send notifications (notify_delay_send set to False)
                 with (
                     self.mock_mail_gateway(mail_unlink_sent=False),
                     self.mock_mail_app(),
@@ -123,7 +116,6 @@ class TestRatingFlow(TestRatingCommon):
                         1, token=access_token, feedback="Bad Feedback"
                     )
 
-                # check posted message: message is updated
                 update_message = record_rating.message_ids[0]
                 self.assertEqual(update_message, message, "Should update first message")
                 self.assertEqual(
@@ -140,7 +132,6 @@ class TestRatingFlow(TestRatingCommon):
                 )
                 self.assertEqual(update_message.subtype_id, expected_subtype)
 
-                # check rating update
                 new_rating = record_rating.rating_ids
                 self.assertEqual(new_rating, rating, "Should update first rating")
                 self.assertTrue(new_rating.consumed)
@@ -158,12 +149,10 @@ class TestRatingMixin(TestRatingCommon):
     def test_rating_values(self):
         record_rating = self.record_rating.with_env(self.env)
 
-        # prepare rating token
         access_0 = record_rating._rating_get_access_token()
         last_rating = record_rating.rating_apply(
             3, token=access_0, feedback="This record is meh but it's cheap."
         )
-        # Make sure to update the write_date which is used to retrieve the last rating
         last_rating.write_date = datetime(2022, 1, 1, 14, 00)
         access_1 = record_rating._rating_get_access_token()
         last_rating = record_rating.rating_apply(
@@ -244,7 +233,6 @@ class TestRatingResName(TransactionCase):
         self.env.flush_all()
         self.assertEqual(rating.res_name, "TWO", "the record-name field still works")
 
-        # subject is not _rec_name, and display_name depends on it
         record.subject = "SUBJ"
         self.env.flush_all()
         self.assertEqual(record.display_name, "TWO - SUBJ")
@@ -254,7 +242,6 @@ class TestRatingResName(TransactionCase):
             "a rename through any display_name dependency must reach res_name",
         )
 
-        # and a write that cannot move display_name leaves the ratings alone
         stamp = rating.write_date
         record.user_id = self.env.ref("base.user_admin").id
         self.env.flush_all()
@@ -284,14 +271,12 @@ class TestRatingRoutes(TestRatingCommon):
                 2) Customer interacts with webpage and submits FORM. Triggers /rate/<string:token>/submit_feedback
                 route. Should update the rating of the record with the data in the POST request
                 """
-                self.authenticate(None, None)  # set up session for public user
+                self.authenticate(None, None)
                 access_token = record_rating._rating_get_access_token()
 
-                # First round of clicking the URL and then submitting FORM data
                 response_click_one = self.url_open(f"/rate/{access_token}/5")
                 response_click_one.raise_for_status()
 
-                # there should be a form to post to validate the feedback and avoid one-click anyway
                 forms = lxml.html.fromstring(response_click_one.content).xpath("//form")
                 matching_rate_form = next(
                     (
@@ -307,7 +292,6 @@ class TestRatingRoutes(TestRatingCommon):
                     f"/rate/{access_token}/submit_feedback",
                 )
 
-                # rating should not change, i.e. default values
                 rating = record_rating.rating_ids
                 self.assertFalse(rating.consumed)
                 self.assertEqual(rating.rating, 0)
@@ -332,15 +316,13 @@ class TestRatingRoutes(TestRatingCommon):
                 if is_rating_mixin_test:
                     self.assertEqual(record_rating.rating_last_value, 5)
 
-                # Second round of clicking the URL and then submitting FORM data
                 response_click_two = self.url_open(f"/rate/{access_token}/1")
                 response_click_two.raise_for_status()
                 if is_rating_mixin_test:
                     self.assertEqual(
                         record_rating.rating_last_value, 5
-                    )  # should not be updated to 1
+                    )
 
-                # check returned form
                 forms = lxml.html.fromstring(response_click_two.content).xpath("//form")
                 matching_rate_form = next(
                     (
@@ -374,10 +356,6 @@ class TestRatingRoutes(TestRatingCommon):
                     self.assertEqual(record_rating.rating_last_value, 1)
 
     def test_portal_user_can_post_message_with_rating(self):
-        """Test portal user can post a message with a rating on a thread with
-        _mail_post_access as read. In this case, sudo() is not necessary for
-        message_post itself, but it is necessary for adding the rating. This
-        tests covers the rating part is properly allowed."""
         record_rating = self.env["mail.test.rating.thread.read"].create(
             {
                 "customer_id": self.partner_1.id,
@@ -385,7 +363,6 @@ class TestRatingRoutes(TestRatingCommon):
                 "user_id": self.user_admin.id,
             }
         )
-        # from model
         message = record_rating.with_user(self.user_portal).message_post(
             body="Not bad",
             message_type="comment",
@@ -394,7 +371,6 @@ class TestRatingRoutes(TestRatingCommon):
         )
         rating = message.sudo().rating_id
         self.assertEqual(rating.rating, 3, "rating was properly set")
-        # stealing attempt from another user
         message2 = record_rating.message_post(
             body="Attempt to steal rating with another user",
             message_type="comment",
@@ -405,7 +381,6 @@ class TestRatingRoutes(TestRatingCommon):
             message.sudo().rating_id, rating, "rating was not removed from m1"
         )
         self.assertFalse(message2.rating_id, "rating was not added to m2")
-        # from controller
         self.authenticate("portal_test", "portal_test")
         res = self.call_jsonrpc(
             "/mail/message/post",

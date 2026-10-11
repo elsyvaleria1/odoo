@@ -65,11 +65,6 @@ class TestEventNotifications(TransactionCase):
         )
 
     def test_attendee_added_create_with_specific_states(self):
-        """
-        When an event is created from an external calendar account (such as Google) which is not linked to an
-        Odoo account, attendee info such as email and state are given at sync.
-        In this case, attendee_ids should be created accordingly.
-        """
         organizer_partner = self.env["res.partner"].create(
             {"name": "orga", "email": "orga@google.com"}
         )
@@ -113,7 +108,6 @@ class TestEventNotifications(TransactionCase):
         )
 
     def test_attendee_added_write(self):
-        """Test that writing ids directly on partner_ids instead of commands is handled."""
         self.event.write({"partner_ids": [self.partner.id]})
         self.assertEqual(
             self.event.attendee_ids.partner_id,
@@ -126,7 +120,7 @@ class TestEventNotifications(TransactionCase):
         attendee = self.event.attendee_ids
         self.event.write(
             {"partner_ids": [(4, self.partner.id)]}
-        )  # Add existing partner
+        )
         self.assertEqual(
             self.event.attendee_ids,
             attendee,
@@ -227,12 +221,6 @@ class TestEventNotifications(TransactionCase):
         self.assertEqual(self.event.invalid_email_partner_ids, self.partner)
 
     def test_default_attendee(self):
-        """
-        Check if priority list id correctly followed
-        1) vals_list[0]['attendee_ids']
-        2) vals_list[0]['partner_ids']
-        3) context.get('default_attendee_ids')
-        """
         partner_bis = self.env["res.partner"].create({"name": "Xavier"})
         event = (
             self.env["calendar.event"]
@@ -256,7 +244,6 @@ class TestEventNotifications(TransactionCase):
             "Partner bis should not be in attendee",
         )
 
-        # priority 1: an explicit attendee_ids wins over partner_ids
         partner_ter = self.env["res.partner"].create({"name": "Yolanda"})
         event_with_attendee_ids = (
             self.env["calendar.event"]
@@ -289,9 +276,6 @@ class TestEventNotifications(TransactionCase):
         )
 
     def test_push_meeting_start(self):
-        """
-        Checks that you can push the start date of an all day meeting.
-        """
         attendee = self.env["res.partner"].create(
             {
                 "name": "Xavier",

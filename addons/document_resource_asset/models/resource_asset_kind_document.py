@@ -63,9 +63,6 @@ class ResourceAssetKindDocument(models.Model):
         return result
 
     def _invalidate_assets(self) -> None:
-        # Assets read their folder off this row, and other models relay that
-        # read; nothing declares either as a field dependency, so a change here
-        # drops the caches wholesale. Settings move rarely.
         self.env.invalidate_all()
 
     @api.depends("kind_id", "company_id")
@@ -79,8 +76,6 @@ class ResourceAssetKindDocument(models.Model):
         self.check_singleton()
         documents = self.env["document.document"].sudo()
         name = self.kind_id.name
-        # a folder of the shape this makes: at the company root, nobody's --
-        # not any folder so named, which a person's own drive can hold
         existing = documents.search(
             [
                 ("type", "=", "folder"),

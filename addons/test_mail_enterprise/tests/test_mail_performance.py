@@ -36,7 +36,6 @@ class EnterpriseBaseMailPerformance(FullBaseMailPerformance):
 
     @classmethod
     def _setup_ocn_for_partners(cls, partners, endpoint=None):
-        """Generate keys and tokens"""
         cls.ocn_project_id = "TestOcnProject"
         cls.env["ir.config_parameter"].sudo().set_param(
             "odoo_ocn.project_id", cls.ocn_project_id
@@ -62,7 +61,6 @@ class EnterpriseBaseMailPerformance(FullBaseMailPerformance):
 @tagged("mail_performance", "post_install", "-at_install")
 class TestMailPerformance(EnterpriseBaseMailPerformance):
     def test_assert_initial_values(self):
-        """Simply ensure some values through all tests"""
         record_ticket = self.env["mail.test.ticket.mc"].browse(
             self.record_ticket_mc.ids
         )
@@ -81,19 +79,17 @@ class TestMailPerformance(EnterpriseBaseMailPerformance):
     @users("employee")
     @warmup
     def test_message_post_w_followers(self):
-        """Aims to cover as much features of message_post as possible"""
         record_ticket = self.env["mail.test.ticket.mc"].browse(
             self.record_ticket_mc.ids
         )
         attachments = self.env["ir.attachment"].create(self.test_attachments_vals)
-        self.push_to_end_point_mocked.reset_mock()  # reset as executed twice
-        self.ocn_iap_jsonrpc_mocked.reset_mock()  # reset as executed twice
+        self.push_to_end_point_mocked.reset_mock()
+        self.ocn_iap_jsonrpc_mocked.reset_mock()
         self.flush_tracking()
 
         with self.assertQueryCount(employee=99):
             new_message = record_ticket.message_post(
                 attachment_ids=attachments.ids,
-                # atmention a user, as it generates a different chunk for ocn
                 body=Markup(
                     '<p>Test Content<a href="/odoo" data-oe-id="%(partner_id)s" data-oe-model="res.partner">@user</a>'
                 )

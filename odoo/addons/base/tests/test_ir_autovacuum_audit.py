@@ -178,11 +178,9 @@ class TestTransientVacuumOverCount(TransactionCase):
         self.assertTrue(self.env.backend.has_rows_beyond(Wizard, total - 1))
         self.assertFalse(self.env.backend.has_rows_beyond(Wizard, total))
 
-        # under the count: nothing is touched, however old the rows
         self.assertEqual(Wizard._remove_transient_rows_over_count(total), 0)
         self.assertEqual(rows.exists(), rows)
 
-        # over the count: only the rows old enough go, the young one stays
         self.env.cr.execute(
             "UPDATE wizard_res_partner_merge"
             " SET write_date = write_date - interval '1 day' WHERE id = ANY(%s)",

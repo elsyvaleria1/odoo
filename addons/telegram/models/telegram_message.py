@@ -13,7 +13,6 @@ from ..tools.authority import operating
 
 _logger = logging.getLogger(__name__)
 
-# Telegram's documented ceiling for one bot: about 30 messages a second.
 _BOT_SENDS_PER_SECOND = 30
 
 
@@ -203,15 +202,6 @@ class TelegramMessage(models.Model):
 
     @api.job(channel="telegram_outbound", max_retries=8, max_defers=200)
     def _deliver(self):
-        """Send one queued message, exactly once or visibly not.
-
-        Telegram has no idempotency key, so a message is stamped `sending` on
-        a side cursor before the call and its outcome is recorded on another:
-        a run that finds it still `sending` cannot know whether Telegram got
-        it and marks it `uncertain` for a person to resend, instead of risking
-        a duplicate. The job's own transaction writes nothing to the row, so
-        it never conflicts with those commits.
-        """
         self.check_singleton()
         message = operating(self)
         if message.state != "outgoing":
@@ -243,9 +233,6 @@ class TelegramMessage(models.Model):
         if not message._consume_send_budget():
             self.env["ir.job"]._defer(1, reason="rate limit")
             return
-        # the client reads the bot's token, which counts a decryption in this
-        # transaction: losing that to a concurrent job must happen before the
-        # message is stamped `sending`, or the replay finds it `uncertain`
         client = bot._get_telegram_client()
         if not message._side_claim():
             return
@@ -256,8 +243,6 @@ class TelegramMessage(models.Model):
             self.env["ir.job"]._defer(error.seconds, reason="flood control")
             return
         except errors.TelegramChatMigrated as error:
-            # the history stays with the group; the message goes on to the
-            # supergroup as a new row, committed with this job
             supergroup = chat._migrate_to(error.new_chat_id)
             message._side_write(
                 {
@@ -298,14 +283,10 @@ class TelegramMessage(models.Model):
             message._side_write(vals)
             if isinstance(error, errors.TelegramForbidden):
                 chat._side_block()
-            # a refused edit or deletion ("message is not modified", one too
-            # old to delete) says nothing of whether the chat takes messages
             if message.api_method.startswith("send"):
                 started = chat._side_update_delivery_failure(vals["error_message"])
                 message._on_delivery_failed(vals["error_message"], started)
             return
-        # an edit answers with the message it edited, a deletion with True:
-        # only a send makes a new Telegram message
         made = message.api_method.startswith("send") and isinstance(result, dict)
         message._side_write(
             {
@@ -321,10 +302,7 @@ class TelegramMessage(models.Model):
             chat._side_remove_delivery_failure()
 
     def _on_delivery_failed(self, error, started) -> None:
-        """Telegram refused this message, a send, for good, saying `error`;
-        `started` is True when its chat was delivering until now. Whoever the
-        message was for may need to know. The outcome was committed on a side
-        cursor this transaction cannot see: read it from the arguments."""
+        pass
 
     def _requeue_in(self, chat):
         self.check_singleton()
@@ -350,8 +328,6 @@ class TelegramMessage(models.Model):
         )
 
     def _still_wanted(self) -> bool:
-        """Whether a queued message should still go out when it is due: a
-        bridge cancels what its reader already saw elsewhere."""
         return True
 
     def _call(self, bot, chat, client=None):
@@ -362,7 +338,6 @@ class TelegramMessage(models.Model):
         if self.thread_uid and self.api_method.startswith("send"):
             payload["message_thread_id"] = int(self.thread_uid)
         if chat.business_connection_id:
-            # sent as the business account's owner, in their own chat
             payload["business_connection_id"] = (
                 chat.business_connection_id.connection_uid
             )
@@ -391,9 +366,6 @@ class TelegramMessage(models.Model):
         return client.call(self.api_method, payload)
 
     def _consume_send_budget(self):
-        """One token of the chat's and the bot's send budgets, taken on a side
-        cursor: a bucket row locked for the job's whole transaction would
-        serialise every send of the bot."""
         chat = self.chat_id
         is_group = (chat.chat_type or "private") != "private"
         with self.env.registry.cursor() as cr:
@@ -439,9 +411,6 @@ class TelegramMessage(models.Model):
 
     @api.model
     def _queue(self, bot, chat, api_method, payload, *, eta=None, **vals):
-        """Queue a message for the outbox and return its ledger row. It is sent
-        by a job after the caller's transaction commits, so a rolled-back
-        transaction sends nothing."""
         message = operating(self).create(
             {
                 "bot_id": bot.id,
@@ -459,19 +428,11 @@ class TelegramMessage(models.Model):
         return message
 
     def _get_delivery_runner(self):
-        """This message, as the user its delivery job runs as: whoever queued
-        it, unless they can run no job -- a webhook's public user is inactive,
-        and the job runner refuses a job of an inactive user, so an answer to
-        an update that no Odoo user sent would never go out. That job runs as
-        the system user instead, which `_deliver` acts through only by the
-        bot's privilege, as it does for anyone."""
         if self.env.user.active:
             return self
         return self.with_user(SUPERUSER_ID)
 
     def action_resend(self):
-        """Send again a message whose outcome is unknown or that failed: a
-        person decides, knowing it may arrive twice."""
         self.check_access("write")
         for message in self.filtered(
             lambda m: m.message_type == "outbound" and m.state in ("uncertain", "error")

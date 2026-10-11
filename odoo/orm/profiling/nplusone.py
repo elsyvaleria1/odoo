@@ -43,9 +43,6 @@ class _NplusOneEntry:
 
 type _Key = tuple[str, str, str, int]
 
-# the public methods that reach each operation, so a frame of an addon
-# overriding one is walked past like the ORM's own and the report names the
-# line that called it
 _ENTRY_POINTS: dict[str, frozenset[str]] = {
     "search": frozenset(
         ("search", "search_fetch", "search_count", "search_read", "search_iter")

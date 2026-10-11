@@ -60,7 +60,6 @@ class TestSplitFrontendPage(HttpCase):
             self.assertEqual(meta.status_code, 200, src)
             for path, info in meta.json()["inputs"].items():
                 for url, spec in sources.items():
-                    # a mirror stub carries the real path, not the real bytes
                     if path.endswith(url) and info["bytes"] == sizes[url]:
                         counts[spec] += 1
         return counts

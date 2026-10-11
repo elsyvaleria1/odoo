@@ -4,9 +4,6 @@ from odoo.tests import TransactionCase, tagged
 
 @tagged("post_install", "-at_install")
 class TestHrAccessBind(TransactionCase):
-    # an employee anchor compares with every employee record of the principal,
-    # as `employee_id.user_id = user.id` does; a unit anchor with the
-    # departments its active employees work in
 
     def test_employees_and_units(self):
         user = self.env["res.users"].create(
@@ -44,9 +41,6 @@ class TestHrAccessBind(TransactionCase):
         self.assertEqual(access._access_bind_units(), sales.ids)
 
     def test_relinking_an_employee_moves_what_its_rows_reach(self):
-        # the principal's employees are compiled into the domain the registry
-        # caches for them: re-linking an employee to another user moves it at
-        # once, not at some unrelated cache clear
         group_user = self.env.ref("base.group_user")
         first, second = self.env["res.users"].create(
             [

@@ -214,9 +214,6 @@ class TestPublicPagesRunWithoutEval(HttpCase):
 
 
 class TestOwlCompilerFollowsEval(HttpCase):
-    # @odoo/owl is owl's runtime build; a page imports the compiler module
-    # exactly when one of its bundles may compile a template in the browser,
-    # which is when it keeps 'unsafe-eval'
     def _page(self, url):
         response = self.url_open(url)
         self.assertEqual(response.status_code, 200, url)

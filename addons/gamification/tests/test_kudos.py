@@ -32,7 +32,6 @@ class TestKudos(common.TransactionCase):
     def _create_kudos(
         self, sender=None, recipient=None, category=None, message="Great job!"
     ):
-        """Helper to create a kudos record."""
         return (
             self.env["gamification.kudos"]
             .with_user(sender or self.sender)
@@ -47,7 +46,6 @@ class TestKudos(common.TransactionCase):
         )
 
     def test_create_kudos_grants_karma(self):
-        """Sending kudos automatically grants karma to the recipient."""
         initial_karma = self.recipient.karma
         expected_karma = self.category_teamwork.karma_granted
 
@@ -61,7 +59,6 @@ class TestKudos(common.TransactionCase):
         )
 
     def test_create_kudos_different_categories(self):
-        """Different categories grant different karma amounts."""
         initial_karma = self.recipient.karma
 
         self._create_kudos(category=self.category_teamwork)
@@ -80,7 +77,6 @@ class TestKudos(common.TransactionCase):
         )
 
     def test_self_kudos_prevented(self):
-        """Users cannot send kudos to themselves."""
         with self.assertRaises(UserError, msg="Self-kudos should be prevented"):
             self.env["gamification.kudos"].with_user(self.sender).create(
                 {
@@ -92,7 +88,6 @@ class TestKudos(common.TransactionCase):
             )
 
     def test_kudos_posts_to_mail_thread(self):
-        """Kudos creation should post a message to the mail thread."""
         kudos = self._create_kudos()
         messages = kudos.message_ids.filtered(
             lambda m: m.subtype_id == self.env.ref("mail.mt_comment")
@@ -100,14 +95,12 @@ class TestKudos(common.TransactionCase):
         self.assertTrue(messages, "Kudos should post a comment message")
 
     def test_kudos_summary_computed(self):
-        """Summary field is auto-computed from sender/recipient/category."""
         kudos = self._create_kudos()
         self.assertIn(self.sender.name, kudos.summary)
         self.assertIn(self.recipient.name, kudos.summary)
         self.assertIn(self.category_teamwork.name, kudos.summary)
 
     def test_kudos_zero_karma_category(self):
-        """Kudos with 0 karma_granted category should not create tracking."""
         self.category_teamwork.karma_granted = 0
         initial_karma = self.recipient.karma
 
@@ -117,7 +110,6 @@ class TestKudos(common.TransactionCase):
         self.assertEqual(self.recipient.karma, initial_karma)
 
     def test_kudos_category_count(self):
-        """Category kudos_count reflects number of kudos in that category."""
         self._create_kudos(category=self.category_teamwork)
         self._create_kudos(category=self.category_teamwork)
         self._create_kudos(category=self.category_innovation)
@@ -129,13 +121,6 @@ class TestKudos(common.TransactionCase):
         self.assertEqual(self.category_innovation.kudos_count, 1)
 
     def test_karma_granted_frozen_after_send(self):
-        """A sender cannot rewrite karma_granted on an already-sent kudos.
-
-        Regression: karma_granted is a plain Integer(readonly=True) -- UI-only,
-        not ORM-enforced -- and was excluded from KUDOS_VALUE_FIELDS, so the
-        sender could rewrite it via write()/RPC/sudo after the fact with no
-        trace, even though no UI path exposes it as editable.
-        """
         kudos = self._create_kudos()
         original = kudos.karma_granted
         self.assertTrue(original, "setUp category should grant non-zero karma")
@@ -151,12 +136,5 @@ class TestKudos(common.TransactionCase):
         )
 
     def test_karma_granted_recorded_correctly_at_create(self):
-        """create() must still be able to set karma_granted for itself.
-
-        karma_granted is now in the frozen-fields set, but create()'s own
-        bookkeeping write (right after the record is created, with the
-        sender still the current user) must not be blocked by the guard
-        meant for post-send edits.
-        """
         kudos = self._create_kudos(category=self.category_teamwork)
         self.assertEqual(kudos.karma_granted, self.category_teamwork.karma_granted)

@@ -124,7 +124,7 @@ class AccountMove(models.Model):
 
         lines_by_move = {}
         for moves in moves_by_scope.values():
-            lines = self.env["account.move.line"].search(  # noqa: E8507 - one query per (partner, company, direction) scope; moves sharing one were merged above
+            lines = self.env["account.move.line"].search(
                 moves[0]._get_domain_outstanding_bank_statement_lines()
             )
             for move in moves:
@@ -464,7 +464,6 @@ class AccountMoveLine(models.Model):
         )
 
     def action_split_lines(self) -> dict:
-        """Open the wizard that splits the selected journal items."""
         return {
             "name": self.env._("Split"),
             "type": "ir.actions.act_window",

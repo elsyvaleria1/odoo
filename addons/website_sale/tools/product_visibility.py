@@ -24,7 +24,6 @@ class WebsiteRequest(Protocol):
 
 
 def can_show_quick_add(product: QuickAddProduct) -> bool:
-    """Apply website sale eligibility and contextual pricing to either product model."""
     product.check_singleton()
     website = cast("Website", product.env["website"])
     if not product.filtered_domain(website._product_domain()):

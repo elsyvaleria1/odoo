@@ -28,7 +28,6 @@ class IrConfig_Parameter(models.Model):
         today = fields.Date.today()
         last_used = fields.Date.to_date(settings.get(self.env, LEGACY_HASH_LAST_USED))
         if not last_used:
-            # enabled by hand without a date: the idle days count from today
             params.set_param(LEGACY_HASH_LAST_USED, fields.Date.to_string(today))
             return
         idle = (today - last_used).days

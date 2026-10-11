@@ -23,12 +23,10 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Articles:
         Article = cls.env["knowledge.article"]
         with mute_logger("odoo.models.unlink"):
             Article.search([]).unlink()
 
-        # Workspace section:
         cls.workspace_article_visible = Article.create(
             {
                 "name": "10 unknown facts about Pim's",
@@ -70,7 +68,6 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
             }
         )
 
-        # Shared section:
         cls.shared_article = Article.create(
             {
                 "name": "TODO list",
@@ -97,7 +94,6 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
             }
         )
 
-        # Private section:
         cls.private_article_admin = Article.create(
             {
                 "name": "My favorite Pim's flavors",
@@ -135,9 +131,7 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
 
     @users("admin")
     def test_get_user_sorted_articles_admin(self):
-        """Check that the administrator can find the articles he has access to."""
         test_dataset = [
-            # search terms, hidden mode, expected results
             (
                 "",
                 False,
@@ -355,9 +349,7 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
 
     @users("employee")
     def test_get_user_sorted_articles_user(self):
-        """Check that the user can find the articles he has access to."""
         test_dataset = [
-            # search terms, hidden_mode, expected results
             (
                 "",
                 False,
@@ -575,14 +567,6 @@ class TestKnowledgeArticleFullTextSearch(KnowledgeCommon):
 
     @users("admin")
     def test_get_user_sorted_ordering(self):
-        """Check that the search method return articles in the following order:
-        1. The articles matching with the title and the body
-        2. The article matching with the title only
-        3. The article matching with the body only
-        Within each group, the search method should rank the articles based
-        on the frequency and the co-occurrence of the search terms in the
-        article body (see: `ts_rank_cd`).
-        """
         Article = self.env["knowledge.article"]
         self.assertEqual(
             Article.get_user_sorted_articles("Pim's", hidden_mode=False),

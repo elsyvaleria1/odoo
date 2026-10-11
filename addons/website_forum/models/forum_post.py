@@ -790,7 +790,7 @@ class ForumPost(models.Model):
 
                 karma = post.forum_id.karma_gen_answer_flagged
                 if post.closed_reason_id == reason_spam:
-                    count_post = post.search_count(  # noqa: E8507 - one count per flagged post, on its author
+                    count_post = post.search_count(
                         [
                             ("parent_id", "=", False),
                             ("forum_id", "=", post.forum_id.id),
@@ -823,7 +823,7 @@ class ForumPost(models.Model):
                 )
                 karma = post.forum_id.karma_gen_answer_flagged
                 if reason_id == reason_spam:
-                    count_post = post.search_count(  # noqa: E8507 - one count per flagged post, on its author
+                    count_post = post.search_count(
                         [
                             ("parent_id", "=", False),
                             ("forum_id", "=", post.forum_id.id),
@@ -1112,8 +1112,6 @@ class ForumPost(models.Model):
         user = self.env.user
         if message_operation not in ("write", "unlink") or user._is_admin():
             return domains
-        # the karma a post asks to edit: its forum's own-post threshold for its
-        # author, the all-posts one for anyone else
         editable = (
             Domain("create_uid", "=", user.id)
             & Domain("forum_id.karma_edit_own", "<=", user.karma)

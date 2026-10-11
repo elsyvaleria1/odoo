@@ -11,8 +11,6 @@ TABLES = ("ir_mail_server", "fetchmail_server")
 def migrate(cr, version):
     if not version:
         return
-    # the vendors' migrations moved every server's credential onto its
-    # connection and cleared the column; what is left belongs to no vendor
     for table in TABLES:
         if not schema.column_exists(cr, table, "oauth2_credential_id"):
             continue

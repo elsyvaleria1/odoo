@@ -9,8 +9,6 @@ class TestRoomKioskLive(RoomCommon, WebsocketCase):
     def test_a_booking_made_elsewhere_reaches_the_open_kiosk_over_the_bus(self):
         resource = self.resources[0]
         token = resource.access_token
-        # a fresh browser subscribes from zero and is replayed the bus's last
-        # minute, the setup's kiosk "reload" included, which would navigate away
         self.env.cr.precommit.run()
         self.env["bus.bus"].sudo().search([]).unlink()
         code = """

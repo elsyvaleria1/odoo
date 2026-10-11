@@ -30,9 +30,6 @@ _UNIQUE_DEFINITION = re.compile(r"^\s*unique\s*\(([^)]*)\)\s*$", re.IGNORECASE)
 
 
 def _foreign_key_targets(model: ModelLike) -> list[tuple[str, str]]:
-    # the same conditions as _field_ddl.update_db_foreign_key, read off the
-    # fields: the DDL never runs on this tier, so the registry's
-    # add_foreign_key is never called and the declaration has to be derived
     if not model._is_an_ordinary_table():
         return []
     targets = []
@@ -40,8 +37,6 @@ def _foreign_key_targets(model: ModelLike) -> list[tuple[str, str]]:
         if not (field.is_many2one and field.store and field.column_type):
             continue
         if field.company_dependent or field.comodel_name not in model.env.registry:
-            # a field whose comodel is absent is degraded, and the DDL that
-            # would declare its constraint never runs for it either
             continue
         comodel = model.env[field.comodel_name]
         if not comodel._is_an_ordinary_table() or not comodel._auto:
@@ -55,16 +50,10 @@ def _foreign_key_targets(model: ModelLike) -> list[tuple[str, str]]:
 def _check_foreign_keys(
     storage: DictBackend, model: ModelLike, rows: list[dict[str, typing.Any]]
 ) -> None:
-    # a create allocates its ids inside create_rows, after these values were
-    # built, so no row of a batch can name a sibling of it: every reference
-    # here is to a row that must already be stored, as it must be for the
-    # INSERT PostgreSQL would run
     for column, table in _foreign_key_targets(model):
         for row in rows:
             value = row.get(column)
             if type(value) is not int:
-                # False is stored as NULL and SQL checks no NULL reference;
-                # anything else is a value this tier cannot resolve to a row
                 continue
             if not storage.get_existing_ids(table, [value]):
                 _debug.logic(
@@ -89,8 +78,6 @@ def _check_m2m_foreign_keys(
     column2: str,
     pairs: typing.Iterable[tuple[int, ...]],
 ) -> None:
-    # the comodel side of the pair of constraints update_db_foreign_keys
-    # declares; the model side references the rows this call already holds
     field = next(
         (
             candidate
@@ -129,9 +116,6 @@ _INTEGER_BOUNDS = {"int4": (INT4_MIN, INT4_MAX), "int8": (INT8_MIN, INT8_MAX)}
 
 
 def _check_column_values(model: ModelLike, rows: list[dict[str, typing.Any]]) -> None:
-    # what the driver and the column type refuse before any table constraint
-    # is consulted: psycopg rejects a NUL in a text parameter, and an int4 or
-    # int8 column rejects a value outside its range
     for field in model._fields.values():
         if not field.store or not field.column_type:
             continue
@@ -158,8 +142,6 @@ def _check_column_values(model: ModelLike, rows: list[dict[str, typing.Any]]) ->
 def _check_table_constraints(
     storage: DictBackend, model: ModelLike, rows: list[dict[str, typing.Any]]
 ) -> None:
-    # what the table refuses on PostgreSQL: a NULL in a NOT NULL column and a
-    # duplicate under a unique constraint (NULLs distinct, as SQL treats them)
     _check_column_values(model, rows)
     registry = model.env.registry
     not_null = [
@@ -184,9 +166,6 @@ def _check_table_constraints(
     ]
     for conname, definition in checks:
         for row in rows:
-            # an UPDATE carries only the columns it writes, so the stored row
-            # supplies the rest; a column neither supplies is unknown, and an
-            # unknown CHECK passes in SQL
             stored = storage.get_row(model._table, row["id"]) if "id" in row else None
             candidate = {**(stored or {}), **row}
             if violates_check(definition, candidate):
@@ -200,10 +179,6 @@ def _check_table_constraints(
         if isinstance(obj, Constraint)
         and (match := _UNIQUE_DEFINITION.match(obj.get_definition(registry)))
     ]
-    # `index="unique"` is a partial unique index on the column, NULLs excluded
-    # (_registry_schema._get_index_expression), which is the same shape as a
-    # one-column UNIQUE constraint and is the only thing holding a One2one to
-    # one row. A translated column is never indexed, so it is never unique.
     uniques += [
         (get_index_name(model._table, field.name), (field.name,))
         for field in model._fields.values()
@@ -216,10 +191,6 @@ def _check_table_constraints(
         return
     existing = storage.get_rows(model._table, storage.get_table_ids(model._table))
     for conname, columns in uniques:
-        # the state the batch leaves behind, not the state it starts from: a
-        # row of this batch that rewrites the key no longer holds its stored
-        # value, so releasing a value on one row and taking it on another in
-        # one flush is allowed, exactly as the successive UPDATEs allow it
         rewritten = {
             row.get("id") for row in rows if all(column in row for column in columns)
         }

@@ -56,7 +56,6 @@ class WizardHrVersionIndexWage(models.TransientModel):
                     contract_dates,
                     contract_version_ids,
                 ) in version_ids_by_contract_date.items():
-                    # Get all posterior versions related to the same contract
                     min_date_version = min(contract_version_ids.mapped("date_version"))
                     contract_version_ids |= employee_versions_by_contract_date.get(
                         contract_dates, self.env["hr.version"]

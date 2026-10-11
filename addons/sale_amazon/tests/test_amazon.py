@@ -15,7 +15,6 @@ from odoo.addons.sale_amazon.tests import common
 class TestAmazon(common.TestAmazonCommon):
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_update_marketplaces_no_change(self):
-        """Test the available marketplaces synchronization with no change."""
         marketplaces = self.env["amazon.marketplace"].search([])
         with patch(
             "odoo.addons.sale_amazon.models.amazon_account.AmazonAccount"
@@ -36,7 +35,6 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_update_marketplaces_remove(self):
-        """Test the available marketplaces synchronization with a marketplace removal."""
         marketplaces = self.env["amazon.marketplace"].search([], limit=2)
         with patch(
             "odoo.addons.sale_amazon.models.amazon_account.AmazonAccount"
@@ -62,7 +60,6 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_update_marketplaces_add(self):
-        """Test the available marketplaces synchronization with a new marketplace."""
         marketplaces = self.env["amazon.marketplace"].search([], limit=2)
         with patch(
             "odoo.addons.sale_amazon.models.amazon_account.AmazonAccount"
@@ -87,12 +84,10 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_full(self):
-        """Test the orders synchronization with on-the-fly creation of all required records."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -106,7 +101,6 @@ class TestAmazon(common.TestAmazonCommon):
             product_.product_tmpl_id.taxes_id = [Command.clear()]
             return product_
 
-        # Create a warehouse that is prioritized when creating a normal order
         view_location = self.env["stock.location"].create(
             {
                 "name": "some location",
@@ -116,8 +110,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
         stock_location = self.env["stock.location"].create(
             {
-                # Under the view location, because a warehouse's stock location has
-                # to be inside it (_check_sub_locations_are_inside_the_warehouse).
                 "name": "some location",
                 "usage": "internal",
                 "company_id": self.env.company.id,
@@ -195,7 +187,7 @@ class TestAmazon(common.TestAmazonCommon):
                 msg="The unitary price should be the quotient of the item price (tax excluded) "
                 "divided by the quantity.",
             )
-            self.assertEqual(product_line.discount, 5)  # 5% discount.
+            self.assertEqual(product_line.discount, 5)
             self.assertEqual(product_line.product_qty, 2.0)
             self.assertEqual(product_line.amazon_item_ref, "987654321")
             self.assertTrue(product_line.amazon_offer_id)
@@ -204,7 +196,7 @@ class TestAmazon(common.TestAmazonCommon):
                 lambda l: l.product_id.default_code == "SHIPPING-CODE"
             )
             self.assertEqual(shipping_line.price_unit, 12.5)
-            self.assertEqual(shipping_line.discount, 20)  # 2.5/12.5*100
+            self.assertEqual(shipping_line.discount, 20)
             self.assertEqual(shipping_line.product_qty, 1.0)
             self.assertFalse(shipping_line.amazon_item_ref)
             self.assertFalse(shipping_line.amazon_offer_id)
@@ -219,10 +211,8 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_partial(self):
-        """Test the orders synchronization interruption with API throttling."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrders":
                 response_ = dict(
@@ -263,11 +253,8 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_fail(self):
-        """Test the orders synchronization cancellation with API throttling."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response or raise an AmazonRateLimitError without making an actual
-            call to the SP-API."""
             if operation_ != "getOrderItems":
                 return common.OPERATIONS_RESPONSES_MAP[operation_]
             else:
@@ -288,7 +275,6 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_abort(self):
-        """Test the orders synchronization cancellation with no active marketplace."""
         last_order_sync_copy = self.account.last_orders_sync
         self.account.active_marketplace_ids = False
         with self.assertRaises(UserError):
@@ -302,10 +288,8 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_fba(self):
-        """Test the orders synchronization with Fulfillment By Amazon."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrders":
                 return dict(
@@ -329,7 +313,6 @@ class TestAmazon(common.TestAmazonCommon):
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -343,7 +326,6 @@ class TestAmazon(common.TestAmazonCommon):
             product_.product_tmpl_id.taxes_id = [Command.clear()]
             return product_
 
-        # Create a warehouse that is prioritized when creating a normal order
         view_location = self.env["stock.location"].create(
             {
                 "name": "some location",
@@ -353,8 +335,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
         stock_location = self.env["stock.location"].create(
             {
-                # Under the view location, because a warehouse's stock location has
-                # to be inside it (_check_sub_locations_are_inside_the_warehouse).
                 "name": "some location",
                 "usage": "internal",
                 "company_id": self.env.company.id,
@@ -407,10 +387,8 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_europe(self):
-        """Test the orders synchronization with a European marketplace."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrders":
                 response_ = dict(
@@ -431,7 +409,6 @@ class TestAmazon(common.TestAmazonCommon):
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -481,28 +458,26 @@ class TestAmazon(common.TestAmazonCommon):
             )
             self.assertEqual(
                 product_line.price_unit,
-                40,  # (100 - 20)/2
+                40,
                 msg="Tax amounts should be deducted from the item price for European marketplaces.",
             )
             self.assertEqual(
                 shipping_line.price_unit,
-                10,  # 12.50 - 2.50
+                10,
                 msg="Tax amounts should be deducted from the shipping price for European "
                 "marketplaces.",
             )
             self.assertEqual(
                 gift_wrapping_line.price_unit,
-                2,  # 3.33 - 1.33
+                2,
                 msg="Tax amounts should be deducted from the gift wrap price for European "
                 "marketplaces.",
             )
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_sync_orders_cancel(self):
-        """Test the orders synchronization with cancellation from Amazon."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             order_status_ = "Unshipped" if not order_created else "Canceled"
             if operation_ == "getOrders":
@@ -522,11 +497,9 @@ class TestAmazon(common.TestAmazonCommon):
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=get_sp_api_response_mock,
         ):
-            # Sync an order created on Amazon.
             order_created = False
             self.account._sync_orders(auto_commit=False)
 
-            # Sync an order canceled from Amazon.
             order_created = True
             self.account._sync_orders(auto_commit=False)
             order = self.env["sale.order"].search(
@@ -541,10 +514,8 @@ class TestAmazon(common.TestAmazonCommon):
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     @mute_logger("odoo.addons.sale_amazon.models.stock_picking")
     def test_sync_orders_cancel_abort(self):
-        """Test the pickings that were confirmed at odoo and then order is canceled at Amazon."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mock response without making an actual call to the Selling Partner API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             order_status_ = "Unshipped" if not self.order_canceled else "Canceled"
             if operation_ == "getOrders":
@@ -565,11 +536,9 @@ class TestAmazon(common.TestAmazonCommon):
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=get_sp_api_response_mock,
         ):
-            # Sync an order created on Amazon.
             self.order_canceled = False
             self.account._sync_orders(auto_commit=False)
 
-            # Check the order state and validate the picking.
             order = self.env["sale.order"].search(
                 [("amazon_order_ref", "=", "123456789")]
             )
@@ -583,15 +552,12 @@ class TestAmazon(common.TestAmazonCommon):
             picking._action_done()
             self.assertEqual(picking.state, "done")
 
-            # Sync an order canceled from Amazon.
             self.order_canceled = True
             self.account._sync_orders(auto_commit=False)
 
     def test_sync_orders_replacement(self):
-        """Test handling of Amazon replacement orders without currency."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrders":
                 response_ = dict(
@@ -634,7 +600,6 @@ class TestAmazon(common.TestAmazonCommon):
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,
@@ -687,7 +652,6 @@ class TestAmazon(common.TestAmazonCommon):
             self.assertEqual(order.amount_total, 0)
 
     def test_inventory_sync_is_skipped_when_disabled(self):
-        """Test that the inventory synchronization is skipped when the account has disabled it."""
         self.account.synchronize_inventory = False
         with patch(
             "odoo.addons.sale_amazon.utils.submit_feed", return_value="An_amazing_id"
@@ -705,7 +669,6 @@ class TestAmazon(common.TestAmazonCommon):
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     @mute_logger("odoo.addons.sale_amazon.models.amazon_offer")
     def test_sync_inventory(self):
-        """Test the inventory availability confirmation synchronization."""
         self.account.synchronize_inventory = True
         with patch(
             "odoo.addons.sale_amazon.utils.submit_feed", return_value="An_amazing_id"
@@ -722,7 +685,7 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_offer")
     def test_inventory_sync_is_skipped_if_loading_feed_data_fails(self):
-        self.offer.amazon_feed_ref = "incorrect json"  # force fetch of feed data
+        self.offer.amazon_feed_ref = "incorrect json"
         self.offer.amazon_sync_status = False
 
         with (
@@ -741,7 +704,7 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(self.offer.amazon_sync_status, "error")
 
     def test_offer_get_feed_data(self):
-        self.offer.amazon_feed_ref = "incorrect json"  # force fetch of feed data
+        self.offer.amazon_feed_ref = "incorrect json"
         self.offer.amazon_channel = False
 
         with patch(
@@ -755,7 +718,7 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(self.offer.amazon_channel, "fbm")
 
     def test_offer_get_feed_data_fallback_when_missing_data(self):
-        self.offer.amazon_feed_ref = "incorrect json"  # force fetch of feed data
+        self.offer.amazon_feed_ref = "incorrect json"
 
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
@@ -769,7 +732,7 @@ class TestAmazon(common.TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_offer")
     def test_offer_get_feed_data_fails_gracefully(self):
-        self.offer.amazon_feed_ref = "incorrect json"  # force fetch of feed data
+        self.offer.amazon_feed_ref = "incorrect json"
 
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
@@ -781,7 +744,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(self.offer.amazon_sync_status, "error")
 
     def test_offer_get_feed_info_calls_sp_api_only_if_needed(self):
-        # Every necessary feed data is already stored
         self.offer.amazon_feed_ref = '{"productType":"PRODUCT"}'
         self.offer.amazon_channel = "fba"
 
@@ -790,7 +752,7 @@ class TestAmazon(common.TestAmazonCommon):
         ) as make_sp_api_request_mock:
             feed_info = self.offer._get_feed_data()
 
-        make_sp_api_request_mock.assert_not_called()  # does not need to be called anymore
+        make_sp_api_request_mock.assert_not_called()
         self.assertIn(self.offer, feed_info)
 
     def test_schedule_inventory_reset_if_order_channel_is_fba_but_offer_is_fbm(self):
@@ -798,7 +760,7 @@ class TestAmazon(common.TestAmazonCommon):
         self.offer.amazon_channel = "fbm"
         self.account.last_orders_sync = datetime(
             1, 1, 1
-        )  # Incomming order should be newer ^^
+        )
         operation_responses_map = {
             **common.OPERATIONS_RESPONSES_MAP,
             "getOrders": {
@@ -832,7 +794,7 @@ class TestAmazon(common.TestAmazonCommon):
         old_sync_status = self.offer.amazon_sync_status
         self.account.last_orders_sync = datetime(
             1, 1, 1
-        )  # Incomming order should be newer ^^
+        )
 
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
@@ -844,10 +806,10 @@ class TestAmazon(common.TestAmazonCommon):
 
         self.assertEqual(
             self.offer.amazon_sync_status, old_sync_status
-        )  # No inventory reset
+        )
         self.assertFalse(
             self.offer.amazon_channel
-        )  # Will be re-updated with next call to _sync_inventory
+        )
 
     def test_inventory_reset(self):
         self.env["stock.quant"]._update_available_quantity(
@@ -908,7 +870,6 @@ class TestAmazon(common.TestAmazonCommon):
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     @mute_logger("odoo.addons.sale_amazon.models.stock_picking")
     def test_sync_pickings(self):
-        """Test the pickings confirmation synchronization."""
         with (
             patch(
                 "odoo.addons.sale_amazon.utils.send_sp_api_request",
@@ -937,7 +898,7 @@ class TestAmazon(common.TestAmazonCommon):
             picking._action_done()
             self.assertEqual(picking.state, "done")
             self.assertEqual(picking.amazon_sync_status, "pending")
-            self.account.company_id.write({"street": "street1"})  # needed in no-demo
+            self.account.company_id.write({"street": "street1"})
             picking._sync_pickings(account_ids=(self.account.id,))
             self.assertEqual(
                 mock.call_count,
@@ -948,7 +909,6 @@ class TestAmazon(common.TestAmazonCommon):
             self.assertEqual(picking.amazon_sync_status, "processing")
 
     def test_get_or_create_matching_product_search(self):
-        """Test the product search based on the internal reference."""
         self.env["product.product"].create(
             {
                 "name": "Test Name",
@@ -961,7 +921,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_get_or_create_matching_product_use_fallback(self):
-        """Test the product search failure with use of the fallback."""
         default_product = self.env["product.product"].create(
             {"name": "Default Name", "type": "consu"}
         )
@@ -980,7 +939,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_get_or_create_matching_product_regen_fallback(self):
-        """Test the product search failure with regeneration of the fallback."""
         default_product = self.env["product.product"].create(
             {
                 "name": "Default Name",
@@ -995,7 +953,7 @@ class TestAmazon(common.TestAmazonCommon):
                 "res_id": default_product.id,
             }
         )
-        default_product.unlink()  # Simulate deletion of the default product added with data
+        default_product.unlink()
         product = self.account._get_or_create_matching_product(
             "INCORRECT_CODE", "test_xmlid", "Default Name", "consu"
         )
@@ -1006,7 +964,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertFalse(product.purchase_ok)
 
     def test_get_or_create_matching_product_no_fallback(self):
-        """Test the product search failure without regeneration of the fallback."""
         self.assertFalse(
             self.account._get_or_create_matching_product(
                 "INCORRECT_CODE", "test_xmlid", "Default Name", "consu", fallback=False
@@ -1017,7 +974,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_get_pricelist_search(self):
-        """Test the pricelist search."""
         currency = self.env["res.currency"].create({"name": "TEST", "symbol": "T"})
         self.env["product.pricelist"].create(
             {
@@ -1037,7 +993,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_get_pricelist_creation(self):
-        """Test the pricelist creation."""
         currency = self.env["res.currency"].create({"name": "TEST", "symbol": "T"})
         pricelist = self.env["product.pricelist"]
         pricelists_count = pricelist.with_context(active_test=False).search_count([])
@@ -1052,7 +1007,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(pricelist.currency_id.id, currency.id)
 
     def test_get_partners_no_creation_same_partners(self):
-        """Test the partners search with contact as delivery."""
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=lambda account_, operation_, **kwargs: common.OPERATIONS_RESPONSES_MAP[
@@ -1098,7 +1052,6 @@ class TestAmazon(common.TestAmazonCommon):
             self.assertEqual(contact.email, "iliketurtles@marketplace.amazon.com")
 
     def test_get_partners_no_creation_different_partners(self):
-        """Test the partners search with different partners for contact and delivery."""
         country_id = self.env["res.country"].search([("code", "=", "US")], limit=1).id
         new_partner_vals = {
             "is_company": True,
@@ -1144,10 +1097,8 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(contact.email, delivery.email)
 
     def test_get_partners_creation_delivery(self):
-        """Test the partners search with creation of the delivery."""
 
         def get_sp_api_response_mock(_account, operation_, **_kwargs):
-            """Return a mocked response without making an actual call to the SP-API."""
             base_response_ = common.OPERATIONS_RESPONSES_MAP[operation_]
             if operation_ == "getOrderAddress":
                 return dict(
@@ -1199,7 +1150,6 @@ class TestAmazon(common.TestAmazonCommon):
             self.assertEqual(contact.email, delivery.email)
 
     def test_get_partners_creation_contact(self):
-        """Test the partners search with creation of the contact."""
         with patch(
             "odoo.addons.sale_amazon.utils.send_sp_api_request",
             new=lambda account_, operation_, **kwargs: common.OPERATIONS_RESPONSES_MAP[
@@ -1237,7 +1187,6 @@ class TestAmazon(common.TestAmazonCommon):
             self.assertEqual(contact.email, "iliketurtles@marketplace.amazon.com")
 
     def test_get_partners_creation_contact_delivery(self):
-        """Test the partners search with creation of the contact and delivery."""
         partners_count = self.env["res.partner"].search_count([])
         order_data = dict(
             common.ORDER_MOCK,
@@ -1260,7 +1209,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(contact.email, delivery.email)
 
     def test_get_partners_missing_buyer_name(self):
-        """Test the partners search with missing buyer name."""
         self.env["res.partner"].create(
             {
                 "name": "Gederic Frilson",
@@ -1294,7 +1242,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_get_partners_missing_email(self):
-        """Test the partners search with missing amazon email."""
         self.env["res.partner"].create(
             {
                 "name": "Gederic Frilson",
@@ -1316,7 +1263,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertFalse(contact.email)
 
     def test_get_partners_arbitrary_fields(self):
-        """Test the partners search with all PII filled but in arbitrary fields."""
         order_data = dict(
             common.ORDER_MOCK,
             ShippingAddress=dict(
@@ -1333,7 +1279,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertTrue(contact.email)
 
     def _get_activity_count(self, contact):
-        """ " Return activity count of given the contact."""
         activity_id = self.env.ref("mail.mail_activity_data_todo").id
         return self.env["mail.activity"].search_count(
             [
@@ -1344,9 +1289,6 @@ class TestAmazon(common.TestAmazonCommon):
         )
 
     def test_activity_on_partners_for_no_matching_state(self):
-        """Test activity created for the salesman if the state received in the Amazon data
-        didn't match any existing state when creating a partner.
-        """
         order_data = dict(
             common.ORDER_MOCK,
             ShippingAddress=dict(
@@ -1358,9 +1300,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(self._get_activity_count(delivery), 1)
 
     def test_no_activity_on_partners_for_no_state_in_amazon_data(self):
-        """Test no activity created for the salesman if there is no state received in the Amazon
-        data.
-        """
         order_data = dict(
             common.ORDER_MOCK,
             ShippingAddress=dict(
@@ -1373,7 +1312,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertFalse(self._get_activity_count(delivery))
 
     def test_get_amazon_offer_search(self):
-        """Test the offer search."""
         marketplace = self.env["amazon.marketplace"].search(
             [("api_ref", "=", "ATVPDKIKX0DER")]
         )
@@ -1392,7 +1330,6 @@ class TestAmazon(common.TestAmazonCommon):
         self.assertEqual(self.env["amazon.offer"].search_count([]), offers_count)
 
     def test_get_amazon_offer_creation(self):
-        """Test the offer creation."""
         marketplace = self.env["amazon.marketplace"].search(
             [("api_ref", "=", "ATVPDKIKX0DER")]
         )

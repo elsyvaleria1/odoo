@@ -42,12 +42,6 @@ class AccountMove(models.Model):
         )
 
     def _serialize_hash_chains(self, chains) -> None:
-        # Under REPEATABLE READ a concurrent poster's committed entries are
-        # invisible, so its chain looks gapped or unhashed. Every poster
-        # rewrites the row its new hashes build on (the chain's last hashed
-        # entry, or the journal while the chain has none), so the later of two
-        # posters to one chain fails to serialize and is retried on a snapshot
-        # that sees the other's entries, while other chains stay unblocked.
         predecessors = self.env["account.move"].concat(
             *(chain["last_move_hashed"] for chain in chains)
         )
@@ -151,9 +145,6 @@ class AccountMove(models.Model):
 
     @api.model
     def _get_securable_chain_heads(self, cutoff_date):
-        # A chain is secured up to the entry before its first unreconciled
-        # statement line, in both sequence and date order, since hashing a
-        # statement line forbids reconciling it afterwards.
         rows = self.env.execute_query(
             SQL(
                 """
@@ -418,8 +409,6 @@ class AccountMove(models.Model):
                     return True
 
                 if "unreconciled" in chain_info["warnings"] and not force_hash:
-                    # hashing a statement line before it is reconciled would
-                    # forbid reconciling it; the chain is secured once it is
                     _debug.logic(
                         "chain_deferred_unreconciled",
                         journal=journal,
@@ -458,8 +447,6 @@ class AccountMove(models.Model):
 
     def _recompute_integrity_hash(self, previous_hash, start_version) -> tuple:
         self.check_singleton()
-        # Versions never decrease along a chain: a hash older than its
-        # predecessor's version is itself the corruption.
         if not previous_hash:
             min_version = 1
         elif previous_hash.startswith("$"):

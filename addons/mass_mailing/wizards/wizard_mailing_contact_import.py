@@ -15,7 +15,6 @@ class WizardMailingContactImport(models.TransientModel):
     )
 
     def action_import(self):
-        """Import each lines of "contact_list" as a new contact."""
         self.check_singleton()
         contacts = tools.mail.email_split_tuples(
             ", ".join((self.contact_list or "").splitlines())
@@ -58,7 +57,6 @@ class WizardMailingContactImport(models.TransientModel):
             contact.email_normalized: contact for contact in existing_contacts
         }
 
-        # Remove duplicated record, keep only the first non-empty name for each email address
         unique_contacts = {}
         for name, email in contacts:
             email = email.lower()
@@ -139,7 +137,6 @@ class WizardMailingContactImport(models.TransientModel):
         }
 
     def action_view_base_import(self) -> dict:
-        """Open the base import wizard to import mailing list contacts with a xlsx file."""
         self.check_singleton()
 
         return {

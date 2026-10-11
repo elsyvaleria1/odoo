@@ -94,8 +94,6 @@ class WizardHelpdeskTicketConvertLead(models.TransientModel):
 
     @api.depends("ticket_id.user_id", "user_id")
     def _compute_team_id(self) -> None:
-        """First, team id is chosen, then, user. If user from ticket have a
-        team_id, use this user and their team."""
         for convert in self:
             user = convert.user_id or convert.ticket_id.user_id
             if not user or (
@@ -124,7 +122,6 @@ class WizardHelpdeskTicketConvertLead(models.TransientModel):
 
     def action_convert_to_lead(self):
         self.check_singleton()
-        # create partner if needed
         if self.action == "create":
             self.partner_id = self.ticket_id._find_matching_partner(force_create=True)
 
@@ -172,7 +169,6 @@ class WizardHelpdeskTicketConvertLead(models.TransientModel):
             subtype_xmlid="mail.mt_note",
         )
 
-        # move the mail thread and attachments
         self.ticket_id.message_change_thread(lead_sudo)
         attachments = self.env["ir.attachment"].search(
             [("res_model", "=", "helpdesk.ticket"), ("res_id", "=", self.ticket_id.id)]
@@ -180,14 +176,12 @@ class WizardHelpdeskTicketConvertLead(models.TransientModel):
         attachments.sudo().write({"res_model": "crm.lead", "res_id": lead_sudo.id})
         self.ticket_id.action_archive()
 
-        # After mail thread move, add linked lead message to ticket
         self.ticket_id.message_post_with_source(
             "helpdesk.ticket_conversion_link",
             render_values={"created_record": lead_sudo, "message": mail_thread_message},
             subtype_xmlid="mail.mt_note",
         )
 
-        # return to lead (if can see) or ticket (if cannot)
         if not lead_sudo.with_env(self.env).has_access("read"):
             return {
                 "name": self.env._("Ticket Converted"),
@@ -197,7 +191,6 @@ class WizardHelpdeskTicketConvertLead(models.TransientModel):
                 "res_id": self.ticket_id.id,
             }
 
-        # return the action to go to the form view of the new Ticket
         action = self.sudo().env.ref("crm.crm_lead_all_leads").read()[0]
         action.update(
             {

@@ -9,7 +9,6 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import (
 @tagged("post_install", "-at_install")
 class TestSubscription(TestSubscriptionCommon, HttpCase):
     def test_pay_button_enabled_in_portal(self):
-        # Check that the pay button is enabled when having only one payment provider enabled
         self.env["payment.provider"].search([]).write({"is_published": False})
         self.dummy_provider = self.env["payment.provider"].create(
             {
@@ -48,10 +47,6 @@ class TestSubscription(TestSubscriptionCommon, HttpCase):
         self.assertEqual(res.status_code, 200)
 
     def test_visibility_of_display_payment_message_in_portal(self):
-        """
-        Check visibility of payment section in portal when subscription is closed
-        and the plan set on that subscription is archived
-        """
         self.provider.write(
             {"payment_method_ids": [Command.set([self.payment_method_id])]}
         )
@@ -66,7 +61,6 @@ class TestSubscription(TestSubscriptionCommon, HttpCase):
         )
 
     def test_subscription_so_preview_without_user_id(self):
-        """Ensure the sale order preview works for a subscription created by a portal user without a user_id."""
 
         sale_order = self.env["sale.order"].create(
             {

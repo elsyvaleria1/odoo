@@ -96,8 +96,6 @@ class TestPaymentState(AccountApprovalCommon):
     def test_mark_paid_sets_state_date_user(self):
         request = self._new_approved_request()
         self.treasury_user.tz = "America/Mexico_City"
-        # 01:00 UTC is still the previous day in Mexico City: the payment is dated on
-        # the treasurer's calendar, not on the server's.
         with freeze_time("2026-09-11 01:00:00"):
             request.with_user(self.treasury_user).action_mark_paid()
         self.assertEqual(request.payment_state, "paid")
@@ -247,9 +245,6 @@ class TestPaymentState(AccountApprovalCommon):
         self.assertFalse(request.paid_by_user_id)
 
     def test_create_payment_state_blocked_for_non_member(self):
-        # The seal has to hold from both sides: write() has always refused,
-        # but a request could be created already paid, which reaches the same
-        # state without ever passing the gate.
         vals = {
             "name": "Born paid",
             "category_id": self.category.id,
@@ -291,7 +286,5 @@ class TestPaymentState(AccountApprovalCommon):
         self.assertEqual(request.payment_state, "paid")
 
     def test_create_without_payment_fields_is_untouched(self):
-        # The gate must not stand in the way of an ordinary request: the
-        # fields are absent from vals, so the check never fires.
         request = self._new_draft_request(owner=self.plain_user)
         self.assertEqual(request.payment_state, "not_paid")

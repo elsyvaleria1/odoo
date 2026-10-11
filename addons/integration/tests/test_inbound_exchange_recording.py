@@ -125,8 +125,6 @@ class TestInboundExchangeRecording(TransactionCase):
         self.receiver.write({"duplicate_detection_enabled": True})
         self._admit(b'{"probe": 1}')
 
-        # not assertRaises: the test case's rolls back to a savepoint, and
-        # the row the refusal leaves is what this test reads
         try:
             self._admit(b'{ "probe" : 1 }')
         except Refused as refused:

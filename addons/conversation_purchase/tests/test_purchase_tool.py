@@ -28,7 +28,7 @@ class TestPurchaseTool(ConversationToolCase):
             record,
         )
         with self.assertRaises((AccessError, UserError)):
-            self._approve(action, self.rep)  # medium risk: leader or above
+            self._approve(action, self.rep)
         self._approve(action, self.leader)
         self.assertEqual(action.state, "applied", action.error)
         order = self.env["purchase.order"].browse(action.applied_res_id)

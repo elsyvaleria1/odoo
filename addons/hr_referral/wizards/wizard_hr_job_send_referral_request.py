@@ -103,7 +103,6 @@ class WizardHrJobSendReferralRequest(models.TransientModel):
             {
                 "employee_name": user.employee_id.name,
                 "sending_method": user[sending_method]
-                # if the sending vector != mail, the field is not required on the user
                 or next(
                     employee[sending_method]
                     for employee in user.employee_ids

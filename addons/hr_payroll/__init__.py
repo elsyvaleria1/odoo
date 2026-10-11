@@ -4,7 +4,6 @@ from . import reports
 
 
 def _auto_install_l10n_hr_payroll(env) -> None:
-    """Installs l10n_**_hr_payroll modules automatically if such exists for the countries that companies are in"""
     country_codes = env["res.company"].search([]).country_id.mapped("code")
     if not country_codes:
         return

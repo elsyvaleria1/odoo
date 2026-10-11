@@ -42,7 +42,6 @@ class HrReferralAlert(models.Model):
             record.dismissed_user_ids |= self.env.user
 
     def write(self, vals):
-        # Bypass write access for this field
         if "dismissed_user_ids" in vals and not self.browse().has_access("write"):
             self.sudo().write({"dismissed_user_ids": vals.pop("dismissed_user_ids")})
         return super().write(vals) if vals else True

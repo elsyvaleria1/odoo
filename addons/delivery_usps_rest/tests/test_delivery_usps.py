@@ -66,8 +66,6 @@ class TestDeliveryUSPS(TransactionCase):
         self.uom_unit = self.env.ref("base.product_uom_unit")
 
     def wiz_put_in_pack(self, picking):
-        """Helper to use the 'wizard.stock.move.line.put.in.pack' wizard
-        in order to call the 'action_put_in_pack' method."""
         wiz_action = picking.action_put_in_pack()
         self.assertEqual(
             wiz_action["res_model"],
@@ -508,7 +506,7 @@ JVBERi0xLjQKJaqrrK0KMSAwIG9iago8PAovUHJvZHVjZXIgKEFwYWNoZSBGT1AgVmVyc2lvbiBTVk46
         responses = {
             "international-prices": INTERNATIONAL_RATE_MOCK_RESPONSE,
             "prices": RATE_MOCK_RESPONSE,
-            "labels": SHIP_MOCK_RESPONSE,  # This is used for both creating and canceling labels but it doesn't matter since the cancellation request only cares about the status code
+            "labels": SHIP_MOCK_RESPONSE,
             "oauth": ACCESS_TOKEN_MOCK_RESPONSE,
             "payments": PAYMENT_TOKEN_MOCK_RESPONSE,
         }

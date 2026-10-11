@@ -20,7 +20,6 @@ class TestOnlinePaymentPosSelfOrderPrepDisplay(TestSelfOrderMobile):
     def _assert_prep_order_count_before_and_after_payment(
         self, order, confirmation_page=True
     ):
-        """Check POS order state and related prep order count before and after a valid online payment."""
         prep_order_count = self.env["pos.prep.order"].search_count(
             [("pos_order_id", "=", order.id)]
         )
@@ -42,7 +41,6 @@ class TestOnlinePaymentPosSelfOrderPrepDisplay(TestSelfOrderMobile):
         self.assertEqual(prep_order_count, 1)
 
     def test_ensure_online_kiosk_order_prep_display(self):
-        """This test ensures if online payment is configured, then only paid kiosk order is sent to the prep display"""
         self.pos_config.write(
             {
                 "use_presets": False,
@@ -83,7 +81,6 @@ class TestOnlinePaymentPosSelfOrderPrepDisplay(TestSelfOrderMobile):
         )
 
     def test_ensure_online_self_order_prep_display(self):
-        """This test ensures if online payment is configured, then only paid self order is sent to the prep display"""
         self.pos_config.write(
             {
                 "use_presets": False,

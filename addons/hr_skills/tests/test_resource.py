@@ -67,13 +67,6 @@ class TestResourceSkills(TransactionCase):
         self.assertEqual(len(default_levels), 1)
 
     def test_the_popover_reads_only_the_skills_still_held(self):
-        """The avatar card tags a resource's skills; lapsed ones are not skills.
-
-        avatar_card_resource_popover_patch reads this field to build its tag
-        list, and it read employee_skill_ids -- every row ever recorded -- so a
-        skill the employee lost, and both versions of one that changed level,
-        showed as current tags.
-        """
         skill_type = self.env["hr.skill.type"].create({"name": "Popover type"})
         level = self.env["hr.skill.level"].create(
             {

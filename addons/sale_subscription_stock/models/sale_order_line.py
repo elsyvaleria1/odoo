@@ -14,20 +14,13 @@ _debug = DebugLog(__name__)
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    # =============================
-    #           Compute
-    # =============================
 
     @api.depends("order_id.next_invoice_date", "order_id.start_date")
     def _compute_qty_transferred(self):
         return super()._compute_qty_transferred()
 
-    # =============================
-    #           Utils
-    # =============================
 
     def _get_stock_moves_outgoing_incoming(self):
-        """Get the moves which are related to the given period."""
         outgoing_moves, incoming_moves = super()._get_stock_moves_outgoing_incoming()
         if not self._filtered_stock_subscription_lines():
             return outgoing_moves, incoming_moves
@@ -51,7 +44,6 @@ class SaleOrderLine(models.Model):
         )
 
     def _filtered_stock_subscription_lines(self) -> Self:
-        """Return the sale.order.line of self which relate to a subscription of storable products"""
         return self.filtered(
             lambda line: line.recurring_invoice and line.product_id.type == "consu"
         )
@@ -71,20 +63,13 @@ class SaleOrderLine(models.Model):
                 return aml[:1].deferred_start_date, aml[:1].deferred_end_date, 1, None
         return super()._get_invoice_line_parameters()
 
-    # =============================
-    #       Delivery logic
-    # =============================
 
     def _reset_subscription_qty_to_invoice(self) -> None:
-        """Reset the quantity to deliver for this period"""
         super()._reset_subscription_qty_to_invoice()
         for line in self._filtered_stock_subscription_lines():
             line.write({"qty_to_transfer": line.product_uom_qty})
 
     def _reset_subscription_quantity_post_invoice(self):
-        """After we invoice, we close the stock.move of product invoiced based on 'delivery'
-        for the period we just invoiced and launch stock rule for the next period.
-        """
         stock_subscription_line = self._filtered_stock_subscription_lines()
         stock_subscription_line.with_context(
             clean_context(self.env.context)
@@ -100,22 +85,17 @@ class SaleOrderLine(models.Model):
                 not line.recurring_invoice
                 or line.order_id.subscription_state == "7_upsell"
             ):
-                # regular lines
                 stock_line_ids.append(line.id)
             elif line.qty_invoiced and line.last_invoiced_date:
-                # invoiced line (move posted)
                 stock_line_ids.append(line.id)
             elif (
                 line.order_id.subscription_state in SUBSCRIPTION_PROGRESS_STATE
                 and not line.last_invoiced_date
             ):
-                # prepaid and postpaid lines not already invoiced
                 stock_line_ids.append(line.id)
             elif line._subscription_is_one_time_sale():
-                # one-time sale lines
                 stock_line_ids.append(line.id)
             elif line._is_postpaid_line() and line.last_invoiced_date:
-                # postpaid already invoiced
                 stock_line_ids.append(line.id)
         return self.env["sale.order.line"].browse(stock_line_ids)
 
@@ -127,7 +107,6 @@ class SaleOrderLine(models.Model):
 
     @api.model
     def _get_incoming_outgoing_moves_filter(self):
-        """Check subscription moves in/out during invoice period."""
         base_filter = super()._get_incoming_outgoing_moves_filter()
         if self.recurring_invoice:
             so = self.order_id
@@ -148,9 +127,7 @@ class SaleOrderLine(models.Model):
         return base_filter
 
     def _get_procurement_qty(self, previous_product_qty=False):
-        """Compute the quantity that was already delivered for the current period."""
         self.check_singleton()
-        # If we update the line, we don't want it to affect the current period for subscriptions
         if (
             self.recurring_invoice
             and previous_product_qty
@@ -160,10 +137,6 @@ class SaleOrderLine(models.Model):
         return super()._get_procurement_qty(previous_product_qty=previous_product_qty)
 
     def _prepare_procurement_vals(self):
-        """Update move.line values
-        We use product_description_variants to display the invoicing date
-        Ensure one is present in inherited function
-        """
         values = super()._prepare_procurement_vals()
         if (
             not self.recurring_invoice
@@ -171,7 +144,6 @@ class SaleOrderLine(models.Model):
             or self._subscription_is_one_time_sale()
         ):
             return values
-        # Remove 1 day as normal people thinks in terms of inclusive ranges.
         if not self.order_id.start_date or (
             self.order_id.next_invoice_date == self.order_id.start_date
             and not self.order_id.last_invoice_date

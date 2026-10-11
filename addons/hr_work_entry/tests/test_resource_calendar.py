@@ -22,7 +22,6 @@ class TestResourceCalendarLeaveTypedLine(TransactionCase):
         cls.fridays = cls.calendar.attendance_ids.filtered(
             lambda attendance: attendance.dayofweek == "4"
         )
-        # A full Monday-to-Sunday week, so the assertions read as weekdays.
         cls.monday = datetime(2026, 8, 31, tzinfo=UTC)
         cls.sunday = datetime(2026, 9, 6, 23, 59, tzinfo=UTC)
         cls.friday = date(2026, 9, 4)
@@ -57,19 +56,12 @@ class TestResourceCalendarLeaveTypedLine(TransactionCase):
         self.assertNotIn(self.friday, self._worked_dates())
 
     def test_excluding_bookings_still_drops_the_leave_typed_line(self):
-        """``resource`` itself asks for ``exclude_bookings``, so the override
-        has to take every parameter of the definition it extends."""
         self.fridays.work_entry_type_id = self.unpaid
         worked = self._worked_dates(exclude_bookings=True)
         self.assertNotIn(self.friday, worked)
         self.assertIn(self.friday.replace(day=3), worked)
 
     def test_flexible_resource_keeps_its_availability(self):
-        """A resource with no calendar of its own is available all week.
-
-        Its fully flexible schedule yields dummy attendances rather than real
-        lines, so nothing about line typing may reach them.
-        """
         self.fridays.work_entry_type_id = self.unpaid
         flexible = self.env["resource.resource"].create(
             {
@@ -85,12 +77,6 @@ class TestResourceCalendarLeaveTypedLine(TransactionCase):
         self.assertEqual(len(intervals), 7)
 
     def test_a_plain_user_can_still_read_the_schedule(self):
-        """`mrp`, `project` and `hr_calendar` reach this for ordinary users.
-
-        ``work_entry_type_id`` is behind ``hr.group_hr_user``, so reading it
-        unsudoed here would raise AccessError in modules that have nothing to
-        do with payroll.
-        """
         self.fridays.work_entry_type_id = self.unpaid
         joe = new_test_user(self.env, login="joe_no_hr", groups="base.group_user")
         self.assertFalse(joe.has_group("hr.group_hr_user"))

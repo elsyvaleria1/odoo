@@ -35,8 +35,6 @@ class TestMailTemplates(TransactionCase):
         self.assertIn("Manufacturing", html)
         self.assertIn("42", html)
         self.assertIn("America New York", html)
-        # tech values are rendered title-cased (see the template's
-        # .replace('_', ' ').title() call).
         self.assertIn("Python", html)
 
     def test_enrich_company_by_dnb_renders_every_field(self):
@@ -65,8 +63,6 @@ class TestMailTemplates(TransactionCase):
         html = self.env["ir.qweb"]._render("iap_mail.enrich_company_by_dnb", values)
         self.assertIn("ACME Corp", html)
         self.assertIn("Brussels", html)
-        # Regression guard for the "toutc" typo (task 28187): the state must
-        # actually reach the page, not just be accepted by t-if.
         self.assertIn("Brussels-Capital", html)
         self.assertIn("1000", html)
         self.assertIn("Manufacturing", html)

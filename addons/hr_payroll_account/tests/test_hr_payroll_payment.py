@@ -68,31 +68,22 @@ class TestHrPayrollPayment(TestHrPayrollAccountCommon):
         cls.hr_payslip_john.action_refresh_from_work_entries()
 
     def test_payment_hr_payslip(self):
-        """Checking the process of a payslip when you register payment."""
 
-        # I validate the payslip.
         self.hr_payslip_john.action_payslip_done()
 
-        # I verify the payslip is in validated state.
         self.assertEqual(self.hr_payslip_john.state, "validated", "State not changed!")
 
-        # I verify that the Accounting Entry is created.
         self.assertTrue(
             self.hr_payslip_john.move_id, "Accounting entry has not been created!"
         )
 
-        # `assertRaises` (not `assertRaisesRegex`) is the savepoint-wrapped one
-        # in this fork's test base; use it defensively even though nothing
-        # writes to the DB before this particular raise today.
         with self.assertRaises(UserError) as raise_ctx:
-            # Should not register payment for a non-posted journal entry
             self.hr_payslip_john.action_register_payment()
         self.assertIn(
             "You can only register payment for posted journal entries.",
             str(raise_ctx.exception),
         )
 
-        # I register payment for the payslip.
         self.hr_payslip_john.move_id.action_post()
         self.assertEqual(
             self.hr_payslip_john.move_id.state,
@@ -102,7 +93,6 @@ class TestHrPayrollPayment(TestHrPayrollAccountCommon):
         action_register_payment = self.hr_payslip_john.action_register_payment()
         action_register_payment["context"]["hr_payroll_payment_register"] = True
 
-        # Use Form to ensure the computes and defaults are computed pre-create
         wizard = Form.from_action(self.env, action_register_payment)
         self.assertEqual(
             wizard.partner_id,
@@ -128,19 +118,6 @@ class TestHrPayrollPayment(TestHrPayrollAccountCommon):
         )
 
     def test_get_line_batch_key_ignores_untrusted_partner_bank(self):
-        """`_get_line_batch_key`'s `payment_consider_partner` fallback must
-        not select a bank account that is not registered on the employee
-        and has `allow_out_payment=False`, even if it sorts before the
-        employee's trusted, registered bank account.
-
-        Calls `_get_line_batch_key` directly (bypassing the
-        `wizard.account.move.line.pay` wizard's `Form`) because `Form.from_action`
-        cannot be used for `action_register_payment` in this environment:
-        `account_payment_provider`'s `_get_available_payment_channels`
-        override raises `ValueError: Unknown payment type False` for any
-        `wizard.account.move.line.pay` wizard, including the pre-existing
-        `test_payment_hr_payslip` above. Regression test for F-PA3-1.
-        """
         untrusted_bank = self.env["res.partner.bank.account"].create(
             {
                 "acc_number": "UNTRUSTED-0001",

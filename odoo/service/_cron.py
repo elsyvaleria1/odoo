@@ -54,8 +54,6 @@ __all__ = [
 
 CRON_POLL_INTERVAL_S = 60
 
-# A stream worker's pass: a lost leader is noticed, its streams reopened
-# elsewhere and a dropped connection redialled within this many seconds.
 STREAM_HEARTBEAT_S = 15
 """How long a cron or job loop waits for a notify before sweeping anyway.
 
@@ -109,8 +107,6 @@ class ListenerKind:
     population_setting: str
     max_age_setting: str
     resolve_process_jobs: typing.Callable[[], typing.Callable[[str], object]]
-    # A kind with a heartbeat sweeps every served database each pass, at
-    # that interval, instead of the databases the cron schedule finds due.
     heartbeat: float | None = None
 
     def population(self, settings: typing.Any = None) -> int:
@@ -149,10 +145,6 @@ JOB_LISTENER = ListenerKind(
     resolve_process_jobs=_job_process_jobs,
 )
 
-# A stream worker's sweep reconciles the held-open connections of a database
-# under its leader lock: what should be open is opened, what should not is
-# closed, what is queued is sent. The connections themselves outlive the sweep
-# in the worker process, so the kind is never recycled by default.
 STREAM_LISTENER = ListenerKind(
     name="stream",
     channel=STREAM_CHANNEL,
@@ -257,14 +249,6 @@ def wait_for_notifies(
     *,
     jitter: float = CRON_NOTIFY_JITTER_MAX_S,
 ) -> bool:
-    """Wait for a notify, and break up the herd one `pg_notify` wakes.
-
-    Every process listening on the channel is woken by the same notify and
-    would otherwise reach for the same database in the same instant.  Both
-    loops carried these two lines separately, which is the shape the *other*
-    spread in this file -- the per-worker sweep interval -- was dead in for as
-    long as it existed.
-    """
     woken = listener.wait(timeout)
     if woken and jitter:
         time.sleep(random.uniform(0, jitter))
@@ -278,18 +262,6 @@ def sweep_database(
     *,
     release: bool,
 ) -> None:
-    """Run one database's due jobs, then let go of it if more are waiting.
-
-    `release` is "this pass has another database to get to": holding a swept
-    database's pool open while sweeping the next is how one tenant's idle
-    connections starve the others.  A job that raises is this database's
-    problem and not the sweep's, so the pass goes on to the next one.
-
-    Both flavours drive their own loop -- a thread sweeps the whole due set
-    between waits, a worker takes one database per pass so its own limits and
-    its master's watchdog get a turn -- but this step was the same in both,
-    down to two spellings of the release condition and two of the warning.
-    """
     try:
         with _debug.perf(
             "cron.database_swept",
@@ -493,12 +465,10 @@ class CronSchedule:
 
     @property
     def polling_delay(self) -> float:
-        """Bound listener sleep by the next sweep, including the first one."""
         return max(0.0, self._listed_at + self.refresh_interval - self._clock())
 
     def _list_known_databases(self, reason: str) -> OrderedSet[str]:
         previous = self._known
-        # Late-bound so a patch on `get_cron_databases` scopes every sweep.
         list_databases = self._list_databases or get_cron_databases
         self._known = OrderedSet(list_databases())
         _debug.logic(
@@ -516,9 +486,6 @@ class CronSchedule:
         return self._list_known_databases("sweep")
 
     def _admit_unknown_databases(self, notified: Iterable[str]) -> None:
-        # A database created since the last sweep notifies under a name the
-        # list has never seen; one re-read per interval admits it now rather
-        # than on the next sweep, while a storm of unknown names stays one scan.
         if self._relisted_for_unknown or all(n in self._known for n in notified):
             return
         self._relisted_for_unknown = True

@@ -70,9 +70,6 @@ class HrAppraisal(models.Model):
         }
 
     def _notify_answer_360_feedback(self) -> None:
-        # posted as OdooBot on purpose: 360 feedback is answered by colleagues
-        # and the acting user is whoever submitted it, so switching authorship
-        # to sudo() would name the rater in the appraisal chatter
         _debug.pipeline("feedback_360_notified", appraisals=self)
         for appraisal in self.with_user(SUPERUSER_ID):
             body = self.env._(

@@ -9,9 +9,6 @@ class SaleOrder(models.Model):
     attendee_count = fields.Integer(compute="_compute_attendee_count")
 
     def write(self, vals):
-        """Synchronize partner from SO to registrations. This is done notably
-        in website_sale controller shop/address that updates customer, but not
-        only."""
         result = super().write(vals)
         if any(line.service_tracking == "event" for line in self.line_ids) and vals.get(
             "partner_id"

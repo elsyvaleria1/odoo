@@ -54,12 +54,12 @@ class HrEmployee(models.Model):
             versions = self._get_versions_with_contract_overlap_with_period(
                 date_start, date_stop
             )
-            scope = "employees"  # debuglog
+            scope = "employees"
         else:
             versions = self._get_all_versions_with_contract_overlap_with_period(
                 date_start, date_stop
             )
-            scope = "all"  # debuglog
+            scope = "all"
         _debug.pipeline(
             "generate_from_employees",
             by=scope,

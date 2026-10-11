@@ -148,8 +148,6 @@ class ProjectTaskRecurrence(models.Model):
                 if task.date_end
                 else fields.Datetime.now()
             )
-            # the series' own clock, the one its shift is computed in, not
-            # the clock of whoever happens to close the task
             next_date = next_start.replace(tzinfo=UTC).astimezone(rec._get_tz(task))
             return bool(rec.repeat_until) and next_date.date() <= rec.repeat_until
 

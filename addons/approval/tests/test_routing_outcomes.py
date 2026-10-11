@@ -6,9 +6,6 @@ from .common import ApprovalCommon
 
 DECLINED = (AccessError, UserError, ValidationError)
 
-# Each script is a list of (action, state, who could approve, who holds an
-# approval activity), read after the action. The first action is None: the
-# request as confirmed.
 SCRIPTS = {
     "any_one_of_two": [
         (None, "pending", {"a", "b"}, {"a", "b"}),
@@ -38,8 +35,6 @@ SCRIPTS = {
         (None, "pending", {"a"}, {"a"}),
         (("approve", "a"), "approved", set(), set()),
     ],
-    # Separate steps notified in order: a later step's member may decide before the
-    # first step is met, which is documented step behaviour, not sequential approval.
     "sequential_as_steps": [
         (None, "pending", {"a", "b"}, {"a"}),
         (("approve", "a"), "pending", {"b"}, {"b"}),
@@ -237,7 +232,6 @@ class TestStepRoutingOutcomes(RoutingOutcomesCase):
         self._run(self._stepped([(("a", "b"), 2, {})]), "two_of_two")
 
     def test_required_beside_optional(self):
-        # A required approver is a step of their own, open beside the pool.
         self._run(
             self._stepped(
                 [(("a",), 1, {"sequence": 10}), (("a", "b"), 1, {"sequence": 10})]
@@ -246,7 +240,6 @@ class TestStepRoutingOutcomes(RoutingOutcomesCase):
         )
 
     def test_sequential(self):
-        # Sequential approvers are one step whose members decide in order.
         self._run(self._stepped([(("a", "b"), 2, {"in_order": True})]), "sequential")
 
     def test_sequential_withdrawal(self):
@@ -262,8 +255,6 @@ class TestStepRoutingOutcomes(RoutingOutcomesCase):
         )
 
     def test_separate_steps_order_who_is_asked_not_who_decides(self):
-        # Steps of their own, notified in order, are not sequential approval: a
-        # later step's member may decide before the first step is met.
         self._run(
             self._stepped([(("a",), 1, {}), (("b",), 1, {})], notify_sequentially=True),
             "sequential_as_steps",
@@ -309,7 +300,6 @@ class TestStepRoutingOutcomes(RoutingOutcomesCase):
         return self._stepped(steps)
 
     def test_rule_adds_a_required_approver(self):
-        # The rule's approver is a step of its own, applicable above the threshold.
         category = self._amount_steps(
             [
                 (("a",), 1, {"sequence": 10}),
@@ -348,7 +338,6 @@ class TestStepRoutingOutcomes(RoutingOutcomesCase):
         self._run(category, "rule_below_its_threshold", request_vals={"amount": 10})
 
     def test_band_replaces_the_approvers(self):
-        # Each band is a step applicable over its own range.
         category = self._amount_steps(
             [
                 (

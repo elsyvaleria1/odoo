@@ -198,8 +198,6 @@ class HrApplicant(models.Model):
                 body,
             )
             odoobot = self.env.ref("base.partner_root")
-            # Do *not* notify on `self` as it will lead to unintended behavior.
-            # See opw-3285752 -> we attach it on the referrer's user
             self.env["mixin.mail.thread"].sudo().message_notify(
                 model=referrer._name,
                 res_id=referrer.id,
@@ -218,22 +216,13 @@ class HrApplicant(models.Model):
         old_state = self.env["hr.recruitment.stage"].browse(old_state_id)
         if old_state and old_state.use_in_referral:
             old_state_sequence = old_state.sequence
-            by = "old_state"  # debuglog
+            by = "old_state"
         elif self.last_valuable_stage_id:
-            # `last_stage_id` reaches write() only when the caller happened to put
-            # it in vals. Falling back to -1 when it is absent makes an applicant
-            # that has already been scored look brand new, and every stage up to
-            # the new one is awarded a SECOND time -- invisible on early moves,
-            # where the stages skipped are worth 0, and worth a full extra stage on
-            # the last one. last_valuable_stage_id is the field this module keeps
-            # for exactly this: how far points have already been granted.
-            # Test the record, not `.sequence`: sequence 0 is the first stage and
-            # `0 or -1` is -1.
             old_state_sequence = self.last_valuable_stage_id.sequence
-            by = "last_valuable_stage"  # debuglog
+            by = "last_valuable_stage"
         else:
             old_state_sequence = -1
-            by = "never_scored"  # debuglog
+            by = "never_scored"
         _debug.logic(
             "points_baseline",
             by=by,
@@ -243,7 +232,6 @@ class HrApplicant(models.Model):
         )
         point_stage = []
 
-        # Decrease stage sequence
         if new_state.sequence < old_state_sequence:
             _debug.pipeline("points_revoked", applicant=self, to=new_state)
             stages_to_remove = self.env["hr.referral.points"]._read_group(
@@ -269,7 +257,6 @@ class HrApplicant(models.Model):
             if not self.date_closed and not new_state.hired_stage:
                 self.referral_state = "progress"
 
-        # Increase stage sequence
         elif new_state.sequence > old_state_sequence:
             stages_to_add = self.env["hr.recruitment.stage"].search(
                 [
@@ -347,7 +334,6 @@ class HrApplicant(models.Model):
         if not self.env.user:
             return
         if self_sudo.ref_user_id == self.env.user and not self_sudo.friend_id:
-            # Use sudo, user has normaly not the right to write on applicant
             self_sudo.write({"friend_id": friend_id})
 
     def _get_onboarding_steps(self) -> list:
@@ -414,7 +400,6 @@ class HrApplicant(models.Model):
         }
         applicant_without_friend = applicants_hired.filtered(lambda r: not r.friend_id)
 
-        # If there are applicant hired without friend and available friends.
         available_friend_count = self.env["hr.referral.friend"].search_count([])
         if bool(applicant_without_friend) and (
             len(applicants_hired) - len(applicant_without_friend)
@@ -439,7 +424,6 @@ class HrApplicant(models.Model):
         )
         result["point_to_spend"] = sum(referal_points.mapped("points"))
 
-        # Employee comes for the first time on this app
         if not user_id.hr_referral_level_id:
             user_id.hr_referral_level_id = (
                 self.env["hr.referral.level"].search([], order="points asc", limit=1).id
@@ -456,7 +440,6 @@ class HrApplicant(models.Model):
             "points": current_level.points,
         }
 
-        # Next referral levels
         result["level_percentage"] = 100
         if next_level:
             if result["point_received"] >= next_level["points"]:
@@ -532,7 +515,6 @@ class HrApplicant(models.Model):
 
     @api.model
     def default_get(self, fields):
-        # To set the source_id as "Referral" instead of utm_source that was generated for every individual referrer
         values = super().default_get(fields)
         utm_source_referral = self.env.ref(
             "utm.utm_source_referral", raise_if_not_found=False
@@ -553,7 +535,6 @@ class HrApplicant(models.Model):
         return values
 
     def reset_applicant(self) -> None:
-        """Reset the applicant state to progress"""
         super().reset_applicant()
         self.write({"referral_state": "progress"})
 

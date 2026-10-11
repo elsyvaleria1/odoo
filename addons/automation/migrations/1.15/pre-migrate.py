@@ -8,7 +8,6 @@ from odoo.addons.automation.models._steps import make_step_key
 def migrate(cr, version):
     if not version:
         return
-    # Before the schema update, so no data file reaching a step meets it keyless.
     if not schema.column_exists(cr, "ir_act_server", "step_key"):
         schema.create_column(cr, "ir_act_server", "step_key", "VARCHAR")
     cr.execute(

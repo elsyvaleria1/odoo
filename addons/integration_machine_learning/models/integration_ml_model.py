@@ -188,8 +188,6 @@ class IntegrationMlModel(models.Model):
 
     _INTERCHANGEABLE_KINDS = ("chat", "vision")
 
-    # A blended price weighs input three to one, the usual convention: extraction
-    # and classification, what this module serves, read far more than they write.
     _INPUT_WEIGHT = 3
 
     @api.depends("name", "code")

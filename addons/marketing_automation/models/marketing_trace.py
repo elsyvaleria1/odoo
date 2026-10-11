@@ -85,7 +85,6 @@ class MarketingTrace(models.Model):
         string="Error message",
         readonly=False,
     )
-    # hierarchy
     parent_id = fields.Many2one(
         comodel_name="marketing.trace",
         compute="_compute_parent_id",
@@ -97,7 +96,6 @@ class MarketingTrace(models.Model):
         inverse_name="parent_id",
         string="Direct child traces",
     )
-    # mailing traces
     mailing_trace_ids = fields.One2many(
         comodel_name="mailing.trace",
         inverse_name="marketing_trace_id",
@@ -177,8 +175,6 @@ class MarketingTrace(models.Model):
 
     @api.depends("mailing_trace_ids")
     def _compute_links_click_datetime(self) -> None:
-        # necessary, because sometimes mailing_trace_ids aren't available
-        # due to failed messages, which prevents `links_click_datetime` to get assigned
         self.links_click_datetime = False
         mailing_trace = self.filtered(lambda x: x.mailing_trace_ids)
         for trace in mailing_trace:
@@ -236,17 +232,9 @@ class MarketingTrace(models.Model):
         self.line_id.runtime_id.sudo()._advance()
 
     def _get_exclusive_events(self):
-        """Return event codes that exclude competing successor events.
-
-        :rtype: set[str]
-        """
         return {"mail_bounce"}
 
     def _get_event_cancel_messages(self) -> dict:
-        """Return cancellation messages keyed by the triggering event code.
-
-        :rtype: dict[str, str]
-        """
         return {
             "mail_open": self.env._("Parent activity mail opened"),
             "mail_reply": self.env._("Parent activity mail replied"),

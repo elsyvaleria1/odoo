@@ -58,7 +58,6 @@ class AppointmentType(models.Model):
 
     @api.model
     def _get_calendar_view_appointment_type_default_context_fields_whitelist(self):
-        """Add the opportunity_id field to list of fields we accept as default in context"""
         whitelist_fields = super()._get_calendar_view_appointment_type_default_context_fields_whitelist()
         whitelist_fields.append("opportunity_id")
         return whitelist_fields
@@ -78,8 +77,6 @@ class AppointmentType(models.Model):
         start,
         stop,
     ):
-        """Add values of the customer's last ongoing lead linked to the staff member, if the appointment type has
-        a random staff user selection. This avoids duplicate leads."""
         values = super()._prepare_calendar_event_values(
             asked_capacity,
             booking_line_values,

@@ -53,12 +53,8 @@ def _common_name(certificate):
 
 class SignEmsigner(SignController):
     def _prepare_document_rendering_data(self, sign_request_id, token, **post):
-        """
-        Override to add show_emsigner_thank_you_dialog and error_message to the context
-        """
         res = super()._prepare_document_rendering_data(sign_request_id, token, **post)
         if res.get("rendering_context"):
-            # show_thank_you_dialog and error_message come from IAP sign_emsigner redirect
             res["rendering_context"]["show_emsigner_thank_you_dialog"] = post.get(
                 "show_emsigner_thank_you_dialog"
             )
@@ -66,15 +62,6 @@ class SignEmsigner(SignController):
         return res
 
     def _get_signature_fields_position(self, document_id, request_item_sudo):
-        """Compute the positions of all signature fields on the PDF for a given document and request item.
-
-        This method retrieves all signature items associated with the given request item (typically
-        based on role), and calculates their absolute positions on the PDF page.
-
-        :param document_id: sign.document record
-        :param request_item_sudo: sign.request.item record
-        :return: dict of signature field positions
-        """
         try:
             pdf_file_data = io.BytesIO(document_id.attachment_id.raw)
             pdf_file_reader = PdfReader(pdf_file_data, strict=False)
@@ -88,7 +75,6 @@ class SignEmsigner(SignController):
         pdf_width = float(page_size[0])
         pdf_height = float(page_size[1])
 
-        # Get all signature items for the role
         signature_item_ids = request_item_sudo._get_current_signature_sign_items()
 
         return [
@@ -103,11 +89,7 @@ class SignEmsigner(SignController):
         ]
 
     def _is_file_large(self, file_size) -> bool:
-        """Check if the file size exceeds the 10 MB limit.
-        :param file_size: size of the file in bytes
-        :return: bool
-        """
-        return file_size >= (1024 * 1024 * 9)  # 9 MB limit for compression
+        return file_size >= (1024 * 1024 * 9)
 
     def _bind_to_attempt(self, pdf, reference_number):
         writer = PdfWriter(io.BytesIO(pdf), incremental=True)
@@ -119,11 +101,6 @@ class SignEmsigner(SignController):
     def _generate_emsigner_request(
         self, request_item_sudo: SignRequestItem, **kwargs: Any
     ) -> dict[str, str | bool | int]:
-        """create the payload to send data to the emsigner portal
-
-        :params request_item_sudo: sign.request.item record
-        :return: dict
-        """
         sign_request = request_item_sudo.sign_request_id
         document_id = sign_request.template_id.document_ids
 
@@ -140,7 +117,7 @@ class SignEmsigner(SignController):
         frame_info = kwargs.get("frame", {})
 
         for key_str, value in signature_info.items():
-            key = int(key_str)  # convert string key to int
+            key = int(key_str)
             frame_data = frame_info.get(key_str, {})
             signed_values[key] = {
                 "value": value,
@@ -152,7 +129,6 @@ class SignEmsigner(SignController):
         output = document_id.render_document_with_items(
             signed_values, final_log_hash=final_log_hash
         )
-        # Generate a unique reference number
         reference_number = uuid.uuid4().hex
         to_sign_data = self._bind_to_attempt(output.getvalue(), reference_number)
         output.close()
@@ -163,7 +139,6 @@ class SignEmsigner(SignController):
             }
         )
 
-        # Get the signature position on the pdf page
         signature_position = self._get_signature_fields_position(
             document_id, request_item_sudo
         )
@@ -175,14 +150,12 @@ class SignEmsigner(SignController):
             ]
         )
 
-        # Check if the file is large and needs compression
         is_file_large = self._is_file_large(
             file_size=document_id.attachment_id.file_size
         )
         if is_file_large:
             to_sign_data = compress_pdf_base64(to_sign_data)
 
-        # Prepare the dynamic content for the emsigner
         dyamic_content = [
             {
                 "Key": "eSigned using Aadhaar by",
@@ -196,7 +169,7 @@ class SignEmsigner(SignController):
         return {
             "Name": request_item_sudo.partner_id.name,
             "FileType": "PDF",
-            "SignatureMode": "12",  # 12 for Aadhaar based eSign
+            "SignatureMode": "12",
             "SelectPage": "PAGE LEVEL",
             "File": base64.b64encode(to_sign_data).decode("utf-8"),
             "PageNumber": page_numbers,
@@ -208,7 +181,7 @@ class SignEmsigner(SignController):
             "EnableDrawSignature": False,
             "EnableESignaturePad": False,
             "IsCompressed": is_file_large,
-            "IsCosign": False,  # Make the value True if there are multiple signers
+            "IsCosign": False,
             "StoreToDB": True,
             "IsGSTN": False,
             "IsGSTN3B": False,
@@ -237,7 +210,6 @@ class SignEmsigner(SignController):
             emsigner_credits = (
                 request.env["iap.account"].sudo().get_credits(IAP_SERVICE_NAME)
             )
-            # If no credits are available, still allow signing without emsigner auth method
             if emsigner_credits < 1:
                 request_item_sudo.signed_without_extra_auth = True
                 return {"success": True}
@@ -245,7 +217,7 @@ class SignEmsigner(SignController):
                 "signature_data": self._generate_emsigner_request(
                     request_item_sudo, **kwargs
                 ),
-                "account_token": account.sudo().account_token,  # FOR IAP CREDIT
+                "account_token": account.sudo().account_token,
                 "emsigner_state": "%s.%s"
                 % (
                     request_item_sudo.sign_request_id.id,
@@ -262,9 +234,6 @@ class SignEmsigner(SignController):
             )
         return super()._acquire_auth_method_result(request_item_sudo, **kwargs)
 
-    # -------------
-    #  HTTP Routes
-    # -------------
 
     @http.route(
         "/emsigner_sign/emsigner_successful",
@@ -334,7 +303,6 @@ class SignEmsigner(SignController):
             .search([("partner_id", "=", request_item.partner_id.id)], limit=1)
         )
         if sign_user_sudo:
-            # sign as a known user
             context = {}
             if request.env.user != sign_user_sudo and not request.env.user._is_public():
                 context.update(logged_user_id=request.env.user.id)
@@ -364,7 +332,6 @@ class SignEmsigner(SignController):
 
         return {"success": True}
 
-    # CREDITS
 
     @http.route(["/emsigner/has_emsigner_credits"], type="jsonrpc", auth="public")
     def has_emsigner_credits(self) -> bool:

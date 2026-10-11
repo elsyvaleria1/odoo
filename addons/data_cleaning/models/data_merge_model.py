@@ -12,10 +12,6 @@ from odoo.tools import SQL
 _logger = logging.getLogger(__name__)
 
 
-# Merge list of list based on their common element
-#   Input: [['a', 'b'], ['b', 'c'], ['d', 'e']]
-#   Output: [['a', 'b', 'c'], ['d', 'e']]
-# https://stackoverflow.com/a/9112588
 def merge_common_lists(lsts):
     sets = [set(lst) for lst in lsts if lst]
     merged = True
@@ -90,15 +86,11 @@ class Data_MergeModel(models.Model):
         help="When enabled, duplicates across different companies will be suggested",
     )
 
-    # The rest of the notification block is `mixin.data.cleaning.notification`.
-    # Only the default differs: a deduplication rule has never notified its
-    # author by default, and this keeps it that way.
     notify_user_ids = fields.Many2many(
         default=False,
         help="List of users to notify when there are new records to merge",
     )
 
-    # Similarity Threshold for Automatic merge
     merge_threshold = fields.Integer(
         string="Similarity Threshold",
         default=75,
@@ -110,7 +102,6 @@ class Data_MergeModel(models.Model):
         help="Duplicates with a similarity below this threshold will not be suggested",
     )
 
-    # Contextual menu action
     is_contextual_merge_action = fields.Boolean(
         string="Merge action attached",
         help='If True, this record is used for contextual menu action "Merge" on the target model.',
@@ -154,7 +145,6 @@ class Data_MergeModel(models.Model):
             else:
                 dm_model.custom_merge_method = False
 
-    # DEDUPLICATION METHODS
 
     def _get_count_pending(self):
         self.check_singleton()
@@ -180,16 +170,11 @@ class Data_MergeModel(models.Model):
         return self.env._("Duplicates to Merge")
 
     def _cron_find_duplicates(self) -> None:
-        """Identify duplicate records for each active model and either notify the users or automatically merge the duplicates."""
         merge_models = self.env["data_merge.model"].sudo().search([])
         merge_models.find_duplicates(batch_commits=True)
         merge_models._notify_pending_records()
 
     def find_duplicates(self, batch_commits=False) -> None:
-        """Search for duplicate records and create the data_merge.group along with its data_merge.record
-
-        :param bool batch_commits: If set, will automatically commit every X records
-        """
         unaccent = self.env.registry.unaccent
         self.env.flush_all()
         for dm_model in self:
@@ -213,7 +198,6 @@ class Data_MergeModel(models.Model):
                     )
 
                 if rule.match_mode == "accent":
-                    # Since unaccent is case sensitive, we must add a lower to make sql_field insensitive
                     sql_field = unaccent(SQL("lower(%s)", sql_field))
 
                 sql_group_by = SQL()
@@ -229,10 +213,6 @@ class Data_MergeModel(models.Model):
                         ", %s", res_model._field_to_sql(table, "company_id", query)
                     )
 
-                # Get all the rows matching the rule defined
-                # (e.g. exact match of the name) having at least 2 records
-                # Each row contains the matched value and an array of matching records:
-                #   | value matched | {array of record IDs matching the field}
                 sql = SQL(
                     """
                     SELECT %(field)s AS group_field_name,
@@ -259,9 +239,6 @@ class Data_MergeModel(models.Model):
                 rows = self.env.cr.fetchall()
                 ids += [row[1] for row in rows]
 
-            # Fetches the IDs of all the records who already matched (and are not merged),
-            # as well as the discarded ones.
-            # This prevents creating twice the same groups.
             self.env.cr.execute(
                 """
                 SELECT
@@ -297,11 +274,6 @@ class Data_MergeModel(models.Model):
                         "Created groups %s / %s", groups_created, groups_to_create_count
                     )
 
-                # Check if the IDs of the group to create is already part of an existing group
-                # e.g.
-                #   The group with records A B C already exists:
-                #       1/ If group_to_create equals A B, do not create a new group
-                #       2/ If group_to_create equals A D, create the new group (A D is not a subset of A B C)
                 if any(group_to_create <= x for x in done_groups_res_ids):
                     continue
 
@@ -334,7 +306,6 @@ class Data_MergeModel(models.Model):
 
             _logger.info("Record creation done after %s", timeit.default_timer() - t1)
 
-    # CONSTRAINT METHODS
 
     @api.constrains("res_model_id")
     def _check_prevent_merge(self) -> None:
@@ -351,7 +322,6 @@ class Data_MergeModel(models.Model):
                     )
                 )
 
-    # CRUD METHODS
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)
@@ -365,9 +335,6 @@ class Data_MergeModel(models.Model):
         if "active" in vals and not vals["active"]:
             stale = self
         elif "res_model_id" in vals:
-            # Same stored-related retarget as the other two queues: the groups
-            # start claiming the new model while their records still hold the old
-            # table's ids, and merging acts on whatever carries them.
             stale = self.filtered(lambda m: m.res_model_id.id != vals["res_model_id"])
         if stale:
             self.env["data_merge.group"].with_context(active_test=False).search(
@@ -393,7 +360,6 @@ class Data_MergeModel(models.Model):
             ).sudo().unlink()
         return super().unlink()
 
-    # ACTION METHODS
 
     def open_records(self):
         self.check_singleton()

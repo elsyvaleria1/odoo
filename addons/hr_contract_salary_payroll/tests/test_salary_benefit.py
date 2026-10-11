@@ -25,20 +25,10 @@ class TestSalaryBenefit(TransactionCase):
         )
 
     def test_switching_the_source_moves_the_field(self):
-        """`field` must follow `source`, which the compute branches on.
-
-        `source` was in no dependency - not this module's, not the parent's -
-        so a benefit switched between sources kept the other one's field name.
-        The stale name is what `_prepare_benefit_vals` writes through, and it
-        never checks `source`, so a rule benefit still carrying `wage` had the
-        submitted amount written onto the version's wage.
-        """
         benefit = self._benefit("field")
         self.env.flush_all()
         self.assertEqual(benefit.field, self.wage_field.name)
 
-        # Only `source` changes. No explicit invalidation: the depends must do
-        # the work, and the stale value used to survive one anyway.
         benefit.write({"source": "rule"})
         self.env.flush_all()
         self.assertEqual(
@@ -65,7 +55,6 @@ class TestSimulationOfferCleanup(TransactionCase):
         )
         self.env.flush_all()
         if months_old:
-            # `create_date` is not writable through the ORM.
             self.env.cr.execute(
                 "UPDATE hr_contract_salary_offer SET create_date = now() - %s::interval WHERE id = %s",
                 ("%s months" % months_old, offer.id),

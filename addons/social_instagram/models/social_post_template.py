@@ -74,8 +74,6 @@ class SocialPostTemplate(models.Model):
         )
     )
     def _compute_instagram_preview(self) -> None:
-        """We want to display various error messages if the image is not appropriate.
-        See #_get_instagram_image_error() for more information."""
 
         for post in self:
             if not post.display_instagram_preview:
@@ -106,23 +104,6 @@ class SocialPostTemplate(models.Model):
             )
 
     def _get_instagram_image_error(self) -> tuple:
-        """Allows verifying that the post within self contains a valid Instagram image.
-
-        Returns: faulty image names along with error_code
-        Errors:              Causes:
-        - 'missing'          If there is no image
-        - 'wrong_extension'  If the image in not in the JPEG format
-        - 'incorrect_ratio'  If the image in not between 4:5 and 1.91:1 ratio'
-        - 'max_limit'        If the number of images is greater than 10 (Carousels are limited to 10 images)
-        - 'corrupted'        If the image is corrupted
-        - False              If everything is correct.
-
-        Those various rules are imposed by Instagram.
-        See: https://developers.facebook.com/docs/instagram-api/reference/ig-user/media
-
-        We want to avoid any kind of dynamic resizing / format change to make sure what the user
-        uploads and sees in the preview is as close as possible to what they will get as a result on
-        Instagram."""
 
         self.check_singleton()
         error_code = False
@@ -147,7 +128,6 @@ class SocialPostTemplate(models.Model):
                             jpeg_image.with_context(bin_size=False).datas
                         )
                     except UserError:
-                        # image could not be loaded
                         error_code = "corrupted"
                         return jpeg_image.name, error_code
 
@@ -160,10 +140,8 @@ class SocialPostTemplate(models.Model):
 
     @api.model
     def _message_fields(self) -> dict:
-        """Return the message field per media."""
         return {**super()._message_fields(), "instagram": "instagram_message"}
 
     @api.model
     def _images_fields(self) -> dict:
-        """Return the images field per media."""
         return {**super()._images_fields(), "instagram": "instagram_image_ids"}

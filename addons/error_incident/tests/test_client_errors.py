@@ -16,7 +16,6 @@ OWL = "layout/web/static/lib/owl/owl.js"
 
 def _source_map(failing_line="    const id = record.data.id;", at=10):
     probe = ["// probe"] * at + [failing_line]
-    # Generated line 0: columns 0-99 are owl (a library), 100 on the probe.
     mappings = ",".join([encode_vlq(0, 1, 3, 0), encode_vlq(100, -1, at - 3, 4)])
     return json_dumps(
         {
@@ -37,8 +36,6 @@ class ClientErrorCase(TransactionCase):
 
     @classmethod
     def _forget_probe_bundles(cls):
-        # the asset pipeline commits a bundle beside the test transaction, so
-        # its rows outlive the rollback: drop them the same way
         with db_connect(cls.env.cr.dbname).cursor() as cr:
             cr.execute(
                 SQL(

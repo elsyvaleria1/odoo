@@ -4,7 +4,7 @@ import contextlib
 import functools
 import io
 import logging
-import optparse  # noqa: TID251  the whole CLI is built on optparse; the ban guards NEW uses
+import optparse
 import os
 import re
 import sys
@@ -37,7 +37,7 @@ crypt_context = CryptContext(
 _dangerous_logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-optparse._ = str  # type: ignore[attr-defined]
+optparse._ = str
 
 ALL_DEV_MODE = ("access", "assets", "qweb", "reload", "xml")
 _MODULE_MAP_OPTIONS = frozenset({"init", "update"})
@@ -214,12 +214,9 @@ LOG_DB_LEVELS = {
     "error": logging.ERROR,
     "critical": logging.CRITICAL,
 }
-# an empty value is "unset" in the config file; these types have no empty literal
 _TYPES_WITHOUT_AN_EMPTY_VALUE = frozenset(
     {"int", "float", "bool", "choice", "smtp_ssl", "without_demo"}
 )
-# a path whose empty value is not "off" but a relative path under the cwd; every
-# other empty path (geoip databases, screenshots, the config file) means "none"
 _PATHS_WITHOUT_AN_EMPTY_VALUE = frozenset({"data_dir"})
 
 
@@ -272,10 +269,6 @@ def _deduplicate_loggers(loggers: list[str]) -> Generator[str]:
     return (f"{logger}:{level}" for logger, level in seen.items())
 
 
-# An option layer that bumps the manager's generation on every write, so a
-# settings snapshot derived from the options is reusable until any layer
-# changes -- through __setitem__, patch(), parse_config() or a test poking
-# config.options[...] directly. Reads are dict's own.
 class _CountingDict(dict[str, Any]):
     __slots__ = ("_bump",)
 
@@ -283,9 +276,6 @@ class _CountingDict(dict[str, Any]):
         super().__init__()
         self._bump = bump
 
-    # A copy is a plain dict: deep-copying a layer must not drag the manager
-    # along through the bound bump, nor bump a half-built copy while its
-    # items are being restored. What copies a layer wants its content.
     def __reduce__(self) -> tuple[Any, ...]:
         return (dict, (dict(self),))
 
@@ -325,7 +315,7 @@ class _CountingDict(dict[str, Any]):
         self._bump()
         return result
 
-    def __ior__(self, other: Any) -> Self:  # type: ignore[override,misc]
+    def __ior__(self, other: Any) -> Self:
         super().__ior__(other)
         self._bump()
         return self
@@ -583,7 +573,7 @@ class configmanager:
             my_default=False,
             help="install demo data in new databases",
         )
-        group.add_option(  # type: ignore[call-overload]
+        group.add_option(
             "--without-demo",
             dest="with_demo",
             type="without_demo",
@@ -909,7 +899,7 @@ class configmanager:
             help="specify the SMTP port",
             type="int",
         )
-        group.add_option(  # type: ignore[call-overload]
+        group.add_option(
             "--smtp-ssl",
             dest="smtp_ssl",
             type="smtp_ssl",
@@ -1638,13 +1628,13 @@ class configmanager:
         for loglevel, message, args, kwargs in cls._log_entries:
             _dangerous_logger.log(loglevel, message, *args, **kwargs)
         cls._log_entries.clear()
-        cls._log = _dangerous_logger.log  # type: ignore[method-assign, assignment]
+        cls._log = _dangerous_logger.log
 
         for message, args, kwargs in cls._warn_entries:
             kwargs.setdefault("stacklevel", 1)
             warnings.warn(message, *args, **kwargs)
         cls._warn_entries.clear()
-        cls._warn = warnings.warn  # type: ignore[method-assign, assignment]
+        cls._warn = warnings.warn
 
     def parse_config(
         self,
@@ -2294,7 +2284,6 @@ class configmanager:
         parsed = check_func(option, option_name, value)
         if parsed is not UNSET:
             return parsed
-        # "None" unsets; a number with a default has no None to fall back to
         if option.type in ("int", "float"):
             return self._default_options.get(option_name)
         return None
@@ -2367,8 +2356,8 @@ class configmanager:
             return
 
         owners = self._server_wide_owners(p)
-        unknown = 0  # debuglog
-        skipped = 0  # debuglog
+        unknown = 0
+        skipped = 0
         for name, value in items:
             if name == "without_demo":
                 name = "with_demo"
@@ -2381,7 +2370,7 @@ class configmanager:
                     name,
                     rcfile,
                 )
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             option = self.options_index.get(name)
             if not option:
@@ -2398,20 +2387,20 @@ class configmanager:
                         name,
                         rcfile,
                     )
-                    unknown += 1  # debuglog
+                    unknown += 1
                 self._file_options[name] = value
                 continue
             if not option.file_loadable:
                 _debug.logic(
                     "config.file.option_skipped", option=name, reason="cli_only"
                 )
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             if value == "" and _empty_is_unset(name, option):
                 _debug.logic(
                     "config.file.option_skipped", option=name, reason="empty_unset"
                 )
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             if (
                 value in ("False", "false")
@@ -2435,7 +2424,7 @@ class configmanager:
                     option=name,
                     reason="legacy_false_unset",
                 )
-                skipped += 1  # debuglog
+                skipped += 1
                 continue
             try:
                 self._file_options[name] = self.parse(name, value)
@@ -2471,9 +2460,6 @@ class configmanager:
         held: list[str] = []
         section = None
         skipping = False
-        # configparser reads a line indented deeper than the option line before
-        # it as that option's continuation, even past blank and comment lines,
-        # and anything else as an option or a section header
         level = 0
         in_option = False
         for line in text.splitlines(keepends=True):
@@ -2545,8 +2531,6 @@ class configmanager:
         try:
             fd, tmp = tempfile.mkstemp(dir=cfg_path.parent, prefix=f".{cfg_path.name}.")
         except PermissionError:
-            # a writable file in a directory we cannot create in (/etc/odoo):
-            # rewrite in place, the only write the directory allows
             with open(cfg_path, "w", encoding="utf-8", opener=_open_private) as file:
                 os.fchmod(file.fileno(), 0o600)
                 file.write(text)
@@ -2565,9 +2549,6 @@ class configmanager:
 
     @property
     def generation(self) -> int:
-        # A test that swaps `options` for a plain mapping (patch.object) writes
-        # past the counting layers; while that lasts every read moves the
-        # counter, so nothing may be memoised.
         options = self.options
         if not (
             isinstance(options, collections.ChainMap)
@@ -2725,6 +2706,4 @@ def _pool_settings_version() -> tuple[int, bool]:
     return config.generation, bool(odoo.evented)
 
 
-# Memoised like odoo.http's slot: the pool reads these settings on every
-# connection lookup and database-list filter, several times per request.
 _provide_pool_settings(_pool_settings, version=_pool_settings_version)

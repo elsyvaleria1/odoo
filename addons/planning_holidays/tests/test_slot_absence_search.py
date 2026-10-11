@@ -10,8 +10,6 @@ class TestSlotAbsenceSearch(TestCommon):
     """Cover the is_absent searcher on planning slots."""
 
     def test_search_is_absent(self):
-        """Check that slots overlapping an approved leave are found and
-        slots of employees without leaves are not."""
         leave = (
             self.env["hr.leave"]
             .sudo()

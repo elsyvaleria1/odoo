@@ -80,7 +80,6 @@ def probe(server, tmp_path):
 
 
 def _get(port, path, timeout=60):
-    """(status, seconds) or (None, seconds) when the reply never came."""
     t0 = time.monotonic()
     conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
     try:
@@ -154,10 +153,6 @@ class TestPreforkLimits:
 
     @pytest.mark.parametrize("phase", [0.0, 2.0, 3.5])
     def test_the_verdict_is_the_workers_own_whatever_the_beat_phase(self, probe, phase):
-        # The master last hears from an idle worker up to one 4 s beat before
-        # a request begins. Unfed during the request, its 5 s clock ran out
-        # first at some phases (measured: three of eight, one before the
-        # budget itself), and the SIGKILL replaced the worker's own cancel.
         srv = probe("--workers", "1", "--limit-time-real", "5")
         assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
         assert _get(srv.port, "/probe/slow/0")[0] == 200

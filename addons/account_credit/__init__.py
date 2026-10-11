@@ -8,8 +8,6 @@ _logger = logging.getLogger(__name__)
 
 
 def pre_init_hook(env: api.Environment) -> None:
-    # approval_sale's own credit-limit trigger is superseded by the credit
-    # policy: a category that still had it would route every order twice
     env.cr.execute(
         "UPDATE approval_category SET check_credit_limit = FALSE "
         "WHERE check_credit_limit = TRUE"

@@ -23,9 +23,6 @@ class HrApplicant(models.Model):
             self._add_extracted_skills(names)
 
     def _get_extract_skill_names(self, skills) -> list[str]:
-        # `resume.skills` declares a row and requires its name, and a bare
-        # "Python" is read as that one required key, so both shapes a model
-        # might answer with arrive here as a row that has a name.
         return [name for skill in skills or () if (name := skill["name"].strip())]
 
     def _add_extracted_skills(self, names: list[str]) -> None:

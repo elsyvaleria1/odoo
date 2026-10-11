@@ -4,7 +4,6 @@ from odoo.libs.documents import mimetypes_for
 
 _debug = DebugLog(__name__)
 
-# every spelling an XML file arrives under: a mail client sends text/xml
 XML_MIMETYPES = mimetypes_for("xml")
 
 
@@ -15,9 +14,6 @@ class IrAttachment(models.Model):
     def create(self, vals_list):
         attachments = super().create(vals_list)
         for attachment in attachments:
-            # Read the link from the created record, not from vals: res_model and
-            # res_id may have been supplied through the default_res_model /
-            # default_res_id context keys instead of the values dict.
             if attachment.res_model != "account.move":
                 continue
             move = self.env["account.move"].browse(attachment.res_id)
@@ -30,10 +26,6 @@ class IrAttachment(models.Model):
                     mimetype=attachment.mimetype,
                     no_document=bool(self.env.context.get("no_document")),
                 )
-            # To avoid creating extra documents, restrict document creation to:
-            # - attachments of a misc operation
-            # - an xml file once it has been successfully registered as a move attachment
-            # and only when the 'no_document' flag is set to False
             if not self.env.context.get("no_document") and (
                 move.move_type == "entry" or attachment.mimetype in XML_MIMETYPES
             ):
@@ -52,9 +44,6 @@ class IrAttachment(models.Model):
         if vals.get("res_model") == "account.move" and not self.env.context.get(
             "no_document"
         ):
-            # Same restriction as create(): a misc operation, or an xml file once
-            # it has been successfully registered as a move attachment. Moves the
-            # user cannot read are left out by the search rather than raising.
             moves = self.env["account.move"].search(
                 [("id", "in", self.mapped("res_id"))]
             )

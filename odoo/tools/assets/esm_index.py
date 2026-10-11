@@ -2,13 +2,8 @@ import hashlib
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-# Bump when compiler semantics change without a corresponding source/stub change.
 _SOURCE_KEY_VERSION = "6"
 
-# the by-source key: what esbuild was given, stored on the published build so a
-# process that has not compiled yet can serve the bundle another one compiled,
-# and a variant (another website, another page) the bytes another variant
-# compiled from the same sources
 
 DEFAULT_VARIANT = "default"
 
@@ -19,8 +14,6 @@ def variant_key(
     page_scope: Iterable[str] = (),
     standalone: bool = False,
 ) -> str:
-    # what selects a different build of one bundle besides its sources; two
-    # variants are published side by side and never supersede each other
     parts = [
         f"{key}={value}"
         for key, value in sorted((assets_params or {}).items())
@@ -72,7 +65,6 @@ def source_key(
     for spec, url in sorted((registered_reach or {}).items()):
         digest.update(f"{spec}={url}".encode())
         digest.update(b"\0")
-    # a legacy script feeds the compile its aliases
     for script in legacy_scripts:
         digest.update(script.unique_descriptor.encode())
         digest.update(b"\0")

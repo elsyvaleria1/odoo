@@ -1,10 +1,3 @@
-# ruff: noqa: F601 - `codes` below intentionally repeats ISO 20022 sub-family
-# codes across multiple parent families (matches the official External Code
-# Sets taxonomy); mirrors the existing `# pylint: disable=duplicate-key`.
-# NOTE: a handful of repeated keys resolve to a DIFFERENT label depending on
-# which section defines them last (Python keeps only the last binding) - see
-# the audit shard (research/2026-07-22-t24068-audit-account_bank_statement_import_camt.md)
-# for the confirmed list; not resolved here, filed as a report-only finding.
 import math
 import re
 from functools import partial
@@ -15,10 +8,7 @@ from odoo.tools import LazyTranslate, float_compare
 _lt = LazyTranslate(__name__, default_lang="en_US")
 
 
-# Codes from the updated document of 30 june 2017
-# pylint: disable=duplicate-key
 codes = {
-    # ExternalBankTransactionDomain1Code #######################################
     "PMNT": _lt("Payments"),
     "CAMT": _lt("Cash Management"),
     "DERV": _lt("Derivatives"),
@@ -30,8 +20,7 @@ codes = {
     "SECU": _lt("Securities"),
     "ACMT": _lt("Account Management"),
     "XTND": _lt("Extended Domain"),
-    # ExternalBankTransactionFamily1Code #######################################
-    "RCDT": _lt("Received Credit Transfers"),  # Payments
+    "RCDT": _lt("Received Credit Transfers"),
     "ICDT": _lt("Issued Credit Transfers"),
     "RCCN": _lt("Received Cash Concentration Transactions"),
     "ICCN": _lt("Issued Cash Concentration Transactions"),
@@ -46,9 +35,9 @@ codes = {
     "DRFT": _lt("Drafts/BillOfOrders"),
     "RRCT": _lt("Received Real Time Credit Transfer"),
     "IRCT": _lt("Issued Real Time Credit Transfer"),
-    "CAPL": _lt("Cash Pooling"),  # Cash Management
+    "CAPL": _lt("Cash Pooling"),
     "ACCB": _lt("Account Balancing"),
-    "OCRD": _lt("OTC Derivatives – Credit Derivatives"),  # Derivatives
+    "OCRD": _lt("OTC Derivatives – Credit Derivatives"),
     "OIRT": _lt("OTC Derivatives – Interest Rates"),
     "OEQT": _lt("OTC Derivatives – Equity"),
     "OBND": _lt("OTC Derivatives – Bonds"),
@@ -56,32 +45,32 @@ codes = {
     "OSWP": _lt("OTC Derivatives – Swaps"),
     "LFUT": _lt("Listed Derivatives – Futures"),
     "LOPT": _lt("Listed Derivatives – Options"),
-    "FTLN": _lt("Fixed Term Loans"),  # Loans, Deposits & Syndications
+    "FTLN": _lt("Fixed Term Loans"),
     "NTLN": _lt("Notice Loans"),
     "FTDP": _lt("Fixed Term Deposits"),
     "NTDP": _lt("Notice Deposits"),
     "MGLN": _lt("Mortgage Loans"),
     "CSLN": _lt("Consumer Loans"),
     "SYDN": _lt("Syndications"),
-    "SPOT": _lt("Spots"),  # Foreign Exchange
+    "SPOT": _lt("Spots"),
     "FWRD": _lt("Forwards"),
     "SWAP": _lt("Swaps"),
     "FTUR": _lt("Futures"),
     "NDFX": _lt("Non Deliverable"),
-    "SPOT": _lt("Spots"),  # Precious Metal
+    "SPOT": _lt("Spots"),
     "FTUR": _lt("Futures"),
     "OPTN": _lt("Options"),
     "DLVR": _lt("Delivery"),
-    "SPOT": _lt("Spots"),  # Commodities
+    "SPOT": _lt("Spots"),
     "FTUR": _lt("Futures"),
     "OPTN": _lt("Options"),
     "DLVR": _lt("Delivery"),
-    "LOCT": _lt("Stand-By Letter Of Credit"),  # Trade Services
+    "LOCT": _lt("Stand-By Letter Of Credit"),
     "DCCT": _lt("Documentary Credit"),
     "CLNC": _lt("Clean Collection"),
     "DOCC": _lt("Documentary Collection"),
     "GUAR": _lt("Guarantees"),
-    "SETT": _lt("Trade, Clearing and Settlement"),  # Securities
+    "SETT": _lt("Trade, Clearing and Settlement"),
     "NSET": _lt("Non Settled"),
     "BLOC": _lt("Blocked Transactions"),
     "OTHB": _lt("CSD Blocked Transactions"),
@@ -91,12 +80,10 @@ codes = {
     "COLC": _lt("Custody Collection"),
     "LACK": _lt("Lack"),
     "CASH": _lt("Miscellaneous Securities Operations"),
-    "OPCL": _lt("Opening & Closing"),  # Account Management
+    "OPCL": _lt("Opening & Closing"),
     "ACOP": _lt("Additional Miscellaneous Credit Operations"),
     "ADOP": _lt("Additional Miscellaneous Debit Operations"),
-    # ExternalBankTransactionSubFamily1Code ####################################
-    # Generic Sub-Families
-    "FEES": _lt("Fees"),  # Miscellaneous Credit Operations
+    "FEES": _lt("Fees"),
     "COMM": _lt("Commission"),
     "COME": _lt("Commission excluding taxes"),
     "COMI": _lt("Commission including taxes"),
@@ -106,7 +93,7 @@ codes = {
     "INTR": _lt("Interest"),
     "RIMB": _lt("Reimbursements"),
     "ADJT": _lt("Adjustments"),
-    "FEES": _lt("Fees"),  # Miscellaneous Debit Operations
+    "FEES": _lt("Fees"),
     "COMM": _lt("Commission"),
     "COME": _lt("Commission excluding taxes"),
     "COMI": _lt("Commission including taxes"),
@@ -117,7 +104,7 @@ codes = {
     "RIMB": _lt("Reimbursements"),
     "ADJT": _lt("Adjustments"),
     "IADD": _lt("Invoice Accepted with Differed Due Date"),
-    "FEES": _lt("Fees"),  # Generic Sub-Families
+    "FEES": _lt("Fees"),
     "COMM": _lt("Commission"),
     "COME": _lt("Commission excluding taxes"),
     "COMI": _lt("Commission including taxes"),
@@ -128,8 +115,7 @@ codes = {
     "RIMB": _lt("Reimbursements"),
     "DAJT": _lt("Credit Adjustments"),
     "CAJT": _lt("Debit Adjustments"),
-    # Payments Sub-Families
-    "BOOK": _lt("Internal Book Transfer"),  # Received Credit Transfer
+    "BOOK": _lt("Internal Book Transfer"),
     "STDO": _lt("Standing Order"),
     "XBST": _lt("Cross-Border Standing Order"),
     "ESCT": _lt("SEPA Credit Transfer"),
@@ -153,7 +139,7 @@ codes = {
     "ACDT": _lt("ACH Credit"),
     "ADBT": _lt("ACH Debit"),
     "TTLS": _lt("Treasury Tax And Loan Service"),
-    "BOOK": _lt("Internal Book Transfer"),  # Issued Credit Transfer
+    "BOOK": _lt("Internal Book Transfer"),
     "STDO": _lt("Standing Order"),
     "XBST": _lt("Cross-Border Standing Order"),
     "ESCT": _lt("SEPA Credit Transfer"),
@@ -177,19 +163,19 @@ codes = {
     "ACDT": _lt("ACH Credit"),
     "ADBT": _lt("ACH Debit"),
     "TTLS": _lt("Treasury Tax And Loan Service"),
-    "COAT": _lt("Corporate Own Account Transfer"),  # Received Cash Concentration
+    "COAT": _lt("Corporate Own Account Transfer"),
     "ICCT": _lt("Intra Company Transfer"),
     "XICT": _lt("Cross-Border Intra Company Transfer"),
     "FIOA": _lt("Financial Institution Own Account Transfer"),
     "BACT": _lt("Branch Account Transfer"),
     "ACON": _lt("ACH Concentration"),
-    "COAT": _lt("Corporate Own Account Transfer"),  # Issued Cash Concentration
+    "COAT": _lt("Corporate Own Account Transfer"),
     "ICCT": _lt("Intra Company Transfer"),
     "XICT": _lt("Cross-Border Intra Company Transfer"),
     "FIOA": _lt("Financial Institution Own Account Transfer"),
     "BACT": _lt("Branch Account Transfer"),
     "ACON": _lt("ACH Concentration"),
-    "PMDD": _lt("Direct Debit"),  # Received Direct Debit
+    "PMDD": _lt("Direct Debit"),
     "URDD": _lt("Direct Debit under reserve"),
     "ESDD": _lt("SEPA Core Direct Debit"),
     "BBDD": _lt("SEPA B2B Direct Debit"),
@@ -200,7 +186,7 @@ codes = {
     "RCDD": _lt("Reversal due to a Payment Cancellation Request"),
     "UPDD": _lt("Reversal due to Return/Unpaid Direct Debit"),
     "PRDD": _lt("Reversal due to Payment Reversal"),
-    "PMDD": _lt("Direct Debit Payment"),  # Issued Direct Debit
+    "PMDD": _lt("Direct Debit Payment"),
     "URDD": _lt("Direct Debit under reserve"),
     "ESDD": _lt("SEPA Core Direct Debit"),
     "BBDD": _lt("SEPA B2B Direct Debit"),
@@ -211,7 +197,7 @@ codes = {
     "RCDD": _lt("Reversal due to a Payment Cancellation Request"),
     "UPDD": _lt("Reversal due to Return/Unpaid Direct Debit"),
     "PRDD": _lt("Reversal due to Payment Reversal"),
-    "CCHQ": _lt("Cheque"),  # Received Cheque
+    "CCHQ": _lt("Cheque"),
     "URCQ": _lt("Cheque Under Reserve"),
     "UPCQ": _lt("Unpaid Cheque"),
     "CQRV": _lt("Cheque Reversal"),
@@ -229,7 +215,7 @@ codes = {
     "ARPD": _lt("ARP Debit"),
     "CASH": _lt("Cash Letter"),
     "CSHA": _lt("Cash Letter Adjustment"),
-    "CCHQ": _lt("Cheque"),  # Issued Cheque
+    "CCHQ": _lt("Cheque"),
     "URCQ": _lt("Cheque Under Reserve"),
     "UPCQ": _lt("Unpaid Cheque"),
     "CQRV": _lt("Cheque Reversal"),
@@ -247,18 +233,18 @@ codes = {
     "ARPD": _lt("ARP Debit"),
     "CASH": _lt("Cash Letter"),
     "CSHA": _lt("Cash Letter Adjustment"),
-    "CWDL": _lt("Cash Withdrawal"),  # Customer Card Transaction
+    "CWDL": _lt("Cash Withdrawal"),
     "CDPT": _lt("Cash Deposit"),
     "XBCW": _lt("Cross-Border Cash Withdrawal"),
     "POSD": _lt("Point-of-Sale (POS) Payment - Debit Card"),
     "POSC": _lt("Credit Card Payment"),
     "XBCP": _lt("Cross-Border Credit Card Payment"),
     "SMRT": _lt("Smart-Card Payment"),
-    "POSP": _lt("Point-of-Sale (POS) Payment"),  # Merchant Card Transaction
+    "POSP": _lt("Point-of-Sale (POS) Payment"),
     "POSC": _lt("Credit Card Payment"),
     "SMCD": _lt("Smart-Card Payment"),
     "UPCT": _lt("Unpaid Card Transaction"),
-    "CDPT": _lt("Cash Deposit"),  # Counter Transaction
+    "CDPT": _lt("Cash Deposit"),
     "CWDL": _lt("Cash Withdrawal"),
     "BCDP": _lt("Branch Deposit"),
     "BCWD": _lt("Branch Withdrawal"),
@@ -269,15 +255,15 @@ codes = {
     "FCWD": _lt("Foreign Currency Withdrawal"),
     "TCDP": _lt("Travellers Cheques Deposit"),
     "TCWD": _lt("Travellers Cheques Withdrawal"),
-    "LBCA": _lt("Credit Adjustment"),  # Lockbox
+    "LBCA": _lt("Credit Adjustment"),
     "LBDB": _lt("Debit"),
     "LBDP": _lt("Deposit"),
-    "STAM": _lt("Settlement at Maturity"),  # Drafts / Bill to Order
+    "STAM": _lt("Settlement at Maturity"),
     "STLR": _lt("Settlement under reserve"),
     "DDFT": _lt("Discounted Draft"),
     "UDFT": _lt("Dishonoured/Unpaid Draft"),
     "DMCG": _lt("Draft Maturity Change"),
-    "BOOK": _lt("Internal Book Transfer"),  # Received Real-Time Credit Transfer
+    "BOOK": _lt("Internal Book Transfer"),
     "STDO": _lt("Standing Order"),
     "XBST": _lt("Cross-Border Standing Order"),
     "ESCT": _lt("SEPA Credit Transfer"),
@@ -301,7 +287,7 @@ codes = {
     "ACDT": _lt("ACH Credit"),
     "ADBT": _lt("ACH Debit"),
     "TTLS": _lt("Treasury Tax And Loan Service"),
-    "BOOK": _lt("Internal Book Transfer"),  # Issued Real-Time Credit Transfer
+    "BOOK": _lt("Internal Book Transfer"),
     "STDO": _lt("Standing Order"),
     "XBST": _lt("Cross-Border Standing Order"),
     "ESCT": _lt("SEPA Credit Transfer"),
@@ -325,27 +311,23 @@ codes = {
     "ACDT": _lt("ACH Credit"),
     "ADBT": _lt("ACH Debit"),
     "TTLS": _lt("Treasury Tax And Loan Service"),
-    # Cash Management Sub-Families
-    "XBRD": _lt("Cross-Border"),  # Cash Pooling
-    "ZABA": _lt("Zero Balancing"),  # Account Balancing
+    "XBRD": _lt("Cross-Border"),
+    "ZABA": _lt("Zero Balancing"),
     "SWEP": _lt("Sweeping"),
     "TOPG": _lt("Topping"),
     "DSBR": _lt("Controlled Disbursement"),
     "ODFT": _lt("Overdraft"),
     "XBRD": _lt("Cross-Border"),
-    # Derivatives Sub-Families
     "SWUF": _lt("Upfront Payment"),
     "SWRS": _lt("Reset Payment"),
     "SWPP": _lt("Partial Payment"),
     "SWFP": _lt("Final Payment"),
     "SWCC": _lt("Client Owned Collateral"),
-    # Loans, Deposits & Syndications Sub-Families
     "DDWN": _lt("Drawdown"),
     "RNEW": _lt("Renewal"),
     "PPAY": _lt("Principal Payment"),
     "DPST": _lt("Deposit"),
     "RPMT": _lt("Repayment"),
-    # Trade Services Sub-Families
     "FRZF": _lt("Freeze of funds"),
     "SOSI": _lt("Settlement of Sight Import document"),
     "SOSE": _lt("Settlement of Sight Export document"),
@@ -354,8 +336,7 @@ codes = {
     "STLR": _lt("Settlement under reserve"),
     "STAC": _lt("Settlement after collection"),
     "STLM": _lt("Settlement"),
-    # Securities Sub-Families
-    "PAIR": _lt("Pair-Off"),  # Trade, Clearing and Settlement & Non Settled
+    "PAIR": _lt("Pair-Off"),
     "TRAD": _lt("Trade"),
     "NETT": _lt("Netting"),
     "TRPO": _lt("Triparty Repo"),
@@ -394,13 +375,13 @@ codes = {
     "OTCN": _lt("OTC Non-CCP"),
     "XCHC": _lt(
         "Exchange Traded CCP"
-    ),  # Blocked Transactions & CSD Blocked Transactions
+    ),
     "XCHG": _lt("Exchange Traded"),
     "XCHN": _lt("Exchange Traded Non-CCP"),
     "OTCC": _lt("OTC CCP"),
     "OTCG": _lt("OTC"),
     "OTCN": _lt("OTC Non-CCP"),
-    "MARG": _lt("Margin Payments"),  # Collateral Management
+    "MARG": _lt("Margin Payments"),
     "TRPO": _lt("Triparty Repo"),
     "REPU": _lt("Repo"),
     "SECB": _lt("Securities Borrowing"),
@@ -420,7 +401,7 @@ codes = {
     "CPRB": _lt("Corporate Rebate"),
     "BIDS": _lt(
         "Repurchase offer/Issuer Bid/Reverse Rights."
-    ),  # Corporate Action & Custody
+    ),
     "BONU": _lt("Bonus Issue/Capitalisation Issue"),
     "BPUT": _lt("Put Redemption"),
     "CAPG": _lt("Capital Gains Distribution"),
@@ -451,7 +432,7 @@ codes = {
     "RWPL": _lt("Redemption Withdrawing Plan"),
     "SSPL": _lt("Subscription Savings Plan"),
     "CSLI": _lt("Cash in lieu"),
-    "CHAR": _lt("Charge/fees"),  # Miscellaneous Securities Operations
+    "CHAR": _lt("Charge/fees"),
     "BKFE": _lt("Bank Fees"),
     "CLAI": _lt("Compensation/Claims"),
     "MNFE": _lt("Management Fees"),
@@ -473,7 +454,6 @@ codes = {
     "RESI": _lt("Futures Residual Amount"),
     "FUCO": _lt("Futures Commission"),
     "INFD": _lt("Fixed Deposit Interest Amount"),
-    # Account Management Sub-Families
     "ACCO": _lt("Account Opening"),
     "ACCC": _lt("Account Closing"),
     "ACCT": _lt("Account Transfer"),
@@ -483,7 +463,6 @@ codes = {
     "FLTA": _lt("Float adjustment"),
     "ERTA": _lt("Exchange Rate Adjustment"),
     "PSTE": _lt("Posting Error"),
-    # General
     "NTAV": _lt("Not available"),
     "OTHR": _lt("Other"),
     "MCOP": _lt("Miscellaneous Credit Operations"),
@@ -503,7 +482,6 @@ def _generic_get(*nodes, xpath, namespaces, placeholder=None):
 
 
 class CAMT:
-    # These are pair of getters: (getter for the amount, getter for the amount's currency)
     _amount_getters = [
         (
             partial(_generic_get, xpath="ns:AmtDtls/ns:TxAmt/ns:Amt/text()"),
@@ -541,7 +519,6 @@ class CAMT:
         ),
     ]
 
-    # These are pair of getters: (getter for the exchange rate, getter for the target currency)
     _target_rate_getters = [
         (
             partial(
@@ -565,7 +542,6 @@ class CAMT:
         ),
     ]
 
-    # These are pair of getters: (getter for the exchange rate, getter for the source currency)
     _source_rate_getters = [
         (
             partial(
@@ -604,7 +580,6 @@ class CAMT:
         ),
     ]
 
-    # These are pair of getters: (getter for the amount, getter for the amount's currency)
     _currency_amount_getters = [
         (
             partial(_generic_get, xpath="ns:AmtDtls/ns:InstdAmt/ns:Amt/text()"),
@@ -646,16 +621,6 @@ class CAMT:
         )
     ]
 
-    # Start Balance
-    #   OPBD : Opening Booked
-    #   PRCD : Previous Closing Balance
-    #   OPAV : Opening Available
-    #   ITBD : Interim Booked (in the case of preceeding pagination)
-    # Triples: (getter for the amount, getter for the sign, the ISO code they
-    # match). The code is kept because `opening + entries == closing` is an
-    # identity for *booked* balances only: an available balance excludes holds
-    # and includes float, so a consumer that cannot tell them apart cannot
-    # reconcile a statement without failing on legitimate files.
     _start_balance_getters = [
         (
             partial(
@@ -703,11 +668,6 @@ class CAMT:
         ),
     ]
 
-    # Ending Balance
-    #   CLBD : Closing Booked
-    #   CLAV : Closing Available
-    #   ITBD : Interim Booked
-    # Triples, as above.
     _end_balance_getters = [
         (
             partial(
@@ -817,7 +777,6 @@ class CAMT:
 
     @staticmethod
     def _get_signed_balance_and_code(node, namespaces, getters) -> tuple:
-        """The balance, and which ISO 20022 code it was read from."""
         for balance_getter, sign_getter, code in getters:
             balance = balance_getter(node, namespaces=namespaces)
             sign = sign_getter(node, namespaces=namespaces)
@@ -849,8 +808,6 @@ class CAMT:
 
                 rate = source_rate or target_rate
                 if rate:
-                    # According to the camt.053 Swiss Payment Standards, the exchange rate should be divided by 100 if the
-                    # currency is in YEN, SEK, DKK or NOK.
                     if target_currency == "CHF" and source_currency in (
                         "SEK",
                         "DKK",
@@ -1023,7 +980,7 @@ class CAMT:
     @staticmethod
     def _get_ref(node, counter_party, prefix, namespaces):
         ref = CAMT._get_main_ref(node, placeholder=counter_party, namespaces=namespaces)
-        if ref is False:  # Explicitely match False, not a falsy value
+        if ref is False:
             ref = CAMT._get_other_ref(node, placeholder=prefix, namespaces=namespaces)
         return ref
 

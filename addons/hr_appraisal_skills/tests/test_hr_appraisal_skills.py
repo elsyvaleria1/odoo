@@ -81,12 +81,6 @@ class TestHrAppraisalSkills(TransactionCase):
         )
 
     def test_changing_skill_level_preserves_justification_value(self):
-        """
-        Test that modifying a core field preserves the value of a passive field.
-
-        When an active/core field is modified (triggering versioned skill creation),
-        passive fields like 'justification' should be copied to the new version.
-        """
         appraisal_form = Form(self.appraisal.with_context(uid=self.user.id))
         old_skills = self.appraisal.appraisal_skill_ids
         index = self.appraisal.current_appraisal_skill_ids.ids.index(
@@ -112,12 +106,6 @@ class TestHrAppraisalSkills(TransactionCase):
         )
 
     def test_changing_justification_value_should_not_create_new_skill(self):
-        """
-        Test that modifying a passive field doesn't trigger versioned skill creation.
-
-        When a passive field is modified, the existing record should be updated
-        without creating a new versioned record.
-        """
         appraisal_form = Form(self.appraisal.with_context(uid=self.user.id))
         old_skills = self.appraisal.appraisal_skill_ids
         index = self.appraisal.current_appraisal_skill_ids.ids.index(

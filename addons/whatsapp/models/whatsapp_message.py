@@ -25,8 +25,6 @@ class WhatsappMessage(models.Model):
     _order = "id desc"
     _rec_name = "mobile_number"
 
-    # Refer to https://developers.facebook.com/docs/whatsapp/cloud-api/reference/media/#supported-media-types
-    # for more details about supported media types
     _SUPPORTED_ATTACHMENT_TYPE = {
         "audio": ("audio/aac", "audio/mp4", "audio/mpeg", "audio/amr", "audio/ogg"),
         "document": (
@@ -36,8 +34,6 @@ class WhatsappMessage(models.Model):
         "image": ("image/jpeg", "image/png"),
         "video": ("video/mp4",),
     }
-    # amount of days during which a message is considered active
-    # used for GC and for finding an active document channel using a recent whatsapp template message
     _ACTIVE_THRESHOLD_DAYS = 15
 
     mobile_number = fields.Char(string="Sent To")
@@ -56,13 +52,13 @@ class WhatsappMessage(models.Model):
             ("sent", "Sent"),
             ("delivered", "Delivered"),
             ("read", "Read"),
-            ("replied", "Replied"),  # used internally
+            ("replied", "Replied"),
             ("received", "Received"),
             ("error", "Failed"),
             (
                 "bounced",
                 "Bounced",
-            ),  # failure linked to number usage, different from pure whatsapp error
+            ),
             ("cancel", "Cancelled"),
         ],
         default="outgoing",
@@ -120,7 +116,7 @@ class WhatsappMessage(models.Model):
             )
             country = recipient_partner.country_id or self.env.company.country_id
             formatted = wa_phone_validation.wa_phone_format(
-                country,  # could take mail.message record as context but seems overkill
+                country,
                 number=message.mobile_number,
                 country=country,
                 force_format="WHATSAPP",
@@ -128,13 +124,9 @@ class WhatsappMessage(models.Model):
             )
             message.mobile_number_formatted = formatted or ""
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override to check blacklist number and also add to blacklist if user has send stop message."""
         messages = super().create(vals_list)
         for message in messages:
             body = html2plaintext(message.body)
@@ -161,8 +153,6 @@ class WhatsappMessage(models.Model):
                             ),
                         )
                 except UserError:
-                    # there was something wrong with number formatting that cannot be
-                    # accepted by the blacklist -> simply skip, better be defensive
                     _logger.warning(
                         "Whatsapp: impossible to change opt-in status of %s (formatted as %s) as it is not a valid number (whatsapp.message-%s)",
                         message.mobile_number,
@@ -173,22 +163,6 @@ class WhatsappMessage(models.Model):
 
     @api.autovacuum
     def _gc_whatsapp_messages(self) -> None:
-        """To avoid bloating the database, we remove old whatsapp.messages that have been correctly
-        received / sent and are older than 15 days.'
-
-        We use these messages mainly to tie a customer answer to a certain document channel, but
-        only do so for the last 15 days (see '_find_active_channel').
-
-        After that period, they become non-relevant as the real content of conversations is kept
-        inside discuss.channel / mail.messages (as every other discussions).
-
-        Impact of GC when using the 'reply-to' function from the WhatsApp app as the customer:
-          - We could loose the context that a message is 'a reply to' another one, implying that
-          someone would reply to a message after 15 days, which is unlikely.
-          (To clarify: we will still receive the message, it will just not give the 'in-reply-to'
-          context anymore on the discuss channel).
-          - We could also loose the "right channel" in that case, and send the message to a another
-          (or a new) discuss channel, but it is again unlikely to answer more than 15 days later."""
 
         domain = self._get_domain_whatsapp_gc()
         self.env["whatsapp.message"].search(domain).unlink()
@@ -203,14 +177,6 @@ class WhatsappMessage(models.Model):
         ]
 
     def _get_formatted_number(self, sanitized_number, country_code) -> str:
-        """Format a valid mobile number for whatsapp.
-
-        Examples: ``'+919999912345'`` -> ``'919999912345'``
-
-        :return: formatted mobile number
-
-        TDE FIXME: remove in master
-        """
         mobile_number_parse = phone_validation.phone_parse(
             sanitized_number, country_code
         )
@@ -222,12 +188,8 @@ class WhatsappMessage(models.Model):
     def _get_opt_out_message(self) -> list:
         return ["stop", "unsubscribe", "stop promotions"]
 
-    # ------------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------------
 
     def button_resend(self) -> None:
-        """Resend a failed message."""
         if self.filtered(lambda rec: rec.state != "error"):
             raise UserError(
                 self.env._("You can not resend message which is not in failed state.")
@@ -235,24 +197,18 @@ class WhatsappMessage(models.Model):
         self._resend_failed()
 
     def button_cancel_send(self) -> None:
-        """Cancel a draft or outgoing message."""
         if self.filtered(lambda rec: rec.state != "outgoing"):
             raise UserError(self.env._("You can not cancel message which is in queue."))
         self.state = "cancel"
 
-    # ------------------------------------------------------------
-    # SEND
-    # ------------------------------------------------------------
 
     def _resend_failed(self) -> None:
-        """Resend failed template messages and messages in active discuss channels."""
         retryable_messages = self.filtered(
             lambda msg: (
                 msg.state == "error" and msg.failure_type != "whatsapp_unrecoverable"
             )
         )
 
-        # filter out outdated channel messages to avoid spamming whatsapp
         discuss_messages = retryable_messages.filtered(
             lambda msg: msg.mail_message_id.model == "discuss.channel"
         )
@@ -265,7 +221,7 @@ class WhatsappMessage(models.Model):
                 lambda channel: (
                     channel.whatsapp_channel_valid_until
                     and channel.whatsapp_channel_valid_until >= fields.Datetime.now()
-                )  # worst case, they will fail
+                )
             )
         )
         cancelled_discuss_messages = discuss_messages.filtered(
@@ -282,9 +238,6 @@ class WhatsappMessage(models.Model):
         self.env["ir.cron"]._trigger_ref("whatsapp.ir_cron_send_whatsapp_queue")
 
     def _send_cron(self) -> None:
-        """Send all outgoing messages."""
-        # order by template to have more relevant duplicate detection
-        # order descending so non-template messages are processed first, as they have a time limit
         records = self.search(
             [
                 ("state", "=", "outgoing"),
@@ -292,9 +245,8 @@ class WhatsappMessage(models.Model):
             order="wa_template_id",
             limit=500,
         )
-        # should not commit during tests
         records._send_message(with_commit=not modules.module.current_test)
-        if len(records) == 500:  # assumes there are more whenever search hits limit
+        if len(records) == 500:
             self.env["ir.cron"]._trigger_ref("whatsapp.ir_cron_send_whatsapp_queue")
 
     def _send(self, force_send_by_cron=False):
@@ -304,8 +256,6 @@ class WhatsappMessage(models.Model):
             self.env["ir.cron"]._trigger_ref("whatsapp.ir_cron_send_whatsapp_queue")
 
     def _send_message(self, with_commit=False):
-        """Prepare json data for sending messages, attachments and templates."""
-        # init api
         message_to_api = {}
         for account, messages in groupby(self, lambda msg: msg.wa_account_id):
             if not account:
@@ -326,8 +276,6 @@ class WhatsappMessage(models.Model):
         sent_message_vals = set()
         for whatsapp_message in self:
             wa_api = message_to_api[whatsapp_message]
-            # try to make changes with current user (notably due to ACLs), but limit
-            # to internal users to avoid crash - rewrite me in master please
             if whatsapp_message.create_uid._is_internal():
                 whatsapp_message = whatsapp_message.with_user(
                     whatsapp_message.create_uid
@@ -342,7 +290,6 @@ class WhatsappMessage(models.Model):
             msg_uid = False
             try:
                 parent_message_id = False
-                # body would always come from plaintext2html hence the url text is already the url and references are redundant
                 body = html2plaintext(whatsapp_message.body, include_references=False)
                 number = whatsapp_message.mobile_number_formatted
                 if not number:
@@ -360,7 +307,6 @@ class WhatsappMessage(models.Model):
                 ):
                     raise WhatsAppError(failure_type="blacklisted")
 
-                # based on template
                 if template := whatsapp_message.wa_template_id:
                     message_type = "template"
                     if (
@@ -382,8 +328,6 @@ class WhatsappMessage(models.Model):
                         whatsapp_message.mail_message_id.res_id
                     )
 
-                    # if retrying message then we need to unlink previous attachment
-                    # in case of header with report in order to generate it again
                     if (
                         whatsapp_message.wa_template_id.report_id
                         and whatsapp_message.wa_template_id.header_type == "document"
@@ -391,18 +335,14 @@ class WhatsappMessage(models.Model):
                     ):
                         whatsapp_message.mail_message_id.attachment_ids.unlink()
 
-                    # generate sending values, components and attachments
                     send_vals, attachment = (
                         whatsapp_message.wa_template_id._prepare_send_template_data(
                             record=from_record,
                             whatsapp_message=whatsapp_message,
                         )
                     )
-                    # reports are considered always unique
                     if not template.report_id:
                         send_vals_without_attachments = dict(send_vals)
-                        # the same attachment re-uploaded will have a different identifier
-                        # TODO MASTER avoid having to upload as part of the "get template values" flow
                         if template.header_type in ("image", "video", "document"):
                             components = [
                                 component_vals
@@ -423,7 +363,6 @@ class WhatsappMessage(models.Model):
                         and attachment
                         not in whatsapp_message.mail_message_id.attachment_ids
                     ):
-                        # Clone the attachment to ensure the template's attachment is not affected by message changes
                         cloned_attachment = attachment.copy(
                             {
                                 "res_model": whatsapp_message.mail_message_id.model,
@@ -433,7 +372,6 @@ class WhatsappMessage(models.Model):
                         whatsapp_message.mail_message_id.attachment_ids = [
                             Command.link(cloned_attachment.id)
                         ]
-                # no template
                 elif whatsapp_message.mail_message_id.attachment_ids:
                     attachment_vals = whatsapp_message._prepare_attachment_vals(
                         whatsapp_message.mail_message_id.attachment_ids[0],
@@ -449,7 +387,6 @@ class WhatsappMessage(models.Model):
                         "preview_url": True,
                         "body": body,
                     }
-                # Tagging parent message id if parent message is available
                 if (
                     whatsapp_message.mail_message_id
                     and whatsapp_message.mail_message_id.parent_id
@@ -483,7 +420,6 @@ class WhatsappMessage(models.Model):
                     if not msg_uid:
                         whatsapp_message._handle_error(failure_type="unknown")
                     else:
-                        # Message already posted for model 'discuss.channel', post message in active channel for other models
                         if (
                             message_type == "template"
                             and whatsapp_message.wa_template_id.model
@@ -497,7 +433,6 @@ class WhatsappMessage(models.Model):
     def _handle_error(
         self, failure_type=False, whatsapp_error_code=False, error_message=False
     ):
-        """Format and write errors on the message."""
         self.check_singleton()
         state = "error"
         if whatsapp_error_code:
@@ -518,7 +453,6 @@ class WhatsappMessage(models.Model):
         )
 
     def _post_message_in_active_channel(self) -> None:
-        """Notify the active channel that someone has sent template message."""
         self.check_singleton()
         if not self.wa_template_id:
             return
@@ -526,11 +460,9 @@ class WhatsappMessage(models.Model):
         if not channel:
             return
 
-        # same user, different model: print full content of message into conversation
         if channel.is_member:
             body = self.body
             message_type = "comment"
-        # diffrent user from any model: warn chat is about to be moved into a new conversation
         else:
             if self.mail_message_id.model and self.mail_message_id.res_id:
                 record_name = self.mail_message_id.record_name
@@ -556,7 +488,6 @@ class WhatsappMessage(models.Model):
 
     @api.model
     def _prepare_attachment_vals(self, attachment, wa_account_id):
-        """Upload the attachment to WhatsApp and return prepared values to attach to the message."""
         whatsapp_media_type = next(
             (
                 media_type
@@ -586,12 +517,8 @@ class WhatsappMessage(models.Model):
 
         return vals
 
-    # ------------------------------------------------------------
-    # CALLBACK
-    # ------------------------------------------------------------
 
     def _process_statuses(self, value):
-        """Process status of the message like 'send', 'delivered' and 'read'."""
         mapping = {"failed": "error", "cancelled": "cancel"}
         processed_message_ids = set()
 
@@ -621,7 +548,6 @@ class WhatsappMessage(models.Model):
         )
 
     def _update_message_fetched_seen(self) -> None:
-        """Update message status for the whatsapp recipient."""
         self.check_singleton()
         if self.mail_message_id.model != "discuss.channel":
             return

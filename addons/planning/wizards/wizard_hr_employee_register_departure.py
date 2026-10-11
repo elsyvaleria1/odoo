@@ -12,9 +12,6 @@ class WizardHrEmployeeRegisterDeparture(models.TransientModel):
         departure_date = datetime.combine(
             self.departure_date + timedelta(days=1), time.min
         )
-        # No end_datetime pre-filter here: departure_date is naive and only
-        # _manage_archived_resources() knows how to convert it to UTC (per
-        # slot/employee timezone) to compare it against end_datetime.
         planning_slots = (
             self.env["planning.slot"]
             .sudo()

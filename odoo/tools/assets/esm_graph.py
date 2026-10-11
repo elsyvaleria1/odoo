@@ -133,10 +133,6 @@ _ESM_EXPORT_DEFAULT_RE_SRC = (
 )
 _ESM_EXPORT_DEFAULT_RE = re.compile(_ESM_EXPORT_DEFAULT_RE_SRC)
 
-# The keyword comes first and the "not part of a longer name" guard follows it
-# as fixed-width lookbehinds: a pattern that opens with a lookbehind cannot use
-# re's literal-prefix skip and is evaluated at every character (2.6x slower on
-# the 21 MB addons corpus, identical matches).
 _TRANSITIVE_IMPORT_RE = re.compile(
     r"(?:import|export)(?<![\w$.]import)(?<![\w$.]export)\s*"
     r"[\w$*{},\s]{0,2000}?"
@@ -255,9 +251,6 @@ def _walk_imports(
                 abs_spec = _resolve_export_specifier(
                     spec, target, resolver.effective_url(spec)
                 )
-                # a relative import of a module the map already answers for
-                # (a bridge to the page's copy) is that copy's business: its
-                # own imports are not ours to serve
                 if abs_spec and abs_spec not in scanned and abs_spec not in known:
                     scanned.add(abs_spec)
                     queue.append(abs_spec)
@@ -313,10 +306,6 @@ def _resolve_export_specifier(
 ) -> str | None:
     if not target_path.startswith("."):
         return target_path.removesuffix(".js")
-    # a specifier is not a directory: "@x/models/related_models" names
-    # related_models/index.js, whose siblings live under related_models/, so a
-    # relative import resolves against the file's url when it is known, and
-    # against the url the specifier names when it is not
     if not importing_url and importing_specifier:
         importing_url = addon_specifier_to_url(importing_specifier)
     if importing_url:
@@ -329,8 +318,6 @@ def _resolve_export_specifier(
     relative = posixpath.normpath(
         posixpath.join(posixpath.dirname(rest) or ".", target_path)
     )
-    # a path climbing out of the addon is kept inside it, as it always was:
-    # the escape check must still see it and name it
     while relative.startswith("../"):
         relative = relative[3:]
     if relative in (".", ".."):
@@ -379,9 +366,6 @@ def _exports_walk(
     stack: list[str],
     exports_cache: dict[str, set[str]] | None,
 ) -> tuple[set[str], bool, int]:
-    # the third value is the shallowest stack depth a star cycle reached from
-    # here: a result that a cycle cut short of an ancestor's names is partial,
-    # and only the ancestor that closes the cycle may cache its own
     walk = _ExportsWalk(
         source_map, importing_specifier, importing_url, stack, exports_cache
     )
@@ -541,11 +525,6 @@ def resolve_specifier_url(spec: str, ext_libs: Mapping[str, str]) -> str | None:
     url = addon_specifier_to_url(spec)
     if url is None or not url.endswith(".js"):
         return url
-    # A specifier whose module is a directory index (`foo/index.js`) carries
-    # the directory name (`@addon/foo`); the string heuristic appends `.js` and
-    # points at a `foo.js` that does not exist, so the import map maps it to a
-    # 404 and every module the page imports through that map fails to link.
-    # Prefer `foo/index.js` when `foo.js` is absent, as `read_source` does.
     if not _static_file_exists(url):
         alt = f"{url[:-3]}/index.js"
         if _static_file_exists(alt):
@@ -554,8 +533,6 @@ def resolve_specifier_url(spec: str, ext_libs: Mapping[str, str]) -> str | None:
 
 
 def _static_file_exists(url: str) -> bool:
-    # file_path memoises the paths it found, so a file removed since is only
-    # seen gone by asking the filesystem
     try:
         return Path(file_path(url.lstrip("/"))).is_file()
     except FileNotFoundError, ValueError:
@@ -581,7 +558,6 @@ class _BridgeExportResolver:
         self._url_cache: dict[str, str] = {}
 
     def hold(self, modules: Iterable) -> None:
-        # the caller's modules as it read them: no second read from disk
         for module in modules:
             self._cache[module.module_path] = module.raw_content
             if url := getattr(module, "url", None):
@@ -721,8 +697,6 @@ def _bridge_wait_lines(specifier: str) -> list[str]:
         f"    }}, {BRIDGE_WAIT_MS});",
         "  });",
         "}",
-        # a listener only while unresolved: registered after a resolving call,
-        # it would copy the exports again on every later registration
         'if (!_s()) { odoo.loader.bus.addEventListener("registered", _s); }',
     ]
 

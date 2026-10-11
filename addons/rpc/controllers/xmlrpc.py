@@ -76,7 +76,6 @@ class _MarshallerDispatch(dict):
         if isinstance(cls, type) and issubclass(cls, ReadonlyDict):
             handler = self[cls] = dict.__getitem__(self, ReadonlyDict)
             return handler
-        # a context's allowed_company_ids is a FrozenList, a list to the wire
         if isinstance(cls, type) and issubclass(cls, list):
             handler = self[cls] = dict.__getitem__(self, list)
             return handler
@@ -145,7 +144,7 @@ class XMLRPC(Controller):
         csrf=False,
         save_session=False,
     )
-    def xmlrpc_1(self, service):  # noqa: E8528 - the XML-RPC API, authenticated per call by the credentials it carries
+    def xmlrpc_1(self, service):
         warn_endpoint_is_deprecated(logger, __name__)
         detach_database()
         try:
@@ -168,7 +167,7 @@ class XMLRPC(Controller):
         csrf=False,
         save_session=False,
     )
-    def xmlrpc_2(self, service):  # noqa: E8528 - the XML-RPC API, authenticated per call by the credentials it carries
+    def xmlrpc_2(self, service):
         warn_endpoint_is_deprecated(logger, __name__)
         detach_database()
         try:

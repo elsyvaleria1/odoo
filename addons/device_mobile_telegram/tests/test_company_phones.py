@@ -18,7 +18,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
             {"bot_username": "notify_bot", "notify_company_phones_only": True}
         )
         cls.test_user._telegram_settings().telegram_notify_inbox = "always"
-        # the phone's number is written as its company writes it, without +52
         cls.env.company.country_id = cls.env.ref("base.mx")
         profile = cls.env["device.profile"].create(
             {"name": "Phones", "auth_type": "bearer", "auth_token": "phones_token"}
@@ -57,8 +56,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
         self._through_webhook({"update_id": 9401, "message": update})
 
     def _through_webhook(self, update):
-        """Hand an update to the router as the webhook does: as its public
-        user, the sender's identity resolved from there."""
         public = self.env.ref("base.public_user")
         self.patch(self.env.transaction, "default_env", self.env(user=public))
         bot = self.test_bot.with_user(public).sudo()
@@ -77,7 +74,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
         )
 
     def test_the_company_phone_s_account_gets_it_whatever_the_prefix(self):
-        # an account registered before Mexico dropped the mobile 1 still says it
         self._verify("5215512345678")
 
         self._post_to_user()
@@ -96,7 +92,6 @@ class TestCompanyPhonesOnly(MailTelegramCase):
         self.assertEqual(self.test_user._get_telegram_notify_status()[0], "refused")
 
     def test_a_foreign_number_ending_alike_is_not_the_phone(self):
-        # a US line whose ten digits are the Mexican phone's is another line
         self._verify("+1 551 234 5678")
 
         self._post_to_user()

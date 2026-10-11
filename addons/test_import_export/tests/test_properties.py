@@ -166,8 +166,6 @@ class TestPropertiesExportImport(HttpCase):
     def test_export_get_fields_inherits(self):
         self.authenticate("admin", "admin")
 
-        # FIXME: Put the creation of record here because there is a bug in create
-        # for inherited properties that empties the properties source values
         inherits_records = self.ModelPropertyInherits.create(
             [
                 {"parent_id": record_parent.id}
@@ -238,7 +236,6 @@ class TestPropertiesExportImport(HttpCase):
             + self.definition_records[1].properties_definition
             if property_dict_type["type"] != "separator"
         ]
-        # Without import compatibility
         self.assertEqual(
             self.properties_records.with_context(import_compat=False)._export_rows(
                 all_properties
@@ -252,7 +249,6 @@ class TestPropertiesExportImport(HttpCase):
                 ["", "", "", "", "", "Name Partner 3"],
             ],
         )
-        # With import compatibility
         self.assertEqual(
             self.properties_records._export_rows(all_properties),
             [
@@ -264,7 +260,6 @@ class TestPropertiesExportImport(HttpCase):
         )
 
     def test_properties_type_field_accessible(self):
-        """Test get_fields works even property_defination model is not accessible."""
 
         property_def = [
             {"name": "date", "type": "date", "string": "Date", "default": "2025-11-11"}
@@ -316,7 +311,7 @@ class TestPropertiesExportImport(HttpCase):
                     "properties_id": self.properties_records[0].id,
                     "another_properties_id": self.properties_records[
                         1
-                    ].id,  # Same definition
+                    ].id,
                 },
                 {
                     "properties_id": self.properties_records[3].id,
@@ -325,10 +320,10 @@ class TestPropertiesExportImport(HttpCase):
             ]
         )
         export_fields = [
-            "properties_id/properties.m2m_prop/name",  # '' for [0], <All partner name> for [1]
-            "another_properties_id/properties.m2o_prop/name",  # Partner Name 1 for [0], '' for [1]
-            "another_properties_id/properties.bool_prop",  # '' for [0], True for [1]
-            "all_properties_ids/properties.char_prop",  # 'Not the default'/'Def' for [0], '' for [1]
+            "properties_id/properties.m2m_prop/name",
+            "another_properties_id/properties.m2o_prop/name",
+            "another_properties_id/properties.bool_prop",
+            "all_properties_ids/properties.char_prop",
         ]
 
         self.assertEqual(
@@ -341,14 +336,14 @@ class TestPropertiesExportImport(HttpCase):
                 ["Name Partner 1", "", True, ""],
                 ["Name Partner 2", "", "", ""],
                 ["Name Partner 3", "", "", ""],
-                ["", "", "", ""],  # For the path_records[1] and all_properties_ids
+                ["", "", "", ""],
             ],
         )
 
         export_fields = [
-            "properties_id/properties.m2m_prop",  # '' for [0], <All partner name> for [1]
-            "another_properties_id/properties.m2o_prop",  # Partner Name 1 for [0], '' for [1]
-            "another_properties_id/properties.bool_prop",  # '' for [0], True for [1]
+            "properties_id/properties.m2m_prop",
+            "another_properties_id/properties.m2o_prop",
+            "another_properties_id/properties.bool_prop",
         ]
         self.assertEqual(
             path_records.export_data(export_fields)["datas"],
@@ -359,7 +354,6 @@ class TestPropertiesExportImport(HttpCase):
         )
 
     def test_export_properties_field(self):
-        """Test that the 'properties' field exports as a dictionary."""
         export_data = (
             self.properties_records[0].export_data(["properties"]).get("datas", [])
         )
@@ -375,16 +369,13 @@ class TestPropertiesExportImport(HttpCase):
         values_list = [
             [
                 "Record Definition Id",
-                # Field of the first definition
                 f"TextType ({def_record_1.display_name})",
                 f"One Selection ({def_record_1.display_name})",
                 f"many2one ({def_record_1.display_name})",
-                # Field of the second definition
                 f"CheckBox ({def_record_2.display_name})",
                 "properties.tags_prop",
                 f"M2M ({def_record_2.display_name})",
             ],
-            # Record attached to the first definition record
             [
                 str(def_record_1.id),
                 "One Text",
@@ -403,7 +394,6 @@ class TestPropertiesExportImport(HttpCase):
                 "",
                 "",
             ],
-            # Record with NULL selection value
             [
                 str(def_record_1.id),
                 "One Text",
@@ -413,7 +403,6 @@ class TestPropertiesExportImport(HttpCase):
                 "",
                 "",
             ],
-            # Record attached to the second definition record
             [
                 str(def_record_2.id),
                 "",
@@ -464,7 +453,6 @@ class TestPropertiesExportImport(HttpCase):
                 opts,
             )
 
-        # if result is empty, no import error
         self.assertItemsEqual(results["messages"], [])
 
         records_created = capture.records
@@ -502,21 +490,17 @@ class TestPropertiesExportImport(HttpCase):
         records_created._get_or_create_xml_ids()
         external_ids = [meta["xmlid"] for meta in records_created.get_metadata()]
 
-        # Test the update flow
         values_list = [
             [
                 "Id",
                 "Record Definition Id",
-                # Field of the first definition
                 f"TextType ({def_record_1.display_name})",
                 f"many2one ({def_record_1.display_name})",
                 f"One Selection ({def_record_1.display_name})",
-                # Field of the second definition
                 f"CheckBox ({def_record_2.display_name})",
                 "properties.tags_prop",
                 f"M2M ({def_record_2.display_name})",
             ],
-            # Record attached to the first definition record
             [
                 external_ids[0],
                 str(def_record_1.id),
@@ -527,7 +511,6 @@ class TestPropertiesExportImport(HttpCase):
                 "",
                 "",
             ],
-            # Record with NULL selection value
             [
                 external_ids[2],
                 str(def_record_1.id),
@@ -538,10 +521,9 @@ class TestPropertiesExportImport(HttpCase):
                 "",
                 "",
             ],
-            # Record attached to the second definition record
             [
                 external_ids[1],
-                str(def_record_2.id),  # record that changed its parent
+                str(def_record_2.id),
                 "",
                 "",
                 "",
@@ -666,7 +648,6 @@ class TestPropertiesExportImport(HttpCase):
         opts = {"quoting": '"', "separator": ";", "has_headers": True}
         preview = import_wizard.parse_preview(opts)
 
-        # Don't find the properties field since the user doesn't have accept to the definition model
         self.assertEqual(
             preview["matches"],
             {
@@ -688,7 +669,6 @@ class TestPropertiesExportImport(HttpCase):
         ]
         Import = self.env["base_import.import"].with_user(user)
 
-        # Patch groups of properties_definition
         self.patch(
             self.ModelDefinition._fields["properties_definition"],
             "groups",
@@ -705,7 +685,6 @@ class TestPropertiesExportImport(HttpCase):
         opts = {"quoting": '"', "separator": ";", "has_headers": True}
         preview = import_wizard.parse_preview(opts)
 
-        # Don't find the properties field since the user doesn't have access to the field definition
         self.assertEqual(
             preview["matches"],
             {

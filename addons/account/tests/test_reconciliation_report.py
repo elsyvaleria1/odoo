@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from odoo import Command, fields
 from odoo.tests import tagged
 
@@ -17,10 +16,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_single_currency(self):
-        """
-        Tests the impact of positive/negative payments/statements on the reconciliation report in a single-currency
-        environment.
-        """
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank",
@@ -30,7 +25,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Statements ====
 
         self.env["account.bank.statement"].create(
             {
@@ -63,7 +57,7 @@ class TestReconciliationReport(TestAccountReportsCommon):
             {
                 "name": "statement_2",
                 "date": "2015-01-05",
-                "balance_start": 200.0,  # create an unexplained difference of 100.0.
+                "balance_start": 200.0,
                 "balance_end_real": -200.0,
                 "journal_id": bank_journal.id,
                 "line_ids": [
@@ -105,7 +99,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Payments ====
         self.inbound_payment_channel.journal_id = bank_journal.id
         self.outbound_payment_channel.journal_id = bank_journal.id
         payment_1 = self.env["account.payment"].create(
@@ -158,7 +151,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
         (payment_1 + payment_2 + payment_3 + payment_4).action_post()
 
-        # ==== Reconciliation ====
 
         st_line = statement_2.line_ids.filtered(
             lambda line: line.payment_ref == "line_1"
@@ -180,7 +172,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         st_line.set_line_bank_statement_line(payment_line.id)
 
-        # ==== Report ====
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model=bank_journal._name
@@ -193,7 +184,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             lines,
-            #   Name                                            Date            Amount
             [0, 1, 3],
             [
                 (f"Balance of '{account}'", "", -200.0),
@@ -220,15 +210,13 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_multi_currencies(self):
-        """Tests the management of multi-currencies in the reconciliation report."""
         self.env.user.group_ids |= self.env.ref("base.group_multi_currency")
         self.env.user.group_ids |= self.env.ref("base.group_no_one")
 
-        company_currency = self.company_data["currency"]  # USD
-        journal_currency = self.other_currency  # EUR
-        choco_currency = self.other_currency_2  # GBP
+        company_currency = self.company_data["currency"]
+        journal_currency = self.other_currency
+        choco_currency = self.other_currency_2
 
-        # ==== Journal with a foreign currency ====
 
         bank_journal = self.env["account.journal"].create(
             {
@@ -240,13 +228,11 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Statement ====
 
         bank_statement = self.env["account.bank.statement"].create(
             {
                 "name": "statement",
                 "line_ids": [
-                    # Transaction in the company currency.
                     (
                         0,
                         0,
@@ -259,7 +245,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
                             "foreign_currency_id": company_currency.id,
                         },
                     ),
-                    # Transaction in a third currency.
                     (
                         0,
                         0,
@@ -276,11 +261,9 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # Partially reconcile the suspense amount associated with each bank statement line
         suspense_account = bank_journal.suspense_account_id
         other_account = bank_journal.company_id.account_config_id.default_cash_difference_income_account_id
 
-        # the first is in company currency
         lines_by_ref = {line.payment_ref: line for line in bank_statement.line_ids}
         bank_move_1 = lines_by_ref["line_1"].move_id
         bank_move_1_suspense_line = bank_move_1.line_ids.filtered(
@@ -297,7 +280,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         bank_move_1.action_post()
 
-        # the second is in neither company nor journal currency
         bank_move_2 = lines_by_ref["line_3"].move_id
         bank_move_2_suspense_line = bank_move_2.line_ids.filtered(
             lambda l: l.account_id == suspense_account
@@ -323,9 +305,7 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         bank_move_2.action_post()
 
-        # ==== Payments ====
         self.inbound_payment_channel.journal_id = bank_journal.id
-        # Payment in the company's currency.
         payment_1 = self.env["account.payment"].create(
             {
                 "amount": 1000.0,
@@ -339,7 +319,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # Payment in the same foreign currency as the journal.
         payment_2 = self.env["account.payment"].create(
             {
                 "amount": 2000.0,
@@ -353,7 +332,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # Payment in a third foreign currency.
         payment_3 = self.env["account.payment"].create(
             {
                 "amount": 3000.0,
@@ -368,7 +346,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         (payment_1 + payment_2 + payment_3).action_post()
 
-        # ==== Misc Entry ====
 
         move = self.env["account.move"].create(
             {
@@ -398,7 +375,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
         move.action_post()
 
-        # ==== Report ====
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model=bank_journal._name
@@ -412,7 +388,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
             self.assertLinesValues(
                 lines,
-                #   Name                                                Date   Am. Cur.                  Cur.       Amount
                 [0, 1, 3, 4, 5],
                 [
                     (f"Balance of '{account}'", "", "", "", 400.0),
@@ -465,10 +440,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             )
 
     def test_reconciliation_change_date(self):
-        """
-        Tests the impact of the report date on the reconciliation report: which statement lines and outstanding
-        payments are taken into account, and that a change of 'balance_end_real' is reflected in the balance.
-        """
         bank_journal = self.company_data["default_journal_bank"]
 
         statement = self.env["account.bank.statement"].create(
@@ -542,7 +513,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # Change the ending balance to check the report reflects it on the bank account balance
         statement["balance_end_real"] = 140.0
 
         payment = self.env["account.payment"].create(
@@ -569,11 +539,9 @@ class TestReconciliationReport(TestAccountReportsCommon):
         options["all_entries"] = True
         options["unfold_all"] = True
 
-        # The last statement is taken into account cause it has a line corresponding to the date of the report.
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 140.0),
@@ -604,7 +572,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 140.0),
@@ -630,10 +597,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_non_statement_payment(self):
-        """
-        Test that moves not linked to a bank statement/payment but linked for example to expenses are all showing in the
-        report
-        """
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank",
@@ -646,7 +609,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             self.inbound_payment_channel.payment_account_id
         )
 
-        # ==== Misc ====
         self.env["account.move"].create(
             {
                 "journal_id": bank_journal.id,
@@ -709,7 +671,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         ).action_post()
 
-        # ==== Report ====
 
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model="account.journal"
@@ -722,7 +683,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             lines,
-            #   Name                                                  Date         Amount
             [0, 1, 3],
             [
                 (f"Balance of '{account}'", "", 0.0),
@@ -745,7 +705,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_misc_entry(self):
-        """Tests that the report correctly displays the misc entry."""
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank",
@@ -755,7 +714,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Misc ====
         self.env["account.move"].create(
             {
                 "journal_id": bank_journal.id,
@@ -798,7 +756,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             lines,
-            #   Name                                                  Date         Amount
             [0, 1, 3],
             [
                 (f"Balance of '{account}'", "", 800.0),
@@ -818,14 +775,12 @@ class TestReconciliationReport(TestAccountReportsCommon):
             ignore_folded=False,
         )
 
-        # With the domain, since the date of the misc is not in the same year, the misc is not present
         options = self._generate_options(report, "2014-01-02", "2014-01-02")
         options["unfold_all"] = True
         lines = report._get_lines(options)
 
         self.assertLinesValues(
             lines,
-            #   Name                                                  Date         Amount
             [0, 1, 3],
             [
                 (f"Balance of '{account}'", "", 0.0),
@@ -846,7 +801,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_delete_statement(self):
-        """Tests how the report reacts when a statement is created and then deleted."""
 
         bank_journal = self.company_data["default_journal_bank"]
 
@@ -936,7 +890,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 130.0),
@@ -975,7 +928,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 130.0),
@@ -1002,10 +954,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_transaction_without_statement(self):
-        """
-        Tests that the 'Transactions without statement' section still accounts for the reconciled entries, so its
-        total is not always the sum of its children.
-        """
         bank_journal = self.company_data["default_journal_bank"]
 
         bank_statement_lines = self.env["account.bank.statement.line"].create(
@@ -1037,7 +985,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 1100.0),
@@ -1084,7 +1031,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 1100.0),
@@ -1106,7 +1052,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         )
 
     def test_reconciliation_report_exchange_entry(self):
-        """Tests that misc entries reported in the exchange journal do not figure in the report."""
 
         bank_journal = self.company_data["default_journal_bank"]
         exchange_journal = (
@@ -1154,7 +1099,6 @@ class TestReconciliationReport(TestAccountReportsCommon):
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                             Date            Amount
             [0, 1, 3],
             [
                 ("Balance of '101401 Bank'", "", 0.0),

@@ -16,7 +16,6 @@ class TestVivaComHttpCommon(TestPointOfSaleHttpCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Create Viva.com payment method
         viva_payment_method = cls.env["pos.payment.method"].create(
             {
                 "name": "Viva",
@@ -155,8 +154,6 @@ class TestVivaComHttpCommon(TestPointOfSaleHttpCommon):
     def test_a_merchant_reference_that_names_no_pos_session_is_acknowledged_unprocessed(
         self,
     ):
-        # A sale keyed on the terminal itself carries the cashier's text, and
-        # Viva.com retries any answer but a 2xx for a day.
         with (
             self._patch_viva_com_session_status() as call_mock,
             self._patch_pos_notify() as notify_mock,

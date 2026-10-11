@@ -95,9 +95,6 @@ class TestEmployeeResourceParty(TransactionCase):
         self.assertEqual(employee.partner_id.tz, "America/Lima")
 
     def test_a_group_change_on_the_user_form_keeps_the_employee(self):
-        # the form holds the employee as a hidden line; the group change
-        # recomputes the employee's user from its resource, and saving must not
-        # read that as the line removed
         user = new_test_user(self.env, login="form_group_change")
         employee = self.env["hr.employee"].create(
             {

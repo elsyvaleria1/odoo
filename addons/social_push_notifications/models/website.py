@@ -25,7 +25,6 @@ class Website(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Overridden to automatically create push accounts for every created website"""
         websites = super().create(vals_list)
         websites._create_push_accounts()
 

@@ -37,8 +37,6 @@ class SpreadsheetDashboardShare(models.Model):
     def create(self, vals_list):
         shares = super().create(vals_list)
         for share in shares:
-            # a copy shared by hand: its link lives as a manual share's does
-            # (decision B1)
             self.env["access.link"]._issue(share, role="view", cause="share")
         return shares
 

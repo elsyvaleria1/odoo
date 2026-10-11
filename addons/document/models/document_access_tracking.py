@@ -36,14 +36,6 @@ class DocumentsAccessTracking(models.Model):
 
     @api.model
     def _create_access_tracking(self, changes_by_document_dict: dict) -> None:
-        # Nothing changed -> nothing to track, and nothing for the cron to
-        # drain. `action_update_access_rights` reaches here unconditionally, so
-        # without this an update that changed nothing (the value was already the
-        # one asked for, a propagation that matched no row, a dialog saved
-        # untouched) still read `document.tracking_batch_size`, resolved the
-        # cron and inserted an `ir_cron_trigger` row -- waking the cron to drain
-        # an empty queue. `_trigger` does not de-duplicate, so a bulk sharing
-        # pass queued one such row per call.
         if not changes_by_document_dict:
             _debug.logic("tracking_skipped", reason="no_changes")
             return
@@ -82,9 +74,6 @@ class DocumentsAccessTracking(models.Model):
         Cron = self.env["ir.cron"]
         remaining = self.search_count([])
         _debug.pipeline("tracking_cron_start", queued=remaining)
-        # Fetch the queue a page at a time. The previous shape ran one
-        # `search` per row, so draining a queue of N cost N extra queries on
-        # top of the N it had to do anyway.
         while batch := self.search([], limit=self._cron_batch_size()):
             for tracking in batch:
                 try:
@@ -134,8 +123,6 @@ class DocumentsAccessTracking(models.Model):
         return {doc_id: common_values for doc_id in self.documents if common_values}
 
     def _add_pre_commit_members_data(self) -> None:
-        # mail's own setter: the copy it replaces wrote nothing when the
-        # transaction already held a tracking body, dropping these documents'
         self.check_singleton()
         self.env["document.document"].browse(self.documents)._track_set_log_message(
             self._get_members_change_template_body()

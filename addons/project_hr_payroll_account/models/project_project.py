@@ -25,7 +25,6 @@ class ProjectProject(models.Model):
         for project in self:
             project.contracts_count = project_count.get(project.account_id.id, 0)
 
-    # Actions
 
     def action_view_project_contracts(self):
         all_contracts = self.env["hr.version"].search(
@@ -49,7 +48,6 @@ class ProjectProject(models.Model):
             action["res_id"] = contracts.id
         return action
 
-    # Project Updates
 
     def _get_stat_buttons(self):
         buttons = super()._get_stat_buttons()

@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -68,7 +67,6 @@ class TestLoyaltyCommunication(TransactionCase):
         )
 
     def test_one_creation_mail_per_coupon(self):
-        """Batching must not cost anyone their mail."""
         program = self._program(trigger="create")
         holders = self._holders(5, "Creation")
 
@@ -77,7 +75,6 @@ class TestLoyaltyCommunication(TransactionCase):
         self.assertEqual(len(self._mails_for(cards)), 5)
 
     def test_creation_mail_is_sent_in_batches(self):
-        """It used to be one `send_mail` per coupon, at about seven queries each."""
         program = self._program(trigger="create")
         self._issue(program, self._holders(2, "Warm"))
 
@@ -93,7 +90,6 @@ class TestLoyaltyCommunication(TransactionCase):
         )
 
     def test_a_coupon_with_no_customer_gets_no_mail(self):
-        """Grouping by sender must not sweep in an unheld coupon."""
         program = self._program(trigger="create")
         cards = self.env["loyalty.card"].create(
             [{"program_id": program.id, "points": 1} for _ in range(3)]
@@ -103,7 +99,6 @@ class TestLoyaltyCommunication(TransactionCase):
         self.assertFalse(self._mails_for(cards))
 
     def test_only_the_highest_milestone_reached_is_sent(self):
-        """A card that jumps past two milestones gets one mail, for the higher."""
         second_template = self.template.copy({"name": "Second milestone"})
         program = self.env["loyalty.program"].create(
             {
@@ -143,7 +138,6 @@ class TestLoyaltyCommunication(TransactionCase):
         self.assertEqual(mails.subject, second_template.subject)
 
     def test_milestone_mail_is_sent_in_batches(self):
-        """The same batching for the 'When Reaching' plans."""
         program = self._program(trigger="points_reach", points=50)
 
         def cross(count, prefix):
@@ -174,7 +168,6 @@ class TestLoyaltyCommunication(TransactionCase):
         self.assertEqual(len(self._mails_for(crossed)), 20)
 
     def test_loyalty_no_mail_still_silences_both(self):
-        """The escape hatch the sale and PoS flows rely on."""
         program = self._program(trigger="create")
         holders = self._holders(3, "Silent")
         cards = (

@@ -9,7 +9,6 @@ class AccountAnalyticLine(models.Model):
             if self.task_id.under_warranty:
                 return False
             elif self.project_id.pricing_type == "employee_rate":
-                # Then we want to keep the SOL define for this timesheet
                 if not self.task_id.sale_line_id:
                     return False
                 mapping = self.env["project.sale.line.employee.map"].search(

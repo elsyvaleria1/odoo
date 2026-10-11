@@ -69,7 +69,6 @@ class IrMail_Server(models.Model):
                 )
 
     def _compute_smtp_port(self) -> None:
-        """Keep the SMTP configuration of an Outlook server (e.g. its port) untouched."""
         super(
             IrMail_Server, self.filtered(lambda s: s.smtp_authentication != "outlook")
         )._compute_smtp_port()
@@ -83,7 +82,6 @@ class IrMail_Server(models.Model):
 
     @api.onchange("smtp_user", "smtp_authentication")
     def _on_change_smtp_user_outlook(self) -> None:
-        """The Outlook mail servers can only be used for the user personal email address."""
         if self.smtp_authentication == "outlook":
             self.from_filter = self.smtp_user
 
@@ -97,12 +95,7 @@ class IrMail_Server(models.Model):
             super()._smtp_login__(connection, smtp_user, smtp_password)
 
     def _get_personal_mail_servers_limit(self):
-        """Return the number of email we can send in 1 minutes for this outgoing server.
-
-        0 fallbacks to 10 to avoid blocking servers.
-        """
         if self.smtp_authentication == "outlook":
-            # Outlook flags emails as spam much faster, so use a lower limit
             return (
                 int(
                     self.env.registry.settings.get(

@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from freezegun import freeze_time
 
 from odoo import Command, fields
@@ -31,13 +30,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         tax_lines_with_caret_options,
         expected_amls_based_on_tax_dict,
     ):
-        """Check the caret option of each tax line redirects to the expected journal items.
-
-        :param report: report.formula record the lines were generated from
-        :param dict options: report options used to generate the lines
-        :param list tax_lines_with_caret_options: report lines carrying the 'generic_tax_report' caret option
-        :param dict expected_amls_based_on_tax_dict: report line name -> expected account.move.line recordset
-        """
         for tax_line in tax_lines_with_caret_options:
             expected_amls = expected_amls_based_on_tax_dict.get(tax_line["name"])
             action = self.env[report.custom_handler_model_name].caret_option_audit_tax(
@@ -101,7 +93,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 640.0),
@@ -117,7 +108,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 640.0),
@@ -140,7 +130,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 640.0),
@@ -258,7 +247,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1100.0),
@@ -274,7 +262,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1100.0),
@@ -293,7 +280,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1100.0),
@@ -330,7 +316,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
             expected_amls_based_on_tax_dict,
         )
 
-        # Same with tax_10 as a sale tax.
         tax_10.type_tax_use = "sale"
 
         options = self._generate_options(
@@ -338,7 +323,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1100.0),
@@ -350,13 +334,11 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
             options,
         )
 
-        # Same with tax_20 as a sale tax.
         tax_10.type_tax_use = "none"
         tax_20.type_tax_use = "sale"
 
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1100.0),
@@ -432,7 +414,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 452.0),
@@ -448,7 +429,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 452.0),
@@ -467,7 +447,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 452.0),
@@ -558,7 +537,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -576,7 +554,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -599,7 +576,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -690,7 +666,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -708,7 +683,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -731,7 +705,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", -100.0),
@@ -771,11 +744,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
 
     def test_tax_report_custom_edition_tax_line(self):
-        """Check the tax report handles manually edited tax lines on a journal entry.
-
-        Editing a tax line breaks the mapping between the original tax details and the line, so extra
-        tax details are generated on it to reflect the edition.
-        """
         tax_10 = self.env["account.tax"].create(
             {
                 "name": "tax_10",
@@ -841,7 +809,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 301.0),
@@ -857,7 +824,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 301.0),
@@ -876,7 +842,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 301.0),
@@ -973,7 +938,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX         NET         TAX         NET         TAX
             [0, 1, 2, 3, 4, 5, 6],
             [
                 ("Sales", "", 100.0, "", 500.0, "", 300.0),
@@ -993,7 +957,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX         NET         TAX         NET         TAX
             [0, 1, 2, 3, 4, 5, 6],
             [
                 ("Sales", "", 100.0, "", 500.0, "", 300.0),
@@ -1018,7 +981,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_tax_account._get_lines(options),
-            #   Name                                    NET         TAX         NET         TAX         NET         TAX
             [0, 1, 2, 3, 4, 5, 6],
             [
                 ("Sales", "", 100.0, "", 500.0, "", 300.0),
@@ -1046,7 +1008,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
                 "type_tax_use": "sale",
                 "include_base_amount": True,
                 "sequence": 0,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
@@ -1057,11 +1018,9 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
                 "amount_type": "percent",
                 "type_tax_use": "sale",
                 "sequence": 1,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
-        # Create an invoice combining our taxes (1 line with each alone, and 1 line with both)
         move = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -1110,7 +1069,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         options = self._generate_options(self.report_generic, move.date, move.date)
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                   Net              Tax
             [0, 1, 2],
             [
                 ("Sales", "", 108.2),
@@ -1187,7 +1145,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 100.0),
@@ -1202,7 +1159,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 100.0),
@@ -1220,7 +1176,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 100.0),
@@ -1295,7 +1250,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 0.0),
@@ -1310,7 +1264,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 0.0),
@@ -1328,7 +1281,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET         TAX
             [0, 1, 2],
             [
                 ("Sales", "", 0.0),
@@ -1370,11 +1322,9 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
             }
         )
 
-        # Form is used here for the dynamic tax line to get created automatically
         move_form = Form(
             self.env["account.move"].with_context(default_move_type="entry")
         )
-        # 'invoice_date' is invisible on 'entry' moves, so the accounting date is the one to set here
         move_form.date = "2022-02-01"
 
         for name, account_id, debit, credit, tax_to_apply in (
@@ -1419,7 +1369,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_generic._get_lines(options),
-            #   Name                                    NET           TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1.0),
@@ -1434,7 +1383,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report_grouped_account_tax._get_lines(options),
-            #   Name                                    NET           TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1.0),
@@ -1452,7 +1400,6 @@ class TestTaxReportDefaultPart(TestAccountReportsCommon):
         report_lines = self.report_grouped_tax_account._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    NET            TAX
             [0, 1, 2],
             [
                 ("Sales", "", 1.0),

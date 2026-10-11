@@ -87,15 +87,12 @@ class BaseCursor:
         self.transaction = None
         self.commit_count = 0
 
-    # Borrowed from the read-only pool, which reads a replica when one is
-    # configured, so what it reads may lag the primary. False means the
-    # primary: a cursor wrapping another (a test cursor) sits on one.
     @property
     def readonly_pool(self) -> bool:
         return False
 
     def flush(self) -> None:
-        passes = 0  # debuglog
+        passes = 0
         for _ in range(self._MAX_FLUSH_PASSES):
             if self.transaction is not None:
                 self.transaction.flush()
@@ -114,7 +111,7 @@ class BaseCursor:
                 precommit=len(self.precommit),
             )
             self.precommit.run()
-            passes += 1  # debuglog
+            passes += 1
         if self.transaction is not None:
             self.transaction.flush()
         if self.precommit:
@@ -213,9 +210,6 @@ class BaseCursor:
         def connection(self) -> psycopg.Connection: ...
 
     def use_read_committed(self) -> bool:
-        # PostgreSQL takes the isolation level only as a transaction's first
-        # statement. A test cursor shares the test's transaction, which has run
-        # queries already; it keeps that transaction's level.
         if self.connection.info.transaction_status != _TX_IDLE:
             _debug.logic("cursor.read_committed_skipped", reason="transaction_open")
             return False
@@ -224,8 +218,6 @@ class BaseCursor:
         return True
 
     def use_autocommit(self) -> bool:
-        # A test cursor shares the test's transaction, which stays open: a
-        # connection leaves a transaction only through its end.
         if self.connection.info.transaction_status != _TX_IDLE:
             _debug.logic("cursor.autocommit_skipped", reason="transaction_open")
             return False
@@ -402,7 +394,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             raise
 
     @property
-    def _backend_pid(self) -> int | None:  # debuglog
+    def _backend_pid(self) -> int | None:
         return get_backend_pid(vars(self).get("_cnx"))
 
     def _fetchall(self) -> list[tuple[Any, ...]]:
@@ -559,16 +551,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             return
         self._close()
 
-    # A connection lost before the transaction's first statement completed is
-    # replayed on a fresh borrow: nothing has happened server-side, so the
-    # statement is the same request it was. Once a statement has run, a
-    # savepoint is open or psycopg's pipeline has been entered (the block's
-    # second statement; the first is an ordinary statement, and the ORM's
-    # flush opens such a block), the transaction has state only the caller
-    # can rebuild, and the loss propagates as it did. So does one while the
-    # caller holds session state (holding_session_state): a session advisory
-    # lock dies with the backend, and a caller replayed onto a fresh one
-    # would carry on believing it still holds it.
     def _replace_lost_connection(self, exc: Exception) -> bool:
         refused = (
             "not_a_loss"
@@ -599,11 +581,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         with suppress(Exception):
             old_obj.close()
         del self._obj
-        # The dead connection goes back first: its permit is the one the
-        # replacement needs when the budget is spent (maxconn=1 is the limit
-        # case). A replacement that still cannot be had ends the cursor --
-        # its connection is gone and nothing is left to give back -- and the
-        # loss propagates, not a PoolError dressed as a statement error.
         pool.give_back(old, keep_in_pool=False)
         try:
             replacement = pool.borrow(self._dsn, key=self._key)
@@ -644,10 +621,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         )
         return True
 
-    # `txid_current_if_assigned()` is non-NULL exactly when this transaction
-    # wrote (an xid is assigned on the first write), so one round trip at
-    # commit answers "did it write" without classifying a single statement.
-    # Asked only when someone registered an observer and something ran.
     def on_commit_if_written(self, observer: Callable[[], None]) -> None:
         self._commit_write_observer = observer
 
@@ -662,11 +635,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         _debug.lifecycle("cursor.cancel", db=self.dbname, backend_pid=self._backend_pid)
         self._cnx.cancel_safe()
 
-    # The budget belongs to the cursor, not to one transaction: `SET LOCAL`
-    # dies at every commit and rollback, and a savepoint rollback reverts one
-    # issued inside it, so the cursor re-arms it before the next statement.
-    # Arming does not count as touching the transaction: the replay re-arms
-    # on the replacement connection, so nothing is lost with the old one.
     def set_statement_timeout(self, seconds: float | None) -> None:
         previous, self._statement_timeout = self._statement_timeout, seconds or None
         _debug.logic(
@@ -677,10 +645,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             armed=self._statement_timeout_armed,
             touched=self._transaction_touched,
         )
-        # Mid-transaction the change applies now; a budget that was set is
-        # lifted now even when a savepoint rollback disarmed it, because the
-        # arming may have been outside that savepoint (test cursors nest
-        # savepoints this cursor does not count).
         if self._statement_timeout_armed or (
             self._transaction_touched and (previous or seconds)
         ):
@@ -770,9 +734,9 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
                 self._format_statement(_render_query(query), params),
             )
         if _debug.perf.enabled:
-            qs = _get_statement_text(_render_query(query))  # debuglog
-            query_type, table = classify_query(qs)  # debuglog
-            words = qs.split(None, 1)  # debuglog
+            qs = _get_statement_text(_render_query(query))
+            query_type, table = classify_query(qs)
+            words = qs.split(None, 1)
             _debug.perf.count(
                 "cursor.statement",
                 db=vars(self).get("dbname"),
@@ -817,8 +781,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             params = query.params
             query = query.code
         else:
-            # str first: Composable is an ABC, whose isinstance is the slow
-            # path, and most text statements are str
             if not isinstance(query, str) and isinstance(query, _sql.Composable):
                 query = query.as_string(self._cnx)
             if params and not isinstance(params, (tuple, list, dict)):
@@ -887,7 +849,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         qs = _get_statement_text(query)
         ddl_kw, rollback_to = classify_statement(qs)
         if ddl_kw is not None:
-            inlined = bool(params)  # debuglog
+            inlined = bool(params)
             if params:
                 query = _inline_ddl_params(qs, params, self._cnx)
                 params = None
@@ -961,11 +923,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         self._drain_siblings_after_stale_plan()
         return True
 
-    # A stale plan this connection met came from a schema change this process
-    # did not see land -- a DBA's ALTER, another process's migration -- so the
-    # idle siblings hold the same stale plans and each would burn a retry of
-    # its own. One drain per database per window heals them together; the
-    # window keeps a burst of requests from draining the pool once each.
     _STALE_PLAN_DRAIN_INTERVAL = 5.0
     _stale_plan_drains: dict[str, float] = {}
 
@@ -1094,9 +1051,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
                         reached_server=has_reached_server(exc),
                     )
                     if self._rolled_back:
-                        # the rollback runs in a finally behind the prerollback
-                        # hooks: it completed, and what raised was a hook; the
-                        # postrollback hooks of that rollback still run
                         _logger.exception("A pre-rollback hook failed on cursor close")
                         try:
                             self._drain_postrollback()
@@ -1125,7 +1079,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             self._closed = True
             del self._obj
             if _debug.lifecycle.enabled:
-                state = vars(self)  # debuglog
+                state = vars(self)
                 _debug.lifecycle(
                     "cursor.closed",
                     db=state.get("dbname"),
@@ -1215,10 +1169,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         ):
             self.postcommit.drain()
 
-    # PostgreSQL answers COMMIT on an aborted transaction with a quiet
-    # ROLLBACK: the writes vanished while the postcommit hooks ran and the
-    # caller carried on as if they had landed. Asked again after the flush,
-    # where a precommit hook can have swallowed the error that aborted it.
     def _refuse_to_commit_an_aborted_transaction(self, stage: str) -> None:
         if not self.in_failed_transaction():
             return
@@ -1257,8 +1207,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
             self._rollback()
         except BaseException:
             if self._rolled_back:
-                # a prerollback hook raised behind a rollback that completed:
-                # its postrollback hooks run, or the next commit drops them
                 try:
                     self._drain_postrollback()
                 except Exception:
@@ -1269,8 +1217,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         self._drain_postrollback()
 
     def _rollback(self) -> None:
-        # first: a clear() below that raises must not leave an earlier
-        # rollback's flag standing
         self._rolled_back = False
         _debug.lifecycle(
             "cursor.rollback",
@@ -1391,9 +1337,6 @@ class Connection:
             fail_fast=fail_fast,
         )
 
-    # One statement outside any transaction: no BEGIN before it, no COMMIT
-    # after it -- two round trips fewer than a cursor's. READ ONLY is a
-    # BEGIN's attribute, so a read-only connection has no guarantee to keep.
     def get_rows_autocommit(
         self,
         query: str | bytes | SQL | _sql.Composable,
@@ -1407,7 +1350,7 @@ class Connection:
         cr = self.cursor()
         try:
             cr.connection.autocommit = True
-            cr.execute(query, params)  # noqa: E8501  test_lint checks get_rows_autocommit's own callers
+            cr.execute(query, params)
             return cr.fetchall() if cr.description is not None else []
         finally:
             cr.close()

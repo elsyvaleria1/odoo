@@ -22,7 +22,6 @@ class TestMailingControllersCommon(MassMailCommon, HttpCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # cleanup lists
         cls.env["mailing.list"].search([]).unlink()
 
         cls._create_mailing_list()
@@ -63,7 +62,6 @@ class TestMailingControllersCommon(MassMailCommon, HttpCase):
 
         cls.test_contact = cls.mailing_list_1.contact_ids[0]
 
-        # freeze time base value
         cls._reference_now = datetime.datetime(2022, 6, 14, 10, 0, 0)
 
     @classmethod
@@ -84,8 +82,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         cls.test_email_normalized = "fleurus@example.com"
 
     def test_assert_initial_values(self):
-        """Ensure test base data to ease test understanding. Globally test_email
-        is member of 2 mailing public lists."""
         memberships = self.env["mailing.subscription"].search(
             [("contact_id.email_normalized", "=", self.test_email_normalized)]
         )
@@ -136,8 +132,6 @@ class TestMailingControllers(TestMailingControllersCommon):
 
     @mute_logger("odoo.http", "odoo.addons.website.models.ir_ui_view")
     def test_mailing_report_unsubscribe(self):
-        """Test deactivation of mailing report sending. It requires usage of
-        a hash token."""
         test_mailing = self.test_mailing_on_lists.with_env(self.env)
         self.env["ir.config_parameter"].sudo().set_param(
             "mass_mailing.mass_mailing_reports", True
@@ -145,11 +139,10 @@ class TestMailingControllers(TestMailingControllersCommon):
         hash_token = test_mailing._generate_mailing_report_token(self.user_marketing.id)
         self.authenticate("user_marketing", "user_marketing")
 
-        # TEST: various invalid cases
         for test_user_id, test_token, error_code in [
-            (self.user_marketing.id, "", 400),  # no token
-            (self.user_marketing.id, "zboobs", 401),  # invalid token
-            (self.env.uid, hash_token, 401),  # invalid credentials
+            (self.user_marketing.id, "", 400),
+            (self.user_marketing.id, "zboobs", 401),
+            (self.env.uid, hash_token, 401),
         ]:
             with self.subTest(test_user_id=test_user_id, test_token=test_token):
                 res = self.url_open(
@@ -165,7 +158,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                     .get_param("mass_mailing.mass_mailing_reports")
                 )
 
-        # TEST: not mailing user
         self.user_marketing.write(
             {
                 "group_ids": [
@@ -186,7 +178,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             .get_param("mass_mailing.mass_mailing_reports")
         )
 
-        # TEST: finally valid call
         self.user_marketing.write(
             {
                 "group_ids": [
@@ -198,7 +189,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             test_mailing.get_base_url(),
             f"mailing/report/unsubscribe?user_id={self.user_marketing.id}&token={hash_token}",
         )
-        # opening the link asks: a scanner fetching it turns nothing off
         res = self.url_open(link)
         self.assertEqual(res.status_code, 200)
         self.assertIn("o_mailing_report_deactivate", res.text)
@@ -255,19 +245,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         self.assertIn(response.status_code, (401, 403))
 
     def test_mailing_unsubscribe_from_document_tour(self):
-        """Test portal unsubscribe on mailings performed on documents (not
-        mailing lists or contacts). Primary effect is to automatically exclude
-        the email (see tour).
-
-        Two tests are performed (with and without existing list subscriptions)
-        as it triggers the display of the mailing list part of the UI.
-
-        Tour effects
-          * unsubscribe from mailing based on a document = blocklist;
-          * add feedback (block list): Other reason, with 'My feedback' feedback;
-          * remove email from exclusion list;
-          * re-add email to exclusion list;
-        """
         opt_out_reasons = self.env["mailing.subscription.optout"].search([])
         test_mailing = self.test_mailing_on_documents.with_env(self.env)
         test_feedback = "My feedback"
@@ -287,7 +264,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 previous_messages = test_partner.message_ids
                 test_email_normalized = tools.email_normalize(test_email)
 
-                # launch unsubscription tour
                 hash_token = test_mailing._generate_mailing_recipient_token(
                     test_partner.id, test_partner.email_normalized
                 )
@@ -298,10 +274,8 @@ class TestMailingControllers(TestMailingControllersCommon):
                         login=None,
                     )
 
-                # status update check
                 self.assertTrue(test_partner.is_blacklisted)
 
-                # partner (document): new message for blocklist addition with feedback
                 self.assertEqual(
                     len(test_partner.message_ids), len(previous_messages) + 1
                 )
@@ -313,7 +287,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                     ),
                 )
 
-                # posted messages on exclusion list record: activated, feedback, deactivated, activated again
                 bl_record = self.env["mail.blacklist"].search(
                     [("email", "=", test_partner.email_normalized)]
                 )
@@ -359,8 +332,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 )
 
     def test_opening_an_unsubscribe_link_unsubscribes_nobody(self):
-        """A scanner or a preview fetches every link of a mail it inspects:
-        the link's page asks, and only the confirmation it posts acts."""
         test_mailing = self.test_mailing_on_documents.with_env(self.env)
         partner = self.env["res.partner"].create(
             {"email": "opened@example.com", "name": "Opened"}
@@ -392,18 +363,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         self.assertTrue(partner.is_blacklisted)
 
     def test_mailing_unsubscribe_from_document_tour_mailing_user(self):
-        """Test portal unsubscribe on mailings performed on documents (not
-        mailing lists or contacts) using a generic '/unsubscribe' link allowing
-        mailing users to see and edit unsubcribe page.
-
-        Tour effects
-          * unsubscribe from mailing based on a document = blocklist;
-          * add feedback (block list): Other reason, with 'My feedback' feedback;
-          * remove email from exclusion list;
-          * re-add email to exclusion list;
-        """
-        # update user to link it with existing mailing contacts and allow the tour
-        # to run; test without and with mailing group
         self.user_marketing.write(
             {
                 "email": tools.formataddr(("Déboulonneur", "fleurus@example.com")),
@@ -415,7 +374,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         test_mailing = self.test_mailing_on_documents.with_env(self.env)
         self.authenticate("user_marketing", "user_marketing")
 
-        # no group -> no direct access to /unsubscribe
         res = self.url_open(
             tools.urls.urljoin(
                 test_mailing.get_base_url(),
@@ -424,7 +382,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         )
         self.assertEqual(res.status_code, 400)
 
-        # group -> direct access to /unsubscribe should wokr
         self.user_marketing.write(
             {
                 "group_ids": [
@@ -432,7 +389,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 ],
             }
         )
-        # launch unsubscription tour
         with freeze_time(self._reference_now):
             self.start_tour(
                 f"/mailing/{test_mailing.id}/unsubscribe",
@@ -441,19 +397,10 @@ class TestMailingControllers(TestMailingControllersCommon):
             )
 
     def test_mailing_unsubscribe_from_list_tour(self):
-        """Test portal unsubscribe on mailings performed on mailing lists. Their
-        effect is to opt-out from the mailing list.
-
-        Tour effects
-          * unsubscribe from mailing based on lists = opt-out from lists;
-          * add feedback (opt-out): Other reason, with 'My feedback' feedback;
-          * add email to exclusion list;
-        """
         opt_out_reasons = self.env["mailing.subscription.optout"].search([])
         test_mailing = self.test_mailing_on_lists.with_env(self.env)
         test_feedback = "My feedback"
 
-        # fetch contact and its subscription and blacklist status, to see the tour effects
         contact_l1 = self.mailing_list_1.contact_ids.filtered(
             lambda contact: contact.email == self.test_email_normalized
         )
@@ -461,7 +408,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             lambda subscription: subscription.contact_id == contact_l1
         )
 
-        # launch unsubscribe tour
         hash_token = test_mailing._generate_mailing_recipient_token(
             contact_l1.id, contact_l1.email
         )
@@ -472,17 +418,14 @@ class TestMailingControllers(TestMailingControllersCommon):
                 login=None,
             )
 
-        # status update check on list 1
         self.assertTrue(subscription_l1.opt_out)
         self.assertEqual(subscription_l1.opt_out_datetime, self._reference_now)
         self.assertEqual(subscription_l1.opt_out_reason_id, opt_out_reasons[-1])
-        # status update check on list 2: unmodified (was not member, still not member)
         contact_l2 = self.mailing_list_2.contact_ids.filtered(
             lambda contact: contact.email == self.test_email_normalized
         )
         self.assertFalse(contact_l2)
 
-        # posted messages on contact record for mailing list 1: feedback, unsubscription
         message_feedback = contact_l1.message_ids[0]
         self.assertEqual(
             message_feedback.body,
@@ -498,7 +441,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             ),
         )
 
-        # posted messages on exclusion list record: activated, deactivated, activated again
         bl_record = self.env["mail.blacklist"].search(
             [("email", "=", contact_l1.email_normalized)]
         )
@@ -516,24 +458,10 @@ class TestMailingControllers(TestMailingControllersCommon):
         self.assertEqual(msg_create.body, Markup("<p>Mail Blacklist created</p>"))
 
     def test_mailing_unsubscribe_from_list_with_update_tour(self):
-        """Test portal unsubscribe on mailings performed on mailing lists. Their
-        effect is to opt-out from the mailing list. Optional exclusion list can
-        be done through interface (see tour).
-
-        Tour effects
-          * unsubscribe from mailing based on lists = opt-out from lists;
-          * add feedback (opt-out): Other reason, with 'My feedback' feedback;
-          * add email to exclusion list;
-          * remove email from exclusion list;
-          * come back to List3;
-          * join List2 (with no feedback, as no opt-out / block list was done);
-          * re-add email to exclusion list;
-        """
         opt_out_reasons = self.env["mailing.subscription.optout"].search([])
         test_mailing = self.test_mailing_on_lists.with_env(self.env)
         test_feedback = "My feedback"
 
-        # fetch contact and its subscription and blacklist status, to see the tour effects
         contact_l1 = self.mailing_list_1.contact_ids.filtered(
             lambda contact: contact.email == self.test_email_normalized
         )
@@ -547,7 +475,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             lambda subscription: subscription.contact_id == contact_l3
         )
 
-        # launch unsubscription tour
         hash_token = test_mailing._generate_mailing_recipient_token(
             contact_l1.id, contact_l1.email
         )
@@ -558,15 +485,12 @@ class TestMailingControllers(TestMailingControllersCommon):
                 login=None,
             )
 
-        # status update check on list 1
         self.assertTrue(subscription_l1.opt_out)
         self.assertEqual(subscription_l1.opt_out_datetime, self._reference_now)
         self.assertEqual(subscription_l1.opt_out_reason_id, opt_out_reasons[-1])
-        # status update check on list 3 (opt-in during test)
         self.assertFalse(subscription_l3.opt_out)
         self.assertFalse(subscription_l3.opt_out_datetime)
 
-        # posted messages on contact record for mailing list 1: subscription update, feedback, unsubscription
         message_update = contact_l1.message_ids[0]
         self.assertEqual(
             message_update.body,
@@ -591,7 +515,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             ),
         )
 
-        # posted messages on contact record for mailing list 3: subscription
         message_sub = contact_l3.message_ids[0]
         self.assertEqual(
             message_sub.body,
@@ -601,7 +524,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             ),
         )
 
-        # posted messages on exclusion list record: activated, deactivated, activated again, feedback
         bl_record = self.env["mail.blacklist"].search(
             [("email", "=", contact_l1.email_normalized)]
         )
@@ -639,16 +561,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         self.assertEqual(msg_create.body, Markup("<p>Mail Blacklist created</p>"))
 
     def test_mailing_unsubscribe_from_my(self):
-        """Test portal unsubscribe using the 'my' mailing-specific portal page.
-        It allows to opt-in / opt-out from mailing lists as well as to manage
-        blocklist (see tour).
-
-        Tour effects
-          * opt-in List3 from opt-out, opt-in List2, opt-out List1;
-          * add feedback (as new opt-out): Other reason, with 'My feedback' feedback;
-          * add email in block list;
-          * add feedback (as block list addition): First reason (hence no feedback);
-        """
         test_feedback = "My feedback"
         portal_user = mail_new_test_user(
             self.env,
@@ -664,7 +576,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         )
         opt_out_reasons = self.env["mailing.subscription.optout"].search([])
 
-        # list opted-out and non-public should not be displayed
         private_list = (
             self.env["mailing.list"]
             .with_context(self._test_context)
@@ -687,7 +598,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         )
         private_list.subscription_ids[0].opt_out = True
 
-        # launch 'my' mailing' tour
         self.authenticate(portal_user.login, portal_user.login)
         with freeze_time(self._reference_now):
             self.start_tour(
@@ -696,7 +606,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 login=portal_user.login,
             )
 
-        # fetch contact and its subscription and blacklist status, to see the tour effects
         contact_l1 = self.mailing_list_1.contact_ids.filtered(
             lambda contact: contact.email == test_email_normalized
         )
@@ -738,7 +647,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             "Subscription: opt-in during test, datetime should have been reset",
         )
         self.assertFalse(subscription_l3.opt_out_reason_id)
-        # message on contact for list 1: opt-out L1, join L2
         msg_fb, msg_sub, msg_uns = contact_l1.message_ids
         self.assertEqual(
             msg_fb.body,
@@ -760,7 +668,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 f"<ul><li>{self.mailing_list_1.name}</li></ul>"
             ),
         )
-        # message on contact for list 2: opt-in L3 and L2
         msg_fb, msg_sub = contact_l3.message_ids
         self.assertEqual(
             msg_fb.body,
@@ -776,7 +683,6 @@ class TestMailingControllers(TestMailingControllersCommon):
             ),
         )
 
-        # block list record created, feedback logged
         bl_record = self.env["mail.blacklist"].search(
             [("email", "=", contact_l1.email_normalized)]
         )
@@ -790,8 +696,6 @@ class TestMailingControllers(TestMailingControllersCommon):
 
     @mute_logger("odoo.http", "odoo.addons.website.models.ir_ui_view")
     def test_mailing_view(self):
-        """Test preview of mailing. It requires either a token, either being
-        mailing user."""
         test_mailing = self.test_mailing_on_documents.with_env(self.env)
         shadow_mailing = test_mailing.copy()
         doc_id, email_normalized = (
@@ -810,38 +714,37 @@ class TestMailingControllers(TestMailingControllersCommon):
         )
         self.authenticate("user_marketing", "user_marketing")
 
-        # TEST: various invalid cases
         for test_mid, test_doc_id, test_email, test_token, error_code in [
-            (test_mailing.id, doc_id, email_normalized, "", 400),  # no token
-            (test_mailing.id, doc_id, email_normalized, "zboobs", 401),  # wrong token
+            (test_mailing.id, doc_id, email_normalized, "", 400),
+            (test_mailing.id, doc_id, email_normalized, "zboobs", 401),
             (
                 test_mailing.id,
                 self.env.user.partner_id.id,
                 email_normalized,
                 hash_token,
                 401,
-            ),  # mismatch
+            ),
             (
                 test_mailing.id,
                 doc_id,
                 "not.email@example.com",
                 hash_token,
                 401,
-            ),  # mismatch
+            ),
             (
                 shadow_mailing.id,
                 doc_id,
                 email_normalized,
                 hash_token,
                 401,
-            ),  # valid credentials but wrong mailing_id
+            ),
             (
                 0,
                 doc_id,
                 email_normalized,
                 hash_token,
                 400,
-            ),  # valid credentials but missing mailing_id
+            ),
         ]:
             with self.subTest(
                 test_mid=test_mid,
@@ -857,7 +760,6 @@ class TestMailingControllers(TestMailingControllersCommon):
                 )
                 self.assertEqual(res.status_code, error_code)
 
-        # TEST: valid call using credentials
         res = self.url_open(
             tools.urls.urljoin(
                 test_mailing.get_base_url(),
@@ -866,7 +768,6 @@ class TestMailingControllers(TestMailingControllersCommon):
         )
         self.assertEqual(res.status_code, 200)
 
-        # TEST: invalid credentials but mailing user
         self.user_marketing.write(
             {
                 "group_ids": [
@@ -889,8 +790,6 @@ class TestMailingTracking(TestMailingControllersCommon):
         "odoo.addons.mail.models.mail_mail", "odoo.addons.mass_mailing.models.mailing"
     )
     def test_tracking_short_code(self):
-        """Test opening short code linked to a mailing trace: should set the
-        trace as opened and clicked, create a click record."""
         mailing = self.test_mailing_on_lists.with_env(self.env)
         with self.mock_mail_gateway(mail_unlink_sent=False):
             mailing.action_send_mail()
@@ -928,8 +827,6 @@ class TestMailingTracking(TestMailingControllersCommon):
         "odoo.addons.mail.models.mail_mail", "odoo.addons.mass_mailing.models.mailing"
     )
     def test_tracking_url_token(self):
-        """Test tracking of mails linked to a mailing trace: should set the
-        trace as opened."""
         mailing = self.test_mailing_on_lists.with_env(self.env)
         with self.mock_mail_gateway(mail_unlink_sent=False):
             mailing.action_send_mail()
@@ -942,7 +839,7 @@ class TestMailingTracking(TestMailingControllersCommon):
         self.assertEqual(len(mailing_trace), 1)
         self.assertFalse(mailing_trace.open_datetime)
         self.assertEqual(mailing_trace.trace_status, "sent")
-        mail.unlink()  # the mail might be removed during the email sending
+        mail.unlink()
         self.env.flush_all()
 
         with freeze_time(self._reference_now):

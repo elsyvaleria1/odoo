@@ -9,8 +9,6 @@ CSS_ERROR_MARKER = "A css error occurred"
 
 
 def _first_bundle(html):
-    # the first tag loading a bundle, not the text "/web/assets/" an inline
-    # script may carry (the layout's import-map notice matches on it)
     return re.search(r'(?:href|src)="/web/assets/', html).start()
 
 

@@ -11,8 +11,6 @@ def migrate(cr, version):
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
-    # end stage: the registry then holds every installed cash flow report
-    # handler, so a localization's own cash-flow tags are covered too
     families = env["account.cash.flow.report.handler"]._get_cash_flow_tag_families()
     dropped_by_kept = defaultdict(list)
     for family in families:

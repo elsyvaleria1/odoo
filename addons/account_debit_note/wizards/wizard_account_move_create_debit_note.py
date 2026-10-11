@@ -34,7 +34,6 @@ class WizardAccountMoveCreateDebitNote(models.TransientModel):
         help="In case you need to do corrections for every line, it can be in handy to copy them.  "
         "We won't copy them for debit notes from credit notes. "
     )
-    # computed fields
     move_type = fields.Char(compute="_compute_from_moves")
     journal_type = fields.Char(compute="_compute_journal_type")
     country_code = fields.Char(related="move_ids.company_id.country_id.code")
@@ -113,7 +112,7 @@ class WizardAccountMoveCreateDebitNote(models.TransientModel):
         new_moves = self.env["account.move"]
         for move in self.move_ids.with_context(
             include_business_fields=True
-        ):  # copy sale/purchase links
+        ):
             default_values = self._prepare_default_values(move)
             new_move = move.copy(default=default_values)
             new_moves |= new_move

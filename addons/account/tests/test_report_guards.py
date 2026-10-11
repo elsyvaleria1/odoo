@@ -80,7 +80,6 @@ class TestReportValueFormatting(TestAccountReportsCommon):
         )
 
     def test_format_value_survives_options_without_a_rounding_unit(self):
-        """format_value is public; a caller may hand it a partial options dict."""
         self.assertEqual(self.report.format_value({}, 12.5, "float"), "12.5")
 
     def test_hide_0_lines_hides_lines_that_render_as_zero(self):
@@ -185,13 +184,13 @@ class TestReportAggregationGuards(TestAccountReportsCommon):
         report = self.env.ref("account.balance_sheet")
         options = report.get_options({})
         for subformula in (
-            "if_above(usd(0))",  # lower-case currency code
-            "if_above(USD 0)",  # missing parentheses
+            "if_above(usd(0))",
+            "if_above(USD 0)",
             "gibberish(1)",
-            "round(1,BAD)",  # unknown rounding method
-            "rounding",  # starts with "round" but is not one
-            "if_above(XYZ(1000))",  # well-formed, but no such currency
-            "if_between(USD(1),XYZ(2))",  # only the second code is unknown
+            "round(1,BAD)",
+            "rounding",
+            "if_above(XYZ(1000))",
+            "if_between(USD(1),XYZ(2))",
         ):
             with self.subTest(subformula=subformula), self.assertRaises(UserError):
                 report._aggregation_apply_bounds(options, subformula, 12.345)
@@ -218,8 +217,6 @@ class TestReportAggregationGuards(TestAccountReportsCommon):
         )
 
     def test_if_between_includes_both_bounds(self):
-        """The docstring used to promise a strict interval; the comparison is <0 / >0,
-        so a value sitting exactly on a bound is returned rather than dropped."""
         report = self.env.ref("account.balance_sheet")
         options = report.get_options({})
         code = self.env.company.currency_id.name
@@ -310,7 +307,7 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
                 "group_ids": [Command.set([self.env.ref("base.group_user").id])],
             }
         )
-        self.env.invalidate_all()  # a restricted env otherwise reads the superuser's cache
+        self.env.invalidate_all()
         with self.assertRaises(AccessError):
             self.status.with_user(plain).read(["status"])
         self.env.invalidate_all()
@@ -318,7 +315,6 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
             self.status.with_user(plain).write({"status": "reviewed"})
 
     def test_an_accountant_can(self):
-        """Control: the group the feature is actually for still works."""
         accountant = self.env["res.users"].create(
             {
                 "name": "accountant",
@@ -356,7 +352,6 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
             }
         )
         self.env.invalidate_all()
-        # Control: the parent return is already hidden by its own rule.
         self.assertFalse(
             self.env["account.return"]
             .with_user(accountant)
@@ -415,7 +410,7 @@ class TestMultiCompanyScoping(TestAccountReportsCommon):
         )
 
     def _visible(self, model, record, companies):
-        self.env.invalidate_all()  # a wider environment's cache would answer otherwise
+        self.env.invalidate_all()
         return bool(
             self.env[model]
             .with_context(allowed_company_ids=companies.ids)
@@ -423,7 +418,6 @@ class TestMultiCompanyScoping(TestAccountReportsCommon):
         )
 
     def test_a_budget_item_is_hidden_wherever_its_budget_is(self):
-        # Control: the budget itself is already scoped by its own rule.
         self.assertFalse(
             self._visible("account.report.budget", self.budget_b, self.company_a)
         )
@@ -526,7 +520,6 @@ class TestPaymentWizardBankExposure(TestAccountReportsCommon):
 
     def test_the_wizard_does_not_reveal_a_bank_account_the_reader_cannot_read(self):
         self.env.invalidate_all()
-        # Control: the same user is refused a direct read.
         with self.assertRaises(AccessError):
             self.bank_b.with_user(self.accountant_a).read(["acc_number"])
         self.env.invalidate_all()
@@ -551,8 +544,6 @@ class TestEveryReportRenders(TestAccountReportsCommon):
     started running in CI recently.
     """
 
-    # Guards that are correct behaviour, not failures: a report that needs a second
-    # currency, and the sections source that reroutes its own report_id.
     EXPECTED = (
         "activate more than one currency",
         "Inconsistent report_id",
@@ -576,9 +567,6 @@ class TestEveryReportRenders(TestAccountReportsCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.reports = cls.env["report.formula"].search([])
-        # The net needs lines that actually have sublines: a report line is only
-        # unfoldable when its groupby resolves to something, so an empty ledger
-        # leaves nothing to expand and the net would silently test nothing.
         journal = cls.company_data["default_journal_misc"]
         moves = cls.env["account.move"].create(
             [
@@ -651,8 +639,6 @@ class TestEveryReportRenders(TestAccountReportsCommon):
             if lines is None:
                 continue
             for line in lines:
-                # Mirror the client: it offers the caret only on an unfoldable line,
-                # and unfoldLine() then needs an expand_function.
                 if not (line.get("unfoldable") and line.get("expand_function")):
                     continue
                 with self.subTest(report=report.name, line=line["name"]):
@@ -686,7 +672,6 @@ class TestExportTestFlagIsNotClientSettable(TestAccountReportsCommon):
     """
 
     def test_the_flag_is_honoured_while_a_test_runs(self):
-        """Control: TestAllReportsGeneration depends on this working."""
         report = self.env.ref("account.balance_sheet")
         options = report.get_options({"_running_export_test": True})
         self.assertTrue(options.get("_running_export_test"))
@@ -714,9 +699,6 @@ class TestAccountsCoverageReportCodelessAccounts(TestAccountReportsCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # Build the report rather than look for one: whether any shipped report
-        # offers the coverage tool depends on the installed localisation, and a
-        # test that skips itself on a generic database guards nothing.
         root = cls.env.ref("account.balance_sheet")
         cls.report = cls.env["report.formula"].create(
             {
@@ -928,7 +910,6 @@ class TestAuditReturnPreviousPeriodScoping(TestAccountReportsCommon):
         )
 
     def _shared_account(self):
-        """An account both companies can see, so a status can actually leak."""
         account = (
             self.env["account.account"]
             .with_company(self.company_a)
@@ -1142,10 +1123,10 @@ class TestLineIdIsClientInput(TestAccountReportsCommon):
 
     def test_a_malformed_line_id_raises_a_user_error(self):
         for line_id in (
-            "garbage",  # no separator at all
-            "x~account.account~abc",  # value is not an id
-            "a~b~1||c~d~2",  # empty segment between two delimiters
-            "~account.account~",  # model without a value is fine, but paired here
+            "garbage",
+            "x~account.account~abc",
+            "a~b~1||c~d~2",
+            "~account.account~",
         ):
             with self.subTest(line_id=line_id):
                 try:
@@ -1167,7 +1148,6 @@ class TestLineIdIsClientInput(TestAccountReportsCommon):
             [("markup", "account.account", 5)],
         )
         self.assertEqual(self.report._parse_line_id(""), [])
-        # An empty markup stays the empty string, as it always has.
         self.assertEqual(
             self.report._parse_line_id("~~Acme"),
             [("", None, "Acme")],
@@ -1240,8 +1220,6 @@ class TestDispatchOnSectionsSource(TestAccountReportsCommon):
             )
 
     def test_a_report_dispatching_on_its_own_options_is_allowed(self):
-        """_init_options_sections points sections_source_id at the report itself,
-        or at its selected variant. Both are legitimate and must not be refused."""
         for report in self.env["report.formula"].search([], limit=12):
             options = report.get_options({})
             source = self.env["report.formula"].browse(options["sections_source_id"])
@@ -1284,7 +1262,6 @@ class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
     """
 
     def _rewrite(self, domain):
-        """Run the report's rewrite over a domain and return the account domain."""
         report = self.env.ref("account.balance_sheet")
         rewritten = []
         real_search = type(self.env["account.account"]).search
@@ -1313,12 +1290,9 @@ class TestCoverageReportDomainRewrite(TestAccountReportsCommon):
             [("date", ">", date)],
         ):
             with self.subTest(domain=domain):
-                # Raising at all is the failure: the old rewriter produced
-                # ['&', ['code', '=like', '4%']] for the fourth case.
                 self._rewrite(domain)
 
     def test_an_or_between_two_account_terms_is_preserved(self):
-        """Flattening the tree would turn this union into an intersection."""
         Account = self.env["account.account"].with_context(active_test=False)
         four = Account.search_count([("code", "=like", "4%")])
         five = Account.search_count([("code", "=like", "5%")])
@@ -1372,7 +1346,6 @@ class TestAnnotationChatterLoad(TestAccountReportsCommon):
         return move.line_ids[0]
 
     def _spy_on_display_name(self):
-        """Returns (context manager, list that collects every resolved move id)."""
         resolved = []
         move_cls = type(self.env["account.move"])
         original = move_cls._compute_display_name
@@ -1404,13 +1377,9 @@ class TestAnnotationChatterLoad(TestAccountReportsCommon):
         )
 
     def test_general_ledger_postprocessor_does_not_resolve_display_names(self):
-        """The general ledger keeps its own copy of the same map."""
         aml = self._annotatable_line()
         report = self.env.ref("account.general_ledger_report")
         handler = self.env["account.general.ledger.report.handler"]
-        # The general ledger only attaches a chatter to its own accumulated-balance
-        # rows: no model, that markup, and a JSON res_id whose second element is
-        # the move line id (models/account_general_ledger.py:605-612).
         lines = [
             {
                 "id": report._get_generic_line_id(

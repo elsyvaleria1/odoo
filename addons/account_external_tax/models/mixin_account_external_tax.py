@@ -20,63 +20,34 @@ class MixinAccountExternalTax(models.AbstractModel):
         help="Technical field to determine if tax is calculated using an external service instead of Odoo.",
     )
 
-    # Methods to be extended by tax calculation integrations (e.g. Avatax)
-    # ====================================================================
     @api.depends("fiscal_position_id")
     def _compute_is_tax_computed_externally(self) -> None:
-        """When True external taxes will be calculated at the appropriate times. This should be overridden
-        so the field is set for eligible records (e.g., sale and/or purchase documents)."""
         self.is_tax_computed_externally = False
 
     def _get_external_taxes(self):
-        """Required hook that should return tax information calculated by an external service.
-
-        :returns: a dictionary prepared by `_process_external_taxes()` that maps each record to it's base line with the
-          appropriate manual_tax_amounts.
-        """
         return {}
 
     def _uncommit_external_taxes(self):
-        """Optional hook that will be called when an invoice is put back to draft and should be uncommitted."""
         return
 
     def _void_external_taxes(self):
-        """Optional hook that will be called when an invoice is deleted and should be voided."""
         return
 
-    # Methods to be extended to add support for external tax calculation on a model (e.g. account.move)
-    # =================================================================================================
     def _get_and_set_external_taxes_on_eligible_records(self):
-        """Should be overridden on documents that want external tax calculation (e.g. account.move and sale.order).
-
-        This method will be called automatically when taxes need to be calculated. This should filter out records
-        who don't need external tax calculation (`is_tax_computed_externally` not set) and also potentially filter
-        out records that are confirmed, posted or not of the right type.
-        """
         return
 
     def _prepare_line_data_for_external_taxes(self):
-        """Should be overridden on documents that want external tax calculation (e.g. account.move and sale.order).
-
-        This method returns model-agnostic line data to be used when doing an external tax request. It should at least
-        have base_line and description keys.
-        """
         return []
 
-    # Other methods
-    # =============
     def _prepare_external_tax_service_params(self):
-        """Gets service params common to all models."""
         return {
             "line_data": self._prepare_line_data_for_external_taxes(),
             "company_partner": self.company_id.partner_id,
-            # To be filled by models
             "document_date": None,
         }
 
     @api.model
     def _set_external_taxes(self, mapped_taxes) -> None:
-        """Sets extra_tax_data based on a dict that maps line records to base lines."""
         for line in mapped_taxes:
             line.tax_ids = False
 
@@ -108,9 +79,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         tax_key_field,
         search_archived_taxes=False,
     ) -> dict:
-        """Takes in base lines with tax values, generates missing account.tax and account.tax.group records and returns a
-        dictionary that maps line records to base lines with the right manual_tax_amounts, ready to be sent to _set_external_taxes."""
-        # Retrieve the tax groups.
         tax_group_names = {
             tax_group_values["name"]: tax_group_values
             for base_line, tax_values_list in base_line_with_tax_values
@@ -139,7 +107,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         for tax_group in missing_tax_groups:
             tax_group_by_name[tax_group.name] = tax_group
 
-        # Retrieve the taxes.
         tax_names = {
             tax_values["name"]: tax_values
             for base_line, tax_values_list in base_line_with_tax_values
@@ -206,7 +173,7 @@ class MixinAccountExternalTax(models.AbstractModel):
             tax_by_name[tax[tax_key_field]] = tax
 
         for base_line, tax_values_list in base_line_with_tax_values:
-            manual_tax_amounts = base_line["manual_tax_amounts"] = {}  # clear old taxes
+            manual_tax_amounts = base_line["manual_tax_amounts"] = {}
             for _tax_group_values, tax_values, manual_amounts in tax_values_list:
                 tax_id = str(tax_by_name[tax_values["name"]].id)
                 if tax_id in manual_tax_amounts:
@@ -233,7 +200,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         return True
 
     def _enable_external_tax_logging(self, icp_name) -> None:
-        """Start logging requests for 30 minutes."""
         self.env["ir.config_parameter"].sudo().set_param(
             icp_name,
             (fields.Datetime.now() + timedelta(minutes=30)).strftime(
@@ -242,7 +208,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         )
 
     def _log_external_tax_request(self, module_name, icp_name, message) -> None:
-        """Log when the ICP's value is in the future."""
         log_end_date = self.env.registry.settings.get(self.env, icp_name, "")
         try:
             log_end_date = datetime.strptime(
@@ -252,8 +217,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         except ValueError:
             need_log = False
         if need_log:
-            # This creates a new cursor to make sure the log is committed even when an
-            # exception is thrown later in this request.
             self.env.flush_all()
             dbname = self.env.cr.dbname
             with Registry(dbname).cursor() as cr:

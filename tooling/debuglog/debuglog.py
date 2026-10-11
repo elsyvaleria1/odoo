@@ -114,7 +114,6 @@ def _is_debug_call(node: ast.AST, *chain: str) -> bool:
 
 
 def _is_timed_decorator(node: ast.AST) -> bool:
-    """`@_debug.perf.timed`, applied bare rather than called."""
     return _is_debug_attr(node, "perf", "timed")
 
 
@@ -174,7 +173,6 @@ def _iter_function_scopes(tree: ast.Module) -> Iterator[ast.AST]:
 
 
 def _bare_targets(target: ast.expr) -> Iterator[ast.Name]:
-    """The plain names an assignment target binds, unpacking included."""
     if isinstance(target, ast.Name):
         yield target
     elif isinstance(target, ast.Tuple | ast.List | ast.Starred):
@@ -184,7 +182,6 @@ def _bare_targets(target: ast.expr) -> Iterator[ast.Name]:
 
 
 def _scope_nodes(scope: ast.AST) -> Iterator[ast.AST]:
-    """Every node lexically inside `scope` but not inside a nested scope."""
     stack = list(ast.iter_child_nodes(scope))
     while stack:
         node = stack.pop()
@@ -205,8 +202,8 @@ class _Scanner(ast.NodeVisitor):
         self._in_span = False
 
     def _site(self, node: ast.AST, kind: str, channel: str | None = None) -> None:
-        line = node.lineno  # type: ignore[attr-defined]  # every node here has a span
-        end = node.end_lineno or line  # type: ignore[attr-defined]
+        line = node.lineno
+        end = node.end_lineno or line
         self.report.sites.append(Site(self.path, line, end, kind, channel))
 
     def _violation(self, node: ast.AST, message: str) -> None:
@@ -214,7 +211,6 @@ class _Scanner(ast.NodeVisitor):
         self.report.violations.append(Violation(self.path, line, message))
 
     def _is_removable(self, stmt: ast.stmt) -> bool:
-        """Would the strip pass delete this statement outright?"""
         if _MARKER_RE.search(self.lines[stmt.lineno - 1]):
             return True
         if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
@@ -230,8 +226,6 @@ class _Scanner(ast.NodeVisitor):
         if isinstance(stmt, ast.If):
             return _guard_channel(stmt.test) is not None
         if isinstance(stmt, ast.With):
-            # a span leaves its own body behind, dedented, so it disappears
-            # only when that body disappears too
             return (
                 len(stmt.items) == 1
                 and _is_debug_call(stmt.items[0].context_expr, "perf")
@@ -246,19 +240,7 @@ class _Scanner(ast.NodeVisitor):
     def _check_removable(
         self, node: ast.stmt, body: list[ast.stmt], *, inside_span: bool = False
     ) -> None:
-        """Refuse a block the strip pass would empty.
-
-        A block of ONE debug statement is the obvious case, and it was the
-        only one this checked until 2026-09-14. A block of several, all of
-        them debug, empties just as completely -- and passed, because the
-        count was the test. Found by the round trip on a three-statement
-        `if line_errors:` whose body was two `# debuglog` counters and one
-        `_debug.logic(...)`: `--check` read three statements and said nothing,
-        `--strip` left a bare `if line_errors:` and the file stopped parsing.
-        """
         if inside_span:
-            # a span's own body may empty: the `with` line is removed too, so
-            # nothing is left needing a statement
             return
         if all(self._is_removable(stmt) for stmt in body):
             self._violation(
@@ -272,22 +254,6 @@ class _Scanner(ast.NodeVisitor):
             self._visit_stmt(stmt, body)
 
     def _check_unpacking(self, call: ast.Call) -> None:
-        """Unpacking into a debug call can raise before the level check.
-
-        A channel is `__call__(self, event, /, **fields)`, so the call
-        machinery -- not the channel -- decides both of these, and it decides
-        them with the channels off:
-
-        * `*` in the positional slot passes more than the one positional
-          `event` takes for any sequence whose length is not exactly 1, and
-          silently works for a length of 1, so the shape sits green until the
-          sequence grows.
-        * `**` beside explicit keywords collides whenever an expanded key
-          matches one of them, and the keys come from runtime data.
-
-        `**` alone is legal and stays legal: `event` is positional-only, so
-        nothing an expansion carries can collide with it.
-        """
         starred = [arg for arg in call.args if isinstance(arg, ast.Starred)]
         if starred:
             self._violation(
@@ -419,27 +385,6 @@ class _Scanner(ast.NodeVisitor):
             self._visit_body(case.body)
 
     def _check_marked_assignments(self, tree: ast.Module) -> None:
-        """Refuse a `# debuglog` line whose name outlives it.
-
-        A marked line is deleted outright, so a name it binds must be read by
-        debug code and nothing else. Measured 2026-09-14: the old checker read
-
-            with _debug.perf("scan", modules=len(graph)) as span:
-                members = graph.cycles()  # debuglog
-                span.set(on_cycle=len(members))
-            for member in members:
-
-        as five clean sites, and the strip produced a file whose `for` loop
-        named an undefined `members` -- two `F821`, out of a tree `--check`
-        had just called clean.
-
-        Scoped per function, because the first cut compared names across the
-        whole file and read a sibling method's *parameter* as the surviving
-        use: 20 findings, every one of them a name collision. And the marker
-        is looked for across the statement's whole SPAN: the first cut read
-        only its opening line, and so missed a marker on the closing bracket
-        of a multi-line assignment whose name the next line reads.
-        """
         covered = {
             line
             for site in self.report.sites
@@ -460,10 +405,6 @@ class _Scanner(ast.NodeVisitor):
                     node.targets if isinstance(node, ast.Assign) else [node.target]
                 )
                 for target in targets:
-                    # only a bare name is bound; `self.x = ...` binds nothing
-                    # called `self`, and reading the name inside the attribute
-                    # target as a binding is how the first cut called
-                    # `db/cursor.py`'s `self._backend_pid` a finding
                     for inner in _bare_targets(target):
                         bound.setdefault(inner.id, node)
             if not bound:
@@ -485,22 +426,6 @@ class _Scanner(ast.NodeVisitor):
                         break
 
     def _check_marker_lines(self, tree: ast.Module) -> None:
-        """Refuse a marker on a line that is not a whole statement.
-
-        The strip removes a marked line and nothing else, so a marker on a
-        continuation line -- or on a compound statement's header -- leaves the
-        rest of the construct behind and the file stops parsing. Measured
-        2026-09-15 on a probe the previous checker called clean at 5 sites:
-
-            first = (
-                a or b
-            ) and not a  # debuglog
-
-        stripped to `first = (` plus an orphaned `a or b`, a `SyntaxError` out
-        of a tree `--check` had just passed. Fourteen sites in `odoo` were in
-        that shape, including `)  # debuglog` on a closing bracket and
-        `except Exception as err:  # debuglog` on a handler.
-        """
         statements = [node for node in ast.walk(tree) if isinstance(node, ast.stmt)]
         for number, text in enumerate(self.lines, 1):
             if not _MARKER_RE.search(text):

@@ -29,8 +29,6 @@ _HOST_PLACEHOLDER_RE = re.compile(r"%[hd]")
 
 @functools.lru_cache(maxsize=8)
 def _compile_static_dbfilter(pattern: str) -> re.Pattern[str] | None:
-    # Cached per pattern so each warning is said once, not once per RPC call
-    # or per cron sweep.
     if _HOST_PLACEHOLDER_RE.search(pattern):
         _debug.logic("rpc.dbfilter_unusable", reason="host_placeholder")
         _logger.warning(
@@ -62,9 +60,6 @@ def get_static_dbfilter(pattern: str | None = None) -> re.Pattern[str] | None:
 
 
 def is_db_exposed(db_name: object) -> bool:
-    # The one answer for every caller that has no request host to resolve
-    # a %h/%d dbfilter against: RPC, the cron and job sweeps, and database
-    # management.  The HTTP layer narrows it further by host.
     if not isinstance(db_name, str) or not db_name:
         return False
     if is_maintenance_db(db_name):

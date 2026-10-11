@@ -6,10 +6,8 @@ class AccountMove(models.Model):
 
     def _send_product_email_templates(self) -> bool:
         if self.env.su:
-            # sending mail in sudo was meant for it being sent from superuser
             self = self.with_user(SUPERUSER_ID)
         for invoice in self.filtered(lambda x: x.move_type == "out_invoice"):
-            # send template only on customer invoice
             comment_subtype_id = self.env["ir.model.data"]._xmlid_to_res_id(
                 "mail.mt_comment"
             )
@@ -23,7 +21,6 @@ class AccountMove(models.Model):
         return True
 
     def _post_entries(self):
-        # OVERRIDE
         posted = super()._post_entries()
         posted._send_product_email_templates()
         return posted

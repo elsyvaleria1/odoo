@@ -174,8 +174,6 @@ class TestHttpStatic(TestHttpStaticCommon):
             self.assertEqual(resolutions(), 4, "an answer expires")
 
     def test_static01_module_sources_revalidate(self):
-        # the per-file ESM fallback loads these by bare URL: a stale cached
-        # module would mix two deploys on one page
         res = self.url_open("/web/static/src/core/registry.js")
         res.raise_for_status()
         self.assertCacheControl(res, "no-cache, max-age=0")
@@ -588,8 +586,6 @@ class TestHttpStatic(TestHttpStaticCommon):
             with self.subTest(field=field), self.assertRaises(UserError):
                 earth[field] = data
                 earth.flush_recordset()
-        # what an older version stored, or a direct import, is still served
-        # inert: the bytes are planted beneath the image validation
         for field in ("glyph_attach", "glyph_related"):
             self.env["ir.attachment"].sudo().search(
                 [

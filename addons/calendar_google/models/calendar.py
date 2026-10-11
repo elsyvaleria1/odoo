@@ -28,9 +28,6 @@ class CalendarEvent(models.Model):
     )
 
     def _google_link_instances(self) -> None:
-        """Give the events of a series Google knows the ids Google built for its
-        instances, from the series id and the start: once, so that an event moved
-        later keeps its id."""
         links = self.recurrence_id._google_links().grouped("recurrence_id")
         if not links:
             return
@@ -77,7 +74,6 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _has_values_to_sync(self, values) -> bool:
-        """Return True if values being updated intersects with Google synced values and False otherwise."""
         synced_fields = self._get_fields_google_synced()
         return any(key in synced_fields for key in values)
 
@@ -90,10 +86,7 @@ class CalendarEvent(models.Model):
         return super().write(vals)
 
     def _check_modify_event_permission(self, values) -> None:
-        """Check if event modification attempt by attendee is valid to avoid duplicate events creation."""
-        # Edge case: when resetting an account, we must be able to erase the event's Google id.
         skip_event_permission = self.env.context.get("skip_event_permission", False)
-        # Edge case 2: check if event is synchronizable in order to make sure the error is worth it.
         is_synchronizable = self._has_values_to_sync(values)
         if skip_event_permission or not is_synchronizable:
             return
@@ -113,8 +106,6 @@ class CalendarEvent(models.Model):
         if google_event.is_cancelled():
             return {"active": False}
 
-        # we need to check 'useDefault' for the event to determine if we have to use google's
-        # default reminder or not
         reminder_command = google_event.reminders.get("overrides")
         if not reminder_command:
             reminder_command = (
@@ -144,18 +135,13 @@ class CalendarEvent(models.Model):
             "show_as": "free" if google_event.is_available() else "busy",
             "guests_readonly": not bool(google_event.guestsCanModify),
         }
-        # Remove 'videocall_location' when not sent by Google, otherwise the local videocall will be discarded.
         if not values.get("videocall_location"):
             values.pop("videocall_location", False)
         if partner_commands:
-            # Add partner_commands only if set from Google. The write method on calendar_events will
-            # override attendee commands if the partner_ids command is set but empty.
             values["partner_ids"] = partner_commands
         if google_event.is_recurrent() and not google_event.is_recurrence():
-            # Propagate the follow_recurrence according to the google result
             values["follow_recurrence"] = google_event.is_recurrence_follower()
         if google_event.start.get("dateTime"):
-            # starting from python3.7, use the new [datetime, date].fromisoformat method
             start = (
                 parse(google_event.start.get("dateTime"))
                 .astimezone(UTC)
@@ -170,8 +156,6 @@ class CalendarEvent(models.Model):
         else:
             start = parse(google_event.start.get("date"))
             stop = parse(google_event.end.get("date")) - relativedelta(days=1)
-            # Stop date should be exclusive as defined here https://developers.google.com/calendar/v3/reference/events#resource
-            # but it seems that's not always the case for old event
             if stop < start:
                 stop = parse(google_event.end.get("date"))
             values["allday"] = True
@@ -206,7 +190,6 @@ class CalendarEvent(models.Model):
         partner_by_email = self._get_sync_partner(emails)
         for email, google_attendee in zip(emails, google_attendees, strict=True):
             if (normalized := tools.email_normalize(email)) in attendees_by_emails:
-                # Update existing attendees
                 attendee_commands += [
                     Command.update(
                         attendees_by_emails[normalized].id,
@@ -214,7 +197,6 @@ class CalendarEvent(models.Model):
                     )
                 ]
             else:
-                # Create new attendees
                 if google_attendee.get("self"):
                     partner = self.env.user.partner_id
                 elif partner_by_email.get(email):
@@ -235,7 +217,6 @@ class CalendarEvent(models.Model):
         google_emails = {tools.email_normalize(email) for email in emails}
         user_email = tools.email_normalize(self.env.user.email)
         for email, odoo_attendee in attendees_by_emails.items():
-            # Remove old attendees but only if it does not correspond to the current user.
             if email not in google_emails and email != user_email:
                 attendee_commands += [Command.delete(odoo_attendee.id)]
                 partner_commands += [Command.unlink(odoo_attendee.partner_id.id)]
@@ -255,7 +236,7 @@ class CalendarEvent(models.Model):
             )
 
             minutes = reminder.get("minutes", 0)
-            alarm = self.env["calendar.alarm"].search(  # noqa: E8507 - one lookup per reminder of the synced event
+            alarm = self.env["calendar.alarm"].search(
                 [("alarm_type", "=", alarm_type), ("duration_minutes", "=", minutes)],
                 limit=1,
             )
@@ -299,8 +280,6 @@ class CalendarEvent(models.Model):
         return commands
 
     def action_mass_archive(self, recurrence_update_setting) -> None:
-        """Delete the series from Google in one request, mailing once, when all
-        of its events go, or all from its base event."""
         self.check_singleton()
         archive_future_events = (
             recurrence_update_setting == "subsequent"
@@ -308,49 +287,26 @@ class CalendarEvent(models.Model):
         )
         if recurrence_update_setting == "all" or archive_future_events:
             Link = self.env["calendar.sync.link"]
-            # the instances go with their series
             Link._of(self.recurrence_id.calendar_event_ids, "google").unlink()
             series = Link._of(self.recurrence_id, "google")
             series.write({"recurrence_id": False})
             series.account_id._queue_push(self.browse())
-            # Increase performance handling 'subsequent' edge case as it was an 'all' update.
             if archive_future_events:
                 recurrence_update_setting = "all"
         super().action_mass_archive(recurrence_update_setting)
 
     def _get_google_start_end(self) -> tuple:
-        """Return the Google 'start' and 'end' payloads for this event.
-
-        In Google API, all-day events must have their 'dateTime' information set
-        as null and timed events must have their 'date' information set as null.
-        This is mandatory for allowing changing timed events to all-day and vice versa.
-
-        :return: (start, end)
-        :rtype: tuple
-        """
         start = {"date": None, "dateTime": None}
         end = {"date": None, "dateTime": None}
         if self.allday:
-            # For all-day events, 'dateTime' must be set to None to indicate that it's an all-day event.
-            # Otherwise, if both 'date' and 'dateTime' are set, Google may not recognize it as an all-day event.
             start["date"] = self.start_date.isoformat()
             end["date"] = (self.stop_date + relativedelta(days=1)).isoformat()
         else:
-            # For timed events, 'date' must be set to None to indicate that it's not an all-day event.
-            # Otherwise, if both 'date' and 'dateTime' are set, Google may not recognize it as a timed event
             start["dateTime"] = self.start.replace(tzinfo=UTC).isoformat()
             end["dateTime"] = self.stop.replace(tzinfo=UTC).isoformat()
         return start, end
 
     def _prepare_google_attendee_vals_list(self) -> list[dict[str, Any]]:
-        """Return the Google 'attendees' payload, sorted by email.
-
-        We sort the attendees to avoid undeterministic test fails. It's not
-        mandatory for Google.
-
-        :return: The attendee payloads
-        :rtype: list
-        """
         attendee_values = [
             {
                 "email": attendee.partner_id.email_normalized,
@@ -363,30 +319,17 @@ class CalendarEvent(models.Model):
         return attendee_values
 
     def _update_google_owner_values(self, values):
-        """Record the event's owner in `values`, or strip what we may not send.
-
-        :param dict values: The Google payload built so far
-        :return: The payload, owner information applied
-        :rtype: dict
-        """
         if (
             self.user_id
             and self.user_id != self.env.user
             and not self.user_id._calendar_sync_connection("google")
         ):
-            # The organizer is an Odoo user that do not sync his calendar
             values["extendedProperties"]["shared"][
                 "%s_owner_id" % self.env.cr.dbname
             ] = self.user_id.id
         elif not self.user_id:
-            # We can't store on the shared properties in that case without getting a 403. It can happen when
-            # the owner is not an Odoo user: We don't store the real owner identity (mail)
-            # If we are not the owner, we should change the post values to avoid errors because we don't have
-            # write permissions
-            # See https://developers.google.com/calendar/concepts/sharing
             keep_keys = ["id", "summary", "attendees", "start", "end", "reminders"]
             values = {key: val for key, val in values.items() if key in keep_keys}
-            # values['extendedProperties']['private] should be used if the owner is not an odoo user
             values["extendedProperties"] = {
                 "private": {
                     "%s_odoo_id" % self.env.cr.dbname: self.id,

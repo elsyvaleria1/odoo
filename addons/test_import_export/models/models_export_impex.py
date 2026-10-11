@@ -41,12 +41,10 @@ MODELS = [
         fields.Selection([("1", "Foo"), ("2", "Bar"), ("3", "Qux"), ("4", "")]),
     ),
     ("selection.function", fields.Selection(selection_fn)),
-    # just relate to an integer
     ("many2one", fields.Many2one("export.integer")),
     ("one2many", fields.One2many("export.one2many.child", "parent_id")),
     ("many2many", fields.Many2many("export.many2many.other")),
     ("function", fields.Integer(compute=compute_fn, inverse=inverse_fn)),
-    # related: specialization of fields.function, should work the same way
     (
         "reference",
         fields.Reference([("export.integer", "integer")], "export.reference"),
@@ -90,7 +88,6 @@ for name, field in MODELS:
 class ExportOne2manyChild(models.Model):
     _name = "export.one2many.child"
     _description = "Export One to Many Child"
-    # FIXME: orm.py:1161, fix to display_name on m2o field
     _rec_name = "value"
 
     parent_id = fields.Many2one(comodel_name="export.one2many")
@@ -120,7 +117,6 @@ class ExportOne2manyMultiple(models.Model):
 
 
 class ExportOne2manyMultipleChild(models.Model):
-    # FIXME: orm.py:1161, fix to display_name on m2o field
     _rec_name = "value"
     _name = "export.one2many.multiple.child"
     _description = "Export One To Many Multiple Child"
@@ -149,7 +145,6 @@ class ExportOne2manyChild2(models.Model):
 class ExportMany2manyOther(models.Model):
     _name = "export.many2many.other"
     _description = "Export Many to Many Other"
-    # FIXME: orm.py:1161, fix to display_name on m2o field
     _rec_name = "value"
 
     str = fields.Char()
@@ -252,6 +247,6 @@ class WithNonDemoConstraint(models.Model):
     @api.constrains("name")
     def _check_name_starts_with_uppercase_except_demo_data(self):
         if self.env.context.get("install_mode"):
-            return  # skipped on demo data
+            return
         if any(rec.name and rec.name[0].islower() for rec in self):
             raise ValidationError("Name must start with an uppercase letter")

@@ -29,11 +29,8 @@ from odoo.addons.sms.tools.sms_api import SmsApi
 
 SMS_CODE_LIFETIME = timedelta(minutes=10)
 SMS_CODE_MAX_FAILURES = 5
-# a signer may have 3 codes sent at once, then one every 10 minutes
 SMS_SEND_BURST = 3
 SMS_SEND_REFILL_SECONDS = 1800
-# a signer may have a new signing link mailed 3 times an hour; a shared document
-# takes 10 refusals an hour
 RESEND_LINK_BURST = 3
 RESEND_LINK_REFILL_SECONDS = 3600
 SHARED_REFUSAL_BURST = 10
@@ -76,10 +73,6 @@ class SignRequestItem(models.Model):
         return validity and datetime.combine(validity, time(23, 59, 59))
 
     def _issue_signer_links(self) -> None:
-        """A comment link per signer, in the signer's name (none for a shared
-        request's anonymous signer), until the request's validity or for as long
-        as a notification's link lives (decision B1): opening, signing, refusing
-        the document."""
         signers = self
         tokens = self.env["access.link"]._issue_each(
             signers,
@@ -92,7 +85,6 @@ class SignRequestItem(models.Model):
             item._update_cache({"access_token": tokens[item.id]}, validate=False)
 
     def _renew_signer_links(self, reason) -> None:
-        """The links sent before stop opening; the signers get new ones."""
         self.env["access.link"].with_privilege(
             "base.privilege_manage_links", reason=reason
         )._revoke_record_links(self, reason)
@@ -100,8 +92,6 @@ class SignRequestItem(models.Model):
 
     @api.model
     def _from_signer_token(self, token, request_id=None):
-        """The signer whose live link ``token`` is, in sudo, or an empty
-        recordset; with ``request_id``, only a signer of that request."""
         try:
             item = (
                 self.env["access.link"]
@@ -120,7 +110,6 @@ class SignRequestItem(models.Model):
     def _get_mail_link(self, email, subject):
         return get_mail_link(email, subject)
 
-    # this display_name (with sudo) is used for many2many_tags especially the partner_id is private
     display_name = fields.Char(compute_sudo=True)
 
     partner_id = fields.Many2one(
@@ -261,7 +250,6 @@ class SignRequestItem(models.Model):
 
     @api.constrains("sign_request_id", "partner_id", "role_id")
     def _check_signers_validity(self) -> None:
-        # this check allows one signer to be False, which is used to "share" a sign template
         self.sign_request_id._check_signers_roles_validity()
         self.sign_request_id._check_signers_partners_validity()
 
@@ -313,7 +301,6 @@ class SignRequestItem(models.Model):
             for request_item in request_items_reassigned:
                 sign_request = request_item.sign_request_id
                 old_sign_user = request_item.partner_id.user_ids[:1]
-                # remove old activities for internal users if they are no longer one of the unsigned signers of their sign requests
                 if (
                     old_sign_user
                     and old_sign_user.has_group("sign.group_sign_user")
@@ -330,7 +317,6 @@ class SignRequestItem(models.Model):
                         ["sign.mail_activity_data_signature_request"],
                         user_id=old_sign_user.id,
                     )
-                # create logs
                 sign_request.message_post(
                     body=self.env._(
                         "The contact of %(role)s has been changed from %(old_partner)s to %(new_partner)s.",
@@ -340,11 +326,9 @@ class SignRequestItem(models.Model):
                     )
                 )
 
-            # add new followers
             request_items_reassigned.sign_request_id.message_subscribe(
                 partner_ids=[vals.get("partner_id")]
             )
-            # add new activities for internal users
             new_sign_user = self.env["res.users"].search(
                 [
                     ("partner_id", "=", vals.get("partner_id")),
@@ -365,7 +349,6 @@ class SignRequestItem(models.Model):
 
         res = super().write(vals)
 
-        # change access token
         reassigned_sent = request_items_reassigned.filtered(
             lambda sri: sri.is_mail_sent
         )
@@ -374,7 +357,6 @@ class SignRequestItem(models.Model):
         return res
 
     def _cancel(self) -> None:
-        """Cancel a SignRequestItem. It can only be used in the SignRequest.cancel or SignRequest._refuse"""
         for request_item in self:
             request_item.write(
                 {
@@ -393,13 +375,10 @@ class SignRequestItem(models.Model):
             request_item.invalidate_recordset(["access_token"])
 
     def _refuse(self, request_state, refusal_reason, refusal_name="", refusal_email=""):
-        """Refuse a sign request item with 'sent' or 'shared' states."""
         self.check_singleton()
         if not self.env.su:
             raise UserError(self.env._("This function can only be called with sudo."))
 
-        # The refuser is the signer's user, else whoever is logged in; a
-        # public visitor of a shared request identifies by name and email.
         refuse_user = self.partner_id.user_ids[:1]
         if not refuse_user and not self.env.user._is_public():
             refuse_user = self.env.user
@@ -433,8 +412,6 @@ class SignRequestItem(models.Model):
             raise UserError(self.env._("This sign request item cannot be refused"))
 
     def _refuse_sent(self, refuse_user, message_post, refusal_reason) -> None:
-        """Refuse requests that were sent directly to the signers ('sent' state).
-        The cancelling flow happens directly in the refused sign request."""
         self.env["sign.log"].create(
             {"sign_request_item_id": self.id, "action": "refuse"}
         )
@@ -442,7 +419,6 @@ class SignRequestItem(models.Model):
             {"signing_date": fields.Date.context_today(self), "state": "canceled"}
         )
 
-        # Mark the signature activity as done for the refuser.
         if refuse_user and refuse_user.has_group("sign.group_sign_user"):
             self.sign_request_id.activity_feedback(
                 ["sign.mail_activity_data_signature_request"], user_id=refuse_user.id
@@ -454,15 +430,10 @@ class SignRequestItem(models.Model):
     def _refuse_shared(
         self, refuse_user, message_post, refusal_name="", refusal_email=""
     ) -> None:
-        """Record a refusal of a request shared by link ('shared' state), which
-        stays open to everyone else. A logged-in refuser is recorded as their
-        contact; a visitor without an account declares a name and an email,
-        recorded as declared and matched to no contact."""
         if not refuse_user and not (refusal_name and refusal_email):
             raise UserError(
                 self.env._("The public user must identify itself for the refusal.")
             )
-        # every refusal notifies the owner: a shared link must not flood them
         if not self._consume_send_budget(
             "shared_refusal", SHARED_REFUSAL_BURST, SHARED_REFUSAL_REFILL_SECONDS
         ):
@@ -517,7 +488,6 @@ class SignRequestItem(models.Model):
         for signer in self:
             signer_email_normalized = email_normalize(signer.signer_email or "")
             signer_lang = get_lang(self.env, lang_code=signer.partner_id.lang).code
-            # We hide the validity information if it is the default (6 month from the create_date)
             has_default_validity = (
                 signer.sign_request_id.validity
                 and signer.sign_request_id.validity - relativedelta(months=6)
@@ -568,26 +538,17 @@ class SignRequestItem(models.Model):
                 },
                 force_send=self.env.context.get(
                     "force_send", True
-                ),  # only force_send if not from cron
+                ),
             )
             signer.is_mail_sent = True
 
     def _get_signer_evidence(self) -> str | bool:
-        """What an authentication method kept to vouch for this signer's
-        identity, as its own hash, for the signature's log entry to cover."""
         return False
 
     def sign(self, signature, **kwargs):
-        """Sign sign request items at once.
-        :param signature: dictionary containing signature values and corresponding ids
-        """
         return self._sign(signature, **kwargs)
 
     def _sign(self, signature, **kwargs):
-        """Stores the sign request item values.
-        :param signature: dictionary containing signature values and corresponding ids / signature image
-        :param validation_required: boolean (via kwargs) indicating whether the sign request item requires a further validation process
-        """
         self.check_singleton()
         if not self.env.su:
             raise UserError(self.env._("This function can only be called with sudo."))
@@ -607,7 +568,7 @@ class SignRequestItem(models.Model):
         signature_ids = (
             {int(k) for k in signature} if isinstance(signature, dict) else set()
         )
-        if not (required_ids <= signature_ids):  # Security check
+        if not (required_ids <= signature_ids):
             raise UserError(self.env._("Some required items are not filled"))
 
         self._update_signature_values(signature, **kwargs)
@@ -662,7 +623,6 @@ class SignRequestItem(models.Model):
         if self.signed_without_extra_auth:
             self._send_no_credits_email()
 
-        # mark signature as done in next activity
         if not self.sign_request_id.request_item_ids.filtered(
             lambda sri: sri.partner_id == self.partner_id and sri.state == "sent"
         ):
@@ -683,9 +643,6 @@ class SignRequestItem(models.Model):
             sign_request.send_signature_accesses()
 
     def _update_signature_values(self, signature, **kwargs) -> None:
-        """Stores the sign request item values.
-        :param signature: dictionary containing signature values and corresponding ids / signature image
-        """
         self.check_singleton()
         if not self.env.su:
             raise UserError(self.env._("This function can only be called with sudo."))
@@ -732,8 +689,6 @@ class SignRequestItem(models.Model):
                         str(value).isdecimal() and int(value) in item.option_ids.ids
                     )
                 ):
-                    # Reject a bad selection value at submission, so the offending
-                    # signer is told, instead of crashing the LAST signer's render.
                     raise UserError(
                         self.env._(
                             "The value of a selection field must be one of its options."
@@ -808,10 +763,6 @@ class SignRequestItem(models.Model):
         self._send_signature_access_message()
 
     def _get_user_signature(self, signature_type="sign_signature"):
-        """Gets the user's stored sign_signature/sign_initials (needs sudo permission)
-        :param str signature_type: 'sign_signature' or 'sign_initials'
-        :returns bytes or False
-        """
         self.check_singleton()
         sign_user = self.partner_id.user_ids[:1]
         current_user_sign = False
@@ -822,10 +773,6 @@ class SignRequestItem(models.Model):
         return False
 
     def _get_user_signature_frame(self, signature_type="sign_signature_frame"):
-        """Gets the user's stored signature/initials frame (needs sudo permission)
-        :param str signature_type: 'sign_signature_frame' or 'sign_initials_frame'
-        :returns: bytes or False
-        """
         self.check_singleton()
         sign_user = self.partner_id.user_ids[:1]
         if sign_user and signature_type in [
@@ -836,9 +783,6 @@ class SignRequestItem(models.Model):
         return False
 
     def _send_sms_code(self) -> bool:
-        """Text the signer a new one-time code, voiding the previous one; False
-        when the signer has had codes sent too often lately. Called in sudo, on
-        the signer a link resolved to."""
         self.check_singleton()
         if not self._consume_send_budget(
             "sms_code", SMS_SEND_BURST, SMS_SEND_REFILL_SECONDS
@@ -861,8 +805,6 @@ class SignRequestItem(models.Model):
         return True
 
     def _consume_send_budget(self, purpose, capacity, refill_seconds) -> bool:
-        """Whether this signer may trigger one more message of ``purpose`` from a
-        public route: ``capacity`` at once, refilled over ``refill_seconds``."""
         self.check_singleton()
         return self.env["rate.limit.bucket"].consume_for_key(
             f"sign.{purpose}:{self.id}",
@@ -883,12 +825,8 @@ class SignRequestItem(models.Model):
         )
 
     def _verify_sms_code(self, code) -> bool:
-        """Whether ``code`` is the live code last sent; a right code is used up
-        and the phone recorded as verified, a wrong one counts towards voiding.
-        Called in sudo, on the signer a link resolved to."""
         self.check_singleton()
         item = self
-        # serialise attempts on one signer, so parallel guesses all count
         item.lock_for_update(allow_referencing=True, wait=True)
         item.invalidate_recordset(
             ["sms_code_hash", "sms_code_expires_at", "sms_code_failures"]
@@ -899,7 +837,6 @@ class SignRequestItem(models.Model):
             or item.sms_code_expires_at < fields.Datetime.now()
         ):
             return False
-        # a code verifies only for the number it was sent to
         if consteq(item._hash_sms_code(code, item.sms_number), item.sms_code_hash):
             item.write(
                 {
@@ -923,17 +860,11 @@ class SignRequestItem(models.Model):
 
     @api.model
     def _has_sms_credits(self) -> bool:
-        """Whether an SMS can be sent: the client asks before offering the code,
-        the server before refusing to sign without one. Credits matter only when
-        the company sends through IAP; a balance IAP cannot tell (-1, an outage)
-        does not block, sending says whether it went through."""
         if self.env.company._get_sms_api_class() is not SmsApi:
             return True
         return self.env["iap.account"].sudo().get_credits("sms") != 0
 
     def _notify_missing_sms_credits(self) -> None:
-        """Tell the request's owner, once, that its signers wait for SMS credits
-        to be able to sign."""
         self.check_singleton()
         sign_request = self.sign_request_id
         owner = sign_request.create_uid
@@ -966,10 +897,6 @@ class SignRequestItem(models.Model):
         return hmac(self.env(su=True), EXPIRY_SCOPE, (timestamp, sign_request_item_id))
 
     def _is_expiry_valid(self, exp_timestamp, exp_hash) -> bool:
-        """Validates if the expiry code is still valid
-        :param float exp_timestamp: a timestamp provided by the user in the URL params
-        :param str exp_hash: code provided in the URL to be checked
-        """
         self.check_singleton()
         if not (exp_timestamp and exp_hash):
             return False
@@ -1005,8 +932,6 @@ class SignRequestItem(models.Model):
             item.sms_number = item.partner_id.phone_ids._primary().number
 
     def _get_constant_value(self, sign_item) -> str:
-        """The value a read-only item holds for this signer: the field its type
-        is linked to, a struck line, or what the template's author typed."""
         item_type = sign_item.type_id.sudo()
         if item_type.auto_field:
             return self._get_auto_field_value(
@@ -1017,9 +942,6 @@ class SignRequestItem(models.Model):
         return sign_item.name
 
     def _get_auto_field_value(self, item_type):
-        """Return the automatic value of a sign item based on the linked model and partner access
-        :return: str: auto_value
-        """
         self.check_singleton()
         item_type_sudo = self.env["sign.item.type"].sudo().browse(item_type["id"])
         record = None
@@ -1059,23 +981,15 @@ class SignRequestItem(models.Model):
         return auto_value
 
     def _get_stamp_value(self) -> str:
-        """
-        Return the formatted stamp value (company name, address, phone) for the partner.
-
-        :returns: str Company name and phone separated by a newline, or an empty string if not found.
-        """
         partner = self.with_context(show_address=1).partner_id
         company_address = None
 
         if partner:
             if partner.parent_id:
-                # Partner has a parent → use parent company
                 company_address = partner.parent_id
             elif partner.is_company:
-                # Partner is a standalone company → use itself (commercial partner)
                 company_address = partner.commercial_partner_id
             elif partner.user_ids and partner.user_ids[0].company_id:
-                # Partner is an individual user → use their company partner
                 company_address = partner.user_ids[0].company_id.partner_id
 
         if not company_address:

@@ -5,10 +5,7 @@ from odoo.fields import Domain
 
 from odoo.addons.phone_call.models.phone_call import number_key
 
-# how far the phone system's stamp of a call may sit from the softphone's own
 SOFTPHONE_WINDOW = timedelta(minutes=2)
-# what a softphone files for a call that rang it: the phone system's report of
-# the same call stands for it
 RINGING_STATES = ("calling", "missed", "rejected")
 
 
@@ -17,8 +14,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _device_entry_user(self, device, call, company):
-        # only a phone system answers for everyone's extensions; a handset's
-        # token naming one would file calls as any colleague
         extension = str(call.get("extension") or "").strip()
         if extension and device._phone_call_channel() == "pbx":
             users = (
@@ -53,8 +48,6 @@ class PhoneCall(models.Model):
         return ingest
 
     def _absorb_ringing_softphone_calls(self) -> None:
-        """Every browser a company number rang filed a call of its own; the
-        phone system's report is that call, so those copies go."""
         incoming = self.filtered(lambda call: call.direction == "incoming")
         if not incoming:
             return
@@ -123,7 +116,6 @@ class PhoneCall(models.Model):
     @api.model
     def _call_to_complete(self, candidates, vals):
         if vals.get("sip_call_id"):
-            # the softphone that took the call named its dialog: no guessing
             named = candidates.filtered(
                 lambda call: (
                     call.channel == "softphone"
@@ -155,8 +147,6 @@ class PhoneCall(models.Model):
 
     def _complete_with_entry(self, vals) -> None:
         if self.channel == "softphone":
-            # the softphone filed this call as it happened; the phone system
-            # adds the device that recorded it, never who or what carried it
             vals = {
                 key: value
                 for key, value in vals.items()

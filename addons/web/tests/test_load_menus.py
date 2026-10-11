@@ -274,13 +274,6 @@ class LoadMenusSearchTests(HttpCase):
         )
 
     def test_a_leaf_category_does_not_head_a_group_of_its_own(self):
-        # base declared five categories whose xml id path names a parent that
-        # exists and which carried no parent_id, so each read as a top-level
-        # application. On a database that loads the data file before any
-        # manifest asks for the path -- which is any database where the module
-        # arrives later -- the launcher heads its apps with the leaf, and
-        # Invoicing sits beside Accounting as a separate group.
-        # module_category_vocabulary.py is the gate; this pins the five.
         for leaf, parent in (
             ("accounting_accounting", "accounting"),
             ("services_helpdesk", "services"),

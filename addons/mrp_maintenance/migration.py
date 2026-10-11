@@ -44,7 +44,6 @@ def migrate_equipment_resources(env):
     for parent, member in sorted(set(pairs)):
         if parent == member:
             continue
-        # Existing containment is authoritative, including historical and planned links.
         if member in contained:
             continue
         relations.create(

@@ -16,7 +16,6 @@ from odoo.addons.account_batch_payment.models.sepa_mapping import (
 class AccountPayment(models.Model):
     _inherit = "account.payment"
 
-    # used to inform the end user there is a SDD mandate that could be used to register that payment
     sdd_mandate_usable = fields.Boolean(
         string="Could a SDD mandate be used?",
         compute="_compute_usable_mandate",
@@ -53,7 +52,6 @@ class AccountPayment(models.Model):
             mandate = payment.get_usable_mandate()
             if not mandate or payment.payment_channel_id.code not in sepa_codes:
                 payment.sdd_mandate_id = False
-            # If we have a usable mandate and the already linked mandate doesn't belong to the new partner (or there isn't one)
             elif mandate and not payment.sdd_mandate_id.filtered_domain(
                 [("partner_id", "=", payment.partner_id.id)]
             ):
@@ -74,7 +72,6 @@ class AccountPayment(models.Model):
 
     @api.model
     def split_node(self, string_node, max_size) -> tuple:
-        # Split a string node according to its max_size in byte
         string_node = normalize_communication(string_node)
         byte_node = string_node.encode()
         if len(byte_node) <= max_size:
@@ -85,9 +82,6 @@ class AccountPayment(models.Model):
 
     @api.depends("date", "partner_id", "company_id")
     def _compute_usable_mandate(self) -> None:
-        """returns the first mandate found that can be used for this payment,
-        or none if there is no such mandate.
-        """
         for payment in self:
             payment.sdd_mandate_usable = bool(payment.get_usable_mandate())
 
@@ -106,10 +100,6 @@ class AccountPayment(models.Model):
                 )
 
     def generate_xml(self, company_id, required_collection_date, askBatchBooking):
-        """Generates a SDD XML file containing the payments corresponding to this recordset,
-        associating them to the given company, with the specified
-        collection date.
-        """
         version = self.journal_id.debit_sepa_pain_version
         if not version:
             raise UserError(
@@ -146,7 +136,6 @@ class AccountPayment(models.Model):
         )
 
     def get_usable_mandate(self):
-        """Returns the sdd mandate that can be used to generate this payment"""
         return self.env["sdd.mandate"]._sdd_get_usable_mandate(
             self.company_id.id or self.env.company.id,
             self.partner_id.commercial_partner_id.id,
@@ -154,18 +143,17 @@ class AccountPayment(models.Model):
         )
 
     def _sdd_xml_gen_header(self, company_id, CstmrDrctDbtInitn) -> None:
-        """Generates the header of the SDD XML file."""
         GrpHdr = create_xml_node(CstmrDrctDbtInitn, "GrpHdr")
         create_xml_node(
             GrpHdr, "MsgId", str(time.time())
-        )  # Using time makes sure the identifier is unique in an easy way
+        )
         create_xml_node(GrpHdr, "CreDtTm", datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
         create_xml_node(GrpHdr, "NbOfTxs", str(len(self)))
         create_xml_node(
             GrpHdr,
             "CtrlSum",
             float_repr(sum(x.amount for x in self), precision_digits=2),
-        )  # This sum ignores the currency, it is used as a checksum (see SEPA rulebook)
+        )
         InitgPty = create_xml_node(GrpHdr, "InitgPty")
         create_xml_node(InitgPty, "Nm", self.split_node(company_id.name, 70)[0])
         create_xml_node_chain(
@@ -173,8 +161,6 @@ class AccountPayment(models.Model):
         )
 
     def _sdd_xml_gen_address(self, root_node, partner, sdd_version) -> None:
-        # Starting from November 2025, structured addresses will become the norm,
-        # and unstructured addresses will not be allowed anymore.
 
         contact_address = partner._display_address(without_company=True)
         if contact_address:
@@ -198,7 +184,7 @@ class AccountPayment(models.Model):
                     )
                     create_xml_node(
                         PstlAdr, "StrtNm", self.split_node(street_name, 70)[0]
-                    )  # Number and box in street
+                    )
                 if partner.zip:
                     create_xml_node(PstlAdr, "PstCd", partner.zip)
                 if partner.city:
@@ -235,8 +221,6 @@ class AccountPayment(models.Model):
         journal,
         CstmrDrctDbtInitn,
     ) -> None:
-        """Generates a group of payments in the same PmtInfo node, provided
-        that they share the same journal."""
         sdd_version = self.journal_id.debit_sepa_pain_version
         if not sdd_version:
             raise UserError(
@@ -260,7 +244,7 @@ class AccountPayment(models.Model):
             PmtInf,
             "CtrlSum",
             float_repr(sum(x.amount for x in self), precision_digits=2),
-        )  # This sum ignores the currency, it is used as a checksum (see SEPA rulebook)
+        )
 
         PmtTpInf = create_xml_node_chain(PmtInf, ["PmtTpInf", "SvcLvl", "Cd"], "SEPA")[
             0
@@ -270,8 +254,6 @@ class AccountPayment(models.Model):
         create_xml_node_chain(PmtTpInf, ["LclInstrm", "Cd"], sdd_scheme)
 
         create_xml_node(PmtTpInf, "SeqTp", "RCUR")
-        # Note: RCUR refers to the COLLECTION of payments, not the type of mandate used
-        # This value is only used for informatory purpose.
 
         create_xml_node(
             PmtInf,
@@ -280,7 +262,7 @@ class AccountPayment(models.Model):
         )
         Cdtr = create_xml_node_chain(
             PmtInf, ["Cdtr", "Nm"], self.split_node(company_id.name, 70)[0]
-        )[0]  # SEPA regulation gives a maximum size of 70 characters for this field
+        )[0]
 
         if sdd_version == "pain.008.001.08":
             self._sdd_xml_gen_address(Cdtr, company_id.partner_id, sdd_version)
@@ -319,11 +301,6 @@ class AccountPayment(models.Model):
             )
 
     def sdd_xml_gen_payment(self, company_id, partner, end2end_name, PmtInf) -> None:
-        """Appends to a SDD XML file being generated all the data related to the
-        payments of a given partner.
-        """
-        # The two following conditions should never execute.
-        # They are here to be sure future modifications won't ever break everything.
         if company_id not in self.company_id.parent_ids:
             raise UserError(
                 self.env._(
@@ -426,7 +403,6 @@ class AccountPayment(models.Model):
             )
 
     def _group_payments_per_bank_journal(self):
-        """Groups the payments of this recordset per associated journal, in a dictionnary of recordsets."""
         rslt = {}
         for payment in self:
             if rslt.get(payment.journal_id):

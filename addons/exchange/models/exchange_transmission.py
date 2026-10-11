@@ -23,9 +23,7 @@ class ExchangeTransmission(models.Model):
         }
     )
 
-    # FIELDS
 
-    # Subject block
     subject_id = fields.Reference(
         selection="_selection_subject_models",
         index=True,
@@ -39,7 +37,6 @@ class ExchangeTransmission(models.Model):
         required=True,
     )
 
-    # Channel block
     channel_id = fields.Many2one(
         comodel_name="exchange.channel",
         index=True,
@@ -50,7 +47,6 @@ class ExchangeTransmission(models.Model):
         related="channel_id.protocol",
     )
 
-    # Lifecycle block
     intent = fields.Selection(
         selection=[
             ("issue", "Issue"),
@@ -94,7 +90,6 @@ class ExchangeTransmission(models.Model):
         index=True,
     )
 
-    # Timing block
     date_created = fields.Datetime(
         default=fields.Datetime.now,
         index=True,
@@ -104,7 +99,6 @@ class ExchangeTransmission(models.Model):
     date_sent = fields.Datetime(readonly=True)
     date_settled = fields.Datetime(readonly=True)
 
-    # Payload block
     attachment_id = fields.Many2one(
         comodel_name="ir.attachment",
         index="btree_not_null",
@@ -127,7 +121,6 @@ class ExchangeTransmission(models.Model):
         help="The counterparty's own words. Never paraphrased.",
     )
 
-    # Relation block
     parent_id = fields.Many2one(
         comodel_name="exchange.transmission",
         index=True,
@@ -143,7 +136,6 @@ class ExchangeTransmission(models.Model):
         "document to reference the one before it.",
     )
 
-    # Retry block
     retry_count = fields.Integer(
         default=0,
         readonly=True,
@@ -153,7 +145,6 @@ class ExchangeTransmission(models.Model):
         readonly=True,
     )
 
-    # Transport block
     event_log_id = fields.Many2one(
         comodel_name="integration.exchange",
         index=True,
@@ -165,7 +156,6 @@ class ExchangeTransmission(models.Model):
 
     display_name = fields.Char(compute="_compute_display_name")
 
-    # INDEXES
 
     _queue_idx = models.Index("(state, date_next_retry)")
     _subject_idx = models.Index("(subject_id, intent)")
@@ -174,7 +164,6 @@ class ExchangeTransmission(models.Model):
         "A counterparty issues one reference per ask.",
     )
 
-    # CONSTRAINT METHODS
 
     @api.constrains("state", "event_log_id")
     def _check_state_agrees_with_transport(self) -> None:
@@ -226,7 +215,6 @@ class ExchangeTransmission(models.Model):
                     self.env._("A chain does not cross channels."),
                 )
 
-    # COMPUTE METHODS
 
     @api.depends("state")
     def _compute_is_settled(self) -> None:
@@ -243,7 +231,6 @@ class ExchangeTransmission(models.Model):
                 label = f"{transmission.reference} - {label}"
             transmission.display_name = label
 
-    # CRUD METHODS
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -260,7 +247,6 @@ class ExchangeTransmission(models.Model):
             self._notify_subjects()
         return result
 
-    # HELPER METHODS
 
     def _notify_subjects(self) -> None:
         for subject in {transmission.subject_id for transmission in self}:
@@ -299,7 +285,6 @@ class ExchangeTransmission(models.Model):
         self.check_singleton()
         return self.channel_id._get_protocol()
 
-    # ACTION METHODS
 
     def action_send(self) -> None:
         self._send_many()
@@ -317,7 +302,6 @@ class ExchangeTransmission(models.Model):
             "view_mode": "form",
         }
 
-    # EXCHANGE METHODS
 
     def _send(self) -> None:
         self.check_singleton()
@@ -376,9 +360,6 @@ class ExchangeTransmission(models.Model):
         for transmission in self:
             verdict = verdicts.get(transmission.id)
             if verdict is None:
-                # The counterparty took the batch and said nothing about this
-                # member. Leaving it queued is the safe reading: the next run
-                # asks again, where dropping it would lose the document.
                 _logger.error(
                     "%s returned no verdict for transmission %s in a batch of %s",
                     protocol._name,
@@ -456,9 +437,6 @@ class ExchangeTransmission(models.Model):
                 "date_next_retry": fields.Datetime.now() + timedelta(seconds=delay),
             },
         )
-        # The endpoint's own backoff, carried as the job's `eta`. `ir_job` owns
-        # when the work runs; `retry_count` stays here because how many times a
-        # counterparty has been asked is an audit trail, not scheduling state.
         channel._enqueue_send(delay=delay)
 
     def _get_next_retry(self, retry_after: int | None):
@@ -493,18 +471,9 @@ class ExchangeTransmission(models.Model):
             },
         )
 
-    # CRON METHODS
 
     @api.model
     def _cron_send_queued(self, limit: int = 100) -> None:
-        """Sweep for queued work no job is carrying.
-
-        Sending is a worker's job now -- `create` and `_schedule_retry` enqueue
-        one per channel. This is the safety net for a transmission that reached
-        `queued` by some other road: a data import, a restored backup, or a job
-        lost to a crash between enqueue and run. Enqueuing is idempotent, so
-        sweeping something already carried costs nothing.
-        """
         now = fields.Datetime.now()
         self.search(
             [

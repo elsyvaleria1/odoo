@@ -7,9 +7,6 @@ DOC = "test_access_right.memo_doc"
 
 @tagged("post_install", "-at_install")
 class TestFetchPendingRuleInput(TransactionCase):
-    # the read rule reads a stored compute; a fetch of known rows that also
-    # selects it left its pending recompute for later, and the rule's WHERE
-    # judged the rows on the value the table held before the change
 
     @classmethod
     def setUpClass(cls):
@@ -41,8 +38,6 @@ class TestFetchPendingRuleInput(TransactionCase):
         return self.doc.with_user(self.user)
 
     def _refused(self, read) -> bool:
-        # assertRaises opens a savepoint, whose flush would settle the
-        # recompute the test leaves pending
         try:
             read()
         except AccessError:

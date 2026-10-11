@@ -67,13 +67,9 @@ class TestAssetDimension(common.TransactionCase):
                 "tracking": "serial",
                 "asset_kind_id": cls.env.ref("base.kind_vehicle").id,
                 "manufacturer_id": cls.manufacturer.id,
-                # The lot takes the product's company; the operator carries
-                # one, and stock.lot.operator_id is check_company.
                 "company_id": cls.env.company.id,
             }
         )
-        # What asset_ledger composes for a vehicle, and what the map has to
-        # show: manufacturer / model / plate.
         cls.canonical = "Trail Bridge Motors / Trail Bridge Truck / TRL-001"
         cls.operator = cls.env["hr.employee"].create({"name": "Trail Bridge Driver"})
         cls.asset = cls.env["product.trace"].create(
@@ -148,8 +144,6 @@ class TestAssetDimension(common.TransactionCase):
         self.assertEqual(self.device.map_subtitle, self.canonical)
 
     def test_a_vehicle_with_no_driver_is_named_by_the_vehicle(self):
-        # The middle case, and the one the map shows most: a truck parked
-        # between shifts still has to say which truck it is.
         self.asset.operator_id = False
         self.assertFalse(self.device.asset_operator_id)
         self.assertEqual(self.device.map_title, self.canonical)
@@ -164,9 +158,6 @@ class TestAssetDimension(common.TransactionCase):
         )
 
     def test_the_label_is_the_canonical_name_not_the_typed_one(self):
-        # The regression this guards: a fleet whose lot names hold VINs, bare
-        # plates and model years put those on the map. display_name does not
-        # move when someone retypes the serial.
         self.asset.name = "JAANMR856C7500651 TRL-001 100"
         self.assertEqual(self.device.map_subtitle, self.canonical)
 
@@ -174,9 +165,6 @@ class TestAssetDimension(common.TransactionCase):
         self.assertEqual(self.device.map_subtitle.count("TRL-001"), 1)
 
     def test_an_asset_that_is_not_a_vehicle_still_gets_its_plate(self):
-        # Only a vehicle's display_name ends in the plate. Equipment keeps its
-        # own name, so the plate is the only thing naming the unit and the
-        # suffix has to survive for it.
         pump = self.env["product.product"].create(
             {
                 "name": "Trail Bridge Pump",

@@ -14,8 +14,6 @@ from .ir_access_log import kept_on_uninstall
 _logger = logging.getLogger(__name__)
 
 
-# the fields whose change changes who holds a duty, or which duties a rule
-# keeps apart
 DUTY_FIELDS = frozenset({"group_ids", "excluded_group_ids", "verb_ids"})
 RULE_FIELDS = frozenset({"function_a_id", "function_b_id", "active"})
 
@@ -26,11 +24,6 @@ _SCANNING: contextvars.ContextVar[bool] = contextvars.ContextVar(
 
 @contextlib.contextmanager
 def _conflicts_created(rules: Any, cause: str) -> Iterator[None]:
-    # a change of what a duty names, or of which duties a rule keeps apart,
-    # applies to people who already hold them: each conflict it creates is
-    # logged, as a scan would find it. Nothing is refused, since nobody is
-    # being given anything; the next grant to them is. A change made inside
-    # another (a duty's verb lines) is scanned once, by the outer one
     if _SCANNING.get() or not rules:
         yield
         return
@@ -64,8 +57,6 @@ class IrAccess(models.Model):
 
     @api.model
     def _duty_rules(self, model_ids: set[int]) -> Any:
-        # the rules keeping apart a duty held through a verb of these models: a
-        # row granting, limiting or removing such a verb changes who holds it
         model_ids &= self.env["ir.access.sod.rule"]._get_duty_verb_model_ids()
         if not model_ids:
             return None
@@ -93,8 +84,6 @@ class IrAccess(models.Model):
     def _duty_rules_of_rows(self, operation: str, model_ids: Any = ()) -> Any:
         if not self or not self.env["ir.access.sod.rule"]._get_duty_verb_model_ids():
             return None
-        # the rows are read once the change is allowed: a refused one is
-        # logged as the change it refuses, not as a read
         self.check_access(operation)
         return self._duty_rules(set(self.model_id.ids) | set(model_ids))
 
@@ -130,7 +119,6 @@ class IrAccessSodFunction(models.Model):
     )
 
     def _get_holder_ids(self, users) -> set[int]:
-        """Which of `users` hold this duty now."""
         self.check_singleton()
         spec = dict(self._get_duty_spec())
         spec["verb_groups"] = self._verb_groups(spec["verbs"])
@@ -148,9 +136,6 @@ class IrAccessSodFunction(models.Model):
 
     @api.model
     def _scheduled_group_ids(self, users) -> dict[int, frozenset[int]]:
-        # the groups a scheduled grant gives each user once it starts, with
-        # what they imply: a duty is judged on what the person is being given,
-        # or a grant scheduled to start later would never be refused
         grants = (
             self.env["res.users"]
             ._grant_model()
@@ -168,7 +153,6 @@ class IrAccessSodFunction(models.Model):
 
     @ormcache("self.id", cache="groups")
     def _get_duty_spec(self) -> dict[str, Any]:
-        # every grant asks every rule's duties: what they name is read once
         self.check_singleton()
         return {
             "groups": frozenset(self.group_ids._ids),
@@ -180,17 +164,12 @@ class IrAccessSodFunction(models.Model):
     def _verb_groups(
         self, verbs: tuple[tuple[str, str], ...]
     ) -> tuple[tuple[frozenset[int], frozenset[int]], ...]:
-        # for each verb of a duty, the groups whose rows grant it and those
-        # holding the operation it requires: a person holds the verb with one
-        # of each, as the engine decides it for them, even when no single group
-        # of theirs holds both
         Access = self.env["ir.access"]
         model_verbs = self.env.registry.model_verbs
         pairs = []
         for model_name, verb_name in verbs:
             verb = model_verbs.get(model_name, {}).get(verb_name)
             if verb is None:
-                # its module is gone: the duty is held through nothing there
                 continue
             pairs.append(
                 (
@@ -323,7 +302,6 @@ class IrAccessSodRule(models.Model):
 
     @api.model
     def _check_users(self, users, cause: str) -> None:
-        """Log every conflict `users` hold now; refuse a blocking one without exception."""
         users = users.filtered(
             lambda user: not user.share and user.active and user.id != SUPERUSER_ID
         )
@@ -346,8 +324,6 @@ class IrAccessSodRule(models.Model):
                 if exception:
                     exception._record_use(cause)
                     continue
-                # a module's data loads before the upgrade can grant its
-                # exceptions: while the registry loads, a conflict is logged
                 blocking = rule.action == "block" and self.env.registry.ready
                 logs.append(rule._log_values(user, cause, blocking))
                 if blocking:
@@ -356,7 +332,6 @@ class IrAccessSodRule(models.Model):
             self.env["ir.access.log"]._record(logs)
         if refused:
             rule, user = refused[0]
-            # the refusal rolls back its own log row; the server log keeps it
             _logger.warning(
                 "Separation of duties rule %s refused %s: %s would hold both %s "
                 "and %s.",
@@ -381,9 +356,7 @@ class IrAccessSodRule(models.Model):
     @api.model
     @ormcache(cache="groups")
     def _get_active_rule_ids(self) -> tuple[tuple[int, int, int], ...]:
-        # every grant asks, and most databases have no rule: kept off the query
         if not self.env.ref("base.privilege_check_duties", raise_if_not_found=False):
-            # base's own data is loading: no module that ships a rule is yet
             return ()
         rules = self.with_privilege(
             "base.privilege_check_duties",
@@ -396,7 +369,6 @@ class IrAccessSodRule(models.Model):
     @api.model
     @ormcache(cache="groups")
     def _get_duty_verb_model_ids(self) -> frozenset[int]:
-        # the models whose rows can change who holds an active rule's duty
         if not self._get_active_rule_ids():
             return frozenset()
         lines = (
@@ -412,9 +384,6 @@ class IrAccessSodRule(models.Model):
     @api.model
     @ormcache(cache="groups")
     def _get_affecting_group_ids(self) -> frozenset[int]:
-        # the groups whose grant can make someone hold a rule's duty: those that
-        # are, or imply, a group a duty is held through; a grant of any other
-        # group is not checked at all
         rule_ids = self._get_active_rule_ids()
         if not rule_ids:
             return frozenset()
@@ -427,7 +396,6 @@ class IrAccessSodRule(models.Model):
             for function in Function.browse(function_ids):
                 spec = function._get_duty_spec()
                 held |= spec["groups"] | spec.get("approver_group_ids", frozenset())
-                # a grant of either half of a verb can complete it
                 for granting, requiring in function._verb_groups(spec["verbs"]):
                     held |= granting | requiring
         if not held:
@@ -453,7 +421,6 @@ class IrAccessSodRule(models.Model):
         return result
 
     def _standing_conflicts(self) -> set[tuple[int, int]]:
-        # who holds both duties of each active rule now, as (rule, user)
         users = self.env["res.users"].search(
             [("share", "=", False), ("id", "!=", SUPERUSER_ID)]
         )
@@ -498,7 +465,6 @@ class IrAccessSodRule(models.Model):
         }
 
     def _get_conflicts(self) -> list[tuple[Any, Any]]:
-        """Every (rule, user) holding both duties today, excepted or not."""
         internal = self.env["res.users"].search(
             [("share", "=", False), ("id", "!=", SUPERUSER_ID)]
         )

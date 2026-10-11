@@ -74,7 +74,6 @@ class TestSpreadsheetAgreesWithTheAccountCodesEngine(TestAccountReportsCommon):
         return move
 
     def _assert_prefix_is_ours(self, prefix, expected):
-        """A prefix that reaches a fixture account makes every assertion below a lie."""
         reached = self.env["account.account"].search([("code", "=like", f"{prefix}%")])
         self.assertEqual(
             reached,
@@ -162,24 +161,12 @@ class TestSpreadsheetAgreesWithTheAccountCodesEngine(TestAccountReportsCommon):
     def test_a_range_report_over_cumulative_accounts_is_where_the_two_part_company(
         self,
     ):
-        """The hazard, pinned so that closing it is a deliberate act.
-
-        The spreadsheet reads a balance-sheet account cumulatively whatever range it is
-        given; a range report reads the movement. Delete this test when the two stop
-        resolving the scope from different places.
-        """
         self._skip_without_spreadsheet()
         self._assert_prefix_is_ours("9701", self.cumulative_account)
         self.assertEqual(self._report_balance("9701", date_range=True), 10.0)
         self.assertEqual(self._spreadsheet_balance("9701"), 110.0)
 
     def test_a_prefix_spanning_both_kinds_is_reconcilable_by_no_date_scope(self):
-        """No `date_scope` reproduces the spreadsheet across a mixed prefix.
-
-        The spreadsheet mixes a cumulative and a period figure inside one sum, which a
-        single expression cannot express. 44 shipped `account_codes` expressions carried
-        such a prefix when this was written.
-        """
         self._skip_without_spreadsheet()
         self._assert_prefix_is_ours(
             "970", self.cumulative_account + self.period_account + self.counterpart

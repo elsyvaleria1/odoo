@@ -22,7 +22,6 @@ class TestCalendarReservation(TransactionCase):
             ]
         )
         cls.organizer_resource, cls.invitee_resource = cls.resources
-        # A partner with no user at all: an external contact invited by e-mail.
         cls.external = cls.env["res.partner"].create({"name": "External Guest"})
         cls.start = datetime(2035, 3, 15, 10, 0)
 
@@ -46,9 +45,6 @@ class TestCalendarReservation(TransactionCase):
             .search([("res_model", "=", "calendar.event"), ("res_id", "in", event.ids)])
         )
 
-    # ------------------------------------------------------------------
-    # Projection
-    # ------------------------------------------------------------------
 
     def test_meeting_books_one_reservation_per_attendee_with_a_resource(self):
         event = self._make_event()
@@ -240,9 +236,6 @@ class TestCalendarReservation(TransactionCase):
         event.partner_ids = [(6, 0, [self.organizer.partner_id.id])]
         self.assertEqual(self._reservations(event).resource_id, self.organizer_resource)
 
-    # ------------------------------------------------------------------
-    # Conflicts — the point of the whole exercise
-    # ------------------------------------------------------------------
 
     def test_two_meetings_on_the_same_person_conflict(self):
         first = self._make_event()
@@ -258,10 +251,6 @@ class TestCalendarReservation(TransactionCase):
         self.assertTrue(second.schedule_overlap_count)
 
     def test_a_meeting_conflicts_with_a_foreign_ledger_claim(self):
-        """The ledger is model-agnostic: a shift booked by another consumer
-        (planning, mrp, project) clashes with a meeting just the same. Stand in
-        for that consumer with a raw claim, since none of them is installable
-        from `calendar`'s own dependency set."""
         self.env["resource.reservation"].sudo().create(
             {
                 "name": "Warehouse shift",
@@ -289,9 +278,6 @@ class TestCalendarReservation(TransactionCase):
         self.assertFalse(first.schedule_overlap_count)
         self.assertFalse(second.schedule_overlap_count)
 
-    # ------------------------------------------------------------------
-    # Lifecycle
-    # ------------------------------------------------------------------
 
     def test_archiving_releases_the_claims_and_restoring_retakes_them(self):
         event = self._make_event()
@@ -314,9 +300,6 @@ class TestCalendarReservation(TransactionCase):
             .search([("res_model", "=", "calendar.event"), ("res_id", "=", event_id)])
         )
 
-    # ------------------------------------------------------------------
-    # Recurrence — the reason the sync is manual
-    # ------------------------------------------------------------------
 
     def test_a_recurrence_books_every_occurrence_exactly_once(self):
         event = self._make_event(
@@ -334,8 +317,6 @@ class TestCalendarReservation(TransactionCase):
         )
 
     def test_rewriting_a_whole_recurrence_leaves_one_booking_set_per_occurrence(self):
-        """`_rewrite_recurrence` never calls `super().write()` on `self`, so an
-        automatic sync hook would not fire here at all."""
         event = self._make_event(
             recurrency=True,
             repeat_unit="day",

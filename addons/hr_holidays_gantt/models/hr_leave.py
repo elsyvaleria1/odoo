@@ -1,4 +1,3 @@
-# Copyright (c) 2005-2006 Axelor SARL. (http://www.axelor.com)
 
 from collections import defaultdict
 from datetime import UTC, datetime, time, timedelta
@@ -20,7 +19,6 @@ class HrLeave(models.Model):
 
     @api.model
     def _get_leave_interval(self, date_from, date_to, employee_ids):
-        # Validated hr.leave create a resource.schedule.exception
         calendar_leaves = self.env["resource.schedule.exception"].search(
             [
                 ("time_type_id.is_work", "=", False),
@@ -30,13 +28,6 @@ class HrLeave(models.Model):
                 "|",
                 ("resource_id", "in", employee_ids.mapped("resource_id").ids),
                 ("resource_id", "=", False),
-                # The python filter below requires the calendar to match too, so
-                # ask the database for it rather than fetching rows only to drop
-                # them: a row survives that filter only when its calendar is
-                # unset or belongs to one of these employees, which is what this
-                # pair says. It bites for company-wide exceptions carrying a
-                # hand-set calendar - the ones with a resource are already
-                # covered by the clause above.
                 "|",
                 (
                     "calendar_id",
@@ -73,7 +64,6 @@ class HrLeave(models.Model):
                 ):
                     leaves[employee.id].append(leave)
 
-        # Get non-validated time off
         leaves_query = self.env["hr.leave"].search(
             [
                 ("employee_id", "in", employee_ids.ids),
@@ -183,20 +173,12 @@ class HrLeave(models.Model):
         return warning
 
     def _group_leaves(self, leaves, employee, date_from, date_to):
-        """Return leaves happening between `date_from` and `date_to`, merged into contiguous periods by validation state."""
         work_times = {
             wk[0]: wk[1]
             for wk in employee._get_work_time_per_day(date_from, date_to)[employee.id]
         }
 
         def has_working_hours(start_dt, end_dt, covered_ranges=()) -> bool:
-            """Returns `True` if there are any working days between `start_dt` and
-            `end_dt` that are not already covered by one of `covered_ranges`.
-            `covered_ranges` lets the caller exclude days spanned by the leaves
-            being compared themselves: those days are absences regardless of
-            whether the calendar already reflects them (only *validated* leaves
-            create a `resource.schedule.exception` record, so `work_times` only
-            ever accounts for those, not for pending `hr.leave` records)."""
             diff_days = (end_dt - start_dt).days
             all_dates = [
                 start_dt.date() + timedelta(days=delta)
@@ -213,7 +195,6 @@ class HrLeave(models.Model):
             if leave.date_from > date_to or leave.date_to < date_from:
                 continue
 
-            # Can handle both hr.leave and resource.schedule.exception
             number_of_days = 0
             is_validated = True
             if isinstance(leave, self.pool["hr.leave"]):
@@ -231,8 +212,6 @@ class HrLeave(models.Model):
                     ).days + 1
                 else:
                     number_of_days = dt_delta.days + ((dt_delta.seconds / 3600) / 24)
-            # leaves are ordered by date_from and grouped by type. When go from the batch of validated time offs to the
-            # requested ones, we need to bypass the second condition with the third one
             if (
                 not periods
                 or has_working_hours(
@@ -294,24 +273,13 @@ class HrLeave(models.Model):
         employee_with_contracts = employee_contracts.employee_id
         employees_without_contracts = employees - employee_with_contracts
 
-        # For employees without contracts
         leaves_mapping.update(
             employees_without_contracts.resource_id._get_unavailable_intervals(
                 start, stop
             )
         )
 
-        # For employees with contracts
         for contract in employee_contracts:
-            # `employee_contracts` matches on the raw contract dates, which are
-            # shared across every sibling `hr.version` amendment of one
-            # continuous contract (see `hr.version._compute_dates`) — not just
-            # the version whose own sliced `date_start`/`date_end` covers this
-            # query window. Skip a stale sibling whose own window already
-            # closed before `start`: without this, `_unavailable_intervals_batch`
-            # below still runs on it and returns an inverted interval that a
-            # later filter silently drops, wasting one calendar computation per
-            # stale version per employee per render.
             if (
                 contract.date_end
                 and datetime.combine(contract.date_end + timedelta(days=1), time.min)
@@ -343,9 +311,6 @@ class HrLeave(models.Model):
 
         result = {}
         for employee in employees:
-            # remove intervals smaller than a cell, as they will cause half a cell to turn grey
-            # ie: when looking at a week, a employee start everyday at 8, so there is a unavailability
-            # like: 2019-05-22 20:00 -> 2019-05-23 08:00 which will make the first half of the 23's cell grey
             notable_intervals = filter(
                 lambda interval: interval[1] - interval[0] >= cell_dt,
                 leaves_mapping.get(employee.resource_id.id, []),

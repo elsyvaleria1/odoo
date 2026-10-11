@@ -42,7 +42,6 @@ class LunchProductCategory(models.Model):
             category.product_count = data.get(category.id, 0)
 
     def _sync_active_products(self) -> None:
-        """Archiving related lunch product"""
         Product = self.env["lunch.product"].with_context(active_test=False)
         all_products = Product.search([("category_id", "in", self.ids)])
         all_products._sync_active_from_related()

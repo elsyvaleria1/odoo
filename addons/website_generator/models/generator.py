@@ -131,7 +131,7 @@ class Website_GeneratorRequest(models.Model):
     @api.depends("status")
     def _compute_status_message(self) -> None:
         for record in self:
-            record.status_message = self.env._(  # noqa: E8502  resolves an _lt() table entry in this env's language
+            record.status_message = self.env._(
                 STATUS_MESSAGES.get(record.status, STATUS_MESSAGES["error_internal"])
             )
 

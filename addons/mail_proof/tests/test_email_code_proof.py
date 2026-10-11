@@ -95,8 +95,6 @@ class TestEmailCodeProof(MockEmail, TransactionCase):
     def test_five_wrong_codes_spend_the_challenge(self):
         params, mail = self._issue()
         challenge = self._challenge(params)
-        # counted in a transaction of its own, which assertRaises' savepoint
-        # would roll back here: the count is driven directly
         for _attempt in range(5):
             self.method._count_wrong_code(challenge)
 

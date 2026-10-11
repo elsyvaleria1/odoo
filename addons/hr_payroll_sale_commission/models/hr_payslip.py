@@ -11,9 +11,6 @@ class HrPayslip(models.Model):
     _inherit = "hr.payslip"
 
     def _compute_input_line_ids(self):
-        """
-        Set commission on the related input_line_ids of the payslip.
-        """
         res = super()._compute_input_line_ids()
         payroll_commission_plan = self.env["sale.commission.plan"].search(
             [("commission_payroll_input", "!=", "False")]

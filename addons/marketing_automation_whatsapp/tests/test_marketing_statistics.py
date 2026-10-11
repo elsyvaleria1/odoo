@@ -57,13 +57,6 @@ class TestWhatsAppStatistics(MarketingAutomationCommon, WhatsAppCommon):
         )
 
     def _setup_email_traces(self, trace_configs, participants, activity):
-        """
-        Creates email trace records for participants in a marketing activity.
-
-        :param trace_configs: List of tuples (marketing_trace_state, mailing_trace_status, has_click).
-        :param participants: List of participant records.
-        :param activity: The related marketing activity.
-        """
         mailing_traces = self.env["mailing.trace"].create(
             [
                 {
@@ -99,13 +92,6 @@ class TestWhatsAppStatistics(MarketingAutomationCommon, WhatsAppCommon):
         )
 
     def _setup_whatsapp_traces(self, trace_configs, participants, activity):
-        """
-        Creates WhatsApp trace records for participants in a marketing activity.
-
-        :param trace_configs: List of tuples (marketing_trace_state, message_state, has_click).
-        :param participants: List of participant records.
-        :param activity: The related marketing activity.
-        """
         whatsapp_messages = self.env["whatsapp.message"].create(
             [
                 {
@@ -134,7 +120,6 @@ class TestWhatsAppStatistics(MarketingAutomationCommon, WhatsAppCommon):
 
     @users("user_marketing_automation")
     def test_statistics_aggregation(self):
-        """Test the correct aggregation of statistics for both email and WhatsApp activities."""
 
         self._setup_email_traces(
             [

@@ -49,10 +49,6 @@ class HrAttendance(models.Model):
         raise NotImplementedError
 
     def _gantt_compute_max_work_hours_within_interval(self, employee, start, stop):
-        """
-        Compute the total work hours of the employee based on the intervals selected on the Gantt view.
-        The calculation takes into account the working calendar (flexible or not).
-        """
         return self.env["resource.calendar"]._get_duration_data(
             employee._get_attendance_intervals(start, stop)
         )["hours"]
@@ -65,9 +61,6 @@ class HrAttendance(models.Model):
         ]
 
     def _gantt_progress_bar_employee_ids(self, res_ids, start, stop):
-        """
-        Resulting display is worked hours / expected worked hours
-        """
         values = {}
         worked_hours_group = self._read_group(
             self._get_domain_gantt_progress_bar(res_ids, start, stop),
@@ -84,7 +77,6 @@ class HrAttendance(models.Model):
             with_worked_hours=len(employee_data),
         )
         for employee in employees:
-            # Retrieve expected attendance for that employee
             values[employee.id] = {
                 "value": employee_data.get(employee.id, 0),
                 "max_value": self._gantt_compute_max_work_hours_within_interval(
@@ -109,10 +101,6 @@ class HrAttendance(models.Model):
         stop_date=None,
         scale=None,
     ):
-        """
-        We override get_gantt_data to allow the display of open-ended records,
-        We also want to add in the gantt rows, the active emloyees that have a check in in the previous 60 days
-        """
 
         domain = Domain(domain) & Domain(
             self.env.context.get("active_domain") or Domain.TRUE
@@ -175,7 +163,7 @@ class HrAttendance(models.Model):
                 lookback_days=60,
             )
             for group in previously_active_employees["groups"]:
-                del group["__record_ids"]  # Records are not needed here
+                del group["__record_ids"]
                 open_ended_gantt_data["groups"].append(group)
                 open_ended_gantt_data["length"] += 1
             if unavailability_fields:
@@ -208,7 +196,6 @@ class HrAttendance(models.Model):
         employees_by_calendar = defaultdict(lambda: self.env["hr.employee"])
         employees = self.env["hr.employee"].browse(res_ids)
 
-        # Retrieve for each employee, their period linked to their calendars
         calendar_periods_by_employee = employees._get_calendar_periods(
             localized(start),
             localized(stop),
@@ -224,13 +211,10 @@ class HrAttendance(models.Model):
             ]
         )
 
-        # calculate the intervals not covered by employee-specific calendars.
-        # store these uncovered intervals for each employee.
-        # store by calendar, employees involved with them
         periods_without_calendar_by_employee = defaultdict(list)
         for employee, calendar_periods in calendar_periods_by_employee.items():
             employee_interval_UTC = Intervals([])
-            for start, stop, calendar in calendar_periods:  # noqa: PLR1704  loop vars intentionally shadow the start/stop args (reported)
+            for start, stop, calendar in calendar_periods:
                 calendar_periods_interval_UTC = Intervals(
                     [
                         (
@@ -248,7 +232,6 @@ class HrAttendance(models.Model):
                     interval_without_calendar
                 )
 
-        # retrieve, for each calendar, unavailability periods for employees linked to this calendar
         _debug.pipeline(
             "attendance_gantt_calendars_resolved",
             calendars=len(employees_by_calendar),
@@ -256,7 +239,6 @@ class HrAttendance(models.Model):
         )
         unavailable_intervals_by_calendar = {}
         for calendar, employees in employees_by_calendar.items():
-            # A schedule without fixed hours leaves the employee always available.
             if calendar.schedule_type != "fully_fixed":
                 _debug.logic(
                     "attendance_gantt_calendar_always_available",
@@ -289,8 +271,6 @@ class HrAttendance(models.Model):
                 for employee in employees
             }
 
-        # calculate employee's unavailability periods based on his calendar's periods
-        # (e.g. calendar A on monday and tuesday and calendar b for the rest of the week)
         unavailable_intervals_by_employees = {}
         for employee, calendar_periods in calendar_periods_by_employee.items():
             employee_unavailable_full_interval = Intervals([])
@@ -312,14 +292,12 @@ class HrAttendance(models.Model):
                 flexible_employees |= employees
 
         result = {}
-        no_calendar = 0  # debuglog
-        flexible = 0  # debuglog
-        partial_calendar = 0  # debuglog
+        no_calendar = 0
+        flexible = 0
+        partial_calendar = 0
         for employee_id in res_ids:
-            # When an employee doesn't have any calendar,
-            # he is considered unavailable for the entire interval
             if employee_id not in unavailable_intervals_by_employees:
-                no_calendar += 1  # debuglog
+                no_calendar += 1
                 result[employee_id] = [
                     {
                         "start": start.astimezone(UTC),
@@ -328,17 +306,13 @@ class HrAttendance(models.Model):
                 ]
                 continue
 
-            # When an employee has a flexible calendar,
-            # he is considered available for the entire interval
             if employee_id in flexible_employees.ids:
-                flexible += 1  # debuglog
+                flexible += 1
                 result[employee_id] = []
                 continue
 
-            # When an employee doesn't have a calendar for a part of the entire interval,
-            # he will be unavailable for this part
             if employee_id in periods_without_calendar_by_employee:
-                partial_calendar += 1  # debuglog
+                partial_calendar += 1
                 unavailable_intervals_by_employees[employee_id] |= (
                     periods_without_calendar_by_employee[employee_id]
                 )

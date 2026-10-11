@@ -135,8 +135,6 @@ class TestApprovalBindingClient(common.TransactionCase):
         )
 
     def test_a_gated_button_without_a_request_answers_plain_data(self):
-        # the answer goes back over JSON-RPC: no request yet is False, never the
-        # empty recordset `request and {...}` used to leak
         self._bind(self.flat_category)
         result = self._spec(self._partner(), self.requester)
         self.assertTrue(result["gated"])
@@ -302,7 +300,6 @@ class TestApprovalBindingClient(common.TransactionCase):
         self.assertEqual(steps["Pool B"]["decisions"], [])
 
     def test_a_click_after_the_decided_step_is_archived_decides_the_rest(self):
-        """Studio's test_08_archive."""
         category = self.env["approval.category"].create(
             {
                 "name": "Client Archive",
@@ -383,7 +380,6 @@ class TestApprovalBindingClient(common.TransactionCase):
         self.assertEqual(result["request"]["state"], "new")
 
     def test_a_record_the_caller_cannot_read_is_refused(self):
-        """Studio's test_07_forbidden_record."""
         self._bind(self.flat_category)
         elsewhere = self.env["res.company"].create({"name": "Client Elsewhere"})
         partner = self._partner(company_id=elsewhere.id)

@@ -12,7 +12,6 @@ from odoo.addons.mail_oauth2.migration import adopt_servers, move_client
 _logger = logging.getLogger(__name__)
 
 COMMON_ENDPOINT = "https://login.microsoftonline.com/common/oauth2/v2.0/"
-# dotted, moved with the module by base 1.144
 ENDPOINT_KEY = "mail_microsoft.endpoint"
 
 
@@ -24,7 +23,6 @@ def _carry_tenant(env, service) -> None:
         return
     authorize, token = urljoin(endpoint, "authorize"), urljoin(endpoint, "token")
     if service.oauth_token_endpoint == urljoin(COMMON_ENDPOINT, "token"):
-        # a single-tenant registration: the calendar set none, mail did
         service.write({"oauth_auth_endpoint": authorize, "oauth_token_endpoint": token})
     elif service.oauth_token_endpoint != token:
         _logger.warning(

@@ -20,11 +20,9 @@ class TestSEPACreditTransferCommon(AccountTestInvoicingCommon):
 
         cls.env.user.group_ids |= cls.env.ref("account.group_validate_bank_account")
 
-        # tests doesn't go through the sanitization (_ is invalid)
         cls.partner_a.name = normalize_communication(cls.partner_a.name)
         cls.partner_b.name = normalize_communication(cls.partner_b.name)
 
-        # A country is required for sepa transfer
         cls.partner_a.country_id = cls.env.ref("base.us")
         cls.partner_b.country_id = cls.env.ref("base.us")
 
@@ -36,7 +34,6 @@ class TestSEPACreditTransferCommon(AccountTestInvoicingCommon):
             }
         )
 
-        # Create an IBAN bank account and its journal
         cls.bank_ing = cls.env["res.bank"].create(
             {
                 "name": "ING",
@@ -65,7 +62,6 @@ class TestSEPACreditTransferCommon(AccountTestInvoicingCommon):
             "account_iso20022.account_payment_method_sepa_ct"
         )
 
-        # Make sure all suppliers have exactly one bank account
         cls.env["res.partner.bank.account"].create(
             {
                 "acc_type": "iban",
@@ -88,7 +84,6 @@ class TestSEPACreditTransferCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def createPayment(cls, partner, amount, memo=None):
-        """Create a SEPA credit transfer payment"""
         return cls.env["account.payment"].create(
             {
                 "journal_id": cls.company_data["default_journal_bank"].id,
@@ -134,14 +129,11 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
             self.assertTrue(payment_2.is_sent)
 
     def test_sepa_pain_version(self):
-        # Test to make sure the initial version is 'Generic' since it is a belgian IBAN
         self.assertEqual(self.bank_journal.sepa_pain_version, "pain.001.001.09")
 
-        # Change IBAN prefix to Germany and check that the pain version is updated accordingly
         self.bank_journal.bank_acc_number = "DE89370400440532013000"
         self.assertEqual(self.bank_journal.sepa_pain_version, "pain.001.001.03.de")
 
-        # Provide an invalid IBAN to see if the pain version falls back to the company's fiscal country
         self.bank_journal.bank_acc_number = "DEL48363523682327"
         self.env.company.tax_config_id.account_fiscal_country_id = (
             self.env.company.country_id
@@ -150,7 +142,6 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
             self.bank_journal.sepa_pain_version, "pain.001.001.03.austrian.004"
         )
 
-        # Remove the company's fiscal country and verify that the pain version now corresponds to the company's country
         self.env.company.country_id = self.env.company.country_id = self.env.ref(
             "base.de"
         )
@@ -158,10 +149,6 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
         self.assertEqual(self.bank_journal.sepa_pain_version, "pain.001.001.03.de")
 
     def test_sepa_character_conversion(self):
-        """
-        - Change the partner's name and street to contain non-latin characters
-        - Check that communication (InstrId) is converted and trimmed to the correct unescaped size (max size = 35 characters)
-        """
         self.partner_a.name = "ÀÎÑϐН"
         self.partner_a.bank_account_ids.sudo().allow_out_payment = False
         self.partner_a.bank_account_ids.acc_holder_name = "ÀÎÑϐН"
@@ -210,9 +197,6 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
         )
 
     def test_sepa_with_no_end_to_end_id(self):
-        """
-        Test to make sure the end-to-end ID is generated and added to the XML even if end_to_end_uuid is empty.
-        """
 
         payment = self.createPayment(self.partner_a, 500)
         payment.end_to_end_uuid = False
@@ -309,7 +293,6 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
         self._check_structured_reference("no", payment)
 
     def test_sepa_trust_check_partner_bank_selection(self):
-        """Test untrusted partner bank account warning mechanism in the payment registration wizard."""
         vendor_bill = self.init_invoice(
             "in_invoice",
             partner=self.partner_a,
@@ -333,12 +316,10 @@ class TestSEPACreditTransfer(TestSEPACreditTransferCommon):
             )
         ) as wizard_form:
             wizard_form.payment_channel_id = self.sepa_ct
-            # Selected trusted account - no warnings
             wizard_form.bank_account_id = self.partner_a.bank_account_ids.filtered(
                 "allow_out_payment"
             )[:1]
             self.assertEqual(wizard_form.untrusted_payments_count, 0)
-            # Selected untrusted account - show warnings
             wizard_form.bank_account_id = untrusted_bank
             self.assertEqual(wizard_form.untrusted_payments_count, 1)
 

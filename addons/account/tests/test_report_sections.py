@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 
 from os import getenv
 from unittest import skipIf
@@ -111,7 +110,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
         )
 
     def test_sections_options_report_selection_variant(self):
-        # Set a fictive country on the company ; making sure no variant is available for it, whatever the modules installed.
         self.env.company.tax_config_id.account_fiscal_country_id = self.env[
             "res.country"
         ].create(
@@ -124,7 +122,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
         generic_tax_report = self.env.ref("account.generic_tax_report")
         self.composite_report.root_report_id = generic_tax_report
 
-        # Open root report
         options = generic_tax_report.get_options({})
         self.assertEqual(
             options["variants_source_id"],
@@ -147,7 +144,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
             "No variant is selected; the root report should be chosen.",
         )
 
-        # Select the variant
         options = generic_tax_report.get_options(
             {**options, "selected_variant_id": self.composite_report.id}
         )
@@ -172,7 +168,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
             "Selecting the composite variant should open its first section.",
         )
 
-        # Select the section
         options = generic_tax_report.get_options(
             {**options, "selected_section_id": self.section_2.id}
         )
@@ -198,7 +193,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
         )
 
     def test_sections_options_report_selection_root(self):
-        # Open the report
         options = self.composite_report.get_options({})
         self.assertEqual(
             options["variants_source_id"],
@@ -221,7 +215,6 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
             "Opening the composite report should open its first section.",
         )
 
-        # Select the section
         options = self.composite_report.get_options(
             {**options, "selected_section_id": self.section_2.id}
         )
@@ -252,15 +245,12 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
     )
     def test_sections_tour(self):
         def patched_init_options_custom(report, options, previous_options):
-            # Emulates a custom handler modifying the export buttons
             if report == self.composite_report:
                 options["buttons"][0]["name"] = "composite_report_custom_button"
 
-        # Setup the reports
         generic_tax_report = self.env.ref("account.generic_tax_report")
         self.composite_report.root_report_id = generic_tax_report
-        self.section_1.root_report_id = generic_tax_report  # First section is a variant of the root report, to increase test coverage
-        # Rewriting the root report recomputes filter_journals ; re-enable it
+        self.section_1.root_report_id = generic_tax_report
         self.section_1.filter_journals = True
 
         with patch.object(
@@ -334,16 +324,13 @@ class TestReportSections(AccountTestInvoicingHttpCommon):
         )
         for invoice in invoice_previous_period | invoice_current_period:
             invoice.action_post()
-            # We manually add this tax_tag, so the line will be counted in the Section 1 report
             invoice.invoice_line_ids.tax_tag_ids = [tax_tag.id]
-        # To be sure we will compute amount_to_pay
         tax_return.is_tax_return = True
         tax_return._proceed_with_locking()
         tax_return.action_submit()
         self.assertEqual(tax_return.total_amount_to_pay, 150)
 
     def test_composite_report_with_journal_report_pdf_export(self):
-        """Test exporting to PDF a composite report containing a journal report."""
         journal_report = self.env.ref("account.journal_report")
         composite_with_journal = self.env["report.formula"].create(
             {

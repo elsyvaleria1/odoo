@@ -9,11 +9,7 @@ from odoo.tools import SQL
 _debug = DebugLog(__name__)
 
 _DIGIT_RUN = re.compile(r"\d+")
-# One earlier transaction is an anecdote; the label of a transfer between
-# strangers repeats that often by chance.
 COUNTERPARTY_KEY_MIN_PRECEDENTS = 2
-# The bank names the counterparty outright, so one reviewed transaction with that
-# name is as strong as the name lookup that runs before it.
 PARTNER_NAME_MIN_PRECEDENTS = 1
 COUNTERPARTY_KEY_PRECEDENTS_READ = 3
 PARTNER_SUGGESTION_SOURCES = [
@@ -91,13 +87,6 @@ class AccountBankStatementLine(models.Model):
             st_line.counterparty_key = st_line._get_counterparty_key()
 
     def _get_counterparty_key(self) -> str | None:
-        """Return the identifier of the other party this transaction's label carries.
-
-        The numbers of a label are what changes between two payments to one
-        party (references, dates, folios), so blanking them leaves what
-        repeats. A statement format that names the counterparty outright (an
-        account, an agreement, a merchant id) overrides this with that name.
-        """
         self.check_singleton()
         label = " ".join((self.payment_ref or "").upper().split())
         return _DIGIT_RUN.sub("#", label) or None
@@ -197,8 +186,6 @@ class AccountBankStatementLine(models.Model):
             case "reconciled":
                 return SQL("st_line.is_reconciled IS TRUE")
             case "open":
-                # creating a line never marks its partner manual, so neither
-                # the asking lines nor the batch imported with them count
                 return SQL(
                     "st_line.is_reconciled IS NOT TRUE AND st_line.is_partner_manual IS TRUE"
                 )
@@ -305,12 +292,6 @@ class AccountBankStatementLine(models.Model):
         )
 
     def _get_partner_lookups(self) -> list:
-        """Return the names of the partner lookups, most trusted first.
-
-        Each takes the lines still without a partner and returns the partner
-        id it is sure of per line id; a line the earlier ones settled never
-        reaches the later ones.
-        """
         return [
             "_partners_by_bank_account",
             "_partners_by_transaction_name",
@@ -319,11 +300,6 @@ class AccountBankStatementLine(models.Model):
         ]
 
     def _get_partner_suggestion_lookups(self) -> list:
-        """Return the lookups that only suggest a partner, with the source each
-        records, most trusted first.
-
-        They run on the lines no lookup of ``_get_partner_lookups`` settled.
-        """
         return [
             (
                 "_partners_by_unreviewed_earlier_transactions",

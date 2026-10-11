@@ -7,7 +7,6 @@ class HrEmployee(models.Model):
     def write(self, vals):
         result = super().write(vals)
         if "active" in vals and not vals["active"]:
-            # an employee who left keeps no Telegram account acting as them
             self.env["telegram.binding"]._revoke_for_departed(self._telegram_partners())
         return result
 
@@ -18,5 +17,4 @@ class HrEmployee(models.Model):
         return result
 
     def _telegram_partners(self):
-        """The contacts a Telegram account of these employees is bound to."""
         return self.partner_id | self.user_id.partner_id

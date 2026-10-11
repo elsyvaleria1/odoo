@@ -27,7 +27,6 @@ class SocialAccount(models.Model):
     )
 
     def _update_statistics(self):
-        """See methods '_get_last_tweets_stats' for more info about Twitter stats."""
 
         twitter_accounts = self._filtered_by_media_types(["twitter"])
         super(SocialAccount, (self - twitter_accounts))._update_statistics()
@@ -65,11 +64,6 @@ class SocialAccount(models.Model):
         return res
 
     def twitter_get_user_by_username(self, username):
-        """Search a user based on his username (e.g: "fpodoo").
-
-        Can not search by name, can only get user by their usernames
-        See: https://developer.twitter.com/en/docs/twitter-api/users/lookup/api-reference
-        """
         user_search_endpoint = url_join(
             self.env["social.media"]._TWITTER_ENDPOINT,
             "/2/users/by/username/%s" % username,
@@ -89,8 +83,6 @@ class SocialAccount(models.Model):
         return response.json().get("data", False) if response.ok else False
 
     def _create_default_stream_twitter(self) -> None:
-        """This will create a stream of type 'Twitter Follow' for each added accounts.
-        It helps with onboarding to have your tweets show up on the 'Feed' view as soon as you have configured your accounts."""
 
         if not self:
             return
@@ -100,7 +92,6 @@ class SocialAccount(models.Model):
         ).id
         streams_to_create = []
         for account in self:
-            # we have to create a matching social.twitter.account for each stream
             twitter_followed_account = self.env["social.twitter.account"].create(
                 {
                     "name": account.name,
@@ -119,7 +110,6 @@ class SocialAccount(models.Model):
         self.env["social.stream"].create(streams_to_create)
 
     def _get_account_stats(self):
-        """Query the account information to retrieve the Twitter audience (= followers count)."""
 
         self.check_singleton()
 
@@ -153,11 +143,6 @@ class SocialAccount(models.Model):
         return result.json()
 
     def _get_last_tweets_stats(self):
-        """To properly retrieve statistics and trends, we would need an Enterprise 'Engagement API' access.
-        See: https://developer.twitter.com/en/docs/metrics/get-tweet-engagement/overview
-
-        Since we don't have access, we use the last 100 user tweets (max for one request) to aggregate
-        the data we are able to retrieve."""
 
         self.check_singleton()
 
@@ -219,13 +204,6 @@ class SocialAccount(models.Model):
         )
 
     def _format_images_twitter(self, image_ids):
-        """Twitter needs a special kind of uploading to process images.
-        It's done in 3 steps:
-        - initialize upload transaction
-        - send bytes
-        - finalize upload transaction.
-
-        More information: https://developer.twitter.com/en/docs/media/upload-media/api-reference/post-media-upload.html"""
 
         self.check_singleton()
 
@@ -260,8 +238,6 @@ class SocialAccount(models.Model):
             timeout=5,
         )
         if not result.ok:
-            # unfortunately Twitter does not return a proper error code so we have to rely on the error message
-            # last known max file size for the API is 20MB
             generic_api_error = result.json().get("error", "")
             raise UserError(
                 self.env._(

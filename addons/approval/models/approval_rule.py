@@ -270,9 +270,6 @@ class ApprovalRule(models.Model):
                 )
 
     def _auto_action_collides(self, other) -> bool:
-        """Whether this rule and `other` can match one request, as far as that can be
-        told without a request: rules of different kinds, or on different figures,
-        documents or fields, are not compared."""
         self.check_singleton()
         if self.condition_type != other.condition_type:
             return False
@@ -499,8 +496,6 @@ class ApprovalRule(models.Model):
                 why="no_subject" if not subject else "no_field",
             )
             return False
-        # The path _check_field_path accepted, read the same way: through each
-        # link, and matching when any record it reaches holds the value.
         reached = subject.mapped(self.subject_field)
         if isinstance(reached, models.BaseModel):
             values = [str(record.id) for record in reached] or [str(False)]
@@ -539,9 +534,6 @@ class ApprovalRule(models.Model):
         return None
 
     def _condition_bounds_in(self, reference) -> tuple[float, bool, float, bool] | None:
-        """This rule's bounds in `reference`'s currency, for an amount, at today's
-        rate: two bands in different currencies overlap as their amounts compare
-        now."""
         self.check_singleton()
         bounds = self._condition_bounds()
         if (

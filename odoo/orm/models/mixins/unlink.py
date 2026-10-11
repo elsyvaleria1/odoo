@@ -50,10 +50,10 @@ class UnlinkMixin(_ModelStubs):
             uid=self.env.uid,
             uninstalling=bool(self.env.context.get(MODULE_UNINSTALL_FLAG)),
         )
-        ondelete_run = 0  # debuglog
+        ondelete_run = 0
         for func in self._ondelete_methods:
             if func._ondelete or not self.env.context.get(MODULE_UNINSTALL_FLAG):
-                ondelete_run += 1  # debuglog
+                ondelete_run += 1
                 func(self)
         _debug.pipeline(
             "unlink.ondelete",
@@ -121,7 +121,6 @@ class UnlinkMixin(_ModelStubs):
         return True
 
     def _unlink_inherits_shared_parents(self, parents: BaseModel) -> None:
-        # the record was its parent's row extended: it goes with its parent
         parents.exists().unlink()
 
     def _unlink_inheritance_rows_cascaded(self) -> None:
@@ -132,7 +131,7 @@ class UnlinkMixin(_ModelStubs):
             model = self.env[model_name].sudo().with_context(active_test=False)
             if not model._is_path_in_database(path):
                 continue
-            rows = model.search([(path, "in", self.ids)])  # noqa: E8507  model varies
+            rows = model.search([(path, "in", self.ids)])
             if model_name == self._name:
                 rows -= self
             _debug.pipeline(
@@ -154,26 +153,20 @@ class UnlinkMixin(_ModelStubs):
             if not column_exists(self.env.cr, model._table, name):
                 return False
             model = self.env[model._fields[name].comodel_name]
-        # only a column seen is remembered: one missing is created by a later
-        # init_models, perhaps in another transaction, and must then be seen
         known.add(key)
         return True
 
     def _defer_dependent_recomputes(self) -> None:
-        # a pending compute that reads these records would run in the flush
-        # before the deletion, on values whose own recompute is discarded: it
-        # is put off, and _modified_before after the flush asks for it again
-        # over the same triggers, once the records are gone
         core = self.env.core
         if not core.has_pending():
             return
         scheduler = core.new_scheduler()
         self._modified_trigger_loop(self._fields, False, scheduler)
-        deferred = 0  # debuglog
+        deferred = 0
         for field, ids in scheduler.to_recompute.items():
             pending = core.get_pending_ids(field)
             if waiting := [id_ for id_ in ids if id_ in pending]:
-                deferred += len(waiting)  # debuglog
+                deferred += len(waiting)
                 core.mark_done(field, waiting)
         if _debug.logic.enabled and deferred:
             _debug.logic(
@@ -184,10 +177,6 @@ class UnlinkMixin(_ModelStubs):
             )
 
     def _modified_many2many_corecords(self) -> None:
-        # the relation rows go with the records, so each corecord's side of a
-        # stored many2many changes too; its dependents hang off the inverse
-        # field, which `Many2many.write` reports to them and the records' own
-        # trigger tree does not reach
         inverses = self.pool.field_inverses
         triggers = self.pool._get_field_triggers()
         records = self.with_env(self.env._derive(su=True, active_test=False))
@@ -213,10 +202,10 @@ class UnlinkMixin(_ModelStubs):
         if core.has_pending():
             model_name = self._name
             pending_ids = self._ids
-            discarded = 0  # debuglog
+            discarded = 0
             for field in core.get_pending_fields():
                 if field.model_name == model_name:
-                    discarded += 1  # debuglog
+                    discarded += 1
                     core.mark_done(field, pending_ids)
             if _debug.logic.enabled and discarded:
                 _debug.logic(
@@ -227,11 +216,6 @@ class UnlinkMixin(_ModelStubs):
                 )
 
     def _discard_pending_of_vanished_rows(self, gone: set[str]) -> None:
-        # the computes queued on rows a cascade removed with these records
-        # (a tree's children included) can never run, nor those queued on the
-        # drafts of any removed row, which read what they were not given from
-        # it: a flush that tried would compute the gone rows from nothing and
-        # cache the result under their ids
         core = self.env.core
         if not core.has_pending():
             return
@@ -300,8 +284,6 @@ class UnlinkMixin(_ModelStubs):
         env = self.env
         registry = env.registry
         cascades = registry.models_cascading_from
-        # the row a subtype deleted is the row every other model of its
-        # table-inheritance tree still holds in cache
         gone = {self._name, *env._table_inheritance_tree(self._name)}
         todo = list(gone)
         while todo:
@@ -322,9 +304,6 @@ class UnlinkMixin(_ModelStubs):
                 field._invalidate_cache(env, keep_dirty=True)
             for field in fields_by_comodel.get(model_name, ()):
                 field._invalidate_cache(env, keep_dirty=True)
-                # a cascade's rows, and the references the database set null
-                # to them, change under the ORM: what is computed from them
-                # without being stored is read again
                 for dependent in registry.get_dependent_fields(field):
                     if not dependent.store:
                         dependent._invalidate_cache(env, keep_dirty=True)
@@ -343,9 +322,6 @@ class UnlinkMixin(_ModelStubs):
             env[model_name]._access_inputs_written(None)
 
     def _forget_dead_drafts(self, gone: set[str]) -> None:
-        # the drafts of deleted rows are dead: no other draft lists them. The
-        # rows a cascade removed are not known by id, so the drafts listed of
-        # those models are checked against what still exists
         env = self.env
         tree = {self._name, *env._table_inheritance_tree(self._name)}
         deleted = frozenset(self._ids)

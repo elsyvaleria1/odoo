@@ -8,11 +8,7 @@ from odoo.tests.common import HttpCase
 
 @odoo.tests.tagged("post_install", "-at_install")
 class TestFrontDeskURL(HttpCase):
-    # -------------------------------------------------------------------------
-    # TESTS
-    # -------------------------------------------------------------------------
     def test_frontdesk_ui(self):
-        """Testing the UI of the Frontdesk module"""
         station = self.env["frontdesk.frontdesk"].create(
             {
                 "name": "Test Office 1",

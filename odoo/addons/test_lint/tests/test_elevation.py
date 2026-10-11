@@ -31,8 +31,6 @@ def _calls(tree: ast.AST, names: frozenset[str]):
 
 
 def _bare_sudo_lines(tree: ast.AST) -> list[int]:
-    # sudo() and sudo(True): elevation to everything, which with_privilege
-    # replaces wherever code acts on someone's behalf
     lines = []
     for node in _calls(tree, frozenset({"sudo"})):
         if node.keywords or len(node.args) > 1:
@@ -65,8 +63,6 @@ def _acts(function: ast.AST) -> bool:
 
 
 def _authority_lines(tree: ast.AST) -> list[int]:
-    # a group check that decides authority: its method writes, creates,
-    # unlinks or runs an action, or a refusal hangs on its answer
     lines = set()
     for function in ast.walk(tree):
         if not isinstance(function, ast.FunctionDef | ast.AsyncFunctionDef):
@@ -92,8 +88,6 @@ def _authority_lines(tree: ast.AST) -> list[int]:
 
 
 def _writes_membership(node: ast.AST) -> bool:
-    # a membership written below the grants: group_ids on a user, or the users
-    # of something named a group
     if isinstance(node, (ast.Assign, ast.AugAssign)):
         targets = node.targets if isinstance(node, ast.Assign) else [node.target]
         return any(
@@ -129,7 +123,6 @@ def _membership_lines(tree: ast.AST) -> list[int]:
 
 
 def _declared_privileges() -> frozenset[str]:
-    # every res.groups record a module's data declares with is_privilege set
     names = set()
     for manifest in Manifest.get_all_addon_manifests():
         root = Path(manifest.path)
@@ -164,8 +157,6 @@ def _declared_privileges() -> frozenset[str]:
 
 
 _RECEIVER_PRIVILEGES = "_receiver_privileges"
-# integration applies a gate's tuples with a starred call over their union,
-# which the tuples answer for
 _RECEIVER_PRIVILEGES_APPLIED = "receiver_privileges"
 
 
@@ -176,8 +167,6 @@ def _literal_name(node: ast.AST) -> str | None:
 
 
 def _privileges_named(tree: ast.AST) -> list[tuple[int, str | None]]:
-    # (line, name) of every with_privilege argument and every name a gate's
-    # `_receiver_privileges` tuple holds, None for a runtime value
     named = [
         (node.lineno, _literal_name(arg))
         for node in _calls(tree, frozenset({"with_privilege"}))
@@ -209,9 +198,6 @@ _MODEL_BASES = frozenset(
     | {f"models.{base}" for base in ("Model", "TransientModel", "AbstractModel")}
 )
 _ELEVATED_WRITES = frozenset({"write", "create", "unlink", "copy"})
-# an override of these that calls its super() has the ORM check the caller's
-# own access to the records, and an AccessError rolls back what it wrote
-# through elevation
 _CHECKED_CRUD = frozenset(
     {"create", "write", "unlink", "copy", "action_archive", "action_unarchive"}
 )
@@ -222,7 +208,6 @@ _ROLE_CHECKS = _GROUP_CHECKS | {"user_has_groups", "is_admin", "is_system"}
 _SAME_RECORDS = frozenset(
     {"filtered", "filtered_domain", "sorted", "with_context", "with_company", "exists"}
 )
-# what these return is no recordset, so the elevation stops travelling there
 _VALUE_ATTRS = frozenset({"id", "ids", "_ids", "display_name"})
 _VALUE_CALLS = frozenset(
     {"read", "search_read", "search_count", "read_group", "_read_group", "get_param"}
@@ -250,8 +235,6 @@ def _is_superuser(node: ast.AST) -> bool:
 
 
 def _elevates(call: ast.Call) -> bool:
-    # sudo() / sudo(<anything but a false constant>), with_privilege, the
-    # superuser as user, and an environment built with su or as the superuser
     for keyword in call.keywords:
         if keyword.arg == "su" and not (
             isinstance(keyword.value, ast.Constant) and not keyword.value.value
@@ -276,9 +259,6 @@ def _elevates(call: ast.Call) -> bool:
 
 
 class _Flow:
-    # which names of one method hold an elevated recordset or environment, and
-    # which hold nothing but what the caller passed: JSON carries no recordset,
-    # so an elevation rooted at a parameter is never reached through RPC
     def __init__(self, function: ast.FunctionDef):
         self.function = function
         arguments = function.args
@@ -355,7 +335,6 @@ class _Flow:
         return [node]
 
     def _root(self, node: ast.AST) -> tuple[ast.AST, bool]:
-        # the name a receiver chain starts from, and whether a link elevates
         elevated = False
         while True:
             if isinstance(node, ast.Call):
@@ -396,7 +375,6 @@ class _Flow:
         return False
 
     def _is_same(self, node: ast.AST) -> bool:
-        # the records the call was made on, narrowed or recontextualised
         while (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
@@ -431,7 +409,6 @@ class _Flow:
         return min(writes, default=None)
 
     def _first_sql_write(self) -> tuple[int, int] | None:
-        # raw DML answers to no ACL at all
         if not any(
             isinstance(node, ast.Constant)
             and isinstance(node.value, str)
@@ -451,8 +428,6 @@ class _Flow:
         )
 
     def _checks_right(self, node: ast.AST) -> bool:
-        # a role test, or an access check other than "read" on records that
-        # are not elevated, which would pass it whatever the caller holds
         if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)):
             return False
         if node.func.attr in _ROLE_CHECKS:
@@ -465,8 +440,6 @@ class _Flow:
         )
 
     def _writes_own(self, node: ast.AST) -> bool:
-        # a write of the records the call was made on, under the caller's own
-        # access
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
             return node.func.attr in _SELF_WRITES and self._same_unelevated(
                 node.func.value
@@ -480,11 +453,6 @@ class _Flow:
         return not self.is_elevated(node) and self._is_same(node)
 
     def is_guarded(self, first_write: tuple[int, int]) -> bool:
-        # A check guards only from before the first elevated write, so nothing
-        # (the database or a remote service) is touched for a refused caller.
-        # A write of the call's own records guards wherever it stands: the
-        # ORM refuses it and the RPC transaction rolls back what the elevation
-        # wrote before it, as with a CRUD override calling super().
         return any(
             (_position(node) < first_write and self._checks_right(node))
             or self._writes_own(node)
@@ -580,7 +548,6 @@ def _extends(function: ast.FunctionDef) -> bool:
 
 @functools.cache
 def _kernel_private() -> frozenset[str]:
-    # what BaseModel declares @api.private is private on every model
     return frozenset(
         name
         for cls in BaseModel.__mro__
@@ -594,8 +561,6 @@ class _ModelFacts(NamedTuple):
     inherits: tuple[str, ...]
     doors: frozenset[str]
     private: frozenset[str]
-    # (name, line) of the public methods writing through an unguarded
-    # elevation, before what other classes of the model make private
     unguarded: tuple[tuple[str, int], ...]
 
 
@@ -659,7 +624,6 @@ def _file_facts(tree: ast.Module) -> _FileFacts:
 
 @functools.cache
 def _facts(sources: tuple) -> tuple[tuple[tuple[str, str, Path], _FileFacts], ...]:
-    # every gate of this file reads one parse of each source
     by_path = _production_python.extract(_file_facts, (path for *_, path in sources))
     return tuple(
         (source, facts)
@@ -710,8 +674,6 @@ def privilege_findings(sources) -> list[str]:
 
 
 def public_elevation_findings(sources) -> dict[str, list[str]]:
-    # a public model method, so an RPC entry point, that elevates and writes
-    # through the elevation without asking the caller's own right in the call
     classes = []
     parents: defaultdict[str, set[str]] = defaultdict(set)
     private: defaultdict[str, set[str]] = defaultdict(set)

@@ -42,11 +42,6 @@ class TestPowerAndFuelEfficiency(UomCommon):
         )
 
     def test_the_power_units_use_si_symbols(self):
-        """The seeded names are what users read in every dropdown and report.
-
-        They shipped as `w`, `Kw`, `Mw` and `Km/l`, none of which is the SI
-        symbol, and the fuel-efficiency setting offered a third spelling again.
-        """
         expected = {
             "base.product_uom_wat": "W",
             "base.product_uom_kw": "kW",

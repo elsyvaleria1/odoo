@@ -10,7 +10,6 @@ class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
     def _media_length_ms(self) -> int:
-        """How long the recording plays, read from its container; 0 unknown."""
         self.check_singleton()
         if not can_decode_media():
             return 0

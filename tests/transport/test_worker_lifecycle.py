@@ -332,7 +332,6 @@ class TestTheCursorIsReleasedAndTheConnectionIsLeftAlone:
         assert order == []
 
     def test_worker_stop_releases_through_it(self, multi):
-        """The clean-teardown site: this is the one that printed on SIGTERM."""
         worker = build_worker(_worker.WorkerCron, multi)
         cursor, order = self._recording_cursor()
         worker.listener = _cron.CronListener("ch", _cron._logger)
@@ -341,7 +340,6 @@ class TestTheCursorIsReleasedAndTheConnectionIsLeftAlone:
         assert order == ["cursor"]
 
     def test_a_failed_listener_open_releases_the_cursor(self):
-        """`open_cron_listener` must not leak the cursor when arming fails."""
         cursor, order = self._recording_cursor()
         conn = MagicMock()
         conn.cursor.return_value = cursor
@@ -374,7 +372,6 @@ class TestTheListeningSocketIsWatchedExclusively:
             assert sock in {k.fileobj for k in selector.get_map().values()}
             events = self._epoll_events(selector._selector.fileno(), sock.fileno())
             assert events is not None and events & select.EPOLLEXCLUSIVE, hex(events)
-            # The selector still resolves readiness to the socket's key.
             client = socket.create_connection(sock.getsockname())
             try:
                 ready = selector.select(timeout=1)

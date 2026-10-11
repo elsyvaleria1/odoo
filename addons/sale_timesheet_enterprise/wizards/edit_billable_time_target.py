@@ -147,13 +147,9 @@ class EditBillableTimeTarget(models.Model):
     active = fields.Boolean(readonly=True)
 
     def write(self, vals):
-        """We only allow the user to edit the billable time target of his employees"""
         employee_vals = {}
         if "billable_time_target" in vals:
             employee_vals["billable_time_target"] = vals.pop("billable_time_target")
-            # seed the cache of this SQL-view-backed model directly (the real
-            # write goes to hr.employee below); use the Field cache API rather
-            # than the legacy env.cache compatibility shim
             field = self._fields["billable_time_target"]
             field._update_cache(
                 self,

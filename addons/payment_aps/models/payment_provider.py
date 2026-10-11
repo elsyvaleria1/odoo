@@ -41,32 +41,21 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "aps":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS === #
 
     def _aps_get_api_url(self) -> str:
         if self.state == "enabled":
             return "https://checkout.payfort.com/FortAPI/paymentPage"
-        else:  # 'test'
+        else:
             return "https://sbcheckout.payfort.com/FortAPI/paymentPage"
 
     def _get_aps_signature(self, data, incoming=True):
-        """Compute the signature for the provided data according to the APS documentation.
-
-        :param dict data: The data to sign.
-        :param bool incoming: Whether the signature must be generated for an incoming (APS to Odoo)
-                              or outgoing (Odoo to APS) communication.
-        :return: The calculated signature.
-        :rtype: str
-        """
         sign_data = "".join(
             [f"{k}={v}" for k, v in sorted(data.items()) if k != "signature"]
         )

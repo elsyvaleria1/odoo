@@ -162,20 +162,12 @@ class TestResource(TestResourceCommon):
         )
 
     def test_switch_two_weeks_resource(self):
-        """
-        Check that it is possible to switch the company's default calendar
-        """
         self.env.company.resource_calendar_id = self.two_weeks_resource
         company_resource = self.env.company.resource_calendar_id
-        # Switch two times to be sure to test both cases
         company_resource.action_switch_two_weeks()
         company_resource.action_switch_two_weeks()
 
     def test_create_company_using_two_weeks_resource(self):
-        """
-        Check that we can create a new company
-        if the default company calendar is two weeks
-        """
         self.env.company.resource_calendar_id = self.two_weeks_resource
         self.env["res.company"].create({"name": "New Company"})
 
@@ -191,9 +183,6 @@ class TestResource(TestResourceCommon):
                 "calendar_id": resource.id,
                 "hour_from": 0,
                 "hour_to": 0,
-                # A line on a 2-weeks calendar must name its week; the test is
-                # about the zero-duration guard in _get_hours_per_day, not about
-                # week attribution.
                 "week_type": "0",
             }
         )

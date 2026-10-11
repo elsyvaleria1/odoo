@@ -152,7 +152,7 @@ class PostgresColumnStore:
         table = SQL.identifier(model._table).code
         column_sql = SQL.identifier(column).code
         cr = typing.cast("Cursor", model.env.cr)
-        cr.executemany(  # noqa: E8501  both names are SQL.identifier().code; executemany takes no SQL params
+        cr.executemany(
             f"UPDATE {table} SET {column_sql} = %s WHERE id = %s",
             [(value, id_) for id_, value in rows],
         )
@@ -160,8 +160,6 @@ class PostgresColumnStore:
     def fetch_and_add(
         self, model: ModelLike, column: str, record_id: int, delta: int
     ) -> int | None:
-        # the row is locked for the statement, so two callers never take the same
-        # value: NOWAIT surfaces the contention instead of queueing behind it
         table = SQL.identifier(model._table)
         column_sql = SQL.identifier(column)
         value: int | None
@@ -185,8 +183,6 @@ class PostgresColumnStore:
     def try_write(
         self, model: ModelLike, column: str, record_id: int, value: typing.Any
     ) -> bool:
-        # a value the table refuses (a unique or exclusion constraint) is an
-        # answer, not an error: the caller picks the next candidate
         cr = model.env.cr
         with cr.savepoint(flush=False) as savepoint:
             try:
@@ -213,8 +209,6 @@ class PostgresColumnStore:
         fallback: dict[str, typing.Any],
         value: dict[str, typing.Any],
     ) -> int:
-        # fallback under the stored object under the new value; a null entry
-        # deletes its key and an object left empty becomes NULL
         cr = model.env.cr
         cr.execute(
             SQL(

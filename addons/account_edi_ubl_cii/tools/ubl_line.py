@@ -20,7 +20,6 @@ class UblLinePriceValues(TypedDict):
 def update_ubl_line_price_node(
     line_node: MutableMapping[str, object], vals: UblLinePriceValues
 ) -> None:
-    """Replace a line's UBL price node, preserving the rest of the caller's mapping."""
     base_line = vals["base_line"]
     ubl_values = base_line["_ubl_values"]
     line_node["cac:Price"] = {
@@ -32,7 +31,6 @@ def update_ubl_line_price_node(
 
 
 def update_ubl_discount_node(discount_node: MutableMapping[str, object]) -> None:
-    """Suppress the textual reason and calculation details, retaining the amount and reason code."""
     discount_node["cbc:AllowanceChargeReason"] = None
     discount_node["cbc:MultiplierFactorNumeric"] = None
     discount_node["cbc:BaseAmount"] = None

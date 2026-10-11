@@ -13,7 +13,6 @@ from odoo.addons.geoengine.models.static_map import (
     render_static_map,
 )
 
-# Checkpoints worth a marker, and the kind they are drawn as.
 CHECKPOINT_KINDS = {
     "departure": "departure",
     "arrival": "arrival",
@@ -23,9 +22,7 @@ CHECKPOINT_KINDS = {
     "handover": "incident",
     "return": "return",
 }
-# GPS readings a little before departure and after return frame the track.
 TRACK_MARGIN = timedelta(minutes=5)
-# The route map spans the printable width of an A4/Letter page.
 ROUTE_MAP_WIDTH = 680
 ROUTE_MAP_HEIGHT = 380
 
@@ -39,15 +36,8 @@ class StockPickingBatch(models.Model):
     }
 
     def action_trip_view_gps_track(self):
-        """Draw the road the vehicle travelled on this trip, with its stops marked.
-
-        :return: the trail map of the vehicle between departure and return
-        :rtype: dict
-        """
         self.check_singleton()
         device, start, end = self._trip_track_window()
-        # A stock user sees the trip, not the GPS devices: the trail is drawn
-        # with the privilege and handed over without its device.
         Trail = self.env["wizard.device.device.view.trail"].with_privilege(
             "stock_fleet_trace_gps_geoengine.privilege_trip_track",
             reason="a trip draws the GPS track of its vehicle",
@@ -94,7 +84,6 @@ class StockPickingBatch(models.Model):
             ]
         )
         action["name"] = self.env._("GPS track of trip %s", self.name)
-        # The trail keeps no device: the context does not name it either.
         action["context"] = {
             key: value
             for key, value in action.get("context", {}).items()
@@ -103,13 +92,6 @@ class StockPickingBatch(models.Model):
         return action
 
     def _trip_track_window(self):
-        """The vehicle's GPS device and the time it travelled this trip,
-        from a little before departure to a little after return.
-
-        :return: (device, start, end)
-        :raises UserError: when the vehicle has no GPS device or the trip has
-            not departed
-        """
         self.check_singleton()
         device = self.env["device.device"].browse(self.vehicle_id.resource_id._gps_device_ids())
         if not device:
@@ -122,8 +104,6 @@ class StockPickingBatch(models.Model):
             raise UserError(
                 self.env._("Trip %s has not departed: it has no track yet.", self.name)
             )
-        # The GPS may have seen the vehicle leave before the trip was departed
-        # by hand, and come back before it was closed.
         start = min(filter(None, [self.trip_gps_exit_date, self.date_departure]))
         end = (
             max(filter(None, [self.trip_gps_entry_date, self.date_return]))
@@ -133,13 +113,6 @@ class StockPickingBatch(models.Model):
         return device, start - TRACK_MARGIN, end + TRACK_MARGIN
 
     def _trip_route_map(self, width=ROUTE_MAP_WIDTH, height=ROUTE_MAP_HEIGHT):
-        """The trip on a static map for its printed sheet: its stops numbered
-        as the sheet sequences them, its events where they happened and, once
-        departed and for a user who may view the GPS track, the road travelled.
-
-        :return: an SVG, or None when the trip has nothing with a place
-        :rtype: markupsafe.Markup | None
-        """
         self.check_singleton()
         items = []
         if self.has_access("view_gps_track"):
@@ -175,8 +148,6 @@ class StockPickingBatch(models.Model):
             for point in self._trip_track_points()
             if point["kind"] != "stop"
         )
-        # Stops are drawn last, over the events at the same place, and carry
-        # the sequence the sheet prints beside each delivery.
         stops = (self.picking_ids | self.trip_checkpoint_ids.picking_id).filtered(
             lambda picking: not picking.trip_support_kind
         )
@@ -200,11 +171,6 @@ class StockPickingBatch(models.Model):
         return render_static_map(self.env, items, width=width, height=height)
 
     def _trip_track_points(self):
-        """The places to mark on the track: stops, events with a place, alerts.
-
-        :return: create values of ``wizard.stock.trip.track.point``
-        :rtype: list
-        """
         self.check_singleton()
         points = []
 

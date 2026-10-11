@@ -26,7 +26,6 @@ class MailMessage(models.Model):
     ) -> None:
         if self.message_type == "whatsapp_message" and self.wa_message_ids:
             if action == "add":
-                # Only allow one emoji, remove any existing one first
                 previous_reaction = self.env["mail.message.reaction"].search(
                     [
                         ("message_id", "=", self.id),
@@ -36,7 +35,6 @@ class MailMessage(models.Model):
                     limit=1,
                 )
                 if previous_reaction:
-                    # If the same reaction already exists, do nothing
                     previous_reaction_emoji = previous_reaction.content
                     if previous_reaction_emoji == content:
                         return

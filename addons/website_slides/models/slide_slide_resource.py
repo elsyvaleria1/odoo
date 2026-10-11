@@ -75,11 +75,6 @@ class SlideSlideResource(models.Model):
 
     @api.depends("file_name", "resource_type", "data", "link")
     def _compute_name(self):
-        # `is_name_default` (language-independent) replaces comparing `name`
-        # against a live-translated `_("Resource")`, which broke as soon as a
-        # resource created under one user language was later written to
-        # under another: the stored placeholder never matched the newly
-        # translated comparison string, so it was never replaced.
         for resource in self:
             if not resource.name or resource.is_name_default:
                 new_name = self.env._("Resource")

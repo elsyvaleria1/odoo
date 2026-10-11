@@ -115,7 +115,6 @@ class TestOrderTrackingAccess(HttpCase):
         notifying = []
 
         def get_pos_orders(_display):
-            # only what is sent can show the order: the page render gets none
             pending = ["7031"] if notifying else []
             return {"done": [], "notDone": pending, "ordersCompletedReadyDate": {}}
 

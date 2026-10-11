@@ -34,7 +34,6 @@ class TestAccountReturn(TestAccountReportsCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # necessary to ensure successful return checks
         cls.company_data["company"].write(
             {
                 "vat": "US12345671",
@@ -199,7 +198,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             self.fail(f"Missing checks in return: {', '.join(missing_checks)}")
 
     def test_report_return_periodicity_option(self):
-        # 1. Check the 'return_type_id' key: it should fall back to the one linked to the report if there is one
         options = self.basic_tax_report.get_options(
             previous_options={
                 "return_periodicity": {
@@ -234,7 +232,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             },
         )
 
-        # 2. Valid override using the previous options
         options = self.basic_tax_report.get_options(
             previous_options={
                 "return_periodicity": {
@@ -263,7 +260,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             },
         )
 
-        # 3. Check that it is variant safe and should fallback to the return_type linked to the report
         options = self.basic_tax_report.get_options(
             previous_options={
                 "return_periodicity": {
@@ -296,7 +292,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             },
         )
 
-        # 4. Check the final fallback using a report that has no link to a return
         basic_report_not_linked = self.env["report.formula"].create(
             {
                 "root_report_id": self.env.ref("account.generic_tax_report").id,
@@ -322,7 +317,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             "'return_periodicity' key should be absent as the report_id in the dict is different as the actual report generating the options.",
         )
 
-        # 5. Check the default behaviour
         options = self.basic_tax_report.get_options(previous_options={})
         self.assertDictEqual(
             options["return_periodicity"],
@@ -431,12 +425,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_tax_return_with_branches_and_rounding_applied(self):
-        """
-        The rounding some countries apply to the closing moves, by calling
-        `_vat_closing_entry_results_rounding` with a specific `vat_results_summary`, must be
-        correctly computed for a company with branches.
-        """
-        # We need to create a new tax report with report lines which will be used in _postprocess_vat_closing_entry_results
         report = self.env["report.formula"].create(
             {
                 "name": "Tax report",
@@ -606,10 +594,8 @@ class TestAccountReturn(TestAccountReportsCommon):
             ]
         )
 
-        # Locking this one ("2023-12-01", "2023-12-31")
         existing_returns[0].action_validate()
 
-        # Regenerate new returns without overriding posted ones
         with self._patch_returns_generation():
             self.env.company.account_config_id.account_return_periodicity = "2_months"
 
@@ -623,7 +609,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assert_return_dates_equal(
             existing_returns,
             [
-                ("2023-12-01", "2023-12-31"),  # First one already posted
+                ("2023-12-01", "2023-12-31"),
                 ("2024-01-01", "2024-02-29"),
                 ("2024-03-01", "2024-04-30"),
                 ("2024-05-01", "2024-06-30"),
@@ -657,10 +643,8 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # Locking this one ("2023-11-01", "2023-12-31")
         existing_returns[0].action_validate()
 
-        # Regenerate new returns without overriding posted ones
         with self._patch_returns_generation():
             self.env.company.account_config_id.account_return_periodicity = "monthly"
 
@@ -674,7 +658,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assert_return_dates_equal(
             existing_returns,
             [
-                ("2023-11-01", "2023-12-31"),  # First one already posted
+                ("2023-11-01", "2023-12-31"),
                 ("2024-01-01", "2024-01-31"),
                 ("2024-02-01", "2024-02-29"),
                 ("2024-03-01", "2024-03-31"),
@@ -705,7 +689,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assert_return_dates_equal(
             existing_returns,
             [
-                ("2023-12-01", "2024-03-31"),  # out of fy start
+                ("2023-12-01", "2024-03-31"),
                 ("2024-04-01", "2024-07-31"),
                 ("2024-08-01", "2024-11-30"),
             ],
@@ -718,7 +702,6 @@ class TestAccountReturn(TestAccountReportsCommon):
                 ("company_id", "=", self.env.company.id),
             ]
         )
-        # Locking this one ("2023-12-01", "2023-12-31")
         existing_returns[0].action_validate()
 
         with self._patch_returns_generation():
@@ -738,7 +721,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                 (
                     "2023-12-01",
                     "2023-12-31",
-                ),  # first already posted so we won't create another one before it
+                ),
                 ("2024-04-01", "2024-07-31"),
                 ("2024-08-01", "2024-11-30"),
             ],
@@ -875,7 +858,6 @@ class TestAccountReturn(TestAccountReportsCommon):
                 f"Period end date ({fields.Date.to_string(period_end)}) doesn't match the expected period end date: ({fields.Date.to_string(expected_end)})",
             )
 
-        # Periodicity only with default start_date
         self.env.company.account_config_id.account_return_periodicity = "monthly"
         assert_period(
             date(2024, 1, 1),
@@ -927,7 +909,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             expected_end=date(2023, 12, 31),
         )
 
-        # Basic start dates
         self.env.company.account_config_id.account_return_periodicity = "trimester"
         self.basic_return_type.deadline_start_date = "2024-01-01"
         assert_period(
@@ -1020,7 +1001,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             expected_end=date(2024, 12, 31),
         )
 
-        # Complexe start dates
         self.env.company.account_config_id.account_return_periodicity = "trimester"
 
         self.basic_return_type.deadline_start_date = "2024-02-06"
@@ -1121,7 +1101,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             expected_end=date(2025, 1, 5),
         )
 
-        # Fiscal year
         self.basic_return_type.deadline_periodicity = "fiscalyear"
         self.env.company.account_config_id.fiscalyear_last_day = 31
         self.env.company.account_config_id.fiscalyear_last_month = "12"
@@ -1159,7 +1138,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_vat_closing_moves_with_lock_date(self):
-        """Checks posting a closing entry after the tax lock date has been manually set is allowed."""
         self.env.company.account_config_id.tax_lock_date = "2024-12-31"
 
         first_return = self.env["account.return"].search(
@@ -1276,7 +1254,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             "company"
         ].tax_config_id.account_fiscal_country_id
         self.basic_return_type.report_id.country_id = (
-            fiscal_country  # To make sure the tax unit is properly detected
+            fiscal_country
         )
         other_company_data = self.setup_other_company(
             name="Tax unit other company", account_opening_date="2024-01-01"
@@ -1417,7 +1395,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             [
                 {
                     "date_from": "2023-11-01",
-                    "date_to": "2023-11-30",  # December is auto generated by try_create using the normal range
+                    "date_to": "2023-11-30",
                     "return_type_id": self.basic_return_type.id,
                 }
             ]
@@ -1467,7 +1445,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             [
                 {
                     "date_from": "2023-10-01",
-                    "date_to": "2023-11-30",  # December is auto generated by try_create using the normal range
+                    "date_to": "2023-11-30",
                     "return_type_id": self.basic_return_type.id,
                 }
             ]
@@ -1503,7 +1481,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         existing_return.action_archive()
         self.assertFalse(existing_return.active)
 
-        # Create a return for a period where a return already existed but is now archived
         wizard = self.env["wizard.account.return.create"].create(
             [
                 {
@@ -1523,7 +1500,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         ]
         self.assertEqual(self.env["account.return"].search_count(domain), 1)
 
-        # Unarchiving old return should raise an error since a new return exists for same period
         with self.assertRaises(UserError):
             existing_return.action_unarchive()
 
@@ -1712,7 +1688,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             check.action_review()
 
     def test_account_return_check_template_basic(self):
-        # 1. Create audit return type
         audit_return_type = self.env["account.return.type"].create(
             [
                 {
@@ -1724,11 +1699,10 @@ class TestAccountReturn(TestAccountReportsCommon):
             ]
         )
 
-        # 2. Create check templates
         mail_activity_type = self.env.ref("mail.mail_activity_data_email")
         templates = self.env["account.return.check.template"].create(
             [
-                {  # Manual Check with activity
+                {
                     "name": "Check 1",
                     "code": "_template_checks_1",
                     "return_type": audit_return_type.id,
@@ -1736,7 +1710,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "model": False,
                     "activity_type": mail_activity_type.id,
                 },
-                {  # Auto Check Failing
+                {
                     "name": "Check 2",
                     "code": "_template_checks_2",
                     "return_type": audit_return_type.id,
@@ -1745,7 +1719,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "domain": "[('state', '=', 'draft')]",
                     "cycle": "equity",
                 },
-                {  # Auto Check Succeeding
+                {
                     "name": "Check 3",
                     "code": "_template_checks_3",
                     "return_type": audit_return_type.id,
@@ -1753,7 +1727,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "model": "account.move",
                     "domain": "[('amount_total', '=', 94329.90)]",
                 },
-                {  # Upload File
+                {
                     "name": "Check 4",
                     "code": "_template_checks_4",
                     "return_type": audit_return_type.id,
@@ -1762,7 +1736,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ]
         )
 
-        # 3. Create audit return
         account_return = audit_return_type.with_context(
             forced_date_from=fields.Date.from_string("2024-01-01"),
             forced_date_to=fields.Date.from_string("2024-12-31"),
@@ -1774,10 +1747,8 @@ class TestAccountReturn(TestAccountReportsCommon):
             "Only one return should be created for a period of one year using an annual return type.",
         )
 
-        # 4. Create draft invoice
         self.init_invoice("out_invoice", amounts=[10], invoice_date="2024-01-01")
 
-        # 5. Refresh checks
         account_return.refresh_checks()
 
         self.assertEqual(len(account_return.check_ids), 4)
@@ -1794,7 +1765,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assert_checks_equal(
             account_return,
             [
-                {  # Manual Check with activity
+                {
                     "name": "Check 1",
                     "code": "_template_checks_1",
                     "message": False,
@@ -1803,7 +1774,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "return_id": account_return,
                     "template_id": templates[0],
                 },
-                {  # Auto Check Failing
+                {
                     "name": "Check 2",
                     "code": "_template_checks_2",
                     "message": False,
@@ -1813,7 +1784,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "cycle": "equity",
                     "template_id": templates[1],
                 },
-                {  # Auto Check Succeeding
+                {
                     "name": "Check 3",
                     "code": "_template_checks_3",
                     "message": False,
@@ -1822,7 +1793,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "return_id": account_return,
                     "template_id": templates[2],
                 },
-                {  # Upload File
+                {
                     "name": "Check 4",
                     "code": "_template_checks_4",
                     "message": False,
@@ -1849,7 +1820,7 @@ class TestAccountReturn(TestAccountReportsCommon):
 
         template = self.env["account.return.check.template"].create(
             [
-                {  # Upload File
+                {
                     "name": "Check 1",
                     "code": "_template_checks_1",
                     "return_type": return_type.id,
@@ -1936,7 +1907,7 @@ class TestAccountReturn(TestAccountReportsCommon):
 
         template = self.env["account.return.check.template"].create(
             [
-                {  # Upload File
+                {
                     "name": "Check 1",
                     "code": "_template_checks_1",
                     "return_type": return_type.id,
@@ -2040,7 +2011,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         invoices |= self.init_invoice(
             "out_invoice", amounts=[10], invoice_date="2024-02-21"
         )
-        # No invoice in March
         invoices |= self.init_invoice(
             "out_invoice", amounts=[10], invoice_date="2024-04-21"
         )
@@ -2057,7 +2027,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             "out_invoice", amounts=[10], invoice_date="2025-03-21"
         )
 
-        # Set account audit status to 'reviewed'
         accounts = invoices.line_ids.account_id
         for account in accounts:
             for account_status in account.account_status:
@@ -2071,7 +2040,6 @@ class TestAccountReturn(TestAccountReportsCommon):
                     working_file_id=audit.id
                 ).audit_status
                 if audit.date_from == fields.Date.from_string("2024-03-01"):
-                    # No reset, as no effect on accounts in March
                     self.assertEqual("reviewed", audit_status)
                 else:
                     self.assertEqual("todo", audit_status)
@@ -2091,9 +2059,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             len(january_return), 1, "There should be one return for January 2024"
         )
 
-        # check_company_data
         self.env.company.vat = False
-        # check_match_all_bank_entries
         bank_journal = self.company_data["default_journal_bank"]
         bank_statement_line = self.env["account.bank.statement.line"].create(
             {
@@ -2105,11 +2071,9 @@ class TestAccountReturn(TestAccountReportsCommon):
                 "date": "2024-01-01",
             }
         )
-        # check_draft_entries
         draft_invoice = self.init_invoice(
             "out_invoice", amounts=[10], invoice_date="2024-01-01"
         )
-        # check_bills_attachment
         bill = self.init_invoice(
             "in_invoice", amounts=[10], invoice_date="2024-01-01", post=True
         )
@@ -2212,7 +2176,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_ec_sales_list_return_checks(self):
-        """Checks that the checks for the EC Sales List return are correctly generated."""
         ec_sales_list_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.ec_sales_list_return_type.id),
@@ -2257,7 +2220,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_annual_return_checks(self):
-        """Checks that the checks for the Annual return are correctly generated."""
         annual_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.annual_return_type.id),
@@ -2556,7 +2518,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             invoice_date="2024-07-01",
         )
 
-        # Mark december return completed
         december_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2565,7 +2526,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
         december_return._close_outside_odoo("Filed before the company used Odoo")
 
-        # January Return: 2.10 to recover
         january_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2583,7 +2543,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # February Return: 4.20 in period -2.10 to recover from January
         february_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2602,7 +2561,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # March Return: 6.3 in period; nothing coming from previous periods
         march_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2620,7 +2578,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # April Return: 21 in period; to recover
         april_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2638,7 +2595,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # May Return: 2.1 in period ; 21 to recover => Nothing to pay in period, still 18.90 to recover in next periods
         may_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2657,7 +2613,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             ],
         )
 
-        # June Return: 18.90 in period - 18.90 to recover => nothing to pay
         june_return = self.env["account.return"].search(
             [
                 ("type_id", "=", self.basic_return_type.id),
@@ -2676,7 +2631,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
         other_account = self.company_data["default_account_revenue"]
-        # Generating an amount to recover of 200 which is not generated by a closing
         self.env["account.move"].create(
             {
                 "date": "2024-07-01",
@@ -2723,11 +2677,9 @@ class TestAccountReturn(TestAccountReportsCommon):
             ]
         )
 
-        # Should raise an error as we cannot have duplicate returns for return type of category 'account_return'
         with self.assertRaises(UserError):
             wizard.action_create_manual_account_returns()
 
-        # Simulate two creation of an audit for the same period, it should be allowed
         audit_return_type = self.env["account.return.type"].create(
             [
                 {
@@ -2941,8 +2893,6 @@ class TestAccountReturn(TestAccountReportsCommon):
                 ):
                     account_return.action_submit()
                     if return_type.states_workflow == "generic_state_tax_report":
-                        # no submitted step for generic_state_tax_report as there's nothing to pay
-                        # (see test_account_return_state_review_submit_pay for a case with something to pay)
                         self.assertEqual(account_return.state, "paid")
                     else:
                         self.assertEqual(account_return.state, "submitted")
@@ -3110,10 +3060,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assertEqual(second_company_return.date_deadline, date(2024, 3, 15))
 
     def test_annual_corporate_tax_return_exception_case(self):
-        """Annual corporate tax return generation for an extended fiscal year: when the
-        fiscal year is longer than 12 months (spanning two calendar years here), the
-        return dates must match the fiscal year boundaries.
-        """
         self.env["account.fiscal.year"].create(
             {
                 "name": "Custom FY",
@@ -3126,7 +3072,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             "account.annual_corporate_tax_return_type"
         )
         with freeze_time(date(2023, 12, 1)):
-            # Generating the return later to be sure that we are in the acceptable time range of year or year + 1.
             annual_corporate_tax_return._try_create_returns_for_fiscal_year(
                 self.env.company, None
             )
@@ -3140,16 +3085,11 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assert_return_dates_equal(existing_return, [("2022-09-01", "2023-12-31")])
 
     def test_tax_return_with_shared_accounts(self):
-        """
-        Test that creating an audit including a shared account will not raise an AccessError in case
-        the account is used by the other company in the audit period.
-        """
 
         company_1 = self.company_data["company"]
         company_2 = self.company_data_2["company"]
         account_revenue = self.company_data["default_account_revenue"]
 
-        # Sharing account
         self.company_data["default_account_revenue"].write(
             {
                 "code_mapping_ids": [
@@ -3166,9 +3106,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             forced_date_to=fields.Date.from_string("2024-12-31"),
         )._try_create_returns_for_fiscal_year(company_2, False)
 
-        # Set the account audit status to 'reviewed'. An audit status is scoped to the
-        # companies of the audit that owns it, so reaching company 2's row needs an
-        # environment that allows company 2.
         both_companies = account_revenue.with_context(
             allowed_company_ids=(company_1 + company_2).ids
         )
@@ -3180,9 +3117,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         self.assertEqual(len(account_status), 2, "one audit status per company")
         account_status.status = "reviewed"
 
-        # ... and company 1 on its own must not see company 2's. The cache has to go
-        # first: a restricted environment reads what a wider one already fetched, so
-        # without this the company guard is never consulted and the check always passes.
         self.env.invalidate_all()
         self.assertFalse(
             self.env["account.audit.account.status"]
@@ -3197,7 +3131,6 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
         self.env.invalidate_all()
 
-        # With company 2, create a move in the audit period
         company_2_move = (
             self.env["account.move"]
             .with_company(company_2)
@@ -3230,7 +3163,6 @@ class TestAccountReturn(TestAccountReportsCommon):
             )
         )
 
-        # Should be able to post the move without issues
         company_2_move.action_post()
         self.assertEqual(
             account_status.filtered(
@@ -3248,12 +3180,10 @@ class TestAccountReturn(TestAccountReportsCommon):
         )
 
     def test_vies_validation_fiscal_position_vat_required(self):
-        """Test that vies validation is performed only for moves with fiscal position with vat required"""
 
         def _check_vies(record, vat):
             return {"valid": vat == "ESA12345674"}
 
-        # needed to have the 'check_partner_vies'
         self.ensure_installed("account_vat")
         self.basic_tax_report.country_id = self.env.ref("base.be")
         self.env.company.account_config_id.vat_check_vies = True
@@ -3751,7 +3681,6 @@ class TestAuditAccountSeeding(TestAccountReportsCommon):
         )
 
     def test_accounts_touched_during_the_period_are_marked_to_review(self):
-        """The control: whatever the query shape, the answer must not change."""
         self.assertTrue(self.audit_type, "the fixture needs an audit return type")
         audit = self._create_audit()
 
@@ -3759,9 +3688,6 @@ class TestAuditAccountSeeding(TestAccountReportsCommon):
         self.assertFalse(self._status_of(audit, self.untouched))
 
     def test_seeding_does_not_aggregate_the_period_ledger(self):
-        """An audit covers a fiscal year: grouping the period's move lines by account
-        scans the whole year's ledger to answer questions that stop at the first hit.
-        """
         captured = []
         cursor_cls = type(self.env.cr)
         original = cursor_cls.execute

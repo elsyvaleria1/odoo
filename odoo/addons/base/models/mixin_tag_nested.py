@@ -33,8 +33,6 @@ class MixinTagNested(models.AbstractModel):
         ancestors = self.browse(ancestor_ids)
         ancestors.fetch(["name", "parent_id", "parent_path"])
         names = {tag.id: tag.name or "" for tag in ancestors}
-        # a rename invalidates only descendants whose display_name is cached,
-        # walking down through cached ones: every ancestor's must be cached too
         (ancestors - self).mapped("display_name")
         _debug.perf.count(
             "nested_display_names",

@@ -5,28 +5,17 @@ from collections.abc import Mapping
 
 from odoo.libs import redact
 
-# Every record of a payment logger is masked, and the cost grows with its
-# length: past this many characters a message is cut, with a marker saying so.
-# A provider's own payload, pretty-printed, stays far below it.
 MESSAGE_LIMIT = 65536
 _WALK_DEPTH = 50
 _WALKED = (Mapping, list, tuple, set, frozenset)
 
 
 class SensitiveDataFilter(logging.Filter):
-    # Masks the record as it will be emitted. The provider's own keys, which may
-    # be named in no way libs.redact knows, are masked in the args first,
-    # whatever their value's type, then the formatted message, traceback and
-    # stack are masked as text: libs.redact's secrets plus those keys. The keys
-    # are a set a provider module may still populate after the filter is built.
     def __init__(self, sensitive_keys=None) -> None:
         super().__init__()
         self._sensitive_keys = set() if sensitive_keys is None else sensitive_keys
 
     def filter(self, record):
-        # a filter runs outside logging's error handling: what raises here
-        # raises into the caller's log call, so a record that cannot be masked
-        # is emptied instead, never passed on as it is
         try:
             self._mask_record(record, frozenset(map(str, self._sensitive_keys)))
         except Exception as error:
@@ -38,19 +27,14 @@ class SensitiveDataFilter(logging.Filter):
     @staticmethod
     def _mask_record(record, keys):
         if isinstance(record.args, Mapping):
-            # "%(password)s" % {...}: the formatted text keeps the value
-            # without the key that names it, so the key is read here
             record.args = redact.mask_data(record.args)
         if keys and record.args:
-            # args that cannot be walked stay as they are, for the text pass
-            # below to mask
             with contextlib.suppress(Exception):
                 record.args = _mask_keys(record.args, keys, set())
         try:
             message = record.getMessage()
             formatted = True
         except Exception:
-            # logging's handleError would print the raw msg and args
             message, formatted = _unformatted(record), False
         masked = _mask(message, keys)
         if masked != message or not formatted:
@@ -58,9 +42,6 @@ class SensitiveDataFilter(logging.Filter):
         if record.exc_info:
             if not record.exc_text:
                 record.exc_text = logging.Formatter().formatException(record.exc_info)
-            # Every formatter renders exc_text once it is set; the exc_info left
-            # behind would hand the raw traceback, frames and locals included,
-            # to any handler reading the exception itself.
             record.exc_info = None
         if record.exc_text:
             record.exc_text = _mask(record.exc_text, keys)
@@ -89,9 +70,6 @@ def _mask(text, keys):
     return f"{masked}\n... [{omitted} more characters not logged]"
 
 
-# a card number under no key at all (a provider's echo, a traceback's locals):
-# 13 to 19 digits, grouped by spaces or dashes, passing the Luhn check, keeps
-# its last four as the masked label the providers themselves show
 _CARD_NUMBER = re.compile(r"(?<![\d-])\d(?:[ -]?\d){12,18}(?![\d-])")
 
 
@@ -140,14 +118,6 @@ def _mask_keys(data, keys, active):
 
 
 def get_payment_logger(name, sensitive_keys=None):
-    """Return the logger of a payment module, masking what it would leak.
-
-    :param str name: The name of the logger.
-    :param set sensitive_keys: Keys of the provider's payment data that are secret under a
-        name the generic redaction does not recognise.
-    :return: The logger.
-    :rtype: logging.Logger
-    """
     logger = logging.getLogger(name)
     logger.addFilter(SensitiveDataFilter(sensitive_keys))
     return logger

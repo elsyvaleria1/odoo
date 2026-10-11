@@ -34,7 +34,6 @@ class TestActivityCommon(ActivityScheduleCase):
 class TestActivityRights(TestActivityCommon):
     def test_activity_action_view_document_no_access(self):
         def _employee_no_access(records, operation):
-            """Simulates employee having no access to the document"""
             if records.env.uid == self.user_employee.id and not records.env.su:
                 return records, lambda: exceptions.AccessError(
                     "Access denied to document"
@@ -61,7 +60,6 @@ class TestActivityRights(TestActivityCommon):
         self.assertEqual(action["res_model"], self.test_record._name)
         self.assertEqual(action["res_id"], self.test_record.id)
 
-        # If user has no access to the record, should return activity view instead
         with patch.object(
             MailTestActivity,
             "_check_access",
@@ -101,7 +99,6 @@ class TestActivityRights(TestActivityCommon):
 
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_activity_security_user_access(self):
-        """Internal user can modify assigned or created or if write on document"""
         act_emp_for_adm = self.test_record.with_user(
             self.user_employee
         ).activity_schedule(
@@ -129,11 +126,9 @@ class TestActivityRights(TestActivityCommon):
             (act_adm_for_emp, True),
         ]
 
-        # document access -> every activity on it
         for activity, __ in expected:
             activity.with_user(self.user_employee).write({"summary": "Caramba caramba"})
 
-        # no document access -> based on create_uid / user_id
         self._hide_test_record_from_employee()
         for activity, can_write in expected:
             with self.subTest(
@@ -149,12 +144,6 @@ class TestActivityRights(TestActivityCommon):
                         activity.write({"summary": "Caramba"})
 
     def test_access_customized_is_one_rule_both_ways(self):
-        """The per-record message access and its domain form are one rule.
-
-        `_mail_operation_domains` defines both; this pins that the per-record
-        answer (`_get_accessible_documents`) and the domain the activity guard
-        searches with (`_mail_access_domain`) still pick the same documents.
-        """
         open_, readonly, locked = self.env["mail.test.access.custo"].create(
             [
                 {"name": "Open"},
@@ -181,7 +170,6 @@ class TestActivityRights(TestActivityCommon):
                         )
 
     def test_activity_security_user_access_customized(self):
-        """Test '_mail_get_operation_for_mail_message_operation' support when scheduling activities."""
         access_open, access_ro, access_locked = (
             self.env["mail.test.access.custo"]
             .with_user(self.user_admin)
@@ -199,7 +187,6 @@ class TestActivityRights(TestActivityCommon):
                 "test_mail.mail_act_test_todo_generic",
             )
 
-        # sanity checks on rule implementation
         (access_open + access_ro + access_locked).with_user(
             self.user_employee
         ).check_access("read")
@@ -209,7 +196,6 @@ class TestActivityRights(TestActivityCommon):
                 "write"
             )
 
-        # '_mail_get_operation_for_mail_message_operation' allows to post, hence posting activities
         emp_new_1 = access_open.with_user(self.user_employee).activity_schedule(
             "test_mail.mail_act_test_todo_generic",
         )
@@ -223,12 +209,10 @@ class TestActivityRights(TestActivityCommon):
             )
 
         self.env.invalidate_all()
-        # check read access correctly uses '_mail_get_operation_for_mail_message_operation'
         admin_activities[0].with_user(self.user_employee).read(["summary"])
         admin_activities[1].with_user(self.user_employee).read(["summary"])
 
         self.env.invalidate_all()
-        # check search correctly uses '_get_mail_message_access'
         found = (
             self.env["mail.activity"]
             .with_user(self.user_employee)
@@ -272,7 +256,6 @@ class TestActivityRights(TestActivityCommon):
         EmployeeActivity = self.env["mail.activity"].with_user(self.user_employee)
         this_one = [("id", "=", test_activity.id)]
 
-        # with access to the document: search, read_group and read see it
         self.assertEqual(EmployeeActivity.search(this_one), test_activity)
         read_group_result = EmployeeActivity.formatted_read_group(
             this_one, ["summary"], ["__count"]
@@ -280,7 +263,6 @@ class TestActivityRights(TestActivityCommon):
         self.assertEqual(1, read_group_result[0]["__count"])
         self.assertEqual("Summary", read_group_result[0]["summary"])
 
-        # without it: search and read_group filter it out, reading it is refused
         self._hide_test_record_from_employee()
         self.assertFalse(EmployeeActivity.search(this_one))
         self.assertFalse(EmployeeActivity.search_read(this_one, ["summary"]))
@@ -290,7 +272,6 @@ class TestActivityRights(TestActivityCommon):
         with self.assertRaises(exceptions.AccessError):
             EmployeeActivity.browse(test_activity.id).read(["summary"])
 
-        # somebody who reaches the document may assign it to the employee
         self.env["mail.activity"].create(
             {
                 "activity_type_id": self.env.ref("test_mail.mail_act_test_todo").id,
@@ -300,13 +281,11 @@ class TestActivityRights(TestActivityCommon):
             }
         )
 
-        # the employee cannot schedule on it for somebody else
         with self.assertRaises(exceptions.AccessError):
             self.test_record.with_user(self.user_employee).activity_schedule(
                 "test_mail.mail_act_test_todo", user_id=self.user_admin.id
             )
 
-        # but reads and read_groups what is assigned to them
         test_activity.user_id = self.user_employee
         test_activity.flush_recordset()
         self.env.invalidate_all()
@@ -327,7 +306,6 @@ class TestActivityFlow(TestActivityCommon):
             test_record = self.env["mail.test.activity"].browse(self.test_record.id)
             self.assertEqual(test_record.activity_ids, self.env["mail.activity"])
 
-            # employee record an activity and check the deadline
             activity = self.env["mail.activity"].create(
                 {
                     "summary": "Test Activity",
@@ -350,7 +328,6 @@ class TestActivityFlow(TestActivityCommon):
             test_record.activity_ids.write({"date_deadline": date.today()})
             self.assertEqual(test_record.activity_state, "today")
 
-            # activity is done
             activity.action_feedback(feedback="So much feedback")
             self.assertEqual(activity.feedback, "So much feedback")
             self.assertEqual(test_record.activity_ids, self.env["mail.activity"])
@@ -400,7 +377,6 @@ class TestActivityFlow(TestActivityCommon):
         self.assertEqual(activity.user_id, self.user_employee)
 
     def test_activity_summary_sync(self):
-        """Test summary from type is copied on activities if set (currently only in form-based onchange)"""
         ActivityType = self.env["mail.activity.type"]
         call_activity_type = ActivityType.create({"name": "call", "sequence": 1})
         email_activity_type = ActivityType.create(
@@ -413,30 +389,23 @@ class TestActivityFlow(TestActivityCommon):
                 default_res_id=self.test_record.id,
             )
         ) as ActivityForm:
-            # coming from default activity type, which is to do
             self.assertEqual(
                 ActivityForm.activity_type_id,
                 self.env.ref("mail.mail_activity_data_todo"),
             )
             self.assertEqual(ActivityForm.summary, "TodoSummary")
-            # `res_model_id` and `res_id` are invisible, see view `mail.mail_activity_view_form_popup`
-            # they must be set using defaults, see `action_feedback_schedule_next`
             ActivityForm.activity_type_id = call_activity_type
-            # activity summary should be empty
             self.assertEqual(
                 ActivityForm.summary, "TodoSummary", "Did not erase if void on type"
             )
 
             ActivityForm.activity_type_id = email_activity_type
-            # activity summary should be replaced with email's default summary
             self.assertEqual(ActivityForm.summary, email_activity_type.summary)
 
             ActivityForm.activity_type_id = call_activity_type
-            # activity summary remains unchanged from change of activity type as call activity doesn't have default summary
             self.assertEqual(ActivityForm.summary, email_activity_type.summary)
 
     def test_activity_type_unlink(self):
-        """Removing type should allocate activities to Todo"""
         email_activity_type = self.env["mail.activity.type"].create(
             {
                 "name": "email",
@@ -454,16 +423,11 @@ class TestActivityFlow(TestActivityCommon):
             activity.activity_type_id, self.env.ref("mail.mail_activity_data_todo")
         )
 
-        # Todo is protected, niark niark
         with self.assertRaises(exceptions.UserError):
             self.env.ref("mail.mail_activity_data_todo").unlink()
 
     @mute_logger("odoo.db")
     def test_activity_values(self):
-        """Test activities are created with right model / res_id values linking
-        to records without void values. 0 as res_id especially is not wanted."""
-        # creating activities on a temporary record generates activities with res_id
-        # being 0, which is annoying -> never create activities in transient mode
         temp_record = self.env["mail.test.activity"].new({"name": "Test"})
         with self.assertRaises(IntegrityError):
             activity = temp_record.activity_schedule(
@@ -472,7 +436,6 @@ class TestActivityFlow(TestActivityCommon):
 
         test_record = self.env["mail.test.activity"].browse(self.test_record.ids)
 
-        # document should be complete: both model and res_id
         with self.assertRaises(IntegrityError):
             self.env["mail.activity"].create(
                 {
@@ -492,7 +455,6 @@ class TestActivityFlow(TestActivityCommon):
                     "res_id": test_record.id,
                 }
             )
-        # free activity is ok (no model, no res_id)
         self.env["mail.activity"].create({"user_id": self.env.uid})
 
         activity = self.env["mail.activity"].create(
@@ -515,9 +477,6 @@ class TestActivityFlow(TestActivityCommon):
 @tests.tagged("mail_activity", "post_install", "-at_install")
 class TestActivityDoneBatch(TestActivityCommon):
     def test_marking_activities_done_posts_once_per_round_of_records(self):
-        """Feedback on N activities posts their done messages in one batch per
-        round of distinct records: three records with one activity each are one
-        message create, a record carrying two activities needs a second round."""
         records = self.env["mail.test.activity"].create(
             [{"name": f"Done {idx}"} for idx in range(3)]
         )
@@ -573,11 +532,8 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
         cls.deleted_record = cls.test_lead_records[2]
         cls.dt_reference = datetime(2024, 1, 15, 8, 0, 0)
 
-        # remove potential demo data on admin, to make test deterministic
         cls.env["mail.activity"].search([("user_id", "=", cls.user_admin.id)]).unlink()
 
-        # records and leads and free activities
-        # have 1 record (or activity) for today, one for tomorrow
         cls.test_activities = cls.env["mail.activity"]
         for record, summary, dt, creator in (
             (cls.test_record, "Summary Today'", cls.dt_reference, cls.user_employee),
@@ -623,7 +579,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
         cls.test_activities_removed = cls.deleted_record.activity_ids
         cls.test_activities_company_2 = cls.test_lead_records[3].activity_ids
 
-        # add atttachments on lead-like test records
         cls.lead_act_attachments = cls.env["ir.attachment"].create(
             cls._generate_attachments_data(
                 1, "mail.activity", cls.test_lead_activities[-4]
@@ -639,7 +594,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
             )
         )
 
-        # free (no model) activities
         cls.test_activities_free = (
             cls.env["mail.activity"]
             .with_user(cls.user_employee)
@@ -655,8 +609,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
             )
         )
 
-        # In the mean time, some FK deletes the record where the message is
-        # scheduled, skipping its unlink() override
         cls.env.cr.execute(
             f"DELETE FROM {cls.test_lead_records._table} WHERE id = %s",
             (cls.deleted_record.id,),
@@ -666,10 +618,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
 
     @users("employee")
     def test_systray_activities_for_various_records(self):
-        """Check that activities made on archived or not archived records, as
-        well as on removed record, to check systray activities behavior and
-        robustness."""
-        # archive record 1
         self.test_record.action_archive()
         self.assertTrue(
             self.test_activities[0].exists(), "Archiving record keeps activities"
@@ -720,7 +668,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
                 self.assertEqual(group_values["domain"], exp_domain)
 
-        # check search results with removed records
         self.env.invalidate_all()
         test_with_removed = (
             self.env["mail.activity"]
@@ -763,7 +710,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
         )
         with self.assertRaises(
             exceptions.AccessError
-        ):  # should not raise a MissingError
+        ):
             self.test_activities_removed.with_user(self.user_admin).read(["summary"])
 
         self.env.invalidate_all()
@@ -779,7 +726,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
             "Even with ACL check, activities linked to removed records are kept if assigned to the user (see odoo/odoo#112126)",
         )
 
-        # if not assigned -> should filter out
         self.env.invalidate_all()
         self.test_activities_removed.write({"user_id": self.user_admin.id})
         test_with_removed = self.env["mail.activity"].search(
@@ -795,8 +741,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
         )
         self.test_activities_removed.write({"user_id": self.user_employee.id})
 
-        # be sure activities on removed records do not crash when managed, and that
-        # lost attachments are removed as well
         self.env.invalidate_all()
         lead_activities = self.test_lead_activities.with_user(self.user_employee)
         lead_act_attachments = self.lead_act_attachments.with_user(self.user_employee)
@@ -832,8 +776,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
 
     @users("employee")
     def test_systray_activities_multi_company(self):
-        """Explicitly check MC support, as well as allowed_company_ids, that
-        limits visible records in a given session, should impact systray activities."""
         self.user_employee.write({"company_ids": [(4, self.company_2.id)]})
 
         self.authenticate(self.user_employee.login, self.user_employee.login)
@@ -865,7 +807,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
                 if (
                     model_name == "mail.activity"
-                ):  # for mail.activity, there is a key with activities we can check
+                ):
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -875,9 +817,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                         ),
                     )
 
-        # when allowed companies restrict visible records, linked activities are
-        # removed from systray, considering you have to log into the right company
-        # to see them (change in 18+)
         with freeze_time(self.dt_reference):
             groups_data = (
                 self.call_jsonrpc(
@@ -910,7 +849,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
                 if (
                     model_name == "mail.activity"
-                ):  # for mail.activity, there is a key with activities we can check
+                ):
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -920,7 +859,6 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                         ),
                     )
 
-        # now not having accessible to company 2 records: tread like forbidden
         self.user_employee.write({"company_ids": [(3, self.company_2.id)]})
         with freeze_time(self.dt_reference):
             groups_data = (
@@ -954,7 +892,7 @@ class TestActivitySystray(TestActivityCommon, HttpCase):
                 self.assertEqual(group_values["overdue_count"], exp_overdue)
                 if (
                     model_name == "mail.activity"
-                ):  # for mail.activity, there is a key with activities we can check
+                ):
                     self.assertEqual(
                         sorted(group_values["activity_ids"]),
                         sorted(
@@ -1002,12 +940,10 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
         ]
 
     def _systray_counter(self, user):
-        """The number the systray badge shows on a reload, for `user`."""
         groups = self.env["res.users"].with_user(user)._get_activity_groups()
         return sum(group.get("due_count", 0) for group in groups)
 
     def _expect_employee_diff(self, count_diff):
-        """One expected bus notification on the employee's channel."""
         partner = self.user_employee.partner_id
         return [
             (
@@ -1030,15 +966,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
 
     @users("employee")
     def test_notify_create_unlink_activities(self):
-        """Creating and unlinking activities notifies the change in "to be done"
-        count per user -- counted in the same unit as the badge it adjusts.
-
-        ``activity_vals`` puts all four activities on ONE record, of which two
-        are to-do. ``_get_activity_groups`` counts one unit per *record* holding
-        at least one to-do activity, so the delta is 1, not 2: the counter used
-        to be seeded in records and moved in activities, and a client that saw
-        +2 here dropped back to 1 as soon as the systray was opened.
-        """
         users = self.env.user + self.user_employee_2
 
         expected_create_notifs = [
@@ -1084,8 +1011,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
                 expected_create_notif_channels, expected_create_notif_message_items
             ):
                 activities = self.env["mail.activity"].create(user_activity_vals)
-            # the invariant the payload exists to preserve: applying the delta to
-            # the badge lands on the value a reload would compute
             self.assertEqual(self._systray_counter(user), before + 1)
             with self.assertBus(
                 expected_unlink_notif_channels, expected_unlink_notif_message_items
@@ -1095,7 +1020,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
 
     @users("employee")
     def test_notify_counts_records_not_activities(self):
-        """Two activities on one record are one unit; on two records, two."""
         model_id = self.env["ir.model"]._get_id(self.test_record._name)
         record_2 = self.env["mail.test.activity"].sudo().create({"name": "second"})
         base = {
@@ -1128,13 +1052,11 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
             )
         self.assertEqual(self._systray_counter(self.env.user), 1)
 
-        # a third activity on the same record moves nothing: the record already counts
         self._reset_bus()
         third = self.env["mail.activity"].create(base | {"res_id": self.test_record.id})
         self.assertBusNotifications([], [])
         self.assertEqual(self._systray_counter(self.env.user), 1)
 
-        # one on another record does move it
         self._reset_bus()
         with self.assertBus(
             channel,
@@ -1150,8 +1072,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
             )
         self.assertEqual(self._systray_counter(self.env.user), 2)
 
-        # removing one of three leaves the record counted -> no notification,
-        # where a per-activity delta would have wrongly decremented the badge
         self._reset_bus()
         third.unlink()
         self.assertBusNotifications([], [])
@@ -1162,17 +1082,7 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
 
     @users("employee")
     def test_notify_counts_in_the_assignee_timezone(self):
-        """The delta is decided on the assignee's own today, like ``state``.
-
-        Frozen at 2024-01-01 09:00 UTC. For an assignee at UTC-11 it is still
-        2023-12-31 there, so an activity due on the 1st is *planned* for them and
-        the badge must not count it. Deciding on the server's date instead --
-        ``date_deadline <= fields.Date.today()``, which is what create, write and
-        unlink used to do -- would have pushed +1 against a badge that computes 0
-        on reload, because the badge is built from ``state`` and ``state`` has
-        always answered in the assignee's timezone.
-        """
-        self.env.user.tz = "Pacific/Midway"  # UTC-11
+        self.env.user.tz = "Pacific/Midway"
         Activity = self.env["mail.activity"]
         self.assertEqual(Activity._today_in_tz(self.env.user.tz), date(2023, 12, 31))
         self.assertEqual(
@@ -1194,7 +1104,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
         self.assertBusNotifications([], [])
         self.assertEqual(self._systray_counter(self.env.user), 0)
 
-        # their own today does count
         channel = [
             (
                 self.env.cr.dbname,
@@ -1220,23 +1129,21 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
     @users("employee")
     def test_notify_update_activities(self):
         write_vals_all = [
-            # added to counter for employee 2, removed from counter for current employee
             {"user_id": self.user_employee_2.id},
             {
                 "user_id": self.user_employee_2.id,
                 "date_deadline": datetime(2023, 12, 31, 15, 0, 0),
                 "active": True,
             },
-            # just notify
             {
                 "date_deadline": datetime(2024, 1, 2, 15, 0, 0)
-            },  # everything is in the future -> all removed from counter
+            },
             {
                 "date_deadline": datetime(2023, 12, 31, 15, 0, 0)
-            },  # everything is in the past -> the one from the future is added
-            {"active": False},  # everything is archived -> all removed from counter
-            {"active": True},  # the archived one is unarchived -> added to counter
-            {},  # no "to be done" count change -> no notif
+            },
+            {"active": False},
+            {"active": True},
+            {},
             [
                 {"date_deadline": datetime(2024, 1, 2, 15, 0, 0), "active": True},
                 {},
@@ -1245,12 +1152,7 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
             ],
         ]
 
-        # All four activities sit on ONE record, so the counter moves by at most
-        # one unit per user: what changes is whether that record still carries a
-        # to-do activity, not how many it carries.
         expected_notifs = [
-            # transfer to the second employee: the record leaves one counter and
-            # joins the other
             [
                 (
                     [(self.env.cr.dbname, user.partner_id._name, user.partner_id.id)],
@@ -1272,8 +1174,6 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
                     self.user_employee + self.user_employee_2, [-1, 1], strict=True
                 )
             ],
-            # same transfer, also pulling every deadline into the past: still one
-            # record either side
             [
                 (
                     [(self.env.cr.dbname, user.partner_id._name, user.partner_id.id)],
@@ -1296,18 +1196,12 @@ class TestActivitySystrayBusNotify(TestActivityCommon):
                 )
             ],
         ] + [
-            # every deadline in the future -> the record stops counting
             self._expect_employee_diff(-1),
-            # every deadline in the past: the record already counted (the active
-            # past one, and today's) and still does -> nothing to say
             [([], [])],
-            # everything archived -> the record stops counting
             self._expect_employee_diff(-1),
-            # unarchiving adds a third to-do activity to a record that already
-            # counts -> nothing to say
             [([], [])],
-            [([], [])],  # no change -> no notif
-            [([], [])],  # no change in "todo" count -> no notif
+            [([], [])],
+            [([], [])],
         ]
         for write_vals, expected_notif_vals in zip(
             write_vals_all, expected_notifs, strict=True
@@ -1359,7 +1253,6 @@ class TestActivityViewHelpers(TestActivityCommon):
         get_activity_data = self.env["mail.activity"].get_activity_data
 
         with self.with_user("employee"):
-            # Setup activities: 3 for the first record, 2 "done" and 2 ongoing for the second
             test_record, test_record_2 = self.env["mail.test.activity"].browse(
                 (self.test_record + self.test_record_2).ids
             )
@@ -1398,7 +1291,6 @@ class TestActivityViewHelpers(TestActivityCommon):
                 feedback="Done", attachment_ids=self.attachment_2.ids
             )
 
-            # Check get activity data
             activity_data = get_activity_data(
                 "mail.test.activity", None, fetch_done=True
             )
@@ -1424,7 +1316,7 @@ class TestActivityViewHelpers(TestActivityCommon):
             grouped = activity_data["grouped_activities"][test_record.id][
                 self.type_upload.id
             ]
-            grouped["ids"] = set(grouped["ids"])  # ids order doesn't matter
+            grouped["ids"] = set(grouped["ids"])
             self.assertDictEqual(
                 grouped,
                 {
@@ -1445,7 +1337,7 @@ class TestActivityViewHelpers(TestActivityCommon):
                 grouped,
                 {
                     "state": "planned",
-                    "count_by_state": {"done": 2, "planned": 3},  # free user is planned
+                    "count_by_state": {"done": 2, "planned": 3},
                     "ids": set(record_2_activities.ids),
                     "reporting_date": record_2_activities[2].date_deadline,
                     "user_assigned_ids": record_2_activities[2:].user_id.ids,
@@ -1458,14 +1350,12 @@ class TestActivityViewHelpers(TestActivityCommon):
                 },
             )
 
-            # Mark all first record activities as "done" and check activity data
             record_activities.action_feedback(
                 feedback="Done", attachment_ids=self.attachment_1.ids
             )
             self.assertEqual(
                 record_activities[2].date_done, date.today()
-            )  # Thanks to freeze_time
-            # Each message owns its own copy; the newest is the last one made.
+            )
             most_recent_attachment_id = max(record_activities.attachment_ids.ids)
             activity_data = get_activity_data(
                 "mail.test.activity", None, fetch_done=True
@@ -1483,9 +1373,6 @@ class TestActivityViewHelpers(TestActivityCommon):
                     "reporting_date": record_activities[2].date_done,
                     "user_assigned_ids": [],
                     "attachments_info": {
-                        # One per message: `_action_done` copies a shared attachment
-                        # rather than letting three messages point at one record that
-                        # only the first of them owns.
                         "count": 3,
                         "most_recent_id": most_recent_attachment_id,
                         "most_recent_name": self.attachment_1.name,
@@ -1497,7 +1384,6 @@ class TestActivityViewHelpers(TestActivityCommon):
                 activity_data["activity_res_ids"], [test_record_2.id, test_record.id]
             )
 
-            # Check filters (domain, pagination and fetch_done)
             self.assertEqual(
                 get_activity_data(
                     "mail.test.activity",
@@ -1512,7 +1398,6 @@ class TestActivityViewHelpers(TestActivityCommon):
                 ],
                 [test_record_2.id],
             )
-            # Note that the records are ordered by ids not by deadline (so we get the "wrong" order)
             self.assertEqual(
                 get_activity_data(
                     "mail.test.activity", None, offset=1, fetch_done=True
@@ -1526,7 +1411,6 @@ class TestActivityViewHelpers(TestActivityCommon):
                 [test_record.id],
             )
 
-            # Unarchiving activities should restore the activity
             record_activities.action_unarchive()
             self.assertFalse(any(act.date_done for act in record_activities))
             self.assertTrue(all(act.date_deadline for act in record_activities))
@@ -1671,14 +1555,12 @@ class TestActivityResName(ActivityScheduleCase):
         self.assertEqual(self._recompute_res_name(), "Renamed")
 
     def test_res_name_costs_one_query_for_the_document(self):
-        """The happy path reads the document; it must not also probe for it."""
         self.env.invalidate_all()
         activity = self.env["mail.activity"].browse(self.activity.id)
         with self.assertQueryCount(__system__=2):
             activity._compute_res_name()
 
     def test_cascade_deleted_document_leaves_a_blank_name(self):
-        """The row is removed behind the ORM's back, as a DB-level cascade does."""
         self.env.cr.execute(
             "DELETE FROM mail_test_activity WHERE id = %s", (self.record.id,)
         )
@@ -1756,7 +1638,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         )
         self.env.flush_all()
         activity.date_deadline = fields.Date.today() - timedelta(days=3)
-        # search_count: a search ordered by date_deadline flushes it anyway
         self.assertEqual(
             self.env["mail.activity"].search_count(
                 [("id", "=", activity.id), ("state", "=", "overdue")]
@@ -1787,14 +1668,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.assertIn(overdue, systray._get_systray_activities())
 
     def test_can_write_is_per_reader(self):
-        """``can_write`` answers for the reader, whichever identity read first.
-
-        It is a pure function of ``env.uid`` and ships to the client in
-        ``_to_store_defaults``, where it decides which buttons the chatter draws.
-        Without ``@api.depends_context("uid")`` its cache key was ``()``, so one
-        slot was shared by every environment in the transaction and a ``sudo()``
-        read anywhere earlier in the request handed its own verdict to the user.
-        """
         activity = self._new_activity(user_id=self.user_admin.id)
         self.env.flush_all()
         self.assertIn(
@@ -1811,7 +1684,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         sudo_verdict = activity.sudo().can_write
         self.assertTrue(sudo_verdict, "the superuser may always write")
 
-        # whichever order they are read in, each identity gets its own answer
         self.env.invalidate_all()
         self.assertEqual(activity.sudo().can_write, sudo_verdict)
         self.assertEqual(as_employee.can_write, employee_verdict)
@@ -1820,7 +1692,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.assertEqual(activity.sudo().can_write, sudo_verdict)
 
     def test_can_write_reaches_the_client_per_reader(self):
-        """The same, through the RPC the chatter popover actually calls."""
         activity = self._new_activity(user_id=self.user_admin.id)
         self.env.flush_all()
         as_employee = activity.with_user(self.user_employee)
@@ -1828,28 +1699,17 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.env.invalidate_all()
         clean = as_employee.activity_format()["mail.activity"][0]["can_write"]
         self.env.invalidate_all()
-        activity.sudo().can_write  # any sudo() touch earlier in the request
+        activity.sudo().can_write
         polluted = as_employee.activity_format()["mail.activity"][0]["can_write"]
         self.assertEqual(clean, polluted)
 
     def test_schedule_for_another_user_on_a_read_post_document(self):
-        """A read-only document that opts into ``_mail_post_access = 'read'``
-        accepts an activity scheduled for somebody else.
-
-        ``_check_access`` states create access as "``mail_post_access`` on the
-        related document", and posting a message on such a record works. The
-        follower side effect used the public ``message_subscribe``, which
-        re-checks *write* for any partner but the caller's own, so a user could
-        schedule for themselves and not for a colleague -- failing with an
-        AccessError naming the document.
-        """
         record = self.env["mail.test.container"].create({"name": "Read-post doc"})
         self.assertEqual(record._mail_post_access, "read")
         model_id = self.env["ir.model"]._get_id(record._name)
         as_employee = record.with_user(self.user_employee)
         self.assertTrue(as_employee.has_access("read"))
 
-        # the policy the model states, exercised directly
         as_employee.message_post(
             body="hello", message_type="comment", subtype_xmlid="mail.mt_comment"
         )
@@ -1870,7 +1730,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
                         }
                     )
                     self.assertEqual(activity.user_id, assignee)
-            # and reassigning one is the same operation from the other side
             mine = Activity.search(
                 [("res_id", "=", record.id), ("user_id", "=", self.env.uid)], limit=1
             )
@@ -1878,13 +1737,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
             self.assertEqual(mine.user_id, self.other_user)
 
     def test_action_feedback_is_not_replayed(self):
-        """Marking a done activity done again neither posts nor rewrites.
-
-        ``action_done`` filtered on ``active``; ``action_feedback`` -- the public
-        API, and the one the web client calls without disabling its button while
-        the RPC is in flight -- did not, so a double click posted a second "done"
-        message and overwrote the feedback.
-        """
         activity = self._new_activity(user_id=self.env.uid, summary="Once")
         self.env.flush_all()
         activity.action_feedback(feedback="first")
@@ -1899,7 +1751,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.assertEqual(activity.date_done, date_done)
 
     def test_feedback_and_archive_are_one_write(self):
-        """Marking done writes once, not once to archive and once for feedback."""
         activities = self.env["mail.activity"].create(
             [
                 {
@@ -1926,7 +1777,6 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.assertEqual(writes, [["active", "feedback"]])
 
     def test_state_survives_a_missing_deadline(self):
-        """``state`` is assigned even with no deadline, as onchange can produce."""
         virtual = self.env["mail.activity"].new(
             {
                 "res_model_id": self.model_id,
@@ -1938,17 +1788,16 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.assertFalse(virtual.state)
 
     def test_date_done_is_the_assignee_date(self):
-        """``date_done`` records the assignee's own day, not the server's UTC one."""
         user_ahead = mail_new_test_user(
             self.env,
             name="Ahead",
             login="ahead",
             groups="base.group_user",
-            tz="Pacific/Kiritimati",  # UTC+14
+            tz="Pacific/Kiritimati",
         )
         activity = self._new_activity(user_id=user_ahead.id)
         self.env.flush_all()
-        with freeze_time("2024-01-01 15:00:00"):  # 2024-01-02 05:00 for the assignee
+        with freeze_time("2024-01-01 15:00:00"):
             activity.action_archive()
             self.env.flush_all()
             self.assertEqual(activity.date_done, date(2024, 1, 2))
@@ -1977,21 +1826,10 @@ class TestActivityAccessAndState(ActivityScheduleCase):
 
         with patch.object(type(self.env["mail.activity"]), "unlink", counting_unlink):
             activities.action_cancel()
-        # empty calls come from cascades; what matters is that the five records
-        # are removed by one call and not one call each
         self.assertEqual([count for count in calls if count], [5])
         self.assertFalse(activities.exists())
 
     def test_activity_on_a_model_without_a_chatter(self):
-        """A model with no followers still carries activities, it just gets no
-        chatter side effect.
-
-        ``res_model_id`` is a plain m2o to ir.model -- only the activity *type*
-        restricts itself to ``is_mail_thread`` -- so an activity may sit on a
-        model that has neither ``_message_subscribe`` nor
-        ``message_post_with_source``. Scheduling one for somebody else used to
-        die on the first and marking it done would have died on the second.
-        """
         target = self.env["res.users"]
         self.assertFalse(
             hasattr(target, "_message_subscribe"),
@@ -2009,11 +1847,9 @@ class TestActivityAccessAndState(ActivityScheduleCase):
         self.env.flush_all()
         self.assertEqual(activity.user_id, self.other_user)
 
-        # reassignment goes through the same side effect
         activity.write({"user_id": self.user_employee.id})
         self.assertEqual(activity.user_id, self.user_employee)
 
-        # and so does notifying, and marking done
         activity.action_notify()
         messages, _next = activity._action_done(feedback="done")
         self.assertFalse(messages, "nowhere to post it")
@@ -2083,12 +1919,6 @@ class TestActivitySearchPaging(ActivityScheduleCase):
                 self.assertEqual(paged.ids, everything.ids)
 
     def test_a_limit_of_zero_asks_for_no_rows(self):
-        """``limit=0`` means zero rows, not "no limit".
-
-        `Query` emits the clause on `limit is not None` and `test_query` pins
-        `search_count(limit=0) == 0`, so a scan that read 0 as "unbounded"
-        answered every row where every other model answers none.
-        """
         Activity = self.env["mail.activity"].with_user(self.user_employee)
         domain = [("id", "in", self.activities.ids)]
         self.assertFalse(Activity.search(domain, limit=0))
@@ -2099,7 +1929,6 @@ class TestActivitySearchPaging(ActivityScheduleCase):
         )
 
     def test_no_limit_means_every_row(self):
-        """The other half of the same contract: `None` is the unbounded one."""
         Activity = self.env["mail.activity"].with_user(self.user_employee)
         domain = [("id", "in", self.activities.ids)]
         self.assertEqual(len(Activity.search(domain)), 25)
@@ -2107,15 +1936,6 @@ class TestActivitySearchPaging(ActivityScheduleCase):
         self.assertEqual(len(Activity.sudo().search(domain, limit=None)), 25)
 
     def test_every_spelling_of_a_limit_agrees_with_a_plain_model(self):
-        """`_search` admits four spellings and they are not interchangeable.
-
-        `orm/models/mixins/_query.py` reads them as: None and False unbounded,
-        True as 1, 0 as zero rows. `False == 0` is True in Python, so a scan
-        that tests either truthiness or `== 0` collapses the two and answers
-        nothing for the one that means everything. Compared against a model
-        with no `_search` override rather than against a hardcoded expectation,
-        so the contract is read off the ORM and not restated here.
-        """
         Activity = self.env["mail.activity"].with_user(self.user_employee)
         Control = self.env["res.partner"].with_user(self.user_employee)
         domain = [("id", "in", self.activities.ids)]
@@ -2145,9 +1965,6 @@ class TestActivitySearchPaging(ActivityScheduleCase):
                 )
 
     def test_inaccessible_activities_do_not_shorten_a_page(self):
-        """A page is filled with accessible rows, not truncated by hidden ones."""
-        # Activities attached to no document are readable by their assignee
-        # alone, so these are invisible to the employee whatever they can read.
         hidden = self.env["mail.activity"].create(
             [
                 {
@@ -2183,8 +2000,6 @@ class TestActivityGarbageCollect(ActivityScheduleCase):
 
     def setUp(self):
         super().setUp()
-        # ir.config_parameter reads go through an ormcache the transaction
-        # rollback does not clear, so state both knobs explicitly per test.
         for parameter in ("delete_overdue_years", "delete_done_years"):
             self.env["ir.config_parameter"].sudo().set_param(
                 f"mail.activity.gc.{parameter}", "0"
@@ -2223,9 +2038,6 @@ class TestActivityGarbageCollect(ActivityScheduleCase):
         self.assertTrue(recent.exists())
 
     def test_gc_done_activities_are_collected_too(self):
-        """Completed activities are archived, so the overdue routine -- which
-        searches with the default ``active_test`` -- never saw them and nothing
-        aged them out."""
         Activity = self.env["mail.activity"]
         with freeze_time("2000-01-01"):
             done = self._activity(date(2000, 1, 1), done=True)
@@ -2293,7 +2105,6 @@ class TestActivityStrandedModel(ActivityScheduleCase):
         )
 
     def _strand(self):
-        """Point the activity at a model no registry entry answers for."""
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE mail_activity SET res_model = %s WHERE id = %s",
@@ -2310,7 +2121,6 @@ class TestActivityStrandedModel(ActivityScheduleCase):
         Activity.search_count([])
 
     def test_the_assignee_still_sees_it(self):
-        """It stays theirs: only the document half is unreachable."""
         self._strand()
         Activity = self.env["mail.activity"].with_user(self.user_employee)
         self.assertIn(self.activity.id, Activity.search([]).ids)
@@ -2397,7 +2207,6 @@ class TestActivityOnAnActivity(TestActivityCommon):
         )
 
     def _bus_total(self, func):
-        """Sum of the count_diff the bus carried while `func` ran."""
         seen = []
         origin = type(self.env["res.users"])._bus_send
 
@@ -2460,12 +2269,6 @@ class TestActivityNotifyCost(TestActivityCommon):
     """
 
     def _schedule(self, count, user):
-        """Create `count` activities without notifying.
-
-        `create` notifies an assignee that is not the actor, which is the thing
-        under test here -- so the fixture stays quiet and each test triggers the
-        one round it means to measure.
-        """
         records = self.env["mail.test.activity"].create(
             [{"name": f"Doc {index}"} for index in range(count)]
         )
@@ -2501,14 +2304,6 @@ class TestActivityNotifyCost(TestActivityCommon):
             activities.action_notify()
 
     def test_notifying_does_not_re_derive_the_document_per_activity(self):
-        """The reply-to follows the document, so it is resolved for the batch
-        rather than once per activity.
-
-        The guarantee is "not per record", not "exactly one call": a future
-        cache could reach zero, and reading an exact count as a verdict is what
-        cost two sessions an afternoon here (`coding_guidelines.rst` §6.4). So
-        bound the derivations, then assert the mechanism actually delivered.
-        """
         activities = self._schedule(5, user=self.user_employee)
         self.env.invalidate_all()
         with patch.object(
@@ -2545,13 +2340,6 @@ class TestActivityNotifyCost(TestActivityCommon):
         )
 
     def test_the_model_description_is_in_the_assignees_language(self):
-        """The assignee reads the notification, so the model's translated name
-        must resolve in *their* language, not in the actor's.
-
-        Hoisting `model_description` out of the per-assignee language context is
-        the easy way to lose this, and it costs nothing visible until somebody
-        runs a database with two languages.
-        """
         self.env["res.lang"]._activate_lang("fr_FR")
         model = self.env["ir.model"]._get("mail.test.activity")
         model.with_context(lang="fr_FR").name = "Modele De Test"
@@ -2586,9 +2374,6 @@ class TestActivityNotifyCost(TestActivityCommon):
         self.assertIn("Modele De Test", str(message.body))
 
     def test_two_activities_on_one_record_each_get_their_notification(self):
-        """`_message_notify_batch` keys bodies by record, so two activities on
-        one record cannot share a batch entry -- they must go in successive
-        rounds rather than one overwriting the other."""
         record = self.env["mail.test.activity"].create({"name": "Doc"})
         common = {
             "activity_type_id": self.env.ref("mail.mail_activity_data_todo").id,
@@ -2616,12 +2401,6 @@ class TestActivityNotifyCost(TestActivityCommon):
         self.assertIn("Second", bodies)
 
     def test_one_batch_keeps_each_document_its_own_company(self):
-        """A batch spans documents; the company, alias domain and reply-to do not.
-
-        This works only because `action_notify` does NOT pre-resolve them:
-        `_message_notify_batch` derives them itself, per record. Passing them as
-        kwargs would write one value across the whole batch.
-        """
         second_company = self.env["res.company"].create({"name": "Second Co"})
         domains = self.env["mail.alias.domain"].create(
             [
@@ -2637,7 +2416,6 @@ class TestActivityNotifyCost(TestActivityCommon):
                 {"name": "in co2", "company_id": second_company.id},
             ]
         )
-        # same assignee, type and deadline: exactly one batch
         self.env["mail.activity"].with_context(mail_activity_quick_update=True).create(
             [
                 {
@@ -2666,12 +2444,6 @@ class TestActivityNotifyCost(TestActivityCommon):
         self.assertEqual(messages.mapped("record_alias_domain_id"), domains)
 
     def test_two_types_sharing_a_name_are_not_merged(self):
-        """The grouping key carries the activity type as a record, not as its name.
-
-        The name is translated, so keying on it would merge two types that
-        collide in the actor's language and hand one of them the other's
-        subtitle in the assignee's.
-        """
         self.env["res.lang"]._activate_lang("fr_FR")
         types = self.env["mail.activity.type"].create(
             [{"name": "Same Name"}, {"name": "Same Name"}]
@@ -2711,7 +2483,6 @@ class TestActivityNotifyCost(TestActivityCommon):
         with patch.object(Thread, "_message_notify_batch", spy):
             activities.action_notify()
         self.assertEqual(len(seen), 2, "two types, two batches")
-        # The label is the assignee's too, not only the type name it wraps.
         self.assertIn("Activité : Premier", seen[0] + seen[1])
         self.assertIn("Activité : Second", seen[0] + seen[1])
 
@@ -2789,22 +2560,15 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
         cls.todo = cls.env.ref("mail.mail_activity_data_todo")
 
     def _mexico_env(self):
-        """The actor's env, with the session context a login would build."""
         return self.env(
             user=self.mexico,
             context=self.env["res.users"].with_user(self.mexico).context_get(),
         )
 
-    # 01:00 UTC on the 17th is 19:00 on the 16th in Mexico City and 03:00 on
-    # the 17th in Madrid: the two are on different days.
     FROZEN = "2026-08-17 01:00:00"
 
     @freeze_time(FROZEN)
     def test_todo_domain_counts_from_the_assignee_day(self):
-        """_domain_todo is the domain form of "already due for you",
-        the predicate _filtered_todo applies in Python. It has to read the same
-        clock: at 01:00 UTC Madrid is a day ahead of Mexico City, so an activity
-        due on Madrid's today is not yet due on Mexico's."""
         Activity = self.env["mail.activity"]
         for user in (self.mexico, self.madrid):
             Activity.create(
@@ -2834,7 +2598,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
                 )
                 self.assertEqual(set(due.mapped("state")), {"today"})
 
-        # and the two users are genuinely on different days here
         self.assertNotEqual(
             Activity._today_in_tz(self.mexico.tz),
             Activity._today_in_tz(self.madrid.tz),
@@ -2868,7 +2631,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_create_and_reschedule_today_agree(self):
-        """The regression this class exists for: same word, same day."""
         activity = (
             self._mexico_env()["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -2893,7 +2655,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_activity_schedule_counts_from_the_assignee_day(self):
-        """The automation path -- every addon that schedules for someone else."""
         activity = (
             self.record.with_user(self.mexico)
             .with_context(
@@ -2908,7 +2669,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_explicit_deadline_is_never_rebased(self):
-        """Only an *implicit* deadline is the assignee's day; a given one stands."""
         activity = (
             self._mexico_env()["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -2926,13 +2686,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_an_unassigned_activity_is_not_born_overdue(self):
-        """No assignee means no ``user_tz``, so both ends resolve to UTC.
-
-        The fallback is deliberately not the caller's timezone -- that would make
-        one activity show a different state to each reader. It is safe only
-        because the deadline default is counted from the same helper, so the two
-        ends of the comparison keep one clock.
-        """
         actor = self._mexico_env()
         activity = (
             actor["mail.activity"]
@@ -2951,7 +2704,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_an_unassigned_activity_reads_the_same_to_everyone(self):
-        """Reader-independence is the reason the fallback is UTC."""
         activity = (
             self._mexico_env()["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -2972,12 +2724,6 @@ class TestActivityDeadlineClock(ActivityScheduleCase):
 
     @freeze_time(FROZEN)
     def test_sql_state_agrees_with_the_computed_one(self):
-        """``_sql_today``'s ELSE branch must spell the same fallback.
-
-        The grouped and searched states come from SQL and the displayed one from
-        Python; if their fallbacks differ, an unassigned activity is filed in one
-        bucket and drawn in another.
-        """
         actor = self._mexico_env()
         actor["mail.activity"].with_context(mail_activity_quick_update=True).create(
             {
@@ -3127,7 +2873,6 @@ class TestActivityResNameFollowsRenames(ActivityScheduleCase):
         self.assertEqual(self.env.cr.fetchone()[0], "Renamed")
 
     def test_the_search_filter_follows_the_rename(self):
-        """`mail_activity_views.xml` filters on `res_name ilike`."""
         activity = self._activity(summary="A")
         self.env.flush_all()
         self.record.name = "Renamed"
@@ -3147,7 +2892,6 @@ class TestActivityResNameFollowsRenames(ActivityScheduleCase):
         )
 
     def test_completed_activities_are_refreshed_too(self):
-        """A done activity still shows its document, so it still needs the name."""
         activity = self._activity(summary="A")
         activity.action_feedback(feedback="done")
         self.env.flush_all()
@@ -3167,7 +2911,6 @@ class TestActivityResNameFollowsRenames(ActivityScheduleCase):
         self.assertEqual(first.res_name, second.res_name)
 
     def test_an_unrelated_write_costs_no_recompute(self):
-        """Only a rename pushes; writing anything else must not."""
         self._activity(summary="A")
         self.env.flush_all()
         self.env.invalidate_all()
@@ -3207,9 +2950,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
         )
 
     def test_writing_res_model_is_refused(self):
-        """`res_model` is a *stored* related field: `readonly` does not stop a
-        programmatic write, and the value lands in the column without touching
-        `res_model_id` -- permanently, since nothing recomputes it."""
         activity = self._activity(summary="A")
         self.env.flush_all()
         with self.assertRaises(exceptions.UserError):
@@ -3218,8 +2958,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
         self.assertEqual(activity.res_model, activity.res_model_id.model)
 
     def test_creating_with_res_model_still_works(self):
-        """`create` is safe -- the related precompute wins -- and must stay so:
-        callers and `_prepare_next_activity_values` overrides pass it."""
         activity = (
             self.env["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -3238,16 +2976,12 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
         self.assertEqual(activity.res_model_id.id, self.model_id)
 
     def test_prepare_next_activity_values_does_not_name_res_model(self):
-        """Naming both invites them to disagree; `res_model_id` is the source."""
         activity = self._activity(summary="A")
         vals = activity._prepare_next_activity_values()
         self.assertNotIn("res_model", vals)
         self.assertEqual(vals["res_model_id"], self.model_id)
 
     def test_feedback_attachments_are_not_shared_between_messages(self):
-        """`message_post` re-parents attachments onto the document, so one
-        record shared by several messages is owned by exactly one of them --
-        and deleting that one document takes the file out of all the others."""
         records = self.env["mail.test.activity"].create(
             [{"name": f"D{index}"} for index in range(3)]
         )
@@ -3292,7 +3026,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
             "three messages, three attachment records -- not one shared three ways",
         )
 
-        # the original owner going away must not empty the other two
         records[0].unlink()
         self.env.flush_all()
         self.env.invalidate_all()
@@ -3305,7 +3038,6 @@ class TestActivityIntegrityGuards(ActivityScheduleCase):
             )
 
     def test_get_activity_data_is_bounded(self):
-        """It is RPC-reachable; without a cap it materialises the whole table."""
         Activity = self.env["mail.activity"]
         records = self.env["mail.test.activity"].create(
             [{"name": f"B{index}"} for index in range(5)]
@@ -3396,7 +3128,6 @@ class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
         self.assertEqual(activity.res_model, activity.res_model_id.model)
 
     def test_creating_with_a_contradicting_res_model_keeps_them_in_step(self):
-        """`create` was already safe -- the related precompute wins. Pin it."""
         activity = (
             self.env["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -3416,8 +3147,6 @@ class TestActivityDocumentModelIntegrity(ActivityScheduleCase):
         self.assertEqual(activity.res_model, activity.res_model_id.model)
 
     def test_the_chained_values_do_not_carry_res_model(self):
-        """`_prepare_next_activity_values` feeds `create`; naming both invites
-        exactly the desynchronisation above."""
         activity = self._activity()
         vals = activity._prepare_next_activity_values()
         self.assertNotIn("res_model", vals)
@@ -3488,7 +3217,6 @@ class TestActivityFeedbackAttachments(ActivityScheduleCase):
         )
 
     def test_deleting_one_document_leaves_the_others_intact(self):
-        """The data loss this class exists for."""
         activities = self._activities()
         attachment = self._attachment()
         messages, __ = activities._action_done(
@@ -3509,7 +3237,6 @@ class TestActivityFeedbackAttachments(ActivityScheduleCase):
             self.assertTrue(message.attachment_ids)
 
     def test_a_single_activity_still_uses_the_attachment_as_given(self):
-        """No copy when there is nothing to share it with."""
         activity = self._activities()[0]
         attachment = self._attachment()
         messages, __ = activity._action_done(
@@ -3617,7 +3344,6 @@ class TestActivityPager(TestActivityCommon):
         )
 
     def test_the_count_honours_count_limit(self):
-        """The count is a scan; the client's bound is what keeps it affordable."""
         Activity = self.env["mail.activity"].with_user(self.pager_user)
         result = Activity.web_search_read(
             self._own_domain(), {"summary": {}}, limit=5, count_limit=10
@@ -3645,7 +3371,6 @@ class TestActivityPager(TestActivityCommon):
         self.assertEqual(Activity.search_count(self._own_domain(), limit=7), 7)
 
     def test_the_count_respects_access(self):
-        """Counting must not widen what the scan narrowed."""
         other = mail_new_test_user(
             self.env, login="pager_other", groups="base.group_user"
         )
@@ -3708,16 +3433,12 @@ class TestActivityNotifyAccess(TestActivityCommon):
                 }
             )
         )
-        # and then the owner loses that company: an ordinary state, and the one
-        # a single-company fixture cannot express at all.
         cls.owner.write(
             {
                 "company_ids": [(6, 0, [cls.company_a.id])],
                 "company_id": cls.company_a.id,
             }
         )
-        # re-browsed off a clean env: the creating context still names company B,
-        # which env.companies now refuses for this user.
         cls.hidden_activity = cls.env["mail.activity"].browse(cls.hidden_activity.id)
 
     def test_the_fixture_really_hides_the_document(self):
@@ -3736,7 +3457,6 @@ class TestActivityNotifyAccess(TestActivityCommon):
         self.assertEqual(activity.user_id, self.colleague)
 
     def test_the_notification_is_authored_by_the_actor_not_by_odoobot(self):
-        """Sudoing the document must not silently reattribute the message."""
         activity = self.hidden_activity.with_user(self.owner)
         before = self.env["mail.message"].search([], order="id DESC", limit=1).id or 0
         activity.write({"user_id": self.colleague.id})
@@ -3818,7 +3538,6 @@ class TestActivityChaining(TestActivityCommon):
         self.assertEqual(following.activity_type_id, self.next_type)
 
     def test_a_vanished_document_does_not_chain(self):
-        """A follow-up on a document that no longer exists has nowhere to live."""
         record = self.env["mail.test.activity"].create({"name": "doomed"})
         activity = self._activity(
             res_model_id=self.env["ir.model"]._get_id("mail.test.activity"),
@@ -3837,12 +3556,6 @@ class TestActivityChaining(TestActivityCommon):
 @tests.tagged("mail_activity")
 class TestActivityOpenDocument(TestActivityCommon):
     def test_a_vanished_document_opens_the_no_access_form(self):
-        """`has_access` answers True for an id that is no longer there.
-
-        Reachable through a DB-level ON DELETE CASCADE, where the document's
-        `unlink` override -- which would have taken the activity with it -- never
-        runs; `_action_done` guards the same state and this did not.
-        """
         record = self.env["mail.test.activity"].create({"name": "cascade victim"})
         activity = self.env["mail.activity"].create(
             {
@@ -3983,7 +3696,6 @@ class TestActivityStateSearch(TestActivityCommon):
         )
 
     def test_an_unknown_state_names_nothing(self):
-        """As on the document side: an unknown state matches no record."""
         self.assertEqual(self._found([("state", "=", "nonsense")]), set())
         self.assertEqual(
             self._found([("state", "not in", ["nonsense"])]),
@@ -3991,13 +3703,6 @@ class TestActivityStateSearch(TestActivityCommon):
         )
 
     def test_an_unsupported_operator_reaches_the_caller_as_a_user_error(self):
-        """The sentinel is only worth returning if the ORM acts on it.
-
-        Asserting `_search_state` returns NotImplemented would pass whether or
-        not anything downstream honours it, so drive the domain instead: the
-        operator must come back as a UserError naming the field, not as the bare
-        ValueError an unsearchable field used to raise out of the ORM.
-        """
         for operator in ("like", "ilike", "=like", "not like", ">"):
             with self.subTest(operator=operator):
                 with self.assertRaises(exceptions.UserError) as caught:
@@ -4035,9 +3740,6 @@ class TestActivitySearchOrderIsStable(TestActivityCommon):
 @tests.tagged("mail_activity")
 class TestActivityModelSelection(TestActivityCommon):
     def test_type_and_plan_offer_the_same_models(self):
-        """A type pinned to a thread model without activities is unreachable:
-        no document of that model can ever carry it. Both selections read one
-        helper, so they cannot drift apart again."""
         env = self.env
         type_models = env["mail.activity.type"]._fields["res_model"].get_values(env)
         plan_models = env["mail.activity.plan"]._fields["res_model"].get_values(env)
@@ -4078,7 +3780,6 @@ class TestActivityOneTodayPerAnswer(TestActivityCommon):
         )
 
     def _rolling_clock(self):
-        """Answer a day later from the second call on, as a midnight would."""
         calls = {"n": 0}
         first = datetime.now(UTC)
 
@@ -4125,8 +3826,6 @@ class TestActivityOneTodayPerAnswer(TestActivityCommon):
         )
 
     def test_the_sql_today_case_agrees_with_its_own_else(self):
-        """`_sql_today` builds a CASE from the branches and an ELSE fallback;
-        read from two instants they can contradict each other."""
         Activity = self.env["mail.activity"]
         calls, rolling = self._rolling_clock()
         with patch.object(type(Activity), "_now", rolling):
@@ -4165,7 +3864,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
         Mc = cls.env["mail.test.multi.company.with.activity"]
         todo = cls.env.ref("mail.mail_activity_data_todo")
         vals = []
-        # readable document / hidden document x mine / someone else's
         for company in (cls.company_a, cls.company_b):
             document = Mc.create(
                 {"name": f"doc {company.name}", "company_id": company.id}
@@ -4180,7 +3878,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
                 }
                 for owner in (cls.reader, cls.other)
             )
-        # and the two document-less shapes
         vals += [
             {"user_id": cls.reader.id, "activity_type_id": todo.id, "summary": "mine"},
             {"user_id": cls.other.id, "activity_type_id": todo.id, "summary": "theirs"},
@@ -4204,7 +3901,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
         )
 
     def test_the_population_is_not_trivially_all_or_nothing(self):
-        """Guard the guard: a fixture everyone can read proves nothing."""
         Activity = self.env["mail.activity"].with_user(self.reader)
         visible = Activity.search([("id", "in", self.population.ids)])
         self.assertTrue(visible, "nothing visible — the fixture proves nothing")
@@ -4215,7 +3911,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
         )
 
     def test_an_uninstalled_res_model_is_reachable_only_by_its_assignee(self):
-        """Both paths treat a model that is not in the registry the same way."""
         Activity = self.env["mail.activity"]
         ghost_ids = []
         for owner in (self.reader, self.other):
@@ -4228,7 +3923,6 @@ class TestActivityAccessIsOneRule(TestActivityCommon):
             )
             ghost_ids.append(activity.id)
         self.env.flush_all()
-        # a res_model the registry does not know, which no ORM write would allow
         self.env.cr.execute(
             "UPDATE mail_activity SET res_model = %s, res_id = %s WHERE id = ANY(%s)",
             ("gone.away.model", 1, ghost_ids),
@@ -4275,7 +3969,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
             cls.env, login="filing_colleague", groups="base.group_user"
         )
         cls.plain_model_id = cls.env["ir.model"]._get_id("mail.test.activity")
-        # readable by every employee, writable only by whoever created it
         cls.env["ir.access"].create(
             {
                 "name": "filing: write your own mail.test.activity",
@@ -4287,11 +3980,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
                 "domain": "[('create_uid', '=', user.id)]",
             }
         )
-        # The row is rolled back with the class, but `_access_domain`
-        # is an ormcache on the *registry*, which a rollback does not touch --
-        # so without this the entries computed while the rule existed outlive it
-        # and decide access for whatever class runs next. Measured: three
-        # unrelated `mail.message` tests failed in a full run and passed alone.
         cls.addClassCleanup(cls.env.registry.clear_cache)
         cls.env.registry.clear_cache()
         cls.readable = cls.env["mail.test.activity"].create({"name": "not yours"})
@@ -4300,8 +3988,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
             .with_user(cls.outsider)
             .create({"name": "yours"})
         )
-        # followed, and then moved out of reach: following survives losing read,
-        # and a follower may still post there.
         cls.aged_record = cls.env["mail.test.multi.company.with.activity"].create(
             {"name": "aged out", "company_id": cls.env.company.id}
         )
@@ -4358,7 +4044,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
         )
 
     def test_posting_stays_refused_after_the_attempt(self):
-        """The escalation this class exists for, asserted as the user sees it."""
         document = self.env["mail.test.multi.company.with.activity"].with_user(
             self.outsider
         )
@@ -4371,16 +4056,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
             document.browse(self.hidden_record.id).message_post(body="after")
 
     def test_the_only_cell_that_moved_is_the_unreadable_one(self):
-        """Filing mirrors `message_subscribe`, so only one case may change.
-
-        Measured against HEAD on the same four documents: every cell of this
-        matrix is what HEAD answers except `unreadable / self`, which HEAD
-        allowed. An earlier attempt at this fix required the *write* half for
-        both columns and moved three cells -- it refused an employee a reminder
-        on a document they can read, and refused a follower one on a document
-        they can still post to. Those two rows are here so that cannot come
-        back.
-        """
         for label, model_id, record, assignee, allowed in (
             ("readable/self", self.plain_model_id, self.readable, self.outsider, True),
             (
@@ -4424,7 +4099,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
                         filing.create(vals)
 
     def test_a_follower_who_can_post_can_file(self):
-        """The invariant the follower half exists for: may post => may file."""
         document = self.env["mail.test.multi.company.with.activity"].with_user(
             self.outsider
         )
@@ -4456,7 +4130,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
         self.assertTrue(activity.id)
 
     def test_a_document_less_todo_still_works(self):
-        """There is no document to ask, so the shortcut still decides."""
         activity = (
             self.env["mail.activity"]
             .with_user(self.outsider)
@@ -4472,7 +4145,6 @@ class TestActivityFilingIsAnActionOnTheDocument(TestActivityCommon):
         self.assertTrue(activity.id)
 
     def test_reading_an_activity_already_filed_for_me_is_unaffected(self):
-        """The systray's "Other activities" bucket depends on this."""
         activity = (
             self.env["mail.activity"]
             .with_context(mail_activity_quick_update=True)
@@ -4542,14 +4214,6 @@ class TestActivityChainingWithoutDocumentAccess(TestActivityCommon):
         self.assertFalse(Document.browse(self.record.id).has_access("read"))
 
     def test_a_successor_the_type_names_needs_the_completers_authority(self):
-        """Completing is the assignee's; the follow-up is on their authority.
-
-        The successor is created under mail.privilege_chain_next_activity, the
-        activity guards still binding: an activity for somebody else needs
-        write on the document. An assignee without it finishes their activity
-        all the same; the follow-up is skipped and logged (decision 8b of P8).
-        An assignee who may write the document hands it on.
-        """
         successor = mail_new_test_user(
             self.env, login="chain_successor", groups="base.group_user"
         )
@@ -4657,7 +4321,6 @@ class TestActivityFeedbackAttachmentsVanishedDocument(ActivityScheduleCase):
         )
 
     def _cascade_delete_the_doomed_document(self):
-        """What an ON DELETE CASCADE leaves: the activity, without its record."""
         self.env.flush_all()
         self.env.cr.execute(
             "DELETE FROM mail_test_activity WHERE id = %s", (self.doomed.id,)
@@ -4749,7 +4412,6 @@ class TestActivityStateSearchSpansTheArchived(TestActivityCommon):
                 )
 
     def test_a_domain_that_never_names_state_still_hides_the_archived(self):
-        """Only a query about `state` drops the implicit filter."""
         self.assertEqual(
             self._found([]), {"SPAN_overdue", "SPAN_today", "SPAN_planned"}
         )
@@ -4809,8 +4471,6 @@ class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
                 }
             )
         )
-        # and then the creator loses that company, which is what makes them the
-        # creator of an activity they can no longer reach through its document.
         cls.creator.write(
             {
                 "company_ids": [(6, 0, [cls.env.company.id])],
@@ -4830,7 +4490,6 @@ class TestActivityCreatorCanUseWhatTheRuleGrants(TestActivityCommon):
         self.assertTrue(self._as_creator().has_access("unlink"))
 
     def test_a_write_that_moves_the_badge_is_allowed_too(self):
-        """The half that raised: `date_deadline` is in `moves_count`."""
         self.env.invalidate_all()
         deadline = self.env["mail.activity"]._today_for(self.colleague)
         self._as_creator().write({"date_deadline": deadline})
@@ -4889,13 +4548,6 @@ class TestActivityStateDomainReadsOneClock(TestActivityCommon):
                 self.assertEqual(Counting.calls, 1)
 
     def test_every_branch_is_handed_the_same_instant(self):
-        """Asserted where the sharing happens, not on the shape it produces.
-
-        `_domain_deadline_today` renders `_sql_today` now, so there are no
-        per-branch `user_tz` terms left to compare days between. What has to
-        hold is upstream of that and survives any future shape: one `moment`
-        reaches every branch, and none of them falls back to reading its own.
-        """
         seen = []
         Activity = self.env["mail.activity"]
         original = type(Activity)._domain_deadline_today
@@ -5021,8 +4673,6 @@ class TestActivityPinnedSearch(TestActivityCommon):
                 {
                     "res_model_id": cls.model_id,
                     "res_id": record.id,
-                    # every deadline identical, so the page is decided by the
-                    # tiebreak alone -- which is the half that could differ
                     "date_deadline": deadline,
                     "user_id": (cls.user_employee if index % 2 else cls.colleague).id,
                     "activity_type_id": cls.activity_type_todo.id,
@@ -5039,10 +4689,6 @@ class TestActivityPinnedSearch(TestActivityCommon):
         self.assertEqual(mine.user_id, self.user_employee)
 
     def test_the_unpinned_search_still_hides_an_unreachable_document(self):
-        """The colleague's activities on documents this reader *can* read are
-        legitimately visible, so the case worth asserting is an activity that
-        is neither theirs nor on a document they can reach.
-        """
         hidden_company = self.env["res.company"].create({"name": "Scan Co B"})
         hidden = self.env["mail.test.multi.company.with.activity"].create(
             {"name": "co-B", "company_id": hidden_company.id}
@@ -5070,7 +4716,6 @@ class TestActivityPinnedSearch(TestActivityCommon):
         )
 
     def test_the_pager_still_counts_the_match_set(self):
-        """A pinned page still counts the whole match set."""
         Activity = self.env["mail.activity"].with_user(self.user_employee)
         domain = [("user_id", "=", self.user_employee.id)]
         total = len(Activity.search(domain))
@@ -5107,7 +4752,6 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
                 )
 
     def test_the_rendered_sql_does_not_depend_on_set_iteration(self):
-        """Rebuild the catalogue from a re-shuffled frozenset and compare."""
         moment = datetime(2026, 8, 31, 6, 0, tzinfo=UTC)
         Activity = self.env["mail.activity"]
         first = str(Activity._sql_today("mail_activity", moment))
@@ -5120,17 +4764,7 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
         )
 
     def test_the_busiest_domain_ors_its_models_in_a_fixed_order(self):
-        """`_todo_keys_elsewhere` rebuilds one domain on every activity create,
-        write and unlink, from a *set* of (model, id) keys. The set decided the
-        order the per-model branches were OR-ed in, and `Domain.OR` preserves
-        that order when the branches differ in structure -- so the busiest query
-        shape on this model reached PostgreSQL as different text per worker.
-        """
         Activity = self.env["mail.activity"]
-        # Six models rather than three: the assertion is exact either way, but
-        # against unsorted code it only fails when the set's order happens to
-        # differ from sorted -- 5 of 6 permutations at three models, 719 of 720
-        # at six.
         models = (
             "crm.lead",
             "mail.activity",
@@ -5163,9 +4797,6 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
         )
 
     def test_the_bookkeeping_search_leaves_the_deadline_to_sql(self):
-        """`_todo_keys_elsewhere` used to fetch every open assigned activity on
-        the touched documents and drop the not-yet-due ones in Python. The
-        deadline is half of `_domain_todo`, so it belongs in the query."""
         Activity = self.env["mail.activity"]
         record = self.env["mail.test.activity"].create({"name": "Doc"})
         model_id = self.env["ir.model"]._get_id("mail.test.activity")
@@ -5202,8 +4833,6 @@ class TestActivityClockIsReproducible(ActivityScheduleCase):
         self.assertEqual(keys, {self.user_employee: {key}})
 
     def test_the_state_domain_ors_its_branches_in_a_fixed_order(self):
-        """`_search_state` intersects with a set; iterating it directly made
-        the OR order vary per process for the same input."""
         Activity = self.env["mail.activity"]
         value = ["planned", "done", "today", "overdue"]
         rendered = [str(Activity._search_state("in", list(value))) for __ in range(5)]
@@ -5261,7 +4890,6 @@ class TestActivityViewRowOrderIsStable(ActivityScheduleCase):
         )
 
     def test_the_deadline_still_decides_when_it_differs(self):
-        """The tiebreak must not have replaced the sort."""
         early, late = self.records[:6], self.records[6:]
         self._schedule(late, date(2026, 9, 1))
         self._schedule(early, date(2026, 9, 20))
@@ -5371,10 +4999,6 @@ class TestActivityCompletionKeepsItsAttachments(ActivityScheduleCase):
         self.assertEqual(message.attachment_ids, owned)
 
     def test_a_batch_keeps_both_kinds_on_every_message(self):
-        """The two attachment paths cross only when N > 1 and each activity
-        owns files: `_attachments_for_post` copies the shared one per message
-        from the second post onward, while `_rehome_own_attachments` re-parents
-        each activity's own. Neither may evict the other."""
         records = self.env["mail.test.activity"].create(
             [{"name": f"Batch {index}"} for index in range(3)]
         )
@@ -5489,17 +5113,14 @@ class TestActivityDeadlineDefaultsToTheAssigneeDay(ActivityScheduleCase):
 
     @freeze_time("2024-06-14 06:00:00")
     def test_a_timezone_behind_the_server(self):
-        """06:00 UTC is still the 13th in Midway."""
         self._assert_agrees(self.behind)
 
     @freeze_time("2024-06-14 18:00:00")
     def test_a_timezone_ahead_of_the_server(self):
-        """18:00 UTC is already the 15th in Kiritimati."""
         self._assert_agrees(self.ahead)
 
     @freeze_time("2024-06-14 06:00:00")
     def test_the_activity_is_due_today_for_its_assignee(self):
-        """The point of the day: it lands in the assignee's due count."""
         activity = (
             self.env["mail.activity"]
             .with_context(default_user_id=self.behind.id)
@@ -5525,7 +5146,6 @@ class TestActivityDeadlineDefaultsToTheAssigneeDay(ActivityScheduleCase):
 
 @tests.tagged("mail_activity")
 class TestActivityScheduleWizardKeepsInput(ActivityScheduleCase):
-    # 01:00 UTC on the 17th: the 16th in Mexico City, the 17th in Madrid
     FROZEN = "2026-08-17 01:00:00"
 
     @classmethod

@@ -45,7 +45,6 @@ TEMPERATURE_MAP = {
     "creative": 0.8,
 }
 
-# Pre-prompts are put in a dictionary so that they can easily be overridden
 PREPROMPTS = {
     "default_system_prompt": "You are a RAG assistant.",
     "tools": dedent("""
@@ -94,16 +93,6 @@ PREPROMPTS = {
 def compute_report_measures(
     fields, field_attrs=None, active_measures=None, sum_aggregator_only=False
 ):
-    """Compute the report measures of a model, mirroring the JavaScript
-    ``computeReportMeasures`` of ``@web/views/view_measurements``.
-
-    :param dict fields: field definitions from ``fields_get()``
-    :param dict field_attrs: field attributes holding the visibility info
-    :param list active_measures: active measure field names
-    :param bool sum_aggregator_only: only keep fields whose aggregator is ``sum``
-    :return: measures with their field definitions, sorted by string with Count last
-    :rtype: dict
-    """
     if field_attrs is None:
         field_attrs = {}
     if active_measures is None:
@@ -129,8 +118,6 @@ def compute_report_measures(
                 )
                 measures[field_name] = filtered_field
 
-    # Rarely necessary, but can be useful for functional fields with overridden
-    # read_group methods.
     for measure in active_measures:
         if measure not in measures and measure in fields:
             filtered_field = submap(
@@ -146,7 +133,7 @@ def compute_report_measures(
     def sort_key(item):
         field_name, field_def = item
         if field_name == "__count":
-            return 1, ""  # Count goes last
+            return 1, ""
         return 0, field_def.get("string", "").lower()
 
     sorted_measures = sorted(measures.items(), key=sort_key)
@@ -154,38 +141,29 @@ def compute_report_measures(
 
 
 def clean_search_view_xml(search_view_arch):
-    """Clean and restructure search view XML for AI consumption."""
     if not search_view_arch:
         return ""
 
-    # Parse XML
     tree = etree.fromstring(search_view_arch)
 
-    # Create new clean structure
     clean_tree = etree.Element("search")
 
-    # 1. Add searchable fields (excluding only those with invisible="1")
     searchable_fields_elem = etree.SubElement(clean_tree, "searchable_fields")
     for field in tree.xpath(
         ".//field[@name and not(@invisible='1') and not(ancestor::group)]"
     ):
-        # Copy only essential attributes
         clean_field = etree.SubElement(searchable_fields_elem, "field")
         for attr in ["name", "string", "filter_domain", "operator"]:
             if field.get(attr):
                 clean_field.set(attr, field.get(attr))
 
-    # 2. Add filters grouped by separators (excluding those with invisible="1")
     filters_elem = etree.SubElement(clean_tree, "filters")
 
-    # Process filters in groups separated by separators
     current_group = None
     for elem in tree:
         if elem.tag == "separator":
-            # Start a new group on separator
             current_group = None
         elif elem.tag == "filter" and elem.get("name") and elem.get("invisible") != "1":
-            # Skip filters that are inside <group> elements (those are groupbys)
             if elem.getparent().tag != "group":
                 if current_group is None:
                     current_group = etree.SubElement(filters_elem, "group")
@@ -194,7 +172,6 @@ def clean_search_view_xml(search_view_arch):
                     if elem.get(attr):
                         clean_filter.set(attr, elem.get(attr))
 
-    # 3. Add groupby filters with extracted field information
     groupbys_elem = etree.SubElement(clean_tree, "groupbys")
     for group in tree.xpath(".//group"):
         for filter_elem in group.xpath(".//filter[@name and not(@invisible='1')]"):
@@ -204,13 +181,11 @@ def clean_search_view_xml(search_view_arch):
                 if filter_elem.get("string"):
                     clean_filter.set("string", filter_elem.get("string"))
 
-                # Extract the actual field name from the context
                 context_str = filter_elem.get("context")
                 context_dict = literal_eval(context_str)
                 if "group_by" in context_dict:
                     clean_filter.set("group_by_field", context_dict["group_by"])
 
-    # Return compact XML string
     return etree.tostring(clean_tree, encoding="unicode", pretty_print=False)
 
 
@@ -393,14 +368,12 @@ class AIAgent(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_sources(self) -> None:
-        """Delete sources (and their attachments) when an agent is deleted."""
         for agent in self:
             if agent.sources_ids:
                 agent.sources_ids.unlink()
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_system_agent(self) -> None:
-        """Prevent deletion of system agents."""
         system_agents = self.filtered("is_system_agent")
         if system_agents:
             raise UserError(self.env._("System agents cannot be deleted."))
@@ -428,21 +401,10 @@ class AIAgent(models.Model):
         )
 
     def _get_embedding_provider(self):
-        """Return the provider used to embed a RAG query.
-
-        Normally the agent's own provider, and it must stay in step with
-        :meth:`_get_embedding_model`: a query embedded by one model is not
-        comparable to chunks embedded by another, even at equal dimensions, so
-        the pair decides which vector space the similarity search happens in.
-
-        Split out for providers that serve text but not embeddings, which have to
-        borrow another provider's embedding model rather than fail.
-        """
         self.check_singleton()
         return self._get_provider()
 
     def action_refresh_sources(self) -> dict:
-        """Refresh the sources to show the new status if any was changed by the cron."""
         self.check_singleton()
         return {
             "type": "ir.actions.client",
@@ -452,7 +414,6 @@ class AIAgent(models.Model):
     def get_direct_response(
         self, prompt: str, context_message: str = "", enable_html_response: bool = False
     ):
-        """Get a direct response from the agent's provider LLM without chat history or channel creation."""
         self.check_singleton()
         response = self._generate_response(
             prompt=prompt, extra_system_context=context_message
@@ -567,11 +528,11 @@ class AIAgent(models.Model):
         if ask_ai_topics := self._get_ask_ai_topics():
             if (operator == "=" and value) or (
                 operator == "!=" and not value
-            ):  # truthy
+            ):
                 return [("topic_ids", "in", [t.id for t in ask_ai_topics])]
             elif (operator == "=" and not value) or (
                 operator == "!=" and value
-            ):  # falsy
+            ):
                 return [("topic_ids", "not in", [t.id for t in ask_ai_topics])]
         else:
             return [("id", "=", False)]
@@ -595,14 +556,6 @@ class AIAgent(models.Model):
         )
 
     def _generate_response(self, prompt, chat_history=None, extra_system_context=""):
-        """Generate an AI response for the given user prompt.
-
-        :param prompt: The user's input prompt
-        :param chat_history: Previous conversation messages to include as context
-        :param extra_system_context: Additional system instructions to include
-        :return: List of response messages from the LLM and/or tool termination messages
-        :raises UserError: If no LLM provider is found for the selected model
-        """
         self.check_singleton()
         _logger.debug("[AI Prompt] %s", prompt)
         system_messages = self._prepare_system_context(
@@ -610,9 +563,6 @@ class AIAgent(models.Model):
         )
         if rag_context := self._prepare_rag_context(prompt):
             system_messages.extend(rag_context)
-        # request_llm drives the whole tool-calling loop: it executes the tool calls the
-        # LLM asks for and keeps the conversation going until the LLM answers or every
-        # tool requests termination.
         llm_response = LLMApiService(
             env=self.env, provider=self._get_provider(), purpose="ai.agent"
         ).request_llm(
@@ -620,7 +570,7 @@ class AIAgent(models.Model):
             system_messages,
             [],
             inputs=(chat_history or []) + [{"role": "user", "content": prompt}],
-            tools=self.sudo().topic_ids.tool_ids._get_ai_tools(),  # sudo => internal users without admin access should be able to access tools
+            tools=self.sudo().topic_ids.tool_ids._get_ai_tools(),
             temperature=TEMPERATURE_MAP[self.response_style],
         )
         if rag_context:
@@ -629,17 +579,6 @@ class AIAgent(models.Model):
         return llm_response
 
     def _get_llm_response_with_sources(self, llm_response):
-        """
-        Parses inline citations (e.g., [SOURCE:210]) from each LLM message,
-        replaces them with clickable sequential superscript numbers, and enriches
-        the message content with a numbered list of corresponding source names
-        and links.
-
-        :param llm_response: The list of messages from the LLM
-        :type llm_response: list[str]
-        :return: The list of messages with the sources added
-        :rtype: list[str]
-        """
         llm_response_with_sources = []
         base_url = self.get_base_url()
         link_attrs = 'target="_blank" rel="noreferrer noopener"'
@@ -782,7 +721,6 @@ class AIAgent(models.Model):
             )
 
     def _eval_ai_prompts(self, rendered_html, remove_prompts=False, ai_context=""):
-        """Evaluate AI prompts in the given HTML content"""
         if is_html_empty(rendered_html):
             return rendered_html
 
@@ -830,7 +768,6 @@ class AIAgent(models.Model):
                 container.getparent().remove(container)
                 continue
 
-            # Wrap each line of the response in a <p> tag.
             wrapped_content = "\n".join(
                 f"<p>{content}</p>"
                 for content in response[0].split("\n")
@@ -865,9 +802,6 @@ class AIAgent(models.Model):
         )
 
     def _check_no_ai_chat_committed_unseen(self, seen) -> None:
-        # The lock orders the callers, but this transaction's REPEATABLE READ
-        # snapshot predates the wait: a READ COMMITTED read sees the chat the
-        # previous holder committed, and the retry then finds it.
         self.check_singleton()
         guest = self.env["mail.guest"]._get_guest_from_context()
         member = (
@@ -905,12 +839,6 @@ class AIAgent(models.Model):
         return channels.filtered(lambda channel: channel.sudo().ai_agent_id == self)[:1]
 
     def _create_ai_chat_channel(self, channel_name=None):
-        # The method is called in three safe scenarios:
-        # - Testing: An admin is creating a channel (from the test button in the AI app) to test an AI agent's configuration.
-        # - Internal Features: An internal user is creating a channel for features like `ai_composer`.
-        # - Public Access: A public/portal user is creating a channel (through livechat for example).
-        #   The access to the agent is verified by the `_is_user_access_allowed` method.
-        # In all cases, the channel is created between the AI agent and the current user, so using sudo() for channel creation is safe.
 
         guest = self.env["mail.guest"]._get_guest_from_context()
         return (
@@ -928,14 +856,12 @@ class AIAgent(models.Model):
                         Command.create({"partner_id": self.partner_id.id}),
                     ],
                     "channel_type": "ai_chat",
-                    # sudo() => visitor can set the name of the channel
                     "name": channel_name or self.partner_id.sudo().name,
                 }
             )
         )
 
     def _facets_to_xml(self, facets) -> str:
-        """Convert facets JSON array to simplified XML elements format with reduced nesting."""
         if not facets:
             return ""
 
@@ -976,7 +902,6 @@ class AIAgent(models.Model):
             if user_context.get("tz"):
                 context_lines.append(f'    <timezone value="{user_context["tz"]}"/>')
 
-            # Current view as a single element if present
             if current_view_info := self.env.context.get("current_view_info"):
                 action_id = current_view_info.get("action_id")
                 action = self.env["ir.actions.actions"].browse(action_id)
@@ -1051,7 +976,6 @@ class AIAgent(models.Model):
             ) from e
 
     def _prepare_extra_system_context(self, discuss_channel) -> str:
-        """Build extra system context based on the agent's configuration."""
         self.check_singleton()
         extra_context = []
         topic_xml_ids = self.topic_ids.get_external_id().values()
@@ -1069,7 +993,7 @@ class AIAgent(models.Model):
             extra_context.append(self._get_date_calculation_reference())
         elif (
             env_context := discuss_channel.ai_env_context
-        ):  # if channel has ai related context (e.g. draft flow) pass it to the agent's extra context
+        ):
             extra_context += env_context
 
         return "\n".join(extra_context) if extra_context else ""
@@ -1080,17 +1004,14 @@ class AIAgent(models.Model):
 
     @ormcache("self.env.access_signature", "self.env.company.id")
     def _get_available_menus(self):
-        """Get all menus accessible to the current user as CSV data."""
         all_menus = self.env["ir.ui.menu"].load_web_menus(False)
         root_menu_ids = set(all_menus["root"]["children"])
 
-        # Collect all non-root action menus
         action_menus = []
         for menu_id, web_menu in all_menus.items():
             if menu_id == "root" or menu_id in root_menu_ids:
                 continue
 
-            # Only process menus with valid actions
             if web_menu["actionModel"] == "ir.actions.act_window":
                 menu = self.env["ir.ui.menu"].browse(web_menu["id"])
                 app_menu = self.env["ir.ui.menu"].browse(web_menu["appID"])
@@ -1109,8 +1030,6 @@ class AIAgent(models.Model):
                         }
                     )
 
-        # Menus are already ordered by sequence from load_web_menus(), but we still need to sort
-        # by complete_name within each app to maintain proper hierarchy display
         action_menus.sort(
             key=lambda m: (m["app_menu"].sequence, m["menu"].complete_name)
         )
@@ -1182,13 +1101,10 @@ class AIAgent(models.Model):
 
     @ormcache("self.env.access_signature", "self.env.company.id")
     def _get_available_models(self) -> str:
-        """Get all models accessible to the current user as CSV data, excluding transient and abstract models."""
-        # Get models the user has read access to
         allowed_models = [
             name for name in self.env.registry if self.env[name].has_access("read")
         ]
 
-        # Get ir.model records for allowed models, excluding abstract and transient
         search_domain = (
             Domain("model", "in", list(allowed_models))
             & Domain("transient", "=", False)
@@ -1196,35 +1112,27 @@ class AIAgent(models.Model):
         )
         model_records = self.env["ir.model"].sudo().search(search_domain, order="model")
 
-        # Get app ordering from web menus
         all_menus = self.env["ir.ui.menu"].load_web_menus(False)
-        root_menu_ids = all_menus["root"]["children"]  # This is ordered by sequence
+        root_menu_ids = all_menus["root"]["children"]
 
-        # Create app name to sequence mapping
         app_sequence = {}
         for idx, menu_id in enumerate(root_menu_ids):
             if menu_id in all_menus:
                 app_menu = self.env["ir.ui.menu"].browse(all_menus[menu_id]["id"])
                 if app_menu.exists():
-                    # Get the technical name (usually matches module name)
                     app_name = all_menus[menu_id].get("xmlid", "").split(".")[0]
                     if app_name:
                         app_sequence[app_name] = idx
 
-        # Group models by their main module/app
         models_by_app = defaultdict(list)
         for model_rec in model_records:
-            # Skip models without a proper registry entry
             if model_rec.model not in self.env:
                 continue
 
             model_obj = self.env[model_rec.model]
-            # Skip models that are actually abstract despite the flag, and those
-            # without a database table.
             if model_obj._abstract or not model_obj._auto:
                 continue
 
-            # Determine the app/module (first module in the list)
             modules = model_rec.modules.split(", ") if model_rec.modules else []
             app = modules[0] if modules else "base"
 
@@ -1235,10 +1143,8 @@ class AIAgent(models.Model):
                 }
             )
 
-        # Build CSV result
         csv_result = "model|description|module\n"
 
-        # Sort apps by their menu sequence, with unknown apps at the end
         sorted_apps = sorted(
             models_by_app.keys(), key=lambda x: (app_sequence.get(x, 999), x)
         )
@@ -1274,46 +1180,36 @@ class AIAgent(models.Model):
         """).strip()
 
     def _get_date_calculation_reference(self):
-        """Generate dynamic date calculation reference based on today's date."""
         today = fields.Date.context_today(self)
         today_dt = datetime.strptime(str(today), "%Y-%m-%d")
 
-        # Calculate various date references
         yesterday = today_dt - timedelta(days=1)
         tomorrow = today_dt + timedelta(days=1)
         last_week_start = today_dt - timedelta(days=7)
 
-        # This week (Monday to Sunday)
         days_since_monday = today_dt.weekday()
         this_week_start = today_dt - timedelta(days=days_since_monday)
         days_until_sunday = 6 - days_since_monday
         this_week_end = today_dt + timedelta(days=days_until_sunday)
 
-        # This month (first to last day)
         this_month_start = today_dt.replace(day=1)
-        # Get last day of current month
         if today_dt.month == 12:
             next_month_start = today_dt.replace(year=today_dt.year + 1, month=1, day=1)
         else:
             next_month_start = today_dt.replace(month=today_dt.month + 1, day=1)
         this_month_end = next_month_start - timedelta(days=1)
 
-        # Last month
         last_month_end = this_month_start - timedelta(days=1)
         last_month_start = last_month_end.replace(day=1)
 
-        # Last 30 days
         thirty_days_ago = today_dt - timedelta(days=30)
 
-        # This year (January 1 to December 31)
         this_year_start = today_dt.replace(month=1, day=1)
         this_year_end = today_dt.replace(month=12, day=31)
 
-        # Last year
         last_year_start = this_year_start.replace(year=today_dt.year - 1)
         last_year_end = this_year_start - timedelta(days=1)
 
-        # Current quarter (full quarter)
         quarter = get_quarter_number(today_dt)
         quarter_starts = {
             1: today_dt.replace(month=1, day=1),
@@ -1323,7 +1219,6 @@ class AIAgent(models.Model):
         }
         current_quarter_start = quarter_starts[quarter]
 
-        # Calculate end of current quarter
         quarter_ends = {
             1: today_dt.replace(month=3, day=31),
             2: today_dt.replace(month=6, day=30),
@@ -1332,20 +1227,19 @@ class AIAgent(models.Model):
         }
         current_quarter_end = quarter_ends[quarter]
 
-        # Last quarter
         last_quarter = quarter - 1 if quarter > 1 else 4
         last_quarter_year = today_dt.year if quarter > 1 else today_dt.year - 1
         quarter_starts_months = {
-            1: 1,  # January
-            2: 4,  # April
-            3: 7,  # July
-            4: 10,  # October
+            1: 1,
+            2: 4,
+            3: 7,
+            4: 10,
         }
         quarter_ends = {
-            1: (3, 31),  # March 31
-            2: (6, 30),  # June 30
-            3: (9, 30),  # September 30
-            4: (12, 31),  # December 31
+            1: (3, 31),
+            2: (6, 30),
+            3: (9, 30),
+            4: (12, 31),
         }
         start_month = quarter_starts_months[last_quarter]
         last_quarter_start = datetime(last_quarter_year, start_month, 1)
@@ -1384,7 +1278,6 @@ class AIAgent(models.Model):
         model_fields = model.fields_get()
         results = []
 
-        # Add header
         if include_description:
             results.append(
                 "field_name|display_name|type|sortable|groupable|description"
@@ -1405,17 +1298,15 @@ class AIAgent(models.Model):
             if field_type == "selection":
                 selection_items = field_info.get("selection", [])
                 field_type += f"({dict(selection_items)})"
-            # Format as CSV with pipe delimiter: field_name|display_name|type|sortable|groupable|description
             field_str = (
                 f"{field_name}|{field_display_name}|{field_type}|{sortable}|{groupable}"
             )
             if include_description:
                 if description := field_info.get("help", ""):
-                    # Replace any pipe characters in the description to avoid delimiter conflicts
                     safe_description = description.replace("|", "&#124;")
                     field_str += f"|{safe_description}"
                 else:
-                    field_str += "|"  # Empty description column for consistent format
+                    field_str += "|"
             results.append(field_str)
 
         return "\n".join(results)
@@ -1544,7 +1435,6 @@ class AIAgent(models.Model):
                 f"The action associated with menu ID {menu_id} does not exist."
             )
 
-        # Log menu and action details
         menu_obj = self.env["ir.ui.menu"].browse(menu_id)
         _logger.info(
             "Opening pivot view for menu '%s' (ID: %s) with action '%s' (ID: %s)",
@@ -1560,7 +1450,6 @@ class AIAgent(models.Model):
                 f"The model '{model_name}' does not match the model of the action associated with menu ID {menu_id}."
             )
 
-        # Parse measures and extract ordering information
         parsed_measures = []
         sorted_column = None
         for measure_str in measures:
@@ -1571,7 +1460,6 @@ class AIAgent(models.Model):
                 order_part = measure_parts[1].lower()
                 if order_part in ["asc", "desc"]:
                     order = order_part
-                    # Set the first measure with ordering as the sorted column
                     if sorted_column is None:
                         sorted_column = {"measure": measure_name, "order": order}
                 else:
@@ -1581,14 +1469,12 @@ class AIAgent(models.Model):
 
             parsed_measures.append(measure_name)
 
-        # Validate measures
         for measure in parsed_measures:
             if measure != "__count" and measure not in self.env[model_name]._fields:
                 raise ValueError(
                     f"Measure '{measure}' not found in model '{model_name}' for menu ID {menu_id}."
                 )
 
-        # Check if pivot view is in available views
         available_views = [view[1] for view in action_dict.get("views", [])]
         if "pivot" not in available_views:
             raise ValueError(
@@ -1608,7 +1494,6 @@ class AIAgent(models.Model):
         if self.env.context.get("ai_session_identifier"):
             bus_data["aiSessionIdentifier"] = self.env.context["ai_session_identifier"]
 
-        # Add sorting information if available
         if sorted_column:
             bus_data["sortedColumn"] = sorted_column
 
@@ -1631,7 +1516,6 @@ class AIAgent(models.Model):
         cumulated=False,
         custom_domain=None,
     ) -> None:
-        """Open a graph view for the specified menu ID with the given parameters."""
         check_search_terms(search)
         check_groupbys(self.env[model_name], selected_groupbys)
         check_measures(self.env[model_name], [measure])
@@ -1647,7 +1531,6 @@ class AIAgent(models.Model):
                 f"The action associated with menu ID {menu_id} does not exist."
             )
 
-        # Log menu and action details
         menu_obj = self.env["ir.ui.menu"].browse(menu_id)
         _logger.info(
             "Opening graph view for menu '%s' (ID: %s) with action '%s' (ID: %s)",
@@ -1663,21 +1546,17 @@ class AIAgent(models.Model):
                 f"The model '{model_name}' does not match the model of the action associated with menu ID {menu_id}."
             )
 
-        # Validate measure
         if measure != "__count" and measure not in self.env[model_name]._fields:
             raise ValueError(
                 f"Measure '{measure}' not found in model '{model_name}' for menu ID {menu_id}."
             )
 
-        # Validate mode
         if mode not in ["bar", "line", "pie"]:
             raise ValueError(f"Invalid mode '{mode}'. Must be 'bar', 'line', or 'pie'.")
 
-        # Validate order
         if order not in ["ASC", "DESC"]:
             raise ValueError(f"Invalid order '{order}'. Must be 'ASC' or 'DESC'.")
 
-        # Check if graph view is in available views
         available_views = [view[1] for view in action_dict.get("views", [])]
         if "graph" not in available_views:
             raise ValueError(
@@ -1720,11 +1599,9 @@ class AIAgent(models.Model):
                 f"The model '{model}' does not match the model of the action associated with menu ID {action_id}."
             )
 
-        # Get field definitions
         model_obj = self.env[model]
         fields = model_obj.fields_get()
 
-        # Get view information to determine field attributes
         views = model_obj.get_views(
             [*action_dict["views"]],
             options={
@@ -1733,7 +1610,6 @@ class AIAgent(models.Model):
             },
         )["views"]
 
-        # Extract field attributes from pivot view if available
         field_attrs = {}
         pivot_view = views.get("pivot")
         if pivot_view and pivot_view.get("arch"):
@@ -1746,10 +1622,8 @@ class AIAgent(models.Model):
                         "string": field_element.get("string"),
                     }
 
-        # Compute measures using our Python implementation
         measures = compute_report_measures(fields, field_attrs)
 
-        # Convert measures to CSV format with pipe delimiter
         csv_result = "field_name|field_display_name|field_type|aggregator|sortable\n"
 
         for field_name, field_info in measures.items():
@@ -1769,7 +1643,6 @@ class AIAgent(models.Model):
         if not menu_ids:
             raise ValueError("At least one menu ID must be provided.")
 
-        # Load all menus to validate IDs
         menus = self.env["ir.ui.menu"].load_menus(False)
 
         csv_result = "menu_id|model|context|domain|search_view\n"
@@ -1791,7 +1664,6 @@ class AIAgent(models.Model):
                 csv_result += f"{menu_id}|Error: Action not found|\n"
                 continue
 
-            # Get context and domain
             context_str = str(action.context or {})
             domain_str = str(action.domain or [])
 
@@ -1802,7 +1674,6 @@ class AIAgent(models.Model):
                 clean_search_view_xml(search_view["arch"]) if search_view else ""
             )
 
-            # Escape the XML for CSV - replace quotes and newlines
             if search_view_xml:
                 search_view_xml = search_view_xml.replace("\n", " ").replace("\r", "")
 

@@ -39,7 +39,6 @@ class TestMobileDeviceForm(TransactionCase):
             (node,) = form.xpath(f"//field[@name='{name}']")
             self.assertIn("mobile_phone", node.get("invisible") or "", name)
         for page in ("connection", "api_auth"):
-            # a page the user's groups already hide is marked invisible="1"
             for node in form.xpath(f"//page[@name='{page}']"):
                 invisible = node.get("invisible") or ""
                 self.assertTrue(invisible == "1" or "mobile_phone" in invisible, page)

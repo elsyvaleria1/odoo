@@ -26,9 +26,6 @@ _logger = logging.getLogger()
 class Sign(http.Controller):
     def _record_document_opened(self, sign_request, current_request_item):
         if current_request_item.state == "sent":
-            # When the signer attempts to sign the request again, their localisation should be
-            # reset: we prefer no/approximate (geoip) information over wrong old information
-            # (from geoip/browser) on the signer localisation.
             current_request_item.write(
                 {
                     "latitude": request.geoip.location.latitude or 0.0,
@@ -63,19 +60,8 @@ class Sign(http.Controller):
         if current_request_item and current_request_item.partner_id.lang:
             signer_lang = current_request_item.partner_id.lang
             http.request.update_context(lang=signer_lang)
-            # This is a website=True route, so http_routing._frontend_pre_dispatch
-            # has already set frontend_lang to the VISITOR's resolved language --
-            # en_US for a signer following a mail link, who is anonymous and has
-            # no prior cookie. localization_service.getPageLocale reads that
-            # cookie BEFORE <html lang>, so overriding the context alone renders
-            # the page in the signer's language server-side while the JS
-            # catalogue stays the visitor's, and every _t() string comes back
-            # untranslated.
             http.request.future_response.set_cookie("frontend_lang", signer_lang)
 
-        # This context is needed since we want to show in the sidebar only non
-        # archive fields but we want to be able to still use archived fields
-        # in the documents to avoid breaking existing sign requests and templates.
         sign_item_types = (
             http.request.env["sign.item.type"]
             .with_context(active_test=False)
@@ -89,7 +75,6 @@ class Sign(http.Controller):
                 )
             )
 
-        # the client gives date items today's date: by the type, not its name
         date_type = request.env.ref(
             "sign.sign_item_type_date", raise_if_not_found=False
         )
@@ -201,16 +186,9 @@ class Sign(http.Controller):
         }
         return result
 
-    #  HTTP Routes
 
     @http.route(["/sign/<share_link>"], type="http", auth="public")
     def share_link(self, share_link, **post):
-        """
-        This controller is used for retro-compatibility of old shared links. share_link was a token saved on the
-        template. We map them to the shared sign request created during upgrade and redirect to the correct URL.
-        :param share_link: share
-        :return: redirect to the sign_document_from_mail controller
-        """
         sign_request_item = request.env["sign.request.item"]._from_signer_token(
             share_link
         )
@@ -238,8 +216,6 @@ class Sign(http.Controller):
         )
         if not current_request_item:
             return http.request.render("sign.deleted_sign_request", status=404)
-        # The sign request should be evaluated but the timestamp has been removed from the parameter.
-        # In that case, we don't render the sign_request_expired template
         removed_timestamp_arg = sign_request.state == "sent" and (
             not post.get("timestamp") or not post.get("exp")
         )
@@ -295,21 +271,6 @@ class Sign(http.Controller):
     def download_document(
         self, request_id, token, download_type, sign_document_id=None, **post
     ):
-        """Handles document download requests for sign requests.
-
-        This method routes requests to download different types of documents
-        (log, origin, or completed) associated with a sign request. It validates
-        the request and delegates to specific handlers based on the download type.
-
-        :param int request_id: The ID of the sign request.
-        :param str token: The access token for the sign request.
-        :param str download_type: Type of document to download ('log', 'origin', or 'completed').
-        :param int sign_document_id: Specific document ID for 'origin' download type.
-        :param post: Additional POST parameters (not used in this method).
-
-        :return: Response containing the requested document or a redirect/not found response.
-        :rtype: http.Response
-        """
         sign_request = self._get_sign_request(request_id, token)
         if not sign_request:
             raise request.prepare_not_found_error()
@@ -329,14 +290,6 @@ class Sign(http.Controller):
         )
 
     def _handle_log_download(self, sign_request):
-        """Generates and returns a PDF log (certificate) for the sign request.
-        Renders a QWeb report as a PDF containing the sign request's log details.
-
-        :param odoo.models.Model sign_request: The sign request record.
-
-        :return: Response containing the PDF content with appropriate headers.
-        :rtype: http.Response
-        """
         report_action = request.env["ir.actions.report"].sudo()
         pdf_content, _dummy = report_action._render_qweb_pdf(
             "sign.action_sign_request_print_logs",
@@ -356,23 +309,9 @@ class Sign(http.Controller):
         )
 
     def _handle_origin_download(self, sign_request, sign_document_id):
-        """Handles the download of the original (unsigned) document for a sign request.
-
-        Retrieves the original document based on either a specific document ID or
-        the documents associated with the sign request's template. If multiple documents
-        exist and no specific ID is provided, returns a ZIP file containing all documents.
-
-        :param odoo.models.Model sign_request: The sign request record.
-        :param int sign_document_id: The ID of the specific document to download.
-
-        :return: Response containing the document data or a ZIP file, or a 404 response if not found.
-        :rtype: http.Response
-        """
         if sign_document_id:
             document_id = request.env["sign.document"].sudo().browse(sign_document_id)
             if document_id not in sign_request.template_document_ids:
-                # The id must belong to this request's template; otherwise the
-                # request token would grant a read of any document in the base.
                 raise request.prepare_not_found_error()
             attachment_data = document_id.attachment_id.datas
             return self._create_document_response(
@@ -388,25 +327,12 @@ class Sign(http.Controller):
                 document_name=template_documents_ids[0].name,
             )
 
-        # If there are multiple documents and no specific ID was provided, create a ZIP
         if len(template_documents_ids) > 1:
             return self._create_zip_response([sign_request])
 
         raise request.prepare_not_found_error()
 
     def _handle_completed_download(self, sign_request, sign_document_id=None):
-        """Handles the download of completed (signed) documents for a sign request.
-
-        Generates completed documents if they don't exist, then returns either a single
-        document response or a ZIP file containing multiple documents based on the number
-        of completed documents.
-
-        :param odoo.models.Model sign_request: The sign request record.
-        :param int sign_document_id: The ID of the specific completed document to download.
-
-        :return: Response containing either a single document or a ZIP file.
-        :rtype: http.Response
-        """
         if not sign_request.completed_document_ids and sign_request.state == "signed":
             sign_request.sudo()._create_completed_documents()
 
@@ -432,13 +358,6 @@ class Sign(http.Controller):
         return self._create_zip_response([sign_request])
 
     def _create_zip_response(self, sign_requests):
-        """Creates a ZIP file containing multiple documents for sign requests.
-
-        :param odoo.models.Model sign_requests: The sign request record(s).
-
-        :return: Response containing the ZIP file with appropriate headers.
-        :rtype: http.Response
-        """
         buffer = io.BytesIO()
         with zipfile.ZipFile(
             buffer, "w", compression=zipfile.ZIP_DEFLATED
@@ -477,15 +396,6 @@ class Sign(http.Controller):
         )
 
     def _format_document_name(self, sign_request, doc_name, existing_document_names):
-        """Formats a document name for download, handling PDF extensions and duplicates.
-
-        :param odoo.models.Model sign_request: The sign request record.
-        :param str doc_name: The original document name.
-        :param set existing_document_names: Set of existing document names to check for duplicates.
-
-        :return: The formatted document name.
-        :rtype: str
-        """
         subject = sign_request.subject or request.env._(
             "Documents of Request %s", str(sign_request.id)
         )
@@ -504,29 +414,16 @@ class Sign(http.Controller):
     def _create_document_response(
         self, sign_request, attachment_data, document_name=None
     ):
-        """Creates an HTTP response for a single document download.
-        Determines the file extension and MIME type based on the sign request's template and returns a response with
-        the decoded document data and appropriate headers.
-
-        :param odoo.models.Model sign_request: The sign request object.
-        :param str attachment_data: Base64-encoded document data.
-        :param str document_name: Specific name for the document, if provided.
-
-        :return: Response containing the decoded document with appropriate headers.
-        :rtype: http.Response
-        """
         extension = "." + sign_request.template_id.document_ids[
             0
         ].attachment_id.mimetype.replace("application/", "").replace(";base64", "")
 
         if document_name:
-            # Use the provided document name if available
             if document_name.endswith(extension):
                 filename = document_name
             else:
                 filename = document_name + extension
         else:
-            # Fall back to the reference name
             filename = sign_request.reference.replace(extension, "") + extension
 
         return request.prepare_response(
@@ -547,11 +444,6 @@ class Sign(http.Controller):
 
     @http.route(["/sign/download/zip/<ids>"], type="http", auth="user")
     def download_multiple_documents(self, ids, **post):
-        """If the user has access to all the requests, create a zip archive of all the documents requested and
-        return it.
-        The documents are each in a folder named by the request subject; duplicate file names are
-        de-duplicated with a counter suffix.
-        """
         if not request.env.user.has_group("sign.group_sign_user"):
             return request.env["ir.http"]._serve_error_page(
                 request.env._("Oops"),
@@ -586,8 +478,6 @@ class Sign(http.Controller):
 
         if current_request_item.state != "sent":
             return http.request.render("sign.deleted_sign_request")
-        # a GET that mails the signer: a prefetching client or a script must not
-        # flood their inbox
         state = "throttled"
         if current_request_item._consume_send_budget(
             "resend_link", RESEND_LINK_BURST, RESEND_LINK_REFILL_SECONDS
@@ -605,15 +495,12 @@ class Sign(http.Controller):
             },
         )
 
-    #  JSON Routes
     @http.route(
         ["/sign/get_document/<int:request_id>/<token>"], type="jsonrpc", auth="user"
     )
     def get_document(self, request_id, token):
         res = self._prepare_document_rendering_data(request_id, token)
         if res.get("error"):
-            # the error page is a whole frontend page, which the backend
-            # action this route feeds cannot show
             raise request.prepare_not_found_error()
         self._record_document_opened(
             res["rendering_context"]["sign_request"],
@@ -664,11 +551,6 @@ class Sign(http.Controller):
         return {"completed_documents": completed_documents}
 
     def _check_refusal_conditions(self, context):
-        """
-        Checks if refusal is allowed based on the states and partners of the current request item
-        and the sign request.
-        :return: Boolean indicating whether refusal is allowed.
-        """
         current_request_item = context.get("current_request_item")
         sign_request = context.get("sign_request")
         if not current_request_item or not sign_request:
@@ -781,8 +663,6 @@ class Sign(http.Controller):
         if not request_item:
             return False
         if request_item.role_id.auth_method == "sms":
-            # the code goes to the number the signer was invited with; the link's
-            # holder types one only when the request named none (L9)
             if not request_item.sms_number:
                 request_item.sms_number = phone_number
             try:
@@ -854,7 +734,6 @@ class Sign(http.Controller):
             .search([("partner_id", "=", request_item_sudo.partner_id.id)], limit=1)
         )
         if sign_user:
-            # sign as a known user
             context = {}
             if request.env.user != sign_user and not request.env.user._is_public():
                 context.update(logged_user_id=request.env.user.id)
@@ -975,12 +854,6 @@ class Sign(http.Controller):
         auth="public",
     )
     def get_sign_request_state(self, request_id, token):
-        """
-        Returns the state of a sign request.
-        :param request_id: id of the request
-        :param token: access token of the request
-        :return: state of the request
-        """
         sign_request = request.env["sign.request"]._from_request_token(
             token, request_id
         )
@@ -990,18 +863,8 @@ class Sign(http.Controller):
 
     @http.route(["/sign/sign_request_items"], type="jsonrpc", auth="public")
     def get_sign_request_items(self, request_id, token, sign_item_id):
-        """
-        Finds up to 3 most important sign request items for the current user to sign,
-        after the user has just completed one.
-        :param request_id: id of the completed sign request
-        :param token: access token of the request
-        :return: list of dicts describing sign request items for the Thank You dialog
-        """
         sign_request = request.env["sign.request"].browse(request_id).sudo()
         sign_item = request.env["sign.request.item"].browse(sign_item_id).sudo()
-        # The caller must hold the SIGNER's token, not the request token: the
-        # request token is printed on every signing page, so checking it here
-        # would let anyone holding a share link read other signers' tokens.
         if (
             not sign_request.exists()
             or not sign_item.exists()

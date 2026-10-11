@@ -240,7 +240,7 @@ class GpsDataProcessor(models.AbstractModel):
             processor_method = getattr(self, processor_method_name, None)
 
             if processor_method and callable(processor_method):
-                result = processor_method(  # pylint: disable=not-callable
+                result = processor_method(
                     value, device_type=device_type, device=device
                 )
 
@@ -415,8 +415,6 @@ class GpsDataProcessor(models.AbstractModel):
         if not prev_log:
             return
 
-        # An unreported level reads 0 on the stored log, so zero means no reading:
-        # a tracker reporting only the percentage falls back to it.
         current_fuel = log_vals.get("fuel_level_l") or None
         prev_fuel = prev_log.fuel_level_l or None
 

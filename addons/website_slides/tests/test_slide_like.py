@@ -59,7 +59,6 @@ class TestSlideLike(HttpCase):
         (fragment,) = response.json()["fragments"]
         self.assertEqual(fragment["key"], f"website_slides.slide_like.{self.slide.id}")
         self.assertIn("fa-solid fa-thumbs-up", fragment["html"])
-        # the swapped form returns to the page, not to the route it posted to
         self.assertIn('value="/slides/x?y=1"', fragment["html"])
         self.assertEqual(self.slide.likes, 1)
 
@@ -85,7 +84,6 @@ class TestSlideLike(HttpCase):
         self.assertEqual(self.slide.likes, 0)
 
     def test_a_non_member_is_refused_in_place(self):
-        # a preview lesson is open to anyone, so its widget shows to non-members
         self.slide.is_preview = True
         self.authenticate("slide_voter", "slide_voter")
 
@@ -108,9 +106,6 @@ class TestSlideLike(HttpCase):
         self.assertEqual(self.slide.likes, 1)
 
     def test_the_course_page_nests_no_form_in_another(self):
-        # a form inside a form is dropped by the parser, and its buttons
-        # submit the outer one: the like widget sits in each lesson card,
-        # which a documentation course shows
         self.channel.channel_type = "documentation"
         self.channel._action_add_members(self.voter.partner_id)
         self.authenticate("slide_voter", "slide_voter")

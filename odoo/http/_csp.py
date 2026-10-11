@@ -24,9 +24,6 @@ _NONCE_RE = re.compile(r"[A-Za-z0-9_-]{16,128}")
 
 
 def get_script_policy(nonce: str, *, unsafe_eval: bool) -> str:
-    # 'unsafe-inline' and https: are what a CSP1 browser falls back to; a
-    # browser that understands nonces ignores 'unsafe-inline', and one that
-    # understands 'strict-dynamic' ignores both.
     sources = [f"'nonce-{nonce}'", "'strict-dynamic'"]
     if unsafe_eval:
         sources.append("'unsafe-eval'")
@@ -74,8 +71,6 @@ class _RequestCspMixin(RequestState):
     csp_scripts_need_eval: bool = False
 
     def note_script_bundle(self, *, needs_eval: bool) -> None:
-        # a page runs without 'unsafe-eval' once it loads a bundle that can,
-        # and only while none of the bundles it loads needs it
         if needs_eval:
             self.csp_scripts_need_eval = True
         self.csp_unsafe_eval = self.csp_scripts_need_eval
@@ -103,9 +98,6 @@ class _RequestCspMixin(RequestState):
         return mode
 
     def adopt_csp_nonce(self, nonce: Any) -> bool:
-        # An RPC rendering markup for the page that sent it stamps that page's
-        # nonce. Never an HTML response: its header would then trust a nonce
-        # its caller picked.
         if self.dispatcher.routing_type == "http":
             msg = "an HTML response draws its own script nonce"
             raise RuntimeError(msg)

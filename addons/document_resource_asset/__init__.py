@@ -4,11 +4,6 @@ from . import models
 
 
 def _document_resource_asset_post_init(env) -> None:
-    """Carry the fleet's own document settings onto the vehicle kind.
-
-    `document_fleet` kept one folder, one tag set and one switch per company for
-    vehicles alone; every kind of asset has them now, as rows.
-    """
     cr = env.cr
     cr.execute(
         """

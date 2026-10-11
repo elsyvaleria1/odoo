@@ -23,7 +23,6 @@ class _UnexpectedError(Exception):
 
 class TestMicrosoftService(TransactionCase):
     def _do_request_result(self, data):
-        """_request answers (status, body)"""
         return (200, data)
 
     def setUp(self):
@@ -63,17 +62,11 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_get_events_delta_without_token(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service._get_events_delta()
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_unexpected_exception(self, mock_do_request):
-        """
-        When an unexpected exception is raised, just propagate it.
-        """
         mock_do_request.side_effect = _UnexpectedError()
 
         with self.assertRaises(_UnexpectedError):
@@ -86,8 +79,6 @@ class TestMicrosoftService(TransactionCase):
     def test_get_events_delta_token_error(
         self, mock_do_request, mock_check_full_sync_required
     ):
-        """A token Outlook no longer knows is said, for the caller to start a
-        full synchronization."""
         mock_do_request.side_effect = [
             requests.HTTPError(
                 response=MagicMock(status_code=410, content="fullSyncRequired")
@@ -105,10 +96,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_without_sync_token(self, mock_do_request):
-        """
-        when no sync token is provided, a full sync should be done
-        """
-        # returns empty data without any next sync token
         mock_do_request.return_value = self._do_request_result({"value": []})
 
         events, next_token = self.service._get_events_delta(
@@ -121,10 +108,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_delta_with_sync_token(self, mock_do_request):
-        """
-        when a sync token is provided, we should retrieve the sync token to use for the next sync.
-        """
-        # returns empty data with a next sync token
         mock_do_request.return_value = self._do_request_result(
             {"value": [], "@odata.deltaLink": self.fake_next_sync_token_url}
         )
@@ -141,9 +124,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_one_page(self, mock_do_request):
-        """
-        When all events are on one page, just get them.
-        """
         mock_do_request.return_value = self._do_request_result(
             {
                 "value": [
@@ -171,9 +151,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_loop_over_pages(self, mock_do_request):
-        """
-        Loop over pages to retrieve all the events.
-        """
         mock_do_request.side_effect = [
             self._do_request_result(
                 {
@@ -230,9 +207,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_filter_out_occurrences(self, mock_do_request):
-        """
-        When all events are on one page, just get them.
-        """
         mock_do_request.return_value = self._do_request_result(
             {
                 "value": [
@@ -258,9 +232,6 @@ class TestMicrosoftService(TransactionCase):
         mock_do_request.assert_has_calls([self.call_without_sync_token])
 
     def test_get_occurrence_details_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service._get_occurrence_details(1)
 
@@ -307,17 +278,11 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_get_events_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service.get_events()
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_no_serie_master(self, mock_do_request):
-        """
-        When there is no serie master, just retrieve the list of events.
-        """
         mock_do_request.return_value = self._do_request_result(
             {
                 "value": [
@@ -345,9 +310,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_get_events_with_one_serie_master(self, mock_do_request):
-        """
-        When there is a serie master, retrieve the list of events and event occurrences linked to the serie master
-        """
         mock_do_request.side_effect = [
             self._do_request_result(
                 {
@@ -382,9 +344,6 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_insert_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service.insert({})
 
@@ -407,16 +366,11 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_patch_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service.patch(123, {})
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_a_refused_patch_raises(self, mock_do_request):
-        """A patch Outlook refuses is said: answering False took a refusal for
-        an item that is gone."""
         mock_do_request.side_effect = requests.HTTPError(
             response=MagicMock(status_code=400)
         )
@@ -464,9 +418,6 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_delete_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service.delete(123)
 
@@ -489,10 +440,6 @@ class TestMicrosoftService(TransactionCase):
 
     @patch.object(MicrosoftCalendarService, "_request")
     def test_delete_an_already_cancelled_event(self, mock_do_request):
-        """
-        When an event has already been cancelled, Outlook may return a status code equals to 403 or 410.
-        In this case, the delete method should return True.
-        """
         event_id = 123
 
         for status in (403, 410):
@@ -528,9 +475,6 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_answer_token_error(self):
-        """
-        if no token is provided, an exception is raised
-        """
         with self.assertRaises(AttributeError):
             self.service.answer(123, "ok", {})
 
@@ -592,8 +536,6 @@ class TestMicrosoftService(TransactionCase):
     def test_get_events_delta_with_outdated_sync_token(
         self, mock_do_request, mock_check_full_sync_required
     ):
-        """A synchronization whose token is outdated reads the whole calendar
-        again in the same run."""
         mock_do_request.side_effect = [
             requests.HTTPError(
                 response=MagicMock(status_code=410, error={"code": "SyncStateNotFound"})
@@ -612,7 +554,6 @@ class TestMicrosoftService(TransactionCase):
         )
 
     def test_a_refresh_goes_to_the_services_token_endpoint(self):
-        # a single-tenant registration names its tenant in the service's URLs
         service = self.env.ref("integration_microsoft.service_microsoft")
         service._set_oauth_client("dummy_client_id", "dummy_secret", company=False)
         tenant_endpoint = (

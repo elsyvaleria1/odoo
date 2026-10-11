@@ -60,9 +60,6 @@ class CustomerPortal(SaleCustomerPortal, AccountCustomerPortal):
         values = self._prepare_portal_layout_values()
         SaleOrder = request.env["sale.order"]
         searchbar_sortings = self._sale_get_order_searchbar_sortings()
-        # Clamp to the declared vocabulary: `sortby` comes straight off the query
-        # string, and indexing it unchecked answered `?sortby=anything-else` with
-        # a KeyError (HTTP 500).
         sortby = self._resolve_searchbar_option(searchbar_sortings, sortby, "date")
         sort_order = searchbar_sortings[sortby]["order"]
         domain = [("task_id", "=", task_id)]
@@ -72,7 +69,6 @@ class CustomerPortal(SaleCustomerPortal, AccountCustomerPortal):
                 ("create_date", "<=", date_end),
             ]
         quotation_count = SaleOrder.search_count(domain)
-        # pager
         pager = portal_pager(
             url="/my/quotes",
             url_args={"date_begin": date_begin, "date_end": date_end, "sortby": sortby},
@@ -80,7 +76,6 @@ class CustomerPortal(SaleCustomerPortal, AccountCustomerPortal):
             page=page,
             step=self._items_per_page,
         )
-        # content according to pager
         quotations = SaleOrder.search(
             domain, order=sort_order, limit=self._items_per_page, offset=pager["offset"]
         )

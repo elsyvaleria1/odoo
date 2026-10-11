@@ -27,7 +27,7 @@ _fields: typing.Any = None
 
 
 def _odoo_fields() -> typing.Any:
-    global _fields  # noqa: PLW0603  one-time lazy binding of a module that imports us
+    global _fields
     if _fields is None:
         from odoo import fields
 
@@ -60,8 +60,6 @@ def _convert(obj: object) -> object:
     if isinstance(obj, (set, frozenset)):
         return list(obj)
     msg = f"Object of type {type(obj).__name__} is not JSON serializable"
-    # a test run fails on the producer; a server logs it and keeps answering,
-    # since a producer no test reaches would otherwise turn a page into a 500
     if _config["test_enable"]:
         raise TypeError(msg)
     _logger.error("%s; it is sent as its str()", msg)

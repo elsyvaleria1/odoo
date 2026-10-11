@@ -23,7 +23,6 @@ class TestAnswerEvents(TestCommon):
     def setUp(self):
         super().setUp()
 
-        # a simple event
         self.simple_event = self.env["calendar.event"].search(
             [("name", "=", "simple_event")]
         )
@@ -49,7 +48,6 @@ class TestAnswerEvents(TestCommon):
             ]
         )
 
-        # the attendee's copy has an id of its own, found by its iCalendar UID
         mock_get_single_event.return_value = (
             True,
             {"value": [{"id": "attendee_123", "iCalUId": "456"}]},
@@ -80,7 +78,6 @@ class TestAnswerEvents(TestCommon):
                 ("partner_id", "=", self.attendee_user.partner_id.id),
             ]
         )
-        # the attendee's copy has an id of its own, found by its iCalendar UID
         mock_get_single_event.return_value = (
             True,
             {"value": [{"id": "attendee_123", "iCalUId": "456"}]},
@@ -102,9 +99,6 @@ class TestAnswerEvents(TestCommon):
     @freeze_time("2021-09-22")
     @patch.object(MicrosoftCalendarService, "get_events")
     def test_attendee_accepts_event_from_outlook_calendar(self, mock_get_events):
-        """
-        In his Outlook calendar, the attendee accepts the event and sync with his odoo calendar.
-        """
         mock_get_events.return_value = (
             MicrosoftEvent(
                 [
@@ -148,9 +142,6 @@ class TestAnswerEvents(TestCommon):
     def test_attendee_accepts_event_from_outlook_calendar_synced_by_organizer(
         self, mock_get_events
     ):
-        """
-        In his Outlook calendar, the attendee accepts the event and the organizer syncs his odoo calendar.
-        """
         mock_get_events.return_value = (
             MicrosoftEvent(
                 [
@@ -190,25 +181,13 @@ class TestAnswerEvents(TestCommon):
         self.assertEqual(attendee.state, "accepted")
 
     def test_attendee_declines_event_from_outlook_calendar(self):
-        """
-        In his Outlook calendar, the attendee declines the event leading to automatically
-        delete this event (that's the way Outlook handles it ...)
-
-        LIMITATION:
-
-        But, as there is no way to get the iCalUId to identify the corresponding Odoo event,
-        there is no way to update the attendee status to "declined".
-        """
+        pass
 
     @freeze_time("2021-09-22")
     @patch.object(MicrosoftCalendarService, "get_events")
     def test_attendee_declines_event_from_outlook_calendar_synced_by_organizer(
         self, mock_get_events
     ):
-        """
-        In his Outlook calendar, the attendee declines the event leading to automatically
-        delete this event (that's the way Outlook handles it ...)
-        """
         mock_get_events.return_value = (
             MicrosoftEvent(
                 [
@@ -258,13 +237,11 @@ class TestAnswerEvents(TestCommon):
         authorize_microsoft_calendar(self.env.user)
         self.env.user.calendar_sync_stop("microsoft")
         payload = {"params": {"model": "calendar.event"}}
-        # Sending the request to the sync_data
         response = self.url_open(
             "/calendar_sync/microsoft/sync_data",
             data=json_dumps(payload),
             headers={"Content-Type": "application/json"},
         ).json()
-        # the status must be sync_stopped
         self.assertEqual(response["result"]["status"], "sync_stopped")
 
     @patch.object(MicrosoftCalendarService, "patch")
@@ -273,8 +250,6 @@ class TestAnswerEvents(TestCommon):
     def test_answer_event_with_external_organizer(
         self, mock_answer, mock_get_single_event, mock_patch
     ):
-        """An invitation from someone outside Odoo is answered from the
-        answering user's own calendar, under its own id there."""
         self.simple_event.write({"user_id": False, "partner_id": False})
         attendee = self.simple_event.attendee_ids.filtered(
             lambda attendee: attendee.partner_id == self.organizer_user.partner_id

@@ -84,23 +84,6 @@ class SocialLivePost(models.Model):
             live_post._post_instagram()
 
     def _post_instagram(self) -> None:
-        """
-        Handles the process of posting images to Instagram, supporting both single and multiple (carousel) posts.
-
-        Steps for Posting Image(s):
-        1. Create Media Container(s):
-            - Upload image(s) and associated data using an initial HTTP request to create media container(s).
-
-        2. Create Carousel Container (if multiple images):
-            - For carousel posts, group the individual media containers into a single carousel container using an additional HTTP request.
-
-        3. Publish the Container:
-            - Mark the media or carousel container as published using the ID returned from the previous request(s).
-
-        More information & examples:
-        - https://developers.facebook.com/docs/instagram-api/reference/ig-user/media
-        - https://developers.facebook.com/docs/instagram-api/reference/ig-user/media_publish
-        """
 
         self.check_singleton()
         account = self.account_id
@@ -115,7 +98,6 @@ class SocialLivePost(models.Model):
 
         media_container_ids = []
         session = self.env["ir.egress"].session(purpose="social_instagram")
-        # Step 1: Create Media Container(s)
         for image in self.image_ids:
             data = {
                 "access_token": account.instagram_access_token,
@@ -145,7 +127,6 @@ class SocialLivePost(models.Model):
             media_container_ids.append(media_response.json().get("id"))
 
         if len(media_container_ids) == 1:
-            # Step 3: Publish the Container (single post)
             publish_response = session.post(
                 media_publish_url,
                 data={
@@ -155,7 +136,6 @@ class SocialLivePost(models.Model):
                 timeout=10,
             )
         else:
-            # Step 2: Create Carousel Container (if multiple images)
             media_response = session.post(
                 media_url,
                 json={
@@ -176,7 +156,6 @@ class SocialLivePost(models.Model):
                     }
                 )
                 return
-            # Step 3: Publish the Container (multi post)
             publish_response = session.post(
                 media_publish_url,
                 data={

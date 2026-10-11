@@ -11,32 +11,24 @@ if TYPE_CHECKING:
     from odoo.addons.base.models.ir_ui_view import IrUiView
 
 OPTIONS_WL = [
-    "use_mail",  # add mail_thread to record
-    "use_active",  # allows to archive records (active field)
-    "use_responsible",  # add user field
-    "use_partner",  # adds partner and related phone and email fields
-    "use_company",  # add company field and corresponding access rules
-    "use_notes",  # html note field
-    "use_date",  # date field
-    "use_double_dates",  # date start and date begin
-    "use_value",  # value and currency
-    "use_image",  # image field
-    "use_sequence",  # allows to order records (sequence field)
-    "lines",  # create a default One2Many targeting a generated lines models
-    "use_stages",  # add stages and stage model to record (kanban)
-    "use_tags",  # add tags and tags model to record (kanban)
+    "use_mail",
+    "use_active",
+    "use_responsible",
+    "use_partner",
+    "use_company",
+    "use_notes",
+    "use_date",
+    "use_double_dates",
+    "use_value",
+    "use_image",
+    "use_sequence",
+    "lines",
+    "use_stages",
+    "use_tags",
 ]
 
 
 def normalize_for_xmlid(s):
-    """Transforms a string to a name suitable for use in an xmlid.
-    Strips leading and trailing spaces, converts unicode chars to ascii,
-    lowers all chars, replaces spaces with underscores and truncates the
-    resulting string to 20 characters.
-
-    :type s: str
-    :rtype: str
-    """
     uni = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
 
     slug_str = re.sub(r"\W", " ", uni).strip().lower()
@@ -48,21 +40,15 @@ class Base(models.AbstractModel):
     _inherit = "base"
 
     def create_studio_model_data(self, name) -> None:
-        """We want to keep track of created records with studio
-        (ex: model, field, view, action, menu, etc.).
-        An ir.model.data is created whenever a record of one of these models
-        is created, tagged with studio.
-        """
         IrModelData = self.env["ir.model.data"]
 
-        # Check if there is already an ir.model.data for the given resource
         data = IrModelData.search(
             [("model", "=", self._name), ("res_id", "=", self.id)]
         )
         if data:
             data.write(
                 {}
-            )  # force a write to set the 'studio' and 'noupdate' flags to True
+            )
         else:
             module = self.env["ir.module.module"].get_or_create_studio_module()
             IrModelData.create(
@@ -90,16 +76,6 @@ class IrModel(models.Model):
 
     @api.model
     def studio_model_create(self, name, options=()) -> tuple:
-        """Allow quick creation of models through Studio.
-
-        :param name: functional name of the model (_description attribute)
-        :param options: list of options that can trigger automated behaviours,
-                        in the form of 'use_<behaviour>' (e.g. 'use_tags')
-        :return: the main model created as well as extra models needed for the
-                 requested behaviours (e.g. tag or stage models) in the form of
-                 a tuple (main_model, extra_models)
-        :rtype: tuple
-        """
         options = set(options)
         use_mail = "use_mail" in options
 
@@ -122,9 +98,6 @@ class IrModel(models.Model):
             ],
         }
 
-        # now let's check other options and accumulate potential extra models (tags, stages)
-        # created during this process, they will need to get their own action and menu
-        # (which will be done at the controller level)
         extra_models_keys = []
         extra_models_values = []
 
@@ -171,17 +144,12 @@ class IrModel(models.Model):
         return super().name_create(name)
 
     def _create_option_lines(self, model_vals):
-        """Creates a new model (with sequence and description fields) and a
-        one2many field pointing to that model.
-        """
-        # create the Line model
         line_model_values, field_values = self._values_lines(model_vals.get("model"))
 
         model_vals["field_id"].append(Command.create(field_values))
         return line_model_values
 
     def _setup_one2many_lines(self, one2many_name=None):
-        # create the Line model
         model_values, field_values = self._values_lines(self.model, one2many_name)
         line_model = self.create(model_values)
         line_model._setup_access_rights()
@@ -190,10 +158,6 @@ class IrModel(models.Model):
         return self.env["ir.model.fields"].create(field_values)
 
     def _values_lines(self, model_name, one2many_name=None) -> tuple:
-        """Build the values for a Line model (with sequence and description
-        fields) and for a one2many field pointing to it.
-        """
-        # create the Line model
         model_table = model_name.replace(".", "_")
         if not self._is_manual_name(model_table):
             model_table = "x_" + model_table
@@ -242,7 +206,7 @@ class IrModel(models.Model):
         model_vals["field_id"].append(
             Command.create(
                 {
-                    "name": "x_active",  # can't use x_studio_active as not supported by ORM
+                    "name": "x_active",
                     "ttype": "boolean",
                     "field_description": self.env._("Active"),
                     "tracking": model_vals.get("is_mail_thread"),
@@ -335,7 +299,6 @@ class IrModel(models.Model):
         )
 
     def _post_create_option_use_company(self, _model) -> None:
-        # generate default for each company (note: also done when creating a new company)
         self.env["ir.access"].create(
             {
                 "name": "%s - Multi-Company" % self.name,
@@ -445,7 +408,6 @@ class IrModel(models.Model):
         )
 
     def _create_option_use_stages(self, model_vals):
-        # 1. Create the stage model
         stage_model_vals = {
             "name": "%s Stages" % model_vals.get("name"),
             "model": "%s_stage" % model_vals.get("model"),
@@ -464,7 +426,6 @@ class IrModel(models.Model):
         }
         self._create_option_use_sequence(stage_model_vals)
 
-        # 2. Link our model with the stage model
         model_vals["field_id"].extend(
             [
                 Command.create(
@@ -532,7 +493,6 @@ class IrModel(models.Model):
         return stage_model_vals
 
     def _post_create_option_use_stages(self, stage_model) -> None:
-        # create stage 'New','In Progress','Done' and set 'New' as default
         stages = self.env[stage_model.model].create(
             [
                 {"x_name": self.env._("New")},
@@ -543,7 +503,6 @@ class IrModel(models.Model):
         self.env["ir.default"].set(self.model, "x_studio_stage_id", stages[0].id)
 
     def _create_option_use_tags(self, model_vals):
-        # 1. Create the tag model
         tag_model_vals = {
             "name": "%s Tags" % model_vals.get("name"),
             "model": "%s_tag" % model_vals.get("model"),
@@ -567,7 +526,6 @@ class IrModel(models.Model):
                 ),
             ],
         }
-        # 2. Link our model with the tag model
         model_vals["field_id"].append(
             Command.create(
                 {
@@ -586,9 +544,6 @@ class IrModel(models.Model):
 
     def _setup_access_rights(self) -> bool:
         for model in self:
-            # Give all access to the created model to Employees by default, except deletion. All access to System
-            # Note: a better solution may be to create groups at the app creation but the model is created
-            # before the app and for other models we need to have info about the app.
             self.env["ir.access"].create(
                 [
                     {
@@ -612,22 +567,14 @@ class IrModel(models.Model):
     def _acquire_default_view(
         self, view_type: str, view_id: int | Literal[False] = False, create: bool = True
     ) -> IrUiView:
-        """Get the default view for a given model.
-
-        By default, create a view if one does not exist.
-        """
         self.check_singleton()
         View = self.env["ir.ui.view"]
-        # If we have no view_id to inherit from, it's because we are adding
-        # fields to the default view of a new model. We will materialize the
-        # default view as a true view so we can keep using our xpath mechanism.
         if view_id:
             view = View.browse(view_id)
         elif create:
             arch = self.env[self.model].get_view(view_id, view_type)["arch"]
-            # set sample data when activating a pivot/graph view through studio
             if view_type in ["graph", "pivot"]:
-                sample_view_arch = ET.fromstring(arch)  # noqa: S314  the arch get_view rendered, not uploaded XML
+                sample_view_arch = ET.fromstring(arch)
                 sample_view_arch.set("sample", "1")
                 arch = ET.tostring(sample_view_arch, encoding="unicode")
             view = View.create(
@@ -647,14 +594,11 @@ class IrModel(models.Model):
         return view
 
     def _create_default_action(self, name):
-        """Create an ir.act_window record set up with the available view types set up."""
         self.check_singleton()
         model_views = self.env["ir.ui.view"].search_read(
             [("model", "=", self.model), ("type", "!=", "search")], fields=["type"]
         )
         available_view_types = {v["type"] for v in model_views}
-        # in actions, kanban should be first, then list, etc.
-        # this is arbitrary, but we need consistency!
         VIEWS_ORDER = {
             "kanban": 0,
             "list": 1,
@@ -735,16 +679,7 @@ class IrModelFields(models.Model):
 
     @api.model
     def _get_next_relation(self, model_name, comodel_name):
-        """Prevent using the same m2m relation table when adding the same field.
-
-        If the same m2m field was already added on the model, the user is in fact
-        trying to add another relation - not the same one. We need to create another
-        relation table.
-        """
         result = super()._get_custom_many2many_names(model_name, comodel_name)[0]
-        # check if there's already a m2m field from model_name to comodel_name;
-        # if yes, check the relation table and add a sequence to it - we want to
-        # be able to mirror these fields on the other side in the same order
         base = result
         attempt = 0
         existing_m2m = self.search(

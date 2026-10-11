@@ -73,12 +73,9 @@ class LazadaItem(models.Model):
         "Item External IDs must be unique for a given shop.",
     )
 
-    # === BUSINESS METHODS === #
 
     @api.constrains("sync_lazada_inventory", "fulfillment_type", "product_id")
     def _check_sync_to_lazada(self) -> None:
-        """Ensure only FBM items can be synced to Lazada and only products that tracks stock in Odoo
-        can be synced to Lazada."""
         default_sale_product = self.env.ref("sale_lazada.default_sale_product")
         for item in self.filtered(lambda item: item.product_id != default_sale_product):
             if not item.product_id.type == "consu" or not item.product_id.is_storable:
@@ -102,12 +99,6 @@ class LazadaItem(models.Model):
             )
 
     def _sync_inventory(self, auto_commit=True) -> None:
-        """Synchronize inventory from Odoo to Lazada for FBM items.
-
-        Only syncs storable products marked for synchronization.
-
-        :param bool auto_commit: Whether to commit after each successful sync
-        """
         error_messages = []
         valid_items = self.filtered("sync_lazada_inventory").sorted(
             "last_inventory_sync_date"
@@ -133,19 +124,10 @@ class LazadaItem(models.Model):
 
     @api.model
     def _prepare_sync_inventory_payload(self, shop, items):
-        """Prepare JSON payload for inventory sync API request.
-
-        :param shop: Lazada shop record
-        :param items: Items to synchronize
-        :return: JSON string payload
-        :rtype: str
-        """
         vals = []
         warehouse_id = shop.fbm_warehouse_id.id
         is_same_warehouse = shop.fbl_location_id.warehouse_id.id == warehouse_id
         for item in items:
-            # Quantity of stock in FBM warehouse is calculated as:
-            # FBM warehouse stock - FBL location stock (if same warehouse)
             fbm_item = item.with_context(warehouse_id=warehouse_id).with_company(
                 shop.company_id
             )
@@ -165,17 +147,8 @@ class LazadaItem(models.Model):
             )
         return json_dumps({"Request": {"Product": {"Skus": {"Sku": vals}}}})
 
-    # === API METHODS === #
 
     def _update_inventory(self, shop, items) -> None:
-        """Update inventory quantities on Lazada for given items.
-
-        Processes items in batches to respect API limits.
-
-        :param shop: Lazada shop record
-        :param items: Items to update
-        :raises Exception: If API response indicates failure
-        """
         shop.check_singleton()
         for batch_items in (
             items.browse(b)

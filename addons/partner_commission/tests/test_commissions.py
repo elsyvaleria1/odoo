@@ -7,12 +7,9 @@ from odoo.addons.partner_commission.tests.setup import Line, Spec, TestCommissio
 @tagged("commission", "post_install", "-at_install")
 class TestCommissions(TestCommissionsSetup):
     def test_commissions(self):
-        """Commissions should be computed based on matching rules."""
-        # We override the products to avoid dealing with subscriptions and mandatory pricings
         self.worker.recurring_invoice = False
         self.crm.recurring_invoice = False
         specs = [
-            # learning: EUR
             Spec(
                 self.learning,
                 [Line(self.worker, 10), Line(self.crm, 1)],
@@ -25,7 +22,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.eur_20,
                 commission=152,
             ),
-            # learning: USD
             Spec(
                 self.learning,
                 [Line(self.worker, 10), Line(self.crm, 1)],
@@ -38,7 +34,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.usd_8,
                 commission=182,
             ),
-            # ready: EUR
             Spec(
                 self.ready,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -51,7 +46,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.eur_20,
                 commission=152,
             ),
-            # ready: USD
             Spec(
                 self.ready,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -64,7 +58,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.usd_8,
                 commission=182,
             ),
-            # silver: EUR
             Spec(
                 self.silver,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -77,7 +70,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.eur_20,
                 commission=153,
             ),
-            # silver: USD
             Spec(
                 self.silver,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -90,7 +82,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.usd_8,
                 commission=183,
             ),
-            # gold: EUR
             Spec(
                 self.gold,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -103,7 +94,6 @@ class TestCommissions(TestCommissionsSetup):
                 pricelist=self.eur_20,
                 commission=154,
             ),
-            # gold: USD
             Spec(
                 self.gold,
                 [Line(self.worker, 1), Line(self.crm, 1)],
@@ -136,7 +126,6 @@ class TestCommissions(TestCommissionsSetup):
             self.assertFalse(po.user_id)
             self.assertEqual(po.purchase_type, "commission")
 
-        # global checks
         purchase_orders = self.env["purchase.order"].search(
             [("partner_id", "=", self.referrer.id)]
         )
@@ -167,8 +156,6 @@ class TestCommissions(TestCommissionsSetup):
             )
 
     def test_partial_payments(self):
-        """The PO should not be created unless the invoice is fully paid"""
-        # We override the crm product to avoid dealing with subscription and mandatory pricing
         self.crm.recurring_invoice = False
         self.referrer.grade_id = self.gold.id
         self.referrer._onchange_grade_id()
@@ -192,7 +179,6 @@ class TestCommissions(TestCommissionsSetup):
         inv = so._create_invoices()
         inv.action_post()
 
-        # pay 10 out of 20
         manual_in = self.bank_journal.inbound_payment_channel_ids.filtered(
             lambda l: l.code == "manual"
         )[0]
@@ -224,12 +210,9 @@ class TestCommissions(TestCommissionsSetup):
         )
 
     def test_refund(self):
-        """A refund should add a negative line to the PO"""
-        # We override the products to avoid dealing with subscriptions and mandatory pricings
         self.crm.recurring_invoice = False
         inv = self.purchase(Spec(self.gold, [Line(self.crm, 1)]))
 
-        # refund
         ctx = {"active_model": "account.move", "active_ids": [inv.id]}
         move_reversal = (
             self.env["wizard.account.move.reverse"]
@@ -262,7 +245,6 @@ class TestCommissions(TestCommissionsSetup):
             "Credit note should have a commission line",
         )
 
-        # check purchase order
         po = inv.commission_po_line_id.order_id
         self.assertEqual(
             len(po.line_ids), 2, "There should be two order lines when refunded"
@@ -277,7 +259,6 @@ class TestCommissions(TestCommissionsSetup):
         )
 
     def test_group_before_capping(self):
-        """The sum of commissions should be grouped by rules then capped, in that specific order."""
         self.learning_plan.commission_rule_ids.write(
             {"is_capped": True, "max_commission": 150}
         )
@@ -288,7 +269,6 @@ class TestCommissions(TestCommissionsSetup):
             pricelist=self.eur_20,
             commission=150,
         )
-        # We test the non recurring flow: recurring_invoice is False on the products
         self.crm.recurring_invoice = False
         self.invoicing.recurring_invoice = False
         inv = self.purchase(spec)
@@ -303,11 +283,9 @@ class TestCommissions(TestCommissionsSetup):
         self.assertEqual(len(po.line_ids), 1, "Expected 1 purchase order line")
 
     def test_sale_order_commission(self):
-        """If the referrer and the sale order both have a commission plan, prioritize the sale order commission plan."""
         self.referrer.grade_id = self.gold
         self.referrer._onchange_grade_id()
 
-        # Subscription commission plan overrides SO commission_plan, remove it for this test
         self.crm.recurring_invoice = False
 
         form = Form(
@@ -317,7 +295,6 @@ class TestCommissions(TestCommissionsSetup):
         )
         form.partner_id = self.customer
         form.referrer_id = self.referrer
-        # Modify SO commission_plan
         form.commission_plan_id = self.silver_plan
 
         with form.line_ids.new() as line:
@@ -334,7 +311,6 @@ class TestCommissions(TestCommissionsSetup):
 
         po = inv.commission_po_line_id.order_id
         self.assertEqual(po.partner_id, self.referrer, "Referrer != vendor")
-        # (silver_plan_rate * crm_price) = 15% * 20 = 3
         self.assertEqual(
             inv.commission_po_line_id.price_subtotal, 3, "Commission is wrong"
         )
@@ -354,7 +330,6 @@ class TestCommissions(TestCommissionsSetup):
             }
         )
 
-        # Create a sale order template with the product by default
         so_template = self.env["sale.order.template"].create(
             {
                 "name": "Test template",
@@ -368,7 +343,6 @@ class TestCommissions(TestCommissionsSetup):
             }
         )
 
-        # Create a commission plan with a rule containing the sale order template
         plan = self.env["commission.plan"].create(
             {
                 "name": "Test Plan",
@@ -390,7 +364,6 @@ class TestCommissions(TestCommissionsSetup):
             }
         )
         self.referrer.commission_plan_id = plan
-        # make sure the template_id field is in the view
         self.salesman.group_ids += self.env.ref("sale.group_sale_order_template")
         form = Form(
             self.env["sale.order"]

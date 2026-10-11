@@ -22,10 +22,6 @@ class ImportHardeningCase(TransactionCase):
         return self.env["base_import.import"].create(vals)
 
     def test_execute_import_empty_file_raises_clean_error(self):
-        """F4a: `_read_csv` used to `return ()` for a completely empty file;
-        unpacking that into `file_length, rows_to_import` raised an unhandled
-        `ValueError` inside `_convert_import_data`, escaping `execute_import`
-        (which only catches `ImportValidationError`)."""
         imp = self._make_import(file=b"", file_name="empty.csv", file_type="text/csv")
         result = imp.execute_import(
             ["value"], ["Value"], {"has_headers": False, "quoting": '"'}
@@ -34,10 +30,6 @@ class ImportHardeningCase(TransactionCase):
         self.assertIn("no content", result["messages"][0]["message"])
 
     def test_execute_import_blank_rows_raises_clean_error(self):
-        """F4b: a non-empty file whose rows are all blank makes `_read_csv`
-        return `(0, [])` (not the bare `()` above); `_convert_import_data`
-        indexed `rows_to_import[0]` unconditionally, raising an unhandled
-        `IndexError`. Distinct code path from the empty-file case."""
         imp = self._make_import(
             file=b"\n\n\n", file_name="blank.csv", file_type="text/csv"
         )
@@ -48,16 +40,7 @@ class ImportHardeningCase(TransactionCase):
         self.assertIn("no content", result["messages"][0]["message"])
 
     def test_read_csv_undetectable_encoding_raises_clean_error(self):
-        """F19: `chardet.detect()` can return `{'encoding': None}` for
-        ambiguous byte content; calling `.lower()` on that `None` used to
-        raise an unhandled `AttributeError` instead of a clean
-        `ImportValidationError`."""
         imp = self._make_import(file=b"a,b,c", file_name="x.csv", file_type="text/csv")
-        # Patches `guess_encoding` where base_import imported it, rather than
-        # `chardet.detect`: detection uses chardet's streaming
-        # `UniversalDetector` (a 249x win on non-ASCII files, see its
-        # docstring), so patching the one-shot call no longer intercepts
-        # anything and this test passed vacuously.
         with (
             patch(
                 "odoo.addons.base_import.models.base_import.guess_encoding",
@@ -68,12 +51,6 @@ class ImportHardeningCase(TransactionCase):
             imp._read_csv({"quoting": '"'})
 
     def test_import_file_by_url_oversized_reports_specific_error(self):
-        """F2: `_import_file_by_url` raises its own specific
-        `ImportValidationError` when `Content-Length` exceeds
-        `import_file_maxbytes`, but its outer `except Exception` used to
-        re-catch that same error and re-wrap it into a generic "Could not
-        retrieve URL" message with no `field`/`field_type` — losing both the
-        actionable text and the client-side column routing."""
         imp = self._make_import()
         fake_response = MagicMock(headers={"Content-Length": str(10**9)})
         fake_session = MagicMock()
@@ -88,21 +65,9 @@ class ImportHardeningCase(TransactionCase):
         self.assertEqual(cm.exception.field_path, ["image_field"])
 
     def test_binary_field_date_value_does_not_crash(self):
-        """F11: `_read_xlsx`/`_read_xls` return native `date`/`datetime`
-        objects for date-formatted cells. If such a cell lands in a column
-        mapped to a `binary`+`attachment` field (e.g. `res.partner.image_1920`),
-        every branch of the binary-import loop (`re.match` / `'.' in ...` /
-        `base64.b64decode`) assumed a string and used to raise an unhandled
-        `TypeError`. A date is not valid image data by any of the 3
-        interpretations (URL, filename, base64), so the correct outcome is a
-        clean `ImportValidationError` — not a crash."""
         imp = self._make_import(res_model="res.partner")
         data = [[datetime.date(2024, 1, 1)]]
         with self.assertRaises(ImportValidationError):
-            # `_parse_import_data` replaced `_parse_import_data_recursive`: the
-            # parse plan now walks the mapped paths rather than every field of
-            # every model involved (which is also what removed the
-            # KeyError('relation') crash on paths like `name/foo`).
             imp._parse_import_data(data, ["image_1920"], {})
 
 
@@ -137,16 +102,11 @@ class TestODSReaderHardening(BaseCase):
         doc = OpenDocumentSpreadsheet()
         table = Table(name="Sheet1")
         row = TableRow()
-        # A non-last cell carrying an attacker-controlled repeat count: readSheet
-        # only reads `numbercolumnsrepeated` on non-last cells (the true last
-        # cell of a row is a legitimate "repeat to end of used range" marker).
-        # `setAttribute` mirrors the reader's own `getAttribute` calls exactly
-        # (same attribute names), unlike guessing at constructor kwarg names.
         repeated_cell = TableCell()
         repeated_cell.setAttribute("numbercolumnsrepeated", str(repeat_value))
         repeated_cell.addElement(P(text="x"))
         row.addElement(repeated_cell)
-        row.addElement(TableCell())  # trailing cell, keeps the crafted one non-last
+        row.addElement(TableCell())
         table.addElement(row)
         doc.spreadsheet.addElement(table)
         return doc
@@ -160,8 +120,4 @@ class TestODSReaderHardening(BaseCase):
         doc = self._build_doc_with_repeat(10**8)
         reader = ODSReader(content=doc)
         row = reader.get_sheet("Sheet1")[0]
-        # +1 for the trailing empty cell, which contributes exactly one
-        # column: it is not expanded (that is the point of the cap being
-        # visible here at all) but nor is it dropped, or a row whose last
-        # column is simply blank would come back narrower than its header.
         self.assertEqual(len(row), MAX_CELL_REPEAT + 1)

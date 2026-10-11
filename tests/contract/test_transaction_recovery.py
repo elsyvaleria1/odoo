@@ -14,7 +14,6 @@ from .conftest import requires_pg
 def test_serialization_rejected_at_commit_replays_the_transaction(
     scratch_db, scratch_cursor, monkeypatch
 ):
-    """A real write-skew conflict must fail at COMMIT, then replay cleanly."""
     cr = scratch_cursor
     cr.execute("CREATE TABLE retry_probe (id integer PRIMARY KEY, value integer)")
     cr.execute("INSERT INTO retry_probe VALUES (1, 0), (2, 0)")

@@ -119,10 +119,6 @@ class _PipelineMixin:
     def in_pipeline(self: _PipelineHost) -> bool:
         return self._pipeline is not None
 
-    # PostgreSQL discards every queued statement after an error, a savepoint's
-    # ROLLBACK TO SAVEPOINT included, so a savepoint's statements never run in
-    # pipeline mode: arming waits while one opened inside the block is open,
-    # and while a COPY, which pipeline mode refuses, holds it off.
     def _arm_pipeline(self: _PipelineHost) -> None:
         self._pipeline_statements += 1
         if (
@@ -149,9 +145,6 @@ class _PipelineMixin:
         self._pipeline_segment = segment
         _debug.lifecycle("cursor.pipeline_entered", db=self.dbname)
 
-    # The sync surfaces whatever the queued statements raised before the
-    # savepoint or the COPY that asked starts, and the block pipelines again
-    # from the first statement after it.
     def _leave_pipeline(self: _PipelineHost, reason: str) -> None:
         segment = self._pipeline_segment
         if segment is None:
@@ -219,7 +212,7 @@ class _PipelineMixin:
         self._pipeline_statement_time = 0.0
         self._pipeline_wait_time = 0.0
         self._pipeline_exit_started = 0.0
-        failed = None  # debuglog
+        failed = None
         if _debug.pipeline.enabled:
             _debug.pipeline(
                 "cursor.pipeline_opened",
@@ -233,7 +226,7 @@ class _PipelineMixin:
                 self._pipeline_stack = stack
                 yield
         except Exception as e:
-            failed = type(e).__name__  # debuglog
+            failed = type(e).__name__
             self._hand_pipeline_failure_to_seam(e)
             raise
         finally:

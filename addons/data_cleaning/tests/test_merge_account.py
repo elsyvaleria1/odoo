@@ -46,7 +46,6 @@ class TestMerge(TransactionCase):
         )
 
     def test_merge_account(self):
-        """Test that we cannot merge accounts."""
         self._enable_merge("account.account")
 
         data_merge_group = self.env["data_merge.group"].create(
@@ -73,14 +72,12 @@ class TestMerge(TransactionCase):
             }
         )
 
-        # the {group_id: record_ids} dict is what the list view sends to merge_multiple_records
         group_records = {str(data_merge_group.id): data_merge_group.record_ids.ids}
         with self.assertRaises(UserError, msg="You cannot merge accounts."):
             self.env["data_merge.group"].merge_multiple_records(group_records)
 
     @users("admin")
     def test_merge_partner_in_hashed_entries(self):
-        """Test that we cannot merge partners used in hashed entries."""
         self.env.user.write(
             {"group_ids": [(4, self.env.ref("account.group_account_user").id)]}
         )
@@ -111,7 +108,6 @@ class TestMerge(TransactionCase):
         )
         move.action_post()
 
-        # The integrity check should work
         integrity_check = move.company_id._check_hash_integrity()["results"]
         integrity_check = next(
             filter(
@@ -144,7 +140,6 @@ class TestMerge(TransactionCase):
             }
         )
 
-        # the {group_id: record_ids} dict is what the list view sends to merge_multiple_records
         group_records = {str(data_merge_group.id): data_merge_group.record_ids.ids}
         with self.assertRaises(
             UserError,
@@ -171,9 +166,6 @@ class TestMerge(TransactionCase):
     def test_merging_a_partner_of_hashed_entries_is_refused_on_top_of_account(self):
         self._hashed_invoice(self.partner_b)
 
-        # data_cleaning's own definition, as it runs when its class sits above
-        # account's in the MRO (data_cleaning installed into a database that
-        # already holds account)
         with self.assertRaisesRegex(UserError, "used in hashed entries"):
             ResPartner._merge_method(
                 self.env["res.partner"], self.partner_a, self.partner_b

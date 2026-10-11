@@ -5831,8 +5831,6 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
         self.assertEqual(self._accrue_draft(plan, date(2025, 1, 1), "2025-01-31"), 2.0)
 
     def test_a_31st_level_prorates_the_day_its_first_period_started_before(self):
-        # The 31st is a boundary like any other day: the period it closes runs
-        # from Dec 31, which the allocation starting Jan 1 did not cover.
         plan = self._create_monthly_plan("31")
         self.assertAlmostEqual(
             self._accrue_draft(plan, date(2025, 1, 1), "2025-01-31"), 2 * 30 / 31
@@ -5889,9 +5887,6 @@ class TestAccrualAllocations(TestHrHolidaysCommon):
         with freeze_time("2026-01-02"):
             caught_up._update_accrual()
             first_of_month._update_accrual()
-        # October, November and December are credited on their last days, and the
-        # carryover on Jan 1 keeps 3 of the 6. On the 1st, December's credit comes
-        # after that carryover instead.
         self.assertEqual(daily.number_of_days, 3)
         self.assertEqual(caught_up.number_of_days, 3)
         self.assertEqual(first_of_month.number_of_days, 5)

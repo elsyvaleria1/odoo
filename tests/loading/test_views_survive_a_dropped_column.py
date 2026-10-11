@@ -119,8 +119,6 @@ def _get_scalar(db: str, query: str) -> str:
 @requires_pg
 @requires_psql
 def test_a_view_of_a_module_outside_the_upgrade_is_rebuilt(tmp_path_factory):
-    """A post-migrate drops a column CASCADE; the view that selected it belongs to
-    a module this upgrade never loads, so nothing calls its init() again."""
     if not pg_reachable():
         pytest.skip("no reachable PostgreSQL")
     if dropdb_path() is None or psql_path() is None:
@@ -140,7 +138,6 @@ def test_a_view_of_a_module_outside_the_upgrade_is_rebuilt(tmp_path_factory):
         )
         installed = _run_odoo_bin(db, addons, "-i", f"base,{OWNER},{EXTENDER}")
         assert installed.returncode == 0, installed.stderr[-4000:]
-        # installed afterwards, so that its SELECT * expands to the extender's column
         _write(extra, READER, "1.0", [OWNER], READER_MODEL)
         installed = _run_odoo_bin(db, addons, "-i", READER)
         assert installed.returncode == 0, installed.stderr[-4000:]

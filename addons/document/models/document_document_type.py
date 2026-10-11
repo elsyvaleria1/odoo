@@ -8,7 +8,6 @@ from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 
 EXPIRING_SOON_DAYS = 30
-# set while the type/tag sync writes back, so its own writes do not sync again
 TYPE_TAG_SYNC = "document_type_tag_sync"
 
 _debug = DebugLog(__name__)
@@ -176,15 +175,6 @@ class DocumentDocument(models.Model):
         return result
 
     def _sync_type_and_tags(self, type_written, tags_written, previous) -> None:
-        """Make the type and the type tag of each document say the same thing.
-
-        A type tag the caller wrote decides the type; a type written alone puts
-        its tag. Removing the type tag clears the type it stood for.
-
-        :param recordset type_written: documents whose ``document_type_id`` was written
-        :param recordset tags_written: documents whose ``tag_ids`` were written
-        :param dict previous: type tags per document id before the write
-        """
         tags_by_type = {
             tag.document_type_id: tag
             for tag in self.env["document.tag"].search(
@@ -198,7 +188,7 @@ class DocumentDocument(models.Model):
         for record in self:
             type_tags = record.tag_ids.filtered("document_type_id")
             if len(type_tags) > 1:
-                continue  # _check_single_type_tag names the conflict
+                continue
             if record in tags_written and type_tags:
                 if record in type_written and record.document_type_id not in (
                     type_tags.document_type_id,
@@ -368,8 +358,6 @@ class DocumentDocument(models.Model):
                 "name": self.env._("%(name)s (Renewal)", name=self.name),
                 "renewal_document_id": self.id,
                 "attachment_id": False,
-                # Stored computes are not copied: without these the renewal
-                # loses the record the document belongs to.
                 "res_model": self.res_model,
                 "res_id": self.res_id,
                 "date_issued": today,

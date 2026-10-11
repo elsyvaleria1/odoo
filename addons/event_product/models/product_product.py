@@ -3,13 +3,6 @@ from odoo.exceptions import ValidationError
 
 
 def raise_event_ticket_service_tracking_error(products) -> None:
-    """Raise the ValidationError shared by product.product's and
-    event.type.ticket's _check_event_ticket_service_tracking constraints.
-
-    `products` must be the offending product.product records, not the whole
-    batch being written: they are named in the message, so a multi-record
-    write says which product to go and fix.
-    """
     service_tracking = products.fields_get(
         ["service_tracking"], ["string", "selection"]
     )["service_tracking"]
@@ -33,11 +26,6 @@ class ProductProduct(models.Model):
         string="Event Tickets",
     )
 
-    # Template tickets need the same guard as event tickets: without this the
-    # product could leave service_tracking='event' while an event.type still
-    # pointed at it, and the failure only surfaced later and elsewhere, when
-    # creating an event from that type copied the product onto an
-    # event.event.ticket that does carry the guard.
     event_type_ticket_ids = fields.One2many(
         comodel_name="event.type.ticket",
         inverse_name="product_id",

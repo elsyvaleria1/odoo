@@ -10,7 +10,6 @@ from odoo.libs.json import dumps as json_dumps
 PARAM_BUCKET = "cloud_storage_s3_bucket_name"
 PARAM_REGION = "cloud_storage_s3_region"
 PARAM_ENDPOINT = "cloud_storage_s3_endpoint_url"
-# cloud_storage_provider values served by this module; every one speaks S3
 PROVIDERS = ("s3", "ovh")
 CREDENTIAL_CATEGORY_XMLID = "cloud_storage_s3.credential_category_cloud_storage_s3"
 CREDENTIAL_NAME = "Cloud Storage S3"
@@ -40,8 +39,6 @@ def get_credential(env, credentials=None):
 
 def get_keys(env):
     credential = get_credential(env)
-    # the payload column is system-only by design; the use path reads it for
-    # the one credential the privilege found
     keys = (
         credential.sudo()._use_secret_payload("cloud_storage_s3:sign")
         if credential
@@ -104,7 +101,6 @@ def get_config(env):
         not config["endpoint_url"]
         and settings.get(env, "cloud_storage_provider", False) == "ovh"
     ):
-        # without its endpoint an OVHcloud bucket would be looked up on Amazon
         return {}
     return config
 
@@ -126,7 +122,7 @@ def get_client(env):
     keys = get_keys(env)
     if not keys:
         raise UserError(env._("The S3 access keys are missing or unreadable."))
-    client = boto3.client(  # noqa: E8518 - botocore opens its own connections and takes no requests session
+    client = boto3.client(
         "s3",
         aws_access_key_id=keys["access_key_id"],
         aws_secret_access_key=keys["secret_access_key"],
@@ -166,16 +162,6 @@ def object_url(bucket, region, key, endpoint_url="") -> str:
 
 
 def parse_object_url(url, region, endpoint_url=""):
-    """Split a virtual-hosted object URL into bucket, region and key.
-
-    :param str url: the attachment URL
-    :param str region: region reported for URLs of the configured endpoint
-    :param str endpoint_url: the configured S3-compatible endpoint, if any
-    :return: ``bucket_name``, ``region`` and ``blob_name``, or ``None``
-    :rtype: dict | None
-    """
-    # Amazon URLs stay recognized so attachments stored before an endpoint
-    # was configured keep resolving.
     match = AWS_URL_PATTERN.fullmatch(url or "")
     if match:
         return {

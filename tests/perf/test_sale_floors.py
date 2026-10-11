@@ -75,10 +75,6 @@ def test_partner_create_on_sale_set(env, counter, check):
 
 
 def test_sale_order_entry_as_salesman(env, counter, check):
-    # what a user's order costs the server: the form's onchanges for a customer
-    # and three lines, the save and the confirmation, as a salesman under access
-    # rules. Measured 2026-09-22 through a real browser, onchange was 43 % of an
-    # order entry's server time and nothing else held it to a number
     from odoo.tests import Form
     from odoo.tests.common import freeze_time, new_test_user
 
@@ -115,13 +111,6 @@ def test_sale_order_entry_as_salesman(env, counter, check):
         "action_confirm",
     )
     clock.wrap(type(salesman_env["sale.order.line"]), "onchange")
-    # the confirmation rewrites date_order to now, and whether that differs
-    # from the create's decides whether one more UPDATE is flushed. Patching
-    # fields.Datetime.now does not reach date_order's default, which holds the
-    # function itself, so the create read the wall clock and the count was 314
-    # or 315 by whether the iteration fell in the pinned second. A frozen
-    # clock reaches both, and the tick makes every confirmation a second
-    # later than its order, as a user's is; the server clock reads real time
     try:
         with freeze_time(
             datetime.combine(datetime.now().date(), time(12)),

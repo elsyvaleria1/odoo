@@ -44,22 +44,19 @@ class IrActionsReport(models.Model):
                 "xml_id": "%s_copy_%s" % (new.xml_id, copy_no),
                 "name": "%s copy(%s)" % (new.name, copy_no),
                 "report_name": "%s_copy_%s" % (new.report_name, copy_no),
-                "report_file": new_view.key,  # TODO: are we sure about this?
+                "report_file": new_view.key,
             }
         )
 
     def _prepare_rendering_context(self, report, docids, data):
         ctx = super()._prepare_rendering_context(report, docids, data)
         if self.env.context.get("studio") and not ctx.get("docs"):
-            # TODO or not ?: user inputed values in data ?
             doc = self.env[report.model].new({})
             ctx["docs"] = doc
         return ctx
 
     @api.model
     def _get_rendering_context_model(self, report):
-        # If the report is a copy of another report, and this report is using a custom model to render its html,
-        # we must use the custom model of the original report.
         report_model_name = "report.%s" % report.report_name
         report_model = self.env.get(report_model_name)
 

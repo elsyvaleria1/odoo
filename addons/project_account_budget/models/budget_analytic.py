@@ -9,6 +9,6 @@ class BudgetAnalytic(models.Model):
         budgets = super().create(vals_list)
         if len(budgets) == 1 and self.env.context.get(
             "project_update"
-        ):  # Creation with Add Budget button in project update
+        ):
             budgets.action_budget_confirm()
         return budgets

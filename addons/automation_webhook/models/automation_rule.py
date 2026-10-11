@@ -125,11 +125,6 @@ class AutomationRule(models.Model):
         return result
 
     def _create_missing_webhook_credentials(self) -> None:
-        """Create and attach credentials to secret-auth webhooks without one.
-
-        Leave existing credentials, including inactive ones, unchanged. Without
-        an encryption key, provision nothing. Return no value.
-        """
         if not self.env["credential.credential"]._is_encryption_key_configured():
             return
         category = self.env.ref(
@@ -145,7 +140,6 @@ class AutomationRule(models.Model):
             rule.credential_id = rule._create_webhook_credential(category)
 
     def _create_webhook_credential(self, category):
-        """Create and return a credential record containing a random secret."""
         self.check_singleton()
         return (
             self.env["credential.credential"]
@@ -192,16 +186,12 @@ class AutomationRule(models.Model):
         return self.log_webhook_calls
 
     def _inbound_exchange_vals(self, admission, event_type):
-        # The address is the credential of a rule with no other scheme; the
-        # row names the rule, not the secret.
         return {
             **super()._inbound_exchange_vals(admission, event_type),
             "request_url": f"/web/hook/{(self.webhook_uuid or '')[:8]}",
         }
 
     def _execute_webhook(self, payload, admission=None):
-        """Run the webhook; `admission` is the call's row, settled here with
-        the dispatch's outcome so a direct call leaves no second record."""
         self.check_singleton()
         try:
             result = self._dispatch_webhook(payload)

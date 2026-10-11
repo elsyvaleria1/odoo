@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 import datetime
 
 from freezegun import freeze_time

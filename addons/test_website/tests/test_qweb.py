@@ -40,11 +40,6 @@ class TestQweb(TransactionCaseWithUserDemo):
         )
 
         asset_version_css = bundle.get_version("css")
-        # The bundle carries no LOCAL JS (only external scripts + local
-        # CSS), so its only generated link is the css attachment — there
-        # is no bundle ``.min.js`` script to expect.  The old
-        # ``css_url, js_url = get_links()[-2:]`` unpacking silently
-        # grabbed an external URL once the js link stopped existing.
         css_url = bundle.get_links()[-1]
 
         html = html.strip()

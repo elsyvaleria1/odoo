@@ -13,8 +13,6 @@ from odoo.addons.phone_call.models.phone_call import number_key
 
 _logger = logging.getLogger(__name__)
 
-# what a line reports as a call's type, as (direction, outcome); Android's
-# CallLog.Calls.TYPE numbers stay accepted for queues written by older builds
 CALL_TYPES = {
     "1": ("incoming", "terminated"),
     "7": ("incoming", "terminated"),
@@ -32,16 +30,11 @@ CALL_TYPES = {
     "6": ("incoming", "blocked"),
     "blocked": ("incoming", "blocked"),
 }
-# a type the platform added after this module was written: stored, not dropped
 UNKNOWN_CALL_TYPE = (False, "unknown")
 
 MATCH_WINDOW = timedelta(seconds=60)
 LONGEST_CALL = timedelta(hours=3)
-# how long a recording that came ahead of its call-log entry waits for it
-# before it is transcribed without the contact the entry would name
 CALL_LOG_GRACE = timedelta(minutes=40)
-# how long the periodic pass keeps looking for the reported call a waiting
-# recording belongs to; past it the call simply stays without its entry
 AWAITING_HORIZON = timedelta(days=7)
 
 
@@ -78,16 +71,11 @@ class PhoneCall(models.Model):
         "that dates and directs it; the entry completes this call on arrival.",
     )
 
-    # Every lookup a device makes reads its calls by start: the dedup, the
-    # recording's call and its stored copy. On device_id alone each one walked
-    # every call the phone ever reported.
     _device_start_idx = models.Index("(device_id, start_date)")
 
     @api.private
     @api.model
     def ingest_from_device(self, device, calls) -> DeviceIngest:
-        """Store a batch of calls ``device`` reported; the device route calls
-        it as the device's receiver, after authenticating the device."""
         prepared = []
         skipped = []
         lines = device._phone_call_lines()
@@ -107,9 +95,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _in_line_companies(self, device, lines=None):
-        """This model where ``device``'s calls are filed: a phone system
-        files each under the company whose number it reached, and a call and
-        its recording are looked up, moved and heard there."""
         if lines is None:
             lines = device._phone_call_lines()
         companies = self.env["res.company"].union(*lines.values())
@@ -195,13 +180,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _remove_already_stored(self, device, prepared):
-        """``prepared`` without the calls ``device`` already reported: by the
-        device's own call id when it names one, else by when, who, which way
-        and to whom -- two withheld callers in the same second to two of a
-        phone system's numbers are two calls."""
-        # The key holds the start exactly, so only calls at the starts of the
-        # batch's id-less entries can match it: a backlog spanning days read
-        # every call in between. An entry with an id is matched by the id.
         stamps = sorted(
             {vals["start_date"] for vals in prepared if not vals["device_call_uid"]}
         )
@@ -256,15 +234,10 @@ class PhoneCall(models.Model):
 
     @api.model
     def _device_entry_user(self, device, call, company):
-        """Who answers for a call ``device`` reported for ``company``: the
-        device's user."""
         return device.user_id
 
     @api.model
     def _calls_to_complete(self, device, entries):
-        """The calls a call-log entry of the batch ``entries`` may complete
-        rather than duplicate: those recordings of ``device`` created ahead
-        of their entry, stamped within the span of the batch."""
         uids = [vals["device_call_uid"] for vals in entries if vals["device_call_uid"]]
         span = Domain(
             "end_date", ">=", min(vals["start_date"] for vals in entries) - MATCH_WINDOW
@@ -281,8 +254,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _call_to_complete(self, candidates, vals):
-        """Of ``candidates``, the call this call-log entry completes: one whose
-        recording its span covers, by number when the recording carried one."""
         uid = vals.get("device_call_uid")
         if uid:
             return candidates.filtered(
@@ -311,8 +282,6 @@ class PhoneCall(models.Model):
                 "awaits_call_log": False,
             }
         )
-        # the recording came first, filed under the device's company: it
-        # follows the call to the company whose line the entry names
         self.env["ir.attachment"].search(
             [
                 ("res_model", "=", self._name),
@@ -336,9 +305,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _cron_complete_awaiting_calls(self) -> None:
-        """A recording and its call-log entry posted at the same moment each
-        miss the other's uncommitted call and make one each: the waiting call
-        gives its recording to the reported call that covers it."""
         now = fields.Datetime.now()
         waiting = self.search(
             [
@@ -363,10 +329,6 @@ class PhoneCall(models.Model):
             reported = reported_by_uid.get((call.device_id, call.device_call_uid))
             if reported:
                 call._merge_into(reported)
-        # The rest find their call by time: each device's reported calls are
-        # read once and every waiting call is matched against the slice its
-        # stamp can reach. One search per waiting call, every hour, over a
-        # seven-day horizon was the cost of a handset whose entries never come.
         for device, unnamed in (waiting - named).grouped("device_id").items():
             stamps = unnamed.mapped("end_date")
             timeline = list(self._reported_calls_near(device, min(stamps), max(stamps)))
@@ -381,8 +343,6 @@ class PhoneCall(models.Model):
                     call._merge_into(reported)
 
     def _merge_into(self, call) -> None:
-        """Give this waiting call's recordings to ``call``, then go; run by
-        the periodic pass, elevated."""
         self.check_singleton()
         attachments = self.env["ir.attachment"].search(
             [("res_model", "=", self._name), ("res_id", "=", self.id)]
@@ -394,8 +354,6 @@ class PhoneCall(models.Model):
         timeline = call._recording_timeline()
         retention_days = timeline._media_retention_days()
         offset = timeline._next_media_offset_ms()
-        # moved, not recreated: a segment takes its attachment with it when it
-        # goes, and the recording was already sent to be heard
         for segment in segments:
             length = max(segment.duration_ms, 1)
             segment.write(
@@ -418,8 +376,6 @@ class PhoneCall(models.Model):
     @api.private
     @api.model
     def store_device_recording(self, device, vals):
-        """File a recording a device uploaded on the call it belongs to: the
-        call already reported, else a call that waits for its entry."""
         return self._in_line_companies(device)._file_device_recording(device, vals)
 
     @api.model
@@ -435,8 +391,6 @@ class PhoneCall(models.Model):
         recorded_at = stamped_at or fields.Datetime.now()
         seconds = self._seconds(vals.get("duration"))
         if uid:
-            # the device named its call: the recording is that call's, whenever
-            # it was stamped and whatever number it carries
             call = self.search(
                 [("device_id", "=", device.id), ("device_call_uid", "=", uid)],
                 limit=1,
@@ -478,9 +432,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _stored_device_recording(self, device, file_name, recorded_at):
-        # a handset retrying past the transport's duplicate window sends the
-        # same file under the same name and write time; a payload naming
-        # neither is not recognisable, and is stored again
         if not file_name or not recorded_at:
             return self.env["ir.attachment"]
         calls = self.search(
@@ -534,9 +485,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _reported_calls_near(self, device, first, last):
-        """The reported calls of ``device`` that could cover a stamp between
-        ``first`` and ``last``, by start: begun at most ``LONGEST_CALL`` before,
-        ``MATCH_WINDOW`` after."""
         return self.search(
             [
                 ("device_id", "=", device.id),
@@ -549,16 +497,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _match_device_call(self, device, number, recorded_at, candidates=None):
-        """The reported call of ``device`` whose span covers ``recorded_at``.
-
-        The dialer stamps the file when the call ends, so the stamp is compared
-        with the call's whole span. Samsung names the file after the contact,
-        not the number, so a recording may carry no number at all: then the
-        call whose end is nearest the stamp is the match -- on a handset, whose
-        calls are one person's, never on a phone system carrying everyone's.
-        ``candidates`` are the device's reported calls near the stamp when the
-        caller has already read them (``_reported_calls_near``).
-        """
         key = number_key(number)
         if not key and device._phone_call_channel() == "pbx":
             return self.browse()

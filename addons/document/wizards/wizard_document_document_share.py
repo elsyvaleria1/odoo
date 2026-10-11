@@ -21,7 +21,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
         required=True,
     )
 
-    # Rights edition
     access_internal = fields.Selection(
         selection="_selection_access_roles",
         string="Internal users",
@@ -61,7 +60,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
     )
     original_is_access_restricted = fields.Boolean()
 
-    # Invitation
     invite_role = fields.Selection(
         selection=[("view", "Viewer"), ("edit", "Editor"), ("manage", "Manager")],
         string="Role",
@@ -75,7 +73,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
     invite_notify_message = fields.Html(string="Notification Message")
     invite_partner_ids = fields.Many2many(comodel_name="res.partner")
 
-    # Additional readonly fields for displaying information
     access_urls = fields.Char(
         string="Access URLs",
         compute="_compute_ui_values",
@@ -111,11 +108,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.model
     def _add_write_options(self, selection_options: list) -> list:
-        """Add write options to the given options list.
-
-        For each existing option, adds a corresponding option with the prefix WRITE_VALUE_PREFIX (except for "mixed").
-        Selecting a 'write_' option indicates that a change has been made.
-        """
         new_options = []
         for code, label in selection_options:
             new_options.append((code, label))
@@ -194,8 +186,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
     )
     def _compute_is_access_modified(self) -> None:
         for record in self:
-            # an expiry moves on as many documents as the dialog is open on:
-            # counted for one only, a date set on several found no Save button
             record.is_access_modified = bool(record._get_update_rights_params()) or (
                 bool(record.link_date_to)
                 and any(
@@ -206,7 +196,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
             )
 
     def action_update_rights(self) -> dict:
-        """Apply the edited access rights and reopen the sharing wizard."""
         self.check_singleton()
         _debug.pipeline(
             "sharing_apply",
@@ -229,10 +218,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
             linked._sync_document_links(date_to=self.link_date_to)
             if self.is_folder_only:
                 linked._sync_subtree_link_expiry(self.link_date_to)
-        # The confirmed change may have removed the current user's own access
-        # (advisory `has_warning_self_access_loss`). Reopening the wizard on a
-        # now-inaccessible document would raise AccessError while building its
-        # document_ids, so only reopen on documents still readable.
         accessible = self.document_ids._filtered_access("read")
         if not accessible:
             _debug.logic("sharing_self_access_lost", documents=self.document_ids)
@@ -248,7 +233,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
         return self.action_open(accessible.ids)
 
     def action_invite_members(self) -> dict:
-        """Invite the selected partners and optionally notify them by email."""
         self.check_singleton()
         if not self.invite_partner_ids:
             _debug.logic("invite_refused", reason="no_partners")
@@ -323,7 +307,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
         }
 
     def action_allow_link_access(self) -> dict:
-        """Enable link access when needed and apply the edited rights."""
         self.check_singleton()
         if self.has_warning_partners_without_access:
             _debug.logic("link_access_forced", documents=self.document_ids)
@@ -338,7 +321,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.model
     def action_open(self, document_ids: list[int]) -> dict:
-        """Open documents sharing wizard on one or more documents."""
         if not document_ids:
             _debug.logic("sharing_open_refused", reason="no_documents")
             raise ValueError("Expected one or more documents.")
@@ -360,7 +342,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
             )
         )
 
-        if is_single_doc:  # expiration only supported for single document
+        if is_single_doc:
             expiration_per_partner = {
                 access.partner_id: access.date_to
                 for access in self._filtered_relevant_access(documents)
@@ -369,9 +351,7 @@ class WizardDocumentDocumentShare(models.TransientModel):
         access_shares = []
         if any(
             d.owner_id != document0.owner_id for d in documents
-        ):  # there are no single owner of all the documents
-            # Mixed owner -> add owner so that their rights appear "mixed" if not editor of the documents they don't own
-            # Otherwise if there are only one owner, it will be displayed as such
+        ):
             all_partners |= documents.owner_id.partner_id
         for partner in all_partners:
             role0, inherited0 = access_by_partner_by_doc[documents[0]].get(
@@ -458,9 +438,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.model
     def _members(self, document: models.Model) -> dict:
-        # {partner: (role, inherited)}: the document's own grants and what
-        # reaches it from the folders above, the owner included; inherited
-        # when what the folders give is more than the document's own grant
         roles = document._access_graph.roles
         own = {
             access.partner_id: roles.index(access.role) + 1
@@ -484,7 +461,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
 
     @api.model
     def _filtered_relevant_access(self, documents: models.Model) -> models.Model:
-        """Filter out expired grants, group grants and the owner's own row."""
         return documents.access_ids.filtered(
             lambda a: (
                 a.partner_id
@@ -497,9 +473,6 @@ class WizardDocumentDocumentShare(models.TransientModel):
         self.check_singleton()
         res = {}
         removed_access = self.share_access_ids.filtered("is_deleted")
-        # Modification of the expiration date is not supported when multiple document are selected
-        # In that case, expiration_date and original_expiration_date will be false and not modifiable in the UI
-        # If a role is changed when multiple documents are selected, we keep the expiration (using None).
         modified_access = self.share_access_ids.filtered(
             lambda a: (
                 (

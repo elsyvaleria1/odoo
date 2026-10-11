@@ -209,7 +209,7 @@ class ResUsers(models.Model):
         return tuple(code for code, _name in self.env["res.lang"].get_installed())
 
     @api.model
-    @tools.ormcache("self.env.uid")  # noqa: E8540  the user's language and timezone
+    @tools.ormcache("self.env.uid")
     def _get_context_cached(self) -> tuple[frozendict, bool]:
         user = self.env.user.with_context(prefetch_fields=False)
         try:
@@ -254,7 +254,7 @@ class ResUsers(models.Model):
         return company_ids
 
     @api.model
-    @tools.ormcache("uid", "passwd_hash")  # noqa: E8540  a credential check, which no group changes
+    @tools.ormcache("uid", "passwd_hash")
     def _check_uid_passwd_cached(
         self, uid: int, passwd: str, passwd_hash: str
     ) -> datetime.datetime | None:
@@ -289,13 +289,9 @@ class ResUsers(models.Model):
         return self._hash_session_token(sid, field_values)
 
     def _get_group_ids(self) -> tuple[int, ...]:
-        # the groups the user holds in the companies in play: the context's
-        # allowed companies, or every company of the user without one
         return self._get_group_state()[0]
 
     def _get_group_scopes(self) -> frozendict:
-        # the same groups, each with the companies its grants limit it to
-        # (None: every company)
         return self._get_group_state()[1]
 
     def _get_group_signature(self) -> tuple:
@@ -306,14 +302,10 @@ class ResUsers(models.Model):
         key = self._grant_scope_key()
         state = self._get_cached_group_state(key)
         if state.valid_until is not None and self.env.cr.now() >= state.valid_until:
-            # a grant started or ended since the value was cached: answer at
-            # the second, until the boundary cron settles it and clears
             state = self._compute_group_state(key)
         return state
 
     def _grant_scope_key(self) -> tuple:
-        # the companies in use, and the privileges the environment holds for
-        # its own user (another user's groups never include them)
         company_ids = self.env.context.get("allowed_company_ids")
         companies = tuple(sorted(company_ids)) if company_ids else None
         privileges = self.env.privileges if self.id == self.env.uid else ()
@@ -327,8 +319,6 @@ class ResUsers(models.Model):
         return self.env["res.users.grant"].sudo()
 
     def _prewarm_group_states(self) -> None:
-        # the group states of many users, cold, in one grant fetch and one
-        # membership read instead of two queries per user
         cache = self._get_cached_group_state.__cache__
         lru = self.pool.ormcache_lrus[cache.cache_name]
         cold = [
@@ -353,8 +343,6 @@ class ResUsers(models.Model):
         grant_ids_by_user = collections.defaultdict(list)
         for grant in grants:
             grant_ids_by_user[grant.user_id.id].append(grant.id)
-        # the users keep this batch as prefetch set: the first one's group_ids
-        # read in _compute_group_state fetches them all
         for user, key in cold:
             user_grants = grants.browse(grant_ids_by_user[user.id]).with_prefetch(
                 grants._ids
@@ -365,13 +353,6 @@ class ResUsers(models.Model):
     def _compute_group_state(
         self, key: tuple, grants: models.BaseModel | None = None
     ) -> GroupState:
-        # the groups of the user's live grants, each with the companies it is
-        # limited to, and when that answer next changes. The transaction
-        # remembers whose state it computed: a user's create may ask before
-        # all of its grants exist, and those grants then clear what was cached.
-        # A membership no scheduled or active grant covers (a create making the
-        # user's grants, a migration writing below the ORM) counts, unscoped:
-        # ending a grant removes its membership, so none comes back that way
         self.env.cr.cache.setdefault(GROUP_STATE_COMPUTED, set()).add(self.id)
         grant_model = self._grant_model()
         valid_until = None
@@ -397,9 +378,7 @@ class ResUsers(models.Model):
         scopes.update(dict.fromkeys(uncovered))
         if grants:
             spans: collections.defaultdict[int, list] = collections.defaultdict(list)
-            # the companies are read only for a user holding a scoped grant
             grants.filtered("scoped").fetch(["company_ids"])
-            # the clock is read only for a user holding a timed grant
             now = (
                 self.env.cr.now()
                 if any(grant.date_from or grant.date_to for grant in grants)
@@ -426,8 +405,6 @@ class ResUsers(models.Model):
                     scopes[group_id] = None
                 else:
                     scopes[group_id] = frozenset().union(*live_scopes)
-        # an implied group takes the scope of what implies it; a user type is
-        # never scoped, so a user stays internal in every company
         groups = self.env["res.groups"].sudo()
         user_types = set(groups._get_user_type_groups()._ids)
         closure: dict[int, frozenset[int] | None] = {}
@@ -946,8 +923,6 @@ class ResUsers(models.Model):
                 }
 
         if not interactive:
-            # The universal door: a key bound to no scope enters under `rpc`,
-            # a key bound to another door enters under that door's rules.
             match = self.env["res.users.apikeys"]._check_credentials_any_scope(
                 credential["password"]
             )
@@ -1188,8 +1163,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _access_field_alternative_class(self, field: Any) -> str | None:
-        # a user reads their own self-readable fields whatever else the field
-        # requires: base.user_self reaches everyone's own record
         if field.name in self.SELF_READABLE_FIELDS:
             return "base.user_self"
         return super()._access_field_alternative_class(field)
@@ -1441,8 +1414,6 @@ class ResUsers(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_last_administrator(self) -> None:
-        # a deletion leaves the database without an administrator as surely
-        # as archiving would, which the grants refuse; they never see it
         system = self.env.ref("base.group_system", raise_if_not_found=False)
         if not (system and self.env.registry.loaded_modules):
             return
@@ -1526,14 +1497,10 @@ class ResUsers(models.Model):
 
     @api.model
     def _get_picker_domain(self) -> Domain:
-        # a picker offers people: a service principal is a program acting for
-        # the company, and a domain naming principal_type asks for it
         return Domain("principal_type", "=", "person")
 
     @api.model
     def _get_service_partner_ids(self) -> list[int]:
-        # partners of service principals, archived ones included: ids to leave
-        # out of a person picker, whoever may read the users
         self.env.cr.execute(
             SQL("SELECT partner_id FROM res_users WHERE principal_type = 'service'")
         )
@@ -1615,8 +1582,6 @@ class ResUsers(models.Model):
                 if user.principal_type == "service" and (user_agent_env or {}).get(
                     "interactive", True
                 ):
-                    # before any auth method's own check (password, LDAP,
-                    # OAuth): a service principal never holds a session
                     _debug.logic("login_refused", uid=user.id, reason="service")
                     raise AccessDenied
                 _debug.pipeline("login_credentials_check", uid=user.id, ip=ip)
@@ -1662,8 +1627,6 @@ class ResUsers(models.Model):
 
     @api.model
     def _check_uid_passwd(self, uid: int, passwd: str) -> int | None:
-        """Refuse, or answer the scope an RPC call runs under: the `rpc`
-        scope's id when the password was an API key, None for a password."""
         if not passwd:
             _debug.logic("uid_passwd_refused", uid=uid, reason="empty")
             raise AccessDenied
@@ -1855,8 +1818,6 @@ class ResUsers(models.Model):
 
     def _action_revoke_all_devices(self) -> dict[str, Any]:
         self.check_singleton()
-        # the current session moves to a new id first: a device still holding
-        # the old one is a stolen copy, and revoking it must not reach this one
         self._end_other_sessions()
         others = self.with_context(active_test=False).auth_client_ids.filtered(
             lambda client: not client.is_current
@@ -1883,8 +1844,6 @@ class ResUsers(models.Model):
         keeps_current = bool(request) and request.session.uid == self.id
         successor = None
         if keeps_current:
-            # a stolen copy of this very session shares its id: only a new id,
-            # whose rotation removes the old family, leaves it behind
             session = request.session
             retired = session.sid[:STORED_SESSION_BYTES]
             session._require_hard_rotation()
@@ -2240,8 +2199,6 @@ class ResUsers(models.Model):
         res = super().fields_get(allfields, attributes=attributes)
 
         readable_fields, writeable_fields = self._get_self_accessible_fields()
-        # a self field its groups= would hide is read on the user's own record
-        # only (base.user_self): described as the user may use it there
         for key in (writeable_fields | readable_fields).intersection(res.keys()):
             if self._field_access_domain(self._fields[key], "read") is not None:
                 res[key] = dict(

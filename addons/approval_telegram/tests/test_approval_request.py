@@ -588,8 +588,6 @@ class TestMiniAppLiveLines(MiniAppPayloadMixin, ApprovalRequestTestBase):
 
 class TestTerminalNotificationErrors(ApprovalRequestTestBase):
     def _fire_terminal_transition(self, error):
-        # state is derived on the request and on the approver alike, so the
-        # terminal state has to come from a recorded decision.
         with self.mock_api_gateway_post():
             self.approver.with_user(self.test_user).action_approve()
         self.assertEqual(self.approval_request.state, "approved")
@@ -607,8 +605,6 @@ class TestTerminalNotificationErrors(ApprovalRequestTestBase):
             self._fire_terminal_transition(error)
 
     def test_a_telegram_outage_still_does_not_block_the_approval(self):
-        # the owner's push is queued: Telegram is not reached in the approval's
-        # transaction, so its outage cannot fail it
         self.test_bot.notify_approvals = True
         with (
             self.mock_api_gateway_post(),

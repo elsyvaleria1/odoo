@@ -75,7 +75,6 @@ class HrWorkEntryContractTest(HttpCase, TransactionCase):
         self.assertEqual(work_entries[1].duration, 2)
         self.assertEqual(work_entries[1].work_entry_type_id, self.overtime_type)
 
-        # should not generate the work entry becuase the work entry for that woking day is already generated
         self.assertFalse(another_work_entry)
 
     def test_overtime_work_entry_by_planning_bis(self):
@@ -99,13 +98,9 @@ class HrWorkEntryContractTest(HttpCase, TransactionCase):
         self.assertEqual(work_entries[0].duration, 7)
         self.assertEqual(work_entries[0].work_entry_type_id, self.attendance_type)
 
-        # should not generate the work entry becuase the work entry for that woking day is already generated
         self.assertFalse(another_work_entry)
 
     def test_attendance_creation_work_entry_by_planning(self):
-        # Ensure that attendance is created correctly when the work entry source
-        # is 'planning', even if there are other published planning slots
-        # for material type resources during the same period.
         material_resource = self.env["resource.resource"].create(
             {
                 "name": "Test non human resource",

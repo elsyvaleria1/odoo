@@ -1,5 +1,3 @@
-# List of ISO 15897 locale supported by Mollie
-# See full details at `locale` parameter at https://docs.mollie.com/reference/v2/payments-api/create-payment
 SUPPORTED_LOCALES = [
     "en_US",
     "nl_NL",
@@ -24,9 +22,6 @@ SUPPORTED_LOCALES = [
     "lt_LT",
 ]
 
-# Currency codes in ISO 4217 format supported by mollie.
-# Note: support varies per payment method.
-# See https://docs.mollie.com/payments/multicurrency. Last seen online: 22 September 2022.
 SUPPORTED_CURRENCIES = [
     "AED",
     "AUD",
@@ -60,18 +55,14 @@ SUPPORTED_CURRENCIES = [
     "ZAR",
 ]
 
-# The codes of the payment methods to activate when Mollie is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
     "card",
-    # Brand payment methods.
     "visa",
     "mastercard",
     "amex",
     "discover",
 }
 
-# Mapping of payment method codes to Mollie codes.
 PAYMENT_METHODS_MAPPING = {
     "apple_pay": "applepay",
     "card": "creditcard",

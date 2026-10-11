@@ -7,7 +7,6 @@ class TestHelpdeskSaleCoupon(common.HelpdeskCommon):
     """Test used to check that the functionalities of After sale in Helpdesk (sale_coupon)."""
 
     def test_helpdesk_sale_loyalty(self):
-        # give the test team ability to create coupons
         self.test_team.helpdesk_use_coupons = True
 
         ticket = self.env["helpdesk.ticket"].create(

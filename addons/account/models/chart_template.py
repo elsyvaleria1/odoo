@@ -322,10 +322,6 @@ class AccountChartTemplate(models.AbstractModel):
         template_data = data.pop("template_data")
         self._split_company_config_data(company, data)
         if company.parent_id:
-            # a branch takes the company's own values and every configuration's,
-            # not just the accounting one: the split above has already moved each
-            # key to the configuration that declares it, and keeping only
-            # `account.config` dropped the rest on the floor
             keep = {"res.company"} | {
                 field.comodel_name for field in company._config_link_fields().values()
             }
@@ -880,10 +876,6 @@ class AccountChartTemplate(models.AbstractModel):
         return True
 
     def _split_company_config_data(self, company, data) -> None:
-        # a template describes a company's accounting as one dict; the keys
-        # the company does not carry belong to the configuration that
-        # declares each of them, loaded right after the company and before
-        # the journals and taxes that read prefixes and fiscal country
         company_data = data.get("res.company", {}).get(company.id, {})
         links = company._config_link_fields()
         config_models = [field.comodel_name for field in links.values()]
@@ -923,8 +915,6 @@ class AccountChartTemplate(models.AbstractModel):
         return vals
 
     def _pre_load_other_config_vals(self, company, template_data):
-        # the template values that neither the company nor account.config
-        # carry, keyed by the configuration link that declares each
         vals_by_link = {}
         property_accounts = self._get_property_accounts()
         for link, field in company._config_link_fields().items():
@@ -972,8 +962,6 @@ class AccountChartTemplate(models.AbstractModel):
         return vals
 
     def _pre_load_report_config_vals(self, company, template_data) -> None:
-        # a template's report layout and paper format are the company's
-        # report configuration, not the company
         config = company.report_config_id
         vals = {}
         for key, value in template_data.items():
@@ -1326,9 +1314,6 @@ class AccountChartTemplate(models.AbstractModel):
         )
 
     def _relink_values(self, Model, record_vals):
-        # the second pass over a template model only links records loaded by
-        # the first: its many2many values go in one statement per field
-        # instead of one write per record
         values = record_vals["values"]
         if (
             Model._name not in TEMPLATE_MODELS
@@ -1833,7 +1818,7 @@ class AccountChartTemplate(models.AbstractModel):
             )
             for field, _account_name in account_fields
         }
-        accounts_before = len(existing_accounts)  # debuglog
+        accounts_before = len(existing_accounts)
         for field, account_name in account_fields:
             for tax_group in tax_group_data.values():
                 account_template_xml_id = tax_group.get(field)
@@ -1887,7 +1872,7 @@ class AccountChartTemplate(models.AbstractModel):
     def _foreign_tax_map_repartition_accounts(
         self, company, country, tax_data, existing_accounts, default_company_taxes
     ) -> None:
-        accounts_before = len(existing_accounts)  # debuglog
+        accounts_before = len(existing_accounts)
         for tax_template in tax_data.values():
             for _command, _id, rep_line in tax_template.get("repartition_line_ids", []):
                 if (
@@ -2234,11 +2219,6 @@ class AccountChartTemplate(models.AbstractModel):
         return None
 
     def _xmlid_index(self):
-        # a load resolves thousands of external ids, mostly the company's own
-        # and mostly ones not created yet; every record it creates clears the
-        # external id cache, so they are answered from an index of the cache's
-        # current state: one query for all of a company's ids, one for the
-        # other ids a batch of values names, one per model for their records
         lru = self.pool.ormcache_lrus["xmlid"]
         index = self.env.cr.cache.get(XmlidIndex)
         if index is None or not index.is_current(lru):

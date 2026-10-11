@@ -28,13 +28,6 @@ class ResPartner(models.Model):
     )
 
     def _get_calendar_event_resources(self, company=None):
-        """Resolve people in one query: this company's resource, else a shared one, else any.
-
-        A person is a human resource through their party, so an attendee with no
-        user — an outside contractor, an employee with no login — resolves exactly
-        like one who has a login. A person attends a meeting once, so the last
-        fallback books the resource they have elsewhere rather than nothing.
-        """
         company = company or self.env.company
         resources = (
             self.env["resource.resource"]
@@ -66,13 +59,12 @@ class ResPartner(models.Model):
 
     def _get_meetings_by_partner(self) -> dict:
         if self.ids:
-            # prefetch 'parent_id'
             all_partners = self.with_context(active_test=False).search_fetch(
                 [("id", "child_of", self.ids)],
                 ["parent_id"],
             )
 
-            query = self.env["calendar.event"]._search([])  # access rows apply
+            query = self.env["calendar.event"]._search([])
             meeting_data = self.env.execute_query(
                 SQL(
                     """
@@ -85,16 +77,10 @@ class ResPartner(models.Model):
                 )
             )
 
-            # Create a dict {partner_id: event_ids} and fill with events linked to the partner
             meetings = {}
             for p_id, m_id in meeting_data:
                 meetings.setdefault(p_id, set()).add(m_id)
 
-            # Roll each partner's meetings up to whichever of its ancestors are
-            # in `self`. `in self` is a scan of the recordset, and it sat inside
-            # a walk up the parent chain of every partner that had a meeting, so
-            # the cost was O(partners x depth x len(self)); the ids are known up
-            # front.
             wanted_ids = set(self._ids)
             for p in self.browse(meetings.keys()):
                 partner = p
@@ -120,12 +106,6 @@ class ResPartner(models.Model):
         return data_list
 
     def get_attendee_detail(self, meeting_ids):
-        """Return a list of dict of the given meetings with the attendees details
-        Used by:
-
-        - many2many_attendee.js: Many2ManyAttendee
-        - calendar_model.js (calendar.CalendarModel)
-        """
         attendees_details = []
         meetings = self.env["calendar.event"].browse(meeting_ids)
         for attendee in meetings.attendee_ids:
@@ -144,7 +124,6 @@ class ResPartner(models.Model):
                     "attendee_id": attendee.id,
                     "is_alone": attendee.event_id.is_organizer_alone
                     and attendee_is_organizer,
-                    # attendees data is sorted according to this key in JS.
                     "is_organizer": 1
                     if attendee.partner_id == attendee.event_id.user_id.partner_id
                     else 0,
@@ -154,13 +133,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _set_calendar_last_notif_ack(self) -> None:
-        """Stamp the calling user's reminder acknowledgement."""
-        # `self.env.user`, not `self.env.context.get('uid', ...)`: the route calls
-        # this through sudo(), and taking the identity from a context key means
-        # any caller able to set `uid` in the context stamps somebody else's
-        # partner. `fields.Datetime.now()` rather than `datetime.now()` for the
-        # same reason every other write of this column uses it -- the two agree
-        # today, and the field's own default is already spelled this way.
         self.env.user.partner_id.write(
             {
                 "calendar_last_notif_ack": fields.Datetime.now(),
@@ -172,14 +144,9 @@ class ResPartner(models.Model):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "calendar.action_calendar_event"
         )
-        # Not `partner_ids = self.ids; partner_ids.append(...)`: that reads as a
-        # mutation of the recordset's own ids and is only safe because `ids`
-        # happens to build a fresh list each time.
         action["context"] = {
             "default_partner_ids": [*self.ids, self.env.user.partner_id.id],
         }
-        # The first branch carries the meetings of this partner's *children*,
-        # which the second cannot express as a domain.
         action["domain"] = [
             "|",
             ("id", "in", self._get_meetings_by_partner()[self.id]),
@@ -188,10 +155,6 @@ class ResPartner(models.Model):
         return action
 
     def _get_busy_calendar_events(self, start_datetime, end_datetime):
-        """Get a mapping from partner id to attended events intersecting with the time interval.
-
-        :rtype: dict[int, <calendar.event>]
-        """
         return self._group_busy_calendar_events(
             self._search_busy_calendar_events(start_datetime, end_datetime),
             start_datetime,
@@ -199,7 +162,6 @@ class ResPartner(models.Model):
         )
 
     def _search_busy_calendar_events(self, start_datetime, end_datetime):
-        """Fetch candidate busy events once, including all-day civil-date ranges."""
         start = self._calendar_utc(start_datetime)
         stop = self._calendar_utc(end_datetime)
         if start >= stop:
@@ -211,9 +173,6 @@ class ResPartner(models.Model):
                 Domain("stop", ">", start),
             ]
         )
-        # Civil dates can be on either side of UTC for the attendee's timezone.
-        # Exact clipping happens after fetching, using the same normalization as
-        # reservation projection, rather than the stored 08:00-18:00 placeholders.
         all_day = Domain.AND(
             [
                 Domain("allday", "=", True),
@@ -238,7 +197,6 @@ class ResPartner(models.Model):
 
     @staticmethod
     def _calendar_utc(value):
-        """Normalize aware instants to stored UTC; naive inputs already mean UTC."""
         return value.astimezone(UTC).replace(tzinfo=None) if value.tzinfo else value
 
     def _group_busy_calendar_events(self, events, start_datetime, end_datetime) -> dict:
@@ -255,7 +213,6 @@ class ResPartner(models.Model):
     def _get_busy_calendar_intervals(
         self, start_datetime, end_datetime, *, user_resources=None
     ):
-        """Return attended busy intervals in UTC, keyed by requested partner id."""
         return self._group_busy_calendar_intervals(
             self._search_busy_calendar_events(start_datetime, end_datetime),
             start_datetime,
@@ -266,7 +223,6 @@ class ResPartner(models.Model):
     def _group_busy_calendar_intervals(
         self, events, start_datetime, end_datetime, *, user_resources=None
     ):
-        """Normalize civil days once for availability checks and presentation alike."""
         start = self._calendar_utc(start_datetime)
         stop = self._calendar_utc(end_datetime)
         if start >= stop:
@@ -297,13 +253,6 @@ class ResPartner(models.Model):
     def _is_calendar_available(
         self, date_start, date_end, appointment_type=None
     ) -> bool:
-        """Check attended meetings while preserving offer-specific sharing policy.
-
-        Equipment-booking customers may book multiple resources concurrently;
-        resource admission is checked separately. A same-offer staff booking is
-        subject to that offer's capacity calculation rather than an exclusive
-        meeting veto. Interval and RSVP semantics come solely from Calendar.
-        """
         grouped = self._get_busy_calendar_events(date_start, date_end)
         for partner in self:
             for event in grouped.get(partner.id, self.env["calendar.event"]):

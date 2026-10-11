@@ -17,34 +17,16 @@ class KpiProvider(models.AbstractModel):
 
     @api.model
     def get_documents_kpi_summary(self) -> list[dict]:
-        """Return the document KPI summary."""
         return get_kpi_summary(self.env.cr, self.env.uid)
 
     @api.model
     def get_kpi_summary(self) -> list[dict]:
-        """Return the KPI summary including document metrics."""
         result = super().get_kpi_summary()
         result.extend(self.get_documents_kpi_summary())
         return result
 
 
 def get_kpi_summary(cr: Any, uid: int) -> list[dict]:
-    """Retrieve the number of active documents currently present in the Inbox folder.
-
-    Only active non-folder documents located in the configured Inbox hierarchy
-    are counted.
-
-    This function intentionally bypasses the ORM so KPI summaries can be retrieved
-    without loading a registry, allowing multi-database servers to serve them faster.
-
-    .. warning::
-        The returned count is **database-wide**: it is not filtered by ir.access
-        rows, nor by company. ``uid`` is used *only* to pick the
-        language for the translated label -- despite that parameter, the value
-        is NOT per-user. This matches the other KPI providers (e.g. ``account``)
-        and the only consumer is the SaaS ``databases`` module. Do not surface
-        this value to an end user as if it were their own Inbox count.
-    """
     expected_columns = {
         "document_document.id",
         "document_document.folder_id",
@@ -65,7 +47,6 @@ def get_kpi_summary(cr: Any, uid: int) -> list[dict]:
     )
     existing_columns = {x[0] for x in cr.fetchall()}
     if expected_columns - existing_columns:
-        # Needed columns are not present -> module is not installed
         _debug.logic("kpi_skipped", reason="module_absent")
         return []
 

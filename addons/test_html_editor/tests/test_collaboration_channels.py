@@ -75,7 +75,6 @@ class TestCollaborationChannels(TransactionCase):
         self.assertFalse(self._editor_channels(keys))
 
     def test_an_abstract_model_is_refused_alone(self):
-        # browse().exists() on a model with no table aborts the transaction
         keys = self._subscribe(
             self.admin,
             [self._channel(model="ir.qweb"), self._channel()],

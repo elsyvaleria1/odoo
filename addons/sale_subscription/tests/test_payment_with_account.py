@@ -16,7 +16,6 @@ from odoo.addons.sale_subscription.tests.common_sale_subscription import (
 class TestSubscriptionPaymentsAccount(
     AccountPaymentCommon, TestSubscriptionCommon, MockEmail
 ):
-    # Inheriting on AccountPaymentCommon is necessary because it patches _get_payment_method_information
 
     def test_invoice_consolidation(self):
         with patch(
@@ -62,9 +61,8 @@ class TestSubscriptionPaymentsAccount(
             other_user = self.company_data["default_user_salesman"]
             sub2 = self.subscription.copy(
                 {"payment_token_id": test_payment_token.id, "user_id": other_user.id}
-            )  # tokens have copy=False property
+            )
             with freeze_time("2023-02-01"):
-                # add a subscription intended to be removed from the recordset to make sure we don't invoice it.
                 sub3 = self.subscription.copy(
                     {
                         "payment_token_id": test_payment_token.id,
@@ -72,7 +70,6 @@ class TestSubscriptionPaymentsAccount(
                     }
                 )
                 (sub2 | self.subscription | sub3).action_confirm()
-                # enable tracking to test _message_auto_subscribe_followers with multiple user_id
                 self.env["sale.order"].with_context(
                     test_provider=new_provider, tracking_disable=False
                 )._create_recurring_invoice()

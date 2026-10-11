@@ -136,7 +136,7 @@ call site rebuilds one on every request that loses its database.
 
 
 def register_select_db_paths(*paths: str, prefixes: Iterable[str] = ()) -> None:
-    global SELECT_DB_PATH_PREFIXES  # noqa: PLW0603  the module owns this registry
+    global SELECT_DB_PATH_PREFIXES
     SELECT_DB_PATHS.update(paths)
     SELECT_DB_PATH_PREFIXES = tuple(
         dict.fromkeys((*SELECT_DB_PATH_PREFIXES, *prefixes))

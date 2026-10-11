@@ -26,9 +26,6 @@ UP_LANGUAGES = ["hi", "ar", "ja", "pt", "fr", "es"]
 
 class UrbanPiperClient:
     def __init__(self, config) -> None:
-        """
-        Initial parameters for making api requests.
-        """
         self.config = config
         self.db_uuid = self.config.env.registry.settings.get(
             self.config.env, "database.uuid", False
@@ -41,9 +38,6 @@ class UrbanPiperClient:
         ).pos_urbanpiper_apikey
 
     def _send_api_request(self, endpoint, method="POST", data=None, timeout=10):
-        """
-        Make an api call, return response for multiple api requests of urban piper.
-        """
         headers = {
             "Authorization": f"apikey {self.config.env.company.pos_urbanpiper_username}:"
             f"{self._api_key()}",
@@ -60,7 +54,6 @@ class UrbanPiperClient:
         access_url = urbanpiper_url + endpoint
         pos_config = self.config
         try:
-            # Make the API request
             response = pos_config._get_integration_connection()._egress_request(
                 method,
                 access_url,
@@ -69,7 +62,6 @@ class UrbanPiperClient:
                 headers=headers,
                 timeout=timeout,
             )
-            # Parse the response as JSON
             response_json = response.json()
             pos_config.log_xml(
                 "API Request Successful:\nURL: %s \nMethod: %s \nPayload: %s \nResponse: %s"
@@ -77,7 +69,6 @@ class UrbanPiperClient:
                 "_send_api_request",
                 "Urbanpiper API Success",
             )
-            # raise an error if the response is not successful
             response.raise_for_status()
             return response_json
         except requests.exceptions.ConnectionError as error:
@@ -119,18 +110,12 @@ class UrbanPiperClient:
             return {"errors": {"JSONDecodeError": "Failed to parse server response."}}
 
     def configure_webhook(self) -> None:
-        """
-        Check and register webhook if the base url is changed.
-        """
         base_url = self.config.get_base_url()
         if base_url != self.config.urbanpiper_webhook_url:
             self.config.urbanpiper_webhook_url = base_url
             self._register_webhook()
 
     def _register_webhook(self) -> None:
-        """
-        Register webhook on Atlas for get notified for order updates.
-        """
         endpoint = "external/api/v1/webhooks/"
         base_url = self.config.urbanpiper_webhook_url
         webhook_url = url_join(base_url, "/urbanpiper/webhook/")
@@ -150,9 +135,6 @@ class UrbanPiperClient:
             self._send_api_request(endpoint, data=payload)
 
     def request_store_create(self):
-        """
-        Request to create a store in UrbanPiper.
-        """
         endpoint = "external/api/v1/stores/"
         data = {
             "stores": [
@@ -171,17 +153,12 @@ class UrbanPiperClient:
         return self._send_api_request(endpoint, data=data)
 
     def request_sync_menu(self):
-        """
-        Sync menu in urban piper.
-        - Sync categories, products, attributes, values and taxes.
-        """
         store_identifier = quote(self.config.urbanpiper_store_identifier, safe="")
         endpoint = f"external/api/v1/inventory/locations/{store_identifier}/"
         product_domain = [
             ("urbanpiper_pos_config_ids", "in", self.config.ids),
             ("type", "!=", "combo"),
         ]
-        # For the US & UK regions, there is an issue on the UrbanPiper side. They require the entire product catalog, but currently, we are only sending the updated products.
         full_sync_required_providers = ["justeat", "grubhub", "doordash", "ubereats"]
         products = self.config.env["product.template"].search(product_domain)
         pos_products = products
@@ -216,35 +193,32 @@ class UrbanPiperClient:
             )
         pos_products_without_pos_categ_ids.pos_categ_ids = pos_other_categ_id
         pos_categories = pos_products.pos_categ_ids
-        # The UrbanPiper platform only supports a single level of sub-categories.
         pos_categories |= pos_categories.parent_id
         pos_attribute_products = pos_products.filtered(lambda p: p.attribute_line_ids)
         payload = {
             "flush_categories": flush,
             "categories": self._prepare_categories_data(
                 pos_categories
-            ),  # pos categories
+            ),
             "flush_items": flush,
-            "items": self._prepare_items_data(pos_products),  # pos products
+            "items": self._prepare_items_data(pos_products),
             "flush_option_groups": flush,
             "option_groups": self._prepare_option_groups_data(
                 pos_attribute_products
-            ),  # pos attributes
+            ),
             "flush_options": flush,
             "options": self._prepare_option_data(
                 pos_attribute_products
-            ),  # pos attribute values
+            ),
             "flush_taxes": flush,
-            "taxes": self.config.prepare_taxes_data(pos_products),  # pos taxes
+            "taxes": self.config.prepare_taxes_data(pos_products),
             "flush_charges": flush,
-            "charges": self._prepare_charges_data(),  # pos charges
+            "charges": self._prepare_charges_data(),
         }
-        # If we have multiple products, we should increase the timeout to 90 seconds.
         response_json = self._send_api_request(
             endpoint, method="POST", data=payload, timeout=90
         )
         if response_json.get("status") == "success":
-            # logic for updating the status of the product in atlas based on config
             for product in pos_products:
                 if not product.urban_piper_status_ids or (
                     product.urban_piper_status_ids
@@ -288,9 +262,6 @@ class UrbanPiperClient:
         return f"{product.id}-{self.db_uuid[0:5]}"
 
     def _prepare_categories_data(self, pos_categories):
-        """
-        Prepare categories data for urban piper.
-        """
         category_lst = []
         for category in pos_categories:
             categ_dict = {
@@ -310,9 +281,6 @@ class UrbanPiperClient:
         return category_lst
 
     def _prepare_items_data(self, pos_products):
-        """
-        Prepare product data for urban piper.
-        """
         item_lst = []
         for product in pos_products:
             product_price = (
@@ -392,10 +360,6 @@ class UrbanPiperClient:
         return item_lst
 
     def _prepare_option_groups_data(self, pos_products):
-        """
-        Prepare option groups data for urban piper.
-        - Attributes are option groups.
-        """
         attribute_lst = []
         for product in pos_products:
             for attr_line in product.attribute_line_ids:
@@ -428,10 +392,6 @@ class UrbanPiperClient:
         return attribute_lst
 
     def _prepare_option_data(self, pos_products):
-        """
-        Prepare options data for urban piper.
-        - Attribute values are options.
-        """
         value_lst = []
         active_ptav = (
             pos_products.attribute_line_ids.product_template_value_ids.filtered(
@@ -462,9 +422,6 @@ class UrbanPiperClient:
         return value_lst
 
     def _prepare_charges_data(self) -> list:
-        """
-        Prepare charges data for urban piper.
-        """
         product_packaging = self.config.env.ref(
             "pos_urban_piper.product_packaging_charges", False
         )
@@ -491,9 +448,6 @@ class UrbanPiperClient:
         ]
 
     def request_category_timing(self):
-        """
-        Sync category timings from Odoo to UrbanPiper.
-        """
         endpoint = "external/api/v1/inventory/categories/timing-groups/"
         pos_categories = (
             self.config.env["pos.category"]
@@ -538,9 +492,6 @@ class UrbanPiperClient:
         return self._send_api_request(endpoint, method="POST", data=payload)
 
     def register_item_toggle(self, products, status):
-        """
-        Enable/Disable product on urban piper store. (If menu is synced with urban piper)
-        """
         product_lst_str = [self.get_item_ref_id(product) for product in products]
         endpoint = "hub/api/v1/items/"
         payload = {
@@ -561,9 +512,6 @@ class UrbanPiperClient:
         return response_json
 
     def urbanpiper_attribute_value_toggle(self, values, status):
-        """
-        Enable/Disable the attribute's value on the urbanpiper store. (If menu is synced with urban piper)
-        """
         value_lst_str = [
             f"{value.product_tmpl_id.id}-{value.product_attribute_value_id.id}"
             for value in values
@@ -580,9 +528,6 @@ class UrbanPiperClient:
     def request_status_update(
         self, order_id, new_status, prep_time, code=None
     ) -> tuple:
-        """
-        Update status in Urban Piper
-        """
         endpoint = f"external/api/v1/orders/{order_id}/status/"
         payload = {
             "new_status": new_status,
@@ -604,17 +549,11 @@ class UrbanPiperClient:
             return False, "Failed to update status in Urban Piper"
 
     def urbanpiper_order_reference_update(self, order) -> None:
-        """
-        Update order reference in Urban Piper
-        """
         endpoint = f"external/api/v1/orders/{order.delivery_identifier}/"
         payload = {"reference_id": order.name}
         self._send_api_request(endpoint, method="PUT", data=payload)
 
     def urbanpiper_store_status_update(self, status) -> None:
-        """
-        Change store status in urban piper.
-        """
         provider_name = self.config.env.context.get("provider_name")
         platforms = (
             [provider_name]
@@ -632,9 +571,6 @@ class UrbanPiperClient:
             self._send_api_request("hub/api/v1/location/", data=payload)
 
     def _get_jpeg_datas(self, datas):
-        """
-        Get the image data in jpeg format.
-        """
         try:
             data_uri = (
                 self.config.env["ir.qweb"]
@@ -647,10 +583,6 @@ class UrbanPiperClient:
             return datas
 
     def _get_or_create_public_image_url(self, record) -> str:
-        """
-        Get public image URL for the given record (product or category).
-        Converts webp to jpeg if necessary.
-        """
         base_url = self.config.urbanpiper_webhook_url
         image_data = (
             record.image_1920
@@ -686,14 +618,9 @@ class UrbanPiperClient:
         return url_join(base_url, local_url)
 
     def request_refresh_webhooks(self):
-        """
-        If customer uses multi db on the same URL. UrbanPiper only stores one webhook per URL.
-        When the user switches the database, they can press the refresh webhook button to
-        update the webhook parameters according to the new database.
-        """
         self.config.urbanpiper_webhook_url = (
             self.config.get_base_url()
-        )  # registring webhook
+        )
         self._register_webhook()
         wehbook_json = self._send_api_request(
             "external/api/v1/webhooks?limit=50", method="GET"

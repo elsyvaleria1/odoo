@@ -14,11 +14,6 @@ _logger = logging.getLogger(__name__)
 
 
 def is_whatsapp_channel(channel) -> bool:
-    """Predicate to filter channels for which the channel type is 'whatsapp'.
-
-    :returns: Whether the channel is a whatsapp channel.
-    :rtype: bool
-    """
     return channel.channel_type == "whatsapp"
 
 
@@ -72,7 +67,6 @@ class DiscussChannel(models.Model):
 
     @api.constrains("channel_type", "whatsapp_number")
     def _check_whatsapp_number(self) -> None:
-        # constraint to check the whatsapp number for channel with type 'whatsapp'
         missing_number = self.filtered(
             lambda channel: (
                 channel.channel_type == "whatsapp" and not channel.whatsapp_number
@@ -86,7 +80,6 @@ class DiscussChannel(models.Model):
                 )
             )
 
-    # NEW COMPUTES
 
     @api.depends("last_wa_mail_message_id")
     def _compute_whatsapp_channel_valid_until(self) -> None:
@@ -106,9 +99,6 @@ class DiscussChannel(models.Model):
                 and channel.whatsapp_channel_valid_until > fields.Datetime.now()
             )
 
-    # ------------------------------------------------------------
-    # MAILING
-    # ------------------------------------------------------------
 
     def _notify_get_channel_message_types(self) -> frozenset[str]:
         return super()._notify_get_channel_message_types() | {"whatsapp_message"}
@@ -122,7 +112,6 @@ class DiscussChannel(models.Model):
         parent_msg_id = (
             kwargs.pop("parent_msg_id") if "parent_msg_id" in kwargs else False
         )
-        # WhatsApp msg must exist before notify to ensure it's included in notifications.
         if kwargs.get("whatsapp_inbound_msg_uid") and self.channel_type == "whatsapp":
             self.env["whatsapp.message"].create(
                 {
@@ -155,9 +144,9 @@ class DiscussChannel(models.Model):
                 parent_wa_msg
                 and len(parent_wa_msg) == 1
                 and parent_wa_msg.message_type
-                == "outbound"  # replying to an outgoing wa
+                == "outbound"
                 and parent_wa_msg.mobile_number_formatted
-                == self.whatsapp_number  # same recipient
+                == self.whatsapp_number
             ):
                 valid_parent_id = parent_id
 
@@ -237,12 +226,8 @@ class DiscussChannel(models.Model):
         if valid_parent_id:
             messages.parent_id = valid_parent_id
 
-        # only return the non-audio message if there are two, as we don't expect to post two messages
         return messages[0]
 
-    # ------------------------------------------------------------
-    # CONTROLLERS
-    # ------------------------------------------------------------
 
     def _get_whatsapp_channel(
         self,
@@ -252,15 +237,6 @@ class DiscussChannel(models.Model):
         create_if_not_found=False,
         related_message=False,
     ):
-        """Creates a whatsapp channel.
-
-        :param str whatsapp_number: whatsapp phone number of the customer. It should
-          be formatted according to whatsapp standards, aka {country_code}{national_number}.
-
-        :returns: whatsapp discussion discuss.channel
-        """
-        # be somewhat defensive with number, as it is used in various flows afterwards
-        # notably in 'message_post' for the number, and called by '_process_messages'
         base_number = (
             whatsapp_number
             if whatsapp_number.startswith("+")
@@ -328,7 +304,6 @@ class DiscussChannel(models.Model):
             )
             partners_to_notify |= channel.whatsapp_partner_id
             if related_message:
-                # Add message in channel about the related document
                 info = self.env._(
                     "Related %(model_name)s: ",
                     model_name=self.env["ir.model"]
@@ -352,7 +327,6 @@ class DiscussChannel(models.Model):
                     subtype_xmlid="mail.mt_note",
                 )
                 if hasattr(related_record, "message_post"):
-                    # Add notification in document about the new message and related channel
                     info = self.env._(
                         "A new WhatsApp channel is created for this document"
                     )
@@ -385,9 +359,6 @@ class DiscussChannel(models.Model):
             channel._broadcast(partners_to_notify.ids)
         return channel
 
-    # ------------------------------------------------------------
-    # OVERRIDE
-    # ------------------------------------------------------------
 
     def _action_unfollow(
         self, partner=None, guest=None, post_leave_message=True
@@ -416,7 +387,6 @@ class DiscussChannel(models.Model):
         return super()._to_store_defaults(target) + [
             Store.Attr("whatsapp_channel_valid_until", predicate=is_whatsapp_channel),
             Store.One("whatsapp_partner_id", [], predicate=is_whatsapp_channel),
-            # sudo: discuss.channel - reading wa_account_id is allowed for multi-company users
             Store.One(
                 "wa_account_id", ["name"], predicate=is_whatsapp_channel, sudo=True
             ),
@@ -448,9 +418,6 @@ class DiscussChannel(models.Model):
             ),
         }
 
-    # ------------------------------------------------------------
-    # COMMANDS
-    # ------------------------------------------------------------
 
     def execute_command_leave(self, **kwargs) -> None:
         if self.channel_type == "whatsapp":

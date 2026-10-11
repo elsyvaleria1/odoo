@@ -12,7 +12,6 @@ from odoo.tools.image import image_process
 
 _debug = DebugLog(__name__)
 
-# The light top bar and page of the web client: the installed app opens on them.
 MANIFEST_THEME_COLOR = "#f8f8fc"
 MANIFEST_BACKGROUND_COLOR = "#f5f5f7"
 

@@ -146,8 +146,6 @@ class StockWarehouseLocation(models.Model):
                 "stock.location", list(missing.values()), company_id
             )
             locations = self.env["stock.location"].create(list(missing.values()))
-            # The outer write has not assigned its own picking types yet: the refresh
-            # this nested write triggers must not create a second one for them.
             pending = [
                 fname
                 for fname in vals
@@ -252,7 +250,7 @@ class StockWarehouseLocation(models.Model):
         if location:
             return location
         raise UserError(
-            self.env._(PARTNER_LOCATION_MISSING[usage])  # noqa: E8502  resolves an _lt() table entry in this env's language
+            self.env._(PARTNER_LOCATION_MISSING[usage])
         )
 
     @api.model

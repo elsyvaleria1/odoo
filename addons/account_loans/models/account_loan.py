@@ -132,13 +132,12 @@ class AccountLoan(models.Model):
         comodel_name="account.loan.line",
         inverse_name="loan_id",
         string="Loan Lines",
-    )  # Amortization schedule
+    )
 
-    # Computed fields
     display_name = fields.Char(
         string="Loan name",
         store=True,
-    )  # stored for pivot view
+    )
     start_date = fields.Date(compute="_compute_start_end_date")
     end_date = fields.Date(compute="_compute_start_end_date")
     is_wrong_date = fields.Boolean(compute="_compute_is_wrong_date")
@@ -150,7 +149,7 @@ class AccountLoan(models.Model):
     outstanding_balance = fields.Monetary(
         compute="_compute_outstanding_balance",
         aggregator="sum",
-    )  # Based on the posted entries
+    )
     nb_posted_entries = fields.Integer(compute="_compute_nb_posted_entries")
     linked_assets_ids = fields.One2many(
         comodel_name="account.depreciation.board",
@@ -160,7 +159,6 @@ class AccountLoan(models.Model):
 
     _check_company_auto = True
 
-    # Constrains
     @api.constrains("amount_borrowed", "interest", "duration")
     def _check_nonnegative_loan_terms(self) -> None:
         for loan in self:
@@ -177,7 +175,6 @@ class AccountLoan(models.Model):
             if loan.duration < 0:
                 raise ValidationError(self.env._("The duration must be positive"))
 
-    # Schedule helpers
     def _get_ordered_lines(self):
         self.check_singleton()
         return self.line_ids.sorted(
@@ -185,15 +182,10 @@ class AccountLoan(models.Model):
         )
 
     def _is_skipped(self, line) -> bool:
-        """Lines up to and including ``skip_until_date`` were entered by hand."""
         self.check_singleton()
         return bool(self.skip_until_date) and line.date <= self.skip_until_date
 
     def _iter_schedule_windows(self):
-        """Yield each line with the lines falling due within a year after it.
-
-        The horizon only moves forward, so one pass covers the whole schedule.
-        """
         self.check_singleton()
         schedule = self._get_ordered_lines()
         dates = [line.date for line in schedule]
@@ -213,7 +205,6 @@ class AccountLoan(models.Model):
             for line in self.line_ids
         )
 
-    # State machine — the single owner of every `state` write
     def _set_state(self, target) -> None:
         for loan in self:
             if loan.state == target:
@@ -229,11 +220,9 @@ class AccountLoan(models.Model):
             loan.state = target
 
     def _settle_state(self) -> None:
-        """Pick the state implied by the entries that are actually posted."""
         for loan in self:
             loan._set_state("closed" if loan._is_fully_repaid() else "running")
 
-    # Compute methods
     @api.depends("name", "start_date", "end_date")
     def _compute_display_name(self):
         for loan in self:
@@ -314,14 +303,12 @@ class AccountLoan(models.Model):
         for loan in self:
             loan.linked_assets_ids = loan.asset_group_id.linked_asset_ids
 
-    # Entry preparation
     def _get_move_label(self, line, kind) -> str:
         self.check_singleton()
         period = format_date(self.env, line.date, date_format="MM/y")
         return f"{self.name} - {kind} {period}"
 
     def _prepare_payment_move_vals(self, line) -> dict:
-        """Principal and interest for one period, to match against the bank."""
         self.check_singleton()
         return {
             "company_id": self.company_id.id,
@@ -361,11 +348,6 @@ class AccountLoan(models.Model):
     def _prepare_reclassification_move_vals(
         self, line, short_term_lines, reverse
     ) -> dict:
-        """Move the principal falling due within a year from long to short term.
-
-        The reversal is built here rather than through ``_reverse_moves()``: at
-        one entry per period per loan the extra copy-and-write is measurable.
-        """
         self.check_singleton()
         amount = sum(short_term_lines.mapped("principal"))
         from_date = format_date(self.env, short_term_lines[0].date, date_format="MM/y")
@@ -380,7 +362,7 @@ class AccountLoan(models.Model):
         short_term_side = "debit" if reverse else "credit"
         move_date = line.date + relativedelta(day=31)
         if reverse:
-            move_date += relativedelta(days=1)  # first day of the next month
+            move_date += relativedelta(days=1)
         return {
             "company_id": self.company_id.id,
             "auto_post": "at_date",
@@ -467,7 +449,6 @@ class AccountLoan(models.Model):
             if not loan.journal_id:
                 raise UserError(self.env._("The loan journal should be set."))
 
-    # Action methods
     def action_confirm(self):
         self._check_confirmable()
 
@@ -527,7 +508,6 @@ class AccountLoan(models.Model):
         reversals._message_log_batch(bodies=reversal_bodies)
 
     def action_upload_amortization_schedule(self, attachment_id) -> dict:
-        """Called when uploading an amortization schedule file"""
         attachment = self.env["ir.attachment"].browse(attachment_id)
         if attachment.mimetype not in IMPORTABLE_MIMETYPES:
             raise UserError(
@@ -565,7 +545,6 @@ class AccountLoan(models.Model):
         }
 
     def action_file_uploaded(self):
-        """Called after the amortization schedule has been imported by the wizard"""
         self.check_singleton()
         if not self.line_ids:
             return self._get_loan_action(
@@ -575,7 +554,6 @@ class AccountLoan(models.Model):
         return self._get_loan_action(self.env._("Loans"), res_id=self.id)
 
     def _sync_header_with_schedule(self) -> None:
-        """Restate the header totals from the schedule that was just generated."""
         for loan in self:
             schedule = loan._get_ordered_lines()
             loan.amount_borrowed = sum(schedule.mapped("principal"))
@@ -584,7 +562,6 @@ class AccountLoan(models.Model):
             loan.date = schedule[0].date if schedule else False
 
     def _clear_schedule(self) -> None:
-        """Drop the schedule and everything generated from it."""
         for loan in self:
             if loan.state != "draft":
                 raise UserError(
@@ -629,7 +606,7 @@ class AccountLoan(models.Model):
             values["start_date"] = self.date
             values["first_payment_date"] = self.date.replace(day=1) + relativedelta(
                 months=1
-            )  # first day of next month
+            )
         return self._create_wizard_action(
             self.env._("Compute New Loan"),
             "wizard.account.loan.create.schedule",
@@ -679,15 +656,8 @@ class AccountLoan(models.Model):
         self.check_singleton()
         return records_action(self.env._("Linked Assets"), self.linked_assets_ids)
 
-    # Model methods
     @api.ondelete(at_uninstall=False)
     def _unlink_except_posted_entries(self) -> None:
-        """Mirror ``resource.asset._unlink_if_model_or_draft``.
-
-        ``account.move.generating_loan_line_id`` is a database-level cascade, so
-        without this guard deleting a loan removes journal entries in SQL —
-        below ``unlink()``, the audit trail and the hash chain.
-        """
         for loan in self:
             if loan.state in ("running", "closed"):
                 raise UserError(

@@ -37,7 +37,6 @@ class HrPayslip(models.Model):
         ]
 
     def _get_errors_by_slip(self):
-        # EXTENDS hr_payroll
         errors_by_slip = super()._get_errors_by_slip()
         draft_slips = self.filtered(lambda ps: ps.state == "draft")
         for (struct, company), slips in (
@@ -78,8 +77,6 @@ class HrPayslip(models.Model):
         return errors_by_slip
 
     def action_payslip_cancel(self):
-        # Remove the link to the cancelled payslip so it can be linked to another payslip
-        # EXTENDS hr_payroll
         res = super().action_payslip_cancel()
         expenses_sudo = self.expense_ids.sudo()
         _debug.lifecycle(
@@ -90,17 +87,14 @@ class HrPayslip(models.Model):
         return res
 
     def action_payslip_draft(self):
-        # We can add the new or previously unlinked expenses to the payslip
-        # EXTENDS hr_payroll
         res = super().action_payslip_draft()
         self._link_expenses_to_payslip(
             clear_existing=False
-        )  # Add the new expenses to the payslip, but keep the already linked ones
+        )
         return res
 
     @api.model_create_multi
     def create(self, vals_list):
-        # EXTENDS hr_payroll
         payslips = super().create(vals_list)
         draft_slips = payslips.filtered(lambda p: p.employee_id and p.state == "draft")
         if not draft_slips:
@@ -109,7 +103,6 @@ class HrPayslip(models.Model):
         return payslips
 
     def write(self, vals):
-        # EXTENDS hr_payroll
         res = super().write(vals)
         if "expense_ids" in vals:
             self._update_expense_input_line_ids()
@@ -129,9 +122,6 @@ class HrPayslip(models.Model):
         )
 
     def _link_expenses_to_payslip(self, clear_existing=True) -> None:
-        """
-        Link expenses to a payslip if the payslip is in draft state and the expense is not already linked to a payslip.
-        """
         if not (
             self.env.is_superuser()
             or self.env.user.has_group("hr_payroll.group_hr_payroll_user")
@@ -146,7 +136,6 @@ class HrPayslip(models.Model):
             )
 
         expenses_sudo = self.sudo()._get_employee_expenses_to_refund_in_payslip()
-        # group by employee
         expenses_by_employee = expenses_sudo.grouped("employee_id")
         for slip_sudo in self.sudo():
             payslip_expenses = expenses_by_employee.get(
@@ -178,12 +167,6 @@ class HrPayslip(models.Model):
                 ]
 
     def _update_expense_input_line_ids(self, search_new_valid_expenses=False) -> None:
-        """
-        Update the payslip input lines to reflect the total amount of the expenses.
-        :param bool search_new_valid_expenses:
-            If False, will only compute the lines using the expenses already linked to the payslip.
-            If True, will take all the expenses that are valid for this payslip (do not link them to the payslip)
-        """
         expense_type = self.env.ref(
             "hr_payroll_expense.expense_other_input", raise_if_not_found=False
         )
@@ -200,10 +183,9 @@ class HrPayslip(models.Model):
             _logger.warning(
                 "The 'hr_payroll_expense.expense_other_input' payslip input type is missing."
             )
-            return  # We cannot do anything without the expense type
+            return
 
         for payslip in self:
-            # Sudo to bypass access rights, as we just need to read the expense's total amounts
             expenses_sudo = payslip.sudo().expense_ids
             if expenses_by_employee_sudo:
                 employee_expenses_sudo = expenses_by_employee_sudo.get(
@@ -212,7 +194,7 @@ class HrPayslip(models.Model):
                 if employee_expenses_sudo:
                     del expenses_by_employee_sudo[
                         payslip.employee_id
-                    ]  # To avoid double assignations
+                    ]
                 expenses_sudo += employee_expenses_sudo
             total = sum(expenses_sudo.mapped("total_amount"))
             lines_to_remove = payslip.input_line_ids.filtered(
@@ -230,12 +212,11 @@ class HrPayslip(models.Model):
             "hr_payroll_expense.expense_other_input", raise_if_not_found=False
         )
         if not expense_type:
-            return  # We cannot do anything without the expense type
+            return
         for payslip_sudo in self.sudo():
             if not payslip_sudo.input_line_ids.filtered(
                 lambda line: line.input_type_id == expense_type
             ):
-                # Sudo to bypass access rights, as we just need to unlink the two models
                 payslip_sudo.expense_ids.payslip_id = False
 
     def action_view_expenses(self):

@@ -35,9 +35,6 @@ class WizardSurveyUserInputViewResult(models.TransientModel):
     def _compute_survey_template_id(self) -> None:
         for wizard in self:
             if not wizard.survey_template_id:
-                # allowed_survey_template_ids is not stored, so on a new record
-                # it yields NewId wrappers; a stored Many2one writes those as
-                # NULL, which the NOT NULL of required=True then rejects
                 wizard.survey_template_id = wizard.allowed_survey_template_ids[
                     :1
                 ]._origin

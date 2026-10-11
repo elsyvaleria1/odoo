@@ -12,12 +12,10 @@ class TestAnalyticPlanOperations(TransactionCase):
         plan = self.env["account.analytic.plan"].create({"name": "Test Plan"})
         column = plan._column_name()
 
-        # the column exists
         self.env.cr.execute(f"SELECT {column} FROM account_analytic_line LIMIT 1")
 
         plan.unlink()
         with self.assertRaises(psycopg.errors.UndefinedColumn), mute_logger("odoo.db"):
-            # column has been deleted
             self.env.cr.execute(f"SELECT {column} FROM account_analytic_line LIMIT 1")
 
     def test_delete_subplan(self):
@@ -118,10 +116,6 @@ class TestAnalyticPlanOperations(TransactionCase):
         self.assertTrue(plan._get_related_field("account.analytic.line"))
 
     def test_project_plan_cannot_be_reparented(self):
-        # `_onchange_parent_id` only guards the form UI; a direct write (RPC,
-        # scripts, other modules) must be blocked too, since the "Project"
-        # plan referenced by `analytic.project_plan` is assumed to always be
-        # a root plan (see the comment in `data/analytic_data.xml`).
         project_plan, __ = self.env["account.analytic.plan"]._get_all_plans()
         other_plan = self.env["account.analytic.plan"].create({"name": "Other Plan"})
         with self.assertRaises(ValidationError):
@@ -140,7 +134,6 @@ class TestAnalyticPlanOperations(TransactionCase):
             }
         )
 
-        # can't delete a plan still used in a view
         with self.assertRaisesRegex(UserError, "still present in views"):
             plan.unlink()
 
@@ -176,18 +169,15 @@ class TestAnalyticPlanOperations(TransactionCase):
             .with_context(validate_analytic=True)
         )
 
-        # the configuration makes it raise an error
         distribution_model.analytic_distribution = {f"{test_account.id}": 100}
         with self.assertRaisesRegex(UserError, r"require a 100% analytic distribution"):
             distribution_model._check_distribution()
 
-        # once it is fixed, the error is not raised anymore
         distribution_model.analytic_distribution = {
             f"{test_account.id},{mandatory_account.id}": 100
         }
         distribution_model._check_distribution()
 
-        # even by keeping a deleted account, the validation still works
         test_account.unlink()
         plan.unlink()
         distribution_model._check_distribution()
@@ -229,13 +219,11 @@ class TestAnalyticPlanOperations(TransactionCase):
             .with_context(validate_analytic=True)
         )
 
-        # mandatory applicability is only in company_2, should not raise for company_1
         distribution_model._check_distribution(
             business_domain="general", company_id=self.env.company.id
         )
 
         applicability.company_id = False
-        # It should apply for all companies now
         with self.assertRaisesRegex(UserError, r"require a 100% analytic distribution"):
             distribution_model._check_distribution(
                 business_domain="general", company_id=self.env.company.id

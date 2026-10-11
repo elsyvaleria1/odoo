@@ -42,7 +42,6 @@ def _open(data: bytes) -> Any:
 
 
 def _streams(container: Any, kind: str) -> list[Any]:
-    # an MP4's cover art is a video stream of one still picture, not footage
     attached_pic = _av().stream.Disposition.attached_pic
     return [
         stream
@@ -87,11 +86,6 @@ def decode_audio(data: bytes, sample_rate: int = AUDIO_SAMPLE_RATE) -> Any:
 
 
 def audio_track(data: bytes) -> bytes:
-    """The first audio stream of a container, re-encoded as mono Ogg Opus.
-
-    A vendor hears audio, not a video container: sending the whole file costs
-    its capacity limit for bytes it never listens to.
-    """
     av = _av()
     out = io.BytesIO()
     with _open(data) as source:

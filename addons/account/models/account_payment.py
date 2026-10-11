@@ -77,7 +77,6 @@ class AccountPayment(models.Model):
     ]
     _description = "Payments"
     _order = "date desc, name desc"
-    # upstream's fields: account.payment.method.line is account.payment.channel
     _legacy_field_names = frozendict(
         {
             "is_reconciled": "is_invoice_reconciled",

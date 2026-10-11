@@ -45,9 +45,6 @@ class StockPicking(models.Model):
 
     def write(self, vals):
         _debug.lifecycle("fleet_picking_write", pickings=self, fields=len(vals))
-        # Only a transfer leaving a docked batch has locations to give back; one
-        # that never saw a dock (a wave split, a plain regrouping) keeps its moves
-        # untouched, or rewriting them merges and deletes what the split made.
         docked = (
             self.filtered(lambda picking: picking.batch_id.dock_id)
             if "batch_id" in vals
@@ -83,7 +80,6 @@ class StockPicking(models.Model):
         for picking in self:
             moves = picking._get_moves_outside_destination()
             moves.write({"location_dest_id": picking.location_dest_id.id})
-            # A dock re-sources outgoing moves; leaving it gives them their own back.
             resourced = picking._get_moves_outside_source()
             if resourced:
                 _debug.logic(

@@ -21,7 +21,6 @@ class TestCloudStorageAttachmentController(
     HttpCaseWithUserDemo, TestCloudStorageAzureCommon
 ):
     def test_cloud_storage_azure_attachment_upload(self):
-        """Test uploading an attachment with azure cloud storage."""
         thread = self.env["res.partner"].create({"name": "Test"})
         self.env["ir.config_parameter"].set_param("cloud_storage_provider", "azure")
         self.authenticate(self.user_demo.login, self.user_demo.login)
@@ -53,7 +52,6 @@ class TestCloudStorageAttachmentController(
                 attachment = self.env["ir.attachment"].search(
                     [], order="id desc", limit=1
                 )
-                # ignore signature in url
                 content = re.sub(
                     r'"url":\s*"https://accountname\.blob\.core\.windows\.net/[^"]*"',
                     '"url":"[url]"',

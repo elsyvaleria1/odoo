@@ -53,11 +53,11 @@ class Neutralize(DatabaseCommand):
             queries = odoo.modules.neutralize.get_neutralization_queries(
                 installed_modules
             )
-        printed = 0  # debuglog
+        printed = 0
         print("BEGIN;")
         for query in queries:
             print(query.rstrip(";") + ";")
-            printed += 1  # debuglog
+            printed += 1
         print("COMMIT;")
         _debug.logic(
             "cli.neutralize.printed",

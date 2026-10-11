@@ -27,16 +27,12 @@ class _OriginRead(typing.NamedTuple):
     field: Field[typing.Any]
     new_id: NewId
     value: object
-    # the context the copy was read in, for a field cached per context: a
-    # twin given a value in one company still holds its read in another
     key: object
 
 
 def _slots(
     core: OrmCore[Field[typing.Any]], field: Field[typing.Any]
 ) -> Iterator[MutableMapping[typing.Any, typing.Any]]:
-    # every slot the value may sit in: a draft's x2many value is shared by
-    # the scopes, and a slot emptied by an invalidation is a new dict later
     if (slot := core.get_field_data_or_none(field)) is not None:
         yield slot
     for _key, context_slot in core.iter_context_caches(field):
@@ -44,20 +40,11 @@ def _slots(
 
 
 class OriginReads:
-    # A draft made of a saved record (NewId(origin=...)) reads each field it
-    # was not given from that record and caches what it read. The cached copy
-    # stands for "what the record holds", so once the record is written or
-    # invalidated it is dropped, unless the draft has been assigned the field
-    # since, which `forget_assigned` records and the identity of the cached
-    # value tells for the paths that assign without saying so.
     __slots__ = ("_by_model", "_deferred", "telling")
 
     def __init__(self) -> None:
         self._by_model: dict[str, dict[int, list[_OriginRead]]] = {}
         self._deferred: list[tuple[str, list[int], Collection[str]]] = []
-        # while drafts' dependents are told of an eviction, `modified` on a
-        # draft is that telling, not an assignment: a copy read again from
-        # the origin meanwhile stays a copy
         self.telling = 0
 
     def __bool__(self) -> bool:
@@ -107,9 +94,6 @@ class OriginReads:
         ids: Iterable[int] | None,
         fnames: Collection[str],
     ) -> dict[Field[typing.Any], list[NewId]]:
-        # what drafts read from these records and still hold as read: the
-        # records changed, so the copies go, and the drafts' fields that
-        # depend on them are for the caller to tell
         by_origin = self._by_model.get(model_name)
         if not by_origin:
             return {}

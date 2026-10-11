@@ -152,7 +152,6 @@ _VIEW_REF_RE = re.compile(
 
 
 def hierarchy_views(hierarchy: dict[Any, list[Any]]) -> list[Any]:
-    """Every overlay in a `_get_hierarchies()` tree, in no particular order."""
     return [view for children in hierarchy.values() for view in children]
 
 
@@ -174,9 +173,6 @@ def _parse_cached(filepath: str, _mtime_ns: int, _size: int) -> etree._ElementTr
 
 
 def _parse_view_file(filepath: str) -> etree._ElementTree:
-    # dev-xml mode reads a view's file on every arch read, and a file holds
-    # many views: parse it once per version. The tree is shared, so what is
-    # read out of it is copied before it is edited.
     stat = Path(filepath).stat()
     return _parse_cached(filepath, stat.st_mtime_ns, stat.st_size)
 
@@ -279,9 +275,6 @@ _xpath_groups_key = etree.ETXPath("//*[@__groups_key__]")
 _xpath_model_access = etree.ETXPath("//*[@model_access_rights]")
 _xpath_verb = etree.ETXPath("//*[@__verb__]")
 _xpath_verbs_field = etree.ETXPath("//field[@__verbs_model__]")
-# the field a record's read answers the verbs it grants with, and the roots
-# of the (sub)views whose buttons read it: a list's <groupby> is one, on the
-# comodel of the many2one it names
 VERBS_FIELD = "__verbs"
 VERB_ROOTS = ("form", "list", "kanban", "groupby")
 _xpath_groups = etree.ETXPath("//*[@groups]")
@@ -420,12 +413,12 @@ class IrUiView(models.Model):
     def _compute_arch(self) -> None:
         read_from_file_ctx = self.env.context.get("read_arch_from_file")
         dev_xml = "xml" in config["dev_mode"]
-        from_file = 0  # debuglog
+        from_file = 0
         for view in self:
             arch_fs = None
             if read_from_file_ctx or (dev_xml and not view.arch_updated):
                 arch_fs = view._get_arch_from_file()
-            from_file += bool(arch_fs)  # debuglog
+            from_file += bool(arch_fs)
             view.arch = arch_fs or view.arch_db
         _debug.logic(
             "compute_arch",
@@ -484,8 +477,6 @@ class IrUiView(models.Model):
         lang = self.env.lang or "en_US"
         field_arch_db = self._fields["arch_db"]
         if lang == "en_US":
-            # the file is the source language: the dictionary would map every
-            # term to itself, and the walk is what normalises the arch
             return field_arch_db.translate(lambda term: term, arch)
         translations = field_arch_db.get_translation_dictionary(
             self.with_context(
@@ -501,10 +492,6 @@ class IrUiView(models.Model):
         self._write_arch_db({view: view.arch for view in self})
 
     def _write_arch_db(self, arch_by_view: dict[Self, str]) -> None:
-        # each view's arch_db is its own write, nested in the one that set
-        # the arch: that write cleared the templates cache and dropped the
-        # customizations already, and the set is validated once at the end,
-        # so a tree several of them share combines once
         arch_fs = self._get_install_arch_fs()
         for view in self.with_context(ir_ui_view_nested_arch_write=True):
             arch = arch_by_view[view]
@@ -516,8 +503,6 @@ class IrUiView(models.Model):
             _debug.lifecycle("arch_written", view=view.id, arch_fs=arch_fs)
             view.write(data)
         self._validate()
-        # xml_translate normalises what it stores, and the value depends on
-        # the language: no environment keeps the value it was handed
         self.invalidate_recordset(["arch"])
 
     @api.depends("arch")
@@ -632,10 +617,6 @@ class IrUiView(models.Model):
     def _iter_invalid_locators(
         self, source: _Element, specs_tree: _Element
     ) -> typing.Iterator[dict[str, Any]]:
-        """Each spec of this overlay that names no node of ``source``, the
-        specs applying as the walk goes so a later one sees what an earlier
-        one inserted. A move inside a spec is a locator too; any other
-        position on a spec's child is misplaced and reported as is."""
 
         def unlocated(spec: _Element) -> dict[str, Any] | None:
             node = None
@@ -737,11 +718,6 @@ class IrUiView(models.Model):
 
     @contextmanager
     def _validation_deferred(self) -> Iterator[Self]:
-        """Validate the views written through the yielded records once, when
-        the block ends, on the state it leaves: an operation that writes
-        several views of one tree (a copy on write, its children re-homed
-        one by one) otherwise combines and compiles that tree again for each,
-        through intermediate states. A nested block defers to the outermost."""
         if self.env.context.get("ir_ui_view_validation_scope") is not None:
             yield self
             return
@@ -751,7 +727,6 @@ class IrUiView(models.Model):
             yield self.with_context(ir_ui_view_validation_scope=scope)
             completed = True
         finally:
-            # an operation that raised is rolled back: nothing to validate
             if completed:
                 self._check_validation_scope(scope)
 
@@ -766,8 +741,6 @@ class IrUiView(models.Model):
             partial._validate(partial=True)
 
     def _check_deferred_now(self) -> None:
-        """Validate what the enclosing _validation_deferred recorded so far,
-        and let the block record afresh."""
         scope = self.env.context.get("ir_ui_view_validation_scope")
         if scope is None:
             return
@@ -777,7 +750,6 @@ class IrUiView(models.Model):
         self._check_validation_scope(pending)
 
     def _validate(self, *, partial: bool = False) -> None:
-        """_check_xml, or recorded for the enclosing _validation_deferred."""
         scope = self.env.context.get("ir_ui_view_validation_scope")
         if scope is not None:
             (scope.partial if partial else scope.full).update(self._ids)
@@ -808,7 +780,6 @@ class IrUiView(models.Model):
                 _debug.logic("check_xml.skipped", view=view.id, reason="no_arch")
                 continue
             if view.mode == "primary" and not view.active:
-                # served to nobody: its tree is validated when it is activated
                 _debug.logic("check_xml.skipped", view=view.id, reason="archived")
                 continue
             try:
@@ -856,8 +827,6 @@ class IrUiView(models.Model):
         return True
 
     def _check_combined_arch(self, combined_arch: _Element) -> None:
-        """This non-qweb view's combined arch against the model and the
-        schema; raises the ValueError _check_xml reports."""
         self.check_singleton()
         if _xpath_attrs(combined_arch) or _xpath_states(combined_arch):
             _debug.logic("check_xml.failed", view=self.id, stage="legacy_attrs")
@@ -904,7 +873,6 @@ class IrUiView(models.Model):
             lines = etree.tostring(
                 view._get_combined_arch(), encoding="unicode"
             ).splitlines(keepends=True)
-            # a node built in code, not parsed, has no line: show the start
             line = error.context["line"] or 1
             fivelines = "".join(lines[max(0, line - 3) : line + 2])
             err = ValidationError(
@@ -942,7 +910,6 @@ class IrUiView(models.Model):
         return root
 
     def _get_primary_descendants(self) -> Self:
-        # one read per level, none when the tree is in cache already
         descendants = self.env["ir.ui.view"]
         level = self.inherit_children_ids
         while level:
@@ -953,14 +920,10 @@ class IrUiView(models.Model):
         return descendants
 
     def _check_sibling_primary_views(self) -> None:
-        """The primary views hanging off these primary roots still combine:
-        they inherit the roots' extensions and one may no longer apply."""
         sibling_primary_views = self._get_primary_descendants()
 
-        # while loading, only views this load has already brought up to date
-        # apply -- base's included, which loads before any module is loaded
         if not self.pool.ready and sibling_primary_views:
-            found = len(sibling_primary_views)  # debuglog
+            found = len(sibling_primary_views)
             sibling_primary_views = sibling_primary_views._filter_loaded_views(
                 include_loaded_xmlids=True
             )
@@ -980,20 +943,12 @@ class IrUiView(models.Model):
             sibling_primary_views._get_combined_archs()
 
     def _check_qweb_compiles(self) -> None:
-        """The templates these qweb views take part in still compile: the
-        primary each one combines into, and every primary inheriting it."""
         roots = self.browse(unique(view._get_primary_root().id for view in self))
         if self.pool.is_loading:
-            # a template may extend or call one a later data file declares, and
-            # an extension the load is about to delete may no longer compile:
-            # the end of the load is the first point the tree is final, and
-            # each root compiles once however many files or hooks touched it
             self.pool.loading.state(_QWEB_ROOTS_TO_COMPILE, set).update(roots.ids)
             _debug.logic("qweb_compile.deferred", views=len(self), roots=len(roots))
             return
         failures = (roots | roots._get_primary_descendants())._get_qweb_compile_errors(
-            # a data file loaded outside a module load may call a template a
-            # later file declares: nothing tells when the set is complete
             check_calls=not self.env.context.get("install_mode"),
         )
         if failures:
@@ -1007,10 +962,6 @@ class IrUiView(models.Model):
 
     @api.model
     def _check_loaded_qweb_templates(self) -> None:
-        """Compile the templates the data files of this load touched, once
-        each, after the records the load made obsolete are gone: a stale
-        extension its module no longer declares must not fail the upgrade
-        that deletes it."""
         if not self.pool.is_loading:
             return
         queued = self.pool.loading.state(_QWEB_ROOTS_TO_COMPILE, set)
@@ -1031,15 +982,6 @@ class IrUiView(models.Model):
             )
 
     def _get_qweb_compile_errors(self, *, check_calls: bool = True) -> list[str]:
-        """What keeps each of these primary qweb views from compiling, or
-        from finding a template it calls by name, one entry per view."""
-        # the compiled code and the trees differ by website, branding, lang:
-        # validation compiles the variant no request context chose, in the
-        # language of the save -- while a write's arch inverse runs, the arch
-        # of the views it writes is readable in that language only
-        # the keys the arch is computed under are kept too: a key read as False
-        # by the writer and missing here is another cache entry, where the
-        # arch a write is protecting reads empty
         context = self.env.context
         qweb = self.env["ir.qweb"].with_context(
             {
@@ -1139,9 +1081,6 @@ class IrUiView(models.Model):
     _model_type_inherit_id = models.Index("(model, inherit_id)")
 
     def _default_mode(self, values: dict[str, Any]) -> dict[str, Any]:
-        """The values with the mode an inherit_id change implies, when they
-        set none: an extension under a parent, a primary without one. A view
-        that already inherits keeps its mode when the parent changes."""
         if "mode" in values or "inherit_id" not in values:
             return values
         if values["inherit_id"] and self and all(view.inherit_id for view in self):
@@ -1221,7 +1160,6 @@ class IrUiView(models.Model):
         return result
 
     def _get_parent_types(self, vals_list: list[dict[str, Any]]) -> dict[int, str]:
-        """The type of each parent a typeless view in the batch inherits."""
         inherit_ids = {
             values["inherit_id"]
             for values in vals_list
@@ -1280,8 +1218,6 @@ class IrUiView(models.Model):
     def _infer_view_type(
         self, values: dict[str, Any], parent_types: dict[int, str]
     ) -> str | None:
-        """The type the values imply: the parent's, or the root tag of the
-        arch. None when the arch does not parse -- validation reports that."""
         if values.get("inherit_id"):
             return parent_types.get(values["inherit_id"])
         arch = self._first_arch(values, ("arch", "arch_base", "arch_db"))
@@ -1307,7 +1243,6 @@ class IrUiView(models.Model):
         return view_type
 
     def _get_install_arch_fs(self) -> str | None:
-        """The addons-relative path of the data file being loaded, if any."""
         install_filename = self.env.context.get("install_filename")
         if not install_filename:
             return None
@@ -1348,9 +1283,6 @@ class IrUiView(models.Model):
         return super().write(vals)
 
     def _write_split_by_mode_default(self, vals: dict[str, Any]) -> bool:
-        """The mode an inherit_id change implies is per view (_default_mode):
-        a batch where some views already inherit and some do not is written
-        as two. True when it was."""
         if "mode" in vals or not vals.get("inherit_id"):
             return False
         inheriting = self.filtered("inherit_id")
@@ -1366,7 +1298,6 @@ class IrUiView(models.Model):
         return True
 
     def _with_arch_updated(self, vals: dict[str, Any]) -> dict[str, Any]:
-        """An arch written outside a data file marks the view as modified."""
         if (
             "arch_updated" in vals
             or not ("arch" in vals or "arch_base" in vals)
@@ -1382,11 +1313,11 @@ class IrUiView(models.Model):
             custom_view.unlink()
 
     def _save_arch_prev(self) -> None:
-        saved = 0  # debuglog
+        saved = 0
         for view in self.with_context(lang=None):
             if view.arch_db:
                 super(IrUiView, view).write({"arch_prev": view.arch_db})
-                saved += 1  # debuglog
+                saved += 1
         _debug.lifecycle("write.arch_prev_saved", views=len(self), saved=saved)
 
     def _write_revalidating(self, vals: dict[str, Any], *, deferred: bool) -> bool:
@@ -1398,9 +1329,6 @@ class IrUiView(models.Model):
         return res
 
     def _write_recombining(self, vals: dict[str, Any]) -> bool:
-        # combine once on the written tree; only a tree that fails is asked
-        # whether it combined before the write, and one that did not is
-        # written without a verdict, the way a repair of a broken view needs
         try:
             with self.env.cr.savepoint():
                 res = super().write(vals)
@@ -1419,9 +1347,6 @@ class IrUiView(models.Model):
         return res
 
     def _get_customizations(self) -> Any:
-        """The users' customizations of these views, which a write on what
-        the view shows drops. While loading, the views that carry one are one
-        query per pass: every view written from a data file asked its own."""
         Custom = self.env["ir.ui.view.custom"].sudo()
         if self.pool.is_loading:
             state = self.pool.loading.state(_CUSTOMIZED_VIEW_IDS, dict)
@@ -1437,7 +1362,6 @@ class IrUiView(models.Model):
 
     @api.model
     def _forget_customized_views(self) -> None:
-        # a customization made while loading changes which views carry one
         if self.pool.is_loading:
             self.pool.loading.state(_CUSTOMIZED_VIEW_IDS, dict).clear()
 
@@ -1525,11 +1449,11 @@ class IrUiView(models.Model):
         default = dict(default or {})
         has_default_without_key = "key" not in default
         vals_list = super().copy_data(default=default)
-        rekeyed = 0  # debuglog
+        rekeyed = 0
         for view, vals in zip(self, vals_list, strict=True):
             if view.key and has_default_without_key:
                 vals["key"] = f"{view.key}_{str(uuid.uuid4())[:6]}"
-                rekeyed += 1  # debuglog
+                rekeyed += 1
         _debug.lifecycle("copy_data", count=len(self), rekeyed=rekeyed)
         return vals_list
 
@@ -1685,10 +1609,6 @@ class IrUiView(models.Model):
         return views
 
     def _get_primary_anchored_ids(self) -> set[int]:
-        """The primary views among these and every view above them: what a
-        primary view is built on, so each is part of its tree whether active
-        or not -- the active flag decides which extensions join a tree, not
-        whether a primary view keeps its own definition."""
         anchored: set[int] = set()
         for view in self:
             if view.mode != "primary":
@@ -1699,10 +1619,6 @@ class IrUiView(models.Model):
         return anchored
 
     def _get_undeclared_view_ids(self, module: str) -> set[int]:
-        """The views `module`'s upgrade did not write and only it names: no
-        longer declared, and deleted by `_process_end` once every module is in.
-        Until then they would extend their parents with an older version's
-        arch, so the loader sets them aside as each module finishes."""
         self.env["ir.model.data"].flush_model(
             ["module", "name", "model", "res_id", "noupdate"]
         )
@@ -1743,10 +1659,6 @@ class IrUiView(models.Model):
         loaded_modules = list(self.pool.loaded_modules)
         if install_module and not include_loaded_xmlids:
             loaded_modules.append(install_module)
-        # with include_loaded_xmlids, a view of the module being loaded counts
-        # once this load has written it: an upgrade otherwise checks a parent
-        # against children the module has not rewritten yet, still in the
-        # arch an older version left
         valid_view_ids = self._get_loaded_view_ids(ids_to_check, loaded_modules) | set(
             check_view_ids
         )
@@ -1856,10 +1768,6 @@ class IrUiView(models.Model):
         )
 
     def _flag_validated_specs(self, arch: _Element) -> bool:
-        """Mark what of this overlay's specs the validation covers: the nodes
-        an after/before/inside spec inserts, the attributes spec's target.
-        True when the overlay replaces a node, which validates the whole
-        combined view — the caller flags its root."""
         validate_view_ids = self.env.context.get("validate_view_ids")
         if (
             not validate_view_ids
@@ -1903,8 +1811,6 @@ class IrUiView(models.Model):
     def _combine_tree(
         self, hierarchy: dict[Self, list[Self]]
     ) -> tuple[_Element, Node | None]:
-        """The combined arch, and the IR it was combined on — None on the XML
-        path (branding), where the tree carries no provenance."""
         self.check_singleton()
         if self.mode != "primary":
             _debug.logic("combine_refused", view=self.id, mode=self.mode)
@@ -1927,19 +1833,15 @@ class IrUiView(models.Model):
             sorted(hierarchy[self], key=lambda v: v.mode == "primary")
         )
         tree_cut_off_view = self.env.context.get("ir_ui_view_tree_cut_off_view")
-        # The overlays apply as patches on the view IR; a spec the patches
-        # cannot express goes through the XML combine, and so does every
-        # spec while branding is on (the website editor reads the processing
-        # instructions and data-oe-* marks the XML path leaves).
         branding = bool(self.env.context.get("inherit_branding"))
         combined = None if branding else Applied(root=from_arch(combined_arch))
-        applied = patched = 0  # debuglog
+        applied = patched = 0
         while queue:
             view = queue.popleft()
             if view == tree_cut_off_view:
                 _debug.logic("combine.cut_off", root=self.id, view=view.id)
                 break
-            applied += 1  # debuglog
+            applied += 1
             arch = etree.fromstring(view.arch or "<data/>")
             if branding:
                 view.inherit_branding(arch)
@@ -1948,10 +1850,8 @@ class IrUiView(models.Model):
                 combined_arch = view.apply_inheritance_specs(combined_arch, arch)
             else:
                 if view.mode == "primary":
-                    # a primary child starts a view of its own: what it sets
-                    # over its base is its definition, not a conflict
                     combined.managed.clear()
-                patched += view._apply_overlay(combined, arch)  # debuglog
+                patched += view._apply_overlay(combined, arch)
 
             for child_view in reversed(hierarchy[view]):
                 if child_view.mode == "primary":
@@ -1959,8 +1859,6 @@ class IrUiView(models.Model):
                 else:
                     queue.appendleft(child_view)
 
-        # the flag lands on the root the overlays leave, so a replaced root
-        # is validated whole too
         if validates_whole:
             _debug.logic("validation_flagged", view=self.id, scope="whole")
             if combined is None:
@@ -1988,10 +1886,6 @@ class IrUiView(models.Model):
         return to_arch(combined.root), combined.root
 
     def _apply_overlay(self, combined: Applied, arch: _Element) -> int:
-        """This view's specs onto the IR: as patches where a patch can express
-        the spec, the XML combine for the rest. Returns how many were patches."""
-        # the record reference, not the xml id: a provenance that costs no
-        # query per overlay (the xml id is one ir.model.data lookup each)
         origin = f"ir.ui.view,{self.id}"
         patches, specs = combine_specs(
             combined, arch, origin, self.apply_inheritance_specs
@@ -2006,13 +1900,6 @@ class IrUiView(models.Model):
         return patches
 
     def get_provenance(self) -> dict[str, dict[str, Any]]:
-        """Which view put each node of this view's combined arch where it is.
-
-        Keyed by the node's id (`odoo.tools.view_ir.identify`): the primary
-        for what its own arch holds, the overlay that inserted the node
-        otherwise, as ``{"view_id": int, "xml_id": str | None, "kind": str}``.
-        Empty while branding is on — the XML combine carries no provenance.
-        """
         self.check_singleton()
         self.browse().check_access("read")
         (root, hierarchy) = self._get_hierarchies()[0]
@@ -2057,7 +1944,6 @@ class IrUiView(models.Model):
         self._fields["inherit_id"]._insert_cache(self.browse(ids), inherit_ids)
 
     def _get_hierarchies(self) -> list[tuple[Self, dict[Self, list[Self]]]]:
-        """For each view, its primary root and the overlay tree under it."""
         chains = self._get_ancestor_chains()
         roots = self.browse(chain[-1] for chain in chains)
         views = self.browse(unique(view_id for chain in chains for view_id in chain))
@@ -2101,7 +1987,6 @@ class IrUiView(models.Model):
         ]
 
     def _get_ancestor_chains(self) -> list[list[int]]:
-        """For each view, the ids from itself up to its root, root last."""
         self._prefetch_ancestry()
         chains = []
         for view in self:
@@ -2115,17 +2000,8 @@ class IrUiView(models.Model):
     def _get_admitted_view_ids(
         self, chains: list[list[int]], check_view_ids: Collection[int]
     ) -> set[int] | None:
-        """While loading, the views of this tree a combine may apply: those
-        of loaded modules, plus each view's own chain (checked by the caller
-        per chain). None once the registry is ready, or when every view is
-        asked for -- nothing is filtered then."""
         if self.pool.ready or self.env.context.get("load_all_views"):
             return None
-        # while loading, a tree holds the views of loaded modules and the
-        # chain of the view being resolved -- each view its own chain, as if
-        # resolved alone, so a batch admits no other view's ancestors. Only
-        # a view that can be a child needs its module looked up: not a root,
-        # not one every chain holds (admitted for every view)
         in_every_chain = set.intersection(*map(set, chains)) if chains else set()
         tree_root_ids = {view.id for view in self if not view.inherit_id}
         admitted = set(
@@ -2139,8 +2015,6 @@ class IrUiView(models.Model):
         return admitted
 
     def _get_combined_archs(self) -> list[_Element]:
-        # views under one root share the hierarchy: combine it once and hand
-        # each a copy, since a caller edits the arch it gets
         combined: dict[tuple[Any, ...], _Element] = {}
         archs = []
         for root, hierarchy in self._get_hierarchies():
@@ -2273,8 +2147,6 @@ class IrUiView(models.Model):
         else:
             views = views_sudo.browse(ids)
 
-        # A view fetched by id answers for its key only if this context's key
-        # lookup finds it: a website-specific copy is not the generic key.
         found_by_key = (
             views.filtered_domain(self._get_domain_template(xmlids))
             if xmlids
@@ -2331,8 +2203,6 @@ class IrUiView(models.Model):
         return MissingError(self.env._("Template not found: '%s'", ref))
 
     def _get_views_by_xmlid(self, xmlids: list[str]) -> dict[int | str, Self]:
-        """The views the xmlids name through ir.model.data, each under its
-        id and its xmlid."""
         domain = Domain.OR(
             Domain("model", "=", "ir.ui.view")
             & Domain("module", "=", module)
@@ -2372,7 +2242,6 @@ class IrUiView(models.Model):
             cache_key, {}
         )
 
-        # isdecimal, not isdigit: "²" is a digit int() refuses
         refs = [
             int(ref) if isinstance(ref, int) or ref.isdecimal() else ref
             for ref in refs
@@ -2466,8 +2335,6 @@ class IrUiView(models.Model):
 
     @staticmethod
     def _verb_reach(model: models.BaseModel, verb: str) -> str:
-        # on how much of the model the user performs the verb: none of it,
-        # all of it, or some records only, which each record's read tells
         if model.env.su:
             return "all"
         domain = model._access_domain(verb)
@@ -2476,10 +2343,6 @@ class IrUiView(models.Model):
         return "all" if domain.is_true() else "some"
 
     def _apply_verb_access(self, tree: _Element) -> int:
-        """Offer each button running a verb's door as the user holds the verb:
-        dropped where they hold it on no record; where they hold it on some
-        only, hidden on the others through the record's __verbs, which its
-        read answers from the decision the doors take. Returns the count."""
         count = 0
         for node in _xpath_verb(tree):
             count += 1
@@ -2516,9 +2379,6 @@ class IrUiView(models.Model):
                 parent.text = (parent.text or "") + tail
 
     def _drop_inaccessible_nodes(self, tree: _Element) -> tuple[int, int]:
-        """Remove every node whose groups the user is not in, keeping its
-        tail; unwrap a bare <t> the user may see. Returns (removed,
-        unwrapped)."""
         group_definitions = self.env["res.groups"]._get_group_definitions()
         user_group_ids = self.env.user._get_group_ids()
 
@@ -2556,10 +2416,6 @@ class IrUiView(models.Model):
         return removed, unwrapped
 
     def _apply_model_access(self, tree: _Element) -> int:
-        """Stamp each node carrying model_access_rights with what the user
-        may do on that model: can_create/can_write on a field, the
-        create/delete/edit flags the view left unset on a root, and the
-        group flags of a kanban grouped on a many2one. Returns the count."""
         count = 0
         for node in _xpath_model_access(tree):
             count += 1
@@ -2636,13 +2492,13 @@ class IrUiView(models.Model):
 
     def _postprocess_debug(self, tree: _Element) -> _Element:
         is_debug = self.env.user.has_group("base.group_no_one")
-        hidden = 0  # debuglog
+        hidden = 0
         for node in _xpath_debug(tree):
             debug = node.attrib.pop("__debug__") == "True"
             if debug != is_debug:
                 node.attrib["invisible"] = "1"
                 node.attrib["column_invisible"] = "1"
-                hidden += 1  # debuglog
+                hidden += 1
         _debug.logic("debug_nodes_applied", view=self.id, debug=is_debug, hidden=hidden)
         return tree
 
@@ -2667,8 +2523,6 @@ class IrUiView(models.Model):
         )
         parent_name_manager = node_info["name_manager"] if node_info else None
 
-        # a privilege is held by code, never by a user: no user's view is shaped
-        # by what a privilege alone may read
         model_groups &= group_definitions.from_ids(
             self.env["ir.access"]._group_ids_with_access(model_name, "read")
             - self.env["res.groups"]._get_privilege_group_ids()
@@ -2790,9 +2644,9 @@ class IrUiView(models.Model):
 
         self._postprocess_debug_to_cache(root)
 
-        nodes = grouped = 0  # debuglog
+        nodes = grouped = 0
         for elem, elem_info in self._iter_arch_nodes(root, get_node_info):
-            nodes += 1  # debuglog
+            nodes += 1
             handler = ELEMENT_HANDLERS.get(elem.tag)
             if handler is not None:
                 had_parent = elem.getparent() is not None
@@ -2804,7 +2658,7 @@ class IrUiView(models.Model):
             if elem_groups or root_model_groups != elem_info["model_groups"]:
                 groups = elem_info["model_groups"] & elem_info["view_groups"]
                 elem.set("__groups_key__", groups.key)
-                grouped += 1  # debuglog
+                grouped += 1
 
             self._postprocess_attributes(elem, name_manager, elem_info)
 
@@ -2913,11 +2767,11 @@ class IrUiView(models.Model):
 
         collect(arch, model)
 
-        flagged = 0  # debuglog
+        flagged = 0
         for field, nodes in field_nodes.items():
             model = self.env[field.model_name]
             if model._has_onchange(field, field_nodes):
-                flagged += 1  # debuglog
+                flagged += 1
                 for node in nodes:
                     if not node.get("on_change"):
                         node.set("on_change", "1")
@@ -3078,15 +2932,15 @@ class IrUiView(models.Model):
             refine=refine,
         )
 
-        nodes = validated = 0  # debuglog
+        nodes = validated = 0
         for elem, elem_info in self._iter_arch_nodes(node, get_node_info):
-            nodes += 1  # debuglog
+            nodes += 1
             handler = ELEMENT_HANDLERS.get(elem.tag)
             if handler is not None:
                 handler.check(self, elem, name_manager, elem_info)
 
             if elem_info["validate"]:
-                validated += 1  # debuglog
+                validated += 1
                 self._check_attributes(elem, name_manager, elem_info)
 
         _debug.pipeline(
@@ -3414,14 +3268,10 @@ class IrUiView(models.Model):
 
     @api.model
     def _get_domain_shipping_modules(self) -> Domain:
-        """The modules whose xmlid makes a view shipped, not custom."""
         return Domain.TRUE
 
     @api.model
     def _get_custom_views(self, models: Collection[str] | None = None) -> Self:
-        """The latest custom view of each model under each inheritance root,
-        over ``models`` or every model: a custom view is one no module ships
-        — no xmlid, or an xmlid whose module is not one the database knows."""
         domain = Domain("active", "=", True)
         if models is not None:
             domain &= Domain("model", "in", list(models))
@@ -3444,8 +3294,6 @@ class IrUiView(models.Model):
                 ["res_id"],
             )
         }
-        # a root's tree spans models (a primary of another model may hang off
-        # it), and each model's custom views are checked on their own
         latest_by_root: dict[tuple[str | None, int], int] = {}
         for view in views:
             if view.id in shipped_ids:

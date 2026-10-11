@@ -42,15 +42,11 @@ class TestPosOrderAvgTime(TestPoSCommon):
         )
 
     def test_avg_times_default_to_sentinel_without_recorded_lines(self):
-        """Check that orders whose lines carry no recorded times report the -1
-        sentinel averages."""
         order = self._make_order()
         self.assertEqual(order.avg_preparation_time, -1)
         self.assertEqual(order.avg_service_time, -1)
 
     def test_avg_times_ignore_unrecorded_lines(self):
-        """Check that the averages only aggregate lines with recorded times,
-        leaving -1 lines out of the mean."""
         order = self._make_order()
         order.lines[0].preparation_time = 120
         order.lines[0].service_time = 30
@@ -59,7 +55,6 @@ class TestPosOrderAvgTime(TestPoSCommon):
         self.assertEqual(order.avg_service_time, 30)
 
     def test_avg_times_average_all_recorded_lines(self):
-        """Check that the averages are the mean over every recorded line."""
         order = self._make_order()
         order.lines[0].preparation_time = 100
         order.lines[1].preparation_time = 200

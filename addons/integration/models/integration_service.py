@@ -18,8 +18,6 @@ declare_authority_keys("integration", "allow_http_production")
 _logger = logging.getLogger(__name__)
 
 OAUTH_CALLBACK_PATH = "/integration/oauth/callback"
-# registered with providers before the standard path existed: they keep
-# answering until no connection was authorized through them
 OAUTH_LEGACY_CALLBACK_PATHS = (
     "/api_gateway/oauth/callback",
     "/api_transport/oauth/callback",
@@ -295,8 +293,6 @@ class IntegrationService(models.Model):
                 )
 
     def _oauth_app_connection(self, company=None):
-        """The connection holding this service's OAuth client: the company's
-        own first, then one every company shares."""
         self.check_singleton()
         company_id = getattr(company, "id", company) or self.env.company.id
         return (
@@ -327,8 +323,6 @@ class IntegrationService(models.Model):
         return bool(app) and all(app._oauth_client())
 
     def _set_oauth_client(self, client_id, client_secret=None, company=None) -> None:
-        """Keep the OAuth client in the vault: the connection already holding
-        it, else a new one for `company`, or for every company when False."""
         self.check_singleton()
         values = {"oauth_client_id": client_id or False}
         if client_secret:
@@ -346,7 +340,6 @@ class IntegrationService(models.Model):
                     service=self.name,
                 )
             )
-        # the vault: an OAuth client is written by no user's rights
         Connection = self.env["integration.connection"].sudo()
         if company is False:
             connection = Connection.search(
@@ -549,8 +542,6 @@ class IntegrationService(models.Model):
                         record.endpoint_url,
                     )
                 elif not record.endpoint_url.startswith("https://"):
-                    # Plain HTTP stays on a private network: a PLC, a gateway,
-                    # a panel on the LAN -- the same line verify_tls draws.
                     host = urlparse(record.endpoint_url).hostname or ""
                     if not is_private_host(host) and not self.env.context.get(
                         "allow_http_production"
@@ -758,14 +749,6 @@ class IntegrationService(models.Model):
                 _logger.exception("Health check failed for %s", service.code)
 
     def _probe_health(self):
-        """Probe with an eligible connection and store this service's status.
-
-        A missing credential or failed request records unhealthy status. A
-        response is healthy for HTTP 2xx. This uses the normal GET request path,
-        including its configured cache and logging behavior.
-
-        :rtype: None
-        """
         self.check_singleton()
         connections = self.connection_ids.filtered(
             lambda c: c.active and (not c.credential_id or c.credential_id.active)
@@ -828,7 +811,7 @@ class IntegrationService(models.Model):
 
     def _get_api_client(self, credential=None):
         self.check_singleton()
-        from odoo.addons.integration.tools import (  # pylint: disable=import-outside-toplevel
+        from odoo.addons.integration.tools import (
             get_api_client,
         )
 
@@ -842,12 +825,6 @@ class IntegrationService(models.Model):
     def _shared_egress_request(
         self, method: str, path: str, *, budgeted: bool = True, **kwargs: Any
     ):
-        """Send `path` on this service's endpoint through its shared connection,
-        whoever the caller is: a public form's captcha or a visitor's address
-        lookup reads the service only to know where to send. The connection's
-        breaker binds; its budget and the service's rate limit bind unless
-        `budgeted` is false, for a call anonymous traffic drives and that must
-        not be refused to everyone once visitors have spent the budget."""
         self.check_singleton()
         service = self.with_privilege(
             "integration.privilege_shared_egress",

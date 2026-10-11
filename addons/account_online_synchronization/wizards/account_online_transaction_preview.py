@@ -46,7 +46,6 @@ class AccountOnlineTransactionPreview(models.TransientModel):
     )
 
     def action_import_transactions(self):
-        # This action can be called on multiple lines.
         if not self:
             raise UserError(
                 self.env._("Please select first the transactions you wish to import.")
@@ -79,8 +78,6 @@ class AccountOnlineTransactionPreview(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # When iso20022 module is installed, the _format_transaction will keep the end_to_end_uuid in the transaction
-        # but the field is not present in this transient model
         for vals in vals_list:
             vals.pop("end_to_end_uuid", None)
 

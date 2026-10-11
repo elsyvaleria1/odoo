@@ -13,7 +13,6 @@ class SocialPost(models.Model):
         super()._compute_stream_posts_count()
 
     def _check_post_access(self) -> None:
-        """See #_get_instagram_image_error() for more information."""
         super()._check_post_access()
 
         for post in self:

@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from odoo import Command, fields
 from odoo.tests import tagged
 
@@ -36,15 +35,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         misc_1 = cls.company_data["default_account_expense"]
         misc_2 = cls.company_data_2["default_account_expense"]
 
-        # Test will use the following dates:
-        # As of                  2017-02-01
-        # 1 - 30:   2017-01-31 - 2017-01-02
-        # 31 - 60:  2017-01-01 - 2016-12-03
-        # 61 - 90:  2016-12-02 - 2016-11-03
-        # 91 - 120: 2016-11-02 - 2016-10-04
-        # Older:    2016-10-03
 
-        # ==== Journal entries in company_1 for partner_a ====
 
         move_1 = cls.env["account.move"].create(
             {
@@ -52,7 +43,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                 "date": fields.Date.from_string("2016-11-03"),
                 "journal_id": cls.company_data["default_journal_purchase"].id,
                 "line_ids": [
-                    # 1000.0 in 61 - 90.
                     Command.create(
                         {
                             "debit": 0.0,
@@ -62,7 +52,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # -800.0 in 31 - 60
                     Command.create(
                         {
                             "debit": 800.0,
@@ -72,7 +61,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # Ignored line.
                     Command.create(
                         {
                             "debit": 200.0,
@@ -92,7 +80,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                 "date": fields.Date.from_string("2016-10-05"),
                 "journal_id": cls.company_data["default_journal_purchase"].id,
                 "line_ids": [
-                    # -200.0 in 61 - 90
                     Command.create(
                         {
                             "debit": 200.0,
@@ -102,7 +89,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # -300.0 in 31 - 60
                     Command.create(
                         {
                             "debit": 300.0,
@@ -112,7 +98,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # 1000.0 in 91 - 120
                     Command.create(
                         {
                             "debit": 0.0,
@@ -122,7 +107,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # 100.0 in all dates
                     Command.create(
                         {
                             "debit": 0.0,
@@ -177,7 +161,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_a.id,
                         }
                     ),
-                    # Ignored line.
                     Command.create(
                         {
                             "debit": 1100.0,
@@ -198,7 +181,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             lambda line: line.account_id == payable_2
         ).reconcile()
 
-        # ==== Journal entries in company_2 for partner_b ====
 
         move_3 = cls.env["account.move"].create(
             {
@@ -206,7 +188,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                 "date": fields.Date.from_string("2016-11-03"),
                 "journal_id": cls.company_data_2["default_journal_purchase"].id,
                 "line_ids": [
-                    # 1000.0 in 61 - 90.
                     Command.create(
                         {
                             "debit": 0.0,
@@ -216,7 +197,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # -800.0 in 31 - 60
                     Command.create(
                         {
                             "debit": 800.0,
@@ -226,7 +206,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # Ignored line.
                     Command.create(
                         {
                             "debit": 200.0,
@@ -246,7 +225,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                 "date": fields.Date.from_string("2016-10-05"),
                 "journal_id": cls.company_data_2["default_journal_purchase"].id,
                 "line_ids": [
-                    # -200.0 in 61 - 90
                     Command.create(
                         {
                             "debit": 200.0,
@@ -256,7 +234,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # -300.0 in 31 - 60
                     Command.create(
                         {
                             "debit": 300.0,
@@ -266,7 +243,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # 1000.0 in 91 - 120
                     Command.create(
                         {
                             "debit": 0.0,
@@ -276,7 +252,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # 100.0 in all dates
                     Command.create(
                         {
                             "debit": 0.0,
@@ -331,7 +306,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
                             "partner_id": cls.partner_b.id,
                         }
                     ),
-                    # Ignored line.
                     Command.create(
                         {
                             "debit": 1100.0,
@@ -364,7 +338,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_unfold_1_whole_report(self):
-        """Test unfolding a line when rendering the whole report."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),
@@ -380,7 +353,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
 
         report_lines = self.report._get_lines(options)
 
-        # Sort by Invoice Date
         options["order_column"] = {
             "expression_label": "invoice_date",
             "direction": "ASC",
@@ -388,9 +360,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
 
         sorted_report_lines = self.report.sort_lines(report_lines, options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             sorted_report_lines,
-            #   Name                   Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -419,16 +389,13 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # Sort 61 - 90 decreasing.
         options["order_column"] = {
             "expression_label": "period3",
             "direction": "DESC",
         }
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(sorted_report_lines, options),
-            #   Name                   Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -457,16 +424,13 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # Sort 61 - 90 increasing.
         options["order_column"] = {
             "expression_label": "period3",
             "direction": "ASC",
         }
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(sorted_report_lines, options),
-            #   Name                   Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -509,9 +473,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
 
         report_lines = self.report._get_lines(options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                  Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older       Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -550,7 +512,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_unfold_all_with_integer_rounding(self):
-        """Test unfolding a line when rendering the whole report with integer rounding."""
         self.report.integer_rounding = "HALF-UP"
         options = self._generate_options(self.report, "2017-02-01", "2017-02-01")
         partner_a_line_id = self.report._get_generic_line_id(
@@ -562,9 +523,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         options["unfolded_lines"] = [partner_a_line_id]
         report_lines = self.report._get_lines(options)
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                    Not Due     1 - 30     31 - 60     61 - 90    91 - 120     Older       Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -594,7 +553,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_unknown_partner(self):
-        """Test that journal items without a partner in the payable account appear as unknown partner."""
 
         misc_move = self.env["account.move"].create(
             {
@@ -631,9 +589,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name           Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 0.0, -1000.0, 150.0, 150.0, 150.0, 1500.0, 950.0),
@@ -645,7 +601,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_filter_partners(self):
-        """Test the filter on top allowing to filter on res.partner."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),
@@ -655,9 +610,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name          Invoice Date   Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 1, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", "", 100.0, 100.0, 100.0, 600.0, 300.0, 100.0, 1300.0),
@@ -667,7 +620,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_filter_partner_categories(self):
-        """Test the filter on top allowing to filter on res.partner.tag."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),
@@ -677,9 +629,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name            Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -690,7 +640,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payable_reconciliation_date(self):
-        """Check the values at a date before some reconciliations are done."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-10-31"),
@@ -699,9 +648,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name             Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", -133.33, 1466.67, 0.0, 0.0, 0.0, 133.33, 1466.67),
@@ -712,7 +659,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payablesort_lines_by_date(self):
-        """Test the sort_lines function using date as sort key."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),
@@ -732,7 +678,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
         options["unfolded_lines"] = [partner_a_line_id, partner_b_line_id]
 
-        # Sort by Invoice Date increasing
         options["order_column"] = {
             "expression_label": "invoice_date",
             "direction": "ASC",
@@ -741,9 +686,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         report_lines = self.report._get_lines(options)
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                  Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -781,16 +724,13 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # Sort by Invoice Date decreasing
         options["order_column"] = {
             "expression_label": "invoice_date",
             "direction": "DESC",
         }
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                     Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -829,7 +769,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )
 
     def test_aged_payablesort_lines_by_numeric_value(self):
-        """Test the sort_lines function using float as sort key."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-02-01"),
@@ -851,16 +790,13 @@ class TestAgedPayableReport(TestAccountReportsCommon):
 
         report_lines = self.report._get_lines(options)
 
-        # Sort by Not Due On increasing
         options["order_column"] = {
             "expression_label": "period0",
             "direction": "ASC",
         }
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                   Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older         Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -898,16 +834,13 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # Sort by Not Due On decreasing
         options["order_column"] = {
             "expression_label": "period0",
             "direction": "DESC",
         }
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report.sort_lines(report_lines, options),
-            #   Name                 Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older         Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -995,9 +928,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         refund.action_post()
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                  Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
@@ -1010,7 +941,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # It should still work if both  invoice and refund are partially reconciled with the same amount
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1032,9 +962,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )._create_payments()
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                 Not Due On     1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
@@ -1047,7 +975,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # It should still work if both  invoice and refund are fully reconciled in the future
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1069,9 +996,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         )._create_payments()
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                  Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
@@ -1111,12 +1036,10 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             )
             invoices_map[name] = invoice.name
 
-        # Without prefix groups
         options = self._generate_options(self.report, test_date, test_date)
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 378.0, 0.0, 0.0, 0.0, 0.0, 0.0, 378.0),
@@ -1134,7 +1057,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
             options,
         )
 
-        # With prefix groups
         self.report.prefix_groups_threshold = 3
         options = self._generate_options(
             self.report, test_date, test_date, default_options={"unfold_all": True}
@@ -1142,7 +1064,6 @@ class TestAgedPayableReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                            Not Due On    1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 378.0, 0.0, 0.0, 0.0, 0.0, 0.0, 378.0),
@@ -1209,10 +1130,8 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2017-02-01", "2017-02-01")
         initial_report_lines = self.report._get_lines(options)
 
-        # With default interval of 30
         self.assertLinesValues(
             self.report.sort_lines(initial_report_lines, options),
-            #   Name               Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 150.0, 150.0, 900.0, 450.0, 150.0, 1950.0),
@@ -1235,10 +1154,8 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         options["aging_interval"] = 60
         report_lines = self.report._get_lines(options)
 
-        # With interval of 60
         self.assertLinesValues(
             self.report.sort_lines(report_lines, options),
-            #   Name               Not Due On      1 - 60     61 - 120   121 - 180   181 - 240       Older        Total
             [0, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", 150.0, 300.0, 1350.0, 0.0, 0.0, 150.0, 1950.0),
@@ -1285,9 +1202,7 @@ class TestAgedPayableReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name               Due Date     Not Due On      1 - 30     31 - 60     61 - 90    91 - 120       Older        Total
             [0, 1, 3, 4, 5, 6, 7, 8, 9],
             [
                 ("Aged Payable", "", 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),

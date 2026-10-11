@@ -142,8 +142,6 @@ class ProofMethod(models.Model):
                 }
             )
         )
-        # a code goes now, its signer waits at the counter; a confirmation
-        # waits in the queue for the asking transaction to commit
         if not queued:
             mail.send(raise_exception=False)
 

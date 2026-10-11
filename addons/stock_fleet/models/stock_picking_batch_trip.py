@@ -4,8 +4,6 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# Once a trip has left, these describe what left and who took it; they are the
-# dispatch record and no later change of vehicle custody or form edit rewrites them.
 FROZEN_AT_DEPARTURE = (
     "vehicle_id",
     "operator_id",
@@ -14,8 +12,6 @@ FROZEN_AT_DEPARTURE = (
     "odometer_departure",
 )
 FROZEN_AT_RETURN = ("odometer_return",)
-# Context keys by which a reader of the vehicle (its GPS) dates the departure or
-# the return with the moment it saw, instead of when the trip was processed.
 TRIP_DEPARTURE_DATE = "trip_departure_date"
 TRIP_RETURN_DATE = "trip_return_date"
 
@@ -93,8 +89,6 @@ class StockPickingBatch(models.Model):
 
     @api.depends("operator_id")
     def _compute_driver_id(self) -> None:
-        # The vehicle's operator is whoever holds it (takes it home, answers for
-        # it), not whoever drives this trip: the driver is the trip's operator.
         for batch in self:
             batch.driver_id = batch.operator_id.partner_id
 
@@ -109,7 +103,6 @@ class StockPickingBatch(models.Model):
             if not (batch.has_dispatch_management or batch.date_departure):
                 batch.trip_state = False
             elif batch.state == "done" and not batch.date_departure:
-                # Done before trips existed, or done without leaving: not a trip.
                 batch.trip_state = False
             elif batch.state == "cancel":
                 batch.trip_state = "cancelled"
@@ -122,8 +115,6 @@ class StockPickingBatch(models.Model):
 
     @api.depends("date_departure", "date_return")
     def _compute_state(self):
-        # A trip that has left is not cancelled when it runs out of transfers: its
-        # vehicle is still out, and it ends when it comes back, with no deliveries.
         emptied = self.filtered(
             lambda batch: (
                 batch.date_departure
@@ -133,8 +124,6 @@ class StockPickingBatch(models.Model):
         for batch in emptied.filtered("date_return"):
             batch.state = "done"
         super(StockPickingBatch, self - emptied)._compute_state()
-        # Nor is it done at its last delivery: the vehicle still has to come back,
-        # and a batch shown as done reads as a trip already closed.
         for batch in (self - emptied).filtered(
             lambda batch: (
                 batch.state == "done" and batch.date_departure and not batch.date_return
@@ -196,8 +185,6 @@ class StockPickingBatch(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_departed_trip(self) -> None:
-        # A departed trip is the dispatch record; deleting it, or merging it into
-        # another batch, would drop that record and orphan its ledger reading.
         departed = self.filtered("date_departure")
         if departed:
             raise UserError(
@@ -208,7 +195,6 @@ class StockPickingBatch(models.Model):
             )
 
     def action_cancel(self):
-        # Cancelling a departed trip would shed what it carried, as deleting it would.
         departed = self.filtered("date_departure")
         if departed:
             _debug.logic("trip_cancel_refused", batches=departed)
@@ -221,7 +207,6 @@ class StockPickingBatch(models.Model):
         return super().action_cancel()
 
     def _check_trip_takes_no_new_pickings(self, added) -> None:
-        """Refuse transfers added to a trip after it left: it carries what it loaded."""
         if added:
             raise UserError(
                 self.env._(
@@ -233,7 +218,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _check_trip_frozen_fields(self, vals) -> None:
-        """Refuse edits to what a departed or closed trip already recorded."""
         departed = self.filtered("date_departure")
         frozen = [name for name in FROZEN_AT_DEPARTURE if name in vals]
         changed = departed.filtered(
@@ -256,11 +240,7 @@ class StockPickingBatch(models.Model):
                 )
             )
 
-    # ------------------------------------------------------------------
-    # Departure and return
-    # ------------------------------------------------------------------
     def _trip_departure_missing(self):
-        """What the trip still lacks before its vehicle may leave."""
         self.check_singleton()
         missing = []
         if not self.picking_ids:
@@ -276,7 +256,6 @@ class StockPickingBatch(models.Model):
         return missing
 
     def action_depart(self):
-        """The vehicle leaves: stamp the departure and freeze the trip."""
         self.check_singleton()
         if self.date_departure:
             raise UserError(self.env._("Trip %s has already departed.", self.name))
@@ -289,8 +268,6 @@ class StockPickingBatch(models.Model):
                     fields=", ".join(missing),
                 )
             )
-        # A vehicle is on one trip at a time, so no trip stays on the road unnoticed.
-        # Only the vehicle: in a breakdown the crew moves on to the rescue vehicle.
         on_road = self.search(
             [
                 ("vehicle_id", "=", self.vehicle_id.id),
@@ -361,7 +338,6 @@ class StockPickingBatch(models.Model):
         )
 
     def action_return(self):
-        """Close the trip: stamp the return and log the odometer on the vehicle."""
         self.check_singleton()
         if not self.date_departure:
             raise UserError(self.env._("Trip %s has not departed yet.", self.name))
@@ -369,8 +345,6 @@ class StockPickingBatch(models.Model):
             raise UserError(self.env._("Trip %s is already closed.", self.name))
         if not self.odometer_return and self._trip_vehicle_returns():
             raise UserError(self.env._("The odometer at return is not set."))
-        # A stop that rides the trip ends delivered or not delivered before the trip
-        # closes. A third-party parcel may stay pending: the carrier delivers it.
         pending = self.picking_ids.filtered(
             lambda picking: (
                 picking.state not in ("done", "cancel") and picking._requires_trip()
@@ -399,8 +373,6 @@ class StockPickingBatch(models.Model):
                 if self.odometer_return:
                     self._record_trip_odometer()
         except UserError as error:
-            # The trip closes regardless: the ledger's quarrel with another reading
-            # is for whoever keeps the ledger, and it is left on the trip's record.
             self.message_post(
                 body=self.env._(
                     "The vehicle's ledger refused the return odometer: %(error)s",
@@ -418,8 +390,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_vehicle_returns(self) -> bool:
-        """Whether the vehicle goes back to the warehouse at the end of the trip:
-        it does unless every transfer it carries ends where it is delivered."""
         self.check_singleton()
         pickings = self.picking_ids.filtered(lambda picking: picking._requires_trip())
         return not pickings or any(
@@ -427,8 +397,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _close_trip_at_last_stop(self) -> None:
-        """A trip whose vehicle does not return ends with the outcome of its
-        last stop."""
         for trip in self:
             if (
                 not trip.date_departure
@@ -456,13 +424,6 @@ class StockPickingBatch(models.Model):
         return True
 
     def _trip_event_date(self, key, not_before=None):
-        """When a departure or a return happened: now, or the moment a reader of
-        the vehicle (its GPS) put in the context under ``key``.
-
-        :param str key: ``TRIP_DEPARTURE_DATE`` or ``TRIP_RETURN_DATE``
-        :param datetime not_before: the earliest moment accepted
-        :rtype: datetime
-        """
         self.check_singleton()
         now = fields.Datetime.now()
         moment = fields.Datetime.to_datetime(self.env.context.get(key))
@@ -480,14 +441,7 @@ class StockPickingBatch(models.Model):
         return moment
 
     def _record_trip_odometer(self):
-        """Log the return odometer on the vehicle's ledger, once per trip.
-
-        :return: the ledger line, empty when the reading does not advance the vehicle
-        :rtype: recordset
-        """
         self.check_singleton()
-        # The reading is the system's, not the driver's: a driver may close a trip
-        # without rights on the vehicle ledger.
         Log = self.env["resource.log"].sudo()
         if not self.vehicle_id:
             return Log
@@ -523,7 +477,6 @@ class StockPickingBatch(models.Model):
         )
 
     def action_open_trip_correction(self):
-        """Offer to take the pending transfers off a trip that has already left."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -536,7 +489,6 @@ class StockPickingBatch(models.Model):
         }
 
     def action_open_trip_driver_form(self) -> dict:
-        """Open the trip on the driver's own form."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",

@@ -39,8 +39,6 @@ class TestAppraisalCampaign(TransactionCase):
         )
 
     def test_campaign_by_employee(self):
-        """Check that the employee mode creates a pending appraisal run by
-        the employee's manager."""
         wizard = self._make_wizard()
         action = wizard.action_generate_appraisals()
 
@@ -52,8 +50,6 @@ class TestAppraisalCampaign(TransactionCase):
         self.assertEqual(appraisals.appraisal_template_id, self.template)
 
     def test_campaign_duplicate_reuses_existing(self):
-        """Check that regenerating on the same date warns and reuses the
-        existing appraisal instead of duplicating it."""
         self._make_wizard().action_generate_appraisals()
 
         wizard = self._make_wizard()
@@ -63,7 +59,6 @@ class TestAppraisalCampaign(TransactionCase):
         self.assertEqual(len(appraisals), 1, "No duplicate should be created")
 
     def test_campaign_warnings(self):
-        """Check the no-employees and no-manager warnings."""
         empty_department = self.env["hr.department"].create({"name": "Empty"})
         wizard = self._make_wizard(mode="department", department_id=empty_department.id)
         self.assertIn("doesn't have employees", wizard.warning)
@@ -71,13 +66,10 @@ class TestAppraisalCampaign(TransactionCase):
         orphan = self.env["hr.employee"].create({"name": "No Manager"})
         wizard = self._make_wizard(employee_ids=[Command.set(orphan.ids)])
         self.assertIn("don't have a manager", wizard.warning)
-        # No manager -> no appraisal is created either
         action = wizard.action_generate_appraisals()
         self.assertFalse(self.env["hr.appraisal"].search(action["domain"]))
 
     def test_campaign_modes_select_employees(self):
-        """Check the employee selection of company/department/category
-        modes."""
         wizard = self._make_wizard(mode="department", department_id=self.department.id)
         self.assertEqual(
             wizard._get_employees_from_mode(), self.manager | self.employee
@@ -92,8 +84,6 @@ class TestAppraisalCampaign(TransactionCase):
         self.assertEqual(wizard._get_employees_from_mode(), self.employee)
 
     def test_campaign_manager_person_excludes_self(self):
-        """Check the specific-person mode, including that an employee never
-        manages their own appraisal."""
         wizard = self._make_wizard(
             manager="person", manager_ids=[Command.set(self.manager.ids)]
         )
@@ -113,7 +103,6 @@ class TestAppraisalCampaign(TransactionCase):
         )
 
     def test_department_to_process_counter(self):
-        """Check the to-process appraisal counter of the department."""
         self.assertEqual(self.department.appraisals_to_process_count, 0)
         self.env["hr.appraisal"].create(
             {
@@ -128,18 +117,8 @@ class TestAppraisalCampaign(TransactionCase):
             "The counter invalidates on its own now that the compute declares "
             "its dependencies",
         )
-        # NOTE: hr_department.action_view_appraisals is not asserted — it
-        # has no callers (tracked in task t24255).
 
     def test_campaign_modes_without_hr_right(self):
-        """A plain internal user can run a campaign in every mode.
-
-        The `hr_appraisal_campaign_responsible` rule used to be keyed on
-        `employee_ids`, a field the wizard has not filled in yet in company,
-        department and category mode, so all three raised `AccessError` for
-        anyone but an Appraisal Officer - behind a list button granted to every
-        internal user. Only the `employee` mode was covered before.
-        """
         user = new_test_user(
             self.env, login="campaign_plain_user", groups="base.group_user"
         )
@@ -167,7 +146,6 @@ class TestAppraisalCampaign(TransactionCase):
                 wizard = Wizard.create(
                     dict(values, appraisal_template_id=self.template.id)
                 )
-                # Scoped to the employees this user manages, never wider.
                 self.assertLessEqual(
                     set(wizard._get_employees_from_mode().ids),
                     set(
@@ -179,18 +157,11 @@ class TestAppraisalCampaign(TransactionCase):
                 )
 
     def test_mail_template_unlink_guard(self):
-        """Check that the appraisal request templates cannot be deleted."""
         template = self.env.ref("hr_appraisal.mail_template_appraisal_reminder")
         with self.assertRaises(ValidationError):
             template.unlink()
 
     def test_warning_is_computed_per_record(self):
-        """`_compute_warning` must iterate `self`.
-
-        It read `self.mode` and assigned `self.warning` directly, so an
-        ordinary batched create — nothing exotic, just `create([{...}, {...}])`
-        — raised `Expected singleton` on the first read of `warning`.
-        """
         wizards = self.env["wizard.hr.appraisal.create"].create(
             [
                 {
@@ -208,19 +179,9 @@ class TestAppraisalCampaign(TransactionCase):
             ]
         )
         self.assertEqual(len(wizards), 2)
-        # The read is the assertion: it used to raise.
         self.assertEqual(len(wizards.mapped("warning")), 2)
 
     def test_employees_domain_covers_every_employee_record(self):
-        """A non-officer's campaign scope must span all their employee records.
-
-        `_employees_domain` used the singular `user.employee_id`, whose compute
-        is scoped to `env.company` alone, while the company half of the same
-        domain widens to `env.companies`. A user holding an employee record in
-        a second company therefore lost every report under it — silently, and
-        for every internal user, since `base.group_user` has create on this
-        wizard and both "Launch Campaign" buttons carry that group.
-        """
         other_company = self.env["res.company"].create({"name": "Campaign Co B"})
         user = new_test_user(self.env, login="campaign_line_manager")
         user.write({"company_ids": [Command.link(other_company.id)]})

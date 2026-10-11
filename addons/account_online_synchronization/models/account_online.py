@@ -27,7 +27,6 @@ from odoo.addons.account_online_synchronization.models.odoofin_auth import OdooF
 _lt = LazyTranslate(__name__)
 _logger = logging.getLogger(__name__)
 
-# `_` is the translation function; a sentinel needs its own object.
 _UNSET = object()
 pattern = re.compile(r"^[a-z0-9-_]+$")
 runbot_pattern = re.compile(r"^https:\/\/[a-z0-9-_]+\.[a-z0-9-_]+\.odoo\.com$")
@@ -99,13 +98,13 @@ class AccountOnlineAccount(models.Model):
             (
                 "planned",
                 "Planned",
-            ),  # When all the transactions couldn't be imported in one go and is waiting for next batch
+            ),
             (
                 "waiting",
                 "Waiting",
-            ),  # When waiting for the provider to fetch the transactions
-            ("processing", "Processing"),  # When currently importing in odoo
-            ("done", "Done"),  # When every transaction have been imported in odoo
+            ),
+            ("processing", "Processing"),
+            ("done", "Done"),
         ]
     )
 
@@ -148,11 +147,6 @@ class AccountOnlineAccount(models.Model):
         return result
 
     def _update_journal(self, swift_code=False, journal_type="bank") -> None:
-        """Link this online account to a journal, creating the journal and its bank record when needed.
-
-        :param swift_code: BIC returned by OdooFin, set on the journal's bank when it has none.
-        :param journal_type: type used when a new journal has to be created.
-        """
         currency_id = (
             self.currency_id.id
             if not self.currency_id.is_current_company_currency
@@ -169,22 +163,14 @@ class AccountOnlineAccount(models.Model):
         )
 
         self.check_singleton()
-        # Journal resolution order: the journal in context (we started the journey from a journal),
-        # then an unlinked bank journal matching the account number and currency, then a new one.
         if (active_id := self.env.context.get("active_id")) and self.env.context.get(
             "active_model"
         ) == "account.journal":
             journal = self.env["account.journal"].browse(active_id)
-            # If we already have a linked account on that journal, it means we are in the process of relinking
-            # it is due to an error that occured which require to redo the connection (can't fix it).
-            # Hence we delete the previously linked account.online.link to prevent showing multiple
-            # duplicate existing connections when opening the iframe
             if journal.account_online_link_id:
                 journal.account_online_link_id.unlink()
 
-            # Ensure the journal's currency matches the bank account's currency.
             if self.currency_id.id != journal.currency_id.id:
-                # If the journal already has entries in a different currency, raise an error.
                 statement_lines_in_other_currency = self.env[
                     "account.bank.statement.line"
                 ].search_count(
@@ -203,7 +189,6 @@ class AccountOnlineAccount(models.Model):
                             currency_name=self.currency_id.name,
                         )
                     )
-                # If the journal's default bank account has entries in a differente currency, silently do nothing to avoid an error.
                 move_lines_in_other_currency = self.env[
                     "account.move.line"
                 ].search_count(
@@ -214,7 +199,6 @@ class AccountOnlineAccount(models.Model):
                     limit=1,
                 )
                 if not move_lines_in_other_currency:
-                    # If not set yet and there are no conflicting entries, set it.
                     journal.sudo().currency_id = self.currency_id.id
         elif existing_journal:
             journal = existing_journal
@@ -244,10 +228,8 @@ class AccountOnlineAccount(models.Model):
         if self.account_number and not self.journal_ids.bank_acc_number:
             journal_vals["bank_acc_number"] = self.account_number
         self.journal_ids.sudo().write(journal_vals)
-        # Update connection status and get consent expiration date and create an activity on related journal
         self.account_online_link_id._update_connection_status()
 
-        # Set last_sync date (date of latest statement or one day after accounting lock date or None)
         lock_date = self.env.company._get_user_fiscal_lock_date(journal)
         last_sync = (
             lock_date + relativedelta(days=1)
@@ -279,18 +261,8 @@ class AccountOnlineAccount(models.Model):
                 self.journal_ids.bank_account_id.bank_id = bank_rec.id
 
     def _refresh(self) -> dict:
-        """Check the provider-side refresh status of this account, triggering a manual refresh when supported.
-
-        :return: ``success`` tells whether transactions can be fetched, ``data`` holds the provider payload.
-        :rtype: dict
-        """
-        # Non exhaustive list of cases where the refresh is not successful and fetching must be
-        # postponed: another refresh was made too early and the provider/bank limits their number,
-        # or the provider is still importing the transactions on his side.
         data = {"account_id": self.online_identifier}
         while True:
-            # account_data and fetching_status can be updated in the middle of the loop.
-            # Enforces that the information we give is always the right one
             data.update(
                 {
                     "account_data": self.account_data,
@@ -305,7 +277,6 @@ class AccountOnlineAccount(models.Model):
             currently_fetching = resp_json.get("currently_fetching")
             success = resp_json.get("success", True)
             if currently_fetching:
-                # Provider has not finished fetching transactions, set status to waiting
                 self.fetching_status = "waiting"
             if not resp_json.get("next_data"):
                 break
@@ -330,7 +301,6 @@ class AccountOnlineAccount(models.Model):
 
         start_date = date or last_stmt_line.date or self.last_sync
         data = {
-            # If we are in a new sync, we do not give a start date; We will fetch as much as possible. Otherwise, the last sync is the start date.
             "start_date": start_date
             and format_date(self.env, start_date, date_format="yyyy-MM-dd"),
             "account_id": self.online_identifier,
@@ -343,7 +313,6 @@ class AccountOnlineAccount(models.Model):
             "include_foreign_currency": True,
         }
         while True:
-            # Ensures that the account_data given is always up-to-date, in case of a refresh in the middle of these calls.
             data.update(
                 {
                     "account_data": self.account_data,
@@ -354,7 +323,6 @@ class AccountOnlineAccount(models.Model):
             )
             sign = -1 if self.inverse_balance_sign else 1
             if resp_json.get("balance"):
-                # If the balance changes, it is safe to assume available_balance changed too, so rather set it to None than to a wrong value
                 if self.balance != resp_json.get("balance") and not resp_json.get(
                     "available_balance"
                 ):
@@ -383,17 +351,8 @@ class AccountOnlineAccount(models.Model):
             balances[account.id] = [formatted_balance, account.balance]
         return balances
 
-    ###########
-    # HELPERS #
-    ###########
 
     def _get_filtered_transactions(self, new_transactions):
-        """Drop the transactions whose online_transaction_identifier is already in the database.
-
-        :param new_transactions: transaction dicts received from the provider.
-        :return: the transactions not imported yet.
-        :rtype: list
-        """
         self.check_singleton()
 
         journal_id = self.journal_ids[:1]
@@ -419,7 +378,6 @@ class AccountOnlineAccount(models.Model):
         )
 
         filtered_transactions = []
-        # Remove transactions already imported in Odoo
         for transaction in new_transactions:
             if transaction_identifier := transaction["online_transaction_identifier"]:
                 if transaction_identifier in existing_online_transaction_identifier:
@@ -430,18 +388,10 @@ class AccountOnlineAccount(models.Model):
         return filtered_transactions
 
     def _format_transactions(self, new_transactions):
-        """Convert provider transactions into account.bank.statement.line values.
-
-        :param new_transactions: transaction dicts received from the provider.
-        :return: values with the foreign currency resolved (and activated), the transaction sign
-                 applied, the date parsed and the online account, journal and company set.
-        :rtype: list
-        """
         self.check_singleton()
         transaction_sign = -1 if self.inverse_transaction_sign else 1
         currencies = self.env["res.currency"].with_context(active_test=False).search([])
         currency_code_mapping = {currency.name: currency for currency in currencies}
-        # field end_to_end_uuid only exists in account_iso20022 but is always given by odoofin
         is_iso20022_installed = (
             self.env["ir.module.module"]._get("account_iso20022").state == "installed"
         )
@@ -473,9 +423,6 @@ class AccountOnlineAccount(models.Model):
         return formatted_transactions
 
     def action_reset_fetching_status(self) -> None:
-        """Clear the fetching status of the accounts."""
-        # An error during the synchronisation can leave the status set, which blocks any further
-        # fetch; this button lets the customer unblock his connection himself.
         self.fetching_status = None
 
 
@@ -551,7 +498,6 @@ class AccountOnlineLink(models.Model):
     )
     show_sync_actions = fields.Boolean(compute="_compute_show_sync_actions")
 
-    # Information received from OdooFin, should not be tampered with
     name = fields.Char(
         readonly=True,
         help="Institution Name",
@@ -560,16 +506,6 @@ class AccountOnlineLink(models.Model):
         readonly=True,
         help="Represent a link for a given user towards a banking institution",
     )
-    # ADR-0081: both tokens rest in credential.credential, encrypted,
-    # access-logged and rate-limited, and the fields become doors onto it.
-    #
-    # The two keep their DIFFERENT groups, which is the point: the refresh token
-    # signs requests and is system-only, while the access token is readable by
-    # any accountant and has to stay that way. Both computes therefore sudo the
-    # credential -- the field's own `groups` decides who may read it, exactly as
-    # before, and the credential itself stays system-only. Without the sudo an
-    # accountant reading `access_token` would raise AccessError from inside the
-    # compute rather than being served the value they are entitled to.
     credential_id = fields.Many2one(
         comodel_name="credential.credential",
         copy=False,
@@ -611,9 +547,6 @@ class AccountOnlineLink(models.Model):
         help="Comma separated list of email addresses to send consent renewal notifications 15, 3 and 1 days before expiry",
     )
 
-    ###################
-    # Compute methods #
-    ###################
 
     @api.depends("account_online_account_ids")
     def _compute_journal_ids(self) -> None:
@@ -626,9 +559,6 @@ class AccountOnlineLink(models.Model):
         for online_link in self:
             online_link.show_sync_actions = online_link.company_id in self.env.companies
 
-    ##########################
-    # Wizard opening actions #
-    ##########################
     def create_new_bank_account_action(self, data) -> dict:
         self.check_singleton()
         journal_type = data.get("journal_type") or "bank"
@@ -640,10 +570,8 @@ class AccountOnlineLink(models.Model):
             view_xml_id = "account.setup_credit_card_account_wizard"
             name = self.env._("Setup Credit Card Account")
 
-        # We do return the bank account setup wizard if we don't have minimum info
         if not data or not data.get("account_number"):
             ctx = {**self.env.context, "journal_type": journal_type}
-            # if this was called from kanban box, active_model is in context
             if self.env.context.get("active_model") == "account.journal":
                 ctx = {
                     **ctx,
@@ -698,13 +626,6 @@ class AccountOnlineLink(models.Model):
         return {"type": "ir.actions.client", "tag": "soft_reload"}
 
     def _link_accounts_to_journals_action(self, swift_code, journal_type) -> dict:
-        """Open a wizard allowing the user to link his bank accounts with a new or existing journal.
-
-        :param swift_code: BIC forwarded to the wizard through the context.
-        :param journal_type: journal type forwarded to the wizard through the context.
-        :return: an action opening the wizard.account.online.link.connect.account wizard.
-        :rtype: dict
-        """
         self.check_singleton()
         account_bank_selection_wizard = self.env[
             "wizard.account.online.link.connect.account"
@@ -751,9 +672,6 @@ class AccountOnlineLink(models.Model):
         if self.connection_state_details and self.connection_state_details.get(
             str(journal.id)
         ):
-            # We have to check that we have a key and a right value for this journal
-            # Because if we have an empty dict, the JS part will handle it as a Proxy object.
-            # To avoid that, we checked if we have a key in the dict and if the value is truthy.
             return self.connection_state_details[str(journal.id)]
         return None
 
@@ -775,11 +693,6 @@ class AccountOnlineLink(models.Model):
         }
 
     def _notify_connection_update(self, journal, connection_state_details) -> None:
-        """Save the last connection state details and notify the accounting dashboard by websocket.
-
-        :param journal: The journal for which we want to save the connection state details.
-        :param connection_state_details: The information about the status of the connection (like how many transactions fetched, ...)
-        """
         self.check_singleton()
         self._record_connection_update(journal, connection_state_details)
         if connection_state_details["status"] == "error":
@@ -788,11 +701,9 @@ class AccountOnlineLink(models.Model):
             )
 
     def _record_connection_update(self, journal, connection_state_details) -> None:
-        # Only the status, the error type and the number of fetched transactions are sent over the
-        # bus, so that no sensitive information leaves the server.
         connection_state_details_status = connection_state_details[
             "status"
-        ]  # We're always waiting for a status in the dict.
+        ]
         if not (
             connection_state_details_status == "success"
             and connection_state_details.get("nb_fetched_transactions", 0) == 0
@@ -849,9 +760,6 @@ class AccountOnlineLink(models.Model):
             mode=mode
         )
 
-    #######################################################
-    # Generic methods to contact server and handle errors #
-    #######################################################
 
     @api.model
     def _get_odoofin_url(self, url):
@@ -871,14 +779,6 @@ class AccountOnlineLink(models.Model):
         return endpoint_url
 
     def _get_odoo_fin(self, url, data=None, ignore_status=False):
-        """Fetch data from the OdooFin proxy.
-
-        :param url: Proxy's URL end point, must start with '/'.
-        :param data: HTTP data request.
-        :param ignore_status: contact the proxy even when the link is disconnected.
-        :return: the result part of the json-rpc response.
-        :rtype: dict
-        """
         if not data:
             data = {}
         if self.state == "disconnected" and not ignore_status:
@@ -904,15 +804,12 @@ class AccountOnlineLink(models.Model):
             "cron": cron,
         }
         if request:
-            # many banking institutions require the end-user IP/user_agent for traceability
-            # of client-initiated actions. It won't be stored on odoofin side.
             data["utils"]["psu_info"] = {
                 "ip": request.httprequest.remote_addr,
                 "user_agent": request.httprequest.user_agent.string,
             }
 
         try:
-            # We have to use sudo to pass record as some fields are protected from read for common users.
             resp = self.env["ir.egress"].request(
                 "POST",
                 endpoint_url,
@@ -934,8 +831,6 @@ class AccountOnlineLink(models.Model):
             ) from error
 
     def _handle_response(self, resp_json, url, data, ignore_status=False):
-        # Response is a json-rpc response, therefore data is encapsulated inside error in case of error
-        # and inside result in case of success.
         if not resp_json.get("error"):
             result = resp_json.get("result")
             state = result.get("odoofin_state") or False
@@ -945,11 +840,10 @@ class AccountOnlineLink(models.Model):
             return result
         else:
             error = resp_json.get("error")
-            # Not considered as error
-            if error.get("code") == 101:  # access token expired, not an error
+            if error.get("code") == 101:
                 self._update_access_token()
                 return self._get_odoo_fin(url, data, ignore_status)
-            elif error.get("code") == 102:  # refresh token expired, not an error
+            elif error.get("code") == 102:
                 self._update_refresh_token()
                 self._update_access_token()
                 link = self.sudo()
@@ -960,20 +854,17 @@ class AccountOnlineLink(models.Model):
                         "access_token": link.access_token,
                     },
                 )
-                if self.journal_ids:  # We can't do it unless we already have a journal
+                if self.journal_ids:
                     self._update_connection_status()
                 return self._get_odoo_fin(url, data, ignore_status)
-            elif error.get("code") == 300:  # redirect, not an error
+            elif error.get("code") == 300:
                 raise OdooFinRedirectException(
                     mode=error.get("data", {}).get("mode", "link")
                 )
-            # If we are in the process of deleting the record ignore code 100 (invalid signature), 104 (account deleted)
-            # 106 (account_data corrupted) and allow user to delete his record from this side.
             elif error.get("code") in (100, 104, 106) and self.env.context.get(
                 "delete_sync"
             ):
                 return {"delete": True}
-            # Log and raise error
             error_details = error.get("data")
             subject = error.get("message")
             message = error_details.get("message")
@@ -996,25 +887,19 @@ class AccountOnlineLink(models.Model):
                 state, subject, message, raise_error
             )
         except CacheMiss, MissingError:
-            # This exception can happen if record was created and rollbacked due to error in same transaction
-            # Therefore it is not possible to log information on it, in this case we just ignore it.
             return
         if not raise_error:
             return
         self._replay_on_rollback("_record_information", state, subject, message, True)
-        # and then raise either a redirectWarning error so that customer can easily open an issue with Odoo,
-        # or eventually bring the user to the documentation if there's no need to contact the support.
         if url:
             action_id = {
                 "type": "ir.actions.act_url",
                 "url": url,
             }
-            raise RedirectWarning(report, action_id, button_label)  # pylint: disable=E0601
-        # either a userError if there's no need to bother the support, or link to the doc.
+            raise RedirectWarning(report, action_id, button_label)
         raise UserError(report)
 
     def _record_information(self, state, subject, message, report) -> tuple:
-        # if state is disconnected, and new state is error: ignore it
         if state == "error" and self.state == "disconnected":
             state = "disconnected"
         if state and self.state != state:
@@ -1061,14 +946,9 @@ class AccountOnlineLink(models.Model):
             self.message_post(body=message_post, subject=subject)
         return message, url, button_label
 
-    ###############
-    # API methods #
-    ###############
 
     @api.depends("credential_id")
     def _compute_odoofin_tokens(self) -> None:
-        # sudo: see the fields above. Which of the two a given user may read is
-        # decided by that field's `groups`, not by access to the vault.
         for link in self:
             credential = link.sudo().credential_id.sudo()
             tokens = (
@@ -1088,14 +968,6 @@ class AccountOnlineLink(models.Model):
             link._odoofin_store_tokens(refresh_token=link.refresh_token)
 
     def _odoofin_store_tokens(self, access_token=_UNSET, refresh_token=_UNSET) -> None:
-        """Write whichever tokens were given into this connection's credential.
-
-        The default is a sentinel rather than None because None is a value a
-        caller means. `_update_access_token` writes ONLY the access token, and a
-        store that could not tell "not given" from "given as empty" would clear
-        the refresh token alongside it -- which the comment at the retry site
-        already warns about: losing it blocks the connection ad vitam eternam.
-        """
         self.check_singleton()
         values = {}
         if access_token is not _UNSET:
@@ -1124,7 +996,6 @@ class AccountOnlineLink(models.Model):
                         "credential.credential_category_oauth2"
                     ).id,
                     "company_id": self.company_id.id,
-                    # In the same create: the oauth2 constraint runs there.
                     **values,
                 }
             )
@@ -1142,7 +1013,6 @@ class AccountOnlineLink(models.Model):
         self.sudo().write(tokens)
 
     def _update_refresh_token(self) -> None:
-        # Use sudo as refresh_token field is not accessible to most user
         for link in self.sudo():
             resp_json = link._get_odoo_fin("/proxy/v1/renew_token", ignore_status=True)
             link.refresh_token = resp_json.get("refresh_token", False)
@@ -1153,11 +1023,10 @@ class AccountOnlineLink(models.Model):
             try:
                 resp_json = link.with_context(delete_sync=True)._get_odoo_fin(
                     "/proxy/v1/delete_user", ignore_status=True
-                )  # delete proxy user
+                )
                 if resp_json.get("delete", True) is True:
                     to_unlink += link
             except OdooFinRedirectException, UserError, RedirectWarning:
-                # Can happen that this call returns a redirect in mode link, in which case we delete the record
                 to_unlink += link
                 continue
         result = super(AccountOnlineLink, to_unlink).unlink()
@@ -1170,11 +1039,8 @@ class AccountOnlineLink(models.Model):
             matching_account = self.account_online_account_ids.filtered(
                 lambda l: l.online_identifier == online_identifier
             )
-            # Ignore account that is already there and linked to a journal as there is no need to fetch information for that one
             if matching_account and matching_account.journal_ids:
                 return matching_account
-            # If we have the account locally but didn't link it to a journal yet, delete it first.
-            # This way, we'll get the information back from the proxy with updated balances. Avoiding potential issues.
             elif matching_account and not matching_account.journal_ids:
                 matching_account.unlink()
         accounts = {}
@@ -1183,7 +1049,6 @@ class AccountOnlineLink(models.Model):
         }
         swift_code = False
         while True:
-            # Retrieve information about a specific account
             if online_identifier:
                 data["online_identifier"] = online_identifier
 
@@ -1214,15 +1079,12 @@ class AccountOnlineLink(models.Model):
 
     def _can_get_transactions(self) -> bool:
         self.check_singleton()
-        # 'limit_time_real_cron' and 'limit_time_real' default respectively to -1 and 120.
-        # Manual fallbacks applied for non-POSIX systems where this key is disabled (set to None).
         limit_time = tools.config["limit_time_real_cron"] or -1
         if limit_time <= 0:
             limit_time = tools.config["limit_time_real"] or 120
         limit_time += (
-            20  # Add 20 seconds to be sure that the process will have been killed
+            20
         )
-        # if any account is actually creating entries and last_refresh was made less than cron_limit_time ago, skip fetching
         if (
             self.account_online_account_ids.filtered(
                 lambda account: account.fetching_status == "processing"
@@ -1231,7 +1093,6 @@ class AccountOnlineLink(models.Model):
             > fields.Datetime.now()
         ):
             return False
-        # If not in the process of importing and auto_sync is not set, skip fetching
         return not (
             self.env.context.get("cron")
             and not self.auto_sync
@@ -1242,7 +1103,6 @@ class AccountOnlineLink(models.Model):
 
     def _get_transactions(self, refresh=True, accounts=False, check_duplicates=False):
         self.check_singleton()
-        # return early if condition to fetch transactions are not met
         if not self._can_get_transactions():
             return None
 
@@ -1250,15 +1110,11 @@ class AccountOnlineLink(models.Model):
         acc = (accounts or self.account_online_account_ids).filtered("journal_ids")
         self.last_refresh = fields.Datetime.now()
         try:
-            # When manually fetching, refresh must still be done in case a redirect occurs
-            # however since transactions are always fetched inside a cron, in case we are manually
-            # fetching, trigger the cron and redirect customer to accounting dashboard
             accounts_to_synchronize = acc
             if not is_cron_running:
                 accounts_not_to_synchronize = self.env["account.online.account"]
                 account_to_reauth = False
                 for online_account in acc:
-                    # Only get transactions on account linked to a journal
                     if refresh and online_account.fetching_status not in (
                         "planned",
                         "processing",
@@ -1293,7 +1149,6 @@ class AccountOnlineLink(models.Model):
             for online_account in accounts_to_synchronize:
                 journal = online_account.journal_ids[0]
                 online_account.fetching_status = "processing"
-                # Committing here so that multiple thread calling this method won't execute in parallel and import duplicates transaction
                 self.env["ir.cron"]._commit_progress()
                 try:
                     transactions = online_account._get_transactions_from_provider()
@@ -1325,8 +1180,6 @@ class AccountOnlineLink(models.Model):
                     transactions, key=lambda transaction: transaction["date"]
                 )
                 if not is_cron_running:
-                    # we want to import the first 100 transaction, show them to the user
-                    # and import the rest asynchronously with the 'online_sync_cron_waiting_synchronization' cron
                     total = sum(transaction["amount"] for transaction in transactions)
                     statement_lines = (
                         self.env["account.bank.statement.line"]
@@ -1388,7 +1241,6 @@ class AccountOnlineLink(models.Model):
                 data["consent_expiring_date"]
             )
             if expiring_synchronization_date != self.expiring_synchronization_date:
-                # TODO: use generic activity mixin methods instead
                 bank_sync_activity_type_id = self.env.ref(
                     "mail.mail_activity_data_todo"
                 )
@@ -1396,7 +1248,6 @@ class AccountOnlineLink(models.Model):
                     "account.journal"
                 )
 
-                # Remove old activities
                 self.env["mail.activity"].search(
                     [
                         ("res_id", "in", self.journal_ids.ids),
@@ -1407,7 +1258,6 @@ class AccountOnlineLink(models.Model):
                     ]
                 ).unlink()
 
-                # Create a new activity for each journals for this synch
                 self.expiring_synchronization_date = expiring_synchronization_date
                 new_activity_vals = [
                     {
@@ -1422,14 +1272,11 @@ class AccountOnlineLink(models.Model):
                     }
                     for journal in self.journal_ids
                 ]
-                # TODO: batch schedule with record-based note
                 self.env["mail.activity"].create(new_activity_vals)
         elif (
             self.expiring_synchronization_date
             and self.expiring_synchronization_date < fields.Date.context_today(self)
         ):
-            # Avoid an infinite "expired synchro" if the provider
-            # doesn't send us a new consent expiring date
             self.expiring_synchronization_date = None
 
     def _update_connection_status(self):
@@ -1440,16 +1287,9 @@ class AccountOnlineLink(models.Model):
 
         self._update_expiring_date(resp_json)
 
-        # Returning what we receive from Odoo Fin to allow function extension
         return resp_json
 
     def _authorize_access(self, data_access_token) -> None:
-        """Give a new connection temporary access to this connection's unlinked accounts.
-
-        :param data_access_token: token shared with the connection being created.
-        """
-        # The already linked accounts are sent along so that the proxy can tell us when nothing is
-        # left to link, in which case we won't call authorize for that connection later on.
         self.check_singleton()
         data = {
             "linked_accounts": self.account_online_account_ids.filtered(
@@ -1461,7 +1301,6 @@ class AccountOnlineLink(models.Model):
             resp_json = self._get_odoo_fin("/proxy/v1/authorize_access", data)
             self.has_unlinked_accounts = resp_json.get("has_unlinked_accounts")
         except UserError:
-            # We don't want to throw an error to the customer so ignore error
             pass
 
     @api.model
@@ -1480,9 +1319,6 @@ class AccountOnlineLink(models.Model):
             journal.message_post(**post_values)
         super()._message_post_prepare_values(post_values)
 
-    ################################
-    # Callback methods from iframe #
-    ################################
 
     def success(self, mode, data):
         journal_type = "bank"
@@ -1504,7 +1340,6 @@ class AccountOnlineLink(models.Model):
 
             self._update_connection_status()
 
-        # if for some reason we just have to update the record without doing anything else, the mode will be set to 'none'
         if mode == "none":
             return {"type": "ir.actions.client", "tag": "reload"}
         try:
@@ -1531,8 +1366,6 @@ class AccountOnlineLink(models.Model):
 
     @api.model
     def connect_existing_account(self, data):
-        # extract client_id and online_identifier from data and retrieve the account detail from the connection.
-        # If we have a journal in context, assign to journal, otherwise create new journal then fetch transaction
         client_id = data.get("client_id")
         online_identifier = data.get("online_identifier")
         if client_id and online_identifier:
@@ -1562,7 +1395,6 @@ class AccountOnlineLink(models.Model):
     def exchange_token(self, exchange_token) -> bool:
         self.check_singleton()
         self.check_access("write")
-        # Exchange token to retrieve client_id and refresh_token from proxy account
         data = {
             "exchange_token": exchange_token,
             "company_id": self.env.company.id,
@@ -1571,7 +1403,6 @@ class AccountOnlineLink(models.Model):
         resp_json = self._get_odoo_fin(
             "/proxy/v1/exchange_token", data=data, ignore_status=True
         )
-        # Write in sudo mode as those fields are protected from users
         self.sudo().write(
             {
                 "client_id": resp_json.get("client_id"),
@@ -1609,14 +1440,10 @@ class AccountOnlineLink(models.Model):
         self._log_information(state="connected")
         return self._get_transactions(check_duplicates=True)
 
-    ##################
-    # action buttons #
-    ##################
 
     def action_new_synchronization(
         self, preferred_inst=None, journal_id=False, journal_type="bank"
     ):
-        # Search for an existing link that was not fully connected
         online_link = self
         if not online_link or online_link.provider_type:
             online_link = self.search(
@@ -1626,7 +1453,6 @@ class AccountOnlineLink(models.Model):
                 ],
                 limit=1,
             )
-        # If not found, create a new one
         if not online_link or online_link.provider_type:
             online_link = self.create({})
         return online_link._open_iframe(
@@ -1662,7 +1488,6 @@ class AccountOnlineLink(models.Model):
             try:
                 self._update_access_token()
             except OdooFinRedirectException:
-                # Delete record and open iframe in a new one
                 self.unlink()
                 return self.create({})._open_iframe("link")
 
@@ -1715,13 +1540,11 @@ class AccountOnlineLink(models.Model):
         if mode == "link":
             user_email = (
                 self.env.user.email or self.env.ref("base.user_admin").email or ""
-            )  # Necessary for some providers onboarding
+            )
             action["params"]["includeParam"]["dbUuid"] = self.env.registry.settings.get(
                 self.env, "database.uuid", False
             )
             action["params"]["includeParam"]["userEmail"] = user_email
-            # Share one random token with every still-connected link, so that the iframe can list
-            # the accounts they haven't linked yet
             existing_link = self.search(
                 [("state", "!=", "disconnected"), ("has_unlinked_accounts", "=", True)]
             )

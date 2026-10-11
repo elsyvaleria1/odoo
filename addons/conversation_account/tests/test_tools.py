@@ -16,8 +16,6 @@ class TestAccountTools(ConversationToolCase):
             [("type", "=", "sale"), ("company_id", "=", self.company.id)], limit=1
         ):
             return
-        # a bare test database has no chart of accounts: one income account
-        # and one sale journal are enough for a draft invoice
         income = self.env["account.account"].create(
             {"name": "Ingresos (test)", "code": "TEST400", "account_type": "income"}
         )

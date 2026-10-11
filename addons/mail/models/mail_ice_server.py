@@ -11,8 +11,6 @@ from odoo.addons.mail.tools.discuss import get_twilio_credentials
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-# per process: the TURN credentials Twilio hands out are secrets, and a row
-# written from a call join would serialise concurrent joins on it
 _twilio_ice_servers: dict[tuple[str, str, str], tuple[datetime.datetime, list]] = {}
 
 

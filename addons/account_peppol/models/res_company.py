@@ -82,39 +82,22 @@ class ResCompany(models.Model):
         self._compute_config_link("account_peppol_config_id")
 
     def _get_active_peppol_parent_company(self):
-        """
-        Gets the closest parent company (relative from the current)
-        that has an active peppol connection.
-        :return: res.company record: containing single company if found, empty if not.
-        """
         self.check_singleton()
 
         for parent_company in self.sudo().parent_ids[::-1][
             1:
-        ]:  # loop through parent companies starting from the closest parent
+        ]:
             if parent_company.sudo().account_peppol_config_id.peppol_can_send:
                 return parent_company
 
         return self.env["res.company"]
 
     def _have_unauthorized_peppol_parent_company(self):
-        """
-        Returns True if the company is using the active peppol connection of the parent company
-        but the user does not have access to that parent company.
-        """
         self.check_singleton()
         parent_company = self.account_peppol_config_id.peppol_parent_company_id
         return parent_company and parent_company not in self.env.user.company_ids
 
     def _reset_peppol_configuration(self, soft=False) -> None:
-        """
-        Reset all peppol configuration fields to their default value before registering.
-        The EAS, endpoint, email, and phone number will be recomputed so that branch companies that uses
-        their parent configuration can have their default values back
-        (as these fields will be overwritten for them when they register as parent).
-
-        :param soft: If True, will only set state to unregistered, but keep peppol config intact, so the user can register again
-        """
         self.account_peppol_config_id.account_peppol_proxy_state = "not_registered"
         self.account_peppol_migration_key = False
         if not soft:
@@ -240,10 +223,6 @@ class ResCompany(models.Model):
         return super().write(vals)
 
     def _peppol_modules_document_types(self) -> dict:
-        """Override this function to add supported document types as modules are installed.
-
-        :returns: dictionary of the form: {module_name: [(document identifier, document_name)]}
-        """
         return {
             "default": {
                 "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2::Invoice##urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0::2.1": "Peppol BIS Billing UBL Invoice V3",
@@ -258,7 +237,6 @@ class ResCompany(models.Model):
         }
 
     def _peppol_supported_document_types(self) -> dict:
-        """Returns a flattened dictionary of all supported document types."""
         return {
             identifier: document_name
             for identifiers in self._peppol_modules_document_types().values()
@@ -270,7 +248,6 @@ class ResCompany(models.Model):
         config_param = self.env.registry.settings.get(
             self.env, "account_peppol.edi.mode", False
         )
-        # by design, we can only have zero or one proxy user per company with type Peppol
         peppol_user = self.sudo().account_edi_proxy_client_ids.filtered(
             lambda u: u.proxy_type == "peppol"
         )

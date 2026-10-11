@@ -18,7 +18,7 @@ from ..parsing import parse_field_expr
 from ..primitives import COLLECTION_TYPES, NewId
 from ._ast_primitives import (
     _MERGE_OPTIMIZATIONS,
-    _OPTIMIZATION_KEY_KIND,  # noqa: F401  imported from here by optimizations.py
+    _OPTIMIZATION_KEY_KIND,
     _OPTIMIZATIONS_FOR,
     MAX_DOMAIN_NESTING,
     DomainOptimizationError,
@@ -173,7 +173,7 @@ class Domain:
     def _opt_model_name(self) -> str | None:
         return self._opt[1]
 
-    def __new__(cls, *args: object, internal: bool = False) -> Domain:  # noqa: PYI034  can return an existing Domain, _TRUE_DOMAIN, _FALSE_DOMAIN or a DomainCondition, not always an instance of cls, so Self would be wrong
+    def __new__(cls, *args: object, internal: bool = False) -> Domain:
         if len(args) > 1:
             if isinstance(field_expr := args[0], str):
                 _first, operator, value = args
@@ -747,8 +747,6 @@ def ids_selected_without_query(domain: Domain) -> OrderedSet[int] | None:
 
 
 def _builds_by_query(domain: Domain, records: BaseModel) -> bool:
-    # whether building the domain's predicate searches the database for the
-    # records, rather than reading their values
     if isinstance(domain, DomainCondition):
         if domain.operator in ("child_of", "parent_of") or isinstance(
             domain.value, (SQL, Query)
@@ -768,9 +766,6 @@ def _builds_by_query(domain: Domain, records: BaseModel) -> bool:
 
 
 def _predicate_cost(domain: Domain, records: BaseModel) -> int:
-    # what building the predicate costs: 2 a search, 1 a fetch past the
-    # record's own columns (an x2many, a non-stored field, a path through a
-    # relation), 0 the columns the record's own row holds
     if _builds_by_query(domain, records):
         return 2
     if isinstance(domain, DomainCondition):
@@ -791,11 +786,6 @@ def _predicate_cost(domain: Domain, records: BaseModel) -> int:
 def _narrowing_predicate(
     children: tuple[Domain, ...], records: BaseModel, *, decided_when: bool
 ) -> Callable[[BaseModel], bool]:
-    # each child's predicate is built on the records the ones before it left
-    # undecided (not yet admitted by an OR, not yet refused by an AND), the
-    # cheapest first: a fetch or a search asks only about the records still in
-    # question. Narrowing asks each predicate once per record and remembers
-    # the answers that decided, so the combination asks again only the last
     ordered = sorted(children, key=lambda child: _predicate_cost(child, records))
     predicates: list[Callable[[BaseModel], bool]] = []
     decided: set[IdType] = set()
@@ -872,7 +862,7 @@ class DomainCondition(Domain):
     operator: str
     value: typing.Any
 
-    def __new__(cls, field_expr: str, operator: str, value: object) -> DomainCondition:  # noqa: PYI034  overrides Domain.__new__, whose return type is deliberately not Self (see its noqa)
+    def __new__(cls, field_expr: str, operator: str, value: object) -> DomainCondition:
         self = object.__new__(cls)
         object.__setattr__(self, "field_expr", field_expr)
         object.__setattr__(self, "operator", operator)
@@ -952,10 +942,6 @@ class DomainCondition(Domain):
         return self
 
     def __invert__(self) -> Domain:
-        # the inverse operator is the complement for every field unless the
-        # comparand is falsy: a related field through a one2many or many2many
-        # reads `!= 0` as "some line is not 0", not as "no line is 0"
-        # (search_related), so that negation waits for _negate and the field
         if (
             "." not in self.field_expr
             and (neg_op := INVERSE_OPERATOR.get(self.operator))
@@ -973,8 +959,6 @@ class DomainCondition(Domain):
         ):
             return DomainCondition(self.field_expr, neg_op, self.value)
         field = self._get_field(model)
-        # a property's values are of any type, and a number does not order
-        # against text: `a > b` failing does not make `a <= b` hold
         if (
             (neg_op := INVERSE_INEQUALITY.get(self.operator))
             and _searches_one_value(field)
@@ -1033,8 +1017,6 @@ class DomainCondition(Domain):
                 OrderedSet,
                 FrozenOrderedSet,
             ):
-                # equal comparands hold equal members, whatever their order
-                # or types; 1 and True share a hash and stay unequal
                 members = (
                     value
                     if value.__class__ in (frozenset, FrozenOrderedSet)
@@ -1254,9 +1236,6 @@ class DomainCondition(Domain):
         if real_ids:
             candidates = DomainCondition("id", "in", OrderedSet(real_ids)) & self
             if active_name := records._active_name:
-                # the records filtered are kept archived or not, but the
-                # context's active_test still decides the corecords the
-                # condition's sub-selects read, as in the search it mirrors
                 candidates &= DomainCondition(active_name, "in", (True, False))
             answered = None
             if records.env.su:
@@ -1307,16 +1286,10 @@ class DomainCondition(Domain):
                 domain = self._optimize(records, OptimizationLevel.FULL)
             return domain._as_predicate(records)
 
-        # a fully optimized condition already ran its search method, which
-        # answered with this very condition (a stored field searching itself):
-        # the column answers now, or the in-memory search would loop
         if opt_level < OptimizationLevel.FULL:
             if self._is_search_defined(records):
                 return self._search_defined_predicate(records)
             if self._is_related_path(records):
-                # the superuser walks the related path in memory: the FULL
-                # rewrite is the `any` chain the sub-select would join, and
-                # no rule narrows it for the superuser
                 with _recursion_error_as_value_error():
                     domain = self._optimize(records, OptimizationLevel.FULL)
                 if domain is not self:
@@ -1382,9 +1355,6 @@ class DomainCondition(Domain):
             if positive_operator != "in":
                 op = "in" if positive_operator == op else "not in"
                 positive_operator = "in"
-            # Run it on the environment of the records being filtered: a rule
-            # domain is cached across requests, so a Query inside it may still
-            # point at the closed cursor of the request that built it.
             value = set(value.get_result_ids(records.env))
             _debug.logic(
                 "domain.predicate.query_resolved",

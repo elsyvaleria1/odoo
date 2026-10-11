@@ -10,9 +10,6 @@ def migrate(cr, version):
         return
     env = api.Environment(cr, SUPERUSER_ID, {})
     AccountMove = env["account.move"]
-    # before 1.40 a hand-typed tax amount lived only as tax lines drifting from
-    # the computed amount; a posted entry keeps its lines as they are, and
-    # action_draft records the drift of one that goes back to draft
     drafts = AccountMove.search(
         [
             ("state", "=", "draft"),

@@ -59,7 +59,6 @@ class PaymentMethod(models.Model):
         store=True,
     )
 
-    # Feature support fields.
     support_tokenization = fields.Boolean(
         string="Tokenization",
         help="Tokenization is the process of saving the payment details as a token that can later"
@@ -108,7 +107,6 @@ class PaymentMethod(models.Model):
         "to customers.",
     )
 
-    # === COMPUTE METHODS === #
 
     @api.depends("primary_payment_method_id")
     def _compute_is_primary(self) -> None:
@@ -120,22 +118,13 @@ class PaymentMethod(models.Model):
             return NotImplemented
         return [("primary_payment_method_id", operator, [False])]
 
-    # === ONCHANGE METHODS === #
 
     @api.onchange("active", "provider_ids", "support_tokenization")
     def _onchange_warn_before_disabling_tokens(self) -> dict | None:
-        """Display a warning about the consequences of archiving the payment method, detaching it
-        from a provider, or removing its support for tokenization.
-
-        Let the user know that the related tokens will be archived.
-
-        :return: A client action with the warning message, if any.
-        :rtype: dict | None
-        """
         disabling = self._origin.active and not self.active
         detached_providers = self._origin.provider_ids.filtered(
             lambda p: p.id not in self.provider_ids.ids
-        )  # Cannot use recordset difference operation because self.provider_ids is a set of NewIds.
+        )
         blocking_tokenization = (
             self._origin.support_tokenization and not self.support_tokenization
         )
@@ -155,7 +144,7 @@ class PaymentMethod(models.Model):
                         else Domain.TRUE
                     ),
                 )
-            )  # Fix `active_test` in the context forwarded by the view.
+            )
             if related_tokens:
                 return {
                     "warning": {
@@ -173,11 +162,6 @@ class PaymentMethod(models.Model):
     def _onchange_provider_ids_warn_before_attaching_payment_method(
         self,
     ) -> dict | None:
-        """Display a warning before attaching a payment method to a provider.
-
-        :return: A client action with the warning message, if any.
-        :rtype: dict | None
-        """
         attached_providers = self.provider_ids.filtered(
             lambda p: p.id.origin not in self._origin.provider_ids.ids
         )
@@ -194,7 +178,6 @@ class PaymentMethod(models.Model):
             }
         return None
 
-    # === CONSTRAINT METHODS === #
 
     @api.constrains("active", "support_manual_capture")
     def _check_manual_capture_supported_by_providers(self) -> None:
@@ -215,10 +198,8 @@ class PaymentMethod(models.Model):
                 )
             )
 
-    # === CRUD METHODS === #
 
     def write(self, vals):
-        # Handle payment methods being archived, detached from providers, or blocking tokenization.
         archiving = vals.get("active") is False
         detached_provider_ids = (
             [v[0] for command, *v in vals["provider_ids"] if command == Command.UNLINK]
@@ -238,15 +219,14 @@ class PaymentMethod(models.Model):
                         else Domain.TRUE
                     ),
                 )
-            )  # Fix `active_test` in the context forwarded by the view.
+            )
             linked_tokens.active = False
 
-        # Prevent enabling a payment method if it is not linked to an enabled provider.
         if vals.get("active"):
             for pm in self:
                 primary_pm = pm if pm.is_primary else pm.primary_payment_method_id
                 if (
-                    not primary_pm.active  # Don't bother for already enabled payment methods.
+                    not primary_pm.active
                     and all(p.state == "disabled" for p in primary_pm.provider_ids)
                 ):
                     raise UserError(
@@ -271,7 +251,6 @@ class PaymentMethod(models.Model):
                 self.env._("You cannot delete a payment method linked to a provider.")
             )
 
-    # === BUSINESS METHODS === #
 
     def _get_compatible_payment_methods(
         self,
@@ -283,31 +262,9 @@ class PaymentMethod(models.Model):
         report=None,
         **kwargs,
     ):
-        """Search and return the payment methods matching the compatibility criteria.
-
-        The compatibility criteria are that payment methods must: be supported by at least one of
-        the providers; support the country of the partner if it exists; be primary payment methods
-        (not a brand). If provided, the optional keyword arguments further refine the criteria.
-
-        :param list provider_ids: The list of providers by which the payment methods must be at
-                                  least partially supported to be considered compatible, as a list
-                                  of `payment.provider` ids.
-        :param int partner_id: The partner making the payment, as a `res.partner` id.
-        :param int currency_id: The payment currency, if known beforehand, as a `res.currency` id.
-        :param bool force_tokenization: Whether only payment methods supporting tokenization can be
-                                        matched.
-        :param bool is_express_checkout: Whether the payment is made through express checkout.
-        :param dict report: The report in which each payment method's availability status and
-                            reason must be logged.
-        :param dict kwargs: Optional data. This parameter is not used here.
-        :return: The compatible payment methods.
-        :rtype: payment.method
-        """
-        # Search compatible payment methods with the base domain.
         payment_methods = self.env["payment.method"].search([("is_primary", "=", True)])
         payment_utils.add_to_report(report, payment_methods)
 
-        # Filter by compatible providers.
         unfiltered_pms = payment_methods
         payment_methods = payment_methods.filtered(
             lambda pm: any(p in provider_ids for p in pm.provider_ids.ids)
@@ -319,11 +276,10 @@ class PaymentMethod(models.Model):
             reason=REPORT_REASONS_MAPPING["provider_not_available"],
         )
 
-        # Handle the partner country; allow all countries if the list is empty.
         partner = self.env["res.partner"].browse(partner_id)
         if (
             partner.country_id
-        ):  # The partner country must either not be set or be supported.
+        ):
             unfiltered_pms = payment_methods
             payment_methods = payment_methods.filtered(
                 lambda pm: (
@@ -338,7 +294,6 @@ class PaymentMethod(models.Model):
                 reason=REPORT_REASONS_MAPPING["incompatible_country"],
             )
 
-        # Handle the supported currencies; allow all currencies if the list is empty.
         if currency_id:
             unfiltered_pms = payment_methods
             payment_methods = payment_methods.filtered(
@@ -354,7 +309,6 @@ class PaymentMethod(models.Model):
                 reason=REPORT_REASONS_MAPPING["incompatible_currency"],
             )
 
-        # Handle tokenization support requirements.
         if force_tokenization:
             unfiltered_pms = payment_methods
             payment_methods = payment_methods.filtered("support_tokenization")
@@ -365,7 +319,6 @@ class PaymentMethod(models.Model):
                 reason=REPORT_REASONS_MAPPING["tokenization_not_supported"],
             )
 
-        # Handle express checkout.
         if is_express_checkout:
             unfiltered_pms = payment_methods
             payment_methods = payment_methods.filtered("support_express_checkout")
@@ -379,17 +332,6 @@ class PaymentMethod(models.Model):
         return payment_methods
 
     def _get_from_code(self, code, mapping=None) -> Self:
-        """Get the payment method corresponding to the given provider-specific code.
-
-        If a mapping is given, the search uses the generic payment method code that corresponds to
-        the given provider-specific code.
-
-        :param str code: The provider-specific code of the payment method to get.
-        :param dict mapping: A non-exhaustive mapping of generic payment method codes to
-                             provider-specific codes.
-        :return: The corresponding ``payment.method``, if any.
-        :rtype: Self
-        """
         generic_to_specific_mapping = mapping or {}
         specific_to_generic_mapping = {
             v: k for k, v in generic_to_specific_mapping.items()

@@ -142,26 +142,22 @@ class WorksheetTemplate(models.Model):
         return res
 
     def unlink(self):
-        # When uninstalling module, let the ORM take care of everything. As the
-        # xml ids are correctly generated, all data will be properly removed.
         if self.env.context.get(MODULE_UNINSTALL_FLAG):
             return super().unlink()
 
-        # When manual deletion of worksheet, we need to handle explicitly the removal of depending data
         models_ids = self.mapped("model_id.id")
         self.env["ir.ui.view"].search(
             [("model", "in", self.mapped("model_id.model"))]
-        ).unlink()  # backend views (form, pivot, ...)
-        self.mapped("report_view_id").unlink()  # qweb templates
+        ).unlink()
+        self.mapped("report_view_id").unlink()
         self.env["ir.access"].search([("model_id", "in", models_ids)]).unlink()
         x_name_fields = self.env["ir.model.fields"].search(
             [("model_id", "in", models_ids), ("name", "=", "x_name")]
         )
         x_name_fields.write(
             {"related": False}
-        )  # we need to manually remove relation to allow the deletion of fields
+        )
         self.mapped("action_id").unlink()
-        # context needed to avoid "manual" removal of related fields
         self.mapped("model_id").with_context(**{MODULE_UNINSTALL_FLAG: True}).unlink()
 
         return super(WorksheetTemplate, self.exists()).unlink()
@@ -172,7 +168,7 @@ class WorksheetTemplate(models.Model):
             dict(
                 vals,
                 name=self.env._("%s (copy)", template.name),
-                model_id=False,  # force no model
+                model_id=False,
             )
             for template, vals in zip(self, vals_list, strict=False)
         ]
@@ -193,13 +189,8 @@ class WorksheetTemplate(models.Model):
         hooks = self._get_worksheet_hooks()
         user_group = self.env.ref(hooks.user_group)
 
-        # while creating model it will initialize the init_models method from create of ir.model
-        # and there is related field of model_id in mail template so it's going to recursive loop while recompute so used flush
         self.env.flush_all()
 
-        # Generate xml ids for some records: views, actions and models. This will let the ORM handle
-        # the module uninstallation (removing all data belonging to the module using their xml ids)
-        # as well as to permit the studio export feature to work with worksheet templates.
         module_name = hooks.module
         xid_values = []
         model_counter = collections.Counter()
@@ -222,7 +213,6 @@ class WorksheetTemplate(models.Model):
                 )
             return records
 
-        # generate the ir.model (and so the SQL table)
         model = register_xids(
             self.env["ir.model"]
             .sudo()
@@ -298,7 +288,6 @@ class WorksheetTemplate(models.Model):
             )
         )
 
-        # create the view to extend by 'studio' and add the user custom fields
         __, __, search_view = register_xids(
             self.env["ir.ui.view"]
             .sudo()
@@ -325,17 +314,14 @@ class WorksheetTemplate(models.Model):
 
         self.env["ir.model.data"].sudo().create(xid_values)
 
-        # link the worksheet template to its generated model and action
         self.write(
             {
                 "action_id": action.id,
                 "model_id": model.id,
             }
         )
-        # this must be done after form view creation and filling the 'model_id' field
         self.sudo()._create_qweb_report_template()
 
-        # Add unique constraint on the x_model_id field since we want one worksheet per host record
         conname = normalize_identifier(f"{name}_x_{res_model}_id_uniq")
         concode = "unique(x_%s_id)" % (res_model)
         add_constraint(self.env.cr, name, conname, concode)
@@ -349,11 +335,6 @@ class WorksheetTemplate(models.Model):
         }
 
     def _prepare_default_fields_values(self):
-        """Prepare a list that contains the data to create the default fields for
-        the model created from the template. Fields related to these fields
-        shouldn't be put here, they should be created after the creation of these
-        fields.
-        """
         res_model_name = self.res_model.replace(".", "_")
         hooks = self._get_worksheet_model_hooks().get(self.res_model)
         fields_func = hooks and hooks.template_fields
@@ -378,7 +359,6 @@ class WorksheetTemplate(models.Model):
         ] + ((fields_func and fields_func()) or [])
 
     def _prepare_default_form_view_values(self, model) -> dict:
-        """Create a default form view for the model created from the template."""
         res_model_name = self.res_model.replace(".", "_")
         hooks = self._get_worksheet_model_hooks().get(self.res_model)
         form_arch_func = hooks and hooks.form_arch
@@ -403,7 +383,6 @@ class WorksheetTemplate(models.Model):
         }
 
     def _prepare_default_list_view_values(self, model) -> dict:
-        """Create a default list view for the model created from the template."""
         hooks = self._get_worksheet_model_hooks().get(self.res_model)
         tree_arch_func = hooks and hooks.list_arch
         return {
@@ -420,7 +399,6 @@ class WorksheetTemplate(models.Model):
         }
 
     def _prepare_default_search_view_values(self, model) -> dict:
-        """Create a default search view for the model created from the template."""
         hooks = self._get_worksheet_model_hooks().get(self.res_model)
         search_arch_func = hooks and hooks.search_arch
         return {
@@ -452,11 +430,6 @@ class WorksheetTemplate(models.Model):
 
     @api.model
     def _get_models_to_check_dict(self):
-        """To be override in the module using it. It returns a dictionary contains
-        the model you want to check for multi-company in the write method.
-        Key: res_model name, eg: "quality.check"
-        Value: a list of (model name, model name to show), eg: [("quality.point", "Quality Point"), ("quality.check", "Quality Check")]
-        """
         return {}
 
     def action_analysis_report(self):
@@ -481,7 +454,6 @@ class WorksheetTemplate(models.Model):
 
     def action_view_worksheets(self):
         action = self.action_id.sudo().read()[0]
-        # modify context to force no create/import button
         action["context"] = dict(
             self.env["ir.actions.actions"]._eval_action_context(
                 action.get("context", "{}")
@@ -497,9 +469,6 @@ class WorksheetTemplate(models.Model):
             )
         return action
 
-    # ---------------------------------------------------------
-    # Business Methods
-    # ---------------------------------------------------------
 
     def get_x_model_form_action(self):
         action = self.action_id.read()[0]
@@ -508,7 +477,7 @@ class WorksheetTemplate(models.Model):
                 "views": [[False, "form"]],
                 "context": {
                     "default_x_%s_id" % self.res_model.replace(".", "_"): True
-                },  # to hide model_id from view
+                },
             }
         )
         return action
@@ -516,7 +485,7 @@ class WorksheetTemplate(models.Model):
     def _get_fields_qweb_arch_omitted(self) -> list:
         return [
             "x_%s_id" % self.res_model.replace(".", "_"),
-            "x_name",  # redundant
+            "x_name",
         ]
 
     def _add_field_node_to_container(self, field_node, form_view_fields, container_col):
@@ -530,18 +499,14 @@ class WorksheetTemplate(models.Model):
             field_info = form_view_fields.get(field_name)
             widget = field_node.attrib.get("widget", False)
             is_signature = False
-            # adapt the widget syntax
             if widget:
                 if widget == "signature":
                     is_signature = True
                     field_node.attrib.pop("widget")
                 elif widget == "image":
-                    # image widgets in qweb (only with t-out)
                     field_node.attrib["t-options-widget"] = "'image'"
                     field_node.attrib["t-options-qweb_img_raw_data"] = "1"
-            # basic form view -> qweb node transformation
             if field_info:
-                # adapt the field node itself
                 field_name = "worksheet." + field_node.attrib["name"]
                 field_node.attrib.pop("name")
                 if is_signature:
@@ -569,7 +534,6 @@ class WorksheetTemplate(models.Model):
                         "'col-7' if report_type == 'pdf' else 'col-lg-9 col-12'"
                     )
                     field_node.attrib["t-field"] = field_name
-                # generate a description
                 description = etree.Element(
                     "div",
                     {
@@ -579,7 +543,6 @@ class WorksheetTemplate(models.Model):
                 description.text = field_node.attrib.pop(
                     "string", field_info and field_info.get("string")
                 )
-                # insert all that in a container
                 container = etree.Element(
                     "div",
                     {
@@ -600,11 +563,6 @@ class WorksheetTemplate(models.Model):
         return new_container_col
 
     def _get_qweb_arch(self, ir_model, qweb_template_name, form_view_id=False):
-        """This function generates a qweb arch, from the form view of the given ir.model record.
-        This is needed because the number and names of the fields aren't known in advance.
-        :param ir_model: ir.model record
-        :returns the arch of the template qweb (t-name included)
-        """
         view_get_result = self.env[ir_model.model].get_view(form_view_id, "form")
         form_view_arch = view_get_result["arch"]
         node = etree.fromstring(form_view_arch)
@@ -623,7 +581,6 @@ class WorksheetTemplate(models.Model):
         ):
             container_row = etree.Element("div")
             container_col = etree.Element("div")
-            # pattern A: field is not in any element group --> field take full width
             if (
                 "name" in row_node.attrib
                 and row_node.attrib["name"] not in self._get_fields_qweb_arch_omitted()
@@ -636,7 +593,6 @@ class WorksheetTemplate(models.Model):
                 container_row.append(new_container_col)
                 qweb_arch.append(container_row)
             else:
-                # pattern B: whe have an element group inside an element group --> we split into 2 columns
                 cols = row_node.xpath("./group")
                 if len(cols) > 0:
                     container_row = etree.Element(
@@ -654,7 +610,6 @@ class WorksheetTemplate(models.Model):
                             )
                             container_row.append(new_container_col)
                     qweb_arch.append(container_row)
-                # pattern C: whe have a field inside an element group --> field take full width
                 else:
                     for field_node in row_node.xpath("./field"):
                         new_container_col = self._add_field_node_to_container(
@@ -672,13 +627,13 @@ class WorksheetTemplate(models.Model):
             new_arch = self._get_qweb_arch(
                 worksheet_template.model_id, report_name, form_view_id
             )
-            if worksheet_template.report_view_id:  # update existing one
+            if worksheet_template.report_view_id:
                 worksheet_template.report_view_id.write({"arch": new_arch})
-            else:  # create the new one
+            else:
                 report_view = self.env["ir.ui.view"].create(
                     {
                         "type": "qweb",
-                        "model": False,  # template qweb for report
+                        "model": False,
                         "inherit_id": False,
                         "mode": "primary",
                         "arch": new_arch,
@@ -694,5 +649,4 @@ class WorksheetTemplate(models.Model):
                         "noupdate": True,
                     }
                 )
-                # linking the new one
                 worksheet_template.write({"report_view_id": report_view.id})

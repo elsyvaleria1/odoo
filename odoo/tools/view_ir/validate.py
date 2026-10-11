@@ -13,7 +13,6 @@ from .schema import Schema, schema
 _debug = DebugLog(__name__)
 
 BOOL_LITERALS = frozenset({"1", "0", "True", "False", "true", "false"})
-# convert.py substitutes %(module.xmlid)d with the record id before the arch is stored
 XMLID_REF = re.compile(r"%\((.*?)\)[ds]")
 REQUIRED_ATTRS: dict[str, tuple[str, ...]] = {
     "field": ("name",),

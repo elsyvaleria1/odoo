@@ -49,12 +49,6 @@ class PosOrder(models.Model):
     def _prepare_invoice_vals(self):
         invoice_vals = super()._prepare_invoice_vals()
         invoice_vals["team_id"] = self.team_id.id
-        # `sale_orders` can hold more than one sale order when this POS order's
-        # lines settle several distinct sale orders (e.g. a downpayment
-        # settlement from one order mixed with a direct sale of another's
-        # remaining balance). Only the first order's shipping address,
-        # payment terms and invoice partner are used below; this is a known
-        # limitation, not an oversight — see pos_sale ledger finding F06.
         sale_orders = self.lines.mapped("sale_order_origin_id")
         if sale_orders:
             if (
@@ -97,7 +91,6 @@ class PosOrder(models.Model):
         AccountTax = self.env["account.tax"]
         pos_orders = self.browse([o["id"] for o in data["pos.order"]])
         for pos_order in pos_orders:
-            # TODO: the way to retrieve the sale order in not consistent... is it a bad code or intended?
             used_pos_lines = (
                 pos_order.lines.sale_order_origin_id.line_ids.pos_order_line_ids
             )
@@ -134,7 +127,6 @@ class PosOrder(models.Model):
                     down_payment_base_lines
                 )
 
-            # Confirm the unconfirmed sale orders that are linked to the sale order lines.
             so_lines = pos_order.lines.mapped("sale_order_line_id")
             sale_orders |= so_lines.mapped("order_id")
             if pos_order.state != "draft":
@@ -143,11 +135,7 @@ class PosOrder(models.Model):
                 ):
                     sale_order.action_confirm()
 
-            # update the demand qty in the stock moves related to the sale order line
-            # flush the qty_transferred to make sure the updated qty_transferred is used when
-            # updating the demand value
             so_lines.flush_recordset(["qty_transferred"])
-            # track the waiting pickings
             waiting_picking_ids = set()
             if "move_ids" in self.env["sale.order.line"]._fields:
                 for so_line in so_lines:
@@ -166,7 +154,6 @@ class PosOrder(models.Model):
                         stock_move.product_uom_qty = so_line.compute_uom_qty(
                             new_qty, stock_move, False
                         )
-                        # If the product is delivered with more than one step, we need to update the quantity of the other steps
                         for move in so_line_stock_move_ids.filtered_domain(
                             [
                                 ("state", "in", ["waiting", "confirmed", "assigned"]),
@@ -184,7 +171,6 @@ class PosOrder(models.Model):
                 if all(is_product_uom_qty_zero(move) for move in picking.move_ids):
                     picking.action_cancel()
                 else:
-                    # We make sure that the original picking still has the correct quantity reserved
                     picking.action_assign()
 
         return data
@@ -253,10 +239,6 @@ class PosOrderLine(models.Model):
         string="Source Sale Order Line",
         index="btree_not_null",
     )
-    # JSON-encoded breakdown of the sale order lines a down-payment line
-    # settles. Written here (and by pos_store.js's addDownPaymentProduct-
-    # OrderlineToOrder) and read only by this module's own JS `saleDetails`
-    # getter (pos_order_line.js) — no consumer outside pos_sale.
     down_payment_details = fields.Text()
     qty_transferred = fields.Float(
         string="Delivery Quantity",
@@ -333,7 +315,6 @@ class PosOrderLine(models.Model):
                         )
 
                 elif outgoing_pickings:
-                    # If the order is not delivered later, and in a "paid", "done" or "invoiced" state, it fully delivered
                     order_line.qty_transferred = order_line.qty
                 else:
                     order_line.qty_transferred = 0
@@ -345,11 +326,6 @@ class PosOrderLine(models.Model):
         return params
 
     def _launch_stock_rule_from_pos_order_lines(self):
-        # `move_ids` on sale.order.line only exists when `sale_stock` is
-        # installed (pos_sale does not depend on it). Without it there is no
-        # stock-move origin to cancel, same reasoning as
-        # StockPicking._create_move_from_pos_order_lines (pos_sale ledger
-        # finding F01).
         if "move_ids" in self.env["sale.order.line"]._fields:
             orders = self.mapped("order_id")
             for order in orders:

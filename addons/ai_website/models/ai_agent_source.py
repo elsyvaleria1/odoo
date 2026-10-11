@@ -7,13 +7,6 @@ class AIAgentSource(models.Model):
     _inherit = "ai.agent.source"
 
     def _get_internal_domains(self):
-        """Override to list the unique internal domains of the websites.
-
-        Handles protocols, paths and the punycode fallback.
-
-        :return: internal domains
-        :rtype: list[str]
-        """
         websites = self.env["website"].search([])
         raw_values = [site.domain_punycode or site.domain for site in websites]
         base_url = self.get_base_url()

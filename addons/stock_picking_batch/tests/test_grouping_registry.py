@@ -60,8 +60,6 @@ class TestGroupingRegistry(TransactionCase):
                 "batch_group_by_src_loc": True,
             }
         )
-        # A delivery address created from a form with no name is still a
-        # partner the batch groups on; its label is False, not a word.
         company_partner = self.env["res.partner"].create({"name": "Grouped Co"})
         partner = self.env["res.partner"].create(
             {"type": "delivery", "parent_id": company_partner.id}

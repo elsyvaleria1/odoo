@@ -103,25 +103,21 @@ class CalendarSyncLink(models.Model):
 
     @api.model
     def _engine(self):
-        """Links as the engine keeps them, whoever the synchronization runs as."""
         return self.with_privilege(
             "calendar_sync.privilege_engine",
             reason="the engine keeps the links of what it synchronizes",
         )
 
     def _record(self):
-        """The event or the recurrence of this link; empty for a tombstone."""
         self.check_singleton()
         return self.event_id or self.recurrence_id
 
     @api.model
     def _field_of(self, records) -> str:
-        """The field of a link holding one of `records`, events or recurrences."""
         return "recurrence_id" if records._name == "calendar.recurrence" else "event_id"
 
     @api.model
     def _of(self, records, code: str):
-        """The links of `records` (events or recurrences) with provider `code`."""
         field = self._field_of(records)
         return self._engine().search(
             [(field, "in", records.ids), ("account_id.provider", "=", code)]
@@ -129,10 +125,6 @@ class CalendarSyncLink(models.Model):
 
     @api.model
     def _match(self, account, remotes) -> dict:
-        """{remote id: `account`'s link} of the `remotes` Odoo holds; a
-        tombstone answers for an item whose deletion Odoo still owes. An item
-        Odoo knows through another account's link, its iCalendar UID or the
-        provider's hint is adopted: `account` gets a link of its own."""
         Link = self._engine()
         code = account.provider
         found = {
@@ -152,14 +144,8 @@ class CalendarSyncLink(models.Model):
             return [remote for remote in remotes if remote.remote_id not in found]
 
         def adoptable():
-            # a cancelled item found by its iCalendar UID or Odoo's hint may be
-            # an earlier copy, deleted, of a meeting held under another id now:
-            # adopting it would read that deletion as this calendar's declining.
-            # One under the very id another calendar holds is the same item
             return [remote for remote in unmatched() if not remote.cancelled]
 
-        # an insert in flight whose answer was lost: the item carries the id
-        # the insert sent, as its own id or beside it
         client_ids = account._provider(code).capabilities.client_insert_id
         if inserting := {
             insert_id: remote
@@ -175,7 +161,6 @@ class CalendarSyncLink(models.Model):
             ):
                 remote = inserting[link.insert_id]
                 if not link._record():
-                    # a tombstone: its record went before the item was known
                     link.remote_id = remote.remote_id
                     found[remote.remote_id] = link
                     continue
@@ -217,9 +202,6 @@ class CalendarSyncLink(models.Model):
             if not record:
                 continue
             links = Link._of(record, code)
-            # a record linked already is another item's (a split series carries
-            # the properties of the one it was split from), unless this
-            # calendar's link of it waits for the answer to its insert
             if not links or links.filtered(
                 lambda link: link.account_id == account and not link.remote_id
             ):
@@ -228,7 +210,6 @@ class CalendarSyncLink(models.Model):
 
     @api.model
     def _adopt(self, account, record, remote, source=None):
-        """`account`'s link of `record` to `remote`, created or corrected."""
         field = self._field_of(record)
         Link = self._engine()
         values = {

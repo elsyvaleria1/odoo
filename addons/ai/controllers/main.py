@@ -7,7 +7,6 @@ from odoo.addons.mail.tools.discuss import add_guest_to_context
 
 
 class AIController(ThreadController):
-    # auth=public to allow visitors to interact with ai agents through livechat
     @http.route(["/ai/generate_response"], type="jsonrpc", auth="public")
     @add_guest_to_context
     def generate_response(

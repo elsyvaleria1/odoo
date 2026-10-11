@@ -20,13 +20,11 @@ class WizardSddMandateSend(models.TransientModel):
         readonly=True,
     )
 
-    # == PRINT ==
     checkbox_download = fields.Boolean(
         string="Download",
         default=False,
     )
 
-    # == MAIL ==
     checkbox_send_mail = fields.Boolean(
         string="Email",
         default=True,
@@ -50,9 +48,6 @@ class WizardSddMandateSend(models.TransientModel):
         readonly=False,
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTE METHODS
-    # -------------------------------------------------------------------------
 
     @api.depends("mandate_id")
     def _compute_recipient_ids(self) -> None:
@@ -84,7 +79,6 @@ class WizardSddMandateSend(models.TransientModel):
 
     @api.depends("mandate_id", "template_id")
     def _compute_subject(self) -> None:
-        # OVERRIDES mail
         for wizard in self.filtered("template_id"):
             wizard.subject = wizard.template_id._render_field(
                 "subject",
@@ -95,7 +89,6 @@ class WizardSddMandateSend(models.TransientModel):
 
     @api.depends("mandate_id", "template_id")
     def _compute_body(self) -> None:
-        # OVERRIDES mail
         for wizard in self.filtered("template_id"):
             wizard.body = wizard.template_id._render_field(
                 "body_html",
@@ -104,9 +97,6 @@ class WizardSddMandateSend(models.TransientModel):
                 options={"post_process": True},
             )[wizard.id]
 
-    # -------------------------------------------------------------------------
-    # BUSINESS ACTIONS
-    # -------------------------------------------------------------------------
 
     def _prepare_mandate_pdf(self) -> dict:
         self.check_singleton()
@@ -124,7 +114,7 @@ class WizardSddMandateSend(models.TransientModel):
             "mimetype": "application/pdf",
             "res_model": "sdd.mandate",
             "res_id": mandate.id,
-            "res_field": "mandate_pdf_file",  # Binary field
+            "res_field": "mandate_pdf_file",
         }
 
     def _send_mail(self, mandate_pdf):
@@ -145,18 +135,14 @@ class WizardSddMandateSend(models.TransientModel):
         mandate = self.mandate_id
         mandate.is_sent = True
 
-        # Generate mandate document.
         pdf_data = self._prepare_mandate_pdf()
 
-        # note: Binary is used for security reason
         attachment = self.env["ir.attachment"].create(pdf_data)
         attachment.register_as_main_attachment(force=True)
 
-        # Send mail
         if self.checkbox_send_mail:
             self._send_mail(attachment)
 
-        # Download PDF
         if self.checkbox_download:
             return {
                 "type": "ir.actions.act_url",

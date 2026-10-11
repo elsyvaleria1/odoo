@@ -7,7 +7,6 @@ from odoo.addons.whatsapp.tools.whatsapp_api import DEFAULT_ENDPOINT, WhatsAppAp
 @tagged("wa_message")
 class WhatsAppAPI(WhatsAppCommon, MockIncomingWhatsApp):
     def test_receive_attachment_with_debug_requests(self):
-        """Ensure attachment fetch requests are logged properly when debug logs are enabled."""
         doc_id = "test_doc_id"
         doc_info_url = f"{DEFAULT_ENDPOINT}/{doc_id}"
         doc_bin_url = "https://doc.getyadoc.lan"

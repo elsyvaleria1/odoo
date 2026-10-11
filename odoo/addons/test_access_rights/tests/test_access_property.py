@@ -11,9 +11,6 @@ ROUNDS = int(os.environ.get("ACCESS_PROPERTY_ROUNDS", "12"))
 
 @tagged("post_install", "-at_install")
 class TestAccessProperty(TransactionCase):
-    # the property's PostgreSQL leg: the access domain searched in SQL
-    # against the check evaluated in memory, where =like, ilike, NULL under
-    # negation and the NOT LIKE ... OR IS NULL rewrite live
 
     def _run(self, seed):
         result = access_property.run(

@@ -28,7 +28,7 @@ class ProductTemplate(models.Model):
                 and product.type == "service"
                 and product.landed_cost_ok
             ):
-                if self.env["account.move.line"].search_count(  # noqa: E8507 - one probe per product losing its landed-cost flag
+                if self.env["account.move.line"].search_count(
                     [
                         ("product_id", "in", product.product_variant_ids.ids),
                         ("is_landed_costs_line", "=", True),

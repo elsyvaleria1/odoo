@@ -11,7 +11,6 @@ class TestPlanningPublishing(TestCommonPlanning, MailCase):
 
         cls.setUpEmployees()
 
-        # employee without work email
         cls.employee_dirk_no_mail = cls.env["hr.employee"].create(
             {"user_id": False, "name": "Dirk", "work_email": False, "tz": "UTC"}
         )
@@ -47,7 +46,7 @@ class TestPlanningPublishing(TestCommonPlanning, MailCase):
     def test_sending_planning_do_not_create_mail_if_employee_has_no_email(self):
         self.shift.write({"resource_id": self.resource_dirk.id})
 
-        self.assertFalse(self.employee_dirk_no_mail.work_email)  # if no work_email
+        self.assertFalse(self.employee_dirk_no_mail.work_email)
 
         Mails = self.env["mail.mail"].sudo()
         before_mails = Mails.search([])

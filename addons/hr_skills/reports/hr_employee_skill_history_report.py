@@ -32,9 +32,6 @@ class HrEmployeeSkillHistoryReport(models.BaseModel):
     def init(self) -> None:
         drop_view_if_exists(self.env.cr, self._table)
 
-        # One row per (employee, skill) on every day a skill of that employee
-        # started or stopped, carrying the level held on that day. When two rows
-        # of the same skill cover the day, the one that started latest wins.
         self.env.cr.execute(
             SQL(
                 """

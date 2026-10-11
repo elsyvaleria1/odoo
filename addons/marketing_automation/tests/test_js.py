@@ -27,20 +27,9 @@ ALL_SUITE_PREFIXES = ("@marketing_automation",)
 class MarketingAutomationSuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_marketing_automation_unit(self):
-        """@marketing_automation -- campaign template picker and the campaign
-        hierarchy kanban widget."""
         self._run_hoot("@marketing_automation", preset="desktop", timeout=900)
 
     def test_suite_filters_cover_every_test_file(self):
-        """Guard the two ways this addon's HOOT tests can silently stop running.
-
-        ``ALL_SUITE_PREFIXES`` is the module root today, so the coverage walk
-        below is exhaustive by construction -- it only starts doing work if the
-        prefixes are ever narrowed (e.g. split into per-directory methods). The
-        failure mode that is live *now* is an empty walk: rename or move
-        ``static/tests`` and the ``&id=`` filter matches nothing, which reads as
-        a pass. Hence the non-empty assertion first.
-        """
         tests_root = Path(file_path("marketing_automation/static/tests"))
         test_files = sorted(tests_root.rglob("*.test.js"))
         self.assertTrue(

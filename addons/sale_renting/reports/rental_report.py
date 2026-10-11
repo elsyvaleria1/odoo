@@ -108,19 +108,9 @@ class SaleRentalReport(models.Model):
         readonly=True,
     )
 
-    # ------------------------------------------------------------
-    # REGISTRY METHODS (SQL Report Mixin Pattern)
-    # ------------------------------------------------------------
 
     def _get_fields_select(self) -> dict:
-        """Registry of fields for SELECT clause.
-
-        :return: mapping of ``{field_name: sql_expression}``
-        :rtype: dict
-        """
         return {
-            # One row per rental day per line: sol.id is not unique here, so the
-            # primary key has to be synthesised over the expanded row set.
             "id": "row_number() OVER (ORDER BY sol.id, d.date)",
             "order_id": "sol.order_id",
             "product_id": "sol.product_id",
@@ -142,19 +132,13 @@ class SaleRentalReport(models.Model):
         }
 
     def _get_from_tables(self) -> list:
-        """Registry of tables and JOINs for FROM clause.
-
-        :return: tuples ``(table_name, alias, join_type, on_condition)``
-        :rtype: list
-        """
         return [
-            ("sale_order_line", "sol", None, None),  # Base table
+            ("sale_order_line", "sol", None, None),
             ("sale_order", "so", "JOIN", "sol.order_id=so.id"),
             ("product_product", "p", "JOIN", "p.id=sol.product_id"),
             ("product_template", "pt", "JOIN", "p.product_tmpl_id=pt.id"),
             ("uom_uom", "u", "JOIN", "u.id=sol.product_uom_id"),
             ("uom_uom", "u2", "JOIN", "u2.id=pt.uom_id"),
-            # Expands each rental line into one row per day of its period.
             (
                 SQL(
                     """LATERAL generate_series(
@@ -170,22 +154,9 @@ class SaleRentalReport(models.Model):
         ]
 
     def _get_where_conditions(self) -> list:
-        """Registry of conditions for WHERE clause.
-
-        :return: SQL condition strings that will be AND'ed together
-        :rtype: list
-        """
         return [
-            "sol.is_rental",  # Only rental order lines
+            "sol.is_rental",
         ]
 
     def _get_fields_group_by(self) -> list:
-        """Registry of fields for GROUP BY clause.
-
-        This report doesn't use GROUP BY: it generates one row per day per
-        rental line using generate_series.
-
-        :return: an empty list (no grouping needed)
-        :rtype: list
-        """
         return []

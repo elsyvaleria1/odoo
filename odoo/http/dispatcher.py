@@ -59,8 +59,6 @@ def is_debugger_handover_required(
 def _prepare_problem_details(
     body: dict[str, Any], status: int, generic: bool
 ) -> dict[str, Any]:
-    # RFC 9457 members first, Odoo's own after them, so a client that knows
-    # one shape or the other reads what it expects.
     try:
         title = HTTPStatus(status).phrase
     except ValueError:
@@ -91,8 +89,6 @@ def get_dispatcher_for_unmatched_route(request: RequestState) -> type[Dispatcher
         and mimetype in dispatcher.mimetypes
     ]
     if len(claimed) > 1:
-        # application/json is both protocols' media type: a JSON-RPC client
-        # is answered in the envelope it reads, which its body names.
         body = _get_json_object(request)
         claimed = ["jsonrpc" if body and body.get("jsonrpc") == "2.0" else "json2"]
     routing_type = claimed[0] if claimed else "http"
@@ -205,10 +201,6 @@ class Dispatcher(ABC):
         env = getattr(self.request, "env", None)
         if env is None or env.cr.closed:
             return
-        # The cursor remembers the budget and re-arms it (SET LOCAL) before the
-        # first statement of every transaction it runs, so a mid-request commit,
-        # a savepoint rollback or the promotion replay keep it; it ends with
-        # the cursor, i.e. with the request.
         env.cr.set_statement_timeout(seconds)
         _debug.logic(
             "http.dispatch.statement_timeout",
@@ -269,8 +261,6 @@ class Dispatcher(ABC):
         sources: collections.abc.Iterable[Any],
         taken: collections.abc.Container[str],
     ) -> None:
-        # A MultiDict spreads into params with its first value; a typed list
-        # parameter repeated in the query or form keeps every value.
         for name in getattr(endpoint, "typed_list_params", None) or ():
             if name in taken:
                 continue
@@ -444,8 +434,6 @@ class JsonRPCDispatcher(Dispatcher):
 
     def prepare_error_response(self, exc: Exception) -> Response:
         if self.request_id is None and not self.jsonrequest:
-            # Refused before dispatch read the envelope (an unmatched path, an
-            # unreachable database): its id is still the client's to match.
             self.request_id = (_get_json_object(self.request) or {}).get("id")
         if isinstance(exc, ParameterError):
             _debug.logic(
@@ -455,9 +443,6 @@ class JsonRPCDispatcher(Dispatcher):
                 id=self.request_id,
             )
             return self._prepare_bad_request_response(exc.description or "Bad Request")
-        # An exception that carries its own response was answered by whoever
-        # raised it -- a gate refusing in the caller's protocol -- and is
-        # served as is, as the json2 dispatcher serves one.
         if isinstance(exc, HTTPException) and exc.response is not None:
             _debug.logic(
                 "http.jsonrpc.error",
@@ -478,11 +463,6 @@ class JsonRPCDispatcher(Dispatcher):
             error["code"] = 100
             error["message"] = "Odoo Session Expired"
 
-        # A refusal of the call is a fault, answered 200 in the envelope. A
-        # server that cannot serve it now (503 while the database is out of
-        # reach) is not: the status and its Retry-After travel with the
-        # envelope, since a 502-504 is what the web client retries as a lost
-        # connection and a proxy reads as unavailable.
         status = HTTPStatus.OK
         headers = None
         if (
@@ -630,11 +610,11 @@ class Json2Dispatcher(Dispatcher):
             return Response(exc.response)
 
         headers = None
-        kind = "internal"  # debuglog
+        kind = "internal"
         if isinstance(exc, (UserError, SessionExpiredException)):
             status = exc.http_status
             body = serialize_exception(exc)
-            kind = "user_error"  # debuglog
+            kind = "user_error"
         elif isinstance(exc, HTTPException):
             status = exc.code or HTTPStatus.INTERNAL_SERVER_ERROR
             body = serialize_exception(
@@ -643,7 +623,7 @@ class Json2Dispatcher(Dispatcher):
                 arguments=(exc.description, status),
             )
             headers = [(k, v) for k, v in exc.get_headers() if k != "Content-Type"]
-            kind = "http_exception"  # debuglog
+            kind = "http_exception"
         else:
             status = HTTPStatus.INTERNAL_SERVER_ERROR
             body = serialize_exception(exc)

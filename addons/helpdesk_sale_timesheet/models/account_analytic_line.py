@@ -38,8 +38,6 @@ class AccountAnalyticLine(models.Model):
         _debug.pipeline(
             "timesheet_display_sol",
             lines=self,
-            # the project subquery is rebuilt on every call of this compute,
-            # with nothing caching it across records or across calls
             billable_projects=len(sale_project_ids),
         )
         for line in self:
@@ -81,9 +79,6 @@ class AccountAnalyticLine(models.Model):
             _debug.logic(
                 "timesheet_partner_compute",
                 lines=self,
-                # guarded because the filter is the method's own work: the
-                # billed remainder is passed to no super() call and assigned
-                # nothing, so this compute answers for a subset of `self`
                 unassigned=self.filtered(lambda t: not t._is_not_billed()),
             )
         super(

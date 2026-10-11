@@ -33,9 +33,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -60,7 +58,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-04 09:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.user_ids,
             self.user_projectmanager,
@@ -73,14 +70,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_multi_users_tasks(self):
-        """
-        user_projectuser     [task_project_pigs_with_planned_hours_user] [task_project_goats_with_planned_hours_user]                                               [task_project_pigs_no_planned_hours_user]
-                                                                        |                                                                                                ^
-                                                                        |                                                                                                |
-                                                                        |                                                                                                |
-        user_projectmanager                                             ------------------------------------------------>[task_project_pigs_with_planned_hours_manager]-
-        and user_projectuser
-        """
         self.task_project_pigs_with_planned_hours_manager.write(
             {
                 "user_ids": [self.user_projectmanager.id, self.user_projectuser.id],
@@ -142,7 +131,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
 
         self.assertEqual(
@@ -154,9 +142,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             datetime(2023, 1, 2, 16),
         )
 
-        # user_projectuser is off till 6
-        # user_projectmanager is off till 10
-        # the first possible time for both of them is starting from 11
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start,
             datetime(2023, 1, 11, 7),
@@ -167,9 +152,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             "10 hours to do / 2 users = 5 hours per user from 7h to 11h + 12h to 13h",
         )
 
-        # even that task_project_pigs_with_planned_hours_manager was planned first as it has a deadline
-        # smart scheduling is optimizing resources so
-        # the gap in days 09 and 10 was filled to plan task_project_goats_with_planned_hours_user
         self.assertEqual(
             self.task_project_goats_with_planned_hours_user.date_start,
             datetime(2023, 1, 9, 7),
@@ -179,8 +161,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             datetime(2023, 1, 10, 9),
         )
 
-        # should not be planned after the old deadline of its parent, as its parent will be planned again
-        # if the new deadline is before the old one, no need to block the task and plan it ASAP
         self.assertEqual(
             self.task_project_pigs_no_planned_hours_user.date_start,
             datetime(2023, 1, 11, 13),
@@ -214,9 +194,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # That no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -241,7 +219,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-03 09:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.user_ids,
             self.user_projectuser,
@@ -275,9 +252,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -302,7 +277,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-04 11:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.user_ids,
             self.user_projectmanager,
@@ -315,7 +289,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_tasks_allocated_hours_with_leaves(self):
-        # Creation of a leave from tuesday to thursday
         begin_leave = self.start_date_view + relativedelta(days=2)
         end_leave = begin_leave + relativedelta(days=2)
         self.env["resource.schedule.exception"].create(
@@ -351,9 +324,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -378,7 +349,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-06 09:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.user_ids,
             self.user_projectuser,
@@ -423,9 +393,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -438,7 +406,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-05 16:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_user.user_ids,
             self.user_projectuser,
@@ -470,9 +437,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -521,7 +486,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-09 14:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.user_ids,
             self.user_projectuser,
@@ -568,9 +532,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -619,7 +581,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-09 14:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.user_ids,
             self.user_projectuser,
@@ -666,9 +627,7 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 }
             )
         )
-        # Test no warning is displayed
         self.assertDictEqual(result[0], {}, "No warnings should be displayed")
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -717,7 +676,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             ),
             "2023-01-16 09:00:00",
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.user_ids,
             self.user_projectuser,
@@ -760,7 +718,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 "user_ids": self.user_projectmanager.ids,
             }
         )
-        # Checking of the planned dates
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.date_start_effective.strftime(
                 "%Y-%m-%d %H:%M:%S"
@@ -815,7 +772,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                             on Sunday, March 26, 2023
                          """,
         )
-        # Check if the user is the target one
         self.assertEqual(
             self.task_project_pigs_with_planned_hours_manager.user_ids,
             self.user_projectmanager,
@@ -828,7 +784,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_smart_schedule_with_planned_hours_and_deadlines(self):
-        """test if the recordset is correctly sorted when multiple dependencies are involved"""
         self.user_projectmanager.write(
             {
                 "tz": "Europe/Brussels",
@@ -865,7 +820,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             .create(vals_list)
         )
 
-        # Click on the magnifying glass, on Monday's cell, to schedule the tasks
         tasks.with_context(
             {
                 "last_date_view": "2023-10-31 22:00:00",
@@ -878,12 +832,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                 "user_ids": self.user_projectmanager.ids,
             }
         )
-        # scheduled_hours, not allocated_hours: this asserts the window the
-        # scheduler produced, and in this fork that is scheduled_hours (working
-        # hours within the task's date range). allocated_hours is the
-        # commitment aggregated from resource reservations and is no longer
-        # rewritten from the dates, which is why the expectation used to differ
-        # depending on whether timesheet_grid was installed.
         allocated_hours = 12
         self.assertEqual(
             tasks.sorted("date_start").mapped(
@@ -973,7 +921,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
         )
 
     def test_smart_schedule_impossible_deadline(self):
-        """test if the recordset is correctly sorted when multiple dependencies are involved"""
         self.user_projectmanager.tz = "Europe/Brussels"
         tasks = task_concu, *_ = (
             self.env["project.task"]
@@ -986,14 +933,12 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             .create(
                 [
                     {
-                        # This task is planned for "tomorrow".
                         "name": "Task concu",
                         "user_ids": self.user_projectmanager.ids,
                         "date_start": datetime(2023, 10, 17, 6, 0),
                         "date_end": datetime(2023, 10, 17, 15, 0),
                     },
                     {
-                        # This task has the closest deadline => planned first
                         "name": "Task (allocated: 1, deadline: Tuesday)",
                         "date_end": datetime(2023, 10, 17, 10, 0),
                         "planned_hours": 16,
@@ -1036,7 +981,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             self.task_project_pigs_with_planned_hours_user.id: {
                 "date_start": False,
                 "date_end": datetime(2023, 10, 19, 15, 0),
-                # user_id will not be changed as it's already assigned to user_projectuser in the first iteration
             },
             self.task_project_pigs_with_planned_hours_manager.id: {
                 "date_start": False,
@@ -1051,7 +995,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
             self.task_project_pigs_no_planned_hours_user.id: {
                 "date_start": False,
                 "date_end": False,
-                # user_id will not be changed as user_projectuser is part of the assignees in the first iteration
             },
         }
 
@@ -1074,7 +1017,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
 
         for new_user in [self.user_projectuser.ids, False]:
             if not new_user:
-                # when planning from not assigned line, user_ids will not change
                 del old_vals[self.task_project_pigs_with_planned_hours_no_user.id][
                     "user_ids"
                 ]
@@ -1111,13 +1053,6 @@ class TestSmartSchedule(TestSmartScheduleCommon):
                         )
 
     def test_load_more_intervals(self):
-        """
-        first, valid intervals will be between date_start and last_date_view
-        only 16 hours can be planned during these 2 days (30, 31)
-
-        then, loading more intervals will run and get other ranges starting from 01 Dec 2023
-        day 01, 02 and 03 will be enough to plan the 24 remaining hours
-        """
         self.task_project_pigs_with_planned_hours_user.planned_hours = 40
         self.task_project_pigs_with_planned_hours_user.with_context(
             {

@@ -123,7 +123,6 @@ class TestViewNormalization(TransactionCase):
         expected = expected and textwrap.dedent(expected).strip()
         self.assertEqual(normalized, expected)
 
-    # Flatten all xpath that target nodes added by studio itself
     def test_view_normalization_00(self):
         self._test_view_normalization(
             """
@@ -166,7 +165,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Delete children of deleted nodes and reanchor siblings
     def test_view_normalization_01(self):
         self._test_view_normalization(
             """
@@ -206,7 +204,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # When there is no more sibling, we need to reanchor on the parent
     def test_view_normalization_02(self):
         self._test_view_normalization(
             """
@@ -236,8 +233,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Same setup as test_view_normalization_02: a group is replaced, and the
-    # sibling field's xpath needs to be reanchored.
     def test_view_normalization_03(self):
         self._test_view_normalization(
             """
@@ -267,7 +262,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # If there is nothing left in the studio view, delete it.
     def test_view_normalization_04(self):
         expected = ""
         self._test_view_normalization(
@@ -291,7 +285,6 @@ class TestViewNormalization(TransactionCase):
         studio_view = self.studio_controller._get_studio_view(self.view)
         self.assertEqual(len(studio_view), 0)
 
-    # An after can become a replace if the following sibling has been removed.
     def test_view_normalization_05(self):
         self._test_view_normalization(
             """
@@ -315,7 +308,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Multiple additions of fields should not appear if it was deleted
     def test_view_normalization_06(self):
         self._test_view_normalization(
             """
@@ -343,7 +335,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Consecutive xpaths around a field that was moved away can be merged.
     def test_view_normalization_07(self):
         self._test_view_normalization(
             """
@@ -374,7 +365,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # A field that was added, then moved then deleted should not appear.
     def test_view_normalization_08(self):
         self._test_view_normalization(
             """
@@ -406,8 +396,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Fields that were added then removed should not appear in the view at all,
-    # and every other xpath that was using it should be reanchored elsewhere.
     def test_view_normalization_09(self):
         self._test_view_normalization(
             """
@@ -439,8 +427,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # When two fields are added after a given field, the second one will appear
-    # before the first one.
     def test_view_normalization_10(self):
         self._test_view_normalization(
             """
@@ -467,8 +453,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # When we add a field after another one and replace the sibling of this one,
-    # everything could be done in a single replace on the sibling node.
     def test_view_normalization_11(self):
         self._test_view_normalization(
             """
@@ -499,9 +483,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # When closest previous node has no name, the closest next node should be
-    # used instead, provided it has a name. Also, attributes need to be handled
-    # in a single xpath and alphabetically sorted.
     def test_view_normalization_12(self):
         self._test_view_normalization(
             """
@@ -530,10 +511,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Changing an already existing attribute will generate a remove line for
-    # the previous value and an addition line for the new value. The removing
-    # line should not close the attributes xpath, both attributes need to be
-    # redefined in a single xpath.
     def test_view_normalization_13(self):
         self._test_view_normalization(
             """
@@ -580,10 +557,7 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Don't break on text with newlines
     def test_view_normalization_15(self):
-        # New lines in text used to create a new line in the diff, desynchronizing
-        # the diff lines and the tree elements iterator
         self._test_view_normalization(
             """
             <data>
@@ -611,7 +585,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Test anchoring next to studio fields
     def test_view_normalization_16(self):
         self._test_view_normalization(
             """
@@ -638,7 +611,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Test replace of last element in arch
     def test_view_normalization_17(self):
         self._test_view_normalization(
             """
@@ -653,10 +625,7 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Replace an existing element then add it back in but somewhere before
-    # its original position
     def test_view_normalization_18(self):
-        # 1. Nothing to do: the phone field kept its place
         self._test_view_normalization(
             """
             <data>
@@ -669,7 +638,6 @@ class TestViewNormalization(TransactionCase):
             """""",
         )
 
-        # 2. phone field has been moved just before the field function
         self._test_view_normalization(
             """
             <data>
@@ -688,8 +656,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Delete an existing element, then replace another element with the deleted
-    # element further down
     def test_view_normalization_19(self):
         self._test_view_normalization(
             """
@@ -711,8 +677,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Delete an existing element, then replace another element before the
-    # original element with the latter
     def test_view_normalization_20(self):
         self._test_view_normalization(
             """
@@ -737,7 +701,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # template fields are appended to the templates, not to the kanban itself
     def test_view_normalization_21(self):
         self._test_view_normalization(
             """
@@ -762,7 +725,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # adding kanban and template fields while using absolute xpaths
     def test_view_normalization_22(self):
         self._test_view_normalization(
             """
@@ -815,7 +777,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Correctly calculate the expr on flat views
     def test_view_normalization_23(self):
         self._test_view_normalization(
             """
@@ -835,7 +796,6 @@ class TestViewNormalization(TransactionCase):
             "gantt",
         )
 
-    # test that unnamed groups/pages are given a pseudo-random name attribute
     def test_view_normalization_24(self):
         random.seed("https://i.redd.it/pnyr50lf0jh01.png")
         self._test_view_normalization(
@@ -872,7 +832,6 @@ class TestViewNormalization(TransactionCase):
         )
         random.seed()
 
-    # test that unnamed pages are given a pseudo-random name attribute
     def test_view_normalization_25(self):
         self._test_view_normalization(
             """
@@ -907,7 +866,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Adjacent addition/removal changes ends with correct xpath
     def test_view_normalization_26(self):
         self._test_view_normalization(
             """
@@ -934,7 +892,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Test descendants equivalent nodes does not change children
     def test_view_normalization_27(self):
         self._test_view_normalization(
             """
@@ -963,7 +920,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Test descendants equivalent nodes does not change children with unwrapped field
     def test_view_normalization_28(self):
         self._test_view_normalization(
             """
@@ -992,7 +948,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move an existing element (after its position)
     def test_view_normalization_29_1(self):
         self._test_view_normalization(
             """
@@ -1011,7 +966,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move an existing element (before its position)
     def test_view_normalization_29_2(self):
         self._test_view_normalization(
             """
@@ -1030,7 +984,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move two existing elements (after its position)
     def test_view_normalization_30_1(self):
         self._test_view_normalization(
             """
@@ -1053,7 +1006,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move two existing elements (before its position)
     def test_view_normalization_30_2(self):
         self._test_view_normalization(
             """
@@ -1076,7 +1028,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move two consequentive existing elements
     def test_view_normalization_30_3(self):
         self._test_view_normalization(
             """
@@ -1099,7 +1050,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # xpath based on a moved element
     def test_view_normalization_31(self):
         self._test_view_normalization(
             """
@@ -1122,7 +1072,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move an existing element and its attributes
     def test_view_normalization_32(self):
         self._test_view_normalization(
             """
@@ -1147,7 +1096,6 @@ class TestViewNormalization(TransactionCase):
         """,
         )
 
-    # Move fields and one of them needs to generate an absolute xpath
     def test_view_normalization_33(self):
         self._test_view_normalization(
             """
@@ -1295,8 +1243,6 @@ class TestViewNormalization(TransactionCase):
             }
         )
 
-        # x_path_[1-3] target <div class="oe_title"/>
-        # x_path_4 targets <div class="other_div"/>
         self._test_view_normalization(
             """
               <data>
@@ -1330,7 +1276,6 @@ class TestViewNormalization(TransactionCase):
             """,
         )
 
-    # Removed line can be adjacent to added xpath with [not(@name)]
     def test_view_normalization_35(self):
         self.view = self.base_view.create(
             {
@@ -1348,7 +1293,6 @@ class TestViewNormalization(TransactionCase):
             }
         )
 
-        # end result: orator:/hello/cruel/world/!?
         self._test_view_normalization(
             """
               <data>
@@ -1380,7 +1324,6 @@ class TestViewNormalization(TransactionCase):
             """,
         )
 
-    # Added line adjacent to comment should be ignored when xpathing
     def test_view_normalization_36(self):
         self.view = self.base_view.create(
             {
@@ -1396,7 +1339,6 @@ class TestViewNormalization(TransactionCase):
             }
         )
 
-        # end result: orator:/hello/cruel/world/!?
         self._test_view_normalization(
             """
               <data>
@@ -1416,7 +1358,6 @@ class TestViewNormalization(TransactionCase):
             """,
         )
 
-    # Identical fields in same xpath do not have mistaken identity
     def test_view_normalization_37(self):
         self.view = self.base_view.create(
             {
@@ -1466,7 +1407,6 @@ class TestViewNormalization(TransactionCase):
         )
 
     def test_view_normalization_37_2(self):
-        """Button have a name which is not unique"""
 
         self.view = self.base_view.create(
             {

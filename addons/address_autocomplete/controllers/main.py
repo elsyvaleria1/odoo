@@ -2,10 +2,6 @@ from odoo import http
 from odoo.exceptions import AccessError
 from odoo.http import request
 
-# Keep in sync with the widget's own `request.length > 5` guard
-# (static/src/address_autocomplete/address_autocomplete.js): a request below
-# this size never reaches the server through the widget, but the check stays
-# here too as a floor against a caller hitting the public route directly.
 MINIMAL_INPUT_SIZE = 5
 
 
@@ -15,7 +11,6 @@ class AddressAutocompleteController(http.Controller):
         return request.env[provider.adapter] if provider else None
 
     def _lookup_key(self, adapter, use_employees_key) -> str | None:
-        """The key this caller's lookups are made with."""
         if not request.env.user._is_internal():
             raise AccessError(
                 request.env._("You don't have access to the internal API key.")

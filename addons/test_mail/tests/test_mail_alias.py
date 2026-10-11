@@ -48,7 +48,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_domain_allowed_validation(self):
-        """Check the validation of `mail.catchall.domain.allowed` system parameter"""
         for value in [",", ",,", ", ,"]:
             with self.assertRaises(exceptions.ValidationError):
                 self.env["ir.config_parameter"].set_param(
@@ -74,9 +73,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("erp_manager")
     def test_alias_domain_company_check(self):
-        """Check constraint trying to avoid ill-defined company setup aka
-        having an alias domain on parent record / record to update that does
-        not match the alias domain."""
         misc_alias_domain = self.env["mail.alias.domain"].create({"name": "misc.com"})
         record_mc_c1, record_mc_c2 = self.env["mail.test.container.mc"].create(
             [
@@ -102,15 +98,12 @@ class TestMailAlias(TestMailAliasCommon):
         self.assertEqual(alias_mc_c1.alias_domain_id, self.mail_alias_domain)
         self.assertEqual(alias_mc_c2.alias_domain_id, self.mail_alias_domain_c2)
 
-        # mail_alias_domain_c2 is linked to a conflicting company
         with self.assertRaises(exceptions.ValidationError):
             record_mc_c1.alias_domain_id = self.mail_alias_domain_c2
         with self.assertRaises(exceptions.ValidationError):
             alias_mc_c1.sudo().alias_domain_id = self.mail_alias_domain_c2
-        # misc_alias_domain is not linked to any company, therefore ok
         record_mc_c1.alias_domain_id = misc_alias_domain
 
-        # alias updating records
         record_upd_c1, record_upd_c2 = (
             self.env["mail.test.alias.optional"]
             .sudo()
@@ -138,19 +131,14 @@ class TestMailAlias(TestMailAliasCommon):
         self.assertEqual(alias_update_c1.alias_domain_id, self.mail_alias_domain)
         self.assertEqual(alias_update_c2.alias_domain_id, self.mail_alias_domain_c2)
 
-        # mail_alias_domain_c2 is linked to a conflicting company
         with self.assertRaises(exceptions.ValidationError):
             record_upd_c1.alias_domain_id = self.mail_alias_domain_c2
         with self.assertRaises(exceptions.ValidationError):
             alias_update_c1.sudo().alias_domain_id = self.mail_alias_domain_c2
-        # misc_alias_domain is not linked to any company, therefore ok
         record_upd_c1.alias_domain_id = misc_alias_domain
 
     @users("admin")
     def test_alias_name_unique(self):
-        """Check uniqueness constraint on alias names, at create and update.
-        Also check conflict management with bounce / catchall defined on
-        alias domains."""
         mail_alias_domain = self.mail_alias_domain.with_env(self.env)
         mail_alias_domain_c2 = self.mail_alias_domain_c2.with_env(self.env)
         alias_model_id = self.env["ir.model"]._get("mail.test.gateway").id
@@ -171,7 +159,6 @@ class TestMailAlias(TestMailAliasCommon):
             (new_mail_alias + other_alias).alias_domain_id, mail_alias_domain
         )
 
-        # test you cannot create  or update aliases matching bounce / catchall of same alias domain
         with self.assertRaises(exceptions.ValidationError):
             self.env["mail.alias"].create(
                 {
@@ -191,7 +178,6 @@ class TestMailAlias(TestMailAliasCommon):
         with self.assertRaises(exceptions.UserError):
             new_mail_alias.write({"alias_name": mail_alias_domain.bounce_alias})
 
-        # other domains bounce / catchall do not prevent
         new_aliases = self.env["mail.alias"].create(
             [
                 {
@@ -203,10 +189,8 @@ class TestMailAlias(TestMailAliasCommon):
         )
         self.assertEqual(new_aliases.alias_domain_id, mail_alias_domain)
         new_aliases.unlink()
-        # bounce/catchall of another domain is ok
         new_mail_alias.write({"alias_name": mail_alias_domain_c2.bounce_alias})
         other_alias.write({"alias_name": mail_alias_domain_c2.catchall_alias})
-        # changing domain would clash with existing catchall
         with self.assertRaises(exceptions.UserError):
             new_mail_alias.write(
                 {
@@ -215,7 +199,6 @@ class TestMailAlias(TestMailAliasCommon):
             )
 
         new_mail_alias.write({"alias_name": "unused.test.alias"})
-        # test that alias {name, alias_domain_id} should be unique
         with self.assertRaises(exceptions.UserError):
             self.env["mail.alias"].create(
                 {
@@ -236,7 +219,6 @@ class TestMailAlias(TestMailAliasCommon):
         with self.assertRaises(exceptions.UserError):
             other_alias.write({"alias_name": "unused.test.alias"})
 
-        # also valid for void domain
         nodom_alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": False,
@@ -272,7 +254,6 @@ class TestMailAlias(TestMailAliasCommon):
                 }
             )
 
-        # test that alias name can be duplicated in case of different alias domains
         other_domain_alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": mail_alias_domain_c2.id,
@@ -281,13 +262,11 @@ class TestMailAlias(TestMailAliasCommon):
             }
         )
         self.assertEqual(other_domain_alias.alias_domain_id, mail_alias_domain_c2)
-        # changing domain would violate uniqueness
         with self.assertRaises(exceptions.UserError):
             other_domain_alias.write({"alias_domain_id": mail_alias_domain.id})
 
     @users("admin")
     def test_alias_name_unique_copy(self):
-        """Check uniqueness constraint check when copying aliases"""
         mail_alias_domain = self.mail_alias_domain.with_env(self.env)
         alias_model_id = self.env["ir.model"]._get("mail.test.gateway").id
         new_mail_alias = self.env["mail.alias"].create(
@@ -297,23 +276,19 @@ class TestMailAlias(TestMailAliasCommon):
         with mute_logger("odoo.db"), self.assertRaises(psycopg.errors.UniqueViolation):
             new_mail_alias.copy({"alias_name": "unused.test.alias"})
 
-        # test that duplicating an alias should have blank name
         copy_1 = new_mail_alias.copy()
         self.assertFalse(copy_1.alias_name)
         self.assertEqual(copy_1.alias_domain_id, mail_alias_domain)
-        # test sanitize of copy with new name
         copy_2 = new_mail_alias.copy({"alias_name": "test.alias.2.éè#"})
         self.assertEqual(copy_2.alias_name, "test.alias.2.ee#")
         self.assertEqual(copy_2.alias_domain_id, mail_alias_domain)
 
-        # cannot batch update, would create duplicates
         with self.assertRaises(exceptions.UserError):
             (copy_1 + copy_2).write({"alias_name": "test.alias.other"})
 
     @users("admin")
     @mute_logger("odoo.models.unlink")
     def test_alias_name_sanitize(self):
-        """Check sanitizer, at both create, copy and write on alias name."""
         alias_names = [
             "bidule...inc.",
             "b4r+=*R3wl_#_-$€{}[]()~|\\/!?&%^'\"`~",
@@ -355,7 +330,6 @@ class TestMailAlias(TestMailAliasCommon):
                 "alias_model_id": self.env["ir.model"]._get("mail.test.container").id,
             }
         )
-        # check at write
         for alias_name, expected, msg in zip(
             alias_names, expected_names, msgs, strict=True
         ):
@@ -365,9 +339,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_a_name_with_nothing_latin_left_is_refused_not_cleared(self):
-        """Normalising "продажи" leaves nothing. Storing that as False turned an
-        edit of a live alias into its silent deletion, and mail to the old
-        address started bouncing without anyone having asked for it."""
         alias_model = self.env["ir.model"]._get("mail.test.container")
         alias = self.env["mail.alias"].create(
             {"alias_model_id": alias_model.id, "alias_name": "sales"}
@@ -384,16 +355,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_name_sanitize_is_always_acceptable(self):
-        """`_normalize_alias_name` must only ever return names `_check_alias_is_ascii`
-        accepts.
-
-        These two are the halves of one contract: the sanitizer normalises, the
-        constraint refuses. When they disagree a user-supplied name raises instead of
-        being cleaned up, and which one happens is decided by nothing more meaningful
-        than where a dot sits -- "<cjk>jobs" normalised, "<cjk>.jobs" raised, because
-        dropping the unrepresentable letter re-created the leading dot that had just
-        been stripped.
-        """
         MailAlias = self.env["mail.alias"]
         explicit = [
             "\u65e5\u672c.jobs",
@@ -410,7 +371,6 @@ class TestMailAlias(TestMailAliasCommon):
                     self.assertRegex(
                         sanitized, dot_atom_text, "must satisfy the constraint"
                     )
-                    # and the constraint itself must agree, not just the regex
                     alias = MailAlias.create(
                         {
                             "alias_model_id": self.env["ir.model"]
@@ -422,8 +382,6 @@ class TestMailAlias(TestMailAliasCommon):
                     self.assertEqual(alias.alias_name, sanitized)
                     alias.unlink()
 
-        # A dot next to an unrepresentable character is the whole failure mode, so
-        # sweep the alphabet that produces it rather than trusting six examples.
         rng = random.Random(20260817)
         alphabet = list("ab.-_@ ") + [
             "\u4e2d",
@@ -445,13 +403,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_name_sanitize_email_domain(self):
-        """With `is_email`, the right-hand side is normalised too.
-
-        It used to be passed through untouched -- the one part of an address nothing
-        validated -- so a space, a second "@" or a non-ascii domain all survived into
-        `mail.alias.domain.default_from`, which composes the From header of every
-        outgoing mail.
-        """
         MailAlias = self.env["mail.alias"]
         for source, expected, msg in [
             ("jobs@Example.COM", "jobs@example.com", "domain is lowercased"),
@@ -474,17 +425,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_status_resets_on_config_change(self):
-        """`alias_status` is a verdict on the alias *configuration*.
-
-        It must therefore be dropped when any input that verdict was reached from
-        changes -- `alias_force_thread_id` included, because `_alias_resolve_error`
-        returns `config_follower_no_record` precisely when a followers-only alias has
-        no record to read followers from. Setting one repairs the alias, so leaving
-        the badge on "invalid" reports a fault that no longer exists.
-
-        Conversely the address is *not* such an input: renaming an alias does not
-        repair a broken configuration, so it must not clear the verdict.
-        """
         record = self.env["mail.test.container"].create({"name": "status host"})
         alias = self.env["mail.alias"].create(
             {
@@ -519,12 +459,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_create_honours_defaults(self):
-        """`create` must not override the ORM's own default machinery.
-
-        It used to write both fields into every `vals` unconditionally, and an
-        explicit key -- even an explicit False -- beats a field default, so a caller
-        passing them through the context was silently ignored.
-        """
         alias = (
             self.env["mail.alias"]
             .with_context(
@@ -537,7 +471,6 @@ class TestMailAlias(TestMailAliasCommon):
         )
         self.assertEqual(alias.alias_name, "from.the.context")
         self.assertEqual(alias.alias_domain_id, self.mail_alias_domain_c2)
-        # and the default still goes through the sanitizer
         alias_2 = (
             self.env["mail.alias"]
             .with_context(default_alias_name="Ctx Déf@ult")
@@ -549,7 +482,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_name_search(self):
-        """`name_search` must find an alias by the address `display_name` shows."""
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -569,8 +501,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_name_sanitize_false(self):
-        """Check empty-like aliases are forced to False, as otherwise unique
-        constraint might fail with empty strings."""
         aliases = self.env["mail.alias"].create(
             [
                 {
@@ -588,7 +518,6 @@ class TestMailAlias(TestMailAliasCommon):
                     alias.alias_name, "Void values should resolve to False"
                 )
 
-        # try to reset names in batch: should work
         for idx, alias in enumerate(aliases):
             alias.write({"alias_name": f"unique-{idx}"})
         aliases.write({"alias_name": ""})
@@ -597,12 +526,9 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_search(self):
-        """Test search on aliases, notably searching on display_name which should
-        be split on searching on alias_name and alias_domain_id."""
-        # ensure existing aliases to ease future asserts
         existing = self.env["mail.alias"].search([("alias_domain_id", "!=", False)])
         self.assertEqual(existing.alias_domain_id, self.mail_alias_domain)
-        existing.write({"alias_name": False})  # don't be annoyed by existing aliases
+        existing.write({"alias_name": False})
 
         mail_alias_domain = self.mail_alias_domain.with_env(self.env)
         mail_alias_domain_c2 = self.mail_alias_domain_c2.with_env(self.env)
@@ -627,13 +553,11 @@ class TestMailAlias(TestMailAliasCommon):
             lambda a: a.alias_domain_id == mail_alias_domain_c2
         )
 
-        # search on alias_name: classic search
         self.assertEqual(
             self.env["mail.alias"].search([("alias_name", "ilike", "test.search")]),
             aliases,
         )
 
-        # search on alias_fullname: search on aggregated of {name}@{domain}
         for search_term, expected, msg in [
             (
                 "mycompany",
@@ -680,7 +604,6 @@ class TestMailAlias(TestMailAliasCommon):
                     msg,
                 )
 
-        # search using IN operator
         for search_term, expected, msg in [
             (
                 ["mycompany"],
@@ -704,7 +627,6 @@ class TestMailAlias(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_setup(self):
-        """Test various constraints / configuration of alias model"""
         alias = self.env["mail.alias"].create(
             {
                 "alias_model_id": self.env["ir.model"]
@@ -715,21 +637,14 @@ class TestMailAlias(TestMailAliasCommon):
         )
         self.assertEqual(alias.alias_status, "not_tested")
 
-        # validation of alias_defaults
         with self.assertRaises(exceptions.ValidationError):
             alias.write({"alias_defaults": "{'custom_field': brokendict"})
         alias.write({"alias_defaults": "{'name': 'validdict'}"})
         self.assertEqual(alias._prepare_alias_defaults(), {"name": "validdict"})
 
-        # the gateway hands these to create() on the aliased model, so a key that is
-        # not a field of it must be refused here rather than at delivery time, where
-        # it bounces the sender and flags the alias invalid
         with self.assertRaises(exceptions.ValidationError):
             alias.write({"alias_defaults": "{'custom_field': 'validdict'}"})
 
-        # `message_new` ignores a non-dict, so anything dict() merely tolerates --
-        # a list of pairs, say -- used to pass this check and then be dropped in
-        # silence when a message actually arrived
         with self.assertRaises(exceptions.ValidationError):
             alias.write({"alias_defaults": "[('name', 'from pairs')]"})
         self.assertEqual(alias._prepare_alias_defaults(), {"name": "validdict"})
@@ -740,11 +655,7 @@ class TestAliasCompany(TestMailAliasCommon):
     """Test company / alias domain and configuration synchronization"""
 
     def test_alias_domain_setup_archived_company(self):
-        """Test initialization of alias domain with at least one archived company
-        and at least one mail.alias record points to one mixin.mail.thread of the
-        archived company"""
 
-        # add archived company to multi company setup
         self.company_archived = self.env["res.company"].create(
             {
                 "country_id": self.env.ref("base.be").id,
@@ -755,7 +666,6 @@ class TestAliasCompany(TestMailAliasCommon):
         )
         self.company_archived.action_archive()
 
-        # create record inheriting from mixin.mail.thread to be used as owner/target thread
         test_record_archived_company = self.env["mail.test.simple.unfollow"].create(
             {
                 "name": "Test record (mixin.mail.thread) specific to archived company",
@@ -771,7 +681,7 @@ class TestAliasCompany(TestMailAliasCommon):
                 "alias_model_id": unfollow_model_id,
                 "alias_parent_thread_id": test_record_archived_company.id,
             }
-        )  # case where the parent thread is specific to archived company
+        )
 
         mc_archived_target = self.env["mail.alias"].create(
             {
@@ -780,10 +690,8 @@ class TestAliasCompany(TestMailAliasCommon):
                 "alias_model_id": unfollow_model_id,
                 "alias_force_thread_id": test_record_archived_company.id,
             }
-        )  # case where the target thread is specific to archived company
+        )
 
-        # eject linked aliases then remove all alias domains; should
-        # trigger the init condition at next create() call
         all_mail_aliases = self.env["mail.alias"].search([])
         all_mail_aliases.write({"alias_domain_id": False})
         self.env["mail.alias.domain"].search([]).unlink()
@@ -793,9 +701,6 @@ class TestAliasCompany(TestMailAliasCommon):
             "Mail aliases should have no linked alias domain at this stage",
         )
 
-        # since we nuked all alias domain records, creating a new alias domain
-        # will initialize it as the default for all mail.alias records.
-        # Should not raise any errors (see _check_alias_domain_id_mc)
         mc_alias_domain = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bounce.mc.archived",
@@ -823,18 +728,12 @@ class TestAliasCompany(TestMailAliasCommon):
     @mute_logger("odoo.models.unlink")
     @users("erp_manager")
     def test_alias_domain_setup(self):
-        """Test synchronization of alias domain with companies when adding /
-        updating / removing alias domains"""
         mail_alias_domain = self.mail_alias_domain.with_env(self.env)
         mail_alias_domain_c2 = self.mail_alias_domain_c2.with_env(self.env)
 
         self.assertEqual(self.company_admin.alias_domain_id, mail_alias_domain)
         self.assertEqual(self.company_2.alias_domain_id, mail_alias_domain_c2)
 
-        # cannot unlink alias domain as there are aliases linked to it.
-        # alias_domain_id is ondelete="restrict", so PG18/psycopg3 raises
-        # RestrictViolation (23001), not ForeignKeyViolation (23503); accept
-        # both, matching the framework's own handling in orm schema.py.
         with (
             self.assertRaises(
                 (psycopg.errors.ForeignKeyViolation, psycopg.errors.RestrictViolation)
@@ -843,15 +742,12 @@ class TestAliasCompany(TestMailAliasCommon):
         ):
             mail_alias_domain.unlink()
 
-        # eject linked aliases then remove alias domain of first company; should
-        # not impact second company
         self.env["mail.alias"].sudo().search([]).write({"alias_domain_id": False})
         mail_alias_domain.unlink()
         self.assertFalse(self.company_admin.alias_domain_id)
         self.assertEqual(self.company_2.alias_domain_id, mail_alias_domain_c2)
         self.assertFalse(self.test_alias_mc.alias_domain_id)
 
-        # remove all alias domains
         self.env["mail.alias.domain"].search([]).unlink()
         self.assertFalse(self.company_2.alias_domain_id)
         self.assertEqual(self.company_2.bounce_email, "")
@@ -861,7 +757,6 @@ class TestAliasCompany(TestMailAliasCommon):
         self.assertFalse(self.company_2.default_from_email, "")
         self.assertFalse(self.company_3.alias_domain_id)
 
-        # create a new alias domain -> consider as re-init, populate all companies
         alias_domain_new = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bounce.new",
@@ -890,7 +785,6 @@ class TestAliasCompany(TestMailAliasCommon):
             "MC Alias: first domain should populate void aliases",
         )
 
-        # manual update
         self.company_2.alias_domain_id = alias_domain_new.id
         self.assertEqual(self.company_2.alias_domain_id, alias_domain_new)
         self.assertEqual(
@@ -901,8 +795,6 @@ class TestAliasCompany(TestMailAliasCommon):
         )
 
     def test_assert_initial_values(self):
-        """Test initial setup values: currently all companies share the same
-        alias configuration as it is unique."""
         self.assertEqual(self.test_alias_mc.alias_domain_id, self.mail_alias_domain)
         self.assertFalse(self.company_no_alias.alias_domain_id)
 
@@ -997,7 +889,6 @@ class TestAliasCompany(TestMailAliasCommon):
 
     @users("erp_manager")
     def test_res_company_creation_alias_domain(self):
-        """Test alias domain configuration when creating new companies"""
         company = self.env["res.company"].create(
             {
                 "email": '"Super Company" <super.company@test3.mycompany.com>',
@@ -1011,7 +902,6 @@ class TestAliasCompany(TestMailAliasCommon):
             "Default alias domain: sequence based",
         )
 
-        # respect forced value
         company = self.env["res.company"].create(
             {
                 "alias_domain_id": self.mail_alias_domain_c2.id,
@@ -1028,14 +918,6 @@ class TestMailAliasBounce(TestMailAliasCommon):
 
     @users("admin")
     def test_bounce_bodies_speak_the_author_language(self):
-        """Neither bounce may go out in the server language when the author has one.
-
-        `_()` picks the language up from the *calling frame's* local named `self`,
-        so translating these bodies depends entirely on each entry point rebinding
-        `self` to an author-language recordset. The config-error body never did, and
-        went out in English to a French sender while the security body next to it
-        went out in French.
-        """
         self.env["res.lang"]._activate_lang("fr_FR")
         author = self.env["res.partner"].create(
             {"name": "Francais", "email": "fr@test.example.com", "lang": "fr_FR"}
@@ -1066,7 +948,6 @@ class TestMailAliasBounce(TestMailAliasCommon):
 
     @users("admin")
     def test_bounce_contact_description_covers_every_policy(self):
-        """The sender is told which addresses may write, for each restriction."""
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1074,8 +955,6 @@ class TestMailAliasBounce(TestMailAliasCommon):
                 "alias_name": "bounce.desc",
             }
         )
-        # Walk the Selection rather than a hardcoded pair, so a module that adds a
-        # policy (as `hr` adds "employees") cannot add one without a description.
         alias.alias_contact = "everyone"
         fallback = alias._get_alias_contact_description()
         restrictions = [
@@ -1131,8 +1010,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_domain_config_alias_clash(self):
-        """Domain names are not unique e.g. owning multiple gmail.com accounts.
-        However bounce / catchall should not clash with aliases."""
         alias_domain = self.mail_alias_domain.with_env(self.env)
 
         for domain_config in ("bounce_alias", "catchall_alias"):
@@ -1144,7 +1021,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                             "name": self.test_alias_mc.alias_domain_id.name,
                         }
                     )
-        # left-part should not clech
         self.env["mail.alias.domain"].create(
             {
                 domain_config: self.test_alias_mc.alias_name,
@@ -1152,8 +1028,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
             }
         )
 
-        # should not clash with existing aliases, to avoid valid aliases be
-        # considered as bounce / catchall
         with self.assertRaises(exceptions.UserError):
             alias_domain.write({"bounce_alias": self.test_alias_mc.alias_name})
         with self.assertRaises(exceptions.UserError):
@@ -1161,15 +1035,11 @@ class TestMailAliasDomain(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_domain_config_unique(self):
-        """Domain names are not unique e.g. owning multiple gmail.com accounts.
-        However bounce / catchall should be unique."""
         alias_domain = self.mail_alias_domain.with_env(self.env)
 
-        # copying directly would duplicate bounce / catchall emails
         with mute_logger("odoo.db"), self.assertRaises(psycopg.errors.UniqueViolation):
             new_alias_domain = alias_domain.copy()
 
-        # same domain name is authorized if bounce and catchall are different
         new_alias_domain = alias_domain.copy(
             {
                 "bounce_alias": "new.bounce",
@@ -1184,7 +1054,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
         )
         self.assertEqual(new_alias_domain.name, alias_domain.name)
 
-        # check bounce / catchall are unique at create
         self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "unique.bounce",
@@ -1192,7 +1061,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 "name": alias_domain.name,
             }
         )
-        # any not unique should raise UniqueViolation (SQL constraint fired after check)
         with mute_logger("odoo.db"), self.assertRaises(psycopg.errors.UniqueViolation):
             self.env["mail.alias.domain"].create(
                 {
@@ -1208,7 +1076,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 }
             )
 
-        # also check write operation
         with self.assertRaises(exceptions.ValidationError):
             new_alias_domain.write({"bounce_alias": alias_domain.bounce_alias})
         with self.assertRaises(exceptions.ValidationError):
@@ -1216,17 +1083,12 @@ class TestMailAliasDomain(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_domain_parameters_validation(self):
-        """Test validation of bounce and catchall fields of alias domain as
-        well as sanitization."""
         alias_domain = self.mail_alias_domain.with_env(self.env)
 
-        # sanitization of name (both create and write)
         for failing_name in [
             "outlook.fr, gmail.com",
-            # fail
             "",
             " ",
-            # a space inside a label is not a domain and cannot be encoded into one
             "prova ider.com",
         ]:
             with self.subTest(failing_name=failing_name):
@@ -1238,7 +1100,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 with self.assertRaises(exceptions.ValidationError):
                     alias_domain.write({"name": failing_name})
 
-        # sanitization of bounce / catchall
         for (
             (bounce_alias, catchall_alias, default_from),
             (exp_bounce, exp_catchall, exp_default_from),
@@ -1252,7 +1113,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 ),
                 ("bounce+😊", "catchall+😊", "notifications+😊"),
                 ("Bouncâïde 😊", "Catchôïee 😊", "Notificâtïons 😊"),
-                # only default_from can be a valid email and taken as such
                 (
                     "bounce@wrong.complete.com",
                     "catchall@wrong.complete.com",
@@ -1267,7 +1127,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 ),
                 ("bounce+", "catchall+", "notifications+"),
                 ("bouncaide-", "catchoiee-", "notifications-"),
-                # only default_from can be a valid email and taken as such
                 (
                     "bounce",
                     "catchall",
@@ -1290,7 +1149,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                     f"catchoiee-@{alias_domain.name}",
                     f"notifications-@{alias_domain.name}",
                 ),
-                # only default_from can be a valid email and taken as such
                 (
                     f"bounce@{alias_domain.name}",
                     f"catchall@{alias_domain.name}",
@@ -1314,8 +1172,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                     alias_domain.default_from_email, exp_default_from_email
                 )
 
-        # falsy values (incl. purely non-latin names, dropped to empty and
-        # therefore rejected as False rather than turned into a "?" garbage alias)
         for config_value in [False, None, "", " ", "ぁ", "ぁぁ"]:
             with self.subTest(config_value=config_value):
                 alias_domain.write({"bounce_alias": config_value})
@@ -1325,7 +1181,6 @@ class TestMailAliasDomain(TestMailAliasCommon):
                 alias_domain.write({"default_from": config_value})
                 self.assertFalse(alias_domain.default_from)
 
-        # check successive param set, should not raise for unicity against itself
         for _ in range(2):
             alias_domain.write(
                 {
@@ -1343,19 +1198,6 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
 
     @users("admin")
     def test_local_parts_are_never_stored_malformed(self):
-        """Whatever is written, the stored local part is usable or empty.
-
-        These go through the same sanitizer as `mail.alias.alias_name` but nothing
-        held the *result* to the rule, so a name the sanitizer mangled was stored
-        anyway: a Cyrillic bounce alias came out as "bounce." and `bounce_email` then
-        composed "bounce.@example.com", which `email_normalize` accepts and only a
-        strict MTA rejects, long after the fact.
-        """
-        # A domain of its own, with local parts none of the values below collapse
-        # onto: 'bounce.\u65e5\u672c' and '\u65e5\u672c.bounce' both sanitise to
-        # 'bounce', which on the shared fixture is already the bounce alias -- writing
-        # it to catchall built the bounce == catchall configuration
-        # `_check_reserved_addresses_are_unique` exists to refuse.
         alias_domain = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bnc",
@@ -1388,8 +1230,6 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
                         self.assertTrue(alias_domain[email_fname].isascii())
                     else:
                         self.assertFalse(alias_domain[email_fname])
-                    # bounce_alias / catchall_alias are required: leave the record
-                    # valid so the flush at teardown has something to write.
                     alias_domain.write(
                         {
                             "bounce_alias": "bnc",
@@ -1400,13 +1240,6 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
 
     @users("admin")
     def test_local_parts_constraint_is_the_backstop(self):
-        """The constraint catches what never went through the sanitizer.
-
-        Every write path sanitizes first, so this cannot be reached from the UI --
-        which is exactly why it is worth having, and worth testing directly: it is
-        the written-down rule, the same role `_check_alias_is_ascii` plays for
-        `mail.alias`.
-        """
         alias_domain = self.mail_alias_domain.with_env(self.env)
         for fname, value in [
             ("bounce_alias", "bounce."),
@@ -1428,14 +1261,12 @@ class TestMailAliasDomainLocalParts(TestMailAliasCommon):
 
     @users("admin")
     def test_default_from_domain_is_validated(self):
-        """`default_from` may be a whole address, and its domain half matters too."""
         alias_domain = self.mail_alias_domain.with_env(self.env)
         alias_domain.write({"default_from": "notifications@exa mple.com"})
         self.assertFalse(
             alias_domain.default_from,
             "a domain with a space in it is not an address; it used to be stored whole",
         )
-        # a non-ascii domain is IDNA-encoded on the way in rather than carried raw
         alias_domain.write(
             {
                 "default_from": "notifications@\u043f\u043e\u0447\u0442\u0430.\u0440\u0444"
@@ -1455,7 +1286,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
     @users("employee")
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_alias_mixin(self):
-        """Various base checks on alias mixin behavior"""
         self.assertEqual(self.env.company.alias_domain_id, self.mail_alias_domain)
 
         record = self.env["mail.test.gateway.groups"].create(
@@ -1521,7 +1351,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
         )
 
     def test_alias_only_writes_need_write_access(self):
-        """An alias-only write by a reader used to be dropped without a word."""
         record = self.env["mail.test.alias.optional"].create(
             {"alias_name": "readers.cannot", "name": "Guarded"}
         )
@@ -1542,12 +1371,11 @@ class TestMailAliasMixin(TestMailAliasCommon):
 
     @users("erp_manager")
     def test_alias_mixin_alias_email(self):
-        """Test 'alias_email' mixin field computation and search capability"""
         Model = self.env["mail.test.container.mc"]
         records = Model.create(
             [
                 {
-                    "alias_name": f"alias.email.{idx}",  # will be present in all companies
+                    "alias_name": f"alias.email.{idx}",
                     "company_id": company.id,
                     "name": f"Test {company.id} {idx}",
                 }
@@ -1581,7 +1409,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
     @users("employee")
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_alias_mixin_alias_id_management(self):
-        """Test alias_id being not mandatory"""
         record_wo_alias, record_w_alias = self.env["mail.test.alias.optional"].create(
             [
                 {
@@ -1622,7 +1449,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
             {"company_id": self.env.company.id},
         )
 
-        # update existing alias
         record_w_alias.write(
             {"alias_contact": "followers", "alias_name": "Updated Alias Name"}
         )
@@ -1630,7 +1456,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
         self.assertEqual(record_w_alias.alias_id.alias_name, "updated-alias-name")
         self.assertEqual(record_w_alias.alias_name, "updated-alias-name")
 
-        # update non existing alias -> creates alias
         record_wo_alias.write({"alias_name": "trying a name"})
         self.assertTrue(
             record_wo_alias.alias_id,
@@ -1647,7 +1472,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
             {"company_id": self.env.company.id},
         )
 
-        # reset alias -> keep the alias as void, don't remove it
         existing_aliases = record_wo_alias.alias_id + record_w_alias.alias_id
         (record_wo_alias + record_w_alias).write({"alias_name": False})
         self.assertEqual((record_wo_alias + record_w_alias).alias_id, existing_aliases)
@@ -1687,8 +1511,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
 
     @users("employee")
     def test_copy_optional_alias_model(self):
-        """Do not propagate alias_id to duplicate record as it could lead to
-        overwriting alias_name of old record."""
         record = self.env["mail.test.alias.optional"].create(
             {
                 "name": "Test Optional Alias Record",
@@ -1701,15 +1523,12 @@ class TestMailAliasMixin(TestMailAliasCommon):
 
     @users("erp_manager")
     def test_multi_company_setup(self):
-        """Test company impact on alias domains when creating or updating
-        records in a MC environment."""
         counter = 0
         for create_cid, exp_company, exp_alias_domain in [
             (None, self.company_2, self.mail_alias_domain_c2),
             (False, self.env["res.company"], self.mail_alias_domain_c2),
             (self.env.user.company_id.id, self.company_2, self.mail_alias_domain_c2),
             (self.company_admin.id, self.company_admin, self.mail_alias_domain),
-            # company without alias domain -> set False on alias also, to avoid MC issues
             (
                 self.company_no_alias.id,
                 self.company_no_alias,
@@ -1733,7 +1552,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
                 self.assertEqual(record.alias_domain_id, exp_alias_domain)
                 self.assertEqual(record.company_id, exp_company)
 
-                # copy: keep company
                 record_copy = record.copy(
                     default={
                         "alias_name": f"alias.copy.{counter}",
@@ -1743,7 +1561,6 @@ class TestMailAliasMixin(TestMailAliasCommon):
                 self.assertEqual(record_copy.alias_domain_id, exp_alias_domain)
                 self.assertEqual(record_copy.company_id, record.company_id)
 
-                # copy: force company
                 record_copy_2 = record.copy(
                     default={
                         "alias_name": f"alias.copy.{counter}.2",
@@ -1754,12 +1571,10 @@ class TestMailAliasMixin(TestMailAliasCommon):
                 self.assertEqual(record_copy_2.alias_domain_id, self.mail_alias_domain)
                 self.assertEqual(record_copy_2.company_id, self.company_admin)
 
-                # updating company: force same alias domain
                 record.write({"company_id": self.company_admin.id})
                 self.assertEqual(record.alias_domain_id, self.mail_alias_domain)
                 self.assertEqual(record.company_id, self.company_admin)
 
-                # reset company: should not impact alias_domain if set
                 record.write({"company_id": False})
                 self.assertEqual(record.alias_domain_id, self.mail_alias_domain)
                 self.assertFalse(record.company_id)
@@ -1771,12 +1586,6 @@ class TestMailAliasAddressInput(TestMailAliasCommon):
 
     @users("admin")
     def test_a_full_address_resolves_its_domain(self):
-        """`jobs@support.example.com` in "Alias Name" used to become `jobs`.
-
-        Silently, on whatever domain the record already carried -- so the alias
-        listened somewhere the user never named. It now moves the alias to the domain
-        that was typed.
-        """
         other = self.env["mail.alias.domain"].create({"name": "support.test.example"})
         alias = self.env["mail.alias"].create(
             {
@@ -1789,13 +1598,11 @@ class TestMailAliasAddressInput(TestMailAliasCommon):
         self.assertEqual(alias.alias_domain_id, other)
         self.assertEqual(alias.alias_full_name, "jobs@support.test.example")
 
-        # and on write, the same
         alias.write({"alias_name": f"jobs2@{self.mail_alias_domain.name}"})
         self.assertEqual(alias.alias_domain_id, self.mail_alias_domain)
 
     @users("admin")
     def test_a_bare_word_after_the_at_is_not_a_domain(self):
-        """`"Ctx Déf@ult"` is a messy name, not an address; keep folding it away."""
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1822,11 +1629,6 @@ class TestMailAliasAddressInput(TestMailAliasCommon):
 
     @users("admin")
     def test_the_mixin_no_longer_eats_the_domain_first(self):
-        """The mixin used to sanitize `alias_name` before `mail.alias` saw it.
-
-        Two sanitizers on one value, and the first one ran without the knowledge
-        needed to keep the second half.
-        """
         other = self.env["mail.alias.domain"].create({"name": "mixin.test.example"})
         record = self.env["mail.test.container"].create(
             {"name": "Mixin Host", "alias_name": "intake@mixin.test.example"}
@@ -1839,13 +1641,6 @@ class TestMailAliasAddressInput(TestMailAliasCommon):
 class TestMailAliasStatus(TestMailAliasCommon):
     @users("admin")
     def test_an_explicit_status_wins_over_the_reset(self):
-        """`alias_status` is written by the gateway, not computed.
-
-        As a stored compute whose `@api.depends` stood in for "reset me", a recompute
-        in the same transaction silently discarded the write -- the gateway sets
-        "valid" the moment a message lands, and any write touching `alias_contact` in
-        the same `vals` overwrote it with "not_tested".
-        """
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1858,7 +1653,6 @@ class TestMailAliasStatus(TestMailAliasCommon):
         alias.invalidate_recordset()
         self.assertEqual(alias.alias_status, "valid")
 
-        # and without an explicit value, touching an input still resets
         alias.write({"alias_contact": "followers"})
         self.assertEqual(alias.alias_status, "not_tested")
 
@@ -1867,13 +1661,6 @@ class TestMailAliasStatus(TestMailAliasCommon):
 class TestMailAliasMixinModelOverride(TestMailAliasCommon):
     @users("admin")
     def test_a_caller_may_alias_a_narrower_model(self):
-        """`_alias_get_creation_values` hardcodes `alias_model_id`; the caller wins.
-
-        Until it did, aliasing a subclass took two writes, and between them the alias
-        held defaults naming fields the interim model did not have -- which
-        `_check_alias_defaults` refuses, eagerly, at `create`. That is `TestMailFlow`'s
-        setup, and it was a hard error on a correct configuration.
-        """
         narrow = self.env["ir.model"]._get_id("mail.test.ticket.partner")
         record = self.env["mail.test.container.mc"].create(
             {
@@ -1908,17 +1695,10 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
         super().setUpClass()
         cls.container_mc_model = cls.env["ir.model"]._get("mail.test.container.mc")
         cls.container_model = cls.env["ir.model"]._get("mail.test.container")
-        # An id no row has ever carried, which is what the form view lets a user type.
         cls.gone_id = 2**30
 
     @users("admin")
     def test_mc_constraint_survives_a_deleted_target(self):
-        """The multi-company constraint fires on any write to `alias_domain_id`.
-
-        Setting up a first alias domain writes it to every domain-less alias at
-        once, so one dangling alias used to be enough to make that fail for all of
-        them, with an error naming neither the alias nor the missing document.
-        """
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1931,8 +1711,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
             "constraint only runs for a domain owned by companies",
         )
         alias.alias_force_thread_id = self.gone_id
-        # the write above already ran the constraint; re-run it explicitly so the
-        # test still means something if the field list of @api.constrains changes
         alias._check_alias_domain_id_mc()
         alias.write({"alias_domain_id": self.mail_alias_domain.id})
 
@@ -1951,12 +1729,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
 
     @users("admin")
     def test_duplicate_error_survives_a_deleted_owner(self):
-        """The "already linked with ..." message names the owner document.
-
-        It browsed it without `exists()`, so a duplicate alias whose owner was gone
-        raised `MissingError` instead of the UserError that says which address
-        clashed -- the one thing the caller needed to know.
-        """
         self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1978,12 +1750,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
 
     @users("admin")
     def test_bounce_clash_error_survives_a_deleted_owner(self):
-        """`mail.alias.domain`'s clash check names the owner document too.
-
-        Same defect, same shape, one model over: it browsed the owner to say *which
-        document* already holds the address, so a stale owner replaced the answer
-        with `MissingError`.
-        """
         self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -1999,12 +1765,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
 
     @users("admin")
     def test_bounce_clash_names_the_document_it_finds(self):
-        """All three branches of the clash message, none of which was covered.
-
-        `test_alias_domain_config_alias_clash` only ever exercised an alias with
-        neither document set, so the two branches that *name* a document -- the ones
-        the `MissingError` above lived in -- had no test at all.
-        """
         cases = [
             ("owner", {"alias_parent_model_id": self.container_model.id}, "Owning Doc"),
             ("target", {}, "Target Doc"),
@@ -2042,16 +1802,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
 
     @users("admin")
     def test_only_stored_reads_are_the_hazard(self):
-        """Why three of the pairs' readers raised and the gateway's did not.
-
-        A missing record answers a non-stored compute with an empty value and a
-        *stored* field with `MissingError`. That is the whole difference between the
-        three call sites that broke -- all of which read `display_name` or a stored
-        `company_id` off the browsed document -- and the gateway's, which happen to
-        read `message_partner_ids` and go through `_partner_get_or_create_from_emails_single`.
-        The gateway is safe by accident, not by design, so pin the boundary: if this
-        stops holding, `mixin_mail_thread`'s three bare browses become the next bug.
-        """
         gone = self.env["mail.test.container"].browse(self.gone_id)
         self.assertTrue(gone, "a browse of a missing id is still truthy")
         self.assertFalse(gone.message_partner_ids)
@@ -2059,7 +1809,7 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
             gone._partner_get_or_create_from_emails_single(["x@y.com"], no_create=True)
         )
         with self.assertRaises(exceptions.MissingError):
-            gone.name  # reading a *stored* field is what raises
+            gone.name
 
     @users("admin")
     def test_alias_get_document_answers_empty_not_missing(self):
@@ -2080,9 +1830,6 @@ class TestMailAliasDanglingDocument(TestMailAliasCommon):
 
 @tagged("mail_alias")
 class TestMailAliasDefaultsValidation(TestMailAliasCommon):
-    # (model, field, value, does a value passed to `create` survive it?)
-    # Every row is *measured* below, not asserted from the field's flags, because
-    # the flags are exactly what this check gets wrong when it gets it wrong.
     DEFAULTS_CASES = [
         ("mail.test.recipients", "customer_email", "kept@test.example.com", True),
         ("mail.test.gateway", "email_normalized", "gone@test.example.com", False),
@@ -2092,19 +1839,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_defaults_verdict_matches_what_create_does(self):
-        """The check must refuse exactly the keys `create` throws away.
-
-        Both halves of the predicate are failure modes that actually happened.
-        Refusing every computed field broke `maintenance`'s own data file at install
-        -- `maintenance.request.maintenance_team_id` is `store=True, readonly=False`,
-        the ordinary spelling of "computed, but overridable", and `create` honours it.
-        Refusing only *non-stored* computes is the opposite error: a stored read-only
-        compute is written and then immediately recomputed over, so the value is just
-        as lost.
-
-        So each row here creates the record, reads the field back, and requires the
-        constraint to agree with what survived.
-        """
         for model, fname, value, survives in self.DEFAULTS_CASES:
             with self.subTest(model=model, field=fname):
                 record = self.env[model].create(
@@ -2136,7 +1870,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_defaults_accept_a_writable_related(self):
-        """A related field with an inverse is writable and must stay accepted."""
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -2149,14 +1882,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
     @users("admin")
     def test_precompute_readonly_is_inside_the_refused_set(self):
-        """Why the predicate needs no `precompute` clause of its own.
-
-        `_prepare_create_values` pops every `precompute and readonly` field from the
-        values outright, so such a field is dropped as surely as any other read-only
-        compute -- and `compute and readonly and not inverse` already covers it. This
-        pins the behaviour the comment in `_check_alias_defaults` leans on; no alias
-        model carries such a field today, so it is asserted on `mail.activity`.
-        """
         field = self.env["mail.activity"]._fields["res_model"]
         self.assertTrue(field.precompute and field.readonly and field.compute)
         record = self.env["mail.test.container"].create({"name": "precompute probe"})
@@ -2174,21 +1899,6 @@ class TestMailAliasDefaultsValidation(TestMailAliasCommon):
 
     @users("admin")
     def test_alias_name_length_is_deliberately_unbounded(self):
-        """RFC 5321 caps a local part at 64 octets and nothing here enforces it.
-
-        That is a real gap and this test does not close it -- it records why closing
-        it at this layer makes things worse, so the next reader does not repeat the
-        attempt. Two composed alias names of the shape
-        `account.journal._alias_prepare_alias_name` builds ("<journal>-<company>")
-        agree for their first 64 characters whenever two company names do, so any
-        truncation here collides them; `account`'s own escape hatch -- append the
-        journal code and re-sanitize -- truncates back to the same string, leaving no
-        way to create the second journal. A hard constraint instead of a truncation
-        fails that journal creation outright, and contradicts
-        `test_mail_message.test_mail_message_values_fromto_long_name`, which asserts
-        an 84-character alias survives sanitisation intact. Bounding a *composed*
-        name belongs to whoever composes it.
-        """
         MailAlias = self.env["mail.alias"]
         base = "customer-invoices-acme-international-manufacturing-and-distri"
         long_one, long_two = base + "bution-holdings-bv", base + "bution-holdings-nv"
@@ -2237,7 +1947,6 @@ class TestMailAliasDomainConfigCache(TestMailAliasCommon):
 
     @users("admin")
     def test_config_members_are_addressable_by_name(self):
-        """The five accessors must not drift from the tuple's order."""
         config = self.env["mail.alias.domain"]._get_config()
         Domain = self.env["mail.alias.domain"]
         self.assertEqual(config.names, Domain._get_alias_domain_names())
@@ -2287,7 +1996,6 @@ class TestMailAliasDomainConfigCache(TestMailAliasCommon):
 
     @users("admin")
     def test_gateway_sees_a_freshly_renamed_catchall(self):
-        """End to end: the next inbound message must use the new address, not the old."""
         Thread = self.env["mixin.mail.thread"]
         domain = self.mail_alias_domain.with_env(self.env)
         domain.write({"catchall_alias": "catchall.rerouted"})
@@ -2353,11 +2061,6 @@ class TestMailAliasDomainName(TestMailAliasCommon):
 
     @users("admin")
     def test_the_domain_name_is_normalised_like_every_other_address_part(self):
-        """It was the one writable field the sanitizer never saw.
-
-        Stored as typed, `MiXeD.CoM` composed addresses no normalised incoming message
-        could equal, and the gateway stopped recognising its own catchall.
-        """
         domain = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bounce",
@@ -2393,7 +2096,6 @@ class TestMailAliasDomainName(TestMailAliasCommon):
 
     @users("admin")
     def test_a_name_that_is_not_a_domain_still_says_so(self):
-        """The sanitizer returning False must not degrade into a bare required error."""
         for failing_name in ["outlook.fr, gmail.com", "", " ", "exa mple.com"]:
             with self.subTest(failing_name=failing_name):
                 with self.assertRaises(exceptions.ValidationError):
@@ -2401,7 +2103,6 @@ class TestMailAliasDomainName(TestMailAliasCommon):
 
     @users("admin")
     def test_a_non_ascii_name_is_idna_encoded_rather_than_refused(self):
-        """Consistent with `default_from`, whose domain half already is."""
         domain = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bounce",
@@ -2419,7 +2120,6 @@ class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
 
     @users("admin")
     def test_one_domain_cannot_use_one_local_part_for_both_roles(self):
-        """`_is_bounce` runs first, so the catchall half would be unreachable."""
         with self.assertRaises(exceptions.ValidationError):
             self.env["mail.alias.domain"].create(
                 {
@@ -2431,7 +2131,6 @@ class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
 
     @users("admin")
     def test_a_catchall_cannot_be_a_sibling_domains_bounce(self):
-        """Domain names are not unique; the two UNIQUE constraints never meet."""
         Domain = self.env["mail.alias.domain"]
         Domain.create(
             {"bounce_alias": "aa", "catchall_alias": "bb", "name": "cross.example.com"}
@@ -2447,7 +2146,6 @@ class TestMailAliasDomainReservedAddresses(TestMailAliasCommon):
 
     @users("admin")
     def test_distinct_addresses_on_the_same_name_are_still_allowed(self):
-        """The point of the model: several accounts on one domain."""
         Domain = self.env["mail.alias.domain"]
         Domain.create(
             {"bounce_alias": "aa", "catchall_alias": "bb", "name": "ok.example.com"}
@@ -2493,12 +2191,6 @@ class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
 
     @users("admin")
     def test_an_unrestricted_personal_server_vetoes_nothing(self):
-        """`_FromFilter.matches` answers True to anything when `from_filter` is empty.
-
-        Unfiltered, one user blanking that field refused every write to every alias
-        domain -- including domains carrying no `default_from` at all, whose
-        `default_from_email` is the empty string.
-        """
         self.personal_server.sudo().from_filter = False
         Domain = self.env["mail.alias.domain"]
         without = Domain.create(
@@ -2514,7 +2206,6 @@ class TestMailAliasDomainPersonalServers(TestMailAliasCommon):
 
     @users("admin")
     def test_an_unrelated_write_does_not_consult_mail_servers(self):
-        """It is a constraint on `default_from` and `name`, and now says so."""
         domain = self.mail_alias_domain.with_env(self.env)
         self.personal_server.sudo().from_filter = False
         domain.write({"sequence": 42})
@@ -2527,12 +2218,6 @@ class TestMailAliasDomainLifecycle(TestMailAliasCommon):
 
     @users("admin")
     def test_the_first_batch_hands_companies_the_sequence_first_domain(self):
-        """Not `alias_domains[0]`, which is whichever record was created first.
-
-        Every later default -- `res.company._default_alias_domain_id`,
-        `base._mail_get_alias_domains` -- reads `_get_default_domain`, so taking
-        creation order here left the first company disagreeing with all the rest.
-        """
         Domain = self.env["mail.alias.domain"]
         self.env["res.company"].with_context(active_test=False).search(
             []
@@ -2565,9 +2250,6 @@ class TestMailAliasDomainLifecycle(TestMailAliasCommon):
 
     @users("admin")
     def test_deleting_a_domain_a_company_uses_is_allowed_but_reported(self):
-        """Wiping every domain is the supported de-configure/re-init flow, and
-        `TestAliasCompany.test_alias_domain_setup` pins the blank `bounce_email` it
-        leaves behind. The cost was invisible; it is now on the log."""
         domain = self.env["mail.alias.domain"].create(
             {
                 "bounce_alias": "bounce",
@@ -2614,14 +2296,6 @@ class TestMailAliasDomainFindAliases(TestMailAliasCommon):
 
     @users("admin")
     def test_an_unset_parameter_claims_the_local_part_on_every_domain(self):
-        """Deliberate, and easy to read as a bug -- so pinned here in its own right.
-
-        `alias_incoming_local` answers on the local part whatever the domain, so with
-        no allow-list configured an address carrying that local part is never a real
-        correspondent, wherever it came from. This is the "left-part pre-17 support"
-        that `test_mail_find_partner_from_emails_alias_localpart` and
-        `TestAPI.test_message_get_default_recipients_banned` depend on.
-        """
         Domain = self.env["mail.alias.domain"]
         ours = f"helpdesk@{self.mail_alias_domain.name}"
         self.assertEqual(
@@ -2631,7 +2305,6 @@ class TestMailAliasDomainFindAliases(TestMailAliasCommon):
 
     @users("admin")
     def test_the_allowed_domains_parameter_narrows_rather_than_widens(self):
-        """Setting it restricts the local-part branch to the listed domains and ours."""
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.catchall.domain.allowed", "partner.example.com"
         )
@@ -2701,8 +2374,6 @@ class TestMailAliasDomainFindAliases(TestMailAliasCommon):
 
     @users("admin")
     def test_the_reply_to_of_a_record_follows_its_alias(self):
-        """`_notify_get_reply_to_addresses` answers from the same snapshot: the alias
-        moving to another parent record must move the reply-to with it."""
         records = self.env["mail.test.simple"].create(
             [{"name": "first"}, {"name": "second"}]
         )
@@ -2737,7 +2408,6 @@ class TestMailAliasDomainAllowedParameter(TestMailAliasCommon):
 
     @users("admin")
     def test_entries_are_held_to_the_domain_rule(self):
-        """`.strip().lower()` let through entries no normalised address can equal."""
         Domain = self.env["mail.alias.domain"]
         for failing in ["foo bar.com", "ex..ample.com", ".example.com"]:
             with self.subTest(failing=failing):
@@ -2759,13 +2429,8 @@ class TestMailAliasDomainIcpMigration(TestMailAliasCommon):
 
     @users("admin")
     def test_an_unusable_icp_is_skipped_not_raised(self):
-        """It ran during installation, so a ValidationError took the install with it."""
         Domain = self.env["mail.alias.domain"]
         Icp = self.env["ir.config_parameter"].sudo()
-        # "-" is deliberately absent: `dot_atom_text` accepts it, so it survives
-        # sanitisation and is created. That is this tree's domain rule being loose,
-        # not this hook's problem -- tightening it belongs in
-        # `mail.alias._normalize_alias_domain_name`, with its own test surface.
         for junk in ["my domain.com", "outlook.fr, gmail.com", "почта .рф"]:
             with self.subTest(junk=junk):
                 Icp.set_param("mail.catchall.domain", junk)
@@ -2795,13 +2460,6 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
 
     @users("admin")
     def test_the_constraint_is_the_sanitizer_s_own_fixpoint(self):
-        """`dot_atom_text` accepted names the sanitizer can never produce.
-
-        `MixedCase` matched the old constraint and matched nothing at delivery:
-        `message_route` lowercases every recipient before comparing. The constraint
-        now asks the sanitizer, so anything it stores it also accepts, and anything
-        it would rewrite it refuses.
-        """
         MailAlias = self.env["mail.alias"]
         self.assertTrue(dot_atom_text.match("MixedCase"), "the old rule accepted it")
         self.assertFalse(MailAlias._alias_name_is_valid("MixedCase"))
@@ -2819,8 +2477,6 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
             }
         )
         self.assertEqual(alias.alias_name, "mixed-case")
-        # forced past create/write, the constraint is what stands between the value
-        # and a name routing could never match
         self.env.cr.execute(
             SQL(
                 "UPDATE mail_alias SET alias_name = %s WHERE id = %s",
@@ -2834,13 +2490,6 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
 
     @users("admin")
     def test_domain_local_parts_answer_to_the_same_predicate(self):
-        """`bounce_alias` and friends are alias names; they get the same rule.
-
-        `_update_configuration` folds the value before the constraint ever sees it,
-        so the constraint is the backstop rather than the gate -- which is exactly why
-        it has to agree with the sanitizer rather than approximate it with a looser
-        regex of its own.
-        """
         domain = self.env["mail.alias.domain"].create(
             {"name": "predicate.test.example"}
         )
@@ -2848,11 +2497,9 @@ class TestMailAliasNameAuthority(TestMailAliasCommon):
         self.assertEqual(domain.bounce_alias, "bounce", "sanitized, not refused")
         self.assertEqual(domain.catchall_alias, "a.b")
 
-        # `default_from` is allowed a domain half, so it is validated as an address
         domain.write({"default_from": "Notifications@Predicate.Test.Example"})
         self.assertEqual(domain.default_from, "notifications@predicate.test.example")
 
-        # forced past the sanitizer, the constraint is what stands
         self.env.cr.execute(
             SQL(
                 "UPDATE mail_alias_domain SET bounce_alias = %s WHERE id = %s",
@@ -2880,14 +2527,6 @@ class TestMailAliasModelTarget(TestMailAliasCommon):
 
     @users("admin")
     def test_a_model_that_cannot_receive_is_refused_at_configuration(self):
-        """The field's `domain=` is a client hint the ORM never enforced.
-
-        Without a constraint `res.currency` was accepted and the misconfiguration
-        surfaced only at delivery -- once per message, forever, as `Mailbox
-        unavailable - model res.currency does not accept document creation`, raised
-        above the branch that would have recorded it on `alias_status`. The badge
-        stayed on "Not Tested" while every message was refused.
-        """
         for model_name in ("res.currency", "mixin.mail.thread", "base"):
             with (
                 self.subTest(model=model_name),
@@ -2902,14 +2541,6 @@ class TestMailAliasModelTarget(TestMailAliasCommon):
 
     @users("admin")
     def test_the_gate_is_message_new_and_not_chatter(self):
-        """`mail.group` is the counter-example that decides the predicate.
-
-        A mailing list receives every one of its messages through its alias, is
-        **not** a `mixin.mail.thread`, and files what arrives as `mail.group.message`
-        -- it implements `message_new` and `_alias_resolve_error` itself. A constraint
-        written on `_mail_is_thread` looks right and refuses to create a mail group
-        at all, which is what the wider suite caught.
-        """
         Alias = self.env["mail.alias"]
         self.assertTrue(
             Alias._alias_model_accepts_mail(self.env["mail.test.container"])
@@ -2919,7 +2550,6 @@ class TestMailAliasModelTarget(TestMailAliasCommon):
                 self.assertFalse(
                     Alias._alias_model_accepts_mail(self.env[model_name]), model_name
                 )
-        # and the discriminator really is `message_new`, not the chatter mixin
         self.assertFalse(hasattr(self.env["res.currency"], "message_new"))
         self.assertTrue(hasattr(self.env["mail.test.container"], "message_new"))
 
@@ -2930,14 +2560,6 @@ class TestMailAliasStatusInputs(TestMailAliasCommon):
 
     @users("admin")
     def test_the_owner_pair_repairs_the_fault_and_clears_the_verdict(self):
-        """`config_follower_no_record` is repaired by an owner, not only by a force id.
-
-        `message_route` reads the followers off `alias._alias_get_document("owner")
-        or self.env[model]`, so `alias_parent_model_id`/`alias_parent_thread_id`
-        supply that record exactly as `alias_force_thread_id` does. Left out of the
-        reset set, the alias reported a fault that setting an owner had already
-        repaired.
-        """
         model_id = self.env["ir.model"]._get("mail.test.container").id
         record = self.env["mail.test.container"].create({"name": "owner doc"})
         alias = self.env["mail.alias"].create(
@@ -2948,8 +2570,6 @@ class TestMailAliasStatusInputs(TestMailAliasCommon):
                 "alias_name": "owner.repairs",
             }
         )
-        # what `message_route` asks when no thread_id is in play: the owner document
-        # if there is one, the bare model otherwise
         self.assertIsNone(alias._alias_get_document("owner"))
         self.assertEqual(
             self.env["mail.test.container"]
@@ -2972,11 +2592,6 @@ class TestMailAliasStatusInputs(TestMailAliasCommon):
 
     @users("admin")
     def test_a_new_field_resets_by_default(self):
-        """The set is an exclusion list, so nothing added later silently opts out.
-
-        As an allowlist it named four fields, and `alias_incoming_local` -- which
-        decides *which mail reaches the alias at all* -- was not one of them.
-        """
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -3023,11 +2638,6 @@ class TestMailAliasStatusRights(TestMailAliasCommon):
 
     @users("admin")
     def test_marking_an_alias_does_not_need_group_system(self):
-        """`mail.alias` is write-restricted to `group_system`, and the gateway runs
-        as whoever fetches the mail. Assigning `alias_status` inline made inbound
-        mail fail with an `AccessError` the moment the mailgate was pointed at a
-        de-privileged user -- an ordinary hardening move.
-        """
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,
@@ -3064,13 +2674,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_a_sibling_in_the_same_write_still_holds_its_address(self):
-        """The whole recordset was excluded from the search, not only the changed part.
-
-        A record that keeps its address still holds it. Excluded by id and absent from
-        the changed set, it was invisible to the check, so the rename reached the
-        unique index at commit -- turning a precise, actionable refusal into a generic
-        one, after a full transaction had been rolled back.
-        """
         held, renaming = self._make("avail.held"), self._make("avail.renaming")
         self.env.flush_all()
         with self.assertRaises(exceptions.UserError) as capture:
@@ -3081,7 +2684,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_a_collision_outside_the_recordset_reads_the_same(self):
-        """The covered case, kept covered: same shape, same class of error."""
         self._make("avail.outside")
         moving = self._make("avail.moving")
         self.env.flush_all()
@@ -3090,7 +2692,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_an_untouched_recordset_is_not_re_checked(self):
-        """Writing a neutral field alongside must not provoke the address query."""
         alias = self._make("avail.quiet")
         self.env.flush_all()
         alias.write({"alias_name": "avail.quiet", "alias_contact": "partners"})
@@ -3098,11 +2699,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_the_refusal_names_the_alias_it_found_not_the_one_being_written(self):
-        """`matching_name` came from the conflict, `current_id` from the caller.
-
-        Printed as one `Name (id)` pair, the id shown belonged to a different alias
-        than the name shown.
-        """
         taken = self._make("avail.taken")
         writing = self._make("avail.writing")
         self.env.flush_all()
@@ -3118,7 +2714,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_create_does_not_rewrite_the_caller_s_dict(self):
-        """`create` sanitized, and injected a domain, into a dict the caller holds."""
         vals = {
             "alias_model_id": self.env["ir.model"]._get("mail.test.container").id,
             "alias_name": "Caller Dict",
@@ -3138,12 +2733,6 @@ class TestMailAliasAddressAvailability(TestMailAliasCommon):
 
     @users("admin")
     def test_a_batch_resolves_its_domains_in_one_query(self):
-        """The domain named in an address was resolved once per record.
-
-        Flat in the batch size is the point: this was +1 query per record, so 100
-        aliases carrying a full address cost 100 searches for at most a handful of
-        distinct domain names.
-        """
         self.env["mail.alias.domain"].create({"name": "batched.test.example"})
         model_id = self.env["ir.model"]._get("mail.test.container").id
         self.env.flush_all()
@@ -3203,12 +2792,6 @@ class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
 
     @users("admin")
     def test_a_local_alias_may_not_shadow_another_domain_s_catchall(self):
-        """Checked against its own domain only, it captured replies meant elsewhere.
-
-        A reply addressed to `rep-b@b.local.test` matched `rep-b@a.local.test` on the
-        local part, and the shadow's `alias_contact` then governed a reply that
-        should have carried no alias at all -- a followers-only shadow bounced it.
-        """
         with self.assertRaises(exceptions.ValidationError):
             self.env["mail.alias"].create(self._vals(alias_incoming_local=True))
         with self.assertRaises(exceptions.ValidationError):
@@ -3218,7 +2801,6 @@ class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
 
     @users("admin")
     def test_a_scoped_alias_is_unaffected(self):
-        """Without the flag the alias answers for one domain, so one domain decides."""
         alias = self.env["mail.alias"].create(self._vals())
         self.assertEqual(alias.alias_full_name, "rep-b@a.local.test")
         with self.assertRaises(exceptions.ValidationError):
@@ -3232,8 +2814,6 @@ class TestMailAliasIncomingLocalReservations(TestMailAliasCommon):
 
     @users("admin")
     def test_a_domain_may_not_reserve_a_local_alias_s_name_either(self):
-        """The mirror. `alias_full_name` cannot see a local-part match, so a domain
-        could take a reservation the alias had already answered for."""
         self.env["mail.alias"].create(
             self._vals(alias_name="freeform", alias_incoming_local=True)
         )
@@ -3251,12 +2831,6 @@ class TestMailAliasBounceCompany(TestMailAliasCommon):
 
     @users("admin")
     def test_the_bounce_names_the_alias_s_company_not_the_gateway_s(self):
-        """`env.company` is the company of whoever fetched the mail.
-
-        With per-company alias domains -- the configuration `_check_alias_domain_id_mc`
-        exists to police -- that told a sender who wrote to one company to go and
-        contact a different one.
-        """
         company = self.env["res.company"].create({"name": "Bounce Company"})
         company.partner_id.email = "hello@bounce-company.test.example"
         domain = self.env["mail.alias.domain"].create({"name": "bc.test.example"})
@@ -3295,7 +2869,6 @@ class TestMailAliasBounceCompany(TestMailAliasCommon):
 
     @users("admin")
     def test_the_domain_answers_when_no_document_does(self):
-        """An alias with no owner and no target still knows which company owns it."""
         company = self.env["res.company"].create({"name": "Domain Only Company"})
         domain = self.env["mail.alias.domain"].create({"name": "doc.test.example"})
         company.alias_domain_id = domain.id
@@ -3324,14 +2897,6 @@ class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
 
     @users("admin")
     def test_the_typed_domain_wins_on_every_path(self):
-        """It won on four of five. The fifth silently kept the field's value.
-
-        `_alias_get_creation_values` carries `alias_domain_id` when the context
-        supplies a default, so it landed in the mixin's post-create overrides and was
-        re-asserted over the domain `mail.alias.create` had just resolved out of the
-        address. Ten core views put both fields on one form, so this is what a user
-        typing a full address into "Alias Name" got.
-        """
         model_id = self.env["ir.model"]._get("mail.test.container").id
         expected = self.typed_domain
 
@@ -3385,7 +2950,6 @@ class TestMailAliasMixinDomainPrecedence(TestMailAliasCommon):
 
     @users("admin")
     def test_a_caller_s_values_still_win_over_the_recomputed_ones(self):
-        """The override mechanism is narrowed, not removed."""
         narrow = self.env["ir.model"]._get_id("mail.test.ticket.partner")
         record = self.env["mail.test.container.mc"].create(
             {
@@ -3418,12 +2982,6 @@ class TestMailAliasDefaultsShape(TestMailAliasCommon):
 
     @users("admin")
     def test_a_key_that_is_not_a_field_name_is_refused_like_every_other_fault(self):
-        """`{1: 2}` parsed as a dict, then died joining its keys into a message.
-
-        Every other malformed value in this field is a `ValidationError`; this one
-        was a bare `TypeError`, which nothing converts -- a 500 for the user, and a
-        traceback for whoever fed it through the API.
-        """
         for defaults in ("{1: 2}", "{None: 'x'}", "{(1, 2): 'x'}"):
             with (
                 self.subTest(defaults=defaults),
@@ -3457,12 +3015,6 @@ class TestAliasDomainNameRule(TestMailAliasCommon):
 
     @users("admin")
     def test_a_bare_hyphen_is_not_a_domain_name(self):
-        """`dot_atom_text` is the *local part*'s rule and `-` satisfies it.
-
-        `mail.catchall.domain = -` installed clean into a domain no resolver answers
-        and no incoming recipient can equal -- the same shape as the mixed-case defect
-        one field over, on a character set instead of on case.
-        """
         MailAlias = self.env["mail.alias"]
         self.assertTrue(dot_atom_text.match("-"), "the old rule accepted it")
         self.assertFalse(MailAlias._normalize_alias_domain_name("-"))
@@ -3502,11 +3054,8 @@ class TestAliasDomainNameRule(TestMailAliasCommon):
 
     @users("admin")
     def test_the_rule_reaches_every_consumer_of_the_sanitizer(self):
-        """One function decides, so `name`, the allowed-domain list and the domain
-        half of a typed address all get the same answer."""
         with self.assertRaises(exceptions.ValidationError):
             self.env["mail.alias.domain"]._normalize_allowed_domains("example.com,-")
-        # and the domain half of an address the user types into "Alias Name"
         alias = self.env["mail.alias"].create(
             {
                 "alias_domain_id": self.mail_alias_domain.id,

@@ -12,8 +12,6 @@ from odoo.tools.authority_keys import declare_authority_keys
 _debug = DebugLog(__name__)
 
 FIELD_SERVICE_STATES = ("3_in_progress", "4_completed")
-# Context key set by Start and Complete: only they move a visit's state for an
-# employee, so that no step (such as the deliveries of the trip bridge) is skipped.
 FIELD_SERVICE_TRANSITION = "field_service_transition"
 declare_authority_keys("planning_field_service", "field_service_transition")
 
@@ -36,7 +34,6 @@ class PlanningSlot(models.Model):
         },
         tracking=True,
     )
-    # sale_planning makes it related to the sales order: a visit sets its own.
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         related=False,
@@ -57,7 +54,6 @@ class PlanningSlot(models.Model):
 
     @api.model
     def default_get(self, fields: list[str]) -> ValuesType:
-        """A visit declared by its employee is theirs, scheduled and starting now."""
         res = super().default_get(fields)
         if self.env.context.get("field_service_declare_visit"):
             res.update(self._get_declared_visit_defaults(fields))
@@ -91,16 +87,12 @@ class PlanningSlot(models.Model):
                     "A shift that is in progress or completed cannot go back to draft."
                 )
             )
-        # Only visits are guarded: a regular shift is edited by whoever the
-        # planning rules let edit it, such as a manufacturing user cancelling it.
         visits = self if vals.get("partner_id") else self.filtered("partner_id")
         if visits and not self.env.su and not visits.has_access("manage_visits"):
             visits._check_employee_write(vals)
         return super().write(vals)
 
     def _check_employee_write(self, vals) -> None:
-        """An employee edits his visit, but it stays his, and only Start and
-        Complete move its state."""
         if "state" in vals and not self.env.context.get(FIELD_SERVICE_TRANSITION):
             raise UserError(
                 self.env._("A visit changes status only through Start and Complete.")
@@ -116,7 +108,6 @@ class PlanningSlot(models.Model):
             )
 
     def action_sign_in(self):
-        """Start the visit now, on site: the time and the place go to the chatter."""
         self.check_singleton()
         if self.state != "2_published":
             raise UserError(self.env._("Only a published shift can be started."))
@@ -124,8 +115,6 @@ class PlanningSlot(models.Model):
             self.action_self_assign()
         now = fields.Datetime.now()
         vals = {"state": "3_in_progress", "start_datetime": now}
-        # A visit planned for another day and started now lasts what it was
-        # planned to last, not until that other day.
         if not self.end_datetime or not now < self.end_datetime <= now + timedelta(
             days=1
         ):
@@ -149,8 +138,6 @@ class PlanningSlot(models.Model):
         self._action_complete()
 
     def _action_complete(self):
-        """Complete the visit. One that was under way ends now; one declared
-        after the fact keeps the times it was declared with."""
         vals = {"state": "4_completed"}
         now = fields.Datetime.now()
         if self.state == "3_in_progress" and self.start_datetime < now:
@@ -160,7 +147,6 @@ class PlanningSlot(models.Model):
         self._send_geolocation()
 
     def _send_geolocation(self) -> None:
-        """Log in the chatter where the phone was when the visit changed state."""
         geolocation = self.env.context.get("geolocation")
         if not geolocation or not self.env["res.groups"]._is_feature_enabled(
             "planning.group_field_service_allow_geolocation"
@@ -171,8 +157,6 @@ class PlanningSlot(models.Model):
                 body=geolocation.get("message") or self.env._("Location error")
             )
             return
-        # Only the coordinates: upstream also looks the place name up online, and a
-        # lookup that fails or hangs would undo the start or the completion.
         latitude, longitude = geolocation["latitude"], geolocation["longitude"]
         self.message_post(
             body=Markup(
@@ -191,8 +175,6 @@ class PlanningSlot(models.Model):
         )
 
     def action_open_map_navigation(self) -> dict:
-        """Directions to the customer: to its coordinates when it has them, as a
-        rural customer's address often does not locate it."""
         self.check_singleton()
         partner = self.partner_id
         if partner.partner_latitude and partner.partner_longitude:

@@ -33,7 +33,6 @@ class TransifexCodeTranslation(models.Model):
     def _load_code_translations(self, module_names=None, langs=None) -> bool:
         try:
             with self.env.cr.savepoint():
-                # the table lock promises translations for a (module, language) will only be created once
                 self.env.cr.execute(
                     f"LOCK TABLE {self._table} IN EXCLUSIVE MODE NOWAIT"
                 )
@@ -84,8 +83,6 @@ class TransifexCodeTranslation(models.Model):
 
     @api.model
     def reload(self):
-        # the DELETE and the reload land together: losing the table lock to a
-        # concurrent load leaves the translations as they were, not emptied
         with self.env.cr.savepoint() as savepoint:
             self.env.cr.execute(f"DELETE FROM {self._table}")
             if not (loaded := self._load_code_translations()):

@@ -148,8 +148,6 @@ class PosPaymentMethod(models.Model):
     hide_qr_code_method = fields.Boolean(compute="_compute_hide_qr_code_method")
 
     def _is_inbound_request_authentic(self, headers, body) -> bool:
-        """Whether a terminal notification that resolved this method is the
-        vendor's -- each terminal integration decides how."""
         self.check_singleton()
         return False
 
@@ -182,11 +180,6 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def _load_pos_data_till_secret_fields(self, config) -> list[str]:
-        """The secrets of a device the till drives from the browser itself.
-
-        Each is listed in `_load_pos_data_fields` too, and is restricted to
-        managers: a cashier cannot read it, the till it operates loads it.
-        """
         return []
 
     @api.model

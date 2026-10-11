@@ -15,11 +15,8 @@ _logger = logging.getLogger(__name__)
 
 INBOUND_SMS_ROUTE = "/integration_twilio/sms/inbound/"
 NUMBER_SID_PATTERN = re.compile(r"^PN[0-9a-fA-F]{32}$")
-# Twilio waits 15 s for the answer: what the media may take is bounded
 MAX_INBOUND_MEDIA = 3
 MEDIA_TIMEOUT = (3, 4)
-# Twilio's default opt-out keywords on long codes, applied by Twilio before
-# the message reaches Odoo; Odoo mirrors them so it stops trying too
 OPT_OUT_KEYWORDS = {
     "STOP",
     "STOPALL",
@@ -31,9 +28,6 @@ OPT_OUT_KEYWORDS = {
     "OPTOUT",
 }
 OPT_IN_KEYWORDS = {"START", "YES", "UNSTOP"}
-# Twilio sells SMS in Mexico on mobile numbers only, and "Mexico Mobile numbers
-# may only be used for two-way person-to-person (P2P) communication"
-# (twilio.com/en-us/guidelines/mx/regulatory): automated SMS are blocked
 CONVERSATION_ONLY_COUNTRIES = {"MX"}
 
 
@@ -139,8 +133,6 @@ class IntegrationTwilioNumber(models.Model):
         return result
 
     def _sync_conversation_members(self) -> None:
-        # a conversation's members are the users its number names: who is
-        # added sees the conversations already open, who is removed stops
         channels = self.env["discuss.channel"].search(
             [("channel_type", "=", "sms"), ("twilio_number_id", "in", self.ids)]
         )
@@ -170,7 +162,6 @@ class IntegrationTwilioNumber(models.Model):
             record.display_name = f"{record.number} ({record.country_id.name})"
 
     def _get_inbound_sms_url(self) -> str:
-        # keyed on Twilio's own id, which a caller cannot count through
         self.check_singleton()
         return urljoin(
             self.company_id.get_base_url(), f"{INBOUND_SMS_ROUTE}{self.twilio_sid}"
@@ -182,9 +173,6 @@ class IntegrationTwilioNumber(models.Model):
 
     @api.model
     def _sync_from_account(self, company) -> None:
-        # numbers synced before and gone from the account are archived, as a
-        # conversation still names them; numbers typed in by hand, which
-        # Twilio never named, stay
         client = company.integration_twilio_config_id._get_twilio_client()
         reported = list(
             client.iterate("IncomingPhoneNumbers", "incoming_phone_numbers")
@@ -242,7 +230,6 @@ class IntegrationTwilioNumber(models.Model):
                 )
             else:
                 continue
-            # an SMS application on the number overrides its SMS URL
             number.is_sms_routed = (
                 not entry.get("sms_application_sid")
                 and entry.get("sms_url") == number._get_inbound_sms_url()
@@ -337,8 +324,6 @@ class IntegrationTwilioNumber(models.Model):
         return attachments
 
     def _apply_opt_out(self, sender, opt_out_type, body) -> None:
-        # Advanced Opt-Out names the keyword it acted on; without it, the
-        # message is the keyword alone, as Twilio's default handling reads it
         keyword = (body or "").strip().upper()
         if opt_out_type not in ("STOP", "START"):
             opt_out_type = (
@@ -363,6 +348,5 @@ class IntegrationTwilioNumber(models.Model):
             blacklist._remove([sanitized], message=message)
 
     def action_unlink(self) -> dict:
-        # archived, not deleted: a conversation on it keeps its number
         self.active = False
         return self.company_id._action_view_integration_twilio_config()

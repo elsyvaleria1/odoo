@@ -110,8 +110,6 @@ class TelegramAccount(models.Model):
 
     @api.model
     def _from_telegram(self, sender):
-        """The account of an update's `from`, created on first sight and kept
-        describing its owner; empty for a bot or a sender without an id."""
         if not sender or sender.get("is_bot") or not sender.get("id"):
             return self.browse()
         tg_user_id = str(sender["id"])
@@ -130,24 +128,15 @@ class TelegramAccount(models.Model):
                         self.env
                     )
             except psycopg.errors.UniqueViolation:
-                # a concurrent update from the same person created it first
                 account = accounts.search([("tg_user_id", "=", tg_user_id)], limit=1)
         changed = {key: value for key, value in vals.items() if account[key] != value}
         if changed:
             account.write(changed)
             if "language_code" in changed:
-                # the bot speaks the language their app uses: so does its menu
                 account.chat_ids._sync_command_menu()
         return account.with_env(self.env)
 
     def _acting_user(self, tier="internal"):
-        """The Odoo user this Telegram person may act as, or no user.
-
-        `internal` wants an internal user, `portal` accepts a share user too.
-        The only answer comes from an active, unexpired binding whose user is
-        active; a binding to a contact acts as the contact's only user of the
-        tier, never as one picked among several.
-        """
         self.check_singleton()
         users = self.env["res.users"]
         binding = operating(self).binding_id
@@ -176,9 +165,6 @@ class TelegramAccount(models.Model):
         return candidates.with_env(self.env)
 
     def _contact(self):
-        """The contact this person speaks as: the one they are bound to, else
-        one made for them now and bound to them, until they prove who they
-        are (the proven contact then absorbs it)."""
         self.check_singleton()
         partner = self._acting_partner()
         if partner:
@@ -191,8 +177,6 @@ class TelegramAccount(models.Model):
         return partner.with_env(self.env)
 
     def _update_phone(self, number) -> None:
-        """Record the number Telegram vouched for: the one of a contact its
-        owner shared whose user id is their own."""
         self.check_singleton()
         digits = "".join(character for character in number or "" if character.isdigit())
         if not digits:
@@ -202,11 +186,9 @@ class TelegramAccount(models.Model):
         )
 
     def _lang(self):
-        """The active language closest to the one their Telegram app uses."""
         code = (self.language_code or "").replace("-", "_")
         if not code:
             return False
-        # cached: the bot asks it of every message it answers
         active = [lang for lang, _name in self.env["res.lang"].get_installed()]
         exact = [lang for lang in active if lang.lower() == code.lower()]
         if exact:
@@ -215,7 +197,6 @@ class TelegramAccount(models.Model):
         return prefix[0] if prefix else False
 
     def _acting_partner(self):
-        """The contact this person speaks for, bound or not a user."""
         self.check_singleton()
         binding = operating(self).binding_id
         if binding.expires_at and binding.expires_at <= fields.Datetime.now():
@@ -223,14 +204,10 @@ class TelegramAccount(models.Model):
         return binding.partner_id.with_env(self.env)
 
     def _bind(self, partner, *, user=None, method, expires_at=False, invited_by=None):
-        """Make `partner` (and `user`, when a session proved it) who this
-        account is, superseding any binding it had."""
         self.check_singleton()
         bindings = operating(self.env["telegram.binding"])
         current = operating(self).binding_ids.filtered(lambda b: b.state == "active")
         current._revoke("superseded")
-        # the index allows one active binding: the revoke must reach the table
-        # before the new row does
         current.flush_recordset(["state"])
         binding = bindings.create(
             {
@@ -242,8 +219,6 @@ class TelegramAccount(models.Model):
                 "invited_by_id": invited_by.id if invited_by else False,
             }
         )
-        # the contact made for the person on first contact was a stand-in for
-        # who they now proved to be: its history joins theirs (plan D6)
         stand_in = current.filtered(lambda b: b.method == "contact").partner_id
         if stand_in and stand_in != partner and not stand_in.user_ids:
             try:
@@ -252,8 +227,6 @@ class TelegramAccount(models.Model):
                         (partner | stand_in).ids, partner, extra_checks=False
                     )
             except UserError as error:
-                # the binding stands; a stand-in the merge refuses (one on a
-                # hashed entry) keeps its own history
                 _logger.warning(
                     "Telegram account %s: stand-in contact %s not merged into %s: %s",
                     self.id,

@@ -9,16 +9,13 @@ class TestInterCompanyRulesCommonSOPO(TestInterCompanyRulesCommon):
     @classmethod
     def get_default_groups(cls):
         groups = super().get_default_groups()
-        # give current user the rights to create sales orders
         return groups | cls.quick_ref("sale.group_sale_manager")
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
 
-        # Required for `discount` to be visible on the form view
         cls.env.user.group_ids += cls.env.ref("sale.group_discount_per_so_line")
-        # Required for `product_uom_id` to be visible on the form view
         cls.env.user.group_ids += cls.env.ref("base.group_uom")
 
         cls.res_users_company_a.group_ids += (
@@ -32,7 +29,6 @@ class TestInterCompanyRulesCommonSOPO(TestInterCompanyRulesCommon):
             + cls.env.ref("sale.group_discount_per_so_line")
         )
 
-        # Create an auto applied fiscal position for each company
         (cls.company_a + cls.company_b).write({"country_id": cls.env.ref("base.us").id})
         cls.fp_a = cls.env["account.fiscal.position"].create(
             {
@@ -52,7 +48,6 @@ class TestInterCompanyRulesCommonSOPO(TestInterCompanyRulesCommon):
             }
         )
 
-        # fiscal positions need some taxes to enable mapping - normally default taxes should belong to a domestic fiscal position
         (
             cls.company_a.tax_config_id.account_sale_tax_id
             | cls.company_a.tax_config_id.account_purchase_tax_id
@@ -64,11 +59,6 @@ class TestInterCompanyRulesCommonSOPO(TestInterCompanyRulesCommon):
 
     @classmethod
     def _create_unprivileged_user(cls, login, company):
-        """Create an internal user with no sale/purchase group at all, i.e.
-        `has_access('create')` is False on both sale.order and
-        purchase.order for them — used as an intercompany_user_id to prove a
-        check evaluates the intercompany user's rights and not the (fully
-        privileged) calling user's."""
         return cls.env["res.users"].create(
             {
                 "name": login,

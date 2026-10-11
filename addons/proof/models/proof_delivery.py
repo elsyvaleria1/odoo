@@ -67,11 +67,6 @@ class ProofDelivery(models.Model):
         payload: dict[str, Any] | None = None,
         signer_request: bool = True,
     ) -> models.BaseModel:
-        """Record the contact's answer to the message, and return the evidence.
-
-        ``signer_request`` says the current HTTP request is the contact's own,
-        so its address and browser are theirs; a channel that relays answers
-        server to server passes False."""
         self.check_singleton()
         if verdict not in dict(VERDICTS):
             raise UserError(self.env._("This answer is not one we asked for."))

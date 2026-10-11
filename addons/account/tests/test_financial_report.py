@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 
 from freezegun import freeze_time
 
@@ -14,12 +13,9 @@ class TestFinancialReport(TestAccountReportsCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # ==== Partners ====
         cls.partner_c = cls._create_partner(name="partner_c")
 
-        # ==== Accounts ====
 
-        # Cleanup existing "Current year earnings" accounts since we can only have one by company.
         cls.env["account.account"].search(
             [
                 (
@@ -72,7 +68,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         for account in accounts_2:
             account.code = account.with_company(cls.company_data_2["company"]).code
 
-        # ==== Custom filters ====
 
         cls.horizontal_group = cls.env["account.report.horizontal.group"].create(
             {
@@ -94,7 +89,6 @@ class TestFinancialReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Journal entries ====
 
         cls.move_2019 = cls.env["account.move"].create(
             {
@@ -411,7 +405,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         return int(generic_id.split("-")[-1])
 
     def test_financial_report_strict_range_on_report_lines_with_no_parent_id(self):
-        """Tests that lines with no parent can be correctly filtered by date range"""
         options = self._generate_options(
             self.report_no_parent_id,
             fields.Date.from_string("2019-01-01"),
@@ -421,7 +414,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         lines = self.report_no_parent_id._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                         Balance
             [0, 1],
             [
                 ("Invisible Partner A line", 1150.0),
@@ -434,7 +426,6 @@ class TestFinancialReport(TestAccountReportsCommon):
     def test_financial_report_strict_empty_range_on_report_lines_with_no_parent_id(
         self,
     ):
-        """Tests that lines with no parent can be correctly filtered by date range with no invoices"""
         options = self._generate_options(
             self.report_no_parent_id,
             fields.Date.from_string("2019-03-01"),
@@ -444,7 +435,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         lines = self.report_no_parent_id._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                          Balance
             [0, 1],
             [
                 ("Invisible Partner A line", 0.0),
@@ -484,7 +474,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("ASSETS", 110.0),
@@ -518,10 +507,6 @@ class TestFinancialReport(TestAccountReportsCommon):
 
     @freeze_time("2016-05-05")
     def test_balance_sheet_last_month_vs_custom_current_year_earnings(self):
-        """
-        Checks the balance sheet calls the right period of the P&L when using the last_month date filter, or an
-        equivalent custom filter (this used to fail due to the options regeneration made by the P&L's get_options()).
-        """
         to_invoice = [
             ("15", "11"),
             ("15", "12"),
@@ -581,22 +566,18 @@ class TestFinancialReport(TestAccountReportsCommon):
             fields.Date.from_string("2016-05-05"),
         )
 
-        # End of Last Month
         options["date"]["filter"] = "last_month"
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             expected_result,
             options,
         )
-        # Custom
         options["date"]["filter"] = "custom"
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             expected_result,
             options,
@@ -618,7 +599,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("ASSETS", 50.0),
@@ -655,7 +635,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         unfolded_lines = self.report._get_unfolded_lines(lines, line_id)
         self.assertLinesValues(
             unfolded_lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("Bank and Cash Accounts", -1300.0),
@@ -679,7 +658,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("ASSETS", 50.0),
@@ -717,7 +695,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         unfolded_lines = self.report._get_unfolded_lines(lines, line_id)
         self.assertLinesValues(
             unfolded_lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("Bank and Cash Accounts", -3300.0),
@@ -883,10 +860,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         )
 
     def test_financial_report_horizontal_group_total(self):
-        """
-        Checks that a total column of the horizontal group is added when there is no comparison, only one column and
-        one level of groupby, and that it is not added anymore once a comparison is set.
-        """
         horizontal_group = self.env["account.report.horizontal.group"].create(
             {
                 "name": "Horizontal Group total",
@@ -916,7 +889,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         )
 
         self.assertTrue(options["show_horizontal_group_total"])
-        # Since we don't calculate the value when totals below section is activated, we disable it
         self.env.company.account_config_id.totals_below_sections = False
         self.assertHorizontalGroupTotal(
             self.report._get_lines(options),
@@ -992,10 +964,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         )
 
     def test_hide_if_zero_with_no_formulas(self):
-        """
-        Checks that a line with hide_if_zero set and no formula of its own stays displayed while at least one of its
-        children has a balance != 0 in one of the compared periods, and is hidden once they are all 0.
-        """
         account1, account2 = self.env["account.account"].create(
             [
                 {
@@ -1147,7 +1115,6 @@ class TestFinancialReport(TestAccountReportsCommon):
             }
         )
 
-        # TODO without this, the create() puts newIds in the sublines, and flushing doesn't help. Seems to be an ORM bug.
         self.env.invalidate_all()
 
         options = self._generate_options(
@@ -1193,7 +1160,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         move.action_post()
         move.line_ids.flush_recordset()
 
-        # With the comparison still on, the lines shouldn't be hidden
         self.assertLinesValues(
             report._get_lines(options),
             [0, 1, 2, 3],
@@ -1205,12 +1171,10 @@ class TestFinancialReport(TestAccountReportsCommon):
             options,
         )
 
-        # Removing the comparison should hide the lines, as they will be 0 in every considered period (the current one)
         options = self._update_comparison_filter(options, report, "previous_period", 0)
         self.assertLinesValues(report._get_lines(options), [0, 1, 2, 3], [], options)
 
     def test_option_hierarchy(self):
-        """Check that the report lines are correct when the option 'Hierarchy and subtotals' is ticked"""
         self.env["account.group"].create(
             {
                 "name": "Sales",
@@ -1263,7 +1227,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         )
 
     def test_option_hierarchy_with_no_group_lines(self):
-        """Check that the report lines of 'No Group' have correct ids with the option 'Hierarchy and subtotals'"""
         self.env["account.group"].create(
             {
                 "name": "Sales",
@@ -1444,7 +1407,6 @@ class TestFinancialReport(TestAccountReportsCommon):
         c1_moves = self.env["account.move"].with_company(c1).create(c1_move_data)
         c1_moves.action_post()
 
-        # 1 USD = 2 CAD
         c2_move_data = [
             {
                 "move_type": "out_invoice",
@@ -1489,10 +1451,8 @@ class TestFinancialReport(TestAccountReportsCommon):
             default_options={"selected_horizontal_group_id": horizontal_group.id},
         )
         lines = report._get_lines(options)
-        # When company specified on ledger, journals for other companies are excluded
         self.assertLinesValues(
             lines,
-            #   Name                                                     C1, no sales         C2, no sales       Sale of C1, C2
             [0, 1, 2, 3],
             [
                 ("Revenue", 0.0, 0.0, 150.0),

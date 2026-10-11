@@ -18,8 +18,6 @@ type FieldCall = tuple[int, frozenset[str], dict[str, str | None]]
 
 
 def _field_call_facts(path: str) -> list[FieldCall]:
-    # (line, keyword names, the class keywords' literal values) of every
-    # `name = fields.X(...)` in a class body
     try:
         tree = ast.parse(Path(path).read_text(encoding="utf-8"))
     except SyntaxError, UnicodeDecodeError:
@@ -71,8 +69,6 @@ def _field_calls(path: str) -> list[FieldCall]:
 
 
 def anonymous_findings(paths) -> list[str]:
-    # a field whose only class is the one its groups= compiles into: nothing
-    # names it, so no row can grant or reach-limit it
     return [
         f"{path}:{line}"
         for path in paths
@@ -85,7 +81,6 @@ def anonymous_findings(paths) -> list[str]:
 
 @functools.cache
 def _shipped_classes() -> dict[str, set[str]]:
-    # per module, the classes its data files create
     shipped: dict[str, set[str]] = {}
     for manifest in Manifest.get_all_addon_manifests():
         root = Path(manifest.path)
@@ -129,7 +124,6 @@ def _depends() -> dict[str, frozenset[str]]:
 
 
 def undeclared_findings() -> list[str]:
-    # a classification naming a class neither its module nor a dependency ships
     shipped = _shipped_classes()
     depends = _depends()
     findings = []
@@ -165,9 +159,6 @@ class TestFieldClassGates(lint_case.LintCase):
         )
 
     def test_fields_whose_only_class_is_anonymous(self):
-        # one floor per repository, as bare_sudo_*: the count then holds at
-        # whatever scope the gate runs at, a repository off the addons path
-        # being one whose floor is not read
         found: dict[str, list[str]] = {}
         for root in lint_case._module_roots():
             found.setdefault(lint_case.repo_of(root), []).extend(

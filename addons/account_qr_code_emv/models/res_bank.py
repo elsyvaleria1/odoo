@@ -39,7 +39,6 @@ class ResPartnerBankAccount(models.Model):
     def _compute_display_qr_setting(self) -> None:
         self.display_qr_setting = False
 
-    # CRC16 calculation with polynomial 0x1021 and initial value 0xFFFF
     def _get_crc16(self, data, poly=0x1021, init=0xFFFF):
         crc = init
         for byte in data:
@@ -88,16 +87,16 @@ class ResPartnerBankAccount(models.Model):
         )
         merchant_category_code = self._get_merchant_category_code()
         return [
-            (0, "01"),  # Payload Format Indicator
-            (1, "12"),  # Dynamic QR Codes
-            (tag, merchant_account_info),  # Merchant Account Information
-            (52, merchant_category_code),  # Merchant Category Code
-            (53, currency_code),  # Transaction Currency
-            (54, amount),  # Transaction Amount
-            (58, self.country_code),  # Country Code
-            (59, merchant_name),  # Merchant Name
-            (60, merchant_city),  # Merchant City
-            (62, additional_data_field),  # Additional Data Field
+            (0, "01"),
+            (1, "12"),
+            (tag, merchant_account_info),
+            (52, merchant_category_code),
+            (53, currency_code),
+            (54, amount),
+            (58, self.country_code),
+            (59, merchant_name),
+            (60, merchant_city),
+            (62, additional_data_field),
         ]
 
     def _prepare_qr_payload(
@@ -119,7 +118,7 @@ class ResPartnerBankAccount(models.Model):
                 structured_communication,
             )
             qr_code_str = "".join(list(starmap(self._serialize, qr_code_vals)))
-            qr_code_str += "6304"  # CRC16
+            qr_code_str += "6304"
             crc = self._get_crc16(bytes(qr_code_str, "utf-8"))
             qr_code_str += format(crc, "04x").upper()
             return qr_code_str
@@ -201,7 +200,6 @@ class ResPartnerBankAccount(models.Model):
         return rslt
 
     def _get_error_messages_for_qr(self, qr_method, debtor_partner, currency):
-        """Return an error for emv_qr if the account's country does no match any methods found in inheriting modules."""
         if qr_method == "emv_qr":
             if not self:
                 return self.env._(

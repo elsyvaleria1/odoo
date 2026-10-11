@@ -36,7 +36,7 @@ class PosOrderLine(models.Model):
                     [
                         (
                             "combo_parent_id",
-                            self.search(  # noqa: E8507 - one lookup per created combo line, on its parent uuid
+                            self.search(
                                 [("uuid", "=", vals.get("combo_parent_uuid"))]
                             ).id,
                         )
@@ -101,8 +101,6 @@ class PosOrder(models.Model):
         readonly=True,
         help="The terminal provider's id of that request.",
     )
-    # the channel only the device holding the order can name: what concerns
-    # one order (its payment) is never sent where every QR code holder listens
     self_order_channel = fields.Char(compute="_compute_self_order_channel")
 
     @api.depends("access_token")
@@ -136,12 +134,6 @@ class PosOrder(models.Model):
         )
 
     def _add_kiosk_terminal_payment(self, payment_method, values) -> bool:
-        """Pay the whole order with a transaction its kiosk's terminal approved.
-
-        The caller has checked the transaction is the one requested for this
-        order, for its amount. False when it already paid this order; raises
-        UserError when it paid another one or the order awaits no payment.
-        """
         self.check_singleton()
         transaction_id = values.get("transaction_id")
         if not transaction_id:
@@ -177,7 +169,6 @@ class PosOrder(models.Model):
 
     def write(self, vals):
         if "table_id" in vals and self.self_ordering_table_id:
-            # Clear stale self-order table link when the order is transferred to a new table.
             vals["self_ordering_table_id"] = vals["table_id"]
         return super().write(vals)
 
@@ -188,14 +179,8 @@ class PosOrder(models.Model):
     @api.model
     def remove_from_ui(self, server_ids):
         orders = self.env["pos.order"].browse(server_ids)
-        # An order the customer placed from their own device is never deleted
-        # out from under them: it is cancelled and kept, so their history still
-        # lists it and the ORDER_STATE_CHANGED they receive names a state their
-        # device can show. super() selects on state = draft, so the cancelled
-        # ones are exactly the ones it leaves alone.
         self_orders = orders.filtered(lambda o: o.source in ("kiosk", "mobile"))
         self_orders._cancel_draft_orders()
-        # before super(), which unlinks the rest: config_id is unreadable after.
         self._notify_order_state_changed(orders)
         return super().remove_from_ui(server_ids)
 
@@ -218,8 +203,6 @@ class PosOrder(models.Model):
         return orders
 
     def _notify_order_state_changed(self, order_ids) -> None:
-        # point_of_sale already emits SYNCHRONISATION for each of these three
-        # transitions, so this override adds only the message it owns
         for config in order_ids.config_id:
             config._notify_self_order("ORDER_STATE_CHANGED", {})
 

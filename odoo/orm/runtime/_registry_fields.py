@@ -242,7 +242,6 @@ class _RegistryFieldsMixin(_RegistryStubs):
             refreshed += 1
         if refreshed:
             self.__dict__.pop("_field_triggers", None)
-            # an anchor's triggers are its dependencies' first hops
             self.__dict__.pop("moving_anchor_fields", None)
         _debug.logic("registry.field_depends_refreshed", fields=refreshed)
 
@@ -395,8 +394,6 @@ class _RegistryFieldsMixin(_RegistryStubs):
         graph = self.model_graph
         if graph.is_modifying_relations(field):
             return True
-        # a write through a root reaches the subtypes' rows, whose dependents
-        # hang off the subtypes' fields (RecomputeMixin._modified_tree_members)
         return any(
             graph.is_modifying_relations(member)
             for member in self._subtype_fields_of_root(field)

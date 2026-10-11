@@ -9,9 +9,6 @@ from odoo.addons.hr_expense_stripe.utils import (
     send_request_stripe_proxy,
 )
 
-# Some postal codes in the demo data aren't supported by Stripe
-# Such as 35043 in France which is used for large businesses or specific delivery points.
-# Or the format isn't specific enough like in the Netherlands which needs the 2 letter at the end.
 POSTAL_CODE_OVERRIDES = {
     "IT": "13019",
     "FI": "22410",
@@ -24,7 +21,6 @@ class ResCompany(models.Model):
     _inherit = "res.company"
 
     def _prepare_account_creation_payload(self) -> dict[str, Any]:
-        """Create a fully prepared Stripe account to quickly test the HR Expense Stripe integration."""
         if (
             self.env.registry.settings.get(
                 self.env, "hr_expense_stripe.stripe_mode", False
@@ -78,7 +74,6 @@ class ResCompany(models.Model):
         }
 
     def action_create_stripe_account(self):
-        """Quickly create a Stripe account by creating one with default/demo data if none exists yet."""
         self.check_singleton()
 
         if self.stripe_id:
@@ -92,4 +87,4 @@ class ResCompany(models.Model):
             payload={"account": self.sudo().stripe_id},
             method="POST",
         )
-        return None  # The demo account is verified inline: no onboarding to redirect to
+        return None

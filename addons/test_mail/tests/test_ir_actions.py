@@ -26,13 +26,11 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
 
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.models.unlink")
     def test_action_email(self):
-        # initial state
         self.assertEqual(
             len(self.test_partner.message_ids), 1, "Contains Contact created message"
         )
         self.assertFalse(self.test_partner.message_partner_ids)
 
-        # update action: send an email
         self.action.write(
             {
                 "mail_post_method": "email",
@@ -49,7 +47,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
         with self.mock_mail_app():
             self.action.with_context(self.context).run()
 
-        # check an email is waiting for sending
         mail = (
             self.env["mail.mail"]
             .sudo()
@@ -62,7 +59,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
         with self.mock_mail_gateway(mail_unlink_sent=True):
             mail.send()
 
-        # no archive (message)
         self.assertEqual(
             len(self.test_partner.message_ids), 1, "Contains Contact created message"
         )
@@ -103,13 +99,11 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
         self.assertEqual(self.action.warning, False)
 
     def test_action_message_post(self):
-        # initial state
         self.assertEqual(
             len(self.test_partner.message_ids), 1, "Contains Contact created message"
         )
         self.assertFalse(self.test_partner.message_partner_ids)
 
-        # test without autofollow and comment
         self.action.write(
             {
                 "mail_post_autofollow": False,
@@ -131,14 +125,12 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
             },
         ):
             self.action.with_context(self.context).run()
-        # NOTE: template using current user will have funny email_from
         self.assertEqual(
             self.test_partner.message_ids[0].email_from,
             self.partner_root.email_formatted,
         )
         self.assertFalse(self.test_partner.message_partner_ids)
 
-        # test with autofollow and note
         self.action.write({"mail_post_autofollow": True, "mail_post_method": "note"})
         with self.assertSinglePostNotifications(
             [{"partner": self.test_partner, "type": "email", "status": "ready"}],
@@ -191,7 +183,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
         self.assertEqual(self.action.warning, False)
 
     def test_action_next_activity_due_date(self):
-        """Make sure we don't crash if a due date is set without a type."""
         self.action.write(
             {
                 "state": "next_activity",
@@ -241,14 +232,13 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
             [
                 {
                     "summary": "TestNew",
-                    "user_id": self.test_partner.user_ids[0].id,  # the first user found
+                    "user_id": self.test_partner.user_ids[0].id,
                 }
             ],
         )
 
     @mute_logger("odoo.addons.mail.models.mail_mail", "odoo.models.unlink")
     def test_action_send_mail_without_mail_thread(self):
-        """Check running a server action to send an email with custom layout on a non mixin.mail.thread model"""
         no_thread_record = self.env["mail.test.nothread"].create(
             {"name": "Test NoMailThread", "customer_id": self.test_partner.id}
         )
@@ -263,7 +253,6 @@ class TestServerActionsEmail(MailCommon, TestServerActionsBase):
             },
         )
 
-        # update action: send an email
         self.action.write(
             {
                 "mail_post_method": "email",
@@ -313,7 +302,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
         cls.activity_type.summary = "Call them back"
 
     def test_activity_summary_defaults_from_the_type(self):
-        """Picking a type fills the title, whatever order the form is filled in."""
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Schedule",
@@ -324,7 +312,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
         )
         self.assertEqual(action.activity_summary, "Call them back")
 
-        # the order the form imposes: the type is chosen after the state
         later = self.env["ir.actions.server"].create(
             {
                 "name": "Schedule later",
@@ -336,17 +323,14 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
         later.activity_type_id = self.activity_type
         self.assertEqual(later.activity_summary, "Call them back")
 
-        # a title of the user's own survives a change of type
         later.activity_summary = "Mine"
         later.activity_type_id = self.env.ref("mail.mail_activity_data_meeting")
         self.assertEqual(later.activity_summary, "Mine")
 
-        # and the state moving away clears it again
         later.state = "code"
         self.assertFalse(later.activity_summary)
 
     def test_warning_follows_the_mail_post_method(self):
-        """The method decides whether a thread is needed, so it must retrigger."""
         no_thread = self.env["ir.model"]._get("mail.test.nothread")
         action = self.env["ir.actions.server"].create(
             {
@@ -371,7 +355,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
         )
 
     def test_warning_requires_a_template_and_an_activity_type(self):
-        """Both used to be missing silently: the runner returned without a trace."""
         action = self.env["ir.actions.server"].create(
             {"name": "Post", "model_id": self.lead_model.id, "state": "mail_post"}
         )
@@ -400,7 +383,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
         self.assertFalse(schedule.warning)
 
     def test_relation_path_must_resolve_when_written(self):
-        """Base validates `update_path` this way; these two paths went unchecked."""
         with self.assertRaises(ValidationError):
             self.env["ir.actions.server"].create(
                 {
@@ -424,13 +406,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
             )
 
     def test_a_path_gone_stale_warns_rather_than_crashing(self):
-        """The constraint cannot see a field deleted after the fact; the warning can.
-
-        The path is put out of date in SQL because that is exactly the state to
-        cover: data the ORM would refuse today, left behind by a field that was
-        removed with its module or its Studio customisation. Deleting the field
-        for real would reload the registry mid-test.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Follow",
@@ -459,12 +434,6 @@ class TestServerActionsMailConfiguration(MailCommon, TestServerActionsBase):
             ).run()
 
     def test_offered_models_match_what_the_model_supports(self):
-        """The dropdown used to offer what the warnings then rejected.
-
-        The `allowed_states` half of this lives in
-        `TestServerActionsMailRegistryContract` instead, because it can only be
-        measured after every module that extends `ir.actions.server` has loaded.
-        """
         action = self.env["ir.actions.server"].create(
             {"name": "Act", "model_id": self.lead_model.id, "state": "next_activity"}
         )
@@ -516,21 +485,6 @@ class TestServerActionsMailRegistryContract(MailCommon):
             self.assertIn(state, action.allowed_states)
 
     def test_every_override_of_our_hooks_calls_super(self):
-        """A module above us may narrow what we contribute, never replace it.
-
-        The generic form of the bug above: any module that overrides one of
-        mail's `ir.actions.server` methods and returns without calling `super()`
-        deletes mail's behaviour silently, in a way no functional test of mail's
-        own can reach. Checking the source is crude, but it is the only check
-        available from here -- and it fails on exactly the shape that shipped.
-
-        What it cannot see is a `super()` call that covers only *part* of the
-        recordset: `sms` called `super()` on `self - sms_actions` and assigned
-        `available_model_ids` itself for the rest, which passed this check while
-        dropping base's own narrowing for that state. Only a behavioural
-        assertion catches that, and it lives where every module has loaded:
-        `test_automation`'s `TestAvailableModelsNeverWiden`.
-        """
         import inspect
 
         from odoo.addons.mail.models.ir_actions_server import (
@@ -654,14 +608,6 @@ class TestServerActionsMailBatch(MailCommon):
         )
 
     def test_next_activity_batch_costs_no_query_per_record(self):
-        """Scheduling N activities is one `create`, so it must not scale with N.
-
-        Unassigned on purpose: assigning one notifies its assignee, and
-        `_notify_thread` runs per message -- roughly 6 further queries per
-        document, which belongs to the notification layer and would swamp what
-        this measures. `test_next_activity_batch_assigns_each_record_its_own_user`
-        covers the assignment itself.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Schedule",
@@ -680,22 +626,6 @@ class TestServerActionsMailBatch(MailCommon):
         self.assertEqual(activities.mapped("summary"), ["Batched"] * 20)
 
     def test_followers_batch_subscribes_every_record(self):
-        """One call per distinct contact set -- not per record, not one for all.
-
-        The budget used to be a flat 10 for 18 further records, which only the
-        union satisfied: one `message_subscribe` for the whole selection with
-        everybody's contact in it, which is the leak
-        `test_a_dynamic_path_subscribes_each_record_its_own_contact` covers.
-        Records that genuinely need different followers need different calls, so
-        what is measured instead is that records *sharing* a contact set still
-        share one: 20 records on one contact cost 16 queries against 12 for two.
-
-        The remaining per-set cost is `message_subscribe`'s own -- an access
-        check and a partner read each time. `mail.followers._add_followers_multi`
-        already takes a `{res_id: {partner_id: subtypes}}` mapping and would do
-        the whole thing in one call; what is missing is a batch entry point
-        beside `message_subscribe` to carry its access check into it.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Follow",
@@ -734,14 +664,6 @@ class TestServerActionsMailBatch(MailCommon):
             self.assertEqual(lead.message_partner_ids, shared)
 
     def test_a_dynamic_path_subscribes_each_record_its_own_contact(self):
-        """`mapped` over the set answers a different question than the action asks.
-
-        A dynamic path names a contact *of each record*. Mapping it over the
-        whole selection and subscribing the result to all of them gave every
-        record everybody else's customer, who then received the chatter of
-        documents that were none of theirs. Only the positive half was measured
-        before -- that each record got its own -- which the union satisfies too.
-        """
         leads = self.env["mail.test.lead"].create(
             [
                 {"name": f"Lead {index}", "partner_id": self.customers[index].id}
@@ -770,7 +692,6 @@ class TestServerActionsMailBatch(MailCommon):
             )
 
     def test_removing_followers_only_removes_each_record_s_own(self):
-        """The mirror: the union unsubscribed contacts that belonged elsewhere."""
         leads = self.env["mail.test.lead"].create(
             [
                 {"name": f"Lead {index}", "partner_id": self.customers[index].id}
@@ -778,7 +699,6 @@ class TestServerActionsMailBatch(MailCommon):
             ]
         )
         leads.message_unsubscribe(leads.message_partner_ids.ids)
-        # everyone follows everything, so a union-based removal empties them all
         leads.message_subscribe(partner_ids=self.customers[:3].ids)
         action = self.env["ir.actions.server"].create(
             {
@@ -801,7 +721,6 @@ class TestServerActionsMailBatch(MailCommon):
             )
 
     def test_next_activity_batch_assigns_each_record_its_own_user(self):
-        """Grouping by assignee must not collapse the assignees."""
         users = self.env["res.users"].create(
             [
                 {
@@ -841,14 +760,6 @@ class TestServerActionsMailBatch(MailCommon):
             self.assertEqual(activity.user_id, lead.user_id)
 
     def test_an_action_with_no_target_record_says_so(self):
-        """A cron passes no `active_ids` at all, and the runner returned quietly.
-
-        Base logs this for the runners it loops per record, but a `multi` runner
-        takes the whole set and an empty set is not an error to it -- so a mail
-        action scheduled as a cron did nothing, every time, in silence. The
-        states that need a record are the states that mind about it being
-        deleted, so base asks the same hook for both.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Scheduled send",
@@ -865,13 +776,6 @@ class TestServerActionsMailBatch(MailCommon):
         self.assertIn("no target record", "\n".join(capture.output))
 
     def test_a_cron_scheduling_a_record_needing_action_is_refused(self):
-        """The log above says it at 3am; the warning says it while configuring.
-
-        A scheduled action is run with no `active_ids`, so an action that needs
-        a record can only ever do nothing. `warning` is what every other
-        misconfiguration on this model uses, and `run()` refuses on it, so the
-        cron fails visibly instead of succeeding at nothing.
-        """
         cron = self.env["ir.cron"].create(
             {
                 "name": "Nightly send",
@@ -901,7 +805,6 @@ class TestServerActionsMailBatch(MailCommon):
         )
 
     def test_a_code_action_with_no_target_record_stays_quiet(self):
-        """`code` is the one state that legitimately runs on nothing."""
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Scheduled code",
@@ -916,11 +819,6 @@ class TestServerActionsMailBatch(MailCommon):
             action.run()
 
     def test_runners_ignore_ids_belonging_to_another_model(self):
-        """`active_ids` are ids in `active_model`; read as ours they name strangers.
-
-        Reachable without a hand-built context: a `code` action on one model that
-        runs an action on another passes its own selection straight down.
-        """
         leads = self._leads(3)
         action = self.env["ir.actions.server"].create(
             {
@@ -942,14 +840,6 @@ class TestServerActionsMailBatch(MailCommon):
             )
 
     def test_one_unsettled_record_does_not_hold_back_the_others(self):
-        """The guard is per record now, because the runner is fed a batch.
-
-        `automation` fires a rule once for the whole write since the
-        runners take `active_ids` as a set. The guard that keeps a half-computed
-        record from being mailed twice used to answer for the set -- one record
-        still waiting on a recompute stopped the mail for every record in the
-        write, and nothing retries a run it skips.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Send",
@@ -961,8 +851,6 @@ class TestServerActionsMailBatch(MailCommon):
         )
         leads = self._leads(3)
         self.env.flush_all()
-        # writing the source leaves `email_normalized` waiting to be recomputed
-        # on this one record and no other
         leads[1].email_from = "pending@test.example.com"
 
         with self.mock_mail_gateway():
@@ -986,7 +874,6 @@ class TestServerActionsMailBatch(MailCommon):
         )
 
     def test_recompute_guard_reads_every_changed_field(self):
-        """One extra name in `old_values` used to disarm the guard entirely."""
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Send",
@@ -1006,8 +893,6 @@ class TestServerActionsMailBatch(MailCommon):
         def run_with(old_values, leave_pending, index):
             self.env.flush_all()
             if leave_pending:
-                # writing the source leaves `email_normalized` waiting to be
-                # recomputed, which is the state the guard is there to detect
                 lead.email_from = f"pending.{index}@test.example.com"
             before = self.env["mail.mail"].sudo().search_count([])
             action.with_context(
@@ -1049,10 +934,9 @@ class TestServerActionsMailDefaults(MailCommon):
     """
 
     def test_the_followers_field_comes_from_mail_s_own_convention(self):
-        """`_mail_get_partner_fields` is what the rest of mail asks; ask it too."""
         for model_name, expected in (
-            ("mail.test.ticket", "customer_id"),  # declares `_mail_partner_fields`
-            ("mail.test.simple", False),  # no convention -> no guess
+            ("mail.test.ticket", "customer_id"),
+            ("mail.test.simple", False),
             ("res.partner", False),
         ):
             with self.subTest(model=model_name):
@@ -1067,11 +951,6 @@ class TestServerActionsMailDefaults(MailCommon):
                 self.assertEqual(action.followers_partner_field_name, expected)
 
     def test_no_field_is_ever_seeded_with_the_followers_m2m_itself(self):
-        """`message_partner_ids` was the alphabetical winner on most threads.
-
-        Seeding it makes the action add the record's followers as followers: a
-        no-op that reports success, on 30 of 44 concrete thread models.
-        """
         threads = self.env["ir.model"].search(
             [("is_mail_thread", "=", True), ("transient", "=", False)]
         )
@@ -1102,7 +981,6 @@ class TestServerActionsMailDefaults(MailCommon):
             )
 
     def test_the_assignee_field_is_user_id_or_nothing(self):
-        """It used to pick `activity_user_id` -- the user of the *next* activity."""
         activity_models = self.env["ir.model"].search(
             [("is_mail_activity", "=", True), ("transient", "=", False)]
         )
@@ -1122,22 +1000,6 @@ class TestServerActionsMailDefaults(MailCommon):
                 self.assertIn(action.activity_user_field_name, ("user_id", False))
 
     def test_the_follower_runners_run_through_a_pending_recompute(self):
-        """Why they carry no `_get_recompute_pending()` guard, unlike the other two.
-
-        `automation` patches `_compute_field_value`, which fires once per
-        computed *field*, so one cascade can process the same rule several times.
-        `_get_recompute_pending` is what stops `mail_post` and `next_activity` sending a
-        mail or scheduling an activity on each pass -- and nothing retries a run
-        it skips, so the guard is only safe where a second pass would duplicate.
-
-        Subscribing duplicates nothing (`_add_followers` runs `check_existing`
-        with `existing_policy="skip"`, and unsubscribing a non-follower is a
-        no-op), so the guard would buy nothing here and would drop the
-        subscription outright. Both halves are asserted: that a run *during* a
-        pending recompute still subscribes -- which fails the moment someone
-        adds the guard -- and that a second run adds no duplicate, which is what
-        makes not guarding safe.
-        """
         lead = self.env["mail.test.lead"].create(
             {"name": "L", "email_from": "l@t.example.com"}
         )
@@ -1161,8 +1023,6 @@ class TestServerActionsMailDefaults(MailCommon):
         def run(state):
             action.state = state
             self.env.flush_all()
-            # writing the source leaves `email_normalized` waiting to be
-            # recomputed -- the exact state `_get_recompute_pending` reports on
             lead.email_from = f"pending.{state}@test.example.com"
             action.with_context(
                 active_model="mail.test.lead",
@@ -1195,11 +1055,6 @@ class TestServerActionsMailDefaults(MailCommon):
         )
 
     def test_an_unset_dynamic_path_warns_instead_of_running(self):
-        """`mapped(False)` returns the recordset, so this used to subscribe ids.
-
-        Nothing could reach it while the seeding always guessed *something*;
-        declining to guess makes an empty path reachable, so it has to be caught.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Act",
@@ -1222,14 +1077,6 @@ class TestServerActionsMailDefaults(MailCommon):
         )
 
     def test_specific_followers_with_nobody_chosen_warns(self):
-        """The dynamic half warned and the specific half did not.
-
-        `_subscribe_followers` returns without a trace when there is nobody to
-        subscribe, which for `followers_type = specific` means an action that
-        reports success and does nothing, forever. The view marks the field
-        required, so this arrives by import or by code -- the same way every
-        other misconfiguration on this model does.
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Follow",
@@ -1244,11 +1091,6 @@ class TestServerActionsMailDefaults(MailCommon):
         self.assertFalse(action.warning, "and it clears once somebody is chosen")
 
     def test_the_two_path_warnings_stay_two_translatable_sentences(self):
-        """Interpolating the noun discarded both catalogue entries in 48 locales.
-
-        No value of a `%(kind)s` placeholder builds the German compound
-        "ist kein Partnerfeld" or the Spanish "campo de contacto".
-        """
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Act",
@@ -1272,7 +1114,6 @@ class TestServerActionsMailDefaults(MailCommon):
         self.assertIn("is not a user field", action.warning)
 
     def test_the_activity_title_follows_the_type_until_the_user_types_one(self):
-        """Base solves this for `name` with `automated_name`; do the same here."""
         todo = self.env.ref("mail.mail_activity_data_todo")
         call = self.env.ref("mail.mail_activity_data_call")
         todo.summary, call.summary = "Do the thing", "Ring the customer"
@@ -1339,13 +1180,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         )
 
     def test_the_form_keeps_a_followers_path_that_still_resolves(self):
-        """`create_uid` is on every model, so the path survives the move.
-
-        The seed ran unconditionally, so the form replaced the path with the
-        new model's convention -- and when that model has no convention to
-        offer, with nothing at all, leaving a *required* field empty and the
-        record unsaveable until the user retypes what they had already written.
-        """
         action = self._action(
             state="followers",
             followers_type="generic",
@@ -1372,12 +1206,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         self.assertEqual(action.activity_user_field_name, "create_uid")
 
     def test_a_path_that_stopped_resolving_is_reseeded(self):
-        """Keeping a path is only safe while the alternative is not a crash.
-
-        `_check_relation_paths` refuses a path naming a field the model does not
-        have, so a path left behind on a model that lost it would fail the very
-        write that moved the model.
-        """
         action = self._action(
             state="followers",
             followers_type="generic",
@@ -1391,7 +1219,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         )
 
     def test_add_and_remove_followers_share_one_configuration(self):
-        """The two states configure identically, so switching must carry it over."""
         action = self._action(
             state="followers",
             followers_type="generic",
@@ -1407,7 +1234,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         )
 
     def test_the_recipients_the_user_declined_to_subscribe_stay_unsubscribed(self):
-        """A message and a note autofollow alike; switching is not a reset."""
         action = self._action(
             state="mail_post",
             template_id=self.template.id,
@@ -1426,11 +1252,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         self.assertFalse(action.mail_post_autofollow, "nor must switching back")
 
     def test_an_export_and_re_import_keeps_the_configuration(self):
-        """Moving an action between databases must not change what it sends.
-
-        The round trip resends `state` unchanged, which used to retrigger the
-        seed and turn a silent email into a message notifying every follower.
-        """
         action = self._action(
             state="mail_post",
             template_id=self.template.id,
@@ -1456,7 +1277,6 @@ class TestServerActionsMailConfigurationSurvives(MailCommon):
         self.assertTrue(action.mail_post_autofollow)
 
     def test_leaving_and_re_entering_mail_post_reseeds_the_method(self):
-        """Preserving is not the same as never seeding."""
         action = self._action(
             state="mail_post", template_id=self.template.id, mail_post_method="email"
         )
@@ -1483,17 +1303,6 @@ class TestServerActionsMailActivityDeadline(MailCommon):
 
     @freeze_time("2026-08-18 23:30:00")
     def test_the_deadline_counts_from_the_assignee_s_timezone(self):
-        """The assignee can be the type's default user, whom the runner never saw.
-
-        Frozen half an hour before midnight UTC, with the assignee fourteen
-        hours ahead: their today is already the 19th, so "in 1 day" is the 20th.
-        Reading the deadline off the server's today gives the 19th -- a day
-        early, every day, for a whole timezone's worth of users.
-
-        Configured the way a user would: "Dynamic User" on a record whose user
-        field happens to be empty. `_activity_create` then falls back to the
-        type's default user, and it is that fallback the runner could not see.
-        """
         assignee = self.env["res.users"].create(
             {
                 "name": "Far East",
@@ -1532,8 +1341,6 @@ class TestServerActionsMailActivityDeadline(MailCommon):
 
     @freeze_time("2026-08-18 12:00:00")
     def test_a_negative_due_date_in_counts_backwards(self):
-        """ "-2 days" is two days before today. It used to be warned about and
-        then scheduled for today, with the sign quietly dropped."""
         action = self.env["ir.actions.server"].create(
             {
                 "name": "Schedule",
@@ -1557,8 +1364,6 @@ class TestServerActionsMailActivityDeadline(MailCommon):
         self.assertEqual(str(activity.date_deadline), "2026-08-16")
 
     def test_the_step_is_the_delay_mixin_s(self):
-        """One arithmetic for "N units". A Jan-31 base is what tells a month
-        step apart from thirty days."""
         base = date(2026, 1, 31)
         for unit in ("day", "week", "month", False):
             for count in (-3, 0, 1, 13):
@@ -1647,7 +1452,6 @@ class TestMailPostBatch(MailCommon):
         )
 
     def test_the_batch_posts_the_same_messages_it_always_did(self):
-        """The saving must not come out of the messages."""
         records = self._run_on(4)
         messages = self._messages_for(records)
         self.assertEqual(len(messages), 4, "one message per record, as before")
@@ -1663,22 +1467,6 @@ class TestMailPostBatch(MailCommon):
             self.assertEqual(message.message_type, "auto_comment")
 
     def test_the_batch_still_creates_recipients_from_a_rendered_email_to(self):
-        """The property that lets *this* runner batch, and the general one not.
-
-        `_prepare_mail_values` branches on
-        `rendering_mode = email_mode or composition_batch`, so one composer over
-        the set renders through `_prepare_mail_values_dynamic` while a composer
-        per record renders through `_prepare_mail_values_rendered`. They do not
-        agree on recipients, which is why the per-record loop in
-        `message_post_with_source` has to stay -- moving this batch up there
-        loses the customer partner in
-        `TestMessagePostLang.test_layout_email_lang_template`.
-
-        This runner is allowed to batch because on its own path the two agree,
-        and that is what this measures rather than assumes: a template whose
-        `email_to` renders to an address no partner holds yet must create that
-        partner and address the message to it, at N=1 and at N>1 alike.
-        """
         template = self.env["mail.template"].create(
             {
                 "name": "Rendered recipient",
@@ -1727,12 +1515,6 @@ class TestMailPostBatch(MailCommon):
         self.assertEqual(message.subtype_id, self.env.ref("mail.mt_note"))
 
     def test_the_marginal_cost_per_record_falls(self):
-        """N=2 against N=20, so a warm cache cannot make this vacuous.
-
-        The composer-per-record loop cost 31.4 queries a record; one composer
-        for the set costs 14.7. The budget is the measured figure with room, not
-        a target -- tighten it when the composer stops posting one at a time.
-        """
         self.env["mail.test.simple"].create({"name": "warm", "email_from": "a@b.c"})
         few = self._cost_of(2)
         many = self._cost_of(20)
@@ -1797,12 +1579,6 @@ class TestServerActionsMailPostContext(MailCommon):
                 self._assert_template_survives(count)
 
     def _assert_template_survives(self, count):
-        """Both branches, because they build the composer from different envs.
-
-        One record goes through `message_post_with_source`; more than one builds
-        the batch composer, and it has to be built from the records' env -- the
-        action's own still carries the context the runner stripped.
-        """
         records = self.env["mail.test.simple"].create(
             [{"name": f"rec{i}", "email_from": "a@b.c"} for i in range(count)]
         )

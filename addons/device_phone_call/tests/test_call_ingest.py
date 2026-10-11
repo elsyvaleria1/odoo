@@ -39,9 +39,6 @@ class TestDeviceCallIngest(DeviceTransactionCase):
         )
 
     def test_a_resend_reads_the_stored_calls_at_its_stamps_not_the_span(self):
-        # A backlog flushed after days offline spans days in one batch, and the
-        # dedup read every stored call between its first and last stamp to
-        # compare against a hundred.
         stored = self._calls(300)
         self.calls.ingest_from_device(self.device, stored)
         self.env.flush_all()

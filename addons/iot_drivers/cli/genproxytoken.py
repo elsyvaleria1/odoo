@@ -22,9 +22,6 @@ class GenProxyToken(Command):
         self.parser.add_argument(
             "--token-length", type=int, help="Token Length", default=16
         )
-        # `cmdargs`, not the implicit sys.argv[1:]: the latter still carries
-        # the command name and every global flag `main()` stripped, so this
-        # parsed argv the dispatcher had already consumed.
         args, _ = self.parser.parse_known_args(cmdargs)
         if args.config:
             config["config"] = args.config

@@ -5,8 +5,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestUserHasAccessIsPerUser(TransactionCase):
-    # user_has_access reads the user in its search, and rows name it as a
-    # fixed filter: one user's verdict must never answer for another
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

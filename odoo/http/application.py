@@ -127,8 +127,6 @@ class _locked_cached_property(functools.cached_property):
 
 
 class _GeoIPReaderSlot:
-    # The MaxMind files are refreshed in place (geoipupdate): look again at
-    # most this often, and reopen when the path, inode or mtime moved.
     RECHECK_SECONDS = 60.0
 
     def __init__(self, kind: str) -> None:
@@ -160,8 +158,6 @@ class _GeoIPReaderSlot:
                     db=self.kind,
                     first=self._identity is None,
                 )
-                # The previous reader is left to the garbage collector: a
-                # lookup running in another thread may still hold it.
                 self._reader = app._open_geoip_reader(self.kind, path)
                 self._identity = current
             self._checked_at = now
@@ -216,8 +212,6 @@ class Application:
         return get_dbs_served(force=True, host=host)
 
     def get_dbs_listed(self, host: str | None = None) -> list[str]:
-        # what a visitor may be shown: the served databases, unless the
-        # administrator hid the list (list_db = False)
         if not current_settings().list_db:
             _debug.logic("http.dbs.listing_refused", reason="list_db_disabled")
             raise AccessDenied
@@ -227,9 +221,6 @@ class Application:
         return filter_dbs_served(dbs, host=host)
 
     def get_static_path(self, module_name: str) -> str | None:
-        # every static request asks, an unknown module stats every addons
-        # path: answers, absent ones included, hold a minute or until the
-        # addons path changes
         now = time.monotonic()
         generation = module_manager.Manifest.cache_generation
         cached = self._static_paths.get(module_name)
@@ -266,8 +257,6 @@ class Application:
         return self.resolve_static_file(path)
 
     def resolve_static_file(self, path: str) -> str | None:
-        # every request asks, and a static path must name the segment: most
-        # are answered here without the split
         if "/static/" not in path:
             return None
         try:
@@ -408,12 +397,6 @@ class Application:
             )
 
     def _apply_ascii_query_string(self, environ: dict[str, object]) -> None:
-        # The transport accepts a raw octet over 0x7f in the target (obs-text);
-        # QUERY_STRING carries it as a latin-1 character, and werkzeug's args,
-        # like every query_string.decode() of the addons, decodes it as strict
-        # UTF-8: a 500 on any route that reads a parameter. Percent-encoded it
-        # unquotes to the same bytes, and werkzeug keeps an invalid sequence
-        # percent-encoded instead of raising.
         query = environ.get("QUERY_STRING")
         if not isinstance(query, str) or query.isascii():
             return
@@ -422,10 +405,6 @@ class Application:
         _debug.logic("http.query_string.quoted", query=quoted)
 
     def _apply_request_uri(self, environ: dict[str, object]) -> None:
-        # The request target as the client sent it. PEP 3333 does not define
-        # it, the transport and werkzeug's server set it, and a caller reading
-        # the original URI after a reroute (website's canonical URL) must not
-        # depend on which server, or test builder, ran it.
         if "REQUEST_URI" in environ:
             return
         uri = environ.get("RAW_URI")
@@ -452,10 +431,6 @@ class Application:
             select_db_path=is_select_db_path(httprequest.path),
         )
         if not durable:
-            # The database is there but out of reach for now (pool exhausted,
-            # server restarting): say so and when to retry, keep the session.
-            # Serving the database-free router instead answered "database not
-            # found" or the selector for a database that exists.
             _logger.warning(
                 "Database %r unreachable for now; answering 503",
                 request.db,
@@ -528,17 +503,17 @@ class Application:
             return existing
         if isinstance(exc, AccessDenied):
             exc.suppress_traceback()
-        via = "no_request"  # debuglog
+        via = "no_request"
         if request is None:
             response: Any = InternalServerError()
         else:
             try:
                 response = request.dispatcher.prepare_error_response(exc)
-                via = "dispatcher"  # debuglog
+                via = "dispatcher"
             except Exception:
                 _logger.exception("The dispatcher could not build an error response")
                 response = InternalServerError()
-                via = "dispatcher_failed"  # debuglog
+                via = "dispatcher_failed"
         set_error_response(exc, response)
         _debug.logic(
             "http.error_response.built",
@@ -603,12 +578,6 @@ class Application:
                 httprequest.close()
 
         with contextlib.ExitStack() as request_guard:
-            # The WSGI iterable is consumed after __call__ returns, so a
-            # return path must NOT close the request here (a streamed body
-            # may read a request-owned resource, e.g. an uploaded file, which
-            # a reroute hands to the request it builds); ownership of close()
-            # moves into the returned ClosingIterator. Paths that exit without
-            # returning an iterable close it now.
             request_guard.callback(close_request)
             pushed = False
             try:
@@ -633,8 +602,6 @@ class Application:
                 with _debug.perf(
                     "http.request", method=httprequest.method, path=httprequest.path
                 ) as span:
-                    # A module's static file needs no database and reads no
-                    # session: it is served before either is looked at.
                     static_file = self.resolve_static_file(httprequest.path)
                     db_free = not static_file and httprequest.path in self.db_free_paths
                     if db_free:

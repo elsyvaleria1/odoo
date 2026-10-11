@@ -10,7 +10,6 @@ from .common import TestAccountBudgetCommon, TestAccountBudgetPurchaseCommon
 @tagged("post_install", "-at_install")
 class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
     def test_access_purchase_order(self):
-        """Make sure a purchase manager can access a purchase order linked to a budget."""
 
         self.budget_analytic_expense.action_budget_confirm()
         purchase_partner = self.env["res.partner"].create({"name": "Purchaser"})
@@ -30,16 +29,12 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
         )
 
     def test_purchase_order_is_above_budget(self):
-        """Test that is_above_budget field is computed correctly"""
-        # budget amount of 10000.0 for "analytic_account_partner_b" and "analytic_account_administratif"
         self.budget_analytic_expense.action_budget_confirm()
-        # PO that is not above budget
         po_1 = self.env["purchase.order"].create(
             {
                 "partner_id": self.partner_a.id,
                 "date_order": "2019-01-10",
                 "line_ids": [
-                    # the first line should be ignored as one of the analytic account is missing
                     Command.create(
                         {
                             "product_id": self.product_a.id,
@@ -70,7 +65,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
         self.assertFalse(po_1.is_above_budget)
         self.assertFalse(po_1.line_ids[0].is_above_budget)
         self.assertFalse(po_1.line_ids[1].is_above_budget)
-        # PO that is above budget
         po_2 = self.env["purchase.order"].create(
             {
                 "partner_id": self.partner_a.id,
@@ -112,10 +106,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
         self.assertFalse(po_2.line_ids[1].is_above_budget)
 
     def test_the_report_date_column_stays_a_date(self):
-        """`purchase.order.date_order` is a Datetime while `budget.report.date`
-        is declared a Date. Selecting it uncast promoted the whole UNION column
-        to `timestamp` in PostgreSQL, so every row of the report -- including
-        the ones this module does not produce -- came back carrying a time."""
         report = self.env["budget.report"]
         self.env.cr.execute(SQL("SELECT * FROM (%s) t LIMIT 0", report._table_query))
         type_code = {
@@ -130,11 +120,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
             self.assertNotIsInstance(value, datetime)
 
     def test_a_commitment_under_no_budget_is_still_reported(self):
-        """`ba` reaches the committed branch through a LEFT JOIN, so the plain
-        `ba.budget_type != 'revenue'` was NULL for a commitment no budget covers
-        and dropped the row -- while the analytic branch keeps its uncovered
-        rows (`test_report_reports_an_uncovered_entry_once`). The two grains
-        have to agree."""
         report = self.env["budget.report"]
         orphan_account = self.env["account.analytic.account"].create(
             {
@@ -165,10 +150,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
         self.assertFalse(rows.budget_analytic_id, "and attributed to no budget")
 
     def test_a_new_budget_reaches_existing_orders(self):
-        """`purchase.order.line.budget_line_ids` is a non-stored compute that
-        *searches* `budget.line`, and `@api.depends("analytic_distribution")`
-        reaches nothing on the budget side. Creating a budget over existing
-        orders left every above-budget warning behind."""
         account = self.env["account.analytic.account"].create(
             {"name": "late budget", "plan_id": self.analytic_plan_projects.id}
         )
@@ -220,9 +201,6 @@ class TestPurchaseOrder(TestAccountBudgetPurchaseCommon):
         self.assertTrue(order.line_ids.is_above_budget)
 
     def test_multi_key_distribution_reaches_every_budget(self):
-        """A PO line whose analytic_distribution carries two separate keys
-        must reach the budget line for EVERY key, not just the first one
-        `analytic_json` iterates."""
         self.budget_analytic_expense.action_budget_confirm()
         department_budget = self.env["budget.analytic"].create(
             {
@@ -287,9 +265,6 @@ class TestPurchaseOrderBudgetContamination(TestAccountBudgetCommon):
     budget-line column as a wildcard) -- these tests need a clean baseline."""
 
     def test_uncommitted_amount_uses_discounted_price(self):
-        """`is_above_budget`'s uncommitted-amount formula must use the same
-        discounted, tax-exclusive basis `_get_pol_query` uses for
-        `committed_amount`."""
         budget = self.env["budget.analytic"].create(
             {
                 "name": "Budget 2019: Discount",
@@ -341,8 +316,6 @@ class TestPurchaseOrderBudgetContamination(TestAccountBudgetCommon):
         self.assertFalse(order.is_above_budget)
 
     def test_uncommitted_amount_does_not_leak_across_budgets(self):
-        """A large uncommitted amount on one line must never count against a
-        different line's unrelated budget."""
         small_budget = self.env["budget.analytic"].create(
             {
                 "name": "Budget 2019: Small",

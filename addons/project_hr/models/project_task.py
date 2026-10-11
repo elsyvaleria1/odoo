@@ -115,18 +115,13 @@ class ProjectTask(models.Model):
         if value is False or value is None:
             return [Command.clear()]
         if not value:
-            # an empty command list, as the ORM reads it: nothing changes
             return []
         if all(isinstance(item, int) for item in value):
-            # a bare id list, as the ORM reads it: a falsy id names nobody
             return [Command.set([item for item in value if item])]
         return list(value)
 
     @api.model
     def _get_user_commands_against(self, commands, users) -> list:
-        # Employees without a user never show in user_ids, so replacing the
-        # users must not replace them: a set or a clear becomes the users it
-        # removes and adds, which leaves every other assignee where it is.
         current = dict.fromkeys(users.ids)
         result = dict(current)
         for command in commands:
@@ -170,8 +165,6 @@ class ProjectTask(models.Model):
             )
 
         def assignee(user_id):
-            # another company's employee is never borrowed: without one in
-            # the task's company the user is assigned directly
             return employees_of(user_id).filtered(
                 lambda employee: employee.company_id == company
             )[:1]
@@ -271,8 +264,6 @@ class ProjectTask(models.Model):
                 or self.env.company
             )
             vals.update(self._assignee_commands_for_users(user_value, company))
-        # a context default lands on user_ids as a value of its own, which a
-        # computed field that is not readonly keeps instead of composing
         without_default = self.with_context(
             {key: value for key, value in context.items() if key != "default_user_ids"}
         )
@@ -376,7 +367,6 @@ class ProjectTask(models.Model):
 
     def write(self, vals):
         if "user_ids" in vals:
-            # the caller's dict stays theirs: web_gantt_write reuses it per batch
             vals = dict(vals)
             user_value = vals.pop("user_ids")
             if not vals.keys() & ASSIGNEE_FIELDS:
@@ -432,8 +422,6 @@ class ProjectTask(models.Model):
                         )
                         task.date_assign = False
                 elif task.id in dates_assign and not task.date_assign:
-                    # project clears the date once no user is left, which an
-                    # employee without a user does not count as
                     _debug.lifecycle(
                         "task_date_assign_set",
                         trigger=(

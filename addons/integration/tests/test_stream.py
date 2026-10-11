@@ -232,8 +232,6 @@ class TestStream(TransactionCase):
         self.assertEqual(heard[-1][1], "the connection dropped")
 
     def test_a_conflict_writing_the_state_reaches_the_retry(self):
-        # it used to pass for the subject refusing the state, and left the
-        # wire thread's transaction aborted, which killed the MQTT loop
         stream = self._stream()
         conflict = psycopg.errors.SerializationFailure("concurrent update")
         with (
@@ -439,9 +437,6 @@ class TestStreamLease(TransactionCase):
         self.assertTrue(second.lease(db, self.env.registry), "released, it moves")
 
     def test_the_lease_keeps_no_snapshot_between_heartbeats(self):
-        # The lock is held for as long as the process leads. A transaction kept
-        # open that long could keep a snapshot, which would hold back the vacuum
-        # horizon of the whole database for the leader's lifetime.
         runtime = StreamRuntime()
         self.addCleanup(runtime.shutdown)
         db = self.env.cr.dbname

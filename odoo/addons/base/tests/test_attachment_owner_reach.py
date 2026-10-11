@@ -9,10 +9,6 @@ from odoo.addons.base.tests.common import make_guard_row
 
 @tagged("post_install", "-at_install")
 class TestAttachmentOwnerReach(TransactionCase):
-    # the search finds what the record-level check reads (_check_access), on
-    # every path it takes: unbounded, a page by chunks, pinned to a model, by
-    # ids; over owners the user reads or not, attachments on attachments to
-    # any depth, public and unlinked rows, and an owner model unreadable
 
     @classmethod
     def setUpClass(cls):
@@ -21,8 +17,6 @@ class TestAttachmentOwnerReach(TransactionCase):
             cls.env, login="reach_internal", groups="base.group_user"
         )
         company_b = cls.env["res.company"].create({"name": "Reach B"})
-        # an internal user of the other company: the partners hidden from the
-        # first are the ones it reads
         cls.other = new_test_user(
             cls.env,
             login="reach_other",
@@ -58,7 +52,6 @@ class TestAttachmentOwnerReach(TransactionCase):
             author = rng.choice([cls.env.user, cls.user, cls.other])
             rows.append(Attachment.with_user(author).sudo().create(values).id)
         cls.attachments = Attachment.browse(rows)
-        # an owner attachment the user may not read whatever it is on
         make_guard_row(
             cls.env,
             "ir.attachment",
@@ -69,7 +62,6 @@ class TestAttachmentOwnerReach(TransactionCase):
         cls.env.flush_all()
 
     def checked(self, Attachments, ids):
-        # the oracle: the record-level check over the rows, in the search order
         return Attachments.browse(ids)._filtered_access("read").ids
 
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")

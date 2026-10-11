@@ -48,13 +48,6 @@ class MixinTableInheritanceRoot(models.AbstractModel):
         )
 
     def _holds_referencing_rows(self, model_name: str) -> bool:
-        """Whether rows of `model_name` can point at a deleted record.
-
-        Only an ordinary table does. A view or a table query derives its rows,
-        so nothing there dangles, and searching one can cost a full scan -- a
-        view over the GPS foreign table held an asset unlink for minutes. A
-        foreign table carries its own delete guard as a trigger.
-        """
         model = self.env[model_name]
         return not model._abstract and model._is_an_ordinary_table()
 
@@ -137,13 +130,6 @@ class MixinTableInheritanceRoot(models.AbstractModel):
         self._drop_set_aside_member_columns()
 
     def _drop_set_aside_member_columns(self) -> None:
-        """A migration that moves a column off the root sets it aside as
-        `legacy_<name>` and drops it; a member table created with its columns
-        spelled out keeps its own copy of the set-aside column after the root
-        drops it (`attislocal`). Such a copy is nobody's field: it goes, with
-        the SQL views that read it, which their modules recreate. This runs
-        once the registry is loaded, after every module's migrations, never
-        between a module's schema pass and its post-migrate."""
         if not self._is_table_inheritance_root() or self.env.cr.readonly:
             return
         cr = self.env.cr
@@ -261,9 +247,6 @@ class MixinTableInheritanceRoot(models.AbstractModel):
         )
 
     def _get_type_field_name(self) -> str:
-        """The stored column naming a row's concrete model, cross-checked
-        against the table it was found in. Empty where the tree keeps none, and
-        then the table alone decides."""
         return "type"
 
     def _get_model_names_concrete(self) -> dict[int, str]:
@@ -317,14 +300,14 @@ class MixinTableInheritanceRoot(models.AbstractModel):
             )
         )
         found = {}
-        mismatched = 0  # debuglog
+        mismatched = 0
         for record_id, table, declared in self.env.cr.fetchall():
             candidates = by_table.get(table) or (root_name,)
             if declared in candidates:
                 found[record_id] = declared
             else:
                 found[record_id] = candidates[0] if len(candidates) == 1 else root_name
-                mismatched += 1  # debuglog
+                mismatched += 1
         _debug.perf.count(
             "concrete_models_queried",
             ids=len(ids),
@@ -409,7 +392,6 @@ class MixinTableInheritanceRoot(models.AbstractModel):
         return result
 
     def _is_column_dropped(self, model_name: str, field_name: str) -> bool:
-        # an uninstall drops columns and tables before the registry forgets them
         model = self.env[model_name]
         return bool(
             self.env.context.get(MODULE_UNINSTALL_FLAG) or model._custom
@@ -430,7 +412,7 @@ class MixinTableInheritanceRoot(models.AbstractModel):
                     self.env[model_name]
                     .sudo()
                     .with_context(active_test=False)
-                    .search([(field_name, "in", self.ids)])  # noqa: E8507  model varies
+                    .search([(field_name, "in", self.ids)])
                 )
                 if references:
                     found[ondelete].append((model_name, field_name, references))
@@ -477,7 +459,7 @@ class MixinTableInheritanceRoot(models.AbstractModel):
                 self.env[model_name]
                 .sudo()
                 .with_context(active_test=False)
-                .search([(field_name, "in", values)])  # noqa: E8507  model varies
+                .search([(field_name, "in", values)])
             )
             if referring:
                 _debug.lifecycle(

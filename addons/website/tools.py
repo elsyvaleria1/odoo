@@ -26,8 +26,6 @@ GRAY_COLOR_PALETTE_URL = (
     "/website/static/src/scss/options/colors/user_gray_color_palette.scss"
 )
 
-# The theme customization groups a writer names (website._customize_theme), by
-# the SCSS map the bundle compiles each from.
 THEME_CUSTOMIZATION_URLS = {
     "values": THEME_VALUES_URL,
     "palette": COLOR_PALETTE_URL,
@@ -38,8 +36,6 @@ THEME_CUSTOMIZATION_GROUPS = {
     url: group for group, url in THEME_CUSTOMIZATION_URLS.items()
 }
 
-# The per-level heading spacing: website.scss emits a level's rule only where it
-# differs from the common heading value, and the rule reads the runtime value.
 RUNTIME_HEADING_KEYS = frozenset(
     f"{level}-{prop}"
     for level in (
@@ -60,8 +56,6 @@ RE_LENGTHS = re.compile(
     r"-?(?:\d+(?:\.\d*)?|\.\d+)(?:px|rem|em|%)?(?: -?(?:\d+(?:\.\d*)?|\.\d+)(?:px|rem|em|%)?){0,3}"
 )
 
-# The header menu's box, which website.scss writes with !important: a pattern
-# per key, since the value lands verbatim in the declaration.
 RE_MENU_BOX_VALUES = {
     "menu-border-width": RE_LENGTHS,
     "menu-border-radius": RE_LENGTHS,
@@ -71,7 +65,6 @@ RE_MENU_BOX_VALUES = {
     "menu-box-shadow": re.compile(r"none|[\w\s(),.%#-]+"),
 }
 
-# Heading sizes: the rules RFS writes read min(size, fluid), both runtime.
 RUNTIME_HEADING_SIZE_KEYS = frozenset(
     {
         *(f"h{level}-font-size" for level in range(1, 7)),
@@ -139,13 +132,9 @@ RUNTIME_FONT_SIZE_KEYS = frozenset(
     }
 )
 
-# Bootstrap's RFS base value, and its rem in px: a larger font size is compiled
-# into a fluid calc() and a media query, which a runtime var() cannot follow.
 RFS_BASE_REM = 1.25
 RFS_REM_PX = 16
 
-# Combination 1 stays compiled: it is the page's own, and Bootstrap derives its
-# body, link, heading and button colours from it.
 RUNTIME_PRESET_KEYS = frozenset(
     f"o-cc{index}-{key}" for index in range(2, 6) for key in PRESET_KEYS
 )
@@ -166,8 +155,6 @@ SALES_HEADER_KEYS = frozenset(
     key for key in ELEMENT_KEYS if key.startswith("header-sales_")
 )
 
-# Values website.scss compiles a rule for only when set: runtime while the compile
-# has one, so setting a first value or clearing one compiles.
 RUNTIME_SET_ONLY_KEYS = frozenset(
     {
         "header-font-size",
@@ -196,8 +183,6 @@ RE_THEME_LENGTH = re.compile(r"-?(?:\d+(?:\.\d*)?|\.\d+)(?:px|rem|em|%)?")
 
 UNSET_THEME_VALUES = frozenset({"", "null", "NULL"})
 
-# `'NULL'` stays out: for a colour or a gradient it is an explicit none, which
-# overrides the theme's default rather than falling back to it.
 UNSET_OVERRIDE_VALUES = frozenset({"", "null"})
 
 RE_THEME_GRADIENT = re.compile(

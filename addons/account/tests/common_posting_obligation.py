@@ -10,10 +10,6 @@ def _is_invoice(move):
 
 @contextmanager
 def holding_invoice_posting(env, holds=_is_invoice):
-    """An obligation on posting that holds every move `holds` names (every
-    invoice-type move by default), as an approval required of each would: its
-    door asks instead of posting, and its checkpoint refuses. A move the
-    transaction admitted for `post` passes."""
     Obligation = type(env["ir.access.obligation"])
     at_door, at_checkpoint = Obligation._at_door, Obligation._at_checkpoint
 

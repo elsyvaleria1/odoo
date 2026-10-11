@@ -9,7 +9,6 @@ class ProductProduct(models.Model):
         params = super()._load_pos_data_fields(config)
         params += ["all_product_tag_ids"]
 
-        # add missing product fields used in the reward_product_domain
         missing_fields = self.env["loyalty.reward"]._get_domain_fields_reward_product(
             config
         ) - set(params)

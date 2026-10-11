@@ -5,9 +5,6 @@ MODEL = "res.partner.industry"
 
 @tagged("post_install", "-at_install")
 class TestStoredAccessDomainsResolve(TransactionCase):
-    # the shape production's noupdate base.user_device_logs had once
-    # auth.user.client.address lost user_id: a row saved when its domain was valid, kept
-    # as it was while the model changed under it
 
     def _row(self, domain):
         row = self.env["ir.access"].create(
@@ -34,7 +31,6 @@ class TestStoredAccessDomainsResolve(TransactionCase):
         ]
 
     def test_every_stored_domain_of_this_database_resolves(self):
-        # run against a production restore after -u base, this is its gate
         unresolved = [
             f"{access.id} {access.model_id.model}: {missing}"
             for access, missing in self.env["ir.access"]._unresolved_domains()

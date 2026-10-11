@@ -178,17 +178,6 @@ class HrVersion(models.Model):
 
     @api.constrains("contract_date_start", "contract_date_end", "departure_reason_id")
     def _check_contract_dates_cover_validated_payslips(self) -> None:
-        """A validated payslip is a paid one: its period cannot fall outside
-        the contract it was computed from. Regular payslips are already
-        protected from this by their validated work entries, which
-        hr_work_entry refuses to delete, but an off-cycle payslip -- a bonus,
-        a settlement -- validates without validating any work entry, so
-        nothing else stands in the way there.
-
-        A version with a departure reason is left out: closing the contract is
-        the point of registering a departure, and wizard.hr.employee.register.departure writes
-        the reason before it writes the end date.
-        """
         conflicts = []
         for version in self.filtered(
             lambda v: v.contract_date_start and not v.departure_reason_id
@@ -227,8 +216,6 @@ class HrVersion(models.Model):
     def _compute_schedule_pay(self) -> None:
         for version in self:
             if version.structure_type_id:
-                # default_schedule_pay is optional on the type: a cleared
-                # selection must not blank the version's schedule.
                 version.schedule_pay = (
                     version.structure_type_id.default_schedule_pay or "monthly"
                 )
@@ -335,17 +322,11 @@ class HrVersion(models.Model):
         )
 
     def _get_occupation_dates(self, include_future_contracts=False):
-        # Takes several versions and returns all the versions under the same occupation (i.e. the same
-        # work rate + the date_from and date_to)
-        # include_future_contracts will use versions where the version_date_start is posterior
-        # compared to today's date
         result = []
         done_versions = self.env["hr.version"]
         date_today = fields.Date.today()
 
         def remove_gap(version, other_versions, before=False):
-            # We do not consider a gap of more than 4 days to be a same occupation
-            # other_versions is considered to be ordered correctly in function of `before`
             current_date = version.date_start if before else version.date_end
             for i, other_version in enumerate(other_versions):
                 if not current_date:
@@ -363,7 +344,7 @@ class HrVersion(models.Model):
         for version in self:
             if version in done_versions:
                 continue
-            versions = version  # hr.version(38,)
+            versions = version
             date_from = version.date_start
             date_to = version.date_end
             all_versions = (
@@ -372,7 +353,7 @@ class HrVersion(models.Model):
                     lambda c: c.date_start <= date_today or include_future_contracts
                 )
                 .sorted("date_start", reverse=True)
-            )  # hr.version(29, 37, 38, 39, 41) -> hr.version(29, 37, 39, 41)
+            )
             before_versions = all_versions.filtered_domain(
                 [("date_start", "<", version.date_start)]
             )
@@ -418,7 +399,6 @@ class HrVersion(models.Model):
         return super()._get_contract_wage_field_name()
 
     def action_view_payslips(self):
-        # [XBO] TODO: to remove if we don't want to display the button in the list view of version
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "hr_payroll.action_view_hr_payslip_month_form"
@@ -438,14 +418,9 @@ class HrVersion(models.Model):
         )
 
     def _preprocess_work_hours_data(self, work_data, date_from, date_to) -> None:
-        """
-        Method is meant to be overriden, see hr_payroll_attendance
-        """
         return
 
     def get_work_hours(self, date_from, date_to, domain=None):
-        # Get work hours between 2 dates (datetime.date), grouped per company
-        # so _get_work_hours can look up each company's calendar/timezone.
         assert not isinstance(date_from, datetime)
         assert not isinstance(date_to, datetime)
 
@@ -455,8 +430,6 @@ class HrVersion(models.Model):
         for version in self:
             versions_by_company[version.company_id] += version
 
-        # We don't need the timezone immediately here, but we need the uniqueness
-        # of the key so that we can guarantee one timezone per set of versions.
         _debug.perf.count(
             "work_hours_by_company",
             versions=self,
@@ -473,15 +446,6 @@ class HrVersion(models.Model):
         return work_data
 
     def _get_work_hours(self, date_from, date_to, domain=None):
-        """
-        Returns the amount (expressed in hours) of work
-        for a version between two dates.
-        If called on multiple versions, sum work amounts of each version.
-
-        :param date_from: The start date
-        :param date_to: The end date
-        :returns: a dictionary {work_entry_id: hours_1, work_entry_2: hours_2}
-        """
         assert not isinstance(date_from, datetime)
         assert not isinstance(date_to, datetime)
 
@@ -519,7 +483,6 @@ class HrVersion(models.Model):
             ]
         )
 
-        # Check if no new contracts starting after the end of the expiring one
         nearly_expired_versions_without_new_versions = self.env["hr.version"]
         new_versions_grouped_by_employee = {
             employee.id
@@ -543,7 +506,6 @@ class HrVersion(models.Model):
         return super()._get_whitelist_fields_from_template() + ["payroll_properties"]
 
     def _payslipped_versions(self) -> Self:
-        """The versions a validated or paid payslip was computed from."""
         payslips = (
             self.env["hr.payslip"]
             .sudo()
@@ -579,14 +541,10 @@ class HrVersion(models.Model):
                 )
             )
         if self and not self.env.context.get("tracking_disable"):
-            # Force to track wage in employee form if any changes is found after version write
             self.employee_id._track_prepare(
                 {version.sudo()._get_contract_wage_field_name() for version in self}
             )
         res = super().write(vals)
-        # sudo like the _track_prepare lookup above: the field-name resolution
-        # reads wage_type, which is payroll-groups-gated, and the writer only
-        # needs hr.version write rights.
         dependendant_fields = self.sudo()._get_fields_that_recompute_payslip()
         if any(key in dependendant_fields for key in vals):
             _debug.pipeline(
@@ -601,7 +559,6 @@ class HrVersion(models.Model):
         return res
 
     def copy(self, default=None):
-        # todo: Remove this override once properties properly work with copy
         new_version = super().copy(default)
         if new_version.sudo().structure_id == self.sudo().structure_id:
             new_version.write({"payroll_properties": dict(self.payroll_properties)})

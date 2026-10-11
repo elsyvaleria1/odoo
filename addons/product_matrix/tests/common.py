@@ -5,8 +5,6 @@ class TestMatrixCommon(common.HttpCase):
     def setUp(self):
         super().setUp()
 
-        # Prepare relevant test data
-        # This is not included in demo data to avoid useless noise
         product_attributes = self.env["product.attribute"].create(
             [
                 {"name": "PA1", "create_variant": "always", "sequence": 1},

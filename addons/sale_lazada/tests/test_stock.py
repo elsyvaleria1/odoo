@@ -76,7 +76,6 @@ class TestStock(common.TestLazadaCommon, TestStockCommon):
         self.move_1.initialize_lazada_order_items()
 
     def test_pack_lazada_package(self):
-        """Ensure Lazada pickings waiting for packing trigger shipment provider fetch and pack."""
         self.picking.lazada_shipping_allocate_type = False
         self.picking.package_extern_id = False
         self.move_1.lazada_order_item_ids.write({"status": "draft"})
@@ -93,7 +92,6 @@ class TestStock(common.TestLazadaCommon, TestStockCommon):
         self.assertEqual(self.picking.lazada_shipping_allocate_type, "NTFS")
 
     def test_fetch_lazada_shipping_label(self):
-        """Ensure fetching shipping labels attaches documents and schedules RTS update."""
         self.picking.package_extern_id = "PKG-001"
         self.picking.carrier_tracking_ref = "TRACK-001"
         self.move_1.lazada_order_item_ids.write({"status": "confirmed"})
@@ -128,7 +126,6 @@ class TestStock(common.TestLazadaCommon, TestStockCommon):
         )
 
     def test_set_lazada_rts(self):
-        """Ensure Ready to Ship API call updates the Lazada package status."""
         self.picking.package_extern_id = "PKG-002"
         self.move_1.lazada_order_item_ids.write({"status": "confirmed"})
 
@@ -147,7 +144,6 @@ class TestStock(common.TestLazadaCommon, TestStockCommon):
         )
 
     def test_update_lazada_shipping_allocation(self):
-        """Ensure the shipment provider fetch stores Lazada allocate type."""
         self.picking.lazada_shipping_allocate_type = False
         self.move_1.lazada_order_item_ids.write({"status": "draft"})
 

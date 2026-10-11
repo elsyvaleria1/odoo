@@ -38,7 +38,6 @@ def _load_account_return_data(env) -> None:
         [("account_config_id.chart_template", "!=", False)], order="parent_path"
     ):
         ChartTemplate = env["account.chart.template"].with_company(company)
-        # Set up the tax returns journal after the CoA was already installed.
         ChartTemplate._load_data(
             {
                 "account.journal": ChartTemplate._get_account_reports_journal(

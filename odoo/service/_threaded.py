@@ -114,11 +114,11 @@ def _cancel_thread_queries(thread: threading.Thread, logger: logging.Logger) -> 
 
 
 _CONSOLE_EVENT_SIGNALS = {
-    0: signal.SIGINT,  # CTRL_C_EVENT
-    1: signal.SIGINT,  # CTRL_BREAK_EVENT
-    2: signal.SIGTERM,  # CTRL_CLOSE_EVENT
-    5: signal.SIGTERM,  # CTRL_LOGOFF_EVENT
-    6: signal.SIGTERM,  # CTRL_SHUTDOWN_EVENT
+    0: signal.SIGINT,
+    1: signal.SIGINT,
+    2: signal.SIGTERM,
+    5: signal.SIGTERM,
+    6: signal.SIGTERM,
 }
 
 
@@ -190,8 +190,8 @@ class ThreadedServer(CommonServer):
 
         now = time.monotonic()
         settings = self.settings
-        watched = 0  # debuglog
-        longest_s = 0.0  # debuglog
+        watched = 0
+        longest_s = 0.0
         for thread in threading.enumerate():
             thread_type = getattr(thread, "type", None)
             if (
@@ -203,18 +203,13 @@ class ThreadedServer(CommonServer):
             if not start_time:
                 continue
             elapsed = now - start_time
-            watched += 1  # debuglog
-            longest_s = max(longest_s, elapsed)  # debuglog
+            watched += 1
+            longest_s = max(longest_s, elapsed)
             budget = settings.get_real_time_budget(thread_type)
             if budget <= 0 or elapsed <= budget:
                 continue
             doing = describe_thread_work(thread)
             if self._cancelled_overruns.get(thread) != start_time:
-                # First verdict on this unit of work: cancel what it is
-                # running in PostgreSQL and give it one monitor pass to
-                # return.  Most overruns are one query, and the client gets
-                # an error instead of the whole server reloading under
-                # everyone.
                 self._cancelled_overruns[thread] = start_time
                 self._overruns_cancelled += 1
                 cancelled = self._cancel_thread_queries(thread)
@@ -261,8 +256,6 @@ class ThreadedServer(CommonServer):
             )
             self.limits_reached_threads.add(thread)
             self._overrun_start_times[thread] = start_time
-        # The verdict stands for the unit of work it was given on: the end of
-        # that request, sweep or job clears it, as does the thread's exit.
         for thread in list(self._cancelled_overruns):
             if not thread.is_alive() or self._overrun_work_finished(
                 thread, self._cancelled_overruns[thread]
@@ -334,9 +327,6 @@ class ThreadedServer(CommonServer):
         )
         thread = current_worker_thread()
         for db_name in db_names:
-            # The limit monitor reads this thread's `start_time` to decide
-            # whether a sweep is over its budget, so each database is its own
-            # unit of work rather than the whole due set being one.
             thread.start_time = time.monotonic()
             try:
                 sweep_database(db_name, process_jobs, cron_logger, release=release)
@@ -473,9 +463,6 @@ class ThreadedServer(CommonServer):
         _debug.lifecycle("server.cron.thread_stopped", label=label, number=number)
 
     def _acquire_listener_stop_fd(self) -> int:
-        # One pipe wakes every listener out of its LISTEN wait when the server
-        # stops, so each closes its own session instead of leaving it to the
-        # kernel at exit.
         if self._listener_stop_pipe is None:
             self._listener_stop_pipe = os.pipe2(os.O_NONBLOCK | os.O_CLOEXEC)
         return self._listener_stop_pipe[0]
@@ -487,8 +474,6 @@ class ThreadedServer(CommonServer):
                 os.write(self._listener_stop_pipe[1], b".")
         floor = time.monotonic() + LISTENER_JOIN_TIMEOUT_S
         deadline = max(deadline, floor)
-        # A thread the limit monitor already flagged over its budget is what
-        # this reload is leaving behind; it gets the floor, not the bound.
         waited = [
             t
             for t in self._listener_threads
@@ -616,15 +601,9 @@ class ThreadedServer(CommonServer):
                 "Hit CTRL-C again or send a second signal to force the shutdown."
             )
 
-        # One graceful-stop bound covers the HTTP drain and the listener
-        # threads together, as the prefork master gives all its workers one.
-        # Listeners are told first so their sessions close while the HTTP
-        # drain runs; they are joined after it, for whatever is left.
         timeout = get_graceful_stop_timeout(self.logger)
         deadline = time.monotonic() + timeout
         self._listener_stop.set()
-        # The streams this process holds close now, leader locks released,
-        # so the next server reopens them rather than waiting on a dead lease.
         _stream.shutdown()
         if self.httpd:
             self.httpd.shutdown()
@@ -651,8 +630,6 @@ class ThreadedServer(CommonServer):
         logging.shutdown()
 
     def _count_stuck_http_threads(self) -> int:
-        # A thread over its time limit is what a reload is leaving behind, so
-        # the drain does not wait for it.
         return sum(
             1
             for thread in self.limits_reached_threads
@@ -772,9 +749,6 @@ class ThreadedServer(CommonServer):
 
 
 class WebsocketServer(CommonServer):
-    # `evented` is the `odoo-bin evented` subcommand, the `odoo.evented` flag
-    # and the metric label; the name says what the process is: the
-    # websocket port, on threads.  Gevent left the fork with the http rewrite.
     flavor = "evented"
     port_setting = "gevent_port"
 
@@ -872,8 +846,6 @@ class WebsocketServer(CommonServer):
             signal.signal(signal.SIGUSR2, log_ormcache_stats)
 
         try:
-            # prefork runs the cron, job and stream listeners as children
-            # of their own: this process holds none of their permits
             self.httpd = ThreadedHTTPServer(
                 self.interface,
                 self.port,
@@ -891,9 +863,6 @@ class WebsocketServer(CommonServer):
                 "server.evented.start", interface=self.interface, port=self.port
             )
             if IS_POSIX:
-                # The watchdog asks for a restart with a SIGTERM to this
-                # process; started here, that signal can only land inside
-                # `serve_forever()`, where it is a clean stop.
                 threading.Thread(
                     target=self.run_watchdog,
                     daemon=True,
@@ -920,9 +889,6 @@ class WebsocketServer(CommonServer):
         super().stop()
 
     def run(self, preload: list[str] | None = None, stop: bool = False) -> int | None:
-        # `preload` is the master's db_name list, which its argv hands every
-        # subprocess; this server loads registries on demand, so it is not a
-        # mistake to report.
         _debug.pipeline(
             "server.evented.run", preload=len(preload or ()), stop=stop, pid=self.pid
         )

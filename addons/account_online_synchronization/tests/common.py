@@ -56,19 +56,6 @@ class AccountOnlineSynchronizationCommon(AccountTestInvoicingCommon):
         end_to_end_uuid=None,
         transaction_details=False,
     ):
-        """Create an online transaction granularly.
-
-        :param transaction_identifier: Online identifier of the transaction, by default transaction_id from the
-                                       setUp. If used, transaction_id is not incremented.
-        :param date: Date of the transaction, by default the date of today
-        :param payment_ref: Label of the transaction
-        :param amount: Amount of the transaction, by default equals 10.0
-        :param foreign_currency_code: Code of transaction's foreign currency
-        :param amount_currency: Amount of transaction in foreign currency, update transaction only if foreign_currency_code is given, by default equals 8.0
-        :param end_to_end_uuid: Unique identifier of the transaction.
-        :param transaction_details: Whether the transaction details should be included or not, by default False
-        :return: A dictionary representing an online transaction (not formatted)
-        """
         transaction_identifier = (
             transaction_identifier
             if transaction_identifier is not None
@@ -102,11 +89,6 @@ class AccountOnlineSynchronizationCommon(AccountTestInvoicingCommon):
         return transaction
 
     def _create_online_transactions(self, dates):
-        """Create one transaction per given date, each with an amount of 10.0.
-
-        :param dates: A list of dates, one transaction is created for each given date.
-        :return: A formatted list of transactions
-        """
         transactions = []
         for date in dates:
             transactions.append(self._create_one_online_transaction(date=date))

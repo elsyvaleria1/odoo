@@ -52,9 +52,6 @@ class TimerTimer(models.Model):
             record.is_timer_running = record.timer_start and not record.timer_pause
 
     def _invalidate_timed_records(self, timers) -> None:
-        # user_timer_id is computed, not stored, and its related fields
-        # (timer_start, timer_pause, is_timer_running) are cached beside it, so
-        # the timed record forgets all of them whenever a timer appears or goes.
         for res_model, res_id, parent_model, parent_id in timers:
             self._invalidate_timer_fields(self.env[res_model].browse(res_id))
             if parent_model and parent_id:
@@ -98,10 +95,6 @@ class TimerTimer(models.Model):
             self.write({"timer_start": fields.Datetime.now()})
 
     def action_timer_stop(self):
-        """Stop the timer and return the spent minutes since it started
-        :return minutes_spent if the timer is started,
-                otherwise return False
-        """
         if not self.timer_start:
             return False
         minutes_spent = self._get_minutes_spent()
@@ -111,7 +104,6 @@ class TimerTimer(models.Model):
     def _get_minutes_spent(self):
         start_time = self.timer_start
         stop_time = fields.Datetime.now()
-        # timer was either running or paused
         if self.timer_pause:
             start_time += stop_time - self.timer_pause
         return (stop_time - start_time).total_seconds() / 60
@@ -127,16 +119,10 @@ class TimerTimer(models.Model):
     @api.model
     @api.readonly
     def get_server_time(self):
-        """Returns the server time.
-        The timer widget needs the server time instead of the client time
-        to avoid time desynchronization issues like the timer beginning at 0:00
-        and not 23:59 and so on.
-        """
         return fields.Datetime.now()
 
     @api.model
     def _get_timers(self):
-        """Get timers from the current user"""
         return self.env["timer.timer"].search([("user_id", "=", self.env.user.id)])
 
     def _get_related_document(self):

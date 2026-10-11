@@ -41,7 +41,6 @@ class AccountAnalyticDistributionModel(models.Model):
 
     @api.constrains("company_id")
     def _check_company_accounts(self) -> None:
-        """Ensure accounts specific to a company isn't used in any distribution model that wouldn't be specific to the company"""
         query = SQL(
             """
             SELECT model.id
@@ -66,8 +65,6 @@ class AccountAnalyticDistributionModel(models.Model):
 
     @api.model
     def _get_distribution(self, vals):
-        """Returns the combined distribution from all matching models based on the vals dict provided
-        This method should be called to prefill analytic distribution field on several models"""
         applicable_models = self._get_applicable_models(
             {k: v for k, v in vals.items() if k != "related_root_plan_ids"}
         )
@@ -77,7 +74,6 @@ class AccountAnalyticDistributionModel(models.Model):
             "related_root_plan_ids", self.env["account.analytic.plan"]
         )
         for model in applicable_models:
-            # ignore model if it contains an account having a root plan that was already applied
             if not applied_plans & model.distribution_analytic_account_ids.root_plan_id:
                 res |= model.analytic_distribution or {}
                 applied_plans += model.distribution_analytic_account_ids.root_plan_id
@@ -99,9 +95,6 @@ class AccountAnalyticDistributionModel(models.Model):
 
     @api.model
     def _get_candidate_models(self) -> Self:
-        # a lookup runs once per distinct argument set -- one per invoice line
-        # of a batch, typically -- and the models are few: every model the
-        # user may read is fetched once per transaction and matched in Python
         per_env = CANDIDATE_MODELS(self.env)
         key = (self.env.uid, self.env.su, tuple(self.env.companies.ids))
         if key not in per_env:
@@ -110,12 +103,5 @@ class AccountAnalyticDistributionModel(models.Model):
 
     def _create_domain(self, fname, value) -> list:
         if fname == "partner_tag_id":
-            # Build a new list instead of `value += [False]`: the list belongs to
-            # the caller's vals dict, and callers memoize on that dict.
-            # `account.move.line._compute_analytic_distribution` keys a frozendict
-            # on it, so mutating it after insertion made every later lookup compare
-            # unequal -- the cache missed on every line and re-ran this search once
-            # per invoice line. Repeated calls also kept appending (`[False, False,
-            # ...]`).
             return [(fname, "in", [*value, False])]
         return [(fname, "in", [value, False])]

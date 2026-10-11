@@ -17,8 +17,6 @@ class ApprovalApprover(models.Model):
         notifier = self.env["telegram.approval.notifier"]
         if not notifier._feature_active():
             return result
-        # queued: Telegram is reached after commit, so its failures cannot
-        # abort the approval
         for approver in self:
             notifier._notify_approver(approver)
         return result

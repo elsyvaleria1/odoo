@@ -33,13 +33,9 @@ class TelegramBot(models.Model):
         return bool(self.notify_company_phones_only and account and not account.phone)
 
     def _get_company_phone_numbers(self, user) -> set[str]:
-        """The numbers, in E.164, of the company phones `user` carries, in the
-        companies this bot serves them in."""
         self.check_singleton()
         category = self.env.ref("device_mobile.device_category_mobile_phone")
         companies = self._served_companies(user)
-        # read as `user` in those companies, whoever asks: the poster's or the
-        # webhook's companies decide nothing
         devices = (
             self.env["device.device"]
             .with_user(user)

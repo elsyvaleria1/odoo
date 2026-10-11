@@ -28,8 +28,6 @@ _MAX_CONSECUTIVE_FAILURES = 2
 
 _DISABLE_COOLDOWN_S = 60.0
 
-# a worker that cannot start (no node, no `npm install`) will not start on
-# the next call either: nothing changes that but an install
 _UNAVAILABLE_COOLDOWN_S = 600.0
 
 
@@ -50,8 +48,6 @@ class _LexerWorker:
         self._disabled_until = time.monotonic() + cooldown_s
 
     def _forget_after_fork(self) -> None:
-        # the worker and its pipes belong to the parent: signalling it or
-        # reading its replies from here would take them from the parent
         proc, self._proc = self._proc, None
         self._lock = threading.Lock()
         self._inbuf = b""
@@ -81,9 +77,6 @@ class _LexerWorker:
         os.set_blocking(proc.stdout.fileno(), False)
         self._inbuf = b""
         worker_process.close_at_shutdown(close_lexer_worker)
-        # the worker says it is ready once es-module-lexer has loaded: one that
-        # dies before that (the package missing) is a worker that cannot start,
-        # not a request that failed
         try:
             greeting = json_loads(
                 self._read_line(proc, time.monotonic() + _REQUEST_TIMEOUT_S)
@@ -164,8 +157,6 @@ class _LexerWorker:
         if self._disabled() or os.name != "posix":
             return None
         with self._lock:
-            # a caller that queued on the lock while another paused the
-            # worker must not spend the pause's fresh attempts
             if self._disabled():
                 return None
             for _attempt in range(2):
@@ -241,12 +232,8 @@ def close_lexer_worker() -> None:
     clear_lex_cache()
 
 
-# a full install lexes ~10k modules: a bound below the corpus evicts every
-# entry before a scan reads it again, so each one relexes all of them
 _LEX_CACHE_ENTRIES = 16384
 
-# keyed on a digest: the sources themselves (every JS file of a registry) would
-# otherwise stay alive as keys for as long as the cache does
 _lex_cache: OrderedDict[bytes, dict[str, Any]] = OrderedDict()
 _lex_cache_lock = threading.Lock()
 
@@ -256,9 +243,6 @@ def lex_module(src: str) -> dict[str, Any] | None:
 
 
 def get_evaluation_uses(src: str) -> list[dict[str, Any]] | None:
-    # The imported bindings a module reads while it is evaluated -- a class
-    # heritage, a top-level call, a static field -- as {"n": specifier,
-    # "name": binding, "line": n}; None when the worker cannot say.
     response = _ask(src, "evaluation_uses")
     return None if response is None else response["uses"]
 
@@ -278,7 +262,6 @@ def _ask(src: str, op: str | None) -> dict[str, Any] | None:
             response = _worker.request(src) if op is None else _worker.request(src, op)
             span.set(lexed=response is not None and response.get("ok") is not False)
         if response is None:
-            # the worker was unreachable: the next call asks again
             return None
         with _lex_cache_lock:
             _lex_cache[key] = response
@@ -294,7 +277,7 @@ def clear_lex_cache() -> None:
 
 
 def _reset_after_fork() -> None:
-    global _lex_cache_lock  # noqa: PLW0603  a lock held by another thread at fork stays held in the child
+    global _lex_cache_lock
     _lex_cache_lock = threading.Lock()
     _worker._forget_after_fork()
 

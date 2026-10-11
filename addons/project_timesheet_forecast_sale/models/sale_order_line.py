@@ -29,7 +29,6 @@ class SaleOrderLine(models.Model):
             SaleOrderLine, self - planning_forecast_sols
         )._compute_planning_hours_planned()
         if planning_forecast_sols:
-            # Search for validated timesheets, and the most recent date of validated timesheets
             group_unit_amount = self.env["account.analytic.line"]._read_group(
                 [
                     ("validated", "=", True),
@@ -42,7 +41,6 @@ class SaleOrderLine(models.Model):
             mapped_unit_amount = defaultdict(float)
             planning_domains = []
             for so_line, unit_amount_sum, date_max in group_unit_amount:
-                # Build a domain to search for slots, for every SOL, beginning from the most recent validated timesheet
                 tmp_domain = [
                     ("sale_line_id", "=", so_line.id),
                     (
@@ -59,7 +57,6 @@ class SaleOrderLine(models.Model):
                 if item not in mapped_unit_amount
             ]
             if sol_without_validated_aal:
-                # Fill the domain with SOL which doesn't have validated timesheets (so no start_datetime constraint)
                 planning_domains.append(
                     [
                         ("sale_line_id", "in", sol_without_validated_aal),
@@ -67,7 +64,6 @@ class SaleOrderLine(models.Model):
                     ]
                 )
             planning_domain = Domain.OR(planning_domains)
-            # Search for the allocated hours on the slots in the domain
             group_allocated_hours = PlanningSlot.with_context(
                 sale_planning_prevent_recompute=True
             )._read_group(
@@ -89,13 +85,11 @@ class SaleOrderLine(models.Model):
             }
             uom_hour = self.env.ref("base.product_uom_hour")
             for sol in planning_forecast_sols:
-                # Convert timesheeted unit amounts to hours
                 converted_unit_amount = sol.company_id.hr_timesheet_config_id.project_time_mode_id._get_quantity_in_unit(
                     mapped_unit_amount.get(sol.id, 0.0),
                     uom_hour,
                     raise_if_failure=False,
                 )
-                # update the planning hours planned
                 sol.planning_hours_planned = (
                     mapped_allocated_hours.get(sol.id, 0.0) + converted_unit_amount
                 )

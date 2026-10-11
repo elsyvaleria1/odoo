@@ -235,8 +235,6 @@ class SetExpression:
         if factor == self:
             return UNIVERSAL_UNION
 
-        # a simplification, and None already means "no simpler form": an
-        # expression whose inversion exceeds the bound is kept as it is
         try:
             rfactor = ~factor
             if rfactor.is_empty() or rfactor.is_universal():
@@ -370,12 +368,6 @@ class SetExpression:
 
 
 class _UnionIndex:
-    # The terms of a union under construction, in insertion order, indexed so that
-    # merging a term looks only at the terms _union_merge can fold it into: one it
-    # is <= to, one <= to it, or one over the same leaf ids. Inter a <= Inter b holds
-    # only if every key of b is in a.reach(), which the maps below answer without a
-    # pairwise scan. Candidates keep insertion order, so the first term that merges
-    # is the one a scan of the whole union would have found.
     __slots__ = (
         "_by_ids",
         "_by_key",
@@ -456,9 +448,6 @@ class _UnionIndex:
         return [(seq, entries[seq]) for seq in sorted(found)]
 
     def _subsuming(self, reach: frozenset[LeafKey]) -> Iterable[int]:
-        # the terms whose every key lies in reach: either every subset of reach of
-        # a width some term has, or every term sharing a key with it, whichever the
-        # index says is fewer to look at
         widths = [w for w, n in self._widths.items() if n and w <= len(reach)]
         subsets = sum(math.comb(len(reach), w) for w in widths)
         sharing = sum(len(self._by_key.get(key, ())) for key in reach)
@@ -482,7 +471,6 @@ class _UnionIndex:
         ]
 
 
-# below this many terms a scan costs less than consulting the index
 _SCAN_LIMIT = 8
 
 
@@ -621,9 +609,6 @@ class Leaf:
         return self.inverse
 
     def reach(self) -> frozenset[tuple[LeafIdType, bool]]:
-        # the keys of every non-special leaf this one is <= to, read off __le__:
-        # subsets and supersets are one relation seen from both ends, and disjoints
-        # are symmetric, so the leaves above this one are found from this one
         if self._reach is None:
             if self.negative:
                 self._reach = frozenset((sub_id, True) for sub_id in self.subsets)

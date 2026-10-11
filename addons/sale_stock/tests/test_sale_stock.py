@@ -3065,9 +3065,6 @@ class TestSaleStock(TestSaleStockCommon, ValuationReconciliationTestCommon):
             2,
             "Expected two pickings: Stock->Output and Output->Customer",
         )
-        # selected by destination, not by position: `stock.picking._order` ends
-        # `id desc`, and both pickings carry the same date_planned, so indexing
-        # asserts which one the procurement happened to create last
         to_transit = pickings.filtered(
             lambda picking: picking.location_dest_id == transit_location
         )

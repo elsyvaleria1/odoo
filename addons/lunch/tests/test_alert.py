@@ -24,12 +24,12 @@ class TestAlarm(TestsCommon):
         )
         self.assertEqual(
             cron_ny.nextcall, datetime(2021, 1, 29, 15, 0)
-        )  # New-york is UTC-5
+        )
 
         tokyo_cron = self.alert_tokyo.cron_id.sudo()
         self.assertEqual(
             tokyo_cron.nextcall, datetime(2021, 1, 29, 23, 0)
-        )  # Tokyo is UTC+9 but the cron is posponed
+        )
 
     @common.users("cle-lunch-manager")
     def test_cron_sync_active(self):
@@ -63,7 +63,6 @@ class TestAlarm(TestsCommon):
             cron_ny.nextcall, old_nextcall - timedelta(hours=5) + timedelta(days=1)
         )
 
-        # Simulate cron execution
         cron_ny.lastcall = old_nextcall - timedelta(hours=5)
         cron_ny.nextcall += timedelta(days=1)
 

@@ -9,7 +9,6 @@ class TestTodoMailFeatures(TestProjectCommon, MailCommon):
     def test_todo_mail_alais_assignees_from_recipient_list(self):
         todo_alias = self.env.ref("project_enterprise_hr.mail_alias_todo")
         self.assertTrue(todo_alias, "To-Do alais has been archived or deleted")
-        # Creating employee for a internal user as the to do alias can only be used by employees
         self.user_projectmanager.action_create_employee()
         self.assertTrue(
             self.user_projectmanager.employee_id,
@@ -34,7 +33,6 @@ class TestTodoMailFeatures(TestProjectCommon, MailCommon):
         )
         cc = f"{new_user.email},{new_partner.email},"
         with self.mock_mail_gateway():
-            # mail from user having employee linked
             task = self.format_and_process(
                 MAIL_TEMPLATE,
                 self.user_projectmanager.email,
@@ -43,7 +41,6 @@ class TestTodoMailFeatures(TestProjectCommon, MailCommon):
                 subject="Test todo assignees from address of mail",
                 target_model="project.task",
             )
-            # mail from user not having employee linked
             task_user = self.format_and_process(
                 MAIL_TEMPLATE,
                 self.user_projectuser.email,
@@ -53,7 +50,6 @@ class TestTodoMailFeatures(TestProjectCommon, MailCommon):
             )
             self.flush_tracking()
         self.assertTrue(task, "To-Do has not been created from a incoming email")
-        # only internal users of "from address" are set as asssignees
         self.assertIn(
             self.user_projectmanager,
             task.user_ids,

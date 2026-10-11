@@ -22,9 +22,6 @@ from odoo.addons.web_studio.controllers.keyed_xml_differ import (
 
 _logger = logging.getLogger(__name__)
 
-# We are dealing with an HTML document that has QWeb syntax in it (<t />, t-att etc..)
-# in addition to some attributes that are specific to the reportEditor (oe-..., ws-...)
-# We cannot use the tools.mail cleaner for that.
 html_cleaner = Cleaner(safe_attrs_only=False, remove_unknown_tags=False)
 
 
@@ -36,20 +33,6 @@ def html_to_xml_tree(stringHTML):
 
 
 def _group_t_call_content(t_call_node):
-    """Groups the content of a t_call_node according to whether they are "real" (div, h2 etc...)
-    or mere <t t-set="" />. In the QWeb semantics the former will form the content inserted
-    in place of the <t t-out="0" /> nodes.
-
-    param etree.Element t_call_node: a node that is of the form <t t-call="sometemplace">....</t>
-
-    returns dict:
-        {
-            [call_group_key: str]: {
-                "nodes": list[etree.Element],
-                "are_real": bool,
-            }
-        }
-    """
     node_groups = {}
     for index, (k, g) in enumerate(
         groupby(
@@ -64,22 +47,6 @@ def _group_t_call_content(t_call_node):
 
 
 def _collect_t_call_content(tree):
-    """Collect every node that has a t-call attribute in tree and their content in an object.
-    Each node is assigned an ID that will be necessary in def _recompose_arch_with_t_call_parts.
-    Since the report editor inlines the t-calls and puts their content in the t-row="0" of the called
-    template, we endup with some pieces of view scattered everywhere.
-    This function prepares the battlefield by identifying nodes that belong to a certain original tree
-
-    param etree.Element tree: the root element of a tree.
-
-    returns dict:
-        {
-            [call_key: str]: {
-                "node": etree.Element,
-                "content": dict (see def _group_t_call_content)
-            }
-        }
-    """
     t_calls = {}
     t_call_nodes = [tree] if tree.get("t-call") else []
     for index, tcall in enumerate(t_call_nodes + tree.findall(".//*[@t-call]")):
@@ -95,14 +62,6 @@ def _collect_t_call_content(tree):
 def _recompose_arch_with_t_call_parts(
     main_tree, origin_call_groups, changed_call_groups
 ):
-    """Reciprocal to def _collect_t_call_content. Except each TCallGroup's content may have
-    changed. In the main_tree, which has been cleaned from all its t-call contents, append either
-    the content that has changed, or the original one.
-
-    param etree.Element main_tree: a tree which t-call do not have children, and must have ids
-    param dict origin_call_groups: see def _collect_t_call_content
-    param dict changed_call_groups: see def _collect_t_call_content
-    """
     for call_key in sorted(origin_call_groups.keys(), key=int):
         origin = origin_call_groups[call_key]["content"]
         changed = changed_call_groups.get(call_key, {}).get("content")
@@ -304,7 +263,6 @@ def _guess_qweb_variables(tree, report, qcontext):
     def recursive(node, qcontext, keys_info):
         if "t-foreach" in node.attrib:
             expr = node.get("t-foreach")
-            # compile
             new_var = node.get("t-as")
             qcontext = dict(qcontext)
             keys_info = dict(keys_info)
@@ -507,7 +465,6 @@ class WebStudioReportController(main.WebStudioController):
                 "report_name": views[0].name,
             }
         )
-        # make it available in the print menu
         report.create_action()
 
         return {
@@ -585,8 +542,6 @@ class WebStudioReportController(main.WebStudioController):
                 "arch": etree.tostring(arch, encoding="utf-8", pretty_print=True),
             }
         )
-        # FIXME: When website is installed, we need to set key as xmlid to search on a valid domain
-        # See '_view_obj' in 'website/model/ir.ui.view'
         view.name = new_view_document_xml_id
         view.key = new_view_document_xml_id
 
@@ -627,7 +582,6 @@ class WebStudioReportController(main.WebStudioController):
             if hasattr(e, "context") and isinstance(
                 e.context.get("view"), models.BaseModel
             ):
-                # This is coming from _prepare_view_error, don't crash
                 report_qweb = None
                 qweb_error = serialize_exception(e)
             else:
@@ -672,12 +626,8 @@ class WebStudioReportController(main.WebStudioController):
             if recursive_set is None:
                 recursive_set = set()
 
-            # Collect t-calls before in an object for id assignation
-            # without being polluted by the variables coming from above
-            # and discrimination between real nodes and mere t-sets
             collected_t_calls = _collect_t_call_content(tree)
 
-            # Inject t-out="0" values
             if variables and variables.get("__zero__"):
                 value = variables["__zero__"]
                 touts = tree.findall(".//t[@t-out='0']")
@@ -688,21 +638,12 @@ class WebStudioReportController(main.WebStudioController):
                     node.set("oe-origin-t-out", "0")
                     node.attrib.pop("t-out")
 
-            # We want a wrapper tag around nodes that will be visible
-            # on the report editor in order to insert/remove/edit nodes at the root
-            # We don't want to do anything for nodes that are mere t-sets except leaving them in their group
-            # Do it in opposite tree direction, to make sure we don't delete a node that still needs
-            # to be treated
             for call_key, call_data in reversed(collected_t_calls.items()):
                 call_node = call_data["node"]
                 call_node.set("ws-view-id", view_id)
                 template = call_node.get("t-call")
 
                 if "{" in template:
-                    # this t-call value is dynamic (e.g. t-call="{{company.tmp}})
-                    # so its corresponding view cannot be read
-                    # this template won't be returned to the Editor so it won't
-                    # be customizable
                     continue
                 if template in recursive_set:
                     continue
@@ -766,9 +707,6 @@ class WebStudioReportController(main.WebStudioController):
         main_qweb = _html_to_client_compliant(load_arch(report_name))
 
         with report.env.registry.cursor() as nfg_cursor:
-            # We are about to evaluate expressions that may produce bad query errors
-            # This new cursor isolates those evaluations from the main transaction
-            # in order to avoid crashes related to them.
             report_safe_cr = report.with_env(report.env(cr=nfg_cursor))
             render_context = report_safe_cr._prepare_rendering_context(
                 report_safe_cr, [0], {"studio": True}
@@ -866,8 +804,6 @@ class WebStudioReportController(main.WebStudioController):
         if xml_ids:
             xml_ids.write({"noupdate": True})
 
-        # We always try to render the full report here because in case of failure, we need
-        # the transaction to rollback
         report_html = self._render_report(report, record_id)
         report_qweb = self._get_report_qweb(report)
 
@@ -879,24 +815,6 @@ class WebStudioReportController(main.WebStudioController):
         }
 
     def _handle_view_changes(self, view, changes):
-        """Reconciles the old view's arch and the changes and saves the result
-        as an inheriting view.
-        1. Mark and collect the relevant editable blocks in the old view's combined arch (essentially the t-calls contents)
-        2. process the changes to convert the html they contain to xml, build the adequate object
-            (see def _recompose_arch_with_t_call_parts)
-        3. Decide if the main block (the root node that has not been moved around by t-call inlining) has changed
-        4. Build a new tree that has the changes instead of the old version
-        5. Save that tree as the arch of the inheriting view.
-
-        param RecordSet['ir.ui.view'] view
-        param changes list[dict]
-            dict: {
-                "type": "full" | "in_t_call",
-                "call_key": str,
-                "call_group_key": str,
-                "html": str,
-            }
-        """
         with deactivate_studio_view(view) as studio_view:
             original = view._get_combined_arch()
             KeyedXmlDiffer.update_node_ids_for_diff(original)
@@ -904,13 +822,9 @@ class WebStudioReportController(main.WebStudioController):
             if studio_view.arch:
                 apply_inheritance_specs(old, etree.fromstring(studio_view.arch))
 
-        # Collect t_call and their groups from the original view
         origin_call_groups = _collect_t_call_content(old)
         for call_data in origin_call_groups.values():
             node = call_data["node"]
-            # Remove the content of each t-call
-            # They will be replaced by either the changed content or the original one
-            # in a following step
             for child in list(node):
                 node.remove(child)
 
@@ -970,9 +884,6 @@ class WebStudioReportController(main.WebStudioController):
                 lambda v: not v.key.startswith("web.") or "layout" not in v.key
             )
 
-        # The external layout template chooses the layout as a function
-        # of the company. This is represented as dynamic t-call (="{{ template.key }}")
-        # and is not caught by the get_related_views
         if "web.external_layout" in views.mapped("key"):
             views = views.filtered(lambda v: v.key != "web.external_layout_standard")
             views |= request.env.company.report_config_id.external_report_layout_id

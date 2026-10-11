@@ -8,7 +8,6 @@ def _raise(exc):
 
 class ProbeCase(TransactionCase):
     def _probed(self, source, location):
-        # the probe's own incidents: the database may hold real ones
         return self.env["error.incident"].search(
             [("source", "=", source), ("occurrence_ids.location", "=", location)]
         )

@@ -87,7 +87,6 @@ class MailTrackingValue(models.Model):
             model_field = model._fields.get(tracking.field_id.name)
             if not model_field or not model._has_field_access(model_field, "read"):
                 return False
-            # a field read on some records only is tracked on those only
             message = tracking.mail_message_id
             if model_field.access_classes is None or message.model != model._name:
                 return True

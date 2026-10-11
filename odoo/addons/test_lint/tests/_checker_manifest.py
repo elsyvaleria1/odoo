@@ -480,8 +480,8 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     for line in [*shape, *value]:
-        print(line)  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
-    print(  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+        print(line)
+    print(
         f"\nDone: {checked} manifests, {len(shape)} to rewrite, "
         f"{len(value)} value finding(s)"
     )

@@ -53,8 +53,6 @@ def mimetype_of(filename):
 
 
 def voice_payload(message):
-    """The recording a Telegram message carries -- a voice note, an audio
-    file, or a document that is audio -- else None."""
     item = message.get("voice") or message.get("audio")
     if not item:
         document = message.get("document") or {}

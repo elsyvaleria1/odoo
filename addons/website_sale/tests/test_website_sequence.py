@@ -19,8 +19,6 @@ class TestWebsiteSequence(BaseCommon):
         cls.public_user = cls.env.ref("base.public_user")
 
         ProductTemplate = cls.env["product.template"]
-        # the products this class orders sit above every existing sequence, so
-        # moving one up or down only ever meets another of them
         cls.base = (
             ProductTemplate.with_context(active_test=False)
             .search([], order="website_sequence DESC", limit=1)

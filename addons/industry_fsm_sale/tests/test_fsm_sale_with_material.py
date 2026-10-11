@@ -6,14 +6,9 @@ from odoo.addons.industry_fsm_sale.tests.common import TestFsmFlowCommon
 
 
 class TestFsmSaleWithMaterial(TestFsmFlowCommon):
-    # If the test has to be run at install, it cannot inherit indirectly from accounttestinvoicingcommon.
-    # So we have to setup the test data again here.
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # industry_fsm_stock confirms an FSM order as soon as it exists, which is the
-        # flow these tests assert does not happen: they hold only while its code is
-        # not loaded, i.e. at_install of a database installing both modules at once
         fsm_stock = cls.env.ref(
             "base.module_industry_fsm_stock", raise_if_not_found=False
         )
@@ -75,7 +70,6 @@ class TestFsmSaleWithMaterial(TestFsmFlowCommon):
         sol01.sequence = 10
         self.assertEqual(sol01.product_qty, 5)
 
-        # Manually add a line for the same product
         sol02 = self.env["sale.order.line"].create(
             {
                 "order_id": so.id,
@@ -107,11 +101,6 @@ class TestFsmSaleWithMaterial(TestFsmFlowCommon):
         self.task._fsm_get_or_create_sale_order()
         self.assertTrue(self.task.sale_order_id)
         self.assertEqual(self.task.sale_order_id.state, "draft")
-        # An order carrying no line cannot be confirmed. This class runs `at_install`,
-        # so the `industry_fsm_stock` auto-confirm -- the one flow that deliberately
-        # confirms an empty order -- is not in play, and the confirmed state is reached
-        # the way `action_fsm_validate` reaches it: through the timesheet line, which
-        # `_compute_material_line_totals` excludes from the material counts below.
         self.env["sale.order.line"].create(
             {
                 "order_id": self.task.sale_order_id.id,

@@ -31,12 +31,11 @@ class ConversationMeetingController(http.Controller):
         receiver="device.device:_receiver_for_meeting_room",
         receiver_event="meeting_audio",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the room
+        csrf=False,
         save_session=False,
         typed=True,
     )
     def room_push_audio(self, identifier: str, conversation_id: int, **kwargs):
-        """Store the full room recording of ``conversation_id`` sent by device ``identifier``."""
         result = request.admission
         device = result.subject
         payload = result.json()
@@ -86,12 +85,11 @@ class ConversationMeetingController(http.Controller):
         receiver="device.device:_receiver_for_meeting_room",
         receiver_event="meeting_chunk",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the room
+        csrf=False,
         save_session=False,
         typed=True,
     )
     def room_push_chunk(self, identifier: str, conversation_id: int, **kwargs):
-        """Transcribe one live chunk and push it to the moderator's panel."""
         result = request.admission
         device = result.subject
         payload = result.json()

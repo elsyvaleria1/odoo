@@ -4,10 +4,6 @@ from . import reports
 
 
 def _sync_rental_stock_moves(env) -> None:
-    """Ensure currently rented products are placed in rental location.
-
-    If not, the rental stock moves generated at return would be inconsistent.
-    """
     query = """
         SELECT id FROM sale_order_line
         WHERE qty_transferred > qty_returned AND is_rental

@@ -1676,8 +1676,6 @@ class TestCowViewSaving(TestViewSavingCommon, HttpCase):
         )
         base_footer.with_context(website_id=1).write({"active": True})
         specific_footer = base_footer._get_views_specific()
-        # the specific view is an extension of website.layout and validates
-        # against it, website context or not: its arch is a spec
         footer = '<xpath expr="//div[@id=\'footer\']" position="replace">%s</xpath>'
         specific_footer.with_context(lang="en_US").arch_db = footer % "<div>hello</div>"
         specific_footer.update_field_translations(

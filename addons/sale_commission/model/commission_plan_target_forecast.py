@@ -50,7 +50,6 @@ class SaleCommissionPlanTargetForecast(models.Model):
     def create(self, vals_list):
         records = super().create(vals_list)
 
-        # Do it after to take default in account
         existing_plan_user = dict(
             self.env["sale.commission.plan.user"]._read_group(
                 [

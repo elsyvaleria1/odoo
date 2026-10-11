@@ -24,7 +24,7 @@ class AccountAccount(models.Model):
     budget_item_ids = fields.One2many(
         comodel_name="account.report.budget.item",
         inverse_name="account_id",
-    )  # To use it in the domain when adding accounts from the report
+    )
 
     audit_debit = fields.Monetary(
         string="Debit",

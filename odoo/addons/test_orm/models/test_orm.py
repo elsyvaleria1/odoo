@@ -701,8 +701,6 @@ class TestOrmComputeCommands(models.Model):
         for record in self:
             record.linked_user_ids = [Command.link(user.id) for user in record.user_ids]
 
-    # the shape of mrp.workorder's working users: a compute that depends on
-    # the context and reads back the command list it assigned
     @api.depends("user_ids")
     @api.depends_context("uid")
     def _compute_working_user_ids(self):
@@ -717,7 +715,7 @@ class TestOrmComputeCommands(models.Model):
     def _compute_watcher_ids(self):
         for record in self:
             record.watcher_ids = [Command.link(user.id) for user in record.user_ids]
-            _ = record.watcher_ids  # read back, as the one2many compute does
+            _ = record.watcher_ids
 
 
 class TestOrmMulti_Compute_Inverse(models.Model):
@@ -1504,7 +1502,6 @@ class TestOrmTransient_Model(models.TransientModel):
 class TestOrmAttachment(models.Model):
     _name = "test_orm.attachment"
     _description = "Attachment"
-    # the override below exists to be patched by a test; it narrows nothing
     _search_visibility_fields = ()
 
     res_model = fields.Char(required=True)

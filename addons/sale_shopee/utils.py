@@ -11,7 +11,6 @@ from odoo.addons.sale_shopee import const
 _logger = logging.getLogger(__name__)
 
 
-# === CUSTOM EXCEPTION CLASSES === #
 
 
 class ShopeeRateLimitError(Exception):
@@ -22,18 +21,9 @@ class ShopeeRateLimitError(Exception):
         super().__init__()
 
 
-# === ONBOARDING === #
 
 
 def get_public_sign(account, path, timestamp):
-    """Given the request params, returns the signing string used to sign the request.
-
-    :param account: shopee.account
-    :param str path: The path of the request
-    :param int timestamp: The timestamp of the request
-    :return: The public signing string
-    :rtype: str
-    """
     account.check_singleton()
     return hmac.new(
         account.partner_key.encode(),
@@ -42,23 +32,9 @@ def get_public_sign(account, path, timestamp):
     ).hexdigest()
 
 
-# === API COMMUNICATIONS === #
 
 
 def request_access_token(shop, main_account_id=False, is_refresh=False):
-    """Request the access tokens for a specific shop.
-
-    see https://open.shopee.com/developer-guide/20
-
-    Note: self.check_singleton()
-
-    :param shop: shopee.shop
-    :param int main_account_id:
-    :param bool is_refresh: If True, the request is to refresh the token
-    :return: The list of shop identifiers associated with the main account
-    :rtype: list
-    :raise: UserError if authorization_code is missing but it's not a refresh request
-    """
     shop.check_singleton()
 
     authorization_code = shop.env.context.get("authorization_code")
@@ -99,17 +75,6 @@ def request_access_token(shop, main_account_id=False, is_refresh=False):
 
 
 def send_shopee_api_request(shop, operation, params=None, body=None, method="GET"):
-    """Send an API request to Shopee.
-
-    :param shop: shopee.shop
-    :param operation: str
-    :param dict params: Query parameters
-    :param dict body: Request body
-    :param str method: HTTP method
-    :return: The response content of the request
-    :rtype: dict
-    :raise: UserError if the request fails
-    """
     shop.check_singleton()
     account = shop.account_id
     api_type = const.API_OPERATIONS_MAPPING[operation]["api_type"]
@@ -117,12 +82,10 @@ def send_shopee_api_request(shop, operation, params=None, body=None, method="GET
     if not params:
         params = {}
 
-    if api_type != "public":  # Require an access token
+    if api_type != "public":
         params["shop_id"] = shop.shop_identifier
-        # Ensure that we have an access token. If not, we request one.
         if not shop.access_token or not shop.access_token_expiration_date:
             request_access_token(shop)
-        # If we have one, but it expired, we refresh it
         elif shop.access_token_expiration_date < datetime.now() + timedelta(minutes=5):
             request_access_token(shop, is_refresh=True)
         params["access_token"] = shop.access_token
@@ -167,7 +130,6 @@ def send_shopee_api_request(shop, operation, params=None, body=None, method="GET
     else:
         response_content = resp.json()
 
-        # Simple error catching with a clear message on the issue.
         if response_content.get("error"):
             message = _get_error_message(response_content)
             raise UserError(
@@ -187,14 +149,6 @@ def send_shopee_api_request(shop, operation, params=None, body=None, method="GET
 
 
 def get_api_sign(shop, operation, timestamp):
-    """Get the API sign for a specific shop.
-
-    :param shop: shopee.shop
-    :param str operation: The operation to perform
-    :param int timestamp: The timestamp of the request
-    :return: The API sign
-    :rtype: str
-    """
     shop.check_singleton()
     account = shop.account_id
     api_type = const.API_OPERATIONS_MAPPING[operation]["api_type"]
@@ -210,17 +164,10 @@ def get_api_sign(shop, operation, timestamp):
 
 
 def _get_public_signing_string(account, path, timestamp) -> str:
-    """Given the request params, returns the signing string used to sign the request."""
     return f"{account.partner_identifier}{path}{timestamp}"
 
 
 def _get_error_message(response_content):
-    """Create an error message from the response content of a Shopee API request.
-
-    :param dict response_content: The response content of the request
-    :return: The error message
-    :rtype: str
-    """
     message = response_content["message"]
     if response_content.get("response"):
         for order in response_content["response"].get("result_list", []):

@@ -133,7 +133,6 @@ class HrAppraisal(models.Model):
         self.check_singleton()
         employee_skills = self.employee_id.current_employee_skill_ids
         employee_skills_by_skill = employee_skills.grouped("skill_id")
-        # Remove skills created by target without any changes
         appraisal_skills = self.current_appraisal_skill_ids.filtered("skill_level_id")
         commands = []
         updated_skills = []
@@ -196,8 +195,7 @@ class HrAppraisal(models.Model):
         vals = []
         for appraisal in self:
             employee_skills = appraisal.employee_id.current_employee_skill_ids
-            # in case the employee confirms its appraisal
-            if appraisal.appraisal_skill_ids:  # check in case we are coming from a previously canceled appraisal and recreate them
+            if appraisal.appraisal_skill_ids:
                 appraisal.appraisal_skill_ids.unlink()
             vals += [
                 {

@@ -46,7 +46,7 @@ class TestEditView(TestStudioController):
             for op in operations:
                 _ops.append(
                     deepcopy(op)
-                )  # the edit view controller may alter objects in place
+                )
         if studio_arch == "":
             studio_arch = "<data/>"
         return self.studio_controller.edit_view(
@@ -215,8 +215,6 @@ class TestEditView(TestStudioController):
             },
         }
         self.edit_view(base_view, operations=ops + [remove_binary_op])
-        # The filename field is still present in the view
-        # this is not intentional rather, it is way easier to leave this invisible field there
         self.assertViewArchEqual(
             base_view.get_combined_arch(),
             """
@@ -439,19 +437,6 @@ class TestEditView(TestStudioController):
         self.assertViewArchEqual(base_view.get_combined_arch(), expected_arch)
 
     def test_edit_attribute_studio_groups(self):
-        """Tests the behavior of setting the attribute `studio_groups` on field view nodes having a `groups=` attribute
-        A second goal is to test the behavior of a field node having a `groups=` attribute set on the node
-        and another `groups=` on the field definition in the model.
-        e.g.
-        `code = fields.Text(string='Python Code', groups='base.group_system',`
-        `<field name="code" groups="base.group_multi_currency"/>`
-        For this above case, a temporary technical node is created during the view postprocessing,
-        wrapping the `<field groups="..."` node,
-        to simulate a AND between the two groups: you must have BOTH groups in order to see the given field node,
-        and the technical node should not remain in the end.
-        """
-        # Ensure there is a group on the `code` field, as the goal of this test is to test the behavior
-        # of a field having a group in the model definition in addition to another group on the field node in the view.
         self.assertEqual(
             self.env["ir.actions.server"]._fields["code"].groups, "base.group_system"
         )
@@ -491,11 +476,6 @@ class TestEditView(TestStudioController):
                 )
 
     def test_edit_field_present_in_multiple_views(self):
-        """a use case where the hack before this fix doesn't work.
-        We try to edit a field that is present in two views, and studio
-        must modify the field in the correct view and do not confuse it
-        with the other one.
-        """
         IrModelFields = self.env["ir.model.fields"].with_context(studio=True)
         source_model = self.env["ir.model"].search([("model", "=", "res.partner")])
         destination_model = self.env["ir.model"].search(
@@ -637,7 +617,6 @@ class TestEditView(TestStudioController):
                 self.assertEqual(node.get(modifier), value)
 
     def test_get_view_t_groups(self):
-        """Tests the behavior of <t groups="..."></t> blocks with Studio."""
         test_group = self.env["res.groups"].create({"name": "test_group"})
         self.env["ir.model.data"].create(
             {
@@ -648,7 +627,6 @@ class TestEditView(TestStudioController):
             }
         )
         for view_type, arch, expected_modifiers in [
-            # The user has the group of the `<t>` node, the `<t>` node **must remain**, and be visible.
             (
                 "form",
                 """
@@ -660,7 +638,6 @@ class TestEditView(TestStudioController):
             """,
                 {"invisible": None},
             ),
-            # The user doesn't have the group of the `<t>` node, the `<t>` node **must remain**, and be invisible.
             (
                 "form",
                 """
@@ -693,12 +670,6 @@ class TestEditView(TestStudioController):
                 self.assertEqual(node.get(modifier), value)
 
     def test_open_users_form_with_studio(self):
-        """Tests the res.users form view can be loaded with Studio.
-
-        The res.users form is an edge case, because it uses fake fields in its view, which do not exist in the model.
-        Make sure the Studio overrides regarding the loading of the views, including the postprocessing,
-        are able to handle these non-existing fields.
-        """
         arch = (
             self.env["res.users"]
             .with_context(studio=True)
@@ -760,7 +731,6 @@ class TestEditView(TestStudioController):
         )
 
     def test_edit_inherited_view(self):
-        # accidentally pass the id of extension view instead of the primary
         main = self.env["ir.ui.view"].create(
             {
                 "name": "test",
@@ -799,8 +769,6 @@ class TestEditView(TestStudioController):
         self.assertEqual(studio_view_id.inherit_id, main)
 
     def test_operation_buttonbox_on_empty_sheet(self):
-        # A <sheet/> with no children is falsy for lxml, which must not be
-        # mistaken for "there is no sheet at all".
         model = self.env["ir.model"].create(
             {
                 "name": "Test Model",
@@ -892,8 +860,6 @@ class TestStudioViewSpecs(TransactionCase):
                 view.get_combined_arch()
 
     def test_a_spec_the_ids_cannot_name_still_applies(self):
-        # `$0` in running text is the XML combine's to apply (it leaves it
-        # literal): the studio view receives that one spec alone, not a tree
         self.studio.write(
             {
                 "arch": """

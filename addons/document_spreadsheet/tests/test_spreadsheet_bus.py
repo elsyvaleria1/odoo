@@ -10,17 +10,12 @@ from odoo.addons.mail.tests.common import MailCase
 
 class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
     def poll(self, *channels, last=0):
-        # Simulates what's done when subscribing to a bus channel.
-        # MockRequest would be useful, but it's currently only defined
-        # with website
-        # the names, and what they open: not the channels every
-        # subscriber gets, whose notifications are not the spreadsheet's
         opened = self.env["ir.websocket"]._bus_channels_by_name(channels)
         channels = [
             channel_with_db(self.env.registry.db_name, c)
             for c in [*channels, *chain.from_iterable(opened.values())]
         ]
-        self.env.cr.precommit.run()  # trigger the creation of bus.bus records
+        self.env.cr.precommit.run()
         return self.env["bus.bus"]._poll(channels, last)[0]
 
     def poll_spreadsheet(self, spreadsheet_id, access_token=None):
@@ -167,21 +162,18 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         revision = self.new_revision_data(spreadsheet)
         spreadsheet.dispatch_spreadsheet_message(revision)
 
-        # without token
         with self.with_user("raoul"):
             self.assertEqual(
                 self.poll_spreadsheet(spreadsheet.id),
                 [],
                 "He should not have received the revision",
             )
-        # with wrong token
         with self.with_user("raoul"):
             self.assertEqual(
                 self.poll_spreadsheet(spreadsheet.id, "wrong-token"),
                 [],
                 "He should not have received the revision",
             )
-        # with token
         with self.with_user("raoul"):
             self.assertEqual(
                 self.poll_spreadsheet(spreadsheet.id, spreadsheet.access_token),

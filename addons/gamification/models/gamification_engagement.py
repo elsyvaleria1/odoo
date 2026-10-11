@@ -7,10 +7,6 @@ from odoo.tools import frozendict
 _logger = logging.getLogger(__name__)
 
 
-# Recorded once per day by a cron job.  Stores aggregate statistics
-# that would be expensive to compute on the fly.  Enables trend
-# analysis: is gamification adoption growing?  Which mechanics are
-# sticky?  Where do users drop off?
 class GamificationEngagementSnapshot(models.Model):
     """Daily snapshot of gamification engagement metrics."""
 
@@ -37,7 +33,6 @@ class GamificationEngagementSnapshot(models.Model):
         index=True,
     )
 
-    # ── User Activity ───────────────────────────────────────────────
     total_users = fields.Integer(
         string="Total Internal Users",
         readonly=True,
@@ -57,7 +52,6 @@ class GamificationEngagementSnapshot(models.Model):
         help="Users who earned karma in the last 30 days.",
     )
 
-    # ── Challenge & Goals ───────────────────────────────────────────
     active_challenges = fields.Integer(readonly=True)
     goals_in_progress = fields.Integer(readonly=True)
     goals_reached_7d = fields.Integer(
@@ -71,7 +65,6 @@ class GamificationEngagementSnapshot(models.Model):
         help="Percentage of non-draft, non-canceled goals that are reached.",
     )
 
-    # ── Badges ──────────────────────────────────────────────────────
     total_badges_granted = fields.Integer(readonly=True)
     badges_granted_7d = fields.Integer(
         string="Badges Granted (7 days)",
@@ -79,7 +72,6 @@ class GamificationEngagementSnapshot(models.Model):
     )
     unique_badge_holders = fields.Integer(readonly=True)
 
-    # ── Kudos ───────────────────────────────────────────────────────
     total_kudos = fields.Integer(
         string="Total Kudos Sent",
         readonly=True,
@@ -97,7 +89,6 @@ class GamificationEngagementSnapshot(models.Model):
         readonly=True,
     )
 
-    # ── Streaks ─────────────────────────────────────────────────────
     active_streaks = fields.Integer(readonly=True)
     broken_streaks = fields.Integer(readonly=True)
     avg_streak_length = fields.Float(
@@ -115,7 +106,6 @@ class GamificationEngagementSnapshot(models.Model):
         help="Active streaks that have survived at least 30 days.",
     )
 
-    # ── Achievements ────────────────────────────────────────────────
     total_unlocks = fields.Integer(
         string="Total Achievement Unlocks",
         readonly=True,
@@ -125,7 +115,6 @@ class GamificationEngagementSnapshot(models.Model):
         readonly=True,
     )
 
-    # ── Karma ───────────────────────────────────────────────────────
     total_karma_granted = fields.Integer(readonly=True)
     karma_granted_7d = fields.Integer(
         string="Karma Granted (7 days)",
@@ -140,20 +129,13 @@ class GamificationEngagementSnapshot(models.Model):
 
     @api.model
     def _cron_record_snapshot(self) -> None:
-        """Record a daily engagement snapshot for each company."""
         companies = self.env["res.company"].search([])
         for company in companies:
             self._record_snapshot(company)
 
     def _record_snapshot(self, company):
-        """Compute and store engagement metrics for a single company.
-
-        :param company: ``res.company`` record.
-        :return: created ``gamification.engagement.snapshot`` record.
-        """
         today = fields.Date.today()
 
-        # Skip if already recorded today
         existing = self.search(
             [
                 ("snapshot_date", "=", today),
@@ -164,18 +146,12 @@ class GamificationEngagementSnapshot(models.Model):
         if existing:
             return existing
 
-        # Every query below reads through `cr.execute`, which does not flush.
-        # `res_users.karma` in particular is a stored compute, so a snapshot
-        # taken in the same transaction as a karma grant read the pre-grant
-        # column. The cron runs after the streak and achievement crons by
-        # design, which is exactly when there is pending work to miss.
         self.env.flush_all()
 
         cr = self.env.cr
         d7 = today - timedelta(days=7)
         d30 = today - timedelta(days=30)
 
-        # ── User metrics ────────────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -190,7 +166,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         user_row = cr.dictfetchone()
 
-        # Active users: those with karma tracking entries in the period
         cr.execute(
             """
             SELECT
@@ -209,7 +184,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         activity_row = cr.dictfetchone()
 
-        # ── Challenge & Goal metrics ────────────────────────────────
         cr.execute(
             """
             SELECT COUNT(DISTINCT gc.id) AS active_challenges
@@ -252,7 +226,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         goal_row = cr.dictfetchone()
 
-        # ── Badge metrics ───────────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -269,7 +242,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         badge_row = cr.dictfetchone()
 
-        # ── Kudos metrics ───────────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -291,7 +263,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         kudos_row = cr.dictfetchone()
 
-        # ── Streak metrics ──────────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -314,7 +285,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         streak_row = cr.dictfetchone()
 
-        # ── Achievement metrics ─────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -330,7 +300,6 @@ class GamificationEngagementSnapshot(models.Model):
         )
         unlock_row = cr.dictfetchone()
 
-        # ── Karma aggregate ─────────────────────────────────────────
         cr.execute(
             """
             SELECT
@@ -350,36 +319,29 @@ class GamificationEngagementSnapshot(models.Model):
             {
                 "snapshot_date": today,
                 "company_id": company.id,
-                # Users
                 "total_users": user_row["total_users"],
                 "users_with_karma": user_row["users_with_karma"],
                 "avg_user_karma": round(user_row["avg_user_karma"], 1),
                 "active_users_7d": activity_row["active_7d"],
                 "active_users_30d": activity_row["active_30d"],
-                # Challenges & Goals
                 "active_challenges": challenge_row["active_challenges"],
                 "goals_in_progress": goal_row["goals_in_progress"],
                 "goals_reached_7d": goal_row["goals_reached_7d"],
                 "goal_completion_rate": round(goal_row["goal_completion_rate"], 1),
-                # Badges
                 "total_badges_granted": badge_row["total_badges_granted"],
                 "badges_granted_7d": badge_row["badges_granted_7d"],
                 "unique_badge_holders": badge_row["unique_badge_holders"],
-                # Kudos
                 "total_kudos": kudos_row["total_kudos"],
                 "kudos_7d": kudos_row["kudos_7d"],
                 "unique_kudos_senders_7d": kudos_row["unique_senders_7d"],
                 "unique_kudos_recipients_7d": kudos_row["unique_recipients_7d"],
-                # Streaks
                 "active_streaks": streak_row["active_streaks"],
                 "broken_streaks": streak_row["broken_streaks"],
                 "avg_streak_length": round(streak_row["avg_streak_length"], 1),
                 "streaks_past_7d": streak_row["streaks_past_7d"],
                 "streaks_past_30d": streak_row["streaks_past_30d"],
-                # Achievements
                 "total_unlocks": unlock_row["total_unlocks"],
                 "unlocks_7d": unlock_row["unlocks_7d"],
-                # Karma
                 "total_karma_granted": karma_row["total_karma"],
                 "karma_granted_7d": karma_row["karma_7d"],
             }
@@ -387,13 +349,6 @@ class GamificationEngagementSnapshot(models.Model):
 
     @api.model
     def get_analytics_summary(self) -> dict:
-        """Return the latest snapshot + trend data for the dashboard.
-
-        Compares the most recent snapshot with the one from 7 days ago
-        to produce directional trends (up/down/flat).
-
-        :return: dict with 'current' snapshot data and 'trends' dict.
-        """
         today = fields.Date.today()
         company_id = self.env.company.id
 

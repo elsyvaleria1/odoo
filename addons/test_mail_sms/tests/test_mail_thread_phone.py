@@ -49,7 +49,6 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
                     "phone_nbr_ids": False,
                     "mobile_nbr_ids": False,
                 },
-                # duplicated of 0606
                 {
                     "phone_nbr_ids": [
                         Command.clear(),
@@ -70,7 +69,6 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
         cls.dupes = cls.test_phone_records[-2:]
 
     def test_initial_data(self):
-        """Test initial data for this class, allowing to be sure of I/O of tests."""
         self.assertEqual(
             [record.mobile_nbr_ids.number for record in self.test_phone_records],
             [
@@ -124,9 +122,7 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
     def test_search_phone_mobile_search_boolean(self):
         test_phone_records = self.test_phone_records.with_env(self.env)
 
-        # test Falsy -> is set / is not set
         for test_values in [False, "", " "]:
-            # test is not set -> both fields should be not set
             results = self.env["mail.test.sms.bl"].search(
                 [("phone_mobile_search", "=", test_values)]
             )
@@ -135,7 +131,6 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
                 self.void_record,
                 "Search on phone_mobile_search: = False: record with two void values",
             )
-            # test is set -> at least one field should be set
             results = self.env["mail.test.sms.bl"].search(
                 [("phone_mobile_search", "!=", test_values)]
             )
@@ -145,7 +140,6 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
                 "Search on phone_mobile_search: != False: record at least one value set",
             )
 
-        # test Truthy -> is set / is not set
         results = self.env["mail.test.sms.bl"].search(
             [("phone_mobile_search", "=", True)]
         )
@@ -165,21 +159,16 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
 
     @users("employee")
     def test_search_phone_mobile_search_equal(self):
-        """Test searching by phone/mobile with direct search"""
         test_phone_records = self.test_phone_records.with_env(self.env)
 
         for user_country in (self.env.ref("base.be"), self.env.ref("base.us")):
             self.env.user.sudo().country_id = user_country.id
-            # test "=" search
             for source, expected in [
                 (
                     "0475",
                     self.env["mail.test.sms.bl"],
-                ),  # incomplete -> no results on "="
-                # complete national number
+                ),
                 ("0475000000", test_phone_records[0]),
-                # various international numbers
-                # ('32475110606', test_phone_records[6]),  # currently not supported, returns nothing
                 ("0032475110606", test_phone_records[6] + self.dupes),
                 ("+32475110606", test_phone_records[6] + self.dupes),
                 ("+32 475 11 06 06", test_phone_records[6] + self.dupes),
@@ -192,10 +181,8 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
 
     @users("employee")
     def test_search_phone_mobile_search_ilike(self):
-        """Test searching by phone/mobile on various ilike combinations"""
         test_phone_records = self.test_phone_records.with_env(self.env)
 
-        # test ilike search
         for source, ilike_expected, notilike_expected in [
             (
                 "0475",
@@ -203,10 +190,6 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
                 test_phone_records - test_phone_records[:5],
             ),
             ("101", test_phone_records[1], test_phone_records - test_phone_records[1]),
-            # the sanitized form is searched beside the raw one, so a prefix
-            # short enough to match every +32475… number says nothing: these
-            # two carry the prefix far enough to name the records that hold it,
-            # and the duplicates that share their number row
             (
                 "+32475110",
                 test_phone_records[5:8] + self.dupes,
@@ -218,14 +201,12 @@ class TestSMSActionsCommon(SMSCommon, TestSMSRecipients):
                 test_phone_records - test_phone_records[5:8] - self.dupes,
             ),
         ]:
-            # test ilike search
             with self.subTest(source=source, operator="ilike"):
                 results = self.env["mail.test.sms.bl"].search(
                     [("phone_mobile_search", "ilike", source)]
                 )
                 self.assertEqual(results, ilike_expected)
 
-            # test inverse ilike search: should be the complement
             with self.subTest(source=source, operator="not ilike"):
                 results = self.env["mail.test.sms.bl"].search(
                     [("phone_mobile_search", "not ilike", source)]

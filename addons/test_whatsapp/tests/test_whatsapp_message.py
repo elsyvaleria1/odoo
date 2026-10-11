@@ -23,7 +23,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
             company_id=cls.company_admin.id,
             name="Public User",
         )
-        # test records for sending messages
         cls.countries = (
             [cls.env.ref("base.be")] * 4
             + [cls.env.ref("base.in"), cls.env.ref("base.ca"), cls.env.ref("base.us")]
@@ -37,8 +36,8 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
             "+32456001144",
             "+32456001155",
             "+91 1325 537171",
-            "+1-613-555-0177",  # canada, same phone_code as US
-            "+1-202-555-0124",  # us, same phone_code as CA
+            "+1-613-555-0177",
+            "+1-202-555-0124",
             "11 6123 4560",
             "+55 11 6123 4561",
             "0708151718",
@@ -61,7 +60,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                 )
             ]
         )
-        # WhatsApp formatting
         cls.mobile_numbers_formatted_wa = [
             "32456001122",
             "32456001133",
@@ -78,7 +76,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
             "525585440749",
             "525585440659",
         ]
-        # E164 (+ sign) formatting
         cls.mobile_numbers_formatted = [
             "+32456001122",
             "+32456001133",
@@ -95,7 +92,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
             "+525585440749",
             "+525585440659",
         ]
-        # International formatting
         cls.mobile_numbers_formatted_intl = [
             "+32 456 00 11 22",
             "+32 456 00 11 33",
@@ -113,7 +109,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
             "+52 55 8544 0659",
         ]
 
-        # test templates
         cls.test_template = cls.env["whatsapp.template"].create(
             {
                 "body": "Hello World",
@@ -125,7 +120,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
         )
 
     def test_assert_initial_values(self):
-        """Ensure base values used in tests"""
         self.assertEqual(self.test_partner.country_id, self.env.ref("base.be"))
         self.assertEqual(self.test_partner._phone_get_number().number, "0485221100")
 
@@ -136,8 +130,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
         self.assertEqual(self.whatsapp_account_2.notify_user_ids, self.user_wa_admin)
 
     def test_blacklist_enforcement_cross_country(self):
-        """Test that blacklist enforcement works correctly when the company country
-        differs from the partner's phone number country."""
         company_de = self.env.ref("base.de")
         self.company_admin.write({"country_id": company_de.id})
         self.user_wa_admin.write({"country_id": False})
@@ -184,7 +176,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("employee")
     def test_message_values_from_composer(self):
-        """Check values produced when sending a message using composer"""
         test_records = self.test_base_records.with_env(self.env)
         template = self.test_template.with_env(self.env)
         partner_ids = (
@@ -219,8 +210,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                 )
 
     def test_message_values_from_receive_new_number(self):
-        """Check values produced when receiving a new message from a new
-        number."""
         for (
             mobile_number,
             exp_mobile_nbr_formatted,
@@ -273,15 +262,11 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                 )
 
     def test_message_values_from_receive_partner(self):
-        """Check values produced when receiving a new message from a number
-        linked to a partner; check formatting / country support."""
         country_be_id = self.env.ref("base.be").id
         country_us_id = self.env.ref("base.us").id
-        # note that we should never receive local numbers as input, not supported
-        # hence not tested (e.g. 0485221100)
         incoming_numbers = [
-            "32485221100",  # this is normally what we expect from WA
-            "+32485221100",  # this is not what we expect but hey, people do stupid things everyday
+            "32485221100",
+            "+32485221100",
         ]
         for (phone, country_id), incoming_number in product(
             [
@@ -289,7 +274,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                 ("+32485221100", country_be_id),
                 ("32485221100", country_be_id),
                 ("+32 485 221 100", country_be_id),
-                # wrong configurations
                 ("0485221100", country_us_id),
             ],
             incoming_numbers,
@@ -323,14 +307,14 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                         "Should find partner even when formatting differs",
                     )
                     discuss_channel = self.assertWhatsAppDiscussChannel(
-                        "32485221100",  # never keep "+"
+                        "32485221100",
                         channel_values={
-                            "whatsapp_number": "32485221100",  # never keep "+"
+                            "whatsapp_number": "32485221100",
                             "whatsapp_partner_id": self.test_partner,
                         },
                         wa_message_fields_values={
-                            "mobile_number": "+32485221100",  # always with +
-                            "mobile_number_formatted": "32485221100",  # never keep "+"
+                            "mobile_number": "+32485221100",
+                            "mobile_number_formatted": "32485221100",
                         },
                     )
 
@@ -339,7 +323,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                     discuss_channel.unlink()
 
     def test_message_values_from_forwarded_message(self):
-        """Check values produced when receiving a new forwarded message with missing "id" """
         template = self.whatsapp_template.with_user(self.env.user)
         test_record = self.test_base_record_nopartner.with_env(self.env)
 
@@ -371,8 +354,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
         )
 
     def test_receive_attachment(self):
-        """Ensure incoming attachments are processed and attached to messages properly."""
-        # Image
         with self.mockWhatsappGateway(), self.mock_mail_app():
             self._wa_document_store["image_doc_id"] = self.image_attachment_wa_admin.raw
             self._receive_whatsapp_message(
@@ -382,7 +363,7 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
                 message_type="image",
                 content_values={
                     "mime_type": self.image_attachment_wa_admin.mimetype,
-                    "sha256": "",  # currently not checked...
+                    "sha256": "",
                     "id": "image_doc_id",
                 },
             )
@@ -401,7 +382,6 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
         self.assertEqual(
             channel_message.attachment_ids.datas, self.image_attachment_wa_admin.datas
         )
-        # Voice
         with self.mockWhatsappGateway(), self.mock_mail_app():
             self._wa_document_store["audio_doc_id"] = self.audio_attachment_wa_admin.raw
             self._receive_whatsapp_message(
@@ -434,19 +414,15 @@ class WhatsAppMessage(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("public_test")
     def test_send_as_public_user(self):
-        """Check that public users creating a message properly sends it afterwards."""
         test_record = self.test_base_records[0].with_user(self.env.user)
-        # clear cache to force fetch as user
         test_record.invalidate_recordset()
 
         original_trigger = IrCronModel._trigger
 
         def patched_cron_trigger(cron, at=None, *, coalesce=0):
-            """Immediately run the send message cron in the current thread if it is not scheduled."""
             if at is None and cron == self.env.ref(
                 "whatsapp.ir_cron_send_whatsapp_queue"
             ):
-                # clear test record as cron wouldn't have anything cached
                 self.test_base_records.invalidate_recordset()
                 cron.with_user(self.env.ref("base.user_root")).sudo(
                     False

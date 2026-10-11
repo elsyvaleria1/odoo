@@ -152,7 +152,6 @@ class TestTripTrack(TransactionCase):
         self.assertTrue(
             stops.get_views([(False, "geoengine")])["views"]["geoengine"]["arch"]
         )
-        # Whoever drew the track reads it; another stock user sees no one's.
         Result = self.env["wizard.device.device.view.trail.result"]
         self.assertEqual(
             Result.with_user(self.supervisor).search(action["domain"]), trail
@@ -176,7 +175,6 @@ class TestTripTrack(TransactionCase):
         self.assertLessEqual({"departure", "return"}, set(points.mapped("kind")))
 
     def test_a_stock_user_draws_the_track_and_the_map_can_show_it(self):
-        """A plain stock user, who sees no GPS device, gets a map that loads."""
         clerk = self.env["res.users"].create(
             {
                 "name": "Dispatch Clerk",
@@ -205,7 +203,6 @@ class TestTripTrack(TransactionCase):
         trail = Result.search(action["domain"])
         self.assertEqual(len(trail), 1)
         self.assertNotIn("gps_trail_selection_summary", action["context"])
-        # What the map reads, as the user: the trail's fields and the layer's points.
         trail.read(["name", "the_trail", "device_name", "length_km"])
         points = (
             self.env["wizard.stock.trip.track.point"]
@@ -216,7 +213,6 @@ class TestTripTrack(TransactionCase):
             )
         )
         self.assertIn("stop", {point["kind"] for point in points})
-        # Only one marker per place and event: an incident is not drawn twice.
         keys = [(p["kind"], p["name"], p["the_point"]) for p in points]
         self.assertEqual(len(keys), len(set(keys)))
         layers = Result.get_layers(
@@ -229,7 +225,6 @@ class TestTripTrack(TransactionCase):
         )
 
     def test_reading_the_trip_is_not_drawing_its_track(self):
-        """Drawing the track is the view_gps_track verb, not a read of the trip."""
         self.trip.action_depart()
         readers = self.env["res.groups"].create({"name": "Trip readers"})
         self.env["ir.access"].create(

@@ -13,16 +13,10 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
     Documentation: https://www.peppolguide.sg/billing/bis/
     """
 
-    # -------------------------------------------------------------------------
-    # EXPORT
-    # -------------------------------------------------------------------------
 
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_sg.xml"
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Templates
-    # -------------------------------------------------------------------------
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":
@@ -32,7 +26,6 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
     def _ubl_default_tax_category_grouping_key(
         self, base_line, tax_data, vals, currency
     ):
-        # EXTENDS account.edi.xml.ubl_bis3
         grouping_key = super()._ubl_default_tax_category_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -43,7 +36,6 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
         grouping_key["tax_exemption_reason"] = None
         grouping_key["tax_exemption_reason_code"] = None
 
-        # For reference: https://www.peppolguide.sg/billing/bis/#_gst_category_codes
         if not tax_data or float_is_zero(tax_data["tax"].amount, precision_digits=4):
             grouping_key["tax_category_code"] = "ZR"
         else:
@@ -52,7 +44,6 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
         return grouping_key
 
     def _ubl_get_line_allowance_charge_discount_node(self, vals, discount_values):
-        # EXTENDS account.edi.xml.ubl_bis3
         discount_node = super()._ubl_get_line_allowance_charge_discount_node(
             vals, discount_values
         )
@@ -60,11 +51,9 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
         return discount_node
 
     def _ubl_add_values_tax_currency_code(self, vals):
-        # OVERRIDE account.edi.xml.ubl_bis3
         self._ubl_add_values_tax_currency_code_empty(vals)
 
     def _ubl_tax_totals_node_grouping_key(self, base_line, tax_data, vals, currency):
-        # EXTENDS account.edi.xml.ubl_bis3
         tax_total_keys = super()._ubl_tax_totals_node_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -74,7 +63,6 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
         return tax_total_keys
 
     def _add_invoice_payment_means_nodes(self, document_node, vals):
-        """https://www.peppolguide.sg/billing/bis/#_payment_means_information"""
         super()._add_invoice_payment_means_nodes(document_node, vals)
         document_node["cac:PaymentMeans"]["cbc:PaymentMeansCode"] = {
             "_text": 54,
@@ -82,7 +70,6 @@ class AccountEdiXmlUbl_Sg(models.AbstractModel):
         }
 
     def _get_party_node(self, vals):
-        # EXTENDS account.edi.xml.ubl_bis3
         party_node = super()._get_party_node(vals)
         party_node["cac:PartyTaxScheme"][0]["cac:TaxScheme"]["cbc:ID"]["_text"] = "GST"
         return party_node

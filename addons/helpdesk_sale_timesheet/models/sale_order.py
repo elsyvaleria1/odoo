@@ -42,10 +42,6 @@ class SaleOrder(models.Model):
             _debug.pipeline(
                 "sale_order_ticket_count",
                 orders=self,
-                # the domain matches a ticket by `sale_order_id` OR by
-                # `sale_line_id`, and the grouping is by `sale_order_id` alone --
-                # so a ticket matched on its line but carrying a different order
-                # is counted under that other key and against no order here
                 matched_groups=len(mapped_data),
                 tickets=sum(mapped_data.values()),
             )
@@ -65,9 +61,6 @@ class SaleOrder(models.Model):
             _debug.logic(
                 "sale_order_created_for_ticket",
                 ticket=ticket,
-                # `create` is model_create_multi, so more than one order can
-                # be created here; the service line is taken across ALL of
-                # them and `action_confirm` below is called on ALL of them
                 orders=created_records,
                 service_line=service_sol,
                 from_embedded_action=self.env.context.get("from_embedded_action"),

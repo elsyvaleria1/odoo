@@ -8,11 +8,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools.date_utils import get_month
 
 STATUS_COLOR = {
-    "01_ready": 4,  # info light blue
-    "02_close": 10,  # success green
-    "03_paid": 5,  # primary purple
-    "04_cancel": 0,  # default grey
-    False: 0,  # default grey -- for studio
+    "01_ready": 4,
+    "02_close": 10,
+    "03_paid": 5,
+    "04_cancel": 0,
+    False: 0,
 }
 
 _debug = DebugLog(__name__)
@@ -246,11 +246,9 @@ class HrPayslipRun(models.Model):
                     version.date_version <= date_start
                     or employee_versions[-1] == version
                 ):
-                    # End case: The first version in contract before the pay run start or the last version of the list
                     employee_valid_versions |= version
                     break
                 if employee_valid_versions:
-                    # Version already added => new contract?
                     if employee_valid_versions[
                         -1
                     ].contract_date_start > version.contract_date_start and (
@@ -258,14 +256,12 @@ class HrPayslipRun(models.Model):
                         or version.contract_date_start
                         > employee_versions[i + 1].contract_date_start
                     ):
-                        # Take only the first version of the new contract founded
                         employee_valid_versions |= version
                 elif (
                     version.contract_date_start >= version.date_version
                     or version.contract_date_start
                     > employee_versions[i + 1].contract_date_start
                 ):
-                    # Take only the first version of the first contract founded
                     employee_valid_versions |= version
             valid_versions |= employee_valid_versions
         _debug.pipeline(
@@ -295,8 +291,6 @@ class HrPayslipRun(models.Model):
             elif any(state == "paid" for state in states):
                 payslip_run.state = "03_paid"
             else:
-                # No draft/validated/paid slip remains among the 4 possible
-                # hr.payslip states, so every slip is cancelled.
                 payslip_run.state = "04_cancel"
 
     @api.depends("state")

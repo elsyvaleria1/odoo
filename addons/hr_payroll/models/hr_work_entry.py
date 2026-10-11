@@ -31,11 +31,6 @@ class HrWorkEntry(models.Model):
             )
 
     def _check_undefined_slots(self, interval_start, interval_end) -> None:
-        """Raise a UserError if part of the interval is not covered by a work entry.
-
-        :param date interval_start: start of the period to validate
-        :param date interval_end: end of the period to validate
-        """
         work_entries_by_contract = defaultdict(lambda: self.env["hr.work.entry"])
         for work_entry in self:
             work_entries_by_contract[work_entry.version_id] |= work_entry
@@ -88,12 +83,6 @@ class HrWorkEntry(models.Model):
         return self.write({"state": "draft"})
 
     def action_view_payslip(self):
-        """Open the payslip that locked this work entry.
-
-        The domain mirrors `_compute_has_payslip`, refunds included: the popover
-        only offers this when `has_payslip` is set, so the two have to agree on
-        what counts as a payslip or the button lands on one that was refunded.
-        """
         self.check_singleton()
         payslips = self.env["hr.payslip"].search(
             [
@@ -126,12 +115,6 @@ class HrWorkEntry(models.Model):
         return action
 
     def check_modification_allowed(self) -> None:
-        """Raise if any of these work entries is locked by a validated payslip.
-
-        Public because the work entries gantt calls it over RPC before running a
-        quick replace: that replace ends in create + unlink, and unlink carries
-        no guard of its own, so the client has to ask before it touches anything.
-        """
         for work_entry in self:
             if work_entry.state == "validated":
                 raise UserError(
@@ -141,13 +124,6 @@ class HrWorkEntry(models.Model):
                 )
 
     def write(self, vals):
-        # A pure state/active change (marking conflicting, archiving, resetting
-        # to draft, ...) is always allowed, even on a validated entry -- every
-        # real caller writes state alone. Any OTHER field must still go through
-        # the "already associated with a generated payslip" guard below, even if
-        # state is ALSO being written in the same call: otherwise a caller could
-        # smuggle an edit to e.g. duration past the guard by pairing it with a
-        # state change.
         if not set(vals) - {"state", "active"}:
             return super().write(vals)
         self.check_modification_allowed()

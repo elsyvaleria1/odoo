@@ -8,11 +8,7 @@ class SocialStreamPost(models.Model):
 
     _inherit = "social.stream.post"
 
-    # ========================================================
-    # COMMENTS / LIKES
-    # ========================================================
 
-    # FACEBOOK
 
     def _facebook_get_comments(self, next_records_token=False, count=20) -> dict:
         return {"comments": self._get_demo_comments(), "summary": {"total_count": 2}}
@@ -20,14 +16,11 @@ class SocialStreamPost(models.Model):
     def _facebook_comment_post(
         self, endpoint_url, message, existing_attachment_id=None, attachment=None
     ):
-        """Returns a fake comment containing the passed 'message'"""
         return self._get_new_comment_demo(message)
 
     def _facebook_like(self, object_id, like) -> None:
-        """Overridden to bypass third-party API calls."""
         return
 
-    # INSTAGRAM
 
     def _instagram_comment_add(self, message, object_id, comment_type="comment"):
         return self._get_new_comment_demo(message)
@@ -37,10 +30,8 @@ class SocialStreamPost(models.Model):
             "comments": self._get_demo_comments(),
         }
 
-    # LINKEDIN
 
     def _linkedin_comment_add(self, message, comment_urn=None, attachment=None):
-        """Returns a fake comment containing the passed 'message'"""
         return {
             "id": "urn:li:comment:(urn:li:activity:12547,452542)",
             "formatted_created_time": "10/02/2019",
@@ -74,10 +65,8 @@ class SocialStreamPost(models.Model):
 
         return {"comments": comments, "summary": {"total_count": 2}}
 
-    # TWITTER
 
     def _twitter_comment_add(self, stream, comment_id, message, attachment):
-        """Returns a fake comment containing the passed 'message'"""
         comment = self._get_new_comment_demo(message)
         comment["in_reply_to_tweet_id"] = comment_id
         return comment
@@ -89,24 +78,17 @@ class SocialStreamPost(models.Model):
         return True
 
     def _twitter_do_retweet(self) -> bool:
-        """In the demo module, we simply increment the retweet counter."""
         self.write({"twitter_retweet_count": self.twitter_retweet_count + 1})
         return True
 
     def _twitter_undo_retweet(self) -> bool:
-        """In the demo module, we simple return `True` to remove a retweet."""
         return True
 
     def _twitter_tweet_quote(self, message, attachment=None):
-        """
-        In the demo module, we return `True` if the user wrote a message.
-        If no message is provided, a new retweet will be created.
-        """
         if not message:
             return self._twitter_do_retweet()
         return True
 
-    # YOUTUBE
 
     def _youtube_comment_add(self, comment_id, message, is_edit=False):
         return self._get_new_comment_demo(message)
@@ -128,12 +110,8 @@ class SocialStreamPost(models.Model):
             "comments": {"data": []},
         }
 
-    # ========================================================
-    # MISC / UTILITY
-    # ========================================================
 
     def _get_demo_comments(self) -> list:
-        """Return some fake comments."""
 
         res_partner_2 = self.env.ref(
             "social_demo.res_partner_2", raise_if_not_found=False

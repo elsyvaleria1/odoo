@@ -13,7 +13,6 @@ odoo_view_link_prefix = "odoo://view/"
 
 
 def odoo_charts(data):
-    """returns all odoo chart definitions in the spreadsheet"""
     figures = []
     for sheet in data.get("sheets", []):
         for figure in sheet.get("figures", []):
@@ -33,12 +32,10 @@ def get_odoo_charts_from_carousel(carousel):
 
 
 def links_urls(data):
-    """return all markdown links in cells"""
     urls = []
     link_prefix = "odoo://view/"
     for sheet in data.get("sheets", []):
         for cell in sheet.get("cells", {}).values():
-            # 'cell' was an object in versions <saas-18.1
             content = cell if isinstance(cell, str) else cell.get("content", "")
             match = re.match(markdown_link_regex, content)
             if match and match.group(2).startswith(link_prefix):
@@ -47,9 +44,6 @@ def links_urls(data):
 
 
 def odoo_view_links(data) -> list:
-    """return all view definitions embedded in link cells.
-    urls looks like odoo://view/{... view data...}
-    """
     return [
         json_loads(url[len(odoo_view_link_prefix) :])
         for url in links_urls(data)
@@ -58,15 +52,10 @@ def odoo_view_links(data) -> list:
 
 
 def remove_aggregator(field_name):
-    """remove the group operator
-    >>> remove_aggregator("amount:sum")
-    >>> "amount"
-    """
     return field_name.split(":")[0]
 
 
 def domain_fields(domain):
-    """return all field names used in the domain"""
     field_names, _value_names = get_domain_value_names(str(domain))
     return list(field_names)
 
@@ -75,7 +64,6 @@ def pivot_measure_fields(pivot) -> list:
     measures = [
         measure
         if isinstance(measure, str)
-        # "field" has been renamed to "name" and "name" to "fieldName"
         else measure["field"]
         if "field" in measure
         else measure["name"]
@@ -88,10 +76,8 @@ def pivot_measure_fields(pivot) -> list:
 
 
 def pivot_fields(pivot) -> tuple:
-    """return all field names used in a pivot definition"""
     model = pivot["model"]
     fields = set(
-        # colGroupBys and rowGroupBys were renamed to columns and rows, name to fieldName
         pivot.get("colGroupBys", [])
         + [col.get("name", col.get("fieldName")) for col in pivot.get("columns", [])]
         + pivot.get("rowGroupBys", [])
@@ -110,7 +96,6 @@ def list_order_fields(list_definition) -> list:
 
 
 def list_fields(list_definition) -> tuple:
-    """return all field names used in a list definitions"""
     model = list_definition["model"]
     fields = set(
         list_definition["columns"]
@@ -121,7 +106,6 @@ def list_fields(list_definition) -> tuple:
 
 
 def chart_fields(chart) -> tuple:
-    """return all field names used in a chart definitions"""
     model = chart["metaData"]["resModel"]
     fields = set(
         chart["metaData"]["groupBy"]
@@ -135,7 +119,6 @@ def chart_fields(chart) -> tuple:
 
 
 def filter_fields(data):
-    """return all field names used in global filter definitions"""
     fields_by_model = defaultdict(set)
     charts = odoo_charts(data)
     if "odooVersion" in data and data["odooVersion"] < 5:
@@ -186,7 +169,6 @@ def extract_fields(extract_fn, items):
 
 
 def fields_in_spreadsheet(data):
-    """return all fields, grouped by model, used in the spreadsheet"""
     odoo_pivots = (
         pivot
         for pivot in data.get("pivots", {}).values()

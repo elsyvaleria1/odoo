@@ -102,8 +102,6 @@ def git_bytes(
     trusted: bool = False,
     timeout: float = TIMEOUT,
 ) -> subprocess.CompletedProcess[bytes]:
-    """git as `git` runs it, its input and output bytes as they are: a patch is
-    no text -- a CRLF line or a Latin-1 file is in it byte for byte."""
     try:
         return subprocess.run(
             ["git", *_SAFE, *args],
@@ -121,8 +119,6 @@ def git_bytes(
 
 
 def is_ancestor(cwd: Path, commit: str, of: str, *, trusted: bool = False) -> bool:
-    """Whether ``of`` holds ``commit``; a commit unknown here is held by
-    nothing."""
     completed = subprocess.run(
         ["git", *_SAFE, "merge-base", "--is-ancestor", commit, of],
         cwd=cwd,

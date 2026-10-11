@@ -17,8 +17,6 @@ from odoo.addons.portal.utils import (
     resolve_thread_for_credentials,
 )
 
-# a link's signed `hash` lets whoever holds it post as its `pid`; a `hash`
-# without a `pid` beside it (a translations cache key) is no signature
 _SIGNED_QUERY = re.compile(r"[?#][^\s'\"<>#]*")
 _SIGNATURE = re.compile(r"(?<=[?&#])(_?hash=)[^&#]+")
 _PARTNER = re.compile(r"[?&#]pid=")
@@ -40,17 +38,11 @@ PARTNER_HASH_SCOPE = tools.register_signed_scope(
     "`pid` a link was sent to, over the access token that link carries",
     lifetime="undated: it holds while the access token it signs opens the record",
 )
-# ir.config_parameter: whether a hash signed with the bare database secret, as
-# every link sent before portal 1.6 carries, is still accepted, and the last day
-# one was; ir.config_parameter._gc_portal_legacy_hash turns it off once idle
 LEGACY_HASH_ENABLED = "portal.legacy_hash_enabled"
 LEGACY_HASH_LAST_USED = "portal.legacy_hash_last_used"
 LEGACY_HASH_IDLE_DAYS = 30
 
 
-# the one place a bare-secret hash is accepted: delete it, its parameters, its
-# privilege, ir.config_parameter._gc_portal_legacy_hash and migration 1.6 once
-# the fallback has turned itself off on every database
 def _legacy_hash_valid(record: models.Model, signature: str, signed: tuple) -> bool:
     env = record.env
     settings = env.registry.settings
@@ -81,8 +73,6 @@ def _legacy_hash_valid(record: models.Model, signature: str, signed: tuple) -> b
         ).set_param(LEGACY_HASH_LAST_USED, today)
 
     if request:
-        # once the request's cursor is back in the pool, on one of its own: a
-        # read-only request cannot write, and a request is never retried over it
         registry, uid = env.registry, env.uid
 
         def record_use_after_release() -> None:
@@ -188,8 +178,6 @@ class MixinMailThread(models.AbstractModel):
     def _verify_sign_token(self, signature, pid, token: str | None = None) -> bool:
         signed = self._portal_hash_signed(pid, token)
         if not signed[1]:
-            # a record closed to its customer's link has no token to sign
-            # over, and a hash over none would speak for anyone's `pid`
             _debug.logic(
                 "hash_refused", model=self._name, record=self.id, reason="no_token"
             )

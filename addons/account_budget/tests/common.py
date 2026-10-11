@@ -8,7 +8,6 @@ class TestAccountBudgetCommon(AccountTestInvoicingCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # ==== Products ====
         cls.product_a = cls.env["product.product"].create(
             {"name": "product_a", "standard_price": 100.0, "supplier_taxes_id": False}
         )
@@ -16,7 +15,6 @@ class TestAccountBudgetCommon(AccountTestInvoicingCommon):
             {"name": "product_b", "standard_price": 100.0, "supplier_taxes_id": False}
         )
 
-        # ==== Analytic accounts ====
 
         cls.analytic_plan_projects = cls.env["account.analytic.plan"].create(
             {"name": "Projects"}
@@ -57,7 +55,6 @@ class TestAccountBudgetCommon(AccountTestInvoicingCommon):
             }
         )
 
-        # ==== Budget Analytic ====
 
         cls.budget_analytic_revenue = cls.env["budget.analytic"].create(
             {

@@ -19,8 +19,6 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
         default="google",
     )
 
-    # Allow to sync with eventually existing ICP keys without creating them if respective module is not installed
-    # Using same field names and strings as their respective res.config.settings
     cal_client_id = fields.Char(
         string="Google Client_id",
         default=lambda self: self.env["res.users"]._calendar_provider_client_id(
@@ -52,15 +50,7 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
 
     @assert_log_admin_access
     def action_calendar_prepare_external_provider_sync(self) -> None:
-        """Called by the wizard to configure an external calendar provider without requiring users
-        to access the general settings page.
-        Make sure that the provider calendar module is installed or install it. Then, set
-        the API keys into the applicable config parameters.
-        """
         self.check_singleton()
-        # `assert_log_admin_access`'s own audit line names this wizard's
-        # generic display_name, not the provider it's actually configuring --
-        # log that explicitly.
         _logger.info(
             "Configuring the %s calendar provider for user %s #%s",
             self.external_calendar_provider,
@@ -81,8 +71,6 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
         if calendar_module.state != "installed":
             calendar_module.button_immediate_install()
 
-        # the install refreshed this environment's registry: the provider's
-        # module answers now
         Users = self.env["res.users"]
         if self.external_calendar_provider == "google":
             Users._set_calendar_provider_client(

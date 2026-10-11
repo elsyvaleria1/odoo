@@ -6,9 +6,6 @@ from odoo.addons.account_transfer.tests.account_transfer_test_classes import (
 )
 
 
-# ############################################################################ #
-#                                UNIT TESTS                                    #
-# ############################################################################ #
 @tagged("post_install", "-at_install")
 class MoveModelLineTestCase(AccountAutoTransferTestCase):
     @classmethod
@@ -23,9 +20,6 @@ class MoveModelLineTestCase(AccountAutoTransferTestCase):
         )
 
     def test_get_transfer_move_lines_values_partner(self):
-        """
-        Create account moves and transfer, verify that the result of the auto transfer is correct.
-        """
         amounts = [4242.0, 1234.56]
         partner_ids = [self._create_partner("partner" + str(i)) for i in range(2)]
         self._create_basic_move(
@@ -167,9 +161,6 @@ class MoveModelLineTestCase(AccountAutoTransferTestCase):
                 "name": "Transfer (100.0% from MASTER 1)",
                 "account_id": self.origin_accounts[0].id,
                 "date_maturity": args[1],
-                # The amount emptied from the source account is not the sum of the transferred amounts but the total amount to be transferred
-                # times the sum of the percentages. this is to ensure that the account ends up with a zero balance and not small residuals.
-                # In this particular case it ensures the emptied amount is 4242.42 + 1234.56, 5476.98 otherwise, it would have wrongly been 5476.97.
                 "balance": -self.round(sum(amounts) * (sum(percentages) / 100.0)),
             },
             {
@@ -194,9 +185,6 @@ class MoveModelLineTestCase(AccountAutoTransferTestCase):
                 "name": "Transfer (-0.1% to SLAVE 5)",
                 "account_id": self.destination_accounts[3].id,
                 "date_maturity": args[1],
-                # As it is the destination line of the model, its amount is not computed but based on the remaining balance. Therefore, we don't
-                # have 'self.round(transfer_lines_amounts[3])' but the difference between what's already been transferred and the total amount.
-                # In this particular case, it means a difference of 0.01 between the computed amount (5.48) and the remaining amount (5.49).
                 "balance": self.round(sum(amounts) - sum(transfer_lines_amounts[:3])),
             },
         ]
@@ -257,11 +245,6 @@ class MoveModelLineTestCase(AccountAutoTransferTestCase):
         self.assertListEqual(exp, res)
 
     def test_get_transfer_move_lines_values_same_partner_ids(self):
-        """
-        Make sure we only process the account moves once.
-        Here the second line references a partner already handled in the first one.
-        The second transfer should thus not be applied to the account lines already handled by the first transfer.
-        """
         amounts = [4242.42, 1234.56]
         partner_ids = [self._create_partner("partner" + str(i)) for i in range(2)]
         self._create_basic_move(

@@ -269,8 +269,6 @@ class TestRules(TransactionCase):
         self.assertEqual(filter_result, allowed_child)
 
     def test_parent_rules_bind_through_a_computed_delegate(self):
-        # hr.employee delegates to hr.version through a computed version_id:
-        # the version's company rule must hold on the employee's rows too
         ChildModel = self.env["test_access_right.inherits_computed"]
         allowed_child, forbidden_child = children = ChildModel.create(
             [

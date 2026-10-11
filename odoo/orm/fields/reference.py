@@ -55,8 +55,6 @@ class Reference(Selection["BaseModel | None"]):
     ) -> str | None:
         if is_recordset(value):
             if value and not isinstance(value.id, int):
-                # the cache holds "model,id" and the read parses the id back;
-                # a NewId has no such form, and the read would fail far from here
                 raise ValueError(
                     f"{self} cannot reference {value}: save the record first"
                 )
@@ -126,11 +124,11 @@ class Reference(Selection["BaseModel | None"]):
         if not per_field:
             return
         names = set(model_names)
-        discarded = 0  # debuglog
+        discarded = 0
         for pairs in per_field.values():
             stale = [pair for pair in pairs if pair[0] in names]
             pairs.difference_update(stale)
-            discarded += len(stale)  # debuglog
+            discarded += len(stale)
         _debug.lifecycle(
             "field.reference.verified_pairs_discarded",
             models=sorted(names),
@@ -157,7 +155,6 @@ class Reference(Selection["BaseModel | None"]):
             and self.store
             and self.column_type
         ):
-            # the siblings' stored pairs, verified in the same round
             stored = env.backend.columns.read(
                 env[self.model_name], self.name, prefetch_ids
             )
@@ -202,8 +199,6 @@ class Reference(Selection["BaseModel | None"]):
             res_id: str
             res_model, res_id = value.split(",")
             corecord = record.env[res_model].browse(int(res_id))
-            # the siblings naming the same model fetch with it, as a
-            # many2one's do
             corecord._prefetch_ids = PrefetchReference(record, self, res_model)
             return corecord
         return None
@@ -222,8 +217,6 @@ class Reference(Selection["BaseModel | None"]):
             return super().get_expression_getter(field_expr)
         read = self.__get__
 
-        # the column holds "model,id" and every domain value takes that form;
-        # the record the descriptor answers equals none of them
         def text(record: BaseModel) -> str | typing.Literal[False]:
             corecord = read(record)
             return f"{corecord._name},{corecord.id}" if corecord else False
@@ -309,7 +302,6 @@ class Many2oneReference(Integer):
             invf = typing.cast("_RelationalMulti", invf)
             additions: dict[IdType, tuple[IdType, ...]] = {}
             for records, value, model_ids in model_ids_per_update:
-                # A tree member's rows are referenced under the root's name.
                 ids = model_ids.get(env[invf.model_name]._get_reference_model_name())
                 if not ids:
                     continue

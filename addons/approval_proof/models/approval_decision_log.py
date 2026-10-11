@@ -17,8 +17,6 @@ class ApprovalDecisionLog(models.Model):
         evidence_id = self.env.context.get("approval_proof_evidence_id")
         if evidence_id:
             for vals in vals_list:
-                # the deciding user's own rows; a row flipped by their refusal
-                # or decided as someone else's delegate names a principal
                 if (
                     vals.get("verdict") in ("approved", "refused")
                     and vals.get("approver_id")

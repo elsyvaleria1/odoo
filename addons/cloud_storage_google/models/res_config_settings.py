@@ -26,7 +26,6 @@ class ResConfigSettings(models.TransientModel):
         "should promise the current service account has the permission "
         "to access the old bucket.",
     )
-    # Google Service Account Key in JSON format
     cloud_storage_google_service_account_key = fields.Binary(
         string="Google Service Account Key",
         store=False,
@@ -64,14 +63,10 @@ class ResConfigSettings(models.TransientModel):
         ICP = self.env["ir.config_parameter"]
         if ICP.get_param("cloud_storage_provider") != "google":
             return super()._setup_cloud_storage_provider()
-        # check bucket access
         bucket_name = ICP.get_param("cloud_storage_google_bucket_name")
-        # use different blob names in case the credentials are allowed to
-        # overwrite an existing blob created by previous tests
         blob_name = f"0/{datetime.now(UTC)}.txt"
 
         IrAttachment = self.env["ir.attachment"]
-        # check blob create permission
         upload_url = IrAttachment._generate_cloud_storage_google_signed_url(
             bucket_name,
             blob_name,
@@ -89,7 +84,6 @@ class ResConfigSettings(models.TransientModel):
                 )
             )
 
-        # check blob read permission
         download_url = IrAttachment._generate_cloud_storage_google_signed_url(
             bucket_name,
             blob_name,
@@ -107,8 +101,6 @@ class ResConfigSettings(models.TransientModel):
                 )
             )
 
-        # CORS management is not allowed in the Google Cloud console.
-        # configure CORS on bucket to allow .pdf preview and direct upload
         cors = [
             {
                 "origin": ["*"],

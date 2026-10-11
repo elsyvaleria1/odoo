@@ -21,8 +21,6 @@ class TestLoaderScriptPolicy(HttpCase):
         )
 
     def test_the_loader_keeps_an_editor_page_s_bounded_wait(self):
-        # the editor's page keeps 'unsafe-eval', so it must not hold its boot
-        # for every artifact the server compiles
         self.browser_js("/", AWAIT_PROBE % "false", login="admin")
 
     def test_the_loader_keeps_a_public_page_s_wait(self):

@@ -21,7 +21,6 @@ class TestOrderAmounts(TestTradeOrderCase):
             qty_invoiced_draft_input=drafted,
         )
 
-    # ─── the rollup ───────────────────────────────────────────────
 
     def test_untaxed_total_sums_the_line_subtotals(self):
         order = self._make_order()
@@ -70,7 +69,6 @@ class TestOrderAmounts(TestTradeOrderCase):
 
         self.assertAlmostEqual(order.amount_untaxed, 50.0, places=2)
 
-    # ─── the invoiced rollup ──────────────────────────────────────
 
     def test_invoiced_and_uninvoiced_amounts_split_the_order(self):
         order = self._make_order()
@@ -107,7 +105,6 @@ class TestOrderAmounts(TestTradeOrderCase):
         self.assertAlmostEqual(order.amount_taxexc_invoiced, 0.0, places=2)
         self.assertAlmostEqual(order.amount_taxexc_to_invoice, 200.0, places=2)
 
-    # ─── the credit warning ───────────────────────────────────────
 
     def test_a_partner_over_its_credit_limit_warns_on_a_draft_order(self):
         company = self.env.company
@@ -128,7 +125,6 @@ class TestOrderAmounts(TestTradeOrderCase):
         self.assertFalse(order.partner_credit_warning)
 
     def test_no_warning_once_the_order_leaves_draft(self):
-        """The warning is advice before committing, not a standing flag."""
         self.env.company.account_config_id.account_use_credit_limit = True
         self.partner.credit_limit = 1.0
         order = self._make_order()

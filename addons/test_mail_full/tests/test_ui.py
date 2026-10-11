@@ -27,7 +27,6 @@ class TestUIPortal(TestPortal):
         )
 
     def test_no_copy_link_for_non_readable_portal_record(self):
-        # mail.test.portal has read access only for base.group_user
         self.start_tour(
             f"/my/test_portal_records/{self.record_portal.id}?{urlencode({'token': self.record_portal.access_token})}",
             "portal_no_copy_link_tour",
@@ -35,7 +34,6 @@ class TestUIPortal(TestPortal):
         )
 
     def test_copy_link_for_readable_portal_record(self):
-        # mail.test.portal has read access only for base.group_user
         self.start_tour(
             f"/my/test_portal_records/{self.record_portal.id}?{urlencode({'token': self.record_portal.access_token})}",
             "portal_copy_link_tour",
@@ -71,7 +69,6 @@ class TestUIPortal(TestPortal):
         record_rating = self.env["mail.test.rating"].create(
             {"name": "Test rating record"}
         )
-        # To check if there is no message with rating, there is no rating cards feature.
         record_rating.message_post(
             body="Message without rating",
             message_type="comment",

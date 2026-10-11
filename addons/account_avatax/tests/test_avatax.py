@@ -82,7 +82,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         with self._capture_request(return_value=response):
             self.assertInvoice(invoice, test_exact_response=response)
 
-        # verify transactions are uncommitted
         with patch(
             "odoo.addons.account_avatax.models.mixin_account_external_tax.MixinAccountExternalTax._uncommit_external_taxes"
         ) as mocked_uncommit:
@@ -94,7 +93,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         with self._capture_request(return_value=response):
             self.assertInvoice(invoice, test_exact_response=response)
 
-        # verify transactions are uncommitted
         with patch(
             "odoo.addons.account_avatax.models.mixin_account_external_tax.MixinAccountExternalTax._uncommit_external_taxes"
         ) as mocked_uncommit:
@@ -102,7 +100,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
             mocked_uncommit.assert_called()
 
     def test_03_odoo_invoice(self):
-        """Tax calculation with two SC SPECIAL 1% taxes on the same line."""
         invoice, response = self._create_invoice_03_and_expected_response()
         self.assertRecordValues(
             invoice,
@@ -125,7 +122,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         )
 
     def test_04_odoo_invoice(self):
-        """Test an invoice for which Avatax returns no taxes."""
         invoice, response = self._create_invoice_03_and_expected_response()
         self.assertRecordValues(
             invoice,
@@ -160,8 +156,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         )
         refund = self.env["account.move"].browse(move_reversal.refund_moves()["res_id"])
 
-        # Amounts should be sent as negative for refunds:
-        # https://developer.avalara.com/erp-integration-guide/sales-tax-badge/transactions/test-refunds/
         lines = [
             refund._prepare_avatax_document_line_service_call(line_data, True)
             for line_data in refund._prepare_line_data_for_external_taxes()
@@ -251,7 +245,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         self.assertIsNone(capture.val, "Journal entries should not be sent to Avatax.")
 
     def test_vendor_bill(self):
-        """We shouldn't send any requests to Avatax for vendor bills."""
         vendor_bill = self.env["account.move"].create(
             {
                 "move_type": "in_invoice",
@@ -298,9 +291,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         company_2.tax_config_id.account_fiscal_country_id = self.env.ref("base.be")
         self.env.user.company_id = company_2
         with self._capture_request(return_value=response):
-            # ensure this doesn't raise:
-            # odoo.exceptions.ValidationError
-            # This entry contains some tax from an unallowed country. Please check its fiscal position and your tax configuration.
             invoice.button_external_tax_calculation()
 
     def test_invoice_branch_company(self):
@@ -316,17 +306,14 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
                 "parent_id": branch.id,
             }
         )
-        self.cr.precommit.run()  # load the CoA
+        self.cr.precommit.run()
 
         invoice = self._create_invoice(post=False, company_id=child_branch.id)
 
-        # Avalara configuration defined on parent company
-        # Should not raise RedirectWarning: ('Please add your AvaTax credentials')
         with self._capture_request(return_value={"lines": [], "summary": []}):
             invoice.button_external_tax_calculation()
 
         self.env.company.avalara_api_id = False
-        # No avalara configuration defined in the parent tree
         with self.assertRaises(
             RedirectWarning, msg="Please add your AvaTax credentials"
         ):
@@ -341,7 +328,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
                 "avalara_commit": True,
             }
         )
-        # Avalara configuration defined on the child branch
         with self._capture_request(return_value={"lines": [], "summary": []}):
             invoice.button_external_tax_calculation()
 
@@ -374,10 +360,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
             invoice.partner_id = partner_no_zip
 
     def test_negative_quantities(self):
-        """The quantity field sent to Avatax should always be positive. From the Avatax documentation:
-        'Quantity of items in this line. This quantity value should always be a positive value representing the quantity
-        of product that changed hands, even when handling returns or refunds.'
-        """
         base_line = defaultdict(lambda: False)
         base_line["product_id"] = self.product_accounting
         base_line["quantity"] = -1
@@ -394,9 +376,7 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         )
 
     def test_multi_currency_exempted_tax(self):
-        """Test an invoice in another currency having 2 taxes computed from AvaTax whose one is exempted"""
         currency = self.setup_other_currency("EUR")
-        # create an invoice of 100 in a currency with a rate of 2.0
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -417,9 +397,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
                 ],
             }
         )
-        # Taxes from AvaTax:
-        # - "CA STATE TAX" (4%)
-        # - "CA COUNTY TAX" (6%) [exempted]
         lines = [
             {
                 "details": [
@@ -472,12 +449,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
             invoice,
             [{"amount_tax": 4.0, "amount_total": 104.0, "amount_untaxed": 100.0}],
         )
-        # The tax lines should be:
-        # ________________________________________________________________________________
-        #              Label              | Amount in Currency | Balance | Debit | Credit
-        # --------------------------------------------------------------------------------
-        #  CA STATE 4%                    |        -4.0        |   -2.0  |  0.0  |  2.0
-        #  CA COUNTY 6%                   |         0.0        |    0.0  |  0.0  |  0.0
         tax_line = invoice.line_ids.filtered(
             lambda l: l.tax_line_id.name == "CA STATE 4%"
         )
@@ -494,7 +465,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         )
 
     def test_invoice_multi_taxline(self):
-        """Test that multiple tax lines having the same tax are not an issue for avatax computation"""
         self.env["account.fiscal.position"].search([("is_avatax", "=", True)]).write(
             {
                 "avatax_invoice_account_id": False,
@@ -605,8 +575,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         }
 
         with self._capture_request(return_value=response):
-            # ensure this doesn't raise:
-            # odoo.exceptions.ValidationError: Expected singleton:
             invoice.button_external_tax_calculation()
         tax_lines = invoice.line_ids.filtered(
             lambda l: l.tax_line_id.name == "CA STATE 6%"
@@ -623,8 +591,6 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         )
 
     def test_fully_discounted_invoice(self):
-        """By default, accounting removes tax lines that are $0. This results in incorrect journal items in case Avatax
-        doesn't calculate it as $0 and we have to set a tax amount."""
         invoice = self.env["account.move"].create(
             [
                 {
@@ -719,7 +685,7 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
                     "lineNumber": f"account.move.line,{invoice.invoice_line_ids[1].id}",
                     "tax": 0.00,
                 },
-            ],  # This discount is tax-exempt.
+            ],
             "summary": [
                 {
                     "jurisCode": "06",
@@ -758,7 +724,7 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
         self.assertRecordValues(
             invoice.line_ids.sorted("balance"),
             [
-                {"name": "Accounting", "balance": -295.00},  # Income account
+                {"name": "Accounting", "balance": -295.00},
                 {"name": "CA STATE 6%", "balance": -17.7},
                 {"name": "CA SPECIAL 3%", "balance": -8.85},
                 {"name": "CA SPECIAL 1%", "balance": -2.95},
@@ -766,11 +732,11 @@ class TestAccountAvalaraInternal(TestAccountAvalaraInternalCommon):
                 {
                     "name": False,
                     "balance": sum(t["tax"] for t in response["summary"]),
-                },  # AR
+                },
                 {
                     "name": "Odoo User Initial Discount",
                     "balance": 295.00,
-                },  # Income account
+                },
             ],
         )
 
@@ -801,12 +767,6 @@ class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
         return res
 
     def test_disable_document_recording(self):
-        """In order for this connector to be used in conjunction with other integrations to AvaTax,
-        the user must be able to control which connector is used for recording documents to AvaTax.
-
-        From a technical standpoint, simply use DocType: 'SalesOrder' on all calls
-        and suppress any non-getTax calls (i.e. cancelTax, postTax).
-        """
         self.env.company.avalara_commit = False
         invoice, response = self._create_invoice_01_and_expected_response()
         with self._capture_request(return_value=response) as capture:
@@ -818,9 +778,6 @@ class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
         )
 
     def test_disable_avatax(self):
-        """The user must have an option to turn on or off the AvaTax Calculation service
-        independent of any other Avalara product or service.
-        """
         self.fp_avatax.is_avatax = False
         with patch(
             "odoo.addons.account_avatax.lib.avatax_client.AvataxClient.request"
@@ -829,7 +786,6 @@ class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
             mocked_request.assert_not_called()
 
     def test_disable_avatax_neutralize(self):
-        """ORM's neutralization feature works."""
         self.cr.execute(next(get_neutralization_queries(["account_avatax"])))
         with patch(
             "odoo.addons.account_avatax.lib.avatax_client.AvataxClient.request"
@@ -838,7 +794,6 @@ class TestAccountAvalaraSalesTaxAdministration(TestAccountAvataxCommon):
             mocked_request.assert_not_called()
 
     def test_integration_connect_button(self):
-        """Test the connection to the AvaTax service and verify the AvaTax credentials."""
         with (
             self._skip_no_credentials(),
             self.assertRaisesRegex(UserError, "'version'"),

@@ -53,18 +53,9 @@ class PaymentPortal(payment_portal.PaymentPortal):
         website=True,
         sitemap=False,
     )
-    def donation_transaction(  # noqa: E8539  unchecked: a donation's form carries a token it deliberately does not check
+    def donation_transaction(
         self, amount, currency_id, partner_id, access_token, minimum_amount=0, **kwargs
     ):
-        """Override of `payment` to not use `partner_id`/`access_token` for authorization.
-
-        Unlike the parent route, the donor's partner is always re-derived server-side (the
-        current user's partner if logged in, otherwise the website's public partner), and
-        `access_token` is not checked against `payment_utils.check_access_token`: the donation
-        amount can be changed by the visitor after the token was generated (see the recompute
-        below), so validating it against the current amount would reject legitimate amount
-        changes as if they were tampering.
-        """
         amount = self._cast_as_float(amount)
         minimum_amount = self._cast_as_float(minimum_amount)
         if amount is None or minimum_amount is None:
@@ -129,8 +120,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
             if not country_id:
                 raise ValidationError(request.env._("Country is required."))
             tx_sudo.partner_country_id = country_id
-        # the user can change the donation amount on the payment page,
-        # therefor we need to recompute the access_token
         access_token = payment_utils.generate_access_token(
             tx_sudo.partner_id.id, tx_sudo.amount, tx_sudo.currency_id.id
         )

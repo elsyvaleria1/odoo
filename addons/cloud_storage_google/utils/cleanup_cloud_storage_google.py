@@ -9,41 +9,16 @@ import requests
 from google.auth.transport.requests import Request
 from google.oauth2 import service_account
 
-# Resolve the shared standalone module from this checkout, without importing
-# the cloud_storage addon (which would start importing the Odoo server).
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "cloud_storage" / "utils"))
 from cloud_storage_cleanup import filter_unreferenced_blob_urls, remove_blob_urls
 
-# This is a script to manually clean up unused google blobs.
 
-# +--------+ 3. search_read ir.attachments with cloud urls +---------+
-# |        | --------------------------------------------> |         |
-# |        | <-------------------------------------------- |  Odoo   |
-# |        | 4. used urls                                  |         |
-# |        |                                               |         |
-# | Script |                                               +---------+
-# |        |                                               +---------+
-# |        |                            1. list all blobs  |  Cloud  |
-# |        | --------------------------------------------> | Storage |
-# |        | <-------------------------------------------- |         |
-# |        | 2. blobs names                                |         |
-# |        |                                               |         |
-# |        |                        5. delete unused blobs |         |
-# |        | --------------------------------------------> |         |
-# |        | <-------------------------------------------- |         |
-# +--------+ 6. 204: No Content                            +---------+
-#
-#
-# 1, 2, 3, 4 are done in batch
-# 5, 6 are done with threadpool
 
-# Odoo
 odoo_url = "http://localhost:8069"
 odoo_db = "odoo_db"
 odoo_username = "admin"
 odoo_password = "admin"
 
-# Google service account
 GOOGLE_CLOUD_STORAGE_ENDPOINT = "https://storage.googleapis.com"
 google_cloud_bucket_name = "bucket_name"
 google_cloud_account_info = r"""account_info"""
@@ -63,7 +38,7 @@ def get_blob_urls(
     headers = {"Authorization": f"Bearer {token}"}
 
     while True:
-        response = requests.get(  # noqa: E8518 - a standalone script run outside the server, with no ir.egress to reach
+        response = requests.get(
             url, params=params, headers=headers, timeout=5
         )
         data = response.json()

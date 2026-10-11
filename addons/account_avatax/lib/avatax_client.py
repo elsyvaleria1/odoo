@@ -20,8 +20,6 @@ AvaTax Software Development Kit for Python.
 @version    TBD
 @link       https://github.com/avadev/AvaTax-REST-V2-Python-SDK
 """
-# This is a stripped down version of the upstream Avatax library for Odoo. Changes were made to
-# prevent arbitrary requests in case function references get leaked.
 
 import logging
 from datetime import UTC, datetime
@@ -71,7 +69,6 @@ class AvataxClient:
         return self
 
     def request(self, method, endpoint, params, json):
-        """Allow to enable a trace of requests in the logger."""
         start = str(datetime.now(UTC))
         url = f"{self.base_url}/api/v2/{endpoint}"
         with guarded_http.guarded_session(netguard.PUBLIC_ONLY) as session:

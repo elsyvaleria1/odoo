@@ -16,7 +16,6 @@ def _sign_post_init(env) -> None:
 
 
 def uninstall_hook(env):
-    # disable the a sign invoices while uninstalling a module
     if env["ir.module.module"]._get("account").state == "installed":
         env["res.company"].search([]).account_config_id.sign_invoice = False
 

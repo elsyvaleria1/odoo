@@ -5,7 +5,6 @@ from .test_common import TestCommon
 
 class TestPlanningLeaves(TestCommon):
     def test_recurrency_public_holiday(self):
-        # Create a public holiday
         self.env["resource.schedule.exception"].create(
             {
                 "name": "Public holiday",
@@ -15,7 +14,7 @@ class TestPlanningLeaves(TestCommon):
             }
         )
         occuring_slot = self.env["planning.slot"].create(
-            {  # this should land on a Monday
+            {
                 "start_datetime": self.random_monday_date + timedelta(hours=8),
                 "end_datetime": self.random_monday_date + timedelta(hours=10),
                 "resource_id": self.resource_bert.id,
@@ -45,11 +44,11 @@ class TestPlanningLeaves(TestCommon):
                     "request_date_to": "2024-03-13",
                 }
             )
-        )  # time off should land on Wednesday
+        )
         leave.action_approve()
 
         occuring_slot = self.env["planning.slot"].create(
-            {  # this should land on a Monday
+            {
                 "start_datetime": self.random_monday_date + timedelta(hours=8),
                 "end_datetime": self.random_monday_date + timedelta(hours=10),
                 "resource_id": self.resource_bert.id,

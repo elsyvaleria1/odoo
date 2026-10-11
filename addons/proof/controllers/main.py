@@ -31,8 +31,6 @@ class ProofAnswer(http.Controller):
             },
         )
 
-    # a POST, never the GET: a mail scanner that opens the link to check it
-    # must not answer for the contact
     @http.route(
         "/proof/answer/<int:delivery_id>/submit",
         type="http",

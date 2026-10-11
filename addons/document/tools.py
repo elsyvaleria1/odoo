@@ -3,8 +3,6 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# set by a caller that wants a move refused, with what it would change, when
-# it changes who reaches the moved documents or what they contain
 MOVE_ACCESS_CHECK = "documents_move_access_check"
 
 
@@ -111,8 +109,6 @@ INLINE_RENDERED_MIMETYPES = frozenset(
 
 
 def is_mimetype_inline_rendered(mimetype: str) -> bool:
-    # a documents-email is rendered in place by the app itself (the preview
-    # reads its raw), as text/plain on the routes
     mimetype = (mimetype or "").split(";")[0].strip().lower()
     return (
         mimetype.startswith("application/pdf")

@@ -6,9 +6,6 @@ from odoo.addons.base.models.mixin_recurrence_interval import (
     REPEAT_UNIT_SELECTION,
 )
 
-# The shared cadence vocabulary, minus the one value this module does not bill
-# on. Narrowed from the shared list rather than spelled again, so a unit added
-# there is a decision here and not a silent divergence.
 PLAN_UNIT_SELECTION = [pair for pair in REPEAT_UNIT_SELECTION if pair[0] != "day"]
 
 _debug = DebugLog(__name__)
@@ -29,9 +26,6 @@ class SaleSubscriptionPlan(models.Model):
     sequence = fields.Integer(default=10)
     company_id = fields.Many2one(comodel_name="res.company")
 
-    # The billing period is `mixin.recurrence.interval`'s cadence -- a plan bills
-    # every N units the way a task repeats every N units. Use the
-    # `billing_period` property below for the timedelta.
     repeat_interval = fields.Integer(
         string="Billing Period ",
         required=True,
@@ -59,7 +53,6 @@ class SaleSubscriptionPlan(models.Model):
         help="Align all subscription invoices on the first day of each billing period.",
     )
 
-    # Self Service
     user_closable = fields.Boolean(
         string="Closable",
         default=False,
@@ -97,7 +90,6 @@ class SaleSubscriptionPlan(models.Model):
         help="Allow customers to temporarily pause their subscription for a specific period. Not available for postpaid subscriptions.",
     )
 
-    # Invoicing
     auto_close_limit = fields.Integer(
         string="Automatic Closing",
         default=15,
@@ -133,7 +125,6 @@ class SaleSubscriptionPlan(models.Model):
         ],
     )
 
-    # UX
     active_subs_count = fields.Integer(
         string="Subscriptions",
         compute="_compute_active_subs_count",
@@ -249,13 +240,6 @@ class SaleSubscriptionPlan(models.Model):
 
     @property
     def billing_period(self):
-        """This plan's cadence as a timedelta, or False when it has none.
-
-        The guard is this module's own: sixteen call sites read the period and
-        treat "no plan" or "no period" as "does not recur", so an empty plan has
-        to answer falsely rather than raise the way `_get_recurrence_delta`
-        does on an empty recordset.
-        """
         if not self.repeat_unit or not self.repeat_interval:
             return False
         return self._get_recurrence_delta()

@@ -141,11 +141,9 @@ class WebsocketCase(HttpCase):
         raise BadRequest("Opening a cursor from an unknown method in websocket test.")
 
     def channel(self, name):
-        """The capability a test's client subscribes to ``name`` with."""
         return channel_capability(self.env, TEST_CHANNEL, name)
 
     def target(self, name):
-        """The channel a test's server sends ``name`` to."""
         return channel_target(self.env, TEST_CHANNEL, name)
 
     def websocket_connect(self, *args, ping_after_connect=True, **kwargs):
@@ -208,11 +206,6 @@ class WebsocketCase(HttpCase):
             )
 
     def assert_released(self, refs, timeout=10.0):
-        # The job thread that ran a connection's last job lets go of it a
-        # moment after the job returned, which is when the test is woken.
-        # No strong reference survives an iteration: a connection seen alive
-        # once, kept in a list across the next gc.collect(), is one its cycle
-        # (connection, frame parser, bound method) can never be freed from.
         deadline = time.monotonic() + timeout
         while True:
             gc.collect()

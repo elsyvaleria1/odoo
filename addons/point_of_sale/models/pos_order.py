@@ -37,10 +37,6 @@ class PosOrder(models.Model):
     )
     _mailing_enabled = True
 
-    # the POS bus's and self-order's credential: a device's (decision G1),
-    # kept sealed by mixin.bearer.token, not in clear. The customer's receipt
-    # and payment links are access.link rows, receipt_token below (decision
-    # POS-A)
     access_token = fields.Char(
         string="Security Token",
         compute="_compute_bearer_token",
@@ -478,7 +474,6 @@ class PosOrder(models.Model):
     @api.model
     @_debug.perf.timed
     def _process_order(self, order, existing_order):
-        """Persist a UI payload without consuming commands needed by extensions."""
         order = deepcopy(order)
         till_combo_shares = self._pop_till_combo_shares(order)
         synced_lines = self._pop_server_owned_values(order)
@@ -638,7 +633,6 @@ class PosOrder(models.Model):
 
     @api.model
     def _pop_server_owned_values(self, order) -> set:
-        """Drop what only the server sets; return the synced lines' uuids and ids."""
         for name in ("is_over_refund", "has_pricing_breach"):
             order.pop(name, None)
         synced = set()
@@ -661,14 +655,13 @@ class PosOrder(models.Model):
         return shares
 
     def _link_uuid_relations(self, record_uuid_mapping) -> None:
-        """Resolve deferred relations in batches, then write each owner once."""
         self.check_singleton()
 
         def as_list(uuids):
             return list(uuids) if isinstance(uuids, (list, tuple, set)) else [uuids]
 
         for model_name, mapping in record_uuid_mapping.items():
-            owner_records = self.env[model_name].search(  # noqa: E8507 - one query per related model, over every owner uuid at once
+            owner_records = self.env[model_name].search(
                 [("uuid", "in", mapping.keys())]
             )
             _debug.logic(
@@ -691,7 +684,7 @@ class PosOrder(models.Model):
             for comodel_name, uuids in uuids_by_model.items():
                 related_by_model[comodel_name] = {
                     record.uuid: record
-                    for record in self.env[comodel_name].search(  # noqa: E8507  one query per related model, over every field's uuid at once
+                    for record in self.env[comodel_name].search(
                         [("uuid", "in", list(uuids))]
                     )
                 }
@@ -920,7 +913,6 @@ class PosOrder(models.Model):
 
     @api.model
     def _get_preparation_change_data(self, value) -> tuple:
-        """Read the synchronization envelope without restricting extension fields."""
         if not value:
             return {}, False
         try:
@@ -1017,9 +1009,6 @@ class PosOrder(models.Model):
             order.receipt_token = tokens.get(order.id, False)
 
     def _issue_receipt_links(self) -> None:
-        """A view link per order for its customer's receipt QR code and online
-        payment, for as long as a receipt's link lives (decision B1: a year),
-        reused while it lives."""
         tokens = self.env["access.link"]._issue_each(
             self, partner_field="partner_id", role="view", cause="notification"
         )
@@ -1574,14 +1563,11 @@ class PosOrder(models.Model):
         )
 
     def _get_amounts_due(self) -> tuple[float, ...]:
-        """The amounts that settle the order, the one to propose first."""
         self.check_singleton()
         refunded = self.refunded_order_id
         if refunded and self.currency_id.is_zero(
             refunded.amount_total + self.amount_total
         ):
-            # a full refund may give back what the customer paid, rounding included,
-            # or the refund's own total, as the POS does
             return (-refunded.amount_paid, self.amount_total)
         return (self.amount_total,)
 
@@ -1744,7 +1730,6 @@ class PosOrder(models.Model):
         return invoice
 
     def _is_payment_amount_valid(self) -> bool:
-        """Use the same rounding tolerance for settlement and subsequent edits."""
         self.check_singleton()
         return any(
             self._is_settled_at(amount_due) for amount_due in self._get_amounts_due()
@@ -1775,7 +1760,6 @@ class PosOrder(models.Model):
                 max_difference = currency.round(rounding.rounding / 2)
                 is_within = currency.compare_amounts(abs(diff), max_difference) <= 0
             else:
-                # UP and DOWN round off strictly less than one whole step
                 max_difference = currency.round(rounding.rounding)
                 is_within = currency.compare_amounts(abs(diff), max_difference) < 0
             _debug.logic(
@@ -1801,7 +1785,6 @@ class PosOrder(models.Model):
             )
 
     def _flag_over_refund(self) -> None:
-        # the till has already handed the money back: record the refund and say so
         self.check_singleton()
         if over_refunded := self.lines.refunded_orderline_id._get_over_refunded_lines(
             self
@@ -1832,7 +1815,6 @@ class PosOrder(models.Model):
         )
 
     def _flag_pricing_breaches(self) -> None:
-        # the till has already taken the money: record the sale as made and say so
         self.check_singleton()
         breaches = self.lines._get_pricing_breaches()
         _debug.logic(
@@ -2303,7 +2285,6 @@ class PosOrder(models.Model):
                 and self.session_id.state != "closed"
             ):
                 self._create_order_picking()
-            # product and partner accounts are company-dependent fields
             move = self.with_company(self.company_id)._generate_pos_order_invoice()
         return {
             "name": self.env._("Customer Invoice"),
@@ -2349,7 +2330,6 @@ class PosOrder(models.Model):
         self.state = "done"
 
         company = self.company_id
-        # Portal defaults belong to the invoice, not its payment journal entries.
         invoice_order = self.with_context(
             {
                 f"default_{name}": value
@@ -2501,8 +2481,6 @@ class PosOrder(models.Model):
                 order_ids.append(refunded_orders[0].id)
 
             existing_order = self._get_open_order(order)
-            # A delta can omit or delete its refund origin. Refresh the old origin
-            # as well as the resulting one so clients receive its refunded quantity.
             order_ids.extend(existing_order.lines.refunded_orderline_id.order_id.ids)
             _debug.pipeline(
                 "sync_order",

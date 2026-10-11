@@ -66,7 +66,6 @@ class ShopeeAccount(models.Model):
     )
     shop_count = fields.Count(count_of="shop_ids")
 
-    # === ONCHANGE METHODS === #
 
     @api.onchange("api_endpoint")
     def _onchange_api_endpoint(self) -> dict | None:
@@ -81,11 +80,9 @@ class ShopeeAccount(models.Model):
             }
         return None
 
-    # === CRUD METHODS === #
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Override to set the default name for the account."""
         for vals in vals_list:
             if not vals.get("name") and vals.get("partner_identifier"):
                 vals["name"] = self.env._(
@@ -96,16 +93,13 @@ class ShopeeAccount(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Reset authorization of the shops if the API endpoint is changed."""
         if "api_endpoint" in vals:
             if vals["api_endpoint"] != self.api_endpoint:
                 self.shop_ids._reset_tokens()
         return super().write(vals)
 
-    # === ACTION METHODS === #
 
     def action_view_shops(self) -> dict:
-        """Open the shops related to the account in a list view."""
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
@@ -116,7 +110,6 @@ class ShopeeAccount(models.Model):
         }
 
     def action_view_auth_link(self) -> dict:
-        """Redirect the user to Shopee in order to authorize the app within Shopee."""
         self.check_singleton()
 
         path = const.API_OPERATIONS_MAPPING["auth_partner"]["url_path"]
@@ -132,9 +125,6 @@ class ShopeeAccount(models.Model):
             "sign": sign,
             "redirect": redirect_url,
         }
-        # The url needs to be accessed in order to give the authorization to the Shopee app.
-        # It will call a callback with the authorization code needed to get the access and
-        # refresh tokens. Check the status of the url before redirecting the user.
         url = f"{const.API_PATHS[self.api_endpoint]}{path}?{url_encode(params)}"
         response = self.env["ir.egress"].request(
             "GET", url, purpose="shopee", timeout=60

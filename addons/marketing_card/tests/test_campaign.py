@@ -70,9 +70,8 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
         mailing = Form(self.env["mailing.mailing"].with_context(mailing_context)).save()
         mailing.body_html = (
             mailing.body_arch
-        )  # normally the js html_field would fill this in
+        )
 
-        # sending mailing before generating cards sends to no-one
         self.assertTrue(mailing.card_requires_sync_count)
         with self.assertRaises(
             exceptions.UserError, msg="There are no recipients selected."
@@ -85,7 +84,6 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
         ):
             mailing.action_launch()
 
-        # once cards are updated they can be sent
         with self.mock_image_renderer():
             mailing.action_update_cards()
         self.assertEqual(len(self._render_image_bodies), 5)
@@ -94,7 +92,6 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
         mailing.action_launch()
         mailing.action_cancel()
 
-        # modifying the domain such that there are missing cards prevents sending again
         mailing.mailing_domain = [("id", "in", partners.ids[1:6])]
         mailing._compute_card_requires_sync_count()
         self.assertTrue(mailing.card_requires_sync_count)
@@ -104,14 +101,12 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
         ):
             mailing.action_launch()
 
-        # updating when the campaign was not modified only updates cards that need to be
         with self.mock_image_renderer():
             mailing.action_update_cards()
         self.assertEqual(len(self._render_image_bodies), 1)
 
         self.assertFalse(mailing.card_requires_sync_count)
 
-        # modifying the campaign should lead to all cards relevant being re-rendered
         campaign.content_header = "New Header"
         mailing._compute_card_requires_sync_count()
         self.assertTrue(mailing.card_requires_sync_count)
@@ -119,16 +114,6 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
             mailing.action_update_cards()
         self.assertEqual(len(self._render_image_bodies), 5)
 
-        # 54 -> 56: two reads moved *into* this window, they are not new work. The
-        # placeholder ACL used to read every field on the mailing on each write and
-        # warmed the record cache as a side effect; it now reads only the fields
-        # that can hold a placeholder, so `contact_list_ids` and the partner batch
-        # are fetched where the send path actually needs them. Restoring the old
-        # all-fields scan puts this back at 54 and costs 25 queries elsewhere.
-        # 56 -> 53: the three assertRaises above roll back a savepoint each, and a
-        # rollback now re-clears only the cache groups its own span invalidated,
-        # so the xmlid, default and config-parameter lookups the warmup paid for
-        # stay warm into this window.
         with self.mock_mail_gateway(), self.assertQueryCount(55):
             mailing._action_send_mail()
 
@@ -143,8 +128,6 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
     @users("marketing_card_user")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_campaign_send_mailing_with_duplicates(self):
-        # set a low batch size to make sure mailing "seen list" does not affect card mailings
-        # as it is based on traces existing with some email -> traces created in batches with mail.mail
         self.env["ir.config_parameter"].sudo().set_param("mail.batch_size", 5)
 
         campaign = self.campaign.with_user(self.env.user)
@@ -169,7 +152,7 @@ class TestMarketingCardMail(MailCase, MarketingCardCommon):
         mailing = Form(self.env["mailing.mailing"].with_context(mailing_context)).save()
         mailing.body_html = (
             mailing.body_arch
-        )  # normally the js html_field would fill this in
+        )
 
         with self.mock_image_renderer():
             mailing.action_update_cards()
@@ -237,7 +220,6 @@ class TestMarketingCardRender(MarketingCardCommon):
             1,
         )
 
-        # second record, modified tags
 
         with self.mock_image_renderer():
             campaign.preview_record_ref = self.partners[1]
@@ -266,7 +248,6 @@ class TestMarketingCardRender(MarketingCardCommon):
         self.assertEqual(cards.mapped("active"), [False] * 2)
         self.assertTrue(cards.mapped("res_id"), self.partners.ids)
 
-        # update previewed record fields
 
         with self.mock_image_renderer():
             campaign.preview_record_ref.sudo().name = "An updated name"
@@ -275,13 +256,11 @@ class TestMarketingCardRender(MarketingCardCommon):
             "Updating the preview record does not refresh the preview.",
         )
 
-        # mismatch preview
 
         with patch(
             "odoo.addons.marketing_card.models.card_campaign.CardCampaign._selection_campaign_models",
             lambda Model: [("res.partner", "Partner"), ("res.users", "User")],
         ):
-            # mismatches without cards
             self.assertEqual(self.static_campaign.res_model, "res.partner")
             self.assertFalse(self.static_campaign.card_ids)
             self.static_campaign.preview_record_ref = self.env.user
@@ -289,7 +268,6 @@ class TestMarketingCardRender(MarketingCardCommon):
             self.static_campaign.preview_record_ref = self.partners[1]
             self.assertEqual(self.static_campaign.res_model, "res.partner")
 
-            # mismatch with card
             self.env["card.card"].sudo().create(
                 {"campaign_id": self.static_campaign.id, "res_id": 1}
             )
@@ -300,13 +278,11 @@ class TestMarketingCardRender(MarketingCardCommon):
                 self.assertTrue(self.static_campaign.res_model)
             self.assertEqual(self.static_campaign.res_model, "res.partner")
 
-            # match with card
             self.static_campaign.preview_record_ref = self.partners[0]
             self.assertEqual(self.static_campaign.res_model, "res.partner")
 
     @mock_image_render
     def test_fetch_datetime(self):
-        """Fetching a datetime field should attempt to translate it in the relevant timezone."""
         freeze_dt = datetime(2020, 5, 5, 12, 0, 0)
         campaign = self.campaign.with_user(self.env.user)
         campaign.write(
@@ -321,7 +297,6 @@ class TestMarketingCardRender(MarketingCardCommon):
         timezones = [None, "Europe/Brussels", "Asia/Tokyo"]
         timezone_result_headers = []
         for tz in timezones:
-            # force find different timezones to check the returned time
             with patch(
                 "odoo.addons.mail.models.base.Base._mail_get_timezone",
                 return_value=tz,
@@ -355,7 +330,6 @@ class TestMarketingCardRouting(HttpCase, MarketingCardCommon):
         self.assertListEqual(cards.mapped("share_status"), [False] * 20)
         self.assertListEqual(cards.mapped("requires_sync"), [False] * 20)
 
-        # user checks preview
         self.campaign.preview_record_ref = partners[0]
         card = cards.filtered(lambda card: card.res_id == partners[0].id)
         self.assertEqual(
@@ -381,8 +355,7 @@ class TestMarketingCardRouting(HttpCase, MarketingCardCommon):
             "A regular user fetching the card should not count as a share.",
         )
 
-        # recipient opens the card they received
-        card.active = True  # reset as if it were never used as preview
+        card.active = True
         image_request_headers = self.url_open(card._get_card_url())
         self.campaign.flush_recordset()
         self.assertEqual(self.campaign.card_count, 20)
@@ -393,7 +366,6 @@ class TestMarketingCardRouting(HttpCase, MarketingCardCommon):
             "A regular user fetching the card should not count as a share.",
         )
 
-        # user publishes redirect url, prompting social network crawler to check open-graph data
         self.opener.headers["User-Agent"] = f"v1 {SOCIAL_NETWORK_USER_AGENTS[0]} v1.2/"
         opengraph_view = html.fromstring(
             self.url_open(card._get_redirect_url()).content
@@ -427,7 +399,6 @@ class TestMarketingCardRouting(HttpCase, MarketingCardCommon):
         )
         self.assertEqual(cards[0].share_status, "shared")
 
-        # someone clicks the redirect url on the social network platform
         self.assertEqual(self.campaign.target_url_click_count, 0)
         self.opener.headers["User-Agent"] = "someuseragent"
         redirect_response = self.url_open(
@@ -455,8 +426,6 @@ class TestMarketingCardSecurity(MarketingCardCommon):
     @users("marketing_card_manager")
     @mute_logger("odoo.addons.mail.models.mixin_mail_render")
     def test_campaign_field_paths(self):
-        """Check that card updates are performed as the current user."""
-        # card users stop reading partner states, administrators do not
         rules = (
             self.env["ir.access"]
             .sudo()
@@ -476,7 +445,6 @@ class TestMarketingCardSecurity(MarketingCardCommon):
             )
         )
         rules.flush_recordset()
-        # set a state as sudo and invalidate to force fetch as test user
         self.marketing_card_user.partner_id.state_id = (
             self.env["res.country.state"]
             .sudo()
@@ -492,7 +460,6 @@ class TestMarketingCardSecurity(MarketingCardCommon):
 
         campaign = self.campaign.with_user(self.env.user)
         campaign.preview_record_ref = self.marketing_card_user.partner_id
-        # should work fine with accessible fields
         campaign._update_cards([("id", "=", self.marketing_card_user.partner_id.id)])
         with self.assertRaises(exceptions.UserError):
             campaign.write(
@@ -501,7 +468,6 @@ class TestMarketingCardSecurity(MarketingCardCommon):
                     "content_header_path": "state_id.name",
                 }
             )
-            # flush to compute image_preview
             campaign.flush_recordset()
 
         campaign.with_user(self.system_admin).write(
@@ -511,7 +477,6 @@ class TestMarketingCardSecurity(MarketingCardCommon):
             }
         )
         campaign.with_user(self.system_admin).flush_recordset()
-        # clear state from cache as it was fetched by the admin for the preview render
         self.marketing_card_user.partner_id.state_id.invalidate_recordset()
 
         with self.assertRaises(exceptions.UserError), self.mock_image_renderer():
@@ -544,12 +509,7 @@ class TestMarketingCardSecurity(MarketingCardCommon):
         campaign_as_owner.unlink()
 
     def test_mail_render_security_body_html(self):
-        """Asserts body_html of card.campaign cannot be written to.
-
-        See _check_access_right_dynamic_template override.
-        """
         campaign = self.campaign.with_user(self.marketing_card_manager)
-        # Will raise ZeroDivisionError if the template is executed
         arbitrary_qweb = """
         <img t-attf-src="data:image/png;base64,{{1 / 0}}"/>
         """
@@ -558,10 +518,8 @@ class TestMarketingCardSecurity(MarketingCardCommon):
             exceptions.AccessError, "You are not allowed to modify"
         ):
             campaign.body_html = arbitrary_qweb
-            # Flush to simulate the end of the transaction and trigger all recomputes
             self.env.cr.flush()
 
-        # Ensure that the value is well not written in db, nor on the current campaign, nor on the related.
         self.assertTrue(arbitrary_qweb not in campaign.body_html)
         self.assertTrue(arbitrary_qweb not in campaign.card_template_id.body)
 
@@ -571,14 +529,7 @@ class TestMarketingCardSecurity(MarketingCardCommon):
             campaign.card_template_id.body = arbitrary_qweb
 
     def test_mail_render_security_render_field_write_access(self):
-        """Check the rendered fields on card.campaign are not both rendered and writeable.
-
-        See _check_access_right_dynamic_template override.
-        """
         CardCampaign = self.env["card.campaign"].with_user(self.marketing_card_manager)
-        # Asserts all render fields are related to card.template, not stored on the campaign itself, and readonly
-        # If one of the render fields doesn't fulfil this assumption, the `_unrestricted_rendering = True` must be
-        # reconsidered for security reasons.
         self.assertTrue(
             all(
                 field.related_field.model_name == "card.template"
@@ -588,5 +539,4 @@ class TestMarketingCardSecurity(MarketingCardCommon):
                 if hasattr(field, "render_engine")
             )
         )
-        # Asserts the manager doesn't have write access to card.template
         self.assertFalse(CardCampaign.card_template_id.has_access("write"))

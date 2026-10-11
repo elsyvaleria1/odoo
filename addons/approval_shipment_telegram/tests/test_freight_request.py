@@ -119,7 +119,7 @@ class TestFreightRequest(TelegramBotTestCase):
         self.assertEqual(request.attachment_ids.name, "hoja_embarque_TOL01584640.jpg")
         self.assertEqual(request.shipment_picking_ids, picking)
         self.assertEqual(picking.freight_request_ids, request)
-        if "approval_request_id" in picking._fields:  # approval_stock's gate
+        if "approval_request_id" in picking._fields:
             self.assertFalse(picking.approval_request_id, "not the transfer's gate")
         self.assertIn("prepared as a draft for $4,731.25", "\n".join(lines))
 

@@ -74,8 +74,6 @@ class TestSingleEmployeeSalesReport(TestPoSCommon):
         )
 
     def test_wizard_renders_the_employee_blocks(self):
-        """The per-employee blocks are rendered by a template that calls
-        ``get_sale_details`` itself, so nothing but a render exercises them."""
         product = self.create_product("Rendered", self.categ_basic, 100)
         self.config.open_ui()
         session = self.config.current_session_id

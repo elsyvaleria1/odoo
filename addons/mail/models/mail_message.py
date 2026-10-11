@@ -85,8 +85,6 @@ class MailMessage(models.Model):
 
     @api.model
     def _may_set_author(self) -> bool:
-        # a visitor posts as itself; an internal user, or code holding the
-        # privilege for a bot's or an agent's reply, names the author
         if self.env.su or self.env.user.has_group("base.group_user"):
             return True
         post_as = self.env.registry.access_policy.privilege_ids(
@@ -539,9 +537,6 @@ class MailMessage(models.Model):
         elif message.sudo(False).has_access(mode):
             return message
 
-        # a thread credential (token, hash) opens the thread, never the notes
-        # its holder could not read: reacting to one or rewriting it is refused
-        # as reading it is; a guest's own channel note needs no credential
         guarded = mode == "read" or any(kwargs.values())
         if (
             guarded
@@ -573,7 +568,6 @@ class MailMessage(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        # an assignment written before this message was notified before it
         self.env["mail.followers"]._finalize_auto_subscribe()
         vals_list = [dict(values) for values in vals_list]
         if not self._may_set_author():
@@ -997,9 +991,6 @@ class MailMessage(models.Model):
             notifications=len(notifications),
             messages=len(message_ids),
         )
-        # a delta, not a count: a count read from this snapshot misses what a
-        # concurrent transaction marked read, while each notification can only
-        # be flipped by the one transaction whose write commits
         self.env.user._bus_send(
             "mail.message/mark_as_read",
             {
@@ -1100,9 +1091,6 @@ class MailMessage(models.Model):
         self._bus_send_reaction_group(content, group)
 
     def _lock_reaction_groups(self) -> None:
-        # the group broadcast carries absolute counts read from this snapshot;
-        # a new row version makes a concurrent reaction on this message wait
-        # here and retry on a snapshot that includes this one
         self.env.cr.execute(
             SQL("UPDATE mail_message SET id = id WHERE id = %s", self.id)
         )
@@ -1263,10 +1251,6 @@ class MailMessage(models.Model):
     def _prefetch_record_ids_by_model(
         self,
     ) -> dict[str, tuple[tuple[int, ...], frozenset[int]]]:
-        # the singletons iterated out of one batch share its prefetch tuple:
-        # its pointers are resolved once per (env, tuple) instead of once per
-        # message, which made a loop over M messages O(M^2). A stale entry only
-        # widens a prefetch hint; holding the tuple keeps its id from reuse
         prefetch_ids = self._prefetch_ids
         if prefetch_ids == self._ids:
             return {}

@@ -17,7 +17,6 @@ class AccountMove(models.Model):
         return super().unlink()
 
     def _post_entries(self):
-        """Ensure taxes are correct before posting."""
         self._get_and_set_external_taxes_on_eligible_records()
         return super()._post_entries()
 
@@ -27,7 +26,6 @@ class AccountMove(models.Model):
         )
 
     def _get_and_set_external_taxes_on_eligible_records(self):
-        """mixin.account.external.tax override."""
         eligible_moves = self._filtered_external_tax_moves().filtered(
             lambda move: move.state != "posted"
         )
@@ -35,7 +33,6 @@ class AccountMove(models.Model):
         return super()._get_and_set_external_taxes_on_eligible_records()
 
     def _prepare_line_data_for_external_taxes(self):
-        """mixin.account.external.tax override."""
         base_lines_values = [
             value
             for value in self._get_rounded_base_and_tax_lines()[0]

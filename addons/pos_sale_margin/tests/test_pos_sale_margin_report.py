@@ -11,21 +11,6 @@ class TestPoSSaleMarginReport(TestPoSCommon):
         self.config = self.basic_config
 
     def _pos_report_margins(self):
-        """Run ``sale.report``'s real POS-side query and return its
-        ``margin`` column for every row.
-
-        A plain ``sale.report.search()`` can't be used here: ``pos_sale``'s
-        ``_get_fields_pos_select()`` feeds its *whole* field registry
-        through ``_get_pos_field_expressions()``, whose base implementation NULLs any
-        key it does not explicitly whitelist -- so almost every POS column,
-        including ``id``, reads back as NULL (task 28563, in ``pos_sale``,
-        out of this module's scope; not fixed here). With ``id`` NULL on
-        every POS row, the ORM cannot tell the rows apart by identity
-        either, so a domain filter or ``.mapped()`` on the resulting
-        recordset is unreliable. Running the query directly and reading the
-        ``margin`` column back as plain SQL sidesteps both issues while
-        still exercising the real, unmodified query this module builds.
-        """
         self.env.flush_all()
         report = self.env["sale.report"].sudo()
         query = SQL(
@@ -79,14 +64,6 @@ class TestPoSSaleMarginReport(TestPoSCommon):
         self.assertEqual(margins, [100])
 
     def test_pos_sale_margin_report_refund(self):
-        """A refund's reported margin must match the sign the stored,
-        already-correctly-signed ``pos.order.line.margin`` field carries.
-
-        Regression test for task 28564: the POS-side ``margin`` SQL used to
-        re-derive ``price_subtotal - total_cost`` from raw columns instead
-        of reusing ``l.margin``, so a refund line (whose stored margin is
-        negative) reported the *original* sale's positive margin instead.
-        """
         product1 = self.create_product(
             "Refund Product", self.categ_basic, 150, standard_price=50
         )
@@ -128,15 +105,6 @@ class TestPoSSaleMarginReport(TestPoSCommon):
         self.assertEqual(sorted(self._pos_report_margins()), [-200, 100])
 
     def test_pos_sale_margin_uses_currency_table_factor(self):
-        """Guard against re-introducing the missing currency-table factor.
-
-        Regression test for task 28564: every sibling POS-side monetary
-        field multiplies by ``account_currency_table.rate`` after dividing
-        by ``pos.currency_rate``; the ``margin`` expression used to skip
-        that factor entirely, so a report viewed in a different reporting
-        currency (or any multi-company deployment with more than one
-        currency) got systematically wrong figures.
-        """
         expression = self.env["sale.report"]._get_pos_field_expressions({})["margin"]
         self.assertIn("l.margin", expression)
         self.assertIn("account_currency_table.rate", expression)

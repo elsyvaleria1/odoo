@@ -12,11 +12,9 @@ class PeppolAuthentication(http.Controller):
         "/peppol/authentication/callback", type="http", methods=["GET"], auth="user"
     )
     def peppol_authentication_callback(self, auth_type, connect_token, auth_token=None):
-        """Route called by the Proxy Server after authentication."""
 
         def redirect(success=True, partner=None, error_message=None):
             if partner:
-                # Notify the root/initial window of the authentication result. See JS service "peppol_auth_service".
                 partner._bus_send(
                     "peppol_auth_channel",
                     {
@@ -24,7 +22,6 @@ class PeppolAuthentication(http.Controller):
                         "error_message": error_message,
                     },
                 )
-                # Action to close the window opened for authentication
             return request.redirect_query(
                 "/odoo/peppol-auth-callback-action", query={"success": success}
             )

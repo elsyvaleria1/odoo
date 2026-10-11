@@ -62,9 +62,6 @@ class TestEmployeeLocation(HomeworkingCase):
         )
 
     def test_an_exception_does_not_leak_across_companies(self):
-        # hr.employee's own rules hide an employee of another company; without a
-        # company on the exception, its `employee_name` related handed the same
-        # name straight back, and the record was writable too.
         _company, employee, exception = self._elsewhere()
         as_local_hr = self.env(user=self._local_hr_user(), su=False)
 

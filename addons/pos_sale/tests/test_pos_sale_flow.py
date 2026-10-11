@@ -104,7 +104,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                     (4, self.env.ref("stock.group_stock_user").id),
                     (4, self.env.ref("sale.group_sale_salesman_all_leads").id),
                     (4, self.env.ref("account.group_account_user").id),
-                    (4, self.env.ref("base.group_system").id),  # FIXME refacto
+                    (4, self.env.ref("base.group_system").id),
                 ]
             }
         )
@@ -113,21 +113,17 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             "/pos/ui/%d" % self.main_pos_config.id, "PosSettleOrder", login="pos_user"
         )
 
-        # assert that sales order qty are correctly updated
         self.assertEqual(sale_order.line_ids.qty_transferred, 3)
         self.assertEqual(
             sale_order.picking_ids[0].move_ids.product_qty, 2100
-        )  # 7 left to deliver => 300 * 7 = 2100
+        )
         self.assertEqual(sale_order.picking_ids[0].move_ids.quantity, 0)
         self.assertEqual(sale_order.picking_ids[1].move_ids.product_qty, 300)
         self.assertEqual(
             sale_order.picking_ids[1].move_ids.quantity, 300
-        )  # 1 delivered => 300 * 2 = 600
+        )
 
     def test_settle_order_with_incompatible_partner(self):
-        """If the partner of the sale order is not compatible with the current pos order,
-        then a new pos order should be to settle the newly selected sale order.
-        """
 
         product1 = self.env["product.product"].create(
             {
@@ -167,10 +163,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.start_pos_tour("PosSettleOrderIncompatiblePartner", login="accountman")
 
     def test_settle_order_with_different_product(self):
-        """This test create an order and settle it in the PoS. But only one of the product is delivered.
-        And we need to make sure the quantity are correctly updated on the sale order.
-        """
-        # create 2 products
         product_a = self.env["product.product"].create(
             {
                 "name": "Product A",
@@ -187,7 +179,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 "lst_price": 10.0,
             }
         )
-        # create a sale order with 2 lines
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -221,7 +212,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                             0,
                             0,
                             {
-                                # Add this line to test that it should not cause any issue when settling this order.
                                 "name": "section line",
                                 "display_type": "line_section",
                             },
@@ -248,13 +238,10 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         orderline_product_b = sale_order.line_ids.filtered(
             lambda l: l.product_id.id == product_b.id
         )
-        # nothing to deliver for product a because already handled in pos.
         self.assertEqual(orderline_product_a.move_ids.product_uom_qty, 0)
-        # 1 item to deliver for product b.
         self.assertEqual(orderline_product_b.move_ids.product_uom_qty, 1)
 
     def test_downpayment_refund(self):
-        # create a sale order
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -279,7 +266,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             )
         )
         sale_order.action_confirm()
-        # set downpayment product in pos config
         self.downpayment_product = self.env["product.product"].create(
             {
                 "name": "Down Payment",
@@ -299,7 +285,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.line_ids[3].qty_invoiced, -1)
 
     def test_settle_order_unreserve_order_lines(self):
-        # create a product category that use the closest location for the removal strategy
         self.removal_strategy = self.env["product.removal"].search(
             [("method", "=", "closest")], limit=1
         )
@@ -321,7 +306,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             }
         )
 
-        # create 2 stock location Shelf 1 and Shelf 2
         self.warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
         )
@@ -423,11 +407,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.line_ids.move_ids.move_lines_count, 0)
 
     def test_settle_order_with_multistep_delivery(self):
-        """This test create an order and settle it in the PoS. It also uses multistep delivery
-        and we need to make sure that all the picking are cancelled if the order is fully delivered.
-        """
 
-        # get the warehouse
         warehouse = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.company.id)], limit=1
         )
@@ -445,7 +425,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             product_a, warehouse.lot_stock_id, 1
         )
 
-        # create a sale order with 2 lines
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -480,7 +459,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.picking_ids.mapped("state"), ["cancel"])
 
     def test_pos_not_groupable_product(self):
-        # Create a UoM Category that is not pos_groupable
         uom = self.env["uom.uom"].create(
             {
                 "name": "Test",
@@ -495,7 +473,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 "uom_id": uom.id,
             }
         )
-        # create a sale order with product_a
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -512,7 +489,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                                 "product_id": product_a.id,
                                 "name": product_a.name,
                                 "product_qty": 3.5,
-                                "price_unit": 8,  # manually set a different price than the lst_price
+                                "price_unit": 8,
                                 "discount": 10,
                             },
                         )
@@ -520,16 +497,11 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 }
             )
         )
-        self.assertEqual(sale_order.amount_total, 28.98)  # 3.5 * 8 * 1.15 * 90%
+        self.assertEqual(sale_order.amount_total, 28.98)
         self.main_pos_config.open_ui()
         self.start_pos_tour("PosSettleOrderNotGroupable", login="accountman")
 
     def test_import_lot_groupable_and_non_groupable(self):
-        """
-        Test importing a Sale Order in POS containing both groupable and non-groupable
-        lot-tracked products, each with quantities exceeding available lots.
-        Ensures the POS correctly handles lot selection and grouping behavior.
-        """
         non_groupable_uom = self.env["uom.uom"].create(
             {
                 "name": "Non groupable",
@@ -615,11 +587,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_customer_notes(self):
-        """This test create an order and settle it in the PoS. It also uses multistep delivery
-        and we need to make sure that all the picking are cancelled if the order is fully delivered.
-        """
 
-        # create a sale order with 2 customer notes
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -718,8 +686,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(self.desk_pad.sales_count, 1)
 
     def test_untaxed_invoiced_amount(self):
-        """Make sure that orders invoiced in the pos gets their untaxed invoiced
-        amount updated accordingly"""
 
         product_a = self.env["product.product"].create(
             {
@@ -834,9 +800,7 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_order_does_not_remain_in_list(self):
-        """Verify that a paid order doesn't remain in the orders list"""
 
-        # Create a sale order
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -871,10 +835,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_settle_draft_order_service_product(self):
-        """
-        Checks that, when settling a draft order (quotation), the quantity set on the corresponding
-        PoS order, for service products, is set correctly.
-        """
 
         product_a = self.env["product.product"].create(
             {
@@ -922,10 +882,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.state, "done")
 
     def test_settle_order_change_customer(self):
-        """
-        When settling an order, the price set on the sol shouldn't reset to
-        the sale price of the product when changing customer.
-        """
         self.product_a.lst_price = 150
         self.product_a.taxes_id = None
         self.product_a.available_in_pos = True
@@ -996,7 +952,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
                 "sale_order_ids": so.ids,
             }
         ).create_invoices()
-        # Invoice the delivered part from the down payment
         down_payment_invoices = so.invoice_ids
         down_payment_invoices.action_post()
         self.main_pos_config.down_payment_product_id = self.env.ref(
@@ -1010,11 +965,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             login="accountman",
         )
 
-        # The tour only settles the order up to the review screen (it never
-        # pays/validates), so it must not have touched the down-payment
-        # invoice created above: the backend state it proves the numpad math
-        # against (order total 980 = 1000 - the already-invoiced 20) must
-        # still be backed by exactly that one invoice.
         self.assertEqual(len(down_payment_invoices), 1)
         self.assertEqual(down_payment_invoices.amount_total, 20.0)
         self.assertEqual(so.invoice_ids, down_payment_invoices)
@@ -1127,7 +1077,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             login="accountman",
         )
 
-        # We check the content of the invoice to make sure Product A/B/C only appears only once
         invoice_pdf_content = str(
             self.env["pos.order"]
             .search([])
@@ -1148,11 +1097,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             )
 
     def test_settle_so_with_non_pos_groupable_uom(self):
-        """
-        For products with a non-groupable PoS UoM (e.g., Kg), ensure that when a SO
-        uses another UoM (e.g., g), the PoS correctly displays the quantity converted
-        back to the original UoM.
-        """
         self.component_kg = self.env["product.product"].create(
             {
                 "name": "Pomme de Terre",
@@ -1219,7 +1163,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
         so.action_confirm()
 
-        # Apply 10% down payment
         self.main_pos_config.open_ui()
         self.main_pos_config.down_payment_product_id = self.env.ref(
             "pos_sale.default_downpayment_product"
@@ -1235,7 +1178,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(invoice.amount_total, 90)
 
     def test_ship_later_no_default(self):
-        """Verify that when settling an order the ship later is not activated by default"""
         product = self.env["product.product"].create(
             {
                 "name": "Product",
@@ -1409,10 +1351,8 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
 
         self.assertEqual(sale_order.line_ids[2].price_unit, 20)
 
-        # Update delivered quantity of SO line
         sale_order.line_ids[0].write({"qty_transferred": 1.0})
 
-        # Let's do the invoice for the remaining amount
         self.env["wizard.sale.order.invoice"].sudo().with_context(
             {
                 "active_model": "sale.order",
@@ -1422,14 +1362,10 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             }
         ).create({}).create_invoices()
 
-        # Confirm all invoices
         sale_order.invoice_ids.action_post()
         self.assertEqual(sale_order.line_ids[2].price_unit, 20)
 
     def test_settle_order_with_multistep_delivery_receipt(self):
-        """This test create an order and settle it in the PoS. It also uses multistep delivery
-        and we need to make sure that all the picking are cancelled if the order is fully delivered.
-        """
         if not self.env["ir.module.module"].search(
             [("name", "=", "purchase"), ("state", "=", "installed")]
         ):
@@ -1501,11 +1437,9 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
         sale_order.action_confirm()
 
-        # We validate the purchase and receipt steps
         po = sale_order._get_purchase_orders()
         po.action_confirm()
         picking = po.picking_ids
-        # validate the 3 picking in order
         picking.button_validate()
         picking = picking._get_next_transfers()
         picking.button_validate()
@@ -1550,7 +1484,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_downpayment_invoice(self):
-        """This test check that users that don't have the pos user group can invoice downpayments"""
         self.env["res.partner"].create({"name": "Test Partner AAA"})
 
         sale_order = (
@@ -1609,7 +1542,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(downpayment_line.price_unit, 100)
 
     def test_downpayment_invoice_link(self):
-        # Test to check if the final invoice generated from an SO is correctly linked to the downpayment invoice.
 
         tax = self.env["account.tax"].create(
             {
@@ -1640,7 +1572,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
 
         sale_orders.action_confirm()
 
-        # CASE 1: downpayment generated in POS, invoice settled in backend
         sale_order = sale_orders[1]
         self.main_pos_config.open_ui()
         self.main_pos_config.down_payment_product_id = self.env.ref(
@@ -1669,7 +1600,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             downpayment_invoice.invoice_line_ids,
         )
 
-        # CASE 2: downpayment generated in POS, invoice settled in POS
         sale_order = sale_orders[0]
         self.start_pos_tour("PoSApplyDownpaymentInvoice2")
 
@@ -1688,10 +1618,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_settle_order_ship_later_effect_on_so(self):
-        """This test create an order, settle it in the PoS and ship it later.
-        We need to make sure that the quantity delivered on the original sale is updated correctly,
-        And that the picking associated to the original sale order is cancelled.
-        """
 
         product_a = self.env["product.product"].create(
             {
@@ -1792,16 +1718,13 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             sale_order_single.pos_order_line_ids.order_id.picking_ids.state, "assigned"
         )
 
-        # The pos order is being shipped later so the qty_transferred should still be 0
         self.assertEqual(sale_order_single.line_ids[0].qty_transferred, 0)
 
-        # We validate the delivery of the order, now the qty_transferred should be 1
         pickings = sale_order_single.pos_order_line_ids.order_id.picking_ids
         pickings.move_ids.quantity = 1
         pickings.button_validate()
         self.assertEqual(sale_order_single.line_ids[0].qty_transferred, 1)
 
-        # multi line order checks
         self.assertEqual(sale_order_multi.line_ids[0].qty_transferred, 0)
         self.assertEqual(sale_order_multi.line_ids[1].qty_transferred, 0)
 
@@ -1815,9 +1738,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_draft_pos_order_linked_sale_order(self):
-        """This test create an order and settle it in the PoS. It will let the PoS order in draft state.
-        As the order is still in draft state it shouldn't have impact on invoiced qty of the linked sale order.
-        """
 
         product_a = self.env["product.product"].create(
             {
@@ -1862,7 +1782,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.line_ids.qty_transferred, 0)
 
     def test_settle_quotation_delivered_qty(self):
-        """Test if a quotation (unconfirmed sale order) is settled in the PoS, the delivered quantity is updated correctly"""
 
         product1 = self.env["product.product"].create(
             {
@@ -1931,7 +1850,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             }
         ).with_context(**payment_context).action_make_payment()
 
-        # generate an invoice for pos order
         res = pos_order.action_pos_order_invoice()
         self.assertIn("res_id", res, "Invoice should be created")
         self.assertEqual(res["res_id"], pos_order.account_move.id)
@@ -1939,16 +1857,10 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         invoice = pos_order.account_move
         self.assertEqual(invoice.state, "posted")
 
-        # when clicking on draft button, it must keep posted because if the pos is open
-        # we cannot cancel the invoice.
         invoice.action_draft()
         self.assertEqual(invoice.state, "posted")
 
     def test_reflect_cancelled_sol(self):
-        # Regression test for reflect_cancelled_sol, which had no test
-        # coverage: it appends/removes a "(Cancelled)" suffix on a linked
-        # sale.order.line's name when the settling invoice is
-        # cancelled/reposted.
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -2021,8 +1933,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.line_ids[0].name, original_name)
 
     def test_get_special_products_and_ensure_downpayment_product(self):
-        # Regression test: _get_special_products and _update_downpayment_product
-        # had no test coverage anywhere in the module.
         self.main_pos_config.down_payment_product_id = self.desk_pad.product_variant_id
         special_products = self.env["pos.config"]._get_special_products()
         self.assertIn(
@@ -2032,8 +1942,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             " payment product",
         )
 
-        # _update_downpayment_product only acts on the pos.config registered
-        # under the point_of_sale.pos_config_main xmlid.
         self.main_pos_config.down_payment_product_id = False
         self.env["ir.model.data"]._update_xmlids(
             [
@@ -2219,9 +2127,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_down_payment_displayed(self):
-        """
-        Tests that a down payment for a Sale Order will be displayed and applied when settling the order
-        """
         product_a = self.env["product.product"].create(
             {
                 "name": "Product A",
@@ -2258,9 +2163,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.start_pos_tour("test_down_payment_displayed", login="accountman")
 
     def test_amount_to_invoice(self):
-        """
-        Checks that the amount to invoice is updated correctly when paying an order in the PoS
-        """
 
         product_a = self.env["product.product"].create(
             {
@@ -2350,7 +2252,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_payment_terms_with_early_discount(self):
-        """Make sure that orders invoiced in the pos do not use payment terms with early discount"""
 
         product_a = self.env["product.product"].create(
             {
@@ -2463,10 +2364,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertFalse(pos_order.account_move.invoice_payment_term_id)
 
     def test_sale_order_fp_different_from_partner_one(self):
-        """
-        Tests that the fiscal position of the sale order is not the same as the partner's fiscal position.
-        The PoS should always use the fiscal position of the sale order when settling it.
-        """
         self.env.user.group_ids += self.quick_ref("sale.group_sale_salesman")
         tax = self.env["account.tax"].create(
             {
@@ -2627,10 +2524,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_quantity_updated_settle(self):
-        """
-        Tests that the quantity is updated when partially settling an order, so that the
-        settle displays the right amount that still needs to be settled.
-        """
         product_a = self.env["product.product"].create(
             {
                 "name": "Product A",
@@ -2659,7 +2552,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.start_pos_tour("test_quantity_updated_settle", login="accountman")
 
     def test_settle_order_with_different_uom(self):
-        """Verify that a qty has changed according to UOM"""
         product_a = self.env["product.product"].create(
             {
                 "name": "Product A",
@@ -2669,7 +2561,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
             }
         )
         test_partner = self.env["res.partner"].create({"name": "Test Partner"})
-        # Create a sale order
         sale_order = (
             self.env["sale.order"]
             .sudo()
@@ -2826,9 +2717,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(picking.move_ids.move_line_ids[1].quantity, 2)
 
     def test_selected_partner_quotation_loading(self):
-        """
-        Tests that when a partner is selected in the PoS, then a quotation for this partner is loaded
-        """
         self.env.user.group_ids += self.quick_ref("sale.group_sale_salesman")
         product_a = self.env["product.product"].create(
             {
@@ -2886,10 +2774,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_ecommerce_paid_order_is_hidden_in_pos(self):
-        """
-        Tests that a Sale Order fully paid via a payment.transaction (eCommerce)
-        does not appear in the list of orders fetched by the Point of Sale.
-        """
         self.env.user.group_ids += self.quick_ref("sale.group_sale_salesman")
         partner_1 = self.env["res.partner"].create({"name": "A Test Partner 1"})
         product_a = self.env["product.product"].create(
@@ -2946,10 +2830,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_ecommerce_unpaid_order_is_shown_in_pos(self):
-        """
-        Tests that a Sale Order fully paid via a payment.transaction (eCommerce)
-        does not appear in the list of orders fetched by the Point of Sale.
-        """
         self.env.user.group_ids += self.quick_ref("sale.group_sale_salesman")
         partner_1 = self.env["res.partner"].create({"name": "A Test Partner 1"})
         product_a = self.env["product.product"].create(
@@ -2987,7 +2867,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         )
 
     def test_backend_settle_refund(self):
-        """Make sure that sale orders settled in PoS and refunded in the backend get their invoiced quantity updated correctly."""
 
         product_a = self.env["product.product"].create(
             {
@@ -3096,7 +2975,6 @@ class TestPoSSale(TestPointOfSaleHttpCommon):
         self.assertEqual(sale_order.line_ids.qty_invoiced, 0)
 
     def test_settle_order_with_multiple_uom(self):
-        """Verify that a sale order with multiple UoM can be settled from the PoS."""
         uom_a, uom_b = self.env["uom.uom"].create(
             [{"name": "UoM A"}, {"name": "UoM B"}]
         )

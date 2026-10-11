@@ -16,7 +16,7 @@ from typing import Any
 try:
     from .change import EDIT_TOOLS, READ_TOOLS, _agent, _clone, _prompt, apply
     from .runner import Outcome, Reporter
-except ImportError:  # run as a script beside runner.py
+except ImportError:
     from change import EDIT_TOOLS, READ_TOOLS, _agent, _clone, _prompt, apply
     from runner import Outcome, Reporter
 

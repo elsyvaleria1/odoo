@@ -1,5 +1,5 @@
 from odoo.exceptions import (
-    AccessError,  # noqa: F401  used by the commented-out assertRaises below (see ledger)
+    AccessError,
 )
 from odoo.tests import tagged
 
@@ -37,5 +37,4 @@ class SpreadsheetDocuments(SpreadsheetTestCommon):
                 )
             )
             for att in attachements:
-                # with self.assertRaises(AccessError):
                 _ = att.datas

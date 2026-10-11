@@ -96,7 +96,6 @@ class TestPosSessionClosingIntegrity(TestPoSCommon):
                     bank_payment_method_diffs={self.bank_pm2.id: amount}
                 )
 
-                # The fixture's rate is 0.5: 20 session units are 40 company units.
                 self._assert_bank_difference(
                     session, self.bank_pm2, amount, company_amount=amount * 2
                 )
@@ -362,7 +361,6 @@ class TestPosSessionClosingSummary(TestPoSCommon):
 
         summary = session.get_closing_control_data()
 
-        # Extensions may add employee subtotals to this otherwise empty mapping.
         self.assertNotIn("id", summary["default_cash_details"])
         self.assertNotIn("amount", summary["default_cash_details"])
         self.assertEqual(len(summary["non_cash_payment_methods"]), 1)

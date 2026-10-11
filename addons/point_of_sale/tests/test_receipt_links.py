@@ -109,7 +109,6 @@ class TestReceiptLinks(TestPointOfSaleHttpCommon):
         self.assertFalse(column_exists(self.env.cr, "pos_order", "access_token"))
         self.assertEqual(order.access_token_hash, hash_bearer_token(token))
         self.assertNotIn(token, order.access_token_sealed)
-        # a kiosk's handle on its order: found by the token it holds
         self.assertEqual(
             self.env["pos.order"].search([("access_token", "in", [token])]), order
         )

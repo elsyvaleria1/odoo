@@ -33,11 +33,6 @@ class TestApprovalFlagGroups(TransactionCase):
         )
 
     def test_a_partner_writer_who_is_not_a_sales_manager_is_refused(self):
-        # A plain seller cannot write ANY res.partner field, so an AccessError
-        # on this one proves nothing about its `groups=` — the model ACL fires
-        # first and the assertion holds with the attribute deleted. This user
-        # can write res.partner and is not a sales manager, so the only thing
-        # left that can refuse is the field attribute itself.
         writer = self.env["res.users"].create(
             {
                 "name": "Partner Writer",
@@ -56,8 +51,6 @@ class TestApprovalFlagGroups(TransactionCase):
         with self.assertRaises(AccessError):
             self.customer.with_user(writer).write({"so_approval_required": True})
 
-        # Control: a field on the same model with no `groups=` goes through, so
-        # the refusal above is the attribute and not the ACL.
         self.customer.with_user(writer).write({"comment": "written by the same user"})
 
     def test_flag_still_triggers_approval_for_seller_so(self):
@@ -73,12 +66,6 @@ class TestApprovalFlagGroups(TransactionCase):
         )
 
     def test_the_approval_sections_vanish_with_their_content(self):
-        # `so_approval_required` carries `groups=` on the model, so the ORM
-        # strips its widget for a plain seller. The wrapping sections carried no
-        # `groups=` of their own, so the seller got a titled section with
-        # nothing in it. The partner form has no section of ours any more --
-        # both fields sit in the base Sales group, which holds other widgets --
-        # so there what must vanish is the pair of fields.
         for model, xpath in (
             ("product.category", "//group[@name='sale_approval']"),
             ("product.template", "//group[@name='sales_approval']"),

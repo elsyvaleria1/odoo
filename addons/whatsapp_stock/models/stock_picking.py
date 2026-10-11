@@ -6,7 +6,6 @@ class StockPicking(models.Model):
 
     def _send_confirmation_email(self):
         super()._send_confirmation_email()
-        # Sudo as the user has not always the right to read this WhatsApp template.
         pickings = self.filtered(
             lambda picking: (
                 picking.company_id._is_text_confirmation_enabled("whatsapp")
@@ -19,8 +18,6 @@ class StockPicking(models.Model):
                 p.company_id.sudo().stock_config_id.stock_confirmation_wa_template_id
             )
         ).items():
-            # Remove 'active_model' to prevent incorrect 'res_model' in wizard.whatsapp.message.send's default_get,
-            # as the picking might be opened from a different action like stock_picking_type_action.
             context = self.env.context.copy()
             context.pop("active_model", None)
             self.env["wizard.whatsapp.message.send"].with_context(context).create(

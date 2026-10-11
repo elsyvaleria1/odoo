@@ -11,7 +11,6 @@ class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
         cls.company_a = cls.company_data["company"]
         cls.company_b = cls.setup_other_company()["company"]
 
-        # Create a service product for the inter-company tests
         cls.product_consultant = cls.env["product.product"].create(
             {
                 "name": "Service",
@@ -41,7 +40,6 @@ class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
             }
         )
 
-        # Create user of company_a
         cls.res_users_company_a = cls.env["res.users"].create(
             {
                 "name": "User A",
@@ -62,7 +60,6 @@ class TestInterCompanyRulesCommon(AccountTestInvoicingCommon):
             }
         )
 
-        # Create user of company_b
         cls.res_users_company_b = cls.env["res.users"].create(
             {
                 "name": "User B",

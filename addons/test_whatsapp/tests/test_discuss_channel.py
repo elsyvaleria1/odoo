@@ -10,14 +10,6 @@ from odoo.addons.whatsapp.tests.common import MockIncomingWhatsApp
 @tagged("wa_message", "discuss_channel")
 class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
     def test_channel_info_link(self):
-        """Test information posted on channels. Flow
-
-        * a message is sent to the customer;
-        * they reply;
-        * then another message is posted using a template. This has two
-          use cases: either the same user, either another user
-        * check record information that should be displayed in channel.
-        """
         template = self.whatsapp_template.with_user(self.env.user)
         template_as_admin = self.whatsapp_template.with_user(self.user_wa_admin)
         template_as_emp = self.whatsapp_template.with_user(self.user_employee)
@@ -82,8 +74,6 @@ class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_channel_info_link_noname(self):
-        """Test that a channel can be created for a model without a name field
-        and rec_name is correctly used for logged info."""
         test_record_noname = self.env["whatsapp.test.nothread.noname"].create(
             {
                 "country_id": self.env.ref("base.be").id,
@@ -125,8 +115,6 @@ class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
 
     @users("user_wa_admin")
     def test_channel_validity_date(self):
-        """Ensure the validity date of a whatsapp channel is only affected by
-        messages sent by the whatsapp recipient."""
         template = self.whatsapp_template.with_user(self.env.user)
         test_record = self.test_base_record_nopartner.with_env(self.env)
 
@@ -150,7 +138,6 @@ class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
         self.assertEqual(first_valid_date, second_valid_date)
 
     def test_message_reaction(self):
-        """Check a reaction is correctly added on a whatsapp message."""
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(self.whatsapp_account, "test", "32499123456")
         discuss_channel = self.assertWhatsAppDiscussChannel(
@@ -199,7 +186,6 @@ class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
                                 "guests": [],
                                 "message": message.id,
                                 "partners": [message.author_id.id],
-                                # new reaction, and there is no way that we can get the id of the reaction, so that the sequence is directly +1
                                 "sequence": message.reaction_ids.ids[0] + 1,
                             }
                         ],
@@ -328,23 +314,18 @@ class DiscussChannel(WhatsAppFullCase, MockIncomingWhatsApp):
             ],
         ):
             with self.mockWhatsappGateway():
-                # Add first reaction 🚀 (user sent)
                 message._message_reaction("🚀", "add", partner, guest)
 
-                # Assert total 2 reactions now (🚀 from Odoo user, 👍 from WA user)
                 reactions = message.reaction_ids
                 self.assertEqual(len(reactions), 2)
                 self.assertSetEqual(set(reactions.mapped("content")), {"🚀", "👍"})
 
-                # Replace 🚀 with 🔥
                 message._message_reaction("🔥", "add", partner, guest)
 
-                # Assert reaction still count to 2, and Odoo user reaction is 🔥
                 reactions = message.reaction_ids
                 self.assertEqual(len(reactions), 2)
                 self.assertSetEqual(set(reactions.mapped("content")), {"🔥", "👍"})
 
-                # Try re-adding 🔥 (should not resend API call)
                 message._message_reaction("🔥", "add", partner, guest)
 
             self.assertEqual(

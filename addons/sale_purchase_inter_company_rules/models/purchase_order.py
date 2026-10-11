@@ -21,10 +21,8 @@ class PurchaseOrder(models.Model):
     )
 
     def _action_confirm(self):
-        """Generate inter company sales order base on conditions."""
         res = super()._action_confirm()
         for order in self:
-            # get the company from partner then trigger action of intercompany relation
             company_rec = self.env["res.company"]._find_company_from_partner(
                 order.partner_id.id
             )
@@ -48,15 +46,7 @@ class PurchaseOrder(models.Model):
         return res
 
     def inter_company_create_sale_order(self, company) -> None:
-        """Create a Sales Order from the current PO (self)
-        Note : In this method, reading the current PO is done as sudo, and the creation of the derived
-        SO as intercompany_user, minimizing the access right required for the trigger user.
-        :param company : the company of the created SO
-        :rtype company : res.company record
-        """
-        # find user for creating and validation SO/PO from partner company
         intercompany_uid = company._get_intercompany_uid_or_raise()
-        # check intercompany user access rights
         if not self.env["sale.order"].with_user(intercompany_uid).has_access("create"):
             _debug.logic(
                 "intercompany_refused",
@@ -72,7 +62,6 @@ class PurchaseOrder(models.Model):
             )
 
         for rec in self:
-            # check pricelist currency should be same with SO/PO document
             company_partner = rec.company_id.partner_id.with_user(intercompany_uid)
             if (
                 company_partner.property_product_pricelist
@@ -98,8 +87,6 @@ class PurchaseOrder(models.Model):
                     )
                 )
 
-            # create the SO and generate its lines from the PO lines
-            # read it as sudo, because inter-compagny user can not have the access right on PO
             _debug.pipeline(
                 "intercompany_sale_order_prepared", purchase_order=rec, company=company
             )
@@ -107,7 +94,6 @@ class PurchaseOrder(models.Model):
                 rec.name, company_partner, company, rec.dest_address_id.id or False
             )
 
-            # lines are browse as sudo to access all data required to be copied on SO line (mainly for company dependent field like taxes)
             for line in rec.line_ids.sudo():
                 sale_order_data["line_ids"] += [
                     Command.create(rec._prepare_sale_order_line_data(line, company))
@@ -116,7 +102,7 @@ class PurchaseOrder(models.Model):
                 self.env["sale.order"]
                 .with_context(
                     allowed_company_ids=company.ids,
-                    in_rental_app=False,  # avoid creating rental orders if PO is accessed via Rental
+                    in_rental_app=False,
                 )
                 .with_user(intercompany_uid)
                 .create(sale_order_data)
@@ -128,25 +114,13 @@ class PurchaseOrder(models.Model):
             )
             sale_order.message_post(body=msg)
 
-            # write vendor reference field on PO
             if not rec.partner_ref:
                 rec.partner_ref = sale_order.name
 
-            # Validation of sales order
             if company.intercompany_document_state == "posted":
                 sale_order.with_user(intercompany_uid).action_confirm()
 
     def _prepare_sale_order_data(self, name, partner, company, direct_delivery_address):
-        """Generate the Sales Order values from the PO
-        :param name : the origin client reference
-        :rtype name : string
-        :param partner : the partner reprenseting the company
-        :rtype partner : res.partner record
-        :param company : the company of the created SO
-        :rtype company : res.company record
-        :param direct_delivery_address : the address of the SO
-        :rtype direct_delivery_address : res.partner record
-        """
         self.check_singleton()
         partner_addr = partner.sudo().address_get(["invoice", "delivery", "contact"])
 
@@ -172,15 +146,8 @@ class PurchaseOrder(models.Model):
 
     @api.model
     def _prepare_sale_order_line_data(self, line, company):
-        """Generate the Sales Order Line values from the PO line
-        :param line : the origin Purchase Order Line
-        :rtype line : purchase.order.line record
-        :param company : the company of the created SO
-        :rtype company : res.company record
-        """
-        # it may not affected because of parallel company relation
         price = line.price_unit or 0.0
-        quantity = line.product_uom_qty  # already in the product's reference UoM
+        quantity = line.product_uom_qty
         price = (
             line.product_id
             and line.product_uom_id._get_price_in_unit(price, line.product_id.uom_id)

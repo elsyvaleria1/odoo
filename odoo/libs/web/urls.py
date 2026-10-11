@@ -13,8 +13,6 @@ _SCHEME_RE = re.compile(r"([A-Za-z][A-Za-z0-9+.-]*):")
 
 
 def url_scheme(url: str) -> str:
-    # urlsplit's reading of the scheme, which is a browser's, without its netloc
-    # validation: a bracketed host that is no IPv6 literal must not hide one.
     url = url.lstrip(_C0_CONTROL_OR_SPACE).translate(_TAB_AND_NEWLINES)
     match = _SCHEME_RE.match(url)
     return match[1].lower() if match else ""

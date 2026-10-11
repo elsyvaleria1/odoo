@@ -41,8 +41,6 @@ class AccountPayment(models.Model):
                 "res_id": create_batch_error_wizard.id,
             }
 
-        # We use self[0] to create the batch; the constrains on the model ensure
-        # the consistency of the generated data (same journal, same payment method, ...)
         batch = self.env["account.batch.payment"].create(
             {
                 "journal_id": self[0].journal_id.id,
@@ -60,9 +58,6 @@ class AccountPayment(models.Model):
         }
 
     def button_open_batch_payment(self) -> dict:
-        """Redirect the user to the batch payments containing this payment.
-        :return:    An action on account.batch.payment.
-        """
         self.check_singleton()
 
         return {

@@ -13,7 +13,6 @@ class TestMailActivityMixin(MailCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # using res.partner as the model inheriting from mixin.mail.activity
         cls.test_record = (
             cls.env["res.partner"]
             .with_context(cls._test_context)
@@ -34,12 +33,9 @@ class TestMailActivityMixin(MailCommon):
                 "res_id": cls.activity_type_1.id,
             }
         )
-        # reset ctx
         cls._reset_mail_context(cls.test_record)
 
     def test_activity_calendar_event_id(self):
-        """Test the computed field "activity_calendar_event_id" which is the event of the
-        next activity. It must evaluate to False if the next activity is not related to an event"""
 
         def create_event(name, event_date):
             return self.env["calendar.event"].create(

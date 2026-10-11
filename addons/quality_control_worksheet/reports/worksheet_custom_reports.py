@@ -16,7 +16,7 @@ class ReportQuality_ControlQuality_Worksheet(models.AbstractModel):
                     [("x_quality_check_id", "=", check.id)],
                     limit=1,
                     order="create_date DESC",
-                )  # take the last one
+                )
                 worksheet_map[check.id] = worksheet
 
         pdf_data["worksheet_map"] = worksheet_map

@@ -82,13 +82,6 @@ class TestHrDepartment(TestMultiCompany):
         self.assertTrue(self.department.company_id == self.company_a)
 
     def test_complete_name_follows_root_rename_read_singly(self):
-        """A recursive stored compute must reach every descendant with the
-        ancestor's new value, whatever order the records are read in.
-
-        `_recompute_singly` used to widen the batch from the record being read,
-        so a deep chain renamed at the root and then read one record at a time,
-        middle first, stored the pre-rename root name on the deepest levels.
-        """
         Department = self.env["hr.department"]
         chain = [Department.create({"name": "R0"})]
         for level in range(1, 6):
@@ -121,14 +114,6 @@ class TestHrDepartment(TestMultiCompany):
         )
 
     def test_moving_to_another_company_requires_settling_the_department_first(self):
-        """The rule bites on the company change too, not only on the assignment.
-
-        `hr.employee.write` applies employee fields before version fields, so a
-        single write carrying both the new company and a cleared department is
-        validated with the new company and the old department still in place.
-        Settling the department first is therefore the supported order, and it
-        is also what a real transfer does.
-        """
         employee = self.employee_other_a
         self.assertEqual(employee.department_id, self.department)
         with self.assertRaises(ValidationError):

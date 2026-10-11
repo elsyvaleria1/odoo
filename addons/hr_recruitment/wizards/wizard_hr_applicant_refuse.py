@@ -103,13 +103,13 @@ class WizardHrApplicantRefuse(models.TransientModel):
                 & Domain("application_status", "=", "ongoing")
             )
             wizard.duplicate_applicant_ids_domain = domain
-            wizard.duplicates_count = self.env["hr.applicant"].search_count(domain)  # noqa: E8507 - a transient wizard: one record
+            wizard.duplicates_count = self.env["hr.applicant"].search_count(domain)
 
     @api.depends("duplicates", "duplicate_applicant_ids_domain")
     def _compute_duplicate_applicant_ids(self) -> None:
         for wizard in self:
             wizard.duplicate_applicant_ids = (
-                self.env["hr.applicant"].search(wizard.duplicate_applicant_ids_domain)  # noqa: E8507 - a transient wizard: one record
+                self.env["hr.applicant"].search(wizard.duplicate_applicant_ids_domain)
                 if wizard.duplicates
                 else self.env["hr.applicant"]
             )
@@ -222,11 +222,6 @@ class WizardHrApplicantRefuse(models.TransientModel):
         )
 
     def _duplicate_match_fields(self) -> tuple:
-        """Keys that make a duplicate traceable back to a refused application.
-
-        Must stay a superset of what ``_get_domain_similar_applicants`` selects
-        on, or a duplicate the wizard offers has no original to point at.
-        """
         return (
             *self.env["hr.applicant"]._DUPLICATE_KEY_FIELDS,
             "pool_applicant_id",
@@ -250,12 +245,6 @@ class WizardHrApplicantRefuse(models.TransientModel):
         return related_original_applicants
 
     def _send_refusal_mails(self) -> None:
-        """Render the template once per language, not once per applicant.
-
-        Refusing is a bulk action, and the rendering has to be grouped by
-        language rather than done in one call because the template is rendered
-        in each recipient's.
-        """
         applicants = self.applicant_ids
         lang_by_applicant = self._render_lang(applicants.ids)
         ids_by_lang = defaultdict(list)

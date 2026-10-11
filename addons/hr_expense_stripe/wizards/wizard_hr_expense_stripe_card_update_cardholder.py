@@ -13,13 +13,10 @@ from odoo.addons.hr_expense_stripe.utils import (
 
 class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
     _name = "wizard.hr.expense.stripe.card.update.cardholder"
-    _inherit = "mixin.mail.thread"  # So we can steal tracking data
+    _inherit = "mixin.mail.thread"
     _description = "Wizard to configure the cardholder"
 
-    # DEV warning, due to the fact that we're using the tracking values to make the diff between stripe values and the new tracked ones,
-    # We should be extra cautious not to use computed or inverse fields in order not to pollute the card chatter with nonsense
 
-    # Untracked fields
     card_id = fields.Many2one(
         comodel_name="hr.expense.stripe.card",
         readonly=True,
@@ -38,9 +35,8 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         readonly=True,
     )
     company_country_code = fields.Char(related="company_country_id.code")
-    stripe_values = fields.Json()  # Used for the tracking data original values
+    stripe_values = fields.Json()
 
-    # Tracked Fields
     firstname = fields.Char(
         string="First Name",
         tracking=True,
@@ -51,7 +47,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
     )
 
     email = fields.Char(tracking=True)
-    phone_number = fields.Char(tracking=True)  # EU required
+    phone_number = fields.Char(tracking=True)
     birthday = fields.Date(tracking=True)
 
     billing_city = fields.Char(
@@ -76,7 +72,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         string="State",
         domain='[("country_id", "=", billing_country_id)]',
         tracking=True,
-    )  # US required
+    )
     billing_zip = fields.Char(
         string="Zip",
         tracking=True,
@@ -85,7 +81,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
     @api.model
     def _create_from_card(self, employee, company, card):
         card.check_access("write")
-        # Ensure access to the employee fields. The card manager should have a read access to the required employee fields
         employee_sudo = employee.sudo()
         employee_stripe_id = employee_sudo.private_stripe_id
         create_vals = {
@@ -112,7 +107,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             year = response["individual"]["dob"]["year"]
             month = response["individual"]["dob"]["month"]
             day = response["individual"]["dob"]["day"]
-            # VERY IMPORTANT, the ORM will convert it but not the JSON
             tracked_create_vals["birthday"] = date(
                 year=year, month=month, day=day
             ).isoformat()
@@ -135,7 +129,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             create_vals["stripe_values"] = deepcopy(tracked_create_vals)
 
         else:
-            # Try prefill from Employee
             private_first_name, *private_last_name = (employee_sudo.name or "").split(
                 " "
             )
@@ -148,7 +141,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             )
             tracked_create_vals["birthday"] = (
                 employee_sudo.birthday and employee_sudo.birthday.isoformat()
-            )  # VERY IMPORTANT, the ORM will convert it but not the JSON
+            )
 
             work_address = employee_sudo.address_id
             tracked_create_vals["billing_country_id"] = work_address.country_id.id
@@ -159,7 +152,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             tracked_create_vals["billing_zip"] = work_address.zip
             tracked_create_vals["billing_state_id"] = work_address.state_id.id
 
-            # As it doesn't exist on Stripe
             tracked_create_vals["stripe_values"] = dict.fromkeys(
                 tracked_create_vals, False
             )
@@ -170,20 +162,19 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         return wizard.with_context(tracking_disable=False)
 
     def _mail_track(self, tracked_fields, initial_values):
-        # EXTEND mail to force custom initial_values
         self.check_singleton()
         initial_values = {}
         for field_name, value in self.stripe_values.items():
             match field_name:
                 case (
                     "billing_country_id"
-                ):  # relational model field stored as an integer in the json
+                ):
                     initial_values[field_name] = self.env["res.country"].browse(value)
                 case "billing_state_id":
                     initial_values[field_name] = self.env["res.country.state"].browse(
                         value
                     )
-                case "birthday":  # Stored as an iso-format string in the json
+                case "birthday":
                     initial_values[field_name] = value and date.fromisoformat(value)
                 case _:
                     initial_values[field_name] = value
@@ -191,10 +182,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         return super()._mail_track(tracked_fields, initial_values)
 
     def _prepare_tracking_values_commands(self):
-        """
-        Re-Generate the commands required for the tracking value to be set as we want it, unrelated if the field was actually modified
-        by the wizard, we want to track the data on Stripe
-        """
         self.check_singleton()
         command_list = [Command.clear()]
         original_values = self.stripe_values
@@ -204,9 +191,9 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         )
         for field_name, value in original_values.items():
             match field_name:
-                case "billing_country_id":  # relational model field
+                case "billing_country_id":
                     new_value = self[field_name] and self[field_name].id
-                case "birthday":  # Stored as an isoformat string in the json
+                case "birthday":
                     new_value = self[field_name]
                     value = value and date.fromisoformat(value)
                 case _:
@@ -230,7 +217,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         self.check_singleton()
         self.card_id.check_access("write")
         employee_sudo = self.employee_id.sudo()
-        # Create the ordered list of user languages for the 3DSecure flow
         preferred_langs = OrderedSet()
         user_lang = (
             employee_sudo.user_id.lang and employee_sudo.user_id.lang.split("_")[0]
@@ -244,7 +230,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             "account": self.company_id.sudo().stripe_id,
             "lang": employee_sudo.user_id.lang
             or employee_sudo.lang
-            or "en_US",  # Default to en_US if no lang is set
+            or "en_US",
             "billing": {
                 "address": {
                     "country": self.billing_country_id.code,
@@ -278,7 +264,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         else:
             raise UserError(self.env._("The phone number is invalid."))
 
-        # Add non mandatory fields
         if self.billing_street2:
             payload["billing"]["address"]["line2"] = self.billing_street2
         if self.billing_state_id:
@@ -301,7 +286,7 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
 
         payload = {
             key: value for key, value in payload.items() if value is not False
-        }  # Else Stripe consider it a value
+        }
         response = send_request_stripe_proxy(
             self.company_id.sudo(), route, route_params, payload=payload, method="POST"
         )
@@ -317,7 +302,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
                 "message": success_message,
             },
         )
-        # What if we need to request terms of services approvals (US-case TBDL)?
 
         if self.env.context.get("stripe_card_action_activate"):
             if not self.env.context.get("test_no_commit"):
@@ -327,7 +311,6 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
         return {"type": "ir.actions.act_window_close"}
 
     def _transfer_messages_to_card(self) -> None:
-        """Copy the messages created for the wizard to all the cardholder cards"""
         create_vals = []
         subtype = self.env.ref(
             "hr_expense_stripe.mt_stripe_cardholder_updated", raise_if_not_found=False
@@ -340,14 +323,13 @@ class WizardHrExpenseStripeCardUpdateCardholder(models.TransientModel):
             common_vals["subtype_id"] = subtype.id
         messages_to_unlink = self.env["mail.message"]
         for wizard in self:
-            # Get the cardholder cards that belong to the same company
             cardholder_user_su = wizard.sudo().employee_id.user_id
             cards_su = cardholder_user_su.stripe_card_ids.filtered_domain(
                 [("company_id", "=", wizard.company_id.id)]
             )
             message = max(
                 wizard.message_ids, key=lambda msg: msg.date, default=None
-            )  # Only the last message
+            )
             if message:
                 tracking_values = [
                     Command.create(values)

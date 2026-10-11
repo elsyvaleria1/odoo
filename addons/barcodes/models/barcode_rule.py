@@ -4,40 +4,16 @@ import re
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-# `{NNNDD}` marks where a rule pattern carries a number: N's are its whole
-# part, D's its decimals. Braces are reserved for it, so a pattern holds at
-# most one such group and no `{m,n}` quantifier.
 NUMERIC_GROUP = re.compile(r"[{](?P<whole>N*)(?P<decimal>D*)[}]")
 _ESCAPE = re.compile(r"\\.", re.DOTALL)
 _NUMBERED_BACKREFERENCE = re.compile(r"\\[1-9]")
 
-# A group that is itself quantified and whose body contains an unbounded
-# quantifier -- `(x+x+)+`, `(a+)*`, or `(\d{2,})+` in a GS1 rule, whose
-# patterns keep their braces -- is the shape that turns a linear match into an
-# exponential one. Patterns run on every scan, so they are rejected on write
-# rather than relied upon to be well-behaved.
 _UNBOUNDED = r"(?:[+*]|\{\d+,\d*\})"
 _NESTED_QUANTIFIER = re.compile(rf"\([^()]*{_UNBOUNDED}[^()]*\)\s*{_UNBOUNDED}")
 
-# A quantified group whose alternatives are plain literals is a second
-# ReDoS shape `_NESTED_QUANTIFIER` does not see: none of `(a|aa)`'s branches
-# contains its own quantifier, yet one alternative being a prefix of another
-# (`a` of `aa`) lets the engine account for the same input two ways, and
-# `+`/`*` turns that ambiguity exponential on a non-matching tail.
 _QUANTIFIED_GROUP = re.compile(rf"\((?P<body>[^()]*)\)\s*{_UNBOUNDED}")
 _LITERAL_ALTERNATIVE = re.compile(r"^[A-Za-z0-9]+$")
 
-# A pattern runs in Python on the server and in the browser's RegExp in the
-# point of sale and the barcode app, so it is held to the syntax both read the
-# same way. The browser throws on every group form but lookarounds and `(?:`
-# and on a possessive quantifier, and reads an escaped letter it does not know
-# (`\A`, `\z`, `\a`, `\U...`) as that letter. In a class, a leading `]` is
-# a literal to Python and closes an empty class for the browser, and `[`,
-# `--`, `&&`, `~~`, `||` are literals Python announces it will reinterpret.
-# The browser also refuses a quantified lookbehind, and a quantified
-# lookaround means nothing in either, so none is accepted.
-# The server matches with `re.ASCII` so `\d`, `\w` and `\b` are the
-# browser's ASCII classes.
 _PORTABLE_GROUP_PREFIX = re.compile(r"\(\?(?:[:=!]|<[=!])")
 _PORTABLE_ESCAPE = re.compile(
     r"\\(?:[dDwWsSbBfnrtv0-9]|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|[^0-9A-Za-z])"
@@ -45,10 +21,6 @@ _PORTABLE_ESCAPE = re.compile(
 _NESTED_SET_TOKENS = ("[", "--", "&&", "~~", "||")
 RULE_REGEX_FLAGS = re.ASCII
 
-# What the browser's `.`, `$` and `\s` mean, spelled for Python: its `.` also
-# stops at CR and the Unicode line separators, its `$` does not match before a
-# trailing newline, and its `\s` is Unicode whitespace even without the `u`
-# flag. `\S` in a class has no Python spelling, so it is not portable.
 _BROWSER_WHITESPACE = (
     r"\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff"
 )
@@ -60,10 +32,8 @@ _BROWSER_EQUIVALENTS = {
 }
 
 
-# pure in the pattern, and re-lexed for every rule of every scan otherwise
 @functools.lru_cache(maxsize=1024)
 def browser_semantics(pattern) -> str:
-    """Rewrite a portable pattern so Python matches what the browser matches."""
     out, i = [], 0
     while i < len(pattern):
         char = pattern[i]
@@ -98,12 +68,6 @@ def _class_escape(escape):
 
 @functools.lru_cache(maxsize=1024)
 def rule_regex(pattern) -> tuple:
-    """Return the regex a rule pattern runs as on the server, and its whole-part width.
-
-    The numeric group becomes a named group capturing that many ASCII digits,
-    so the regex itself locates the number. The width is None when the pattern
-    carries no number.
-    """
     pattern = browser_semantics(pattern)
     numeric_group = NUMERIC_GROUP.search(pattern)
     if not numeric_group:
@@ -119,7 +83,6 @@ def rule_regex(pattern) -> tuple:
 
 
 def unportable_construct(pattern):
-    """Return the first construct of `pattern` the browser does not read as Python does, or None."""
     i, previous_is_quantifier, closed_lookaround = 0, False, False
     lookarounds = []
     while i < len(pattern):
@@ -177,12 +140,6 @@ def _scan_class(pattern, start) -> tuple:
 
 
 def _has_ambiguous_alternation(pattern) -> bool:
-    """Detect a quantified group whose literal alternatives share a prefix.
-
-    Only plain-literal alternatives (no regex metacharacters) are checked:
-    prefix analysis on an arbitrary sub-pattern is not sound in general, so
-    this only raises the bar rather than closing the class of bug for good.
-    """
     for group in _QUANTIFIED_GROUP.finditer(pattern):
         alternatives = group.group("body").split("|")
         if len(alternatives) < 2 or not all(

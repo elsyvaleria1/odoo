@@ -12,8 +12,6 @@ from odoo.tools.misc import OrderedSet, unique
 _logger = logging.getLogger(__name__)
 PRICE_CONTEXT_KEYS = ["pricelist", "quantity", "uom", "date"]
 
-# kind: (setting, unit when the setting is "1", unit otherwise). Length and
-# distance have no setting of their own: they follow the imperial volume one.
 UOM_SETTINGS = {
     "weight": ("product.weight_in_lbs", "base.product_uom_lb", "base.product_uom_kgm"),
     "volume": (
@@ -49,7 +47,6 @@ UOM_SETTINGS = {
     ),
 }
 
-# the four fields product.template mirrors from its single variant
 MANUFACTURER_FIELDS = (
     "manufacturer_id",
     "manufacturer_pname",
@@ -284,9 +281,6 @@ class ProductTemplate(models.Model):
         inverse="_inverse_default_code",
         store=True,
     )
-    # The four manufacturer fields, their strings and the two hook names below
-    # are OCA product-attribute's design (AGPL-3; see the note in
-    # product_product.py); the bodies are this fork's.
     manufacturer_id = fields.Many2one(
         comodel_name="res.partner",
         compute="_compute_manufacturer_info",
@@ -416,7 +410,6 @@ class ProductTemplate(models.Model):
         templates = super().create([template_vals for template_vals, _variant in split])
         to_build = templates
         if self.env.context.get("update_product_template_attribute_values", True):
-            # the lines just created rebuilt their own template's variants
             to_build = templates.filtered(lambda t: not t.attribute_line_ids)
         to_build._create_variant_ids()
         for template, (_vals, variant_vals) in zip(templates, split, strict=True):
@@ -803,9 +796,6 @@ class ProductTemplate(models.Model):
         return action
 
     def action_open_packaging_barcodes(self) -> dict:
-        # Every packaging barcode of this product, across all of its units.  The
-        # uom.uom stat button only ever scopes by unit, so this is the one
-        # product-scoped view of them.
         self.check_singleton()
         variants = self.product_variant_ids
         return {
@@ -1469,9 +1459,6 @@ class ProductTemplate(models.Model):
         )
 
     def _split_variant_vals(self, vals) -> tuple[dict, dict]:
-        # These are written through to the single variant: they wait for the
-        # variants to be built, or they land on none, or on one the rebuild
-        # then removes.
         variant_fnames = set(self._get_related_fields_variant_template())
         return (
             {key: value for key, value in vals.items() if key not in variant_fnames},
@@ -1479,8 +1466,6 @@ class ProductTemplate(models.Model):
         )
 
     def _write_single_variant_vals(self, variant_vals) -> None:
-        # A template with several variants has no single one to hold them;
-        # stored on it they would contradict their compute.
         single = self.filtered(lambda template: len(template.product_variant_ids) <= 1)
         if variant_vals and single:
             super(ProductTemplate, single).write(variant_vals)

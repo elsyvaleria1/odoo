@@ -277,18 +277,12 @@ class AccountReturnType(models.Model):
         return vals_list
 
     def copy_translations(self, new, excluded=()) -> None:
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
     def _can_return_exist(self, company, tax_unit=False) -> bool:
-        """Returns whether a return can exist for this type with the provided company and tax units. This is used to know which returns need
-        to be deleted when a change of configuration has occured.
-        """
         is_foreign_vat = (
             self.report_id
             and company.tax_config_id.account_fiscal_country_id.code
@@ -313,7 +307,7 @@ class AccountReturnType(models.Model):
     def _cron_sync_all_returns(self) -> None:
         _debug.lifecycle("_cron_sync_all_returns", records=self)
         now = fields.Datetime.now()
-        date_upper_bound = now - relativedelta(days=1)  # -1 day to cope for precision
+        date_upper_bound = now - relativedelta(days=1)
         root_companies = (
             self.env["res.company"]
             .sudo()
@@ -384,12 +378,6 @@ class AccountReturnType(models.Model):
     @api.model
     @_debug.perf.timed
     def _sync_all_returns(self, root_companies) -> None:
-        """Generate or update the returns of every root company, non domestic tax unit and
-        foreign VAT fiscal position, then vacuum the returns that configuration changes made
-        obsolete.
-
-        :param root_companies: the res.company records to generate returns for
-        """
         root_companies = root_companies.filtered(
             lambda x: x.account_config_id.account_opening_date
         )
@@ -411,7 +399,7 @@ class AccountReturnType(models.Model):
                     ("country_id", "=", fiscal_country.id),
                     ("company_ids", "in", company.ids),
                 ]
-            )  # At most 1
+            )
             self._generate_all_returns(fiscal_country.code, company, domestic_tax_unit)
             all_domestic_tax_units += domestic_tax_unit
 
@@ -420,7 +408,6 @@ class AccountReturnType(models.Model):
                 tax_unit.country_id.code, tax_unit.main_company_id, tax_unit
             )
 
-        # Create returns for foreign VAT fiscal positions
         fpos_root_company_domain = [("company_id", "child_of", root_companies.ids)]
         all_foreign_vat_fpos = (
             self.env["account.fiscal.position"]
@@ -433,7 +420,6 @@ class AccountReturnType(models.Model):
             for country_code in {fpos.country_id.code for fpos in fiscal_positions}:
                 self._generate_all_returns(country_code, company, None)
 
-        # Post generation -> we need to vacuum all returns that should not exist anymore
         return_root_company_domain = [("company_ids", "in", root_companies.ids)]
         all_return_that_might_be_deleted = (
             self.env["account.return"]
@@ -469,13 +455,6 @@ class AccountReturnType(models.Model):
     @api.model
     @_debug.perf.timed
     def _generate_all_returns(self, country_code, main_company, tax_unit=None):
-        """
-        Hook to override to enable the generation of new return types.
-
-        :param country_code: the country code for which we want to generate returns. It can be fpos country_code or main_company country_code
-        :param main_company: the main company for which we generate returns
-        :param tax_unit: the tax unit for which we generate returns, if any
-        """
 
         if self.env.context.get("only_refresh_conditional_types"):
             return
@@ -496,7 +475,6 @@ class AccountReturnType(models.Model):
                 ]
             )
         else:
-            # For foreign vat we want to search strictly on country as the others without country should already be generated
             search_domain = Domain.AND(
                 [
                     Domain("country_id.code", "=", country_code),
@@ -527,15 +505,6 @@ class AccountReturnType(models.Model):
     def _try_create_returns_for_fiscal_year(
         self, main_company, tax_unit, allow_duplicates=False, bypass_period_check=False
     ):
-        """Create or update the returns (possibly deleting the 'new' ones, if needed) for the
-        provided main_company and tax_unit, covering the periods from one year before today up to
-        one year after it.
-
-        The `forced_date_from` and `forced_date_to` context keys restrict the generation to a
-        specific interval; both must be set to be taken into account.
-        """
-        # Most operations run in sudo(): a configuration change can restructure branches or tax
-        # units, so returns of companies the current user cannot access must still be fixed up.
         self.check_singleton()
         if self.report_id.filter_multi_company != "tax_units":
             tax_unit = False
@@ -588,9 +557,7 @@ class AccountReturnType(models.Model):
             returns_to_unlink.sudo().unlink()
             return None
 
-        # We do not want to traverse children if we are using a tax_unit or using a fiscal_position
         if not tax_unit and not main_company.parent_id and main_company.child_ids:
-            # Also create returns for the branch sub-trees with different VAT numbers as main_company
             other_main_companies = self.env["res.company"]
             to_treat = [(main_company.vat, main_company)]
             while to_treat:
@@ -663,7 +630,7 @@ class AccountReturnType(models.Model):
                         "company_id",
                         "=",
                         main_company.id,
-                    ),  # We don't want to use the check_company_domain here
+                    ),
                     ("type_id", "=", self.id),
                     ("date_to", ">=", date_from),
                     ("date_from", "<=", date_to),
@@ -683,7 +650,6 @@ class AccountReturnType(models.Model):
                 )
             same_periods = set(periods) & set(existing_periods.keys())
 
-            # For existing period that won't be changed, we check the company structure
             for same_period in same_periods:
                 same_period_returns = existing_periods[same_period]
                 for same_period_return in same_period_returns:
@@ -699,11 +665,9 @@ class AccountReturnType(models.Model):
 
             periods = list(
                 set(periods) - same_periods
-            )  # We don't need to create periods that are already created and good
+            )
             periods.sort(key=lambda period: period[0])
 
-            # Get the one that are wrong and delete them if possible
-            # In case of period switch we need to resolve it
             unmatched_existing_periods = set(existing_periods.keys()) - same_periods
             unmatched_existing_periods_posted_returns = self.env["account.return"]
             unmatched_existing_periods_unposted_returns = self.env["account.return"]
@@ -720,7 +684,6 @@ class AccountReturnType(models.Model):
                         period
                     ]
 
-            # We can safely unlink these as they are not posted. We will create new returns for these periods
             unmatched_existing_periods_unposted_returns.filtered(
                 lambda r: not r.manually_created
             ).sudo().unlink()
@@ -735,14 +698,11 @@ class AccountReturnType(models.Model):
                 posted=unmatched_existing_periods_posted_returns,
                 periods_left=len(periods),
             )
-            # So now we are only left with existing one that cannot be unlinked
-            # We should create new returns for periods after the last posted return
             if unmatched_existing_periods_posted_returns:
                 most_recent_posted_return = max(
                     unmatched_existing_periods_posted_returns,
                     key=lambda ret: ret.date_to,
                 )
-                # We need to remove all periods to create where the date_from is less or equal than the most_recent_posted_return date_to
                 new_periods = [
                     period
                     for period in periods
@@ -757,7 +717,6 @@ class AccountReturnType(models.Model):
                     periods_left=len(periods),
                 )
 
-        # Now we can create those new returns
         create_vals_list = []
         for period_from, period_to in periods:
             create_vals_list.append(
@@ -804,7 +763,6 @@ class AccountReturnType(models.Model):
             )
         )
 
-        # We should update those companies if they are wrong
         expected_companies = (
             self.env["account.return"]
             .sudo()
@@ -1010,7 +968,6 @@ class AccountReturnType(models.Model):
         return self.sudo().deadline_start_date or fields.Date.from_string("2025-01-01")
 
     def _get_periodicity_months_delay(self, company, date=None):
-        """Returns the number of months separating two returns"""
         periodicity = self._get_periodicity(company)
         if periodicity == "fiscalyear":
             if date:
@@ -1020,8 +977,6 @@ class AccountReturnType(models.Model):
                 delta = relativedelta(end_date + relativedelta(days=1), start_date)
                 return delta.years * 12 + delta.months
 
-            # Without a date, we cant know which fiscal year we are trying to get the length of
-            # To fallback, we find the longest fiscal year defined for this company
             months = 12
             fiscalyears = self.env["account.fiscal.year"].search(
                 [("company_id", "=", company.id)]
@@ -1050,12 +1005,6 @@ class AccountReturnType(models.Model):
     def _get_period_boundaries(
         self, company_id, date, override_period_months=None, override_start_date=None
     ) -> tuple:
-        """Return the boundaries of the period containing the provided date for this return type.
-
-        :return: the (start, end) dates of the period
-        :rtype: tuple
-        """
-        # Keep consistent with the equivalent computation in the tax report filters JavaScript.
         if self._get_periodicity(company_id) == "fiscalyear":
             fy_dates = company_id.compute_fiscalyear_dates(date)
             _debug.logic(
@@ -1080,24 +1029,21 @@ class AccountReturnType(models.Model):
 
         aligned_date = (
             date + relativedelta(days=-(start_day - 1))
-        )  # we offset the date back from start_day amount of day - 1 so we can compute months periods aligned to the start and end of months
+        )
         year = aligned_date.year
         month_offset = aligned_date.month - start_month
         period_number = (month_offset // period_months) + 1
 
-        # If the date is before the start date and start month of this year, this mean we are in the previous period
-        # So the initial_date should be one year before and the period_number should be computed in reverse because month_offset is negative
         if date < datetime.date(date.year, start_month, start_day):
             year -= 1
             period_number = ((12 + month_offset) // period_months) + 1
 
         month_delta = period_number * period_months
 
-        # We need to work with offsets because it handle automatically the end of months (28, 29, 30, 31)
         end_date = (
             datetime.date(year, start_month, 1)
             + relativedelta(months=month_delta, days=start_day - 2)
-        )  # -1 because the first days is aldready counted and -1 because the first day of the next period must not be in this range
+        )
         start_date = datetime.date(year, start_month, 1) + relativedelta(
             months=month_delta - period_months, day=start_day
         )

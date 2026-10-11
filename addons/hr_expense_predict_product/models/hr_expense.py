@@ -60,9 +60,7 @@ class HrExpense(models.Model):
             "company_id": self.company_id.id or self.env.company.id,
             "limit_parameter": limit_parameter,
         }
-        # In case there is an error while parsing the to_tsquery (wrong character for example)
-        # We don't want to have a traceback, instead return False
-        parsed = False  # debuglog
+        parsed = False
         with contextlib.suppress(psycopg.errors.SyntaxError):
             with self.env.cr.savepoint():
                 with _debug.perf(
@@ -71,7 +69,7 @@ class HrExpense(models.Model):
                 ):
                     self.env.cr.execute(_PRODUCT_PREDICTION_QUERY, params)
                 result = self.env.cr.fetchone()
-            parsed = True  # debuglog
+            parsed = True
             if result:
                 _debug.logic(
                     "expense_product_predicted",

@@ -5,7 +5,7 @@ from odoo.addons.point_of_sale.tests.common import TestPoSCommon
 
 @odoo.tests.tagged(
     "-at_install", "post_install"
-)  # Only runs after installation, not at install time
+)
 class TestPOSCustomerAccountReconciliation(TestPoSCommon):
     def setUp(self):
         super().setUp()
@@ -205,8 +205,6 @@ class TestPOSCustomerAccountReconciliation(TestPoSCommon):
             },
         ]
         order_data = [self.create_ui_order_data(**params) for params in order_data]
-        # Settlement is a transfer from the bank to the customer account, not
-        # another sale: the zero-quantity orders and their net payments are zero.
         for order in order_data:
             order["state"] = "paid"
         self.env["pos.order"].sync_from_ui(order_data)

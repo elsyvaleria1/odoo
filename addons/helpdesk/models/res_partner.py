@@ -23,7 +23,6 @@ class ResPartner(models.Model):
             [("id", "child_of", self.ids)]
         )
 
-        # group tickets by partner, and account for each partner in self
         groups = self.env["helpdesk.ticket"]._read_group(
             [("partner_id", "in", all_partners_subquery)],
             groupby=["partner_id"],

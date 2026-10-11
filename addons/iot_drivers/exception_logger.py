@@ -23,7 +23,7 @@ class ExceptionLogger:
     def _flush_buffer(self) -> None:
         self._buffer.seek(0)
         _logger.error(self._buffer.getvalue().rstrip("\n"))
-        self._buffer = StringIO()  # Reset the buffer
+        self._buffer = StringIO()
 
     def flush(self) -> None:
         if self._buffer.tell() > 0:

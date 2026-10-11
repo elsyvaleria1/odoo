@@ -26,7 +26,6 @@ class TestMailingRetry(MassMailCommon, CronMixinCase):
         )
         mailing.action_launch()
 
-        # force email sending to fail to test our retry mechanism
         def patched_mail_mail_send(
             mail_records,
             auto_commit=False,

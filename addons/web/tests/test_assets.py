@@ -257,7 +257,6 @@ class TestAssetEncodings(HttpCase):
         return response, response.raw.read(decode_content=False)
 
     def test_a_bundle_is_served_in_the_encoding_the_client_accepts(self):
-        # the first request builds the bundle, the second reads it back
         for attempt in ("built", "stored"):
             with self.subTest(attempt=attempt):
                 response, body = self._get("gzip, deflate, br, zstd")
@@ -312,8 +311,6 @@ class TestWebAssetsRegenerationLock(HttpCase):
         self.assertNotIn("immutable", response.headers.get("Cache-Control", ""))
 
     def test_the_waiter_reads_committed_before_it_takes_the_lock(self):
-        # a waiter must see the stylesheet the lock holder committed: its
-        # transaction is READ COMMITTED before the lock statement starts it
         bundle_name = "web.assets_frontend"
         self.env["ir.attachment"].search(
             [("url", "=like", f"/web/assets/%/{bundle_name}.min.css")]
@@ -374,8 +371,6 @@ class TestWebAssetsRegenerationLock(HttpCase):
 @tagged("post_install", "-at_install")
 class TestTemporalPolyfill(HttpCase):
     def _run_shim(self, delete_temporal):
-        # the page's own loader shim, run while a fresh document still parses,
-        # with each script carrying the page's CSP nonce as the shim's does
         self.browser_js(
             "/web/login",
             f"""
@@ -437,7 +432,6 @@ class TestBrowserFloorNotice(HttpCase):
         self.assertIn('id="o_browser_unsupported"', html)
 
     def _rerun_check(self, setup_js, expect_notice):
-        # rerun the page's own check under a simulated browser
         self.browser_js(
             "/web/login",
             f"""
@@ -452,8 +446,6 @@ class TestBrowserFloorNotice(HttpCase):
                 console.error("notice shown: " + shown);
             }}
             """,
-            # parsed, not only started: the check defers its notice to
-            # DOMContentLoaded while the document is still loading
             "document.readyState !== 'loading'",
         )
 
@@ -461,11 +453,9 @@ class TestBrowserFloorNotice(HttpCase):
         self._rerun_check("HTMLScriptElement.supports = () => false;", True)
 
     def test_a_browser_without_supports_and_no_error_keeps_the_page(self):
-        # Chrome/Edge 89-95: import maps work, supports() does not exist yet
         self._rerun_check("delete HTMLScriptElement.supports;", False)
 
     def test_a_browser_without_supports_whose_bundle_fails_gets_the_notice(self):
-        # what Chrome 79 produced: a SyntaxError in a compiled bundle
         self._rerun_check(
             """
             delete HTMLScriptElement.supports;

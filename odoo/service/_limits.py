@@ -69,9 +69,6 @@ def get_websocket_max_connections() -> int:
 
 
 def get_websocket_db_threads() -> int:
-    # What the pool has left once every HTTP thread holds two connections
-    # and every listener its session: websocket jobs queue for these threads
-    # rather than racing the requests for a connection.
     import odoo
 
     from .httpd import (

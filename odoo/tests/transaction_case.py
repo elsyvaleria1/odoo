@@ -68,7 +68,7 @@ _debug = DebugLog(__name__)
 TEST_CURSOR_COOKIE_NAME = "test_request_key"
 
 
-class RegistryRLock(threading._RLock):  # type: ignore[misc]  # only the private class is subclassable
+class RegistryRLock(threading._RLock):
     _owner: int | None
 
     @property
@@ -126,12 +126,8 @@ def release_test_lock() -> Generator[None]:
         _take_back_test_lock()
 
 
-# How long the hand-back waits before it names the thread still holding the
-# lock -- a request that outlived its client -- and dumps that thread's stack.
 _TAKE_BACK_REPORT_S = 5.0
 
-# How long a revocation waits for the statement a late request is running on
-# the test connection to return; past it the run halts instead.
 _REVOKE_STATEMENT_WAIT_S = 30.0
 
 
@@ -141,13 +137,6 @@ def _request_time_ceiling() -> float | None:
 
 
 def _take_back_test_lock() -> None:
-    # The lock was lent to this test's requests. A request that outlives its
-    # client still holds it through its TestCursor and still runs statements
-    # on the test's connection, so the test waits for that thread to return
-    # it -- however long it takes, up to the time a server allows a request
-    # (limit_time_real). Past that a server would cancel the request and roll
-    # its transaction back; the test does the same to the request's cursors,
-    # between two of its statements, and fails, and the run goes on.
     ceiling = _request_time_ceiling()
     started = clock.monotonic()
     reported_ident: int | None = None
@@ -233,8 +222,6 @@ def _revoke_late_request(ident: int, reason: str) -> bool:
 def _recover_stranded_acquisitions(ident: int) -> bool:
     released = TestCursor.release_stranded_by(ident, current_test_tag())
     if _registry_test_lock.owner_ident == ident:
-        # acquisitions with no cursor left to return them: adopt them all, and
-        # let the hand-back take its own one
         _release_foreign_acquisition(_registry_test_lock)
         while _registry_test_lock.held_by_this_thread:
             _registry_test_lock.release()
@@ -366,12 +353,6 @@ _super_send = requests.Session.send
 _super_getaddrinfo = socket.getaddrinfo
 
 
-# names public DNS never answers: RFC 6761's .invalid and .test, and the
-# private-use .internal (ICANN, 2024) and .home.arpa (RFC 8375), which only a
-# private resolver answers, never with a public address; every other external
-# name gets a public address, so the egress guard lets it through to the
-# request block (BlockedRequest) as it would with a working resolver, without
-# a DNS lookup
 _UNRESOLVABLE_SUFFIXES = (".invalid", ".test", ".internal", ".home.arpa")
 _EXTERNAL_TEST_ADDRESS = "93.184.216.34"
 
@@ -390,8 +371,6 @@ def _hosts_file_names(path: str = "/etc/hosts") -> frozenset[str]:
 def _resolves_for_real(name: str) -> bool:
     if name in (HOST, "localhost") or name.endswith(".localhost"):
         return True
-    # the hosts file answers without a network, so it answers as in production
-    # (ip6-localhost is ::1 there, and the egress guard must see that)
     if name.lower() in _hosts_file_names():
         return True
     try:
@@ -412,11 +391,6 @@ def _offline_getaddrinfo(host, port=None, *args, **kwargs):
 
 
 def _raise_test_timeout(timeout):
-    """At least ten seconds for each part of a `requests` timeout.
-
-    `requests` takes a number or a (connect, read) pair, where either part may
-    be None for no limit.
-    """
     if isinstance(timeout, tuple):
         return tuple(_raise_test_timeout(part) for part in timeout)
     if timeout and timeout < 10:
@@ -477,9 +451,9 @@ def _normalise_records(
 
 
 class BaseCase(TestCase):
-    registry: Registry = None  # type: ignore[assignment]
-    env: api.Environment = None  # type: ignore[assignment]
-    cr: Cursor = None  # type: ignore[assignment]
+    registry: Registry = None
+    env: api.Environment = None
+    cr: Cursor = None
     registry_patches: ClassVar[list]
 
     test_tags: set[str] | None = None
@@ -566,7 +540,7 @@ class BaseCase(TestCase):
         )
         raise BlockedRequest(f"External requests verboten (was {r.method} {r.url})")
 
-    def run(self, result: OdooTestResult) -> None:  # type: ignore[override]  # a result is mandatory here
+    def run(self, result: OdooTestResult) -> None:
         testMethod = getattr(self, self._testMethodName)
 
         if getattr(testMethod, "_retry", True) and getattr(self, "_retry", True):
@@ -645,7 +619,7 @@ class BaseCase(TestCase):
         cls.addClassCleanup(check_remaining_processes)
 
         def check_remaining_patchers():
-            for patcher in list(_patch._active_patches):  # type: ignore[attr-defined]  # mock keeps the registry private
+            for patcher in list(_patch._active_patches):
                 if hasattr(patcher, "target"):
                     description = f"{patcher.target}.{patcher.attribute}"
                 else:
@@ -692,12 +666,10 @@ class BaseCase(TestCase):
             patcher = patch.object(
                 requests.sessions.Session,
                 "send",
-                lambda s, r, **kw: cls._request_handler(s, r, **kw),  # noqa: PLW0108  classmethod would bind and shift (s, r)
+                lambda s, r, **kw: cls._request_handler(s, r, **kw),
             )
             patcher.start()
             cls.addClassCleanup(patcher.stop)
-            # the egress guard resolves a name before `requests` sends: without
-            # this, an external name waits on a DNS lookup the test may not need
             dns_patcher = patch.object(socket, "getaddrinfo", _offline_getaddrinfo)
             dns_patcher.start()
             cls.addClassCleanup(dns_patcher.stop)
@@ -735,9 +707,6 @@ class BaseCase(TestCase):
     def _open_class_cursor(cls) -> None:
         cls.cr = cast("Cursor", cls.registry.cursor())
         cls.addClassCleanup(cls.cr.close)
-        # the class holds one transaction for all its tests, which may wait on
-        # a browser or compute for minutes: the server's idle timeout is not
-        # for them (transaction-local, gone with the class's rollback)
         cls.cr.execute(
             "SELECT set_config('idle_in_transaction_session_timeout', '0', true)"
         )
@@ -772,8 +741,6 @@ class BaseCase(TestCase):
         return self.env.ref(xid)
 
     def _distrust_test_caches(self, *groups: str) -> None:
-        # for code that knows a value it caches now will not hold for the next
-        # test, though no write of the test cleared its cache
         for scope in _cache_scope:
             scope.distrust(groups)
 
@@ -896,7 +863,7 @@ class BaseCase(TestCase):
 
                 yield cm
 
-    def assertRaises(  # type: ignore[override]  # narrowed to one exception type
+    def assertRaises(
         self,
         exception: type[BaseException],
         func: Callable | None = None,
@@ -1024,10 +991,6 @@ class BaseCase(TestCase):
         yield from self._patchExecute([], flush)
 
     def _counts_no_statements(self) -> bool:
-        # a backend that issues no SQL has no statement budget to grade: the
-        # body of the assertion still runs, so a class hosted on the DB-free
-        # tier gets everything the test says about behaviour and leaves the
-        # budget to the database-backed run of the same test
         return not hasattr(self.cr, "sql_statement_count")
 
     @contextmanager
@@ -1036,7 +999,7 @@ class BaseCase(TestCase):
     ) -> Generator[None]:
         if self.warm and not self._counts_no_statements():
             with patch("random.random", lambda: 1), observing_statements():
-                login = self.env.user.login  # type: ignore[attr-defined]  # res.users is an addon model
+                login = self.env.user.login
                 expected = counters.get(login, default)
                 if flush:
                     self.env.flush_all()
@@ -1107,14 +1070,7 @@ class BaseCase(TestCase):
     def assertQueriesConstant(
         self, run: Callable[[int], object], small: int = 2, large: int = 10
     ) -> None:
-        # the query count of run(n) does not depend on n: an N+1 fails here
-        # whatever the pinned number, and a constant-cost change passes here
-        # whatever the pinned number. Each run gets a savepoint and a cold
-        # record cache; the first run is a warm-up that pays the one-off
-        # costs (rules, users, ormcaches) neither measured run then meets
         if self._counts_no_statements():
-            # same rule as assertQueryCount: run the work, grade the shape
-            # where the statements are
             _debug.logic(
                 "test.assert.queries_constant_ungraded", test=self.canonical_tag
             )
@@ -1301,7 +1257,7 @@ class BaseCase(TestCase):
         model = records.browse(records.ids)
         fields = model._fields
         computed = self._depends_computed_names(model, computed_fields)
-        probes = self._depends_probe_names(model, probe_fields)  # debuglog
+        probes = self._depends_probe_names(model, probe_fields)
         with _debug.perf(
             "test.assert.depends_probe_sweep",
             cr=model.env.cr,
@@ -1361,20 +1317,20 @@ class BaseCase(TestCase):
     ) -> list[tuple[str, str, Any, Any, Any]]:
         env = records.env
         savepoint = env.cr.savepoint(flush=False)
-        skipped = None  # debuglog
+        skipped = None
         try:
             env.flush_all()
             env.invalidate_all()
             current = target[probe_name]
             if isinstance(current, odoo.models.BaseModel):
                 if current.id == value:
-                    skipped = "same_value"  # debuglog
+                    skipped = "same_value"
                     return []
             elif current == value:
-                skipped = "same_value"  # debuglog
+                skipped = "same_value"
                 return []
             if self._depends_forced_recompute(records, computed) is None:
-                skipped = "recompute_failed"  # debuglog
+                skipped = "recompute_failed"
                 return []
             env.invalidate_all()
             before = self._depends_read(records, computed)
@@ -1384,15 +1340,15 @@ class BaseCase(TestCase):
             env.invalidate_all()
             fresh = self._depends_read(records.browse(records.ids), computed)
             if before is None or cached is None or fresh is None:
-                skipped = "read_failed"  # debuglog
+                skipped = "read_failed"
                 return []
             recomputed = self._depends_forced_recompute(records, computed)
             if recomputed is None:
-                skipped = "recompute_failed"  # debuglog
+                skipped = "recompute_failed"
                 return []
             fresh = {**fresh, **recomputed}
         except Exception as exc:
-            skipped = type(exc).__name__  # debuglog
+            skipped = type(exc).__name__
             return []
         finally:
             savepoint.rollback()
@@ -1672,10 +1628,6 @@ class BaseCase(TestCase):
         if self.http_request_allow_all:
             _debug.logic("test.cursor.allowed", reason="allow_all")
             return
-        # The cookie is how a request served on a SERVER thread proves it is
-        # this test's. Code running on the test's own thread under a request it
-        # mocked -- a login that reads its durable cooldown row through
-        # `registry.cursor()`, say -- needs no ticket, and has none to show.
         if threading.current_thread() is self._test_thread:
             _debug.logic("test.cursor.allowed", reason="test_thread")
             return
@@ -1842,7 +1794,6 @@ def _iter_controller_classes(cls: type = Controller) -> Iterator[type]:
 
 
 def _get_controllers_fingerprint() -> int:
-    # a set: __subclasses__() reorders as transient subclasses come and go
     return hash(
         frozenset(
             (id(cls), name, id(value))
@@ -1854,9 +1805,6 @@ def _get_controllers_fingerprint() -> int:
 
 
 def sync_routing_with_controllers(registry: Any) -> None:
-    # a routing map holds the controller methods it was built from: a test
-    # that patches or adds one between two requests must not be served the
-    # map an earlier test left warm
     fingerprint = _get_controllers_fingerprint()
     if _routing_controllers_fingerprints.get(id(registry)) == fingerprint:
         return
@@ -1890,8 +1838,6 @@ def _is_routed_by_current_code(endpoint: Any, resolved: dict[type, set[int]]) ->
 def _is_routing_built_from_replaced_code(
     registry: Any, marks: dict[str, tuple[int, int]]
 ) -> bool:
-    # a map stored while a test patched a controller keeps the patched method
-    # once the patch is undone; nothing invalidates a cache for a code change
     resolved: dict[type, set[int]] = {}
     for name in _ROUTING_LRUS:
         lru = registry.ormcache_lrus[name]
@@ -1904,10 +1850,6 @@ def _is_routing_built_from_replaced_code(
     return False
 
 
-# what the trusted caches are computed from besides rows: code, the registry's
-# own attributes, the server options. A test that patches one of them with
-# unittest.mock gets those caches cleared when the patch starts and again when
-# it stops, as a test whose every cache started cold used to
 _CACHE_FEEDING_MODULES = (
     "odoo.http",
     "odoo.modules",
@@ -1928,8 +1870,6 @@ _cache_owning_models: dict[int, frozenset[str]] = {}
 def _get_cache_owning_models(registry: Any) -> frozenset[str]:
     owners = _cache_owning_models.get(id(registry))
     if owners is None:
-        # what every model inherits from `base` (the view caches) is no reason
-        # to call every model a source of those caches
         shared = set(registry["base"].__mro__) if "base" in registry else set()
         owners = _cache_owning_models[id(registry)] = frozenset(
             name
@@ -1947,7 +1887,6 @@ def _get_cache_owning_models(registry: Any) -> frozenset[str]:
 
 _ALL_TRUSTED_GROUPS = ("assets", "templates", "routing")
 
-# a model's view archs are cached per model in "templates", whatever the model
 _MODEL_GROUPS = ("templates",)
 
 _PATCH_PLUMBING = frozenset(
@@ -1972,7 +1911,6 @@ def _get_groups_fed_by(
     target: Any, attribute: str | None, registry: Any
 ) -> tuple[str, ...]:
     if isinstance(target, Registry):
-        # its state, not the methods the framework itself patches in a test
         if callable(getattr(Registry, attribute or "", None)):
             return ()
         return _ALL_TRUSTED_GROUPS
@@ -2002,9 +1940,6 @@ def _get_groups_fed_by(
 
 
 def _is_patched_by_the_framework() -> bool:
-    # the patches this package applies around a request or a tour (the bus,
-    # the tour flag, the test credentials) feed none of these caches, and
-    # would otherwise make every browser test start cold
     frame: types.FrameType | None = sys._getframe()
     while frame is not None:
         module = frame.f_globals.get("__name__", "")
@@ -2034,9 +1969,6 @@ class _TestCacheScope:
         return ROLLBACK_SAFE_CACHES - self.untrusted
 
     def note_patch(self, target: Any, attribute: str | None) -> None:
-        # a test used to start with every cache cold: what earlier tests left
-        # in the trusted caches must not answer for the code it patches, and
-        # what it stores under its patch is not trusted at its end
         lrus = {
             lru
             for group in _get_groups_fed_by(target, attribute, self.registry)
@@ -2054,7 +1986,6 @@ class _TestCacheScope:
         self.registry.discard_ormcache_entries({lru: self.carried[lru] for lru in lrus})
 
     def distrust(self, groups: Iterable[str]) -> None:
-        # what the test stores in these from here on is not kept past its end
         lrus = {
             lru
             for group in groups
@@ -2079,7 +2010,7 @@ def _watch_cache_feeding_patches() -> None:
     if getattr(mock._patch, "_clears_caches_it_feeds", False):
         return
     enter = mock._patch.__enter__
-    patch_dict = mock._patch_dict._patch_dict  # type: ignore[attr-defined]
+    patch_dict = mock._patch_dict._patch_dict
 
     def watched_enter(self: Any) -> Any:
         result = enter(self)
@@ -2091,9 +2022,9 @@ def _watch_cache_feeding_patches() -> None:
         _note_patch(self.in_dict)
         return result
 
-    mock._patch.__enter__ = watched_enter  # type: ignore[method-assign]
-    mock._patch_dict._patch_dict = watched_patch_dict  # type: ignore[attr-defined]
-    mock._patch._clears_caches_it_feeds = True  # type: ignore[attr-defined]
+    mock._patch.__enter__ = watched_enter
+    mock._patch_dict._patch_dict = watched_patch_dict
+    mock._patch._clears_caches_it_feeds = True
 
 
 def _get_ormcache_marks(registry: Any) -> dict[str, tuple[int, int]]:
@@ -2130,10 +2061,6 @@ class TransactionCase(BaseCase):
 
     @classmethod
     def _open_class_transaction(cls) -> None:
-        # the whole of what binds the class to a database: a case that runs on
-        # another backend (odoo/tests/in_memory_case.py) replaces this method
-        # and inherits everything else, so a hosted class's own setUpClass
-        # builds its fixtures in the environment the case actually uses
         cls.registry = Registry(get_db_name())
         cls._registry_guard = guard = _RegistryGuard(cls.registry, cls.__qualname__)
         cls.addClassCleanup(guard.reset_changes)
@@ -2257,17 +2184,10 @@ class TransactionCase(BaseCase):
         ):
             self.env.flush_all()
 
-            # the cursor's own factory, so a class hosted on the DB-free tier
-            # (odoo/tests/in_memory_case.py) takes its storage snapshot here
             savepoint = self.cr.savepoint(flush=False)
         self.addCleanup(savepoint.close)
 
     def _clear_registry_caches(self, scope: _TestCacheScope) -> None:
-        # what a rolled-back transaction leaves in a cache is what it cleared or
-        # stored there: a cache it cleared may hold values computed from its
-        # writes, and so may one it filled unless every write that cache
-        # depends on would have cleared it. The others keep entries the test
-        # could not have influenced, which spares the next test their rebuild
         registry = self.registry
         _cache_scope.clear()
         marks = scope.marks
@@ -2282,15 +2202,9 @@ class TransactionCase(BaseCase):
             kept=len(registry.ormcache_lrus) - len(stale),
         )
         registry.clear_ormcache_lrus(stale)
-        # nothing signals in a test: the groups the test invalidated would
-        # reach the next test's reset_changes() as its own
         registry.cache_invalidated.clear()
 
     def _redo_registry_resets_after_rollback(self) -> None:
-        # in test mode `reset_changes` rebuilds from a test cursor, which still
-        # sees what this test wrote: rebuilt from the test's own cleanup, the
-        # models keep what the rollback then undoes, so the reset is redone
-        # once the rollback and the environments' clearing are both done
         registry = self.registry
         reset_changes = registry.reset_changes
         resets: list[bool] = []
@@ -2317,8 +2231,6 @@ class TransactionCase(BaseCase):
 
     @contextmanager
     def sync_env_with_side_cursors(self) -> Generator[None]:
-        # a side cursor shares this transaction but not this env: it reads
-        # only what was flushed, and what it writes this cache cannot see
         env = self.env
         env.flush_all()
         _debug.lifecycle("test.registry.side_cursor_sync", test=self.canonical_tag)
@@ -2329,8 +2241,6 @@ class TransactionCase(BaseCase):
 
     @contextmanager
     def leave_registry_test_mode(self) -> Generator[None]:
-        # for what only a second connection shows: another transaction's
-        # snapshot, its locks, or a cursor that outlives this one's failure
         cls = type(self)
         left = cls._registry_patched
         if left:

@@ -116,7 +116,7 @@ class ReplicaLagGate:
     def record(self, lag_seconds: float) -> None:
         lag = max(0.0, lag_seconds)
         with self._lock:
-            was_lagging = self._lagging  # debuglog
+            was_lagging = self._lagging
             self.last_lag = lag
             self._lagging = self.enabled and lag > self.max_lag
             _debug.perf.count(

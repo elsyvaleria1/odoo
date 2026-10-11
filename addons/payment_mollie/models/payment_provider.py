@@ -27,10 +27,8 @@ class PaymentProvider(models.Model):
         help="The Test or Live API Key depending on the configuration of the provider",
     )
 
-    # === COMPUTE METHODS === #
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "mollie":
             supported_currencies = supported_currencies.filtered(
@@ -38,26 +36,21 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
 
         if self.code != "mollie":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "mollie":
             return super()._prepare_request_url(endpoint, **kwargs)
         return urls.urljoin("https://api.mollie.com/v2/", endpoint.strip("/"))
 
     def _prepare_request_headers(self, *args, **kwargs):
-        """Override of `payment` to build the request headers."""
         if self.code != "mollie":
             return super()._prepare_request_headers(*args, **kwargs)
 
@@ -67,12 +60,10 @@ class PaymentProvider(models.Model):
             "Accept": "application/json",
             "Authorization": f"Bearer {self.mollie_api_key}",
             "Content-Type": "application/json",
-            # See https://docs.mollie.com/integration-partners/user-agent-strings
             "User-Agent": f"Odoo/{odoo_version} MollieNativeOdoo/{module_version}",
         }
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "mollie":
             return super()._parse_response_error(response)
 

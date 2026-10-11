@@ -33,7 +33,6 @@ class TestAccountBankStatementImportOFX(AccountTestInvoicingCommon):
             }
         )
 
-        # Get OFX file content
         ofx_file_path = "account_bank_statement_import_ofx/static/ofx/test_ofx.ofx"
         with file_open(ofx_file_path, "rb") as ofx_file:
             bank_journal.create_document_from_attachment(
@@ -48,7 +47,6 @@ class TestAccountBankStatementImportOFX(AccountTestInvoicingCommon):
                 .ids
             )
 
-        # Check the imported bank statement
         imported_statement = self.env["account.bank.statement"].search(
             [("company_id", "=", self.env.company.id)]
         )
@@ -93,7 +91,6 @@ class TestAccountBankStatementImportOFX(AccountTestInvoicingCommon):
         )
 
     def test_ofx_file_import_error(self):
-        """Check a UserError is raised when a file can't be decoded with the default encoding."""
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "Bank 123456",
@@ -104,8 +101,6 @@ class TestAccountBankStatementImportOFX(AccountTestInvoicingCommon):
             }
         )
 
-        # Get OFX file content
-        # This file contains characters that cannot be decoded with the default encoding - PLEASE DO NOT UPDATE THIS FILE
         ofx_file_path = (
             "account_bank_statement_import_ofx/static/ofx/test_ofx_unicode_error.ofx"
         )

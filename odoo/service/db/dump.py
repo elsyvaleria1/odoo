@@ -266,10 +266,10 @@ def _add_filestore_to_zip(zipf: zipfile.ZipFile, filestore: str) -> None:
         _debug.logic("database.dump.filestore_absent", filestore=filestore)
         return
     with _debug.perf("database.dump.filestore_added", filestore=filestore) as span:
-        files = 0  # debuglog
+        files = 0
         for path in _iter_filestore_files(filestore):
             zipf.write(path, "filestore/" + os.path.relpath(path, filestore))
-            files += 1  # debuglog
+            files += 1
         span.set(files=files)
 
 
@@ -377,7 +377,7 @@ def _check_no_mapping_credentials(db_name: str) -> None:
 
 
 def _dump_into_tempfile(write: Callable[[IO[bytes]], None]) -> IO[bytes]:
-    t = tempfile.TemporaryFile()  # noqa: SIM115  the caller owns and closes it
+    t = tempfile.TemporaryFile()
     try:
         write(t)
         t.seek(0)

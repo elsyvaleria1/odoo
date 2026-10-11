@@ -126,16 +126,12 @@ class TestCreditWarningExposure(TestSaleCommon):
             self._create_invoice(500.0).action_post()
 
     def _confirmed_delivery(self, price_unit):
-        # a cash-only customer confirms on immediate terms only: the order
-        # ships on credit under a running exception
         self.partner.sudo().credit_exception = True
         order = self._create_order(price_unit)
         order.action_confirm()
         picking = order.picking_ids
         self.assertEqual(len(picking), 1)
         if "can_validate_user_ids" in picking.picking_type_id._fields:
-            # marin lets only the users its operation types list validate
-            # their transfers: the test's user validates as one of them
             picking.picking_type_id.sudo().can_validate_user_ids = [
                 Command.link(self.env.user.id)
             ]

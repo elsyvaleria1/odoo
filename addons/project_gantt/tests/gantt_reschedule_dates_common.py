@@ -6,27 +6,12 @@ from odoo.tests import new_test_user
 from odoo.addons.project.tests.test_project_base import TestProjectCommon
 from odoo.addons.web_gantt.models.models import Base
 
-# As the writing of the new planned_dates is only made when date_start_effective is in the future,
-# we need to cheat during the tests
 fake_now = datetime(2021, 4, 1)
 
 
 class ProjectGanttRescheduleCommon(TestProjectCommon):
     @classmethod
     def setUpClass(cls):
-        """
-        project structure
-
-        ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐
-        │ Task 1  │ -->  │ Task 3  │ -->  │ Task 4  │ -->  │ Task 5  │ -->  │ Task 6  │
-        │         │      │         │      │         │      │02/08 8H │      │         │
-        │ 24/06   │      │ 24/06   │      │ 30/06   │      │   ->    │      │ 04/08   │
-        │ 9H > 12H│      │13H > 15H│      │15H > 17H│      │03/08 17H│      │ 8H->17H │
-        └─────────┘      └─────────┘      └─────────┘      └─────────┘      └─────────┘
-
-        1 --> 3: 3 blocked by 1
-
-        """
 
         def get_overlapping_delta():
             return (

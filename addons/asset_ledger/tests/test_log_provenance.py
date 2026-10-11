@@ -36,8 +36,6 @@ class TestLogProvenance(TransactionCase):
             self.assertTrue(label, f"source {key!r} carries no label")
 
     def test_a_source_exists_only_where_a_producer_writes_it(self):
-        # Each producing module adds its own value through selection_add, so an
-        # unwritten value is a vocabulary that outlived its producer.
         producers = {
             "manual": "resource_asset_product",
             "bill": "resource_asset_account",

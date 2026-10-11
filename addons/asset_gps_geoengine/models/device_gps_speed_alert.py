@@ -7,8 +7,6 @@ from .device_gps_speed_event import EVENT_GAP
 
 _logger = logging.getLogger(__name__)
 
-# A burst older than this when first seen is history, not news: after an
-# outage the cron does not raise a day of stale alerts at once.
 ALERT_LOOKBACK = timedelta(hours=24)
 
 
@@ -76,7 +74,6 @@ class DeviceGpsSpeedAlert(models.Model):
             .filtered(
                 lambda event: (
                     event.level == "critical"
-                    # the burst is over: its peak is final
                     and event.end < now - EVENT_GAP
                 )
             )
@@ -142,10 +139,6 @@ class DeviceGpsSpeedAlert(models.Model):
             what=what,
             speed=round(event.speed_max),
             minutes=round(event.duration_min, 1),
-            # context_timestamp reads the ENVIRONMENT's timezone, not the
-            # record's, and this runs in the cron user's environment. Passing
-            # the recipient alone would stamp the note with the cron user's
-            # clock -- UTC, for a fleet that reads its own six hours earlier.
             start=fields.Datetime.context_timestamp(
                 recipient.with_context(tz=recipient.tz or "UTC"), event.start
             ).strftime("%d/%m/%Y %H:%M"),

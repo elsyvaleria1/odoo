@@ -5,7 +5,6 @@ class WizardAccountMoveSendBatch(models.TransientModel):
     _inherit = "wizard.account.move.send.batch"
 
     def action_send_and_print(self, force_synchronous=False, allow_fallback_pdf=False):
-        # EXTENDS 'account'
         if peppol_moves := self.move_ids.filtered(
             lambda m: (
                 "peppol" in self._get_default_sending_methods(m)

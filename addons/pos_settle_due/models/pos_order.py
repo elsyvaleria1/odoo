@@ -32,7 +32,6 @@ class PosOrder(models.Model):
 
     @api.model
     def _load_pos_data_fields(self, config):
-        # EXTENDS point_of_sale
         return super()._load_pos_data_fields(config) + [
             "customer_due_total",
             "init_customer_due_total",
@@ -49,10 +48,8 @@ class PosOrder(models.Model):
                     payment.amount > 0 and payment.payment_method_id.type == "pay_later"
                 )
             )
-            # Only compute potential customer due if there is a partner and there is a pay_later payment method and if the order is not invoiced
             if order.partner_id and order_pay_later_pm and not order.is_invoiced:
                 if order.customer_due_total:
-                    # Update the existing due of the order
                     order_due = order.init_customer_due_total
                     order_settled = self.env.company.currency_id.round(
                         sum(order.settled_order_line_ids.mapped("price_unit"))
@@ -73,7 +70,6 @@ class PosOrder(models.Model):
                     total_before = customer_due - order_due
                     if customer_due > 0:
                         if total_before < 0:
-                            # If the customer had a deposited amount
                             order_due = customer_due
                         if order_due > 0:
                             order.customer_due_total = order_due

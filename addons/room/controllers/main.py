@@ -19,7 +19,7 @@ class RoomController(http.Controller):
         type="jsonrpc",
         auth="public",
     )
-    def get_existing_bookings(self, access_token):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def get_existing_bookings(self, access_token):
         room_sudo = self._get_room_from_access_token(access_token)
         now = fields.Datetime.now()
         bookings = [
@@ -39,7 +39,7 @@ class RoomController(http.Controller):
         return sorted(bookings + blocks, key=lambda booking: booking["start_datetime"])
 
     @http.route("/room/<string:access_token>/background", type="http", auth="public")
-    def room_background_image(self, access_token):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def room_background_image(self, access_token):
         room_sudo = self._get_room_from_access_token(access_token)
         if not room_sudo.room_background_image:
             return ""
@@ -52,7 +52,7 @@ class RoomController(http.Controller):
     @http.route(
         "/room/<string:access_token>/booking/create", type="jsonrpc", auth="public"
     )
-    def room_booking_create(self, access_token, name, start_datetime, stop_datetime):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def room_booking_create(self, access_token, name, start_datetime, stop_datetime):
         room_sudo = self._get_room_from_access_token(access_token)
         return (
             request.env["calendar.event"]
@@ -65,7 +65,7 @@ class RoomController(http.Controller):
         type="jsonrpc",
         auth="public",
     )
-    def room_booking_delete(self, access_token, booking_id):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def room_booking_delete(self, access_token, booking_id):
         return self._get_booking(booking_id, access_token).unlink()
 
     @http.route(
@@ -73,7 +73,7 @@ class RoomController(http.Controller):
         type="jsonrpc",
         auth="public",
     )
-    def room_booking_update(self, access_token, booking_id, **kwargs):  # noqa: E8539  device: a device's or a kiosk's credential, presented by a program
+    def room_booking_update(self, access_token, booking_id, **kwargs):
         booking = self._get_booking(booking_id, access_token)
         vals = {
             fname: kwargs[key]
@@ -81,7 +81,6 @@ class RoomController(http.Controller):
             if kwargs.get(key)
         }
         if booking._prepare_room_booking_data()["private"]:
-            # the kiosk was shown a placeholder, and sends it back
             vals.pop("name", None)
         return booking.write(vals)
 

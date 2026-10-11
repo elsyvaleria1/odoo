@@ -52,7 +52,6 @@ class WizardMolecularSketch(models.TransientModel):
             sketch.summary = sketch._report_line()
 
     def _report_line(self):
-        """One line describing the drawing, read from the molblock itself."""
         if not self.molblock:
             return ""
         try:
@@ -77,7 +76,6 @@ class WizardMolecularSketch(models.TransientModel):
         )
 
     def action_save(self):
-        """Store the drawing as a compound, with its role and its geometries."""
         self.check_singleton()
         if self.campaign_id and not self.role:
             raise UserError(

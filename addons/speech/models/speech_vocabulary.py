@@ -63,8 +63,6 @@ class SpeechVocabulary(models.Model):
 
     @api.model
     def _word_as_said(self, text: str, company=None) -> SpeechVocabulary:
-        """The word a phrase is, however it is accented or cased; created from
-        the phrase as given when no word sounds like it."""
         said = spoken_words(text)
         company_id = company.id if company else False
         words = self.with_context(active_test=False).search(
@@ -78,9 +76,6 @@ class SpeechVocabulary(models.Model):
     def _get_or_create_words(
         self, names: Iterable[str], kind: str = "term", company=None
     ) -> SpeechVocabulary:
-        """The words by name -- the company's own, else the shared one --
-        created where missing: two modules that need the same word share it
-        instead of colliding on it."""
         Vocabulary = self.with_context(active_test=False)
         company_id = company.id if company else False
         wanted = list(dict.fromkeys(name.strip() for name in names if name.strip()))
@@ -103,7 +98,6 @@ class SpeechVocabularyForm(models.Model):
     _description = "Spoken Form of a Vocabulary Word"
     _order = "phrases, id"
     _rec_name = "phrases"
-    # a learned form names no one: who confirmed it is not kept
     _log_access = False
 
     vocabulary_id = fields.Many2one(

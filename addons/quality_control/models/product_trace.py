@@ -10,15 +10,6 @@ _debug = DebugLog(__name__)
 class ProductTrace(models.Model):
     _inherit = "product.trace"
 
-    # The reverse sides of `quality.check.trace_ids` and `quality.alert.trace_ids`.
-    # They exist so that the two counters below have a dependency the ORM can
-    # actually follow: both are `search_count` computes, and both declared
-    # nothing at all, so the ORM cached their answer for the whole transaction
-    # and no check or alert created afterwards ever moved them.  Measured:
-    # `quality_check_qty` read 1, a second check was created naming the same
-    # lot, and it still read 1 -- 2 only after an explicit `invalidate_all()`.
-    # Both m2m are declared on the tables the forward fields already own, so
-    # this adds a name, not a column.
     quality_check_ids = fields.Many2many(
         comodel_name="quality.check",
         relation="product_trace_quality_check_rel",
@@ -43,8 +34,6 @@ class ProductTrace(models.Model):
         groups="quality.group_quality_user",
     )
 
-    # `depends_context('company')`: the count is scoped to `self.env.company`,
-    # so two companies must not be served each other's cached answer.
     @api.depends("quality_check_ids")
     @api.depends_context("company")
     def _compute_quality_check_qty(self) -> None:

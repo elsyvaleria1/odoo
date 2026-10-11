@@ -64,13 +64,11 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
     @mute_logger("odoo.db.cursor")
     @users("apt_manager")
     def test_booking_to_event_on_invoice_paid_resource(self):
-        """Replace booking with Event when invoice is paid - resource appointment"""
         appointment_type = self.appointment_resources_payment
         asked_capacity = 5
         start = self.start_slot
         stop = self.stop_slot
 
-        # Assert Initial Capacity
         resources_remaining_capacity = (
             appointment_type._get_resources_remaining_capacity(
                 appointment_type.resource_ids, start, stop
@@ -78,7 +76,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
         )
         self.assertEqual(resources_remaining_capacity["total_remaining_capacity"], 5)
 
-        # Create Calendar Event Booking and Calendar Booking Lines
         booking_values = {
             "appointment_type_id": appointment_type.id,
             "asked_capacity": asked_capacity,
@@ -108,7 +105,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
             list(calendar_booking_lines_values.values())
         )
 
-        # Assert Booking Lines are not taking capacity
         resources_remaining_capacity = (
             appointment_type._get_resources_remaining_capacity(
                 appointment_type.resource_ids, start, stop
@@ -116,12 +112,10 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
         )
         self.assertEqual(resources_remaining_capacity["total_remaining_capacity"], 5)
 
-        # Create an invoice
         invoice = calendar_booking.sudo()._create_booking_invoices()
         self.assertEqual(calendar_booking.account_move_id, invoice)
         self.assertFalse(invoice.calendar_booking_ids.calendar_event_id)
 
-        # Posting invoice (at transaction post processing or manually) creates event and reserve space
         invoice._post()
         event = invoice.calendar_booking_ids.calendar_event_id
         self.assertEqual(len(event), 1)
@@ -133,12 +127,10 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
         )
         self.assertEqual(resources_remaining_capacity["total_remaining_capacity"], 0)
 
-        # Invoiced quantity should be equal to asked_capacity
         self.assertEqual(
             invoice.invoice_line_ids.quantity, calendar_booking.asked_capacity
         )
 
-        # Assert Booking Data
         self.assertTrue(event.active)
         self.assertEqual(event, calendar_booking.calendar_event_id)
         self.assertEqual(
@@ -154,7 +146,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
             all(attendee.state == "accepted" for attendee in event.attendee_ids)
         )
 
-        # Assert Booking Lines Data
         booking_line_1 = event.booking_line_ids.filtered(
             lambda line: line.resource_id == self.resource_1
         )
@@ -184,7 +175,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
     @freeze_time("2022-02-13 20:00:00")
     @users("apt_manager")
     def test_booking_to_event_on_invoice_paid_users(self):
-        """Replace booking with Event when invoice is paid - staff user appointment"""
         appointment_type = self.appointment_users_payment
         for manage_capacity in (True, False):
             with self.subTest(
@@ -193,12 +183,10 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
                 start = self.start_slot
                 stop = self.stop_slot
 
-                # Assert Initial Data
                 slots = appointment_type._get_appointment_slots("UTC")
                 slots_list = self._filter_appointment_slots(slots)
                 self.assertEqual(len(slots_list), 1)
 
-                # Create Calendar Event Booking
                 booking_values = {
                     "appointment_type_id": appointment_type.id,
                     "asked_capacity": 3 if manage_capacity else 1,
@@ -222,17 +210,14 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
                 }
                 calendar_booking = self.env["calendar.booking"].create(booking_values)
 
-                # Create an invoice
                 invoice = calendar_booking.sudo()._create_booking_invoices()
                 self.assertEqual(calendar_booking.account_move_id, invoice)
                 self.assertFalse(invoice.calendar_booking_ids.calendar_event_id)
 
-                # Calendar Booking do not reserve space
                 slots = appointment_type._get_appointment_slots("UTC")
                 slots_list = self._filter_appointment_slots(slots)
                 self.assertEqual(len(slots_list), 1)
 
-                # Posting invoice (at transaction post processing or manually) creates event and reserve space
                 invoice._post()
                 event = invoice.calendar_booking_ids.calendar_event_id
                 self.assertEqual(len(event), 1)
@@ -240,12 +225,10 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
                 slots_list = self._filter_appointment_slots(slots)
                 self.assertEqual(len(slots_list), 0)
 
-                # Invoiced quantity should be equal to asked_capacity
                 self.assertEqual(
                     invoice.invoice_line_ids.quantity, calendar_booking.asked_capacity
                 )
 
-                # Assert Booking Data
                 self.assertTrue(event.active)
                 self.assertEqual(event, calendar_booking.calendar_event_id)
                 self.assertEqual(
@@ -264,7 +247,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
                     all(attendee.state == "accepted" for attendee in event.attendee_ids)
                 )
 
-                # Assert Booking Lines Data
                 booking_line, calendar_booking_line = (
                     event.booking_line_ids,
                     calendar_booking.booking_line_ids,
@@ -285,7 +267,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
                 calendar_booking.unlink()
 
     def test_booking_unlink(self):
-        """Unlinking a booking should (only) unlink appointment answers not linked to any calendar event."""
         appointment_type = self.appointment_users_payment
         appointment_question = self.env["survey.question"].create(
             {
@@ -299,7 +280,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
             "value_char_box": "I am Good",
             "answer_type": "char_box",
         }
-        # Create Calendar Event Booking
         booking_values = {
             "appointment_type_id": appointment_type.id,
             "appointment_response_ids": [
@@ -340,7 +320,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
 
     @users("apt_manager")
     def test_contiguous_bookings_availability(self):
-        """Checks that two bookings with the same user (or resource) are both considered as available on contiguous slots."""
         booking_values = {
             "appointment_type_id": self.appointment_users_payment.id,
             "booking_line_ids": [
@@ -374,8 +353,6 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
         self.assertEqual(len(calendar_bookings.calendar_event_id), 2)
 
     def test_gc_calendar_booking(self):
-        """Remove bookings still existing after 6 months.
-        Remove bookings with ending passed for 2 months at least."""
         max_creation_dt = self.reference_now - relativedelta(months=6)
         max_stop_dt = self.reference_now - relativedelta(months=2)
 
@@ -427,10 +404,9 @@ class AppointmentAccountPaymentTest(AppointmentAccountPaymentCommon):
     @freeze_time("2022-02-13")
     @users("apt_manager")
     def test_no_manage_capacity_paid_resource(self):
-        """Test that no matter the resource capacity, we only use and reserve 1 when capacity is not managed"""
         self.assertFalse(
             self.appointment_resources_payment.meeting_ids
-        )  # Assert initial data
+        )
         self.appointment_resources_payment.write(
             {
                 "manage_capacity": False,

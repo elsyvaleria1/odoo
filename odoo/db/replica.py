@@ -23,21 +23,11 @@ _debug = DebugLog(__name__)
 
 REPLICA_RETRY_TIME = 20 * 60
 
-# A replica borrow has a fallback, so it never waits out db_borrow_timeout:
-# a dead replica cost the first read-only request the full 30 s, once per
-# breaker half-open attempt (measured against a refused port). The probe's
-# own connect timeout bounds the reachable-but-slow case.
 REPLICA_BORROW_TIMEOUT = 5.0
 
 CursorMode = typing.Literal["ro", "ro->rw", "rw"]
 
 
-# Which sessions read from the primary for a while because they just wrote:
-# a replica that has not applied a client's own commit would show that
-# client its write as missing. Keyed by whatever the caller identifies a
-# client by (the http layer passes the session id); pruned on insert past
-# `_PRUNE_ABOVE` entries so an idle server does not keep every session ever
-# seen.
 class WritePins:
     __slots__ = ("_clock", "_deadlines", "_lock", "window")
 
@@ -59,7 +49,6 @@ class WritePins:
             self._deadlines[key] = now + self.window
             if len(self._deadlines) > self._PRUNE_ABOVE:
                 self._deadlines = {k: d for k, d in self._deadlines.items() if d > now}
-        # The key is a session id at the http call site: never log it.
         _debug.logic("replica.pinned", window=self.window, pinned=len(self._deadlines))
 
     def is_pinned(self, key: typing.Hashable) -> bool:
@@ -82,9 +71,6 @@ def is_readonly_cursor_enabled(settings: PoolSettings | None = None) -> bool:
     return resolve(settings).readonly_cursors
 
 
-# Every live router with a replica, so the health surface can report what
-# the log lines say: a registry owns its router, and the registry table is
-# the ORM's, which this package does not read.
 _routers: weakref.WeakSet[ReplicaRouter] = weakref.WeakSet()
 
 
@@ -177,10 +163,6 @@ class ReplicaRouter:
         )
         return self._primary_cursor(pin_key), "ro->rw"
 
-    # Every primary cursor handed out with a key can pin, whatever branch
-    # chose the primary: http acquires read-only first and reuses the cursor
-    # when the route writes, so a pinned or demoted request that writes must
-    # refresh the pin or its next read lands on the replica unpinned.
     def _primary_cursor(self, pin_key: typing.Hashable | None) -> BaseCursor:
         primary = self.primary.cursor()
         if pin_key is not None and self.pins.window:
@@ -204,18 +186,12 @@ class ReplicaRouter:
                 cooldown_remaining_s=self.breaker.cooldown_remaining,
             )
             return None
-        # Chosen but not yet borrowed: a caller that must also read the primary
-        # does it now, so it never holds a cursor of each at once.
         if before_replica is not None:
             try:
                 before_replica()
             except BaseException:
                 self.breaker.release(attempt)
                 raise
-        # Any refusal falls back, not only a transport one: the probe files a
-        # replica that has not replayed the database's creation as
-        # InvalidCatalogName, a ProgrammingError, which raised into every
-        # read-only request and never tripped the breaker.
         try:
             cr = replica.cursor(borrow_timeout=REPLICA_BORROW_TIMEOUT, fail_fast=True)
         except (psycopg.Error, PoolError) as e:
@@ -241,14 +217,9 @@ class ReplicaRouter:
         except BaseException:
             self.breaker.release(attempt)
             raise
-        # Asked of the call, not read around it: two racing successes read the
-        # breaker open before and closed after, and both announced the recovery.
         if self.breaker.record_success(attempt):
             _debug.lifecycle("replica.recovered", trips=self.breaker.trips)
             _logger.info("Replica reachable again, resuming readonly cursors")
-        # A sample that failed left the cursor's transaction aborted -- on a hot
-        # standby a recovery conflict cancels it -- and handed out as is, the
-        # request's first statement raised InFailedSqlTransaction.
         if (
             sample_due
             and self.lag.acquire_sample_interval()
@@ -263,13 +234,10 @@ class ReplicaRouter:
         cr.close()
         return None
 
-    # A failed sample measured nothing, so the verdict stands: recorded as zero
-    # it declared a replica known to be minutes behind caught up, and failures
-    # are likeliest on exactly that standby, whose replay cancels queries.
     def _sample_lag(self, cr: BaseCursor) -> bool:
         try:
             with _debug.perf("replica.lag_query", cr=cr):
-                cr.execute(LAG_SQL, log_exceptions=False)  # noqa: E8501  LAG_SQL is a module constant
+                cr.execute(LAG_SQL, log_exceptions=False)
             row = cr.fetchone()
         except Exception as e:
             _debug.logic(

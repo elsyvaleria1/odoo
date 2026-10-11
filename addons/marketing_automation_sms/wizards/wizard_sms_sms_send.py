@@ -13,7 +13,6 @@ class WizardSmsSmsSend(models.TransientModel):
             and self.mailing_id
             and self.marketing_activity_id
         ):
-            # retrieve traces linked to recipients
             traces = self.env["marketing.trace"].search(
                 [
                     ("activity_id", "=", self.marketing_activity_id.id),
@@ -22,7 +21,6 @@ class WizardSmsSmsSend(models.TransientModel):
             )
             res_id_to_trace_id = {trace.res_id: trace.id for trace in traces}
 
-            # update generated traces
             for record in records:
                 sms_values = result[record.id]
                 trace_commands = sms_values["mailing_trace_ids"]

@@ -16,8 +16,6 @@ __all__ = [
 
 
 def _round_half_away_from_zero(f: float) -> float:
-    # a tie is f an exact half away from its rounding; the old test on f + 1
-    # lost the bits of an |f| below 1, so 0.49999999999999994 read as a tie
     roundf = round(f)
     if f - roundf in (0.5, -0.5):
         return f + math.copysign(0.5, f)
@@ -59,11 +57,7 @@ def float_round(
 
 
 _EPSILON_SCALE = 2.0**-50
-# Past 2**47 the epsilon grows beyond an eighth of a step and the float's own
-# representation error can fake a tie: the float stops telling real digits from
-# noise, so the shortest decimal that round-trips to it is rounded instead.
 _EXACT_THRESHOLD = 2.0**47
-# a double round-trips any decimal of at most this many significant digits
 _FAITHFUL_DIGITS = 15
 
 
@@ -75,7 +69,6 @@ def _round_r(
     if value == 0:
         return 0.0
     if rounding_factor == 0:
-        # 10 ** -precision_digits underflowed: no step is fine enough to move it
         return float(value)
 
     step = rounding_factor
@@ -86,7 +79,7 @@ def _round_r(
     else:
         normalized_value = value / rounding_factor
 
-    if normalized_value == 0.0:  # noqa: RUF069  exact-zero fast path; 0.0 is representable
+    if normalized_value == 0.0:
         return 0.0
     magnitude = abs(normalized_value)
     if not magnitude < _EXACT_THRESHOLD:
@@ -109,7 +102,7 @@ def _round_r(
     elif rounding_method == "HALF-EVEN":
         integral = math.floor(normalized_value)
         remainder = abs(normalized_value - integral)
-        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon  # noqa: RUF069  exact fast path + epsilon fallback
+        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon
         result = (
             integral + (integral & 1)
             if is_half
@@ -118,7 +111,7 @@ def _round_r(
     elif rounding_method == "HALF-DOWN":
         integral = math.floor(abs(normalized_value))
         remainder = abs(normalized_value) - integral
-        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon  # noqa: RUF069  exact fast path + epsilon fallback, as above
+        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon
         if is_half:
             result = math.copysign(integral, normalized_value)
         else:
@@ -140,7 +133,6 @@ def _round_r(
     elif not inverted and (step.is_integer() or _spells_its_decimal(step)):
         rounded = float(result * rounding_factor)
     else:
-        # 1/0.03 and 1.1 are not floats, so a multiple of either lands an ulp off
         rounded = float(Decimal(result) * Decimal(repr(step)))
     if (
         near_boundary
@@ -151,8 +143,6 @@ def _round_r(
         )
         and _significant_digits(value) <= _FAITHFUL_DIGITS
     ):
-        # the epsilon decided it, but the float spells a decimal off the
-        # boundary: a real digit, not arithmetic noise, so round that instead
         return _round_exact(value, step, rounding_method)
     return rounded or 0.0
 
@@ -183,7 +173,6 @@ def _shortest_decimal(value: float) -> tuple[int, int]:
 
 
 def _decimal_text(value: float) -> str:
-    # numpy's repr is "np.float64(2.5)"; an int keeps all its digits
     return repr(value if type(value) is int else float(value))
 
 
@@ -225,7 +214,7 @@ def _round_exact(
 
 def _is_zero_r(value: float, epsilon: float) -> bool:
     return (
-        value == 0.0  # noqa: RUF069  exact-zero fast path; the epsilon test after `or` is the real check
+        value == 0.0
         or abs(_round_r(value, epsilon)) < epsilon
     )
 
@@ -272,13 +261,10 @@ def float_repr(value: float, precision_digits: int) -> str:
 
 
 def _round_half_up_by_factor(value: float, step: float, factor: float) -> float:
-    # _round_r(value, step, "HALF-UP") unrolled for a float or int `value` and a
-    # step that is 1 or whose inverse is the integer `factor`: both give the
-    # same float, the error types included
     if value == 0:
         return 0.0
     normalized_value = value * factor
-    if normalized_value == 0.0:  # noqa: RUF069  exact-zero fast path, as in _round_r
+    if normalized_value == 0.0:
         return 0.0
     magnitude = abs(normalized_value)
     if not magnitude < _EXACT_THRESHOLD:
@@ -289,8 +275,6 @@ def _round_half_up_by_factor(value: float, step: float, factor: float) -> float:
     epsilon = magnitude * _EPSILON_SCALE
     nudged = normalized_value + math.copysign(epsilon, normalized_value)
     nearest = round(nudged)
-    # below 2**47 a double minus its nearest integer is exact, so a half apart
-    # is exactly the tie round() would settle to even
     if nudged - nearest in (0.5, -0.5):
         result = nudged + math.copysign(0.5, nudged)
     else:

@@ -49,7 +49,7 @@ class TestAccess(ConversationCase):
             with self.assertRaises(AccessError):
                 self.env[model].with_user(self.rep).search([])
         Vocabulary = self.env["speech.vocabulary"].with_user(self.rep)
-        Vocabulary.search([], limit=1)  # reading is allowed
+        Vocabulary.search([], limit=1)
         with self.assertRaises(AccessError):
             Vocabulary.create({"name": "Nope"})
 

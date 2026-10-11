@@ -192,20 +192,18 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
                     expected_target_duration = range(89, 92)
                 case "year":
                     expected_target_duration = range(364, 366)
-            # Map existing targets and track changes, starting by unlinking out-of-range ones.
             existing_targets = {(t.date_from, t.date_to): t for t in plan.target_ids}
             target_changes = [
                 Command.unlink(t.id)
                 for t in plan.target_ids
                 if (
                     t.date_from < plan.date_from or t.date_to > plan.date_to
-                )  # Doesn't belong to updated period
+                )
                 or (t.date_to - t.date_from).days
-                not in expected_target_duration  # Doesn't belong to updated periodicity
+                not in expected_target_duration
             ]
 
             while date_from + timedelta - relativedelta(days=1) <= plan.date_to:
-                # Add new targets for missing periods.
                 period_end = date_from + timedelta - relativedelta(days=1)
                 if (date_from, period_end) not in existing_targets:
                     target_changes += [
@@ -269,7 +267,6 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
                     exact_value = True
                     break
             if not exact_value:
-                # Try to interpolate/extrapolate values at 100
                 amount = self._get_completion_value(sorted_amounts, sorted_rates)
                 if amount:
                     plan.commission_amount = amount
@@ -285,7 +282,6 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
         for target in self.target_commission_ids.sorted("target_rate"):
             values += [{"x": round(target.target_rate * 100), "y": target.amount}]
         if values:
-            # For visual purpose: explain how values is computed outside of known bounds
             values += [{"x": values[-1]["x"] + 50, "y": values[-1]["y"]}]
         return {"values": values, "currency": self.currency_id.symbol}
 
@@ -357,12 +353,8 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
 
     @api.model
     def _get_completion_value(self, sorted_amounts, sorted_rates):
-        """Interpolate/extrapolate the amount at 100% target completion.
-        return: amount at 100% target completion
-        """
         lowest_vals = [v for v in sorted_rates if v < 1]
         higher_vals = [v for v in sorted_rates if v > 1]
-        # The plan has always a value at 0% completion
         low, high = None, None
         if lowest_vals and higher_vals:
             low = lowest_vals[-1]
@@ -371,9 +363,7 @@ CREATE INDEX IF NOT EXISTS account_move_invoice_user_id_date_idx ON account_move
             low = lowest_vals[-2]
             high = lowest_vals[-1]
         if not (low and high) or low == high:
-            # No values or division by zero
             return None
-        # y = ax + b
         return sorted_amounts[low] + (sorted_amounts[high] - sorted_amounts[low]) / (
             high - low
         ) * (1 - low)

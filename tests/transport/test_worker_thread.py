@@ -109,14 +109,6 @@ class TestForgettingARequest:
                     delattr(thread, attr)
 
     def test_the_gate_attribute_goes_with_the_ones_it_gates(self):
-        """The readers ask for `query_count` and then read three more.
-
-        `logutils`'s perf filter and the pool's query accumulator both test
-        `hasattr(worker, "query_count")` and go on to read `query_time`,
-        `perf_t0` and `cursor_mode` unguarded. Dropping the gate while
-        leaving those is harmless; dropping those while leaving the gate is
-        an AttributeError inside a log filter.
-        """
         gated = {"query_time", "perf_t0", "cursor_mode"}
         assert "query_count" in REQUEST_SCOPED_ATTRIBUTES
         assert gated <= set(REQUEST_SCOPED_ATTRIBUTES), (
@@ -131,13 +123,6 @@ class TestForgettingARequest:
         forget_request()
 
     def test_every_declared_attribute_is_accounted_for(self):
-        """A new request attribute has to be forgotten or declared to outlive one.
-
-        `WorkerThread` is where the attributes are written down, and the two
-        ends of a request are elsewhere. Adding one there and not to the list
-        is how the previous request's database came to be logged against the
-        next one's error.
-        """
         declared = set(WorkerThread.__annotations__)
         outlives_a_request = {"type", "start_time", "exec_context"}
         reset_not_dropped = {"rpc_model_method"}
@@ -152,8 +137,6 @@ class TestForgettingARequest:
 
 class TestAThreadIsNamedByItsWork:
     def _thread(self, kind, **attrs):
-        # A real thread's attribute surface: an unset attribute is absent,
-        # not a truthy mock, and the object is hashable for the ledgers.
         thread = threading.Thread(name=f"fake.{kind}")
         for name, value in {"type": kind, **attrs}.items():
             setattr(thread, name, value)

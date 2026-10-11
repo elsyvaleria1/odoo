@@ -63,7 +63,6 @@ class AnalyticCommon(BaseCommon):
 
     @classmethod
     def setup_independent_company(cls, **kwargs):
-        # OVERRIDE
         company = super().setup_independent_company(**kwargs)
         if not company:
             company = cls._create_company(name="analytic", **kwargs)
@@ -76,9 +75,7 @@ class AnalyticCommon(BaseCommon):
 
     @classmethod
     def setup_independent_user(cls):
-        # Add group_system to be able to create companies notably in the class setup
         default_groups = cls.env.ref("base.group_system") + cls.get_default_groups()
-        # Removes access rights linked to timesheet and helpdesk
         core_group_ids = (
             cls.env.ref(
                 "hr_timesheet.group_hr_timesheet_user", raise_if_not_found=False

@@ -32,14 +32,6 @@ class PosSelfOrderPreparationDisplayController(PosSelfOrderController):
         super().remove_order(access_token, order_id, order_access_token)
 
     def _send_to_preparation_display(self, pos_config, pos_order_id):
-        """Send only paid orders to the prep display if a valid payment method is configured;
-        otherwise, send all orders.
-
-        The order is read in the environment the access token resolved, as
-        every other method of this controller does: these routes are
-        ``auth="public"`` and the guard below reads ``pos.config``, which the
-        public user may not.
-        """
         pos_order = pos_config.env["pos.order"].browse(pos_order_id).exists()
         if (
             not pos_order.config_id.has_valid_self_payment_method()

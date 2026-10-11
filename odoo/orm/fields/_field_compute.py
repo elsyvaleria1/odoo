@@ -91,9 +91,6 @@ def recompute(field: Field[typing.Any], records: ModelLike) -> None:
         )
         if existing:
             func(existing)
-        # a record that is gone is gone for every pending field of the model,
-        # not only this one: the next field's recompute would only find it
-        # missing again, one existence query each
         for f in records._get_stored_computed_fields():
             records.env.remove_to_compute(f, missing)
 
@@ -133,8 +130,6 @@ def _iter_recursive_reads(
         and not inverse.compute
         and first.comodel_name == probe._name
     ):
-        # the children of a candidate are the candidates naming it as their
-        # parent: read that way, no row outside the batch is fetched
         for record in probe:
             for parent_id in record[inverse.name]._ids:
                 yield parent_id, record.id
@@ -183,10 +178,6 @@ def _ancestor_chains(
     probe: ModelLike,
     outside: dict[IdType, set[IdType]],
 ) -> dict[IdType, list[IdType]] | None:
-    # a parent-store record's parent_path lists its ancestors: the chain
-    # above a parent outside the batch is read there, not fetched a level at
-    # a time. A path the cached parents contradict, or one not cached, is
-    # not trusted, and the walk reads the rows
     if not probe._parent_store or len(paths) != 1:
         return None
     parent = probe._fields[probe._parent_name]
@@ -254,10 +245,6 @@ def _read_through_unfinished(
     reads: dict[IdType, set[IdType]],
     blocked: set[IdType],
 ) -> None:
-    # a record outside the batch whose value is still to compute is computed
-    # when read, and reads in turn: a batch record it reaches must be computed
-    # before the batch record reading it, or that read serves the placeholder
-    # of a protected record and a value nobody recomputes is built on it
     chains = _ancestor_chains(paths, probe, outside)
     if chains is not None:
         _read_up_the_chains(field, records, chains, outside, reads, blocked)
@@ -316,19 +303,11 @@ def get_recursive_levels(
     if not paths or len(ids) < 2:
         return [ids], []
 
-    # a record reading a value being computed outside this batch reads the
-    # value being replaced: it waits for a recompute of its own, as does
-    # every record reading it
     held = records.env.core.get_protected_ids(field)
     reads: dict[IdType, set[IdType]] = {id_: set() for id_ in ids}
     blocked: set[IdType] = set()
     outside: dict[IdType, set[IdType]] = {}
-    # the order is a fact of the rows, not of what the user may read: a
-    # hidden or archived record the compute reaches still goes first
     probe = records.browse(ids).sudo().with_context(active_test=False)
-    # the children a record reads through its inverse parent are listed from
-    # the batch alone, which misses an unfinished child outside it: only a
-    # batch holding every pending record of a stored field has none
     through_parent = (
         not held
         and field.store
@@ -467,8 +446,6 @@ def compute_recursive_prefetch(
     if record.id in leftover:
         field.compute_value(record)
         return record
-    # the levels the record reads and its own: a level above it is computed
-    # when read, not on the chance it will be
     computed: list[IdType] = []
     for level in levels:
         batch = records.browse(
@@ -501,8 +478,6 @@ def _recompute_batched(
     to_compute_ids: Collection[IdType],
     apply_except_missing: Callable[[Callable[[typing.Any], None], typing.Any], None],
 ) -> None:
-    # like get_recursive_levels' guard: a record whose dependency is being computed
-    # reads the value being replaced, so it stays pending unless it was asked for
     held = {
         id_ for id_ in _get_ids_mid_compute(field, records) if id_ in to_compute_ids
     }

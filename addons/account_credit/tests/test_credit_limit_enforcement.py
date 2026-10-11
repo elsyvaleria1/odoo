@@ -127,10 +127,6 @@ class TestCreditLimitEnforcement(CreditAuthorizationCase, TransactionCase):
         self.assertEqual(order.state, "draft")
 
     def test_an_order_on_a_draft_invoice_stands_once_in_the_exposure(self):
-        """The exposure adds the draft invoices to what the orders still have
-        to invoice. An order invoiced in draft stood in both -- the draft, and
-        the order's own amount, which only a posted invoice used to reduce --
-        so a customer was refused credit it still had."""
         self.product.invoice_policy = "ordered"
         order = self._create_order(price=3000.0)
         order.action_confirm()

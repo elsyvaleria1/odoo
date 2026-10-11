@@ -79,7 +79,6 @@ class SelfOrderCommonTest(odoo.tests.HttpCase):
             }
         )
 
-        # desk organizer
         cls.desk_organizer = cls.env["product.product"].create(
             {
                 "name": "Desk Organizer",
@@ -258,8 +257,6 @@ class SelfOrderCommonTest(odoo.tests.HttpCase):
             }
         )
 
-        # We need a table and a floor to be able to do some tours when we do not have demo data.
-        # and thus no floors.
         self.pos_main_floor = self.env["restaurant.floor"].create(
             {
                 "name": "Main Floor Test",
@@ -278,12 +275,8 @@ class SelfOrderCommonTest(odoo.tests.HttpCase):
             }
         )
 
-        # we need a default tax fixed at 15% to all product because in the test prices are based on this tax.
-        # some time with the localization this may not be the case. So we force it.
         self.env["product.product"].search([]).taxes_id = self.default_tax15
 
-        # A new tax is added to each product and this tax is from a different company.
-        # This is important in the test because the added tax should not be used in the tour.
         self._add_tax_to_product_from_different_company()
 
     def create_backend_pos_order(self, data):
@@ -335,7 +328,6 @@ class SelfOrderCommonTest(odoo.tests.HttpCase):
             }
         )
 
-        # Re-trigger prices computation
         order.lines._onchange_amount_line_all()
         order._recompute_amounts()
 

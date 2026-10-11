@@ -17,7 +17,6 @@ class Webhook(http.Controller):
         auth="receiver",
         receiver="whatsapp.account:_receiver_for_webhook",
         receiver_event="whatsapp_webhook",
-        # auth="receiver": Meta's X-Hub-Signature-256 HMAC over the body, keyed by the account's app secret
         csrf=False,
         save_session=False,
         typed=True,
@@ -27,8 +26,6 @@ class Webhook(http.Controller):
         data = admission.json()
         for entry in data["entry"]:
             account_id = entry["id"]
-            # Every entry of one delivery is signed with one app secret; an
-            # entry naming an account of another app fails its own check.
             accounts = (
                 request.env["whatsapp.account"]
                 .sudo()
@@ -60,7 +57,6 @@ class Webhook(http.Controller):
                         )
                     )
                     if wa_account_id:
-                        # Process Messages and Status webhooks
                         if changes["field"] == "messages":
                             request.env["whatsapp.message"]._process_statuses(value)
                             wa_account_id._process_messages(value)
@@ -70,9 +66,7 @@ class Webhook(http.Controller):
                             data,
                         )
 
-                # Process Template webhooks
                 if value.get("message_template_id"):
-                    # There is no user in webhook, so we need to SUPERUSER_ID to write on template object
                     template = (
                         request.env["whatsapp.template"]
                         .sudo()
@@ -120,12 +114,9 @@ class Webhook(http.Controller):
         auth="receiver",
         receiver="whatsapp.account:_receiver_for_webhook_verification",
         receiver_event="whatsapp_verification",
-        # auth="receiver": the account's vaulted hub.verify_token
         csrf=False,
         save_session=False,
         typed=True,
     )
     def webhookget(self, **kwargs):
-        """Meta verifies the webhook by presenting a token and expecting its
-        challenge back; once it is answered the webhook is activated."""
         return request.prepare_response(request.admission.extra["challenge"])

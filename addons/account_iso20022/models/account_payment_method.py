@@ -44,8 +44,6 @@ class AccountPaymentMethod(models.Model):
     def _get_domain_payment_method(self, code, with_currency=True, with_country=True):
         domain = super()._get_domain_payment_method(code, with_currency, with_country)
         if with_currency and code == "iso20022":
-            # To prevent ISO20022 to be automatically added to the journals to which SEPA has to be added when updating
-            # the payment methods of the existing journals, at module install
             eur_currency = self.env.ref("base.EUR")
             domain &= Domain(
                 [

@@ -368,8 +368,6 @@ class HrApplicant(models.Model):
         _debug.logic("talent_pool_split", direct=direct, indirect=self - direct)
         for applicant in direct:
             applicant.is_applicant_in_pool = True
-            # A talent being created is its own pool holder before ``create`` has
-            # linked ``pool_applicant_id``, so fall back to its own pools.
             pools = (
                 applicant.pool_applicant_id.talent_pool_ids or applicant.talent_pool_ids
             )
@@ -404,8 +402,6 @@ class HrApplicant(models.Model):
                 for fname in self._DUPLICATE_KEY_FIELDS
                 if applicant[fname] and (fname, applicant[fname]) in pool_ids_by_key
             ]
-            # The keys can match different talents, hence different pools: the
-            # count is the union, not whichever key happened to be checked first.
             pools = set().union(*matches) if matches else ()
             _debug.logic(
                 "talent_pool_match",
@@ -431,13 +427,6 @@ class HrApplicant(models.Model):
                 applicant.phone_ids = applicant.partner_id.phone_ids
 
     def _inverse_partner_email(self) -> None:
-        """Push the applicant's contact details onto their contact record.
-
-        Shared by ``email_from`` and ``phone_ids``: only *creating* the contact
-        needs an email, so the sync below is gated on having a contact, not on
-        having an email -- otherwise a phone set on an email-less applicant is
-        silently dropped.
-        """
         for applicant in self:
             email_normalized = tools.email_normalize(applicant.email_from or "")
             if email_normalized and not applicant.partner_id:
@@ -456,10 +445,6 @@ class HrApplicant(models.Model):
             if not partner:
                 continue
             if email_normalized:
-                # Name and e-mail stay on the e-mail path they have always been on:
-                # `partner_id` is a plain m2o with no domain, so it can be a contact
-                # the recruiter picked, and writing a name onto one is not this
-                # defect's business.
                 if applicant.partner_name and applicant.partner_name != partner.name:
                     partner.name = applicant.partner_name
                 if email_normalized != partner.email:
@@ -1121,10 +1106,6 @@ class HrApplicant(models.Model):
             has_email=bool(defaults.get("email_from")),
         )
         applicant = super().message_new(msg_dict, custom_values=defaults)
-        # The mail carries an address but no number, so take the contact's --
-        # previously done by calling `_compute_partner_phone_email` directly,
-        # which also rewrote `email_from` from the contact and so could replace
-        # the address the applicant actually wrote from.
         if applicant.partner_id and not applicant.phone_ids:
             _debug.logic(
                 "phones_from_contact",
@@ -1237,11 +1218,6 @@ class HrApplicant(models.Model):
         }
 
     def reset_applicant(self) -> None:
-        """Send applications back to the start of their job's flow.
-
-        Grouped by job because the target stage is per job, so this costs one
-        write per distinct job rather than one per application.
-        """
         Stage = self.env["hr.recruitment.stage"]
         first_stage_by_job = Stage._get_first_stage_by_job(self.job_id)
         for job, applicants in self.grouped("job_id").items():
@@ -1279,13 +1255,6 @@ class HrApplicant(models.Model):
         }
 
     def _get_duration_from_tracking(self, trackings):
-        """Stop the current stage's clock at the moment of refusal.
-
-        ``super()`` counts every stage up to now; a refused application stopped
-        moving when it was refused, so the span since then is not time spent in
-        the stage. Clamped at zero: a ``refuse_date`` older than the stage entry
-        would otherwise report a negative duration that grows every day.
-        """
         durations = super()._get_duration_from_tracking(trackings)
         if self.refuse_reason_id and self.refuse_date:
             stage_id = self.stage_id.id

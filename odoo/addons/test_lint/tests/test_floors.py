@@ -7,9 +7,6 @@ from . import lint_case
 
 class TestFloors(lint_case.LintCase):
     def test_the_floors_file_has_one_spelling(self):
-        # An absent gate reads zero, so a zero entry is a second spelling of a
-        # hard zero; sorted keys keep two sessions lowering different floors
-        # from conflicting on anything but their own line.
         text = lint_case._FLOORS_PATH.read_text(encoding="utf-8")
         floors = json_loads(text)
         self.assertEqual(

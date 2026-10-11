@@ -18,12 +18,8 @@ def _is_sms_trace_matching(number, status, record, trace):
 
 
 class MassSMSCase(SMSCase, MockLinkTracker):
-    # ------------------------------------------------------------
-    # ASSERTS
-    # ------------------------------------------------------------
 
     def assertSMSStatistics(self, recipients_info, mailing, records, check_sms=True):
-        """Deprecated, remove in 14.4"""
         return self.assertSMSTraces(
             recipients_info, mailing, records, check_sms=check_sms
         )
@@ -38,42 +34,6 @@ class MassSMSCase(SMSCase, MockLinkTracker):
         sent_unlink=False,
         sms_links_info=None,
     ):
-        """Check content of traces. Traces are fetched based on a given mailing
-        and records. Their content is compared to recipients_info structure that
-        holds expected information. Links content may be checked, notably to
-        assert shortening or unsubscribe links. Sms.sms records may optionally
-        be checked.
-
-        :param recipients_info: list[{
-          # TRACE
-          'partner': res.partner record (may be empty),
-          'number': number used for notification (may be empty, computed based on partner),
-          'trace_status': outgoing / process / pending / sent / cancel / bounce / error / opened
-            (sent by default),
-          'record: linked record,
-          # SMS.SMS
-          'content': optional: if set, check content of sent SMS;
-          'failure_type': error code linked to sms failure (see ``error_code``
-            field on ``sms.sms`` model);
-          },
-          { ... }];
-        :param mailing: a mailing.mailing record from which traces have been
-          generated;
-        :param records: records given to mailing that generated traces. It is
-          used notably to find traces using their IDs;
-        :param check_sms: if set, check sms.sms records that should be linked to traces
-          unless not sent (trace_status == 'cancel');
-        :param is_cancel_not_sent: if True, also check that no mail.message
-          related to "cancel trace" have been created and disable check_sms for those.
-        :param sent_unlink: it True, sent sms.sms are deleted and we check gateway
-          output result instead of actual sms.sms records;
-        :param sms_links_info: if given, should follow order of ``recipients_info``
-          and give details about links. See ``assertLinkShortenedHtml`` helper for
-          more details about content to give
-          Not tested for sms with trace status == 'cancel' if is_cancel_not_sent;
-        ]
-        """
-        # map trace state to sms state
         state_mapping = {
             "sent": "sent",
             "outgoing": "outgoing",
@@ -104,51 +64,41 @@ class MassSMSCase(SMSCase, MockLinkTracker):
                 )
         debug_info = "\n".join(traces_info)
         self.assertTrue(all(s.model == records._name for s in traces))
-        # self.assertTrue(all(s.utm_campaign_id == mailing.campaign_id for s in traces))
         self.assertEqual(
             {s.res_id for s in traces},
             set(records.ids),
             f"Should find one trace / record. Found\n{debug_info}",
         )
 
-        # check each trace
         if not sms_links_info:
             sms_links_info = [None] * len(recipients_info)
         for recipient_info, link_info, record in zip(
             recipients_info, sms_links_info, records, strict=True
         ):
-            # check input
             invalid = set(recipient_info.keys()) - {
                 "content",
                 "record",
-                # recipient
                 "number",
                 "partner",
-                # trace info
                 "failure_type",
                 "trace_status",
-                # check control
                 "check_sms",
             }
             if invalid:
                 raise AssertionError(f"assertSMSTraces: invalid input {invalid}")
 
-            # recipients
             partner = recipient_info.get("partner", self.env["res.partner"])
             number = recipient_info.get("number")
             if number is None and partner:
                 number = partner._sms_get_recipients_info()[partner.id]["sanitized"]
-            # trace
             status = recipient_info.get("trace_status", "outgoing")
             failure_type = (
                 recipient_info["failure_type"]
                 if status in ("error", "cancel", "bounce")
                 else None
             )
-            # content
             content = recipient_info.get("content", None)
             record = record or recipient_info.get("record")
-            # checks
             recipient_check_sms = recipient_info.get("check_sms", check_sms)
 
             trace = traces.filtered(
@@ -194,8 +144,6 @@ class MassSMSCase(SMSCase, MockLinkTracker):
                     raise NotImplementedError
 
             if link_info and not sms_not_created:
-                # shortened links are directly included in sms.sms record as well as
-                # in sent sms (not like mails who are post-processed)
                 sms_sent = self._find_sms_sent(partner, number)
                 sms_sms = self._find_sms_sms(partner, number, state_mapping[status])
                 for url, is_shortened, add_link_params in link_info:
@@ -220,12 +168,8 @@ class MassSMSCase(SMSCase, MockLinkTracker):
                     )
         return traces
 
-    # ------------------------------------------------------------
-    # GATEWAY TOOLS
-    # ------------------------------------------------------------
 
     def gateway_sms_bounce(self, mailing, records, error_code="invalid_destination"):
-        """Bounce SMS through sms/status controller"""
         traces = mailing.mailing_trace_ids.filtered(
             lambda t: t.model == records._name and t.res_id in records.ids
         )
@@ -239,9 +183,6 @@ class MassSMSCase(SMSCase, MockLinkTracker):
             self._make_webhook_jsonrpc_request(statuses)
 
     def gateway_sms_click(self, mailing, record, use_sent_sms=True):
-        """Simulate a click on a sent SMS. Usage: giving a partner and/or
-        a number, find an SMS sent to him, find shortened links in its body
-        and call add_click to simulate a click."""
         trace = mailing.mailing_trace_ids.filtered(
             lambda t: t.model == record._name and t.res_id == record.id
         )
@@ -257,7 +198,6 @@ class MassSMSCase(SMSCase, MockLinkTracker):
             return self.gateway_sms_sms_click(sms_sms)
 
     def gateway_sms_delivered(self, mailing, records):
-        """Simulate a delivery report received for a sent SMS."""
         traces = mailing.mailing_trace_ids.filtered(
             lambda t: t.model == records._name and t.res_id in records.ids
         )
@@ -279,11 +219,8 @@ class MassSMSCase(SMSCase, MockLinkTracker):
         return self._gateway_sms_click(sms_sms.body)
 
     def _gateway_sms_click(self, body):
-        """When clicking on a link in a SMS we actually don't have any
-        easy information in body, only body. We currently click on all found
-        shortened links."""
         for url in mail.TEXT_URL_REGEX.findall(body):
-            if "/r/" in url:  # shortened link, like 'http://localhost:8069/r/LBG/s/53'
+            if "/r/" in url:
                 parsed_url = urlsplit(url)
                 path_items = parsed_url.path.split("/")
                 code, sms_id_int = path_items[2], int(path_items[4])

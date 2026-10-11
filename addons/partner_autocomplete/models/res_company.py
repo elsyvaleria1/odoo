@@ -47,7 +47,6 @@ class ResCompany(models.Model):
     def create(self, vals_list):
         res = super().create(vals_list)
         if modules.module.current_test:
-            # Skip enrichment in tests so no IAP request is ever issued.
             res.sudo().partner_autocomplete_config_id.iap_enrich_auto_done = True
         else:
             res.iap_enrich_auto()
@@ -63,8 +62,6 @@ class ResCompany(models.Model):
         return arch, view
 
     def iap_enrich_auto(self) -> bool:
-        """Enrich company. This method should be called by automatic processes
-        and a protection is added to avoid doing enrich in a loop."""
         if self.env.user._is_system() and self.env.registry.ready:
             for company in self.filtered(
                 lambda company: (
@@ -76,8 +73,6 @@ class ResCompany(models.Model):
         return True
 
     def _enrich(self) -> bool:
-        """This method calls the partner autocomplete service from IAP to enrich
-        partner related fields of the company."""
         self.check_singleton()
         _logger.info("Starting enrich of company %s (%s)", self.name, self.id)
 
@@ -100,7 +95,6 @@ class ResCompany(models.Model):
             and not self.partner_id[field]
         }
 
-        # for company: from state_id / country_id display_name like to IDs
         company_data.update(
             self._enrich_extract_m2o_id(company_data, ["state_id", "country_id"])
         )
@@ -109,7 +103,6 @@ class ResCompany(models.Model):
         return True
 
     def _enrich_extract_m2o_id(self, iap_data, m2o_fields):
-        """Extract m2O ids from data (because of res.partner._format_data_company)"""
         extracted_data = {}
         for m2o_field in m2o_fields:
             relation_data = iap_data.get(m2o_field)
@@ -118,15 +111,6 @@ class ResCompany(models.Model):
         return extracted_data
 
     def _get_company_domain_name(self):
-        """Extract the company domain to be used by IAP services.
-
-        The domain is extracted from the website or the email information.
-
-        >>> company.email, company._get_company_domain_name()
-        ("info@proximus.be", "proximus.be")
-        >>> company.website, company._get_company_domain_name()
-        ("https://www.info.proximus.be", "proximus.be")
-        """
         self.check_singleton()
 
         company_domain = email_domain_extract(self.email) if self.email else False

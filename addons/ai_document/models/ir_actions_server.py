@@ -41,8 +41,6 @@ class IrActionsServer(models.Model):
         except psycopg.errors.SerializationFailure, psycopg.errors.DeadlockDetected:
             raise
         except Exception as e:
-            # We don't want to raise, to not break the flow like documents upload
-            # (e.g., if the OpenAI key is not set)
             error = e
             _debug.logic("ai_run_failed", action=self, error=type(e).__name__)
             _logger.exception("AI error: %s", error)
@@ -69,8 +67,6 @@ class IrActionsServer(models.Model):
                 )
 
         elif self.env.user.active:
-            # Send the last tool result or name as toast notification
-            # Or the main AI action if no tool was executed
             tool_history = " ".join(
                 t["result"] for t in tool_calls_history if t["result"]
             )
@@ -98,11 +94,9 @@ class IrActionsServer(models.Model):
             and record._name == "document.document"
             and self.ai_autosort_folder_id == record.folder_id
         ):
-            # Evaluate the folder prompt on the document and not on the folder
             folder_prompt, folder_context_fields, target_folders = (
                 parse_ai_prompt_values(
                     self.env,
-                    # sudo: ai_sort_prompt has group system
                     record.folder_id.sudo().ai_sort_prompt,
                     "document.document",
                 )

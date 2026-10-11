@@ -127,7 +127,6 @@ class EsgReport(models.Model):
             root_article.apply_template(root_template.id)
             root_article.write({"name": esg_report.title})
 
-            # Invite the responsible users:
             root_article.invite_members(
                 esg_report.responsible_user_ids.partner_id, "write"
             )
@@ -210,9 +209,7 @@ class EsgReport(models.Model):
                     element.set("data-embedded-props", json_dumps(embedded_props))
                     current_class = element.get("class", "")
                     if show_content:
-                        # Remove 'd-print-none' if present
                         element.set("class", current_class.replace("d-print-none", ""))
-                    # Add 'd-print-none' if not already present
                     elif "d-print-none" not in current_class:
                         element.set("class", current_class + " d-print-none")
                     is_section_updated = True

@@ -3,9 +3,6 @@ from odoo.modules.module import adapt_version
 from odoo.tools import SQL
 from odoo.tools.module_data import fold_module
 
-# the migrations of a module folded into base leave with it, so no database
-# may cross the fold below the last version they bring it to: uom has none,
-# resource's last is 1.39
 FOLDABLE = {"uom": "1.2", "resource": "1.39"}
 
 
@@ -24,8 +21,6 @@ def _installed_version(cr, module: str) -> str | None:
 def migrate(cr, version):
     if not version:
         return
-    # units of measure are as basic as currencies, and everything in the ERP
-    # can be a resource: base holds both
     for module, foldable in FOLDABLE.items():
         installed = _installed_version(cr, module)
         if installed is None:

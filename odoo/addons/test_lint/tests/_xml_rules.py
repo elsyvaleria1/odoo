@@ -246,8 +246,6 @@ def dynamic_event_handler(file: DataFile, ctx: Context):
 
 
 def inline_event_handlers(root: etree._Element) -> Iterator[tuple[int, str]]:
-    # <t> takes no DOM attribute (a t-call's on* is a parameter), and a
-    # capitalised tag is an OWL component, whose on* attributes are props
     for element in root.iter():
         if not isinstance(element.tag, str):
             continue
@@ -300,9 +298,6 @@ def orphan_data_file(file: DataFile, ctx: Context):
         yield 1, "no manifest lists it and no Python loads it"
 
 
-# the models of stock Odoo's access: no class declares them, and the loader
-# converts their records into ir.access rows (ir_access_legacy);
-# access_retired_format keeps this repository's own modules off them
 _STOCK_ACCESS_MODELS = frozenset({"ir.rule", "ir.model.access"})
 
 
@@ -372,16 +367,12 @@ def special_button_type(file: DataFile, ctx: Context):
                 yield element.sourceline, f"{where} with type={kind!r}"
 
 
-# Field widgets that read `nolabel` as a prop of their own and hide their
-# label text with it, wherever the field sits (`archAttribute("nolabel")` in
-# their extractProps); TestXmlLint pins the set against the JS.
 NOLABEL_WIDGETS = frozenset({"boolean_favorite", "statinfo"})
 
 
 def dead_nolabels(
     file: DataFile,
 ) -> Iterator[tuple[etree._Element, etree._Element]]:
-    # (view record, field) of every nolabel= the form compiler never reads
     for record, arch in file.model_view_archs():
         if _arch_root(arch) != "form":
             continue
@@ -393,11 +384,8 @@ def dead_nolabels(
             if _under(element, _LIST_ROOTS | {"kanban"}, arch):
                 continue
             parent = element.getparent()
-            # an inheriting arch's field lands where its locator says, which the
-            # file alone does not tell
             if parent.tag in ("xpath", "data") or parent.get("position"):
                 continue
-            # the compiler reads it on a group's or a setting's own children only
             if parent.tag not in _LABEL_OWNERS:
                 yield record, element
 

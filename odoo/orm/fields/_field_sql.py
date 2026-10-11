@@ -163,7 +163,7 @@ class _FieldSqlMixin(_FieldStubs):
         )
         converted: list[typing.Any] = []
         null_in_condition = False
-        dropped = 0  # debuglog
+        dropped = 0
         for v in value:
             if v is False or v is None:
                 null_in_condition = True
@@ -171,7 +171,7 @@ class _FieldSqlMixin(_FieldStubs):
             try:
                 converted.append(_value_to_column(v))
             except ValueError, TypeError:
-                dropped += 1  # debuglog
+                dropped += 1
                 continue
         if _debug.logic.enabled and dropped:
             _debug.logic(
@@ -475,8 +475,6 @@ class _FieldSqlMixin(_FieldStubs):
         regex = re.compile(str(value))
         render = self._get_pattern_getter(records, field_expr, getter)
 
-        # a NULL column matches no regular expression in SQL, not even one
-        # the empty string it renders as would match
         def matches(rec: M) -> bool:
             text = render(rec)
             if not text and getter(rec) in (False, None):
@@ -514,9 +512,6 @@ class _FieldSqlMixin(_FieldStubs):
         assert operator not in Domain.NEGATIVE_OPERATORS, (
             "only positive operators are implemented"
         )
-        # the SQL side checks the field before compiling; a predicate whose
-        # fast path reads the shared cache would otherwise answer for a
-        # field the user may not read
         if self.access_classes is not None:
             self.check_read_access(records)
         getter = self.get_expression_getter(field_expr)

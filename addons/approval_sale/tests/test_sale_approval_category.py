@@ -164,10 +164,6 @@ class TestSaleApprovalCategory(TransactionCase):
         self.assertIn(self.product, category.product_ids)
 
     def test_the_sales_page_does_not_offer_auto_confirm(self):
-        # The toggle had no reader anywhere: auto-confirm is decided by the
-        # company field alone. Asserting on our own view record rather than the
-        # rendered arch keeps this independent of which sibling approval
-        # modules happen to be installed.
         view = self.env.ref("approval_sale.view_approval_category_form_sale")
         self.assertNotIn(
             '<field name="order_auto_confirm"',
@@ -404,7 +400,6 @@ class TestCategoryApplicability(TransactionCase):
             "visible; a second editable widget gives one field two labels",
         )
 
-        # The divs on the Sales page still read it, so the form must still parse.
         arch = self.env["approval.category"].get_view(
             self.env.ref("approval.view_approval_category_form").id,
             "form",

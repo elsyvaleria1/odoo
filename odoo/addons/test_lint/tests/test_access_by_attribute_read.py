@@ -3,7 +3,6 @@ from collections import defaultdict
 
 from . import _production_python, lint_case
 
-# what a body may call and still decide nothing: reading through recordsets
 _READS = frozenset(
     {
         "browse",
@@ -47,9 +46,6 @@ def _called(node: ast.Call) -> str:
 
 
 def _writes_another_record(statement: ast.stmt) -> bool:
-    # `a.b.c = value` or `browse(id).c = value` writes the record reached,
-    # which checks write access; `record.c = value` may be a compute's own
-    # assignment, which checks nothing
     if isinstance(statement, ast.Assign):
         targets = statement.targets
     elif isinstance(statement, ast.AugAssign):

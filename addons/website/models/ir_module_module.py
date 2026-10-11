@@ -159,7 +159,7 @@ class IrModuleModule(models.Model):
                     )
 
                 if find:
-                    imd = self.env["ir.model.data"].search(  # noqa: E8507 - the copy is resolved one record at a time; it may have been created by an earlier pass of this loop
+                    imd = self.env["ir.model.data"].search(
                         [("model", "=", find._name), ("res_id", "=", find.id)]
                     )
                     if imd and imd.noupdate:
@@ -416,7 +416,6 @@ class IrModuleModule(models.Model):
         self.check_singleton()
         website = self.env["website"].get_current_website()
 
-        # removing a theme and loading one save each of their views
         with self.env["ir.ui.view"]._validation_deferred() as views:
             theme = self.with_env(views.env)
             theme._theme_remove(website)
@@ -621,7 +620,7 @@ class IrModuleModule(models.Model):
             return res
 
         lang_value_list = [
-            SQL("%(lang)s, o_menu.name->>%(lang)s", lang=SQL("'%s'" % lang))  # noqa: E8501  lang is an installed language code
+            SQL("%(lang)s, o_menu.name->>%(lang)s", lang=SQL("'%s'" % lang))
             for lang in langs
             if lang != "en_US"
         ]

@@ -63,8 +63,6 @@ class TestHttpCase(HttpCase):
         )
 
     def test_console_error_waved_through_by_the_checker_does_not_fail_the_run(self):
-        # the page reports its own verdict through the success signal; an error
-        # the checker ignores must not settle the run, nor poison that signal
         code = "console.error('[probe] not a failure'); console.log('test successful')"
         with self.assertLogs(level="ERROR"):
             self.browser_js(

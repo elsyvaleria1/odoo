@@ -27,7 +27,6 @@ class TestPaymentLinkWizard(AccountPaymentCommon):
         )
 
     def test_epd_info_set_on_exact_match(self):
-        """Test that epd_info is populated when amount equals invoice_amount_due."""
         invoice = self._create_posted_invoice()
         wizard = self._create_wizard(invoice, amount=100.0, amount_max=100.0)
         wizard.has_eligible_epd = True
@@ -39,8 +38,6 @@ class TestPaymentLinkWizard(AccountPaymentCommon):
         )
 
     def test_epd_info_not_set_on_real_mismatch(self):
-        """Test that epd_info stays empty when amount is genuinely different from
-        invoice_amount_due (beyond rounding tolerance)."""
         invoice = self._create_posted_invoice()
         wizard = self._create_wizard(invoice, amount=50.0, amount_max=100.0)
         wizard.has_eligible_epd = True
@@ -49,9 +46,6 @@ class TestPaymentLinkWizard(AccountPaymentCommon):
         self.assertFalse(wizard.epd_info)
 
     def test_link_uses_portal_url_for_invoice(self):
-        """Test that the link for an account.move routes through the invoice portal
-        page instead of the generic /payment/pay page, and carries the
-        account_payment-specific query params."""
         invoice = self._create_posted_invoice()
         wizard = self._create_wizard(invoice, amount=100.0, amount_max=100.0)
 
@@ -62,8 +56,6 @@ class TestPaymentLinkWizard(AccountPaymentCommon):
         self.assertTrue(wizard.link.endswith("#portal_pay"))
 
     def test_link_falls_back_to_base_behavior_for_non_invoice(self):
-        """Test that the link for a non-account.move record keeps the base
-        `payment` module's generic /payment/pay behavior untouched."""
         wizard = self.env["wizard.payment.transaction.view.link"].create(
             {
                 "res_model": "res.partner",

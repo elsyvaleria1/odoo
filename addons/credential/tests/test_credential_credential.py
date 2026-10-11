@@ -509,9 +509,6 @@ class TestCredentialSecurityValidations(TransactionCase):
         self.assertIn("exceeds maximum size", str(cm.exception))
 
     def test_the_json_field_never_shows_a_secret_a_named_field_owns(self):
-        # For a `custom` credential the JSON box is the one visible field. A
-        # password put in the payload would be rendered there in clear text and
-        # sent to the browser, beside its own masked field.
         credential = self.env["credential.credential"].create(
             {
                 "name": "PAC style login",
@@ -526,7 +523,6 @@ class TestCredentialSecurityValidations(TransactionCase):
         self.assertNotIn("pac-secret", credential.credential_data)
         self.assertNotIn("pac-user", credential.credential_data)
         self.assertIn("endpoint", credential.credential_data)
-        # the payload itself still carries everything, for whoever reads it
         whole = credential.get_credential_dict()
         self.assertEqual(whole["password"], "pac-secret")
         self.assertEqual(whole["endpoint"], "https://pac.example")
@@ -566,10 +562,6 @@ class TestCredentialSecurityValidations(TransactionCase):
         self.assertIn("password", str(caught.exception))
 
     def test_an_empty_json_field_does_not_erase_the_username_beside_it(self):
-        # credential_data is on the form for every category and empty for all but
-        # `custom`, so a plain basic-auth save carries it blank. It owns only the
-        # keys no named accessor claims: blanking it must leave the username and
-        # password alone, whichever order the two reach their inverses.
         category = self.env.ref("credential.credential_category_basic_auth")
         for label, vals in (
             (
@@ -1434,12 +1426,6 @@ class TestOAuthClientCredentials(TransactionCase):
         self.assertIn("refresh token", str(cm.exception))
 
     def test_oauth2_with_only_a_refresh_token_is_accepted(self):
-        """An access token expires; the refresh token is what survives.
-
-        A credential holding only that one is an OAuth credential at rest, not a
-        half-filled one, and requiring an access token made the steady state
-        unrepresentable.
-        """
         credential = self.env["credential.credential"].create(
             {
                 "name": "Refresh Only",

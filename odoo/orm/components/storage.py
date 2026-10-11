@@ -36,8 +36,6 @@ class DictBackend:
         self._tables: dict[str, dict[int, dict[str, Any]]] = {}
         self._sequences: dict[str, int] = defaultdict(int)
         self._named_sequences: dict[str, NamedSequence] = {}
-        # PostgreSQL table inheritance: a child's rows show through its root
-        # and every member draws ids from the root's sequence
         self._roots: dict[str, str] = {}
         self._children: dict[str, list[str]] = defaultdict(list)
 
@@ -94,9 +92,6 @@ class DictBackend:
                 rows=sum(len(rows) for rows in self._tables.values()),
                 sequences=len(self._named_sequences),
             )
-        # the sequences are deliberately absent: `nextval` is not
-        # transactional on PostgreSQL, so a value a rolled-back savepoint
-        # drew is spent and the next row takes the one after it
         return (
             {
                 table: {id_: dict(row) for id_, row in rows.items()}

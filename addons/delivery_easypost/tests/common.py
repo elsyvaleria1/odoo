@@ -57,7 +57,6 @@ class EasypostTestCommon(TransactionCase):
                 "zip": "1160",
             }
         )
-        # configure rounding, so that we can enter an extra-light product
         conf = self.env["ir.config_parameter"]
         conf.set_param("product.weight_in_lbs", "1")
         precision = self.env.ref("product.decimal_stock_weight")
@@ -127,7 +126,6 @@ class EasypostTestCommon(TransactionCase):
 
     @contextmanager
     def patch_easypost_requests(self):
-        """Mock context for get and post requests to the Easypost API."""
 
         def _mocked_easypost_request(endpoint, request_type="get", data=None):
             mocked_contents = {
@@ -1908,7 +1906,6 @@ class EasypostTestCommon(TransactionCase):
             return response
 
         def _mocked_easypost_get_services_and_package_types():
-            """In the module, we use requests to access those documents."""
             with file_open(
                 "delivery_easypost/static/data/package_types_by_carriers.json"
             ) as f:
@@ -1920,7 +1917,6 @@ class EasypostTestCommon(TransactionCase):
             return packages, services
 
         def _mocked_successful_empty_get_response(*args, **kwargs):
-            """This mock is used when requesting documents, such as labels."""
             response = Mock()
             response.status_code = 200
             response.content = ""

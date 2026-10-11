@@ -11,17 +11,15 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
     def _invoice_get_page_view_values(
         self, invoice, access_token, /, payment=False, amount=None, **kwargs
     ):
-        # EXTENDS account
 
         values = super()._invoice_get_page_view_values(
             invoice, access_token, amount=amount, **kwargs
         )
 
         if not invoice._has_to_be_paid():
-            # Do not compute payment-related stuff if given invoice doesn't have to be paid.
             return {
                 **values,
-                "payment": payment,  # We want to show the dialog even when everything has been paid (with a custom message)
+                "payment": payment,
             }
 
         epd = values.get("epd_discount_amount_currency", 0.0)
@@ -142,16 +140,12 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
         self, invoices_data, access_token=None, **kwargs
     ):
         logged_in = not request.env.user._is_public()
-        # We set partner_id to the partner id of the current user if logged in, otherwise we set it
-        # to the invoice partner id. We do this to ensure that payment tokens are assigned to the
-        # correct partner and to avoid linking tokens to the public user.
         partner_sudo = (
             request.env.user.partner_id if logged_in else invoices_data["partner"]
         )
         invoice_company = invoices_data["company"] or request.env.company
 
         availability_report = {}
-        # Select all the payment methods and tokens that match the payment context.
         providers_sudo = (
             request.env["payment.provider"]
             .sudo()
@@ -163,7 +157,7 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
                 report=availability_report,
                 **kwargs,
             )
-        )  # In sudo mode to read the fields of providers and partner (if logged out).
+        )
         payment_methods_sudo = (
             request.env["payment.method"]
             .sudo()
@@ -173,14 +167,13 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
                 currency_id=invoices_data["currency"].id,
                 report=availability_report,
             )
-        )  # In sudo mode to read the fields of providers.
+        )
         tokens_sudo = (
             request.env["payment.token"]
             .sudo()
             ._get_available_tokens(providers_sudo.ids, partner_sudo.id)
-        )  # In sudo mode to read the partner's tokens (if logged out) and provider fields.
+        )
 
-        # Make sure that the partner's company matches the invoice's company.
         company_mismatch = not PaymentPortal._can_partner_pay_in_company(
             partner_sudo, invoice_company
         )
@@ -206,7 +199,6 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
             "access_token": access_token,
             "payment_reference": invoices_data.get("payment_reference", False),
         }
-        # Merge the dictionaries while allowing the redefinition of keys.
         return (
             portal_page_values
             | payment_form_values
@@ -218,9 +210,7 @@ class PortalAccount(portal.PortalAccount, PaymentPortal):
     def portal_my_invoice_detail(
         self, invoice_id, payment_token=None, amount=None, **kw
     ):
-        # EXTENDS account
 
-        # If we have a custom payment amount, make sure it hasn't been tampered with
         if amount and not payment_utils.is_access_token_valid(
             payment_token, invoice_id, amount
         ):

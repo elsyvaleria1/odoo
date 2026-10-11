@@ -31,7 +31,6 @@ class WizardPosOrderInvoice(models.TransientModel):
             )
         selected_orders = (
             self.env["pos.order"]
-            # Recordsets preserve duplicates; invoice each selected order only once.
             .browse(list(dict.fromkeys(self.env.context.get("active_ids") or [])))
             .filtered(
                 lambda o: (
@@ -84,7 +83,6 @@ class WizardPosOrderInvoice(models.TransientModel):
         return None
 
     def _open_customer_confirmation(self, orders) -> dict:
-        # Persist the displayed customer and selection before opening the dialog.
         confirmation = (
             self.env["wizard.pos.order.invoice.missing.customer"]
             .with_context(orders=orders.ids)
@@ -122,7 +120,6 @@ class WizardPosOrderInvoice(models.TransientModel):
         return list(orders.grouped(self._get_invoice_group_key).values())
 
     def _check_refund_invoice_groups(self, groups) -> None:
-        # Validate every group before posting any invoice in the batch.
         invalid_orders = self.env["pos.order"]
         for orders in groups:
             if len(orders) > 1:
@@ -141,7 +138,6 @@ class WizardPosOrderInvoice(models.TransientModel):
             )
 
     def _get_invoice_group_key(self, order) -> tuple:
-        """Keep every singleton consumed by the invoice preparation homogeneous."""
         return (
             order.config_id,
             order.partner_id,

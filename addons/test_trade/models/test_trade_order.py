@@ -12,21 +12,12 @@ class TestTradeOrder(models.Model):
     ]
     _description = "Base Order Test"
 
-    # FIELDS
 
-    # Order line block
     line_ids = fields.One2many(comodel_name="test_trade.order.line")
-    # Declared on `mixin.order` with an abstract comodel: a concrete model
-    # that does not repoint it hands back `mixin.order` records.
     duplicated_order_ids = fields.Many2many(comodel_name="test_trade.order")
-    # References
     partner_ref = fields.Char(copy=False)
 
-    # HELPER METHODS
 
-    # A third order type: it behaves like a sale, and it is not sale.order.
-    # Direction is shared; identity is its own -- that split is the whole
-    # reason these are separate declarations.
     _direction = SALE
     _lock_setting_field = "test_trade_order_lock"
 
@@ -39,7 +30,6 @@ class TestTradeOrder(models.Model):
     def _get_duplicate_ref_field(self):
         return "partner_ref"
 
-    # ─── Hooks consumed by later tasks (safe generic defaults) ─────
 
     def _get_display_name_suffix(self):
         if not self.env.context.get(self._get_display_name_context_key()):

@@ -16,9 +16,6 @@ class TestTripHardening(TripFixtureMixin, TransactionCase):
         super().setUpClass()
         cls.not_ordered = cls.env.ref("stock_fleet_trace.unbatch_reason_not_ordered")
 
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
     def _event(self, uuid, event_type, picking=None, **payload):
         return {
             "client_uuid": uuid,
@@ -97,14 +94,10 @@ class TestTripHardening(TripFixtureMixin, TransactionCase):
     def _rows(self, trip):
         return {row["picking"]: row for row in trip._trip_report_stops()}
 
-    # ------------------------------------------------------------------
-    # Phone hash chain and sync
-    # ------------------------------------------------------------------
     def test_after_a_gap_the_rest_of_the_same_sync_is_still_applied(self):
         first, second = self._delivery(5), self._delivery(2)
         trip = self._trip(first | second)
         trip.action_depart()
-        # The phone lost an event: its next one chains to a hash never received.
         events = self._chain(
             trip,
             [
@@ -194,9 +187,6 @@ class TestTripHardening(TripFixtureMixin, TransactionCase):
         self.assertNotIn("fuel", codes)
         self.assertNotIn("driver_change", codes)
 
-    # ------------------------------------------------------------------
-    # Weight by delivery
-    # ------------------------------------------------------------------
     def test_a_rescue_trip_sheet_adds_up_after_a_spill(self):
         first, rest = self._delivery(5), self._delivery(2)
         trip = self._trip(first | rest)
@@ -233,7 +223,6 @@ class TestTripHardening(TripFixtureMixin, TransactionCase):
         trip.action_trip_load()
         trip.action_depart()
         self._stop_result(rejecting, 3, reason=self.not_ordered)
-        # The two sacks refused are free on the vehicle when they spill.
         self._spill(trip, 2)
 
         other_reserved = sum(other.move_ids.move_line_ids.mapped("quantity"))

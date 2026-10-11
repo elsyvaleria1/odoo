@@ -58,8 +58,6 @@ class RepairOrder(models.Model):
     def create(self, vals_list):
         _debug.lifecycle("repair_quality_create", count=len(vals_list))
         res = super().create(vals_list)
-        # One call for the batch: `_create_quality_checks_for_repair` is
-        # multi-record and its point searches do not depend on the repair.
         res.filtered(
             lambda repair: repair.state in ("confirmed", "under_repair")
         )._create_quality_checks_for_repair(["product", "operation"])
@@ -79,9 +77,6 @@ class RepairOrder(models.Model):
             ).unlink()
             started._create_quality_checks_for_repair(["product"])
         elif "trace_id" in vals:
-            # Only the per-product checks carry a lot -- that is what
-            # `_create_quality_checks_for_repair` fills in.  (`False` on an
-            # m2m does clear it, measured; `Command.clear()` only says so.)
             product_checks = started.quality_check_ids.filtered(
                 lambda c: c.measure_on == "product"
             )
@@ -112,7 +107,6 @@ class RepairOrder(models.Model):
                     repair.product_id, repair.picking_type_id, measure_on=measure
                 )
                 for point_ids_batch in batched(points.ids, 10_000, strict=False):
-                    # avoid fetching large HTML fields like `note` & `reason`
                     fields_to_fetch = [
                         "measure_frequency_type",
                         "repeat_unit",
@@ -132,8 +126,6 @@ class RepairOrder(models.Model):
                             )
                         )
                     else:
-                        # No need to find the intersection if there is only 1 repair,
-                        # the initial set of points are valid for said repair.
                         repair_points = self.env["quality.point"].browse(
                             point_ids_batch
                         )
@@ -148,7 +140,6 @@ class RepairOrder(models.Model):
                             "product_id": repair.product_id.id
                             if measure == "product"
                             else False,
-                            # `[]`, not `False`: an m2m takes commands.
                             "trace_ids": [Command.link(repair.trace_id.id)]
                             if measure == "product" and repair.trace_id
                             else [],

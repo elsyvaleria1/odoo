@@ -41,9 +41,6 @@ class StockPackageType(models.Model):
 
     @api.depends("package_carrier_type")
     def _compute_length_uom_name(self) -> None:
-        """
-        Keep default length_uom and then convert it later down the line
-        """
         super()._compute_length_uom_name()
         uom_name = (
             self.env["product.template"]._get_uom_from_setting("length").display_name

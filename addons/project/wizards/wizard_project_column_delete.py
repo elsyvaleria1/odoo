@@ -115,8 +115,6 @@ class WizardProjectColumnDelete(models.TransientModel):
                 "type": "ir.actions.act_window_close",
                 "infos": {"success": True},
             }
-        # opened from the column's own views, whose record may be gone: reopen
-        # the column list instead of reloading it
         Actions = self.env["ir.actions.actions"]
         action = Actions._get_action_dict_by_xml_id(
             self.env[self.res_model]._column_action

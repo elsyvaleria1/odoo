@@ -56,7 +56,6 @@ class HrVersion(models.Model):
             )
         )
 
-        # For hourly wage contracts generate the worked_days_line_ids manually
         if self.wage_type == "hourly":
             work_days_data = self.employee_id._get_work_duration_data_batch(
                 datetime.combine(payslip.date_from, time.min),
@@ -77,14 +76,9 @@ class HrVersion(models.Model):
                 )
             )
 
-        # Part Time Simulation
         old_wage_on_payroll = payslip.version_id.wage_on_signature
         old_wage = payslip.version_id.wage
         new_version_vals = {}
-        # Maps each reduced working schedule to whether it needs a bi-weekly
-        # attendance grid (a 1-in-10 day off can't be expressed within a
-        # single week) and how many non-lunch attendance lines to drop to
-        # reach it.
         part_time_schedules = {
             "90": (True, 2),
             "80": (False, 2),
@@ -101,11 +95,6 @@ class HrVersion(models.Model):
                 working_schedule != "100"
                 and working_schedule not in part_time_schedules
             ):
-                # The context value arrives raw from the configurator's HTTP
-                # request: anything but the mapped schedules would leave
-                # new_calendar the empty recordset below (blanking the
-                # simulation version's calendar mid-compute), and a
-                # non-numeric value would crash int() on a public route.
                 _debug.logic(
                     "simulation_schedule_unmapped",
                     version=self,

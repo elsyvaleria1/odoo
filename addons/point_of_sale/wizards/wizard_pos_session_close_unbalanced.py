@@ -26,7 +26,6 @@ class WizardPosSessionCloseUnbalanced(models.TransientModel):
         if len(session) != 1 or not session.exists():
             raise UserError(self.env._("Select exactly one session to close."))
         account = self.account_id
-        # account_readonly only locks the field in the view
         if not session.has_access("choose_balancing_account"):
             account = session._get_balancing_account()
         _debug.lifecycle(

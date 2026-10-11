@@ -55,6 +55,6 @@ class TestAPIKeys(TestTOTPMixin, HttpCase):
         self.install_totphook()
         self.start_tour("/odoo", "apikeys_tour_setup", login=self.user_test.login)
         self.start_tour("/odoo", "totp_tour_setup", login=self.user_test.login)
-        [(_, [key], [])] = self.messages  # pylint: disable=unbalanced-tuple-unpacking
+        [(_, [key], [])] = self.messages
         uid = self.xmlrpc_common.authenticate(db, self.user_test.login, key, {})
         self.assertEqual(uid, self.user_test.id)

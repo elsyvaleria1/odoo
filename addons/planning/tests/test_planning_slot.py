@@ -11,9 +11,8 @@ class TestPlanningContract(TestPlanningContractCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # This contract ends at the 15th of the month
         cls.employee_bert.version_id.write(
-            {  # Fixed term contract
+            {
                 "contract_date_end": datetime.strptime("2015-11-15", "%Y-%m-%d"),
                 "contract_date_start": datetime.strptime("2015-01-01", "%Y-%m-%d"),
                 "date_version": datetime.strptime("2015-01-01", "%Y-%m-%d"),
@@ -24,7 +23,6 @@ class TestPlanningContract(TestPlanningContractCommon):
         )
         cls.contract_cdd = cls.employee_bert.version_id
 
-        # This contract starts the next day
         cls.contract_cdi = cls.employee_bert.create_version(
             {
                 "contract_date_start": datetime.strptime("2015-11-16", "%Y-%m-%d"),
@@ -125,11 +123,6 @@ class TestPlanningContract(TestPlanningContractCommon):
         )
 
     def test_creation_recurrencing_planning_without_employee_contract_access(self):
-        """
-        The creation of recurring schedules requires information on contracts.
-        The goal is to test whether a user who is "Administrator" for Planning
-        but has no Employee and Contract rights can use this flow.
-        """
         planning_value = {
             "name": "Test planning",
             "start_datetime": datetime(2015, 11, 8, 00, 00, 00),
@@ -165,13 +158,7 @@ class TestPlanningContract(TestPlanningContractCommon):
         )
 
     def test_allocated_hours_of_slot_with_flexible_contract(self):
-        """
-        When a flexible or fully flexible employee plan a slot outside the period of
-        the contract, the pre-computed allocated hours should be 0 hours.
-        Additionally, apply the test for a flexible contract with no end date.
-        """
 
-        # 1) Set a fully flexible contract for an employee
         self.employee_joseph.version_id.write(
             {
                 "contract_date_end": datetime.strptime("2015-12-16", "%Y-%m-%d"),
@@ -183,7 +170,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             }
         )
 
-        # Create a slot outside the contract period
         slot_outside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 17, 8, 0, 0),
@@ -197,7 +183,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             "The allocated hours should be 0 for a slot outside the contract period of a fully flexible employee",
         )
 
-        # Create a slot inside the contract period
         slot_inside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 16, 1, 0, 0),
@@ -211,7 +196,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             "The allocated hours should equal the whole length of the slot inside the contract period of a fully flexible employee",
         )
 
-        # 2) Set a flexible contract for another employee
         self.employee_janice.version_id.write(
             {
                 "date_version": datetime.strptime("2015-11-16", "%Y-%m-%d"),
@@ -223,7 +207,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             }
         )
 
-        # Create a slot outside the contract period
         slot_outside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 17, 8, 0, 0),
@@ -237,7 +220,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             "The allocated hours should be 0 for a slot outside the contract period of a flexible employee",
         )
 
-        # Create a slot inside the contract period
         slot_inside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 16, 8, 0, 0),
@@ -251,7 +233,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             "The allocated hours should be 6 for a slot inside the contract period of a flexible employee",
         )
 
-        # 3) Set a flexible contract with no end date for another employee
         self.employee_janice.create_version(
             {
                 "date_version": datetime.strptime("2016-01-16", "%Y-%m-%d"),
@@ -277,26 +258,20 @@ class TestPlanningContract(TestPlanningContractCommon):
         )
 
     def test_allocated_hours_of_slot_overlapping_with_contract_period(self):
-        """
-        When a flexible or fully flexible employee plan a slot partially outside the period of
-        the contract, the pre-computed allocated hours should be the hours within the contract period.
-        """
 
-        # 1) Set a fully flexible contract for an employee
         self.employee_joseph.version_id.write(
             {
                 "date_version": datetime.strptime("2015-11-16", "%Y-%m-%d"),
                 "contract_date_start": datetime.strptime("2015-11-16", "%Y-%m-%d"),
                 "contract_date_end": datetime.strptime(
                     "2015-12-16", "%Y-%m-%d"
-                ),  # contract will end at 2015-12-16 23:59:59
+                ),
                 "name": "Fully flex contract for Joseph",
                 "resource_calendar_id": False,
                 "wage": 5000.0,
             }
         )
 
-        # Create a slot partially outside the contract period
         slot_outside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 16, 8, 0, 0),
@@ -310,7 +285,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             "The allocated hours should be 16h (8AM to 12PM) of the 16th of December for the fully flexible employee",
         )
 
-        # 2) Set a flexible contract for another employee
         self.employee_janice.version_id.write(
             {
                 "date_version": datetime.strptime("2015-11-16", "%Y-%m-%d"),
@@ -322,7 +296,6 @@ class TestPlanningContract(TestPlanningContractCommon):
             }
         )
 
-        # Create a slot partially outside the contract period
         slot_outside = self.env["planning.slot"].create(
             {
                 "start_datetime": datetime(2015, 12, 16, 8, 0, 0),
@@ -408,5 +381,4 @@ class TestFlexibleSlotsShareTheWeek(TransactionCase):
         later = self._slot(self.wednesday, self.wednesday + timedelta(days=7))
         later.allocated_hours = 20.0
         self.assertEqual(self._hours(later), [(20.0, 20.0)])
-        # alone the slot holds 56 h, and 20 h of it fits in what is left
         self.assertAlmostEqual(later.allocated_percentage, 100 * 20 / 56, places=4)

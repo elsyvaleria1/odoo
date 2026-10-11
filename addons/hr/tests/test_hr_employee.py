@@ -160,7 +160,6 @@ class TestHrEmployee(TestHrCommon):
         with self.assertRaises(ValidationError):
             employee.tz = False
 
-        # A person may have no timezone; the resource then keeps its own.
         self.res_users_hr_officer.tz = False
         self.assertEqual(employee.tz, "Europe/London")
 
@@ -180,9 +179,6 @@ class TestHrEmployee(TestHrCommon):
         employee_form.work_email = "raoul@example.com"
         employee_form.user_id = self.res_users_hr_officer
         employee = employee_form.save()
-        # Choosing the user makes the employee that person: the name typed
-        # before is replaced by the party's, and renaming afterwards renames
-        # the party.
         self.assertEqual(employee.name, self.res_users_hr_officer.name)
         self.assertEqual(employee.partner_id, self.res_users_hr_officer.partner_id)
         employee.name = "Raoul Grosbedon"
@@ -224,8 +220,6 @@ class TestHrEmployee(TestHrCommon):
         self.assertTrue(self.employee_without_image.avatar_1920)
 
     def test_a_blank_after_strip_name_does_not_crash_create(self):
-        # hr accepts a blank name; a module may refuse one (hr_employee_firstname
-        # does, for payroll), and a ValidationError is that refusal, not a crash
         for name in ("   ", "\t", ""):
             with self.subTest(name=name):
                 try:
@@ -913,8 +907,6 @@ class TestHrEmployee(TestHrCommon):
                 "work_email": "second_employee@test.com",
             }
         )
-        # One person, one set of work channels: a second employment reads and
-        # writes the same party as the first.
         self.assertEqual(second_employee.phone_ids, partner.phone_ids)
         self.assertEqual(second_employee.phone_ids, first_employee.phone_ids)
         self.assertEqual(second_employee.work_email, partner.email)
@@ -1146,7 +1138,6 @@ class TestPublicBirthdayLanguage(TestHrCommon):
         )
 
     def test_a_hidden_birthday_stays_hidden(self):
-        """The other branch must not move."""
         self.celebrant.birthday_public_display = False
         self.celebrant.invalidate_recordset(["birthday_public_display_string"])
 
@@ -1204,7 +1195,6 @@ class TestPresenceOutOfContract(TestHrCommon):
         )
 
     def test_an_employee_under_contract_is_still_reported_present(self):
-        """The control: the state must keep working for everybody else."""
         employee = self._online_employee(
             date_version="2020-01-01", contract_date_start="2020-01-01"
         )
@@ -1240,12 +1230,6 @@ class TestEmployeeKanbanLaunchPlan(TestHrCommon):
         )
 
     def test_the_kanban_declares_the_renderer_that_was_registered_for_it(self):
-        """`hr_employee_kanban` is registered in JS and no view asked for it.
-
-        `static/src/views/kanban_view.js` adds it to the views registry, so it is
-        built on every page load and then never used -- the kanban falls back to
-        the generic renderer.
-        """
         self.assertEqual(
             self._kanban_arch().get("js_class"),
             "hr_employee_kanban",

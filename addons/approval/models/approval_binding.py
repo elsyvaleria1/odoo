@@ -207,7 +207,6 @@ class ApprovalBinding(models.Model):
         return self.verb or self.method or self.action_id.name or "?"
 
     def _get_method_name(self) -> str | None:
-        """The method a replay calls: the bound method, or the verb's first door."""
         self.check_singleton()
         if self.method or not self.verb:
             return self.method or None
@@ -215,7 +214,6 @@ class ApprovalBinding(models.Model):
         return verb.methods[0] if verb and verb.methods else None
 
     def _is_document_obligation(self) -> bool:
-        """A verb binding with no category: the document asks its own approval."""
         self.check_singleton()
         model = self.env.get(self.model_id.model)
         return bool(
@@ -252,7 +250,6 @@ class ApprovalBinding(models.Model):
     def _domain_source_field(self) -> str:
         return "subject_domain"
 
-    # -- configuration-time validation ------------------------------------
 
     @api.constrains(
         "model_id",
@@ -430,8 +427,6 @@ class ApprovalBinding(models.Model):
                 )
 
     def _check_move_decides(self, model) -> None:
-        """A move decides only on a document whose state is its approval, and only
-        through a verb that is that state's move."""
         self.check_singleton()
         verb = self.env.registry.model_verbs.get(model._name, {}).get(self.verb or "")
         synced = isinstance(model, self.env.registry["mixin.approval.state.sync"])
@@ -495,7 +490,6 @@ class ApprovalBinding(models.Model):
         "base.",
         "bus.",
     )
-    # what the gate stops or whom it stops; any other field leaves both as they are
     _SYSTEM_GATED_FIELDS = frozenset(
         {"model_id", "method", "verb", "action_id", "mode", "subject_domain"}
     )
@@ -515,10 +509,6 @@ class ApprovalBinding(models.Model):
             )
 
     def _check_gate_left_to_system(self) -> None:
-        """A non-system user may not gate a system model, nor set what a gate that
-        applies to everyone stops: either can stop the superuser and the server.
-        Checked on the changes themselves, not as a constraint, so an approval
-        manager still edits the rest of a shipped `enforce` binding."""
         if self.env.context.get("install_module") or self.env.user._is_system():
             return
         for binding in self:
@@ -728,8 +718,6 @@ class ApprovalBinding(models.Model):
         self.check_singleton()
         if self.mode != "advise" and not self._has_anyone_to_ask():
             return records.browse()
-        # The condition reads the record whole: a caller who cannot read what it
-        # reads must not fall outside the gate for that.
         probe = records.sudo()
         if self.subject_domain:
             domain = self._parse_domain_or_warn()
@@ -778,7 +766,6 @@ class ApprovalBinding(models.Model):
             ("state", "=", "approved"),
         ]
         if self.run_on_approval:
-            # an approval that runs its operation is spent on that run
             domain.append(("date_binding_replayed", "=", False))
         by_id = {record.id: record for record in records}
         covered = set()
@@ -848,8 +835,6 @@ class ApprovalBinding(models.Model):
         covered_ids,
         asking: bool = False,
     ) -> bool:
-        """Whether `record` wants a request; `asking` is the button's check, where
-        Block asks too, since nothing runs that the refusal would have to undo."""
         self.check_singleton()
         covered = record.id in covered_ids
 
@@ -907,9 +892,6 @@ class ApprovalBinding(models.Model):
         return True
 
     def _get_latest_requests(self, records) -> dict[int, Any]:
-        """The latest request raised through this binding for each of `records`, read
-        under sudo: a caller who cannot read the request an earlier caller raised
-        must find it all the same, not raise a second one."""
         self.check_singleton()
         if not records:
             return {}
@@ -1205,7 +1187,6 @@ class ApprovalBinding(models.Model):
     @api.model
     @ormcache("action_id")
     def _get_action_binding_ids(self, action_id: int) -> tuple[int, ...]:
-        """The bindings on one action, cached like the method lookup and for the same reason."""
         return tuple(
             self.sudo()
             .with_context(active_test=True)
@@ -1214,7 +1195,6 @@ class ApprovalBinding(models.Model):
         )
 
     def _run_action_on(self, records):
-        """Run this binding's server action on `records`, in their environment."""
         self.check_singleton()
         action = records.env["ir.actions.server"].browse(self.action_id.id)
         trace.BINDING.note(
@@ -1226,7 +1206,6 @@ class ApprovalBinding(models.Model):
             active_id=records[:1].id,
         ).run()
 
-    # -- keeping the registry in step with the configuration ---------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -1280,8 +1259,6 @@ class ApprovalBinding(models.Model):
                 )
 
     def _check_move_decides_kept(self, vals=None) -> None:
-        """A shipped move-decides obligation is the document's own approval flow:
-        switching it off would leave requests nobody's move ever decides."""
         if self.env.context.get(MODULE_UNINSTALL_FLAG):
             return
         frozen = ("mode", "active", "verb", "model_id")
@@ -1310,7 +1287,6 @@ class ApprovalBinding(models.Model):
         return result
 
     def _get_requests_holding_decisions(self, records):
-        """The requests a reset clears: approved ones, and waiting ones already decided in part."""
         self.check_singleton()
         waiting = (
             self.env["approval.request"]
@@ -1340,8 +1316,6 @@ class ApprovalBinding(models.Model):
         return covering | waiting
 
     def _get_covering_requests(self, records):
-        """Every approved request that could be covering these records, as
-        _get_covered_ids reads coverage."""
         self.check_singleton()
         if "approval_request_id" in records._fields:
             return records.sudo().approval_request_id.filtered(
@@ -1368,13 +1342,6 @@ class ApprovalBinding(models.Model):
         )
 
     def _reset_coverage(self, records) -> None:
-        """Reset to draft the approvals that covered these records.
-
-        Through `action_reset_to_draft`, the framework's own lifecycle, so an
-        adopter is told through `_on_approval_reset` and the decisions stay in the
-        request's chatter. The one-shot stamp is cleared, so a binding that runs on
-        approval runs again in the next cycle.
-        """
         self.check_singleton()
         holding = self._get_requests_holding_decisions(records)
         trace.BINDING.note(
@@ -1430,7 +1397,6 @@ class ApprovalBinding(models.Model):
             self._register_hook()
             self.env.registry.registry_invalidated = True
 
-    # -- registry patching -------------------------------------------------
 
     def _register_hook(self):
         super()._register_hook()
@@ -1479,7 +1445,6 @@ class ApprovalBinding(models.Model):
                 setattr(ModelClass, method_name, guarded)
 
     def _unregister_hook(self) -> None:
-        """Remove only our own wrappers, identified by the marker we set."""
         for ModelClass in self.env.registry.values():
             for name, function in list(vars(ModelClass).items()):
                 if getattr(function, ORIGIN_ATTR, None) is not None:
@@ -1534,9 +1499,6 @@ class ApprovalBinding(models.Model):
                     method=label,
                 ),
             )
-        # A call approval would replay without its arguments is refused, unless
-        # its caller approves it on invoke and it runs now: the savepoint takes
-        # back the requests raised for a call that is refused after all.
         unreplayable = not replayable and any(
             binding.run_on_approval for binding in wanting
         )
@@ -1639,12 +1601,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _run_admitted(self, records, operation: str, call):
-        """Run `call(records)` with `records` let through `operation`'s own wrapper.
-
-        The ids are part of the admission: an operation that posts other records
-        inside the admitted call leaves those records to be checked on their own.
-        The admission lives on the transaction for the length of the call only.
-        """
         with records.env.transaction.admitting(records._name, operation, records.ids):
             return call(records)
 
@@ -1654,11 +1610,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _enforce_at_checkpoint(self, records, bindings, operation: str) -> None:
-        """Hold `operation`'s bindings on a path that reaches its checkpoint.
-
-        A checkpoint can neither ask for an approval nor keep a request it raised,
-        so a record Block or Request mode would stop is refused here.
-        """
         admitted = self._get_admitted_ids(records, operation)
         pending = records.filtered(lambda record: record.id not in admitted)
         trace.BINDING.event(
@@ -1700,7 +1651,6 @@ class ApprovalBinding(models.Model):
                 ),
             )
 
-    # -- verbs: the kernel's doors and checkpoints ask these -----------------
 
     @api.model
     def _get_declared_verb(self, records, verb: str):
@@ -1708,7 +1658,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _get_own_verb(self, records) -> str | None:
-        """The verb a document's own obligation holds, for a request naming none."""
         for verb in records.env.registry.model_verbs.get(records._name, ()):
             own, _configured = self._split_verb_bindings(records._name, verb)
             if own:
@@ -1717,11 +1666,6 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _split_verb_bindings(self, model_name: str, verb: str) -> tuple:
-        """The document's own obligation on `verb`, and the configured bindings.
-
-        A shipped obligation is the code gate it replaces, which the kill switch
-        never reached; the configured bindings keep answering to it.
-        """
         bindings = self._bindings_for_verb(model_name, verb).filtered(
             lambda binding: binding.mode != "act_decides"
         )
@@ -1735,14 +1679,12 @@ class ApprovalBinding(models.Model):
 
     @api.model
     def _move_decides(self, model_name: str, verb: str) -> bool:
-        """Whether moving a document into `verb`'s state is the request's decision."""
         return any(
             binding.mode == "act_decides"
             for binding in self._bindings_for_verb(model_name, verb)
         )
 
     def _hold_document_at_door(self, records, verb: str, run):
-        """A document asks its own approval at the verb's door, as its code gate did."""
         self.check_singleton()
         records._check_before_approval(verb)
         if self.mode == "request" and not self._passes_on_elevation(self._elevation()):

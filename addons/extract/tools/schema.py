@@ -66,10 +66,6 @@ class FieldSpec:
         if self.choices:
             return self._choice(value)
         if self.type == "date":
-            # Never short-circuited on `accepts`, which passes any str -- that
-            # looseness is the whole reason a date needs coercing, and
-            # returning "12/03/2026" untouched is how an unparseable date
-            # reaches the consistency rules and raises inside one.
             return to_date(value).isoformat()
         if self.type in ("float", "int"):
             if isinstance(value, bool):
@@ -86,9 +82,6 @@ class FieldSpec:
             raise ValueError(f"{value!r} is not a {self.type}")
         if self.type == "list" and self.items is not None:
             rows = [row for row in map(self._coerce_row, value) if row is not None]
-            # None and not [], so a required list whose every row was unreadable
-            # is reported missing. `Schema.missing` asks `is None`, and an empty
-            # list satisfies a requirement while carrying nothing.
             return rows or None
         return value
 
@@ -102,10 +95,6 @@ class FieldSpec:
         raise ValueError(f"{value!r} is not one of {', '.join(self.choices)}")
 
     def _coerce_row(self, row: Any) -> dict[str, Any] | None:
-        # A row that cannot be read is dropped and the rest of the list is kept.
-        # Raising instead would discard every row because one of them was
-        # unreadable, and send the cascade back to a more expensive strategy for
-        # a list it had already read.
         if not isinstance(row, dict):
             row = self._row_of(row)
             if row is None:
@@ -123,10 +112,6 @@ class FieldSpec:
         return read or None
 
     def _row_of(self, value: Any) -> dict[str, Any] | None:
-        # A skill is "Python" as readily as {"name": "Python"}, and a row with
-        # exactly one required key has exactly one place the bare value can go.
-        # With two, there is no such place and guessing one would be the
-        # unwritten contract this declaration exists to end.
         if value is None:
             return None
         required = [name for name, spec in self.items.items() if spec.required]

@@ -177,9 +177,6 @@ class TestExchangeTransmission(ExchangeCase):
         self.assertEqual(transmission.reference, "JOB-1")
 
     def test_the_enqueued_job_is_what_the_runner_will_execute(self):
-        # The unit above proves a row was written. This proves the row describes
-        # work that does the right thing when driven the way `ir.job` drives it:
-        # `getattr(env[model_name].browse(record_ids), method_name)()`.
         self.env["ir.job"].search([]).unlink()
         transmission = self._add_transmission()
 
@@ -397,12 +394,6 @@ class TestExchangeClaim(ExchangeCase):
     """A send has an effect no rollback undoes, so two senders must not both make it."""
 
     def _held_elsewhere(self):
-        """Make the row read as held by another transaction.
-
-        The real lock cannot be exercised from one test transaction: a second
-        cursor cannot see a record this one has not committed. So this stands in
-        for what SKIP LOCKED returns when somebody else holds the row.
-        """
         self.patch(
             self.registry["exchange.transmission"],
             "try_lock_for_update",

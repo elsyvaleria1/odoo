@@ -1,4 +1,3 @@
-# The currencies supported by Xendit, in ISO 4217 format.
 SUPPORTED_CURRENCIES = [
     "IDR",
     "MYR",
@@ -7,8 +6,6 @@ SUPPORTED_CURRENCIES = [
     "VND",
 ]
 
-# To correctly allow lowest decimal place rounding
-# https://docs.xendit.co/payment-link/payment-channels
 CURRENCY_DECIMALS = {
     "IDR": 0,
     "MYR": 0,
@@ -17,35 +14,23 @@ CURRENCY_DECIMALS = {
     "VND": 0,
 }
 
-# The codes of the payment methods to activate when Xendit is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods.
-    # ID
     "card",
     "dana",
     "ovo",
     "qris",
-    # MY
     "fpx",
     "touch_n_go",
-    # TH
     "promptpay",
     "linepay",
     "shopeepay",
-    # VN
     "appota",
     "zalopay",
     "vnptwallet",
-    # Brand payment methods.
     "visa",
     "mastercard",
 }
 
-# FPX is an online payment method in Malaysia that allows customers to make payments directly from their bank accounts.
-# Items prefixed with "DD_" are for individual account and doing direct debit
-# Items suffixed with "_BUSINESS" are for business accounts
-# When user chooses FPX in Odoo, this list becomes filtered payment options in Xendit dashboard
-# When webhook is received from Xendit, we can map all of these options back to 'fpx' in Odoo
 FPX_METHODS = [
     "DD_UOB_FPX",
     "DD_PUBLIC_FPX",
@@ -88,7 +73,6 @@ FPX_METHODS = [
     "UOB_FPX_BUSINESS",
 ]
 
-# Mapping of payment code to channel code according to Xendit API
 PAYMENT_METHODS_MAPPING = {
     "bank_bca": "BCA",
     "bank_permata": "PERMATA",
@@ -103,7 +87,6 @@ PAYMENT_METHODS_MAPPING = {
     **dict.fromkeys(FPX_METHODS, "fpx"),
 }
 
-# Mapping of transaction states to Xendit payment statuses.
 PAYMENT_STATUS_MAPPING = {
     "draft": (),
     "pending": ("PENDING"),

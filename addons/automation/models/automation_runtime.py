@@ -240,7 +240,6 @@ class AutomationRuntime(models.Model):
 
     @api.model
     def _get_input_fields(self):
-        """Return the fields the step named by the context asks for."""
         line = (
             self.env["automation.runtime.line"]
             .browse(self.env.context.get(INPUT_CONTEXT_KEY))
@@ -675,8 +674,6 @@ class AutomationRuntime(models.Model):
         return self.line_ids.filtered(lambda line: line._awaits_input())
 
     def _get_input_action(self, line) -> dict:
-        """Open the dialog `line` waits on: the run's fields for an Input step,
-        the step's own fields for a step that needs them before it runs."""
         self.check_singleton()
         if line.action_id.node_type != "input" or not line.action_id.input_field_ids:
             return line._get_input_action()
@@ -864,7 +861,6 @@ class AutomationRuntime(models.Model):
         return added
 
     def action_sync_to_definition(self) -> None:
-        """Bring this run up to its automation's current graph, running nothing."""
         self._sync_to_definition(advance=False)
 
     def _sync_to_definition(self, advance=True) -> None:
@@ -928,13 +924,6 @@ class AutomationRuntime(models.Model):
         runs._notify_workflow_change()
 
     def _sync_topology(self, definition) -> models.Model:
-        """Make the edges into steps not yet run match `definition`.
-
-        An edge the automation no longer has is retired and one it gained is
-        added, but only into a step still waiting, scheduled or ready: a step
-        that ran keeps the edges it ran under. Returns the steps whose incoming
-        edges changed.
-        """
         open_states = ("waiting", "scheduled", "ready")
         Edge = self.env["automation.runtime.edge"]
         retired = self.edge_ids.filtered(
@@ -997,15 +986,7 @@ class AutomationRuntime(models.Model):
 
     @api.readonly
     def get_workflow_graph(self) -> dict:
-        """Return the steps and connections of this run for the workflow canvas.
-
-        Read from the run's own lines and edges, not from the definition: a
-        run keeps the graph it started with, so a step added to the automation
-        since is not one of its steps and must not be drawn as one.
-        """
         self.check_singleton()
-        # Whoever may read a run may see it drawn: the privilege adds the
-        # steps and the automation it was started from, and nothing else.
         run = self.with_privilege(
             "automation.privilege_draw_run",
             reason="a run's diagram reads the steps the run was started from",

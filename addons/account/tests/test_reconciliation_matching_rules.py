@@ -3078,14 +3078,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
         )
 
     def test_user_reconcile_model_outranks_auto_created_one(self):
-        """A model the accountant wrote must be offered before one odoobot inferred.
-
-        `_create_reconciliation_rule` sets no sequence, so an auto-created model
-        takes the field default and ties with a hand-written one. The tie used
-        to break on `id ASC`, which favours whichever was created first --
-        normally the automatic one, since the user writes their rule in reaction
-        to it.
-        """
         auto_model = self._create_reconcile_model(
             name="Inferred by odoobot",
             created_automatically=True,
@@ -3116,7 +3108,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
         )
 
     def test_partner_mapping_prefers_the_accountants_model(self):
-        """Same ranking, on the query that fills in a missing partner."""
         self._create_reconcile_model(
             name="Mapped by odoobot",
             created_automatically=True,
@@ -3157,7 +3148,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
         )
 
     def test_proposed_reconcile_model_prefers_the_accountants_model(self):
-        """Same ranking, on the query that picks the single model to propose."""
         auto_model = self._create_reconcile_model(
             name="Proposed by odoobot",
             created_automatically=True,

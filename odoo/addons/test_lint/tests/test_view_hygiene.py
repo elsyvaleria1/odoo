@@ -58,9 +58,6 @@ class OrphanLabelLinter(LintCase):
             for node in (el, *el.iterancestors())
         )
 
-    # Mirrors FormCompiler.compileLabel / compileField: a literal-invisible node
-    # is never compiled, a label waits for the next compiled field whose `id`
-    # (else `name`) it names, and binds at once to one already compiled.
     @classmethod
     def _orphans(cls, view, arch):
         present, buttons, compiled = set(), set(), set()
@@ -167,8 +164,6 @@ class ActWindowViewOrderLinter(LintCase):
 
         offenders = []
         for xmlid, modes in declared.items():
-            # the client merges both by (sequence, id): the action's own
-            # view_ids are created with it, before any other module's pin
             pinned = [
                 mode
                 for *_, mode in sorted(
@@ -287,10 +282,6 @@ class ActWindowViewOrderLinter(LintCase):
                 )
 
 
-# The form compiler builds these from `el.children`, which holds elements only:
-# a text node directly inside one is never rendered, yet it is exported for
-# translation. `page` only as a notebook's child and the button box only when it
-# has an element child; `app` and `block` only under the settings compiler.
 _FORM_TEXT_DROPPING = frozenset({"setting", "group", "notebook"})
 _SETTINGS_TEXT_DROPPING = frozenset({"app", "block"})
 _SETTINGS_JS_CLASS = "base_settings"

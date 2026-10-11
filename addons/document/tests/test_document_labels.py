@@ -114,9 +114,6 @@ class TestDocumentLabels(TransactionCaseDocuments):
         return access_class
 
     def test_a_class_someone_writes_without_reading_cannot_label(self):
-        # partner_group_restricted.partner_locked's shape: everyone writes,
-        # nobody reads; as a label it made a document everyone edited and
-        # nobody saw
         everyone = self.env.ref("base.group_everyone")
         user = self.env.ref("base.group_user")
         write_only = self._class(
@@ -201,10 +198,6 @@ class TestDocumentLabels(TransactionCaseDocuments):
         self.assertFalse(self.confidential.can_label)
 
     def test_a_class_reader_s_reach_is_searched_once(self):
-        # no label lets writing without reading, so the union of both bands
-        # is the view band, not the view and edit reaches side by side (twice
-        # the query of every search), whatever write-only field gate is
-        # co-installed
         self._class(
             "document.test_write_only",
             {

@@ -125,9 +125,6 @@ class TestApplicantExtraction(TransactionCase):
         self.assertFalse(applicant.extract_can_be_read)
 
     def test_a_blank_phone_creates_no_phone_record(self):
-        """A read the model was not sure of must not leave a numberless
-        ``phone.number`` behind: the target is a relation, so an empty string is
-        not simply an empty column."""
         before = self.env["phone.number"].search_count([])
         with _only(_Stub({**_READ, "phone": "   "})):
             applicant = self._applicant()
@@ -171,7 +168,6 @@ class TestApplicantExtraction(TransactionCase):
         self.assertEqual(recorded["corrected_to"], "+32 470 11 22 33")
 
     def test_clearing_the_phone_records_no_correction(self):
-        """An uncomparable write is not a correction to ``None``."""
         with _only(_Stub(_READ)):
             applicant = self._applicant()
             applicant.action_extract_document()

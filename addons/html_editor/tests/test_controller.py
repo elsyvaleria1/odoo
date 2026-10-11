@@ -94,8 +94,6 @@ class TestController(HttpCase):
             "3AADAA" not in str(response.content), "Old c1 should not be there anymore"
         )
 
-        # a palette colour is read from the frontend bundle's CSS, which a
-        # generated asset carries as content, not as indexed text
         frontend_css = (
             self.env["ir.qweb"]._get_asset_bundle("web.assets_frontend").css().raw
         ).decode("utf-8")

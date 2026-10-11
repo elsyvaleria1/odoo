@@ -11,7 +11,6 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _set_utm(cls, response) -> None:
-        # Make sure response is an odoo Response.
         response = Response.from_endpoint_result(response)
         domain = cls.get_utm_domain_cookies()
         for url_parameter, __, cookie_name in request.env[

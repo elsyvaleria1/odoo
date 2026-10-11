@@ -199,9 +199,6 @@ class DeviceConfig(models.Model):
                 self.device_ids
             )
         if self._SPEED_LIMIT_FIELDS & touched:
-            # speed_over_*_events are baked against the limits current at
-            # refresh time; new limits rewrite settled history, so the report
-            # must rebuild in full. Marking twice in one write is a no-op.
             self.env["device.data.log.gps.report"]._rolling_mark_stale()
         return result
 
@@ -278,7 +275,5 @@ class DeviceConfig(models.Model):
         self.check_singleton()
         corrected = self.get_corrected_odometer(raw_odometer)
         if not corrected:
-            # The offset shifts a genuine reading; a payload with no odometer
-            # must stay at 0 so NULLIF(real_odometer, 0) keeps excluding it.
             return 0.0
         return corrected + (device.odometer_initial_offset or 0)

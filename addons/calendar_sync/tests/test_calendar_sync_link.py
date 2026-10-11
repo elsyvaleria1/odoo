@@ -69,7 +69,6 @@ class TestCalendarSyncLink(TransactionCase):
         self._link(event_id=self.event.id, remote_id="r1")
         self._refused(UniqueViolation, event_id=other_event.id, remote_id="r1")
         self._link(self.other_account, event_id=other_event.id, remote_id="r1")
-        # an event that became a series under its own id
         self._link(recurrence_id=self.recurrence.id, remote_id="r1")
 
     def test_a_deleted_record_leaves_a_tombstone(self):

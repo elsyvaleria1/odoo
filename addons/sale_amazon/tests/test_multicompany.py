@@ -40,12 +40,10 @@ class TestAmazonMultiCompany(TestAmazonCommon):
 
     @mute_logger("odoo.addons.sale_amazon.models.amazon_account")
     def test_tax_application_on_sync_order_for_branch_company(self):
-        """Test the orders synchronization can assign taxes from parent company."""
 
         def find_matching_product_mock(
             _self, product_code_, _default_xmlid, default_name_, default_type_
         ):
-            """Return a product created on-the-fly with the product code as internal reference."""
             product_ = self.env["product.product"].create(
                 {
                     "name": default_name_,

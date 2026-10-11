@@ -11,7 +11,6 @@ _debug = DebugLog(__name__)
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
 
-    # used to know if generate a task and/or a project, depending on the product settings
     is_service = fields.Boolean(
         string="Is a Service",
         export_string_translation=False,

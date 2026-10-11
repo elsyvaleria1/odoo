@@ -63,10 +63,8 @@ class StockPicking(models.Model):
     )
 
     def _trip_scanned_by_lot(self):
-        """Units scanned at this stop, per (product, lot)."""
         self.check_singleton()
         scanned = defaultdict(float)
-        # Only this trip's scans: a delivery loaded again starts its count over.
         for scan in self.trip_scan_ids.filtered(
             lambda s: s.kind == "lot" and s.batch_id == self.batch_id
         ):

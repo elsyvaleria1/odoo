@@ -50,7 +50,6 @@ class Website(models.Model):
     def write(self, vals):
         result = super().write(vals)
         if "theme_scss_values" in vals:
-            # the frontend bundle generates the website's SCSS maps from it
             self.env.registry.clear_cache("assets")
         return result
 
@@ -68,9 +67,6 @@ class Website(models.Model):
     def _customize_theme(
         self, values=None, palette=None, theme_palette=None, gray_palette=None
     ) -> dict:
-        # The one entry point for code customizing a website's theme. Each
-        # group goes where it is stored: runtime keys to theme_values, the rest
-        # to the SCSS map the bundle compiles.
         self.check_singleton()
         assets = self.env["website.assets"].with_context(website_id=self.id)
         reload_bundles = False
@@ -127,7 +123,6 @@ class Website(models.Model):
         return number / RFS_REM_PX if value.endswith("px") else number
 
     def _is_theme_value_compile_needed(self, key, value) -> bool:
-        # A value the SCSS compile can carry but the runtime path cannot.
         if key in RUNTIME_GRADIENT_KEYS:
             return not is_theme_gradient(value)
         if key in RUNTIME_FONT_SIZE_KEYS:
@@ -146,8 +141,6 @@ class Website(models.Model):
             return True
         if key in RUNTIME_SET_ONLY_KEYS:
             if key in RE_MENU_BOX_VALUES and not self._theme_value_is_valid(key, value):
-                # Refused by _set_theme_values rather than written verbatim
-                # into an !important declaration.
                 return False
             if key in RUNTIME_THEME_COLOR_KEYS and not self._theme_value_is_valid(
                 key, value
@@ -269,10 +262,6 @@ class Website(models.Model):
         return self._theme_css_markup(declarations, rules)
 
     def _theme_css_markup(self, declarations, rules):
-        # The block is written into an inline <style>. Every value was checked
-        # when stored, but the field can be written around _set_theme_values,
-        # and no CSS value this code emits contains "<": refusing it keeps a
-        # stored "</style>" from closing the element.
         safe_declarations = [item for item in declarations if "<" not in item]
         safe_rules = [item for item in rules if "<" not in item]
         if len(safe_declarations) != len(declarations) or len(safe_rules) != len(rules):
@@ -285,7 +274,6 @@ class Website(models.Model):
         return Markup(css)
 
     def _theme_length_css(self, key, value):
-        # RFS prints a px font size in rem; the runtime value follows it.
         if key in RUNTIME_FONT_SIZE_KEYS | RUNTIME_HEADING_SIZE_KEYS and value.endswith(
             "px"
         ):

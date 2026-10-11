@@ -92,9 +92,6 @@ class SocialAccount(models.Model):
             self._firebase_send_message_from_iap(data, visitors)
 
     def _firebase_send_message_from_configuration(self, data, visitors):
-        """Sends messages one by one using the firebase REST API.
-        It requires a bearer token for authentication that we obtain using the google_auth library.
-        Returns he matched website.visitors (search_read records)."""
 
         if not visitors:
             return [], []

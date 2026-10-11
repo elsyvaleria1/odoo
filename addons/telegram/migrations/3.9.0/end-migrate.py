@@ -4,7 +4,6 @@ from odoo.addons.telegram.tools.authority import operating
 
 
 def migrate(cr, version):
-    # end stage: every feature module is loaded, so each menu names them all
     if not version:
         return
     env = api.Environment(cr, SUPERUSER_ID, {})

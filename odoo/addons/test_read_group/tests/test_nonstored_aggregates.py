@@ -30,7 +30,6 @@ class TestNonStoredAggregates(common.TransactionCase):
         self.assertEqual(info["integer"]["aggregator"], "sum")
         self.assertFalse(info["integer_doubled"].get("aggregator"))
         self.assertEqual(info["integer_doubled_peak"]["aggregator"], "max")
-        # composes its own SQL: aggregated by the database, not through records
         self.assertEqual(info["integer_squared"]["aggregator"], "sum")
         self.assertFalse(
             self.Task._aggregates_through_records(
@@ -80,9 +79,6 @@ class TestNonStoredAggregates(common.TransactionCase):
         self.assertEqual((total, biggest), (30, 16))
 
     def test_many2one_folds_to_ids(self):
-        # the SQL tier aggregates a many2one column, which holds ids; the fold
-        # must too, or the web client receives "res.currency(33,)" where a
-        # monetary list asks `currency_id:array_agg_distinct` of a group
         first, second = self.env["test_read_group.user"].create(
             [{"name": "first"}, {"name": "second"}]
         )
@@ -110,8 +106,6 @@ class TestNonStoredAggregates(common.TransactionCase):
         )
 
     def test_an_empty_group_folds_to_the_empty_value(self):
-        # the aggregate of a group whose records have no value is the aggregate's
-        # empty value, as a column of NULLs gives
         [(count, total)] = self.Task._read_group(
             [("id", "in", [])], [], ["integer_doubled:count", "integer_doubled:sum"]
         )
@@ -140,12 +134,9 @@ class TestNonStoredAggregates(common.TransactionCase):
         [(total,)] = Model._read_group(
             [("id", "in", records.ids)], [], ["total_twice:sum_currency"]
         )
-        # 20 USD stays 20; 10 EUR at 0.5 EUR per USD is 20 USD
         self.assertEqual(total, 40.0)
 
     def test_a_related_non_stored_field_is_still_refused(self):
-        # the fold is for a compute of the model's own; a non-stored related
-        # field keeps its rule, which reads through the target under sudo only
         Model = self.env["test_read_group.aggregate.monetary"].with_user(
             self.env.ref("base.user_admin")
         )

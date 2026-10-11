@@ -30,7 +30,6 @@ class AccountMove(models.Model):
         compute="_compute_edi_error_message",
     )
     edi_error_message = fields.Html(compute="_compute_edi_error_message")
-    # Technical field to display the documents that will be processed by the CRON
     edi_web_services_to_process = fields.Text(
         compute="_compute_edi_web_services_to_process"
     )
@@ -140,7 +139,6 @@ class AccountMove(models.Model):
 
     @api.depends("edi_document_ids.state")
     def _compute_show_reset_to_draft_button(self) -> None:
-        # OVERRIDE
         super()._compute_show_reset_to_draft_button()
         for move in self:
             if not move._check_edi_documents_for_reset_to_draft():
@@ -180,9 +178,6 @@ class AccountMove(models.Model):
                     move.edi_show_abandon_cancel_button = True
                     break
 
-    ####################################################
-    # Export Electronic Document
-    ####################################################
 
     def _prepare_edi_tax_details(
         self,
@@ -190,66 +185,6 @@ class AccountMove(models.Model):
         filter_invl_to_apply=None,
         grouping_key_generator=None,
     ):
-        """Compute amounts related to taxes for the current invoice.
-
-        :param filter_to_apply:         Optional filter to exclude some tax values from the final results.
-                                        The filter is defined as a method getting a dictionary as parameter
-                                        representing the tax values for a single repartition line.
-                                        This dictionary contains:
-
-            'base_line_id':             An account.move.line record.
-            'tax_id':                   An account.tax record.
-            'tax_repartition_line_id':  An account.tax.repartition.line record.
-            'base_amount':              The tax base amount expressed in company currency.
-            'tax_amount':               The tax amount expressed in company currency.
-            'base_amount_currency':     The tax base amount expressed in foreign currency.
-            'tax_amount_currency':      The tax amount expressed in foreign currency.
-
-                                        If the filter is returning False, it means the current tax values will be
-                                        ignored when computing the final results.
-
-        :param filter_invl_to_apply:    Optional filter to exclude some invoice lines.
-
-        :param grouping_key_generator:  Optional method used to group tax values together. By default, the tax values
-                                        are grouped by tax. This parameter is a method getting a dictionary as parameter
-                                        (same signature as 'filter_to_apply').
-
-                                        This method must returns a dictionary where values will be used to create the
-                                        grouping_key to aggregate tax values together. The returned dictionary is added
-                                        to each tax details in order to retrieve the full grouping_key later.
-
-        :return:                        The full tax details for the current invoice and for each invoice line
-                                        separately. The returned dictionary is the following:
-
-            'base_amount':              The total tax base amount in company currency for the whole invoice.
-            'tax_amount':               The total tax amount in company currency for the whole invoice.
-            'base_amount_currency':     The total tax base amount in foreign currency for the whole invoice.
-            'tax_amount_currency':      The total tax amount in foreign currency for the whole invoice.
-            'tax_details':              A mapping of each grouping key (see 'grouping_key_generator') to a dictionary
-                                        containing:
-
-                'base_amount':              The tax base amount in company currency for the current group.
-                'tax_amount':               The tax amount in company currency for the current group.
-                'base_amount_currency':     The tax base amount in foreign currency for the current group.
-                'tax_amount_currency':      The tax amount in foreign currency for the current group.
-                'group_tax_details':        The list of all tax values aggregated into this group.
-
-            'tax_details_per_record': A mapping of each invoice line to a dictionary containing:
-
-                'base_amount':          The total tax base amount in company currency for the whole invoice line.
-                'tax_amount':           The total tax amount in company currency for the whole invoice line.
-                'base_amount_currency': The total tax base amount in foreign currency for the whole invoice line.
-                'tax_amount_currency':  The total tax amount in foreign currency for the whole invoice line.
-                'tax_details':          A mapping of each grouping key (see 'grouping_key_generator') to a dictionary
-                                        containing:
-
-                    'base_amount':          The tax base amount in company currency for the current group.
-                    'tax_amount':           The tax amount in company currency for the current group.
-                    'base_amount_currency': The tax base amount in foreign currency for the current group.
-                    'tax_amount_currency':  The tax amount in foreign currency for the current group.
-                    'group_tax_details':    The list of all tax values aggregated into this group.
-
-        """
         return self._prepare_invoice_aggregated_taxes(
             filter_invl_to_apply=filter_invl_to_apply,
             filter_tax_values_to_apply=filter_to_apply,
@@ -257,8 +192,6 @@ class AccountMove(models.Model):
         )
 
     def _is_ready_to_be_sent(self) -> bool:
-        # OVERRIDE
-        # Prevent a mail to be sent to the customer if the EDI document is not sent.
         res = super()._is_ready_to_be_sent()
 
         if not res:
@@ -270,8 +203,6 @@ class AccountMove(models.Model):
         return not bool(edi_documents_to_send)
 
     def _post_entries(self):
-        # OVERRIDE
-        # Set the electronic document to be posted and post immediately for synchronous formats.
         posted = super()._post_entries()
 
         edi_document_vals_list = []
@@ -315,7 +246,6 @@ class AccountMove(models.Model):
         return posted
 
     def button_force_cancel(self) -> None:
-        """Cancel the invoice without waiting for the cancellation request to succeed."""
         for move in self:
             to_cancel_edi_documents = move.edi_document_ids.filtered(
                 lambda doc: doc.state == "to_cancel"
@@ -329,8 +259,6 @@ class AccountMove(models.Model):
         self.action_cancel()
 
     def action_cancel(self):
-        # OVERRIDE
-        # Set the electronic document to be canceled and cancel immediately for synchronous formats.
         res = super().action_cancel()
 
         self.edi_document_ids.filtered(lambda doc: doc.state != "sent").write(
@@ -349,7 +277,6 @@ class AccountMove(models.Model):
         return not self.edi_show_cancel_button
 
     def action_draft(self):
-        # OVERRIDE
         for move in self:
             if not move._edi_allow_action_draft():
                 raise UserError(
@@ -368,7 +295,6 @@ class AccountMove(models.Model):
         return res
 
     def button_cancel_posted_moves(self):
-        """Mark the edi.document related to this move to be canceled."""
         to_cancel_documents = self.env["account.edi.document"]
         for move in self:
             move._check_fiscal_lock_dates()
@@ -393,7 +319,6 @@ class AccountMove(models.Model):
         )
 
     def button_abandon_cancel_posted_posted_moves(self) -> None:
-        """Cancel the request for cancellation of the EDI."""
         documents = self.env["account.edi.document"]
         for move in self:
             is_move_marked = False
@@ -421,7 +346,6 @@ class AccountMove(models.Model):
     def _get_edi_attachment(self, edi_format):
         return self._get_edi_document(edi_format).sudo().attachment_id
 
-    # this override is to make sure that the main attachment is not the edi xml otherwise the attachment viewer will not work correctly
     def _message_set_main_attachment_id(
         self, attachments, force=False, filter_xml=True
     ) -> None:
@@ -435,9 +359,6 @@ class AccountMove(models.Model):
             attachments, force=force, filter_xml=filter_xml
         )
 
-    ####################################################
-    # Business operations
-    ####################################################
 
     def button_process_edi_web_services(self) -> None:
         self.check_singleton()
@@ -452,19 +373,14 @@ class AccountMove(models.Model):
         docs._process_documents_web_services(with_commit=with_commit)
 
     def _retry_edi_documents_error(self):
-        """Called when edi_documents need to be retried."""
         self.edi_document_ids.write({"error": False, "blocking_level": False})
 
     def action_retry_edi_documents_error(self) -> None:
         self._retry_edi_documents_error()
         self.action_process_edi_web_services()
 
-    ####################################################
-    # Mailing
-    ####################################################
 
     def _process_attachments_for_template_post(self, mail_template):
-        """Add Edi attachments to templates."""
         result = super()._process_attachments_for_template_post(mail_template)
         for move in self.filtered("edi_document_ids"):
             move_result = result.setdefault(move.id, {})

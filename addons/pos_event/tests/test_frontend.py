@@ -221,7 +221,6 @@ class TestUi(TestPointOfSaleHttpCommon):
                 "event_slot_ids": [(6, 0, (slot_1 + slot_2).ids)],
             }
         )
-        # Reduce first slot availability by one
         registration_1_basic = self.env["event.registration"].create(
             [
                 {
@@ -278,7 +277,6 @@ class TestUi(TestPointOfSaleHttpCommon):
         self.assertTrue(order.lines[1].event_registration_ids)
 
     def test_orderline_price_remain_same_as_ticket_price(self):
-        """Test that the order line price remains the same as the ticket price when the customer added to the order."""
         self.pos_user.write(
             {
                 "group_ids": [
@@ -336,7 +334,6 @@ class TestUi(TestPointOfSaleHttpCommon):
         )
         self.assertEqual(len(registrations), 4)
 
-        # No customer during order, filled registration information
         no_partner_registration = registrations.filtered(lambda r: not r.partner_id)
         self.assertEqual(len(no_partner_registration), 1)
         self.assertEqual(no_partner_registration.name, "Name 1")
@@ -347,17 +344,14 @@ class TestUi(TestPointOfSaleHttpCommon):
         )
         self.assertEqual(len(partner_registrations), 3)
 
-        # Customer during order, filled registration information
         r2 = partner_registrations.filtered(lambda r: r.name == "Name 2")
         self.assertEqual(len(r2), 1)
         self.assertEqual(r2.email, "2@test.com")
 
-        # Customer during order, partial registration information
         r3 = partner_registrations.filtered(lambda r: r.name == "Name 3")
         self.assertEqual(len(r3), 1)
         self.assertEqual(r3.email, "event@partner.com")
 
-        # Customer during order, no registration information
         r_empty = partner_registrations.filtered(lambda r: r.name == "Event Parter")
         self.assertEqual(len(r_empty), 1)
         self.assertEqual(r_empty.email, "event@partner.com")

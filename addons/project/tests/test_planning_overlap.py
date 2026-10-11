@@ -198,10 +198,6 @@ class TestPlanningOverlap(TestProjectCommon):
             }
         )
 
-        # Not a Form: date_start is the invisible companion of the date_end
-        # daterange widget (project_task_views.xml, options start_date_field),
-        # so the view offers no direct write on it and Form rightly refuses one.
-        # The subject here is _search_planning_overlap after unscheduling.
         self.task_2.write({"date_start": False, "date_end": False})
 
         search_result = self.env["project.task"].search(

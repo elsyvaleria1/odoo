@@ -11,7 +11,6 @@ class SaleOrderLine(models.Model):
             last_invoice_date, next_invoice_date, draft=draft
         )
         if draft:
-            # a point-of-sale line is never a draft invoice
             return result
         for sale_line in self:
             result[sale_line.id] = result.get(sale_line.id, 0) + sum(

@@ -251,8 +251,6 @@ class IrAccessChangeset(models.Model):
     _inherit = "ir.access.changeset"
 
     def _matrix_pairs(self) -> tuple[set[tuple[int, int]], set[int]]:
-        # the (model, group) cells of the matrix this change set touches, and
-        # the groups whose implications it changes (their whole column)
         self.check_singleton()
         Access = self.env["ir.access"]._access_evaluator("ir.access")
         pairs: set[tuple[int, int]] = set()

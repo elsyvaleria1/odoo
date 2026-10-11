@@ -445,12 +445,6 @@ class TestAccountMoveCreation(AccountApprovalCommon):
         return requests
 
     def test_moves_by_request_costs_the_same_whatever_the_selection(self):
-        """The batched lookup must not grow a query per selected request.
-
-        _get_documents_of_model is check_singleton() and searches once per
-        record, which is why the bulk action used to pay one account.move
-        search per request -- twice over.
-        """
         small = self._make_invoiced_requests(2, "Cost small")
         large = self._make_invoiced_requests(6, "Cost large")
 
@@ -472,7 +466,6 @@ class TestAccountMoveCreation(AccountApprovalCommon):
         )
 
     def test_moves_by_request_agrees_with_the_singleton_helper(self):
-        """Batched and per-record readings must return the same moves."""
         requests = self._make_invoiced_requests(3, "Agree")
         batched = requests._account_moves_by_request()
         for request in requests:

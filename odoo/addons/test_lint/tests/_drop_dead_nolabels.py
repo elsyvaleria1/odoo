@@ -22,8 +22,6 @@ _COMMENT = re.compile(rb"<!--.*?-->", re.DOTALL)
 
 
 def _attribute_spans(source: bytes) -> list[re.Match]:
-    # every nolabel= written in a tag, in document order: one per element
-    # carrying it, comments left out
     comments = [match.span() for match in _COMMENT.finditer(source)]
     return [
         match
@@ -33,8 +31,6 @@ def _attribute_spans(source: bytes) -> list[re.Match]:
 
 
 def drop_dead_nolabels(path: Path, *, dry_run: bool = False) -> int | None:
-    """Remove the nolabel= the form compiler never reads, in the file's own
-    bytes; None when the file cannot be rewritten faithfully."""
     source = path.read_bytes()
     try:
         tree = etree.parse(BytesIO(source), PARSER)
@@ -42,8 +38,6 @@ def drop_dead_nolabels(path: Path, *, dry_run: bool = False) -> int | None:
         _logger.warning("  SKIP  %s: %s", path, exc)
         return None
     file = DataFile(str(path), "", tree.getroot(), True, False)
-    # the set holds the proxies: lxml hands out a new one per access once the
-    # last reference is gone, so an id() taken here could name another element
     dead = {element for _record, element in dead_nolabels(file)}
     if not dead:
         return 0

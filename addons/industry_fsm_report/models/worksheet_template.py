@@ -120,7 +120,6 @@ class WorksheetTemplate(models.Model):
 
     @api.model
     def _create_demo_data_fsm(self, model_id=False) -> None:
-        # create demo data in batch for performance reasons (avoid multiple calls to setup_models)
         if not model_id:
             model_id = self.env.ref(
                 "industry_fsm_report.fsm_worksheet_template2"

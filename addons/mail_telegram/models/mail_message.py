@@ -12,7 +12,6 @@ class MailMessage(models.Model):
     )
 
     def _telegram_tracking_lines(self):
-        """A tracking message's changes as `Field: old → new` lines."""
         self.check_singleton()
         lines = []
         for value in self.tracking_value_ids._tracking_value_format():

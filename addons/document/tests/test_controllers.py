@@ -418,8 +418,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
         self.assertEqual(res.content, self.doc_icon)
 
     def test_doc_ctrl_content_shortcut_to_a_trashed_target(self):
-        # trashing a document leaves its shortcuts active: the target's own
-        # state is what refuses the visitor
         self.internal_file.action_update_access_rights(
             access_via_link="view",
             is_access_via_link_hidden=False,
@@ -602,7 +600,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
                     self.assertURLEqual(res.headers.get("Location"), location)
 
     def test_a_deep_link_asking_for_the_preview_keeps_it(self):
-        # the AI notification links with an empty ?documents_init_open_preview=
         self.authenticate(self.user_demo.login, self.user_demo.login)
         res = self.url_open(
             f"/odoo/documents/{self.public_file.access_token}?documents_init_open_preview=",
@@ -919,8 +916,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
                 self.assertEqual(capture.records.check_singleton().name, expected)
 
     def test_a_request_whose_upload_was_dropped_stays_open(self):
-        # an override may drop the file (the prepare hook's None): the request
-        # was answered with nothing, so its upload link stays an upload link
         self.authenticate(None, None)
         with patch.object(
             ShareRoute, "_documents_upload_prepare", lambda self, doc, vals: None
@@ -936,9 +931,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
         self.assertEqual(self.public_request.access_via_link, "edit")
 
     def test_a_direct_upload_never_takes_over_a_document_holding_a_file(self):
-        # an override may report an existing document instead of creating one;
-        # a direct cloud upload would then hand out an upload URL for, and
-        # empty, that document's file
         self.env["ir.config_parameter"].sudo().set_param(
             "cloud_storage_provider", "probe"
         )
@@ -1283,7 +1275,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
 
     @mute_logger("odoo.http")
     def test_doc_ctrl_upload_respects_the_lock(self):
-        # the route writes sudo; the lock of another user holds all the same
         self.internal_file.action_update_access_rights(
             access_via_link="edit", is_access_via_link_hidden=False
         )
@@ -1330,7 +1321,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
         )
         self.authenticate("portal_test", "portal_test")
         with self.assertLogs("odoo.http", "WARNING"):
-            # the portal user only visited the link: that opens nothing here
             self.assertEqual(
                 self.url_open(portal_zip).status_code, HTTPStatus.FORBIDDEN
             )
@@ -1524,7 +1514,6 @@ class TestDocumentsControllers(HttpCaseWithUserDemo, MockEmail):
             ),
             (restricted_manager, self.user_manager, "SHARED", restricted_manager.id),
             (shared_via_link, self.user_portal, False, shared_via_link.id),
-            # a visit through the link shares nothing with the visitor
             (shared_via_link, self.user_manager, False, shared_via_link.id),
             (archived_doc, self.user_demo, "TRASH", archived_doc.id),
             (archived_folder, self.user_demo, "TRASH", archived_folder.id),

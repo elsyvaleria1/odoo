@@ -11,15 +11,6 @@ class ResConfigSettings(models.TransientModel):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Sweep at once when a control is switched on, so the list is not wrong
-        until the next hour.
-
-        The snapshot has to be taken before `super()`: a related field that is
-        not readonly is written through to the company by `create` itself, so
-        anything comparing the setting to the company afterwards -- here or in
-        `set_values`, which runs later still -- reads them equal whatever the
-        user changed.
-        """
         companies = self.env["res.company"].browse(
             {vals.get("company_id") or self.env.company.id for vals in vals_list}
         )

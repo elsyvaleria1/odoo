@@ -46,8 +46,6 @@ class TestInterCompanyOthers(TestInterCompanyRulesCommonSOPO):
                 ],
             }
         )
-        # confirming the action from the test will use Odoobot which results in the same flow as
-        # confirming the SO from an email link
         so.action_confirm()
 
         po = self.env["purchase.order"].search(

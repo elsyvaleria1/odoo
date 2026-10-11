@@ -45,10 +45,6 @@ class HrEmployee(models.Model):
 
     @api.depends("hr_employee_folder_id", "partner_id")
     def _compute_document_count(self) -> None:
-        # Branch per record, not on the batch: `self.hr_employee_folder_id` is
-        # the union over every record being computed, so a mixed batch used to
-        # take the folder path for everyone and silently return 0 for the
-        # folder-less ones instead of their partner-based count.
         with_folder = self.filtered("hr_employee_folder_id")
         _debug.logic(
             "employee_document_count",
@@ -57,9 +53,7 @@ class HrEmployee(models.Model):
             by_partner=len(self) - len(with_folder),
         )
 
-        # Transitional: only while the documents-hr setting is optional; drop this branch once it is mandatory.
         if without_folder := self - with_folder:
-            # Search everywhere if no employee folder configured.
             document_count_by_partner = dict(
                 self.env["document.document"]._read_group(
                     [("partner_id", "in", without_folder.partner_id.ids)],
@@ -109,28 +103,20 @@ class HrEmployee(models.Model):
         result = super().write(vals)
         if "name" in vals and len(self) == 1:
             _debug.lifecycle("employee_folder_renamed", employee=self)
-            # This makes no sense to rename multiple employees with the same name. This would probably be an error.
-            # So we rename the folder only if one employee is renamed at a time.
             self.sudo().hr_employee_folder_id.write({"name": vals["name"]})
         return result
 
     def action_see_documents(self):
-        # The person's own documents, reached from their own profile.
         self.check_singleton()
         if self.is_user:
             return self.partner_id.action_see_documents()
         return None
 
     def action_view_documents(self):
-        """Open and display all the content of the employee subfolder under HR > Employee."""
         self.check_singleton()
-        # Gate both branches below the same way: neither the "search
-        # everywhere" fallback nor the folder-based act_url is meant to be
-        # reachable by a user outside HR, regardless of document_hr_settings.
         if not self.env.user.has_groups("hr.group_hr_user"):
             _debug.logic("employee_folder_refused", reason="not_hr_user", employee=self)
             raise AccessError(self.env._("You cannot access the employee's folder."))
-        # If setting not activated, use the old filter -> Search everywhere
         if not self.company_id.documents_hr_settings:
             _debug.logic("employee_documents", by="search_everywhere", employee=self)
             action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
@@ -158,20 +144,7 @@ class HrEmployee(models.Model):
         }
 
     def _create_employee_documents_folders(self, skip_subfolders=False) -> None:
-        """Employee document folder is meant to be used by HR only to store all the documents they need regarding the
-        employee (E.g.: ID Card, Drive License, etc..). The employee does not have access to this folder,
-        nor the documents inside it (by default at least)"""
-        # Deliberately not gated on company_id.documents_hr_settings, unlike
-        # every other decision point in this module: nothing back-fills folders
-        # when the switch is turned back on (res.company.write back-fills on
-        # documents_employee_folder_id changing, not on the switch), so
-        # skipping provisioning while it is off would leave every employee
-        # hired in between permanently folder-less. Provision always, and gate
-        # only the filing. Changing that needs the back-fill written first.
         employees = self.filtered("company_id.documents_employee_folder_id")
-        # Never hand a second folder to an employee that already has one:
-        # overwriting the pointer orphans the old folder and its documents.
-        # Subfolder generation below still covers all of `employees`.
         employees_without_folder = employees.filtered(
             lambda e: not e.hr_employee_folder_id
         )
@@ -202,7 +175,6 @@ class HrEmployee(models.Model):
         )
         for employee, folder in zip(employees_without_folder, folders, strict=False):
             employee.hr_employee_folder_id = folder.id
-            # create Contracts Subfolder
             if not employee.hr_employee_contract_folder_id:
                 employee.hr_employee_contract_folder_id = (
                     self.env["document.document"]
@@ -222,12 +194,6 @@ class HrEmployee(models.Model):
             employees._create_employee_documents_subfolders()
 
     def _create_employee_documents_subfolders(self) -> None:
-        """Generate subfolders under the employee folder, following what is specified on the company
-        -> res_config_settings.employee_subfolders
-        Removing a folder name from the setting should not delete the folder if it's not empty.
-        Existing folders should not be recreated.
-        Only newly added folder name should generate a new subfolder.
-        """
         Documents = self.env["document.document"]
         create_subfolders_vals = []
         subfolders_to_delete = Documents
@@ -241,16 +207,12 @@ class HrEmployee(models.Model):
         )
         subfolders_by_employee_folder = subfolders.grouped("folder_id")
         for company, company_employees in self.grouped("company_id").items():
-            # Strip here, once: the names are compared against the stored
-            # folder names below, so stripping only at creation time made
-            # " Beta" look missing and "Beta" look removed on every save.
             subfolder_names = [
                 stripped
                 for name in (company.employee_subfolders or "").split(",")
                 if (stripped := name.strip())
             ]
             for employee in company_employees.filtered("hr_employee_folder_id"):
-                # Add new folders added to the list
                 existing_subfolders = subfolders_by_employee_folder.get(
                     employee.hr_employee_folder_id, Documents
                 )
@@ -267,8 +229,6 @@ class HrEmployee(models.Model):
                     for subfolder_name in added_subfolder_names
                 )
 
-                # Delete removed folder from the list.
-                # -> Side effect : folders created manually that are still empty will be deleted.
                 removed_subfolders_names = list(
                     set(existing_subfolders.mapped("name")) - set(subfolder_names)
                 )

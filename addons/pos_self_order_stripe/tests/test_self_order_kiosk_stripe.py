@@ -47,9 +47,6 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
         }
 
     def _build_payload(self, params=None):
-        """
-        Helper to properly build jsonrpc payload
-        """
         return {
             "jsonrpc": "2.0",
             "method": "call",
@@ -66,7 +63,6 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
         )
 
     def test_get_stripe_creditentials(self):
-        """This test make sure the get_stripe_creditentials method does not crash because of `_get_pos_config_and_table` method"""
         self.pos_config.open_ui()
         stripe_connection_token = "odoo.addons.pos_stripe.models.pos_payment_method.PosPaymentMethod.stripe_connection_token"
         connection_token = {
@@ -89,7 +85,6 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
             )
 
     def test_stripe_capture_payment(self):
-        """This test make sure the stripe_capture_payment method does not crash because of `_get_pos_config_and_table` method"""
         self.pos_config.self_ordering_access_token = "access_token"
         self.pos_config.open_ui()
         stripe_capture_payment = "odoo.addons.pos_stripe.models.pos_payment_method.PosPaymentMethod.stripe_capture_payment"
@@ -144,10 +139,9 @@ class TestSelfOrderKioskStripe(SelfOrderCommonTest):
             self.assertTrue(order.state == "paid", "The order should be paid")
 
     def test_kiosk_without_payment_terminal(self):
-        """Verify that kiosk should not ask for payment when valid payment method is not configured."""
         invalid_pm = (
             self.bank_payment_method
-        )  # 'Bank' is not a valid payment method for kiosk mode
+        )
         self.pos_config.write(
             {
                 "self_ordering_mode": "kiosk",

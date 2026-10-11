@@ -14,13 +14,11 @@ class TestPhoneBlacklistOps(TransactionCase):
         return self.env["phone.blacklist"]
 
     def test_add_creates_active_entry(self):
-        """add() blacklists a sanitized, active number."""
         entry = self.Blacklist.add(self.NUMBER)
         self.assertTrue(entry.active)
         self.assertEqual(entry.number, self.NUMBER)
 
     def test_add_existing_reactivates(self):
-        """Re-adding an archived number reactivates the same record."""
         entry = self.Blacklist.add(self.NUMBER)
         entry.action_archive()
         self.assertFalse(entry.active)
@@ -29,31 +27,26 @@ class TestPhoneBlacklistOps(TransactionCase):
         self.assertTrue(again.active)
 
     def test_remove_archives_entry(self):
-        """remove() de-activates an existing blacklist entry."""
         self.Blacklist.add(self.NUMBER)
         removed = self.Blacklist.remove(self.NUMBER)
         self.assertFalse(removed.active)
 
     def test_remove_unknown_number_creates_inactive(self):
-        """Removing a not-yet-listed number records it as inactive (boundary)."""
         removed = self.Blacklist.remove("+33698765432")
         self.assertTrue(removed)
         self.assertFalse(removed.active)
 
     def test_search_number_sanitizes_value(self):
-        """Searching by number matches the sanitized entry."""
         entry = self.Blacklist.add(self.NUMBER)
         found = self.Blacklist.search([("number", "=", self.NUMBER)])
         self.assertIn(entry, found)
 
     def test_action_blacklist_remove_opens_wizard(self):
-        """The unblacklist action targets the remove wizard."""
         entry = self.Blacklist.add(self.NUMBER)
         action = entry.phone_action_blacklist_remove()
         self.assertEqual(action["res_model"], "wizard.phone.blacklist.archive")
 
     def test_create_invalid_number_raises(self):
-        """Creating a blacklist entry with an unparseable number is rejected."""
         with self.assertRaises(UserError):
             self.Blacklist.create([{"number": "12"}])
 
@@ -145,7 +138,6 @@ class TestPortalUserBlacklistOnDeactivate(TransactionCase):
         )
 
     def test_deactivation_of_internal_user_denied(self):
-        """Self-service deactivation of a non-portal user is denied."""
         user = self.env["res.users"].create(
             {
                 "name": "Internal user",

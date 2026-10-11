@@ -174,7 +174,6 @@ class TestPosConfigDashboard(TestPoSCommon):
         )
         self.env.flush_all()
         self.env.invalidate_all()
-        # Warm access-rule metadata; session fields and computed values stay cold.
         self.env["pos.session"].search([], limit=1)
         with self.assertQueryCount(1):
             selected = configs.current_session_id

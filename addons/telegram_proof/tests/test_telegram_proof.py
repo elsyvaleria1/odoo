@@ -57,7 +57,6 @@ class TestTelegramProof(TelegramBotTestCase):
         ledgers = self.env["telegram.message"].browse(
             [int(delivery.ref) for delivery in challenge.delivery_ids]
         )
-        # what the outbox job does once the asking transaction commits
         for ledger in ledgers:
             ledger.write({"state": "sent", "msg_uid": "1"})
         return challenge, ledgers

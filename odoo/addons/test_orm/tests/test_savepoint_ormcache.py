@@ -8,7 +8,6 @@ class TestSavepointOrmcache(TransactionCase):
             with self.subTest(flush=flush):
                 key = f"test_orm.savepoint_ormcache.{flush}"
                 self.assertFalse(Parameter.get_param(key))
-                # not assertRaises: it wraps the block in a flushing savepoint of its own
                 try:
                     with self.env.cr.savepoint(flush=flush):
                         Parameter.set_param(key, "ghost")

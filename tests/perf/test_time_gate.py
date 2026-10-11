@@ -86,8 +86,6 @@ class _Counter:
 
 
 def test_a_round_that_waited_for_a_cpu_is_not_the_reading():
-    # three rounds of 5, 2 and 9 ms; the 2 ms one spent 1 ms on the run queue,
-    # so it is not the floor's reading even though it is the fastest
     ticks = iter([0.0, 0.005, 1.0, 1.002, 2.0, 2.009])
     waits = iter([0.0, 0.0, 0.0, 0.001, 0.001, 0.001])
     readings = measure(
@@ -112,8 +110,6 @@ class _WaitingCounter(_Counter):
 
 
 def test_a_wait_inside_the_statements_does_not_contend_the_round():
-    # one round of 5 ms, 3 of them SQL; it waited 1 ms for a CPU, all of it
-    # on the wake-up after its statements, which the residual does not hold
     counter = _WaitingCounter()
     ticks = iter([0.0, 0.005])
     waits = iter([0.0, 0.001])

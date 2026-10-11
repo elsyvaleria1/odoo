@@ -27,15 +27,12 @@ class StockMove(models.Model):
         return self.env["quality.point"].sudo().search(quality_points_domain)
 
     def _create_quality_checks_for_mo(self) -> None:
-        # Groupby move by production order. Use it in order to generate missing quality checks.
         mo_moves = defaultdict(lambda: self.env["stock.move"])
         check_vals_list = []
         for move in self:
             if move.production_id and move.location_dest_usage != "inventory":
                 mo_moves[move.production_id] |= move
 
-        # orders confirmed together mostly share their products and their
-        # operation type, so each distinct question is searched once
         points_by_question = {}
 
         def search_points(products, picking_type, measure_on):
@@ -46,13 +43,11 @@ class StockMove(models.Model):
                 )
             return points_by_question[question]
 
-        # QC of product type
         for production, moves in mo_moves.items():
             quality_points = search_points(
                 moves.product_id, production.picking_type_id, "product"
             )
 
-            # Since move lines are created too late for the manufactured product, we create the QC of move_line type directly here instead, excluding by-products
             quality_points |= search_points(
                 production.product_id, production.picking_type_id, "move_line"
             )
@@ -75,12 +70,7 @@ class StockMove(models.Model):
                 )
             check_vals_list += mo_check_vals_list
 
-        # QC of operation type
         for production in mo_moves:
-            # Exclude the points this order already carries a check for.  The
-            # picking side of this pair has always done so; the MO side had
-            # not, so every later confirm -- a backorder, a move added to a
-            # confirmed order -- added a second copy of every operation check.
             existing_point_ids = (
                 production.sudo()
                 .check_ids.filtered(lambda c: c.measure_on == "operation")

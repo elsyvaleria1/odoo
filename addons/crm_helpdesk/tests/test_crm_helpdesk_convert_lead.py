@@ -27,7 +27,6 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
             }
         )
 
-        # UTM fields
         cls.test_campaign = cls.env["utm.campaign"].create(
             {
                 "name": "A test UTM campaign",
@@ -52,10 +51,8 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         )
 
     def assertLeadTicketConvertData(self, lead, ticket, partner, crm_team, user_id):
-        # ticket update: archived
         self.assertFalse(ticket.active)
 
-        # new lead: data from ticket and convert options
         self.assertEqual(lead.name, ticket.name)
         self.assertEqual(lead.description, ticket.description)
         self.assertEqual(lead.partner_id, partner)
@@ -70,16 +67,13 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
 
     @users("user_helpdesk_user")
     def test_convert_to_lead_rights(self):
-        # admin updates salesman to have helpdesk rights
         self.helpdesk_user.write(
             {"group_ids": [(4, self.env.ref("sale.group_sale_salesman_all_leads").id)]}
         )
         ticket = self.env["helpdesk.ticket"].browse(self.test_ticket.ids)
-        # add helpdesk user to sales team
         self.test_team.write({"member_ids": [(4, self.helpdesk_user.id)]})
         test_crm_team = self.env["team.team"].browse(self.test_team.ids)
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.helpdesk.ticket.convert.lead"]
             .with_context(
@@ -97,23 +91,19 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         self.assertEqual(convert.ticket_id, ticket)
         self.assertEqual(convert.user_id, self.helpdesk_user)
 
-        # update team / user
         convert.update({"user_id": self.user_sales_leads.id})
         action = convert.action_convert_to_lead()
-        # helpdesk user with salesman rights redirected to lead
         lead = self.env["crm.lead"].search([("name", "=", ticket.name)])
         self.assertEqual(action["res_model"], lead._name)
         self.assertLeadTicketConvertData(
             lead, ticket, ticket.partner_id, test_crm_team, self.user_sales_leads
         )
 
-        # admin remove rights on helpdesk user -> wizard not invokable
         ticket.write({"active": True})
         self.helpdesk_user.write(
             {"group_ids": [(3, self.env.ref("helpdesk.group_helpdesk_user").id)]}
         )
 
-        # sneaky monkey tries to invoke the wizard
         with self.assertRaises(AccessError):
             convert = (
                 self.env["wizard.helpdesk.ticket.convert.lead"]
@@ -132,10 +122,8 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
 
     @users("user_helpdesk_user")
     def test_convert_to_lead_w_name_email(self):
-        """Base test for convert: internal details, based on email"""
         ticket = self.env["helpdesk.ticket"].browse(self.test_ticket.ids)
 
-        # automatic partner creation on ticket model (TDE FIXME)
         self.assertEqual(ticket.partner_id.name, ticket.partner_name)
         self.assertEqual(ticket.partner_id.email, "my.customer@example.com")
         new_partner = self.env["res.partner"].search(
@@ -143,16 +131,13 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         )
         self.assertEqual(ticket.partner_id, new_partner)
 
-        # post a message to check thread change
         msg = ticket.message_post(
             body="Youplaboum", subtype_xmlid="mail.mt_comment", message_type="comment"
         )
         ticket_message_ids = ticket.message_ids
 
-        # ensure basic rights on team and ticket type
         test_crm_team = self.env["team.team"].browse(self.test_team.ids)
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.helpdesk.ticket.convert.lead"]
             .with_context(
@@ -170,16 +155,13 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         self.assertEqual(convert.user_id, self.env["res.users"])
 
         action = convert.action_convert_to_lead()
-        # helpdesk user redirected to tickets
         self.assertEqual(action["res_model"], ticket._name)
 
-        # check created lead coherency
         lead = self.env["crm.lead"].sudo().search([("name", "=", ticket.name)])
         self.assertLeadTicketConvertData(
             lead, ticket, new_partner, test_crm_team, self.env["res.users"]
         )
 
-        # check discussion thread transfer
         self.assertTrue(
             all(message in lead.message_ids for message in ticket_message_ids)
         )
@@ -187,7 +169,6 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
 
     @users("user_helpdesk_user")
     def test_lead_convert_to_ticket_w_name(self):
-        """Test matching partner based on name"""
         ticket = self.env["helpdesk.ticket"].browse(self.test_ticket.ids)
         ticket.update(
             {
@@ -200,10 +181,8 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         )
         self.assertTrue(len(new_partner))
 
-        # ensure basic rights on team and ticket type
         test_crm_team = self.env["team.team"].browse(self.test_team.ids)
 
-        # invoke wizard and apply it
         convert = (
             self.env["wizard.helpdesk.ticket.convert.lead"]
             .with_context(
@@ -221,14 +200,12 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         self.assertEqual(convert.partner_id, new_partner)
         convert.action_convert_to_lead()
 
-        # check created lead coherency
         lead = self.env["crm.lead"].sudo().search([("name", "=", ticket.name)])
         self.assertLeadTicketConvertData(
             lead, ticket, new_partner, test_crm_team, self.env["res.users"]
         )
 
     def test_helpdesk_ticket_to_lead(self):
-        """Test to ensure that a helpdesk ticket is converted to a lead when the user has CRM lead access."""
         self.assertTrue(self.test_ticket.active)
         self.helpdesk_user.group_ids |= self.env.ref("crm.group_use_lead")
         action = self.test_ticket.with_user(
@@ -246,7 +223,6 @@ class TestTicketConvertToLead(helpdesk_common.HelpdeskCommon):
         self.assertEqual(lead_count, 1)
 
     def test_helpdesk_ticket_to_opportunity(self):
-        """Test to ensure that a helpdesk ticket is converted to an opportunity when the user doesn't have CRM lead access."""
         self.assertTrue(self.test_ticket.active)
         self.helpdesk_user.group_ids -= self.env.ref("crm.group_use_lead")
         action = self.test_ticket.with_user(

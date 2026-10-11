@@ -20,8 +20,6 @@ INVITATION_OUTLIVES_EVENT = timedelta(days=30)
 
 
 def invitation_link_end(event):
-    # a month after the meeting ends, and never less than a month from now: a
-    # meeting entered after it happened still gets a link that opens
     return max(event.stop, fields.Datetime.now()) + INVITATION_OUTLIVES_EVENT
 
 
@@ -37,10 +35,6 @@ class CalendarAttendee(models.Model):
 
     @api.model
     def _receiver_for_invitation(self, **path_args):
-        """The route's receiver for an invitation link: the attendee bearing the
-        token, admitted by the company's receiver; an empty token is no token
-        (`access_token = ''` would match every row whose column is NULL), and a
-        valid one presented from somebody else's session was forwarded."""
         attendee = self._from_invitation_token(request.get_http_params().get("token"))
         if not attendee:
             return attendee
@@ -65,8 +59,6 @@ class CalendarAttendee(models.Model):
 
     @api.model
     def _from_invitation_token(self, token):
-        """The attendee whose live invitation link ``token`` is, in sudo, or an
-        empty recordset: a guessed, revoked or expired token alike."""
         try:
             return (
                 self.env["access.link"]
@@ -99,9 +91,6 @@ class CalendarAttendee(models.Model):
         return invitation_link_end(self.event_id)
 
     def _issue_invitation_links(self) -> None:
-        """A comment link per attendee, in their partner's name, until a month
-        after the event ends (decision CAL-A): accepting, declining and viewing
-        the invitation."""
         attendees = self.filtered("partner_id")
         tokens = self.env["access.link"]._issue_each_new(
             attendees,
@@ -122,7 +111,6 @@ class CalendarAttendee(models.Model):
         ("needsAction", "Needs Action"),
     ]
 
-    # event
     event_id = fields.Many2one(
         comodel_name="calendar.event",
         string="Meeting linked",
@@ -134,7 +122,6 @@ class CalendarAttendee(models.Model):
         comodel_name="calendar.recurrence",
         related="event_id.recurrence_id",
     )
-    # attendee
     partner_id = fields.Many2one(
         comodel_name="res.partner",
         string="Attendee",
@@ -155,19 +142,6 @@ class CalendarAttendee(models.Model):
         compute="_compute_common_name",
         store=True,
     )
-    # `access_token` is the bearer credential of the `calendar` auth method:
-    # holding one is enough to accept or decline an invitation from an
-    # unauthenticated browser, and the controllers that do it sudo() without
-    # checking who is calling. Any employee could read every attendee row, so
-    # every token in the database was one search_read away from anyone.
-    #
-    # Restricted with `groups` rather than masked in `_fetch_query`, which is how
-    # `calendar.event` hides its private fields: masking writes False into the
-    # *shared* field cache, and a token is per-reader, so a masked read would be
-    # served from cache to the very sudo() render that needs the real value --
-    # emptying the accept/decline links of the invitation mail. `groups` is
-    # checked at access time, keeps the cache honest, and sudo() bypasses it, so
-    # the legitimate readers (mail templates, token controllers) still work.
     access_token = fields.Char(
         string="Invitation Token",
         compute="_compute_access_token",
@@ -179,7 +153,6 @@ class CalendarAttendee(models.Model):
         compute="_compute_mail_tz",
         help="Timezone used for displaying time in the mail template",
     )
-    # state
     state = fields.Selection(
         selection=STATE_SELECTION,
         string="Status",
@@ -190,9 +163,6 @@ class CalendarAttendee(models.Model):
         "UNIQUE(event_id, partner_id)",
         "An attendee can only appear once per meeting.",
     )
-    # `availability` (free/busy) used to be declared here: a stored column with
-    # no reader, no writer and no view in any repo. The event's own `show_as`
-    # carries that information.
 
     @api.depends("partner_id", "partner_id.name", "email")
     def _compute_common_name(self) -> None:
@@ -206,21 +176,11 @@ class CalendarAttendee(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for values in vals_list:
-            # by default, if no state is given for the attendee corresponding to the current user
-            # that means he's the event organizer so we can set his state to "accepted"
             if (
                 "state" not in values
                 and values.get("partner_id") == self.env.user.partner_id.id
             ):
                 values["state"] = "accepted"
-            # A `common_name`-parsing block used to live here, trying to pull
-            # an embedded `mailto:` address out of `values['common_name']`
-            # into `values['email']`. Both fields are related/computed with
-            # no inverse (`email` -> `partner_id.email`, `common_name` ->
-            # `_compute_common_name`), so the ORM silently dropped whatever
-            # was written into them -- dead code, confirmed by a live
-            # `create()` call whose passed-in `common_name`/`email` never
-            # landed on the record.
         attendees = super().create(vals_list)
         attendees.event_id.check_access("write")
         attendees._issue_invitation_links()
@@ -231,10 +191,6 @@ class CalendarAttendee(models.Model):
         return attendees
 
     def write(self, vals):
-        # Check access on the event being left, not only the one landed on:
-        # `event_id` is a plain writable field, so a write reassigning it only
-        # checked the destination event, letting a user with no write access
-        # to the origin event detach an attendee from it regardless.
         old_events = self.event_id
         res = super().write(vals)
         (old_events | self.event_id).check_access("write")
@@ -252,10 +208,6 @@ class CalendarAttendee(models.Model):
         return res
 
     def unlink(self):
-        # `create()`/`write()` both route through `event_id.check_access('write')`;
-        # `unlink()` had no equivalent, letting any internal user delete any
-        # attendee off any event -- checked before deleting, since after
-        # deletion the rows this check would query no longer exist.
         events = self.event_id
         events.check_access("write")
         self._unsubscribe_partner()
@@ -274,9 +226,6 @@ class CalendarAttendee(models.Model):
             ).partner_id & event.message_partner_ids
             event.message_unsubscribe(partner_ids=partners.ids)
 
-    # ------------------------------------------------------------
-    # MAILING
-    # ------------------------------------------------------------
 
     @api.model
     def _mail_template_default_values(self) -> dict:
@@ -289,8 +238,6 @@ class CalendarAttendee(models.Model):
         }
 
     def _message_get_default_recipients_sources(self):
-        # override: partner_id being the only stored field, we can currently
-        # simplify computation, we have no other choice than relying on it
         return {
             attendee.id: {
                 "partners": attendee.partner_id,
@@ -301,8 +248,6 @@ class CalendarAttendee(models.Model):
         }
 
     def _send_invitation_emails(self) -> None:
-        """Hook to be able to override the invitation email sending process.
-        Notably inside appointment to use a different mail template from the appointment type."""
         self._notify_attendees(
             self.env.ref(
                 "calendar.calendar_template_meeting_invitation",
@@ -314,19 +259,6 @@ class CalendarAttendee(models.Model):
     def _notify_attendees(
         self, mail_template, notify_author=False, force_send=False
     ) -> None:
-        """Notify attendees about event main changes (invite, cancel, ...) based
-        on template.
-
-        :param mail_template: a mail.template record
-        :param force_send: if set to True, the mail(s) will be sent immediately (instead of the next queue processing)
-        :return: None. Nothing reads the result; the early exits used to answer
-            False and the ordinary one None, which said nothing either way.
-        """
-        # Cheapest and most certain first. The `force_send_limit` parameter and
-        # the per-event `_skip_send_mail_status_update` sweep used to run above
-        # these guards, so a database with `calendar.block_mail` set -- which
-        # sends nothing at all -- still paid a config read and a pass over every
-        # event on every notification.
         if isinstance(mail_template, str):
             raise ValueError(
                 "Template should be a template record, not an XML ID anymore."
@@ -349,15 +281,6 @@ class CalendarAttendee(models.Model):
             mail_template
         )
 
-        # Render the template once for all recipients instead of three times per
-        # recipient inside the loop; _render_field already batches by id.
-        #
-        # sudo: the invitation body embeds each recipient's own `access_token` in
-        # the accept/decline/view links, and `_fetch_query` masks that token for
-        # every attendee but the reader -- so the organiser rendering invitations
-        # for other people would otherwise produce links with an empty token.
-        # Rendering is the one legitimate reader of somebody else's token; it
-        # emits it only into the mail addressed to that person.
         rendering_template = mail_template.sudo()
         bodies = rendering_template._render_field(
             "body_html", recipients.ids, compute_lang=True
@@ -374,7 +297,7 @@ class CalendarAttendee(models.Model):
                 .sudo()
                 .message_notify(
                     email_from=emails_from[attendee.id]
-                    or None,  # use None to trigger fallback sender
+                    or None,
                     author_id=attendee.event_id.user_id.partner_id.id
                     or self.env.user.partner_id.id,
                     body=bodies[attendee.id],
@@ -386,7 +309,6 @@ class CalendarAttendee(models.Model):
                     force_send=False,
                 )
             )
-        # batch sending at the end
         if force_send:
             force_send_limit = int(
                 self.env.registry.settings.get(
@@ -398,19 +320,6 @@ class CalendarAttendee(models.Model):
         return
 
     def _notify_attendees_recipients(self, notify_author=False) -> Self:
-        """The attendees of `self` that a notification will actually reach.
-
-        An e-mail address, not excluded by `_is_attendee_notification_required`, and on an
-        event that does not opt out through `_skip_send_mail_status_update`.
-        Everything the caller does afterwards is sized to this set and not to
-        `self` -- copying an attachment or rendering a template for an attendee
-        we never mail is pure waste, and since the copies carry
-        `res_id=0`/`res_model='wizard.mail.message.send'` the wasted ones are only
-        reclaimed a day later by the mail autovacuum.
-
-        :return: the ``calendar.attendee`` records a notification reaches
-        :rtype: Self
-        """
         notified_ids = set(self.ids)
         for event, attendees in self.grouped("event_id").items():
             if event._skip_send_mail_status_update():
@@ -425,30 +334,9 @@ class CalendarAttendee(models.Model):
         )
 
     def _notify_attendees_attachments(self, mail_template):
-        """Attachment ids to put on each recipient's mail.
-
-        Two sources, both one attachment record per recipient: the template's
-        own attachments, and the .ics of the event that recipient is invited to.
-
-        :rtype: dict[int, list[int]]
-        """
         attachments_by_attendee = {attendee.id: [] for attendee in self}
 
         if mail_template.attachment_ids:
-            # Setting res_model to ensure attachments are linked to the msg (otherwise only internal users are allowed link attachments)
-            #
-            # `copy()`, not `copy_data()` + `create()`: duplicating an
-            # `ir.attachment` is split across the two. `copy_data` carries the
-            # bytes only for database-stored content; filestore-backed content is
-            # relinked to its existing file by `copy()` afterwards, deliberately
-            # without reading it. Building the values and creating them here
-            # skipped that relink, so every attendee received an attachment with
-            # no content -- checksum unset, file_size 0 -- for any template
-            # attachment held in the filestore, which is the normal case.
-            #
-            # One copy per recipient rather than one batched create: the relink
-            # costs no bytes, and going through the API that actually duplicates
-            # an attachment is what stops this regressing again.
             copied_ids = []
             for _recipient in self:
                 copied_ids += mail_template.attachment_ids.copy(
@@ -465,9 +353,6 @@ class CalendarAttendee(models.Model):
             ):
                 attachments_by_attendee[attendee_id] += list(ids)
 
-        # One create for every .ics rather than one per recipient inside the
-        # posting loop: each recipient needs their own attachment record, but
-        # they do not need their own round trip.
         ics_files = self.event_id._get_ics_file()
         with_ics = [
             attendee for attendee in self if ics_files.get(attendee.event_id.id)
@@ -475,7 +360,7 @@ class CalendarAttendee(models.Model):
         if with_ics:
             context = {
                 **clean_context(self.env.context),
-                "no_document": True,  # An ICS file must not create a document
+                "no_document": True,
             }
             ics_attachments = (
                 self.env["ir.attachment"]
@@ -500,49 +385,23 @@ class CalendarAttendee(models.Model):
         return attachments_by_attendee
 
     def _is_attendee_notification_required(self, notify_author=False) -> bool:
-        """Utility method that determines if the attendee should be notified.
-        By default, we do not want to notify (aka no message and no mail) the current user
-        if he is part of the attendees. But for reminders, mail_notify_author could be forced
-        (Override in appointment to ignore that rule and notify all attendees if it's an appointment)
-        """
         self.check_singleton()
         partner_not_sender = self.partner_id != self.env.user.partner_id
         return bool(partner_not_sender or notify_author)
 
-    # ------------------------------------------------------------
-    # STATE MANAGEMENT
-    # ------------------------------------------------------------
 
     def do_tentative(self):
-        """Makes event invitation as Tentative."""
         return self.write({"state": "tentative"})
 
     def do_accept(self):
-        """Marks event invitation as Accepted."""
         self._log_answer(self.env._("%s has accepted the invitation"))
         return self.write({"state": "accepted"})
 
     def do_decline(self):
-        """Marks event invitation as Declined."""
         self._log_answer(self.env._("%s has declined the invitation"))
         return self.write({"state": "declined"})
 
     def _log_answer(self, body_format) -> None:
-        """Log each attendee's answer on its own event, in as few rounds as possible.
-
-        `message_post` is `check_singleton`, so a loop over `self` paid a full post
-        per attendee: answering a twenty-occurrence series posted twenty
-        messages one at a time. Measured at **5.39 queries per attendee**,
-        attributed by control -- `do_tentative` performs the same `write` with
-        no message and is flat (one query for twenty attendees).
-
-        The thread is the *event*, so a batch may carry at most one attendee per
-        event; attendees are dealt into rounds on that basis. The case that
-        motivates this -- one person answering a whole series -- is a single
-        round, because each occurrence is its own event.
-
-        :param body_format: a translated format string taking the common name.
-        """
         if not self:
             return
         subtype_id = self.env["ir.model.data"]._xmlid_to_res_id(

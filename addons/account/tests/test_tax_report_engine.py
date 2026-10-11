@@ -1,4 +1,3 @@
-# pylint: disable=bad-whitespace
 from freezegun import freeze_time
 
 from odoo import Command, fields
@@ -23,7 +22,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Create country data
         cls.fiscal_country = cls.env["res.country"].create(
             {
                 "name": "Discworld",
@@ -38,7 +36,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Setup fiscal data
         cls.company_data["company"].write(
             {
                 "account_return_periodicity": "trimester",
@@ -51,7 +48,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         cls.change_company_country(cls.company_data["company"], cls.fiscal_country)
 
-        # Prepare tax groups
         cls.tax_group_1 = cls._instantiate_basic_test_tax_group()
         cls.tax_group_2 = cls._instantiate_basic_test_tax_group()
         cls.tax_group_3 = cls._instantiate_basic_test_tax_group(
@@ -61,7 +57,6 @@ class TestTaxReport(TestAccountReportsCommon):
             country=cls.foreign_country
         )
 
-        # Prepare tax accounts
         cls.tax_account_1 = cls.env["account.account"].create(
             {
                 "name": "Tax Account",
@@ -87,7 +82,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # ==== Sale taxes: group of two taxes having type_tax_use = 'sale' ====
         cls.sale_tax_percentage_incl_1 = cls.env["account.tax"].create(
             {
                 "name": "sale_tax_percentage_incl_1",
@@ -176,7 +170,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         cls.move_sale.action_post()
 
-        # ==== Purchase taxes: group of taxes having type_tax_use = 'none' ====
 
         cls.none_tax_percentage_incl_2 = cls.env["account.tax"].create(
             {
@@ -266,9 +259,7 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         cls.move_purchase.action_post()
 
-        # Instantiate test data for fiscal_position option of the tax report (both for checking the report and VAT closing)
 
-        # Create a foreign partner
         cls.test_fpos_foreign_partner = cls.env["res.partner"].create(
             {
                 "name": "Mare Cel",
@@ -276,7 +267,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Create both a domestic and foreign tax report, and some taxes for them
         cls.domestic_tax_report = cls.env["report.formula"].create(
             {
                 "name": "The Unseen Tax Report",
@@ -359,7 +349,6 @@ class TestTaxReport(TestAccountReportsCommon):
             ],
         )
 
-        # Create a fiscal_position to automatically map the default tax for partner "Mare Cel" to our test tax
         cls.env["account.tax"].search([]).original_tax_ids = False
         cls.foreign_vat_fpos = cls.env["account.fiscal.position"].create(
             {
@@ -388,7 +377,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Create some domestic invoices (not all in the same closing period)
         cls.init_invoice(
             "out_invoice",
             partner=cls.partner_a,
@@ -438,7 +426,6 @@ class TestTaxReport(TestAccountReportsCommon):
             taxes=cls.domestic_purchase_tax,
         )
 
-        # Create some foreign invoices (not all in the same closing period)
         cls.init_invoice(
             "out_invoice",
             partner=cls.test_fpos_foreign_partner,
@@ -519,21 +506,6 @@ class TestTaxReport(TestAccountReportsCommon):
         tax_repartition,
         company=None,
     ):
-        """Creates a basic test tax, as well as tax report lines and tags, connecting them all together.
-
-        A tax report line will be created within tax report for each of the elements in tax_repartition,
-        for both invoice and refund, so that the resulting repartition lines each reference their corresponding
-        report line. Negative tags will be assigned when type_tax_use is 'sale'; positive tags otherwise.
-
-        :param tax_report: The report to create lines for.
-        :param percentage: The created tax has amount_type='percent'. This parameter contains its amount.
-        :param type_tax_use: type_tax_use of the tax to create
-        :param tax_group: The tax group to assign to the created tax.
-        :param tax_repartition: List of tuples in the form [(factor_percent, account, use_in_tax_closing)], one tuple
-                                for each tax repartition line to create (base lines will be automatically created).
-        :param company: The company owning the created tax; defaults to the current environment's company.
-        :return: The created account.tax record.
-        """
         tax = cls.env["account.tax"].create(
             {
                 "name": f"{type_tax_use} - {percentage} - {tax_report.name}",
@@ -553,7 +525,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 tax_report.line_ids[-1].sequence + 1 if tax_report.line_ids else 0
             )
 
-            # Create a report line for the base
             base_report_line_name = f"{tax.id}-{move_type_suffix}-base"
             base_report_line = cls._create_tax_report_line(
                 base_report_line_name,
@@ -571,7 +542,6 @@ class TestTaxReport(TestAccountReportsCommon):
             ]
 
             for factor_percent, account, use_in_tax_closing in tax_repartition:
-                # Create a report line for the repartition line
                 tax_report_line_name = f"{tax.id}-{move_type_suffix}-{factor_percent}"
                 tax_report_line = cls._create_tax_report_line(
                     tax_report_line_name,
@@ -633,25 +603,20 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.domestic_tax_report._get_lines(options),
-            #   Name                                                          Balance
             [0, 1],
             [
-                # out_invoice
                 (f"{self.domestic_sale_tax.id}-invoice-base", 200),
                 (f"{self.domestic_sale_tax.id}-invoice-30", 30),
                 (f"{self.domestic_sale_tax.id}-invoice-70", 70),
                 (f"{self.domestic_sale_tax.id}-invoice--100", -100),
-                # out_refund
                 (f"{self.domestic_sale_tax.id}-refund-base", -20),
                 (f"{self.domestic_sale_tax.id}-refund-30", -3),
                 (f"{self.domestic_sale_tax.id}-refund-70", -7),
                 (f"{self.domestic_sale_tax.id}-refund--100", 10),
-                # in_invoice
                 (f"{self.domestic_purchase_tax.id}-invoice-base", 400),
                 (f"{self.domestic_purchase_tax.id}-invoice-40", 80),
                 (f"{self.domestic_purchase_tax.id}-invoice-60", 120),
                 (f"{self.domestic_purchase_tax.id}-invoice--100", -200),
-                # in_refund
                 (f"{self.domestic_purchase_tax.id}-refund-base", -60),
                 (f"{self.domestic_purchase_tax.id}-refund-40", -12),
                 (f"{self.domestic_purchase_tax.id}-refund-60", -18),
@@ -667,9 +632,7 @@ class TestTaxReport(TestAccountReportsCommon):
             self.domestic_tax_return_type,
             {
                 self.env.company: [
-                    # 0.5 * 0.7 * (200 - 20) = 63
                     {"debit": 63.0, "credit": 0.0, "account_id": self.tax_account_1.id},
-                    # 0.5 * 0.6 * (400 - 60) = 102
                     {
                         "debit": 0.0,
                         "credit": 102.0,
@@ -690,32 +653,26 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_report_foreign_monocompany(self):
-        """Test tax report's content with a foreign VAT fiscal position."""
         options = self._generate_options(
             self.foreign_tax_report, "2021-01-01", "2021-03-31"
         )
 
         self.assertLinesValues(
             self.foreign_tax_report._get_lines(options),
-            #   Name                                                          Balance
             [0, 1],
             [
-                # out_invoice
                 (f"{self.foreign_sale_tax.id}-invoice-base", 800),
                 (f"{self.foreign_sale_tax.id}-invoice-80", 384),
                 (f"{self.foreign_sale_tax.id}-invoice-20", 96),
                 (f"{self.foreign_sale_tax.id}-invoice--100", -480),
-                # out_refund
                 (f"{self.foreign_sale_tax.id}-refund-base", -200),
                 (f"{self.foreign_sale_tax.id}-refund-80", -96),
                 (f"{self.foreign_sale_tax.id}-refund-20", -24),
                 (f"{self.foreign_sale_tax.id}-refund--100", 120),
-                # in_invoice
                 (f"{self.foreign_purchase_tax.id}-invoice-base", 1000),
                 (f"{self.foreign_purchase_tax.id}-invoice-51", 306),
                 (f"{self.foreign_purchase_tax.id}-invoice-49", 294),
                 (f"{self.foreign_purchase_tax.id}-invoice--100", -600),
-                # in_refund
                 (f"{self.foreign_purchase_tax.id}-refund-base", -600),
                 (f"{self.foreign_purchase_tax.id}-refund-51", -183.6),
                 (f"{self.foreign_purchase_tax.id}-refund-49", -176.4),
@@ -731,9 +688,7 @@ class TestTaxReport(TestAccountReportsCommon):
             self.foreign_tax_return_type,
             {
                 self.env.company: [
-                    # 0.6 * 0.2 * (800 - 200) = 72
                     {"debit": 72.0, "credit": 0.0, "account_id": self.tax_account_1.id},
-                    # 0.6 * 0.49 * (1000 - 600) = 117.6
                     {
                         "debit": 0.0,
                         "credit": 117.6,
@@ -756,17 +711,6 @@ class TestTaxReport(TestAccountReportsCommon):
     def test_tax_report_grid(self):
         company = self.company_data["company"]
 
-        # We generate a tax report with the following layout
-        # /Base
-        #   - Base 42%
-        #   - Base 11%
-        # /Tax
-        #   - Tax 42%
-        #       - 10.5%
-        #       - 31.5%
-        #   - Tax 11%
-        #   - Tax -100%
-        # /Tax difference (42% - 11%)
 
         tax_report = self.env["report.formula"].create(
             {
@@ -785,8 +729,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # We create the lines in a different order from the one they have in report,
-        # so that we ensure sequence is taken into account properly when rendering the report
         tax_section = self._create_tax_report_line(
             "Tax",
             tax_report,
@@ -859,7 +801,6 @@ class TestTaxReport(TestAccountReportsCommon):
             formula="tax_42.balance - tax_11.balance",
         )
 
-        # Create two taxes linked to report lines
         tax_11 = self.env["account.tax"].create(
             {
                 "name": "Impôt sur les revenus",
@@ -968,7 +909,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Create an invoice using the tax we just made
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -990,17 +930,14 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         invoice.action_post()
 
-        # Generate the report and check the results
         report = tax_report
         options = self._generate_options(report, invoice.date, invoice.date)
 
-        # Invalidate the cache to ensure the lines will be fetched in the right order.
         self.env.invalidate_all()
 
         lines = report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                        Balance
             [0, 1],
             [
                 ("Base", 200),
@@ -1020,7 +957,6 @@ class TestTaxReport(TestAccountReportsCommon):
             options,
         )
 
-        # We refund the invoice
         refund_wizard = (
             self.env["wizard.account.move.reverse"]
             .with_context(active_model="account.move", active_ids=invoice.ids)
@@ -1034,10 +970,8 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         refund_wizard.modify_moves()
 
-        # We check the taxes on refund have impacted the report properly (everything should be 0)
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                         Balance
             [0, 1],
             [
                 ("Base", 0.0),
@@ -1058,15 +992,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def _create_caba_taxes_for_report_lines(self, report_lines_dict, company):
-        """Creates cash basis taxes with a specific test repartition and maps them to
-        the provided tax_report lines.
-
-        :param report_lines_dict:  A dictionary mapping type_tax_use values to
-                                   tax report line records
-        :param company:            Unused.
-
-        :return:                   The created account.tax objects
-        """
         return self.env["account.tax"].create(
             [
                 {
@@ -1191,30 +1116,6 @@ class TestTaxReport(TestAccountReportsCommon):
         on_all_invoices_created=None,
         invoice_generator=None,
     ):
-        """Generic test function called by several cash basis tests.
-
-        Creates a sale and a purchase tax, each associated with a new tax report line via
-        _create_caba_taxes_for_report_lines, then creates an invoice AND a refund for each
-        of these taxes, and finally compares the tax report to the expected values.
-
-        :param expected_columns:          The columns we want the final tax report to contain
-
-        :param expected_lines:            The lines we want the final tax report to contain
-
-        :param on_invoice_created:        A function to be called when a single invoice has
-                                          just been created, taking the invoice as a parameter
-                                          (This can be used to reconcile the invoice with something, for example)
-
-        :param on_all_invoices_created:   A function to be called when all the invoices corresponding
-                                          to a tax type have been created, taking the
-                                          recordset of all these invoices as a parameter
-                                          (Use it to reconcile invoice and credit note together, for example)
-
-        :param invoice_generator:         A function used to generate an invoice. A default
-                                          one is called if none is provided, creating
-                                          an invoice with a single line amounting to 100,
-                                          with the provided tax set on it.
-        """
 
         def default_invoice_generator(inv_type, partner, account, date, tax):
             return self.env["account.move"].create(
@@ -1242,7 +1143,6 @@ class TestTaxReport(TestAccountReportsCommon):
         company.account_config_id.tax_exigibility = True
         partner = self.env["res.partner"].create({"name": "Char Aznable"})
 
-        # Create a tax report
         tax_report = self.env["report.formula"].create(
             {
                 "name": "Test",
@@ -1260,7 +1160,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # We create some report lines
         report_lines_dict = {
             "sale": self._create_tax_report_line(
                 "Sale", tax_report, sequence=1, tag_name="-sale"
@@ -1270,13 +1169,8 @@ class TestTaxReport(TestAccountReportsCommon):
             ),
         }
 
-        # We create a sale and a purchase tax, linked to our report lines' tags.
-        # These taxes are asymmetric (their 75% repartition line does not impact the report line
-        # at refund), which gives complete coverage and does not shadow any result due, for
-        # example, to some undesired swapping between debit and credit.
         taxes = self._create_caba_taxes_for_report_lines(report_lines_dict, company)
 
-        # Create invoice and refund using the tax we just made
         invoice_types = {
             "sale": ("out_invoice", "out_refund"),
             "purchase": ("in_invoice", "in_refund"),
@@ -1308,8 +1202,6 @@ class TestTaxReport(TestAccountReportsCommon):
             if on_all_invoices_created:
                 on_all_invoices_created(invoices)
 
-        # Generate the report and check the results
-        # We check the taxes on invoice have impacted the report properly
         options = self._generate_options(tax_report, date_from=today, date_to=today)
         inv_report_lines = tax_report._get_lines(options)
         self.assertLinesValues(
@@ -1317,7 +1209,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def _register_full_payment_for_invoice(self, invoice):
-        """Fully pay the invoice, so that the cash basis entries are created"""
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1328,12 +1219,7 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_tax_report_grid_cash_basis(self):
-        """Cash basis moves created for taxes based on payments are handled differently
-        by the report; their sign must be managed properly.
-        """
-        # 100 (base, invoice) - 100 (base, refund) + 20 (tax, invoice) - 5 (25% tax, refund) = 15
         self._run_caba_generic_test(
-            #   Name                      Balance
             [0, 1],
             [
                 ("Sale", 15),
@@ -1344,20 +1230,13 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_tax_report_grid_cash_basis_refund(self):
-        """Cash basis moves created for taxes based on payments are handled differently
-        by the report; their sign must be managed properly. Here an invoice is
-        reconciled with a refund (created separately, so not cancelling it).
-        """
 
         def reconcile_opposite_types(invoices):
-            """Reconciles the created invoices with their matching refund."""
             invoices.mapped("line_ids").filtered(
                 lambda x: x.account_type in ("asset_receivable", "liability_payable")
             ).reconcile()
 
-        # 100 (base, invoice) - 100 (base, refund) + 20 (tax, invoice) - 5 (25% tax, refund) = 15
         self._run_caba_generic_test(
-            #   Name                      Balance
             [0, 1],
             [
                 ("Sale", 15),
@@ -1368,16 +1247,8 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_tax_report_grid_cash_basis_misc_pmt(self):
-        """Cash basis moves created for taxes based on payments are handled differently
-        by the report; their sign must be managed properly. Here the invoice is paid
-        with a misc operation instead of a payment.
-        """
 
         def reconcile_with_misc_pmt(invoice):
-            """Create a misc operation equivalent to a full payment and reconciles
-            the invoice with it.
-            """
-            # Pay the invoice with a misc operation simulating a payment, so that the cash basis entries are created
             invoice_reconcilable_line = invoice.line_ids.filtered(
                 lambda x: x.account_type in ("liability_payable", "asset_receivable")
             )
@@ -1412,9 +1283,7 @@ class TestTaxReport(TestAccountReportsCommon):
             )
             (invoice_reconcilable_line + payment_reconcilable_line).reconcile()
 
-        # 100 (base, invoice) - 100 (base, refund) + 20 (tax, invoice) - 5 (25% tax, refund) = 15
         self._run_caba_generic_test(
-            #   Name                      Balance
             [0, 1],
             [
                 ("Sale", 15),
@@ -1425,11 +1294,7 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_caba_no_payment(self):
-        """The cash basis taxes of an unpaid invoice should
-        never impact the report.
-        """
         self._run_caba_generic_test(
-            #   Name                      Balance
             [0, 1],
             [
                 ("Sale", 0.0),
@@ -1439,12 +1304,8 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_caba_half_payment(self):
-        """Paying half the amount of the invoice should report half the
-        base and tax amounts.
-        """
 
         def register_half_payment_for_invoice(invoice):
-            """Pay half of the invoice, so that the cash basis entries are created"""
             payment_method_id = (
                 self.inbound_payment_channel
                 if invoice.is_inbound()
@@ -1460,9 +1321,7 @@ class TestTaxReport(TestAccountReportsCommon):
                 }
             )._create_payments()
 
-        # 50 (base, invoice) - 50 (base, refund) + 10 (tax, invoice) - 2.5 (25% tax, refund) = 7.5
         self._run_caba_generic_test(
-            #   Name                     Balance
             [0, 1],
             [
                 ("Sale", 7.5),
@@ -1472,18 +1331,13 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_caba_mixed_generic_report(self):
-        """Tests mixing taxes with different tax exigibilities displays correct amounts
-        in the generic tax report.
-        """
         self.env.company.account_config_id.tax_exigibility = True
-        # Create taxes
         regular_tax = self.env["account.tax"].create(
             {
                 "name": "Regular",
                 "amount": 42,
                 "amount_type": "percent",
                 "type_tax_use": "sale",
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
@@ -1495,11 +1349,9 @@ class TestTaxReport(TestAccountReportsCommon):
                 "type_tax_use": "sale",
                 "tax_exigibility": "on_payment",
                 "cash_basis_transition_account_id": self.cash_basis_transfer_account.id,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
-        # Create an invoice using them, and post it
         invoice = self.init_invoice(
             "out_invoice",
             invoice_date="2021-07-01",
@@ -1509,12 +1361,10 @@ class TestTaxReport(TestAccountReportsCommon):
             company=self.company_data["company"],
         )
 
-        # Check the report only contains non-caba things
         report = self.env.ref("account.generic_tax_report")
         options = self._generate_options(report, invoice.date, invoice.date)
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                         Net               Tax
             [0, 1, 2],
             [
                 ("Sales", "", 42),
@@ -1524,7 +1374,6 @@ class TestTaxReport(TestAccountReportsCommon):
             options,
         )
 
-        # Pay half of the invoice
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1535,10 +1384,8 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Check the report again: half the cash basis should be there
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                          Net               Tax
             [0, 1, 2],
             [
                 ("Sales", "", 47),
@@ -1549,7 +1396,6 @@ class TestTaxReport(TestAccountReportsCommon):
             options,
         )
 
-        # Pay the rest
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1560,10 +1406,8 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Check everything is in the report
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                          Net              Tax
             [0, 1, 2],
             [
                 ("Sales", "", 52),
@@ -1575,11 +1419,7 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_report_mixed_exigibility_affect_base_generic_invoice(self):
-        """Tests mixing caba and non-caba taxes with one of them affecting the base
-        of the other works properly on invoices for the generic report.
-        """
         self.env.company.account_config_id.tax_exigibility = True
-        # Create taxes
         regular_tax = self.env["account.tax"].create(
             {
                 "name": "Regular",
@@ -1588,7 +1428,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 "type_tax_use": "sale",
                 "include_base_amount": True,
                 "sequence": 0,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
@@ -1602,32 +1441,26 @@ class TestTaxReport(TestAccountReportsCommon):
                 "cash_basis_transition_account_id": self.cash_basis_transfer_account.id,
                 "include_base_amount": True,
                 "sequence": 1,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
         report = self.env.ref("account.generic_tax_report")
-        # Case 1: on_invoice tax affecting on_payment tax's base
         self._run_check_suite_mixed_exigibility_affect_base(
             regular_tax + caba_tax,
             "2021-07-01",
             report,
-            # Name,                          Net,               Tax
             [0, 1, 2],
-            # Before payment
             [
                 ("Sales", "", 42),
                 ("Regular (42.0%)", 100, 42),
                 ("Total Sales", "", 42),
             ],
-            # After paying 30%
             [
                 ("Sales", "", 46.26),
                 ("Regular (42.0%)", 100, 42),
                 ("Cash Basis (10.0%)", 42.6, 4.26),
                 ("Total Sales", "", 46.26),
             ],
-            # After full payment
             [
                 ("Sales", "", 56.2),
                 ("Regular (42.0%)", 100, 42),
@@ -1636,31 +1469,25 @@ class TestTaxReport(TestAccountReportsCommon):
             ],
         )
 
-        # Change sequence
         caba_tax.sequence = 0
         regular_tax.sequence = 1
 
-        # Case 2: on_payment tax affecting on_invoice tax's base
         self._run_check_suite_mixed_exigibility_affect_base(
             regular_tax + caba_tax,
             "2021-07-02",
             report,
-            #   Name                         Net                Tax
             [0, 1, 2],
-            # Before payment
             [
                 ("Sales", "", 46.2),
                 ("Regular (42.0%)", 110, 46.2),
                 ("Total Sales", "", 46.2),
             ],
-            # After paying 30%
             [
                 ("Sales", "", 49.2),
                 ("Cash Basis (10.0%)", 30, 3),
                 ("Regular (42.0%)", 110, 46.2),
                 ("Total Sales", "", 49.2),
             ],
-            # After full payment
             [
                 ("Sales", "", 56.2),
                 ("Cash Basis (10.0%)", 100, 10),
@@ -1670,11 +1497,7 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_report_mixed_exigibility_affect_base_tags(self):
-        """Tests mixing caba and non-caba taxes with one of them affecting the base
-        of the other works properly on invoices for the tax report.
-        """
         self.env.company.account_config_id.tax_exigibility = True
-        # Create taxes
         tax_report = self.env["report.formula"].create(
             {
                 "name": "Sokovia Accords",
@@ -1714,14 +1537,11 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Case 1: on_invoice tax affecting on_payment tax's base
         self._run_check_suite_mixed_exigibility_affect_base(
             regular_tax + caba_tax,
             "2021-07-01",
             tax_report,
-            #   Name                                       Balance
             [0, 1],
-            # Before payment
             [
                 (f"{regular_tax.id}-invoice-base", 100),
                 (f"{regular_tax.id}-invoice-100", 42),
@@ -1732,7 +1552,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 (f"{caba_tax.id}-refund-base", 0.0),
                 (f"{caba_tax.id}-refund-100", 0.0),
             ],
-            # After paying 30%
             [
                 (f"{regular_tax.id}-invoice-base", 100),
                 (f"{regular_tax.id}-invoice-100", 42),
@@ -1743,7 +1562,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 (f"{caba_tax.id}-refund-base", 0.0),
                 (f"{caba_tax.id}-refund-100", 0.0),
             ],
-            # After full payment
             [
                 (f"{regular_tax.id}-invoice-base", 100),
                 (f"{regular_tax.id}-invoice-100", 42),
@@ -1756,18 +1574,14 @@ class TestTaxReport(TestAccountReportsCommon):
             ],
         )
 
-        # Change sequence
         caba_tax.sequence = 0
         regular_tax.sequence = 1
 
-        # Case 2: on_payment tax affecting on_invoice tax's base
         self._run_check_suite_mixed_exigibility_affect_base(
             regular_tax + caba_tax,
             "2021-07-02",
             tax_report,
-            #   Name                                       Balance
             [0, 1],
-            # Before payment
             [
                 (f"{regular_tax.id}-invoice-base", 110),
                 (f"{regular_tax.id}-invoice-100", 46.2),
@@ -1778,7 +1592,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 (f"{caba_tax.id}-refund-base", 0.0),
                 (f"{caba_tax.id}-refund-100", 0.0),
             ],
-            # After paying 30%
             [
                 (f"{regular_tax.id}-invoice-base", 110),
                 (f"{regular_tax.id}-invoice-100", 46.2),
@@ -1789,7 +1602,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 (f"{caba_tax.id}-refund-base", 0.0),
                 (f"{caba_tax.id}-refund-100", 0.0),
             ],
-            # After full payment
             [
                 (f"{regular_tax.id}-invoice-base", 110),
                 (f"{regular_tax.id}-invoice-100", 46.2),
@@ -1812,7 +1624,6 @@ class TestTaxReport(TestAccountReportsCommon):
         vals_30_percent_paid,
         vals_fully_paid,
     ):
-        # Create an invoice using them
         invoice = self.init_invoice(
             "out_invoice",
             invoice_date=invoice_date,
@@ -1822,7 +1633,6 @@ class TestTaxReport(TestAccountReportsCommon):
             company=self.company_data["company"],
         )
 
-        # Check the report
         report_options = self._generate_options(report, invoice.date, invoice.date)
         self.assertLinesValues(
             report._get_lines(report_options),
@@ -1831,7 +1641,6 @@ class TestTaxReport(TestAccountReportsCommon):
             report_options,
         )
 
-        # Pay 30% of the invoice
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1842,7 +1651,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Check the report again: 30% of the caba amounts should be there
         self.assertLinesValues(
             report._get_lines(report_options),
             report_columns,
@@ -1850,7 +1658,6 @@ class TestTaxReport(TestAccountReportsCommon):
             report_options,
         )
 
-        # Pay the rest: total caba amounts should be there
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=invoice.ids, active_model="account.move"
         ).create(
@@ -1860,7 +1667,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Check the report
         self.assertLinesValues(
             report._get_lines(report_options),
             report_columns,
@@ -1869,9 +1675,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_caba_always_exigible(self):
-        """Misc operations without payable nor receivable lines must always be exigible,
-        whatever the tax_exigibility configured on their taxes.
-        """
         tax_report = self.env["report.formula"].create(
             {
                 "name": "Laplace's Box",
@@ -1910,7 +1713,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Create a misc operation using various combinations of our taxes
         move = self.env["account.move"].create(
             {
                 "date": "2021-08-01",
@@ -1950,11 +1752,9 @@ class TestTaxReport(TestAccountReportsCommon):
             "A move without payable/receivable line should always be exigible, whatever its taxes.",
         )
 
-        # Check tax report by grid
         report_options = self._generate_options(tax_report, move.date, move.date)
         self.assertLinesValues(
             tax_report._get_lines(report_options),
-            #   Name                                        Balance
             [0, 1],
             [
                 (f"{regular_tax.id}-invoice-base", 200),
@@ -1969,12 +1769,10 @@ class TestTaxReport(TestAccountReportsCommon):
             report_options,
         )
 
-        # Check generic tax report
         tax_report = self.env.ref("account.generic_tax_report")
         report_options = self._generate_options(tax_report, move.date, move.date)
         self.assertLinesValues(
             tax_report._get_lines(report_options),
-            #   Name                               Net           Tax
             [0, 1, 2],
             [
                 ("Sales", "", 108.2),
@@ -1987,16 +1785,8 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_tax_report_grid_caba_negative_inv_line(self):
-        """Tests cash basis taxes work properly in case a line of the invoice
-        has been made with a negative quantities and taxes (causing debit and
-        credit to be inverted on the base line).
-        """
 
         def neg_line_invoice_generator(inv_type, partner, account, date, tax):
-            """Invoices created here have a line at 100 with a negative quantity of -1.
-            They also required a second line (here 200), so that the invoice doesn't
-            have a negative total, but we don't put any tax on it.
-            """
             return self.env["account.move"].create(
                 {
                     "move_type": inv_type,
@@ -2012,7 +1802,6 @@ class TestTaxReport(TestAccountReportsCommon):
                                 "tax_ids": [Command.set(tax.ids)],
                             }
                         ),
-                        # Second line, so that the invoice doesn't have a negative total
                         Command.create(
                             {
                                 "name": "test",
@@ -2026,9 +1815,7 @@ class TestTaxReport(TestAccountReportsCommon):
                 }
             )
 
-        # -100 (base, invoice) + 100 (base, refund) - 20 (tax, invoice) + 5 (25% tax, refund) = -15
         self._run_caba_generic_test(
-            #   Name                      Balance
             [0, 1],
             [
                 ("Sale", -15),
@@ -2039,20 +1826,12 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_report_multi_inv_line_no_rep_account(self):
-        """Tests the behavior of the tax report when using a tax without any
-        repartition account (hence doing its tax lines on the base account),
-        and using the tax on two lines (to make sure grouping is handled
-        properly by the report).
-        We do that for both regular and cash basis taxes.
-        """
-        # Create taxes
         regular_tax = self.env["account.tax"].create(
             {
                 "name": "Regular",
                 "amount": 42,
                 "amount_type": "percent",
                 "type_tax_use": "sale",
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
 
@@ -2064,12 +1843,10 @@ class TestTaxReport(TestAccountReportsCommon):
                 "type_tax_use": "sale",
                 "tax_exigibility": "on_payment",
                 "cash_basis_transition_account_id": self.cash_basis_transfer_account.id,
-                # We use default repartition: 1 base line, 1 100% tax line
             }
         )
         self.env.company.account_config_id.tax_exigibility = True
 
-        # Make one invoice of 2 lines for each of our taxes
         invoice_date = fields.Date.from_string("2021-04-01")
         other_account_revenue = self.company_data["default_account_revenue"].copy()
 
@@ -2129,11 +1906,9 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Post the invoices
         regular_invoice.action_post()
         caba_invoice.action_post()
 
-        # Pay cash basis invoice
         self.env["wizard.account.move.line.pay"].with_context(
             active_ids=caba_invoice.ids, active_model="account.move"
         ).create(
@@ -2142,12 +1917,10 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )._create_payments()
 
-        # Check the generic report
         report = self.env.ref("account.generic_tax_report")
         options = self._generate_options(report, invoice_date, invoice_date)
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                         Net               Tax
             [0, 1, 2],
             [
                 ("Sales", "", 168),
@@ -2201,10 +1974,8 @@ class TestTaxReport(TestAccountReportsCommon):
         invoice_date = fields.Date.from_string("2018-01-01")
         tax_accounts_map = {}
         for index, company in enumerate(all_companies):
-            # Make sure the fiscal country is what we want
             self.change_company_country(company, self.fiscal_country)
 
-            # Create a tax for this report
             tax_account = self.env["account.account"].create(
                 {
                     "name": "Tax unit test tax account",
@@ -2235,7 +2006,6 @@ class TestTaxReport(TestAccountReportsCommon):
             created_taxes[company] = test_tax
             tax_accounts[company] = tax_account
 
-            # Create an invoice with this tax
             self.init_invoice(
                 "out_invoice",
                 partner=self.partner_a,
@@ -2246,7 +2016,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 company=company,
             )
 
-        # Check report content, with various scenarios of active companies
         for active_companies in (
             company_1,
             company_2,
@@ -2255,9 +2024,6 @@ class TestTaxReport(TestAccountReportsCommon):
             all_companies,
             company_2 + company_3,
         ):
-            # In the regular flow, selected companies are changed from the selector, in the UI.
-            # The tax unit option of the report changes the value of the selector, so it'll
-            # always stay consistent with allowed_company_ids.
             options = self._generate_options(
                 tax_unit_report.with_context(allowed_company_ids=active_companies.ids),
                 invoice_date,
@@ -2287,10 +2053,8 @@ class TestTaxReport(TestAccountReportsCommon):
                 tax_unit_report.with_context(
                     allowed_company_ids=active_companies.ids
                 )._get_lines(options),
-                #   Name                                                          Balance
                 [0, 1],
                 [
-                    # Company 1
                     (
                         f"{created_taxes[company_1].id}-invoice-base",
                         100 if company_1 in active_companies else 0.0,
@@ -2301,7 +2065,6 @@ class TestTaxReport(TestAccountReportsCommon):
                     ),
                     (f"{created_taxes[company_1].id}-refund-base", 0.0),
                     (f"{created_taxes[company_1].id}-refund-100", 0.0),
-                    # Company 2
                     (
                         f"{created_taxes[company_2].id}-invoice-base",
                         200
@@ -2318,7 +2081,6 @@ class TestTaxReport(TestAccountReportsCommon):
                     ),
                     (f"{created_taxes[company_2].id}-refund-base", 0.0),
                     (f"{created_taxes[company_2].id}-refund-100", 0.0),
-                    # Company 3 (not part of the unit, so always 0 in our cases)
                     (
                         f"{created_taxes[company_3].id}-invoice-base",
                         300 if company_3 == active_companies[0] else 0.0,
@@ -2333,7 +2095,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 options,
             )
 
-        # Test tax closing for the tax unit
         self._assert_tax_closing(
             company_1,
             "2018-01-01",
@@ -2369,7 +2130,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_unit_create_horizontal_group(self):
-        """Creating two tax units must create the matching horizontal groups and link them to the generic tax report."""
         company_1 = self.company_data["company"]
         company_2 = self.company_data_2["company"]
         company_2.currency_id = company_1.currency_id
@@ -2398,13 +2158,11 @@ class TestTaxReport(TestAccountReportsCommon):
             ]
         )
 
-        # Check if the two last horizontal_group are the one created from the tax unit
         horizontal_groups = self.env["account.report.horizontal.group"].search([])[-2:]
         self.assertEqual(
             ["First Tax Unit", "Second Tax Unit"], horizontal_groups.mapped("name")
         )
 
-        # Check if the generic_tax_report has the two groups
         generic_tax_report = self.env.ref("account.generic_tax_report")
         self.assertTrue(
             all(
@@ -2414,7 +2172,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_unit_auto_fiscal_position(self):
-        # setup companies
         company_1 = self.company_data["company"]
         company_2 = self.company_data_2["company"]
         company_2.currency_id = company_1.currency_id
@@ -2423,7 +2180,6 @@ class TestTaxReport(TestAccountReportsCommon):
         unit_companies = company_1 + company_2 + company_3
         all_companies = unit_companies + company_4
 
-        # create a tax unit containing 3 companies
         tax_unit = self.env["account.tax.unit"].create(
             {
                 "name": "One unit to rule them all",
@@ -2436,7 +2192,6 @@ class TestTaxReport(TestAccountReportsCommon):
         self.assertFalse(tax_unit.fpos_synced)
         tax_unit.action_sync_unit_fiscal_positions()
         for current_company in unit_companies:
-            # verify that partners for other companies in the unit have a fiscal position that removes taxes
             created_fp = tax_unit._get_tax_unit_fiscal_positions(
                 companies=current_company
             )
@@ -2447,8 +2202,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 .property_account_position_id,
                 created_fp,
             )
-            # Tax unit FP drops taxes bound to a fiscal position; taxes
-            # without fiscal_position_ids are preserved by design.
             company_taxes = self.env["account.tax"].search(
                 [("company_ids", "in", [current_company.id])]
             )
@@ -2464,7 +2217,6 @@ class TestTaxReport(TestAccountReportsCommon):
         tax_unit._compute_fpos_synced()
         self.assertTrue(tax_unit.fpos_synced)
 
-        # remove company 3 from the unit and verify that the fiscal positions are removed from the relevant companies
         tax_unit.write({"company_ids": [Command.unlink(company_3.id)]})
         self.assertFalse(tax_unit.fpos_synced)
         tax_unit.action_sync_unit_fiscal_positions()
@@ -2481,7 +2233,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         self.assertTrue(tax_unit.fpos_synced)
 
-        # add company 3, remove company 2
         tax_unit.write(
             {"company_ids": [Command.link(company_3.id), Command.unlink(company_2.id)]}
         )
@@ -2499,7 +2250,6 @@ class TestTaxReport(TestAccountReportsCommon):
             company_1.partner_id.with_company(company_3).property_account_position_id
         )
 
-        # remove the fiscal position from the partner of company 1
         company_1.partner_id.with_company(
             company_3
         ).property_account_position_id = False
@@ -2507,7 +2257,6 @@ class TestTaxReport(TestAccountReportsCommon):
         tax_unit.action_sync_unit_fiscal_positions()
         self.assertTrue(tax_unit.fpos_synced)
 
-        # replace all companies
         tax_unit.write(
             {
                 "company_ids": [Command.set([company_2.id, company_4.id])],
@@ -2518,7 +2267,6 @@ class TestTaxReport(TestAccountReportsCommon):
         tax_unit.action_sync_unit_fiscal_positions()
         self.assertTrue(tax_unit.fpos_synced)
 
-        # no fiscal positions should exist after deleting the unit
         tax_unit.unlink()
         for company in all_companies:
             self.assertFalse(
@@ -2528,10 +2276,8 @@ class TestTaxReport(TestAccountReportsCommon):
             )
 
     def test_tax_unit_with_foreign_vat_fpos(self):
-        # Company 1 has the test country as domestic country, and a foreign VAT fpos in a different province
         company_1 = self.company_data["company"]
 
-        # Company 2 belongs to a different country, and has a foreign VAT fpos to the test country
         company_2 = self.company_data_2["company"]
         company_2.currency_id = company_1.currency_id
 
@@ -2576,7 +2322,6 @@ class TestTaxReport(TestAccountReportsCommon):
             company=company_2,
         )
 
-        # Both companies belong to a tax unit in test country
         tax_unit = self.env["account.tax.unit"].create(
             {
                 "name": "Taxvengers, assemble!",
@@ -2587,10 +2332,7 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # Opening the tax report for test country, we should see the same as in
-        # test_tax_report_domestic_monocompany + the 1000 of company 2, whatever the main company
 
-        # Varying the order of the two companies (and hence changing the "main" active one) should make no difference.
         for unit_companies in ((company_1 + company_2), (company_2 + company_1)):
             options = self._generate_options(
                 self.domestic_tax_report.with_context(
@@ -2608,33 +2350,26 @@ class TestTaxReport(TestAccountReportsCommon):
 
             self.assertLinesValues(
                 self.domestic_tax_report._get_lines(options),
-                #   Name                                                          Balance
                 [0, 1],
                 [
-                    # out_invoice
                     (f"{self.domestic_sale_tax.id}-invoice-base", 200),
                     (f"{self.domestic_sale_tax.id}-invoice-30", 30),
                     (f"{self.domestic_sale_tax.id}-invoice-70", 70),
                     (f"{self.domestic_sale_tax.id}-invoice--100", -100),
-                    # out_refund
                     (f"{self.domestic_sale_tax.id}-refund-base", -20),
                     (f"{self.domestic_sale_tax.id}-refund-30", -3),
                     (f"{self.domestic_sale_tax.id}-refund-70", -7),
                     (f"{self.domestic_sale_tax.id}-refund--100", 10),
-                    # in_invoice
                     (f"{self.domestic_purchase_tax.id}-invoice-base", 400),
                     (f"{self.domestic_purchase_tax.id}-invoice-40", 80),
                     (f"{self.domestic_purchase_tax.id}-invoice-60", 120),
                     (f"{self.domestic_purchase_tax.id}-invoice--100", -200),
-                    # in_refund
                     (f"{self.domestic_purchase_tax.id}-refund-base", -60),
                     (f"{self.domestic_purchase_tax.id}-refund-40", -12),
                     (f"{self.domestic_purchase_tax.id}-refund-60", -18),
                     (f"{self.domestic_purchase_tax.id}-refund--100", 30),
-                    # out_invoice, company 2
                     (f"{company_2_tax.id}-invoice-base", 1000),
                     (f"{company_2_tax.id}-invoice-100", 110),
-                    # out_refund, company 2
                     (f"{company_2_tax.id}-refund-base", 0),
                     (f"{company_2_tax.id}-refund-100", 0),
                 ],
@@ -2648,9 +2383,7 @@ class TestTaxReport(TestAccountReportsCommon):
             self.domestic_tax_return_type,
             {
                 company_1: [
-                    # 0.5 * 0.7 * (200 - 20) = 63
                     {"debit": 63.0, "credit": 0.0, "account_id": self.tax_account_1.id},
-                    # 0.5 * 0.6 * (400 - 60) = 102
                     {
                         "debit": 0.0,
                         "credit": 102.0,
@@ -2668,7 +2401,6 @@ class TestTaxReport(TestAccountReportsCommon):
                     },
                 ],
                 company_2: [
-                    # 0.11 * 1 * 1000 = 110
                     {
                         "debit": 110.0,
                         "credit": 0.0,
@@ -2686,9 +2418,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_tax_report_with_entries_with_sale_and_purchase_taxes(self):
-        """Ensure signs are managed properly for entry moves, in the case where
-        invoice/bill like entries are created and reverted.
-        """
         today = fields.Date.today()
         company = self.env.user.company_id
         tax_report = self.env["report.formula"].create(
@@ -2708,7 +2437,6 @@ class TestTaxReport(TestAccountReportsCommon):
             }
         )
 
-        # We create some report lines
         report_lines_dict = {
             "sale": [
                 self._create_tax_report_line(
@@ -2728,7 +2456,6 @@ class TestTaxReport(TestAccountReportsCommon):
             ],
         }
 
-        # We create a sale and a purchase tax, linked to our report line tags
         taxes = self._create_taxes_for_report_lines(report_lines_dict, company)
 
         account_types = {
@@ -2743,7 +2470,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 ],
                 limit=1,
             )
-            # create one entry and it's reverse
             move_form = Form(
                 self.env["account.move"].with_context(default_move_type="entry")
             )
@@ -2756,7 +2482,6 @@ class TestTaxReport(TestAccountReportsCommon):
                 line.tax_ids.clear()
                 line.tax_ids.add(tax)
 
-            # Create a third account.move.line for balance.
             with move_form.line_ids.new() as line:
                 line.account_id = account
                 if tax.type_tax_use == "sale":
@@ -2785,12 +2510,10 @@ class TestTaxReport(TestAccountReportsCommon):
 
         options = self._generate_options(tax_report, today, today)
 
-        # We check the taxes on entries have impacted the report properly
         inv_report_lines = tax_report._get_lines(options)
 
         self.assertLinesValues(
             inv_report_lines,
-            #   Name                         Balance
             [0, 1],
             [
                 ("Sale base", 0.0),
@@ -2803,9 +2526,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
     @freeze_time("2023-10-05 02:00:00")
     def test_invoice_like_entry_reverse_caba_report(self):
-        """Cancelling the reconciliation of an invoice using cash basis taxes should reverse the cash basis move
-        in such a way that the original cash basis move lines' impact falls down to 0.
-        """
         self.env.company.account_config_id.tax_exigibility = True
 
         tax_report = self.env["report.formula"].create(
@@ -2912,7 +2632,6 @@ class TestTaxReport(TestAccountReportsCommon):
             receivable_line_form.debit = 142
         move = move_form.save()
         move.action_post()
-        # make payment
         payment = self.env["account.payment"].create(
             {
                 "payment_type": "inbound",
@@ -2931,7 +2650,6 @@ class TestTaxReport(TestAccountReportsCommon):
         report_options = self._generate_options(tax_report, move.date, move.date)
         self.assertLinesValues(
             tax_report._get_lines(report_options),
-            #   Name                                       Balance
             [0, 1],
             [
                 ("Invoice base", 0.0),
@@ -2942,13 +2660,11 @@ class TestTaxReport(TestAccountReportsCommon):
             report_options,
         )
 
-        # Reconcile the move with a payment
         (payment.move_id + move).line_ids.filtered(
             lambda x: x.account_id == self.company_data["default_account_receivable"]
         ).reconcile()
         self.assertLinesValues(
             tax_report._get_lines(report_options),
-            #   Name                                       Balance
             [0, 1],
             [
                 ("Invoice base", 100),
@@ -2959,11 +2675,9 @@ class TestTaxReport(TestAccountReportsCommon):
             report_options,
         )
 
-        # Unreconcile the moves
         move.line_ids.remove_move_reconcile()
         self.assertLinesValues(
             tax_report._get_lines(report_options),
-            #   Name                                       Balance
             [0, 1],
             [
                 ("Invoice base", 0.0),
@@ -2975,7 +2689,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def setup_multi_vat_context(self):
-        """Setup 2 tax reports, taxes and partner to represent a multiVat context in which both taxes affect both tax report"""
 
         def get_tag(report_line):
             return report_line.expression_ids._get_matching_tags()
@@ -3099,7 +2812,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(local_tax_report, "2022-10-01", "2022-12-31")
         self.assertLinesValues(
             local_tax_report._get_lines(options),
-            #   Name                                        Balance
             [0, 1],
             [
                 ("base_local", 100.0),
@@ -3111,7 +2823,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(foreign_tax_report, invoice.date, invoice.date)
         self.assertLinesValues(
             foreign_tax_report._get_lines(options),
-            #   Name                                          Balance
             [0, 1],
             [
                 ("base_foreign", 100.0),
@@ -3137,7 +2848,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(local_tax_report, invoice.date, invoice.date)
         self.assertLinesValues(
             local_tax_report._get_lines(options),
-            #   Name                                        Balance
             [0, 1],
             [
                 ("base_local", 100.0),
@@ -3149,7 +2859,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(foreign_tax_report, invoice.date, invoice.date)
         self.assertLinesValues(
             foreign_tax_report._get_lines(options),
-            #   Name                                          Balance
             [0, 1],
             [
                 ("base_foreign", 100.0),
@@ -3159,7 +2868,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_tax_report_w_rounding_line(self):
-        """Check that the tax report is correct when a rounding line is added to an invoice."""
         self.env["res.config.settings"].create(
             {"company_id": self.company_data["company"].id, "group_cash_rounding": True}
         )
@@ -3251,7 +2959,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                                         Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 0.63),
@@ -3271,7 +2978,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                                         Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 0.63),
@@ -3297,7 +3003,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                                               Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 0.63),
@@ -3321,9 +3026,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_multivat_multi_fpos(self):
-        """Tests the tax report and closing in a multivat setup, with multiple foreign VAT fiscal positions defined for the same country, with
-        the same VAT number, ensuring all of them are properly taken into account.
-        """
         self.foreign_vat_fpos.auto_apply = False
         self.env["account.fiscal.position"].create(
             {
@@ -3349,25 +3051,20 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.foreign_tax_report._get_lines(options),
-            #   Name                                                          Balance
             [0, 1],
             [
-                # out_invoice
                 (f"{self.foreign_sale_tax.id}-invoice-base", 900),
                 (f"{self.foreign_sale_tax.id}-invoice-80", 432),
                 (f"{self.foreign_sale_tax.id}-invoice-20", 108),
                 (f"{self.foreign_sale_tax.id}-invoice--100", -540),
-                # out_refund
                 (f"{self.foreign_sale_tax.id}-refund-base", -200),
                 (f"{self.foreign_sale_tax.id}-refund-80", -96),
                 (f"{self.foreign_sale_tax.id}-refund-20", -24),
                 (f"{self.foreign_sale_tax.id}-refund--100", 120),
-                # in_invoice
                 (f"{self.foreign_purchase_tax.id}-invoice-base", 1000),
                 (f"{self.foreign_purchase_tax.id}-invoice-51", 306),
                 (f"{self.foreign_purchase_tax.id}-invoice-49", 294),
                 (f"{self.foreign_purchase_tax.id}-invoice--100", -600),
-                # in_refund
                 (f"{self.foreign_purchase_tax.id}-refund-base", -600),
                 (f"{self.foreign_purchase_tax.id}-refund-51", -183.6),
                 (f"{self.foreign_purchase_tax.id}-refund-49", -176.4),
@@ -3383,9 +3080,7 @@ class TestTaxReport(TestAccountReportsCommon):
             self.foreign_tax_return_type,
             {
                 self.env.company: [
-                    # 0.6 * 0.2 * (800 - 200 + 100) = 84
                     {"debit": 84.0, "credit": 0.0, "account_id": self.tax_account_1.id},
-                    # 0.6 * 0.49 * (1000 - 600) = 117.6
                     {
                         "debit": 0.0,
                         "credit": 117.6,
@@ -3406,7 +3101,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_multiple_same_tax_lines_with_multiple_analytics(self):
-        """One Invoice line with analytic_distribution and another with another analytic_distribution, both with the same tax"""
         analytic_plan = self.env["account.analytic.plan"].create(
             {"name": "Plan with Tax details"}
         )
@@ -3516,7 +3210,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                          Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 31.0),
@@ -3537,7 +3230,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                           Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 31.0),
@@ -3554,7 +3246,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_caba_negative_lines_with_multiple_accounts(self):
-        """One invoice with 2 lines on 2 income accounts, one with a negative total, both with a caba tax."""
         self.company_data["company"].account_config_id.tax_exigibility = True
         account_1 = self.company_data["default_account_revenue"]
         account_2 = self.company_data["default_account_assets"]
@@ -3607,7 +3298,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
         payment.action_post()
 
-        # Reconcile the move with a payment
         (payment.move_id + invoice).line_ids.filtered(
             lambda x: x.account_id == self.company_data["default_account_receivable"]
         ).reconcile()
@@ -3617,7 +3307,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                          Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 100.0),
@@ -3637,7 +3326,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                           Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 100.0),
@@ -3651,10 +3339,6 @@ class TestTaxReport(TestAccountReportsCommon):
         )
 
     def test_caba_not_duplicated_in_tax_report_when_in_tax_group(self):
-        """
-        Test that the CABA tax amount is not duplicated in the general tax report
-        when it is part of a tax group.
-        """
 
         self.env.company.account_config_id.tax_exigibility = True
 
@@ -3700,7 +3384,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                           Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 10.0),
@@ -3714,7 +3397,6 @@ class TestTaxReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                                                           Base      Tax
             [0, 1, 2],
             [
                 ("Sales", "", 20.0),
@@ -3783,7 +3465,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(report, "2025-01-01", "2025-03-31")
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Balance
             [0, 1],
             [
                 ("test", 42.0),
@@ -3794,7 +3475,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(report, "2025-01-01", "2025-01-31")
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Balance
             [0, 1],
             [
                 ("test", 42.0),
@@ -3805,7 +3485,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(report, "2025-02-01", "2025-02-28")
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Balance
             [0, 1],
             [
                 ("test", 42.0),
@@ -3816,7 +3495,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(report, "2025-03-01", "2025-03-31")
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Balance
             [0, 1],
             [
                 ("test", 42.0),
@@ -3827,7 +3505,6 @@ class TestTaxReport(TestAccountReportsCommon):
         options = self._generate_options(report, "2025-04-01", "2025-04-01")
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                    Balance
             [0, 1],
             [
                 ("test", 100.0),

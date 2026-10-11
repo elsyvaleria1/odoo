@@ -55,13 +55,8 @@ class EsmRegistry(NamedTuple):
     runtime_bundle_names: frozenset = frozenset()
     exports: frozenset = frozenset()
     bundle_owners: Mapping = MappingProxyType({})
-    # page bundles served as one classic script: a browser keeps a compiled
-    # form of those across loads, and of a module script it streams it does not
     classic_page_bundles: frozenset = frozenset()
 
-    # a bundle is named after the module that declared it, except when that
-    # module was folded into another and the bundle kept its name
-    # (`pos_preparation_display.assets`, declared by `pos_enterprise`)
     def bundle_addon(self, bundle: str) -> str:
         return self.bundle_owners.get(bundle) or bundle.partition(".")[0]
 
@@ -272,9 +267,6 @@ def _freeze_registry(
         secondary_bundle_names=frozenset(
             child for children in secondary_includes.values() for child in children
         ),
-        # a secondary others declare as their parent is one half of a split
-        # page (web.assets_frontend_lazy under web.assets_frontend_minimal),
-        # not a satellite riding on one
         page_secondaries=frozenset(
             child for children in secondary_includes.values() for child in children
         )
@@ -301,9 +293,6 @@ def _prepare_esm_registry() -> EsmRegistry:
     standalone_bundles: set = set()
     runtime_bundles: set = set()
     external_libs: dict = {}
-    # Modules reached by NAME from outside the bundle graph -- a test's
-    # browser_js code, a tour started from Python -- which no scan of JavaScript
-    # sources can discover. Declared by the module that owns them.
     exports: set = set()
     external_lib_owner: dict = {}
     bundle_owners: dict = {}

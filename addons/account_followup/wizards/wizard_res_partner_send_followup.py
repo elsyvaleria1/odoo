@@ -12,13 +12,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
     @api.model
     def default_get(self, fields):
         defaults = super().default_get(fields)
-        # The action carries no binding and no context defaults of its own, so the
-        # active record is a property of the caller: only the link on the partner
-        # form supplies it. Reached any other way -- Technical > Window Actions, a
-        # bookmarked /odoo/action- URL, a server action -- the bare subscripts below
-        # used to raise KeyError, an opaque 500 rather than something to act on. An
-        # assert was doubly wrong for this: it states an operator-facing
-        # precondition as a developer invariant, and `python -O` compiles it out.
         active_ids = self.env.context.get("active_ids") or []
         if (
             self.env.context.get("active_model") != "res.partner"
@@ -44,7 +37,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
 
     partner_id = fields.Many2one(comodel_name="res.partner")
 
-    # email fields
     email = fields.Boolean()
     email_recipient_ids = fields.Many2many(
         comodel_name="res.partner",
@@ -53,9 +45,8 @@ class WizardResPartnerSendFollowup(models.TransientModel):
         compute="_compute_email_recipient_ids",
         store=True,
         readonly=False,
-    )  # override
+    )
 
-    # sms fields
     sms = fields.Boolean()
     sms_body = fields.Char(
         compute="_compute_sms_body",
@@ -67,20 +58,17 @@ class WizardResPartnerSendFollowup(models.TransientModel):
         domain=[("model", "=", "res.partner")],
     )
 
-    # print fields
     print_letter = fields.Boolean(
         string="Letter",
         default=True,
     )
     join_invoices = fields.Boolean(string="Attach Invoices")
 
-    # attachments fields
     attachment_ids = fields.Many2many(
         comodel_name="ir.attachment",
         bypass_search_access=True,
     )
 
-    # Wizard buttons visibility controllers
     show_send_button = fields.Boolean(compute="_compute_show_send_button")
     show_print_button = fields.Boolean(compute="_compute_show_print_button")
 
@@ -95,7 +83,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
             wizard.show_print_button = wizard.print_letter
 
     def _compute_render_model(self) -> None:
-        # OVERRIDES mixin.mail.render
         self.render_model = "res.partner"
 
     def _get_defaults_from_followup_line(self, followup_line):
@@ -119,7 +106,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
 
     @api.depends("template_id")
     def _compute_body(self) -> None:
-        # OVERRIDES mixin.mail.composer
         report = self.env["account.followup.report"]
         for wizard in self:
             wizard.body = report._get_main_body(
@@ -157,10 +143,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
             )
 
     def _get_followup_request(self):
-        """Build the reminder the user has composed in this wizard.
-
-        :rtype: FollowupRequest
-        """
         return FollowupRequest.prepare(
             self.partner_id,
             manual=True,
@@ -179,10 +161,6 @@ class WizardResPartnerSendFollowup(models.TransientModel):
         )
 
     def process_followup(self):
-        """Process the followup for the active partner, then close the wizard."""
-        # Bound to the wizard's Send / Print / Send & Print buttons (same
-        # handler, view picks the label). Sends email/SMS and prints the
-        # followup letter (pdf) depending on which channels are enabled.
         action = self.partner_id._execute_followup_and_print(
             self._get_followup_request()
         )

@@ -124,7 +124,6 @@ class ScorecardDimension(models.Model):
 
     @api.model
     def _score_band_labels(self, keys) -> dict:
-        # Called on a dimension: the rows of a measured dimension name a band.
         return {}
 
     def _score_band_labels_for(self, keys):

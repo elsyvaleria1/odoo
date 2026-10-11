@@ -78,8 +78,6 @@ class TestHolidaysMail(TestHrHolidaysCommon, MailCase):
                 self.assertTrue("has been accepted" in admin_emails.preview)
 
     def test_notify_officers_when_the_type_asks_for_it(self):
-        """A type flagged to notify officers reaches every officer of the
-        employee's company, without anyone maintaining a list."""
         leave_type = self.env["hr.leave.type"].create(
             {
                 "name": "Notifying Time Off",
@@ -114,7 +112,6 @@ class TestHolidaysMail(TestHrHolidaysCommon, MailCase):
         )
 
     def test_no_officer_notification_unless_the_type_asks(self):
-        """The flag is off by default, so nothing changes for existing types."""
         leave_type = self.env["hr.leave.type"].create(
             {"name": "Quiet Time Off", "requires_allocation": False}
         )

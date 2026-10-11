@@ -142,8 +142,6 @@ class TestInvoiceDraftBucket(TestSaleCommon):
             self.line.set_manual_price(90.0)
 
     def test_a_draft_invoice_does_not_move_the_credit_still_to_invoice(self):
-        """A draft is no receivable: the partner's credit still to invoice
-        holds the order until the invoice is posted, and not twice."""
         self.env.company.account_use_credit_limit = True
         partner = self.partner_a.commercial_partner_id
         partner.invalidate_recordset(["credit_to_invoice"])

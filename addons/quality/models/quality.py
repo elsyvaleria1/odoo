@@ -8,13 +8,6 @@ from odoo.tools import frozendict
 
 
 def _update_sequence_names(env, vals_list, sequence_code) -> None:
-    """Name every vals dict that has no real name yet from `sequence_code`.
-
-    `ir.sequence.next_by_code` searches for the sequence *and* draws one value,
-    so naming a batch of records one at a time cost two round trips each --
-    measured on a 25-line receipt, 50 of the 79 queries `action_confirm` spent
-    were these.  `next_by_code_batch` does the search once and the draw once.
-    """
     new_name = env._("New")
     todo = [
         vals for vals in vals_list if "name" not in vals or vals["name"] == new_name
@@ -34,7 +27,6 @@ class QualityPointTest_Type(models.Model):
     _access_anchors = frozendict({"company": ""})
     _description = "Quality Control Test Type"
 
-    # Used instead of selection field in order to hide a choice depending on the view.
     name = fields.Char(
         translate=True,
         required=True,
@@ -50,13 +42,6 @@ class QualityPointTest_Type(models.Model):
 
     @api.model
     def _get_default(self) -> Self:
-        """The test type a new quality point or check falls back to.
-
-        One implementation for the two of them: `quality.point` and
-        `quality.check` each carried a `_get_default_test_type_id` *and* a
-        `_get_domain_default`, so every module narrowing the default had
-        to override the same thing four times.
-        """
         return self.search(self._get_domain_default(), limit=1)
 
     @api.model
@@ -190,33 +175,16 @@ class QualityPoint(models.Model):
         return super().create(vals_list)
 
     def check_execute_now(self):
-        """Whether this point should produce a check right now.
-
-        Single-record by contract: `quality_control` answers `periodical` with
-        a query over this point's own checks, and `random` with a draw per
-        point.
-        """
         _debug.pipeline("quality_check_execute_now", points=self)
         self.check_singleton()
         return True
 
     def _is_check_execution_sampled(self) -> bool:
-        """True when `check_execute_now` draws a fresh answer on every call.
-
-        A sampled point has to be asked once per prospective check.  Any other
-        answers the same thing for a whole batch, so the caller can ask once --
-        which matters because the batch is one call per *move line*.
-        """
         _debug.logic("quality_check_sampled", points=self)
         self.check_singleton()
         return False
 
     def _get_execute_now_by_point(self) -> dict:
-        """`{point id: verdict}` for the points that answer the same every time.
-
-        Sampled points are deliberately absent: the caller must keep asking
-        them per check, and `_is_execution_required` does.
-        """
         _debug.logic("quality_check_by_point", points=self)
         return {
             point.id: point.check_execute_now()
@@ -225,7 +193,6 @@ class QualityPoint(models.Model):
         }
 
     def _is_execution_required(self, settled) -> bool:
-        """Whether to raise a check for this point now, reusing a settled verdict."""
         _debug.logic("quality_execution_required", points=self, settled=settled)
         self.check_singleton()
         if self.id in settled:
@@ -426,8 +393,6 @@ class QualityCheck(models.Model):
 
     @api.depends("point_id")
     def _compute_test_type_id(self) -> None:
-        # `_get_default_test_type_id` searches; hoisted out of the loop so a
-        # batch of point-less checks costs one search instead of one each.
         default_test_type_id = None
         for check in self:
             if check.point_id:
@@ -438,7 +403,6 @@ class QualityCheck(models.Model):
                 check.test_type_id = default_test_type_id
 
     def _is_pass_fail_applicable(self) -> bool:
-        """Return true if do_fail and do_pass can be applied."""
         return False
 
     @api.model_create_multi
@@ -449,11 +413,6 @@ class QualityCheck(models.Model):
     def write(self, vals):
         quality_state = vals.get("quality_state")
         if quality_state in ("pass", "fail"):
-            # Closing a check records who closed it and when -- unless the
-            # caller said.  The old guard read `not vals.get('control_date')`,
-            # which is true of nearly every write, and answered it by calling
-            # `do_pass` / `do_fail`, which wrote a second time and overwrote
-            # an author that had just been supplied.
             vals = {
                 "user_id": self.env.user.id,
                 "control_date": fields.Datetime.now(),
@@ -461,11 +420,6 @@ class QualityCheck(models.Model):
             }
         res = super().write(vals)
         if quality_state in ("pass", "fail"):
-            # `_on_pass` / `_on_fail` are what the bridge modules extend, and
-            # they hang off the write rather than off `do_pass` / `do_fail` so
-            # that a bare `quality_state = 'pass'` reaches them as well --
-            # `mrp_workorder.check_quality_checks` does exactly that, and
-            # relies on the move being picked afterwards.
             if quality_state == "pass":
                 self._on_pass()
             else:
@@ -479,14 +433,10 @@ class QualityCheck(models.Model):
         return self.write({"quality_state": "pass"})
 
     def _on_pass(self):
-        """The checks in `self` have just been marked passed.
-
-        Extension point for the bridge modules; the state is already written
-        when this runs.  Multi-record by contract.
-        """
+        pass
 
     def _on_fail(self):
-        """The checks in `self` have just been marked failed."""
+        pass
 
 
 class QualityAlert(models.Model):
@@ -496,11 +446,6 @@ class QualityAlert(models.Model):
     _check_company_auto = True
 
     def _get_team_id_from_context(self):
-        """The team the current action is scoped to, if any.
-
-        Both the default stage and the kanban group expansion need it, and
-        both had their own copy of this three-line lookup.
-        """
         team_id = self.env.context.get("default_team_id")
         if (
             not team_id
@@ -508,7 +453,6 @@ class QualityAlert(models.Model):
             and self.env.context.get("active_id")
         ):
             team_id = self.env.context["active_id"]
-        # default_team_id is shared with every other usage's documents
         return (
             self.env["team.team"]
             .browse(team_id or ())
@@ -518,7 +462,6 @@ class QualityAlert(models.Model):
         )
 
     def _default_stage_id(self):
-        """Gives default stage_id"""
         domain = Domain("team_ids", "=", False)
         if team_id := self._get_team_id_from_context():
             domain &= Domain("team_ids", "in", team_id)
@@ -615,10 +558,6 @@ class QualityAlert(models.Model):
 
     def write(self, vals):
         if "stage_id" in vals and "date_close" not in vals:
-            # A stage flagged `done` closes the alert.  The old code only ever
-            # set the date, from a second, re-entrant `write`, so an alert
-            # pulled back out of a done stage kept a close date it no longer
-            # had -- and `self.stage_id` was read across the whole recordset.
             stage = self.env["quality.alert.stage"].browse(vals["stage_id"])
             vals = dict(vals, date_close=fields.Datetime.now() if stage.done else False)
         return super().write(vals)
@@ -637,7 +576,6 @@ class QualityAlert(models.Model):
 
     @api.model
     def _read_group_stage_ids(self, stages, domain):
-        """Show stages for the current team, plus any stage with no team."""
         team_id = self._get_team_id_from_context()
         domain = Domain("id", "in", stages.ids) | Domain("team_ids", "=", False)
         if team_id:

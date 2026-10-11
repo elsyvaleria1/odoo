@@ -22,8 +22,6 @@ SAFE_SETTINGS: typing.Final[dict[str, typing.Any]] = {
     "halt_level": 5,
     "raw_enabled": False,
     "file_insertion_enabled": False,
-    # docutils reads DOCUTILSCONFIG, ./docutils.conf and ~/.docutils after
-    # these, so any of them could re-enable raw HTML and file inclusion
     "_disable_config": True,
 }
 
@@ -59,8 +57,6 @@ def _parents(dropped_nodes: list[nodes.Element]) -> list[nodes.Element]:
 class _DropUnsafeUris(Transform):
     default_priority = 871
 
-    # Each parent's children are rebuilt once: replacing or removing one node
-    # at a time looks it up by index, quadratic in a paragraph's links.
     def apply(self) -> None:
         references = [
             reference

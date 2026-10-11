@@ -46,18 +46,11 @@ class TestPaymentTransaction(PaymentCommon):
         self.assertTrue(tx.is_live)
 
     def test_is_not_live_when_created_by_test_provider(self):
-        self.provider.state = "test"  # Will work with anything other than 'enabled'
+        self.provider.state = "test"
         tx = self._create_transaction("redirect")
         self.assertFalse(tx.is_live)
 
     def test_create_multi_generates_unique_references_for_same_prefix(self):
-        """Test that creating several transactions at once without an explicit reference yields
-        unique references.
-
-        All three share the same time-based prefix (created within the same second), so without
-        accounting for the in-batch siblings they would collide on the `reference` unique
-        constraint.
-        """
         common_values = {
             "payment_method_id": self.payment_method_id,
             "amount": self.amount,
@@ -78,7 +71,6 @@ class TestPaymentTransaction(PaymentCommon):
         )
 
     def test_capture_allowed_for_authorized_users(self):
-        """Test that users who have access to a transaction can capture it."""
         if not self.env.ref("account.group_account_invoice", raise_if_not_found=False):
             self.skipTest("account needed for test")
         self.provider.support_manual_capture = "full_only"
@@ -87,7 +79,6 @@ class TestPaymentTransaction(PaymentCommon):
         self._assert_does_not_raise(AccessError, tx.with_user(user).action_capture)
 
     def test_void_allowed_for_authorized_users(self):
-        """Test that users who have access to a transaction can void it."""
         if not self.env.ref("account.group_account_invoice", raise_if_not_found=False):
             self.skipTest("account needed for test")
         self.provider.support_manual_capture = "full_only"
@@ -96,7 +87,6 @@ class TestPaymentTransaction(PaymentCommon):
         self._assert_does_not_raise(AccessError, tx.with_user(user).action_void)
 
     def test_refund_allowed_for_authorized_users(self):
-        """Test that users who have access to a transaction can refund it."""
         if not self.env.ref("account.group_account_invoice", raise_if_not_found=False):
             self.skipTest("account needed for test")
         self.provider.support_refund = "full_only"
@@ -105,25 +95,22 @@ class TestPaymentTransaction(PaymentCommon):
         self._assert_does_not_raise(AccessError, tx.with_user(user).action_refund)
 
     def test_capture_blocked_for_unauthorized_user(self):
-        """Test that users who don't have access to a transaction cannot capture it."""
         self.provider.support_manual_capture = "full_only"
         tx = self._create_transaction("redirect", state="authorized")
         self.assertRaises(AccessError, tx.with_user(self.internal_user).action_capture)
 
     def test_void_blocked_for_unauthorized_user(self):
-        """Test that users who don't have access to a transaction cannot void it."""
         self.provider.support_manual_capture = "full_only"
         tx = self._create_transaction("redirect", state="authorized")
         self.assertRaises(AccessError, tx.with_user(self.internal_user).action_void)
 
     def test_refund_blocked_for_unauthorized_user(self):
-        """Test that users who don't have access to a transaction cannot refund it."""
         self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
         self.assertRaises(AccessError, tx.with_user(self.internal_user).action_refund)
 
     def test_refunds_count(self):
-        self.provider.support_refund = "full_only"  # Should simply not be False
+        self.provider.support_refund = "full_only"
         tx = self._create_transaction("redirect", state="done")
         for reference_index, operation in enumerate(
             ("online_redirect", "online_direct", "online_token", "validation", "refund")
@@ -132,7 +119,7 @@ class TestPaymentTransaction(PaymentCommon):
                 "dummy",
                 reference=f"R-{tx.reference}-{reference_index + 1}",
                 state="done",
-                operation=operation,  # Override the computed flow
+                operation=operation,
                 source_transaction_id=tx.id,
             )._post_process()
 
@@ -143,7 +130,6 @@ class TestPaymentTransaction(PaymentCommon):
         )
 
     def test_capturing_tx_creates_child_tx(self):
-        """Test that capturing a transaction creates a child capture transaction."""
         self.provider.capture_manually = True
         self.provider.support_manual_capture = "partial"
         source_tx = self._create_transaction("direct", state="authorized")
@@ -152,7 +138,6 @@ class TestPaymentTransaction(PaymentCommon):
         self.assertNotEqual(child_tx, source_tx)
 
     def test_voiding_tx_creates_child_tx(self):
-        """Test that voiding a transaction creates a child void transaction."""
         self.provider.capture_manually = True
         self.provider.support_manual_capture = "partial"
         source_tx = self._create_transaction("direct", state="authorized")
@@ -164,7 +149,6 @@ class TestPaymentTransaction(PaymentCommon):
         self.provider.support_refund = "partial"
         tx = self._create_transaction("redirect", state="done")
 
-        # Test the default values of a full refund transaction
         refund_tx = tx._create_child_transaction(tx.amount, is_refund=True)
         self.assertEqual(
             refund_tx.reference,
@@ -205,7 +189,6 @@ class TestPaymentTransaction(PaymentCommon):
             msg="The partner of the refund transaction should be that of the source transaction.",
         )
 
-        # Test the values of a partial refund transaction with custom refund amount
         partial_refund_tx = tx._create_child_transaction(11.11, is_refund=True)
         self.assertAlmostEqual(
             partial_refund_tx.amount,
@@ -309,7 +292,6 @@ class TestPaymentTransaction(PaymentCommon):
         )
 
     def test_validate_amount_skips_validation_transactions(self):
-        """Test that the amount validation is skipped for validation transactions."""
         tx = self._create_transaction("redirect", operation="validation")
         with patch(
             "odoo.addons.payment.models.payment_transaction.PaymentTransaction"
@@ -320,18 +302,11 @@ class TestPaymentTransaction(PaymentCommon):
         self.assertNotEqual(tx.state, "error")
 
     def test_view_refunds_opens_the_refund_not_another_child(self):
-        """Test that `action_view_refunds` opens the refund transaction even when a non-refund
-        child (e.g. a partial capture) has a higher id than the refund.
-
-        Without an `operation` filter, the default `id desc` order would open the most recent child
-        of any operation instead of the refund.
-        """
         self.provider.support_manual_capture = "partial"
         self.provider.support_refund = "partial"
         source_tx = self._create_transaction("direct", state="done")
         refund_tx = source_tx._create_child_transaction(30.0, is_refund=True)
         refund_tx.state = "done"
-        # A non-refund child created *after* the refund therefore has a higher id.
         later_capture_tx = source_tx._create_child_transaction(10.0)
         later_capture_tx.state = "done"
 
@@ -344,14 +319,7 @@ class TestPaymentTransaction(PaymentCommon):
         )
 
     def test_validate_amount_skips_when_no_amount_data_extracted(self):
-        """Test that amount validation is skipped (and does not crash) when no amount data is
-        extracted.
-
-        Providers that opt out of the amount check return `None`, and the base implementation used
-        when no provider claims the payment data returns `{}` too. `_check_amount` must treat
-        both as "skip" rather than raising a `KeyError` while indexing the missing data.
-        """
-        tx = self._create_transaction("direct")  # Uses the base `_extract_amount_data`.
+        tx = self._create_transaction("direct")
         tx._check_amount({})
         self.assertNotEqual(
             tx.state,
@@ -392,7 +360,6 @@ class TestPaymentTransaction(PaymentCommon):
         self.assertEqual(apply_updates_mock.call_count, 0)
 
     def test_processing_tokenizes_validated_transaction(self):
-        """Test that `_process` tokenizes 'authorized' and 'done' transactions when possible."""
         self.provider.support_manual_capture = "partial"
         self.provider.capture_manually = True
         for state in ["authorized", "done"]:
@@ -415,7 +382,6 @@ class TestPaymentTransaction(PaymentCommon):
             self.assertTrue(tx.token_id)
 
     def test_processing_only_tokenizes_when_requested(self):
-        """Test that `_process` only triggers tokenization if the user requested it."""
         tx = self._create_transaction("redirect", state="done", tokenize=False)
         with (
             patch(

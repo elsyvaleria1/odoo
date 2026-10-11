@@ -30,15 +30,9 @@ class CalendarFilters(models.Model):
     partner_checked = fields.Boolean(
         string="Checked",
         default=True,
-    )  # used to know if the partner is checked in the filter of the calendar view for the user_id.
+    )
 
     _user_id_partner_id_unique = models.Constraint(
         "UNIQUE(user_id, partner_id)",
         "A user cannot have the same contact twice.",
     )
-
-    # `unlink_from_partner_id(partner_id)` used to live here: an @api.model
-    # public -- so RPC-callable -- method that unlinked the filters of *every*
-    # user for a partner. Nothing in any repo called it, and with no guard
-    # on this model it let any employee wipe another's calendar overlays. The
-    # guard is now `calendar_filters_rule_own`; the method is gone.

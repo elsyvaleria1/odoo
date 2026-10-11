@@ -317,13 +317,6 @@ class SaleOrderLine(models.Model):
             purchase_order.origin = ", ".join([*origins, self.order_id.name])
 
     def _purchase_service_create(self, quantity=None):
-        """Create a purchase order line (and maybe a purchase order) for `quantity` of this sale line.
-        If a line should create a RFQ, it will check for existing PO. If no one is find, the SO line will create one, then adds
-        a new PO line. The created purchase order line will be linked to the SO line.
-        :param quantity: the quantity to force on the PO line, expressed in SO line UoM
-        :return: map of sale.order.line to the created purchase.order.line records
-        :rtype: dict
-        """
         sale_line_purchase_map = {}
         for line in self:
             line = line.with_company(line._purchase_service_get_company())

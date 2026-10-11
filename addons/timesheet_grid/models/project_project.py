@@ -95,8 +95,6 @@ class ProjectProject(models.Model):
                     ]
                 )
             )
-            # The ratio between the workable hours in the gantt view scale and the workable hours
-            # between start and end dates of the project allows to determine the allocated hours for the current scale
             ratio = 1
             if work_intervals_for_project:
                 ratio = work_intervals_for_scale / work_intervals_for_project

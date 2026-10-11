@@ -14,7 +14,6 @@ def _has_url_suffix(suffix, menu):
 class TestWEventMenu(TestWEventCommon):
     @users("admin")
     def test_seo_data(self):
-        """Test SEO data for submenus on event website page"""
 
         self.assertFalse(
             self.event.website_meta_title, "Event should initially have no meta title"

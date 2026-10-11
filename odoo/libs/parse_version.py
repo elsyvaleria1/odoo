@@ -29,7 +29,6 @@ def _parse_version_parts(s: str) -> Iterator[str]:
             if len(digits) <= 8:
                 yield digits.zfill(8)
             else:
-                # ":" sorts after every digit, so a longer number outranks any 8-digit one
                 yield f":{len(digits):08d}{digits}"
         else:
             yield "*" + part

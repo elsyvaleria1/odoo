@@ -6,7 +6,6 @@ class AlarmManager(models.AbstractModel):
 
     @api.model
     def _send_reminder(self):
-        """Cron method, overridden here to send WhatsApp reminders as well"""
         super()._send_reminder()
         events_by_alarm = self._get_events_by_alarm_to_notify("whatsapp")
         if not events_by_alarm:
@@ -19,7 +18,6 @@ class AlarmManager(models.AbstractModel):
             events = (
                 self.env["calendar.event"].with_prefetch(event_ids).browse(event_ids)
             )
-            # Filter out the event organizer when notify_responsible is False
             attendees = events.attendee_ids.filtered(
                 lambda attendee: attendee.state != "declined"
             )

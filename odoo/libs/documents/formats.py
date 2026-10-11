@@ -28,10 +28,7 @@ __all__ = [
 class Format:
     mimetype: str
     extension: str
-    # other spellings of this very type: they name its extension
     aliases: frozenset[str] = field(default_factory=frozenset)
-    # other types whose content may be this format: a reader of it tries them,
-    # but they are not it (prose is text/plain too)
     read_from: frozenset[str] = field(default_factory=frozenset)
 
     @property

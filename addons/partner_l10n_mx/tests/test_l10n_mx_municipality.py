@@ -9,8 +9,6 @@ class MunicipalityTestBase(TransactionCase):
         super().setUpClass()
         cls.Municipality = cls.env["l10n_mx.municipality"]
         cls.mexico = cls.env.ref("base.mx")
-        # An own state: a database with the real municipalities loaded already
-        # holds codes 001, 002... in every real state.
         cls.state = cls.env["res.country.state"].create(
             {
                 "name": "Test State",

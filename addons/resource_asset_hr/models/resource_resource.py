@@ -57,9 +57,6 @@ class ResourceResource(models.Model):
                 )
 
     def _inverse_custody_employee(self, employee_field) -> None:
-        # Through write, so the resource field's own inverse runs: an assignment
-        # written inside another inverse would otherwise never reach the table.
-        # Grouped by holder, so a batch writing one holder is one write.
         resource_field = EMPLOYEE_CUSTODY_FIELDS[employee_field]
         by_resource = defaultdict(self.browse)
         for resource in self:
@@ -115,10 +112,6 @@ class ResourceResource(models.Model):
 def live_custody_subquery(
     role, resource_alias, alias, *, at="(clock_timestamp() AT TIME ZONE 'UTC')"
 ) -> str:
-    """A lateral subquery naming the employee who holds `role` on the resource
-    right at ``at`` (now by default): the latest started assignment, so a resource joins at most one row
-    and a report's groups do not split. Use it as ``LEFT JOIN LATERAL {subquery}
-    ON TRUE``."""
     return f"""(
                 SELECT e.id AS employee_id
                   FROM resource_assignment ra

@@ -39,7 +39,6 @@ MISC_SUITES = (
     "@document/router",
     "@document/thumbnail_service",
 )
-# tagged mobile: run under the mobile preset, where ui.isSmall is real
 MOBILE_SUITES = ("@document/mobile",)
 ALL_DOCUMENTS_SUITE_PREFIXES = (*VIEW_SUITES, *PDF_SUITES, *MISC_SUITES, *MOBILE_SUITES)
 

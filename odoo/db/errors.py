@@ -64,10 +64,6 @@ def is_handled_by_seam(exc: BaseException) -> bool:
 
 
 def mark_failed_statement(exc: BaseException, query: Any) -> None:
-    # PostgreSQL reports both sides of a foreign-key violation with the same
-    # SQLSTATE and diagnostics; only lc_messages-dependent prose tells an
-    # INSERT that points nowhere from a DELETE something still points at.
-    # The statement verb is the locale-proof witness.
     if match := _STATEMENT_VERB_RE.search(str(query)):
         setattr(exc, _STATEMENT_VERB_ATTR, match[1].upper())
 

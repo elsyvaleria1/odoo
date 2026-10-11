@@ -15,7 +15,6 @@ class OverviewRecordAction(TypedDict):
 def prepare_overview_record_action(
     env: Environment, report_id: int, line_id: str
 ) -> OverviewRecordAction:
-    """Open the record encoded in an overview line using its default form."""
     report = env["report.formula"].browse(report_id)
     model, record_id = report._get_model_info_from_id(line_id)
     return {

@@ -67,7 +67,6 @@ class WizardMarketingCampaignLaunchTest(models.TransientModel):
                 participant.res_id = participant.resource_ref.id
 
     def action_launch_test(self) -> dict:
-        """Create test participant based on user choice."""
         previous_test_participants = self.env["marketing.participant"].search(
             [
                 ("campaign_id", "=", self.campaign_id.id),

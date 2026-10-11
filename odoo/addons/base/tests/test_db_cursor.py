@@ -845,8 +845,6 @@ class TestCursorBulkMethods(BaseCase):
                     cr.in_pipeline,
                     "the second statement should have run in pipeline mode",
                 )
-                # The queued statement has no result yet; the cursor syncs the
-                # pipeline to answer rather than reporting the stale None.
                 self.assertEqual([c.name for c in cr.description], ["b"])
                 self.assertEqual(cr.fetchall(), [(2,)])
 
@@ -1331,10 +1329,10 @@ class TestCopyFrom(BaseCase):
     def test_copy_from_empty_nonreturning_short_circuits(self):
         with registry().cursor() as cr:
             cr.execute("CREATE TEMP TABLE _test_cpens (a int, b text)")
-            before = cr.sql_log_count  # noqa: E8516  asserts the row counter itself
+            before = cr.sql_log_count
             self.assertIsNone(cr.copy_from("_test_cpens", ["a", "b"], []))
             self.assertEqual(
-                cr.sql_log_count,  # noqa: E8516  asserts the row counter itself
+                cr.sql_log_count,
                 before,
                 "empty copy_from must not hit the server",
             )
@@ -2738,8 +2736,6 @@ class TestExecuteValuesPageSize(BaseCase):
             )
 
     def test_a_page_wider_than_the_bind_ceiling_is_clamped(self):
-        # PostgreSQL counts bind parameters in a uint16; a page_size that would
-        # put 65 536 of them in one statement is split rather than refused.
         with registry().cursor() as cr:
             cr.execute("CREATE TEMP TABLE _ev_ceiling (a int, b int)")
             rows = [(i, -i) for i in range(40000)]
@@ -2767,8 +2763,6 @@ class TestFaketimeSearchPathIsAStartupOption(BaseCase):
                     with self.subTest(attempt=attempt):
                         cr = connection.cursor()
                         try:
-                            # public resolves before pg_catalog, so a public.now()
-                            # shadows the builtin: that is what faketime needs
                             cr.execute("SELECT current_schemas(true)")
                             self.assertEqual(cr.fetchone(), (["public", "pg_catalog"],))
                             self.assertEqual(
@@ -2957,10 +2951,6 @@ class TestExpDropClosesPoolTwice(BaseCase):
         fake_conn.cursor.return_value = fake_cursor
 
         with (
-            # `exp_drop` is the RPC-facing entry: it refuses a database this
-            # process does not serve, which on a `-d <db>` lane is every name
-            # but the lane's own.  The listing patch alone got past the gate
-            # until the gate also began asking the process-level predicate.
             tools.config.patch(db_name=[fake_db], dbfilter=""),
             patch("odoo.service.db.listing.list_dbs", return_value=[fake_db]),
             patch("odoo.modules.registry.Registry.remove"),
@@ -3714,12 +3704,12 @@ class TestExecutemanyGeneratorParams(BaseCase):
     def test_loaded_generator_executes_and_counts_all_rows(self):
         with registry().cursor() as cr:
             cr.execute("CREATE TEMP TABLE _test_em_gen (v int)")
-            before = cr.sql_log_count  # noqa: E8516  asserts the row counter itself
+            before = cr.sql_log_count
             cr.executemany(
                 "INSERT INTO _test_em_gen(v) VALUES (%s)",
                 ((i,) for i in range(3)),
             )
-            counted = cr.sql_log_count - before  # noqa: E8516  asserts the row counter itself
+            counted = cr.sql_log_count - before
             cr.execute("SELECT count(*) FROM _test_em_gen")
             self.assertEqual(cr.fetchone()[0], 3)
             self.assertEqual(
@@ -3729,10 +3719,10 @@ class TestExecutemanyGeneratorParams(BaseCase):
     def test_empty_generator_short_circuits(self):
         with registry().cursor() as cr:
             cr.execute("CREATE TEMP TABLE _test_em_empty (v int)")
-            before = cr.sql_log_count  # noqa: E8516  asserts the row counter itself
+            before = cr.sql_log_count
             cr.executemany("INSERT INTO _test_em_empty(v) VALUES (%s)", (x for x in ()))
             self.assertEqual(
-                cr.sql_log_count,  # noqa: E8516  asserts the row counter itself
+                cr.sql_log_count,
                 before,
                 "empty generator must short-circuit",
             )
@@ -3742,7 +3732,7 @@ class TestExecutemanyGeneratorParams(BaseCase):
     def test_copy_from_empty_generator_short_circuits(self):
         with registry().cursor() as cr:
             cr.execute("CREATE TEMP TABLE _test_copy_empty_gen (v int)")
-            rows_before = cr.sql_log_count  # noqa: E8516  asserts the row counter itself
+            rows_before = cr.sql_log_count
             statements_before = cr.sql_statement_count
             cr.copy_from("_test_copy_empty_gen", ["v"], (x for x in ()))
             self.assertEqual(
@@ -3751,7 +3741,7 @@ class TestExecutemanyGeneratorParams(BaseCase):
                 "an empty generator must not pay a COPY round trip; a length "
                 "test cannot see one, so the first row is peeled instead",
             )
-            self.assertEqual(cr.sql_log_count, rows_before)  # noqa: E8516  asserts the row counter itself
+            self.assertEqual(cr.sql_log_count, rows_before)
 
     def test_copy_from_a_generator_still_copies(self):
         with registry().cursor() as cr:
@@ -3781,10 +3771,6 @@ class TestRecoverableErrorLogLevel(BaseCase):
         )
 
     def test_lock_not_available_logged_as_warning_not_error(self):
-        # An advisory lock, not a row of res_users: under ``-u`` the loading
-        # transaction holds the admin row until it commits, so a plain
-        # ``FOR UPDATE`` on it waits forever. ``lock_timeout`` raises the same
-        # 55P03 ``LockNotAvailable`` that ``NOWAIT`` does.
         with registry().cursor() as cr_lock:
             cr_lock.execute("SELECT pg_advisory_xact_lock(%s)", (0x0D00,))
             with self.assertLogs("odoo.db.cursor", level="WARNING") as cm:
@@ -5014,10 +5000,10 @@ class TestFailedStatementsAreCounted(BaseCase):
         return cr
 
     def _delta(self, cr, fn):
-        before, before_global = cr.sql_log_count, odoo.db.sql_counter  # noqa: E8516  asserts the row counter itself
+        before, before_global = cr.sql_log_count, odoo.db.sql_counter
         with contextlib.suppress(Exception):
             fn()
-        delta = (cr.sql_log_count - before, odoo.db.sql_counter - before_global)  # noqa: E8516  asserts the row counter itself
+        delta = (cr.sql_log_count - before, odoo.db.sql_counter - before_global)
         with contextlib.suppress(Exception):
             cr.rollback()
         return delta
@@ -5152,11 +5138,11 @@ class TestFailedStatementsAreCounted(BaseCase):
     def test_copy_is_counted_like_every_other_statement_entry_point(self):
         cr = self._cr()
         try:
-            before = cr.sql_log_count  # noqa: E8516  asserts the row counter itself
+            before = cr.sql_log_count
             with cr.copy("COPY _test_count (a) FROM STDIN") as cp:
                 cp.write("7\n8\n")
             self.assertEqual(
-                cr.sql_log_count - before,  # noqa: E8516  asserts the row counter itself
+                cr.sql_log_count - before,
                 1,
                 "cr.copy() was the one marked statement entry point invisible "
                 "to query counting",
@@ -5713,9 +5699,6 @@ class TestPartitionedTablesAreVisible(BaseCase):
 
 class TestInheritedColumnsAreTheParents(BaseCase):
     def test_a_member_s_inherited_column_is_named_and_kept(self):
-        # A table-inheritance member cannot drop a column its parent declares
-        # (PG: "cannot drop inherited column"); the drop path skips it and the
-        # parent's field owns it.
         cr = db_connect(common.get_db_name()).cursor()
         try:
             cr.execute("DROP TABLE IF EXISTS _test_tree_child, _test_tree_root CASCADE")
@@ -6396,8 +6379,6 @@ class TestNoRedundantLockAfterDdl(BaseCase):
 
 
 class TestPermitsSurviveKilledBackendsUnderLoad(BaseCase):
-    # Cursors are taken from db_connect(), not registry(): every TestCursor
-    # serialises on one lock, and this test exists to race.
     @mute_logger("odoo.db.cursor")
     def test_budget_and_checkouts_read_zero_after_the_storm(self):
         import gc
@@ -6432,7 +6413,7 @@ class TestPermitsSurviveKilledBackendsUnderLoad(BaseCase):
                     if rnd.random() < 0.5:
                         cr.commit()
                     if rnd.random() < 0.1:
-                        del cr  # dropped without close: __del__ must release
+                        del cr
                         continue
                     cr.close()
                     with lock:

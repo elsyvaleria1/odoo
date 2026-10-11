@@ -64,10 +64,8 @@ class WaMaCase(
 @tagged("link_tracker")
 class TestMarketingAutomation(WaMaCase):
     def test_detect_responses(self):
-        """Test reply mechanism on whatsapp"""
         self.campaign.sync_participants()
 
-        # send message
         with self.mockWhatsappGateway():
             self.campaign.execute_activities()
 
@@ -76,7 +74,6 @@ class TestMarketingAutomation(WaMaCase):
                 ("activity_id", "in", self.activity.ids),
             ]
         )
-        # recieve message
         with self.mockWhatsappGateway():
             self._receive_whatsapp_message(
                 self.whatsapp_account,
@@ -91,7 +88,6 @@ class TestLinkTracker(WaMaCase):
     def test_tracked_button(self):
         self.campaign.sync_participants()
 
-        # send message
         with self.mockWhatsappGateway():
             self.campaign.execute_activities()
 
@@ -103,7 +99,6 @@ class TestLinkTracker(WaMaCase):
         )
         self.assertEqual(len(trace), 1)
 
-        # find embedded links
         sent_wa_msg = self._wa_msg_sent_vals[0]
         btn_1 = next(
             c
@@ -129,7 +124,6 @@ class TestLinkTracker(WaMaCase):
         )
         self.assertEqual(len(body_link_tracker), 1)
 
-        # FIXME: why are buttons using local part url only, not body url ?
         self.assertEqual(
             link_btn_1, f"r/{btn_link_tracker.code}/w/{trace.whatsapp_message_id.id}"
         )
@@ -137,12 +131,10 @@ class TestLinkTracker(WaMaCase):
             link_body,
             f"{self.link_base_url}/r/{body_link_tracker.code}/w/{trace.whatsapp_message_id.id}",
         )
-        # FIXME: why are dynamic buttons not having their trailing / ?
         self.assertEqual(link_btn_2, "???")
 
     def test_wa_template_button_component_tracking(self):
         button_component = self.test_wa_template._acquire_template_button_component()
-        # FIXME: dynamic url seems badly done, missing / ?
         self.assertDictEqual(
             button_component,
             {

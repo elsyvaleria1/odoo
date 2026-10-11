@@ -28,8 +28,6 @@ _debug = DebugLog(__name__)
 
 class CustomerPortal(payment_portal.PaymentPortal):
     def _get_domain_subscription(self, partner):
-        # Include all subscriptions linked to any contact (child) of the company (commercial partner).
-        # This ensures all users of a company can view and manage each other's subscriptions.
         return [
             ("partner_id", "child_of", partner.commercial_partner_id.id),
             ("subscription_state", "in", ["3_progress", "4_paused", "6_churn"]),
@@ -37,7 +35,6 @@ class CustomerPortal(payment_portal.PaymentPortal):
         ]
 
     def _prepare_home_portal_values(self, counters):
-        """Add subscription details to main account page"""
         values = super()._prepare_home_portal_values(counters)
         if "subscription_count" in counters:
             if request.env["sale.order"].has_access("read"):
@@ -152,9 +149,6 @@ class CustomerPortal(payment_portal.PaymentPortal):
             },
         }
 
-        # Clamp to the declared vocabularies: both come straight off the query
-        # string, and indexing them unchecked answered an unknown value with a
-        # KeyError (HTTP 500).
         sortby = self._resolve_searchbar_option(
             searchbar_sortings, sortby, "subscription_state"
         )
@@ -162,7 +156,6 @@ class CustomerPortal(payment_portal.PaymentPortal):
         filterby = self._resolve_searchbar_option(searchbar_filters, filterby, "all")
         domain += searchbar_filters[filterby]["domain"]
 
-        # pager
         order_count = Order.search_count(domain)
         pager = portal_pager(
             url="/my/subscriptions",
@@ -252,16 +245,12 @@ class CustomerPortal(payment_portal.PaymentPortal):
             not order_sudo.end_date
             or order_sudo.end_date > order_sudo.next_invoice_date
         )
-        # day periods are not supported in standard but may be used by the community.
-        # Invoicing more than once a day will never be supported because of the invoicing cron periodicity.
         periods = {"day": "days", "week": "weeks", "month": "months", "year": "years"}
-        # Calculate the duration when the customer can reopen his subscription
         missing_periods = 1
         if order_sudo.next_invoice_date:
             rel_period = relativedelta(
                 datetime.datetime.today(), order_sudo.next_invoice_date
             )
-            # In missing_periods, include current period to ensure not show payment form to portal if more than one billing cycle is overdue
             missing_periods = (
                 ceil(
                     getattr(rel_period, periods[order_sudo.plan_id.repeat_unit])
@@ -278,21 +267,16 @@ class CustomerPortal(payment_portal.PaymentPortal):
         progress_child = order_sudo.subscription_child_ids.filtered(
             lambda s: s.subscription_state in SUBSCRIPTION_PROGRESS_STATE
         )
-        # prevent churned SO with a confirmed renewal to be reactivated. The child should be updated.
-        # Additionally, prevent customers from reopening any closed subscription by paying either
-        # the plan or the subscription plan is archived.
         display_payment_message = False
         if (
             order_sudo.subscription_state in ["3_progress", "4_paused"]
             and not progress_child
         ):
-            # In progress orders are always payable.
             display_payment_message = True
         elif (
             order_sudo.subscription_state in SUBSCRIPTION_CLOSED_STATE
             and not progress_child
         ):
-            # The SO is payable if it has an active plan and products
             active_products = all(
                 prod.active for prod in order_sudo.line_ids.product_template_id
             )
@@ -347,7 +331,7 @@ class CustomerPortal(payment_portal.PaymentPortal):
 
         payment_form_values = {
             "default_token_id": order_sudo.payment_token_id.id,
-            "sale_order_id": order_sudo.id,  # Allow Stripe to check if tokenization is required.
+            "sale_order_id": order_sudo.id,
         }
 
         payment_context = {
@@ -370,10 +354,8 @@ class CustomerPortal(payment_portal.PaymentPortal):
         )
 
     def _prepare_partner_addresses(self, order_sudo):
-        """Retrieves the invoicing and delivery addresses of the sale order, and format them properly for display."""
         addresses_data = self._prepare_address_data(order_sudo.partner_id)
         check_user_id = order_sudo.user_id or request.env.user
-        # we don't allow to update the subscription shipping address yet.
         return {
             "multiple_addresses_enabled": check_user_id.has_group(
                 "account.group_delivery_invoice_address"
@@ -641,7 +623,6 @@ class CustomerPortal(payment_portal.PaymentPortal):
         addresses_data = self._prepare_address_data(order_sudo.partner_id)
         invoicing_id = int(kw.get("invoicing_address", 0))
         invoicing_partner = request.env["res.partner"].browse(invoicing_id)
-        # Check if the provided address is in the list of accessible address to the SO partner
         if invoicing_partner in addresses_data["billing_addresses"]:
             order_sudo.partner_invoice_id = invoicing_partner
         return request.redirect(
@@ -660,20 +641,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         access_token=None,
         **kwargs,
     ):
-        """Override of payment: additional rendering values for subscription order management.
-        Sale order transaction for subscription: We need to assign the token once the payment is done.
-        Invoice of a subscription: we update the transaction route and define an alternative transaction_route_subscription
-        that will be used if the customer check the option to save that payment method on the contract.
-
-        :param bool manage_subscription: Whether the payment form should be adapted to allow
-                                         managing subscriptions. This allows distinguishing cases.
-        :param str sale_order_id: The sale order for which a payment is made, as a `sale.order` id.
-        :param str subscription_invoice_id: The account move for which a payment is made, as a `account.move` id.
-        :param str access_token: The access token of the subscription.
-        :param dict kwargs: Locally unused keywords arguments.
-        :return: The dict of extra payment form values.
-        :rtype: dict
-        """
         extra_payment_form_values = super()._prepare_extra_payment_form_context(
             manage_subscription=manage_subscription,
             sale_order_id=sale_order_id,
@@ -685,16 +652,16 @@ class PaymentPortal(payment_portal.PaymentPortal):
             sale_order_id = self._cast_as_int(sale_order_id)
             extra_payment_form_values.update(
                 {
-                    "sale_order_id": sale_order_id,  # Allow Stripe to check if tokenization is required.
+                    "sale_order_id": sale_order_id,
                 }
             )
-            try:  # Check document access against what could be a portal access token.
+            try:
                 order_sudo = request.env["access.link"]._open_record(
                     "sale.order", sale_order_id, access_token
                 )
             except (
                 AccessError
-            ):  # It is a payment access token computed on the payment context.
+            ):
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),
@@ -728,7 +695,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 )
             except (
                 AccessError
-            ):  # It is a payment access token computed on the payment context.
+            ):
                 if not payment_utils.is_access_token_valid(
                     access_token,
                     kwargs.get("partner_id"),
@@ -739,8 +706,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
             invoice_sudo = request.env["account.move"].sudo().browse(invoice_id)
 
             if invoice_sudo.invoice_line_ids.subscription_id:
-                # Reroute the next steps of the payment flow to the portal view of the invoice.
-                # Add `is_subscription` variable in invoice information for differentiating subscriptions from regular SOs.
                 transaction_route = (
                     f"/my/subscriptions/invoice/{invoice_id}/transaction"
                 )
@@ -754,13 +719,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         return extra_payment_form_values
 
     def _create_transaction(self, *args, **kwargs):
-        """Override of payment to set subscriptions in pending states.
-
-        :param int sale_order_id: The sale order for which a payment id made, as a `sale.order` id
-        :param dict custom_create_values: Additional create values overwriting the default ones
-        :return: The result of the parent method
-        :rtype: recordset of `payment.transaction`
-        """
         tx_sudo = super()._create_transaction(*args, **kwargs)
         if tx_sudo.operation != "validation" and tx_sudo.state not in [
             "done",
@@ -777,15 +735,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
     def subscription_transaction(
         self, order_id, access_token, is_validation=False, **kwargs
     ):
-        """Create a draft transaction and return its processing values.
-        :param int order_id: The subscription for which a transaction is made, as a `sale.order` id
-        :param str access_token: The access token of the subscription used to authenticate the partner
-        :param bool is_validation: Whether the operation is a validation
-        :param dict kwargs: Locally unused data passed to `_create_transaction`
-        :return: The mandatory values for the processing of the transaction
-        :rtype: dict
-        :raise: ValidationError if the subscription id or the access token is invalid
-        """
         order_sudo, redirection = self._get_subscription(access_token, order_id)
         if redirection:
             raise werkzeug.exceptions.NotFound
@@ -793,13 +742,11 @@ class PaymentPortal(payment_portal.PaymentPortal):
         partner_sudo = (
             request.env.user.partner_id if logged_in else order_sudo.partner_id
         )
-        # Anticipate the next period by forcing invoice creation
         subscription_anticipate = str2bool(kwargs.pop("subscription_anticipate", False))
         self._check_transaction_kwargs(kwargs)
         kwargs.update(partner_id=partner_sudo.id)
-        if not is_validation:  # Renewal transaction
+        if not is_validation:
             invoice_to_pay = None
-            # When amount value is set and equal to None, fallback to zero
             amount = kwargs.get("amount") or 0
             if not subscription_anticipate:
                 for invoice in order_sudo.invoice_ids:
@@ -841,10 +788,9 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 {
                     "amount": amount,
                     "currency_id": order_sudo.currency_id.id,
-                    "tokenization_requested": tokenize,  # Renewal transactions are always tokenized
+                    "tokenization_requested": tokenize,
                 }
             )
-            # Create the transaction.
             tx_sudo = self._create_transaction(
                 custom_create_values={
                     "sale_order_ids": [Command.set([order_id])],
@@ -856,13 +802,13 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 is_validation=is_validation,
                 **kwargs,
             )
-        else:  # Validation transaction
+        else:
             kwargs.update(
                 {
-                    "amount": None,  # The amount is computed when creating the transaction.
-                    "currency_id": None,  # The currency is computed when creating the transaction.
+                    "amount": None,
+                    "currency_id": None,
                     "reference_prefix": payment_utils.singularize_reference_prefix(
-                        prefix="V"  # Validation transactions use their own reference prefix
+                        prefix="V"
                     ),
                 }
             )
@@ -885,14 +831,11 @@ class PaymentPortal(payment_portal.PaymentPortal):
     def subscription_transaction_from_invoice(
         self, invoice_id, access_token, is_validation=False, **kwargs
     ):
-        # We should not do validation with this flow, return an empty dict instead.
         if is_validation:
             return {}
 
-        # Get the invoice record using the access token.
         invoice_sudo = self._get_invoice_sudo(access_token, invoice_id)
 
-        # Validate the transaction's kwargs and then update it with invoice information.
         self._check_transaction_kwargs(kwargs)
         logged_in = not request.env.user._is_public()
         partner_sudo = (
@@ -907,9 +850,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
             }
         )
 
-        # Get subscriptions linked to the invoice lines and create the transaction linking to them.
         subscriptions_sudo = invoice_sudo.invoice_line_ids.subscription_id
-        # Note: tokenize will always be True in this flow (unautomated goes via account_payment)
         tokenize = kwargs.get("tokenization_requested") or kwargs.get("flow") == "token"
         tx_sudo = self._create_transaction(
             custom_create_values={
@@ -928,14 +869,6 @@ class PaymentPortal(payment_portal.PaymentPortal):
         "/my/subscriptions/assign_token/<int:order_id>", type="jsonrpc", auth="user"
     )
     def subscription_assign_token(self, order_id, token_id, access_token=None):
-        """Assign a token to a subscription.
-
-        :param int order_id: The subscription to which the token must be assigned, as a
-                                    `sale.order` id
-        :param int token_id: The token to assign, as a `payment.token` id
-        :param str access_token: the order portal access token
-        :return: None
-        """
         order_sudo, redirection = self._get_subscription(access_token, order_id)
         partner_id = request.env.user.partner_id
 
@@ -949,15 +882,12 @@ class PaymentPortal(payment_portal.PaymentPortal):
                 [
                     ("id", "=", token_id),
                     ("partner_id", "child_of", partner_id.commercial_partner_id.id),
-                    # Bypass active_test context to make sure no archived tokens are used.
                     ("active", "=", True),
                 ]
             )
         )
 
         if not token_sudo:
-            # Archived token are removed from existing subscriptions
-            # and shouldn't be re-assigned through this route.
             raise werkzeug.exceptions.NotFound
 
         max_amount = token_sudo.provider_id.maximum_amount
@@ -980,19 +910,13 @@ class PaymentPortal(payment_portal.PaymentPortal):
 
     @http.route()
     def payment_method(self, sale_order_id=None, **kwargs):
-        """Override to cast sale_order_id passed in via token_management_url to an int."""
         return super().payment_method(
             sale_order_id=self._cast_as_int(sale_order_id), **kwargs
         )
 
     def _invoice_get_page_view_values(self, invoice, access_token, /, **kwargs):
-        """Override of account to allow save the token on the sale.order when the invoice
-        is related to a subscription. It allows to save the token automatically on the sale.order if
-        the customer chose to pay the invoice with that option.
-        """
         subscription_id = invoice.line_ids.subscription_id
         if invoice and subscription_id:
-            # The function "_prepare_extra_payment_form_context" needs the invoice inside the kwargs to work.
             kwargs.update(
                 {
                     "subscription_invoice_id": invoice.id,
@@ -1007,14 +931,6 @@ class SalePortal(sale_portal.CustomerPortal):
     def _prepare_payment_form_context(
         self, order_sudo, is_subscription=False, subscription_anticipate=False, **kwargs
     ):
-        """Override of `sale` to specify whether the sales order is a subscription.
-
-        :param sale.order order_sudo: The sales order being paid.
-        :param bool is_subscription: Whether the order is a subscription.
-        :param dict kwargs: Locally unused keywords arguments.
-        :return: The payment-specific values.
-        :rtype: dict
-        """
         is_subscription = (
             is_subscription
             or order_sudo.is_subscription

@@ -187,8 +187,6 @@ class DeviceDevice(models.Model):
     def _stream_vals(self):
         vals = super()._stream_vals()
         if vals is not None and self.is_counter_device:
-            # The PLC subscribes at QoS 1: a counter ping lost is an hour's
-            # delta lost, a duplicate is filtered by its timestamp.
             vals["options"] = {**vals.get("options", {}), "qos": 1}
         return vals
 

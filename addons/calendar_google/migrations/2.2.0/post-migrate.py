@@ -29,8 +29,6 @@ def migrate(cr, version):
     service = env.ref("integration_google.service_google")
     Users = env["res.users"].with_context(active_test=False)
     Credential = env["credential.credential"].with_context(active_test=False)
-    # the tokens stay where they are: a user keeps syncing without
-    # authorizing again, now through a connection that owns them
     for user_id, credential_id, expires in rows:
         env["integration.connection"]._personal(
             service, Users.browse(user_id), scope=CALENDAR_SCOPE

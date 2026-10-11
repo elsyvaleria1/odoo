@@ -28,7 +28,6 @@ class SocialLivePost(models.Model):
             [("media_type", "=", "youtube")]
         )
 
-        # 1. build various data structures we are going to need
         all_existing_posts = (
             self.env["social.live.post"]
             .sudo()
@@ -49,7 +48,6 @@ class SocialLivePost(models.Model):
             live_post.youtube_video_id: live_post for live_post in all_existing_posts
         }
 
-        # 2. make one batch of requests per account to fetch youtube videos
         youtube_videos = []
         for account in youtube_accounts:
             account._refresh_youtube_token()
@@ -60,7 +58,7 @@ class SocialLivePost(models.Model):
             youtube_video_ids = posts_per_account[account.id].mapped("youtube_video_id")
 
             YOUTUBE_BATCH_SIZE = (
-                50  # can only fetch videos 50 by 50 maximum, limited by YouTube API
+                50
             )
             for video_ids_batch in batched(
                 youtube_video_ids, YOUTUBE_BATCH_SIZE, strict=False
@@ -84,7 +82,6 @@ class SocialLivePost(models.Model):
 
                 youtube_videos += result.json().get("items")
 
-        # 3. update live post based on video statistics
         for video in youtube_videos:
             video_stats = video["statistics"]
             existing_live_posts_by_youtube_video_id.get(video["id"]).write(
@@ -110,15 +107,11 @@ class SocialLivePost(models.Model):
             live_post._post_youtube()
 
     def _post_youtube(self) -> None:
-        """Will simply mark the already uploaded video as 'publicly available'."""
         self.check_singleton()
         self.account_id._refresh_youtube_token()
 
         youtube_description = self.post_id.youtube_description
         if youtube_description:
-            # shorten and UTMize links in YouTube description
-            # we only do that for the content we put on YouTube, the "message" field remains
-            # untouched to avoid confusing the end user
             youtube_description = (
                 self.env["mixin.mail.render"]
                 .sudo()
@@ -141,7 +134,6 @@ class SocialLivePost(models.Model):
                 "snippet": {
                     "title": self.post_id.youtube_title,
                     "description": youtube_description,
-                    # for some reason the category ID is required, even if we never change it
                     "categoryId": self.post_id.youtube_video_category_id,
                 },
                 "status": {

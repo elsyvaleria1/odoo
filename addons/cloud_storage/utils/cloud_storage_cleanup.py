@@ -20,21 +20,15 @@ def filter_unreferenced_blob_urls(
     password: str,
     batch_size: int = 1000,
 ) -> Iterator[str]:
-    """Yield URLs absent from this account's attachment lookup, in input order.
-
-    This is lazy and batches both the input and the RPC reads. The account must
-    be able to read every cloud attachment: absence from a restricted lookup
-    does not establish that a blob is unused. Duplicates are retained.
-    """
     if batch_size < 1:
         raise ValueError("batch_size must be at least one")
-    with xmlrpc.client.ServerProxy(  # noqa: E8518 - standalone operator script; no server-side ir.egress
+    with xmlrpc.client.ServerProxy(
         f"{odoo_url}/xmlrpc/2/common"
     ) as common:
         uid = common.authenticate(database, username, password, {})
     if not uid:
         raise ValueError("Odoo authentication failed; no blobs were selected")
-    with xmlrpc.client.ServerProxy(  # noqa: E8518 - standalone operator script; no server-side ir.egress
+    with xmlrpc.client.ServerProxy(
         f"{odoo_url}/xmlrpc/2/object"
     ) as models:
         for batch in batched(blob_urls, batch_size, strict=False):
@@ -69,14 +63,9 @@ def remove_blob_urls(
     success_status: int,
     max_workers: int | None = None,
 ) -> int:
-    """Delete the supplied URLs and return the number acknowledged as deleted.
-
-    Already absent blobs and other HTTP responses are logged but not counted.
-    Transport and input-iterator exceptions propagate to the operator.
-    """
 
     def remove_blob(blob_url: str) -> bool:
-        response = requests.delete(  # noqa: E8518 - standalone operator script; no server-side ir.egress
+        response = requests.delete(
             blob_url, headers=headers, timeout=5
         )
         if response.status_code == success_status:

@@ -1,17 +1,3 @@
-# Access through the record a row belongs to, as SQL.
-#
-# A message, a follower, an attachment is reached through the record it is
-# on: a (model, res_id) pair naming any model. owner_reach states that as one
-# condition the database evaluates -- per owning model, the row's model and
-# its owner under that model's own access domain -- instead of reading
-# candidate rows into Python and asking each model about its ids.
-#
-# The owning models are those the search pins, or else what the table holds,
-# found by a loose index scan (owner_models). The branches are
-# ordered by how many rows each model holds, so a row meets its own after a
-# comparison or two, and each is an EXISTS the planner may answer by probing
-# the owner's primary key per row (a few rows: one record's chatter) or by
-# hashing the owner's reach once (a count over everything).
 
 from __future__ import annotations
 
@@ -41,20 +27,12 @@ __all__ = [
 
 _debug = DebugLog(__name__)
 
-# the hosts whose reach is being stated, outermost first: an owning model that
-# is one of them closes a cycle (an attachment on an attachment, a message on
-# an attachment on a message), which no fixed SQL states
 _COMPILING = "owner_reach_hosts"
 
-# the candidates a page reads at a time, before deciding them
 CHUNK = 1000
 
-# a search returning at most this many rows reads few enough to probe each
-# row's owner rather than hash every owner the user reaches
 BOUNDED_SEARCH = 1000
 
-# what a reach returns for an owning model no domain states: the owners the
-# rows name are then decided one by one, by `decide`
 CONCRETE = object()
 
 Reach = Callable[["models.BaseModel"], typing.Any]
@@ -76,8 +54,6 @@ def is_bounded(limit: int | bool | None) -> bool:
 def pinned_values(
     model: models.BaseModel, field_name: str, domain: Domain
 ) -> Collection[typing.Any] | None:
-    # the values a domain holds `field_name` to everywhere it matches (an
-    # "=" or "in" its every match obeys), None where it holds it to none
     domain = domain.optimize(model)
     field_only = domain.map_conditions(
         lambda cond: (
@@ -97,9 +73,6 @@ def pinned_values(
 
 
 def owner_models(env: api.Environment, table: str, column: str) -> tuple[str, ...]:
-    # the models `table.column` names now, the most frequent first: read for
-    # each search that pins none, as a row may land on a new model by any
-    # path, raw SQL included, and a stale list would hide it
     rows = env.execute_query(
         SQL(
             """WITH RECURSIVE held AS (
@@ -145,29 +118,7 @@ def owner_reach(
     itself: Domain | None = None,
     decide: Decide = _readable,
 ) -> Domain:
-    # The rows of `model` whose owner -- the record of model `model_field`
-    # with id `res_id_field` -- is within `reach(Owner)`: a domain on the
-    # owning model read in sudo, archived records included; None or FALSE
-    # where nothing of that model is reached. An owner reached whole (TRUE)
-    # asks nothing of its records, as the record-level check reads no record
-    # no rule restricts; a row on no model of the registry is reached by none.
-    #
-    # `probe`: each owner is probed per row (OFFSET 0 keeps the planner from
-    # hashing the owner's whole reach), for a page, which reads few rows of
-    # the count the planner estimates without its limit, or a host whose
-    # rows are few against their owners'. `only`: the owning models the search holds its rows to
-    # (pinned_values), no other model's branch stated nor planned.
-    # `within(Owner)`: a further condition on the row in that owner's branch,
-    # as an attachment's field must be one the user reads on its record.
-    # `itself`: what reaches a row other than its owner (an attachment
-    # public, or the user's unlinked one); given, a row on a row of the host
-    # is reached along the chain of its owners in SQL, else its owners are
-    # decided one by one. `decide(owners)`: of some owners, those reached, for
-    # an owning model `reach` answers CONCRETE and where a cycle closes (the
-    # record-level check by default).
     def to_sql(host: models.BaseModel, alias: str, query: Query) -> SQL:
-        # the reach is the principal's that asked for it: an access domain is
-        # rendered as the superuser
         host = host.with_env(model.env)
         host.flush_model([model_field, res_id_field])
         stated = _OwnerReach(
@@ -225,8 +176,6 @@ class _OwnerReach:
         cyclic: bool,
         names: Collection[str] | None = None,
     ) -> list[SQL]:
-        # one branch per owning model (`names`, else the reach's own), the
-        # models reached whole as one
         unrestricted = []
         stated = []
         for name in self.names if names is None else names:
@@ -256,14 +205,11 @@ class _OwnerReach:
         return stated
 
     def branch(self, name: str, at: str, at_query: Query) -> SQL | bool:
-        # the branch of one owning model: True where it is reached whole and
-        # the row asks nothing more, False where nothing of it is reached
         try:
             domain = self.reach(self.owner_env[name])
             if domain is CONCRETE:
                 return self.concrete(name, at, at_query) or False
         except AccessError:
-            # a model the user may not search reaches them nothing
             _debug.logic("owner_reach.refused", model=self.host._name, owner=name)
             return False
         if domain is None or domain.is_false():
@@ -294,8 +240,6 @@ class _OwnerReach:
         return SQL("(%s = %s AND %s%s)", model_column, name, owner_sql, row_sql)
 
     def row_condition(self, name: str, at: str, at_query: Query) -> SQL | None:
-        # the row's own condition in the branch of `name`: SQL() for none,
-        # None where no row of that branch is reached
         if self.within is None:
             return SQL()
         on_row = self.within(self.owner_env[name])
@@ -309,11 +253,6 @@ class _OwnerReach:
         return SQL(" AND %s", on_row._to_sql(self.host, at, at_query))
 
     def self_chain(self, at: str, at_query: Query) -> SQL | None:
-        # a row on a row of the host: reached where its owner is, and the
-        # owner where its own owner is, as far as the chain goes. Stated over
-        # the rows that own others only, by a recursive CTE whose base is what
-        # reaches an owner otherwise (itself, or another model's record) and
-        # whose step climbs one owner at a time
         host = self.host
         assert self.itself is not None
         row_sql = self.row_condition(host._name, at, at_query)
@@ -329,7 +268,6 @@ class _OwnerReach:
             model_field,
             host._name,
         )
-        # the owners are on few models: their branches alone are stated
         owner_owners = sorted(
             name
             for (name,) in env.execute_query(
@@ -343,7 +281,6 @@ class _OwnerReach:
             if name and name in env
         )
         step = Query.get_table_alias(at, "owner_chain")
-        # an owner is the host's record too: its own access rows bind it
         rules = env.registry.access_policy.record_domain(env, host._name, "read")
         sudo_host = host.sudo().with_context(active_test=False)
         rules = rules.optimize_full(sudo_host)
@@ -363,7 +300,6 @@ class _OwnerReach:
         climb_sql = self.row_condition(host._name, step, climb_query)
         reached_name = f"{step}__reached"
         reached = SQL.identifier(reached_name)
-        # the recursive reference joins: PostgreSQL refuses it in a subquery
         climb_query.add_join(
             "JOIN",
             reached_name,
@@ -399,10 +335,6 @@ class _OwnerReach:
         )
 
     def concrete(self, name: str, at: str, at_query: Query) -> SQL | None:
-        # the records the rows name, decided one by one (`decide`): where no
-        # domain states an owner's reach, and where the owners are a model
-        # being stated further out -- the record-level check follows the rows
-        # and ends where they do
         host = self.host
         env = host.env
         rows = env.execute_query(
@@ -450,15 +382,8 @@ def search_by_owner(
     model_field: str,
     **kwargs: typing.Any,
 ) -> Query:
-    # the rows of `domain` the user reaches, `reached(only, bounded)` being
-    # their reach on the owning models `only` (None: all). A search that holds
-    # its rows to some owning models, or reads past a page, is one statement;
-    # a page over every model is not -- the reach of every owning model is a
-    # statement too large to plan for eighty rows -- so its candidates come a
-    # chunk at a time, each decided by the reach of the models it holds alone
     pinned = pinned_values(model, model_field, domain)
     if pinned is None and (ids := pinned_values(model, "id", domain)) is not None:
-        # a search by ids asks the models of those rows, not of the table
         pinned = _owner_models_of(model, model_field, ids)
     bounded = is_bounded(limit)
     if pinned is not None or not bounded:
@@ -502,7 +427,6 @@ def _owner_models_of(
     ids = [id_ for id_ in ids if isinstance(id_, int) and not isinstance(id_, bool)]
     if not ids:
         return []
-    # the rows the transaction read already say it, as they will to the search
     cached = model._fields[model_field]._get_cache(model.env)
     if all(id_ in cached for id_ in ids):
         return list(dict.fromkeys(cached[id_] for id_ in ids if cached[id_]))

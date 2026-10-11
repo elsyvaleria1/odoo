@@ -1,8 +1,5 @@
 from odoo.tests import TransactionCase, tagged
 
-# The party and the roles that hang off it. A stored field on one of these
-# whose value is derived from another is a MIRROR: a second copy of one fact,
-# free to drift from the first.
 PARTY_MODELS = frozenset(
     {
         "res.partner",
@@ -14,11 +11,6 @@ PARTY_MODELS = frozenset(
     }
 )
 
-# A two-way sync -- compute AND inverse -- is the only mirror shape that can be
-# written from both ends, so it is the only one that can disagree with itself.
-# These two are deliberate: a resource is scheduling's view of a person, it is
-# named and zoned like that person, and material resources have both fields
-# with no party at all, so neither can simply be delegated away.
 TWO_WAY_SYNCS = frozenset(
     {
         ("resource.resource", "name"),
@@ -31,12 +23,6 @@ class TestPartyStoredMirrors(TransactionCase):
     """One fact, one writer -- measured from the registry rather than asserted."""
 
     def _mirrors(self):
-        """Stored fields whose dependencies cross into another party model.
-
-        Read through `get_depends`, which is the field's own answer. An earlier
-        scan of this asked the field for an attribute Odoo fields do not have,
-        found nothing, and reported zero mirrors.
-        """
         found = {}
         for model_name in sorted(PARTY_MODELS):
             model = self.env[model_name]
@@ -52,11 +38,6 @@ class TestPartyStoredMirrors(TransactionCase):
                         continue
                     if hop.comodel_name not in PARTY_MODELS:
                         continue
-                    # `related` is tested FIRST on purpose. A stored related
-                    # with readonly=False is implemented with a compute and an
-                    # inverse, so asking about those first calls every writable
-                    # related a hand-written two-way sync -- which is what the
-                    # first version of this gate did, and it named six.
                     found[(model_name, fname)] = (
                         "related"
                         if field.related
@@ -101,10 +82,8 @@ class TestPartyStoredMirrors(TransactionCase):
         )
 
     def test_the_detector_sees_the_mirrors_it_is_meant_to_see(self):
-        """A gate that measures nothing passes for the wrong reason."""
         mirrors = self._mirrors()
         self.assertEqual(mirrors.get(("hr.employee", "name")), "related")
-        # the company delegates its name to its party: no mirror to see
         self.assertIsNone(mirrors.get(("res.company", "name")))
         self.assertEqual(mirrors.get(("resource.resource", "name")), "two-way")
         self.assertGreater(len(mirrors), 10)

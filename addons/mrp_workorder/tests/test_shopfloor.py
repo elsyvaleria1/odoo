@@ -7,19 +7,15 @@ from odoo.tests.common import HttpCase, tagged
 class TestShopFloor(HttpCase):
     def setUp(self):
         super().setUp()
-        # Set Administrator as the current user.
         self.uid = self.env.ref("base.user_admin").id
-        # Enables Work Order setting, and disables other settings.
         self._enable_settings("workorder")
 
-        # Create a test dedicated company.
         self.company = self.env["res.company"].create(
             {"name": "Test ShopFloor Company"}
         )
         self.env.user.company_ids |= self.company
         self.env.user.company_id = self.company
         self.env.company = self.company
-        # Create an employee for the user (it will be created for the test company.)
         self.employee = self.env["hr.employee"].create({"user_id": self.env.user.id})
 
         group_lot = self.env.ref("stock.group_production_lot")
@@ -29,12 +25,10 @@ class TestShopFloor(HttpCase):
         self.env.user.write({"group_ids": [Command.unlink(group_lot.id)]})
         self.env.user.write({"group_ids": [Command.unlink(group_multi_loc.id)]})
         self.env.user.write({"group_ids": [Command.unlink(group_pack.id)]})
-        # Explicitly remove the UoM group.
         self.group_user = self.env.ref("base.group_user")
         self.group_user.write({"implied_ids": [Command.unlink(group_uom.id)]})
         self.env.user.write({"group_ids": [Command.unlink(group_uom.id)]})
 
-        # Add some properties for commonly used in tests records.
         self.warehouse = self.env["stock.warehouse"].create(
             {
                 "name": "Test Warehouse",
@@ -44,13 +38,11 @@ class TestShopFloor(HttpCase):
                 "sequence": 5,
             }
         )
-        # Give WH's manufacturing operation a low sequence to prioritize it over other WH's ones.
         self.warehouse.manu_type_id.sequence = 1
         self.stock_location = self.warehouse.lot_stock_id
         self.test_type_register_production = self.env.ref(
             "mrp_workorder.test_type_register_production"
         )
-        # Reset LN/SN sequence for the same reason.
         stock_lot_seq = self.env["ir.sequence"].search([("code", "=", "product.trace")])
         stock_lot_seq.number_next_actual = 1
 
@@ -77,7 +69,6 @@ class TestShopFloor(HttpCase):
         )
         employees[0].barcode = "659898105101"
 
-        # Create basic data's to rely on
         (
             self.final_product,
             self.component_1,
@@ -141,7 +132,6 @@ class TestShopFloor(HttpCase):
             }
         )
 
-    # === UTIL METHODS ===#
     def _enable_settings(self, *args):
         fieldname_by_setting = {
             "by-product": "group_mrp_byproducts",
@@ -160,9 +150,7 @@ class TestShopFloor(HttpCase):
         if create_vals:
             self.env["res.config.settings"].create(create_vals).execute()
 
-    # === TEST METHODS ===#
     def test_shop_floor(self):
-        # Creates somme employees for test purpose.
 
         giraffe = self.env["product.product"].create(
             {
@@ -338,8 +326,6 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_shop_floor_auto_select_workcenter(self):
-        """This test ensures the right work center is selected when Shop Floor is opened."""
-        # Create some products.
         product_final = self.env["product.product"].create(
             {
                 "name": "Pizza",
@@ -358,14 +344,12 @@ class TestShopFloor(HttpCase):
                 "is_storable": True,
             }
         )
-        # Adds some quantity in stock.
         self.env["stock.quant"]._update_available_quantity(
             product_comp1, self.stock_location, quantity=999
         )
         self.env["stock.quant"]._update_available_quantity(
             product_comp2, self.stock_location, quantity=999
         )
-        # Create three workcenters.
         wc1, wc2 = self.env["mrp.workcenter"].create(
             [
                 {
@@ -377,7 +361,6 @@ class TestShopFloor(HttpCase):
         wc1.alternative_workcenter_ids = wc2
         wc2.alternative_workcenter_ids = wc1
         wc3 = self.env["mrp.workcenter"].create({"name": "Furnace"})
-        # Create a BoM.
         bom = self.env["mrp.bom"].create(
             {
                 "product_id": product_final.id,
@@ -405,7 +388,6 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Create two Manufacturing Orders.
         all_mo = self.env["mrp.production"].create(
             [
                 {
@@ -419,7 +401,6 @@ class TestShopFloor(HttpCase):
         all_mo.action_confirm()
         all_mo.action_assign()
         all_mo.button_plan()
-        # Mark as done the 2th MO 1st WO.
         all_mo[1].workorder_ids[0].button_start()
         all_mo[1].workorder_ids[0].action_mark_as_done()
         self.start_tour(
@@ -430,12 +411,7 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_shop_floor_catalog_add_component_in_two_steps(self):
-        """Ensures when a component is added through the Shop Floor catalog,
-        the Pick Component operation is correctly created/updated."""
-        # Set the manufacture in 2 steps.
         self.warehouse.manufacture_steps = "pbm"
-        # Create a product with a BoM and two components.
-        # Create some products.
         product_final = self.env["product.product"].create(
             {
                 "name": "Pot",
@@ -466,14 +442,12 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Adds some quantity in stock.
         self.env["stock.quant"]._update_available_quantity(
             product_comp1, self.stock_location, quantity=999
         )
         self.env["stock.quant"]._update_available_quantity(
             product_comp2, self.stock_location, quantity=999
         )
-        # Create a Manufacturing Order.
         mo = self.env["mrp.production"].create(
             {
                 "product_id": product_final.id,
@@ -484,10 +458,8 @@ class TestShopFloor(HttpCase):
         mo.action_confirm()
         mo.action_assign()
         mo.button_plan()
-        # Validate the MO's Pick Component.
         self.assertEqual(len(mo.picking_ids), 1)
         mo.picking_ids.button_validate()
-        # Simulate "Add Component" from the Shop Floor.
         kwargs = {"from_shop_floor": True}
         mo._update_order_line_info(
             product_comp2.id, 1, child_field="move_raw_ids", **kwargs
@@ -526,7 +498,6 @@ class TestShopFloor(HttpCase):
                 },
             ],
         )
-        # Simulate adding more quantity from the Shop Floor.
         mo._update_order_line_info(
             product_comp2.id, 2, child_field="move_raw_ids", **kwargs
         )
@@ -559,7 +530,6 @@ class TestShopFloor(HttpCase):
                 },
             ],
         )
-        # starts the MO and simulate adding more quantity from the Shop Floor.
         mo.action_start()
         self.assertEqual(mo.state, "progress")
         mo._update_order_line_info(
@@ -597,16 +567,12 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_shop_floor_my_wo_filter_with_pin_user(self):
-        """Checks the shown Work Orders (in "My WO" section) are correctly
-        refreshed when selected user uses a PIN code."""
-        # Create two employees (one with no PIN code and one with a PIN code.)
         self.env["hr.employee"].sudo().create(
             [
                 {"name": "John Snow"},
                 {"name": "Queen Elsa", "pin": "41213"},
             ]
         )
-        # Create some products and add enough quantity in stock for the components.
         final_product, comp_1, comp_2 = self.env["product.product"].create(
             [
                 {
@@ -622,7 +588,6 @@ class TestShopFloor(HttpCase):
         self.env["stock.quant"]._update_available_quantity(
             comp_2, self.stock_location, quantity=100
         )
-        # Configure all the needs to create a MO with at least one WO.
         workcenter = self.env["mrp.workcenter"].create(
             {
                 "name": "Winter's Workshop",
@@ -652,9 +617,7 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Mark the components as to consume in the operation so they appear in the Shop Floor.
         bom.bom_line_ids.operation_id = bom.operation_ids.id
-        # Create, confirm and plan two MO.
         all_mo = self.env["mrp.production"].create(
             [
                 {
@@ -675,8 +638,6 @@ class TestShopFloor(HttpCase):
         )
 
     def test_generate_serials_in_shopfloor(self):
-        """Ensure we can produce a MO with By-Product even if it's tracked by SN,
-        then check the By-Product comes and goes in the right locations."""
         self._enable_settings("tracking", "by-product")
         component1 = self.env["product.product"].create(
             {
@@ -753,17 +714,6 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_partial_backorder_with_multiple_operations(self):
-        """
-        Create an MO for 10 units and 3 operations: op1, op2, op3. Process:
-        - 10 units in op1
-        - 7 units in op2
-        - 5 units in op3
-        Validate the MO for these 5 units and create a backorder. Check that each operation of the
-        backorder displays the appropriate remaining quantity in the backend and in the shopfloor:
-        - op1 shall be cancelled
-        - op2 shall be processed for 3 units
-        - op3 shall be processed for 5 units
-        """
         finished = self.env["product.product"].create(
             {
                 "name": "finish",
@@ -787,7 +737,6 @@ class TestShopFloor(HttpCase):
             }
         )
 
-        # Cancel previous MOs and create a new one
         self.env["mrp.production"].search(
             [("state", "not in", ("cancel", "done"))]
         ).action_cancel()
@@ -803,7 +752,6 @@ class TestShopFloor(HttpCase):
         mo.action_assign()
         mo.button_plan()
 
-        # wo_1 completely finished, wo_2 and wo_3 partially finished
         for wo, qty in zip(
             mo.workorder_ids.sorted(lambda wo: wo.operation_id.id),
             (10, 7, 5),
@@ -814,7 +762,6 @@ class TestShopFloor(HttpCase):
                 fmo.qty_producing = qty
             wo.button_finish()
 
-        # Create a backorder
         action = mo.button_mark_done()
         backorder = Form(
             self.env["wizard.mrp.production.produce.partial"].with_context(
@@ -827,7 +774,6 @@ class TestShopFloor(HttpCase):
         )[-1]
         mo_backorder.button_plan()
 
-        # Sanity check
         by_operation = {wo.operation_id.name: wo for wo in mo_backorder.workorder_ids}
         self.assertEqual(by_operation["op1"].state, "cancel")
         self.assertEqual(by_operation["op2"].state, "ready")
@@ -840,17 +786,6 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_change_qty_produced(self):
-        """
-        Check that component quantity matches the quantity produced set in the shop
-        floor register production change to the quantity produced
-        Example:
-            move.uom_unit = 2.
-            bom.final_quantity = 1
-            MO.qty_producing = 5 -> should consume 10 components for move_raw.
-            Confirm MO and update MO.qty_producing = 3
-            Finish the workorder, then it should consume 6 components for move_raw.
-        The above behaviour should be occur on the MO form and shop floor.
-        """
         demo = self.env["product.product"].create({"name": "DEMO"})
         comp1, comp2 = self.env["product.product"].create(
             [{"name": name, "is_storable": True} for name in ["COMP1", "COMP2"]]
@@ -886,7 +821,6 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Create a step to register production.
         self.env["quality.point"].create(
             [
                 {
@@ -947,10 +881,6 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_operator_assigned_to_all_work_orders(self):
-        """
-        Check that, if a custom operator is selected in the side panel, all work orders
-        completed via Shop Floor are assigned to that operator.
-        """
         employee = self.env["hr.employee"].sudo().create([{"name": "Anita Olivier"}])
         product = self.env["product.product"].create({"name": "P", "is_storable": True})
         workcenter = self.env["mrp.workcenter"].create({"name": "Workcenter1"})
@@ -1002,12 +932,6 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_automatic_backorder_no_redirect(self):
-        """
-        Test that the backorder is created without redirecting to the
-        production form on shopfloor. This is the case when the backorder
-        is created automatically by the system on shopfloor.
-        Also check that the production can be closed if there is nothing to backorder.
-        """
         self.warehouse.manu_type_id.create_backorder = "always"
         final_product, component = self.env["product.product"].create(
             [
@@ -1046,7 +970,6 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Create a step to register production.
         self.env["quality.point"].create(
             [
                 {
@@ -1171,10 +1094,6 @@ class TestShopFloor(HttpCase):
         self.assertFalse(wo.allow_producing_quantity_change)
 
     def test_shop_floor_unsynced_bom(self):
-        """Check that when a component that has been removed from a BoM with
-        a not done MO, it still shows the component in the shop floor for
-        that MO.
-        """
         demo = self.env["product.product"].create({"name": "DEMO"})
         comp1, comp2 = self.env["product.product"].create(
             [{"name": name, "is_storable": True} for name in ["COMP1", "COMP2"]]
@@ -1209,7 +1128,6 @@ class TestShopFloor(HttpCase):
                 ],
             }
         )
-        # Create a step to register production.
         self.env["quality.point"].create(
             [
                 {
@@ -1255,7 +1173,6 @@ class TestShopFloor(HttpCase):
         mo.action_confirm()
         mo.action_assign()
         mo.button_plan()
-        # Remove one component from the BoM, so that the MO and BoM are unsynced
         bom.bom_line_ids[0].unlink()
 
         self.start_tour(
@@ -1272,12 +1189,6 @@ class TestShopFloor(HttpCase):
                 self.assertTrue(move.picked)
 
     def test_product_consumption(self):
-        """Test that we generate the correct move when completing from the shopfloor
-        a MO with component consumption. The component is tracked by lot, and use kg
-        as its default UoM.
-        BoM: component 50g => product 1 Unit
-        """
-        # user need to be in the production lot group to be able to see the lot id in the quant selection view.
         self.env.user.write(
             {"group_ids": [Command.link(self.ref("stock.group_production_lot"))]}
         )
@@ -1367,13 +1278,7 @@ class TestShopFloor(HttpCase):
 
     @users("test_without_hr_right")
     def test_add_component_from_shop_floor(self):
-        """
-        Check that components added to a WO from the shopfloor are visible
-        on both the WO and the MO and that, in multi step manufacturing,
-        the associated tranfers are generated accordingly.
-        """
         self.warehouse.manufacture_steps = "pbm"
-        # Put products in stock to be added to the MO/WO
         (self.product_1 | self.product_2).write(
             {
                 "is_favorite": True,
@@ -1395,7 +1300,6 @@ class TestShopFloor(HttpCase):
                 "warehouse_id": self.warehouse.id,
             }
         )
-        # Tests workorders that are not linked to the bom by removing the link between these
         mo.workorder_ids[0].operation_id = False
         mo.action_confirm()
         pick = mo.picking_ids

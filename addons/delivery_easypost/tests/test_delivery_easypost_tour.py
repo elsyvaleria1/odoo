@@ -27,7 +27,6 @@ class TestDeliveryEasypostTour(HttpCase, EasypostTestCommon):
             {
                 "name": "EASYPOST Test",
                 "delivery_type": "easypost",
-                # API keys are not required, the response is mocked
                 "easypost_test_api_key": "test",
                 "easypost_production_api_key": "test",
                 "product_id": product.id,

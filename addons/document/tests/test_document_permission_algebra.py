@@ -326,11 +326,7 @@ class TestPermissionAlgebraDifferential(TransactionCase):
                             access_via_link="none",
                             access_ids=cls._membership_commands(membership),
                         )
-                    # set after the content exists: the scope of what is
-                    # already below a folder follows its boundary
                     sub.is_access_restricted = boundary
-        # a folder moved under another takes the new one's grants and loses
-        # the old one's, with everything below it
         moved = cls.matrix.filtered(
             lambda d: d.name == f"sub/member-edit/{cls.company_main.id}/False"
         )
@@ -438,8 +434,6 @@ class TestPermissionAlgebraDifferential(TransactionCase):
         self._assert_formula_holds(self.user_public)
 
     def test_the_formula_sees_what_a_scope_drops(self):
-        # negative control of the oracle itself: a boundary ignored, or a
-        # grant on a file reaching below it, changes the answer on this matrix
         formula = LiveFormula(self.env, self.user_internal)
         honest = {d.id: formula.permission(d) for d in self.matrix}
         formula._scope = lambda document: list(
@@ -563,7 +557,6 @@ class TestPermissionAlgebraDifferential(TransactionCase):
         )
 
     def _assert_reach_table_is_derived(self):
-        # the rows the triggers kept equal the rows derived from scratch
         Document = self.env["document.document"]
         cr = self.env.cr
         Document._access_graph_flush()
@@ -583,9 +576,6 @@ class TestPermissionAlgebraDifferential(TransactionCase):
         self.assertEqual(rebuilt - kept, Counter(), "rows derived that were not kept")
 
     def test_the_reach_table_stays_derived_through_any_writes(self):
-        # moves, links, hidden links, owners, companies, grants, boundaries and
-        # shortcut targets: after each batch the kept rows are the derived
-        # ones, and the formula still holds for every subject
         rng = random.Random(7)
         Document = self.env["document.document"].sudo()
         folders = self.matrix.filtered(lambda document: document.type == "folder")
@@ -653,8 +643,6 @@ class TestPermissionAlgebraDifferential(TransactionCase):
                 self._assert_formula_holds(subject)
 
     def test_a_raw_sql_write_is_derived_too(self):
-        # the rows are kept by the database: a statement the ORM never saw
-        # re-derives what it touched before it returns
         folder = self.matrix.filtered(
             lambda document: document.type == "folder" and document.folder_id
         )[:1]
@@ -680,8 +668,6 @@ class TestPermissionAlgebraDifferential(TransactionCase):
                 self._assert_formula_holds(subject)
 
     def test_a_changed_system_row_is_read_live(self):
-        # the system reach folds into the reach query only as shipped: a row
-        # an administrator rewrote is read live, whatever it now says
         Document = self.env["document.document"].with_user(self.user_system)
         self.assertTrue(Document._folds_system_reach())
         shipped = self.env.ref("document.access_document_system_reach")

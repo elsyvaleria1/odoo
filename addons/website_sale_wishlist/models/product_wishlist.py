@@ -73,8 +73,6 @@ class ProductWishlist(models.Model):
     def current(self):
         if not request:
             return self
-        # the header renders the wish count once per header variant: the
-        # request's wishlist is read once, see `_frontend_pre_dispatch`
         wishlist = getattr(request, "wishlist", None)
         if wishlist is None:
             return self._get_current_wishlist()
@@ -88,7 +86,7 @@ class ProductWishlist(models.Model):
     @api.model
     def _lazy_current_wishlist(self):
         return lazy(
-            lambda: request.env["product.wishlist"]._get_current_wishlist()  # noqa: PLW0108  request.env when read: a login changes it
+            lambda: request.env["product.wishlist"]._get_current_wishlist()
         )
 
     @api.model

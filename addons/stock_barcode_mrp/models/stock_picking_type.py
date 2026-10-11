@@ -9,9 +9,6 @@ class StockPickingType(models.Model):
     count_mo_confirmed = fields.Integer(compute="_compute_count_mo_confirmed")
 
     def _compute_count_mo_confirmed(self) -> None:
-        # One GROUP BY for the whole set rather than a COUNT(*) per picking
-        # type, which `test_lint E8507` counts as a query inside a loop. The two
-        # non-record leaves ride along in the domain unchanged.
         counts = dict(
             self.env["mrp.production"]._read_group(
                 [

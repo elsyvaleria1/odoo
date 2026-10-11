@@ -5,7 +5,6 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _prepare_line_data_for_external_taxes(self):
-        """Override to set the originating warehouse per line. Set a warehouse if the line is shipped from a single location."""
         res = super()._prepare_line_data_for_external_taxes()
         for line_data in res:
             line = line_data["base_line"]["record"]

@@ -89,7 +89,6 @@ class _PostgresWriteMixin:
             copy_rows = self._prepare_insert_rows(
                 model, stored_list, columns, col_fields
             )
-            # a row handed its id (one sharing its parent's) is not given another
             given_ids = "id" in columns
             batch_ids = cr.copy_from(
                 model._table,
@@ -120,8 +119,6 @@ class _PostgresWriteMixin:
                 columns = ["id"]
                 rows = [(SQL_DEFAULT,) for _ in stored_list]
 
-            # an INSERT carries its values as bind parameters, so it goes in
-            # batches; COPY above streams them all
             for batch in batched(rows, INSERT_BATCH_SIZE, strict=False):
                 cr.execute(
                     SQL(
@@ -232,7 +229,7 @@ class _PostgresWriteMixin:
                     f"_execute_update: {field} is not a stored column field"
                 )
             column = SQL.identifier(fname)
-            cast = SQL(column_type[1])  # noqa: E8501  from the field declaration
+            cast = SQL(column_type[1])
             expr = value_sql(index, fname, column, cast)
             if field.translate is True:
                 _debug.logic(
@@ -362,7 +359,6 @@ class _PostgresWriteMixin:
             SQL("%s = ANY(%s)", SQL.identifier(model._table, "id"), list(ids))
         )
         if wait:
-            # two writers queueing on the same rows take them in one order
             query.order = SQL.identifier(model._table, "id")
         sql = SQL("%s %s", query.select(), self._lock_clause(allow_referencing, wait))
         rows = model.env.execute_query(sql)

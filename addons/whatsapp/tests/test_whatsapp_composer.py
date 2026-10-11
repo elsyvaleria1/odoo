@@ -13,7 +13,6 @@ class WhatsAppComposerCase(WhatsAppCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # test records for sending messages
         cls.customers = cls.env["res.partner"].create(
             [
                 {
@@ -35,7 +34,6 @@ class WhatsAppComposerCase(WhatsAppCommon):
             ]
         )
 
-        # templates (considered as approved)
         (
             cls.template_basic,
             cls.template_dynamic_cplx,
@@ -127,14 +125,11 @@ Welcome to {{4}} office""",
 @tagged("wa_composer")
 class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
     def test_assert_initial_data(self):
-        """Ensure base data for tests, to ease understanding them"""
         self.assertEqual(self.company_admin.country_id, self.env.ref("base.us"))
         self.assertEqual(self.user_admin.country_id, self.env.ref("base.be"))
 
     @users("employee")
     def test_composer_check_user_number(self):
-        """When using 'user_phone' in template variables, number should be
-        set on sender."""
         template = self.template_dynamic_cplx.with_user(self.env.user)
 
         for mobile, should_crash in [(False, True), ("", True), ("zboing", False)]:
@@ -159,8 +154,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
     @users("user_wa_admin")
     def test_composer_free_text_on_template_change(self):
-        """Test header_text_1(text type), free_text_x and button_dynamic_url_x fields update
-        on template change and make sure it is correctly sent even after modifying it."""
         template_1 = self.env["whatsapp.template"].create(
             {
                 "body": "Template 1 Demo Value: {{1}}",
@@ -241,7 +234,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
         self.assertEqual(composer_form.free_text_2, False)
         self.assertEqual(composer_form.button_dynamic_url_1, "https://www.odoo.com/???")
         self.assertEqual(composer_form.button_dynamic_url_2, False)
-        # Change template to check free_text values are updated
         composer_form.wa_template_id = template_2
         self.assertEqual(composer_form.header_text_1, "Sample Header 1")
         self.assertEqual(composer_form.free_text_1, "Sample Value 2")
@@ -250,7 +242,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
             composer_form.button_dynamic_url_1, "https://runbot.odoo.com/???"
         )
         self.assertEqual(composer_form.button_dynamic_url_2, "https://www.odoo.com/???")
-        # Edit demo value and check it is updated after sending message
         composer_form.header_text_1 = "Edited Header"
         composer_form.free_text_1 = "Edited Value"
         composer_form.button_dynamic_url_1 = "https://runbot.odoo.com/runbot"
@@ -271,7 +262,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
     @users("user_wa_admin")
     def test_composer_free_text_with_10_body_variables(self):
-        """Test free_text with 10 body variables"""
         template = self.template_with_10_body_variables
         template.invalidate_recordset()
         composer_form = self._wa_composer_form(template, from_records=self.customers[0])
@@ -280,8 +270,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
     @users("employee")
     def test_composer_number_on_template_change(self):
-        """Test composer behavior when templates changes, also test contextual
-        value that forces the value on top of template phone field path."""
         template_1 = self.template_basic
         template_1.write({"phone_field": "phone_ids"})
         template_2 = (
@@ -298,7 +286,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
             )
         )
 
-        # verify phone doesn't change with default phone context key in single mode
         composer_1 = self._wa_composer_form(
             template_1,
             from_records=self.customers[0],
@@ -317,7 +304,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
             composer_1.phone, "+32455998877", "Default context value should be kept"
         )
 
-        # Verify phone change according to template with no default phone
         composer_2 = self._wa_composer_form(
             template_1,
             from_records=self.customers[0],
@@ -342,8 +328,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
     @users("employee")
     def test_composer_number_validation(self):
-        """Test number computation and validation in single / batch mode. Also
-        test direct send by cron / delegate behavior."""
         template = self.template_basic.with_env(self.env)
         date_reference = Datetime.from_string("2023-11-22 09:00:00")
         invalid_customer = (
@@ -380,7 +364,7 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 1,
                 True,
                 False,
-                False,  # single record without cron
+                False,
             ),
             (
                 all_test_records[0],
@@ -390,7 +374,7 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 1,
                 False,
                 False,
-                True,  # single record with cron
+                True,
             ),
             (
                 all_test_records[0],
@@ -400,7 +384,7 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 0,
                 False,
                 False,
-                False,  # no need to force cron in single mode / won't crash as default context value
+                False,
             ),
             (
                 all_test_records,
@@ -410,7 +394,7 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 1,
                 False,
                 True,
-                True,  # batch mode always force cron
+                True,
             ),
             (
                 all_test_records,
@@ -420,7 +404,7 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 1,
                 False,
                 True,
-                True,  # batch mode always force cron
+                True,
             ),
             (
                 all_test_records,
@@ -455,7 +439,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 composer = composer_form.save()
                 self.assertEqual(composer.phone, exp_phone)
 
-                # Test that the WhatsApp composer fails validation when there is invalid number.
                 with (
                     freeze_time(date_reference),
                     self.capture_triggers(
@@ -471,7 +454,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                     else:
                         composer._send_whatsapp_template(force_send_by_cron=force_cron)
 
-                # in batch mode: two messages ready to be sent + one failed
                 if exp_batch:
                     self.assertEqual(len(self._new_wa_msg), 3)
                     for exp_contacted in self.customers:
@@ -489,8 +471,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                         captured_triggers.records[0].cron_id,
                         self.env.ref("whatsapp.ir_cron_send_whatsapp_queue"),
                     )
-                    # `_trigger()` takes no date, so the queue is scheduled for
-                    # the *database* clock -- which `freeze_time` does not reach.
                     self.assertEqual(
                         captured_triggers.records[0].call_at,
                         self.env.cr.now().replace(microsecond=0),
@@ -500,7 +480,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
     @users("employee")
     def test_composer_tpl_button(self):
-        """Test adding buttons on templates"""
         for button_values in [
             {"button_type": "quick_reply"},
             {"button_type": "phone_number", "call_number": "+91 (835) 902-5723"},
@@ -524,7 +503,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                 self.assertWAMessage()
 
     def test_composer_variable_evaluation(self):
-        """Test various field paths to check corner cases of evaluation"""
         variable = self.template_dynamic_cplx.variable_ids.filtered(
             lambda v: v.field_name == "country_id.name"
         )
@@ -568,14 +546,11 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 
         for field_path, expected_value in zip(
             [
-                # many2one with value
                 "country_id",
                 "country_id.name",
-                # many2many
                 "tag_ids",
                 "tag_ids.color",
                 "tag_ids.partner_ids",
-                # integer without value
                 "color",
             ],
             [
@@ -605,13 +580,9 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
                     }
                 )
 
-        # should crash
         for field_path in [
-            # does not exist on distant model
             "country_id.wrong",
-            # does not exist
             "wrong",
-            # void is not supported
             "",
             False,
             None,
@@ -625,7 +596,6 @@ class WhatsAppComposerInternals(WhatsAppComposerCase, CronMixinCase):
 class WhatsAppComposerPreview(WhatsAppComposerCase):
     @users("user_wa_admin")
     def test_composer_preview(self):
-        """Test preview feature from composer"""
         body_var = "Nishant"
         header_var = "Jigar"
         template = self.env["whatsapp.template"].create(
@@ -673,7 +643,6 @@ class WhatsAppComposerPreview(WhatsAppComposerCase):
 
     @users("user_wa_admin")
     def test_composer_preview_with_10_body_variables(self):
-        """Test preview feature from composer with 10 body variables"""
         template = self.template_with_10_body_variables
         template.invalidate_recordset()
         composer = self._instanciate_wa_composer_from_records(
@@ -688,8 +657,6 @@ class WhatsAppComposerPreview(WhatsAppComposerCase):
 @tagged("wa_composer")
 class WhatsAppComposerUsage(WhatsAppComposerCase):
     def test_composer_template_send_user_access(self):
-        """Test that WA message send through SUDO-ed flow, involving public
-        user"""
         self._setup_share_users()
 
         for test_user in (

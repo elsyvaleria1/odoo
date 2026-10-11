@@ -111,9 +111,6 @@ class ResourceResource(models.Model):
         return self._action_view_logs()
 
     def _get_latest_ledger_reading(self) -> dict:
-        """{asset id: (odometer, date)} of the newest positive reading in the
-        ledger. NULLS FIRST: an undated reading must not outrank a dated one,
-        and Postgres sorts NULL last on a plain ASC."""
         if not self.ids:
             return {}
         timeline = self._get_log_model().search_fetch(
@@ -124,10 +121,6 @@ class ResourceResource(models.Model):
         return {log.asset_id.id: (log.odometer, log.date) for log in timeline}
 
     def _sync_odometer_meter(self) -> None:
-        """Record the ledger's newest reading on the odometer meter when the two
-        disagree, and keep the meter's unit the asset's. A downward move is
-        recorded as a correction; no reading at all leaves the meter alone,
-        since 0 is not a measurement."""
         latest = self._get_latest_ledger_reading()
         for asset in self.sudo():
             value, when = latest.get(asset.id, (0.0, False))
@@ -165,7 +158,6 @@ class ResourceResource(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # the kind picks the model the thing is created in
         for vals in vals_list:
             self._fill_kind_from_product(vals)
         return super().create(vals_list)

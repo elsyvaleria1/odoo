@@ -27,10 +27,6 @@ class PartnerLedgerTelegramTestCase(TelegramBotTestCase):
     def _post_statement_line(
         cls, partner, account_type="asset_receivable", company=None
     ):
-        """Post a receivable line for ``partner`` in ``company``, the current
-        one by default: what makes a customer eligible for a statement.
-        ``liability_payable`` posts a supplier's line instead, which does
-        not."""
         company = company or cls.env.company
         receivable = cls._statement_account(company, account_type)
         income = cls._statement_account(company, "income")

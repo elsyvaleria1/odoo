@@ -81,13 +81,11 @@ class StockPickingType(models.Model):
             lambda picking: picking.code == "repair_operation"
         )
 
-        # By default, set count_repair_xxx to False
         self.count_repair_ready = False
         self.count_repair_confirmed = False
         self.count_repair_under_repair = False
         self.count_repair_late = False
 
-        # shortcut
         if not repair_picking_types:
             return
 
@@ -116,7 +114,6 @@ class StockPickingType(models.Model):
         counts = {}
         for pt in picking_types:
             pt_count = counts.setdefault(pt[0].id, {})
-            # Only confirmed repairs (not "under repair" ones) are considered as ready
             if pt[1] and pt[2] == "confirmed":
                 pt_count.setdefault("ready", 0)
                 pt_count["ready"] += pt[3]

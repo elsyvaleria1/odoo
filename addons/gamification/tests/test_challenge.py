@@ -17,7 +17,6 @@ class TestGamificationCommon(TransactionCaseGamification):
         employees_group = self.env.ref("base.group_user")
         self.user_ids = employees_group.all_user_ids
 
-        # Push demo user into the challenge before creating a new one
         self.env.ref("gamification.challenge_base_discover")._update_all()
         self.robot = (
             self.env["res.users"]
@@ -68,7 +67,6 @@ class test_challenge(TestGamificationCommon):
         )
 
         demo = self.user_demo
-        # demo user will set a timezone
         demo.tz = "Europe/Brussels"
         goal_ids = Goals.search(
             [
@@ -86,14 +84,12 @@ class test_challenge(TestGamificationCommon):
         missed = goal_ids.filtered(lambda g: g.state != "reached")
         self.assertFalse(missed, "Not every goal was reached after changing timezone")
 
-        # Mark demo goals as fully reached (top rank) and others as partial
         all_goals = Goals.search([("challenge_id", "=", challenge.id)])
         demo_goals = all_goals.filtered(lambda g, demo=demo: g.user_id == demo)
         other_goals = all_goals - demo_goals
         demo_goals.write({"state": "reached", "current": 9999})
         other_goals.write({"state": "reached", "current": 0})
 
-        # reward for two firsts as admin may have timezone
         badge_id = self.badge_good_job.id
         challenge.write({"reward_first_id": badge_id, "reward_second_id": badge_id})
         challenge.write({"state": "done"})
@@ -105,7 +101,6 @@ class test_challenge(TestGamificationCommon):
 
     @mute_logger("odoo.models.unlink", "odoo.addons.mail", "odoo.addons.auth_signup")
     def test_20_update_all_goals_filter(self):
-        # Enroll two internal and two portal users in the challenge
         (
             portal_last_active_old,
             portal_last_active_recent,
@@ -136,22 +131,18 @@ class test_challenge(TestGamificationCommon):
             }
         )
 
-        # Setup user presence
         challenge.user_ids.presence_ids.unlink()
 
-        # Create "old" log in records
         for user in (
             portal_last_active_old,
             portal_last_active_recent,
             internal_last_active_old,
             internal_last_active_recent,
         ):
-            self.env["mail.presence"]._update_presence(user, 20 * 60 * 1000)  # 20 min
+            self.env["mail.presence"]._update_presence(user, 20 * 60 * 1000)
 
-        # Reset goal objective values
         all_test_users.partner_id.tz = False
 
-        # Regenerate all goals
         self.env["gamification.goal"].search([]).unlink()
         self.assertFalse(self.env["gamification.goal"].search([]))
 
@@ -166,27 +157,22 @@ class test_challenge(TestGamificationCommon):
         self.assertEqual(len(goal_ids), 4)
         self.assertEqual(set(goal_ids.mapped("state")), {"inprogress"})
 
-        # +1 second to avoid microsecond inaccuracy when comparing to write_date in _update_all
         current_date = datetime.datetime.now() + timedelta(seconds=1)
         with freeze_time(current_date):
-            # Update presence for 2 users
             self.env["mail.presence"]._update_presence(internal_last_active_recent)
             self.env["mail.presence"]._update_presence(portal_last_active_recent)
 
-        # Update goal objective checked by goal definition
         all_test_users.partner_id.write({"tz": "Europe/Paris"})
         all_test_users.flush_recordset()
 
-        # Update goals as done by _cron_update
         challenge._update_all()
         unchanged_goal_ids = self.env["gamification.goal"].search(
             [
                 ("challenge_id", "=", challenge.id),
-                ("state", "=", "inprogress"),  # others were updated to "reached"
+                ("state", "=", "inprogress"),
                 ("user_id", "in", challenge.user_ids.ids),
             ]
         )
-        # Check that goals of users not recently active were not updated
         self.assertEqual(
             portal_last_active_old | internal_last_active_old,
             unchanged_goal_ids.user_id,
@@ -199,7 +185,7 @@ class test_challenge(TestGamificationCommon):
             {
                 "name": "test",
                 "state": "draft",
-                "user_domain": '[("active", "=", True)]',  # Include all active users to get a least one participant
+                "user_domain": '[("active", "=", True)]',
                 "reward_id": 1,
             }
         )
@@ -374,12 +360,6 @@ class TestChallengeRewardNobodyBadge(TestGamificationCommon):
     """Regression test: challenge rewards with rule_auth='nobody' badges."""
 
     def test_reward_nobody_badge_as_erp_manager(self):
-        """Challenge can reward a 'nobody' badge when closed by a non-admin manager.
-
-        Regression: _reward_user previously lacked sudo(), so check_granting()
-        blocked the badge creation for non-SUPERUSER users — even though
-        rule_auth='nobody' is specifically designed for challenge automation.
-        """
         manager = (
             self.env["res.users"]
             .with_context(no_reset_password=True)
@@ -426,7 +406,6 @@ class TestChallengeRewardNobodyBadge(TestGamificationCommon):
             }
         )
 
-        # Start challenge and manually reach the goal
         challenge.action_start()
         goal = self.env["gamification.goal"].search(
             [
@@ -438,10 +417,8 @@ class TestChallengeRewardNobodyBadge(TestGamificationCommon):
         self.assertTrue(goal, "Goal should have been created")
         goal.write({"current": 1, "state": "reached"})
 
-        # Close challenge as the ERP manager (not group_system/superuser)
         challenge.with_user(manager).write({"state": "done"})
 
-        # Verify badge was granted
         badge_grant = self.env["gamification.badge.user"].search(
             [
                 ("badge_id", "=", nobody_badge.id),
@@ -460,11 +437,6 @@ class TestCompletionCap(TestGamificationCommon):
     """Tests for completion percentage capping in challenge rankings."""
 
     def test_topN_caps_completion_at_100(self):
-        """_get_top_users caps individual goal completeness at 100%.
-
-        Regression: a user exceeding a target 5x was credited 500% per goal,
-        dominating the ranking over users who completed all goals normally.
-        """
         goal_def = self.env["gamification.goal.definition"].create(
             {
                 "name": "Cap Test Def",
@@ -490,7 +462,6 @@ class TestCompletionCap(TestGamificationCommon):
         )
         challenge.action_start()
 
-        # Robot exceeds target 5x, demo exactly reaches it
         goals = self.env["gamification.goal"].search(
             [("challenge_id", "=", challenge.id)]
         )
@@ -500,18 +471,12 @@ class TestCompletionCap(TestGamificationCommon):
             else:
                 goal.write({"current": 10, "state": "reached"})
 
-        # _get_top_users returns a tuple of res.users records (or False).
-        # The completion cap is internal to the ranking algorithm; we verify
-        # indirectly: robot (50/10 = 500% uncapped) must NOT outrank demo
-        # (10/10 = 100%) — both should be capped at 100% and thus tied.
         challengers = challenge._get_top_users(3)
         ranked_users = [c for c in challengers if c]
         self.assertGreaterEqual(len(ranked_users), 2, "At least 2 users should qualify")
-        # Robot must not be exclusively first (would mean uncapped 500% > 100%)
         self.assertIn(self.user_demo, ranked_users[:2], "Demo should be in top 2")
 
     def test_challenge_line_name_is_readonly(self):
-        """Challenge line name field is readonly to prevent accidental global rename."""
         field = self.env["gamification.challenge.line"]._fields["name"]
         self.assertTrue(
             field.readonly,
@@ -540,7 +505,6 @@ class TestChallengeStartRefreshButtonAccess(TestGamificationCommon):
         self.challenge = self.env.ref("gamification.challenge_base_discover")
 
     def test_employee_direct_action_start_raises_access_error(self):
-        """Confirms the underlying ACL/action mismatch is real."""
         with self.assertRaises(AccessError):
             self.challenge.with_user(self.employee_only_user).action_start()
 
@@ -549,8 +513,6 @@ class TestChallengeStartRefreshButtonAccess(TestGamificationCommon):
             self.challenge.with_user(self.employee_only_user).action_check()
 
     def test_start_and_refresh_buttons_are_manager_only_in_view(self):
-        """The header buttons must carry a manager-only `groups=` so an
-        employee never sees/clicks into the AccessError proven above."""
         view = self.env.ref("gamification.challenge_form_view")
         arch = etree.fromstring(view.arch_db)
         for name in ("action_start", "action_check"):

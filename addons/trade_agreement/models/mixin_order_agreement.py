@@ -276,7 +276,6 @@ class MixinOrderLineAgreement(models.AbstractModel):
                 else False
             )
         )
-        # the deepest category is the most specific agreement
         return covering.sorted(
             lambda agreement_line: len(agreement_line.product_category_id.parent_path),
             reverse=True,
@@ -290,8 +289,6 @@ class MixinOrderLineAgreement(models.AbstractModel):
         return price, discount
 
     def _get_released_qty(self):
-        # a return and the credit note that follows it take back the same
-        # goods, so the larger of the two is what went back, not their sum
         self.check_singleton()
         taken_back = self._get_returned_qty()
         if "qty_invoiced" in self._fields:

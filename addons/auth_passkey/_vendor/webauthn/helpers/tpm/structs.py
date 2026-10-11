@@ -5,17 +5,6 @@ from typing import Mapping, Union
 from ..cose import COSECRV, COSEAlgorithmIdentifier
 from ..exceptions import InvalidTPMPubAreaStructure
 
-################
-#
-# A whole lotta domain knowledge is captured here, with hazy connections to source
-# documents. Good places to start searching for more info on these values are the
-# following Trusted Computing Group TPM Library docs linked in the WebAuthn API:
-#
-# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-1-Architecture-01.38.pdf
-# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
-# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
-#
-################
 
 
 class TPM_ST(str, Enum):
@@ -361,7 +350,6 @@ TPM_ECC_CURVE_MAP: Mapping[bytes, TPM_ECC_CURVE] = {
 }
 
 
-# Intentionally omit curves we can't map so a KeyError gets thrown
 TPM_ECC_CURVE_COSE_CRV_MAP: Mapping[TPM_ECC_CURVE, COSECRV] = {
     TPM_ECC_CURVE.NIST_P256: COSECRV.P256,
     TPM_ECC_CURVE.NIST_P384: COSECRV.P384,
@@ -371,7 +359,6 @@ TPM_ECC_CURVE_COSE_CRV_MAP: Mapping[TPM_ECC_CURVE, COSECRV] = {
 }
 
 
-# Intentionally omit algs we can't map so a KeyError gets thrown
 TPM_ALG_COSE_ALG_MAP: Mapping[TPM_ALG, COSEAlgorithmIdentifier] = {
     TPM_ALG.SHA256: COSEAlgorithmIdentifier.RSASSA_PSS_SHA_256,
     TPM_ALG.SHA384: COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_384,
@@ -380,8 +367,6 @@ TPM_ALG_COSE_ALG_MAP: Mapping[TPM_ALG, COSEAlgorithmIdentifier] = {
 }
 
 
-# Sourced from https://trustedcomputinggroup.org/resource/vendor-id-registry/
-# Latest version: https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-Vendor-ID-Registry-Version-1.02-Revision-1.00.pdf
 TPM_MANUFACTURERS: Mapping[str, TPMManufacturerInfo] = {
     "id:414D4400": TPMManufacturerInfo(name="AMD", id="AMD"),
     "id:41544D4C": TPMManufacturerInfo(name="Atmel", id="ATML"),

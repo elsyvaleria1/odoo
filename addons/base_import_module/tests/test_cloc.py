@@ -35,8 +35,6 @@ VALID_XML_2 = """<?xml version="1.0" encoding="UTF-8"?>
 
 class TestClocFields(test_cloc.TestClocCustomization):
     def create_studio_module(self):
-        # Studio module does not exist at this stage, so we simulate it
-        # Check for existing module in case the test run on an existing database
         if not self.env["ir.module.module"].search(
             [("name", "=", "studio_customization")]
         ):
@@ -52,10 +50,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
             )
 
     def test_fields_from_import_module(self):
-        """
-        Check that custom computed fields installed with an imported module
-        is counted as customization
-        """
         self.env["ir.module.module"].create(
             {
                 "name": "imported_module",
@@ -95,10 +89,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
         )
 
     def test_fields_module_name(self):
-        """
-        Check that custom computed fields installed with an imported module
-        is counted as customization
-        """
         self.env["ir.module.module"].create(
             {
                 "name": "imported_module",
@@ -140,7 +130,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
         )
         self.create_xml_id("test_imported_module", "qweb_view_test", qweb_view)
 
-        # Add qweb view from non imported module
         qweb_view = self.env["ir.ui.view"].create(
             {
                 "name": "Qweb Test",
@@ -150,7 +139,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
         )
         self.create_xml_id("studio_customization", "qweb_view_test", qweb_view)
 
-        # Add form view from module
         form_view = self.env["ir.ui.view"].create(
             {
                 "name": "Test partner",
@@ -201,7 +189,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
             )
             archive.writestr("test_imported_module/static/src/js/test.xml", VALID_XML)
 
-        # Import test module
         self.env["ir.module.module"]._import_zipfile(stream)
         cl = cloc.Cloc()
         cl.count_customization(self.env)
@@ -271,9 +258,7 @@ class TestClocFields(test_cloc.TestClocCustomization):
             "attachment_/test_imported_module/static/src/js/test_xml",
         ]
 
-        # Import test module
         self.env["ir.module.module"]._import_zipfile(stream)
-        # Create exclude xml_id
         for name in id_names:
             rec = self.env.ref(f"test_imported_module.{name}")
             self.create_xml_id("__cloc_exclude__", name, rec)
@@ -315,22 +300,18 @@ class TestClocFields(test_cloc.TestClocCustomization):
             )
             archive.writestr("test_imported_module/static/src/js/test.xml", VALID_XML)
             archive.writestr("test_imported_module/data/test.xml", VALID_XML_2)
-        # Import test module
         self.env["ir.module.module"]._import_zipfile(stream)
 
-        # Import a second time to upgrade, test that it does not raise error
         self.env["ir.module.module"]._import_zipfile(stream)
 
         cl = cloc.Cloc()
         cl.count_customization(self.env)
         self.assertEqual(cl.code.get("test_imported_module", 0), 0)
 
-        # Uninstall data module
         self.env["ir.module.module"].search(
             [("name", "=", "test_imported_module")]
         ).module_uninstall()
 
-        # Check that the database is cleaned after uninstallation
         attachments = self.env["ir.attachment"].search(
             [("url", "ilike", "test_imported_module/static/src/js/test_js")]
         )
@@ -359,15 +340,6 @@ class TestClocFields(test_cloc.TestClocCustomization):
         )
 
     def test_count_attachment_binary_and_bad_encoding_do_not_crash(self):
-        """t27114 audit: every CLOC test fixture was well-formed, clean
-        UTF-8 text — none exercised a binary blob or a non-UTF-8-encoded
-        text file reaching the same attachment-scanning path
-        (odoo/tools/cloc.py: count_customization() ->
-        attach.raw.decode("latin1")) that counts an imported module's
-        static assets. `latin1` never raises on arbitrary bytes and the
-        .js/.xml counters are naive regex/string counters rather than real
-        parsers, so this is expected to degrade gracefully rather than
-        raise — pin that down instead of leaving it assumed."""
         manifest_content = json_dumps(
             {
                 "name": "test_imported_module",

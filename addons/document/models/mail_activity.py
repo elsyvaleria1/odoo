@@ -35,8 +35,6 @@ class MailActivity(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> MailActivity:
-        # No document names an activity before it exists: saying so spares the
-        # compute a one2many read per batch; the link below sets it when made.
         for vals in vals_list:
             vals.setdefault("is_document_request", False)
         activities = super().create(vals_list)
@@ -170,8 +168,6 @@ class MailActivity(models.Model):
         return write_result
 
     def _readable(self) -> Self:
-        # a document request's requester reads its activity; one the writer
-        # may move but not read is no request of theirs to propagate
         return self._filtered_access("read")
 
     def _acquire_next_activity_values(self) -> ValuesType:
@@ -212,9 +208,6 @@ class MailActivity(models.Model):
         feedback: str | Literal[False] = False,
         attachment_ids: list[int] | None = None,
     ) -> tuple:
-        # An activity knows whether a document names it as its request, from
-        # its own row: closing any other activity asks the document table
-        # nothing.
         requests = self.filtered("is_document_request")
         if not requests:
             return super()._action_done(
@@ -224,8 +217,6 @@ class MailActivity(models.Model):
             [("request_activity_id", "in", requests.ids)]
         )
         document_without_attachment = documents.filtered(lambda d: not d.attachment_id)
-        # "uploaded" only when a file comes with the closing: a request marked
-        # done without one was answered with nothing
         if document_without_attachment and attachment_ids and not feedback:
             feedback = document_without_attachment[0]._request_uploaded_message()
         messages, next_activities = super(
@@ -237,8 +228,6 @@ class MailActivity(models.Model):
             documents=documents,
             unfulfilled=len(document_without_attachment),
         )
-        # the request is closed: its upload link falls back to viewing, the
-        # system's decision, tracked as any change of who can access
         if upload_links := documents.filtered(
             lambda document: document.access_via_link == "edit"
         ):

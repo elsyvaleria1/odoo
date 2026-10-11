@@ -16,9 +16,7 @@ _logger = getLogger(__name__)
 class AppointmentPerformanceCase(AppointmentCommon):
     def setUp(self):
         super().setUp()
-        # patch registry to simulate a ready environment
         self.patch(self.env.registry, "ready", True)
-        # we don't use mock_mail_gateway thus want to mock smtp to test the stack
         self._mock_smtplib_connection()
 
 
@@ -33,13 +31,9 @@ class AppointmentUIPerformanceCase(AppointmentPerformanceCase):
         )
         cls.env["appointment.type"].browse(shipped_type_ids).exists().active = False
         cls._website_renders_the_page = "website" in cls.env
-        # website_appointment (auto-installed with enterprise) publishes the type
-        # with its SEO metadata, which the page reads once more
         cls._page_reads_the_type_seo = (
             "website_meta_title" in cls.env["appointment.type"]._fields
         )
-        # website_helpdesk shows a visitor a team's menu only while the team is
-        # published, which the layout reads once per page
         cls._layout_reads_the_team_menus = bool(
             "team.team" in cls.env
             and "website_menu_id" in cls.env["team.team"]._fields
@@ -48,13 +42,9 @@ class AppointmentUIPerformanceCase(AppointmentPerformanceCase):
             .search_count([("website_menu_id", "!=", False)])
         )
 
-        # tweak in case website is installed
         if "website" in cls.env and "channel_id" in cls.env["website"]:
-            # if website_livechat is installed, disable it
             cls.env["website"].search([]).channel_id = False
 
-            # remove menu containing a slug url (only website_helpdesk normally), to
-            # avoid the menu cache being disabled, which would increase sql queries.
             cls.env["website.menu"].search(
                 [
                     ("url", "=like", "/%/%-%"),
@@ -66,39 +56,31 @@ class AppointmentUIPerformanceCase(AppointmentPerformanceCase):
 class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
     def setUp(self):
         super().setUp()
-        # Setup already some meetings for the staff user of appointment type
         self._create_meetings(
             self.staff_user_bxls,
             [
                 (
-                    self.reference_monday + timedelta(days=1),  # 3 hours first Tuesday
+                    self.reference_monday + timedelta(days=1),
                     self.reference_monday + timedelta(days=1, hours=3),
                     False,
                 ),
                 (
                     self.reference_monday
-                    + timedelta(days=7),  # next Monday: one full day
+                    + timedelta(days=7),
                     self.reference_monday + timedelta(days=7, hours=1),
                     True,
                 ),
             ],
         )
 
-        # When website_sale is installed, rendering the web page
-        # fetches the user's current sales order leading to a loading
-        # of available pricelists for that user.
-        # A fallback mechanism is in place in pricelists (see `_get_partner_pricelist_multi`)
-        # causing the queryCount to go up when a first pricelist is not found.
         if "product.pricelist" in self.env:
             self.env["product.pricelist"].search([]).write({"active": False})
 
-        # Flush everything, notably tracking values, as it may impact performances
         self.flush_tracking()
 
     @warmup
     def test_appointment_invitation_page_anonymous(self):
-        """Anonymous access of invitation page"""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         invitation = self.env["appointment.invite"].create(
             {
                 "short_code": "spock",
@@ -122,8 +104,7 @@ class OnlineAppointmentPerformance(AppointmentUIPerformanceCase):
 
     @warmup
     def test_appointment_type_page_website_authenticated(self):
-        """Authenticated access of Appointment type page"""
-        random.seed(1871)  # fix shuffle in _slots_add_users_availability
+        random.seed(1871)
         self.apt_type_bxls_2days.is_published = True
 
         self.authenticate("staff_user_aust", "staff_user_aust")

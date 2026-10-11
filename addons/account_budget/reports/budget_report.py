@@ -182,8 +182,6 @@ class BudgetReport(models.Model):
                 SQL(
                     "(%s)",
                     SQL(" OR ").join(
-                        # a line scoping no plan at all would match every entry in its
-                        # period; partially-scoped lines still match on the plans they set
                         SQL(
                             "%s IS NOT NULL",
                             self.env["budget.line"]._field_to_sql("bl", fname),
@@ -207,14 +205,6 @@ class BudgetReport(models.Model):
         )
 
     def _get_scoped_analytic_line_ids(self):
-        """The analytic lines the report is narrowed to, or None for all of them.
-
-        Scoping by analytic line keeps only the rows that are those lines: the
-        budget rows and every other branch are left out of the query instead of
-        being built and filtered away. The filter has to sit inside the branch --
-        PostgreSQL does not push a condition on ``res_id`` through the union --
-        or every analytic entry of the database is joined to find a handful.
-        """
         analytic_line_ids = self.env.context.get("budget_report_analytic_line_ids")
         return None if analytic_line_ids is None else list(analytic_line_ids)
 

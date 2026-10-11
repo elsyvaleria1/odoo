@@ -49,8 +49,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_one_employee_without_allocation_does_not_sink_the_batch(self):
-        """The employees who can take the time off get it; the one who cannot
-        is skipped rather than aborting everyone else's request."""
         wizard = self._wizard()
         action = wizard.action_generate_time_off()
 
@@ -71,7 +69,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_allocated_types_are_selectable(self):
-        """A type that requires an allocation can be picked in the wizard."""
         arch = etree.fromstring(
             self.env.ref("hr_holidays.hr_leave_generate_multi_wizard_view_form").arch
         )
@@ -83,7 +80,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_no_employee_selected_means_everyone(self):
-        """Leaving the employee list empty targets every employee in reach."""
         arch = etree.fromstring(
             self.env.ref("hr_holidays.hr_leave_generate_multi_wizard_view_form").arch
         )
@@ -102,8 +98,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_a_batch_of_only_uncovered_employees_still_reports(self):
-        """Nothing is created, and the failure is reported rather than raised
-        as a wall of text."""
         wizard = self._wizard(employee_ids=[(6, 0, self.uncovered.ids)])
         action = wizard.action_generate_time_off()
         self.assertFalse(self.env["hr.leave"].search(action["domain"]))
@@ -131,8 +125,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_hourly_type_keeps_the_hours_asked_for(self):
-        """An hour-based type generated in batch spans the chosen hours, not
-        the whole day."""
         wizard = self._typed_wizard("hour", hour_from=9.0, hour_to=12.0)
         action = wizard.action_generate_time_off()
         leave = self.env["hr.leave"].search(action["domain"])
@@ -147,7 +139,6 @@ class TestLeaveGenerateMultiWizard(TestHrHolidaysCommon):
         )
 
     def test_half_day_type_keeps_the_period_asked_for(self):
-        """A half-day type generated in batch takes the chosen half."""
         wizard = self._typed_wizard(
             "half_day", date_from_period="pm", date_to_period="pm"
         )

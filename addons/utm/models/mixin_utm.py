@@ -35,7 +35,6 @@ class MixinUtm(models.AbstractModel):
     def default_get(self, fields):
         values = super().default_get(fields)
 
-        # We ignore UTM for salesmen, except some requests that could be done as superuser_id to bypass access rights.
         if not self.env.is_superuser() and self.env.user.has_group(
             "sale.group_sale_salesman"
         ):
@@ -48,9 +47,7 @@ class MixinUtm(models.AbstractModel):
                 field = self._fields[field_name]
                 value = False
                 if request:
-                    # ir_http dispatch saves the url params in a cookie
                     value = request.cookies.get(cookie_name)
-                # if we receive a string for a many2one, we search/create the id
                 if field.type == "many2one" and isinstance(value, str) and value:
                     record = self._get_or_create_record(field.comodel_name, value)
                     value = record.id
@@ -59,14 +56,7 @@ class MixinUtm(models.AbstractModel):
         return values
 
     def tracking_fields(self) -> list:
-        # This function cannot be overridden in a model which inherit mixin.utm
-        # Limitation by the heritage on AbstractModel
-        # record_crm_lead.tracking_fields() will call tracking_fields() from module mixin.utm (if not overridden on crm.lead)
-        # instead of the overridden method from utm.mixin.
-        # To force the call of overridden method, we use self.env['mixin.utm'].tracking_fields() which respects overridden
-        # methods of mixin.utm, but will ignore overridden method on crm.lead
         return [
-            # ("URL_PARAMETER", "FIELD_NAME_MIXIN", "NAME_IN_COOKIES")
             ("utm_campaign", "campaign_id", "odoo_utm_campaign"),
             ("utm_source", "source_id", "odoo_utm_source"),
             ("utm_medium", "medium_id", "odoo_utm_medium"),
@@ -82,18 +72,6 @@ class MixinUtm(models.AbstractModel):
 
     @api.model
     def get_or_create_record(self, model_name, name) -> dict:
-        """Version of ``_get_or_create_record`` used in frontend notably in
-        website_links. For UTM models it calls _get_or_create_record. For other
-        models (as through inheritance custom models could be used notably in
-        website links) it calls a create. In the end it relies on
-        standard ACLs, and is mainly a wrapper for UTM models.
-
-        :param model_name: name of the model to create or find the record on
-        :param name: value to set on the model's `_rec_name` field
-        :return: id of newly created or found record. As the magic of call_kw
-            for create is not called anymore we have to manually return an id
-            instead of a recordset.
-        """
         if model_name in self._tracking_models():
             record = self._get_or_create_record(model_name, name)
         else:
@@ -101,7 +79,6 @@ class MixinUtm(models.AbstractModel):
         return {"id": record.id, "name": record.display_name}
 
     def _get_or_create_record(self, model_name, name):
-        """Based on the model name and on the name of the record, retrieve the corresponding record or create it."""
         Model = self.env[model_name]
 
         cleaned_name = name.strip()
@@ -112,7 +89,6 @@ class MixinUtm(models.AbstractModel):
             )
 
         if not record:
-            # No record found, create a new one
             record_values = {"name": cleaned_name}
             if "is_auto_campaign" in record._fields:
                 record_values["is_auto_campaign"] = True
@@ -124,30 +100,11 @@ class MixinUtm(models.AbstractModel):
     def _get_unique_names(
         self, model_name: str, names: Sequence[str | Literal[False] | None]
     ) -> list[str | Literal[False]]:
-        """Generate unique names for the given model.
-
-        Take a list of names and return for each names, the new names to set
-        in the same order (with a counter added if needed).
-
-        E.G.
-            The name "test" already exists in database
-            Input: ['test', 'test [3]', 'bob', 'test', 'test']
-            Output: ['test [2]', 'test [3]', 'bob', 'test [4]', 'test [5]']
-
-        :param model_name: name of the model for which we will generate unique names
-        :param names: list of names, we will ensure that each name will be unique
-        :return: a list of new values for each name, in the same order
-        """
-        # Avoid conflicting with itself, otherwise each check at update automatically
-        # increments counters
         skip_record_ids = self.env.context.get("utm_check_skip_record_ids") or []
-        # Remove potential counter part in each names, skipping falsy names
-        # (an "ilike" domain on an empty name would match every record)
         names_without_counter = {
             self._split_name_and_count(name)[0] for name in names if name
         }
 
-        # Retrieve existing similar names
         existing_names: set[str] = set()
         if names_without_counter:
             search_domain = Domain.OR(
@@ -160,8 +117,6 @@ class MixinUtm(models.AbstractModel):
                 for vals in self.env[model_name].search_read(search_domain, ["name"])
             }
 
-        # Counter for each names, based on the names list given in argument
-        # and the record names in database
         used_counters_per_name = {
             name: {
                 self._split_name_and_count(existing_name)[1]
@@ -170,8 +125,6 @@ class MixinUtm(models.AbstractModel):
             }
             for name in names_without_counter
         }
-        # Automatically incrementing counters for each name, will be used
-        # to fill holes in used_counters_per_name
         current_counter_per_name: defaultdict[str, Iterator[int]] = defaultdict(
             lambda: itertools.count(1)
         )
@@ -187,7 +140,6 @@ class MixinUtm(models.AbstractModel):
             if asked_counter and asked_counter not in existing:
                 count = asked_counter
             else:
-                # keep going until the count is not already used
                 for count in current_counter_per_name[name_without_counter]:
                     if count not in existing:
                         break
@@ -204,13 +156,6 @@ class MixinUtm(models.AbstractModel):
     def _split_name_and_count(
         name: str | Literal[False] | None,
     ) -> tuple[str, int]:
-        """
-        Return the name part and the counter based on the given name.
-
-        e.g.
-            "Medium" -> "Medium", 1
-            "Medium [1234]" -> "Medium", 1234
-        """
         name = name or ""
         name_counter_re = r"(.*)\s+\[([0-9]+)\]"
         match = re.match(name_counter_re, name)

@@ -16,8 +16,5 @@ def walk_with_parents(tree: ast.AST) -> list[ast.AST]:
 
 
 def nodes(tree: ast.AST) -> list[ast.AST]:
-    # Every checker iterates the module once per run: the list is built on the
-    # first request and kept on the tree, so the other checkers reuse it rather
-    # than each paying an ast.walk.
     cached = getattr(tree, "_nodes", None)
     return cached if cached is not None else walk_with_parents(tree)

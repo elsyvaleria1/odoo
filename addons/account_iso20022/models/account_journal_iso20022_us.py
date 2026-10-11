@@ -21,10 +21,6 @@ class AccountJournal(models.Model):
     def _prepare_payment_type_element(
         self, payment_method_code: str, priority: str | None
     ) -> etree._Element:
-        """Right now the entry class code is a field stored in a different module
-        `l10n_us_payment_nacha` which is not always installed. If it is we can take
-        advantage of it, otherwise we default to CCD.
-        """
         PmtTpInf = super()._prepare_payment_type_element(payment_method_code, priority)
         if payment_method_code == "iso20022_us":
             LclInstrm = etree.SubElement(PmtTpInf, "LclInstrm")
@@ -59,8 +55,6 @@ class AccountJournal(models.Model):
     def _prepare_credit_transfer_element(
         self, PmtInfId, payment, payment_method_code, include_charge_bearer=True
     ) -> etree._Element:
-        # In the US via BoA there are reserved characters not allowed in the memo or payment name.
-        # They are (*+~:)
         CdtTrfTxInf = super()._prepare_credit_transfer_element(
             PmtInfId,
             payment,
@@ -75,8 +69,6 @@ class AccountJournal(models.Model):
     def _prepare_remittance_element(
         self, payment_method_code, payment
     ) -> etree._Element | None:
-        # In the US via BoA there are reserved characters not allowed in the memo or payment name.
-        # They are (*+~:)
         RmtInf = super()._prepare_remittance_element(payment_method_code, payment)
         if payment_method_code == "iso20022_us" and RmtInf is not None:
             if (Ustrd := RmtInf.find(".//Ustrd")) is not None:

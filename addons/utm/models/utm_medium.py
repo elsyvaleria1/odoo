@@ -75,8 +75,5 @@ class UtmMedium(models.Model):
                         }
                     )
             except IntegrityError:
-                # A concurrent call created the same medium between our
-                # env.ref() lookup and this create(); return that one instead
-                # of propagating the unique-constraint violation.
                 return self.env.ref(f"{module}.utm_medium_{name_normalized}")
             return utm_medium

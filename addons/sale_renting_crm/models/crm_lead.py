@@ -57,19 +57,16 @@ class CrmLead(models.Model):
             )
 
     def _get_domain_action_view_sale_quotation(self):
-        # over-ride to exclude rental quotations linked to lead
         action_lead_quotation_domain = super()._get_domain_action_view_sale_quotation()
         return Domain.AND(
             [action_lead_quotation_domain, [("is_rental_order", "=", False)]]
         )
 
     def _get_domain_lead_quotation(self):
-        # over-ride to exclude rental quotations linked to lead
         lead_quotation_domain = super()._get_domain_lead_quotation()
         return Domain.AND([lead_quotation_domain, [("is_rental_order", "=", False)]])
 
     def _get_domain_lead_sale_order(self):
-        # over-ride to exclude rental sale orders linked to lead
         lead_sale_order_domain = super()._get_domain_lead_sale_order()
         return Domain.AND([lead_sale_order_domain, [("is_rental_order", "=", False)]])
 

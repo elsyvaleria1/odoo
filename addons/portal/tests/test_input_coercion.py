@@ -160,8 +160,6 @@ class TestShareRecipientSplit(TransactionCase):
         )
 
     def _invitation_scope(self, scope):
-        # where the scope is stored depends on what is installed (website keeps
-        # one per website over auth_signup's parameter); the wizard only asks
         return patch.object(
             type(self.env["res.users"]),
             "_get_signup_invitation_scope",

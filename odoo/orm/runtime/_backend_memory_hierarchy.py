@@ -86,13 +86,10 @@ class _InMemoryHierarchyMixin:
         step_domain: Domain,
         same_columns: typing.Sequence[str] = (),
     ) -> Query:
-        # the closure reads the columns: a pending write has to reach them
         model.flush_model([parent_field, *same_columns])
         table = model._table
 
         def matching(condition: Domain) -> set[int] | None:
-            # _single_table_where: a TRUE domain adds no WHERE at all, so
-            # neither the active test nor the record rules a search adds
             if condition.is_true():
                 return None
             return set(model._search(condition).get_result_ids())
@@ -107,8 +104,6 @@ class _InMemoryHierarchyMixin:
                 children_of[parent_id].append(row_id)
 
         def same_key(row_id: int) -> tuple[str, ...]:
-            # COALESCE(col::text, '') on the SQL side: only NULL collapses
-            # to '', a stored 0 or false compares as its text
             row = rows[row_id]
             key = []
             for column in same_columns:
@@ -144,8 +139,6 @@ class _InMemoryHierarchyMixin:
         column2: str,
         ids: typing.Collection[int],
     ) -> bool:
-        # the reachability CTE over the relation rows: a source that reaches
-        # itself closes a cycle
         edges: defaultdict[int, set[int]] = defaultdict(set)
         for _row_id, row in self._iter_m2m_rows(relation):
             source, destination = row.get(column1), row.get(column2)

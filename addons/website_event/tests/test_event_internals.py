@@ -242,7 +242,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
         )
 
     def test_process_attendees_form_no_tickets(self):
-        """Check that registering with no ticket works."""
         event = self._create_default_event(
             event_type_id=self.event_type_questions.id,
         )
@@ -295,10 +294,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
         )
 
     def test_process_attendees_form_missing_ticket_key(self):
-        """A POST that never sends the '<idx>-event_ticket_id' key at all (as
-        opposed to sending it empty/falsy) must not silently produce a
-        registration with a missing 'event_ticket_id' key that would later
-        crash a bare dict subscript in registration_confirm()."""
         event = self._create_default_event(
             event_type_id=self.event_type_questions.id,
         )
@@ -326,9 +321,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
         )
 
     def test_check_posted_ids_are_offered_slot(self):
-        """A posted event_slot_id that doesn't belong to the event must raise
-        a friendly UserError (caught by the framework as a normal error page)
-        instead of reaching event.slot's model-level ValidationError."""
         event = self._create_default_event(
             event_type_id=self.event_type_questions.id,
         )
@@ -359,9 +351,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
             )
 
     def test_process_tickets_form_negative_quantity(self):
-        """A posted 'nb_register-<id>' value that is zero or negative must be
-        dropped, not returned as an order with a negative/zero quantity that
-        would understate the displayed ordered_seats count."""
         event = self._create_default_event()
         ticket = self.env["event.event.ticket"].create(
             {
@@ -383,9 +372,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
         )
 
     def test_filter_open_slots_query_count(self):
-        """_filter_open_slots must batch seat-availability lookups per
-        EVENT, not per slot: the query count for filtering N slots on one
-        event must not grow with N."""
         event = self._create_default_event(name="Multi-slot event")
         one_slot = self.env["event.slot"].create(
             {
@@ -530,10 +516,6 @@ class TestEventData(DefaultEventMixin, EventCase, MockVisitor):
 
     @users("portal_test")
     def test_website_visibility_portal_user_unrelated_registration(self):
-        """A logged-in user with no visitor must only be considered
-        participating in events tied to their OWN partner, never in every
-        event that happens to have any registration at all (WEE-01: the
-        heuristic must seed with Domain.FALSE, not Domain.TRUE)."""
         other_partner = self.env["res.partner"].sudo().create({"name": "Someone Else"})
         self.env["event.registration"].sudo().create(
             {

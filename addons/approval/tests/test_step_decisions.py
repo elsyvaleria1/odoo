@@ -138,7 +138,6 @@ class TestApprovalStepDecisions(ApprovalCommon):
         self.assertEqual(self.row.decided_step_ids, self.first | self.second)
 
     def test_a_listed_member_is_asked_once_their_own_step_opens(self):
-        """Studio's test_entries_approved_by_other_read_by_regular_user."""
         group = self.env["res.groups"].create({"name": f"Asked {self.id()}"})
         self.approver_3.group_ids = [Command.link(group.id)]
         category = self._make_category(name=f"Asked {self.id()}")

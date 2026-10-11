@@ -13,7 +13,6 @@ class AIWebsiteLivechatController(http.Controller):
     )
     @add_guest_to_context
     def create_chat_channel_with_ai_agent(self, ai_agent_id):
-        # Sudo => access is managed through _is_user_access_allowed.
         ai_agent = self.env["ai.agent"].sudo().search([("id", "=", ai_agent_id)])
         if not ai_agent or not ai_agent._is_user_access_allowed():
             return None
@@ -30,8 +29,6 @@ class AIWebsiteLivechatController(http.Controller):
             request.update_context(guest=guest)
         if guest:
             store.add_global_values(guest_token=guest.sudo()._format_auth_cookie())
-        # The active chat channel with the AI Agent is removed and a new one is created to limit visitors to a single chat channel.
-        # Not returning the active chat channel and creating a new one instead is a design choice.
         active_chat_channel = ai_agent._get_ai_chat_channel()
         ai_agent._lock_ai_chat_creation()
         ai_agent._check_no_ai_chat_committed_unseen(active_chat_channel)
@@ -60,7 +57,6 @@ class AIWebsiteLivechatController(http.Controller):
             country = request.env["res.country"].search(
                 [("code", "=", request.geoip.country_code)], limit=1
             )
-        # sudo() => visitor can access the livechat channel to check if there is an operator available
         livechat_channel = (
             request.env["im_livechat.channel"]
             .sudo()

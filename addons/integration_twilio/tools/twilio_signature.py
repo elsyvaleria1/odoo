@@ -11,8 +11,6 @@ DEFAULT_PORTS = {"http": 80, "https": 443}
 def compute_signature(
     auth_token: str, url: str, params: Iterable[tuple[str, object]]
 ) -> str:
-    # Twilio sorts the parameter names and, under a repeated name, its distinct
-    # values: a flattened dict keeps one value and signs something else
     values_by_name = defaultdict(set)
     for name, value in params:
         values_by_name[name].add(str(value))
@@ -26,8 +24,6 @@ def compute_signature(
 
 
 def url_variants(url: str) -> list[str]:
-    # with and without the scheme's default port: a proxy in front of Odoo
-    # adds or drops it, and Twilio signed the URL as configured
     parts = urlsplit(url)
     default_port = DEFAULT_PORTS.get(parts.scheme)
     host = parts.hostname or ""

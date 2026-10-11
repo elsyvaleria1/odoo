@@ -369,7 +369,6 @@ class ResGroups(models.Model):
                 after - membership, membership - after
             )
         if {"user_ids", "implied_ids"} & vals.keys():
-            # res.users holds the invariant on its own side only
             _debug.logic(
                 "administrator_checked",
                 groups=self.ids,
@@ -379,7 +378,6 @@ class ResGroups(models.Model):
             self.env["res.users"]._check_at_least_one_administrator()
 
         if self.ids and vals.keys() == {"user_ids"}:
-            # who holds the groups, not what they are
             self.env["res.users.grant"]._clear_membership_caches()
         elif self.ids:
             self.env["ir.access"]._clear_access_caches()
@@ -387,8 +385,6 @@ class ResGroups(models.Model):
             _debug.lifecycle("groups_cache_cleared", groups=self.ids, by="write")
 
         if "implied_ids" in vals and self.ids:
-            # a group that now implies another gives its members that duty too:
-            # judged as a grant of it would be, blocking or logged
             self.env["ir.access.sod.rule"]._check_users(
                 self.all_user_ids, "implication_changed"
             )
@@ -543,8 +539,6 @@ class ResGroups(models.Model):
     @api.model
     @tools.ormcache(cache="groups")
     def _get_everyone_group_id(self) -> int | None:
-        # every user holds Everyone, a user of no user type too: the user types
-        # imply it, and the membership computations add it to whoever has none
         return (
             self.env["ir.model.data"]._xmlid_to_res_id(
                 "base.group_everyone", raise_if_not_found=False

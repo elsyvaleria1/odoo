@@ -8,7 +8,6 @@ from odoo.addons.link_tracker.tests.common import MockLinkTracker
 class TestTrackerHttpRequests(MockLinkTracker, common.HttpCase):
     @mute_logger("odoo.addons.http_routing.models.ir_http", "odoo.http")
     def test_no_preview_tracking(self):
-        """Ensure that requests with a user agent matching known preview user agents will not be registered as a click"""
         link_tracker = self.env["link.tracker"].create(
             {
                 "url": "/",
@@ -18,7 +17,6 @@ class TestTrackerHttpRequests(MockLinkTracker, common.HttpCase):
         self.assertEqual(len(link_tracker.link_click_ids), 0)
         link = "/r/" + link_tracker.code
 
-        # Check that no click is registered for a MicrosoftPreview agent
         self.url_open(
             link,
             headers={
@@ -28,7 +26,6 @@ class TestTrackerHttpRequests(MockLinkTracker, common.HttpCase):
         )
         self.assertEqual(len(link_tracker.link_click_ids), 0)
 
-        # Check that no click is registered for a Google-PageRenderer agent
         self.url_open(
             link,
             headers={
@@ -38,7 +35,6 @@ class TestTrackerHttpRequests(MockLinkTracker, common.HttpCase):
         )
         self.assertEqual(len(link_tracker.link_click_ids), 0)
 
-        # Check (sanity) that a request from a regular UA does still register the click
         self.url_open(
             link,
             headers={

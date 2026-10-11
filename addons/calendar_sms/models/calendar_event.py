@@ -6,7 +6,6 @@ class CalendarEvent(models.Model):
     _inherit = "calendar.event"
 
     def _do_sms_reminder(self, alarms) -> None:
-        """Send an SMS text reminder to attendees that haven't declined the event"""
         for event in self:
             declined_partners = event.attendee_ids.filtered_domain(
                 [("state", "=", "declined")]

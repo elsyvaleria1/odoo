@@ -109,9 +109,6 @@ class TestTheStoredFieldsFollowTheSchedule(TransactionCase):
         self.env.flush_all()
         self._drop_the_lunch()
 
-        # An unrelated write to one of the two. It used to be the only thing
-        # that re-priced a day, which is how two identical days ended up
-        # stored eight and nine.
         monday.write({"check_out": datetime(2026, 9, 7, 17, 1)})
         monday.write({"check_out": datetime(2026, 9, 7, 17, 0)})
         self.env.flush_all()

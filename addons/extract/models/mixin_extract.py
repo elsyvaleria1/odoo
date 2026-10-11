@@ -15,10 +15,6 @@ _logger = logging.getLogger(__name__)
 
 JOB_CHANNEL = "extract"
 
-#: Returned by ``_extract_compare_value`` when a written value cannot be reduced
-#: to something comparable with what was read. Distinct from ``None``, which is a
-#: value a caller can legitimately write and which must still count as a
-#: correction.
 NOT_COMPARABLE = object()
 
 WAIT_SECONDS = 30
@@ -140,24 +136,9 @@ class MixinExtract(models.AbstractModel):
             self.write(values)
 
     def _extract_write_value(self, model_field: str, value: Any) -> Any:
-        """What to write for ``model_field`` given the scalar extraction read.
-
-        Extraction yields scalars; a target that is not one (a relation the
-        scalar has to be resolved against) overrides this. Returning the value
-        unchanged is right for every plain column.
-        """
         return value
 
     def _extract_compare_value(self, model_field: str, value: Any) -> Any:
-        """The scalar to compare against what was read, for correction tracking.
-
-        The inverse of ``_extract_write_value``: ``vals`` carries whatever the
-        writer passed -- for a relation, command lists -- and comparing that to
-        an extracted string would record every write as a correction. Return
-        ``NOT_COMPARABLE`` to say the write cannot be reduced to a comparable
-        value, which records nothing; ``None`` is a value like any other and
-        still counts as a correction.
-        """
         return value
 
     def action_extract(self) -> None:
@@ -170,8 +151,6 @@ class MixinExtract(models.AbstractModel):
 
     def _extract_later(self, delay: int = 0, after=None):
         self.check_singleton()
-        # a job that waits on readings is keyed apart: the extraction that
-        # queued it may still be running under the plain key
         key = f"extract.{self._name}.{self.id}"
         if after:
             key += ".after_readings"
@@ -186,8 +165,6 @@ class MixinExtract(models.AbstractModel):
         return job
 
     def _await_readings(self, source: Document) -> bool:
-        """Queue the readings the document wanted and have this extraction run
-        again once they are made; False when there is nothing to wait for."""
         attachment = self.env["ir.attachment"].browse(
             source.options.get("attachment_id") or ()
         )
@@ -246,8 +223,6 @@ class MixinExtract(models.AbstractModel):
             return None
         if allow_pending:
             source.options["read_up_to"] = METERED
-        # a reading worth a job (a transcription) is queued, never made inside
-        # this call: the extraction runs again once it is kept
         source.options["defer_async"] = True
 
         pending = self.extract_pending or None
@@ -262,7 +237,6 @@ class MixinExtract(models.AbstractModel):
                 pending=pending if pending and "strategy" in pending else None,
             )
         except psycopg.Error:
-            # not an extraction's verdict: the job retries or fails it
             raise
         except Exception as e:
             _logger.exception("Extraction failed on %s %s", self._name, self.id)

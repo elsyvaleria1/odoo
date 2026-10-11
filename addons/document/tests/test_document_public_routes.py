@@ -237,14 +237,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
         )
 
     def test_zip_cap_counts_directories_too(self):
-        """A tree of empty folders is work, and the cap has to see it.
-
-        A directory contributes no bytes but one `_get_folder_children` search,
-        and the walk is bounded only by the number of folders. Counting files
-        alone left an unauthenticated folder-share link able to ask a worker for
-        one search per folder, at any depth, which is precisely what the cap
-        exists to stop.
-        """
         Document = self.env["document.document"]
         folder = Document.create(
             {"name": "Deep", "type": "folder", "access_via_link": "view"}
@@ -327,7 +319,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
 
     @mute_logger("odoo.http")
     def test_pdf_split_answers_400_to_a_malformed_pdf(self):
-        # the parser's error is not a ValueError: it answered 500
         broken = self.env["document.document"].create(
             {
                 "name": "broken.pdf",
@@ -383,7 +374,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
                 "folder_id": folder.id,
             }
         )
-        # a row older than the model's scheme constraint
         self.env.cr.execute(
             "UPDATE document_document SET url = 'javascript:alert(1)' WHERE id = %s",
             [link.id],
@@ -399,7 +389,6 @@ class TestDocumentsPublicRouteHardening(HttpCase):
         self.assertRegex(
             page.content.decode(), r"2\s*documents", "the shortcut shows its target's"
         )
-        # a subfolder card opens its page in one request, not three redirects
         self.assertNotIn(b"/documents/redirect/", page.content)
         subfolder = folder.children_ids.filtered(lambda d: d.type == "folder")
         opened = self.url_open(
@@ -753,15 +742,6 @@ class TestDocumentsPublicRouteInput(HttpCase, TransactionCaseDocuments):
         self.assertEqual(res.status_code, 400)
 
     def test_non_ascii_signup_token_is_not_a_server_error(self):
-        """A non-ASCII `member_signup_token` must be rejected, not raise.
-
-        `consteq` is `hmac.compare_digest`, which raises TypeError on a `str`
-        holding non-ASCII, and the parameter is public and attacker-controlled.
-        The route reaches the comparison without a valid document token -- any
-        path segment does, since `_from_access_token` simply answers "no
-        document" for a bad one -- so the only thing needed is a
-        `document.access` id, a small guessable integer.
-        """
         invitee = self.env["res.partner"].create(
             {"name": "audit_invitee", "email": "audit_invitee@t.test"}
         )
@@ -809,8 +789,6 @@ class TestDocumentsPublicRouteInput(HttpCase, TransactionCaseDocuments):
         self.assertIn(res.status_code, (400, 404))
 
     def test_bare_odoo_documents_path_is_the_app_not_a_share_link(self):
-        # `/odoo/documents` alone used to read the literal `documents` as an
-        # access token, sending a portal user to `/documents/documents`.
         self.portal_user.password = "portal_pw"
         self.authenticate("portal_user", "portal_pw")
         res = self.url_open("/odoo/documents", allow_redirects=False)

@@ -229,8 +229,6 @@ class WebsiteMenu(models.Model):
             restricted.with_context(
                 adding_designer_group_to_menu=True
             ).group_ids += self.env.ref("website.group_website_designer")
-        # After the write, not before: a cache cleared ahead of its own change is
-        # free to be refilled from pre-change state by anything `super()` reads.
         self.env.registry.clear_cache("templates")
         return res
 
@@ -410,7 +408,7 @@ class WebsiteMenu(models.Model):
                     Domain("url", "=", menu["url"])
                     | Domain("url", "=", "/" + menu["url"])
                 )
-                page = self.env["website.page"].search(domain, limit=1)  # noqa: E8507 - one probe per submitted menu url; the limit=1 pick follows the website-specific ordering
+                page = self.env["website.page"].search(domain, limit=1)
                 if page:
                     _debug.logic("menu_bound", by="page", menu=menu_id.id, page=page.id)
                     menu["page_id"] = page.id

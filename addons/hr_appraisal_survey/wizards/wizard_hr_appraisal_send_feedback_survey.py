@@ -74,10 +74,9 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
     )
     user_body = fields.Html(string="User Contents")
 
-    # Overrides of mixin.mail.composer
     @api.depends(
         "survey_template_id"
-    )  # fake trigger otherwise not computed in new mode
+    )
     def _compute_render_model(self) -> None:
         self.render_model = "survey.user_input"
 
@@ -106,10 +105,6 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
 
     @api.depends("appraisal_id")
     def _compute_allowed_survey_template_ids(self) -> None:
-        # survey.survey orders by create_date alone, and the templates shipped
-        # with this module are created in the same transaction, to the same
-        # microsecond: without a tiebreaker the default below is decided by
-        # physical row order
         all_appraisal_templates = self.env["survey.survey"].search(
             [("survey_type", "=", "appraisal")], order="create_date DESC, id ASC"
         )
@@ -123,9 +118,6 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
     def _compute_survey_template_id(self) -> None:
         for wizard in self:
             if not wizard.survey_template_id:
-                # allowed_survey_template_ids is not stored, so on a new record
-                # it yields NewId wrappers; a stored Many2one writes those as
-                # NULL, which the NOT NULL of required=True then rejects
                 wizard.survey_template_id = wizard.allowed_survey_template_ids[
                     :1
                 ]._origin
@@ -137,11 +129,8 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
         for wizard in self:
             date_close = wizard.appraisal_id.date_close
             if not date_close:
-                # the wizard opens without an appraisal in context too
                 wizard.deadline = date_in_month
                 continue
-            # allow "last day" feedback fill by adding 1 day, and never propose
-            # a deadline action_send would refuse and the picker would forbid
             wizard.deadline = max(
                 today + relativedelta(days=1),
                 min(date_in_month, date_close + relativedelta(days=1)),
@@ -166,11 +155,6 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
         return None
 
     def _get_reachable_partner(self, employee):
-        # `_create_answer` uses `partner.email` and ignores any `email` it is
-        # also given whenever `partner` is truthy, so a partner is only safe
-        # to pass here when its OWN email is the reachable one - never a
-        # partner picked for another reason (e.g. partner_id existing)
-        # while the actual address lives on a different partner.
         contact = employee.partner_id
         if contact and contact.email:
             _debug.logic("feedback_partner", by="employee_partner", employee=employee)
@@ -255,7 +239,6 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
         return answers
 
     def _send_mail(self, answer):
-        """Create mail specific for recipient containing notably its access token"""
         ctx = {
             "logged_user": self.env.user.name,
             "employee": self.employee_id.name,
@@ -290,10 +273,6 @@ class WizardHrAppraisalSendFeedbackSurvey(models.TransientModel):
         if fields.Date.today() > self.deadline:
             raise UserError(self.env._("Please set an Answer Deadline in the future"))
 
-        # the onchange only strips emailless employees on a value entered
-        # through the form; a caller that creates/writes employee_ids
-        # directly (bypassing the onchange) must be caught here too, or an
-        # unreachable answer + mail gets created for them silently
         employees = self.employee_ids.filtered(
             lambda e: e.work_email or e.user_id.partner_id.email
         )

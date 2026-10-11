@@ -62,7 +62,6 @@ _KINDS = ("mixed_value_kinds", "false_sentinel", "bool_or_none", "action_bool_re
 
 
 def _contracts(tree: ast.Module) -> list[tuple[str, str]]:
-    # (kind, "<line> <what>") of every retired contract the file declares
     found = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef):

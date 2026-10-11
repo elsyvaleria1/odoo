@@ -161,13 +161,6 @@ def test_check_refuses_an_unstrippable_shape(tmp_path, body, fragment):
 
 
 def test_the_timed_decorator_is_a_perf_site(tmp_path):
-    """`@_debug.perf.timed` is a recognised shape, counted on the perf channel.
-
-    It was refused until 2026-09-15, which left 1,350 sites -- 1,346 of them in
-    `account` -- in a shape the strip pass could not remove. Nobody noticed
-    because this checker had been deleted with `odoo/tooling/` and had to be
-    recovered from history before it could run at all.
-    """
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -201,7 +194,6 @@ def test_stripping_the_timed_decorator_leaves_the_method(tmp_path):
     assert report is not None
     stripped = debuglog.strip_file(report)
     assert "_debug.perf.timed" not in stripped
-    # the method and every decorator that is not ours survive untouched
     assert "@property" in stripped
     assert "def f(self):" in stripped
     assert "return 1" in stripped
@@ -209,7 +201,6 @@ def test_stripping_the_timed_decorator_leaves_the_method(tmp_path):
 
 
 def test_the_timed_decorator_is_refused_when_called(tmp_path):
-    """Only the bare form is a shape: `timed` takes the function itself."""
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -221,7 +212,6 @@ def test_the_timed_decorator_is_refused_when_called(tmp_path):
 
 
 def test_a_splat_without_explicit_keywords_is_allowed(tmp_path):
-    """`event` is positional-only, so a lone `**` expansion cannot collide."""
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -233,11 +223,6 @@ def test_a_splat_without_explicit_keywords_is_allowed(tmp_path):
 
 
 def test_a_positional_star_is_refused_even_where_it_would_work_today(tmp_path):
-    """A one-element sequence binds `event` and passes; two raise.
-
-    So the shape is green until the sequence grows, which is why it is refused
-    on its form rather than on a length the checker cannot know.
-    """
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -250,13 +235,6 @@ def test_a_positional_star_is_refused_even_where_it_would_work_today(tmp_path):
 
 
 def test_a_block_of_several_debug_statements_is_refused(tmp_path):
-    """Counting statements was the test, and three of them still empty a block.
-
-    Found by the round trip on 2026-09-14: an `if line_errors:` whose body was
-    two `# debuglog` counters and one `_debug.logic(...)` passed `--check`
-    (three statements, not one) and left a bare `if line_errors:` after
-    `--strip`, so the file no longer parsed.
-    """
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -273,7 +251,6 @@ def test_a_block_of_several_debug_statements_is_refused(tmp_path):
 
 
 def test_a_block_with_one_surviving_statement_is_allowed(tmp_path):
-    """The same block with real work in it strips to valid code."""
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -291,11 +268,6 @@ def test_a_block_with_one_surviving_statement_is_allowed(tmp_path):
 
 
 def test_a_span_body_may_empty_because_the_span_goes_with_it(tmp_path):
-    """The `with` line is removed too, so nothing is left needing a statement.
-
-    The first cut of the block rule did not except this and reported two
-    sites in `odoo/modules` and `odoo/tests` that strip perfectly well.
-    """
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -310,13 +282,6 @@ def test_a_span_body_may_empty_because_the_span_goes_with_it(tmp_path):
 
 
 def test_a_marked_line_whose_name_survives_is_refused(tmp_path):
-    """`--check` called this clean and the strip produced an undefined name.
-
-    Measured 2026-09-14: `cached = name in sys.modules  # debuglog` followed
-    by `if cached:` read as four clean sites, and `--strip` left `if cached:`
-    with nothing binding it -- `F821`, out of a tree the checker had just
-    passed. Fifty sites in `odoo` were in that shape.
-    """
     source = (
         "import sys\n"
         "from odoo.libs.debug_log import DebugLog\n"
@@ -348,7 +313,6 @@ def test_a_marked_line_read_only_by_debug_code_is_allowed(tmp_path):
 
 
 def test_an_attribute_target_binds_no_bare_name(tmp_path):
-    """`self._x = ...  # debuglog` must not read as binding `self`."""
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -403,14 +367,6 @@ def test_a_test_suite_is_skipped_but_a_package_named_tests_is_scanned(tmp_path):
 
 
 def test_a_marker_on_a_continuation_line_is_refused(tmp_path):
-    """`--check` passed this at 5 sites and `--strip` produced a SyntaxError.
-
-    Measured 2026-09-15. The strip removes the marked LINE, not the statement
-    it belongs to, so a marker on a continuation line leaves the rest of the
-    construct behind. Fourteen sites in `odoo` were in this shape, including
-    `)  # debuglog` on a closing bracket and `except Exception as err:` on a
-    handler.
-    """
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"
@@ -426,7 +382,6 @@ def test_a_marker_on_a_continuation_line_is_refused(tmp_path):
 
 
 def test_a_marker_on_a_compound_header_is_refused(tmp_path):
-    """Removing the header orphans the block it opens."""
     source = (
         "from odoo.libs.debug_log import DebugLog\n"
         "_debug = DebugLog(__name__)\n"

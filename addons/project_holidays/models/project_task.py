@@ -38,7 +38,6 @@ class ProjectTask(models.Model):
                 res.append({"names": names, "leaves": leave_dict})
             return res
 
-        # Avoid NewIds issue by browsing for self.ids.
         tasks = self.with_context(prefetch_fields=False)
 
         if all(self._ids):
@@ -78,7 +77,6 @@ class ProjectTask(models.Model):
 
         for task in assigned_tasks:
             leaves_parameters = {"validated": [], "requested": []}
-            # Gather leaves parameters for each employee
             for employee in task.user_ids._origin.employee_ids:
                 task_leaves = leaves.get(employee.id)
                 if task_leaves:
@@ -91,7 +89,6 @@ class ProjectTask(models.Model):
                         if not leaves_for_employee:
                             continue
                         leaves_parameters[leave_type].append(leaves_for_employee)
-            # Group leaves
             for leave_type, leaves_for_employee in leaves_parameters.items():
                 leaves_parameters[leave_type] = group_by_leave(leaves_for_employee)
             warning = ""

@@ -14,7 +14,6 @@ from odoo.addons.sale_commission_subscription.tests.common import (
 class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
     @classmethod
     def default_env_context(cls):
-        # needed for mail.tracking.value test
         return {}
 
     def setUp(self):
@@ -22,7 +21,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         self.flush_tracking()
 
     def flush_tracking(self):
-        """Force the creation of tracking values."""
         self.env.flush_all()
         self.cr.flush()
 
@@ -47,7 +45,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             )
             sub.action_confirm()
             with self.assertRaises(UserError):
-                # achievements based on sold metrics can't be used with recurring plan achievements
                 self.commission_plan_sub.achievement_ids = self.env[
                     "sale.commission.plan.achievement"
                 ].create(
@@ -193,7 +190,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
                 }
             ]
         )
-        # Make sure the commissions are 100% on target, achievements force the commission rate
         self.commission_plan_user.target_commission_ids.target_rate = 1
         self.commission_plan_user.action_approve()
         self.commission_plan_sub.action_approve()
@@ -256,7 +252,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         commissions = self.env["sale.commission.report"].search(
             [("plan_id", "=", self.commission_plan_user.id)]
         )
-        # this plan will take both invoices: subscription and the other one because no recurring plan is defined
         self.assertEqual(len(commissions), 24, "24 commissions for two users")
         self.assertAlmostEqual(
             inv2.amount_untaxed,
@@ -280,7 +275,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
 
     @freeze_time("2024-02-02")
     def test_multiple_achievements(self):
-        # this test makes sure all achievements are summed even if one product is in several achievements for example
         category = self.env["product.category"].create(
             {
                 "name": "Test Category",
@@ -337,7 +331,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
                 },
             ]
         )
-        # Make sure the commissions are 100% on target, achievements force the commission rate
         self.commission_plan_user.target_commission_ids.target_rate = 1
         self.commission_plan_user.action_approve()
         self.commission_plan_sub.action_approve()
@@ -355,7 +348,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         self.assertAlmostEqual(
             inv.amount_untaxed, 500, 2, msg="The invoice amount should be equal to 500"
         )
-        # this plan will take both invoices: subscription and the other one because no recurring plan is defined
         self.assertEqual(len(commissions), 24, "24 commissions for two users")
         self.assertEqual(
             sum(achievements.mapped("achieved")),
@@ -378,7 +370,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         self.assertAlmostEqual(
             inv.amount_untaxed, 500, 2, msg="The invoice amount should be equal to 500"
         )
-        # this plan will take both invoices: subscription and the other one because no recurring plan is defined
         self.assertEqual(len(commissions), 24, "24 commissions for two users")
         self.assertEqual(
             sum(achievements.mapped("achieved")),
@@ -501,18 +492,11 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             self.assertEqual(achievements.related_res_id, sub.id)
 
     def test_sub_commission_currency(self):
-        """Test that MRR log are converted in the currency of the current company.
-        We need to use the currency of the log and not the company currency
-        """
         self.original_get_subscription_currency_rates = self.env[
             "sale.commission.achievement.report"
         ]._get_subscription_currency_rates
         currency_inr = self.env.ref("base.INR")
         currency_inr.active = True
-        # créer pricelist INR
-        # créer SO INR alors que company en USD
-        # créer plan etc
-        # vérifier les achievements
         inr_pricelist = self.env["product.pricelist"].create(
             {"name": "Rupee", "currency_id": currency_inr.id}
         )
@@ -569,7 +553,7 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
                 [
                     {
                         "type": "mrr",
-                        "rate": 1,  # to ease computation of currency rates, 100%
+                        "rate": 1,
                         "plan_id": self.commission_plan_sub.id,
                         "recurring_plan_id": sub.plan_id.id,
                     }
@@ -635,7 +619,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             .with_company(other_company)
             .create({"name": "TEST", "currency_id": inr_currency.id})
         )
-        # Conversion from current company (USD) to INR
         self.env["res.currency.rate"].create(
             {
                 "currency_id": inr_currency.id,
@@ -644,7 +627,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             }
         )
         usd_currency = self.env.company.currency_id
-        # Conversion from other company (INR) to USD
         self.env["res.currency.rate"].with_company(other_company).create(
             {
                 "currency_id": usd_currency.id,
@@ -654,7 +636,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         )
         company_data = self.collect_company_accounting_data(other_company)
         other_company.country_id = self.env.ref("base.fr")
-        # set the OTC in the current currency
         self.commission_plan_user.commission_amount = 90
         self.commission_plan_user.target_ids.amount = 90
         self.commission_plan_user.achievement_ids = self.env[
@@ -747,7 +728,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         self.assertAlmostEqual(
             sum(achievements.mapped("achieved")), 150, 2, msg="30000*0.3 /60"
         )
-        # 90 = is the maximum commission (100%).  30000 * 0.3 / 60 = 150 --> capped as 90
         self.assertAlmostEqual(
             sum(commissions.mapped("commission")), 90, 2, msg="150 achieved becomes 90"
         )
@@ -767,7 +747,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         self.assertAlmostEqual(
             sum(achievements.mapped("achieved")), 9000, 2, msg="30000 * 0.3 = 9000"
         )
-        # 5400 = is the maximum commission (100%) (90 x 60).  20000 * 0.3 = 6000 --> capped as 5400
         self.assertAlmostEqual(
             sum(commissions.mapped("commission")),
             5400,
@@ -776,7 +755,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
         )
 
     def test_sub_commission_duplicated_id(self):
-        # make sure two log created the same day are counted as two achievements
         first_now = datetime.datetime(2024, 2, 2, 8, 0, 0)
         second_now = datetime.datetime(2024, 3, 2, 8, 0, 0)
         third_now = datetime.datetime(2024, 3, 3, 9, 0, 0)
@@ -851,7 +829,7 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             )
             inv = sub._create_invoices()
             inv._post()
-            self.flush_tracking()  # needed to run precommit _update_effective_date
+            self.flush_tracking()
             order_log_ids = sub.order_log_ids.sorted("id")
             sub_data = [
                 (
@@ -912,16 +890,13 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
             self.assertEqual(
                 achievements.mapped("related_res_id"), [sub.id, sub.id, sub.id]
             )
-            # remove duplicates
             achievement_ids = set(achievements.ids)
             self.assertEqual(
                 len(achievement_ids), 3, "Three achievements should have different ids"
             )
 
     def test_sub_commission_transfer(self):
-        # Ensure transfer logs are taken into account
         with freeze_time("2024-06-01"):
-            #  monthly
             sub = self.subscription.copy()
             sub.user_id = self.commission_user_1.id
 
@@ -1014,8 +989,6 @@ class TestSaleSubCommissionUser(TestSaleSubscriptionCommissionCommon):
                     ),
                 ],
             )
-            # two logs share the day: without the id the tie falls to the model's
-            # `id desc` and the list comes out in reverse creation order
             order_log_ids = renewal_so.order_log_ids.sorted(
                 lambda log: (log.event_date, log.id)
             )

@@ -15,9 +15,8 @@ from odoo.addons.payment_asiapay.tests.common import AsiaPayCommon
 class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
     @freeze_time(
         "2011-11-02 12:00:21"
-    )  # Freeze time for consistent singularization behavior.
+    )
     def test_reference_is_singularized(self):
-        """Test the singularization of reference prefixes."""
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.asiapay.code
         )
@@ -25,9 +24,8 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
 
     @freeze_time(
         "2011-11-02 12:00:21"
-    )  # Freeze time for consistent singularization behavior.
+    )
     def test_reference_is_computed_based_on_document_name(self):
-        """Test the computation of reference prefixes based on the provided invoice."""
         self._skip_if_account_payment_is_not_installed()
         company = self.env.company
         Account = self.env["account.account"]
@@ -66,9 +64,8 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
 
     @freeze_time(
         "2011-11-02 12:00:21"
-    )  # Freeze time for consistent singularization behavior.
+    )
     def test_reference_is_stripped_at_max_length(self):
-        """Test that reference prefixes are stripped to have a length of at most 35 chars."""
         reference = self.env["payment.transaction"]._get_unique_reference(
             self.asiapay.code,
             prefix="this is a long reference of more than 35 characters",
@@ -77,7 +74,6 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
         self.assertEqual(len(reference), 35)
 
     def test_no_item_missing_from_rendering_values(self):
-        """Test that the rendered values are conform to the transaction fields."""
         tx = self._create_transaction(flow="redirect")
         with patch(
             "odoo.addons.payment_asiapay.models.payment_provider.PaymentProvider"
@@ -104,7 +100,6 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment.models.payment_transaction")
     def test_no_input_missing_from_redirect_form(self):
-        """Test that no key is omitted from the rendering values."""
         tx = self._create_transaction(flow="redirect")
         expected_input_keys = [
             "merchantId",
@@ -138,8 +133,6 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
         self.assertEqual(form_info["inputs"]["amount"], "0.0")
 
     def test_apply_updates_confirms_transaction(self):
-        """Test that the transaction state is set to 'done' when the payment data indicate a
-        successful payment."""
         tx = self._create_transaction(flow="redirect")
         tx._apply_updates(self.webhook_payment_data)
         self.assertEqual(tx.state, "done")

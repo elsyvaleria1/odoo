@@ -149,9 +149,9 @@ class SpreadsheetAccountingBalanceTagFunctionTest(AccountTestInvoicingCommon):
         self.assertEqual(
             tag_balances,
             [
-                {"balance": 150.0},  # year 2025, tag_1
-                {"balance": 0.0},  # year 2025, tag_1 & tag_2
-                {"balance": 0.0},  # year 2024, tag_1, posted_only
-                {"balance": 100.0},  # year 2024, tag_1, draft included
+                {"balance": 150.0},
+                {"balance": 0.0},
+                {"balance": 0.0},
+                {"balance": 100.0},
             ],
         )

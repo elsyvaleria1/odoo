@@ -105,9 +105,6 @@ class TestMailGatewayRecipient(TransactionCase):
         )
         return dict(self.env.cr.fetchall())
 
-    # the first alias domain of a database becomes its companies' own, and the
-    # aliases installed modules keep (a journal's sales@, purchases@) move onto
-    # it: what each test adds is read against what the domain already answers
     def test_the_view_lists_what_the_gateway_answers(self):
         before = self._recipients()
         self.assertEqual(before["bounce-rcpt@rcpt.example.com"], "bounce")
@@ -156,8 +153,6 @@ class TestMailInbound(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # a key already set has sealed this database's secrets: replacing it
-        # would leave them unreadable
         patcher = patch.dict(
             os.environ,
             {
@@ -295,8 +290,6 @@ class TestMailInbound(HttpCase):
 
     @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
     def test_a_server_whose_fallback_takes_no_document_defers_the_message(self):
-        """A fallback model that takes no mail is the configuration's fault,
-        which an administrator fixes: the MTA keeps the message meanwhile."""
         self.server.object_id = self.env.ref("base.model_res_country")
         response = self._post(
             _envelope(
@@ -479,8 +472,6 @@ class TestGatewayRetryableFailure(TransactionCase):
         self.env.company.alias_domain_id = domain
         Partner = type(self.env["res.partner"])
         bounces_before = self.env["mail.mail"].search_count([])
-        # the bounce is written on its own cursor, which reads only what is
-        # flushed: the alias must be as visible to it as a committed one is
         with (
             self.sync_env_with_side_cursors(),
             patch.object(
@@ -489,8 +480,6 @@ class TestGatewayRetryableFailure(TransactionCase):
                 side_effect=psycopg.errors.SerializationFailure("concurrent update"),
             ),
         ):
-            # not assertRaises: it rolls back to a savepoint, and with it what
-            # the failure path wrote, which is what this test reads
             try:
                 self.env["mixin.mail.thread"].message_process(
                     False, _message("retry@x", to="retry@retry.example.com")

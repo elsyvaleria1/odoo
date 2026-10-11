@@ -520,9 +520,6 @@ class TestWebSaveConcurrencyAccess(common.TransactionCase):
             )
 
     def test_a_user_saves_their_own_preferences_with_the_check_on(self):
-        # res.users grants no write to a plain user; its write() lets one
-        # write their own preferences, so the check must leave write access
-        # to write() and not refuse first
         user = new_test_user(self.env, login="ws_self", groups="base.group_user")
         self.env.flush_all()
         record = user.with_user(user)

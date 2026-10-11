@@ -22,12 +22,10 @@ from odoo.addons.base.models.ir_access import (
 )
 from odoo.addons.base.models.ir_access_reach import PRINCIPAL_FIELDS
 
-# the methods through which a model decides access in code instead of in rows
 _CHECK_OVERRIDES = frozenset({"_check_access", "_has_field_access", "_access_domain"})
 _FIELD_OVERRIDES = frozenset(
     {"_has_field_access", "_check_field_access", "_has_write_groups"}
 )
-# what marks a _search override as one that filters for access
 _SEARCH_ACCESS_NAMES = frozenset(
     {
         "bypass_access",
@@ -48,7 +46,6 @@ def _production(row_or_module) -> bool:
 
 
 def kind_findings(rows):
-    # a guard on a group binds everyone unless it says it binds the members
     return [
         f"{row.where()}: no kind"
         for row in rows
@@ -81,7 +78,6 @@ def domain_findings(rows):
 
 
 class _Principal:
-    # the binds a predicate template reads, as placeholders a domain can hold
     def __getattr__(self, name):
         return [1] if name.endswith("s") else 1
 
@@ -96,8 +92,6 @@ def _predicate_args(text: str | None) -> dict:
 
 
 def predicate_findings(rows, predicates):
-    # a row applying a named predicate names one a module declares, for its
-    # model, with arguments the template reads into a domain the model answers
     findings = []
     for row in rows:
         if not row.creates or row.reach != "predicate":
@@ -150,8 +144,6 @@ def coverage_findings(rows, models):
     )
 
 
-# the groups that are never held in some companies only: a grant of a user
-# type is refused a scope, and everyone is every user everywhere
 _UNSCOPED_GROUPS = frozenset(
     {"base.group_user", "base.group_portal", "base.group_public", "base.group_everyone"}
 )
@@ -167,8 +159,6 @@ def _reads_companies(node) -> bool:
 
 
 def _company_paths(row) -> set[str]:
-    # the fields a row compares with the principal's companies: its domain's,
-    # and for a company reach the anchor it reads
     paths = set()
     if row.reach == "company" and index.known_model(row.model):
         anchor = index.anchors(row.model).get(row.anchor or "company")
@@ -189,9 +179,6 @@ def _company_paths(row) -> set[str]:
 
 
 def company_anchor_findings(rows):
-    # a model's company guards and its company anchor name the same field, so a
-    # grant limited to some companies reaches exactly what a guard would admit
-    # there; a guard reading several fields needs the anchor among them
     paths_by_model: defaultdict[str, set[str]] = defaultdict(set)
     where_by_model: dict[str, str] = {}
     for row in rows:
@@ -216,10 +203,6 @@ def company_anchor_findings(rows):
 
 
 def anchorless_findings(rows, models):
-    # the models where a group that can be held in some companies only has a
-    # permission, and no company anchor: such a grant applies there to every
-    # record while one of its companies is in use. A privilege is held by
-    # nobody, only raised by with_privilege for one call, so it has no companies
     unscoped = _UNSCOPED_GROUPS | index.privileges()
     return sorted(
         {
@@ -237,10 +220,6 @@ def anchorless_findings(rows, models):
 
 
 def _declares_no_company(info) -> bool:
-    # a model stating that its records belong to no company ("company": ""
-    # in its _access_anchors), as a configuration every company shares: a
-    # grant limited to some companies reaches all of it by design, where the
-    # finding is a company forgotten
     return info.anchors.get("company") == ""
 
 
@@ -298,8 +277,6 @@ def override_findings(paths):
 
 
 def _field_overrides(path: str) -> list[str]:
-    # a model deciding a field's access in code rather than through the
-    # field's classes and their rows
     try:
         tree = ast.parse(Path(path).read_text(encoding="utf-8"))
     except SyntaxError, UnicodeDecodeError:
@@ -375,13 +352,11 @@ def retired_format_paths(repo: str = "odoo") -> list[str]:
         if "/migrations/" not in path
         and "/upgrades/" not in path
         and "/static/" not in path
-        # the stand-in for a module written for stock Odoo, on purpose
         and "/test_legacy_access/" not in path
     ]
 
 
 class _RefsAsConstants(ast.NodeTransformer):
-    # ref('xmlid') names one record, the same whoever the row is read for
     def visit_Call(self, node: ast.Call) -> ast.AST:
         if (
             isinstance(node.func, ast.Name)
@@ -401,8 +376,6 @@ def _fixed_leaves(domain: str):
 
 
 def _reads_principal(domain: str | None) -> bool:
-    # a domain that reads the user: through its names, or through a field
-    # whose search reads it (a named predicate says that one)
     if not domain:
         return False
     try:
@@ -422,8 +395,6 @@ def _reads_principal(domain: str | None) -> bool:
 
 
 def reach_findings(rows):
-    # a row that reaches through an anchor its model declares, of a kind its
-    # rung can read, with nothing but a fixed filter beside it
     findings = []
     for row in rows:
         if not row.reach:
@@ -447,8 +418,6 @@ def reach_findings(rows):
 
 
 def anchor_findings(models):
-    # every declared anchor follows fields the models have, to the model its
-    # kind names
     findings = []
     for name, info in sorted(models.items()):
         if info.kind == "abstract" or not _production(info.module):
@@ -486,8 +455,6 @@ def anchor_findings(models):
 
 
 def free_domain_findings(rows):
-    # a row that still spells its reach out as a domain the principal is read
-    # into, where a rung or a named predicate could say it
     return sorted(
         f"{row.where()}: {row.model}"
         for row in rows
@@ -502,9 +469,6 @@ class TestAccessRows(lint_case.LintCase):
         cls.found = defaultdict(dict)
         cls.reached = {}
         cycles_seen: set[str] = set()
-        # a repository's rows are read against what it builds on (index.visible);
-        # the narrowest layer first, so a cycle is reported by the repository
-        # whose rows close it and not again by each one built on top
         for repo in sorted(
             lint_case.repositories(), key=lambda repo: len(lint_case.visible(repo))
         ):
@@ -715,7 +679,6 @@ class TestAccessRows(lint_case.LintCase):
 
 
 class TestAccessRowGatesSeeTheirFaults(lint_case.LintCase):
-    # each gate reads a planted fault, so a gate that goes blind reads red here
 
     def _row(self, **values):
         defaults = {
@@ -833,7 +796,6 @@ class TestAccessRowGatesSeeTheirFaults(lint_case.LintCase):
 
     def test_an_anchor_its_path_does_not_follow(self):
         def planted(path, kind):
-            # planted on a real model, so its fields are the index's
             return {
                 "res.partner": index.ModelInfo(
                     "res.partner",

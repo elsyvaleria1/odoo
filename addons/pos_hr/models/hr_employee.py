@@ -61,7 +61,6 @@ class HrEmployee(models.Model):
         return read_records
 
     def _get_pos_role(self, config) -> str:
-        """The role the till gives this employee: manager, cashier or minimal."""
         self.check_singleton()
         if (
             config.group_pos_manager_id in self.user_id.all_group_ids
@@ -74,7 +73,6 @@ class HrEmployee(models.Model):
 
     def _is_pos_manager(self) -> bool:
         self.check_singleton()
-        # an employee with no user has no group
         return bool(self.user_id) and self.user_id._has_group(
             "point_of_sale.group_pos_manager"
         )
@@ -88,7 +86,6 @@ class HrEmployee(models.Model):
                 employees=self,
             )
             return []
-        # Apply visibility filters (the access domain)
         visible_emp_ids = self.search([("id", "in", self.ids)])
         employees_data = self.sudo().search_read(
             [("id", "in", visible_emp_ids.ids)], ["barcode", "pin"]

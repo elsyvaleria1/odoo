@@ -57,16 +57,8 @@ their Pokémon can meet any challenge.
         job_trainer.contract_template_id = cls.contract_template_trainer
 
     def test_change_contract_template_with_work_entries(self):
-        """
-        Check if generating work entries for the next month on an employee
-        prevents us from changing contract templates on new offers for this
-        employee.
-        """
-        # Will generate work entries for this month, and the next month for all
-        # employees
         self.env["hr.version"]._cron_generate_missing_work_entries()
 
-        # The tour will also save the offer after the change
         self.start_tour(
             f"/odoo/employees/{self.employee.id}",
             "change_contract_template_on_offer_tour",

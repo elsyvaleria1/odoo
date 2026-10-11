@@ -7,14 +7,6 @@ from odoo.db import schema
 
 _logger = logging.getLogger(__name__)
 
-# predecessor_ids and successor_ids read project_task_dependency, the typed rows,
-# instead of a relation of their own; a link only the old relation held becomes
-# a finish-to-start row without lag, and the relation goes with its reflection.
-# The old relation accepted cycles, which would leave every task on one waiting
-# forever: a link closing one, given the typed rows and the links kept before it
-# in (task, predecessor) order, is dropped and logged. Blocking now reads the
-# type (a finish-to-finish predecessor no longer blocks the start), so every
-# task that had a dependency has its state recomputed
 
 Link = tuple[int, int]
 

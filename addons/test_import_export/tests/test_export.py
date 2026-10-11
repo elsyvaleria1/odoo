@@ -18,7 +18,7 @@ class XlsxCreatorCase(common.HttpCase):
 
         self.session = self.authenticate("admin", "admin")
 
-        self.worksheet = {}  # mock worksheet
+        self.worksheet = {}
 
         self.default_params = {
             "domain": [],
@@ -86,7 +86,6 @@ class XlsxCreatorCase(common.HttpCase):
 @tagged("post_install", "-at_install")
 class TestExport(XlsxCreatorCase):
     def test_int_monetary_float(self):
-        # FIXME the currency is actually not used but still change the behavior of the export (see ExportXlsxWriter.__init__)
         self.env["res.currency"].create(
             {
                 "name": "bottlecap",
@@ -116,7 +115,6 @@ class TestExport(XlsxCreatorCase):
         export = self.export(
             fields=["int_sum", "float_monetary", "bool_and", "float_min"]
         )
-        # FIXME assertExportEqual doesn't test the real information show in the export file
         self.assertExportEqual(
             export,
             [
@@ -371,7 +369,6 @@ class TestGroupedExport(XlsxCreatorCase):
         )
 
     def test_float_avg_nested(self):
-        """With more than one nested level (avg aggregation)"""
         values = [
             {"int_sum": 10, "int_max": 30, "float_avg": 100.0},
             {"int_sum": 10, "int_max": 30, "float_avg": 200.0},
@@ -400,7 +397,6 @@ class TestGroupedExport(XlsxCreatorCase):
         )
 
     def test_float_avg_nested_no_value(self):
-        """With more than one nested level (avg aggregation is done on 0, not False)"""
         values = [
             {"int_sum": 10, "int_max": 20, "float_avg": False},
             {"int_sum": 10, "int_max": 30, "float_avg": False},
@@ -533,10 +529,6 @@ class TestGroupedExport(XlsxCreatorCase):
         )
 
     def test_nested_records(self):
-        """
-        aggregated values currently not supported for nested record export, but it should not crash
-        e.g. export 'many2one/const'
-        """
         values = [
             {
                 "int_sum": 10,
@@ -616,7 +608,6 @@ class TestGroupedExport(XlsxCreatorCase):
             {"int_sum": 10, "date_max": date(2019, 1, 1)},
             {"int_sum": 10, "date_max": False},
         ]
-        # Group and aggregate by date, but date fields are not set for all records
         self.make(values)
         export = self.export(
             fields=["int_sum", "date_max"],
@@ -683,7 +674,6 @@ class TestGroupedExport(XlsxCreatorCase):
         )
 
     def test_decimal_separator(self):
-        """The decimal separator of the language used shouldn't impact the float representation in the exported xlsx"""
         lang_data = get_lang(self.env)
         lang = self.env["res.lang"].browse(lang_data.id)
         lang.decimal_point = ","
@@ -787,7 +777,6 @@ class TestGroupedExport(XlsxCreatorCase):
 
     @warmup
     def test_performance_export_data(self):
-        """Tests the number of calls to `export_data` and the number of sql queries during a grouped export"""
         self.make(
             [
                 {"int_sum": 1, "int_max": 1},
@@ -800,8 +789,6 @@ class TestGroupedExport(XlsxCreatorCase):
                 {"int_sum": 5, "int_max": 8},
             ]
         )
-        # five in the handler (search, grouped read, export_data, currency
-        # decimals, model name) plus the session's client-binding check
         with (
             self.assertQueryCount(6),
             patch.object(
@@ -841,7 +828,6 @@ class TestGroupedExport(XlsxCreatorCase):
         )
 
     def test_groupby_properties_type_field(self):
-        """Test that exporting works for record grouped by a property field."""
 
         property_def = [
             {"name": "date", "type": "date", "string": "Date", "default": "2025-11-11"}

@@ -14,8 +14,6 @@ CODE_COLUMNS = {
 def migrate(cr, version):
     if not version:
         return
-    # hr.employee.country_id is nationality_country_id (hr 1.33); a rule a user
-    # wrote still names the old field and would fail when the payslip computes
     for table, columns in CODE_COLUMNS.items():
         for column in columns:
             cr.execute(

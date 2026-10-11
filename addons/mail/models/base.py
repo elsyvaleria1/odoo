@@ -132,8 +132,6 @@ class Base(models.AbstractModel):
     def unlink(self) -> Literal[True]:
         record_ids = self.ids if (not self._abstract and not self._transient) else []
         if record_ids and self._name in self.env.registry.models_cascading_from:
-            # the database deletes the rows cascading from these, and a pending
-            # auto-subscription of one of them runs while it still exists
             self.env["mail.followers"]._finalize_auto_subscribe()
         result = super().unlink()
         if record_ids and (
@@ -204,10 +202,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def _mail_operation_domains(self, message_operation: str) -> dict[str, Domain]:
-        # which access each record needs for a message operation, as the
-        # records each document operation covers; a record no domain holds
-        # admits the message operation to nobody. The one definition: the
-        # per-record map and the access domain both derive from it
         valid_operations = {"read", "write", "unlink", "create"}
         if message_operation not in valid_operations:
             raise ValueError(
@@ -237,15 +231,11 @@ class Base(models.AbstractModel):
 
     @api.model
     def _mail_access_domain(self, message_operation: str) -> Domain:
-        # the records whose messages the operation reaches for the user: those
-        # a document operation covers and on which the user holds it
         policy = self.env.registry.access_policy
         reached, covered = [], Domain.FALSE
         for operation, domain in self._mail_operation_domains(
             message_operation
         ).items():
-            # a record the first domain covers is not the second's, as in
-            # the per-record map
             own, covered = domain & ~covered, covered | domain
             if not policy.model_allowed(self.env, self._name, operation):
                 continue
@@ -254,9 +244,6 @@ class Base(models.AbstractModel):
 
     @api.model
     def _mail_message_read_reach(self) -> Domain:
-        # the records whose messages and followers the user reads, as a domain
-        # read in sudo: the message access domain, or, for a model deciding
-        # its own access in Python, what its own search finds for the user
         if type(self)._check_access is models.BaseModel._check_access:
             return self._mail_access_domain("read")
         return self._record_access_domain("read")
@@ -379,10 +366,6 @@ class Base(models.AbstractModel):
     @api.model
     @tools.ormcache("reference_name", cache="stable")
     def _get_model_names_filed_as(self, reference_name: str) -> tuple[str, ...]:
-        # every model whose records a message, a follower or an attachment
-        # names `reference_name`: the model, a table-inheritance tree's members,
-        # and a model sharing its parent's id, whose cached threads all change
-        # together
         return tuple(
             sorted(
                 name
@@ -1283,7 +1266,7 @@ class Base(models.AbstractModel):
                 ):
                     reply_to_email[record.id] = address
 
-        by_alias = len(reply_to_email)  # debuglog
+        by_alias = len(reply_to_email)
         if set(_res_ids) - set(reply_to_email):
             for company, record_ids in company_to_res_ids.items():
                 if not company.catchall_email:

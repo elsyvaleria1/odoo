@@ -4,7 +4,6 @@ from odoo import api, fields, models
 class ResUsersSettings(models.Model):
     _inherit = "res.users.settings"
 
-    # Calendar module settings.
     calendar_default_privacy = fields.Selection(
         selection=[
             ("public", "Public"),
@@ -20,6 +19,5 @@ class ResUsersSettings(models.Model):
 
     @api.model
     def _get_fields_blacklist(self):
-        """Get list of calendar fields that won't be formatted in session_info."""
         calendar_fields_blacklist = ["calendar_default_privacy"]
         return super()._get_fields_blacklist() + calendar_fields_blacklist

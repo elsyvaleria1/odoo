@@ -22,7 +22,7 @@ class _OrderedSetBase[T](AbstractSet[T]):
 
     @abstractmethod
     def __init__(self, elems: Iterable[T] = ()) -> None:
-        """Store distinct elements in their iteration order."""
+        pass
 
     def __contains__(self, elem: object) -> bool:
         return elem in self._map
@@ -33,7 +33,7 @@ class _OrderedSetBase[T](AbstractSet[T]):
     def __len__(self) -> int:
         return len(self._map)
 
-    def __and__(self, other: Iterable[T]) -> Self:  # type: ignore[override]
+    def __and__(self, other: Iterable[T]) -> Self:
         if not isinstance(other, Iterable):
             return NotImplemented
         members = other if isinstance(other, (AbstractSet, Mapping)) else set(other)

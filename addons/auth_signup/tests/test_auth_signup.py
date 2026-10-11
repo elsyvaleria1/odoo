@@ -15,7 +15,6 @@ class TestAuthSignupFlow(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
         self.env["ir.config_parameter"].sudo().set_param(
             "auth_signup.invitation_scope", "b2c"
         )
-        # once website is loaded its per-website field wins over the parameter
         if "website" in self.env:
             self.env["website"].sudo().search([]).auth_signup_uninvited = "b2c"
 
@@ -36,18 +35,12 @@ class TestAuthSignupFlow(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
             yield
 
     def test_confirmation_mail_free_signup(self):
-        """
-        Check if a new user is informed by email when he is registered
-        """
 
-        # Activate free signup
         self._activate_free_signup()
 
-        # Get csrf_token
         self.authenticate(None, None)
         csrf_token = http.Request.csrf_token(self)
 
-        # Values from login form
         name = "toto"
         payload = {
             "login": "toto@example.com",
@@ -57,24 +50,20 @@ class TestAuthSignupFlow(HttpCaseWithUserPortal, HttpCaseWithUserDemo):
             "csrf_token": csrf_token,
         }
 
-        # Override unlink to not delete the email if the send works.
         with (
             patch.object(
                 odoo.addons.mail.models.mail_mail.MailMail, "unlink", lambda self: None
             ),
             self.patch_captcha_signup(),
         ):
-            # Call the controller
             url_free_signup = self._get_free_signup_url()
             response = self.url_open(url_free_signup, data=payload)
-            # a new account is a portal user, whom portal sends to /my
             landing = (
                 "/my"
                 if "mixin.portal" in self.env
                 else "/web/login_successful?account_created=True"
             )
             self.assertIn(landing, response.url)
-            # Check if an email is sent to the new user
             new_user = self.env["res.users"].search([("name", "=", name)])
             self.assertTrue(new_user)
             mail = self.env["mail.message"].search(
@@ -150,21 +139,15 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
             "auth_signup.invitation_scope",
             scope,
         )
-        # With `website` installed the per-website field wins: its override of
-        # _get_signup_invitation_scope (website/models/res_users.py) only falls
-        # back to the parameter when auth_signup_uninvited is empty, and it
-        # ships set to b2c. Closing only the parameter closes nothing.
         if "website" in self.env:
             self.env["website"].sudo().search([]).auth_signup_uninvited = scope
 
     def test_signup_disabled_is_not_found(self):
-        """Without b2c and without token the signup page must 404."""
         self._set_signup("b2b")
         res = self.url_open("/web/signup")
         self.assertEqual(res.status_code, 404)
 
     def test_reset_password_disabled_is_not_found(self):
-        """With the reset feature off and no token the route must 404."""
         self.env["ir.config_parameter"].sudo().set_param(
             "auth_signup.reset_password",
             "False",
@@ -173,7 +156,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertEqual(res.status_code, 404)
 
     def test_signup_page_renders_with_frame_protection(self):
-        """In b2c the page renders with the anti-framing headers."""
         self._set_signup("b2c")
         res = self.url_open("/web/signup")
         self.assertEqual(res.status_code, 200)
@@ -181,7 +163,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertIn("frame-ancestors", res.headers.get("Content-Security-Policy", ""))
 
     def test_signup_post_creates_and_logs_in_user(self):
-        """A valid b2c signup creates the user and opens a session."""
         self._set_signup("b2c")
         self.authenticate(None, None)
         res = self.url_open(
@@ -206,7 +187,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertEqual(user.name, "Brand New")
 
     def test_signup_post_password_mismatch_shows_error(self):
-        """Mismatched passwords surface the form error, no user created."""
         self._set_signup("b2c")
         self.authenticate(None, None)
         res = self.url_open(
@@ -229,7 +209,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         )
 
     def test_signup_post_duplicate_email_shows_error(self):
-        """Signing up with an existing login reports the duplicate."""
         self._set_signup("b2c")
         self.authenticate(None, None)
         res = self.url_open(
@@ -245,9 +224,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertIn("Another user is already registered", res.text)
 
     def test_signup_post_blank_login_shows_error(self):
-        """A signup POST with a blank login surfaces the form error
-        instead of a 500 (bypasses the HTML `required` attribute the way a
-        non-browser client would)."""
         self._set_signup("b2c")
         self.authenticate(None, None)
         res = self.url_open(
@@ -264,7 +240,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertIn("The form was not properly filled in.", res.text)
 
     def test_reset_password_does_not_leak_account_existence(self):
-        """Known and unknown logins get the SAME generic reset message."""
         self.env["ir.config_parameter"].sudo().set_param(
             "auth_signup.reset_password",
             "True",
@@ -279,7 +254,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
             },
         )
         self.assertIn(generic, res_known.text)
-        # the known login actually got a reset token prepared
         self.assertEqual(
             self.user_demo.partner_id.sudo().signup_type,
             "reset",
@@ -295,7 +269,6 @@ class TestSignupHttpRoutes(HttpCaseWithUserDemo):
         self.assertIn(generic, res_unknown.text)
 
     def test_signup_with_invalid_token_reports_it(self):
-        """A garbage token renders the dedicated invalid-token error."""
         self._set_signup("b2b")
         res = self.url_open("/web/signup?token=not-a-real-token")
         self.assertEqual(res.status_code, 200)

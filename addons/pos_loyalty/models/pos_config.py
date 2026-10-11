@@ -5,8 +5,6 @@ from odoo.exceptions import UserError
 class PosConfig(models.Model):
     _inherit = "pos.config"
 
-    # NOTE: this funtions acts as a m2m field with loyalty.program model. We do this to handle an excpetional use case:
-    # When no PoS is specified at a loyalty program form, this program is applied to every PoS (instead of none)
     def _get_program_ids(self):
         today = fields.Date.context_today(self)
         return (
@@ -36,7 +34,6 @@ class PosConfig(models.Model):
 
     def _check_before_creating_new_session(self):
         self.check_singleton()
-        # Check validity of programs before opening a new session
         invalid_reward_products_msg = ""
         for reward in self._get_program_ids().reward_ids:
             if reward.reward_type == "product":
@@ -69,7 +66,6 @@ class PosConfig(models.Model):
             raise UserError(f"{prefix_error_msg}\n{invalid_reward_products_msg}")
         if gift_card_programs:
             for gc_program in gift_card_programs:
-                # Do not allow a gift card program with more than one rule or reward, and check that they make sense
                 if len(gc_program.reward_ids) > 1:
                     raise UserError(
                         self.env._("Invalid gift card program. More than one reward.")
@@ -113,7 +109,6 @@ class PosConfig(models.Model):
 
     def use_coupon_code(self, code, creation_date, partner_id, pricelist_id) -> dict:
         self.check_singleton()
-        # Points desc so that in coupon mode one could use a coupon multiple times
         coupon = self.env["loyalty.card"].search(
             [
                 ("program_id", "in", self._get_program_ids().ids),

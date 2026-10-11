@@ -46,7 +46,6 @@ class DocumentsDocument(models.Model):
         _debug.lifecycle("expenses_created", documents=self, expenses=expenses)
         for document, expense in zip(self, expenses, strict=False):
             if document.res_model or document.res_id:
-                # Create new attachment
                 attachment = document.attachment_id.with_context(no_document=True).copy(
                     {
                         "res_model": expense._name,

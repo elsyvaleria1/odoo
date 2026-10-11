@@ -40,9 +40,6 @@ class TestOpenAPIReceiverSecurity(TransactionCase):
         self.assertEqual(self.ir_http._openapi_security_for(spec), [])
 
     def test_a_door_the_subject_proves_says_the_path_carries_the_proof(self):
-        # mail/unfollow and its kind: the receiver model carries no gate, the
-        # token in the path is the proof, and an empty `security` would read
-        # as an open door.
         resolved = dict(
             self.ir_http._openapi_security_for(
                 route(receiver="res.partner:_receiver_for_x")

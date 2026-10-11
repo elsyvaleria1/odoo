@@ -68,15 +68,12 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
         _debug.logic(
             "rpc.method_refused", model=model._name, method=name, reason="private"
         )
-        raise AccessError(  # noqa: E8505  rejection reply to a bad RPC call
+        raise AccessError(
             f"Private methods (such as '{model._name}.{name}') "
             f"cannot be called remotely."
         )
 
     cls = type(model)
-    # Once private, private in every override: an override that drops
-    # @api.private must not reopen the method, so the whole MRO is read, and
-    # through __dict__ so the caller's name runs no descriptor before that.
     for mro_cls in cls.__mro__:
         if getattr(mro_cls.__dict__.get(name), "_api_private", False):
             _debug.logic(
@@ -86,7 +83,7 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
                 reason="api_private",
                 declared_in=mro_cls.__name__,
             )
-            raise AccessError(  # noqa: E8505  rejection reply to a bad RPC call
+            raise AccessError(
                 f"Private methods (such as '{model._name}.{name}') "
                 f"cannot be called remotely."
             )
@@ -95,14 +92,14 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
     if not callable(method):
         _debug.logic("rpc.method_missing", model=model._name, method=name)
         error = AttributeError(f"The method '{model._name}.{name}' does not exist")
-        error.loglevel = logging.WARNING  # type: ignore[attr-defined]
+        error.loglevel = logging.WARNING
         raise error
 
     if method == getattr(model, name, None):
         _debug.logic(
             "rpc.method_refused", model=model._name, method=name, reason="not_bound"
         )
-        raise AccessError(  # noqa: E8505  rejection reply to a bad RPC call
+        raise AccessError(
             f"The method '{model._name}.{name}' cannot be called remotely."
         )
 
@@ -110,8 +107,6 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
     return method
 
 
-# the model a remote call named: what a person asked of the server, as
-# opposed to what the code serving them does on other models
 _CALLED_MODEL: ContextVar[str | None] = ContextVar("rpc_called_model", default=None)
 
 
@@ -129,9 +124,6 @@ def called_model() -> str | None:
 
 
 def _scope_rules(model: BaseModel) -> api_scope.ScopeRules | None:
-    """The API key scope this call is served under, from the context the door
-    set at authentication, or the one already being enforced when a call
-    reaches `call_kw` from inside another."""
     scope_id = model.env.context.get("api_scope_id")
     if isinstance(scope_id, int) and scope_id:
         return model.env["res.users.apikeys.scope"].sudo().browse(scope_id)._rules()
@@ -147,10 +139,6 @@ def call_kw(model: BaseModel, name: str, args: Sequence, kwargs: Mapping) -> typ
     rules = _scope_rules(model)
     if rules is None:
         return _call_kw(model, name, args, kwargs)
-    # The scope is checked before anything runs, with the caller's own words
-    # in the refusal; the call runs under it, so the ORM hooks that read the
-    # active scope see it whatever context the caller sent; the result comes
-    # back without what the scope hides.
     api_scope.check_call(model.env, rules, model._name, name, args, kwargs)
     kwargs = dict(kwargs)
     kwargs["context"] = api_scope.safe_context(model.env, kwargs.get("context"))
@@ -172,7 +160,7 @@ def _call_kw(
     if name == "create":
         if not args:
             _debug.logic("rpc.call_kw.rejected", model=model._name, reason="no_vals")
-            raise AccessError(  # noqa: E8505  names the caller's own protocol error
+            raise AccessError(
                 f"Method '{model._name}.create' requires a vals dict or list "
                 f"of vals dicts as its first positional argument."
             )
@@ -180,7 +168,7 @@ def _call_kw(
             _debug.logic(
                 "rpc.call_kw.rejected", model=model._name, reason="create_not_model"
             )
-            raise AccessError(  # noqa: E8505  addresses whoever wrote the override
+            raise AccessError(
                 f"Method '{model._name}.create' is not declared with "
                 f"@api.model_create_multi (or @api.model). An override that "
                 f"drops the decorator makes call_kw treat the vals as record "
@@ -195,7 +183,7 @@ def _call_kw(
             _debug.logic(
                 "rpc.call_kw.rejected", model=model._name, method=name, reason="no_ids"
             )
-            raise AccessError(  # noqa: E8505  names the caller's own protocol error
+            raise AccessError(
                 f"Method '{model._name}.{name}' requires record ids as its "
                 f"first positional argument."
             )
@@ -343,7 +331,7 @@ def execute_cr(
     recs = env.get(obj)
     if recs is None:
         _debug.logic("rpc.execute_cr.model_missing", model=obj, method=method)
-        raise UserError(  # noqa: E8505  the RPC named a model that does not exist
+        raise UserError(
             f"Object {obj} doesn't exist"
         )
     thread = current_worker_thread()
@@ -351,7 +339,6 @@ def execute_cr(
     _debug.pipeline("rpc.execute_cr", model=obj, method=method, uid=uid)
 
     def invoke() -> typing.Any:
-        # Deferred model work belongs to the attempt, before flush and commit.
         return _force_lazy_values(call_kw(recs, method, args, kw))
 
     result = retrying(invoke, env, participant)
@@ -396,11 +383,6 @@ def _is_bare_iterator(val: typing.Any) -> bool:
 
 
 def _force_lazy_in_mapping(val: Mapping, memo: _LazyMemo, active: set[int]) -> Mapping:
-    # Mapping ABCs do not establish writability: frozendict inherits dict but
-    # rejects assignment. Replacements go in a wire-compatible copy, made only
-    # once a value has actually been replaced. The keys are snapshotted because
-    # a lazy may write back into its own container when it is warmed, and a
-    # registered Mapping need not offer items().
     items: dict | None = None
     keys = list(val)
     for key in keys:
@@ -436,7 +418,7 @@ def _force_lazy_in_sequence(
             items[index] = forced
     if items is None:
         return val
-    return tuple(items) if type(val) is tuple else type(val)(items)  # type: ignore[call-arg]
+    return tuple(items) if type(val) is tuple else type(val)(items)
 
 
 def _force_lazy_in_place(val: Iterable, memo: _LazyMemo, active: set[int]) -> None:
@@ -461,8 +443,6 @@ def _force_lazy_in_value(
     active.add(marker)
     try:
         result = val
-        # Exact types first: the ABC checks below cost a metaclass call each,
-        # and a search_read result is dicts of lists of tuples all the way down.
         if cls is dict:
             result = _force_lazy_in_mapping(val, memo, active)
         elif cls is list or cls is tuple:
@@ -481,8 +461,6 @@ def _force_lazy_in_value(
             result = _force_lazy_in_sequence(val, memo, active)
         elif isinstance(val, (AbstractSet, Iterable)):
             _force_lazy_in_place(val, memo, active)
-        # Retain the input too: temporary values yielded by generators may
-        # otherwise be destroyed and have their identities reused mid-walk.
         memo[marker] = (val, result)
         return result
     finally:

@@ -30,13 +30,6 @@ class StockScrap(models.Model):
                 self.product_id = lot.product_id
 
     def _find_lot_from_barcode(self, barcode):
-        """Return at most one lot named `barcode`.
-
-        A lot name is unique per (product, company) only, so the same name can legitimately
-        exist for several products. Searching unbounded and assigning the result to a Many2one
-        raises "Expected singleton"; prefer the lot of the product already on the scrap, and
-        fall back to any other one.
-        """
         _debug.logic("scrap_lot_from_barcode", scraps=self, barcode=barcode)
         Lot = self.env["product.trace"]
         if self.product_id:

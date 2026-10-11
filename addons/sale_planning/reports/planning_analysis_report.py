@@ -21,7 +21,6 @@ class PlanningAnalysisReport(models.Model):
         string="Sales Order Item",
         readonly=True,
     )
-    # Not using a related as we want to avoid having a depends.
     role_product_ids = fields.One2many(
         comodel_name="product.template",
         compute="_compute_role_product_ids",

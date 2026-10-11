@@ -74,7 +74,6 @@ class TestMessageFormatPortal(common.TransactionCase):
             ]
         )
 
-        # Warm registry/ACL metadata once, then measure cold record caches in both arms.
         messages.portal_message_format()
         costs = []
         for batch in (messages[:3], messages):
@@ -240,8 +239,6 @@ class TestPortalAttachmentOwnershipHttp(HttpCase):
         )
         own_token = attachments[self.own_message.id]["ownership_token"]
         self.assertNotIn("ownership_token", attachments[self.other_message.id])
-        # The capability is attachment-wide, not scoped to a message. The old
-        # duplicate did not grant this reader a token absent from the response.
         self.assertEqual(own_token, self.attachment._get_ownership_token())
         self.assertTrue(
             self.attachment.with_user(self.owner)._has_attachments_ownership(

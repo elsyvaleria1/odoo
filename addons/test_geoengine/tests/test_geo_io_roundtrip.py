@@ -113,7 +113,7 @@ class TestGeoJsonRoundTrip(TransactionCase):
 
     def test_export_reprojects_rather_than_relabelling(self):
         _wizard, doc = self._export(output_srid="3857")
-        x, y = doc["features"][0]["geometry"]["coordinates"][0][0]  # pylint: disable=invalid-name
+        x, y = doc["features"][0]["geometry"]["coordinates"][0][0]
         self.assertGreater(
             abs(x), 180, f"coordinates still look like degrees: {(x, y)}"
         )
@@ -376,7 +376,7 @@ class TestShapefileRoundTrip(TransactionCase):
         vals.update(overrides)
         wizard = self.env["wizard.base.export.geodata"].create(vals)
         wizard.action_export()
-        archive = zipfile.ZipFile(  # pylint: disable=consider-using-with
+        archive = zipfile.ZipFile(
             io.BytesIO(base64.b64decode(wizard.output_file))
         )
         return wizard, archive
@@ -478,7 +478,7 @@ class TestShapefileRoundTrip(TransactionCase):
     def test_export_reprojects_rather_than_relabelling(self):
         _wizard, archive = self._export(output_srid="3857")
         records = self._read_records(archive)
-        x, _y = records[0].shape.points[0]  # pylint: disable=invalid-name
+        x, _y = records[0].shape.points[0]
         self.assertGreater(abs(x), 180, f"coordinates still look like degrees: {x}")
 
     def test_export_carries_the_requested_properties(self):

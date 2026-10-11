@@ -58,5 +58,4 @@ class MixinStockWarnInsufficientQty(models.AbstractModel):
             )
 
     def action_proceed(self):
-        """Carry out the reference document's operation despite the shortage."""
         raise NotImplementedError

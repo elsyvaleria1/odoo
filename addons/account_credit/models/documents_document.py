@@ -16,21 +16,6 @@ class DocumentsDocument(models.Model):
     has_guarantor = fields.Boolean(related="document_type_id.has_guarantor")
 
     def write(self, vals):
-        """Keep the derived credit file in step with a document that moves.
-
-        ``res.partner.credit_document_ids`` is a One2many whose domain is the
-        subtree of the company's credit folder plus the types a credit grade
-        requires. The ORM keeps a One2many in step through its inverse only --
-        a partner's cache is updated when a document writes ``partner_id`` --
-        so a document changing ``folder_id`` or ``document_type_id`` walks in
-        or out of the file without anything telling the partner.
-        What is cached stays cached, and ``credit_limit`` and
-        ``credit_document_compliant``, both stored, then recompute from that
-        stale cache even though ``@api.depends`` did mark them.
-
-        So the cache is dropped here and the partners are told. The domain is
-        not part of the dependency graph, but these two are writes we see.
-        """
         if "folder_id" not in vals and "document_type_id" not in vals:
             return super().write(vals)
         partners = self._get_credit_file_partners()
@@ -42,12 +27,6 @@ class DocumentsDocument(models.Model):
         return result
 
     def _get_credit_file_partners(self):
-        """The partners whose credit file the records in ``self`` belong to.
-
-        A folder stands for everything under it: moving one carries its whole
-        subtree in or out of the credit tree at once, and the framework's own
-        traversal would reach the folder's own contact and nothing else.
-        """
         documents = self.filtered(lambda document: document.type != "folder")
         partners = documents.partner_id
         for folder in self - documents:

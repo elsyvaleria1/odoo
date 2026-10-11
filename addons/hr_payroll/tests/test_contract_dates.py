@@ -20,9 +20,6 @@ class TestContractDates(TestPayslipBase):
                 "contract_date_end": date(2025, 12, 31),
             }
         )
-        # An off-cycle structure: it is not the default one of its type, so
-        # confirming a payslip on it does not validate the work entries of the
-        # period -- nothing else guards its dates.
         cls.bonus_structure = cls.env["hr.payroll.structure"].create(
             {
                 "name": "Christmas bonus",
@@ -85,8 +82,6 @@ class TestContractDates(TestPayslipBase):
         self.assertEqual(self.richard_contract.contract_date_start, date(2025, 6, 1))
 
     def test_a_departure_still_closes_the_contract(self):
-        # Registering a departure shortens the contract on purpose, and it
-        # writes the reason before the date, so the guard steps aside.
         self._validated_bonus_payslip()
         self.richard_emp.departure_reason_id = self.env.ref("hr.departure_resigned")
         self.richard_contract.contract_date_end = date(2025, 2, 28)

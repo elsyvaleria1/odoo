@@ -62,10 +62,8 @@ class PaymentProvider(models.Model):
         copy=False,
     )
 
-    # === COMPUTE METHODS === #
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "paypal":
             supported_currencies = supported_currencies.filtered(
@@ -73,25 +71,15 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "paypal":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === ACTION METHODS === #
 
     def action_paypal_create_webhook(self) -> None:
-        """Create a new webhook.
-
-        Note: This action only works for instances using a public URL.
-
-        :return: None
-        :raise UserError: If the base URL is not in HTTPS.
-        """
         base_url = self.get_base_url()
         if "localhost" in base_url:
             raise UserError(
@@ -110,17 +98,8 @@ class PaymentProvider(models.Model):
         )
         self.paypal_webhook_id = webhook_data.get("id")
 
-    # === BUSINESS METHODS === #
 
     def _paypal_get_inline_form_values(self, currency=None):
-        """Return a serialized JSON of the required values to render the inline form.
-
-        Note: `self.check_singleton()`
-
-        :param res.currency currency: The transaction currency.
-        :return: The JSON serial of the required values to render the inline form.
-        :rtype: str
-        """
         inline_form_values = {
             "provider_id": self.id,
             "client_id": self.paypal_client_id,
@@ -128,22 +107,13 @@ class PaymentProvider(models.Model):
         }
         return json_dumps(inline_form_values)
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "paypal":
             return super()._prepare_request_url(endpoint, **kwargs)
         return self._paypal_get_api_url() + endpoint
 
     def _paypal_get_api_url(self) -> str:
-        """Return the API URL according to the provider state.
-
-        Note: self.check_singleton()
-
-        :return: The API URL
-        :rtype: str
-        """
         self.check_singleton()
 
         if self.state == "enabled":
@@ -154,7 +124,6 @@ class PaymentProvider(models.Model):
     def _prepare_request_headers(
         self, *args, idempotency_key=None, is_refresh_token_request=False, **kwargs
     ):
-        """Override of `payment` to build the request headers."""
         if self.code != "paypal":
             return super()._prepare_request_headers(
                 *args,
@@ -165,7 +134,6 @@ class PaymentProvider(models.Model):
 
         headers = {
             "Content-Type": "application/json",
-            # PayPal requires a reference specific to Odoo to be able to track Odoo customers.
             "PayPal-Partner-Attribution-Id": "OdooInc_SP_EC",
         }
         if idempotency_key:
@@ -175,12 +143,6 @@ class PaymentProvider(models.Model):
         return headers
 
     def _paypal_get_access_token(self):
-        """Generate a new access token if it's expired, otherwise return the existing access token.
-
-        :return: A valid access token.
-        :rtype: str
-        :raise ValidationError: If the access token can not be fetched.
-        """
         if fields.Datetime.now() > self.paypal_access_token_expiry - timedelta(
             minutes=5
         ):
@@ -205,13 +167,11 @@ class PaymentProvider(models.Model):
         return self.paypal_access_token
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "paypal":
             return super()._parse_response_error(response)
         return response.json().get("message", "")
 
     def _prepare_request_auth(self, *, is_refresh_token_request=False, **kwargs):
-        """Override of `payment` to build the request Auth."""
         if self.code != "paypal" or not is_refresh_token_request:
             return super()._prepare_request_auth(
                 is_refresh_token_request=is_refresh_token_request, **kwargs

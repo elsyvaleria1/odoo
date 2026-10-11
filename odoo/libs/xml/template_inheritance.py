@@ -270,8 +270,6 @@ def _replace_outer(
             comment = content
     if spec_content.get("position") == "move":
         spec_content = extract(spec_content)
-    # a detached element stays in its old document, where an absolute xpath of
-    # a later spec would resolve: the new root needs a document of its own
     source = copy.deepcopy(spec_content)
     source.tail = None
     if t_name := node.get("t-name"):
@@ -445,13 +443,6 @@ def _merge_list(value: str, add: str, remove: str, separator: str | None) -> str
 def merge_attribute_value(
     attribute: str, current: str, add: str, remove: str, separator: str | None
 ) -> str:
-    """The value ``attribute`` takes after an ``add``/``remove`` edit of
-    ``current``: an expression joined by the separator's operator for the
-    modifier, ``t-if``/``t-elif`` and ``decoration-*`` attributes, a separated
-    list otherwise. One definition for the XML specs and the IR patches; the
-    browser engine (``web/static/src/core/template_inheritance.js``) implements
-    the same one, and ``web/static/tests/core/template_inheritance_cases.js``
-    holds both to it."""
     if separator == "":
         raise ValueError(f"Invalid separator '' for attribute {attribute!r}")
     if attribute in _EXPRESSION_ATTRIBUTES or attribute.startswith("decoration-"):
@@ -460,9 +451,6 @@ def merge_attribute_value(
 
 
 def hoist_wrapped_attributes(arch: etree._Element) -> bool:
-    # an arch stored before c8bc61c298eb may wrap <attribute> in other
-    # elements, which that engine read through and this one refuses: hoisting
-    # every <attribute> to its spec keeps what the old engine applied
     changed = False
     specs = [node for node in arch.iter() if node.get("position") == "attributes"]
     for spec in specs:
@@ -581,17 +569,16 @@ def apply_inheritance_specs(
         _remove_element(to_extract)
         return to_extract
 
-    applied = 0  # debuglog
+    applied = 0
     with _debug.perf("template_inheritance.specs", specs=len(specs)) as span:
         while specs:
             spec = specs.popleft()
             if isinstance(spec, SKIPPED_ELEMENT_TYPES):
                 continue
             if spec.tag == "data":
-                # a nested <data> applies where it stands, before its siblings
                 specs.extendleft(reversed(spec))
                 continue
-            applied += 1  # debuglog
+            applied += 1
 
             node = locate_node(source, spec)
             if node is None:

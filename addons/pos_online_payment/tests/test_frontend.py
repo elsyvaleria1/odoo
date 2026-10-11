@@ -28,7 +28,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.user.group_ids |= cls.env.ref("point_of_sale.group_pos_manager")
-        # Code from addons/account_payment_provider/tests/common.py:
         Method_get_payment_method_information = (
             AccountPaymentMethod._get_payment_method_information
         )
@@ -46,9 +45,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             cls.env["account.payment.method"].sudo().create(
                 {"name": "Dummy method", "code": "none", "payment_type": "inbound"}
             )
-        # End of code from addons/account_payment_provider/tests/common.py
 
-        # Code inspired by addons/point_of_sale/tests/common.py:
         cls.company = cls.company_data["company"]
         cls.cash_journal = cls.env["account.journal"].create(
             {
@@ -89,11 +86,10 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
                 "company_id": cls.company.id,
             }
         )
-        # End of code inspired by addons/point_of_sale/tests/common.py
 
         cls.payment_provider = (
             cls.provider
-        )  # The dummy_provider used by the tests of the 'payment' module.
+        )
 
         cls.payment_provider_old_company_id = cls.payment_provider.company_id.id
         cls.payment_provider_old_journal_id = cls.payment_provider.journal_id.id
@@ -134,7 +130,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             }
         )
 
-        # Code from addons/point_of_sale/tests/test_frontend.py:
         cls.pos_user = mail_new_test_user(
             cls.env,
             email="pos_op_user@test.com",
@@ -144,7 +139,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             tz="Europe/Brussels",
         )
 
-        # End of code from addons/point_of_sale/tests/test_frontend.py
 
         archive_products(cls.env)
 
@@ -164,21 +158,8 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             }
         )
 
-    # Code from addons/account_payment_provider/tests/common.py
     @classmethod
     def _prepare_provider(cls, provider_code="none", company=None, update_values=None):
-        """Override of `payment` to prepare and return the first provider matching the given
-        provider and company.
-
-        If no provider is found in the given company, we duplicate the one from the base company.
-        All other providers belonging to the same company are disabled to avoid any interferences.
-
-        :param str provider_code: The code of the provider to prepare.
-        :param recordset company: The company of the provider to prepare, as a `res.company` record.
-        :param dict update_values: The values used to update the provider.
-        :return: The provider to prepare, if found.
-        :rtype: recordset of `payment.provider`
-        """
         provider = super()._prepare_provider(provider_code, company, update_values)
         if not provider.journal_id:
             provider.journal_id = cls.env["account.journal"].search(
@@ -187,7 +168,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             )
         return provider
 
-    # End of code from addons/account_payment_provider/tests/common.py
 
     def setUp(self):
         self.enable_post_process_patcher = False
@@ -211,7 +191,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         current_session = self.pos_config.current_session_id
         current_session.set_opening_control(0, None)
 
-        # Simulate a cashier saving an unpaid order on the server
         product = self.letter_tray
         order_uid = "00055-001-0001"
         order_pos_reference = "Order " + order_uid
@@ -273,14 +252,12 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         amount_per_payment = order.amount_total / payments_amount
         for i in range(payments_amount):
             if i != payments_amount - 1 or cashier_request_for_remaining:
-                # Simulate the cashier requesting an online payment for the order
                 op_data = order.with_user(
                     self.pos_user
                 ).get_and_set_online_payments_data(amount_per_payment)
                 self.assertEqual(op_data["id"], order.id)
                 self.assertTrue("paid_order" not in op_data)
 
-            # Simulate the customer paying the order online
             self._fake_online_payment(
                 order.id, order._receipt_token(), self.payment_provider.id
             )
@@ -290,7 +267,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         self.assertEqual(op_data["id"], order.id)
         self.assertTrue("paid_order" in op_data)
 
-        # Simulate the cashier closing the session (to detect eventual accounting issues)
         total_cash_payment = sum(
             current_session.order_ids.filtered(lambda o: o.state != "cancel")
             .payment_ids.filtered(
@@ -315,7 +291,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             + str(order.amount_total),
         )
 
-    # Code from addons/point_of_sale/tests/test_point_of_sale_flow.py
     def compute_tax(self, product, price, qty=1, taxes=None):
         if not taxes:
             taxes = product.taxes_id.filtered_domain(
@@ -326,7 +301,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         untax = res["total_excluded"]
         return untax, sum(tax.get("amount", 0.0) for tax in res["taxes"])
 
-    # End of code from addons/point_of_sale/tests/test_point_of_sale_flow.py
 
     def test_1_online_payment_with_cashier(self):
         self._test_fake_customer_online_payment(
@@ -348,7 +322,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
 
         with mute_logger(
             "odoo.http"
-        ):  # Mutes "The provided order or access token is invalid." online payment portal error.
+        ):
             self.assertRaises(
                 AssertionError,
                 self._fake_open_pos_order_pay_page,
@@ -394,12 +368,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
         )
 
     def test_refuse_online_payment_without_accounting_payment(self):
-        """
-        Test that a an order can not be paid through an online payment method from the backend
-        when no accounting payment are set for this payment method. Ensure that it will raise
-        an error as soon as it is tried as it is not supported yet. Also ensures that we can still
-        close the session afterwards, as it is a side effect of not throwing the error.
-        """
         self.main_pos_config.open_ui()
         session = self.main_pos_config.current_session_id
         try:
@@ -442,13 +410,11 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
                 "Cannot create a POS online payment without an accounting payment",
                 str(e),
             )
-            # Make sure that we can close the session
             session.order_ids.filtered(lambda o: o.state == "draft").unlink()
             session.action_pos_session_closing_control()
             self.assertEqual(session.state, "closed")
 
     def test_selected_customer_after_adding_payment_sync(self):
-        """Test that the selected customer is kept after adding an online payment."""
         self.pos_config.with_user(self.pos_admin).open_ui()
         self.start_pos_tour(
             "test_selected_customer_after_adding_payment_sync", login="pos_admin"
@@ -470,12 +436,10 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
 
     @classmethod
     def tearDownClass(cls):
-        # Restore company values after the tests
         cls.company.account_config_id.account_default_pos_receivable_account_id = (
             cls.old_account_default_pos_receivable_account_id
         )
 
-        # Restore dummy_provider values after the tests
         cls.payment_provider.write(
             {
                 "company_id": cls.payment_provider_old_company_id,
@@ -483,8 +447,6 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
             }
         )
 
-        # The online payment method cannot be deleted because it is used by a payment in the database.
-        # It would require to delete the paid orders of the tests, the corresponding accounting, the session data...
         cls.pos_config.payment_method_ids = [
             Command.unlink(cls.online_payment_method.id)
         ]

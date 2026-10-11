@@ -57,16 +57,13 @@ _MAX_IDS = 10
 _MAX_ITEMS = 50
 _MAX_CHARS = 200
 
-#: A batch smaller than this says nothing about growth, so it is never flagged.
 _NPLUSONE_MIN_ROWS = 4
 SLOW_MS_VAR = "APPROVAL_TRACE_SLOW_MS"
 NPLUSONE_VAR = "APPROVAL_TRACE_NPLUSONE"
 
-#: the open spans of the running thread, innermost last, for `annotate`
 _open = threading.local()
 _depth = threading.local()
 
-#: event -> [calls, total_ms, worst_ms, rows, sql]
 _perf: dict[str, list[float]] = {}
 
 
@@ -96,7 +93,6 @@ _SLOW_MS = _env_float(SLOW_MS_VAR)
 _WATCH_NPLUSONE = _env_flag(NPLUSONE_VAR) or _SLOW_MS is not None
 
 
-# -- rendering -----------------------------------------------------------------
 
 
 def _render_ids(ids: Iterable[Any]) -> str:
@@ -136,7 +132,7 @@ def _render_value(value: Any) -> str:
 def _render(value: Any) -> str:
     try:
         return _render_value(value)
-    except Exception:  # instrumentation must never break the engine
+    except Exception:
         return "<unrenderable>"
 
 
@@ -147,7 +143,6 @@ def _line(event: str, fields: Mapping[str, Any]) -> str:
     return f"{event} {rendered}"
 
 
-# -- one target ----------------------------------------------------------------
 
 
 class _OffSpan(dict):
@@ -171,19 +166,16 @@ class Target:
         self._items_logger = logging.getLogger(f"{LOG_ROOT}.{name}.items")
 
     def on(self) -> bool:
-        """Whether a payload is worth building at all."""
         return self._logger.isEnabledFor(logging.DEBUG)
 
     def items_on(self) -> bool:
         return self._items_logger.isEnabledFor(logging.DEBUG)
 
     def note(self, event: str, **fields: Any) -> None:
-        """INFO: one line per externally visible lifecycle event."""
         if self._logger.isEnabledFor(logging.INFO):
             self._logger.info(_line(event, fields))
 
     def event(self, event: str, **fields: Any) -> None:
-        """DEBUG: one line per decision this code took."""
         if self._logger.isEnabledFor(logging.DEBUG):
             self._logger.debug(_line(event, fields))
 
@@ -193,11 +185,6 @@ class Target:
         entries: Iterable[Mapping[str, Any]]
         | Callable[[], Iterable[Mapping[str, Any]]],
     ) -> None:
-        """DEBUG on ``<target>.items``: one line per item of a batch.
-
-        ``entries`` may be a callable so that a caller pays nothing for building
-        the payload while the child logger is silent.
-        """
         if not self._items_logger.isEnabledFor(logging.DEBUG):
             return
         resolved = entries() if callable(entries) else entries
@@ -209,12 +196,6 @@ class Target:
 
     @contextmanager
     def span(self, event: str, **fields: Any) -> Iterator[dict[str, Any]]:
-        """Time a block and log it once, whether it returns or raises.
-
-        Yields the field mapping so the body can add what it learns
-        (``span["rows"] = len(rows)``). Runs whenever the target is printing OR
-        the performance switch is set, which are separate questions.
-        """
         printing = self._logger.isEnabledFor(logging.DEBUG)
         if not (printing or accounting()):
             yield _OFF_SPAN
@@ -247,10 +228,6 @@ class Target:
             _report_outliers(event, elapsed_ms, spanned)
 
 
-# -- the targets ---------------------------------------------------------------
-#
-# One per concern, so a campaign session enables the axis it is working on rather
-# than the whole engine. Keep this list and the table in conventions.md together.
 
 ACCESS = Target("access")
 ACTIVITY = Target("activity")
@@ -321,14 +298,6 @@ _BY_NAME: dict[str, Target] = {
 
 
 def _quiet_by_default() -> None:
-    """Keep the campaign silent unless a target was named on the command line.
-
-    ONLY the root is levelled. ``--log-handler`` is resolved before any addon is
-    imported, so a root the operator asked for already carries its own level and
-    is left alone -- and every target is left at NOTSET so that it inherits that
-    root, which is what makes ``--log-handler odoo.approval:DEBUG`` reach all of
-    them while ``--log-handler odoo.approval.routing:DEBUG`` reaches one.
-    """
     root = logging.getLogger(LOG_ROOT)
     if root.level == logging.NOTSET:
         root.setLevel(_QUIET_DEFAULT)
@@ -337,26 +306,13 @@ def _quiet_by_default() -> None:
 _quiet_by_default()
 
 
-# -- the perf ledger -----------------------------------------------------------
 
 
 def accounting() -> bool:
-    """Whether a span is worth timing even when nothing is printing it."""
     return _SLOW_MS is not None or _WATCH_NPLUSONE or PERF.on()
 
 
 def annotate(**fields: Any) -> None:
-    """Add what this call actually did to the span that is timing it.
-
-    A wrapped entry point knows its batch size (``n``) and nothing else, and the
-    batch is often not the work: ``_sync_approvers`` is called with one request and
-    writes a plan of forty rows, and it is the forty that the query count should be
-    read against. A method that knows its own work unit says so here, and it costs
-    one thread-local read when nothing is measuring.
-
-    ``work=`` is the reserved name: `_report_outliers` prefers it over ``n`` when
-    deciding whether the queries grew with the work.
-    """
     open_spans = getattr(_open, "stack", None)
     if open_spans:
         open_spans[-1].update(fields)
@@ -379,7 +335,6 @@ def _account(event: str, elapsed_ms: float, measured: Mapping[str, Any]) -> None
 def _report_outliers(
     event: str, elapsed_ms: float, measured: Mapping[str, Any]
 ) -> None:
-    """The two performance questions worth interrupting a silent run for."""
     rows = measured.get("work") or measured.get("n") or 0
     sql = measured.get("sql") or 0
     if _SLOW_MS is not None and elapsed_ms >= _SLOW_MS:
@@ -420,12 +375,10 @@ class LedgerRow(NamedTuple):
 
     @property
     def sql_per_row(self) -> float | None:
-        """Queries per record, the number an N+1 shows up in. None when no rows."""
         return self.sql / self.rows if self.rows else None
 
 
 def perf_ledger() -> list[LedgerRow]:
-    """Every span seen so far, costliest first."""
     return sorted(
         (
             LedgerRow(event, int(calls), total, worst, int(rows), int(sql))
@@ -437,11 +390,6 @@ def perf_ledger() -> list[LedgerRow]:
 
 
 def dump_perf_ledger(reset: bool = True, top: int | None = None) -> None:
-    """Log the ledger to ``odoo.approval.perf`` at INFO, then clear it.
-
-    Meant to be called from a shell after exercising a flow, or at the end of a
-    batch that is itself the thing being measured. ``top`` keeps the costliest N.
-    """
     rows = perf_ledger()
     PERF.note(
         "ledger_begin",
@@ -469,18 +417,9 @@ def dump_perf_ledger(reset: bool = True, top: int | None = None) -> None:
 
 
 def forget_perf_ledger() -> None:
-    """Drop what has been accounted so far. For tests, and for measuring one flow."""
     _perf.clear()
 
 
-# -- the wrapped entry points --------------------------------------------------
-#
-# model -> method -> target. Wrapping happens at registry load (approval's
-# `base._register_hook`, models.py), so the engine's own files carry no line for
-# any of it: one span per call with its batch size, duration, query delta and
-# outcome. ONLY CONCRETE MODELS BELONG HERE -- an adopter of `mixin.approval`
-# inherits the mixin's Python class, not its registry class, so wrapping an
-# abstract model reaches nobody and the mixins are instrumented by hand instead.
 
 CALL_TRACES: dict[str, dict[str, str]] = {
     "approval.request": {
@@ -684,8 +623,6 @@ def _traced(target: Target, event: str, origin: Any, on_vals: bool = False) -> A
     def traced(self, *args: Any, **kwargs: Any) -> Any:
         if not (target.on() or accounting()):
             return origin(self, *args, **kwargs)
-        # `create` is called on an empty recordset, so its batch size is the
-        # vals_list it was handed, not `self`.
         size = len(args[0]) if on_vals and args else len(self)
         cursor = self.env.cr
         before = getattr(cursor, "sql_log_count", 0)
@@ -700,7 +637,6 @@ def _traced(target: Target, event: str, origin: Any, on_vals: bool = False) -> A
 
 
 def instrument(model: models.BaseModel) -> None:
-    """Wrap the entry points ``CALL_TRACES`` names on this model's class."""
     traced = CALL_TRACES.get(model._name)
     if not traced:
         return
@@ -726,7 +662,6 @@ def instrument(model: models.BaseModel) -> None:
 
 
 def uninstrument(model: models.BaseModel) -> None:
-    """Undo :func:`instrument`, leaving anything else on the class alone."""
     if model._name not in CALL_TRACES:
         return
     model_class = type(model)

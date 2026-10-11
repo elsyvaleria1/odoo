@@ -29,7 +29,6 @@ class TestNotifySecurityUpdateTotp(MailCommon):
 
     @users("employee")
     def test_security_update_trusted_device_added_removed(self):
-        """Make sure we notify the user when TOTP trusted devices are removed on his account."""
         recipients = [self.env.user.email_formatted]
         with self.mock_mail_gateway():
             self.env["auth.totp.trust"].sudo()._issue(
@@ -38,7 +37,6 @@ class TestNotifySecurityUpdateTotp(MailCommon):
 
         self.assertNotSentEmail(recipients)
 
-        # now remove the key using the user's relationship
         with self.mock_mail_gateway():
             self.env["auth.totp.trust"].flush_model()
             self.env.user.sudo(False)._revoke_all_totp_trust()

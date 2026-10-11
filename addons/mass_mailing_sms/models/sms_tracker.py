@@ -45,9 +45,8 @@ class SmsTracker(models.Model):
     def _update_sms_traces(
         self, trace_status, failure_type=False, failure_reason=False
     ):
-        if not self.mailing_trace_id:  # avoid a search below
+        if not self.mailing_trace_id:
             return self.env["mailing.trace"]
-        # See _update_sms_notifications
         statuses_to_ignore = {
             "cancel": ["cancel", "process", "pending", "sent"],
             "outgoing": ["outgoing", "process", "pending", "sent"],
@@ -61,7 +60,6 @@ class SmsTracker(models.Model):
             lambda t: t.trace_status not in statuses_to_ignore
         )
         if traces:
-            # TDE note: check to use set_sent / ... tools updating marketing automation bits
             traces_values = {
                 "trace_status": trace_status,
                 "failure_type": failure_type,
@@ -91,13 +89,13 @@ class SmsTracker(models.Model):
                     "mailing_trace_ids.trace_status",
                     "=",
                     "process",
-                ),  # = not any trace with 'process' status
+                ),
                 ("state", "!=", "done"),
             ]
         )
 
         if mailings_to_mark_done:
-            if self.env.user.is_public:  # From webhook event
+            if self.env.user.is_public:
                 mailings_to_mark_done._track_set_author(
                     self.env.ref("base.partner_root")
                 )

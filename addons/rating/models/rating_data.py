@@ -14,8 +14,6 @@ RATING_HAPPY_VALUE = 5
 RATING_NEUTRAL_VALUE = 3
 RATING_UNHAPPY_VALUE = 1
 RATING_NONE_VALUE = 0
-# how long a customer may still change the rating they gave through its link;
-# the notification of the rating waits as long
 RATING_CHANGE_WINDOW = timedelta(hours=2)
 
 RATING_TEXT = [
@@ -48,7 +46,6 @@ def _rating_assert_value(rating_value) -> None:
 
 
 def _rating_to_grade(rating_value) -> str:
-    """Return the grade bucket ('great', 'okay', 'bad') for a rating value."""
     _rating_assert_value(rating_value)
     if rating_value >= RATING_LIMIT_SATISFIED:
         return "great"
@@ -58,7 +55,6 @@ def _rating_to_grade(rating_value) -> str:
 
 
 def _rating_to_text(rating_value) -> str:
-    """From a rating value give a text-based mean value."""
     _rating_assert_value(rating_value)
     if rating_value >= RATING_LIMIT_SATISFIED:
         return "top"
@@ -70,8 +66,6 @@ def _rating_to_text(rating_value) -> str:
 
 
 def _rating_to_threshold(rating_value):
-    """From a rating value, return the thresholds in form of 0-1-3-5 used
-    notably for images."""
     _rating_assert_value(rating_value)
     if rating_value >= RATING_LIMIT_SATISFIED:
         return RATING_HAPPY_VALUE

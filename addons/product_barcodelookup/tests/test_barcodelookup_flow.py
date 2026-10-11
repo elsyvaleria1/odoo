@@ -14,14 +14,11 @@ class TestBarcodelookup(HttpCase, MockAPIBarcodelookup):
 
     def _verify_product_data(self, product, normalized_view=False, variant_rights=True):
         self.assertEqual(product.name, "Odoo Scale up")
-        # weight is not present in main view, but in normalized view
         if normalized_view:
             self.assertEqual(product.weight, 1.5)
 
-        # check attributes only if not creating from normalized view.
         if not normalized_view:
             self.assertEqual(product.categ_id.name, "Business & Industrial")
-            # when user have rights to create attributes
             if variant_rights:
                 self.assertEqual(len(product.attribute_line_ids), 5)
                 self.assertItemsEqual(
@@ -50,13 +47,12 @@ class TestBarcodelookup(HttpCase, MockAPIBarcodelookup):
                 variant_product = new_product.save()
                 self._verify_product_data(variant_product)
 
-                # check after removing group
                 group_product_variant = env.ref("product.group_product_variant", False)
                 env.user.write({"all_group_ids": [(3, group_product_variant.id)]})
 
-            new_form = Form(env["product.template"])  # new form
+            new_form = Form(env["product.template"])
             new_form.barcode = (
-                "497105359773"  # can't create 2 product with same barcode
+                "497105359773"
             )
             product_wo_variant = new_form.save()
             self._verify_product_data(product_wo_variant, variant_rights=False)

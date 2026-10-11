@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from odoo import Command, fields
 from odoo.tests import tagged
 
@@ -79,7 +78,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         ).reconcile()
 
     def test_growth_comparison(self):
-        """Test the growth comparison column works on a report with dynamic lines."""
         self.report.filter_period_comparison = True
         options = self._generate_options(
             self.report,
@@ -321,7 +319,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # This move should not appear since it does not use a bank or cash account
         receivable_move = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -349,7 +346,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
                 ],
             }
         )
-        # Default journal account that hasn't "Bank and Cash" or "Credit Card" type should not appear
         self.misc_journal.default_account_id = self.account_no_tag
         receivable_move.action_post()
 
@@ -392,7 +388,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
         options["filter_period_comparison"] = True
 
-        # Current period
         invoice_current_period = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -456,7 +451,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             self.account_receivable_1,
         )
 
-        # Past period
         invoice_past_period = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -836,9 +830,9 @@ class TestCashFlowReport(TestAccountReportsCommon):
                 ["Cash flows from operating activities", 575.0],
                 ["Advance Payments received from customers", 0.0],
                 ["Cash received from operating activities", 575.0],
-                ["121160 Account Operating", 230.0],  # Company 1
-                ["121160 Account Operating", 115.0],  # Company 2 (rate 2.0)
-                ["121160 Account Operating", 230.0],  # Company 3
+                ["121160 Account Operating", 230.0],
+                ["121160 Account Operating", 115.0],
+                ["121160 Account Operating", 230.0],
                 ["Total Cash received from operating activities", 575.0],
                 ["Advance payments made to suppliers", 0.0],
                 ["Cash paid for operating activities", 0.0],
@@ -852,30 +846,21 @@ class TestCashFlowReport(TestAccountReportsCommon):
                 ["Cash in", 0.0],
                 ["Cash out", 0.0],
                 ["Cash and cash equivalents, closing balance", 575.0],
-                ["101401 Bank", 230.0],  # Company 1
-                ["101401 Bank", 230.0],  # Company 3
-                ["101411 Bank", 115.0],  # Company 2 (rate 2.0)
+                ["101401 Bank", 230.0],
+                ["101401 Bank", 230.0],
+                ["101411 Bank", 115.0],
                 ["Total Cash and cash equivalents, closing balance", 575.0],
             ],
             options,
         )
 
     def test_cash_flow_tricky_case_1(self):
-        """Test the cash flow report when:
-
-        - reconciling multiple payments.
-        - dealing with multiple receivable lines.
-        - dealing with multiple partials on the same line.
-        - making an advance payment.
-        - adding entries after the report date.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
             fields.Date.from_string("2017-01-01"),
         )
 
-        # First invoice, two receivable lines on the same account.
         invoice = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -923,7 +908,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
         invoice.action_post()
 
-        # First payment (20% of the invoice).
         payment_1 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -980,7 +964,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # Second payment (also 20% but will produce two partials, one on each receivable line).
         payment_2 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1037,7 +1020,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # Third payment (residual invoice amount + 1000.0).
         payment_3 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1094,7 +1076,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # Second invoice.
         invoice_2 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1126,7 +1107,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
 
         self._reconcile_on((invoice_2 + payment_3).line_ids, self.account_receivable_1)
 
-        # Exceed the report date, should not affect the report.
         self.assertLinesValues(
             self.report._get_lines(options),
             [0, 1],
@@ -1180,18 +1160,12 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_2(self):
-        """Test the cash flow report when:
-
-        - dealing with multiple receivable accounts.
-        - making a reconciliation involving multiple liquidity moves.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
             fields.Date.from_string("2017-01-01"),
         )
 
-        # First liquidity move.
         liquidity_move_1 = self.env["account.move"].create(
             {
                 "date": "2016-01-01",
@@ -1263,7 +1237,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # Misc. move to be reconciled at 800 / (1000 + 3000) = 20%.
 
         misc_move = self.env["account.move"].create(
             {
@@ -1340,7 +1313,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # Second liquidity move.
 
         liquidity_move_2 = self.env["account.move"].create(
             {
@@ -1417,7 +1389,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             options,
         )
 
-        # This should not change the report.
         self._reconcile_on(
             (liquidity_move_1 + liquidity_move_2).line_ids, self.account_receivable_3
         )
@@ -1448,11 +1419,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_3(self):
-        """Test the cash flow report when:
-
-        - reconciling entries on a non receivable/payable account.
-        - dealing with unusual liquidity moves.
-        """
         move_1 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1547,7 +1513,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
         (move_1 + move_2 + move_3).action_post()
 
-        # Reconcile everything on account_financing.
         self._reconcile_on((move_1 + move_2 + move_3).line_ids, self.account_financing)
 
         options = self._generate_options(
@@ -1613,10 +1578,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_4(self):
-        """Check the liquidity move paying the misc move at 1000 / 3000 = 1/3.
-
-        The sign matters here: the 3000 in credit must become 1000 in debit.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -1729,7 +1690,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_5(self):
-        """Same as test_cash_flow_tricky_case_4 with reversed debit/credit."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -1842,7 +1802,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_6(self):
-        """Test the additional lines on liquidity moves (e.g. bank fees) are correctly reported."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -2041,9 +2000,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_7(self):
-        """Test cross reconciliation between liquidity moves with additional lines when the liquidity
-        account is reconcilable.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -2155,13 +2111,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_8(self):
-        """Test the cash flow report when:
-
-        - the liquidity moves are reconciled to a move having a total amount of 0.0.
-        - the liquidity and the misc moves are reconciled twice.
-        - the reconciliations are partial.
-        - there are additional lines on the misc moves.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -2294,7 +2243,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_tricky_case_9(self):
-        """Same as test_cash_flow_tricky_case_8 with reversed debit/credit."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2016-01-01"),
@@ -2427,11 +2375,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_handle_multiple_tags(self):
-        """Ensure the balances are correct when:
-
-        - several non-cash-flow-report account tags are set.
-        - a mix of several non-cash-flow-report tags and one cash flow report tag is set.
-        """
 
         options = self._generate_options(
             self.report,
@@ -2452,8 +2395,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             }
         )
 
-        # account_no_tag will now have 2 tags unrelated to the Cash Flow Report.
-        # account_financing will now have the `account.account_tag_financing` tag, plus the two unrelated tags.
         (self.account_no_tag + self.account_financing).write(
             {
                 "tag_ids": [
@@ -2585,14 +2526,9 @@ class TestCashFlowReport(TestAccountReportsCommon):
         )
 
     def test_cash_flow_hierarchy(self):
-        """Test the 'hierarchy' option gives each report section (e.g. "Cash and cash equivalents,
-        beginning of period" and "Cash and cash equivalents, closing balance") its own dedicated
-        hierarchy instead of mixing them up together.
-        """
         options = self._generate_options(self.report, "2016-01-01", "2016-12-31")
         self.env.company.account_config_id.totals_below_sections = True
 
-        # Create the account groups for the bank and cash accounts
         self.env["account.group"].create(
             [
                 {
@@ -2615,7 +2551,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
         self.account_bank.code = "10140499"
         self.account_cash.code = "10150199"
 
-        # Create opening balance
         self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -2653,8 +2588,6 @@ class TestCashFlowReport(TestAccountReportsCommon):
             }
         ).action_post()
 
-        # Test the report with the hierarchy option disabled
-        # To make sure that the lines are in the right place we also check their 'level'
         options["hierarchy"] = False
         lines_wo_hierarchy = [
             {
@@ -2741,12 +2674,9 @@ class TestCashFlowReport(TestAccountReportsCommon):
                 "book_value": "$\xa0150.00",
             },
         ]
-        # assertEqual is used and not assertLinesValues because we want to check the 'level'
         self.assertEqual(len(lines_wo_hierarchy), len(expected_values_wo_hierarchy))
         self.assertEqual(lines_wo_hierarchy, expected_values_wo_hierarchy)
 
-        # Test the report with the hierarchy option enabled
-        # To make sure that the lines are in the right place we also check their 'level'
         options["hierarchy"] = True
         lines = [
             {
@@ -2853,6 +2783,5 @@ class TestCashFlowReport(TestAccountReportsCommon):
                 "book_value": "$\xa0150.00",
             },
         ]
-        # assertEqual is used and not assertLinesValues because we want to check the 'level'
         self.assertEqual(len(lines), len(expected_values))
         self.assertEqual(lines, expected_values)

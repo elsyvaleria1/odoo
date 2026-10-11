@@ -22,15 +22,6 @@ _ZERO_ONLY = (255, *(0,) * 255)
 
 
 def _fix_image_transparency(image) -> None:
-    """Modify image transparency to minimize issue of grey bar artefact.
-    When an image has a transparent pixel zone next to white pixel zone on a
-    white background, this may cause on some renderer grey line artefacts at
-    the edge between white and transparent.
-
-    This method sets black transparent pixel to white transparent pixel which solves
-    the issue for the most probable case. With this the issue happen for a
-    black zone on black background but this is less likely to happen.
-    """
     if image.mode != "RGBA":
         return
     red, green, blue, alpha = image.split()
@@ -132,13 +123,6 @@ class SignDocument(models.Model):
 
     @api.model
     def create_from_attachment_data(self, attachment_data_list, template_id):
-        """
-        Create sign.document records from a list of dictionaries containing attachment data.
-
-        :param attachment_data_list: List of dictionaries, each with 'name', 'datas' and 'sequence' keys.
-        :return: The list of newly created sign.document records.
-        :raises UserError: If the input list is empty or a dictionary is missing the 'name' or 'datas' key.
-        """
         if not attachment_data_list:
             raise UserError(self.env._("The attachment data list cannot be empty."))
         created_records = []
@@ -180,10 +164,6 @@ class SignDocument(models.Model):
         self.template_id._check_documents_unlocked()
 
     def get_radio_sets_dict(self) -> dict:
-        """
-        :return: dict radio_sets_dict that maps each radio set that belongs to
-            this template to a dictionary containing num_options and radio_item_ids.
-        """
         radio_sets = self.sign_item_ids.filtered(
             lambda item: item.radio_set_id
         ).radio_set_id
@@ -203,18 +183,6 @@ class SignDocument(models.Model):
         return items
 
     def update_attachment_name(self, name) -> bool:
-        """
-        Updates the attachment's name. If the provided name is empty or None,
-        the current name is retained. This forced update prevents the creation
-        of duplicate sign items during simultaneous RPC requests.
-
-        :param name: The new name for the attachment.
-        :return:
-
-            - True: Indicates the attachment name was successfully updated.
-            - False: Indicates the update was skipped because a sign request linked
-              to the template already exists
-        """
         self.check_singleton()
         if self.template_id.has_sign_requests:
             return False
@@ -222,8 +190,6 @@ class SignDocument(models.Model):
         return True
 
     def rotate_pdf(self) -> bool:
-        """Turn every page of the document a quarter clockwise; refused (False)
-        once a request uses its template, whose items were placed on it."""
         self.check_singleton()
         if self.template_id.has_sign_requests:
             return False
@@ -232,7 +198,6 @@ class SignDocument(models.Model):
         return True
 
     def _prepare_preview_vals(self) -> dict:
-        """Build static demo/placeholder values for the template preview, keyed by item type and responsible role."""
         self.check_singleton()
         values_dict = {}
         sign_item_type_date = self.env.ref(
@@ -286,12 +251,12 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
             elif it.type_id.item_type == "checkbox":
                 value = "on"
             elif it.type_id.item_type == "selection":
-                value = it.option_ids[:1].id  # we select always the first option
+                value = it.option_ids[:1].id
             elif it.type_id.item_type == "radio":
                 radio_items = it.radio_set_id.radio_items
                 value = (
                     "on" if it == radio_items[:1] else ""
-                )  # we select always the first option
+                )
             elif it.type_id.item_type == "strikethrough":
                 value = "striked"
             values_dict[it.id] = {
@@ -305,7 +270,6 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
         custom_font = self.env.registry.settings.get(
             self.env, "sign.use_custom_font", False
         )
-        # The font must be a TTF font. The tool 'otf2ttf' may be useful for conversion.
         if custom_font:
             pdfmetrics.registerFont(TTFont(custom_font, custom_font + ".ttf"))
             return custom_font
@@ -344,22 +308,17 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
         packet = io.BytesIO()
         can = canvas.Canvas(packet, pagesize=self._get_page_size(old_pdf))
         for page_index, page in enumerate(old_pdf.pages):
-            # Absolute values are taken as it depends on the MediaBox template PDF metadata, they may be negative
             width = float(abs(page.mediabox.width))
             height = float(abs(page.mediabox.height))
 
-            # Add the final_log_hash as the certificate reference id on each page
             if final_log_hash:
                 can.setFont(font, height * 0.01)
                 ref_text = f"Signature: {final_log_hash}"
                 can.drawCentredString(width / 3, height - 15, ref_text)
 
-            # Set page orientation (either 0, 90, 180 or 270)
             rotation = page.get("/Rotate", 0)
             if rotation and isinstance(rotation, int):
                 can.rotate(rotation)
-                # Translate system so that elements are placed correctly
-                # despite of the orientation
                 if rotation == 90:
                     width, height = height, width
                     can.translate(0, -height)
@@ -374,11 +333,7 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
                 value_dict = signed_values.get(item.id)
                 if not value_dict:
                     continue
-                # Isolate each item's font, colour and line width so one item's
-                # styling (e.g. the stamp's dark-blue border) cannot leak onto the
-                # next items drawn on the same page.
                 can.saveState()
-                # only get the 1st
                 value = value_dict["value"]
                 frame = value_dict["frame"]
                 if frame:
@@ -468,13 +423,12 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
                         can.drawString(width * item.posX + x_shift, height * y, line)
                         y -= normalFontSize * 0.1
 
-                    # Draw a dark blue border around the stamp field for visual emphasis
                     if item.type_id.item_type == "stamp":
                         padding = 5
                         itemW, itemH = item.width * width, item.height * height
                         itemX, itemY = item.posX * width, (1 - item.posY) * height
-                        can.setLineWidth(1.2)  # thickness of border
-                        can.setStrokeColorRGB(0, 0, 139 / 255)  # darkblue border
+                        can.setLineWidth(1.2)
+                        can.setStrokeColorRGB(0, 0, 139 / 255)
                         can.rect(
                             itemX - padding,
                             itemY - itemH - padding,
@@ -507,13 +461,10 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
                     y = height * (1 - item.posY)
                     w = item.width * width
                     h = item.height * height
-                    # Calculate the center of the sign item rectangle.
                     c_x = x + w * 0.5
                     c_y = y - h * 0.5
-                    # Draw the outer empty circle.
                     can.circle(c_x, c_y, h * 0.5)
                     if value == "on":
-                        # Draw the inner filled circle.
                         can.circle(x_cen=c_x, y_cen=c_y, r=h * 0.5 * 0.75, fill=1)
                 elif item.type_id.item_type in {"signature", "initial"}:
                     try:
@@ -568,7 +519,6 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
         return output
 
     def _copy_sign_items_to(self, new_document):
-        """Copy all sign items of the self document to the new_document that fit within its page count."""
         self.check_singleton()
         if new_document.template_id.has_sign_requests:
             raise UserError(
@@ -580,7 +530,6 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
         new_document_pages = new_document.num_pages
         item_id_map = {}
         for sign_item in self.sign_item_ids:
-            # Only copy sign items that fit within the new document's page range.
             if sign_item.page <= new_document_pages:
                 new_sign_item = sign_item.copy({"document_id": new_document.id})
                 item_id_map[str(sign_item.id)] = str(new_sign_item.id)

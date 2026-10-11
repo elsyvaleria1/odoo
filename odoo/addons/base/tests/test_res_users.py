@@ -632,8 +632,6 @@ class TestUsers2(UsersCommonCase):
 
     @warmup
     def test_write_group_ids_performance(self):
-        # what other installed modules hook onto a group grant is a fixed cost per
-        # write; the grant is batched when the cost does not grow with the users
         contact_creation_group = self.env.ref("base.group_partner_manager")
         users = self.env["res.users"].create(
             [
@@ -819,9 +817,6 @@ class TestUsersIdentitycheck(HttpCase):
         )
         self.assertTrue(self.url_open("/web").url.endswith("/web"))
 
-        # The double has to look like the request an HttpCase serves: the
-        # identity check rate-limits by remote address and reads the
-        # test-cursor cookie before it may open a pool cursor.
         _request_stack.push(
             SimpleNamespace(
                 session=session,

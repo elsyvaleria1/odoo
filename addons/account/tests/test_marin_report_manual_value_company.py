@@ -91,7 +91,6 @@ class TestMarinReportManualValueCompany(TestAccountReportsCommon):
         self.assertEqual(
             [company["id"] for company in options["companies"]], self.company_b.ids
         )
-        # the report shows company B while the user works in company A
         report = self.report.with_context(
             allowed_company_ids=(self.company_a + self.company_b).ids
         )

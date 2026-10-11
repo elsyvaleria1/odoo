@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
@@ -22,12 +21,6 @@ class TestLoyaltyGenerateScope(TransactionCase):
         )
 
     def test_selecting_nobody_means_every_partner(self):
-        """An empty selection is the wizard's "Match all records" reading.
-
-        Deliberate, and pinned by `sale_loyalty`'s `test_program_usability`; the
-        count reaches the user through `coupon_qty` before anything is generated.
-        This test states it here too, where the behaviour actually lives.
-        """
         partner_count = self.env["res.partner"].search_count([])
         self.assertGreater(partner_count, 1, "the database has partners to reach")
 
@@ -37,7 +30,6 @@ class TestLoyaltyGenerateScope(TransactionCase):
         self.assertEqual(len(wizard.generate_coupons()), partner_count)
 
     def test_selecting_a_customer_issues_one_coupon(self):
-        """A chosen customer still gets a coupon."""
         wizard = self._wizard(
             mode="selected", customer_ids=[Command.set(self.partner.ids)]
         )
@@ -47,11 +39,6 @@ class TestLoyaltyGenerateScope(TransactionCase):
         self.assertEqual(coupons.partner_id, self.partner)
 
     def test_a_batch_of_wizards_records_each_ones_grant(self):
-        """Each coupon's history line comes from the wizard that issued it.
-
-        The history was built from `self` rather than from the wizard in the loop, so
-        a batch raised a singleton error before it could get this wrong.
-        """
         first, second = self.env["wizard.loyalty.program.create.card"].create(
             [
                 {
@@ -81,7 +68,6 @@ class TestLoyaltyGenerateScope(TransactionCase):
         )
 
     def test_anonymous_coupons_are_held_by_nobody(self):
-        """Anonymous mode issues the requested count, unattached."""
         wizard = self._wizard(mode="anonymous", coupon_qty=3)
 
         coupons = wizard.generate_coupons()

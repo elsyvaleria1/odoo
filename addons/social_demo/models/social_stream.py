@@ -36,13 +36,11 @@ class SocialStream(models.Model):
             ),
         ]
         for stream in res:
-            # Once all demo streams are created, we start creating default stream posts for new streams.
             if all(stream for stream in demo_streams):
                 stream._add_default_stream_posts()
         return res
 
     def _add_default_stream_posts(self) -> None:
-        """When adding a stream, we create some fake stream.posts for demo purposes."""
 
         res_partner_10 = self.env.ref(
             "social_demo.res_partner_10", raise_if_not_found=False
@@ -102,5 +100,4 @@ class SocialStream(models.Model):
             )
 
     def _sync_stream_data(self):
-        """Overridden to bypass third-party API calls."""
         return False

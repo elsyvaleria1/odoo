@@ -15,11 +15,7 @@ class TestSmsTwilioController(MockSmsTwilio, HttpCase):
     @mute_logger("odoo.addons.integration_twilio.controllers.main")
     @users("employee")
     def test_sms_twilio_controller_status(self):
-        """Test that the controller correctly processes the webhook calls we
-        receive from Twilio"""
-        # All good
         ok = self.webhook_ok_response.copy()
-        # Handle known errors (the ones that we have already mapped)
         invalid_destination = {
             **self.webhook_ok_response,
             "MessageStatus": "undelivered",
@@ -27,7 +23,6 @@ class TestSmsTwilioController(MockSmsTwilio, HttpCase):
             "ErrorCode": 30005,
             "ErrorMessage": "Unknown destination handset",
         }
-        # Handle unknown errors (the ones that we not have mapped)
         unknown_error = {
             **self.webhook_ok_response,
             "MessageStatus": "failed",
@@ -35,7 +30,6 @@ class TestSmsTwilioController(MockSmsTwilio, HttpCase):
             "ErrorCode": 12345,
             "ErrorMessage": "Unknown error",
         }
-        # Unknown status -> no update
         wrong_status = {
             **self.webhook_ok_response,
             "MessageStatus": "myfakestatus",
@@ -101,7 +95,6 @@ class TestSmsTwilioController(MockSmsTwilio, HttpCase):
     @mute_logger("odoo.addons.integration_twilio.controllers.main")
     @users("employee")
     def test_sms_twilio_controller_status_signature(self):
-        """Check X-Twilio-Signature is effectively checked"""
         call_params = self.webhook_ok_response.copy()
         with self.mock_sms_twilio_gateway():
             composer = (
@@ -123,7 +116,6 @@ class TestSmsTwilioController(MockSmsTwilio, HttpCase):
                 },
             )
             self.assertEqual(response.status_code, 401)
-            # SMS not updated
             self.assertRecordValues(
                 sms.sms_tracker_id.mail_notification_id,
                 [

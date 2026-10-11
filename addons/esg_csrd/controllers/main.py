@@ -69,7 +69,6 @@ class EsgMetricSurvey(Survey):
                 .search([("survey_ids", "!=", False)])
                 .survey_ids
             ):
-                # If the deadline is reached, ESG Manager should be able to consult answers
                 access_data["can_answer"] = False
                 access_data["validity_code"] = True
         return access_data
@@ -99,7 +98,6 @@ class EsgCsrdReportController(KnowledgeAuditReportController):
             .reconciled_payment_ids
         )
         if reconciled_payments:
-            # We take the last payment for each invoice to compute the average days to payment
             request.env.cr.execute(
                 SQL(
                     """
@@ -154,7 +152,6 @@ class EsgCsrdReportController(KnowledgeAuditReportController):
         ):
             return super()._get_template_variables(article)
 
-        # Base Year
         base_year_start_date = 0
         base_year_end_date = 0
         if esg_report.base_year:
@@ -164,8 +161,6 @@ class EsgCsrdReportController(KnowledgeAuditReportController):
             base_year_start_date = base_year_date["date_from"]
             base_year_end_date = base_year_date["date_to"]
 
-        # Payment Terms data
-        # Reporting Year
         payment_terms_data_reporting = self._get_payment_terms_data(
             esg_report.start_date, esg_report.end_date
         )
@@ -173,7 +168,6 @@ class EsgCsrdReportController(KnowledgeAuditReportController):
         pct_payment_on_terms_reporting = payment_terms_data_reporting[
             "pct_payment_on_terms"
         ]
-        # Base year
         avg_days_payment_base = 0
         pct_payment_on_terms_base = 0
         if esg_report.base_year:

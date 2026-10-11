@@ -430,8 +430,6 @@ class TestTransitiveSpecifierDiscovery(BaseCase):
         self.assertEqual(again, set())
 
     def test_a_relative_import_of_a_known_module_is_not_walked_into(self):
-        # the map answers @a/known (a bridge to the page's copy): what it
-        # imports is the page's, not a per-file specifier of ours
         sources = {
             "@a/seed": "import { x } from './known';\n",
             "@a/known": "import { y } from '@a/deep';\nexport const x = y;\n",

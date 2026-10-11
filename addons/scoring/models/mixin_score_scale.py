@@ -18,9 +18,6 @@ class MixinScoreScale(models.AbstractModel):
 
     _score_host_model = None
 
-    # Fields whose change moves which subjects fall into which band. A
-    # consequence field is deliberately absent: it is read downstream from the
-    # band, and changing it reclassifies nobody.
     _BAND_SCALE_FIELDS = ("min_value", "max_value", "active", "company_id")
 
     sequence = fields.Integer(
@@ -44,7 +41,6 @@ class MixinScoreScale(models.AbstractModel):
         self.check_singleton()
         if self.company_id:
             return self._scale_domain(self.company_id)
-        # A company-less band belongs to every scale, so nothing narrows it.
         return []
 
     @api.model

@@ -12,16 +12,10 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
     * Documentation: https://github.com/A-NZ-PEPPOL/A-NZ-PEPPOL-BIS-3.0/tree/master/Specifications
     """
 
-    # -------------------------------------------------------------------------
-    # EXPORT
-    # -------------------------------------------------------------------------
 
     def _export_invoice_filename(self, invoice):
         return f"{invoice.name.replace('/', '_')}_a_nz.xml"
 
-    # -------------------------------------------------------------------------
-    # EXPORT: Templates
-    # -------------------------------------------------------------------------
 
     def _get_customization_id(self, process_type="billing"):
         if process_type == "billing":
@@ -31,7 +25,6 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
     def _ubl_default_tax_category_grouping_key(
         self, base_line, tax_data, vals, currency
     ):
-        # EXTENDS account.edi.xml.ubl_bis3
         grouping_key = super()._ubl_default_tax_category_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -42,7 +35,6 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
         return grouping_key
 
     def _ubl_get_line_allowance_charge_discount_node(self, vals, discount_values):
-        # EXTENDS account.edi.xml.ubl_bis3
         discount_node = super()._ubl_get_line_allowance_charge_discount_node(
             vals, discount_values
         )
@@ -50,11 +42,9 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
         return discount_node
 
     def _ubl_add_values_tax_currency_code(self, vals):
-        # OVERRIDE account.edi.xml.ubl_bis3
         self._ubl_add_values_tax_currency_code_empty(vals)
 
     def _ubl_tax_totals_node_grouping_key(self, base_line, tax_data, vals, currency):
-        # EXTENDS account.edi.xml.ubl_bis3
         tax_total_keys = super()._ubl_tax_totals_node_grouping_key(
             base_line, tax_data, vals, currency
         )
@@ -64,7 +54,6 @@ class AccountEdiXmlUbl_A_Nz(models.AbstractModel):
         return tax_total_keys
 
     def _get_party_node(self, vals):
-        # EXTENDS account.edi.xml.ubl_bis3
         party_node = super()._get_party_node(vals)
         partner = vals["partner"]
         commercial_partner = partner.commercial_partner_id

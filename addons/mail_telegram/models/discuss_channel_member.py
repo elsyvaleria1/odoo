@@ -10,7 +10,6 @@ class DiscussChannelMember(models.Model):
             return
         mirrors = self.env["telegram.mirror"]
         for member in self:
-            # a Telegram speaker's own member is not typing in Odoo
             if not member.partner_id.user_ids.filtered(lambda u: not u.share):
                 continue
             for mirror in mirrors._of_thread(member.channel_id):

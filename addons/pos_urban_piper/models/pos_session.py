@@ -15,7 +15,7 @@ class PosSession(models.Model):
         if self.config_id.module_pos_urban_piper:
             self.config_id.update_store_status(
                 status=False
-            )  # api request for updating status at urban piper
+            )
         self.config_id.set_urban_piper_provider_states({})
         return result
 

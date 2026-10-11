@@ -73,6 +73,4 @@ class TestCertificateAdapter(TransactionCase):
 
     def test_load_cert_chain_unlocks_a_password_protected_key(self):
         context = self._ssl_context()
-        # Must not raise: the certificate's private key is password-protected,
-        # and load_cert_chain has to use that password to unlock it.
         context.load_cert_chain(self.certificate)

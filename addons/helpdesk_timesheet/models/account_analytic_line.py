@@ -38,7 +38,6 @@ class AccountAnalyticLine(models.Model):
     )
 
     def _auto_init(self):
-        # At install implementation of `_compute_helpdesk_ticket_id` -> default value of NULL for all rows
         if not column_exists(
             self.env.cr, "account_analytic_line", "helpdesk_ticket_id"
         ):
@@ -84,7 +83,6 @@ class AccountAnalyticLine(models.Model):
 
     @api.depends("helpdesk_ticket_id")
     def _compute_task_id(self) -> None:
-        # Override to set task_id to false when a helpdesk_ticket_id has been assigned
         task_and_ticket_lines = self.filtered(
             lambda line: line.task_id and line.helpdesk_ticket_id
         )
@@ -96,7 +94,6 @@ class AccountAnalyticLine(models.Model):
 
     @api.depends("task_id", "project_id")
     def _compute_helpdesk_ticket_id(self) -> None:
-        # set helpdesk_ticket_id to false when a task_id has been assigned
         timesheet_to_update = self.filtered(
             lambda line: (
                 (line.task_id and line.helpdesk_ticket_id)
@@ -108,7 +105,6 @@ class AccountAnalyticLine(models.Model):
 
     @api.constrains("task_id", "helpdesk_ticket_id")
     def _check_no_link_task_and_ticket(self) -> None:
-        # Check if any timesheets are not linked to a ticket and a task at the same time
         has_linked_to_both = self.env["account.analytic.line"].search(
             [
                 ("id", "in", self.ids),
@@ -120,8 +116,6 @@ class AccountAnalyticLine(models.Model):
         _debug.logic(
             "timesheet_task_and_ticket_check",
             lines=self,
-            # the constraint re-SEARCHES `self.ids` instead of filtering the
-            # recordset it was handed, so it costs a query per write
             linked_to_both=has_linked_to_both,
         )
         if has_linked_to_both:
@@ -153,9 +147,6 @@ class AccountAnalyticLine(models.Model):
                 "timesheet_rewritten_for_ticket",
                 lines=self,
                 ticket=ticket,
-                # the write path reads the ticket through `sudo()`, so a user
-                # who cannot see the ticket still gets its project, analytic
-                # account and company written onto their line
                 states_its_company="company_id" in vals,
             )
             if ticket.analytic_account_id:
@@ -187,9 +178,6 @@ class AccountAnalyticLine(models.Model):
                     if not vals_update.get("account_id"):
                         vals_update["account_id"] = ticket.project_id.account_id.id
                 for vals in ticket_vals_list:
-                    # a per-line copy: `vals_update` is built once per ticket,
-                    # so a `company_id` added for one entry would otherwise
-                    # stay in it and be written over the next entry's own
                     line_vals = dict(vals_update)
                     if "company_id" not in vals:
                         line_vals["company_id"] = (
@@ -198,10 +186,6 @@ class AccountAnalyticLine(models.Model):
                     _debug.logic(
                         "timesheet_defaults_from_ticket",
                         ticket=ticket,
-                        # `vals_update` is built once per TICKET and mutated
-                        # inside this per-VALS loop, so a `company_id` added
-                        # for one entry stays in it and the `vals.update`
-                        # below writes it over the next entry's own
                         vals_states_its_company="company_id" in vals,
                         fields=sorted(line_vals),
                     )
@@ -209,11 +193,9 @@ class AccountAnalyticLine(models.Model):
         return super().create(vals_list)
 
     def _update_existing_timers(self, vals) -> None:
-        # if the ticket changed to set a ticket or remove ticket and no task is set instead
         if "helpdesk_ticket_id" in vals and (
             self.helpdesk_ticket_id or not self.task_id
         ):
-            # Check if there are some running timers linked to the timesheets to also update them.
             timers = self.env["timer.timer"].search(
                 [("res_model", "=", self._name), ("res_id", "in", self.ids)]
             )

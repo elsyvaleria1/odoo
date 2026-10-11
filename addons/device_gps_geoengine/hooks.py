@@ -14,9 +14,6 @@ def post_init_hook(env) -> None:
     """)
     result = env.cr.fetchone()
 
-    # On a foreign table the column and its GiST index live on the remote
-    # server and are created by mixin.device.data.log._auto_init; only the
-    # backfill below applies, and it ships to the remote as one UPDATE.
     foreign = fdw.is_foreign(env.cr, "device_data_log_gps")
     if result and result[0] != 4326 and not foreign:
         _logger.info("Converting the_point column from SRID %s to 4326", result[0])

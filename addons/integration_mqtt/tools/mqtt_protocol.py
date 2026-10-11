@@ -35,7 +35,7 @@ class MqttProtocol(StreamProtocol):
     def open(self, stream, on_frame, on_state):
         url = urlsplit(stream.url)
         options = stream.options
-        client = mqtt.Client(  # noqa: E8518 - the broker's address was checked by ir.egress on the snapshot; paho holds the socket open
+        client = mqtt.Client(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
             client_id=options.get("client_id") or f"odoo-stream-{stream.id}",
             protocol=mqtt.MQTTv5,
@@ -52,9 +52,6 @@ class MqttProtocol(StreamProtocol):
         handle = MqttHandle(client, stream, topics)
 
         def guarded(callback):
-            # paho runs the callbacks on its network thread, which dies with
-            # any exception they raise: no keepalive, no frame, while the
-            # stream still reads open
             def run(*args):
                 try:
                     callback(*args)
@@ -123,7 +120,6 @@ class MqttProtocol(StreamProtocol):
         info.wait_for_publish(timeout=10)
 
     def alive(self, handle):
-        # a dead network thread leaves the client reading connected
         thread = getattr(handle.client, "_thread", None)
         return handle.client.is_connected() and (thread is None or thread.is_alive())
 

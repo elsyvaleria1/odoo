@@ -33,7 +33,6 @@ class TestWebsiteScriptPolicy(CspPageAssertions, HttpCase):
         self.assertEqual(len({cached, cached_twice, rerendered, rerender_cached}), 4)
 
     def test_a_public_page_runs_without_unsafe_eval_cached_or_not(self):
-        # a cache hit renders no t-call-assets: the policy rides on the cache
         WebsitePage = type(self.env["website.page"])
         rendered = [
             self.url_open(url).headers["Content-Security-Policy"]
@@ -54,19 +53,15 @@ class TestWebsiteScriptPolicy(CspPageAssertions, HttpCase):
             self.assertNotIn("'unsafe-eval'", policy)
 
     def test_a_page_an_editor_opens_keeps_unsafe_eval(self):
-        # the builder loads its editor into the page it previews
         self.assertIn('"await_precompiled_templates": true', self.url_open("/").text)
         self.authenticate("admin", "admin")
         for url in ("/", "/contactus"):
             response = self.url_open(url)
             policy = response.headers["Content-Security-Policy"]
             self.assertIn("'unsafe-eval'", policy, url)
-            # nor does it hold its boot for every artifact the server compiles
             self.assertIn('"await_precompiled_templates": false', response.text, url)
 
     def test_a_page_an_editor_opens_starts_its_public_app_in_dev_mode(self):
-        # a test run is OWL's dev mode, which awaits no artifact: the page
-        # compiles in the browser, with a compiler no bundle of it imports
         page_ready = "document.body.getAttribute('is-ready') === 'true'"
         preview_ready = (
             "document.querySelector('.o_iframe_container iframe:not(.o_ignore_in_tour)')"
@@ -128,10 +123,6 @@ class TestWebsitePrecompiledTemplates(TransactionCase):
     BUNDLE = "web.assets_frontend_lazy"
 
     def test_a_website_s_own_templates_are_rebuilt_with_its_params(self):
-        # a public page on a website with assets of its own announces a
-        # checksum only that website's bundle yields; the artifact route
-        # rebuilt the bundle without it and 404ed, and the page, run without
-        # 'unsafe-eval', could not compile in the browser either
         require_precompiler()
         website = self.env["website"].create({"name": "Own assets"})
         self.env["ir.asset"].create(
@@ -161,7 +152,6 @@ class TestWebsitePrecompiledTemplates(TransactionCase):
             pipeline.generate_esm_template_bundle(use_import=False),
         )
         IrHttp = self.env["ir.http"]
-        # what the artifact route runs in: a request that is not a website page
         with MockRequest(self.env, is_frontend=False):
             modules = IrHttp._get_webclient_translation_modules()[0]
             translations_hash = IrHttp._get_web_translations_hash(modules, "en_US")
@@ -175,9 +165,6 @@ class TestWebsitePrecompiledTemplates(TransactionCase):
         self.assertIn('"website.FullscreenIndication": [', artifact.raw.decode())
 
     def test_a_website_without_assets_of_its_own_ships_the_same_bundle(self):
-        # the params in the announcement made every website's compiled bundle
-        # other bytes: a new website compiled each bundle again, and a
-        # read-only cursor, which cannot save them, served its modules one by one
         IrQweb = self.env["ir.qweb"]
         first = self.env["website"].search([], limit=1)
         second = self.env["website"].create({"name": "No assets of its own"})

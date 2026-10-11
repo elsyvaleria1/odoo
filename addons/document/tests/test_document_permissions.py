@@ -273,8 +273,6 @@ class TestDocumentsReadCost(TransactionCaseDocuments):
         return queries
 
     def test_search_read_of_folder_id_is_batched(self):
-        # the first read compiles the reader's access, whose cost depends on the
-        # installed modules and not on the records
         self._search_read_cost(1)
         few, many = self._search_read_cost(5), self._search_read_cost(25)
         self.assertEqual(
@@ -467,8 +465,6 @@ class TestDocumentsMoveAuthorization(TransactionCaseDocuments):
         doc.with_user(self.doc_user).write({"user_folder_id": "MY"})
         self.assertFalse(doc.folder_id)
         self.assertEqual(doc.owner_id, self.doc_user)
-        # out of its folder it keeps only its own grants: its owner shares it
-        # with the employees before a manager can reach it
         self.assertEqual(doc.access_internal, "none")
         doc.with_user(self.doc_user).action_update_access_rights(access_internal="view")
 
@@ -746,7 +742,6 @@ class TestDocumentsLockHandsOff(TransactionCaseDocuments):
             "tags": lambda d: d.write({"tag_ids": [Command.link(tag.id)]}),
             "partner": lambda d: d.write({"partner_id": self.other.partner_id.id}),
             "share": lambda d: d.write({"access_via_link": "view"}),
-            # the sharing dialog's path writes elevated, past write
             "share dialog": lambda d: d.action_update_access_rights(
                 access_via_link="view"
             ),
@@ -793,7 +788,6 @@ class TestDocumentsLockHandsOff(TransactionCaseDocuments):
         )
 
     def test_user_can_trash_answers_as_action_archive_does(self):
-        # unowned, editable itself, in a folder the user may only view
         folder = self.env["document.document"].create(
             {"name": "view folder", "type": "folder", "access_internal": "view"}
         )

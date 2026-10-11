@@ -43,7 +43,7 @@ class StockMoveLine(models.Model):
         digits="Product Unit",
         compute="_compute_qty_done",
         inverse="_inverse_qty_done",
-    )  # Dummy field
+    )
     packaging_uom_id = fields.Many2one(
         comodel_name="uom.uom",
         related="move_id.packaging_uom_id",
@@ -111,7 +111,6 @@ class StockMoveLine(models.Model):
         )
         no_quant = self.env["stock.quant"]
         for line in self:
-            # The search spans every line's parent location; each line keeps its own.
             prefix = line.parent_location_id.parent_path
             line.product_stock_quant_ids = (
                 quants_by_product.get(line.product_id, no_quant).filtered(
@@ -153,7 +152,6 @@ class StockMoveLine(models.Model):
         for line in self:
             if not line.result_package_id:
                 if line.outermost_result_package_id:
-                    # A package was set as outermost while the line itself isn't packed yet -> Pack the line
                     line.action_put_in_pack(
                         package_id=line.outermost_result_package_id.id
                     )
@@ -161,7 +159,6 @@ class StockMoveLine(models.Model):
             package = get_before_outermost(line.result_package_id)
             package.package_dest_id = False
             if line.outermost_result_package_id:
-                # A package was set as outermost while the line itself is already in a pack -> Pack the pack
                 package.action_put_in_pack(
                     package_id=line.outermost_result_package_id.id
                 )
@@ -180,16 +177,12 @@ class StockMoveLine(models.Model):
         model = self
         carried_qty_done = False
         for vals in vals_list:
-            # To avoid a write on `quantity` at the creation of the record (in the `qty_done`
-            # inverse, when the line's move is not created yet), we set the `quantity` directly at
-            # the creation and remove `qty_done` in the meantime.
             if "qty_done" in vals:
                 qty_done = vals.pop("qty_done")
                 vals["quantity"] = qty_done
                 vals["picked"] = qty_done > 0
                 carried_qty_done = True
         if carried_qty_done and "default_qty_done" in self.env.context:
-            # The default would bring the inverse back.
             context = dict(self.env.context)
             del context["default_qty_done"]
             model = self.with_env(self.env(context=context))

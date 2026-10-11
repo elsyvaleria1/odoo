@@ -5,27 +5,15 @@ class WizardResPartnerMerge(models.TransientModel):
     _inherit = "wizard.res.partner.merge"
 
     def _update_foreign_keys(self, src_partners, dst_partner) -> None:
-        """Override of base to merge corresponding nominative loyalty cards."""
         self._merge_loyalty_cards(src_partners, dst_partner)
         super()._update_foreign_keys(src_partners, dst_partner)
 
     def _merge_loyalty_cards(self, src_partners, dst_partner) -> None:
-        """Merge nominative loyalty cards.
-
-        Each program's points end up on one card held by `dst_partner`, and both
-        sides of the move are written to `loyalty.history` -- otherwise the
-        surviving balance is right and nothing explains it.
-
-        :param src_partners: recordset of source res.partner records to merge
-        :param dst_partner: destination res.partner record
-        """
         LoyaltyCard = self.env["loyalty.card"].sudo()
         cards_per_program = dict(
             LoyaltyCard._read_group(
                 domain=[
                     ("partner_id", "in", src_partners.ids),
-                    # `loyalty.program` owns what "nominative" means; this used to
-                    # be a second copy of `_compute_is_nominative`'s condition.
                     ("program_id.is_nominative", "=", True),
                 ],
                 groupby=["program_id"],
@@ -35,7 +23,6 @@ class WizardResPartnerMerge(models.TransientModel):
         if not cards_per_program:
             return
 
-        # One search for every destination card rather than one per program.
         destination_per_program = {}
         for card in LoyaltyCard.search(
             [
@@ -48,8 +35,6 @@ class WizardResPartnerMerge(models.TransientModel):
 
         history_vals = []
         for program, cards in cards_per_program.items():
-            # `id:recordset` promises no order: keep the oldest card, so the one
-            # that survives is the one whose history reaches furthest back.
             cards = cards.sorted("id")
             survivor = destination_per_program.get(program) or cards[0]
             drained = cards - survivor

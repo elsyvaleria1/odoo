@@ -21,7 +21,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         cls.contract = cls.employee.version_id
 
     def test_documents_hr_employees_folders_no_owner(self):
-        # Document owner is the user that creates the document. But hr 'system' folders cannot be owned by anyone.
         public_user = self.env["res.users"].create(
             {
                 "name": "Johnny Applicant",
@@ -39,7 +38,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.assertFalse(employee.hr_employee_folder_id.owner_id)
 
     def test_employee_subfolder_generation_renaming_and_access(self):
-        # hr_employee_folder_id should have been created at employee creation
         self.assertEqual(
             self.employee.hr_employee_folder_id.name,
             self.employee.name,
@@ -52,8 +50,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             "HR Employee Subfolder should be renamed when renaming the employee.",
         )
 
-        # Test on new Company - HR Employee folder should be created on company create.
-        # and a new employee should generate a subfolder for that employee inside the company's HR Employee folder.
         new_company = self.env["res.company"].create({"name": "New Company"})
         self.assertTrue(new_company.documents_employee_folder_id)
         new_company_employee = self.env["hr.employee"].create(
@@ -74,14 +70,12 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             new_company_employee.hr_employee_folder_id.folder_id,
             new_company.documents_employee_folder_id,
         )
-        # Test unconfigured companies: employees should not have a subfolder
         doc_employee_folder_id = new_company.documents_employee_folder_id.id
         new_company.documents_employee_folder_id = False
         new_company_employee_bis = self.env["hr.employee"].create(
             {"name": "New Company Employee Bis", "company_id": new_company.id}
         )
         self.assertFalse(new_company_employee_bis.hr_employee_folder_id)
-        # Reconfiguring the company should create employee subfolders for employee that has none
         new_company.documents_employee_folder_id = doc_employee_folder_id
         self.assertTrue(new_company_employee_bis.hr_employee_folder_id)
         self.assertEqual(
@@ -89,7 +83,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             new_company.documents_employee_folder_id,
         )
 
-        # Test changing settings for Documents HR Employee folder. All employee subfolders should follow.
         new_folder = self.env["document.document"].create(
             {"name": "New folder", "type": "folder"}
         )
@@ -114,7 +107,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.assertEqual(self.employee.hr_employee_folder_id.access_via_link, "none")
         self.assertEqual(self.employee.hr_employee_folder_id.access_internal, "none")
 
-        # Check access - only used for HR users - even employee should not have access to their "own" subfolder
         with self.assertRaises(AccessError):
             self.employee.hr_employee_folder_id.with_user(self.doc_user_2).read(
                 ["name"]
@@ -127,9 +119,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             self.employee.hr_employee_folder_id.with_user(self.employee.user_id).write(
                 {"name": "Test"}
             )
-        # moved under the new folder, the employee folders reach what it
-        # grants and no longer what the old one did: the Hr manager is made
-        # its member
         new_folder.action_update_access_rights(
             partners={self.hr_manager.partner_id: ("edit", False)}
         )
@@ -137,13 +126,9 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.employee.hr_employee_folder_id.with_user(self.hr_manager).write(
             {"name": "Test2"}
         )
-        # restricted, with nothing granted on it, what the folders above grant
-        # stops there
         self.employee.hr_employee_folder_id.write(
             {"is_access_restricted": True, "access_ids": False}
         )
-        # Hr user and HR manager should be able to view and edit but only using the access token
-        # see @test_open_document_from_hr test method - If access to smart button and action, access to the records.
         with self.assertRaises(AccessError):
             self.employee.hr_employee_folder_id.with_user(self.hr_manager).read(
                 ["name"]
@@ -160,9 +145,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             )
 
     def test_bridge_hr_settings_on_write(self):
-        """Make sure the hr document settings (owner, partner, hidden link-only access) apply to the document
-        created when an attachment is linked to an employee.
-        """
         attachment_txt_test = self.env["ir.attachment"].create(
             {
                 "datas": self.TEXT,
@@ -191,7 +173,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.assertTrue(document.is_access_via_link_hidden)
 
     def test_upload_employee_attachment(self):
-        """Make sure an employee's attachment is linked to the existing document and a new one is not created."""
         document = self.env["document.document"].create(
             {
                 "name": "Doc",
@@ -211,7 +192,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         )
 
     def test_hr_employee_document_auto_created_not_shared_with_employee(self):
-        """Test that automatically created employee documents from attachment are not shared with the employee."""
         attachment = self.env["ir.attachment"].create(
             {
                 "name": "test.txt",
@@ -230,7 +210,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         )
 
     def test_hr_employee_document_upload_not_shared_with_employee(self):
-        """Test that uploaded hr.employee documents are not shared with the employee."""
         self.authenticate(self.hr_manager.login, self.hr_manager.login)
         with RecordCapturer(self.env["document.document"], []) as capture:
             res = self.url_open(
@@ -266,7 +245,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         )
 
     def test_open_document_from_hr(self):
-        """Test that opening the document app from an employee (hr app) is opening only for hr users."""
         with self.assertRaises(AccessError):
             self.employee.with_user(self.doc_user_2).action_view_documents()
         action = self.employee.with_user(self.hr_user).action_view_documents()
@@ -277,7 +255,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         )
 
     def test_raise_if_used_folder(self):
-        """It shouldn't be possible to archive/delete a folder used by a company (see _raise_if_used_folder)"""
         company_b = self.env["res.company"].create({"name": "Company B"})
         root = self.env["document.document"].create(
             {"name": "root", "type": "folder", "access_internal": "edit"}
@@ -300,7 +277,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.assertEqual(
             folder_hr_employees2.with_user(self.doc_user).user_permission, "none"
         )
-        # It should be possible to archive an unused 'HR' folder"
         with self.assertRaises(
             UserError,
             msg="It should not be possible for non admin to archive the 'HR Employee' folder",
@@ -339,10 +315,6 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
             self.employee.hr_employee_folder_id.unlink()
 
     def test_portal_user_own_root_documents(self):
-        """Portal user (linked to employee!!) should be able to own root
-        documents as they are now allowed to be set as employee related user
-        and employee documents are store in their "my drive", and are,
-        by definition, root documents"""
         employee_portal_user, normal_portal_user = self.env["res.users"].create(
             [
                 {
@@ -400,5 +372,4 @@ class TestCaseDocumentsBridgeHR(HttpCase, TransactionCaseDocumentsHr):
         self.assertTrue(document.is_access_via_link_hidden)
 
     def test_hr_contract_document_creation_permission_employee_only(self):
-        """Test that created hr.contract documents are only viewable by the employee and editable by hr managers."""
         self.check_document_creation_permission(self.contract)

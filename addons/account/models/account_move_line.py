@@ -57,7 +57,7 @@ class AccountMoveLine(models.Model):
         check_company=True,
         bypass_search_access=True,
     )
-    journal_id = fields.Many2one(  # noqa: E8529  partial index (journal_id) WHERE amount_residual < 0: the open-items scan
+    journal_id = fields.Many2one(
         related="move_id.journal_id",
         precompute=True,
         store=True,
@@ -72,7 +72,7 @@ class AccountMoveLine(models.Model):
         store=False,
     )
 
-    company_id = fields.Many2one(  # noqa: E8529  measured: a 2 M-line ledger aggregates 3-4x slower filtering company and state through account_move
+    company_id = fields.Many2one(
         related="move_id.company_id",
         precompute=True,
         store=True,
@@ -84,17 +84,17 @@ class AccountMoveLine(models.Model):
         string="Company Currency",
         readonly=True,
     )
-    move_name = fields.Char(  # noqa: E8529  composite index (date, move_name, id): the ledger's sort key
+    move_name = fields.Char(
         related="move_id.name",
         string="Number",
         store=True,
         index="btree",
     )
-    parent_state = fields.Selection(  # noqa: E8529  measured: a 2 M-line ledger aggregates 3-4x slower filtering state through account_move (88 -> 326 ms, 250 -> 679 ms)
+    parent_state = fields.Selection(
         related="move_id.state",
         store=True,
     )
-    date = fields.Date(  # noqa: E8529  composite indexes (account_id, date) and (date, move_name, id)
+    date = fields.Date(
         related="move_id.date",
         store=True,
         copy=False,
@@ -105,7 +105,7 @@ class AccountMoveLine(models.Model):
         copy=False,
         aggregator="min",
     )
-    ref = fields.Char(  # noqa: E8529  composite index (partner_id, ref): payment matching
+    ref = fields.Char(
         related="move_id.ref",
         store=True,
         index="trigram",
@@ -227,7 +227,7 @@ class AccountMoveLine(models.Model):
         readonly=True,
         check_company=True,
     )
-    payment_id = fields.Many2one(  # noqa: E8529  move_id.origin_payment_id is a non-stored compute over account_payment.move_id: no column to join
+    payment_id = fields.Many2one(
         comodel_name="account.payment",
         related="move_id.origin_payment_id",
         string="Originator Payment",
@@ -781,7 +781,6 @@ class AccountMoveLine(models.Model):
     def _get_term_default_accounts(self):
         moves = self.move_id
         result = {}
-        # the most recent payment-term line of each move, current lines excluded
         previous_lines = self.env["account.move.line"].search(
             [
                 ("move_id", "in", moves.ids),
@@ -794,7 +793,6 @@ class AccountMoveLine(models.Model):
             result.setdefault(
                 ("account.move", line.move_id.id, None), line.account_id.id
             )
-        # the lowest active receivable / payable account of each company
         accounts = (
             self.env["account.account"]
             .sudo()
@@ -880,10 +878,10 @@ class AccountMoveLine(models.Model):
             )[-2:].account_id
             if len(previous_two_accounts) == 1 and len(line.move_id.line_ids) > 2:
                 line.account_id = previous_two_accounts
-                source = "previous lines"  # debuglog
+                source = "previous lines"
             else:
                 line.account_id = line.move_id.journal_id.default_account_id
-                source = "journal default"  # debuglog
+                source = "journal default"
             _debug.logic(
                 "fallback_account",
                 move=line.move_id,
@@ -1058,8 +1056,6 @@ class AccountMoveLine(models.Model):
         if stored_lines:
             Partial = self.env["account.partial.reconcile"]
             amounts_map = {}
-            # one row per (line, side); the currency amount is rounded to the side's
-            # currency, which every partial of a line shares with the line itself
             debit_groups = Partial._read_group(
                 [("debit_move_id", "in", stored_lines.ids)],
                 ["debit_move_id", "debit_currency_id"],
@@ -2360,10 +2356,10 @@ class AccountMoveLine(models.Model):
 
         before = existing()
         _debug.pipeline("invoice_sync_before", invoice_lines=len(before))
-        yield  # noqa: RUF075 - deliberate: on exception the transaction aborts and rolls back, so skipping the post-write currency/balance sync here changes nothing that would otherwise be persisted
+        yield
         after = existing()
-        amount_currency_synced = 0  # debuglog
-        balance_synced = 0  # debuglog
+        amount_currency_synced = 0
+        balance_synced = 0
         for line in after:
             if (
                 (changed(line, "balance") or changed(line, "move_type"))
@@ -2375,7 +2371,7 @@ class AccountMoveLine(models.Model):
                 and line.currency_id == line.company_id.currency_id
             ):
                 line.amount_currency = line.balance
-                amount_currency_synced += 1  # debuglog
+                amount_currency_synced += 1
             if (
                 (
                     changed(line, "amount_currency")
@@ -2392,7 +2388,7 @@ class AccountMoveLine(models.Model):
                     line.amount_currency / line.currency_rate
                 )
                 line.balance = balance
-                balance_synced += 1  # debuglog
+                balance_synced += 1
         _debug.pipeline(
             "invoice_sync_after",
             lines=container["records"],
@@ -3269,18 +3265,18 @@ class AccountMoveLine(models.Model):
         fully_reconciled_aml_ids = set()
 
         all_results = []
-        exhausted_side = None  # debuglog
+        exhausted_side = None
         while True:
             if not debit_values:
                 debit_values = next(debit_values_list, None)
                 if not debit_values:
-                    exhausted_side = "debit"  # debuglog
+                    exhausted_side = "debit"
                     break
 
             if not credit_values:
                 credit_values = next(credit_values_list, None)
                 if not credit_values:
-                    exhausted_side = "credit"  # debuglog
+                    exhausted_side = "credit"
                     break
 
             results = self._prepare_reconciliation_single_partial(
@@ -3473,11 +3469,11 @@ class AccountMoveLine(models.Model):
 
         plan_list = []
         all_aml_ids = set()
-        empty_items = 0  # debuglog
+        empty_items = 0
         for item in reconciliation_plan:
             plan_node = process_leaf(item)
             if not plan_node or not plan_node.get("amls"):
-                empty_items += 1  # debuglog
+                empty_items += 1
                 continue
 
             amls = plan_node["amls"]

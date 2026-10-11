@@ -14,7 +14,6 @@ class TestDiscussMeetings(MailCommon):
         cls.env = cls.env(user=cls.host)
 
     def _start_meeting(self, name):
-        # create_date comes from the database clock, which freeze_time does not reach
         with self.mock_datetime_and_now(fields.Datetime.now()):
             return self.env["discuss.channel"]._create_group(
                 self.host.partner_id.ids,
@@ -78,7 +77,6 @@ class TestDiscussMeetings(MailCommon):
     def test_a_meeting_is_over_once_its_call_ended(self):
         calling = self._start_meeting("Ad-hoc Call")
         idle = self._start_meeting("Ended Call")
-        # the call history is written by the RTC machinery, never by the user
         self.env["discuss.call.history"].sudo().create(
             [
                 {"channel_id": calling.id, "start_dt": fields.Datetime.now()},

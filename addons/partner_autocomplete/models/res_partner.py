@@ -71,11 +71,11 @@ class ResPartner(models.Model):
                 installed_lang := (
                     self.env["res.lang"].search(
                         [("code", "=", lang), ("iso_code", "=", lang)]
-                    )  # specific lang (e.g.: fr_BE)
+                    )
                     or self.env["res.lang"].search(
                         [("code", "ilike", lang[:2]), ("iso_code", "ilike", lang[:2])],
                         limit=1,
-                    )  # fallback to generic lang (e.g. fr)
+                    )
                 )
             ):
                 iap_data["lang"] = installed_lang.code
@@ -92,7 +92,7 @@ class ResPartner(models.Model):
     def autocomplete_by_name(self, query, query_country_id, timeout=15) -> list:
         if (
             query_country_id is False
-        ):  # If it's 0, we purposely do not want to filter on the country
+        ):
             query_country_id = self.env.company.country_id.id
         query_country_code = self.env["res.country"].browse(query_country_id).code
         response, _ = self.env["iap.autocomplete.api"]._request_partner_autocomplete(
@@ -242,9 +242,6 @@ class ResPartner(models.Model):
         return arch, view
 
     def enrich_company_message_post(self, data) -> None:
-        """
-        Post a chatter note containing company enrichment data received from IAP
-        """
         template = self.env.ref(
             "iap_mail.enrich_company_by_dnb", raise_if_not_found=False
         )

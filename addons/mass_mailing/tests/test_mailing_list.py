@@ -32,7 +32,6 @@ class TestMailingContactAccess(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_contact_properties_access(self):
-        # Check that mailing user can edit properties on mailing contact
         value = [
             {
                 "type": "char",
@@ -59,7 +58,6 @@ class TestMailingContactAccess(MassMailCommon):
         )
         self.assertEqual(dict(contact.properties), {})
 
-        # Sanity check, mailing user can only edit the definition on partner in SUDO
         with self.assertRaises(exceptions.AccessError):
             self.env["res.partner"].create(
                 {"properties": copy.deepcopy(value), "name": "test"}
@@ -111,7 +109,6 @@ class TestMailingContactToList(MassMailCommon):
             }
         )
 
-        # create wizard with context values
         wizard_form = Form(
             self.env["wizard.mailing.contact.add.list"].with_context(
                 default_contact_ids=contacts.ids
@@ -119,7 +116,6 @@ class TestMailingContactToList(MassMailCommon):
         )
         self.assertEqual(wizard_form.contact_ids.ids, contacts.ids)
 
-        # set mailing list and add contacts
         wizard_form.mailing_list_id = mailing
         wizard = wizard_form.save()
         frozen_time = datetime(2025, 1, 1, 0, 0)
@@ -139,7 +135,6 @@ class TestMailingContactToList(MassMailCommon):
         subaction = action["params"]["next"]
         self.assertEqual(subaction["type"], "ir.actions.act_window_close")
 
-        # set mailing list, add contacts and redirect to mailing view
         mailing2 = self.env["mailing.list"].create(
             {
                 "name": "Contacts Sublimator",
@@ -186,7 +181,6 @@ class TestMailingListMerge(MassMailCommon):
     def test_mailing_contact_create(self):
         default_list_ids = (self.mailing_list_2 | self.mailing_list_3).ids
 
-        # simply set default list in context
         new = (
             self.env["mailing.contact"]
             .with_context(default_list_ids=default_list_ids)
@@ -202,7 +196,6 @@ class TestMailingListMerge(MassMailCommon):
         )
         self.assertEqual(new.list_ids, (self.mailing_list_2 | self.mailing_list_3))
 
-        # default list and subscriptions should be merged
         new = (
             self.env["mailing.contact"]
             .with_context(default_list_ids=default_list_ids)
@@ -238,11 +231,9 @@ class TestMailingListMerge(MassMailCommon):
             new.list_ids,
             (self.mailing_list_1 | self.mailing_list_2 | self.mailing_list_3),
         )
-        # should correctly take subscription opt_out value
         for list_id in (self.mailing_list_1 | self.mailing_list_2).ids:
             new = new.with_context(default_list_ids=[list_id])
             self.assertTrue(all(contact.opt_out for contact in new))
-        # not opt_out for new subscription without specific create values
         for list_id in self.mailing_list_3.ids:
             new = new.with_context(default_list_ids=[list_id])
             self.assertFalse(any(contact.opt_out for contact in new))
@@ -278,7 +269,6 @@ class TestMailingListMerge(MassMailCommon):
         form = Form(self.env["mailing.mailing"].with_context(mailing_ctx))
         form.subject = "Test Mail"
         mailing = form.save()
-        # Check that mailing model and mailing list are set properly
         self.assertEqual(
             mailing.mailing_model_id,
             self.env["ir.model"]._get("mailing.list"),
@@ -303,7 +293,6 @@ class TestMailingListMerge(MassMailCommon):
                 "subscription_ids": [(0, 0, {"list_id": self.mailing_list_3.id})],
             }
         )
-        # Copy the contact with default_list_ids in context, which should not raise anything
         contact_2 = contact_1.with_context(
             default_list_ids=self.mailing_list_3.ids
         ).copy()
@@ -315,10 +304,6 @@ class TestMailingListMerge(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_list_merge(self):
-        # TEST CASE: Merge A,B into the existing mailing list C
-        # The mailing list C contains the same email address than 'Norbert' in list B
-        # This test ensure that the mailing lists are correctly merged and no
-        # duplicates are appearing in C
         merge_form = Form(
             self.env["wizard.mailing.list.merge"].with_context(
                 active_ids=[self.mailing_list_1.id, self.mailing_list_2.id],
@@ -327,20 +312,16 @@ class TestMailingListMerge(MassMailCommon):
         )
         merge_form.new_list_name = False
         merge_form.merge_options = "existing"
-        # Need to set `merge_options` before `dest_lid_id` so `dest_list_id` is visible
-        # `'invisible': [('merge_options', '=', 'new')]`
         merge_form.dest_list_id = self.mailing_list_3
         merge_form.archive_src_lists = False
         result_list = merge_form.save().action_mailing_lists_merge()
 
-        # Assert the number of contacts is correct
         self.assertEqual(
             len(result_list.contact_ids.ids),
             5,
             "The number of contacts on the mailing list C is not equal to 5",
         )
 
-        # Assert there's no duplicated email address
         self.assertEqual(
             len(list(set(result_list.contact_ids.mapped("email")))),
             5,
@@ -350,7 +331,6 @@ class TestMailingListMerge(MassMailCommon):
 
     @users("user_marketing")
     def test_mailing_list_merge_cornercase(self):
-        """Check wrong use of merge wizard"""
         with self.assertRaises(exceptions.UserError):
             merge_form = Form(
                 self.env["wizard.mailing.list.merge"].with_context(
@@ -436,7 +416,6 @@ class TestMailingContactImport(MassMailCommon):
 
         self.assertEqual(contact_import.mailing_list_ids, first_list)
 
-        # Can not add many2many directly on a Form
         contact_import.mailing_list_ids |= third_list
 
         self.assertEqual(
@@ -449,13 +428,11 @@ class TestMailingContactImport(MassMailCommon):
             len(third_list.contact_ids), 0, "Should not yet create the contact"
         )
 
-        # Test that the context key "default_list_ids" is ignored (because we manually set list_ids)
         contact_import.with_context(
             default_list_ids=(first_list | second_list).ids
         ).action_import()
 
         self.env["mailing.list"].invalidate_model(["contact_ids"])
-        # Check the contact of the first mailing list
         contacts = [(contact.name, contact.email) for contact in first_list.contact_ids]
         self.assertIn(
             ("", "alice@example.com"),
@@ -488,7 +465,6 @@ class TestMailingContactImport(MassMailCommon):
         )
         self.assertEqual(len(contacts), 5, "Should have imported 2 new contacts")
 
-        # Check the contact of the third mailing list
         contacts = [(contact.name, contact.email) for contact in third_list.contact_ids]
         self.assertIn(
             ("", "alice@example.com"),
@@ -552,14 +528,12 @@ class TestSubscriptionManagement(MassMailCommon):
         self.assertEqual(ml_3.contact_count_email, 3)
         self.assertEqual(ml_3.contact_count_opt_out, 0)
 
-        # create a new test contact
         contact = self.env["mailing.contact"].browse(
             self.env["mailing.contact"].name_create(_email_formatted)[0]
         )
         self.assertEqual(contact.email, _email_normalized)
         self.assertEqual(contact.name, "Mireille Labeille")
 
-        # add new subscriptions (and ensure email_normalized is used)
         (ml_1 + ml_2)._update_subscription_from_email(
             _email_formatted_upd, opt_out=False
         )
@@ -568,7 +542,6 @@ class TestSubscriptionManagement(MassMailCommon):
         )
         self.assertEqual(subs.list_id, ml_1 + ml_2)
 
-        # opt-out from opted-in mailing list + 1 non opted-in mailing list
         (ml_2 + ml_3)._update_subscription_from_email(
             _email_formatted_upd, opt_out=True
         )

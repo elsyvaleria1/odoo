@@ -23,7 +23,6 @@ class TestWebsiteAllPerformance(
     def setUpClass(cls):
         super().setUpClass()
 
-        # Attachment needed for the replacement of images
         cls.env["ir.attachment"].create(
             {
                 "public": True,
@@ -49,14 +48,11 @@ class TestWebsiteAllPerformance(
         cats[2].parent_id = cats[1].id
         cats[1].parent_id = cats[0].id
 
-        # First image (blue) for the template.
         color_blue = "#4169E1"
         name_blue = "Royal Blue"
-        # Red for the variant.
         color_red = "#CD5C5C"
         name_red = "Indian Red"
 
-        # Create the color attribute.
         cls.product_attribute = cls.env["product.attribute"].create(
             {
                 "name": "Beautiful Color",
@@ -64,7 +60,6 @@ class TestWebsiteAllPerformance(
             }
         )
 
-        # create the color attribute values
         cls.attr_values = cls.env["product.attribute.value"].create(
             [
                 {
@@ -82,13 +77,11 @@ class TestWebsiteAllPerformance(
             ]
         )
 
-        # first image (blue) for the template
         f = io.BytesIO()
         Image.new("RGB", (1920, 1080), "#4169E1").save(f, "JPEG")
         f.seek(0)
         blue_image = base64.b64encode(f.read())
 
-        # second image (red) for the variant 1
         f = io.BytesIO()
         Image.new("RGB", (800, 500), "#FF69E1").save(f, "JPEG")
         f.seek(0)
@@ -275,7 +268,6 @@ class TestWebsiteAllPerformance(
         self.set_registry_readonly_mode(True)
         self.page.track = False
 
-        # self.url_open('/web/set_profiling?profile=1&execution_context_qweb=1')
 
         self.assertEqual(self._get_cart_quantity(), 0)
 
@@ -297,7 +289,6 @@ class TestWebsiteAllPerformance(
             mocked.assert_called_once()
 
         select_tables_perf = {
-            # website queries
             "orm_signaling_registry": 1,
             "ir_attachment": 1,
         }
@@ -325,7 +316,6 @@ class TestWebsiteAllPerformance(
         )
         self.assertEqual(self._get_cart_quantity(), 1)
         select_tables_perf = {
-            # website queries
             "orm_signaling_registry": 1,
             "ir_attachment": 1,
         }
@@ -350,7 +340,6 @@ class TestWebsiteAllPerformance(
 
         self.assertEqual(self._get_cart_quantity(), 0)
         select_tables_perf = {
-            # website queries
             "orm_signaling_registry": 1,
             "ir_attachment": 1,
         }
@@ -366,7 +355,6 @@ class TestWebsiteAllPerformance(
             self.set_registry_readonly_mode(readonly_enabled)
             with self.subTest(readonly_enabled=readonly_enabled):
                 select_tables_perf = {
-                    # website queries
                     "orm_signaling_registry": 1,
                     "ir_attachment": 1,
                     "website_page": 2,
@@ -394,7 +382,7 @@ class TestWebsiteAllPerformance(
             f'<img src="/web/image/product.image/{self.product_images.ids[1]}/', html
         )
 
-        query_count = 49  # To increase this number you must ask the permission to al
+        query_count = 49
         queries = {
             "orm_signaling_registry": 1,
             "website": 2,
@@ -404,9 +392,6 @@ class TestWebsiteAllPerformance(
             "product_tag": 1,
             "product_public_category": 2,
             "product_product": 1,
-            # the comparison's button reads the cards' specification lines too,
-            # in one read for the page: a product with specifications compares
-            # (0a811a1b1878)
             "product_template_attribute_line": 4,
             "res_users": 1,
             "res_partner": 2,
@@ -450,20 +435,13 @@ class TestWebsiteAllPerformance(
         queries["product_template_attribute_value"] += 3
 
         if self._has_demo_data():
-            # demo sets preview_variants on Color and Legs: the cards' variant
-            # previews read the variants' combinations, the variants, their images;
-            # the combinations are a many2many read under the public user's
-            # record rules, so their relation is probed first (9f1db963ef48)
             query_count += 4
             queries["product_product"] += 2
             queries["ir_attachment"] += 1
             queries["product_variant_combination"] = 1
-            # demo's public categories nest three levels below the root, and
-            # the sidebar reads children one level per query
             query_count += 3
             queries["product_public_category"] += 3
 
-        # To increase the query count you must ask the permission to al
         return query_count, queries
 
     def _has_demo_data(self):
@@ -471,7 +449,6 @@ class TestWebsiteAllPerformance(
 
     @tagged("is_query_count")
     def test_perf_sql_queries_shop(self):
-        # To increase the query count you must ask the permission to al
         query_count, queries = self._get_queries_shop()
 
         self.assertEqual(sum(queries.values()), query_count, "Please learn to count.")

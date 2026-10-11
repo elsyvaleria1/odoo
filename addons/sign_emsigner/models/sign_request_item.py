@@ -53,7 +53,6 @@ class SignRequestItem(models.Model):
                 lambda r: r.role_id and r.role_id.auth_method == "emsigner"
             ).role_id
 
-            # If there are multiple emsigner roles or user is doing sign now, we do not set auth_method
             if emsigner_roles:
                 if len(emsigner_roles) > 1:
                     emsigner_roles.auth_method = False
@@ -61,7 +60,6 @@ class SignRequestItem(models.Model):
                     emsigner_record = related_records.filtered_domain(
                         [("role_id", "in", emsigner_roles.ids)]
                     )
-                    # must have signature items & only one document
                     if emsigner_record and (
                         not emsigner_record._get_current_signature_sign_items()
                         or len(emsigner_record.sign_request_id.template_id.document_ids)
@@ -69,24 +67,19 @@ class SignRequestItem(models.Model):
                     ):
                         emsigner_record.role_id.auth_method = False
                     else:
-                        # when we have multiple signers, we always keep the emsigner role last in the order
-                        # and set the normal signers first
                         normal_signers = related_records - emsigner_record
 
                         normal_signers = normal_signers.sorted(
                             key=lambda r: r.mail_sent_order or 1
                         )
-                        # normal signers first
                         for idx, signer in enumerate(normal_signers, start=1):
                             signer.mail_sent_order = idx
 
-                        # Then emsigners get the last order(s)
                         last_order = len(normal_signers) + 1
                         emsigner_record.mail_sent_order = last_order
         return items
 
     def _get_current_signature_sign_items(self):
-        """Get the sign items that are of type signature and are assigned to the current role."""
         return self.sign_request_id.template_id.sign_item_ids.filtered(
             lambda item: (
                 item.responsible_id.id == self.role_id.id

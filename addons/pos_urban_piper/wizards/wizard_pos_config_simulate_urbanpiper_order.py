@@ -264,6 +264,6 @@ class WizardPosConfigSimulateUrbanpiperOrder(models.TransientModel):
                 "message": message,
                 "type": notification_type,
                 "sticky": False,
-                "next": {"type": "ir.actions.act_window_close"},  # force a form reload
+                "next": {"type": "ir.actions.act_window_close"},
             },
         }

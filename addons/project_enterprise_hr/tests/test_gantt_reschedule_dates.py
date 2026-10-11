@@ -12,15 +12,12 @@ from odoo.addons.project_gantt.tests.gantt_reschedule_dates_common import fake_n
 @freeze_time(fake_now)
 class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
     def test_auto_shift_employee_integration(self):
-        # We have to bypass the calendar validity computation for employees/students,
-        # Otherwise, we will fallback on company calendar if there are no contracts
-        # once the test is launched in project_enterprise_hr_contract by extension
         self.armande_employee.employee_type = "freelance"
 
         self.task_4.predecessor_ids = [Command.clear()]
         new_task_3_begin_date = self.task_1_date_deadline - timedelta(
             hours=2
-        )  # 2021 06 24 10:00
+        )
 
         self.gantt_reschedule_consume_buffer(
             self.task_3,
@@ -33,8 +30,6 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
             },
         )
         failed_message = "The auto shift date feature should take the employee's calendar into account."
-        # task_1 is booked on Armande from the moment she is employed; 9-12 holds
-        # none of her afternoons, so it lasts the 3 hours it held when placed
         self.assertEqual(
             self.task_1.date_start,
             new_task_3_begin_date - relativedelta(days=1, hour=14),
@@ -47,7 +42,7 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
         )
         new_task_3_begin_date = self.task_1.date_start + relativedelta(
             hour=10
-        )  # 2021 06 23 10:00
+        )
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -58,7 +53,6 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
                 ).strftime("%Y-%m-%d %H:%M:%S"),
             },
         )
-        # its 3 hours, held 14-17 when placed, end at 10 in Armande's mornings
         self.assertEqual(
             self.task_1.date_start,
             new_task_3_begin_date + relativedelta(days=-1, hour=11),
@@ -186,10 +180,6 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
         )
 
     def test_auto_shift_multiple_assignees(self):
-        """
-        Tests that the auto shift fallbacks to the company calendar in the case that
-        there are multiple assignees to the task.
-        """
         self.task_1.user_ids += self.user_projectmanager
         self.gantt_reschedule_consume_buffer(
             self.task_1, self.task_1_date_gantt_reschedule_trigger()
@@ -200,21 +190,6 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
         self.assertTrue(self.task_1.date_end <= self.task_3.date_start, failed_message)
 
     def test_move_backward_with_multi_users(self):
-        """
-                     -------------------------------------------------------------
-        Raouf 1 & 2  |     [0]                                                   |
-                     v      |                                                    |
-        Raouf 1     [13]    ->[ 1 ]------>[2]----------->[5]   |->[7]---------->[8]
-                               |  |        ^      --------|-----                 ^
-                               |  |        |      |       |                      |
-        Raouf 2                |  -->[3]   |      |       ----->[9]------------>[10]
-                               |           |      |
-                               |           |      |
-        Raouf 3 & 2            ---------->[4]---->[6]
-
-        When we move 8 before 13:
-        - all the ancestors of 8 should move before 8 (0, 1, 4, 2, 6, 7, 5, 9, 10, 8)
-        """
         self.armande_employee.resource_calendar_id = self.calendar_40h.id
 
         self.env["hr.employee"].create(
@@ -322,8 +297,6 @@ class TestGanttRescheduleOnTasks(AutoShiftDatesHRCommon):
                 ),
             },
         )
-        # 8 allocated hours on a four-hour window with two assignees are two
-        # bookings of four hours, and the timeline holds one resource's share
         self.assert_new_dates(
             self.project2_task_0,
             datetime(year=2024, month=2, day=8, hour=9),
@@ -468,7 +441,6 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
 
     def test_auto_shift_employee_contract_integration(self):
-        # As the fallback is the company and not the resource's calendar, we have to create a contract for armande in the past
         self.contract_3 = self.armande_employee.create_version(
             {
                 "date_version": self.task_1_planned_date_begin.date()
@@ -486,7 +458,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         self.task_4.predecessor_ids = [Command.clear()]
         new_task_3_begin_date = self.task_1_date_deadline - timedelta(
             hours=2
-        )  # 2021 06 24 10:00
+        )
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -505,7 +477,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
         new_task_3_begin_date = self.task_1.date_start - relativedelta(
             days=2
-        )  # 2021 06 21 11:00
+        )
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -523,7 +495,6 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
             failed_message,
         )
         tmp_date_start = self.contract_3.date_start
-        # Test like there are no active contract covering < 2021 06 15
         self.contract_3.write(
             {
                 "contract_date_start": self.contract_3.contract_date_end
@@ -532,7 +503,7 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
         new_task_3_begin_date = self.task_1.date_start - relativedelta(
             days=2
-        )  # 2021 06 14 14:00
+        )
         old_task_1_begin_task = self.task_1.date_start
         self.gantt_reschedule_consume_buffer(
             self.task_3,
@@ -546,11 +517,10 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
         failed_message = "The auto shift date feature should not move the task when no contract cover the period and no calendar is set on the employee."
         self.assertEqual(self.task_1.date_start, old_task_1_begin_task, failed_message)
-        # Reset contract
         self.contract_3.write({"contract_date_start": tmp_date_start})
         new_task_1_begin_date = self.contract_2.date_start + relativedelta(
             days=1, hour=14
-        )  # 2021 06 27 14:00
+        )
         self.gantt_reschedule_consume_buffer(
             self.task_1,
             {
@@ -568,11 +538,6 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
         )
 
     def test_auto_shift_period_without_contract(self):
-        """
-        When the employee has at least one valid contract, we need to follow the contract.
-        In this case, if no contract covering the period, we can't move the task
-        When the employee has no valid contract, we follow the company calendar
-        """
         self.contract_3 = self.armande_employee.create_version(
             {
                 "date_version": self.task_1_planned_date_begin.date()
@@ -586,15 +551,12 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
                 "wage": 5000.0,
             }
         )
-        # every version is still ahead of the frozen clock, so the employee's
-        # current version is the earliest one, contract_3: the calendar the
-        # test means is contract_1's, named as such
         self.contract_1.resource_calendar_id = self.calendar_morning
 
         self.task_4.predecessor_ids = [Command.clear()]
         new_task_3_begin_date = self.task_1_date_deadline - timedelta(
             hours=2
-        )  # 2021 06 24 10:00
+        )
         self.gantt_reschedule_consume_buffer(
             self.task_3,
             {
@@ -648,6 +610,5 @@ class TestGanttRescheduleOnTasksWithVersion(AutoShiftDatesHRCommon):
                 "date_end": task_1_prev_date_deadline.strftime("%Y-%m-%d %H:%M:%S"),
             },
         )
-        # Moving task 1 after task 3 => task 3 will move forward to solve the conflict
         failed_message = "The auto shift date feature should take the company calendar as there are no valid contractss."
         self.assertEqual(self.task_1.date_end, self.task_3.date_start, failed_message)

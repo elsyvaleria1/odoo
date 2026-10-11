@@ -130,8 +130,6 @@ class TestEmbeddedPdfViewer(HttpCase, common.SlidesCase):
         return base64.b64encode(buffer.getvalue())
 
     def test_the_embed_renders_a_pdf_through_the_pdfjs_module(self):
-        # the viewer receives the "pdfjs-dist" namespace from import(); it no
-        # longer relies on the build publishing globalThis.pdfjsLib
         self.channel.website_id = self.env["website"].get_current_website().id
         self.slide.write(
             {

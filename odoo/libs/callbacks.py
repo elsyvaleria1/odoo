@@ -55,15 +55,6 @@ class HookMark:
 
 
 class UndoLog:
-    # A mark taken while its hooks held nothing is "empty": rolling back to it
-    # is dropping every transactional hook, which needs no journal. Mutations
-    # are journaled only while a "full" mark is open, so the flushing savepoint
-    # of an import row (whose precommit hooks are flushed before it opens)
-    # records nothing. `durable` entries (a durable hook consumed by a flush)
-    # are the only ones kept once no full mark remains, so each must be valid
-    # whatever unjournaled mutations happened around it. `strict` entries (a
-    # durable hook added under a test's strict mark) are undone only by a
-    # rollback to a strict mark, so a savepoint inside the test keeps them.
     __slots__ = (
         "_entries",
         "_full",
@@ -89,8 +80,6 @@ class UndoLog:
 
     @property
     def span(self) -> tuple[HookMark | None, int]:
-        # what an entry recorded now is undone with: the innermost mark, until a
-        # rewind (which keeps that mark open) drops the entries recorded under it
         return (self._marks[-1] if self._marks else None, self._rewinds)
 
     def record(self, undo: Callable[..., object], *args: Any) -> None:
@@ -256,7 +245,7 @@ class JournaledList(list[Any]):
             self._log.record(_truncate_list, self, len(self))
         list.extend(self, values)
 
-    def __iadd__(self, values: Iterable[Any], /) -> Self:  # type: ignore[override,misc]
+    def __iadd__(self, values: Iterable[Any], /) -> Self:
         self.extend(values)
         return self
 
@@ -341,10 +330,6 @@ class JournaledList(list[Any]):
 
 
 class JournaledSet(MutableSet[Any]):
-    # Each member maps to (insertion stamp, the member itself): an undone
-    # removal puts back the very object removed, and the stamp puts it back in
-    # its place, sorted lazily on the next ordered read instead of shifting
-    # every later member on each undo.
     __slots__ = ("_items", "_log", "_stamp", "_unordered")
 
     def __init__(self, log: UndoLog, items: Iterable[Any] = ()) -> None:
@@ -459,9 +444,6 @@ class JournaledDict(dict[Any, Any]):
         return value
 
     def _remove(self, key: Any) -> None:
-        # a removal changes order and may drop the key as stored (True for 1.0):
-        # the first one under a mark snapshots the items, which the undo of every
-        # later one under it restores, at a copy per mark rather than per removal
         if self._log.recording and self._snapshot_span != (span := self._log.span):
             self._snapshot_span = span
             self._log.record(_restore_items, self, list(dict.items(self)))
@@ -486,7 +468,7 @@ class JournaledDict(dict[Any, Any]):
         for key, value in kwargs.items():
             self[key] = value
 
-    def __ior__(self, other: Any, /) -> Self:  # type: ignore[override,misc]
+    def __ior__(self, other: Any, /) -> Self:
         self.update(other)
         return self
 
@@ -569,8 +551,6 @@ def _snapshot_durable(data: dict[Any, Any]) -> dict[Any, tuple[Any, Any]]:
     return {key: (value, copies[key]) for key, value in data.items()}
 
 
-# A durable hook closes over the container it parks in durable_data, so a
-# strict rollback restores that very object rather than rebinding a copy.
 def _restore_durable(
     data: dict[Any, Any], snapshot: dict[Any, tuple[Any, Any]]
 ) -> None:
@@ -646,8 +626,6 @@ class Callbacks:
             self._popleft()()
         self.clear()
 
-    # For hooks that run once their transaction is settled: a failing hook
-    # must not cost the later ones their turn, since nothing re-runs them.
     def drain(self) -> None:
         first: Exception | None = None
         while self._funcs:
@@ -662,8 +640,6 @@ class Callbacks:
                         "hook %r failed after an earlier hook had failed", func
                     )
             except BaseException:
-                # an interrupt goes up at once; the failure before it would
-                # otherwise vanish with no trace
                 if first is not None:
                     _logger.error("a hook failed before an interrupt", exc_info=first)
                 raise
@@ -699,10 +675,10 @@ class Callbacks:
         if undone is None:
             _debug.logic("callbacks.rollback_to_unknown_mark")
             return
-        dropped = 0  # debuglog
+        dropped = 0
         if not mark.full and (self._funcs or self.data):
             durable = [func for func in self._funcs if type(func) is _Durable]
-            dropped = len(self._funcs) - len(durable)  # debuglog
+            dropped = len(self._funcs) - len(durable)
             self._funcs.clear()
             self._funcs.extend(durable)
             dict.clear(self.data)

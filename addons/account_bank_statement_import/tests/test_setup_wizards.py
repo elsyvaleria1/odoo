@@ -9,9 +9,6 @@ class TestSetupBankManualConfigWizard(AccountTestInvoicingCommon):
     which defaults bank_statements_source on the linked journal."""
 
     def _neutralize_other_bank_journal_candidates(self):
-        """Give every journal that currently matches the wizard's
-        "unlinked bank journal" domain a bank account, so it stops matching
-        and a journal set up by the test becomes the sole candidate."""
         wiz_new = self.env["wizard.res.partner.bank.account.create"].new({})
         domain = wiz_new._get_domain_unlinked_journal("bank")
         others = self.env["account.journal"].search(domain)
@@ -25,10 +22,6 @@ class TestSetupBankManualConfigWizard(AccountTestInvoicingCommon):
             others.bank_account_id = dummy_bank.id
 
     def test_validate_does_not_clobber_already_configured_source(self):
-        """A journal already connected to Online Synchronization, but with
-        no bank_account_id yet, must keep its bank_statements_source when
-        this wizard is completed -- num_journals_without_account_bank == 0
-        must not force it back to 'file_import'."""
         self._neutralize_other_bank_journal_candidates()
         journal = self.env["account.journal"].create(
             {
@@ -50,8 +43,6 @@ class TestSetupBankManualConfigWizard(AccountTestInvoicingCommon):
         self.assertEqual(journal.bank_statements_source, "online_sync")
 
     def test_validate_still_defaults_undefined_source(self):
-        """The wizard's actual purpose -- defaulting a brand-new bank
-        journal's source to 'file_import' -- must keep working."""
         self._neutralize_other_bank_journal_candidates()
         journal = self.env["account.journal"].create(
             {

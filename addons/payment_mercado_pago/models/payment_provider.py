@@ -35,12 +35,10 @@ class PaymentProvider(models.Model):
         help="The country of the Mercado Pago account. The currency will be updated to match the"
         " country of the Mercado Pago account.",
     )
-    # TODO anko remove in 19.1
     mercado_pago_is_oauth_supported = fields.Boolean(
         compute="_compute_mercado_pago_is_oauth_supported"
     )
 
-    # OAuth fields
     mercado_pago_access_token = fields.Char(
         compute="_compute_credential_doors",
         inverse="_inverse_credential_doors",
@@ -62,10 +60,8 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "mercado_pago").update(
             {
@@ -81,7 +77,7 @@ class PaymentProvider(models.Model):
                 self.mercado_pago_account_country_id.code
             )
             currency = (
-                self.env["res.currency"]  # noqa: E8507 - one lookup per provider, on its own account country
+                self.env["res.currency"]
                 .with_context(
                     active_test=False,
                 )
@@ -90,17 +86,11 @@ class PaymentProvider(models.Model):
             provider.available_currency_ids = [Command.set(currency.ids)]
 
     def _compute_mercado_pago_is_oauth_supported(self) -> None:
-        """Return current state of OAuth support by Odoo. To be removed in future versions."""
         self.mercado_pago_is_oauth_supported = False
 
-    # === CONSTRAINT METHODS === #
 
     @api.constrains("state", "mercado_pago_access_token")
     def _check_mercado_pago_credentials_are_set_before_enabling(self) -> None:
-        """Check that the Mercado Pago credentials are valid when the provider is enabled.
-
-        :raise ValidationError: If the Mercado Pago credentials are not set.
-        """
         for provider in self.filtered(
             lambda p: p.code == "mercado_pago" and p.state != "disabled"
         ):
@@ -116,10 +106,6 @@ class PaymentProvider(models.Model):
     def _check_mercado_pago_credentials_are_set_before_allowing_tokenization(
         self,
     ) -> None:
-        """Check that the OAuth credentials are valid when the tokenization is enabled.
-
-        :raise ValidationError: If the Mercado Pago credentials are not valid.
-        """
         if any(
             p.code == "mercado_pago"
             and p.allow_tokenization
@@ -130,27 +116,15 @@ class PaymentProvider(models.Model):
                 self.env._("Connect your account before enabling tokenization.")
             )
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "mercado_pago":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === ACTIONS METHODS === #
 
     def action_start_onboarding(self, menu_id=None):
-        """Override of `payment` to redirect to the Mercado Pago OAuth URL.
-
-        Note: `self.check_singleton()`
-
-        :param int menu_id: The menu from which the onboarding is started, as an `ir.ui.menu` id.
-        :return: An URL action to redirect to the Mercado Pago OAuth URL.
-        :rtype: dict
-        :raise RedirectWarning: If the company's currency is not supported.
-        """
         self.check_singleton()
 
         if self.code != "mercado_pago":
@@ -171,8 +145,6 @@ class PaymentProvider(models.Model):
                 self.env._("Set the account country before connecting the account.")
             )
 
-        # Encode the return URL parameters here rather than passing them in the 'state' parameter
-        # from IAP, because Mercado Pago doesn't JSON dumps in that parameter.
         return_url_params = {"state": self._issue_onboarding_state()}
         return_url = urljoin(self.get_base_url(), const.OAUTH_RETURN_ROUTE)
         proxy_url_params = {
@@ -187,7 +159,6 @@ class PaymentProvider(models.Model):
         }
 
     def _prepare_credential_reset_vals(self) -> dict:
-        """Override of `payment` to supply the provider-specific credential values to reset."""
         if self.code != "mercado_pago":
             return super()._prepare_credential_reset_vals()
 
@@ -196,16 +167,14 @@ class PaymentProvider(models.Model):
             "mercado_pago_access_token_expiry": None,
             "mercado_pago_public_key": None,
             "mercado_pago_refresh_token": None,
-            "allow_tokenization": False,  # The account must be connected to allow tokenization.
+            "allow_tokenization": False,
         }
 
-    # === BUSINESS METHODS === #
 
     @api.model
     def _get_compatible_providers(
         self, *args, is_validation=False, report=None, **kwargs
     ):
-        """Override of `payment` to filter out Mercado Pago providers for validation operations."""
         providers = super()._get_compatible_providers(
             *args, is_validation=is_validation, report=report, **kwargs
         )
@@ -223,14 +192,6 @@ class PaymentProvider(models.Model):
         return providers
 
     def _mercado_pago_get_inline_form_values(self, partner_id):
-        """Return a serialized JSON of the values required to render the inline form.
-
-        Note: `self.check_singleton()`
-
-        :param int partner_id: The partner of the transaction, as a `res.partner` id.
-        :return: The JSON serial of the inline form values.
-        :rtype: str
-        """
         self.check_singleton()
 
         partner = self.env["res.partner"].browse(partner_id).exists()
@@ -240,10 +201,8 @@ class PaymentProvider(models.Model):
         }
         return json_dumps(inline_form_values)
 
-    # === REQUEST HELPERS === #
 
     def _prepare_request_url(self, endpoint, *, is_proxy_request=False, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "mercado_pago":
             return super()._prepare_request_url(
                 endpoint, is_proxy_request=is_proxy_request, **kwargs
@@ -263,7 +222,6 @@ class PaymentProvider(models.Model):
         is_refresh_token_request=False,
         **kwargs,
     ):
-        """Override of `payment` to build the request headers."""
         if self.code != "mercado_pago":
             return super()._prepare_request_headers(
                 method,
@@ -284,18 +242,10 @@ class PaymentProvider(models.Model):
         return headers
 
     def _mercado_pago_get_access_token(self):
-        """Generate a new access token if it's expired, otherwise return the existing access token.
-
-        Note: `self.check_singleton()`
-
-        :return: A valid access token.
-        :rtype: str
-        :raise ValidationError: If the access token can not be fetched.
-        """
         self.check_singleton()
 
         if self.mercado_pago_access_token and (
-            not self.mercado_pago_access_token_expiry  # Legacy access token
+            not self.mercado_pago_access_token_expiry
             or self.mercado_pago_access_token_expiry >= fields.Datetime.now()
         ):
             return self.mercado_pago_access_token
@@ -328,7 +278,6 @@ class PaymentProvider(models.Model):
             return self.mercado_pago_access_token
 
     def _parse_response_content(self, response, *, is_proxy_request=False, **kwargs):
-        """Override of `payment` to parse the response content."""
         if self.code != "mercado_pago" or not is_proxy_request:
             return super()._parse_response_content(
                 response, is_proxy_request=is_proxy_request, **kwargs
@@ -336,7 +285,6 @@ class PaymentProvider(models.Model):
         return self._parse_proxy_response(response)
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "mercado_pago":
             return super()._parse_response_error(response)
         return response.json().get("message", "")

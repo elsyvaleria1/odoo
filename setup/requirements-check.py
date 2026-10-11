@@ -61,7 +61,6 @@ if TYPE_CHECKING:
 
 Version = tuple[int, ...]
 
-# shared beween debian and ubuntu
 SPECIAL = {
     "pytz": "tz",
     "protobuf": "protobuf",
@@ -78,7 +77,7 @@ def urlopen(url: str) -> io.BufferedReader:
     Path("/tmp/package_versions_cache/").mkdir(exist_ok=True, parents=True)
     file_path = f"/tmp/package_versions_cache/{file_name}"
     if not Path(file_path).is_file():
-        with _urlopen(url) as response:  # noqa: S310 -- scheme checked above; metadata fetches use HTTP(S).
+        with _urlopen(url) as response:
             Path(file_path).write_bytes(response.read())
     return Path(file_path).open("rb")
 
@@ -90,9 +89,6 @@ def parse_version(vstring: str) -> Version | None:
 
 
 def cleanup_debian_version(s: str) -> str:
-    """Try to strip the garbage from the version string, just remove everything
-    following the first `+`, `~` or `-`
-    """
     return re.match(
         r"""
         (?:\d+:)? # debian crud prefix
@@ -168,7 +164,6 @@ class PipPackage:
                 break
 
         if not has_wheel_for_version and has_any_wheel:
-            # TODO, we should prefer a version matching the one from a distro
             for rel_version, rel in releases.items():
                 for release in rel:
                     if not release["filename"].endswith(".whl"):
@@ -213,7 +208,6 @@ class Distribution(ABC):
 
     @classmethod
     def get(cls, name: str) -> type[Distribution]:
-        """Return the Distribution subclass matching the given name."""
         try:
             return next(c for c in cls.__subclasses__() if c.__name__.lower() == name)
         except StopIteration:
@@ -225,11 +219,7 @@ class Debian(Distribution):
     """Checker for Debian distribution package versions via sources.debian.org API."""
 
     def get_version(self, package: str) -> Version | str | None:
-        """Try to find which version of ``package`` is in Debian release {release}"""
         package = SPECIAL.get(package, package)
-        # try the python prefix first: some packages have a native of foreign $X and
-        # either the bindings or a python equivalent at python-X, or just a name
-        # collision
         prefixes = ["python-", ""]
         if package.startswith("python"):
             prefixes = [""]
@@ -263,9 +253,6 @@ class Ubuntu(Distribution):
         super().__init__(release)
 
         self._packages = {}
-        # ideally we should request the proper Content-Encoding but PUC
-        # apparently does not care, and returns a somewhat funky
-        # content-encoding (x-gzip) anyway
         with (
             urlopen(
                 f"https://packages.ubuntu.com/source/{release}/allpackages?format=txt.gz"
@@ -274,8 +261,7 @@ class Ubuntu(Distribution):
         ):
             for line in itertools.islice(
                 data, 6, None
-            ):  # first 6 lines is garbage header
-                # ignore the restricted, security, universe, multiverse tags
+            ):
                 m = re.match(r"(\S+) \(([^)]+)\)", line.strip())
                 assert m, f"invalid line {line.strip()!r}"
                 self._packages[m[1]] = m[2]
@@ -290,15 +276,10 @@ class Ubuntu(Distribution):
 
 
 def _strip_comment(line: str) -> str:
-    """Strip inline comments from a requirement file line."""
     return line.split("#", 1)[0].strip()
 
 
 def parse_requirements(reqpath: Path) -> dict[str, list[tuple[str, Marker]]]:
-    """Parses a requirement file to a dict of {package: [(version, markers)]}
-
-    The env markers express *whether* that specific dep applies.
-    """
     reqs = {}
     with reqpath.open("r", encoding="utf-8") as f:
         for req_line in f:
@@ -308,10 +289,6 @@ def parse_requirements(reqpath: Path) -> dict[str, list[tuple[str, Marker]]]:
             requirement = Requirement(req_line)
             version = None
             if requirement.specifier:
-                # A pin may legitimately carry an upper bound as well as a floor
-                # (`protobuf>=6.31.0,<8`). The distro comparison only has a floor
-                # to compare against, so take that and ignore the ceiling —
-                # previously any such line aborted the whole run.
                 floors = [
                     spec
                     for spec in requirement.specifier
@@ -329,34 +306,26 @@ def parse_requirements(reqpath: Path) -> dict[str, list[tuple[str, Marker]]]:
 
 
 def ok(text: str) -> str:
-    """Wrap text in ANSI green colour codes."""
     return f"\033[92m{text}\033[39m"
 
 
 def em(text: str) -> str:
-    """Wrap text in ANSI blue colour codes."""
     return f"\033[94m{text}\033[39m"
 
 
 def warn(text: str) -> str:
-    """Wrap text in ANSI yellow colour codes."""
     return f"\033[93m{text}\033[39m"
 
 
 def ko(text: str) -> str:
-    """Wrap text in ANSI red colour codes."""
     return f"\033[91m{text}\033[39m"
 
 
 def default(text: str) -> str:
-    """Return text unchanged (no decoration)."""
     return text
 
 
 def _requirements(args: argparse.Namespace) -> dict[str, list[tuple[str, Marker]]]:
-    # Both runtime files, not just requirements.txt: the dependencies of the
-    # bundled addons moved to requirements-addons.txt, and a check that reads
-    # only the server file silently stops comparing them against the distro.
     repo_root = (Path.cwd() / __file__).parent.parent
     reqs = parse_requirements(repo_root / "requirements.txt")
     for name, options in parse_requirements(
@@ -388,8 +357,6 @@ def _header_rows(
 def _matching_version(
     options: list[tuple[str, Marker]], pyver: str, platform: str
 ) -> tuple[bool, str | None]:
-    # FIXME: when multiple options apply, check which pip uses
-    #        (first-matching. best-matching, latest, ...)
     for version, markers in options:
         if not markers or markers.evaluate(
             {"python_version": pyver, "sys_platform": platform}
@@ -457,7 +424,6 @@ def _requirement_row(
             if pip_infos is not None:
                 deco = _pypi_deco(pip_infos, platform_version, pyver, platform, byver)
             row.append((platform_version or "any", deco))
-    # this requirement doesn't apply, ignore
     if not byver and not args.all:
         return None
     for checker, pyver in zip(checkers, pyvers, strict=False):
@@ -483,7 +449,7 @@ def _separators(n_pyvers: int, n_platforms: int, n_checkers: int) -> list[str]:
         seps.extend([" | "] * n_platforms)
     seps[-1] = " |#| "
     seps.extend([" |#|  "] * n_checkers)
-    seps[-1] = " "  # remove last column separator
+    seps[-1] = " "
     return seps
 
 
@@ -524,7 +490,6 @@ def _to_image(output: str, output_format: str, width: int) -> str:
     with tempfile.NamedTemporaryFile() as tmp:
         convert(output, tmp.name, width=width, title="requirements-check.py")
         output = tmp.read().decode()
-    # remove mac like bullets
     return output.replace(
         """<g transform="translate(26,22)">
             <circle cx="0" cy="0" r="7" fill="#ff5f57"/>
@@ -562,7 +527,6 @@ def main(args: argparse.Namespace) -> None:
 
     stderr.write("\n")
 
-    # evaluate width of columns
     sizes = [0] * len(table[0])
     for row in table:
         sizes = [

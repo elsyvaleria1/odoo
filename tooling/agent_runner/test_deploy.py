@@ -362,8 +362,6 @@ def _lines(**changed):
 
 
 def test_a_fix_applied_where_production_differs_from_base_is_found_applied(host):
-    # production runs behind the base: the text around the fix differs there,
-    # and the hotfix commit -- made on production's files -- is what is checked
     _push_base(host, "addons/stock_x/models.py", _lines(), "ten lines")
     _git(host.production, "pull", "-q", "--ff-only")
     _push_base(host, "addons/stock_x/models.py", _lines(l3="line3 newer"), "unreleased")
@@ -443,8 +441,6 @@ def _fix_writing(host, branch, path, content: bytes):
 
 
 def test_a_patch_reaches_git_byte_for_byte(host, monkeypatch, tmp_path):
-    # CRLF lines, a Latin-1 file, and a host whose git colours and unprefixes
-    # its diffs: none of it reshapes the patch
     config = tmp_path / "gitconfig"
     config.write_text("[color]\n\tdiff = always\n[diff]\n\tnoprefix = true\n")
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
@@ -481,8 +477,6 @@ def test_a_hotfix_edited_beside_is_activated_not_taken_for_contained(host, besid
     lease = _hotfix_lease(host, branch="19.0-marin-fix-h-i9-a1", commit=fix)
     deploy.hotfix(lease, StubReporter())
     _git(host.production, "update-ref", "-d", deploy.HEALTHY)
-    # a later production commit edits beside the hotfix: its patch no longer
-    # reverses, though the fix is there
     _commit(
         host.production,
         "addons/stock_x/models.py",

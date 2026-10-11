@@ -45,7 +45,6 @@ class MixinTag(models.AbstractModel):
                 "codes_kept", model=self._name, tags=len(self), reason="none_pending"
             )
             return
-        # a code computed earlier in this transaction is taken too
         self.flush_model(["code"])
         taken = {
             code
@@ -56,14 +55,14 @@ class MixinTag(models.AbstractModel):
                 )
             )
         }
-        suffixed = 0  # debuglog
+        suffixed = 0
         for tag in pending:
             base = self._name_to_code(tag.name) or "TAG"
             candidate, suffix = base, 1
             while candidate in taken:
                 suffix += 1
                 candidate = f"{base}_{suffix}"
-            suffixed += candidate != base  # debuglog
+            suffixed += candidate != base
             taken.add(candidate)
             tag.code = candidate
         _debug.logic(

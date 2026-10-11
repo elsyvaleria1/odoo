@@ -18,10 +18,8 @@ class PosSession(models.Model):
 
     def _reconcile_account_move_lines(self, data):
         data = super()._reconcile_account_move_lines(data)
-        # Get pay later move lines created in the session (from POS orders not invoiced)
         pay_later_move_lines = data.get("pay_later_move_lines")
 
-        # Add lines from invoiced orders that have been settled during this session
         pay_later_move_lines |= (
             self.order_ids.mapped("lines")
             .filtered(
@@ -69,6 +67,5 @@ class PosSession(models.Model):
                     | session_move_lines
                     | invoice_move_lines
                 )
-            # one group per (partner, account), so the groups are disjoint
             no_line._reconcile_plan(plan)
         return data

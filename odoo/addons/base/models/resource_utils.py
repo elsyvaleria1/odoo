@@ -16,9 +16,7 @@ if TYPE_CHECKING:
 CUSTODY_SYNC = "custody_sync"
 CUSTODY_SILENT = "custody_silent"
 SKIP_IDENTITY_CHECK = "skip_asset_identity_check"
-# a thing is acquired before it is available, unlike a resource of its own
 ASSET_INITIAL_STATE = "draft"
-# the kind model already creating these resources as its parents
 KIND_MODEL_CREATING = "resource_kind_model_creating"
 OPERATOR_ROLE = "operator"
 MANAGER_ROLE = "manager"
@@ -65,13 +63,6 @@ def find_available_interval(
     blocked: Intervals | None = None,
     earliest: datetime | None = None,
 ) -> tuple[datetime, datetime] | None:
-    """Find an exclusive interval containing the requested working duration.
-
-    Duration is a positive timedelta measured in elapsed working time. The
-    provider clips working intervals to each query window and returns claims.
-    Calendar pauses may occur inside a result; reservations and explicit blocks
-    cannot. Callers supply their horizon, direction and optional earliest bound.
-    """
     if duration <= timedelta(0) or step <= timedelta(0) or iterations < 1:
         raise ValueError("Duration, window step and iteration count must be positive")
     anchor = localized(anchor).astimezone(UTC)
@@ -124,7 +115,6 @@ def find_available_interval(
                     ]
                 )
             if span >= remaining:
-                # datetimes are stored to the second: a slot is returned in it
                 found = (
                     (edge, start + remaining) if forward else (stop - remaining, edge)
                 )
@@ -183,7 +173,6 @@ def hours_by_day(
 
 
 def week_type_of(day: date) -> str:
-    # the selection key of resource.calendar.attendance.week_type
     return str((day.toordinal() - 1) // 7 % 2)
 
 
@@ -197,8 +186,6 @@ def fill_week(
     hours_per_week: float,
     leave_hours: Mapping[date, float],
 ) -> dict[date, float]:
-    # a week's hours fall on its first days, up to the daily cap; a day's
-    # leave takes its hours from the week once, before that day's work
     remaining = hours_per_week
     filled = {}
     for offset in range(7):
@@ -250,8 +237,6 @@ def peak_capacities(bookings, windows):
         if start < stop:
             index = bisect_right(lefts, start) - 1
             while index < len(timeline) and timeline[index][0] < stop:
-                # the total runs over the whole span, not from zero at start:
-                # round off the residue of its additions and subtractions
                 peak = max(peak, round(timeline[index][2], 9))
                 index += 1
         peaks.append(peak)

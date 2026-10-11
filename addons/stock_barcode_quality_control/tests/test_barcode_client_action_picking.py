@@ -9,14 +9,6 @@ from odoo.addons.stock_barcode.tests.test_barcode_client_action import (
 @tagged("post_install", "-at_install")
 class TestBarcodeClientActionPicking(TestBarcodeClientAction):
     def test_operation_quality_check_barcode(self):
-        """
-        Test quality check on incoming shipment from barcode.
-
-        Note that the situation is quite different from the outgoing
-        shipment flows since creating an incoming shipment on the
-        fly form barcode will end up with a draft picking that
-        will be confirmed at the start of the button_validate.
-        """
 
         product3 = self.env["product.product"].create(
             {
@@ -25,7 +17,6 @@ class TestBarcodeClientActionPicking(TestBarcodeClientAction):
                 "barcode": "product3",
             }
         )
-        # Create Quality Point for incoming shipments.
         quality_points = self.env["quality.point"].create(
             [
                 {
@@ -68,16 +59,7 @@ class TestBarcodeClientActionPicking(TestBarcodeClientAction):
         self.assertEqual(quality_checks.picking_id[1].state, "assigned")
 
     def test_operation_quality_check_delivery_barcode(self):
-        """
-        Test quality check on outgoing shipment from barcode.
-        Note that the situation is quite different from the incoming
-        shipment flows since creating an outgoing shipment on the
-        fly form the barcode will end up with an assinged picking that
-        has never been confirmed and hence will NOT be confirmed
-        during the button_validate.
-        """
 
-        # Create Quality point for deliveries.
         quality_points = self.env["quality.point"].create(
             [
                 {
@@ -114,10 +96,6 @@ class TestBarcodeClientActionPicking(TestBarcodeClientAction):
         self.assertEqual(quality_checks.picking_id.state, "done")
 
     def test_quality_check_partial_reception_barcode(self):
-        """
-        Check that quality checks triggered at validation are related to the products
-        that are picked (hence moved).
-        """
         self.env["quality.point"].create(
             [
                 {
@@ -181,10 +159,6 @@ class TestBarcodeClientActionPicking(TestBarcodeClientAction):
         )
 
     def test_quality_check_packages_lots_tour(self):
-        """
-        Test quality check creation on an incoming shipment
-        using packages and lots in the Barcode app.
-        """
         grp_lot = self.env.ref("stock.group_tracking_lot")
         self.env.user.write({"group_ids": [Command.link(grp_lot.id)]})
         product_lot = self.productlot1

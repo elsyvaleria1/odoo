@@ -35,10 +35,6 @@ class IrActionsAct_WindowView(models.Model):
 
     @api.model
     def _selection_view_mode(self) -> list:
-        # A window can show every view type but the two that are not views of
-        # records: the vocabulary is ir.ui.view's, read at call time, so a
-        # module registering a type registers a window mode with it and
-        # nothing has to say it twice.
         return [
             (value, label)
             for value, label in self.env["ir.ui.view"]

@@ -35,37 +35,22 @@ class PaymentPostProcessing(http.Controller):
         list_as_website_content=_lt("Payment Status"),
     )
     def display_status(self, **kwargs):
-        """Fetch the transaction and display it on the payment status page.
-
-        :param dict kwargs: Optional data. This parameter is not used here
-        :return: The rendered status page
-        :rtype: str
-        """
         monitored_tx = self._get_monitored_transaction()
-        # The session might have expired, or the transaction never existed.
         values = {"tx": monitored_tx} if monitored_tx else {"payment_not_found": True}
         return request.render("payment.payment_status", values)
 
     @http.route("/payment/status/poll", type="jsonrpc", auth="public")
     def poll_status(self, **_kwargs):
-        """Fetch the transaction and trigger its post-processing.
-
-        :return: The post-processing values of the transaction.
-        :rtype: dict
-        """
-        # We only poll the payment status if a payment was found, so the transaction should exist.
         monitored_tx = self._get_monitored_transaction()
 
-        # Post-process the transaction before redirecting the user to the landing route and its
-        # document.
         if not monitored_tx.is_post_processed:
             try:
                 monitored_tx._post_process()
             except (
                 psycopg.OperationalError,
                 psycopg.IntegrityError,
-            ):  # The database cursor could not be committed.
-                request.env.cr.rollback()  # Rollback and try later.
+            ):
+                request.env.cr.rollback()
                 raise PostProcessingRetryError("retry") from None
             except Exception:
                 request.env.cr.rollback()
@@ -83,19 +68,9 @@ class PaymentPostProcessing(http.Controller):
 
     @classmethod
     def monitor_transaction(cls, transaction):
-        """Make the provided transaction id monitored.
-
-        :param payment.transaction transaction: The transaction to monitor.
-        :return: None
-        """
         request.session[cls.MONITORED_TX_ID_KEY] = transaction.id
 
     def _get_monitored_transaction(self):
-        """Retrieve the user's last transaction from the session (the transaction being monitored).
-
-        :return: the user's last transaction
-        :rtype: payment.transaction
-        """
         return (
             request.env["payment.transaction"]
             .sudo()

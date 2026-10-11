@@ -13,8 +13,6 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _consume_api_scope_budget(cls, scope, uid) -> None:
-        """A scope's budget is a token bucket per key holder, kept on a cursor
-        of its own so a refused call is still counted."""
         if not scope.budget_requests:
             return
         try:

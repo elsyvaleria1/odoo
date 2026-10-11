@@ -232,17 +232,13 @@ class WizardDeviceDeviceViewTrail(models.TransientModel):
         return mapping
 
     def _empty_selection_message(self):
-        # One message per selection mode, phrased for what the user picked.
         self.check_singleton()
         return self.env._("Please select at least one GPS device")
 
     def _trail_source_extras(self, device):
-        # What a trail is named and grouped by beyond the device itself. A
-        # device knows nothing about assets or operators until a bridge says so.
         return {}
 
     def _trail_result_vals(self, source_info):
-        # The wizard.device.device.view.trail.result columns those extras land in, if any exist.
         return {}
 
     def _get_trail_display_name(self, source_info, suffix=""):

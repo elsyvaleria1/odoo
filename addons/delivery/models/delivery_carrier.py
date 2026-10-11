@@ -30,15 +30,7 @@ class DeliveryCarrier(models.Model):
     _credential_holder_field = "carrier_credential_id"
     _credential_purpose = "delivery:carrier"
 
-    # To add an external provider: inherit this model, extend the
-    # "delivery_type" selection with a ('<my_provider>', 'My Provider') pair,
-    # and add <my_provider>_rate_shipment, <my_provider>_send_shipping,
-    # <my_provider>_get_tracking_link, <my_provider>_cancel_shipment and
-    # _<my_provider>_get_default_custom_package_code (documented hereunder).
 
-    # -------------------------------- #
-    # Internals for shipping providers #
-    # -------------------------------- #
 
     name = fields.Char(
         string="Delivery Method",
@@ -50,7 +42,6 @@ class DeliveryCarrier(models.Model):
         default=10,
         help="Determine the display order",
     )
-    # This field will be overwritten by internal shipping providers by adding their own type (ex: 'fedex')
     delivery_type = fields.Selection(
         selection=[("base_on_rule", "Based on Rules"), ("fixed", "Fixed Price")],
         string="Provider",
@@ -132,15 +123,6 @@ class DeliveryCarrier(models.Model):
     max_weight = fields.Float(
         help="If the total weight of the order is over this weight, the method won't be available."
     )
-    # Every carrier's secrets rest in credential.credential, through
-    # mixin.credential.holder. The carriers keep their own field NAMES -- they
-    # are in the views and in every request builder -- and declare them as doors
-    # in `_CREDENTIAL_FIELDS`.
-    #
-    # The vault field a given secret maps to is the carrier's decision, because
-    # the shapes differ: DHL has a key and a secret, Sendcloud has one key,
-    # Easypost has one per environment. `api_key`/`api_secret` take a pair, and
-    # `credential_data` takes anything that is neither.
     carrier_credential_id = fields.Many2one(
         comodel_name="credential.credential",
         string="Credential",
@@ -493,20 +475,12 @@ class DeliveryCarrier(models.Model):
         ]
 
     def copy_translations(self, new, excluded=()):
-        # ``copy_data`` renames ``name`` in the duplicating user's language
-        # only; without this the copy would keep the source record's exact
-        # ``name`` in every other language.
         super().copy_translations(new, excluded=(*excluded, "name"))
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
     def _get_delivery_type(self):
-        """Return the delivery type.
-
-        This method needs to be overridden by a delivery carrier module if the delivery type is not
-        stored on the field `delivery_type`.
-        """
         self.check_singleton()
         return self.delivery_type
 
@@ -524,25 +498,8 @@ class DeliveryCarrier(models.Model):
         )
         return float(price) * (1.0 + self.margin) + fixed_margin_in_sale_currency
 
-    # -------------------------- #
-    # API for external providers #
-    # -------------------------- #
 
     def rate_shipment(self, order):
-        """Compute the price of the order shipment
-
-        :param order: record of sale.order
-        :returns: a dict with structure
-          ::
-
-            {'success': boolean,
-             'price': a float,
-             'error_message': a string containing an error message,
-             'warning_message': a string containing a warning message,
-             'carrier_price': a float, present on the success path only}
-        :rtype: dict
-        """
-        # TODO maybe the currency code?
         self.check_singleton()
         _debug.pipeline(
             "rate_shipment_enter",
@@ -552,7 +509,6 @@ class DeliveryCarrier(models.Model):
         )
         if hasattr(self, "%s_rate_shipment" % self.delivery_type):
             res = getattr(self, "%s_rate_shipment" % self.delivery_type)(order)
-            # apply fiscal position
             company = self.company_id or order.company_id or self.env.company
             res["price"] = self.product_id._get_tax_included_unit_price(
                 company,
@@ -563,11 +519,8 @@ class DeliveryCarrier(models.Model):
                 product_price_unit=res["price"],
                 product_currency=company.currency_id,
             )
-            # apply margin on computed price
             res["price"] = self._apply_margins(res["price"], order)
-            # save the real price in case a free_over rule overide it to 0
             res["carrier_price"] = res["price"]
-            # free when order is large enough
             amount_without_delivery = order._get_amount_total_without_delivery()
             if (
                 res["success"]
@@ -619,7 +572,6 @@ class DeliveryCarrier(models.Model):
             self.env.flush_all()
             db_name = self.env.cr.dbname
 
-            # Use a new cursor to avoid rollback that could be caused by an upper method
             try:
                 db_registry = Registry(db_name)
                 with db_registry.cursor() as cr:
@@ -640,9 +592,6 @@ class DeliveryCarrier(models.Model):
             except psycopg.Error:
                 pass
 
-    # ------------------------------------------------ #
-    # Fixed price shipping, aka a very simple provider #
-    # ------------------------------------------------ #
 
     fixed_price = fields.Float(
         compute="_compute_fixed_price",
@@ -685,9 +634,6 @@ class DeliveryCarrier(models.Model):
             "warning_message": False,
         }
 
-    # ----------------------------------- #
-    # Based on rule delivery type methods #
-    # ----------------------------------- #
 
     def base_on_rule_rate_shipment(self, order) -> dict:
         carrier = self._match_address(order.partner_shipping_id)
@@ -736,7 +682,6 @@ class DeliveryCarrier(models.Model):
         }
 
     def _get_weight_in_kg(self, weight: float) -> float:
-        """Return product weight in kilograms without rounding."""
         self.check_singleton()
         product_model = cast("ProductTemplate", self.env["product.template"])
         weight_uom = product_model._get_uom_from_setting("weight")
@@ -779,11 +724,6 @@ class DeliveryCarrier(models.Model):
                 continue
             if line.product_id.type in {"service", "combo"}:
                 continue
-            # `product_uom_qty` IS the line quantity already converted to the
-            # product's reference UoM, which is the unit `weight`/`volume` are
-            # expressed in. Running it through `_get_quantity_in_unit` again converted
-            # a second time and inflated every weight/volume on a line whose UoM
-            # differs from the product's (12 Units sold as 1 Dozen weighed as 144).
             qty = line.product_uom_qty
             weight += (line.product_id.weight or 0.0) * qty
             volume += (line.product_id.volume or 0.0) * qty
@@ -794,10 +734,6 @@ class DeliveryCarrier(models.Model):
         total = order._get_amount_total_without_delivery()
 
         total = self._get_converted_price(order, total, "pricelist_to_company")
-        # weight is either,
-        # 1- weight chosen by user in wizard.sale.order.add.shipping wizard passed by context
-        # 2- saved weight to use on sale order
-        # 3- total order line weight as fallback
         weight = self.env.context.get("order_weight") or order.shipping_weight or weight
         _debug.logic(
             "price_available_inputs",
@@ -811,12 +747,6 @@ class DeliveryCarrier(models.Model):
         return self._get_price_from_picking(total, weight, volume, quantity, wv=wv)
 
     def _get_price_dict(self, total, weight, volume, quantity, wv=0.0) -> dict:
-        """Hook allowing to retrieve dict to be used in _get_price_from_picking() function.
-        Hook to be overridden when we need to add some field to product and use it in variable factor from price rules.
-
-        :return: The price factors used to evaluate the price rules.
-        :rtype: dict
-        """
         return {
             "price": total,
             "volume": volume,

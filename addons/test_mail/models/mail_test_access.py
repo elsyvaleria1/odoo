@@ -11,7 +11,7 @@ class MailTestAccess(models.Model):
     _description = "Mail Access Test"
     _name = "mail.test.access"
     _inherit = ["mixin.mail.thread.blacklist"]
-    _mail_post_access = "write"  # default value but ease mock
+    _mail_post_access = "write"
     _order = "id DESC"
     _primary_email = "email_from"
     _mail_partner_fields = ("customer_id",)
@@ -45,7 +45,7 @@ class MailTestAccessCusto(models.Model):
     _description = "Mail Access Test with Custo"
     _name = "mail.test.access.custo"
     _inherit = ["mixin.mail.thread.blacklist", "mixin.mail.activity"]
-    _mail_post_access = "write"  # default value but ease mock
+    _mail_post_access = "write"
     _order = "id DESC"
     _primary_email = "email_from"
     _mail_partner_fields = ("customer_id",)
@@ -62,10 +62,8 @@ class MailTestAccessCusto(models.Model):
 
     @api.model
     def _mail_operation_domains(self, message_operation):
-        # customize message creation: only unlocked, except admins
         if message_operation == "create" and not self.env.user._is_admin():
             return {"read": Domain("is_locked", "=", False)}
-        # customize read: read access on unlocked, write access on locked
         if message_operation == "read":
             return {
                 "write": Domain("is_locked", "=", True),
@@ -95,7 +93,6 @@ class MailTestAccessPublic(models.Model):
     def _mail_get_customer_information(self):
         email_key_to_values = super()._mail_get_customer_information()
         for record in self.filtered("email"):
-            # do not fill Falsy with random data, unless monorecord (= always correct)
             if not tools.email_normalize(record.email) and len(self) > 1:
                 continue
             values = email_key_to_values.setdefault(record.email, {})

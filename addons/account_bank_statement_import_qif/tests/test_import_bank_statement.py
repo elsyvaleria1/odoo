@@ -55,8 +55,6 @@ class TestAccountBankStatementImportQIF(AccountTestInvoicingCommon):
         )
 
     def test_qif_with_a_latin1_payee_imports(self):
-        """A payee or memo with an accent used to raise UnicodeDecodeError out
-        of a bare `bytes.decode()`, which is most non-English QIF exports."""
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "bank QIF latin-1",

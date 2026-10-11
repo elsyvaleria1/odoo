@@ -153,8 +153,6 @@ class TestOutbox(TelegramBotTestCase):
         self.assertEqual(payload["chat_id"], self.test_chat.chat_id)
 
     def test_a_conflict_reading_the_token_leaves_the_message_queued(self):
-        # the token's decryption is counted in the job's transaction: losing
-        # it to a concurrent job used to strand the message `uncertain`
         message = self._queued()
         conflict = psycopg.errors.SerializationFailure("concurrent update")
         with (
@@ -304,8 +302,6 @@ class TestOutbox(TelegramBotTestCase):
 
     def test_an_unreachable_telegram_is_retried(self):
         message = self._queued()
-        # not assertRaises: it rolls back to a savepoint, and in a test the
-        # side cursor's commits live in the test transaction
         raised = None
         with patch(_CALL, side_effect=errors.TelegramUnavailable(0, "timeout")):
             try:

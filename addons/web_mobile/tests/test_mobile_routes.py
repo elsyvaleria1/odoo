@@ -25,9 +25,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
         }
 
     def test_version_info(self):
-        """
-        This request is used to check for a compatible Odoo server
-        """
         payload = self.prepare_rpc_payload()
         response = self.url_open(
             "/web/webclient/version_info",
@@ -45,10 +42,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
 
     @mute_logger("odoo.http")
     def test_database_list(self):
-        """
-        This request is used to retrieve the databases' list
-        NB: this route has a different behavior depending on the ability to list databases or not.
-        """
         payload = self.prepare_rpc_payload()
         response = self.url_open(
             "/web/database/list", data=json_dumps(payload), headers=self.headers
@@ -67,10 +60,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
             self.assertEqual(error["data"]["name"], "odoo.exceptions.AccessDenied")
 
     def test_authenticate(self):
-        """
-        This request is used to authenticate a user using its username/password
-        and retrieve its details & session's id
-        """
         payload = self.prepare_rpc_payload(
             {
                 "db": get_db_name(),
@@ -96,10 +85,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
 
     @mute_logger("odoo.http")
     def test_authenticate_wrong_credentials(self):
-        """
-        This request is used to attempt to authenticate a user using the wrong credentials
-        (username/password) and check the returned error
-        """
         payload = self.prepare_rpc_payload(
             {
                 "db": self.env.cr.dbname,
@@ -118,10 +103,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
 
     @mute_logger("odoo.http")
     def test_authenticate_wrong_database(self):
-        """
-        This request is used to authenticate a user against a non existing database and
-        check the returned error
-        """
         db_name = "dummydb-%s" % str(uuid4())
         payload = self.prepare_rpc_payload(
             {
@@ -140,9 +121,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
         self.assertEqual(error["data"]["name"], "odoo.exceptions.AccessError")
 
     def test_avatar(self):
-        """
-        This request is used to retrieve the user's picture
-        """
         self.authenticate("demo", "demo")
         self.user_demo.image_1920 = b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC"
         response = self.url_open(
@@ -153,9 +131,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
         self.assertIsInstance(avatar, Image.Image)
 
     def test_session_info(self):
-        """
-        This request is used to authenticate a user using its session id
-        """
         payload = self.prepare_rpc_payload()
         self.authenticate("demo", "demo")
         response = self.url_open(
@@ -172,9 +147,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
         self.assertEqual(result["uid"], self.session.uid)
 
     def _is_success_json_response(self, data):
-        """ "
-        Helper to validate a standard JSONRPC response's structure
-        """
         self.assertEqual(
             list(data.keys()),
             ["jsonrpc", "id", "result"],
@@ -184,9 +156,6 @@ class MobileRoutesTest(HttpCaseWithUserDemo):
         self.assertTrue(isinstance(data["id"], str))
 
     def _is_error_json_response(self, data):
-        """
-        Helper to validate an error JSONRPC response's structure
-        """
         self.assertEqual(
             list(data.keys()),
             ["jsonrpc", "id", "error"],
@@ -215,12 +184,6 @@ class MobileRoutesMultidbTest(MobileRoutesTest):
             return None
         dblist = (get_db_name(), "another_database")
         assert len(dblist) >= 2, "There should be at least 2 databases"
-        # ``Application.get_dbs_served`` and ``Application.filter_dbs_served`` are
-        # the two injection points ``_select_dbname`` resolves through, so one
-        # patch each is enough. The only effective ``Registry`` dispatch patch
-        # point is still ``odoo.http._serve.Registry``; without it this
-        # "multidb" rerun executes in the same monodb environment as the base
-        # class.
         with (
             patch("odoo.http.Application.get_dbs_served") as get_dbs_served,
             patch("odoo.http.Application.filter_dbs_served") as filter_dbs_served,
@@ -233,8 +196,6 @@ class MobileRoutesMultidbTest(MobileRoutesTest):
             ]
             Registry.return_value = self.registry
             ServeRegistry.return_value = self.registry
-            # Drop the monodb memo so requests see the patched seams, and
-            # again afterwards so no patched value leaks into later tests.
             odoo.http.invalidate_db_catalog_cache()
             try:
                 return super().run(result)

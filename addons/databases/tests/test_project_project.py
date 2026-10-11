@@ -13,8 +13,6 @@ class TestProjectProject(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # test create a db with just a url
-        # this is in the setUpClass as we will reuse it in each test
         cls.database = cls.env["project.project"].create(
             [
                 {
@@ -26,7 +24,6 @@ class TestProjectProject(TransactionCase):
         )
 
     def test_create_projects_without_a_url(self):
-        # This shouldn't raise any error
         self.env["project.project"].create([{"name": "Regular Project"}])
 
         with mute_logger("odoo.db.cursor"), self.assertRaises(IntegrityError):
@@ -82,7 +79,6 @@ class TestProjectProject(TransactionCase):
         with mute_logger("odoo.db.cursor"), self.assertRaises(IntegrityError):
             regular_project.database_hosting = "other"
 
-        # This shouldn't raise any error, even if not all database have a URL and not all projects are databases
         (
             regular_project
             + saas_database
@@ -90,9 +86,7 @@ class TestProjectProject(TransactionCase):
             + premise_database
             + other_database
         ).write_uid = self.ref("base.user_admin")
-        # database_url can be set without error even if there is no database_hosting
         regular_project.database_url = "https://regular.tld"
-        # once database_url is set, database_hosting can be set without error
         regular_project.database_hosting = "other"
 
     def test_action_database_connect_other(self):

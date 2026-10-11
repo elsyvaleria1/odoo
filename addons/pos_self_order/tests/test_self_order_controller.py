@@ -52,21 +52,17 @@ class TestSelfOrderController(SelfOrderCommonTest):
             ],
         }
 
-        # At this point there is no change on the order, so no data is returned
         data = self.make_request_to_controller("/pos-self-order/get-user-data", params)
         self.assertEqual(data, {})
 
-        # Changing state in params should return the order to update it
-        params["order_access_tokens"][0]["state"] = "draft"  # Server order is paid
+        params["order_access_tokens"][0]["state"] = "draft"
         data = self.make_request_to_controller("/pos-self-order/get-user-data", params)
         self.assertEqual(len(data["pos.order"]), 1)
 
-        # No order access token should return no order
         params["order_access_tokens"] = []
         data = self.make_request_to_controller("/pos-self-order/get-user-data", params)
         self.assertEqual(data, {})
 
-        # Two outdated order write_date should return both orders
         params["order_access_tokens"] = [
             {
                 "access_token": order1.access_token,
@@ -86,7 +82,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         data = self.make_request_to_controller("/pos-self-order/get-user-data", params)
         self.assertEqual(len(data["pos.order"]), 2)
 
-        # Only one outdated order write_date should return one order
         params["order_access_tokens"] = [
             {
                 "access_token": order1.access_token,
@@ -105,7 +100,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(len(data["pos.order"]), 1)
         self.assertEqual(data["pos.order"][0]["id"], order1.id)
 
-        # A cancelled order should be returned
         order2.action_pos_order_cancel()
         params["order_access_tokens"] = [
             {
@@ -119,7 +113,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(data["pos.order"][0]["id"], order2.id)
         self.assertEqual(data["pos.order"][0]["state"], "cancel")
 
-        # Up to date data should return no order
         params["order_access_tokens"] = [
             {
                 "access_token": order1.access_token,
@@ -135,7 +128,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         data = self.make_request_to_controller("/pos-self-order/get-user-data", params)
         self.assertEqual(data, {})
 
-        # Only write date is provided
         params["order_access_tokens"] = [
             {"access_token": order2.access_token, "write_date": "1970-01-01 00:00:00"}
         ]
@@ -144,7 +136,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(len(data["pos.order"]), 1)
         self.assertEqual(data["pos.order"][0]["id"], order2.id)
 
-        # Only state is provided
         params["order_access_tokens"] = [
             {"access_token": order2.access_token, "state": "paid"}
         ]
@@ -154,7 +145,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(data["pos.order"][0]["id"], order2.id)
 
     def test_access_right_with_message_follower(self):
-        """Test to ensure that user data is still displayed when a message follower is set on the order"""
         self.pos_config.self_ordering_mode = "mobile"
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")
@@ -209,8 +199,6 @@ class TestSelfOrderController(SelfOrderCommonTest):
         self.assertEqual(data["pos.order"][0]["id"], pos_order.id)
 
     def test_an_order_opens_after_the_database_secret_changed(self):
-        # the kiosk keeps the order's token; the server keeps only its hash and
-        # a seal the new secret no longer opens
         self.pos_config.self_ordering_mode = "mobile"
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")

@@ -29,7 +29,6 @@ class WizardQualityCheckDecide(models.TransientModel):
     )
     qty_failed = fields.Float()
 
-    # fields linked to the current_check_id
     potential_failure_location_ids = fields.Many2many(
         related="current_check_id.point_id.failure_location_ids"
     )
@@ -86,8 +85,6 @@ class WizardQualityCheckDecide(models.TransientModel):
     def _compute_position(self) -> None:
         for wz in self:
             check_ids = wz.check_ids.ids
-            # `.index()` raises ValueError rather than rendering the wizard;
-            # a current check that is not in the list is one of one.
             position = (
                 check_ids.index(wz.current_check_id.id) + 1
                 if wz.current_check_id.id in check_ids
@@ -97,8 +94,6 @@ class WizardQualityCheckDecide(models.TransientModel):
             wz.is_last_check = position >= len(check_ids)
 
     def do_measure(self):
-        # `quality.check.do_measure` grades; the wizard only decides which of
-        # its own two buttons the verdict corresponds to.
         _debug.pipeline("quality_check_measure", wizards=self)
         self.check_singleton()
         if self.current_check_id._measure_passes():
@@ -196,11 +191,6 @@ class WizardQualityCheckDecide(models.TransientModel):
 
     def show_failure_message(self) -> dict:
         self.qty_failed = self.qty_line
-        # No trailing comma: both branches used to build a one-element *tuple*,
-        # and the dialog was titled `('Quality Check Failed',)`.  The product
-        # name is only used when there is one -- an operation check has none,
-        # and so does a product check whose product was never set, which the
-        # old `measure_on` test did not cover.
         if self.product_id:
             name = self.env._(
                 "Quality Check Failed for %(product_name)s",

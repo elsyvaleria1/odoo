@@ -2,8 +2,6 @@ from collections.abc import Set as AbstractSet
 
 from odoo import api, models
 
-# What the ORM itself accepts as a multi-value search term, mirroring
-# odoo.orm.primitives. An `in` arrives as an OrderedSet, not as a list.
 COLLECTION_TYPES = (list, tuple, AbstractSet)
 
 
@@ -34,13 +32,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _search_display_name_match(self, operator, value, search_fnames):
-        """Resolve a short term on the other name fields instead of failing.
-
-        A Many2one autocomplete fires on the first keystroke, and the phone
-        search refuses a term below ``_phone_search_min_length``. Left in the
-        OR, that refusal takes down the whole lookup, so a contact could no
-        longer be picked by typing one or two letters of its name.
-        """
         if "phone_mobile_search" in search_fnames and (
             self._phone_term_too_short(value) or not self._phone_term_has_digit(value)
         ):
@@ -51,9 +42,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _phone_term_has_digit(self, value) -> bool:
-        # a name typed into a many2one is looked up on the phone numbers too,
-        # a regexp scan of the whole table per keystroke; a term without a
-        # digit cannot name a number, so the scan is not started for it
         values = value if isinstance(value, COLLECTION_TYPES) else [value]
         return any(
             not isinstance(term, str) or any(ch.isdigit() for ch in term)
@@ -62,11 +50,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _phone_term_too_short(self, value) -> bool:
-        """Whether a search term is below the minimum the phone search accepts.
-
-        An empty term is not too short: the phone search lets it through as a
-        set/unset test rather than rejecting it.
-        """
         minimum = self._phone_search_min_length
         if not minimum:
             return False

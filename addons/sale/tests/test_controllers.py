@@ -118,7 +118,6 @@ class TestPortalShareEmails(SaleCommon, MockEmail):
             ]
         )
         wizard = self._share_wizard(recipients)
-        # Isolate link preparation from the intentionally per-recipient mail delivery.
         with patch.object(type(wizard), "_notify_share_invitation") as post:
             wizard._send_public_link(recipients)
             costs = []

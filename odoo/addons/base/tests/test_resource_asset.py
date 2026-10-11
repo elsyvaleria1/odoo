@@ -84,7 +84,6 @@ class TestResourceAsset(TransactionCase):
         user = new_test_user(
             self.env, login="component_editor", groups="base.group_asset_user"
         )
-        # a kind no group gates: a vehicle is the fleet officers' to write
         crate = self.env["resource.kind"].create({"name": "Crate", "code": "crate"})
         whole = self.Asset.create({"name": "Whole", "kind_id": crate.id})
         child = self.Asset.create({"name": "Member", "kind_id": crate.id}).with_user(
@@ -92,8 +91,6 @@ class TestResourceAsset(TransactionCase):
         )
         child.parent_id = whole
         self.assertEqual(child.parent_id, whole)
-        # a thing is written by whoever may write things of its kind, and by
-        # nobody who may not
         bystander = new_test_user(self.env, login="component_bystander")
         with self.assertRaises(AccessError):
             child.with_user(bystander).capacity = 2
@@ -284,8 +281,6 @@ class TestResourceAsset(TransactionCase):
         self.assertEqual(inventory.unique_scope, "company")
 
     def test_a_kind_that_does_not_enforce_takes_an_incomplete_asset(self):
-        """The default everywhere. A unit arrives before its paperwork, and a
-        fleet that is already incomplete must stay writable."""
         truck = self._truck()
 
         self.assertFalse(self.vehicle.enforce_identifiers)
@@ -329,8 +324,6 @@ class TestResourceAsset(TransactionCase):
             tool.kind_id = self.vehicle
 
     def test_an_enforcing_kind_is_still_refused_nothing_when_asked_to_skip(self):
-        """The seam a receipt uses: the serial is created before the paperwork
-        arrives, and `resource_asset_stock` opens it on that one path."""
         self.vehicle.enforce_identifiers = True
 
         truck = self.Asset.with_context(skip_asset_identity_check=True).create(
@@ -816,8 +809,6 @@ class TestResourceAsset(TransactionCase):
         self.assertFalse(press.properties)
 
     def test_the_computed_currency_reaches_sql(self):
-        # currency_id is computed and not stored; the list's currency-aware
-        # sum, a group by currency and a currency filter all need it in SQL
         truck = self._truck(value_original=48000.0)
         currency = truck.currency_id
         self.assertIn(truck, self.Asset.search([("currency_id", "=", currency.id)]))

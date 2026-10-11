@@ -84,7 +84,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
             22.0,
             "Booth price reduce tax should be equal to its price with 10% taxes ($20.0 + $2.0)",
         )
-        # Here we expect the price to be the sum of the booth ($40.0)
         self.assertEqual(
             float_compare(sale_order.amount_untaxed, 40.0, precision_rounding=0.1),
             0,
@@ -111,7 +110,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
             110.0,
             "Booth price reduce tax should be equal to its price with 10% taxes ($100.0 + $10.0)",
         )
-        # Here we expect the price to be the sum of the booth ($200.0)
         self.assertEqual(
             float_compare(sale_order.amount_untaxed, 200.0, precision_rounding=0.1),
             0,
@@ -137,7 +135,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
             "Total amount should be the sum of the booths prices with 10% taxes ($180.0 + $18.0).",
         )
 
-        # Confirm the SO.
         sale_order.action_confirm()
 
         for booth in self.booth_1 + self.booth_2:
@@ -177,7 +174,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
 
     @users("user_sales_salesman")
     def test_event_booth_registrations_inverse(self):
-        # Create sale order and add a booth
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.event_customer.id,
@@ -203,7 +199,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
             "Booths not correctly linked with event_booth_registration.",
         )
 
-        # Update booths
         sale_order.write(
             {
                 "line_ids": [
@@ -219,7 +214,6 @@ class TestEventBoothSale(TestEventBoothSaleWData):
             }
         )
 
-        # Confirm the SO.
         sale_order.action_confirm()
         self.assertEqual(
             sale_order.event_booth_count, 2, "Event Booth Count should be equal to 2."
@@ -237,7 +231,6 @@ class TestEventBoothSaleInvoice(AccountTestInvoicingCommon, TestEventBoothSaleWD
     def setUpClass(cls):
         super().setUpClass()
 
-        # Add group `group_account_invoice` to user_sales_salesman to allow to pay the invoice
         cls.user_sales_salesman.group_ids += cls.env.ref(
             "account.group_account_invoice"
         )
@@ -266,11 +259,9 @@ class TestEventBoothSaleInvoice(AccountTestInvoicingCommon, TestEventBoothSaleWD
         self.assertEqual(booth.state, "unavailable")
         self.assertFalse(booth.is_paid)
 
-        # Create and check that the invoice was created
         invoice = sale_order._create_invoices()
         self.assertEqual(len(sale_order.invoice_ids), 1, "Invoice not created.")
 
-        # Confirm the invoice and check SO invoice status
         invoice.action_post()
         self.assertEqual(
             sale_order.invoice_state,
@@ -285,7 +276,6 @@ class TestEventBoothSaleInvoice(AccountTestInvoicingCommon, TestEventBoothSaleWD
         )
         register_payments._create_payments()
 
-        # Check the invoice payment state after paying the invoice
         in_payment_state = invoice._get_invoice_in_payment_state()
         self.assertEqual(
             invoice.payment_state,
@@ -294,7 +284,6 @@ class TestEventBoothSaleInvoice(AccountTestInvoicingCommon, TestEventBoothSaleWD
         )
 
         self.assertEqual(booth.state, "unavailable")
-        # When running without enterprise the payments get reconciled immediately.
         is_paid = self.env["account.move"]._get_invoice_in_payment_state() == "paid"
         self.assertEqual(is_paid, booth.is_paid)
         invoice._invoice_paid_hook()

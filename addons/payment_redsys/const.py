@@ -1,9 +1,6 @@
-# The codes of the payment methods to activate when Redsys is activated.
 DEFAULT_PAYMENT_METHOD_CODES = {
-    # Primary payment methods
     "card",
     "bizum",
-    # Brand payment methods
     "visa",
     "mastercard",
     "amex",
@@ -11,7 +8,6 @@ DEFAULT_PAYMENT_METHOD_CODES = {
     "jcb",
 }
 
-# Mapping of payment method codes to Redsys codes.
 PAYMENT_METHODS_MAPPING = {
     "bizum": "z",
     "card": "C",
@@ -22,11 +18,9 @@ PAYMENT_METHODS_MAPPING = {
     "jcb": "9",
 }
 
-# Mapping of transaction states to Redsys payment statuses.
-# See https://pagosonline.redsys.es/desarrolladores-inicio/integrate-con-nosotros/parametros-de-entrada-y-salida/.
 PAYMENT_STATUS_MAPPING = {
     "done": tuple(f"{i:04}" for i in range(100))
-    + ("400", "900"),  # From 0000 to 0099, 400 and 900
+    + ("400", "900"),
     "cancel": ("9915",),
     "error": (
         "101",

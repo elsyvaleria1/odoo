@@ -22,7 +22,6 @@ class WizardHrExpenseStripeCardBlock(models.TransientModel):
     other_reason_text = fields.Char(string="Description")
 
     def action_block_card(self):
-        """Block the card **permanently**"""
         for wizard in self:
             if wizard.cancellation_reason not in {False, "none"}:
                 wizard.card_id._create_or_update_card(

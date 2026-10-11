@@ -89,23 +89,6 @@ class AccountCodesTerm(NamedTuple):
 
 
 def parse_account_codes_formula(formula: str) -> list[AccountCodesTerm]:
-    r"""Parse an ``account_codes`` formula into its signed terms.
-
-    A term is ``[+-]<selector>[<tag>]\(<exclusion>,...)[DC]``, every part but
-    the selector optional:
-
-    - selector: an account code prefix (``101``) or an account tag
-      (``tag(module.xmlid)``, or ``tag(<id>)``);
-    - ``[<tag>]`` keeps only the selected accounts carrying that tag
-      (``666[tag(l10n_sk.account_tag_related_entity)]``);
-    - ``\(...)`` drops the accounts whose code starts with one of the listed
-      prefixes or that carry one of the listed tags;
-    - ``D`` / ``C`` keeps an account only while its balance is debit / credit.
-
-    Terms partition a range by pairing a tag filter with the same tag as an
-    exclusion: ``666[tag(a)]``, ``666[tag(b)]\(tag(a))``, ``666\(tag(a),tag(b))``
-    count an account carrying both tags once, under ``a``.
-    """
     terms = []
     for token in filter(
         None, ACCOUNT_CODES_ENGINE_SPLIT_REGEX.split(formula.replace(" ", ""))

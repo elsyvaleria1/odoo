@@ -145,9 +145,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         return move
 
     def test_multi_currencies(self):
-        """Two moves in the same currency (CAD), the first one paid by 3 payments in
-        3 different currencies (CAD, XAF, USD).
-        """
         first_bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -196,14 +193,11 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             currency=self.company_data["currency"],
         )
 
-        # Test the report in 2023.
         options = self._generate_options(self.report, "2023-01-01", "2023-12-31")
         options["unfold_all"] = True
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -239,9 +233,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         self.assertTrue(edited["custom_rate"])
 
     def test_same_currency(self):
-        """Two moves in the same currency, the first bill reconciled with a bank statement line.
-        The statement line and the move share the same currency (CAD).
-        """
         first_bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -288,14 +279,11 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             ).id
         )
 
-        # Test the report in 2023.
         options = self._generate_options(self.report, "2023-01-01", "2023-12-31")
         options["unfold_all"] = True
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -312,11 +300,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_exclude_account_for_adjustment_entry(self):
-        """Check the exclude functionality of the report.
-
-        A bill partially reconciled with a bank statement line still shows up in the report,
-        as does an unpaid invoice; excluding the remainder of the bill removes it.
-        """
 
         first_bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
@@ -330,7 +313,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             price_unit=800.0,
         )
 
-        # Invoice
         self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="out_invoice",
@@ -363,13 +345,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             ).id
         )
 
-        # Test the report in 2023.
         options = self._generate_options(self.report, "2023-01-01", "2023-12-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -415,9 +394,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options["unfold_all"] = True
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -440,9 +417,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_same_rate(self):
-        """Make sure no adjustment lines are generated if the rate is unchanged
-        (i.e. do not create 0 balance adjustment lines)
-        """
         self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -458,11 +432,8 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-21", "2023-01-21")
         options["unfold_all"] = True
 
-        # Check the CAD lines: the rate is unchanged, so the adjustment is 0.
         self.assertLinesValues(
-            # pylint: disable = C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -529,10 +500,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         self.assertFalse(any("OEXP9" in name for name in names))
 
     def test_changing_rate_between_move_and_payment(self):
-        """The currency rate changes between the creation of a move and its payment.
-
-        Covers several payments for the same move, each at a different date and rate.
-        """
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -548,9 +515,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-26")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -566,7 +531,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
-        # First payment for the bill at the given date to check if it appears in the report when changing the date_to
         self.pay_move(
             bill,
             500,
@@ -575,7 +539,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             currency=self.other_currency,
         )
 
-        # Second payment at a later date to fully paid the bill
         self.pay_move(
             bill,
             500,
@@ -587,9 +550,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -609,9 +570,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
     def test_payment_in_company_currency_invoice_in_foreign_currency_fully_reconcile(
         self,
     ):
-        """A move in a foreign currency paid in the company currency; the rate change makes it
-        fully reconciled, so nothing is left to display in the report.
-        """
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -624,8 +582,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             price_unit=1000.0,
         )
 
-        # We pay the bill for 500 but thanks to the changing of the rate (1 --> 2), 500 become 1000 and the move is
-        # fully reconciled, so we don't need to display anything on the report
         self.pay_move(
             bill,
             500,
@@ -641,7 +597,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
     def test_payment_in_company_currency_invoice_in_foreign_currency_not_fully_reconcile(
         self,
     ):
-        """A move in a foreign currency partially paid in the company currency."""
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -654,7 +609,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             price_unit=1000.0,
         )
 
-        # We pay the first part of the bill, thanks to the changing of rates we have paid 600
         self.pay_move(
             bill,
             300,
@@ -666,9 +620,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-26")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -684,13 +636,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
-        # We check the report again with other date to witness the new changing of rates
         options = self._generate_options(self.report, "2023-01-01", "2023-02-01")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -708,9 +657,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
 
     @freeze_time("2023-01-28")
     def test_pay_all_move_check_before_full_payment(self):
-        """Fully pay the move, then check that the report still displays its lines
-        when opened at a date before the payment.
-        """
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -723,7 +669,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             price_unit=1000.0,
         )
 
-        # We fully pay the bill, in company currency
         self.pay_move(
             bill,
             1000,
@@ -732,18 +677,14 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             currency=self.company_data["currency"],
         )
 
-        # The report shouldn't display anything after the full payment.
         options = self._generate_options(self.report, "2023-01-01", "2023-01-29")
         options["unfold_all"] = True
         self.assertEqual(len(self.report._get_lines(options)), 0)
 
-        # The report should display the bill before the full payment.
         options = self._generate_options(self.report, "2023-01-01", "2023-01-26")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -761,9 +702,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
 
     @freeze_time("2023-01-26")
     def test_move_credit_note(self):
-        """Create a credit note, change the currency rate and then the payment. Check if the report gives the correct
-        values before and after the payment
-        """
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -802,9 +740,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         self.env["account.move"].browse(reversal["res_id"]).action_post()
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                                               Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -828,10 +764,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
 
     @freeze_time("2023-01-26")
     def test_with_payment_term(self):
-        """Payment term requiring 30% up front and the rest within 60 days.
-
-        Check the report before and after the payment.
-        """
         account_payment_term_advance_60days = self.env["account.payment.term"].create(
             {
                 "name": "account_payment_term_advance_60days",
@@ -871,9 +803,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-30")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -890,7 +820,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
-        # The price is double since the rate is x2 So the amount of the payment is 300
         self.pay_move(
             bill,
             150,
@@ -900,9 +829,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -918,13 +845,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
-        # We check when coming back before the payment the lines are ok
         options = self._generate_options(self.report, "2023-01-01", "2023-01-25")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -942,7 +866,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_transfer_invoice_to_another_partner(self):
-        """The bill amount is still found in the report once the payable is moved to another partner."""
         bill = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="in_invoice",
@@ -1004,9 +927,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1024,11 +945,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
 
     @freeze_time("2023-01-26")
     def test_refund_invoice_keep_exchange_diff_line(self):
-        """Create an invoice, cancel it with a credit note.
-        Check the report, unreconcile the credit note and
-        check the report again.
-        """
-        # Create a customer invoice with a rate of 1 USD = 1 CAD
         invoice = self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="out_invoice",
@@ -1041,7 +957,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             price_unit=1000.0,
         )
 
-        # Reverse the customer invoice with a rate of 1 USD = 2 CAD to create a partial credit note
         move_reversal = (
             self.env["wizard.account.move.reverse"]
             .with_context(active_model="account.move", active_ids=invoice.ids)
@@ -1054,7 +969,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
         reversal = move_reversal.reverse_moves()
         credit_note = self.env["account.move"].browse(reversal["res_id"])
-        credit_note.invoice_line_ids[0].price_unit = 300  # Only reverse for 300
+        credit_note.invoice_line_ids[0].price_unit = 300
         credit_note.action_post()
         line_to_reconciles = (invoice + credit_note).line_ids.filtered(
             lambda l: (
@@ -1063,13 +978,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             )
         )
 
-        #  Checking the report after reconciliation between the invoice and the credit note (Rate 1 USD = 4 CAD)
         options = self._generate_options(self.report, "2023-01-01", "2023-01-30")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1085,7 +997,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
             },
         )
 
-        # Delete the reconciliation
         partial = self.env["account.partial.reconcile"].search(
             [
                 ("debit_move_id", "=", line_to_reconciles[0].id),
@@ -1094,13 +1005,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
         partial.unlink()
 
-        # Check the report in february, the exchange diff should disappear as it was computed in january (Rate 1 USD = 4 CAD)
         options = self._generate_options(self.report, "2023-01-01", "2023-02-15")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                                           Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1124,10 +1032,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_invoice_with_different_rate_than_the_existing_one(self):
-        """A rate customized on a single entry (by editing its debit/credit and amount_currency)
-        is kept: the report uses it for the balance in foreign currency and at operation rate.
-        """
-        # Special rate of 3
         entry = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1164,13 +1068,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
         entry.action_post()
 
-        # Opening the report for a rate at 4 instead of 3
         options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1187,12 +1088,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_current_liability_reco_bank_journal_aml(self):
-        """An entry on a reconcilable current liability account in a foreign currency, reconciled
-        with a bank journal aml.
-
-        Before reconciliation the bank journal aml must not impact the report, its amount being
-        already realized; once reconciled with the current liability aml, it must.
-        """
         special_liability_current_account = self.env["account.account"].create(
             {
                 "name": "201 GOL",
@@ -1281,13 +1176,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
         bank_entry.action_post()
 
-        # Checking the report before reconciliation
         options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1313,13 +1205,10 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
         line_to_reconciles.reconcile()
 
-        # After reconciliation, the bank journal aml should impact the report
         options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1340,7 +1229,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_no_pl_account_present(self):
-        """An account with a currency on it is NOT present in the report when it is a p&l account."""
 
         self.company_data[
             "default_account_expense"
@@ -1360,9 +1248,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-26")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),
@@ -1379,9 +1265,6 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         )
 
     def test_adjustment_entry_with_tax_on_expense_account(self):
-        """Make sure the adjustment entry is correctly generated even when
-        the expense account has default taxes.
-        """
         self.create_move_one_line(
             partner_id=self.partner_a.id,
             move_type="out_invoice",
@@ -1397,9 +1280,7 @@ class TestMultiCurrenciesRevaluationReport(TestAccountReportsCommon):
         options = self._generate_options(self.report, "2023-01-01", "2023-01-26")
         options["unfold_all"] = True
         self.assertLinesValues(
-            # pylint: disable=C0326
             self.report._get_lines(options),
-            #   Name                       Balance in foreign currency     Balance at op. rate     Balance at curr rate     Adjustment
             [0, 1, 2, 3, 4],
             [
                 ("Accounts To Adjust", "", "", "", ""),

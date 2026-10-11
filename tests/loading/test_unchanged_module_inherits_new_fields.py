@@ -147,7 +147,6 @@ def test_an_unchanged_module_gets_the_fields_an_upgraded_parent_adds(
         _write(extra, CHILD, [PARENT], CHILD_MODELS)
         run = _run_odoo_bin(db, addons, data_dir, "-i", f"base,{PARENT},{CHILD}")
         assert run.returncode == 0, run.stdout[-4000:]
-        # the first update stamps the checksums the skip compares against
         run = _run_odoo_bin(db, addons, data_dir, "-u", "base")
         assert run.returncode == 0, run.stdout[-4000:]
 

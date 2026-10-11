@@ -8,11 +8,8 @@ from odoo.addons.device_gps.tools import haversine_m
 
 _logger = logging.getLogger(__name__)
 
-# Teltonika reports harsh acceleration, braking and cornering as event 253.
 HARSH_DRIVING_EVENT = "253"
-# Below this speed (km/h) a reading counts as the vehicle standing still.
 STANDING_SPEED = 3.0
-# How far back a vehicle's first read goes when it has no cursor yet.
 FIRST_READ_WINDOW = timedelta(days=1)
 
 
@@ -59,9 +56,6 @@ class StockPickingBatch(models.Model):
                 bool(batch.vehicle_id.resource_id._gps_device_ids()) if batch.vehicle_id else False
             )
 
-    # ------------------------------------------------------------------
-    # GPS stamps on the log
-    # ------------------------------------------------------------------
     def _trip_checkpoint(self, event_type, **vals):
         reading = self.env.context.get("trip_gps_reading")
         if reading:
@@ -80,7 +74,6 @@ class StockPickingBatch(models.Model):
         }
 
     def _trip_alert(self, vehicle, alert_type, date, **vals):
-        """Raise an alert once: same type, vehicle, time and delivery is one."""
         Alert = self.env["stock.trip.alert"]
         existing = Alert.search(
             [
@@ -104,9 +97,6 @@ class StockPickingBatch(models.Model):
             }
         )
 
-    # ------------------------------------------------------------------
-    # Reading the track
-    # ------------------------------------------------------------------
     @api.model
     def _cron_trip_gps_sync(self) -> None:
         vehicles = self.env["resource.asset.vehicle"].search(
@@ -126,7 +116,6 @@ class StockPickingBatch(models.Model):
                 _logger.exception("GPS sync failed for vehicle %s", vehicle.id)
 
     def action_trip_gps_sync(self) -> None:
-        """Read the GPS now instead of waiting for the scheduled run."""
         self.check_access("write")
         trips = self.with_privilege(
             "stock_fleet_trace_gps.privilege_trip_gps_read",
@@ -139,7 +128,6 @@ class StockPickingBatch(models.Model):
 
     @api.model
     def _trip_gps_sync_vehicle(self, vehicle) -> None:
-        """Process the readings of ``vehicle`` since its cursor, then its trips."""
         warehouses = (
             self.env["stock.warehouse"].search([]).filtered("has_trip_geofence")
         )
@@ -164,8 +152,6 @@ class StockPickingBatch(models.Model):
 
         inside = vehicle.trip_gps_inside_warehouse_id
         if logs and not vehicle.trip_gps_cursor:
-            # The first reading ever only says where the vehicle is: starting inside
-            # the warehouse is not an arrival, starting outside is not a departure.
             inside = containing(logs[0])
             logs_to_scan = logs[1:]
         else:
@@ -206,15 +192,12 @@ class StockPickingBatch(models.Model):
             ],
             order="date_loaded desc, id desc",
         )
-        # The truck left with the trip on board, not with a planned one it also
-        # has: a trip never loaded sorts first on date_loaded desc (NULL first).
         trip = (
             trips.filtered(lambda t: t.trip_state == "in_transit")
             or trips.filtered(lambda t: t.trip_state == "loaded")
             or trips
         )[:1]
         if trip.trip_state == "in_transit":
-            # Dispatched by hand first: the track confirms the time it left.
             if not trip.trip_gps_exit_date:
                 trip.trip_gps_exit_date = log.timestamp
             return
@@ -248,7 +231,6 @@ class StockPickingBatch(models.Model):
         trip._trip_gps_write_readings(vehicle, log, vals)
         try:
             with self.env.cr.savepoint():
-                # The track dates the departure: the trip left when it saw it.
                 trip.with_context(
                     trip_gps_reading=reading,
                     trip_departure_date=min(log.timestamp, fields.Datetime.now()),
@@ -264,8 +246,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _trip_gps_on_entry(self, vehicle, log, warehouse) -> None:
-        # A trip returns to its own warehouse: driving through another one's
-        # geofence on the route closes nothing.
         trip = self.search(
             [
                 ("vehicle_id", "=", vehicle.id),
@@ -303,20 +283,11 @@ class StockPickingBatch(models.Model):
             return
         trip._trip_gps_review_route()
         context = {"trip_gps_reading": self._gps_reading(log)}
-        # The track dates the return, so the return leg's kilometres end where the
-        # vehicle came back and not when the reading was processed; unless the trip
-        # was dispatched by hand later than the track says it came back.
         if log.timestamp >= trip.date_departure:
             context["trip_return_date"] = min(log.timestamp, fields.Datetime.now())
         trip.with_context(**context).action_return()
 
     def _trip_gps_write_readings(self, vehicle, log, vals) -> None:
-        """Write the GPS readings; one that contradicts the trip becomes an alert.
-
-        A reading the trip refuses (e.g. a return odometer below the one typed at
-        departure) must not stop the track from being read: only the stamp is
-        kept and the conflict is left for a person to settle.
-        """
         self.check_singleton()
         try:
             with self.env.cr.savepoint():
@@ -335,9 +306,6 @@ class StockPickingBatch(models.Model):
                 note=str(error)[:250],
             )
 
-    # ------------------------------------------------------------------
-    # Stops, unplanned stops, driving, fuel, silence
-    # ------------------------------------------------------------------
     def _trip_gps_window_logs(self):
         self.check_singleton()
         start = self.trip_gps_exit_date or self.date_departure
@@ -353,11 +321,6 @@ class StockPickingBatch(models.Model):
 
     @staticmethod
     def _dwells(logs, near, min_minutes) -> list:
-        """Runs of consecutive readings for which ``near`` holds, long enough.
-
-        :return: (first log, last log) of each run lasting ``min_minutes`` or more
-        :rtype: list
-        """
         runs, current = [], []
         for log in logs:
             if near(log):
@@ -375,11 +338,6 @@ class StockPickingBatch(models.Model):
         ]
 
     def _trip_gps_stop_pickings(self):
-        """The deliveries the vehicle had to visit: those on the trip and those
-        it brought back not delivered.
-
-        :rtype: recordset
-        """
         self.check_singleton()
         return (
             self.picking_ids
@@ -389,13 +347,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _gps_leg_stops(self):
-        """The stops the track verified on this trip, delivered or not.
-
-        A trip whose track verified no stop falls back to the validations.
-
-        :return: dicts with ``arrival``, ``departure`` and ``pickings``
-        :rtype: list
-        """
         self.check_singleton()
         end = self.date_return or fields.Datetime.now()
         visited = (
@@ -416,7 +367,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_gps_review_route(self) -> None:
-        """Compare the track of the trip with its stops, idempotently."""
         self.check_singleton()
         if not self.vehicle_id.resource_id._gps_device_ids() or not self.date_departure:
             return
@@ -476,7 +426,6 @@ class StockPickingBatch(models.Model):
         self._trip_gps_silence(logs)
 
     def _trip_gps_check_outcomes(self, logs) -> None:
-        """An outcome the track never visited is an alert once the trip is back."""
         if not (self.trip_gps_entry_date or self.date_return):
             return
         vehicle = self.vehicle_id

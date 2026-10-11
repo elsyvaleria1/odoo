@@ -4,9 +4,6 @@ from odoo import fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
-#: Fixed lookback window for `_compute_ordered_qty`, intentionally
-#: independent of `res.company.trade_config_id.order_cycle_count/unit` (which
-#: drives a separate, configurable "gone quiet" cutoff on `res.partner`).
 ORDERED_QTY_WINDOW_DAYS = 365
 
 _debug = DebugLog(__name__)

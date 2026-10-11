@@ -35,7 +35,7 @@ class LazyLogValue:
     def __str__(self) -> str:
         try:
             return str(self.fn())
-        except Exception as exc:  # a label must never break the caller
+        except Exception as exc:
             return f"<unprintable: {exc!r}>"
 
     __repr__ = __str__

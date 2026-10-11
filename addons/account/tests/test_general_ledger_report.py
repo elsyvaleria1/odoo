@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from freezegun import freeze_time
 
 import odoo.tests
@@ -15,7 +14,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Give codes in company_1 to the accounts in company_2.
         context = {
             "allowed_company_ids": [
                 cls.company_data["company"].id,
@@ -32,7 +30,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             context
         ).code = "600010"
 
-        # Entries in 2016 for company_1 to test the initial balance.
         cls.move_2016_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -80,7 +77,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         cls.move_2016_1.action_post()
 
-        # Entries in 2016 for company_2 to test the initial balance in multi-companies/multi-currencies.
         cls.move_2016_2 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -116,7 +112,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         cls.move_2016_2.action_post()
 
-        # Entry in 2017 for company_1 to test the report at current date.
         cls.move_2017_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -236,7 +231,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         cls.move_2017_1.action_post()
 
-        # Entry in 2017 for company_2 to test the current period in multi-companies/multi-currencies.
         cls.move_2017_2 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -272,10 +266,8 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         cls.move_2017_2.action_post()
 
-        # Archive 'default_journal_bank' to ensure archived entries are not filtered out.
         cls.company_data_2["default_journal_bank"].active = False
 
-        # Deactive all currencies to ensure group_multi_currency is disabled.
         cls.env["res.currency"].search([("name", "!=", "USD")]).with_context(
             force_deactivate=True
         ).active = False
@@ -284,9 +276,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
     def report(self):
         return self.env.ref("account.general_ledger_report")
 
-    # -------------------------------------------------------------------------
-    # TESTS: General Ledger
-    # -------------------------------------------------------------------------
     def test_general_ledger_unaffected_earnings_current_fiscal_year(self):
         def invoice_move(date):
             return self.env["account.move"].create(
@@ -399,7 +388,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                              Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("211000 Account Payable", 2100.0, 0.0, 2100.0),
@@ -523,7 +511,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                              Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("211000 Account Payable", 2100.0, 0.0, 2100.0),
@@ -536,7 +523,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_fold_unfold_multicompany_multicurrency(self):
-        """Test unfolding a line when rendering the whole report."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -545,7 +531,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                             Debit           Credit        Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 1000.0, 0.0, 1000.0),
@@ -565,7 +550,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         options["unfold_all"] = True
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                             Debit           Credit   Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 1000.0, 0.0, 1000.0),
@@ -603,7 +587,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_multiple_years_initial_balance(self):
-        # Entries in 2015 for company_1 to test the initial balance.
         move_2015_1 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -658,7 +641,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                               Debit           Credit         Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 1000.0, 0.0, 1000.0),
@@ -679,7 +661,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                               Debit           Credit      Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 1000.0, 0.0, 1000.0),
@@ -717,13 +698,11 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_load_more(self):
-        """Test unfolding a line to use the load more."""
         self.env = self.env(
             context=dict(self.env.context, allowed_company_ids=self.env.company.ids)
         )
         self.report.load_more_limit = 2
 
-        # To test the initial balance with load more
         move = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -863,7 +842,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             report_lines,
-            #   Name                                    Debit      Credit     Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 2000.0, 0.0, 2000.0),
@@ -892,7 +870,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             load_more_1,
-            #   Name                                    Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("INV/2017/00002 2017_3_3", 3000.0, 0.0, 25000.0),
@@ -914,7 +891,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             load_more_2,
-            #   Name                                    Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("INV/2017/00002 2017_3_5", 5000.0, 0.0, 34000.0),
@@ -924,9 +900,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_foreign_currency_account(self):
-        """Ensure the total in foreign currency of an account is displayed only if all journal items are sharing the
-        same currency.
-        """
         self.env.user.group_ids |= self.env.ref("base.group_multi_currency")
 
         foreign_curr_account = self.env["account.account"].create(
@@ -1031,7 +1004,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         options["unfolded_lines"] = [account_revenue_line_id]
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                              Amount_currency   Debit           Credit   Balance
             [0, 3, 4, 5, 6],
             [
                 ("121000 Account Receivable", "", 2100.0, 0.0, 2100.0),
@@ -1054,7 +1026,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_filter_search_bar_print(self):
-        """Test the lines generated when a user filters on the search bar and prints the report"""
         options = self._generate_options(
             self.report,
             "2017-01-01",
@@ -1066,7 +1037,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                    Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("400000 Product Sales", 20000.0, 0.0, 20000.0),
@@ -1088,7 +1058,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                                Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("Result Brought Forward - company_1_data", 200.0, 300.0, -100.0),
@@ -1169,9 +1138,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         self.assertLessEqual(count_statements(), baseline + 1)
 
     def test_general_ledger_income_expense_initial_balance(self):
-        """Test that when the report period does not start at the beginning of the FY,
-        any AMLs prior to the report period but after the beginning of the FY are
-        displayed in the initial balance for Income and Expense accounts."""
 
         self.env = self.env(
             context=dict(self.env.context, allowed_company_ids=self.env.company.ids)
@@ -1223,7 +1189,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                    Debit           Credit          Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 2000.0, 0.0, 2000.0),
@@ -1279,17 +1244,12 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         self.start_tour("/odoo", "account_reports_search", login=self.env.user.login)
 
     def test_general_ledger_hierarchy_non_numerical_column_value(self):
-        """
-        Test the value of the non-numerical columns of the general ledger when the hierarchy option is enabled.
-        """
         options = self._generate_options(self.report, "2017-01-01", "2017-12-31")
         options["hierarchy"] = True
 
-        # String and Date figure type should be empty when using hierarchy.
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                                    Date   Partner
             [0, 1, 2],
             [
                 ("(No Group)", "", ""),
@@ -1343,7 +1303,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                Debit        Credit       Balance
             [0, 3, 4, 5],
             [
                 ("(No Group)", 50.0, 50.0, 0.0),
@@ -1412,7 +1371,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         options["hierarchy"] = True
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                               Currency        Debit        Credit       Balance
             [0, 3, 4, 5, 6],
             [
                 ("4 Group", 75.0, 75.0, 0.0, 75.0),
@@ -1428,7 +1386,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                               Currency        Debit        Credit       Balance
             [0, 3, 4, 5, 6],
             [
                 ("4-5 Group", 0.0, 75.0, 75.0, 0.0),
@@ -1444,7 +1401,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                               Currency        Debit        Credit       Balance
             [0, 3, 4, 5, 6],
             [
                 ("3-5 Group", "", 75.0, 125.0, -50.0),
@@ -1473,16 +1429,13 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             "out_invoice", invoice_date="2010-01-01", amounts=[200]
         )
 
-        # Make sure no sequence is set on them by default, so that move_2 can receive a lower sequence when posting
         (move_1 + move_2).write({"name": ""})
 
-        # Post the moves in reverse order than the one they were created in, so that their line ids' respective order does not match their sequences'
         move_2.action_post()
         move_1.action_post()
 
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                      Debit       Credit      Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 300.0, 0.0, 300.0),
@@ -1580,7 +1533,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         self.env.company.account_config_id.totals_below_sections = False
         self.assertLinesValues(
             report._get_lines(options),
-            #   Name                                              Debit       Credit      Balance
             [0, 3, 4, 5],
             [
                 ("121000 Account Receivable", 2500.0, 0.0, 2500.0),
@@ -1655,7 +1607,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         self.env.company.account_config_id.totals_below_sections = False
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                          amount_currency           Debit       Credit      Balance
             [0, 3, 4, 5, 6],
             [
                 ("211000 Account Payable", "", 100.0, 0.0, 100.0),
@@ -1671,9 +1622,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_general_ledger_unfold_all(self):
-        """
-        Check that the batched version of the report is consistent with the report non batched
-        """
         self.env.company.account_config_id.totals_below_sections = False
         options = self._generate_options(
             self.report,
@@ -1715,7 +1663,6 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             self.assertDictEqual(line_batched, line_non_batched)
 
     def test_general_ledger_deprecated_account_with_transactions(self):
-        """Test that deprecated accounts still appear in General Ledger."""
         test_account = self.env["account.account"].create(
             {
                 "code": "TEST237000",
@@ -1857,7 +1804,7 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             [0, 4, 5, 6],
             [
                 ("121000 Account Receivable", 1100.0, 0.0, 1100.0),
-                ("121000 Account Receivable", 100.0, 0.0, 100.0),  # 200 CAD = 100 USD
+                ("121000 Account Receivable", 100.0, 0.0, 100.0),
             ],
             options,
         )
@@ -2315,12 +2262,7 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
         )
 
     def test_open_gl_from_bs_then_change_date_filter(self):
-        """
-        Test that the 'filter_search_bar' option key is not filtered out when updating the date filter after opening
-        the General Ledger from a balance sheet line
-        """
 
-        # Open Balance Sheet
         balance_sheet = self.env.ref("account.balance_sheet")
         bs_options = self._generate_options(
             balance_sheet,
@@ -2334,16 +2276,13 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             line, [0, 1], [("121000 Account Receivable", 1000.0)], bs_options
         )
 
-        # Open General Ledger
         general_ledger = self.env.ref("account.general_ledger_report")
         params = {"line_id": line[0]["id"]}
         res = balance_sheet.caret_option_open_general_ledger(bs_options, params)
         gl_options = res["params"]["options"]
 
-        # options are updated afterward by the search() in report_formula/static/src/components/account_report/search_bar/search_bar.js
         filter_search_bar = gl_options["filter_search_bar"]
 
-        # Update the date filter
         gl_options["date"] = {**gl_options["date"], "filter": "this_month"}
         new_gl_options = general_ledger.with_context(res["context"]).get_options(
             gl_options

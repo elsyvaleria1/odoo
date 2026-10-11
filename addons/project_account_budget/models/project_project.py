@@ -104,7 +104,6 @@ class ProjectProject(models.Model):
             "view_mode": "form",
         }
 
-    # Project Updates
 
     def get_panel_data(self):
         panel_data = super().get_panel_data()

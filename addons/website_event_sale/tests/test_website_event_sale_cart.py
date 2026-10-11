@@ -176,7 +176,6 @@ class TestWebsiteEventSaleCartSeats(TestWebsiteEventSaleCommon):
         self.assertIn("only 2 seats", res["warning"])
 
     def test_cart_add_respects_event_level_cap(self):
-        """A capped event limits the cart even when its ticket is uncapped."""
         self.event.write({"seats_limited": True, "seats_max": 2})
         self.assertFalse(self.ticket.seats_limited)
 
@@ -189,7 +188,6 @@ class TestWebsiteEventSaleCartSeats(TestWebsiteEventSaleCommon):
         self.assertIn("only 2 seats", res["warning"])
 
     def test_cart_add_uses_tightest_of_event_and_ticket_cap(self):
-        """With both caps set, the tighter one (here the event) applies."""
         self.event.write({"seats_limited": True, "seats_max": 2})
         ticket = self.env["event.event.ticket"].create(
             {
@@ -211,7 +209,6 @@ class TestWebsiteEventSaleCartSeats(TestWebsiteEventSaleCommon):
         self.assertIn("only 2 seats", res["warning"])
 
     def test_cart_add_uncapped_event_and_ticket_is_unlimited(self):
-        """With no cap anywhere the helper returns None and nothing is clamped."""
         self.assertFalse(self.event.seats_limited)
         self.assertFalse(self.ticket.seats_limited)
 

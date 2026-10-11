@@ -11,8 +11,6 @@ TOMTOM_ROUTE_PATH = "/routing/1/calculateRoute/{points}/json"
 KEY_PURPOSE = "stock_fleet_route:tomtom_routing"
 TIMEOUT = 15
 
-# Routing v1 takes its key in the query string only, and a parameter named
-# plain `key` is not one the generic masking recognises as a secret.
 register_url_secret(
     r"(/routing/\d+/[^\s'\"<>]*?[?&]key=)[^&\s'\"<>]+", rf"\g<1>{redact.MASK}"
 )
@@ -26,12 +24,6 @@ class StockFleetRouteTomtom(models.AbstractModel):
 
     @api.model
     def _connection(self, company):
-        """Return the connection holding ``company``'s TomTom credential.
-
-        :param recordset company: the company the trip belongs to
-        :raise UserError: when no usable credential serves the company
-        :rtype: recordset
-        """
         service = (
             self.env["integration.service"]
             .sudo()
@@ -73,19 +65,6 @@ class StockFleetRouteTomtom(models.AbstractModel):
     def _calculate_route(
         self, points, best_order=False, depart_at="now", company=None
     ) -> dict:
-        """Drive through ``points`` from the first to the last.
-
-        :param list points: (latitude, longitude) pairs, origin first
-        :param bool best_order: let TomTom reorder the points between the
-            first and the last
-        :param str depart_at: ``now`` or an RFC 3339 date
-        :param recordset company: whose TomTom credential pays for the call;
-            the current company when omitted
-        :return: ``order``, the indexes of the intermediate points (0 is
-            ``points[1]``) in the order to visit them, and ``legs``, one dict per
-            leg in that order with ``seconds``, ``delay`` and ``meters``
-        :rtype: dict
-        """
         connection = self._connection(company or self.env.company)
         path = TOMTOM_ROUTE_PATH.format(
             points=":".join(f"{lat},{lon}" for lat, lon in points)
@@ -119,14 +98,6 @@ class StockFleetRouteTomtom(models.AbstractModel):
 
     @api.model
     def _tomtom_request(self, connection, path, params):
-        """Call TomTom through ``connection`` and return its JSON answer.
-
-        :param recordset connection: the connection holding the credential
-        :param str path: the path under the connection's base URL
-        :param dict params: the query, without the key
-        :raise UserError: when TomTom is unreachable or answers an error
-        :rtype: dict
-        """
         key = connection.credential_id._use_secret(KEY_PURPOSE, prefer="api_key")
         if not key:
             raise UserError(
@@ -144,7 +115,6 @@ class StockFleetRouteTomtom(models.AbstractModel):
                 timeout=TIMEOUT,
             )
         except requests.RequestException as error:
-            # Not chained: the cause's own message carries the URL with the key.
             raise UserError(
                 self.env._(
                     "TomTom could not be reached: %s", redact.mask_text(str(error))

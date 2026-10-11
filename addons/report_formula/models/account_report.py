@@ -227,7 +227,6 @@ class AccountReport(models.Model):
     def _get_variants(self, report_id):
         source_report = self.env["report.formula"].browse(report_id)
         if source_report.root_report_id:
-            # We need to get the root report in order to get all variants
             source_report = source_report.root_report_id
         return (
             source_report
@@ -271,7 +270,6 @@ class AccountReport(models.Model):
         return self.source_date_field or self.root_report_id.source_date_field or "date"
 
     def _get_source_measure_field(self):
-        """The numeric field a `domain` expression sums; None when the report has none."""
         return (
             self.source_measure_field
             or self.root_report_id.source_measure_field
@@ -355,7 +353,6 @@ class AccountReport(models.Model):
         return {}
 
     def _filtered_available_for(self, options: dict[str, Any]) -> Self:
-        """Among these variants, those the options' companies may use."""
         countries = (
             self.env["res.company"]
             .browse(self.get_report_company_ids(options))
@@ -381,7 +378,6 @@ class AccountReport(models.Model):
         return self.source_model or self.root_report_id.source_model or None
 
     def _get_source_model(self):
-        """The model a `domain` expression searches; None when the report has none."""
         source_model = self._get_source_model_name()
         return self.env[source_model] if source_model else None
 

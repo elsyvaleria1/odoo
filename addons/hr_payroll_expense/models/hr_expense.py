@@ -13,20 +13,11 @@ class HrExpense(models.Model):
     )
 
     def _compute_is_editable(self) -> None:
-        """Add the condition that an expense is not editable if it is linked to a payslip."""
-        # EXTENDS hr_expense
         super()._compute_is_editable()
         for expense in self:
             expense.is_editable = expense.is_editable and not expense.payslip_id
 
     def _get_countries_allowing_payslips(self) -> set:
-        """
-        Helper method to get a set of countries where at least one payroll structure contains an expense rule.
-        False can be present in the returned list, as structure's country_id is optional and we have to take it into account
-        until it is set to required.
-        :return: set of country_ids and/or False
-        :rtype: set[int, bool]
-        """
         return {
             country_sudo.id if country_sudo else False
             for (country_sudo,) in self.env["hr.payroll.structure"]
@@ -38,15 +29,13 @@ class HrExpense(models.Model):
         }
 
     def action_refuse(self):
-        # EXTENDS hr_expense
         res = super().action_refuse()
         self.sudo().refund_in_payslip = (
-            False  # Because we check the access rights in write
+            False
         )
         return res
 
     def action_reset(self):
-        # EXTENDS hr_expense
         if any(slip.state in {"validated", "paid"} for slip in self.payslip_id):
             raise UserError(
                 self.env._(
@@ -58,7 +47,6 @@ class HrExpense(models.Model):
         return super().action_reset()
 
     def action_report_in_next_payslip(self) -> None:
-        """Allow the report to be included in the next employee payslip computation."""
         if not self:
             raise UserError(self.env._("There are no valid expenses selected."))
         if self.filtered(
@@ -76,7 +64,7 @@ class HrExpense(models.Model):
         expense_structure_country_ids = self._get_countries_allowing_payslips()
         if (
             False not in expense_structure_country_ids
-        ):  # Should be removed as soon as the country_id is required on the structures
+        ):
             for country_id in self.grouped(
                 lambda expense: expense.company_id.country_id.id
             ):
@@ -84,7 +72,7 @@ class HrExpense(models.Model):
                     msg = self.env._(
                         "Expense reimbursement rule needs to be configured to add expenses to payslips.\n"
                         'Please create one salary rule with the "%(code)s" code on the relevant salary structures.',
-                        code="EXPENSES",  # Not translated
+                        code="EXPENSES",
                     )
                     action = self.env.ref(
                         "hr_payroll.action_salary_rule_form", raise_if_not_found=False
@@ -98,7 +86,6 @@ class HrExpense(models.Model):
                         )
                     raise UserError(msg)
 
-        # Do not raise if already reported, just ignore it
         to_report = self.filtered(lambda expense: not expense.refund_in_payslip)
         to_report.refund_in_payslip = True
         for record in to_report:
@@ -113,9 +100,6 @@ class HrExpense(models.Model):
             )
 
     def action_remove_from_payslip(self) -> None:
-        """
-        Disallow the expense to be included to the next employee payslip computation and/or unlink it from its payslip if possible.
-        """
         valid_expenses = self.filtered(
             lambda expense: (
                 not expense.payslip_id
@@ -125,7 +109,6 @@ class HrExpense(models.Model):
                 )
             )
         )
-        # Don't raise in case of batch action for smooth flow
         if not valid_expenses:
             raise UserError(
                 self.env._(
@@ -134,7 +117,6 @@ class HrExpense(models.Model):
                 )
             )
         previous_payslips = valid_expenses.payslip_id
-        # Only edit & post message when really needed
         expenses_to_edit = valid_expenses.filtered(
             lambda expense: expense.payslip_id or expense.refund_in_payslip
         )
@@ -152,7 +134,6 @@ class HrExpense(models.Model):
             )
         expenses_to_edit.write({"refund_in_payslip": False, "payslip_id": False})
         if previous_payslips:
-            # Remove the expenses amounts from the payslips
             previous_payslips._update_expense_input_line_ids()
 
     def action_view_payslip(self):

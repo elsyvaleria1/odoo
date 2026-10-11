@@ -40,7 +40,6 @@ class AccountJournal(models.Model):
         return dashboard_data
 
     def open_sdd_payments(self):
-        # return action 'Direct debit payments to collect' with context forged
         ctx = self.env.context.copy()
         ctx.update(
             {"default_journal_id": self.id, "search_default_journal_id": self.id}

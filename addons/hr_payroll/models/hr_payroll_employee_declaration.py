@@ -82,7 +82,7 @@ class HrPayrollEmployeeDeclaration(models.Model):
             report_id = sheet._get_pdf_report().id
             has_global = any(
                 not d.employee_id for d in declarations
-            )  # eg: Individual account at company level
+            )
             if has_global:
                 employees = self.env[res_model].browse(res_id).line_ids.employee_id
             else:
@@ -104,17 +104,13 @@ class HrPayrollEmployeeDeclaration(models.Model):
                     not employee and not has_global
                 ):
                     continue
-                # The has_global (company-level) entry is documented to key by
-                # an empty hr.employee recordset, but defend against a raw
-                # Python False too — employee.lang below would otherwise
-                # AttributeError on a bool.
                 employee = employee or self.env["hr.employee"]
                 _logger.info(
                     "Printing %s (%s/%s)", sheet._description, counter, sheet_count
                 )
                 counter += 1
                 sheet_filename = sheet._get_pdf_filename(employee)
-                sheet_file, dummy = report_sudo.with_context(  # noqa: RUF059  `dummy` is the fork throwaway-name convention
+                sheet_file, dummy = report_sudo.with_context(
                     lang=employee.lang or self.env.lang
                 )._render_qweb_pdf(
                     report_id,

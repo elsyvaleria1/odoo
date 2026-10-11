@@ -594,9 +594,6 @@ class CrmLead(models.Model):
 
     @api.depends("team_id", "type")
     def _compute_stage_id(self) -> None:
-        # one stage lookup per team, not per lead: the search depends on the
-        # team and the domain alone, and assigning a batch of leads ran it
-        # once per lead (200 identical queries over 200 leads)
         to_place = self.filtered(
             lambda lead: (
                 not lead.stage_id
@@ -640,9 +637,6 @@ class CrmLead(models.Model):
         others = self - leads
         others.day_close = None
         for lead in leads:
-            # to the second, as `date_closed` is: a lead closed in the second
-            # it was created has a negative sub-second interval, whose .days
-            # is -1, and abs() reads that as one day
             date_create = fields.Datetime.from_string(lead.create_date).replace(
                 microsecond=0
             )
@@ -939,7 +933,7 @@ class CrmLead(models.Model):
                     + [("email_domain_criterion", "=", lead.email_domain_criterion)],
                 )
             if lead.partner_id and lead.partner_id.commercial_partner_id:
-                duplicate_lead_ids |= lead.with_context(active_test=False).search(  # noqa: E8507 - one probe per lead, on the lead's own commercial partner
+                duplicate_lead_ids |= lead.with_context(active_test=False).search(
                     common_lead_domain
                     + [
                         (
@@ -2106,7 +2100,6 @@ class CrmLead(models.Model):
         return upd_values
 
     def convert_opportunity(self, partner, user_ids=False, team_id=False) -> bool:
-        """Convert the leads; ``partner=None`` keeps each lead's own customer."""
         customer = partner if partner is None else partner or self.env["res.partner"]
         leads_by_vals = {}
         for lead in self:

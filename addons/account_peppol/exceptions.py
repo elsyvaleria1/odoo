@@ -4,11 +4,7 @@ from odoo.tools import LazyTranslate
 
 _lt = LazyTranslate(__name__)
 
-# Error mapping of code to message strings from Peppol IAP (peppol_proxy/exceptions.py)
-# We need to wrap all the message inside lambda to make sure they will be called on demand,
-# with a language context in the environment
 
-# Standard errors (stored as `code`)
 STANDARD_EXCEPTION_CODE_MESSAGES_MAP: dict[int, Callable[..., str]] = {
     101: lambda: _lt("Something went wrong with your request"),
     102: lambda arg: _lt(
@@ -70,7 +66,6 @@ STANDARD_EXCEPTION_CODE_MESSAGES_MAP: dict[int, Callable[..., str]] = {
 }
 
 
-# Errors from the ebMS standard (stored as `ebms_code`)
 EBMS_EXCEPTION_CODE_MESSAGES_MAP: dict[int, Callable[..., str]] = {
     1: lambda: _lt(
         "Although the message document is well formed and schema valid, some element/attribute contains a value that could not be recognized and therefore could not be used by the MSH."
@@ -207,28 +202,14 @@ def _get_translation_lambda_message(
     elif translation_lambda_arg_count == len(args):
         return translation_lambda(*args)
     else:
-        # The translation lambda require a number of arguments that doesn't match
-        # the received number of args from the `args` list.
-        # To prevent TypeError of mismatching expected positional argument,
-        # we'll create a dummy args and call the translation lambda with it.
         dummy_args = ["<unknown>"] * translation_lambda_arg_count
         return translation_lambda(*dummy_args)
 
 
 def get_peppol_error_message(env, error_vals: dict):
-    """
-    Helper to process the error dictionary returned from the IAP response.
-    It will only get the code (or EBMS code) and map it to the correct translated message.
-    :param dict error_vals: the dictionary of encoded error json generated from the `_json` method in `peppol_proxy`
-    :return: the translated error message
-    :rtype: str
-    """
-    # handles errors raised directly from jsonrpc routes instead of being caught and converted
     if error_vals.get("data", {}).get("context"):
         error_vals = error_vals["data"]["context"]
     if (ebms_code := error_vals.get("ebms_code")) and ebms_code != 4:
-        # Error with ebMS code is originally from PeppolInboundError
-        # In most case, ebMS message will be better and more specific, except for when the code is 4 (general "Other" message)
         error_message = get_ebms_message(env, error_vals)
     else:
         error_message = get_exception_message(env, error_vals)
@@ -242,12 +223,6 @@ def get_peppol_error_message(env, error_vals: dict):
 
 
 def get_exception_message(env, error_vals: dict):
-    """
-    :param error_vals: this dictionary must contain the following keys:
-    - 'code': <str>
-    - 'args': <list[str]>
-    :return: the translated standard error message
-    """
     peppol_code = error_vals["code"]
     if peppol_code not in STANDARD_EXCEPTION_CODE_MESSAGES_MAP:
         return env._("Unknown Peppol Error: %s", error_vals)
@@ -259,12 +234,6 @@ def get_exception_message(env, error_vals: dict):
 
 
 def get_ebms_message(env, error_vals: dict):
-    """
-    :param error_vals: this dictionary must contain the following keys:
-    - 'ebms_code': <str>
-    - 'args': <list[str]>
-    :return: the translated EBMS error message
-    """
     ebms_code = error_vals["ebms_code"]
     if ebms_code not in EBMS_EXCEPTION_CODE_MESSAGES_MAP:
         return env._("Unknown Peppol Error: %s", error_vals)

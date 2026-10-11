@@ -89,13 +89,6 @@ class TestPlanningResource(TestCommonPlanning):
         self.assertEqual(slot_a.overlap_slot_count, 0)
 
     def test_cumulative_over_allocation_is_a_conflict(self):
-        """Three 50% shifts on one resource are 150% of it.
-
-        No *pair* of them exceeds 100, so the pairwise
-        `S1.allocated_percentage + S2.allocated_percentage > 100` this used to
-        run reported nothing. Conflicts now come from the reservation ledger's
-        cumulative sweep, which measures the total claim at each instant.
-        """
         window = {
             "resource_id": self.res_willywaller.id,
             "start_datetime": datetime(2019, 6, 6, 8, 0, 0),
@@ -129,14 +122,6 @@ class TestPlanningResource(TestCommonPlanning):
         )
 
     def test_conflicts_reach_across_models(self):
-        """A shift sees a clash with any claim on its resource, not only shifts.
-
-        The reservation ledger is shared, so a resource booked by something
-        outside planning is visible here -- which is the point of projecting
-        into it. `overlap_slot_count` stays shift-to-shift because its m2m is
-        typed to `planning.slot`; the mixin's `schedule_overlap_count` is what
-        counts everything.
-        """
         slot = self.env["planning.slot"].create(
             {
                 "resource_id": self.res_willywaller.id,

@@ -537,7 +537,6 @@ class ProjectProject(models.Model):
             "active_id": orders.id if len(orders) == 1 else False,
             "active_ids": orders.ids,
         }
-        # the wizard derives this default for one order, not for several
         down_payment = not any(orders.mapped("is_invoiceable"))
         if down_payment:
             action["context"]["default_advance_payment_method"] = "percentage"
@@ -905,8 +904,6 @@ class ProjectProject(models.Model):
                 amount_taxexc_invoiced_draft,
                 amount_taxexc_invoiced,
             ) in sale_line_read_group:
-                # revenue is invoiced once posted: what sits on a draft is
-                # still to invoice
                 amount_taxexc_to_invoice += amount_taxexc_invoiced_draft
                 if is_downpayment:
                     downpayment_amount_invoiced += currency._convert(

@@ -17,8 +17,6 @@ from odoo.addons.social.tests.tools import mock_void_external_calls
 class TestSocialBasics(common.SocialCase, CronMixinCase):
     @mock_void_external_calls()
     def test_cron_triggers(self):
-        """When scheduling social posts, CRON triggers should be created to run the CRON sending
-        the post as close to the time frame as possible."""
 
         scheduled_date = fields.Datetime.now() + timedelta(days=1)
         with self.capture_triggers(
@@ -40,10 +38,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
             captured_trigger.cron_id, self.env.ref("social.ir_cron_post_scheduled")
         )
 
-        # When updating the scheduled date, a new CRON trigger should be created with the new date.
-        # Note that we intentionally do not remove / update the old trigger, as we would complicate
-        # the code and it's not necessary (CRON triggers are rather harmless and cleaned
-        # automatically anyway)
         with self.capture_triggers(
             "social.ir_cron_post_scheduled"
         ) as captured_triggers:
@@ -59,7 +53,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
     @users("social_manager")
     @mock_void_external_calls()
     def test_social_account_internals(self):
-        """Test social account creation, notably medium generation"""
         vals_list = [
             {
                 "name": "TestAccount_%d" % x,
@@ -84,8 +77,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
     @users("social_user")
     @mock_void_external_calls()
     def test_social_post_create_multi(self):
-        """Ensure that a 'multi' creation of 2 social.posts also
-        creates 2 associated utm.sources."""
         social_posts = self.env["social.post"].create(
             [
                 {"account_ids": [(4, self.social_account.id)], "message": "Message 1"},
@@ -101,7 +92,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
     @patch.object(Cursor, "now", lambda *args, **kwargs: datetime(2022, 1, 2))
     @users("social_user")
     def test_social_post_utm(self):
-        """Test that the name of the UTM source is generated from the message of the post."""
         post_1, post_2, post_3, post_4, post_5, post_6, post_7 = self.env[
             "social.post"
         ].create(
@@ -165,7 +155,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
             msg="Name already generated from the content of a different record",
         )
 
-        # The 2 next social posts have different message, but they are the same once truncated
         self.assertEqual(
             post_6.name,
             "Long message xxxxxxx... (Social Post created on 2022-01-02)",
@@ -210,9 +199,6 @@ class TestSocialBasics(common.SocialCase, CronMixinCase):
         )
 
     def test_social_post_create_with_default_calendar_date(self):
-        """Make sure that when a default_calendar_date is passed and the scheduled_date is changed,
-        We take into account the new scheduled_date as calendar_date.
-        See social.post#create for more details."""
         default_calendar_date = fields.Datetime.now() + timedelta(hours=1)
         form = Form(
             self.env["social.post"].with_context(

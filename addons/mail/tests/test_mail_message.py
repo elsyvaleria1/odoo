@@ -56,8 +56,6 @@ class TestMailMessage(common.MailCommon):
         )
 
     def test_needaction_does_not_load_every_notification(self):
-        """`needaction` is one boolean for the current user; it must not read
-        the notification of every other recipient to compute it."""
         others = self.env["res.partner"].create(
             [{"name": f"Recipient {index}"} for index in range(30)]
         )

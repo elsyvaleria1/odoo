@@ -7,8 +7,6 @@ WHITELISTED = "test_ir_access.whitelisted"
 
 
 class TestFieldClasses(TransactionCase):
-    # a field names the class it belongs to; ir.access rows say who may read
-    # or write the fields of a class, and groups= is a class of its own
 
     @classmethod
     def setUpClass(cls):
@@ -118,8 +116,6 @@ class TestFieldClasses(TransactionCase):
         self.assertEqual(self.child.with_user(self.payroll).parent_wage, 10.0)
 
     def test_the_residual_class_holds_every_field_but_those_listed(self):
-        # secret names no class, so it takes the model's residual class; the
-        # automatic columns and the whitelisted name never do
         self.assertFalse(self.allowed(self.portal, WHITELISTED, "secret"))
         self.assertTrue(self.allowed(self.plain, WHITELISTED, "secret"))
         for fname in ("id", "display_name", "name"):
@@ -149,8 +145,6 @@ class TestFieldClasses(TransactionCase):
         self.assertEqual(self.record.sudo().wage, 10.0)
 
     def test_a_stored_compute_is_not_closed_over_its_sources(self):
-        # a derived field states its own class; until it does, it shows what
-        # it was computed from (the C2 gate counts such fields)
         self.assertTrue(self.allowed(self.plain, MODEL, "wage_twice"))
         self.assertEqual(self.record.with_user(self.plain).wage_twice, 20.0)
 
@@ -198,8 +192,6 @@ class TestFieldClasses(TransactionCase):
 
 
 class TestFieldClassViews(TransactionCase):
-    # a class-gated field is dropped from the arch a non-holder is served,
-    # like a groups= field, because the view compiler reads the class's rows
 
     @classmethod
     def setUpClass(cls):

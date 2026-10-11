@@ -15,7 +15,7 @@ from odoo.addons.integration.tools.admission import Acknowledged, json_get
 
 _logger = logging.getLogger(__name__)
 
-UNPREDICTABLE_ADYEN_DATA = object()  # sentinel
+UNPREDICTABLE_ADYEN_DATA = object()
 POS_HMAC_METADATA = re.compile(r"(metadata\.pos_hmac=)[^&]*")
 
 
@@ -48,7 +48,6 @@ class PosPaymentMethod(models.Model):
         except ValueError:
             data = None
         if not json_get(data, "SaleToPOIResponse"):
-            # Not a response to a sales request.
             raise Acknowledged.json(None)
         msg_header = json_get(data, "SaleToPOIResponse", "MessageHeader")
         if (
@@ -171,9 +170,6 @@ class PosPaymentMethod(models.Model):
         return pending
 
     def _adyen_record_notification(self, data, pending) -> None:
-        """Keep the notification for the till and, for an approval, leave its
-        confirmation to the cron: Adyen is still waiting for this request to
-        answer, and the terminal may not report the transaction until it has."""
         result = data["SaleToPOIResponse"]["PaymentResponse"]["Response"].get("Result")
         state = "pending" if result == "Success" else "final"
         self.write(
@@ -219,11 +215,6 @@ class PosPaymentMethod(models.Model):
         self._adyen_settle(data, pending, state)
 
     def _adyen_transaction_status(self, data, pending) -> str:
-        """What Adyen itself reports of the notified payment: "confirmed" when
-        it approved this transaction for the amount notified, "failed" only when
-        it reports this transaction failed, and "unconfirmed" for anything else
-        (unreachable, in progress, not found, another transaction or amount).
-        Cloud Terminal API event notifications carry no signature of Adyen's."""
         status_request = {
             "SaleToPOIRequest": {
                 "MessageHeader": {
@@ -314,7 +305,6 @@ class PosPaymentMethod(models.Model):
     def _selection_payment_terminals(self):
         return super()._selection_payment_terminals() + [("adyen", "Adyen")]
 
-    # Adyen
     adyen_api_key = fields.Char(
         string="Adyen API key",
         compute="_compute_credential_doors",
@@ -335,7 +325,7 @@ class PosPaymentMethod(models.Model):
     adyen_latest_response = fields.Char(
         copy=False,
         groups="base.group_erp_manager",
-    )  # used to buffer the latest asynchronous notification from Adyen.
+    )
     adyen_pending_request = fields.Char(
         copy=False,
         classification="base.internal",
@@ -370,8 +360,7 @@ class PosPaymentMethod(models.Model):
         for payment_method in self:
             if not payment_method.adyen_terminal_identifier:
                 continue
-            # sudo() to search all companies
-            existing_payment_method = self.sudo().search(  # noqa: E8507 - one probe per method, on its own terminal identifier
+            existing_payment_method = self.sudo().search(
                 [
                     ("id", "!=", payment_method.id),
                     (
@@ -436,7 +425,6 @@ class PosPaymentMethod(models.Model):
         }
 
     def proxy_adyen_request(self, data, operation=False):
-        """Necessary because Adyen's endpoints don't have CORS enabled"""
         self.check_singleton()
         if not self.env.su and not self.env.user.has_group(
             "point_of_sale.group_pos_user"
@@ -448,7 +436,6 @@ class PosPaymentMethod(models.Model):
         if not operation:
             operation = "terminal_request"
 
-        # These checks are not optimal. This RPC method should be changed.
 
         is_capture_data = (
             operation == "capture"
@@ -622,8 +609,6 @@ class PosPaymentMethod(models.Model):
         return {"tenderOption": "AskGratuity", "authorisationType": "PreAuth"}
 
     def _adyen_sign_payment_request(self, data, self_order_id=False) -> None:
-        """Sign a payment request and record it as the one notification this
-        terminal may next answer, for the order it pays when a kiosk sent it."""
         msg_header = data["SaleToPOIRequest"]["MessageHeader"]
         payment_request = data["SaleToPOIRequest"]["PaymentRequest"]
         sale_data = payment_request["SaleData"]
@@ -692,7 +677,6 @@ class PosPaymentMethod(models.Model):
             timeout=TIMEOUT,
         )
 
-        # Authentication error doesn't return JSON
         if req.status_code == 401:
             return {"error": {"status_code": req.status_code, "message": req.text}}
 

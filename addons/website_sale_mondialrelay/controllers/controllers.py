@@ -53,8 +53,6 @@ class MondialRelay(http.Controller):
         if order_sudo.partner_shipping_id != partner_shipping:
             order_sudo.partner_shipping_id = partner_shipping
 
-        # the new address moves the delivery rates and the addresses shown:
-        # the checkout is loaded again, as it was after the old JSON answer
         return fragments_or_redirect(
             request.env, "/shop/checkout", redirect="/shop/checkout"
         )

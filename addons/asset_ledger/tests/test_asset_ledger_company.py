@@ -51,13 +51,6 @@ class TestAssetLedgerCompany(TransactionCase):
         )
 
     def _acting_as(self, company):
-        """Act *in* `company`, while still allowed to see the other one.
-
-        Both stay allowed on purpose. What is under test is which company a log
-        takes, and narrowing the allowed set would mean a cross-company create
-        failed on a company guard instead -- refused either way, but for a reason
-        that proves nothing about where the company came from.
-        """
         others = [other.id for other in (self.owner | self.other) if other != company]
         return self.Log.with_company(company).with_context(
             allowed_company_ids=[company.id, *others]
@@ -73,8 +66,6 @@ class TestAssetLedgerCompany(TransactionCase):
         )
 
     def test_a_company_less_asset_falls_back_to_the_acting_company(self):
-        """A shared asset imposes nothing, which is the case the constraint
-        already exempts by ignoring empty companies."""
         log = self._acting_as(self.other).create(
             {"asset_id": self.shared_asset.asset_id.id}
         )
@@ -82,7 +73,6 @@ class TestAssetLedgerCompany(TransactionCase):
         self.assertEqual(log.company_id, self.other)
 
     def test_an_explicit_company_still_wins(self):
-        """The field is computed to seed a value, not to overrule a caller."""
         log = self._acting_as(self.other).create(
             {"asset_id": self.shared_asset.asset_id.id, "company_id": self.owner.id}
         )
@@ -108,12 +98,6 @@ class TestAssetLedgerCompany(TransactionCase):
         )
 
     def test_recompanying_the_asset_leaves_booked_logs_alone(self):
-        """The dependency is the coarse `asset_id` on purpose.
-
-        A log is an accounting row whose currency follows its company. Tracking
-        `asset_id.company_id` would silently restate every stored figure the
-        day somebody edited the asset.
-        """
         log = self._acting_as(self.owner).create(
             {"asset_id": self.asset.asset_id.id, "amount": 500.0}
         )
@@ -126,16 +110,12 @@ class TestAssetLedgerCompany(TransactionCase):
     def test_a_ledger_split_before_this_edit_says_so(self):
         self.Log.create({"asset_id": self.shared_asset.asset_id.id})
         stale = self.Log.create({"asset_id": self.shared_asset.asset_id.id})
-        # Planted the way production got its own: a write that bypassed the
-        # field, leaving a split the constraint can only report, never prevent.
         self.env.cr.execute(
             "UPDATE resource_log SET company_id = %s WHERE id = %s",
             (self.other.id, stale.id),
         )
         self.env.invalidate_all()
 
-        # The next person to book anything against this asset is the one who
-        # meets it, which is the whole reason the message exists.
         with self.assertRaises(ValidationError) as caught:
             self.Log.create({"asset_id": self.shared_asset.asset_id.id})
 
@@ -143,11 +123,6 @@ class TestAssetLedgerCompany(TransactionCase):
 
     @mute_logger("odoo.addons.resource_asset_product.models.resource_asset_log")
     def test_a_split_this_edit_causes_does_not_blame_old_data(self):
-        """The other branch, and the reason they are told apart.
-
-        Sending a reader after stale rows that are perfectly fine costs them
-        the one thing the message was supposed to give them.
-        """
         self.Log.create(
             {"asset_id": self.shared_asset.asset_id.id, "company_id": self.owner.id}
         )

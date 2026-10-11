@@ -144,10 +144,6 @@ def _none_is_false(
     return False if value is None else value
 
 
-# the read of an unguarded field with its conversion inline: an empty value
-# reads as False, or every falsy value as the number `falsy`. A second Python
-# call per attribute read was a fifth of its cost, and choosing the conversion
-# by a branch per read gave most of that back. A guarded read goes the long way
 def _prepare_inline_get(
     falsy: typing.Any,
     guarded_cache_to_record: (
@@ -239,8 +235,6 @@ class Field[T](
 
     cache_is_read_value: bool = False
 
-    # create converts the value to its column form once, validating it there;
-    # the INSERT and the cache take that form without validating again
     column_value_is_cache: bool = False
 
     is_one2many: bool = False
@@ -282,21 +276,16 @@ class Field[T](
     _sequence: int
     _base_fields__: tuple[Self, ...] = ()
     _extra_keys__: tuple[str, ...] = ()
-    # what the registry built a merged or inherited field from: a later setup
-    # building it from the same keeps this object instead of a copy
     _reuse_key__: tuple[object, ...] | None = None
     _direct: bool = False
     _toplevel: bool = False
 
     inherited: bool = False
     joins_delegation: bool = False
-    # the same-named fields of the other models sharing this model's table
     tree_siblings: tuple[Field[typing.Any], ...] = ()
     inherited_field: typing.Any = None
 
-    # a relational field's comodel, typed as the name every reader indexes the
-    # environment with; unset (None at runtime) on any other field
-    comodel_name: str = None  # type: ignore[assignment]
+    comodel_name: str = None
     context: ContextType = frozendict({})
 
     delegate: bool = False
@@ -316,8 +305,6 @@ class Field[T](
     search: str | Callable[[BaseModel, str, typing.Any], DomainType] | None = None
     related: str | None = None
     default: Callable[[ModelLike], T] | T | None = None
-    # the declared default when it was a value, not a callable: the only
-    # default the schema may repeat as a column DEFAULT
     default_literal: typing.Any = None
 
     string: str | None = None
@@ -327,12 +314,7 @@ class Field[T](
     required: bool = False
     classification: str | None = None
     write_classification: str | None = None
-    # a derived field (related, stored or compute_sudo) that shows a function
-    # of sources some of its readers may not read, on purpose: the class it
-    # discloses (a presence dot, a count, "a credential is set")
     discloses: str | None = None
-    # how the registry bound them, so that a change of groups after setup (a
-    # test patching a field) rebinds them instead of leaving them stale
     _access_binder: Callable[[Field[typing.Any]], FieldAccessClasses | None] | None = (
         None
     )
@@ -365,8 +347,6 @@ class Field[T](
         self.__dict__.pop("write_groups", None)
         self._rebind_access_classes()
 
-    # the classes a principal must hold to read and write the field, bound by
-    # the registry once every field is set up; None: no class, no check
     @property
     def access_classes(self) -> FieldAccessClasses | None:
         return self.__dict__.get("access_classes")
@@ -381,9 +361,6 @@ class Field[T](
         self.__dict__.pop("access_classes", None)
         self._refresh_get_guarded()
 
-    # whether a read must go the long way: an access check, a pending
-    # recomputation, or a term translation to apply; a plain attribute, not a
-    # descriptor, so the fast __get__ reads it as an instance value
     _get_guarded: bool = True
 
     def _refresh_get_guarded(self) -> None:
@@ -426,7 +403,6 @@ class Field[T](
         for key in BOOLEAN_ATTRIBUTES:
             value = kwargs.get(key, SENTINEL)
             if value is not SENTINEL and not isinstance(value, bool):
-                # store="True" is truthy and so is store="False"
                 raise TypeError(
                     f"{type(self).__name__}({key}={value!r}): {key} takes a bool"
                 )
@@ -596,13 +572,6 @@ class Field[T](
                 )
 
     def _check_sql_hooks(self, model: BaseModel) -> None:
-        # A field whose SQL for a groupby or an order term is not its column
-        # names the model method that composes it, the way `search=` names
-        # the method that composes its domain. The method is a declaration a
-        # reader and a tool can find on the field, where an override of
-        # `_read_group_groupby` or `_order_field_to_sql` on the model is not:
-        # it hides the one field it acts on behind the identity of a method
-        # that every groupby and every order on the model goes through.
         for attribute, stand_in in (
             ("group_by_sql", "group_by_field"),
             ("order_by_sql", "order_by_field"),
@@ -660,8 +629,6 @@ class Field[T](
         return bool(self.compute and self.store)
 
     def delegation_key_settled(self, env: Environment) -> bool:
-        # a delegated column comes through the delegation join: while the
-        # key is pending or unwritten the table names the wrong parent
         if not self.inherited:
             return True
         key = env[self.model_name]._fields[self._related_names[0]]
@@ -670,8 +637,6 @@ class Field[T](
 
     @property
     def fetched_with_row(self) -> bool:
-        # a stored column, or a delegated field read under this model's own
-        # access, which the row's SELECT reaches through the delegation join
         if self.store:
             return True
         if not (self.inherited and self.compute_sudo and self.joins_delegation):
@@ -682,8 +647,6 @@ class Field[T](
         return (
             target is not None
             and key is not None
-            # the join needs the key in the table: a computed, unstored key
-            # names whatever the column last held
             and bool(key.store)
             and bool(key.column_type)
             and bool(target.store)
@@ -783,12 +746,6 @@ class Field[T](
         return records, cache_value
 
     def _settle_pending_as_null(self, records: BaseModel) -> None:
-        """A just-inserted row already holds NULL where its compute is pending.
-
-        `_create` leaves PENDING, not None, in cache for a stored computed field it
-        did not insert. A compute that lands on the value NULL stands for is then
-        not a change, and writing it back would cost an UPDATE per create.
-        """
         field_cache = self._get_cache(records.env)
         dirty = records.env.core.get_dirty(self)
         settled = [
@@ -836,8 +793,6 @@ class Field[T](
         drafts: Collection[IdType],
         linked_ids: Collection[IdType],
     ) -> None:
-        # the inverse update that linked linked_ids into drafts is undone; a
-        # many2one it overwrote is dropped, to be read again from its origin
         core = env.core
         caches = [cache for _key, cache in core.iter_context_caches(self)]
         if (data := core.get_field_data_or_none(self)) is not None:
@@ -929,7 +884,7 @@ class Field[T](
         core = env.core
         scheduled = core.get_pending_ids(self)
         dirty = core.get_dirty(self)
-        cleared = 0  # debuglog
+        cleared = 0
         for id_ in records._ids:
             if field_cache.get(id_) is not PENDING:
                 continue
@@ -938,7 +893,7 @@ class Field[T](
             if dirty and id_ in dirty:
                 continue
             del field_cache[id_]
-            cleared += 1  # debuglog
+            cleared += 1
         if _debug.logic.enabled and cleared:
             _debug.logic(
                 "field.dead_pending_cleared",
@@ -957,7 +912,7 @@ class Field[T](
         record_id = record._ids[0]
         kind = bool(record_id)
         budget = PREFETCH_MAX - 1
-        released = 0  # debuglog
+        released = 0
         for id_ in record._prefetch_ids:
             if budget <= 0:
                 break
@@ -974,7 +929,7 @@ class Field[T](
             ):
                 del field_cache[id_]
                 budget -= 1
-                released += 1  # debuglog
+                released += 1
         if _debug.logic.enabled and released:
             _debug.logic(
                 "field.dead_pending_released",
@@ -1045,7 +1000,6 @@ class Field[T](
                 snapshot.pop(id_, None)
         for many2one in env.registry.order_key_inverses.get(self, ()):
             many2one._resort_inverses(records)
-        # the row is one: a sibling model's cached copy of it is stale now
         for sibling in self.tree_siblings:
             sibling._invalidate_cache(env, real_ids, keep_dirty=True)
 
@@ -1128,28 +1082,19 @@ class Field[T](
         return SENTINEL
 
     def _settle_new_record_compute_group(self, records: BaseModel) -> None:
-        """Materialise this field's compute group before writing to a new one.
-
-        A stored computed field on a `new()` record is lazy: neither cached
-        nor scheduled. So a sibling of the group read AFTER this assignment
-        would run the group's compute, which assigns every field of the
-        group, over the value being written here. `write()` settles the same
-        group for the same reason (`_write_settle_protected`); this is the
-        assignment path, which does not go through it.
-        """
         group = records.pool.field_computed.get(self)
         if not group or len(group) == 1:
             return
         env = records.env
         record_id = records._ids[0]
-        settled = 0  # debuglog
+        settled = 0
         for sibling in group:
             if sibling is self or not (sibling.compute and sibling.store):
                 continue
             if record_id in sibling._get_cache(env):
                 continue
             sibling.__get__(records)
-            settled += 1  # debuglog
+            settled += 1
         if _debug.logic.enabled and settled:
             _debug.logic(
                 "field.new_record.compute_group_settled",
@@ -1208,8 +1153,6 @@ class Field[T](
     ) -> None:
         recs = _get_recordset_like(records, ids)
         self.mark_dirty(recs, value)
-        # a value derived and not stored changes nothing a rule reads: the
-        # writes of its inputs have reported themselves
         if self.store and any(ids):
             recs._access_inputs_written((self.name,))
 

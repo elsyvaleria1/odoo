@@ -259,8 +259,6 @@ class TestLostTransaction(RunCompletionCase):
         return line
 
     def _execute_losing(self, line, target, attribute):
-        # no assertRaises: it opens a savepoint of its own and rolls back to
-        # it, which would hide whether the step was marked failed
         raised = None
         lost = psycopg.errors.SerializationFailure("concurrent update")
         with patch.object(target, attribute, side_effect=lost):
@@ -283,9 +281,6 @@ class TestLostTransaction(RunCompletionCase):
         self._assert_not_failed(line)
 
     def test_a_savepoint_refused_by_a_concurrent_update_raises_too(self):
-        # 2026-10-07: the flush that opens the step's savepoint wrote a row a
-        # concurrent transaction had committed; marking the step failed was
-        # then refused as well, and only InFailedSqlTransaction surfaced
         line = self._ready_line()
 
         self._execute_losing(line, self.env.cr, "savepoint")

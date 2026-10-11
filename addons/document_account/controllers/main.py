@@ -19,8 +19,6 @@ class AccountShareRoute(ShareRoute):
         document_sudo = self._from_access_token(access_token, skip_log=True)
         if document_sudo.type != "binary" or not document_sudo.has_embedded_pdf:
             return super().documents_content(access_token, download)
-        # an XML invoice previews as the PDF it carries, a rendering the
-        # browser shows as it shows any PDF, blocked download or not
         embedded_pdf = document_sudo._extract_pdf_from_xml()
         _debug.pipeline("content_served", by="embedded_pdf", document=document_sudo)
         self._log_view(document_sudo)

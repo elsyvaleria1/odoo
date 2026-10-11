@@ -297,8 +297,6 @@ class OdooTestResult:
         _debug.lifecycle("test.result.aborted", reason=reason)
 
     def halt(self, reason: str) -> None:
-        # the test that halts reports its own error; this stops every test
-        # after it, in this suite and in the suites of the modules still to load
         global_report = self.global_report or self
         global_report.aborted = global_report.aborted or reason
         global_report.shouldStop = True
@@ -435,11 +433,11 @@ class OdooTestResult:
         details = stats_logger.isEnabledFor(logging.DEBUG)
         stats_tree: dict[str, Stat] = collections.defaultdict(Stat)
         counts: collections.Counter[str] = collections.Counter()
-        unmatched = 0  # debuglog
+        unmatched = 0
         for test, stat in self.stats.items():
             r = _TEST_ID.match(test)
             if not r:
-                unmatched += 1  # debuglog
+                unmatched += 1
                 continue
 
             stats_tree[r["module"]] += stat

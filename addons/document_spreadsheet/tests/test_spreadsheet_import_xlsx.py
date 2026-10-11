@@ -10,7 +10,6 @@ from .common import SpreadsheetTestCommon
 
 class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
     def test_import_xlsx(self):
-        """Import xlsx"""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
@@ -29,7 +28,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
             self.assertTrue(spreadsheet)
 
     def test_import_xlsx_WPS_mimetype(self):
-        """Import xlsx"""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
@@ -48,7 +46,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
             self.assertTrue(spreadsheet)
 
     def test_import_xlsx_wrong_mime_type(self):
-        """Import xlsx with wrong mime type raises an error."""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
@@ -70,7 +67,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
             )
 
     def test_import_xlsx_wrong_content(self):
-        """Import a xlsx which isn't a zip raises error"""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
@@ -90,13 +86,11 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
         )
 
     def test_import_xlsx_zip_but_not_xlsx(self):
-        """Import a zip which isn't a xlsx raises error"""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
         document_xlsx = self.env["document.document"].create(
             {
-                # Minimum zip file
                 "datas": base64.encodebytes(
                     b"\x50\x4b\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                 ),
@@ -113,7 +107,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
         )
 
     def test_import_xlsx_computes_multipage(self):
-        """Import xlsx leads to accurate multipage computation"""
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
         )
@@ -139,7 +132,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
                 self.assertEqual(spreadsheet.is_multipage, is_multipage)
 
     def test_compute_xlsx_multipage_does_not_create_attachment(self):
-        """multipage computation does not create the xlsx attachments in the database"""
         filename = "test_with_image.xlsx"
 
         with file_open(f"document_spreadsheet/tests/data/{filename}", "rb") as f:
@@ -161,7 +153,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
         self.assertEqual(attachment_count, new_attachment_count)
 
     def test_request_xlsx_computes_multipage(self):
-        """Successfully upload xlsx on requested documents"""
         self.authenticate("spreadsheetDude", "spreadsheetDude")
         folder = self.env["document.document"].create(
             {"name": "Test folder", "type": "folder"}
@@ -212,7 +203,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
         self.assertEqual(document.is_multipage, True)
 
     def test_spreadsheet_conversion_with_portal_user(self):
-        """Test XLSX to Spreadsheet conversion with portal user who is `edit` role of the folder."""
         portal_user = new_test_user(
             self.env, login="test_portal", groups="base.group_portal"
         )
@@ -246,8 +236,6 @@ class SpreadsheetImportXlsx(HttpCase, SpreadsheetTestCommon):
         spreadsheet = self.env["document.document"].browse(spreadsheet_id).exists()
 
         self.assertTrue(spreadsheet)
-        # Spreadsheets are edited by internal users only: the folder's edit
-        # grant reaches the portal users as view
         for user in (portal_user, portal_user_doc_owner):
             self.assertEqual(spreadsheet.with_user(user).sudo().user_permission, "view")
         self.assertFalse(

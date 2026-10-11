@@ -222,7 +222,6 @@ class TestSaleCommissionManager(TestSaleCommissionCommon):
 
         self.commission_plan_manager.target_ids.amount = 2000
 
-        # There is already a level 0 at 0$, level 0.5 at 0$ and level 1 at 2500$ by default
         self.commission_plan_manager.target_commission_ids += self.env[
             "sale.commission.plan.target.commission"
         ].create(

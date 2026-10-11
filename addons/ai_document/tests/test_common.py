@@ -56,18 +56,16 @@ class TestAiDocumentsCommon(TransactionCase):
     def setUp(self):
         super().setUp()
 
-        # Test using both at the same time (to test "multi" type server actions)
         self.ir_action_tool = self.env["ir.actions.server"].create(
             {
                 "model_id": self.env["ir.model"]._get_id("document.document"),
                 "state": "multi",
                 "name": "Rename and return count",
-                "use_in_ai": False,  # Will be forced by the wizard
+                "use_in_ai": False,
                 "child_ids": self.ir_action_tools_childs.ids,
             }
         )
 
-        # Configure the prompt using the wizard
         Doc = self.env["document.document"]
         sort_wizard = Form(
             self.env["wizard.document.document.setup.ai.sort"].with_context(
@@ -75,8 +73,6 @@ class TestAiDocumentsCommon(TransactionCase):
             )
         )
         sort_wizard.ai_sort_prompt = f"Execute the action then move in {Doc._ai_folder_insert(self.target_folder.id)} here is the name {ai_field_insert('name', 'Name')}"
-        # other installed modules (ai_document_account) add default tools of
-        # their own: the suite pins ai_document's, the move in folder
         sort_wizard.ai_tool_ids.clear()
         sort_wizard.ai_tool_ids.add(
             self.env.ref("ai_document.ir_actions_server_move_in_folder")

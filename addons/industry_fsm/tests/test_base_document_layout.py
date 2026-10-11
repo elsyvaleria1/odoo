@@ -27,7 +27,6 @@ class TestBaseDocumentLayout(TestIndustryFsmCommon):
             "The template should be the default one since the active_id is not defined in the context.",
         )
 
-        # Add context to be able to check the override
         DocumentLayout = DocumentLayout.with_context(
             active_model="project.task", active_id=self.task.id
         )

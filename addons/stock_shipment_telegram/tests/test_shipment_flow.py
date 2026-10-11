@@ -138,7 +138,6 @@ class TestShipmentFlow(TelegramBotTestCase):
         return self.Sheet.search([], limit=1)
 
     def _offered(self):
-        """The buttons of the last keyboard the bot sent, in order."""
         for message in reversed(self.posted):
             markup = message.get("reply_markup") or {}
             if isinstance(markup, str):
@@ -221,14 +220,12 @@ class TestShipmentFlow(TelegramBotTestCase):
         self.assertFalse(self.out.carrier_tracking_ref)
 
     def _transfer_buttons(self):
-        """The transfers the last keyboard offered, without its other buttons."""
         return [
             data for data in self._offered() if data.startswith(("emb:p:", "emb:m:"))
         ]
 
     @staticmethod
     def _tail(picking):
-        """What the sender types: the digits closing the transfer's name."""
         return picking.name.rpartition("/")[2]
 
     def test_typed_digits_offer_the_delivery_ending_in_them(self):
@@ -326,7 +323,6 @@ class TestShipmentFlow(TelegramBotTestCase):
         self.assertEqual(self.out.carrier_tracking_ref, "TOL01584640")
 
     def _second_sheet(self):
-        """A second sheet, of another tracking number, sent after the first."""
         self._sheet_photo(read={**SHEET, "tracking_ref": "TOL01584641"})
         return self._last_sheet()
 

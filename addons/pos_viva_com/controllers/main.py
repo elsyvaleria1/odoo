@@ -7,7 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 class PosVivaComController(http.Controller):
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/pos_viva_com/notification",
         type="http",
@@ -25,7 +24,7 @@ class PosVivaComController(http.Controller):
         if request.httprequest.data:
             data = admission.json()
             event_type = data.get("EventTypeId")
-            if event_type != 1796:  # Transaction Payment Created
+            if event_type != 1796:
                 _logger.warning(
                     'received a message with an unknown event type "%s". See https://developer.viva.com/webhooks-for-payments/#webhook-events.',
                     event_type,
@@ -57,8 +56,6 @@ class PosVivaComController(http.Controller):
             merchant_trns
         )
         if not sessions:
-            # A sale keyed on the terminal itself: Viva.com retries any answer
-            # but a 2xx for a day, so it is acknowledged, not refused.
             _logger.warning(
                 "Viva.com notified terminal %s of a sale with merchant reference %r,"
                 " which names no POS session.",

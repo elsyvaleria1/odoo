@@ -214,7 +214,6 @@ class SurveySurvey(models.Model):
         default="public",
         required=True,
     )
-    # kept sealed by mixin.bearer.token
     access_token = fields.Char(default=lambda self: self._default_access_token())
     short_link_code = fields.Char(
         index="btree_not_null",
@@ -1736,7 +1735,6 @@ class SurveySurvey(models.Model):
     def _bearer_token_columns(
         self, token: str | None, cipher: Fernet
     ) -> dict[str, str | None]:
-        # a token's first characters stay searchable: they are the short link
         columns = super()._bearer_token_columns(token, cipher)
         columns["short_link_code"] = token[: self.SHORT_TOKEN_LENGTH] if token else None
         return columns
@@ -1858,9 +1856,6 @@ class SurveySurvey(models.Model):
             )
         )
 
-        # A respondent may hold several answers to one question (multiple choice, and
-        # one row each for a matrix), so these are sets: keeping a single value per
-        # respondent silently dropped every answer but the last.
         row_values_by_input = defaultdict(list)
         col_values_by_input = defaultdict(list)
         for line in lines:

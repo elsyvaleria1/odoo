@@ -26,11 +26,9 @@ class MockSmsTwilioApi(SMSCase):
     def setUpClass(cls):
         super().setUpClass()
 
-        # some test data
         cls.twilio_valid_phone_number = "+12202154155"
         cls.twilio_invalid_phone_number = "+3212312312"
 
-        # mock control
         cls.mock_error_type = False
         cls.mock_error_number_to_type = {}
         cls.mock_body = False
@@ -38,7 +36,6 @@ class MockSmsTwilioApi(SMSCase):
         cls.mock_number = False
         cls.mock_sms_uuid = "NA"
 
-        # find details of outgoing requests
         cls.twilio_request_re = re.compile(
             r"https://api.twilio.com/2010-04-01/Accounts(?:/(AC[\d]{32}))?(?:/|\.json)?(.*)"
         )
@@ -63,7 +60,6 @@ class MockSmsTwilioApi(SMSCase):
             "currency": "USD",
         }
 
-        # typical / expected responses
         cls.webhook_ok_response = {
             "AccountSid": "ACfake",
             "ApiVersion": "2010-04-01",
@@ -242,7 +238,6 @@ class MockSmsTwilioApi(SMSCase):
             cls.mock_error_type = error_type
         if error_number_to_type is not None:
             cls.mock_error_number_to_type = error_number_to_type
-        # various data, used notably to forge better simulated responses
         if body is not None:
             cls.mock_body = body
         if company is not False:
@@ -330,7 +325,6 @@ class MockSmsTwilioApi(SMSCase):
         return self.url_open(path, params, headers=headers)
 
     def simulate_sms_twilio_status(self, sms_batch, company):
-        # Twilio names each message: the same sid twice is a redelivery
         for sms in sms_batch:
             message_sid = f"SM{sms.uuid}"
             self.post_signed_twilio_callback(

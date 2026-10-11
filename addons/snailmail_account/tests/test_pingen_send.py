@@ -39,7 +39,6 @@ class TestPingenSend(HttpCase):
         }
 
     def create_invoice(self):
-        """Create a sample invoice"""
         invoice = (
             self.env["account.move"]
             .with_context(default_move_type="out_invoice")

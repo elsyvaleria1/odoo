@@ -124,8 +124,6 @@ def _get_company_ids(model: ModelLike) -> list[int]:
 def _enter_company_dependent(
     field: Field[typing.Any], model: ModelLike, column: dict[str, typing.Any]
 ) -> None:
-    # the plain value was what every company read: each company keeps it, a
-    # company created later reads the fallback like any company-dependent field
     company_ids = _get_company_ids(model)
     _debug.logic(
         "field.ddl.company_dependent_entered",
@@ -158,8 +156,6 @@ def _get_main_company_id(model: ModelLike) -> int | None:
 def _leave_company_dependent(
     field: Field[typing.Any], model: ModelLike, *, keep_translation: bool
 ) -> None:
-    # one value per company becomes one value: the main company's, as it read
-    # it (its own value, or its fallback where it had none)
     column_type = field.column_type
     assert column_type is not None
     company_id = _get_main_company_id(model)
@@ -221,7 +217,6 @@ def convert_db_column_translatable(
             model.env.cr, model._table, field.name, field.column_type[1]
         )
     elif column["udt_name"] == "jsonb":
-        # the column was translated or company-dependent; each value says which
         _leave_company_dependent(field, model, keep_translation=True)
     else:
         sql.convert_column(model.env.cr, model._table, field.name, field.column_type[1])
@@ -312,10 +307,6 @@ def update_db_notnull(
 
 
 def get_wanted_sql_default(field: Field[typing.Any], model: ModelLike) -> typing.Any:
-    # a callable default is a decision made per record and per environment
-    # (the current company, the clock, the language); only a declared literal
-    # of a required field may be repeated by the schema, for the rows a module
-    # not loaded yet inserts without the column
     value = field.default_literal
     if (
         field.required
@@ -448,9 +439,6 @@ def update_db_foreign_key(
 def update_db_relation_table(field: Many2many, model: ModelLike) -> bool:
     cr = model.env.cr
     relation, column1, column2 = field._get_relation_triple()
-    # An explicit relation may be a model with its own payload and constraints.
-    # Its model owns table creation, foreign keys and uninstall reflection even
-    # when this referencing model happens to initialize first.
     if not model.pool.register_relation_table(
         model._name, relation, field._module, reflect=not field.manual
     ):

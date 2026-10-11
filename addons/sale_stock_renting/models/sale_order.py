@@ -5,8 +5,6 @@ class SaleOrder(models.Model):
     _inherit = "sale.order"
 
     def _prepare_get_order_line_values(self):
-        """Override of `sale_renting` to infer the product from the reserved lots, if not already
-        sepcified."""
         defaults = super()._prepare_get_order_line_values()
         if "product_id" not in defaults and (
             reserved_trace_ids := self.env.context.get("default_reserved_trace_ids")
@@ -19,7 +17,6 @@ class SaleOrder(models.Model):
         return defaults
 
     def write(self, vals):
-        # Reschedule related pickings
         if self.env.user.has_group(
             "sale_stock_renting.group_rental_stock_picking"
         ) and any(key in ["rental_start_date", "rental_return_date"] for key in vals):

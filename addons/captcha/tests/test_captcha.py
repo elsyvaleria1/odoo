@@ -75,8 +75,6 @@ class TestCaptcha(TransactionCase):
         asked.assert_not_called()
 
     def test_with_no_choice_the_configured_provider_checks(self):
-        """Entering a provider's keys is enough, as it was before the
-        captcha module: an unset choice is the first configured provider."""
         self.env["ir.config_parameter"].sudo().set_param("captcha.provider", "")
         self.assertEqual(self.env["ir.http"]._captcha_provider(), FAKE)
         self.has_secret = False
@@ -155,8 +153,6 @@ class TestSiteverify(TransactionCase):
         self.assertIn("ValueError", logs.output[0])
 
     def test_a_refused_token_reaches_the_log_by_its_prefix_alone(self):
-        """The token is the caller's, bounded only by the request size: logged
-        whole, the caller chose how much was written."""
         huge = "A" * 100_000
         with self.assertLogs(ADAPTER, "WARNING") as logs:
             verdict = self._verdict(
@@ -170,7 +166,6 @@ class TestSiteverify(TransactionCase):
         self.assertIn("invalid-input-response", logged)
 
     def test_a_missing_token_is_refused_without_asking(self):
-        """Nothing a visitor posts without a token spends a provider call."""
         with (
             patch.object(CaptchaAdapter, "_secret", lambda self: "SECRET", create=True),
             patch.object(CaptchaAdapter, "_post_verification", create=True) as sent,

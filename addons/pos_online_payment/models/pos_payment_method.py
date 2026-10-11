@@ -38,7 +38,7 @@ class PosPaymentMethod(models.Model):
     def _get_online_payment_providers(self, pos_config_id=False, error_if_invalid=True):
         self.check_singleton()
         providers_sudo = self.sudo().online_payment_provider_ids
-        if not providers_sudo:  # Empty = all published providers
+        if not providers_sudo:
             providers_sudo = (
                 self.sudo()
                 .env["payment.provider"]
@@ -79,7 +79,6 @@ class PosPaymentMethod(models.Model):
 
     @api.constrains("config_ids", "is_online_payment")
     def _check_pos_config_online_payment(self) -> None:
-        """Check that each POS config has at most one online payment method,"""
         for pm in self.filtered("is_online_payment"):
             for config in pm.config_ids:
                 other_online_pms = config.payment_method_ids.filtered_domain(
@@ -160,11 +159,6 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def _get_or_create_online_payment_method(self, company_id, pos_config_id):
-        """Get the first online payment method compatible with the provided pos.config.
-        If there isn't any, try to find an existing one in the same company and return it without adding the pos.config to it.
-        If there is not, create a new one for the company and return it without adding the pos.config to it.
-        """
-        # Parameters are ids instead of a pos.config record because this method can be called from a web controller or internally
         payment_method_id = (
             self.env["pos.payment.method"]
             .search(
@@ -206,7 +200,6 @@ class PosPaymentMethod(models.Model):
 
     @api.onchange("is_online_payment")
     def _onchange_is_online_payment(self) -> None:
-        """Reset method to hide widget `pos_payment_provider_cards` in form view."""
         self.payment_method_type = "none"
 
     def _is_online_payment(self) -> bool:

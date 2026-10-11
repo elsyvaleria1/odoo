@@ -19,8 +19,6 @@ class TestCommandPermissions(TelegramBotTestCase):
 
     @contextmanager
     def guarded(self, command="/guardada", **grants):
-        """Make every bot answer `command`, declared with `grants`; yield the
-        users it ran as."""
         original = self.handler._telegram_commands
         ran = []
 
@@ -110,7 +108,6 @@ class TestCommandMenu(TelegramBotTestCase):
         self.test_chat._sync_command_menu()
         menu = self._menus()
         self.assertEqual(len(menu), 1)
-        # /start is Telegram's own button, /desconectar is never one tap away
         self.assertEqual(self._commands(menu), ["quiensoy", "cancelar", "ayuda"])
         self.assertEqual(menu.payload["scope"], {"type": "chat", "chat_id": 12345})
         self.assertEqual(self.test_chat.command_menu, menu.payload["commands"])

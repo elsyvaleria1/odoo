@@ -31,7 +31,6 @@ class WizardHrJobCreatePost(models.TransientModel):
         store=True,
         readonly=False,
     )
-    # required are dropped to permit the user to generate the post without filling the fields
     post_html = fields.Html(required=False)
     platform_ids = fields.Many2many(required=False)
     campaign_start_date = fields.Date(required=False)
@@ -87,10 +86,6 @@ class WizardHrJobCreatePost(models.TransientModel):
             platforms=len(self.platform_ids),
             has_apply_url=bool(self.job_apply_url),
             has_campaign_start_date=bool(self.campaign_start_date),
-            # this module drops `required` on four of the parent's fields so the
-            # wizard can be saved half-filled, and then re-imposes them here --
-            # so these four are the only thing standing between a blank form
-            # and a post
             message_length=len(error_msg),
         )
         return super()._check_fields_before_posting(error_msg)
@@ -102,8 +97,6 @@ class WizardHrJobCreatePost(models.TransientModel):
             wizard=self,
             job=self.job_id,
             apply_method=self.apply_method,
-            # posting to a job board with the redirect method PUBLISHES the job
-            # on the website as a side effect, which is not what the button says
             published_as_a_side_effect=self.apply_method == "redirect"
             and not self.job_id.is_published,
         )

@@ -12,24 +12,24 @@ _NODE_WHITELIST = (
     ast.Expression,
     ast.Name,
     ast.Call,
-    ast.Subscript,  # expr
-    ast.Constant,  # constants
+    ast.Subscript,
+    ast.Constant,
     ast.BinOp,
     ast.Add,
     ast.Sub,
     ast.Mult,
-    ast.Div,  # binops
+    ast.Div,
     ast.BoolOp,
     ast.And,
-    ast.Or,  # boolops
+    ast.Or,
     ast.Compare,
     ast.Lt,
     ast.LtE,
     ast.Gt,
-    ast.GtE,  # comparisons
+    ast.GtE,
     ast.UnaryOp,
     ast.UAdd,
-    ast.USub,  # unary ops
+    ast.USub,
 )
 
 
@@ -51,7 +51,6 @@ class ProductUomFieldRewriter(ast.NodeTransformer):
         if isinstance(node.value, ast.Name):
             for model, alias in self.SUB_ENTITIES:
                 if node.value.id == alias:
-                    # fail early if AST specs ever change
                     assert isinstance(node.attr, str), "Attribute name must be a string"
 
                     self.accessed_fields[model].add(node.attr)
@@ -116,15 +115,12 @@ class TaxFormulaValidator(ast.NodeVisitor):
             and isinstance(node.func.ctx, ast.Load)
         ):
             raise ValidationError(self.env._("Unknown function call"))
-        # don't visit node.func: it's already validated and min/max aren't allowed as normal Name identifiers
         for arg in node.args:
             self.visit(arg)
         if node.keywords:
             raise ValidationError(self.env._("Kwargs are not allowed"))
 
     def visit_Subscript(self, node: ast.Subscript):
-        # Only allow string constants as subscripts (e.g., product["type"])
-        # They are not allowed elsewhere in the formula
         if not (
             isinstance(node.value, ast.Name)
             and node.value.id in ("product", "uom")
@@ -142,11 +138,6 @@ class TaxFormulaValidator(ast.NodeVisitor):
 
 
 def check_formula(env, formula: str) -> str:
-    """
-    This helper function checks that the formula is compatible with pyjs
-    by checking that the AST only uses allowed nodes in the appropriate context
-    and raises a ValidationError if not.
-    """
     assert isinstance(formula, str), "Formula must be a string"
 
     try:
@@ -154,21 +145,10 @@ def check_formula(env, formula: str) -> str:
     except SyntaxError, ValueError:
         raise ValidationError(env._("Invalid formula")) from None
 
-    # `env` is needed to generate localized error messages.
-    # Odoo's `_()` translation looks for `env` in the caller's local scope and one frame above it,
-    # but AST traversal is recursive and hides the original context in a deep frame stack
     TaxFormulaValidator(env).visit(tree)
 
 
 def normalize_formula(env, formula: str, field_predicate=None) -> tuple[str, set[str]]:
-    """
-    This helper function collects all field access and rewrites
-    all attribute accesses to product to subscript accesses
-
-    e.g.: product.field to product['field'] access & collect all accessed product fields.
-
-    :return (normalized formula, set of accessed product attributes & fields)
-    """
     assert isinstance(formula, str), "Formula must be a string"
 
     try:
@@ -180,7 +160,7 @@ def normalize_formula(env, formula: str, field_predicate=None) -> tuple[str, set
     transformed_tree = transformer.visit(tree)
     ast.fix_missing_locations(
         transformed_tree
-    )  # puts back lineno/col_offset for safe_eval's compile
+    )
 
     if callable(field_predicate):
         for model, fields in transformer.accessed_fields.items():

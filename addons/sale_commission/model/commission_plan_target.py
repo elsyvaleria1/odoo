@@ -83,7 +83,6 @@ class SaleCommissionPlanTarget(models.Model):
                         )
                         % current.name
                     )
-                # Overlap detection: sorting can be indeterministic when the same date_from is used
                 if current.date_to >= next_one.date_from:
                     _debug.logic(
                         "target_period_rejected",
@@ -114,12 +113,9 @@ class SaleCommissionPlanTarget(models.Model):
 
     @api.depends("payment_date", "amount", "plan_id")
     def _compute_payment_amount(self) -> None:
-        """Recompute the sum of amounts of the records sharing the same payment_date"""
         amount_per_payment_date = defaultdict(list)
         total_per_date = defaultdict(float)
-        # We need to group all related targets
         for target in self.plan_id.target_ids:
-            # plan_id is used to avoid mixing targets from different plans
             key = (target.plan_id, target.payment_date)
             amount_per_payment_date[key].append(target.id)
             total_per_date[key] += target.amount

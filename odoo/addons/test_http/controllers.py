@@ -155,7 +155,6 @@ class TestHttp(http.Controller):
         )
         return request.prepare_json_response(spec)
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         "/test_http/echo-http-post",
         type="http",
@@ -213,7 +212,6 @@ class TestHttp(http.Controller):
     def echo_json_context(self, **kwargs):
         return self.env.context
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         "/test_http/echo-json-over-http",
         type="http",
@@ -364,7 +362,6 @@ class TestHttp(http.Controller):
             if error == "UserError":
                 raise UserError("Walter is AFK")
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         "/test_http/upload_file",
         methods=["POST"],
@@ -373,7 +370,7 @@ class TestHttp(http.Controller):
         csrf=False,
     )
     def upload_file_retry(self, ufile):
-        global should_fail  # noqa: PLW0603  test fixture toggle, single-threaded by construction
+        global should_fail
         if should_fail is None:
             raise ValueError("should_fail should be set.")
 
@@ -386,7 +383,6 @@ class TestHttp(http.Controller):
 
         return data.decode()
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         '/test_http/<model("test_http.galaxy"):galaxy>/su_setname',
         methods=["POST"],
@@ -401,7 +397,6 @@ class TestHttp(http.Controller):
         galaxy.sudo().name = name
         return name
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         "/test_http/promotion_upload",
         methods=["POST"],
@@ -417,7 +412,6 @@ class TestHttp(http.Controller):
         )
         return str(len(promotion_upload_reads))
 
-    # csrf=False: a test fixture posted without a session token
     @http.route(
         "/test_http/reroute_upload",
         methods=["POST"],
@@ -433,7 +427,7 @@ class TestHttp(http.Controller):
 
     @http.route("/test_http/retry_replay", type="http", auth="user")
     def retry_replay(self):
-        global should_fail  # noqa: PLW0603  test fixture toggle, as above
+        global should_fail
         default_env = request.env.transaction.default_env
         replay_observations.append(
             {
@@ -454,7 +448,7 @@ class TestHttp(http.Controller):
 
     @http.route("/test_http/concurrency_error", type="http", auth="none")
     def concurrency_error(self):
-        global should_fail  # noqa: PLW0603  test fixture toggle, as above
+        global should_fail
         if should_fail is None:
             e = "should_fail must be set."
             raise ValueError(e)

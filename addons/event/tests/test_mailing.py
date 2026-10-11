@@ -13,11 +13,6 @@ class TestMailing(EventCase, MockEmail):
     def setUpClass(cls):
         super().setUpClass()
 
-        # freeze some datetimes, and ensure more than 1D+1H before event starts
-        # to ease time-based scheduler check
-        # Since `now` is used to set the `create_date` of an event and create_date
-        # has often microseconds, we set it to ensure that the scheduler we still be
-        # launched if scheduled_date == create_date - microseconds
         cls.reference_now = datetime(2024, 7, 20, 14, 30, 15, 123456)
         cls.event_date_begin = datetime(2024, 7, 22, 8, 0, 0)
         cls.event_date_end = datetime(2024, 7, 24, 18, 0, 0)
@@ -105,14 +100,12 @@ class TestMailing(EventCase, MockEmail):
                 ):
                     event.event_mail_ids._send_mail(self.registrations)
 
-                # where email == partner.email -> partner is recipient
                 for customer in self.event_customer + self.event_customer2:
                     self.assertMailMail(
                         customer,
                         "outgoing",
                         fields_values=exp_mail_values,
                     )
-                # other registrations: emails
                 self.assertMailMailWEmails(
                     [
                         formataddr(("Robodoo", "robodoo@example.com")),
@@ -125,7 +118,6 @@ class TestMailing(EventCase, MockEmail):
 
     @users("user_eventmanager")
     def test_event_mail_recipients(self):
-        """Check default / suggested recipients"""
         _default_organizer = self.user_eventmanager.company_id.partner_id
         for event_values, exp_followers, exp_defaults, exp_suggested in [
             (
@@ -169,8 +161,6 @@ class TestMailing(EventCase, MockEmail):
 
     @users("user_eventuser")
     def test_mail_template_creation(self):
-        """Check default values when creating registration templates, should
-        be correctly configured by default."""
         template_form_default = Form(
             self.env["mail.template"].with_context(default_model="event.registration")
         )

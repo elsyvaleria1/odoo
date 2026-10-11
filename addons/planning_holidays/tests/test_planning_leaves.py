@@ -54,7 +54,6 @@ class TestPlanningLeaves(TestCommon):
         self.assertNotEqual(
             slot_1.leave_warning, False, "employee is on leave, should have a warning"
         )
-        # The warning should display the whole concerned leave period
         (slot_1 + slot_2).invalidate_recordset(fnames=["leave_warning"])
         self.assertEqual(slot_1.leave_warning, "bert is on time off on 01/01/2020. \n")
 
@@ -92,7 +91,6 @@ class TestPlanningLeaves(TestCommon):
         self.assertNotEqual(
             slot_1.leave_warning, False, "employee is on leave, should have a warning"
         )
-        # The warning should display the whole concerned leave period
         self.assertEqual(
             slot_1.leave_warning,
             "bert is on time off from 01/06/2020 to 01/07/2020. \n",
@@ -124,19 +122,10 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_shift_update_according_time_off(self):
-        """working day and allocated hours of planning slot are update according to public holiday
-        Test Case
-        ---------
-            1) Create slot
-            2) Add public holiday
-            3) Checked the allocated hour and working days count of slot
-            4) Unlink the public holiday
-            5) Checked the allocated hour and working days count of slot
-        """
         with freeze_time("2020-04-10"):
             today = datetime.datetime.today()
             self.env.cr._now = (
-                today  # used to force create_date, as sql is not wrapped by freeze gun
+                today
             )
 
             ethan = self.env["hr.employee"].create(
@@ -152,7 +141,7 @@ class TestPlanningLeaves(TestCommon):
                 {
                     "resource_id": ethan.resource_id.id,
                     "employee_id": ethan.id,
-                    "start_datetime": datetime.datetime(2020, 4, 20, 8, 0),  # Monday
+                    "start_datetime": datetime.datetime(2020, 4, 20, 8, 0),
                     "end_datetime": datetime.datetime(2020, 4, 24, 17, 0),
                 }
             )
@@ -161,12 +150,11 @@ class TestPlanningLeaves(TestCommon):
                 "allocated_hours": slot.allocated_hours,
             }
 
-            # Add the public holiday
             public_holiday = self.env["resource.schedule.exception"].create(
                 {
                     "name": "Public holiday",
                     "calendar_id": ethan.resource_id.calendar_id.id,
-                    "date_from": datetime.datetime(2020, 4, 21, 8, 0),  # Wednesday
+                    "date_from": datetime.datetime(2020, 4, 21, 8, 0),
                     "date_to": datetime.datetime(2020, 4, 21, 17, 0),
                 }
             )
@@ -177,7 +165,6 @@ class TestPlanningLeaves(TestCommon):
                 "Allocated hours should be updated",
             )
 
-            # Unlink the public holiday
             public_holiday.unlink()
             self.assertDictEqual(
                 initial_slot,
@@ -313,13 +300,6 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_progress_bar_with_holiday(self):
-        """
-        Test Case
-        ---------
-            1) Create one day time-off
-            2) Create weekly shift
-            3) Calculate percentage and verify
-        """
         self.env["hr.leave"].sudo().create(
             {
                 "holiday_status_id": self.leave_type.id,
@@ -352,11 +332,6 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_half_day_off_leave_of_flexible_resource(self):
-        """
-        Test half-day off leave for a flexible resource.
-        The leave intervals should be set to 00:00:00 - 12:00:00 for AM half-day off
-        and 12:00:00 - 23:59:59 for PM half-day off in the planning_gantt view.
-        """
         flexible_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Flex Calendar",
@@ -371,7 +346,6 @@ class TestPlanningLeaves(TestCommon):
         employee.resource_calendar_id = flexible_calendar
         self.leave_type.request_unit = "half_day"
 
-        # Test AM half-day leave
         leave_am = (
             self.env["hr.leave"]
             .sudo()
@@ -410,7 +384,6 @@ class TestPlanningLeaves(TestCommon):
             interval_am[1], end_dt_am, "The end of the interval should be 12:00:00"
         )
 
-        # Test PM half-day leave on next day
         leave_pm = (
             self.env["hr.leave"]
             .sudo()
@@ -452,11 +425,6 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_multiple_leaves_with_one_refusal_and_approval(self):
-        """
-        Test by creating 2 leaves for same date and same employee
-        having a resource calendar of flexible hours with state of
-        one refused and another approved.
-        """
         self.employee_bert.resource_calendar_id = self.env["resource.calendar"].create(
             {
                 "name": "Flex Calendar",
@@ -498,11 +466,6 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_two_half_day_off_leaves_on_same_day_of_flexible_resource(self):
-        """
-        Test half-day off leave for a flexible resource.
-        The leave intervals should be set to 08:00:00 - 16:00:00
-        if 2 half-day offs on the same day(am and pm).
-        """
         self.employee_bert.resource_calendar_id = self.flexible_calendar
         self.leave_type.request_unit = "half_day"
         leave_am, leave_pm = (
@@ -553,13 +516,6 @@ class TestPlanningLeaves(TestCommon):
         )
 
     def test_batch_creation_from_calendar_with_time_off(self):
-        """
-        This test ensure that when planning slots are created from the "create multi" of the calendar view, the public
-        holidays and time off are correctly computed.
-        If some slots are supposed to be planned on public holidays/weekend, those slots are ignored.
-        If some slots are supposed to be planned on a time off of a resource, those slots are ignored for the
-        resource on time off, the other resource are correctly assigned to a new slot.
-        """
         template = self.env["planning.slot.template"].create(
             {
                 "start_time": 9,
@@ -584,7 +540,6 @@ class TestPlanningLeaves(TestCommon):
             ]
         )
 
-        # Public time off on Friday
         self.env["resource.schedule.exception"].create(
             {
                 "name": "Public holiday",
@@ -594,7 +549,6 @@ class TestPlanningLeaves(TestCommon):
             }
         )
 
-        # Ethan is off on Thursday, Chris is off on Wednesday
         self.env["hr.leave"].sudo().create(
             [
                 {
@@ -612,11 +566,6 @@ class TestPlanningLeaves(TestCommon):
             ]
         )._action_validate()
 
-        # Only 2 new slots are expected :
-        # - The slot on the 2nd April is a time off for chris
-        # - The slot on the 3rd April is a time off for ethan
-        # - The slot on the 4th April is a public holiday
-        # - The 2 slots on the 5th April are set on a weekend
         slot_ethan, slot_chris = self.env["planning.slot"].create_batch_from_calendar(
             [
                 {
@@ -650,13 +599,6 @@ class TestPlanningLeaves(TestCommon):
     def test_batch_creation_from_calendar_with_duration_days_template_and_time_off(
         self,
     ):
-        """
-        This test ensure that when planning slots are created from the "create multi" of the calendar view, the public
-        holidays and time off are correctly computed.
-        If some slots are supposed to be planned on public holidays/weekend, those slots are ignored.
-        If some slots are supposed to be planned on a time off of a resource, those slots are ignored for the
-        resource on time off, the other resource are correctly assigned to a new slot.
-        """
 
         template = self.env["planning.slot.template"].create(
             {
@@ -682,7 +624,6 @@ class TestPlanningLeaves(TestCommon):
             ]
         )
 
-        # Wednesday is a public time off
         self.env["resource.schedule.exception"].create(
             {
                 "name": "Public holiday",
@@ -692,7 +633,6 @@ class TestPlanningLeaves(TestCommon):
             }
         )
 
-        # Ethan is off on Thursday
         self.env["hr.leave"].sudo().create(
             [
                 {
@@ -704,8 +644,6 @@ class TestPlanningLeaves(TestCommon):
             ]
         )._action_validate()
 
-        # expected end date for Chris : 03 + 1 (public time off)
-        # expected end date for Ethan : 03 + 4 (public time off + personal time off + weekend)
         slot_ethan, slot_chris = self.env["planning.slot"].create_batch_from_calendar(
             [
                 {
@@ -744,9 +682,6 @@ class TestPlanningLeaves(TestCommon):
             }
         )
 
-        # date:            --------- 28/07 ---------|--------- 29/07 ---------|--------- 30/07 ----------|
-        # schedule:        morning off |            |       |off(11->16)|     |            |afternoon off|
-        # hours to work:              4H            |            3H           |           4H             |
 
         custom_leave, half_day_leave = self.env["hr.leave.type"].create(
             [

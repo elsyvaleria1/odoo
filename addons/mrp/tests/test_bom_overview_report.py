@@ -274,7 +274,6 @@ class TestBomOverviewReport(TestMrpCommon):
             }
         )
         self.assertEqual(variant.get_forecast_bom_id(), bom.id)
-        # what the forecast's Manufacturing Forecast button sends
         options = self.report.with_context(
             active_model="mrp.bom", active_id=bom.id, active_product_id=variant.id
         ).get_options({})
@@ -381,8 +380,6 @@ class TestBomReportWarehouse(TestMrpCommon):
         )
 
     def test_without_one_it_is_produced_where_a_new_order_of_it_would_be(self):
-        # The first warehouse by sequence is warehouse_1; the first
-        # manufacturing operation type is the second plant's.
         self.warehouse_2.manu_type_id.sequence = 1
         self.bom.picking_type_id = False
         production = self.env["mrp.production"].create(

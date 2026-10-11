@@ -23,8 +23,6 @@ EXPRESSION_RE = re.compile(r"(?s)\$\{.+?\}")
 
 
 def concatenates_a_value(call):
-    # literals joined with + are extracted joined, as they evaluate: only a
-    # value among them makes a msgid no runtime string matches
     return any(
         not LITERAL_RE.fullmatch(operand) or EXPRESSION_RE.search(operand)
         for operand in re.findall(OPERAND_PAT, call.partition("(")[2])

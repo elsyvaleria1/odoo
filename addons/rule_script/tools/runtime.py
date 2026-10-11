@@ -16,10 +16,6 @@ from .types import RuleValueError, coerce
 
 MAX_RANGE = 10_000
 MAX_CALL_DEPTH = 32
-# One evaluation, the rules it calls included, iterates at most MAX_STEPS
-# times and calls at most MAX_CALLS rules; an integer it builds by * or **
-# holds at most MAX_INT_BITS bits. Nested loops multiply, a range cap alone
-# does not bound them.
 MAX_STEPS = 1_000_000
 MAX_CALLS = 1_000
 MAX_INT_BITS = 4_096
@@ -148,8 +144,6 @@ SAFE_BUILTINS = {
 
 
 def compile_rule(module, filename):
-    """The evaluate function of a parsed rule module, compiled against the
-    rule builtins only."""
     namespace = {
         "__builtins__": SAFE_BUILTINS,
         GUARDED_ATTRIBUTE: _rule_attribute,
@@ -157,7 +151,7 @@ def compile_rule(module, filename):
         GUARDED_POWER: _rule_power,
         GUARDED_ITERATE: _rule_iterate,
     }
-    exec(compile(module, filename, "exec"), namespace)  # noqa: S102  the module was parsed and rewritten by parse_rule
+    exec(compile(module, filename, "exec"), namespace)
     return namespace[ENTRY_POINT]
 
 
@@ -209,10 +203,7 @@ class RuleContext:
 
 
 def run_rule(function, header, inputs, context):
-    """Evaluate a compiled rule on a mapping of inputs; the result is checked
-    against the rule's OUTPUT type."""
     rule_inputs = RuleInputs(header.inputs, inputs)
-    # the outermost evaluation opens the budget its nested calls share
     token = _BUDGET.set(RuleBudget()) if _BUDGET.get() is None else None
     try:
         result = function(rule_inputs, context)

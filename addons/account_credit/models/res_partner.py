@@ -122,32 +122,6 @@ class Partner(models.Model):
             partner.credit_root_folder_id = folder
 
     def _domain_credit_document_ids(self):
-        """Restrict ``document_ids`` to the credit files.
-
-        A credit document is one filed under a company's credit folder, or one
-        whose type a credit grade rule requires, wherever it is filed: an
-        identification kept in a shared identity folder still proves what the
-        rule asks for. Which partner it belongs to is its own ``partner_id``.
-        The subtree is read across every company rather than
-        ``self.env.companies``, because
-        ``credit_limit`` and ``credit_document_compliant`` are stored and their
-        value may not depend on which companies the user recomputing them
-        happens to have enabled. The seven companies share one credit folder,
-        so the union is also what the business means.
-
-        Folders are excluded: a subfolder carrying a contact is not a document
-        that contact submitted.
-
-        The domain is not part of the dependency graph, so a document changing
-        ``folder_id`` or ``document_type_id`` would leave this One2many cached
-        and the stored fields derived from it answering for a file it has left.
-        ``document.document.write`` is where that is caught, and
-        ``credit.grade.rule`` drops the cache when the required types change.
-        """
-        # Read the folder off credit.config, not off the company: since the
-        # credit consolidation res_company.credit_folder_id is a non-stored
-        # related onto credit_config_id, and searching it compiles to an
-        # `any!` subdomain that the view validator rejects outright.
         scope = self.env["credit.config"].with_privilege(
             "account_credit.privilege_read_credit_file_scope",
             reason="a credit file holds the same documents whoever reads it",
@@ -156,11 +130,6 @@ class Partner(models.Model):
         required_types = scope.env["credit.grade.rule"].search([]).document_type_id
         if not roots and not required_types:
             return Domain.FALSE
-        # `child_of` on `folder_id` takes a single value -- see
-        # `_search_folder_id` in document's `document_document_user_folder.py`,
-        # "Only one value can be searched for child of `folder_id`" -- so one
-        # term per root. Companies sharing a credit folder collapse by
-        # themselves.
         filed = Domain.OR(Domain("folder_id", "child_of", root.id) for root in roots)
         if required_types:
             filed |= Domain("document_type_id", "in", required_types.ids)

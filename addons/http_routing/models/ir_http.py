@@ -39,10 +39,6 @@ FRONTEND_TRANSLATIONS_ROUTE = "/website/translations"
 
 _REDIRECTABLE_METHODS = ("GET", "HEAD")
 
-# A URL segment or an Accept-Language tag is read as a language only when it is
-# shaped like one -- fr, FR, fr_FR, fr-fr, es_419, sr@latin -- so a page at
-# /en_vivo is not taken for English. A configured url_code is matched as such
-# before this applies.
 _LANG_TAG_RE = re.compile(
     r"([a-z]{2,3})(?:[_-]([a-z]{2}|[0-9]{3}))?(@[a-z]+)?", re.IGNORECASE
 )
@@ -196,8 +192,6 @@ class IrHttp(models.AbstractModel):
 
         router = http.root.get_routing_map(request.db, env=request.env).bind("")
         try:
-            # matched as the link will be followed, not as this request came:
-            # a page answering a POST still links to its GET-only neighbours
             rule, args = router.match(path_info=url, method="GET", return_rule=True)
             for key, val in list(args.items()):
                 if isinstance(val, models.BaseModel):
@@ -223,12 +217,6 @@ class IrHttp(models.AbstractModel):
             try:
                 return tools.urls.urljoin(canonical_domain, path)
             except ValueError:
-                # An URL the router could not rebuild is quoted as-is above, so
-                # it may still carry '.'/'..' segments -- scanners probe with
-                # them. urljoin refuses to build a domain-qualified URL out of
-                # such a path, and rightly so: it is not canonical. Degrade to
-                # the root-relative path, like the no-domain branch below, as
-                # this runs while rendering the error page of that very request.
                 return path
 
         return path + suffix
@@ -264,10 +252,6 @@ class IrHttp(models.AbstractModel):
             else None
         )
         if lang_url_code not in url_codes:
-            # A language the site does not serve is kept only when the caller
-            # named it: the target may serve more languages than the site does
-            # (survey serves every installed one). One that merely leaked in
-            # from the context -- a backend user's language -- would 404.
             _debug.logic("url_lang_unserved", lang=requested_code, kept=bool(lang_code))
             lang_url_code = (
                 (lang_url_code or lang_code) if lang_code else default_url_code
@@ -356,17 +340,6 @@ class IrHttp(models.AbstractModel):
 
     @api.model
     def get_nearest_lang(self, lang_code: str | None) -> str | None:
-        """Return the active frontend language code nearest to ``lang_code``.
-
-        An exact match wins outright. Otherwise, among the active frontend
-        languages that share ``lang_code``'s base (e.g. ``es_MX`` and
-        ``es_419`` both base to ``"es"``), the first one in
-        ``res.lang._get_frontend()``'s iteration order is returned — which is
-        alphabetical by language display name, not by any linguistic or
-        geographic notion of "nearest". When two or more variants of the same
-        base are active, which one wins this tie-break is therefore
-        arbitrary but deterministic.
-        """
         if not lang_code:
             return None
 
@@ -385,7 +358,6 @@ class IrHttp(models.AbstractModel):
         if hasattr(request, "is_frontend"):
             return super()._match(path)
 
-        # See /1, match a non website endpoint
         matched = not_found = None
         try:
             rule, args = cls._match_and_flag(path)
@@ -474,9 +446,6 @@ class IrHttp(models.AbstractModel):
                         request.cookies.get("frontend_lang")
                     ),
                 ),
-                # an anonymous session's context language is the browser's
-                # (Request.get_default_lang): it is the "browser" source, which
-                # a site may switch off, not a choice the visitor made
                 (
                     "user",
                     lambda: (
@@ -550,18 +519,15 @@ class IrHttp(models.AbstractModel):
                 path, path_no_lang, url_lang_str, default_lang, allow_redirect
             )
 
-        # See /2, no lang in url and default website
         if request.lang == default_lang:
             _debug.logic("reroute_for_lang", by="default_lang", path=path)
 
-        # See /3, missing lang in url but user-agent is a bot
         elif request.env["ir.http"].is_a_bot():
             _debug.logic(
                 "reroute_for_lang", by="bot", path=path, ignored=request.lang.code
             )
             request.lang = default_lang
 
-        # See /4, no lang in url and should not redirect (e.g. POST), continue
         elif not allow_redirect:
             _debug.logic(
                 "reroute_for_lang",
@@ -570,7 +536,6 @@ class IrHttp(models.AbstractModel):
                 lang=request.lang.code,
             )
 
-        # See /5, missing lang in url, /home -> /fr/home
         else:
             _debug.logic(
                 "reroute_for_lang", by="missing_lang", path=path, lang=request.lang.code
@@ -591,15 +556,10 @@ class IrHttp(models.AbstractModel):
         request_url_code = request.lang.url_code
 
         if allow_redirect:
-            # See /6, default lang in url, /en/home and /en_US/home -> /home.
-            # Compared on the resolved language, not the segment: an alias of
-            # the default language goes there in one hop instead of 301-ing to
-            # /en/home first.
             if request.lang == default_lang:
                 _debug.logic("reroute_for_lang", by="default_lang_in_url", path=path)
                 cls._redirect_lang(path_no_lang)
 
-            # See /7, lang alias in url, /fr_FR/home -> /fr/home
             if url_lang_str != request_url_code:
                 _debug.logic(
                     "reroute_for_lang", by="lang_alias", path=path, to=request_url_code
@@ -608,12 +568,10 @@ class IrHttp(models.AbstractModel):
                     cls._lang_url_prefix(path_no_lang, request_url_code), code=301
                 )
 
-            # See /8, homepage with trailing slash, /fr/ -> /fr
             if path == f"/{url_lang_str}/":
                 _debug.logic("reroute_for_lang", by="trailing_slash", path=path)
                 cls._redirect_lang(path[:-1], code=301)
 
-        # See /9, canonical lang in url, or any lang when redirecting is forbidden
         _debug.logic(
             "reroute_for_lang",
             by="valid_lang_rerouted",
@@ -690,8 +648,6 @@ class IrHttp(models.AbstractModel):
         code = 500
         values = {
             "exception": exception,
-            # shown to an editor or in debug mode only: a crawler's 404 flood
-            # should not format a stack per request
             "traceback": lazy(lambda: "".join(traceback.format_exception(exception))),
         }
 
@@ -740,9 +696,6 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _serve_error_page(cls, title: str, message: str, *, status: int) -> Response:
-        # http_error's layout reads what only a frontend request carries
-        # (portal's frontend_languages, website's website), so a route that is
-        # not one -- a backend download, an OAuth callback -- is made one first
         if not getattr(request, "is_frontend", False):
             _debug.logic("error_page_made_frontend", path=request.httprequest.path)
             request.is_frontend = True
@@ -757,8 +710,6 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _handle_error(cls, exception):
-        # a refusal of a form posted in place (@web/public/fragment_form) is
-        # told to the page, which stays as it is
         if isinstance(exception, UserError) and wants_fragments():
             request.env.cr.rollback()
             return request.prepare_json_response(
@@ -782,8 +733,6 @@ class IrHttp(models.AbstractModel):
         code, values = cls._prepare_exception_code_and_values(exception)
 
         request.env.cr.rollback()
-        # an unrouted URL has been through the fallback already, in
-        # _serve_ir_http_fallback, before this NotFound was raised
         if code in (404, 403) and not getattr(
             request.attempt_scratch, "fallback_tried", False
         ):

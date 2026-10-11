@@ -127,10 +127,6 @@ class TestSelfOrderPreset(SelfOrderCommonTest):
         self.assertNotEqual(last_order.preset_time, False)
 
     def test_slot_limit_orders(self):
-        """
-        Tests that when a slot reached it's limit capacity, it is not shown
-        in the selector anymore.
-        """
         resource_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Takeaway",

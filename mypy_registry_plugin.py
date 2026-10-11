@@ -48,7 +48,6 @@ def _literal_strings(ctx: MethodContext) -> list[str] | None:
 class RegistryStubsPlugin(Plugin):
     def _add_registry_dependencies(self, ctx: MethodContext) -> None:
         api = cast("TypeChecker", ctx.api)
-        # Module loading dependencies do not recheck function bodies in a daemon.
         for trigger in (
             make_trigger(STUB_MODULE),
             make_wildcard_trigger(STUB_MODULE),
@@ -61,7 +60,6 @@ class RegistryStubsPlugin(Plugin):
     def _registry_classes(self, ctx: MethodContext) -> dict[str, TypeInfo]:
         self._add_registry_dependencies(ctx)
         api = cast("TypeChecker", ctx.api)
-        # Fine-grained rechecking replaces types; keep no TypeInfo objects across calls.
         classes: dict[str, TypeInfo] = {}
         module = api.modules.get(STUB_MODULE)
         for symbol in module.names.values() if module is not None else ():
@@ -173,8 +171,6 @@ class RegistryStubsPlugin(Plugin):
         return ctx.default_return_type
 
     def get_additional_deps(self, file: MypyFile) -> list[tuple[int, str, int]]:
-        # the stub is imported by nobody; every checked file depends on it so
-        # its classes are loaded before a method hook asks for them
         if file.fullname == STUB_MODULE or file.fullname.startswith("mypy."):
             return []
         return [(10, STUB_MODULE, -1)]

@@ -16,16 +16,9 @@ if TYPE_CHECKING:
 
 __all__ = ["CHANNELS", "ROOT", "DebugLog", "debug_scope", "format_event"]
 
-# Every debug logger this module hands out lives under ROOT, so one
-# `--log-handler odoo.debug:DEBUG` enables all of them and
-# `--log-handler odoo.debug.perf:DEBUG` enables one channel across the tree.
-# The JS twin (@web/core/debug/debug_logger) uses the same four channel names.
 ROOT = "odoo.debug"
 CHANNELS = ("logic", "perf", "pipeline", "lifecycle")
 
-# An addon's layer segment is dropped from its scope unless an earlier layer of
-# the same addon holds a module of the same name: controllers/event_track.py
-# then keeps "controllers" so its loggers stay apart from models/event_track.py.
 _ADDON_LAYERS = ("models", "wizards", "wizard", "reports", "controllers")
 
 
@@ -70,14 +63,9 @@ def _format_text(text: str) -> str:
 
 
 _MAX_DEPTH = 3
-# an item holding one of these would read as the collection's own syntax
 _ITEM_SYNTAX = frozenset(",[](){}'\"")
 
 
-# a string that would read as another value -- a number, inf or nan,
-# None/True/False, the overflow (+N) or depth (<list:N>) markers -- is quoted
-# inside a collection, so ["1", 1] and [None, "None"] stay apart; inside
-# braces, one holding ":" too, so a set {"a:b"} is no dict {a:b}
 _READS_AS_OTHER = re.compile(r"[+-]?(?:\d[\d.e+-]*|inf|nan)|None|True|False|[+<].*")
 
 
@@ -122,7 +110,6 @@ def _format_collection(value: Any, depth: int) -> str | None:
         shown = _format_items(value, len(value), depth)
         return f"({shown},)" if len(value) == 1 else f"({shown})"
     if isinstance(value, _SETS):
-        # a snapshot: another thread may be changing a live set or dict
         items = tuple(value)
         if not items:
             return "set()"
@@ -143,9 +130,6 @@ def _format_collection(value: Any, depth: int) -> str | None:
 def _format_value(value: Any, depth: int = 0) -> str:
     if isinstance(value, str):
         return _format_text(value)
-    # a collection prints bounded and unquoted, like a recordset: a field
-    # list reads [a,b,c]; one holding whitespace is quoted whole, so an item
-    # cannot forge a field of the line
     if isinstance(value, _COLLECTIONS):
         if depth >= _MAX_DEPTH:
             return f"<{type(value).__name__}:{len(value)}>"
@@ -154,11 +138,6 @@ def _format_value(value: Any, depth: int = 0) -> str:
         return _format_text(text) if depth == 0 else text
     if isinstance(value, float):
         return f"{value:.3f}"
-    # Duck-typed recordset, so a site passes the recordset itself: nothing is
-    # computed when the channel is off, and a large one prints bounded.
-    # A value that refuses inspection (an unbound werkzeug proxy raises
-    # RuntimeError on any attribute) prints as its type: a log line must never
-    # break the code it observes.
     try:
         model = getattr(value, "_name", None)
         if isinstance(model, str) and not isinstance(value, type):
@@ -176,8 +155,6 @@ def format_event(event: str, fields: dict[str, Any]) -> str:
     return " ".join(parts)
 
 
-# a field whose formatting raises (a closed cursor, a failing lazy label)
-# costs its own value, not the line, and never the code that logged it
 def _format_field(value: Any) -> str:
     try:
         return _format_value(value)
@@ -200,8 +177,6 @@ class _Channel:
             self.logger.debug("%s", format_event(event, fields))
 
 
-# Round trips, not sql_log_count: executemany adds len(rows) to the latter, so a
-# batched INSERT of N rows would read as N queries.
 def _statements(cr: Any) -> int:
     try:
         return getattr(cr, "sql_statement_count", 0)
@@ -210,8 +185,6 @@ def _statements(cr: Any) -> int:
 
 
 def _clock(_read: Callable[[], float] = time.perf_counter) -> float:
-    # Capture the C clock in a default: freezing business time must neither
-    # freeze spans nor exempt a timed method's whole call stack from freezing.
     return _read()
 
 
@@ -291,7 +264,7 @@ class _PerfChannel(_Channel):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("%s", format_event(event, fields))
 
-    def __call__(  # type: ignore[override]  # a perf event is a span, not a line
+    def __call__(
         self, event: str, /, cr: Any = None, **fields: Any
     ) -> _Span | _DisabledSpan:
         if not self.logger.isEnabledFor(logging.DEBUG):

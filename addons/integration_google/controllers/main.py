@@ -7,7 +7,6 @@ from odoo.addons.integration_google.models.integration_service import (
 
 
 class GoogleOAuthController(OAuthController):
-    # registered in Google consoles before the standard callback existed
     @http.route(
         LEGACY_CALLBACK_PATH, type="http", auth="user", website=False, csrf=False
     )

@@ -15,8 +15,6 @@ class TestAccountBudget(TestAccountBudgetCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # created here, not in a test: a plan's dynamic column survives the
-        # method rollback in the registry but not in the database
         cls.analytic_plan_empty = cls.env["account.analytic.plan"].create(
             {"name": "Empty plan"}
         )
@@ -27,19 +25,14 @@ class TestAccountBudget(TestAccountBudgetCommon):
 
         self.assertRecordValues(budget, [{"state": "draft"}])
 
-        # I pressed the confirm button to confirm the Budget
-        budget.action_budget_confirm()
-
-        # I check that budget is in "Confirmed" state
-        self.assertRecordValues(budget, [{"state": "confirmed"}])
-
-        # Confirming an already-confirmed budget with no children leaves it "Confirmed"
         budget.action_budget_confirm()
 
         self.assertRecordValues(budget, [{"state": "confirmed"}])
 
-        # I pressed the revise button to create a draft revision of the Budget
-        # (the original stays "Confirmed" until the revision is confirmed)
+        budget.action_budget_confirm()
+
+        self.assertRecordValues(budget, [{"state": "confirmed"}])
+
         budget.action_create_revision()
 
         revised_budget = self.env["budget.analytic"].search(
@@ -47,21 +40,16 @@ class TestAccountBudget(TestAccountBudgetCommon):
         )
         self.assertTrue(revised_budget, "The revised budget should have been created")
 
-        # I pressed the confirm button to confirm the revised Budget
         revised_budget.action_budget_confirm()
 
-        # I check that revised_budget is in "Confirmed" state and budget is in "Revised" state
         self.assertRecordValues(revised_budget, [{"state": "confirmed"}])
         self.assertRecordValues(budget, [{"state": "revised"}])
 
-        # I pressed the done button to set the Revised Budget to "Done" state
         revised_budget.action_budget_done()
 
-        # I check that revised_budget is in "Done" state
         self.assertRecordValues(revised_budget, [{"state": "done"}])
 
     def test_budget_split(self):
-        # I created a budget split wizard with a date range and a period and a list of analytic plans
         res = (
             self.env["wizard.budget.analytic.create"]
             .create(
@@ -94,9 +82,6 @@ class TestAccountBudget(TestAccountBudgetCommon):
             dict(zip(account_dict.keys(), combination, strict=True))
             for combination in product(*account_dict.values())
         ]
-        # 12 monthly budgets, each carrying every account combination. Without
-        # this the zip below was `strict=False`, so an empty result set walked
-        # zero pairs and the test passed having asserted nothing.
         self.assertEqual(len(budget_lines), 12 * len(account_combinations))
         for line, combination in zip(
             budget_lines, account_combinations * 12, strict=True
@@ -110,8 +95,7 @@ class TestAccountBudget(TestAccountBudgetCommon):
 
     @freeze_time("2024-01-15 14:30:00")
     def test_revised_budget_name_generation(self):
-        """Test that revised budget names are generated correctly."""
-        budget = self.budget_analytic_revenue  # Use existing budget from setup
+        budget = self.budget_analytic_revenue
         budget.action_budget_confirm()
 
         revised_budget = budget.action_create_revision()
@@ -132,7 +116,6 @@ class TestAccountBudget(TestAccountBudgetCommon):
         )
 
     def test_budget_split_keeps_the_trailing_partial_period(self):
-        """A range ending mid-period used to lose that period silently."""
         wizard = self._split_wizard(date_to="2019-12-15")
         lines = self.env["budget.line"].search(wizard.action_budget_split()["domain"])
         budgets = lines.budget_analytic_id.sorted("date_from")
@@ -171,7 +154,6 @@ class TestAccountBudget(TestAccountBudgetCommon):
         )
 
     def test_budget_split_rejects_a_plan_without_accounts(self):
-        """An empty plan produced budgets with no lines at all."""
         wizard = self._split_wizard(
             analytical_plan_ids=[(6, 0, self.analytic_plan_empty.ids)], period="year"
         )
@@ -179,9 +161,6 @@ class TestAccountBudget(TestAccountBudgetCommon):
             wizard.action_budget_split()
 
     def test_budget_split_refuses_an_unbounded_cartesian_product(self):
-        """The line count is the product of the plan sizes times the number
-        of periods, and nothing used to bound it: three plans of twenty
-        accounts over a year generated 96 000 lines from one click."""
         wizard = self._split_wizard(
             analytical_plan_ids=[
                 (
@@ -194,16 +173,13 @@ class TestAccountBudget(TestAccountBudgetCommon):
         with patch.object(type(wizard), "MAX_GENERATED_LINES", 10):
             with self.assertRaises(UserError):
                 wizard.action_budget_split()
-        # under the limit it still generates
         self.assertTrue(wizard.action_budget_split()["domain"])
 
     def test_budget_split_honours_the_budget_type(self):
-        """The wizard could only ever generate expense budgets."""
         wizard = self._split_wizard(period="year", budget_type="revenue")
         lines = self.env["budget.line"].search(wizard.action_budget_split()["domain"])
         self.assertEqual(lines.budget_analytic_id.mapped("budget_type"), ["revenue"])
 
     def test_budget_split_rejects_inverted_dates(self):
-        """`date_range` raised a bare ValueError at the user."""
         with self.assertRaises(ValidationError):
             self._split_wizard(date_from="2019-12-31", date_to="2019-01-01")

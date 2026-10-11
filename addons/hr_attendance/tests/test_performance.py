@@ -12,22 +12,7 @@ from odoo.tests.common import TransactionCase, tagged
 _logger = logging.getLogger(__name__)
 
 
-# A FIXED anchor, not `date.today()`. The fixture spans two months of calendar
-# days, so against a moving anchor both the number of attendances and their
-# weekday composition change every day -- and so does the query count a budget
-# is supposed to pin. 2025-09-02 gives 63 days (30 + 31 + 2) and therefore
-# 6,300 attendances over the 100 employees, whatever day this runs.
 _ANCHOR = date(2025, 9, 2)
-# TWO NUMBERS, BOTH EXACT, BECAUSE THE BUDGET IS A FUNCTION OF THE INSTALLED
-# MODULE SET AND NOT ONLY OF THIS MODULE'S CODE. `hr_work_entry_attendance`
-# overrides `hr.attendance._get_employee_calendar()` to prefer a contract's own
-# schedule, and that override costs exactly one query on this path -- measured
-# by installing it into a database that had just read 258 and re-running: 259.
-#
-# A single budget of 259 was what this test carried first, taken on a database
-# that happened to have the enterprise module on it, and it printed
-# `Query count less than expected: 258 < 259` on every clean run -- which is
-# the exact defect this test's own comment was written to describe.
 _REGENERATION_QUERIES = 258
 _REGENERATION_QUERIES_WITH_WORK_ENTRIES = 259
 
@@ -279,13 +264,6 @@ class TestHrAttendancePerformance(TransactionCase):
         cls.attendances = cls.env["hr.attendance"].create(vals)
 
     def test_regenerate_overtime_line(self):
-        # The budget is the measurement, with no headroom. It was 1,700 once --
-        # six times the real cost -- and `assertQueryCount` only LOGS when the
-        # count comes in under budget, so that gap was reported on every run
-        # and failed nothing: a regeneration that started issuing a query per
-        # attendance would have had 1,400 to spare before this noticed. The
-        # figure is only a figure because `_ANCHOR` is fixed; against
-        # `date.today()` it moved with the weekday composition of the span.
         self.assertEqual(len(self.attendances), 6300)
         budget = (
             _REGENERATION_QUERIES_WITH_WORK_ENTRIES
@@ -359,8 +337,6 @@ class TestAttendanceComputeBatchCost(TransactionCase):
         self._assert_flat("_compute_last_attendance_id")
 
 
-# noon on a mid-month day: the fixture's "three hours ago" stays in this month
-# in Brussels, which it left in the first hours (UTC) of every month
 @freeze_time("2025-06-17 12:00:00")
 @tagged("post_install", "-at_install")
 class TestAttendanceComputeQueryScope(TransactionCase):

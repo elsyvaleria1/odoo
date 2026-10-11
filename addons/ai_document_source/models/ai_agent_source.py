@@ -21,14 +21,12 @@ class AIAgentSource(models.Model):
     @api.depends_context("uid")
     @api.depends("document_id")
     def _compute_user_has_access(self) -> None:
-        """Override to check the user's access through the linked document."""
         document_sources = self.filtered(lambda s: s.type == "document")
         for source in document_sources:
             source.user_has_access = source.document_id.user_permission != "none"
         super(AIAgentSource, self - document_sources)._compute_user_has_access()
 
     def _update_name(self):
-        """Override to name document sources after their document."""
         if not self:
             return None
 
@@ -45,7 +43,6 @@ class AIAgentSource(models.Model):
         return None
 
     def action_access_source(self) -> dict:
-        """Override to open the linked document when there is one."""
         self.check_singleton()
         if self.document_id:
             return {
@@ -60,7 +57,6 @@ class AIAgentSource(models.Model):
         return super().action_access_source()
 
     def action_reprocess_index(self):
-        """Override to reprocess the index of sources of type document."""
         self.check_singleton()
         if self.type != "document":
             return super().action_reprocess_index()
@@ -92,10 +88,6 @@ class AIAgentSource(models.Model):
         return None
 
     def _recreate_attachments_for_sources(self, sources) -> None:
-        """Create fresh attachments for the given sources, unlinking old embeddings.
-
-        :param ai.agent.source sources: sources to create fresh attachments for
-        """
         if not sources:
             return
 
@@ -107,14 +99,6 @@ class AIAgentSource(models.Model):
             base_attachment = source.document_id.attachment_id.with_context(
                 no_document=True
             )
-            # `copy()`, not `copy_data()` + `create()`: duplicating an
-            # `ir.attachment` is split across the two. `copy_data` carries the
-            # bytes only for database-stored content; a filestore-backed
-            # attachment is relinked to its existing file by `copy()` afterwards,
-            # deliberately without reading it. Building the vals and creating
-            # them separately therefore skipped that relink, and every refreshed
-            # source got an attachment with no content at all -- no checksum, no
-            # file_size, nothing to embed.
             source.attachment_id = base_attachment.copy(
                 {
                     "res_model": "ai.agent.source",

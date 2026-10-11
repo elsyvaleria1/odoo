@@ -38,7 +38,6 @@ class IrActionsServer(models.Model):
         "mail_post",
     }
 
-    # AI Action
     state = fields.Selection(
         selection_add=[("ai", "AI")],
         ondelete={"ai": "cascade"},
@@ -58,7 +57,6 @@ class IrActionsServer(models.Model):
         help='Prompt used by "AI" action',
     )
 
-    # AI Tools
     ai_tool_description = fields.Text(
         string="AI Tool Description",
         translate=True,
@@ -115,20 +113,6 @@ class IrActionsServer(models.Model):
 
     @api.depends_context("default_use_in_ai")
     def _compute_allowed_states(self) -> None:
-        """Narrow what the modules below allow; never replace it.
-
-        This used to re-assign the whole selection in its else-branch, which is
-        base's line copied. That silently dropped every narrowing an earlier
-        module had applied: `ai` depends on `mail`, so it wins the MRO, and
-        `mail`'s override -- the one that hides `next_activity`, `followers` and
-        `remove_followers` on a model that supports neither activities nor a
-        thread -- never ran. `ai_auto_install` installs `ai` from a bare
-        `-i mail`, so that was every enterprise deployment with pgvector, and no
-        test could see it: `at_install` tests run inside the loading loop
-        (`modules/loading.py`) and a `test_*` module is pinned to the depth of
-        its heaviest dependency (`modules/module_graph.py`), so `test_mail` runs
-        before anything layered on `mail` is loaded.
-        """
         super()._compute_allowed_states()
         if not self.env.context.get("default_use_in_ai"):
             return
@@ -169,14 +153,6 @@ class IrActionsServer(models.Model):
                 check_schema(data)
 
     def _get_ai_tools(self, record=None, tool_calls_history=None) -> dict:
-        """Return the tools to use in the LLM services.
-
-        :param record: The record (if any) on which the tools will be executed
-        :param tool_calls_history: A list to register the server action called
-        :return: dict mapping the tool name to a tuple
-            (description, allow_end_message, callable, parameters JSON schema)
-        :rtype: dict
-        """
         no_parameter_schema = {
             "properties": {},
             "required": [],
@@ -194,7 +170,6 @@ class IrActionsServer(models.Model):
         )
 
         def _exec_tool(ir_action_tool, arguments):
-            # Execute the tool, and register the call in `tool_calls_history`
             start_time = time.perf_counter()
             error = None
             try:
@@ -205,8 +180,6 @@ class IrActionsServer(models.Model):
             except psycopg.errors.SerializationFailure, psycopg.errors.DeadlockDetected:
                 raise
             except Exception as e:
-                # If something went wrong (e.g., not enough access) we return the error to the LLM
-                # so we can do prompt like "Do ... if it failed, to ..."
                 error = e
                 result = (
                     f"An error occurred while executing {ir_action_tool.name}: {error}"
@@ -233,8 +206,6 @@ class IrActionsServer(models.Model):
                     )
 
             if result is None and record:
-                # If the tool returned nothing, then we set the description of the
-                # tool as the result, so prompt like "if cannot do anything, do ..." work better
                 result = ir_action_tool._ai_get_action_description(record)
 
             if tool_calls_history is not None:
@@ -273,7 +244,6 @@ class IrActionsServer(models.Model):
         }
 
     def _ai_get_action_description(self, record) -> str:
-        """Build the description of the executed action, used as tool result and in toast messages."""
         self.check_singleton()
 
         if self.state == "next_activity":
@@ -287,16 +257,10 @@ class IrActionsServer(models.Model):
         return self.env._('Action "%(action)s" done.', action=self.name)
 
     def _run_action_ai_multi(self, eval_context=None) -> None:
-        """Execute an action of type `ai`."""
         for record in self._ai_get_records(eval_context):
             self._ai_action_run(record)
 
     def _ai_prepare_prompt_values(self, record) -> tuple:
-        """Render the prompt and return the set of field paths we need to read.
-
-        :return: (rendered prompt, set of field paths)
-        :rtype: tuple
-        """
         self.check_singleton()
         action_prompt = ""
         context_fields = set()
@@ -309,7 +273,6 @@ class IrActionsServer(models.Model):
         return action_prompt, context_fields
 
     def _ai_action_run(self, record) -> tuple:
-        """Run the AI action on the given record if any."""
         self.check_singleton()
         self.sudo(record.env.su)._check_access_to_run(record)
 
@@ -358,7 +321,6 @@ class IrActionsServer(models.Model):
         )
 
         if isinstance(record, self.pool["mixin.mail.thread"]):
-            # Log the tools the LLM used in the chatter of the record
             body = self.env["ir.qweb"]._render(
                 "ai.ai_log_action",
                 {
@@ -372,23 +334,15 @@ class IrActionsServer(models.Model):
         return responses, tool_calls_history
 
     def _ai_get_records(self, eval_context):
-        """Return the records on which the AI action will be executed."""
         if self.env.context.get("onchange_self"):
             return self.env.context["onchange_self"]
         records = eval_context.get("record") or eval_context["model"]
         return records | (eval_context.get("records") or eval_context["model"])
 
     def _ai_tool_call(self, record, arguments):
-        """What an agent's call of this tool does: run it, unless a module holds it."""
         return self._ai_tool_run(record, arguments)
 
     def _ai_tool_run(self, record, arguments):
-        """Run this tool on ``record`` as the user the agent works for.
-
-        The tool is checked like any server action that user runs -- its groups,
-        or write access to its model and records -- and goes through the same
-        gate as ``run()``, so an approval binding on it holds for an agent too.
-        """
         self.check_singleton()
         _logger.info("AI: Call action %s with arguments: %s", self.name, arguments)
         if session := get_ai_logging_session():
@@ -456,7 +410,5 @@ class IrActionsServer(models.Model):
         raise UserError(self.env._("This action cannot be executed by an AI."))
 
     def _ai_partner(self):
-        # Because this can be used in server action, we isolate it in a method
-        # in case the data change in the future
         ai_agent = self.env.ref("ai.ai_default_agent", raise_if_not_found=False)
         return ai_agent.partner_id if ai_agent else self.env["res.partner"]

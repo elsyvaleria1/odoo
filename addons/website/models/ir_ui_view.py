@@ -145,8 +145,6 @@ class IrUiView(models.Model):
         current_website_id = self.env.context.get("website_id")
         if not current_website_id or self.env.context.get("no_cow"):
             return super().write(vals)
-        # a copy on write copies the view and re-homes its children one by
-        # one: the tree is validated once, as the copies leave it
         with self._validation_deferred() as views:
             return views._write_on_copies(vals, current_website_id)
 
@@ -188,8 +186,6 @@ class IrUiView(models.Model):
                 copy_vals["inherit_id"] = vals["inherit_id"]
                 if "mode" in vals:
                     copy_vals["mode"] = vals["mode"]
-                # the copy carries the generic's mode; the change implies
-                # the same default it would on the generic itself
                 copy_vals = view._default_mode(copy_vals)
             website_specific_view = view.copy(copy_vals)
 
@@ -433,10 +429,6 @@ class IrUiView(models.Model):
     def _get_views_inheriting(self):
         views = self
         if not views.env.context.get("website_id"):
-            # a website-specific view resolves in its own website: outside
-            # one, the generic domain would drop it from its own tree. The
-            # generic resolution comes first -- its fetch is the one that
-            # reads the chain -- and only a specific chain resolves again
             generic = super()._get_views_inheriting()
             website_ids = views.website_id.ids
             if len(website_ids) != 1:
@@ -649,8 +641,6 @@ class IrUiView(models.Model):
                     website=current_website.id,
                 )
                 self = website_specific_view
-        # without an xpath `self` is the embedded field's record id, which need
-        # not be a view: reading one of its fields raises MissingError
         _debug.lifecycle(
             "save", view=self.id, key=self.key if xpath else None, xpath=xpath or None
         )

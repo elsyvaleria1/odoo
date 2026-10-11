@@ -29,7 +29,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
             groups="base.group_portal",
         )
 
-        # Enable rating feature
         cls.test_team.write({"helpdesk_use_rating": True})
 
         HelpdeskTicket = cls.env["helpdesk.ticket"].with_context(
@@ -58,7 +57,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
             "consumed": True,
         }
 
-        # for get_dashboard
         cls.team_sla = cls.test_team.copy({"helpdesk_use_sla": True})
         cls.stage_done.team_ids = [Command.link(cls.team_sla.id)]
 
@@ -66,7 +64,7 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
             {
                 "name": "SLA user",
                 "login": "sj@test.com",
-                "tz": "Asia/Singapore",  # UTC +8
+                "tz": "Asia/Singapore",
                 "group_ids": [
                     Command.link(cls.env.ref("helpdesk.group_use_sla").id),
                     Command.link(cls.env.ref("helpdesk.group_helpdesk_manager").id),
@@ -111,15 +109,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
         )
 
     def test_helpdesk_dashboard(self):
-        """Test the rating stat displayed in the dashboard for the current user.
-
-        Test Cases:
-        ==========
-        1) Generate some ratings on the current date.
-        2) Call the `get_dashboard` method in helpdesk team model to get
-           data displayed in the dashboard.
-        3) Check the rating values in the dashboard data.
-        """
         yesterday = date.today() - relativedelta(days=1)
         with patch.object(self.env.cr, "now", lambda: yesterday):
             ratings = self.env["rating.rating"].create(
@@ -138,13 +127,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
                     },
                 ]
             )
-            # Flush INSIDE the patched clock. `create()` seeds `write_date`
-            # from `cr.now()`, but the row is re-stamped when it is actually
-            # written, so letting the flush escape this block gave the ratings
-            # a real-now `write_date` while `create_date` stayed backdated --
-            # and `get_dashboard` buckets "today" on `write_date`, so
-            # yesterday's ratings counted as today's and the assertion below
-            # could never hold. Measured both ways before changing it.
             self.env.flush_all()
 
         HelpdeskTeam = self.env["team.team"]
@@ -178,7 +160,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
             data["7days"]["rating"], 5, "The average rating should be equal to 5 / 5."
         )
 
-        # create ratings for today
         ratings = self.env["rating.rating"].create(
             [
                 {
@@ -259,7 +240,6 @@ class TestHelpdeskRating(HelpdeskCommon, HttpCase, MailCase):
         self.assertEqual(data["7days"]["rating"], 5)
 
     def test_helpdesk_dashboard_user_timing(self):
-        """Test that the dashboard properly uses the user's timezone when calculating 'today' and '7days' values"""
         HelpdeskTeam = self.team_sla.with_user(self.user_sla)
         HelpdeskTicket = self.env["helpdesk.ticket"].with_user(self.user_sla)
         context_today = HelpdeskTeam._local_midnight_as_utc()

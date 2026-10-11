@@ -98,7 +98,7 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         self.assertEqual(len(commissions), 24)
         self.assertEqual(sum(commissions.mapped("commission")), 80)
 
-        SO.date_order = "2024-02-01 10:00:00"  # First day of the monthly period
+        SO.date_order = "2024-02-01 10:00:00"
         self.env["sale.commission.achievement.report"]._pre_achievement_operation()
         commissions = self.env["sale.commission.report"].search(
             [
@@ -116,7 +116,7 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         self.assertEqual(sum(commissions.mapped("achieved")), 80)
         self.assertEqual(len(achievements), 1)
 
-        SO.date_order = "2024-02-29 10:00:00"  # Last day of the monthly period
+        SO.date_order = "2024-02-29 10:00:00"
         self.env["sale.commission.achievement.report"]._pre_achievement_operation()
         commissions = self.env["sale.commission.report"].search(
             [
@@ -214,7 +214,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         self.assertEqual(len(commissions), 24)
         self.assertEqual(sum(commissions.mapped("commission")), 600)
 
-        # Check that a refund invoice creates a negative achievement
         refund_wizard = (
             self.env["wizard.account.move.reverse"]
             .with_context(active_model="account.move", active_ids=AM.ids)
@@ -276,7 +275,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
 
         self.commission_plan_user.target_ids.amount = 2000
 
-        # There is already a level 0 at 0$, level 0.5 at 0$ and level 1 at 2500$ by default
         self.commission_plan_user.target_commission_ids += self.env[
             "sale.commission.plan.target.commission"
         ].create(
@@ -461,7 +459,7 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         self.env["res.currency.rate"].create(
             {
                 "currency_id": new_currency.id,
-                "rate": 2,  # 2 NC = 1 $
+                "rate": 2,
             }
         )
         new_currency_pricelist = self.env["product.pricelist"].create(
@@ -536,7 +534,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
             .with_company(other_company)
             .create({"name": "TEST", "currency_id": inr_currency.id})
         )
-        # Conversion from current company (USD) to INR
         self.env["res.currency.rate"].create(
             {
                 "currency_id": inr_currency.id,
@@ -545,7 +542,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
             }
         )
         usd_currency = self.env.company.currency_id
-        # Conversion from other company (INR) to USD
         self.env["res.currency.rate"].with_company(other_company).create(
             {
                 "currency_id": usd_currency.id,
@@ -555,7 +551,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         )
         company_data = self.collect_company_accounting_data(other_company)
         other_company.country_id = self.env.ref("base.fr")
-        # set the OTC in the current currency
         self.commission_plan_user.commission_amount = 90
         self.commission_plan_user.target_ids.amount = 90
         self.commission_plan_user.achievement_ids = self.env[
@@ -629,7 +624,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
             100,
             msg="30% of 20000 with a curency rate of 60 (invoice is in another currency)",
         )
-        # 90 = is the maximum commission (100%).  20000 * 0.3 / 60 = 100 --> capped as 90
         self.assertAlmostEqual(
             sum(commissions.mapped("commission")),
             90,
@@ -653,7 +647,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
             6000,
             msg="30% of 2000 (no curency rate)",
         )
-        # 5400 = is the maximum commission (100%) (90 x 60).  20000 * 0.3 = 6000 --> capped as 5400
         self.assertAlmostEqual(
             sum(commissions.mapped("commission")),
             5400,
@@ -730,7 +723,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         )
 
         self.env["sale.commission.achievement.report"]._pre_achievement_operation()
-        # Once the cache is invalidated, the plan values are still updated and the report provide the right values
         commissions = self.env["sale.commission.report"].search(
             [("plan_id", "=", self.commission_plan_user.id)]
         )
@@ -744,7 +736,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         self.assertEqual(sum(commissions.mapped("forecast")), 4800)
 
         self.env["sale.commission.achievement.report"]._pre_achievement_operation()
-        # Same, all forecast are identical
         commissions = self.env["sale.commission.report"].search(
             [("plan_id", "=", self.commission_plan_user.id)]
         )
@@ -841,10 +832,6 @@ class TestSaleCommissionUser(TestSaleCommissionCommon):
         )
 
     def test_salesperson_date_from_matches_plan(self):
-        """
-        When updating `date_from` on an existing commission plan (`commission_plan_user`),
-        all linked salesperson records should automatically update their `date_from` to match the plan.
-        """
         for user in self.commission_plan_user.user_ids:
             user.date_from = datetime.date(year=2024, month=1, day=2)
         self.commission_plan_user.date_from = datetime.date(year=2024, month=1, day=3)

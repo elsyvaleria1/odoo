@@ -38,13 +38,6 @@ class StreamRuntime:
                     self._drop_lease(db_name)
             cursor = registry.cursor()
             try:
-                # The advisory lock is the session's, so the lease holds a
-                # session and no transaction. An open transaction would keep a
-                # snapshot whenever its last statement left a portal behind --
-                # every statement does under the extended query protocol -- and
-                # hold back the vacuum horizon of the whole database for as long
-                # as the process leads. Like the cron listener's, the session is
-                # exempt from the pool's idle timeout.
                 if cursor.use_autocommit():
                     cursor.execute("SET idle_session_timeout = 0")
                 cursor.execute(
@@ -123,7 +116,6 @@ RUNTIME = StreamRuntime()
 
 
 def process_streams(db_name: str) -> None:
-    """One database's sweep: lead it or leave it, then reconcile."""
     with working_on_database(db_name):
         try:
             registry = Registry(db_name)
@@ -138,7 +130,7 @@ def process_streams(db_name: str) -> None:
             return
         if not RUNTIME.lease(db_name, registry):
             return
-        registry[STREAM_MODEL]._reconcile(db_name, RUNTIME)  # type: ignore[attr-defined]
+        registry[STREAM_MODEL]._reconcile(db_name, RUNTIME)
 
 
 def shutdown() -> None:

@@ -71,9 +71,6 @@ class MailMessage(models.Model):
     def _get_search_reach_domain(
         self, *, bounded: bool = False, only: Collection[str] | None = None
     ) -> Domain:
-        # what the record-level read check admits (_get_forbidden_access), as
-        # one domain: a message addressed or notified to the user, theirs, or
-        # on a document whose messages they read
         pid = self.env.user.partner_id.id
         direct = Domain("partner_ids", "in", [pid]) | Domain(
             "notification_ids.res_partner_id", "=", pid
@@ -176,15 +173,15 @@ class MailMessage(models.Model):
                 return forbidden
 
         remaining = self._get_access_values(operation)
-        asked = len(remaining)  # debuglog
+        asked = len(remaining)
         self._discard_own_messages(remaining, operation)
-        own = asked - len(remaining)  # debuglog
+        own = asked - len(remaining)
         if operation == "read":
             self._discard_notified_messages(remaining)
         documents = self._group_ids_by_document(remaining)
-        before_documents = len(remaining)  # debuglog
+        before_documents = len(remaining)
         self._discard_accessible_documents(remaining, documents, operation)
-        by_document = before_documents - len(remaining)  # debuglog
+        by_document = before_documents - len(remaining)
         if operation == "create":
             self._discard_notified_parents(remaining)
             self._discard_followed_documents(remaining, documents)
@@ -271,8 +268,6 @@ class MailMessage(models.Model):
         return None if self.env.user._is_public() else self.env.uid
 
     def _get_author_partner_id_for_access(self) -> int | None:
-        # the public partner authors every anonymous post: owning those would
-        # hand each visitor what any other visitor posted
         return None if self.env.user._is_public() else self.env.user.partner_id.id
 
     def _discard_own_messages(self, remaining: dict, operation: str) -> None:

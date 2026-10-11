@@ -9,11 +9,6 @@ class StockPickingBatch(models.Model):
     _inherit = "stock.picking.batch"
 
     def action_load_operator_sales(self) -> dict | None:
-        """Board the ready deliveries of the orders the trip's operator sold.
-
-        A salesperson who delivers takes his own customers' goods: his trip is
-        built from his portfolio, whichever customers he ends up visiting.
-        """
         self.check_singleton()
         if self.date_departure:
             raise UserError(
@@ -39,8 +34,6 @@ class StockPickingBatch(models.Model):
         )
         if self.picking_type_id:
             domain &= Domain("picking_type_id", "=", self.picking_type_id.id)
-        # Only what leaves whole: a partly reserved transfer would be handed over
-        # short and leave a backorder behind the salesperson's back.
         pickings = (
             self.env["stock.picking"]
             .search(domain)

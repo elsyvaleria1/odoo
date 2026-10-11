@@ -92,7 +92,6 @@ class TestPayslipBase(TransactionCase):
             {"name": "Leave", "is_leave": True, "code": "LEAVETEST100"}
         )
 
-        # I create a work entry type with work rate
         cls.work_entry_type_overtime_duty = cls.env["hr.work.entry.type"].create(
             {
                 "name": "Overtime Duty",
@@ -103,7 +102,6 @@ class TestPayslipBase(TransactionCase):
             }
         )
 
-        # I create a salary structure for "Software Developer"
         cls.developer_pay_structure = cls.env["hr.payroll.structure"].create(
             {
                 "name": "Salary Structure for Software Developer",
@@ -925,9 +923,8 @@ class TestPayslipContractBase(TestPayslipBase):
             }
         )
 
-        # This contract ends at the 15th of the month
         cls.contract_cdd = cls.richard_emp.sudo().create_version(
-            {  # Fixed term contract
+            {
                 "contract_date_end": datetime.strptime("2015-11-15", "%Y-%m-%d"),
                 "contract_date_start": datetime.strptime("2015-01-01", "%Y-%m-%d"),
                 "date_version": datetime.strptime("2015-01-01", "%Y-%m-%d"),
@@ -939,7 +936,6 @@ class TestPayslipContractBase(TestPayslipBase):
             }
         )
 
-        # This contract starts the next day
         cls.contract_cdi = cls.richard_contract
         cls.richard_contract.sudo().write(
             {
@@ -954,7 +950,6 @@ class TestPayslipContractBase(TestPayslipBase):
             }
         )
 
-        # Contract for Jules
         cls.jules_emp.version_id.sudo().write(
             {
                 "contract_date_start": datetime.strptime("2015-01-01", "%Y-%m-%d"),

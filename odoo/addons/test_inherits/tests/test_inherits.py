@@ -159,7 +159,6 @@ class TestInherits(common.TransactionCase):
         parent = self.env["test.unstored.inherits.parent"].create({"name": "foo"})
 
         field = parent._fields["test_unstored_inherits_shared_line_ids"]
-        # the cache misses every id, as both of its questions must say
         with (
             patch.object(
                 field,

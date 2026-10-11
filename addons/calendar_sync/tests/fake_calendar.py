@@ -23,15 +23,10 @@ class FakeCalendars:
         self.calendars: dict[int, dict[str, dict]] = {}
         self.changed: dict[int, list[str]] = {}
         self.sent: list[tuple[str, int, str]] = []
-        # (account id, record id) the engine said it inserted
         self.inserted: list[tuple[int, int]] = []
-        # the context of each insert and patch, as the adapter sees it
         self.contexts: list[dict] = []
-        # {operation: kind} fails every call; once=True only the next one
         self.failing: dict[str, tuple[ErrorKind, bool]] = {}
-        # an insert that lands, then loses its answer
         self.lose_insert_answers = 0
-        # {record id: why}: what the provider would refuse before any request
         self.refusals: dict[int, str] = {}
         self._ids = itertools.count(1)
         self._tokens = itertools.count(1)
@@ -40,7 +35,6 @@ class FakeCalendars:
         return self.calendars.setdefault(account.id, {})
 
     def add(self, account, remote_id=None, **values) -> str:
-        """An item someone created in `account`'s calendar."""
         remote_id = remote_id or f"{self.code}-{next(self._ids)}"
         self.calendar(account)[remote_id] = {
             "uid": f"uid-{remote_id}",
@@ -189,7 +183,6 @@ class FakeAdapter:
     def _apply_series(self, account, master, occurrences, recurrence):
         occurrences = sorted(occurrences, key=lambda remote: remote.payload["start"])
         if not master:
-            # occurrences alone, each found in the series by its start
             events = {}
             for remote in occurrences:
                 event = recurrence.calendar_event_ids.filtered(

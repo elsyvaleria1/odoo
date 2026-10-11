@@ -55,7 +55,7 @@ def _get_stack_trace(
         stack.append(_format_frame(frame))
         frame = frame.f_back
     if frame is None and limit_frame:
-        _logger.runbot("Limit frame was not found")  # type: ignore[attr-defined]
+        _logger.runbot("Limit frame was not found")
     return list(reversed(stack))
 
 
@@ -408,7 +408,6 @@ class SyncCollector(Collector):
     def hook(
         self, _frame: FrameType, event: str, _arg: Any = None
     ) -> Callable[[FrameType, str, Any], Any] | None:
-        # the profiler's own teardown (__exit__, end, stop) runs traced
         if event == "line" or _frame.f_code.co_filename == __file__:
             return None
         entry = {"event": event, "frame": _format_frame(_frame)}
@@ -705,8 +704,6 @@ class Profiler:
             self.init_thread.profiler_params = self.params
         if self.disable_gc:
             self.exit_stack.enter_context(disabling_gc())
-        # logged before the collectors start: a tracing collector would
-        # otherwise record the logging call as part of the profiled code
         _debug.lifecycle(
             "profiler.starting",
             db=self.db,

@@ -17,8 +17,6 @@ from odoo.libs.colors import (
     sass_shade,
 )
 
-# The header and footer parts website.scss colours with `o-element-colors`, by
-# the selector of the rule it includes them in.
 ELEMENT_SELECTORS = {
     "menu": ".navbar-light",
     "footer": ".o_footer",
@@ -247,8 +245,6 @@ def _split_selectors(selectors):
 
 
 def _combination_selectors(css):
-    # What `@extend .o_ccN` added (a footer or header set to a combination)
-    # rides the combination's own rule, so a runtime rule must repeat it.
     selectors = {}
     for prelude, body in _top_level_rules(css):
         if not prelude.startswith("@") and (match := _RE_COMBINATION_BG.search(body)):
@@ -275,8 +271,6 @@ def _top_level_rules(css):
 
 
 def _navbar_dark_rules(css):
-    # What `@extend .navbar-dark` gives a dark header, as `.navbar-light` rules;
-    # None when one sits in an at-rule, which a runtime rule does not restate.
     rules = []
     for prelude, body in _top_level_rules(css):
         if ".navbar-dark" not in prelude and ".navbar-dark" not in body:
@@ -294,7 +288,6 @@ def _navbar_dark_rules(css):
 
 
 def named_color_css(context, value):
-    # website.scss's format-color(): a palette name resolves through o-color().
     color = parse_user_color(value)
     if isinstance(color, str):
         r = _Resolver(context, {})
@@ -303,7 +296,6 @@ def named_color_css(context, value):
 
 
 def small_font_size_em(context, rem) -> str | None:
-    # Bootstrap's `small`: `$o-small-font-size / $font-size-base * 1em`.
     match = re.fullmatch(r"([\d.]+)(px|rem)", context.font_size_base)
     if not match:
         return None
@@ -415,8 +407,6 @@ def parse_user_color(raw):
 
 
 def _normalize_elements(palette):
-    # website's secondary_variables.scss: a part given a colour instead of a
-    # combination is combination 1 with that colour as its custom one.
     palette = dict(palette)
     for name in ELEMENT_SELECTORS:
         base = palette.get(name)
@@ -431,13 +421,9 @@ class _Resolver:
         self.context = context
         self.overrides = overrides
         self.palette = _normalize_elements({**context.palette, **overrides})
-        # website's secondary_variables.scss excludes every user-set colour
-        # from auto-contrast: `map-keys($o-user-color-palette)`.
         self.exclusions = context.exclusions | set(overrides)
 
     def _chain(self, value, palette):
-        # o-related-color: at most ten redirections through the three palettes;
-        # a name found in none of them, or still a name past the limit, is null.
         for _ in range(11):
             if isinstance(value, int):
                 value = f"o-cc{value}-bg"
@@ -456,7 +442,6 @@ class _Resolver:
         return None
 
     def related(self, name):
-        # o-related-color without use-cc-bg: a combination number stays one.
         value = name
         for _ in range(11):
             if value is None or isinstance(value, (int, tuple)):
@@ -638,7 +623,6 @@ def _mute(color) -> tuple:
 
 
 def _cc_shape(r, index) -> dict:
-    # html_editor.common.scss's o-cc-shape.
     cc = f"o-cc{index}"
     bg = r.color(f"{cc}-bg")
     opaque = bg is not None and bg[3] > 0
@@ -658,7 +642,6 @@ def _cc_shape(r, index) -> dict:
 
 
 def _element_state(r, name) -> tuple:
-    # website.scss's o-element-color-state.
     index, custom = r.related(name), r.related(f"{name}-custom")
     legacy = (index is not None and not isinstance(index, int)) or isinstance(
         custom, int
@@ -677,7 +660,6 @@ def _element_background(r, name):
 
 
 def _element_shape(r, name) -> str | dict:
-    # website.scss's o-element-color-shape.
     index, custom, legacy = _element_state(r, name)
     if legacy:
         return "legacy"
@@ -704,8 +686,6 @@ def _element_shape(r, name) -> str | dict:
 
 
 def _element_declarations(r, name):
-    # website.scss's o-element-color-values, plus what the builder reads back:
-    # `--menu` (the combination) and `--menu-custom` (the colour).
     index, custom, legacy = _element_state(r, name)
     if legacy:
         return {}
@@ -765,7 +745,6 @@ def _same_color(color1, color2) -> bool:
 
 
 def _scrolltop_declarations(r) -> dict:
-    # website.scss's o-footer-scrolltop-colors.
     transparent = (0.0, 0.0, 0.0, 0.0)
     footer = r.color("footer-custom") or r.color("footer") or transparent
     footer = sass_flatten(footer, r.context.body_bg)
@@ -786,8 +765,6 @@ def _scrolltop_declarations(r) -> dict:
 
 
 def _layout_shape(r) -> tuple:
-    # A layout other than full width drops its header padding when the menu
-    # has no colour of its own, or the body's.
     color = _menu_color(r)
     if r.context.layout == "full":
         return (color is not None,)
@@ -799,7 +776,6 @@ def _layout_shape(r) -> tuple:
 
 
 def _menu_is_dark(r) -> bool:
-    # website.scss: `color-contrast(o-menu-color()) != $color-contrast-dark`.
     color = _menu_color(r)
     if color is None:
         return False
@@ -832,8 +808,6 @@ def _combination_gradient(context, gradients, index):
 def fits_runtime(context, overrides, gradients):
     r, compiled = _Resolver(context, overrides), _Resolver(context, {})
     for name in _compiled_elements(context):
-        # A part's combination gradient is a rule the runtime can restate but
-        # not take back.
         compiled_index = _element_state(compiled, name)[0]
         if context.cc_gradients.get(compiled_index) and not _combination_gradient(
             context, gradients, _element_state(r, name)[0]
@@ -912,7 +886,6 @@ def _menu_dark_rules(context) -> tuple:
 
 
 def _gradient_selectors(context, key):
-    # Where website.scss includes o-add-gradient for each gradient value.
     if match := re.fullmatch(r"o-cc(\d)-bg-gradient", key):
         return _selectors(context, int(match[1]))
     if key == "menu-gradient":
@@ -927,8 +900,6 @@ def _gradient_selectors(context, key):
 
 
 def gradient_css(context, overrides, gradients):
-    # website.scss order: each gradient value's own rule, then the rule that
-    # gives a part its combination's gradient (which wins where both apply).
     rules = [
         rule
         for key, gradient in sorted(gradients.items())

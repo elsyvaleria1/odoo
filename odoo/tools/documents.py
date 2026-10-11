@@ -75,8 +75,6 @@ register_reader(PdfEmbeddedFiles())
 
 
 def _module_is_loaded(component: Any, options: Mapping[str, Any]) -> bool:
-    # a reader or writer registers itself when its addon is imported, which is
-    # process-wide; a database that has not installed the addon cannot use it
     module = getattr(component, "module", "")
     env = options.get("env")
     if not module or env is None:

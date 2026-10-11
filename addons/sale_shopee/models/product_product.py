@@ -6,13 +6,6 @@ class ProductProduct(models.Model):
 
     @api.model
     def _restore_shopee_data_product(self, default_name, default_type, xmlid):
-        """Create a product and assign it the provided and previously valid xmlid.
-
-        :param str default_name: The name of the product
-        :param str default_type: The type of the product
-        :param str xmlid: The xmlid of the product
-        :return: The created product
-        """
         product = (
             self.env["product.product"]
             .with_context(mail_create_nosubscribe=True)
@@ -44,7 +37,6 @@ class ProductProduct(models.Model):
         return product
 
     def _configure_for_shopee(self) -> None:
-        """Archive products and their templates and define their invoice policy."""
         self.active = False
         for product_template in self.product_tmpl_id:
             product_template.write(

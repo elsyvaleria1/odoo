@@ -18,11 +18,6 @@ class AccountTaxReportHandler(models.AbstractModel):
     def _action_audit_cell_from_tax_tags(
         self, options: dict[str, Any], params: dict[str, Any]
     ) -> dict[str, Any]:
-        """Audit underlying tax tags when a rounded report also carries their balance.
-
-        Localizations opt in because their visible balance uses aggregation and
-        rounding; the parallel expression identifies the original journal items.
-        """
         report_line = self.env["report.formula.line"].browse(params["report_line_id"])
         if set(report_line.expression_ids.mapped("label")) == {
             "balance",
@@ -36,7 +31,6 @@ class AccountTaxReportHandler(models.AbstractModel):
         self, report, options, all_column_groups_expression_totals, warnings
     ):
         if "account.common_warning_draft_in_period" in warnings:
-            # Recompute the warning 'common_warning_draft_in_period' to not include tax closing entries in the banner of unposted moves
             if not self.env["account.move"].search_count(
                 [
                     ("state", "=", "draft"),
@@ -47,7 +41,6 @@ class AccountTaxReportHandler(models.AbstractModel):
             ):
                 warnings.pop("account.common_warning_draft_in_period")
 
-        # Chek the use of inactive tags in the period
         query = report._get_report_query(options, "strict_range")
         rows = self.env.execute_query(
             SQL(
@@ -125,18 +118,8 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_dynamic_lines(self, report, options, grouping, warnings=None):
-        """Compute the report lines for the generic tax report.
-
-        :param report:      The report.formula record being rendered.
-        :param options:     The report options.
-        :param str grouping: The requested grouping ('tax_account', 'account_tax' or none).
-        :param warnings:    The warnings dictionary to fill, if any.
-        :return:            A list of lines, each one being a python dictionary.
-        :rtype:             list
-        """
         options_by_column_group = report._split_options_per_column_group(options)
 
-        # Compute tax_base_amount / tax_amount for each selected groupby.
         if grouping == "tax_account":
             groupby_fields = [
                 ("src_tax", "type_tax_use"),
@@ -172,9 +155,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                 report, options, options_by_column_group
             )
 
-        # Fetch involved records in order to ensure all lines are sorted according the comodel order.
-        # To do so, we compute 'sorting_map_list' allowing to retrieve each record by id and the order
-        # to be used.
         record_ids_gb = [set() for dummy in groupby_fields]
 
         def update_record_ids_gb_recursively(node, level=0):
@@ -196,16 +176,14 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         sorting_map_list = []
         for i, comodel in enumerate(comodels):
             if comodel:
-                # Relational records.
                 records = (
                     self.env[comodel]
                     .with_context(active_test=False)
-                    .search([("id", "in", tuple(record_ids_gb[i]))])  # noqa: E8507  one search per comodel, and each iteration is a different model
+                    .search([("id", "in", tuple(record_ids_gb[i]))])
                 )
                 sorting_map = {r.id: (r, j) for j, r in enumerate(records)}
                 sorting_map_list.append(sorting_map)
             else:
-                # src_tax_type_tax_use.
                 selection = (
                     self.env["account.tax"]
                     ._fields["type_tax_use"]
@@ -219,7 +197,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     }
                 )
 
-        # Compute report lines.
         lines = []
         self._update_lines_recursively(
             report,
@@ -238,17 +215,12 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         )
         return lines
 
-    # -------------------------------------------------------------------------
-    # GENERIC TAX REPORT COMPUTATION (DYNAMIC LINES)
-    # -------------------------------------------------------------------------
 
     @api.model
     @_debug.perf.timed
     def _read_generic_tax_report_amounts_no_tax_details(
         self, report, options, options_by_column_group
     ):
-        # Fetch the group of taxes.
-        # If all child taxes have a 'none' type_tax_use, all amounts are aggregated and only the group appears on the report.
         company_ids = report.get_report_company_ids(options)
         company_domain = self.env["account.tax"]._check_company_domain(company_ids)
         company_where_query = (
@@ -295,14 +267,14 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             )
 
         results = defaultdict(
-            lambda: {  # key: type_tax_use
+            lambda: {
                 "base_amount": dict.fromkeys(options["column_groups"], 0.0),
                 "tax_amount": dict.fromkeys(options["column_groups"], 0.0),
                 "tax_non_deductible": dict.fromkeys(options["column_groups"], 0.0),
                 "tax_deductible": dict.fromkeys(options["column_groups"], 0.0),
                 "tax_due": dict.fromkeys(options["column_groups"], 0.0),
                 "children": defaultdict(
-                    lambda: {  # key: tax_id
+                    lambda: {
                         "base_amount": dict.fromkeys(options["column_groups"], 0.0),
                         "tax_amount": dict.fromkeys(options["column_groups"], 0.0),
                         "tax_non_deductible": dict.fromkeys(
@@ -317,13 +289,11 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
 
         for column_group_key, column_group_options in options_by_column_group.items():
             query = report._get_report_query(column_group_options, "strict_range")
-            # make sure account_move is always joined
             if "account_move_line__move_id" not in query._joins:
                 query.join(
                     "account_move_line", "move_id", "account_move", "id", "move_id"
                 )
 
-            # Fetch the base amounts.
             self.env.cr.execute(
                 SQL(
                     """
@@ -384,20 +354,10 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                         and row["tax_id"]
                         in group_of_taxes_info[row["src_group_tax_id"]]["child_tax_ids"]
                     ):
-                        # Suppose a base of 1000 with a group of taxes 20% affect + 10%.
-                        # The base of the group of taxes must be 1000, not 1200 because the group of taxes is not
-                        # expanded. So the tax lines affecting the base of its own group of taxes are ignored.
                         pass
                     elif row[
                         "tax_type_tax_use"
                     ] == "none" and child_to_group_of_taxes.get(row["tax_id"]):
-                        # The tax line is affecting the base of a 'none' tax belonging to a group of taxes.
-                        # In that case, the amount is accounted as an extra base for that group. However, we need to
-                        # account it only once.
-                        # For example, suppose a tax 10% affect base of subsequent followed by a group of taxes
-                        # 20% + 30%. On a base of 1000.0, the tax line for 10% will affect the base of 20% + 30%.
-                        # However, this extra base must be accounted only once since the base of the group of taxes
-                        # must be 1100.0 and not 1200.0.
                         group_tax_id = child_to_group_of_taxes[row["tax_id"]]
                         if group_tax_id not in group_of_taxes_with_extra_base_amount:
                             group_tax_info = group_of_taxes_info[group_tax_id]
@@ -417,7 +377,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     row["tax_id"] in group_of_taxes_info
                     and group_of_taxes_info[row["tax_id"]]["to_expand"]
                 ):
-                    # Expand the group of taxes since it contains at least one tax with a type != 'none'.
                     group_info = group_of_taxes_info[row["tax_id"]]
                     for child_tax_id, child_exigibility in zip(
                         group_info["child_tax_ids"],
@@ -445,7 +404,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                 tax_types=len(results),
                 groups_with_extra_base=len(group_of_taxes_with_extra_base_amount),
             )
-            # Fetch the tax amounts.
 
             select_deductible = join_deductible = group_by_deductible = SQL()
             _debug.logic(
@@ -507,9 +465,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             )
 
             for row in self.env.cr.dictfetchall():
-                # Manage group of taxes.
-                # In case the group of taxes is mixing multiple taxes having a type_tax_use != 'none', consider
-                # them instead of the group.
                 tax_id = row["tax_id"]
                 if row["group_tax_id"]:
                     tax_type_tax_use = row["group_tax_type_tax_use"]
@@ -570,19 +525,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
     def _read_generic_tax_report_amounts(
         self, report, options_by_column_group, groupby_fields
     ):
-        """Read the tax details to compute the tax amounts.
-
-        :param report:                  The report.formula record being rendered.
-        :param options_by_column_group: The report options, split per column group key.
-        :param groupby_fields:          A list of tuple (alias, field) representing the way the amounts must be grouped.
-        :return:                        A dictionary mapping each groupby key (e.g. a tax_id) to a sub dictionary containing:
-
-            base_amount:    The tax base amount expressed in company's currency.
-            tax_amount:     The tax amount expressed in company's currency.
-            children:       The children nodes following the same pattern as the current dictionary.
-
-        :rtype:                         dict
-        """
         fetch_group_of_taxes = False
 
         select_clause_list = []
@@ -597,7 +539,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             )
             groupby_query_list.append(SQL.identifier(alias, field))
 
-            # Fetch both info from the originator tax and the child tax to manage the group of taxes.
             if alias == "src_tax":
                 select_clause_list.append(
                     SQL(
@@ -609,9 +550,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                 groupby_query_list.append(SQL.identifier("tax", field))
                 fetch_group_of_taxes = True
 
-        # Fetch the group of taxes.
-        # If all children taxes are 'none', all amounts are aggregated and only the group will appear on the report.
-        # If some children taxes are not 'none', the children are displayed.
         group_of_taxes_to_expand = set()
         if fetch_group_of_taxes:
             group_of_taxes = (
@@ -637,8 +575,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                 query
             )
 
-            # Avoid adding multiple times the same base amount sharing the same grouping_key.
-            # It could happen when dealing with group of taxes for example.
             row_keys = set()
 
             self.env.cr.execute(
@@ -669,24 +605,17 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             for row in self.env.cr.dictfetchall():
                 node = res
 
-                # tuple of values used to prevent adding multiple times the same base amount.
                 cumulated_row_key = [row["is_refund"]]
 
                 for alias, field in groupby_fields:
                     grouping_key = f"{alias}_{field}"
 
-                    # Manage group of taxes.
-                    # In case the group of taxes is mixing multiple taxes having a type_tax_use != 'none', consider
-                    # them instead of the group.
                     if (
                         grouping_key == "src_tax_id"
                         and row["src_tax_id"] in group_of_taxes_to_expand
                     ):
-                        # Add the originator group to the grouping key, to make sure that its base amount is not
-                        # treated twice, for hybrid cases where a tax is both used in a group and independently.
                         cumulated_row_key.append(row[grouping_key])
 
-                        # Ensure the child tax is used instead of the group.
                         grouping_key = "tax_id"
 
                     row_key = row[grouping_key]
@@ -703,7 +632,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     )
                     sub_node = node[row_key]
 
-                    # Add amounts.
                     if cumulated_row_key_tuple not in row_keys:
                         sub_node["base_amount"][column_group_key] += row["base_amount"]
                     sub_node["tax_amount"][column_group_key] += row["tax_amount"]
@@ -740,37 +668,20 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         parent_line_id=None,
         warnings=None,
     ) -> None:
-        """Populate the list of report lines passed as parameter recursively. At this point, every amounts is already
-        fetched for every periods and every groupby.
-
-        :param options:             The report options.
-        :param lines:               The list of report lines to populate.
-        :param sorting_map_list:    A list of dictionary mapping each encountered key with a weight to sort the results.
-        :param index:               The index of the current element to process (also equals to the level into the hierarchy).
-        :param groupby_fields:      A list of tuple <alias, field> defining in which way tax amounts should be grouped.
-        :param values_node:         The node containing the amounts and children into the hierarchy.
-        :param type_tax_use:        The type_tax_use of the tax.
-        :param parent_line_id:      The line id of the parent line (if any)
-        :param warnings             The warnings dictionnary.
-        """
         if index == len(groupby_fields):
             return
 
         alias, field = groupby_fields[index]
         groupby_key = f"{alias}_{field}"
 
-        # Sort the keys in order to add the lines in the same order as the records.
         sorting_map = sorting_map_list[index]
         sorted_keys = sorted(values_node.keys(), key=lambda x: sorting_map[x][1])
 
         for key in sorted_keys:
-            # Compute 'type_tax_use' with the first grouping since 'src_tax_type_tax_use' is always
-            # the first one.
             if groupby_key == "src_tax_type_tax_use":
                 type_tax_use = key
             sign = -1 if type_tax_use == "sale" else 1
 
-            # Prepare columns.
             tax_amount_dict = values_node[key]
             columns = []
             tax_base_amounts = tax_amount_dict["base_amount"]
@@ -793,7 +704,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     report._prepare_column_dict(col_value, column, options=options)
                 )
 
-                # Add the non-deductible, deductible and due tax amounts.
                 if expr_label == "tax" and options.get(
                     "account_journal_report_tax_deductibility_columns"
                 ):
@@ -815,7 +725,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                         )
                     )
 
-            # Prepare line.
             default_vals = {
                 "columns": columns,
                 "level": index if index == 0 else index + 1,
@@ -836,7 +745,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
 
             lines.append((0, report_line))
 
-            # Process children recursively.
             self._update_lines_recursively(
                 report,
                 options,
@@ -869,19 +777,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         parent_line_id,
         warnings=None,
     ):
-        """Build the report line accordingly to its type.
-
-        :param report:          The report.formula record being rendered.
-        :param options:         The report options.
-        :param default_vals:    The pre-computed report line values.
-        :param str groupby_key: The groupby field name this line stands for
-                                ('src_tax_type_tax_use', 'src_tax_id' or 'account_id').
-        :param value:           The grouping value, a record or a tuple depending on `groupby_key`.
-        :param parent_line_id:  The line id of the parent line (if any, can be None otherwise).
-        :param warnings:        The warnings dictionary.
-        :return:                A python dictionary.
-        :rtype:                 dict
-        """
         report_line = dict(default_vals)
         if parent_line_id is not None:
             report_line["parent_id"] = parent_line_id
@@ -967,7 +862,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
                     (abs(tax_value) - abs(computed_tax_amount)) / float(net_value or 1)
                 )
 
-                # Error is bigger than 0.1%. We can not ignore it.
                 if error > 0.001:
                     _debug.logic(
                         "tax_line_inconsistent",
@@ -983,9 +877,6 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
 
                     return
 
-    # -------------------------------------------------------------------------
-    # BUTTONS & CARET OPTIONS
-    # -------------------------------------------------------------------------
 
     @_debug.perf.timed
     def caret_option_audit_tax(self, options, params) -> dict:
@@ -1021,19 +912,16 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
             report._get_domain_options(options, "strict_range")
         ) & Domain.OR(
             (
-                # Base lines
                 [
                     ("tax_ids", "in", tax.ids),
                     ("tax_ids.type_tax_use", "=", tax.type_tax_use),
                     ("tax_repartition_line_id", "=", False),
                 ],
-                # Tax lines
                 [
                     ("group_tax_id", "=", tax.id)
                     if tax.amount_type == "group"
                     else ("tax_line_id", "=", tax.id),
                 ],
-                # Tax lines acting as base lines
                 tax_affecting_base_domain,
             )
         )

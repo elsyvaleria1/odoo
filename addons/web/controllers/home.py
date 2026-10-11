@@ -234,8 +234,6 @@ class Home(http.Controller):
                     try:
                         request.env["ir.http"]._check_request_captcha_token("login")
                     except UserError as e:
-                        # a refused captcha is said on the login form, as a
-                        # refused password is, not on an error page
                         raise AccessDenied(e.args[0]) from e
                 with _debug.perf("login_authenticate", cr=request.env.cr):
                     auth_info = request.session.authenticate(request.env, credential)

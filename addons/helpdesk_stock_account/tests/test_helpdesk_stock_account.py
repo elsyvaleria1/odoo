@@ -9,7 +9,6 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # give the test team ability to return and refund products
         cls.test_team.helpdesk_use_product_returns = True
         cls.test_team.helpdesk_use_credit_notes = True
         cls.journal_id = (
@@ -36,7 +35,6 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         )
 
     def test_refund_after_return_single_so(self):
-        """When we refund a storable product, the product that weren't returned shouldn't be part of the refund"""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,
@@ -52,17 +50,16 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         )
         sale_order.action_confirm()
         sale_order._create_invoices()
-        sale_order.invoice_ids.action_post()  # confirm invoice
+        sale_order.invoice_ids.action_post()
         sale_order.picking_ids.move_ids.quantity = 5
-        sale_order.picking_ids.button_validate()  # confirm delivery
-        self.return_product(sale_order, 2)  # return 2 products
+        sale_order.picking_ids.button_validate()
+        self.return_product(sale_order, 2)
         refund_move = self.refund_product(
             sale_order.invoice_ids
-        )  # create a refund for the invoice
+        )
         self.assertEqual(refund_move.invoice_line_ids.quantity, 2)
 
     def test_refund_after_return_multi_so(self):
-        """Same test as before, but this time with multiple sales orders"""
         sale_orders = self.env["sale.order"].create(
             [
                 {
@@ -91,20 +88,19 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         )
         sale_orders.action_confirm()
         sale_orders._create_invoices()
-        sale_orders.invoice_ids.action_post()  # confirm invoice
+        sale_orders.invoice_ids.action_post()
         sale_orders[0].picking_ids.move_ids.quantity = 10
         sale_orders[1].picking_ids.move_ids.quantity = 5
-        sale_orders.picking_ids.button_validate()  # confirm deliveries
-        self.return_product(sale_orders[0], 2)  # return 2 products from so1
-        self.return_product(sale_orders[1], 3)  # return 3 products from so1
+        sale_orders.picking_ids.button_validate()
+        self.return_product(sale_orders[0], 2)
+        self.return_product(sale_orders[1], 3)
         refund_move = self.refund_product(
             sale_orders.invoice_ids
-        )  # create a refund for the invoice
+        )
         self.assertEqual(refund_move.invoice_line_ids[0].quantity, 2)
         self.assertEqual(refund_move.invoice_line_ids[1].quantity, 3)
 
     def test_refund_after_return_down_payment(self):
-        """Same test as before, but this time by refunding a product on multiple invoices (down payment)"""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.partner.id,
@@ -120,7 +116,7 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         )
         sale_order.action_confirm()
         sale_order.picking_ids.move_ids.quantity = 5
-        sale_order.picking_ids.button_validate()  # confirm delivery
+        sale_order.picking_ids.button_validate()
         context = {
             "active_model": "sale.order",
             "active_ids": [sale_order.id],
@@ -139,13 +135,10 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         downpayment.create_invoices()
         payment = self.env["wizard.sale.order.invoice"].with_context(context).create({})
         payment.create_invoices()
-        self.return_product(sale_order, 2)  # return 2 products
+        self.return_product(sale_order, 2)
         refund_moves = self.refund_product(
             sale_order.invoice_ids
-        )  # create a refund for the invoice
-        # `invoice_ids` lists the down payment invoice before the final one, so the
-        # credit notes come back in that order too: pick the final invoice's by its
-        # product rather than by position.
+        )
         refund = refund_moves.filtered(
             lambda move: self.product in move.invoice_line_ids.product_id
         )
@@ -153,10 +146,10 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
         down_payment_line = refund.invoice_line_ids[2]
         self.assertEqual(
             product_line.quantity, -8
-        )  # since it is a down payment, the qty is 10 - 2
+        )
         self.assertEqual(
             down_payment_line.quantity, 1
-        )  # down payment qty shouldn't change
+        )
 
     def refund_product(self, invoice):
         credit_note = self.env["wizard.account.move.reverse"].create(
@@ -189,23 +182,11 @@ class TestHelpdeskStockAccount(HelpdeskCommon):
                     "default_show_transfers": False,
                 }
             )
-        ).save().process()  # return product
+        ).save().process()
 
         return return_picking
 
     def test_refund_only_one_product(self):
-        """
-        This test verifies that a refund of only one product is created if a product has been selected, in the case
-        of a corresponding invoice containing several products.
-        Test case:
-            - Create a SO with 2 products
-            - Confirm SO and create invoice
-            - Confirm invoice
-            - Create helpdesk Ticket
-            - In the refund wizard, select a product
-            - Create a credit note
-            - Check if the only product selected is present on the credit note
-        """
         product_0 = self.env["product.product"].create(
             {
                 "name": "Test Product 0",

@@ -1,4 +1,3 @@
-# pylint: disable=bad-whitespace
 from odoo import Command, fields
 from odoo.tests import tagged
 
@@ -13,7 +12,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         cls.report = cls.env.ref("account.balance_sheet")
 
     def test_report_lines_ordering(self):
-        """Check that the report lines are correctly ordered with nested account groups"""
         self.env["account.group"].create(
             [
                 {
@@ -38,7 +36,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
             [{"code": "101600", "name": "C", "account_type": "asset_cash"}]
         )
 
-        # Create a journal entry with one line per account
         move = self.env["account.move"].create(
             {
                 "date": "2020-02-02",
@@ -56,7 +53,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         move.action_post()
         move.line_ids.flush_recordset()
 
-        # Create the report hierarchy with the Bank and Cash Accounts lines unfolded
         line_id = self._get_basic_line_dict_id_from_report_line_ref(
             "account.account_financial_report_bank_view0"
         )
@@ -70,7 +66,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         self.env.company.account_config_id.totals_below_sections = False
         lines = self.report._get_lines(options)
 
-        # The unfolded section holds the 4 accounts and the 2 account groups, nested by code prefix
         unfolded_lines = self.report._get_unfolded_lines(lines, line_id)
         unfolded_lines = [
             {"name": line["name"], "level": line["level"]} for line in unfolded_lines
@@ -126,7 +121,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                            Balance
             [0, 1],
             [
                 ("ASSETS", 2300.00),
@@ -159,8 +153,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         )
 
     def test_unfold_all_and_total_lines(self):
-        """Check that only the wanted total lines exist with the 'unfold_all' option: empty sections have no total line."""
-        # Only '_get_lines' is covered here; manual unfolds in the web UI are not exercised by this test.
 
         self.env.company.account_config_id.totals_below_sections = True
         options = self._generate_options(
@@ -199,12 +191,8 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
             }
         ).action_post()
 
-        # assertLinesValues filters / ignores children lines of folded lines.
-        # The total lines for the 2 visible lines with groupbys already exist in 'folded_lines' but are filtered / ignored by assertLinesValues.
-        # (Thus they do not appear in the expected result below either.)
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name
             [0],
             [
                 ("ASSETS",),
@@ -239,7 +227,6 @@ class TestBalanceSheetReport(TestAccountReportsCommon):
         options["unfold_all"] = True
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name
             [0],
             [
                 ("ASSETS",),

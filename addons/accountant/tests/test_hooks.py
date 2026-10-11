@@ -21,22 +21,14 @@ class TestAccountantHooks(AccountTestInvoicingCommon):
         )
 
     def test_uninstall_hook_restores_every_overwritten_group_field(self):
-        """The hook restored the user group's name and nothing else, while the
-        security data overwrites four fields on it and one on the readonly
-        group. `account` stays installed after this module goes, so anything
-        left behind keeps this module's value forever.
-        """
         group_user = self.env.ref("account.group_account_user")
         group_readonly = self.env.ref("account.group_account_readonly")
-        # what the data file put there
         self.assertEqual(group_user.sequence, 40)
         self.assertTrue(group_user.comment)
         self.assertTrue(group_user.privilege_id)
 
         uninstall_hook(self.env)
 
-        # `account` declares the user group with a name and implied_ids only,
-        # and res.groups gives these three no default, so core's values are 0/False
         self.assertEqual(group_user.name, "Show Full Accounting Features")
         self.assertEqual(group_user.sequence, 0)
         self.assertFalse(group_user.comment)
@@ -48,11 +40,6 @@ class TestAccountantHooks(AccountTestInvoicingCommon):
         )
 
     def test_uninstall_hook_hands_back_every_adopted_menu(self):
-        """The hook used to carry its own list of the menus to restore, and it
-        named 6 of the 7 the data file adopts. ir.ui.menu.unlink() reparents the
-        children a menu still has to parent_id = False, so the one left behind
-        became a root-level app once menu_accounting was deleted.
-        """
         accounting_menu = self.env.ref("accountant.menu_accounting")
         invoicing_menu = self.env.ref("account.menu_finance")
         Menu = self.env["ir.ui.menu"].with_context(active_test=False)
@@ -89,8 +76,6 @@ class TestAccountantHooks(AccountTestInvoicingCommon):
         self.assertTrue(second.show_on_dashboard)
 
     def test_clearing_the_tax_return_journal_keeps_it_pinned(self):
-        """Deliberate asymmetry with the test above: nothing takes over the role,
-        so there is no reason to hide the journal the user was last using."""
         company = self.env.company
         journal = self._general_journal("TRC")
         company.account_config_id.account_tax_return_journal_id = journal
@@ -100,13 +85,8 @@ class TestAccountantHooks(AccountTestInvoicingCommon):
         self.assertTrue(journal.show_on_dashboard)
 
     def test_post_init_pins_a_journal_assigned_before_install(self):
-        """Why the post-init loop exists: the inverse only fires on write, so a
-        company whose journal predates this module never triggered it.
-        """
         company = self.env.company
         journal = self._general_journal("TRD")
-        # Assign it behind the ORM's back, so the inverse does not run and the
-        # company looks like one set up before this module was installed.
         self.env.cr.execute(
             "UPDATE account_config SET account_tax_return_journal_id = %s WHERE company_id = %s",
             (journal.id, company.id),
@@ -116,11 +96,7 @@ class TestAccountantHooks(AccountTestInvoicingCommon):
         )
         self.assertFalse(journal.show_on_dashboard)
 
-        # Scope the hook to a country outside its auto-install list, so it cannot
-        # try to install account_reports_cash_basis in the middle of a test.
         company.country_id = self.env.ref("base.be")
-        # As root, the way the real post-init hook is invoked: it walks every
-        # company in the database, which a plain test user cannot write to.
         _accounting_post_init(self.env(user=SUPERUSER_ID))
 
         self.assertTrue(journal.show_on_dashboard)

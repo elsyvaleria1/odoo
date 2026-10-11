@@ -24,7 +24,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
         }
 
     def _send_receipt_to_customer(self, bot, chat, payment) -> list:
-        # the question the customer was asked on posting carries the receipt
         if payment.confirmation_state:
             return []
         return super()._send_receipt_to_customer(bot, chat, payment)
@@ -103,8 +102,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
             self._send(bot, chat, tg.escape(str(error)))
             return
         method = params["methods"][0]
-        # the challenge keeps only its token's hash: the chat keeps the token
-        # for the few minutes the collector has to type the customer's code
         self._flow_start(
             chat,
             "confirm_code",
@@ -148,8 +145,6 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
 
     def _invite_customer(self, bot, chat, payment) -> None:
         tr = self._tr(bot, chat)
-        # opened at the door or not at all: a QR left in the collector's chat
-        # for days could bind an account of theirs as the customer
         token = self.env["telegram.link.token"]._issue(
             bot,
             partner=payment.partner_id,

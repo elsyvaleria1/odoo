@@ -7,7 +7,6 @@ class ProductProduct(models.Model):
 
     def write(self, vals):
         if not vals.get("active", True) and any(product.active for product in self):
-            # Prevent archiving products used for giving rewards
             rewards = (
                 self.env["loyalty.reward"]
                 .sudo()

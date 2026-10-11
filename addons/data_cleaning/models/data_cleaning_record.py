@@ -106,12 +106,10 @@ class Data_CleaningRecord(models.Model):
                 "%s_%s" % (record.res_model_name, record.res_id)
             )
             if original_record:
-                # update those values now as we might need them to render some actions (e.g. format_phone)
                 current_value = original_record[record.field_name] or ""
                 suggested_value = record._render_value(current_value)
                 suggested_value_display = suggested_value
                 if any(rule_id.action == "trim" for rule_id in record.rule_ids):
-                    # non-breaking space, to render multiple spaces in the backend
                     current_value = current_value.replace(" ", "\u00a0").replace(
                         "\t", "\u00a0"
                     )

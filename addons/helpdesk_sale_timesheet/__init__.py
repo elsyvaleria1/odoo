@@ -15,8 +15,6 @@ def _helpdesk_sale_timesheet_post_init(env) -> None:
     projects = teams.filtered(
         lambda team: team.project_id and not team.project_id.allow_billable
     ).mapped("project_id")
-    # sale_timesheet's _compute_timesheet_product_id fills the product once
-    # billing is on, and keeps one the project already chose.
     projects.write({"allow_billable": True})
 
     without_project = teams.filtered(lambda team: not team.project_id)

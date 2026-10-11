@@ -43,7 +43,7 @@ class TestCarrierBatchRules(TransactionCase):
             }
         )
         if weight:
-            picking.weight  # force the queued compute to run
+            picking.weight
             picking.flush_recordset(["weight"])
             self.env.cr.execute(
                 "UPDATE stock_picking SET weight = %s WHERE id = %s",
@@ -53,28 +53,24 @@ class TestCarrierBatchRules(TransactionCase):
         return picking
 
     def test_pickings_domain_filters_by_carrier_when_grouping(self):
-        """With carrier grouping on, candidate pickings filter by carrier."""
         picking = self._picking(carrier=self.carrier)
         self.assertIn("carrier_id", str(picking._get_domain_possible_pickings()))
         self.picking_type.batch_group_by_carrier = False
         self.assertNotIn("carrier_id", str(picking._get_domain_possible_pickings()))
 
     def test_auto_batch_description_appends_carrier(self):
-        """The auto-batch description carries the carrier name."""
         picking = self._picking(carrier=self.carrier)
         self.assertIn(self.carrier.name, picking._get_auto_batch_description())
 
     def test_weight_limit_blocks_heavy_pairs(self):
-        """Two pickings exceeding batch_max_weight cannot be batched."""
         heavy_1 = self._picking(weight=6.0, carrier=self.carrier)
-        heavy_2 = self._picking(weight=6.0, carrier=self.carrier)  # 12 > 10
-        light = self._picking(weight=3.0, carrier=self.carrier)  # 9 <= 10
+        heavy_2 = self._picking(weight=6.0, carrier=self.carrier)
+        light = self._picking(weight=3.0, carrier=self.carrier)
         with patch(f"{BASE_PICKING}._is_auto_batchable", return_value=True):
             self.assertFalse(heavy_1._is_auto_batchable(heavy_2))
             self.assertTrue(heavy_1._is_auto_batchable(light))
 
     def test_no_weight_limit_always_batchable(self):
-        """A zero max weight disables the weight guard (boundary)."""
         self.picking_type.batch_max_weight = 0
         heavy_1 = self._picking(weight=6.0, carrier=self.carrier)
         heavy_2 = self._picking(weight=6.0, carrier=self.carrier)
@@ -82,7 +78,6 @@ class TestCarrierBatchRules(TransactionCase):
             self.assertTrue(heavy_1._is_auto_batchable(heavy_2))
 
     def test_batch_merge_respects_accumulated_weight(self):
-        """A batch rejects pickings that push it over the weight limit."""
         first = self._picking(weight=6.0, carrier=self.carrier)
         batch = self.env["stock.picking.batch"].create(
             {
@@ -90,8 +85,8 @@ class TestCarrierBatchRules(TransactionCase):
                 "picking_ids": [(6, 0, first.ids)],
             }
         )
-        heavy = self._picking(weight=6.0, carrier=self.carrier)  # 12 > 10
-        light = self._picking(weight=3.0, carrier=self.carrier)  # 9 <= 10
+        heavy = self._picking(weight=6.0, carrier=self.carrier)
+        light = self._picking(weight=3.0, carrier=self.carrier)
         with patch(f"{BASE_BATCH}._is_auto_mergeable", return_value=True):
             self.assertFalse(
                 batch._is_auto_mergeable(**heavy._get_auto_merge_amounts())
@@ -99,7 +94,6 @@ class TestCarrierBatchRules(TransactionCase):
             self.assertTrue(batch._is_auto_mergeable(**light._get_auto_merge_amounts()))
 
     def test_the_carrier_key_reaches_the_wave_paths_too(self):
-        """batch_group_by_carrier is a grouping criterion, not a batch-only flag."""
         criteria = self.picking_type._get_grouping_criteria()
         self.assertIn("batch_group_by_carrier", criteria)
         criterion = criteria["batch_group_by_carrier"]
@@ -108,6 +102,5 @@ class TestCarrierBatchRules(TransactionCase):
         self.assertEqual(criterion.line_path, "picking_id.carrier_id")
 
     def test_a_negative_weight_limit_is_refused(self):
-        """The limit bounds a loop, so it may not be negative."""
         with self.assertRaises(ValidationError):
             self.picking_type.batch_max_weight = -1

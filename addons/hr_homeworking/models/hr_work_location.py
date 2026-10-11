@@ -12,10 +12,6 @@ class HrWorkLocation(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_used_by_employee(self) -> None:
-        # sudo and active_test=False on purpose: a location this user cannot see
-        # in use -- another company's employee, an archived one -- is still in
-        # use, and the foreign key is ON DELETE SET NULL, so letting the unlink
-        # through empties that employee's week with nothing to show for it.
         employees = self.env["hr.employee"].sudo().with_context(active_test=False)
         domain = ["|"] * (len(DAYS) - 1) + [(day, "in", self.ids) for day in DAYS]
         if employees.search_count(domain, limit=1):

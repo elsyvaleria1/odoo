@@ -553,6 +553,4 @@ class TestAutoWaving(TransactionCase):
         self.assertEqual(len(new_wave), 1)
         self.assertEqual(len(new_wave.move_line_ids), 2)
         new_wave.action_assign()
-        # Lines sort by their picking's date_planned, stamped at creation to the
-        # second: whether the two pickings share one decides which comes first.
         self.assertEqual(sorted(new_wave.move_line_ids.mapped("quantity")), [1, 2])

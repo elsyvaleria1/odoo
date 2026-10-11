@@ -141,8 +141,6 @@ class ResConfigSettings(models.TransientModel):
                 {
                     "AllowedOrigins": ["*"],
                     "AllowedMethods": ["GET", "PUT"],
-                    # a PDF viewer reads a document in ranges, and needs the
-                    # range headers of the answer to know where it is
                     "AllowedHeaders": ["Content-Type", "Range"],
                     "ExposeHeaders": [
                         "Accept-Ranges",
@@ -176,8 +174,6 @@ class ResConfigSettings(models.TransientModel):
         if not self._is_s3_provider():
             return super()._check_cloud_storage_uninstallable()
         if self.cloud_storage_provider in s3.PROVIDERS:
-            # moving between providers this module serves keeps every stored
-            # URL readable, so nothing is being disabled
             return None
         url_domain = [("url", "=like", "https://%.s3.%.amazonaws.com/%")]
         if endpoint := s3.get_endpoint(self.env):

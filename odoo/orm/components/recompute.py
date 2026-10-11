@@ -51,8 +51,8 @@ class RecomputeScheduler:
     ) -> frozenset[Any]:
         protected = self._engine.get_protected_ids(field)
         if protected:
-            requested = len(ids)  # debuglog
-            ids = ids - protected  # noqa: PLR6104  `ids` is caller-owned: -= would mutate it in place
+            requested = len(ids)
+            ids = ids - protected
             if len(ids) < requested and _debug.logic.enabled:
                 _debug.logic(
                     "recompute_scheduler.protected_trimmed",
@@ -68,16 +68,16 @@ class RecomputeScheduler:
             if field.is_stored_computed:
                 m = self._marked.get(field)
                 if m:
-                    ids = ids - m  # noqa: PLR6104  caller-owned set, see above
+                    ids = ids - m
                 r = self.to_recompute.get(field)
                 if r and ids:
-                    ids = ids - r  # noqa: PLR6104  caller-owned set, see above
+                    ids = ids - r
             else:
                 if cached_ids is not None and not cached_ids:
                     ids = frozenset()
                 seen = self._seen_recursive.get(field)
                 if seen and ids:
-                    ids = ids - seen  # noqa: PLR6104  caller-owned set, see above
+                    ids = ids - seen
             if not ids:
                 _debug.logic(
                     "recompute_scheduler.recursive_exhausted",
@@ -89,8 +89,6 @@ class RecomputeScheduler:
                 self._seen_recursive[field].update(ids)
             recursive_ids = frozenset(ids)
             if cached_ids is not None and not field.is_stored_computed:
-                # a record with nothing cached has nothing to drop, but the
-                # records below it may: the walk goes on through it
                 ids = frozenset(id_ for id_ in ids if id_ in cached_ids)
 
         if field.is_stored_computed:

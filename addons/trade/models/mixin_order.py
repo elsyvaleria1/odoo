@@ -253,7 +253,6 @@ class MixinOrder(models.AbstractModel):
     tax_country_id = fields.Many2one(
         comodel_name="res.country",
         compute="_compute_tax_country_id",
-        # The fiscal position may belong to a company the reading user cannot access.
         compute_sudo=True,
     )
     locked = fields.Boolean(tracking=True)
@@ -319,7 +318,7 @@ class MixinOrder(models.AbstractModel):
         for company in self.company_id:
             order_by_product_by_company[company] = {
                 product: set(order_ids)
-                for product, order_ids in Line._read_group(  # noqa: E8507 - one query per company; orders sharing one were merged above
+                for product, order_ids in Line._read_group(
                     [
                         ("product_id", "in", self.line_ids.product_id.ids),
                         ("state", "=", "done"),
@@ -390,8 +389,6 @@ class MixinOrder(models.AbstractModel):
     def create(self, vals_list):
         seq_code = self._sequence_code
         default_company_id = None
-        # the orders of one company and one date draw their names from the
-        # sequence in one batch, in the order they are created
         unnamed_by_key = defaultdict(list)
         for vals in vals_list:
             if "company_id" in vals:

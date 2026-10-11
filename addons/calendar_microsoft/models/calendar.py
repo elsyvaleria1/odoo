@@ -58,10 +58,6 @@ class CalendarEvent(models.Model):
         }
 
     def _check_microsoft_sync_status(self):
-        """
-        Returns True if synchronization with Outlook Calendar is active and False otherwise.
-        The user's Microsoft synchronization must not be stopped and Outlook account must be connected.
-        """
         outlook_connected = self.env.user._calendar_sync_connection("microsoft")
         return outlook_connected and not self.env.user._calendar_sync_stopped(
             "microsoft"
@@ -71,7 +67,6 @@ class CalendarEvent(models.Model):
     def create(self, vals_list):
         notify_context = self.env.context.get("dont_notify", False)
 
-        # Forbid recurrence creation in Odoo, suggest its creation in Outlook due to the spam limitation.
         recurrency_in_batch = any(vals.get("recurrency") for vals in vals_list)
         if (
             self._check_microsoft_sync_status()
@@ -88,7 +83,6 @@ class CalendarEvent(models.Model):
             )
             if check_organizer
         ]:
-            # If event has a different organizer, check its sync status and verify if the user is listed as attendee.
             sender_user, partner_ids = self._get_organizer_user_change_info(vals)
             partner_included = (
                 partner_ids
@@ -102,8 +96,6 @@ class CalendarEvent(models.Model):
         ).create(vals_list)
 
     def _check_organizer_validation(self, sender_user, partner_included) -> None:
-        """Check if the proposed event organizer can be set accordingly."""
-        # Edge case: events created or updated from Microsoft should not check organizer validation.
         change_from_microsoft = self._microsoft_applying()
         if sender_user and sender_user != self.env.user and not change_from_microsoft:
             current_sync_status = self._check_microsoft_sync_status()
@@ -125,14 +117,6 @@ class CalendarEvent(models.Model):
                 )
 
     def _check_recurrence_overlapping(self, new_start) -> None:
-        """
-        Outlook does not allow to modify time fields of an event if this event crosses
-        or overlaps the recurrence. In this case a 400 error with the Outlook code "ErrorOccurrenceCrossingBoundary"
-        is returned. That means that the update violates the following Outlook restriction on recurrence exceptions:
-        an occurrence cannot be moved to or before the day of the previous occurrence, and cannot be moved to or after
-        the day of the following occurrence.
-        For example: E1 E2 E3 E4 cannot becomes E1 E3 E2 E4
-        """
         before_count = len(
             self.recurrence_id.calendar_event_ids.filtered(
                 lambda e: e.start.date() < self.start.date() and e != self
@@ -158,9 +142,6 @@ class CalendarEvent(models.Model):
         return self.filtered(lambda e: e._is_matching_timeslot(start, stop, allday))
 
     def _is_matching_timeslot(self, start, stop, allday) -> bool:
-        """
-        Check if an event matches with the provided timeslot
-        """
         self.check_singleton()
 
         event_start, event_stop = self._range()
@@ -175,14 +156,10 @@ class CalendarEvent(models.Model):
         return (event_start, event_stop) == (start, stop)
 
     def _forbid_recurrence_update(self) -> None:
-        """
-        Suggest user to update recurrences in Outlook due to the Outlook Calendar spam limitation.
-        """
         error_msg = self.env._(
             "Due to an Outlook Calendar limitation, recurrence updates must be done directly in Outlook Calendar."
         )
         if self - self._microsoft_held():
-            # If any event is not synced, suggest deleting it in Odoo and recreating it in Outlook.
             error_msg = self.env._(
                 "Due to an Outlook Calendar limitation, recurrence updates must be done directly in Outlook Calendar.\n"
                 "If this recurrence is not shown in Outlook Calendar, you must delete it in Odoo Calendar and recreate it in Outlook Calendar."
@@ -191,9 +168,6 @@ class CalendarEvent(models.Model):
         raise UserError(error_msg)
 
     def _forbid_recurrence_creation(self) -> None:
-        """
-        Suggest user to update recurrences in Outlook due to the Outlook Calendar spam limitation.
-        """
         raise UserError(
             self.env._(
                 "Due to an Outlook Calendar limitation, recurrent events must be created directly in Outlook Calendar."
@@ -205,7 +179,6 @@ class CalendarEvent(models.Model):
         recurrence_update_setting = values.get("recurrence_update")
         notify_context = self.env.context.get("dont_notify", False)
 
-        # Forbid recurrence updates through Odoo and suggest user to update it in Outlook.
         if self._check_microsoft_sync_status():
             recurrency_in_batch = self.filtered(lambda ev: ev.recurrency)
             recurrence_update_attempt = (
@@ -220,8 +193,6 @@ class CalendarEvent(models.Model):
             ):
                 self._forbid_recurrence_update()
 
-        # When changing the organizer, check its sync status and verify if the user is listed as attendee.
-        # Updates from Microsoft must skip this check since changing the organizer on their side is not possible.
         change_from_microsoft = self._microsoft_applying()
         deactivated_events_ids = []
         new_user_id = values.get("user_id")
@@ -237,19 +208,15 @@ class CalendarEvent(models.Model):
                 event._recreate_event_different_organizer(values, sender_user)
                 deactivated_events_ids.append(event.id)
 
-        # check a Outlook limitation in overlapping the actual recurrence
         if recurrence_update_setting == "this" and "start" in values:
             self._check_recurrence_overlapping(values["start"])
 
-        # a single event becoming the base of a series leaves Outlook: the
-        # series is what Outlook holds of it now
         if values.get("recurrency"):
             self.filtered(
                 lambda event: not event.recurrency and not event.recurrence_id
             )._microsoft_tombstone()
 
         deactivated_events = self.browse(deactivated_events_ids)
-        # Update attendee status before 'values' variable is overridden in super.
         attendee_ids = values.get("attendee_ids")
         if attendee_ids and values.get("partner_ids"):
             (self - deactivated_events)._update_attendee_status(attendee_ids)
@@ -259,7 +226,6 @@ class CalendarEvent(models.Model):
             (self - deactivated_events).with_context(dont_notify=notify_context),
         ).write(values)
 
-        # Deactivate events that were recreated after changing organizer.
         if deactivated_events:
             res |= super(
                 CalendarEvent,
@@ -268,7 +234,6 @@ class CalendarEvent(models.Model):
         return res
 
     def unlink(self):
-        # Forbid recurrent events unlinking from calendar list view with sync active.
         if self and self._check_microsoft_sync_status():
             synced_events = self._microsoft_held()
             change_from_microsoft = self._microsoft_applying()
@@ -281,7 +246,6 @@ class CalendarEvent(models.Model):
         return super().unlink()
 
     def _recreate_event_different_organizer(self, values, sender_user) -> None:
-        """Copy current event values, delete it and recreate it with the new organizer user."""
         self.check_singleton()
         self.env["calendar.event"].with_user(sender_user).with_context(
             skip_contact_description=True
@@ -289,7 +253,6 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _get_organizer_user_change_info(self, values) -> tuple:
-        """Return the sender user of the event and the partner ids listed on the event values."""
         sender_user_id = values.get("user_id")
         if not sender_user_id:
             sender_user_id = self.env.user.id
@@ -309,10 +272,6 @@ class CalendarEvent(models.Model):
         return sender_user, partner_ids
 
     def _update_attendee_status(self, attendee_ids) -> None:
-        """Merge current status from 'attendees_ids' with new attendees values for avoiding their info loss in write().
-        Create a dict getting the state of each attendee received from 'attendee_ids' variable and then update their state.
-        :param attendee_ids: List of attendee commands carrying a dict with 'partner_id' and 'state' keys in its third position.
-        """
         state_by_partner = {}
         for cmd in attendee_ids:
             if (
@@ -327,7 +286,6 @@ class CalendarEvent(models.Model):
                 attendee.state = state_update
 
     def action_mass_archive(self, recurrence_update_setting) -> None:
-        # Do not allow archiving if recurrence is synced with Outlook. Suggest updating directly from Outlook.
         self.check_singleton()
         if self._check_microsoft_sync_status() and self._microsoft_held():
             self._forbid_recurrence_update()
@@ -382,21 +340,15 @@ class CalendarEvent(models.Model):
             "recurrency": microsoft_event.is_recurrent(),
         }
         if commands_partner:
-            # Add partner_commands only if set from Microsoft. The write method on calendar_events will
-            # override attendee commands if the partner_ids command is set but empty.
             values["partner_ids"] = commands_partner
 
         if microsoft_event.is_recurrent() and not microsoft_event.is_recurrence():
-            # Propagate the follow_recurrence according to the Outlook result
             values["follow_recurrence"] = not microsoft_event.is_recurrence_outlier()
 
-        # if a videocall URL is provided with the Outlook event, use it
         if microsoft_event.isOnlineMeeting and microsoft_event.onlineMeeting.get(
             "joinUrl"
         ):
             values["videocall_location"] = microsoft_event.onlineMeeting["joinUrl"]
-        # if a location is a URL matching a specific pattern (i.e a URL to access to a videocall),
-        # copy it in the 'videocall_location' instead
         elif values["location"] and any(
             re.match(p, values["location"]) for p in VIDEOCALL_URL_PATTERNS
         ):
@@ -466,27 +418,21 @@ class CalendarEvent(models.Model):
             partner = partners_by_emails.get(
                 email_normalize(email) or email, self.env["res.partner"]
             )
-            # Responses from external invitations are stored in the 'responseStatus' field.
-            # This field only carries the current user's event status because Microsoft hides other user's status.
             if self.env.user.email == email and microsoft_event.responseStatus:
                 attendee_microsoft_status = microsoft_event.responseStatus.get(
                     "response", "none"
                 )
             elif microsoft_event.isOrganizer is False and email in attendees_by_emails:
-                # an attendee's copy says none for the others' answers, which
-                # Outlook tracks on the organizer's item alone: Odoo's stand
                 continue
             else:
                 attendee_microsoft_status = attendee_info.get("status").get("response")
             state = ATTENDEE_CONVERTER_M2O.get(attendee_microsoft_status, "needsAction")
 
             if email in attendees_by_emails:
-                # Update existing attendees
                 commands_attendee += [
                     Command.update(attendees_by_emails[email].id, {"state": state})
                 ]
             elif partner:
-                # Create new attendees
                 commands_attendee += [
                     Command.create({"state": state, "partner_id": partner.id})
                 ]
@@ -494,7 +440,6 @@ class CalendarEvent(models.Model):
                 if attendee_info.get("emailAddress").get("name") and not partner.name:
                     partner.name = attendee_info.get("emailAddress").get("name")
         for odoo_attendee in attendees_by_emails.values():
-            # Remove old attendees
             if odoo_attendee.email not in emails:
                 commands_attendee += [Command.delete(odoo_attendee.id)]
                 commands_partner += [Command.unlink(odoo_attendee.partner_id.id)]
@@ -672,7 +617,6 @@ class CalendarEvent(models.Model):
                 "private": "private",
                 "confidential": "confidential",
             }
-            # Set default privacy in event according to the organizer's calendar default privacy if defined.
             if self.user_id:
                 sensitivity_o2m[False] = sensitivity_o2m.get(
                     self.user_id.calendar_default_privacy
@@ -690,7 +634,7 @@ class CalendarEvent(models.Model):
             dtstart = recurrence.dtstart or fields.Datetime.now()
             rule_range = {"startDate": (dtstart.date()).isoformat()}
 
-            if recurrence.repeat_type == "count":  # e.g. stop after X occurence
+            if recurrence.repeat_type == "count":
                 rule_range["numberOfOccurrences"] = min(
                     recurrence.repeat_number, MAX_RECURRENT_OCCURRENCES
                 )
@@ -698,7 +642,7 @@ class CalendarEvent(models.Model):
             elif recurrence.repeat_type == "forever":
                 rule_range["numberOfOccurrences"] = MAX_RECURRENT_OCCURRENCES
                 rule_range["type"] = "numbered"
-            elif recurrence.repeat_type == "until":  # e.g. stop after 12/10/2020
+            elif recurrence.repeat_type == "until":
                 rule_range["endDate"] = recurrence.repeat_until.isoformat()
                 rule_range["type"] = "endDate"
 

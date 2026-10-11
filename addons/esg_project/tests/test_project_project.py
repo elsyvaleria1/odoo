@@ -15,7 +15,6 @@ class TestProjectProject(TransactionCase):
         cls.esg_project = cls.env.ref("esg_project.esg_project_project_0")
 
     def test_unlink_project(self):
-        """Test to unlink esg project and another project"""
         with self.assertRaises(ValidationError, msg="ESG project cannot be deleted"):
             self.esg_project.unlink()
 

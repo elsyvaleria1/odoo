@@ -135,9 +135,6 @@ class TestMultiCompany(TestHrCommon):
         )
 
     def test_an_employee_is_read_under_its_version_rule(self):
-        # hr.employee delegates to hr.version through the computed version_id:
-        # a version held by a company the reader cannot reach is not read
-        # through the employee either
         hr_manager_a = mail_new_test_user(
             self.env,
             login="hr_manager_a",
@@ -159,8 +156,6 @@ class TestMultiCompany(TestHrCommon):
         )
 
     def test_a_relationship_reads_the_version_through_both_doors(self):
-        # user_b reports to employee_a, of company A: what lets user_b read its
-        # manager's employee record lets it read the manager's version
         Version = (
             self.env["hr.version"].with_user(self.user_b).with_company(self.company_b)
         )

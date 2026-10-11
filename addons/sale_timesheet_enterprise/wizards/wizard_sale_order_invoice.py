@@ -22,9 +22,6 @@ class WizardSaleOrderInvoice(models.TransientModel):
             self.env, "sale.invoiced_timesheet", DEFAULT_INVOICED_TIMESHEET
         )
         if param_invoiced_timesheet == "approved":
-            # Then no need to check if there is some timer running for the
-            # timesheets linked to the SOs because we will just take the
-            # validated ones and so no timer should be running for those ones.
             self.has_timer_running = False
             return
         Timesheet = self.env["account.analytic.line"]

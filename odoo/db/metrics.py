@@ -82,19 +82,15 @@ class _MetricsMixin:
         start: float = 0.0,
         hooks: Any = None,
     ) -> None:
-        global sql_counter  # noqa: PLW0603  process-wide SQL counter; the module IS the accumulator
+        global sql_counter
         self.sql_log_count += count
         if statement:
             self.sql_statement_count += 1
         sql_counter += count
         t: Any = self._thread
-        # http.application sets the pair together on a request thread; one
-        # question answers for both.
         if hasattr(t, "query_count"):
             t.query_count += count
             t.query_time += delay
-        # A hook may remove itself or another (a profiler reaching its entry
-        # limit ends and unhooks); iterating the live list would skip the next.
         for hook in tuple(hooks) if hooks else ():
             hook(self, query, params, start, delay)
 
@@ -110,13 +106,6 @@ class _MetricsMixin:
 
     @contextmanager
     def _enable_logging(self) -> Iterator[None]:
-        """Force this cursor's queries to be logged for the duration of the block.
-
-        Restores the level afterwards. The logger is process-wide, so this is not
-        thread-safe -- it exists for a test that has just failed an
-        `assertQueryCount` and wants to see which queries ran, which is worth more
-        than isolation at that moment.
-        """
         level = _logger.level
         _logger.setLevel(logging.DEBUG)
         _debug.lifecycle("metrics.sql_logging_forced", previous_level=level)

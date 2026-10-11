@@ -30,7 +30,7 @@ class AccountMoveLine(models.Model):
         export_string_translation=False,
         compute="_compute_esg_emission_multiplicator",
         store=True,
-    )  # Technical field, storing the multiplicator to apply to the gas volumes (important for the report)
+    )
     esg_emissions_value = fields.Float(
         string="Emissions (kgCO₂e)",
         compute="_compute_esg_emissions_value",
@@ -40,7 +40,6 @@ class AccountMoveLine(models.Model):
         if not column_exists(
             self.env.cr, "account_move_line", "esg_emission_factor_id"
         ):
-            # Create the column to avoid computation during installation
             create_column(
                 self.env.cr, "account_move_line", "esg_emission_factor_id", "int4"
             )
@@ -82,13 +81,6 @@ class AccountMoveLine(models.Model):
             else:
                 aml_uom = line.product_uom_id or line.esg_emission_factor_id.uom_id
                 if aml_uom and line.esg_emission_factor_id.uom_id:
-                    # A compute must be defined for every state its dependencies
-                    # can reach. A factor measured in km may be assigned to a
-                    # line measured in Units, and the strict conversion raises
-                    # there -- out of a compute, which aborts the whole flush
-                    # rather than the assignment that caused it. This is a
-                    # reporting figure, so it takes the degrading wrapper the
-                    # uom model provides for exactly this.
                     line.esg_emission_multiplicator = aml_uom._get_quantity_report(
                         qty=line.quantity,
                         to_unit=line.esg_emission_factor_id.uom_id,
@@ -153,10 +145,7 @@ class AccountMoveLine(models.Model):
             return
         assignation_vals_list = []
         esg_emission_factor_id_assignation_key = {}
-        # domain to search a rule containing the same combinaison (product_id, partner_id, account_id) linked
-        # to another emission_factor to remove it since the user breaks it
         assignation_rules_to_remove_domain = Domain.FALSE
-        # domain to search the existing assignation rules to avoid creating the same rule
         assignation_rules_to_check_domain = Domain.FALSE
         lines_per_group = defaultdict(self.env["account.move.line"].browse)
         for line in move_lines_with_emission_factor:
@@ -204,7 +193,6 @@ class AccountMoveLine(models.Model):
                     ]
                 )
                 if len(esg_emission_factor) > 1:
-                    # break assignation rules (to remove if exists)
                     assignation_rules_to_remove_domain |= combination_domain
                     continue
                 assignation_rules_to_remove_domain |= combination_domain & Domain(
@@ -282,7 +270,6 @@ class AccountMoveLine(models.Model):
                         ]
                     )
                 elif esg_emission_factor.id != esg_emission_factor_id:
-                    # broken rule, should be removed
                     assignation_rules_to_remove_domain |= Domain(
                         [
                             ("product_id", "=", product_id),

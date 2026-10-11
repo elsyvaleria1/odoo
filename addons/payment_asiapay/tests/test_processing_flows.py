@@ -12,8 +12,6 @@ from odoo.addons.payment_asiapay.tests.common import AsiaPayCommon
 class TestProcessingFlows(AsiaPayCommon, PaymentHttpCommon):
     @mute_logger("odoo.addons.payment_asiapay.models.payment_transaction")
     def test_webhook_notification_triggers_processing(self):
-        """Test that receiving a valid webhook notification triggers the processing of the
-        payment data."""
         self._create_transaction("redirect")
         url = self._build_url(AsiaPayController._webhook_url)
         with (
@@ -29,7 +27,6 @@ class TestProcessingFlows(AsiaPayCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_asiapay.models.payment_transaction")
     def test_webhook_notification_triggers_signature_check(self):
-        """Test that receiving a webhook notification triggers a signature check."""
         self._create_transaction("redirect")
         url = self._build_url(AsiaPayController._webhook_url)
         with (
@@ -44,27 +41,23 @@ class TestProcessingFlows(AsiaPayCommon, PaymentHttpCommon):
             self.assertEqual(signature_check_mock.call_count, 1)
 
     def test_accept_webhook_notification_with_valid_signature(self):
-        """Test the verification of a webhook notification with a valid signature."""
         tx = self._create_transaction("redirect")
         self.assertTrue(tx._is_notification_signature_valid(self.webhook_payment_data))
 
     @mute_logger("odoo.addons.payment_asiapay.models.payment_transaction")
     def test_reject_notification_with_missing_signature(self):
-        """Test the verification of a notification with a missing signature."""
         tx = self._create_transaction("redirect")
         payload = dict(self.webhook_payment_data, secureHash="dummy")
         self.assertFalse(tx._is_notification_signature_valid(payload))
 
     @mute_logger("odoo.addons.payment_asiapay.models.payment_transaction")
     def test_reject_notification_with_invalid_signature(self):
-        """Test the verification of a notification with an invalid signature."""
         tx = self._create_transaction("redirect")
         payload = dict(self.webhook_payment_data, secureHash="dummy")
         self.assertFalse(tx._is_notification_signature_valid(payload))
 
     @mute_logger("odoo.addons.payment_asiapay.models.payment_transaction")
     def test_reject_notification_with_a_non_ascii_signature(self):
-        """Test that a non-ASCII signature is refused, not raised on."""
         tx = self._create_transaction("redirect")
         payload = dict(self.webhook_payment_data, secureHash="é" * 40)
         self.assertFalse(tx._is_notification_signature_valid(payload))

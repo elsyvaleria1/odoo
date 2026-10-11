@@ -17,7 +17,7 @@ class CustomerFsmPortal(CustomerPortal):
                     limit=1,
                     order="create_date DESC",
                 )
-            )  # take the last one
+            )
             worksheet_map[task_sudo.id] = worksheet
         data.update({"worksheet_map": worksheet_map})
         return data

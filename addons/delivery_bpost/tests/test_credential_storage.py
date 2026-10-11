@@ -39,9 +39,6 @@ class TestBpostCredentials(TransactionCase):
         self.assertEqual(self.carrier.bpost_developer_password, "round-trip")
 
     def test_the_account_number_stays_a_plain_column(self):
-        # It goes into request URLs, so it is an identifier rather than a
-        # secret, and it was never on the backlog. Asserted so a later tidy-up
-        # cannot sweep it into the vault for symmetry.
         field = self.env["delivery.carrier"]._fields["bpost_account_number"]
 
         self.assertTrue(field.store)

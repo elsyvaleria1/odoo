@@ -7,13 +7,9 @@ _testcapi = pytest.importorskip(
 )
 
 
-# CPython gives a type at most 1000 version tags; a class written more often
-# than that (every write to it or to a base spends one) no longer caches its
-# attribute lookups, and each lookup on a model walks its whole MRO
 def _unversioned(registry) -> list[str]:
     names = []
     for name, model_cls in registry.models.items():
-        # a lookup assigns a version tag the class can still take
         model_cls._name
         if _testcapi.type_get_version(model_cls) == 0:
             names.append(name)

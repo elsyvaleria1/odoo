@@ -14,9 +14,6 @@ class TestActivityStateRollup(TransactionCase):
             yield from itertools.combinations_with_replacement(STATES, size)
 
     def test_it_agrees_with_the_alphabetical_sort_it_replaced(self):
-        # fleet spelled this `sorted(states)[0]`, which is right only because
-        # "overdue" happens to sort before "today". Renaming either value would
-        # have silently inverted it.
         mixin = self.env["mixin.mail.activity"]
         for combo in self._combinations():
             present = {state for state in combo if state and state != "planned"}
@@ -28,8 +25,6 @@ class TestActivityStateRollup(TransactionCase):
             )
 
     def test_among_keeps_a_value_the_caller_cannot_store(self):
-        # fleet.vehicle and product.trace both offer only none/overdue/today, so
-        # "planned" must not come back even when a child is planned.
         mixin = self.env["mixin.mail.activity"]
         self.assertEqual(
             mixin._most_urgent_activity_state(

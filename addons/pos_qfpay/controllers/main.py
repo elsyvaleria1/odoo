@@ -7,7 +7,6 @@ _logger = logging.getLogger(__name__)
 
 
 class QFPayNotificationController(Controller):
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @route(
         "/qfpay/notify",
         type="http",
@@ -19,8 +18,6 @@ class QFPayNotificationController(Controller):
         typed=True,
     )
     def qfpay_notify(self, **kwargs):
-        """Receive a QFPay asynchronous payment/refund notification, admitted
-        against the method its trade number names."""
         qfpay_pm_sudo = request.admission.subject
         extra = request.admission.extra
         data = extra["data"]

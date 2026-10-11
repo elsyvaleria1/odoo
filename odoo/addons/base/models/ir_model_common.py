@@ -7,11 +7,11 @@ from typing import Any
 from psycopg.types.json import Jsonb
 
 from odoo import api, models
-from odoo.api import MODULE_UNINSTALL_FLAG  # noqa: F401 - re-exported downstream
+from odoo.api import MODULE_UNINSTALL_FLAG
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
-from odoo.tools.module_data import (  # noqa: F401 - re-exported downstream
+from odoo.tools.module_data import (
     field_xmlid,
     inherit_xmlid,
     model_xmlid,

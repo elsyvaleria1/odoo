@@ -91,7 +91,6 @@ class SignItem(models.Model):
 
     def copy_data(self, default=None):
         vals_list = super().copy_data(default=default)
-        # When duplicating sign items of type "radio" create new equivalent radio sets for the new items.
         radio_set_map = {}
         for radio_set_id in {
             item["radio_set_id"] for item in vals_list if item["radio_set_id"]
@@ -120,7 +119,6 @@ class SignItem(models.Model):
 
     @api.autovacuum
     def _gc_radio_set_and_options(self) -> None:
-        # Unlink orphaned radio sets that has no sign items linked to it
         self.env.cr.execute("""
             WITH linked_radio AS (
                 SELECT s.id radio_id
@@ -131,7 +129,6 @@ class SignItem(models.Model):
             DELETE FROM sign_item_radio_set
             WHERE id IN (SELECT * FROM linked_radio)
         """)
-        # Unlink options that don't belong to any selection sign item
         self.env.cr.execute("""
             DELETE FROM sign_item_option
             WHERE id NOT IN (SELECT sign_item_option_id FROM sign_item_option_rel)

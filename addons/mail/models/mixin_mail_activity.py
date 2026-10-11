@@ -450,7 +450,6 @@ class MixinMailActivity(models.AbstractModel):
                 user_id=self.env.uid if field.name.startswith("my_") else None,
             )
             sql_value = SQL.identifier(join_alias, "date_deadline")
-        # a record with no activity sorts last whichever way the deadline goes
         return self._order_value_to_sql(
             sql_value, direction, nulls if nulls.code else SQL("NULLS LAST"), query
         )

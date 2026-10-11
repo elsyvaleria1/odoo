@@ -5,8 +5,6 @@ ZIP_ZIP4 = re.compile(r"^[0-9]{5}(-[0-9]{4})?$")
 
 
 def split_zip_plus_four(zipcode: str) -> list[str]:
-    """If zipcode is a ZIP+4, split it into two parts.
-    Else leave it unchanged"""
     if ZIP_ZIP4.match(zipcode) and "-" in zipcode:
         return zipcode.split("-")
     else:

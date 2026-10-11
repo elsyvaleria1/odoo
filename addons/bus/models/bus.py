@@ -63,7 +63,7 @@ _notify_conns_inherited_from_parent = []
 
 
 def _reset_notify_state_in_child() -> None:
-    global _notify_conn, _notify_lock  # noqa: PLW0603  one NOTIFY connection per process, reset after fork
+    global _notify_conn, _notify_lock
     if _notify_conn is not None:
         _notify_conns_inherited_from_parent.append(_notify_conn)
         _notify_conn = None
@@ -74,7 +74,7 @@ os.register_at_fork(after_in_child=_reset_notify_state_in_child)
 
 
 def _get_notify_conn_locked():
-    global _notify_conn  # noqa: PLW0603  one NOTIFY connection per process
+    global _notify_conn
     if _notify_conn is None or _notify_conn.closed:
         _dbname, params = odoo.db.get_connection_info_for_database("postgres")
         _notify_conn = psycopg.connect(autocommit=True, **params)
@@ -82,7 +82,7 @@ def _get_notify_conn_locked():
 
 
 def _close_notify_conn_locked() -> None:
-    global _notify_conn  # noqa: PLW0603  one NOTIFY connection per process
+    global _notify_conn
     if _notify_conn is not None:
         with contextlib.suppress(psycopg.Error, OSError):
             _notify_conn.close()
@@ -176,15 +176,6 @@ def get_notify_payloads(channels):
     return payloads
 
 
-# A websocket's watermark moves past an id once that id has been dispatched for
-# NOTIFICATION_HOLD_BACK_SECONDS, so an id drawn long before the commit that
-# makes its row visible is skipped for good. A flush (every savepoint) inserts
-# the pending bus rows and draws their ids mid-transaction. Deferred to the
-# commit, this redraws, in insertion order, the ids of a transaction older than
-# a second -- well inside the hold-back window. It redates them too: create_date
-# is the transaction's start, and a client still at last=0 polls a lookback
-# window on it, which would miss a transaction longer than the window.
-# (A plain string: its plpgsql has no query parameters.)
 RESTAMP_AT_COMMIT = """
     DROP TRIGGER IF EXISTS bus_bus_draw_id_at_commit ON bus_bus;
     DROP FUNCTION IF EXISTS bus_bus_draw_id_at_commit();
@@ -246,8 +237,6 @@ class BusBus(models.Model):
         timeout_ago = fields.Datetime.now() - datetime.timedelta(
             seconds=gc_retention_seconds
         )
-        # the newest row stays: _bus_last_id is MAX(id), the watermark a client
-        # reconciles an absolute value against, and it must never go back to 0
         self.env.cr.execute(
             "DELETE FROM bus_bus WHERE id IN "
             "(SELECT id FROM bus_bus WHERE create_date < %s"
@@ -377,10 +366,6 @@ class BusBus(models.Model):
 
 
 def _warn_if_watermark_overtaken(data) -> None:
-    # RESTAMP_AT_COMMIT redraws the ids of a transaction older than a second
-    # above every id drawn before: a watermark it read after inserting its own
-    # rows no longer covers them, and a client reconciling a delta against it
-    # (mail's counters) counts that delta twice.
     began = data.pop("bus.bus.transaction_began", None)
     read_at = data.pop("bus.bus.watermark_read_at", None)
     if read_at is None or began is None:
@@ -416,8 +401,6 @@ class ImDispatch(threading.Thread):
         self._channels_to_ws = {}
         self._lock = threading.Lock()
         self._ever_started = False
-        # Alive is not enough: between a lost connection and the next LISTEN
-        # the thread waits out its backoff and delivers nothing.
         self._listening = False
         self._poll_round = 0
         self._poll_memo = {}
@@ -426,8 +409,6 @@ class ImDispatch(threading.Thread):
         self._waker = None
 
     def set_waker(self, waker) -> None:
-        # One call per wake for a whole set of websockets, rather than one
-        # cross-thread hand-off per websocket.
         self._waker = waker
 
     def _wake(self, websockets, poll_round) -> None:
@@ -464,8 +445,6 @@ class ImDispatch(threading.Thread):
         )
 
     def _start_if_stopped(self) -> None:
-        # Subscriptions arrive on several threads at once, and two that both
-        # find the thread not alive would both start it.
         with self._start_lock:
             with contextlib.suppress(RuntimeError):
                 if not self.is_alive():
@@ -474,10 +453,6 @@ class ImDispatch(threading.Thread):
 
     def subscribe(self, channels, last, db, websocket, routes=frozenset()) -> None:
         channels = frozenset(hashable(channel_with_db(db, c)) for c in channels)
-        # A connection closes on the loop thread while its subscribe runs on a
-        # job thread: checked and recorded under the lock its unsubscribe
-        # takes, a closed one is never registered again, and an unsubscribe
-        # always sees the channels it has to remove.
         with self._lock:
             if websocket.state is not ConnectionState.OPEN:
                 return
@@ -517,8 +492,6 @@ class ImDispatch(threading.Thread):
             self._listening = True
             _debug.lifecycle("listening", channels=len(self._channels_to_ws))
             sel.register(conn, selectors.EVENT_READ)
-            # Whatever committed before LISTEN -- the first subscriber's poll
-            # included -- woke nobody.
             self._dispatch_to_all()
             while not stop_event.is_set():
                 if sel.select(DISPATCHER_SELECT_TIMEOUT):

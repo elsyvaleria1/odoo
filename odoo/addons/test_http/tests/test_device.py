@@ -63,8 +63,6 @@ class TestDevice(TestHttpBase):
                 "X-Forwarded-Host": "odoo.com",
                 "X-Forwarded-Proto": "http",
             }
-        # one cookie jar plays every browser: each user agent keeps its own
-        # browser key, as separate browsers would
         agent = (headers or {}).get("User-Agent", "")
         jar = self.opener.cookies
         jar.set(CLIENT_KEY_COOKIE, None)
@@ -515,7 +513,6 @@ class TestDevice(TestHttpBase):
             if before_replica is not None:
                 prechecks.append(before_replica)
                 before_replica()
-                # revoked after the replica's verdict, before the write
                 self.user_internal.auth_client_ids._revoke()
             replica_cursors.append(acquire(readonly, **kwargs))
             return replica_cursors[-1]

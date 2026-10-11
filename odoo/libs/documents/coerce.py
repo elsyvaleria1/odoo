@@ -25,7 +25,6 @@ def _is_digit(character: str) -> bool:
 
 
 def _separates_digits(value: str, index: int) -> bool:
-    # an exponent's sign is read past, so "9,5e-5" still names its point
     after = index + 1
     if value[index] in "eE" and value[after : after + 1] in ("+", "-"):
         after += 1
@@ -94,9 +93,6 @@ def normalize_number(
 ) -> str | None:
     grouping, point = infer_separators(value, thousand, decimal)
     if "e" in value or "E" in value:
-        # read through a float, so an exponent past its range is infinite
-        # rather than a million digits, then written out in full: "f" on the
-        # float kept six places, and a small magnitude came out as zero
         try:
             number = float(value.replace(grouping, "."))
         except ValueError:

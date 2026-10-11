@@ -15,16 +15,6 @@ class MercadoPagoPosRequest:
         self.mercado_pago_bearer_token = mp_bearer_token
 
     def call_mercado_pago(self, method, endpoint, payload):
-        """Make a request to Mercado Pago POS API.
-
-        :param method: "GET", "POST", ...
-        :param endpoint: The endpoint to be reached by the request.
-        :param payload: The payload of the request.
-        :return The JSON-formatted content of the response.
-
-        Note: The platform id below is not secret, and is just used to
-        quantify the amount of Odoo users on Mercado's backend.
-        """
         endpoint = MERCADO_PAGO_API_ENDPOINT + endpoint
         header = {
             "Authorization": f"Bearer {self.mercado_pago_bearer_token}",

@@ -28,7 +28,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_event_order(self):
-        """check the ordering of events when searching"""
 
         def create_event(name, date):
             return self.CalendarEvent.create(
@@ -45,13 +44,11 @@ class TestCalendar(SavepointCaseWithUserDemo):
         bar2 = create_event("bar", "2011-06-01")
         domain = [("id", "in", (foo1 + foo2 + bar1 + bar2).ids)]
 
-        # sort them by name only
         events = self.CalendarEvent.search(domain, order="name")
         self.assertEqual(events.mapped("name"), ["bar", "bar", "foo", "foo"])
         events = self.CalendarEvent.search(domain, order="name desc")
         self.assertEqual(events.mapped("name"), ["foo", "foo", "bar", "bar"])
 
-        # sort them by start date only
         events = self.CalendarEvent.search(domain, order="start")
         self.assertEqual(
             events.mapped("start"), (foo1 + bar1 + foo2 + bar2).mapped("start")
@@ -61,7 +58,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             events.mapped("start"), (foo2 + bar2 + bar1 + foo1).mapped("start")
         )
 
-        # sort them by name then start date
         events = self.CalendarEvent.search(domain, order="name asc, start asc")
         self.assertEqual(list(events), [bar1, bar2, foo1, foo2])
         events = self.CalendarEvent.search(domain, order="name asc, start desc")
@@ -71,7 +67,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         events = self.CalendarEvent.search(domain, order="name desc, start desc")
         self.assertEqual(list(events), [foo2, foo1, bar2, bar1])
 
-        # sort them by start date then name
         events = self.CalendarEvent.search(domain, order="start asc, name asc")
         self.assertEqual(list(events), [foo1, bar1, bar2, foo2])
         events = self.CalendarEvent.search(domain, order="start asc, name desc")
@@ -117,7 +112,7 @@ class TestCalendar(SavepointCaseWithUserDemo):
         self.assertEqual(len(start_recurring_dates), 4)
 
         for d in start_recurring_dates:
-            if d.day < 28:  # DST switch happens between 2018-10-27 and 2018-10-28
+            if d.day < 28:
                 self.assertEqual(d.hour, 14)
             else:
                 self.assertEqual(d.hour, 15)
@@ -134,7 +129,7 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
         f = Form(event.with_context(tz="America/New_York").with_user(self.user_demo))
         f.name = "test"
-        f.start = "2022-07-07 01:00:00"  # This is in UTC. In NY, it corresponds to the 6th of july at 9pm.
+        f.start = "2022-07-07 01:00:00"
         f.recurrency = True
         self.assertEqual(f.weekday, "WED")
         self.assertEqual(
@@ -150,16 +145,8 @@ class TestCalendar(SavepointCaseWithUserDemo):
 
     @freezegun.freeze_time("2023-10-06 10:00:00")
     def test_event_creation_mail(self):
-        """
-        Freezegun used because we don't send mail for past events
-        Check that mail are sent to the attendees on event creation
-        Check that mail are sent to the added attendees on event edit
-        Check that mail are NOT sent to the attendees when the event date is past
-        Check that mail have extra attachement added by the user
-        """
 
         def _test_one_mail_per_attendee(self, partners):
-            # check that every attendee receive a (single) mail for the event
             for partner in partners:
                 mail = (
                     self.env["mail.message"]
@@ -174,7 +161,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
 
         def _test_emails_has_attachment(self, partners, attachments_names=None):
             attachments_names = attachments_names or ["fileText_attachment.txt"]
-            # check that every email has specified extra attachments
             for partner in partners:
                 mail = (
                     self.env["mail.message"]
@@ -231,11 +217,9 @@ class TestCalendar(SavepointCaseWithUserDemo):
             }
         )
 
-        # every partner should have 1 mail sent
         _test_one_mail_per_attendee(self, partners)
         _test_emails_has_attachment(self, partners)
 
-        # adding more partners to the event
         partners.extend(
             [
                 self.env["res.partner"].create(
@@ -259,10 +243,8 @@ class TestCalendar(SavepointCaseWithUserDemo):
             }
         )
 
-        # more email should be sent
         _test_one_mail_per_attendee(self, partners)
 
-        # create a new event in the past
         self.CalendarEvent.create(
             {
                 "name": "NOmailTest",
@@ -274,7 +256,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             }
         )
 
-        # no more email should be sent
         _test_one_mail_per_attendee(self, partners)
 
         partner_staff, new_partner = self.env["res.partner"].create(
@@ -316,7 +297,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_event_creation_internal_user_invitation_ics(self):
-        """Check that internal user can read invitation.ics attachment"""
         internal_user = new_test_user(
             self.env, login="internal_user", groups="base.group_user"
         )
@@ -334,18 +314,11 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
         msg.invalidate_recordset()
 
-        # internal user can read the attachment without errors
         self.assertEqual(
             msg.with_user(internal_user).attachment_ids.name, "invitation.ics"
         )
 
     def test_event_creation_sudo_other_company(self):
-        """Check Access right issue when create event with sudo
-
-        Create a company, a user in that company
-        Create an event for someone else in another company as sudo
-        Should not failed for acces right check
-        """
         now = fields.Datetime.context_timestamp(
             self.partner_demo, fields.Datetime.now()
         )
@@ -400,8 +373,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_meeting_creation_from_partner_form(self):
-        """When going from a partner to the Calendar and adding a meeting, both current user and partner
-        should be attendees of the event"""
         calendar_action = self.partner_demo.schedule_meeting()
         event = (
             self.env["calendar.event"]
@@ -426,7 +397,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             self.event_tech_presentation.videocall_channel_id.id,
             "No channel should be set before the route is accessed",
         )
-        # create the first channel
         self.event_tech_presentation._create_videocall_channel()
         self.assertNotEqual(self.event_tech_presentation.videocall_channel_id.id, False)
 
@@ -435,7 +405,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             {"name": "Jack", "email": "jack@gm.co"}
         )
         new_partners = [partner1.id, partner2.id]
-        # invite partners to meeting
         self.event_tech_presentation.write(
             {"partner_ids": [Command.link(new_partner) for new_partner in new_partners]}
         )
@@ -448,11 +417,8 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_search_current_attendee_status(self):
-        """Test searching for events based on the current user's attendance status."""
-        # Create a second user to ensure the filter is specific to the current user
         user_test = new_test_user(self.env, login="user_test_calendar_filter")
 
-        # Create events with different attendee statuses for both users
         event_accepted = self.env["calendar.event"].create(
             {
                 "name": "Event Demo Accepted",
@@ -520,10 +486,8 @@ class TestCalendar(SavepointCaseWithUserDemo):
             }
         )
 
-        # Perform searches as the demo user and assert the results
         CalendarEvent_Demo = self.env["calendar.event"].with_user(self.user_demo)
 
-        # Search for 'Yes' (accepted)
         accepted_events = CalendarEvent_Demo.search(
             [("current_status", "=", "accepted")]
         )
@@ -533,7 +497,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             "Should find only the event where the demo user has accepted.",
         )
 
-        # Search for 'No' (declined)
         declined_events = CalendarEvent_Demo.search(
             [("current_status", "=", "declined")]
         )
@@ -543,7 +506,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             "Should find only the event where the demo user has declined.",
         )
 
-        # Search for 'Maybe' (tentative)
         tentative_events = CalendarEvent_Demo.search(
             [("current_status", "=", "tentative")]
         )
@@ -553,7 +515,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             "Should find only the event where the demo user is tentative.",
         )
 
-        # Search for events where status is not 'No' (declined)
         not_declined_events = CalendarEvent_Demo.search(
             [("current_status", "!=", "declined")]
         )
@@ -578,7 +539,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             "Events where the user is not an attendee should NOT be in the result.",
         )
 
-        # Search using the 'in' operator
         in_events = CalendarEvent_Demo.search(
             [("current_status", "in", ["accepted", "tentative"])]
         )
@@ -597,8 +557,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_event_duplication_allday(self):
-        """Test that a calendar event is successfully duplicated with dates."""
-        # Create an event
         calendar_event = self.env["calendar.event"].create(
             {
                 "name": "All Day",
@@ -609,9 +567,7 @@ class TestCalendar(SavepointCaseWithUserDemo):
                 "allday": True,
             }
         )
-        # Duplicate the event with explicit defaults for start_date and stop_date
         new_calendar_event = calendar_event.copy()
-        # Ensure the copied event exists and retains the correct dates
         self.assertTrue(new_calendar_event, "Event should be duplicated.")
         self.assertEqual(
             new_calendar_event.start_date,
@@ -625,7 +581,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_event_privacy_domain(self):
-        """Test privacy domain filtering in _read_group for events with user_id=False and default privacy (False)"""
         now = datetime.now()
         test_user = self.user_demo
 
@@ -662,7 +617,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             groupby=["create_date:month"],
         )
 
-        # Verify privacy domain filtered out the private event only
         total_visible_events = sum(group[1] for group in result)
         self.assertEqual(
             total_visible_events,
@@ -671,9 +625,7 @@ class TestCalendar(SavepointCaseWithUserDemo):
         )
 
     def test_unauthorized_user_cannot_add_attendee(self):
-        """Check that a user that doesn't have access to a private event cannot add attendees to it"""
         attendee_model = self.env["calendar.attendee"].with_user(self.user_demo.id)
-        # event_id in values
         with self.assertRaises(AccessError):
             attendee_model.create(
                 [
@@ -683,7 +635,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
                     }
                 ]
             )
-        # event_id via context (default_event_id)
         with self.assertRaises(AccessError):
             attendee_model.with_context(
                 default_event_id=self.event_tech_presentation.id
@@ -696,7 +647,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             )
 
     def test_default_duration(self):
-        # Check the default duration depending on various parameters
         user_demo = self.user_demo
         second_company = (
             self.env["res.company"].sudo().create({"name": "Second Company"})
@@ -741,7 +691,6 @@ class TestCalendar(SavepointCaseWithUserDemo):
             ]
         )
         new_partners = [partner1.id, partner2.id]
-        # invite partners to meeting
         self.event_tech_presentation.write(
             {"partner_ids": [Command.link(new_partner) for new_partner in new_partners]}
         )

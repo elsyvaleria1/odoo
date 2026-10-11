@@ -18,7 +18,6 @@ class TestPosPreparationDisplay(TestPoSCommon):
         config3 = self.env["pos.config"].create({"name": "rest3"})
         config4 = self.env["pos.config"].create({"name": "rest4"})
 
-        # pos preperation display linked to specific configs
         display1 = self.env["pos.prep.display"].create(
             {
                 "name": "Preparation Display 1",

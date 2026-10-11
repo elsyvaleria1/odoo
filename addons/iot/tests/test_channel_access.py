@@ -203,8 +203,6 @@ class TestIotChannelAccess(HttpCase):
         self.assertEqual(len(self.sent), 1)
 
     def test_an_upstream_box_answers_its_last_requester_without_a_route(self):
-        # upstream's iot_drivers answers an offer with no session id and its
-        # remote debug status with session 0
         def offer(login, password):
             self.authenticate(login, password)
             self._call(

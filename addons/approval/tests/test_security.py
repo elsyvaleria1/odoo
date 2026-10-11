@@ -137,9 +137,6 @@ class TestApproverAccessControl(common.TransactionCase):
         self.assertEqual(request.state, "approved")
 
     def test_owner_cannot_decide_their_row_once_the_policy_forbids_it(self):
-        """The policy is read when deciding, not only when routing, and under
-        sudo too: a row staged while the category allowed self-approval cannot
-        carry the owner's decision after it stops allowing it."""
         category = self.env["approval.category"].create(
             {
                 "sequence_code": "SC0055",

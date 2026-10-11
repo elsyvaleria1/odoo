@@ -228,9 +228,6 @@ class TestAccess(common.TestSurveyCommon):
             )
 
         for model in ("survey.user_input", "survey.user_input.line"):
-            # refused outright, or, when another module grants employees a
-            # scoped read (calendar's appointment responses), none of this
-            # survey's answers are in the scope
             try:
                 visible = self.env[model].search(
                     [("survey_id", "in", [self.survey.id])]

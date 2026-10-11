@@ -26,7 +26,6 @@ class WizardHrJobCreatePost(models.TransientModel):
             return 5
 
         def convert_status_to_monster_id():
-            # pay per diem
             if self.job_id.payment_interval == "daily":
                 return 3
             if self.job_id.schedule_id.is_fulltime:
@@ -59,9 +58,8 @@ class WizardHrJobCreatePost(models.TransientModel):
                 },
             },
             "JobPostings": {
-                "JobPosting": {  # n.b. a list of job postings dict is allowed
+                "JobPosting": {
                     "BoardName": {
-                        # monsterId 1 is monster.com and 178 is jobsearch.demo.monster.com
                         "monsterId": 1
                         if not consteq(
                             str(
@@ -110,9 +108,6 @@ class WizardHrJobCreatePost(models.TransientModel):
                 "monster_job_ref_code",
                 wizard=self,
                 job=self.job_id,
-                # the occurrence counter is read off the LAST post's ref code
-                # by splitting on the final underscore, so a hand-edited or
-                # differently shaped code restarts the sequence at 1
                 by="incremented_from_last_post" if last_post else "first_post",
                 previous=last_post.api_data["jobRefCode"] if last_post else False,
                 occurrence=occurrence_str,
@@ -124,7 +119,6 @@ class WizardHrJobCreatePost(models.TransientModel):
         if self.job_id.industry_id and (
             industry_id := self.job_id.industry_id.monster_id
         ):
-            # not taking multiple industries into account because only one will be selected by monster
             data["JobPostings"]["JobPosting"]["Industries"] = {
                 "Industry": [
                     {
@@ -187,8 +181,6 @@ class WizardHrJobCreatePost(models.TransientModel):
             wizard=self,
             job=self.job_id,
             job_ref_code=data["jobRefCode"],
-            # each of these blocks is added only when its source is set, and
-            # a posting missing one is accepted by Monster without comment
             has_industry=bool(data["JobPostings"]["JobPosting"].get("Industries")),
             has_work_hours=bool(data["JobInformation"].get("WorkHours")),
             has_job_type=bool(data["JobInformation"].get("JobType")),

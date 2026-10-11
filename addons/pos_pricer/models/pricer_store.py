@@ -13,11 +13,7 @@ PRICER_REQUESTS_TIMEOUT = 10
 def setup_requests_session(
     requests_session, pricer_login, pricer_password, auth_url
 ) -> None:
-    """
-    Setup the jwt token for the authentification in requests_session
-    """
     try:
-        # Get a new JWT token
         response = requests_session.get(
             auth_url,
             auth=(pricer_login, pricer_password),
@@ -42,15 +38,12 @@ class PricerStore(models.Model):
         "pricer_password": "pricer_password",
     }
 
-    # The name of the Pricer store in Odoo
     name = fields.Char(
         string="Store Name",
         required=True,
         help="Pricer Store name in Odoo database",
     )
 
-    # Fields used for Pricer API requests
-    # All the 4 following fields need to be provided to clients by Pricer
     pricer_store_identifier = fields.Char(
         string="Pricer Store ID",
         required=True,
@@ -80,7 +73,6 @@ class PricerStore(models.Model):
         help="Password of your Pricer account",
     )
 
-    # Products and Pricer tags associated to the Pricer Store
     product_ids = fields.One2many(
         comodel_name="product.product",
         inverse_name="pricer_store_id",
@@ -92,7 +84,6 @@ class PricerStore(models.Model):
         string="Pricer Tags",
     )
 
-    # Update status fields
     last_update_datetime = fields.Datetime(
         string="Last Update",
         readonly=True,
@@ -104,7 +95,6 @@ class PricerStore(models.Model):
         help="Status message of the last synchronization with Pricer",
     )
 
-    # Dummy fields for quick pairing
     dummy_prod_barcode = fields.Char(
         string="Product barcode",
         store=False,
@@ -117,17 +107,12 @@ class PricerStore(models.Model):
         help="Scan the Pricer tag barcode here",
     )
 
-    # ------------------------- PRICER API URLs -------------------------
-    # For authentification: "https://central-manager.[PRICER_TENANT_NAME].pcm.pricer-plaza.com[PRICER_API_SUFFIX]"
-    # For other requests: "https://[PRICER_STORE_NAME].[PRICER_TENANT_NAME].pcm.pricer-plaza.com[PRICER_API_SUFFIX]"
-    # Example: "https://1234.odoo-be.pcm.pricer-plaza.com/api/public/core/v1/items"
     auth_url = fields.Char(compute="_compute_auth_url")
     create_or_update_products_url = fields.Char(
         compute="_compute_create_or_update_products_url"
     )
     link_tags_url = fields.Char(compute="_compute_link_tags_url")
 
-    # Their "compute" methods
     @api.depends("pricer_tenant_name")
     def _compute_auth_url(self) -> None:
         for record in self:
@@ -143,14 +128,8 @@ class PricerStore(models.Model):
         for record in self:
             record.link_tags_url = f"https://{record.pricer_store_identifier}.{record.pricer_tenant_name}.pcm.pricer-plaza.com/api/public/core/v1/labels"
 
-    # ------------------------- CONSTRAINS -------------------------
     @api.constrains("pricer_store_identifier")
     def _check_pricer_store_identifier(self) -> None:
-        """
-        Pricer Store ID must:
-            1) Consist of: a-z, 0-9 or '-'
-            2) Must start with a-z or 0-9
-        """
         for record in self:
             if not re.fullmatch(
                 r"^[a-z0-9][a-z0-9-]*$", record.pricer_store_identifier
@@ -173,14 +152,10 @@ class PricerStore(models.Model):
                     )
                 )
 
-    # ------------------------- API METHODS -------------------------
     def _integration_connection_service(self):
         return "pos_pricer", self.env._("Point of Sale: Pricer"), "other"
 
     def unlink_label(self, pricer_tag_id) -> None:
-        """
-        Stop displaying product infromation on a pricer tag when deleting it from Odoo database
-        """
         unlink_tag_url = f"https://{self.pricer_store_identifier}.{self.pricer_tenant_name}.pcm.pricer-plaza.com/api/public/core/v1/labels/{pricer_tag_id}/links"
 
         with self._get_integration_connection()._egress_session(
@@ -218,7 +193,6 @@ class PricerStore(models.Model):
                 ) from e
 
     def action_button_update_pricer_tags(self) -> dict:
-        """Manually call Pricer API to update products on Pricer tags"""
         updated = self._update_pricer_tags(update_all=False)
 
         message = (
@@ -239,33 +213,20 @@ class PricerStore(models.Model):
         }
 
     def _update_pricer_tags(self, update_all):
-        """This method is regularly called by a cron in pricer module
-        The interval is defined in data/pricer_ir_cron.xml
-        This is done to avoid doing excessive API requests on every action
-        while maintaining user's pricer tags synchronized with Odoo database
-
-        A button on list view of pricer stores allows the user to manually call this method
-        If called manually, instead of going through ALL the pricer stores in the database,
-        it will only check the pricer stores specified in its "pricer_stores_to_update" argument
-
-        :param bool update_all: only kept not to change the method signature
-        """
         anything_to_update = False
 
-        # Go through every Pricer store and build a JSON request body for it
         for store in self:
             products = store.product_ids.filtered("pricer_product_to_create_or_update")
             tags = products.pricer_tag_ids.filtered("pricer_product_to_link")
 
             if not products and not tags:
-                continue  # This store is up to date
+                continue
 
             anything_to_update = True
 
             with store._get_integration_connection()._egress_session(
                 "pos_pricer"
             ) as requests_session:
-                # Call the Pricer api to update/create products and link the price tags
                 try:
                     setup_requests_session(
                         requests_session,
@@ -273,7 +234,6 @@ class PricerStore(models.Model):
                         store.pricer_password,
                         store.auth_url,
                     )
-                    # Create / Update products at Pricer database
                     if products:
                         requests_session.patch(
                             store.create_or_update_products_url,
@@ -288,7 +248,6 @@ class PricerStore(models.Model):
                             store.name,
                             store.create_or_update_products_url,
                         )
-                    # Link the new Pricer tags to the existing products on their database
                     if tags:
                         requests_session.patch(
                             store.link_tags_url,

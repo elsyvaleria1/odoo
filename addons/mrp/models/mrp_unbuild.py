@@ -200,8 +200,6 @@ class MrpUnbuild(models.Model):
             remaining = production.product_uom_id.round(
                 production.qty_produced - order._get_quantity_unbuilt_before()
             )
-            # Zero would break the positive-quantity constraint on save; the
-            # whole order is refused with a message at validation instead.
             order.product_qty = (
                 remaining
                 if production.product_uom_id.compare(remaining, 0) > 0

@@ -310,10 +310,6 @@ class Store:
     def _records_not_added(
         self, records: models.Model, spec_key: Any, as_thread: bool
     ) -> models.Model:
-        # a record reached again through another relation with the same
-        # specification serializes to the same values: only the records this
-        # specification has not added yet are serialized, the others already
-        # sit in the store with everything they reach
         env, model_name = records.env, records._name
         missing = []
         for record_id in records._ids:
@@ -339,7 +335,6 @@ class Store:
         memo = self._spec_key_memo.get(id(spec))
         if memo is not None and memo[0] is spec:
             return memo[1]
-        # holding the spec keeps its id() from being reused while the store lives
         self._spec_key_memo[id(spec)] = (spec, ("I", id(spec)))
         key = self._compute_spec_key(spec)
         self._spec_key_memo[id(spec)] = (spec, key)
@@ -488,8 +483,6 @@ class Store:
             self._answers: dict[tuple[str, Environment], bool] = {}
 
         def is_current_user(self, env: Environment) -> bool:
-            # asked once per serialized record by several fields; the answer
-            # depends on nothing a serialization changes
             key = ("is_current_user", env)
             if key not in self._answers:
                 self._answers[key] = self._is_current_user(env)
@@ -664,8 +657,6 @@ class Store:
         def _thread_ids(
             self, record: models.Model, res_model_field: str, res_model: str
         ) -> tuple[int, ...]:
-            # every thread of the model that the calling record's siblings point
-            # at, so a field computed on one thread is computed for all of them
             memo = self.__dict__.get("_thread_ids_memo")
             if memo is None or memo[0] is not record._prefetch_ids:
                 ids_by_model: defaultdict[str, list[int]] = defaultdict(list)

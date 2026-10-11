@@ -67,7 +67,6 @@ class WorksheetTemplate(models.Model):
 
     @api.model
     def _create_demo_data_quality(self) -> None:
-        # create demo data in batch for performance reasons (avoid multiple calls to setup_models)
         _debug.lifecycle("worksheet_demo_data_create", templates=self)
         model_id = self.env.ref(
             "quality_control_worksheet.quality_control_worksheet_template1"

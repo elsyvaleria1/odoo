@@ -40,7 +40,6 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
         ),
     )
     def test_event_creation_for_user(self):
-        """Check that either emails or synchronization happens correctly when creating an event for another user."""
         user_root = self.env.ref("base.user_root")
         self.assertFalse(user_root._calendar_sync_connection("microsoft"))
         partner = self.env["res.partner"].create(
@@ -62,15 +61,11 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
         paused_sync_user._calendar_sync_account("microsoft").stopped = True
         inserts = distinct_inserts("created")
         for create_user, organizer, mail_notified_partners, attendee in [
-            # an online appointment with user 0 goes out through user 0's
-            # calendar, which invites the attendees
             (user_root, self.users[0], False, partner),
-            (user_root, None, partner, partner),  # emulates online resource appointment
+            (user_root, None, partner, partner),
             (self.users[0], None, False, partner),
             (self.users[0], self.users[0], False, partner),
             (self.users[0], self.users[1], False, partner),
-            # whoever creates it, an event goes out through its synchronized
-            # organizer
             (paused_sync_user, self.users[0], False, paused_sync_user.partner_id),
         ]:
             with self.subTest(
@@ -118,10 +113,6 @@ class TestSyncOdoo2MicrosoftMail(TestCommon, MailCase):
                         )
 
     def test_change_organizer_pure_odoo_event(self):
-        """
-        Test that changing organizer on a pure Odoo event (not synced with Microsoft)
-        does not archive the event.
-        """
         self.organizer_user._calendar_sync_account("microsoft").stopped = True
         event = (
             self.env["calendar.event"]

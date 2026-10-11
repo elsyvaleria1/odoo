@@ -10,9 +10,7 @@ from odoo.addons.sale_stock_renting.tests.test_rental_common import TestRentalCo
 @tagged("post_install", "-at_install")
 class TestRentalInvoicing(TestRentalCommon, AccountTestInvoicingCommon):
     def test_no_cogs_for_rental_invoice_anglo_saxon(self):
-        """Ensure no COGS or inventory valuation journal entries are created for rental products in Anglo-Saxon mode."""
 
-        # Setup: Anglo-Saxon mode and real-time inventory valuation
         self.env.company.account_config_id.anglo_saxon_accounting = True
         self.product_id.valuation = "real_time"
         self.product_id.standard_price = 100.0
@@ -46,7 +44,6 @@ class TestRentalInvoicing(TestRentalCommon, AccountTestInvoicingCommon):
         invoice = sale_order._create_invoices()
         invoice.action_post()
 
-        # Get the invoice lines
         rental_lines = invoice.line_ids.filtered(
             lambda l: any(sl.is_rental for sl in l.sale_line_ids)
         )
@@ -54,12 +51,10 @@ class TestRentalInvoicing(TestRentalCommon, AccountTestInvoicingCommon):
             lambda l: all(not sl.is_rental for sl in l.sale_line_ids)
         )
 
-        # Fetch valuation-related journal lines from the invoice's journal entry
         move_lines = invoice.line_ids
 
         valuation_lines = move_lines.filtered(lambda line: line.cogs_origin_id.id)
 
-        # Check: No valuation entries tied to rental lines
         self.assertFalse(
             rental_lines & valuation_lines.cogs_origin_id,
             "Rental invoice line should not generate COGS or inventory valuation journal entries.",

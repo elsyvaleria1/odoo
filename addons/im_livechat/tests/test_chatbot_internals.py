@@ -330,8 +330,6 @@ class ChatbotCase(MailCommon, chatbot_common.ChatbotCase):
             channel_data_emp = (
                 Store().add(discuss_channel.with_user(self.user_employee)).get_result()
             )
-            # the operator's join opens a savepoint, whose flush puts the
-            # transfer message on the bus before their channel is serialized
             transfer_notif = self._new_bus_notifs.filtered(
                 lambda notif: (
                     json_loads(notif.message)["payload"].get("message_id")

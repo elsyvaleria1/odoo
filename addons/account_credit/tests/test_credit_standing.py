@@ -42,8 +42,6 @@ class TestCreditStanding(AccountTestInvoicingCommon):
             cls.company
         )._update_available_quantity(cls.storable, warehouse.lot_stock_id, 10)
         if "can_validate_user_ids" in warehouse.out_type_id._fields:
-            # marin lets only the users its operation types list validate
-            # their transfers: the stock user validates as one of them
             warehouse.out_type_id.sudo().can_validate_user_ids = [
                 Command.link(cls.stock_user.id)
             ]
@@ -139,9 +137,6 @@ class TestCreditStanding(AccountTestInvoicingCommon):
         self.assertEqual(picking.state, "done")
 
     def test_a_branch_keeper_validates_a_colleagues_credit_delivery(self):
-        """A branch's warehouse keeper may sell too, as a seller reading their
-        own orders only: the delivery of a colleague's order still weighs its
-        credit, opened and validated, and the order stays out of their reach."""
         keeper = new_test_user(
             self.env,
             login="credit_standing_keeper",
@@ -163,8 +158,6 @@ class TestCreditStanding(AccountTestInvoicingCommon):
             "a colleague's order stays out of the keeper's reach",
         )
         picking = order.picking_ids.with_user(keeper)
-        # the keeper opens the delivery in a request of their own: nothing the
-        # salesperson read is cached, and a cached value is read unchecked
         self.env.invalidate_all()
         self.assertTrue(picking.credit_verdict_outcome, "the keeper opens it judged")
         picking.move_ids.quantity = 1

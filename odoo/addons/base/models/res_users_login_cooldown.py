@@ -48,12 +48,6 @@ class LoginCooldown:
         return env["res.users.login.cooldown"]
 
     def claim(self, cr, source: str) -> bool:
-        # One attempt per source in flight, held to the end of the caller's
-        # transaction. The count is read in the caller's snapshot and written
-        # after it, so attempts overlapping one another would all read the
-        # count from before the others' failures; one at a time, an attempt
-        # reads at most the last one's failure late. A second attempt is
-        # refused, not queued: waiting, it would still read its old snapshot.
         cr.execute(
             SQL(
                 "SELECT pg_try_advisory_xact_lock(hashtextextended(%s, 0))",
@@ -83,8 +77,6 @@ class LoginCooldown:
     def record_failure(self, source: str, delay: datetime.timedelta) -> None:
         now = fields.Datetime.now()
         with self.registry.cursor() as cr:
-            # a concurrent failure from the same source must be counted, not
-            # lost to a snapshot taken before its row was committed
             cr.use_read_committed()
             cr.execute(
                 SQL(

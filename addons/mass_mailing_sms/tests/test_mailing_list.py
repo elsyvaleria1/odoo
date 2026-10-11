@@ -16,7 +16,6 @@ class TestMailingListSms(MassSMSCommon):
         form.sms_subject = "Test SMS"
         form.body_plaintext = "Test sms body"
         sms = form.save()
-        # Check that mailing model and mailing list are set properly
         self.assertEqual(
             sms.mailing_model_id,
             self.env["ir.model"]._get("mailing.list"),

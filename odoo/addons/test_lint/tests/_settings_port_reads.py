@@ -37,7 +37,6 @@ SKIPPED_PARTS = frozenset({"tests", "migrations", "upgrades"})
 
 
 def _environment(call: ast.Call) -> ast.expr | None:
-    # the X of X["ir.config_parameter"].sudo().<method>(...)
     receiver = call.func.value
     if not (
         isinstance(receiver, ast.Call)
@@ -95,7 +94,7 @@ def _port_call(call: ast.Call) -> ast.Call | None:
         if method == "get":
             default = ast.Constant(False)
         elif method != "get_bool":
-            return None  # get_param_int/_float always take their default
+            return None
     settings = ast.Attribute(
         ast.Attribute(copy.deepcopy(environment), "registry", ast.Load()),
         "settings",
@@ -110,7 +109,6 @@ def _port_call(call: ast.Call) -> ast.Call | None:
 
 
 class _Replacer(ast.NodeTransformer):
-    # the calls the text rewrite replaced, by position, and nothing else
     def __init__(self, positions: set[tuple[int, int, int, int]]):
         self.positions = positions
 
@@ -130,7 +128,6 @@ def _offsets(source: bytes) -> list[int]:
 
 
 def _comment_offsets(source: bytes, starts: list[int]) -> list[int]:
-    # tokenize counts columns in characters, the AST in bytes
     lines = source.splitlines(keepends=True)
     return [
         starts[token.start[0] - 1]
@@ -149,10 +146,8 @@ def rewrite(source: bytes) -> tuple[bytes, int]:
         if isinstance(node, ast.Call) and (port := _port_call(node)) is not None:
             start = starts[node.lineno - 1] + node.col_offset
             end = starts[node.end_lineno - 1] + node.end_col_offset
-            # a comment inside the call would not survive ast.unparse
             if not any(start <= offset < end for offset in comments):
                 spans.append((start, end, port, node))
-    # an outer rewrite contains its inner ones' text: rewrite the outermost
     spans = [
         span
         for span in spans
@@ -205,7 +200,7 @@ def main(argv=None) -> int:
             try:
                 new, count = rewrite(source)
             except (SyntaxError, ValueError) as exc:
-                print(f"  SKIP  {path}: {exc}")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+                print(f"  SKIP  {path}: {exc}")
                 continue
             if not count:
                 continue
@@ -220,7 +215,7 @@ def main(argv=None) -> int:
                     [sys.executable, "-m", "ruff", "format", "--quiet", str(path)],
                     check=True,
                 )
-    print(f"{total} read(s) through the settings port in {files} file(s)")  # noqa: T201, RUF100 CLI entry point: stdout is the fixer's report
+    print(f"{total} read(s) through the settings port in {files} file(s)")
     return 0
 
 

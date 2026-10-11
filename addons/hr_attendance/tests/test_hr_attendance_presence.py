@@ -119,7 +119,6 @@ class TestAttendanceDrivenPresence(TransactionCase):
         )
 
     def test_the_icon_and_the_state_read_the_same_flag(self):
-        """They disagreed: the icon consulted the flag, the state did not."""
         for control in (True, False):
             with self.subTest(attendance_control=control):
                 employee = self._employee(attendance_control=control)

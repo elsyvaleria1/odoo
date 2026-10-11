@@ -76,7 +76,6 @@ class StripeCommon(PaymentCommon):
         }
 
     def _mock_setup_intent_request(self, *args, **kwargs):
-        # See: https://docs.stripe.com/api/setup_intents/confirm
         mandate_options = (
             {
                 "amount": 1500000,

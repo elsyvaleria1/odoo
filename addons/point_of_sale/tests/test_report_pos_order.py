@@ -109,8 +109,6 @@ class TestReportPoSOrder(TestPoSCommon):
 
     def test_report_zero_net_quantity_and_validation_delay(self):
         order = self._create_report_order((1, -1, 0))
-        # Audit timestamps come from PostgreSQL. Anchor to the stored creation
-        # date instead of trying to overwrite it or freeze Python's clock.
         order.date_order = order.create_date.replace(
             hour=0,
             minute=0,
@@ -147,8 +145,6 @@ class TestReportPoSOrder(TestPoSCommon):
         )
 
         self.assertAlmostEqual(delay, 1.5)
-        # PivotRenderer chooses its formatter from this metadata. An integer
-        # field hides the fractional part of an otherwise correct SQL average.
         self.assertEqual(
             report.fields_get(["delay_validation"])["delay_validation"]["type"], "float"
         )
@@ -459,8 +455,6 @@ class TestReportPoSOrder(TestPoSCommon):
             login="report_render_cashier",
             groups="point_of_sale.group_pos_user",
         )
-        # This legacy adapter has no shipped action/template. Supply one only
-        # for this test so the real report service and QWeb exercise its values.
         self.env["ir.ui.view"].create(
             {
                 "name": "POS invoice adapter test",

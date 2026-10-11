@@ -77,7 +77,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
 
     @users("user_marketing")
     def test_mass_sms_internals_errors(self):
-        # same customer, specific different number on record -> should be valid
         new_record_1 = self.env["mail.test.sms"].create(
             {
                 "name": "MassSMSTest_nr1",
@@ -114,7 +113,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             }
         )
         self.env["phone.blacklist"].sudo().create({"number": "0456110011"})
-        # new customer, number already on record -> should be ignored
         country_be_id = self.env.ref("base.be").id
         nr2_partner = self.env["res.partner"].create(
             {
@@ -139,8 +137,8 @@ class TestMassSMSInternals(TestMassSMSCommon):
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
         mailing.write(
             {
-                "sms_force_send": False,  # force outgoing sms, not sent
-                "keep_archives": True,  # keep a note on document (mass_keep_log)
+                "sms_force_send": False,
+                "keep_archives": True,
             }
         )
         with self.with_user("user_marketing"):
@@ -173,7 +171,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             len(valid_records),
             "Only not canceled message must be logged in the chatter",
         )
-        # duplicates
         self.assertSMSTraces(
             [
                 {
@@ -187,7 +184,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             mailing,
             new_record_2,
         )
-        # blacklist
         self.assertSMSTraces(
             [
                 {
@@ -206,7 +202,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             mailing,
             bl_record_1,
         )
-        # missing number
         self.assertSMSTraces(
             [
                 {
@@ -220,7 +215,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             mailing,
             void_record,
         )
-        # wrong values
         self.assertSMSTraces(
             [
                 {
@@ -237,7 +231,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
         )
         self.assertEqual(mailing.canceled, 5)
 
-        # Same test using use_exclusion_list = False
         mailing_no_blacklist = mailing.copy()
         mailing_no_blacklist.use_exclusion_list = False
         with self.with_user("user_marketing"):
@@ -267,8 +260,8 @@ class TestMassSMSInternals(TestMassSMSCommon):
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
         mailing.write(
             {
-                "sms_force_send": False,  # check with outgoing traces, not already pending
-                "keep_archives": True,  # keep a note on document (mass_keep_log)
+                "sms_force_send": False,
+                "keep_archives": True,
             }
         )
 
@@ -280,7 +273,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             [("mass_mailing_id", "in", mailing.ids)]
         )
         self.assertEqual(len(traces), 5)
-        # new traces generated
         self.assertSMSTraces(
             [
                 {
@@ -298,9 +290,7 @@ class TestMassSMSInternals(TestMassSMSCommon):
             with self.mockSMSGateway():
                 mailing.action_send_sms(res_ids=self.records.ids)
 
-        # delete old traces (for testing purpose: ease check by deleting old ones)
         traces.unlink()
-        # new failed traces generated for duplicates
         self.assertSMSTraces(
             [
                 {
@@ -315,7 +305,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
             mailing,
             self.records[:5],
         )
-        # new traces generated
         self.assertSMSTraces(
             [
                 {
@@ -331,10 +320,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
 
     @users("user_marketing")
     def test_mass_sms_processing_with_force_send(self):
-        """Test that a `processing` status returned by IAP is immediately applied to traces and mailing stays sending.
-
-        The status update case where the sms are sent via the cron is done in TestSmsController.
-        """
         with self.with_user("user_marketing"):
             mailing = self.env["mailing.mailing"].create(
                 {
@@ -372,7 +357,6 @@ class TestMassSMSInternals(TestMassSMSCommon):
 
     @users("user_marketing")
     def test_mass_sms_error_with_force_send(self):
-        """Test that a failed status returned by IAP is immediately applied to traces."""
         with self.with_user("user_marketing"):
             mailing = self.env["mailing.mailing"].create(
                 {
@@ -454,7 +438,6 @@ class TestMassSMSTest(TestMassSMSCommon):
             sorted(new_traces.mapped("sms_number")), ["+32455334455", "+32456001122"]
         )
 
-        # Test if bad inline_template in the body raises an error
         mailing.write(
             {
                 "body_plaintext": "Hello {{ object.name_id.id }}",
@@ -500,7 +483,6 @@ class TestMassSMS(TestMassSMSCommon):
                 [
                     ("http://www.odoo.com/smstest", True, {}),
                     ("http://www.odoo.com/smstest/%s" % record.name, True, {}),
-                    # unsubscribe is not shortened and parsed at sending
                     ("unsubscribe", False, {}),
                 ]
                 for record in self.records
@@ -510,8 +492,6 @@ class TestMassSMS(TestMassSMSCommon):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mass_sms_partner_only(self):
-        """Check sending SMS marketing on models having only a partner_id fields
-        set is working."""
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
         mailing.write(
             {
@@ -552,14 +532,12 @@ class TestMassSMS(TestMassSMSCommon):
                 [
                     ("http://www.odoo.com/smstest", True, {}),
                     ("http://www.odoo.com/smstest/%s" % record.id, True, {}),
-                    # unsubscribe is not shortened and parsed at sending
                     ("unsubscribe", False, {}),
                 ]
                 for record in records
             ],
         )
 
-        # add a new record, send -> sent list should not resend traces
         new_record = self.env["mail.test.sms.partner"].create(
             [
                 {
@@ -588,7 +566,6 @@ class TestMassSMS(TestMassSMSCommon):
                 [
                     ("http://www.odoo.com/smstest", True, {}),
                     ("http://www.odoo.com/smstest/%s" % new_record.id, True, {}),
-                    # unsubscribe is not shortened and parsed at sending
                     ("unsubscribe", False, {}),
                 ]
             ],
@@ -597,8 +574,6 @@ class TestMassSMS(TestMassSMSCommon):
     @users("user_marketing")
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_mass_sms_partner_only_m2m(self):
-        """Check sending SMS marketing on models having only a m2m to partners
-        is currently not suppored."""
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
         mailing.write(
             {
@@ -629,10 +604,7 @@ class TestMassSMS(TestMassSMSCommon):
             model="mail.test.sms.bl.optout", count=5
         )
 
-        # optout records 0 and 1
         (recipients[0] | recipients[1]).write({"opt_out": True})
-        # blacklist records 4
-        # TDE FIXME: sudo should not be necessary
         self.env["phone.blacklist"].sudo().create(
             {"number": recipients[4].phone_nbr_ids.number}
         )
@@ -643,7 +615,7 @@ class TestMassSMS(TestMassSMSCommon):
                     "mail.test.sms.bl.optout"
                 ),
                 "mailing_domain": [("id", "in", recipients.ids)],
-                "keep_archives": True,  # keep a note on document (mass_keep_log)
+                "keep_archives": True,
             }
         )
 
@@ -708,7 +680,6 @@ class TestMassSMSTwilio(TestMassSMSCommon, MockSmsTwilioApi):
 
     @users("user_marketing")
     def test_mass_sms(self):
-        """Test SMS marketing using twilio"""
         mailing = self.env["mailing.mailing"].browse(self.mailing_sms.ids)
 
         with self.mock_sms_twilio_gateway():
@@ -734,8 +705,6 @@ class TestMassSMSTwilio(TestMassSMSCommon, MockSmsTwilioApi):
 
     @users("user_marketing")
     def test_mass_sms_twilio_issue(self):
-        """Test specific propagation / update to trace failure_type from twilio
-        errors"""
         for error_type, exp_failure_type in [
             ("twilio_acc_unverified", "sms_acc"),
             ("twilio_callback", "twilio_callback"),

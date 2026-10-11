@@ -15,9 +15,6 @@ class MixinOrderDelayReport(models.AbstractModel):
     _order_table = ""
     _link_column = ""
     _date_commitment_alias = ""
-    # the move's end that meets the partner, and the usage it carries there:
-    # a return reverses the direction and shares the order line, so without
-    # this it counts as a second on-time transfer
     _direction: TradeDirection | None = None
 
     partner_id = fields.Many2one(

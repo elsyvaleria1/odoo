@@ -78,9 +78,6 @@ class TestSurveyComputePagesQuestions(common.TestSurveyCommon):
         )
 
     def test_compute_page_id_batch_create_out_of_sequence_order(self):
-        """A One2many's in-cache order right after a batch create() is command
-        order, not the model's (sequence, id) order — _compute_page_id must
-        not assume the sort is already correct."""
         with self.with_user("survey_manager"):
             survey = self.env["survey.survey"].create(
                 {

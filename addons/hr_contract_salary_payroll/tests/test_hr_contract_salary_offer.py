@@ -28,7 +28,7 @@ class TestHrContractSalaryOffer(TransactionCase):
             {
                 "name": "Version Calendar",
                 "hours_per_day": 7.6,
-                "hours_per_week": 38,  # if the version uses this calendar, version.work_time_rate will be 0.95 cause relative to company weekly working hours
+                "hours_per_week": 38,
                 "full_time_required_hours": 38,
             }
         )
@@ -53,8 +53,6 @@ class TestHrContractSalaryOffer(TransactionCase):
             }
         )
         cls.version = cls.employee.version_ids[0]
-        # Use this context override before calling methods marked with `@requires_hr_version_context`
-        # Business code might depend on the context being set correctly, so we don't patch `@requires_hr_version_context`
         cls.version_ctx = {
             "salary_simulation": True,
             "tracking_disable": True,
@@ -81,7 +79,6 @@ class TestHrContractSalaryOffer(TransactionCase):
                 self.env["hr.contract.salary.offer"].with_context(**action["context"])
             )
         self.assertAlmostEqual(offer_form.monthly_wage, expected, places=2)
-        # The default spares the monthly wage a salary simulation of its own.
         self.assertEqual(len(calls), 1)
 
     def test_version_calendar_priority(self):
@@ -98,19 +95,15 @@ class TestHrContractSalaryOffer(TransactionCase):
             .with_context(**self.version_ctx)
         )
 
-        # case 1: version calendar empty -> offer calendar is used
         self.version.resource_calendar_id = False
         offer._compute_salary()
         version = offer._acquire_version()
         self.assertEqual(version.resource_calendar_id, self.offer_calendar)
         self.assertAlmostEqual(
             offer.gross_wage, 2000.0, places=2
-        )  # check gross salary computed in Salary Simulation Preview
+        )
 
     def test_an_unmapped_simulation_schedule_falls_back_to_full_time(self):
-        """A schedule value outside the mapped set (raw from the configurator's
-        HTTP request) must neither blank the simulation version's calendar nor
-        crash int(): it simulates full time instead."""
         original_calendar = self.version.resource_calendar_id
         for hostile in ("70", "abc"):
             with hr_version_context(
@@ -130,15 +123,6 @@ class TestHrContractSalaryOffer(TransactionCase):
         self.assertEqual(self.version.resource_calendar_id, original_calendar)
 
     def test_part_time_simulation_working_schedule_branches(self):
-        """
-        `_generate_salary_simulation_payslip`'s part-time branches
-        (`simulation_working_schedule` in {'90','80','60','50','40','20'})
-        were never exercised by any test in this module, so a regression in
-        the `two_weeks_calendar` polarity or the wage-scaling factor for any
-        one of them could pass the full suite undetected.
-        """
-        # A clean, known calendar: 5 days x (morning, afternoon), no lunch
-        # lines, so "non-lunch attendance count" is unambiguous.
         company_calendar = self.env["resource.calendar"].create(
             {
                 "name": "Full Time Calendar (10 non-lunch lines)",
@@ -165,9 +149,6 @@ class TestHrContractSalaryOffer(TransactionCase):
         self.version.wage_on_signature = 2000
         self.version.wage = 2000
 
-        # schedule -> (needs_two_weeks_calendar, remaining non-lunch lines)
-        # Mirrors the {schedule: (needs_two_weeks_calendar, remove_count)}
-        # mapping in hr_version.py's _generate_salary_simulation_payslip.
         expected_by_schedule = {
             "80": (False, 8),
             "60": (False, 6),
@@ -207,11 +188,6 @@ class TestHrContractSalaryOffer(TransactionCase):
                     places=2,
                 )
 
-        # '90' is the one branch that *turns on* the bi-weekly calendar
-        # (needs a two-week attendance grid to express a 1-in-10 day off),
-        # unlike the other five which turn it off — verified separately since
-        # the two-week attendance rebuild it triggers is resource.calendar's
-        # own concern, not this module's.
         with hr_version_context(
             self.version.with_context(simulation_working_schedule="90")
         ) as version:
@@ -222,9 +198,6 @@ class TestHrContractSalaryOffer(TransactionCase):
                 payslip.version_id.wage_on_signature, 1800.0, places=2
             )
 
-        # '100' (or no simulation_working_schedule) stays full time: the
-        # part-time branch is skipped entirely, so the version's own calendar
-        # and wage are left untouched.
         with hr_version_context(self.version) as version:
             payslip = version._generate_salary_simulation_payslip()
             self.assertTrue(payslip.env.context.get("salary_simulation_full_time"))
@@ -288,7 +261,4 @@ class TestHrContractSalaryOffer(TransactionCase):
         self.assertEqual(offer_form.contract_template_id, template)
         self.assertEqual(offer_form.final_yearly_costs, template.final_yearly_costs)
         self.assertAlmostEqual(offer_form.monthly_wage, 3000, places=2)
-        # One simulation for the monthly wage and one for the salary preview. A cache
-        # invalidation that drops the form's values makes the wage computes run again
-        # for every field they reset, and the count climbs past twenty.
         self.assertEqual(len(calls), 2)

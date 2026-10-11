@@ -22,10 +22,10 @@ class ConnectionBudget:
 
     def acquire(self, timeout: float) -> bool:
         endtime = None
-        waited_since = 0.0  # debuglog
+        waited_since = 0.0
         with self._cond:
             while self._in_use >= self.maxconn:
-                waited_since = waited_since or monotonic()  # debuglog
+                waited_since = waited_since or monotonic()
                 if timeout == float("inf"):
                     self._cond.wait()
                     continue

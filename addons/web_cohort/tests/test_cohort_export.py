@@ -10,7 +10,6 @@ XLSX_MIMETYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.she
 
 
 def _payload(timeline="forward"):
-    """Build the export payload the cohort client posts back to the server."""
     return {
         "title": "Subscriptions",
         "model": "x_cohort_stuff",
@@ -52,13 +51,11 @@ class TestCohortExport(HttpCase):
         return self.url_open(f"/web/cohort/export?{query}")
 
     def _shared_strings(self, response):
-        """Return every string cell of the workbook, headers included."""
         with zipfile.ZipFile(io.BytesIO(response.content)) as workbook:
             xml = workbook.read("xl/sharedStrings.xml").decode()
         return re.findall(r"<t[^>]*>([^<]*)</t>", xml)
 
     def test_export_returns_a_spreadsheet(self):
-        """The endpoint answers with a real xlsx workbook."""
         self.authenticate("admin", "admin")
 
         response = self._export()
@@ -69,7 +66,6 @@ class TestCohortExport(HttpCase):
             self.assertIn("xl/worksheets/sheet1.xml", workbook.namelist())
 
     def test_export_names_the_file_after_the_report(self):
-        """The download carries a filename built from title and model."""
         self.authenticate("admin", "admin")
 
         response = self._export()
@@ -80,7 +76,6 @@ class TestCohortExport(HttpCase):
         self.assertIn(".xlsx", disposition)
 
     def test_export_supports_the_backward_timeline(self):
-        """A backward cohort numbers its columns from the negative range."""
         self.authenticate("admin", "admin")
 
         forward = self._export()
@@ -94,7 +89,6 @@ class TestCohortExport(HttpCase):
         self.assertNotIn("+0", backward_strings)
 
     def test_export_requires_an_authenticated_user(self):
-        """The endpoint is not public: an anonymous call lands on login."""
         response = self._export()
 
         self.assertEqual(response.status_code, 200)

@@ -29,7 +29,6 @@ class HrAppraisalGoal(models.Model):
     def _prepare_goal_vals(self, employee_id, goal_parent_id) -> ValuesType:
         self.check_singleton()
         res = super()._prepare_goal_vals(employee_id, goal_parent_id)
-        # Need to use this method instead of copy because it's not possible to duplicate a hr.appraisal.goal.skill
         skill_values = self.current_goal_skill_ids.read(load=False)
         for skill_value in skill_values:
             skill_value["goal_id"] = False
@@ -46,7 +45,6 @@ class HrAppraisalGoal(models.Model):
         new_goals = super().copy(default)
 
         new_goal_by_old_goal = dict(zip(self.ids, new_goals.ids, strict=False))
-        # Need to use this method instead of copy because it's not possible to duplicate a hr.appraisal.goal.skill
         new_skill_values = self.goal_skill_ids.read(load=False)
 
         for new_skill_value in new_skill_values:

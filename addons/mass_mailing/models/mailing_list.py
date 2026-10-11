@@ -10,12 +10,7 @@ class MailingList(models.Model):
     _name = "mailing.list"
     _description = "Mailing List"
     _mailing_enabled = True
-    # NB: a second `_order = "name"` used to sit above _description (it is still
-    # there upstream). Python keeps the last binding, so this one has always
-    # won; the other was dead. Dropped rather than swapped, to keep the
-    # ordering the model has actually shipped with.
     _order = "create_date DESC"
-    # As this model has their own data merge, avoid to enable the generic data_merge on that model.
     _disable_data_merge = True
 
     name = fields.Char(
@@ -83,9 +78,6 @@ class MailingList(models.Model):
         "management page to allow them to update their preferences.",
     )
 
-    # ------------------------------------------------------
-    # COMPUTE / ONCHANGE
-    # ------------------------------------------------------
 
     @api.depends("mailing_ids")
     def _compute_mailing_count(self) -> None:
@@ -105,20 +97,10 @@ class MailingList(models.Model):
 
     @api.depends("contact_ids")
     def _compute_mailing_list_statistics(self) -> None:
-        """Computes various statistics for this mailing.list that allow users
-        to have a global idea of its quality (based on blacklist, opt-outs, ...).
-
-        As some fields depend on the value of each other (mainly percentages),
-        we compute everything in a single method."""
-        # flush, notably to have email_normalized computed on contact model
         self.env.flush_all()
 
-        # 1. Fetch contact data and associated counts (total / blacklist / opt-out)
         contact_statistics_per_mailing = self._get_contact_statistics()
 
-        # 2. Fetch bounce data
-        # Optimized SQL way of fetching the count of contacts that have
-        # at least 1 message bouncing for passed mailing.lists """
         bounce_per_mailing = {}
         if self.ids:
             sql = """
@@ -130,12 +112,9 @@ class MailingList(models.Model):
                 AND list_sub.list_id = ANY(%s)
                 GROUP BY list_sub.list_id
             """
-            # a list, like the two sibling queries above: `= ANY` binds an
-            # array, and a tuple adapts to a composite instead
             self.env.cr.execute(sql, (list(self.ids),))
             bounce_per_mailing = dict(self.env.cr.fetchall())
 
-        # 3. Compute and assign all counts / pct fields
         for mailing_list in self:
             contact_counts = contact_statistics_per_mailing.get(mailing_list.id, {})
             for field, value in contact_counts.items():
@@ -158,12 +137,8 @@ class MailingList(models.Model):
                 mailing_list.contact_pct_blacklisted = 0
                 mailing_list.contact_pct_bounce = 0
 
-    # ------------------------------------------------------
-    # ORM overrides
-    # ------------------------------------------------------
 
     def write(self, vals):
-        # Prevent archiving used mailing list
         if "active" in vals and not vals.get("active"):
             mass_mailings = self.env["mailing.mailing"].search_count(
                 [
@@ -195,12 +170,8 @@ class MailingList(models.Model):
             for mailing_list, vals in zip(self, vals_list, strict=True)
         ]
 
-    # ------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------
 
     def action_view_import(self):
-        """Open the mailing list contact import wizard."""
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "mass_mailing.mailing_contact_import_action"
         )
@@ -214,7 +185,6 @@ class MailingList(models.Model):
         return action
 
     def action_send_mailing(self):
-        """Open the mailing form view, with the current lists set as recipients."""
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "mass_mailing.mailing_mailing_action_mail"
         )
@@ -297,31 +267,7 @@ class MailingList(models.Model):
         return action
 
     def action_merge(self, src_lists, archive):
-        """
-        Insert all the contact from the mailing lists 'src_lists' to the
-        mailing list in 'self'. Possibility to archive the mailing lists
-        'src_lists' after the merge except the destination mailing list 'self'.
-        """
-        # Explanation of the SQL query with an example. There are the following lists
-        # A (id=4): yti@odoo.com; yti@example.com
-        # B (id=5): yti@odoo.com; yti@example.com
-        # C (id=6): nothing
-        # To merge the mailing lists A and B into C, we build the view st that looks
-        # like this with our example:
-        #
-        #  contact_id |           email           | row_number |  list_id |
-        # ------------+---------------------------+------------------------
-        #           4 | yti@odoo.com              |          1 |        4 |
-        #           6 | yti@odoo.com              |          2 |        5 |
-        #           5 | yti@example.com           |          1 |        4 |
-        #           7 | yti@example.com           |          1 |        5 |
-        #
-        # The row_column is kind of an occurrence counter for the email address.
-        # Then we create the Many2many relation between the destination list and the contacts
-        # while avoiding to insert an existing email address (if the destination is in the source
-        # for example)
         self.check_singleton()
-        # Put destination is sources lists if not already the case
         src_lists |= self
         self.env.flush_all()
         self.env.cr.execute(
@@ -356,39 +302,16 @@ class MailingList(models.Model):
                     )
                 ) st
             WHERE st.rn = 1;""",
-            # a list, not a tuple: `= ANY` binds an array, and psycopg 3 adapts
-            # a tuple to a composite instead -- `malformed array literal:
-            # "(2,3,4)"` -- so every merge raised. `.ids` is already a list.
             (self.id, src_lists.ids, self.id),
         )
         self.env.invalidate_all()
         if archive:
             (src_lists - self).action_archive()
 
-    # ------------------------------------------------------
-    # SUBSCRIPTION MANAGEMENT
-    # ------------------------------------------------------
 
     def _update_subscription_from_email(
         self, email, opt_out=True, force_message=None
     ) -> None:
-        """When opting-out: we have to switch opted-in subscriptions. We don't
-        need to create subscription for other lists as opt-out = not being a
-        member.
-
-        When opting-in: we have to switch opted-out subscriptions and create
-        subscription for other mailing lists id they are public. Indeed a
-        contact is opted-in when being subscribed in a mailing list.
-
-        :param str email: email address that should opt-in or opt-out from
-          mailing lists;
-        :param boolean opt_out: if True, opt-out from lists given by self if
-          'email' is member of it. If False, opt-in in lists givben by self
-          and create membership if not already member;
-        :param str force_message: if given, post a note using that body on
-          contact instead of generated update message. Give False to entirely
-          skip the note step;
-        """
         email_normalized = tools.email_normalize(email)
         if not self or not email_normalized:
             return
@@ -401,14 +324,12 @@ class MailingList(models.Model):
         if not contacts:
             return
 
-        # switch opted-in subscriptions
         if opt_out:
             current_opt_in = contacts.subscription_ids.filtered(
                 lambda sub: not sub.opt_out and sub.list_id in self
             )
             if current_opt_in:
                 current_opt_in.write({"opt_out": True})
-        # switch opted-out subscription and create missing subscriptions
         else:
             subscriptions = contacts.subscription_ids.filtered(
                 lambda sub: sub.list_id in self
@@ -417,7 +338,6 @@ class MailingList(models.Model):
             if current_opt_out:
                 current_opt_out.write({"opt_out": False})
 
-            # create a subscription (for a single contact) for missing lists
             missing_lists = self - subscriptions.list_id
             if missing_lists:
                 self.env["mailing.subscription"].create(
@@ -430,7 +350,6 @@ class MailingList(models.Model):
         switched = current_opt_in if opt_out else current_opt_out
         switched_by_contact = switched.grouped("contact_id")
         for contact in contacts:
-            # do not log if no opt-out / opt-in was actually done
             updated = switched_by_contact.get(contact, switched.browse()).list_id
             if not opt_out:
                 updated += missing_lists
@@ -466,18 +385,11 @@ class MailingList(models.Model):
                 subtype_id=self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_note"),
             )
 
-    # ------------------------------------------------------
-    # MAILING
-    # ------------------------------------------------------
 
     def _mailing_get_default_domain(self, mailing):
         return [("list_ids", "in", mailing.contact_list_ids.ids)]
 
     def _mailing_get_opt_out_list(self, mailing) -> set:
-        """Check subscription on all involved mailing lists. If user is opt_out
-        on one list but not on another if two users with same email address, one
-        opted in and the other one opted out, send the mail anyway."""
-        # TODO DBE Fixme : Optimize the following to get real opt_out and opt_in
         subscriptions = (
             self.subscription_ids if self else mailing.contact_list_ids.subscription_ids
         )
@@ -489,24 +401,8 @@ class MailingList(models.Model):
         )
         return {c for c in opt_out_contacts if c not in opt_in_contacts}
 
-    # ------------------------------------------------------
-    # UTILITY
-    # ------------------------------------------------------
 
     def _get_contact_statistics(self):
-        """Compute number of contacts matching various conditions.
-        (see '_get_contact_count_select_fields' for details)
-
-        Will return a dict under the form:
-        {
-            42: { # 42 being the mailing list ID
-                'contact_count': 52,
-                'contact_count_email': 35,
-                'contact_count_opt_out': 5,
-                'contact_count_blacklisted': 2
-            },
-            ...
-        }"""
 
         res = []
         if self.ids:
@@ -531,7 +427,6 @@ class MailingList(models.Model):
             contact_counts[mailing_list_id] = res_item
 
         for mass_mailing in self:
-            # adds default 0 values for ids that don't have statistics
             if mass_mailing.id not in contact_counts:
                 contact_counts[mass_mailing.id] = dict.fromkeys(
                     mass_mailing._get_fields_contact_statistics(), 0
@@ -540,14 +435,6 @@ class MailingList(models.Model):
         return contact_counts
 
     def _get_fields_contact_statistics(self):
-        """Returns fields and SQL query select path in a dictionnary.
-        This is done to be easily overridable in subsequent modules.
-
-        - mailing_list_id             id of the associated mailing.list
-        - contact_count:              all contacts
-        - contact_count_email:        all valid emails
-        - contact_count_opt_out:      all opted-out contacts
-        - contact_count_blacklisted:  all blacklisted contacts"""
 
         return {
             "mailing_list_id": "list_id AS mailing_list_id",
@@ -567,7 +454,6 @@ class MailingList(models.Model):
         }
 
     def _get_contact_statistics_joins(self):
-        """Extracted to be easily overridable by sub-modules (such as mass_mailing_sms)."""
         return """
             LEFT JOIN mailing_contact c ON (r.contact_id=c.id)
             LEFT JOIN mail_blacklist bl on c.email_normalized = bl.email and bl.active"""

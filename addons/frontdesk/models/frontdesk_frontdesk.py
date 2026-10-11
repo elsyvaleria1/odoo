@@ -144,7 +144,6 @@ class FrontdeskFrontdesk(models.Model):
         groups="frontdesk.frontdesk_group_user",
     )
     favorite_user_ids = fields.Many2many(
-        # responsible_ids already owns the table the ORM would derive here.
         relation="frontdesk_favorite_user_rel",
         column1="frontdesk_id",
         column2="user_id",
@@ -164,15 +163,12 @@ class FrontdeskFrontdesk(models.Model):
 
     @api.onchange("company_id")
     def _onchange_company_id(self):
-        """Ensure that the public user has access to the selected company."""
         if self.company_id and self.company_id != self.env.company:
             public_user = self.env.ref("base.public_user")
             if self.company_id not in public_user.company_ids:
                 public_user.company_ids = [Command.link(self.company_id.id)]
 
     def _compute_dashboard_data(self) -> None:
-        """This method computes the number of guests currently on site, the number of pending visitors, the number
-        of drinks to serve, and the time of the latest check-in."""
         visitor_data = self.env["frontdesk.visitor"]._read_group(
             [
                 ("state", "in", ("checked_in", "planned")),
@@ -301,7 +297,6 @@ class FrontdeskFrontdesk(models.Model):
         ]
 
     def _get_frontdesk_data(self):
-        """Returns the data to the frontend."""
         self.check_singleton()
         data = {
             "company": {"name": self.company_id.name, "id": self.company_id.id},
@@ -320,7 +315,6 @@ class FrontdeskFrontdesk(models.Model):
         return data
 
     def _get_planned_visitors(self) -> list:
-        """Returns the planned visitors for quick sign in to the frontend."""
         time_min = datetime.now() - timedelta(minutes=PLANNED_VISITOR_TIME)
         time_max = datetime.now() + timedelta(minutes=PLANNED_VISITOR_TIME)
         visitors = (

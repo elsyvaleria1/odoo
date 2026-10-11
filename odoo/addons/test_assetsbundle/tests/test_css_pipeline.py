@@ -1631,7 +1631,6 @@ class TestCssCompileErrorReporting(TransactionCase):
         )
         pipeline = bundle._css
         source = "\n".join(asset.get_source() for asset in bundle.stylesheets)
-        # 1 marker, 2 .a, 3 marker, 4 .b, 5 .c
         located = pipeline._locate_source_line(source, 5)
 
         self.assertIn("/m/static/src/second.scss line 2", located)
@@ -1642,12 +1641,6 @@ class TestCssCompileErrorReporting(TransactionCase):
         self.assertEqual(pipeline._locate_source_line("a\nb\n", 99), "")
 
     def test_a_protocol_slash_inside_a_string_is_not_a_comment(self):
-        """`//` inside a quoted url() is data, not the start of a comment.
-
-        A comment stripper that is not string-aware truncates the line at the
-        protocol, and the whole bundle then stops compiling for a reason that
-        names no file. This shape has reached production once already.
-        """
         svg = "<svg xmlns='http://www.w3.org/2000/svg'/>"
         bundle = self._bundle(
             (

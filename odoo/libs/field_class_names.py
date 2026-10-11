@@ -25,9 +25,6 @@ __all__ = [
 ANONYMOUS_PREFIX = "groups:"
 
 
-# a class verdict that holds on some records only: a row of the class that
-# reaches some records, or a group held through a grant limited to some
-# companies; the records are the policy's to compile, per model
 PER_RECORD: typing.Final = "per-record"
 
 type Verdict = bool | str
@@ -53,10 +50,6 @@ def field_view_groups(
     resolve_named: Callable[[str], SetExpression],
     operation: str = "read",
 ) -> SetExpression:
-    """The group expression a field is visible to in a view: the intersection
-    over its classes. An anonymous class (a ``groups=`` spec) is read from the
-    definitions; a named one goes through ``resolve_named(key)``, so a caller
-    that never has a named class never runs it."""
     classes = getattr(field, "access_classes", None)
     if classes is None:
         return definitions.universe

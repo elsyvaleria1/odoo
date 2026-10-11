@@ -5,13 +5,6 @@ class DiscussChannel(models.Model):
     _inherit = "discuss.channel"
 
     def message_post(self, *, message_type="notification", **kwargs):
-        """
-        Overrides the base message_post to handle specific cases for WhatsApp messages
-        that are responses to existing messages. The responses can happen two ways:
-        1) swipe right, 2) direct response. for the first case parent message is available
-        which makes it easier to detect for which the message was replied to, for the second
-        case we assume that message was replied towards all previously sent templates.
-        """
         new_msg = super().message_post(message_type=message_type, **kwargs)
         if message_type != "whatsapp_message":
             return new_msg

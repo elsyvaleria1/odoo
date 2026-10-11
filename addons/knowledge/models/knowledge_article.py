@@ -84,7 +84,6 @@ class KnowledgeArticle(models.Model):
         compute="_compute_article_url",
         readonly=True,
     )
-    # Access rules and members + implied category
     internal_permission = fields.Selection(
         selection=[
             ("write", "Can edit"),
@@ -146,17 +145,16 @@ class KnowledgeArticle(models.Model):
     user_can_read = fields.Boolean(
         string="Can Read",
         compute="_compute_user_can_read",
-    )  # ACL-like
+    )
     user_can_write = fields.Boolean(
         string="Can Edit",
         compute="_compute_user_can_write",
-    )  # ACL-like
+    )
     user_permission = fields.Selection(
         selection=[("write", "write"), ("read", "read"), ("none", "none")],
         string="User permission",
         compute="_compute_user_permission",
     )
-    # Hierarchy and sequence
     parent_id = fields.Many2one(
         comodel_name="knowledge.article",
         string="Parent Article",
@@ -164,8 +162,6 @@ class KnowledgeArticle(models.Model):
         ondelete="cascade",
         tracking=30,
     )
-    # used to speed-up hierarchy operators such as child_of/parent_of
-    # see '_parent_store' implementation in the ORM for details
     parent_path = fields.Char(index=True)
     child_ids = fields.One2many(
         comodel_name="knowledge.article",
@@ -190,7 +186,7 @@ class KnowledgeArticle(models.Model):
         help="If set, this article won't inherit access rules from its parents anymore.",
     )
     sequence = fields.Integer(
-        default=0,  # Set default=0 to avoid false values and messed up sequence order inside same parent
+        default=0,
         help="The sequence is computed only among the articles that have the same parent.",
     )
     root_article_id = fields.Many2one(
@@ -203,7 +199,6 @@ class KnowledgeArticle(models.Model):
         tracking=10,
         help="The subject is the title of the highest parent in the article hierarchy.",
     )
-    # Item management
     is_article_item = fields.Boolean(
         string="Is Item?",
         index=True,
@@ -219,7 +214,6 @@ class KnowledgeArticle(models.Model):
         tracking=True,
     )
 
-    # categories and ownership
     category = fields.Selection(
         selection=[
             ("workspace", "Workspace"),
@@ -233,8 +227,6 @@ class KnowledgeArticle(models.Model):
         index=True,
         help="Used to categorize articles in UI, depending on their main permission definitions.",
     )
-    # Stored to improve performance when loading the article tree. (avoid looping through members if 'workspace')
-    # Same as write_uid/_date but limited to the body
     last_edition_uid = fields.Many2one(
         comodel_name="res.users",
         string="Last Edited by",
@@ -250,7 +242,6 @@ class KnowledgeArticle(models.Model):
         related="last_edition_uid.avatar_128",
         string="Last Editor's Avatar",
     )
-    # Favorite
     is_user_favorite = fields.Boolean(
         string="Is Favorited",
         compute="_compute_is_user_favorite",
@@ -264,7 +255,6 @@ class KnowledgeArticle(models.Model):
         string="Favorite Articles",
         copy=False,
     )
-    # Set default=0 to avoid false values and messed up order
     favorite_count = fields.Integer(
         string="#Is Favorite",
         compute="_compute_favorite_count",
@@ -272,7 +262,6 @@ class KnowledgeArticle(models.Model):
         store=True,
         copy=False,
     )
-    # Visibility
     is_article_visible_by_everyone = fields.Boolean(
         string="Can everyone see the Article?",
         compute="_compute_is_article_visible_by_everyone",
@@ -286,7 +275,6 @@ class KnowledgeArticle(models.Model):
         search="_search_is_article_visible",
         recursive=True,
     )
-    # Trash management
     to_delete = fields.Boolean(
         string="Trashed",
         tracking=100,
@@ -296,7 +284,6 @@ class KnowledgeArticle(models.Model):
                 (default is 30)""",
     )
     deletion_date = fields.Date(compute="_compute_deletion_date")
-    # Property fields
     article_properties_definition = fields.PropertiesDefinition(
         string="Article Item Properties"
     )
@@ -306,7 +293,6 @@ class KnowledgeArticle(models.Model):
         copy=True,
     )
 
-    # Templates
     is_listed_in_templates_gallery = fields.Boolean(
         string="Is listed in Templates Gallery?",
         help="If checked, the article will appear in the templates gallery under the 'Shared Templates' section",
@@ -372,42 +358,18 @@ class KnowledgeArticle(models.Model):
         """)
 
         if not self.env.cr.rowcount:
-            # 1. Create a custom text configuration:
-            #
-            # In Knowledge, we want to allow people to search within the body of
-            # the articles. To ensure that the search is independent of the user's
-            # language, we will create a custom text configuration that doesn't
-            # discard any word and that doesn't apply any stemming method to the
-            # document. The configuration will use the PostgreSQL's default parser
-            # to tokenise the document and assign a type to each token.
 
             self.env.cr.execute("""
                 CREATE TEXT SEARCH CONFIGURATION knowledge_config
                     (PARSER = pg_catalog.default);
             """)
 
-            # 2. Create a custom dictionary:
-            #
-            # After assigning a token type to each token, PostgreSQL will pass
-            # each token through a dictionary and will discard the token if it
-            # is included in the dictionary assigned to the given token type.
-            # To index all words, we will create an empty dictionary and pass
-            # the tokens we want to preserve to it. As it is empty, the tokens
-            # passing through it will always be preserved.
 
             self.env.cr.execute("""
                 CREATE TEXT SEARCH DICTIONARY knowledge_dictionary
                     (TEMPLATE = pg_catalog.simple);
             """)
 
-            # 3. Map the token type to our custom dictionary:
-            #
-            # In our custom text configuration, we will ignore the XML tags
-            # (`tag` and `entity`) and the blank spaces (`blank`) and map the
-            # other token types to the empty dictionary we created above. This
-            # will ensure that we will index all the actual content of the article.
-            #
-            # Reference: https://www.postgresql.org/docs/current/textsearch-parsers.html
 
             self.env.cr.execute("""
                 ALTER TEXT SEARCH CONFIGURATION knowledge_config
@@ -418,12 +380,6 @@ class KnowledgeArticle(models.Model):
                     WITH knowledge_dictionary;
             """)
 
-            # 4. Add an index to speed up the @@ match operation:
-            #
-            # When searching in a large collection of articles, the search can
-            # quickly become slow as the database has to parse the body of all
-            # articles. To speed up the search, we will use an index to quickly
-            # find potential candidates matching with the given search terms.
 
             create_index(
                 self.env.cr,
@@ -433,22 +389,9 @@ class KnowledgeArticle(models.Model):
                 method="GIN",
             )
 
-    # ------------------------------------------------------------
-    # CONSTRAINTS
-    # ------------------------------------------------------------
 
     @api.constrains("internal_permission", "article_member_ids")
     def _check_is_writable(self) -> None:
-        """Articles must always have at least one writer. This constraint is done
-        on article level, in coordination to the constraint on member model (see
-        ``_check_is_writable`` on ``knowledge.article.member``).
-
-        If article has no member the internal_permission must be write. If article
-        has members validation is done in article.member model as we cannot trigger
-        the constraint depending on fields from related model.
-
-        Note: computation is done in Py instead of using optimized SQL queries
-        because value are not yet in DB at this point."""
         for article in self:
             if (
                 article.inherited_permission != "write"
@@ -493,9 +436,6 @@ class KnowledgeArticle(models.Model):
                     )
                 )
 
-    # ------------------------------------------------------------
-    # COMPUTED FIELDS
-    # ------------------------------------------------------------
 
     def _compute_article_url(self) -> None:
         for article in self:
@@ -526,7 +466,6 @@ class KnowledgeArticle(models.Model):
 
         if not wparent:
             return
-        # group by parents to lessen number of computation
         articles_byparent = defaultdict(lambda: self.env["knowledge.article"])
         for article in wparent:
             articles_byparent[article.parent_id] += article
@@ -552,13 +491,11 @@ class KnowledgeArticle(models.Model):
         if articles == self:
             return
 
-        # Put the new article(s) in the first stage (specific by parent_id)
         items = self - articles
         results = self.env["knowledge.article.stage"].search_read(
             [("parent_id", "in", items.parent_id.ids)], ["parent_id", "id"]
         )
         stages_by_parent_id = {}
-        # keep only the first stage by parent_id
         for result in results:
             parent_id = result["parent_id"][0] if result.get("parent_id") else False
             if parent_id and not stages_by_parent_id.get(parent_id):
@@ -574,9 +511,6 @@ class KnowledgeArticle(models.Model):
         self._inherit_template_category_id()
 
     def _inherit_template_category_id(self) -> None:
-        """The templates inherit the category from their parents: only a root
-        template holds a category of its own. The descendants follow through
-        the recursive dependency, which the ORM recomputes level by level."""
         children = self.filtered("parent_id")
         _debug.logic(
             "template_category.inherited",
@@ -699,9 +633,6 @@ class KnowledgeArticle(models.Model):
         "parent_id",
     )
     def _compute_inherited_permission(self) -> None:
-        """The permission every employee holds on the article: the highest
-        grant to them on the article or on the articles above it, up to the
-        nearest desynchronized one; and the nearest article that sets it."""
         audience = self._internal_audience_group()
         saved = self.filtered("id")
         ranks = saved._access_graph_group_ranks(audience)
@@ -741,10 +672,6 @@ class KnowledgeArticle(models.Model):
     @api.depends_context("uid")
     @api.depends("access_role")
     def _compute_user_permission(self) -> None:
-        """The current user's permission: the highest grant reaching them on
-        the article or above it (their partner's, their groups', the
-        employees' for an internal user), read at query time. Public users
-        never have any permission."""
         if self.env.user._is_public():
             self.user_permission = False
             return
@@ -756,20 +683,12 @@ class KnowledgeArticle(models.Model):
     @api.depends_context("uid")
     @api.depends("user_permission")
     def _compute_user_has_access(self) -> None:
-        """Compute if the current user has read access to the article based on
-        permissions and memberships.
-
-        Admins have all access through ACLs by default but fields are
-        still using the permission-based computation."""
         for article in self:
             article.user_has_access = (
                 article.user_permission != "none" if article.user_permission else False
             )
 
     def _search_user_has_access(self, operator, value):
-        """The articles a grant reaches the current user on: their partner's,
-        their groups', and for an internal user the employees', on the article
-        or above it up to the nearest desynchronized article."""
         if operator not in ("in", "not in"):
             return NotImplemented
         domain = (
@@ -806,11 +725,6 @@ class KnowledgeArticle(models.Model):
     @api.depends_context("uid")
     @api.depends("user_permission")
     def _compute_user_has_write_access(self) -> None:
-        """Compute if the current user has write access to the article based on
-        permissions and memberships.
-
-        Admins have all access through ACLs by default but fields are
-        still using the permission-based computation."""
         for article in self:
             article.user_has_write_access = article.user_permission == "write"
 
@@ -823,10 +737,6 @@ class KnowledgeArticle(models.Model):
     @api.depends_context("uid")
     @api.depends("user_has_access")
     def _compute_user_can_read(self) -> None:
-        """Compute read access, based on standard ACLs, which is either system
-        group (which has access to everything), either based on members and
-        permissions (see ``user_has_access``). Used mainly for views
-        attributes or as a shortener for conditions."""
         if self.env.is_system():
             self.user_can_read = True
         else:
@@ -837,10 +747,6 @@ class KnowledgeArticle(models.Model):
     @api.depends_context("uid")
     @api.depends("user_has_write_access")
     def _compute_user_can_write(self) -> None:
-        """Compute write access, based on standard ACLs, which is either system
-        group (which has access to everything), either based on members and
-        permissions (see ``user_has_write_access``). Used mainly for views
-        attributes or as a shortener for conditions."""
         if self.env.is_system():
             self.user_can_write = True
         else:
@@ -898,8 +804,6 @@ class KnowledgeArticle(models.Model):
     def _search_is_user_favorite(self, operator, value):
         if operator != "in":
             return NotImplemented
-        # easier than a not in on a 2many field (hint: use sudo because of
-        # complicated ACL on favorite based on user access on article)
         return [
             (
                 "favorite_ids",
@@ -917,12 +821,6 @@ class KnowledgeArticle(models.Model):
     )
     @api.depends_context("uid")
     def _compute_is_article_visible(self) -> None:
-        """Compute if the user can see a specific article.
-        The user can see it in two cases: when the article can be seen by everyone
-        and when he is a member of the said article if it is visible only by its members.
-
-        Note: portal users are forced to be members of the articles and do not benefit from 'is_article_visible_by_everyone'
-        """
         visible_articles = (
             self.filtered(lambda article: article.is_article_visible_by_everyone)
             if self.env.user._is_internal()
@@ -972,7 +870,7 @@ class KnowledgeArticle(models.Model):
                 article.root_article_id.is_article_visible_by_everyone
             )
         root_articles.is_article_visible_by_everyone = (
-            False  # Forces initialization of the field if not already set.
+            False
         )
 
     @api.depends("to_delete", "write_date")
@@ -990,9 +888,6 @@ class KnowledgeArticle(models.Model):
             for article in trashed_articles:
                 article.deletion_date = article.write_date + timedelta(days=limit_days)
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     def _order_by_sql_is_user_favorite(
         self, field, alias, direction, nulls, query
@@ -1006,26 +901,6 @@ class KnowledgeArticle(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Article permissions being quite strong, some custom behavior support
-        is necessary in order to let people create articles with a correct
-        configuration.
-
-        Constraints
-          * creating an article under a parent requires to be able to write on
-            it. As anyway errors will raise we prevently raise a more user friendly
-            error;
-          * root articles without permission are forced to write to avoid issues
-            with constraints;
-
-        Notably
-          * automatically organize articles to be the last of their parent
-            children, unless a specific sequence is given;
-          * allow creation of private articles for him- or her-self. As creation
-            rights on member model are not granted, we detect private article
-            creation and sudo the creation of those. This requires some data
-            manipulation to sudo only those and keep requested ordering based
-            on vals_list;
-        """
         defaults = self.default_get(
             ["article_member_ids", "internal_permission", "parent_id"]
         )
@@ -1038,8 +913,6 @@ class KnowledgeArticle(models.Model):
         parent_ids = set()
 
         for index, vals in enumerate(vals_list):
-            # Set body to match title if any, or prepare a void header to ease
-            # article onboarding.
             if not vals.get("is_template", False) and "body" not in vals:
                 vals["body"] = (
                     Markup("<h1>%s</h1>") % vals["name"]
@@ -1055,7 +928,6 @@ class KnowledgeArticle(models.Model):
             )
 
             can_sudo = False
-            # get values from vals or defaults
             member_ids = (
                 vals.get("article_member_ids")
                 or defaults.get("article_member_ids")
@@ -1082,15 +954,13 @@ class KnowledgeArticle(models.Model):
                     internal_permission != "none"
                     and "is_article_visible_by_everyone" in vals
                 ):
-                    # do not let portal specify the visibility, it will inherit from the root article
                     del vals["is_article_visible_by_everyone"]
 
-            # force write permission for workspace articles
             if not parent_id and not internal_permission:
                 vals.update(
                     {
                         "internal_permission": "write",
-                        "parent_id": False,  # just be sure we don't grant privileges
+                        "parent_id": False,
                     }
                 )
 
@@ -1113,19 +983,7 @@ class KnowledgeArticle(models.Model):
                     ),
                 ]
 
-            # We need to check if the article creation needs to be done with sudo permissions and that
-            # it is authorized.
-            # This is authorized if :
-            #   * The user is not the superuser
-            #   * We do not try to create any favorite records or children articles in the same call
-            #   * We do not try to create a child article
-            #   * We want to create a single member that is the user creating the article
 
-            # The reason why we would want to add the creator as a member for all articles is that
-            # with the new visibility logic, when a user creates a new article in the workspace it is
-            # set to only be visible to members.
-            # This means that in order for him to see the article he just created, we add him to the
-            # members, which needs sudo access.
 
             check_for_sudo = (
                 not self.env.su
@@ -1160,12 +1018,10 @@ class KnowledgeArticle(models.Model):
                 if children := vals.pop("child_ids", None):
                     children_by_index[index] = [command[2] for command in children]
 
-            # if no sequence, parent will have to be checked
             if not vals.get("sequence"):
                 vals_by_parent_id.setdefault(parent_id, []).append(vals)
             vals_as_sudo.append(can_sudo)
 
-        # check access to parents
         if parent_ids:
             if not self.browse(parent_ids).has_access("write"):
                 raise AccessError(
@@ -1174,13 +1030,11 @@ class KnowledgeArticle(models.Model):
                     )
                 )
 
-        # compute all maximum sequences / parent
         max_sequence_by_parent = {}
         if vals_by_parent_id:
             parent_ids = list(vals_by_parent_id.keys())
             max_sequence_by_parent = self._get_max_sequence_inside_parents(parent_ids)
 
-        # update sequences
         for parent_id, article_vals in vals_by_parent_id.items():
             current_sequence = 0
             if parent_id in max_sequence_by_parent:
@@ -1193,7 +1047,6 @@ class KnowledgeArticle(models.Model):
                     vals["sequence"] = current_sequence
                     current_sequence += 1
 
-        # check access rights only if all records needs sudo
         if all(vals_as_sudo) or writerless:
             self.check_access("create")
         if writerless:
@@ -1204,7 +1057,6 @@ class KnowledgeArticle(models.Model):
                 )
             )
 
-        # sort by sudo / not sudo
         creator = self.with_context(
             {
                 key: value
@@ -1277,13 +1129,10 @@ class KnowledgeArticle(models.Model):
                 )
             )
 
-        # Move under a parent is considered as a write on it (permissions, ...)
         _resequence = False
         if not self.env.user._is_internal() and not self.env.su:
             writable_fields = self._get_portal_write_fields_allowlist()
             if all(article.category == "private" for article in self):
-                # let non internal users re-organize their private articles
-                # and send them to trash if they wish
                 writable_fields |= {"active", "to_delete", "parent_id"}
 
             if vals.keys() - writable_fields:
@@ -1335,8 +1184,6 @@ class KnowledgeArticle(models.Model):
         if "parent_id" in vals and not vals["parent_id"]:
             self._check_is_writable()
 
-        # resequence only if a sequence was not already computed based on current
-        # parent maximum to avoid unnecessary recomputation of sequences
         if _resequence:
             self.sudo()._resequence()
 
@@ -1370,11 +1217,7 @@ class KnowledgeArticle(models.Model):
         return vals_list
 
     def copy_batch(self, default=None):
-        """Duplicates a recordset of articles. Filters out articles that are
-        going to be duplicated during the duplication of their parent in order
-        to prevent duplicating several times the same article."""
         current_ids = set(self.ids)
-        # Remove records that will get duplicated with their parent
         to_copy = self.filtered(
             lambda article: not article._get_ancestor_ids_nearest_first() & current_ids
         )
@@ -1385,8 +1228,6 @@ class KnowledgeArticle(models.Model):
                 for article in to_copy
             ]
         )
-        # update translations, skip name (hardcoded in default anyway) and o2m fields
-        # as we don't need anything translated from them
         for old, new in zip(to_copy, duplicates, strict=False):
             old.copy_translations(
                 new,
@@ -1407,13 +1248,10 @@ class KnowledgeArticle(models.Model):
         return stages.search(search_domain)
 
     def _get_domain_read(self):
-        """Independently from admin bypass, give the domain allowing to read
-        articles."""
         return [("user_has_access", "=", True)]
 
     @api.model
     def _get_portal_write_fields_allowlist(self) -> set:
-        """ " Fields that can be written on by a portal user."""
         return {
             "article_properties",
             "article_properties_definition",
@@ -1427,9 +1265,6 @@ class KnowledgeArticle(models.Model):
             "stage_id",
         }
 
-    # ------------------------------------------------------------
-    # BASE MODEL METHODS
-    # ------------------------------------------------------------
 
     _GC_TRASH_BATCH_SIZE = 100
 
@@ -1455,17 +1290,6 @@ class KnowledgeArticle(models.Model):
 
     @api.model
     def name_create(self, name):
-        """ " This override is meant to make the 'name_create' symmetrical to the display_name.
-        When creating an article, we attempt to extract a potential icon from the beginning of the
-        name to correctly split the 'name' and 'icon' fields.
-
-        This is especially important since some flows, such as importing records, are based on
-        name_create to create missing records.
-        It also allows pasting an article display_name into a m2o field and using the quick creation
-        if it does not exist.
-
-        Without this override, you would get '📄🚀 Article With Icon' (placeholder added as icon is
-        not detected) instead of '🚀 Article With Icon' as result."""
 
         article_name, icon = self._extract_icon_from_name(name)
         if not icon:
@@ -1488,24 +1312,10 @@ class KnowledgeArticle(models.Model):
             rec.display_name = f"{rec.icon or self._get_no_icon_placeholder()} {name}"
 
     def _get_no_icon_placeholder(self) -> str:
-        """Emoji used in templates as a placeholder when icon is False. It's
-        here as a method because some lxml builds on macOS can not parse emoji
-        characters, and a user using such a device would not be able to install
-        the Knowledge module without an error.
-        This method should be removed as soon as a solution is found allowing
-        emojis to be parsed directly from a template on those devices.
-        """
         return "📄"
 
     @api.model
     def _search_display_name(self, operator, value):
-        """This override is meant to make the 'name_search' symmetrical to the display_name.
-        As we append the icon (emoji) before the article name, when searching based on that same
-        syntax '[emoji] name' we need to return the appropriate results.
-
-        This is especially important since some flows, such as exporting and re-importing records,
-        are based on display_name / name_search to match records (for example when importing the article
-        parent record, without this override it will never match)."""
 
         if operator == "in":
             return Domain.OR(self._search_display_name("=", v) for v in value)
@@ -1522,7 +1332,6 @@ class KnowledgeArticle(models.Model):
             return super()._search_display_name(operator, value)
 
         if icon == self._get_no_icon_placeholder():
-            # special case using the icon placeholder (no icon stored but the display_name returns one)
             domain = [
                 ("name", operator, article_name),
                 "|",
@@ -1538,19 +1347,11 @@ class KnowledgeArticle(models.Model):
         return domain
 
     def _get_transformed_body_from(self, source_article):
-        """Returns the body of the source article with the following transformations:
-        - Updates the embedded views so that the views listing the article items
-        of the source article now lists the article items of the current article.
-        - Removes the history steps from the document.
-        :param <knowledge.article> source_article: Source article
-        """
         fragment = html.fragment_fromstring(source_article.body, create_parent=True)
 
-        # Remove history steps to prevent divergence errors:
         for element in fragment.findall(".//*[@data-last-history-steps]"):
             del element.attrib["data-last-history-steps"]
 
-        # Update the embedded views:
         for element in fragment.findall(".//*[@data-embedded='view']"):
             embedded_props = json_loads(element.get("data-embedded-props"))
             view_props = embedded_props.get("viewProps", {})
@@ -1564,16 +1365,8 @@ class KnowledgeArticle(models.Model):
 
         return html.tostring(fragment, encoding="unicode")
 
-    # ------------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------------
 
     def action_make_private_copy(self, preserve_name=False):
-        """Creates a duplicate of the current article and saves it in the user's
-        private section. This method replicates the article items and Kanban stages.
-        Additionally, it updates the embedded views to ensure they reference the
-        new article's items instead of those from the original article.
-        :param preserve_name: if False, append the name with (copy)"""
         self.check_singleton()
         name = (
             self.env._("%(article_name)s (copy)", article_name=self.name)
@@ -1581,7 +1374,6 @@ class KnowledgeArticle(models.Model):
             else self.name
         )
 
-        # Copy the article and make it private:
         article = self.env["knowledge.article"].create(
             {
                 "article_member_ids": [
@@ -1602,10 +1394,8 @@ class KnowledgeArticle(models.Model):
             }
         )
 
-        # Remove the history steps and transform the embedded views:
         article.write({"body": article._get_transformed_body_from(self)})
 
-        # Copy the related stages for the /kanban command:
         stages_mapping = {}
         for stage in self.env["knowledge.article.stage"].search(
             [("parent_id", "=", self.id)]
@@ -1613,7 +1403,6 @@ class KnowledgeArticle(models.Model):
             new_stage = stage.copy({"parent_id": article.id})
             stages_mapping[stage.id] = new_stage.id
 
-        # Copy the related article items and link them to their corresponding stage:
         article_items = self.child_ids.filtered(lambda article: article.is_article_item)
         self.env["knowledge.article"].create(
             [
@@ -1636,15 +1425,8 @@ class KnowledgeArticle(models.Model):
         return article
 
     def action_make_copy(self, preserve_name=False):
-        """Create a copy of the current article and attempt to attach it to the
-        parent of the original. If the new parent article is not editable by the
-        user, the copied article will be placed in the user's private section,
-        ensuring the user retains access.
-        :param preserve_name: if False, append the name with (copy)
-        """
         self.check_singleton()
         article = self.action_make_private_copy(preserve_name)
-        # Attach the new copy to the parent of the original article:
         if self.parent_id and self.parent_id.user_can_write:
             article.write(
                 {
@@ -1654,14 +1436,6 @@ class KnowledgeArticle(models.Model):
         return article
 
     def action_home_page(self):
-        """Redirect to the home page of knowledge, which displays an article.
-        Chosen articles comes from
-
-          * either self if it is not void (taking the first article);
-          * ``res_id`` key from context;
-          * find the first accessible article, based on favorites and sequence
-            (see ``_get_first_accessible_article``);
-        """
         article = self[0] if self else False
         if not article and self.env.context.get("res_id", False):
             article = self.browse([self.env.context["res_id"]])
@@ -1679,8 +1453,6 @@ class KnowledgeArticle(models.Model):
         return action
 
     def action_redirect_to_parent(self):
-        """Redirect to the parent article if the user has access to the parent
-        article. Otherwise, redirect to the home page."""
         self.check_singleton()
         return (
             self.parent_id.action_home_page()
@@ -1692,14 +1464,11 @@ class KnowledgeArticle(models.Model):
         self.is_locked = lock
 
     def action_toggle_user_favorite(self):
-        """Read access is sufficient for toggling its own favorite status."""
         if not self.has_access("read"):
-            # Return a meaningful error message as this may be called through UI
             raise AccessError(
                 self.env._("You cannot add or remove this article to your favorites")
             )
 
-        # need to sudo to be able to write on the article model even with read access
         to_favorite_sudo = self.sudo().filtered(
             lambda article: not article.is_user_favorite
         )
@@ -1714,7 +1483,6 @@ class KnowledgeArticle(models.Model):
                     ("user_id", "=", self.env.user.id),
                 ]
             ).unlink()
-        # manually invalidate cache to recompute the favorites related fields
         self.invalidate_recordset(fnames=["is_user_favorite", "favorite_ids"])
         return self[0].is_user_favorite if self else False
 
@@ -1722,14 +1490,6 @@ class KnowledgeArticle(models.Model):
         self._action_archive_articles(send_to_trash=True)
 
     def _action_archive_articles(self, send_to_trash=False) -> None:
-        """When archiving
-                  * archive the current article and all its writable descendants;
-                  * unreachable descendants (none, read) are set as free articles without
-                    root;
-        :param bool send_to_trash: KnowledgeArticle specific archive:
-        """
-        # _detach_unwritable_descendants calls _filtered_access() which returns
-        # a sudo-ed recordset
         articles = self + self._detach_unwritable_descendants().with_env(self.env)
         articles.filtered("active").active = False
         if send_to_trash:
@@ -1737,18 +1497,6 @@ class KnowledgeArticle(models.Model):
             articles._send_trash_notifications()
 
     def action_unarchive(self):
-        """When unarchiving
-
-        * unarchive the current article and all its writable descendants;
-        * unreachable descendants (none, read) are set as free articles without
-          root; Side note: the main use case that we support is to be able to
-          undo an archive by mistake. So the unarchiving should unarchive all
-          the article archived by the user. If, in some other cases, there are
-          unreachable descendant for the current user, some of the original
-          archived articles won't be restored.
-        * To avoid 'restoring' an article that will not appear anywhere on
-          the knowledge home page, make the article a root article.
-        """
         for article_item in self.filtered(
             lambda article: (
                 article.is_article_item
@@ -1770,21 +1518,13 @@ class KnowledgeArticle(models.Model):
             .with_env(self.env)
         )
         articles_to_restore = self + writable_descendants
-        # Leave the trash BEFORE un-archiving. _check_trash is
-        # `to_delete IS NOT TRUE or active IS NOT TRUE`, so a row that is active
-        # again while still flagged for deletion violates it -- and any flush
-        # between the two writes hits the database in exactly that state. This
-        # order never leaves the constraint: to_delete goes false while the row
-        # is still archived, then active goes true with the flag already clear.
         articles_to_restore.filtered("to_delete").to_delete = False
         super(KnowledgeArticle, articles_to_restore).action_unarchive()
         for article_sudo in self.sudo().filtered(
             lambda article: article.parent_id.to_delete
         ):
             write_values = article_sudo._desync_access_from_parents_values()
-            # Make it root
             write_values.update({"parent_id": False, "is_desynchronized": False})
-            # sudo to write on members
             article_sudo.write(write_values)
 
     def action_join(self):
@@ -1813,22 +1553,8 @@ class KnowledgeArticle(models.Model):
             self.sudo()._add_members(current_user.partner_id, self.internal_permission)
             return False
 
-    # ------------------------------------------------------------
-    # SEQUENCE / ORDERING
-    # ------------------------------------------------------------
 
     def move_to(self, parent_id=False, before_article_id=False, category=False):
-        """Move an article in the tree.
-
-        :param int parent_id: id of an article that will be the new parent;
-        :param int before_article_id: id of an article before which the article
-          should be moved. Otherwise it is put as last parent children;
-        :param str category: target category ('workspace', 'private', 'shared')
-          can be omitted if the destination can be deduced from parent_id or
-          before_article_id;
-
-        :return: True
-        """
         self.check_singleton()
         before_article = (
             self.env["knowledge.article"].browse(before_article_id)
@@ -1840,7 +1566,6 @@ class KnowledgeArticle(models.Model):
             if parent_id
             else self.env["knowledge.article"]
         )
-        # deduce category if not specified
         category = category or parent.category or before_article.category
         if not category:
             raise ValidationError(
@@ -1866,7 +1591,6 @@ class KnowledgeArticle(models.Model):
             )
 
         if category == "private":
-            # making an article private requires a lot of extra-processing, use specific method
             return self._move_and_make_private(
                 parent=parent, before_article=before_article
             )
@@ -1875,38 +1599,17 @@ class KnowledgeArticle(models.Model):
         if before_article:
             values["sequence"] = before_article.sequence
         if parent_id and not self.parent_id:
-            # be sure to reset internal permission when moving a root article under a parent
             values["internal_permission"] = False
         if not parent_id and category == "workspace":
-            # be sure to have an internal permission on the article if moved outside
-            # of an hierarchy
             values.update({"internal_permission": "write", "is_desynchronized": False})
 
         return self.write(values)
 
     def _resequence(self) -> None:
-        """This method reorders the children of the same parent (brotherhood) if
-        needed. If an article have been moved from one parent to another we do not
-        need to resequence the children of the old parent as the order remains
-        unchanged. We only need to resequence the children of the new parent only if
-        the sequences of the children contains duplicates.
-
-        When reordering an article, we assume that we always set the sequence
-        equals to the position we want it to be. When duplicates last modified
-        wins. We use write date, presence in self (indicating a write hence a
-        priority) and ID to differentiate new ordering between duplicates.
-
-        e.g. if we want article D to be placed at 3rd position between A B et C
-          * set D.sequence = 2;
-          * but C was already 2;
-          * D is in self: it wins. Or D has newer write_date: it wins. Or D has
-            been created more recently: it wins.
-        """
         parent_ids = self.mapped("parent_id").ids
         if any(not article.parent_id for article in self):
             parent_ids.append(False)
 
-        # fetch and sort all_children: sequence ASC, then modified, then write date DESC
         all_children = self.search([("parent_id", "in", parent_ids)])
         all_children = all_children.sorted(
             lambda article: (
@@ -1915,7 +1618,7 @@ class KnowledgeArticle(models.Model):
                 article.write_date,
                 article.id,
             ),
-            reverse=True,  # due to date
+            reverse=True,
         )
 
         article_to_update_by_sequence = defaultdict(
@@ -1925,11 +1628,9 @@ class KnowledgeArticle(models.Model):
         for parent_id in parent_ids:
             children = children_by_parent_id.get(parent_id, all_children.browse())
             sequences = children.mapped("sequence")
-            # no need to resequence if no duplicates.
             if len(sequences) == len(set(sequences)):
                 return
 
-            # only need to resequence after duplicate: allow holes in the sequence but limit number of write operations.
             duplicate_index = next(
                 idx for idx, item in enumerate(sequences) if item in sequences[:idx]
             )
@@ -1938,7 +1639,6 @@ class KnowledgeArticle(models.Model):
                 article_to_update_by_sequence[i + start_sequence] |= child
 
         for sequence in article_to_update_by_sequence:
-            # call super to avoid loops in write
             super(KnowledgeArticle, article_to_update_by_sequence[sequence]).write(
                 {"sequence": sequence}
             )
@@ -1956,9 +1656,6 @@ class KnowledgeArticle(models.Model):
         )
         return {parent.id: sequence_max for parent, sequence_max in rg_results}
 
-    # ------------------------------------------------------------
-    # HELPERS
-    # ------------------------------------------------------------
 
     @api.model
     def article_create(
@@ -1969,15 +1666,6 @@ class KnowledgeArticle(models.Model):
         is_article_item=False,
         article_properties=False,
     ) -> Self:
-        """Helper to create articles, allowing to pre-compute some configuration
-        values.
-
-        :param str title: name of the article;
-        :param int parent_id: id of an existing article who will be the parent
-          of the newly created articled. Must be writable;
-        :param bool is_private: set current user as sole owner of the new article;
-        :param bool is_article_item: set the created article as an article item;
-        """
         return self.create(
             self._prepare_article_create_values(
                 title, parent_id, is_private, is_article_item, article_properties
@@ -2001,15 +1689,8 @@ class KnowledgeArticle(models.Model):
             if not is_private and parent.category == "private":
                 is_private = True
         else:
-            # child do not have to setup an internal permission as it is inherited
             values["internal_permission"] = "none" if is_private else "write"
-            # For private articles, we need to set a member because the internal_permission is set to
-            # 'none' which restricts the access to only members of the article.
 
-            # For workspace articles, we need to add a member because the visibility of a brand new root
-            # article is always set to 'Members', meaning that only the members are able to see it at all times in
-            # their tree.
-            # And we need the creator to be able to see it in order for him to easily edit it later.
             values["article_member_ids"] = [
                 Command.create(
                     {
@@ -2034,18 +1715,6 @@ class KnowledgeArticle(models.Model):
         return values
 
     def get_user_sorted_articles(self, search_query, limit=40, hidden_mode=False):
-        """
-        Called when using the Command palette to search for articles matching
-        with the given search terms. If no search terms are provided, the
-        function returns the user's favorite articles when hidden_mode is False;
-        otherwise, it returns all the hidden articles the user has access to,
-        not exceeding the limit.
-
-        :param str search_query: Search terms of the user
-        :param int limit: Maximal number of records to return
-        :param bool hidden_mode: If True, scope the search to the hidden articles.
-                                 If False, scope the search to the visible articles.
-        """
         domain = Domain(
             [
                 ("is_article_visible", "!=", hidden_mode),
@@ -2053,7 +1722,7 @@ class KnowledgeArticle(models.Model):
                     "user_has_access",
                     "=",
                     True,
-                ),  # Admins won't see other's private articles.
+                ),
             ]
         )
         if not search_query:
@@ -2068,41 +1737,11 @@ class KnowledgeArticle(models.Model):
         return self.get_sorted_articles(search_query, domain, limit)
 
     def get_sorted_articles(self, search_query, domain=False, limit=40):
-        """
-            Get the articles matching with the given search term.
-
-            To reduce the query runtime, the search method limits the number of
-            candidates to consider using the `knowledge.fts_search_cut_off`
-            configuration and pre-selects relevant candidates incrementally
-            using CTE queries.
-
-            The search method pre-selects first articles matching with the title
-            and the body, then articles matching with the title only and, finally,
-            articles matching with the body only. The search method stops adding
-            new candidates when the maximum number of candidates is reached.
-
-            After that, the search method ranks the selected articles using a
-            scoring function and return the most relevant ones. With that approach,
-            the query should return relevant results in reasonable time.
-
-            - If the number of overall matches is lower than the configured cut
-              off, the query returns the top-k matches of the database.
-            - If the number of overall matches is greater than the configured cut
-              off, we consider that the search terms are too broad and we don't
-              consider all potential candidates to reduce the query runtime. As
-              we pre-select relevant matches first, the query should return
-              relevant results but not necessarily the most relevant ones.
-
-        :param str search_query: Search terms
-        :param domain: domain used to filter the articles
-        :param int limit: Maximal number of records to return
-        """
         if not search_query:
             return []
         domain = Domain(domain or Domain.TRUE) & Domain("is_template", "=", False)
         query = self._search(domain)
 
-        # Escape special characters recognized by the 'ILIKE' keyword
         search_pattern = "%" + re.sub(r"(%|_|\\)", r"\\\1", search_query) + "%"
         ts_query = SQL(
             "plainto_tsquery('knowledge_config', %(search_query)s)",
@@ -2201,13 +1840,9 @@ class KnowledgeArticle(models.Model):
 
         sorted_articles = self.env.cr.dictfetchall()
 
-        # Create a tuple with the id and name_get for root_article_id to
-        # mimic the result of a read.
         for sorted_article in sorted_articles:
             if sorted_article["icon"] is None:
                 sorted_article["icon"] = False
-            # Get the display name of the root article using the same logic as
-            # in name_get.
             sorted_article["root_article_id"] = (
                 sorted_article["root_article_id"],
                 "%s %s"
@@ -2224,9 +1859,6 @@ class KnowledgeArticle(models.Model):
         return sorted_articles
 
     def get_suggested_templates(self):
-        """Retrieves the template used to create the current article and returns
-        all sub-templates that have not yet been loaded under the article.
-        The method is primarily used to fetch the annexes."""
         self.check_singleton()
         if not self.origin_template_id:
             return []
@@ -2267,16 +1899,6 @@ class KnowledgeArticle(models.Model):
         return suggested_templates
 
     def load_suggested_template(self, template_id):
-        """
-        Loads the specified template under the current article.
-        Unlike the other methods, it partially loads the template structure:
-        - Parent templates are loaded if they have not already been loaded.
-        - Child templates of the specified template are not loaded.
-        The article created from the template is then placed in the article
-        hierarchy following the template hierarchy.
-        The method is primarily used to load an annexe under the article.
-        :param int template_id: ID of the template to load
-        """
         self.check_singleton()
         if not template_id or not self.origin_template_id:
             return None
@@ -2294,9 +1916,6 @@ class KnowledgeArticle(models.Model):
         templates_to_load = []
         template_to_article_pairs = []
 
-        # Step 1: Fetch the templates to be loaded (i.e: the specified template
-        # and any unloaded parent templates) and determine the parent article
-        # under which the new articles will be attached.
 
         all_articles_created_from_template = self.search(
             [
@@ -2317,8 +1936,6 @@ class KnowledgeArticle(models.Model):
             templates_to_load.append(template)
             template = template.parent_id
 
-        # Step 2: Generate the articles from the templates and move them to their
-        # designated destination.
 
         for template in reversed(templates_to_load):
             sibling_articles = self.search(
@@ -2357,7 +1974,6 @@ class KnowledgeArticle(models.Model):
             all_articles_created_from_template |= article
             parent_article = article
 
-        # Step 3: Create a method to resolve the references stored in the article body.
 
         template_xml_id_to_article_id_mapping = {}
         all_ir_model_data = (
@@ -2393,7 +2009,6 @@ class KnowledgeArticle(models.Model):
                 else self.env.ref(xml_id).id
             )
 
-        # Step 4: Copy the template values to their corresponding articles.
 
         for template, article in template_to_article_pairs:
             article.write(
@@ -2410,9 +2025,6 @@ class KnowledgeArticle(models.Model):
 
         return parent_article
 
-    # ------------------------------------------------------------
-    # PERMISSIONS / MEMBERS MANAGEMENT
-    # ------------------------------------------------------------
 
     def get_permission_panel_members(self):
         self.check_singleton()
@@ -2438,14 +2050,6 @@ class KnowledgeArticle(models.Model):
         )
 
     def restore_article_access(self):
-        """Resets permissions based on ancestors. It removes all members except
-        members on the articles that are not on any ancestor or that have higher
-        permission than from ancestors.
-
-        Security note: this method checks for write access on current article,
-        considering it as sufficient to restore access and members.
-        (side-note: portal users cannot alter article access)
-        """
         self.check_singleton()
         if not self.parent_id:
             return False
@@ -2490,16 +2094,6 @@ class KnowledgeArticle(models.Model):
         )
 
     def invite_members(self, partners, permission, message=None) -> bool:
-        """Invite the given partners to the current article. Inviting to remove
-        access is straightforward (just set permission). Inviting with rights
-        requires to check for privilege escalation in descendants.
-
-        :param partners: recordset of invited partners;
-        :param str permission: permission of newly invited members, one of
-            'none', 'read' or 'write';
-
-        :param message: the message relayed to :meth:`~_send_invite_mail`.
-        """
         self.check_singleton()
         if permission == "none":
             self._exclude_partners(partners)
@@ -2561,19 +2155,6 @@ class KnowledgeArticle(models.Model):
             )
 
     def set_internal_permission(self, permission):
-        """Set the internal permission of the article.
-
-        Special cases:
-          * to ensure the user still has write access after modification,
-            add the user as write member if given permission != write;
-          * when downgrading internal permission on a child article, desync it
-            from parent to stop inherited rights transmission;
-          * if we set same permission as parent and the article has no specific
-            member: resync if on parent;
-
-        :param str permission: internal permission to set, one of 'none', 'read'
-          or 'write';
-        """
         if not self.env.user._is_internal():
             raise AccessError(
                 self.env._(
@@ -2591,7 +2172,6 @@ class KnowledgeArticle(models.Model):
             > ARTICLE_PERMISSION_LEVEL[permission]
         )
         if downgrade:
-            # desync is done as sudo, explicitly check access
             if not self.env.su and not self.user_can_write:
                 raise AccessError(
                     self.env._(
@@ -2599,7 +2179,6 @@ class KnowledgeArticle(models.Model):
                         article_name=self.display_name,
                     )
                 )
-            # sudo to write on members
             return self.sudo().write(
                 self._desync_access_from_parents_values(
                     force_internal_permission=permission
@@ -2615,25 +2194,6 @@ class KnowledgeArticle(models.Model):
         return self.write(values)
 
     def set_member_permission(self, member_id, permission) -> None:
-        """Sets the given permission to the given member.
-
-        If the member has rights based on membership: simply update it.
-        If the member has rights based on a parent article (inherited rights)
-        If the new permission is downgrading the member's access
-        the article is desynchronized form its parent;
-        Else we add a new member with the higher permission;
-
-        Security notes:
-
-        - this method checks for write access on current article,
-          considering it as sufficient to modify members permissions.
-        - portal users cannot alter memberships in any way.
-
-        :param int member_id: member_id whose permission is to be updated.
-            Can be a member of 'self' or one of its ancestors;
-
-        :param str permission: new permission, one of 'none', 'read' or 'write';
-        """
         member = self.env["knowledge.article.member"].browse(member_id)
         if not member.exists():
             raise UserError(
@@ -2655,14 +2215,12 @@ class KnowledgeArticle(models.Model):
         if permission == "none":
             self._exclude_partners(member.partner_id)
             return
-        # member is inherited
         if member.article_id != self:
             downgrade = (
                 ARTICLE_PERMISSION_LEVEL[member.permission]
                 > ARTICLE_PERMISSION_LEVEL[permission]
             )
             if downgrade:
-                # sudo to write on members
                 self.sudo().write(
                     self._desync_access_from_parents_values(
                         force_partners=member.partner_id,
@@ -2685,11 +2243,6 @@ class KnowledgeArticle(models.Model):
     def set_is_article_visible_by_everyone(
         self, is_article_visible_by_everyone
     ) -> None:
-        """Set the visibility of an article to the provided value.
-        If the new value is False, we need to check if the user is a member of the article.
-        If that's not the case then we add it as a member of the article with the same permission as the
-        article.
-        This ensures that the user can see the article when modifying its visibility."""
         self.check_singleton()
         self.write({"is_article_visible_by_everyone": is_article_visible_by_everyone})
 
@@ -2701,22 +2254,6 @@ class KnowledgeArticle(models.Model):
             self._add_members(self.env.user.partner_id, self.user_permission)
 
     def remove_member(self, member_id) -> None:
-        """Removes a member from the article. If the member was based on a
-        parent article, the current article will be desynchronized form its parent.
-        We also ensure the partner to remove is removed after the desynchronization
-        if was copied from parent.
-        If the user remove its own member on a private article, the article is
-        archived instead.
-
-        Security note
-          * portal users cannot alter article membership
-          * when removing themselves: users need only read access on the article
-            (automatically checked by access on self);
-          * when removing someone else: write access is required on the article
-            (explicitly checked);
-
-        :param int member_id: member's id to remove
-        """
         self.check_singleton()
         if not self.env.su and not self.env.user._is_internal():
             raise AccessError(
@@ -2731,12 +2268,8 @@ class KnowledgeArticle(models.Model):
                 )
             )
 
-        # belongs to current article members
         current_membership = self.article_member_ids.filtered(lambda m: m == member)
 
-        # Send private article to trash if leaving it
-        # (note: admin could be member with access none on a private article and leave the article,
-        # should not send the article to the trash in that case)
         remove_self = member.partner_id == self.env.user.partner_id
         if (
             remove_self
@@ -2747,8 +2280,6 @@ class KnowledgeArticle(models.Model):
             self.action_send_to_trash()
             return
 
-        # If user doesn't gain higher access when removing own member,
-        # we should allow to do it.
         self_escalation = not (
             remove_self
             and ARTICLE_PERMISSION_LEVEL[member.permission]
@@ -2762,12 +2293,10 @@ class KnowledgeArticle(models.Model):
                     member_name=member.display_name,
                 )
             )
-        # member is on current article: remove member
         if current_membership:
             self.sudo().write(
                 {"article_member_ids": [Command.delete(current_membership.id)]}
             )
-        # inherited rights from parent: desync and remove member
         else:
             self.sudo().write(
                 self._desync_access_from_parents_values(
@@ -2783,19 +2312,6 @@ class KnowledgeArticle(models.Model):
                 )
 
     def _add_members(self, partners, permission, force_update=True):
-        """Adds new members to the current article with the given permission.
-        If a given partner is already member permission is updated instead.
-
-        Security note: this method checks for write access on current article,
-        considering it as sufficient to add new members.
-        (side-note: portal users can't alter memberships, see '_add_members_command')
-
-        :param <res.partner> partners: recordset of res.partner for which
-          new members are added;
-        :param string permission: member permission, one of 'none', 'read' or 'write';
-        :param boolean force_update: if already existing, force the new permission;
-          this can be used to create default members and left existing one untouched;
-        """
         self.check_singleton()
         members_command = self._add_members_command(
             partners, permission, force_update=force_update
@@ -2803,13 +2319,6 @@ class KnowledgeArticle(models.Model):
         return self.sudo().write({"article_member_ids": members_command})
 
     def _add_members_command(self, partners, permission, force_update=True):
-        """Implementation of ``_add_members``, returning commands to update
-        the article. Used when caller prefers commands compared to updating
-        directly the article.
-
-        Portal users cannot alter memberships in any way.
-
-        See main method for more details."""
         self.check_singleton()
         if not self.env.su and not self.user_can_write:
             raise AccessError(
@@ -2847,19 +2356,6 @@ class KnowledgeArticle(models.Model):
         force_partners=False,
         force_member_permission=False,
     ) -> dict:
-        """Get the necessary values to copy all inherited accesses from parents
-        on the article and desynchronize the article from its parent,
-        allowing custom access management. We allow to force permission of
-        given partners.
-
-        :param string force_internal_permission: force a new internal permission
-          for the article. Otherwise fallback on inherited computed internal
-          permission;
-        :param <res.partner> force_partners: force permission of new members
-          related to those partners;
-        :param string force_member_permission: used with force_partners to
-          specify the custom permission to give. One of 'none', 'read', 'write';
-        """
         self.check_singleton()
         level = force_internal_permission or self.inherited_permission
         members_commands = self._copy_access_from_parents_commands(
@@ -2890,26 +2386,11 @@ class KnowledgeArticle(models.Model):
     def _copy_access_from_parents_commands(
         self, force_partners=False, force_member_permission=False
     ):
-        """Prepares commands for all inherited accesses from parents on the given
-        article. It allows to de-synchronize the article from its parent and
-        allows custom access management. We allow to force permission of given
-        partners, bypassing inherited ones.
-
-        :param <res.partner> force_partners: force permission of new members
-          related to those partners;
-        :param str force_member_permission: force a new permission to partners
-          given by force_partners. Otherwise fallback on inherited computed
-          internal permission;
-
-        :returns: commands to be applied on 'article_member_ids' field;
-        :rtype: list
-        """
         self.check_singleton()
         members_permission = self._get_article_member_permissions()[self.id]
 
         members_commands = []
         for partner_id, values in members_permission.items():
-            # if member already on self, do not add it.
             if not values["based_on"] or values["based_on"] == self.id:
                 continue
             if (
@@ -2936,35 +2417,12 @@ class KnowledgeArticle(models.Model):
         return members_commands
 
     def _detach_unwritable_descendants(self):
-        """When taking specific actions on an article like archiving or making
-        it private, we want to be able to 'detach' the unaccessible children and
-        set them as free (root) articles. Indeed in those business flows you
-        should not change the current access level of children articles.
-
-        This method takes care of correctly detaching those children and returns
-        a subset of children to which the user effectively has write access to.
-
-        As the children are moved to "root" articles we also reset their desync
-        status. Indeed, a root article cannot be desyncronized as stated by SQL
-        constraints.
-
-        Note: this might produce funny results when involving a hierarchy with
-        invisible nodes in it (A-B-C where B is not achievable). You might
-        archive / privatize articles and break hierarchy without knowing it.
-
-        Security note: this method does not check accesses. Caller has to ensure
-        access is granted, depending on the business flow.
-
-        :returns: the children knowledge.article which were
-          not detached, meaning that current user has write access on them"""
         all_descendants_sudo = self.sudo()._get_descendants()
         writable_descendants_sudo = (
             all_descendants_sudo.with_env(self.env)._filtered_access("write").sudo()
         )
         other_descendants_sudo = all_descendants_sudo - writable_descendants_sudo
 
-        # copy rights to allow breaking the hierarchy while keeping access for members
-        # do this on synchronized articles as desynchronized one do not inherit from parent
         for article_sudo in other_descendants_sudo.filtered(
             lambda article: not article.is_desynchronized
         ):
@@ -2974,9 +2432,6 @@ class KnowledgeArticle(models.Model):
                 }
             )
 
-        # create new root articles and reset desync: direct children of these articles +
-        # the writable descendants. Indeed they are going to be modified the same way
-        # as "self" (archived / moved to private) -> all their children should be detached
         new_roots_woperm_sudo = other_descendants_sudo.filtered(
             lambda article: (
                 article.parent_id in (self + writable_descendants_sudo)
@@ -3003,20 +2458,6 @@ class KnowledgeArticle(models.Model):
         return writable_descendants_sudo
 
     def _move_and_make_private(self, parent=False, before_article=False):
-        """Set as private: remove members, ensure current user is the only member
-        with write access. Requires a sudo to bypass member ACLs after checking
-        write access on the article.
-
-        Children articles to which the user also has a write access to are made
-        private as well. Other articles are detached, see '_detach_unwritable_descendants'
-        for details.
-
-        :param <knowledge.article> parent: an optional parent to move the article under;
-        :param <knowledge.article> before_article: article before which the article
-          should be moved. Otherwise it is put as last parent children;
-
-        :return: True
-        """
         self.check_singleton()
         parent = parent if parent is not False else self.env["knowledge.article"]
         before_article = (
@@ -3029,27 +2470,24 @@ class KnowledgeArticle(models.Model):
             (self + parent).check_access("write")
         except AccessError, UserError:
             if parent:
-                raise AccessError(  # noqa: B904  (reported)
+                raise AccessError(
                     self.env._(
                         "You are not allowed to move '%(article_name)s' under '%(parent_name)s'.",
                         article_name=self.display_name,
                         parent_name=parent.display_name,
                     )
                 )
-            raise AccessError(  # noqa: B904  (reported)
+            raise AccessError(
                 self.env._(
                     "You are not allowed to make '%(article_name)s' private.",
                     article_name=self.display_name,
                 )
             )
 
-        # first detach unwritable children (see ``_detach_unwritable_descendants``)
         writable_descendants_sudo = self._detach_unwritable_descendants()
 
         article_values = {
-            # reset internal permission if parent is set (will inherit) or force private (aka 'none')
             "internal_permission": False if parent else "none",
-            # cannot be desync when made private as we wipe members access
             "is_desynchronized": False,
             "parent_id": parent.id if parent else False,
         }
@@ -3057,18 +2495,14 @@ class KnowledgeArticle(models.Model):
             article_values["sequence"] = before_article.sequence
 
         self_sudo = self.sudo()
-        # remove members as the article is moved to private
         members_to_remove = self_sudo.article_member_ids
         self_member_command = []
         if not parent:
-            # make sure the current user is the only member left with write access to the article
-            # if we have a parent, this is not necessary as we will inherit members access from them
             self_member = self_sudo.article_member_ids.filtered(
                 lambda m: m.partner_id == self.env.user.partner_id
             )
             if self_member:
                 self_member_command = [(1, self_member.id, {"permission": "write"})]
-                # keep current member
                 members_to_remove = members_to_remove.filtered(
                     lambda member: member.partner_id != self.env.user.partner_id
                 )
@@ -3090,8 +2524,6 @@ class KnowledgeArticle(models.Model):
             article_values
         )
 
-        # remove all specific memberships configurations on children. They now inherit
-        # the only 'write' member from their parent now, making them private.
         writable_descendants_sudo.with_context(
             knowledge_member_skip_writable_check=True
         ).write(
@@ -3104,18 +2536,6 @@ class KnowledgeArticle(models.Model):
         return res
 
     def _move_and_make_shared_root(self, before_article):
-        """Set as shared root: add inherited members, ensure current user is a
-        member with write access. Requires a sudo to bypass member ACLs after
-        checking write access on the article.
-
-        Descendants articles to which the user does not have write access are
-        detached (see `_detach_unwritable_descendants` for details).
-
-        :param <knowledge.article> before_article: article before which the article
-          should be moved. Otherwise it is put as last root;
-
-        :return: True
-        """
         self.check_singleton()
         if not self.has_access("write"):
             raise AccessError(
@@ -3144,8 +2564,6 @@ class KnowledgeArticle(models.Model):
                     )
                 )
 
-        # Add the current user as member in case he had write access to the
-        # article through internal permissions
         if not user_is_member:
             members_commands.append(
                 (
@@ -3160,7 +2578,6 @@ class KnowledgeArticle(models.Model):
                 self.env._("You need at least 2 members for the Article to be shared.")
             )
 
-        # Since the move is valid, detach unwritable descendants
         self._detach_unwritable_descendants()
 
         values = {
@@ -3172,28 +2589,11 @@ class KnowledgeArticle(models.Model):
         if before_article:
             values["sequence"] = before_article.sequence
 
-        # Sudo to be able to create new article_members
         return self.sudo().write(values)
 
     def _has_write_member(
         self, partners_to_exclude=False, members_to_exclude=False
     ) -> bool:
-        """Method allowing to check if this article still has at least one member
-        with write access. Typically used during constraints checks.
-
-        This method is *not* optimized; prefer ``_get_article_member_permissions``
-        when possible.
-
-        :param <res.partner> partners_to_exclude: used when checking recursively
-          through article parents, we only check for the most specific access
-          for a given partner;
-        :param <knowledge.article.member> members_to_exclude: memberships that
-          should not be considered when checking for a write access, used when
-          unlinking members that should not be taken into account;
-
-        :returns: whether a write member has been found;
-        :rtype: bool
-        """
         self.check_singleton()
         partners_to_exclude = partners_to_exclude or self.env["res.partner"]
         members_to_exclude = members_to_exclude or self.env["knowledge.article.member"]
@@ -3212,30 +2612,6 @@ class KnowledgeArticle(models.Model):
         return False
 
     def _get_article_member_permissions(self, additional_fields=False):
-        """Retrieve the permission for all the members that apply to the target article.
-        Members that apply are not only the ones on the article but can also come from parent articles.
-
-        The caller can pass additional fields to retrieve from the following models:
-        - res.partner, joined on the partner_id of the membership
-        - knowledge.article, joined on the 'origin' of the membership
-          (when the membership is based on one of its parent article)
-          to retrieve more fields on the origin of the membership
-        - knowledge.article.member to retrieve more fields on the membership
-
-        The expected format is::
-
-            {'model': [('field', 'field_alias')]}
-        e.g::
-            {
-                "res.partner": [
-                    ("name", "partner_name"),
-                    ("email", "partner_email"),
-                ]
-            }
-
-        These additional fields are not sanitized: the caller must verify the
-        user can access them and that no injection is possible.
-        """
         self.env["res.partner"].flush_model()
         self.env["knowledge.article"].flush_model()
         self.env["knowledge.article.member"].flush_model()
@@ -3251,7 +2627,6 @@ class KnowledgeArticle(models.Model):
         select_fields_clause = SQL()
         join_clauses = SQL()
         if additional_fields:
-            # model -> join key
             supported_models = {
                 "res.partner": "partner_id",
                 "knowledge.article": "source_article_id",
@@ -3266,7 +2641,6 @@ class KnowledgeArticle(models.Model):
                 model = self.env[model_name]
                 table_name = self.env[model_name]._table
 
-                # add missing join clauses
                 if model_name not in joins:
                     joins[model_name] = SQL(
                         "JOIN %(table_name)s ON %(table_pkey)s = %(effective_membership_fkey)s",
@@ -3277,7 +2651,6 @@ class KnowledgeArticle(models.Model):
                         ),
                     )
 
-                # add selected fields
                 for field_name, field_alias in fields_list:
                     field = model._fields.get(field_name)
                     has_column = bool(field and field.store and field.column_type)
@@ -3369,9 +2742,6 @@ class KnowledgeArticle(models.Model):
 
         return article_members
 
-    # ------------------------------------------------------------
-    # MAILING
-    # ------------------------------------------------------------
 
     def _mail_track(self, tracked_fields, initial_values):
         changes, tracking_value_ids = super()._mail_track(
@@ -3468,12 +2838,6 @@ class KnowledgeArticle(models.Model):
         )
 
     def _send_trash_notifications(self):
-        """This method searches all the partners that should be notified about
-        articles have been trashed. As each partner to notify may have different
-        accessible articles depending on their rights, for each partner, we need
-        to retrieve the first accessible article that will be considered for
-        them as the root trashed article. A notification is sent to each partner
-        to notify with the list of their own accessible articles."""
         partners_to_notify = self.article_member_ids.filtered(
             lambda member: member.permission in ["read", "write"]
         ).partner_id
@@ -3483,29 +2847,21 @@ class KnowledgeArticle(models.Model):
         )
         sent_messages = self.env["mail.message"]
         for partner in partners_to_notify.filtered(lambda p: not p.partner_share):
-            # if only one article, all the partner_to_notify have access to the article.
             if len(self) == 1:
                 main_articles, children = self, KnowledgeArticle
             else:
-                # Current partner may have no access to some of the articles_to_notify.
-                # Get all accessible articles for the current partner
                 partner_user = partner.user_ids.filtered(lambda u: not u.share)[0]
                 accessible_articles = KnowledgeArticle.with_user(partner_user).search(
                     [("id", "in", self.ids)]
                 )
 
-                # "Main articles" are articles that:
-                #   - has no parent
-                #   - OR the current partner as no access to their parent
-                #   - OR the parent article can be accessed but is not archived.
                 main_articles = accessible_articles.sudo().filtered_domain(
                     [("parent_id", "not in", accessible_articles.ids)]
                 )
                 children = accessible_articles - main_articles
 
-            # Set the partner lang in context to send mail in partner lang.
             partner_lang = get_lang(self.env, lang_code=partner.lang).code
-            self = self.with_context(lang=partner_lang)  # force translation of subject
+            self = self.with_context(lang=partner_lang)
 
             if len(main_articles) == 1:
                 subject = self.env._(
@@ -3528,8 +2884,6 @@ class KnowledgeArticle(models.Model):
                 )
             )
 
-            # If multiple "main articles", to keep sending only one mail,
-            # don't link the notification to any document.
             document_to_notify = (
                 main_articles
                 if len(main_articles) == 1
@@ -3546,9 +2900,6 @@ class KnowledgeArticle(models.Model):
 
         return sent_messages
 
-    # ------------------------------------------------------------
-    # BUSINESS METHODS
-    # ------------------------------------------------------------
 
     def create_article_from_template(self, parent_id=False):
         self.check_singleton()
@@ -3572,39 +2923,11 @@ class KnowledgeArticle(models.Model):
         return article
 
     def apply_template(self, template_id, skip_body_update=False):
-        """Applies the given template on the current article
-
-        :param int template_id: Template id
-        :param boolean skip_body_update: Whether the method should skip writing
-            the body and return it for further management by the caller. This does
-            not apply to child articles as they are not managed the same
-            way and are side records. Typically:
-
-            - False: when creating a template based article from scratch;
-            - True: in other cases to avoid collaborative issues (write on
-              body should be done at client side);
-
-        :returns: body of the article, used notably client side for
-            collaborative mode
-
-        :rtype: str
-        """
         self.check_singleton()
         template = self.env["knowledge.article"].browse(template_id)
         template.check_singleton()
 
-        # The following algorithm will proceed in 3 steps:
-        # 1. In the first step, we will recursively create the articles and the
-        #    stages following the same structure as the templates. This will
-        #    ensure that the records exist in the database for the following steps.
-        # 2. In the second step, we will build a dict mapping the template
-        #    xml ids with the article ids created from it. The dict will be
-        #    used to convert the template xml ids mentioned in the templates
-        #    with the ids of the articles generated from them.
-        # 3. In the third step, we will populate the articles using the values
-        #    set on the associated templates.
 
-        # Step 1: Create the articles and the stages
 
         template_to_article_pairs = []
         stack = [(template, self)]
@@ -3613,7 +2936,6 @@ class KnowledgeArticle(models.Model):
             (parent_template, parent_article) = stack.pop()
             template_to_article_pairs.append((parent_template, parent_article))
 
-            # Create the stages:
             parent_template_stages = self.env["knowledge.article.stage"].search(
                 [("parent_id", "=", parent_template.id)]
             )
@@ -3629,7 +2951,6 @@ class KnowledgeArticle(models.Model):
                 ]
             )
 
-            # Create the child articles:
             child_templates = parent_template.child_ids
             if parent_article._is_load_all_annexes_required():
                 child_templates = child_templates.filtered(
@@ -3667,7 +2988,6 @@ class KnowledgeArticle(models.Model):
             child_articles = self.env["knowledge.article"].create(child_articles_values)
             stack.extend(zip(child_templates, child_articles, strict=False))
 
-        # Step 2: Build the dict mapping the template xml ids with the article ids
 
         template_xml_id_to_article_id_mapping = {}
         all_ir_model_data = (
@@ -3695,10 +3015,6 @@ class KnowledgeArticle(models.Model):
                 template_xml_id = ir_model_data.complete_name
                 template_xml_id_to_article_id_mapping[template_xml_id] = article.id
 
-        # When rendering the template, the `ref` function should return the id
-        # of the article created from the template having the given xml id.
-        # This will ensure that the ids stored in the body of the newly created
-        # article will refer to the right article and not to the original template.
 
         def ref(xml_id):
             return (
@@ -3707,7 +3023,6 @@ class KnowledgeArticle(models.Model):
                 else self.env.ref(xml_id).id
             )
 
-        # Step 3: Copy the template values to the new articles
 
         (root_template, root_article) = template_to_article_pairs.pop(0)
         for template, article in reversed(template_to_article_pairs):
@@ -3743,12 +3058,6 @@ class KnowledgeArticle(models.Model):
         return body
 
     def _render_template(self, ref=False):
-        """
-        Generates the HTML body based on the template content.
-        :param callable ref: The `ref` function will be used to refer to an
-          external record and integrate advanced elements such as embedded views
-          of article items and article links.
-        """
         self.check_singleton()
         if not self.is_template or not self.template_body:
             return False
@@ -3772,13 +3081,6 @@ class KnowledgeArticle(models.Model):
         fragment = html.fragment_fromstring(self.template_body, create_parent="div")
 
         for element in fragment.xpath('//*[@data-embedded="view"]'):
-            # When encoding the "embedded props", we find and replace the function
-            # calls of `ref` with the ids returned by the given `ref` function for
-            # the given xml ids. The generated HTML will then only contain ids.
-            # Example:
-            # When the "embedded props" contains `ref('knowledge.article_template_1')`,
-            # we replace that string occurrence with the id returned by the given
-            # `ref` function evaluated with the xml_id 'knowledge.article_template_1'.
             embedded_props = ast.literal_eval(
                 re.sub(
                     r"(?<![\w])ref\(\'(?P<xml_id>\w+\.\w+)\'\)",
@@ -3846,11 +3148,6 @@ class KnowledgeArticle(models.Model):
         return fragment
 
     def apply_article_as_template(self, article_id):
-        """Substitute the current article fields for the given article and return
-        the body so that it can be applied in the editor. This function is meant
-        to be called while in edition, so that the body update is shared in
-        collaboration with other users.
-        :param int article_id: Article id to copy"""
         self.check_singleton()
         article = self.env["knowledge.article"].browse(article_id)
         article.check_singleton()
@@ -3868,7 +3165,6 @@ class KnowledgeArticle(models.Model):
 
         body = self._get_transformed_body_from(article)
 
-        # Copy the article stages:
         stages_mapping = {}
         for stage in self.env["knowledge.article.stage"].search(
             [("parent_id", "=", article.id)]
@@ -3876,7 +3172,6 @@ class KnowledgeArticle(models.Model):
             new_stage = stage.copy({"parent_id": self.id})
             stages_mapping[stage.id] = new_stage.id
 
-        # Copy the related article items and link them to their corresponding stage:
         article_items = article.child_ids.filtered(
             lambda article: article.is_article_item
         ).sorted(lambda child: child.sequence)
@@ -3906,7 +3201,6 @@ class KnowledgeArticle(models.Model):
         for article_item, new_article_item in zip(
             article_items, new_article_items, strict=False
         ):
-            # Create the stages for the article items:
             stages = stages_by_parent_id.get(article_item)
             if stages:
                 stages.copy({"parent_id": new_article_item.id})
@@ -3944,7 +3238,6 @@ class KnowledgeArticle(models.Model):
         return [("is_template", "=", True), ("parent_id", "=", False)]
 
     def create_default_item_stages(self) -> None:
-        """Need to create stages if this article has no stage yet."""
         stage_count = self.env["knowledge.article.stage"].search_count(
             [("parent_id", "=", self.id)]
         )
@@ -3966,24 +3259,15 @@ class KnowledgeArticle(models.Model):
             )
 
     def _is_load_all_annexes_required(self) -> bool:
-        """
-        Return whether all child templates should be loaded when applying a template.
-        If True, the template_child_default_create flag is ignored.
-        """
         self.check_singleton()
         return True
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     @api.model
     def _extract_icon_from_name(self, name) -> tuple:
-        """See name_create / _search_display_name overrides for details."""
         if not isinstance(name, str) or len(name) < 3:
             return name, None
 
-        # we consider that a non-alphabetical and non-special character is an emoji
         emoji_match = re.match(r"([^\w.,;:_%+!\\/@$€#&()*=~-]) (.*)", name)
         if not emoji_match or len(emoji_match.groups()) != 2:
             return name, None
@@ -3993,15 +3277,6 @@ class KnowledgeArticle(models.Model):
         return article_name, emoji
 
     def _get_ancestor_ids_nearest_first(self):
-        """Return the union of sets including the ids for the ancestors of
-        records in recordset. E.g.,
-         * if self = KnowledgeArticle `8` which has for parent `4` that has itself
-           parent `2`, return `{2, 4}`;
-         * if article `11` is a child of `6` and is also in `self`, return
-           `{2, 4, 6}`;
-
-        :rtype: OrderedSet
-        """
         ancestor_ids = OrderedSet()
         for article in self:
             if article.id in ancestor_ids:
@@ -4024,8 +3299,6 @@ class KnowledgeArticle(models.Model):
         )
 
     def _get_first_accessible_article(self):
-        """Returns the first accessible article for the current user.
-        If user has favorites, return first favorite article."""
         article = self.env["knowledge.article"]
         if not self.env.user._is_public():
             article = (
@@ -4037,7 +3310,6 @@ class KnowledgeArticle(models.Model):
                 .article_id
             )
         if not article:
-            # retrieve workspace articles first, then private/shared ones.
             article = self.search(
                 Domain.AND(
                     [
@@ -4052,8 +3324,6 @@ class KnowledgeArticle(models.Model):
         return article
 
     def get_valid_parent_options(self, search_term=""):
-        """Returns the list of articles that can be set as parent for the
-        current article (to avoid recursions)"""
         return self.search_read(
             domain=[
                 "&",
@@ -4074,15 +3344,12 @@ class KnowledgeArticle(models.Model):
         )
 
     def _get_descendants(self):
-        """Returns the descendants recordset of the current article."""
         return self.env["knowledge.article"].search(
             [("id", "not in", self.ids), ("parent_id", "child_of", self.ids)]
         )
 
     @api.model
     def get_empty_list_help(self, help_message):
-        # Meant to target knowledge_article_action_trashed action only.
-        # -> Use the specific context key of that action to target it.
         if "search_default_filter_trashed" not in self.env.context:
             return super().get_empty_list_help(help_message)
         get_param = self.env["ir.config_parameter"].sudo().get_param
@@ -4102,12 +3369,6 @@ class KnowledgeArticle(models.Model):
         )
 
     def get_visible_articles(self, root_articles_ids, unfolded_ids):
-        """Get the articles that are visible in the sidebar with the given
-        root articles and unfolded ids.
-
-        An article is visible if it is a root article, or if it is a child
-        article (not item) of an unfolded visible article.
-        """
         if root_articles_ids:
             visible_articles_domain = [
                 "|",
@@ -4115,7 +3376,7 @@ class KnowledgeArticle(models.Model):
                 "&",
                 "&",
                 ("parent_id", "in", unfolded_ids),
-                ("id", "child_of", root_articles_ids),  # Don't fetch hidden unfolded
+                ("id", "child_of", root_articles_ids),
                 ("is_article_item", "=", False),
             ]
 
@@ -4146,19 +3407,6 @@ class KnowledgeArticle(models.Model):
         return accessible_root_ancestors
 
     def get_sidebar_articles(self, unfolded_ids=False) -> dict:
-        """Get the data used by the sidebar on load in the form view.
-        It returns some information from every article that is accessible by
-        the user and that is either:
-
-        - a visible root article.
-        - a favorite article or a favorite item (for the current user).
-        - the current article (except if it is a descendant of a hidden
-          root article or of an non accessible article - but even if it is
-          a hidden root article).
-        - an ancestor of the current article, if the current article is
-          shown.
-        - a child article of any unfolded article that is shown.
-        """
 
         root_articles_domain = [
             ("parent_id", "=", False),
@@ -4167,8 +3415,6 @@ class KnowledgeArticle(models.Model):
         ]
         has_root_access = self.root_article_id.has_access("read")
 
-        # Fetch root article_ids as sudo, ACLs will be checked on next global call fetching 'all_visible_articles'
-        # this helps avoiding 2 queries done for ACLs (and redundant with the global fetch)
         root_articles_ids = (
             self.env["knowledge.article"].sudo().search(root_articles_domain).ids
         )
@@ -4189,18 +3435,14 @@ class KnowledgeArticle(models.Model):
             .ids
         )
 
-        # Add favorite articles and items (they are root articles in the
-        # favorite tree)
         root_articles_ids += favorite_articles_ids
 
         if unfolded_ids is False:
             unfolded_ids = []
 
-        # Add active article and its parents in list of unfolded articles
         if self.is_article_visible:
             if self.parent_id:
                 unfolded_ids += self._get_ancestor_ids_nearest_first()
-        # If the current article is a hidden root article, show the article
         elif not self.parent_id and self.id:
             root_articles_ids += [self.id]
 
@@ -4221,7 +3463,7 @@ class KnowledgeArticle(models.Model):
                     "is_article_item",
                     "has_article_children",
                 ],
-                None,  # To not fetch the name of parent_id
+                None,
             ),
             "favorite_ids": favorite_articles_ids,
             "active_article_accessible_root_id": active_article_accessible_ancestors[
@@ -4232,13 +3474,6 @@ class KnowledgeArticle(models.Model):
         }
 
     def get_article_hierarchy(self, exclude_article_ids=False):
-        """Return the `display_name` and `user_has_access` values of the articles that are in the
-        hierarchy (parent_path) of the given article from the furthest ancestor to the closest one,
-        excluding the ones provided in exclude_article_ids.
-        Requires a sudo to get the values of articles that are not accessible by the user (as the
-        display name of the root and parent articles are shown even if the user does not have
-        access to them, we consider it safe to show it for the entire hierarchy)
-        """
         self.check_singleton()
         ancestor_ids = self._get_ancestor_ids_nearest_first()
         if exclude_article_ids:

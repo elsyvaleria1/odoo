@@ -4,13 +4,6 @@ from odoo.api import Self
 
 class DummyMethods:
     def one_arg(self, a: int) -> int:
-        """
-        A simple dummy identity function.
-
-        :param int a: an int.
-        :returns: an int.
-        :rtype: int
-        """
         return a
 
     one_arg.expected = {
@@ -28,16 +21,6 @@ class DummyMethods:
     def multiple_args_and_error(
         self, a: int, b: list[int], c: dict[str, list[str]]
     ) -> int:
-        """
-        Another dummy function.
-
-        :param int a: an int.
-        :param list[int] b: a list of int.
-        :param dict[str, list[str]] c: a dict of lists.
-        :raises ValueError: raise an error if ``a`` is greater than ``len(b)``.
-        :returns: returns the element of ``b`` at index ``a``.
-        :rtype: int
-        """
         return a
 
     multiple_args_and_error.expected = {
@@ -64,10 +47,6 @@ class DummyMethods:
     }
 
     def docstring_but_no_hints(self, a, b):
-        """
-        :param a: an A
-        :param b: a B
-        """
         pass
 
     docstring_but_no_hints.expected = {
@@ -88,12 +67,7 @@ class DummyMethods:
         "return": {"annotation": "int"},
     }
 
-    # the self param should be stripped away
     def self_method(self, a):
-        """
-        :param self:
-        :param a: an A
-        """
         pass
 
     self_method.expected = {
@@ -102,11 +76,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    # BaseModel should be replaced by list[int]
     def returns_base_model(self) -> models.BaseModel:
-        """
-        :rtype: BaseModel
-        """
         return object.__new__(models.BaseModel)
 
     returns_base_model.expected = {
@@ -116,11 +86,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    # Model should be replaced by list[int]
     def returns_model(self) -> models.Model:
-        """
-        :rtype: Model
-        """
         return object.__new__(models.Model)
 
     returns_model.expected = {
@@ -130,11 +96,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    # Self should be replaced by list[int]
     def returns_self(self) -> Self:
-        """
-        :rtype: Self
-        """
         return self
 
     returns_self.expected = {
@@ -176,14 +138,6 @@ class DummyMethods:
     }
 
     def bulletpoints(self):
-        """
-        Some bulletpoints:
-
-        * beep
-        * boop
-
-        a bit more text
-        """
         pass
 
     bulletpoints.expected = {
@@ -200,12 +154,7 @@ class DummyMethods:
         </div>""",
     }
 
-    # A `:type:` field is the only annotation an unannotated parameter gets.
     def type_field_only(self, a):
-        """
-        :param a: an A
-        :type a: SomeCustomType
-        """
         pass
 
     type_field_only.expected = {
@@ -214,13 +163,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    # Every parameter marker has to survive into the rendered signature: a
-    # reader copying `(a, kwargs)` writes a call that cannot work.
     def every_parameter_kind(self, pos, /, normal, *args, kw_only=1, **kwargs):
-        """
-        :param pos: positional-only
-        :param kwargs: the rest
-        """
         pass
 
     every_parameter_kind.expected = {
@@ -235,10 +178,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    # Annotations naming a type imported under `if TYPE_CHECKING:` must reflect
-    # as written rather than raise NameError. `Sequence` is not imported here on
-    # purpose -- this is the shape most of the ORM has.
-    def deferred_annotation(self, names: Sequence[str]) -> Sequence[int]:  # noqa: F821 - the point of the fixture
+    def deferred_annotation(self, names: Sequence[str]) -> Sequence[int]:
         pass
 
     deferred_annotation.expected = {
@@ -247,7 +187,6 @@ class DummyMethods:
         "return": {"annotation": "Sequence[int]"},
     }
 
-    # Those methods cannot be called over RPC and should not appear in /doc
     @classmethod
     def class_method(cls):
         pass
@@ -262,3 +201,17 @@ class DummyMethods:
 
     def _underscope_method(self):
         pass
+
+
+DOCSTRING_FIXTURES = {
+    "one_arg": "\n        A simple dummy identity function.\n\n        :param int a: an int.\n        :returns: an int.\n        :rtype: int\n        ",
+    "multiple_args_and_error": "\n        Another dummy function.\n\n        :param int a: an int.\n        :param list[int] b: a list of int.\n        :param dict[str, list[str]] c: a dict of lists.\n        :raises ValueError: raise an error if ``a`` is greater than ``len(b)``.\n        :returns: returns the element of ``b`` at index ``a``.\n        :rtype: int\n        ",
+    "docstring_but_no_hints": "\n        :param a: an A\n        :param b: a B\n        ",
+    "self_method": "\n        :param self:\n        :param a: an A\n        ",
+    "returns_base_model": "\n        :rtype: BaseModel\n        ",
+    "returns_model": "\n        :rtype: Model\n        ",
+    "returns_self": "\n        :rtype: Self\n        ",
+    "bulletpoints": "\n        Some bulletpoints:\n\n        * beep\n        * boop\n\n        a bit more text\n        ",
+    "type_field_only": "\n        :param a: an A\n        :type a: SomeCustomType\n        ",
+    "every_parameter_kind": "\n        :param pos: positional-only\n        :param kwargs: the rest\n        ",
+}

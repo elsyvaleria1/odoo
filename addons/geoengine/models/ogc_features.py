@@ -25,8 +25,6 @@ CONFORMANCE = [
     "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson",
 ]
 DEFAULT_LIMIT = 100
-# A client reads the collection list on every connection: an extent that takes
-# longer than this is left out there and computed by /collections/{id}.
 LIST_EXTENT_TIMEOUT_MS = 300
 MAX_LIMIT = 10_000
 WGS84 = 4326
@@ -74,8 +72,6 @@ def collections(env) -> list[Collection]:
         if not model_name or model_name not in env:
             continue
         model = env[model_name]
-        # before the field record: a reader may not see the fields of a model
-        # it cannot read, and one such layer refused the whole listing
         if not model.has_access("read"):
             continue
         field = model._fields.get(layer.geo_field_id.name)
@@ -96,8 +92,6 @@ def find_collection(env, collection_id: str) -> Collection | None:
 
 
 def property_names(env, collection: Collection) -> list[str]:
-    """The fields the model's geoengine view shows, as far as the caller may
-    read them: what a map popup shows is what a GIS client gets."""
     model = env[collection.model_name]
     arch = model.get_view(view_type="geoengine")["arch"]
     names = []
@@ -299,8 +293,6 @@ def _parameter(name: str, schema: dict, description: str, where: str = "query") 
 
 
 def api_definition(env, base: str) -> dict:
-    """A minimal OpenAPI 3.0 description of these endpoints, which clients
-    read to discover the parameters; per-collection schemas are not given."""
     json_ok = {"200": {"description": "OK", "content": {"application/json": {}}}}
     geojson_ok = {
         "200": {"description": "OK", "content": {"application/geo+json": {}}},

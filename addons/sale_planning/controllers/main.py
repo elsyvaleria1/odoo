@@ -5,7 +5,6 @@ class ShiftControllerProject(ShiftController):
     def _planning_get(self, planning_token, employee_token, message=False):
         result = super()._planning_get(planning_token, employee_token, message)
         if not result:
-            # one of the token does not match an employee/planning
             return None
         result["open_slot_has_sale_line"] = any(
             s.sale_line_id for s in result["open_slots_ids"]

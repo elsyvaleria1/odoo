@@ -110,10 +110,8 @@ class TestApprovalBindingActions(common.TransactionCase):
             [("res_model", "=", "res.partner"), ("res_id", "=", partner.id)]
         )
 
-    # -- server actions ----------------------------------------------------
 
     def test_a_blocked_server_action_is_refused_on_the_server(self):
-        """Exactly the call web_studio let through."""
         self._bind(self.server_action, mode="block", sudo_policy="enforce")
         partner = self._partner()
         with self.assertRaises(UserError):
@@ -156,7 +154,6 @@ class TestApprovalBindingActions(common.TransactionCase):
         self.assertTrue(self._ran(partner))
         self.assertTrue(request.date_binding_replayed)
 
-    # -- reports -----------------------------------------------------------
 
     def _render_html(self, user, partner):
         return (
@@ -172,7 +169,6 @@ class TestApprovalBindingActions(common.TransactionCase):
             self._render_html(self.requester, partner)
 
     def test_the_pdf_entry_point_is_gated_too(self):
-        """A stored PDF is returned without rendering, so the check sits at the entry."""
         self._bind(self.report, mode="block", sudo_policy="enforce")
         partner = self._partner()
         with self.assertRaises(UserError):
@@ -199,7 +195,6 @@ class TestApprovalBindingActions(common.TransactionCase):
         self.assertEqual(report_type, "html")
         self.assertIn(b"Action Partner", html)
 
-    # -- what can and cannot be enforced -----------------------------------
 
     def test_is_enforced_says_which_operations_the_server_can_refuse(self):
         window = self.env.ref("base.action_partner_form")

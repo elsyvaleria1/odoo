@@ -4,9 +4,6 @@ from odoo.tests import Form, common, tagged
 @tagged("voip", "post_install", "-at_install")
 class TestVoipUserConfig(common.TransactionCase):
     def test_voip_user_config_access_rights(self):
-        """
-        Tests that users cannot read VoIP configuration of other users.
-        """
         user_data_1 = {"login": "i_love_voip", "name": "Handsome VoIP User 😎"}
         voip_user = self.env["res.users"].create(user_data_1).sudo(False)
         settings = voip_user.env["res.users.settings"]._get_or_create_for_user(
@@ -20,9 +17,6 @@ class TestVoipUserConfig(common.TransactionCase):
         self.assertFalse(voip_user.with_user(evil_password_stealer).voip_secret)
 
     def test_update_voip_user_config_from_user_form(self):
-        """
-        Asserts that changes made to the VoIP Config in the res.users forms are reflected in res.users.settings.
-        """
         form = Form(self.env["res.users"], view="base.view_users_form")
         form.name = "钟离"
         form.login = "摩拉克斯"

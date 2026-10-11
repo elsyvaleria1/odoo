@@ -38,7 +38,6 @@ class AccountReturnCheck(models.Model):
         ondelete="set null",
     )
 
-    # Refreshed fields
     name = fields.Char(
         translate=True,
         required=True,
@@ -56,7 +55,7 @@ class AccountReturnCheck(models.Model):
     records_name = fields.Char(
         compute="_compute_records_name",
         compute_sudo=True,
-    )  # sudo is necessary because we're accessing ir.model
+    )
     records_model = fields.Many2one(
         comodel_name="ir.model",
         string="Model",
@@ -72,7 +71,6 @@ class AccountReturnCheck(models.Model):
         bypass_search_access=True,
     )
 
-    # Return related
     return_id = fields.Many2one(
         comodel_name="account.return",
         string="Account Return",
@@ -94,7 +92,6 @@ class AccountReturnCheck(models.Model):
         string="Deadline",
     )
 
-    # Editable fields
     refresh_result = fields.Boolean(default=True)
     approver_ids = fields.Many2many(
         comodel_name="res.users",
@@ -128,7 +125,7 @@ class AccountReturnCheck(models.Model):
             )
         new_vals_list = [
             {
-                key: self.env._(value) if isinstance(value, LazyGettext) else value  # noqa: E8502  resolves the caller's _lt() values in this env's language
+                key: self.env._(value) if isinstance(value, LazyGettext) else value
                 for key, value in vals_dict.items()
             }
             for vals_dict in vals_list
@@ -136,7 +133,6 @@ class AccountReturnCheck(models.Model):
 
         records = super().create(new_vals_list)
 
-        # Left part is the check field name and right part is the template field name
         translatable_fields = [("name", "name"), ("message", "description")]
         all_langs = self.env["res.lang"].get_installed()
         for vals_dict, record in zip(vals_list, records, strict=False):
@@ -214,20 +210,17 @@ class AccountReturnCheck(models.Model):
 
                 if vals["result"] in ("anomaly", "todo"):
                     check.approver_ids = False
-                    # Writing on supervisor_id is only allowed for account admin, we don't want to raise
-                    # an access error to a bookmaker if nothing is unset.
                     if check.supervisor_id:
                         check.supervisor_id = False
                 elif vals["result"] == "reviewed":
                     check.approver_ids |= user
-                    # Same as above
                     if check.supervisor_id:
                         check.supervisor_id = False
                 elif vals["result"] == "supervised":
                     check.supervisor_id = user
 
         cleaned_vals = {
-            key: self.env._(value) if isinstance(value, LazyGettext) else value  # noqa: E8502  resolves the caller's _lt() values in this env's language
+            key: self.env._(value) if isinstance(value, LazyGettext) else value
             for key, value in vals.items()
         }
         result = super().write(cleaned_vals)
@@ -324,14 +317,6 @@ class AccountReturnCheck(models.Model):
         }
 
     def _parse_expression(self, value, context):
-        """Evaluate a stringified expression (context, domain or params).
-
-        :param value: the expression to evaluate
-        :param context: the evaluation context exposing the allowed helpers
-        :return: the evaluated expression
-        """
-        # literal_eval on the transformed tree: only the predefined helpers of the evaluation
-        # context (e.g. ref()) are resolved, so no arbitrary code can be executed.
         try:
             tree = ast.parse(value, mode="eval")
             transformer = CheckActionExpressionTransformer(context)
@@ -342,12 +327,6 @@ class AccountReturnCheck(models.Model):
 
     @_debug.perf.timed
     def action_review(self):
-        """Preprocess and return the action that must be triggered when clicking a check.
-
-        :rtype: dict or None
-        """
-        # Actions coming from data carry their domain and context as strings, so they must be
-        # evaluated against _prepare_evaluation_context before being returned.
         _debug.lifecycle("action_review", records=self)
         self.check_singleton()
 
@@ -493,5 +472,4 @@ class CheckActionExpressionTransformer(ast.NodeTransformer):
             and callable(helper := self.evaluation_context.get(node.func.id))
         ):
             return ast.Constant(helper(*self.prepare_call_args(node.args)))
-        # Preserve unsupported calls so literal_eval rejects them as invalid expressions.
         return node

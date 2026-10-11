@@ -74,8 +74,6 @@ class TestSeparationOfDuties(TransactionCase):
             self._grant(self.approvers)
 
     def test_a_grant_scheduled_to_join_two_duties_is_refused(self):
-        # a duty is judged on what the person is being given: a grant that
-        # starts tomorrow would otherwise be held from then on, unjudged
         self._grant(self.payers)
         with (
             mute_logger("odoo.addons.base.models.ir_access_sod"),
@@ -148,19 +146,15 @@ class TestSeparationOfDuties(TransactionCase):
         return self._logged("sod_conflict").filtered(lambda log: log.cause == cause)
 
     def test_a_duty_widened_onto_its_holders_logs_their_conflict_once(self):
-        # the clerk already holds what the duty now names: nothing is refused,
-        # since nobody is being given anything, and the conflict is logged
         auditors = self.env["res.groups"].create({"name": "SoD Auditors"})
         self._grant(self.payers | auditors)
 
         self.approve.group_ids = [Command.link(auditors.id)]
         self.assertEqual(len(self._conflicts("duty_changed")), 1)
-        # a change leaving the conflict standing does not log it again
         self.approve.excluded_group_ids = self.env["res.groups"].create(
             {"name": "SoD Nobody"}
         )
         self.assertEqual(len(self._conflicts("duty_changed")), 1)
-        # the next grant to them is still refused
         with (
             mute_logger("odoo.addons.base.models.ir_access_sod"),
             self.assertRaises(AccessError),
@@ -184,7 +178,6 @@ class TestSeparationOfDuties(TransactionCase):
         self.assertEqual(len(self._conflicts("rule_changed")), 2)
 
     def test_a_row_giving_a_duty_s_verb_logs_its_holders(self):
-        # a duty held through a verb is held by whoever a row gives it to
         posters = self.env["res.groups"].create(
             {
                 "name": "SoD Posters",
@@ -221,8 +214,6 @@ class TestSeparationOfDuties(TransactionCase):
         self.assertFalse(self._conflicts("duty_changed"))
 
     def test_a_refused_change_of_a_duty_s_rows_is_refused_as_a_change(self):
-        # the rows a change would scan are read once it is allowed: a clerk's
-        # refused write is logged as the write it is, not failed as a read
         Log = type(self.env["ir.access.log"])
         calls = []
         original = Log._record_denial
@@ -237,9 +228,6 @@ class TestSeparationOfDuties(TransactionCase):
         self.assertEqual(calls, [("ir.access", "write")])
 
     def test_a_verb_completed_by_another_group_is_a_duty_held(self):
-        # a group granting the verb alone, held beside the internal users'
-        # write it requires, lets its holder post: the duty is held, although
-        # no single group of theirs holds both
         posters = self.env["res.groups"].create({"name": "SoD Posters, verb only"})
         self.env["ir.access"].create(
             {

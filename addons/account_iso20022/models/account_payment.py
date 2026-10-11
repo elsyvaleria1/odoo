@@ -175,8 +175,6 @@ class AccountPayment(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         res = super().create(vals_list)
-        # If the import doesn't have an end_to_end_uuid, there's on need to compute one for it as it should only be
-        # created by the initiating party.
         if self.env.context.get("import_file"):
             res.env.remove_to_compute(self._fields["end_to_end_uuid"], res)
         return res

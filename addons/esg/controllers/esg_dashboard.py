@@ -11,7 +11,6 @@ from odoo.tools.misc import get_lang
 
 class EsgDashboard(Controller):
     def _get_data_per_scope(self, start_date, end_date):
-        # Quantity of carbon emissions per scope during end_date year
         data_per_scope = dict(
             request.env["esg.carbon.emission.report"]._read_group(
                 domain=[
@@ -29,7 +28,6 @@ class EsgDashboard(Controller):
             "indirect_others": request.env._("Scope 3"),
         }
 
-        # If no data found from start of current year to now, build sample data
         if not data_per_scope:
             data_per_scope = {scope: randint(50, 100) for scope in scope_names.values()}
             is_sample = True
@@ -117,7 +115,6 @@ class EsgDashboard(Controller):
         }
 
     def _get_data_per_month(self, start_date, end_date):
-        # Cumulative distribution of carbon emissions per month, displayed from start_date to end_date
         data = dict(
             request.env["esg.carbon.emission.report"]._read_group(
                 domain=[
@@ -130,7 +127,6 @@ class EsgDashboard(Controller):
             )
         )
 
-        # Generate a dictionary with all months from start_date to end_date
         start_date = start_date.replace(day=1)
         end_date = end_date.replace(day=1)
         current_date = start_date
@@ -141,7 +137,7 @@ class EsgDashboard(Controller):
             next_year = current_date.year + (1 if next_month == 1 else 0)
             current_date = current_date.replace(month=next_month, year=next_year)
 
-        if not data:  # If no data, build sample data
+        if not data:
             for month in data_per_month:
                 data_per_month[month] = randint(50, 100)
             is_sample = True
@@ -248,7 +244,6 @@ class EsgDashboard(Controller):
 
     def _get_dashboard_data(self):
         end_date = date.today()
-        # Create data for bar chart grouped by scope
         start_date = end_date.replace(day=1, month=1)
         data_per_scope = self._get_data_per_scope(start_date, end_date)
         title = end_date.year
@@ -257,7 +252,6 @@ class EsgDashboard(Controller):
         )
         carbon_analytics_section_data = self._get_carbon_analytics_section_data()
 
-        # Create data for line chart grouped by month-year
         start_date = end_date - relativedelta(years=1)
         data_per_month = self._get_data_per_month(start_date, end_date)
         graph_config_per_month = self._get_graph_config_per_month(

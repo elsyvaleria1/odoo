@@ -64,10 +64,6 @@ class TelegramHandlerWallet(models.AbstractModel):
         )
 
     def _cards(self, bot, user):
-        """Read only active cards of this sender in the selected company.
-
-        :return: Holder-scoped cards from the bot's configured wallet accounts.
-        """
         cards = (
             self.env["wallet.card"]
             .with_user(user)
@@ -339,10 +335,6 @@ class TelegramHandlerWallet(models.AbstractModel):
         return True
 
     def _submit(self, bot, chat, user) -> None:
-        """Create and confirm one approval using the sender's ordinary permissions.
-
-        :param user: The currently linked internal user, checked again by the router.
-        """
         card = self._current_card(bot, chat, user)
         data = self._flow_data(chat)
         if (

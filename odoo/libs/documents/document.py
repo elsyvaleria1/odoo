@@ -41,8 +41,6 @@ _debug = DebugLog(__name__)
 
 TEXT_MAX_CHARS = 60_000
 
-# media families: their bytes may decode under some codec and pass the
-# text-likeness sieve when short (a PNG header did), but carry no words
 _OPAQUE_MIMETYPE_FAMILIES = ("image/", "audio/", "video/", "font/", "model/")
 
 DEFAULT_READ_UP_TO = CHEAP
@@ -83,9 +81,6 @@ class Document:
         name: str = "",
         **options: Any,
     ) -> None:
-        # bytes, or what loads them: with a declared mimetype a document a kept
-        # reading answers never loads its bytes (a recording of gigabytes whose
-        # transcript is known); without one, only the bytes say what they are
         self._load: Callable[[], bytes] | None = None
         self._data: bytes | None = None
         declared = get_essential_mimetype(mimetype)
@@ -224,16 +219,12 @@ class Document:
     def _falls_back_to_decoding(self) -> bool:
         if TEXT in self._consulted:
             return False
-        # a reader above the ceiling may answer once it rises, and a decoded
-        # text would be kept as the reading it never gets to make
         ceiling = self.read_up_to
         return not any(
             reader.cost > ceiling for reader in get_readers(self.mimetype, TEXT)
         )
 
     def _decode_head(self) -> str:
-        # the text is clamped to text_max_chars, which no encoding spells in
-        # more than four bytes each: the tail of a large blob is never decoded
         limit = self.text_max_chars
         data = self.data
         if isinstance(self._decoded, str) or limit <= 0 or len(data) <= limit * 4:
@@ -272,13 +263,11 @@ class Document:
         return True if representation == TREE else bool(value)
 
     def read(self, representation: str) -> Any:
-        """The representation by name, derived as its property would."""
         if representation not in _PROPERTIES:
             raise ValueError(f"{representation!r} is not read by name")
         return getattr(self, _PROPERTIES[representation])
 
     def seed(self, representation: str, value: Any, read_by: str = "") -> None:
-        """Hold a reading made elsewhere, trusted at every cost ceiling."""
         if representation not in _PROPERTIES:
             raise ValueError(f"{representation!r} is not read from a document")
         self._derived[representation] = value
@@ -340,11 +329,9 @@ class Document:
             mimetype=self.mimetype,
             ceiling=ceiling,
         ) as span:
-            tried = failed = deferred = 0  # debuglog
+            tried = failed = deferred = 0
             winner = ""
             winner_cost = FREE
-            # the ceiling bounds what is paid inline; a deferred reading is
-            # queued, so it is wanted whatever the ceiling
             for reader in get_readers(
                 self.mimetype,
                 representation,
@@ -352,18 +339,18 @@ class Document:
                 up_to=None if deferring else ceiling,
             ):
                 if deferring and reader.async_only:
-                    deferred += 1  # debuglog
+                    deferred += 1
                     self._consulted.add(representation)
                     self.wanted.add(representation)
                     continue
                 if reader.cost > ceiling:
                     continue
                 self._consulted.add(representation)
-                tried += 1  # debuglog
+                tried += 1
                 try:
                     answer = reader.read(self)
                 except Exception as e:
-                    failed += 1  # debuglog
+                    failed += 1
                     self.errors[representation] = str(e) or type(e).__name__
                     _debug.logic(
                         "document.reader_failed",
@@ -401,7 +388,6 @@ class Document:
         if self._is_read(representation, value):
             self.errors.pop(representation, None)
         if len(self.wanted) > wanted_before:
-            # built on a reading still to come: asked again once it is seeded
             return value
         self._derived[representation] = value
         self._derived_at[representation] = ceiling
@@ -413,7 +399,6 @@ class Document:
         return self._read_by.get(representation, "")
 
     def read_cost(self, representation: str) -> int:
-        """What reading the representation cost; a seeded one cost nothing here."""
         return self._read_cost.get(representation, FREE)
 
     def __repr__(self) -> str:

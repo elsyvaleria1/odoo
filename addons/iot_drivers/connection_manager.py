@@ -26,7 +26,6 @@ class ConnectionManager(Thread):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def _register_iot_box(self) -> None:
-        """This method is called to register the IoT Box on odoo.com and get a pairing code"""
         req = self._call_iot_proxy()
         if all(key in req for key in ["pairing_code", "pairing_uuid"]):
             self.pairing_code = req["pairing_code"]
@@ -36,14 +35,10 @@ class ConnectionManager(Thread):
             self.iot_box_registered = True
 
     def _acquire_next_polling_interval(self) -> float:
-        # To avoid spamming odoo.com with requests we gradually space out the requests
-        # e.g If the pairing code is valid for 2 hours this would lead to max 329 requests
-        # Starting with 15 seconds and ending with 40s interval, staying under 20s for 50 min
         self.n_times_polled += 1
         return 14 + 1.01**self.n_times_polled
 
     def run(self):
-        # Double loop is needed in case the IoT Box isn't initially connected to the internet
         while True:
             while self._is_database_connect_poll_required():
                 if not self.iot_box_registered:
@@ -71,7 +66,7 @@ class ConnectionManager(Thread):
         }
 
         try:
-            req = requests.post(  # noqa: E8518 - runs on the IoT box, which has no database and so no ir.egress
+            req = requests.post(
                 "https://iot-proxy.odoo.com/odoo-enterprise/iot/connect-box",
                 json=data,
                 timeout=5,
@@ -98,13 +93,9 @@ class ConnectionManager(Thread):
 
     def _connect_to_server(self, url, token, db_uuid, enterprise_code) -> None:
         self.new_database_url = url
-        # Save DB URL and token
         helpers.save_conf_server(url, token, db_uuid, enterprise_code)
-        # Send already detected devices and IoT Box info to the database
         manager._send_all_devices()
-        # Switch git branch before restarting, this avoids restarting twice
         upgrade.check_git_branch()
-        # Restart to get a certificate, load the IoT handlers...
         helpers.odoo_restart(2)
 
     def _try_print_pairing_code(self) -> None:

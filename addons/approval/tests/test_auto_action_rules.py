@@ -253,7 +253,6 @@ class TestAutoActionRules(common.TransactionCase):
             threshold=100,
             currency_id=company.currency_id.id,
         )
-        # 60 in a currency worth twice the company's is 120 of it: no overlap
         self._auto_rule(
             "Refuse Above 60",
             "auto_refuse",

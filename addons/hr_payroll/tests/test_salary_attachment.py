@@ -96,9 +96,8 @@ class TestSalaryAttachment(TestPayslipBase):
         self.action_pay_payslip(self.toto)
         self.assertEqual(attachment_A.paid_amount, 400)
         self.assertEqual(attachment_B.paid_amount, 200)
-        # We have a total amount of 300 to distribute between attachments
         self.action_pay_payslip(self.toto)
-        self.assertEqual(attachment_A.paid_amount, 500)  # Don't exceed total_amount
+        self.assertEqual(attachment_A.paid_amount, 500)
         self.assertEqual(attachment_B.paid_amount, 300)
 
     def test_distribution_attachment_payslip_amount(self):
@@ -195,15 +194,11 @@ class TestSalaryAttachment(TestPayslipBase):
         payslip.action_payslip_done()
         payslip.action_payslip_paid()
         self.assertEqual(fixed_A.paid_amount, 100)
-        # 500 (changed manually) - 300 = 200 remaining
-        # Estimated end date of fixed B is before fixed A
-        # Add 200 to initial 200 of fixed B
         self.assertEqual(fixed_B.paid_amount, 400)
         self.assertEqual(monthly_A.paid_amount, 100)
         self.assertEqual(monthly_B.paid_amount, 200)
 
     def test_attachment_inputs_with_same_code(self):
-        # 3rd attachment should be ignored even though it comes last
         att_1, att_2, _ = self.env["hr.payslip.input.type"].create(
             [
                 {
@@ -336,8 +331,6 @@ class TestSalaryAttachment(TestPayslipBase):
             self.assertEqual(split_attachment.employee_count, 1)
 
     def test_closed_attachment_warns_on_its_draft_payslips(self):
-        """Closing an adjustment leaves it linked to payslips already
-        generated, which keep deducting it. The payslip has to say so."""
         attachment = self.env["hr.salary.attachment"].create(
             {
                 "employee_ids": [self.toto.id],

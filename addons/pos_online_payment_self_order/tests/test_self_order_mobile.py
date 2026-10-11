@@ -26,7 +26,7 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         )
         self.env.ref(
             "payment.cron_post_process_payment_tx"
-        ).method_direct_trigger()  # Cron triggered in _handle_notification_data()
+        ).method_direct_trigger()
         return res
 
     @classmethod
@@ -49,16 +49,11 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
                 "online_payment_provider_ids": [Command.set([cls.payment_provider.id])],
             }
         )
-        # Needed to test online payments through the portal
         cls.env["account.payment.method"].sudo().create(
             {"name": "Dummy method", "code": "none", "payment_type": "inbound"}
         )
 
     def test_online_payment_self_pay_after_meal_table(self):
-        """
-        Verify that we can make multiple orders with online payment in self ordering mode
-        with pay after meal and service mode table.
-        """
         self.pos_config.write(
             {
                 "self_ordering_mode": "mobile",
@@ -97,9 +92,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         self.start_tour(self_route_table, "self_mobile_online_payment_meal_table")
 
     def test_online_payment_kiosk_qr_code(self):
-        """
-        Verify that when making an order from kiosk with online payment, a QR code is generated
-        """
         self.pos_config.write(
             {
                 "self_ordering_mode": "kiosk",
@@ -114,10 +106,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         self.start_tour(self_route, "test_online_payment_kiosk_qr_code")
 
     def test_online_payment_mobile_self_order_preparation_changes(self):
-        """
-        Ensure that the Order button in the POS UI remains enabled when an online payment method
-        is configured for mobile self-ordering and the order has not yet been paid.
-        """
         self.pos_config.write(
             {
                 "self_ordering_mode": "mobile",
@@ -131,7 +119,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         self.pos_config.with_user(self.pos_user).open_ui()
         self.pos_config.current_session_id.set_opening_control(0, "")
 
-        # create self-order from mobile
         self.start_tour(
             self.pos_config._get_self_order_route(),
             "test_online_payment_mobile_self_order_preparation_changes",
@@ -140,7 +127,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         self.assertEqual(order.state, "draft")
         self.assertEqual(len(order.lines), 2)
 
-        # Check self-order in pos-terminal order button remains enabled
         self.start_tour(
             "/pos/ui?config_id=%d" % self.pos_config.id,
             "test_online_payment_pos_self_order_preparation_changes",
@@ -148,10 +134,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
         )
 
     def test_kiosk_cart_restore_and_cancel(self):
-        """
-        Verify that the cart restores correctly after back navigation from payment
-        and that order cancellation works as expected.
-        """
 
         self.pos_config.write(
             {
@@ -173,7 +155,6 @@ class TestSelfOrderMobile(SelfOrderCommonTest, OnlinePaymentCommon):
             limit=1,
         )
 
-        # Collect order lines in a dict by product name
         order_lines = {line.product_id.name: line for line in kiosk_order.lines}
         self.assertEqual(len(order_lines), 2, "There should be exactly 2 order lines")
 

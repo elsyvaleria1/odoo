@@ -158,14 +158,6 @@ class TestShareWizardAppliesOnConfirm(TestProjectCommon):
 @tagged("post_install", "-at_install")
 class TestCollaboratorRulesLetAManagerShare(TestProjectCommon):
     def test_a_manager_can_share_a_project_they_neither_follow_nor_own(self) -> None:
-        # project.collaborator carries the comp / visibility / manager triad that
-        # project.risk and project.gate carry. The manager member is what makes
-        # the pair work: the visibility permission is read-only and scoped to
-        # projects the user may access, and permissions only ever add -- so
-        # without the manager's unrestricted `crud` permission nothing lets a
-        # manager CREATE a collaborator on a project they do not follow. That is
-        # every project the setUpClass of an HttpCase builds, which is how it
-        # reached the sharing tours rather than a unit test.
         project = (
             self.env["project.project"]
             .with_user(self.env.ref("base.user_root"))

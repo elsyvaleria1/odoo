@@ -21,13 +21,9 @@ class AccountMove(models.Model):
     )
 
     def _post_entries(self):
-        # OVERRIDE to generate cross invoice based on company rules.
         invoices_map = {}
         posted = super()._post_entries()
         candidates = posted.filtered(lambda move: move.is_sale_document())
-        # Resetting a source invoice to draft and re-posting it must not produce
-        # a second vendor bill: the first mirror is still there and nothing
-        # links it back or cancels it.
         already_mirrored = (
             self.env["account.move"]
             .sudo()
@@ -42,9 +38,6 @@ class AccountMove(models.Model):
             )
             if (
                 company_sudo
-                # invoicing a partner of your own company is not an
-                # inter-company transaction: mirroring it books a phantom
-                # liability against the company that issued the invoice.
                 and company_sudo != invoice.company_id
                 and company_sudo.intercompany_generate_bills_refund
                 and not invoice.auto_generated
@@ -53,10 +46,6 @@ class AccountMove(models.Model):
                 invoices_map[company_sudo] += invoice
         for company_sudo, invoices in invoices_map.items():
             company_sudo._check_intercompany_config()
-            # Drop every default_* the posting user happens to carry rather
-            # than a hand-maintained deny list: anything left over is applied
-            # to a document in another company. default_move_type is re-added
-            # per record by _inter_company_create_invoices.
             context = clean_context(self.env.context)
             context["default_company_id"] = company_sudo.id
             invoices.with_user(company_sudo.intercompany_user_id.id).with_context(
@@ -65,15 +54,7 @@ class AccountMove(models.Model):
         return posted
 
     def _inter_company_create_invoices(self, company):
-        """Create cross company invoices.
-        :param company: the company the mirror documents are created in. The
-                        caller is expected to have applied ``with_company``
-                        already; taking it explicitly keeps that contract
-                        visible instead of reading it back off ``env.company``.
-        :return:        The newly created invoices.
-        """
 
-        # Prepare invoice values.
         invoices_vals = []
         inverse_types = {
             "out_invoice": "in_invoice",
@@ -95,8 +76,6 @@ class AccountMove(models.Model):
             for line in inv_new.invoice_line_ids.filtered(
                 lambda l: l.display_type not in NON_ACCOUNTABLE_DISPLAY_TYPES
             ):
-                # We need to adapt the taxes following the fiscal position, but we must keep the
-                # price unit.
                 price_unit = line.price_unit
                 line.tax_ids = line._get_computed_taxes()
                 line.price_unit = price_unit
@@ -105,7 +84,6 @@ class AccountMove(models.Model):
             invoice_vals.pop("line_ids", None)
             invoices_vals.append((inv, invoice_vals))
 
-        # Create invoices.
         moves = self.create([vals for _origin, vals in invoices_vals])
         auto_post = company.intercompany_document_state == "posted"
         for (origin_invoice, _vals), move in zip(invoices_vals, moves, strict=True):
@@ -130,15 +108,7 @@ class AccountMove(models.Model):
         return moves
 
     def _inter_company_prepare_invoice_data(self, invoice_type, company):
-        r"""Get values to create the invoice.
-        /!\ Doesn't care about lines, see '_inter_company_prepare_invoice_line_data'.
-        :param invoice_type: the move type of the invoice to create.
-        :param company:      the company the invoice is created in.
-        :return: Python dictionary of values.
-        """
         self.check_singleton()
-        # We need the fiscal position in the company we are creating the invoice
-        # in, not the fiscal position of the current invoice (self.company_id).
         delivery_partner_id = self.company_id.partner_id.address_get(["delivery"])[
             "delivery"
         ]
@@ -168,9 +138,6 @@ class AccountMove(models.Model):
             and not self.invoice_payment_term_id.company_id
             else False,
         }
-        # Leave the key out entirely when the company has no purchase journal at
-        # all: a False here reaches the NOT NULL column verbatim and aborts the
-        # source company's own post with a raw NotNullViolation.
         journal = company._get_intercompany_purchase_journal()
         if journal:
             vals["journal_id"] = journal.id
@@ -182,15 +149,6 @@ class AccountMoveLine(models.Model):
 
     @api.model
     def _inter_company_is_out_of_reach(self, records, company):
-        """Whether ``company`` cannot see these company-owned records.
-
-        Both ``product.product`` and ``account.analytic.account`` are guarded by
-        a ``['|', ('company_id', '=', False), ('company_id', 'parent_of',
-        company_ids)]`` guard, so a record owned by ``company`` itself or
-        by any of its ancestors is perfectly readable there. Owning *a* company
-        is therefore not the same as being out of reach, which is what the two
-        call sites used to test.
-        """
         return records.filtered(
             lambda record: (
                 record.company_id and record.company_id not in company.parent_ids
@@ -198,10 +156,6 @@ class AccountMoveLine(models.Model):
         )
 
     def _inter_company_prepare_invoice_line_data(self, company):
-        """Get values to create the invoice line.
-        :param company: the company the invoice line is created in.
-        :return: Python dictionary of values.
-        """
         self.check_singleton()
 
         vals = {
@@ -253,9 +207,6 @@ class AccountMoveLine(models.Model):
                 )
             }
 
-        # Combine Company B's default distribution model with the line's own
-        # distribution from Company A (filtered above to accounts valid in
-        # Company B); on overlapping keys the line's distribution wins.
         if company_b_default_distribution or analytic_distribution:
             vals["analytic_distribution"] = dict(
                 company_b_default_distribution, **analytic_distribution

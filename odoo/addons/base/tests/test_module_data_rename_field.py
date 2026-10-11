@@ -120,7 +120,6 @@ class TestRenameFieldIntoAColumnAlreadyThere(TransactionCase):
             field_ids["interval_type"],
             field_ids["repeat_unit"],
         )
-        # history pointing at the old field row, as mail.tracking.value does
         cr.execute("""
             CREATE TABLE probe_tracking (
                 id serial PRIMARY KEY,

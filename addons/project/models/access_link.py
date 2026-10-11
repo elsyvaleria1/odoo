@@ -10,8 +10,6 @@ class AccessLink(models.Model):
         reason = super()._record_refusal()
         if reason or self.res_model not in PRIVACY_GATED_MODELS:
             return reason
-        # read as the policy reads it: whoever presents the token, the
-        # project's privacy and collaborators decide
         record = (
             self.env["ir.access"]
             ._access_evaluator(self.res_model)

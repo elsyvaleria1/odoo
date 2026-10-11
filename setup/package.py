@@ -17,14 +17,10 @@ import pexpect
 
 _logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------
-# Utils
-# ----------------------------------------------------------
 
 ROOTDIR = Path(Path(os.path.realpath(__file__)).parent).parent
 TSTAMP = time.strftime("%Y%m%d", time.gmtime())
 TSEC = time.strftime("%H%M%S", time.gmtime())
-# Get some variables from release.py
 release_vars = runpy.run_path(str(ROOTDIR / "odoo" / "release.py"))
 version = release_vars["version"]
 version_info = release_vars["version_info"]
@@ -56,7 +52,6 @@ class OdooTestError(Exception):
 def run_cmd(
     cmd: list[str], chdir: str | None = None, timeout: float | None = None
 ) -> subprocess.CompletedProcess[bytes]:
-    """Run a shell command, logging it beforehand."""
     _logger.info("Running command: '%s'", " ".join(cmd))
     return subprocess.run(cmd, cwd=chdir, timeout=timeout, check=False)
 
@@ -102,12 +97,6 @@ def _rpc_count_modules(
 def publish(
     args: argparse.Namespace, pub_type: str, extensions: list[str]
 ) -> list[str]:
-    """Publish builded package (move builded files and generate a symlink to the latests)
-    :args: parsed program args
-    :pub_type: one of [deb, rpm, src, exe, iot]
-    :extensions: list of extensions to publish
-    :returns: published files
-    """
 
     def _publish(release: str) -> str:
         build_path = Path(args.build_dir) / release
@@ -116,7 +105,6 @@ def publish(
         release_path = release_dir / filename
         os.renames(build_path, release_path)
 
-        # Latest/symlink handler
         release_abspath = Path(release_path).resolve()
         latest_abspath = release_abspath.replace(TSTAMP, "latest")
 
@@ -134,11 +122,7 @@ def publish(
     return published
 
 
-# ---------------------------------------------------------
-# Generates Packages, Sources and Release files of debian package
-# ---------------------------------------------------------
 def gen_deb_package(args: argparse.Namespace, published_files: list[str]) -> None:
-    # Executes command to produce file_name in path, and moves it to args.pub/deb
     def _gen_file(
         args: argparse.Namespace, command: list[str], file_name: str, path: str
     ) -> None:
@@ -147,8 +131,6 @@ def gen_deb_package(args: argparse.Namespace, published_files: list[str]) -> Non
             subprocess.call(command, stdout=out, cwd=path)
         shutil.copy(cur_tmp_file_path, Path(args.pub) / "deb" / file_name)
 
-    # Copy files to a temp directory (required because the working directory must contain only the
-    # files of the last release)
     temp_path = tempfile.mkdtemp(suffix="debPackages")
     for pub_file_path in published_files:
         shutil.copy(pub_file_path, temp_path)
@@ -157,19 +139,15 @@ def gen_deb_package(args: argparse.Namespace, published_files: list[str]) -> Non
         (
             ["dpkg-scanpackages", "--multiversion", "."],
             "Packages",
-        ),  # Generate Packages file
-        (["dpkg-scansources", "."], "Sources"),  # Generate Sources file
-        (["apt-ftparchive", "release", "."], "Release"),  # Generate Release file
+        ),
+        (["dpkg-scansources", "."], "Sources"),
+        (["apt-ftparchive", "release", "."], "Release"),
     ]
-    # Generate files
     for command in commands:
         _gen_file(args, command[0], command[-1], temp_path)
-    # Remove temp directory
     shutil.rmtree(temp_path)
 
     if args.sign:
-        # Generate Release.gpg (= signed Release)
-        # Options -abs: -a (Create ASCII armored output), -b (Make a detach signature), -s (Make a signature)
         subprocess.call(
             [
                 "gpg",
@@ -188,12 +166,7 @@ def gen_deb_package(args: argparse.Namespace, published_files: list[str]) -> Non
         )
 
 
-# ---------------------------------------------------------
-# Generates an RPM repo
-# ---------------------------------------------------------
 def rpm_sign(args: argparse.Namespace, file_name: str) -> None:
-    """Genereate a rpm repo in publish directory"""
-    # Sign the RPM
     rpmsign = pexpect.spawn(
         "/bin/bash",
         ["-c", "rpm --resign %s" % file_name],
@@ -207,7 +180,6 @@ def rpm_sign(args: argparse.Namespace, file_name: str) -> None:
 def _update_build_dir(
     args: argparse.Namespace, win32: bool = False, move_addons: bool = True
 ) -> None:
-    """Copy files to the build directory"""
     _logger.info('Preparing build dir "%s"', args.build_dir)
     cmd = [
         "rsync",
@@ -240,16 +212,12 @@ def _update_build_dir(
                         _logger.warning("Cannot remove '%s': %s", addon_path, rm_error)
 
 
-#  Docker stuffs
 class Docker:
     """Base Docker class. Must be inherited by specific Docker builder class"""
 
     arch = None
 
     def __init__(self, args: argparse.Namespace) -> None:
-        """
-        :param args: argparse parsed arguments
-        """
         self.args = args
         self.tag = "odoo-%s-%s-nightly-tests" % (DOCKERVERSION, self.arch)
         self.container_name = None
@@ -272,7 +240,6 @@ class Docker:
         self.build_image()
 
     def build_image(self) -> None:
-        """Build the dockerimage by copying Dockerfile into build_dir/docker"""
         docker_file = self.docker_dir / "Dockerfile"
         docker_file.write_text(self.docker_template)
         shutil.copy(Path(self.args.build_dir) / "requirements.txt", self.docker_dir)
@@ -308,14 +275,12 @@ class Docker:
             self.exposed_port = exposed_port
         if detach:
             docker_cmd.append("-d")
-            # preserve logs in case of detached docker container
             cmd = "(%s) > %s 2>&1" % (cmd, self.test_log_file)
 
         docker_cmd.extend([self.tag, "/bin/bash", "-c", "cd /data/src && %s" % cmd])
         run_cmd(docker_cmd, timeout=timeout).check_returncode()
 
     def is_running(self) -> bool:
-        """Return True if the docker container is still running."""
         dinspect = subprocess.run(
             ["docker", "container", "inspect", self.container_name],
             stderr=subprocess.DEVNULL,
@@ -325,14 +290,13 @@ class Docker:
         return dinspect.returncode == 0
 
     def stop(self) -> None:
-        """Stop the running docker container."""
         run_cmd(["docker", "stop", self.container_name]).check_returncode()
 
     def test_odoo(self) -> None:
         _logger.info("Starting to test Odoo install test")
         start_time = time.time()
         while self.is_running() and (time.time() - start_time) < INSTALL_TIMEOUT:
-            time.sleep(5)  # give some time for odoo to install and start
+            time.sleep(5)
             if (Path(args.build_dir) / "odoo.pid").exists():
                 try:
                     _rpc_count_modules(port=self.exposed_port)
@@ -350,10 +314,10 @@ class Docker:
         )
 
     def build(self) -> None:
-        """To be overriden by specific builder"""
+        pass
 
     def start_test(self) -> None:
-        """To be overriden by specific builder"""
+        pass
 
 
 class DockerTgz(Docker):
@@ -411,13 +375,11 @@ class DockerDeb(Docker):
 
     def build(self) -> None:
         _logger.info("Start building debian package")
-        # Append timestamp to version for the .dsc to refer the right .tar.gz
         cmds = [
             "sed -i '1s/^.*$/odoo (%s.%s) stable; urgency=low/' debian/changelog"
             % (VERSION, TSTAMP)
         ]
         cmds.append("dpkg-buildpackage -rfakeroot -uc -us -tc")
-        # As the packages are built in the parent of the buildir, we move them back to build_dir
         cmds.append("mv ../odoo_* ./")
         self.run(" && ".join(cmds), self.args.build_dir, "odoo-deb-build-%s" % TSTAMP)
         _logger.info("Finished building debian package")
@@ -496,12 +458,9 @@ class DockerRpm(Docker):
 
     def gen_rpm_repo(self, args: argparse.Namespace, rpm_filepath: str) -> None:
         pub_repodata_path = Path(args.pub) / "rpm" / "repodata"
-        # Removes the old repodata
         if pub_repodata_path.is_dir():
             shutil.rmtree(pub_repodata_path)
 
-        # Copy files to a temp directory (required because the working directory must contain only the
-        # files of the last release)
         temp_path = tempfile.mkdtemp(suffix="rpmPackages")
         shutil.copy(rpm_filepath, temp_path)
 
@@ -509,7 +468,6 @@ class DockerRpm(Docker):
         self.run("createrepo /data/src/", temp_path, "odoo-rpm-createrepo-%s" % TSTAMP)
         shutil.copytree(Path(temp_path) / "repodata", pub_repodata_path)
 
-        # Remove temp directory
         shutil.rmtree(temp_path)
 
 

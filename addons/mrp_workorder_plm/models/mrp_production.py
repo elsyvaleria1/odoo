@@ -6,7 +6,6 @@ class MrpProduction(models.Model):
 
     def _create_revision_bom(self, will_update_version=True):
         revision_bom = super()._create_revision_bom(will_update_version)
-        # Copies the operations' steps.
         if revision_bom and self.workorder_ids.check_ids:
             original_operations_by_values = self.bom_id.operation_ids.grouped(
                 lambda op: (op["company_id"], op["name"], op["workcenter_id"])

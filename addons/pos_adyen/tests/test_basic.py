@@ -34,7 +34,6 @@ class TestAdyenPoS(TestPointOfSaleHttpCommon):
         self.main_pos_config.with_user(self.pos_user).open_ui()
 
         def post(session, method, url, **kwargs):
-            # TODO: check that the data passed by pos to adyen is correct
             response = Response()
             response.status_code = 200
             response._content = b"ok"

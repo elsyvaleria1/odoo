@@ -23,8 +23,6 @@ class TestSurveyInvite(common.TestSurveyCommon, MailCase):
         return res
 
     def _set_signup_scope(self, scope):
-        # the parameter decides only without `website`, whose per-website
-        # scope wins (b2b by default, b2c once website_sale is installed)
         self.startPatcher(
             patch.object(
                 type(self.env["res.users"]),
@@ -223,9 +221,6 @@ class TestSurveyInvite(common.TestSurveyCommon, MailCase):
 
     @users("survey_manager")
     def test_survey_invite_by_email_skips_partners_without_a_user_account(self):
-        """action_invite()'s email lookup must not attach a login-required
-        invite to a partner with no user account, and must not attach it to
-        more than one partner sharing the same normalized email."""
         Answer = self.env["survey.user_input"]
         dup_customer = (
             self.env["res.partner"]
@@ -258,7 +253,6 @@ class TestSurveyInvite(common.TestSurveyCommon, MailCase):
             "to a partner that can never log in as itself",
         )
 
-        # A matching partner that DOES have a user account must still be found.
         invite2 = self.env["wizard.survey.survey.invite"].create(
             {"survey_id": self.survey.id, "emails": self.user_emp.email}
         )
@@ -500,12 +494,6 @@ class TestSurveyInvite(common.TestSurveyCommon, MailCase):
         )
 
     def test_resend_to_a_contact_without_an_email(self):
-        """mapped('email') keeps the False of a partner-only participation.
-
-        The lookup it was fed was only filled ``if answer.email``, so resending to
-        a contact with no email address raised KeyError(False) -- and action_resend
-        forces existing_mode='resend', so this was the mainline flow.
-        """
         partner = self.env["res.partner"].create({"name": "No Email Contact"})
         existing = self.survey._create_answer(partner=partner, check_attempts=False)
         self.env.flush_all()

@@ -71,8 +71,6 @@ class TestNewStoredAttachmentBackfill(TransactionCase):
         Model = self.env["test_orm.computed_attachment"]
         records = Model.create([{"name": "one"}, {"name": "two"}])
         self.env.flush_all()
-        # the state an upgrade that adds the field starts from: rows, no files,
-        # and no stored reflection of the field
         self._thumbnails_of(records).unlink()
         self.env.cr.execute(
             SQL(

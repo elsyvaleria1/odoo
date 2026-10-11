@@ -14,7 +14,6 @@ class HrEmployee(models.Model):
     )
 
     def action_archive(self):
-        # If an employee is archived, we pause all of their cards in the related company
         self.check_access("write")
         archived_employees = self.filtered("active")
         archived_employees.sudo().user_id.stripe_card_ids.filtered(

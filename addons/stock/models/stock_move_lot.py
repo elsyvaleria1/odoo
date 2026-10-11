@@ -354,8 +354,6 @@ class StockMoveLot(models.Model):
             raise UserError(
                 self.env._("The quantity per lot should always be a positive value."),
             )
-        # binary floats put `//` one short (1.0 // 0.1 == 9) or leave a
-        # remainder of ~1e-16 (6 % 0.6): both are settled at the unit precision
         uom = self.env["uom.uom"]
         line_count = int(quantity // qty_per_lot)
         leftover = uom.round(quantity - line_count * qty_per_lot)

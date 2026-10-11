@@ -62,9 +62,6 @@ class WizardMrpProductionPostWipEntry(models.TransientModel):
     mo_ids = fields.Many2many(comodel_name="mrp.production")
 
     def _get_company_or_category_default(self, company_field, category_field):
-        # the owner is asked for the field rather than the company: every
-        # name this is called with now lives on `stock.config`, and
-        # subscripting the company with one raises
         ProductCategory = self.env["product.category"]
         owner = self.env.company._config_owner_of(company_field)
         return owner[company_field] or ProductCategory._fields[

@@ -8,7 +8,6 @@ from odoo.tests import freeze_time
 from .common import TestIndustryFsmCommon
 
 
-# Time is freezed on a monday
 @freeze_time("2100-01-04")
 class TestFsmPlanningOverlap(TestIndustryFsmCommon):
     @classmethod

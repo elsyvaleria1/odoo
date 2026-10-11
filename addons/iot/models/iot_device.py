@@ -118,11 +118,6 @@ class IotDevice(models.Model):
 
     @api.model
     def _device_kinds(self) -> dict[str, int]:
-        """The registry kind that answers for each device type.
-
-        Read by xml id rather than stored on the selection, so a module that
-        adds a type ships its kind beside it and nothing here has to know.
-        """
         kinds = {}
         for value, _label in self._fields["type"].selection:
             record = self.env.ref(f"iot.kind_iot_{value}", raise_if_not_found=False)
@@ -158,11 +153,6 @@ class IotDevice(models.Model):
 
     @api.model
     def _get_manual_measurement_manufacturers(self):
-        """Manufacturers whose devices only report a value when asked.
-
-        A driver module adds its own manufacturer here rather than editing the
-        compute, so the base app names no vendor.
-        """
         return set()
 
     @api.depends("manufacturer")

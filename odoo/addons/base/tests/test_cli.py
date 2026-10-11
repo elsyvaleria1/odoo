@@ -101,7 +101,6 @@ class TestCommand(BaseCase):
         for name in ("bonbon", "café"):
             with self.subTest(name):
                 command_output = self.run_command(name, check=False).stderr.strip()
-                # the tail: a process without the optional odoo_rust warns first
                 self.assertEqual(
                     command_output.splitlines()[-2:],
                     [

@@ -1,6 +1,5 @@
 from odoo import fields, models
 
-# Allow promo programs to send mails 'At Creation' or 'When Reaching' X points
 
 
 class LoyaltyMail(models.Model):

@@ -118,7 +118,6 @@ class GoogleReserveCommon(AppointmentCommon):
             cls.apt_type_resources_table_1 + cls.apt_type_resources_table_2
         )
 
-        # cleanup config
         cls.env["ir.config_parameter"].set_param(
             "appointment_google_reserve.google_reserve_iap_endpoint",
             "https://google-reserve.api.odoo.com",

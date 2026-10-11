@@ -15,7 +15,6 @@ class ResCompany(models.Model):
             data["company_id"] or self.env.company.id for data in payload
         )
         existing_companies = companies.exists()
-        # prefetch both fields
         existing_companies.account_config_id.fetch(
             ["fiscalyear_last_day", "fiscalyear_last_month"]
         )

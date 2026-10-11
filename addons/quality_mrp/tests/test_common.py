@@ -77,10 +77,6 @@ class TestQualityMrpCommon(TestQualityCommon):
             }
         )
 
-        # Both components track inventory, so a manufacturing order reserves them
-        # rather than inventing a line per component. Without stock there is no
-        # move line for a quality check to hang off, and the Form that edits one
-        # indexes into an empty list.
         warehouse = cls.env.ref("stock.warehouse0")
         cls.env["stock.quant"].with_context(inventory_mode=True).create(
             [

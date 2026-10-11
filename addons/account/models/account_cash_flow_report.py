@@ -14,7 +14,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _dynamic_lines_generator(
         self, report, options, all_column_groups_expression_totals, warnings=None
     ):
-        # Compute the cash flow report using the direct method: https://www.investopedia.com/terms/d/direct_method.asp
         lines = []
 
         layout_data = self._prepare_layout_data()
@@ -101,14 +100,12 @@ class AccountCashFlowReportHandler(models.AbstractModel):
         if not payment_account_ids:
             return report_data
 
-        # Compute 'Cash and cash equivalents, beginning of period'
         for aml_data in self._get_liquidity_balance(
             report, options, payment_account_ids, "to_beginning_of_period"
         ):
             self._add_report_data("opening_balance", aml_data, layout_data, report_data)
             self._add_report_data("closing_balance", aml_data, layout_data, report_data)
 
-        # Compute 'Cash and cash equivalents, closing balance'
         for aml_data in self._get_liquidity_balance(
             report, options, payment_account_ids, "strict_range"
         ):
@@ -117,14 +114,12 @@ class AccountCashFlowReportHandler(models.AbstractModel):
         tags_ids = self._get_tags_ids()
         cashflow_tag_ids = self._get_cashflow_tag_ids()
 
-        # Process liquidity moves
         for aml_groupby_account in self._get_liquidity_moves(
             report, options, payment_account_ids, cashflow_tag_ids
         ):
             for aml_data in aml_groupby_account.values():
                 self._dispatch_aml_data(tags_ids, aml_data, layout_data, report_data)
 
-        # Process reconciled moves
         for aml_groupby_account in self._get_reconciled_moves(
             report, options, payment_account_ids, cashflow_tag_ids
         ):
@@ -142,18 +137,10 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _add_report_data(
         self, layout_line_id, aml_data, layout_data, report_data
     ) -> None:
-        """Add or update the report_data dictionary with aml_data.
-
-        report_data keys are the keys returned by _prepare_layout_data() (used for mapping) and each value can
-        contain 2 dictionaries:
-            * (required) 'balance' where the key is the column_group_key and the value is the balance of the line
-            * (optional) 'aml_groupby_account' where the key is an account_id and the values are the aml data
-        """
 
         def _report_update_parent(
             layout_line_id, aml_column_group_key, aml_balance, layout_data, report_data
         ):
-            # Update the balance in report_data of the parent of the layout_line_id recursively (Stops when the line has no parent)
             if "parent_line_id" in layout_data[layout_line_id]:
                 parent_line_id = layout_data[layout_line_id]["parent_line_id"]
 
@@ -219,7 +206,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
         )
 
     def _get_tags_ids(self) -> dict:
-        """Get the dict passed on to _dispatch_aml_data, mapping each report section key to its account tag id."""
         return {
             "operating": self.env.ref("account.account_tag_operating").id,
             "investing": self.env.ref("account.account_tag_investing").id,
@@ -227,7 +213,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
         }
 
     def _get_cashflow_tag_ids(self):
-        """Get the account tag ids that are relevant for the cash flow report."""
         return self._get_tags_ids().values()
 
     @api.model
@@ -280,7 +265,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _dispatch_aml_data(self, tags_ids, aml_data, layout_data, report_data) -> None:
-        # Dispatch the aml_data in the correct layout_line
         if aml_data["account_account_type"] == "asset_receivable":
             self._add_report_data(
                 "advance_payments_customer", aml_data, layout_data, report_data
@@ -330,20 +314,8 @@ class AccountCashFlowReportHandler(models.AbstractModel):
                     report_data,
                 )
 
-    # -------------------------------------------------------------------------
-    # QUERIES
-    # -------------------------------------------------------------------------
     @_debug.perf.timed
     def _get_account_ids(self, report, options):
-        """Retrieve the liquidity accounts to be part of the cash flow statement: the default accounts of the
-        selected bank/cash/general journals and the outstanding accounts of their payment method lines.
-
-        :param options: The report options.
-        :return:        A tuple containing all account.account's ids being used in a liquidity journal.
-        :rtype:         tuple
-        """
-        # Fetch liquidity accounts:
-        # Accounts being used by at least one bank/cash/general journal.
         selected_journal_ids = [j["id"] for j in report._get_options_journals(options)]
 
         where_clause = (
@@ -395,12 +367,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _get_move_ids_query(
         self, report, payment_account_ids, column_group_options
     ) -> SQL:
-        """Build the query retrieving the ids of all liquidity moves to be part of the cash flow statement.
-
-        :param payment_account_ids: A tuple containing all account.account's ids being used in a liquidity journal.
-        :return:                    The SQL query aggregating the move ids.
-        :rtype:                     SQL
-        """
 
         query = report._get_report_query(
             column_group_options,
@@ -420,15 +386,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_liquidity_balance(self, report, options, payment_account_ids, date_scope):
-        """Compute the balance of all liquidity accounts to populate the following sections:
-            'Cash and cash equivalents, beginning of period' and 'Cash and cash equivalents, closing balance'.
-
-        :param options:                 The report options.
-        :param payment_account_ids:     A tuple containing all account.account's ids being used in a liquidity journal.
-        :return:                        A list of dict with keys 'column_group_key', 'account_id', 'account_code',
-                                        'account_name' and 'balance'.
-        :rtype:                         list
-        """
         queries = []
 
         for (
@@ -496,16 +453,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _get_liquidity_moves(
         self, report, options, payment_account_ids, cash_flow_tag_ids
     ):
-        """Fetch all information needed to compute lines from liquidity moves.
-        The difficulty is to represent only the not-reconciled part of balance.
-
-        :param options:                 The report options.
-        :param payment_account_ids:     A tuple containing all account.account's ids being used in a liquidity journal.
-        :return:                        One entry per account, each mapping a column_group_key to a dict with keys
-                                        'column_group_key', 'account_id', 'account_code', 'account_name',
-                                        'account_account_type', 'account_tag_id' and 'balance'.
-        :rtype:                         list
-        """
 
         reconciled_aml_groupby_account = {}
 
@@ -651,17 +598,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
     def _get_reconciled_moves(
         self, report, options, payment_account_ids, cash_flow_tag_ids
     ):
-        """Retrieve all moves being not a liquidity move to be shown in the cash flow statement.
-        Each amount must be valued at the percentage of what is actually paid.
-        E.g. An invoice of 1000 being paid at 50% must be valued at 500.
-
-        :param options:                 The report options.
-        :param payment_account_ids:     A tuple containing all account.account's ids being used in a liquidity journal.
-        :return:                        One entry per account, each mapping a column_group_key to a dict with keys
-                                        'column_group_key', 'account_id', 'account_code', 'account_name',
-                                        'account_account_type', 'account_tag_id' and 'balance'.
-        :rtype:                         list
-        """
 
         reconciled_account_ids = {
             column_group_key: set() for column_group_key in options["column_groups"]
@@ -909,7 +845,6 @@ class AccountCashFlowReportHandler(models.AbstractModel):
             aml_account_tag_id = aml_data["account_tag_id"]
             aml_balance = aml_data["balance"]
 
-            # Compute the total reconciled for the whole move.
             total_reconciled_amount = 0.0
             total_amount = 0.0
 
@@ -919,14 +854,11 @@ class AccountCashFlowReportHandler(models.AbstractModel):
                 total_reconciled_amount += reconciled_amount
                 total_amount += amount
 
-            # Compute matched percentage for each account.
             if (
                 total_amount
                 and aml_account_id
                 not in reconciled_percentage_per_move[aml_column_group_key][aml_move_id]
             ):
-                # Lines being on reconciled moves but not reconciled with any liquidity move must be valued at the
-                # percentage of what is actually paid.
                 reconciled_percentage = total_reconciled_amount / total_amount
                 aml_balance *= reconciled_percentage
             elif (
@@ -934,27 +866,10 @@ class AccountCashFlowReportHandler(models.AbstractModel):
                 and aml_account_id
                 in reconciled_percentage_per_move[aml_column_group_key][aml_move_id]
             ):
-                # The total amount to reconcile is 0. In that case, only add entries being on these accounts. Otherwise,
-                # this special case will lead to an unexplained difference equivalent to the reconciled amount on this
-                # account.
-                # E.g:
-                #
-                # Liquidity move:
-                # Account         | Debit     | Credit
-                # --------------------------------------
-                # Bank            |           | 100
-                # Receivable      | 100       |
-                #
-                # Reconciled move:                          <- reconciled_amount=100, total_amount=0.0
-                # Account         | Debit     | Credit
-                # --------------------------------------
-                # Receivable      |           | 200
-                # Receivable      | 200       |             <- Only the reconciled part of this entry must be added.
                 aml_balance = -reconciled_percentage_per_move[aml_column_group_key][
                     aml_move_id
                 ][aml_account_id][0]
             else:
-                # Others lines are not considered.
                 continue
 
             reconciled_aml_per_account.setdefault(aml_account_id, {})
@@ -983,12 +898,8 @@ class AccountCashFlowReportHandler(models.AbstractModel):
         )
         return list(reconciled_aml_per_account.values())
 
-    # -------------------------------------------------------------------------
-    # COLUMNS / LINES
-    # -------------------------------------------------------------------------
     @_debug.perf.timed
     def _prepare_layout_data(self) -> dict:
-        # Indentation of the following dict reflects the structure of the report.
         return {
             "opening_balance": {
                 "name": self.env._("Cash and cash equivalents, beginning of period"),

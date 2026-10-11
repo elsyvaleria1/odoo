@@ -31,12 +31,6 @@ class FetchmailServer(models.Model):
 
     @api.constrains("server_type", "encryption", "password", "user")
     def _check_use_google_gmail_service(self) -> None:
-        """Mirror ``ir.mail_server``'s Gmail constraint on the incoming side.
-
-        The outgoing half has checked all three of these for a long time; the incoming
-        half checked only the encryption, so a Gmail server could carry a stored
-        password that the OAuth flow never uses and no username for it to match.
-        """
         for server in self.filtered(lambda s: s.server_type == "gmail"):
             if server.password:
                 raise UserError(
@@ -64,23 +58,12 @@ class FetchmailServer(models.Model):
                 )
 
     def _prepare_server_type_defaults(self) -> ValuesType:
-        """Gmail is IMAPS on 993, and its tokens belong to no other server type.
-
-        This extends a plain helper rather than overriding ``_onchange_server_type``.
-        Overriding the onchange itself meant restating ``@api.onchange``, and the ORM
-        reads the trigger list off the single MRO winner -- so whichever OAuth addon
-        loaded last silently decided which fields trigger the onchange for everybody.
-        """
         vals = super()._prepare_server_type_defaults()
         if self.server_type == "gmail":
             vals.update(server="imap.gmail.com", encryption="ssl_strict", port=993)
         return vals
 
     def _imap_login__(self, connection) -> None:
-        """Authenticate the IMAP connection.
-
-        If the mail server is Gmail, we use the OAuth2 authentication protocol.
-        """
         self.check_singleton()
         if self.server_type == "gmail":
             auth_string = self._mail_google_auth_string(self.user)
@@ -89,8 +72,5 @@ class FetchmailServer(models.Model):
             super()._imap_login__(connection)
 
     def _get_connection_type(self):
-        """Return which connection must be used for this mail server (IMAP or POP).
-        The Gmail mail server used an IMAP connection.
-        """
         self.check_singleton()
         return "imap" if self.server_type == "gmail" else super()._get_connection_type()

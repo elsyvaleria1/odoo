@@ -352,7 +352,7 @@ class SaleOrder(models.Model):
         self = self.with_company(self.company_id)
 
         if not uom_id:
-            uom_id = self.env["product.product"].browse(product_id).uom_id.id  # type: ignore[attr-defined]
+            uom_id = self.env["product.product"].browse(product_id).uom_id.id
         if existing_sol := self._cart_find_product_line(
             product_id, uom_id=uom_id, **kwargs
         )[:1]:
@@ -364,7 +364,7 @@ class SaleOrder(models.Model):
                 line=existing_sol.id,
             )
             return self._cart_update_line_quantity(
-                line_id=existing_sol.id,  # type: ignore[attr-defined]
+                line_id=existing_sol.id,
                 quantity=existing_sol.product_qty + quantity,
                 **kwargs,
             )
@@ -502,9 +502,6 @@ class SaleOrder(models.Model):
         }
 
     def _cart_page_events(self, warning=None, quick_reorder=False) -> dict:
-        # what the page around the cart follows: the header's cart badge and
-        # the warning (@website_sale/interactions/cart_updates), the express
-        # checkout's amount (@payment/interactions/express_checkout)
         amount = self.amount_total
         return {
             "website_sale:cart_updated": {
@@ -525,8 +522,6 @@ class SaleOrder(models.Model):
             },
         }
 
-    # the regions a page shows of the cart, re-read by the visitor's other
-    # tabs when the cart changes (@bus/public/live_fragments)
     _CART_FRAGMENT_KEYS = (
         "website_sale.cart_lines",
         "website_sale.total",
@@ -536,7 +531,6 @@ class SaleOrder(models.Model):
     def _notify_cart_changed(self) -> None:
         if not self:
             return
-        # the tab that made the change (@web/public/tab_id) already shows it
         origin = request.httprequest.headers.get("X-Odoo-Tab") if request else None
         self.env["bus.bus"]._sendone(
             self,

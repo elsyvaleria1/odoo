@@ -19,8 +19,6 @@ from typing import Any
 SCOPE_NAME = "steps"
 PREVIOUS_NAME = "previous"
 
-# Mapping's own methods: a key spelled like one would be shadowed by it under
-# attribute access, so a derived key steps around them.
 RESERVED_KEYS = frozenset({"get", "items", "keys", "values"})
 STEP_KEY_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 STEP_KEY_MAX = 64
@@ -81,13 +79,6 @@ class References:
 
 
 def collect_references(source: str | None, mode: str = "exec") -> References:
-    """Return the step keys `source` names, read from its syntax tree.
-
-    `steps.k`, `steps["k"]`, `steps.get("k")` and `"k" in steps` name `k`;
-    indexing `steps` with anything but a literal is dynamic and cannot be
-    checked. Code that does not parse names nothing here: the server action's
-    own validation reports the syntax error.
-    """
     refs = References()
     if not source or not source.strip():
         return refs

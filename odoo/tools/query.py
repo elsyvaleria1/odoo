@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 _debug = DebugLog(__name__)
 
-# one placeholder per pinned id overflows the 65535 bind-parameter limit
 _SUBSELECT_UNNEST_THRESHOLD = 100
 
 
@@ -58,8 +57,6 @@ def _with_once(
 ) -> SQL:
     if not expressions and not sets:
         return SQL.EMPTY
-    # MATERIALIZED: one evaluation whatever the number of references; left
-    # to itself PostgreSQL inlines an expression referenced once
     return SQL(
         "WITH %s ",
         SQL(", ").join(
@@ -86,9 +83,6 @@ def _with_once(
 
 
 def _splice_once(sql: SQL, replacements: dict[str, SQL]) -> SQL:
-    # `sql` with each once reference, by its code, replaced in one pass --
-    # by the expression itself or by another reference -- and the parameters
-    # of what comes in placed where it lands
     if not replacements or not sql:
         return sql
     references = re.compile("|".join(map(re.escape, replacements)))
@@ -199,33 +193,6 @@ class Query:
             self._invalidate_ids()
 
     def once(self, expression: SQL) -> SQL:
-        """A scalar subquery standing for ``expression``, computed once.
-
-        For an expression that reads none of the query's tables and that its
-        conditions name many times over -- the set of containers a principal
-        holds a grant on, asked of every alias an access rule walks. Written
-        inline, each occurrence is a subquery PostgreSQL plans on its own. The
-        statement the query is run as (`statement`, the ids, the counts) states
-        each distinct expression once, as a common table expression, and what
-        comes back here reads it: to the planner the same parameter the inline
-        subquery was, so the plan of the rest does not change.
-
-        What goes into another statement stays whole on its own -- `select`,
-        `subselect`, `from_clause` and `where_clause` have the expression
-        back inline: a subquery that opens with WITH is one PostgreSQL no
-        longer folds into the query around it. A statement composed of
-        several queries reads theirs from one WITH through `SharedOnce`.
-
-        Keep it to small sets. The reference is a parameter computed at run
-        time, not a constant: PostgreSQL hashes ``x = ANY(array)`` only for a
-        constant array, and against this one compares every row with each
-        element in turn. ``x IN (SELECT unnest(...))`` would hash it, but a
-        subquery that reads a common table expression keeps the whole plan
-        out of parallel workers. Test membership in a large set as a
-        semi-join on the table it comes from instead. Inside ``ANY(...)`` the
-        reference needs a cast (``ANY(%s::int4[])``), or PostgreSQL reads it
-        as the subquery form of ``ANY``.
-        """
         try:
             index = self._once.index(expression)
         except ValueError:
@@ -235,17 +202,6 @@ class Query:
         return _once_reference(self.table, index)
 
     def once_set(self, expression: SQL) -> SQL:
-        """A subquery standing for the set ``expression`` selects, stated once
-        where several queries share one statement.
-
-        A query rendered alone has the subquery back inline wherever it is
-        referenced: the planner sees the set's own estimate and may probe it
-        per row or hash it, as the rest of the plan wants. A statement
-        composed of several queries through `SharedOnce` -- a search per
-        opened group -- states it once at its head, MATERIALIZED, and every
-        part reads it: one evaluation of an access reach for all the groups,
-        not one per group.
-        """
         try:
             index = self._once_sets.index(expression)
         except ValueError:
@@ -278,13 +234,6 @@ class Query:
         return _with_once(self.table, self._once)
 
     def copy(self) -> Query:
-        """A query with this one's state, sharing none of its mutable parts.
-
-        A `Query` handed to a domain -- `("line_ids", "in", query)` -- is still
-        the caller's object, so a field that has to narrow it by its own
-        `domain=` narrows this copy instead. Without it the caller's query is
-        filtered for every later use of it.
-        """
         cls = type(self)
         other = cls.__new__(cls)
         for klass in cls.__mro__:
@@ -428,8 +377,6 @@ class Query:
         return self._select_sql(args, self.from_clause, self.where_clause)
 
     def statement(self, *args: str | SQL) -> SQL:
-        """`select()` as the statement to execute, not a part of another one:
-        it opens with what `once()` was given and reads it from there."""
         if not self._once:
             return self.select(*args)
         return SQL(
@@ -481,14 +428,6 @@ class Query:
         )
 
     def get_result_ids(self, env: Environment | None = None) -> tuple[int, ...]:
-        """Ids of the rows matched by this query.
-
-        :param env: environment to execute on, when the caller has a live one.
-            A query may outlive the request that built it -- an access
-            domain is cached across requests, and the queries inside it come
-            along -- and by then its own environment holds a closed cursor.
-        :return: the matched ids
-        """
         if self._empty_by_construction:
             self._ids = ()
             return self._ids
@@ -507,9 +446,6 @@ class Query:
                 )
             return self._ids
 
-        # Another transaction: the result is neither read from nor written to
-        # the memo, which belongs to the cursor that built this query and would
-        # otherwise hand back rows read in a transaction that already ended.
         _debug.logic("query.result_ids.foreign_transaction", table=self.table)
         return tuple(id_ for (id_,) in env.execute_query(self.statement()))
 
@@ -649,7 +585,6 @@ class SharedOnce:
         self._sets: list[SQL] = []
 
     def select(self, query: Query, *args: str | SQL) -> SQL:
-        """`query.select(*args)`, reading its once-expressions from this scope."""
         if query.table != self._table:
             msg = f"{query.table!r} is not this scope's table {self._table!r}"
             raise ValueError(msg)
@@ -678,7 +613,6 @@ class SharedOnce:
         )
 
     def statement(self, body: SQL) -> SQL:
-        """``body``, composed of this scope's selects, as the statement to run."""
         _debug.perf.count(
             "query.shared_once",
             table=self._table,

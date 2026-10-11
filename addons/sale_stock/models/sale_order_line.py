@@ -151,7 +151,7 @@ class SaleOrderLine(models.Model):
             ] |= line
 
         for (route_ids, destination_id), lines in by_key.items():
-            rules = self.env["stock.rule"].search(  # noqa: E8507 - one query per distinct (routes, destination); lines sharing one were merged above
+            rules = self.env["stock.rule"].search(
                 domain=Domain.AND(
                     [
                         [("route_id", "in", list(route_ids))],
@@ -407,7 +407,6 @@ class SaleOrderLine(models.Model):
                 continue
             procuring.append((line, qty))
 
-        # one reference per order that has none yet, created together
         first_line_by_order = {}
         for line, _qty in procuring:
             if not line.order_id.reference_ids:

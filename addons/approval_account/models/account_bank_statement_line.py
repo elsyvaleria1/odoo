@@ -21,8 +21,6 @@ class AccountBankStatementLine(models.Model):
         return lines
 
     def _get_domain_settled_elsewhere(self) -> Domain:
-        # a transaction a live approval request claims is settled by what that
-        # request approves, not matched to a document on its own
         return super()._get_domain_settled_elsewhere() | Domain(
             "approval_request_ids",
             "any",

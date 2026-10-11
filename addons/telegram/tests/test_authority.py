@@ -24,8 +24,6 @@ class TestUpdateAuthority(TelegramBotTestCase):
         cls.operate = cls.env["res.groups"]._privilege_ids((OPERATE_BOT,))
 
     def _webhook_bot(self):
-        # the webhook hands the router a superuser bot of the request's user,
-        # in a transaction whose real user is that request's
         transaction = self.env.transaction
         self.patch(transaction, "default_env", self.env(user=self.public))
         return self.test_bot.with_user(self.public).sudo()

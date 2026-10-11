@@ -52,12 +52,6 @@ class StockLocation(models.Model):
     )
 
     def _get_or_create_trip_vehicle_location(self, vehicle):
-        """Return the location of ``vehicle`` under this one, creating it if needed.
-
-        :param recordset vehicle: a ``resource.asset.vehicle``
-        :return: the vehicle's child location of this location
-        :rtype: recordset
-        """
         self.check_singleton()
         location = self.search(
             [("trip_vehicle_id", "=", vehicle.id), ("location_id", "=", self.id)],

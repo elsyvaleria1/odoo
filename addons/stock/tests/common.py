@@ -139,8 +139,6 @@ class TestStockCommon(ProductVariantsCommon):
         cls.picking_type_int = cls.warehouse_1.int_type_id
         cls.picking_type_out = cls.warehouse_1.out_type_id
         cls.picking_type_out.reservation_method = "manual"
-        # a warehouse built while stock_picking_batch is installed batches its
-        # receipts and deliveries by itself, which these tests do not exercise
         (cls.picking_type_in | cls.picking_type_out).auto_batch = False
 
         cls.stock_location = cls.warehouse_1.lot_stock_id

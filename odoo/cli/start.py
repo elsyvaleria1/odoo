@@ -145,10 +145,6 @@ def is_path_in_module(path: str | Path) -> bool:
     return any(Manifest._from_path(str(p)) for p in (path, *path.parents))
 
 
-# An explicit --addons-path on the command line replaces the configuration
-# file's, so the project directory alone would drop every path the file
-# names and leave the database's other modules unloadable. The project comes
-# first among the non-bootstrap paths: it is what `start` was asked to run.
 def _derive_addons_paths(
     project_path: Path, *, bootstrap: str | None, configured: Iterable[str]
 ) -> list[str]:

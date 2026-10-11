@@ -156,13 +156,6 @@ class TestMailGateway(MailCommon):
         return documents
 
     def test_forwarded_attachment_becomes_its_own_document(self):
-        """Forwarding a mail files the file it carries, not just the envelope.
-
-        This is the whole point of a folder alias for invoices and receipts:
-        people forward the supplier's mail. Parsing ``message/rfc822`` as one
-        opaque leaf files ``forwarded.eml`` -- which nobody opens -- and drops
-        the PDF, silently and with no error anywhere.
-        """
         before = (
             self.env["document.document"].with_context(active_test=False).search([]).ids
         )
@@ -240,7 +233,6 @@ class TestMailGateway(MailCommon):
                     ("res_model", "=", self.document._name),
                 ]
             ),
-            # the document's own `file.gif`, plus the one file the reply carries
             1 + len(self.email_filenames),
         )
         doc_messages = self.env["mail.message"].search(

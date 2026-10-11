@@ -9,8 +9,6 @@ from odoo.tools.files import file_path
 
 
 def fixture(name: str) -> dict:
-    """A webhook payload GitHub publishes (@octokit/webhooks-examples 7.6.1),
-    trimmed to what Odoo reads."""
     return json_loads(
         pathlib.Path(
             file_path(f"integration_github/tests/data/{name}.json")

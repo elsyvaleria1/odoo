@@ -83,8 +83,6 @@ class TestReportsCommon(TransactionCase):
 
 class TestReports(TestReportsCommon):
     def _assert_zpl_equal(self, target, rendering, msg):
-        # ZPL ignores whitespace between commands, and the XML formatters reflow these
-        # templates' indentation and blank lines.
         def normalise(zpl):
             return sub(rb"\n+", b"\n", zpl.replace(b" ", b""))
 
@@ -1043,7 +1041,6 @@ class TestReports(TestReportsCommon):
         self.assertEqual(lines[6]["document_in"], False)
 
     def test_report_forecast_4_intermediate_transfers(self):
-        # the three-step reception route pulls from Vendors with stock alone
         if is_module_installed(self.env, "purchase_stock"):
             self.skipTest(RECEPTION_ROUTE_BOUGHT)
         grp_multi_loc = self.env.ref("stock.group_stock_multi_locations")

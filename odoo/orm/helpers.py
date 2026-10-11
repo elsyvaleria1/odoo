@@ -19,9 +19,6 @@ _debug = DebugLog(__name__)
 
 
 def invalid_field_message(model: ModelLike, fname: str) -> str:
-    """The error for `fname` absent from `model`, naming the field this fork
-    calls it when the model declares the rename (`_legacy_field_names`): a
-    caller written for upstream Odoo learns the name here at once."""
     message = f"Invalid field {fname!r} on model {model._name!r}"
     renamed = getattr(model, "_legacy_field_names", None) or {}
     if fname in renamed:
@@ -42,14 +39,11 @@ def get_fields_by_name(
     return fields
 
 
-# a model class's derived lookups live in one dict the class holds for its
-# lifetime: a re-setup empties it in place, where deleting a memo attribute
-# would spend one of the class's version tags (registration.set_class_attr)
 def get_class_memos(cls: type) -> dict[str, typing.Any]:
     memos = cls.__dict__.get("_class_memos__")
     if memos is None:
         memos = {}
-        cls._class_memos__ = memos  # type: ignore[attr-defined]
+        cls._class_memos__ = memos
     return memos
 
 

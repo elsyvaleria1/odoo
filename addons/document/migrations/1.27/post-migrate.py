@@ -7,10 +7,6 @@ def migrate(cr, version):
         cr, "document_document", "thumbnail_status"
     ):
         return
-    # a thumbnail stored on its document becomes that document's own, for the
-    # content it holds: rendered there, by a browser, or authored (a
-    # spreadsheet's, whose status was never set). An error is not kept, the
-    # server renders it again; a shortcut's was a copy of its target's
     cr.execute(
         """
         INSERT INTO document_thumbnail

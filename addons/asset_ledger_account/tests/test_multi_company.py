@@ -14,7 +14,6 @@ class TestAssetLogMultiCompany(AccountTestInvoicingCommon):
         cls.other_data = cls.setup_other_company()
         cls.company_b = cls.other_data["company"]
         cls.company_b.currency_id = cls.env.ref("base.EUR")
-        # The session stays on company A while every bill below belongs to B.
         cls.env.user.sudo().company_ids = [Command.link(cls.company_b.id)]
         cls.env = cls.env(
             context=dict(

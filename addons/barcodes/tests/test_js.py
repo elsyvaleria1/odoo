@@ -25,17 +25,10 @@ ALL_SUITE_PREFIXES = ("@barcodes",)
 class BarcodesSuite(web_test_js.HOOTCommon):
     @odoo.tests.no_retry
     def test_barcodes_unit(self):
-        """@barcodes — the barcode parser, scanner and field JS suites."""
         self._run_hoot("@barcodes", preset="desktop", timeout=900)
 
     @odoo.tests.no_retry
     def test_barcodes_unit_mobile(self):
-        """@barcodes under the mobile preset.
-
-        ``barcode_mobile`` patches the barcode service's ``isMobileChrome`` and
-        drives touch-keyboard behaviour, so it registers nothing under the
-        desktop preset and the desktop run above never reaches it.
-        """
         self._run_hoot("@barcodes", preset="mobile", tag="-headless", timeout=900)
 
     def test_suite_filters_cover_every_test_file(self):

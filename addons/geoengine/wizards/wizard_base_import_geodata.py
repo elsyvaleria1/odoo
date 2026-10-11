@@ -167,7 +167,7 @@ class WizardBaseImportGeodata(models.TransientModel):
 
     def _shapefile_to_geojson(self, raw: bytes) -> dict:
         try:
-            archive = zipfile.ZipFile(  # pylint: disable=consider-using-with
+            archive = zipfile.ZipFile(
                 io.BytesIO(raw)
             )
         except zipfile.BadZipFile as e:
@@ -396,7 +396,7 @@ class WizardBaseImportGeodata(models.TransientModel):
                 ),
             )
 
-        TargetModel = self.env[self.model_name]  # pylint: disable=invalid-name
+        TargetModel = self.env[self.model_name]
         geo_field_name = self.geo_field_id.name
 
         field_map = {}

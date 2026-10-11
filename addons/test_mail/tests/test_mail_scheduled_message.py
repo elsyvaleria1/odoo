@@ -22,7 +22,6 @@ class TestScheduledMessage(MailCommon, TestRecipients):
     def setUpClass(cls):
         super().setUpClass()
 
-        # force 'now' to ease test about schedulers
         cls.reference_now = FieldDatetime.to_datetime("2022-12-24 12:00:00")
 
         with cls.mock_datetime_and_now(cls, cls.reference_now):
@@ -91,46 +90,35 @@ class TestScheduledMessage(MailCommon, TestRecipients):
 class TestScheduledMessageAccess(TestScheduledMessage):
     @users("employee")
     def test_scheduled_message_model_without_post_right(self):
-        # creation on a record that the user cannot post to
         with self.assertRaises(AccessError):
             self.schedule_message(self.private_record)
-        # read a message scheduled on a record the user can't post to
         with self.assertRaises(AccessError):
             self.hidden_scheduled_message.read()
-        # search a message scheduled on a record the user can't post to
         self.assertFalse(
             self.env["mail.scheduled.message"].search(
                 [["id", "=", self.hidden_scheduled_message.id]]
             )
         )
-        # write on a message scheduled on a record the user can't post to
         with self.assertRaises(AccessError):
             self.hidden_scheduled_message.write({"body": "boum"})
-        # post a message scheduled on a record the user can't post to
         with self.assertRaises(AccessError):
             self.hidden_scheduled_message.post_message()
-        # unlink a message scheduled on a record the user can't post to
         with self.assertRaises(AccessError):
             self.hidden_scheduled_message.unlink()
 
     @users("employee")
     def test_scheduled_message_model_with_post_right(self):
-        # read a message scheduled by another user on a record the user can post to
         self.visible_scheduled_message.read()
-        # search a message scheduled by another user on a record the user can post to
         self.assertEqual(
             self.env["mail.scheduled.message"].search(
                 [["id", "=", self.visible_scheduled_message.id]]
             ),
             self.visible_scheduled_message,
         )
-        # write on a message scheduled by another user on a record the user can post to
         with self.assertRaises(AccessError):
             self.visible_scheduled_message.write({"body": "boum"})
-        # post a message scheduled by another user: not the creator, not admin
         with self.assertRaises(AccessError):
             self.visible_scheduled_message.post_message()
-        # unlink a message scheduled on a record the user can post to
         self.visible_scheduled_message.unlink()
 
     @users("employee")
@@ -176,45 +164,34 @@ class TestScheduledMessageAccess(TestScheduledMessage):
 
     @users("employee")
     def test_own_scheduled_message(self):
-        # create a scheduled message on a record the user can post to
         scheduled_message = self.schedule_message(self.test_record)
-        # read own scheduled message
         scheduled_message.read()
-        # search own scheduled message
         self.assertEqual(
             self.env["mail.scheduled.message"].search(
                 [["id", "=", scheduled_message.id]]
             ),
             scheduled_message,
         )
-        # write on own scheduled message
         scheduled_message.write({"body": "Hello!"})
-        # unlink own scheduled message
         scheduled_message.unlink()
 
 
 class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
     @users("employee")
     def test_scheduled_message_restrictions(self):
-        # cannot schedule a message in the past
         with self.assertRaises(ValidationError):
             self.schedule_message(
                 self.test_record, scheduled_date="2022-12-24 10:00:00"
             )
-        # cannot schedule a message on a model without thread
-        # with admin as employee does not have write access on res.users)
         with self.with_user("admin"), self.assertRaises(ValidationError):
             self.schedule_message(self.user_employee)
         scheduled_message = self.schedule_message(self.test_record)
-        # cannot reschedule a message in the past
         with self.assertRaises(ValidationError):
             scheduled_message.write({"scheduled_date": "2022-12-24 14:00:00"})
-        # cannot change target record of scheduled message
         with self.assertRaises(UserError):
             scheduled_message.write({"res_id": 2})
         with self.assertRaises(UserError):
             scheduled_message.write({"model": "mail.test.track"})
-        # unlink the test record should also unlink the test message
         self.test_record.sudo().unlink()
         self.assertFalse(scheduled_message.exists())
 
@@ -235,16 +212,13 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
                 send_context={"mail_post_autofollow": True},
                 subject="Test subject",
             ).id
-            # cron should be triggered at scheduled date
             self.assertEqual(
                 capt.records["call_at"],
                 FieldDatetime.to_datetime("2022-12-24 14:00:00"),
             )
-            # no message created or mail sent
             self.assertFalse(self.test_record.message_ids)
             self.assertFalse(self._new_mails)
 
-            # add a scheduled message that will fail to check that it won't block the cron
             failing_schedueld_message_id = self.schedule_message(
                 test_lead,
                 scheduled_date="2022-12-24 14:00:00",
@@ -265,9 +239,7 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
                 self.env["mail.scheduled.message"].with_user(
                     self.user_root
                 )._post_messages_cron()
-            # one scheduled message failed, only one mail should be sent
             self.assertEqual(len(self._new_mails), 1)
-            # user should be notified about the failed posting
             self.assertMailNotifications(
                 self._new_msgs.exists().filtered(lambda m: not m.model),
                 [
@@ -286,7 +258,6 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
                     }
                 ],
             )
-            # other message should be posted and mail should be sent
             self.assertMailNotifications(
                 self._new_msgs.exists().filtered(
                     lambda m: m.model == self.test_record._name
@@ -308,11 +279,9 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
                 ],
             )
             self.assertEqual(self._new_mails[0].state, "sent")
-            # customer should be a follower of the thread (mail_post_autofollow context key)
             self.assertIn(
                 self.test_record.customer_id, self.test_record.message_partner_ids
             )
-            # scheduled messages shouldn't exist anymore
             self.assertFalse(
                 self.env["mail.scheduled.message"].search(
                     [["id", "in", [scheduled_message_id, failing_schedueld_message_id]]]
@@ -359,7 +328,6 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
 
     @users("employee")
     def test_scheduled_message_posting_on_scheduled_time(self):
-        """Ensure scheduled message is posted and sent at the scheduled time."""
         self.test_record.message_subscribe(partner_ids=[self.partner_1.id])
 
         self.schedule_message(
@@ -372,12 +340,10 @@ class TestScheduledMessageBusiness(TestScheduledMessage, CronMixinCase):
             self.mock_datetime_and_now(self.reference_now),
             self.sync_env_with_side_cursors(),
         ):
-            # Needed to get force_send disabled due to mail_notify_force_send in the context
             self.env.ref("mail.ir_cron_post_scheduled_message").with_user(
                 self.user_admin
             ).method_direct_trigger()
 
-        # Message is posted and mail is sent on time
         self.assertEqual(len(self._new_mails), 1)
         self.assertMailMailWRecord(
             self.test_record,

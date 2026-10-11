@@ -33,9 +33,6 @@ class CreditGradeRule(models.Model):
     )
 
     def _drop_credit_file_cache(self) -> None:
-        # the types the rules require are part of the credit file's domain,
-        # which the dependency graph does not see: a file cached before the
-        # change would keep answering for the old set of types
         self.env["res.partner"].invalidate_model(["credit_document_ids"])
 
     def _sync_profiles(self) -> None:

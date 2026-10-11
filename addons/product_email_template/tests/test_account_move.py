@@ -52,9 +52,6 @@ class TestAccountMove(AccountTestInvoicingCommon):
         self.assertTrue(message_sent[0].email_from, "Should have from email address")
 
     def test_send_as_system_when_sudo(self):
-        """
-        Test scenario of a product ordered through the portal.
-        """
         id_max = self.env["mail.message"].search([], order="id desc", limit=1)
         if id_max:
             id_max = id_max[0].id

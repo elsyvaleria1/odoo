@@ -34,12 +34,12 @@ class Speedscope:
         self.profiles: list[dict[str, Any]] = []
 
     def add(self, key: str, profile: list[_Entry]) -> None:
-        queries = 0  # debuglog
+        queries = 0
         for entry in profile:
             self.caller_frame = self.init_caller_frame
             self.convert_stack(entry["stack"] or [])
             if "query" in entry:
-                queries += 1  # debuglog
+                queries += 1
                 query = entry["query"]
                 full_query = entry["full_query"]
                 entry["stack"].append((f"sql({shorten(query)})", full_query, None))
@@ -72,7 +72,7 @@ class Speedscope:
         display_name: str | None = None,
         use_context: bool = True,
         constant_time: bool = False,
-        context_per_name: dict[str, Any] | None = None,  # noqa: ARG002  accepted for call-site compatibility, unused on this path
+        context_per_name: dict[str, Any] | None = None,
         **params: Any,
     ) -> Self:
         entries = []
@@ -206,7 +206,7 @@ class Speedscope:
         use_context: bool = True,
         constant_time: bool = False,
         aggregate_sql: bool = False,
-        **params: Any,  # noqa: ARG002  accepted for call-site compatibility, unused on this path
+        **params: Any,
     ) -> list[_Event]:
         entry_end = previous_end = None
         if not entries:

@@ -360,8 +360,6 @@ class StockWarehouse(models.Model):
 
     @api.model
     def _get_default_for_company(self, company) -> Self:
-        # the first warehouse of a company answers every default-warehouse
-        # question of a transaction; memoized until a warehouse changes
         per_company = DEFAULT_WAREHOUSE_BY_COMPANY(self.env)
         key = (company.id, self.env.uid, self.env.su)
         if key not in per_company:
@@ -634,7 +632,7 @@ class StockWarehouse(models.Model):
             ("stock.move", "location_id"),
             ("stock.move", "location_dest_id"),
         ):
-            record = self.env[model].search(  # noqa: E8507 - three literal (model, field) probes
+            record = self.env[model].search(
                 [(field_name, "in", locations.ids)], limit=1
             )
             if not record:

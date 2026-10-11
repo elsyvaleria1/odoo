@@ -67,7 +67,6 @@ def memo(key, factory):
 
 
 def begin_callback():
-    """A fresh record of the button presses answered while one is handled."""
     _state.answered = set()
     return _state.answered
 

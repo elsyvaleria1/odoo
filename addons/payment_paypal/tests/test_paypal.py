@@ -22,8 +22,6 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
         self.assertEqual(processing_values["order_id"], self.order_id)
 
     def test_order_payload_values_for_public_user(self):
-        """If a payment is made with the public user we need to make sure that the
-        email address is not sent to PayPal and that we provide the country code of the company instead."""
         tx = self._create_transaction(
             flow="direct", partner_id=self.public_user.partner_id.id
         )
@@ -36,7 +34,6 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_paypal.models.payment_transaction")
     def test_complete_order_confirms_transaction(self):
-        """Test the processing of a webhook notification."""
         tx = self._create_transaction("direct")
         normalized_data = self.env["payment.transaction"]._normalize_paypal_data(
             self.completed_order
@@ -50,13 +47,11 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
             self.payment_data.get("resource"), from_webhook=True
         )
 
-        # Confirmed transaction
         tx = self._create_transaction("direct")
         self.env["payment.transaction"]._process("paypal", normalized_data)
         self.assertEqual(tx.state, "done")
         self.assertEqual(tx.provider_reference, normalized_data["id"])
 
-        # Pending transaction
         self.reference = "Test Transaction 2"
         tx = self._create_transaction("direct")
         payload = {
@@ -71,7 +66,6 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_paypal.models.payment_transaction")
     def test_webhook_notification_confirms_transaction(self):
-        """Test the processing of a webhook notification."""
         tx = self._create_transaction("direct")
         url = self._build_url(PaypalController._webhook_url)
         with patch(
@@ -112,7 +106,6 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
 
     @mute_logger("odoo.addons.payment_paypal.models.payment_transaction")
     def test_webhook_notification_triggers_origin_check(self):
-        """Test that receiving a webhook notification triggers an origin check."""
         self._create_transaction("direct")
         url = self._build_url(PaypalController._webhook_url)
         with (
@@ -162,7 +155,6 @@ class PaypalTest(PaypalCommon, PaymentHttpCommon):
             },
         )
 
-        # Set country to one where state is required
         self.partner.country_id = self.env.ref("base.us")
         payload = tx._paypal_prepare_order_payload()
         self.assertEqual(

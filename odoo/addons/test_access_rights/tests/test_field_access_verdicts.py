@@ -9,9 +9,6 @@ MODEL = "test_access_right.some_obj"
 
 @tagged("post_install", "-at_install")
 class TestFieldVerdictMemo(TransactionCase):
-    # forbidden2's group is held through a grant limited to company A: the
-    # field reads on A's records only, a verdict kept per record for the
-    # transaction and dropped by a write of the company it reads
 
     @classmethod
     def setUpClass(cls):

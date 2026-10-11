@@ -845,8 +845,6 @@ class MailGroup(models.Model):
 
     @api.model
     def _receiver_for_unsubscribe(self, group_id=None, **path_args):
-        """The route's receiver for the one-click unsubscribe: the group,
-        admitted on the member's email access token the mail carried."""
         group = self.sudo().browse(group_id).exists()
         if not group:
             return group

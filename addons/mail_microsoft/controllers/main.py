@@ -7,7 +7,6 @@ from odoo.addons.mail_microsoft.models.integration_service import (
 
 
 class OutlookOAuthController(OAuthController):
-    # registered in Microsoft Entra for Outlook before the standard callback
     @http.route(
         LEGACY_CALLBACK_PATH, type="http", auth="user", website=False, csrf=False
     )

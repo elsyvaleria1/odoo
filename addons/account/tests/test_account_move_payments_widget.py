@@ -338,12 +338,6 @@ class TestAccountMovePaymentsWidget(AccountTestInvoicingCommon):
         self.assert_invoice_outstanding_reconciled_widget(out_invoice, expected_amounts)
 
     def test_outstanding_widget_shown_on_draft_invoice(self):
-        """The outstanding credits/debits belong on draft invoices too.
-
-        `_compute_invoice_outstanding_credits_debits_widget` already accepts
-        `state in {"draft", "posted"}`, so the widget is computed for a draft
-        invoice and then discarded by the form view.
-        """
         out_invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -392,7 +386,6 @@ class TestAccountMovePaymentsWidget(AccountTestInvoicingCommon):
             " widget group; the 3 alerts of the other move types stay hidden",
         )
 
-        # A partner with nothing outstanding sees none of the five.
         bare_invoice = out_invoice.copy({"partner_id": self.partner_b.id})
         self.assertFalse(bare_invoice.invoice_has_outstanding)
         bare_values = {
@@ -409,12 +402,6 @@ class TestAccountMovePaymentsWidget(AccountTestInvoicingCommon):
             "nothing outstanding, nothing to show",
         )
 
-        # The two "Pay" buttons read the same `invoice_has_outstanding`, but
-        # registering a payment still requires a posted move: they keep their
-        # `state != 'posted'` guard. Each is pinned against the record that
-        # isolates it -- with outstanding payments the primary button is hidden
-        # anyway, without them the secondary one is, so a single fixture would
-        # let one of the two guards be dropped unnoticed.
         pay_buttons = {
             node.get("id"): node
             for node in arch.iter("button")

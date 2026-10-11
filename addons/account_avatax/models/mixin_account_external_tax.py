@@ -14,7 +14,6 @@ _logger = logging.getLogger(__name__)
 class MixinAccountExternalTax(models.AbstractModel):
     _inherit = "mixin.account.external.tax"
 
-    # Technical field used for the visibility of fields and buttons
     is_avatax = fields.Boolean(compute="_compute_is_avatax")
 
     @api.depends("fiscal_position_id")
@@ -77,9 +76,8 @@ class MixinAccountExternalTax(models.AbstractModel):
                 "commit": commit
                 and self._find_avatax_credentials_company(
                     self.company_id
-                ).avalara_commit,  # TODO master: remove commit parameter from method
+                ).avalara_commit,
                 "fiscal_position": self.fiscal_position_id,
-                # To be filled by specific models
                 "is_refund": None,
                 "document_type": None,
                 "tax_date": None,
@@ -90,10 +88,6 @@ class MixinAccountExternalTax(models.AbstractModel):
 
     @api.model
     def _prepare_avatax_document_line_service_call(self, line_data, is_refund):
-        """Create a `LineItemModel` based on line_data.
-
-        :param dict line_data: base line data returned by _prepare_line_data_for_external_taxes()
-        """
         base_line = line_data["base_line"]
         product = base_line["product_id"]
         avatax_category = product._get_avatax_category_id()
@@ -139,11 +133,6 @@ class MixinAccountExternalTax(models.AbstractModel):
 
     @api.model
     def _prepare_avatax_document_service_call(self, params):
-        """Get the transaction values.
-
-        :returns: a mapping defined by the AvataxModel ``CreateTransactionModel``.
-        :rtype: dict
-        """
         lines = [
             self._prepare_avatax_document_line_service_call(
                 line_data, params["is_refund"]
@@ -233,7 +222,6 @@ class MixinAccountExternalTax(models.AbstractModel):
         )
 
     def _get_external_taxes(self):
-        # EXTENDS 'mixin.account.external.tax'
         res = super()._get_external_taxes()
         errors = []
 
@@ -246,7 +234,6 @@ class MixinAccountExternalTax(models.AbstractModel):
             for record in records:
                 service_params = record._prepare_avatax_service_params()
 
-                # Avatax errors when sending records without lines
                 if not service_params["line_data"]:
                     continue
 
@@ -312,10 +299,9 @@ class MixinAccountExternalTax(models.AbstractModel):
                     query_result = client.commit_transaction(**params)
                 elif action == "uncommit":
                     query_result = client.uncommit_transaction(**params)
-                else:  # void
+                else:
                     query_result = client.void_transaction(**params)
 
-                    # There's nothing to void when a draft record is deleted without ever being sent to Avatax.
                     if (
                         query_result.get("error", {}).get("code")
                         == "EntityNotFoundError"
@@ -347,11 +333,11 @@ class MixinAccountExternalTax(models.AbstractModel):
         return super()._void_external_taxes()
 
     def _handle_response(self, response, title):
-        if response.get("errors"):  # http error
+        if response.get("errors"):
             _logger.warning(pformat(response), stack_info=True)
             return "%s\n%s" % (title, response.get("title", ""))
 
-        if response.get("error"):  # avatax error
+        if response.get("error"):
             _logger.warning(pformat(response), stack_info=True)
             messages = "\n".join(
                 detail["message"] for detail in response["error"]["details"]

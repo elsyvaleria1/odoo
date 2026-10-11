@@ -2,14 +2,9 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.trade.tools import TradeDirection, direction_of
 
-#: Every model that mixes in `mixin.order`, and the line model beside it.
 ORDER_MODELS = ["sale.order", "purchase.order", "test_trade.order"]
 ORDER_LINE_MODELS = ["sale.order.line", "purchase.order.line", "test_trade.order.line"]
 
-#: What `mixin.order` reads off a concrete order model beside its direction:
-#: the model's own identity, which no direction can derive. `_auto_lock_group`
-#: is deliberately absent: empty is a meaningful value there, and
-#: `test_trade.order` uses it.
 ORDER_DECLARATIONS = [
     "_sequence_code",
     "_lock_setting_field",
@@ -64,14 +59,6 @@ class TestOrderTypeDeclarations(TransactionCase):
             order.__class__._direction = direction
 
     def test_no_two_order_models_share_a_sequence_code(self):
-        """The defect this contract exists to prevent.
-
-        `test_trade.order` once declared `code = 'sale.order'` on its own
-        `ir.sequence`, because the mixin built that code from the order type
-        and left it no way to name its own. Being company-scoped it shadowed
-        sale's, and every sales order created afterwards was named off the
-        test module's counter.
-        """
         codes = [self.env[name]._sequence_code for name in ORDER_MODELS]
 
         self.assertEqual(
@@ -81,12 +68,6 @@ class TestOrderTypeDeclarations(TransactionCase):
         )
 
     def test_each_order_model_draws_names_from_its_own_sequence(self):
-        """Names must carry the prefix of the model's *own* sequence.
-
-        Asserting only that the three names differ is not enough: three models
-        all drawing from one counter also produce three different names. The
-        prefix is what says which counter answered.
-        """
         for model_name in ORDER_MODELS:
             model = self.env[model_name]
             sequence = (
@@ -117,12 +98,6 @@ class TestOrderTypeDeclarations(TransactionCase):
                 )
 
     def test_every_order_sequence_is_global(self):
-        """A company-scoped sequence shadows a global one of the same code.
-
-        That is the mechanism by which this module's sequence took over
-        `sale.order`, and it also leaves every other company without a
-        sequence at all, so orders created there come out unnamed.
-        """
         for model_name in ORDER_MODELS:
             code = self.env[model_name]._sequence_code
             sequences = self.env["ir.sequence"].sudo().search([("code", "=", code)])

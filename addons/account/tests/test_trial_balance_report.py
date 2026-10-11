@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 from odoo import Command, fields
 from odoo.tests import tagged
 
@@ -11,7 +10,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
     def setUpClass(cls):
         super().setUpClass()
 
-        # Give codes in company_1 to the accounts in company_2.
         context = {
             "allowed_company_ids": [
                 cls.company_data["company"].id,
@@ -28,7 +26,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             context
         ).code = "600010"
 
-        # Entries in 2016 for company_1 to test the initial balance.
         cls.move_2016_1 = cls.env["account.move"].create(
             [
                 {
@@ -78,7 +75,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         cls.move_2016_1.action_post()
 
-        # Entries in 2016 for company_2 to test the initial balance in multi-companies/multi-currencies.
         cls.move_2016_2 = cls.env["account.move"].create(
             [
                 {
@@ -116,7 +112,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         cls.move_2016_2.action_post()
 
-        # Entry in 2017 for company_1 to test the report at current date.
         cls.move_2017_1 = cls.env["account.move"].create(
             [
                 {
@@ -238,7 +233,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         cls.move_2017_1.action_post()
 
-        # Entry in 2017 for company_2 to test the current period in multi-companies/multi-currencies.
         cls.move_2017_2 = cls.env["account.move"].create(
             [
                 {
@@ -276,10 +270,8 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         cls.move_2017_2.action_post()
 
-        # Archive 'default_journal_bank' to ensure archived entries are not filtered out.
         cls.company_data_2["default_journal_bank"].active = False
 
-        # Deactivate all currencies to ensure group_multi_currency is disabled.
         cls.env["res.currency"].search([("name", "!=", "USD")]).with_context(
             force_deactivate=True
         ).active = False
@@ -287,9 +279,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         cls.report = cls.env.ref("account.trial_balance_report")
         cls.company_data["company"].account_config_id.totals_below_sections = False
 
-    # -------------------------------------------------------------------------
-    # Helper functions
-    # -------------------------------------------------------------------------
     def _create_invoice_move(self, date, partner_id=False):
         return self.env["account.move"].create(
             [
@@ -334,9 +323,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             ]
         )
 
-    # -------------------------------------------------------------------------
-    # TESTS: Trial Balance
-    # -------------------------------------------------------------------------
     def test_trial_balance_unaffected_earnings_current_fiscal_year(self):
         move_2009_12 = self._create_invoice_move("2009-12-31")
         move_2009_12.action_post()
@@ -404,7 +390,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                         Initial Balance         Debit          Credit          End Balance
             [0, 1, 2, 3, 4],
             [
                 ("211000 Account Payable", 2000.0, 100.0, 0.0, 2100.0),
@@ -483,7 +468,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                        Initial Balance         Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("211000 Account Payable", 1000.0, 1100.0, 0.0, 2100.0),
@@ -519,7 +503,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                     Initial Balance          Debit         Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("121000 Account Receivable", 0.0, 1000.0, 0.0, 1000.0),
@@ -553,7 +536,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                            Initial Balance         Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("121000 Account Receivable", 0.0, 1000.0, 0.0, 1000.0),
@@ -565,7 +547,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_comparisons(self):
-        # Ensure the comparison filter between years + ascending/descending option
         options = self._generate_options(self.report, "2017-01-01", "2017-12-31")
         options = self._update_comparison_filter(
             options,
@@ -676,11 +657,8 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         for i, val in enumerate(expected_header_values):
             self.assertDictEqual(options["column_headers"][0][i], val)
 
-        # Rate for 2016 and 2017 is (1/3 (from 2016) * 366 + 1/2 (from 2017) * 365) / 731 => 0.416552668
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                             [Initial Balance]   [     2016       ]    [End Balance]  [Initial Balance]      [       2017        ]       [End Balance]
-            #    Name                                             Balance      Debit      Credit         Balance             Balance      Debit          Credit          Balance
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
             [
                 (
@@ -777,7 +755,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                      Initial Balance        Debit        Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("121000 Account Receivable", 0.0, 1000.0, 0.0, 1000.0),
@@ -795,10 +772,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_account_group_with_hole(self):
-        """
-        The report must handle a hole in the account group hierarchy: groups 10 and
-        1012 have entries while the intermediate group 101 has none.
-        """
 
         test_journal = self.env["account.journal"].create(
             [
@@ -830,7 +803,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             ]
         )
 
-        # Create the accounts.
         account_a, account_a1 = self.env["account.account"].create(
             [
                 {
@@ -903,7 +875,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                            Initial Balance         Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ["10 Group_10", 0.0, 300.0, 300.0, 0.0],
@@ -917,10 +888,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_action_general_ledger(self):
-        """
-        The caret_option_open_general_ledger action must set a default_filter_accounts
-        and, when the hierarchy is enabled, unfold the group.
-        """
         self.env["account.group"].create(
             [
                 {"name": "Group_6", "code_prefix_start": "6", "code_prefix_end": "6"},
@@ -935,7 +902,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #    Name                                      Initial Balance        Debit        Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("6 Group_6", -21000.0, 200.0, 0.0, -20800.0),
@@ -962,10 +928,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         self.assertEqual(len(unfolded_lines), 9)
 
     def test_action_general_ledger_unallocated_earnings(self):
-        """
-        caret_option_open_general_ledger on an Unallocated Earnings line, both in a
-        multi-company scenario and with a single company selected.
-        """
         options = self._generate_options(self.report, "2017-06-01", "2017-06-01")
         parent_line_id = self.report._get_generic_line_id(
             model_name="report.formula.line",
@@ -978,14 +940,12 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         params = {"line_id": unallocated_earnings_line_id}
 
-        # Test case with more than one company
         res = self.report.caret_option_open_general_ledger(options, params)
         self.assertEqual(
             res["context"]["default_filter_accounts"],
             "Result Brought Forward - company_1_data",
         )
 
-        # Test case with only one company
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.company_data["company"]).ids)],
@@ -998,7 +958,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_multiple_years_initial_balance(self):
-        # Entries in 2015 for company_1 to test the initial balance for the Result Brought Forward line.
         move_2015_1 = self.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -1046,7 +1005,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         move_2015_1.action_post()
 
-        # Entry in 2016 for company_1 to test the initial balance for equity_unaffected accounts.
         equity_unaffected_acc = self.env["account.account"].search(
             [
                 ("account_type", "=", "equity_unaffected"),
@@ -1099,8 +1057,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                              [Initial Balance]   [     2016       ]    [End Balance]  [Initial Balance]      [       2017        ]       [End Balance]
-            #    Name                                              Balance      Debit      Credit         Balance             Balance      Debit          Credit          Balance
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
             [
                 (
@@ -1199,8 +1155,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_comparisons_continuous_months(self):
-        # Ensure that when comparing multiple months, an initial and end balance appear when the fiscal year changes.
-        # Select only company 1 to avoid noise and focus on test objective.
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.company_data["company"]).ids)],
@@ -1214,8 +1168,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                             [Initial]  [  Nov 2016  ] [   Dec 2016  ] [ End ] [Initial ] [   Jan 2017  ] [  Feb 2017  ] [ End ]
-            #    Name                                      Balance   Debit  Credit   Debit  Credit  Balance  Balance    Debit   Credit  Debit  Credit   Balance
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             [
                 (
@@ -1313,8 +1265,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_comparisons_non_continuous_months(self):
-        # Ensure that when comparing two non-continuous months, an end and initial balance columns are displayed.
-        # Select only company 1 to avoid noise and focus on test objective.
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.company_data["company"]).ids)],
@@ -1328,8 +1278,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                                             [Initial]   [  Jan 2016  ]   [ End ]  [Initial ] [  Jan 2017   ]    [ End ]
-            #    Name                                      Balance    Debit  Credit    Balance   Balance   Debit    Credit    Balance
             [0, 1, 2, 3, 4, 5, 6, 7, 8],
             [
                 (
@@ -1393,9 +1341,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_unfold_all(self):
-        # Ensure the "unfold all" feature (and therefore the _custom_unfold_all_batch_data_generator) is working as expected
-        # This also implies testing with multiple user groupbys. The key 'test_unfold_all' is provided to ensure that
-        # no fallback is used in case a key is not provided by the custom unfold all function
         move_with_partner = self.env["account.move"].create(
             [
                 {
@@ -1430,7 +1375,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         move_with_partner.action_post()
 
-        # Select only one company to reduce the number of lines
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.company_data["company"]).ids)],
@@ -1448,7 +1392,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                  Initial Balance       Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("121000 Account Receivable", 0.0, 1000.0, 0.0, 1000.0),
@@ -1478,12 +1421,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_audit_cell(self):
-        """
-        Audit of the trial balance cells, with a 2023 move on an expense account and
-        the report opened in 2024 comparing with 2023. The move must be part of the
-        audit domain of the 2023 expense cell and of the 2024 unaffected earnings
-        cell, and absent from the two other cells.
-        """
         move_1 = self.env["account.move"].create(
             [
                 {
@@ -1548,7 +1485,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         end_balance_col_group_2023 = options["columns"][3]["column_group_key"]
         end_balance_col_group_2024 = options["columns"][7]["column_group_key"]
 
-        # 1. Expense account in 2023
         params = self._get_audit_params_from_report_line(
             options,
             trial_balance_top_parent_line,
@@ -1560,7 +1496,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )["domain"]
         self.assertTrue(move_1_expense_line.filtered_domain(audit_domain))
 
-        # 2. Unaffected account in 2023
         params = self._get_audit_params_from_report_line(
             options,
             trial_balance_top_parent_line,
@@ -1572,7 +1507,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )["domain"]
         self.assertFalse(move_1_expense_line.filtered_domain(audit_domain))
 
-        # 3. Expense account in 2024
         params = self._get_audit_params_from_report_line(
             options,
             trial_balance_top_parent_line,
@@ -1584,7 +1518,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )["domain"]
         self.assertFalse(move_1_expense_line.filtered_domain(audit_domain))
 
-        # 4. Unaffected account in 2024
         params = self._get_audit_params_from_report_line(
             options,
             trial_balance_top_parent_line,
@@ -1628,9 +1561,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                            [           Initial Balance          ] [               2017                     ]  [              End Balance           ]
-            #    Name                            [   Partner A   ]   [   Partner B    ]    [   Partner A   ]    [   Partner B    ]  [   Partner A   ]   [   Partner B    ]
-            #    Name                            Debit      Credit    Debit      Credit    Debit      Credit    Debit      Credit    Debit      Credit    Debit      Credit
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             [
                 (
@@ -1668,7 +1598,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_groupby_partner(self):
-        """Make sure the trial balance still works properly when the first groupby isn't by account_id (but by partner_id for example)."""
         move_with_partner = self.env["account.move"].create(
             [
                 {
@@ -1704,7 +1633,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         move_with_partner.action_post()
 
-        # Select only one company to reduce the number of lines
         self.env.user.write(
             {
                 "company_ids": [Command.set((self.company_data["company"]).ids)],
@@ -1722,7 +1650,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                  Initial Balance       Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("partner_a", 0.0, 100.0, 100.0, 0.0),
@@ -1751,10 +1678,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_blank_if_zero(self):
-        """
-        With the 'blank if zero' option, a '0.0' value is blanked on the account
-        lines but kept on the total line.
-        """
         self.report.column_ids.write({"blank_if_zero": True})
         options = self._generate_options(
             self.report,
@@ -1768,7 +1691,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #    Name                                  Initial Balance       Debit          Credit      End Balance
             [0, 1, 2, 3, 4],
             [
                 ("121000 Account Receivable", "", 1000.0, "", 1000.0),
@@ -1780,9 +1702,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_trial_balance_analytic_groupby(self):
-        """
-        Test the groupby on analytic accounts and on analytic plans.
-        """
         self.env.user.group_ids += self.env.ref("analytic.group_analytic_accounting")
         self.report.filter_analytic = True
         self.report.filter_analytic_groupby = True
@@ -1860,7 +1779,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         move_2020.action_post()
 
-        # add a group by analytic account
         options = self._generate_options(
             self.report,
             "2020-01-01",
@@ -1873,9 +1791,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #                                                       [         Initial Balance        ]    [            Jan 2020            ]    [           End Balance          ]
-            #                                                       [ Account XYZ ]    [    Total    ]    [ Account XYZ ]    [    Total    ]    [ Account XYZ ]    [    Total    ]
-            #   Name                                                Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             [
                 (
@@ -1942,7 +1857,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             options,
         )
 
-        # add a group by analytic plan
         options = self._generate_options(
             self.report,
             "2020-01-01",
@@ -1955,9 +1869,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #                                                      [         Initial Balance        ]    [            Jan 2020            ]    [           End Balance          ]
-            #                                                      [   Plan XYZ  ]    [    Total    ]    [   Plan XYZ  ]    [    Total    ]    [   Plan XYZ  ]    [    Total    ]
-            #   Name                                               Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit    Debit    Credit
             [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             [
                 (
@@ -2045,11 +1956,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         self.report.export_to_xlsx(options)
 
     def test_trial_balance_export_pdf_filter(self):
-        """
-        The search bar filter must apply on the account code, the account name and,
-        when the hierarchy is enabled, on the group name; also on undistributed
-        profits/losses.
-        """
         self.env["account.group"].create(
             [
                 {
@@ -2075,7 +1981,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             ]
         )
 
-        # Create the accounts.
         account_a, account_a1, account_b2 = self.env["account.account"].create(
             [
                 {
@@ -2155,7 +2060,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
         move.action_post()
 
-        # Test the filter on account_code
         default_options = {
             "hierarchy": False,
             "unfold_all": True,
@@ -2175,7 +2079,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             options,
         )
 
-        # Test the filter on account_name
         default_options = {
             "hierarchy": False,
             "unfold_all": True,
@@ -2196,7 +2099,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             options,
         )
 
-        # Test the filter on account_group and account_code
         default_options = {
             "hierarchy": True,
             "unfold_all": True,
@@ -2219,7 +2121,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             options,
         )
 
-        # Test the filter on undistributed profits/losses
         default_options = {
             "unfold_all": True,
             "export_mode": "print",
@@ -2240,13 +2141,6 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
         )
 
     def test_open_journal_items_on_account_group(self):
-        """Drilling into an account.group line must resolve to the accounts under
-        that group.
-        """
-        # Regression: under psycopg3 the `code_store->>'%(root_company_id)s'` lookup
-        # used a placeholder *inside* a SQL string literal, which is not substituted,
-        # so it read the literal jsonb key '%s', matched no account, and left the
-        # drill-down domain empty (clicking a group showed no journal items).
         group = self.env["account.group"].create(
             {
                 "name": "Regr Group",

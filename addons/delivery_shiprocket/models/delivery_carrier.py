@@ -30,19 +30,6 @@ class DeliveryCarrier(models.Model):
     shiprocket_email = fields.Char(
         help="Enter your Username from Shiprocket account (API)."
     )
-    # Doors onto `carrier_credential_id` (ADR-0081). Two secrets of different
-    # kinds: the password is the durable one and the access token is what it
-    # buys, valid ten days and regenerated from the pair.
-    #
-    # The EMAIL beside them stays a plain column. It is the username half of the
-    # login, is not secret, and has no `groups` today -- moving it would restrict
-    # a field the UI shows.
-    #
-    # The two doors keep the DIFFERENT visibility they have today: the password
-    # is `base.group_system`, the access token has no groups at all and is
-    # readable by anyone who can read the carrier. Both computes therefore sudo
-    # the credential, so each field's own `groups` decides who may read it and
-    # nothing about who may read the vault leaks into that.
     _CREDENTIAL_FIELDS = {
         "shiprocket_password": "password",
         "shiprocket_access_token": "shiprocket_access_token",
@@ -100,9 +87,6 @@ class DeliveryCarrier(models.Model):
     )
 
     def action_shiprocket_test_connection(self) -> dict | None:
-        """
-        Test connection by generate access token from shiprocket email and password.
-        """
         self.check_singleton()
         if self.delivery_type == "shiprocket":
             sr = ShipRocket(self, self.log_xml)
@@ -139,10 +123,6 @@ class DeliveryCarrier(models.Model):
         return None
 
     def action_get_channels(self):
-        """
-        Fetch the dictionary of channel(s) configured by the customer on its
-        shiprocket account and create shiprocket channel record(s) in odoo.
-        """
         for carrier in self:
             if carrier.delivery_type != "shiprocket":
                 continue
@@ -154,7 +134,6 @@ class DeliveryCarrier(models.Model):
                         "Failed to fetch Shiprocket Channel(s), Please try again later."
                     )
                 )
-            # multiple shipping method(s) can use same channels
             current_channels = self.env["shiprocket.channel"].search(
                 [("shiprocket_email", "=", carrier.shiprocket_email)]
             )
@@ -164,7 +143,6 @@ class DeliveryCarrier(models.Model):
                 existing_channels = current_channels_by_code.pop(
                     code, current_channels.browse()
                 )
-                # remove channel if already exists
                 current_channels -= existing_channels
                 if not existing_channels:
                     new_channel_vals.append(
@@ -176,14 +154,9 @@ class DeliveryCarrier(models.Model):
                     )
             if new_channel_vals:
                 self.env["shiprocket.channel"].create(new_channel_vals)
-            # delete channel(s) if not exists anymore
             current_channels.unlink()
 
     def action_get_couriers(self):
-        """
-        Fetch shiprocket carriers from shiprocket account.
-        create record(s) of shiprocket courier(s) in odoo.
-        """
         for carrier in self:
             if carrier.delivery_type != "shiprocket":
                 continue
@@ -195,7 +168,6 @@ class DeliveryCarrier(models.Model):
                         "Failed to fetch Shiprocket Couriers(s), Please try again later."
                     )
                 )
-            # multiple shipping method(s) can use same couriers
             current_couriers = self.env["shiprocket.courier"].search(
                 [("shiprocket_email", "=", carrier.shiprocket_email)]
             )
@@ -205,7 +177,6 @@ class DeliveryCarrier(models.Model):
                 existing_couriers = current_couriers_by_code.pop(
                     courier.get("id"), current_couriers.browse()
                 )
-                # remove courier if already exists
                 current_couriers -= existing_couriers
                 if not existing_couriers:
                     new_courier_vals.append(
@@ -217,13 +188,9 @@ class DeliveryCarrier(models.Model):
                     )
             if new_courier_vals:
                 self.env["shiprocket.courier"].create(new_courier_vals)
-            # delete courier(s) if not exists anymore
             current_couriers.unlink()
 
     def _shiprocket_converted_amount(self, order, price_inr):
-        """
-        Returns the converted amount from the INR amount based on order's currency.
-        """
         return self.env.ref("base.INR")._convert(
             price_inr,
             order.currency_id,
@@ -232,9 +199,6 @@ class DeliveryCarrier(models.Model):
         )
 
     def shiprocket_rate_shipment(self, order) -> dict:
-        """
-        Returns shipping rate for the order and chosen shipping method.
-        """
         _debug.pipeline(
             "carrier_rate_request",
             provider="shiprocket",
@@ -265,11 +229,6 @@ class DeliveryCarrier(models.Model):
         }
 
     def shiprocket_send_shipping(self, pickings):
-        """
-        Send shipment to shiprocket. Once the shiprocket order is
-        generated, it will post the message(s) with tracking link,
-        shipping label pdf and manifest pdf.
-        """
         _debug.pipeline(
             "carrier_ship_request",
             provider="shiprocket",
@@ -279,7 +238,6 @@ class DeliveryCarrier(models.Model):
         sr = ShipRocket(self, self.log_xml)
 
         def _get_document_data(url):
-            """Returns the document content for label and manifest."""
             try:
                 document_response = self._get_integration_connection()._egress_request(
                     "GET", url, purpose="shiprocket", timeout=30
@@ -319,7 +277,6 @@ class DeliveryCarrier(models.Model):
                         tracking_ref=carrier_tracking_ref,
                     )
                     picking.message_post(body=log_message, attachments=attachments)
-                # if shiprocket_pickup_request is enable then only shiprocket generate manifest(s).
                 if self.shiprocket_manifests_generate and response.get("manifest_url"):
                     manifest_data = _get_document_data(response["manifest_url"])
                     attachments = [
@@ -331,9 +288,7 @@ class DeliveryCarrier(models.Model):
                     ]
                     log_message = self.env._("Manifest generated of %s", courier_name)
                     picking.message_post(body=log_message, attachments=attachments)
-            # when carrier is in test mode, need to cancel shiprocket order.
             if not self.prod_environment:
-                # Need carrier_tracking_ref to cancel shipment
                 picking.carrier_tracking_ref = " + ".join(
                     shippings.get("tracking_numbers")
                 )
@@ -341,10 +296,6 @@ class DeliveryCarrier(models.Model):
         return res
 
     def shiprocket_get_tracking_link(self, picking):
-        """
-        Returns the tracking links for a picking.
-        Shiprocket returns one tracking link for one package.
-        """
         _debug.logic(
             "carrier_tracking_link",
             provider="shiprocket",
@@ -366,13 +317,6 @@ class DeliveryCarrier(models.Model):
         )
 
     def shiprocket_cancel_shipment(self, picking):
-        """
-        Cancel shipment using shiprocket requests.
-        To Refunds for canceled shipment(s) or order(s) will be promptly processed:
-        - Cancel the Shiprocket order(s), if pickup request enable.
-        - Cancel the Shiprocket shipment(s), if pickup request disable.
-        post message if order is already canceled.
-        """
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="shiprocket",
@@ -408,6 +352,5 @@ class DeliveryCarrier(models.Model):
                         "Order cancelled successfully!"
                     )
                     picking.message_post(body=msg)
-        # To avoid the duplicates values in Tracking Reference
         if not self.prod_environment:
             picking.carrier_tracking_ref = ""

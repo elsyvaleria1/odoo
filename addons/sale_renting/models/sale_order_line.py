@@ -20,7 +20,6 @@ class SaleOrderLine(models.Model):
         depends=["order_id"],
     )
 
-    # Stored because a product could have been rent_ok when added to the SO but then updated
     is_rental = fields.Boolean(
         compute="_compute_is_rental",
         precompute=True,
@@ -53,7 +52,6 @@ class SaleOrderLine(models.Model):
         depends=["product_id"],
     )
 
-    # Technical computed fields for UX purposes (hide/make fields readonly, ...)
     is_late = fields.Boolean(related="order_id.is_late")
     team_id = fields.Many2one(related="order_id.team_id")
     country_id = fields.Many2one(related="order_id.partner_id.country_id")
@@ -100,22 +98,16 @@ class SaleOrderLine(models.Model):
 
     @api.onchange("qty_transferred")
     def _onchange_qty_transferred(self) -> None:
-        """When picking up more than reserved, reserved qty is updated"""
         self.product_qty = max(self.product_qty, self.qty_transferred)
 
     @api.depends("is_rental")
     def _compute_qty_transferred_method(self) -> None:
-        """Allow modification of delivered qty without depending on stock moves."""
         rental_lines = self.filtered("is_rental")
         super(SaleOrderLine, self - rental_lines)._compute_qty_transferred_method()
         rental_lines.qty_transferred_method = "manual"
 
     @api.depends("is_rental")
     def _compute_name(self):
-        """Override to add the compute dependency.
-
-        The custom name logic can be found below in _get_line_multiline_description_sale.
-        """
         super()._compute_name()
 
     @api.depends("product_id")
@@ -127,20 +119,11 @@ class SaleOrderLine(models.Model):
 
     @api.depends("is_rental")
     def _compute_product_readonly(self) -> None:
-        """Extend product_readonly for rental lines.
-
-        Rental products are always editable (not readonly) regardless of order state,
-        allowing users to change rental products even after confirmation.
-        """
         rental_lines = self.filtered("is_rental")
         super(SaleOrderLine, self - rental_lines)._compute_product_readonly()
         rental_lines.product_readonly = False
 
     def _compute_pricelist_item_id(self) -> None:
-        """Discard pricelist item computation for rental lines.
-
-        This will disable the standard discount computation because no pricelist rule was found.
-        """
         rental_lines = self.filtered("is_rental")
         super(SaleOrderLine, self - rental_lines)._compute_pricelist_item_id()
         rental_lines.pricelist_item_id = False
@@ -164,25 +147,24 @@ class SaleOrderLine(models.Model):
         self.rental_color = 0
         for sol in self.filtered("order_is_rental"):
             if sol.state in ("draft", "sent"):
-                sol.rental_color = 5  # purple
+                sol.rental_color = 5
                 continue
             match sol.rental_status:
                 case "pickup":
                     sol.rental_color = (
                         3 if sol.is_late else 4
-                    )  # yellow if late else blue
+                    )
                 case "return":
                     sol.rental_color = (
                         6 if sol.is_late else 2
-                    )  # red if late else orange
+                    )
                 case "returned":
-                    sol.rental_color = 7  # green
+                    sol.rental_color = 7
 
     def _search_rental_status(self, operator, values):
         if operator != "in":
             return NotImplemented
 
-        # Uses custom SQL to compare fields between each other.
         return (
             Domain("order_is_rental", "=", False) if False in values else Domain.FALSE
         ) | (
@@ -223,26 +205,9 @@ class SaleOrderLine(models.Model):
             ),
             limit=80 - len(products),
         )
-        # While `_web_read_group_expand` already includes `products` in the expanded set, it
-        # exhibits an unusual behavior of adding the expanded groups first, even though they are
-        # empty groups. Performing the union here reverses this behavior.
         return products + expanded_products
 
     def web_gantt_write(self, vals):
-        """Updates the sale order line with the provided values and performs necessary validations.
-
-        This method also recalculates rental prices if the duration of the rental changes.
-
-        :param dict vals: Dictionary of values to update on the sale order line.
-        :raises UserError: If the order is already picked up and the start date is being updated.
-        :raises UserError: If the order is already returned and the end date is being updated.
-        :raises UserError: If the write operation fails.
-        :return: A dictionary containing notifications and/or actions, if applicable. Format: {
-            'notifications': list[{'type': str, 'message': str, 'code': str}],
-            'actions': list[dict]  # Action dictionaries
-        }
-        :rtype: dict
-        """
         self.check_singleton()
         result = {"notifications": [], "actions": []}
 
@@ -281,7 +246,6 @@ class SaleOrderLine(models.Model):
         return result
 
     def _get_line_multiline_description_sale(self):
-        """Add Rental information to the SaleOrderLine name."""
         res = super()._get_line_multiline_description_sale()
         if self.is_rental:
             self.order_id._rental_set_dates()
@@ -300,7 +264,6 @@ class SaleOrderLine(models.Model):
             and start_date.replace(tzinfo=UTC).astimezone(timezone(tz)).date()
             == return_date.replace(tzinfo=UTC).astimezone(timezone(tz)).date()
         ):
-            # If return day is the same as pickup day, don't display return_date Y/M/D in description.
             return_date_part = format_time(env, return_date, tz=tz, time_format="short")
         else:
             return_date_part = format_datetime(
@@ -314,16 +277,11 @@ class SaleOrderLine(models.Model):
         )
 
     def _use_template_name(self):
-        """Avoid the template line description in order to add the rental period on the SOL."""
         if self.is_rental:
             return False
         return super()._use_template_name()
 
     def _create_delay_line(self, qty_returned) -> None:
-        """Generate a sale order line representing the delay cost due to the late return.
-
-        :param float qty_returned: returned quantity
-        """
         self.check_singleton()
 
         self = self.with_company(self.company_id)
@@ -339,7 +297,6 @@ class SaleOrderLine(models.Model):
             _debug.logic("delay_line_skipped", line=self, reason="no_delay_price")
             return
 
-        # migrate to a function on res_company get_extra_product?
         delay_product = self.company_id.extra_product
         if not delay_product:
             delay_product = (
@@ -359,8 +316,6 @@ class SaleOrderLine(models.Model):
                         "purchase_ok": False,
                     }
                 )
-                # Not set to inactive to allow users to put it back in the settings
-                # In case they removed it.
             _debug.lifecycle(
                 "delay_product_resolved",
                 company=self.company_id,
@@ -394,14 +349,6 @@ class SaleOrderLine(models.Model):
         )
 
     def _prepare_delay_line_vals(self, delay_product, delay_price) -> dict:
-        """Prepare values of delay line.
-
-        :param product.product delay_product: Product used for the delay_line
-        :param float delay_price: Price of the delay line
-
-        :return: sale.order.line creation values
-        :rtype: dict
-        """
         delay_line_description = self._get_delay_line_description()
         return {
             "name": delay_line_description,
@@ -412,7 +359,6 @@ class SaleOrderLine(models.Model):
         }
 
     def _get_delay_line_description(self) -> str:
-        # Shouldn't tz be taken from self.order_id.user_id.tz ?
         tz = self._get_tz()
         env = self.with_context(use_babel=True).env
         expected_date = format_datetime(env, self.return_date, tz=tz, dt_format=False)
@@ -427,11 +373,6 @@ class SaleOrderLine(models.Model):
         return self.env.context.get("tz") or self.env.user.tz or "UTC"
 
     def _get_pricelist_price(self):
-        """Custom price computation for rental lines.
-
-        The displayed price will only be the price given by the product.pricing rules matching the
-        given line information (product, period, pricelist, ...).
-        """
         self.check_singleton()
         if self.is_rental:
             self.order_id._rental_set_dates()

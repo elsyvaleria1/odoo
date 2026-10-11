@@ -13,7 +13,6 @@ class TestUblCiiCommon(AccountTestInvoicingCommon):
 
     @classmethod
     def _create_company(cls, **create_values):
-        # EXTENDS 'account'
         create_values.setdefault("currency_id", cls.env.ref("base.EUR").id)
         company = super()._create_company(**create_values)
         company.tax_config_id.tax_calculation_rounding_method = "round_globally"
@@ -139,9 +138,6 @@ class TestUblCiiCommon(AccountTestInvoicingCommon):
             }
         )
 
-    # -------------------------------------------------------------------------
-    # EXPORT HELPERS
-    # -------------------------------------------------------------------------
 
     def subfolder(self):
         return "export"
@@ -158,9 +154,6 @@ class TestUblCiiCommon(AccountTestInvoicingCommon):
             invoice.ubl_cii_xml_id.raw, filename, subfolder=self.subfolder()
         )
 
-    # -------------------------------------------------------------------------
-    # IMPORT HELPERS
-    # -------------------------------------------------------------------------
 
     @classmethod
     def _import_as_attachment_on(cls, attachment, journal=None):

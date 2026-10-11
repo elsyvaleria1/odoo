@@ -48,8 +48,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
         )
 
     def test_sub_timesheet_create_recurring_tasks(self):
-        # Similar test with recurring tasks: new tasks are created automatically
-        # Note: when the setting is deactivated it works similarly. All timesheets must be created into a single task.
 
         self.env.user.group_ids += self.env.ref("project.group_project_recurring_tasks")
         self.project_global.allow_recurring_tasks = True
@@ -57,13 +55,11 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
             self.subscription_timesheet.action_confirm()
             task = self.subscription_timesheet.tasks_ids
             self.assertTrue(task, "A new task should be created")
-            # after confirming the subscription, next invoice date is set to the next period
             self.assertEqual(
                 self.subscription_timesheet.line_ids.qty_transferred,
                 0,
                 "No delivery before creating the first recurring invoice",
             )
-            # after creating timesheet line quantity delivered set to 4
             self.env["account.analytic.line"].create(
                 {
                     "name": "Test Line",
@@ -79,7 +75,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
                 "Product should be delivered after creating the recurring invoice",
             )
         with freeze_time("2024-10-01"):
-            # record timesheet for that task
             self.env["account.analytic.line"].create(
                 {
                     "name": "Test Line",
@@ -97,7 +92,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
                 10,
                 "The product should be delivered",
             )
-            # When the task is done, we create a new one
             task.state = "done"
             self.subscription_timesheet.invalidate_recordset(["tasks_ids"])
             task = self.subscription_timesheet.tasks_ids - task
@@ -126,7 +120,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
             )
         with freeze_time("2024-12-01"):
             inv = self.subscription_timesheet._create_recurring_invoice()
-            # When the task is done, we create a new one
             task.state = "done"
             self.subscription_timesheet.invalidate_recordset(["tasks_ids"])
             task = self.subscription_timesheet.tasks_ids - task
@@ -139,7 +132,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
             self.assertEqual(len(task), 2, "Two tasks are created automatically")
 
     def test_sub_timesheet_order_invoice_product(self):
-        # Subscription service product with invoicing policy `ordered_prepaid`
         self.product_order_timesheet2.recurring_invoice = True
 
         with freeze_time("2025-02-15"):
@@ -181,7 +173,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
                     },
                 ]
             )
-            # We need to run the cron once in order to update the next_invoice_date of the subscription
             self.env["sale.order"]._cron_recurring_create_invoice()
             self.assertEqual(
                 subscription_timesheet.line_ids.qty_transferred,
@@ -307,10 +298,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
 
     @freeze_time("2025-08-03")
     def test_invoice_orders_if_delivery_qty(self):
-        """
-        Test invoicing order that has lines with delivery invoicing policy products
-        and has delivered quantity
-        """
         subscription = self.env["sale.order"].create(
             {
                 "name": "CopyTestSubscriptionWithTimeSheet",
@@ -355,7 +342,6 @@ class TestSubscriptionTask(TestSubscriptionCommon, TestCommonSaleTimesheet):
 
         self.env["sale.order"]._cron_recurring_create_invoice()
 
-        # An invoice should be created
         self.assertTrue(subscription.invoice_ids)
         self.assertEqual(
             subscription.invoice_ids.invoice_line_ids[0].quantity, timesheet.unit_amount

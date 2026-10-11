@@ -12,9 +12,6 @@ class IrHttp(models.AbstractModel):
         mods = super()._get_translation_frontend_modules_name()
         return mods + ["pos_self_order"]
 
-    # With the website module installed, there is an issue where
-    # the default website's languages override the kiosk languages.
-    # This override works around the issue.
     @api.model
     def get_nearest_lang(self, lang_code: str) -> str:
         if not lang_code:

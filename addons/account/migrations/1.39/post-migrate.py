@@ -17,8 +17,6 @@ def migrate(cr, version):
             ("move_type", "in", ("out_invoice", "out_refund", "out_receipt")),
         ]
     )
-    # the flag is new: before it, a rate counted as typed by hand when it
-    # differed from the rate of the day the draft was created
     manual = drafts.filtered(
         lambda move: (
             move.currency_id != move.company_currency_id

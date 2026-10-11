@@ -66,7 +66,6 @@ class TestDocumentRequest(MailCommon, HttpCase):
         )
 
     def _end_of_day_for_requester(self, day):
-        # the grant runs through the deadline day in the requester's timezone
         tz = ZoneInfo(self.user_employee.tz or "UTC")
         end = datetime.combine(day, time.max).replace(tzinfo=tz)
         return end.astimezone(UTC).replace(tzinfo=None)
@@ -103,8 +102,6 @@ class TestDocumentRequest(MailCommon, HttpCase):
             subject="Document Request : Wizard Request",
         )
         self.assertEqual(document.access_via_link, "none")
-        # the requestee is granted on the document; the requester owns it and
-        # also reaches it through the folder, where nothing is copied from
         access_doc_partner_1 = document.access_ids.check_singleton()
         self.assertEqual(access_doc_partner_1.partner_id, self.doc_partner_1)
         self.assertEqual(access_doc_partner_1.role, "edit")

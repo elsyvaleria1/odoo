@@ -73,8 +73,6 @@ class MixinOrderProductMatrix(models.AbstractModel):
                     else:
                         order_lines.update({"product_qty": 0.0})
                     continue
-                # several lines of one variant would each lose their own
-                # business logic if merged, so the grid refuses to pick one
                 if len(order_lines) > 1:
                     _debug.logic("matrix_qty_refused", lines=order_lines)
                     raise ValidationError(self._get_matrix_line_conflict_message())

@@ -41,8 +41,6 @@ class TestHrEmployeeMail(TestHrCommon, MailCommon):
         )
 
     def test_employees_alias_compares_whole_addresses(self):
-        """`work_email ilike <address>` read `%` and `_` as wildcards, and both
-        are legal in a local part: `%@test.example.com` matched every employee."""
         alias = self.env["mail.alias"].create(
             {
                 "alias_contact": "employees",
@@ -83,7 +81,6 @@ class TestHrEmployeeMail(TestHrCommon, MailCommon):
     def test_assert_initial_values(self):
         self.assertTrue(self.test_employee.partner_id)
         self.assertFalse(self.test_employee.message_partner_ids)
-        # The party's channels are the employee's work channels now.
         self.assertEqual(self.test_employee.email, self.test_employee.work_email)
         self.assertEqual(
             self.test_employee.phone_ids, self.test_employee.partner_id.phone_ids

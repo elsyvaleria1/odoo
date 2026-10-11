@@ -134,9 +134,6 @@ class TestDocumentsUserFolder(TransactionCaseDocuments):
         cls.company_restr_doc.action_update_access_rights(
             partners={cls.doc_user.partner_id: ("view", False)}
         )
-        # hidden, not sent to the trash: the trash refuses the folders other
-        # applications use (document_hr's employee folders), and an application
-        # may refuse to archive a folder it relies on (document_project's base)
         cls.unarchivable = cls.env["document.document"]
         for document in (
             cls.env["document.document"]
@@ -432,8 +429,6 @@ class TestDocumentsUserFolder(TransactionCaseDocuments):
                     | self.company_restr_folder
                     | self.unarchivable,
                     "MY": Document,
-                    # another person's drive is theirs (I1): only what an
-                    # audience or a grant gives reaches the administrator
                     "SHARED": self.shared_doc_drive | self.folder_a | self.folder_b,
                     "RECENT": self.folder_a,
                     str(self.folder_a.id): self.folder_a_a,

@@ -14,7 +14,6 @@ class WizardPosOrderInvoiceMissingCustomer(models.TransientModel):
     def _get_selected_orders(self):
         if self:
             self.check_singleton()
-            # the selection keeps the order it was recorded in
             return self.order_ids.sorted("id")
         selected_orders = self.env.context.get("orders")
         return self.env["pos.order"].browse(selected_orders)

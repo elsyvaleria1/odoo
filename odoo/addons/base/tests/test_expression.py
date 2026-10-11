@@ -272,7 +272,6 @@ class TestExpression(SavepointCaseWithUserDemo, TransactionExpressionCase):
         Partner.create({"name": "other"})
         self.env.flush_all()
         self.assertFalse(Partner._parent_store)
-        # the closure is a subquery of the search, not a query of its own
         with self.assertQueryCount(1):
             found = Partner.search([("id", "child_of", root.id)])
         self.assertEqual(found, root + kids + grandkid)
@@ -294,8 +293,6 @@ class TestExpression(SavepointCaseWithUserDemo, TransactionExpressionCase):
         (root + child).mapped("name")
         (root + child).mapped("parent_path")
         (partner + other).mapped("tag_ids")
-        # the roots of a many2many hierarchy are known rows: no search
-        # confirms them, and the search itself is the only statement
         with self.assertQueryCount(1):
             found = Partner.search(
                 [("tag_ids", "child_of", root.id), ("id", "in", (partner + other).ids)]
@@ -2496,8 +2493,6 @@ class TestQueries(TransactionCase):
 
     def test_rec_names_search(self):
         Model = self.env["ir.model"]
-        # This checks the search expression, independently of addons (such as
-        # mail) that replace ir.model's default ordering.
         self.patch(type(Model), "_order", "model")
 
         self.assertEqual(Model._rec_names_search, ["name", "model"])

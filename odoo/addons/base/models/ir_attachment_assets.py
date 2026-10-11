@@ -18,14 +18,10 @@ _debug = DebugLog(__name__)
 
 ASSETS_URL_PREFIX = "/web/assets/"
 
-# The encodings a generated asset is stored in beside its raw bytes, in the
-# order a client accepting several is served them: (Content-Encoding, url
-# suffix, mimetype of the stored bytes, compressor).
 ASSET_ENCODINGS = (
     ("zstd", ".zst", "application/zstd", lambda raw: zstd.compress(raw, 12)),
     ("gzip", ".gz", "application/gzip", lambda raw: gzip.compress(raw, 6, mtime=0)),
 )
-# a map and its encoded copies: each carries the whole map
 SOURCE_MAP_SUFFIXES = (
     ".map",
     *(f".map{suffix}" for _encoding, suffix, _mimetype, _compress in ASSET_ENCODINGS),
@@ -39,7 +35,6 @@ _ENCODED_ASSET_MIMETYPES = frozenset(
         "image/svg+xml",
     }
 )
-# below this, the compressed variant saves less than its row costs
 _ENCODED_ASSET_FLOOR = 8192
 
 
@@ -75,8 +70,6 @@ class IrAttachment(models.Model):
             or vals.get("mimetype") not in _ENCODED_ASSET_MIMETYPES
         ):
             return []
-        # every other value is the original's: an ESM row's company_id=False
-        # keeps its variants off the company's foreign-key lock as well
         base = {k: v for k, v in vals.items() if k not in ("datas", "db_datas")}
         return [
             {
@@ -91,10 +84,6 @@ class IrAttachment(models.Model):
 
     @tools.ormcache("self.id", cache="assets")
     def _encoded_asset_variants(self) -> tuple[str, frozendict]:
-        """(this generated asset's mimetype, {encoding: id of its encoded
-        copy}), so the hot path neither searches its copies nor reads the asset
-        it serves one of. A copy's going clears the assets cache; one deleted
-        under a stale entry is caught where it is served."""
         self.check_singleton()
         url = self.url or ""
         if (
@@ -112,9 +101,6 @@ class IrAttachment(models.Model):
         )
 
     def _get_encoded_asset_variant(self, accept_encodings: Any) -> tuple[Self, str]:
-        """The encoded copy of this asset a client accepting
-        `accept_encodings` is served, and its encoding; none when it accepts
-        none of them or the asset has no copies."""
         self.check_singleton()
         __, variants = self._encoded_asset_variants()
         for encoding, _suffix, _mimetype, _compress in ASSET_ENCODINGS:
@@ -130,9 +116,6 @@ class IrAttachment(models.Model):
                 try:
                     encoded = binary._get_stream_from_record(variant, "raw", filename)
                 except MissingError:
-                    # a copy deleted since it was cached (a transaction that read
-                    # before the delete committed can cache it again): the asset
-                    # itself serves, and the copies are looked up anew
                     _debug.logic("asset_encoded_copy_gone", filename=filename)
                     self.env.registry.clear_cache("assets")
                 else:
@@ -143,9 +126,6 @@ class IrAttachment(models.Model):
         return binary._get_stream_from_record(self, "raw", filename)
 
     def _newest_encoded_variant_ids(self) -> dict[str, int]:
-        """{copy url: id} of this asset's encoded copies. Twins of one bundle
-        share its url and so its copies' urls; each copy is created right after
-        its own asset, so the newest per url is the newest twin's."""
         self.check_singleton()
         ids: dict[str, int] = {}
         for variant in self._search_generated_assets(
@@ -170,7 +150,6 @@ class IrAttachment(models.Model):
             url and url.startswith(ASSETS_URL_PREFIX) for url in self.mapped("url")
         )
         if clear_assets:
-            # the variants go with the asset they encode, whoever unlinks it
             if variants := self._encoded_variants() - self:
                 variants.unlink()
         res = super().unlink()
@@ -178,8 +157,6 @@ class IrAttachment(models.Model):
             _debug.lifecycle(
                 "assets_cache_cleared", reason="attachment_unlink", count=len(self)
             )
-            # again after commit: a transaction that read before it can cache
-            # what this one deleted
             self.env["ir.asset"]._invalidate_assets_cache()
         return res
 
@@ -200,12 +177,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _withheld_source_maps(self) -> Domain | None:
-        """The generated source maps this user may not read, or ``None``.
-
-        A generated asset is a public attachment, since it is served as an
-        asset; its map carries every bundled source, comments included, and is
-        the system's alone -- the server reads it to locate browser errors --
-        unless the maps are linked, served to whoever loads the bundle."""
         if self.env.su or self.env.is_system():
             return None
         if (
@@ -239,8 +210,6 @@ class IrAttachment(models.Model):
 
     @api.model
     def _is_content_index_required(self, values: dict) -> bool:
-        # nobody searches a compiled bundle by its words; indexing one costs
-        # the text extraction of a megabyte of minified code per row
         if self._is_generated_asset_vals(values):
             _debug.logic("index_skipped", reason="generated_asset")
             return False
@@ -280,8 +249,6 @@ class IrAttachment(models.Model):
         order: str | None = None,
         urls: list[str] | None = None,
     ) -> Self:
-        # a generated asset is public by construction and belongs to no one:
-        # whoever asks for its url reads it
         return self.sudo().search(
             self._get_domain_generated_assets(
                 url=url, url_pattern=url_pattern, urls=urls
@@ -313,14 +280,9 @@ class IrAttachment(models.Model):
 
     @api.autovacuum
     def _gc_esm_bridges(self) -> tuple[int, int]:
-        # a bridge shim belongs to no build: pages import it by content, and a
-        # reuse refreshes its write_date, so age alone says it is unused.
-        # Every other generated ESM file is a build's, collected with it
         cutoff = fields.Datetime.now() - timedelta(
             days=self._get_esm_bridge_gc_grace_days()
         )
-        # the shims alone: a reuse refreshes a shim, not its encoded copies,
-        # which go with their shim when it goes
         domain = self._get_domain_generated_assets(
             url_pattern=f"{ESM_BRIDGE_URL_PREFIX}%.js"
         ) & Domain("write_date", "<", cutoff)

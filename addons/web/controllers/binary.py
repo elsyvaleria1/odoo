@@ -66,8 +66,6 @@ def _resolve_res_id(value) -> int | None:
 
 
 def _vary_on_encoding(response: Response) -> Response:
-    # an asset answers in the encoding the request accepts, so a cache keys
-    # it by Accept-Encoding as well
     response.headers.add("Vary", "Accept-Encoding")
     return response
 
@@ -101,10 +99,7 @@ def _locked_rw_env(env: api.Environment, lock_key: str) -> Iterator[api.Environm
     if env.cr.readonly:
         _debug.logic("lock_readonly_cursor_rollback", lock_key=lock_key)
         env.cr.rollback()
-    # Always use a fresh cursor: the request cursor has already queried and
-    # cannot change its isolation level before waiting for the lock.
     with env.registry.cursor(readonly=False) as rw_cr:
-        # Read under the lock what the previous generator committed.
         rw_cr.use_read_committed()
         digest = hashlib.blake2b(lock_key.encode(), digest_size=8).digest()
         with _debug.perf("lock_advisory_wait", lock_key=lock_key):
@@ -141,7 +136,7 @@ class Binary(http.Controller):
         auth="public",
         readonly=True,
     )
-    def content_common(  # noqa: E8539  content: an attachment's own token or ownership token
+    def content_common(
         self,
         xmlid: str | None = None,
         model: str = "ir.attachment",
@@ -316,10 +311,6 @@ class Binary(http.Controller):
             "content_security_policy": None,
         }
         if str2bool(nocache, False) or not persisted or unique == ANY_UNIQUE:
-            # an asset built but not saved (a stylesheet's error banner) is
-            # served once: the next request builds again once the fault clears;
-            # an "any" URL names whichever version is current, so it must not
-            # outlive that version in a cache
             send_file_kwargs["max_age"] = None
         elif not debug_assets:
             send_file_kwargs["immutable"] = True
@@ -428,8 +419,6 @@ class Binary(http.Controller):
 
     @staticmethod
     def _source_map_private(filename: str, response: Response) -> Response:
-        # a map served past the gate is this user's: no shared cache may keep
-        # it for the next visitor, whatever its asset's caching says
         env = request.env
         if filename.endswith(SOURCE_MAP_SUFFIXES) and (
             env.registry.settings.get(env, "web.esbuild.source_maps", "") != "linked"
@@ -439,9 +428,6 @@ class Binary(http.Controller):
 
     @staticmethod
     def _source_map_published() -> bool:
-        # an "external" map carries every bundled source, comments included:
-        # it is written for the server's own use and for administrators, and
-        # only "linked" hands it to whoever loads the bundle
         env = request.env
         mode = env.registry.settings.get(env, "web.esbuild.source_maps", "")
         return mode == "linked" or env.user._is_system()
@@ -562,7 +548,7 @@ class Binary(http.Controller):
         readonly=True,
         save_session=False,
     )
-    def content_image(  # noqa: E8539  content: an attachment's own token or ownership token
+    def content_image(
         self,
         xmlid: str | None = None,
         model: str = "ir.attachment",

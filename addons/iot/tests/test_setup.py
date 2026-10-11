@@ -87,8 +87,6 @@ class TestBoxEnrolment(HttpCase):
         self.assertEqual(by_identifier["scale_b"], "disconnected")
 
     def test_a_fiscal_data_module_that_changes_port_keeps_one_record(self):
-        """A serial device is identified by its port, so replugging it reads as
-        a new device. ``_find_moved_device`` is what stops the duplicate."""
         token = self._hand_out_token()
         blackbox = {
             "name": "BODO001 fiscal data module",
@@ -121,8 +119,6 @@ class TestBoxEnrolment(HttpCase):
         self.assertEqual(box.ip, "10.6.6.6")
 
     def test_a_known_box_paired_again_takes_the_fresh_pairing_token(self):
-        """A box disconnected and paired again holds the token the wizard just
-        handed out, not the one the database paired it with first."""
         first = self._hand_out_token()
         self._setup(self._payload(first), {})
         box = self._box()

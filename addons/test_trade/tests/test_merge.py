@@ -108,7 +108,6 @@ class TestMerge(TestTradeOrderCase):
         self.assertEqual(lines.price_unit, 100.0)
 
     def test_merged_sections_do_not_collide_on_sequence(self):
-        """Sequences are per-order, so every source repeats the target's."""
         first = self._order_with_section("A")
         second = self._order_with_section("B")
 
@@ -140,13 +139,6 @@ class TestMerge(TestTradeOrderCase):
         return order
 
     def test_a_target_carrying_duplicate_lines_does_not_break_the_merge(self):
-        """The index is pruned when equivalent target lines are folded.
-
-        Folding unlinks all but the first, and an index still holding them
-        handed a deleted record to the next source line sharing the key -- the
-        merge died with MissingError partway through, having already moved
-        some lines.
-        """
         target = self._order_with_identical_lines(2)
         first_source = self._order_with_identical_lines(1)
         second_source = self._order_with_identical_lines(1)
@@ -170,7 +162,6 @@ class TestMerge(TestTradeOrderCase):
         )
 
     def test_finding_matches_changes_nothing_on_its_own(self):
-        """`_merge_find_matching_line` reads; `_merge_collapse_matches` writes."""
         target = self._order_with_identical_lines(2)
         source = self._order_with_identical_lines(1)
         candidates = list(target.line_ids)

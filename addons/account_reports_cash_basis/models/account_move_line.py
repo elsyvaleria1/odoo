@@ -8,10 +8,6 @@ class AccountMoveLine(models.Model):
 
     @api.model
     def _search(self, *args, **kwargs):
-        """Shadow the account_move_line table with its cash basis substitute so
-        report queries read cash-based amounts, or with the analytic variant when
-        the report also groups by analytic.
-        """
         query = super()._search(*args, **kwargs)
         if self.env.context.get("account_report_cash_basis"):
             self.env["report.formula"]._prepare_lines_for_cash_basis()

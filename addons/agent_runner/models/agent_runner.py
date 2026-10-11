@@ -6,10 +6,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.http import request
 
-# A runner that has not called in this long is shown offline; its leases expire
-# on their own clock.
 _ONLINE_WINDOW = timedelta(minutes=2)
-# Polling does not rewrite the row each time it calls.
 _SEEN_RESOLUTION = timedelta(seconds=30)
 
 
@@ -96,7 +93,6 @@ class AgentRunner(models.Model):
             )
 
     def action_issue_token(self) -> dict[str, Any]:
-        """A new bearer token, shown once; the one before stops working."""
         self.check_singleton().check_access("write")
         Credential = self.env["credential.credential"]
         if not Credential._is_encryption_key_configured():
@@ -143,14 +139,12 @@ class AgentRunner(models.Model):
 
     @api.model
     def _receiver_for_bearer(self, **_path_args: Any) -> AgentRunner:
-        """The runner whose token the call carries; the gate verifies it again."""
         header = request.httprequest.headers.get("Authorization", "")
         scheme, _, token = header.partition(" ")
         if scheme.lower() != "bearer" or not token:
             return self.browse()
         return self._get_by_credential_token(token.strip(), [("active", "=", True)])
 
-    # Polls: a call that hands nothing out and changes nothing leaves no row.
     _UNLOGGED_EVENTS = frozenset({"agent_claim", "agent_heartbeat"})
 
     def _inbound_event_logged(self, event_type: str | None) -> bool:

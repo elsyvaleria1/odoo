@@ -14,7 +14,6 @@ class PaymentTransaction(models.Model):
         index=True,
     )
 
-    # === CRUD METHODS === #
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -30,10 +29,8 @@ class PaymentTransaction(models.Model):
             tx.mandate_id = tx.token_id.sdd_mandate_id
         return txs
 
-    # === BUSINESS METHODS ===#
 
     def _prepare_provider_processing_values(self, processing_values):
-        """Override of `payment` to return SEPA-specific processing values."""
         if (
             self.provider_id.custom_mode != "sepa_direct_debit"
             or self.operation == "online_token"
@@ -45,7 +42,6 @@ class PaymentTransaction(models.Model):
         }
 
     def _send_payment_request(self):
-        """Override of `payment` to create the related `account.payment` and notify the customer."""
         if self.provider_id.custom_mode != "sepa_direct_debit":
             return super()._send_payment_request()
 
@@ -59,27 +55,18 @@ class PaymentTransaction(models.Model):
             self._set_error(self.env._("The mandate is invalid."))
             return None
 
-        # There is no provider to send a payment request to, but we handle empty payment data
-        # to let the payment engine call the generic processing methods.
         self._process("sepa_direct_debit", {"reference": self.reference})
         return None
 
     def _apply_updates(self, payment_data):
-        """Override of `payment` to update the transaction based on the payment data."""
         if self.provider_id.custom_mode != "sepa_direct_debit":
             return super()._apply_updates(payment_data)
 
         if self.operation in ("online_token", "offline"):
-            self._set_done()  # SEPA transactions are confirmed as soon as the mandate is valid.
+            self._set_done()
         return None
 
     def _set_done(self, **kwargs):
-        """Override of `payment` to create the token and validate the mandate of confirmed SEPA
-        transaction.
-
-        Note: It would be preferred to do it in the post-processing, but the tokens must be created
-        before Subscription checks for their existence during its own post-processing.
-        """
         confirmed_txs = super()._set_done(**kwargs)
         sepa_txs = confirmed_txs.filtered(
             lambda t: (
@@ -107,24 +94,12 @@ class PaymentTransaction(models.Model):
         return confirmed_txs
 
     def _get_communication(self):
-        """Override of `payment_custom` to ensure the transaction reference is used as payment
-        communication when requesting a SDD mandate.
-        """
         if self.provider_id.custom_mode != "sepa_direct_debit":
             return super()._get_communication()
         else:
             return self.reference
 
     def _create_payment(self, **extra_create_values):
-        """Override of `payment` to pass the correct payment method line id and the SDD mandate id
-        to the extra create values.
-
-        Note: self.check_singleton()
-
-        :param dict extra_create_values: The optional extra create values.
-        :return: The created payment.
-        :rtype: recordset of `account.payment`
-        """
         if self.provider_id.custom_mode != "sepa_direct_debit":
             return super()._create_payment(**extra_create_values)
 

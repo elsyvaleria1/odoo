@@ -12,20 +12,15 @@ class MRPStockBarcode(StockBarcodeController):
     @http.route()
     def main_menu(self, barcode):
         action = self._try_open_production(barcode)
-        by = "open_production" if action else "none"  # debuglog
+        by = "open_production" if action else "none"
         if not action:
             action = self._try_create_production(barcode)
-            by = "create_production" if action else "fallthrough"  # debuglog
+            by = "create_production" if action else "fallthrough"
         _debug.logic("barcode_main_menu", by=by, matched=bool(action))
         return action or super().main_menu(barcode)
 
     @http.route("/stock_barcode_mrp/save_barcode_data", type="jsonrpc", auth="user")
     def save_barcode_mrp_data(self, model_vals):
-        """Saves data from the barcode app, allows multiple model saves in the same http call
-
-        :param model_vals: list of list with model name,res_id and a dict of write_vals
-        :return: the barcode data from the mrp model passed
-        """
         for model, res_id, vals in model_vals:
             if res_id == 0:
                 record = (
@@ -33,13 +28,11 @@ class MRPStockBarcode(StockBarcodeController):
                     .with_context(newByProduct=vals.pop("byProduct", False))
                     .create(vals)
                 )
-                # difficult to use precompute as there are lots of depends fields to precompute
                 if model == "mrp.production":
                     record._compute_move_finished_ids()
             else:
                 record = request.env[model].browse(res_id)
                 for key in vals:
-                    # check if list of dict is passed for creation (for many2many, trace_producing_ids in case of mrp)
                     if isinstance(vals[key], list) and isinstance(vals[key][0], dict):
                         sub_model = request.env[model]._fields[key].comodel_name
                         vals[key] = request.env[sub_model].create(vals[key]).ids
@@ -70,9 +63,6 @@ class MRPStockBarcode(StockBarcodeController):
         return group_data
 
     def _try_create_production(self, barcode):
-        """If barcode represents a manufacure picking type, create and open a
-        new manufacturing order.
-        """
         picking_type = request.env["stock.picking.type"].search(
             [
                 ("barcode", "=", barcode),
@@ -95,7 +85,6 @@ class MRPStockBarcode(StockBarcodeController):
         return False
 
     def _try_open_production(self, barcode):
-        """If barcode represents a production order, open it"""
         production = request.env["mrp.production"].search(
             [
                 ("name", "=", barcode),

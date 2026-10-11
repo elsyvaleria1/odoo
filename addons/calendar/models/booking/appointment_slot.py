@@ -59,7 +59,6 @@ class AppointmentSlot(models.Model):
         help="If empty, all resources are considered to be available.\n"
         "If set, only the selected resources will be taken into account for this slot.",
     )
-    # Recurring slot
     weekday = fields.Selection(
         selection=[
             ("1", "Monday"),
@@ -87,7 +86,6 @@ class AppointmentSlot(models.Model):
         readonly=False,
         required=True,
     )
-    # Real time slot
     start_datetime = fields.Datetime(
         string="From",
         help="Start datetime for unique slot type management",
@@ -121,8 +119,6 @@ class AppointmentSlot(models.Model):
                 start_datetime = slot.start_datetime
                 end_datetime = slot.end_datetime
                 if slot.allday:
-                    # when "allday" is True, the end date is stored as "that day at midnight"
-                    # we add 1 full day to have a proper duration computation
                     end_datetime += relativedelta(days=1)
                 duration = (end_datetime - start_datetime).total_seconds() / 3600
                 slot.duration = round(duration, 2)
@@ -140,8 +136,6 @@ class AppointmentSlot(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # The class default fills end_hour before the compute can adapt it to
-        # start_hour, so a slot starting at 18:00 would be born ending at 17:00.
         for vals in vals_list:
             if "end_hour" not in vals:
                 vals["end_hour"] = self._end_hour_for_create(vals)
@@ -164,7 +158,6 @@ class AppointmentSlot(models.Model):
 
     @api.depends("start_hour")
     def _compute_end_hour(self) -> None:
-        """Try to adapt end_hour if the interval end_hour < start_hour"""
         for record in self:
             duration = record.appointment_type_id.appointment_duration
             if (
@@ -204,13 +197,6 @@ class AppointmentSlot(models.Model):
             )
 
     def _convert_end_hour_24_format(self):
-        """Convert end_hour from [0, 24[ to ]0, 24] by replacing 0 by 24 if necessary.
-
-        The end_hour can be encoded as '00:00', which means 'the next day at midnight'.
-        For some simple computation, we transform that 0 into 24 to make it easier to manipulate.
-        For example, when we want to know if the end hour is after the start hour, or when looping through
-        available slots 'until the end hour'.
-        """
         self.check_singleton()
         return self.end_hour or 24
 

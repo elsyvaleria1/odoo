@@ -75,11 +75,10 @@ class ProjectProject(models.Model):
                     for company, templates in company_worksheets
                 }
 
-                # Assign the appropriate worksheet template to each project
                 for project in projects:
                     project.worksheet_template_id = worksheet_mapping.get(
                         project.company_id.id,
                         worksheet_mapping.get(
                             False, False
-                        ),  # Fallback to a template without a company
+                        ),
                     )

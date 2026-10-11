@@ -1,5 +1,3 @@
-# Languages supported by WhatsApp Cloud API
-# API Documentation: https://developers.facebook.com/docs/whatsapp/business-management-api/message-templates/supported-languages
 
 Languages = [
     ("af", "Afrikaans"),

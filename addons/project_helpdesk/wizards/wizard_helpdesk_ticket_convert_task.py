@@ -16,7 +16,6 @@ class WizardHelpdeskTicketConvertTask(models.TransientModel):
         return result
 
     def _get_default_project_id(self):
-        # This method is meant to be overridden.
         return False
 
     project_id = fields.Many2one(

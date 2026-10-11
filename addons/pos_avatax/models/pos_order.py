@@ -11,7 +11,6 @@ class PosOrder(models.Model):
     ]
 
     def _get_and_set_external_taxes_on_eligible_records(self):
-        """mixin.account.external.tax override."""
         eligible_orders = self.filtered(
             lambda order: order.is_tax_computed_externally and order.state in ("draft")
         )
@@ -19,11 +18,8 @@ class PosOrder(models.Model):
         return super()._get_and_set_external_taxes_on_eligible_records()
 
     def _prepare_line_data_for_external_taxes(self):
-        """mixin.account.external.tax override."""
         res = []
         for line in self.lines:
-            # Clear all taxes (e.g. default customer tax). Not every line will be sent to the external tax
-            # calculation service, those lines would keep their default taxes otherwise.
             line.tax_ids = False
             pos_config = line.order_id.config_id
             res.append(
@@ -31,7 +27,7 @@ class PosOrder(models.Model):
                     "id": line.id,
                     "model_name": line._name,
                     "product_id": line.product_id,
-                    "description": None,  # no line description on pos.order.line
+                    "description": None,
                     "qty": line.qty,
                     "uom_id": line.product_uom_id,
                     "price_subtotal": line.price_subtotal,
@@ -46,7 +42,6 @@ class PosOrder(models.Model):
         return res
 
     def _get_avatax_ship_to_partner(self):
-        """mixin.account.external.tax override."""
         return self.partner_id
 
     @api.model

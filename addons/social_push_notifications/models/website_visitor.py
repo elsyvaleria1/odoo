@@ -18,9 +18,6 @@ class WebsiteVisitor(models.Model):
     )
 
     def action_send_push_notification(self):
-        """Opens social media post form prefilled with selected website.visitor
-        and push notification activated."""
-        # validate if push notification are allowed for all selected visitors
         if all(visitor.has_push_notifications for visitor in self):
             push_media = self.env["social.media"].search(
                 [("media_type", "=", "push_notifications")]
@@ -41,14 +38,11 @@ class WebsiteVisitor(models.Model):
             )
 
     def _get_domain_inactive_visitors(self):
-        """Visitors registered to push subscriptions are considered always active and should not be
-        deleted."""
         return super()._get_domain_inactive_visitors() & Domain(
             "has_push_notifications", "=", False
         )
 
     def _merge_visitor(self, target):
-        """Override linking process to link existing push subscriptions to the final visitor."""
         self.push_subscription_ids.write({"website_visitor_id": target.id})
         self.write({"has_push_notifications": False})
         return super()._merge_visitor(target)
@@ -56,7 +50,6 @@ class WebsiteVisitor(models.Model):
     def _register_push_subscription(self, push_token):
         self.check_singleton()
 
-        # in case we already have this token, delete and re-create
         if push_token:
             self.env["website.visitor.push.subscription"].search(
                 [("push_token", "=", push_token)]

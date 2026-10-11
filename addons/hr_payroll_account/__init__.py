@@ -23,10 +23,6 @@ def _hr_payroll_account_post_init(env) -> None:
 
 
 def _salaries_account_journal_pre_init(env) -> None:
-    """
-    This pre-init hook will check if there is existing "SLR" journal and modify it to keep the code "SLR" free,
-    so that we can add an "SLR" journal in the post init hook
-    """
     companies = env["res.company"].search([])
 
     env.cr.execute(

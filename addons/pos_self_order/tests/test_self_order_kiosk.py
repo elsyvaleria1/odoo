@@ -62,7 +62,6 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
             }
         )
 
-        # With preset location choices
         self.start_tour(
             self.pos_config._get_self_order_route(),
             "self_kiosk_each_counter_takeaway_in",
@@ -75,7 +74,6 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
             }
         )
 
-        # Without location choices, since we need preset to do so.
         self.start_tour(self_route, "self_kiosk_each_table_takeaway_in")
         self.pos_config.write(
             {
@@ -85,7 +83,6 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
         self.pos_config.default_preset_id.service_at = "counter"
         self.start_tour(self_route, "self_kiosk_each_table_takeaway_out")
 
-        # Cancel behavior
         self.start_tour(self_route, "self_order_kiosk_cancel")
 
     def test_duplicate_order_kiosk(self):
@@ -241,7 +238,6 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
         )
 
     def test_self_order_pricelist(self):
-        # ignore pre-existing pricelists for the purpose of this test
         self.env["product.pricelist"].search([]).write({"active": False})
         pricelist = self.env["product.pricelist"].create(
             {
@@ -334,19 +330,16 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
             "self_ordering_image_home_ids",
             "self_ordering_image_background_ids",
         ]:
-            # SET
             new_att = create_fake_attachment()
             self.pos_config.write({field: [Command.set([new_att.id])]})
             self.assertEqual(len(self.pos_config[field]), 1)
             assert_all_image_public()
 
-            # LINK
             new_att = create_fake_attachment()
             self.pos_config.write({field: [Command.link(new_att.id)]})
             self.assertEqual(len(self.pos_config[field]), 2)
             assert_all_image_public()
 
-            # CREATE
             self.pos_config.write(
                 {
                     field: [
@@ -379,13 +372,10 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
                 "self_ordering_image_background_ids": [],
             }
         )
-        # Default home images are automatically assigned when all images are removed
         self.assertEqual(len(self.pos_config.self_ordering_image_home_ids), 3)
-        # Background images can be fully cleared
         self.assertEqual(len(self.pos_config.self_ordering_image_background_ids), 0)
 
     def test_self_order_parent_category(self):
-        # Create a parent POS category and two child POS categories
         test_parent_category = self.env["pos.category"].create(
             {
                 "name": "Test Parent Category",
@@ -398,7 +388,6 @@ class TestSelfOrderKiosk(SelfOrderCommonTest):
             {"name": "Test Child Category 2", "parent_id": test_parent_category.id}
         )
 
-        # Create sample products for testing for child categories
         self.env["product.product"].create(
             {
                 "name": "Coca-Cola",

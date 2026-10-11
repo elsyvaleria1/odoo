@@ -9,9 +9,7 @@ class DocumentsDocument(models.Model):
 
     @api.model
     def create_ai_agent_sources_from_documents(self, document_ids, agent_id):
-        """Create AI agent sources from the given documents."""
         documents = self.browse(document_ids)
-        # Create copies of the attachments
         attachment_ids = []
         document_source_mapping = {}
         for document in documents:
@@ -43,7 +41,6 @@ class DocumentsDocument(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_sources(self) -> None:
-        """Delete sources when a document is deleted."""
         source_linked_to_document = self.env["ai.agent.source"].search(
             [("document_id", "in", self.ids)]
         )

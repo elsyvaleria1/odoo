@@ -9,7 +9,6 @@ class SaleOrder(models.Model):
 
     def _create_recurring_invoice(self, batch_size=30):
         invoices = super()._create_recurring_invoice(batch_size)
-        # Already compute taxes for unvalidated documents as they can already be paid
         _debug.pipeline("recurring_invoice_taxes_refreshed", invoices=invoices)
         invoices._get_and_set_external_taxes_on_eligible_records()
         return invoices
@@ -33,9 +32,6 @@ class SaleOrder(models.Model):
         return params
 
     def _prepare_line_data_for_external_taxes(self):
-        """EXTENDS 'mixin.account.external.tax'. Override to exclude non-invoicable lines. Only override for confirmed
-        orders. Non-confirmed orders never have invoicable lines and can be paid through /my/orders which will ask to
-        pay all lines."""
         res = super()._prepare_line_data_for_external_taxes()
         filtered_res = []
 

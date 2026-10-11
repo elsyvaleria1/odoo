@@ -14,7 +14,6 @@ class TestLineFields(TestTradeOrderCase):
     def test_name_computed_from_product(self):
         line = self._line_no_name()
 
-        # test hook returns product.display_name
         self.assertIn(self.product.name, line.name)
 
     def test_name_not_computed_for_section(self):

@@ -20,10 +20,6 @@ class CalendarAttendee(models.Model):
         return result
 
     def _calendar_sync_answered(self) -> None:
-        """An answer changes the event in every calendar holding it, which
-        only its organizer may write: it goes out through the organizer, or
-        through the one answering when the event has none. A provider with
-        an answer endpoint hears it from the attendee's own calendar instead."""
         Account = self.env["calendar.sync.account"]
         Link = self.env["calendar.sync.link"]
         for code, provider in Account._engine_providers().items():
@@ -35,15 +31,11 @@ class CalendarAttendee(models.Model):
                 links = Link._of(event, code)
                 if not links or sender._calendar_sync_stopped(code):
                     continue
-                # owed like an edit: sent when the synchronization runs
                 links.write({"pending": True, "error": False})
                 if sender._calendar_sync_active(code):
                     Account._for(sender, code)._as_engine()._queue_push(event)
 
     def _calendar_sync_answer_in_own_calendar(self, code: str) -> None:
-        """The current user's answers, owed from their own calendar while they
-        synchronize with `code`, paused or not; the organizer has none to
-        give."""
         user = self.env.user
         if not user._calendar_sync_connection(code) or user._calendar_sync_stopped(
             code

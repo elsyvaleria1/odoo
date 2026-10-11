@@ -11,7 +11,6 @@ from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCom
 @tagged("post_install", "-at_install")
 class TestPoSRental(TestPointOfSaleHttpCommon):
     def test_rental_with_lots(self):
-        """Test rental product with lots"""
         self.tracked_product_id = self.env["product.product"].create(
             {
                 "name": "Test2",
@@ -23,7 +22,6 @@ class TestPoSRental(TestPointOfSaleHttpCommon):
             }
         )
 
-        # Set Stock quantities
 
         self.lot_id1 = self.env["product.trace"].create(
             {
@@ -90,7 +88,7 @@ class TestPoSRental(TestPointOfSaleHttpCommon):
                     (
                         4,
                         self.env.ref("base.group_system").id,
-                    ),  # You are not allowed to access 'Test Inherit Daughter' (test_inherit_daughter) records.
+                    ),
                 ]
             }
         )
@@ -102,7 +100,6 @@ class TestPoSRental(TestPointOfSaleHttpCommon):
         )
 
     def test_rental_qty_delivered(self):
-        """Test rental product qty delivered when processed in PoS"""
         self.env.user.write(
             {
                 "group_ids": [
@@ -268,7 +265,6 @@ class TestPoSRental(TestPointOfSaleHttpCommon):
         self.assertEqual(self.line_ids.qty_returned, 1.0)
 
     def test_rental_qty_delivered_without_rental_picking(self):
-        """Test rental product qty delivered when processed in PoS when rental picking is disabled"""
         test_product = self.env["product.product"].create(
             {
                 "name": "Rental",

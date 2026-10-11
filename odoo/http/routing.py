@@ -220,8 +220,6 @@ def _get_route_type_effective(declared_routing: dict[str, Any]) -> str:
 
 @functools.lru_cache(maxsize=4096)
 def _get_route_type_inherited(controller_cls: type, name: str) -> str | None:
-    # An assembled controller class never changes its bases, so the walk is
-    # answered once per class and method, not on every call of the route.
     for cls in controller_cls.__mro__:
         routing = getattr(cls.__dict__.get(name), "original_routing", None)
         if routing and routing.get("type") is not None:
@@ -233,7 +231,6 @@ def _get_route_type_called(
     controller: Controller, name: str, declared_routing: dict[str, Any]
 ) -> str:
     if declared_routing.get("type") is None:
-        # widened to type: mypy reads type[Controller] as not Hashable
         controller_cls: type = type(controller)
         inherited = _get_route_type_inherited(controller_cls, name)
         if inherited is not None:
@@ -267,9 +264,6 @@ def route(route: str | Iterable[str] | None = None, **routing: Any) -> Callable:
                 "%s defined with invalid routing parameter 'method', assuming 'methods'",
                 fname,
             )
-            # Honor the "assuming" promise for the typo's most common shape,
-            # a single method string, instead of raising two lines below
-            # about a parameter the author never wrote.
             routing["methods"] = (wrong,) if isinstance(wrong, str) else wrong
             _debug.logic("http.route.parameter_typo", endpoint=fname, given="method")
         methods = routing.get("methods")
@@ -392,7 +386,6 @@ def _merge_route(
     for cls, submethod in definitions:
         if not hasattr(submethod, "original_routing"):
             if not decorated:
-                # A plain method a subclass later exposes: nothing to override.
                 continue
             _debug.logic(
                 "http.route.override_unrouted",
@@ -452,21 +445,21 @@ def _merge_route(
 def _generate_routing_rules(
     modules: list[str], nodb_only: bool
 ) -> Generator[tuple[str, Endpoint]]:
-    controllers = endpoints = rules = skipped_nodb = typed = 0  # debuglog
+    controllers = endpoints = rules = skipped_nodb = typed = 0
     for ctrl in _get_controllers(modules):
-        controllers += 1  # debuglog
+        controllers += 1
         for method_name, _member in inspect.getmembers(ctrl, inspect.ismethod):
             resolved = _resolve_route(ctrl, method_name)
             if resolved is None:
                 continue
             merged_routing, method, param_specs = resolved
             if nodb_only and merged_routing["auth"] != "none":
-                skipped_nodb += 1  # debuglog
+                skipped_nodb += 1
                 continue
 
             frozen_routing = MappingProxyType(merged_routing)
-            endpoints += 1  # debuglog
-            typed += bool(param_specs)  # debuglog
+            endpoints += 1
+            typed += bool(param_specs)
 
             for url in merged_routing["routes"]:
                 partial = functools.partial(method)
@@ -474,7 +467,7 @@ def _generate_routing_rules(
                 endpoint = cast("Endpoint", partial)
                 endpoint.routing = frozen_routing
                 _apply_param_specs(endpoint, param_specs)
-                rules += 1  # debuglog
+                rules += 1
 
                 yield (url, endpoint)
     _debug.pipeline(

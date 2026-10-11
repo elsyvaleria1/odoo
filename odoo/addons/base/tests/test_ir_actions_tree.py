@@ -55,8 +55,6 @@ class TestIrActionsTree(TransactionCase):
             )
 
     def test_load_resolves_the_concrete_model_from_the_table_not_the_column(self):
-        # a database upgraded with such rows keeps them: the constraint that
-        # forbids them is only added once none is left
         self.env.cr.execute(
             "ALTER TABLE ir_act_window DROP CONSTRAINT ir_act_window_type_names_model"
         )
@@ -123,7 +121,7 @@ class TestIrActionsLoadAudit(TransactionCase):
         )
 
     def test_the_rule_is_the_one_bindings_apply(self):
-        as_user = lambda action: action.with_user(self.user)  # noqa: E731  reads as the sentence the assertions below are made of
+        as_user = lambda action: action.with_user(self.user)
         self.assertEqual(as_user(self.open)._get_load_refusal_of_record(), "")
         self.assertEqual(
             as_user(self.restricted)._get_load_refusal_of_record(), "groups"

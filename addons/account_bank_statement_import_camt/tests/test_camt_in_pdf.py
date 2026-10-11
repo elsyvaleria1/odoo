@@ -58,7 +58,6 @@ class TestCamtInsidePdf(AccountTestInvoicingCommon):
         )
 
     def test_the_bare_camt_still_imports(self):
-        """The control: nothing about the existing path changes."""
         self._import(self.camt, "test_camt.xml", "application/xml")
 
         self.assertEqual(self._statements().balance_start, 8998.20)

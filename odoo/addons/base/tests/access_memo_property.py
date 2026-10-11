@@ -11,22 +11,6 @@ from odoo.libs.lru import LRU
 from odoo.orm.domain import Domain
 from odoo.orm.runtime.transaction import Transaction
 
-# the stateful differential property of the access memos: a transaction keeps
-# its read verdicts per record, its field-class verdicts, its x2many scopes and
-# the policy's answers per principal, and a write, a rule, a membership or a
-# context switch must leave none of them answering otherwise than a principal
-# judged from scratch would. A sequence of writes and checks runs in one
-# transaction; after every check the same check runs again in a fresh
-# transaction on the same rows, with empty registry caches, and the record
-# verdicts are also compared with the access domain searched under sudo.
-#
-# A seed dwells on one hazard (a rule through a tree, a stored compute, an
-# x2many, a translation, a contact's company, a write behind the ORM...): an
-# episode points a rule at it, asks, chooses among a few writes one that
-# changes the answer from scratch, asks again, and asks once more from a
-# principal differing in what the rule reads. A divergence or a crash is cut
-# down to the shortest sequence that still shows it. test_access_rights runs it
-# on PostgreSQL.
 
 LONG = int(os.environ.get("ACCESS_MEMO_PROPERTY_STEPS", "0"))
 SEEDS = int(os.environ.get("ACCESS_MEMO_PROPERTY_SEEDS", "0"))
@@ -56,7 +40,6 @@ class World:
         return (env or self.env)[self.names[role]]
 
     def bound(self, name: str) -> typing.Any:
-        # the world's recordset in the environment the world runs in now
         return getattr(self, name).with_env(self.env)
 
     def record(self, role: str, index: int) -> typing.Any:
@@ -76,7 +59,6 @@ class World:
 
 
 def _french(word: str) -> str:
-    # another of the words, so a condition on one admits in one language only
     return WORDS[(WORDS.index(word) + 1) % len(WORDS)]
 
 
@@ -209,12 +191,8 @@ def build_world(env, names: dict[str, str], note_class: str, *, sql: bool) -> Wo
     return world
 
 
-# -- the generator ------------------------------------------------------------
 
 
-# the conditions a rule may read, each named for the hazard it puts the memo
-# to: the property draws a hazard first, so the rare ones come as often as
-# plain columns
 LEAVES = {
     "doc": (
         ("plain", "[('level', '>=', {n})]"),
@@ -260,7 +238,6 @@ LEAVES = {
     ),
     "tag": (("plain", "[('color', '<', {low})]"),),
 }
-# what a reach reads, as the leaves above name it
 REACHES = {
     "own": "owner",
     "company": "company",
@@ -269,8 +246,6 @@ REACHES = {
 }
 
 
-# the hazards a seed dwells on: what a rule reads, and the writes behind
-# write() or behind the ORM that change it
 THEMES = (
     *sorted({hazard for leaves in LEAVES.values() for hazard, _text in leaves}),
     "bypass",
@@ -312,8 +287,6 @@ def _domain(rng: random.Random, world: World, role: str, depth: int = 0) -> str:
     return f"['{operator}'] + {left} + {_domain(rng, world, role, depth + 1)}"
 
 
-# the rows the world holds: a slot keeps its model or class and its kind, and
-# the property rewrites its domain, reach, group and operations
 SLOTS = (
     ("doc", "permission"),
     ("doc", "permission"),
@@ -412,11 +385,6 @@ WRITABLE = {
     "folder": ("parent_id", "active", "company_id", "manager_id"),
     "tag": ("color", "active"),
 }
-# the fields a value may be set on behind write() (a dirty cache value) or
-# behind the ORM (a row changed and the field invalidated): those whose
-# dependants the caller cannot leave stale for an unrelated reason, a cached
-# one2many whose domain or active filter reads them, or an inverse the cache
-# does not follow
 BYPASSABLE = {
     "cache": {
         "doc": ("level", "state", "owner_id", "company_id"),
@@ -580,7 +548,6 @@ def _check(rng: random.Random) -> tuple:
     return ("observe", _principal(rng), kind, role, indexes, detail)
 
 
-# the fields a reach reads through the anchors, in the words of a domain
 REACH_READS = {
     "own": "'owner_id'",
     "own_partner": "'partner_id' partner",
@@ -603,8 +570,6 @@ def _fact_mutation(
     focus: tuple,
     bypass: bool = False,
 ) -> tuple:
-    # a write of something a rule in play reads, on the records asked about
-    # when the rule reads them directly
     text = " ".join(texts)
     i = rng.choice(focus[4]) if rng.random() < 0.7 else rng.randrange(16)
     options: list[tuple] = []
@@ -667,9 +632,6 @@ def _fact_mutation(
     return op
 
 
-# what a rule on a document reads through another record: the words of the
-# rule that say so, the path from the document and the fields of the record
-# there a write changes the answer by
 VIA = (
     (("child_of", "parent_of", "folder_id.parent_id"), "folder_id", ("parent_id",)),
     (
@@ -700,9 +662,6 @@ VIA_ROLE = {
 def _via_options(
     rng: random.Random, world: World, text: str, i: int, bypass: bool = False
 ) -> list[tuple]:
-    # writes of the records a document's rule reads it through, reached from
-    # the document asked about: its folder and the folder above, its lines,
-    # its tags, its contact's company
     options = []
     for words, path, fnames in VIA:
         if not any(word in text for word in words):
@@ -719,8 +678,6 @@ def _via_options(
 
 
 def _memoized(check: tuple) -> bool:
-    # the check reads a memo: a read verdict per record, a user x2many slot or
-    # a field class's verdict per record; a search or a grouping reads none
     if check[2] in ("has_access", "filtered", "check"):
         return check[5] == "read"
     return check[2] not in ("search", "read_group")
@@ -737,8 +694,6 @@ def _focus_role(check: tuple) -> str:
 def _focus_rule(
     rng: random.Random, world: World, check: tuple, theme: str | None = None
 ) -> tuple[list[tuple], str]:
-    # the first permission of the model or class the check asks about now
-    # reads one condition, drawn for a hazard, or reaches through an anchor
     role = _focus_role(check)
     hazard = theme if theme in _hazards(role) else rng.choice(_hazards(role))
     spec = _row_spec(rng, world, role, "permission")
@@ -755,7 +710,6 @@ def _focus_rule(
     slot = SLOTS.index((role, "permission"))
     ops = [("rule_write", slot, spec, False)]
     if check[2] == "x2many":
-        # the lines are read on documents the user reads
         everything = {**_row_spec(rng, world, "doc", "permission"), "group": 0}
         everything.update(operation="crud", domain=False, reach=False)
         ops.append(
@@ -764,28 +718,20 @@ def _focus_rule(
     for other, (other_role, kind) in enumerate(SLOTS):
         if other == slot or other_role != role:
             continue
-        # the other permission idles, and most often the guard: a guard that
-        # refuses everything leaves nothing to flip
         if kind == "permission" or rng.random() < 0.7:
             idle = {**_row_spec(rng, world, role, kind), "active": False}
             ops.append(("rule_write", other, idle, False))
     return ops, hazard
 
 
-# how often an episode is a scope episode, and the hazards its line rule
-# reads: those whose field a raw write changes
 SCOPE_EPISODES = 0.15
 SCOPE_HAZARDS = ("owner", "plain")
 
 
-# the slot of the principal a hazard's rule reads: (user, companies, language,
-# contact acted for, active_test)
 VARIED = {"owner": 0, "company": 1, "translated": 2, "partner": 3, "active": 4}
 
 
 def _vary(rng: random.Random, check: tuple, hazard: str | None) -> tuple:
-    # the same question from a principal that differs in one thing, most
-    # often the thing the rule in play reads
     slot = VARIED.get(hazard or "", rng.randrange(5))
     if rng.random() < 0.3:
         slot = rng.randrange(5)
@@ -796,8 +742,6 @@ def _vary(rng: random.Random, check: tuple, hazard: str | None) -> tuple:
 
 
 def _differing(world: World, check: tuple, variations: list[tuple]) -> tuple | None:
-    # the first variation of the check a principal from scratch answers
-    # otherwise: a memo keyed on less than it reads serves the first answer
     ids = world.ids(check[3], check[4])
     with _in_scratch(world):
         answers = {
@@ -813,7 +757,6 @@ def _differing(world: World, check: tuple, variations: list[tuple]) -> tuple | N
     return next((v for v in variations if answers[v] != answers[check]), None)
 
 
-# -- running a sequence -------------------------------------------------------
 
 
 def _resolve(world: World, value: typing.Any) -> typing.Any:
@@ -975,8 +918,6 @@ def _apply(world: World, op: tuple) -> None:
 
 
 def _write_as(world: World, record: typing.Any, fname: str, value, mode: str) -> None:
-    # a write, a dirty value set behind write(), or a row changed behind the
-    # ORM and invalidated (for the record, or for its model)
     env = world.env
     record_field = record._fields[fname]
     if mode == "write":
@@ -993,7 +934,7 @@ def _write_as(world: World, record: typing.Any, fname: str, value, mode: str) ->
         column = record_field.convert_to_column(value, record)
         if world.sql:
             env.cr.execute(
-                f'UPDATE "{record._table}" SET "{fname}" = %s WHERE id = %s',  # noqa: E8501  table and column of the generator's fixed models
+                f'UPDATE "{record._table}" SET "{fname}" = %s WHERE id = %s',
                 (column, record.id),
             )
         else:
@@ -1009,7 +950,6 @@ def _role_of(world: World, model_name: str) -> str:
 
 
 def _below(record: typing.Any, parent_id: int) -> bool:
-    # the parent would close a cycle: the tree refuses it
     tree = record.with_context(active_test=False).search(
         [("id", "child_of", record.id)]
     )
@@ -1052,7 +992,6 @@ class _Divergence(Exception):
         self.failure = failure
 
 
-# -- observing ----------------------------------------------------------------
 
 
 def principal_env(world: World, principal: tuple) -> typing.Any:
@@ -1172,10 +1111,6 @@ def observe(env: typing.Any, world: World, kind: str, role: str, ids, detail):
 def from_scratch(
     env: typing.Any, *, registry_caches: bool = False
 ) -> typing.Iterator[typing.Callable]:
-    # a second transaction on the same cursor and rows, with no memo, no field
-    # cache, no cursor cache and empty registry caches (or copies of them,
-    # where only the transaction's own state must be left alone); restored
-    # afterwards, so the transaction under test keeps every memo it had
     env.flush_all()
     cr, registry = env.cr, env.registry
     old_transaction, old_cache = cr.transaction, cr.cache
@@ -1198,7 +1133,6 @@ def from_scratch(
 
 
 def definition(env: typing.Any, model_name: str, operation: str, ids) -> set:
-    # the records the policy's access domain admits, searched under sudo
     policy = env.registry.access_policy
     if not policy.model_allowed(env, model_name, operation):
         return set()
@@ -1243,7 +1177,6 @@ def _observe_and_compare(world: World, op: tuple) -> dict | None:
 
 
 def _execute(world: World, op: tuple) -> dict | None:
-    # a step's divergence, or the error it raised beside an access refusal
     try:
         if op[0] == "observe":
             return _observe_and_compare(world, op)
@@ -1260,7 +1193,6 @@ def _execute(world: World, op: tuple) -> dict | None:
 
 @contextmanager
 def _isolated(world: World) -> typing.Iterator[None]:
-    # every sequence starts from the world as built and leaves it so
     env = world.env
     snapshot = (
         {role: list(ids) for role, ids in world.handles.items()},
@@ -1283,7 +1215,6 @@ def _isolated(world: World) -> typing.Iterator[None]:
 
 
 def run(world: World, ops: list[tuple]) -> dict | None:
-    # the first divergence or crash of the sequence, with its step
     failure = None
     with _isolated(world):
         for step, op in enumerate(ops):
@@ -1302,8 +1233,6 @@ def _same_finding(found: dict | None, failure: dict) -> bool:
 
 
 def shrink(world: World, ops: list[tuple], failure: dict) -> tuple[list, dict]:
-    # the shortest sequence found that still fails the same way: cut after
-    # the failing step, then drop chunks and single steps while it does
     ops = ops[: failure["step"] + 1]
     chunk = max(1, len(ops) // 2)
     while chunk >= 1:
@@ -1350,8 +1279,6 @@ TRIABLE = frozenset(
 
 @contextmanager
 def _in_scratch(world: World) -> typing.Iterator[None]:
-    # the world runs in a transaction of its own for a while, to choose what
-    # to do next; what it creates there is forgotten with it
     handles = {role: list(ids) for role, ids in world.handles.items()}
     real = world.env
     with from_scratch(real, registry_caches=True) as fresh:
@@ -1363,8 +1290,6 @@ def _in_scratch(world: World) -> typing.Iterator[None]:
 
 
 def _indirect(op: tuple, check: tuple) -> bool:
-    # the write reaches the answer through another record, a translation, a
-    # contact's company or behind write(): what a memo is likeliest to miss
     if op[0] in (
         "lines",
         "tags",
@@ -1378,9 +1303,6 @@ def _indirect(op: tuple, check: tuple) -> bool:
 
 
 def _flipping(world: World, check: tuple, candidates: list[tuple]) -> tuple | None:
-    # the first candidate that changes the answer of the check, the indirect
-    # ones tried first, from scratch and rolled back: the transaction under
-    # test sees none of them
     _tag, principal, kind, role, indexes, detail = check
     ids = world.ids(role, indexes)
     candidates = sorted(candidates, key=lambda op: not _indirect(op, check))
@@ -1410,20 +1332,12 @@ def _flipping(world: World, check: tuple, candidates: list[tuple]) -> tuple | No
 
 
 def explore(world: World, seed: int, steps: int) -> tuple[list[tuple], dict | None]:
-    # the rows of the world are rewritten, then episodes: a check, a write
-    # that changes its answer when one of a few candidates does, the check
-    # again and once more from a principal that differs in one thing. The
-    # writes are chosen on the live rows, and kept as plain steps a replay
-    # repeats without choosing
     rng = random.Random(seed)
     ops: list[tuple] = []
     texts: list[str] = []
-    # each seed dwells on one hazard, so a few seeds cover them all
     theme = THEMES[seed % len(THEMES)]
 
     def themed_check() -> tuple:
-        # a check whose rule can read the theme, its kind drawn evenly: the
-        # x2many slots and the field classes as often as the record verdicts
         by_kind: dict[str, list[tuple]] = {}
         for _attempt in range(40):
             check = _check(rng)
@@ -1443,10 +1357,6 @@ def explore(world: World, seed: int, steps: int) -> tuple[list[tuple], dict | No
         return _execute(world, op)
 
     def scope_episode() -> dict | None:
-        # a user's x2many slot filled under a rule on the lines, a line of it
-        # changed behind the ORM and invalidated, the slot read again: the
-        # invalidation is all the memo hears of the change, and a seed drawing
-        # each step on its own rarely lines the three up
         indexes = tuple(rng.randrange(16) for _i in range(rng.randrange(1, 4)))
         check = ("observe", _principal(rng), "x2many", "doc", indexes, "line_ids")
         focus, _hazard = _focus_rule(rng, world, check, rng.choice(SCOPE_HAZARDS))
@@ -1479,7 +1389,6 @@ def explore(world: World, seed: int, steps: int) -> tuple[list[tuple], dict | No
         check = themed_check() if themed else _check(rng)
         read, hazard = texts[-3:], None
         if themed or rng.random() < 0.5:
-            # the question hinges on one rule, drawn for a hazard
             focus, hazard = _focus_rule(rng, world, check, theme if themed else None)
             for op in focus:
                 if failure := step(op):

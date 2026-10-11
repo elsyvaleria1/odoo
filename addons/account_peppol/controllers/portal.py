@@ -5,9 +5,6 @@ from odoo.addons.account.models.res_company import PEPPOL_LIST
 
 
 class PortalAccount(CustomerPortal):
-    # ------------------------------------------------------------
-    # My Account
-    # ------------------------------------------------------------
 
     def _prepare_my_account_rendering_values(self, *args, **kwargs):
         rendering_values = super()._prepare_my_account_rendering_values(*args, **kwargs)
@@ -38,7 +35,6 @@ class PortalAccount(CustomerPortal):
         return mandatory_fields
 
     def _get_address_errors(self, address_values, *args, **kwargs):
-        # EXTENDS 'portal'
         invalid_fields, missing_fields, error_messages = super()._get_address_errors(
             address_values, *args, **kwargs
         )

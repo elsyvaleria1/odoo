@@ -108,7 +108,6 @@ class HrContractSalaryOffer(models.Model):
                 }
             )
         calendar = version.resource_calendar_id
-        # An unset schedule is stored as the shared fully flexible one.
         if calendar == self.env["resource.calendar"]._get_fully_flexible_calendar():
             calendar = (
                 self.resource_calendar_id
@@ -127,9 +126,6 @@ class HrContractSalaryOffer(models.Model):
         if not version.contract_date_start:
             current_version = self.employee_id.current_version_id
             if current_version.contract_date_start:
-                # The rollback discards this with the rest of the simulation, but the
-                # simulation needs it: the template becomes the employee's contract from
-                # date_version, and _check_dates refuses that while the running one is open.
                 current_version.write(
                     {"contract_date_end": version.date_version - relativedelta(days=1)}
                 )
@@ -172,8 +168,6 @@ class HrContractSalaryOffer(models.Model):
     @api.depends("monthly_wage", "structure_id", "resource_calendar_id")
     def _compute_salary(self) -> None:
         vals_by_offer = {}
-        # Invalidating the model is needed to be sure that the contract_template_id has the correct data. Even with
-        # the rollback, the recordset in cache could still hold some wrong values that were rollbacked
         with hr_version_context(self) as offers:
             for offer in offers:
                 version = offer._acquire_version()

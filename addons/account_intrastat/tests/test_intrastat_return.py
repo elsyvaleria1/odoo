@@ -64,7 +64,6 @@ class TestIntrastatReturn(TestAccountReportsCommon):
             self.fail(f"Missing checks in return: {', '.join(missing_checks)}")
 
     def test_intrastat_checks(self):
-        """Test that all the checks are present in the first return"""
 
         january_return = self.env["account.return"].search(
             [
@@ -105,7 +104,6 @@ class TestIntrastatReturn(TestAccountReportsCommon):
             "The check for only B2B customers should pass as there are no private individuals in the January return",
         )
 
-        # make the check fail by adding a private individual
         private_individuals = self.env["res.partner"].create(
             [
                 {

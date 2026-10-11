@@ -102,12 +102,6 @@ class TestAccountMoveTemplate(TransactionCase):
 
     @classmethod
     def _setup_second_company(cls):
-        """A second company, so the multi-company paths are actually exercised.
-
-        Everything else in this file is built in ``cls.env.company``, which is
-        why a whole family of company-scoped defects stayed invisible until a
-        two-company database was used.
-        """
         cls.other_company = cls.env["res.company"].create({"name": "AMT Other Co"})
         cls.other_journal = cls.env["account.journal"].create(
             {
@@ -1183,9 +1177,6 @@ class TestAccountMoveTemplate(TransactionCase):
                 }
             )
         )
-        # `code` is company-dependent: it does not exist in this company's
-        # namespace at all, which is what used to make the template
-        # unresolvable from here.
         self.assertFalse(account.with_company(self.company).code)
         self.assertEqual(account.with_company(self.other_company).code, "TAMTX1")
 
@@ -1222,9 +1213,6 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertEqual(wizard.line_ids.account_id, account)
 
     def test_the_tax_picker_is_scoped_to_the_templates_company(self):
-        # `tax_ids` carries `check_company=True`, so a picker that offers
-        # every tax of the right `type_tax_use` offers taxes the save
-        # refuses with a company-crossover error.
         arch = etree.fromstring(
             self.env["account.move.template"].get_view(view_type="form")["arch"]
         )
@@ -1305,10 +1293,6 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertGreater(added.sequence, 20)
 
     def test_moving_a_template_to_a_company_revalidates_its_lines(self):
-        # `company_id` is a stored related the code resolution keys on, so
-        # a company switch has to re-run the check the codes were accepted
-        # by -- otherwise the template silently keeps pointing at accounts
-        # the new company does not have.
         self.env["account.journal"].create(
             {
                 "name": "AMT Other Misc Journal",
@@ -1323,9 +1307,6 @@ class TestAccountMoveTemplate(TransactionCase):
             )
 
     def test_an_accounting_manager_can_run_a_template(self):
-        # `group_account_manager` implies only `group_account_invoice`, so
-        # it does not inherit the accountant's grant on the run wizard: a
-        # user who can create and edit templates could not run one.
         manager = self.env["res.users"].create(
             {
                 "name": "AMT Manager",
@@ -1376,9 +1357,6 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertEqual(payment.memo, "AMT-REF-11")
 
     def test_the_payment_branch_has_an_extension_hook(self):
-        # `_prepare_move_vals` is the move branch's override point and
-        # downstream uses it; the payment branch needs the mirror, or a
-        # downstream module has to re-implement `create_payment` whole.
         model = self.env["wizard.account.move.template.create.move"]
         self.assertTrue(hasattr(model, "_prepare_move_vals"))
         self.assertTrue(hasattr(model, "_prepare_payment_vals"))
@@ -1432,9 +1410,6 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertEqual(move.invoice_line_ids.product_uom_id, dozens)
 
     def test_a_wizard_line_without_a_unit_lets_the_move_compute_one(self):
-        # The move line's `product_uom_id` is a stored, editable compute. Passing
-        # the key as False on create suppresses it, so an unset wizard line must
-        # omit the key rather than write an empty value.
         product = self.env["product.product"].create(
             {
                 "name": "AMT Uomless Product",
@@ -1532,9 +1507,6 @@ class TestAccountMoveTemplate(TransactionCase):
         wide = self.env["account.move.template"].with_context(allowed_company_ids=both)
         self.assertEqual(wide.browse(template.id).journal_id, self.other_journal)
 
-        # The compute reads `env.companies`, so narrowing the active
-        # companies has to produce a different answer -- not the one left
-        # in the cache by the wider read.
         narrow = self.env["account.move.template"].with_context(
             allowed_company_ids=[self.company.id]
         )
@@ -1937,9 +1909,6 @@ class TestAccountMoveTemplate(TransactionCase):
         self.assertFalse(move.invoice_payment_term_id)
 
     def test_a_drawn_product_brings_its_own_unit_of_measure(self):
-        # The template line's unit describes the product it pins. A product an
-        # extension draws in its place carries its own unit, and an empty unit
-        # sends an empty `ClaveUnidad` to the SAT (CFDI40165).
         dozens = self.env.ref("base.product_uom_dozen")
         drawn = self.env["product.product"].create(
             {

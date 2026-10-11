@@ -26,7 +26,6 @@ class TestWinbooksImport(common.TransactionCase):
             self.env["ir.attachment"].search([("name", "=", FILENAME)])
             or self.download_test_db()
         )
-        # self.env.cr.commit(); return  # uncomment to avoid fetching multiple times locally
         test_company = self.env["res.company"].create(
             {
                 "name": "My Winbooks Company",

@@ -8,7 +8,6 @@ class VoiceSentence(models.Model):
     _name = "voice.sentence"
     _description = "Voice Sentence"
     _order = "day desc, id desc"
-    # a shared sentence names no one: no author, no timestamp finer than its day
     _log_access = False
 
     day = fields.Date(

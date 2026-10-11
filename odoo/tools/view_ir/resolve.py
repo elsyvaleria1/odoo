@@ -36,37 +36,18 @@ def combine_specs(
     origin: str | None = None,
     apply_xml: ApplyXml = apply_inheritance_specs,
 ) -> tuple[int, int]:
-    """Apply the XML inheritance specs of one view onto ``state.root``.
-
-    Each spec's target is located the way the XML combine locates it — the
-    same xpath, the same first match — on the arch ``state.root`` stands for,
-    and the spec applies as a :class:`Patch` addressing that node itself: no
-    step identifies the tree, since the ids depend on the whole tree and
-    naming one target meant re-deriving them all after every patch. A spec
-    whose target cannot be located, whose content holds a ``$0`` in a text
-    node beside other text, whose position is not one of the five, or whose
-    patch the merge refuses (a bad separator, say) applies the XML way
-    through ``apply_xml`` — which reports a spec it cannot apply in its own
-    words, and that is what this raises. Specs address the tree the specs
-    before them leave, so they apply in order; ``state`` accumulates the
-    provenance, and a node the XML way inserts carries ``origin`` like one a
-    patch inserts. Returns how many specs applied as patches, and how many
-    specs there were.
-    """
     work = _Working(state)
     specs = _flatten(specs_tree)
     patches = 0
     for spec in specs:
         patch = _translate(work, spec, origin)
-        reason = "unnamed"  # debuglog
+        reason = "unnamed"
         if patch is not None:
             try:
                 apply_one(state, patch, work.addresses())
             except ValueError as e:
-                # a change the merge refuses (a bad separator, say): the XML
-                # path applies the same spec and reports it in its own words
                 patch = None
-                reason = f"refused:{type(e).__name__}"  # debuglog
+                reason = f"refused:{type(e).__name__}"
             else:
                 patches += 1
                 work.invalidate()
@@ -125,7 +106,6 @@ class _Working:
         self._handles = {}
 
     def address(self, node: Node) -> str:
-        """The name a patch gives ``node``: a handle on the node itself."""
         handle = f"~{id(node)}"
         self._handles[handle] = node
         return handle
@@ -142,10 +122,6 @@ class _Working:
         return self._named
 
     def locate(self, spec: etree._Element) -> Node | None:
-        """The node a spec addresses — off the tree for the shapes that name
-        one node (`<field name="x">`, `//tag`, `//tag[@attr='v']`, the
-        overwhelming majority), off the materialised arch's xpath otherwise,
-        both with the XML combine's first-match rule."""
         tag, attr, value = _simple_target(spec)
         if tag is not None:
             if attr == "name" and value:
@@ -178,10 +154,6 @@ class _Working:
     def apply_xml(
         self, spec: etree._Element, apply_xml: ApplyXml, origin: str | None
     ) -> None:
-        """The spec the XML way, on the materialised arch, read back as the
-        tree; an element the XML combine keeps keeps its node's provenance and
-        the attribute setters ``managed`` holds for it, one it inserts is the
-        spec's."""
         arch = self.arch()
         assert self._nodes is not None
         kept = self._nodes
@@ -208,8 +180,6 @@ class _Working:
 def _simple_target(
     spec: etree._Element,
 ) -> tuple[str | None, str | None, str | None]:
-    """(tag, attr, value) when the spec names its target by one attribute or
-    by tag alone; (None, None, None) when only xpath can say."""
     if spec.tag != "xpath":
         attrs = [
             (k, v) for k, v in spec.attrib.items() if is_locator_attribute(spec, k)
@@ -248,9 +218,6 @@ def _translate(
             if not isinstance(attribute.tag, str):
                 continue
             name = attribute.get("name")
-            # a malformed <attribute> is the XML path's to refuse, with its
-            # message: another element, an unknown attribute, add/remove
-            # beside text
             if (
                 attribute.tag != "attribute"
                 or not name
@@ -276,9 +243,6 @@ def _translate(
                 )
             )
         return Patch(op, target_id, attributes=tuple(changes), origin=origin)
-    # the XML combine locates a moved node on the tree the elements ahead of
-    # it in the spec leave, moved or inserted; the patch locates it up front,
-    # so a move behind another element goes the XML way
     elements = [child for child in spec if isinstance(child.tag, str)]
     if any(child.get("position") == "move" for child in elements[1:]):
         return None
@@ -329,8 +293,6 @@ def _content_node(element: etree._Element, op: str) -> Node | None:
 
 
 def _place_dollar_zero(node: Node, op: str) -> bool:
-    """`$0` as a node's whole text becomes a `$0` child, as in a replace spec;
-    `$0` anywhere else is left to the XML path."""
     if node.text is not None and "$0" in node.text:
         if node.text != "$0" or op != "replace":
             return False

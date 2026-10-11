@@ -7,8 +7,6 @@ class IrWebsocket(models.AbstractModel):
     def _implicit_bus_channels(self):
         channels = super()._implicit_bus_channels()
         group = self.env.ref("device.group_device_user", raise_if_not_found=False)
-        # beside the group's own channel, which bus subscribes to through
-        # all_group_ids: one channel of that group per company of the user
         if not group or group not in self.env.user.all_group_ids:
             return channels
         return [*channels, *((group, cid) for cid in self.env.user.company_ids.ids)]

@@ -43,8 +43,6 @@ class TestPayrollFieldsAccess(TransactionCase):
         )
 
     def test_every_amount_on_a_version_names_a_class(self):
-        # every internal user reads hr.version: an amount a module adds to it
-        # is read by whom its class and groups name, or by everyone
         unclassified = sorted(
             name
             for name, field in self.env["hr.version"]._fields.items()

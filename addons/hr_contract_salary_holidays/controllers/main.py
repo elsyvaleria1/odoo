@@ -1,7 +1,7 @@
 from odoo.http import request
 
 from odoo.addons.hr_contract_salary.controllers import (
-    main,  # noqa: F401  imported for controller load order (reported)
+    main,
 )
 from odoo.addons.sign.controllers.main import Sign
 
@@ -18,7 +18,6 @@ class SignContract(Sign):
                 time_off_type = (
                     version.company_id.hr_contract_timeoff_auto_allocation_type_id
                 )
-                # Sudo is required here because it isn't guaranteed that the second person signing will be a manager.
                 records = (
                     request.env["hr.leave.allocation"]
                     .sudo()

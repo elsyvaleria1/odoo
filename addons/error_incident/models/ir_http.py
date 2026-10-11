@@ -12,7 +12,6 @@ from .error_incident import capture_payload
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-# The key under the JSON-RPC error's `data.context` that names the incident.
 CONTEXT_KEY = "error_incident"
 
 
@@ -21,19 +20,11 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _handle_error(cls, exception: Exception) -> Any:
-        # Before `super()`: it serializes the error body, so the key must be on
-        # the exception by then.
         cls._capture_request_error(exception)
         return super()._handle_error(exception)
 
     @classmethod
     def _capture_request_error(cls, exception: Exception) -> None:
-        """Name the incident in the error the client receives; record it later.
-
-        The request's cursor has been rolled back, may be read-only, and may
-        already be closed: the occurrence is written once it is back in the
-        pool, on a cursor of its own (`call_after_release`).
-        """
         if is_expected(exception) or not request or not request.db:
             return
         try:

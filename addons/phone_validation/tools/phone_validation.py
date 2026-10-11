@@ -5,11 +5,11 @@ from odoo.tools import LazyTranslate
 
 _lt = LazyTranslate(
     __name__, default_lang="en_US"
-)  # TODO pass env to functions and remove _lt
+)
 _logger = logging.getLogger(__name__)
 _phonenumbers_lib_warning = [
     False
-]  # single-element list: mutated in-place to avoid a module `global`
+]
 
 
 try:
@@ -17,15 +17,12 @@ try:
 
     def phone_parse(number, country_code):
         try:
-            # Parse a first time to obtain an initial PhoneNumber object
             phone_nbr = phonenumbers.parse(
                 number, region=country_code or None, keep_raw_input=True
             )
-            # Force format to international to apply metadata patches
             formatted_intl = phonenumbers.format_number(
                 phone_nbr, phonenumbers.PhoneNumberFormat.INTERNATIONAL
             )
-            # Parse a second time with the number now formatted internationally
             phone_nbr = phonenumbers.parse(
                 formatted_intl, region=country_code or None, keep_raw_input=True
             )
@@ -42,11 +39,7 @@ try:
                 )
             if reason == phonenumbers.ValidationResult.TOO_SHORT:
                 raise UserError(_lt("Impossible number %s: not enough digits.", number))
-            # in case of "TOO_LONG", we may try to reformat the number in case it was
-            # entered without '+' prefix or using leading '++' not always recognized;
-            # in any case final error should keep the original number to ease tracking
             if reason == phonenumbers.ValidationResult.TOO_LONG:
-                # people may enter 0033... instead of +33...
                 if number.startswith("00"):
                     try:
                         phone_nbr = phone_parse(
@@ -56,7 +49,6 @@ try:
                         raise UserError(
                             _lt("Impossible number %s: too many digits.", number)
                         ) from None
-                # people may enter 33... instead of +33...
                 elif not number.startswith("+"):
                     try:
                         phone_nbr = phone_parse(f"+{number}", country_code)
@@ -89,21 +81,6 @@ try:
         force_format="INTERNATIONAL",
         raise_exception=True,
     ):
-        """Format the given phone number according to the localisation and international options.
-        :param number: number to convert
-        :param country_code: the ISO country code in two chars
-        :type country_code: str
-        :param country_phone_code: country dial in codes, defined by the ITU-T (Ex: 32 for Belgium)
-        :type country_phone_code: int
-        :param force_format: stringified version of format globals (see
-          https://github.com/daviddrysdale/python-phonenumbers/blob/dev/python/phonenumbers/phonenumberutil.py)
-            'E164' = 0
-            'INTERNATIONAL' = 1
-            'NATIONAL' = 2
-            'RFC3966' = 3
-        :type force_format: str
-        :rtype: str
-        """
         try:
             phone_nbr = phone_parse(number, country_code)
         except UserError:

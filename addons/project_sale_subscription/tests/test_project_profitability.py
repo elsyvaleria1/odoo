@@ -90,7 +90,6 @@ class TestSaleSubscriptionProjectProfitability(
         foreign_company = self.company_data_2["company"]
         foreign_company.currency_id = self.foreign_currency
 
-        # Create and confirm a subscription with the foreign company
         subscription_foreign = self.subscription_foreign.copy(project_vals)
         self.assertDictEqual(
             self.project._get_profitability_items(False),
@@ -134,8 +133,6 @@ class TestSaleSubscriptionProjectProfitability(
             },
         )
 
-        # Create and confirm a subscription with the main company and the same template as the foreign subscription
-        # This ensures that even if subscriptions share a template, the currency is correctly computed
         subscription_main_with_foreign_template = (
             self.subscription_main_with_foreign_template.copy(project_vals)
         )
@@ -165,15 +162,12 @@ class TestSaleSubscriptionProjectProfitability(
                 },
             },
         )
-        # Confirm the main company subscription
-        # This ensures that subscriptions with different template are correctly computed
         subscription = self.subscription.copy(project_vals)
         subscription.action_confirm()
         new_amount_expected += (
             subscription.recurring_monthly
             * subscription.template_id.duration_value
         )
-        # There are more than 5 sale lines, the allSubscriptionIds arg is now expected
         all_ids = subscription.line_ids.ids
         all_ids.extend(subscription_main_with_foreign_template.line_ids.ids)
         all_ids.extend(subscription_foreign.line_ids.ids)
@@ -205,7 +199,6 @@ class TestSaleSubscriptionProjectProfitability(
         foreign_company = self.company_data_2["company"]
         foreign_company.currency_id = self.foreign_currency
 
-        # Create and confirm a subscription with the foreign company
         subscription_foreign = self.subscription_foreign.copy(project_vals)
         subscription_foreign.project_id = self.project
         self.assertDictEqual(
@@ -248,8 +241,6 @@ class TestSaleSubscriptionProjectProfitability(
             },
         )
 
-        # Confirm the main company subscription
-        # This ensures that subscriptions with different template are correctly computed
         subscription = self.subscription.copy(project_vals)
         subscription.action_confirm()
         self.assertEqual(subscription.subscription_state, "3_progress")
@@ -287,10 +278,6 @@ class TestSaleSubscriptionProjectProfitability(
         )
 
     def test_recurrent_fixed_service_only_in_subscription_section(self):
-        """
-        A recurrent service with prepaid/fixed invoicing should only be included in
-        the subscription section, not the "Fixed Hourly" cost. (because it is recurrent)
-        """
         self.project.company_id = False
 
         foreign_company = self.company_data_2["company"]
@@ -329,7 +316,6 @@ class TestSaleSubscriptionProjectProfitability(
         )
         sale_order_foreign.currency_id = self.foreign_currency
         sale_order_foreign.action_confirm()
-        # there should be only a subscription section, not the fixed/prepaid services section
         self.assertDictEqual(
             self.project._get_profitability_items(False)["revenues"],
             {
@@ -372,7 +358,6 @@ class TestSaleSubscriptionProjectProfitability(
             }
         )
         sale_order.action_confirm()
-        # there should be only a subscription section, not the fixed/prepaid services section
         self.assertDictEqual(
             self.project._get_profitability_items(False)["revenues"],
             {
@@ -396,8 +381,6 @@ class TestSaleSubscriptionProjectProfitability(
         )
 
     def test_project_update(self):
-        """Test that the project update panel works when the project
-        is linked to a closed subscription that was invoiced."""
         self.env.user.group_ids += self.env.ref("analytic.group_analytic_accounting")
 
         sale_order = self.env["sale.order"].create(
@@ -461,17 +444,6 @@ class TestSaleSubscriptionProjectProfitability(
         )
 
     def test_project_profitability_with_renewed_subscription(self):
-        """
-        Test that the project profitability is correctly updated when a subscription is renewed.
-
-        Test Case:
-        ==========
-        1- create a subscription and link it to a project
-        2- confirm the subscription and create an invoice and post it
-        3- renew the subscription
-        4- check that `To Invoice` reflects the new subscription amount while `Invoiced` takes
-           into account previous subscription.
-        """
         self.env.user.group_ids += self.env.ref("analytic.group_analytic_accounting")
 
         subscription = self.env["sale.order"].create(
@@ -533,7 +505,6 @@ class TestSaleSubscriptionProjectProfitability(
             },
         )
 
-        # Renew the subscription
         action = subscription.prepare_renewal_order()
         renewed_sub = self.env["sale.order"].browse(action["res_id"])
         renewed_sub.action_confirm()

@@ -1,7 +1,6 @@
 from odoo import fields, models
 from odoo.tools import float_compare, float_is_zero
 
-# Differences below this many kilograms are rounding, not goods.
 WEIGHT_PRECISION = 2
 
 
@@ -28,15 +27,7 @@ class StockPickingBatch(models.Model):
         "breakdown moved to the rescue trip.",
     )
 
-    # ------------------------------------------------------------------
-    # Recording
-    # ------------------------------------------------------------------
     def _trip_record_stops(self, pickings):
-        """Freeze what each delivery weighs as it boards this trip.
-
-        :param recordset pickings: the deliveries boarding, with their goods
-            already reserved on the vehicle
-        """
         self.check_singleton()
         Stop = self.env["stock.trip.stop"].with_privilege(
             "stock_fleet_trace.privilege_trip_trace_record",
@@ -54,7 +45,6 @@ class StockPickingBatch(models.Model):
                 Stop.create({**vals, "batch_id": self.id, "picking_id": picking.id})
 
     def _trip_record_written_off(self, picking, weight):
-        """Charge ``weight`` lost on the route to ``picking`` on this trip."""
         self.check_singleton()
         stop = self.trip_stop_ids.filtered(lambda s: s.picking_id == picking)
         if stop:
@@ -63,20 +53,7 @@ class StockPickingBatch(models.Model):
                 reason="a trip records what each delivery lost",
             ).weight_written_off += weight
 
-    # ------------------------------------------------------------------
-    # Trip sheet
-    # ------------------------------------------------------------------
     def _trip_report_stops(self):
-        """Every delivery this trip carried, with its weight and where it ended.
-
-        Read from what each delivery weighed when it boarded this trip, so later
-        trips of the same delivery do not change this one's sheet.
-
-        :return: per delivery (``picking`` False for goods nobody reserved) its
-            outcome and the weight at departure, delivered, written off, handed
-            over and brought back
-        :rtype: list
-        """
         self.check_singleton()
         checkpoints = self.trip_checkpoint_ids
         delivered_here = checkpoints.filtered(
@@ -137,13 +114,6 @@ class StockPickingBatch(models.Model):
         return stops
 
     def _trip_report_free_goods(self, stops):
-        """Account for the goods nobody reserved: rejections and what a rescue took.
-
-        Rejected goods stay on the vehicle, free. A write-off of free goods and
-        the free goods a breakdown moved to the rescue come out of the rejecting
-        deliveries first; what is left, and what a rescue trip took over free,
-        gets its own row.
-        """
         written_off = self.trip_incident_ids.filtered(
             lambda i: i.state == "approved"
         ).line_ids._trip_goods_weight()
@@ -185,10 +155,6 @@ class StockPickingBatch(models.Model):
             )
 
     def _trip_report_weights_match(self, stops) -> bool:
-        """Whether the deliveries' weights add up to the trip's, row by row too.
-
-        :rtype: bool
-        """
         self.check_singleton()
         total = sum(stop["departure"] for stop in stops)
         if float_compare(total, self.weight_departure, precision_digits=2):
@@ -199,12 +165,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_report_handover_lines(self, rescue):
-        """The goods a breakdown moved to ``rescue``, as the handover moved them.
-
-        :return: per moved line its delivery (empty for free goods), product,
-            lot, quantity and unit
-        :rtype: list
-        """
         self.check_singleton()
         moves = self.trip_support_picking_ids.filtered(
             lambda p: p.trip_support_kind == "handover"
@@ -226,7 +186,6 @@ class StockPickingBatch(models.Model):
         )
 
     def _trip_report_breakdown(self, rescue):
-        """The breakdown that sent ``rescue``: the one linked, else the latest."""
         self.check_singleton()
         breakdowns = self.trip_incident_ids.filtered(
             lambda i: i.incident_type == "breakdown" and i.state == "approved"
@@ -235,12 +194,6 @@ class StockPickingBatch(models.Model):
         return linked[:1] or breakdowns.sorted("date", reverse=True)[:1]
 
     def _trip_report_write_offs(self):
-        """What approved incidents took off the vehicle, line by line.
-
-        :return: per lost line its incident, delivery, product, lot, quantity,
-            weight and the scrap that took it off the stock
-        :rtype: list
-        """
         self.check_singleton()
         kinds = dict(
             self.env["stock.trip.incident"]
@@ -273,12 +226,6 @@ class StockPickingBatch(models.Model):
         return rows
 
     def _trip_report_movements(self):
-        """The stock moves the trip made: loading, handover, unloading, write-offs.
-
-        :return: per transfer or scrap its reference, what it was, from, to,
-            state and date
-        :rtype: list
-        """
         self.check_singleton()
         kinds = dict(
             self.env["stock.picking"]
@@ -317,10 +264,6 @@ class StockPickingBatch(models.Model):
         return rows
 
     def _trip_report_rescue_outcomes(self, rescue):
-        """What happened on ``rescue`` to each delivery it took over.
-
-        :rtype: dict
-        """
         self.check_singleton()
         return {
             row["picking"]: row["outcome"]

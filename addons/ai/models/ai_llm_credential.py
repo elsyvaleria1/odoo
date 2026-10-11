@@ -3,7 +3,6 @@ import os
 from odoo import api, models
 from odoo.exceptions import UserError
 
-# Where each built-in provider's key is read from when nothing overrides this.
 PROVIDER_KEY_SOURCES = {
     "openai": {"config_key": "ai.openai_key", "env_var": "ODOO_AI_CHATGPT_TOKEN"},
     "google": {"config_key": "ai.google_key", "env_var": "ODOO_AI_GEMINI_TOKEN"},
@@ -28,17 +27,6 @@ class AiLlmCredential(models.AbstractModel):
 
     @api.model
     def _get_api_token(self, provider):
-        """Return the API key for ``provider``.
-
-        Overrides should ``return super()._get_api_token(provider)`` when they
-        have nothing for this provider, so the configured system parameter keeps
-        working and the error message stays in one place.
-
-        :param str provider: provider name, e.g. ``openai``
-        :return: the API key
-        :rtype: str
-        :raises UserError: the provider is unknown, or has no key configured
-        """
         source = PROVIDER_KEY_SOURCES.get(provider)
         if source is None:
             raise UserError(self.env._("Unsupported provider '%s'", provider))

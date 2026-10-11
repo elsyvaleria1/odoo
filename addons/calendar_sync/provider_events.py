@@ -54,7 +54,6 @@ class ProviderEvents(abc.Set):
 
     @property
     def ids(self) -> tuple:
-        """The events' ids, each the calendar's own."""
         return tuple(event.id for event in self)
 
     def filter(self, func) -> Self:

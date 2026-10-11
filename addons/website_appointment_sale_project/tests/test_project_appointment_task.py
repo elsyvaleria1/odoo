@@ -226,7 +226,6 @@ class TestProjectAppointmentTask(TestProjectCommon, AppointmentCommon):
             ],
         }
         calendar_booking = self.env["calendar.booking"].create(booking_values)
-        # A configuration edit after booking must not erase answers from the task.
         self.appointment_question_single_line_text.active = False
 
         sale_order = (

@@ -49,7 +49,6 @@ def text_to_string(element):
 
 
 def clean_text_content(buf):
-    """Drop NULs and CRs, tabs to spaces, collapse whitespace."""
     if not buf:
         return buf
     buf = buf.translate(
@@ -247,9 +246,6 @@ def read_opendoc(data, max_entry_bytes=MAX_ENTRY_BYTES):
             raw = read_zip_entry(zf, zf.getinfo("content.xml"), max_entry_bytes)
             if raw is None:
                 return clean_text_content("")
-            # Explicit hardened parser (defense-in-depth): don't rely solely on
-            # the process-wide lxml default to guard against XXE and entity
-            # expansion.
             parser = etree.XMLParser(resolve_entities=False, no_network=True)
             content = etree.fromstring(raw, parser=parser)
             mime_type = zf.read("mimetype").decode("utf-8").strip()

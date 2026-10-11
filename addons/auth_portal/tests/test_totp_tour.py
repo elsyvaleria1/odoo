@@ -18,6 +18,5 @@ class TestTOTPortal(HttpCaseWithUserPortal, TestTOTPMixin):
         self.install_totphook()
 
         self.start_tour("/my/security", "totportal_tour_setup", login="portal")
-        # also disables totp otherwise we can't re-login
         self.start_tour("/", "totportal_login_enabled", login=None)
         self.start_tour("/", "totportal_login_disabled", login=None)

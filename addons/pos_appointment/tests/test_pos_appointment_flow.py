@@ -41,9 +41,7 @@ class TestPosAppointmentFlow(CommonPosTest):
         cls.env.user.group_ids -= cls.env.ref("calendar.group_appointment_manager")
 
     def test_appointment_reservation_count(self):
-        """Test that bookings are created with the correct number of reservation."""
 
-        # Reservation should depend on resource_total_capacity_reserved
         capacity_reservation = self.env["calendar.event"].create(
             {
                 "name": "event without partner",
@@ -54,7 +52,6 @@ class TestPosAppointmentFlow(CommonPosTest):
         )
         self.assertEqual(capacity_reservation.waiting_list_capacity, 3)
 
-        # resource_total_capacity_reserved has priority over resource_ids
         capacity_reservation_2 = self.env["calendar.event"].create(
             {
                 "name": "event without partner",
@@ -65,7 +62,6 @@ class TestPosAppointmentFlow(CommonPosTest):
         )
         self.assertEqual(capacity_reservation_2.waiting_list_capacity, 5)
 
-        # Reservation should depend on resource_ids
         resource_reservation = self.env["calendar.event"].create(
             {
                 "name": "event without partner",
@@ -76,8 +72,6 @@ class TestPosAppointmentFlow(CommonPosTest):
         self.assertEqual(resource_reservation.waiting_list_capacity, 6)
 
     def test_prepare_calendar_event_values_phone_number(self):
-        """Test that the phone number of the customer is added to the calendar event when an appointment is booked
-        from the POS."""
         partner = self.env["res.partner"].create(
             {
                 "name": "Customer A",
@@ -107,15 +101,12 @@ class TestPosAppointmentFlow(CommonPosTest):
         )
         self.assertEqual(event_values["phone_number"], "123456789")
 
-        # Create calendar event
         event = self.env["calendar.event"].create(event_values)
         self.assertEqual(partner._phone_get_number().number, "123456789")
         self.assertEqual(event.phone_number, "123456789")
 
-        # Phone number is not related to the partner
         partner._phone_replace_number("phone_ids", "987654321")
         self.assertEqual(event.phone_number, "123456789")
 
-        # And reversely, changing the phone number on the event does not change it on the partner
         event.phone_number = "111222333"
         self.assertEqual(partner._phone_get_number().number, "987654321")

@@ -38,11 +38,7 @@ class HrAppraisalGoal(models.Model):
         compute="_compute_employee_autocomplete",
         compute_sudo=True,
     )
-    # A Many2one resolved through a Many2many: with employees in more than one
-    # company it silently keeps whichever the ORM reached first, and the
-    # multi-company rule then hides the goal from the others. The constraint
-    # below is what makes this declaration honest.
-    company_id = fields.Many2one(  # noqa: E8529  the path employee_ids.company_id crosses an x2many: no single row to join
+    company_id = fields.Many2one(
         comodel_name="res.company",
         related="employee_ids.company_id",
         store=True,
@@ -112,7 +108,6 @@ class HrAppraisalGoal(models.Model):
         compute="_compute_sibling_goals_ratio",
         store=True,
     )
-    # Goal Template
     active = fields.Boolean(default=True)
     parent_path = fields.Char(index=True)
     parent_id = fields.Many2one(
@@ -133,7 +128,6 @@ class HrAppraisalGoal(models.Model):
 
     @api.depends_context("uid")
     def _compute_has_edit_right(self) -> None:
-        # Due to a strange framework behavior the view is not readonly when the user can't write on this model.
         for goal in self:
             goal.has_edit_right = goal.has_access("write")
 
@@ -259,15 +253,12 @@ class HrAppraisalGoal(models.Model):
     def action_confirm(self):
         self.write({"progression": "100"})
 
-    ########################################## Goal template ##########################################################
 
-    def create_goals(self, employee_ids=[], employee_goal_dict={}) -> None:  # noqa: B006  preexisting mutable defaults; reassigned not mutated (reported)
+    def create_goals(self, employee_ids=[], employee_goal_dict={}) -> None:
         if not employee_ids and "default_employee_id" in self.env.context:
             employee_ids = [self.env.context["default_employee_id"]]
         if not employee_ids:
             return
-        # The method is RPC-reachable and creates with sudo(), which bypasses
-        # `hr_appraisal_goal_own_create`. Re-apply that scope here.
         allowed = self.env.user.get_employee_autocomplete_ids().ids
         forbidden = [eid for eid in employee_ids if eid not in allowed]
         if forbidden:
@@ -318,11 +309,6 @@ class HrAppraisalGoal(models.Model):
         }
 
     def _get_duration_month(self):
-        """Whole months between creation and deadline, years included.
-
-        `relativedelta(...).months` is the month *component* only, so a
-        fourteen-month goal used to come out as two.
-        """
         self.check_singleton()
         if not self.deadline or self.deadline <= self.create_date.date():
             return 0
@@ -398,7 +384,6 @@ class HrAppraisalGoal(models.Model):
             "context": {"goals_ids": self.env.context.get("goals_ids")},
         }
 
-    ######################################### ORM method ##############################################################
 
     def action_archive(self):
         super().action_archive()
@@ -407,8 +392,6 @@ class HrAppraisalGoal(models.Model):
 
     def action_unarchive(self):
         super().action_unarchive()
-        # `child_ids` respects active_test, and the children we archived on the
-        # way down are exactly the ones it would now hide.
         children = self.with_context(active_test=False).child_ids
         if children:
             children.action_unarchive()
@@ -440,7 +423,6 @@ class HrAppraisalGoal(models.Model):
             )
 
         new_goal_templates = super().copy(default)
-        # Build the hierarchy of new goals
         res = self.child_ids.copy(default).grouped("parent_id")
         for old_goal_template, new_goal_template in zip(
             self, new_goal_templates, strict=True
@@ -450,8 +432,6 @@ class HrAppraisalGoal(models.Model):
         return new_goal_templates
 
     def recursive_unlink(self) -> None:
-        # active_test would hide archived children, and the default
-        # `ondelete='set null'` on parent_id would leave them as orphan roots.
         children = self.with_context(active_test=False).child_ids
         if children:
             children.recursive_unlink()

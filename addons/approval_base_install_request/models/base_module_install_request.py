@@ -7,19 +7,9 @@ class BaseModuleInstallRequest(models.Model):
     _inherit = ["base.module.install.request", "mixin.approval"]
 
     def _send_request(self):
-        """Ask the administrators through an approval request rather than an
-        e-mail each: the request is the record of who asked, who decided and
-        what they said, and the engine's activities are what reach them."""
         self.action_create_approval_request()
 
     def action_open_install_review(self) -> dict:
-        """Open the dependency review that ends in the install.
-
-        Installing is not done from the approval decision itself: it commits and
-        replaces the registry, which would pull the rest of the decision out from
-        under the request still being written. It stays one explicit click, as it
-        was when the administrator followed the e-mail's link.
-        """
         self.check_singleton()
         if self.approval_state != "approved":
             raise UserError(

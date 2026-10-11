@@ -54,7 +54,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
         spreadsheet = self.env["spreadsheet.test"].create({})
         snapshot = {"sheets": [], "revisionId": spreadsheet.current_revision_uuid}
 
-        # one revision is saved in the meantime (concurrently)
         spreadsheet.dispatch_spreadsheet_message(self.new_revision_data(spreadsheet))
 
         with self.assertRaises(UserError):
@@ -92,7 +91,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
             self.assertEqual(revision["timestamp"], datetime(2020, 2, 2, 0, 0, 0))
             self.assertEqual(revision["user"], (user.id, user.name))
 
-        # from snapshot
         data = spreadsheet.get_spreadsheet_history(True)
         revisions = data["revisions"]
         self.assertEqual(len(revisions), 1)
@@ -150,7 +148,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
         spreadsheet.dispatch_spreadsheet_message(revision_data)
         self.assertEqual(spreadsheet.current_revision_uuid, next_revision_id)
 
-        # dispatch new revision on top
         revision_data = self.new_revision_data(spreadsheet)
         next_revision_id = revision_data["nextRevisionId"]
         spreadsheet.dispatch_spreadsheet_message(revision_data)
@@ -171,7 +168,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
             snapshot_revision_id,
         )
 
-        # dispatch revision after snapshot
         revision_data = self.new_revision_data(spreadsheet)
         next_revision_id = revision_data["nextRevisionId"]
         spreadsheet.dispatch_spreadsheet_message(revision_data)
@@ -284,7 +280,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
 
     def test_get_search_arch(self):
 
-        # default search view
         arch = '<search><field name="name"/></search>'
         self.env["ir.ui.view"].create(
             {
@@ -314,7 +309,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
         result = self.env["mixin.spreadsheet"].get_search_view_archs([xml_id])
         self.assertEqual(result, {"res.partner": [arch]})
 
-        # with a custom search view
         custom_arch = (
             '<search><field name="name" string="custom search view"/></search>'
         )
@@ -341,6 +335,6 @@ class SpreadsheetMixinTest(SpreadsheetTestCase):
         )
         thread1, thread2 = threads
         self.assertEqual(
-            threads.mapped("display_name"),  # compute in batch
+            threads.mapped("display_name"),
             [thread1.display_name, thread2.display_name],
         )

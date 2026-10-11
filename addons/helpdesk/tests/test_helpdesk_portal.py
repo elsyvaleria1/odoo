@@ -44,7 +44,6 @@ class TestHelpdeskPortal(HttpCase, HelpdeskCommon):
         )
 
     def test_ignore_mail_scanner_closure(self):
-        """Only GET requests should lead to a ticket being closed."""
         self.test_team.allow_portal_ticket_closing = True
         self.test_team.helpdesk_privacy_visibility = "portal"
 

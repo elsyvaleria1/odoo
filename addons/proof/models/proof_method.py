@@ -14,7 +14,6 @@ CODE_SCOPE = register_signed_scope(
 )
 CODE_DIGITS = 6
 CODE_ATTEMPTS = 5
-# the advisory lock space of a challenge's code attempts
 CODE_LOCK = 20251009
 
 STRENGTHS = [
@@ -83,18 +82,12 @@ class ProofMethod(models.Model):
         return self.code == "password"
 
     def _is_enrolled_contact(self, partner: models.BaseModel) -> bool:
-        """Whether a contact with no user account can prove with this method:
-        through the user who asks them, or, for a method answered on their own
-        channel, whether that channel reaches them."""
         self.check_singleton()
         return False
 
     def _deliver_confirmation(
         self, challenge: models.BaseModel, reminder: bool = False
     ) -> models.BaseModel:
-        """Send the contact what ``challenge`` asks them to confirm, with a way
-        to answer it, and return the ``proof.delivery`` that answer arrives on;
-        an empty one when the channel could not take it."""
         self.check_singleton()
         raise UserError(
             self.env._(
@@ -103,20 +96,15 @@ class ProofMethod(models.Model):
         )
 
     def _withdraw_delivery(self, delivery: models.BaseModel) -> None:
-        """Tell the contact a message they can no longer answer is spent."""
         self.check_singleton()
 
     def _uses_code(self) -> bool:
-        """Whether this method is answered with a code sent to the signer's own
-        channel, which the user who asks them enters."""
         self.check_singleton()
         return False
 
     def _send_code(
         self, challenge: models.BaseModel, signer: models.BaseModel, code: str
     ) -> str:
-        """Send ``code`` to ``signer`` on this method's channel, with what they
-        agree to, and return where it went, masked."""
         self.check_singleton()
         raise UserError(
             self.env._(
@@ -149,13 +137,6 @@ class ProofMethod(models.Model):
         }
 
     def _take_code_attempt(self, challenge: models.BaseModel, wrong: bool) -> bool:
-        """Whether the challenge still takes a code, counting a wrong one.
-
-        In a transaction of its own, since the refusal rolls this request back,
-        and under a lock of the challenge's, so that parallel guesses take turns
-        instead of all reading the count before any of them raised it. A right
-        code is not counted: the request that redeems the challenge then never
-        conflicts with the counter it read."""
         with self.env.registry.cursor() as cr:
             cr.execute(
                 SQL("SELECT pg_advisory_xact_lock(%s, %s)", CODE_LOCK, challenge.id)
@@ -187,8 +168,6 @@ class ProofMethod(models.Model):
     def _accept_proof(
         self, challenge: models.BaseModel, payload: dict[str, Any]
     ) -> dict[str, Any]:
-        """Check the user's proof against the challenge and return what the
-        evidence keeps of it; raise UserError when it does not hold."""
         self.check_singleton()
         if self._uses_code():
             return self._check_code(challenge, payload)

@@ -61,31 +61,6 @@ class AiAgent(models.Model):
         )
 
     def _embedding_capable_providers(self):
-        """Provider names that can embed, in upstream's own preference order.
-
-        :return: names accepted by ``LLMApiService`` and by
-            ``_get_embedding_model``
-        :rtype: list
-
-        This was the literal ``["openai", "google"]``, which restated two tables
-        that already say it. ``_get_llm_providers()`` is the set of
-        providers this fork can drive at all — every entry carries an
-        ``embedding_model``, and a module registering a third through
-        an ``_get_llm_providers`` override would have been invisible to a hardcoded pair.
-        ``integration.ml.provider.has_embeddings`` is the per-vendor capability flag, and it
-        already held the same answer: True for openai and gemini, False for
-        claude, deepseek and deepgram.
-
-        Deriving rather than restating is also what gives ``has_embeddings`` a
-        reader. It had none, which is how the two could have drifted apart
-        without anything failing.
-
-        The name has to come from ``_get_llm_providers()`` rather than from the
-        ``integration.ml.provider`` row: ``_get_embedding_model`` looks the return value up
-        in that table and ``LLMApiService`` is constructed with it, so an
-        ``integration_machine_learning`` service code — ``gemini`` where upstream says ``google`` — is
-        not interchangeable here.
-        """
         endpoint_codes = self.env["ai.llm.credential"]._PROVIDER_ENDPOINT_CODES
         registry = self.env["integration.ml.provider"].sudo()
         capable = []

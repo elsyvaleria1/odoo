@@ -147,8 +147,6 @@ class IrFilters(models.Model):
         return domain
 
     def _domain_eval_context(self) -> dict[str, Any]:
-        # the names the web client evaluates a favourite with, plus the two
-        # record-rule ones _ALLOWED_DOMAIN_NAMES also admits
         today = fields.Date.context_today(self)
         return {
             "uid": self.env.uid,

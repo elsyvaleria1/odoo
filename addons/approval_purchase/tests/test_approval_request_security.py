@@ -150,13 +150,6 @@ class TestApprovalRequestSecurity(TransactionCase):
         )
 
     def test_the_purchase_groups_keep_the_access_base_group_user_grants(self):
-        """Pins what the deleted access rows were adding: nothing.
-
-        base.group_user already holds read on approval.category and full
-        rights on approval.request and approval.approver, and both purchase
-        groups imply it, so a row per purchase group granted nothing. If core
-        ever narrows its own rows, this test is what fails.
-        """
         base_only = self.env["res.users"].create(
             {
                 "name": "Plain Internal User",
@@ -179,7 +172,6 @@ class TestApprovalRequestSecurity(TransactionCase):
                         )
 
     def test_a_purchase_manager_still_administers_approval_categories(self):
-        """The one row that was kept is the one that grants something."""
         category = self.env["approval.category"].create(
             {"name": "Managed Category", "approval_type": "purchase"},
         )

@@ -9,7 +9,6 @@ from odoo.addons.mail.tests.common import MailCommon
 class TestAttachment(MailCommon):
     @users("employee")
     def test_register_as_main_attachment(self):
-        """Test 'register_as_main_attachment', especially the multi support"""
         records_model1 = self.env["mail.test.simple.main.attachment"].create(
             [
                 {

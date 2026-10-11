@@ -136,11 +136,8 @@ class Team(models.Model):
         )
         for team in teams:
             team._check_usage_rights(team._get_team_usage_keys())
-        # favorite_user_ids is written after the memberships created inline, and
-        # replaces the favorites those memberships granted
         teams.team_member_ids._add_to_team_favorites()
         teams._sync_usage_aliases()
-        # an alias field reaches its team.alias row, which exists only now
         for team, alias_vals in zip(teams, alias_vals_list, strict=True):
             if alias_vals:
                 team.write(alias_vals)
@@ -168,18 +165,13 @@ class Team(models.Model):
             self.team_member_ids.action_archive()
         if flags:
             self._sync_usage_aliases()
-            # a usage the team now carries may be mono for its members
             self.team_member_ids._enforce_mono_membership()
-            # access domains inline a user's teams per usage
             self.env.registry.clear_cache()
         if "company_id" in vals:
             self._refresh_usage_aliases()
         return res
 
     def _check_usage_rights(self, keys) -> None:
-        # a rule on the flag lets a usage's administrators edit its teams, but it
-        # reads the team before the write: setting or clearing another usage's
-        # flag must be that usage's administrators' call
         if (
             not keys
             or self.env.su
@@ -361,7 +353,6 @@ class Team(models.Model):
     def action_activate_multi_membership(self, flags=None) -> None:
         usages = self._get_usages()
         if flags:
-            # the form sends its unsaved flags, which decide what the banner warned of
             keys = {
                 key
                 for key, usage in usages.items()

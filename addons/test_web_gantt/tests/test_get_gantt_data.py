@@ -46,13 +46,12 @@ class TestUnityWebReadGroupGantt(TransactionCase):
             ]
         )
 
-    # Test (limit/offset of group) * (groupby 0/1/2) * (groupby many2one/many2many/char) (no limit by groups)
 
     def test_get_gantt_data_without_limit(self):
         self.env.invalidate_all()
         with self.assertQueryCount(
             1
-        ):  # No _read_group but 1 query for search/reading display_name
+        ):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
                 [],
@@ -77,7 +76,6 @@ class TestUnityWebReadGroupGantt(TransactionCase):
             )
 
         self.env.invalidate_all()
-        # 1 SQL for _read_group + 1 SQL for reading name of groups + 1 SQL reading records
         with self.assertQueryCount(3):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
@@ -135,11 +133,9 @@ class TestUnityWebReadGroupGantt(TransactionCase):
 
     def test_get_gantt_data_with_limit(self):
         self.env.invalidate_all()
-        # 1 SQL for _read_group + 1 SQL to count the number of group (because limit isn't reached)
-        # + 1 SQL for reading name of parent_id + 1 SQL reading records
         with self.assertQueryCount(
             4
-        ):  # One for _read_group + One for reading name (+order)
+        ):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
                 ["parent_id", "name"],
@@ -172,8 +168,6 @@ class TestUnityWebReadGroupGantt(TransactionCase):
             )
 
         self.env.invalidate_all()
-        # 1 SQL for _read_group + 1 SQL to count the number of group (because limit isn't reached)
-        # + 1 SQL for reading name of parent_id + 1 SQL reading records
         with self.assertQueryCount(4):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids)],
@@ -211,7 +205,6 @@ class TestUnityWebReadGroupGantt(TransactionCase):
     def test_get_gantt_data_with_inactive(self):
         self.env.invalidate_all()
         self.pills[0:2].active = False
-        # 1 SQL for _read_group + 1 SQL for reading name of groups + 1 SQL reading records
         with self.assertQueryCount(3):
             result = self.env["test.web.gantt.pill"].get_gantt_data(
                 [("id", "in", self.pills.ids), ("active", "=", False)],
@@ -247,12 +240,6 @@ class TestUnityWebReadGroupGantt(TransactionCase):
             )
 
     def test_ungrouped_call_tolerates_unavailability_fields(self):
-        """An ungrouped call asking for unavailabilities answers, not raises.
-
-        Without a groupby the single synthetic group carries no field keys, so
-        reading the requested field out of it with ``[]`` raised KeyError for
-        any caller that is not the gantt view's own client code.
-        """
         result = self.env["test.web.gantt.pill"].get_gantt_data(
             [("id", "in", self.pills[0].ids)],
             [],

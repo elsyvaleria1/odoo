@@ -7,7 +7,6 @@ from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 @tagged("post_install", "-at_install")
 class TestAccountDebitNote(AccountTestInvoicingCommon):
     def test_00_debit_note_out_invoice(self):
-        """Debit Note of a regular Customer Invoice"""
         invoice = self.init_invoice(
             "out_invoice", products=self.product_a + self.product_b
         )
@@ -25,7 +24,6 @@ class TestAccountDebitNote(AccountTestInvoicingCommon):
         )
         move_debit_note_wiz.create_debit()
 
-        # Search for the original invoice
         debit_note = self.env["account.move"].search(
             [("debit_origin_id", "=", invoice.id)]
         )
@@ -43,7 +41,6 @@ class TestAccountDebitNote(AccountTestInvoicingCommon):
         )
 
     def test_10_debit_note_in_refund(self):
-        """Debit Note of a vendor refund (is a regular vendor bill)"""
         invoice = self.init_invoice(
             "in_refund", products=self.product_a + self.product_b
         )
@@ -60,7 +57,6 @@ class TestAccountDebitNote(AccountTestInvoicingCommon):
         )
         move_debit_note_wiz.create_debit()
 
-        # Search for the original invoice
         debit_note = self.env["account.move"].search(
             [("debit_origin_id", "=", invoice.id)]
         )

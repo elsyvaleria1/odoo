@@ -534,9 +534,6 @@ class TestOrderSharedFeatures(TransactionCase):
     }
 
     def test_order_count_is_not_narrowed_by_the_personal_rule(self):
-        """`_compute_order_count` must see every order for the partner, like
-        `_compute_recent_orders_count` already does, not just the ones the
-        acting salesperson personally owns."""
         for model, group in self._OWN_DOCUMENTS_GROUPS.items():
             with self.subTest(model=model):
                 count_field = self._COUNT_FIELDS[model]

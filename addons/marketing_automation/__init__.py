@@ -4,7 +4,6 @@ from . import wizards
 
 
 def uninstall_hook(env):
-    # remove reference to mailing.mailing use_in_marketing_automation field
     act_window = env.ref("mass_mailing.mailing_mailing_action_mail", False)
     if (
         act_window

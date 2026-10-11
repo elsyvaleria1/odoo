@@ -25,9 +25,6 @@ _debug = DebugLog(__name__)
 
 
 class _OriginPrefetch(Reversible[IdType]):
-    # the origins of a draft's prefetch set, derived as they are walked: a
-    # draft line's prefetch set is every line of its parent, and turning it
-    # into a tuple on each `_origin` made a loop over the lines quadratic
     __slots__ = ("_ids",)
 
     def __init__(self, ids: Iterable[IdType]) -> None:
@@ -79,8 +76,6 @@ class EnvironmentMixin(_ModelStubs):
 
     @api.private
     def with_privilege(self, *names: str, reason: str | None = None) -> Self:
-        # a privilege is a group only code holds: it adds its ir.access rows to
-        # the user's, every guard still binds, and with_user() drops it
         privileges = self.env.registry.access_policy.privilege_ids(self.env, names)
         env = self.env(privileges=self.env.privileges | privileges)
         if reason:
@@ -89,9 +84,6 @@ class EnvironmentMixin(_ModelStubs):
 
     @api.private
     def with_acting_partner(self, partner: typing.Any) -> Self:
-        # the code acts on behalf of this contact, who has no user of their own:
-        # the user's rows read it as the principal's partner, the user stays
-        # the user, and with_user() drops it
         if not partner:
             return self
         partner.check_singleton()

@@ -16,7 +16,6 @@ class CalendarMailCommon(MailCase, CronMixinCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # give default values for all email aliases and domain
         cls._init_mail_gateway()
         cls._init_mail_servers()
 
@@ -99,12 +98,6 @@ class TestCalendarMail(CalendarMailCommon):
 
     def test_assert_initial_values(self):
         self.assertFalse(self.event.message_partner_ids)
-        # The organizer is on the invitation too. `CalendarMailCommon` creates
-        # the event with no `partner_ids`, so `_default_partner_ids` puts the
-        # creating user's partner there -- and that partner is `base.user_root`'s,
-        # which is archived. This listed only the four added afterwards, and
-        # passed because `partner_ids` applied the comodel's active test and hid
-        # the fifth.
         self.assertEqual(
             self.event.partner_ids,
             self.user_root.partner_id
@@ -140,7 +133,7 @@ class TestCalendarMail(CalendarMailCommon):
                     "name": self.customers[0].name,
                     "partner_id": self.customers[0].id,
                 },
-                {  # wrong email suggested, can be corrected ?
+                {
                     "create_values": {},
                     "email": self.customers[1].email_normalized,
                     "name": self.customers[1].name,
@@ -181,9 +174,6 @@ class TestEventNotifications(CalendarMailCommon):
         cls.partner = cls.user.partner_id
 
     def test_assert_initial_values(self):
-        # Not empty: the event is created with no `partner_ids`, so the creating
-        # user's partner is its first attendee. That partner is archived, which
-        # is the only reason this read as empty.
         self.assertEqual(self.event.partner_ids, self.user_root.partner_id)
 
     def test_message_invite(self):
@@ -199,7 +189,6 @@ class TestEventNotifications(CalendarMailCommon):
         ):
             self.event.partner_ids = self.partner
 
-        # remove custom threshold, sends immediately instead of queuing
         email_partner = self.env["res.partner"].create(
             {"name": "bob invitee", "email": "bob.invitee@test.lan"}
         )
@@ -230,7 +219,6 @@ class TestEventNotifications(CalendarMailCommon):
             )
 
     def test_message_invite_email_notif_mass_queued(self):
-        """Check that more than 20 notified attendees means mails are queued."""
         self.env["ir.config_parameter"].sudo().set_param(
             "mail.mail_force_send_limit", None
         )
@@ -427,7 +415,7 @@ class TestEventNotifications(CalendarMailCommon):
                     "alarm_ids": [fields.Command.link(alarm.id)],
                 }
             )
-            self.env.flush_all()  # flush is required to make partner_ids be present in the event
+            self.env.flush_all()
 
         self.assertEqual(len(capt.records), 1)
         self.assertLessEqual(capt.records.call_at, now)
@@ -449,9 +437,6 @@ class TestEventNotifications(CalendarMailCommon):
             self.assertTrue(user_message, "Organizer must receive a reminder")
 
     def test_email_alarm_recurrence(self):
-        # test that only a single cron trigger is created for recurring events.
-        # Once a notification has been sent, the next one should be created.
-        # It prevent creating hunderds of cron trigger at event creation
         alarm = self.env["calendar.alarm"].create(
             {
                 "name": "Alarm",
@@ -547,7 +532,6 @@ class TestEventNotifications(CalendarMailCommon):
                 self.assertEqual(len(capt.records), 1)
 
         with self.capture_triggers("calendar.ir_cron_scheduler_alarm") as capt:
-            # Create alarm with one hour interval.
             alarm_hour = self.env["calendar.alarm"].create(
                 {
                     "name": "Alarm",
@@ -556,8 +540,6 @@ class TestEventNotifications(CalendarMailCommon):
                     "duration": 1,
                 }
             )
-            # Create monthly recurrence, ensure the next alarm is set to the first event
-            # and then one month later must be set one hour before to the last event.
             with freeze_time("2024-04-16 10:00+0000"):
                 now = fields.Datetime.now()
                 self.env["calendar.event"].create(
@@ -573,7 +555,6 @@ class TestEventNotifications(CalendarMailCommon):
                     }
                 ).with_context(mail_notrack=True)
                 self.env.flush_all()
-                # Ensure that there is only one alarm set, exactly for one hour previous the event.
                 self.assertEqual(
                     len(capt.records),
                     1,
@@ -588,8 +569,6 @@ class TestEventNotifications(CalendarMailCommon):
             self.env["ir.cron.trigger"].search([("cron_id", "=", cron.id)]).unlink()
 
             with freeze_time("2024-04-22 10:00+0000"):
-                # The next alarm will be set through the next_date selection for the next event.
-                # Ensure that there is only one alarm set, exactly for one hour previous the event.
                 self.env["calendar.alarm_manager"]._send_reminder()
                 self.assertEqual(
                     len(capt.records),
@@ -603,7 +582,6 @@ class TestEventNotifications(CalendarMailCommon):
                 )
 
     def test_email_alarm_daily_recurrence(self):
-        # test email alarm is sent correctly on daily recurrence
         alarm = self.env["calendar.alarm"].create(
             {
                 "name": "Alarm",
@@ -652,67 +630,64 @@ class TestEventNotifications(CalendarMailCommon):
                 self.assertEqual(capt.records.call_at, datetime(2022, 4, 15, 10, 10))
 
     def test_notification_event_timezone(self):
-        """
-        Check the domain that decides when calendar events should be notified to the user.
-        """
 
         def search_event():
             return self.env["calendar.event"].search(
                 self.env["res.users"]._systray_get_calendar_event_domain()
             )
 
-        self.env.user.tz = "Europe/Brussels"  # UTC +1 15th November 2023
+        self.env.user.tz = "Europe/Brussels"
         events = (
             self.env["calendar.event"]
             .create(
                 [
                     {
                         "name": "Meeting",
-                        "start": datetime(2023, 11, 15, 18, 0),  # 19:00
-                        "stop": datetime(2023, 11, 15, 19, 0),  # 20:00
+                        "start": datetime(2023, 11, 15, 18, 0),
+                        "stop": datetime(2023, 11, 15, 19, 0),
                     },
                     {
                         "name": "Tomorrow meeting",
-                        "start": datetime(2023, 11, 15, 23, 0),  # 00:00 next day
-                        "stop": datetime(2023, 11, 16, 0, 0),  # 01:00 next day
+                        "start": datetime(2023, 11, 15, 23, 0),
+                        "stop": datetime(2023, 11, 16, 0, 0),
                     },
                 ]
             )
             .with_context(mail_notrack=True)
         )
-        with freeze_time("2023-11-15 17:30:00"):  # 18:30 before event
+        with freeze_time("2023-11-15 17:30:00"):
             self.assertEqual(search_event(), events[0])
-        with freeze_time("2023-11-15 18:00:00"):  # 19:00 during event
+        with freeze_time("2023-11-15 18:00:00"):
             self.assertEqual(search_event(), events[0])
-        with freeze_time("2023-11-15 18:30:00"):  # 19:30 during event
+        with freeze_time("2023-11-15 18:30:00"):
             self.assertEqual(search_event(), events[0])
-        with freeze_time("2023-11-15 19:00:00"):  # 20:00 during event
+        with freeze_time("2023-11-15 19:00:00"):
             self.assertEqual(search_event(), events[0])
-        with freeze_time("2023-11-15 19:30:00"):  # 20:30 after event
+        with freeze_time("2023-11-15 19:30:00"):
             self.assertEqual(len(search_event()), 0)
         events.unlink()
 
-        self.env.user.tz = "America/Lima"  # UTC -5 15th November 2023
+        self.env.user.tz = "America/Lima"
         event = (
             self.env["calendar.event"]
             .create(
                 {
                     "name": "Meeting",
-                    "start": datetime(2023, 11, 16, 0, 0),  # 19:00 15th November
-                    "stop": datetime(2023, 11, 16, 1, 0),  # 20:00 15th November
+                    "start": datetime(2023, 11, 16, 0, 0),
+                    "stop": datetime(2023, 11, 16, 1, 0),
                 }
             )
             .with_context(mail_notrack=True)
         )
-        with freeze_time("2023-11-15 23:30:00"):  # 18:30 before event
+        with freeze_time("2023-11-15 23:30:00"):
             self.assertEqual(search_event(), event)
-        with freeze_time("2023-11-16 00:00:00"):  # 19:00 during event
+        with freeze_time("2023-11-16 00:00:00"):
             self.assertEqual(search_event(), event)
-        with freeze_time("2023-11-16 00:30:00"):  # 19:30 during event
+        with freeze_time("2023-11-16 00:30:00"):
             self.assertEqual(search_event(), event)
-        with freeze_time("2023-11-16 01:00:00"):  # 20:00 during event
+        with freeze_time("2023-11-16 01:00:00"):
             self.assertEqual(search_event(), event)
-        with freeze_time("2023-11-16 01:30:00"):  # 20:30 after event
+        with freeze_time("2023-11-16 01:30:00"):
             self.assertEqual(len(search_event()), 0)
         event.unlink()
 
@@ -721,35 +696,35 @@ class TestEventNotifications(CalendarMailCommon):
             .create(
                 {
                     "name": "Meeting",
-                    "start": datetime(2023, 11, 16, 21, 0),  # 16:00 16th November
-                    "stop": datetime(2023, 11, 16, 22, 0),  # 27:00 16th November
+                    "start": datetime(2023, 11, 16, 21, 0),
+                    "stop": datetime(2023, 11, 16, 22, 0),
                 }
             )
             .with_context(mail_notrack=True)
         )
-        with freeze_time("2023-11-15 19:00:00"):  # 14:00 the day before event
+        with freeze_time("2023-11-15 19:00:00"):
             self.assertEqual(len(search_event()), 0)
         event.unlink()
 
-        self.env.user.tz = "Asia/Manila"  # UTC +8 15th November 2023
+        self.env.user.tz = "Asia/Manila"
         events = (
             self.env["calendar.event"]
             .create(
                 [
                     {
                         "name": "Very early meeting",
-                        "start": datetime(2023, 11, 14, 16, 30),  # 0:30
-                        "stop": datetime(2023, 11, 14, 17, 0),  # 1:00
+                        "start": datetime(2023, 11, 14, 16, 30),
+                        "stop": datetime(2023, 11, 14, 17, 0),
                     },
                     {
                         "name": "Meeting on 2 days",
-                        "start": datetime(2023, 11, 15, 15, 30),  # 23:30
-                        "stop": datetime(2023, 11, 15, 16, 30),  # 0:30 next day
+                        "start": datetime(2023, 11, 15, 15, 30),
+                        "stop": datetime(2023, 11, 15, 16, 30),
                     },
                     {
                         "name": "Early meeting tomorrow",
-                        "start": datetime(2023, 11, 15, 23, 0),  # 00:00 next day
-                        "stop": datetime(2023, 11, 16, 0, 0),  # 01:00 next day
+                        "start": datetime(2023, 11, 15, 23, 0),
+                        "stop": datetime(2023, 11, 16, 0, 0),
                     },
                     {
                         "name": "All day meeting",
@@ -819,9 +794,6 @@ class TestEventNotifications(CalendarMailCommon):
                 )
 
     def test_calendar_recurring_event_delete_notification(self):
-        """Ensure that we can delete a specific occurrence of a recurring event
-        and notify the participants about the cancellation."""
-        # Setup for creating a test event with recurring properties.
         user_admin = self.env.ref("base.user_admin")
         start = datetime.combine(date.today(), datetime.min.time()).replace(hour=9)
         stop = datetime.combine(date.today(), datetime.min.time()).replace(hour=12)
@@ -838,18 +810,10 @@ class TestEventNotifications(CalendarMailCommon):
                 "location": "Odoo S.A.",
                 "privacy": "public",
                 "show_as": "busy",
-                # A participant to notify, which is what this test is named for.
-                # Without one the meeting is solo, and the wizard's `close()`
-                # deletes it outright rather than offering to mail anybody -- so
-                # `action_unlink_event()` below ran against a deleted record. It
-                # used to survive only because the creating user here is OdooBot,
-                # whose partner is archived and therefore absent from
-                # `partner_ids`, which is what the old "is this solo?" test read.
                 "partner_ids": [(4, user_admin.partner_id.id)],
             }
         )
 
-        # Deleting the next occurrence of the event using the delete wizard.
         wizard = (
             self.env["wizard.calendar.event.delete"]
             .with_context(form_view_ref="calendar.calendar_popover_delete_view")
@@ -860,7 +824,6 @@ class TestEventNotifications(CalendarMailCommon):
         form.save()
         wizard.close()
 
-        # Unlink the event and send a cancellation notification.
         event.action_unlink_event()
         wizard = self.env["wizard.calendar.event.delete"].create(
             {
@@ -871,15 +834,11 @@ class TestEventNotifications(CalendarMailCommon):
             }
         )
 
-        # Simulate sending the email and ensure one email was sent.
         with self.mock_mail_gateway():
             wizard.action_send_mail_and_delete()
         self.assertEqual(len(self._new_mails), 1)
 
     def test_get_next_potential_limit_alarm(self):
-        """
-        Test that the next potential limit alarm is correctly computed for notification alarms.
-        """
         now = fields.Datetime.now()
         start = now - relativedelta(days=1)
         while start.weekday() > 4:
@@ -892,7 +851,6 @@ class TestEventNotifications(CalendarMailCommon):
         weekday_dict[weekday_flag] = True
 
         partner = self.user.partner_id
-        # until_date event first alarm
         alarm = self.env["calendar.alarm"].create(
             {
                 "name": "Alarm",
@@ -931,7 +889,6 @@ class TestEventNotifications(CalendarMailCommon):
             self.assertLess(now, first_alarm)
         events.unlink()
 
-        # count event last alarm
         recurrence_count = 5
         start = now - relativedelta(days=1)
         stop = start + relativedelta(hours=1)
@@ -963,9 +920,6 @@ class TestEventNotifications(CalendarMailCommon):
         )
         actual_alarms = sorted([data.get("last_alarm") for data in result.values()])
 
-        # strict=False: expected_alarms/actual_alarms genuinely differ in length here (pre-existing
-        # test looseness, see t24068 shard) - strict=True breaks this test, consistent with the
-        # account module's TAX-3 precedent of not blanket-applying strict=True.
         for expected, actual in zip(expected_alarms, actual_alarms, strict=False):
             self.assertEqual(actual, expected)
 
@@ -975,14 +929,6 @@ class TestInvitationTemplateAttachments(CalendarMailCommon):
     """Attendees must receive the template's attachments, not empty copies."""
 
     def test_template_attachments_reach_attendees_with_their_content(self):
-        """Duplicating an `ir.attachment` is split across two methods.
-
-        `copy_data` carries the bytes only for database-stored content; a
-        filestore-backed attachment -- the normal case -- is relinked to its
-        existing file by `copy()` afterwards. Building the values here and
-        creating the records separately skipped that relink, so every attendee
-        got an attachment with no content: no checksum, zero bytes.
-        """
         template = self.env.ref("calendar.calendar_template_meeting_invitation")
         attachment = self.env["ir.attachment"].create(
             {

@@ -12,13 +12,8 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         super().setUpClass()
         cls.wizard_model = cls.env["wizard.hr.applicant.send.sign.request"]
 
-    # NOTE: the empty-pool warning branch is not pinned — demo templates carry
-    # signature requests and can be neither deleted nor cheaply hidden from
-    # this fixture. Branch documented as uncovered.
 
     def test_selectable_templates_filtered_by_responsible_count(self):
-        """Check that only templates with one or two responsibles are
-        selectable."""
         one_role = self._template("Solo", 1)
         two_roles = self._template("Duo", 2)
         three_roles = self._template("Trio", 3)
@@ -30,8 +25,6 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         self.assertFalse(self.wizard_model._default_get_template_warning())
 
     def test_responsible_intersection_across_templates(self):
-        """Check that the common responsible set is the intersection of the
-        selected templates' roles."""
         template_a = self._template("A", 1)
         template_b = self._template("B", 2)
         wizard = self.wizard_model.new(
@@ -55,14 +48,6 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         )
 
     def test_default_signer_from_applicant_context(self):
-        """Check that the sign request wizard picks the applicant partner from
-        the reference doc context."""
-        # NOTE: this pins the override's divergent contract — the base
-        # _get_default_signer returns a partner *id* in every branch while
-        # this override returns a *recordset*; an applicant without a
-        # partner yields an empty recordset that skips the base fallback,
-        # leaving the first signer blank. Model defect tracked under task
-        # t24785; re-align this assertion when it is fixed.
         partner = self.env["res.partner"].create({"name": "Candidate"})
         applicant = self.env["hr.applicant"].create(
             {"partner_name": "Candidate", "partner_id": partner.id}
@@ -81,17 +66,6 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         )
 
     def test_two_responsible_template_requests_both_signers(self):
-        """Check that a template with two roles produces two request items.
-
-        The wizard advertises this case in its own help text, and it was
-        unreachable: the request items were built from `sign_values[1]` --
-        the applicant recordset -- instead of `sign_values[2]`, the signer
-        dicts, with the role hard-coded to the applicant's. One item came out
-        per request whatever the template, so `sign.request`'s
-        `_check_signers_roles_validity` refused every two-role template with
-        "You must specify one signer for each role of your sign template",
-        naming a thing the user had in fact supplied.
-        """
         template = self._template("Duo", 2)
         roles = template.sign_item_ids.responsible_id
         applicant = self._applicant("Candidate Two", "candidate.two@example.com")
@@ -137,7 +111,6 @@ class TestSignWizardHelpers(SignTemplateFixture, TransactionCase):
         )
 
     def test_one_responsible_template_requests_only_the_applicant(self):
-        """The single-role case was accidentally correct; keep it that way."""
         template = self._template("Solo", 1)
         role = template.sign_item_ids.responsible_id
         applicant = self._applicant("Candidate One", "candidate.one@example.com")

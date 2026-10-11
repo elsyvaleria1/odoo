@@ -5,9 +5,7 @@ from odoo.libs.json import dumps as json_dumps
 
 _debug = DebugLog(__name__)
 
-# the visibilities that keep a project to its manager and its team
 TEAM_ONLY = ("followers", "invited_users")
-# what decides who reaches a project's documents
 AUDIENCE_FIELDS = frozenset(
     {"privacy_visibility", "user_id", "member_user_ids", "documents_folder_id"}
 )
@@ -43,8 +41,6 @@ class ProjectProject(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _archive_folder_on_projects_unlinked(self) -> None:
-        """Archives the project folder if all its related projects are unlinked."""
-        # an archived project still owns its folder
         folders = self.sudo().documents_folder_id.with_context(active_test=False)
         orphaned = folders.filtered(
             lambda folder: folder.active and not (folder.project_ids - self)
@@ -107,8 +103,6 @@ class ProjectProject(models.Model):
                     "type": "folder",
                 }
                 if team_only:
-                    # a team's folder is not opened by the link its parent
-                    # hands down: its members hold grants instead
                     folder_vals["access_via_link"] = "none"
                 folders_to_create_vals.append(folder_vals)
                 projects_with_folder_to_create.append(project)
@@ -131,10 +125,6 @@ class ProjectProject(models.Model):
             )._sync_document_audience()
 
     def _sync_document_audience(self) -> None:
-        # the project decides who reaches its folder: on a team-only project
-        # its manager and its team, and on a shared one the portal users
-        # invited as collaborators, each at what their collaboration allows.
-        # The grants are the project's (cause), revoked when it asks no more
         Access = self.env["document.access"]
         for project in self:
             folder = project.documents_folder_id
@@ -229,8 +219,6 @@ class ProjectProject(models.Model):
             team_only = new_visibility in TEAM_ONLY
             for project in self.filtered("documents_folder_id"):
                 folder = project.documents_folder_id
-                # the folder and what it holds: closed to the company and to
-                # its link for a team, open again as the parent hands it down
                 (folder | project.document_ids).with_privilege(
                     "document.privilege_share_documents",
                     reason="a project's documents follow its visibility",
@@ -262,7 +250,6 @@ class ProjectProject(models.Model):
         return res
 
     def unlink(self):
-        # a deleted project asks for no grant on the folder it leaves behind
         for project in self:
             self.env["document.access"]._sync_caused_grants(
                 f"project.project,{project.id}", []
@@ -270,8 +257,6 @@ class ProjectProject(models.Model):
         return super().unlink()
 
     def copy(self, default=None):
-        # We have to add no_create_folder=True to the context, otherwise a folder
-        # will be automatically created during the call to create.
         copied_projects = (
             super(ProjectProject, self.with_context(no_create_folder=True))
             .copy(default)

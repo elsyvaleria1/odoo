@@ -51,12 +51,6 @@ template_env_globals = {
 }
 
 
-# The expression grammar a template author below Settings may add to a
-# template stored in the database. Reading data through attribute chains is
-# the purpose of a template; what it may not do is reach the environment, call
-# anything that is not a formatter or a read-only helper, or hand a callable to
-# code that will call it (map(record.unlink, ...)): a function argument in a
-# callable position must be a lambda, whose body obeys the same grammar.
 RESTRICTED_NAMES = frozenset({"env", "request", "self", "values"})
 RESTRICTED_ATTRIBUTES = frozenset(
     {"env", "sudo", "pool", "registry", "cr", "uid", "su", "transaction"}
@@ -166,9 +160,6 @@ RESTRICTED_METHODS = frozenset(
         "zfill",
     }
 )
-# argument positions the callee invokes: (positional indexes, keywords); the
-# builtin sorted() takes its key by keyword only, a recordset's .sorted() also
-# positionally, hence one table per call form
 CALLABLE_ARGUMENTS_NAME: dict[str, tuple[tuple[int, ...], tuple[str, ...]]] = {
     "filter": ((0,), ()),
     "map": ((0,), ()),
@@ -212,7 +203,6 @@ def restricted_expression_errors(expression: str) -> list[str]:
 
 
 def restricted_binding_errors(name: str) -> list[str]:
-    # a function the grammar lets a template call must stay that function
     if name in RESTRICTED_FUNCTIONS or name in RESTRICTED_NAMES:
         return [f"the name {name!r} cannot be rebound"]
     return []
@@ -229,13 +219,11 @@ def _restricted_call_errors(node: ast.Call, func: ast.expr) -> list[str]:
         case _:
             return ["only a named function or method may be called"]
     positions, keywords = table.get(name, ((), ()))
-    # a * sequence can fill any position after it, the callable ones included
     passed = [
         argument
         for index, argument in enumerate(node.args[: max(positions, default=-1) + 1])
         if index in positions or isinstance(argument, ast.Starred)
     ]
-    # a ** mapping can name any keyword, the callable ones included
     passed += [
         kw.value
         for kw in node.keywords
@@ -297,7 +285,7 @@ def render_inline_template(
     format_value: Callable[[object], str] = str,
 ) -> str:
     results = []
-    defaulted = 0  # debuglog
+    defaulted = 0
     for string, expression, default in template_instructions:
         results.append(string)
 
@@ -305,7 +293,7 @@ def render_inline_template(
             result = safe_eval.safe_eval(expression, variables)
             if renders_as_no_value(result):
                 result = default
-                defaulted += 1  # debuglog
+                defaulted += 1
             if result != "":
                 results.append(format_value(result))
 

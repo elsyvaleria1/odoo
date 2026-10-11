@@ -85,8 +85,6 @@ class LoadMixin(_ModelStubs):
     ) -> None:
         global_error_message = None
         try:
-            # the release flushes, and a failure there rolls the batch back:
-            # its ids are kept only once the savepoint is released
             with self.env.cr.savepoint():
                 loaded = self._load_records(data_list, update)
             ids.extend(loaded.ids)
@@ -256,10 +254,6 @@ class LoadMixin(_ModelStubs):
             if model and model not in creatable_models:
                 return False
             if name is not None and name not in batch_tokens.get(model or "", ()):
-                # the batch holds no record this name could resolve to, so
-                # the reference is settled by storage alone and the batch
-                # stays whole; flushing here split an import into one create
-                # per distinct name
                 return False
 
             data_list = [
@@ -687,8 +681,6 @@ class LoadMixin(_ModelStubs):
     ) -> Self:
         segments = self._split_on_repeated_xml_ids(data_list)
         if len(segments) > 1:
-            # a row naming an external id an earlier row of the batch created
-            # updates that record, as it does when the rows load one by one
             _debug.logic(
                 "load.records_split_on_repeated_xml_id",
                 model=self._name,

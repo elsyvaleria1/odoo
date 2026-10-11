@@ -428,8 +428,6 @@ class TestAccountIncomingSupplierInvoice(
         )
 
     def test_an_alias_whose_company_default_is_no_id_defers_its_mail(self):
-        """The alias defaults are the configuration's fault, as a gateway
-        model that takes no document is: the mail waits for the fix."""
         message = message_from_string(
             "From: someone@example.com\n"
             "To: bills@example.com\n"

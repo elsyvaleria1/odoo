@@ -209,7 +209,6 @@ class TestWebsiteMonsterIntegration(TransactionCase):
 class TestMockupWebsiteMonsterIntegration(TestWebsiteMonsterIntegration):
     @contextmanager
     def patch_monster_requests(self):
-        """Mock context for requests to the Monster.com API"""
 
         class MockedClient:
             class Service:

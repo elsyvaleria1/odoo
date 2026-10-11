@@ -207,7 +207,6 @@ def _style(message: str, *styles: str) -> str:
 
 
 def get_access_log_level(raw_path: str) -> int:
-    # The settings read is the expensive half; only a static path needs it.
     if "/static/" in raw_path and not current().dev_mode:
         return logging.DEBUG
     return logging.INFO
@@ -262,8 +261,6 @@ def log_access(
         f"{now.tm_mday:02d}/{_MONTHS[now.tm_mon]}/{now.tm_year:04d} "
         f"{now.tm_hour:02d}:{now.tm_min:02d}:{now.tm_sec:02d}"
     )
-    # Record args are werkzeug's (request line, status, size): access-log filters
-    # match on args[0], and an IPv6 zone id carries a literal %.
     address = str(conn.addr[0]).replace("%", "%%")
     template = address + " - - [" + stamp + '] "%s" %s %s'
     _access_logger.log(level, template, message, status, size)
@@ -319,8 +316,6 @@ def prepare_wsgi_environ(
         if key != "CONTENT_TYPE":
             key = f"HTTP_{key}"
             if key in environ:
-                # RFC 9110 5.3 joins repeated fields with commas, but a cookie
-                # value may hold one; RFC 6265 5.4 lists cookies with "; "
                 separator = "; " if key == "HTTP_COOKIE" else ","
                 value = f"{environ[key]}{separator}{value}"
         environ[key] = value
@@ -520,8 +515,6 @@ def _read_head(conn: Connection, limits: TransportLimits) -> tuple[int, int] | N
             if not conn.source.receive_into_buffer():
                 return None
         except TimeoutError:
-            # A pause inside the head is bounded by head_timeout, not by the
-            # per-read socket timeout that governs a body or a response.
             continue
     conn.sock.settimeout(limits.socket_timeout)
     return span
@@ -694,9 +687,6 @@ def _run_exchange(
 
 
 def _refuse_body(exchange: Exchange, exc: BodyError) -> None:
-    # The application may have caught the error and built a response of its
-    # own -- Odoo's answers 500 -- but the fault is the client's framing, and
-    # whatever follows it on the connection is unreadable.
     head = exchange.head
     _debug.logic(
         "httpd.body_refused",
@@ -818,8 +808,6 @@ def _settle(
     if reader.exhausted:
         return Outcome.PERSIST if persist else Outcome.CLOSE
     if exchange.body_withheld:
-        # The client is waiting for a 100 that will not come: nothing is in
-        # flight to drain or linger for, and the response said close.
         _debug.logic("httpd.body_never_requested", path=head.path)
         return Outcome.CLOSE
     drained = False
@@ -849,7 +837,6 @@ def serve_prefork_connection(
     try:
         outcome = serve_one(conn, app, identity, limits, allow_keep_alive=False)
     finally:
-        # An upgrade handed the socket to its own thread, which closes it.
         if outcome is not Outcome.UPGRADED:
             conn.close()
     return outcome

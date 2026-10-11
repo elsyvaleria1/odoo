@@ -39,9 +39,6 @@ class ResUsersSettings(models.Model):
     def _get_or_create_for_user(self, user: Any) -> Self:
         settings = user.with_env(self.env).res_users_settings_ids
         if not settings:
-            # on a read-only request the insert raises ReadOnlySqlTransaction,
-            # which replays the request read-write: a new() row would hand the
-            # client an id it cannot write its settings back to
             _debug.lifecycle(
                 "settings_created", uid=user.id, readonly=self.env.cr.readonly
             )
@@ -63,8 +60,6 @@ class ResUsersSettings(models.Model):
                 field for field in fields_to_format if field not in fields_blacklist
             ]
         else:
-            # the user reads their own row: a field kept from them is left out,
-            # not refused
             fields_to_format = [
                 name
                 for name, field in self._fields.items()
@@ -75,8 +70,6 @@ class ResUsersSettings(models.Model):
                     and self._has_field_access(field, "read")
                 )
             ]
-        # settings are read through sudo() and sent to their owner, so the
-        # owner's groups bound which fields go
         reader = self.with_user(self.user_id)
         return self._format_settings(
             [

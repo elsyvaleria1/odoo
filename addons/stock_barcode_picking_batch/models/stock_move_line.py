@@ -5,7 +5,6 @@ class StockMoveLine(models.Model):
     _inherit = "stock.move.line"
 
     def _domain_picking_id(self) -> list | None:
-        # Add a domain on `picking_id` only if we come from a batch.
         batch_id = self.env.context.get("default_batch_id")
         if batch_id:
             return [

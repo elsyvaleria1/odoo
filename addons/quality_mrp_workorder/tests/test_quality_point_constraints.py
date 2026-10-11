@@ -1,4 +1,3 @@
-# Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from odoo import Command
 from odoo.exceptions import ValidationError
@@ -48,7 +47,6 @@ class TestQualityPointOperationConstraint(TransactionCase):
             )
 
     def test_a_sibling_in_the_same_create_does_not_condemn_a_legal_point(self):
-        """The constraint used to read `self.operation_id`, not the point's."""
         points = self.env["quality.point"].create(
             [
                 self._vals(bom_id=self.bom.id, operation_id=self.bom.operation_ids.id),

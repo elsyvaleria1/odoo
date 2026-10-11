@@ -223,10 +223,6 @@ class _WeasySharedState:
             return state.css_cache[key]
 
     def remove_font_folders(self) -> None:
-        # the folder weasyprint makes on a first @font-face goes only with
-        # FontConfiguration.__del__, which neither an interpreter exit nor a
-        # prefork worker's os._exit runs; an evicted state is collected, and
-        # its __del__ runs then. No lock: a worker thread may hold it at exit
         try:
             states = tuple(self._db_states.values())
         except RuntimeError:
@@ -255,8 +251,6 @@ _LAZY_WEASYPRINT_NAMES = {
 }
 
 
-# the names stay module attributes, imported on first use, so that patching
-# one on this module (as the report tests do) reaches the renderer
 def _lazy_weasyprint(name: str) -> Any:
     try:
         return globals()[name]
@@ -397,9 +391,6 @@ def _path_has_route(path: str, route: str) -> bool:
     return path.endswith(route) or f"{route}/" in path
 
 
-# importing weasyprint takes 0.4 s (it loads pango and runs find_library),
-# paid by every process loading web; the fetcher joins weasyprint's URLFetcher
-# only when one is made, so the import waits for a report to render
 @functools.cache
 def _join_weasyprint_fetcher(cls: type) -> type:
     from weasyprint.urls import URLFetcher
@@ -2067,8 +2058,6 @@ class IrActionsReport(models.Model):
         return rendered
 
     def _download_splits_per_record(self) -> bool:
-        """Whether downloading this report for several records yields one
-        file per record, zipped, instead of a single merged PDF."""
         return False
 
     def _render_qweb_pdf(

@@ -11,7 +11,6 @@ _logger = logging.getLogger(__name__)
 
 
 class PosAdyenController(http.Controller):
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         "/pos_adyen/notification",
         type="http",
@@ -26,7 +25,6 @@ class PosAdyenController(http.Controller):
     def notification(self):
         adyen_pm_sudo = request.admission.subject
         data = request.admission.extra["data"]
-        # The HMAC is removed to prevent anyone from using it in place of Adyen.
         adyen_additional_response = data["SaleToPOIResponse"]["PaymentResponse"][
             "Response"
         ]["AdditionalResponse"]
@@ -46,7 +44,7 @@ class PosAdyenController(http.Controller):
         adyen_pm_sudo._adyen_record_notification(data, pending)
         return request.prepare_json_response(
             "[accepted]"
-        )  # https://docs.adyen.com/point-of-sale/design-your-integration/choose-your-architecture/cloud/#guarantee
+        )
 
     @staticmethod
     def _get_additional_data_from_unparsed(adyen_additional_response, data_key):

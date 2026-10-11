@@ -48,15 +48,6 @@ class TestTrashedLinkedDocuments(TransactionCase):
         )
 
     def test_a_trashed_document_survives_the_record_it_was_linked_to(self):
-        """The trash is a delay before deletion, not another way of deleting now.
-
-        Deleting the product detaches the ACTIVE document and sends it to the
-        trash, which is recoverable for `document.deletion_delay` days. The
-        already-trashed one was skipped by that detach, so its attachment still
-        pointed at the product; deleting the product took the attachment, and
-        `attachment_id`'s `ondelete="cascade"` took the document with it --
-        permanently, and well before the date its own archive message promised.
-        """
         product = self._product("trashed source")
         attachment = self._attach(product)
         document = self._document_of(attachment)
@@ -82,7 +73,6 @@ class TestTrashedLinkedDocuments(TransactionCase):
         self.assertFalse(document.active, "and it stays in the trash, not restored")
 
     def test_an_active_document_survives_it_too(self):
-        """The control this is being aligned with, so a regression names itself."""
         product = self._product("active source")
         attachment = self._attach(product)
         document = self._document_of(attachment)
@@ -97,14 +87,6 @@ class TestTrashedLinkedDocuments(TransactionCase):
         )
 
     def test_relinking_an_attachment_a_trashed_document_holds_makes_no_second_one(self):
-        """`unique (attachment_id)` is a hard constraint: the guard must see every row.
-
-        The "is this attachment already documented?" check ran a default
-        search, so a trashed document did not count; `create` then inserted a
-        second row for the same attachment and the transaction died on
-        `document_document_attachment_unique` -- a raw UniqueViolation rather
-        than a UserError, so no caller could recover from it.
-        """
         source = self._product("first host")
         attachment = self._attach(source)
         document = self._document_of(attachment)
@@ -123,7 +105,6 @@ class TestTrashedLinkedDocuments(TransactionCase):
         )
 
     def test_the_guard_still_lets_a_first_document_be_created(self):
-        """Negative control: a guard that refused everything would pass the above."""
         product = self._product("fresh host")
         attachment = self._attach(product)
 

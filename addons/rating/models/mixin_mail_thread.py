@@ -18,11 +18,8 @@ class MixinMailThread(models.AbstractModel):
         classification="base.internal",
     )
 
-    # MAIL OVERRIDES
-    # --------------------------------------------------
 
     def unlink(self):
-        """When removing a record, its rating should be deleted too."""
         record_ids = self.ids
         result = super().unlink()
         self.env["rating.rating"].sudo().search(
@@ -36,38 +33,22 @@ class MixinMailThread(models.AbstractModel):
     def _get_message_create_ignore_field_names(self):
         return super()._get_message_create_ignore_field_names() | {"rating_id"}
 
-    # RATING CONFIGURATION
-    # --------------------------------------------------
 
     def _rating_apply_get_default_subtype_id(self):
         return self.env["ir.model.data"]._xmlid_to_res_id("mail.mt_comment")
 
     def _rating_get_operator(self):
-        """Return the operator (partner) that is the person who is rated.
-
-        :return: res.partner singleton
-        """
         if "user_id" in self and self.user_id.partner_id:
             return self.user_id.partner_id
         return self.env["res.partner"]
 
     def _rating_get_partner(self):
-        """Return the customer (partner) that performs the rating.
-
-        :return: res.partner singleton
-        """
         if "partner_id" in self and self.partner_id:
             return self.partner_id
         return self.env["res.partner"]
 
-    # RATING SUPPORT
-    # --------------------------------------------------
 
     def _rating_get_access_token(self, partner=None):
-        """Return access token linked to existing ratings, or create a new rating
-        that will create the asked token. An explicit call to access rights is
-        performed as sudo is used afterwards as this method could be used from
-        different sources, notably templates."""
         self.check_access("read")
         if not partner:
             partner = self._rating_get_partner()
@@ -98,18 +79,8 @@ class MixinMailThread(models.AbstractModel):
             )
         return rating.access_token or rating._issue_link()
 
-    # EXPOSED API
-    # --------------------------------------------------
 
     def rating_send_request(self, template, lang=False, force_send=True) -> None:
-        """This method send rating request by email, using a template given in parameter.
-
-        :param record template: a mail.template record used to compute the message body;
-        :param str lang: optional lang; it can also be specified directly on the template
-          itself in the lang field;
-        :param bool force_send: whether to send the request directly or use the mail
-          queue cron (preferred option);
-        """
         if lang:
             template = template.with_context(lang=lang)
         self.with_context(mail_notify_force_send=force_send).message_post_with_source(
@@ -128,27 +99,6 @@ class MixinMailThread(models.AbstractModel):
         subtype_xmlid=None,
         notify_delay_send=False,
     ):
-        """Apply a rating to the record. This rating can either be linked to a
-        token (customer flow) or directly a rating record (code flow).
-
-        If the current model inherits from mixin.mail.thread mixin a message is posted
-        on its chatter. User going through this method should have at least
-        employee rights as well as rights on the current record because of rating
-        manipulation and chatter post (either employee, either sudo-ed in public
-        controllers after security check granting access).
-
-        :param float rate: the rating value to apply (from 0 to 5);
-        :param string token: access token to fetch the rating to apply (optional);
-        :param record rating: rating.rating to apply (if no token);
-        :param string feedback: additional feedback (plaintext);
-        :param string subtype_xmlid: xml id of a valid mail.message.subtype used
-          to post the message (if it applies). If not given a classic comment is
-          posted;
-        :param notify_delay_send: Delay the sending by 2 hours of the email so the user
-            can still change his feedback. If False, the email will be sent immediately.
-
-        :returns: rating.rating record
-        """
         if rate < 0 or rate > 5:
             raise ValueError(
                 f"Wrong rating value. A rate should be between 0 and 5 (received {rate})."
@@ -192,7 +142,7 @@ class MixinMailThread(models.AbstractModel):
             else:
                 self.message_post(
                     author_id=rating.partner_id.id
-                    or None,  # None will set the default author in mail/mail_thread.py
+                    or None,
                     body=rating_body,
                     rating_id=rating.id,
                     scheduled_date=scheduled_datetime,
@@ -204,8 +154,6 @@ class MixinMailThread(models.AbstractModel):
     def _message_post_prepare_values(self, post_values) -> None:
         super()._message_post_prepare_values(post_values)
         rating_id = post_values.pop("rating_id", False)
-        # create rating.rating record linked to given rating_value. Using sudo as portal users may have
-        # rights to create messages and therefore ratings (security should be checked beforehand)
         if rating_value := post_values.pop("rating_value", False):
             rating_id = (
                 self.env["rating.rating"]
@@ -231,9 +179,6 @@ class MixinMailThread(models.AbstractModel):
         return super()._message_post_batch_per_record_keys() | {"rating_id"}
 
     def _message_post_after_hook(self, message, msg_values):
-        """Override to link rating to message as sudo. This is done in
-        _message_post_after_hook to be before _notify_thread."""
-        # sudo: rating.rating - can link rating to message from same author and thread
         rating = self.env["rating.rating"].browse(msg_values.get("rating_id")).sudo()
         same_author = rating.partner_id and rating.partner_id == message.author_id
         if (

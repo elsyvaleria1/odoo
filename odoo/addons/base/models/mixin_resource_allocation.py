@@ -50,8 +50,6 @@ class MixinResourceAllocation(models.AbstractModel):
         return result
 
     def _recompute_allocated_hours(self) -> None:
-        # The hours are what the reservations book: a value written past the
-        # access checks is replaced by them, never kept.
         self.env.add_to_compute(self._fields["allocated_hours"], self)
 
     def _get_fields_sync_trigger(self):

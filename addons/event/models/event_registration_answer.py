@@ -40,7 +40,6 @@ class EventRegistrationAnswer(models.Model):
         "There must be a suggested value or a text value.",
     )
 
-    # for displaying selected answers by attendees in attendees list view
     @api.depends("value_answer_id", "question_type", "value_text_box")
     def _compute_display_name(self):
         for reg in self:

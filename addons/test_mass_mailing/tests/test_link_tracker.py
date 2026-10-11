@@ -23,7 +23,6 @@ class TestLinkTracker(common.TestMassMailCommon):
         code = self.link.code
         self.assertEqual(self.link.count, 1)
 
-        # click from a new IP should create a new entry
         click = (
             self.env["link.tracker.click"]
             .sudo()
@@ -48,7 +47,6 @@ class TestLinkTracker(common.TestMassMailCommon):
         self.assertEqual(trace.trace_status, "outgoing")
         self.assertFalse(trace.links_click_datetime)
 
-        # click from a new IP should create a new entry and update stat when provided
         click = (
             self.env["link.tracker.click"]
             .sudo()

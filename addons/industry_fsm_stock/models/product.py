@@ -57,8 +57,6 @@ class ProductProduct(models.Model):
     @api.depends("fsm_quantity")
     @api.depends_context("fsm_task_id", "uid")
     def _compute_quantity_decreasable(self) -> None:
-        # Compute if a product is already delivered. If a quantity is not yet delivered,
-        # we can decrease the quantity
         _debug.perf.count("fsm_qty_decreasable_compute", products=self)
         task_id = self.env.context.get("fsm_task_id")
         if not task_id:
@@ -101,7 +99,6 @@ class ProductProduct(models.Model):
             product.id: product_uom_qty for product, product_uom_qty in moves_read_group
         }
 
-        # If no move line can be found, look into the SOL in case one line has no move and could be used to decrease the qty
         sale_lines_read_group = (
             self.env["sale.order.line"]
             .sudo()
@@ -152,12 +149,10 @@ class ProductProduct(models.Model):
         return super().write(vals)
 
     def action_assign_serial(self, from_onchange=False) -> dict | None:
-        """Opens a wizard to assign SN's name on each move lines."""
         _debug.pipeline("fsm_serial_assign", products=self, from_onchange=from_onchange)
         self.check_singleton()
         if self.tracking == "none":
             return None
-        # If the wizard is triggered from the menu, an error should not be raised, the wizard will be in readonly instead.
         if from_onchange and not self.env.user.has_group("stock.group_stock_user"):
             raise AccessError(
                 self.env._(
@@ -168,7 +163,6 @@ class ProductProduct(models.Model):
 
         task_id = self.env.context.get("fsm_task_id")
         task = self.env["project.task"].browse(task_id)
-        # project user with no sale rights should be able to change material quantities
         sale_lines = task.sale_order_id.line_ids.sudo().filtered(
             lambda line: (
                 line.task_id == task

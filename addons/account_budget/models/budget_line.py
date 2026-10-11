@@ -85,16 +85,9 @@ class BudgetLine(models.Model):
 
     @staticmethod
     def _percentage_fname(amount_fname) -> str:
-        """`achieved_amount` -> `achieved_percentage`; the pairing every
-        aggregated amount is expected to follow."""
         return f"{amount_fname.removesuffix('_amount')}_percentage"
 
     def _get_report_aggregates(self) -> dict:
-        """Map each computed amount to the `budget.report` column feeding it.
-
-        One `_read_group` fills them all; a module adding an amount extends this
-        mapping instead of overriding the compute.
-        """
         return {"achieved_amount": "achieved"}
 
     @api.depends(
@@ -130,15 +123,10 @@ class BudgetLine(models.Model):
     def _compute_theoretical(self) -> None:
         today = fields.Date.context_today(self)
         for line in self:
-            # before the period opens nothing is expected yet; without this the
-            # clamp below floors at one day, which is the whole budget when the
-            # period is one day long
             if not line.date_from or not line.date_to or today < line.date_from:
                 line.theoretical_amount = 0
                 line.theoretical_percentage = 0
                 continue
-            # One day is added since we need to include the start and end date in the computation.
-            # For example, between April 1st and April 30th, the timedelta must be 30 days.
             line_timedelta = line.date_to - line.date_from + timedelta(days=1)
             elapsed_timedelta = (
                 min(today, line.date_to) - line.date_from + timedelta(days=1)
@@ -154,9 +142,6 @@ class BudgetLine(models.Model):
         self, alias: str, field_expr: str, query: (Query | None) = None
     ) -> SQL:
         if field_expr == "currency_id" and query is not None:
-            # `company_id` is related to the budget and carries no column of its
-            # own here -- the 1.2 migration dropped it -- so the company has to
-            # be reached through the stored `budget_analytic_id`.
             budget_alias = query.left_join(
                 alias, "budget_analytic_id", "budget_analytic", "id", "budget_analytic"
             )
@@ -171,11 +156,6 @@ class BudgetLine(models.Model):
         return super()._field_to_sql(alias, field_expr, query)
 
     def _get_python_aggregated_fields(self) -> set:
-        """Non-stored fields aggregated in Python rather than in SQL.
-
-        `Field._description_aggregator` probes `_read_group_select`, so a field
-        absent here advertises no aggregator and can never be a pivot measure.
-        """
         return {
             *self._get_report_aggregates(),
             *map(self._percentage_fname, self._get_report_aggregates()),
@@ -193,8 +173,6 @@ class BudgetLine(models.Model):
         return None, None
 
     def _read_group_select(self, aggregate_spec, query):
-        # flag the computed amounts as aggregatable and sum them from the
-        # records of each group, since none of them is a stored column
         if self._split_python_aggregate(aggregate_spec)[0]:
             return super()._read_group_select("id:recordset", query)
         return super()._read_group_select(aggregate_spec, query)
@@ -224,12 +202,6 @@ class BudgetLine(models.Model):
 
     @api.model
     def _invalidate_budget_cache(self) -> None:
-        """Drop every figure derived from `budget.report`.
-
-        The report is an SQL view, so no ORM dependency reaches its rows: both
-        its own cached rows and the aggregates read out of them survive a change
-        to a budget, a budget line or an analytic entry.
-        """
         self.invalidate_model(
             sorted(self._get_python_aggregated_fields() | {"is_above_budget"})
         )
@@ -238,8 +210,6 @@ class BudgetLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
-        # `@api.constrains` only fires for fields present in `vals`, so a caller
-        # omitting every plan key produced a line matching every analytic entry
         lines._check_account_id()
         self._invalidate_budget_cache()
         return lines

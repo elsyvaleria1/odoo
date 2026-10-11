@@ -15,10 +15,6 @@ class IrActionReport(models.Model):
     _inherit = "ir.actions.report"
 
     def render_document(self, device_id_list, res_ids, data=None) -> list:
-        """Send the dictionary in message to the iot_box via websocket,
-        or return the data to be sent by longpolling.
-        """
-        # only override the method for delivery_iot reports
         _debug.pipeline(
             "iot_render_document", reports=self, devices=len(device_id_list)
         )
@@ -63,4 +59,4 @@ class IrActionReport(models.Model):
             }
             for attachment in attachments
             for device in device_ids
-        ]  # As it is called via JS, we format keys to camelCase
+        ]

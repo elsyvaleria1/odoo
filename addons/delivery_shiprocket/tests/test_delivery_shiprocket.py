@@ -61,9 +61,6 @@ class TestDeliveryShiprocket(ShiprocketCommon):
         cls.order_date = str(datetime.today().date())
 
     def _get_expected_parcel_data(self):
-        """
-        Returns the expected parcel data for shiprocket requests.
-        """
         return {
             "request_pickup": self.shiprocket.shiprocket_pickup_request,
             "print_label": True,
@@ -144,7 +141,6 @@ class TestDeliveryShiprocket(ShiprocketCommon):
 
         so_vals = {"partner_id": self.in_partner.id, "line_ids": [(0, None, sol_vals)]}
         sale_order = SaleOrder.create(so_vals)
-        # Add delivery cost in Sales order
         self.env["wizard.sale.order.add.shipping"].with_context(
             {
                 "default_order_id": sale_order.id,
@@ -235,7 +231,6 @@ class TestDeliveryShiprocket(ShiprocketCommon):
             "line_ids": [(0, None, sol_vals1), (0, None, sol_vals2)],
         }
         sale_order = SaleOrder.create(so_vals)
-        # Add delivery cost in Sales order
         self.env["wizard.sale.order.add.shipping"].with_context(
             {
                 "default_order_id": sale_order.id,
@@ -312,9 +307,6 @@ class TestDeliveryShiprocket(ShiprocketCommon):
 @tagged("post_install", "-at_install")
 class TestDeliveryShiprocketPostInstall(TestDeliveryShiprocket):
     def test_shiprocket_delivery_with_discounts(self):
-        """
-        Ensure both regular and loyaly discount lines are correctly passed to the carrier.
-        """
         sale_loyalty_module = self.env["ir.module.module"]._get("sale_loyalty")
         if sale_loyalty_module.state != "installed":
             self.skipTest("This test will fail if sale_loyalty is not installed")
@@ -353,7 +345,6 @@ class TestDeliveryShiprocketPostInstall(TestDeliveryShiprocket):
             }
         )
 
-        # Apply loyalty discount
         coupon_program = self.env["loyalty.program"].create(
             {
                 "name": "20 bucks discount",
@@ -384,7 +375,6 @@ class TestDeliveryShiprocketPostInstall(TestDeliveryShiprocket):
             -20.0,
         )
 
-        # Apply "regular" discount
         wizard = self.env["wizard.sale.order.add.discount"].create(
             {
                 "sale_order_id": sale_order.id,
@@ -399,11 +389,9 @@ class TestDeliveryShiprocketPostInstall(TestDeliveryShiprocket):
                 == ol.company_id.sale_config_id.sale_discount_product_id.id
             )
         )
-        # Double the discount by changing the quantity instead of the flat value
         discount_line.product_qty = 2
         self.assertEqual(discount_line.price_total, -40)
 
-        # Total expected price is 115 - (20 + 40) = 55
         self.assertAlmostEqual(sale_order.amount_total, 55)
 
         sale_order.action_confirm()

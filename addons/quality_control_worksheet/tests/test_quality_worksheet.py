@@ -20,9 +20,6 @@ class TestQualityWorksheet(HttpCase, TestQualityCommon):
         cls.supplier_location = cls.env.ref("stock.stock_location_suppliers")
 
     def test_multiple_worksheet_checks(self):
-        """Have a receipt for two product, to trigger quality checks for each product.
-        the two worksheet should be opened back to back for completion
-        """
         self.env["res.users"].search(
             [("login", "=", "admin")]
         ).email = "administrator@example.com"
@@ -68,13 +65,11 @@ class TestQualityWorksheet(HttpCase, TestQualityCommon):
         )
         receipt.action_confirm()
         self.assertEqual(len(receipt.check_ids), 2)
-        # launch tour to test the worksheets opening back to back
         action = self.env.ref("stock.action_picking_tree_all")
         action["res_id"] = receipt.id
         action["view_id"] = self.env.ref("stock.view_stock_picking_form")
         url = f"/odoo/{receipt.id}/action-{action.id}"
         self.start_tour(url, "test_multiple_worksheet_checks", login="admin")
-        # there should be 3 move lines and 3 checks
         self.assertEqual(len(receipt.move_line_ids), 3)
         self.assertRecordValues(
             receipt.check_ids,

@@ -5,9 +5,7 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# the request parameter every form sends its token in, whichever the provider
 TOKEN_PARAM = "captcha_token"
-# the setting's value that checks nothing, where an unset one picks a provider
 NO_PROVIDER = "none"
 
 
@@ -16,14 +14,10 @@ class IrHttp(models.AbstractModel):
 
     @api.model
     def _captcha_providers(self) -> dict:
-        """{code: CaptchaProvider} of the installed providers."""
         return {}
 
     @api.model
     def _captcha_provider(self):
-        """The provider chosen in the settings, when it is installed and has a
-        site key; with none chosen, the first installed one, by code, that has
-        a site key and a secret; None when the settings say none."""
         code = self.env.registry.settings.get(self.env, "captcha.provider", False)
         if code == NO_PROVIDER:
             return None

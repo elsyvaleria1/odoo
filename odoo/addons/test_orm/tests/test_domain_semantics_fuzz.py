@@ -60,7 +60,6 @@ class TestDomainSemanticsFuzz(TransactionCase):
             ],
             isolated=True,
         )
-        # fold case as this database does: a C-locale cluster lowers ASCII only
         registry.ilike_normalizer = self.env.registry.get_ilike_normalizer(self.env)
         schema = build_schema(self.env, ITEM_MODELS)
         env = self.env

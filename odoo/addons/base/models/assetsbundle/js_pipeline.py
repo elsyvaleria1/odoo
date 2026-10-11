@@ -38,9 +38,6 @@ class JsPipeline:
             _debug.logic("module_syntax_ignored", bundle=bundle.name, url=asset.url)
             return None
         if bundle._is_esm_bundle:
-            # Only files classified classic reach self.javascripts here: a
-            # headerless static/lib file that is really an ES module would
-            # land raw in the classic script and its SyntaxError kill it whole.
             if not has_module_syntax(asset.raw_content):
                 return None
             msg = (
@@ -103,13 +100,13 @@ class JsPipeline:
         content_bundle_list = []
         content_line_count = 0
         line_header = JavascriptAsset._HEADER_LINE_COUNT
-        stubbed = 0  # debuglog
+        stubbed = 0
         for asset in self._bundle.javascripts:
             stub = self._module_syntax_error_stub(asset)
             if stub:
                 content_bundle_list.append(stub)
                 content_line_count += stub.count("\n") + 1
-                stubbed += 1  # debuglog
+                stubbed += 1
                 continue
             generator.add_source(
                 asset.url,

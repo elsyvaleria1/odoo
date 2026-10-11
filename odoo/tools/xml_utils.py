@@ -105,14 +105,6 @@ def cleanup_xml_node(
 
 
 def prepare_xml_signature(source: str | bytes) -> etree._Element:
-    """Prepare an unsigned signature template for digesting and signing.
-
-    Parse the template, retain empty nodes, and remove indentation. In the
-    first direct ds:Object only, replace newline text with an empty string
-    and remove all tails. Leaf nodes without text can remain self-closing;
-    meaningful text (including embedded newlines) is retained. Do this before
-    computing digests: changing whitespace afterwards invalidates signatures.
-    """
     signature = cleanup_xml_node(source, remove_blank_nodes=False, indent_level=-1)
     etree.indent(signature, space="")
     signature_object = signature.find("{http://www.w3.org/2000/09/xmldsig#}Object")

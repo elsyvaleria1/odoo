@@ -16,7 +16,6 @@ class TestHrReferralBase(TransactionCase):
             {"name": "Research and Development", "company_id": cls.company_1.id}
         )
 
-        # I create a new user "Richard"
         cls.richard_user = cls.env["res.users"].create(
             {
                 "name": "Richard",
@@ -27,7 +26,6 @@ class TestHrReferralBase(TransactionCase):
             }
         )
 
-        # I create a new user "Steve"
         cls.steve_user = cls.env["res.users"].create(
             {
                 "name": "Steve",

@@ -54,8 +54,6 @@ class DiscussChannel(models.Model):
 
     @classmethod
     def _channel_type_policies(cls) -> dict[str, ChannelTypePolicy]:
-        # an email conversation is read as a chat: its few members are the
-        # inbox's users and a correspondent who is reached by email only
         return {
             **super()._channel_type_policies(),
             "email": ChannelTypePolicy(
@@ -151,8 +149,6 @@ class DiscussChannel(models.Model):
             or not correspondent.active
             or not correspondent.email_normalized
         ):
-            # what the correspondent wrote, or the channel says, is not mailed
-            # back to them
             return others
         return [
             *others,

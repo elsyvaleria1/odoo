@@ -16,11 +16,6 @@ class StockWarehouse(models.Model):
     )
 
     def _trip_origin(self):
-        """Where the trips of this warehouse start and end.
-
-        :return: ``(latitude, longitude)``, or None when nothing locates it
-        :rtype: tuple
-        """
         self.check_singleton()
         origin = self._trip_origin_set()
         if origin:
@@ -31,11 +26,6 @@ class StockWarehouse(models.Model):
         return None
 
     def _trip_origin_set(self):
-        """The trips' origin as set on the warehouse, without the address fallback.
-
-        :return: ``(latitude, longitude)``, or None when it was not set
-        :rtype: tuple
-        """
         self.check_singleton()
         if self.trip_origin_latitude or self.trip_origin_longitude:
             return self.trip_origin_latitude, self.trip_origin_longitude

@@ -51,14 +51,11 @@ class WhatsAppSecurityCase(WhatsAppCommon):
 class WhatsAppAccountSecurity(WhatsAppSecurityCase):
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_account_access(self):
-        """Test MC-enabled access on whastapp account model"""
-        # main company access only
         self.assertTrue(self.whatsapp_account.with_user(self.user_admin).name)
         self.assertTrue(self.whatsapp_account.with_user(self.user_employee).name)
         with self.assertRaises(exceptions.AccessError):
             self.assertTrue(self.whatsapp_account.with_user(self.user_employee_c2).name)
 
-        # open to second company
         account_admin = self.whatsapp_account.with_user(self.user_admin)
         account_admin.write(
             {
@@ -69,8 +66,6 @@ class WhatsAppAccountSecurity(WhatsAppSecurityCase):
 
     @users("admin")
     def test_account_defaults(self):
-        """Ensure default configuration of account, notably MC / notification
-        values."""
         account = self.env["whatsapp.account"].create(
             {
                 "account_uid": "azerty",
@@ -94,8 +89,6 @@ class WhatsAppControllerSecurity(MockIncomingWhatsApp, WhatsAppSecurityCase):
 
     @mute_logger("odoo.addons.whatsapp.controller.main")
     def test_signature_verification(self):
-        # signed over the exact bytes sent: a digest frozen for one JSON
-        # spelling stops matching the moment the serializer spells it otherwise
         body = json_dumps_bytes({"entry": [{"id": self.whatsapp_account.account_uid}]})
         sig = hmac.new(
             self.whatsapp_account.app_secret.encode(), body, hashlib.sha256
@@ -105,16 +98,14 @@ class WhatsAppControllerSecurity(MockIncomingWhatsApp, WhatsAppSecurityCase):
             message_data=body,
             headers={"X-Hub-Signature-256": f"sha256={sig}"},
         )
-        # the endpoint returns nothing when everything is fine
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.content)
 
-        # wrong calls: the account's gate refuses before the handler runs
         for signature in [
-            False,  # no signature
-            "sha256=",  # empty
-            sig,  # wrong format
-            f"sha256={sig[:-1]}{'1' if sig[-1] == '0' else '0'}",  # wrong
+            False,
+            "sha256=",
+            sig,
+            f"sha256={sig[:-1]}{'1' if sig[-1] == '0' else '0'}",
         ]:
             with self.subTest(signature=signature):
                 headers = {"X-Hub-Signature-256": signature} if signature else None
@@ -207,7 +198,6 @@ class WhatsAppDiscussSecurity(WhatsAppSecurityCase):
                 users=self.user_employee
             )
 
-        # Check that admin can join in any whatsapp channel
         employee_channel = (
             self.env["discuss.channel"]
             .with_user(self.user_employee)
@@ -230,12 +220,7 @@ class WhatsAppMessageSecurity(WhatsAppSecurityCase):
         "odoo.addons.base.models.ir_model",
     )
     def test_message_signup_token(self):
-        """Assert the template values sent to the whatsapp API are not fetched
-        as sudo/SUPERUSER, even when going through the cron/queue."""
 
-        # As group_system, create a template to send signup links to new users
-        # through whatsapp.It sounds relatively reasonable as valid use case
-        # that an admin wants to send user invitation links through a WA message
         env = self.env(user=self.user_admin)
         whatsapp_template_signup = env["whatsapp.template"].create(
             {
@@ -260,26 +245,12 @@ class WhatsAppMessageSecurity(WhatsAppSecurityCase):
             }
         )
 
-        # Ask for the reset password of the admin
-        # This mimics what the `/web/reset_password` URL does, which is publicly available, you just have to know
-        # the login of your targeted user ('admin').
-        # https://github.com/odoo/odoo/blob/554e6b0898727b6c08a9702e19ea8f2d67632c38/addons/auth_signup/controllers/main.py#L91
-        # We could also directly call `/web/reset_password` within this unit test, but this would require:
-        # - to convert the test to an httpcase
-        # - to get and send the CSRF token.
-        # Given the extra overhead, and the fact this is not what we are testing here,
-        # just call directly `res.users.reset_password` as sudo, as the `/web/reset_password` route does
         env["res.users"].sudo().reset_password(self.user_admin.login)
 
-        # As whatsapp_admin, take the opportunity of the above whatsapp template
-        # to try to use it against the admin, and retrieve his signup token, allowing
-        # the whatsapp_admin to change the password of the system admin
         env = self.env(user=self.user_wa_admin)
-        # Ensure the whatsapp admin can indeed not read the signup url directly
         with self.assertRaises(exceptions.AccessError):
             env.ref("base.user_admin").partner_id._get_signup_url()
 
-        # Now, try to access the signup url of the admin user through a message sent to whatsapp.
         mail_message = self.user_admin.partner_id.message_post(body="foo")
         whatsapp_message = env["whatsapp.message"].create(
             {
@@ -290,32 +261,19 @@ class WhatsAppMessageSecurity(WhatsAppSecurityCase):
             }
         )
 
-        # Flush before calling the cron, to write in database pending writes
-        # (e.g. `mobile_number_formatted`, which is computed based on `mobile_number`)
         env.flush_all()
 
-        # Use the test_mode/TestCursor
-        # To handle the `cr.commit()` in the `send_cron` method:
-        # it shouldn't actually commit the transaction, as we are in a test, but simulate it,
-        # which is the goal of the test_mode/TestCursor
         with (
             self.sync_env_with_side_cursors(),
             self.mockWhatsappGateway(),
             env.registry.cursor() as cr,
         ):
-            # Process the queue to send the whatsapp message through the cron/queue,
-            # as the cron queue would do.
             env(cr=cr).ref(
                 "whatsapp.ir_cron_send_whatsapp_queue"
             ).sudo().method_direct_trigger()
 
-        # Invalidate the cache of the whatsapp message, to force fetching the new values,
-        # as the cron wrote on the message using another cursor
         whatsapp_message.invalidate_recordset()
         self.assertEqual(whatsapp_message.state, "error")
-        # the access error reaches us as itself: it already names the field and
-        # the group that would grant it, which the generic "not able to fetch"
-        # wrapper it replaces did not.
         self.assertIn("signup_type", whatsapp_message.failure_reason)
         self.assertIn("do not have enough rights", whatsapp_message.failure_reason)
 
@@ -324,7 +282,6 @@ class WhatsAppMessageSecurity(WhatsAppSecurityCase):
 class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_tpl_create(self):
-        """Creation is for WA admins only"""
         template = (
             self.env["whatsapp.template"]
             .with_user(self.user_wa_admin)
@@ -351,7 +308,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
 
     @mute_logger("odoo.addons.base.models.ir_access")
     def test_tpl_read_allowed_users(self):
-        """Test 'allowed_users' that restricts access to the template"""
         template = (
             self.env["whatsapp.template"]
             .with_user(self.user_wa_admin)
@@ -360,7 +316,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
         self.assertEqual(template.with_user(self.user_employee).name, "Test")
         self.assertEqual(template.with_user(self.user_employee2).name, "Test")
 
-        # update, limit allowed users
         template.write(
             {
                 "allowed_user_ids": [
@@ -375,8 +330,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
 
     @mute_logger("odoo.addons.base.models.ir_model")
     def test_tpl_phone_field_update(self):
-        """Check 'phone_field' update is done using the same rules as dynamic
-        fields: either limited to allowed fields, either user is a sysadmin."""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "Hello Phone Field Chain",
@@ -399,11 +352,11 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
         )
 
         field_paths_allowed = ["phone_ids", "phone_sanitized"]
-        field_paths_allowed_ko = ["x_studio_phone_ids"]  # allowed but does not exist
-        field_paths_disallowed = ["name"]  # not allowed
+        field_paths_allowed_ko = ["x_studio_phone_ids"]
+        field_paths_disallowed = ["name"]
         field_paths_disallowed_ko = [
             "my_custom_phone_field"
-        ]  # not allowed and does not exist
+        ]
         for field_paths, invalid, admin_only in [
             (field_paths_allowed, False, False),
             (field_paths_allowed_ko, True, False),
@@ -416,7 +369,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
                 with self.subTest(field_path=field_path, test_user_name=test_user.name):
                     template.sudo().write({"phone_field": "phone_ids"})
                     template = template.with_user(test_user)
-                    # employee can never updates templates; wa_admin allowed fields only
                     if test_user == self.user_employee or (
                         admin_only and test_user == self.user_wa_admin
                     ):
@@ -433,7 +385,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
                         template, test_partner, with_user=test_user
                     )
                     with self.mockWhatsappGateway():
-                        # name does not hold a valid number, in single mode it should crash
                         if field_path == "name":
                             with self.assertRaises(exceptions.UserError):
                                 composer.action_send_whatsapp_template()
@@ -441,7 +392,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
                             composer.action_send_whatsapp_template()
 
     def test_tpl_safe_field_access(self):
-        """Check field access security"""
         template = self.env["whatsapp.template"].create(
             {
                 "body": "hello, I am from '{{1}}'.",
@@ -451,7 +401,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
             }
         )
 
-        # Verify that a System User can use any field in template.
         template.with_user(self.user_admin).variable_ids = [
             (5, 0, 0),
             (
@@ -467,7 +416,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
             ),
         ]
 
-        # Verify that a WhatsApp Admin can't set unsafe fields in template variable
         with self.assertRaises(exceptions.ValidationError):
             template.with_user(self.user_wa_admin).variable_ids = [
                 (5, 0, 0),
@@ -489,7 +437,6 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
                 "ir.model"
             ]._get_id("res.partner")
 
-        # try to change the model of the variable with x2many command
         with self.assertRaises(exceptions.ValidationError):
             self.env["whatsapp.template"].with_user(self.user_wa_admin).create(
                 {
@@ -503,18 +450,14 @@ class WhatsAppTemplateSecurity(WhatsAppSecurityCase):
 
     @users("user_wa_admin")
     def test_tpl_update_wa_admin(self):
-        """Check WA admins update involving field access."""
         template = self.template_protected_fields.with_env(self.env)
 
-        # changing fields other than variables should not trigger security check
         template.write({"name": "Can Update"})
         self.assertEqual(template.name, "Can Update")
 
 
 class WhatsAppTemplateCompanyAnchor(WhatsAppCommon):
     def test_a_template_belongs_to_the_companies_of_its_account(self):
-        # the field a grant limited to some companies compiles against: the
-        # path the templates' company guards already read
         self.assertEqual(
             {
                 model: self.env[model]._access_company_anchor()

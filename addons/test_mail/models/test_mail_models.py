@@ -13,11 +13,9 @@ class MailTestSimple(models.Model):
     email_from = fields.Char()
 
     def _message_compute_subject(self):
-        """To ease mocks"""
         return super()._message_compute_subject()
 
     def _notify_by_email_get_final_mail_values(self, *args, **kwargs):
-        """To ease mocks"""
         return super()._notify_by_email_get_final_mail_values(*args, **kwargs)
 
     def _notify_by_email_get_headers(self, headers=None):
@@ -79,7 +77,6 @@ class MailTestAliasOptional(models.Model):
     email_from = fields.Char()
 
     def _alias_get_creation_values(self):
-        """Updates itself"""
         values = super()._alias_get_creation_values()
         values["alias_model_id"] = self.env["ir.model"]._get_id(
             "mail.test.alias.optional"
@@ -176,7 +173,7 @@ class MailTestTrack(models.Model):
     user_id = fields.Many2one("res.users", "Responsible", tracking=True)
     container_id = fields.Many2one("mail.test.container", tracking=True)
     company_id = fields.Many2one("res.company")
-    track_fields_tofilter = fields.Char()  # comma-separated list of field names
+    track_fields_tofilter = fields.Char()
     track_enable_default_log = fields.Boolean(default=False)
     parent_id = fields.Many2one("mail.test.track", string="Parent")
     company_amount = fields.Float(company_dependent=True, tracking=True)

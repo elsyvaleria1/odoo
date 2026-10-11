@@ -17,7 +17,7 @@ class DeviceMobileController(DevicePhoneCallController):
         receiver_refusal="device.device:_prepare_companion_refusal_response",
         receiver_event="mobile_location",
         methods=["POST"],
-        csrf=False,  # auth="receiver": the device's inbound gate authenticates the phone
+        csrf=False,
         save_session=False,
         typed=True,
     )

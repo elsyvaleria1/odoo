@@ -30,10 +30,6 @@ class DocumentsDocument(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_attachment_held_by_sign(self) -> None:
-        # sign.document.attachment_id is required and ondelete="restrict", so
-        # the database refuses this delete anyway -- as a psycopg
-        # RestrictViolation escaping to the client, not as something a user can
-        # read. Refuse it here instead, with the reason.
         attachments = self.sudo().attachment_id
         if not attachments:
             return

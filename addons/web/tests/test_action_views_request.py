@@ -21,8 +21,6 @@ class TestViewsRequest(BaseCase):
         self.assertIn([7, "search"], self._views([7, "res.partner.search"]))
 
     def test_a_search_view_given_as_a_bare_id(self):
-        # a method returning an action dict often writes it so; it used to
-        # raise TypeError and the menu never opened
         self.assertIn([7, "search"], self._views(7))
 
     def test_no_search_view_takes_the_default(self):

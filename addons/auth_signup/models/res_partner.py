@@ -26,7 +26,6 @@ class SignupError(Exception):
 
 
 def random_token() -> str:
-    # the token has an entropy of about 120 bits (6 bits/char * 20 chars)
     chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     return "".join(random.SystemRandom().choice(chars) for _ in range(20))
 
@@ -62,18 +61,14 @@ class ResPartner(models.Model):
         res_id=None,
         model=None,
     ):
-        """generate a signup url for the given partner ids and action, possibly overriding
-        the url state components (menu_id, id, view_type)"""
 
         res = dict.fromkeys(self.ids, False)
         for partner in self:
             base_url = partner.get_base_url()
-            # when required, make sure the partner has a valid signup token
             if self.env.context.get("signup_valid") and not partner.user_ids:
                 partner.sudo().signup_prepare()
 
             route = "login"
-            # the parameters to encode for the query
             query = {"db": self.env.cr.dbname}
             if self.env.context.get("create_user"):
                 query["signup_email"] = partner.email
@@ -117,9 +112,6 @@ class ResPartner(models.Model):
         return self.signup_prepare()
 
     def signup_get_auth_param(self):
-        """Get a signup token related to the partner if signup is enabled.
-        If the partner already has a user, get the login parameter.
-        """
         if not self.env.user._is_internal() and not self.env.is_admin():
             raise exceptions.AccessDenied
 
@@ -139,19 +131,11 @@ class ResPartner(models.Model):
         return self.write({"signup_type": None})
 
     def signup_prepare(self, signup_type="signup") -> bool:
-        """set the signup token type on the partners"""
         self.write({"signup_type": signup_type})
         return True
 
     @api.model
     def _get_signup_partner(self, token, check_validity=False, raise_exception=False):
-        """find the partner corresponding to a token, and possibly check its validity
-
-        :param token: the token to resolve
-        :param bool check_validity: if True, also check validity
-        :param bool raise_exception: if True, raise exception instead of returning False
-        :return: partner (browse record) or False (if raise_exception is False)
-        """
         partner = self._get_partner_from_token(token)
         if not partner:
             raise exceptions.UserError(
@@ -161,25 +145,6 @@ class ResPartner(models.Model):
 
     @api.model
     def _resolve_signup_info(self, token):
-        """retrieve the user info about the token
-
-        :rtype: dict | None
-        :return: a dictionary with the user information if the token is valid,
-            None otherwise:
-
-                db
-                    the name of the database
-                token
-                    the token, if token is valid
-                signup_type
-                    what the token was minted for ("signup" or "reset")
-                name
-                    the name of the partner, if token is valid
-                login
-                    the user login, if the user already exists
-                email
-                    the partner email, if the user does not exist
-        """
         partner = self._get_partner_from_token(token)
         if not partner:
             return None
@@ -196,23 +161,12 @@ class ResPartner(models.Model):
     def _get_login_date(self) -> int | None:
         self.check_singleton()
         users_login_dates = self.user_ids.mapped("login_date")
-        users_login_dates = list(filter(None, users_login_dates))  # remove falsy values
+        users_login_dates = list(filter(None, users_login_dates))
         if any(users_login_dates):
             return int(max(map(datetime.timestamp, users_login_dates)))
         return None
 
     def _generate_signup_token(self, expiration=None):
-        """Generate the signup token for the partner in self.
-
-        Assume that :attr:`signup_type` is either ``'signup'`` or ``'reset'``.
-
-        :param expiration: the time in hours before the expiration of the token
-        :return: the signed payload/token that can be used to reset the
-                 password/signup.
-
-        Since ``login_date`` is part of the payload, this token is
-        invalidated as soon as the user logs in.
-        """
         self.check_singleton()
         self = self.sudo()
         if not expiration:
@@ -257,14 +211,11 @@ class ResPartner(models.Model):
         env = self.sudo().env
         if payload := tools.resolve_hash_signed(env, SIGNUP_SCOPE, token):
             partner_id, user_ids, login_date, signup_type, *password_state = payload
-            # login_date can be either an int or "None" as a string for signup
             partner = env["res.partner"].browse(partner_id)
             if (
                 login_date == partner._get_login_date()
                 and partner.user_ids.ids == user_ids
                 and signup_type == partner.signup_type
-                # a token minted before the password state entered the payload
-                # carries four values, and lives out its own few hours
                 and (
                     not password_state
                     or (not partner.user_ids and password_state[0] == "")

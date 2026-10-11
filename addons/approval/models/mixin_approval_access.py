@@ -53,8 +53,6 @@ class MixinApprovalAccess(models.AbstractModel):
         partner, role = self._get_access_subject(request.subject_key)
         if not partner:
             return
-        # An approval asked before a wider grant must not narrow it: an older
-        # "view" approved after "edit" would set the partner back to view.
         held = self._has_access(partner, role)
         trace.SUBJECTS.note(
             "access_granted",
@@ -69,8 +67,6 @@ class MixinApprovalAccess(models.AbstractModel):
         self._end_access_requests_now_held(partner, request)
 
     def _end_access_requests_now_held(self, partner, granted) -> None:
-        """Cancel the partner's other waiting requests that the access they hold now
-        already answers."""
         self.check_singleton()
         key = self._get_access_subject_key(partner)
         waiting = self._search_subject_approval_requests(

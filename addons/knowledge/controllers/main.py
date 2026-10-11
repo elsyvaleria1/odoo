@@ -7,14 +7,9 @@ from odoo.addons.base.models.access_link import LinkLoginRequired, LinkRefused
 
 
 class KnowledgeController(http.Controller):
-    # ------------------------
-    # Article Access Routes
-    # ------------------------
 
     @http.route("/knowledge/home", type="http", auth="user")
     def access_knowledge_home(self):
-        """This route will redirect internal users to the backend view of the
-        article and the share users to the frontend view instead."""
         article = request.env["knowledge.article"]._get_first_accessible_article()
         if request.env.user._is_internal():
             return self._redirect_to_backend_view(article)
@@ -22,8 +17,6 @@ class KnowledgeController(http.Controller):
 
     @http.route("/knowledge/article/<int:article_id>", type="http", auth="user")
     def redirect_to_article(self, article_id, show_resolved_threads=False):
-        """This route will redirect internal users to the backend view of the
-        article and the share users to the frontend view instead."""
         article = (
             request.env["knowledge.article"]
             .with_context(active_test=False)
@@ -42,13 +35,6 @@ class KnowledgeController(http.Controller):
         auth="public",
     )
     def article_invite(self, member_id, invitation_hash):
-        """This route will check if the given parameter allows the client to access the article via the invite token.
-        Then, if the partner has not registered yet, we will redirect the client to the signup page to finally redirect
-        them to the article.
-        If the partner already has registrered, we redirect them to the login page, which forwards them to the article.
-        """
-        # a signup token handed out below lasts no longer than the live
-        # invitation link it came with
         try:
             member = (
                 request.env["access.link"]
@@ -67,8 +53,6 @@ class KnowledgeController(http.Controller):
         article = member.article_id
 
         if not partner.user_ids:
-            # Force the signup even if not enabled (as we explicitly invited the member).
-            # They should still be able to create a user.
             signup_allowed = (
                 request.env["res.users"]._get_signup_invitation_scope() == "b2c"
             )
@@ -93,7 +77,6 @@ class KnowledgeController(http.Controller):
         return request.redirect(f"/odoo/knowledge/{article.id or 'new'}")
 
     def _redirect_to_portal_view(self, article):
-        # We build the session information necessary for the web client to load
         session_info = request.env["ir.http"].session_info()
 
         session_info.update(

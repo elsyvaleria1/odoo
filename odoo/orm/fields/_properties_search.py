@@ -72,8 +72,6 @@ def _optimize_property_temporal_comparand(
     elif property_type == "datetime":
         value, _ = _value_to_datetime(condition.value, model.env)
     elif operator in ("in", "not in") and isinstance(condition.value, AbstractSet):
-        # no definition says date: a date comparand still matches the text
-        # it is stored as, which SQL compares and JSON cannot encode as is
         if not any(isinstance(item, date) for item in condition.value):
             return condition
         value = OrderedSet(
@@ -85,8 +83,6 @@ def _optimize_property_temporal_comparand(
         property_type = "text"
     else:
         return condition
-    # a stored value is canonical, and so is the comparand: equality is exact
-    # text equality, and a bound holds the stored precision
     if isinstance(value, COLLECTION_TYPES):
         value = OrderedSet(
             render_temporal_property(item, property_type)
@@ -112,7 +108,6 @@ def _optimize_property_temporal_comparand(
 
 
 def _is_unset(value: typing.Any) -> bool:
-    # an unset relational property reads as its comodel's empty recordset
     return (
         value is False
         or value is None
@@ -122,7 +117,6 @@ def _is_unset(value: typing.Any) -> bool:
 
 
 def _same_value(domain_value: typing.Any, value: typing.Any) -> bool:
-    # 0 == False and 1 == True in Python; a stored 0 is not an unset property
     return domain_value == value and isinstance(domain_value, bool) is isinstance(
         value, bool
     )
@@ -149,20 +143,14 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
         self, condition: DomainCondition, model: BaseModel, level: OptimizationLevel
     ) -> Domain:
         if level == OptimizationLevel.BASIC:
-            # before a negation is distributed: NOT of what matches nothing
-            # matches everything, not "the other inequality or unset"
             _fname, property_name = parse_field_expr(condition.field_expr)
             if property_name:
-                # a path through a property (`props.ref.name`) is refused by
-                # the search: the in-memory read must not answer it instead
                 name, part = split_temporal_part(property_name)
                 check_property_field_value_name(name)
                 refuse_boolean_part_comparand(condition, part)
             if condition.operator in PYTHON_INEQUALITY_OPERATOR and (
                 condition.value is False or condition.value is None
             ):
-                # an unset comparand has no order, and an unset property is
-                # not 0
                 _debug.logic(
                     "field.properties.unset_comparand_ordered",
                     model=model._name,
@@ -205,8 +193,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
         return get_property
 
     def _get_temporal_part_getter(self, name: str, part: str) -> typing.Any:
-        # the raw stored value, as the SQL expression reads it: the record's
-        # own definition may name a char under the same name
         resolved: list[tuple[str, typing.Any]] = []
 
         def getter(record: BaseModel) -> typing.Any:
@@ -259,8 +245,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
             domain = Domain(value).optimize(records)
 
             def matches_any(rec: BaseModel) -> bool:
-                # a record whose own definition types the property otherwise
-                # holds no corecord to match
                 corecords = getter(rec)
                 return is_recordset(corecords) and bool(
                     corecords.filtered_domain(domain)
@@ -292,9 +276,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
         getter: abc.Callable[[BaseModel], typing.Any],
         value: abc.Collection[typing.Any],
     ) -> abc.Callable[[BaseModel], bool]:
-        # the same buckets as _property_in_to_sql: False is the unset property
-        # (json false, null or no key), [True] alone means "set", and a value
-        # matches a scalar or one item of a tags list
         values = list(value)
         if len(values) == 1 and values[0] is True:
             return lambda rec: not _is_unset(getter(rec))
@@ -305,8 +286,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
             rec_value = getter(rec)
             if _is_unset(rec_value):
                 return match_unset
-            # each record's own definition types its value: a relational one
-            # is compared by the ids it stores, as SQL compares the column
             if is_recordset(rec_value):
                 items: abc.Iterable[typing.Any] = rec_value._ids
             elif type(rec_value) is list:
@@ -393,8 +372,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
                 )
         assert sqls, "No SQL generated for property"
         if operator == "not in" and check_null_op_false is None:
-            # "not in" keeps the records without the property, as a column's
-            # NOT IN keeps the NULLs; a NULL json value answers neither branch
             return SQL(
                 "(%s OR %s)",
                 SQL(" AND ").join(sqls),
@@ -479,8 +456,6 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
             raise ValueError(f"Invalid operator {operator} for Properties") from None
 
         if isinstance(value, str):
-            # ->> renders an unset property (json false) as the text 'false',
-            # which LIKE '%a%' and < 'red' would match; only text compares
             sql_json = sql_left
             sql_left = SQL(
                 "(CASE WHEN jsonb_typeof(%s) IN ('boolean', 'null')"
@@ -499,15 +474,12 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
             if operator in Domain.NEGATIVE_OPERATORS:
                 sql = SQL("(%s OR %s IS NULL)", sql, sql_left)
             elif operator in PYTHON_INEQUALITY_OPERATOR:
-                # a list or a number does not order against text
                 sql = SQL("(jsonb_typeof(%s) = 'string' AND %s)", sql_json, sql)
             return sql
 
         sql_right = SQL("%s", json_dumps(value))
         sql = SQL("%s%s%s", sql_left, sql_operator, sql_right)
         if operator in PYTHON_INEQUALITY_OPERATOR and isinstance(value, int | float):
-            # jsonb orders every boolean above every number: an unset
-            # property (false) would satisfy size > 2
             json_type = "boolean" if isinstance(value, bool) else "number"
             sql = SQL("(jsonb_typeof(%s) = %s AND %s)", sql_left, json_type, sql)
         return sql

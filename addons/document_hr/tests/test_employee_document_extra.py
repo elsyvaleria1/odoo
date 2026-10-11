@@ -21,14 +21,11 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_signature_tag_unlink_guard(self):
-        """Check that the contract-signature tag cannot be deleted."""
         tag = self.env.ref("document_hr.document_tag_signature_request")
         with self.assertRaises(UserError):
             tag.unlink()
 
     def test_document_count_without_employee_folder(self):
-        """Check the transitional partner-based counter when no employee
-        folder is configured."""
         self.employee.hr_employee_folder_id = False
         self.env["document.document"].create(
             {
@@ -40,14 +37,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         self.employee.invalidate_recordset(["document_count"])
         self.assertEqual(self.employee.document_count, 1)
 
-        # An employee whose partner simply has no documents. This used to
-        # clear `partner_id` instead, which `hr.employee` forbids: the field is
-        # `required=True` and the column is NOT NULL, so the write raised
-        # `NotNullViolation` and the assertion below was never reached. The
-        # branch under test is `document_count_by_partner.get(partner, 0)`, and
-        # a partner with nothing filed against it reaches it exactly as a
-        # contactless employee would have -- while being a state this fork can
-        # actually hold.
         orphan = self.env["hr.employee"].create({"name": "No Documents"})
         orphan.hr_employee_folder_id = False
         orphan.invalidate_recordset(["document_count"])
@@ -59,8 +48,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_action_view_documents_branches(self):
-        """Check the legacy-filter, access, and act_url branches of
-        action_view_documents."""
         hr_user = new_test_user(
             self.env,
             login="docs_hr_officer",
@@ -83,15 +70,10 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
             self.employee.partner_id.id,
         )
 
-        # settings=False must still be gated the same as settings=True: a
-        # non-hr user gets no "search everywhere" action either.
         with self.assertRaises(AccessError):
             self.employee.with_user(self.doc_user).action_view_documents()
 
     def test_public_employee_bridge(self):
-        """Check the public employee counter relation and the see-documents
-        action for user and non-user employees."""
-        # is_user is true only for the employee of the CURRENT user
         self.env["document.document"].create(
             [
                 {
@@ -118,8 +100,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         self.assertIsNone(public_plain.action_see_documents())
 
     def test_clearing_employee_subfolders_setting_removes_them(self):
-        """Check that emptying the subfolders setting deletes the folders it
-        created, and not only that replacing it with another name does."""
         company = self.employee.company_id
         folder = self.employee.sudo().hr_employee_folder_id
         Documents = self.env["document.document"].sudo()
@@ -138,8 +118,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_archived_employee_folder_moves_with_the_others(self):
-        """Check that re-pointing the Employees Folder also moves the folder of
-        an archived employee, instead of orphaning it under the old root."""
         company = self.employee.company_id
         self.employee.action_archive()
         new_root = self.env["document.document"].create(
@@ -156,14 +134,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_repointing_folder_resets_manually_customized_access(self):
-        """Pin today's behaviour (round-2 audit R3, CONFIRMED, fix left as a
-        DECISION NEEDED — see the round-2 ledger): re-pointing the Employees
-        Folder unconditionally resets every employee folder's access back to
-        the module defaults, even one an HR admin had manually locked down
-        further. This is deliberate — it counters document.document.write's
-        own access-from-new-parent sync — but it is currently silent and
-        untested, so pin it here on purpose: a future change to this method
-        must touch this test knowingly, not by accident."""
         folder = self.employee.sudo().hr_employee_folder_id
         self.assertEqual(folder.access_via_link, "none")
         folder.sudo().access_via_link = "view"
@@ -184,8 +154,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_main_folder_generation_is_idempotent(self):
-        """Check that regenerating the company root folder keeps the existing
-        one instead of orphaning it and everything filed under it."""
         company = self.employee.company_id
         before = company.documents_employee_folder_id
         self.assertTrue(before, "the fixture configures a root folder")
@@ -204,8 +172,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_second_company_gets_the_contracts_tag(self):
-        """Check that a company created after install also gets the default
-        contracts tag through _generate_employee_documents_main_folders."""
         tag = self.env.ref("document_hr.documents_hr_tag_contracts")
         company = self.env["res.company"].create({"name": "Second company"})
         self.assertIn(
@@ -215,11 +181,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_main_company_gets_the_contracts_tag_through_the_generic_path(self):
-        """Check that base.main_company gets the default contracts tag from
-        _generate_employee_documents_main_folders alone, with no dedicated
-        data record for it (round-2 audit R2: the old noupdate XML record
-        hardcoding base.main_company was redundant with this method and has
-        been removed)."""
         tag = self.env.ref("document_hr.documents_hr_tag_contracts")
         main_company = self.env.ref("base.main_company")
         main_company.documents_hr_contracts_tags = [(5, 0, 0)]
@@ -232,8 +193,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_existing_contracts_tag_is_not_overwritten(self):
-        """Check that a company which already chose its own contracts tags
-        keeps them."""
         other_tag = self.env["document.tag"].create({"name": "Custom contracts"})
         company = self.env["res.company"].create(
             {
@@ -244,8 +203,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         self.assertEqual(company.documents_hr_contracts_tags, other_tag)
 
     def test_subfolder_generation_is_idempotent_with_spaces(self):
-        """Check that a comma-separated list written the way humans write it,
-        with spaces, does not duplicate a subfolder on every save."""
         company = self.employee.company_id
         folder = self.employee.sudo().hr_employee_folder_id
         Documents = self.env["document.document"].sudo()
@@ -256,7 +213,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
         self.assertEqual(first_pass, ["Alpha", "Beta", "Contracts"])
 
-        # a non-empty folder survives the delete branch, so a duplicate would stay
         beta = Documents.search([("folder_id", "=", folder.id), ("name", "=", "Beta")])
         Documents.create({"name": "keepalive", "folder_id": beta.id})
 
@@ -272,8 +228,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_document_count_in_a_mixed_batch(self):
-        """Check that an employee without a folder keeps its partner-based
-        count when computed alongside an employee that has one."""
         partner = self.env["res.partner"].create({"name": "Mixed batch contact"})
         folderless = self.env["hr.employee"].create(
             {"name": "No folder", "partner_id": partner.id}
@@ -302,8 +256,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_employee_folder_generation_is_idempotent(self):
-        """Check that regenerating an employee's folder keeps the existing one
-        instead of orphaning it and everything filed under it."""
         before = self.employee.sudo().hr_employee_folder_id
         self.assertTrue(before, "the fixture gives the employee a folder")
 
@@ -316,9 +268,6 @@ class TestEmployeeDocumentsExtra(TransactionCaseDocumentsHr):
         )
 
     def test_contract_document_is_filed_in_the_employees_contracts(self):
-        """A contract attachment's document lands in the employee's "Contracts"
-        folder, where a signed contract is filed too -- not at the company-wide
-        root among every employee's folders (upstream's own fix, 2026-04-03)."""
         attachment = self.env["ir.attachment"].create(
             {
                 "datas": self.TEXT,

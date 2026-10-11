@@ -56,7 +56,6 @@ class TestVoipResPartner(common.TransactionCase):
         self.assertNotIn(id, ids)
 
     def test_voip_get_contacts_search_by_name_or_email(self):
-        """Test that partners are searched by name and email. Only partners with phone or mobile are returned."""
         store_data = self.env["res.partner"].get_contacts(
             offset=0,
             limit=10,
@@ -78,7 +77,6 @@ class TestVoipResPartner(common.TransactionCase):
         self.assertIdNotInStoreData(self.partner2.id, store_data)
 
     def test_voip_get_contacts_search_by_T9_name(self):
-        # "partner" in T9 is 7278637
         store_data = self.env["res.partner"].get_contacts(
             offset=0,
             limit=10,
@@ -91,7 +89,6 @@ class TestVoipResPartner(common.TransactionCase):
         self.assertIdNotInStoreData(self.partner3.id, store_data)
 
     def test_voip_get_contacts_phone_search_min_length(self):
-        """Test that phone search is only done when the search terms length is >= _phone_search_min_length."""
         if self.min_length <= 1:
             self.skipTest("_phone_search_min_length is set to 1, skipping test.")
 

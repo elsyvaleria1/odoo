@@ -19,14 +19,6 @@ if typing.TYPE_CHECKING:
 
 @dataclass(frozen=True)
 class AccessGraph:
-    # parent: the many2one onto the same model (the model has _parent_store)
-    # grants: the one2many onto the adopter's mixin.access.grant model
-    # roles: the ladder, lowest first; a role implies every lower one
-    # owner: a many2one onto res.users holding the top role on its node and
-    #   below it
-    # boundary: a boolean; inherited grants stop at a node that sets it
-    # container: (field, value) a node must match to hold children; grants on
-    #   other nodes reach that node only
     parent: str
     grants: str
     roles: tuple[str, ...]
@@ -36,7 +28,6 @@ class AccessGraph:
 
 
 def path_ids(column: SQL) -> SQL:
-    # a materialized path ("1/5/9/") as the int4[] of the nodes it names
     return SQL("string_to_array(rtrim(%s, '/'), '/')::int4[]", column)
 
 
@@ -141,8 +132,6 @@ class MixinAccessGraph(models.AbstractModel):
 
     @api.constrains("access_label_id")
     def _check_access_label_id(self) -> None:
-        # a label lets its class's writers edit and its readers see: a class
-        # someone may write without reading hides what it lets them edit
         refused = self.env["ir.access"]._label_refused_classes()
         if names := {refused.get(label.id) for label in self.access_label_id} - {None}:
             raise ValidationError(
@@ -154,8 +143,6 @@ class MixinAccessGraph(models.AbstractModel):
             )
 
     def _check_access_label_change(self) -> None:
-        # a label changes who reaches a record: whoever holds the top role on
-        # it sets it, as they set its grants
         if self.env.su or self._access_graph is None or not self:
             return
         top = self._access_graph.roles[-1]
@@ -184,8 +171,6 @@ class MixinAccessGraph(models.AbstractModel):
             )
 
     def _access_label_reach(self, role: str) -> Domain:
-        # the records whose label lets the current user hold the role: the
-        # lowest role reads the label's class, the others write it
         graph = self._access_graph
         operation = "read" if graph is None or role == graph.roles[0] else "write"
         return self._access_label_guard(operation)
@@ -230,10 +215,6 @@ class MixinAccessGraph(models.AbstractModel):
             node.access_role = roles[rank - 1] if rank else False
 
     def _search_access_role(self, operator: str, value: typing.Any) -> Domain:
-        # a role band is the records reached at that role and not at the next
-        # one up; False is the band reached at none. Adjacent bands asked
-        # together are one run, the records reached at its lowest role and not
-        # above its highest: "view or above" is one reach, not one per role
         if operator not in ("in", "not in"):
             return NotImplemented
         if self._access_graph is None:
@@ -264,10 +245,6 @@ class MixinAccessGraph(models.AbstractModel):
         return Domain.OR(pieces)
 
     def _access_graph_reach(self, role: str, **options: typing.Any) -> Domain:
-        # the records the current user holds the role or a higher one on, as
-        # far as their labels let them: the lowest role reads a label's class,
-        # the others write it. No label lets writing without reading, so a
-        # record reached higher up is never reached past its label's readers
         label = self._access_label_reach(role)
         return self._access_graph_domain(role, **options) & label
 
@@ -280,9 +257,6 @@ class MixinAccessGraph(models.AbstractModel):
         partner: bool = True,
         owner: bool = True,
     ) -> Domain:
-        # the records the current user reaches at the role or above; groups
-        # given explicitly are counted whether or not the user holds them, for
-        # an adopter that composes an audience term of its own
         if self.env.user._is_public():
             return Domain.FALSE
         sql = self._access_graph_condition(
@@ -294,16 +268,12 @@ class MixinAccessGraph(models.AbstractModel):
         )
 
         def to_sql(model: MixinAccessGraph, alias: str, query: Query) -> SQL:
-            # the condition reads the tree and the grants in SQL: what the
-            # transaction wrote must be there first
             model._access_graph_flush()
             return sql(alias, query)
 
         return Domain.custom(to_sql=to_sql)
 
     def _access_graph_group_ranks(self, group_id: int) -> dict[int, int]:
-        # {id: 1-based rank of the highest live grant the group holds on the
-        # record or above it, within its scope}
         graph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
         names = type(grant_model)._access_grant_names
@@ -334,8 +304,6 @@ class MixinAccessGraph(models.AbstractModel):
         return dict(self.env.cr.fetchall())
 
     def _access_graph_ranks(self, ids: list[int]) -> dict[int, int]:
-        # {id: 1-based rank of the highest role the current user holds, as far
-        # as the record's label lets them}
         roles = self._access_graph.roles
         self._access_graph_flush()
         nodes = self.with_context(active_test=False)
@@ -393,8 +361,6 @@ class MixinAccessGraph(models.AbstractModel):
         partner: bool = True,
         owner: bool = True,
     ) -> typing.Callable[..., SQL]:
-        # an SQL condition on a row of the model: its id among the nodes the
-        # reach table says the user reaches (mixin_access_graph_reach)
         subquery = self._access_reach_subquery(
             role,
             groups=groups,
@@ -404,8 +370,6 @@ class MixinAccessGraph(models.AbstractModel):
         )
 
         def condition(alias: str, query: Query | None = None) -> SQL:
-            # the reach is a set the query states once where its statement is
-            # shared, as the parts of the opened groups share it
             _debug.logic("access_graph.reach", model=self._name, alias=alias)
             reach = SQL("(%s)", subquery) if query is None else query.once_set(subquery)
             return SQL("%s IN %s", SQL.identifier(alias, "id"), reach)
@@ -413,12 +377,6 @@ class MixinAccessGraph(models.AbstractModel):
         return condition
 
     def _access_graph_sources(self) -> list[dict[str, typing.Any]]:
-        # every live grant and owner that reaches the record, with the node it
-        # comes from: what a share dialog lists as inherited, and what explain
-        # reads. The policy reads its own data here, as ir.access reads its
-        # rows: in SQL, so whether the caller may read a folder above does not
-        # change what reaches the record; records come back as ids in the
-        # caller's environment
         self.check_singleton()
         graph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
@@ -483,12 +441,6 @@ class Base(models.AbstractModel):
         "role", optional=("at", "groups", "except_groups", "partner", "owner")
     )
     def _access_predicate_graph_reach(self, bind: typing.Any, args: dict) -> Domain:
-        # base.graph_reach: the records whose access graph (the model's own, or
-        # the one at the end of args["at"]) the principal holds args["role"]
-        # or a higher role on. args["groups"] counts those groups' grants
-        # whoever holds them, as an audience; args["except_groups"] leaves
-        # theirs out; partner and owner (true by default) count the
-        # principal's own grants and ownership
         path = (args.get("at") or "").rstrip(".")
         model = self
         for name in filter(None, path.split(".")):
@@ -574,13 +526,6 @@ class MixinAccessGrant(models.AbstractModel):
     def _sync_caused_grants(
         self, cause_ref: str, wanted: list[tuple[int, str, int, str, int | bool]]
     ) -> None:
-        # the grants one cause holds become exactly `wanted`, each (node id,
-        # "partner_id" or "group_id", principal id, role, company id or False);
-        # what the cause no longer asks for is revoked, and a grant another
-        # cause made on the same node is left alone unless it grants less. The
-        # rows are read in SQL and written as the system: a module's grant is
-        # the module's decision, taken when its own configuration is written,
-        # and whoever writes that configuration need not manage the node
         names = self._access_grant_names
         grants = self.sudo()
         ladder = self._fields[names.role].get_values(self.env)

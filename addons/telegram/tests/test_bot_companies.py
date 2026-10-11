@@ -31,8 +31,6 @@ class BotCompaniesCase(TelegramBotTestCase):
 
     @contextmanager
     def started(self, company="choose", starts_flow=False):
-        """Every bot answers /empezar, declared with `company`; yield the
-        companies each run acted in."""
         original = self.handler._telegram_commands
         runs = []
 
@@ -95,11 +93,9 @@ class TestBotCompanies(BotCompaniesCase):
         owner = bot.company_id
         self.assertEqual(bot.company_ids, owner)
 
-        # serving its owner alone, it moves with it
         bot.company_id = self.main
         self.assertEqual(bot.company_ids, self.main)
 
-        # serving several, it keeps them and serves its new owner too
         bot.company_ids = [Command.link(self.other.id)]
         bot.company_id = owner
         self.assertEqual(bot.company_ids, self.main | self.other | owner)
@@ -112,7 +108,6 @@ class TestBotCompanies(BotCompaniesCase):
             {"company_id": self.other.id, "company_ids": [Command.set(self.other.ids)]}
         )
         self.test_user.company_ids = [Command.set(self.main.ids)]
-        # only the main company is theirs, and the bot no longer serves it
         with self.assertRaises(ForeignSender):
             self._sender()
 
@@ -139,7 +134,6 @@ class TestBotCompanies(BotCompaniesCase):
 
         with self.started() as runs:
             self._press(f"tg_co:{self.other.id}")
-        # run with its arguments, in the company chosen and no other
         self.assertEqual(runs, [(self.other, self.other, ["x"])])
 
     def test_a_company_the_person_lost_is_no_choice(self):
@@ -191,7 +185,6 @@ class TestBotCompanies(BotCompaniesCase):
             self.test_bot, self.test_chat, handler, self.test_user
         )
         self.assertEqual(company, self.other)
-        # a button of another feature acts in its own record's company
         self.assertFalse(
             self.router._command_company(
                 self.test_bot,
@@ -234,7 +227,6 @@ class TestBotCompanies(BotCompaniesCase):
         self.assertIn("permission", send.call_args.args[1])
         self.assertNotIn("/empezar", menu)
 
-        # available again everywhere, it is offered again
         command.company_ids = False
         with self.started():
             menu = [
@@ -255,8 +247,6 @@ class TestIdleIntake(BotCompaniesCase):
 
     @contextmanager
     def intake(self, command="/empezar", **declared):
-        """The general handler's contact intake stands for `command`; yield
-        the companies its runs acted in."""
         runs = []
 
         def on_message(this, bot, chat, message, partner, internal_user):

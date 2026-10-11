@@ -139,10 +139,6 @@ class DeliveryCarrier(models.Model):
         selection=[("LB", "LB"), ("KG", "KG")],
         default="LB",
     )
-    # Note about weight units: Odoo (v9) currently works with kilograms.
-    # --> Gross weight of each products are expressed in kilograms.
-    # For some services, FedEx requires weights expressed in pounds, so we
-    # convert them when necessary.
     fedex_label_stock_type = fields.Selection(
         selection=FEDEX_STOCK_TYPE,
         string="Label Type",
@@ -212,7 +208,6 @@ class DeliveryCarrier(models.Model):
         order_currency = order.currency_id
         superself = self.sudo()
 
-        # Authentication stuff
         srm = FedexRequest(
             self.log_xml, request_type="rating", prod_environment=self.prod_environment
         )
@@ -221,7 +216,6 @@ class DeliveryCarrier(models.Model):
         )
         srm.client_detail(superself.fedex_account_number, superself.fedex_meter_number)
 
-        # Build basic rating request and set addresses
         srm.transaction_detail(order.name)
         srm.shipment_request(
             self.fedex_droppoff_type,
@@ -253,7 +247,6 @@ class DeliveryCarrier(models.Model):
         )
         srm.set_master_package(weight_value, 1)
 
-        # Commodities for customs declaration (international shipping)
         if (
             "INTERNATIONAL" in self.fedex_service_type
             or self.fedex_service_type == "FEDEX_REGIONAL_ECONOMY"
@@ -279,7 +272,6 @@ class DeliveryCarrier(models.Model):
                 superself.fedex_duty_payment,
             )
 
-        # Prepare the request
         self._fedex_update_srm(srm, "rate", order=order)
         del srm.ClientDetail["Region"]
         request = serialize_object(
@@ -376,7 +368,6 @@ class DeliveryCarrier(models.Model):
                 picking.shipping_weight, self.fedex_weight_unit
             )
 
-            # Commodities for customs declaration (international shipping)
             if (
                 "INTERNATIONAL" in self.fedex_service_type
                 or self.fedex_service_type == "FEDEX_REGIONAL_ECONOMY"
@@ -415,7 +406,6 @@ class DeliveryCarrier(models.Model):
 
             package_count = len(picking.move_line_ids.result_package_id) or 1
 
-            # For india picking courier is not accepted without this details in label.
             po_number = order.display_name or False
             dept_number = False
             if (
@@ -430,20 +420,11 @@ class DeliveryCarrier(models.Model):
                 )
                 dept_number = "BILL D/T: SENDER"
 
-            # TODO RIM master: factorize the following crap
 
             packages = self._get_packages_from_picking(
                 picking, self.fedex_default_package_type_id
             )
 
-            # Note: Fedex has a complex multi-piece shipping interface
-            # - Each package has to be sent in a separate request
-            # - First package is called "master" package and holds shipping-
-            #   related information, including addresses, customs...
-            # - Last package responses contains shipping price and code
-            # - If a problem happens with a package, every previous package
-            #   of the shipping has to be cancelled separately
-            # (Why doing it in a simple way when the complex way exists??)
 
             master_tracking_id = False
             package_labels = []
@@ -466,7 +447,6 @@ class DeliveryCarrier(models.Model):
                     net_weight, len(packages), master_tracking_id=master_tracking_id
                 )
 
-                # Prepare the request
                 self._fedex_update_srm(srm, "ship", picking=picking)
                 request = serialize_object(
                     {
@@ -491,11 +471,9 @@ class DeliveryCarrier(models.Model):
                 package_labels.append((package_name, srm.get_label()))
                 carrier_tracking_refs.append(response["tracking_number"])
 
-                # First package
                 if sequence == 1:
                     master_tracking_id = response["master_tracking_id"]
 
-                # Last package
                 if sequence == package_count:
                     carrier_price = self._get_request_price(
                         response["price"], order, order_currency
@@ -539,7 +517,6 @@ class DeliveryCarrier(models.Model):
                     }
                     res.append(shipping_data)
 
-            # TODO RIM handle if a package is not accepted (others should be deleted)
 
             if self.return_label_on_delivery:
                 self.get_return_label(
@@ -664,7 +641,6 @@ class DeliveryCarrier(models.Model):
                 total_commodities_amount,
                 "NON_DOCUMENTS",
             )
-            # We consider that returns are always paid by the company creating the label
             srm.duties_payment(
                 picking.picking_type_id.warehouse_id.partner_id,
                 superself.fedex_account_number,
@@ -672,7 +648,6 @@ class DeliveryCarrier(models.Model):
             )
         srm.return_label(tracking_number, origin_date)
 
-        # Prepare the request
         self._fedex_update_srm(srm, "return", picking=picking)
         request = serialize_object(
             {
@@ -767,16 +742,13 @@ class DeliveryCarrier(models.Model):
             raise UserError(result["errors_message"])
 
     def _get_request_price(self, req_price, order, order_currency=None):
-        """Extract price info in target currency, converting if necessary"""
         if not order_currency:
             order_currency = order.currency_id
         company = order.company_id or self.env.user.company_id
         fdx_currency = _convert_curr_iso_fdx(order_currency.name)
         if fdx_currency in req_price:
-            # normally we'll have the order currency on the response, then we can take it as is
             return req_price[fdx_currency]
         _logger.info("Preferred currency has not been found in FedEx response")
-        # otherwise, see if we have the company currency, and convert to the order's currency
         fdx_currency = _convert_curr_iso_fdx(company.currency_id.name)
         if fdx_currency in req_price:
             return company.currency_id._convert(
@@ -785,11 +757,7 @@ class DeliveryCarrier(models.Model):
                 company,
                 order.date_order or fields.Date.today(),
             )
-        # finally, attempt to find active currency in the database
         currency_codes = list(req_price.keys())
-        # note, fedex sometimes return the currency as ISO instead of using their own code
-        # (eg it can return GBP instead of UKL for a UK address)
-        # so we'll do the search for both
         currency_codes += [_convert_curr_fdx_iso(c) for c in currency_codes]
         currency_instances = self.env["res.currency"].search(
             [("name", "in", currency_codes)]
@@ -807,13 +775,6 @@ class DeliveryCarrier(models.Model):
         return 0.0
 
     def _fedex_add_extra_data_to_request(self, request, request_type) -> None:
-        """Adds the extra data to the request.
-        When there are multiple items in a list, they will all be affected by
-        the change.
-        for example, with
-        {"ShipmentDetails": {"Pieces": {"Piece": {"AdditionalInformation": "extra info"}}}}
-        the AdditionalInformation of each piece will be updated.
-        """
         extra_data_input = {
             "rate": self.fedex_extra_data_rate_request,
             "ship": self.fedex_extra_data_ship_request,
@@ -825,7 +786,6 @@ class DeliveryCarrier(models.Model):
             raise UserError(self.env._("Invalid syntax for FedEx extra data.")) from err
 
         def extra_data_to_request(request, extra_data):
-            """recursive function that adds extra data to the current request."""
             for key, new_value in extra_data.items():
                 request[key] = current_value = request.get(key)
                 if isinstance(current_value, list):
@@ -854,16 +814,10 @@ class DeliveryCarrier(models.Model):
             weight, self.env.ref(convert_to), round=False
         )
 
-        # Some users may want to ship very lightweight items; in order to give them a rating, we round the
-        # converted weight of the shipping to the smallest value accepted by FedEx: 0.01 kg or lb.
-        # (in the case where the weight is actually 0.0 because weights are not set, don't do this)
         if weight > 0.0:
             new_value = max(new_value, 0.01)
 
-        # Rounding to avoid differences between sum of values before and after conversion, caused by
-        # Floating Point Arithmetic issues (ex: .1 + .1 + .1 != .3)
         return float_repr(new_value, 10)
 
     def _fedex_update_srm(self, srm, request_type, order=None, picking=None):
-        """Hook to introduce new custom behaviors in the Fedex request."""
         return srm

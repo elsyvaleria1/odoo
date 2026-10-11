@@ -74,8 +74,6 @@ class TestLiveChatDigest(TestDigestCommon):
         self.assertEqual(round(self.digest_1.kpi_livechat_rating_value, 2), 33.33)
 
     def test_kpi_livechat_rating_ignores_ratings_on_other_channel_types(self):
-        """The KPI scopes to livechat by subquery now, not by an id list. It has
-        to keep excluding ratings on discuss channels that are not livechat."""
         group = self.env["discuss.channel"].create(
             {
                 "name": "A group chat",
@@ -102,14 +100,6 @@ class TestLiveChatDigest(TestDigestCommon):
         )
 
     def test_kpi_livechat_rating_does_not_materialise_every_channel(self):
-        """It used to `search()` every livechat session in the database and hand
-        the ids back as an `IN` list, rebuilt on each of the six window reads.
-        Measured at 100,000 sessions: 87.9 ms per read against 10.0 ms, with
-        17.6 ms of that spent in PLANNING alone, parsing the list.
-
-        The guard is that the id list is never built: `_search` returns a Query
-        and `rating_get_grades` keeps it a subquery.
-        """
         Channel = self.env["discuss.channel"]
         seen = []
         original = type(Channel).search
@@ -130,8 +120,6 @@ class TestLiveChatDigest(TestDigestCommon):
         )
 
     def test_rating_domain_accepts_a_query(self):
-        """`_get_domain_rating(record_ids=...)` is what keeps it a subquery, and the
-        two forms have to select the same ratings."""
         Channel = self.env["discuss.channel"]
         by_ids = Channel.search([("channel_type", "=", "livechat")]).rating_get_grades()
         by_query = Channel.rating_get_grades(

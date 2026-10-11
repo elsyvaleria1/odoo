@@ -25,10 +25,6 @@ ACCESS_LOG_EVENTS = [
     ("log_chain_broken", "Log seal chain broken"),
 ]
 
-# a row's sealed content: the row as the database holds it, less its seal,
-# the references a deletion elsewhere empties (ON DELETE SET NULL) and the
-# columns no value was written to, so a column a module adds later leaves the
-# rows sealed before it as they were
 SEALED_CONTENT = SQL(
     """
     jsonb_strip_nulls(
@@ -39,9 +35,6 @@ SEALED_CONTENT = SQL(
     """
 )
 
-# the database refuses any change to a row but its sealing, once, and the
-# emptying of a reference whose record was deleted; and any delete but a purge
-# (a plain string: its plpgsql % placeholders are no query parameters)
 APPEND_ONLY = """
     CREATE OR REPLACE FUNCTION ir_access_log_append_only() RETURNS trigger
     LANGUAGE plpgsql AS $$
@@ -91,8 +84,6 @@ APPEND_ONLY = """
         FOR EACH STATEMENT EXECUTE FUNCTION ir_access_log_no_truncate();
 """
 
-# the last row sealed, as "sequence:seal": a sealed row deleted from the end of
-# the chain leaves no gap, only a head the chain no longer reaches
 SEAL_HEAD = "base.access_log_seal_head"
 
 _PURGING: contextvars.ContextVar[bool] = contextvars.ContextVar(
@@ -101,13 +92,10 @@ _PURGING: contextvars.ContextVar[bool] = contextvars.ContextVar(
 
 
 def _keep_rows(records: Any) -> None:
-    # uninstalling the module that wrote an event keeps its rows: the log
-    # outlives the code that wrote it
     return
 
 
 def kept_on_uninstall(events: list[tuple[str, str]]) -> dict[str, Any]:
-    """The ondelete of the log events a module adds: its rows stay."""
     return dict.fromkeys((event for event, _label in events), _keep_rows)
 
 
@@ -208,9 +196,6 @@ class IrAccessLog(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:
-        # every row names its actor by login too, whichever path writes it; a
-        # row is only ever written by the log's own elevated paths (_record,
-        # the refusal's cursor of its own), which read any user's login
         actor_ids = {vals["actor_id"] for vals in vals_list if vals.get("actor_id")}
         logins = {
             user.id: user.login
@@ -232,8 +217,6 @@ class IrAccessLog(models.Model):
 
     @api.model
     def _record_privileged(self, model_name: str, operation: str, ids: tuple) -> None:
-        # a create, write or delete made under a privilege, on a model that
-        # declares _access_audit or under a privilege that asks for it
         privileges = self.env["res.groups"].sudo().browse(sorted(self.env.privileges))
         audited = self.env.registry[model_name]._access_audit
         privileges = privileges if audited else privileges.filtered("audit_privilege")
@@ -262,15 +245,11 @@ class IrAccessLog(models.Model):
 
     @api.ondelete(at_uninstall=False)
     def _unlink_except_purge(self) -> None:
-        # nobody deletes a row, the superuser included, but through _remove_rows,
-        # which the log records; the database refuses any other delete
         if not _PURGING.get():
             raise UserError(self.env._("The authorization log cannot be deleted."))
 
     @api.model
     def _remove_rows(self, domain: list, reason: str) -> int:
-        """Delete the rows `domain` matches, for a stated reason (retention, an
-        erasure request); only the superuser does, and the purge is logged."""
         if self.env.uid != SUPERUSER_ID:
             raise UserError(self.env._("Only the superuser purges the log."))
         if not reason:
@@ -296,8 +275,6 @@ class IrAccessLog(models.Model):
 
     @api.model
     def _seal(self, batch: int = 5000) -> int:
-        # chain every committed row not sealed yet, in the order it is sealed:
-        # a row a transaction still holds is sealed once it commits
         cr = self.env.cr
         cr.execute("SELECT pg_advisory_xact_lock(hashtext('ir_access_log_seal'))")
         cr.execute(
@@ -329,7 +306,6 @@ class IrAccessLog(models.Model):
         if sealed:
             self.invalidate_model(["seal", "seal_seq"])
             self.env["ir.config_parameter"].set_param(SEAL_HEAD, f"{seq}:{previous}")
-            # the server log keeps the head outside the database too
             _logger.info("authorization log sealed through row %s: %s", seq, previous)
         return sealed
 
@@ -345,8 +321,6 @@ class IrAccessLog(models.Model):
 
     @api.model
     def _get_seal_chain_error(self, batch: int = 5000) -> str | None:
-        """Where the seal chain breaks, or None: a sealed row changed, or one
-        missing from the sequence."""
         cr = self.env.cr
         previous, expected = "", 1
         while True:

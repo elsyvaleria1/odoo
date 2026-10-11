@@ -1,5 +1,3 @@
-# Copyright (c) 2011 CCI Connect asbl (http://www.cciconnect.be) All Rights Reserved.
-#                       Philmer <philmer@cciconnect.be>
 
 {
     "name": "Accounting Consistency Checks",

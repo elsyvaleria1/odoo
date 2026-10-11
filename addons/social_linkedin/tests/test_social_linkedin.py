@@ -73,25 +73,16 @@ class SocialLinkedinCase(SocialCase):
             )
 
     def test_post_image(self):
-        """
-        Check the priority of the ``post type``
-        The first priority is image
-        """
         self.social_post.message = "A message https://example.com"
         self.assertTrue(self.social_post.image_ids)
         self._test_post_type("multiImage")
 
     def test_post_urls(self):
-        """
-        Check the priority of the ``post type``
-        The second priority is urls
-        """
         self.social_post.message = "A message https://example.com"
         self.social_post.image_ids = False
         return self._test_post_type("article")
 
     def test_post_urls_metadata(self):
-        """Same as @test_post_urls, but this time the page has some metadata."""
 
         def _patched_get_link_preview_from_url(*args, **kwargs):
             return {
@@ -130,10 +121,6 @@ class SocialLinkedinCase(SocialCase):
         )
 
     def test_post_text(self):
-        """
-        Check the priority of the ``post type``
-        The last priority is text
-        """
         self.social_post.message = "A message without URL"
         self.social_post.image_ids = False
         self._test_post_type(None)
@@ -186,10 +173,6 @@ class SocialLinkedinCase(SocialCase):
         return commentaries
 
     def test_post_with_special_char(self):
-        """
-        Check the priority of the ``post type``
-        The last priority is text
-        """
         self.social_post.message = "(This) <is> {a} [test] string <3"
         self.social_post.image_ids = False
         commentaries = self._get_commentary_after_post()
@@ -209,7 +192,6 @@ class SocialLinkedinCase(SocialCase):
         )
 
     def test_fetch_media_urns(self):
-        """Test that all urns get a download url."""
 
         def _patched_linkedin_request(endpoint, *args, **kwargs):
             response = requests.Response()
@@ -232,11 +214,8 @@ class SocialLinkedinCase(SocialCase):
             return response
 
         fake_post_data = [
-            # Video URN
             {"content": {"media": {"id": "urn:li:video:123"}}},
-            # Image URN
             {"content": {"media": {"id": "urn:li:image:456"}}},
-            # Multi Image URN
             {"content": {"multiImage": {"images": [{"id": "urn:li:image:789"}]}}},
         ]
         with patch.object(
@@ -250,14 +229,11 @@ class SocialLinkedinCase(SocialCase):
 
         self.assertTrue(fake_post_data)
         video_data, image_data, multi_data = fake_post_data
-        # Video assert
         self.assertTrue("downloadUrl" not in video_data["content"]["media"])
         self.assertEqual(video_data["commentary"], "https://example.com/123")
-        # Image assert
         self.assertEqual(
             image_data["content"]["media"]["downloadUrl"], "https://example.com/456"
         )
-        # Multi Image assert
         self.assertEqual(
             multi_data["content"]["multiImage"]["images"][0]["downloadUrl"],
             "https://example.com/789",

@@ -37,15 +37,12 @@ class PaymentProvider(models.Model):
         groups="base.group_system",
     )
 
-    # === COMPUTE METHODS === #
 
     def _compute_feature_support_fields(self) -> None:
-        """Override of `payment` to enable additional features."""
         super()._compute_feature_support_fields()
         self.filtered(lambda p: p.code == "xendit").support_tokenization = True
 
     def _get_supported_currencies(self):
-        """Override of `payment` to return the supported currencies."""
         supported_currencies = super()._get_supported_currencies()
         if self.code == "xendit":
             supported_currencies = supported_currencies.filtered(
@@ -53,53 +50,33 @@ class PaymentProvider(models.Model):
             )
         return supported_currencies
 
-    # === CRUD METHODS === #
 
     def _get_default_payment_method_codes(self):
-        """Override of `payment` to return the default payment method codes."""
         self.check_singleton()
         if self.code != "xendit":
             return super()._get_default_payment_method_codes()
         return const.DEFAULT_PAYMENT_METHOD_CODES
 
-    # === BUSINESS METHODS === #
 
     def _get_redirect_form_view(self, is_validation=False):
-        """Override of `payment` to avoid rendering the form view for validation operations.
-
-        Unlike other compatible payment methods in Xendit, `Card` is implemented using a direct
-        flow. To avoid rendering a useless template, and also to avoid computing wrong values, this
-        method returns `None` for Xendit's validation operations (Card is and will always be the
-        sole tokenizable payment method for Xendit).
-
-        Note: `self.check_singleton()`
-
-        :param bool is_validation: Whether the operation is a validation.
-        :return: The view of the redirect form template or None.
-        :rtype: ir.ui.view | None
-        """
         self.check_singleton()
 
         if self.code == "xendit" and is_validation:
             return None
         return super()._get_redirect_form_view(is_validation)
 
-    # === REQUEST HELPERS ===#
 
     def _prepare_request_url(self, endpoint, **kwargs):
-        """Override of `payment` to build the request URL."""
         if self.code != "xendit":
             return super()._prepare_request_url(endpoint, **kwargs)
         return f"https://api.xendit.co/{endpoint}"
 
     def _prepare_request_auth(self, **kwargs):
-        """Override of `payment` to build the request Auth."""
         if self.code != "xendit":
             return super()._prepare_request_auth(**kwargs)
         return self.xendit_secret_key, ""
 
     def _parse_response_error(self, response):
-        """Override of `payment` to parse the error message."""
         if self.code != "xendit":
             return super()._parse_response_error(response)
         return response.json().get("message")

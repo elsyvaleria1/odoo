@@ -26,9 +26,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 "args": self.env._(", ").join(args),
             }
 
-    ####################################################
-    # ACTIONS
-    ####################################################
 
     def action_fill_company_details(self, options, params) -> dict:
         return {
@@ -40,21 +37,9 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
         }
 
     def _saft_get_account_type(self, account_type):
-        """To be overridden if specific account types are needed.
-        Some countries need to specify an account type, unique to the saf-t report.
-
-        :return: False if no account type needed, otherwise a string with the account type"""
         return False
 
     def _get_report_values(self, report, options, values=None):
-        """
-        Get the report values based on lines. While parsing the lines, check for the existence of the
-        undistributed earnings line, which should be added to values['errors'].
-        :return dict:    Keys are account_ids pointing to a dict of values
-            - account_id:
-                - sum                               {'debit': float, 'credit': float, 'balance': float}
-                - (optional) initial_balance:       float
-        """
         options = report.get_options(
             previous_options={
                 **options,
@@ -143,7 +128,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             "move_vals_list": [],
             "tax_detail_per_line_map": {},
         }
-        # Fill 'total_debit_in_period', 'total_credit_in_period', 'move_vals_list'.
         query = report._get_report_query(options, "strict_range")
         tax_name = self.env["account.tax"]._field_to_sql("tax", "name")
         journal_name = self.env["account.journal"]._field_to_sql("journal", "name")
@@ -275,13 +259,11 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 move_vals = move_vals_map[line_vals["move_id"]]
                 move_vals["line_vals_list"].append(line_vals)
 
-                # Track the total debit/period of the whole period.
                 res["total_debit_in_period"] += line_vals["debit"]
                 res["total_credit_in_period"] += line_vals["credit"]
 
                 res["tax_detail_per_line_map"][line_vals["id"]] = line_vals
 
-        # Fill 'journal_vals_list'.
         for journal_vals in journal_vals_map.values():
             journal_vals["move_vals_list"] = list(
                 journal_vals.pop("move_vals_map").values()
@@ -345,7 +327,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 },
             )
 
-        # Fill 'tax_vals_list'.
         values["tax_vals_list"] = list(tax_vals_map.values())
 
     @api.model
@@ -362,7 +343,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             ),
         }
 
-        # Fill 'customer_vals_list' and 'supplier_vals_list'
         query = report._get_report_query(
             options,
             "from_beginning",
@@ -411,7 +391,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 }
             )
 
-        # Fill 'partner_detail_map'.
         all_partners |= values["company"].partner_id
         partner_addresses_map = defaultdict(dict)
         partner_contacts_map = defaultdict(lambda: self.env["res.partner"])
@@ -475,7 +454,6 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 ),
             }
 
-        # Add newly computed values to the final template values.
         values.update(res)
 
     @api.model

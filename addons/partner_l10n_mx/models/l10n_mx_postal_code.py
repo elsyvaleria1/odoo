@@ -72,9 +72,6 @@ class L10nMxPostalCode(models.Model):
         help="Inactive postal codes are hidden from searches",
     )
 
-    # NULLS NOT DISTINCT: name is optional, and the nameless row is the "no
-    # colony" entry for its postal code -- there is one of those, not many, and
-    # a plain UNIQUE placed no limit on them at all.
     _code_state_name_uniq = models.UniqueIndex(
         "(code, state_id, name) NULLS NOT DISTINCT",
         "A colony name must be unique per postal code per state.",
@@ -82,14 +79,6 @@ class L10nMxPostalCode(models.Model):
 
     @api.model
     def _import_sepomex(self, content: bytes) -> dict[str, int]:
-        """Load Correos de México's national catalogue (``cpdescarga.txt``).
-
-        The file is latin-1, pipe-separated, and opens with a licence line
-        before its header. Each row is a settlement; its state and
-        municipality are resolved by their INEGI keys. A settlement already
-        loaded only gets its municipality filled in, so a newer catalogue can
-        be imported over an older one.
-        """
         lines = content.decode("latin-1").splitlines()
         start = next(i for i, line in enumerate(lines) if line.startswith("d_codigo|"))
         rows = csv.DictReader(io.StringIO("\n".join(lines[start:])), delimiter="|")

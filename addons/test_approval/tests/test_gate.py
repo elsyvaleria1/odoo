@@ -90,7 +90,6 @@ class TestApprovalGate(ApprovalCommon):
         self.assertEqual(document.ship_count, 1)
         self.assertEqual(document.state, "shipped")
         self.assertTrue(document.approval_request_id.date_operation_run)
-        # taken back, it would undo nothing: the shipment stands
         with self.assertRaisesRegex(UserError, "already went through"):
             document.approval_request_id.with_user(self.approver_1).action_withdraw()
         document.action_ship()

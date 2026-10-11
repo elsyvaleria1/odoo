@@ -217,8 +217,6 @@ class TestResourceRelation(TransactionCase):
 
     @mute_logger("odoo.db.cursor")
     def test_concurrent_disjoint_edges_cannot_complete_a_cycle(self):
-        # Existing B->C and D->A form two components. A->B and C->D have
-        # disjoint endpoints, so locking just the new endpoints is insufficient.
         ids = []
         context = {"allowed_company_ids": [self.env.company.id]}
         try:

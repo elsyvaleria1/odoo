@@ -6,14 +6,10 @@ from odoo.http import request
 
 from odoo.addons.phone_call.models.phone_call import number_key
 
-# the word the companion app checks on every reply; a phone system's agent
-# speaks the same contract
 COMPANION_SERVICE = "remote_mobile"
 
 PBX_CATEGORY_CODE = "pbx"
 
-# a call-reporting device uploads whole recordings, and its body is logged
-# only up to a cap so the audio never lands in the event log
 _CALL_REPORTER_MAX_PAYLOAD = 52428800
 _CALL_REPORTER_MAX_LOGGED_PAYLOAD = 65536
 
@@ -49,8 +45,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _call_reporter_category_codes(self) -> set:
-        """Categories whose devices push their calls and recordings: nothing
-        is polled from them, and their uploads are recording-sized."""
         return {PBX_CATEGORY_CODE}
 
     def _reports_calls(self) -> bool:
@@ -83,8 +77,6 @@ class DeviceDevice(models.Model):
 
     def _place_receiver(self) -> None:
         super()._place_receiver()
-        # a phone system files each call under the company whose number it
-        # reached, so its receiver works in every company that has a line
         Gate = self.env["mixin.inbound.gate"]
         for device in self.filtered(
             lambda device: device.active and device._phone_call_channel() == "pbx"
@@ -109,9 +101,6 @@ class DeviceDevice(models.Model):
         return None
 
     def _phone_call_lines(self) -> dict:
-        """Every company number a call may name as its ``line``:
-        ``{number_key: companies}``. A handset's calls are its own company's
-        whatever it says, so only a phone system has lines."""
         self.check_singleton()
         if self._phone_call_channel() != "pbx":
             return {}
@@ -126,10 +115,6 @@ class DeviceDevice(models.Model):
         return dict(lines)
 
     def _phone_call_company(self, line=None, lines=None):
-        """The company a call this device reports belongs to: the one whose
-        number is the ``line`` the call reached, when a phone system reports it
-        (it carries every company's number; the device's own company first if
-        two share it), else the device's."""
         self.check_singleton()
         own = self.company_id or self.user_id.company_id or self.env.company
         key = number_key(line)
@@ -149,8 +134,6 @@ class DeviceDevice(models.Model):
 
     @api.model
     def _prepare_companion_refusal_response(self, refused):
-        """The companion app reads every answer's `service`, and a 413's
-        `limit_bytes`; that contract is deployed on phones in the field."""
         return request.prepare_json_response(
             {"service": COMPANION_SERVICE, **refused.problem()}, status=refused.status
         )

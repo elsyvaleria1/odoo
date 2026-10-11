@@ -50,7 +50,6 @@ class LazadaRateLimitError(Exception):
 
 
 def get_lazada_aggregated_status(statuses):
-    """Determine overall delivery status from statuses."""
     unique_statuses = list(set(statuses))
     if len(unique_statuses) == 1:
         return unique_statuses[0]
@@ -61,12 +60,6 @@ def get_lazada_aggregated_status(statuses):
 
 
 def lazada_timestamp_to_datetime(timestamp):
-    """Convert Lazada timestamp string to Odoo datetime.
-
-    :param str timestamp: Timestamp in format 'YYYY-MM-DD HH:MM:SS %z'
-    :return: Naive datetime in UTC
-    :rtype: datetime
-    """
     try:
         return (
             datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S %z")
@@ -78,13 +71,6 @@ def lazada_timestamp_to_datetime(timestamp):
 
 
 def get_public_sign(shop, timestamp):
-    """Given the request params, returns the signing string used to sign the request.
-
-    :param shop: lazada.shop record
-    :param int timestamp: The timestamp of the request
-    :return: The public signing string
-    :rtype: str
-    """
     shop.check_singleton()
     return hmac_tool(
         request.env(su=True), AUTHORIZATION_SCOPE, f"{shop.id}|{timestamp}"
@@ -92,13 +78,6 @@ def get_public_sign(shop, timestamp):
 
 
 def get_api_sign(shop, operation, params):
-    """Generate HMAC signature for authenticated API requests.
-
-    :param shop: lazada.shop record with app_secret
-    :param str operation: API operation name
-    :param dict params: Parameters to sign
-    :return: HMAC-SHA256 signature in uppercase
-    """
     shop.check_singleton()
     return (
         hmac.new(
@@ -126,7 +105,7 @@ def _get_error_message(response_content):
     message = response_content.get("message", "")
     if response_content.get("result"):
         message += "\n".join(response_content["result"].get("error_msg", ""))
-    if response_content.get("detail"):  # For error handling of UpdateSellerQuantity
+    if response_content.get("detail"):
         for item in response_content["detail"]:
             message += "\n".join(
                 f"For product SKU {item.get('sku')}, [{item.get('code')}] - {item.get('message')}"
@@ -143,11 +122,6 @@ def _get_api_endpoint(shop, operation):
 
 
 def request_access_token(shop, authorization_code=None):
-    """Request or refresh access token from Lazada API.
-
-    :param lazada.shop shop: The Lazada shop for which an access token is requested.
-    :param str authorization_code: If provided, requests a new refresh token and access token.
-    """
     shop.check_singleton()
     params = {}
     if authorization_code:
@@ -168,25 +142,12 @@ def request_access_token(shop, authorization_code=None):
 
 
 def send_lazada_api_request(operation, shop, params=None, method="GET"):
-    """Make an authenticated API request to Lazada.
-
-    Automatically handles token refresh, rate limiting, and error handling.
-
-    :param str operation: API operation name from const.API_OPERATIONS_MAPPING
-    :param lazada.shop shop: The Lazada shop on behalf of which the request is made
-    :param dict params: URL query parameters
-    :param str method: HTTP method (GET, POST, etc.)
-    :return: Response data from Lazada API
-    :raises LazadaRateLimitError: When API rate limit is reached
-    :raises LazadaApiError: When API request fails
-    :raises UserError: When API request fails
-    """
     shop.check_singleton()
 
     params = params or {}
     api_type = const.API_OPERATIONS_MAPPING[operation]["api_type"]
 
-    if api_type != "public":  # Require an access token
+    if api_type != "public":
         if (
             not shop.access_token
             or not shop.access_token_expiration_date
@@ -236,7 +197,6 @@ def send_lazada_api_request(operation, shop, params=None, method="GET"):
         raise LazadaApiError(shop, operation, "N/A", resp.status_code, resp.text)
     response_content = resp.json()
 
-    # Simple error catching with a clear message on the issue.
     if response_content.get("code") != "0":
         if response_content.get("code") in ["901", "SellerCallLimit"]:
             raise LazadaRateLimitError(operation)
@@ -249,7 +209,7 @@ def send_lazada_api_request(operation, shop, params=None, method="GET"):
         raise LazadaApiError(
             shop, operation, response_content.get("request_id"), error_code, message
         )
-    if api_type != "public":  # public API response return access token
+    if api_type != "public":
         _logger.info("Operation %s: \n%s", operation, pformat(response_content))
 
     return response_content

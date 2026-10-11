@@ -15,8 +15,6 @@ _debug = DebugLog(__name__)
 
 class MixinOrderStock(models.AbstractModel):
     _name = "mixin.order.stock"
-    # mixin.product.catalog declares _is_display_stock_in_catalog; inheriting
-    # it places this mixin ahead of it in the order's MRO
     _inherit = ["mixin.order.state.rollup", "mixin.product.catalog"]
     _description = "Order Stock Integration"
 

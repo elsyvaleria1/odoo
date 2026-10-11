@@ -336,8 +336,6 @@ class MaintenancePlan(models.Model):
     @api.model
     def _get_due_plans(self, moment):
         by_date = self.search([("date_next_scheduled", "<=", moment)])
-        # A distance threshold cannot be expressed as a domain -- it compares
-        # two fields on different models -- so those plans are filtered here.
         by_odometer = self.search([("distance_interval", ">", 0)]).filtered(
             lambda plan: plan._is_odometer_due()
         )
@@ -365,8 +363,6 @@ class MaintenancePlan(models.Model):
         started = failed = 0
         for plan in self._get_due_plans(now):
             order = plan._get_open_order()
-            # An order already under way, or whose transfer a user cancelled, is
-            # left to its users: the cron only sends out what nobody has touched.
             if not order or order.picking_ids or order.state != "confirmed":
                 continue
             if order.date_scheduled_start and order.date_scheduled_start > now:

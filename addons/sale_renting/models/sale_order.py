@@ -29,15 +29,6 @@ class SaleOrder(models.Model):
 
     @api.model
     def default_get(self, fields):
-        """Override to map relevant default `sale.order.line` fields to `sale.order` fields.
-
-        Mainly used to create a new rental order from the rental schedule view, as it works on
-        `sale.order.line` records.
-
-        :param Sequence[str] fields: Fields without values.
-        :return: A dictionary mapping the default field values.
-        :rtype: dict[str, Any]
-        """
         defaults = super().default_get(fields)
 
         if self.env.context.get("convert_get_order_line_values"):
@@ -57,7 +48,6 @@ class SaleOrder(models.Model):
             if "line_ids" in missing_fields:
                 defaults["line_ids"] = [self._prepare_get_order_line_values()]
 
-            # Convert added default values to the right format (see also `BaseModel.default_get`)
             for fname in defaults.keys() & missing_fields:
                 field = self._fields[fname]
                 value = field.convert_to_cache(defaults[fname], self, validate=False)
@@ -66,15 +56,11 @@ class SaleOrder(models.Model):
         return defaults
 
     def _prepare_get_order_line_values(self):
-        """Generate default values for `sale.order.line` based on context keys prefixed with
-        'default_'."""
-        # Extract field names from context keys that start with 'default_'
         default_field_names = (
-            key.replace("default_", "", 1)  # Remove the 'default_' prefix
+            key.replace("default_", "", 1)
             for key in self.env.context
             if key.startswith("default_")
         )
-        # Filter field names to include only those that exist in `sale.order.line` fields
         sol_field_names = (
             field_name
             for field_name in default_field_names
@@ -89,13 +75,11 @@ class SaleOrder(models.Model):
             },
         }
 
-    # === FIELDS ===#
 
     is_rental_order = fields.Boolean(
         string="Created In App Rental",
         compute="_compute_is_rental_order",
         precompute=True,
-        # By default, all orders created in rental app are Rental Orders
         default=lambda self: self.env.context.get("in_rental_app"),
         store=True,
         readonly=False,
@@ -123,7 +107,6 @@ class SaleOrder(models.Model):
         compute="_compute_rental_status",
         store=True,
     )
-    # rental_status = next action to do basically, but shown string is action done.
     next_action_date = fields.Datetime(
         string="Next Action",
         compute="_compute_rental_status",
@@ -141,12 +124,10 @@ class SaleOrder(models.Model):
         " This excludes any grace period before late fees apply.",
     )
 
-    # === COMPUTE METHODS ===#
 
     @api.depends("line_ids.is_rental")
     def _compute_is_rental_order(self) -> None:
         for order in self:
-            # If a rental product is added in the rental app to the order, it becomes a rental order
             order.is_rental_order = order.is_rental_order or order.has_rented_products
 
     @api.depends("line_ids.is_rental")
@@ -183,7 +164,6 @@ class SaleOrder(models.Model):
                 order.rental_status = "sent"
             elif order.state != "done":
                 order.rental_status = order.state
-            # As soon as an item is picked, the order status turns to "Pickedup"
             elif order.has_returnable_lines:
                 order.rental_status = "return"
                 order.next_action_date = order.rental_return_date
@@ -223,12 +203,11 @@ class SaleOrder(models.Model):
             order.is_late = (
                 order.is_rental_order
                 and order.rental_status
-                in ["pickup", "return"]  # has_pickable_lines or has_returnable_lines
+                in ["pickup", "return"]
                 and order.next_action_date
                 and order.next_action_date < now
             )
 
-    # === SEARCH METHODS === #
 
     def _search_is_late(self, operator, value):
         if operator != "in" and True not in value:
@@ -243,12 +222,9 @@ class SaleOrder(models.Model):
             ]
         )
 
-    # === ONCHANGE METHODS ===#
 
     @api.onchange("pricelist_id")
     def _onchange_pricelist_id_show_update_prices(self):
-        """Override of `sale` to not show the "Update Prices" button when creating a new order from
-        the rental schedule."""
         if self.env.context.get("in_rental_schedule") and self.env.context.get(
             "sale_onchange_first_call"
         ):
@@ -257,8 +233,6 @@ class SaleOrder(models.Model):
 
     @api.onchange("company_id")
     def _onchange_company_id_warning(self) -> dict | None:
-        """Override of `sale` to not show the "Update Prices" button when creating a new order from
-        the rental schedule."""
         if self.env.context.get("in_rental_schedule") and self.env.context.get(
             "sale_onchange_first_call"
         ):
@@ -267,7 +241,6 @@ class SaleOrder(models.Model):
 
     @api.onchange("rental_start_date", "rental_return_date")
     def _onchange_duration_show_update_duration(self) -> None:
-        # Hide the "Update Rental Prices" button when creating a new order from the rental schedule.
         if self.env.context.get("in_rental_schedule") and self.env.context.get(
             "sale_onchange_first_call"
         ):
@@ -289,7 +262,6 @@ class SaleOrder(models.Model):
     def _onchange_rental_return_date(self) -> None:
         self.line_ids.filtered("is_rental")._compute_name()
 
-    # === ACTION METHODS ===#
 
     def action_update_rental_prices(self) -> None:
         _debug.lifecycle("rental_prices_updated", orders=self)
@@ -303,13 +275,11 @@ class SaleOrder(models.Model):
         self.with_context(rental_recompute_price=True)._recompute_prices()
 
     def _get_order_lines_price_updatable(self):
-        """Exclude non-rental lines from price recomputation"""
         lines = super()._get_order_lines_price_updatable()
         if not self.env.context.get("rental_recompute_price"):
             return lines
         return lines.filtered("is_rental")
 
-    # PICKUP / RETURN : rental.processing wizard
 
     def action_view_pickup(self):
         self.check_singleton()
@@ -359,7 +329,6 @@ class SaleOrder(models.Model):
         }
 
     def _get_portal_return_action(self):
-        """Return the action used to display orders when returning from customer portal."""
         if self.is_rental_order:
             return self.env.ref("sale_renting.rental_order_action")
         else:
@@ -377,7 +346,6 @@ class SaleOrder(models.Model):
             )
         return domain
 
-    # === TOOLING ===#
 
     def _rental_set_dates(self) -> None:
         _debug.logic("rental_dates_set", orders=self)
@@ -396,10 +364,8 @@ class SaleOrder(models.Model):
             }
         )
 
-    # === BUSINESS METHODS ===#
 
     def _get_product_catalog_order_data(self, products, **kwargs):
-        """Override to add the rental dates for the price computation"""
         return super()._get_product_catalog_order_data(
             products,
             start_date=self.rental_start_date,
@@ -408,9 +374,6 @@ class SaleOrder(models.Model):
         )
 
     def _update_order_line_info(self, product_id, quantity, **kwargs):
-        """Override to add the context to mark the line as rental and the rental dates for the
-        price computation
-        """
         if self.is_rental_order:
             self = self.with_context(in_rental_app=True)
             product = self.env["product.product"].browse(product_id)
@@ -425,7 +388,6 @@ class SaleOrder(models.Model):
         )
 
     def _prepare_catalog_extra_context(self):
-        """Override to add rental dates in the context for product availabilities."""
         extra_context = super()._prepare_catalog_extra_context()
         extra_context.update(
             start_date=self.rental_start_date, end_date=self.rental_return_date

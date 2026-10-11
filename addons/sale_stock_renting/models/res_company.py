@@ -7,7 +7,6 @@ _debug = DebugLog(__name__)
 class ResCompany(models.Model):
     _inherit = "res.company"
 
-    # Rental Inventory
 
     rental_loc_id = fields.Many2one(
         comodel_name="stock.location",
@@ -18,7 +17,6 @@ class ResCompany(models.Model):
         "are still considered as company assets.",
     )
 
-    # Padding Time
 
     padding_time = fields.Float(
         default=0.0,

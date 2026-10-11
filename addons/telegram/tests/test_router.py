@@ -21,8 +21,6 @@ class FakeHandler:
         self.seen = []
 
     def __bool__(self):
-        # a real handler is an empty recordset, so falsy: the router must
-        # never test one for truth
         return False
 
     def _telegram_commands(self):
@@ -110,7 +108,6 @@ class TestRouterPrecedence(TelegramBotTestCase):
         self.assertEqual(idle.seen, [])
 
     def test_two_idle_intakes_ask_the_person_which(self):
-        # the lower priority used to answer, unasked
         late = FakeHandler("telegram.handler.late", intakes={"text"}, priority=50)
         early = FakeHandler("telegram.handler.early", intakes={"text"}, priority=10)
 
@@ -118,7 +115,6 @@ class TestRouterPrecedence(TelegramBotTestCase):
 
         self.assertEqual(late.seen + early.seen, [])
         markup = post.call_args.kwargs["json"]["reply_markup"]
-        # the higher priority is offered first
         self.assertLess(
             markup.index("tg_in:telegram.handler.early"),
             markup.index("tg_in:telegram.handler.late"),

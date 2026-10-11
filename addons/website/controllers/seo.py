@@ -258,11 +258,6 @@ class WebsiteSeoRoutes:
         return html.fromstring(str(content))
 
     def _resolve_model(self, model_name):
-        """A client-supplied model name, refused rather than raised through.
-
-        `request.env[unknown]` is a bare KeyError and therefore a 500; every
-        neighbouring route in this file answers with a typed refusal.
-        """
         if not isinstance(model_name, str) or model_name not in request.env:
             _debug.logic("unknown_model_refused", model=model_name)
             raise werkzeug.exceptions.NotFound

@@ -10,8 +10,6 @@ MODEL = "test_ir_access.reached"
 
 
 class TestReach(TransactionCase):
-    # a row says how far it reaches through an anchor its model declares, and
-    # compiles to the domain its text used to spell out
 
     @classmethod
     def setUpClass(cls):
@@ -128,7 +126,6 @@ class TestReach(TransactionCase):
         self.assertEqual(self.reached(), self.all)
         self.env["ir.access"].search([("model_id.model", "=", MODEL)]).unlink()
         self.row("none")
-        # a row admitting nothing is no access to the model, as [(0, '=', 1)]
         self.assertFalse(self.env[MODEL].with_user(self.user).has_access("read"))
 
     def test_a_fixed_filter_rides_along(self):
@@ -161,8 +158,6 @@ class TestReach(TransactionCase):
         self.assertEqual(self.reached(), self.theirs)
 
     def test_a_row_passes_its_predicate_the_arguments_it_reads(self):
-        # an argument left out, or one the predicate does not read, would make
-        # the row admit nothing once evaluated: it is refused when saved
         template = self.env["ir.access.predicate"].create(
             {
                 "name": "test.named_at",
@@ -207,9 +202,6 @@ class TestReach(TransactionCase):
         )
 
     def test_a_predicate_rewritten_while_modules_load_leaves_rows_not_loaded(self):
-        # an upgrade rewrites base's predicates before the modules whose rows
-        # name them are loaded: a row whose model is not there yet is not
-        # judged then, it is with its own module
         ceiling = self.env.ref("base.access_predicate_conditional_reach")
         self.row(
             "predicate",
@@ -272,7 +264,6 @@ class TestReach(TransactionCase):
         self.assertFalse(filter_reads_user(registry, MODEL, "[('name', '=', 'x')]"))
         with self.assertRaises(ValidationError):
             self.row("all", domain="[('is_mine', '=', True)]")
-        # what an earlier conversion left in a database: the reach all beside it
         row = self.row("all", domain="[('name', '!=', False)]")
         self.env.cr.execute(
             "UPDATE ir_access SET domain = %s WHERE id = %s",

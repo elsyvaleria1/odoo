@@ -12,11 +12,11 @@ _debug = DebugLog(__name__)
 def rewind_uploaded_files(
     httprequest: Any, *, cause: BaseException | None = None
 ) -> None:
-    rewound = 0  # debuglog
+    rewound = 0
     for filename, file in httprequest.files.items(multi=True):
         if hasattr(file, "seekable") and file.seekable():
             file.seek(0)
-            rewound += 1  # debuglog
+            rewound += 1
         else:
             _debug.logic("http.upload.not_seekable", filename=filename)
             raise RuntimeError(

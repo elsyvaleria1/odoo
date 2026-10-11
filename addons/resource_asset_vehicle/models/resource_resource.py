@@ -21,23 +21,15 @@ class ResourceResource(models.Model):
         super(ResourceResource, self - vehicles)._compute_display_name()
 
     def _get_display_identity(self):
-        """What names this unit among others of its model. A plate is how a
-        vehicle is spoken about, but one waiting for its paperwork has none --
-        and a serial says more about which vehicle this is than "No Plate"
-        does."""
         self.check_singleton()
         if self.license_plate or self.vin_sn:
             return self.license_plate or self.vin_sn
-        # The asset's own name is composed from its model and its serial, and
-        # the model is already the part before this one -- the same reason the
-        # plate is not appended to a label that ends in it.
         name = self.name or ""
         model = self.product_id.name or ""
         if model and name.startswith(f"{model} "):
             name = name[len(model) + 1 :]
         return name or self.env._("No Plate")
 
-    # a vehicle's product fills the model year when the vehicle has none
     @api.onchange("product_id")
     def _onchange_product_id_model_year(self) -> None:
         if not self.model_year and self.product_id.vehicle_model_year:

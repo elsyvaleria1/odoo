@@ -6,8 +6,6 @@ _logger = logging.getLogger(__name__)
 
 MAX_FILES = 5
 
-# Documents filed in Documents, found by the type of document: the words its
-# type's name carries, in Spanish and English.
 FILED_KINDS = {
     "guarantee": ("garant", "colateral", "guarantee", "collateral"),
     "promissory_note": ("pagar", "promissory"),
@@ -16,11 +14,6 @@ FILED_KINDS = {
     "guarantee_release": ("liberaci", "release"),
 }
 
-# The report a model's records are printed with: Odoo's own main print, the
-# first one installed of those listed. These are report_name values, the
-# template each report prints, not xml ids: an xml id of that name is the
-# template's view, not the report. A model not listed uses the first report
-# its Print menu offers.
 MAIN_REPORTS = {
     "purchase.order": ("purchase.report_purchaseorder",),
     "sale.order": ("sale.report_saleorder",),
@@ -32,11 +25,7 @@ MAIN_REPORTS = {
     "stock.picking": ("stock.report_deliveryslip",),
 }
 
-# Documents Odoo prints, by the model whose main report prints them: a
-# partner's for a statement, else the document found by its reference.
 PRINTED_KINDS = {
-    # a statement is the Customer Statement accounting report, not a report
-    # action: the follow-up letter Odoo prints for a partner is another thing
     "statement": "res.partner",
     "invoice": "account.move",
     "payment_receipt": "account.payment",
@@ -48,15 +37,6 @@ KINDS = (*FILED_KINDS, "credit_file", *PRINTED_KINDS)
 
 
 def collect(env, kind, params):
-    """The files a request for documents asks for, as ``(filename, bytes)``.
-
-    :param env: the environment to read and print in; printing writes report
-        caches, so it is a read-write environment
-    :param str kind: one of KINDS
-    :param dict params: the classifier's parameters (partner, reference)
-    :return: the files, at most MAX_FILES, and the names of what matched
-    :rtype: tuple[list, list]
-    """
     if kind in PRINTED_KINDS:
         return _printed(env, kind, params)
     return _filed(env, kind, params)
@@ -89,7 +69,6 @@ def _filed(env, kind, params):
         if words:
             documents = documents.filtered(lambda document: _is(document, words))
         if kind == "guarantee":
-            # a guarantee release names the guarantee it releases: it is not one
             release = FILED_KINDS["guarantee_release"]
             documents = documents.filtered(lambda document: not _is(document, release))
     documents = documents.filtered("attachment_id")
@@ -101,7 +80,6 @@ def _filed(env, kind, params):
 
 
 def _is(document, words) -> bool:
-    """Whether a document's type or name carries one of `words`."""
     text = f"{document.document_type_id.display_name or ''} {document.name or ''}"
     return any(word in text.lower() for word in words)
 
@@ -110,9 +88,6 @@ STATEMENT_REPORT = "account.customer_statement_report"
 
 
 def statement_companies(env, partner):
-    """The companies where `partner` has open receivable or payable entries,
-    else the partner's own company or the current one: each has its own
-    statement."""
     lines = env["account.move.line"].search(
         [
             ("partner_id", "child_of", partner.commercial_partner_id.id),
@@ -125,15 +100,6 @@ def statement_companies(env, partner):
 
 
 def statements(env, partner, companies=None) -> list:
-    """``[(filename, bytes)]``: the Customer Statement of `partner` as Odoo
-    exports it to PDF, one per company where it has something open.
-
-    :param env: a read-write environment over every company
-    :param partner: the customer or supplier
-    :param companies: the companies asked for, else every one with something open
-    :return: the files
-    :rtype: list
-    """
     report = env.ref(STATEMENT_REPORT, raise_if_not_found=False)
     if not report:
         raise NotFound(env._("That document cannot be printed on this database."))
@@ -153,8 +119,6 @@ def statements(env, partner, companies=None) -> list:
 
 
 def _asked_companies(env, params):
-    """The companies a request names (e.g. "the statement in LMMR"), or
-    nothing when it names none."""
     name = (params.get("company") or "").strip()
     return find(env, "res.company", name, ("code", "name")) if name else None
 
@@ -202,12 +166,10 @@ def _printed(env, kind, params):
 
 
 def filename(record, fallback) -> str:
-    """The name a record's PDF is sent under: its name, slashes replaced."""
     return f"{(record.display_name or fallback).replace('/', '-')}.pdf"
 
 
 def _first_report(env, model, names):
-    """The first PDF report of `model` among `names` that is installed."""
     found = env["ir.actions.report"].search(
         [
             ("model", "=", model),
@@ -220,7 +182,6 @@ def _first_report(env, model, names):
 
 
 def main_report(env, model):
-    """The PDF report a record of `model` is printed with, or nothing."""
     report = _first_report(env, model, MAIN_REPORTS.get(model, ()))
     if report:
         return report
@@ -236,9 +197,6 @@ def main_report(env, model):
 
 
 def print_records(env, records, report=None):
-    """``[(filename, bytes)]``: each record printed by `report`, else by its
-    model's main report; a model with none, or a record that fails to
-    print, is left out."""
     report = report or (main_report(env, records._name) if records else None)
     if not report:
         return []

@@ -6,8 +6,6 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
 
     def _invoice_constraints_peppol_en16931_ubl(self, invoice, vals):
         constraints = super()._invoice_constraints_peppol_en16931_ubl(invoice, vals)
-        # A BIS3 file handed to an accountant for a B2C sale carries no endpoint and is
-        # still valid; only a document travelling on Peppol needs both addresses.
         if not self.env.context.get("from_peppol"):
             return constraints
 

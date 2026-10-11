@@ -244,14 +244,6 @@ class TestErrorStatusEndToEnd(HttpCase):
                 self.assertGreaterEqual(response.status_code, 400)
 
     def test_no_entrypoint_branch_can_answer_a_status_less_exception_with_200(self):
-        # The three branches Application.__call__ chooses between -- static,
-        # nodb, db -- do not share an error path: only the last two funnel a
-        # code-less HTTPException through _serve_aborted. Measured on the tree
-        # before the guard moved into HTTPException.get_response, a status-less
-        # exception raised from get_static_file_path, from Request._post_init or
-        # from _serve_static each answered *200 OK*; one raised from a handler
-        # answered 500. _serve_static is not a corner: it is how every asset on
-        # the server is delivered.
         blank = werkzeug.exceptions.HTTPException("no status on this one")
 
         def _boom(*args, **kwargs):

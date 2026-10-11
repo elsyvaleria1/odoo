@@ -25,8 +25,6 @@ class IrAttachment(models.Model):
     )
 
     def _read_format(self, fnames: Any, load: str = "_classic_read") -> list:
-        # a document's file read over RPC takes the gate its download routes
-        # take (ir.binary); attachments that back no blocked document pass
         if not self.env.su and {"raw", "datas", "db_datas"} & set(fnames):
             Binary = self.env["ir.binary"]
             for attachment in self:
@@ -34,9 +32,6 @@ class IrAttachment(models.Model):
         return super()._read_format(fnames, load=load)
 
     def copy(self, default: ValuesType | None = None) -> IrAttachment:
-        # a copy of a file (a duplicated record's, one added from Documents to
-        # a record) is not a second filing of it: the document stays the
-        # original's
         return super(IrAttachment, self.with_context(no_document=True)).copy(default)
 
     def get_documents_operation_add_destination(self) -> dict:
@@ -180,10 +175,6 @@ class IrAttachment(models.Model):
         if self.env.context.get("no_document"):
             _debug.logic("auto_document_skipped", reason="no_document_context")
             return super().write(vals)
-        # Decided before `super().write`, because only a write that moves
-        # res_model/res_id can create a document and `a.res_field` is about to
-        # change. Reading it at all costs a fetch, so the cheap test that
-        # rules the whole thing out comes first.
         if not {"res_model", "res_id"} & vals.keys():
             return super().write(vals)
         to_document = self.filtered(

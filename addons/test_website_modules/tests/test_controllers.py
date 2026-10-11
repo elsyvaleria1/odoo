@@ -63,10 +63,8 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
             self.assertEqual(svg, response.content, "Expect unchanged SVG")
             return True
 
-        # Admin can modify page
         modify("admin", "page-admin.gif")
 
-        # Base user cannot modify page
         self.user_demo.write(
             {
                 "group_ids": [
@@ -81,7 +79,6 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
             json.get("result"), "Expect no URL when called with insufficient rights"
         )
 
-        # Restricted editor with event right cannot modify page
         self.user_demo.write(
             {
                 "group_ids": [
@@ -100,7 +97,6 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
             json.get("result"), "Expect no URL when called with insufficient rights"
         )
 
-        # Website designer can modify page
         self.user_demo.write(
             {
                 "group_ids": [
@@ -112,19 +108,16 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
         )
         modify("demo", "page-demo.gif")
 
-        # Website designer can modify url attachment (for e.g. unsplash)
         attachment.url = "/page-logo-unique.gif"
         modify("demo", "page-logo-unique.gif")
-        attachment.url = False  # Reset previous value
+        attachment.url = False
 
         event = self.env["event.event"].create({"name": "test event"})
         attachment.res_model = "event.event"
         attachment.res_id = event.id
 
-        # Admin can modify event
         modify("admin", "event-admin.gif")
 
-        # Base user cannot modify event
         self.user_demo.write(
             {
                 "group_ids": [
@@ -139,7 +132,6 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
             json.get("result"), "Expect no URL when called with insufficient rights"
         )
 
-        # Restricted editor with sales rights cannot modify event
         self.user_demo.write(
             {
                 "group_ids": [
@@ -158,7 +150,6 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
             json.get("result"), "Expect no URL when called with insufficient rights"
         )
 
-        # Restricted editor with event rights can modify event
         self.user_demo.write(
             {
                 "group_ids": [
@@ -173,7 +164,6 @@ class TestWebEditorController(HttpCaseWithUserDemo, HttpCaseWithUserPortal):
         )
         modify("demo", "event-demo.gif")
 
-        # Website designer cannot modify event
         self.user_demo.write(
             {
                 "group_ids": [

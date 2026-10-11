@@ -57,7 +57,6 @@ class WizardProductProductUpdateImage(models.TransientModel):
         self._check_cron_status()
         self._check_api_key_set()
 
-        # Compute default values
         if self.env.context.get("active_model") == "product.template":
             product_ids = (
                 self.env["product.template"]
@@ -101,27 +100,15 @@ class WizardProductProductUpdateImage(models.TransientModel):
     )
 
     def action_fetch_image(self) -> dict:
-        """Fetch the images of the first ten products and delegate the remaining to the cron.
-
-        The first ten images are immediately fetched to improve the user experience. This way, they
-        can immediately browse the processed products and be assured that the task is running well.
-        Also, if any error occurs, it can be thrown to the user. Then, a cron job is triggered to be
-        run as soon as possible, unless the daily request limit has been reached. In that case, the
-        cron job is scheduled to run a day later.
-
-        :return: A notification to inform the user about the outcome of the action
-        :rtype: dict
-        """
         self.products_to_process.is_image_fetch_pending = (
-            True  # Flag products to process for the cron
+            True
         )
 
-        # Process the first 10 products immediately
         matching_images_count = self._process_products(
             self._get_products_to_process(10)
         )
 
-        if self._get_products_to_process(1):  # Delegate remaining products to the cron
+        if self._get_products_to_process(1):
             self._check_cron_status()
             self.with_context(
                 automatically_triggered=False
@@ -150,15 +137,6 @@ class WizardProductProductUpdateImage(models.TransientModel):
         }
 
     def _cron_update_images(self) -> None:
-        """Fetch images of a list of products using their barcode.
-
-        This method is called from a cron job. If the daily request limit is reached,
-        the cron job is scheduled to run again a day later.
-
-        :return: None
-        """
-        # Retrieve 100 products at a time to limit the run time and avoid
-        # reaching Barcode Lookup default rate limit.
         self._process_products(self._get_products_to_process(100))
         if self._get_products_to_process(1):
             self.with_context(automatically_triggered=True)._trigger_update_images_cron(
@@ -166,54 +144,26 @@ class WizardProductProductUpdateImage(models.TransientModel):
             )
 
     def _get_products_to_process(self, limit=100):
-        """Get the products that need to be processed and meet the criteria.
-
-        The criteria are to have a barcode and no image. If `products_to_process`
-        is not populated the DB is searched to find matching product records.
-
-        :param int limit: The maximum number of records to return, defaulting to
-                          100; this limit can be changed according to Barcode
-                          Lookup API rate limits
-        :return: The products that meet the criteria
-        :rtype: recordset of `product.product`
-        """
         products_to_process = self.products_to_process or self.env[
             "product.product"
         ].search([("is_image_fetch_pending", "=", True)], limit=limit)
         return products_to_process.filtered(
-            # p.is_image_fetch_pending needed for self.products_to_process's
-            # records that might already have been processed but not yet
-            # removed from the list when called from action_fetch_image.
             lambda p: not p.image_1920 and p.barcode and p.is_image_fetch_pending
         )[
             :limit
-        ]  # Apply the limit after the filter with self.products_to_process for more results
+        ]
 
     def _process_products(self, products_to_process) -> int:
-        """Fetch an image from the Barcode Lookup API for each product.
-
-        We fetch all image URLs associated with the product and save
-        the first valid image.
-
-        :param recordset products_to_process: The products for which an
-                                              image must be fetched, as a
-                                              `product.product` recordset
-        :return: The number of products for which a matching image was found
-        :rtype: int
-        :raises UserError: If the API Key is incorrect
-        """
         if not products_to_process:
             return 0
 
         nb_timeouts = 0
-        batch_size = 10  # Process 10 products at a time
+        batch_size = 10
         for i in range(0, len(products_to_process), batch_size):
-            # Fetch image URLs and handle eventual errors
             batch_products = products_to_process[i : i + batch_size]
             barcodes = [product.barcode for product in products_to_process]
 
             try:
-                # Fetch 10 products in single request
                 response = self._get_image_urls_from_barcode_lookup(barcodes)
                 response_status_code = response.get("status_code")
 
@@ -240,11 +190,9 @@ class WizardProductProductUpdateImage(models.TransientModel):
                         _logger.warning("No data returned for some barcodes.")
             except RequestConnectionError, RequestTimeout:
                 nb_timeouts += 1
-                if nb_timeouts <= 3:  # Temporary loss of service
-                    continue  # Let the image of this product be fetched by the next cron run
+                if nb_timeouts <= 3:
+                    continue
 
-                # The service has not responded more than 3 times, stop trying for now and wait
-                # for the next cron run.
                 self.with_context(
                     automatically_triggered=True
                 )._trigger_update_images_cron(
@@ -255,7 +203,6 @@ class WizardProductProductUpdateImage(models.TransientModel):
                 )
                 break
 
-            # Fetch image and handle possible error
             product_response = response.get("products", False)
             for product in batch_products:
                 if (
@@ -268,28 +215,22 @@ class WizardProductProductUpdateImage(models.TransientModel):
                             image = self._get_image_from_url(image_link)
                             if image:
                                 product.image_1920 = image
-                            break  # Stop at the first valid image
+                            break
                         except (
                             RequestConnectionError,
                             RequestTimeout,
-                            UserError,  # skip an image that fails to fetch or process
+                            UserError,
                         ):
-                            pass  # Move on to the next image
+                            pass
                 product.is_image_fetch_pending = False
                 self.env["ir.cron"]._commit_progress(processed=1)
 
         return len(products_to_process.filtered("image_1920"))
 
     def _get_image_urls_from_barcode_lookup(self, barcodes):
-        """Fetch the image URLs.
-
-        :param barcodes: an iterable of product barcodes
-        :return: A response or None
-        :rtype: dict
-        """
         if not barcodes:
             return None
-        barcodes = ",".join(barcodes)  # Comma separated barcodes
+        barcodes = ",".join(barcodes)
         response = (
             self.env["product.template"]
             .with_context(skip_barcode_check=True)
@@ -298,7 +239,6 @@ class WizardProductProductUpdateImage(models.TransientModel):
         product_response = response.get("products", False)
         if product_response:
             products = {}
-            # Make a dict with key as barcode and value as list of images
             for product in product_response:
                 if all(key in product for key in ["barcode_number", "images"]):
                     products[product.get("barcode_number")] = product.get("images")
@@ -306,38 +246,18 @@ class WizardProductProductUpdateImage(models.TransientModel):
         return response
 
     def _get_image_from_url(self, url):
-        """Retrieve an image from the URL.
-
-        If the request failed or the response header
-        'Content-Type' does not contain 'image/', return None
-
-        :param string url: url of an image
-        :return: The retrieved image or None
-        :rtype: bytes
-        """
         image = None
         response = barcode_lookup_service.barcode_lookup_request(url)
         if (
             response.status_code == requests.codes.ok
             and "image/" in response.headers.get("Content-Type", "")
-        ):  # Ignore non-image results
+        ):
             image = base64.b64encode(response.content)
         return image
 
     def _trigger_update_images_cron(self, at=None) -> None:
-        """Create a trigger for the cron `ir_cron_fetch_image`.
-
-        By default the cron is scheduled to be executed as soon as possible but
-        the optional `at` argument may be given to delay the execution later
-        with a precision down to 1 minute.
-
-        :param Optional[datetime.datetime] at:
-            When to execute the cron, at a specific moment in time instead of as soon as possible.
-        """
         cron_fetch_image = self.env.ref("product_barcodelookup.ir_cron_fetch_image")
         if at:
-            # Remove all other cron trigger because we don't want to trigger the cron before 'at'
-            # in order to respect the time off when timeout or too_many_requests
             self.env["ir.cron.trigger"].search(
                 [
                     ("call_at", "<", at),

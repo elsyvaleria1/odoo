@@ -66,7 +66,6 @@ class AccountMove(models.Model):
         return starting_sequence
 
     def _get_copy_message_content(self, default):
-        """Override to handle debit note specific messages."""
         if default and default.get("debit_origin_id"):
             return self.env._(
                 "This debit note was created from: %s", self._get_html_link()

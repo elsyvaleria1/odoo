@@ -31,9 +31,6 @@ def _recordings(cr):
 
 
 def _own_conversation(cr, call_id, conversation_id):
-    # a recording that came ahead of its call log had a conversation of its
-    # own; the call made for it now owns that conversation. The pre-migration
-    # gave both tables the columns when conversations named call logs.
     if not schema.column_exists(cr, "phone_call", "conversation_id"):
         return
     cr.execute(
@@ -60,8 +57,6 @@ def migrate(cr, version):
         device = env["device.device"].browse(row["device_id"]).exists()
         call = Call.browse(row["phone_call_id"]).exists()
         if not call and device:
-            # a recording that never found its call-log entry waits for it, as
-            # one arriving now would
             call = Call._create_awaiting_call(
                 device,
                 row["phone_number"] or "",
@@ -97,10 +92,6 @@ def migrate(cr, version):
         start_ms = timeline._next_media_offset_ms()
         seconds = row["duration"] or 0
         length = seconds * 1000 if seconds else audio._media_length_ms()
-        # filed, not transcribed: these were never heard when they came in,
-        # and _file_recording would queue the whole archive at once
         timeline._add_media_segment(audio, start_ms, start_ms + max(length, 1))
     schema.drop_columns(cr, "phone_call", ["migrated_device_call_log_id"])
-    # every row moved onto phone.call; nothing defines these models any more,
-    # so nothing else would drop their tables
     cr.execute("DROP TABLE device_call_recording, device_call_log CASCADE")

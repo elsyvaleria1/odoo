@@ -28,9 +28,6 @@ class TestResPartnerManufacturer(TransactionCase):
         self.assertEqual(self.manufacturer.count_manufactured_products, 1)
 
     def test_the_count_refreshes_after_an_archive_in_the_same_cursor(self):
-        # reading the count first is what makes this a test of the dependency:
-        # with a cold cache the post-archive read is correct even when nothing
-        # watches `active`.
         self.assertEqual(self.manufacturer.count_manufactured_products, 2)
         self.template_a.action_archive()
         self.assertEqual(self.manufacturer.count_manufactured_products, 1)

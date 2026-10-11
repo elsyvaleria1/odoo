@@ -288,7 +288,6 @@ class TestIrAttachmentStorage(TransactionCase):
             patch.object(self.env.cr, "rollback", lambda: None),
             mute_logger("odoo.addons.base.models.ir_attachment"),
         ):
-            # what the install left on the checklist would take the capped slot
             Attachment._gc_file_store()
         Attachment._mark_for_gc_multi(["zz/cap-one", "zz/cap-two"])
         with (

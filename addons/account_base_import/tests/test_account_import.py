@@ -129,7 +129,6 @@ class TestBaseImport(AccountTestInvoicingCommon):
 
     @unittest.skipUnless(can_import("openpyxl"), "openpyxl module not available")
     def test_account_xlsx_import_fresh_company(self):
-        """Test importing new accounts in a fresh company with nothing but a MISC journal."""
         new_company = self.env["res.company"].create({"name": "New Test Company"})
 
         self.env["account.journal"].create(
@@ -171,14 +170,12 @@ class TestBaseImport(AccountTestInvoicingCommon):
             ],
         )
 
-        # Check that there are now 15 accounts in the company: 14 imported + the unaffected earnings account.
         num_accounts = (
             self.env["account.account"].with_company(new_company).search_count([])
         )
         self.assertEqual(num_accounts, 15)
 
     def test_account_csv_import_with_code_mapping(self):
-        # Create other companies referenced in the imported XLSX
         company_2, company_3 = self.env["res.company"].create(
             [
                 {"name": "Company 2"},
@@ -236,7 +233,6 @@ class TestBaseImport(AccountTestInvoicingCommon):
         )
 
     def test_account_csv_import_with_code_mapping_and_no_code(self):
-        # Create other companies referenced in the imported XLSX
         company_2 = self.env["res.company"].create([{"name": "Company 2"}])
 
         result = self._create_save_import(
@@ -356,7 +352,6 @@ class TestBaseImport(AccountTestInvoicingCommon):
 
     @unittest.skipUnless(can_import("openpyxl"), "openpyxl module not available")
     def test_journal_name_preserved_on_import(self):
-        """Test that existing journal names are not overwritten when importing journal items."""
         misc_journal = self.env["account.journal"].search(
             [("code", "=", "MISC"), ("company_id", "=", self.env.company.id)], limit=1
         )

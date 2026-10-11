@@ -29,9 +29,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
 
         cls.payslip_run.company_id = cls.company_data["company"].id
 
-        # Else the payslip_run will be using the the demo company in its environment, thus raising an error
-        # when payslip_run.action_validate() is called. Because the demo company doesn't have a journal
-        # and payslip_run.slip_ids.journal_id is company dependent
         cls.payslip_run.env = cls.env
 
         cls.dep_expense = (
@@ -210,7 +207,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         )
 
     def get_reconciliation_lines_from_accounts(self, account_ids):
-        """Helper function to return reconciled lines linked to specific accounts"""
         return self.env["account.partial.reconcile"].search(
             [
                 "|",
@@ -223,7 +219,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
     def get_all_amls_to_be_reconciled(
         expenses, payslips, include_payslips_payment_terms_amls=False
     ):
-        """Helper function to return all the amls required to test the reconciliation"""
 
         expenses_amls = expenses.account_move_id.line_ids.filtered(
             lambda line: line.display_type == "payment_term"
@@ -254,11 +249,10 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         expenses_total_amount = sum(expenses.mapped("total_amount"))
         expenses.action_submit()
         expenses.action_approve()
-        for expense in expenses:  # Ensure each expense as a unique move
+        for expense in expenses:
             self.post_expenses_with_wizard(expense)
         expenses.action_report_in_next_payslip()
 
-        # Creating payslip links the expense to the payslip
         payslip = self.create_payslip()
         self.assertRecordValues(
             expenses,
@@ -295,7 +289,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Test removing expense from payslip unlinks the two
         expense_1.action_remove_from_payslip()
         self.assertRecordValues(
             expenses,
@@ -362,7 +355,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         )
         self.assertFalse(payslip.input_line_ids)
 
-        # This should re-add the expense to the payslip
         expenses.action_report_in_next_payslip()
         payslip.action_payslip_draft()
         self.assertRecordValues(
@@ -381,7 +373,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Moving up to setting the payslip as done shouldn't change anything for the expense
         self.payslip_run.slip_ids.compute_sheet()
         self.payslip_run.action_validate()
         self.assertRecordValues(
@@ -399,13 +390,11 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
                 },
             ],
         )
-        # Test trying to remove the expense from the payslip when a payslip has generated a move raises an error
         with self.assertRaises(UserError):
             expense_1.action_remove_from_payslip()
         with self.assertRaises(UserError):
             expense_1.action_reset()
 
-        # Posting the payslip move should post the expense moves
         payslip.move_id.action_post()
         expenses_lines_to_reconcile, payslip_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
@@ -437,7 +426,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             "There should be automatic reconciliation lines as it's the most simple case",
         )
 
-        # Because the expense & the payslip moves don't have the same account, there should be a misc entry generated
         misc_move = reconciliation_lines.debit_move_id.move_id - (
             expenses.account_move_id | payslip.move_id
         )
@@ -469,7 +457,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Test reversing the payslip move keeps the expense linked to the payslip
         payslip.move_id.action_draft()
         payslip.move_id.unlink()
         self.assertRecordValues(
@@ -499,9 +486,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
 
     @freeze_time("2022-01-25")
     def test_corner_case_expense_with_expense_payslip_same_payable_account(self):
-        """
-        Test posting the payslip move, in the case where the payable account is the same for both the payslip & the expense moves
-        """
         expense = self.create_expenses()
         expense.action_submit()
         expense.action_approve()
@@ -526,7 +510,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Sets the expense rule on the payroll expense rule
         self.expense_salary_rule.account_debit = (
             expense._get_expense_account_destination()
         )
@@ -543,8 +526,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         payslip.action_payslip_done()
         payslip.move_id.action_post()
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         expense_line_to_reconcile, payslip_line_to_reconcile = (
             self.get_all_amls_to_be_reconciled(expense, payslip)
         )
@@ -573,10 +554,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
 
     @freeze_time("2022-01-25")
     def test_corner_case_expense_with_all_identical_payable_accounts(self):
-        """
-        Similar case than `test_corner_case_expense_with_expense_payslip_same_payable_account`
-        except that the payslip payment term account is also the same
-        """
         expense = self.create_expenses()
         expense.action_submit()
         expense.action_approve()
@@ -601,7 +578,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Sets the expense rule on the payroll expense rule & NET rule
         self.expense_salary_rule.account_debit = (
             expense._get_expense_account_destination()
         )
@@ -622,8 +598,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         payslip.action_payslip_done()
         payslip.move_id.action_post()
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         reconciliation_lines = self.get_reconciliation_lines_from_accounts(
             [expense._get_expense_account_destination()]
         )
@@ -665,10 +639,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
 
     @freeze_time("2022-01-25")
     def test_corner_case_expense_edited_expense_move(self):
-        """
-        Test that, as you can edit the expense account move independently of the expense, it will still prepare the reconciliation if the
-        totals do not match (as it would require a write-off misc move & user input to select a write-off account)
-        """
         expenses = self.create_expenses(
             [
                 {
@@ -717,7 +687,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Edit the total_amount on the expense move by duplicating the product line
         line_to_duplicate = expenses.account_move_id.line_ids.filtered(
             lambda line: "Expense To Edit" in (line.name or "")
         )[:1]
@@ -749,8 +718,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         )
         payslip.move_id.action_post()
 
-        # Check the two moves are NOT reconciled
-        # Get the corresponding account.partial.reconcile lines
         expense_lines_to_reconcile, payslip_line_to_reconcile = (
             self.get_all_amls_to_be_reconciled(expenses, payslip)
         )
@@ -786,10 +753,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         )
 
     def test_already_paid_expense(self):
-        """
-        Test that you can post the move of your payslip, even if the expense has been flagged to be reimbursed through a payslip,
-        but still got paid the "common way"
-        """
         paid_or_in_payment_state = self.env[
             "account.move"
         ]._get_invoice_in_payment_state()
@@ -803,8 +766,8 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             | expense_normal
         )
         expenses.action_submit()
-        expenses._do_approve()  # Skip duplicate wizard
-        for expense in expenses:  # Ensure we get three distinct moves
+        expenses._do_approve()
+        for expense in expenses:
             self.post_expenses_with_wizard(expense)
         expenses.action_report_in_next_payslip()
 
@@ -859,7 +822,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
         self.assertRecordValues(
             expenses.sorted("state"),
             [
-                # refund_in_payslip flag isn't reset, but we currently do not need it to be
                 {
                     "total_amount": 1000.0,
                     "state": paid_or_in_payment_state,
@@ -982,12 +944,8 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             ],
         )
 
-        # Posting the move will result in `expense_paid_before_payslip_move_posting` being paid twice,
-        # but as the warning has been ignored it's the user's problem. It should not raise
         payslip.move_id.action_post()
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         reconciliation_lines = self.get_reconciliation_lines_from_accounts(
             [expense_normal._get_expense_account_destination()]
         )
@@ -1001,7 +959,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             "There should be two moves, corresponding to the two payments done, as the payslip won't be automatically reconciled",
         )
 
-        # 2 of the three lines of expense_lines_to_reconcile should be reconciled by the early payment, the last one should not
         expense_lines_to_reconcile, payslip_line_to_reconcile = (
             self.get_all_amls_to_be_reconciled(expenses, payslip)
         )
@@ -1039,7 +996,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             pattern,
             "The matching number should be a definitive one",
         )
-        # Sorting by ID as there are two distinct reconciliation steps
         self.assertRecordValues(
             reconciliation_lines.sorted("id"),
             [
@@ -1111,7 +1067,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
             }
         )
 
-        # No expense linked if there are no expense rule in the structure
         self.assertFalse(payslip.expense_ids)
         self.payslip_run.slip_ids.compute_sheet()
         self.payslip_run.action_validate()
@@ -1126,7 +1081,6 @@ class TestPayrollExpense(TestHrPayrollAccountCommon, TestExpenseCommon):
 
     @freeze_time("2024-01-01")
     def test_unlink_payslip_moves_user(self):
-        """Test Account user are able to reset to draft payslip move and unlink them"""
         user = self.env["res.users"].create(
             {
                 "name": "Account user",

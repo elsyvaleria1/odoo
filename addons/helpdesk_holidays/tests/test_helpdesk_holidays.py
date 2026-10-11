@@ -165,7 +165,6 @@ class TestHelpdeskHolidays(HelpdeskCommon, TestHrHolidaysCommon):
             "tag_ids": [Command.link(tag.id)],
         }
 
-        # We can't test for sure that new tickets will always be assigned to hrmanager since it's random, but this should be good enough.
         self.assertEqual(
             self.new_ticket(vals).user_id,
             self.user_hrmanager,
@@ -203,7 +202,6 @@ class TestHelpdeskHolidays(HelpdeskCommon, TestHrHolidaysCommon):
             "The created ticket should be automatically assigned to employee",
         )
 
-    # Freeze the time a Monday, so that it's outside the working schedule
     @freeze_time("2022-03-14")
     def test_assignment_resource_calendar(self):
         self.employee_hruser.resource_id.calendar_id = self.env[

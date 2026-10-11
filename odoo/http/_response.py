@@ -58,7 +58,7 @@ class _RequestResponseMixin(RequestState):
         return NotFound(description)
 
     def redirect(self, location: str, code: int = 303, local: bool = True) -> Response:
-        requested = location  # debuglog
+        requested = location
         if local:
             try:
                 stripped = urlsplit(location)._replace(scheme="", netloc="")

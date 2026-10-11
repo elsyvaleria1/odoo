@@ -24,13 +24,10 @@ class ResUsersSettings(models.Model):
         default=lambda self: self._get_default_voip_provider(),
     )
 
-    # Credentials for authentication to the PBX server
     voip_username = fields.Char(
         string="VoIP username / Extension number",
         help="The username (typically the extension number) that will be used to register with the PBX server.",
     )
-    # two users on one extension: the phone system rings whoever registered
-    # last, and a call's report names a user at random
     _voip_username_unique = models.UniqueIndex(
         "(voip_provider_id, voip_username) WHERE voip_username IS NOT NULL "
         "AND voip_username != ''",
@@ -61,7 +58,6 @@ class ResUsersSettings(models.Model):
         help="""Specify a phone number so that placing a call in Odoo Phone will ring your preferred device (your desk phone or cell phone) and then connect you to the recipient.""",
     )
 
-    # Mobile stuff
     how_to_call_on_mobile = fields.Selection(
         selection=[
             ("ask", "Always Ask"),

@@ -17,7 +17,6 @@ class DiscussChannel(models.Model):
 
     channel_type = fields.Selection(
         selection_add=[("sms", "SMS Conversation")],
-        # uninstalling keeps the conversations, as group chats of their members
         ondelete={"sms": "set group"},
     )
     sms_number = fields.Char(
@@ -67,8 +66,6 @@ class DiscussChannel(models.Model):
 
     @classmethod
     def _channel_type_policies(cls):
-        # one person on one company number, answered by the users the number
-        # names: a conversation, not a channel anyone may find and join
         return {
             **super()._channel_type_policies(),
             "sms": ChannelTypePolicy(
@@ -119,14 +116,10 @@ class DiscussChannel(models.Model):
             .get(number_key(sender_number))
         )
         partner = self.env["res.partner"].browse(partner_id)
-        # a number nobody answers yet, as one carried over from sms_twilio,
-        # still has someone see what is written to it
         members = (
             twilio_number.user_ids
             or company.integration_twilio_config_id._get_account_responsible()
         ).partner_id
-        # two first messages of one sender arriving together make one
-        # conversation: the loser of the unique index retries the request
         channel, created = get_or_create_row(
             self.env.cr,
             lambda: self.create(
@@ -151,8 +144,6 @@ class DiscussChannel(models.Model):
         return channel
 
     def _notify_thread_by_sms(self, message, recipients_data, msg_vals=False, **kwargs):
-        # what a member writes in an SMS conversation is sent to its person,
-        # from the company number the conversation takes place on
         if not self._is_sms_reply(message, msg_vals):
             return super()._notify_thread_by_sms(
                 message, recipients_data, msg_vals=msg_vals, **kwargs
@@ -186,7 +177,6 @@ class DiscussChannel(models.Model):
         replies.write(
             {"twilio_sender_id": number.id, "record_company_id": number.company_id.id}
         )
-        # who replied STOP is not written to, whatever the conversation says
         blacklisted = (
             self.env["phone.blacklist"]
             .with_privilege(
@@ -204,8 +194,6 @@ class DiscussChannel(models.Model):
         return result
 
     def _is_sms_reply(self, message, msg_vals) -> bool:
-        # a member's message to the person, not a note, nor OdooBot's or an
-        # automation's post in the conversation
         if self.channel_type != "sms":
             return False
         msg_vals = msg_vals or {}
@@ -224,8 +212,6 @@ class DiscussChannel(models.Model):
         )
 
     def _action_unfollow(self, partner=None, guest=None, post_leave_message=True):
-        # a number's users answer its conversations: one leaves by being taken
-        # off the number, or new messages would reach nobody
         if (
             partner
             and self.channel_type == "sms"
@@ -243,8 +229,6 @@ class DiscussChannel(models.Model):
         super()._action_unfollow(partner, guest, post_leave_message)
 
     def _add_members(self, **kwargs):
-        # the person writes by SMS, not in Discuss: only the company's own
-        # users join their conversation, never a guest or a portal user
         if any(channel.channel_type == "sms" for channel in self):
             partners = kwargs.get("partners") or self.env["res.partner"]
             users = kwargs.get("users") or self.env["res.users"]

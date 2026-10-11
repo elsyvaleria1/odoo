@@ -14,11 +14,9 @@ class TestEventSecurity(TestEventFullCommon):
     @users("user_employee")
     @mute_logger("odoo.models.unlink", "odoo.addons.base.models.ir_model")
     def test_event_access_employee(self):
-        # Event: read ok
         event = self.test_event.with_user(self.env.user)
         event.read(["name"])
 
-        # Event: read only
         with self.assertRaises(AccessError):
             self.env["event.event"].create(
                 {
@@ -36,13 +34,11 @@ class TestEventSecurity(TestEventFullCommon):
                 }
             )
 
-        # Event Type
         with self.assertRaises(AccessError):
             self.test_event_type.with_user(self.env.user).read(["name"])
         with self.assertRaises(AccessError):
             self.test_event_type.with_user(self.env.user).write({"name": "Test Write"})
 
-        # Event Stage
         with self.assertRaises(AccessError):
             self.env["event.stage"].create(
                 {
@@ -50,24 +46,20 @@ class TestEventSecurity(TestEventFullCommon):
                 }
             )
 
-        # Event Registration
         with self.assertRaises(AccessError):
             self.env["event.registration"].search([])
 
     @users("user_eventregistrationdesk")
     @mute_logger("odoo.models.unlink", "odoo.addons.base.models.ir_model")
     def test_event_access_event_registration(self):
-        # Event: read ok
         event = self.test_event.with_user(self.env.user)
         event.read(["name", "user_id", "kanban_state"])
 
-        # Event: read only
         with self.assertRaises(AccessError):
             event.name = "Test"
         with self.assertRaises(AccessError):
             event.unlink()
 
-        # Event Registration
         registration = self.env["event.registration"].create(
             {
                 "event_id": event.id,
@@ -85,7 +77,6 @@ class TestEventSecurity(TestEventFullCommon):
     @users("user_eventuser")
     @mute_logger("odoo.models.unlink", "odoo.addons.base.models.ir_model")
     def test_event_access_event_user(self):
-        # Event
         event = self.test_event.with_user(self.env.user)
         event.read(["name", "user_id", "kanban_state"])
         event.write({"name": "New name"})
@@ -97,11 +88,9 @@ class TestEventSecurity(TestEventFullCommon):
             }
         )
 
-        # Event: cannot unlink
         with self.assertRaises(AccessError):
             event.unlink()
 
-        # Event Type
         with self.assertRaises(AccessError):
             self.env["event.type"].create(
                 {
@@ -128,7 +117,6 @@ class TestEventSecurity(TestEventFullCommon):
     @users("user_eventmanager")
     @mute_logger("odoo.models.unlink", "odoo.addons.base.models.ir_model")
     def test_event_access_event_manager(self):
-        # Event Type
         event_type = self.env["event.type"].create(
             {
                 "name": "ManagerEventType",
@@ -152,7 +140,6 @@ class TestEventSecurity(TestEventFullCommon):
         )
         event_type.write({"name": "New Name"})
 
-        # Event
         event = self.env["event.event"].create(
             {
                 "name": "ManagerEvent",
@@ -162,12 +149,10 @@ class TestEventSecurity(TestEventFullCommon):
         )
         event.write({"name": "New Event Name"})
 
-        # Event Stage
         stage = self.env["event.stage"].create({"name": "test"})
         stage.write({"name": "ManagerTest"})
         event.write({"stage_id": stage.id})
 
-        # Event Registration
         registration = self.env["event.registration"].create(
             {"event_id": event.id, "name": "Myself"}
         )
@@ -178,7 +163,6 @@ class TestEventSecurity(TestEventFullCommon):
         stage.unlink()
         event_type.unlink()
 
-        # Settings access rights required to enable some features
         self.user_eventmanager.write(
             {
                 "group_ids": [
@@ -196,8 +180,6 @@ class TestEventSecurity(TestEventFullCommon):
             event_config.execute()
 
     def test_event_question_access(self):
-        """Check that some user groups have access to questions and answers only if they are linked to at
-        least one published event."""
         question = self.env["event.question"].create(
             {
                 "title": "Question",
@@ -236,7 +218,6 @@ class TestEventSecurity(TestEventFullCommon):
             question.with_user(user).read(["title"])
             answer.with_user(user).read(["name"])
 
-        # To check the access of user groups to questions and answers linked to at least one published event.
         self.env["event.event"].create(
             {
                 "name": "Published Event",
@@ -245,18 +226,11 @@ class TestEventSecurity(TestEventFullCommon):
             }
         )
 
-        # Check that all user groups have access to questions and answers linked to at least one published event.
         for user in restricted_users + unrestricted_users:
             question.with_user(user).read(["title"])
             answer.with_user(user).read(["name"])
 
     def test_implied_groups(self):
-        """Test that the implied groups are correctly set.
-
-        - Event Manager imply Event User
-        - Event User imply Registration user
-        """
-        # Event Manager
         self.assertTrue(
             self.user_eventmanager.has_group("event.group_event_user"),
             "The event manager group must imply the event user group",
@@ -266,7 +240,6 @@ class TestEventSecurity(TestEventFullCommon):
             "The event manager group must imply the registration user group",
         )
 
-        # Event User
         self.assertTrue(
             self.user_eventuser.has_group("event.group_event_registration_desk"),
             "The event user group must imply the event user group",
@@ -276,7 +249,6 @@ class TestEventSecurity(TestEventFullCommon):
             "The event user group must not imply the event user group",
         )
 
-        # Registration User
         self.assertFalse(
             self.user_eventregistrationdesk.has_group("event.group_event_manager"),
             "The event registration group must not imply the event user manager",
@@ -287,7 +259,6 @@ class TestEventSecurity(TestEventFullCommon):
         )
 
     def test_multi_companies(self):
-        """Test ACLs with multi company."""
         company_1 = self.env.ref("base.main_company")
         company_2 = self.env["res.company"].create({"name": "Company 2"})
         user_company_1 = self.user_eventuser

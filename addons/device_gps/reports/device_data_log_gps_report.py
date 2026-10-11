@@ -352,9 +352,6 @@ class DeviceDataLogGpsReport(models.Model):
         help="Percentage of tracked time spent coasting. Aggregates correctly via _read_group_select.",
     )
 
-    # (target, numerator, denominator, scale). Eight fields were eight copies
-    # of the same guarded division; the only thing that ever varied was which
-    # three fields and whether the answer is a percentage.
     _RATIO_FIELDS = (
         ("speed_avg", "speed_sum", "speed_count", 1),
         ("fuel_level_avg", "fuel_level_sum", "fuel_level_count", 1),
@@ -400,10 +397,6 @@ class DeviceDataLogGpsReport(models.Model):
     def _local_day_expression(self) -> str:
         return "log.timestamp AT TIME ZONE 'UTC' AT TIME ZONE log.resource_tz"
 
-    # Pad the rolling window for local dates on both sides of UTC.
-    # Both cutoffs are computed here and bound as values rather than derived
-    # from now() in SQL: the log table is a postgres_fdw foreign table in
-    # production and only a shippable filter keeps the scan remote.
     def _rolling_cutoff_date(self):
         tz = ZoneInfo(self._REPORT_TZ)
         local_now = fields.Datetime.now().replace(tzinfo=UTC).astimezone(tz)
@@ -420,13 +413,6 @@ class DeviceDataLogGpsReport(models.Model):
         )
         return SQL("%s::timestamp", local_midnight.astimezone(UTC).replace(tzinfo=None))
 
-    # Two round trips on purpose. postgres_fdw ships a predicate only when it
-    # can evaluate it remotely on its own, and a correlated subquery inside a
-    # LATERAL is not one: spelled that way the foreign scan fetched the whole
-    # log and filtered it here -- hours per tick once the table lived in
-    # marin190_gps. A bare GROUP BY + max() ships whole, and so does an OR-list
-    # of constant per-device ranges, which also hits the (device_id,
-    # timestamp) index on either side of the wire.
     def _rolling_scope(self) -> SQL:
         cutoff = self._rolling_cutoff_utc_sql()
         self.env.cr.execute(

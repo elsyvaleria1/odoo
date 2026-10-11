@@ -45,7 +45,6 @@ class WebRtcClient(Thread):
 
             @channel.on("message")
             async def on_message(message_str: str):
-                # Handle chunked message
                 if self.chunked_message_in_progress.get(channel) is not None:
                     if message_str == "chunked_end":
                         message_str = self.chunked_message_in_progress.pop(channel)
@@ -56,7 +55,6 @@ class WebRtcClient(Thread):
                     self.chunked_message_in_progress[channel] = ""
                     return
 
-                # Handle regular message
                 message = json_loads(message_str)
                 message_type = message["message_type"]
                 _logger.info("Received message of type %s", message_type)
@@ -78,7 +76,6 @@ class WebRtcClient(Thread):
                             time.perf_counter() - start_operation_time,
                         )
                     else:
-                        # Notify that the device is not connected
                         self.send(
                             {
                                 "owner": message["session_id"],

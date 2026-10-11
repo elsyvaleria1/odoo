@@ -30,7 +30,7 @@ try:
     )
 
     HAS_CRYPTOGRAPHY = True
-except ImportError:  # pragma: no cover  exercised only where the wheel is absent
+except ImportError:
     HAS_CRYPTOGRAPHY = False
 
 from collections.abc import Callable, Sequence

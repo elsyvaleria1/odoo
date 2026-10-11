@@ -150,7 +150,7 @@ class CalDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND", "REPORT", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
     def calendar_home(self, username: str | None = None, **kw):
@@ -230,10 +230,10 @@ class CalDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["PROPFIND", "REPORT", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
-    def calendar_collection(self, username: str, calendar_id: int, **kw):  # pylint: disable=too-many-return-statements
+    def calendar_collection(self, username: str, calendar_id: int, **kw):
         method = request.httprequest.method
         if method == "OPTIONS":
             return self._options()
@@ -395,10 +395,10 @@ class CalDAVController(http.Controller):
         receiver_event="dav",
         receiver_refusal="device.device:_prepare_dav_refusal_response",
         methods=["GET", "HEAD", "PUT", "DELETE", "PROPFIND", "OPTIONS"],
-        csrf=False,  # auth="receiver": the device's bearer token or its user's Basic login
+        csrf=False,
         typed=True,
     )
-    def calendar_resource(self, username: str, calendar_id: int, ics_id: str, **kw):  # pylint: disable=too-many-return-statements
+    def calendar_resource(self, username: str, calendar_id: int, ics_id: str, **kw):
         method = request.httprequest.method
         if method == "OPTIONS":
             return self._options()
@@ -462,7 +462,7 @@ class CalDAVController(http.Controller):
         self._record_states(env, event)
         return Response(body, status=200, headers=headers)
 
-    def _put_event(self, env, username, calendar, ics_id):  # pylint: disable=too-many-return-statements
+    def _put_event(self, env, username, calendar, ics_id):
         ical_data = request.httprequest.data.decode("utf-8", errors="replace")
         if not ical_data.strip():
             return Response("Bad Request", status=400)

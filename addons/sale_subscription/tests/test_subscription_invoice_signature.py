@@ -57,7 +57,7 @@ class TestSubscriptionInvoiceSignature(TestInvoiceSignature, TestSubscription):
     ):
         representative_user = self.company_data["default_user_salesman"]
         self.env.company.account_config_id.signing_user = (
-            representative_user  # set the representative user of the company
+            representative_user
         )
         self.assertEqual(self.subscription.invoice_count, 0)
         with self.sync_env_with_side_cursors():
@@ -101,13 +101,11 @@ class TestSubscriptionInvoiceSignature(TestInvoiceSignature, TestSubscription):
             renewal_so.action_confirm()
             self.flush_tracking()
         with freeze_time("2024-09-03"):
-            # customer never pays (happens when the token is not working).
             renewal_so.sudo()._cron_subscription_expiration()
             self.flush_tracking()
             self.assertEqual(renewal_so.subscription_state, "6_churn")
             self.assertEqual(subscription.subscription_state, "5_renewed")
             with self.assertRaises(ValidationError):
-                # You cannot cancel a churned renewed subscription. You can reopen it and cancel it if you want to reopen the parent
                 renewal_so._action_cancel()
             renewal_so.reopen_order()
             renewal_so._action_cancel()
@@ -116,7 +114,6 @@ class TestSubscriptionInvoiceSignature(TestInvoiceSignature, TestSubscription):
             self.assertEqual(subscription.subscription_state, "3_progress")
 
     def test_sale_order_log_creation(self):
-        """Test that duplicating a canceled quotation is possible"""
         with freeze_time("2024-07-30"):
             self.subscription.write(
                 {
@@ -166,10 +163,6 @@ class TestSubscriptionInvoiceSignature(TestInvoiceSignature, TestSubscription):
         self.assertEqual(sub.invoice_ids.state, "posted")
 
     def test_sale_get_order_map(self):
-        """If a subscription order is locked but has a renewal (child order), an attempt to
-        expense some purchase order which is linked to the analytic account of the subscription
-        should use the non-locked, renewed order.
-        """
         required_modules = ("project_hr_expense", "purchase")
         if not all(
             self.env["ir.module.module"]._get(module).state == "installed"

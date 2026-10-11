@@ -18,7 +18,7 @@ class TestIsMultiLang(odoo.tests.HttpCase):
         website.default_lang_id = en
         website.language_ids = en + fr
 
-        for data in [None, {"post": True}]:  # GET / POST
+        for data in [None, {"post": True}]:
             body = lxml.html.fromstring(
                 self.url_open("/fr/multi_url", data=data).content
             )
@@ -48,7 +48,7 @@ class TestIsMultiLang(odoo.tests.HttpCase):
 
         it.active = True
         be.active = True
-        website.domain = self.base_url()  # for _is_canonical_url
+        website.domain = self.base_url()
         website.default_lang_id = en
         website.language_ids = en + it + be
         country1.update_field_translations(
@@ -70,8 +70,6 @@ class TestIsMultiLang(odoo.tests.HttpCase):
         )
 
         body = lxml.html.fromstring(r.content)
-        # Note: this test is indirectly testing the `ref=canonical` tag is correctly set,
-        #       as it is required in order for `rel=alternate` tags to be inserted in the DOM
         it_href = body.find('./head/link[@rel="alternate"][@hreflang="it"]').get("href")
         fr_href = body.find('./head/link[@rel="alternate"][@hreflang="fr"]').get("href")
         en_href = body.find('./head/link[@rel="alternate"][@hreflang="en"]').get("href")
@@ -99,7 +97,6 @@ class TestIsMultiLang(odoo.tests.HttpCase):
         website.default_lang_id = en
         website.language_ids = en + be
 
-        # alternate href should be use the current url.
         self.url_open(be_prefix)
         self.url_open(be_prefix + "/contactus")
         r = self.url_open(be_prefix)

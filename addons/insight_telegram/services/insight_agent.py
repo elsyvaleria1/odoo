@@ -5,8 +5,6 @@ from odoo.addons.speech_telegram.tools.assistant import BotAssistant
 
 PURPOSE = "telegram.insight.agent"
 
-# Rounds of tool calls one question may take before the model is made to
-# answer with what it has.
 MAX_ROUNDS = 15
 MAX_TOKENS = 4000
 
@@ -131,18 +129,6 @@ class InsightAgent(BotAssistant):
     )
 
     def answer(self, question, history, reader, *, tz, today, on_round=None, files=()):
-        """Answer `question` given the earlier exchanges of the chat.
-
-        :param str question: what the owner asked
-        :param list history: earlier ``{"question", "answer"}`` exchanges
-        :param OdooTools reader: runs the tools on read-only transactions
-        :param str tz: the owner's timezone
-        :param str today: the owner's current date, ISO formatted
-        :param on_round: called before each round, to show the bot is working
-        :param files: content blocks of the files the person sent
-        :return: the answer text, Markdown-light
-        :rtype: str
-        """
         model = self._chat_model()
         if not model:
             raise CommError(f"No chat model is usable for {PURPOSE}")
@@ -165,8 +151,6 @@ class InsightAgent(BotAssistant):
             content = question
         messages.append({"role": "user", "content": content})
 
-        # the tools this answer may use: the reader's own, reports included,
-        # or the exploration tools alone
         tools_of = getattr(reader, "tools", None)
         self._tool_specs = tools_of() if tools_of else [dict(t) for t in TOOLS]
         for round_number in range(MAX_ROUNDS + 1):
@@ -196,13 +180,9 @@ class InsightAgent(BotAssistant):
 
     def _turn(self, model, system, messages, *, last):
         tools = list(self._tool_specs)
-        # the tool list is the same every round: caching it with the system
-        # prompt makes every round after the first read it from the cache
         tools[-1] = {**tools[-1], "cache_control": {"type": "ephemeral"}}
 
         def request(client, ai_model):
-            # the loop speaks the Anthropic Messages wire; a fallback hop to
-            # another vendor is skipped, as a failed hop would be
             if not isinstance(client, ClaudeClient):
                 raise CommError(f"{ai_model.code} does not speak the tool-use wire")
             return client.create_message(

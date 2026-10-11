@@ -28,7 +28,6 @@ class CardCampaign(models.Model):
         return self.env["card.template"].search([], limit=1)
 
     def _selection_campaign_models(self) -> list:
-        """Hardcoded list of models, checked against actually-present models."""
         allowed_models = [
             "res.partner",
             "event.track",
@@ -121,11 +120,9 @@ class CardCampaign(models.Model):
     )
     request_description = fields.Text()
 
-    # Static Content fields
     content_background = fields.Image(string="Background")
     content_button = fields.Char(string="Button")
 
-    # Dynamic Content fields
     content_header = fields.Char(string="Header")
     content_header_dyn = fields.Boolean(string="Is Dynamic Header")
     content_header_path = fields.Char(string="Header Path")
@@ -148,7 +145,6 @@ class CardCampaign(models.Model):
     content_sub_section2_dyn = fields.Boolean(string="Is Dynamic Sub-Section 2")
     content_sub_section2_path = fields.Char(string="Sub-Section 2 Path")
 
-    # images are always dynamic
     content_image1_path = fields.Char(string="Dynamic Image 1")
     content_image2_path = fields.Char(string="Dynamic Image 2")
 
@@ -168,7 +164,6 @@ class CardCampaign(models.Model):
             }
         )
         for campaign, status, card_count in cards_by_status_count:
-            # shared cards are implicitly visited
             if status == "shared":
                 campaign.card_share_count += card_count
             if status in ("shared", "visited"):
@@ -204,21 +199,6 @@ class CardCampaign(models.Model):
         ]
 
     def _check_access_right_dynamic_template(self, fnames=None) -> None:
-        """`_unrestricted_rendering` being True means we trust the value on model
-        when rendering. This means once created, rendering is done without restriction.
-        But this attribute triggers a check at create / write / translation update that
-        current user is an admin or has full edition rights (group_mail_template_editor).
-
-         However here a Marketing Card Manager must be able to edit the fields other
-         than the rendering fields. The qweb rendered field `body_html` cannot be
-         modified by users other than the `base.group_system` users, as
-        - it's a related field to `card.template.body`,
-        - store=False
-        - the model `card.template` can only be altered by `base.group_system`
-
-        Hence the security is delegated to the 'card.template' model, hence the
-        check done by `_check_access_right_dynamic_template` can be bypassed.
-        """
         return
 
     @api.depends(lambda self: self._get_fields_render() + ["preview_record_ref"])
@@ -262,7 +242,7 @@ class CardCampaign(models.Model):
                         or self.env["card.campaign"].get_base_url(),
                         "title": vals[
                             "name"
-                        ],  # not having this will trigger a request in the create
+                        ],
                         "source_id": utm_source.id if utm_source else None,
                         "label": f"marketing_card_campaign_{vals.get('name', '')}_{fields.Datetime.now()}",
                     }
@@ -295,7 +275,6 @@ class CardCampaign(models.Model):
         if link_tracker_vals:
             self.link_tracker_id.sudo().write(link_tracker_vals)
 
-        # write and detect model changes on actively-used campaigns
         original_models = self.mapped("res_model")
 
         write_res = super().write(vals)
@@ -388,11 +367,6 @@ class CardCampaign(models.Model):
         }
 
     def _acquire_preview_card(self) -> CardCard:
-        """Refresh the card corresponding to the preview record, or create one if none exists.
-
-        The image gets the preview render. The card is archived to ensure
-        it is rerendered later if sent.
-        """
         self.check_singleton()
         card = (
             self.env["card.card"]
@@ -418,7 +392,6 @@ class CardCampaign(models.Model):
         return card
 
     def _action_share_get_default_body(self) -> str:
-        # try to pick a relevant card if users try to visit during preview/test mailings
         preview_card = self._acquire_preview_card() if self else self.env["card.card"]
         return f"""
 <div class="o_layout oe_unremovable oe_unmovable o_empty_theme" data-name="Mailing">
@@ -454,9 +427,6 @@ class CardCampaign(models.Model):
 </div></div></div></div>
 """
 
-    # ==========================================================================
-    # Image generation
-    # ==========================================================================
 
     def _get_image_b64(self, record):
         if not self.card_template_id.body:
@@ -471,8 +441,6 @@ class CardCampaign(models.Model):
             *TEMPLATE_DIMENSIONS,
         )[0]
 
-        # None means there was a logged error at image rendering time.
-        # Tests also do not render by default, in that case ignore.
         if image_bytes is None and not modules.module.current_test:
             raise exceptions.UserError(
                 self.env._(
@@ -483,12 +451,8 @@ class CardCampaign(models.Model):
             )
         return image_bytes and base64.b64encode(image_bytes)
 
-    # ==========================================================================
-    # Card creation
-    # ==========================================================================
 
     def _update_cards(self, domain, auto_commit=False):
-        """Create missing cards and update cards if necessary based for the domain."""
         self.check_singleton()
         TargetModel = self.env[self.res_model]
         res_ids = TargetModel.search(domain).ids
@@ -503,7 +467,6 @@ class CardCampaign(models.Model):
                 ["res_id", "requires_sync"],
             )
         )
-        # update active and res_model for preview cards
         cards.active = True
         self.env["card.card"].create(
             [
@@ -512,7 +475,6 @@ class CardCampaign(models.Model):
             ]
         )
 
-        # render by batch of 100 to avoid losing progress in case of time out
         updated_cards = self.env["card.card"]
         while cards := self.env["card.card"].search_fetch(
             [
@@ -523,10 +485,8 @@ class CardCampaign(models.Model):
             ["res_id"],
             limit=100,
         ):
-            # no need to autocommit if it can be done in one batch
             if auto_commit and updated_cards:
                 self.env["ir.cron"]._commit_progress()
-                # avoid keeping hundreds of jpegs in memory
                 self.env["card.card"].invalidate_model(["image"])
             TargetModelPrefetch = TargetModel.with_prefetch(cards.mapped("res_id"))
             for card in cards.filtered("requires_sync"):
@@ -549,18 +509,13 @@ class CardCampaign(models.Model):
         )
         return (card and card._get_path(suffix)) or self.target_url
 
-    # ==========================================================================
-    # Mail render mixin / Render utils
-    # ==========================================================================
 
     @api.depends("res_model")
     def _compute_render_model(self) -> None:
-        """override for mixin.mail.render"""
         for campaign in self:
             campaign.render_model = campaign.res_model
 
     def _prepare_card_element_vals(self, record) -> dict[str, Any]:
-        """Helper to get the right value for dynamic fields."""
         self.check_singleton()
         result = {
             "image1": images[0]
@@ -620,9 +575,7 @@ class CardCampaign(models.Model):
                     m = record.mapped(field_path)
                     result[el] = (m and m[0]) or False
                 except AttributeError, ValueError:
-                    # for generic image, or if field incorrect, return name of field
                     result[el] = field_path
-                # force dates to their relevant timezone as that's what is usually wanted
                 if isinstance(result[el], (date, datetime)) and (
                     tz := record._mail_get_timezone()
                 ):

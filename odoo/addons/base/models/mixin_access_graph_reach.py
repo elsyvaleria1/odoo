@@ -15,9 +15,7 @@ _debug = DebugLog(__name__)
 if typing.TYPE_CHECKING:
     from .mixin_access_graph import AccessGraph
 
-# who a row names: a partner's grant, a group's grant, or a user owning a node
 PARTNER, GROUP, USER = 0, 1, 2
-# a row of the node's own graph, every adopter's; adopters number theirs above
 OWN = 0
 
 REACH_COLUMNS = (
@@ -41,14 +39,6 @@ def principal_key(kind: int, principal_id: int) -> int:
 
 
 class MixinAccessGraph(models.AbstractModel):
-    # The reach table: every way a principal reaches a node, one row each,
-    # derived from the tree and the grants and kept exact by the database, as
-    # an index is: statement triggers on the node and grant tables re-derive
-    # what a statement touched and what reads it (the subtree, the shortcuts
-    # to it) before the statement returns, whoever wrote it, the ORM or raw
-    # SQL. Who the user is -- their groups, the companies in use, the clock
-    # -- stays a query-time input, so a membership change, a company switch
-    # or an expiry writes nothing
     _inherit = "mixin.access.graph"
 
     def init(self) -> None:
@@ -56,18 +46,11 @@ class MixinAccessGraph(models.AbstractModel):
         if self._access_graph is not None and not self._abstract:
             self.pool.post_init(self._access_reach_install)
 
-    # -- declaration, overridden by adopters ---------------------------------
 
     def _access_reach_table(self) -> str:
         return f"{self._table}_access_reach"
 
     def _access_reach_tracked_columns(self) -> list[str]:
-        # the node columns a row is derived from. A change to one re-derives
-        # the node and what reads it (_access_reach_readers). A move rewrites
-        # the parent_path of every node it carries in one statement, which
-        # re-derives the subtree once: the scope a node inherits is read from
-        # parent_path and the boundaries on it, not from access_scope_path,
-        # which the ORM recomputes in many later statements
         graph = self._access_graph
         columns = [
             graph.parent,
@@ -79,8 +62,6 @@ class MixinAccessGraph(models.AbstractModel):
         return columns
 
     def _access_reach_deep_columns(self) -> list[str]:
-        # the node columns whose change reaches the whole subtree: what a node
-        # passes down to every node below it
         graph = self._access_graph
         return [
             *((graph.owner,) if graph.owner else ()),
@@ -89,34 +70,23 @@ class MixinAccessGraph(models.AbstractModel):
         ]
 
     def _access_reach_own_via(self) -> SQL:
-        # the via of a node's own graph rows, over the refreshed node "scope"
         return SQL("%s", OWN)
 
     def _access_reach_graph_needs(self) -> list[SQL]:
-        # the nodes, beyond those refreshed, whose graph rows the derived rows
-        # read: selects of ids over the refreshed nodes "scope"
         return []
 
     def _access_reach_ctes(self) -> list[tuple[str, SQL]]:
-        # common table expressions the derived rows read, after "graph"
         return []
 
     def _access_reach_derived(self) -> list[SQL]:
-        # the adopter's own ways of reaching: selects of REACH_COLUMNS over
-        # "scope" (the refreshed nodes, whole rows) and "graph" (the own-graph
-        # tuples of every node needed)
         return []
 
     def _access_reach_readers(self, affected: SQL) -> list[SQL]:
-        # the nodes whose rows read a node of `affected` (an int4[]) other
-        # than through the scope its descendants inherit: selects of ids
         return []
 
     def _access_reach_graph_vias(self) -> tuple[int, ...]:
-        # the vias the graph's own reach (_access_graph_domain) counts
         return (OWN,)
 
-    # -- the query ------------------------------------------------------------
 
     def _access_reach_subquery(
         self,
@@ -130,16 +100,6 @@ class MixinAccessGraph(models.AbstractModel):
         owner_vias: typing.Iterable[int] = (),
         alternatives: typing.Iterable[tuple[list[int], SQL]] = (),
     ) -> SQL:
-        # the ids of the nodes the current user reaches at the role or above
-        # through the rows of `vias`: one principal column, so that what the
-        # planner estimates is what it reads. A group counts in the companies
-        # in use it is held in (those its membership is limited to, else all),
-        # on nodes of those companies or of none, and its grant limited to a
-        # company counts while that company is one of them; a partner's grant
-        # and an owner count on a node of a company in use, of none, or of one
-        # the user is not in. `owner_vias` are rows the node's own user
-        # (resource_user_id) holds at every role; `alternatives` are further
-        # (principal keys, condition) pairs the adopter reaches through
         graph: AccessGraph = self._access_graph
         user = self.env.user
         rank = graph.roles.index(role) + 1
@@ -246,11 +206,8 @@ class MixinAccessGraph(models.AbstractModel):
             SQL(" OR ").join(reached),
         )
 
-    # -- generation -----------------------------------------------------------
 
     def _access_reach_company_column(self) -> str | None:
-        # the node's own column holding its company: a row carries it, so an
-        # anchor reached through a relation would go stale with no trigger
         anchor = self._access_company_anchor()
         if anchor and "." in anchor:
             raise ValueError(
@@ -260,10 +217,6 @@ class MixinAccessGraph(models.AbstractModel):
         return anchor
 
     def _access_reach_scope_ctes(self, node_company: SQL) -> list[tuple[str, SQL]]:
-        # "node_scope": each needed node with the nodes whose grants reach it,
-        # its ancestors up to the nearest boundary and itself, read off its
-        # parent_path (as access_scope_path states them). Set-wise: every path
-        # unnested once, each node's cut found by one join
         graph: AccessGraph = self._access_graph
         table = SQL.identifier(self._table)
         steps = SQL(
@@ -308,9 +261,6 @@ class MixinAccessGraph(models.AbstractModel):
         ]
 
     def _access_reach_rows(self, node_filter: SQL, grants: SQL | None = None) -> SQL:
-        # INSERT the rows of the nodes `node_filter` (on alias "node_row")
-        # selects; with `grants` (an int4[]), only the rows those grants are
-        # the source of
         graph: AccessGraph = self._access_graph
         grant_model = self.env[self._fields[graph.grants].comodel_name]
         names = type(grant_model)._access_grant_names
@@ -399,7 +349,6 @@ class MixinAccessGraph(models.AbstractModel):
         columns = SQL(", ").join(SQL.identifier(column) for column in REACH_COLUMNS)
         rows = SQL(" UNION ALL ").join([own, *self._access_reach_derived()])
         if grants is not None:
-            # the ways of reaching that come from no grant are no grant's
             rows = SQL(
                 "SELECT * FROM (%s) AS derived (%s) WHERE derived.grant_id IS NOT NULL",
                 rows,
@@ -416,11 +365,6 @@ class MixinAccessGraph(models.AbstractModel):
         )
 
     def _access_reach_closure(self) -> SQL:
-        # the body of a function of (ids, deep) returning the nodes whose rows
-        # a change to `ids` may change: the nodes and, until none is new, what
-        # reads them (_access_reach_readers); deep, also every node below each
-        # of those, which inherits their scope. Walked a level at a time down
-        # the parent's index
         graph: AccessGraph = self._access_graph
         readers = self._access_reach_readers(SQL("level"))
         read = (
@@ -666,13 +610,8 @@ class MixinAccessGraph(models.AbstractModel):
             deep_changed=deep_changed,
         )
 
-    # -- lifecycle --------------------------------------------------------------
 
     def _access_reach_install(self) -> None:
-        # create the table, its functions and triggers, and derive every row,
-        # whenever what derives them changed since the last install: the
-        # functions and triggers of the previous version go first, whatever
-        # their shape was
         cr = self.env.cr
         reach = self._access_reach_table()
         self.pool.register_relation_table(self._name, reach, self._original_module)
@@ -699,8 +638,6 @@ class MixinAccessGraph(models.AbstractModel):
             )
             for (function,) in cr.fetchall():
                 cr.execute(SQL("DROP FUNCTION %s CASCADE", SQL.identifier(function)))
-            # the scope chain's GIN index served the live condition, which
-            # read the chain per row; nothing reads it through an index now
             cr.execute(
                 SQL(
                     "DROP INDEX IF EXISTS %s",

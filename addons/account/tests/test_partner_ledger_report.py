@@ -1,4 +1,3 @@
-# pylint: disable=C0326
 import json
 
 from odoo import Command, fields
@@ -33,7 +32,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             name="partner_c", tag_ids=[Command.set([cls.partner_category_b.id])]
         )
 
-        # Entries in 2016 for company_1 to test the initial balance.
         cls.move_2016_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -84,7 +82,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
         cls.move_2016_1.action_post()
 
-        # Entries in 2016 for company_2 to test the initial balance in multi-companies/multi-currencies.
         cls.move_2016_2 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -122,7 +119,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
         cls.move_2016_2.action_post()
 
-        # Entry in 2017 for company_1 to test the report at current date.
         cls.move_2017_1 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -251,7 +247,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
         cls.move_2017_1.action_post()
 
-        # Entry in 2017 for company_2 to test the current period in multi-companies/multi-currencies.
         cls.move_2017_2 = cls.env["account.move"].create(
             {
                 "move_type": "entry",
@@ -290,7 +285,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         cls.report = cls.env.ref("account.partner_ledger_report")
 
     def test_partner_ledger_unfold(self):
-        """Test unfolding a line when rendering the whole report."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -299,7 +293,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.0, 20150.0),
@@ -317,7 +310,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.0, 20150.0),
@@ -337,7 +329,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_batch_data_generator(self):
-        """Test the custom_unfold_all_batch_data_generator"""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -347,7 +338,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                      Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.0, 20150.0),
@@ -399,7 +389,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         json.dumps(expanded, default=json_default)
 
     def test_partner_ledger_load_more(self):
-        """Test unfolding a line to use the load more."""
         self.report.load_more_limit = 2
 
         options = self._generate_options(
@@ -415,7 +404,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             report_lines,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.0, 20150.0),
@@ -444,7 +432,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_1,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("MISC/2017/01/0001 2017_1_4", 4000.0, 0.0, 9150.0),
@@ -466,7 +453,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             load_more_2,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("MISC/2017/01/0001 2017_1_6", 6000.0, 0.0, 20150.0),
@@ -475,9 +461,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_filter_account_types(self):
-        """Test building the report with a filter on account types.
-        When filtering on receivable accounts (i.e. trade_receivable and/or non_trade_receivable), partner_b should disappear from the report.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -492,7 +475,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 15000.0, 0.0, 15000.0),
@@ -508,7 +490,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_filter_partners(self):
-        """Test the filter on top allowing to filter on res.partner."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -518,7 +499,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.00, 20150.0),
@@ -529,7 +509,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_filter_partner_categories(self):
-        """Test the filter on top allowing to filter on res.partner.tag."""
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -539,7 +518,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.0, 20150.0),
@@ -550,9 +528,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_unknown_partner(self):
-        """Test the partner ledger for whenever a line appearing in it has no partner assigned.
-        Check that reconciling this line with an invoice/bill of a partner does affect his balance.
-        """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -592,7 +567,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.00, 20150.0),
@@ -612,7 +586,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 1000.00, 19150.0),
@@ -624,14 +597,12 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Unfold 'partner_a'
         options["unfolded_lines"] = [
             self.report._get_generic_line_id("res.partner", self.partner_a.id)
         ]
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 1000.00, 19150.0),
@@ -651,14 +622,12 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Unfold 'Unknown Partner'
         options["unfolded_lines"] = [
             self.report._get_generic_line_id("res.partner", None, markup="no_partner")
         ]
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 1000.00, 19150.0),
@@ -675,7 +644,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Change the dates to exclude the reconciliation max date: situation is back to the beginning
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -684,7 +652,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 20000.0, 0.00, 20150.0),
@@ -695,7 +662,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Change the dates to have a date_from > to the reconciliation max date and check the initial balances are correct
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-04-01"),
@@ -704,7 +670,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 0.0, 0.0, 19150.0),
@@ -716,14 +681,12 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Unfold 'partner_a' to check the initial balance line is correct
         options["unfolded_lines"] = [
             self.report._get_generic_line_id("res.partner", self.partner_a.id)
         ]
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 0.0, 0.0, 19150.0),
@@ -764,12 +727,10 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
                 post=True,
             )
 
-        # Without prefix groups
         options = self._generate_options(self.report, test_date, test_date)
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                               Journal           Debit          Credit            Balance
             [0, 1, 6, 7, 9],
             [
                 ("A", "", 42.0, 0.0, 42.0),
@@ -786,7 +747,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # With prefix groups
         self.report.prefix_groups_threshold = 3
         options = self._generate_options(
             self.report, test_date, test_date, default_options={"unfold_all": True}
@@ -794,7 +754,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                   Journal           Debit          Credit            Balance
             [0, 1, 6, 7, 9],
             [
                 ("A (8 lines)", "", 336.0, 0.0, 336.0),
@@ -895,7 +854,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                      Debit              Credit            Balance
             [0, 6, 7, 9],
             [
                 ("Obiwan Kenobi", 6000.0, 5700.0, 300.0),
@@ -907,7 +865,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         options["unreconciled"] = True
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                      Debit              Credit            Balance
             [0, 6, 7, 9],
             [
                 ("Obiwan Kenobi", 1000.0, 700.0, 300.0),
@@ -917,10 +874,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_print_pdf_exclude_partner_with_name_similar_to_another_partner_email(self):
-        """
-        When printing a PDF report, the search bar filter must exclude partners whose email
-        address is similar to another partner's name, as the view does.
-        """
         partner = self.env["res.partner"].create(
             {"name": "Great Customer", "email": "partner_a@test.com"}
         )
@@ -945,7 +898,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         self.assertFalse(partner.name in [line["name"] for line in lines])
 
     def test_partner_ledger_search_with_unknown_partner(self):
-        """Test that the lines with no partners are included in the report when searching for "Unknown Partner" """
         options = self._generate_options(
             self.report,
             fields.Date.from_string("2017-01-01"),
@@ -958,7 +910,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("Unknown Partner", 200.0, 200.0, 0.0),
@@ -979,7 +930,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("Unexpected Customer", 1000.0, 0.0, 1000.0),
@@ -990,7 +940,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_no_amount_currency_col_in_single_currency(self):
-        # In multi-currency, we get the amount_currency column
         self.assertGreater(len(self.env["res.currency"].search([])), 1)
         options = self._generate_options(
             self.report,
@@ -1004,7 +953,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             )
         )
 
-        # Not in single-currency
         self.env["res.currency"].search([("name", "!=", "USD")]).with_context(
             force_deactivate=True
         ).active = False
@@ -1067,10 +1015,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         self.assertTrue(has_amount_currency_col("print"))
 
     def test_partner_ledger_fully_reconcile_previous_year(self):
-        """
-        A partner with a zero balance whose journal items all predate the report period is
-        hidden, whether or not those items are reconciled.
-        """
         new_partner = self.env["res.partner"].create({"name": "Anakin Skywalker"})
         move = self.env["account.move"].create(
             {
@@ -1126,11 +1070,8 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             "2020-12-31",
             default_options={"partner_ids": new_partner.ids},
         )
-        # Balance is 0 and nothing happened during the period, so the partner is hidden even
-        # though its entries are still unreconciled
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                   Name                          Debit              Credit           Balance
             [0, 6, 7, 9],
             [
                 ("Total", 0.0, 0.0, 0.0),
@@ -1144,10 +1085,8 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             )
         ).reconcile()
 
-        # Balance is still 0 and there is no more unreconciled entries, the partner stays hidden
         self.assertLinesValues(
             self.report._get_lines(options),
-            #        Name                                     Debit              Credit           Balance
             [0, 6, 7, 9],
             [
                 ("Total", 0.0, 0.0, 0.0),
@@ -1211,10 +1150,8 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             "2019-12-31",
             default_options={"partner_ids": new_partner.ids},
         )
-        # Balance is 0 but the moves are in the report period, so we show the line
         self.assertLinesValues(
             self.report._get_lines(options),
-            #              Name                              Debit              Credit            Balance
             [0, 6, 7, 9],
             [
                 ("Darth Vader", 500.0, 500.0, 0.0),
@@ -1229,11 +1166,8 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             )
         ).reconcile()
 
-        # Balance is still 0 and there is no more unreconciled entries, but the moves are in the
-        # current report period, so we still show the partner in the report
         self.assertLinesValues(
             self.report._get_lines(options),
-            #             Name                               Debit              Credit            Balance
             [0, 6, 7, 9],
             [
                 ("Darth Vader", 500.0, 500.0, 0.0),
@@ -1243,7 +1177,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_toggle_followup(self):
-        """Make sure that toggling the followup also (and only) toggles other lines of the same invoice."""
         installments_payment_term = self.env["account.payment.term"].create(
             {
                 "name": "3 installments",
@@ -1303,8 +1236,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_reconciled_misc_without_partner_shows_with_partner_filter(self):
-        """A misc move without a partner reconciled with a partner invoice must still appear
-        when filtering the Partner Ledger by that partner."""
         bernard = self.env["res.partner"].create({"name": "Bernard Gagnant"})
         invoice = self.init_invoice(
             "out_invoice",
@@ -1358,7 +1289,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
         (invoice_receivable + misc_receivable).reconcile()
 
-        # Ensure both the invoice and the misc move appear when the report is fully unfolded.
         options = self._generate_options(
             self.report,
             "2019-03-01",
@@ -1368,7 +1298,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         lines = self.report._get_lines(options)
         self.assertLinesValues(
             lines,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 (bernard.name, 1000.0, 1000.0, 0.0),
@@ -1394,8 +1323,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # When filtering the report by the partner, the misc move (despite having no partner)
-        # must still appear because it is reconciled with the partner's invoice.
         options_partner = self._generate_options(
             self.report,
             "2019-03-01",
@@ -1405,7 +1332,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         lines_filtered = self.report._get_lines(options_partner)
         self.assertLinesValues(
             lines_filtered,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 (bernard.name, 1000.0, 1000.0, 0.0),
@@ -1418,7 +1344,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_without_filter_partner(self):
-        """Test opening the partner ledger report when filter_partner is disabled."""
         self.report.filter_partner = False
         options = self._generate_options(
             self.report,
@@ -1431,7 +1356,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         report_lines = self.report._get_lines(options)
         self.assertLinesValues(
             report_lines,
-            #   Name                                    Debit           Credit          Balance
             [0, 6, 7, 9],
             [
                 ("partner_a", 0.0, 0.0, 20150.0),
@@ -1449,11 +1373,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
         )
 
     def test_partner_ledger_amount_currency(self):
-        """
-        The partner line displays the amount currency when all the journal items of the
-        partner share the same foreign currency within a column group, and the initial
-        balance moves are left out of that computation.
-        """
         bernard = self.env["res.partner"].create({"name": "Bernard Gagnant"})
 
         eur_currency = self.env.ref("base.EUR")
@@ -1486,7 +1405,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         (usd_invoice + eur_invoice).action_post()
 
-        # USD invoice from previous period; shouldn't affect amount_currency (displayed since it's the only foreign currency in this period).
         options = self._generate_options(
             self.report,
             "2026-01-01",
@@ -1496,7 +1414,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                Debit          Credit       Amount Currency       Balance
             [0, 6, 7, 8, 9],
             [
                 ("Bernard Gagnant", 2000.0, 0.0, 1000.0, 3000.0),
@@ -1506,7 +1423,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             currency_map={8: {"currency": eur_currency}},
         )
 
-        # Test that if multiple currencies are used during the evaluated period, the amount currency shouldn't be displayed
         gbp_currency = self.env.ref("base.GBP")
         gbp_currency.active = True
 
@@ -1531,7 +1447,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #   Name                                Debit          Credit       Amount Currency       Balance
             [0, 6, 7, 8, 9],
             [
                 ("Bernard Gagnant", 4000.0, 0.0, "", 5000.0),
@@ -1540,8 +1455,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
             options,
         )
 
-        # Test that if multiple currencies are used, but a horizontal groupby is applied so that only a single foreign
-        # currency is used per column group, then the report should display the amount currency correctly
 
         horizontal_group = self.env["account.report.horizontal.group"].create(
             {
@@ -1579,8 +1492,6 @@ class TestPartnerLedgerReport(TestAccountReportsCommon):
 
         self.assertLinesValues(
             self.report._get_lines(options),
-            #                             [            EUR             ] [            GBP             ] [            USD             ]
-            #   Name                      Amount Currency     Balance     Amount Currency     Balance    Amount Currency     Balance
             [0, 8, 9, 17, 18, 26, 27],
             [
                 ("Bernard Gagnant", 1000.0, 2000.0, 1000.0, 2000.0, "", 2000.0),

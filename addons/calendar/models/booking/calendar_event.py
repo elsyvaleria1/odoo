@@ -41,7 +41,6 @@ class CalendarEvent(models.Model):
     @api.model
     def default_get(self, fields):
         res = super().default_get(fields)
-        # If the event has an apt type, set the event stop datetime to match the apt type duration
         if (
             res.get("appointment_type_id")
             and res.get("duration")
@@ -51,14 +50,13 @@ class CalendarEvent(models.Model):
             res["stop"] = res["start"] + timedelta(hours=res["duration"])
         if not self.env.context.get("booking_gantt_create_record", False):
             return res
-        # Round the stop datetime to the nearest minute when coming from the gantt view
         if (
             res.get("stop")
             and isinstance(res["stop"], datetime)
             and res["stop"].second != 0
         ):
-            res["stop"] = datetime.min + round(  # noqa: DTZ901  naive epoch, fields are naive UTC
-                (res["stop"] - datetime.min) / timedelta(minutes=1)  # noqa: DTZ901  same
+            res["stop"] = datetime.min + round(
+                (res["stop"] - datetime.min) / timedelta(minutes=1)
             ) * timedelta(minutes=1)
         user_id = res.get("user_id")
         resource_ids = (
@@ -67,7 +65,6 @@ class CalendarEvent(models.Model):
             .convert_to_cache(res.get("resource_ids", []), self.env["calendar.event"])
         )
         resources = self.env["resource.resource"].browse(resource_ids)
-        # get a relevant appointment type for ease of use when coming from a view that groups by resource
         if not res.get("appointment_type_id") and "appointment_type_id" in fields:
             appointment_types = False
             if resources:
@@ -83,7 +80,6 @@ class CalendarEvent(models.Model):
             appointment_type = self.env["appointment.type"].browse(appointment_type_id)
             if "name" in fields:
                 res.setdefault("name", appointment_type.name)
-            # set the maximum capacity if managing capacities
             if "total_capacity_reserved" in fields:
                 if appointment_type.schedule_based_on == "resources" and resources:
                     res.setdefault(
@@ -104,15 +100,12 @@ class CalendarEvent(models.Model):
 
         if self.env.context.get("appointment_default_assign_user_attendees"):
             default_partner_ids = self.env.context.get("default_partner_ids", [])
-            # If there is only one attendee -> set him as organizer of the calendar event
-            # Mostly used when you click on a specific slot in the appointment kanban
             if len(default_partner_ids) == 1 and "user_id" in fields:
                 attendee_user = (
                     self.env["res.partner"].browse(default_partner_ids).user_ids
                 )
                 if attendee_user:
                     res["user_id"] = attendee_user[0].id
-            # Special gantt case: we want to assign the current user to the attendees if he's set as organizer
             elif (
                 res.get("user_id")
                 and res.get("partner_ids", Command.set([])) == [Command.set([])]
@@ -183,9 +176,6 @@ class CalendarEvent(models.Model):
         readonly=True,
         ondelete="set null",
     )
-    # The booking-line table is the truth, and `booked_resource_ids` reads it so a
-    # search or a group-by can reach it. `resource_ids` is what a writer uses: writing
-    # the relation table directly would insert a line with no capacity_reserved.
     booked_resource_ids = fields.Many2many(
         comodel_name="resource.resource",
         relation="appointment_booking_line",
@@ -287,10 +277,6 @@ class CalendarEvent(models.Model):
                 ).ids
             )
 
-            # Combine with super() instead of replacing it: another override in the
-            # MRO may contribute a False, and returning a freshly built list would
-            # silently drop it. Harmless with today's base implementation
-            # (`[True] * len(vals_list)`), but only by accident.
             return [
                 previous
                 and vals.get("appointment_type_id") not in resource_appointment_type_ids
@@ -360,10 +346,6 @@ class CalendarEvent(models.Model):
                 )
                 isAllCapacityTrue = all(events_manage_capacity)
                 isAllCapacityFalse = not any(events_manage_capacity)
-                # Add events of the bookings to check if:
-                # - There are event appointments with manage capacity True and False
-                # - Manage capacity is all True and the resource is exclusive or capacity used >= resource capacity
-                # - Manage capacity is all False and more than one appointment type or number of bookings > max_bookings
                 if (
                     (not isAllCapacityTrue and not isAllCapacityFalse)
                     or (
@@ -443,11 +425,6 @@ class CalendarEvent(models.Model):
                 event.videocall_redirection = False
                 continue
             if not event.access_token:
-                # Mint the token through the model's own helper rather than
-                # assigning here. This compute is non-stored and depends on
-                # `access_token`, so a write made inside it is discarded: the
-                # column stayed NULL and the URL below pointed at a token that
-                # did not exist, giving a permanently dead videocall link.
                 event._update_access_token()
             event.videocall_redirection = (
                 f"{event.get_base_url()}/calendar/videocall/{event.access_token}"
@@ -482,9 +459,6 @@ class CalendarEvent(models.Model):
         return super().get_base_url()
 
     def _get_scheduled_partners(self):
-        # Equipment customers receive invitations as booking stakeholders. They
-        # may reserve several resources concurrently, including on others' behalf.
-        # Only staff appointments and ordinary meetings reserve personal time.
         if self.appointment_type_id.schedule_based_on == "resources":
             return self.env["res.partner"]
         return super()._get_scheduled_partners()
@@ -597,9 +571,6 @@ class CalendarEvent(models.Model):
             event.booking_access_token = tokens.get(event.id, False)
 
     def _issue_booking_links(self) -> None:
-        """A comment link per booking, in its booker's name, until a month after
-        the meeting ends (decision CAL-A): viewing, cancelling and adding
-        attendees to the booking."""
         bookings = self.filtered("appointment_type_id")
         tokens = self.env["access.link"]._issue_each(
             bookings,
@@ -615,8 +586,6 @@ class CalendarEvent(models.Model):
 
     @api.model
     def _from_booking_token(self, token, *, archived=False):
-        """The booking whose live management link ``token`` is, in sudo, or an
-        empty recordset."""
         try:
             event = (
                 self.env["access.link"]
@@ -695,17 +664,10 @@ class CalendarEvent(models.Model):
         return super()._is_partner_unavailable(partner, partner_events)
 
     def _init_column(self, column_name, *, new_column=False):
-        """Initialize the value of the given column for existing rows."""
-        # access_token is skipped: generating unique tokens for potentially tons of existing
-        # events is wasteful, they are generated on the fly when needed.
         if column_name != "access_token":
             super()._init_column(column_name, new_column=new_column)
 
     def _inverse_resource_ids_or_capacity(self) -> None:
-        """Update booking lines as inverse of both resource capacity and resource_ids."""
-        # Both values are stored on the booking line and the resource capacity depends on the
-        # resources existing in the first place, so they share a single inverse to avoid any
-        # ordering conflict.
         booking_lines = []
         booking_lines_to_delete = self.env["appointment.booking.line"]
         for event in self:
@@ -801,7 +763,6 @@ class CalendarEvent(models.Model):
             ("company_id", "=", False),
             ("company_id", "in", self.env.context.get("allowed_company_ids", [])),
         ]
-        # If we have a default appointment type, we only want to show those resources
         default_appointment_type = self.env.context.get("default_appointment_type_id")
         if default_appointment_type:
             return (
@@ -812,7 +773,6 @@ class CalendarEvent(models.Model):
         return self.env["resource.resource"].search(resources_domain)
 
     def _read_group_partner_ids(self, partners, domain):
-        """Show the partners associated with relevant staff users in appointment gantt context."""
         if not self.env.context.get("appointment_booking_gantt_show_all_resources"):
             return partners
         appointment_type_id = self.env.context.get("default_appointment_type_id", False)
@@ -853,10 +813,6 @@ class CalendarEvent(models.Model):
         return super()._track_get_default_log_message(tracked_fields)
 
     def action_cancel_meeting(self, partner_ids) -> None:
-        """Archive the meeting, logging which attendees requested the cancellation.
-
-        :param list partner_ids: ids of the partners who requested the cancellation
-        """
         self.check_singleton()
         message_body = self.env._("Appointment cancelled")
         if partner_ids:
@@ -872,7 +828,6 @@ class CalendarEvent(models.Model):
                     partners=cancelling_attendees,
                 )
         self._track_set_log_message(message_body)
-        # Use the organizer if set or fallback on SUPERUSER to notify attendees that the event is archived
         self.with_user(self.user_id or SUPERUSER_ID).sudo().action_archive()
 
     def action_set_appointment_attended(self) -> None:
@@ -892,14 +847,6 @@ class CalendarEvent(models.Model):
         self.appointment_status = "no_show"
 
     def _get_or_create_partners(self, guest_emails_str, limit=None):
-        """Used to find the partners from the emails strings and creates partners if not found.
-
-        :param str guest_emails_str: line-separated guest emails. It will
-          fetch or create partners to add them as event attendees;
-        :return: the fetched or created partners
-        :rtype: <res.partner>
-        """
-        # Split and normalize guest emails
         formatted_emails = email_split_and_format_normalize(guest_emails_str)
         valid_normalized = list(
             tools.misc.unique(
@@ -909,11 +856,6 @@ class CalendarEvent(models.Model):
         )
         if not valid_normalized:
             return self.env["res.partner"]
-        # Cap the guest count when the caller asks for it. This used to key on
-        # `self.env.su` as a proxy for "came from the public web form", which bound
-        # every sudo caller - crons, server actions, bridge modules - and bound no
-        # ordinary internal user. The two public controllers pass the limit
-        # explicitly instead.
         if limit and len(valid_normalized) > limit:
             raise UserError(
                 self.env._(
@@ -922,7 +864,6 @@ class CalendarEvent(models.Model):
                 )
             )
 
-        # Find or create existing partners
         return self.env["mixin.mail.thread"]._partner_get_or_create_from_emails_single(
             formatted_emails
         )
@@ -948,7 +889,6 @@ class CalendarEvent(models.Model):
             return res
 
         appointment_type_sudo = self.appointment_type_id.sudo()
-        # set 'author_id' and 'email_from' based on the organizer
         vals = (
             {
                 "author_id": self.user_id.partner_id.id,
@@ -979,7 +919,7 @@ class CalendarEvent(models.Model):
                             "calendar.mt_calendar_event_booked"
                         ),
                         "email_layout_xmlid": "mail.mail_notification_light",
-                        "partner_ids": [],  # notify followers of the subtype only, not default recipients
+                        "partner_ids": [],
                     },
                 )
         if (
@@ -1007,7 +947,6 @@ class CalendarEvent(models.Model):
         return super()._get_activity_excluded_models() + ["appointment.type"]
 
     def _get_customer_summary(self):
-        # Summary should make sense for the person who booked the meeting
         if (
             self.appointment_type_id
             and self.appointment_type_id.schedule_based_on == "users"
@@ -1021,20 +960,6 @@ class CalendarEvent(models.Model):
         return super()._get_customer_summary()
 
     def _get_domain_default_privacy(self):
-        """Extend the privacy domain to include every event related to a resource appointment type.
-
-        :rtype: Domain
-        """
-        # Resource related events must stay visible and accessible from the gantt view whatever
-        # their privacy: privacy derives from the user settings, and resource events aren't
-        # typically linked to any user, so their visibility shouldn't depend on it.
-        #
-        # `any!`, not a dotted path: this domain is visibility policy that
-        # `_search` injects into every search touching a non-public field, so it
-        # must not be evaluated under the caller's rights on `appointment.type`.
-        # Through `any` the subselect checked them, and a portal user -- who may
-        # read their own appointments but not appointment types -- could not
-        # count or list calendar events at all.
         return super()._get_domain_default_privacy() | Domain(
             "appointment_type_id",
             "any!",
@@ -1042,7 +967,6 @@ class CalendarEvent(models.Model):
         )
 
     def _get_customer_description(self):
-        """Return shareable event details without embedding management credentials."""
         if not self.appointment_type_id:
             return super()._get_customer_description()
         confirmation = html_sanitize(

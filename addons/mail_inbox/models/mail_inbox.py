@@ -119,7 +119,6 @@ class MailInbox(models.Model):
         self.check_singleton()
         if author_id := msg_dict.get("author_id"):
             return self.env["res.partner"].browse(author_id)
-        # one of our own addresses writing in is a correspondent like any other
         correspondent = self.env[
             "mixin.mail.thread"
         ]._partner_get_or_create_from_emails_single(
@@ -141,12 +140,8 @@ class MailInbox(models.Model):
         ]
         if channel := Channel.search(domain, limit=1):
             return channel
-        # First contact is serialised per inbox: a concurrent first message from
-        # the same sender waits on this lock, then fails to serialise against the
-        # inbox row written below, and its retry finds the channel created here.
         self.lock_for_update(wait=True)
         self.last_conversation_date = fields.Datetime.now()
-        # the channel is the inbox's, not whoever's transaction routed the mail
         return Channel.with_context(
             discuss_channel_creator_joins=False,
             discuss_creator_notified_by_caller=True,

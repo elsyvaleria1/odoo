@@ -103,7 +103,7 @@ class CredentialAccessLog(models.Model):
 
     def unlink(self):
         if self and not self._is_cleanup_authorized():
-            raise UserError(  # noqa: E8506  the audit trail refuses deletion outside its authorized cleanup
+            raise UserError(
                 self.env._(
                     "Audit log records cannot be deleted!\n\n"
                     "Credential access logs must be preserved for security auditing "
@@ -130,11 +130,6 @@ class CredentialAccessLog(models.Model):
             )
 
     def _prepare_vals_out_of_band(self, vals_list: list[dict]) -> list[dict]:
-        # rows prepared in another transaction, written from this one: a
-        # credential that transaction created and did not commit could only have
-        # been read by its own creator, a company it created would take its rows
-        # along (cascade), and a user it created leaves the row with the login
-        # it denormalized
         def surviving(model: str, key: str) -> set[int]:
             ids = {vals[key] for vals in vals_list if vals.get(key)}
             return set(self.env[model].browse(ids).exists().ids)

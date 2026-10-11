@@ -9,12 +9,6 @@ _SINGLETON_FIELD_TYPES = frozenset({"col", "measure", "readonly"})
 
 @view_validation.register_validator("grid")
 def valid_field_types(arch, **kwargs) -> bool:
-    """The col, measure and readonly <field>s must each appear at most once in
-    a grid view; row fields are not restricted. A <field> with no type is a row
-    field, which is what both the schema and GridArchParser already make of it.
-
-    :type arch: etree._Element
-    """
     seen = set()
     for f in arch.iterdescendants("field"):
         field_type = f.get("type", "row")

@@ -3,10 +3,6 @@ from odoo.tests import TransactionCase, new_test_user, tagged
 
 @tagged("post_install", "-at_install")
 class TestAccessDecisionsIgnoreTheCache(TransactionCase):
-    # a read raises only when the value is fetched: once a sudo read has
-    # cached it, the same read returns it. A decision taken by trying the read
-    # therefore depends on what ran before; each case below is judged with
-    # the value cached and without
 
     @classmethod
     def setUpClass(cls):

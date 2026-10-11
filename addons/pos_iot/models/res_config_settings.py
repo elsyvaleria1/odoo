@@ -17,7 +17,6 @@ class ResConfigSettings(models.TransientModel):
         help="The transactions are processed by Six via an IoT box. Setup your terminal on the related payment method.",
     )
 
-    # pos.config fields
     pos_iface_display_id = fields.Many2one(
         related="pos_config_id.iface_display_id",
         readonly=False,

@@ -12,7 +12,7 @@ class PlanningSlot(models.Model):
         if self.project_id and not self.sale_line_id.product_id.planning_enabled:
             if (
                 self.project_id.allocated_hours == 0
-            ):  # If the project has no allocated hours, we still want to copy the slot so we immediately return
+            ):
                 return res
             if self.project_id not in remaining_hours_to_plan:
                 remaining_hours_to_plan[self.project_id] = (
@@ -25,7 +25,7 @@ class PlanningSlot(models.Model):
                 )
                 != 1
             ):
-                return False  # nothing left to allocate.
+                return False
         return res
 
     def _update_remaining_hours_to_plan_and_values(
@@ -37,7 +37,7 @@ class PlanningSlot(models.Model):
         if self.project_id and not self.sale_line_id.product_id.planning_enabled:
             if (
                 self.project_id.allocated_hours == 0
-            ):  # If the project has no allocated hours, we still want to copy the slot so we immediately return
+            ):
                 return res
             if (
                 float_compare(
@@ -56,6 +56,6 @@ class PlanningSlot(models.Model):
             values["end_datetime"] = values["start_datetime"] + timedelta(
                 hours=remaining_hours
             )
-            values.pop("allocated_hours", None)  # we want that to be computed again.
+            values.pop("allocated_hours", None)
             remaining_hours_to_plan[self.project_id] -= remaining_hours * ratio
         return res

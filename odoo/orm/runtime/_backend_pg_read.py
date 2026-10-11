@@ -81,10 +81,6 @@ def _total_order(model: ModelLike, order: str, order_sql: SQL) -> SQL:
 
 
 def _get_fetch_term(model: ModelLike, field: Field[typing.Any], query: Query) -> SQL:
-    # the memo is keyed by field alone: a _field_to_sql override that answers
-    # the bare identifier under one environment and an expression under
-    # another would be served the identifier from the second call on, so an
-    # override customises a column in every environment or in none
     if field.translate:
         return _get_translated_fetch_term(model, field, query)
     term = field._fetch_term
@@ -100,8 +96,6 @@ def _get_fetch_term(model: ModelLike, field: Field[typing.Any], query: Query) ->
     ):
         field._fetch_term = sql
         if tuple(column.to_flush) == (field,):
-            # the same identifier with the field to flush, for every other
-            # place that spells the column against its own table
             field._column_term = column
     return sql
 
@@ -160,16 +154,8 @@ class _PostgresReadMixin:
                         sql = _get_fetch_term(model, field, query)
                     sql_terms.append(sql)
 
-            # a pending compute is not flushed by a fetch: the row's value
-            # stays pending and is computed when it is read
             select = query.statement(*sql_terms)
             if model._ids:
-                # a fetch of known rows writes only the fetched columns whose
-                # term asks for a flush: a plain column's dirty value already
-                # wins over the SELECT's in the cache. A search_fetch keeps
-                # its flush: the WHERE reads every row. So does a column the
-                # WHERE reads (a read rule on a stored compute): left pending,
-                # the rule would judge the rows on the value before the change
                 filtering = {
                     *query.where_clause.to_flush,
                     *query.from_clause.to_flush,
@@ -200,8 +186,6 @@ class _PostgresReadMixin:
             for field, values in zip(column_fields, column_values, strict=True):
                 if field.is_stored_computed:
                     field._clear_dead_pending(fetched)
-                    # a row whose compute is pending keeps it: the table holds
-                    # the value before the change, not after it
                     members = (field, *field.tree_siblings)
                     if any(core.has_pending_field(member) for member in members):
                         keep = [
@@ -261,8 +245,6 @@ class _PostgresReadMixin:
         check_access: bool = True,
         prof: typing.Any = None,
     ) -> Query:
-        # a mixin hands the port its own recordset; compiling its SQL needs
-        # the model rather than the fragment that called
         return _prepare_postgres_search_query(
             typing.cast("BaseModel", model),
             domain,

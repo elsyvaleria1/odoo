@@ -6,7 +6,6 @@ class IrQweb(models.AbstractModel):
 
     def _render(self, template, values=None, **options):
         if self.env.context.get("studio"):
-            # Force inherit branding from report rendering
             return super(IrQweb, self.with_context(inherit_branding=True))._render(
                 template, values, **options
             )
@@ -16,7 +15,6 @@ class IrQweb(models.AbstractModel):
         return super()._get_template_cache_keys() + ["studio"]
 
     def _prepare_environment(self, values):
-        # blacklist known parasite variables
         if self.env.context.get("studio"):
             for k in ["main_object"]:
                 if k in values:

@@ -63,13 +63,6 @@ class TestHrAppraisal(TransactionCase):
         cls.duration_first_appraisal = 9
         cls.duration_next_appraisal = 12
 
-        # The plan has to be configured at the same instant the employee is hired.
-        # Enabling it after the freeze block recomputed next_appraisal_date against
-        # the REAL clock, and `(today - 6 months) + 6 months` is not today whenever
-        # the earlier month is short of that day: 2026-08-30 goes back to 2026-02-28
-        # and forward to 2026-08-28, two days BEFORE today. _upcoming_appraisal_
-        # creation_date then reads a date already in the past and pushes it a whole
-        # period out, so these tests passed or failed on the calendar alone.
         with freeze_time(date.today() + relativedelta(months=-6)):
             cls.env.company.write(
                 {
@@ -92,9 +85,6 @@ class TestHrAppraisal(TransactionCase):
                     "work_email": "michael@odoo.com",
                 }
             )
-            # work_location_id is a Many2one: o2m-style commands are invalid
-            # and rejected by the strict ORM (they were silently dropped
-            # before), so create the location explicitly.
             cls.hr_employee.write(
                 {
                     "work_location_id": cls.env["hr.work.location"]
@@ -115,40 +105,28 @@ class TestHrAppraisal(TransactionCase):
 
     def test_hr_appraisal(self):
         with freeze_time(date.today() + relativedelta(months=6)):
-            # I run the scheduler
-            self.env["res.company"]._run_employee_appraisal_plans()  # cronjob
+            self.env["res.company"]._run_employee_appraisal_plans()
 
-            # I check whether new appraisal is created for above employee or not
             appraisals = self.HrAppraisal.search(
                 [("employee_id", "=", self.hr_employee.id)]
             )
             self.assertTrue(appraisals, "Appraisal not created")
 
-            # I start the appraisal process by click on "Start Appraisal" button.
             appraisals.action_confirm()
 
-            # I check that state is "Appraisal Sent".
             self.assertEqual(
                 appraisals.state,
                 "2_pending",
                 "appraisal should be 'Appraisal Sent' state",
             )
 
-            # A final rating is needed before closing the appraisal
             appraisals.assessment_note = self.appraisal_rating
-            # I close this appraisal
             appraisals.action_done()
-            # I check that state of Appraisal is done.
             self.assertEqual(
                 appraisals.state, "3_done", "Appraisal should be in done state"
             )
 
     def test_01_appraisal_next_appraisal_date(self):
-        """An employee has just started working: next_appraisal_date is set properly.
-
-        When there is an ongoing appraisal, there is no appraisal plan yet, so
-        next_appraisal_date should be empty.
-        """
         with freeze_time(date.today() - relativedelta(months=6)):
             months = self.hr_employee.company_id.duration_after_recruitment
             upcoming_appraisal_date = date.today() + relativedelta(months=months)
@@ -159,7 +137,6 @@ class TestHrAppraisal(TransactionCase):
                 "next_appraisal_date is not set properly for an employee that has just started",
             )
 
-            # create appraisal manually
             self.HrAppraisal.create(
                 {
                     "employee_id": self.hr_employee.id,
@@ -174,7 +151,6 @@ class TestHrAppraisal(TransactionCase):
             )
 
     def test_appraisal_next_appraisal_date_uppcoming_appraisal(self):
-        """Check next_appraisal_date is correct and that the appraisal plan generates the appraisal at that time."""
 
         with freeze_time(date.today() - relativedelta(months=6)):
             months = self.hr_employee.company_id.duration_after_recruitment
@@ -198,11 +174,6 @@ class TestHrAppraisal(TransactionCase):
             )
 
     def test_08_check_new_employee_no_appraisal(self):
-        """
-        Employee has started working recenlty
-        less than duration_after_recruitment ago,
-        check that appraisal is not set
-        """
         with freeze_time(date.today() - relativedelta(months=3)):
             self.env["res.company"]._run_employee_appraisal_plans()
             appraisals = self.HrAppraisal.search(
@@ -211,12 +182,6 @@ class TestHrAppraisal(TransactionCase):
             self.assertFalse(appraisals, "Appraisal created")
 
     def test_09_check_appraisal_after_recruitment(self):
-        """
-        Employee has started working recently
-        Time for a first appraisal after
-        some time (duration_after_recruitment) has evolved
-        since recruitment
-        """
         with freeze_time(
             self.hr_employee.date_version
             + relativedelta(months=self.duration_after_recruitment)
@@ -228,11 +193,6 @@ class TestHrAppraisal(TransactionCase):
             self.assertTrue(appraisals, "Appraisal not created")
 
     def test_10_check_no_appraisal_since_recruitment_appraisal(self):
-        """
-        After employees first recruitment appraisal some time has evolved,
-        but not enough for the first real appraisal.
-        Check that appraisal is not created
-        """
         with freeze_time(
             self.hr_employee.date_version
             + relativedelta(months=self.duration_after_recruitment)
@@ -259,17 +219,10 @@ class TestHrAppraisal(TransactionCase):
             self.assertFalse(appraisals, "Appraisal created")
 
     def test_11_check_first_appraisal_since_recruitment_appraisal(self):
-        """
-        Employee started while ago, has already had
-        first recruitment appraisal and now it is
-        time for a first real appraisal
-        """
         with freeze_time(
             self.hr_employee.date_version
             + relativedelta(months=self.duration_after_recruitment)
         ):
-            # In order to make the second appraisal, cron checks that
-            # there is alraedy one done appraisal for the employee
             self.HrAppraisal.create(
                 {
                     "employee_id": self.hr_employee.id,
@@ -291,20 +244,12 @@ class TestHrAppraisal(TransactionCase):
             self.assertTrue(appraisals, "Appraisal not created")
 
     def test_12_check_no_appraisal_after_first_appraisal(self):
-        """
-        Employee has already had first recruitment appraisal
-        and first real appraisal, but its not time yet
-        for recurring appraisal. Check that
-        appraisal is not set
-        """
         with freeze_time(
             self.hr_employee.date_version
             + relativedelta(
                 months=self.duration_after_recruitment + self.duration_first_appraisal
             )
         ):
-            # In order to make recurring appraisal, cron checks that
-            # there are alraedy two done appraisals for the employee
             self.HrAppraisal.create(
                 {
                     "employee_id": self.hr_employee.id,
@@ -337,17 +282,12 @@ class TestHrAppraisal(TransactionCase):
             self.assertFalse(appraisals, "Appraisal created")
 
     def test_12_check_recurring_appraisal(self):
-        """
-        check that recurring appraisal is created
-        """
         with freeze_time(
             self.hr_employee.date_version
             + relativedelta(
                 months=self.duration_after_recruitment + self.duration_first_appraisal
             )
         ):
-            # In order to make recurring appraisal, cron checks that
-            # there are alraedy two done appraisals for the employee
             self.HrAppraisal.create(
                 {
                     "employee_id": self.hr_employee.id,
@@ -381,8 +321,6 @@ class TestHrAppraisal(TransactionCase):
     def test_load_scenario(self):
         appraisals_before = self.HrAppraisal.search_count([])
         self.env["hr.appraisal"]._load_demo_data()
-        # `has_demo_data` uses this tag as its sentinel, so the scenario is only
-        # really loaded if it exists afterwards.
         self.assertTrue(
             self.env.ref(
                 "hr_appraisal.hr_appraisal_goal_tag_softskills",
@@ -409,8 +347,6 @@ class TestHrAppraisal(TransactionCase):
         appraisal_form = Form(
             self.env["hr.appraisal"]
             .with_user(user_without_hr_right)
-            # See the note in test_hr_appraisal_goal.py: the form's modifier
-            # expressions read `uid` out of the context.
             .with_context({"uid": user_without_hr_right.id})
         )
         appraisal_form.save()
@@ -499,11 +435,6 @@ class TestHrAppraisal(TransactionCase):
         )
 
     def test_appraisal_with_employee_officer(self):
-        """
-        This test checks that an admin can see appraisals of all employees,
-        while an employee officer can only see appraisals where they are
-        the appraiser.
-        """
         admin_user = self.env.ref("base.user_admin")
         officer_group = self.env.ref("hr.group_hr_manager")
         officer_user = self.env["res.users"].create(
@@ -516,7 +447,6 @@ class TestHrAppraisal(TransactionCase):
         )
         officer_user.action_create_employee()
 
-        # Create appraisal A with admin as appraiser
         appraisal_a = self.HrAppraisal.create(
             {
                 "employee_id": self.hr_employee.id,
@@ -529,15 +459,12 @@ class TestHrAppraisal(TransactionCase):
         self.assertEqual(self._get_appraisal_count(admin_user), 1)
         self.assertEqual(self._get_appraisal_count(officer_user), 0)
 
-        # An officer who cannot see any of this employee's appraisals must get
-        # an honest empty list, not a list scoped to an empty employee id.
         action = self.hr_employee.with_user(
             officer_user
         ).action_view_employee_appraisals()
         self.assertEqual(action["domain"], [("employee_id", "in", [])])
         self.assertFalse(action.get("res_id"))
 
-        # Create appraisal B with officer as appraiser
         self.HrAppraisal.create(
             {
                 "employee_id": self.hr_employee.id,
@@ -550,7 +477,6 @@ class TestHrAppraisal(TransactionCase):
         self.assertEqual(self._get_appraisal_count(admin_user), 2)
         self.assertEqual(self._get_appraisal_count(officer_user), 1)
 
-        # Delete appraisal A
         appraisal_a.sudo().unlink()
 
         self.assertEqual(self._get_appraisal_count(admin_user), 1)
@@ -570,7 +496,6 @@ class TestHrAppraisal(TransactionCase):
             self.assertEqual(appraisals.department_id, self.dep_rd)
 
     def test_appraisal_template_computation(self):
-        # Delete all templates to prevent them from interacting with the test
         for template in self.env["hr.appraisal.template"].search([]):
             template.unlink()
 

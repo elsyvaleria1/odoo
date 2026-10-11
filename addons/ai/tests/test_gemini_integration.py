@@ -60,7 +60,6 @@ class TestGeminiIntegration(TransactionCase):
     def test_gemini_embedding_and_completion(
         self, mock_request, mock_get_api_token, mock_get_similar_chunks
     ):
-        """Gemini models hit the embedding and completion endpoints, with the RAG context."""
         mock_get_api_token.return_value = "test-gemini-key"
         mock_get_similar_chunks.return_value = self.test_embedding
 
@@ -137,7 +136,6 @@ class TestGeminiIntegration(TransactionCase):
         )
 
     def test_provider_detection_for_gemini(self):
-        """Gemini models resolve to the google provider and the gemini embedding model."""
         google_provider = next(p for p in PROVIDERS if p.name == "google")
         for model, _ in google_provider.llms:
             if model in DEPRECATED_MODELS:
@@ -150,6 +148,5 @@ class TestGeminiIntegration(TransactionCase):
             get_provider_for_embedding_model(self.env, "gemini-embedding-001"), "google"
         )
 
-        # Test that unknown embedding model raises an error
         with self.assertRaises(UserError):
             get_provider_for_embedding_model(self.env, "unknown-embedding-model")

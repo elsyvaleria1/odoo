@@ -23,7 +23,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
     def setUpClass(cls):
         super().setUpClass()
 
-        # create SO
         cls.sale_order = (
             cls.env["sale.order"]
             .with_context(tracking_disable=True)
@@ -60,11 +59,9 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
         )
 
     def test_sale_validated_timesheet(self):
-        # set invoiced_timesheet as "Approved timesheet only"
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.invoiced_timesheet", "approved"
         )
-        #  confirm SO
         self.sale_order.action_confirm()
 
         project_1 = self.env["project.project"].search(
@@ -76,7 +73,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
         delivered_task = self.env["project.task"].search(
             [("sale_line_id", "=", self.delivered_so_line.id)]
         )
-        # check project, task and analytic account
         self.assertEqual(
             self.sale_order.tasks_count,
             2,
@@ -95,7 +91,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
 
         yesterday = date.today() - relativedelta(days=1)
         week_before = date.today() + relativedelta(weeks=-1)
-        # log timesheet on task of delivered So line
         delivered_timesheet1 = self.env["account.analytic.line"].create(
             {
                 "name": "Timesheet delivered 1",
@@ -116,7 +111,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
                 "date": yesterday,
             }
         )
-        # log timesheet on task of ordered so line
         ordered_timesheet1 = self.env["account.analytic.line"].create(
             {
                 "name": "Timesheet ordered 1",
@@ -138,7 +132,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             }
         )
 
-        # check not any timesheet should be validated
         self.assertFalse(
             any(
                 [
@@ -151,10 +144,8 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             "Timesheet should not be validated",
         )
 
-        # Validate ordered and delivered some Timesheet
         timesheet_to_validate = delivered_timesheet1 | ordered_timesheet1
         timesheet_to_validate.action_validate_timesheet()
-        # check if timesheets are validated
         self.assertTrue(delivered_timesheet1.validated)
         self.assertTrue(ordered_timesheet1.validated)
 
@@ -162,7 +153,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             any([delivered_timesheet1.validated, ordered_timesheet1.validated]),
             "Timesheet should be validated",
         )
-        # check timesheet is linked to SOL
         self.assertEqual(
             delivered_timesheet1.so_line.id,
             self.delivered_so_line.id,
@@ -173,7 +163,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             self.ordered_so_line.id,
             "The ordered timesheet should be linked to ordered SOL",
         )
-        # check delivered quantity on SOL
         self.assertEqual(
             self.ordered_so_line.qty_transferred,
             8,
@@ -185,16 +174,13 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             "Delivered quantity should be 6 as some timesheet is validated",
         )
 
-        # invoice SO
         invoice1 = self.sale_order._create_invoices()
-        # check invoiced amount
         self.assertEqual(
             invoice1.amount_total,
             self.ordered_so_line.price_unit * 10
             + self.delivered_so_line.price_unit * 6,
             "Invoiced amount should be equal to Ordered SOL + Delivered SOL unit price * 6",
         )
-        # check timesheet is linked to invoice
         self.assertEqual(
             delivered_timesheet1.timesheet_invoice_id,
             invoice1,
@@ -205,7 +191,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             "The ordered timesheet should not be linked to the invoice, since we are in ordered quantity",
         )
 
-        # check invoiced quantity on sale order and on invoice
         ordered_invoice_line = self.ordered_so_line.invoice_line_ids.filtered(
             lambda line: line.move_id == invoice1
         )
@@ -223,7 +208,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             "The draft invoice's quantity should be same on sales order line and invoice line",
         )
 
-        # Validate remaining Timesheet
         timesheet_to_validate = delivered_timesheet2 | ordered_timesheet2
         timesheet_to_validate.action_validate_timesheet()
 
@@ -231,7 +215,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             any([delivered_timesheet2.validated, ordered_timesheet2.validated]),
             "Timesheet should be validated",
         )
-        # check remaining timesheet is linked to SOL
         self.assertEqual(
             delivered_timesheet2.so_line.id,
             self.delivered_so_line.id,
@@ -242,7 +225,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             self.ordered_so_line.id,
             "The ordered timesheet should be linked to ordered SOL",
         )
-        # check delivered quantity on SOL
         self.assertEqual(
             self.ordered_so_line.qty_transferred, 10, "All quantity should be delivered"
         )
@@ -252,10 +234,8 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             "All quantity should be delivered",
         )
 
-        # invoice remaining SO
         invoice2 = self.sale_order._create_invoices()
 
-        # check invoiced amount
         self.assertEqual(
             invoice2.amount_total,
             self.delivered_so_line.price_unit * 4,
@@ -267,7 +247,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             + self.delivered_so_line.price_unit * 10,
             "Invoiced amount should be equal to Ordered SOL + Delivered SOL",
         )
-        # check invoiced quantity on sale order and on invoice
         ordered_invoice_line2 = self.ordered_so_line.invoice_line_ids.filtered(
             lambda line: line.move_id == invoice2
         )
@@ -283,7 +262,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
             delivered_invoice_line.quantity + delivered_invoice_line2.quantity,
             "The draft invoices' quantity should be same on sales order line and invoice lines",
         )
-        # nothing is left to raise, and neither invoice is posted
         self.assertEqual(
             self.sale_order.invoice_state,
             "draft",
@@ -291,22 +269,9 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
         )
 
     def test_project_sharing_with_validated_timesheet_invoicing(self):
-        """This test check if the portal user in project sharing see only the totals based on the timesheets
-        are computed on the validated timesheets only and not all the timesheets related to a task.
-        Because the portal user will only see the validated timesheets and not all ones.
-
-        Also assures that internal users will see the same results when they access the portal
-        view
-
-        Test Case:
-        =========
-
-        """
-        # set invoiced_timesheet as "Approved timesheet only"
         self.env["ir.config_parameter"].sudo().set_param(
             "sale.invoiced_timesheet", "approved"
         )
-        #  confirm SO
         self.sale_order.action_confirm()
 
         project_1 = self.env["project.project"].search(
@@ -402,11 +367,6 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
         self.assertEqual(portal_task_read["portal_progress"], 0.2)
 
     def test_block_edit_so_line_validated_timesheet(self):
-        """
-        The purpose is to check that it is not possible to modify the sale order line
-        if the timesheet is validated when we call the logic that updates the
-        timesheet sale order lines.
-        """
         self.sale_order.action_confirm()
         ordered_task = self.env["project.task"].search(
             [("sale_line_id", "=", self.ordered_so_line.id)]
@@ -452,10 +412,10 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
 
         self.assertEqual(
             not_validated_timesheet.so_line, other_sale_line
-        )  # sale order line is updated
+        )
         self.assertEqual(
             validated_timesheet.so_line, ordered_task.sale_line_id
-        )  # sale order line is not updated
+        )
 
     def test_create_invoice_for_past_validated_timesheet(self):
         self.env.user.group_ids += self.quick_ref(
@@ -525,7 +485,7 @@ class TestSaleValidatedTimesheet(TestCommonSaleTimesheet):
                             self.env.ref("sale.group_sale_manager").id,
                             self.env.ref(
                                 "account.group_account_user"
-                            ).id,  # Add the accounting accountant group
+                            ).id,
                         ],
                     )
                 ],

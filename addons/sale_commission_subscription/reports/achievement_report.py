@@ -11,11 +11,7 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_subscription_currency_rates(self) -> str:
-        """Get a query to be able to convert the MRR log amount (in SO currency) to the currency of the log's company.
-        Rates are read as res.currency._get_rates reads them for that company; a currency without any converts at 1.
-        """
         conversion_date = fields.Date.today()
-        # In case we want to replay data at previous date
         if self.env.context.get("conversion_date"):
             conversion_date = datetime.strptime(
                 self.env.context["conversion_date"], "%Y-%m-%d"
@@ -76,7 +72,6 @@ class SaleCommissionAchievementReport(models.Model):
 
     @api.model
     def _get_sale_order_log_product(self) -> str:
-        # TODO BIG CURRENCY CHANGES 0_0
         return """
             rules.mrr_rate * log.amount_signed / COALESCE(log_rate.rate, 1)
         """
@@ -100,7 +95,6 @@ class SaleCommissionAchievementReport(models.Model):
     @api.model
     def _where_invoices(self):
         res = super()._where_invoices()
-        # When the rules has no recurring plan, all invoices match, otherwise only the plan of the subscription
         res += """
           AND ((rules.recurring_plan_id IS NULL) OR (rules.recurring_plan_id=sub.plan_id))
         """

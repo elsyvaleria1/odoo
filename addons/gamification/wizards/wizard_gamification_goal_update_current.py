@@ -14,7 +14,6 @@ class WizardGamificationGoalUpdateCurrent(models.TransientModel):
     current = fields.Float()
 
     def action_update_current(self) -> None:
-        """Wizard action for updating the current value."""
         for wiz in self:
             wiz.goal_id.write(
                 {

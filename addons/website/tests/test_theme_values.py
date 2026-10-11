@@ -125,7 +125,6 @@ class TestThemeValues(TransactionCase):
         )
         self.assertFalse(result["reload_bundles"])
         self.assertIsNone(self._custom_user_values())
-        # RFS prints a px font size in rem, and so does the runtime value.
         self.assertEqual(
             result["theme_values_css"],
             ":root{--btn-padding-x:1.4rem;--input-font-size:1.125rem}",
@@ -143,8 +142,6 @@ class TestThemeValues(TransactionCase):
         first = self.assets.update_scss_customization(
             USER_VALUES, {"h3-margin-top": "12px"}
         )
-        # The level equals the common heading margin, so no h3 rule is compiled
-        # yet: setting it the first time compiles one.
         self.assertTrue(first["reload_bundles"])
         self.assertIn("'h3-margin-top': 12px,", self._custom_user_values())
         second = self.assets.update_scss_customization(
@@ -158,8 +155,6 @@ class TestThemeValues(TransactionCase):
             USER_VALUES, {"h1-font-size": "3.5rem", "h5-font-size": "18px"}
         )
         self.assertFalse(result["reload_bundles"])
-        # Bootstrap's RFS: 3.5rem is past its 1.25rem base, so below 1200px it
-        # shrinks fluidly; 18px (1.125rem) is not, and stays as it is.
         self.assertEqual(
             result["theme_values_css"],
             ":root{--h1-font-size:3.5rem;--h5-font-size:1.125rem;"
@@ -183,7 +178,6 @@ class TestThemeValues(TransactionCase):
             USER_VALUES,
             {"header-font-size": "1.125rem", "header-text-color": "'o-color-2'"},
         )
-        # Neither is set on the default website, so no rule reads them yet.
         self.assertTrue(first["reload_bundles"])
         second = self.assets.update_scss_customization(
             USER_VALUES,
@@ -201,7 +195,6 @@ class TestThemeValues(TransactionCase):
             USER_VALUES, {"body-line-height": "1.7", "small-font-size": "13px"}
         )
         self.assertFalse(result["reload_bundles"])
-        # Bootstrap's `small` is the ratio to the base size, in em.
         self.assertEqual(
             result["theme_values_css"],
             ":root{--body-line-height:1.7;--small-font-size:0.8125rem;"
@@ -249,8 +242,6 @@ class TestThemeValues(TransactionCase):
             USER_VALUES, {"fixed-logo-height": "2rem"}
         )
         self.assertFalse(result["reload_bundles"])
-        # The scrolled logo's font size is the height over the base line height,
-        # which RFS makes fluid past 1.25rem.
         self.assertEqual(
             result["theme_values_css"],
             ":root{--fixed-logo-height:2rem;"
@@ -271,8 +262,6 @@ class TestThemeValues(TransactionCase):
         )
 
     def test_the_input_radius_applies_at_runtime_once_the_compile_has_one(self):
-        # Unset, the check boxes keep Bootstrap's .25em; set, they take
-        # min(radius, .25rem): the first value compiles that rule.
         first = self.assets.update_scss_customization(
             USER_VALUES, {"input-border-radius": "8px"}
         )
@@ -346,8 +335,6 @@ class TestThemeValues(TransactionCase):
 
     def test_the_runtime_gradient_rules_are_the_compiled_ones(self):
         self.addCleanup(close_sass_compiler)
-        # The default footer is combination 2, so it takes that combination's
-        # gradient too, through a rule of its own.
         css = self.assets.update_scss_customization(
             USER_VALUES, {"o-cc2-bg-gradient": GRADIENT}
         )["theme_values_css"]
@@ -573,9 +560,6 @@ class ThemeColorsCase(TransactionCase):
 
     @staticmethod
     def _rendered(value):
-        # Dart Sass prints a colour pushed past the gamut by an HSL adjustment as
-        # hsl() with a lightness beyond 0-100%; ours prints the same colour as
-        # rgb(). A browser clamps both to one colour, which is what is compared.
         if hsl := re.fullmatch(r"hsl\(([-\d.]+),\s*([-\d.]+)%,\s*([-\d.]+)%\)", value):
             hue, saturation, lightness = (float(x) for x in hsl.groups())
             clamp = min(max(lightness, 0), 100) / 100

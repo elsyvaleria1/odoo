@@ -55,8 +55,6 @@ class TestDurationDisplayLanguage(TestHrHolidaysCommon):
         leave = self._spanish_leave()
         self.assertEqual(leave.duration_display, "3 días")
 
-        # Somebody else -- an admin working in English -- fixes the company
-        # calendar.  This re-triggers the leave's duration compute.
         english_env = self.env(context={**self.env.context, "lang": "en_US"})
         english_env["resource.calendar"].browse(
             self.employee_emp.resource_calendar_id.id
@@ -70,8 +68,6 @@ class TestDurationDisplayLanguage(TestHrHolidaysCommon):
                 }
             )
         ]
-        # Their request ends here: whatever the recompute produced is now on
-        # disk.  The employee reads it afterwards, in a later request.
         english_env.flush_all()
         leave.invalidate_recordset()
 

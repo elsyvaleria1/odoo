@@ -35,18 +35,12 @@ from odoo.tools.assets.esm_registry import (
 
 from odoo.addons.base.models.assetsbundle import AssetsBundle
 
-# above esbuild's own 30 s timeout, so a normal compile is always waited for,
-# and well under limit_time_real, so a stalled holder cannot queue every waiter
-# until the workers are killed
 _ESBUILD_LOCK_TIMEOUT_S = 45
 _LOCK_TIMED_OUT = object()
 _fallback_log = get_asset_logger("fallback")
 _bridge_log = get_asset_logger("bridge")
 _debug = DebugLog(__name__)
 
-# specifier literals per source, keyed by the asset's unique descriptor (url
-# and mtime): the page bundles of one process share most of their sources,
-# and one bundle's consumers re-list many of its own
 _SPECIFIER_LITERALS_CACHE: LRU = LRU(16384)
 
 
@@ -62,8 +56,6 @@ def _get_specs_imported_by_consumers(
     for consumer in consumers:
         own = [a for a in consumer.native_modules if a.module_path not in members]
         own_specs = {name for a in own for name in module_specifiers(a)}
-        # the reach walk records an external lib's specifier aside, and a
-        # bundle can own one (@odoo/hoot-mock): a direct import is read here
         imported.update(
             spec
             for asset in own
@@ -185,8 +177,6 @@ class IrQweb(models.AbstractModel):
     def _warn_bridges_read_at_evaluation(
         self, bundle: str, native_modules: list, bridged: set[str]
     ) -> None:
-        # Loud, not fatal: the bundle already fails in the browser with an
-        # error that names neither module; this names both.
         for use in get_evaluation_time_bridge_uses(native_modules, bridged):
             log_event(
                 _bridge_log,
@@ -285,9 +275,6 @@ class IrQweb(models.AbstractModel):
         if assets_params is None:
             assets_params = self.env["ir.asset"]._prepare_assets_params()
 
-        # everything a waiter would redo under the lock is prepared first, and
-        # a build another worker already published is served without queuing
-        # behind the lock, as the runtime-group path does
         child_bundles = self._get_dynamic_child_bundles(
             bundle, assets_params, debug_assets=False
         )
@@ -356,8 +343,6 @@ class IrQweb(models.AbstractModel):
                 self._open_esbuild_circuit(bundle, "no_lock_cursor", decline=True)
                 return empty, []
             if locked is _LOCK_TIMED_OUT:
-                # a holder stalled past the timeout: serve its build if it
-                # published meanwhile, else fall back rather than queue on
                 reused = self._load_esbuild_result_committed(
                     bundle, source_key, variant
                 )
@@ -368,7 +353,6 @@ class IrQweb(models.AbstractModel):
                 return empty, []
 
             if locked is not self:
-                # the holder before us may have published it meanwhile
                 reused = locked._load_esbuild_result_by_source(
                     bundle, source_key, variant
                 )
@@ -417,13 +401,9 @@ class IrQweb(models.AbstractModel):
                 yield None
                 return
             if _module.current_test:
-                # the lock cursor is a test cursor over this very transaction,
-                # and the rollback that closes it would undo what the caller
-                # publishes under the lock
                 self._acquire_esbuild_lock(bundle, cr=self.env.cr)
                 yield self
                 return
-            # the waiter must see what the holder published before releasing
             lock_cr.use_read_committed()
             try:
                 self._acquire_esbuild_lock(
@@ -438,8 +418,6 @@ class IrQweb(models.AbstractModel):
     def _publish_esbuild_result(
         self, bundle: str, asset_bundle: AssetsBundle, result: EsbuildResult
     ) -> None:
-        # the same artifact the page saves afterwards, saved while the lock is
-        # held: a request waiting on the lock reuses it instead of compiling
         code = self._combine_bundle_with_templates(
             result.code, asset_bundle.generate_esm_template_bundle(use_import=False)
         )
@@ -503,11 +481,9 @@ class IrQweb(models.AbstractModel):
         return not standalone and bundle in esm_registry().classic_page_bundles
 
     def _as_classic_page(self, bundle: str, result: EsbuildResult) -> EsbuildResult:
-        # a source map of the first pass does not describe the second's output
         if result.sourcemap or "\n//# sourceMappingURL=" in result.code:
             _debug.logic("classic_page_declined", bundle=bundle, reason="source_map")
             return result
-        # the metafile is what says which libraries the page has to provide
         if not result.metafile:
             _debug.logic("classic_page_declined", bundle=bundle, reason="no_metafile")
             return result
@@ -532,10 +508,6 @@ class IrQweb(models.AbstractModel):
         reached: Collection[str],
         provided: Collection[str],
     ) -> dict[str, str]:
-        # what esbuild reads besides the modules it is handed: an import
-        # through an alias, static or a literal import(), of a module nothing
-        # stubs or externalises is built in, and a key without it would serve
-        # the build of that module's old text
         members = {module.module_path for module in modules}
         if not members:
             return {}
@@ -563,8 +535,6 @@ class IrQweb(models.AbstractModel):
     def _load_esbuild_result_committed(
         self, bundle: str, source_key: str, variant: str
     ) -> EsbuildResult | None:
-        # the request's snapshot predates builds other workers committed since;
-        # a short READ COMMITTED cursor sees them without taking the lock
         if _module.current_test:
             return self._load_esbuild_result_by_source(bundle, source_key, variant)
         try:
@@ -652,15 +622,6 @@ class IrQweb(models.AbstractModel):
                 )
             )
 
-        # A consumer is declared under a bundle NAME, and the name it is
-        # declared under need not be the bundle that serves the page:
-        # `web.assets_frontend` is a logical parent that pages load as
-        # `web.assets_frontend_minimal` plus `web.assets_frontend_lazy`, and
-        # survey declares its secondary bundles under the logical one. So a
-        # consumer of any bundle whose modules this bundle carries is a
-        # consumer of this bundle -- otherwise `@web/core/browser/cookie`, a
-        # member of the minimal bundle alone, was registered by nobody and the
-        # survey form's bridge read `undefined` for it.
         member_paths = {asset.module_path for asset in asset_bundle.native_modules}
         carried_by: dict[str, bool] = {bundle: True}
 
@@ -717,11 +678,6 @@ class IrQweb(models.AbstractModel):
         exported = {"@web/core/templates", "@web/core/assets"} & members
         exported.update(esm_registry().exports & members)
         exported.update(_get_specs_imported_by_consumers(consumers, members))
-        # the page's import map bridges every specifier a dynamic child's
-        # modules import that the page does not serve as a file
-        # (`_get_esm_import_map_prod`): a per-file fallback of a secondary
-        # resolves its imports through those bridges, so each one this bundle
-        # carries, it registers
         for child in child_bundles:
             bridged, _ext = child._bridges._discover_bridge_specifiers(
                 set(), set(external_libs()), modules=child.native_modules

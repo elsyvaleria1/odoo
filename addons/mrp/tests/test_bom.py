@@ -1128,8 +1128,6 @@ class TestBoM(TestMrpCommon):
                     searchQty=bom_crumble.product_qty,
                     searchVariant=False,
                 )["lines"]
-                # A made sub-assembly pays its components for what is needed and
-                # its share of one batch of its own operations.
                 crumble_cost = (
                     needed["bom_cost"]
                     - needed["operations_cost"]

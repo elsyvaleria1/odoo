@@ -6,7 +6,6 @@ from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCom
 @tagged("post_install", "-at_install")
 class TestPOSLoyaltyProductLoading(TestPointOfSaleHttpCommon):
     def test_loyalty_product_loading(self):
-        """Test that loyalty products are loaded correctly in the PoS session."""
         new_product = self.env["product.product"].create(
             {
                 "name": "New Product",
@@ -60,7 +59,6 @@ class TestPOSLoyaltyProductLoading(TestPointOfSaleHttpCommon):
             "Loyalty product should not be in _pos_special_products_ids when program is inactive.",
         )
 
-        # Activate the program to ensure the product is loaded
         program.write({"active": True})
 
         data = current_session.with_context(
@@ -79,7 +77,6 @@ class TestPOSLoyaltyProductLoading(TestPointOfSaleHttpCommon):
             "Loyalty product should not be in _pos_special_products_ids since it is loaded.",
         )
 
-        # Make the product not available in the PoS
         new_product.write({"available_in_pos": False})
 
         data = current_session.with_context(

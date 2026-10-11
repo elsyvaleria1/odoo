@@ -95,7 +95,6 @@ class ProjectHelpdeskPortal(ProjectCustomerPortal, CustomerPortal):
             domain=domain,
         )
 
-        # pager
         pager_vals = values["pager"]
         pager_vals["url_args"].update(filterby=filterby)
         pager = portal_pager(**pager_vals)

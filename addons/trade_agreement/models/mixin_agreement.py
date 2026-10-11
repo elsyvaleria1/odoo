@@ -533,7 +533,6 @@ class MixinAgreementLine(models.AbstractModel):
             )
 
     def _get_price_for_qty(self, qty):
-        # qty in this line's unit: the highest break it reaches sets the price
         self.check_singleton()
         reached = self.break_ids.filtered(lambda rule: rule.min_qty <= qty)
         if not reached:

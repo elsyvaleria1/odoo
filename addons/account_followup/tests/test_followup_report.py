@@ -36,7 +36,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             )
 
     def test_followup_report_address_1(self):
-        """Test child contact priorities: the company will be used when there is no followup or billing contacts"""
 
         Partner = self.env["res.partner"]
         self.partner_a.is_company = True
@@ -79,12 +78,10 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         )
 
     def test_followup_report_address_2(self):
-        """Test child contact priorities: the billing contact used on the invoice is preferred over a generic child contact."""
 
         Partner = self.env["res.partner"]
         self.partner_a.is_company = True
 
-        # Testing followup sent to billing address if used in invoice
 
         child_partner = Partner.create(
             {
@@ -136,7 +133,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         mail.unlink()
 
     def test_negative_followup_report(self):
-        """Test negative or null followup reports: if a contact has an overdue invoice but has a negative or null total due, no action is needed."""
         followup_line = self.env["account_followup.followup.line"].create(
             {
                 "company_id": self.env.company.id,
@@ -191,7 +187,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         self.assertPartnerFollowup(self.partner_a, "no_action_needed", followup_line)
 
     def test_followup_send_email(self):
-        """Tests that the email address in the mail.template is used to send the followup email."""
         self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -210,7 +205,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         ).action_post()
 
         def send_email(email_from, marker):
-            """Create a mail.template, open the followup wizard, send, and return the message."""
             mail_template = self.env["mail.template"].create(
                 {
                     "name": "Payment Reminder",
@@ -229,7 +223,7 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
                 )
                 .create({})
             )
-            wizard.email = True  # tick the 'email' checkbox
+            wizard.email = True
             wizard.template_id = mail_template
             with patch.object(
                 self.env.registry["report.formula"],
@@ -247,19 +241,16 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             self.assertEqual(message.author_id, self.env.user.partner_id)
             return message
 
-        # case 1: the email_from is dynamically set
         message = send_email(
             email_from="{{ object._get_followup_responsible().email_formatted }}",
             marker="Pay me now !",
         )
         self.assertEqual(message.email_from, self.env.user.partner_id.email_formatted)
 
-        # case 2: the email_from is hardcoded in the template
         message = send_email(email_from="test@odoo.com", marker="Pay me noooow !")
         self.assertEqual(message.email_from, "test@odoo.com")
 
     def test_process_automatic_followup_send_email(self):
-        """Tests that the email address in the mail.template is used to send the followup email from the cron."""
         self.env["account_followup.followup.line"].create(
             {
                 "company_id": self.env.company.id,
@@ -286,7 +277,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
         ).action_post()
 
         def send_email(email_from, marker):
-            """Create a mail.template, link it to the followup line, execute, return the message."""
             mail_template = self.env["mail.template"].create(
                 {
                     "name": "Payment Reminder",
@@ -319,15 +309,12 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             )
             return message
 
-        # case 1: the email_from is dynamically set
         message = send_email(
             email_from="{{ object._get_followup_responsible().email_formatted }}",
             marker="Pay me now !",
         )
         self.assertEqual(message.email_from, self.env.user.partner_id.email_formatted)
 
-        # we have to create a new overdue invoice to test the second case as the previous invoice
-        # will no longer trigger the followup
         self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
@@ -345,7 +332,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             }
         ).action_post()
 
-        # case 2: the email_from is hardcoded in the template
         message = send_email(email_from="test@odoo.com", marker="Pay me noooow !")
         self.assertEqual(message.email_from, "test@odoo.com")
 
@@ -409,15 +395,11 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             ),
         ):
             cron.method_direct_trigger()
-            # For the same reason we clear the cache in assertPartnerFollowup, to avoid this test change the state of the cache,
-            # which could break other tests.
             self.assertEqual(patched.call_count, 1)
 
         count_mail = self.env["mail.message"].search_count(
             [("record_company_id", "=", self.company_data["company"].id)]
         )
-        # We should have 1 email :
-        # 1 for the main company
         self.assertEqual(count_mail, 1)
 
     def test_followup_report_with_levels_on_one_branch(self):
@@ -436,7 +418,7 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             ]
         )
 
-        self.cr.precommit.run()  # load the COA
+        self.cr.precommit.run()
 
         self.env["account_followup.followup.line"].create(
             [
@@ -505,15 +487,11 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             ),
         ):
             cron.method_direct_trigger()
-            # For the same reason we clear the cache in assertPartnerFollowup, to avoid this test change the state of the cache,
-            # which could break other tests.
             self.assertEqual(patched.call_count, 1)
 
         count_mail = self.env["mail.message"].search_count(
             [("record_company_id", "=", branch_a.id)]
         )
-        # We should have 1 email :
-        # 1 for the Branch number 1
         self.assertEqual(count_mail, 1)
 
     def test_followup_report_with_levels_on_branches_and_main_company(self):
@@ -532,7 +510,7 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             ]
         )
 
-        self.cr.precommit.run()  # load the COA
+        self.cr.precommit.run()
 
         self.env["account_followup.followup.line"].create(
             [
@@ -645,8 +623,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
             ),
         ):
             cron.method_direct_trigger()
-            # For the same reason we clear the cache in assertPartnerFollowup, to avoid this test change the state of the cache,
-            # which could break other tests.
             self.assertEqual(patched.call_count, 3)
 
         count_mail = self.env["mail.message"].search_count(
@@ -658,25 +634,13 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
                 )
             ]
         )
-        # We should have 3 emails :
-        # 1 for the main company
-        # 1 for the Branch number 1
-        # 1 for the Branch number 2
         self.assertEqual(count_mail, 3)
 
-        # Now we check the amounts overdue
-        # Expected : 200 (main_company) + 400 (branch_a) + 800 (branch_b)
         self.assertEqual(self.partner_a.total_overdue, 1400)
-        # Expected : 400
         self.assertEqual(self.partner_a.with_company(branch_a).total_overdue, 400)
-        # Expected : 800
         self.assertEqual(self.partner_a.with_company(branch_b).total_overdue, 800)
 
     def test_partner_total_due_with_payable(self):
-        """
-        Test that the total due for a partner also reflects payable accounts and is coherent with the customer statement report.
-        """
-        # Init options.
         report = self.env.ref("account.customer_statement_report")
         default_options = {
             "partner_id": self.partner_a.id,
@@ -700,9 +664,7 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
 
         with freeze_time("2016-01-01"):
             self.assertLinesValues(
-                # pylint: disable=C0326
                 report._get_lines(options),
-                #   Name                                        Date,        Due Date,  Amount,       Balance
                 [0, 1, 2, 3, 5],
                 [
                     ("partner_a", "", "", 500.0, 500.0),
@@ -723,9 +685,7 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
 
         with freeze_time("2016-01-01"):
             self.assertLinesValues(
-                # pylint: disable=C0326
                 report._get_lines(options),
-                #   Name                                        Date,        Due Date,  Amount,       Balance
                 [0, 1, 2, 3, 5],
                 [
                     ("partner_a", "", "", 300.0, 300.0),
@@ -939,9 +899,6 @@ class TestAccountFollowupReports(TestAccountReportsCommon, TestAccountFollowupCo
 
     def test_action_report_followup(self):
         def _render_html_to_pdf(_self, bodies, *args, _split=False, **kwargs):
-            # Same contract as the method it stands in for: one merged PDF, or
-            # one per body under `_split`. Returning the bytes either way makes
-            # the split caller iterate them as ints.
             pdf = file_open("base/tests/minimal.pdf", "rb").read()
             return [pdf] * len(bodies) if _split else pdf
 

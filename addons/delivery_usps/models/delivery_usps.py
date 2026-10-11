@@ -22,7 +22,6 @@ class DeliveryCarrier(models.Model):
             )
         },
     )
-    # Fields required to configure
     usps_username = fields.Char(
         string="USPS User ID",
         groups="base.group_system",
@@ -103,7 +102,6 @@ class DeliveryCarrier(models.Model):
         default="Lg Flat Rate Box",
     )
 
-    # For international shipping
     usps_international_regular_container = fields.Selection(
         selection=[
             ("FLATRATEENV", "Flat Rate Envelope"),
@@ -198,7 +196,6 @@ class DeliveryCarrier(models.Model):
                 "warning_message": False,
             }
 
-        # USPS always returns prices in USD
         if order.currency_id.name == "USD":
             price = quotes["price"]
         else:
@@ -248,7 +245,6 @@ class DeliveryCarrier(models.Model):
             if not currency_order:
                 currency_order = picking.company_id.currency_id
 
-            # USPS always returns prices in USD
             if currency_order.name == "USD":
                 price = booking["price"]
             else:
@@ -382,7 +378,6 @@ class DeliveryCarrier(models.Model):
         )
         pounds = math.floor(weight_in_pounds)
         ounces = round((weight_in_pounds - pounds) * 16, 3)
-        # ounces should be at least 1 for the api request not to fail.
         if pounds == 0 and int(ounces) == 0:
             ounces = 1
         return {"pound": pounds, "ounce": ounces}

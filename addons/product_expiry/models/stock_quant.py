@@ -10,16 +10,9 @@ from odoo.addons.stock.tools.reservation import RemovalStrategy
 
 
 def _fefo_sort_key(quant) -> tuple:
-    """Python mirror of `removal_date, in_date, id` for the quants-cache path.
-
-    `removal_date` may be unset; Postgres orders NULLs last in ASC, so unset
-    dates sort after real ones. The leading `is False` flag reproduces that, so
-    the sentinel beside it is only ever compared inside the unset group, never
-    against a real date. Odoo datetimes are naive-UTC, hence naive `datetime.min`.
-    """
     return (
         quant.removal_date is False,
-        quant.removal_date or datetime.min,  # noqa: DTZ901  naive sentinel, the field is naive UTC
+        quant.removal_date or datetime.min,
         quant.in_date,
         quant.id,
     )
@@ -40,7 +33,7 @@ class StockQuant(models.Model):
     expiration_date = fields.Datetime(
         related="trace_id.expiration_date",
     )
-    removal_date = fields.Datetime(  # noqa: E8529  FEFO gathers ORDER BY removal_date, in_date, id, and report_stock_quantity reads the column
+    removal_date = fields.Datetime(
         related="trace_id.removal_date",
         store=True,
     )
@@ -90,7 +83,6 @@ class StockQuant(models.Model):
                 quant.available_quantity = 0
 
     def _aggregates_through_records(self, field, func):
-        # _read_group_select below answers this one in SQL
         if field.name == "available_quantity" and func == "sum":
             return False
         return super()._aggregates_through_records(field, func)

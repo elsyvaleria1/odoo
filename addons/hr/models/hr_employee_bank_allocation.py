@@ -30,7 +30,7 @@ class HrEmployeeBankAllocation(models.Model):
         related="employee_id.partner_id",
         string="Account Holder",
     )
-    company_id = fields.Many2one(  # noqa: E8529  hr_employee_bank_allocation_comp_rule filters every read by this column
+    company_id = fields.Many2one(
         related="employee_id.company_id",
         store=True,
         index=True,
@@ -59,12 +59,6 @@ class HrEmployeeBankAllocation(models.Model):
 
     @api.constrains("amount", "amount_is_percentage", "employee_id")
     def _check_percentages_total(self) -> None:
-        """The percentage allocations of one employee total exactly 100.
-
-        Checked per employee rather than per row, because the invariant is over
-        the set: `self` may hold one changed row out of several, so the siblings
-        are read back rather than assumed.
-        """
         for employee in self.employee_id:
             shares = employee.salary_allocation_ids.filtered("amount_is_percentage")
             if not shares:

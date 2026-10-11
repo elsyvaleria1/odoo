@@ -83,7 +83,6 @@ def _mock_starshipit_call(
                         },
                     ],
                 },
-                # For simplicity, we only set the two id's used by the backend.
                 "orders/import": {
                     "success": True,
                     "orders": [
@@ -107,14 +106,12 @@ def _mock_starshipit_call(
         }
 
         if simulate_unavailable_price and method == "GET" and "orders" in url:
-            # Simulate a Starshipit call that doesn't return the shipping price yet
             responses["GET"]["orders"]["order"].pop("total_shipping_price")
 
         for endpoint, content in responses[method].items():
             if endpoint in url:
                 response = requests.Response()
                 if _should_simulate_error(url):
-                    # Simulate error on Starshpit call
                     response._content = json_dumps_bytes({
                             "success": False,
                             "errors": [
@@ -213,7 +210,6 @@ class TestDeliveryStarShipIt(TransactionCase):
         )
 
     def test_rate_order(self):
-        """Set up a sale order for an AU client and ensure that the rate is computed properly."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.au_partner.id,
@@ -234,7 +230,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             self.assertEqual(choose_delivery_carrier.delivery_price, 4.20)
 
     def test_shipping_order(self):
-        """Ensure that the shipping of an order works properly."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.au_partner.id,
@@ -279,7 +274,6 @@ class TestDeliveryStarShipIt(TransactionCase):
                 "The StarShipIt Parcel Reference is not set",
             )
 
-            # Check that we the PDF is there and contains the "label"
             pdf = picking.message_ids.attachment_ids.filtered(
                 lambda m: m.datas == b"WW91J3JlIGEgY3VyaW91cyBvbmUgYXJlbid0IHlvdQ=="
             )
@@ -334,7 +328,6 @@ class TestDeliveryStarShipIt(TransactionCase):
                 False,
                 "The StarShipIt Parcel Reference is not set",
             )
-            # The parcel has been processed, but we wish to return it
             picking.carrier_id.starshipit_get_return_label(picking)
             self.assertIsNot(
                 picking.starshipit_return_parcel_reference,
@@ -351,7 +344,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             )
 
     def test_shipping_order_async_price(self):
-        """Test the full flow with a delayed price from Starshipit."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.au_partner.id,
@@ -396,7 +388,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             )
 
     def test_partner_address_street2(self):
-        """Ensure street2 is taken into account if not False"""
         au_partner_2 = self.env["res.partner"].create(
             {
                 "name": "Acme Corporation",
@@ -410,10 +401,8 @@ class TestDeliveryStarShipIt(TransactionCase):
         )
 
         starshipit_service = self.starshipit._get_starshipit()
-        # Without street2
         partner_details = starshipit_service._get_partner_details(self.au_partner)
         self.assertEqual(partner_details["street"], "26 Acheron Road")
-        # With street2
         partner_details = starshipit_service._get_partner_details(au_partner_2)
         self.assertEqual(partner_details["street"], "Unit 12 Floor 15 26 Acheron Road")
 
@@ -425,7 +414,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             }
         )
 
-        # Simulate error in label creation step
         with _mock_starshipit_call(simulate_error_for="shipment"):
             sale_order.set_delivery_line(self.starshipit, 0)
             sale_order.action_confirm()
@@ -436,7 +424,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             with self.assertRaises(UserError):
                 picking._action_done()
 
-        # Simulate successful retry
         with _mock_starshipit_call(simulate_error=False):
             picking._action_done()
             pdf = picking.message_ids.attachment_ids.filtered(
@@ -449,14 +436,12 @@ class TestDeliveryStarShipIt(TransactionCase):
             )
 
     def test_create_delivery_method_from_so(self):
-        """Test the creation of a delivery method from a sale order."""
         sale_order = self.env["sale.order"].create(
             {
                 "partner_id": self.au_partner.id,
                 "line_ids": [Command.create({"product_id": self.product_to_ship1.id})],
             }
         )
-        # Open "Add Shipping" Wizard in sale order
         wiz_action = sale_order.action_view_delivery_wizard()
         add_shipping_wizard = (
             self.env[wiz_action["res_model"]]
@@ -464,7 +449,6 @@ class TestDeliveryStarShipIt(TransactionCase):
             .create({"carrier_id": self.starshipit.id, "order_id": sale_order.id})
         )
         with _mock_starshipit_call():
-            # Open "Get more delivery methods" Wizard from "Add Shipping" Wizard
             new_delivery_method_wiz_action = (
                 add_shipping_wizard.create_new_starshipit_delivery_method()
             )
@@ -474,7 +458,6 @@ class TestDeliveryStarShipIt(TransactionCase):
                 .create({})
             )
 
-            # Select a service and validate
             new_delivery_method_wiz["selected_service_code"] = "CP01ILB"
             result_action = new_delivery_method_wiz.action_validate()
             self.assertNotEqual(
@@ -483,7 +466,6 @@ class TestDeliveryStarShipIt(TransactionCase):
                 "A new carrier id should have been created.",
             )
 
-            # Redirected to the "Add Shipping" Wizard with the new carrier
             new_add_shipping_wizard = (
                 self.env[result_action["res_model"]]
                 .with_context(result_action["context"])

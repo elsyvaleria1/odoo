@@ -7,12 +7,10 @@ class IrActionsReport(models.Model):
     _inherit = "ir.actions.report"
 
     def _render_qweb_pdf_prepare_streams(self, report_ref, data, res_ids=None):
-        # EXTENDS base
         collected_streams = super()._render_qweb_pdf_prepare_streams(
             report_ref, data, res_ids
         )
 
-        # allows to add factur-x.xml to custom PDF templates (comma separated list of template names)
         custom_templates = self.env.registry.settings.get(
             self.env, "account.custom_templates_facturx_list", ""
         )
@@ -24,7 +22,6 @@ class IrActionsReport(models.Model):
             and len(res_ids) == 1
             and self._get_report(report_ref).report_name in custom_templates
         ):
-            # Generate and embed Factur-X
             invoice = self.env["account.move"].browse(res_ids)
             if invoice.is_sale_document() and invoice.state == "posted":
                 pdf_stream = collected_streams[invoice.id]["stream"]

@@ -9,7 +9,6 @@ from odoo.tools import SQL, plaintext2html
 from odoo.addons.mail.tools.discuss import Store
 from odoo.addons.phone_call.models.phone_call import number_key
 
-# the transcript and summary columns of upstream's AI call features
 RETIRED_COLUMNS = ("transcript", "transcription_status", "summary")
 
 
@@ -21,8 +20,6 @@ class PhoneCall(models.Model):
         compute="_compute_is_within_same_company",
         store=True,
     )
-    # Since activities are deleted from the database once marked as done, the
-    # activity name is saved here in order to be preserved.
     activity_name = fields.Char(
         help="The name of the activity related to this phone call, if any."
     )
@@ -102,18 +99,6 @@ class PhoneCall(models.Model):
         res_model: str | None = None,
         sip_call_id: str | None = None,
     ) -> dict:
-        """Creates a call from the provided values and returns it formatted for
-        use in JavaScript. If a record is provided via its id and model,
-        introspects it for a recipient.
-
-        :param phone_number: The phone number to call
-        :param partner_id: ID of the partner related to this call
-        :param direction: Direction of the call ('incoming' or 'outgoing')
-        :param res_id: Optional record ID to extract partner from
-        :param res_model: Optional model name to extract partner from
-        :param sip_call_id: The SIP Call-ID of the call's dialog, when known
-        :return: Dictionary with created call IDs and formatted data
-        """
         self.check_access("read")
         values = {
             "phone_number": phone_number,
@@ -160,9 +145,6 @@ class PhoneCall(models.Model):
 
     @api.model
     def _softphone_history_domain(self) -> Domain:
-        """The user's own calls, and their companies' calls to a company number
-        that nobody answered: the phone system reports those once, for everyone
-        it rang."""
         return Domain("user_id", "=", self.env.uid) | (
             Domain("user_id", "=", False)
             & Domain("channel", "=", "pbx")
@@ -191,8 +173,6 @@ class PhoneCall(models.Model):
         calls_sudo.start_date = fields.Datetime.now()
         calls_sudo.state = "ongoing"
         if sip_call_id:
-            # an outgoing call's dialog exists once it is answered: named now,
-            # the phone system's report of it joins this call
             calls_sudo.filtered(
                 lambda call: not call.sip_call_id
             ).sip_call_id = sip_call_id
@@ -228,7 +208,6 @@ class PhoneCall(models.Model):
                 )
             )
         elif number:
-            # an internal extension is a few digits a contact may still carry
             partner = partner.search([("phone_ids.number", "=", number)], limit=1)
         if not partner and number:
             partner = (

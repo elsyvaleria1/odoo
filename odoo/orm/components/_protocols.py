@@ -52,11 +52,7 @@ class SchedulableField(FieldKey, Protocol):
 
     @property
     def tree_siblings(self) -> tuple[SchedulableField, ...]:
-        """The same-named fields of the other models sharing this one's table.
-
-        A value done or protected is a fact of the row, so it is recorded for
-        every model of the tree; `ComputeEngine._keys` is what spreads it.
-        """
+        pass
 
 
 class FieldLike(NamedField, SchedulableField, Protocol):

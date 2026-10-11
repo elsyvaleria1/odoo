@@ -10,7 +10,6 @@ class PosPaymentMethod(models.Model):
     def _selection_payment_terminals(self):
         return super()._selection_payment_terminals() + [("stripe", "Stripe")]
 
-    # Stripe
     stripe_serial_number = fields.Char(
         copy=False,
         help="[Serial number of the stripe terminal], for example: WSC513105011295",
@@ -27,7 +26,7 @@ class PosPaymentMethod(models.Model):
         for payment_method in self:
             if not payment_method.stripe_serial_number:
                 continue
-            existing_payment_method = self.search(  # noqa: E8507 - one probe per method, on its own serial number
+            existing_payment_method = self.search(
                 [
                     ("id", "!=", payment_method.id),
                     ("stripe_serial_number", "=", payment_method.stripe_serial_number),
@@ -81,8 +80,6 @@ class PosPaymentMethod(models.Model):
                 self.env._("Do not have access to fetch token from Stripe")
             )
 
-        # For Terminal payments, the 'payment_method_types' parameter must include
-        # at least 'card_present' and the 'capture_method' must be set to 'manual'.
         currency = self.journal_id.currency_id or self.company_id.currency_id
 
         params = [
@@ -93,8 +90,6 @@ class PosPaymentMethod(models.Model):
         ]
 
         if currency.name == "AUD" and self.company_id.country_code == "AU":
-            # See https://stripe.com/docs/terminal/payments/regional?integration-country=AU
-            # This parameter overrides "capture_method": "manual" above.
             params.append(
                 (
                     "payment_method_options[card_present][capture_method]",
@@ -112,13 +107,6 @@ class PosPaymentMethod(models.Model):
 
     @api.model
     def stripe_capture_payment(self, paymentIntentId, amount=None):
-        """Captures the payment identified by paymentIntentId.
-
-        :param paymentIntentId: the id of the payment to capture
-        :param amount: without this parameter the entire authorized
-                       amount is captured. Specifying a larger amount allows
-                       overcapturing to support tips.
-        """
         if not self.env.user.has_group("point_of_sale.group_pos_user"):
             raise AccessError(
                 self.env._("Do not have access to fetch token from Stripe")
@@ -128,7 +116,6 @@ class PosPaymentMethod(models.Model):
 
         data = None
         if amount is not None:
-            # No rounding values stored in a model method
             rounding = self.env.context.get("stripe_currency_rounding", 0.01)
             data = {
                 "amount_to_capture": round(amount / rounding),
@@ -142,7 +129,6 @@ class PosPaymentMethod(models.Model):
 
     def action_stripe_key(self) -> dict:
         res_id = self._get_stripe_payment_provider().id
-        # Redirect
         return {
             "name": self.env._("Stripe"),
             "res_model": "payment.provider",

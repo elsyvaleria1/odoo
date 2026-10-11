@@ -8,15 +8,8 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
-# Set by the Delivered button: once the photo is in, the dialog delivers again.
-# Any other caller validates on its own terms (quantities, backorders, context),
-# so the dialog only keeps the photo and the caller repeats its action.
 DELIVERY_PROOF_RESUME = "delivery_proof_resume"
-# The photo is shrunk to this on upload: a phone photo of a sheet stays legible
-# at a fraction of its size.
 DELIVERY_PROOF_MAX_SIDE = 1920
-# What shows the customer received a delivery: the photo of the signed slip, or
-# the customer's signature captured on a screen.
 DELIVERY_EVIDENCE = ("delivery_proof", "signature")
 
 
@@ -57,7 +50,6 @@ class StockPickingType(models.Model):
         return res
 
     def _start_delivery_proof(self) -> None:
-        """Date the requirement on the types that switch it on without a date."""
         self.filtered(
             lambda picking_type: (
                 picking_type.delivery_proof_required
@@ -68,9 +60,6 @@ class StockPickingType(models.Model):
 
 class StockPicking(models.Model):
     _inherit = "stock.picking"
-    # Who reviews the evidence of a delivery is its verbs' rows
-    # (security/ir_access.xml): whoever delivers uploads the photo, but may not
-    # vouch for it nor for the paper, nor rewrite the evidence once delivered.
     _access_verbs = {
         "reject_delivery_proof": models.Verb(
             transition=("delivery_proof_ok", True, False), at_create=False
@@ -92,8 +81,6 @@ class StockPicking(models.Model):
     delivery_proof_required = fields.Boolean(
         related="picking_type_id.delivery_proof_required",
     )
-    # Not the related above: it follows the type as it is today, so the reviewers'
-    # lists would take every delivery the type ever validated.
     delivery_proof_due = fields.Boolean(
         string="Signed Slip Due",
         compute="_compute_delivery_proof_due",
@@ -150,9 +137,6 @@ class StockPicking(models.Model):
         readonly=True,
     )
 
-    # What is there, not whether it counts: whether a signature carries a name
-    # that is not ours is judged when the delivery is validated, and the stored
-    # tick must not depend on who triggers its recompute.
     @api.depends("delivery_proof", "signature")
     def _compute_delivery_proof_ok(self):
         for picking in self:
@@ -214,7 +198,6 @@ class StockPicking(models.Model):
             rejected = self.filtered("delivery_proof_ok")
         res = super().write(vals)
         if evidence and not any(vals[fname] for fname in evidence):
-            # Who captured the evidence is forgotten only with the last of it.
             self.filtered(
                 lambda picking: (
                     picking.delivery_proof_uid
@@ -222,23 +205,12 @@ class StockPicking(models.Model):
                     and not picking.signature
                 )
             ).write({"delivery_proof_uid": False, "delivery_proof_date": False})
-        # Evidence cleared together with its tick is not a rejection.
         rejected.filtered(
             lambda picking: picking.delivery_proof or picking.signature
         )._ask_for_another_delivery_proof()
         return res
 
     def _guard_delivery_evidence(self, vals, evidence) -> None:
-        """Keep the evidence of a delivered transfer as it was reviewed.
-
-        Once a delivery under review is done, whoever delivered may still add the
-        photo it lacks or replace one a reviewer rejected; anything else (another
-        signature, replacing or clearing what was accepted) is a reviewer's. What
-        is replaced or cleared stays on the chatter.
-
-        :param dict vals: the values being written
-        :param list evidence: the evidence fields among them
-        """
         delivered = self.filtered(
             lambda picking: picking.state == "done" and picking.delivery_proof_due
         )
@@ -251,30 +223,15 @@ class StockPicking(models.Model):
         (delivered - reviewed)._keep_delivery_evidence(evidence)
 
     def _adds_delivery_proof(self, vals, evidence) -> bool:
-        """Whether this write only gives the transfer the photo it lacks.
-
-        :rtype: bool
-        """
         self.check_singleton()
         if evidence != ["delivery_proof"] or not vals["delivery_proof"]:
             return False
         return not self.delivery_proof or not self.delivery_proof_ok
 
     def _change_delivery_evidence(self, evidence) -> None:
-        """A reviewer rewrites the evidence of a delivered transfer.
-
-        :param list evidence: the evidence fields being written
-        """
         self._keep_delivery_evidence(evidence)
 
     def _keep_delivery_evidence(self, evidence) -> None:
-        """Post on the chatter the evidence about to be replaced or cleared.
-
-        A rejection the write is about to lift, since the tick follows the
-        evidence, is said there too.
-
-        :param list evidence: the evidence fields being written
-        """
         labels = self.fields_get(evidence, ["string"])
         for picking in self:
             attachments = [
@@ -299,7 +256,6 @@ class StockPicking(models.Model):
             picking.message_post(body=body, attachments=attachments)
 
     def _ask_for_another_delivery_proof(self):
-        """Ask whoever captured the rejected evidence for the signed slip's photo."""
         for picking in self:
             uploader = picking.delivery_proof_uid
             if not uploader.active or uploader == self.env.user:
@@ -317,10 +273,6 @@ class StockPicking(models.Model):
             )
 
     def _requires_delivery_proof(self):
-        """Whether this transfer is validated only with the signed slip's photo.
-
-        :rtype: bool
-        """
         self.check_singleton()
         picking_type = self.picking_type_id
         return bool(
@@ -330,13 +282,6 @@ class StockPicking(models.Model):
         )
 
     def _has_delivery_proof(self):
-        """Whether the transfer carries the customer's signature.
-
-        Here, the photo of the delivery slip signed by the customer. A bridge that
-        captures the signature another way, with who signed, adds its own.
-
-        :rtype: bool
-        """
         self.check_singleton()
         return bool(self.delivery_proof)
 
@@ -345,11 +290,6 @@ class StockPicking(models.Model):
         self._check_delivery_proof()
 
     def _check_delivery_proof(self):
-        """Refuse to validate a transfer that needs the signed slip without it.
-
-        The refusal carries the way out: a dialog that takes the photo and, for
-        the Delivered button, delivers again.
-        """
         missing = self.filtered(
             lambda picking: (
                 picking._requires_delivery_proof() and not picking._has_delivery_proof()
@@ -372,20 +312,12 @@ class StockPicking(models.Model):
         )
 
     def _action_upload_delivery_proof(self, resume=False):
-        """The dialog that takes the photo of the signed slip.
-
-        :param resume: "deliver" to deliver once the photo is in, False to only
-            keep it
-        :rtype: dict
-        """
         self.check_singleton()
         return {
             "type": "ir.actions.act_window",
             "name": self.env._("Signed Delivery Slip"),
             "res_model": "wizard.stock.picking.delivery.proof",
             "view_mode": "form",
-            # A RedirectWarning hands the action to the client as is, with no
-            # server pass to derive its views from view_mode.
             "views": [(False, "form")],
             "target": "new",
             "context": {
@@ -395,14 +327,11 @@ class StockPicking(models.Model):
         }
 
     def action_deliver(self):
-        # Missing its photo, the delivery is refused with a dialog that takes the
-        # photo and delivers again: the whole transfer, as this button does.
         return super(
             StockPicking, self.with_context(**{DELIVERY_PROOF_RESUME: "deliver"})
         ).action_deliver()
 
     def action_receive_delivery_paper(self):
-        """Tick the signed slips a reviewer has in hand, of delivered transfers."""
         self.filtered(
             lambda picking: (
                 picking.state == "done" and not picking.delivery_paper_received

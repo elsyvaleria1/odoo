@@ -25,8 +25,6 @@ class StockPicking(models.Model):
     )
 
     def _compute_state(self):
-        # Since `state` is a computed field, it does not go through the `write` function we usually use to track
-        # those changes.
         _debug.perf.count("helpdesk_picking_state_compute", pickings=self)
         previous_states = {picking: picking.state for picking in self}
         res = super()._compute_state()
@@ -136,7 +134,6 @@ class StockPicking(models.Model):
         return pickings
 
     def action_linked_ticket(self) -> dict:
-        """Open the linked helpdesk ticket from the stock picking form view."""
         return {
             "type": "ir.actions.act_window",
             "name": self.ticket_id.name,

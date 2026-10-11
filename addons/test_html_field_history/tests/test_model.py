@@ -129,7 +129,6 @@ class TestModel(TransactionCase):
             rec1.html_field_history,
             "Record creation should not generate revisions",
         )
-        # Attempt to write unsecure HTML inside sanitized html field
         rec1.write(
             {"versioned_field_1": 'scam <iframe src="http://not.secure.scam" />'}
         )
@@ -140,7 +139,6 @@ class TestModel(TransactionCase):
             "not.secure.scam", rec1.html_field_history["versioned_field_1"]
         )
 
-        # Ensure the unsecure HTML was not stored in revision data
         rec1.write({"versioned_field_1": "not a scam"})
         self.assertEqual(len(rec1.html_field_history["versioned_field_1"]), 2)
         self.assertEqual(rec1.versioned_field_1, "<p>not a scam</p>")
@@ -165,12 +163,10 @@ class TestHistoryRpcGuards(TransactionCase):
         cls.record.versioned_field_1 = "<p>v3</p>"
 
     def test_unversioned_field_name_rejected(self):
-        """A field outside _get_fields_versioned raises a clean UserError."""
         with self.assertRaises(UserError):
             self.record.html_field_history_get_content_at_revision("display_name", 1)
 
     def test_non_integer_revision_rejected(self):
-        """Strings, None and booleans are rejected as revision ids."""
         for bogus in ("1", None, True):
             with self.assertRaises(UserError):
                 self.record.html_field_history_get_content_at_revision(
@@ -178,14 +174,12 @@ class TestHistoryRpcGuards(TransactionCase):
                 )
 
     def test_content_restored_at_revision(self):
-        """Applying stored patches walks the content back to a revision."""
         restored = self.record.html_field_history_get_content_at_revision(
             "versioned_field_1", 1
         )
         self.assertEqual(restored, "<p>v1</p>")
 
     def test_comparison_and_diff_reference_both_versions(self):
-        """Comparison and unified diff expose old and new content."""
         comparison = self.record.html_field_history_get_comparison_at_revision(
             "versioned_field_1", 1
         )

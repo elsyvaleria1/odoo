@@ -36,8 +36,6 @@ class TestPaymentProvider(AsiaPayCommon):
             )
 
     def test_incompatible_with_unsupported_currencies(self):
-        """Test that AsiaPay providers are filtered out from compatible providers when the currency
-        is not supported."""
         compatible_providers = self.env["payment.provider"]._get_compatible_providers(
             self.env.company.id,
             self.partner.id,
@@ -47,7 +45,6 @@ class TestPaymentProvider(AsiaPayCommon):
         self.assertNotIn(self.asiapay, compatible_providers)
 
     def test_signature_calculation_for_outgoing_data(self):
-        """Test that the calculated signature matches the expected signature for outgoing data."""
         calculated_signature = self.asiapay._get_asiapay_signature(
             {
                 "merchant_id": self.asiapay.asiapay_merchant_id,
@@ -63,7 +60,6 @@ class TestPaymentProvider(AsiaPayCommon):
         )
 
     def test_signature_calculation_for_incoming_data(self):
-        """Test that the calculated signature matches the expected signature for incoming data."""
         calculated_signature = self.asiapay._get_asiapay_signature(
             self.webhook_payment_data, incoming=True
         )

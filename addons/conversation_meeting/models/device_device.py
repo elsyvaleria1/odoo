@@ -1,9 +1,6 @@
 from odoo import api, models
 
-# A meeting of a few hours compressed to Opus stays well under this; the
-# integration ceiling is the same figure by default and wins when lower.
 ROOM_MAX_PAYLOAD = 100 * 1024 * 1024
-# The body is the recording; the event log keeps a head, never the audio.
 ROOM_MAX_LOGGED_PAYLOAD = 65536
 
 
@@ -52,6 +49,5 @@ class DeviceDevice(models.Model):
         result = super().write(vals)
         category_id = self._room_category_id()
         if category_id and vals.get("device_category_id") == category_id:
-            # A phone re-purposed as the room keeps its phone-sized limits otherwise.
             super().write(self._room_defaults())
         return result

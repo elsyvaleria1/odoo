@@ -39,7 +39,6 @@ class TestSelfOrderCombo(SelfOrderCommonTest):
             4,
             "There should be 4 order lines - 1 combo parent and 3 combo lines",
         )
-        # check that the combo lines are correctly linked to each other
         parent_line_id = self.env["pos.order.line"].search(
             [("product_id.name", "=", "Office Combo"), ("order_id", "=", order.id)]
         )
@@ -90,11 +89,6 @@ class TestSelfOrderCombo(SelfOrderCommonTest):
         self.start_tour(self_route, "self_combo_selector_category")
 
     def test_product_dont_display_all_variants(self):
-        """
-        Tests that when a variant is in a combo, clicking the variant
-        will only select it and not display every variant available
-        for that product. It still displays them if the template is given.
-        """
         size_attribute, color_attribute = self.env["product.attribute"].create(
             [
                 {
@@ -129,7 +123,6 @@ class TestSelfOrderCombo(SelfOrderCommonTest):
                 },
             ]
         )
-        # With an never and always attribute
         coke_template_never_always, coke_template_always, coke_template_never = (
             self.env["product.template"].create(
                 [

@@ -6,9 +6,6 @@ class WizardMrpProductionProducePartial(models.TransientModel):
 
     def action_close_mo(self):
         if wo_id := self.env.context.get("workorder_id_to_finish", False):
-            # Mirror the base wizard's action_close_mo: MOs whose picking type
-            # mandates a backorder must still be split even when the user
-            # picked "Close", not just on the action_backorder path below.
             always_backorder_mo_ids = self.env.context.get(
                 "always_backorder_mo_ids", []
             )
@@ -42,12 +39,9 @@ class WizardMrpProductionProducePartial(models.TransientModel):
         )
         backorders -= productions_to_backorder
 
-        # It is prudent to reserve any quantity that has become available to the backorder
-        # production's move_raw_ids after the production which spawned them has been marked done.
         backorders_to_assign = backorders.filtered(
             lambda order: order.picking_type_id.reservation_method == "at_confirm"
         )
         backorders_to_assign.action_assign()
 
-        # as we are bypassing the normal record_production flow, let's finish it
         return workorder_to_finish.post_record_production(backorders)

@@ -38,8 +38,6 @@ class ProviderDHL(models.Model):
             )
         },
     )
-    # Doors onto `carrier_credential_id`. A key and a secret map onto the vault's
-    # own `api_key` / `api_secret`, so no JSON is needed here.
     _CREDENTIAL_FIELDS = {"dhl_api_key": "api_key", "dhl_api_secret": "api_secret"}
 
     dhl_api_key = fields.Char(
@@ -77,7 +75,6 @@ class ProviderDHL(models.Model):
         string="Region",
         default="AM",
     )
-    # Nowadays hidden, by default it's the D, couldn't find any documentation on other services
     dhl_product_code = fields.Selection(
         selection=[
             ("0", "0 - Logistics Services"),
@@ -239,7 +236,6 @@ class ProviderDHL(models.Model):
             )
             return packages
 
-        # Create all packages.
         move_lines_by_package = picking.move_line_ids.grouped("result_package_id")
         for package in picking.move_line_ids.result_package_id:
             move_lines = move_lines_by_package[package]
@@ -257,7 +253,6 @@ class ProviderDHL(models.Model):
                 }
             )
 
-        # Create one package: either everything is in pack or nothing is.
         if picking.weight_bulk:
             commodities = self._prepare_commodity_values_from_move_lines(
                 picking.move_line_ids
@@ -285,13 +280,6 @@ class ProviderDHL(models.Model):
         return packages
 
     def _datetime_to_dhl_utc_string(self, datetime_object):
-        """Format a datetime in UTC using DHL's literal ``GMT+00:00`` suffix.
-
-        Naive inputs retain ``datetime.astimezone``'s local-time interpretation.
-
-        :param datetime datetime_object: planned shipping time
-        :rtype: str
-        """
         return datetime_object.astimezone(tz=UTC).strftime(
             "%Y-%m-%dT%H:%M:%S GMT+00:00"
         )
@@ -395,7 +383,7 @@ class ProviderDHL(models.Model):
                 price
                 for price in product["totalPrice"]
                 if price["currencyType"] == "BILLC"
-            ]  # get the price in the billing currency
+            ]
             global_product_code = product["productCode"]
             if global_product_code == self.dhl_product_code and charge:
                 shipping_charge = charge[0]["price"]
@@ -699,7 +687,6 @@ class ProviderDHL(models.Model):
         return f"http://www.dhl.com/en/express/tracking.html?AWB={picking.carrier_tracking_ref}"
 
     def dhl_rest_cancel_shipment(self, picking) -> None:
-        # Obviously you need a pick up date to delete SHIPMENT by DHL. So you can't do it if you didn't schedule a pick-up.
         _debug.lifecycle(
             "carrier_cancel_request",
             provider="dhl_rest",
@@ -725,15 +712,6 @@ class ProviderDHL(models.Model):
         return float_round(weight, 3)
 
     def _get_dhl_declared_value_and_currency(self, picking) -> tuple:
-        """Return the declared amount and currency code for a picking.
-
-        Sale orders contribute non-display product/consumable lines, including
-        tax. Without a sale order, use move quantities at product list prices
-        and the picking company's currency.
-
-        :param picking: singleton ``stock.picking`` record
-        :rtype: tuple[float, str]
-        """
         sale_order = picking.sale_id
         if sale_order:
             total_value = sum(
@@ -752,12 +730,6 @@ class ProviderDHL(models.Model):
         return total_value, currency_name
 
     def _update_dhl_rest_request_extra_data(self, request, request_type) -> None:
-        """Adds the extra data to the request.
-        When there are multiple items in a list, they will all be affected by
-        the change.
-        for example, with
-        {"content": {"packages": {"description": "amazon package"}}}
-        the description of each piece will be updated."""
         extra_data_input = {
             "rate": self.dhl_extra_data_rate_request,
             "ship": self.dhl_extra_data_ship_request,
@@ -769,7 +741,6 @@ class ProviderDHL(models.Model):
             raise UserError(self.env._("Invalid syntax for DHL extra data.")) from error
 
         def extra_data_to_request(request, extra_data):
-            """recursive function that adds extra data to the current request"""
             for key, new_value in extra_data.items():
                 current_value = request.get(key)
                 if isinstance(current_value, list):

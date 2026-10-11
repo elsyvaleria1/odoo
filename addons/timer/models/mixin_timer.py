@@ -51,12 +51,6 @@ class MixinTimer(models.AbstractModel):
 
     @api.depends_context("uid")
     def _compute_user_timer_id(self) -> None:
-        """Get the timers according these conditions
-        :user_id is is the current user
-        :res_id is the current record
-        :res_model is the current model
-        limit=1 by security but the search should never have more than one record
-        """
         timer_read_group = self.env["timer.timer"]._read_group(
             domain=[
                 ("user_id", "=", self.env.user.id),
@@ -72,7 +66,6 @@ class MixinTimer(models.AbstractModel):
 
     @api.model
     def _get_user_timers(self):
-        # Return user's timers. Can have multiple timers if some are in pause
         return self.env["timer.timer"].search([("user_id", "=", self.env.user.id)])
 
     def unlink(self):
@@ -105,29 +98,18 @@ class MixinTimer(models.AbstractModel):
         )
 
     def action_timer_start(self):
-        """Start the timer of the current record
-        First, if a timer is running, stop or pause it
-        If there isn't a timer for the current record, create one then start it
-        Otherwise, resume or start it
-        """
         self.check_singleton()
         self.sudo()._stop_timer_in_progress()
         timer = self.user_timer_id
         if not timer:
             timer = self._create_timer()
             timer.action_timer_start()
-        # Check if it is in pause then resume it or start it
         elif timer.timer_pause:
             timer.action_timer_resume()
         else:
             timer.action_timer_start()
 
     def action_timer_stop(self):
-        """Stop the timer of the current record
-        Unlink the timer, it's useless to keep the stopped timer.
-        A new timer can be create if needed
-        Return the amount of minutes spent
-        """
         self.check_singleton()
         timer = self.user_timer_id
         minutes_spent = timer.action_timer_stop()
@@ -155,15 +137,9 @@ class MixinTimer(models.AbstractModel):
         )
 
     def _action_interrupt_user_timers(self) -> None:
-        # Interruption is the action called when the timer is stoped by the start of another one
         self.action_timer_pause()
 
     def _stop_timer_in_progress(self) -> None:
-        """
-        Cancel the timer in progress if there is one
-        Each model can interrupt the running timer in a specific way
-        By setting it in pause or stop by example
-        """
         timers = self._get_user_timers().filtered(lambda t: t.is_timer_running)
         for timer in timers:
             model = self.env[timer.res_model].browse(timer.res_id)

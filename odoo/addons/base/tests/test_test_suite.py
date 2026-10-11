@@ -107,9 +107,6 @@ class TestRunnerLoggingCommon(TransactionCase):
                 extra=None,
                 sinfo=None,
             ):
-                # The odoo.debug.* channels (odoo/libs/debug_log.py) are an
-                # orthogonal stream, off by default; what this pins is the
-                # runner's own report lines, so they stay out of the capture.
                 if name.startswith("odoo.debug."):
                     return
                 log_records.append(
@@ -1334,8 +1331,6 @@ class TestTheHandBackWaitsForTheRequest(TransactionCase):
         self.env.flush_all()
         name = self.env.user.partner_id.name
         raised = []
-        # not assertRaises: its savepoint would roll the request's write back
-        # whether the revocation did or not
         with (
             patch.object(transaction_case, "_request_time_ceiling", return_value=0.5),
             patch.object(transaction_case, "_TAKE_BACK_REPORT_S", 0.1),

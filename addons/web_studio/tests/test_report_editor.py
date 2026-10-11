@@ -93,11 +93,9 @@ class TestReportEditor(TransactionCase):
             }
         )
 
-        # check original report render to expected output
         report_html = report._render_template(report.report_name).decode()
         self.assertEqual("".join(report_html.split()), "hi!hi!!")
 
-        # duplicate original report
         report.copy_report_and_template()
         copy_report = self.env["ir.actions.report"].search(
             [
@@ -105,13 +103,11 @@ class TestReportEditor(TransactionCase):
             ]
         )
 
-        # check duplicated report render to expected output
         copy_report_html = copy_report._render_template(
             copy_report.report_name
         ).decode()
         self.assertEqual("".join(copy_report_html.split()), "hi!hi!!")
 
-        # check that duplicated view is inheritance combination of original view
         copy_view = self.env["ir.ui.view"].search(
             [
                 ("key", "=", copy_report.report_name),
@@ -124,12 +120,8 @@ class TestReportEditor(TransactionCase):
         self.assertEqual(found, 2, "t-call is duplicated one time and used 2 times")
 
     def test_duplicate(self):
-        # Inheritance during an upgrade work only with loaded views
-        # The following force the inheritance to work for all views
-        # so the created view is correctly inherited
         self.env = self.env(context={"load_all_views": True})
 
-        # Create a report/view containing "foo"
         report = self.env["ir.actions.report"].create(
             {
                 "name": "test duplicate",
@@ -151,14 +143,12 @@ class TestReportEditor(TransactionCase):
             ("report_name", "=like", "web_studio.test_duplicate_foo_copy_%")
         ]
 
-        # Duplicate the report and retrieve the duplicated view
         report.copy_report_and_template()
         copy1 = self.env["ir.actions.report"].search(duplicate_domain)
-        copy1.check_singleton()  # watchdog
+        copy1.check_singleton()
         copy1_view = self.env["ir.ui.view"].search([("key", "=", copy1.report_name)])
-        copy1_view.check_singleton()  # watchdog
+        copy1_view.check_singleton()
 
-        # Inherit the view to replace "foo" by "bar"
         self.env["ir.ui.view"].create(
             {
                 "inherit_id": copy1_view.id,
@@ -172,12 +162,10 @@ class TestReportEditor(TransactionCase):
             }
         )
 
-        # Assert the duplicated view renders "bar" then unlink the report
         copy1_html = copy1._render_template(copy1.report_name).decode()
         self.assertEqual("".join(copy1_html.split()), "bar")
         copy1.unlink()
 
-        # Re-duplicate the original report, it must renders "foo"
         report.copy_report_and_template()
         copy2 = self.env["ir.actions.report"].search(duplicate_domain)
         copy2.check_singleton()
@@ -249,7 +237,6 @@ class TestReportEditor(TransactionCase):
             combined_arch,
         )
 
-        # duplicate original report, views will be combined into one
         report.copy_report_and_template()
         copy_view = self.env["ir.ui.view"].search(
             [
@@ -258,7 +245,6 @@ class TestReportEditor(TransactionCase):
         )
         self.assertEqual(copy_view.arch, combined_arch)
 
-        # translations of combined views have been copied to the new view
         new_arch = "<div>a_ in fr<div>ab in fr</div><div>a_ in fr</div>aba in fr<div>ab in fr</div></div>"
         self.assertEqual(copy_view.with_context(lang="fr_FR").arch, new_arch)
 
@@ -406,8 +392,6 @@ class TestReportEditorUIUnit(HttpCase):
         )
 
         doc_arch, studio_arch = get_combined_and_studio_arch(self.main_view_document)
-        # Not sure about this one. Due to the absence of relevant branding
-        # The entire view is replaced (case "entire_view" in report.py)
         self.assertXMLEqual(
             doc_arch,
             """
@@ -1766,7 +1750,6 @@ class TestReportEditorUIUnit(HttpCase):
             }
         )
 
-        # Assert that the report has no associated views
         views = self.env["ir.ui.view"].search(
             [("key", "=", "web_studio.test_no_view_report")]
         )

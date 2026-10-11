@@ -55,7 +55,6 @@ class HrContractSalaryBenefit(models.Model):
         ondelete="cascade",
         help="Select the contract's field to consider in salary computation",
     )
-    # TODO: rename res_field_public into field / cost_field for consistency with fold_field and manual_field
     res_field_public = fields.Selection(
         selection="_selection_public_field_names",
         string="Benefit Field",
@@ -292,10 +291,6 @@ class HrContractSalaryBenefit(models.Model):
 
     @api.depends("structure_type_id")
     def _compute_benefits(self) -> None:
-        # `benefit.structure_type_id`, not `self.structure_type_id`: on a
-        # multi-record recompute - an ordinary write loop is enough - `self`
-        # yields the UNION of the types, which equals no single record's type,
-        # so every record's mandatory-benefit list was emptied.
         for benefit in self:
             benefit.benefit_ids = benefit.benefit_ids.filtered_domain(
                 [("structure_type_id", "=", benefit.structure_type_id.id)]
@@ -317,8 +312,6 @@ class HrContractSalaryBenefit(models.Model):
         return res
 
     def _sync_requested_documents_as_required(self, previous_field_ids=False) -> None:
-        """Keep `hr.contract.salary.personal.info.is_required` in sync with which fields
-        are still referenced by some benefit's `requested_documents_field_ids`."""
         still_requested_field_ids = (
             self.env["hr.contract.salary.benefit"]
             .search([])

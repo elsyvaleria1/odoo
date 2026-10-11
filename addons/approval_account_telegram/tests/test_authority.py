@@ -60,8 +60,6 @@ class TestPaymentRequestAuthority(PaymentApprovalTelegramTestCase):
         self.assertEqual(log.create_uid, self.test_user)
 
     def test_a_company_files_in_its_own_category_only(self):
-        # another company's category for /pago is that company's: requests of
-        # this one never land in it
         other_company = self.env["res.company"].create({"name": "TG Other Company"})
         self.env["approval.category"].create(
             {

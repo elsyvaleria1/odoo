@@ -85,7 +85,6 @@ class TestMailTemplateAuthoring(MailCommon):
             template.body_html = '<p t-out="object.env.user.password"/>'
 
     def test_only_what_a_module_file_ships_is_trusted(self):
-        # an expression auth_signup's data file ships for set_password_email
         spelled = (
             "int(int(object.env['ir.config_parameter'].sudo()"
             ".get_param('auth_signup.signup.validity.hours',144))/24)"
@@ -111,8 +110,6 @@ class TestMailTemplateAuthoring(MailCommon):
         self.create_as_editor(body_html=body)
         shipped.with_user(self.editor).copy({"name": "My copy"})
 
-        # the database body of a shipped template vouches for nothing: not
-        # what an administrator edited into it, nor what an editor writes
         shipped.body_html = '<p t-out="object.env.company.name"/>'
         with self.assertRaises(AccessError):
             self.create_as_editor(body_html='<p t-out="object.env.company.name"/>')

@@ -62,9 +62,6 @@ class StockRuleSelection(models.Model):
 
     @api.model
     def _get_rule_chain_key(self, product, location, route_ids, warehouses) -> tuple:
-        # a chain can step into any warehouse, so usability is keyed over all of
-        # them, per company because a route is usable per company; product and
-        # category routes stay apart because they rank first
         return (
             location.id,
             frozenset(route_ids.ids),

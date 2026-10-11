@@ -41,6 +41,5 @@ class TestCorsLivechatTranscript(HttpCase):
                 % self.livechat_channel.id,
                 headers={"Content-Type": "application/json"},
             )
-        # an unmatched JSON-RPC path is answered inside its envelope (205eb6c7aa57)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()["error"]["code"], 404)

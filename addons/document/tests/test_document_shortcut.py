@@ -112,7 +112,6 @@ class TestDocumentsShortcutAccess(TransactionCaseDocuments):
                 "access_internal": "edit",
             }
         )
-        # a shortcut's audience is its target's: nothing is granted on it
         self.assertEqual(explicit.access_internal, "none")
         self.assertFalse(explicit.access_ids)
         self.assertEqual(explicit.access_via_link, "none")
@@ -300,7 +299,6 @@ class TestDocumentsShortcutDestinationAmbiguity(TransactionCaseDocuments):
 
     @users("documents@example.com")
     def test_the_same_selection_is_accepted_with_an_explicit_destination(self):
-        """Naming a destination is what the refusal asks for, so it must work."""
         in_folder = self.env["document.document"].create(
             {
                 "name": "inside2.txt",
@@ -327,7 +325,6 @@ class TestDocumentsShortcutDestinationAmbiguity(TransactionCaseDocuments):
 
     @users("documents@example.com")
     def test_one_shared_folder_still_needs_no_destination(self):
-        """Negative control: the check must not start refusing the plain case."""
         documents = self.env["document.document"].create(
             [
                 {
@@ -346,7 +343,6 @@ class TestDocumentsShortcutDestinationAmbiguity(TransactionCaseDocuments):
 
     @users("documents@example.com")
     def test_a_selection_entirely_at_the_root_still_needs_no_destination(self):
-        """The other negative control: one destination, and it is the root."""
         documents = self.env["document.document"].create(
             [
                 {

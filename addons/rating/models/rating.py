@@ -32,7 +32,7 @@ class RatingRating(models.Model):
         index=True,
         ondelete="cascade",
     )
-    res_model = fields.Char(  # noqa: E8529  index (res_model, res_id, write_date) partial
+    res_model = fields.Char(
         related="res_model_id.model",
         string="Document Model",
         store=True,
@@ -61,12 +61,7 @@ class RatingRating(models.Model):
         index=True,
         ondelete="cascade",
     )
-    # readonly, like its `res_model` sibling above: writable would make it an
-    # inversable related, and every write of it would then write `model` back
-    # onto `ir.model` -- a no-op by construction, since the value can only ever
-    # be what the related read already returns, but one that costs write access
-    # on `ir.model` and so fails for any non-administrator.
-    parent_res_model = fields.Char(  # noqa: E8529  index (parent_res_model, parent_res_id, write_date) partial
+    parent_res_model = fields.Char(
         related="parent_res_model_id.model",
         string="Parent Document Model",
         store=True,
@@ -208,9 +203,6 @@ class RatingRating(models.Model):
         for rating in self:
             rating.rating_text = rating_data._rating_to_text(rating.rating)
 
-    # ------------------------------------------------------------
-    # CRUD
-    # ------------------------------------------------------------
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -220,8 +212,6 @@ class RatingRating(models.Model):
             if "rating" in values or "feedback" in values:
                 values["rated_on"] = fields.Datetime.now()
         ratings = super().create(vals_list)
-        # a rating asked of a customer is answered through a link of theirs;
-        # one given in the chatter needs none
         for rating in ratings.filtered(lambda rating: not rating.consumed):
             rating._issue_link()
         return ratings
@@ -245,8 +235,6 @@ class RatingRating(models.Model):
             rating.access_token = tokens.get(rating.id, False)
 
     def _issue_link(self) -> str:
-        """The token the rating's customer answers with, issued for as long as
-        a notification's link lives (decision B1)."""
         self.check_singleton()
         __, token = self.env["access.link"]._issue(
             self, partner=self.partner_id, role="comment", cause="notification"
@@ -262,8 +250,6 @@ class RatingRating(models.Model):
         return super().write(vals)
 
     def _is_open_through_link(self) -> bool:
-        """Whether the rating's link may still set it: until the customer gave
-        it, and for RATING_CHANGE_WINDOW after, to change their mind."""
         self.check_singleton()
         if not self.consumed:
             return True
@@ -271,17 +257,10 @@ class RatingRating(models.Model):
         return fields.Datetime.now() < given + rating_data.RATING_CHANGE_WINDOW
 
     def unlink(self):
-        # OPW-2181568: Delete the chatter message too
         self.env["mail.message"].search([("rating_ids", "in", self.ids)]).unlink()
         return super().unlink()
 
     def _get_parent_data(self, values):
-        """Determine the parent res_model/res_id, based on the values to create or write.
-
-        Returns ``parent_res_model_id`` and ``parent_res_id``.  The stored char
-        ``parent_res_model`` is not among them: it is related to
-        ``parent_res_model_id.model`` and the ORM keeps it in step on its own.
-        """
         current_model_name = (
             self.env["ir.model"].sudo().browse(values["res_model_id"]).model
         )
@@ -302,9 +281,6 @@ class RatingRating(models.Model):
                 data["parent_res_id"] = parent_res_model.id
         return data
 
-    # ------------------------------------------------------------
-    # ACTIONS
-    # ------------------------------------------------------------
 
     def action_view_rated_object(self):
         self.check_singleton()
@@ -315,22 +291,8 @@ class RatingRating(models.Model):
             "views": [[False, "form"]],
         }
 
-    # ------------------------------------------------------------
-    # TOOLS
-    # ------------------------------------------------------------
 
     def _classify_by_model(self):
-        """To ease batch computation of various ratings related methods they
-        are classified by model. Ratings not linked to a valid record through
-        res_model / res_id are ignored.
-
-        :returns: for each model having at least one rating in self, have
-          a sub-dict containing
-            * ratings: ratings related to that model;
-            * record IDs: records linked to the ratings of that model, in same
-              order;
-        :rtype: dict
-        """
         data_by_model = {}
         for rating in self.filtered(lambda act: act.res_model and act.res_id):
             if rating.res_model not in data_by_model:

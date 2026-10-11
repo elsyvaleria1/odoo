@@ -39,11 +39,6 @@ class TestLeadAssignPerf(TestLeadAssignCommon):
 
         with self.with_user("user_sales_manager"):
             self.env.user._is_internal()
-            # Counted after a rolled-back rehearsal (assertQueryCountWarm), so
-            # the figure is the assignment's own. Pinned on a database that
-            # installs crm alone; optional merge relations have separate costs.
-            # `assertQueryCount` only fails on an over-count, so a budget met
-            # from further below is a guard that has retired: re-pin it.
             self.assertQueryCountWarm(
                 lambda: (
                     self.env["team.team"]

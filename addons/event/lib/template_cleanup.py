@@ -5,7 +5,6 @@ if TYPE_CHECKING:
 
 
 def unlink_template_schedules(templates: BaseModel) -> None:
-    """Delete event and event-type schedules referencing the removed templates."""
     domain = (
         "template_ref",
         "in",

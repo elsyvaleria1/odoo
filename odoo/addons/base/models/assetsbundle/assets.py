@@ -79,8 +79,6 @@ class WebAsset:
 
     @functools.cached_property
     def _source_descriptor(self) -> str:
-        # A file whose content is supplied inline keeps its url, so the url
-        # alone would version it by the file on disk rather than the content.
         if self.url and self.inline:
             digest = hashlib.sha256(self.inline.encode()).hexdigest()
             return f"{self.url}#{digest}"
@@ -183,8 +181,6 @@ class JavascriptAsset(WebAsset):
 
     @property
     def raw_content(self) -> str:
-        # the name tools/assets' NativeModuleLike protocol reads; a script's
-        # content is never rewritten, so it is the content itself
         return self.content
 
     def minify(self) -> str:
@@ -280,8 +276,6 @@ class StylesheetAsset(WebAsset):
     _CSS_TOKEN_RE = _CSS_STRING_OR_COMMENT
     _SOURCE_TOKEN_RE = _CSS_STRING_OR_COMMENT
     _IDENT_CHAR = re.compile(r"[\w-]")
-    # plain CSS resolves @import here; a preprocessor resolves it on its own
-    # load paths, so the rewrite would break every library import
     _REWRITES_IMPORTS = True
     id = "0"
 
@@ -453,9 +447,6 @@ class ScssStylesheetAsset(PreprocessedCSS):
         except SassNotFoundError:
             raise
         except (SassProtocolError, OSError) as exc:
-            # a transport failure of the embedded protocol; anything else is a
-            # bug in this code and must surface, not run the slow path forever
-            # compile_string has already closed the process it failed on
             self._warn_embedded_fallback(exc)
             _debug.logic("sass_fallback_cli", error=type(exc).__name__)
 

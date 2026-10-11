@@ -27,21 +27,9 @@ SD_LISTEN_FDS_START = 3
 
 
 def adopt_activated_socket(fileno: int) -> socket.socket:
-    """Adopt a systemd socket-activation fd, rejecting non-TCP sockets.
-
-    The server serves TCP: it reads ``getsockname()[:2]`` as (host, port) and
-    sets ``TCP_NODELAY`` on every connection.  A unit configured with
-    ``ListenStream=/path.sock`` hands over an ``AF_UNIX`` socket instead, which
-    survives adoption but fails cryptically at the first accept (``TCP_NODELAY``
-    raises ``OSError 95``, taking the accept loop or the worker down) after
-    producing a garbage server identity.  Reject it here, where the cause is
-    still nameable.
-    """
     sock = socket.socket(fileno=fileno)
     if sock.family not in (socket.AF_INET, socket.AF_INET6):
         family = getattr(sock.family, "name", sock.family)
-        # Release the wrapper without closing the fd (the process exits below,
-        # which reclaims it); closing here would fight the fd's real owner.
         sock.detach()
         raise SystemExit(
             f"Socket activation passed a {family} socket on fd {fileno}; the "
@@ -60,9 +48,6 @@ def _get_first_owned_limit(*limits: int) -> int:
 
 
 def _count_activated_sockets(config: OptionSource) -> int:
-    # sd_listen_fds(3): the unit's sockets arrive as fds 3.. in the order
-    # its [Socket] section lists them -- the HTTP port first, the websocket
-    # port second when the unit has one -- and only for the pid named.
     listen_fds = os.getenv("LISTEN_FDS") or "0"
     count = (
         int(listen_fds)
@@ -195,17 +180,16 @@ class ServerSettings:
         return bool(self.init or self.update or self.reinit)
 
 
-_last_seen: ServerSettings | None = None  # debuglog
+_last_seen: ServerSettings | None = None
 
 
 def _get_settings_from_live_config() -> ServerSettings:
-    global _last_seen  # debuglog
+    global _last_seen
 
     import odoo.tools
 
     settings = ServerSettings.from_config(odoo.tools.config)
-    # Derived once per config change; the event names the fields that moved.
-    previous, _last_seen = _last_seen, settings  # debuglog
+    previous, _last_seen = _last_seen, settings
     if _debug.lifecycle.enabled and settings != previous:
         _debug.lifecycle(
             "settings.changed",
@@ -230,8 +214,6 @@ def _get_settings_from_live_config() -> ServerSettings:
 def _get_live_inputs_version() -> object:
     import odoo.tools
 
-    # Socket activation is read from the environment, not the option dict, so
-    # the two variables that decide it are part of the key.
     return (
         odoo.tools.config.generation,
         os.getenv("LISTEN_FDS"),
@@ -239,9 +221,6 @@ def _get_live_inputs_version() -> object:
     )
 
 
-# Derived once per change of its inputs, not per read; a key written after
-# boot still reaches the tier on the next read, and a test's override() or
-# installed() still wins.
 slot: SettingsSlot[ServerSettings] = SettingsSlot(
     "odoo.service",
     _get_settings_from_live_config,

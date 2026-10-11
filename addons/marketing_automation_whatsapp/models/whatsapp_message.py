@@ -21,7 +21,6 @@ class WhatsappMessage(models.Model):
         return self
 
     def _process_statuses(self, value):
-        """Process statuses of whatsapp messages like: 'send', 'delivered' and 'read'."""
         processed_msgs = super()._process_statuses(value)
         status_mapping = {
             "send": "whatsapp_send",

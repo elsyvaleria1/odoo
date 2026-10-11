@@ -13,9 +13,6 @@ from odoo.addons.integration_github.tools.app import APP_CATEGORY
 
 _debug = DebugLog(__name__)
 
-# What a change needs of its repository: push a branch, open a pull request,
-# read what checks say about it. Nothing else of the installation; a kind that
-# only reads narrows it.
 RUN_PERMISSIONS = {
     "contents": "write",
     "pull_requests": "write",
@@ -77,8 +74,6 @@ class AgentRun(models.Model):
             same_repository(granted, self.github_repository)
             for granted in minted.repositories
         ):
-            # the App's installation holds a repository of that name under
-            # another owner, or none: its token would not reach this one
             raise CredentialsRefused(
                 self.env._(
                     "The company's GitHub App is not installed on %(repository)s.",
@@ -95,8 +90,6 @@ class AgentRun(models.Model):
         }
 
     def _github_permissions(self) -> dict[str, str]:
-        """What this run's token may do in its repository; a kind that only
-        reads narrows it."""
         return dict(RUN_PERMISSIONS)
 
     def _complete(self, token: object, result: object, usage: dict[str, Any]) -> bool:
@@ -108,8 +101,6 @@ class AgentRun(models.Model):
         return first
 
     def _link_github_pull(self) -> None:
-        """The pull request of the branch this run pushed, once both exist --
-        whichever GitHub or the runner reports first."""
         self.check_singleton()
         pulls = self.env["integration.github.pull"].search(
             [

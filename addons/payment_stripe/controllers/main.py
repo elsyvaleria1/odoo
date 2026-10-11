@@ -21,30 +21,21 @@ class StripeController(http.Controller):
 
     @http.route(_return_url, type="http", methods=["GET"], auth="public")
     def stripe_return(self, **data):
-        """Process the payment data sent by Stripe after redirection from payment.
-
-        Customers go through this route regardless of whether the payment was direct or with
-        redirection to Stripe or to an external service (e.g., for strong authentication).
-
-        :param dict data: The payment data, including the reference appended to the URL in
-                          `_prepare_provider_processing_values`.
-        """
-        # Retrieve the transaction based on the reference included in the return url.
         tx_sudo = (
             request.env["payment.transaction"]
             .sudo()
             ._search_by_reference("stripe", data)
         )
         endpoint = (
-            f"payment_intents/{data.get('payment_intent')}"  # Fetch the PaymentIntent.
+            f"payment_intents/{data.get('payment_intent')}"
             if tx_sudo.operation != "validation"
-            else f"setup_intents/{data.get('setup_intent')}"  # Fetch the SetupIntent.
+            else f"setup_intents/{data.get('setup_intent')}"
         )
         try:
             response_content = tx_sudo._send_api_request(
                 "GET",
                 endpoint,
-                data={"expand[]": "payment_method"},  # Expand all required objects.
+                data={"expand[]": "payment_method"},
             )
         except ValidationError:
             _logger.error("Failed to process the return from Stripe.")
@@ -53,13 +44,10 @@ class StripeController(http.Controller):
                 self._include_payment_intent_in_payment_data(response_content, data)
             else:
                 self._include_setup_intent_in_payment_data(response_content, data)
-            # Process the payment data crafted with Stripe API's objects.
             tx_sudo._process("stripe", data)
 
-        # Redirect the user to the status page.
         return request.redirect("/payment/status")
 
-    # csrf=False: auth="receiver" admits the caller through its inbound gate
     @http.route(
         _webhook_url,
         type="http",
@@ -71,11 +59,6 @@ class StripeController(http.Controller):
         typed=True,
     )
     def stripe_webhook(self):
-        """Process the payment data sent by Stripe to the webhook.
-
-        :return: An empty string to acknowledge the notification.
-        :rtype: str
-        """
         admission = request.admission
         tx_sudo = admission.subject
         event = admission.extra["event"]
@@ -85,15 +68,14 @@ class StripeController(http.Controller):
             "Notification received from Stripe with data:\n%s", pprint.pformat(event)
         )
         try:
-            if event["type"].startswith("payment_intent"):  # Payment operation.
+            if event["type"].startswith("payment_intent"):
                 if tx_sudo.tokenize:
                     payment_method = tx_sudo._send_api_request(
                         "GET", f"payment_methods/{stripe_object['payment_method']}"
                     )
                     stripe_object["payment_method"] = payment_method
                 self._include_payment_intent_in_payment_data(stripe_object, data)
-            elif event["type"].startswith("setup_intent"):  # Validation operation.
-                # Fetch the missing PaymentMethod object.
+            elif event["type"].startswith("setup_intent"):
                 payment_method = tx_sudo._send_api_request(
                     "GET", f"payment_methods/{stripe_object['payment_method']}"
                 )
@@ -101,10 +83,9 @@ class StripeController(http.Controller):
                 self._include_setup_intent_in_payment_data(stripe_object, data)
             elif (
                 event["type"] == "charge.refunded"
-            ):  # Refund operation (refund creation).
+            ):
                 refunds = stripe_object["refunds"]["data"]
 
-                # The refunds linked to this charge are paginated, fetch the remaining refunds.
                 has_more = stripe_object["refunds"]["has_more"]
                 while has_more:
                     payload = {
@@ -118,7 +99,6 @@ class StripeController(http.Controller):
                     refunds += additional_refunds["data"]
                     has_more = additional_refunds["has_more"]
 
-                # Process the refunds for which a refund transaction has not been created yet.
                 processed_refund_ids = tx_sudo.child_transaction_ids.filtered(
                     lambda tx: tx.operation == "refund"
                 ).mapped("provider_reference")
@@ -128,20 +108,14 @@ class StripeController(http.Controller):
                     refund_tx_sudo = self._create_refund_tx_from_refund(tx_sudo, refund)
                     self._include_refund_in_payment_data(refund, data)
                     refund_tx_sudo._process("stripe", data)
-                # Don't process the payment data for the source transaction.
                 return request.prepare_json_response("")
             elif (
                 event["type"] == "charge.refund.updated"
-            ):  # Refund operation (with update).
-                # A refund was updated by Stripe after it was already processed (possibly to
-                # cancel it). This can happen when the customer's payment method can no longer
-                # be topped up (card expired, account closed...). The `tx_sudo` record is the
-                # refund transaction to update.
+            ):
                 self._include_refund_in_payment_data(stripe_object, data)
 
-            # Process the payment data crafted with Stripe API objects
             tx_sudo._process("stripe", data)
-        except ValidationError:  # Acknowledge the notification to avoid getting spammed
+        except ValidationError:
             _logger.exception(
                 "Unable to process the payment data; skipping to acknowledge"
             )
@@ -171,14 +145,6 @@ class StripeController(http.Controller):
 
     @staticmethod
     def _create_refund_tx_from_refund(source_tx_sudo, refund_object):
-        """Create a refund transaction based on Stripe data.
-
-        :param recordset source_tx_sudo: The source transaction for which a refund is initiated, as
-                                         a sudoed `payment.transaction` record.
-        :param dict refund_object: The Stripe refund object to create the refund from.
-        :return: The created refund transaction.
-        :rtype: recordset of `payment.transaction`
-        """
         amount_to_refund = refund_object["amount"]
         converted_amount = payment_utils.minor_to_major_currency_units(
             amount_to_refund,
@@ -195,17 +161,6 @@ class StripeController(http.Controller):
         _apple_pay_domain_association_url, type="http", methods=["GET"], auth="public"
     )
     def stripe_apple_pay_get_domain_association_file(self):
-        """Get the domain association file for Stripe's Apple Pay.
-
-        Stripe handles the process of "merchant validation" described in Apple's documentation for
-        Apple Pay on the Web. Stripe and Apple will access this route to check the content of the
-        file and verify that the web domain is registered.
-
-        See https://stripe.com/docs/stripe-js/elements/payment-request-button#verifying-your-domain-with-apple-pay.
-
-        :return: The content of the domain association file.
-        :rtype: str
-        """
         with file_open(
             "payment_stripe/static/files/apple-developer-merchantid-domain-association"
         ) as f:

@@ -5,7 +5,6 @@ from odoo import api, fields, models
 AUTOFIX_KINDS = ("error_incident.diagnose", "error_incident.fix")
 REVISION = "error_incident.revision"
 HOTFIX = "error_incident.hotfix"
-# Runs of the deploy runner on the production host: no agent, no model key.
 DELIVERY_KINDS = (REVISION, HOTFIX)
 
 

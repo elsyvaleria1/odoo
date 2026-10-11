@@ -62,10 +62,6 @@ class AccountPayment(models.Model):
                 )
 
     def _auto_init(self):
-        """
-        Create compute stored field check_number
-        here to avoid MemoryError on large databases.
-        """
         if not column_exists(self.env.cr, "account_payment", "check_number"):
             create_column(self.env.cr, "account_payment", "check_number", "varchar")
 
@@ -145,7 +141,6 @@ class AccountPayment(models.Model):
     @api.model
     def fields_get(self, allfields=None, attributes=None):
         result = super().fields_get(allfields, attributes)
-        # pretend the field 'check_number' to be readonly
         field_desc = result.get("check_number") or {}
         if "readonly" in field_desc:
             field_desc["readonly"] = True
@@ -156,7 +151,6 @@ class AccountPayment(models.Model):
         return super()._get_trigger_fields_to_synchronize() + ("check_number",)
 
     def _get_aml_default_display_name_list(self):
-        # Extends 'account'
         self.check_singleton()
 
         if not self.check_number:
@@ -191,8 +185,6 @@ class AccountPayment(models.Model):
         return super().action_post()
 
     def print_checks(self):
-        """Check that the recordset is valid, set the payments state to sent and call print_checks()"""
-        # Since this method can be called via a client_action_multi, we need to make sure the received records are what we expect
         valid_payments = self.filtered(
             lambda r: r.payment_channel_id.code == "check_printing" and not r.is_sent
         )
@@ -215,8 +207,6 @@ class AccountPayment(models.Model):
             )
 
         if not valid_payments[0].journal_id.check_manual_sequencing:
-            # The wizard asks for the number printed on the first pre-printed check
-            # so payments are attributed the number of the check the'll be printed on.
             self.env.cr.execute(
                 """
                   SELECT payment.check_number
@@ -277,9 +267,6 @@ class AccountPayment(models.Model):
         self.write({"is_sent": "True"})
         return report_action.report_action(self)
 
-    #######################
-    # CHECK PRINTING METHODS
-    #######################
     def _prepare_check_address_values(self) -> CheckAddressValues:
         bank = self.journal_id.bank_id
         return {
@@ -356,12 +343,10 @@ class AccountPayment(models.Model):
             "memo": self.memo,
             "stub_cropped": not multi_stub
             and len(self.move_id._get_reconciled_invoices()) > INV_LINES_PER_STUB,
-            # If the payment does not reference an invoice, there is no stub line to display
             "stub_lines": p,
         }
 
     def _prepare_check_pages(self) -> list[dict[str, Any]]:
-        """Returns the data structure used by the template: a list of dicts containing what to print on pages."""
         stub_pages = self._prepare_check_stub_pages() or [False]
         pages = []
         for i, p in enumerate(stub_pages):
@@ -369,9 +354,6 @@ class AccountPayment(models.Model):
         return pages
 
     def _prepare_check_stub_pages(self) -> list[list[dict[str, Any]]]:
-        """The stub is the summary of paid invoices. It may spill on several pages, in which case only the check on
-        first page is valid. This function returns a list of stub lines per page.
-        """
         self.check_singleton()
 
         def prepare_vals(invoice, partials=None, current_amount=0):
@@ -414,7 +396,6 @@ class AccountPayment(models.Model):
             }
 
         if self.move_id:
-            # Decode the reconciliation to keep only invoices.
             term_lines = self.move_id.line_ids.filtered(
                 lambda line: (
                     line.account_id.account_type
@@ -426,7 +407,6 @@ class AccountPayment(models.Model):
                 + term_lines.matched_credit_ids.credit_move_id.move_id
             ).filtered(lambda x: x.is_outbound(include_receipts=True))
 
-            # Group partials by invoices.
             invoice_map = dict.fromkeys(invoices, self.env["account.partial.reconcile"])
             for partial in term_lines.matched_debit_ids:
                 invoice = partial.debit_move_id.move_id
@@ -471,9 +451,7 @@ class AccountPayment(models.Model):
                     stub_lines += [prepare_vals(invoice, current_amount=current_amount)]
                     remaining -= current_amount
 
-        # Crop the stub lines or split them on multiple pages
         if not self.company_id.account_config_id.account_check_printing_multi_stub:
-            # If we need to crop the stub, leave place for an ellipsis line
             num_stub_lines = (
                 len(stub_lines) > INV_LINES_PER_STUB and INV_LINES_PER_STUB - 1
             ) or INV_LINES_PER_STUB
@@ -482,7 +460,6 @@ class AccountPayment(models.Model):
             stub_pages = []
             i = 0
             while i < len(stub_lines):
-                # Make sure we don't start the credit section at the end of a page
                 if len(stub_lines) >= i + INV_LINES_PER_STUB and stub_lines[
                     i + INV_LINES_PER_STUB - 1
                 ].get("header"):
@@ -495,11 +472,6 @@ class AccountPayment(models.Model):
         return stub_pages
 
     def _get_micr_line(self) -> str:
-        """Generate MICR line to be printed on blank checks.
-        A - ⑆ (transit: used to delimit a bank code),
-        B - ⑇ (amount: used to delimit a transaction amount),
-        C - ⑈ (on - us: used to delimit a customer account number),
-        D - ⑉ (dash: used to delimit parts of numbers—e.g., routing numbers or account numbers)."""
         micr_check_number = self.check_number or "000000"
         micr_bank_routing = (
             self.journal_id.bank_account_id.clearing_number or "000000000"

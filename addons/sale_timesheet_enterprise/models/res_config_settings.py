@@ -37,32 +37,16 @@ class ResConfigSettings(models.TransientModel):
     )
 
     def set_values(self):
-        """Override set_values to recompute the qty_transferred for each sale.order.line
-        where :
-            -   the sale.order has the state to 'done',
-            -   the type of the product is a 'service',
-            -   the service_policy in product has 'delivered_timesheet'.
-
-        We need to recompute this field because when the invoiced_timesheet
-        config changes, this field isn't recompute.
-        When the qty_transferred field is recomputed, we need to update the
-        qty_to_invoice and invoice status fields.
-        """
         old_value = self.env.registry.settings.get(
             self.env, "sale.invoiced_timesheet", False
         )
         if old_value and self.invoiced_timesheet != old_value:
-            # recompute the qty_transferred in sale.order.line for sale.order
-            # where his state is set to 'done'.
             sale_order_lines = (
                 self.env["sale.order.line"]
                 .sudo()
                 .search(
                     [
                         ("state", "=", "done"),
-                        # Fork values: upstream's single 'to invoice' is 'to do' plus
-                        # 'partial' here, so both are needed to keep selecting every line
-                        # that is not fully invoiced.
                         ("invoice_state", "in", ["no", "to do", "partial"]),
                         ("product_id.type", "=", "service"),
                         ("product_id.service_type", "=", "timesheet"),

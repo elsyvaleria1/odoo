@@ -73,8 +73,6 @@ class IrHttp(models.AbstractModel):
         if model is None:
             return []
         if "auth_type" not in model._fields:
-            # The subject proves the caller: a token in the path it checks
-            # itself, or a Resolution's verifier. No header is read.
             return [_SCHEME_DEFINITIONS["subject"]]
         resolved: dict[str, dict[str, Any]] = {}
         for auth_type in self._openapi_receiver_auth_types(model_name):
@@ -94,8 +92,6 @@ class IrHttp(models.AbstractModel):
         used = sorted({row.auth_type for row in rows if row.auth_type})
         if used:
             return used
-        # No row answers for this door yet; what one would carry is the
-        # field's own default, which is what a partner is told to send.
         default = model._fields["auth_type"].default
         default = default(model) if callable(default) else default
         return [default] if default else []

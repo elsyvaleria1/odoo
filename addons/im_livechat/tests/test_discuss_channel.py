@@ -442,9 +442,6 @@ class TestDiscussChannel(TestImLivechatCommon, TestGetOperatorCommon, MailCase):
         )
 
     def test_the_empty_session_sweep_runs_and_keeps_what_was_spoken_in(self):
-        """`interval %s` is a syntax error under psycopg 3, which binds the
-        placeholder server-side, so this sweep raised on every autovacuum run
-        and collected nothing. Nothing covered it, which is why."""
         operator = self._create_operator()
         empty = self._create_conversation(self.livechat_channel, operator)
         empty.message_ids.unlink()

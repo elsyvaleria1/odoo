@@ -8,7 +8,7 @@ from pathlib import Path
 from psycopg.errors import InsufficientPrivilege
 
 import odoo
-import odoo.release  # noqa: F401  binds the submodule so `odoo.release.version` resolves below
+import odoo.release
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.memory_watch import start_from_environ as start_memory_watch
 from odoo.service import db, server
@@ -99,8 +99,6 @@ def remove_pid_file(main_pid: int) -> None:
 
 
 def write_pid_file() -> None:
-    # Reload candidates are children of the persistent supervisor. They must
-    # neither replace its PID file nor register cleanup that removes it.
     if int(os.environ.get("ODOO_RELOAD_SUPERVISOR_PID", "0")):
         _debug.logic("cli.server.pid_skipped", reason="reload_candidate")
         return
@@ -143,8 +141,6 @@ def _create_database(db_name: str) -> bool:
 
 
 def create_configured_databases() -> None:
-    # The evented child is spawned by a master that already ran this, and it
-    # never loads a registry, so it has no database to create or extend.
     if odoo.evented:
         _debug.logic("cli.server.database_probe_skipped", reason="evented")
         return
@@ -154,9 +150,6 @@ def create_configured_databases() -> None:
             config["init"] = {**config["init"], "base": True}
         _debug.lifecycle("cli.server.databases_created", created=len(created))
         return
-    # `init` reaches every configured database: on the ones that already exist
-    # it would turn a plain load into a module update, so the new ones get
-    # their base installed on their own
     from odoo.modules.registry import Registry
 
     for db_name in created:

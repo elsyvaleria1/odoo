@@ -74,7 +74,7 @@ class PlanningSlot(models.Model):
                     "end_datetime",
                     ">",
                     today,
-                ),  # only fetch the slots containing today in their period or shifts in the future
+                ),
             ]
         )
         if not slots:

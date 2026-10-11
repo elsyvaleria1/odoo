@@ -457,7 +457,6 @@ class TestPurchaseAmountToInvoice(AccountTestInvoicingCommon):
         line.qty_transferred = 5.0
 
         bill = po.create_invoice()
-        # the draft bill claims the whole line and bills none of it
         self.assertEqual(line.qty_invoiced, 0.0)
         self.assertEqual(line.qty_invoiced_draft, 5.0)
         self.assertEqual(line.qty_to_invoice, 0.0)

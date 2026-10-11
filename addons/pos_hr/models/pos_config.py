@@ -36,7 +36,6 @@ class PosConfig(models.Model):
             for emp_id in self._default_group_pos_manager_id().user_ids.employee_id.ids
         ]
 
-        # write employees in sudo, because we have no access to these corecords
         sudo_vals = {
             field_name: vals.pop(field_name)
             for field_name in (
@@ -53,8 +52,6 @@ class PosConfig(models.Model):
             "pos_config_employee_lists_written",
             configs=self,
             escalated_fields=len(sudo_vals),
-            # the key is `pop`ped into `sudo_vals` on the non-superuser path,
-            # so it is read from wherever it ended up
             advanced_commands=len(
                 vals.get("advanced_employee_ids")
                 or sudo_vals.get("advanced_employee_ids")

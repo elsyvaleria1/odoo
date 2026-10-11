@@ -48,7 +48,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
     )
     social_stream_post_id = fields.Many2one(comodel_name="social.stream.post")
     social_account_id = fields.Many2one(comodel_name="social.account")
-    # comment data
     author_name = fields.Char(
         string="Post Author Name",
         compute="_compute_post_data",
@@ -68,8 +67,7 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
     )
     post_image_urls = fields.Text(
         string="Post Images URLs"
-    )  # JSON array capturing the URLs of the images
-    # UTMs
+    )
     utm_source_id = fields.Many2one(
         comodel_name="utm.source",
         compute="_compute_utm_data",
@@ -85,14 +83,9 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
 
     @api.depends("author_name")
     def _compute_partner_action_data(self) -> None:
-        """The goal is to find a matching partner based on the post or comment author name.
-        e.g: the customer 'John Doe' commented on your Facebook post, and is already an existing
-        customer with the same name in your Odoo database -> do the matching.
-        If there are none or more than one, fallback to 'create' mode."""
 
         for wizard in self:
             partner = False
-            # avoid searching on res.partner if not enough characters
             if wizard.author_name and len(wizard.author_name) > 3:
                 partner = self.env["res.partner"].name_search(wizard.author_name)
             if partner and len(partner) == 1:
@@ -104,8 +97,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
 
     @api.depends("social_stream_post_id", "conversion_source")
     def _compute_post_data(self) -> None:
-        """When converting from a stream.post, use it to populate post fields.
-        Otherwise, the post fields will come from the default values passed on from the frontend."""
 
         for wizard in self:
             if (
@@ -122,17 +113,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
 
     @api.depends("social_stream_post_id", "social_account_id")
     def _compute_utm_data(self) -> None:
-        """UTMs computation logic:
-
-        - The medium is always set to the related social.account of the social.stream.post
-        - If we find a matching social.post, we use its source and campaign
-          Note: there will not always be a matching social.post
-          e.g: when you post directly on your Facebook page on Facebook, then we don't have a
-          social.post record related to that published content in your Odoo database, but it will
-          still appear in the stream view and leads can be created from it
-        - Otherwise, we set the source to a common record created in data.
-          That way, users can still check some statistics based on posts that don't originate from
-          Odoo."""
 
         utm_source_social_post = self.env.ref(
             "social_crm.utm_source_social_post", raise_if_not_found=False
@@ -151,16 +131,8 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
                     wizard.utm_source_id = utm_source_social_post.id
 
     def action_convert_to_lead(self):
-        """Creates a crm.lead using the information of the social.stream.post or the comment.
-        There are two possible sources:
-        - 'stream_post'
-          A social.stream.post, in that case all the information are retrieved from it
-        - 'comment'
-          A comment or a reply to a comment, in that case there is no record stored so we receive
-          all the necessary information from the default values."""
 
         self.check_singleton()
-        # create partner if needed
         if self.action == "create":
             self.partner_id = self.env["res.partner"].create({"name": self.author_name})
 
@@ -187,7 +159,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
         }
 
         if self.action == "nothing":
-            # set the contact_name as we don't have a partner
             lead_values["contact_name"] = self.author_name
 
         lead_sudo = (
@@ -197,7 +168,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
             .create(lead_values)
         )
 
-        # return to lead (if can see) or simply close wizard (if cannot)
         if not lead_sudo.with_env(self.env).has_access("read"):
             return {
                 "type": "ir.actions.client",
@@ -209,7 +179,6 @@ class WizardSocialStreamPostCreateLead(models.TransientModel):
                 },
             }
 
-        # return the action to go to the form view of the new Ticket
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "crm.crm_lead_all_leads"
         )

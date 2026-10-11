@@ -121,7 +121,6 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                             ml.quantity = qty_added
                         new_line_needed = False
                         break
-                # if no ml were available, create a new one
                 move = (
                     moves_from_intermediate_pickings[pick][0]
                     if moves_from_intermediate_pickings[pick]
@@ -159,7 +158,6 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                 and line.get_line_parent_section().id == section_id
             )
         )
-        # create the new sale_lines from the wizard
         move_line_qty_per_lot_id = defaultdict(int)
         new_lines = self.tracking_line_ids.filtered(
             lambda line: not line.sale_order_line_id
@@ -188,11 +186,8 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
         dict_moves_per_picking = self._get_moves_dict(self.task_id.sale_order_id)
         self.env["stock.move"].check_access("write")
 
-        # set the qty to 0 for the sol and the deliveries from the deleted wizard line
         for sl in sale_lines_remove:
             if sl.qty_transferred == 0 and sl.fsm_trace_id:
-                # if dict_moves_per_picking:  # handles 2/3 ways deliveries
-                #     self._remove_qty_from_intermediate_delivery(dict_moves_per_picking, sl.fsm_trace_id, 0-(sl.product_qty - sl.qty_transferred), deleted_line=True)
                 editable_moves = sl.move_ids.filtered(
                     lambda m: m.state not in ["done", "cancel"]
                 )
@@ -200,8 +195,6 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                 for m in editable_moves:
                     m.trace_ids = [Command.unlink(sl.fsm_trace_id.id)]
                 sl.fsm_trace_id = False
-                # If the warehouse of the delivery is different from the one of the sale_order, the stock.rule.run() will not handle the moves correctly.
-                # We have to manually set the product_uom_qty and cancel the moves
                 if (
                     sl.order_id.warehouse_id
                     != self.env.user._get_default_warehouse_id()
@@ -210,12 +203,11 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                     editable_moves.state = "cancel"
             sl.product_qty = sl.qty_transferred
 
-        # update the sol and deliveries according to the modification of the wizard lines
         for line in self.tracking_line_ids:
             qty = line.quantity if self.tracking == "lot" else 1
             sol = line.sale_order_line_id
             if sol:
-                if dict_moves_per_picking:  # handles 2/3 ways deliveries
+                if dict_moves_per_picking:
                     if sol.fsm_trace_id == line.trace_id:
                         current_qty_demand = sol.product_qty - sol.qty_transferred
                         if qty > current_qty_demand:
@@ -228,12 +220,10 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                                 sol.fsm_trace_id,
                                 qty - current_qty_demand,
                             )
-                    else:  # the sn/lot id was changed
-                        # adds the qty of the new trace_id
+                    else:
                         self._add_qty_to_intermediate_delivery(
                             dict_moves_per_picking, line, qty
                         )
-                        # removes the qty of the old trace_id
                         self._remove_qty_from_intermediate_delivery(
                             dict_moves_per_picking,
                             sol.fsm_trace_id,
@@ -241,7 +231,7 @@ class WizardProjectTaskUpdateProductLot(models.TransientModel):
                         )
                 if (
                     sol.fsm_trace_id != line.trace_id
-                ):  # update the trace_id of the deliveries linked to the sale_order_line
+                ):
                     self._update_lot_id(sol, line)
                 vals = {
                     "fsm_trace_id": line.trace_id,

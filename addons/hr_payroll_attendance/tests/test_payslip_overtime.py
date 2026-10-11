@@ -58,7 +58,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
         cls.company = cls.payslip.company_id
 
     def test_overtime_outside_period(self):
-        # Right before the payslip period
         self.env["hr.attendance.overtime.line"].create(
             {
                 "employee_id": self.employee.id,
@@ -66,7 +65,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
                 "duration": 5,
             }
         )
-        # Right after the payslip period
         self.env["hr.attendance.overtime.line"].create(
             {
                 "employee_id": self.employee.id,
@@ -74,8 +72,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
                 "duration": 5,
             }
         )
-        # Since contract resource_calendar_id's default to the company's,
-        # we can just change the company's resource_calendar_id's timezone.
         self.env.company.resource_calendar_id.tz = "Asia/Manila"
         self.payslip._compute_worked_days_line_ids()
         self.assertFalse(
@@ -139,7 +135,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
         )
 
     def test_overtime_with_approval(self):
-        """Test that the overtime is taken into account only when it's approved."""
         self.company.write({"attendance_overtime_validation": "by_manager"})
 
         attendance = self.env["hr.attendance"].create(
@@ -154,7 +149,6 @@ class TestPayslipOvertime(HrWorkEntryAttendanceCommon):
             self.payslip.worked_days_line_ids.filtered(lambda w: w.code == "OVERTIME")
         )
 
-        # Approve the overtime
         attendance.action_approve_overtime()
         self.payslip.version_id.generate_work_entries(
             self.payslip.date_from, self.payslip.date_to, force=True

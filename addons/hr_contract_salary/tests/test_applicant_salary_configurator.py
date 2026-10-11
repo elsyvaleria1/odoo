@@ -375,10 +375,6 @@ class TestSalaryConfiguratorForApplicant(HttpCase):
             self.assertEqual(offer_form.job_title, self.senior_dev_job.name)
             self.assertEqual(
                 offer_form.contract_start_date,
-                # the field defaults to `context_today`, not to UTC today: the
-                # two differ for the hours of the UTC day the user's timezone
-                # has already rolled out of, which made this assertion fail
-                # every evening and pass every morning
                 fields.Date.to_string(fields.Date.context_today(self.env.user)),
             )
             self.assertEqual(offer_form.employee_id, new_version.employee_id)

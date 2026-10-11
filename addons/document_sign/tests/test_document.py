@@ -46,9 +46,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
         self.document_pdf_0 = self.documents[0]
 
     def test_bridge_folder_workflow(self):
-        """
-        tests the create new business model (sign).
-        """
         self.assertFalse(self.document_pdf_0.res_model)
         self.documents.document_sign_create_sign_template(self.folder_a.id)
         self.assertEqual(
@@ -71,7 +68,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
 
     @mute_logger("odoo.addons.document.models.document_document", "pypdf._reader")
     def test_sign_action(self):
-        """Test sign a document from Document app using the workflow rule."""
         self.document_pdf_0.document_sign_create_sign_template(self.folder_a.id)
         self.assertEqual(self.document_pdf_0.res_model, "sign.document")
         document = self.env["sign.document"].search(
@@ -81,7 +77,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             [("document_ids", "in", document.id)]
         )
 
-        # Create a sign item directly for the new template
         self.env["sign.item"].create(
             {
                 "type_id": self.env.ref("sign.sign_item_type_text").id,
@@ -124,9 +119,8 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
 
     @mute_logger(
         "odoo.addons.document.models.document_document", "pypdf._reader"
-    )  # avoid warning about counting page of PDFs
+    )
     def test_signed_documents_access_rights(self):
-        """Test access rights and owner of signed/certificate documents."""
         Document = self.env["document.document"]
         Partner = self.env["res.partner"]
         User = self.env["res.users"]
@@ -157,7 +151,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
         for user in users:
             with self.subTest(user_name=user.name):
                 sign_request = self.create_sign_request_1_role(user.partner_id, Partner)
-                # See /sign/sign/<int:sign_request_id>/<token> controller
                 sign_request.request_item_ids[0].with_user(user).sudo().sign(
                     {str(self.template_1_role.sign_item_ids[0].id): "Test Sign"}
                 )
@@ -180,8 +173,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
                     self.assertTrue(doc.is_access_via_link_hidden)
                     self.assertFalse(doc.owner_id)
                     self.assertEqual(doc.partner_id, user.partner_id)
-                    # the folder's member reaches the signed documents from the
-                    # folder; the signer is granted view on them
                     reached = doc._member_roles()
                     self.assertEqual(reached[user_sign_manager.partner_id], "edit")
                     if user != user_sign_manager:
@@ -202,20 +193,15 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
                     ):
                         doc.with_user(user).write({"name": "New name"})
 
-        # user_sign_manager have edit access on all the signed documents
         self.assertEqual(len(all_documents_signed), 8)
         for doc in all_documents_signed:
             doc.with_user(user_sign_manager).name = "Name overridden by the manager"
 
     def test_correct_reference_doc_set(self):
-        """Verifies that the correct reference document is linked to a sign request.
-        Ensures that when documents have identical checksums, the sign request is
-        only linked to the document it originated from."""
         writer = OdooPdfFileWriter()
         writer.add_blank_page(width=200, height=200)
         stream = io.BytesIO()
         writer.write(stream)
-        # create a document
         self.env["document.document"].create(
             {
                 "name": "another.pdf",
@@ -224,7 +210,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
                 "folder_id": self.folder_a_a.id,
             }
         )
-        # create a document to sign with the same content
         documents_to_sign = self.env["document.document"].create(
             {
                 "name": "test.pdf",
@@ -237,7 +222,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
         with self.subTest(
             "Ensure sign request does not link to unrelated documents and cause access errors"
         ):
-            # create a sign template with the same content then request a signature
             with self.with_user(self.user_1.login):
                 attachment = self.env["ir.attachment"].create(
                     {
@@ -274,7 +258,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             )
 
         with self.subTest("Ensure sign request links to the correct document"):
-            # create a sign request from the documents_to_sign
             action = documents_to_sign.document_sign_create_sign_template()
             document_sign_template = self.env["sign.template"].browse(
                 action["params"]["id"]
@@ -289,20 +272,14 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             )
             related_request = wizard.create_request()
             wizard._create_request_log_note(related_request)
-            # Verify that the request got linked to the documents_to_sign
             self.assertEqual(related_request.reference_doc, documents_to_sign)
 
     def test_import_document(self):
-        """
-        This test verifies that a user can import a document from the Documents app
-        and create a sign template from it by calling the action_import_and_create method.
-        """
         writer = OdooPdfFileWriter()
         writer.add_blank_page(width=200, height=200)
         stream = io.BytesIO()
         writer.write(stream)
 
-        # Create a document
         document = self.env["document.document"].create(
             {
                 "name": "test_import_document.pdf",
@@ -312,7 +289,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             }
         )
 
-        # Create a wizard for importing documents
         wizard = (
             self.env["wizard.sign.template.import.document"]
             .with_user(self.env.user)
@@ -323,21 +299,17 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
             )
         )
 
-        # Perform the import and create action
         result = wizard.action_import_and_create()
 
-        # Assertions to verify the result
         self.assertEqual(result["type"], "ir.actions.client")
         self.assertEqual(result["tag"], "sign.Template")
         self.assertTrue(result["params"]["id"], "Template ID should be created")
 
-        # Verify template creation
         template = self.env["sign.template"].browse(result["params"]["id"])
         self.assertTrue(template.exists(), "Sign template should be created")
 
     @mute_logger("odoo.addons.document.models.document_document")
     def test_signed_document_requester_access(self):
-        """Verifies that the requester of a sign request has at least view access to the signed document."""
         Document = self.env["document.document"]
         User = self.env["res.users"]
 
@@ -383,7 +355,6 @@ class TestCaseDocumentsBridgeSign(SignRequestCommon):
         )
         self.assertEqual(len(documents_signed), 2)
         for doc in documents_signed:
-            # The requester has view access to the signed document
             access_by_partner = doc.access_ids.grouped("partner_id")
             requester_access = access_by_partner[requester.partner_id]
             self.assertIsNotNone(

@@ -10,8 +10,6 @@ class TestDonationPortal(HttpCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # the transfer provider carries payment methods only once payment_custom
-        # is installed, which website_payment does not depend on
         cls.method = cls.env.ref("payment.payment_method_unknown")
         cls.provider = cls.env.ref("payment.payment_provider_transfer")
         cls.provider.write(

@@ -8,9 +8,7 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        # give the test team ability to create credit note
         cls.test_team.helpdesk_use_credit_notes = True
-        # create a sale order and invoice
         cls.product = cls.env["product.product"].create(
             {
                 "name": "product 1",
@@ -25,7 +23,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
         )
 
     def test_helpdesk_account_1(self):
-        """Test used to check that the functionalities of After sale in Helpdesk (credit note)."""
         self.env["sale.order.line"].create(
             {
                 "product_id": self.product.id,
@@ -37,7 +34,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
         self.so._create_invoices()
         invoice = self.so.invoice_ids
         invoice.action_post()
-        # helpdesk.ticket access rights
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "test",
@@ -92,20 +88,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
         )
 
     def test_create_multiple_credit_notes_in_ticket(self):
-        """Test used to check a multiple credit notes are created in the ticket.
-
-        Test Case:
-        ----------
-            - Create sale order With 10 product Qty
-            - Confirm sale order and create invoice
-            - Confirm Invoice
-            - Create helpdesk Ticket
-            - Create a credit note(Partial Refund)
-            - Confirm a credit note
-            - Create a credit note(Full Refund)
-            - Check the credit note state
-            - Create a credit note With Form
-        """
         journal_id = (
             self.env["account.journal"]
             .search(
@@ -126,7 +108,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
         self.so._create_invoices()
         invoice = self.so.invoice_ids
         invoice.action_post()
-        # helpdesk.ticket access rights
         ticket = self.env["helpdesk.ticket"].create(
             {
                 "name": "test",
@@ -136,7 +117,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
             }
         )
 
-        # create a Partial Refund
         credit_note = self.env["wizard.account.move.reverse"].create(
             {
                 "helpdesk_ticket_id": ticket.id,
@@ -157,7 +137,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
             "Invoice should still be suitable after partial refund.",
         )
 
-        #  create a Full Refund
         credit_note = self.env["wizard.account.move.reverse"].create(
             {
                 "helpdesk_ticket_id": ticket.id,
@@ -182,7 +161,6 @@ class TestHelpdeskAccount(common.HelpdeskCommon):
             "No suitable invoices should remain after full refund.",
         )
 
-        # create a Refund
         credit_note_form = Form(
             self.env["wizard.account.move.reverse"].with_context(
                 {

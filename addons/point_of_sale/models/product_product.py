@@ -11,7 +11,6 @@ class ProductProduct(models.Model):
 
     def _get_inactive_ids(self, config):
         removed = super()._get_inactive_ids(config)
-        # what is left is readable and active
         kept = self - self.browse(removed)
         templates = kept.product_tmpl_id
         removed_templates = templates.browse(templates._get_inactive_ids(config))

@@ -80,10 +80,10 @@ class _HooksMixin(_ModelStubs):
                 )
                 self.update(defaults)
 
-            change_defaults = 0  # debuglog
+            change_defaults = 0
             for name, field in cls._fields.items():
                 if field.change_default:
-                    change_defaults += 1  # debuglog
+                    change_defaults += 1
                     methods[name].append(functools.partial(onchange_default, field))
 
             _debug.perf.count(

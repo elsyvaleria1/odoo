@@ -32,9 +32,6 @@ class Survey(models.Model):
         return super().write(vals)
 
     def _check_spreadsheet_link_is_the_systems(self) -> None:
-        # opening the linked sheet makes its opener an editor of it, under
-        # sudo: a link a survey officer could write would be a grant on any
-        # document they named
         if not self.env.su:
             _debug.logic("survey_spreadsheet_link_refused", user=self.env.user)
             raise AccessError(
@@ -45,12 +42,8 @@ class Survey(models.Model):
         return [survey._get_survey_values() for survey in self]
 
     def _get_survey_values(self) -> dict:
-        """Returns a 2d array of the results of the survey"""
         self.check_singleton()
 
-        # For reference:
-        # user_input = all the answers of an user for a survey
-        # user_input_line = single answer of a user. Multi-choice/matrix questions have multiple user_input_lines per question.
 
         locale = self.env["res.lang"]._get_user_spreadsheet_locale()
         date_format = locale["dateFormat"]
@@ -82,7 +75,7 @@ class Survey(models.Model):
         user_inputs = self.user_input_ids.sorted("create_date")
         user_row_index = {}
         for index, user_input in enumerate(user_inputs):
-            user_row_index[user_input] = index + 1  # +1 because of the header row
+            user_row_index[user_input] = index + 1
             timestamp_column[index + 1]["value"] = datetime_to_spreadsheet_date_number(
                 user_input.create_date, tz_name
             )
@@ -109,8 +102,6 @@ class Survey(models.Model):
                     self.env._("Comments"), question.title
                 )
 
-                # grouped once per question: filtering every line for each
-                # response made the table quadratic in the responses
                 lines_by_input = question.user_input_line_ids.grouped("user_input_id")
                 no_lines = question.user_input_line_ids.browse()
                 for user_input in self.user_input_ids:
@@ -282,10 +273,6 @@ class Survey(models.Model):
 
     @api.model
     def _get_or_create_survey_folder_sudo(self):
-        """Get the folder where survey spreadsheets are stored.
-        If the folder does not exist, create it.
-        If the folder exists but is archived, unarchive it.
-        """
         folder_id = self.env.registry.settings.get(
             self.env, "document_spreadsheet_survey.survey_folder", False
         )

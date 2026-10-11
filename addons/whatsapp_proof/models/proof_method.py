@@ -3,7 +3,6 @@ import re
 from odoo import fields, models
 
 PHONE_FIELD = "phone_ids"
-# Meta refuses a template variable with a line break, a tab or four spaces
 _VARIABLE_SPACING = re.compile(r"\s*[\r\n\t]+\s*| {4,}")
 ANSWERS = ("confirmed", "disputed")
 
@@ -34,10 +33,6 @@ class ProofMethod(models.Model):
         return super()._is_enrolled_contact(partner)
 
     def _get_wa_template(self) -> models.BaseModel:
-        """The method's template while it can carry the question, else none:
-        approved, with the two quick replies that answer it. One whoever asks
-        cannot read (limited to some users, another company's) reaches nobody
-        rather than refusing the act that asks."""
         template = self.wa_template_id
         if not template or not template.has_access("read"):
             return template.browse()
@@ -95,15 +90,11 @@ class ProofMethod(models.Model):
                 },
             }
         )
-        # through the queue: sent by its cron once the asking transaction
-        # commits, so a record rolled back never reaches its contact
         whatsapp_message._send(force_send_by_cron=True)
         delivery.ref = str(whatsapp_message.id)
         return delivery
 
     def _get_reply_verdict(self, whatsapp_message, message) -> str | None:
-        """Confirmed or disputed, by which of the template's two first quick
-        replies was pressed: their text is what WhatsApp sends back."""
         buttons = whatsapp_message.wa_template_id.button_ids.filtered(
             lambda button: button.button_type == "quick_reply"
         ).sorted("sequence")[:2]

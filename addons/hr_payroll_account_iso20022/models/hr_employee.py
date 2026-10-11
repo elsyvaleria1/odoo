@@ -28,9 +28,6 @@ class HrEmployee(models.Model):
             _debug.logic(
                 "sepa_invalid_ibans",
                 employees=self,
-                # an employee with NO account holder row is absent from
-                # `employees_data` entirely, so they are neither valid nor
-                # reported invalid -- they simply are not counted
                 rows=len(employees_data),
                 invalid=len(
                     {

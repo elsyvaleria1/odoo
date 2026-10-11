@@ -33,13 +33,12 @@ class MixinAccountAvataxUniqueCode(models.AbstractModel):
         if operator != "in":
             return NotImplemented
 
-        # allow searching with or without prefix
         prefix = self._description.lower() + " "
         try:
             ids = [
                 int(number_v)
                 for v in value
-                if v is not False  # ignore False value
+                if v is not False
                 if (
                     number_v := (
                         v if not v.lower().startswith(prefix) else v[len(prefix) :]

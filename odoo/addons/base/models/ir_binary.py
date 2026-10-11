@@ -20,9 +20,6 @@ from odoo.tools.image import image_guess_size_from_field_name, image_process
 from odoo.tools.misc import is_valid_limited_field_access_token
 
 DEFAULT_PLACEHOLDER_PATH = "web/static/img/placeholder.png"
-# A caller that needs the bytes themselves (resize, zip, re-encode) asks for
-# an inline stream through this context key: a storage that would answer
-# with a redirect to its own URL hands the content over instead.
 STREAM_INLINE_CONTEXT_KEY = "binary_stream_inline"
 FIELD_TOKEN_SCOPE = register_signed_scope(
     "binary",
@@ -195,8 +192,6 @@ class IrBinary(models.AbstractModel):
                     mimetype=stream.mimetype,
                 )
 
-        # a redirect names the file too: its storage signs the name into the
-        # URL, or a field's blob downloads under the field's technical name
         if filename:
             stream.download_name = filename
         elif self._can_name_from_field(record, filename_field):
@@ -249,7 +244,6 @@ class IrBinary(models.AbstractModel):
         crop: bool = False,
         quality: int = 0,
     ) -> Stream:
-        # resizing and the mimetype check need the bytes, not a redirect
         inline = {STREAM_INLINE_CONTEXT_KEY: True}
         self, record = self.with_context(**inline), record.with_context(**inline)
         stream = None

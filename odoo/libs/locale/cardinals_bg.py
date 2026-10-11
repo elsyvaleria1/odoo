@@ -216,8 +216,6 @@ class BulgarianNumerals:
             is_final = index > 0 and not any(groups[index + 1 :])
 
             if group == 1 and power >= 3:
-                # a lone scale word is a component of its own, and the last
-                # component takes "и" as any other would
                 if is_final:
                     words.append(AND)
                 if power >= 6:

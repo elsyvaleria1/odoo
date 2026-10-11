@@ -4,7 +4,6 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    # databases_apiuser is deprecated: Odoo.com supports /json/2 routes that only require an API key; will be removed in saas~19.2
     databases_apiuser = fields.Char(
         string="Odoo.com API User",
         config_parameter="databases.odoocom_apiuser",

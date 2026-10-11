@@ -25,7 +25,6 @@ class TestDownloadBlockedSharingDialog(TransactionCase):
         return self.env["wizard.document.document.share"].browse(action["res_id"])
 
     def test_the_sharing_dialog_reflects_and_applies_the_setting(self):
-        """The setting is reachable where sharing is decided, not only by API."""
         wizard = self._open_sharing(self.document)
         self.assertEqual(wizard.viewer_download_mode, "blocked")
 
@@ -36,8 +35,6 @@ class TestDownloadBlockedSharingDialog(TransactionCase):
         self.assertEqual(wizard.viewer_download_mode, "allowed")
         self.assertFalse(wizard.is_access_modified, "untouched is not a change")
 
-        # Same `write_` convention the other access selections use: choosing a
-        # `write_` value is what marks it as edited.
         wizard.viewer_download_mode = "write_blocked"
         self.assertTrue(wizard.is_access_modified)
         wizard.action_update_rights()

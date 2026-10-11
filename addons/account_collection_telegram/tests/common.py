@@ -12,7 +12,6 @@ _JPEG = b"\xff\xd8\xff\xe0fake-jpeg"
 class CollectionTelegramCase(AccountTestInvoicingCommon, TelegramBotTestCase):
     @classmethod
     def _create_partner(cls, vals=None, **create_values):
-        # both bases name a partner factory, one by dict and one by keywords
         return cls.env["res.partner"].create(
             {"name": "Test Partner", "lang": "en_US", **(vals or {}), **create_values}
         )

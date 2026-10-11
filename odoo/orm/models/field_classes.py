@@ -20,9 +20,6 @@ if typing.TYPE_CHECKING:
 
 __all__ = ["ANONYMOUS_PREFIX", "anonymous_spec", "is_anonymous", "unmasked_values"]
 
-# a fetch reads a column's true value into the cache, which stays truthful:
-# a value the principal may not read on a record is masked where it leaves
-# (read, a WHERE, an ORDER BY, a GROUP BY), never where it is fetched
 _UNMASKED: ContextVar[bool] = ContextVar("unmasked_field_values", default=False)
 
 
@@ -43,15 +40,10 @@ class FieldAccessClasses(typing.NamedTuple):
     read: tuple[str, ...]
     write: tuple[str, ...]
     write_hook: Callable[[BaseModel], bool] | None = None
-    # classes that grant reading on their own, in place of those of `read`
-    # (a user's own record): the read verdict is read OR read_alternative
     read_alternative: tuple[str, ...] = ()
 
 
 class ModelFieldClasses(typing.NamedTuple):
-    # what a model says of one of its fields, asked once at registry setup:
-    # a class it adds to the field's own (a residual or a whitelist class),
-    # a class needed to write it, and a class that grants reading it alone
     own: str | None = None
     write: str | None = None
     alternative: str | None = None
@@ -74,9 +66,6 @@ FIELD_CLASS_HOOKS = (
 def model_field_classes(
     model: BaseModel, defaults: typing.Mapping[str, typing.Any]
 ) -> dict[str, ModelFieldClasses]:
-    # the model's own hooks, asked with an environment; only the fields they
-    # say something of are kept, and a model that overrides none of them and
-    # names no residual class says nothing
     model_cls = type(model)
     if model_cls._access_residual_class is None and all(
         getattr(model_cls, hook) is defaults[hook] for hook in FIELD_CLASS_HOOKS
@@ -97,9 +86,6 @@ def model_field_classes(
 def field_access_classes(
     said: typing.Mapping[str, ModelFieldClasses], field: Field[typing.Any]
 ) -> FieldAccessClasses | None:
-    # what a principal must be granted to read, and to write, the field: its
-    # named class, its groups, and what its model says of it; None for a
-    # field anyone who reaches the record may read
     model_says = said.get(field.name, NO_MODEL_CLASSES)
     read: list[str] = []
     if field.classification:

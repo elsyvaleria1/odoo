@@ -40,7 +40,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         related="company_id.account_peppol_migration_key",
         readonly=False,
     )
-    # Deprecated
     peppol_activate_self_billing = fields.Boolean(
         string="Activate self-billing",
         compute="_compute_peppol_activate_self_billing",
@@ -48,7 +47,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         help="If activated, you will be able to send and receive self-billed invoices via Peppol."
         "You can still disable reception by disabling the self-billing document types below.",
     )
-    # Deprecated
     peppol_self_billing_reception_journal_id = fields.Many2one(
         related="company_id.account_peppol_config_id.peppol_self_billing_reception_journal_id",
         readonly=False,
@@ -69,9 +67,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         readonly=False,
     )
 
-    # -------------------------------------------------------------------------
-    # COMPUTES
-    # -------------------------------------------------------------------------
 
     @api.depends("account_peppol_edi_user", "account_peppol_proxy_state")
     def _compute_service_json(self) -> None:
@@ -116,11 +111,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
 
     @api.depends("account_peppol_proxy_state", "service_json")
     def _compute_service_ids(self) -> None:
-        """Get the selectable document types.
-
-        Synthesize a combination of locally available document types and those added to the user on
-        the IAP, add the relevant services.
-        """
         supported_doctypes = self.env["res.company"]._peppol_supported_document_types()
         for wizard in self:
             if wizard.account_peppol_proxy_state == "receiver" and wizard.service_json:
@@ -150,7 +140,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         for wizard in self:
             wizard.company_id.account_peppol_config_id.peppol_activate_self_billing_sending = wizard.peppol_activate_self_billing
 
-            # When setting the 'Activate self-billing' field, automatically enable/disable the self-billing reception services.
             self_billing_services = wizard.service_ids.filtered(
                 lambda s: s.document_identifier in SELF_BILLING_DOCUMENT_TYPES.values()
             )
@@ -159,13 +148,8 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
             )
 
     def button_sync_form_with_peppol_proxy(self) -> bool:
-        """Update the peppol contact email on IAP.
-        Note: The service configuration is DEPRECATED / hidden in the view.
-        Disabling services can lead to complicance issues and is not necessary
-        since all existing services should just work."""
         self.check_singleton()
 
-        # Update company details
         if (
             self.account_peppol_contact_email
             != self.company_id.account_peppol_config_id.account_peppol_contact_email
@@ -186,7 +170,6 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         return True
 
     def button_peppol_unregister(self) -> bool:
-        """Unregister the user from Peppol network."""
         self.check_singleton()
 
         if self.account_peppol_edi_user:
@@ -196,14 +179,12 @@ class WizardAccountPeppolConfigUpdateContact(models.TransientModel):
         return True
 
     def button_peppol_reset_to_sender(self) -> bool:
-        """Reset the participant back to sender and unregister it from the SMP"""
         self.check_singleton()
         if self.account_peppol_edi_user:
             self.account_peppol_edi_user._peppol_deregister_participant_to_sender()
         return True
 
     def button_peppol_register_sender_as_receiver(self):
-        """Reset the participant back to sender and unregister it from the SMP"""
         self.check_singleton()
         if self.account_peppol_edi_user:
             self.account_peppol_edi_user._peppol_register_sender_as_receiver()

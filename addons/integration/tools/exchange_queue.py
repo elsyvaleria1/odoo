@@ -30,9 +30,6 @@ def _register_flush_hooks(env: api.Environment) -> None:
             )
             _logger.debug("Batch created %d exchange rows", len(logs))
 
-    # A caller that lets an error propagate rolls its transaction back, and the
-    # exchange that failed is the one most worth a row. `_rollback` empties
-    # `precommit.durable_data` before running this, so it keeps its own list.
     @cr.postrollback.add
     def keep_logs_of_rolled_back_transaction():
         if pending:
@@ -40,8 +37,6 @@ def _register_flush_hooks(env: api.Environment) -> None:
 
 
 def keep_rows(registry, logs: list[dict[str, Any]]) -> None:
-    """Create `logs` in a transaction of their own, the one they were queued
-    in having rolled back."""
     try:
         with registry.cursor() as log_cr:
             log_env = api.Environment(log_cr, SUPERUSER_ID, {})
@@ -58,16 +53,6 @@ def keep_rows(registry, logs: list[dict[str, Any]]) -> None:
 def _without_vanished_references(
     env: api.Environment, logs: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    """Unlink rows from the records a rollback took away.
-
-    A row is queued in the transaction of its call, and what the call stood
-    on may have been created there too: a record's connection is made lazily
-    by its first call, and its company, user or credential can be as new as
-    the call. When a savepoint or the transaction around it rolls back, those
-    records go with it while the row survives, and naming them would fail the
-    row's insert on its foreign key. The row is kept without them. Its
-    channel is a reference, which no foreign key holds, and stays named.
-    """
     exchanges = env["integration.exchange"]
     vanished = {}
     for name, field in exchanges._fields.items():

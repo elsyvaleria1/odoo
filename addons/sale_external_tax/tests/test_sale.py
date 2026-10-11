@@ -9,7 +9,6 @@ from odoo.addons.sale.tests.common import SaleCommon
 @tagged("post_install", "-at_install")
 class TestSaleExternalTaxesSale(SaleCommon):
     def test_01_send_locked_order(self):
-        """Ensure locked sale orders with external taxes can be sent without tax recomputation"""
         order = self.env["sale.order"].create(
             {
                 "name": "test",

@@ -11,7 +11,6 @@ class AlarmManager(models.AbstractModel):
         codes = list(self.env["calendar.sync.account"]._engine_providers())
         if not codes:
             return base
-        # the provider reminds the attendees of an event it holds
         return SQL(
             """%s AND NOT EXISTS (
                 SELECT 1

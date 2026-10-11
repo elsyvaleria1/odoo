@@ -124,7 +124,6 @@ def _get_column_read_value(
         and value is not None
         and (env.context.get("bin_size") or env.context.get("bin_size_" + field.name))
     ):
-        # pg_size_pretty(length(col)) on the SQL path: the size, not the bytes
         return pg_size_pretty(len(value))
     return value
 
@@ -343,12 +342,6 @@ class StorageBackend(typing.Protocol):
         *,
         probe_links: bool = False,
     ) -> dict[int, list[int]]:
-        """The ids of `query` linked to each record, in the query's order.
-
-        `probe_links` asks the backend to check the relation for any row of
-        `records` before it runs `query`, for a query too costly to run on an
-        empty relation. The answer is the same either way.
-        """
         ...
 
     def count_m2m_groups(
@@ -403,7 +396,6 @@ class PostgresBackend(
     __slots__ = ()
 
     def timezone_names(self, env: Environment) -> frozenset[str]:
-        # the names the server's timezone() accepts, once per database
         names = _sql_timezone_names.get(env.cr.dbname)
         if names is None:
             with _debug.perf("backend.timezones_loaded", cr=env.cr) as span:

@@ -72,9 +72,6 @@ class TestPhoneSystemCalls(DeviceTransactionCase):
         )
 
     def test_a_withheld_callers_recording_stays_on_its_own_call(self):
-        # A withheld caller answered by 201 for a minute, and a second caller
-        # 20 s later: the first recording's stamp is nearer the second call's
-        # end, and it carries no number to tell them apart
         created = self.calls.ingest_from_device(
             self.pbx,
             [
@@ -214,10 +211,6 @@ class TestPhoneSystemCalls(DeviceTransactionCase):
         self.assertEqual(created.company_id, self.lmmr)
 
     def test_the_hourly_join_reads_each_devices_calls_once(self):
-        # A handset with recordings on and call-log sync off makes a waiting
-        # call per recording that no entry ever completes, and each stays in
-        # the cron's seven-day horizon: it searched the call log once per
-        # waiting call, every hour.
         handset = self._create_device_device(
             config=self.config,
             name="Handset",
@@ -268,8 +261,6 @@ class TestPhoneSystemCalls(DeviceTransactionCase):
                 }
             ],
         ).created
-        # posted at the same moment as the entry, the recording never saw its
-        # call and made one of its own
         waiting = self.calls._create_awaiting_call(
             handset, "+527221234567", _START + timedelta(seconds=40), 30
         )

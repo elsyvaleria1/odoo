@@ -17,14 +17,9 @@ class ResConfigSettings(models.TransientModel):
             settings=self,
             has_alias=bool(todo_alias),
             alias_domain=self.alias_domain_id,
-            # the alias is recreated under the SAME xmlid the data file owns,
-            # so a second settings save on a database where it was deleted
-            # re-declares `project_enterprise_hr.mail_alias_todo` from a
-            # transient wizard rather than from the module's data
             recreates=not todo_alias and bool(self.alias_domain_id),
         )
         if not todo_alias and self.alias_domain_id:
-            # create alias again if deletes the record created from data
             alias = (
                 self.env["mail.alias"]
                 .sudo()

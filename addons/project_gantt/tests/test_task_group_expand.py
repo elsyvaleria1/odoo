@@ -15,7 +15,6 @@ class TestTaskGroupExpand(TestProjectCommon):
                 for group in groups
             )
 
-        # Simulate Gantt view
         gantt_domain = [
             ("date_start", ">=", datetime.today()),
             ("date_end", "<=", datetime.today() + timedelta(days=7)),
@@ -32,7 +31,6 @@ class TestTaskGroupExpand(TestProjectCommon):
             )
         )
 
-        # 1. Search with no filter on user_ids: Current user should have a group (even if empty)
         groups = Task.formatted_read_group(
             gantt_domain + [("id", "=", self.task_2.id)], ["user_ids"]
         )
@@ -41,7 +39,6 @@ class TestTaskGroupExpand(TestProjectCommon):
             "A group should exist for the current user if no filter is applied on user_ids.",
         )
 
-        # 2. Search with filter on user_ids: Current user should not have a group if empty
         groups = Task.formatted_read_group(
             gantt_domain + [("user_ids", "in", self.user_projectmanager.id)],
             ["user_ids"],
@@ -51,7 +48,6 @@ class TestTaskGroupExpand(TestProjectCommon):
             "No empty group should be added for the current user if a filter is applied on user_ids.",
         )
 
-        # 3. Corner case: same search as 2 but with a task not displayed in the gantt view assigned to both user
         test_task = self.env["project.task"].create(
             [
                 {
@@ -73,7 +69,6 @@ class TestTaskGroupExpand(TestProjectCommon):
             "No empty group should be added for the current user if a filter is applied on user_ids, even if a record not visible in the gantt view match the domain.",
         )
 
-        # 4. Corner case: same case as 3, but with the task visible in the gantt view
         test_task.write(
             {
                 "date_start": datetime.now(),
@@ -89,7 +84,6 @@ class TestTaskGroupExpand(TestProjectCommon):
             "Even if a filter is applied on user_ids, all user row containing visible tasks in the gantt view should be displayed",
         )
 
-        # 5. Search for a user with no tasks → user row should show
         user_no_task = self.user_portal
         search_domain = [
             ("user_ids", "in", user_no_task.id),

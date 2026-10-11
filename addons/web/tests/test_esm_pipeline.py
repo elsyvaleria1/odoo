@@ -187,7 +187,6 @@ class TestEsbuildCircuitBreaker(TransactionCase):
                 AssetsBundle("web.test_bundle", [], env=self.env),
                 None,
             )
-            # read under the same current_test: it is part of the circuit key
             allow, reason = self.IrQweb._get_esbuild_circuit_state("web.test_bundle")
         self.assertEqual(result.code, "")
         self.assertFalse(allow)
@@ -390,11 +389,7 @@ class TestContentAddressableUrl(TransactionCase):
 
     def test_different_content_produces_different_url(self):
         ir_qweb = self.env["ir.qweb"]
-        # the production branch writes rows and build on this cursor; the test
-        # branch commits the build through its own connection, out of sight
         with patch.object(ir_qweb_assets._module, "current_test", None):
-            # content no other test saves: a build owns a directory, and a
-            # directory is the hash of its content alone
             url_a = ir_qweb._save_esm_attachment(
                 "test.cas.diff",
                 "export const casDiff = 1;",
@@ -699,8 +694,6 @@ console.log(JSON.stringify({ registered, rebound }));
         self.assertIs(kept, result)
 
     def test_a_failed_second_pass_stays_a_module(self):
-        # a build made under a test is committed for the next one: this one is
-        # keyed apart, so that no later test is served a page that stayed a module
         with (
             patch.object(
                 ir_qweb_assets_esbuild,
@@ -1737,8 +1730,6 @@ class TestNativeNodesDispatch(TransactionCase):
                 impl_mock.assert_not_called()
 
     def test_decline_falls_back_to_the_cached_per_file_nodes(self):
-        # a decline is remembered: the per-file fallback comes from the cache
-        # under esbuild_ok=False, never rebuilt uncached per request
         for readonly in (False, True):
             with self.subTest(readonly=readonly):
                 result, cached_mock, impl_mock = self._run(
@@ -1851,8 +1842,6 @@ class TestEsbuildLockCursor(TransactionCase):
         self.assertEqual(locked_on, [self.env.cr])
 
     def test_a_published_build_is_reused_without_taking_the_lock(self):
-        # a cold worker that finds the build another one published must not
-        # queue behind the per-bundle lock only to learn it exists
         ir_qweb = self._qweb
         locked_on = []
         published = EsbuildResult("published", None, None)
@@ -2038,9 +2027,6 @@ class TestEsmSourceKeyedReuse(TransactionCase):
             other.commit()
 
     def test_the_next_process_serves_the_index_without_esbuild(self):
-        # the test transaction is REPEATABLE READ and cannot see rows another
-        # connection commits, so both renders run on connections of their own,
-        # the way two worker processes would
         from odoo.db import db_connect
 
         params = self.env["ir.asset"]._prepare_assets_params()
@@ -2098,9 +2084,6 @@ class TestProdNodesDeclineNotCached(TransactionCase):
         self.assertIn("declined=True", caught.output[0])
 
     def test_a_failed_save_statement_leaves_the_transaction_usable(self):
-        # a statement the save runs in the caller's transaction can fail (a
-        # serialization failure on a row another connection wrote); served
-        # inline, the caller must still be able to run the next statement
         ir_qweb = self._qweb
 
         def failing_plan(self, rows, *_args):
@@ -2184,10 +2167,6 @@ class _FakeEsbuildRenders:
         stack.enter_context(
             patch.object(AssetsBundle, "esbuild_native_bundle", self._compile)
         )
-        # the memo is about compiling; a build another test committed for the
-        # same sources would be reused instead and hide every compile, and a
-        # fake build published over a real one would supersede it and clear
-        # the cache the memo lives in
         stack.enter_context(
             patch.object(
                 IrQweb, "_load_esbuild_result_by_source", lambda *_a, **_k: None
@@ -2200,9 +2179,6 @@ class _FakeEsbuildRenders:
                 lambda build, _spec: build.browse(),
             )
         )
-        # the memo is about a compile the cursor declines; whether a read-only
-        # test cursor compiles at all depends on the rows its snapshot holds,
-        # which earlier runs on the same database decide
         self.can_serve = IrQweb._can_esm_readonly_test_serve
         stack.enter_context(
             patch.object(
@@ -2215,9 +2191,6 @@ class _FakeEsbuildRenders:
         return EsbuildResult(f"built{self.compiles};", None, None)
 
     def _render(self, *, readonly=True):
-        # the memo is the contract for a write that cannot happen: under a test
-        # the rows normally go through their own connection, so that write is
-        # made to fail here the way a read-only cursor used to
         with contextlib.ExitStack() as stack:
             stack.enter_context(contextlib.closing(self.env.cr.savepoint(flush=False)))
             if readonly:
@@ -2313,8 +2286,6 @@ class TestReadonlyDeclineIsRemembered(_FakeEsbuildRenders, TransactionCase):
         self.assertEqual(built, [], "a read-only test cursor cannot save them")
 
     def test_a_readonly_decline_is_the_fallback_signal(self):
-        # under a test the rows go through their own connection; the decline
-        # is what a failure of that write becomes on a read-only cursor
         with (
             patch.object(self.env.cr, "_readonly", True),
             patch.object(
@@ -2371,8 +2342,6 @@ class TestReadonlyDeclineIsRemembered(_FakeEsbuildRenders, TransactionCase):
             self.assertEqual(
                 len(attempts), 1, "the decline cooldown holds the next render"
             )
-            # the cooldown is the only memory: once it lapses the lock cursor
-            # is tried again, unlike a read-only decline the memo keeps
             self.env["ir.qweb"]._esbuild_circuit.clear()
             self._render()
         self.assertEqual(
@@ -2468,9 +2437,6 @@ class TestARolledBackRenderIsServed(_FakeEsbuildRenders, HttpCase):
         return EsbuildResult(f"built{self.token}{self.compiles};", None, None)
 
     def test_the_bundle_a_rolled_back_render_cached_is_served(self):
-        # test_themes: a 404 page renders on a read-write cursor, compiles the
-        # page bundle and is rolled back; the next read-only page serves the
-        # nodes it cached, and the browser asks for their url
         self.token = uuid.uuid4().hex
         _pre, post = self._render(readonly=False)
         url = post[0][1]["src"]
@@ -2942,10 +2908,6 @@ class TestSecondaryBundleSingletons(TransactionCase):
         self.assertEqual(shared, {spec})
         self.assertEqual(inlined, set())
 
-    # A declared parent may be a page carrying five modules (room's booking
-    # tablet) or one half of a split page (web.assets_frontend_minimal), so the
-    # scope-less safe set, the intersection over every declared parent, is
-    # allowed to be empty. The singletons are shared on a page that has them.
     FULL_PAGE = ("web.assets_web",)
 
     def _shared(self, page_scope=()):
@@ -3058,7 +3020,6 @@ class TestSecondaryBundleSingletonsBuild(TransactionCase):
 @tagged("web_unit", "web_assets")
 class TestSecondaryBundlePageScopeKey(TransactionCase):
     BUNDLE = "web.assets_tests"
-    # rendered beside the parents, never declared as one
     SIBLING = "web.assets_backend"
 
     def _scope(self, rendered):
@@ -3081,8 +3042,6 @@ class TestSecondaryBundlePageScopeKey(TransactionCase):
         )
 
     def test_the_key_follows_the_declaration_order(self):
-        # Other addons can declare a parent before web's manifest is read.
-        # The registry owns the order; rendering in reverse must not change it.
         parents = esm_registry().secondary_parents[self.BUNDLE]
         self.assertGreaterEqual(len(parents), 2)
         self.assertEqual(self._scope(tuple(reversed(parents))), parents)
@@ -3508,8 +3467,6 @@ class TestDynamicBundleIntegrity(TransactionCase):
             ).native_modules
         ]
         self.assertTrue(names, "no installed runtime bundle carries a module")
-        # under a test the page carries web_tour.automatic (web.assets_tests):
-        # such a child compiles to nothing and is served as bare specifiers
         names = [
             name
             for name in names
@@ -3588,9 +3545,6 @@ class TestDynamicBundleIntegrity(TransactionCase):
                 for parent, children in registry.dynamic_children.items()
                 if name in children and parent.partition(".")[0] in installed
             ]
-            # the set the group build itself stubs against: on a test page the
-            # secondary satellites (web.assets_tests) register what they
-            # inline for that page, so a child neither carries nor bridges it
             parent_specs = set(
                 IrQweb._get_runtime_parent_specs(
                     tuple(parents), None, IrQweb._has_esm_test_satellites("")
@@ -4168,11 +4122,6 @@ class TestBundleDescriptorFormat(HttpCase):
 
 @tagged("-at_install", "post_install", "web_assets")
 class TestPerFileSecondaryOnAPage(TransactionCase):
-    # a page-scoped secondary whose compiled file could not be saved (a
-    # read-only test cursor) is served per file next to the page's compiled
-    # bundles; what those bundles carry must reach it through bridges, or the
-    # page evaluates a second copy (`Duplicate add for key "tools" in
-    # "debug_section"` on /?debug=tests, from debug_menu -> debug_menu_basic)
     BUNDLE = "web.assets_tests"
     PAGE = ("web.assets_frontend_minimal", "web.assets_frontend_lazy")
 
@@ -4202,9 +4151,6 @@ class TestPerFileSecondaryOnAPage(TransactionCase):
     _BRIDGE = ("/web/assets/esm/bridges/", "data:")
 
     def test_what_the_page_carries_is_bridged_not_served_again(self):
-        # what the tests bundle reaches AND the page carries -- derived from
-        # the install, not a fixed module name, since which page modules the
-        # bundle's test tours reach depends on what is installed
         import_map, provided = self._debug_map(self.PAGE)
         reached = sorted(provided & set(import_map))
         self.assertTrue(
@@ -4220,9 +4166,6 @@ class TestPerFileSecondaryOnAPage(TransactionCase):
         )
 
     def test_a_page_scope_is_what_bridges_the_page_carried_modules(self):
-        # without the page scope the per-file branch does not bridge to the
-        # page's copies; at least one module the scoped map bridges is served
-        # per file (its own src url) unscoped -- the duplication the scope fixes
         scoped, provided = self._debug_map(self.PAGE)
         unscoped, _ = self._debug_map(())
         bridged_by_scope = {
@@ -4243,11 +4186,6 @@ class TestPerFileSecondaryOnAPage(TransactionCase):
         )
 
     def test_a_relative_import_of_a_page_carried_module_reaches_its_bridge(self):
-        # html_editor's video_plugin.js imports ./media_dialog/video_selector.js:
-        # the browser resolves that to the file's url, which a specifier key
-        # never matches, so the page-carried module was fetched from source --
-        # a second copy -- and its own import of @html_editor/components/switch
-        # /switch, which nothing had reason to map, failed the page
         import_map, provided = self._debug_map(self.PAGE)
         page_urls = {
             url: spec
@@ -4338,9 +4276,6 @@ class TestPageBundleExportSurface(TransactionCase):
         self.assertEqual(bridged, [], "a parent's bridges lex every module it has")
 
     def test_a_cold_readonly_page_render_compiles_nothing_it_cannot_serve(self):
-        # test_website_modules' first read-only page render compiled every
-        # bundle of the page, published it to a connection its snapshot cannot
-        # read, declined it and rendered the per-file map: 22 s on a loaded box
         IrQweb = self.env["ir.qweb"]
         page = "web.assets_frontend_lazy"
         Build = self.env["ir.asset.build"].sudo()
@@ -4381,9 +4316,6 @@ class TestPageBundleExportSurface(TransactionCase):
         )
 
     def test_a_bundle_s_specifiers_are_read_once_per_assets_cache(self):
-        # a cold page render asks for the same parents' import maps from the
-        # consumer scan, the runtime group's parent specs and the secondary
-        # providers, each on a fresh bundle that re-reads every module's header
         IrQweb = self.env["ir.qweb"]
         params = self.env["ir.asset"]._prepare_assets_params()
         page = "web.assets_frontend_lazy"
@@ -4478,10 +4410,6 @@ class TestPageBundleExportSurface(TransactionCase):
             )
 
     def test_every_bridge_in_a_page_import_map_has_a_registered_provider(self):
-        # a bridge shim reads its provider from the loader; the per-file
-        # fallback of a secondary resolves a bare specifier through the page's
-        # map, so a bridged member nobody registers is "X is not a constructor"
-        # on the first request after the tests bundle changed
         IrQweb = self.env["ir.qweb"]
         params = self.env["ir.asset"]._prepare_assets_params()
         pages = {
@@ -4512,8 +4440,6 @@ class TestPageBundleExportSurface(TransactionCase):
                 self.assertFalse(sorted(bridged - registered))
 
     def test_a_child_import_the_page_does_not_carry_is_mapped_to_its_file(self):
-        # the runtime group inlines what its page does not carry, so nothing
-        # registers it: a bridge would bind the per-file fallback to undefined
         IrQweb = self.env["ir.qweb"]
         params = self.env["ir.asset"]._prepare_assets_params()
         page = "web.assets_frontend_lazy"
@@ -4554,9 +4480,6 @@ class TestPageBundleExportSurface(TransactionCase):
         )
 
     def test_a_declared_export_is_registered_without_a_source_naming_it(self):
-        # test_click_everywhere asks the loader for the clickbot loader by
-        # name from Python; no JavaScript source spells that literal, so the
-        # scan cannot find it and the manifest declares it.
         _bundle, exported = self._exported()
         self.assertIn("@web/webclient/clickbot/clickbot_loader", esm_registry().exports)
         self.assertIn("@web/webclient/clickbot/clickbot_loader", exported)
@@ -4770,7 +4693,7 @@ class TestServedLibraries(TransactionCase):
                     posixpath.join(posixpath.dirname(served_url), spec)
                 )
                 self.assertIn(target, by_url, f"{declared} imports {spec}")
-        prefix = lambda spec: served[spec].split("/web/static/", 1)[0]  # noqa: E731  closes over served for the three assertions below
+        prefix = lambda spec: served[spec].split("/web/static/", 1)[0]
         self.assertEqual(
             prefix("@odoo/hoot-dom-helpers-dom"),
             prefix("@odoo/hoot-dom-helpers-events"),
@@ -4817,9 +4740,6 @@ class TestServedLibraries(TransactionCase):
                 source.count(b"\n") // 20,
                 f"{name}: the served copy is minified",
             )
-        # the compiler module imports nothing: it registers itself, under its
-        # build, in the global registry the page's runtime takes its own
-        # build's compiler from
         self.assertNotRegex(owl.raw, rb"""(?:\bfrom|\bimport)\s*["']""")
         self.assertIn(b'Symbol.for("@odoo/owl/compiler")', owl.raw)
         self.assertIn(b"export", owl.raw)

@@ -339,7 +339,6 @@ class TestPosSessionLoadContract(TestPoSCommon):
                 missing := {
                     key
                     for key in set(rows[0]) - set(params[model]["relations"])
-                    # "_name" keys are the loader's own extras, read off the raw row
                     if key != "id" and not key.startswith("_")
                 }
             )
@@ -906,8 +905,6 @@ class TestPosSessionCashJournal(TestPoSCommon):
 
         self.cash_pm1.journal_id = replacement
 
-        # _start_pos_session also rewrites config.payment_method_ids, which is a
-        # separate historical reconfiguration path from opening a new register.
         self.config.open_ui()
         new_session = self.config.current_session_id
         _logger.debug(

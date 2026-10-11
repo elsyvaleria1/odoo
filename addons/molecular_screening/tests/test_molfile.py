@@ -2,8 +2,6 @@ from odoo.tests import BaseCase, tagged
 
 from ..tools.molfile import parse_molblock
 
-# Nitromethane anion drawn with a charged pair and a reversed bond record, so
-# both the M CHG block and the atom-order normalisation get exercised.
 CHARGED = """anion
      RDKit          2D
 
@@ -31,8 +29,6 @@ class TestMolfile(BaseCase):
 
     def test_bonds_are_normalised(self):
         _atoms, bonds = parse_molblock(CHARGED)
-        # Every record is stored with its lower index first, whichever way the
-        # file wrote it, so one bond cannot enter twice reversed.
         self.assertTrue(all(bond["atom_a"] < bond["atom_b"] for bond in bonds))
         self.assertEqual(
             sorted(
@@ -46,7 +42,6 @@ class TestMolfile(BaseCase):
         _atoms, bonds = parse_molblock(aromatic)
         flagged = [bond for bond in bonds if bond["aromatic"]]
         self.assertEqual(len(flagged), 1)
-        # An aromatic record has no Kekulé order of its own, so it is kept as 1
         self.assertEqual(flagged[0]["bond_order"], 1)
 
     def test_rejects_v3000_and_garbage(self):

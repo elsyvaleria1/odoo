@@ -78,10 +78,6 @@ class TestWishlistPublicUsers(HttpCase):
     def test_a_public_group_user_that_is_not_the_website_visitor_sees_a_session_wishlist(
         self,
     ):
-        # the header renders the wish count for every visitor; a user of the
-        # public group that is not the website's own public user has no read
-        # access on wishlists, and reading his own was a 403 on every page
-        # (a 404 page included)
         visitor = self.env["res.users"].create(
             {
                 "name": "other public",
@@ -96,7 +92,6 @@ class TestWishlistPublicUsers(HttpCase):
         self.assertIn("o_wsale_my_wish", response.text)
 
     def test_a_page_reads_the_visitor_wishlist_once(self):
-        # the header renders the wish count in each of its variants
         user = new_test_user(self.env, "wisher", groups="base.group_user")
         product = self.env["product.product"].create(
             {"name": "Wished", "is_published": True, "sale_ok": True}
@@ -164,7 +159,6 @@ class TestWishlistRemove(HttpCase):
 
         self.assertEqual(first.status_code, 303)
         self.assertTrue(first.headers["Location"].endswith("/shop/wishlist"))
-        # the page tells the tab which products remain, for its header count
         self.assertIn(f'data-wishlist-product-ids="[{self.products[1].id}]"', page.text)
         self.assertTrue(last.headers["Location"].endswith("/shop/cart"))
         self.assertFalse(self.wishes.exists())

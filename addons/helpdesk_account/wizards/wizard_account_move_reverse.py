@@ -28,7 +28,6 @@ class WizardAccountMoveReverse(models.TransientModel):
         if ticket_id:
             if "reason" in fields:
                 result["reason"] = self.env._("Helpdesk Ticket #%s", ticket_id)
-            # set default Invoice
             ticket = self.env["helpdesk.ticket"].browse(ticket_id)
             domain = self._get_domain_default_so(ticket)
             last_so = self.env["sale.order"].search(
@@ -43,7 +42,6 @@ class WizardAccountMoveReverse(models.TransientModel):
                     result["move_ids"] = [Command.set(moves.ids)]
         return result
 
-    # Add compute method
     move_ids = fields.Many2many(
         comodel_name="account.move",
         relation="account_move_reversal_move",
@@ -159,7 +157,6 @@ class WizardAccountMoveReverse(models.TransientModel):
             r.suitable_sale_order_ids = self.env["sale.order"].search(domain)
 
     def reverse_moves(self, is_modify=False):
-        # OVERRIDE
         if not self.move_ids:
             lang = self.helpdesk_ticket_id.partner_id.lang or self.env.lang
             res = {

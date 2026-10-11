@@ -142,7 +142,7 @@ class DeliveryCarrier(models.Model):
                 for line in order.line_ids.filtered(
                     lambda line: not line.is_delivery and not line.display_type
                 )
-            )  # required when service type = 'UPS Worldwide Express Freight'
+            )
         }
 
         if self.allow_cash_on_delivery:
@@ -203,7 +203,6 @@ class DeliveryCarrier(models.Model):
             )
 
         if self.ups_bill_my_account and order.partner_ups_carrier_account:
-            # Don't show delivery amount, if ups bill my account option is true
             price = 0.0
 
         return {
@@ -542,7 +541,7 @@ class DeliveryCarrier(models.Model):
         )
         tracking_ref = picking.carrier_tracking_ref
         if not self.prod_environment:
-            tracking_ref = "1ZISDE016691676846"  # used for testing purpose
+            tracking_ref = "1ZISDE016691676846"
 
         superself = self.sudo()
         srm = UPSRequest(

@@ -71,9 +71,6 @@ def _isolated_registry(*classes):
     return ModelRegistry([*classes, _StubIrModelData], isolated=True)
 
 
-# the key of a group and the value of an aggregate, spelled so that the two
-# tiers compare: a record by its name (ids differ, creation order does not),
-# a float exactly; an array keeps its order, which both tiers define
 def _spell(value):
     if hasattr(value, "_ids"):
         return tuple(value.mapped("display_name")) if value else ()
@@ -104,7 +101,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
         obs_b = script(self.env)
         suffix = f"in-memory read_group diverged from SQL{': ' + msg if msg else ''}"
         if isinstance(obs_a, dict) and isinstance(obs_b, dict):
-            # one call at a time, so the message shows whole rows
             self.assertEqual(list(obs_a), list(obs_b), suffix)
             for key in obs_a:
                 self.assertEqual(obs_a[key], obs_b[key], f"{key} -- {suffix}")
@@ -191,8 +187,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
                 observed[str(groupby)] = _rows(Model, [], groupby, aggregates)
                 for aggregate in ("value:sum", "__count", "numeric_value:sum"):
                     for direction in ("", " desc"):
-                        # the groupby keys break the ties an aggregate leaves,
-                        # which SQL would otherwise order as the plan happens to
                         order = ", ".join([f"{aggregate}{direction}", *groupby])
                         observed[f"{groupby} order {order}"] = _rows(
                             Model, [], groupby, [aggregate], order=order
@@ -365,9 +359,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
             env["res.currency.rate"].search([]).unlink()
             env["res.currency.rate"].create(
                 [
-                    # eur: a shared past rate loses to the company's own future
-                    # one, and the company's latest past rate wins over a later
-                    # future one
                     {
                         "currency_id": eur.id,
                         "name": today - datetime.timedelta(days=30),
@@ -391,7 +382,6 @@ class TestReadGroupBackendMatrix(TransactionCase):
                         "rate": 4.0,
                         "company_id": company.id,
                     },
-                    # usd: only future rates, the earliest applies
                     {
                         "currency_id": usd.id,
                         "name": today + datetime.timedelta(days=9),
@@ -621,7 +611,6 @@ class TestReadGroupBackendWalk(TestReadGroupBackendMatrix):
         return script
 
     def _diff_seeds(self, classes, draw):
-        # every seed starts from the rows the in-memory tier starts from: none
         for seed in range(12):
             with self.subTest(seed=seed), self.env.cr.savepoint() as savepoint:
                 try:
@@ -647,18 +636,9 @@ class TestReadGroupBackendWalk(TestReadGroupBackendMatrix):
             aggs = rng.choice(self.SCALAR_AGGREGATES)
             order = None
             if any("partner_id" not in groupby for groupby in sets):
-                # a many2one order term sorts the sets that lack it by
-                # ANY_VALUE() of the joined name, which PostgreSQL picks
-                # arbitrarily, while the in-memory tier drops the term for
-                # those sets; and without it the sets that have it tie
-                # arbitrarily. Neither is wrong, and no caller orders a set
-                # by a column it does not group by: the many2one is drawn
-                # only when every set groups by it
                 sets = [[t for t in groupby if t != "partner_id"] for groupby in sets]
             terms = sorted({term for groupby in sets for term in groupby})
             if rng.random() < 0.5 and (terms or aggs):
-                # the groupby terms break the ties an aggregate leaves; a
-                # term a set lacks is dropped for that set
                 term = rng.choice([*terms, *aggs])
                 order = ", ".join(
                     [

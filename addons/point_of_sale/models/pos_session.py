@@ -561,9 +561,6 @@ class PosSession(models.Model):
 
     @api.depends("config_id")
     def _compute_cash_journal_id(self) -> None:
-        # Initialize the drawer when assigning a register. Later payment-method
-        # changes refresh open sessions explicitly in pos.config.write, preserving
-        # the journal used by closed sessions and their accounting history.
         for session in self:
             session.cash_journal_id = (
                 session.config_id._get_cash_payment_method().journal_id
@@ -688,7 +685,6 @@ class PosSession(models.Model):
                 configs=config_ids,
                 fields=sorted({k for vals in vals_list for k in vals}),
             )
-        # The partial unique index must see pending closes before inserting a new session.
         with _debug.perf("flush_uniqueness_before_create", cr=self.env.cr):
             self.flush_model(["config_id", "state"])
         if self.env.user.has_group("point_of_sale.group_pos_user"):
@@ -804,7 +800,6 @@ class PosSession(models.Model):
             }
         )
         data = {}
-        # future-dated orders are excluded from get_session_orders, not from the entry
         has_activity = bool(
             record.order_ids.filtered(lambda o: o.state != "cancel")
             or record.statement_line_ids
@@ -919,7 +914,6 @@ class PosSession(models.Model):
         return True
 
     def _lock_sessions(self, error_message) -> None:
-        """Serialize closing and cash mutations, keeping locks until transaction end."""
         self.check_access("write")
         try:
             self.lock_for_update()
@@ -928,7 +922,6 @@ class PosSession(models.Model):
             raise UserError(error_message) from error
 
     def _check_bank_payment_method_diffs(self, differences) -> None:
-        """Accept finite amounts only for bank methods belonging to this session."""
         if not differences:
             return
         self.check_singleton()
@@ -1169,8 +1162,6 @@ class PosSession(models.Model):
 
         outstanding_account = payment_method.outstanding_account_id
         if not outstanding_account and not self.currency_id.is_zero(diff_amount):
-            # Resolve the same defaults as a captured payment without creating a
-            # zero-value payment or changing any accounting records.
             payment = (
                 self.env["account.payment"]
                 .with_context(pos_payment=True)
@@ -1902,7 +1893,6 @@ class PosSession(models.Model):
     def _create_bank_payment_difference_moves(
         self, differences, combined_methods=()
     ) -> None:
-        """Post standalone differences not already included in combined payments."""
         for method in self.payment_method_ids.filtered(
             lambda method: method.type == "bank" and method not in combined_methods
         ):
@@ -1933,7 +1923,6 @@ class PosSession(models.Model):
         return data
 
     def _update_payment_outstanding_account(self, payment, payment_amount) -> None:
-        """Assign the payment direction and resolve its outstanding account."""
         payment_type = (
             "outbound"
             if self.currency_id.compare_amounts(payment_amount, 0) < 0
@@ -2097,10 +2086,6 @@ class PosSession(models.Model):
             {
                 "amount": abs(new_amount_currency),
                 "payment_type": "outbound" if new_amount_currency < 0 else "inbound",
-                # Writing the direction queues every compute that hangs off it,
-                # and currency_id hangs off journal_id: left to recompute, a payment
-                # of a foreign-currency session falls back to the journal's or the
-                # company's currency. Keep what the session created it with.
                 "journal_id": account_payment.journal_id.id,
                 "currency_id": account_payment.currency_id.id,
                 "destination_account_id": account_payment.destination_account_id.id,
@@ -2340,7 +2325,6 @@ class PosSession(models.Model):
                 lines | split_invoice_receivable_lines.get(payment, no_line)
                 for payment, lines in split_inv_payment_receivable_lines.items()
             ]
-        # The groups are disjoint, so one plan reconciles each as its own call did.
         plan = [
             unreconciled
             for lines in plan

@@ -21,9 +21,6 @@ class AppointmentType(models.Model):
 
     @api.model
     def get_appointment_type_templates_data(self):
-        """
-        Returns onboarding template names and all linked necessary rendering information.
-        """
         return {
             "meeting": {
                 "description": self.env._("Let others book a meeting in your calendar"),

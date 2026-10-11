@@ -59,7 +59,7 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
 
         cls.batched_expenses = cls.env["hr.expense"].create(expenses_vals)
         cls.batched_expenses.action_submit()
-        cls.batched_expenses._do_approve()  # Skip duplicate wizard
+        cls.batched_expenses._do_approve()
         cls.post_expenses_with_wizard(cls.batched_expenses, date="2022-01-15")
         cls.batched_expenses.action_report_in_next_payslip()
 
@@ -67,7 +67,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
 
     @freeze_time("2022-01-25")
     def test_corner_case_batched_payslips_simple_case(self):
-        """Test that the link is still properly done when payslips are accounted for in batches"""
         self.batched_payslips.compute_sheet()
         self.payslip_run.action_validate()
 
@@ -90,8 +89,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "All expense moves should be paid and reconciled with the payslips move",
         )
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         expenses_lines_to_reconcile, payslips_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
                 self.batched_expenses, self.batched_payslips
@@ -177,11 +174,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
     def test_corner_case_batched_payslips_with_same_accounts_between_expenses_and_payslip(
         self,
     ):
-        """
-        Test that posting the payslip move is properly reconciled with the expenses ones,
-        in the case where the payable account is the same for both the payslip & the expenses moves
-        """
-        # Sets the expense rule on the payroll expense rule
         payable_account_id = self.batched_expenses[0]._get_expense_account_destination()
         self.expense_salary_rule.account_debit = payable_account_id
 
@@ -201,8 +193,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "All expense moves should be paid and reconciled with the payslips move",
         )
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         expenses_lines_to_reconcile, payslips_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
                 self.batched_expenses, self.batched_payslips
@@ -279,16 +269,10 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
 
     @freeze_time("2022-01-25")
     def test_corner_case_batched_payslips_with_too_many_different_accounts(self):
-        """
-        Test that posting the payslip move cannot automatically reconcile but prepares it to be manually reconciled,
-        in the case where there would be more than 2 different accounts for the payslip & the expenses moves
-        """
-        # Unlink the actual moves, so they're re-generated with the new accounts
         self.batched_expenses.account_move_id.action_draft()
         self.batched_expenses.account_move_id.unlink()
         self.batched_expenses.action_reset()
 
-        # Generate a different account for each partner
         default_payable_account = self.env["account.account"].browse(
             self.batched_expenses[0]._get_expense_account_destination()
         )
@@ -305,7 +289,7 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
                 }
             )
         self.batched_expenses.action_submit()
-        self.batched_expenses._do_approve()  # Skip duplicate wizard
+        self.batched_expenses._do_approve()
         self.post_expenses_with_wizard(self.batched_expenses)
         self.assertEqual(
             10,
@@ -317,7 +301,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "We should now have a different account per expense",
         )
 
-        # Re-link payslips with the expenses, as the reset of the expenses unlinked them
         self.batched_expenses.action_report_in_next_payslip()
         self.batched_payslips.action_payslip_draft()
         self.assertSetEqual(
@@ -339,8 +322,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "All expense moves should still be set to 'not_paid'",
         )
 
-        # Check the moves are NOT reconciled
-        # Get the corresponding account.partial.reconcile lines
         expenses_lines_to_reconcile, payslips_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
                 self.batched_expenses, self.batched_payslips
@@ -381,18 +362,10 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
 
     @freeze_time("2022-01-25")
     def test_corner_case_batched_payslips_with_different_accounts_mix(self):
-        """
-        Test that the link is still properly done when payslips are accounted for in batches,
-        in the case where there would be 2 different accounts for the payslip & the expenses moves,
-        but the accounts difference is only on the expense side
-        (mix between `-with_same_accounts_between_expenses_and_payslip` & `-with_too_many_different_accounts`)
-        """
-        # Sets the payslip move expense line account to be the default expense one
         self.expense_salary_rule.account_debit = self.batched_expenses[
             0
         ]._get_expense_account_destination()
 
-        # Take one expense and make it use a different account
         different_account_expense = self.batched_expenses[-1]
         different_account_expense_original_payslip = (
             different_account_expense.payslip_id
@@ -410,7 +383,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             different_account
         )
 
-        # Put the expense back on the payslip
         self.post_expenses_with_wizard(different_account_expense)
         different_account_expense.action_report_in_next_payslip()
         different_account_expense_original_payslip.action_payslip_draft()
@@ -442,8 +414,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "All expense moves should be paid and reconciled with the payslips move",
         )
 
-        # Check reconciliation
-        # Get the corresponding account.partial.reconcile lines
         expenses_lines_to_reconcile, payslips_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
                 self.batched_expenses, self.batched_payslips
@@ -463,7 +433,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
         )
         misc_move_lines = misc_move.line_ids.sorted("balance")
         expenses_lines_to_reconcile = expenses_lines_to_reconcile.sorted("balance")
-        # Sorting by name to avoid non-deterministic order of the two last lines, names of the lines sould be "Reimb.." & "Transfer..."
         self.assertRecordValues(
             reconciliation_lines.sorted(
                 lambda prl: (prl.amount, prl.debit_move_id.name)
@@ -514,7 +483,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
                     "debit_move_id": payslips_lines_to_reconcile.id,
                     "credit_move_id": expenses_lines_to_reconcile.ids[1],
                 },
-                # Only the last expense is reconciled with a misc move as it uses a different account
                 {
                     "amount": 1009.0,
                     "debit_move_id": payslips_lines_to_reconcile.id,
@@ -532,7 +500,6 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
     def test_corner_case_batched_payslips_with_edited_expense_moves(self):
         edited_expense = self.batched_expenses[0]
 
-        # Editing the expense move
         edited_expense.account_move_id.action_draft()
         edited_expense.account_move_id.invoice_line_ids.filtered(
             lambda aml: aml.product_id == self.product_c
@@ -548,13 +515,10 @@ class TestPayrollExpenseBatched(TestPayrollExpense):
             "The move should have a different amount than the expense",
         )
 
-        # Post the moves
         self.batched_payslips.compute_sheet()
         self.payslip_run.action_validate()
         self.batched_payslips.move_id.action_post()
 
-        # Check the two moves are NOT reconciled
-        # Get the corresponding account.partial.reconcile lines
         expenses_lines_to_reconcile, payslips_lines_to_reconcile = (
             self.get_all_amls_to_be_reconciled(
                 self.batched_expenses, self.batched_payslips

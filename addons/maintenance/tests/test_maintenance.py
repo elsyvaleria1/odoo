@@ -60,7 +60,6 @@ class TestMaintenance(TestMaintenanceCommon):
             }
         )
 
-        # Create new maintenance order
         maintenance_order_01 = self.maintenance_order.with_user(self.user).create(
             {
                 "name": "Resolution is bad",
@@ -73,17 +72,13 @@ class TestMaintenance(TestMaintenanceCommon):
             }
         )
 
-        # I check that maintenance_order is created or not
         assert maintenance_order_01, "Maintenance Order not created"
 
-        # I check that Initially maintenance order is a draft
         self.assertEqual(maintenance_order_01.state, "draft")
 
-        # I check that the user confirms and starts the maintenance order
         maintenance_order_01.with_user(self.user).action_confirm()
         maintenance_order_01.with_user(self.user).action_start()
 
-        # I check that maintenance order is in progress
         self.assertEqual(maintenance_order_01.state, "in_progress")
 
     def test_a_forever_plan_opens_the_next_order_confirmed(self):
@@ -96,9 +91,6 @@ class TestMaintenance(TestMaintenanceCommon):
         self.assertEqual(next_order.state, "confirmed")
 
     def test_update_multiple_maintenance_order_record(self):
-        """
-        Test that multiple records of the model 'maintenance.order' can be written simultaneously.
-        """
         maintenance_orders = self.env["maintenance.order"].create(
             [
                 {
@@ -143,12 +135,6 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
             self.assertEqual(form.name, "Super Equipment")
 
     def test_done_maintenance_no_date_done_or_date_confirmed(self):
-        """
-        Ensure an asset with done maintenance orders that have
-        `date_done` or `date_confirmed` set to False can still be opened.
-        In theory this should never happen, but we should fail gracefully
-        in case these dates are forced set to False.
-        """
 
         form = Form(
             self.env["resource.resource"].with_user(self.manager),
@@ -171,7 +157,6 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         self.assertTrue(maintenance.date_done)
         form = Form(equipment, view="base.resource_asset_view_form")
 
-        # this shouldn't happen unless it's forced
         maintenance.date_done = False
         form = Form(equipment, view="base.resource_asset_view_form")
         maintenance.date_done = fields.Date.today()

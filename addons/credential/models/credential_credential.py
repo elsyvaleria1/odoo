@@ -20,18 +20,10 @@ from .credential_use import check_purpose
 _logger = logging.getLogger(__name__)
 
 _USAGE_PENDING_KEY = "credential.usage.pending"
-# A flush that loses to a concurrent one on the same row is run again this many
-# times in all; the counts are statistics, so past that they are logged and lost.
 _USAGE_FLUSH_TRIES = 3
 
 
 def _flush_usage(registry, pending: dict) -> None:
-    """Add a transaction's uses to their credentials, in a cursor of its own.
-
-    The counters are added in SQL (column + n), never read and written back,
-    so two flushes on one row both count; rows are locked in id order, so two
-    flushes cannot deadlock.
-    """
     if not pending:
         return
     rows = sorted(pending.items())
@@ -89,7 +81,6 @@ EXPIRY_WARNING_DAYS = 30
 
 
 def _payload_secret(value: Any) -> Secret | None:
-    # a JSON payload may hold a key typed as a number
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         value = str(value)
     return Secret.of(value)
@@ -574,9 +565,6 @@ class CredentialCredential(models.Model):
         if records._touches_system_secrets():
             self.env.registry.clear_cache()
 
-        # The policy fields belong to the credential administrators, so a creator
-        # outside that group cannot be handed them as create values; the category
-        # applies them afterwards, and only where the creator chose nothing.
         for record, names in zip(records.sudo(), unset_policy, strict=True):
             category = record.category_id
             policy = {
@@ -836,10 +824,6 @@ class CredentialCredential(models.Model):
         for record in self:
             payload = record.get_credential_dict()
             definitions = record.category_id.sudo().field_ids
-            # a JSON key that only stands in for the simple value (bearer_token
-            # for credential_value) is no field of its own until the credential
-            # keeps JSON: written next to the simple value it would be refused,
-            # the storage being sealed by whichever is written first
             alternatives = {
                 definition.requirement_group
                 for definition in definitions
@@ -954,7 +938,7 @@ class CredentialCredential(models.Model):
                     ("encryption_key_version", "<", current_version),
                 ],
             )
-            total_all = model.search_count([])  # noqa: E8507  one query per model, not per record
+            total_all = model.search_count([])
             stats = {
                 "total": total_all,
                 "eligible": len(eligible),
@@ -1107,15 +1091,6 @@ class CredentialCredential(models.Model):
         }
 
     def _probe_health(self) -> dict[str, Any]:
-        """Run the credential-specific probe and store its health result.
-
-        This fallback records unknown health and a check timestamp; extensions
-        provide the service probe. An unsuccessful probe is a returned outcome,
-        not a raising validation contract.
-
-        :returns: ``success`` and ``message``; this fallback also returns
-            ``not_implemented=True``
-        """
         self.check_singleton()
 
         _logger.info(
@@ -1262,11 +1237,6 @@ class CredentialCredential(models.Model):
                 return value
         return self.credential_value or False
 
-    # The use path: trusted server code placing a secret on the wire or checking a
-    # signature with it. It skips the per-user decrypt allowance and the per-read
-    # audit row, both of which exist to stop a person harvesting secrets and which
-    # made the hundred-and-first outbound call of an hour fail. It is private so no
-    # RPC call reaches it; transport exchanges are recorded in their own log.
     def _use_secret_payload(self, purpose: str) -> dict:
         self.check_singleton()
         check_purpose(purpose)
@@ -1278,7 +1248,6 @@ class CredentialCredential(models.Model):
         if not encrypted:
             return {}
         plaintext = self._decrypt_value_safe(encrypted, default=None)
-        # Without ODOO_API_ENCRYPTION_KEY the mixin answers False, not None.
         if not plaintext:
             _logger.warning(
                 "Credential %s: could not decrypt for use (key missing or "
@@ -1311,9 +1280,6 @@ class CredentialCredential(models.Model):
             return (payload["username"], password)
         return None
 
-    # A secret that belongs to the database rather than to a company or an
-    # endpoint (an OAuth application's client secret, say), which used to be an
-    # ir.config_parameter kept in clear.
     _SYSTEM_SECRET_PREFIX = "System secret: "
 
     @api.model
@@ -1398,15 +1364,6 @@ class CredentialCredential(models.Model):
         return None
 
     def increment_usage(self, success: bool = True) -> None:
-        """Count one use, and whether it succeeded, once the transaction ends.
-
-        Every call through a credential used to write its row in the caller's
-        transaction; a bot's chats all share one credential, so two calls at
-        once had one transaction fail on that row, a serialization failure
-        surfacing at whatever flush came next. The count is added after the
-        transaction commits or rolls back -- the call happened either way --
-        in a cursor of its own, and is not seen before then.
-        """
         self.check_singleton()
         self._queue_usage(uses=1, successes=int(success), errors=int(not success))
 
@@ -1472,9 +1429,6 @@ class CredentialCredential(models.Model):
             self._create_access_logs_out_of_band([vals])
             return
         self._create_access_logs([vals])
-        # The plaintext was produced whether or not the caller's transaction
-        # commits, so a rollback must not take the audit row with it. The row is
-        # prepared now: after the rollback this transaction's records are gone.
         self.env.cr.postrollback.add(
             lambda: self._create_access_logs_out_of_band([vals])
         )
@@ -1559,9 +1513,6 @@ class CredentialCredential(models.Model):
                 )
 
     def mark_as_used(self) -> None:
-        """Record when the credential was last used, once the transaction ends
-        (see increment_usage): every authenticated webhook of a receiver calls
-        this on the same row."""
         self.check_singleton()
         self._queue_usage()
         self._log_access("use")
